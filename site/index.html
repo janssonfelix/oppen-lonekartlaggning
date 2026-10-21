@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<!-- SPDX-License-Identifier: MIT — Copyright 2026 Felix Jansson -->
+<!-- Mall för demosidan. Byggs av tools/site.mjs (npm run site) till site/dist/. -->
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src 'self'; base-uri 'none'; form-action 'none';">
+    <meta name="referrer" content="no-referrer">
+    <meta name="description" content="Öppen lönekartläggning: analysverktyg för den årliga lönekartläggningen, i en enda fil som körs lokalt i webbläsaren. Öppen källkod under MIT-licensen.">
+    <title>Öppen lönekartläggning</title>
+    <style>
+        :root {
+            --bg: #f0f4f8; --kort: #ffffff; --text: #1e293b; --dampad: #475569;
+            --primar: #1d4ed8; --primar-hover: #1e40af; --kant: #e2e8f0;
+            --notis-bg: #fffbeb; --notis-kant: #f59e0b; --radie: 12px;
+        }
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg: #0f172a; --kort: #1e293b; --text: #e2e8f0; --dampad: #94a3b8;
+                --primar: #60a5fa; --primar-hover: #93c5fd; --kant: #334155;
+                --notis-bg: #292524; --notis-kant: #d97706;
+            }
+        }
+        * { box-sizing: border-box; }
+        body { margin: 0; background: var(--bg); color: var(--text);
+               font: 17px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+        main { max-width: 860px; margin: 0 auto; padding: 32px 16px 48px; }
+        h1 { font-size: 2.1rem; line-height: 1.2; margin: 0 0 4px; }
+        h2 { font-size: 1.25rem; margin: 0 0 8px; }
+        .version { color: var(--dampad); margin: 0 0 16px; font-size: 0.95rem; }
+        .ingress { font-size: 1.15rem; margin: 0 0 24px; }
+        .knappar { display: flex; flex-wrap: wrap; gap: 12px; margin: 0 0 20px; }
+        .knapp { display: inline-block; padding: 12px 20px; border-radius: 10px; font-weight: 600;
+                 text-decoration: none; border: 2px solid var(--primar); }
+        .knapp-primar { background: var(--primar); color: #fff; }
+        .knapp-primar:hover { background: var(--primar-hover); border-color: var(--primar-hover); }
+        .knapp-sekundar { color: var(--primar); background: transparent; }
+        @media (prefers-color-scheme: dark) { .knapp-primar { color: #0f172a; } }
+        a:focus-visible { outline: 3px solid var(--notis-kant); outline-offset: 2px; }
+        .notis { background: var(--notis-bg); border-left: 4px solid var(--notis-kant);
+                 padding: 12px 16px; border-radius: 8px; margin: 0 0 28px; }
+        .kort { background: var(--kort); border: 1px solid var(--kant); border-radius: var(--radie);
+                padding: 20px 22px; margin: 0 0 18px; }
+        .kort p:last-child, .kort ul:last-child, .kort ol:last-child { margin-bottom: 0; }
+        .bild { width: 100%; height: auto; border: 1px solid var(--kant); border-radius: var(--radie); margin: 0 0 24px; }
+        code { font-family: ui-monospace, Consolas, monospace; font-size: 0.88em; overflow-wrap: anywhere; }
+        .kontrollsumma { display: block; padding: 8px 10px; background: var(--bg); border-radius: 6px; margin: 4px 0 8px; }
+        footer { color: var(--dampad); font-size: 0.9rem; margin-top: 32px; }
+    </style>
+</head>
+<body>
+<main>
+    <h1>Öppen lönekartläggning</h1>
+    <p class="version">Version {{VERSION}} · öppen källkod under MIT-licensen</p>
+    <p class="ingress">Ett analysverktyg för den årliga lönekartläggningen enligt diskrimineringslagen och
+        EU:s lönetransparensdirektiv — i en enda fil som körs i webbläsaren på din egen dator.
+        Ingen installation, ingen server, inget konto.</p>
+
+    <div class="knappar">
+        <a class="knapp knapp-primar" href="oppen-lonekartlaggning.html?demo=1">Prova med påhittad data</a>
+        <a class="knapp knapp-sekundar" href="oppen-lonekartlaggning.html" download>Ladda ner verktyget ({{STORLEK}})</a>
+    </div>
+
+    <p class="notis"><strong>Här provar du med påhittad data.</strong> För skarp data: ladda ner filen och
+        öppna den på din dator. Verktyget skickar ingenting över nätverket, men organisationens
+        löner ska bearbetas på organisationens egen dator — inte i en flik från en webbplats.</p>
+
+    {{BILD}}
+
+    <section class="kort" aria-labelledby="rubrik-vad">
+        <h2 id="rubrik-vad">Vad verktyget gör</h2>
+        <p>Läs in personalfilen ur lönesystemet (CSV eller Excel) och arbeta igenom lönekartläggningen
+            i den ordning lagen beskriver:</p>
+        <ol>
+            <li><strong>Underlag</strong> — inläsning och kontroll av filen.</li>
+            <li><strong>Kartlägg och analysera</strong> — regler och praxis, lika arbete, likvärdigt arbete
+                och lönestrukturen.</li>
+            <li><strong>Åtgärda</strong> — prioritering med kostnad, löneöversyn och handlingsplan.</li>
+            <li><strong>Dokumentera</strong> — ett redigerbart Word-utkast, rapporter och underlag för
+                samverkan med facket.</li>
+        </ol>
+        <p>Verktyget pekar ut kandidater för granskning; bedömningen av sakliga skäl gör ni.</p>
+    </section>
+
+    <section class="kort" aria-labelledby="rubrik-dataskydd">
+        <h2 id="rubrik-dataskydd">Dataskydd i korthet</h2>
+        <ul>
+            <li>All bearbetning sker i webbläsarens minne. Nätverkstrafik och lagring är spärrade.</li>
+            <li>Bara de fält analysen behöver läses in; personnummer, namn och e-post avvisas.</li>
+            <li>Lönemått för grupper med färre än 10 personer redovisas inte i de beskrivande vyerna och
+                exporterna.</li>
+        </ul>
+        <p>Underlag för dataskyddsombudet och IT — risk- och sårbarhetsanalys med svar på de vanligaste
+            frågorna — följer med i källkoden.</p>
+    </section>
+
+    <section class="kort" aria-labelledby="rubrik-igang">
+        <h2 id="rubrik-igang">Kom igång</h2>
+        <ol>
+            <li>Ladda ner filen och öppna den i en webbläsare (Edge, Chrome eller Firefox).</li>
+            <li>Klicka <em>Prova med demodata</em> och utforska verktyget.</li>
+            <li>När ni är redo: läs in organisationens <em>organisationspaket</em> (lönepolitiskt
+                ställningstagande och jämförelsestatistik) och därefter personalfilen.</li>
+        </ol>
+        {{GUIDER}}
+    </section>
+
+    <section class="kort" aria-labelledby="rubrik-verifiera">
+        <h2 id="rubrik-verifiera">Kontrollera filen</h2>
+        <p>Kontrollsumman (SHA-256) för version {{VERSION}}:</p>
+        <code class="kontrollsumma">{{SHA}}</code>
+        <p>Jämför med <code>sha256sum oppen-lonekartlaggning.html</code> (Linux, Mac) eller
+            <code>(Get-FileHash -Algorithm SHA256 oppen-lonekartlaggning.html).Hash</code> (Windows).
+            Byggrapporten finns i <a href="RELEASE.txt">RELEASE.txt</a>.</p>
+    </section>
+
+    <section class="kort" aria-labelledby="rubrik-licens">
+        <h2 id="rubrik-licens">Licens</h2>
+        <p>Öppen lönekartläggning är öppen källkod under MIT-licensen.
+            Kommuner, regioner och alla andra får använda, ändra och sprida verktyget fritt enligt licensens villkor.
+            Upphovsperson: Felix Jansson.</p>
+    </section>
+
+    <footer>Sidan har inga skript, ingen analys och ingen spårning.</footer>
+</main>
+</body>
+</html>

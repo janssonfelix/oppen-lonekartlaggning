@@ -1,0 +1,93 @@
+name: Release
+
+# Släpper en version när en tagg v<VERSION> pushas:
+#   1. release-grinden (npm run release:kontroll, tools/release.mjs) — versionen står lika i VERSION, package.json,
+#      CHANGELOG och RELEASE.txt, riskanalysen är granskad mot koden som släpps (teknisk-plan.md §9 punkt 17b);
+#   2. bygget görs om och måste bli byte-identiskt med den incheckade artefakten;
+#   3. artefakten och RELEASE.txt signeras med Sigstore cosign utan nyckel (keyless): certifikatet utfärdas för
+#      det här arbetsflödet genom GitHub Actions OIDC-token, så signaturen styrker att filen byggdes här ur taggen;
+#   4. signaturen verifieras med samma kommando som SECURITY.md anger, och allt publiceras som en GitHub Release.
+#
+# Kontrollsumman i RELEASE.txt skyddar bara mot en skadad fil; det är signaturen som styrker äktheten.
+on:
+  push:
+    tags: ['v*']
+
+# Inga behörigheter som standard; jobbet får bara det det behöver.
+permissions: {}
+
+# Stegen är låsta på commit-SHA (versionen står som kommentar), så att en flyttad tagg hos
+# tredjepartsåtgärden inte kan ändra vad som körs. Uppdatera SHA och kommentar tillsammans.
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # skapa releasen och ladda upp filerna
+      id-token: write   # OIDC-token till Sigstore (keyless signering)
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Hela historiken: release-grinden jämför granskningsdatumen med senaste commit som rör koden.
+          fetch-depth: 0
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '22'
+
+      - name: Install (deterministiskt)
+        run: npm ci
+
+      - name: Taggen motsvarar VERSION
+        run: |
+          if [ "v$(cat VERSION)" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::Taggen $GITHUB_REF_NAME motsvarar inte VERSION ($(cat VERSION))."
+            exit 1
+          fi
+
+      - name: Release-grinden
+        run: npm run release:kontroll
+
+      - name: Artefakten motsvarar källan (byte-identisk)
+        run: |
+          fore=$(sha256sum dist/oppen-lonekartlaggning.html | cut -d' ' -f1)
+          npm run bundle
+          efter=$(sha256sum dist/oppen-lonekartlaggning.html | cut -d' ' -f1)
+          if [ "$fore" != "$efter" ] || ! git diff --quiet -- dist; then
+            echo "::error::Den incheckade artefakten motsvarar inte källan ($fore → $efter)."
+            exit 1
+          fi
+          echo "Artefakten är byte-identisk med en färsk build ($fore)."
+
+      - uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+
+      # Varje fil får ett Sigstore-paket (.sigstore.json) med signaturen, certifikatet och posten i
+      # transparensloggen Rekor.
+      - name: Signera artefakten och RELEASE.txt
+        working-directory: dist
+        run: |
+          cosign sign-blob --yes --bundle oppen-lonekartlaggning.html.sigstore.json oppen-lonekartlaggning.html
+          cosign sign-blob --yes --bundle RELEASE.txt.sigstore.json RELEASE.txt
+
+      - name: Verifiera signaturerna
+        working-directory: dist
+        run: |
+          for f in oppen-lonekartlaggning.html RELEASE.txt; do
+            cosign verify-blob "$f" --bundle "$f.sigstore.json" \
+              --certificate-identity "https://github.com/${GITHUB_REPOSITORY}/.github/workflows/release.yml@${GITHUB_REF}" \
+              --certificate-oidc-issuer https://token.actions.githubusercontent.com
+          done
+
+      - name: Publicera som GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          # Versionens avsnitt ur CHANGELOG blir releasens text.
+          node -e "const t=require('fs').readFileSync('CHANGELOG.md','utf8');const v=process.argv[1];const m=t.split(/^## /m).find(s=>s.startsWith(v));if(!m){console.error('Inget avsnitt för '+v+' i CHANGELOG.md');process.exit(1);}process.stdout.write(m.slice(m.indexOf('\n')+1).trim()+'\n');" "$version" > release-text.md
+          gh release create "$GITHUB_REF_NAME" --verify-tag \
+            --title "Öppen lönekartläggning $version" \
+            --notes-file release-text.md \
+            dist/oppen-lonekartlaggning.html \
+            dist/RELEASE.txt \
+            dist/oppen-lonekartlaggning.html.sigstore.json \
+            dist/RELEASE.txt.sigstore.json

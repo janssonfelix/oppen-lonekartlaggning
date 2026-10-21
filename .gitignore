@@ -1,0 +1,27 @@
+node_modules/
+*.tmp
+
+# GDPR: riktig löne-/personaldata ska aldrig checkas in (läses in i verktyget vid körning).
+# Gäller även referens- och statistikfiler — de hör till organisationspaketet, inte till koden.
+*.csv
+*.xlsx
+*.xls
+*.lonepaket.json
+
+# Lokala indata (testdata skapas med npm run gen:testdata och är CSV, se ovan).
+tools/data/*
+
+# Redigerarnas tillfälliga filer.
+*.kate-swp
+*.swp
+*~
+
+# Arbetskatalog för utvecklingsverktyg, inte en del av projektet.
+.claude/
+
+# Lokalt material som inte hör till den publika källkoden, och dess utfiler.
+privat/
+dist/marknad/
+
+# Genererad demosida (npm run site).
+site/dist/

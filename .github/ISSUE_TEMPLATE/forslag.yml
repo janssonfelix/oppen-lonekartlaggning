@@ -1,0 +1,29 @@
+name: Förslag
+description: En idé om något verktyget borde göra, eller göra annorlunda.
+title: "Förslag: "
+labels: [förslag]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Skicka ingen verklig lönedata och inga personuppgifter**, inte heller som exempel.
+        Beskriv behovet med påhittade tal.
+  - type: textarea
+    id: behov
+    attributes:
+      label: Vilket behov gäller det?
+      description: Vad försöker du göra i lönekartläggningen, och vad hindrar dig i dag?
+    validations:
+      required: true
+  - type: textarea
+    id: forslag
+    attributes:
+      label: Förslag
+      description: Hur skulle det kunna lösas? Lagrum eller praxis som förslaget bygger på är bra att nämna.
+  - type: checkboxes
+    id: ingen-lonedata
+    attributes:
+      label: Kontroll
+      options:
+        - label: Ärendet innehåller ingen verklig lönedata och inga personuppgifter.
+          required: true

@@ -1,0 +1,52 @@
+name: Fel
+description: Något i verktyget fungerar inte som det ska.
+title: "Fel: "
+labels: [fel]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Skicka ingen verklig lönedata och inga personuppgifter** — inte i texten, inte i bilagor, inte i
+        skärmbilder. Återskapa felet med demodata (*Prova med demodata*) eller en påhittad fil.
+
+        En säkerhetsbrist (att data kan lämna datorn, bli kvar efter *Rensa all data*, eller att en fil kan
+        köra kod) rapporteras privat enligt `SECURITY.md`, inte här.
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Står i fliken Om verktyget och i RELEASE.txt.
+      placeholder: "2026.10.19"
+    validations:
+      required: true
+  - type: input
+    id: webblasare
+    attributes:
+      label: Webbläsare och operativsystem
+      placeholder: "Firefox 140 på Windows 11"
+    validations:
+      required: true
+  - type: textarea
+    id: steg
+    attributes:
+      label: Så här återskapas felet
+      description: Steg för steg, med demodata eller en påhittad fil.
+      placeholder: |
+        1. Prova med demodata
+        2. Öppna fliken …
+        3. …
+    validations:
+      required: true
+  - type: textarea
+    id: forvantat
+    attributes:
+      label: Vad du väntade dig, och vad som hände
+    validations:
+      required: true
+  - type: checkboxes
+    id: ingen-lonedata
+    attributes:
+      label: Kontroll
+      options:
+        - label: Ärendet innehåller ingen verklig lönedata och inga personuppgifter.
+          required: true

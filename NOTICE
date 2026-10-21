@@ -1,0 +1,7 @@
+Öppen lönekartläggning
+Copyright 2026 Felix Jansson
+
+Licensierad under MIT-licensen (SPDX: MIT). Licenstexten står i filen LICENSE.
+
+Verktyget innehåller tredjepartsbibliotek under egna licenser (MIT, zlib, Apache 2.0, ISC);
+se LICENSES.md och src/licenser.txt.

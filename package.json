@@ -1,0 +1,41 @@
+{
+  "name": "oppen-lonekartlaggning",
+  "version": "2026.10.19",
+  "private": true,
+  "engines": {
+    "node": ">=22.12"
+  },
+  "description": "Single-file lonekartlaggningsverktyg (DiskrL kap. 3 + EU 2023/970). Applikationen byggs av tools/bundle.mjs (npm run bundle); ovrig dev-tooling for tester och linting.",
+  "scripts": {
+    "test": "node tools/test.mjs",
+    "test:watch": "vitest",
+    "lint": "eslint dist/app.js src/lib tests tools",
+    "lint:fix": "eslint --fix dist/app.js src/lib tests tools",
+    "typecheck": "npm run typecheck:lib && npm run typecheck:app",
+    "typecheck:lib": "tsc -p tsconfig.json",
+    "typecheck:app": "tsc -p tsconfig.app.json",
+    "build:app": "node tools/build-app.mjs",
+    "bundle": "node tools/bundle.mjs",
+    "gen:testdata": "node tools/gen-testdata.mjs",
+    "gen:aid": "node tools/gen-aid-etiketter.mjs",
+    "gen:skr": "node tools/gen-skr-personal.mjs",
+    "test:browser": "node tools/browser-smoke.mjs",
+    "test:browser:firefox": "node tools/browser-smoke.mjs --browser=firefox",
+    "test:browser:webkit": "node tools/browser-smoke.mjs --browser=webkit",
+    "test:browser:webkit:behallare": "podman run --rm --security-opt label=disable --network=none -v \"$PWD\":/work:ro -w /work mcr.microsoft.com/playwright:v1.64.1-noble node tools/browser-smoke.mjs --browser=webkit",
+    "perf": "node tools/perf-smoke.mjs",
+    "site": "node tools/site.mjs",
+    "release:kontroll": "node tools/release.mjs"
+  },
+  "devDependencies": {
+    "axe-core": "^4.14.0",
+    "d3": "7.9.0",
+    "eslint": "^10.13.0",
+    "globals": "^17.13.0",
+    "jsdom": "30.1.1",
+    "playwright": "^1.64.1",
+    "typescript": "7.0.2",
+    "vitest": "^5.0.5"
+  },
+  "type": "module"
+}

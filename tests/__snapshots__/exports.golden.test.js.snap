@@ -1,0 +1,3404 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`golden: Excel-exporterna på fast dataset > "Excel (alla flikar)" matchar facit 1`] = `
+{
+  "EU-Lonekartlaggning": [
+    [
+      "Yrkesgrupp (AID + benämning)",
+      "Antal personer (kvinnor/män)",
+      "Köns-dominans (Kvinno-/Mans-/Blandad)",
+      "Andel kvinnor i yrket nationellt (SKR:s personalstatistik)",
+      "Median Kvinnor (kr/mån)",
+      "Median Män (kr/mån)",
+      "Lönegap kvinnor/män (kvinnors median i % av männens)",
+      "Status (Lika lön / Avvikelse / Utred)",
+    ],
+    [
+      "5301 Undersköterska",
+      "17 (14/3)",
+      "Kvinno-dom",
+      "–",
+      "Gruppens median 28 800 kr",
+      null,
+      "–",
+      "Könsuppdelningen är för liten (ett kön n < 10)",
+    ],
+    [
+      "4100 Tekniker",
+      "17 (3/14)",
+      "Mans-dom",
+      "–",
+      "Gruppens median 33 500 kr",
+      null,
+      "–",
+      "Könsuppdelningen är för liten (ett kön n < 10)",
+    ],
+    [
+      "5500 Sjuksköterska",
+      "14 (12/2)",
+      "Kvinno-dom",
+      "–",
+      "Gruppens median 31 950 kr",
+      null,
+      "–",
+      "Könsuppdelningen är för liten (ett kön n < 10)",
+    ],
+    [
+      "2000 Ingenjör",
+      "14 (2/12)",
+      "Mans-dom",
+      "–",
+      "Gruppens median 36 675 kr",
+      null,
+      "–",
+      "Könsuppdelningen är för liten (ett kön n < 10)",
+    ],
+    [
+      "4 yrkesgrupper visas med gruppens samlade median i stället för könsuppdelade medianer: 5301 Undersköterska, 4100 Tekniker, 5500 Sjuksköterska, 2000 Ingenjör. Grupperna är stora nog att redovisa, men ett av könen har färre än 10 personer, så en könsjämförelse skulle peka ut enskilda.",
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+    ],
+  ],
+  "Jamforelsestatistik": [
+    [
+      "BAS B",
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+    ],
+    [
+      "AID / Yrkesgrupp",
+      "BAS",
+      "Antal personer (organisationen)",
+      "P10 organisationen (kr/mån)",
+      "P10 jämförelsestatistiken (kr/mån)",
+      "P10 skillnad mot jämförelsestatistiken (%)",
+      "Median organisationen (kr/mån)",
+      "Median jämförelsestatistiken (kr/mån)",
+      "Median skillnad mot jämförelsestatistiken (%)",
+      "P90 organisationen (kr/mån)",
+      "P90 jämförelsestatistiken (kr/mån)",
+      "P90 skillnad mot jämförelsestatistiken (%)",
+    ],
+    [
+      "4100 Tekniker",
+      "B",
+      17,
+      32660,
+      "–",
+      "–",
+      33500,
+      33800,
+      -0.89,
+      34140,
+      "–",
+      "–",
+    ],
+    [
+      "5301 Undersköterska",
+      "B",
+      17,
+      28160,
+      "–",
+      "–",
+      28800,
+      29500,
+      -2.37,
+      29200,
+      "–",
+      "–",
+    ],
+    [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+    ],
+    [
+      "BAS C",
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+    ],
+    [
+      "AID / Yrkesgrupp",
+      "BAS",
+      "Antal personer (organisationen)",
+      "P10 organisationen (kr/mån)",
+      "P10 jämförelsestatistiken (kr/mån)",
+      "P10 skillnad mot jämförelsestatistiken (%)",
+      "Median organisationen (kr/mån)",
+      "Median jämförelsestatistiken (kr/mån)",
+      "Median skillnad mot jämförelsestatistiken (%)",
+      "P90 organisationen (kr/mån)",
+      "P90 jämförelsestatistiken (kr/mån)",
+      "P90 skillnad mot jämförelsestatistiken (%)",
+    ],
+    [
+      "2000 Ingenjör",
+      "C",
+      14,
+      35755,
+      "–",
+      "–",
+      36675,
+      36500,
+      0.48,
+      37455,
+      "–",
+      "–",
+    ],
+    [
+      "5500 Sjuksköterska",
+      "C",
+      14,
+      31195,
+      "–",
+      "–",
+      31950,
+      "–",
+      "–",
+      32455,
+      "–",
+      "–",
+    ],
+  ],
+  "Konsskevhet": [
+    [
+      "BAS-intervall",
+      "Totalt antal personer",
+      "Andel kvinnor (%)",
+      "Andel män (%)",
+      "Underrepresenterat kön (om < 10% av gruppen)",
+    ],
+    [
+      "B",
+      34,
+      50,
+      50,
+      "-",
+    ],
+    [
+      "C",
+      28,
+      50,
+      50,
+      "-",
+    ],
+  ],
+  "Lika arbete per BAS": [
+    [
+      "Kvinnors och mäns lön per BAS-intervall (översiktstabellen på Lika arbete)",
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+    ],
+    [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+    ],
+    [
+      "BAS-intervall",
+      "Antal kvinnor",
+      "Antal män",
+      "Median kvinnor (kr)",
+      "Median män (kr)",
+      "Skillnad (kr)",
+      "Kvinnors median i % av mäns",
+      "Konfidensintervall 95 %, nedre",
+      "Konfidensintervall 95 %, övre",
+      "Status",
+    ],
+    [
+      "B",
+      17,
+      17,
+      28800,
+      33500,
+      -4700,
+      86,
+      84.5,
+      87.4,
+      "Avviker mer än 5 %",
+    ],
+    [
+      "C",
+      14,
+      14,
+      31975,
+      36675,
+      -4700,
+      87.2,
+      85.4,
+      88.9,
+      "Avviker mer än 5 %",
+    ],
+  ],
+  "Lonegap": [
+    [
+      "BAS-intervall",
+      "Antal personer (kvinnor/män)",
+      "Kvinnors median i % av männens (100% = lika lön)",
+      "Median Kvinna (kr/mån)",
+      "Median Man (kr/mån)",
+    ],
+    [
+      "B",
+      "17/17",
+      86,
+      28800,
+      33500,
+    ],
+    [
+      "C",
+      "14/14",
+      87.2,
+      31975,
+      36675,
+    ],
+  ],
+  "Lonegap per alder": [
+    [
+      "Lönegap per åldersgrupp (Ålder & karriär)",
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+    ],
+    [
+      "Visas inte, ett kön har färre än 10 personer: 40–49 år.",
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+    ],
+    [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+    ],
+    [
+      "Åldersgrupp",
+      "Antal kvinnor",
+      "Antal män",
+      "Median kvinnor (kr)",
+      "Median män (kr)",
+      "Kvinnors median i % av mäns",
+      "Konfidensintervall 95 %, nedre",
+      "Konfidensintervall 95 %, övre",
+    ],
+    [
+      "30–39 år",
+      25,
+      25,
+      31300,
+      33700,
+      92.9,
+      80.3,
+      95.4,
+    ],
+  ],
+  "Lönepolitik": [
+    [
+      "Lönerna mot Eget ställningstagande (fliken Lönepolitik)",
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+    ],
+    [
+      "Position är var medianen ligger i referensens spann: 0 % = på P10, 100 % = på P90; under 0 eller över 100 betyder utanför spannet. Yrkesgrupper med färre än 10 personer står med antal men utan lönemått, och med färre än 5 utelämnas de; de räknas alltid in i BAS-intervallets rader. Könsuppdelade mått redovisas bara där varje kön har minst 10 personer.",
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+    ],
+    [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+    ],
+    [
+      "Yrkesgrupper mot sitt spann",
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+    ],
+    [
+      "BAS-intervall",
+      "AID",
+      "Yrkesgrupp",
+      "Antal",
+      "Median (kr)",
+      "Referensens P10 (kr)",
+      "Referensens P90 (kr)",
+      "Position (%)",
+      "Under P10 (antal)",
+      "Referensnivå",
+    ],
+    [
+      "B",
+      "5301",
+      "Undersköterska",
+      17,
+      28800,
+      27000,
+      35000,
+      22.5,
+      0,
+      "BAS-nivå",
+    ],
+    [
+      "B",
+      "4100",
+      "Tekniker",
+      17,
+      33500,
+      27000,
+      35000,
+      81.3,
+      0,
+      "BAS-nivå",
+    ],
+    [
+      "C",
+      "5500",
+      "Sjuksköterska",
+      14,
+      31950,
+      30000,
+      39000,
+      21.7,
+      0,
+      "BAS-nivå",
+    ],
+    [
+      "C",
+      "2000",
+      "Ingenjör",
+      14,
+      36675,
+      30000,
+      39000,
+      74.2,
+      0,
+      "BAS-nivå",
+    ],
+    [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+    ],
+    [
+      "Läget i spannet per kön, per BAS-intervall (genomsnittlig position: 0 % = P10, 100 % = P90)",
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+    ],
+    [
+      "BAS-intervall",
+      "Antal kvinnor",
+      "Antal män",
+      "Kvinnors läge (%)",
+      "Mäns läge (%)",
+      "Skillnad kvinnor − män (procentenheter)",
+      null,
+      null,
+      null,
+      null,
+    ],
+    [
+      "B",
+      17,
+      17,
+      29.3,
+      73.1,
+      -43.7,
+      null,
+      null,
+      null,
+      null,
+    ],
+    [
+      "C",
+      14,
+      14,
+      26.2,
+      68.3,
+      -42.1,
+      null,
+      null,
+      null,
+      null,
+    ],
+    [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+    ],
+    [
+      "Fördelningen i spannets tredjedelar per kön (hela urvalet, andel av könet)",
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+    ],
+    [
+      "Kön",
+      "Antal",
+      "Under spannet (%)",
+      "Nedre tredjedelen (%)",
+      "Mellersta tredjedelen (%)",
+      "Övre tredjedelen (%)",
+      "Över spannet (%)",
+      null,
+      null,
+      null,
+    ],
+    [
+      "Kvinnor",
+      31,
+      0,
+      83.9,
+      6.5,
+      9.7,
+      0,
+      null,
+      null,
+      null,
+    ],
+    [
+      "Män",
+      31,
+      0,
+      16.1,
+      3.2,
+      80.6,
+      0,
+      null,
+      null,
+      null,
+    ],
+    [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+    ],
+    [
+      "Efterlevnad per BAS-intervall",
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+    ],
+    [
+      "BAS-intervall",
+      "Antal",
+      "Under P10 (antal)",
+      "Inom spannet (antal)",
+      "Över P90 (antal)",
+      "Under P10 (%)",
+      "Inom spannet (%)",
+      "Över P90 (%)",
+      null,
+      null,
+    ],
+    [
+      "B",
+      34,
+      0,
+      34,
+      0,
+      0,
+      100,
+      0,
+      null,
+      null,
+    ],
+    [
+      "C",
+      28,
+      0,
+      28,
+      0,
+      0,
+      100,
+      0,
+      null,
+      null,
+    ],
+  ],
+  "Löneöversikt": [
+    [
+      "BAS B",
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+    ],
+    [
+      "Kategori (BAS / Kön / Yrkesgrupp)",
+      "P10 — lägsta lönedecilen (kr/mån)",
+      "Median (kr/mån)",
+      "P90 — högsta lönedecilen (kr/mån)",
+      "Antal personer",
+      "Lönespridning P90/P10 (kvot)",
+      "Median jämförelsestatistiken (kr/mån)",
+      "Diff mot jämförelsestatistiken (%)",
+    ],
+    [
+      "ställningstagandet",
+      27000,
+      30000,
+      35000,
+      "-",
+      "-",
+      "-",
+      "-",
+    ],
+    [
+      "Organisationen",
+      28330,
+      30900,
+      33970,
+      34,
+      1.2,
+      "-",
+      "-",
+    ],
+    [
+      "Kvinna",
+      28160,
+      28800,
+      32540,
+      17,
+      1.16,
+      "-",
+      "-",
+    ],
+    [
+      "Man",
+      29160,
+      33500,
+      34140,
+      17,
+      1.17,
+      "-",
+      "-",
+    ],
+    [
+      "4100 Tekniker",
+      32660,
+      33500,
+      34140,
+      17,
+      1.05,
+      33800,
+      -0.9,
+    ],
+    [
+      "5301 Undersköterska",
+      28160,
+      28800,
+      29200,
+      17,
+      1.04,
+      29500,
+      -2.4,
+    ],
+    [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+    ],
+    [
+      "BAS C",
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+    ],
+    [
+      "Kategori (BAS / Kön / Yrkesgrupp)",
+      "P10 — lägsta lönedecilen (kr/mån)",
+      "Median (kr/mån)",
+      "P90 — högsta lönedecilen (kr/mån)",
+      "Antal personer",
+      "Lönespridning P90/P10 (kvot)",
+      "Median jämförelsestatistiken (kr/mån)",
+      "Diff mot jämförelsestatistiken (%)",
+    ],
+    [
+      "ställningstagandet",
+      30000,
+      33500,
+      39000,
+      "-",
+      "-",
+      "-",
+      "-",
+    ],
+    [
+      "Organisationen",
+      31405,
+      34075,
+      37245,
+      28,
+      1.19,
+      "-",
+      "-",
+    ],
+    [
+      "Kvinna",
+      31195,
+      31975,
+      34645,
+      14,
+      1.11,
+      "-",
+      "-",
+    ],
+    [
+      "Man",
+      33305,
+      36675,
+      37455,
+      14,
+      1.12,
+      "-",
+      "-",
+    ],
+    [
+      "2000 Ingenjör",
+      35755,
+      36675,
+      37455,
+      14,
+      1.05,
+      36500,
+      0.5,
+    ],
+    [
+      "5500 Sjuksköterska",
+      31195,
+      31950,
+      32455,
+      14,
+      1.04,
+      "-",
+      "-",
+    ],
+  ],
+  "Metod & parametrar": [
+    [
+      "Metod & parametrar — reproducerbarhet och tolkning",
+      null,
+    ],
+    [
+      "",
+      null,
+    ],
+    [
+      "Verktyg",
+      "Öppen lönekartläggning (v<VERSION>)",
+    ],
+    [
+      "Exporttidpunkt",
+      "<DATUM> <TID>",
+    ],
+    [
+      "Artefakt-SHA-256",
+      "Se RELEASE.txt / filens banner (single-file-bygget är källans sanning)",
+    ],
+    [
+      "Datakälla",
+      "Lokalt uppladdad fil (bearbetad helt i webbläsaren, inga nätverksanrop)",
+    ],
+    [
+      "Antal personer (inläst)",
+      "62",
+    ],
+    [
+      "Antal personer (i denna analys)",
+      "62",
+    ],
+    [
+      "Modell — oförklarat gap",
+      "OLS på log(månadslön) ~ kön + ålder + BAS-intervall (indikatorvariabler, första BAS som referens); HC3-robusta standardfel (Long & Ervin 2000)",
+    ],
+    [
+      "Steg + Yrkesgrupp (dekomponeringen)",
+      "Könsgap med fasta effekter för yrkesgrupp inom BAS (AID×BAS) utöver ålder, skattat med inomtransformation; visas som sista steg, ingår inte i huvudtalet",
+    ],
+    [
+      "Ålder & karriär (tvärsnitt)",
+      "Lön mot ålder och livscykelmodellen bygger på ett tvärsnitt: de visar skillnader mellan åldersgrupper i dag, inte hur en persons lön utvecklas över karriären (kohorteffekter)",
+    ],
+    [
+      "Trattdiagrammet",
+      "Med färre än tio yrkesgrupper säger trattens form lite; varje grupp bedöms då för sig i tabellen. Punktens bedömning bygger på en omkastning av könen inom gruppen",
+    ],
+    [
+      "p-värden",
+      "t-fördelning vid df < 100, annars normalfördelning; Benjamini-Hochberg (FDR) vid multipla grupptest",
+    ],
+    [
+      "Konfidensintervall",
+      "Bootstrap-percentil (B ≥ 1000 sampel) på mediankvot kvinna/man",
+    ],
+    [
+      "Signifikansnivå",
+      "α = 0,05",
+    ],
+    [
+      "Minsta gruppstorlek för redovisning",
+      "10 personer. Grupper med färre redovisas inte i beskrivande vyer (gäller inte likvärdighetsanalysen).",
+    ],
+    [
+      "Referens för lönenivåer",
+      "Eget ställningstagande (egen fil)",
+    ],
+    [
+      "Jämförelsestatistik",
+      "Jämförelsestatistik (egen fil)",
+    ],
+    [
+      "Krav-proxy (likvärdigt arbete)",
+      "BAS-intervall (ordinal rangordning)",
+    ],
+    [
+      "Lönegapets tecken",
+      "Verktyget räknar skillnaden som (kvinnor − män) / män och visar den som kvinnors lön i procent av mäns (under 100 = kvinnor lägre). EU-lönerapporten och rapportens avsnitt om lönetransparens redovisar i stället direktivets lönegap, (män − kvinnor) / män i procent, enligt art. 9: positivt tal = kvinnor lägre. Beloppet är detsamma.",
+    ],
+    [
+      "Tolkningsregel",
+      "Ett oförklarat gap är en statistisk signal om var man bör titta närmare — inte ett bevis för osaklig (diskriminerande) löneskillnad. Den bedömningen görs kvalitativt av arbetsgivaren.",
+    ],
+    [
+      "Rättslig ram",
+      "Diskrimineringslagen 3 kap. (lönekartläggning); direktiv (EU) 2023/970 om lönetransparens. De enskilda lagrummen står i docs/utveckling/lagrum.md.",
+    ],
+    [
+      "Bladet Lönepolitik",
+      "Läget i referensens lönespann (0 % = P10, 100 % = P90) per yrkesgrupp, per kön och BAS-intervall samt fördelningen i spannets tredjedelar per kön och efterlevnaden per BAS-intervall — samma mått och samma regler för minsta gruppstorlek som fliken Lönepolitik: yrkesgrupper under 10 personer utan lönemått, könsuppdelade mått bara där varje kön har minst 10 personer.",
+    ],
+  ],
+  "Metodik": [
+    [
+      "Metodik & urval — kvalitetssäkring",
+      null,
+    ],
+    [
+      "Genererad",
+      "<DATUM> <TID>",
+    ],
+    [
+      null,
+      null,
+    ],
+    [
+      "Löneöversikt",
+      null,
+    ],
+    [
+      "Total i datafilen",
+      62,
+    ],
+    [
+      "= Använda i analysen",
+      62,
+    ],
+    [
+      null,
+      null,
+    ],
+    [
+      "Formler & definitioner",
+      null,
+    ],
+    [
+      "  Median",
+      "P50, mittersta värdet av sorterad lönelista",
+    ],
+    [
+      "  P10",
+      "Värdet där 10% av gruppen tjänar mindre",
+    ],
+    [
+      "  P90",
+      "Värdet där 90% av gruppen tjänar mindre",
+    ],
+    [
+      "  Lönespridning",
+      "P90 / P10 (1.0 = ingen spridning, &gt;1.5 = bred spridning)",
+    ],
+    [
+      "  Diff mot jämförelsestatistiken",
+      "(organisationens median / jämförelsens median) − 1 uttryckt i %",
+    ],
+    [
+      null,
+      null,
+    ],
+    [
+      "Speciella regler",
+      null,
+    ],
+    [
+      "  K-anonymitet: 0 grupper utelämnades (n &lt; 10); de räknas upp under respektive BAS",
+      null,
+    ],
+    [
+      "  BAS-grupper visar i ordning: "ställningstagandet" (referensen), "Organisationen", "Kvinna", "Man" och sedan varje yrkesgrupp med ≥5 personer",
+      null,
+    ],
+    [
+      null,
+      null,
+    ],
+    [
+      "Lönegap & Könsfördelning",
+      null,
+    ],
+    [
+      "Total i datafilen",
+      62,
+    ],
+    [
+      "= Använda i analysen",
+      62,
+    ],
+    [
+      null,
+      null,
+    ],
+    [
+      "Formler & definitioner",
+      null,
+    ],
+    [
+      "  Lönegap (Kv mot Mä)",
+      "median(kvinnors lön) / median(mäns lön) × 100%. 100% = lika lön.",
+    ],
+    [
+      "  Lagstadgat tröskelvärde",
+      "|gap − 100%| &gt; 5% (EU-direktiv 2023/970, utredningsgräns)",
+    ],
+    [
+      "  Könsskevhet",
+      "Andel av ett kön &lt; 40% av gruppen (jämn fördelning kräver att båda könen ≥ 40%)",
+    ],
+    [
+      "  Översiktsdiagram",
+      "Stapel per BAS, färg = avvikelse från 100% (grön ≤3%, gul 3-5%, röd &gt;5%)",
+    ],
+    [
+      null,
+      null,
+    ],
+    [
+      "Speciella regler",
+      null,
+    ],
+    [
+      "  Kräver minst 10 personer av varje kön för att medianer ska visas (k-anonymitet)",
+      null,
+    ],
+    [
+      "  Könsfördelning räknas så länge totalen ≥ 5 (även om ena könet har &lt; 5 individer)",
+      null,
+    ],
+    [
+      null,
+      null,
+    ],
+    [
+      "Lika arbete — multivariat regression",
+      null,
+    ],
+    [
+      "Total i datafilen",
+      62,
+    ],
+    [
+      "= Använda i analysen",
+      4,
+    ],
+    [
+      null,
+      null,
+    ],
+    [
+      "Formler & definitioner",
+      null,
+    ],
+    [
+      "  Lönegap per yrke",
+      "(median Kv / median Mä − 1) × 100%",
+    ],
+    [
+      "  Status-tröskel",
+      "≥ 3 % Balanserat · 3–5 % Följ upp · &gt; 5 % Värt att granska (EU 2023/970)",
+    ],
+    [
+      "  Dominans",
+      "Kvinnodominerad om >60% kvinnor, mansdominerad om >60% män (dvs. ett kön < 40%), annars könsblandad (jämn fördelning = båda könen ≥ 40%)",
+    ],
+    [
+      "  OLS-regression",
+      "log(lön) ~ kön + ålder + BAS-intervall (indikatorvariabler, första BAS som referens). Standardfel: HC3 robust (Long &amp; Ervin 2000)",
+    ],
+    [
+      "  BAS-rangordning",
+      "Fast enligt BAS-systemet: A lägst (t.ex. 0–99 poäng), B nästa intervall (100–199) osv.; rang = bokstavens plats (A=1, B=2 …); ett BAS-steg är alltid ett intervall, även när en bokstav saknas i underlaget; högre rang = högre värderat arbete",
+    ],
+    [
+      "  Per-BAS regression",
+      "Separat log(lön) ~ kön + ålder inom varje BAS med ≥10 av varje kön",
+    ],
+    [
+      null,
+      null,
+    ],
+    [
+      "Speciella regler",
+      null,
+    ],
+    [
+      "  Regression estimerad: log(lön) ~ kön + ålder + BAS-intervall (indikatorer) · n=62, R²=70,2 %",
+      null,
+    ],
+    [
+      "  Bedömning av "saklig/osaklig" skillnad kräver kompletterande granskning – verktyget identifierar endast statistiska avvikelser",
+      null,
+    ],
+    [
+      null,
+      null,
+    ],
+    [
+      "Prioriteringsanalys",
+      null,
+    ],
+    [
+      "Total i datafilen",
+      62,
+    ],
+    [
+      "= Använda i analysen",
+      4,
+    ],
+    [
+      null,
+      null,
+    ],
+    [
+      "Formler & definitioner",
+      null,
+    ],
+    [
+      "  Avvikelse %",
+      "(organisationens median / referensens median) − 1 i %",
+    ],
+    [
+      "  Åtgärdskostnad",
+      "|avvikelse kr/mån| × 12 mån × (1 + 39,15 %/100) × antal personer (endast om under referens, inkl PO-påslag)",
+    ],
+    [
+      "  Prioriteringsindex",
+      "riktningsvikt × (avvikelse·50% + volym·30% + jämställdhet·20%), skala 0-100",
+    ],
+    [
+      "  Riktningsvikt",
+      "1.0 om under referens, 0.5 om över (under-betalning vägs tyngre)",
+    ],
+    [
+      "  Status",
+      "Prioriterad utredning om avvikelse &lt; -5% och n ≥ 10 · Utredning rekommenderas om avvikelse &lt; -5% · Följ upp om &lt; -2% · Översyn rekommenderas om &gt; +5%",
+    ],
+    [
+      null,
+      null,
+    ],
+    [
+      "Speciella regler",
+      null,
+    ],
+    [
+      "  Aktuell referens: Eget ställningstagande (per BAS)",
+      null,
+    ],
+    [
+      "  Tabellen visar topp 30 grupper rankade efter prioriteringsindex",
+      null,
+    ],
+    [
+      "  Bubbeldiagrammets storlek = årskostnad, x = avvikelse, y = antal personer (log skala)",
+      null,
+    ],
+    [
+      null,
+      null,
+    ],
+    [
+      "Jämförelsestatistik",
+      null,
+    ],
+    [
+      "Total i datafilen",
+      62,
+    ],
+    [
+      "− Yrke×BAS-grupper utan median i jämförelsestatistiken",
+      1,
+    ],
+    [
+      "= Använda i analysen",
+      4,
+    ],
+    [
+      null,
+      null,
+    ],
+    [
+      "Formler & definitioner",
+      null,
+    ],
+    [
+      "  AID-kod (matchningsnyckel)",
+      "Inledande sifferprefix av yrkesnamn (t.ex. "402010 Förskollärare" ger 402010)",
+    ],
+    [
+      "  Percentiler",
+      "P10 = kvantil 0,1, median, P90 = kvantil 0,9 av organisationens löner i yrke och BAS",
+    ],
+    [
+      "  Diff (%)",
+      "(organisationens värde / jämförelsens värde − 1) × 100, per percentil",
+    ],
+    [
+      "  Matchning",
+      "Jämförelsestatistiken: först AID + BAS, annars AID utan BAS. Ställningstagandet: AID + BAS, annars AID, annars BAS",
+    ],
+    [
+      null,
+      null,
+    ],
+    [
+      "Speciella regler",
+      null,
+    ],
+    [
+      "  Negativ skillnad (röd) = organisationen ligger under jämförelsen",
+      null,
+    ],
+    [
+      "  Positiv skillnad (grön) = över jämförelsen (kan motiveras av specialistkompetens, marknadsläge)",
+      null,
+    ],
+  ],
+  "Prioritering": [
+    [
+      "Prioriteringsindex (0-100, högt = hantera först)",
+      "Yrkesgrupp (AID + benämning)",
+      "BAS-intervall",
+      "Antal personer i gruppen",
+      "Antal kvinnor/män",
+      "Median organisationen (kr/mån)",
+      "Referens-median (kr/mån)",
+      "Avvikelse mot referens (%)",
+      "Avvikelse per person (kr/mån)",
+      "Lönegap kvinnor/män (%), negativt tal = kvinnor lägre",
+      "Justeringskostnad per person (kr/mån)",
+      "Total åtgärdskostnad (kr för perioden, inkl PO-påslag)",
+      "Prioriteringsstatus (Utred / Bevaka / OK / Granska)",
+      "Bristyrke (Ja/Nej)",
+    ],
+    [
+      16.8667,
+      "5301 Undersköterska",
+      "B",
+      17,
+      "14/3",
+      28800,
+      30000,
+      -4,
+      -1200,
+      "–",
+      1200,
+      340639.2,
+      "Följ upp",
+      "Nej",
+    ],
+    [
+      16.1114,
+      "5500 Sjuksköterska",
+      "C",
+      14,
+      "12/2",
+      31950,
+      33500,
+      -4.63,
+      -1550,
+      "–",
+      1550,
+      362346.6,
+      "Följ upp",
+      "Nej",
+    ],
+    [
+      14.8222,
+      "4100 Tekniker",
+      "B",
+      17,
+      "3/14",
+      33500,
+      30000,
+      11.67,
+      3500,
+      "–",
+      "–",
+      "–",
+      "Över referens",
+      "Nej",
+    ],
+    [
+      12.098,
+      "2000 Ingenjör",
+      "C",
+      14,
+      "2/12",
+      36675,
+      33500,
+      9.48,
+      3175,
+      "–",
+      "–",
+      "–",
+      "Över referens",
+      "Nej",
+    ],
+  ],
+  "Sektorer": [
+    [
+      "Sektor",
+      "Antal",
+      "Andel kvinnor",
+      "Kvinnor, SKR",
+      "Median kvinnor",
+      "Median män",
+      "Kvinnors lön i % av mäns",
+      "Justerad (ålder, BAS)",
+      "AID-grupper",
+      "Punkter i Att göra",
+    ],
+    [
+      "Okänt huvudområde",
+      62,
+      50,
+      "–",
+      31150,
+      34000,
+      91.6,
+      "89,5 % (87,2 %–91,8 %)",
+      4,
+      2,
+    ],
+  ],
+  "Underlagets kvalitet": [
+    [
+      "Underlagets kvalitet",
+      "Varning",
+      null,
+      null,
+    ],
+    [
+      null,
+      null,
+      null,
+      null,
+    ],
+    [
+      "Kriterium",
+      "Status",
+      "Värde",
+      "Förklaring",
+    ],
+    [
+      "Jämförbarhet",
+      "OK",
+      100,
+      "100 % av personalen finns i BAS-intervall där båda könen har minst 10 personer.",
+    ],
+    [
+      "Statistisk styrka",
+      "Varning",
+      3.8,
+      "Den minsta könsskillnad analysen säkert kan upptäcka är 3,8 %.",
+    ],
+    [
+      "Fullständighet",
+      "OK",
+      0,
+      "0 % av filens rader föll bort eller saknar giltig ålder.",
+    ],
+    [
+      "Rimlighet",
+      "OK",
+      0,
+      "0 rader (0 %) har lön under 20 000 eller över 250 000 kr, ålder utanför 18–70 eller BAS utanför A–J.",
+    ],
+    [
+      "Modell",
+      "OK",
+      "full",
+      "Regressionen tar hänsyn till både ålder och BAS-intervall.",
+    ],
+  ],
+}
+`;
+
+exports[`golden: Excel-exporterna på fast dataset > EU-rapporten matchar facit 1`] = `
+{
+  "Distributionellt gap": [
+    [
+      "Percentil",
+      "Kvinnor",
+      "Män",
+      "Lönegap enligt art. 9 (%), positivt tal = kvinnor lägre",
+    ],
+    [
+      "P10",
+      28300,
+      32000,
+      11.6,
+    ],
+    [
+      "P25",
+      28750,
+      33250,
+      13.5,
+    ],
+    [
+      "P50",
+      31150,
+      34000,
+      8.4,
+    ],
+    [
+      "P75",
+      32275,
+      36525,
+      11.6,
+    ],
+    [
+      "P90",
+      32650,
+      37200,
+      12.2,
+    ],
+  ],
+  "Kvartilfördelning": [
+    [
+      "Kvartil",
+      "Lönespann",
+      "n",
+      "Kvinnor",
+      "Män",
+      "Andel kvinnor (%)",
+    ],
+    [
+      "Q1",
+      "upp till 29 250 kr",
+      16,
+      13,
+      3,
+      81,
+    ],
+    [
+      "Q2",
+      "29 250 kr – 32 550 kr",
+      15,
+      13,
+      2,
+      87,
+    ],
+    [
+      "Q3",
+      "32 550 kr – 34 250 kr",
+      16,
+      3,
+      13,
+      19,
+    ],
+    [
+      "Q4",
+      "över 34 250 kr",
+      15,
+      2,
+      13,
+      13,
+    ],
+  ],
+  "Metod & parametrar": [
+    [
+      "Metod & parametrar — reproducerbarhet och tolkning",
+      null,
+    ],
+    [
+      "",
+      null,
+    ],
+    [
+      "Verktyg",
+      "Öppen lönekartläggning (v<VERSION>)",
+    ],
+    [
+      "Exporttidpunkt",
+      "<DATUM> <TID>",
+    ],
+    [
+      "Artefakt-SHA-256",
+      "Se RELEASE.txt / filens banner (single-file-bygget är källans sanning)",
+    ],
+    [
+      "Datakälla",
+      "Lokalt uppladdad fil (bearbetad helt i webbläsaren, inga nätverksanrop)",
+    ],
+    [
+      "Antal personer (inläst)",
+      "62",
+    ],
+    [
+      "Antal personer (i denna analys)",
+      "62",
+    ],
+    [
+      "Modell — oförklarat gap",
+      "OLS på log(månadslön) ~ kön + ålder + BAS-intervall (indikatorvariabler, första BAS som referens); HC3-robusta standardfel (Long & Ervin 2000)",
+    ],
+    [
+      "Steg + Yrkesgrupp (dekomponeringen)",
+      "Könsgap med fasta effekter för yrkesgrupp inom BAS (AID×BAS) utöver ålder, skattat med inomtransformation; visas som sista steg, ingår inte i huvudtalet",
+    ],
+    [
+      "Ålder & karriär (tvärsnitt)",
+      "Lön mot ålder och livscykelmodellen bygger på ett tvärsnitt: de visar skillnader mellan åldersgrupper i dag, inte hur en persons lön utvecklas över karriären (kohorteffekter)",
+    ],
+    [
+      "Trattdiagrammet",
+      "Med färre än tio yrkesgrupper säger trattens form lite; varje grupp bedöms då för sig i tabellen. Punktens bedömning bygger på en omkastning av könen inom gruppen",
+    ],
+    [
+      "p-värden",
+      "t-fördelning vid df < 100, annars normalfördelning; Benjamini-Hochberg (FDR) vid multipla grupptest",
+    ],
+    [
+      "Konfidensintervall",
+      "Bootstrap-percentil (B ≥ 1000 sampel) på mediankvot kvinna/man",
+    ],
+    [
+      "Signifikansnivå",
+      "α = 0,05",
+    ],
+    [
+      "Minsta gruppstorlek för redovisning",
+      "10 personer. Grupper med färre redovisas inte i beskrivande vyer (gäller inte likvärdighetsanalysen).",
+    ],
+    [
+      "Referens för lönenivåer",
+      "Eget ställningstagande (egen fil)",
+    ],
+    [
+      "Jämförelsestatistik",
+      "Jämförelsestatistik (egen fil)",
+    ],
+    [
+      "Krav-proxy (likvärdigt arbete)",
+      "BAS-intervall (ordinal rangordning)",
+    ],
+    [
+      "Lönegapets tecken",
+      "Verktyget räknar skillnaden som (kvinnor − män) / män och visar den som kvinnors lön i procent av mäns (under 100 = kvinnor lägre). EU-lönerapporten och rapportens avsnitt om lönetransparens redovisar i stället direktivets lönegap, (män − kvinnor) / män i procent, enligt art. 9: positivt tal = kvinnor lägre. Beloppet är detsamma.",
+    ],
+    [
+      "Tolkningsregel",
+      "Ett oförklarat gap är en statistisk signal om var man bör titta närmare — inte ett bevis för osaklig (diskriminerande) löneskillnad. Den bedömningen görs kvalitativt av arbetsgivaren.",
+    ],
+    [
+      "Rättslig ram",
+      "Diskrimineringslagen 3 kap. (lönekartläggning); direktiv (EU) 2023/970 om lönetransparens. De enskilda lagrummen står i docs/utveckling/lagrum.md.",
+    ],
+    [
+      "Lönegapets tecken i den här filen",
+      "Lönegapet är (män − kvinnor) / män i procent, enligt art. 9: positivt tal = kvinnor lägre. Verktygets flikar och övriga blad visar i stället kvinnors lön i procent av mäns; beloppet är detsamma.",
+    ],
+  ],
+  "Representation": [
+    [
+      "BAS",
+      "n",
+      "Median",
+      "Andel kvinnor (%)",
+      "Lönegap enligt art. 9 (%), positivt tal = kvinnor lägre",
+    ],
+    [
+      "B",
+      34,
+      30900,
+      50,
+      14,
+    ],
+    [
+      "C",
+      28,
+      34075,
+      50,
+      12.8,
+    ],
+  ],
+  "Sammanfattning": [
+    [
+      "EU 2023/970 — lönerapportmått",
+      "",
+    ],
+    [
+      "Genererad",
+      "<DATUM> <TID>",
+    ],
+    [
+      "Verktyg",
+      "Öppen lönekartläggning v<VERSION>",
+    ],
+    [
+      "Antal anställda",
+      62,
+    ],
+    [
+      "Lönegap i medellön enligt art. 9 (%), positivt tal = kvinnor lägre",
+      10.6,
+    ],
+    [
+      "Lönegap i medianlön enligt art. 9 (%), positivt tal = kvinnor lägre",
+      8.4,
+    ],
+    [
+      "Tecken",
+      "Lönegapet är (män − kvinnor) / män i procent, enligt art. 9: positivt tal = kvinnor lägre. Verktygets flikar och övriga blad visar i stället kvinnors lön i procent av mäns; beloppet är detsamma.",
+    ],
+    [
+      "",
+      "",
+    ],
+    [
+      "OBS",
+      "Kompletterande/rörliga lönedelar ingår ej (en lönedefinition). Aggregat — inga individdata.",
+    ],
+  ],
+}
+`;
+
+exports[`golden: Excel-exporterna på fast dataset > JPA-protokollet matchar facit 1`] = `
+{
+  "1. Försättssida": [
+    [
+      "GEMENSAM LÖNEBEDÖMNING — SAMVERKANSPROTOKOLL",
+      "",
+    ],
+    [
+      "Direktiv (EU) 2023/970 om lönetransparens, gemensam lönebedömning",
+      "",
+    ],
+    [
+      "Diskrimineringslagen 3 kap. (lönekartläggning)",
+      "",
+    ],
+    [
+      "",
+      "",
+    ],
+    [
+      "Genererad",
+      "<DATUM> <TID>",
+    ],
+    [
+      "Verktyg",
+      "Öppen lönekartläggning (v<VERSION>)",
+    ],
+    [
+      "Aktiv profil",
+      "Er organisation",
+    ],
+    [
+      "Jämförelseinstitution",
+      "jämförelsestatistiken",
+    ],
+    [
+      "",
+      "",
+    ],
+    [
+      "— OMFATTNING —",
+      "",
+    ],
+    [
+      "Totalt antal personer i underlaget",
+      62,
+    ],
+    [
+      "Antal yrkesgrupper där kvinnors och mäns median skiljer sig mer än 5 % (lika arbete)",
+      0,
+    ],
+    [
+      "Antal BAS-intervall med >5% oförklarat gap (likvärdigt arbete)",
+      2,
+    ],
+    [
+      "Antal kandidatpar i likvärdigt arbete (kvinnodominerat yrke mot icke-kvinnodominerat yrke med lika eller lägre krav)",
+      2,
+    ],
+    [
+      "",
+      "",
+    ],
+    [
+      "— DELTAGARE I SAMRÅDET —",
+      "(fylls i av parterna)",
+    ],
+    [
+      "Datum för samråd",
+      "",
+    ],
+    [
+      "Plats / form",
+      "",
+    ],
+    [
+      "Arbetsgivarens representant 1 (namn)",
+      "",
+    ],
+    [
+      "Arbetsgivarens representant 1 (befattning)",
+      "",
+    ],
+    [
+      "Arbetsgivarens representant 2 (namn)",
+      "",
+    ],
+    [
+      "Arbetsgivarens representant 2 (befattning)",
+      "",
+    ],
+    [
+      "Facklig representant 1 (namn)",
+      "",
+    ],
+    [
+      "Facklig representant 1 (organisation)",
+      "",
+    ],
+    [
+      "Facklig representant 2 (namn)",
+      "",
+    ],
+    [
+      "Facklig representant 2 (organisation)",
+      "",
+    ],
+    [
+      "Facklig representant 3 (namn)",
+      "",
+    ],
+    [
+      "Facklig representant 3 (organisation)",
+      "",
+    ],
+    [
+      "Övriga närvarande",
+      "",
+    ],
+    [
+      "",
+      "",
+    ],
+    [
+      "— GEMENSAM SAMMANFATTNING —",
+      "(fylls i efter samrådet)",
+    ],
+    [
+      "Huvudsakliga slutsatser",
+      "",
+    ],
+    [
+      "Övergripande åtgärdsplan",
+      "",
+    ],
+    [
+      "Tidplan för åtgärder",
+      "",
+    ],
+    [
+      "Nästa uppföljning (datum)",
+      "",
+    ],
+    [
+      "",
+      "",
+    ],
+    [
+      "Detta protokoll ska bifogas arbetsgivarens lönekartläggning för året.",
+      "",
+    ],
+    [
+      "Originalexemplar förvaras i låst arkiv enligt arbetsgivarens dokumenthanteringsplan.",
+      "",
+    ],
+  ],
+  "2. Lika arbete (yrken)": [
+    [
+      "Nr",
+      "AID / Yrkesgrupp",
+      "N totalt",
+      "N kvinnor",
+      "N män",
+      "Median kvinnor (kr)",
+      "Median män (kr)",
+      "Differens (kr)",
+      "Kvinnors median i % av mäns",
+      "Sakliga skäl — arbetsgivarens analys",
+      "Fackliga partens kommentar / motargument",
+      "Status efter samråd (motiverat / behöver åtgärd / oklart)",
+      "Överenskommen åtgärd",
+      "Tidplan",
+      "Ansvarig",
+    ],
+    [
+      "—",
+      "Inga yrkesgrupper där kvinnors och mäns median skiljer sig mer än 5 %, efter k-anonymitet",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+    ],
+  ],
+  "3. Likvärdigt arbete (BAS)": [
+    [
+      "Nr",
+      "BAS-intervall",
+      "N totalt",
+      "N kvinnor",
+      "N män",
+      "Oförklarat gap (%)",
+      "95% KI lägre",
+      "95% KI övre",
+      "p-värde",
+      "R² för modellen",
+      "Statistiskt säkerställd",
+      "Sakliga skäl — arbetsgivarens analys",
+      "Fackliga partens kommentar",
+      "Status efter samråd",
+      "Överenskommen åtgärd",
+      "Tidplan",
+      "Ansvarig",
+    ],
+    [
+      1,
+      "B",
+      34,
+      17,
+      17,
+      -10.64,
+      -14.18,
+      -6.95,
+      "< 0.001",
+      "54.6%",
+      "Ja",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+    ],
+    [
+      2,
+      "C",
+      28,
+      14,
+      14,
+      -10.44,
+      -13.84,
+      -6.91,
+      "< 0.001",
+      "63%",
+      "Ja",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+    ],
+  ],
+  "3b. § 3-10 Likvärdighet": [
+    [
+      "Nr",
+      "Org. AID",
+      "Org. Yrke",
+      "BAS",
+      "Org. n",
+      "Org. % kvinnor",
+      "Median Org. (kr)",
+      "Jämf. AID",
+      "Jämf. Yrke",
+      "Jämf. % kvinnor",
+      "Jämf. n",
+      "Jämförelsekälla",
+      "Median Jämf. (kr)",
+      "Gap (kr)",
+      "Gap (%)",
+      "95 % KI lägre (kr)",
+      "95 % KI övre (kr)",
+      "Säkerhet",
+      "Påverkansindex",
+      "Sakliga skäl — arbetsgivarens analys",
+      "Fackliga partens kommentar",
+      "Status efter samråd",
+      "Överenskommen åtgärd",
+      "Tidplan",
+      "Ansvarig",
+    ],
+    [
+      1,
+      "5301",
+      "Undersköterska",
+      "B",
+      17,
+      82.4,
+      28800,
+      "4100",
+      "Tekniker",
+      17.6,
+      17,
+      "Intern (organisation)",
+      33500,
+      4700,
+      16.32,
+      4200,
+      5200,
+      "Säker (CI > 0)",
+      79900,
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+    ],
+    [
+      2,
+      "5500",
+      "Sjuksköterska",
+      "C",
+      14,
+      85.7,
+      31950,
+      "2000",
+      "Ingenjör",
+      14.3,
+      14,
+      "Intern (organisation)",
+      36675,
+      4725,
+      14.79,
+      4150,
+      5375,
+      "Säker (CI > 0)",
+      66150,
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+    ],
+  ],
+  "4. Exkluderat (k-anon)": [
+    [
+      "EXKLUDERADE GRUPPER — transparens för fackliga parter",
+      "",
+    ],
+    [
+      "",
+      "",
+    ],
+    [
+      "Inga personidentifierande uppgifter visas. Endast antal exkluderade grupper.",
+      "",
+    ],
+    [
+      "",
+      "",
+    ],
+    [
+      "Lika arbete (yrkesgrupper):",
+      "",
+    ],
+    [
+      "  Exkluderade p.g.a. k-anonymitet (n<10 per kön)",
+      4,
+    ],
+    [
+      "  Under 5%-tröskeln (rågap ≥ 5%)",
+      0,
+    ],
+    [
+      "",
+      "",
+    ],
+    [
+      "Likvärdigt arbete (BAS-intervall):",
+      "",
+    ],
+    [
+      "  Exkluderade p.g.a. k-anonymitet (n<10 per kön)",
+      0,
+    ],
+    [
+      "  Exkluderade p.g.a. singulär regression (multikollinearitet)",
+      0,
+    ],
+    [
+      "  Under 5%-tröskeln (oförklarat gap ≥ 5%)",
+      0,
+    ],
+    [
+      "",
+      "",
+    ],
+    [
+      "Gränsen 5 % kommer från direktivets regler om gemensam lönebedömning (art. 10).",
+      "",
+    ],
+    [
+      "k-anonymitet (n<10) skyddar enskilda anställdas integritet (uppgiftsminimering och inbyggt dataskydd enligt dataskyddsförordningen).",
+      "",
+    ],
+    [
+      "Grupper under k-tröskeln kan inte analyseras säkert utan risk för återidentifiering.",
+      "",
+    ],
+    [
+      "Om dessa grupper behöver granskas separat bör det ske utan numeriska bilagor.",
+      "",
+    ],
+  ],
+  "5. Metodik & rättslig grund": [
+    [
+      "METODIK & RÄTTSLIG GRUND",
+      "",
+    ],
+    [
+      "",
+      "",
+    ],
+    [
+      "— Rättslig grund —",
+      "",
+    ],
+    [
+      "Direktiv (EU) 2023/970, art. 10",
+      "Gemensam lönebedömning krävs hos arbetsgivare som lönerapporterar när skillnaden i någon kategori arbetstagare är 5 % eller mer, inte motiveras av objektiva könsneutrala kriterier och inte åtgärdats inom sex månader.",
+    ],
+    [
+      "Direktiv (EU) 2023/970, art. 10",
+      "Bedömningen görs tillsammans med arbetstagarrepresentanterna; åtgärder inom rimlig tid.",
+    ],
+    [
+      "Diskrimineringslagen, lönekartläggning",
+      "Löneskillnad ska kunna motiveras med sakliga skäl: arbetets svårighet, ansvar, krav på utbildning/erfarenhet eller andra särskilda omständigheter.",
+    ],
+    [
+      "Diskrimineringslagen, likvärdigt arbete",
+      "Likvärdigt arbete bedöms genom analys av krav som arbetet ställer (utbildning, ansvar, ansträngning, arbetsförhållanden).",
+    ],
+    [
+      "Diskrimineringslagen, kvinnodominerat arbete",
+      "Arbetsgivaren ska analysera om kvinnodominerade yrken har lägre lön än icke-kvinnodominerade yrken med likvärdiga eller lägre krav i arbetet. BAS-rank används i flik 3b som ordinal proxy för arbetskrav — slutgiltig kravvärdering kräver kvalitativ granskning.",
+    ],
+    [
+      "Diskrimineringslagen <TID>",
+      "Konstaterade osakliga löneskillnader ska åtgärdas så snart som möjligt, senast inom 3 år.",
+    ],
+    [
+      "",
+      "",
+    ],
+    [
+      "— Statistisk metodik —",
+      "",
+    ],
+    [
+      "Lika arbete (yrkesgrupp)",
+      "Direkt median-jämförelse mellan kvinnors och mäns löner inom samma AID-kod. Kvinnors median i procent av mäns = median_kv / median_mä × 100; under 100 betyder att kvinnor ligger lägre.",
+    ],
+    [
+      "Likvärdigt arbete (BAS-intervall)",
+      "OLS-regression: log(lön) ~ kön + ålder (centrerad) inom varje BAS. Oförklarat gap = kön-koefficient omräknad till procentskillnad. HC3-robusta standardfel (Long & Ervin 2000).",
+    ],
+    [
+      "Konfidensintervall",
+      "95% KI = β ± t(0,975; n−k) × HC3 robust SE, transformerat tillbaka från log-skala; t-kvantilen är 1,96 vid n−k ≥ 100 och större vid färre frihetsgrader.",
+    ],
+    [
+      "Statistisk signifikans",
+      "p < 0.05 = ej slumpmässig skillnad. Tröskel följer Medlingsinstitutets praxis.",
+    ],
+    [
+      "",
+      "",
+    ],
+    [
+      "— k-anonymitet —",
+      "",
+    ],
+    [
+      "Tröskel",
+      "n ≥ 10 per kön krävs för att en grupp ska redovisas individuellt.",
+    ],
+    [
+      "Bakgrund",
+      "Skydd mot återidentifiering av enskilda anställda via deduktion (kön + ålder + yrke + BAS).",
+    ],
+    [
+      "Konsekvens",
+      "Små grupper exkluderas helt från detta protokoll. Antal exkluderade redovisas i flik 4.",
+    ],
+    [
+      "",
+      "",
+    ],
+    [
+      "— Begränsningar att vara medvetna om —",
+      "",
+    ],
+    [
+      "Sakliga skäl",
+      "Verktyget identifierar löneskillnader men avgör inte vad som är saklig grund. Den bedömningen är gemensamma parters ansvar.",
+    ],
+    [
+      "Modellantaganden",
+      "OLS antar linjär samband mellan ålder och log(lön). Lifecycle-analysen (i verktygets EU-flik) testar detta antagande med kvadratisk åldersterm.",
+    ],
+    [
+      "Multipel jämförelse",
+      "Många p-värden testas samtidigt. Vid stort antal BAS-intervall förväntas 1 falskt positivt resultat per 20 tester av slump. Tolka p-värden i kontext.",
+    ],
+  ],
+  "6. Signaturer": [
+    [
+      "SIGNATURER — GEMENSAM LÖNEBEDÖMNING",
+      "",
+    ],
+    [
+      "",
+      "",
+    ],
+    [
+      "Parterna intygar att de tagit del av detta protokoll och dess slutsatser.",
+      "",
+    ],
+    [
+      "",
+      "",
+    ],
+    [
+      "— Arbetsgivarrepresentant 1 —",
+      "",
+    ],
+    [
+      "Namn",
+      "",
+    ],
+    [
+      "Befattning",
+      "",
+    ],
+    [
+      "Signatur",
+      "",
+    ],
+    [
+      "Datum",
+      "",
+    ],
+    [
+      "",
+      "",
+    ],
+    [
+      "— Arbetsgivarrepresentant 2 —",
+      "",
+    ],
+    [
+      "Namn",
+      "",
+    ],
+    [
+      "Befattning",
+      "",
+    ],
+    [
+      "Signatur",
+      "",
+    ],
+    [
+      "Datum",
+      "",
+    ],
+    [
+      "",
+      "",
+    ],
+    [
+      "— Facklig representant 1 —",
+      "",
+    ],
+    [
+      "Namn",
+      "",
+    ],
+    [
+      "Organisation",
+      "",
+    ],
+    [
+      "Signatur",
+      "",
+    ],
+    [
+      "Datum",
+      "",
+    ],
+    [
+      "",
+      "",
+    ],
+    [
+      "— Facklig representant 2 —",
+      "",
+    ],
+    [
+      "Namn",
+      "",
+    ],
+    [
+      "Organisation",
+      "",
+    ],
+    [
+      "Signatur",
+      "",
+    ],
+    [
+      "Datum",
+      "",
+    ],
+    [
+      "",
+      "",
+    ],
+    [
+      "— Facklig representant 3 —",
+      "",
+    ],
+    [
+      "Namn",
+      "",
+    ],
+    [
+      "Organisation",
+      "",
+    ],
+    [
+      "Signatur",
+      "",
+    ],
+    [
+      "Datum",
+      "",
+    ],
+    [
+      "",
+      "",
+    ],
+    [
+      "Originalet förvaras hos arbetsgivaren. Kopior till samtliga underskrivande parter.",
+      "",
+    ],
+  ],
+  "Metod & parametrar": [
+    [
+      "Metod & parametrar — reproducerbarhet och tolkning",
+      null,
+    ],
+    [
+      "",
+      null,
+    ],
+    [
+      "Verktyg",
+      "Öppen lönekartläggning (v<VERSION>)",
+    ],
+    [
+      "Exporttidpunkt",
+      "<DATUM> <TID>",
+    ],
+    [
+      "Artefakt-SHA-256",
+      "Se RELEASE.txt / filens banner (single-file-bygget är källans sanning)",
+    ],
+    [
+      "Datakälla",
+      "Lokalt uppladdad fil (bearbetad helt i webbläsaren, inga nätverksanrop)",
+    ],
+    [
+      "Antal personer (inläst)",
+      "62",
+    ],
+    [
+      "Antal personer (i denna analys)",
+      "62",
+    ],
+    [
+      "Modell — oförklarat gap",
+      "OLS på log(månadslön) ~ kön + ålder + BAS-intervall (indikatorvariabler, första BAS som referens); HC3-robusta standardfel (Long & Ervin 2000)",
+    ],
+    [
+      "Steg + Yrkesgrupp (dekomponeringen)",
+      "Könsgap med fasta effekter för yrkesgrupp inom BAS (AID×BAS) utöver ålder, skattat med inomtransformation; visas som sista steg, ingår inte i huvudtalet",
+    ],
+    [
+      "Ålder & karriär (tvärsnitt)",
+      "Lön mot ålder och livscykelmodellen bygger på ett tvärsnitt: de visar skillnader mellan åldersgrupper i dag, inte hur en persons lön utvecklas över karriären (kohorteffekter)",
+    ],
+    [
+      "Trattdiagrammet",
+      "Med färre än tio yrkesgrupper säger trattens form lite; varje grupp bedöms då för sig i tabellen. Punktens bedömning bygger på en omkastning av könen inom gruppen",
+    ],
+    [
+      "p-värden",
+      "t-fördelning vid df < 100, annars normalfördelning; Benjamini-Hochberg (FDR) vid multipla grupptest",
+    ],
+    [
+      "Konfidensintervall",
+      "Bootstrap-percentil (B ≥ 1000 sampel) på mediankvot kvinna/man",
+    ],
+    [
+      "Signifikansnivå",
+      "α = 0,05",
+    ],
+    [
+      "Minsta gruppstorlek för redovisning",
+      "10 personer. Grupper med färre redovisas inte i beskrivande vyer (gäller inte likvärdighetsanalysen).",
+    ],
+    [
+      "Referens för lönenivåer",
+      "Eget ställningstagande (egen fil)",
+    ],
+    [
+      "Jämförelsestatistik",
+      "Jämförelsestatistik (egen fil)",
+    ],
+    [
+      "Krav-proxy (likvärdigt arbete)",
+      "BAS-intervall (ordinal rangordning)",
+    ],
+    [
+      "Lönegapets tecken",
+      "Verktyget räknar skillnaden som (kvinnor − män) / män och visar den som kvinnors lön i procent av mäns (under 100 = kvinnor lägre). EU-lönerapporten och rapportens avsnitt om lönetransparens redovisar i stället direktivets lönegap, (män − kvinnor) / män i procent, enligt art. 9: positivt tal = kvinnor lägre. Beloppet är detsamma.",
+    ],
+    [
+      "Tolkningsregel",
+      "Ett oförklarat gap är en statistisk signal om var man bör titta närmare — inte ett bevis för osaklig (diskriminerande) löneskillnad. Den bedömningen görs kvalitativt av arbetsgivaren.",
+    ],
+    [
+      "Rättslig ram",
+      "Diskrimineringslagen 3 kap. (lönekartläggning); direktiv (EU) 2023/970 om lönetransparens. De enskilda lagrummen står i docs/utveckling/lagrum.md.",
+    ],
+  ],
+}
+`;
+
+exports[`golden: Excel-exporterna på fast dataset > den samlade jämförelseexporten matchar facit 1`] = `
+{
+  "Jamforelse_alla_percentiler": [
+    [
+      "",
+      "",
+      "",
+      "Organisationen",
+      "",
+      "",
+      "",
+      "Jämförelse: jämförelsestatistiken",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "Eget ställningstagande",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      null,
+      null,
+    ],
+    [
+      "AID / Yrkesgrupp",
+      "BAS",
+      "N (organisationen)",
+      "P10",
+      "Median",
+      "P90",
+      "Bredd P90/P10",
+      "P10",
+      "Diff P10 (kr)",
+      "Diff P10 (%)",
+      "Median",
+      "Diff Median (kr)",
+      "Diff Median (%)",
+      "P90",
+      "Diff P90 (kr)",
+      "Diff P90 (%)",
+      "P10",
+      "Diff P10 (kr)",
+      "Diff P10 (%)",
+      "Median",
+      "Diff Median (kr)",
+      "Diff Median (%)",
+      "P90",
+      "Diff P90 (kr)",
+      "Diff P90 (%)",
+    ],
+    [
+      "4100 Tekniker",
+      "B",
+      17,
+      32660,
+      33500,
+      34140,
+      1.045,
+      null,
+      null,
+      null,
+      33800,
+      -300,
+      -0.89,
+      null,
+      null,
+      null,
+      27000,
+      5660,
+      20.96,
+      30000,
+      3500,
+      11.67,
+      35000,
+      -860,
+      -2.46,
+    ],
+    [
+      "5301 Undersköterska",
+      "B",
+      17,
+      28160,
+      28800,
+      29200,
+      1.037,
+      null,
+      null,
+      null,
+      29500,
+      -700,
+      -2.37,
+      null,
+      null,
+      null,
+      27000,
+      1160,
+      4.3,
+      30000,
+      -1200,
+      -4,
+      35000,
+      -5800,
+      -16.57,
+    ],
+    [
+      "2000 Ingenjör",
+      "C",
+      14,
+      35755,
+      36675,
+      37455,
+      1.048,
+      null,
+      null,
+      null,
+      36500,
+      175,
+      0.48,
+      null,
+      null,
+      null,
+      30000,
+      5755,
+      19.18,
+      33500,
+      3175,
+      9.48,
+      39000,
+      -1545,
+      -3.96,
+    ],
+    [
+      "5500 Sjuksköterska",
+      "C",
+      14,
+      31195,
+      31950,
+      32455,
+      1.04,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      30000,
+      1195,
+      3.98,
+      33500,
+      -1550,
+      -4.63,
+      39000,
+      -6545,
+      -16.78,
+    ],
+  ],
+  "Metadata": [
+    [
+      "Öppen lönekartläggning — Samlad Jämförelse-export",
+      "",
+    ],
+    [
+      "",
+      "",
+    ],
+    [
+      "Genererad",
+      "<DATUM>T<TID>Z",
+    ],
+    [
+      "Verktyg version",
+      "<VERSION>",
+    ],
+    [
+      "",
+      "",
+    ],
+    [
+      "Aktiv profil",
+      "Er organisation",
+    ],
+    [
+      "Jämförelseinstitution",
+      "jämförelsestatistiken",
+    ],
+    [
+      "",
+      "",
+    ],
+    [
+      "Antal grupper i export",
+      4,
+    ],
+    [
+      "Antal personer (totalt)",
+      62,
+    ],
+    [
+      "Antal grupper utelämnade, k-anonymitet (n<10)",
+      0,
+    ],
+    [
+      "",
+      "",
+    ],
+    [
+      "Jämförelsestatistik laddat",
+      "Ja",
+    ],
+    [
+      "  - innehåller P10",
+      "Nej (saknas i uppladdad fil)",
+    ],
+    [
+      "  - innehåller P90",
+      "Nej (saknas i uppladdad fil)",
+    ],
+    [
+      "Referens",
+      "Eget ställningstagande (egen fil)",
+    ],
+    [
+      "",
+      "",
+    ],
+    [
+      "Diff-kolumner: positiva värden (grön) = organisationen ligger över referens.",
+      "",
+    ],
+    [
+      "Negativa värden (röd) = organisationen ligger under referens.",
+      "",
+    ],
+    [
+      "Tomma celler = referensvärde saknas i uppladdad fil eller ej tillämpligt.",
+      "",
+    ],
+    [
+      "k-anonymitet (n<10) = grupper med färre än 10 personer exkluderas helt.",
+      "",
+    ],
+  ],
+  "Metod & parametrar": [
+    [
+      "Metod & parametrar — reproducerbarhet och tolkning",
+      null,
+    ],
+    [
+      "",
+      null,
+    ],
+    [
+      "Verktyg",
+      "Öppen lönekartläggning (v<VERSION>)",
+    ],
+    [
+      "Exporttidpunkt",
+      "<DATUM> <TID>",
+    ],
+    [
+      "Artefakt-SHA-256",
+      "Se RELEASE.txt / filens banner (single-file-bygget är källans sanning)",
+    ],
+    [
+      "Datakälla",
+      "Lokalt uppladdad fil (bearbetad helt i webbläsaren, inga nätverksanrop)",
+    ],
+    [
+      "Antal personer (inläst)",
+      "62",
+    ],
+    [
+      "Antal personer (i denna analys)",
+      "62",
+    ],
+    [
+      "Modell — oförklarat gap",
+      "OLS på log(månadslön) ~ kön + ålder + BAS-intervall (indikatorvariabler, första BAS som referens); HC3-robusta standardfel (Long & Ervin 2000)",
+    ],
+    [
+      "Steg + Yrkesgrupp (dekomponeringen)",
+      "Könsgap med fasta effekter för yrkesgrupp inom BAS (AID×BAS) utöver ålder, skattat med inomtransformation; visas som sista steg, ingår inte i huvudtalet",
+    ],
+    [
+      "Ålder & karriär (tvärsnitt)",
+      "Lön mot ålder och livscykelmodellen bygger på ett tvärsnitt: de visar skillnader mellan åldersgrupper i dag, inte hur en persons lön utvecklas över karriären (kohorteffekter)",
+    ],
+    [
+      "Trattdiagrammet",
+      "Med färre än tio yrkesgrupper säger trattens form lite; varje grupp bedöms då för sig i tabellen. Punktens bedömning bygger på en omkastning av könen inom gruppen",
+    ],
+    [
+      "p-värden",
+      "t-fördelning vid df < 100, annars normalfördelning; Benjamini-Hochberg (FDR) vid multipla grupptest",
+    ],
+    [
+      "Konfidensintervall",
+      "Bootstrap-percentil (B ≥ 1000 sampel) på mediankvot kvinna/man",
+    ],
+    [
+      "Signifikansnivå",
+      "α = 0,05",
+    ],
+    [
+      "Minsta gruppstorlek för redovisning",
+      "10 personer. Grupper med färre redovisas inte i beskrivande vyer (gäller inte likvärdighetsanalysen).",
+    ],
+    [
+      "Referens för lönenivåer",
+      "Eget ställningstagande (egen fil)",
+    ],
+    [
+      "Jämförelsestatistik",
+      "Jämförelsestatistik (egen fil)",
+    ],
+    [
+      "Krav-proxy (likvärdigt arbete)",
+      "BAS-intervall (ordinal rangordning)",
+    ],
+    [
+      "Lönegapets tecken",
+      "Verktyget räknar skillnaden som (kvinnor − män) / män och visar den som kvinnors lön i procent av mäns (under 100 = kvinnor lägre). EU-lönerapporten och rapportens avsnitt om lönetransparens redovisar i stället direktivets lönegap, (män − kvinnor) / män i procent, enligt art. 9: positivt tal = kvinnor lägre. Beloppet är detsamma.",
+    ],
+    [
+      "Tolkningsregel",
+      "Ett oförklarat gap är en statistisk signal om var man bör titta närmare — inte ett bevis för osaklig (diskriminerande) löneskillnad. Den bedömningen görs kvalitativt av arbetsgivaren.",
+    ],
+    [
+      "Rättslig ram",
+      "Diskrimineringslagen 3 kap. (lönekartläggning); direktiv (EU) 2023/970 om lönetransparens. De enskilda lagrummen står i docs/utveckling/lagrum.md.",
+    ],
+  ],
+}
+`;
+
+exports[`golden: Excel-exporterna på fast dataset > handlingsplansunderlaget matchar facit 1`] = `
+{
+  "Handlingsplan": [
+    [
+      "Åtgärd",
+      "Berörd grupp (AID·BAS)",
+      "Lagrum",
+      "Sakligt skäl prövat?",
+      "Beräknad kostnad (kr/år, inkl. PO)",
+      "Ansvarig",
+      "Tidsplan (senast inom 3 år)",
+      "Status",
+    ],
+    [
+      "Granska likvärdigt arbete (kvinnodominerat yrke)",
+      "5301 · BAS B",
+      "Likvärdigt arbete",
+      "",
+      1334170,
+      "",
+      "",
+      "",
+    ],
+    [
+      "Granska likvärdigt arbete (kvinnodominerat yrke)",
+      "5500 · BAS C",
+      "Likvärdigt arbete",
+      "",
+      1104573,
+      "",
+      "",
+      "",
+    ],
+    [
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+    ],
+    [
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+    ],
+    [
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+    ],
+    [
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+    ],
+    [
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+    ],
+  ],
+  "Metod & parametrar": [
+    [
+      "Metod & parametrar — reproducerbarhet och tolkning",
+      null,
+    ],
+    [
+      "",
+      null,
+    ],
+    [
+      "Verktyg",
+      "Öppen lönekartläggning (v<VERSION>)",
+    ],
+    [
+      "Exporttidpunkt",
+      "<DATUM> <TID>",
+    ],
+    [
+      "Artefakt-SHA-256",
+      "Se RELEASE.txt / filens banner (single-file-bygget är källans sanning)",
+    ],
+    [
+      "Datakälla",
+      "Lokalt uppladdad fil (bearbetad helt i webbläsaren, inga nätverksanrop)",
+    ],
+    [
+      "Antal personer (inläst)",
+      "62",
+    ],
+    [
+      "Antal personer (i denna analys)",
+      "62",
+    ],
+    [
+      "Modell — oförklarat gap",
+      "OLS på log(månadslön) ~ kön + ålder + BAS-intervall (indikatorvariabler, första BAS som referens); HC3-robusta standardfel (Long & Ervin 2000)",
+    ],
+    [
+      "Steg + Yrkesgrupp (dekomponeringen)",
+      "Könsgap med fasta effekter för yrkesgrupp inom BAS (AID×BAS) utöver ålder, skattat med inomtransformation; visas som sista steg, ingår inte i huvudtalet",
+    ],
+    [
+      "Ålder & karriär (tvärsnitt)",
+      "Lön mot ålder och livscykelmodellen bygger på ett tvärsnitt: de visar skillnader mellan åldersgrupper i dag, inte hur en persons lön utvecklas över karriären (kohorteffekter)",
+    ],
+    [
+      "Trattdiagrammet",
+      "Med färre än tio yrkesgrupper säger trattens form lite; varje grupp bedöms då för sig i tabellen. Punktens bedömning bygger på en omkastning av könen inom gruppen",
+    ],
+    [
+      "p-värden",
+      "t-fördelning vid df < 100, annars normalfördelning; Benjamini-Hochberg (FDR) vid multipla grupptest",
+    ],
+    [
+      "Konfidensintervall",
+      "Bootstrap-percentil (B ≥ 1000 sampel) på mediankvot kvinna/man",
+    ],
+    [
+      "Signifikansnivå",
+      "α = 0,05",
+    ],
+    [
+      "Minsta gruppstorlek för redovisning",
+      "10 personer. Grupper med färre redovisas inte i beskrivande vyer (gäller inte likvärdighetsanalysen).",
+    ],
+    [
+      "Referens för lönenivåer",
+      "Eget ställningstagande (egen fil)",
+    ],
+    [
+      "Jämförelsestatistik",
+      "Jämförelsestatistik (egen fil)",
+    ],
+    [
+      "Krav-proxy (likvärdigt arbete)",
+      "BAS-intervall (ordinal rangordning)",
+    ],
+    [
+      "Lönegapets tecken",
+      "Verktyget räknar skillnaden som (kvinnor − män) / män och visar den som kvinnors lön i procent av mäns (under 100 = kvinnor lägre). EU-lönerapporten och rapportens avsnitt om lönetransparens redovisar i stället direktivets lönegap, (män − kvinnor) / män i procent, enligt art. 9: positivt tal = kvinnor lägre. Beloppet är detsamma.",
+    ],
+    [
+      "Tolkningsregel",
+      "Ett oförklarat gap är en statistisk signal om var man bör titta närmare — inte ett bevis för osaklig (diskriminerande) löneskillnad. Den bedömningen görs kvalitativt av arbetsgivaren.",
+    ],
+    [
+      "Rättslig ram",
+      "Diskrimineringslagen 3 kap. (lönekartläggning); direktiv (EU) 2023/970 om lönetransparens. De enskilda lagrummen står i docs/utveckling/lagrum.md.",
+    ],
+  ],
+  "Vägledning": [
+    [
+      "Handlingsplan för jämställda löner — vägledning",
+      "",
+    ],
+    [
+      "Lagrum",
+      "Diskrimineringslagen 3 kap.: åtgärder, kostnadsberäkning och tidsplan i dokumentationen av lönekartläggningen",
+    ],
+    [
+      "§ 11",
+      "Arbetsgivare med minst 10 anställda ska upprätta en handlingsplan med åtgärder, kostnadsberäkning och tidsplan.",
+    ],
+    [
+      "Tidsplan",
+      "Åtgärderna ska genomföras så snart som möjligt, dock senast inom tre år.",
+    ],
+    [
+      "Ej inom 3 år",
+      "Åtgärder som inte kan genomföras inom tre år ska dokumenteras särskilt med motivering och plan för när de kan genomföras.",
+    ],
+    [
+      "§ 13",
+      "Lönekartläggningen, analysen och handlingsplanen ska dokumenteras skriftligt.",
+    ],
+    [
+      "Samverkan",
+      "Arbetet ska bedrivas i samverkan med arbetstagarna (diskrimineringslagen).",
+    ],
+    [
+      "",
+      "",
+    ],
+    [
+      "Detta underlag",
+      "Förifyllt med 0 grupp(er) under referens (Prioritering) och 2 kandidatpar i likvärdigt arbete. Fyll i sakliga skäl, ansvarig, tidsplan och status. Endast aggregat — inga individdata.",
+    ],
+    [
+      "OBS",
+      "Detta är ett analysunderlag. Den sammanhållna handlingsplanen färdigställs i arbetsgivarens dokumentation/Word.",
+    ],
+  ],
+}
+`;
+
+exports[`golden: Excel-exporterna på fast dataset > § 3:10-exporten matchar facit 1`] = `
+{
+  "Likvärdighet §3-10": [
+    [
+      "Nr",
+      "Org. AID",
+      "Org. Yrke",
+      "BAS",
+      "Org. n",
+      "Org. % kvinnor",
+      "Median Org. (kr)",
+      "Jämf. AID",
+      "Jämf. Yrke",
+      "Jämf. % kvinnor",
+      "Jämf. n",
+      "Jämförelsekälla",
+      "Median Jämf. (kr)",
+      "Gap (kr)",
+      "Gap (%)",
+      "Justerad för ålder (%)",
+      "KI 95% låg (kr)",
+      "KI 95% hög (kr)",
+      "Säkerhet",
+      "Påverkansindex",
+      "Sakligt skäl — fylls i",
+      "Status / åtgärd — fylls i",
+    ],
+    [
+      1,
+      "5301",
+      "Undersköterska",
+      "B",
+      17,
+      82.4,
+      28800,
+      "4100",
+      "Tekniker",
+      17.6,
+      17,
+      "Intern (organisation)",
+      33500,
+      4700,
+      16.32,
+      15.96,
+      4200,
+      5200,
+      "Säker skillnad",
+      79900,
+      "",
+      "",
+    ],
+    [
+      2,
+      "5500",
+      "Sjuksköterska",
+      "C",
+      14,
+      85.7,
+      31950,
+      "2000",
+      "Ingenjör",
+      14.3,
+      14,
+      "Intern (organisation)",
+      36675,
+      4725,
+      14.79,
+      14.53,
+      4150,
+      5375,
+      "Säker skillnad",
+      66150,
+      "",
+      "",
+    ],
+  ],
+  "Metadata": [
+    [
+      "LIKVÄRDIGHETSANALYS — DISKRIMINERINGSLAGEN KAP. 3 § 10",
+      "",
+    ],
+    [
+      "",
+      "",
+    ],
+    [
+      "Genererad",
+      "<DATUM> <TID>",
+    ],
+    [
+      "Verktyg",
+      "Öppen lönekartläggning (v<VERSION>)",
+    ],
+    [
+      "Aktiv profil",
+      "Er organisation",
+    ],
+    [
+      "Modell",
+      "Organisationens kvinnodominerade AID×BAS jämförs inom samma BAS, primärt mot organisationens egna icke-kv-dom yrken (intern), annars jämförelsestatistiken (extern fallback)",
+    ],
+    [
+      "",
+      "",
+    ],
+    [
+      "— PARAMETRAR —",
+      "",
+    ],
+    [
+      "Kvinnotröskel (%)",
+      60,
+    ],
+    [
+      "Min gap (%)",
+      5,
+    ],
+    [
+      "Visa max antal par",
+      20,
+    ],
+    [
+      "k-anonymitet",
+      "Tillämpas EJ i denna analys",
+    ],
+    [
+      "",
+      "",
+    ],
+    [
+      "— DIAGNOSTIK —",
+      "",
+    ],
+    [
+      "Organisationens AID×BAS totalt",
+      4,
+    ],
+    [
+      "Kvinnodominerade i organisationen",
+      2,
+    ],
+    [
+      "•varav med n < k-tröskel (inkluderade ändå)",
+      0,
+    ],
+    [
+      "Rader i jämförelsestatistiken",
+      3,
+    ],
+    [
+      "Jämförelsestatistiken har könsfördelning",
+      "Nej",
+    ],
+    [
+      "Icke-kvinnodominerade i jämförelsestatistiken",
+      2,
+    ],
+    [
+      "Kvinnodominerade i jämförelsestatistiken",
+      1,
+    ],
+    [
+      "Blandade i jämförelsestatistiken",
+      0,
+    ],
+    [
+      "Oklassificerade i jämförelsestatistiken",
+      0,
+    ],
+    [
+      "Klassificering från jämförelsestatistikens könsfördelning",
+      3,
+    ],
+    [
+      "Klassificering från SKR:s personalstatistik",
+      0,
+    ],
+    [
+      "Interna jämförelseyrken i organisationen",
+      2,
+    ],
+    [
+      "Gemensamma BAS",
+      2,
+    ],
+    [
+      "Möjliga par",
+      2,
+    ],
+    [
+      "•varav jämförelseyrke > organisation",
+      2,
+    ],
+    [
+      "Flaggade interna par",
+      2,
+    ],
+    [
+      "Flaggade externa par (jämförelsestatistiken)",
+      0,
+    ],
+    [
+      "BAS som föll tillbaka på extern statistik",
+      0,
+    ],
+    [
+      "Par i utdata",
+      2,
+    ],
+    [
+      "",
+      "",
+    ],
+    [
+      "— RÄTTSLIG GRUND —",
+      "",
+    ],
+    [
+      "Diskrimineringslagen",
+      "Arbetsgivaren ska analysera om kvinnodominerade yrken har lägre lön än icke-kvinnodominerade yrken med likvärdiga eller lägre krav.",
+    ],
+    [
+      "Krav-proxy",
+      "Jämförelsen sker INOM samma BAS — likvärdighet är datadefinierad förutsättning.",
+    ],
+    [
+      "Jämförelsekälla",
+      "Primärt organisationens egna icke-kv-dom yrken (inom-arbetsgivare). Saknas internt jämförelseyrke i en BAS används jämförelsestatistiken som extern proxy.",
+    ],
+    [
+      "95 % KI",
+      "Bootstrap B=1000 på medianskillnaden. Intern: omdragning av bägge individurvalen. Extern: omdragning av org-löner mot jämförelsestatistikens median som konstant. Hela intervallet > 0 = säker skillnad.",
+    ],
+    [
+      "Justerad för ålder (%)",
+      "Jämförelseyrkets lön omräknad till det kvinnodominerade yrkets åldersfördelning: log(lön) = a + b·ålder skattas i jämförelseyrket (minst 10 personer, minst 5 års åldersspridning), lönen prediceras vid varje person i det kvinnodominerade yrket och medianen av prediktionerna jämförs med dess median. Den råa skillnaden är det lagen prövar; den justerade visar hur mycket som kan bero på åldersstruktur. Bara interna par; tomt när den inte kan räknas.",
+    ],
+    [
+      "Påverkansindex",
+      "Heuristik för rangordning: |gap kr| × antal medarbetare i gruppen. Inte ett lagstadgat mått.",
+    ],
+  ],
+  "Metod & parametrar": [
+    [
+      "Metod & parametrar — reproducerbarhet och tolkning",
+      null,
+    ],
+    [
+      "",
+      null,
+    ],
+    [
+      "Verktyg",
+      "Öppen lönekartläggning (v<VERSION>)",
+    ],
+    [
+      "Exporttidpunkt",
+      "<DATUM> <TID>",
+    ],
+    [
+      "Artefakt-SHA-256",
+      "Se RELEASE.txt / filens banner (single-file-bygget är källans sanning)",
+    ],
+    [
+      "Datakälla",
+      "Lokalt uppladdad fil (bearbetad helt i webbläsaren, inga nätverksanrop)",
+    ],
+    [
+      "Antal personer (inläst)",
+      "62",
+    ],
+    [
+      "Antal personer (i denna analys)",
+      "62",
+    ],
+    [
+      "Modell — oförklarat gap",
+      "OLS på log(månadslön) ~ kön + ålder + BAS-intervall (indikatorvariabler, första BAS som referens); HC3-robusta standardfel (Long & Ervin 2000)",
+    ],
+    [
+      "Steg + Yrkesgrupp (dekomponeringen)",
+      "Könsgap med fasta effekter för yrkesgrupp inom BAS (AID×BAS) utöver ålder, skattat med inomtransformation; visas som sista steg, ingår inte i huvudtalet",
+    ],
+    [
+      "Ålder & karriär (tvärsnitt)",
+      "Lön mot ålder och livscykelmodellen bygger på ett tvärsnitt: de visar skillnader mellan åldersgrupper i dag, inte hur en persons lön utvecklas över karriären (kohorteffekter)",
+    ],
+    [
+      "Trattdiagrammet",
+      "Med färre än tio yrkesgrupper säger trattens form lite; varje grupp bedöms då för sig i tabellen. Punktens bedömning bygger på en omkastning av könen inom gruppen",
+    ],
+    [
+      "p-värden",
+      "t-fördelning vid df < 100, annars normalfördelning; Benjamini-Hochberg (FDR) vid multipla grupptest",
+    ],
+    [
+      "Konfidensintervall",
+      "Bootstrap-percentil (B ≥ 1000 sampel) på mediankvot kvinna/man",
+    ],
+    [
+      "Signifikansnivå",
+      "α = 0,05",
+    ],
+    [
+      "Minsta gruppstorlek för redovisning",
+      "10 personer. Grupper med färre redovisas inte i beskrivande vyer (gäller inte likvärdighetsanalysen).",
+    ],
+    [
+      "Undantag från minsta gruppstorlek",
+      "Den här filen kan även innehålla grupper under tröskeln (undantag: Likvärdigt arbete).",
+    ],
+    [
+      "Referens för lönenivåer",
+      "Eget ställningstagande (egen fil)",
+    ],
+    [
+      "Jämförelsestatistik",
+      "Jämförelsestatistik (egen fil)",
+    ],
+    [
+      "Krav-proxy (likvärdigt arbete)",
+      "BAS-intervall (ordinal rangordning)",
+    ],
+    [
+      "Lönegapets tecken",
+      "Verktyget räknar skillnaden som (kvinnor − män) / män och visar den som kvinnors lön i procent av mäns (under 100 = kvinnor lägre). EU-lönerapporten och rapportens avsnitt om lönetransparens redovisar i stället direktivets lönegap, (män − kvinnor) / män i procent, enligt art. 9: positivt tal = kvinnor lägre. Beloppet är detsamma.",
+    ],
+    [
+      "Tolkningsregel",
+      "Ett oförklarat gap är en statistisk signal om var man bör titta närmare — inte ett bevis för osaklig (diskriminerande) löneskillnad. Den bedömningen görs kvalitativt av arbetsgivaren.",
+    ],
+    [
+      "Rättslig ram",
+      "Diskrimineringslagen 3 kap. (lönekartläggning); direktiv (EU) 2023/970 om lönetransparens. De enskilda lagrummen står i docs/utveckling/lagrum.md.",
+    ],
+  ],
+}
+`;
+
+exports[`golden: PDF/print-rapporten (buildPrintReport) på fast dataset > urvalet "facklig" matchar facit 1`] = `"<h1>Lönekartläggning <ÅR> — dokumentation</h1><p class="muted">Testorganisationen · Hela organisationen · genererad <DATUM> · v<VERSION> · Underlagets kvalitet: Varning</p><div class="draftbox"><strong>Låst kopia.</strong> Samma innehåll som Word-utkastet vid samma tillfälle, att verifiera mot. Fälten märkta <em>[HR fyller i …]</em> fylls i och beslutas i Word-dokumentet.</div><section class="rm-avsnitt" data-rm-avsnitt="sammanfattning"><h2>1. Sammanfattning och underlag</h2><table><tbody><tr><th>Antal anställda</th><td>62 (kvinnor: 31, män: 31)</td></tr><tr><th>Medianlön kvinnor / män</th><td>31&nbsp;150 kr / 34&nbsp;000 kr</td></tr><tr><th>Kvinnors medianlön i procent av mäns</th><td>91,6 %</td></tr><tr><th>Urval</th><td>Hela organisationen</td></tr><tr><th>Referens för lönenivåer</th><td>Eget ställningstagande (egen fil)</td></tr><tr><th>Jämförelsestatistik</th><td>Jämförelsestatistik (egen fil)</td></tr><tr><th>Rättslig ram</th><td>Diskrimineringslagen 3 kap. (lönekartläggning); direktiv (EU) 2023/970</td></tr></tbody></table><div class="fillin"><strong>[HR fyller i]</strong> Sammanfattande slutsats av årets lönekartläggning (övergripande iakttagelser och viktigaste åtgärder).</div></section><section class="rm-avsnitt" data-rm-avsnitt="regler"><h2>2. Regler och praxis kring lön</h2><p class="muted">Granskning av de regler och den praxis som styr lönesättningen — inte lönerna i sig. En regel kan vara könsneutralt skriven och ändå slå olika i praktiken. Redovisas per granskningsområde.</p><table><thead><tr><th>Granskningsområde</th><th>Bedömning</th><th>Iakttagelser / åtgärd</th></tr></thead><tbody><tr><td>1. Lönesättningsprinciper &amp; lönekriterier</td><td>Åtgärd krävs</td><td>Fast testanteckning.</td></tr><tr><td>2. Lönerevisionsprocessen (löneöversyn)</td><td><em>[HR fyller i]</em></td><td><em>[HR fyller i]</em></td></tr><tr><td>3. Rörlig lön, tillägg &amp; förmåner</td><td><em>[HR fyller i]</em></td><td><em>[HR fyller i]</em></td></tr><tr><td>4. Anställningsvillkor &amp; arbetstid</td><td><em>[HR fyller i]</em></td><td><em>[HR fyller i]</em></td></tr><tr><td>5. Praxis vid nyanställning &amp; ingångslöner</td><td><em>[HR fyller i]</em></td><td><em>[HR fyller i]</em></td></tr><tr><td>6. Praxis vid befordran &amp; lönehöjning</td><td><em>[HR fyller i]</em></td><td><em>[HR fyller i]</em></td></tr></tbody></table><p class="muted">Bedömningen fylls i på fliken "Bestämmelser &amp; praxis" och följer automatiskt med hit.</p></section><section class="rm-avsnitt" data-rm-avsnitt="lika"><h2>3. Lika arbete — kvinnor och män i samma yrke</h2><p class="muted">Den löneskillnad som står kvar när ålder och nivå räknats bort, samt de yrkesgrupper där kvinnors och mäns medianlön skiljer sig mer än 5 % och därför behöver förklaras med sakliga skäl eller åtgärdas.</p><p class="muted">AID är SKR:s och de fackliga organisationernas gemensamma indelning av arbetsuppgifter i ”rimligt homogena” grupper för lönestatistik. AID är inte ett arbetsvärderingssystem och är inte avsett att avgöra vilka arbeten som är lika eller likvärdiga. Verktygets AID-grupper är därför en utgångspunkt för lika arbete, som ni bekräftar; för likvärdigt arbete kompletterar BAS-intervallen eller en egen arbetsvärdering. Källa: SKR, Arbetsidentifikation (AID) — Handbok för kodning (2020).</p><table><tbody><tr><th>Kvinnors medianlön i procent av mäns</th><td>91,6 %</td></tr><tr><th>Löneskillnad som står kvar efter ålder och nivå</th><td><strong>−10,55 % (95 % KI: −12,90 till −8,14 %; p &lt; 0,001)</strong></td></tr><tr><th>Modell</th><td>log(lön) ~ kön + ålder + BAS-intervall (indikatorer) · 62 obs · R² 70,2 %</td></tr></tbody></table><p class="muted">Löneskillnaden efter ålder och nivå anges som en skillnad i procent: negativ när kvinnor ligger lägre.</p><h3>Grupper att bedöma</h3><p class="muted">Ingen yrkesgrupp har en skillnad över 5 % mellan kvinnors och mäns medianlön.</p><div class="fillin"><strong>[HR fyller i]</strong> Bedöm för varje grupp om löneskillnaden har samband med kön. Ange sakligt skäl (t.ex. dokumenterad erfarenhet, prestation, marknadsläge, tjänstetillägg) eller besluta åtgärd.</div></section><section class="rm-avsnitt" data-rm-avsnitt="likvardigt"><h2>4. Likvärdigt arbete — kvinnodominerade yrken</h2><p class="muted">Kvinnodominerade yrken som tjänar mindre än ett annat yrke med minst lika höga krav. Listan är kandidater att granska — det är arbetsgivaren som avgör om kraven verkligen är likvärdiga.</p><table><thead><tr><th>#</th><th>Kvinnodominerat yrke</th><th>Jämförelseyrke</th><th>Jämförelseyrkets median högre med (kr)</th><th>Högre med (%)</th><th>Kravvärdering / sakligt skäl (fyll i)</th></tr></thead><tbody><tr><td>1</td><td>5301 Undersköterska (BAS B)</td><td>4100 Tekniker (BAS B)</td><td>4&nbsp;700 kr</td><td>16,3 %</td><td>&nbsp;</td></tr><tr><td>2</td><td>5500 Sjuksköterska (BAS C)</td><td>2000 Ingenjör (BAS C)</td><td>4&nbsp;725 kr</td><td>14,8 %</td><td>&nbsp;</td></tr></tbody></table><div class="fillin"><strong>[HR fyller i]</strong> Avgör, utifrån befattningsbeskrivning eller arbetsvärdering, om jämförelseyrkets krav verkligen är likvärdiga eller lägre. Ange sakligt skäl eller åtgärd för varje par som står kvar.</div></section><section class="rm-avsnitt" data-rm-avsnitt="struktur"><h2>5. Struktur och lönetransparens (EU 2023/970)</h2><p class="muted">Hur kvinnor och män fördelar sig mellan nivåerna, och lönegapet i median på varje nivå enligt direktivets art. 9: skillnaden i procent av mäns lön, positivt tal = kvinnor lägre. Verktygets flikar visar samma skillnad som kvinnors lön i procent av mäns.</p><table><thead><tr><th>BAS</th><th>N</th><th>Andel kvinnor</th><th>Median</th><th>Lönegap enligt art. 9</th></tr></thead><tbody><tr><td>B</td><td>34</td><td>50 %</td><td>30&nbsp;900 kr</td><td>+14,0 %</td></tr><tr><td>C</td><td>28</td><td>50 %</td><td>34&nbsp;075 kr</td><td>+12,8 %</td></tr></tbody></table><h3>Kvinnors och mäns lön per BAS-intervall</h3><table><thead><tr><th>BAS</th><th>Kvinnor / män</th><th>Median kvinnor</th><th>Median män</th><th>Skillnad</th><th>Kvinnors lön i % av mäns</th><th>95 % konfidensintervall</th><th>Status</th></tr></thead><tbody><tr><td>B</td><td>17 / 17</td><td>28&nbsp;800 kr</td><td>33&nbsp;500 kr</td><td>−4&nbsp;700 kr</td><td>86,0 %</td><td>84,5–87,4 %</td><td>Avviker mer än 5 %</td></tr><tr><td>C</td><td>14 / 14</td><td>31&nbsp;975 kr</td><td>36&nbsp;675 kr</td><td>−4&nbsp;700 kr</td><td>87,2 %</td><td>85,4–88,9 %</td><td>Avviker mer än 5 %</td></tr></tbody></table><p class="muted">Skillnaden är kvinnors medianlön minus mäns. Når konfidensintervallet 100 % kan skillnaden bero på slumpen. Bara BAS-intervall där både kvinnor och män når minsta gruppstorlek har en rad.</p></section><section class="rm-avsnitt" data-rm-avsnitt="samverkan"><h2>6. Samverkan med arbetstagarna</h2><div class="fillin"><strong>[HR fyller i]</strong> Dokumentera samverkan med arbetstagarorganisationerna: datum, deltagande parter och synpunkter (protokollet för gemensam lönebedömning kan bifogas).</div></section><section class="rm-avsnitt" data-rm-avsnitt="regression"><h2>Bilaga: Justerat lönegap i detalj</h2><p class="muted">Skattad modell: log(lön) ~ kön + ålder + BAS-intervall (indikatorer) (OLS-regression). Lönegapet anges som en skillnad i procent: negativ när kvinnor ligger lägre.</p><table><tbody><tr><th>Antal observationer</th><td>62 (kvinnor: 31, män: 31)</td></tr><tr><th>Kvinnors medianlön i procent av mäns</th><td>91,6 %</td></tr><tr><th>Oförklarad skillnad (över 5 % och statistiskt säkerställd)</th><td><strong>−10,55 % (95 % KI: −12,90 till −8,14, p &lt; 0,001, t = −8,39; HC3 robust SE)</strong></td></tr><tr><th>Ålderseffekt</th><td>+0,33 % per år</td></tr><tr><th>R² / justerad R²</th><td>70,2 % / 68,7 %</td></tr><tr><th>BAS-intervall i modellen</th><td>2 (B–C; indikatorvariabler, B är referens)</td></tr><tr><th>BAS-effekter</th><td>nivå mot BAS B: C +10,47 % (p &lt; 0,001)</td></tr></tbody></table><h3>Sekventiell dekomponering</h3><table><thead><tr><th>Modell</th><th>Lönegap</th><th>R²</th></tr></thead><tbody><tr><td>Endast kön</td><td>−10,55 %</td><td>38,9 %</td></tr><tr><td>+ BAS-intervall</td><td>−10,55 %</td><td>68,1 %</td></tr><tr><td>+ Ålder</td><td>−10,55 %</td><td>70,2 %</td></tr><tr><td>+ Yrkesgrupp</td><td>−2,24 %</td><td>99,8 %</td></tr></tbody></table><p>Steget + Yrkesgrupp: −2,2 % är löneskillnaden mellan kvinnor och män med samma yrkesgrupp, BAS-intervall och ålder (fasta effekter för yrkesgrupp inom BAS). Bygger på 62 personer i 4 yrkesgrupper där båda könen finns. Huvudtalet ovan räknar inte bort yrkesgruppen.</p><p>Strukturellt förklarad andel: 0 % av råa gapet förklaras av strukturella variabler (ålder och BAS-intervall). Oförklarad rest: 100 %.</p><h3>Per BAS-intervall (separata regressioner)</h3><table><thead><tr><th>BAS</th><th>N</th><th>Kvinnor / män</th><th>Oförklarat gap</th><th>Signifikans</th><th>Över 5 % och säkerställd</th></tr></thead><tbody><tr><td>B</td><td>34</td><td>17 / 17</td><td>−10,64 %</td><td>p &lt; 0,001</td><td>ja</td></tr><tr><td>C</td><td>28</td><td>14 / 14</td><td>−10,44 %</td><td>p &lt; 0,001</td><td>ja</td></tr></tbody></table></section><section class="rm-avsnitt" data-rm-avsnitt="metod"><h2>Bilaga: Metod och parametrar</h2><p class="muted">Dessa uppgifter följer med så att analysen går att återskapa och förstå. Verktyget pekar ut kandidater för bedömning — det dömer inte.</p><table><tbody><tr><th>Verktyg</th><td>Öppen lönekartläggning (v<VERSION>)</td></tr><tr><th>Exporttidpunkt</th><td><DATUM> <TID></td></tr><tr><th>Artefakt-SHA-256</th><td>Se RELEASE.txt / filens banner (single-file-bygget är källans sanning)</td></tr><tr><th>Datakälla</th><td>Lokalt uppladdad fil (bearbetad helt i webbläsaren, inga nätverksanrop)</td></tr><tr><th>Antal personer (inläst)</th><td>62</td></tr><tr><th>Antal personer (i denna analys)</th><td>62</td></tr><tr><th>Modell — oförklarat gap</th><td>OLS på log(månadslön) ~ kön + ålder + BAS-intervall (indikatorvariabler, första BAS som referens); HC3-robusta standardfel (Long &amp; Ervin 2000)</td></tr><tr><th>Steg + Yrkesgrupp (dekomponeringen)</th><td>Könsgap med fasta effekter för yrkesgrupp inom BAS (AID×BAS) utöver ålder, skattat med inomtransformation; visas som sista steg, ingår inte i huvudtalet</td></tr><tr><th>Ålder &amp; karriär (tvärsnitt)</th><td>Lön mot ålder och livscykelmodellen bygger på ett tvärsnitt: de visar skillnader mellan åldersgrupper i dag, inte hur en persons lön utvecklas över karriären (kohorteffekter)</td></tr><tr><th>Trattdiagrammet</th><td>Med färre än tio yrkesgrupper säger trattens form lite; varje grupp bedöms då för sig i tabellen. Punktens bedömning bygger på en omkastning av könen inom gruppen</td></tr><tr><th>p-värden</th><td>t-fördelning vid df &lt; 100, annars normalfördelning; Benjamini-Hochberg (FDR) vid multipla grupptest</td></tr><tr><th>Konfidensintervall</th><td>Bootstrap-percentil (B ≥ 1000 sampel) på mediankvot kvinna/man</td></tr><tr><th>Signifikansnivå</th><td>α = 0,05</td></tr><tr><th>Minsta gruppstorlek för redovisning</th><td>10 personer. Grupper med färre redovisas inte i beskrivande vyer (gäller inte likvärdighetsanalysen).</td></tr><tr><th>Referens för lönenivåer</th><td>Eget ställningstagande (egen fil)</td></tr><tr><th>Jämförelsestatistik</th><td>Jämförelsestatistik (egen fil)</td></tr><tr><th>Krav-proxy (likvärdigt arbete)</th><td>BAS-intervall (ordinal rangordning)</td></tr><tr><th>Lönegapets tecken</th><td>Verktyget räknar skillnaden som (kvinnor − män) / män och visar den som kvinnors lön i procent av mäns (under 100 = kvinnor lägre). EU-lönerapporten och rapportens avsnitt om lönetransparens redovisar i stället direktivets lönegap, (män − kvinnor) / män i procent, enligt art. 9: positivt tal = kvinnor lägre. Beloppet är detsamma.</td></tr><tr><th>Tolkningsregel</th><td>Ett oförklarat gap är en statistisk signal om var man bör titta närmare — inte ett bevis för osaklig (diskriminerande) löneskillnad. Den bedömningen görs kvalitativt av arbetsgivaren.</td></tr><tr><th>Rättslig ram</th><td>Diskrimineringslagen 3 kap. (lönekartläggning); direktiv (EU) 2023/970 om lönetransparens. De enskilda lagrummen står i docs/utveckling/lagrum.md.</td></tr></tbody></table></section>"`;
+
+exports[`golden: PDF/print-rapporten (buildPrintReport) på fast dataset > urvalet "komplett" matchar facit 1`] = `
+"<h1>Lönekartläggning <ÅR> — dokumentation</h1><p class="muted">Testorganisationen · Hela organisationen · genererad <DATUM> · v<VERSION> · Underlagets kvalitet: Varning</p><div class="draftbox"><strong>Låst kopia.</strong> Samma innehåll som Word-utkastet vid samma tillfälle, att verifiera mot. Fälten märkta <em>[HR fyller i …]</em> fylls i och beslutas i Word-dokumentet.</div><section class="rm-avsnitt" data-rm-avsnitt="sammanfattning"><h2>1. Sammanfattning och underlag</h2><table><tbody><tr><th>Antal anställda</th><td>62 (kvinnor: 31, män: 31)</td></tr><tr><th>Medianlön kvinnor / män</th><td>31&nbsp;150 kr / 34&nbsp;000 kr</td></tr><tr><th>Kvinnors medianlön i procent av mäns</th><td>91,6 %</td></tr><tr><th>Urval</th><td>Hela organisationen</td></tr><tr><th>Referens för lönenivåer</th><td>Eget ställningstagande (egen fil)</td></tr><tr><th>Jämförelsestatistik</th><td>Jämförelsestatistik (egen fil)</td></tr><tr><th>Rättslig ram</th><td>Diskrimineringslagen 3 kap. (lönekartläggning); direktiv (EU) 2023/970</td></tr></tbody></table><div class="fillin"><strong>[HR fyller i]</strong> Sammanfattande slutsats av årets lönekartläggning (övergripande iakttagelser och viktigaste åtgärder).</div></section><section class="rm-avsnitt" data-rm-avsnitt="regler"><h2>2. Regler och praxis kring lön</h2><p class="muted">Granskning av de regler och den praxis som styr lönesättningen — inte lönerna i sig. En regel kan vara könsneutralt skriven och ändå slå olika i praktiken. Redovisas per granskningsområde.</p><table><thead><tr><th>Granskningsområde</th><th>Bedömning</th><th>Iakttagelser / åtgärd</th></tr></thead><tbody><tr><td>1. Lönesättningsprinciper &amp; lönekriterier</td><td>Åtgärd krävs</td><td>Fast testanteckning.</td></tr><tr><td>2. Lönerevisionsprocessen (löneöversyn)</td><td><em>[HR fyller i]</em></td><td><em>[HR fyller i]</em></td></tr><tr><td>3. Rörlig lön, tillägg &amp; förmåner</td><td><em>[HR fyller i]</em></td><td><em>[HR fyller i]</em></td></tr><tr><td>4. Anställningsvillkor &amp; arbetstid</td><td><em>[HR fyller i]</em></td><td><em>[HR fyller i]</em></td></tr><tr><td>5. Praxis vid nyanställning &amp; ingångslöner</td><td><em>[HR fyller i]</em></td><td><em>[HR fyller i]</em></td></tr><tr><td>6. Praxis vid befordran &amp; lönehöjning</td><td><em>[HR fyller i]</em></td><td><em>[HR fyller i]</em></td></tr></tbody></table><p class="muted">Bedömningen fylls i på fliken "Bestämmelser &amp; praxis" och följer automatiskt med hit.</p></section><section class="rm-avsnitt" data-rm-avsnitt="lika"><h2>3. Lika arbete — kvinnor och män i samma yrke</h2><p class="muted">Den löneskillnad som står kvar när ålder och nivå räknats bort, samt de yrkesgrupper där kvinnors och mäns medianlön skiljer sig mer än 5 % och därför behöver förklaras med sakliga skäl eller åtgärdas.</p><p class="muted">AID är SKR:s och de fackliga organisationernas gemensamma indelning av arbetsuppgifter i ”rimligt homogena” grupper för lönestatistik. AID är inte ett arbetsvärderingssystem och är inte avsett att avgöra vilka arbeten som är lika eller likvärdiga. Verktygets AID-grupper är därför en utgångspunkt för lika arbete, som ni bekräftar; för likvärdigt arbete kompletterar BAS-intervallen eller en egen arbetsvärdering. Källa: SKR, Arbetsidentifikation (AID) — Handbok för kodning (2020).</p><table><tbody><tr><th>Kvinnors medianlön i procent av mäns</th><td>91,6 %</td></tr><tr><th>Löneskillnad som står kvar efter ålder och nivå</th><td><strong>−10,55 % (95 % KI: −12,90 till −8,14 %; p &lt; 0,001)</strong></td></tr><tr><th>Modell</th><td>log(lön) ~ kön + ålder + BAS-intervall (indikatorer) · 62 obs · R² 70,2 %</td></tr></tbody></table><p class="muted">Löneskillnaden efter ålder och nivå anges som en skillnad i procent: negativ när kvinnor ligger lägre.</p><h3>Grupper att bedöma</h3><p class="muted">Ingen yrkesgrupp har en skillnad över 5 % mellan kvinnors och mäns medianlön.</p><div class="fillin"><strong>[HR fyller i]</strong> Bedöm för varje grupp om löneskillnaden har samband med kön. Ange sakligt skäl (t.ex. dokumenterad erfarenhet, prestation, marknadsläge, tjänstetillägg) eller besluta åtgärd.</div></section><section class="rm-avsnitt" data-rm-avsnitt="likvardigt"><h2>4. Likvärdigt arbete — kvinnodominerade yrken</h2><p class="muted">Kvinnodominerade yrken som tjänar mindre än ett annat yrke med minst lika höga krav. Listan är kandidater att granska — det är arbetsgivaren som avgör om kraven verkligen är likvärdiga.</p><table><thead><tr><th>#</th><th>Kvinnodominerat yrke</th><th>Jämförelseyrke</th><th>Jämförelseyrkets median högre med (kr)</th><th>Högre med (%)</th><th>Kravvärdering / sakligt skäl (fyll i)</th></tr></thead><tbody><tr><td>1</td><td>5301 Undersköterska (BAS B)</td><td>4100 Tekniker (BAS B)</td><td>4&nbsp;700 kr</td><td>16,3 %</td><td>&nbsp;</td></tr><tr><td>2</td><td>5500 Sjuksköterska (BAS C)</td><td>2000 Ingenjör (BAS C)</td><td>4&nbsp;725 kr</td><td>14,8 %</td><td>&nbsp;</td></tr></tbody></table><div class="fillin"><strong>[HR fyller i]</strong> Avgör, utifrån befattningsbeskrivning eller arbetsvärdering, om jämförelseyrkets krav verkligen är likvärdiga eller lägre. Ange sakligt skäl eller åtgärd för varje par som står kvar.</div></section><section class="rm-avsnitt" data-rm-avsnitt="struktur"><h2>5. Struktur och lönetransparens (EU 2023/970)</h2><p class="muted">Hur kvinnor och män fördelar sig mellan nivåerna, och lönegapet i median på varje nivå enligt direktivets art. 9: skillnaden i procent av mäns lön, positivt tal = kvinnor lägre. Verktygets flikar visar samma skillnad som kvinnors lön i procent av mäns.</p><table><thead><tr><th>BAS</th><th>N</th><th>Andel kvinnor</th><th>Median</th><th>Lönegap enligt art. 9</th></tr></thead><tbody><tr><td>B</td><td>34</td><td>50 %</td><td>30&nbsp;900 kr</td><td>+14,0 %</td></tr><tr><td>C</td><td>28</td><td>50 %</td><td>34&nbsp;075 kr</td><td>+12,8 %</td></tr></tbody></table><h3>Kvinnors och mäns lön per BAS-intervall</h3><table><thead><tr><th>BAS</th><th>Kvinnor / män</th><th>Median kvinnor</th><th>Median män</th><th>Skillnad</th><th>Kvinnors lön i % av mäns</th><th>95 % konfidensintervall</th><th>Status</th></tr></thead><tbody><tr><td>B</td><td>17 / 17</td><td>28&nbsp;800 kr</td><td>33&nbsp;500 kr</td><td>−4&nbsp;700 kr</td><td>86,0 %</td><td>84,5–87,4 %</td><td>Avviker mer än 5 %</td></tr><tr><td>C</td><td>14 / 14</td><td>31&nbsp;975 kr</td><td>36&nbsp;675 kr</td><td>−4&nbsp;700 kr</td><td>87,2 %</td><td>85,4–88,9 %</td><td>Avviker mer än 5 %</td></tr></tbody></table><p class="muted">Skillnaden är kvinnors medianlön minus mäns. Når konfidensintervallet 100 % kan skillnaden bero på slumpen. Bara BAS-intervall där både kvinnor och män når minsta gruppstorlek har en rad.</p></section><section class="rm-avsnitt" data-rm-avsnitt="atgarder"><h2>6. Åtgärder och tidsplan</h2><p class="muted">Planerade lönejusteringar och andra åtgärder, med beslut, ansvar och tidsplan. Tabellen listar de grupper som ligger under referensen enligt prioriteringen, med uppskattad kostnad för att nå den.</p><p class="muted">Inga prioriterade åtgärdsgrupper (ingen referensdata uppladdad).</p><div class="fillin"><strong>[HR fyller i]</strong> Besluta åtgärder, budget och tidsplan (lönejusteringar ska genomföras så snart som möjligt och senast inom tre år). Beskriv även förebyggande åtgärder.</div></section><section class="rm-avsnitt" data-rm-avsnitt="samverkan"><h2>7. Samverkan med arbetstagarna</h2><div class="fillin"><strong>[HR fyller i]</strong> Dokumentera samverkan med arbetstagarorganisationerna: datum, deltagande parter och synpunkter (protokollet för gemensam lönebedömning kan bifogas).</div></section><section class="rm-avsnitt" data-rm-avsnitt="beslut"><h2>8. Beslut och underskrift</h2><div class="fillin"><strong>[HR fyller i]</strong> Beslutsfattare, datum och underskrift. Ange när nästa lönekartläggning ska genomföras (årligen).</div></section><section class="rm-avsnitt" data-rm-avsnitt="regression"><h2>Bilaga: Justerat lönegap i detalj</h2><p class="muted">Skattad modell: log(lön) ~ kön + ålder + BAS-intervall (indikatorer) (OLS-regression). Lönegapet anges som en skillnad i procent: negativ när kvinnor ligger lägre.</p><table><tbody><tr><th>Antal observationer</th><td>62 (kvinnor: 31, män: 31)</td></tr><tr><th>Kvinnors medianlön i procent av mäns</th><td>91,6 %</td></tr><tr><th>Oförklarad skillnad (över 5 % och statistiskt säkerställd)</th><td><strong>−10,55 % (95 % KI: −12,90 till −8,14, p &lt; 0,001, t = −8,39; HC3 robust SE)</strong></td></tr><tr><th>Ålderseffekt</th><td>+0,33 % per år</td></tr><tr><th>R² / justerad R²</th><td>70,2 % / 68,7 %</td></tr><tr><th>BAS-intervall i modellen</th><td>2 (B–C; indikatorvariabler, B är referens)</td></tr><tr><th>BAS-effekter</th><td>nivå mot BAS B: C +10,47 % (p &lt; 0,001)</td></tr></tbody></table><h3>Sekventiell dekomponering</h3><table><thead><tr><th>Modell</th><th>Lönegap</th><th>R²</th></tr></thead><tbody><tr><td>Endast kön</td><td>−10,55 %</td><td>38,9 %</td></tr><tr><td>+ BAS-intervall</td><td>−10,55 %</td><td>68,1 %</td></tr><tr><td>+ Ålder</td><td>−10,55 %</td><td>70,2 %</td></tr><tr><td>+ Yrkesgrupp</td><td>−2,24 %</td><td>99,8 %</td></tr></tbody></table><p>Steget + Yrkesgrupp: −2,2 % är löneskillnaden mellan kvinnor och män med samma yrkesgrupp, BAS-intervall och ålder (fasta effekter för yrkesgrupp inom BAS). Bygger på 62 personer i 4 yrkesgrupper där båda könen finns. Huvudtalet ovan räknar inte bort yrkesgruppen.</p><p>Strukturellt förklarad andel: 0 % av råa gapet förklaras av strukturella variabler (ålder och BAS-intervall). Oförklarad rest: 100 %.</p><h3>Per BAS-intervall (separata regressioner)</h3><table><thead><tr><th>BAS</th><th>N</th><th>Kvinnor / män</th><th>Oförklarat gap</th><th>Signifikans</th><th>Över 5 % och säkerställd</th></tr></thead><tbody><tr><td>B</td><td>34</td><td>17 / 17</td><td>−10,64 %</td><td>p &lt; 0,001</td><td>ja</td></tr><tr><td>C</td><td>28</td><td>14 / 14</td><td>−10,44 %</td><td>p &lt; 0,001</td><td>ja</td></tr></tbody></table></section><section class="rm-avsnitt" data-rm-avsnitt="metod"><h2>Bilaga: Metod och parametrar</h2><p class="muted">Dessa uppgifter följer med så att analysen går att återskapa och förstå. Verktyget pekar ut kandidater för bedömning — det dömer inte.</p><table><tbody><tr><th>Verktyg</th><td>Öppen lönekartläggning (v<VERSION>)</td></tr><tr><th>Exporttidpunkt</th><td><DATUM> <TID></td></tr><tr><th>Artefakt-SHA-256</th><td>Se RELEASE.txt / filens banner (single-file-bygget är källans sanning)</td></tr><tr><th>Datakälla</th><td>Lokalt uppladdad fil (bearbetad helt i webbläsaren, inga nätverksanrop)</td></tr><tr><th>Antal personer (inläst)</th><td>62</td></tr><tr><th>Antal personer (i denna analys)</th><td>62</td></tr><tr><th>Modell — oförklarat gap</th><td>OLS på log(månadslön) ~ kön + ålder + BAS-intervall (indikatorvariabler, första BAS som referens); HC3-robusta standardfel (Long &amp; Ervin 2000)</td></tr><tr><th>Steg + Yrkesgrupp (dekomponeringen)</th><td>Könsgap med fasta effekter för yrkesgrupp inom BAS (AID×BAS) utöver ålder, skattat med inomtransformation; visas som sista steg, ingår inte i huvudtalet</td></tr><tr><th>Ålder &amp; karriär (tvärsnitt)</th><td>Lön mot ålder och livscykelmodellen bygger på ett tvärsnitt: de visar skillnader mellan åldersgrupper i dag, inte hur en persons lön utvecklas över karriären (kohorteffekter)</td></tr><tr><th>Trattdiagrammet</th><td>Med färre än tio yrkesgrupper säger trattens form lite; varje grupp bedöms då för sig i tabellen. Punktens bedömning bygger på en omkastning av könen inom gruppen</td></tr><tr><th>p-värden</th><td>t-fördelning vid df &lt; 100, annars normalfördelning; Benjamini-Hochberg (FDR) vid multipla grupptest</td></tr><tr><th>Konfidensintervall</th><td>Bootstrap-percentil (B ≥ 1000 sampel) på mediankvot kvinna/man</td></tr><tr><th>Signifikansnivå</th><td>α = 0,05</td></tr><tr><th>Minsta gruppstorlek för redovisning</th><td>10 personer. Grupper med färre redovisas inte i beskrivande vyer (gäller inte likvärdighetsanalysen).</td></tr><tr><th>Referens för lönenivåer</th><td>Eget ställningstagande (egen fil)</td></tr><tr><th>Jämförelsestatistik</th><td>Jämförelsestatistik (egen fil)</td></tr><tr><th>Krav-proxy (likvärdigt arbete)</th><td>BAS-intervall (ordinal rangordning)</td></tr><tr><th>Lönegapets tecken</th><td>Verktyget räknar skillnaden som (kvinnor − män) / män och visar den som kvinnors lön i procent av mäns (under 100 = kvinnor lägre). EU-lönerapporten och rapportens avsnitt om lönetransparens redovisar i stället direktivets lönegap, (män − kvinnor) / män i procent, enligt art. 9: positivt tal = kvinnor lägre. Beloppet är detsamma.</td></tr><tr><th>Tolkningsregel</th><td>Ett oförklarat gap är en statistisk signal om var man bör titta närmare — inte ett bevis för osaklig (diskriminerande) löneskillnad. Den bedömningen görs kvalitativt av arbetsgivaren.</td></tr><tr><th>Rättslig ram</th><td>Diskrimineringslagen 3 kap. (lönekartläggning); direktiv (EU) 2023/970 om lönetransparens. De enskilda lagrummen står i docs/utveckling/lagrum.md.</td></tr></tbody></table></section><section class="page-break"><h1 class="pr-liten-rubrik">Bilagor: tabeller och diagram ur flikarna</h1>
+                <p class="pr-dampad">Underlaget bakom avsnitten, som det står i verktygets flikar. Grupper under tröskeln är utelämnade på samma sätt som där.</p></section><section class="page-break"><h2>Lika arbete – kvinnor och män i samma yrke (EU 2023/970)</h2><p>Yrkesgrupper med &gt; 5% osaklig löneskillnad är anmälningspliktiga.</p><table id="matrix-table" class="data-table" aria-label="EU-lönekartläggning: lika arbete-jämförelse mellan kvinnor och män per yrkesgrupp">
+                                <thead>
+                                    <tr>
+                                        <th data-export-label="Yrkesgrupp (AID + benämning)" class="sortable">Yrkesgrupp</th>
+                                        <th data-export-label="Antal personer (kvinnor/män)" class="sortable">Antal (Kv/Mä)</th>
+                                        <th data-export-label="Köns-dominans (Kvinno-/Mans-/Blandad)" class="sortable">Dominans</th>
+                                        <th data-export-label="Andel kvinnor i yrket nationellt (SKR:s personalstatistik)" title="Andel kvinnor i yrket (AID-etiketten) enligt SKR:s personalstatistik, i kommuner, regioner eller båda efter organisationstypen — ett referensvärde att jämföra er egen könsfördelning mot" class="sortable">Kvinnor, SKR</th>
+                                        <th data-export-label="Median Kvinnor (kr/mån)" class="sortable">Median Kvinnor</th>
+                                        <th data-export-label="Median Män (kr/mån)" class="sortable">Median Män</th>
+                                        <th data-export-label="Lönegap kvinnor/män (kvinnors median i % av männens)" class="sortable">Kvinnors median i % av mäns</th>
+                                        <th data-export-label="Status (Lika lön / Avvikelse / Utred)" class="sortable">Status</th>
+                                        <th class="t-mitt" data-no-sort="" data-export-skip="">Detalj</th>
+                                    </tr>
+                                </thead>
+                                <tbody><tr><td>5301 Undersköterska</td><td data-sort-value="17">17 (14/3)</td><td>Kvinno-dom</td><td data-sort-value="" title="Koden finns inte i SKR:s personalstatistik">–</td><td colspan="2" class="t-mitt" data-sort-value="28800">Gruppens median 28&nbsp;800&nbsp;kr</td><td data-sort-value="0">–</td><td><span class="f-dampad la-status la-status-liten" title="Könsuppdelningen är för liten: ett kön har färre än 10 personer"><span class="bara-export">Könsuppdelningen är för liten (</span>ett kön n &lt; 10<span class="bara-export">)</span></span></td><td class="ta-mitt ingen-radbrytning"><button class="row-cross-link" data-target="rapport" data-yrke="5301 Undersköterska" title="Öppna i Löneöversikten" aria-label="Öppna 5301 Undersköterska i Löneöversikten"><svg class="ikon ikon-pilUt" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M7 17 17 7"></path><path d="M9 7h8v8"></path></svg></button></td></tr><tr><td>4100 Tekniker</td><td data-sort-value="17">17 (3/14)</td><td>Mans-dom</td><td data-sort-value="" title="Koden finns inte i SKR:s personalstatistik">–</td><td colspan="2" class="t-mitt" data-sort-value="33500">Gruppens median 33&nbsp;500&nbsp;kr</td><td data-sort-value="0">–</td><td><span class="f-dampad la-status la-status-liten" title="Könsuppdelningen är för liten: ett kön har färre än 10 personer"><span class="bara-export">Könsuppdelningen är för liten (</span>ett kön n &lt; 10<span class="bara-export">)</span></span></td><td class="ta-mitt ingen-radbrytning"><button class="row-cross-link" data-target="rapport" data-yrke="4100 Tekniker" title="Öppna i Löneöversikten" aria-label="Öppna 4100 Tekniker i Löneöversikten"><svg class="ikon ikon-pilUt" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M7 17 17 7"></path><path d="M9 7h8v8"></path></svg></button></td></tr><tr><td>5500 Sjuksköterska</td><td data-sort-value="14">14 (12/2)</td><td>Kvinno-dom</td><td data-sort-value="" title="Koden finns inte i SKR:s personalstatistik">–</td><td colspan="2" class="t-mitt" data-sort-value="31950">Gruppens median 31&nbsp;950&nbsp;kr</td><td data-sort-value="0">–</td><td><span class="f-dampad la-status la-status-liten" title="Könsuppdelningen är för liten: ett kön har färre än 10 personer"><span class="bara-export">Könsuppdelningen är för liten (</span>ett kön n &lt; 10<span class="bara-export">)</span></span></td><td class="ta-mitt ingen-radbrytning"><button class="row-cross-link" data-target="rapport" data-yrke="5500 Sjuksköterska" title="Öppna i Löneöversikten" aria-label="Öppna 5500 Sjuksköterska i Löneöversikten"><svg class="ikon ikon-pilUt" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M7 17 17 7"></path><path d="M9 7h8v8"></path></svg></button></td></tr><tr><td>2000 Ingenjör</td><td data-sort-value="14">14 (2/12)</td><td>Mans-dom</td><td data-sort-value="" title="Koden finns inte i SKR:s personalstatistik">–</td><td colspan="2" class="t-mitt" data-sort-value="36675">Gruppens median 36&nbsp;675&nbsp;kr</td><td data-sort-value="0">–</td><td><span class="f-dampad la-status la-status-liten" title="Könsuppdelningen är för liten: ett kön har färre än 10 personer"><span class="bara-export">Könsuppdelningen är för liten (</span>ett kön n &lt; 10<span class="bara-export">)</span></span></td><td class="ta-mitt ingen-radbrytning"><button class="row-cross-link" data-target="rapport" data-yrke="2000 Ingenjör" title="Öppna i Löneöversikten" aria-label="Öppna 2000 Ingenjör i Löneöversikten"><svg class="ikon ikon-pilUt" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M7 17 17 7"></path><path d="M9 7h8v8"></path></svg></button></td></tr><tr><td colspan="9"><p class="k-mask-note">4 yrkesgrupper visas med gruppens samlade median i stället för könsuppdelade medianer: 5301 Undersköterska, 4100 Tekniker, 5500 Sjuksköterska, 2000 Ingenjör. Grupperna är stora nog att redovisa, men ett av könen har färre än 10 personer, så en könsjämförelse skulle peka ut enskilda.</p></td></tr></tbody>
+                            </table></section><section class="page-break"><h2>Lönegap per BAS-intervall (&gt; 5%)</h2><table id="paygap-table" class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th scope="col" data-export-label="BAS-intervall" class="sortable">BAS-intervall</th>
+                                        <th scope="col" data-export-label="Antal personer (kvinnor/män)" class="sortable">Antal (Kv/Mä) <span class="info-tip" data-k-tooltip="Antal personer som löneberäkningen för denna BAS baseras på, uppdelat per kön. Är ett kön färre än {k} visas BAS-intervallets samlade median i stället; är hela intervallet under {k} utelämnas raden och namnges i noten under tabellen (k-anonymitet)." data-tooltip="Antal personer som löneberäkningen för denna BAS baseras på, uppdelat per kön. Är ett kön färre än 10 visas BAS-intervallets samlade median i stället; är hela intervallet under 10 utelämnas raden och namnges i noten under tabellen (k-anonymitet)."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg></span></th>
+                                        <th scope="col" data-export-label="Kvinnors median i % av männens (100% = lika lön)" class="sortable">Kvinna % av Man</th>
+                                        <th scope="col" data-export-label="Median Kvinna (kr/mån)" class="sortable">Median Kvinna</th>
+                                        <th scope="col" data-export-label="Median Man (kr/mån)" class="sortable">Median Man</th>
+                                        <th scope="col" data-export-skip="" title="Öppnar bevis-popup med formel och ingångsdata för denna BAS-rad." class="sortable">Bevis</th>
+                                    </tr>
+                                </thead>
+                                <tbody><tr><td>B</td><td class="t-hoger">17/17</td><td class="f-kritisk fet">86,0 %</td><td>28&nbsp;800&nbsp;kr</td><td>33&nbsp;500&nbsp;kr</td><td class="t-mitt"><button class="btn-evidence" data-paygap-row="1" type="button" title="Visa beräkningen bakom denna BAS-rad" aria-label="Visa bevis för BAS B"><svg class="ikon ikon-sok" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg></button></td></tr><tr><td>C</td><td class="t-hoger">14/14</td><td class="f-kritisk fet">87,2 %</td><td>31&nbsp;975&nbsp;kr</td><td>36&nbsp;675&nbsp;kr</td><td class="t-mitt"><button class="btn-evidence" data-paygap-row="1" type="button" title="Visa beräkningen bakom denna BAS-rad" aria-label="Visa bevis för BAS C"><svg class="ikon ikon-sok" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg></button></td></tr></tbody>
+                            </table><h2 class="pr-ned">Ojämn könsfördelning (under 40 % av ett kön)</h2><table id="skevhet-table" class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th scope="col" data-export-label="BAS-intervall" class="sortable">BAS-intervall</th>
+                                        <th scope="col" data-export-label="Totalt antal personer" class="sortable">Totalt N</th>
+                                        <th scope="col" data-export-label="Andel kvinnor (%)" class="sortable">Kvinnor (%)</th>
+                                        <th scope="col" data-export-label="Andel män (%)" class="sortable">Män (%)</th>
+                                        <th scope="col" data-export-label="Underrepresenterat kön (om < 10% av gruppen)" class="sortable">Underrep. Kön</th>
+                                    </tr>
+                                </thead>
+                                <tbody><tr><td>B</td><td>34</td><td>50,0 %</td><td>50,0 %</td><td>-</td></tr><tr><td>C</td><td>28</td><td>50,0 %</td><td>50,0 %</td><td>-</td></tr></tbody>
+                            </table></section><section class="page-break"><h2>Löneöversikt (organisation · kön · yrke)</h2><table id="rapport-table" class="data-table" aria-label="Löneöversikt per BAS-intervall, kön och yrkesgrupp">
+                                <thead>
+                                    <tr>
+                                        <th scope="col" data-export-label="Kategori (BAS / Kön / Yrkesgrupp)" class="sortable">Kategori</th>
+                                        <th scope="col" data-export-label="P10 — lägsta lönedecilen (kr/mån)" class="sortable">P10 (10:e percentilen) <span class="info-tip" data-tooltip="Den lönenivå där 10% av personerna i gruppen tjänar mindre och 90% tjänar mer. Speglar lönenivån för de lägst betalda i gruppen."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg></span></th>
+                                        <th scope="col" data-export-label="Median (kr/mån)" class="sortable">Median <span class="info-tip" data-tooltip="Den mittersta lönen när alla löner sorteras. Hälften tjänar mer, hälften tjänar mindre. Mer rättvis än medelvärde eftersom enstaka mycket höga eller låga löner inte påverkar."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg></span></th>
+                                        <th scope="col" data-export-label="P90 — högsta lönedecilen (kr/mån)" class="sortable">P90 (90:e percentilen) <span class="info-tip" data-tooltip="Den lönenivå där 90% av personerna tjänar mindre och 10% tjänar mer. Speglar lönenivån för de högst betalda i gruppen."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg></span></th>
+                                        <th scope="col" data-export-label="Antal personer" class="sortable">Antal</th>
+                                        <th scope="col" data-export-label="Lönespridning P90/P10 (kvot)" class="sortable">Lönespridning <span class="info-tip" data-tooltip="P90 delat med P10. Värdet 1.0 = ingen spridning (alla tjänar lika). 1.3 = de högst betalda tjänar 30% mer än de lägst betalda. Värden över ~1.5 kan signalera stora interna löneskillnader som bör granskas."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg></span></th>
+                                        <th class="jmf-kolumn sortable" scope="col" data-export-label="Median jämförelsestatistiken (kr/mån)">Median jämförelsestatistiken <span class="info-tip" data-tooltip="Medianlönen för samma yrkesgrupp (samma AID-kod och BAS-intervall) i jämförelsestatistiken. Kräver att jämförelse-statistik laddats upp."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg></span></th>
+                                        <th class="jmf-kolumn sortable" scope="col" data-export-label="Diff mot jämförelsestatistiken (%)">Diff mot jämförelsestatistiken <span class="info-tip" data-tooltip="Skillnad mellan organisationens median och jämförelsens median, uttryckt i procent. Negativt värde (rött) = organisationen ligger under jämförelsens median. Positivt (grönt) = över."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg></span></th>
+                                    </tr>
+                                </thead>
+                                <tbody><tr class="group-header" data-bas="B"><td colspan="8">BAS B</td></tr><tr><td>ställningstagandet</td><td data-sort-value="27000">27&nbsp;000&nbsp;kr</td><td data-sort-value="30000">30&nbsp;000&nbsp;kr</td><td data-sort-value="35000">35&nbsp;000&nbsp;kr</td><td>-</td><td>-</td><td>-</td><td>-</td></tr><tr><td>Organisationen <button class="btn-evidence" data-rapport-row="1" type="button" title="Visa beräkningen bakom denna rad" aria-label="Visa bevis för Organisationen"><svg class="ikon ikon-sok" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg></button></td><td class="" data-sort-value="28330">28&nbsp;330&nbsp;kr</td><td class="" data-sort-value="30900">30&nbsp;900&nbsp;kr</td><td data-sort-value="33970">33&nbsp;970&nbsp;kr</td><td data-sort-value="34">34</td><td data-sort-value="1.20">1,20</td><td class="bak-info-yta">-</td><td class="bg-info-yta halvfet ">-</td></tr><tr><td>Kvinna <button class="btn-evidence" data-rapport-row="1" type="button" title="Visa beräkningen bakom denna rad" aria-label="Visa bevis för Kvinna"><svg class="ikon ikon-sok" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg></button></td><td class="" data-sort-value="28160">28&nbsp;160&nbsp;kr</td><td class="" data-sort-value="28800">28&nbsp;800&nbsp;kr</td><td data-sort-value="32540">32&nbsp;540&nbsp;kr</td><td data-sort-value="17">17</td><td data-sort-value="1.16">1,16</td><td class="bak-info-yta">-</td><td class="bg-info-yta halvfet ">-</td></tr><tr><td>Man <button class="btn-evidence" data-rapport-row="1" type="button" title="Visa beräkningen bakom denna rad" aria-label="Visa bevis för Man"><svg class="ikon ikon-sok" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg></button></td><td class="" data-sort-value="29160">29&nbsp;160&nbsp;kr</td><td class="" data-sort-value="33500">33&nbsp;500&nbsp;kr</td><td data-sort-value="34140">34&nbsp;140&nbsp;kr</td><td data-sort-value="17">17</td><td data-sort-value="1.17">1,17</td><td class="bak-info-yta">-</td><td class="bg-info-yta halvfet ">-</td></tr><tr><td>4100 Tekniker <button class="btn-evidence" data-rapport-row="1" type="button" title="Visa beräkningen bakom denna rad" aria-label="Visa bevis för 4100 Tekniker"><svg class="ikon ikon-sok" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg></button></td><td class="" data-sort-value="32660">32&nbsp;660&nbsp;kr</td><td class="" data-sort-value="33500">33&nbsp;500&nbsp;kr</td><td data-sort-value="34140">34&nbsp;140&nbsp;kr</td><td data-sort-value="17">17</td><td data-sort-value="1.05">1,05</td><td class="bak-info-yta" data-sort-value="33800">33&nbsp;800&nbsp;kr</td><td class="bg-info-yta halvfet f-kritisk" data-sort-value="-0.9">−0,9 %</td></tr><tr><td>5301 Undersköterska <button class="btn-evidence" data-rapport-row="1" type="button" title="Visa beräkningen bakom denna rad" aria-label="Visa bevis för 5301 Undersköterska"><svg class="ikon ikon-sok" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg></button></td><td class="" data-sort-value="28160">28&nbsp;160&nbsp;kr</td><td class="" data-sort-value="28800">28&nbsp;800&nbsp;kr</td><td data-sort-value="29200">29&nbsp;200&nbsp;kr</td><td data-sort-value="17">17</td><td data-sort-value="1.04">1,04</td><td class="bak-info-yta" data-sort-value="29500">29&nbsp;500&nbsp;kr</td><td class="bg-info-yta halvfet f-kritisk" data-sort-value="-2.4">−2,4 %</td></tr><tr class="group-header" data-bas="C"><td colspan="8">BAS C</td></tr><tr><td>ställningstagandet</td><td data-sort-value="30000">30&nbsp;000&nbsp;kr</td><td data-sort-value="33500">33&nbsp;500&nbsp;kr</td><td data-sort-value="39000">39&nbsp;000&nbsp;kr</td><td>-</td><td>-</td><td>-</td><td>-</td></tr><tr><td>Organisationen <button class="btn-evidence" data-rapport-row="1" type="button" title="Visa beräkningen bakom denna rad" aria-label="Visa bevis för Organisationen"><svg class="ikon ikon-sok" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg></button></td><td class="" data-sort-value="31405">31&nbsp;405&nbsp;kr</td><td class="" data-sort-value="34075">34&nbsp;075&nbsp;kr</td><td data-sort-value="37245">37&nbsp;245&nbsp;kr</td><td data-sort-value="28">28</td><td data-sort-value="1.19">1,19</td><td class="bak-info-yta">-</td><td class="bg-info-yta halvfet ">-</td></tr><tr><td>Kvinna <button class="btn-evidence" data-rapport-row="1" type="button" title="Visa beräkningen bakom denna rad" aria-label="Visa bevis för Kvinna"><svg class="ikon ikon-sok" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg></button></td><td class="" data-sort-value="31195">31&nbsp;195&nbsp;kr</td><td class="" data-sort-value="31975">31&nbsp;975&nbsp;kr</td><td data-sort-value="34645">34&nbsp;645&nbsp;kr</td><td data-sort-value="14">14</td><td data-sort-value="1.11">1,11</td><td class="bak-info-yta">-</td><td class="bg-info-yta halvfet ">-</td></tr><tr><td>Man <button class="btn-evidence" data-rapport-row="1" type="button" title="Visa beräkningen bakom denna rad" aria-label="Visa bevis för Man"><svg class="ikon ikon-sok" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg></button></td><td class="" data-sort-value="33305">33&nbsp;305&nbsp;kr</td><td class="" data-sort-value="36675">36&nbsp;675&nbsp;kr</td><td data-sort-value="37455">37&nbsp;455&nbsp;kr</td><td data-sort-value="14">14</td><td data-sort-value="1.12">1,12</td><td class="bak-info-yta">-</td><td class="bg-info-yta halvfet ">-</td></tr><tr><td>2000 Ingenjör <button class="btn-evidence" data-rapport-row="1" type="button" title="Visa beräkningen bakom denna rad" aria-label="Visa bevis för 2000 Ingenjör"><svg class="ikon ikon-sok" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg></button></td><td class="" data-sort-value="35755">35&nbsp;755&nbsp;kr</td><td class="" data-sort-value="36675">36&nbsp;675&nbsp;kr</td><td data-sort-value="37455">37&nbsp;455&nbsp;kr</td><td data-sort-value="14">14</td><td data-sort-value="1.05">1,05</td><td class="bak-info-yta" data-sort-value="36500">36&nbsp;500&nbsp;kr</td><td class="bg-info-yta halvfet fg-ok" data-sort-value="0.5">+0,5 %</td></tr><tr><td>5500 Sjuksköterska <button class="btn-evidence" data-rapport-row="1" type="button" title="Visa beräkningen bakom denna rad" aria-label="Visa bevis för 5500 Sjuksköterska"><svg class="ikon ikon-sok" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg></button></td><td class="" data-sort-value="31195">31&nbsp;195&nbsp;kr</td><td class="" data-sort-value="31950">31&nbsp;950&nbsp;kr</td><td data-sort-value="32455">32&nbsp;455&nbsp;kr</td><td data-sort-value="14">14</td><td data-sort-value="1.04">1,04</td><td class="bak-info-yta">-</td><td class="bg-info-yta halvfet ">-</td></tr></tbody>
+                            </table></section><section class="page-break"><h2>Jämförelse mot jämförelsestatistiken</h2><table id="benchmark-table" class="data-table" aria-label="Jämförelse organisationens löner mot extern statistik och lönepolitiskt ställningstagande">
+                                <thead id="benchmark-thead">
+                                    <tr>
+                                        <th scope="col" data-export-label="AID / Yrkesgrupp" class="sortable">Yrke</th>
+                                        <th scope="col" class="sortable">BAS</th>
+                                        <th scope="col" data-export-label="Antal personer (organisationen)" class="sortable">N</th>
+                                        <th scope="col" class="jmf-block sortable" data-export-label="P10 Testorganisationen (kr/mån)" data-pctl="P10" title="P10 Testorganisationen (kr/mån)">P10 Testorganisationen</th>
+                                        <th scope="col" data-jmf="P10" data-jmf-typ="varde" data-export-label="P10 jämförelsestatistiken (kr/mån)" class="sortable" title="P10 jämförelsestatistiken (kr/mån)">P10 jmf</th>
+                                        <th scope="col" data-jmf="P10" data-jmf-typ="diff" data-export-label="P10 skillnad mot jämförelsestatistiken (%)" class="sortable" title="P10 skillnad mot jämförelsestatistiken (%)">P10 diff</th>
+                                        <th scope="col" class="jmf-block sortable" data-export-label="Median Testorganisationen (kr/mån)" data-pctl="Median" title="Median Testorganisationen (kr/mån)">Median Testorganisationen</th>
+                                        <th scope="col" data-jmf="Median" data-jmf-typ="varde" data-export-label="Median jämförelsestatistiken (kr/mån)" class="sortable" title="Median jämförelsestatistiken (kr/mån)">Median jmf</th>
+                                        <th scope="col" data-jmf="Median" data-jmf-typ="diff" data-export-label="Median skillnad mot jämförelsestatistiken (%)" class="sortable" title="Median skillnad mot jämförelsestatistiken (%)">Median diff</th>
+                                        <th scope="col" class="jmf-block sortable" data-export-label="P90 Testorganisationen (kr/mån)" data-pctl="P90" title="P90 Testorganisationen (kr/mån)">P90 Testorganisationen</th>
+                                        <th scope="col" data-jmf="P90" data-jmf-typ="varde" data-export-label="P90 jämförelsestatistiken (kr/mån)" class="sortable" title="P90 jämförelsestatistiken (kr/mån)">P90 jmf</th>
+                                        <th scope="col" data-jmf="P90" data-jmf-typ="diff" data-export-label="P90 skillnad mot jämförelsestatistiken (%)" class="sortable" title="P90 skillnad mot jämförelsestatistiken (%)">P90 diff</th>
+                                    </tr>
+                                </thead>
+                                <tbody><tr class="group-header"><td colspan="12">BAS B</td></tr><tr data-rad="4100|B"><td>4100 Tekniker</td><td>B</td><td class="num" data-sort-value="17">17</td><td class="num jmf-block" data-sort-value="32660">32&nbsp;660&nbsp;kr</td><td class="num muted" data-sort-value="">–</td><td class="num muted" data-sort-value="">–</td><td class="num jmf-block" data-sort-value="33500">33&nbsp;500&nbsp;kr</td><td class="num muted" data-sort-value="33800">33&nbsp;800&nbsp;kr</td><td class="num jmf-neg" data-sort-value="-0.89" title="−300&nbsp;kr">−0,9 %</td><td class="num jmf-block" data-sort-value="34140">34&nbsp;140&nbsp;kr</td><td class="num muted" data-sort-value="">–</td><td class="num muted" data-sort-value="">–</td></tr><tr data-rad="5301|B"><td>5301 Undersköterska</td><td>B</td><td class="num" data-sort-value="17">17</td><td class="num jmf-block" data-sort-value="28160">28&nbsp;160&nbsp;kr</td><td class="num muted" data-sort-value="">–</td><td class="num muted" data-sort-value="">–</td><td class="num jmf-block" data-sort-value="28800">28&nbsp;800&nbsp;kr</td><td class="num muted" data-sort-value="29500">29&nbsp;500&nbsp;kr</td><td class="num jmf-neg" data-sort-value="-2.37" title="−700&nbsp;kr">−2,4 %</td><td class="num jmf-block" data-sort-value="29200">29&nbsp;200&nbsp;kr</td><td class="num muted" data-sort-value="">–</td><td class="num muted" data-sort-value="">–</td></tr><tr class="group-header"><td colspan="12">BAS C</td></tr><tr data-rad="2000|C"><td>2000 Ingenjör</td><td>C</td><td class="num" data-sort-value="14">14</td><td class="num jmf-block" data-sort-value="35755">35&nbsp;755&nbsp;kr</td><td class="num muted" data-sort-value="">–</td><td class="num muted" data-sort-value="">–</td><td class="num jmf-block" data-sort-value="36675">36&nbsp;675&nbsp;kr</td><td class="num muted" data-sort-value="36500">36&nbsp;500&nbsp;kr</td><td class="num jmf-pos" data-sort-value="0.48" title="+175&nbsp;kr">+0,5 %</td><td class="num jmf-block" data-sort-value="37455">37&nbsp;455&nbsp;kr</td><td class="num muted" data-sort-value="">–</td><td class="num muted" data-sort-value="">–</td></tr><tr data-rad="5500|C"><td>5500 Sjuksköterska</td><td>C</td><td class="num" data-sort-value="14">14</td><td class="num jmf-block" data-sort-value="31195">31&nbsp;195&nbsp;kr</td><td class="num muted" data-sort-value="">–</td><td class="num muted" data-sort-value="">–</td><td class="num jmf-block" data-sort-value="31950">31&nbsp;950&nbsp;kr</td><td class="num muted" data-sort-value="">–</td><td class="num muted" data-sort-value="">–</td><td class="num jmf-block" data-sort-value="32455">32&nbsp;455&nbsp;kr</td><td class="num muted" data-sort-value="">–</td><td class="num muted" data-sort-value="">–</td></tr></tbody>
+                            </table></section>
+            <section class="page-break">
+                <h2>Bilaga: Metodik &amp; urval (kvalitetssäkring)</h2>
+                <p class="pr-dampad">Detalj över varje analys, formler och vilka rader som ingått. Använd för revision och kvalitetskontroll av resultaten.</p>
+                
+                        <h3 class="pr-ned-14">Löneöversikt</h3>
+                        <table class="kpi pr-under">
+                            <tbody><tr><th>Total i datafilen</th><td>62</td></tr>
+                            
+                            <tr><th><strong>= Använda i denna analys</strong></th><td><strong>62</strong></td></tr>
+                        </tbody></table>
+                        <p class="pr-tat"><strong>Formler:</strong></p><ul><li><strong>Median:</strong> P50, mittersta värdet av sorterad lönelista</li><li><strong>P10:</strong> Värdet där 10% av gruppen tjänar mindre</li><li><strong>P90:</strong> Värdet där 90% av gruppen tjänar mindre</li><li><strong>Lönespridning:</strong> P90 / P10 (1.0 = ingen spridning, &gt;1.5 = bred spridning)</li><li><strong>Diff mot jämförelsestatistiken:</strong> (organisationens median / jämförelsens median) − 1 uttryckt i %</li></ul>
+                        <p class="pr-tat"><strong>Speciella regler:</strong></p><ul><li>K-anonymitet: 0 grupper utelämnades (n &lt; 10); de räknas upp under respektive BAS</li><li>BAS-grupper visar i ordning: "ställningstagandet" (referensen), "Organisationen", "Kvinna", "Man" och sedan varje yrkesgrupp med ≥5 personer</li></ul>
+                    
+                        <h3 class="pr-ned-14">Lönegap &amp; Könsfördelning</h3>
+                        <table class="kpi pr-under">
+                            <tbody><tr><th>Total i datafilen</th><td>62</td></tr>
+                            
+                            <tr><th><strong>= Använda i denna analys</strong></th><td><strong>62</strong></td></tr>
+                        </tbody></table>
+                        <p class="pr-tat"><strong>Formler:</strong></p><ul><li><strong>Lönegap (Kv mot Mä):</strong> median(kvinnors lön) / median(mäns lön) × 100%. 100% = lika lön.</li><li><strong>Lagstadgat tröskelvärde:</strong> |gap − 100%| &gt; 5% (EU-direktiv 2023/970, utredningsgräns)</li><li><strong>Könsskevhet:</strong> Andel av ett kön &lt; 40% av gruppen (jämn fördelning kräver att båda könen ≥ 40%)</li><li><strong>Översiktsdiagram:</strong> Stapel per BAS, färg = avvikelse från 100% (grön ≤3%, gul 3-5%, röd &gt;5%)</li></ul>
+                        <p class="pr-tat"><strong>Speciella regler:</strong></p><ul><li>Kräver minst 10 personer av varje kön för att medianer ska visas (k-anonymitet)</li><li>Könsfördelning räknas så länge totalen ≥ 5 (även om ena könet har &lt; 5 individer)</li></ul>
+                    
+                        <h3 class="pr-ned-14">Lika arbete — multivariat regression</h3>
+                        <table class="kpi pr-under">
+                            <tbody><tr><th>Total i datafilen</th><td>62</td></tr>
+                            
+                            <tr><th><strong>= Använda i denna analys</strong></th><td><strong>4</strong></td></tr>
+                        </tbody></table>
+                        <p class="pr-tat"><strong>Formler:</strong></p><ul><li><strong>Lönegap per yrke:</strong> (median Kv / median Mä − 1) × 100%</li><li><strong>Status-tröskel:</strong> ≥ 3 % Balanserat · 3–5 % Följ upp · &gt; 5 % Värt att granska (EU 2023/970)</li><li><strong>Dominans:</strong> Kvinnodominerad om &gt;60% kvinnor, mansdominerad om &gt;60% män (dvs. ett kön &lt; 40%), annars könsblandad (jämn fördelning = båda könen ≥ 40%)</li><li><strong>OLS-regression:</strong> log(lön) ~ kön + ålder + BAS-intervall (indikatorvariabler, första BAS som referens). Standardfel: HC3 robust (Long &amp; Ervin 2000)</li><li><strong>BAS-rangordning:</strong> Fast enligt BAS-systemet: A lägst (t.ex. 0–99 poäng), B nästa intervall (100–199) osv.; rang = bokstavens plats (A=1, B=2 …); ett BAS-steg är alltid ett intervall, även när en bokstav saknas i underlaget; högre rang = högre värderat arbete</li><li><strong>Per-BAS regression:</strong> Separat log(lön) ~ kön + ålder inom varje BAS med ≥10 av varje kön</li></ul>
+                        <p class="pr-tat"><strong>Speciella regler:</strong></p><ul><li>Regression estimerad: log(lön) ~ kön + ålder + BAS-intervall (indikatorer) · n=62, R²=70,2 %</li><li>Bedömning av "saklig/osaklig" skillnad kräver kompletterande granskning – verktyget identifierar endast statistiska avvikelser</li></ul>
+                    
+                        <h3 class="pr-ned-14">Prioriteringsanalys</h3>
+                        <table class="kpi pr-under">
+                            <tbody><tr><th>Total i datafilen</th><td>62</td></tr>
+                            
+                            <tr><th><strong>= Använda i denna analys</strong></th><td><strong>4</strong></td></tr>
+                        </tbody></table>
+                        <p class="pr-tat"><strong>Formler:</strong></p><ul><li><strong>Avvikelse %:</strong> (organisationens median / referensens median) − 1 i %</li><li><strong>Åtgärdskostnad:</strong> |avvikelse kr/mån| × 12 mån × (1 + 39,15 %/100) × antal personer (endast om under referens, inkl PO-påslag)</li><li><strong>Prioriteringsindex:</strong> riktningsvikt × (avvikelse·50% + volym·30% + jämställdhet·20%), skala 0-100</li><li><strong>Riktningsvikt:</strong> 1.0 om under referens, 0.5 om över (under-betalning vägs tyngre)</li><li><strong>Status:</strong> Prioriterad utredning om avvikelse &lt; -5% och n ≥ 10 · Utredning rekommenderas om avvikelse &lt; -5% · Följ upp om &lt; -2% · Översyn rekommenderas om &gt; +5%</li></ul>
+                        <p class="pr-tat"><strong>Speciella regler:</strong></p><ul><li>Aktuell referens: Eget ställningstagande (per BAS)</li><li>Tabellen visar topp 30 grupper rankade efter prioriteringsindex</li><li>Bubbeldiagrammets storlek = årskostnad, x = avvikelse, y = antal personer (log skala)</li></ul>
+                    
+                        <h3 class="pr-ned-14">Jämförelsestatistik</h3>
+                        <table class="kpi pr-under">
+                            <tbody><tr><th>Total i datafilen</th><td>62</td></tr>
+                            <tr><th>− Yrke×BAS-grupper utan median i jämförelsestatistiken</th><td>1</td></tr>
+                            <tr><th><strong>= Använda i denna analys</strong></th><td><strong>4</strong></td></tr>
+                        </tbody></table>
+                        <p class="pr-tat"><strong>Formler:</strong></p><ul><li><strong>AID-kod (matchningsnyckel):</strong> Inledande sifferprefix av yrkesnamn (t.ex. "402010 Förskollärare" ger 402010)</li><li><strong>Percentiler:</strong> P10 = kvantil 0,1, median, P90 = kvantil 0,9 av organisationens löner i yrke och BAS</li><li><strong>Diff (%):</strong> (organisationens värde / jämförelsens värde − 1) × 100, per percentil</li><li><strong>Matchning:</strong> Jämförelsestatistiken: först AID + BAS, annars AID utan BAS. Ställningstagandet: AID + BAS, annars AID, annars BAS</li></ul>
+                        <p class="pr-tat"><strong>Speciella regler:</strong></p><ul><li>Negativ skillnad (röd) = organisationen ligger under jämförelsen</li><li>Positiv skillnad (grön) = över jämförelsen (kan motiveras av specialistkompetens, marknadsläge)</li></ul>
+                    
+            </section>"
+`;
+
+exports[`golden: PDF/print-rapporten (buildPrintReport) på fast dataset > urvalet "ledning" matchar facit 1`] = `"<h1>Lönekartläggning <ÅR> — dokumentation</h1><p class="muted">Testorganisationen · Hela organisationen · genererad <DATUM> · v<VERSION> · Underlagets kvalitet: Varning</p><div class="draftbox"><strong>Låst kopia.</strong> Samma innehåll som Word-utkastet vid samma tillfälle, att verifiera mot. Fälten märkta <em>[HR fyller i …]</em> fylls i och beslutas i Word-dokumentet.</div><section class="rm-avsnitt" data-rm-avsnitt="sammanfattning"><h2>1. Sammanfattning och underlag</h2><table><tbody><tr><th>Antal anställda</th><td>62 (kvinnor: 31, män: 31)</td></tr><tr><th>Medianlön kvinnor / män</th><td>31&nbsp;150 kr / 34&nbsp;000 kr</td></tr><tr><th>Kvinnors medianlön i procent av mäns</th><td>91,6 %</td></tr><tr><th>Urval</th><td>Hela organisationen</td></tr><tr><th>Referens för lönenivåer</th><td>Eget ställningstagande (egen fil)</td></tr><tr><th>Jämförelsestatistik</th><td>Jämförelsestatistik (egen fil)</td></tr><tr><th>Rättslig ram</th><td>Diskrimineringslagen 3 kap. (lönekartläggning); direktiv (EU) 2023/970</td></tr></tbody></table><div class="fillin"><strong>[HR fyller i]</strong> Sammanfattande slutsats av årets lönekartläggning (övergripande iakttagelser och viktigaste åtgärder).</div></section><section class="rm-avsnitt" data-rm-avsnitt="lika"><h2>2. Lika arbete — kvinnor och män i samma yrke</h2><p class="muted">Den löneskillnad som står kvar när ålder och nivå räknats bort, samt de yrkesgrupper där kvinnors och mäns medianlön skiljer sig mer än 5 % och därför behöver förklaras med sakliga skäl eller åtgärdas.</p><p class="muted">AID är SKR:s och de fackliga organisationernas gemensamma indelning av arbetsuppgifter i ”rimligt homogena” grupper för lönestatistik. AID är inte ett arbetsvärderingssystem och är inte avsett att avgöra vilka arbeten som är lika eller likvärdiga. Verktygets AID-grupper är därför en utgångspunkt för lika arbete, som ni bekräftar; för likvärdigt arbete kompletterar BAS-intervallen eller en egen arbetsvärdering. Källa: SKR, Arbetsidentifikation (AID) — Handbok för kodning (2020).</p><table><tbody><tr><th>Kvinnors medianlön i procent av mäns</th><td>91,6 %</td></tr><tr><th>Löneskillnad som står kvar efter ålder och nivå</th><td><strong>−10,55 % (95 % KI: −12,90 till −8,14 %; p &lt; 0,001)</strong></td></tr><tr><th>Modell</th><td>log(lön) ~ kön + ålder + BAS-intervall (indikatorer) · 62 obs · R² 70,2 %</td></tr></tbody></table><p class="muted">Löneskillnaden efter ålder och nivå anges som en skillnad i procent: negativ när kvinnor ligger lägre.</p><h3>Grupper att bedöma</h3><p class="muted">Ingen yrkesgrupp har en skillnad över 5 % mellan kvinnors och mäns medianlön.</p><div class="fillin"><strong>[HR fyller i]</strong> Bedöm för varje grupp om löneskillnaden har samband med kön. Ange sakligt skäl (t.ex. dokumenterad erfarenhet, prestation, marknadsläge, tjänstetillägg) eller besluta åtgärd.</div></section><section class="rm-avsnitt" data-rm-avsnitt="likvardigt"><h2>3. Likvärdigt arbete — kvinnodominerade yrken</h2><p class="muted">Kvinnodominerade yrken som tjänar mindre än ett annat yrke med minst lika höga krav. Listan är kandidater att granska — det är arbetsgivaren som avgör om kraven verkligen är likvärdiga.</p><table><thead><tr><th>#</th><th>Kvinnodominerat yrke</th><th>Jämförelseyrke</th><th>Jämförelseyrkets median högre med (kr)</th><th>Högre med (%)</th><th>Kravvärdering / sakligt skäl (fyll i)</th></tr></thead><tbody><tr><td>1</td><td>5301 Undersköterska (BAS B)</td><td>4100 Tekniker (BAS B)</td><td>4&nbsp;700 kr</td><td>16,3 %</td><td>&nbsp;</td></tr><tr><td>2</td><td>5500 Sjuksköterska (BAS C)</td><td>2000 Ingenjör (BAS C)</td><td>4&nbsp;725 kr</td><td>14,8 %</td><td>&nbsp;</td></tr></tbody></table><div class="fillin"><strong>[HR fyller i]</strong> Avgör, utifrån befattningsbeskrivning eller arbetsvärdering, om jämförelseyrkets krav verkligen är likvärdiga eller lägre. Ange sakligt skäl eller åtgärd för varje par som står kvar.</div></section><section class="rm-avsnitt" data-rm-avsnitt="atgarder"><h2>4. Åtgärder och tidsplan</h2><p class="muted">Planerade lönejusteringar och andra åtgärder, med beslut, ansvar och tidsplan. Tabellen listar de grupper som ligger under referensen enligt prioriteringen, med uppskattad kostnad för att nå den.</p><p class="muted">Inga prioriterade åtgärdsgrupper (ingen referensdata uppladdad).</p><div class="fillin"><strong>[HR fyller i]</strong> Besluta åtgärder, budget och tidsplan (lönejusteringar ska genomföras så snart som möjligt och senast inom tre år). Beskriv även förebyggande åtgärder.</div></section><p class="k-stampel pr-stampel">Minsta gruppstorlek för redovisning: 10.</p>"`;
+
+exports[`golden: Word-utkastet (§§ 8–14) på fast dataset > matchar facit (snapshot) — inga kvarvarande datum/tid/version 1`] = `"<h1>Lönekartläggning <ÅR> — dokumentation</h1><p class="muted">Testorganisationen · Hela organisationen · genererad <DATUM> · v<VERSION> · Underlagets kvalitet: Varning</p><div class="draftbox"><strong>⚠ UTKAST att färdigställa.</strong> Verktygets analysfynd är ifyllda nedan. De gulmarkerade <em>[HR fyller i …]</em>-fälten är de kvalitativa bedömningar som Diskrimineringslagen ålägger arbetsgivaren att göra och dokumentera. Granska alla siffror, fyll i bedömningarna, och spara som <strong>.docx</strong> när dokumentet är klart. Detta utkast ersätter inte er slutliga, beslutade dokumentation.</div><h2>1. Sammanfattning och underlag</h2><table><tr><th>Antal anställda</th><td>62 (kvinnor: 31, män: 31)</td></tr><tr><th>Medianlön kvinnor / män</th><td>31 150 kr / 34 000 kr</td></tr><tr><th>Kvinnors medianlön i procent av mäns</th><td>91,6 %</td></tr><tr><th>Urval</th><td>Hela organisationen</td></tr><tr><th>Referens för lönenivåer</th><td>Eget ställningstagande (egen fil)</td></tr><tr><th>Jämförelsestatistik</th><td>Jämförelsestatistik (egen fil)</td></tr><tr><th>Rättslig ram</th><td>Diskrimineringslagen 3 kap. (lönekartläggning); direktiv (EU) 2023/970</td></tr></table><div class="fillin"><strong>[HR fyller i]</strong> Sammanfattande slutsats av årets lönekartläggning (övergripande iakttagelser och viktigaste åtgärder).</div><h2>2. Regler och praxis kring lön</h2><p class="muted">Granskning av de regler och den praxis som styr lönesättningen — inte lönerna i sig. En regel kan vara könsneutralt skriven och ändå slå olika i praktiken. Redovisas per granskningsområde.</p><table><thead><tr><th>Granskningsområde</th><th>Bedömning</th><th>Iakttagelser / åtgärd</th></tr></thead><tbody><tr><td>1. Lönesättningsprinciper &amp; lönekriterier</td><td>Åtgärd krävs</td><td>Fast testanteckning.</td></tr><tr><td>2. Lönerevisionsprocessen (löneöversyn)</td><td><em>[HR fyller i]</em></td><td><em>[HR fyller i]</em></td></tr><tr><td>3. Rörlig lön, tillägg &amp; förmåner</td><td><em>[HR fyller i]</em></td><td><em>[HR fyller i]</em></td></tr><tr><td>4. Anställningsvillkor &amp; arbetstid</td><td><em>[HR fyller i]</em></td><td><em>[HR fyller i]</em></td></tr><tr><td>5. Praxis vid nyanställning &amp; ingångslöner</td><td><em>[HR fyller i]</em></td><td><em>[HR fyller i]</em></td></tr><tr><td>6. Praxis vid befordran &amp; lönehöjning</td><td><em>[HR fyller i]</em></td><td><em>[HR fyller i]</em></td></tr></tbody></table><p class="muted">Bedömningen fylls i på fliken &quot;Bestämmelser &amp; praxis&quot; och följer automatiskt med hit.</p><h2>3. Lika arbete — kvinnor och män i samma yrke</h2><p class="muted">Den löneskillnad som står kvar när ålder och nivå räknats bort, samt de yrkesgrupper där kvinnors och mäns medianlön skiljer sig mer än 5 % och därför behöver förklaras med sakliga skäl eller åtgärdas.</p><p class="muted">AID är SKR:s och de fackliga organisationernas gemensamma indelning av arbetsuppgifter i ”rimligt homogena” grupper för lönestatistik. AID är inte ett arbetsvärderingssystem och är inte avsett att avgöra vilka arbeten som är lika eller likvärdiga. Verktygets AID-grupper är därför en utgångspunkt för lika arbete, som ni bekräftar; för likvärdigt arbete kompletterar BAS-intervallen eller en egen arbetsvärdering. Källa: SKR, Arbetsidentifikation (AID) — Handbok för kodning (2020).</p><table><tr><th>Kvinnors medianlön i procent av mäns</th><td>91,6 %</td></tr><tr><th>Löneskillnad som står kvar efter ålder och nivå</th><td><strong>−10,55 % (95 % KI: −12,90 till −8,14 %; p &lt; 0,001)</strong></td></tr><tr><th>Modell</th><td>log(lön) ~ kön + ålder + BAS-intervall (indikatorer) · 62 obs · R² 70,2 %</td></tr></table><p class="muted">Löneskillnaden efter ålder och nivå anges som en skillnad i procent: negativ när kvinnor ligger lägre.</p><figure data-rm-bild="chart-perbas-gap" data-rm-flik="matrix"><figcaption>Oförklarat lönegap per BAS-intervall</figcaption></figure><figure data-rm-bild="chart-la-tratt" data-rm-flik="matrix"><figcaption>Yrkesgrupperna mot slumpens gränser — kvinnors medianlön i procent av mäns mot gruppens storlek</figcaption></figure><h3>Grupper att bedöma</h3><p class="muted">Ingen yrkesgrupp har en skillnad över 5 % mellan kvinnors och mäns medianlön.</p><div class="fillin"><strong>[HR fyller i]</strong> Bedöm för varje grupp om löneskillnaden har samband med kön. Ange sakligt skäl (t.ex. dokumenterad erfarenhet, prestation, marknadsläge, tjänstetillägg) eller besluta åtgärd.</div><h2>4. Likvärdigt arbete — kvinnodominerade yrken</h2><p class="muted">Kvinnodominerade yrken som tjänar mindre än ett annat yrke med minst lika höga krav. Listan är kandidater att granska — det är arbetsgivaren som avgör om kraven verkligen är likvärdiga.</p><table><thead><tr><th>#</th><th>Kvinnodominerat yrke</th><th>Jämförelseyrke</th><th>Jämförelseyrkets median högre med (kr)</th><th>Högre med (%)</th><th>Kravvärdering / sakligt skäl (fyll i)</th></tr></thead><tbody><tr><td>1</td><td>5301 Undersköterska (BAS B)</td><td>4100 Tekniker (BAS B)</td><td>4 700 kr</td><td>16,3 %</td><td>&nbsp;</td></tr><tr><td>2</td><td>5500 Sjuksköterska (BAS C)</td><td>2000 Ingenjör (BAS C)</td><td>4 725 kr</td><td>14,8 %</td><td>&nbsp;</td></tr></tbody></table><figure data-rm-bild="chart-likvardighet-heatmap" data-rm-flik="likvardighet"><figcaption>Kandidatpar i likvärdigt arbete</figcaption></figure><div class="fillin"><strong>[HR fyller i]</strong> Avgör, utifrån befattningsbeskrivning eller arbetsvärdering, om jämförelseyrkets krav verkligen är likvärdiga eller lägre. Ange sakligt skäl eller åtgärd för varje par som står kvar.</div><h2>5. Struktur och lönetransparens (EU 2023/970)</h2><p class="muted">Hur kvinnor och män fördelar sig mellan nivåerna, och lönegapet i median på varje nivå enligt direktivets art. 9: skillnaden i procent av mäns lön, positivt tal = kvinnor lägre. Verktygets flikar visar samma skillnad som kvinnors lön i procent av mäns.</p><table><thead><tr><th>BAS</th><th>N</th><th>Andel kvinnor</th><th>Median</th><th>Lönegap enligt art. 9</th></tr></thead><tbody><tr><td>B</td><td>34</td><td>50 %</td><td>30 900 kr</td><td>+14,0 %</td></tr><tr><td>C</td><td>28</td><td>50 %</td><td>34 075 kr</td><td>+12,8 %</td></tr></tbody></table><h3>Kvinnors och mäns lön per BAS-intervall</h3><table><thead><tr><th>BAS</th><th>Kvinnor / män</th><th>Median kvinnor</th><th>Median män</th><th>Skillnad</th><th>Kvinnors lön i % av mäns</th><th>95 % konfidensintervall</th><th>Status</th></tr></thead><tbody><tr><td>B</td><td>17 / 17</td><td>28 800 kr</td><td>33 500 kr</td><td>−4 700 kr</td><td>86,0 %</td><td>84,5–87,4 %</td><td>Avviker mer än 5 %</td></tr><tr><td>C</td><td>14 / 14</td><td>31 975 kr</td><td>36 675 kr</td><td>−4 700 kr</td><td>87,2 %</td><td>85,4–88,9 %</td><td>Avviker mer än 5 %</td></tr></tbody></table><p class="muted">Skillnaden är kvinnors medianlön minus mäns. Når konfidensintervallet 100 % kan skillnaden bero på slumpen. Bara BAS-intervall där både kvinnor och män når minsta gruppstorlek har en rad.</p><figure data-rm-bild="chart-skevhet-overview" data-rm-flik="matrix"><figcaption>Kvinnors medianlön i procent av mäns, per BAS-intervall — samma kvot och intervall som tabellen ovan</figcaption></figure><figure data-rm-bild="chart-skevhet-andel" data-rm-flik="matrix"><figcaption>Könsfördelning per BAS-intervall</figcaption></figure><figure data-rm-bild="chart-struktur-kvartiler" data-rm-flik="struktur"><figcaption>Kvinnor och män per lönekvartil</figcaption></figure><figure data-rm-bild="chart-kon-aldergap" data-rm-flik="kon"><figcaption>Lönegap per åldersgrupp — rå skillnad, alla yrken och nivåer</figcaption></figure><figure data-rm-bild="chart-lp-konlagen" data-rm-flik="lonepolitik"><figcaption>Var i referensens lönespann ligger kvinnor och män</figcaption></figure><h2>6. Åtgärder och tidsplan</h2><p class="muted">Planerade lönejusteringar och andra åtgärder, med beslut, ansvar och tidsplan. Tabellen listar de grupper som ligger under referensen enligt prioriteringen, med uppskattad kostnad för att nå den.</p><p class="muted">Inga prioriterade åtgärdsgrupper (ingen referensdata uppladdad).</p><div class="fillin"><strong>[HR fyller i]</strong> Besluta åtgärder, budget och tidsplan (lönejusteringar ska genomföras så snart som möjligt och senast inom tre år). Beskriv även förebyggande åtgärder.</div><h2>7. Samverkan med arbetstagarna</h2><div class="fillin"><strong>[HR fyller i]</strong> Dokumentera samverkan med arbetstagarorganisationerna: datum, deltagande parter och synpunkter (protokollet för gemensam lönebedömning kan bifogas).</div><h2>8. Beslut och underskrift</h2><div class="fillin"><strong>[HR fyller i]</strong> Beslutsfattare, datum och underskrift. Ange när nästa lönekartläggning ska genomföras (årligen).</div><h2>Bilaga: Justerat lönegap i detalj</h2><p class="muted">Skattad modell: log(lön) ~ kön + ålder + BAS-intervall (indikatorer) (OLS-regression). Lönegapet anges som en skillnad i procent: negativ när kvinnor ligger lägre.</p><table><tr><th>Antal observationer</th><td>62 (kvinnor: 31, män: 31)</td></tr><tr><th>Kvinnors medianlön i procent av mäns</th><td>91,6 %</td></tr><tr><th>Oförklarad skillnad (över 5 % och statistiskt säkerställd)</th><td><strong>−10,55 % (95 % KI: −12,90 till −8,14, p &lt; 0,001, t = −8,39; HC3 robust SE)</strong></td></tr><tr><th>Ålderseffekt</th><td>+0,33 % per år</td></tr><tr><th>R² / justerad R²</th><td>70,2 % / 68,7 %</td></tr><tr><th>BAS-intervall i modellen</th><td>2 (B–C; indikatorvariabler, B är referens)</td></tr><tr><th>BAS-effekter</th><td>nivå mot BAS B: C +10,47 % (p &lt; 0,001)</td></tr></table><h3>Sekventiell dekomponering</h3><table><thead><tr><th>Modell</th><th>Lönegap</th><th>R²</th></tr></thead><tbody><tr><td>Endast kön</td><td>−10,55 %</td><td>38,9 %</td></tr><tr><td>+ BAS-intervall</td><td>−10,55 %</td><td>68,1 %</td></tr><tr><td>+ Ålder</td><td>−10,55 %</td><td>70,2 %</td></tr><tr><td>+ Yrkesgrupp</td><td>−2,24 %</td><td>99,8 %</td></tr></tbody></table><p>Steget + Yrkesgrupp: −2,2 % är löneskillnaden mellan kvinnor och män med samma yrkesgrupp, BAS-intervall och ålder (fasta effekter för yrkesgrupp inom BAS). Bygger på 62 personer i 4 yrkesgrupper där båda könen finns. Huvudtalet ovan räknar inte bort yrkesgruppen.</p><p>Strukturellt förklarad andel: 0 % av råa gapet förklaras av strukturella variabler (ålder och BAS-intervall). Oförklarad rest: 100 %.</p><h3>Per BAS-intervall (separata regressioner)</h3><table><thead><tr><th>BAS</th><th>N</th><th>Kvinnor / män</th><th>Oförklarat gap</th><th>Signifikans</th><th>Över 5 % och säkerställd</th></tr></thead><tbody><tr><td>B</td><td>34</td><td>17 / 17</td><td>−10,64 %</td><td>p &lt; 0,001</td><td>ja</td></tr><tr><td>C</td><td>28</td><td>14 / 14</td><td>−10,44 %</td><td>p &lt; 0,001</td><td>ja</td></tr></tbody></table><h2>Bilaga: Metod och parametrar</h2><p class="muted">Dessa uppgifter följer med så att analysen går att återskapa och förstå. Verktyget pekar ut kandidater för bedömning — det dömer inte.</p><table><tr><th>Verktyg</th><td>Öppen lönekartläggning (v<VERSION>)</td></tr><tr><th>Exporttidpunkt</th><td><DATUM> <TID></td></tr><tr><th>Artefakt-SHA-256</th><td>Se RELEASE.txt / filens banner (single-file-bygget är källans sanning)</td></tr><tr><th>Datakälla</th><td>Lokalt uppladdad fil (bearbetad helt i webbläsaren, inga nätverksanrop)</td></tr><tr><th>Antal personer (inläst)</th><td>62</td></tr><tr><th>Antal personer (i denna analys)</th><td>62</td></tr><tr><th>Modell — oförklarat gap</th><td>OLS på log(månadslön) ~ kön + ålder + BAS-intervall (indikatorvariabler, första BAS som referens); HC3-robusta standardfel (Long &amp; Ervin 2000)</td></tr><tr><th>Steg + Yrkesgrupp (dekomponeringen)</th><td>Könsgap med fasta effekter för yrkesgrupp inom BAS (AID×BAS) utöver ålder, skattat med inomtransformation; visas som sista steg, ingår inte i huvudtalet</td></tr><tr><th>Ålder &amp; karriär (tvärsnitt)</th><td>Lön mot ålder och livscykelmodellen bygger på ett tvärsnitt: de visar skillnader mellan åldersgrupper i dag, inte hur en persons lön utvecklas över karriären (kohorteffekter)</td></tr><tr><th>Trattdiagrammet</th><td>Med färre än tio yrkesgrupper säger trattens form lite; varje grupp bedöms då för sig i tabellen. Punktens bedömning bygger på en omkastning av könen inom gruppen</td></tr><tr><th>p-värden</th><td>t-fördelning vid df &lt; 100, annars normalfördelning; Benjamini-Hochberg (FDR) vid multipla grupptest</td></tr><tr><th>Konfidensintervall</th><td>Bootstrap-percentil (B ≥ 1000 sampel) på mediankvot kvinna/man</td></tr><tr><th>Signifikansnivå</th><td>α = 0,05</td></tr><tr><th>Minsta gruppstorlek för redovisning</th><td>10 personer. Grupper med färre redovisas inte i beskrivande vyer (gäller inte likvärdighetsanalysen).</td></tr><tr><th>Referens för lönenivåer</th><td>Eget ställningstagande (egen fil)</td></tr><tr><th>Jämförelsestatistik</th><td>Jämförelsestatistik (egen fil)</td></tr><tr><th>Krav-proxy (likvärdigt arbete)</th><td>BAS-intervall (ordinal rangordning)</td></tr><tr><th>Lönegapets tecken</th><td>Verktyget räknar skillnaden som (kvinnor − män) / män och visar den som kvinnors lön i procent av mäns (under 100 = kvinnor lägre). EU-lönerapporten och rapportens avsnitt om lönetransparens redovisar i stället direktivets lönegap, (män − kvinnor) / män i procent, enligt art. 9: positivt tal = kvinnor lägre. Beloppet är detsamma.</td></tr><tr><th>Tolkningsregel</th><td>Ett oförklarat gap är en statistisk signal om var man bör titta närmare — inte ett bevis för osaklig (diskriminerande) löneskillnad. Den bedömningen görs kvalitativt av arbetsgivaren.</td></tr><tr><th>Rättslig ram</th><td>Diskrimineringslagen 3 kap. (lönekartläggning); direktiv (EU) 2023/970 om lönetransparens. De enskilda lagrummen står i docs/utveckling/lagrum.md.</td></tr></table>"`;
+
+exports[`golden: Word-utkastet (§§ 8–14) på fast dataset > word/document.xml matchar facit 1`] = `
+"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><w:body><w:p><w:pPr><w:pStyle w:val="Heading1"/></w:pPr><w:r><w:t xml:space="preserve">Lönekartläggning <ÅR> — dokumentation</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="Dampad"/></w:pPr><w:r><w:t xml:space="preserve">Testorganisationen · Hela organisationen · genererad <DATUM> · v<VERSION> · Underlagets kvalitet: Varning</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="Utkastruta"/></w:pPr><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">⚠ UTKAST att färdigställa.</w:t></w:r><w:r><w:t xml:space="preserve"> Verktygets analysfynd är ifyllda nedan. De gulmarkerade </w:t></w:r><w:r><w:rPr><w:i/></w:rPr><w:t xml:space="preserve">[HR fyller i …]</w:t></w:r><w:r><w:t xml:space="preserve">-fälten är de kvalitativa bedömningar som Diskrimineringslagen ålägger arbetsgivaren att göra och dokumentera. Granska alla siffror, fyll i bedömningarna, och spara som </w:t></w:r><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">.docx</w:t></w:r><w:r><w:t xml:space="preserve"> när dokumentet är klart. Detta utkast ersätter inte er slutliga, beslutade dokumentation.</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="Heading2"/></w:pPr><w:r><w:t xml:space="preserve">1. Sammanfattning och underlag</w:t></w:r></w:p><w:tbl><w:tblPr><w:tblStyle w:val="Tabell"/><w:tblW w:w="5000" w:type="pct"/></w:tblPr><w:tblGrid><w:gridCol w:w="4535"/><w:gridCol w:w="4535"/></w:tblGrid><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:tcPr><w:tcW w:w="4535" w:type="dxa"/></w:tcPr><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">Antal anställda</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="4535" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">62 (kvinnor: 31, män: 31)</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:tcPr><w:tcW w:w="4535" w:type="dxa"/></w:tcPr><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">Medianlön kvinnor / män</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="4535" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">31 150 kr / 34 000 kr</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:tcPr><w:tcW w:w="4535" w:type="dxa"/></w:tcPr><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">Kvinnors medianlön i procent av mäns</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="4535" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">91,6 %</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:tcPr><w:tcW w:w="4535" w:type="dxa"/></w:tcPr><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">Urval</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="4535" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">Hela organisationen</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:tcPr><w:tcW w:w="4535" w:type="dxa"/></w:tcPr><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">Referens för lönenivåer</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="4535" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">Eget ställningstagande (egen fil)</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:tcPr><w:tcW w:w="4535" w:type="dxa"/></w:tcPr><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">Jämförelsestatistik</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="4535" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">Jämförelsestatistik (egen fil)</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:tcPr><w:tcW w:w="4535" w:type="dxa"/></w:tcPr><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">Rättslig ram</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="4535" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">Diskrimineringslagen 3 kap. (lönekartläggning); direktiv (EU) 2023/970</w:t></w:r></w:p></w:tc></w:tr></w:tbl><w:p><w:pPr><w:pStyle w:val="FyllIn"/></w:pPr><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">[HR fyller i]</w:t></w:r><w:r><w:t xml:space="preserve"> Sammanfattande slutsats av årets lönekartläggning (övergripande iakttagelser och viktigaste åtgärder).</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="Heading2"/></w:pPr><w:r><w:t xml:space="preserve">2. Regler och praxis kring lön</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="Dampad"/></w:pPr><w:r><w:t xml:space="preserve">Granskning av de regler och den praxis som styr lönesättningen — inte lönerna i sig. En regel kan vara könsneutralt skriven och ändå slå olika i praktiken. Redovisas per granskningsområde.</w:t></w:r></w:p><w:tbl><w:tblPr><w:tblStyle w:val="Tabell"/><w:tblW w:w="5000" w:type="pct"/></w:tblPr><w:tblGrid><w:gridCol w:w="3023"/><w:gridCol w:w="3023"/><w:gridCol w:w="3023"/></w:tblGrid><w:tr><w:trPr><w:cantSplit/><w:tblHeader/></w:trPr><w:tc><w:tcPr><w:tcW w:w="3023" w:type="dxa"/><w:shd w:val="clear" w:color="auto" w:fill="F0F0F0"/></w:tcPr><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">Granskningsområde</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="3023" w:type="dxa"/><w:shd w:val="clear" w:color="auto" w:fill="F0F0F0"/></w:tcPr><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">Bedömning</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="3023" w:type="dxa"/><w:shd w:val="clear" w:color="auto" w:fill="F0F0F0"/></w:tcPr><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">Iakttagelser / åtgärd</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:tcPr><w:tcW w:w="3023" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">1. Lönesättningsprinciper &amp; lönekriterier</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="3023" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">Åtgärd krävs</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="3023" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">Fast testanteckning.</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:tcPr><w:tcW w:w="3023" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">2. Lönerevisionsprocessen (löneöversyn)</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="3023" w:type="dxa"/></w:tcPr><w:p><w:r><w:rPr><w:i/></w:rPr><w:t xml:space="preserve">[HR fyller i]</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="3023" w:type="dxa"/></w:tcPr><w:p><w:r><w:rPr><w:i/></w:rPr><w:t xml:space="preserve">[HR fyller i]</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:tcPr><w:tcW w:w="3023" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">3. Rörlig lön, tillägg &amp; förmåner</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="3023" w:type="dxa"/></w:tcPr><w:p><w:r><w:rPr><w:i/></w:rPr><w:t xml:space="preserve">[HR fyller i]</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="3023" w:type="dxa"/></w:tcPr><w:p><w:r><w:rPr><w:i/></w:rPr><w:t xml:space="preserve">[HR fyller i]</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:tcPr><w:tcW w:w="3023" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">4. Anställningsvillkor &amp; arbetstid</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="3023" w:type="dxa"/></w:tcPr><w:p><w:r><w:rPr><w:i/></w:rPr><w:t xml:space="preserve">[HR fyller i]</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="3023" w:type="dxa"/></w:tcPr><w:p><w:r><w:rPr><w:i/></w:rPr><w:t xml:space="preserve">[HR fyller i]</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:tcPr><w:tcW w:w="3023" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">5. Praxis vid nyanställning &amp; ingångslöner</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="3023" w:type="dxa"/></w:tcPr><w:p><w:r><w:rPr><w:i/></w:rPr><w:t xml:space="preserve">[HR fyller i]</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="3023" w:type="dxa"/></w:tcPr><w:p><w:r><w:rPr><w:i/></w:rPr><w:t xml:space="preserve">[HR fyller i]</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:tcPr><w:tcW w:w="3023" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">6. Praxis vid befordran &amp; lönehöjning</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="3023" w:type="dxa"/></w:tcPr><w:p><w:r><w:rPr><w:i/></w:rPr><w:t xml:space="preserve">[HR fyller i]</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="3023" w:type="dxa"/></w:tcPr><w:p><w:r><w:rPr><w:i/></w:rPr><w:t xml:space="preserve">[HR fyller i]</w:t></w:r></w:p></w:tc></w:tr></w:tbl><w:p><w:pPr><w:pStyle w:val="Dampad"/></w:pPr><w:r><w:t xml:space="preserve">Bedömningen fylls i på fliken &quot;Bestämmelser &amp; praxis&quot; och följer automatiskt med hit.</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="Heading2"/></w:pPr><w:r><w:t xml:space="preserve">3. Lika arbete — kvinnor och män i samma yrke</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="Dampad"/></w:pPr><w:r><w:t xml:space="preserve">Den löneskillnad som står kvar när ålder och nivå räknats bort, samt de yrkesgrupper där kvinnors och mäns medianlön skiljer sig mer än 5 % och därför behöver förklaras med sakliga skäl eller åtgärdas.</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="Dampad"/></w:pPr><w:r><w:t xml:space="preserve">AID är SKR:s och de fackliga organisationernas gemensamma indelning av arbetsuppgifter i ”rimligt homogena” grupper för lönestatistik. AID är inte ett arbetsvärderingssystem och är inte avsett att avgöra vilka arbeten som är lika eller likvärdiga. Verktygets AID-grupper är därför en utgångspunkt för lika arbete, som ni bekräftar; för likvärdigt arbete kompletterar BAS-intervallen eller en egen arbetsvärdering. Källa: SKR, Arbetsidentifikation (AID) — Handbok för kodning (2020).</w:t></w:r></w:p><w:tbl><w:tblPr><w:tblStyle w:val="Tabell"/><w:tblW w:w="5000" w:type="pct"/></w:tblPr><w:tblGrid><w:gridCol w:w="4535"/><w:gridCol w:w="4535"/></w:tblGrid><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:tcPr><w:tcW w:w="4535" w:type="dxa"/></w:tcPr><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">Kvinnors medianlön i procent av mäns</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="4535" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">91,6 %</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:tcPr><w:tcW w:w="4535" w:type="dxa"/></w:tcPr><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">Löneskillnad som står kvar efter ålder och nivå</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="4535" w:type="dxa"/></w:tcPr><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">−10,55 % (95 % KI: −12,90 till −8,14 %; p &lt; 0,001)</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:tcPr><w:tcW w:w="4535" w:type="dxa"/></w:tcPr><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">Modell</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="4535" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">log(lön) ~ kön + ålder + BAS-intervall (indikatorer) · 62 obs · R² 70,2 %</w:t></w:r></w:p></w:tc></w:tr></w:tbl><w:p><w:pPr><w:pStyle w:val="Dampad"/></w:pPr><w:r><w:t xml:space="preserve">Löneskillnaden efter ålder och nivå anges som en skillnad i procent: negativ när kvinnor ligger lägre.</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="Dampad"/></w:pPr><w:r><w:t xml:space="preserve">[Diagram: Oförklarat lönegap per BAS-intervall — bilden kunde inte skapas]</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="Dampad"/></w:pPr><w:r><w:t xml:space="preserve">[Diagram: Yrkesgrupperna mot slumpens gränser — kvinnors medianlön i procent av mäns mot gruppens storlek — bilden kunde inte skapas]</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="Heading3"/></w:pPr><w:r><w:t xml:space="preserve">Grupper att bedöma</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="Dampad"/></w:pPr><w:r><w:t xml:space="preserve">Ingen yrkesgrupp har en skillnad över 5 % mellan kvinnors och mäns medianlön.</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="FyllIn"/></w:pPr><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">[HR fyller i]</w:t></w:r><w:r><w:t xml:space="preserve"> Bedöm för varje grupp om löneskillnaden har samband med kön. Ange sakligt skäl (t.ex. dokumenterad erfarenhet, prestation, marknadsläge, tjänstetillägg) eller besluta åtgärd.</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="Heading2"/></w:pPr><w:r><w:t xml:space="preserve">4. Likvärdigt arbete — kvinnodominerade yrken</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="Dampad"/></w:pPr><w:r><w:t xml:space="preserve">Kvinnodominerade yrken som tjänar mindre än ett annat yrke med minst lika höga krav. Listan är kandidater att granska — det är arbetsgivaren som avgör om kraven verkligen är likvärdiga.</w:t></w:r></w:p><w:tbl><w:tblPr><w:tblStyle w:val="Tabell"/><w:tblW w:w="5000" w:type="pct"/></w:tblPr><w:tblGrid><w:gridCol w:w="1511"/><w:gridCol w:w="1511"/><w:gridCol w:w="1511"/><w:gridCol w:w="1511"/><w:gridCol w:w="1511"/><w:gridCol w:w="1511"/></w:tblGrid><w:tr><w:trPr><w:cantSplit/><w:tblHeader/></w:trPr><w:tc><w:tcPr><w:tcW w:w="1511" w:type="dxa"/><w:shd w:val="clear" w:color="auto" w:fill="F0F0F0"/></w:tcPr><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">#</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1511" w:type="dxa"/><w:shd w:val="clear" w:color="auto" w:fill="F0F0F0"/></w:tcPr><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">Kvinnodominerat yrke</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1511" w:type="dxa"/><w:shd w:val="clear" w:color="auto" w:fill="F0F0F0"/></w:tcPr><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">Jämförelseyrke</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1511" w:type="dxa"/><w:shd w:val="clear" w:color="auto" w:fill="F0F0F0"/></w:tcPr><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">Jämförelseyrkets median högre med (kr)</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1511" w:type="dxa"/><w:shd w:val="clear" w:color="auto" w:fill="F0F0F0"/></w:tcPr><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">Högre med (%)</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1511" w:type="dxa"/><w:shd w:val="clear" w:color="auto" w:fill="F0F0F0"/></w:tcPr><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">Kravvärdering / sakligt skäl (fyll i)</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:tcPr><w:tcW w:w="1511" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">1</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1511" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">5301 Undersköterska (BAS B)</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1511" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">4100 Tekniker (BAS B)</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1511" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">4 700 kr</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1511" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">16,3 %</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1511" w:type="dxa"/></w:tcPr><w:p></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:tcPr><w:tcW w:w="1511" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">2</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1511" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">5500 Sjuksköterska (BAS C)</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1511" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">2000 Ingenjör (BAS C)</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1511" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">4 725 kr</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1511" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">14,8 %</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1511" w:type="dxa"/></w:tcPr><w:p></w:p></w:tc></w:tr></w:tbl><w:p><w:pPr><w:pStyle w:val="Dampad"/></w:pPr><w:r><w:t xml:space="preserve">[Diagram: Kandidatpar i likvärdigt arbete — bilden kunde inte skapas]</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="FyllIn"/></w:pPr><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">[HR fyller i]</w:t></w:r><w:r><w:t xml:space="preserve"> Avgör, utifrån befattningsbeskrivning eller arbetsvärdering, om jämförelseyrkets krav verkligen är likvärdiga eller lägre. Ange sakligt skäl eller åtgärd för varje par som står kvar.</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="Heading2"/></w:pPr><w:r><w:t xml:space="preserve">5. Struktur och lönetransparens (EU 2023/970)</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="Dampad"/></w:pPr><w:r><w:t xml:space="preserve">Hur kvinnor och män fördelar sig mellan nivåerna, och lönegapet i median på varje nivå enligt direktivets art. 9: skillnaden i procent av mäns lön, positivt tal = kvinnor lägre. Verktygets flikar visar samma skillnad som kvinnors lön i procent av mäns.</w:t></w:r></w:p><w:tbl><w:tblPr><w:tblStyle w:val="Tabell"/><w:tblW w:w="5000" w:type="pct"/></w:tblPr><w:tblGrid><w:gridCol w:w="1814"/><w:gridCol w:w="1814"/><w:gridCol w:w="1814"/><w:gridCol w:w="1814"/><w:gridCol w:w="1814"/></w:tblGrid><w:tr><w:trPr><w:cantSplit/><w:tblHeader/></w:trPr><w:tc><w:tcPr><w:tcW w:w="1814" w:type="dxa"/><w:shd w:val="clear" w:color="auto" w:fill="F0F0F0"/></w:tcPr><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">BAS</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1814" w:type="dxa"/><w:shd w:val="clear" w:color="auto" w:fill="F0F0F0"/></w:tcPr><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">N</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1814" w:type="dxa"/><w:shd w:val="clear" w:color="auto" w:fill="F0F0F0"/></w:tcPr><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">Andel kvinnor</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1814" w:type="dxa"/><w:shd w:val="clear" w:color="auto" w:fill="F0F0F0"/></w:tcPr><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">Median</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1814" w:type="dxa"/><w:shd w:val="clear" w:color="auto" w:fill="F0F0F0"/></w:tcPr><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">Lönegap enligt art. 9</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:tcPr><w:tcW w:w="1814" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">B</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1814" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">34</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1814" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">50 %</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1814" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">30 900 kr</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1814" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">+14,0 %</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:tcPr><w:tcW w:w="1814" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">C</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1814" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">28</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1814" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">50 %</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1814" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">34 075 kr</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1814" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">+12,8 %</w:t></w:r></w:p></w:tc></w:tr></w:tbl><w:p><w:pPr><w:pStyle w:val="Heading3"/></w:pPr><w:r><w:t xml:space="preserve">Kvinnors och mäns lön per BAS-intervall</w:t></w:r></w:p><w:tbl><w:tblPr><w:tblStyle w:val="Tabell"/><w:tblW w:w="5000" w:type="pct"/></w:tblPr><w:tblGrid><w:gridCol w:w="1133"/><w:gridCol w:w="1133"/><w:gridCol w:w="1133"/><w:gridCol w:w="1133"/><w:gridCol w:w="1133"/><w:gridCol w:w="1133"/><w:gridCol w:w="1133"/><w:gridCol w:w="1133"/></w:tblGrid><w:tr><w:trPr><w:cantSplit/><w:tblHeader/></w:trPr><w:tc><w:tcPr><w:tcW w:w="1133" w:type="dxa"/><w:shd w:val="clear" w:color="auto" w:fill="F0F0F0"/></w:tcPr><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">BAS</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1133" w:type="dxa"/><w:shd w:val="clear" w:color="auto" w:fill="F0F0F0"/></w:tcPr><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">Kvinnor / män</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1133" w:type="dxa"/><w:shd w:val="clear" w:color="auto" w:fill="F0F0F0"/></w:tcPr><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">Median kvinnor</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1133" w:type="dxa"/><w:shd w:val="clear" w:color="auto" w:fill="F0F0F0"/></w:tcPr><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">Median män</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1133" w:type="dxa"/><w:shd w:val="clear" w:color="auto" w:fill="F0F0F0"/></w:tcPr><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">Skillnad</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1133" w:type="dxa"/><w:shd w:val="clear" w:color="auto" w:fill="F0F0F0"/></w:tcPr><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">Kvinnors lön i % av mäns</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1133" w:type="dxa"/><w:shd w:val="clear" w:color="auto" w:fill="F0F0F0"/></w:tcPr><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">95 % konfidensintervall</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1133" w:type="dxa"/><w:shd w:val="clear" w:color="auto" w:fill="F0F0F0"/></w:tcPr><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">Status</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:tcPr><w:tcW w:w="1133" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">B</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1133" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">17 / 17</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1133" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">28 800 kr</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1133" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">33 500 kr</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1133" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">−4 700 kr</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1133" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">86,0 %</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1133" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">84,5–87,4 %</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1133" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">Avviker mer än 5 %</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:tcPr><w:tcW w:w="1133" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">C</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1133" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">14 / 14</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1133" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">31 975 kr</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1133" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">36 675 kr</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1133" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">−4 700 kr</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1133" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">87,2 %</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1133" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">85,4–88,9 %</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1133" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">Avviker mer än 5 %</w:t></w:r></w:p></w:tc></w:tr></w:tbl><w:p><w:pPr><w:pStyle w:val="Dampad"/></w:pPr><w:r><w:t xml:space="preserve">Skillnaden är kvinnors medianlön minus mäns. Når konfidensintervallet 100 % kan skillnaden bero på slumpen. Bara BAS-intervall där både kvinnor och män når minsta gruppstorlek har en rad.</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="Dampad"/></w:pPr><w:r><w:t xml:space="preserve">[Diagram: Kvinnors medianlön i procent av mäns, per BAS-intervall — samma kvot och intervall som tabellen ovan — bilden kunde inte skapas]</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="Dampad"/></w:pPr><w:r><w:t xml:space="preserve">[Diagram: Könsfördelning per BAS-intervall — bilden kunde inte skapas]</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="Dampad"/></w:pPr><w:r><w:t xml:space="preserve">[Diagram: Kvinnor och män per lönekvartil — bilden kunde inte skapas]</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="Dampad"/></w:pPr><w:r><w:t xml:space="preserve">[Diagram: Lönegap per åldersgrupp — rå skillnad, alla yrken och nivåer — bilden kunde inte skapas]</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="Dampad"/></w:pPr><w:r><w:t xml:space="preserve">[Diagram: Var i referensens lönespann ligger kvinnor och män — bilden kunde inte skapas]</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="Heading2"/></w:pPr><w:r><w:t xml:space="preserve">6. Åtgärder och tidsplan</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="Dampad"/></w:pPr><w:r><w:t xml:space="preserve">Planerade lönejusteringar och andra åtgärder, med beslut, ansvar och tidsplan. Tabellen listar de grupper som ligger under referensen enligt prioriteringen, med uppskattad kostnad för att nå den.</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="Dampad"/></w:pPr><w:r><w:t xml:space="preserve">Inga prioriterade åtgärdsgrupper (ingen referensdata uppladdad).</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="FyllIn"/></w:pPr><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">[HR fyller i]</w:t></w:r><w:r><w:t xml:space="preserve"> Besluta åtgärder, budget och tidsplan (lönejusteringar ska genomföras så snart som möjligt och senast inom tre år). Beskriv även förebyggande åtgärder.</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="Heading2"/></w:pPr><w:r><w:t xml:space="preserve">7. Samverkan med arbetstagarna</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="FyllIn"/></w:pPr><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">[HR fyller i]</w:t></w:r><w:r><w:t xml:space="preserve"> Dokumentera samverkan med arbetstagarorganisationerna: datum, deltagande parter och synpunkter (protokollet för gemensam lönebedömning kan bifogas).</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="Heading2"/></w:pPr><w:r><w:t xml:space="preserve">8. Beslut och underskrift</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="FyllIn"/></w:pPr><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">[HR fyller i]</w:t></w:r><w:r><w:t xml:space="preserve"> Beslutsfattare, datum och underskrift. Ange när nästa lönekartläggning ska genomföras (årligen).</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="Heading2"/></w:pPr><w:r><w:t xml:space="preserve">Bilaga: Justerat lönegap i detalj</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="Dampad"/></w:pPr><w:r><w:t xml:space="preserve">Skattad modell: log(lön) ~ kön + ålder + BAS-intervall (indikatorer) (OLS-regression). Lönegapet anges som en skillnad i procent: negativ när kvinnor ligger lägre.</w:t></w:r></w:p><w:tbl><w:tblPr><w:tblStyle w:val="Tabell"/><w:tblW w:w="5000" w:type="pct"/></w:tblPr><w:tblGrid><w:gridCol w:w="4535"/><w:gridCol w:w="4535"/></w:tblGrid><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:tcPr><w:tcW w:w="4535" w:type="dxa"/></w:tcPr><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">Antal observationer</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="4535" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">62 (kvinnor: 31, män: 31)</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:tcPr><w:tcW w:w="4535" w:type="dxa"/></w:tcPr><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">Kvinnors medianlön i procent av mäns</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="4535" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">91,6 %</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:tcPr><w:tcW w:w="4535" w:type="dxa"/></w:tcPr><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">Oförklarad skillnad (över 5 % och statistiskt säkerställd)</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="4535" w:type="dxa"/></w:tcPr><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">−10,55 % (95 % KI: −12,90 till −8,14, p &lt; 0,001, t = −8,39; HC3 robust SE)</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:tcPr><w:tcW w:w="4535" w:type="dxa"/></w:tcPr><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">Ålderseffekt</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="4535" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">+0,33 % per år</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:tcPr><w:tcW w:w="4535" w:type="dxa"/></w:tcPr><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">R² / justerad R²</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="4535" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">70,2 % / 68,7 %</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:tcPr><w:tcW w:w="4535" w:type="dxa"/></w:tcPr><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">BAS-intervall i modellen</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="4535" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">2 (B–C; indikatorvariabler, B är referens)</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:tcPr><w:tcW w:w="4535" w:type="dxa"/></w:tcPr><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">BAS-effekter</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="4535" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">nivå mot BAS B: C +10,47 % (p &lt; 0,001)</w:t></w:r></w:p></w:tc></w:tr></w:tbl><w:p><w:pPr><w:pStyle w:val="Heading3"/></w:pPr><w:r><w:t xml:space="preserve">Sekventiell dekomponering</w:t></w:r></w:p><w:tbl><w:tblPr><w:tblStyle w:val="Tabell"/><w:tblW w:w="5000" w:type="pct"/></w:tblPr><w:tblGrid><w:gridCol w:w="3023"/><w:gridCol w:w="3023"/><w:gridCol w:w="3023"/></w:tblGrid><w:tr><w:trPr><w:cantSplit/><w:tblHeader/></w:trPr><w:tc><w:tcPr><w:tcW w:w="3023" w:type="dxa"/><w:shd w:val="clear" w:color="auto" w:fill="F0F0F0"/></w:tcPr><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">Modell</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="3023" w:type="dxa"/><w:shd w:val="clear" w:color="auto" w:fill="F0F0F0"/></w:tcPr><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">Lönegap</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="3023" w:type="dxa"/><w:shd w:val="clear" w:color="auto" w:fill="F0F0F0"/></w:tcPr><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">R²</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:tcPr><w:tcW w:w="3023" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">Endast kön</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="3023" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">−10,55 %</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="3023" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">38,9 %</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:tcPr><w:tcW w:w="3023" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">+ BAS-intervall</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="3023" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">−10,55 %</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="3023" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">68,1 %</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:tcPr><w:tcW w:w="3023" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">+ Ålder</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="3023" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">−10,55 %</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="3023" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">70,2 %</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:tcPr><w:tcW w:w="3023" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">+ Yrkesgrupp</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="3023" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">−2,24 %</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="3023" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">99,8 %</w:t></w:r></w:p></w:tc></w:tr></w:tbl><w:p><w:r><w:t xml:space="preserve">Steget + Yrkesgrupp: −2,2 % är löneskillnaden mellan kvinnor och män med samma yrkesgrupp, BAS-intervall och ålder (fasta effekter för yrkesgrupp inom BAS). Bygger på 62 personer i 4 yrkesgrupper där båda könen finns. Huvudtalet ovan räknar inte bort yrkesgruppen.</w:t></w:r></w:p><w:p><w:r><w:t xml:space="preserve">Strukturellt förklarad andel: 0 % av råa gapet förklaras av strukturella variabler (ålder och BAS-intervall). Oförklarad rest: 100 %.</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="Heading3"/></w:pPr><w:r><w:t xml:space="preserve">Per BAS-intervall (separata regressioner)</w:t></w:r></w:p><w:tbl><w:tblPr><w:tblStyle w:val="Tabell"/><w:tblW w:w="5000" w:type="pct"/></w:tblPr><w:tblGrid><w:gridCol w:w="1511"/><w:gridCol w:w="1511"/><w:gridCol w:w="1511"/><w:gridCol w:w="1511"/><w:gridCol w:w="1511"/><w:gridCol w:w="1511"/></w:tblGrid><w:tr><w:trPr><w:cantSplit/><w:tblHeader/></w:trPr><w:tc><w:tcPr><w:tcW w:w="1511" w:type="dxa"/><w:shd w:val="clear" w:color="auto" w:fill="F0F0F0"/></w:tcPr><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">BAS</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1511" w:type="dxa"/><w:shd w:val="clear" w:color="auto" w:fill="F0F0F0"/></w:tcPr><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">N</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1511" w:type="dxa"/><w:shd w:val="clear" w:color="auto" w:fill="F0F0F0"/></w:tcPr><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">Kvinnor / män</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1511" w:type="dxa"/><w:shd w:val="clear" w:color="auto" w:fill="F0F0F0"/></w:tcPr><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">Oförklarat gap</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1511" w:type="dxa"/><w:shd w:val="clear" w:color="auto" w:fill="F0F0F0"/></w:tcPr><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">Signifikans</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1511" w:type="dxa"/><w:shd w:val="clear" w:color="auto" w:fill="F0F0F0"/></w:tcPr><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">Över 5 % och säkerställd</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:tcPr><w:tcW w:w="1511" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">B</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1511" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">34</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1511" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">17 / 17</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1511" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">−10,64 %</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1511" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">p &lt; 0,001</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1511" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">ja</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:tcPr><w:tcW w:w="1511" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">C</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1511" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">28</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1511" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">14 / 14</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1511" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">−10,44 %</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1511" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">p &lt; 0,001</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1511" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">ja</w:t></w:r></w:p></w:tc></w:tr></w:tbl><w:p><w:pPr><w:pStyle w:val="Heading2"/></w:pPr><w:r><w:t xml:space="preserve">Bilaga: Metod och parametrar</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="Dampad"/></w:pPr><w:r><w:t xml:space="preserve">Dessa uppgifter följer med så att analysen går att återskapa och förstå. Verktyget pekar ut kandidater för bedömning — det dömer inte.</w:t></w:r></w:p><w:tbl><w:tblPr><w:tblStyle w:val="Tabell"/><w:tblW w:w="5000" w:type="pct"/></w:tblPr><w:tblGrid><w:gridCol w:w="4535"/><w:gridCol w:w="4535"/></w:tblGrid><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:tcPr><w:tcW w:w="4535" w:type="dxa"/></w:tcPr><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">Verktyg</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="4535" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">Öppen lönekartläggning (v<VERSION>)</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:tcPr><w:tcW w:w="4535" w:type="dxa"/></w:tcPr><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">Exporttidpunkt</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="4535" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve"><DATUM> <TID></w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:tcPr><w:tcW w:w="4535" w:type="dxa"/></w:tcPr><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">Artefakt-SHA-256</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="4535" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">Se RELEASE.txt / filens banner (single-file-bygget är källans sanning)</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:tcPr><w:tcW w:w="4535" w:type="dxa"/></w:tcPr><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">Datakälla</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="4535" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">Lokalt uppladdad fil (bearbetad helt i webbläsaren, inga nätverksanrop)</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:tcPr><w:tcW w:w="4535" w:type="dxa"/></w:tcPr><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">Antal personer (inläst)</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="4535" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">62</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:tcPr><w:tcW w:w="4535" w:type="dxa"/></w:tcPr><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">Antal personer (i denna analys)</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="4535" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">62</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:tcPr><w:tcW w:w="4535" w:type="dxa"/></w:tcPr><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">Modell — oförklarat gap</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="4535" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">OLS på log(månadslön) ~ kön + ålder + BAS-intervall (indikatorvariabler, första BAS som referens); HC3-robusta standardfel (Long &amp; Ervin 2000)</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:tcPr><w:tcW w:w="4535" w:type="dxa"/></w:tcPr><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">Steg + Yrkesgrupp (dekomponeringen)</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="4535" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">Könsgap med fasta effekter för yrkesgrupp inom BAS (AID×BAS) utöver ålder, skattat med inomtransformation; visas som sista steg, ingår inte i huvudtalet</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:tcPr><w:tcW w:w="4535" w:type="dxa"/></w:tcPr><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">Ålder &amp; karriär (tvärsnitt)</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="4535" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">Lön mot ålder och livscykelmodellen bygger på ett tvärsnitt: de visar skillnader mellan åldersgrupper i dag, inte hur en persons lön utvecklas över karriären (kohorteffekter)</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:tcPr><w:tcW w:w="4535" w:type="dxa"/></w:tcPr><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">Trattdiagrammet</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="4535" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">Med färre än tio yrkesgrupper säger trattens form lite; varje grupp bedöms då för sig i tabellen. Punktens bedömning bygger på en omkastning av könen inom gruppen</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:tcPr><w:tcW w:w="4535" w:type="dxa"/></w:tcPr><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">p-värden</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="4535" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">t-fördelning vid df &lt; 100, annars normalfördelning; Benjamini-Hochberg (FDR) vid multipla grupptest</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:tcPr><w:tcW w:w="4535" w:type="dxa"/></w:tcPr><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">Konfidensintervall</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="4535" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">Bootstrap-percentil (B ≥ 1000 sampel) på mediankvot kvinna/man</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:tcPr><w:tcW w:w="4535" w:type="dxa"/></w:tcPr><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">Signifikansnivå</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="4535" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">α = 0,05</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:tcPr><w:tcW w:w="4535" w:type="dxa"/></w:tcPr><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">Minsta gruppstorlek för redovisning</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="4535" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">10 personer. Grupper med färre redovisas inte i beskrivande vyer (gäller inte likvärdighetsanalysen).</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:tcPr><w:tcW w:w="4535" w:type="dxa"/></w:tcPr><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">Referens för lönenivåer</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="4535" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">Eget ställningstagande (egen fil)</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:tcPr><w:tcW w:w="4535" w:type="dxa"/></w:tcPr><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">Jämförelsestatistik</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="4535" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">Jämförelsestatistik (egen fil)</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:tcPr><w:tcW w:w="4535" w:type="dxa"/></w:tcPr><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">Krav-proxy (likvärdigt arbete)</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="4535" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">BAS-intervall (ordinal rangordning)</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:tcPr><w:tcW w:w="4535" w:type="dxa"/></w:tcPr><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">Lönegapets tecken</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="4535" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">Verktyget räknar skillnaden som (kvinnor − män) / män och visar den som kvinnors lön i procent av mäns (under 100 = kvinnor lägre). EU-lönerapporten och rapportens avsnitt om lönetransparens redovisar i stället direktivets lönegap, (män − kvinnor) / män i procent, enligt art. 9: positivt tal = kvinnor lägre. Beloppet är detsamma.</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:tcPr><w:tcW w:w="4535" w:type="dxa"/></w:tcPr><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">Tolkningsregel</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="4535" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">Ett oförklarat gap är en statistisk signal om var man bör titta närmare — inte ett bevis för osaklig (diskriminerande) löneskillnad. Den bedömningen görs kvalitativt av arbetsgivaren.</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:tcPr><w:tcW w:w="4535" w:type="dxa"/></w:tcPr><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">Rättslig ram</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="4535" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">Diskrimineringslagen 3 kap. (lönekartläggning); direktiv (EU) 2023/970 om lönetransparens. De enskilda lagrummen står i docs/utveckling/lagrum.md.</w:t></w:r></w:p></w:tc></w:tr></w:tbl><w:p/><w:sectPr><w:footerReference w:type="default" r:id="rIdSidfot"/><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1418" w:right="1418" w:bottom="1418" w:left="1418" w:header="709" w:footer="709" w:gutter="0"/></w:sectPr></w:body></w:document>"
+`;

@@ -1,0 +1,95 @@
+name: CI
+
+# Kvalitetsgrind. Två jobb:
+#   quality — lint, typkontroll, hela testsviten, mojibake-skydd och kontroll av att den
+#             incheckade artefakten faktiskt motsvarar källan.
+#   browser — röktest av den byggda single-file-filen i riktig Chromium, Firefox och WebKit.
+#             Diagrammen (diagramkärnan på D3, ADR-39) ritas med äkta D3 också i
+#             jsdom-testerna; här prövas PNG-exporten, som kräver en riktig canvas,
+#             och att allt fungerar under CSP:n från file://.
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+# Stegen är låsta på commit-SHA (versionen står som kommentar), så att en flyttad tagg hos
+# tredjepartsåtgärden inte kan ändra vad som körs. Uppdatera SHA och kommentar tillsammans.
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # Node 22 krävs: jsdom-kedjan (html-encoding-sniffer → @exodus/bytes)
+      # gör require() av en ES-modul, vilket kastar ERR_REQUIRE_ESM på Node 20.
+      # Med Node 20 föll smoke-, a11y- och golden-sviterna tyst (endast 183 av
+      # 286 tester kördes). require(esm) är påslaget från och med Node 22.12.
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '22'
+
+      - name: Install (deterministiskt)
+        run: npm ci
+
+      - name: Lint (inga errors tillåtna)
+        run: npm run lint
+
+      # JSDoc-typkontroll med tsc i checkJs-läge (tsconfig.json: src/lib + tools, tsconfig.app.json: src/app
+      # som ett gemensamt globalt scope). Nolläge: varje nytt fel stoppar bygget.
+      - name: Typkontroll (tsc --checkJs, noll fel)
+        run: npm run typecheck
+
+      - name: Enhetstester (Vitest)
+        run: npm test
+
+      - name: Teckenkodningsgrind (ingen U+FFFD i egen källkod)
+        run: |
+          node -e "const fs=require('fs');let bad=false;for(const f of ['dist/app.js','src/index.html','src/style.css']){if(fs.readFileSync(f,'utf8').includes('�')){console.error('U+FFFD (mojibake) i '+f);bad=true;}}if(bad)process.exit(1);console.log('Ingen mojibake i källfilerna.');"
+
+      # Bygget är reproducerbart (ingen tidsstämpel i bannern), så en färsk
+      # build måste bli byte-identisk med den incheckade artefakten. Utan detta
+      # kan källan ändras utan att den skeppade HTML-filen byggs om —
+      # appsource-testet vaktar dist/app.js, men ingenting vaktade bundlen.
+      - name: Artefakten motsvarar källan (byte-identisk)
+        run: |
+          fore=$(sha256sum dist/oppen-lonekartlaggning.html | cut -d' ' -f1)
+          npm run bundle
+          efter=$(sha256sum dist/oppen-lonekartlaggning.html | cut -d' ' -f1)
+          if [ "$fore" != "$efter" ]; then
+            echo "::error::Den incheckade artefakten motsvarar inte källan."
+            echo "  incheckad: $fore"
+            echo "  ombyggd:   $efter"
+            echo "Kör 'npm run bundle' och committa resultatet."
+            exit 1
+          fi
+          echo "Artefakten är byte-identisk med en färsk build ($fore)."
+
+  # Samma röktest i de tre webbläsarmotorer som verktyget stöder (Chrome/Edge, Firefox,
+  # Safari). WebKit kräver systembibliotek som bara finns färdiga på Ubuntu, så det körs här.
+  browser:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '22'
+
+      - name: Install (deterministiskt)
+        run: npm ci
+
+      - name: Installera ${{ matrix.browser }}
+        run: npx playwright install --with-deps ${{ matrix.browser }}
+
+      # Byggs om här i stället för att lita på den incheckade filen: efter en
+      # git-checkout har alla filer samma tidsstämpel, och röktestets
+      # färskhetsspärr jämför mtime mot källan.
+      - name: Bygg single-file-artefakten
+        run: npm run bundle
+
+      - name: Röktest i riktig webbläsare (${{ matrix.browser }})
+        run: node tools/browser-smoke.mjs --browser=${{ matrix.browser }}

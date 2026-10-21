@@ -1,0 +1,27 @@
+version: 2
+
+# Beroendeuppdateringar. Verktyget har inga runtime-beroenden från npm (biblioteken ligger låsta med
+# kontrollsummor i vendor/); npm-beroendena är utvecklingsverktyg (test, lint, typkontroll, röktest).
+#
+# Arbetsflödenas steg är låsta på commit-SHA med versionen som kommentar (`uses: x@<sha> # v4.4.0`).
+# Dependabot uppdaterar SHA och kommentar tillsammans; tests/sakerhet.test.js kräver att varje steg
+# fortfarande pekar på en fullständig SHA med versionskommentar.
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      utvecklingsverktyg:
+        dependency-type: development
+    ignore:
+      # jsdom 30.1.2–30.1.3 ändrar fokusbeteendet så att fem tangentbordstester i smoke.test.js och
+      # smoke-granssnitt.test.js faller. jsdom är låst på 30.1.1 tills det är utrett; senare versioner föreslås.
+      - dependency-name: jsdom
+        versions: ["30.1.2", "30.1.3"]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
