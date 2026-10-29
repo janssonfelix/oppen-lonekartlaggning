@@ -229,7 +229,7 @@ adaptern verkligen delegerar vaktas av `tests/drift.test.js`:
   rätt grupp. Utskriftsfönstret för checklistorna (`printScaffoldView`) läser `:root` och allt från `.dold` till
   stilmallens slut ur den körande stilmallen och lägger in det som byggt stilark (`adoptedStyleSheets`): ett `<style>`-element
   som skriptet skapar blockeras av den ärvda CSP:n (`style-src-elem`), så fönstret var tidigare helt ostilat.
-- **Tester:** Vitest — 2445 tester i 69 filer: rena `src/lib/`-moduler, CSV-parsning, jsdom-röktest
+- **Tester:** Vitest — 2451 tester i 69 filer: rena `src/lib/`-moduler, CSV-parsning, jsdom-röktest
   av varje vy (ADR-7; `tests/smoke.test.js` med det delade fönstret och sju `tests/smoke-*.test.js` per
   område), k-tröskeln i åtta `tests/ktroskel*.test.js` med riggen i `tests/helpers/ktroskel-rigg.js`,
   gränssnittet i `tests/granssnitt*.test.js` (riggen `tests/helpers/granssnitt-rigg.js`) och diagramvyerna i
@@ -524,7 +524,9 @@ alla flikar och söker igenom den synliga texten.
 rendering (~250 ms). En cache skulle spara den tiden men kräva en invalideringsregel som är bevisbart rätt för
 varje ändring av data, urval och inställningar; ett inaktuellt resultat i en juridisk analys är ett allvarligt
 fel, 250 ms är det inte. Regressionen räknas därför alltid om. *Får inte implementeras*, inte heller som
-memoisering inuti modulen.
+memoisering inuti modulen. Det som är tillåtet är att en funktion som kört regressionen skickar resultatet vidare
+som ett argument till det den själv anropar i samma varv (`bedomningUnderlag({ reg })`, Att göras lista): ett
+värde, ingen lagring, inget att invalidera.
 
 **ADR-19 — Underlagets kvalitet: svagaste länken avgör.** Underlaget bedöms med fem kriterier med status
 OK/Varning/Kritisk: jämförbarhet (andel av personalen i BAS-intervall där båda könen har minst k), statistisk
@@ -1136,7 +1138,10 @@ till i rapporten* som ett recept — rader, kolumner, mått, urval, gruppvillkor
 (`src/lib/tabellrecept.js`, `state.rapportTabeller`). Recepten ritas om i exportläget (ADR-51) med samma pivot som
 fliken (`computePivot`) och Utforskas exportregler för minsta gruppstorlek, i avsnittet *Egna tabeller* efter
 avsnittet per BAS-intervall (följer med när det gör det), i Excel-bladet *Egna tabeller* och som block i
-rapportunderlaget (`egen:i:j`, `egenTabellBlock` i `src/lib/rapportunderlag.js`). Avsnittet per
+rapportunderlaget (`egen:i:j`, `egenTabellBlock` i `src/lib/rapportunderlag.js`). Organisationspaketet kan bära
+recepten (`rapport: { tabeller, perBasRecept }`, `_rapport` i `src/lib/organisationspaket.js`): giltiga recept följer
+med, standardreceptet per BAS utelämnas, ett paket med `rapport` ersätter handläggarens egna tabeller och ett utan
+rör dem inte; formuläret har rutan *Ta med rapportens egna tabeller*. Avsnittet per
 BAS-intervall följer ett recept (`state.perBasRecept`, `valideraPerBasRecept` i `src/lib/perbas.js`): dimension (BAS
 eller sektor), rader, mått, åldersgränser och summeringstabeller; standardreceptet är arbetsgivarnas utkast och sparas
 som null. Båda bärs av konfigurationsfilen och nollställs av *Rensa all data*.
@@ -1157,9 +1162,10 @@ Kända brister och obesvarade frågor, så att de inte lever bara i en konversat
    varje grupp görs med omkastning, utom för grupper över 300 personer.
 
 **Prestanda:**
-5. **Ändrad minsta gruppstorlek tar 6,6 s på 55 000 rader** (10 → 11): bootstrap-KI (2,7 s, bara när `statGolv()`
-   ändras), Att göra och processöversikten (som läser samma lista, byggd en gång) och den öppna fliken räknas om.
-   Det som återstår är regressionen, som körs flera gånger per rendering och inte får cachas (ADR-17). Översikt
+5. **Ändrad minsta gruppstorlek tar 5,9 s på 55 000 rader** (10 → 11): bootstrap-KI (2,7 s, bara när `statGolv()`
+   ändras), Att göra och processöversikten (som läser samma lista, byggd en gång, med regressionen körd en gång
+   och skickad vidare) och den öppna fliken räknas om. Det som återstår är regressionen i processöversikten och
+   underlagets kvalitet, som inte får cachas (ADR-17). Översikt
    ritas inte två gånger — när Översikt är den öppna fliken är den redan ritad av stegen (`_omritningssteg`).
 
    Mätvärden med `npm run perf` på 55 000 syntetiska rader (2026-10-29, efter ADR-51): uppladdning till klart

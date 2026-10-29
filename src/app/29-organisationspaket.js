@@ -89,7 +89,7 @@ function lasInPaket(text, _filnamn, { inbakat = false } = {}) {
     // Ett riktigt paket blandas inte med påhittade demosiffror: demot avslutas först.
     if (state.isDemo) _rensaAllData({ inbakat: false });
 
-    const { profil, installningar, referens, statistik } = r.delar;
+    const { profil, installningar, referens, statistik, rapport } = r.delar;
     const varningar = [...r.varningar];
     // Golvet för tröskeln (ADR-47): ett nytt paket får sänka eller ta bort det förra paketets golv bara om
     // användaren bekräftar — samma fråga som vid en sänkt tröskel. Nekas den står det gamla golvet kvar.
@@ -138,6 +138,13 @@ function lasInPaket(text, _filnamn, { inbakat = false } = {}) {
         varningar.push(`Minsta gruppstorlek höjs till ${nyttGolv}, paketets lägsta tillåtna.`);
     }
     state.paket = { ...r.paket, kalla: inbakat ? 'inbakat' : 'fil' };
+    // Rapportens recept (ADR-52) ersätter de egna tabellerna och receptet per BAS; ett paket utan dem rör dem inte.
+    if (rapport) {
+        state.rapportTabeller = rapport.tabeller.map(t => JSON.parse(JSON.stringify(t)));
+        state.perBasRecept = rapport.perBasRecept ? JSON.parse(JSON.stringify(rapport.perBasRecept)) : null;
+        varningar.push(`Paketet ger rapporten ${rapport.tabeller.length} ${rapport.tabeller.length === 1 ? 'egen tabell' : 'egna tabeller'}`
+            + (rapport.perBasRecept ? ' och ett eget recept per BAS-intervall.' : '.'));
+    }
 
     if (referens) {
         state.policy = referens.rader.map(x => ({ ...x }));
@@ -210,7 +217,23 @@ function _fyllPaketFormular() {
     const kryss = (id, v) => { const el = _paketFalt(id); if (el) /** @type {HTMLInputElement} */ (el).checked = v; };
     kryss('paket-inaktivitet-last', las.inaktivitetMin != null);
     kryss('paket-sma-export', las.smaGrupperIExport !== false);
+    // Rapportens recept (ADR-52): rutan är förkryssad när något finns att ta med, annars avstängd.
+    const harRecept = _paketHarRecept();
+    kryss('paket-rapport', harRecept);
+    const rr = _paketFalt('paket-rapport');
+    if (rr) /** @type {HTMLInputElement} */ (rr).disabled = !harRecept;
     uppdateraPaketKnapp();
+}
+
+/** Finns egna tabeller eller ett eget recept per BAS att ta med i paketet? */
+function _paketHarRecept() {
+    return (state.rapportTabeller || []).length > 0 || (state.perBasRecept != null && typeof _pbReceptArStandard === 'function' && !_pbReceptArStandard(state.perBasRecept));
+}
+/** Rapportens recept ur formuläret: null när rutan inte är ikryssad eller inget finns. */
+function _paketRapportUrFormular() {
+    const el = /** @type {HTMLInputElement|null} */ (_paketFalt('paket-rapport'));
+    if (!el || !el.checked || !_paketHarRecept()) return null;
+    return { tabeller: state.rapportTabeller || [], perBasRecept: state.perBasRecept || undefined };
 }
 
 /** Formulärets låsningar (ADR-47): tomt fält = paketet anger inget. */
@@ -261,9 +284,11 @@ function uppdateraPaketKnapp() {
         const lasText = _paketLasText({ kTroskelLagst: f.kTroskelLagst ?? null, inaktivitetMin: f.inaktivitetLast ? f.inaktivitetMin : null,
                                         smaGrupperIExport: f.smaGrupperIExport });
         const lasDel = lasFel ? ` ${lasFel}` : lasText ? ` Låsningar: ${lasText}.` : ' Paketet låser inget.';
+        const rp = _paketRapportUrFormular();
+        const rpDel = rp ? ` Rapporten: ${rp.tabeller.length} ${rp.tabeller.length === 1 ? 'egen tabell' : 'egna tabeller'}${rp.perBasRecept ? ' och ett eget recept per BAS-intervall' : ''}.` : '';
         sam.textContent = harData
             ? `Paketet får med: ${[harReferens() ? `ställningstagandet "${referensNamn()}" (${state.policy.length} rader)` : null,
-                state.statistik.length ? `jämförelsestatistiken (${state.statistik.length} rader)` : null].filter(Boolean).join(' och ')}.${kDel}${lasDel}`
+                state.statistik.length ? `jämförelsestatistiken (${state.statistik.length} rader)` : null].filter(Boolean).join(' och ')}.${kDel}${lasDel}${rpDel}`
             : 'Läs först in ett ställningstagande eller jämförelsestatistik med rutorna ovan.';
     }
 }
@@ -292,6 +317,7 @@ function skapaPaket() {
                                     kortnamn: _paketText('paket-ref-kortnamn') || _paketText('paket-ref-namn') || state.policyKortnamn || undefined,
                                     rader: state.policy } : null,
         statistik: state.statistik.length ? { namn: state.statistikNamn || undefined, rader: state.statistik } : null,
+        rapport: _paketRapportUrFormular(),
     });
 }
 
@@ -419,6 +445,7 @@ function visaInbakatPaket() {
         + `${rad('Inbakat', inb.skapad)}${rad('Verktygets version', inb.verktygsversion)}${rad('Verktygsfilens kontrollsumma (SHA-256)', inb.verktygssha)}`
         + `${rad('Benämning på jämförelsestatistiken', obj?.profil?.jamforelseNamn)}${rad('Minsta gruppstorlek', inst.kTroskel)}${rad('Lägsta tillåtna minsta gruppstorlek', inst.kTroskelLagst)}`
         + `${rad('Rensning vid inaktivitet (min)', inst.inaktivitetMin)}${rad('Rensningstiden låst', inst.inaktivitetLast ? 'ja' : null)}${rad('Små grupper i Utforskas export', inst.smaGrupperIExport === false ? 'inte tillåtet' : null)}</dl>`
+        + `${rad('Egna tabeller i rapporten', obj?.rapport?.tabeller?.length)}${rad('Receptet per BAS-intervall', obj?.rapport?.perBasRecept ? 'eget' : null)}`
         + tabell(obj?.referens?.namn || 'Ställningstagandet', obj?.referens?.rader, ['aid', 'bas', 'p10', 'med', 'p90'])
         + tabell(obj?.statistik?.namn || 'Jämförelsestatistiken', obj?.statistik?.rader, ['aid', 'bas', 'median', 'p10', 'p90', 'andelKv'])
         + `<details class="bakgrund-panel marg-t-12"><summary>Råtext (JSON)</summary><pre class="fs-xs max-hojd-420 rulla">${esc(obj ? JSON.stringify(obj, null, 2) : inb.text)}</pre></details>`;

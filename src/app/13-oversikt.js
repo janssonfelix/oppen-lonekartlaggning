@@ -93,10 +93,11 @@ function updateCompliance() {
 }
 
 // ---- Underlagets kvalitet (ADR-19): svagaste länken avgör ----
-function bedomningUnderlag() {
+/** @param {{reg?: any}} [val] reg: regressionen när anroparen just kört den — ett värde som skickas vidare, ingen cache (ADR-17) */
+function bedomningUnderlag({ reg: given } = {}) {
     const d = getData();
     if (!d.length) return null;
-    const reg = runOLSRegression();
+    const reg = given || runOLSRegression();
     const modell = reg.error ? 'fel' : (reg.modelName === 'full' ? 'full' : 'minimal');
     const mde = reg.error ? null : _dqMdeFranSe(reg.seKonR);
     const b = _dqBedomUnderlag(d, { k: kInstalld(), audit: state.dataAudit, mde, modell });   // jämförbarheten gäller det som lämnar verktyget (ADR-51)

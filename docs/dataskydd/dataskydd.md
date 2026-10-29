@@ -192,7 +192,8 @@ tröskeln av något kön, och processöversiktens steg 4 blir inte klart när al
 under tröskeln: steget säger hur många par som bara redovisas i fliken Likvärdigt arbete och leder dit.
 
 **Organisationsfilen.** Systemägaren kan baka in organisationspaketet i verktygsfilen och sprida en fil.
-Den innehåller bara det paketet bär (benämningar, inställningar och aggregat), aldrig lönedata; inget
+Den innehåller bara det paketet bär (benämningar, inställningar, aggregat och rapportens tabellrecept — inga
+tal), aldrig lönedata; inget
 skript ändras, så skydden ovan gäller oförändrade (riskanalysen §6.9).
 
 ## 4. Det som kan lämna verktyget

@@ -12,6 +12,9 @@
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
 
+import { valideraRecept } from './tabellrecept.js';
+import { valideraPerBasRecept, perBasReceptArStandard } from './perbas.js';
+
 export const PAKET_FORMAT = 'lonekartlaggning-organisationspaket';
 export const PAKET_VERSION = 1;
 export const PAKET_MAX_BYTE = 5 * 1024 * 1024;
@@ -83,7 +86,7 @@ function _orgTyp(v) {
 /**
  * Bygger ett paket ur appens delar. Tomma delar utelämnas.
  * @param {{organisation:string, utgivare?:string, skapat:string, avserAr?:number,
- *          profil?:Object, installningar?:Object, referens?:Object|null, statistik?:Object|null}} u
+ *          profil?:Object, installningar?:Object, referens?:Object|null, statistik?:Object|null, rapport?:Object|null}} u
  * @returns {Object} JSON-säkert paket
  */
 export function byggPaket(u) {
@@ -108,11 +111,35 @@ export function byggPaket(u) {
             smaGrupperIExport: inst.smaGrupperIExport === false ? false : undefined,
         }),
     };
+    // Rapportens recept (ADR-52): egna tabeller ur Utforska och receptet för avsnittet per BAS-intervall. Bara
+    // giltiga recept följer med, och standardreceptet per BAS utelämnas (det gäller ändå).
+    const rapport = _rapport(u.rapport, null);
+    if (rapport) paket.rapport = rapport;
     const refRader = (u.referens?.rader || []).map(_referensRad).filter(Boolean);
     if (refRader.length) paket.referens = { ..._utanTomma({ namn: _text(u.referens.namn), kortnamn: _text(u.referens.kortnamn) }), rader: refRader };
     const statRader = (u.statistik?.rader || []).map(_statistikRad).filter(Boolean);
     if (statRader.length) paket.statistik = { ..._utanTomma({ namn: _text(u.statistik.namn) }), rader: statRader };
     return paket;
+}
+
+/**
+ * Rapportens recept i giltig form, eller null när inget finns. Ogiltiga tabellrecept faller bort (med en varning
+ * när `varningar` ges); receptet per BAS normaliseras, och standardreceptet blir null.
+ * @param {any} rp
+ * @param {string[]|null} varningar
+ */
+function _rapport(rp, varningar) {
+    if (!rp || typeof rp !== 'object') return null;
+    const in_ = Array.isArray(rp.tabeller) ? rp.tabeller : [];
+    const tabeller = in_.map(t => valideraRecept(t)).filter(Boolean);
+    if (varningar && tabeller.length < in_.length) {
+        const n = in_.length - tabeller.length;
+        varningar.push(`${n} ${n === 1 ? 'egen tabell' : 'egna tabeller'} i paketet gick inte att läsa och hoppas över.`);
+    }
+    let perBasRecept = rp.perBasRecept && typeof rp.perBasRecept === 'object' ? valideraPerBasRecept(rp.perBasRecept) : null;
+    if (perBasRecept && perBasReceptArStandard(perBasRecept)) perBasRecept = null;
+    if (!tabeller.length && !perBasRecept) return null;
+    return { tabeller, ...(perBasRecept ? { perBasRecept } : {}) };
 }
 
 // ---- Tolka ----
@@ -215,6 +242,7 @@ export function tolkaPaket(text) {
             installningar: _utanTomma({ poPct: _tal(inst.poPct, 0, 100), poNot: _text(inst.poNot), months: _period(inst.manader), kTroskel, ...las }),
             referens: refRader ? { ..._utanTomma({ namn: _text(o.referens.namn), kortnamn: _text(o.referens.kortnamn) }), rader: refRader } : null,
             statistik: statRader ? { ..._utanTomma({ namn: _text(o.statistik.namn) }), rader: statRader } : null,
+            rapport: _rapport(o.rapport, varningar),
         },
         varningar,
     };

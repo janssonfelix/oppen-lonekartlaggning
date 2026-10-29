@@ -12,7 +12,8 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   recept (rader, kolumner, mått och urval, valfritt en tabell per BAS-intervall) och ritas om med minsta gruppstorlek i
   avsnittet *Egna tabeller* i Word-utkastet och PDF-rapporten, i bladet *Egna tabeller* i Excel-filen och som block
   i rapportunderlaget. Tabellerna
-  ordnas och tas bort under *Rapportens innehåll* och följer med i konfigurationsfilen. Avsnittet per BAS-intervall
+  ordnas och tas bort under *Rapportens innehåll* och följer med i konfigurationsfilen; organisationspaketet kan
+  bära dem och receptet per BAS, så att alla handläggare får samma tabeller. Avsnittet per BAS-intervall
   följer ett redigerbart recept: upprepa per BAS eller per sektor, rader, mått, åldersgränser och summeringstabeller.
 - **Tabellerna per BAS-intervall, som i en skriven lönekartläggning.** Word-utkastet har ett nytt avsnitt,
   *Lönestruktur per BAS-intervall*, och Excel-filen ett nytt blad, *Per BAS*, byggda efter arbetsgivarnas egna
@@ -90,7 +91,8 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   exporten ritade i exportläget, och Lika arbetes minne har ett rum per tröskel, så att ett lägesbyte inte räknar
   om något. På 55 000 rader gick fliken från 12 s till omkring 3 s. Ett byte av minsta gruppstorlek ritar inte
   Översikt två gånger, bygger Att göras lista en gång för Att göra och processöversikten, och räknar om
-  bootstrap-KI och styrkan bara när det statistiska golvet ändras.
+  bootstrap-KI och styrkan bara när det statistiska golvet ändras. Att göra kör regressionen en gång i stället för
+  fyra och skickar resultatet vidare till underlagsbedömningen (ingen cache, ADR-17 står kvar).
 
 ### Gränssnitt
 
