@@ -147,9 +147,12 @@ describe('egna tabeller: receptet för avsnittet per BAS-intervall', () => {
 describe('exportläget kostar inte mer än det måste (ADR-51)', () => {
     it('rapportModellBada ger samma modell som rapportModell() och rapportModell({ alla: true }) ur ett bygge', () => {
         const w = fonster();
+        // Metodbilagans exporttidpunkt har sekunder: två modeller byggda på var sin sida om ett sekundskifte (som på
+        // en långsam CI-maskin) är ändå samma modell, så tidpunkten jämförs inte.
+        const utanTid = m => JSON.stringify(m).replace(/"Exporttidpunkt","[^"]*"/g, '"Exporttidpunkt","<TID>"');
         const bada = w.eval('rapportModellBada()');
-        expect(JSON.stringify(bada.urval)).toBe(JSON.stringify(w.eval('rapportModell()')));
-        expect(JSON.stringify(bada.alla)).toBe(JSON.stringify(w.eval('rapportModell({ alla: true })')));
+        expect(utanTid(bada.urval)).toBe(utanTid(w.eval('rapportModell()')));
+        expect(utanTid(bada.alla)).toBe(utanTid(w.eval('rapportModell({ alla: true })')));
         expect(bada.alla.avsnitt.length).toBeGreaterThanOrEqual(bada.urval.avsnitt.length);
     });
     it('Lika arbetes minne har ett rum per tröskel: ett lägesbyte räknar inte om översiktens rader', () => {

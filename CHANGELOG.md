@@ -29,6 +29,52 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 - **All personal ingår, även BAS K och uppåt.** Begränsningen till BAS A–J är borttagen (ADR-21 upphävd):
   chefsnivåerna läses in och analyseras som alla andra intervall, i stället för att bara räknas. Rimlighetskontrollen
   kräver bara att BAS är en bokstav. Efter användartest: lönekartläggningen ska omfatta hela organisationen.
+- **Regressionskortet förklarar sig:** ett avsnitt *Så fungerar regressionen — i tre steg* under inledningen säger
+  i vardagsspråk vad modellen gör, vad den räknar bort och inte, och vilket tal i kortet som används till vad.
+  Slutsatsen säger vad som blir kvar både med och utan yrkesgruppssteget (tidigare stod två olika "kvarstår" i
+  samma block). Internt språk är borta ur kortet ("hero-rutan", "Realistiskt intervall", "Quantile regression",
+  "Joint Pay Assessment", "p.e."). Blinder-Oaxaca-kortet säger att det räknar män mot kvinnor och hur talet
+  förhåller sig till huvudtalet, och kallar inte längre den oförklarade delen diskrimineringsindikerande.
+- **Ålder & karriär:** *Lönegap per åldersgrupp* står direkt under spridningsdiagrammet. Raden under nyckeltalen
+  säger i klartext om lönen stiger lika mycket per levnadsår för båda könen och hur mycket åldersfördelningen
+  förklarar, i stället för "lutningen skiljer sig med 6 %" och R². Nyckeltalet *Vid samma ålder* säger vad det
+  räknar bort och inte. Livscykelavsnittet är lättare: R²-rutorna är borta (talen står i modelljämförelsen),
+  tolkningen formulerar hypoteser att pröva i stället för orsaker, tabellens kolumner heter inte *Median* när de är
+  modellvärden, och könsskillnaden i modelljämförelsen räknas åt samma håll som huvudmodellen. Hjälptexten *Så
+  används fliken* är omskriven efter dagens namn på nyckeltal och paneler, och menyn har ett verktygstips för fliken.
+- **Ordlistan** förklarar p-värdet rätt (hur ofta slumpen skulle ge en så stor skillnad om ingen fanns) och har en
+  post *Sekventiell dekomponering* med alla stegen i stället för två som sade "tre steg".
+- **Ålder & karriär ordnad efter tre frågor.** Överst: finns skillnaden kvar vid samma ålder (nyckeltal, spridning,
+  gap per åldersgrupp). Fördjupningen börjar med *Växer gapet med åldern?* (livscykeln, öppen), därefter
+  lönespridning över ålder, lönefördelning, åldersstruktur och jämförelsen av alla BAS-intervall. Det andra
+  spridningsdiagrammet (*Lön mot ålder, närmare*) är borta; hela urvalets trendlinje är i stället ett valbart lager i
+  det övre diagrammet, med samma tröskelregel som förut (visas bara när urvalet når minsta gruppstorlek).
+  Nyckeltalet *Ålderskoncentration* ("18 år") heter *Mittersta hälften är* och visar spannet ("35–48 år"), och
+  åldersstrukturens risktexter säger att de hör till personalplaneringen, inte till kartläggningen.
+- **En bild av dekomponeringen.** Trappan i regressionskortet har fått yrkesgruppssteget, ljusare och efter
+  huvudtalet, så att den visar samma sak som förklaringsbudgeten; steglistan med pilar finns kvar för skärmläsare
+  och textkopior men visas inte. Den gula metodnoten om median mot geometriskt medelvärde står nu kort i *Så
+  fungerar regressionen* (*Två råa gap*). Per-BAS-tabellens rad "För få" säger vad som krävs ("kräver minst 10 av
+  varje kön").
+- **Ett tecken i hela verktyget: kvinnor mot män, negativt när kvinnor ligger lägre.** Tre ställen räknade åt
+  andra hållet och går nu ihop med huvudtalet i Lika arbete: livscykelmodellens skillnad vid 25 och 65 år
+  (`gapPerAge` i `src/lib/livscykel.js` är nu log(kvinna) − log(man); nyckeltalen heter *Kvinnors lön mot mäns* och
+  en negativ förändring betyder att kvinnorna halkar efter, i texterna, tabellen per BAS och åtgärdslistan),
+  Blinder-Oaxaca-kortet (rågap, förklarat och oförklarat visas kvinnor mot män; metoden räknar internt män mot
+  kvinnor och kortet säger det) och *Var uppstår löneskillnaden?* på Översikt och i rapportunderlaget
+  (`src/lib/gapuppdelning.js` räknar kvinnor − män; negativa belopp betyder att kvinnornas medellön är lägre).
+  Undantaget är EU-lönerapportens blad, som har direktivets tecken (art. 9) med tecknet utskrivet, som förut.
+- **Tre småsaker i texterna.** Kronexemplet i regressionskortet säger också hur stor summan är som andel av
+  kvinnornas samlade årslön. Blinder-Oaxaca-kortets förklarade och oförklarade del står i procentenheter av
+  rågapet ("10,7 procentenheter") i stället för som negativa procenttal. Inledningen till *Var uppstår
+  löneskillnaden?* är en mening utan parentes.
+- **Livscykelavsnittet utan dubbletter.** Inledningens tre punkter om växande, krympande och konstant gap är
+  borta (tolkningen under kurvan säger det som gäller), liksom metodraden med N och R². Modelljämförelsen har fyra
+  rader färre: antal parametrar, R² och ojusterat R² är borta, kvar är antal personer, förklarad del av
+  lönespridningen, löneskillnaden och p-värdena.
+- **Livscykelns tabell per BAS-intervall** räknar nivåerna ur modellens egna BAS-koefficienter
+  (exp(β_BAS − β_visat), ny `basFaktor` i `src/lib/livscykel.js`) i stället för att skala kurvan med kvoten mellan
+  intervallens medianlöner; bevisrutan visar faktorn.
 
 ### Dataskydd
 
@@ -66,8 +112,19 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   standardvärde förklaras som SKR:s värde för kommuner och regioner; bristyrkestipset hänvisar inte längre till
   SKR-listor. Ordlistan har fått posten *SKR*, metodbilagan en rad om den nationella referensen, och *Om verktyget*
   förklarar de tre sakerna verktyget hämtar från SKR. Efter användartest: "SKR-statistik" var oklart.
+- **Hjälptexterna *Så används fliken*** i Lika arbete, Prioritering och Utforska är omskrivna efter dagens
+  avsnitt, knappar och ord (inte längre "waterfall-uppdelningen", "Quantile regression", "röda romber",
+  "konfig-panelen"); menyn har ett verktygstips för Prioritering, och ordlistan säger att kvoten (85,2 %) och
+  skillnaden (−14,8 %) är samma tal.
 - **Rensning vid inaktivitet: 90 minuter som standard** (tidigare 30). Valen är av, 30, 60, 90 och 120 minuter;
   organisationspaketet kan fortfarande låsa tiden. Efter användartest: 30 minuter avbröt ett normalt arbetspass.
+
+### Utveckling
+
+- **Testwrappern räknar rätt vid omkörning:** när en arbetare kraschar efter att filen rapporterat klart och filen
+  körs om, dubblas inte dess tester i kontrollen mot teknisk plan (`tools/test.mjs` prövar båda summorna).
+- **Testriggen schemalägger inget under nedmonteringen** av ett fönster (`requestAnimationFrame` och `setTimeout`
+  stubbas före stängning), så att en uppskjuten omritning inte skriver "d3 is not defined" i CI-loggen.
 
 ## 2026.10.19
 

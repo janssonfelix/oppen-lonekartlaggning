@@ -242,7 +242,7 @@ console.log('\n── Diagrammen (diagramkärnan, ADR-39) ──');
 const DIAGRAMMEN = [['matrix', 'chart-skevhet-overview'], ['matrix', 'chart-perbas-gap'], ['struktur', 'chart-sektorer'],
                   ['lonepolitik', 'chart-lp-gender'], ['lonepolitik', 'chart-lp-compliance'], ['kon', 'chart-demo-hist'],
                   // linjer, band och lådor
-                  ['kon', 'chart-kon-scatter'], ['kon', 'chart-kon-boxplot'], ['kon', 'chart-demografi'],
+                  ['kon', 'chart-kon-scatter'], ['kon', 'chart-kon-boxplot'],
                   ['kon', 'chart-demo-agecurve'], ['kon', 'chart-demo-spread'], ['matrix', 'lifecycle-chart'],
                   // de sammansatta diagrammen
                   ['benchmark', 'chart-jamforelse-spann'], ['benchmark', 'chart-jamforelse-avvikelse'], ['lonepolitik', 'chart-lp-bandmap'],
@@ -406,7 +406,7 @@ console.log('\n── Ålder & karriär: ett urval för hela fliken ──');
     await page.waitForTimeout(1200);
     const fore = await page.evaluate(() => ({ n: document.getElementById('kon-kpi-n').textContent, oppna: [...document.querySelectorAll('details.avsnitt[id^="avsnitt-ak-"]')].filter(a => a.open).map(a => a.id),
         skarmar: +(Math.max(document.documentElement.scrollHeight, document.getElementById('main-content').scrollHeight) / innerHeight).toFixed(1) }));
-    ok(fore.oppna.length === 1 && fore.oppna[0] === 'avsnitt-ak-lon', 'bara avsnittet om lön mot ålder är öppet');
+    ok(fore.oppna.length === 1 && fore.oppna[0] === 'avsnitt-ak-karriar', 'bara avsnittet om gapet över karriären är öppet');
     console.log(`    (fliken är ${fore.skarmar} skärmhöjder med bara första avsnittet öppet)`);
     const bas = await page.evaluate(() => [...document.getElementById('bas-select-kon').options].map(o => o.value).find(v => v !== '__ALLA__'));
     await page.selectOption('#bas-select-kon', bas);

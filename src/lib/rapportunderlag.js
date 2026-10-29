@@ -268,10 +268,10 @@ export function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
     if (typ === 'uppdelning') {
         const R = 'Var uppstår löneskillnaden?';
         if (!u) return blk(R, [`För få personer för att dela upp skillnaden: ett kön har färre än ${k} personer i urvalet.`], null);
-        const inledning = `Männens medellön är ${_kr(u.medel.ma)} och kvinnornas ${_kr(u.medel.kv)}, en skillnad på ${_kr(u.gap)} (${_pct(u.gapPct)} av männens).`;
+        const inledning = `Kvinnornas medellön är ${_kr(u.medel.kv)} och männens ${_kr(u.medel.ma)}, en skillnad på ${_kr(u.gap)} (${_pct(u.gapPct)} av männens).`;
         if (u.skyddad === false) return blk(R, [inledning, `Skillnaden delas inte upp här: en grupp med färre än ${k} personer står för så stor del av en av delarna att dess bidrag annars skulle kunna räknas fram.`], null);
         const { A, B, C } = u.delar;
-        const st = [`${inledning} Positiva belopp betyder att männens medellön är högre.`,
+        const st = [`${inledning} Beloppen är kvinnor mot män: negativa belopp betyder att kvinnornas medellön är lägre.`,
             `Av skillnaden beror ${_kr(A)} på att kvinnor och män är olika fördelade över BAS, ${_kr(B)} på olika AID inom samma BAS och ${_kr(C)} på löneskillnader inom samma AID och BAS.`];
         if (u.litetGap) st.push('Skillnaden är mindre än 1 % av männens medellön. Delarna kan då peka åt olika håll och vara större än själva skillnaden.');
         const andel = v => u.litetGap ? '—' : _pct(v / u.gap * 100, 0);

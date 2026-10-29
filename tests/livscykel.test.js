@@ -96,11 +96,12 @@ describe('livscykelRegression: skattning', () => {
         expect(Math.abs(res.kvCoef - (-0.1))).toBeLessThan(0.02);
     });
 
-    it('gapet vid 25 år följer prediktionerna: 1 − kvinna/man', () => {
+    it('gapet vid 25 år följer prediktionerna, kvinnor mot män: kvinna/man − 1', () => {
         const kvinna = res.predKvinna[0].lon;
         const man = res.predMan[0].lon;
-        expect(res.gapAt25).toBeCloseTo((man / kvinna - 1) * 100, 6);
-        expect(res.gapAt65).toBeCloseTo((res.predMan[40].lon / res.predKvinna[40].lon - 1) * 100, 6);
+        expect(res.gapAt25).toBeCloseTo((kvinna / man - 1) * 100, 6);
+        expect(res.gapAt25).toBeLessThan(0);                                       // kvinnorna ligger lägre i fixturen
+        expect(res.gapAt65).toBeCloseTo((res.predKvinna[40].lon / res.predMan[40].lon - 1) * 100, 6);
         expect(res.gapDelta).toBeCloseTo(res.gapAt65 - res.gapAt25, 10);
     });
 
@@ -137,6 +138,17 @@ describe('livscykelRegression: fixBas', () => {
         const utan = livscykelRegression(rader, { golv: 10 });
         const res = livscykelRegression(rader, { fixBas: 'Z', golv: 10 });
         expect(res.fixBas).toBe(utan.fixBas);
+    });
+
+    it('nivåfaktorn per BAS kommer ur modellens koefficienter: 1 för det visade intervallet, och kurvan för ett annat intervall är kurvan gånger faktorn', () => {
+        const rader = fixtur(240);
+        const a = livscykelRegression(rader, { fixBas: 'A', golv: 10 });
+        const c = livscykelRegression(rader, { fixBas: 'C', golv: 10 });
+        expect(Object.keys(a.basFaktor)).toEqual(['A', 'B', 'C']);
+        expect(a.basFaktor.A).toBe(1);
+        expect(a.basFaktor.C).toBeCloseTo(Math.exp(0.2), 1);                        // fixturens nivåskillnad A→C är 0,2 på log-skalan
+        expect(c.predMan[0].lon).toBeCloseTo(a.predMan[0].lon * a.basFaktor.C, 6);   // samma sak som att räkna kurvan för C
+        expect(c.basFaktor.A).toBeCloseTo(1 / a.basFaktor.C, 10);
     });
 
     it('prediktionerna för olika fixBas skiljer sig åt på nivån, inte i gapet', () => {

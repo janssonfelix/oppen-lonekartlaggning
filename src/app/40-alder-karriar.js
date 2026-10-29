@@ -6,6 +6,26 @@
 // skillnader mellan åldersgrupper nu, inte hur en persons lön utvecklas — åldersgrupperna skiljer sig också i
 // utbildning, yrkesval och anställningstid (kohorteffekter). Står under kurvorna, i Om verktyget och i metodbilagan.
 const KOHORT_FORBEHALL = 'Kurvorna bygger på ett tvärsnitt av lönerna i dag: de visar skillnader mellan åldersgrupper just nu, inte hur en persons lön utvecklas över karriären. Åldersgrupperna skiljer sig också i utbildning, yrkesval och anställningstid (kohorteffekter), så en skillnad mellan 30- och 60-åringar är inte en förväntad löneutveckling.';
+// Raden under nyckeltalen, i klartext: stiger lönen lika mycket per levnadsår för kvinnor och män, och hur mycket av
+// skillnaden förklarar åldersfördelningen? Ren funktion. lutKv/lutMa är trendlinjernas lutning i kronor per år;
+// ra och vidSammaAlder är kvinnors lön i procent av mäns, utan justering respektive avläst vid medelåldern.
+function _akInsiktText(lutKv, lutMa, ra, vidSammaAlder) {
+    const kr = v => `${v >= 0 ? '+' : '−'}${svTal(Math.abs(Math.round(v)), 0)} kr`;
+    const medel = (Math.abs(lutKv) + Math.abs(lutMa)) / 2;
+    const likaLutning = medel === 0 || Math.abs(lutKv - lutMa) / medel <= 0.25;
+    const lutning = likaLutning
+        ? `Lönen stiger ungefär lika mycket per levnadsår för kvinnor (${kr(lutKv)}) och män (${kr(lutMa)}).`
+        : lutKv < lutMa
+            ? `Lönen stiger långsammare med åldern för kvinnor (${kr(lutKv)} per år) än för män (${kr(lutMa)}).`
+            : `Lönen stiger snabbare med åldern för kvinnor (${kr(lutKv)} per år) än för män (${kr(lutMa)}).`;
+    const skillnad = vidSammaAlder - ra;
+    const justering = Math.abs(skillnad) < 1
+        ? `Vid samma ålder är kvinnors lön ${svPct(vidSammaAlder, 1)} av mäns, nästan som utan justering (${svPct(ra, 1)}): åldersfördelningen förklarar lite av skillnaden.`
+        : skillnad > 0
+            ? `Vid samma ålder är kvinnors lön ${svPct(vidSammaAlder, 1)} av mäns, mot ${svPct(ra, 1)} utan justering: åldersfördelningen förklarar en del av skillnaden${vidSammaAlder < 95 ? ', men inte hela' : ''}.`
+            : `Vid samma ålder är kvinnors lön ${svPct(vidSammaAlder, 1)} av mäns, mot ${svPct(ra, 1)} utan justering: skillnaden blir större när åldern räknas bort, eftersom kvinnorna i urvalet i genomsnitt är äldre.`;
+    return `${lutning} ${justering} Vad BAS-intervall och yrkesgrupp förklarar står i Lika arbete.`;
+}
 function renderKon(bas) {
     const isAll = bas === "__ALLA__";
     const df = getData().filter(d => (isAll || d.bas === bas) && d.alder && d.alder > 0 && d.kon);
@@ -45,15 +65,18 @@ function renderKon(bas) {
     /** @type {HTMLElement} */ (document.getElementById("kon-kpi-slope")).textContent = `${lutning(kvOk, regKv)} / ${lutning(maOk, regMa)} kr`;
     const insightEl = document.getElementById("p-value-insight");
     if (insightEl) {
-        const avgSlope = (Math.abs(regKv.m) + Math.abs(regMa.m)) / 2;
-        const slopeRatio = avgSlope > 0 ? svTal(Math.abs(regKv.m - regMa.m) / avgSlope * 100, 0) : '0';
         const scope = isAll ? "Hela urvalet" : `BAS ${bas}`;
-        insightEl.innerHTML = konOk
-            ? `<strong>${scope} – Insikt:</strong> Trendlinjernas lutning skiljer sig med ${slopeRatio} %. Förklaringsgrad: kvinnor ${svTal(regKv.r2, 2)}, män ${svTal(regMa.r2, 2)}.`
+        insightEl.innerHTML = konOk && medMa > 0 && expMa > 0
+            ? `<strong>${scope}:</strong> ${_akInsiktText(regKv.m, regMa.m, (medKv / medMa) * 100, (expKv / expMa) * 100)}`
             : `<strong>${scope}:</strong> ${esc(_konUtelamnatNot())}`;
     }
     { const not = document.getElementById('kon-kohort-not'); if (not) not.textContent = KOHORT_FORBEHALL; }
     const colorBy = /** @type {HTMLInputElement} */ (document.getElementById('kon-color-by'))?.value || 'kon';
+    // Trendlinjen för hela urvalet är ett valbart lager. Den är ett lönemått för urvalet och visas bara när
+    // urvalet (alla BAS eller det valda) når tröskeln (beslut av produktägaren 2026-10-16).
+    const trendAllaVald = !!(/** @type {HTMLInputElement|null} */ (document.getElementById('kon-trend-alla'))?.checked);
+    const trendAllaOk = df.length >= kTroskel();
+    const trendAlla = trendAllaVald && trendAllaOk ? Stat.linearRegression(df.map(d => [d.alder, d.lon])) : null;
     // Trendlinjer per kön med 95 % KI-band — bara för ett kön som når tröskeln.
     const ciKv = kvOk ? linearRegressionCI(dataKv.map(d => [d.alder, d.lon]), minAlder, maxAlder, 25) : null;
     const ciMa = maOk ? linearRegressionCI(dataMa.map(d => [d.alder, d.lon]), minAlder, maxAlder, 25) : null;
@@ -75,12 +98,13 @@ function renderKon(bas) {
     const liten = individLitenFor(getData());
     const dolda = df.filter(liten).length;
     ritaFigur('chart-kon-scatter', _konScatterFigur({
-        df, dataKv, dataMa, isAll, colorBy, minAlder, maxAlder, statMedian, liten,
+        df, dataKv, dataMa, isAll, colorBy, minAlder, maxAlder, statMedian, liten, trendAlla,
         trendKv: kvOk ? regKv : null, trendMa: maOk ? regMa : null, ciKv, ciMa, pol: isAll ? null : policyFor(null, bas),
         beskrivning: `Spridningsdiagram lön mot ålder för ${scope2}. ${dataKv.length} kvinnor och ${dataMa.length} män. ` +
             (konOk ? `Kvinnors trend ökar med ${Math.round(regKv.m)} kr per år, mäns med ${Math.round(regMa.m)} kr per år. `
                    : `${kvOk ? `Kvinnors trend ökar med ${Math.round(regKv.m)} kr per år. ` : ''}${maOk ? `Mäns trend ökar med ${Math.round(regMa.m)} kr per år. ` : ''}Trendlinje visas inte för ${utan}: ${skal}. `) +
-            `Ojusterat lönegap: ${unadjGap}. Åldersjusterat: ${ageAdjGap}.` }), { hojd: 420 });
+            `Ojusterat lönegap: ${unadjGap}. Åldersjusterat: ${ageAdjGap}.` +
+            (trendAlla ? ` Trend för hela urvalet: ${trendAlla.m >= 0 ? '+' : '−'}${svTal(Math.abs(Math.round(trendAlla.m)), 0)} kr per år.` : '') }), { hojd: 420 });
     // En låda är könets kvartiler: den ritas bara för ett kön som når tröskeln.
     const boxEl = document.getElementById('chart-kon-boxplot');
     if (kvOk || maOk) {
@@ -88,7 +112,8 @@ function renderKon(bas) {
             beskrivning: `Lådagram av lönefördelning per kön för ${scope2}. ${rawLonKv.length} kvinnor, ${rawLonMa.length} män.`
                 + (utan ? ` Lådan visas inte för ${utan}: ${skal}.` : '') }), { hojd: 420 });
     } else if (boxEl) rensaFigur(boxEl);
-    _setDiagramKNot('chart-kon-scatter', [utan ? `Trendlinje och konfidensband visas inte för ${utan}: ${skal}.` : '', _individNot(dolda)].filter(Boolean).join(' '));
+    _setDiagramKNot('chart-kon-scatter', [utan ? `Trendlinje och konfidensband visas inte för ${utan}: ${skal}.` : '',
+        trendAllaVald && !trendAllaOk ? _demoTrendNot(df.length) : '', _individNot(dolda)].filter(Boolean).join(' '));
     _setDiagramKNot('chart-kon-boxplot', utan ? `Lådan visas inte för ${utan}: ${skal}.` : '');
     renderKonTathet();
     renderKonMultiplar();
@@ -134,6 +159,7 @@ function renderKonTathet() {
     if (not) { not.hidden = !utelamnade.length; not.textContent = utelamnade.length ? `Visas inte, färre än ${kTroskel()} personer: ${utelamnade.join(', ')}.` : ''; }
 }
 document.getElementById('kon-tathet-visa')?.addEventListener('change', () => renderKonTathet());
+document.getElementById('kon-trend-alla')?.addEventListener('change', () => { const s = /** @type {HTMLInputElement|null} */ (document.getElementById('bas-select-kon')); if (s) renderKon(s.value); });
 document.getElementById('kon-tathet-form')?.addEventListener('change', () => renderKonTathet());
 
 // ---- Löneklasser: indelningen för histogrammet ----
@@ -305,7 +331,7 @@ const _vagratLinje = (serie, farg, y, a0, a1, val = {}) => ({ marke: 'linje', se
 // eller kön i gruppen är under tröskeln (individLitenFor); trendlinje och konfidensband bygger på alla och finns
 // bara för ett kön som når tröskeln — anroparen lämnar annars null. Zoom: pensla ett område och välj "Zooma hit".
 /** @param {{[k: string]: any, liten?: (rad: any) => boolean}} val */
-function _konScatterFigur({ df, dataKv, dataMa, isAll, colorBy, minAlder, maxAlder, statMedian, trendKv, trendMa, ciKv, ciMa, pol, beskrivning, liten = () => false }) {
+function _konScatterFigur({ df, dataKv, dataMa, isAll, colorBy, minAlder, maxAlder, statMedian, trendKv, trendMa, trendAlla = null, ciKv, ciMa, pol, beskrivning, liten = () => false }) {
     const punkt = (d, medKon) => ({ x: d.alder, y: d.lon, yrke: d.yrke, ...(isAll || medKon ? { bas: d.bas } : {}),
                                     ...(medKon ? { kon: d.kon.includes('kvinna') ? 'Kvinna' : 'Man' } : {}), ...(liten(d) ? { liten: true } : {}),
                                     markering: markeringFor(d.bas, d.yrke) });
@@ -332,6 +358,8 @@ function _konScatterFigur({ df, dataKv, dataMa, isAll, colorBy, minAlder, maxAld
         data: [{ x: minAlder, y: reg.m * minAlder + reg.b }, { x: maxAlder, y: reg.m * maxAlder + reg.b }] })); };
     trend('Kvinna (trend)', PALETTE.kon.kvinna, trendKv);
     trend('Man (trend)', PALETTE.kon.man, trendMa);
+    if (trendAlla) lager.push(_vagratLinje(`Hela urvalet (trend, R² = ${svTal(trendAlla.r2, 2)})`, PALETTE.semantic.trend, 0, minAlder, maxAlder, { tjocklek: 2, streck: 'streckad',
+        data: [{ x: minAlder, y: trendAlla.m * minAlder + trendAlla.b }, { x: maxAlder, y: trendAlla.m * maxAlder + trendAlla.b }] }));
     if (statMedian != null) lager.push(_vagratLinje(`Median i ${plotNamn(jmfNamn('jämförelsestatistiken'))}`, PALETTE.serie[10], statMedian, minAlder, maxAlder, { streck: 'streckad' }));
     return { beskrivning, individer: true, x: { skala: 'linjar', titel: 'Ålder' }, y: { skala: 'linjar', titel: 'Månadslön', format: 'kr' }, lager,
         referens: pol ? [{ typ: 'zon', y0: pol.p10, y1: pol.p90, farg: PALETTE.semantic.neutral, opacitet: 0.15 },
@@ -413,7 +441,6 @@ function renderDemografi(bas) {
         ? getData().filter(d => d.alder > 0)
         : getData().filter(d => d.bas === bas && d.alder > 0);
     if (df.length < 2) return;
-    const scope    = isAll ? 'Hela urvalet' : `BAS ${bas}`;
     const scopeShort = isAll ? 'urvalet' : `BAS-intervallet`;
     const basKv = df.filter(d => d.kon.includes('kvinna'));
     const basMa = df.filter(d => d.kon === 'man' || d.kon === 'män');
@@ -432,7 +459,7 @@ function renderDemografi(bas) {
     // Successionszonen är 60+ (motsvarar riktålder 60–67); trösklarna följer den.
     const pct60p = +(df.filter(d => d.alder >= 60).length / n * 100).toFixed(1);
     const pctU40 = +(df.filter(d => d.alder < 40).length / n * 100).toFixed(1);
-    const iqr    = Math.round(Stat.quantile(ages, 0.75) - Stat.quantile(ages, 0.25));
+    const q25 = Math.round(Stat.quantile(ages, 0.25)), q75 = Math.round(Stat.quantile(ages, 0.75));
     const ageDiff = +(medianAge - orgMedian).toFixed(1);
     const ageEl = document.getElementById('demo-kpi-age');
     if (ageEl) {
@@ -451,7 +478,7 @@ function renderDemografi(bas) {
     const junEl = document.getElementById('demo-kpi-junior');
     if (junEl) { junEl.textContent = svPct(pctU40, 1); junEl.style.color = pctU40<15?FARG.varning:'var(--text-main)'; }
     const iqrEl = document.getElementById('demo-kpi-iqr');
-    if (iqrEl) iqrEl.textContent = `${iqr} år`;
+    if (iqrEl) iqrEl.textContent = `${q25}–${q75} år`;
     // Risk text
     const risks = [];
     if (pct60p > 25) risks.push(`<strong>Hög successionsrisk:</strong> ${svPct(pct60p, 1)} av ${scopeShort} är 60+ år. Aktiv planering för kompetensöverföring rekommenderas — riktålder 60–67 betyder att en betydande del kan avgå inom 0–7 år.`);
@@ -464,34 +491,25 @@ function renderDemografi(bas) {
     const riskEl = document.getElementById('demo-risk-insight');
     if (riskEl) {
         if (risks.length === 0) { riskEl.style.display='none'; }
-        else { riskEl.style.display='block'; riskEl.innerHTML=risks.join('<br>'); riskEl.className=pct60p>25?'insight-box warning':'insight-box'; }
+        else { riskEl.style.display='block'; riskEl.innerHTML=risks.join('<br>') + '<br><span class="text-dampad-sm">Hör till personalplaneringen, inte till lönekartläggningen.</span>'; riskEl.className=pct60p>25?'insight-box warning':'insight-box'; }
     }
     // Histogram
     ritaFigur('chart-demo-hist', _demoHistFigur({ pctKv, pctMa, refPct, isAll }), { hojd: 340 });
     if (document.getElementById('chart-demo-pyramid')) ritaFigur('chart-demo-pyramid', _demoPyramidFigur({ pctKv, pctMa, isAll }));
-    // Spridning lön mot ålder, åldersfördelning per kön och lönespridning över ålder.
-    // Trendlinjen och lutningen för hela urvalet är ett lönemått för urvalet: de visas bara när urvalet
-    // (alla BAS eller det valda) når tröskeln (beslut av produktägaren 2026-10-16); punkterna per person
-    // följer sin egen regel (individLitenFor, ADR-14).
-    const trendOk = n >= kTroskel();
-    const reg  = trendOk ? Stat.linearRegression(df.map(d => [d.alder, d.lon])) : null;
-    _laNyckel('nyckel-ak-lon', reg ? `${reg.m >= 0 ? '+' : ''}${svTal(reg.m, 0)} kr per år` : '–');
+    // Åldersfördelning per kön och lönespridning över ålder. (Spridningsdiagrammet lön mot ålder ligger överst
+    // i fliken; hela urvalets trend är ett valbart lager där.)
     const minA = Math.min(...ages), maxA = Math.max(...ages);
     const pol = isAll ? null : policyFor(null, bas);
-    const liten = individLitenFor(getData());
-    ritaFigur('chart-demografi', _demografiFigur({ df, reg, minA, maxA, pol, scope, liten }), { hojd: 380 });
-    _setDiagramKNot('chart-demografi', [trendOk ? '' : _demoTrendNot(n), _individNot(df.filter(liten).length, trendOk)].filter(Boolean).join(' '));
-    // Extra-graf A: andel av eget kön per ålder, 5-årigt glidande medel (win=2)
+    // Andel av eget kön per ålder, 5-årigt glidande medel (win=2)
     const aLo = Math.max(18, Math.floor(minA)), aHi = Math.min(67, Math.ceil(maxA));
     ritaFigur('chart-demo-agecurve', _demoAgecurveFigur(_ageShareCurve(basKv, aLo, aHi, 2), _ageShareCurve(basMa, aLo, aHi, 2), aHi), { hojd: 300 });
-    // Extra-graf B: P10/median/P90 över ålder (glidande ±2 år; ett åldersfönster under tröskeln ger ett avbrott i kurvan)
-    { const f = _demoBandFigur(df, kTroskel(), pol, aLo, aHi); if (f) ritaFigur('chart-demo-spread', f, { hojd: 320 }); else rensaFigur('chart-demo-spread'); }
-
-    const insightEl = document.getElementById('demo-insight');
-    if (insightEl) insightEl.innerHTML = `<strong>${scope}:</strong> ${n} personer` + (reg ? ` · Löneutveckling: ${reg.m >= 0 ? '+' : ''}${svTal(reg.m, 0)} kr/år · R²: ${svTal(reg.r2, 2)}.` : ` · ${esc(_demoTrendNot(n))}`);
+    // P10/median/P90 per femårsgrupp (en åldersgrupp under tröskeln ritas inte). Avsnittets nyckeltal är antalet grupper.
+    { const f = _demoBandFigur(df, kTroskel(), pol, aLo, aHi);
+      if (f) ritaFigur('chart-demo-spread', f, { hojd: 320 }); else rensaFigur('chart-demo-spread');
+      _laNyckel('nyckel-ak-lon', f ? `${f.lager[2].data.length} femårsgrupper` : ''); }
 }
-// Noten när urvalet är under tröskeln: trendlinje och lutning utelämnas (punkterna per person följer sin egen regel).
-function _demoTrendNot(n) { return `Trendlinje och lutning visas inte: urvalet har ${n} personer, färre än ${kTroskel()}.`; }
+// Noten när urvalet är under tröskeln: hela urvalets trendlinje utelämnas (punkterna per person följer sin egen regel).
+function _demoTrendNot(n) { return `Trendlinje för hela urvalet visas inte: urvalet har ${n} personer, färre än ${kTroskel()}.`; }
 
 // Åldershistogrammets figur (diagramkärnan, ADR-39): andel per åldersgrupp, staplad per kön, mot Sveriges sysselsatta.
 // Raka etiketter, inte lutade; zonen markerar 60 år och äldre
@@ -529,21 +547,6 @@ function _demoPyramidFigur({ pctKv, pctMa, isAll }) {
         x: { skala: 'linjar', titel: `Kvinnor åt vänster · andel av ${isAll ? 'organisationen' : 'BAS-intervallet'} (%) · Män åt höger`, format: 'pctAbs', doman: [-grans, grans], nollinje: true },
         hojd: Math.max(300, 70 + grupper.length * 24),
         lager: [serie('Kvinna', PALETTE.kon.kvinna, pctKv, -1), serie('Man', PALETTE.kon.man, pctMa, 1)] };
-}
-
-// `reg` är null när urvalet är under tröskeln: då ritas ingen trendlinje (anroparen säger det i noten).
-/** @param {{[k: string]: any, liten?: (rad: any) => boolean}} val */
-function _demografiFigur({ df, reg, minA, maxA, pol, scope, liten = () => false }) {
-    const namn = referensKortnamn();
-    return { beskrivning: `Spridningsdiagram lön mot ålder för ${scope}${reg ? ', med trendlinje' : ''}${pol ? `${reg ? ' och' : ', med'} referensens P10, median och P90` : ''}. ${df.length} personer.${reg ? '' : ' Trendlinje visas inte: urvalet är under minsta gruppstorlek.'}`,
-        individer: true, x: { skala: 'linjar', titel: 'Ålder' }, y: { skala: 'linjar', titel: 'Månadslön', format: 'kr' },
-        lager: [{ marke: 'punkt', serie: 'Anställda', farg: PALETTE.serie[0], storlek: 3.5, opacitet: 0.55,
-                  data: df.map(d => ({ x: d.alder, y: d.lon, yrke: d.yrke, bas: d.bas, ...(liten(d) ? { liten: true } : {}), markering: markeringFor(d.bas, d.yrke) })), tips: _punktTips },
-            ...(reg ? [_vagratLinje(`Trend (R² = ${svTal(reg.r2, 2)})`, PALETTE.semantic.trend, 0, minA, maxA,
-                { data: [{ x: minA, y: reg.m * minA + reg.b }, { x: maxA, y: reg.m * maxA + reg.b }] })] : []),
-            ...(pol ? [_vagratLinje(`${namn} P10`, colors.policy, pol.p10, minA, maxA, { streck: 'streckad', tjocklek: 1.5 }),
-                       _vagratLinje(`${namn} Median`, colors.policy, pol.med, minA, maxA),
-                       _vagratLinje(`${namn} P90`, colors.policy, pol.p90, minA, maxA, { streck: 'streckad', tjocklek: 1.5 })] : [])] };
 }
 
 // Utjämnade kurvor ritas monotont: de går aldrig utanför värdena.

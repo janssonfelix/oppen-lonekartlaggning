@@ -36,34 +36,34 @@ function fonster(k = null, rader = byggDataset()) {
 }
 const text = el => (el ? el.textContent.replace(/\s+/g, ' ').trim() : '');
 
-describe('Ålder & karriär: demografidelens trendlinje och lutning kräver att urvalet når tröskeln', () => {
-    const rita = (w, bas) => { iExport(w); w.eval(`renderDemografi('${bas}')`); return w.document; };
-    const harTrend = fig => fig.lager.some(l => l.marke === 'linje' && /^Trend/.test(l.serie));
-    it('ett valt BAS med 6 personer: ingen trendlinje, streck i nyckeltalet och en not under diagrammet (vid 10)', () => {
+describe('Ålder & karriär: trendlinjen för hela urvalet (valbart lager) kräver att urvalet når tröskeln', () => {
+    const rita = (w, bas) => { iExport(w); w.document.getElementById('kon-trend-alla').checked = true; w.eval(`renderKon('${bas}')`); return w.document; };
+    const harTrend = fig => fig.lager.some(l => l.marke === 'linje' && /^Hela urvalet \(trend/.test(l.serie));
+    it('ett valt BAS med 6 personer: ingen trendlinje för hela urvalet och en not under diagrammet (vid 10)', () => {
         const d = rita(fonster(), 'E');
-        const fig = d.getElementById('chart-demografi')._figur;
+        const fig = d.getElementById('chart-kon-scatter')._figur;
         expect(harTrend(fig)).toBe(false);
-        expect(fig.lager.filter(l => l.marke === 'punkt')).toHaveLength(1);   // punkterna per person ritas som förut (ADR-14)
-        expect(fig.beskrivning).not.toMatch(/med trendlinje/);
-        expect(text(d.getElementById('nyckel-ak-lon'))).toBe('–');
-        expect(text(d.getElementById('chart-demografi-k-not'))).toMatch(/^Trendlinje och lutning visas inte: urvalet har 6 personer, färre än 10\./);
-        expect(text(d.getElementById('demo-insight'))).not.toMatch(/Löneutveckling/);
-        expect(text(d.getElementById('demo-insight'))).toMatch(/färre än 10/);
+        expect(fig.lager.filter(l => l.marke === 'punkt')).toHaveLength(2);   // punkterna per person ritas som förut (ADR-14)
+        expect(fig.beskrivning).not.toMatch(/Trend för hela urvalet/);
+        expect(text(d.getElementById('chart-kon-scatter-k-not'))).toMatch(/Trendlinje för hela urvalet visas inte: urvalet har 6 personer, färre än 10\./);
+        expect(text(d.getElementById('nyckel-ak-lon'))).toBe('');            // inga femårsgrupper når tröskeln
     });
-    it('samma BAS vid tröskeln 5: trendlinje, lutning och ingen not', () => {
+    it('samma BAS vid tröskeln 5: trendlinje i figuren och beskrivningen, ingen not om den', () => {
         const d = rita(fonster(5), 'E');
-        expect(harTrend(d.getElementById('chart-demografi')._figur)).toBe(true);
-        expect(text(d.getElementById('nyckel-ak-lon'))).toMatch(/kr per år$/);
-        // Noten om punkter per person (3 av varje kön i gruppen) finns kvar, men inte den om trendlinjen.
-        expect(text(d.getElementById('chart-demografi-k-not'))).not.toMatch(/Trendlinje och lutning visas inte/);
-        expect(text(d.getElementById('chart-demografi-k-not'))).toMatch(/Trendlinjen bygger på alla/);
-        expect(text(d.getElementById('demo-insight'))).toMatch(/Löneutveckling/);
+        const fig = d.getElementById('chart-kon-scatter')._figur;
+        expect(harTrend(fig)).toBe(true);
+        expect(fig.beskrivning).toMatch(/Trend för hela urvalet: [+−]\d+ kr per år\./);
+        expect(text(d.getElementById('chart-kon-scatter-k-not'))).not.toMatch(/Trendlinje för hela urvalet visas inte/);
     });
-    it('vid 25 behåller hela urvalet trendlinjen, ett BAS med 20 personer förlorar den', () => {
+    it('vid 25 behåller hela urvalet trendlinjen, ett BAS med 20 personer förlorar den; utan kryss finns inget lager', () => {
         const w = fonster(25);
-        expect(harTrend(rita(w, '__ALLA__').getElementById('chart-demografi')._figur)).toBe(true);
-        expect(harTrend(rita(w, 'A').getElementById('chart-demografi')._figur)).toBe(false);
-        expect(text(w.document.getElementById('chart-demografi-k-not'))).toMatch(/urvalet har 20 personer, färre än 25/);
+        expect(harTrend(rita(w, '__ALLA__').getElementById('chart-kon-scatter')._figur)).toBe(true);
+        expect(harTrend(rita(w, 'A').getElementById('chart-kon-scatter')._figur)).toBe(false);
+        expect(text(w.document.getElementById('chart-kon-scatter-k-not'))).toMatch(/urvalet har 20 personer, färre än 25/);
+        w.document.getElementById('kon-trend-alla').checked = false;
+        w.eval("renderKon('__ALLA__')");
+        expect(harTrend(w.document.getElementById('chart-kon-scatter')._figur)).toBe(false);
+        expect(text(w.document.getElementById('chart-kon-scatter-k-not'))).not.toMatch(/hela urvalet/);
     });
 });
 
@@ -201,7 +201,7 @@ describe('Diagramdata från diagram med en punkt per person säger att filen inn
     it('spridningsdiagrammen i Ålder & karriär bär raden på rad 2, efter stämpeln; aggregerade diagram bär den inte', () => {
         const w = fonster();
         w.eval("renderTabContent('kon')");
-        for (const id of ['chart-kon-scatter', 'chart-demografi', 'chart-kon-multiplar']) {
+        for (const id of ['chart-kon-scatter', 'chart-kon-multiplar']) {
             const r = rader(w, id);
             expect(r.length, id).toBeGreaterThan(3);
             expect(r[0][0], id).toMatch(/^.* — Lönekartläggning .*Minsta gruppstorlek för redovisning: 10\.$/);

@@ -28,7 +28,7 @@ describe('gapUppdelning', () => {
     it('A + B + C = gap på slumpad data', () => {
         const u = gapUppdelning(slumpa(), { k: K });
         expect(summa(u)).toBeCloseTo(u.gap, 6);
-        expect(u.gap).toBeCloseTo(u.medel.ma - u.medel.kv, 9);
+        expect(u.gap).toBeCloseTo(u.medel.kv - u.medel.ma, 9);   // kvinnor mot män
         expect(u.gapPct).toBeCloseTo(u.gap / u.medel.ma * 100, 9);
     });
     it('byte av kön ger delar med omvänt tecken', () => {
@@ -42,7 +42,7 @@ describe('gapUppdelning', () => {
         const r = [...flera(30, 'kvinna', 30000, 'A', 'A1'), ...flera(10, 'man', 30000, 'A', 'A1'),
                    ...flera(10, 'kvinna', 40000, 'B', 'B1'), ...flera(30, 'man', 40000, 'B', 'B1')];
         const u = gapUppdelning(r, { k: K });
-        expect(u.gap).toBeGreaterThan(0);
+        expect(u.gap).toBeLessThan(0);                            // kvinnorna ligger lägre: negativt
         expect(u.delar.A).toBeCloseTo(u.gap, 6);
         expect(u.delar.B).toBeCloseTo(0, 6);
         expect(u.delar.C).toBeCloseTo(0, 6);
@@ -52,7 +52,7 @@ describe('gapUppdelning', () => {
         const u = gapUppdelning(r, { k: K });
         expect(u.delar.A).toBeCloseTo(0, 6);
         expect(u.delar.B).toBeCloseTo(0, 6);
-        expect(u.delar.C).toBeCloseTo(3000, 6);
+        expect(u.delar.C).toBeCloseTo(-3000, 6);
     });
     it('AID med bara ett kön: inget C-bidrag, allt i B, summan håller', () => {
         const r = [...flera(20, 'kvinna', 30000, 'A', 'A1'), ...flera(20, 'man', 36000, 'A', 'A2'),
@@ -137,7 +137,7 @@ describe('gapUppdelning', () => {
         const u = gapUppdelning(r, { k: K });
         expect(u.skyddad).toBe(false);
         expect(u.delar).toBeNull();
-        expect(u.gap).toBeCloseTo(u.medel.ma - u.medel.kv, 9);   // hela skillnaden redovisas ändå
+        expect(u.gap).toBeCloseTo(u.medel.kv - u.medel.ma, 9);   // hela skillnaden redovisas ändå
     });
     it('en liten synlig post räcker inte som skydd för en stor dold', () => {
         const r = [];

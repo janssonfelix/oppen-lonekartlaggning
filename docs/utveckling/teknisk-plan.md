@@ -229,7 +229,7 @@ adaptern verkligen delegerar vaktas av `tests/drift.test.js`:
   rätt grupp. Utskriftsfönstret för checklistorna (`printScaffoldView`) läser `:root` och allt från `.dold` till
   stilmallens slut ur den körande stilmallen och lägger in det som byggt stilark (`adoptedStyleSheets`): ett `<style>`-element
   som skriptet skapar blockeras av den ärvda CSP:n (`style-src-elem`), så fönstret var tidigare helt ostilat.
-- **Tester:** Vitest — 2450 tester i 69 filer: rena `src/lib/`-moduler, CSV-parsning, jsdom-röktest
+- **Tester:** Vitest — 2451 tester i 69 filer: rena `src/lib/`-moduler, CSV-parsning, jsdom-röktest
   av varje vy (ADR-7; `tests/smoke.test.js` med det delade fönstret och sju `tests/smoke-*.test.js` per
   område), k-tröskeln i åtta `tests/ktroskel*.test.js` med riggen i `tests/helpers/ktroskel-rigg.js`,
   gränssnittet i `tests/granssnitt*.test.js` (riggen `tests/helpers/granssnitt-rigg.js`) och diagramvyerna i
@@ -558,7 +558,8 @@ kräver bara att BAS är en bokstav; små intervall skyddas av minsta gruppstorl
 
 **ADR-22 — Var uppstår löneskillnaden? Uppdelning på medellön.** Blinder-Oaxaca säger hur stor del av gapet som
 är "förklarat", men inte var det uppstår. Översiktens avsnitt och ett block i rapportunderlaget (efter
-Sammanfattning) delar därför skillnaden i medellön, män minus kvinnor, i tre delar som summerar exakt:
+Sammanfattning) delar därför skillnaden i medellön, kvinnor minus män (negativ när kvinnor ligger lägre, som
+överallt i verktyget), i tre delar som summerar exakt:
 **BAS-fördelning** (struktur), **AID inom BAS** (likvärdigt arbete) och **lön inom samma AID och BAS** (lika
 arbete), visade som en trappa. Varje steg delas symmetriskt med kvinnors och mäns genomsnitt som vikt, så inget
 kön är referens; saknas ett kön i en grupp får det andra könets medellön och gruppen bidrar bara till
@@ -1190,6 +1191,19 @@ Kända brister och obesvarade frågor, så att de inte lever bara i en konversat
    gånger) kan krympa när en flik ändå ändras och en rad får samma avstånd som sina grannar.
 8. **Ett gemensamt globalt scope** på omkring 20 000 rader. Logik flyttas till `src/lib/` när en del ändå ändras.
 9. *(Löst: `.github/dependabot.yml` uppdaterar npm och arbetsflödenas steg, §6.)*
+
+**Gränssnitt och analys (översynen 2026-10-29):**
+9b. **Ett tecken i hela verktyget:** löneskillnader anges kvinnor mot män, negativt när kvinnor ligger lägre
+    (huvudtalet, livscykeln, Blinder-Oaxaca-kortets rågap, *Var uppstår löneskillnaden?*); kvoten *kvinnors lön i
+    procent av mäns* används där den är standard (Översikt, Ålder & karriär, direktivets tabeller). Enda
+    undantaget är EU-lönerapportens blad med direktivets tecken (art. 9), utskrivet i rubriken.
+9c. **Ålder & karriär ordnad efter tre frågor** (vid samma ålder; över karriären; åldersstruktur), med ett
+    spridningsdiagram där hela urvalets trend är ett valbart lager. Täthetskurvorna per BAS står kvar i fliken
+    för att utskriften använder dem; flyttas de behöver utskriften en annan bild.
+9d. **Dekomponeringen visas som en bild:** trappan med yrkesgruppssteget efter huvudtalet, förklaringsbudgeten
+    under den, steglistan som skärmläsaralternativ. Livscykelns nivåer per BAS kommer ur modellens
+    BAS-koefficienter (`basFaktor`). Kvar att besluta: Blinder-Oaxaca på BAS-indikatorer i stället för rang
+    (ADR-44 undantog den), så att uppdelningen vilar på samma modell som huvudtalet.
 
 **Export:**
 10. **Svenskt talformat:** jämförelseexporten (`64-jamforelse-export.js`) och CSV-exporternas tolkning (`_CSV_TALLIKT`) är inte

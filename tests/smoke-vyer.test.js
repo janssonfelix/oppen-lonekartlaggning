@@ -427,7 +427,7 @@ describe('utfällt som standard', () => {
         w.__loadDemoData();
         w.document.querySelector('.nav-item[data-tab="matrix"]').click();
         // Per flik i den nya formen: det första avsnittet öppet, övriga hopfällda.
-        for (const [prefix, forsta] of [['avsnitt-la-', 'avsnitt-la-yrkesgrupper'], ['avsnitt-ak-', 'avsnitt-ak-lon'], ['avsnitt-dk-', 'avsnitt-dk-robusthet'],
+        for (const [prefix, forsta] of [['avsnitt-la-', 'avsnitt-la-yrkesgrupper'], ['avsnitt-ak-', 'avsnitt-ak-karriar'], ['avsnitt-dk-', 'avsnitt-dk-robusthet'],
                 ['avsnitt-st-', 'avsnitt-st-representation'], ['avsnitt-lo-', 'avsnitt-lo-riktade']]) {
             const flikens = [...w.document.querySelectorAll(`details.avsnitt[id^="${prefix}"]`)];
             expect(flikens.length, prefix).toBeGreaterThanOrEqual(4);
