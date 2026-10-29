@@ -76,7 +76,7 @@
                     <span class="nav-etikett">Struktur &amp; rapportmått</span>
                 </button>
                 <div class="nav-group" role="presentation" aria-hidden="true">3 · Åtgärda</div>
-                <button class="nav-item" data-tab="prioritering" id="tab-prioritering" aria-disabled="true" title="Ladda upp strukturdata för att aktivera" aria-controls="view-prioritering">
+                <button class="nav-item" data-tip="Vad bör åtgärdas först, och vad kostar det? Yrkesgrupperna ordnade efter oförklarad skillnad och kostnaden att rätta den." data-tab="prioritering" id="tab-prioritering" aria-disabled="true" title="Ladda upp strukturdata för att aktivera" aria-controls="view-prioritering">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
                     <span class="nav-etikett">Prioritering</span>
                 </button>
@@ -407,7 +407,7 @@
                         </div>
                         <div class="stat-box">
                             <div class="stat-etikett">Kvinnors lön i % av mäns</div>
-                            <div class="stat-val" id="stat-paygap" title="Kvinnors medianlön som procent av mäns (100 % = lika lön). 90 % = kvinnor tjänar 10 % mindre. Standardpresentation enligt Medlingsinstitutet / EU 2023/970.">-</div>
+                            <div class="stat-val" id="stat-paygap" title="Kvinnors medianlön som procent av mäns (100 % = lika lön). 90 % = kvinnor tjänar 10 % mindre, samma sak som ett lönegap på −10 %. Standardpresentation enligt Medlingsinstitutet / EU 2023/970.">-</div>
                         </div>
                     </div>
                     <div id="ov-lage" class="ov-lage">
@@ -659,18 +659,18 @@
                             <ul>
                                 <li>Granska varje BAS-grupp för att se om medianen ligger under organisationens lönepolitiska ställningstagande</li>
                                 <li>Identifiera yrken där medianen ligger långt under jämförelsens median (sista kolumnerna)</li>
-                                <li>Använd lönespridning-kolumnen för att hitta grupper med onormalt stor inre variation</li>
+                                <li>Använd kolumnen för lönespridning för att hitta grupper med ovanligt stor inre variation</li>
                             </ul>
-                            <h3>Vid facklig dialog</h3>
+                            <h3>Vid samverkan</h3>
                             <ul>
                                 <li>Visa upp den fullständiga lönestrukturen för att skapa transparens</li>
                                 <li>Sortera tabellen efter lönegap eller skillnaden mot jämförelsestatistiken för att rikta diskussionen</li>
-                                <li>Söka på specifika yrkesgrupper som facklig part frågar om</li>
+                                <li>Sök på de yrkesgrupper som arbetstagarnas företrädare frågar om</li>
                             </ul>
                             <h3>Inför ledningsmöte</h3>
                             <ul>
-                                <li>Exportera till Excel via knappen ovan för bilaga</li>
-                                <li>Fäll in BAS-grupper som inte är i fokus för att hålla materialet kort</li>
+                                <li><em>Exportera Excel</em> ovanför tabellen ger en bilaga med minsta gruppstorlek tillämpad</li>
+                                <li><em>Fäll in alla</em> och fäll sedan ut de BAS-intervall som är i fokus, så hålls materialet kort</li>
                             </ul>
                         </div>
                     </details>
@@ -679,8 +679,8 @@
                 <!-- Löneutveckling (Kön) Tab -->
                 <div id="view-kon" class="view-panel dold">
                     <div class="flik-intro">
-                        <strong>Lön över karriären — värderas erfarenhet lika?</strong>
-                        Kurvorna visar hur lönen följer åldern för kvinnor respektive män i vald nivå. Går linjerna isär värderas erfarenhet olika mellan könen. Det förklarar ofta en del av ett lönegap — men en förklaring är inte automatiskt ett godtagbart skäl.
+                        <strong>Ålder och karriär — tre frågor.</strong>
+                        Finns skillnaden kvar vid samma ålder? Växer den över karriären? Och hur ser åldersstrukturen ut? Nyckeltalen och diagrammet här överst svarar på den första; fördjupningen tar de två andra. Åldern förklarar ofta en del av ett lönegap — men en förklaring är inte automatiskt ett godtagbart skäl.
                     </div>
                     <div class="urvalsrad" id="ak-urval">
                         <label for="bas-select-kon"><strong>Urval för hela fliken</strong></label>
@@ -720,6 +720,7 @@
                             <div class="chart-header rad-bryt-mitt gap-16 mellan marg-b-16">
                                 <h2 class="fs-lg marg-0">Lön mot ålder, med trend</h2>
                                 <div class="rad-mitt gap-10">
+                                    <label class="falt-kryss pad-0" data-tooltip="En trendlinje för alla i urvalet, oavsett kön. Visas bara när urvalet når minsta gruppstorlek."><input type="checkbox" id="kon-trend-alla"> Trend för hela urvalet</label>
                                     <label for="kon-color-by" class="text-dampad-sm fw-600">Färglägg efter:</label>
                                     <select id="kon-color-by" class="form-select fs-sm pad-6-10">
                                         <option value="kon">Kön</option>
@@ -752,21 +753,14 @@
                     </div>
                     
                     <p class="avsnitt-rubrikrad">Fördjupning</p>
-                    <details class="avsnitt" id="avsnitt-ak-lon" open>
-                        <summary><span class="avsnitt-titel"><h2>Lön mot ålder, närmare</h2><span class="avsnitt-under">Mot referensens nivåer och som spridning över ålder</span></span><span class="avsnitt-nyckel" id="nyckel-ak-lon"></span></summary>
+                    <details class="avsnitt" id="avsnitt-ak-karriar" open>
+                        <summary><span class="avsnitt-titel"><h2>Växer gapet med åldern?</h2><span class="avsnitt-under">Lönekurvor för kvinnor och män över ett yrkesliv</span></span><span class="avsnitt-nyckel" id="nyckel-ak-karriar"></span></summary>
+                        <p class="avsnitt-inledning">Om kvinnors och mäns lönekurvor glider isär över ett yrkesliv kan det tyda på långsammare karriärutveckling, effekter av föräldraledighet eller att lönesättningen slår olika. Ett gap som växer med åldern är något annat än ett som funnits från start.</p>
+                        <div id="livscykel-content"></div>
+                    </details>
+                    <details class="avsnitt" id="avsnitt-ak-lon">
+                        <summary><span class="avsnitt-titel"><h2>Lönespridning över ålder</h2><span class="avsnitt-under">Median och percentilband per femårsgrupp</span></span><span class="avsnitt-nyckel" id="nyckel-ak-lon"></span></summary>
                         <div class="card">
-                        <div class="chart-header rad-mitt mellan marg-b-16">
-                            <div>
-                                <h3 class="m-0">Lön mot ålder</h3>
-                                <p class="text-dampad-xs marg-4-0-0">Samma personer som ovan, utan uppdelning på kön och med en trendlinje för hela urvalet. När ett BAS-intervall är valt visas referensens P10, median och P90 som linjer.</p>
-                            </div>
-                        </div>
-                        <div class="chart-container large" id="demo-export-area">
-                            <div id="chart-demografi"></div>
-                        </div>
-                        <div id="demo-insight" class="insight-box mt-4"></div>
-                    </div>
-                        <div class="card marg-t-24">
                         <div class="chart-header rad-mitt mellan marg-b-16">
                             <div>
                                 <h3 class="m-0">Lönespridning över ålder (P10 · Median · P90)</h3>
@@ -826,7 +820,7 @@
                     <details class="avsnitt" id="avsnitt-ak-struktur">
                         <summary><span class="avsnitt-titel"><h2>Åldersstruktur</h2><span class="avsnitt-under">Återväxt och pensionsavgångar, jämfört med riket</span></span><span class="avsnitt-nyckel" id="nyckel-ak-struktur"></span></summary>
                         <p class="avsnitt-inledning"><span class="info-tip" data-tooltip="Referensdata: SCB:s arbetskraftsundersökningar (AKU), sysselsatta i Sverige."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
-                        Jämför organisationens åldersfördelning med riket. Använd den för att upptäcka var ni riskerar pensionsavgångar utan återväxt, och för att se om en sned åldersstruktur påverkar lönebilden.</p>
+                        Jämför organisationens åldersfördelning med riket, och se om en sned åldersstruktur påverkar lönebilden. Återväxt och pensionsavgångar hör till personalplaneringen, inte till lönekartläggningen — de står här för att samma underlag visar dem.</p>
                         <div class="summary-stats">
                         <div class="stat-box" data-tooltip="Medianåldern i detta BAS-intervall jämfört med organisationens totala medianålder. Avvikelse &gt;5 år markeras.">
                             <div class="stat-etikett">Medianålder</div>
@@ -841,8 +835,8 @@
                             <div class="stat-etikett">Andel under 40</div>
                             <div class="stat-val fs-1_5rem" id="demo-kpi-junior">-</div>
                         </div>
-                        <div class="stat-box" data-tooltip="Interkvartilsavstånd (IQR) i år – skillnaden mellan 75:e och 25:e percentilen. Lågt värde = gruppen är åldersmässigt homogen. Högt värde = bred åldersspridning.">
-                            <div class="stat-etikett">Ålderskoncentration</div>
+                        <div class="stat-box" data-tooltip="Åldrarna för den mittersta hälften av urvalet (25:e till 75:e percentilen). Ett smalt spann betyder att gruppen är åldersmässigt homogen.">
+                            <div class="stat-etikett">Mittersta hälften är</div>
                             <div class="stat-val fs-1_5rem" id="demo-kpi-iqr">-</div>
                         </div>
                     </div>
@@ -913,11 +907,6 @@
                 <div id="view-livscykel" class="view-panel dold">
                     
                     
-                    <details class="avsnitt" id="avsnitt-ak-karriar">
-                        <summary><span class="avsnitt-titel"><h2>Växer gapet med åldern?</h2><span class="avsnitt-under">Lönekurvor för kvinnor och män över ett yrkesliv</span></span><span class="avsnitt-nyckel" id="nyckel-ak-karriar"></span></summary>
-                        <p class="avsnitt-inledning">Om kvinnors och mäns lönekurvor glider isär över ett yrkesliv kan det tyda på långsammare karriärutveckling, effekter av föräldraledighet eller att lönesättningen slår olika. Ett gap som växer med åldern är något annat än ett som funnits från start.</p>
-                        <div id="livscykel-content"></div>
-                    </details>
                     <details class="card avsnitt" id="avsnitt-ak-metod">
                         <summary><span class="avsnitt-titel"><h2>Så används fliken</h2><span class="avsnitt-under">Tolkningstips och användning i kartläggning och dialog</span></span><span class="avsnitt-nyckel" id="nyckel-ak-metod"></span></summary>
                         <details class="flik-usage">
@@ -1487,23 +1476,23 @@
                                     <ul>
                                         <li>Topp 10 i tabellen och kostnadsdiagrammet ger 80/20-regelns budgetfokus</li>
                                         <li>Total åtgärdskostnad/år är direkt budgetunderlag</li>
-                                        <li>Exportera matrisen som bild via diagrammets meny Exportera (välj «Alla bubblor» under Etiketter så är bilden självförklarande) som bilaga</li>
+                                        <li>Exportera matrisen som bild via diagrammets meny Exportera (välj <em>Alla bubblor</em> under <em>Etiketter</em> så är bilden självförklarande) som bilaga</li>
                                     </ul>
                                     <h3>Vid budgetdialog</h3>
                                     <ul>
                                         <li>Pröva "om vi gör X, händer Y" i <strong>Löneöversyn</strong>: riktade potter per grupp, med kön, lönegräns och höj till</li>
                                         <li>Växla mellan ställningstagande (intern policy) och jämförelsestatistiken (marknadsläge) för olika perspektiv</li>
                                     </ul>
-                                    <h3>Vid facklig dialog</h3>
+                                    <h3>Vid samverkan</h3>
                                     <ul>
                                         <li>Visa matrisen för att skapa visuell konsensus om var fokus bör vara</li>
-                                        <li>Klicka på pilknappen i tabellen för att djupgranska en grupp i Löneöversikten (Utforska)</li>
+                                        <li>Knappen <em>Öppna i Löneöversikten</em> på raden visar gruppens löner i Utforska</li>
                                     </ul>
                                     <h3>Tolkningstips</h3>
                                     <ul>
                                         <li>Storlek på bubbla = total åtgärdskostnad (inte antal personer)</li>
-                                        <li>Y-axeln är logaritmisk — små grupper syns ändå tydligt</li>
-                                        <li>Justera viktningar i konfig-panelen om er ledning har andra prioriteringar</li>
+                                        <li>Med många grupper är lodräta axeln logaritmisk — små grupper syns ändå tydligt</li>
+                                        <li>Justera vikterna under <em>Viktning av prioriteringsindex</em> om er ledning har andra prioriteringar</li>
                                     </ul>
                                 </div>
                             </details>
@@ -1952,51 +1941,34 @@
                         <div class="audit-content"><em class="f-dampad">Laddar...</em></div>
                     </details>
                         <details class="flik-usage">
-                            <summary>Hur används denna flik vid...</summary>
-                            <div class="flik-usage-content">
-                                <h3>Formell lönekartläggning enligt diskrimineringslagen</h3>
-                                <ul>
-                                    <li>Den multivariata regressionen ger den oförklarade löneskillnaden — det Medlingsinstitutet och MUR fokuserar på</li>
-                                    <li>Tabellen identifierar yrkesgrupper inom samma "lika arbete" (samma AID-kod) som bör utredas</li>
-                                    <li>Per-BAS-regressionen visar var i organisationen den oförklarade skillnaden ligger</li>
-                                </ul>
-                                <h3>Inför gemensam lönebedömning (EU 2023/970)</h3>
-                                <ul>
-                                    <li>Lista yrkesgrupper märkta <svg class="ikon ikon-nal" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 22s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/></svg> "Värt att granska" — kandidater där EU-direktivets utredningssteg aktualiseras</li>
-                                    <li>Dokumentera sakliga skäl för varje lyft grupp innan den gemensamma lönebedömningen</li>
-                                    <li>Välj urvalet "Facklig dialog" under Dokumentera för Word-utkast och PDF till facklig part</li>
-                                </ul>
-                                <h3>Vid frågor från ledning eller facklig part</h3>
-                                <ul>
-                                    <li>"Är vi diskriminerande?" — peka på den oförklarade siffran efter kontroller</li>
-                                    <li>"Varför är råa gapet så stort?" — visa waterfall-uppdelningen</li>
-                                    <li>"Var är problemet störst?" — peka på per-BAS-tabellen</li>
-                                </ul>
-                                <h3>Tolkningstips</h3>
-                                <ul>
-                                    <li>Statistisk signifikans (p &lt; 0,05) visar att skillnaden inte beror på slump — men praktisk betydelse kräver också att den är &gt; 5%</li>
-                                    <li>Quantile regression visar om gapet är värre i toppen ("glasstaket") eller botten ("klistergolvet")</li>
-                                </ul>
-                            
-                            <h3>Identifiera prioriterade BAS-intervall</h3>
+                        <summary>Hur används denna flik vid...</summary>
+                        <div class="flik-usage-content">
+                            <h3>Lönekartläggning enligt diskrimineringslagen</h3>
                             <ul>
-                                <li>Översiktsdiagrammet visar direkt vilka BAS-intervall som har störst gap — röda romber prioriteras</li>
-                                <li>Den första tabellen listar alla BAS med gap &gt; 5% (EU-direktivets utredningströskel)</li>
-                                <li>Den andra tabellen visar grupper med extrem könssnedfördelning (under 10%)</li>
+                                <li><em>Kvinnor och män i samma yrkesgrupp</em> är kartläggningens kärna: varje yrkesgrupp där båda könen finns, med status. Grupper märkta <em>Börja här</em> och <em>Värt att granska</em> är de som ska utredas och där sakliga skäl ska dokumenteras.</li>
+                                <li><em>Lönegap per BAS-intervall</em> säger var i organisationen skillnaden är störst; <em>Könsfördelning per BAS-intervall</em> var ett kön är under 40 % — där är jämförelserna mindre säkra.</li>
+                                <li><em>Vad blir kvar av lönegapet?</em> ger den oförklarade skillnaden när ålder och nivå räknats bort — det tal Medlingsinstitutet redovisar nationellt. Oförklarat betyder inte osakligt: det är det som ska granskas, inte ett bevis.</li>
                             </ul>
-                            <h3>Tolkning</h3>
+                            <h3>Inför gemensam lönebedömning (EU 2023/970)</h3>
                             <ul>
-                                <li>Lönegap-värde: 100% = lika lön, 95% = kvinnor tjänar 5% mindre än män</li>
-                                <li>Vid kraftig könsskevhet blir lönejämförelser opålitliga — vi rekommenderar att tolka dessa med försiktighet</li>
-                                <li>Gå vidare till Lika arbete för djupare analys per yrkesgrupp</li>
+                                <li>Lista yrkesgrupperna märkta <em>Värt att granska</em>: där aktualiseras direktivets utredningssteg.</li>
+                                <li>Dokumentera sakliga skäl för varje grupp innan den gemensamma lönebedömningen; <em>Personer att granska</em> under tabellen pekar på enskilda löner som sticker ut.</li>
+                                <li>Välj urvalet <em>Facklig dialog</em> under <em>Rapportens innehåll</em> på Dokumentera &amp; exportera för Word-utkast och PDF till arbetstagarnas företrädare.</li>
                             </ul>
-                            <h3>Inför gemensam lönebedömning</h3>
+                            <h3>Vid frågor från ledning eller arbetstagarnas företrädare</h3>
                             <ul>
-                                <li>Lista alla röda romber som kandidater för formell utredning</li>
-                                <li>Komplettera med sakliga skäl-bedömning från EU-matrisen</li>
+                                <li>"Är vi diskriminerande?" — det går inte att läsa ur statistiken; peka på den oförklarade skillnaden och på vilka grupper som ska granskas.</li>
+                                <li>"Varför är det råa gapet så stort?" — visa trappan <em>steg för steg</em>: vad åldersfördelningen och BAS-placeringen förklarar.</li>
+                                <li>"Var är problemet störst?" — tabellen per BAS-intervall under regressionskortet.</li>
+                            </ul>
+                            <h3>Tolkningstips</h3>
+                            <ul>
+                                <li>Statistiskt säkerställd (p under 0,05) betyder att en så stor skillnad sällan uppstår av slumpen när ingen finns — inte att den är stor. Praktisk betydelse kräver också att den är över 5 %.</li>
+                                <li><em>Lönefördelningen</em> i regressionskortet visar om skillnaden är störst bland de högst betalda (glastak) eller de lägst betalda (klistergolv).</li>
+                                <li>Kvoten 95 % (kvinnors lön av mäns) och skillnaden −5 % är samma tal; regressionskortet använder skillnaden så att den kan jämföras med modellens.</li>
                             </ul>
                             </div>
-                        </details>
+                    </details>
                     </details>
                 </div>
 

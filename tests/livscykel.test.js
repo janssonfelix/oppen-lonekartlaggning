@@ -139,6 +139,17 @@ describe('livscykelRegression: fixBas', () => {
         expect(res.fixBas).toBe(utan.fixBas);
     });
 
+    it('nivåfaktorn per BAS kommer ur modellens koefficienter: 1 för det visade intervallet, och kurvan för ett annat intervall är kurvan gånger faktorn', () => {
+        const rader = fixtur(240);
+        const a = livscykelRegression(rader, { fixBas: 'A', golv: 10 });
+        const c = livscykelRegression(rader, { fixBas: 'C', golv: 10 });
+        expect(Object.keys(a.basFaktor)).toEqual(['A', 'B', 'C']);
+        expect(a.basFaktor.A).toBe(1);
+        expect(a.basFaktor.C).toBeCloseTo(Math.exp(0.2), 1);                        // fixturens nivåskillnad A→C är 0,2 på log-skalan
+        expect(c.predMan[0].lon).toBeCloseTo(a.predMan[0].lon * a.basFaktor.C, 6);   // samma sak som att räkna kurvan för C
+        expect(c.basFaktor.A).toBeCloseTo(1 / a.basFaktor.C, 10);
+    });
+
     it('prediktionerna för olika fixBas skiljer sig åt på nivån, inte i gapet', () => {
         const rader = fixtur(240);
         const a = livscykelRegression(rader, { fixBas: 'A', golv: 10 });

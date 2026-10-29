@@ -42,6 +42,21 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   används fliken* är omskriven efter dagens namn på nyckeltal och paneler, och menyn har ett verktygstips för fliken.
 - **Ordlistan** förklarar p-värdet rätt (hur ofta slumpen skulle ge en så stor skillnad om ingen fanns) och har en
   post *Sekventiell dekomponering* med alla stegen i stället för två som sade "tre steg".
+- **Ålder & karriär ordnad efter tre frågor.** Överst: finns skillnaden kvar vid samma ålder (nyckeltal, spridning,
+  gap per åldersgrupp). Fördjupningen börjar med *Växer gapet med åldern?* (livscykeln, öppen), därefter
+  lönespridning över ålder, lönefördelning, åldersstruktur och jämförelsen av alla BAS-intervall. Det andra
+  spridningsdiagrammet (*Lön mot ålder, närmare*) är borta; hela urvalets trendlinje är i stället ett valbart lager i
+  det övre diagrammet, med samma tröskelregel som förut (visas bara när urvalet når minsta gruppstorlek).
+  Nyckeltalet *Ålderskoncentration* ("18 år") heter *Mittersta hälften är* och visar spannet ("35–48 år"), och
+  åldersstrukturens risktexter säger att de hör till personalplaneringen, inte till kartläggningen.
+- **En bild av dekomponeringen.** Trappan i regressionskortet har fått yrkesgruppssteget, ljusare och efter
+  huvudtalet, så att den visar samma sak som förklaringsbudgeten; steglistan med pilar finns kvar för skärmläsare
+  och textkopior men visas inte. Den gula metodnoten om median mot geometriskt medelvärde står nu kort i *Så
+  fungerar regressionen* (*Två råa gap*). Per-BAS-tabellens rad "För få" säger vad som krävs ("kräver minst 10 av
+  varje kön").
+- **Livscykelns tabell per BAS-intervall** räknar nivåerna ur modellens egna BAS-koefficienter
+  (exp(β_BAS − β_visat), ny `basFaktor` i `src/lib/livscykel.js`) i stället för att skala kurvan med kvoten mellan
+  intervallens medianlöner; bevisrutan visar faktorn.
 
 ### Dataskydd
 
@@ -65,6 +80,10 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   standardvärde förklaras som SKR:s värde för kommuner och regioner; bristyrkestipset hänvisar inte längre till
   SKR-listor. Ordlistan har fått posten *SKR*, metodbilagan en rad om den nationella referensen, och *Om verktyget*
   förklarar de tre sakerna verktyget hämtar från SKR. Efter användartest: "SKR-statistik" var oklart.
+- **Hjälptexterna *Så används fliken*** i Lika arbete, Prioritering och Utforska är omskrivna efter dagens
+  avsnitt, knappar och ord (inte längre "waterfall-uppdelningen", "Quantile regression", "röda romber",
+  "konfig-panelen"); menyn har ett verktygstips för Prioritering, och ordlistan säger att kvoten (85,2 %) och
+  skillnaden (−14,8 %) är samma tal.
 - **Rensning vid inaktivitet: 90 minuter som standard** (tidigare 30). Valen är av, 30, 60, 90 och 120 minuter;
   organisationspaketet kan fortfarande låsa tiden. Efter användartest: 30 minuter avbröt ett normalt arbetspass.
 

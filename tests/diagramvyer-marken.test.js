@@ -23,6 +23,20 @@ describe('Lika arbete: trappan, gapet längs lönefördelningen och hanteln per 
         expect(vanliga([f.lager[1].tips(f.lager[1].data[0])[1]])[0]).toEqual(['Ändrar gapet med', '+5,3 procentenheter']);
         expect(() => valideraFigur(f, 't')).not.toThrow();
     });
+    it('trappan med yrkesgruppssteget: ett ljusare spann efter huvudtalet, med egen nivå, och beskrivningen säger att det inte ingår i huvudtalet', () => {
+        w.__s = steg; w.__y = { name: '+ Yrkesgrupp', status: 'ok', gapPct: -2.3 };
+        const f = w.eval('_regTrappaFigur(window.__s, window.__y)');
+        expect(f.x.ordning).toEqual(['Ojusterat gap', 'BAS-intervall', 'Ålder', 'Oförklarat gap', 'Yrkesgrupp inom BAS']);
+        expect(f.lager.map(l => l.marke)).toEqual(['stapel', 'intervall', 'intervall', 'punkt']);
+        expect(f.lager[2]).toMatchObject({ opacitet: 0.45, serie: 'Yrkesgrupp inom BAS (ingår inte i huvudtalet)' });
+        expect(f.lager[2].data.map(d => [d.x, d.lag, d.hog, d.farg])).toEqual([['Yrkesgrupp inom BAS', -4.6, -2.3, '#2a78d6']]);
+        expect(f.lager[3].data.map(d => d.etikett)).toEqual(['−9,4 %', '−4,1 %', '−4,6 %', '−4,6 %', '−2,3 %']);
+        expect(f.beskrivning).toMatch(/Räknas också yrkesgrupp inom BAS bort blir −2,3 % kvar; det steget ingår inte i huvudtalet/);
+        expect(() => valideraFigur(f, 't')).not.toThrow();
+        // Ett utelämnat yrkesgruppssteg ger trappan utan det steget.
+        w.__y = { name: '+ Yrkesgrupp', status: 'too_few' };
+        expect(w.eval('_regTrappaFigur(window.__s, window.__y)').x.ordning).toHaveLength(4);
+    });
     it('trappan visas bara när alla steg får visas — aldrig när det ojusterade steget är utelämnat', () => {
         w.__u = { steg, utelamnat: false };
         expect(w.eval('_regTrappaVisas(window.__u)')).toBe(true);
@@ -48,7 +62,7 @@ describe('Lika arbete: trappan, gapet längs lönefördelningen och hanteln per 
         const el = w3.document.getElementById('chart-reg-trappa');
         expect(el && el._figur).toBeTruthy();
         expect(el._figur.x.ordning[0]).toBe('Ojusterat gap');
-        expect(el.querySelectorAll('[data-marke="intervall"]').length).toBe(el._figur.lager[1].data.length);
+        expect(el.querySelectorAll('[data-marke="intervall"]').length).toBe(el._figur.lager.filter(l => l.marke === 'intervall').reduce((n, l) => n + l.data.length, 0));   // med yrkesgruppssteget när det visas
     });
     it('gapet längs lönefördelningen: tre rader från nollinjen, med värdet utskrivet och noll inom axeln', () => {
         w.__q = [{ tau: 0.1, konPct: -6.123 }, { tau: 0.5, konPct: -4.5 }, { tau: 0.9, konPct: -2.25 }];
@@ -1267,18 +1281,18 @@ describe('Ålder & karriär — ett urval för hela fliken, och avsnitt med nyck
         expect(sel.value).toBe('__ALLA__');
         expect(d.getElementById('kon-kpi-n').textContent).toBe(fore.n);
     });
-    it('avsnitten: lön mot ålder är öppet, de övriga hopfällda men ritade, och de som följer urvalet säger sitt nyckeltal', () => {
+    it('avsnitten: livscykeln är öppen, de övriga hopfällda men ritade, och de som följer urvalet säger sitt nyckeltal', () => {
         const w2 = oppna(), d = w2.document;
-        for (const id of ['chart-kon-boxplot', 'chart-kon-histogram', 'chart-demo-hist', 'chart-demo-pyramid', 'chart-kon-tathet', 'chart-kon-multiplar']) {
+        for (const id of ['chart-demo-spread', 'chart-kon-boxplot', 'chart-kon-histogram', 'chart-demo-hist', 'chart-demo-pyramid', 'chart-kon-tathet', 'chart-kon-multiplar']) {
             const el = d.getElementById(id);
             expect(el._figur, id).toBeDefined();
             expect(el.closest('details.avsnitt').open, id).toBe(false);
         }
-        expect(d.getElementById('chart-demo-spread').closest('details.avsnitt').open).toBe(true);
+        expect(d.getElementById('avsnitt-ak-karriar').open).toBe(true);
         expect(d.getElementById('chart-kon-scatter').closest('details.avsnitt')).toBeNull();          // huvuddiagrammet ligger i toppen
         expect(t(d.getElementById('nyckel-ak-fordelning').textContent)).toMatch(/^Kvinnors median \d+,\d % av mäns$/);
         expect(t(d.getElementById('nyckel-ak-struktur').textContent)).toMatch(/^\d+,\d % är 60 år eller äldre$/);
-        expect(t(d.getElementById('nyckel-ak-lon').textContent)).toMatch(/^[+−-]?[\d ]+ kr per år$/);
+        expect(t(d.getElementById('nyckel-ak-lon').textContent)).toMatch(/^\d+ femårsgrupper$/);
         expect(t(d.getElementById('nyckel-ak-alla').textContent)).toMatch(/^\d+ BAS-intervall$/);
         // Avsnittet som inte följer urvalet säger det i rubriken, inte i en not under varje diagram.
         expect(t(d.querySelector('#avsnitt-ak-alla > summary').textContent)).toMatch(/Följer inte urvalet/);

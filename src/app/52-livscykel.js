@@ -54,25 +54,13 @@ function renderLifecycleAnalysis() {
     const gapEnd   = result.gapAt65;
     const gapKlass = (g) => Math.abs(g) > 5 ? 'fg-kritisk' : Math.abs(g) > 2 ? 'fg-varning' : 'fg-ok';
 
-    // ====== B4: Översiktstabell — gap-utveckling per BAS ======
-    // Räkna fram gap@25 och gap@65 per BAS genom att köra livscykel på varje BAS
-    // (delar fit men byter ut "fixBas" och beräknar gapPerAge endast för det BAS).
-    // Notera: vi använder den GLOBALA fitten (gap-utvecklingen styrs av kön×ålder-
-    // interaktionerna som är globala — BAS påverkar bara nivån). Därför är
-    // gap@25 och gap@65 samma för alla BAS i modellen. Det vi visar per BAS är
-    // i stället NIVÅERNA (kvinnors/mäns predikterade lön vid 25 och 65 år).
-    // Detta är pedagogiskt viktigare för HR — de ser vilka BAS som har de
-    // största absoluta gapen i kronor.
+    // ====== B4: Översiktstabell — modellens lönenivåer per BAS ======
+    // Modellen är en enda regression över alla BAS: kön×ålder-interaktionerna är gemensamma, så gapet i procent
+    // vid 25 och 65 år är detsamma i alla intervall. Det som skiljer per BAS är nivån, och den kommer ur modellens
+    // egna BAS-koefficienter (result.basFaktor = exp(β_BAS − β_visat)), inte ur uppmätta medianer.
     const basRows = result.basList.map(b => {
-        // Eftersom vi inte har direkt åtkomst till fit.beta använder vi gapPerAge:
-        // gap är konstant per ålder över BAS (i denna additiva modell), så vi
-        // tar kronor-värden från predKvinna/predMan (som beräknats för result.fixBas)
-        // och skalar med Median(BAS-grupp) / Median(refBAS).
         const dB  = state.data.filter(r => r.bas === b && r.lon > 0);
-        const dRef = state.data.filter(r => r.bas === result.fixBas && r.lon > 0);
-        const skala = (dB.length >= 3 && dRef.length >= 3)
-            ? Stat.median(dB.map(r => r.lon)) / Stat.median(dRef.map(r => r.lon))
-            : 1.0;
+        const skala = result.basFaktor?.[b] ?? 1.0;
         const kv25 = result.predKvinna[0].lon * skala;
         const kv65 = result.predKvinna[result.predKvinna.length - 1].lon * skala;
         const ma25 = result.predMan[0].lon * skala;
@@ -85,10 +73,9 @@ function renderLifecycleAnalysis() {
         };
     });
 
-    // k-anonymitet: nivåerna skalas med BAS-gruppens egen median, så för ett BAS
-    // under tröskeln pekar kronvärdena ut enskilda löner. Raden utelämnas helt —
-    // en rad där varenda kronkolumn står som "< 10" ger inget att analysera —
-    // och BAS:et räknas upp i noten under tabellen.
+    // k-anonymitet: ett BAS-intervall under tröskeln har en koefficient skattad på få personers löner, så
+    // kronvärdena skulle peka ut dem. Raden utelämnas helt — en rad där varenda kronkolumn står som "< 10" ger
+    // inget att analysera — och BAS:et räknas upp i noten under tabellen.
     const basVisade = basRows.filter(r => !isKMasked(r.n));
     const basUtelamnade = basRows.filter(r => isKMasked(r.n)).map(r => r.bas);
 
@@ -224,7 +211,7 @@ function renderLifecycleAnalysis() {
                 </table>
                 ${kMaskNote(basUtelamnade, 'BAS-intervall|BAS-intervall')}
                 <p class="text-dampad-xs lh-1_5 marg-10-0-0">
-                    <em>Talen är modellens lönenivåer, inte uppmätta medianer: kurvan räknas för det visade intervallet (${esc(result.fixBas)}) och övriga intervall skalas med kvoten mellan intervallens medianlöner. Skillnaden i procent (${svPct(result.gapAt25, 1)} vid 25 år, ${svPct(result.gapAt65, 1)} vid 65) är densamma för alla intervall i modellen; kronorna skiljer eftersom lönenivåerna skiljer.</em>
+                    <em>Talen är modellens lönenivåer, inte uppmätta medianer: kurvan räknas för det visade intervallet (${esc(result.fixBas)}) och övriga intervall får sin nivå ur modellens egna BAS-koefficienter. Skillnaden i procent (${svPct(result.gapAt25, 1)} vid 25 år, ${svPct(result.gapAt65, 1)} vid 65) är densamma för alla intervall i modellen; kronorna skiljer eftersom lönenivåerna skiljer.</em>
                 </p>
             </div>
         </details>
@@ -301,11 +288,12 @@ function _evidenceForLifecycleBas(row, result) {
     const fmtPct = v => v == null || !isFinite(v) ? '—' : (v >= 0 ? '+' : '') + svPct(v, 1);
     return {
         title: `Bevis — BAS ${row.bas} (livscykelanalys)`,
-        intro: `Predikterade lönenivåer från livscykelmodellen för BAS <strong>${esc(row.bas)}</strong>. Modellen är global (en regression över alla BAS samtidigt); per-BAS-nivåerna fås genom att skala referens-BAS:s prediktioner med median-kvoten.`,
+        intro: `Predikterade lönenivåer från livscykelmodellen för BAS <strong>${esc(row.bas)}</strong>. Modellen är global (en regression över alla BAS samtidigt); nivån per BAS kommer ur modellens egen BAS-koefficient.`,
         rows: [
             { label: 'BAS-intervall',                       value: row.bas },
             { label: 'Antal personer i BAS (organisation)',  value: row.n.toLocaleString('sv-SE') },
-            { label: 'Visat BAS-intervall',                 value: result.fixBas, note: 'Intervallet som lönekurvan räknas för direkt. Övriga intervall skalas.' },
+            { label: 'Visat BAS-intervall',                 value: result.fixBas, note: 'Intervallet som lönekurvan räknas för direkt. Övriga intervall får sin nivå ur sin BAS-koefficient.' },
+            { label: 'Nivåfaktor mot visat intervall',      value: result.basFaktor?.[row.bas] != null ? svTal(result.basFaktor[row.bas], 3) : '—', note: 'exp(β_BAS − β_visat); 1,000 för det visade intervallet.' },
             { label: '— Predikterad lön vid 25 år',         value: '' },
             { label: 'Kvinna',                              value: fmtKr(row.kv25) },
             { label: 'Man',                                  value: fmtKr(row.ma25) },
@@ -322,8 +310,8 @@ function _evidenceForLifecycleBas(row, result) {
         formula: `<strong>Beräkning av predikterad lön per BAS:</strong><br>
             För referens-BAS "${result.fixBas}" beräknas direkt från modellen:<br>
             ln(lön) = β₀ + β_kön·isKv + β_ålder·(ålder−medel) + β_ålder²·(ålder−medel)² + β_kön×ålder·... + Σβ_BAS·dummies<br><br>
-            För andra BAS skalas resultatet med median-kvoten:<br>
-            lön(BAS) = lön(${result.fixBas}) × <em>median(BAS) / median(${result.fixBas})</em><br><br>
+            För andra BAS ger modellens BAS-koefficient nivån:<br>
+            lön(BAS) = lön(${result.fixBas}) × <em>exp(β_BAS − β_${result.fixBas})</em><br><br>
             <em>Notera: detta är en additiv modell — BAS påverkar nivån men inte gap-utvecklingen. Därför är procent-gapet identiskt över alla BAS, men kronvärdet skiljer eftersom lönenivåerna skiljer.</em>`,
         footer: `Livscykelmodellen tillåter att gapet varierar med åldern (via kön×ålder-interaktioner). Är interaktionerna ej signifikanta (p ≥ 0,10) är gapet i praktiken konstant — då räcker huvudregressionen. Är de signifikanta måste karriärspecifika åtgärder övervägas.`
     };

@@ -339,11 +339,13 @@ function _regTrappaVisas(stegUt) {
     return !!stegUt && !stegUt.utelamnat && stegUt.steg.filter(s => s.status === 'ok').length >= 2 && stegUt.steg[0].status === 'ok';
 }
 const _REG_TRAPPSTEG = { '+ BAS-intervall': 'BAS-intervall', '+ Ålder': 'Ålder' };
-function _regTrappaFigur(seqOk) {
+/** @param {any[]} seqOk @param {any} [yrkesSteg] */
+function _regTrappaFigur(seqOk, yrkesSteg = null) {
     const forst = seqOk[0], sist = seqOk[seqOk.length - 1];
+    const yrke = yrkesSteg && yrkesSteg.status === 'ok' && typeof yrkesSteg.gapPct === 'number' ? yrkesSteg : null;
     const pct = v => `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(1).replace('.', ',')} %`;
     const pp = v => `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(1).replace('.', ',')} procentenheter`;
-    const kategorier = ['Ojusterat gap', ...seqOk.slice(1).map(s => _REG_TRAPPSTEG[s.name] || s.name.replace(/^\+ /, '')), 'Oförklarat gap'];
+    const kategorier = ['Ojusterat gap', ...seqOk.slice(1).map(s => _REG_TRAPPSTEG[s.name] || s.name.replace(/^\+ /, '')), 'Oförklarat gap', ...(yrke ? ['Yrkesgrupp inom BAS'] : [])];
     // Varje förklaringssteg: från gapet före steget till gapet efter. Seriens blå när gapet krymper mot noll, orange när
     // det växer — inte grönt och gult: att ett gap FÖRKLARAS av ålder eller nivå är ingen bedömning av att det är bra.
     const steg = seqOk.slice(1).map((s, i) => {
@@ -352,7 +354,7 @@ function _regTrappaFigur(seqOk) {
                  farg: Math.abs(efter) <= Math.abs(fore) ? PALETTE.serie[0] : PALETTE.serie[1] };
     });
     const niva = (x, v) => ({ x, y: +v.toFixed(2), etikett: pct(v) });
-    return { beskrivning: `Hur lönegapet förklaras steg för steg: från det ojusterade gapet ${pct(forst.gapPct)} till det oförklarade ${pct(sist.gapPct)} när BAS-intervall och ålder räknas in. Negativt gap betyder att kvinnor har lägre lön. Samma tal står i stegen nedanför.`,
+    return { beskrivning: `Hur lönegapet förklaras steg för steg: från det ojusterade gapet ${pct(forst.gapPct)} till det oförklarade ${pct(sist.gapPct)} när BAS-intervall och ålder räknas in.${yrke ? ` Räknas också yrkesgrupp inom BAS bort blir ${pct(yrke.gapPct)} kvar; det steget ingår inte i huvudtalet.` : ''} Negativt gap betyder att kvinnor har lägre lön. Samma tal står i förklaringsbudgeten.`,
         legend: false, hojd: 300,
         x: { skala: 'band', ordning: kategorier }, y: { skala: 'linjar', titel: 'Lönegap (%)', nollinje: true },
         lager: [
@@ -361,9 +363,15 @@ function _regTrappaFigur(seqOk) {
               tips: d => [[d.x], ['Lönegap', pct(d.y)]] },
             { marke: 'intervall', serie: 'Förklaras av', tjocklek: 44, data: steg,
               tips: d => [[d.x], ['Ändrar gapet med', pp(d.andring)], ['Gap före', pct(d.fore)], ['Gap efter', pct(d.efter)]] },
+            // Yrkesgruppssteget (ADR-46) efter huvudtalet, ljusare: det ingår inte i huvudtalet.
+            ...(yrke ? [{ marke: 'intervall', serie: 'Yrkesgrupp inom BAS (ingår inte i huvudtalet)', tjocklek: 44, opacitet: 0.45,
+              data: [{ x: 'Yrkesgrupp inom BAS', lag: Math.min(sist.gapPct, yrke.gapPct), hog: Math.max(sist.gapPct, yrke.gapPct), fore: sist.gapPct, efter: yrke.gapPct, andring: yrke.gapPct - sist.gapPct,
+                       farg: Math.abs(yrke.gapPct) <= Math.abs(sist.gapPct) ? PALETTE.serie[0] : PALETTE.serie[1] }],
+              tips: d => [[d.x], ['Ändrar gapet med', pp(d.andring)], ['Gap före', pct(d.fore)], ['Kvar efter yrkesgrupp', pct(d.efter)], ['Ingår inte i huvudtalet', '']] }] : []),
             // Nivån efter varje steg, med sitt värde: ett streck och en etikett.
             { marke: 'punkt', symbol: 'streck', serie: 'Gap efter steget', farg: PALETTE.semantic.mork, storlek: 11,
-              data: [niva('Ojusterat gap', forst.gapPct), ...seqOk.slice(1).map((s, i) => niva(kategorier[i + 1], s.gapPct)), niva('Oförklarat gap', sist.gapPct)] }
+              data: [niva('Ojusterat gap', forst.gapPct), ...seqOk.slice(1).map((s, i) => niva(kategorier[i + 1], s.gapPct)), niva('Oförklarat gap', sist.gapPct),
+                     ...(yrke ? [niva('Yrkesgrupp inom BAS', yrke.gapPct)] : [])] }
         ] };
 }
 
@@ -586,7 +594,8 @@ function renderRegressionCard() {
                     <li><strong>Svaret är ett tal med ett spann.</strong> Huvudtalet (${sign}${svPct(r.konPct, 1)}) är den skillnaden i genomsnitt över hela underlaget. Spannet säger hur säker skattningen är, och p-värdet om skillnaden går att skilja från slumpen.</li>
                 </ol>
                 <p class="marg-0-0-6"><strong>Räknas bort:</strong> ålder och BAS-intervall${r.yrkesSteg?.status === 'ok' ? ', och yrkesgrupp inom BAS i ett eget steg nedan' : ''}. <strong>Räknas inte bort:</strong> ${harAnsvar ? 'ansvar (står på en egen rad), ' : ''}anställningstid, utbildning, deltid, prestation och marknadsläge — sådant som kan vara sakliga skäl men som lönefilen inte innehåller.</p>
-                <p class="marg-0"><strong>Så läser du kortet:</strong> huvudtalet överst är det som går in i rapporten. <em>Steg för steg</em> visar vad ålder och nivå förklarar, <em>per BAS-intervall</em> var skillnaden finns, och <em>lönefördelningen</em> om den är störst bland lågt eller högt betalda. Ordlistan förklarar begreppen.</p>
+                <p class="marg-0-0-6"><strong>Så läser du kortet:</strong> huvudtalet överst är det som går in i rapporten. <em>Steg för steg</em> visar vad ålder och nivå förklarar, <em>per BAS-intervall</em> var skillnaden finns, och <em>lönefördelningen</em> om den är störst bland lågt eller högt betalda. Ordlistan förklarar begreppen.</p>
+                <p class="marg-0 text-dampad-sm"><strong>Två råa gap:</strong> rutan överst räknar det råa gapet på medianlönen, som direktivets tröskel gör; trappans första steg räknar det i modellens procentskala (genomsnitt av logaritmerad lön). Talen skiljer sig något när lönefördelningen är skev. Båda är riktiga: medianen för direktivet, modellens för uppdelningen.</p>
             </div>
         </details>`;
 
@@ -678,7 +687,7 @@ function renderRegressionCard() {
     const allM = (r.perBas || []).filter(p => p.status === 'ok' && isFinite(p.pValue)).length;
     const perBasRows = (r.perBas || []).map(p => {
         if (p.status !== 'ok') {
-            const note = p.status === 'too_few' ? `För få (Kv:${p.kvN}, Mä:${p.maN})` : 'Singulär';
+            const note = p.status === 'too_few' ? `För få: ${p.kvN} kvinnor, ${p.maN} män (kräver minst ${statGolv()} av varje kön)` : 'Singulär';
             return `<tr><td>${esc(p.bas)}</td><td class="t-hoger">${p.n}</td><td class="t-mitt">${p.kvN}/${p.maN}</td>`
                 + `<td class="farg-dampad kursiv">${note}</td>`
                 + `<td class="t-mitt f-dampad">Går ej att bedöma</td>`
@@ -797,14 +806,12 @@ function renderRegressionCard() {
                     <span class="info-tip" data-tooltip="Vi börjar med det råa lönegapet och visar hur stor del som förklaras av varje strukturell variabel. Det som blir kvar i sista steget är den oförklarade löneskillnaden.">${ikon('info', 14)}</span>
                 </summary>
                 <p class="text-dampad-sm lh-1_55 marg-8-0-6">
-                    Modellen skattas i flera steg, med en kontrollvariabel till i varje. Varje stapel visar lönegapet som <strong>OLS-koefficient på log-skalan</strong> (exp(β)−1, motsvarar skillnad i geometriskt medelvärde). Genom att lägga till kontrollvariabler ser vi hur mycket av gapet som förklaras av strukturella skillnader och vad som <em>oförklarat</em> kvarstår.
+                    Modellen skattas i flera steg, med en kontrollvariabel till i varje. Trappan visar lönegapet efter varje steg, och förklaringsbudgeten under den hur många procentenheter varje steg tar. Det som blir kvar i sista steget är den oförklarade skillnaden.
                 </p>
-                ${stegUt.utelamnat ? `<p class="k-mask-note">${esc(stegUt.not)}</p>` : `<p class="notis-varning fs-xs lh-1_5 marg-0-0-8 pad-8-12">
-                    <strong>Notera om metodik:</strong> Värdet i första steget (${seqOk[0] && typeof seqOk[0].gapPct === 'number' ? (seqOk[0].gapPct >= 0 ? '+' : '') + svPct(seqOk[0].gapPct, 1) : 'log-OLS'}) skiljer sig något från det <em>median-baserade</em> råa lönegapet (${_raGapText(r, v => (v >= 0 ? '+' : '') + svPct(v, 1))}) som visas i rutan ovan och som EU-direktivet (2023/970) refererar till. Skillnaden uppstår eftersom median ≠ geometriskt medelvärde när lönefördelningen inte är perfekt symmetrisk. Båda är legitima — median används för EU-tröskel-jämförelse, log-OLS för regressionsuppdelning.
-                </p>`}
+                ${stegUt.utelamnat ? `<p class="k-mask-note">${esc(stegUt.not)}</p>` : ''}
                 ${budgetHtml}
                 ${ansvarHtml}
-                <div class="reg-waterfall">${waterfallHtml}</div>
+                <div class="reg-waterfall${_regTrappaVisas(stegUt) ? ' sr-only' : ''}"${_regTrappaVisas(stegUt) ? ' aria-label="Stegen som lista"' : ''}>${waterfallHtml}</div>
                 ${explainedRowHtml(budget)}
             </details>
             ` : ''}
@@ -973,7 +980,7 @@ function renderRegressionCard() {
     _renderPerBasGapChart(r.perBas, bhQByBas);
     // Trappan och kvantilkurvan: bilder av tal som kortet redan visar i tabell.
     const trappa = document.getElementById('chart-reg-trappa');
-    if (trappa) ritaFigur(trappa, _regTrappaFigur(stegUt.steg.filter(s => s.status === 'ok' && s.name !== '+ Yrkesgrupp')));
+    if (trappa) ritaFigur(trappa, _regTrappaFigur(stegUt.steg.filter(s => s.status === 'ok' && s.name !== '+ Yrkesgrupp'), yrkeVisas ? r.yrkesSteg : null));
     const kvantil = document.getElementById('chart-reg-kvantil');
     if (kvantil && _regKvantilSenast) ritaFigur(kvantil, _regKvantilFigur(_regKvantilSenast));
     const statsToggle = document.getElementById('perbas-show-stats');

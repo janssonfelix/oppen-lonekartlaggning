@@ -653,8 +653,8 @@ describe('Löneutveckling: chart-kon-scatter och chart-kon-boxplot', () => {
     });
 });
 
-describe('Ålder & karriär: chart-demografi, chart-demo-agecurve, chart-demo-spread', () => {
-    it('figurerna: punkter med trend; monotona kurvor per kön med zon från 60; percentilband per femårsgrupp', () => {
+describe('Ålder & karriär: chart-demo-agecurve, chart-demo-spread', () => {
+    it('figurerna: monotona kurvor per kön med zon från 60; percentilband per femårsgrupp', () => {
         const kurva = { ages: [58, 59, 60, 61, 62], share: [1, 2, 3, 2, 1] };
         w.__k = kurva;
         const a = w.eval('_demoAgecurveFigur(window.__k, window.__k, 62)');
@@ -675,22 +675,17 @@ describe('Ålder & karriär: chart-demografi, chart-demo-agecurve, chart-demo-sp
         expect(w.eval('_demoBandFigur(window.__df.slice(0, 12), 10)')).toBeNull();  // en enda åldersgrupp är inget band
         for (const f of [a, s]) expect(() => valideraFigur(f, 't')).not.toThrow();
     });
-    it('ritas av kärnan med demodatan: tre diagram, kurvorna som en linje per serie', () => {
+    it('ritas av kärnan med demodatan: två diagram, kurvorna som en linje per serie', () => {
         const w2 = createAppWindow();
         w2.__state.kLage = 'export';
         w2.__loadDemoData();
         w2.__renderTabContent('demografi');
         const el = id => w2.document.getElementById(id);
-        for (const id of ['chart-demografi', 'chart-demo-agecurve', 'chart-demo-spread']) {
+        for (const id of ['chart-demo-agecurve', 'chart-demo-spread']) {
             expect(el(id).data, id).toBeUndefined();
             expect(el(id)._figur, id).toBeDefined();
             expect(() => valideraFigur(el(id)._figur, id)).not.toThrow();
         }
-        const dem = el('chart-demografi')._figur;
-        expect(dem.lager[0]).toMatchObject({ marke: 'punkt', serie: 'Anställda' });
-        expect(dem.lager[1].serie).toMatch(/^Trend \(R² = \d,\d\d\)$/);
-        // En punkt per person vars grupp når tröskeln; övriga är märkta små och ritas inte.
-        expect(el('chart-demografi').querySelectorAll('[data-marke="punkt"]').length).toBe(dem.lager[0].data.filter(d => !d.liten).length);
         expect(el('chart-demo-agecurve').querySelectorAll('path[data-marke="linje"]')).toHaveLength(2);
     });
 });
@@ -1069,7 +1064,7 @@ describe('spridningsdiagrammen: en person i en grupp under tröskeln visas inte 
             expect(w.eval('getData().filter(individLitenFor(getData())).length')).toBe(0);
         });
     });
-    it.each([['chart-kon-scatter', "renderKon('__ALLA__')"], ['chart-demografi', "renderDemografi('__ALLA__')"]])(
+    it.each([['chart-kon-scatter', "renderKon('__ALLA__')"]])(
         '%s: punkterna ritas inte, syns inte i exportbilden eller diagramdatan, och noten säger hur många', (id, rita) => {
         medData(data(), [], () => {
             w.eval(`populateSelects(); ${rita}`);

@@ -2577,6 +2577,12 @@ function livscykelRegression(rader, { fixBas, golv }) {
     const predKvinna = predict(1);
     const predMan    = predict(0);
 
+    // Nivåfaktor per BAS ur modellens egna koefficienter: exp(β_BAS − β_visat), med referensintervallets β = 0.
+    // Multiplicerat med kurvan för det visade intervallet ger den modellens lönenivå i varje annat intervall.
+    const idxBas = b => 6 + dummyBas.indexOf(b);
+    const betaBas = b => (b === refBas ? 0 : fit.beta[idxBas(b)]);
+    const basFaktor = Object.fromEntries(basList.map(b => [b, Math.exp(betaBas(b) - betaBas(fixBas))]));
+
     // Gap per ålder: log(man) - log(kvinna) = -[β_kv + β_kv×age·ac + β_kv×age²·ac²]
     // Procentskillnad: (exp(logGap) - 1) × 100
     const gapPerAge = ages.map(a => {
@@ -2607,7 +2613,7 @@ function livscykelRegression(rader, { fixBas, golv }) {
         ok: true,
         n, k, R2: fit.R2, adjR2, aic,
         ageMean,
-        basList, fixBas, refBas,
+        basList, fixBas, refBas, basFaktor,
         predKvinna, predMan, gapPerAge,
         kvCoef, kvSE, kvPValue,
         kvAgeCoef: fit.beta[idxKvAge], kvAgePVal,
