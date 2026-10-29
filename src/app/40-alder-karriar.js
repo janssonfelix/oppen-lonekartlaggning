@@ -6,6 +6,26 @@
 // skillnader mellan åldersgrupper nu, inte hur en persons lön utvecklas — åldersgrupperna skiljer sig också i
 // utbildning, yrkesval och anställningstid (kohorteffekter). Står under kurvorna, i Om verktyget och i metodbilagan.
 const KOHORT_FORBEHALL = 'Kurvorna bygger på ett tvärsnitt av lönerna i dag: de visar skillnader mellan åldersgrupper just nu, inte hur en persons lön utvecklas över karriären. Åldersgrupperna skiljer sig också i utbildning, yrkesval och anställningstid (kohorteffekter), så en skillnad mellan 30- och 60-åringar är inte en förväntad löneutveckling.';
+// Raden under nyckeltalen, i klartext: stiger lönen lika mycket per levnadsår för kvinnor och män, och hur mycket av
+// skillnaden förklarar åldersfördelningen? Ren funktion. lutKv/lutMa är trendlinjernas lutning i kronor per år;
+// ra och vidSammaAlder är kvinnors lön i procent av mäns, utan justering respektive avläst vid medelåldern.
+function _akInsiktText(lutKv, lutMa, ra, vidSammaAlder) {
+    const kr = v => `${v >= 0 ? '+' : '−'}${svTal(Math.abs(Math.round(v)), 0)} kr`;
+    const medel = (Math.abs(lutKv) + Math.abs(lutMa)) / 2;
+    const likaLutning = medel === 0 || Math.abs(lutKv - lutMa) / medel <= 0.25;
+    const lutning = likaLutning
+        ? `Lönen stiger ungefär lika mycket per levnadsår för kvinnor (${kr(lutKv)}) och män (${kr(lutMa)}).`
+        : lutKv < lutMa
+            ? `Lönen stiger långsammare med åldern för kvinnor (${kr(lutKv)} per år) än för män (${kr(lutMa)}).`
+            : `Lönen stiger snabbare med åldern för kvinnor (${kr(lutKv)} per år) än för män (${kr(lutMa)}).`;
+    const skillnad = vidSammaAlder - ra;
+    const justering = Math.abs(skillnad) < 1
+        ? `Vid samma ålder är kvinnors lön ${svPct(vidSammaAlder, 1)} av mäns, nästan som utan justering (${svPct(ra, 1)}): åldersfördelningen förklarar lite av skillnaden.`
+        : skillnad > 0
+            ? `Vid samma ålder är kvinnors lön ${svPct(vidSammaAlder, 1)} av mäns, mot ${svPct(ra, 1)} utan justering: åldersfördelningen förklarar en del av skillnaden${vidSammaAlder < 95 ? ', men inte hela' : ''}.`
+            : `Vid samma ålder är kvinnors lön ${svPct(vidSammaAlder, 1)} av mäns, mot ${svPct(ra, 1)} utan justering: skillnaden blir större när åldern räknas bort, eftersom kvinnorna i urvalet i genomsnitt är äldre.`;
+    return `${lutning} ${justering} Vad BAS-intervall och yrkesgrupp förklarar står i Lika arbete.`;
+}
 function renderKon(bas) {
     const isAll = bas === "__ALLA__";
     const df = getData().filter(d => (isAll || d.bas === bas) && d.alder && d.alder > 0 && d.kon);
@@ -45,11 +65,9 @@ function renderKon(bas) {
     /** @type {HTMLElement} */ (document.getElementById("kon-kpi-slope")).textContent = `${lutning(kvOk, regKv)} / ${lutning(maOk, regMa)} kr`;
     const insightEl = document.getElementById("p-value-insight");
     if (insightEl) {
-        const avgSlope = (Math.abs(regKv.m) + Math.abs(regMa.m)) / 2;
-        const slopeRatio = avgSlope > 0 ? svTal(Math.abs(regKv.m - regMa.m) / avgSlope * 100, 0) : '0';
         const scope = isAll ? "Hela urvalet" : `BAS ${bas}`;
-        insightEl.innerHTML = konOk
-            ? `<strong>${scope} – Insikt:</strong> Trendlinjernas lutning skiljer sig med ${slopeRatio} %. Förklaringsgrad: kvinnor ${svTal(regKv.r2, 2)}, män ${svTal(regMa.r2, 2)}.`
+        insightEl.innerHTML = konOk && medMa > 0 && expMa > 0
+            ? `<strong>${scope}:</strong> ${_akInsiktText(regKv.m, regMa.m, (medKv / medMa) * 100, (expKv / expMa) * 100)}`
             : `<strong>${scope}:</strong> ${esc(_konUtelamnatNot())}`;
     }
     { const not = document.getElementById('kon-kohort-not'); if (not) not.textContent = KOHORT_FORBEHALL; }

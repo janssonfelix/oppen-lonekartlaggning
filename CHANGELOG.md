@@ -27,6 +27,21 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 - **All personal ingår, även BAS K och uppåt.** Begränsningen till BAS A–J är borttagen (ADR-21 upphävd):
   chefsnivåerna läses in och analyseras som alla andra intervall, i stället för att bara räknas. Rimlighetskontrollen
   kräver bara att BAS är en bokstav. Efter användartest: lönekartläggningen ska omfatta hela organisationen.
+- **Regressionskortet förklarar sig:** ett avsnitt *Så fungerar regressionen — i tre steg* under inledningen säger
+  i vardagsspråk vad modellen gör, vad den räknar bort och inte, och vilket tal i kortet som används till vad.
+  Slutsatsen säger vad som blir kvar både med och utan yrkesgruppssteget (tidigare stod två olika "kvarstår" i
+  samma block). Internt språk är borta ur kortet ("hero-rutan", "Realistiskt intervall", "Quantile regression",
+  "Joint Pay Assessment", "p.e."). Blinder-Oaxaca-kortet säger att det räknar män mot kvinnor och hur talet
+  förhåller sig till huvudtalet, och kallar inte längre den oförklarade delen diskrimineringsindikerande.
+- **Ålder & karriär:** *Lönegap per åldersgrupp* står direkt under spridningsdiagrammet. Raden under nyckeltalen
+  säger i klartext om lönen stiger lika mycket per levnadsår för båda könen och hur mycket åldersfördelningen
+  förklarar, i stället för "lutningen skiljer sig med 6 %" och R². Nyckeltalet *Vid samma ålder* säger vad det
+  räknar bort och inte. Livscykelavsnittet är lättare: R²-rutorna är borta (talen står i modelljämförelsen),
+  tolkningen formulerar hypoteser att pröva i stället för orsaker, tabellens kolumner heter inte *Median* när de är
+  modellvärden, och könsskillnaden i modelljämförelsen räknas åt samma håll som huvudmodellen. Hjälptexten *Så
+  används fliken* är omskriven efter dagens namn på nyckeltal och paneler, och menyn har ett verktygstips för fliken.
+- **Ordlistan** förklarar p-värdet rätt (hur ofta slumpen skulle ge en så stor skillnad om ingen fanns) och har en
+  post *Sekventiell dekomponering* med alla stegen i stället för två som sade "tre steg".
 
 ### Dataskydd
 

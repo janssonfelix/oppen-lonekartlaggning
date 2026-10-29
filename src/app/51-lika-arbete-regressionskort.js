@@ -548,9 +548,11 @@ function renderRegressionCard() {
             `;
         });
     }
-    const explainedRow = stegUt.explainedShare !== null
+    // Slutsatsen räknar till och med + Ålder (huvudtalet). Har budgeten ett yrkesgruppssteg sägs också vad som blir
+    // kvar med det inräknat — annars står två olika "kvarstår" i samma block (30 % här, 15 % i budgeten).
+    const explainedRowHtml = budget => stegUt.explainedShare !== null
         ? `<div class="bak-info-bg ram-v-3-info rund-4 fs-sm lh-1_55 marg-t-10 pad-10-14">
-            <strong>Slutsats:</strong> ${svPct(stegUt.explainedShare, 0)} av det råa lönegapet förklaras av strukturella variabler (åldersfördelning och BAS-placering). Resterande <strong>${svPct((100-stegUt.explainedShare), 0)}</strong> är den oförklarade komponenten — det som <em>inte</em> kan tillskrivas struktur och som lönekartläggningen ska adressera.
+            <strong>Slutsats:</strong> ${svPct(stegUt.explainedShare, 0)} av det råa lönegapet förklaras av åldersfördelning och BAS-placering; <strong>${svPct((100-stegUt.explainedShare), 0)}</strong> blir kvar som huvudtalets oförklarade skillnad.${budget && budget.parts.some(p => p.key === 'yrke') ? ` Räknas också yrkesgrupp inom BAS bort blir ${svPct(budget.remainingShare, 0)} kvar (steget + Yrkesgrupp, som inte ingår i huvudtalet).` : ''} Det oförklarade är det som <em>inte</em> kan tillskrivas dessa faktorer och som lönekartläggningen ska granska närmare.
            </div>`
         : '';
 
@@ -570,6 +572,23 @@ function renderRegressionCard() {
         <p class="reg-caveat-inline" role="note"><strong>Kom ihåg:</strong> <em>oförklarat</em> betyder att skillnaden
         inte fångas upp av ålder och BAS-placering — <strong>inte</strong> att den beror på kön eller är osaklig.
         Det är en signal om var ni bör titta närmare, inte ett bevis.</p>`;
+
+    // Så fungerar regressionen: tre steg i vardagsspråk, vad som räknas bort och inte, och vilket tal som används
+    // till vad. Hjälptext (data-hjalptext), så att vakttestet för fackuttryck inte läser den som gränssnitt.
+    const harAnsvar = r.ansvarSteg?.status === 'ok';
+    const saFunkarHtml = `
+        <details class="reg-sa-funkar marg-b-12" data-hjalptext open>
+            <summary class="pekare fw-600 pad-8-0 ej-markerbar">Så fungerar regressionen — i tre steg</summary>
+            <div class="bak-yta rund-6 fs-sm lh-1_6 marg-t-8 pad-14-16">
+                <ol class="marg-0-0-10-22 pad-0">
+                    <li><strong>Lönen räknas i procent, inte i kronor.</strong> Modellen arbetar med logaritmen av månadslönen, så att en skillnad betyder samma sak i BAS A som i BAS E: fem procent är fem procent.</li>
+                    <li><strong>Varje person jämförs med dem som liknar personen.</strong> Modellen söker den lönenivå som bäst beskriver alla ${svTal(r.n, 0)} personer utifrån tre saker på en gång: kön, ålder och BAS-intervall. Den svarar på frågan: hur mycket skiljer lönen mellan en kvinna och en man <em>i samma BAS-intervall och samma ålder</em>?</li>
+                    <li><strong>Svaret är ett tal med ett spann.</strong> Huvudtalet (${sign}${svPct(r.konPct, 1)}) är den skillnaden i genomsnitt över hela underlaget. Spannet säger hur säker skattningen är, och p-värdet om skillnaden går att skilja från slumpen.</li>
+                </ol>
+                <p class="marg-0-0-6"><strong>Räknas bort:</strong> ålder och BAS-intervall${r.yrkesSteg?.status === 'ok' ? ', och yrkesgrupp inom BAS i ett eget steg nedan' : ''}. <strong>Räknas inte bort:</strong> ${harAnsvar ? 'ansvar (står på en egen rad), ' : ''}anställningstid, utbildning, deltid, prestation och marknadsläge — sådant som kan vara sakliga skäl men som lönefilen inte innehåller.</p>
+                <p class="marg-0"><strong>Så läser du kortet:</strong> huvudtalet överst är det som går in i rapporten. <em>Steg för steg</em> visar vad ålder och nivå förklarar, <em>per BAS-intervall</em> var skillnaden finns, och <em>lönefördelningen</em> om den är störst bland lågt eller högt betalda. Ordlistan förklarar begreppen.</p>
+            </div>
+        </details>`;
 
     const kronorHtml = !konOk ? `<p class="k-mask-note">Skillnaden räknas inte om till kronor: exemplet utgår från männens medianlön, och ett av könen har färre än ${kTroskel()} personer i modellen.</p>` : kr ? `
         <div class="reg-kronor" role="region" aria-label="Lönegapet uttryckt i kronor">
@@ -609,7 +628,7 @@ function renderRegressionCard() {
             .join('');
         const legend = budget.parts.map(p => `
             <li><span class="rb-key rb-${p.key}"></span>${esc(p.label)}:
-                <strong>${p.val < 0 ? '−' : ''}${svTal(Math.abs(p.val), 2)} p.e.</strong>
+                <strong>${p.val < 0 ? '−' : ''}${svTal(Math.abs(p.val), 2)} procentenheter</strong>
                 <span class="f-dampad">(${svPct((Math.max(0, p.val) / budget.denom * 100), 0)} av gapet)</span></li>`).join('');
         budgetHtml = `
             <div class="reg-budget">
@@ -620,7 +639,7 @@ function renderRegressionCard() {
                 </div>
                 <ul class="reg-budget-legend">
                     ${legend}
-                    <li><span class="rb-key rb-kvar"></span><strong>Kvarstår oförklarat: ${svTal(budget.remaining, 2)} p.e.</strong>
+                    <li><span class="rb-key rb-kvar"></span><strong>Kvarstår oförklarat: ${svTal(budget.remaining, 2)} procentenheter</strong>
                         <span class="f-dampad">(${svPct(budget.remainingShare, 0)} av gapet)</span></li>
                 </ul>
                 ${budget.parts.some(p => p.key === 'yrke') ? `<p class="rb-note">Yrkesgrupp inom BAS räknas in i budgeten, inte i huvudtalet ovan: det som kvarstår här är skillnaden mellan kvinnor och män med samma yrkesgrupp, BAS-intervall och ålder.</p>` : ''}
@@ -705,7 +724,7 @@ function renderRegressionCard() {
     const rawCIsuffix = state.bootstrapCI ? fmtCI(state.bootstrapCI.gapPct) : '';
     const tolkning = isSig
         ? (Math.abs(r.konPct) > 5
-            ? `Kvinnor tjänar i median <strong class="f-kritisk">${svPct(Math.abs(r.konPct), 1)} mindre</strong> än män även efter att vi har räknat bort skillnader i ålder och BAS-placering. Detta är <em>oförklarad</em> löneskillnad — den kan <strong>inte</strong> motiveras med att kvinnor är yngre eller arbetar i andra BAS-intervall. Eftersom skillnaden överstiger 5 % och är statistiskt säkerställd aktualiseras EU-direktivets (2023/970) utredningssteg — väg skillnaden mot sakliga skäl.`
+            ? `Enligt modellen tjänar kvinnor <strong class="f-kritisk">${svPct(Math.abs(r.konPct), 1)} mindre</strong> än män med samma ålder och samma BAS-intervall, alltså även efter att skillnader i ålder och BAS-placering räknats bort. Detta är <em>oförklarad</em> löneskillnad — den kan <strong>inte</strong> motiveras med att kvinnor är yngre eller arbetar i andra BAS-intervall. Eftersom skillnaden överstiger 5 % och är statistiskt säkerställd aktualiseras EU-direktivets (2023/970) utredningssteg — väg skillnaden mot sakliga skäl.`
             : `Det finns en statistiskt säkerställd oförklarad löneskillnad på ${svPct(Math.abs(r.konPct), 1)}, men den är under 5%-tröskeln. Bör dokumenteras med sakliga skäl och följas upp över tid.`)
         : `<strong>Det råa lönegapet (${_raGapText(r, v => svPct(v, 1) + rawCIsuffix)})</strong> försvinner när vi kontrollerar för att kvinnor och män har olika åldersfördelning och olika BAS-placering. Återstående skillnad (${sign}${svPct(r.konPct, 1)}) är statistiskt obetydlig — datat är förenligt med att ingen verklig oförklarad skillnad finns.`;
 
@@ -739,6 +758,7 @@ function renderRegressionCard() {
                 <p><span class="info-tip" data-tooltip="En statistisk metod (OLS-regression) som &quot;rensar bort&quot; effekten av att kvinnor och män har olika ålder och arbetar i olika BAS-intervall. Det som kvarstår är den OFÖRKLARADE löneskillnaden — det som inte kan tillskrivas dessa strukturella skillnader. Standardmetod inom svensk lönekartläggning (Medlingsinstitutet) och motsvarar EU-direktivets 'unexplained gender pay gap'.">${ikon('info', 14)}</span> Det <strong>råa lönegapet</strong> mellan kvinnor och män kan delvis förklaras av att grupperna har olika åldersstruktur och är olika fördelade över BAS-intervallen. Vi använder en statistisk metod som "rensar bort" dessa strukturella skillnader. Det som <strong>kvarstår</strong> är den <em>oförklarade</em> löneskillnaden — den del som inte beror på att kvinnor är yngre, jobbar i annat BAS osv.</p>
             </div>
 
+            ${saFunkarHtml}
             ${modelBanner}
             ${reliabilityHtml}
 
@@ -747,7 +767,7 @@ function renderRegressionCard() {
                     <div class="hero-label">Oförklarad löneskillnad, kvinnor mot män</div>
                     <div class="hero-number fg-${verdictFarg}" aria-live="polite">${sign}${svPct(r.konPct, 1)}</div>
                     <div class="hero-meta">
-                        <strong>Realistiskt intervall:</strong> ${svPct(r.konPctLow, 1)} till ${svPct(r.konPctHigh, 1)}
+                        <strong>Troligt spann (95 % konfidensintervall):</strong> ${svPct(r.konPctLow, 1)} till ${svPct(r.konPctHigh, 1)}
                         <span class="info-tip" data-tooltip="95% konfidensintervall (HC3 robust). Det &quot;verkliga&quot; värdet ligger med 95% sannolikhet inom detta intervall. Smalt intervall = säker estimering, brett = osäker. Klassisk KI för jämförelse: ${svPct(r.konPctLowClassical, 1)} till ${svPct(r.konPctHighClassical, 1)}.">${ikon('info', 14)}</span><br>
                         <strong>Statistiskt säkerställd:</strong>
                         <span title="${esc(_sigPlainText(r.pValue))}" class="ram-b-1-prickad-dampad hjalpmarke hjalp-markor">${isSig ? 'Ja' : 'Nej'} (${sig})</span>
@@ -777,15 +797,15 @@ function renderRegressionCard() {
                     <span class="info-tip" data-tooltip="Vi börjar med det råa lönegapet och visar hur stor del som förklaras av varje strukturell variabel. Det som blir kvar i sista steget är den oförklarade löneskillnaden.">${ikon('info', 14)}</span>
                 </summary>
                 <p class="text-dampad-sm lh-1_55 marg-8-0-6">
-                    Tre regressionsmodeller jämförs. Varje stapel visar lönegapet som <strong>OLS-koefficient på log-skalan</strong> (exp(β)−1, motsvarar skillnad i geometriskt medelvärde). Genom att lägga till kontrollvariabler ser vi hur mycket av gapet som förklaras av strukturella skillnader och vad som <em>oförklarat</em> kvarstår.
+                    Modellen skattas i flera steg, med en kontrollvariabel till i varje. Varje stapel visar lönegapet som <strong>OLS-koefficient på log-skalan</strong> (exp(β)−1, motsvarar skillnad i geometriskt medelvärde). Genom att lägga till kontrollvariabler ser vi hur mycket av gapet som förklaras av strukturella skillnader och vad som <em>oförklarat</em> kvarstår.
                 </p>
                 ${stegUt.utelamnat ? `<p class="k-mask-note">${esc(stegUt.not)}</p>` : `<p class="notis-varning fs-xs lh-1_5 marg-0-0-8 pad-8-12">
-                    <strong>Notera om metodik:</strong> Värdet i första steget (${seqOk[0] && typeof seqOk[0].gapPct === 'number' ? (seqOk[0].gapPct >= 0 ? '+' : '') + svPct(seqOk[0].gapPct, 1) : 'log-OLS'}) skiljer sig något från det <em>median-baserade</em> råa lönegapet (${_raGapText(r, v => (v >= 0 ? '+' : '') + svPct(v, 1))}) som visas i hero-rutan ovan och som EU-direktivet (2023/970) refererar till. Skillnaden uppstår eftersom median ≠ geometriskt medelvärde när lönefördelningen inte är perfekt symmetrisk. Båda är legitima — median används för EU-tröskel-jämförelse, log-OLS för regressionsuppdelning.
+                    <strong>Notera om metodik:</strong> Värdet i första steget (${seqOk[0] && typeof seqOk[0].gapPct === 'number' ? (seqOk[0].gapPct >= 0 ? '+' : '') + svPct(seqOk[0].gapPct, 1) : 'log-OLS'}) skiljer sig något från det <em>median-baserade</em> råa lönegapet (${_raGapText(r, v => (v >= 0 ? '+' : '') + svPct(v, 1))}) som visas i rutan ovan och som EU-direktivet (2023/970) refererar till. Skillnaden uppstår eftersom median ≠ geometriskt medelvärde när lönefördelningen inte är perfekt symmetrisk. Båda är legitima — median används för EU-tröskel-jämförelse, log-OLS för regressionsuppdelning.
                 </p>`}
                 ${budgetHtml}
                 ${ansvarHtml}
                 <div class="reg-waterfall">${waterfallHtml}</div>
-                ${explainedRow}
+                ${explainedRowHtml(budget)}
             </details>
             ` : ''}
 
@@ -852,10 +872,10 @@ function renderRegressionCard() {
                 return `
                 <details class="mt-14" open>
                     <summary class="pekare fw-600 pad-8-0 ej-markerbar">Lönegap i olika delar av lönefördelningen
-                        <span class="info-tip" data-tooltip="OLS estimerar lönegapet i medelvärdet. Quantile regression estimerar gapet i olika delar av fördelningen separat. P10 = botten av lönefördelningen ('klistergolvet'), P50 = median, P90 = toppen ('glasstaket'). Visar om diskriminering är värre i vissa lönenivåer.">${ikon('info', 14)}</span>
+                        <span class="info-tip" data-tooltip="Huvudmodellen skattar lönegapet i medelvärdet. Kvantilregression skattar gapet i olika delar av fördelningen var för sig. P10 = botten av lönefördelningen ('klistergolvet'), P50 = median, P90 = toppen ('glasstaket'). Visar om skillnaden är större i vissa lönenivåer.">${ikon('info', 14)}</span>
                     </summary>
                     <p data-hjalptext class="text-dampad-sm lh-1_55 marg-8-0-6">
-                        OLS-regressionen ovan estimerar lönegapet vid <em>medelvärdet</em>. Quantile regression visar gapet i olika delar av lönefördelningen — viktigt om gapet är ojämnt fördelat (t.ex. värre för låginkomsttagare än för höginkomsttagare).
+                        Huvudmodellen ovan skattar lönegapet vid <em>medelvärdet</em>. Kvantilregression visar gapet i olika delar av lönefördelningen — viktigt om gapet är ojämnt fördelat (t.ex. värre för låginkomsttagare än för höginkomsttagare).
                     </p>
                     <div class="rulla-x">
                         <div class="chart-container"><div id="chart-reg-kvantil"></div></div>
@@ -888,7 +908,7 @@ function renderRegressionCard() {
                     </table>
                     <p class="marg-10-0-6"><strong>Symbolerna i per-BAS-tabellen:</strong></p>
                     <ul class="marg-0-0-10-22">
-                        <li>${ikon('nal')} = signifikant <strong>och</strong> överstiger 5 %-tröskeln i lönetransparensdirektivet — här aktualiseras EU-direktivets utredningssteg (väg mot sakliga skäl, överväg Joint Pay Assessment)</li>
+                        <li>${ikon('nal')} = signifikant <strong>och</strong> överstiger 5 %-tröskeln i lönetransparensdirektivet — här aktualiseras EU-direktivets utredningssteg (väg mot sakliga skäl, överväg gemensam lönebedömning)</li>
                         <li>${ikon('oga')} = signifikant men under 5 % — värt att dokumentera med sakliga skäl och följa upp</li>
                         <li><span class="f-dampad">Inget märke</span> = inte signifikant, eller signifikant men praktiskt obetydlig storlek</li>
                     </ul>
@@ -1018,7 +1038,7 @@ function renderBlinderOaxacaCard() {
     wrap.innerHTML = `
         <div class="card ram-v-4-granska-ljus">
             <h3 class="marg-0-0-6">Förklarad och oförklarad löneskillnad
-                <span class="info-tip" data-tooltip="Standardmetod inom arbetsmarknadsekonomi (Blinder 1973, Oaxaca 1973). Bryter ned rågapet i tre delar: hur mycket beror på att kvinnor och män har olika karakteristika (förklarat), och hur mycket beror på att de får olika avkastning på samma karakteristika (oförklarat — diskrimineringsindikerande). Används av Medlingsinstitutet.">${ikon('info', 14)}</span>
+                <span class="info-tip" data-tooltip="Standardmetod inom arbetsmarknadsekonomi (Blinder 1973, Oaxaca 1973). Bryter ned rågapet i tre delar: hur mycket beror på att kvinnor och män har olika karakteristika (förklarat), och hur mycket beror på att samma egenskaper betalas olika (oförklarat — det statistiken inte kan förklara, inte ett mått på diskriminering). Används av Medlingsinstitutet.">${ikon('info', 14)}</span>
             </h3>
             <p class="text-dampad-sm lh-1_55 marg-0-0-14">
                 Rågapet i månadslön delas upp i den del som <em>förklaras</em> av strukturella skillnader
@@ -1029,7 +1049,7 @@ function renderBlinderOaxacaCard() {
 
             <div class="rutnat gap-14 kolumner-3-lika marg-b-18">
                 <div class="bak-accent-yta rund-8 pad-14 ta-mitt">
-                    <div class="etikett-versal">Rågap (män mot kvinnor)</div>
+                    <div class="etikett-versal">Rågap, män mot kvinnor</div>
                     <div class="farg-accent-mork fs-nyckeltal fw-700 marg-t-4">${fmtPct(r.rawGapPct)}</div>
                     <div class="finstilt">n = ${r.nKv} kvinnor + ${r.nMa} män</div>
                 </div>
@@ -1044,6 +1064,8 @@ function renderBlinderOaxacaCard() {
                     <div class="finstilt">≈ ${svPct(unexplainedPctOfGap, 0)} av rågapet</div>
                 </div>
             </div>
+
+            <p class="text-dampad-sm lh-1_55 marg-0-0-14">Här räknas åt andra hållet än i kortet ovan: mäns lön mot kvinnors, så ett positivt tal betyder att män ligger högre. Den oförklarade delen här och huvudtalet ovan är samma skillnad sedd från två håll; de skiljer sig något eftersom uppdelningen använder BAS som rangordning och skattar kvinnors och mäns lönesättning var för sig.</p>
 
             <details open>
                 <summary class="farg-text pekare fw-600">Visa uppdelning per variabel</summary>
@@ -1060,16 +1082,15 @@ function renderBlinderOaxacaCard() {
                         <tbody>${compRows}</tbody>
                     </table>
                     <p data-hjalptext class="text-dampad-xs lh-1_5 marg-10-0-0">
-                        <strong>Tolkning:</strong> Klassisk Blinder-Oaxaca-uppdelning. Q = endowment-effekt
-                        (skillnad i karakteristika värderade till kvinnornas avkastning). U = coefficient-effekt
-                        (skillnad i avkastning på samma karakteristika). I = interaction (samspel).
+                        <strong>Tolkning:</strong> Klassisk Blinder-Oaxaca-uppdelning. Q = skillnader i egenskaper (ålder, BAS) värderade
+                        med kvinnornas lönesättning. U = skillnad i hur samma egenskaper betalas. I = samspel mellan de två.
                         Förklarat = Q. Oförklarat = U + I.
                     </p>
                 </div>
             </details>
 
             <div class="bak-varning-bg ram-v-3-varning rund-4 fs-sm lh-1_55 marg-t-14 pad-10-12">
-                <strong>Vad betyder detta i facklig samråd?</strong><br>
+                <strong>Vad betyder detta i samverkan?</strong><br>
                 Den <em>förklarade</em> delen (${fmtPct(r.explainedPct)}) beror på att kvinnor och män
                 i organisationen har olika ålder och arbetar i olika BAS-intervall. Den hänsyn man rimligt
                 kan ta är dessa strukturella skillnader. Den <em>oförklarade</em> delen (${fmtPct(r.unexplainedPct)})
