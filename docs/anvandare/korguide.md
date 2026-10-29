@@ -233,8 +233,7 @@ också när det är hopfällt.
    A", alla eller något av villkoren) och på grupper (t.ex. "gap mindre än 95 %").
    Hanteldiagrammet visar gapet per grupp, bubbeldiagrammet om
    kvinnodominerade grupper har lägre lön. Grupper med färre än 10 personer visas
-   tonade — mönstrade staplar, streckad kant på punkter — och följer inte med i exporten om
-   du inte kryssar i det. Klicka på en grupp
+   som alla andra på skärmen men följer inte med i exporten om du inte kryssar i det. Klicka på en grupp
    för att öppna dess gruppdossier. Rader och kolumner kan också vara **Sektor** eller
    **AID-mellannivå** (de fyra första siffrorna, t.ex. "AID 2070xx" för undersköterskor och
    vårdbiträden). När raderna är yrkesgrupper kan små grupper **slås ihop till nästa

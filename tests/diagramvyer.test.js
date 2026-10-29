@@ -454,13 +454,13 @@ describe('gap per åldersgrupp, trattdiagram och läget i spannet per kön', () 
         expect(w.eval('_laOversiktRader(window.__d, ["A"], 11)')).toEqual(a);           // … med samma tal här (båda könen når 11)
         w.__d2 = w.__d.slice();
         expect(w.eval('_laTrattUnderlag(window.__d2, 10)')).not.toBe(u);                // annat underlag: räknas om
-        expect(w.eval('_laMinne !== null')).toBe(true);
+        expect(w.eval('_laMinnen.size')).toBeGreaterThan(0);
         w.eval('laMinneSlapp()');
-        expect(w.eval('_laMinne')).toBeNull();
+        expect(w.eval('_laMinnen.size')).toBe(0);
         // Rensningen och ogiltigförklaringen av statistiken släpper minnet (det håller en referens till dataraderna).
         w.eval('_laOversiktRader(window.__d, ["A"], 10)');
         w.eval('invalidateStatCaches({ recompute: false })');
-        expect(w.eval('_laMinne')).toBeNull();
+        expect(w.eval('_laMinnen.size')).toBe(0);
     });
     it('trattdiagrammet: en grupp över 300 personer bedöms med gruppens egen spridning, och högst sex grupper namnges', () => {
         const grupp = (yrke, n, kvLon, maLon) => [...Array.from({ length: n }, (_, i) => p('kvinna', 40, kvLon + (i % 21 - 10) * 150, yrke)), ...Array.from({ length: n }, (_, i) => p('man', 40, maLon + (i % 21 - 10) * 150, yrke))];

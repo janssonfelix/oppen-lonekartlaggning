@@ -18,38 +18,43 @@ function renderExportBesked() {
     const satt = (id, html) => { const el = document.getElementById(id); if (el) el.innerHTML = har ? html : ''; };
     if (!har) { ['besked-word', 'besked-pdf', 'besked-excel', 'besked-zip'].forEach(id => satt(id, '')); _ebRitaUrval(); return; }
     /** @type {any} */ let b = null;
-    try { b = rmBesked(rapportModell()); } catch (e) { rapporteraFel('Förhandsbesked: Word-utkastet', e); }
+    /** @type {any} */ let alla = null;
+    try { const bada = rapportModellBada(); alla = bada.alla; b = rmBesked(bada.urval); } catch (e) { rapporteraFel('Förhandsbesked: Word-utkastet', e); }
     if (b) {
         satt('besked-word', `<strong>Innehåller:</strong> ${esc(_ebText([b.urval, _ebAntal(b.avsnitt, 'avsnitt', 'avsnitt'), _ebAntal(b.tabeller, 'tabell', 'tabeller'), _ebAntal(b.diagram, 'diagram', 'diagram'), `${b.fyllIn} fält att fylla i`]))}`
             + (b.utelamnat.length ? `<br><strong>Utelämnar:</strong> ${esc(b.utelamnat.join(' · '))}` : '<br><strong>Utelämnar:</strong> ingenting'));
         // PDF-rapporten är samma modell; flikarnas tabeller följer med som bilagor när inget avsnitt är bortvalt.
-        const hela = b.avsnitt === rapportModell({ alla: true }).avsnitt.length;
+        const hela = !!alla && b.avsnitt === alla.avsnitt.length;
         satt('besked-pdf', `<strong>Innehåller:</strong> ${esc(_ebText([b.urval, _ebAntal(b.avsnitt, 'avsnitt', 'avsnitt'), _ebAntal(b.tabeller, 'tabell', 'tabeller'), _ebAntal(b.diagram, 'diagram', 'diagram'),
             hela ? 'bilagor med flikarnas tabeller och diagram' : 'inga bilagor (ett kortare urval är just avsnitten)']))}`
             + `<br><strong>Utelämnar:</strong> ${esc(b.utelamnat.length ? b.utelamnat.join(' · ') : 'ingenting')}`);
         _laNyckel('nyckel-ex-urval', b.urval);
     }
+    let blad = /** @type {string[]} */ ([]);
     try {
-        const blad = excelAlltBlad();
+        blad = excelAlltBlad();
         satt('besked-excel', `<strong>Innehåller:</strong> ${esc(_ebAntal(blad.length, 'blad', 'blad'))} — ${esc(blad.join(', '))}<br>`
             + `<strong>Utelämnar:</strong> ${esc(`grupper med färre än ${kInstalld()} personer (minsta gruppstorlek; på skärmen visas de)`)}`);
     } catch (e) { rapporteraFel('Förhandsbesked: Excel', e); }
     try {
-        satt('besked-zip', `<strong>Innehåller:</strong> ${esc(`Word-utkastet, Excel-filen (${_ebAntal(excelAlltBlad().length, 'blad', 'blad')}) och diagrammen i alla flikar som bilder`)}<br>`
+        satt('besked-zip', `<strong>Innehåller:</strong> ${esc(`Word-utkastet, Excel-filen (${_ebAntal(blad.length, 'blad', 'blad')}) och diagrammen i alla flikar som bilder`)}<br>`
             + `<strong>Utelämnar:</strong> ${esc(`diagram utan något att visa över tröskeln, och diagrammet i Personer att granska`)}`);
     } catch (e) { rapporteraFel('Förhandsbesked: ZIP', e); }
-    _ebRitaUrval();
+    _ebRitaUrval(alla);
 }
 
-/** Listan där urvalet görs: en rad per avsnitt med ruta och knappar för att flytta upp och ned, och de tre färdiga urvalen. */
-function _ebRitaUrval() {
+/**
+ * Listan där urvalet görs: en rad per avsnitt med ruta och knappar för att flytta upp och ned, och de tre färdiga urvalen.
+ * @param {any} [alla] modellen med alla avsnitt, när anroparen redan byggt den
+ */
+function _ebRitaUrval(alla) {
     const host = document.getElementById('rapport-urval');
     if (!host) return;
     if (!getData().length) { host.innerHTML = ''; _laNyckel('nyckel-ex-urval', ''); return; }
     const u = rapportUrval();
     let rubriker = {};
     try { // Lagrummet i rubriken hör till dokumentet; i gränssnittet står avsnittets namn utan paragrafhänvisning.
-        rubriker = Object.fromEntries(rapportModell({ alla: true }).avsnitt.map(a => [a.id, a.grundrubrik.replace(/\s*\((?:§|EU)[^)]*\)\s*$/, '')])); } catch (e) { rapporteraFel('Urval: avsnitten', e); }
+        rubriker = Object.fromEntries((alla || rapportModell({ alla: true })).avsnitt.map(a => [a.id, a.grundrubrik.replace(/\s*\((?:§|EU)[^)]*\)\s*$/, '')])); } catch (e) { rapporteraFel('Urval: avsnitten', e); }
     const finns = u.ordning.filter(id => rubriker[id]);
     host.innerHTML = `<div class="urval-fasta" role="group" aria-label="Färdiga urval">`
         + Object.entries(RM_URVAL).map(([nyckel, f]) => `<button type="button" class="btn btn-secondary btn-sm" data-urval-fast="${nyckel}" aria-pressed="${u.namn === f.namn}">${esc(f.namn)}</button>`).join('')

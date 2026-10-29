@@ -26,20 +26,30 @@ function iExportLage() { return state.kLage === 'export'; }
 function _bytKLage(lage) {
     state.kLage = lage;
     ritGenerationNy();                                                      // allt som är ritat bär det andra läget
-    // Bara det som räknas med kTroskel() släpps: Lika arbetes minne och livscykelns. Skattningarna (statGolv,
-    // bootstrap, styrka, § 3:10-paren) är desamma i båda lägena och behålls.
+    // Inget räknat släpps: Lika arbetes minne har ett rum per tröskel (skärmens och exportens), och skattningarna
+    // (statGolv, bootstrap, styrka, § 3:10-paren) är desamma i båda lägena. Livscykelns bevisunderlag hör till det
+    // som är ritat.
     state._lifecycleCache = null;
-    if (typeof laMinneSlapp === 'function') laMinneSlapp();
 }
 /**
- * Ritar skärmen tillbaka efter en export: Översikts delar och den öppna fliken (som grinden kan ha ritat i
- * exportläget), utom Dokumentera & exportera, som alltid ritas i exportläget. Flikar som inte syns töms inte: det
- * de bär är ritat med den inställda tröskeln (försiktigare än skärmen), och de ritas om när de öppnas.
+ * Ritar skärmen tillbaka efter en export: Översikts delar och den öppna fliken, när grinden ritade dem i exportläget
+ * (`ritade`: flikarna som ritades under exporten), utom Dokumentera & exportera, som alltid ritas i exportläget. Det
+ * som inte ritades under exporten visar fortfarande skärmens tal och rörs inte — Dokumentera-fliken i sig ritar inga
+ * andra flikar, och att rita om Översikt kostar sekunder på stora underlag. Flikar som inte syns töms inte: det de
+ * bär är ritat med den inställda tröskeln (försiktigare än skärmen), och de ritas om när de öppnas.
+ * @param {Set<string>} ritade
  */
-function _ritaOmEfterExport() {
+const _OVERSIKT_STEG = new Set(['nyckeltal', 'kompliansöversikt', 'underlagets kvalitet', 'Att göra', 'processöversikten', 'extremvärden', 'inläsningsrapporten', 'A/B-jämförelsen']);
+function _ritaOmEfterExport(ritade) {
     if (!state.data.length || typeof _omritningssteg !== 'function') return;
-    for (const [namn, fn] of _omritningssteg()) { if (namn === 'dokumentera' || namn === 'flikar som inte syns') continue; _omritningForsok(namn, fn); }
+    for (const [namn, fn] of _omritningssteg()) {
+        if (namn === 'dokumentera' || namn === 'flikar som inte syns') continue;
+        const ska = namn === 'gruppdossiern' || (_OVERSIKT_STEG.has(namn) ? ritade.has('dashboard') : ritade.has(namn));
+        if (ska) _omritningForsok(namn, fn);
+    }
 }
+/** Flikarna som är ritade i den generation som gäller nu (under en export: de som ritades i exportläget). */
+function _ritadeNu() { return new Set([..._ritadVid].filter(([, g]) => g === _ritGeneration).map(([f]) => f)); }
 /**
  * Kör fn i exportläget och går tillbaka till skärmläget efteråt (också när fn ger ett löfte eller kastar).
  * Nästlade anrop byter inte läge. Fn:s värde returneras.
@@ -54,7 +64,7 @@ function medExportLage(fn) {
     if (yttre) _bytKLage('export');
     _exportDjup++;
     let synk = true;
-    const tillbaka = () => { _exportDjup = Math.max(0, _exportDjup - 1); if (_exportDjup === 0 && yttre) { _bytKLage('skarm'); _ritaOmEfterExport(); } };
+    const tillbaka = () => { _exportDjup = Math.max(0, _exportDjup - 1); if (_exportDjup === 0 && yttre) { const ritade = _ritadeNu(); _bytKLage('skarm'); _ritaOmEfterExport(ritade); } };
     try {
         const r = fn();
         if (r && typeof /** @type {any} */ (r).then === 'function') { synk = false; return /** @type {any} */ (r).finally(tillbaka); }

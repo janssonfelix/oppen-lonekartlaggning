@@ -309,7 +309,7 @@ describe('omritning efter ändrad tröskel från gränssnittet: stegvis, med fö
         await w.eval('_renderaOmAllaFlikarStegvis()');
         expect(d.getElementById('omritning-ruta')).toBeNull();
         const oppen = d.querySelector('.nav-item.active[data-tab]').getAttribute('data-tab');
-        expect(ritade).toEqual([oppen]);                                   // bara den öppna fliken, en gång; övriga töms
+        expect(ritade).toEqual(oppen === 'dashboard' ? [] : [oppen]);     // bara den öppna fliken, en gång (Översikts delar ritas av stegen själva); övriga töms
         expect(synliga(w, [...SENT_MELLAN, ...SENT_SMA])).toEqual([]);         // ingen mellangrupp eller liten grupp syns längre någonstans
         d.body.dispatchEvent(new w.Event('click', { bubbles: true }));
         expect(klick).toBe(1);                                             // spärren är släppt

@@ -74,6 +74,14 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   exportläge med den inställda tröskeln, som förut. Inställningen, stämpeln och metodbilagan är oförändrade; Utforskas
   ruta gäller fortfarande exporten. Efter användartest: den som arbetar i verktyget har redan lönefilen.
 
+### Prestanda
+
+- **Dokumentera & exportera ritas snabbare på stora underlag.** Förhandsbeskedet byggde rapportmodellen tre gånger
+  och Excel-bladlistan två; nu en gång var (`rapportModellBada`). Efter en export ritas bara det tillbaka som
+  exporten ritade i exportläget, och Lika arbetes minne har ett rum per tröskel, så att ett lägesbyte inte räknar
+  om något. På 55 000 rader gick fliken från 12 s till omkring 3 s, och omritningen efter ändrad minsta
+  gruppstorlek ritar inte längre Översikt två gånger.
+
 ### Gränssnitt
 
 - **Prioritering är vad, Löneöversyn är hur (ADR-50).** Prioritering svarar på vad som bör åtgärdas och vad det
