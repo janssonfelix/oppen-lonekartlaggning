@@ -23376,7 +23376,6 @@ function renderLifecycleAnalysis() {
 
     // Jämför vs primäranalysen (cachas inte — vi anropar den direkt)
     const primary = runOLSRegression();
-    const primaryR2 = (primary && !primary.error) ? primary.R2 : null;
     const primaryAdjR2 = (primary && !primary.error) ? primary.adjR2 : null;
     const primaryGap = (primary && !primary.error) ? primary.konPct : null;
     const primaryP   = (primary && !primary.error) ? primary.pValue : null;
@@ -23460,19 +23459,7 @@ function renderLifecycleAnalysis() {
             <strong>Vad analyserar livscykelmodellen?</strong>
             <p class="fs-md lh-1_55 marg-8-0">
                 Den här analysen svarar på frågan: <em>"Är lönegapet mellan kvinnor och män
-                konstant över karriären, eller växer/krymper det med åldern?"</em>
-            </p>
-            <ul class="fs-sm lh-1_6 marg-8-0 pad-v-22">
-                <li><strong>Växande gap</strong> kan indikera långsammare karriärväg,
-                    föräldraledighetseffekter eller lönerevisioner som slår olika.</li>
-                <li><strong>Krympande gap</strong> kan tyda på att skillnaden uppstår vid rekryteringen:
-                    kvinnor och män börjar med olika ingångslöner men kommer ikapp.</li>
-                <li><strong>Konstant gap</strong> pekar på strukturella faktorer som bör
-                    adresseras i lönekartläggningen, inte via karriärspecifika åtgärder.</li>
-            </ul>
-            <p class="text-dampad-sm marg-8-0-0">
-                <em>Metod: utökad regression med kvadratisk åldersterm och
-                kön×ålder-interaktioner. HC3-robusta standardfel. N = ${result.n}, R² = ${svPct((result.R2*100), 1)}.</em>
+                konstant över karriären, eller växer/krymper det med åldern?"</em> Svaret, och vad det kan bero på, står i tolkningen under kurvan. Bygger på ${svTal(result.n, 0)} personer.
             </p>
         </div>
 
@@ -23561,7 +23548,7 @@ function renderLifecycleAnalysis() {
         <!-- B6: Detaljerad modelljämförelse -->
         <details class="mb-14" open>
             <summary class="bak-upphojd rund-6 pekare fw-600 pad-10-14">
-                Detaljerad modelljämförelse: huvudmodell mot livscykelmodell
+                Modelljämförelse: huvudmodell mot livscykelmodell
             </summary>
             <div class="pad-10-0">
                 <table class="data-table fs-sm">
@@ -23573,10 +23560,8 @@ function renderLifecycleAnalysis() {
                         </tr>
                     </thead>
                     <tbody>
-                        <tr><td><strong>Antal observationer (N)</strong></td><td>${primary ? primary.n : '—'}</td><td>${result.n}</td></tr>
-                        <tr><td><strong>Antal parametrar (k)</strong></td><td>${primary ? primary.k : '—'}</td><td>${result.k}</td></tr>
-                        <tr><td><strong>R²</strong></td><td>${primaryR2 != null ? svPct((primaryR2*100), 1) : '—'}</td><td>${svPct((result.R2*100), 1)}</td></tr>
-                        <tr><td><strong>Justerat R²</strong></td><td>${primaryAdjR2 != null ? svPct((primaryAdjR2*100), 1) : '—'}</td><td>${svPct((result.adjR2*100), 1)}</td></tr>
+                        <tr><td><strong>Antal personer</strong></td><td>${primary ? primary.n : '—'}</td><td>${result.n}</td></tr>
+                        <tr><td><strong>Förklarad del av lönespridningen (justerat R²)</strong></td><td>${primaryAdjR2 != null ? svPct((primaryAdjR2*100), 1) : '—'}</td><td>${svPct((result.adjR2*100), 1)}</td></tr>
                         <tr><td><strong>Löneskillnad kvinnor mot män</strong></td><td>${primaryGap != null ? (primaryGap >= 0 ? '+' : '') + svPct(primaryGap, 1) : '—'}</td><td>${(((Math.exp(result.kvCoef) - 1) * 100) >= 0 ? '+' : '')}${svPct(((Math.exp(result.kvCoef) - 1) * 100), 1)} (vid medelåldern ${Math.round(result.ageMean)} år)</td></tr>
                         <tr><td><strong>Kön — p-värde</strong></td><td>${primaryP != null ? (primaryP < 0.001 ? '< 0,001' : svTal(primaryP, 3)) : '—'} ${primaryP != null ? sigBadge(primaryP) : ''}</td><td>${result.kvPValue < 0.001 ? '< 0,001' : result.kvPValue.toFixed(3)} ${sigBadge(result.kvPValue)}</td></tr>
                         <tr><td><strong>Kön×ålder — p-värde</strong></td><td><em class="f-dampad">ej i modellen</em></td><td>${result.kvAgePVal < 0.001 ? '< 0,001' : svTal(result.kvAgePVal, 3)} ${sigBadge(result.kvAgePVal)}</td></tr>

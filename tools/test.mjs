@@ -34,19 +34,24 @@ const kor = filer => {
 const korSviten = () => {
     let svar = kor([]);
     let fallna = svar.fallna;
-    let antal = svar.antal;
+    // Antalet tester: första körningens summa, plus omkörningarnas. En arbetare som kraschar efter att filen
+    // rapporterat klart (under nedmonteringen) har redan räknats i första körningen; då får summan inte dubblas.
+    // Båda tolkningarna prövas mot planens rad, så att en omkörning aldrig gör en grön körning röd.
+    const forsta = svar.antal;
+    let omkorda = 0;
     for (let forsok = 1; svar.kraschade.length && forsok <= 2; forsok++) {
         console.log(`\n[test] Arbetaren kraschade i ${svar.kraschade.length} fil(er); kör om (försök ${forsok} av 2):\n  ${svar.kraschade.join('\n  ')}\n`);
         svar = kor(svar.kraschade);
         fallna = fallna || svar.fallna;
-        antal += svar.antal;
+        omkorda += svar.antal;
     }
     if (svar.kraschade.length) { console.error('\n[test] Arbetaren kraschade också vid omkörning — sviten är ofullständig.'); return 1; }
     if (!extra.length && !fallna) {
         const plan = readFileSync(new URL('../docs/utveckling/teknisk-plan.md', import.meta.url), 'utf8');
         const m = /Vitest — (\d+) tester i \d+ filer/.exec(plan);
-        if (!m || Number(m[1]) !== antal) {
-            console.error(`\n[test] teknisk-plan.md §6 säger ${m ? m[1] : '(ingen rad)'} tester, men sviten har ${antal}. Rätta raden "Vitest — N tester i M filer".`);
+        const antal = [forsta + omkorda, ...(omkorda ? [forsta] : [])];
+        if (!m || !antal.includes(Number(m[1]))) {
+            console.error(`\n[test] teknisk-plan.md §6 säger ${m ? m[1] : '(ingen rad)'} tester, men sviten har ${antal.join(' eller ')}. Rätta raden "Vitest — N tester i M filer".`);
             return 1;
         }
     }

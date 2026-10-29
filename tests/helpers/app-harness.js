@@ -37,6 +37,9 @@ const _dettaTest = [];
 // återstår 15 MB. Ett fönster som ingen pekar på släpps helt.
 function _stang(w) {
     _fonster.delete(w);
+    // Inget får schemaläggas under nedmonteringen: en uppskjuten omritning (requestAnimationFrame, setTimeout) som
+    // hinner köras efter close() hittar inget d3 och skriver "d3 is not defined" i loggen — det enda bruset i CI.
+    try { w.requestAnimationFrame = () => 0; w.setTimeout = () => 0; } catch (_e) { /* fönstret är redan stängt */ }
     try { w.eval('typeof _rensaAllData === "function" && _rensaAllData()'); } catch (_e) { /* fönstret är redan stängt eller trasigt */ }
     try { w.close(); } catch (_e) { /* redan stängt */ }
 }
