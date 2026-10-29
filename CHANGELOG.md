@@ -63,6 +63,10 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   kvinnor och kortet säger det) och *Var uppstår löneskillnaden?* på Översikt och i rapportunderlaget
   (`src/lib/gapuppdelning.js` räknar kvinnor − män; negativa belopp betyder att kvinnornas medellön är lägre).
   Undantaget är EU-lönerapportens blad, som har direktivets tecken (art. 9) med tecknet utskrivet, som förut.
+- **Tre småsaker i texterna.** Kronexemplet i regressionskortet säger också hur stor summan är som andel av
+  kvinnornas samlade årslön. Blinder-Oaxaca-kortets förklarade och oförklarade del står i procentenheter av
+  rågapet ("10,7 procentenheter") i stället för som negativa procenttal. Inledningen till *Var uppstår
+  löneskillnaden?* är en mening utan parentes.
 - **Livscykelavsnittet utan dubbletter.** Inledningens tre punkter om växande, krympande och konstant gap är
   borta (tolkningen under kurvan säger det som gäller), liksom metodraden med N och R². Modelljämförelsen har fyra
   rader färre: antal parametrar, R² och ojusterat R² är borta, kvar är antal personer, förklarad del av

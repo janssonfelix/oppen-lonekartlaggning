@@ -22853,6 +22853,9 @@ function renderRegressionCard() {
     // även när regressionen själv får köras (fast golv, ADR-38).
     const konOk = _konFarRedovisas(r.nKvAnalysed, r.nMaAnalysed);
     const kr = konOk ? _regressionKronor(r) : null;
+    // Summan per år som andel av kvinnornas samlade årslön i underlaget: det tal en ekonom frågar efter.
+    const lonesummaKvAr = konOk ? getData().filter(d => d.lon > 0 && d.alder > 0 && typeof d.kon === 'string' && d.kon.includes('kvinna')).reduce((s, d) => s + d.lon, 0) * 12 : 0;
+    const andelAvLonesumma = kr && lonesummaKvAr > 0 ? Math.abs(kr.krTotalYear) / lonesummaKvAr * 100 : null;
     // Budgeten utgår från första steget och visar skillnaderna mellan stegen: utelämnas med det.
     const budget = stegUt.utelamnat ? null : _explanationBudget(yrkeVisas ? stegIKortet : seqOk);
 
@@ -22890,7 +22893,7 @@ function renderRegressionCard() {
             <div class="reg-kronor-grid">
                 <div class="rk-tile"><div class="rk-val">${krFmt(Math.abs(kr.krMonth))}</div><div class="rk-lbl">per kvinna och månad</div></div>
                 <div class="rk-tile"><div class="rk-val">${krFmt(Math.abs(kr.krYear))}</div><div class="rk-lbl">per kvinna och år</div></div>
-                <div class="rk-tile"><div class="rk-val">${krFmt(Math.abs(kr.krTotalYear))}</div><div class="rk-lbl">för alla ${r.nKvAnalysed} kvinnor i underlaget, per år</div></div>
+                <div class="rk-tile"><div class="rk-val">${krFmt(Math.abs(kr.krTotalYear))}</div><div class="rk-lbl">för alla ${r.nKvAnalysed} kvinnor i underlaget, per år${andelAvLonesumma != null ? ` (${svPct(andelAvLonesumma, 1)} av kvinnornas samlade årslön)` : ''}</div></div>
             </div>
             <p class="rk-example"><strong>Konkret:</strong> en man med medianlön tjänar <strong>${krFmt(kr.refMan)}</strong>/mån.
             En kvinna <em>i samma ålder och samma BAS-intervall</em> förutsägs enligt modellen tjäna
@@ -23348,18 +23351,18 @@ function renderBlinderOaxacaCard() {
                     <div class="finstilt">n = ${r.nKv} kvinnor + ${r.nMa} män</div>
                 </div>
                 <div class="bak-ok-bg rund-8 pad-14 ta-mitt">
-                    <div class="etikett-versal">Förklarat (struktur)</div>
-                    <div class="farg-ok fs-nyckeltal fw-700 marg-t-4">${fmtPct(forklarat)}</div>
+                    <div class="etikett-versal">Förklarat av ålder och BAS</div>
+                    <div class="farg-ok fs-nyckeltal fw-700 marg-t-4">${svTal(Math.abs(forklarat), 1)} procentenheter</div>
                     <div class="finstilt">≈ ${svPct(explainedPctOfGap, 0)} av rågapet</div>
                 </div>
                 <div class="bak-varning-bg rund-8 pad-14 ta-mitt">
-                    <div class="etikett-versal">Oförklarat (koef + samspel)</div>
-                    <div class="farg-varning fs-nyckeltal fw-700 marg-t-4">${fmtPct(oforklarat)}</div>
+                    <div class="etikett-versal">Oförklarat</div>
+                    <div class="farg-varning fs-nyckeltal fw-700 marg-t-4">${svTal(Math.abs(oforklarat), 1)} procentenheter</div>
                     <div class="finstilt">≈ ${svPct(unexplainedPctOfGap, 0)} av rågapet</div>
                 </div>
             </div>
 
-            <p class="text-dampad-sm lh-1_55 marg-0-0-14">Samma håll som i kortet ovan: kvinnors lön mot mäns, negativt när kvinnor ligger lägre. Den oförklarade delen här och huvudtalet ovan mäter samma skillnad; de skiljer sig något eftersom uppdelningen använder BAS som rangordning och skattar kvinnors och mäns lönesättning var för sig. (Metoden räknar internt mäns lön mot kvinnors; talen är omräknade.)</p>
+            <p class="text-dampad-sm lh-1_55 marg-0-0-14">Rågapet räknas som i kortet ovan: kvinnors lön mot mäns, negativt när kvinnor ligger lägre; de två delarna är hur många procentenheter av det som förklaras respektive blir kvar${(forklarat > 0) !== (ragap > 0) ? ' (den förklarade delen drar här åt motsatt håll mot rågapet)' : ''}. Den oförklarade delen här och huvudtalet ovan mäter samma skillnad; de skiljer sig något eftersom uppdelningen använder BAS som rangordning och skattar kvinnors och mäns lönesättning var för sig. (Metoden räknar internt mäns lön mot kvinnors; talen är omräknade.)</p>
 
             <details open>
                 <summary class="farg-text pekare fw-600">Visa uppdelning per variabel</summary>
@@ -23385,9 +23388,9 @@ function renderBlinderOaxacaCard() {
 
             <div class="bak-varning-bg ram-v-3-varning rund-4 fs-sm lh-1_55 marg-t-14 pad-10-12">
                 <strong>Vad betyder detta i samverkan?</strong><br>
-                Den <em>förklarade</em> delen (${fmtPct(forklarat)}) beror på att kvinnor och män
+                Den <em>förklarade</em> delen (${svTal(Math.abs(forklarat), 1)} procentenheter) beror på att kvinnor och män
                 i organisationen har olika ålder och arbetar i olika BAS-intervall. Den hänsyn man rimligt
-                kan ta är dessa strukturella skillnader. Den <em>oförklarade</em> delen (${fmtPct(oforklarat)})
+                kan ta är dessa strukturella skillnader. Den <em>oförklarade</em> delen (${svTal(Math.abs(oforklarat), 1)} procentenheter)
                 är vad lönekartläggningen ska <strong>analysera djupare</strong> — sakliga skäl
                 måste finnas dokumenterade för att motivera den.
             </div>
@@ -26586,8 +26589,8 @@ function renderGapUppdelning() {
         return;
     }
     const inledning = u.gap <= 0
-        ? `Kvinnor har i genomsnitt <strong>${_guKr(-u.gap, false)}</strong> (${_guPct(-u.gapPct)} av mäns medellön) lägre medellön än män.`
-        : `Kvinnor har i genomsnitt <strong>${_guKr(u.gap, false)}</strong> (${_guPct(u.gapPct)} av mäns medellön) högre medellön än män.`;
+        ? `Kvinnors medellön är <strong>${_guKr(-u.gap, false)}</strong> lägre än mäns, det är ${_guPct(-u.gapPct)} av mäns medellön.`
+        : `Kvinnors medellön är <strong>${_guKr(u.gap, false)}</strong> högre än mäns, det är ${_guPct(u.gapPct)} av mäns medellön.`;
     const medKv = Stat.median(d.filter(r => r.kon.includes('kvinna') && r.lon > 0).map(r => r.lon));
     const medMa = Stat.median(d.filter(r => (r.kon === 'man' || r.kon === 'män') && r.lon > 0).map(r => r.lon));
     const medianText = medMa > 0 ? ` Kvinnors medianlön är ${_guPct(medKv / medMa * 100)} av mäns.` : '';

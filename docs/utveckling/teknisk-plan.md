@@ -1186,6 +1186,19 @@ Kända brister och obesvarade frågor, så att de inte lever bara i en konversat
 8. **Ett gemensamt globalt scope** på omkring 20 000 rader. Logik flyttas till `src/lib/` när en del ändå ändras.
 9. *(Löst: `.github/dependabot.yml` uppdaterar npm och arbetsflödenas steg, §6.)*
 
+**Gränssnitt och analys (översynen 2026-10-29):**
+9b. **Ett tecken i hela verktyget:** löneskillnader anges kvinnor mot män, negativt när kvinnor ligger lägre
+    (huvudtalet, livscykeln, Blinder-Oaxaca-kortets rågap, *Var uppstår löneskillnaden?*); kvoten *kvinnors lön i
+    procent av mäns* används där den är standard (Översikt, Ålder & karriär, direktivets tabeller). Enda
+    undantaget är EU-lönerapportens blad med direktivets tecken (art. 9), utskrivet i rubriken.
+9c. **Ålder & karriär ordnad efter tre frågor** (vid samma ålder; över karriären; åldersstruktur), med ett
+    spridningsdiagram där hela urvalets trend är ett valbart lager. Täthetskurvorna per BAS står kvar i fliken
+    för att utskriften använder dem; flyttas de behöver utskriften en annan bild.
+9d. **Dekomponeringen visas som en bild:** trappan med yrkesgruppssteget efter huvudtalet, förklaringsbudgeten
+    under den, steglistan som skärmläsaralternativ. Livscykelns nivåer per BAS kommer ur modellens
+    BAS-koefficienter (`basFaktor`). Kvar att besluta: Blinder-Oaxaca på BAS-indikatorer i stället för rang
+    (ADR-44 undantog den), så att uppdelningen vilar på samma modell som huvudtalet.
+
 **Export:**
 10. **Svenskt talformat:** jämförelseexporten (`64-jamforelse-export.js`) och CSV-exporternas tolkning (`_CSV_TALLIKT`) är inte
     prövade.
