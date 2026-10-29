@@ -75,8 +75,9 @@ Exportera en personalfil (CSV eller XLSX) med dessa kolumner:
    *Jämförelsestatistik* fylls i av sig själva. Dra sedan in eller välj lönefilen i den
    **obligatoriska** rutan (steg 2).
    **Minsta gruppstorlek för redovisning:** fältet ligger under **Inställningar** i sidhuvudet (värdet
-   *Minsta gruppstorlek* i flikarnas översta rad är en länk dit). Standardvärdet är 10: lönemått för grupper med färre personer än så redovisas
-   inte. Ni kan ändra värdet till ett heltal från 2 (högre skärper skyddet). Ett värde under 10
+   *Minsta gruppstorlek* i flikarnas översta rad är en länk dit). På skärmen visas alla grupper; gränsen gäller
+   det som lämnar verktyget (Excel, Word, PDF, ZIP, CSV, urklipp, diagrambilder, rapportunderlaget). Standardvärdet är 10: lönemått för grupper med färre personer än så redovisas
+   inte där. Ni kan ändra värdet till ett heltal från 2 (högre skärper skyddet). Ett värde under 10
    kräver att ni bekräftar och visas som en varning överst på alla flikar. Värdet står i
    metodbilagan och i exporterad data; under 10 står dessutom meningen *Tröskeln är sänkt från
    standardvärdet 10.* på det som kan spridas för sig, till exempel diagrambilder, kopierade tabeller

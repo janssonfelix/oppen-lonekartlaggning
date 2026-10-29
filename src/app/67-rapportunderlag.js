@@ -33,7 +33,9 @@ function _rapportHpRader(seedRows) {
 }
 
 /** Alla textblock i den ordning de visas: avsnitt, yrkesgrupper, kandidatpar. */
-function rapportunderlagBlock() {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function rapportunderlagBlock(...a) { return medExportLage(() => _rapportunderlagBlockExport.apply(null, /** @type {any} */ (a))); }
+function _rapportunderlagBlockExport() {
     const d = getData();
     if (!d.length) return [];
     const k = kTroskel();
@@ -147,7 +149,9 @@ function renderRapportunderlag() {
 function _ruBlockId(id) { return 'ru-' + String(id).replace(/[^A-Za-z0-9_-]/g, '-'); }
 
 /** Kopierar alla avsnittsblock (utan yrkes- och parblock) i en kopiering. */
-async function kopieraRapportAvsnitt() {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function kopieraRapportAvsnitt(...a) { return medExportLage(() => _kopieraRapportAvsnittExport.apply(null, /** @type {any} */ (a))); }
+async function _kopieraRapportAvsnittExport() {
     const avsnitt = [..._rapportBlockSenast.values()].filter(b => !b.id.includes(':'));
     if (!avsnitt.length) return 'saknas';
     const html = avsnitt.map(b => _ruTillWordHtml(b)).join('\n');
@@ -191,7 +195,9 @@ function _rapportKvitto(knapp, text) {
 }
 
 /** Kopierar ett block som formaterad text + ren text. Reserv: markera och kopiera. */
-async function kopieraRapportBlock(id) {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function kopieraRapportBlock(...a) { return medExportLage(() => _kopieraRapportBlockExport.apply(null, /** @type {any} */ (a))); }
+async function _kopieraRapportBlockExport(id) {
     const b = _rapportBlockSenast.get(id);
     if (!b) return 'saknas';
     const html = _ruTillWordHtml(b), text = _ruTillText(b);
@@ -237,7 +243,9 @@ function _dataUrlTillBlob(dataUrl) {
 
 /** Kopierar ett diagram som PNG (1600 × 900). Ritar fliken först om diagrammet saknas.
  *  Reserv: PNG laddas ner via exportmenyns väg. */
-async function kopieraRapportDiagram(id) {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function kopieraRapportDiagram(...a) { return medExportLage(() => _kopieraRapportDiagramExport.apply(null, /** @type {any} */ (a))); }
+async function _kopieraRapportDiagramExport(id) {
     const def = _rapportDiagramLista(_rapportParLage.harPar, _rapportParLage.exkluderade).find(g => g.id === id)
         || (id !== 'chart-likvardighet-heatmap' ? RAPPORT_DIAGRAM.find(g => g.id === id) : null);
     if (!def) return 'saknas';

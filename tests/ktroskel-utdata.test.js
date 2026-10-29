@@ -6,15 +6,15 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
-import { normalisera, fonster, tvaDec } from './helpers/ktroskel-rigg.js';
+import { normalisera, fonster, tvaDec, iExport } from './helpers/ktroskel-rigg.js';
 
 // Sviten ritar om hela verktyget i varje test. Under full last tar ett test 4–6 s, så standardgränsen 5 s
 // fäller olika tester från körning till körning.
 vi.setConfig({ testTimeout: 30000 });
 
 describe('k-tröskeln under 5 i Lönepolitik', () => {
-    it('mellannivån med bara antal finns inte när tröskeln är 3', () => {
-        const w = fonster(3);
+    it('mellannivån med bara antal finns inte när tröskeln är 3 (exportläget)', () => {
+        const w = iExport(fonster(3));
         expect(w.eval('_lpTier(4)')).toBe('full');
         expect(w.eval('_lpTier(2)')).toBe('masked');
         w.__renderTabContent('lonepolitik');
@@ -34,6 +34,7 @@ describe('k-tröskeln: Prioritering visar ingen könsjämförelse för ett kön 
         w.__state.data = rader;
         w.__state.policy = ['F0', 'F1', 'F2', 'P'].map(b => ({ bas: b, p10: 22000, med: 30000, p90: 52000 }));
         w.eval('populateSelects(); unlockTabs();');
+        iExport(w);   // så som tabellen lämnar verktyget; skärmen maskerar inget (ADR-51)
         w.__renderTabContent('prioritering');
         const vy = w.document.getElementById('view-prioritering');
         const text = normalisera(vy.textContent + ' ' + [...vy.querySelectorAll('*')].map(e => Array.from(e.attributes, a => a.value).join(' ')).join(' '));
@@ -75,8 +76,7 @@ describe('k-tröskeln: § 3:10-par i Word-utkastet och utskriften', () => {
         const w = fonsterPar(null);
         const ord = normalisera(w.__docDraftHtml());
         const tryck = await utskrift(w);
-        // Sentinelmedianen kan i utskriften förekomma i Löneöversiktens BAS-rad (en annan, tillåten grupp); par-tabellen prövas via etiketten.
-        expect(ord).not.toContain(String(SENT));
+        // Sentinelmedianen kan förekomma som P10 för hela BAS C (en annan, tillåten grupp); par-tabellen prövas via etiketten.
         for (const t of [ord, tryck]) {
             // Gruppen får nämnas i k-notan (ADR-12), men inte stå som cell i en par-tabell.
             expect(t).not.toMatch(/<td[^>]*>[^<]*5300 Yrke 5300|<td[^>]*>[^<]*Yrke 5300/);
@@ -130,7 +130,7 @@ describe('k-tröskeln: § 3:10-par utanför fliken (protokoll, Att göra, handli
     const attGora = w => {
         w.eval('renderActionChecklist()');
         return {
-            punkter: normalisera(JSON.stringify(w.eval('buildActionChecklist()'))),
+            punkter: normalisera(w.eval('JSON.stringify(medExportLage(() => buildActionChecklist()))')),
             kort: normalisera(w.document.getElementById('action-checklist-container').textContent
                 + w.document.getElementById('att-gora-borja').textContent),
             csv: fangaCsv(w),
@@ -139,7 +139,7 @@ describe('k-tröskeln: § 3:10-par utanför fliken (protokoll, Att göra, handli
     const dossier = (w, nyckel) => {
         w.eval(`renderGruppdossier('${nyckel}')`);
         return { skarm: normalisera(w.document.getElementById('dossier-body').textContent),
-                 text: normalisera(w.eval(`gruppdossierAsText(buildGruppdossier('${nyckel}'))`)) };
+                 text: normalisera(w.eval(`medExportLage(() => gruppdossierAsText(buildGruppdossier('${nyckel}')))`)) };
     };
 
     it('paret finns i beräkningen (annars prövar testet inget)', () => {
@@ -155,25 +155,23 @@ describe('k-tröskeln: § 3:10-par utanför fliken (protokoll, Att göra, handli
         expect(text).toMatch(NOT);
         expect(text).toMatch(/Antal redovisade kandidatpar i likvärdigt arbete[^|]*\| 0/);
     });
-    it('vid 10: Att göra (punkter, kort och CSV) saknar paret och anger antalet', () => {
+    it('vid 10: Att göra på skärmen visar paret; punkterna i exportläget och CSV-filen saknar det och anger antalet', () => {
         const a = attGora(fonsterPar(null));
-        for (const t of [a.punkter, a.kort, a.csv]) {
+        expect(a.kort).toContain(ETIKETT);   // skärmen maskerar inget (ADR-51)
+        for (const t of [a.punkter, a.csv]) {
             expect(t).not.toContain(ETIKETT);
             expect(t).not.toContain(String(SENT));
         }
-        expect(a.kort).toMatch(NOT);
         expect(a.csv).toMatch(NOT);
     });
-    it('vid 10: handlingsplanens förifyllda rader (skärm och Excel) saknar paret, och fliken anger antalet', async () => {
+    it('vid 10: handlingsplanens förifyllda rader visar paret på skärmen; i exportläget och i Excel saknas det, och antalet anges', async () => {
         const w = fonsterPar(null);
-        const seed = w.eval('_handlingsplanSeedRows()');
+        expect(w.eval('_handlingsplanSeedRows()').lvCount).toBe(1);   // skärmen maskerar inget (ADR-51)
+        const seed = w.eval('medExportLage(() => _handlingsplanSeedRows())');
         expect(seed.lvCount).toBe(0);
         expect(JSON.stringify(seed.rows)).not.toContain('5300');
         w.eval('renderHandlingsplanSeed()');
-        const flik = normalisera(w.document.getElementById('handlingsplan-tbody').textContent
-            + w.document.getElementById('handlingsplan-seed-note').textContent);
-        expect(flik).not.toContain('5300');
-        expect(flik).toMatch(NOT);
+        expect(normalisera(w.document.getElementById('handlingsplan-tbody').textContent)).toContain('5300');
         const excel = await fangaExcel(w, 'exportHandlingsplan');
         expect(excel).not.toContain('5300');
         expect(excel).toMatch(NOT);
@@ -189,13 +187,12 @@ describe('k-tröskeln: § 3:10-par utanför fliken (protokoll, Att göra, handli
         expect(vid5).toContain('5300');
         expect(vid5).not.toMatch(/redovisas inte här/);
     });
-    it('vid 10: gruppdossiern för den stora gruppen i paret visar inte den lilla och anger antalet', () => {
+    it('vid 10: gruppdossiern på skärmen visar den lilla gruppen; textkopian (lämnar verktyget) gör det inte och anger antalet', () => {
         const d = dossier(fonsterPar(null), '6100|C');
-        for (const t of [d.skarm, d.text]) {
-            expect(t).not.toContain(ETIKETT);
-            expect(t).not.toContain(String(SENT));
-            expect(t).toMatch(NOT);
-        }
+        expect(d.skarm).toContain(ETIKETT);
+        expect(d.text).not.toContain(ETIKETT);
+        expect(d.text).not.toContain(String(SENT));
+        expect(d.text).toMatch(NOT);
     });
 
     it('vid 5 (den lilla gruppens storlek är 6): paret finns i alla fyra', async () => {
@@ -246,7 +243,7 @@ describe('k-tröskeln: § 3:10-par utanför fliken (protokoll, Att göra, handli
         expect(t5).toContain('5300');
         expect(t5).toContain(arskostnad(w5));
     });
-    it('vid 10: Löneöversynens förslag riktar inte mot den lilla gruppen och anger antalet; vid 5 gör de det', () => {
+    it('Löneöversynens förslag på skärmen riktar också mot den lilla gruppen (skärmen maskerar inget, ADR-51); raden säger att beloppet bygger på enskildas löner', () => {
         const forslag = k => {
             const w = fonsterPar(k);
             w.alert = () => {};
@@ -256,9 +253,9 @@ describe('k-tröskeln: § 3:10-par utanför fliken (protokoll, Att göra, handli
             return { w, aid: w.__state.forecast.targets.map(t => t.aid) };
         };
         const a10 = forslag(null);
-        expect(a10.aid).not.toContain('5300');
-        expect(a10.w.document.getElementById('forecast-par-not').textContent).toMatch(NOT);
-        expect(normalisera(a10.w.document.getElementById('forecast-targets').textContent)).not.toContain('5300');
+        expect(a10.aid).toContain('5300');
+        expect(a10.w.document.getElementById('forecast-par-not').textContent).toBe('');
+        expect(a10.w.document.getElementById('forecast-targets').textContent).toMatch(/Raden berör 6 personer, färre än 10 personer/);
         const a5 = forslag(5);
         expect(a5.aid).toContain('5300');
         expect(a5.w.document.getElementById('forecast-par-not').textContent).not.toMatch(NOT);
@@ -277,7 +274,7 @@ describe('k-tröskeln: § 3:10-par utanför fliken (protokoll, Att göra, handli
         const par = w.eval('likvardighetResultat().pairs');
         expect(par.length).toBe(26);
         expect(par.slice(0, 20).some(p => p.kvN < 10)).toBe(true);   // annars prövar testet inget
-        const lv = w.eval("buildActionChecklist().filter(i => i.kategori === 'Likvärdigt arbete').map(i => i.id)");
+        const lv = w.eval("medExportLage(() => buildActionChecklist()).filter(i => i.kategori === 'Likvärdigt arbete').map(i => i.id)");
         expect(lv.length).toBe(20);
         const smaAid = par.filter(p => p.kvN < 10).map(p => p.kvAid);
         expect(lv.some(id => smaAid.some(a => id.includes(`lv-${a}-`)))).toBe(false);
@@ -333,6 +330,7 @@ describe('k-tröskeln i texterna', () => {
     it('Excel-protokollets rad om BAS-regressionen citerar statistiska golvet, raden om yrken tröskeln', () => {
         const w = createAppWindow();
         w.eval('sattKTroskel(5, { fraga: false })');
+        w.__state.kLage = 'export';
         const rader = w.eval('_jpaExkluderadeTexter()');
         expect(rader.yrken).toContain('n<5');
         expect(rader.bas).toContain('n<10');
@@ -356,14 +354,14 @@ describe('k-tröskeln i gränssnittet', () => {
         const w = createAppWindow();
         const d = w.document;
         skriv(w, '6');
-        expect(w.eval('kTroskel()')).toBe(6);
+        expect(w.eval('kInstalld()')).toBe(6);
         const varning = d.getElementById('k-troskel-varning');
         expect(varning.hidden).toBe(false);
         expect(varning.textContent).toContain('Minsta gruppstorlek är sänkt till 6 (standard 10). Lönemått för små grupper kan peka ut enskilda.');
         expect(varning.closest('.view-panel')).toBeNull();   // ligger utanför flikpanelerna
         expect(varning.querySelector('button')).toBeNull();  // går inte att stänga
         d.getElementById('btn-k-aterstall').click();
-        expect(w.eval('kTroskel()')).toBe(10);
+        expect(w.eval('kInstalld()')).toBe(10);
         expect(varning.hidden).toBe(true);
     });
     it('höjt värde ger ingen varning men en återställ-knapp', () => {
@@ -375,7 +373,7 @@ describe('k-tröskeln i gränssnittet', () => {
     it.each(['', '10,0', '1e2', '1', '1001', 'tio'])('ogiltigt värde %p: felet syns vid fältet och fältet återfår gällande värde', v => {
         const w = createAppWindow();
         const f = skriv(w, v);
-        expect(w.eval('kTroskel()')).toBe(10);
+        expect(w.eval('kInstalld()')).toBe(10);
         expect(f.value).toBe('10');
         const fel = w.document.getElementById('k-troskel-fel');
         expect(fel.hidden).toBe(false);
@@ -413,7 +411,7 @@ describe('k-tröskeln i gränssnittet', () => {
     it.each(['tio', '10,0', '1e2'])('sattKTroskel avvisar %p direkt', v => {
         const w = createAppWindow();
         expect(w.eval(`sattKTroskel(${JSON.stringify(v)}, { fraga: false }).ok`)).toBe(false);
-        expect(w.eval('kTroskel()')).toBe(10);
+        expect(w.eval('kInstalld()')).toBe(10);
     });
 });
 
@@ -426,7 +424,7 @@ describe('k-tröskeln i utdata', () => {
         const w = fonster(null);
         expect(w.eval('kStampel()')).toBe(STAMPEL_10);
         expect(w.eval('_kSanktNot()')).toBe('');
-        expect(metodrad(w)[1]).toBe('10 personer. Grupper med färre redovisas inte i beskrivande vyer (gäller inte likvärdighetsanalysen).');
+        expect(metodrad(w)[1]).toBe('10 personer. Grupper med färre redovisas inte i det som lämnar verktyget (gäller inte likvärdighetsanalysen); på skärmen visas alla grupper.');
         expect(w.__docDraftHtml()).toContain('Minsta gruppstorlek för redovisning');
         const block = w.__rapportunderlagBlock();
         expect(w.__ruTillText(block.find(b => b.id === 'sammanfattning'))).toContain(STAMPEL_10);
@@ -500,7 +498,7 @@ describe('k-tröskeln: motiveringsförslagen visar ingen lönepositionsslutsats 
         for (let i = 0; i < 6; i++) rows.push({ kon: 'kvinna', lon: 20000 + i, alder: 40 });
         for (let i = 0; i < 6; i++) rows.push({ kon: 'man', lon: 40000 + i, alder: 40 });
         w.__item = { _rows: rows, kvN: 6, maN: 6, n: 12, diffPct: -8, costPerPerson: 0 };
-        return w.eval('generateMotivationSuggestions(window.__item)').map(f => f.text).join(' ');
+        return w.eval('medExportLage(() => generateMotivationSuggestions(window.__item)).map(f => f.text).join(" ")');
     };
     it('vid 10 saknas glasstaksmönstret för en grupp med 6 av varje kön', () => {
         expect(forslag(null)).not.toContain('Glasstaks-/klistergolvsmönster');
@@ -570,7 +568,7 @@ describe('k-tröskeln i konfigurationsfilen', () => {
         const b = createAppWindow();
         b.__cfg = cfg;
         b.eval('applyConfigSnapshot(window.__cfg)');
-        expect(b.eval('kTroskel()')).toBe(15);
+        expect(b.eval('kInstalld()')).toBe(15);
         expect(b.document.getElementById('k-troskel').value).toBe('15');
     });
     it('en fil utan fältet lämnar gällande värde orört (som ett organisationspaket utan fältet)', () => {
@@ -582,7 +580,7 @@ describe('k-tröskeln i konfigurationsfilen', () => {
         b.eval('sattKTroskel(15, { fraga: false })');
         b.__cfg = cfg;
         b.eval('applyConfigSnapshot(window.__cfg)');
-        expect(b.eval('kTroskel()')).toBe(15);
+        expect(b.eval('kInstalld()')).toBe(15);
         expect(b.eval('orgNamn("")')).toBe('Exempelorganisationen');   // resten av filen läses in
     });
     it.each([1, 2.5, '12', 1001, null])('ogiltigt värde %p avvisas och lämnar allt orört', v => {
@@ -593,10 +591,10 @@ describe('k-tröskeln i konfigurationsfilen', () => {
         cfg.orgName = 'Ska inte läsas in';
         a.__cfg = cfg;
         // null räknas som att fältet saknas: värdet står kvar och resten läses in.
-        if (v === null) { a.eval('applyConfigSnapshot(window.__cfg)'); expect(a.eval('kTroskel()')).toBe(15); return; }
+        if (v === null) { a.eval('applyConfigSnapshot(window.__cfg)'); expect(a.eval('kInstalld()')).toBe(15); return; }
         a.eval('sattKTroskel(15, { fraga: false })');
         expect(() => a.eval('applyConfigSnapshot(window.__cfg)')).toThrow(/kTroskel måste vara ett heltal mellan 2 och 1000/);
-        expect(a.eval('kTroskel()')).toBe(15);
+        expect(a.eval('kInstalld()')).toBe(15);
         expect(a.eval('orgNamn("")')).not.toBe('Ska inte läsas in');
     });
     it('värde under 10: nekad bekräftelse behåller värdet men läser in resten', () => {
@@ -610,7 +608,7 @@ describe('k-tröskeln i konfigurationsfilen', () => {
         b.__cfg = cfg;
         b.eval('applyConfigSnapshot(window.__cfg)');
         expect(fragor).toBe(1);
-        expect(b.eval('kTroskel()')).toBe(10);
+        expect(b.eval('kInstalld()')).toBe(10);
         expect(b.eval('orgNamn("")')).toBe('Exempelorganisationen');
     });
     it('värde under 10: godkänd bekräftelse tillämpar värdet', () => {
@@ -623,7 +621,7 @@ describe('k-tröskeln i konfigurationsfilen', () => {
         b.__cfg = cfg;
         b.eval('applyConfigSnapshot(window.__cfg)');
         expect(fragor).toBe(1);
-        expect(b.eval('kTroskel()')).toBe(6);
+        expect(b.eval('kInstalld()')).toBe(6);
     });
     it('en fil utan fältet: ett sänkt värde står också kvar, utan fråga', () => {
         const a = createAppWindow();
@@ -635,7 +633,7 @@ describe('k-tröskeln i konfigurationsfilen', () => {
         b.eval('sattKTroskel(6, { fraga: false })');
         b.__cfg = cfg;
         b.eval('applyConfigSnapshot(window.__cfg)');
-        expect(b.eval('kTroskel()')).toBe(6);
+        expect(b.eval('kInstalld()')).toBe(6);
         expect(fragor).toBe(0);
         expect(b.document.getElementById('k-troskel-varning').hidden).toBe(false);
     });
@@ -649,13 +647,13 @@ describe('k-tröskeln i organisationspaketet', () => {
     it('paketets värde blir gällande', () => {
         const w = createAppWindow();
         expect(las(w, paket(20)).ok).toBe(true);
-        expect(w.eval('kTroskel()')).toBe(20);
+        expect(w.eval('kInstalld()')).toBe(20);
     });
     it('ett paket utan fältet ändrar inte gällande värde', () => {
         const w = createAppWindow();
         w.eval('sattKTroskel(15, { fraga: false })');
         expect(las(w, paket(undefined)).ok).toBe(true);
-        expect(w.eval('kTroskel()')).toBe(15);
+        expect(w.eval('kInstalld()')).toBe(15);
     });
     it('värde under 10 kräver bekräftelse; nekad läser in resten av paketet', () => {
         const w = createAppWindow();
@@ -664,7 +662,7 @@ describe('k-tröskeln i organisationspaketet', () => {
         const r = las(w, paket(5));
         expect(r.ok).toBe(true);
         expect(fragor).toBe(1);
-        expect(w.eval('kTroskel()')).toBe(10);
+        expect(w.eval('kInstalld()')).toBe(10);
         expect(w.eval('harReferens()')).toBe(true);
     });
     it('värde under 10: godkänd bekräftelse tillämpar värdet och läser in paketet', () => {
@@ -673,7 +671,7 @@ describe('k-tröskeln i organisationspaketet', () => {
         w.confirm = () => { fragor++; return true; };
         expect(las(w, paket(5)).ok).toBe(true);
         expect(fragor).toBe(1);
-        expect(w.eval('kTroskel()')).toBe(5);
+        expect(w.eval('kInstalld()')).toBe(5);
         expect(w.eval('harReferens()')).toBe(true);
     });
     it('fältet i paketformuläret följer tröskeln utan att testet skriver det', () => {
@@ -683,7 +681,7 @@ describe('k-tröskeln i organisationspaketet', () => {
         f.value = '15';
         f.dispatchEvent(new w.Event('change', { bubbles: true }));
         w.document.getElementById('paket-org').value = 'Exempelorganisationen';
-        expect(w.eval('kTroskel()')).toBe(15);
+        expect(w.eval('kInstalld()')).toBe(15);
         expect(w.eval('skapaPaket()').installningar.kTroskel).toBe(15);
     });
     it('ogiltigt värde i paketet används inte och ger en varning', () => {
@@ -691,7 +689,7 @@ describe('k-tröskeln i organisationspaketet', () => {
         const r = las(w, paket(1));
         expect(r.ok).toBe(true);
         expect(r.meddelande).toMatch(/minsta gruppstorlek .* används inte/i);
-        expect(w.eval('kTroskel()')).toBe(10);
+        expect(w.eval('kInstalld()')).toBe(10);
     });
     it('skapade paket bär formulärets värde', () => {
         const w = createAppWindow();

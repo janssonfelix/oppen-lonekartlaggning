@@ -2,8 +2,14 @@
 // Copyright 2026 Felix Jansson
 
 // ---- k-anonymitet (uppgiftsminimering och inbyggt dataskydd, art. 5.1 c och 25) ----
-// Grupper med färre än kTroskel() personer redovisas inte i utdata, så att enskildas löner
-// inte kan räknas fram via t.ex. känd åldersstruktur.
+// Grupper med färre än kTroskel() personer redovisas inte i det som lämnar verktyget, så att enskildas
+// löner inte kan räknas fram via t.ex. känd åldersstruktur.
+//
+// Två lägen (ADR-51, beslut 2026-10-29 efter användartest): på SKÄRMEN maskeras inget — den som använder
+// verktyget har redan lönefilen — och kTroskel() är då 1. Allt som LÄMNAR verktyget (Excel, Word, PDF, ZIP,
+// CSV, urklipp, diagrambilder, rapportunderlaget, Dokumentera & exportera) ritas och räknas i exportläget
+// (23-exportgrind.js: medExportLage), där kTroskel() är den inställda tröskeln, kInstalld(). Inställningen,
+// stämpeln och texterna om regeln talar alltid om den inställda tröskeln.
 //
 // Standardvärdet 10 matchar SCB:s rekommendation för publicerad lönestatistik på små
 // grupper. Användaren kan ändra värdet (ADR-38): ett värde under standard kräver bekräftelse och visas med stående varning. Värdet
@@ -13,8 +19,12 @@ const K_STANDARD = 10;
 const K_MIN = 2;
 const K_MAX = 1000;
 
-/** Gällande minsta gruppstorlek för redovisning. Enda vägen att läsa värdet. */
-function kTroskel() { return state.kTroskel; }
+/** På skärmen maskeras inget: tröskeln är 1 (ADR-51). */
+const K_SKARM = 1;
+/** Tröskeln som gäller just nu: den inställda i exportläget, annars 1. Enda vägen att läsa det som ska tillämpas. */
+function kTroskel() { return state.kLage === 'export' ? state.kTroskel : K_SKARM; }
+/** Den inställda minsta gruppstorleken (gäller det som lämnar verktyget), oavsett läge. */
+function kInstalld() { return state.kTroskel; }
 
 /** Organisationspaketets golv för tröskeln (ADR-47), eller null när inget paket satt något. */
 function kTroskelLagst() { return state.paketLas.kTroskelLagst; }
@@ -26,8 +36,9 @@ function _kAterstallVarde() { return Math.max(K_STANDARD, kTroskelLagst() ?? K_M
  * Golv för skattningar (regression per BAS, bootstrap, förväntad lön): aldrig under
  * standardvärdet, eftersom gränsen där gäller skattningens tillförlitlighet och inte
  * redovisningen. Följer med uppåt, så att ett skärpt skydd också gäller skattade gruppvärden.
+ * Räknas på den inställda tröskeln i båda lägena (ADR-51), så att skattningarna — och deras cacher — är desamma.
  */
-function statGolv() { return Math.max(kTroskel(), K_STANDARD); }
+function statGolv() { return Math.max(kInstalld(), K_STANDARD); }   // oberoende av läget: skattningarna är desamma på skärmen och i exporten
 
 /**
  * Avgör om en gruppstorlek är under k-tröskeln.
@@ -75,7 +86,8 @@ function _konFarRedovisasFor(rader) {
 
 /** Meningen där ett könsuppdelat mått för hela urvalet utelämnats (samma ordalydelse som Rapportunderlaget). */
 function _konUtelamnatNot() {
-    return `Könsuppdelade lönemått redovisas inte eftersom ett kön har färre än ${kTroskel()} personer i urvalet.`;
+    return kTroskel() <= 1 ? 'Könsuppdelade lönemått redovisas inte eftersom ett av könen saknas i urvalet.'
+        : `Könsuppdelade lönemått redovisas inte eftersom ett kön har färre än ${kTroskel()} personer i urvalet.`;
 }
 
 /**
@@ -87,7 +99,7 @@ function _konUtelamnatNot() {
  */
 function _raGapText(reg, fmt) {
     if (!reg || reg.rawGapPct == null) return '–';
-    return _konFarRedovisas(reg.nKvAnalysed, reg.nMaAnalysed) ? fmt(reg.rawGapPct) : `– (ett kön har färre än ${kTroskel()} personer)`;
+    return _konFarRedovisas(reg.nKvAnalysed, reg.nMaAnalysed) ? fmt(reg.rawGapPct) : (kTroskel() <= 1 ? '– (ett av könen saknas)' : `– (ett kön har färre än ${kTroskel()} personer)`);
 }
 
 /**
@@ -190,9 +202,9 @@ function _parForRedovisning(pairs) {
     return { par, utelamnade, not: _parUtelamnadeNot(utelamnade) };
 }
 
-/** Raden som anger gällande tröskel (stämpeln), på de utdata som bär den. */
+/** Raden som anger den inställda tröskeln (stämpeln), på de utdata som bär den. */
 function kStampel() {
-    const k = kTroskel();
+    const k = kInstalld();
     return `Minsta gruppstorlek för redovisning: ${k}.`
         + (k < K_STANDARD ? ` Tröskeln är sänkt från standardvärdet ${K_STANDARD}.` : '');
 }
@@ -248,7 +260,7 @@ function _kUndantagFor(el, medSma) {
 }
 
 /** Stämpeln när tröskeln är sänkt under standard, annars tom sträng. */
-function _kSanktNot() { return kTroskel() < K_STANDARD ? kStampel() : ''; }
+function _kSanktNot() { return kInstalld() < K_STANDARD ? kStampel() : ''; }
 
 /** Stycket med stämpeln för utskrifter när tröskeln är sänkt (escapat), annars tom sträng. */
 function _kSanktStycke() {
@@ -280,7 +292,7 @@ function _gruppAid(r) { const m = String(r.yrke || '').match(/^(\d+)/); return m
 
 /** Sidfot med tillägg när tröskeln är sänkt under standard. */
 function _kSidfot(text) {
-    return kTroskel() < K_STANDARD ? `${text} · minsta gruppstorlek ${kTroskel()} (standard ${K_STANDARD})` : text;
+    return kInstalld() < K_STANDARD ? `${text} · minsta gruppstorlek ${kInstalld()} (standard ${K_STANDARD})` : text;
 }
 
 const _kHarStampel = rows => rows.some(r => Array.isArray(r) && typeof r[0] === 'string' && r[0].includes('Minsta gruppstorlek för redovisning'));
@@ -289,24 +301,24 @@ function _csvMedStampel(rows, undantag) { return _kHarStampel(rows) ? rows : [..
 /** Tabell till urklipp: stämpeln bara när tröskeln är sänkt eller exporten hör till ett undantag. */
 function _tsvMedStampel(rows, undantag) { return (_kSanktNot() || undantag) && !_kHarStampel(rows) ? [...rows, [], [kStampelFor(undantag)]] : rows; }
 
-/** Byter {k} mot gällande tröskel och {golv} mot det statistiska golvet. */
+/** Byter {k} mot den inställda tröskeln och {golv} mot det statistiska golvet. */
 function _kText(s) {
-    return String(s ?? '').replace(/\{k\}/g, String(kTroskel())).replace(/\{golv\}/g, String(statGolv()));
+    return String(s ?? '').replace(/\{k\}/g, String(kInstalld())).replace(/\{golv\}/g, String(Math.max(kInstalld(), K_STANDARD)));
 }
 
 /** Fyller de fasta texterna i index.html som nämner talet. */
 function _fyllKTexter() {
-    document.querySelectorAll('[data-k-troskel]').forEach(el => { el.textContent = String(kTroskel()); });
-    document.querySelectorAll('[data-k-golv]').forEach(el => { el.textContent = String(statGolv()); });
+    document.querySelectorAll('[data-k-troskel]').forEach(el => { el.textContent = String(kInstalld()); });
+    document.querySelectorAll('[data-k-golv]').forEach(el => { el.textContent = String(Math.max(kInstalld(), K_STANDARD)); });
     document.querySelectorAll('[data-k-tooltip]').forEach(el => { el.setAttribute('data-tooltip', _kText(el.getAttribute('data-k-tooltip'))); });
     const lbl = document.getElementById('explore-inkludera-sma-label');
-    if (lbl) lbl.textContent = `Ta med grupper under ${kTroskel()} i exporten`;
+    if (lbl) lbl.textContent = `Ta med grupper under ${kInstalld()} i exporten`;
 }
 
 // Fält, varning och texter som visar värdet.
 function _synkaKTroskel() {
     _fyllKTexter();
-    const k = kTroskel();
+    const k = kInstalld();
     const falt = document.getElementById('k-troskel');
     if (falt) /** @type {HTMLInputElement} */ (falt).value = String(k);
     // Paketformuläret bär samma värde, men skrivs inte över medan användaren redigerar det.

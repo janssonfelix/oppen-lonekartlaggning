@@ -224,7 +224,7 @@ function _mkBorrRad() {
     el.hidden = !_mkTillbaka;
     if (!_mkTillbaka) return;
     el.appendChild(document.createTextNode(`Du kom hit från BAS ${_mkTillbaka.bas}: urvalet är satt till det BAS-intervallet och raderna till yrkesgrupp inom BAS. `
-        + `Grupper med färre än ${kTroskel()} personer visas här markerade och följer inte med i en export om du inte kryssar i rutan. `));
+        + `Grupper med färre än ${kInstalld()} personer följer inte med i en export om du inte kryssar i rutan. `));
     const b = _mkKnapp('tillbaka', 'Tillbaka till föregående urval');
     b.addEventListener('click', nedborrningTillbaka);
     el.appendChild(b);

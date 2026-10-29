@@ -49,7 +49,7 @@ function _sokRita() {
     if (!text) { lista.hidden = true; lista.innerHTML = ''; falt.setAttribute('aria-expanded', 'false'); falt.removeAttribute('aria-activedescendant'); return; }
     lista.innerHTML = _sokTraffar.length
         ? _sokTraffar.map((t, i) => `<li role="option" id="sok-traff-${i}" data-sok-index="${i}" aria-selected="${i === _sokAktiv}"><span class="sok-namn">${esc(t.namn)}</span><span class="sok-under">${esc(t.under)} · ${svTal(t.n, 0)} personer</span></li>`).join('')
-        : `<li class="sok-ingen" role="presentation">Ingen grupp matchar. Grupper med färre än ${kTroskel()} personer går inte att söka fram.</li>`;
+        : '<li class="sok-ingen" role="presentation">Ingen grupp matchar.</li>';
     lista.hidden = false;
     falt.setAttribute('aria-expanded', 'true');
     _sokMarkeraAktiv();

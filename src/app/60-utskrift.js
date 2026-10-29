@@ -35,7 +35,9 @@ function bibliotekCssForUtskrift() {
     return ut;
 }
 
-async function buildPrintReport() {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function buildPrintReport(...a) { return medExportLage(() => _buildPrintReportExport.apply(null, /** @type {any} */ (a))); }
+async function _buildPrintReportExport() {
     if (!getData().length) { alert('Ladda upp data först.'); return; }
     showLoading();
     try {

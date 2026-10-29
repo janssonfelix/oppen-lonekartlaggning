@@ -747,7 +747,7 @@ const GLOSSARY = [
     { cat:'Verktyget', term:'Per-BAS conditional gap', short:'Separata regressioner inom varje BAS', long:'För varje BAS-intervall med minst {golv} personer av varje kön körs en separat regression: log(lön) ~ kön + ålder. Visar var inom organisationen den oförklarade löneskillnaden är som störst.' },
 
     // GDPR
-    { cat:'GDPR', term:'K-anonymitet', short:'Skydd mot återidentifiering vid små grupper', long:'Verktygets eget skydd mot återidentifiering, som uttryck för uppgiftsminimering och inbyggt dataskydd i dataskyddsförordningen (art. 5.1 c och 25). Verktyget redovisar inte lönemått för grupper med färre än {k} personer (standard 10; värdet kan ändras på Översikt) eftersom enskilda löner då kan deduceras via t.ex. känd åldersstruktur. I Utforska visas de tonade, men de följer bara med i exporten om du kryssar i det. Likvärdigt arbete visar kandidatpar även när en grupp är mindre, eftersom lagen kräver att små kvinnodominerade yrken prövas; Word-utkastet, PDF-rapporten och rapportunderlaget tar inte med sådana par.' },
+    { cat:'GDPR', term:'K-anonymitet', short:'Skydd mot återidentifiering i det som lämnar verktyget', long:'Verktygets eget skydd mot återidentifiering, som uttryck för uppgiftsminimering och inbyggt dataskydd i dataskyddsförordningen (art. 5.1 c och 25). På skärmen visas alla grupper. Det som lämnar verktyget — Excel, Word, PDF, ZIP, CSV, urklipp, diagrambilder, rapportunderlaget — redovisar inte lönemått för grupper med färre än {k} personer (minsta gruppstorlek, standard 10), och könsuppdelade mått bara när varje kön når den. Värdet ställs in under Inställningar och står i metodbilagan.' },
     { cat:'GDPR', term:'Uppgiftsminimering', short:'Behandla endast nödvändiga uppgifter (dataskyddsförordningen art. 5.1 c)', long:'Personuppgifter ska vara adekvata, relevanta och begränsade till vad som är nödvändigt. Verktyget läser endast in vitlistade fält (BAS, yrke, lön, ålder, kön samt två valfria: arbetsvärderingspoäng och AID:s kod för ledning och särskilda uppdrag) — anställningsnummer, namn, e-post och personnummer plockas inte upp ens om de finns i filen.' },
     { cat:'GDPR', term:'Pseudonymisering', short:'Ersätt direkta identifierare med koder', long:'Direkta personidentifierare ersätts med löpnummer eller koder. Återmappning hålls separat. Möjliggör analys utan direkt återidentifiering. Rekommenderas före CSV-uppladdning.' },
     { cat:'GDPR', term:'Privacy by Design', short:'Inbyggt dataskydd (dataskyddsförordningen art. 25)', long:'Tekniska och organisatoriska åtgärder som standard. Detta verktyg implementerar Privacy by Design genom: lokal-only-arkitektur (data lämnar aldrig enheten), CSP-spärrar mot nätverksanrop, k-anonymitet, vitlistad fältparsning, automatisk avvisning av filer som innehåller personidentifierare.' },
@@ -1103,8 +1103,14 @@ function buildBarCell(percent, scaleMax = 25, options = {}) {
 // Copyright 2026 Felix Jansson
 
 // ---- k-anonymitet (uppgiftsminimering och inbyggt dataskydd, art. 5.1 c och 25) ----
-// Grupper med färre än kTroskel() personer redovisas inte i utdata, så att enskildas löner
-// inte kan räknas fram via t.ex. känd åldersstruktur.
+// Grupper med färre än kTroskel() personer redovisas inte i det som lämnar verktyget, så att enskildas
+// löner inte kan räknas fram via t.ex. känd åldersstruktur.
+//
+// Två lägen (ADR-51, beslut 2026-10-29 efter användartest): på SKÄRMEN maskeras inget — den som använder
+// verktyget har redan lönefilen — och kTroskel() är då 1. Allt som LÄMNAR verktyget (Excel, Word, PDF, ZIP,
+// CSV, urklipp, diagrambilder, rapportunderlaget, Dokumentera & exportera) ritas och räknas i exportläget
+// (23-exportgrind.js: medExportLage), där kTroskel() är den inställda tröskeln, kInstalld(). Inställningen,
+// stämpeln och texterna om regeln talar alltid om den inställda tröskeln.
 //
 // Standardvärdet 10 matchar SCB:s rekommendation för publicerad lönestatistik på små
 // grupper. Användaren kan ändra värdet (ADR-38): ett värde under standard kräver bekräftelse och visas med stående varning. Värdet
@@ -1114,8 +1120,12 @@ const K_STANDARD = 10;
 const K_MIN = 2;
 const K_MAX = 1000;
 
-/** Gällande minsta gruppstorlek för redovisning. Enda vägen att läsa värdet. */
-function kTroskel() { return state.kTroskel; }
+/** På skärmen maskeras inget: tröskeln är 1 (ADR-51). */
+const K_SKARM = 1;
+/** Tröskeln som gäller just nu: den inställda i exportläget, annars 1. Enda vägen att läsa det som ska tillämpas. */
+function kTroskel() { return state.kLage === 'export' ? state.kTroskel : K_SKARM; }
+/** Den inställda minsta gruppstorleken (gäller det som lämnar verktyget), oavsett läge. */
+function kInstalld() { return state.kTroskel; }
 
 /** Organisationspaketets golv för tröskeln (ADR-47), eller null när inget paket satt något. */
 function kTroskelLagst() { return state.paketLas.kTroskelLagst; }
@@ -1127,8 +1137,9 @@ function _kAterstallVarde() { return Math.max(K_STANDARD, kTroskelLagst() ?? K_M
  * Golv för skattningar (regression per BAS, bootstrap, förväntad lön): aldrig under
  * standardvärdet, eftersom gränsen där gäller skattningens tillförlitlighet och inte
  * redovisningen. Följer med uppåt, så att ett skärpt skydd också gäller skattade gruppvärden.
+ * Räknas på den inställda tröskeln i båda lägena (ADR-51), så att skattningarna — och deras cacher — är desamma.
  */
-function statGolv() { return Math.max(kTroskel(), K_STANDARD); }
+function statGolv() { return Math.max(kInstalld(), K_STANDARD); }   // oberoende av läget: skattningarna är desamma på skärmen och i exporten
 
 /**
  * Avgör om en gruppstorlek är under k-tröskeln.
@@ -1176,7 +1187,8 @@ function _konFarRedovisasFor(rader) {
 
 /** Meningen där ett könsuppdelat mått för hela urvalet utelämnats (samma ordalydelse som Rapportunderlaget). */
 function _konUtelamnatNot() {
-    return `Könsuppdelade lönemått redovisas inte eftersom ett kön har färre än ${kTroskel()} personer i urvalet.`;
+    return kTroskel() <= 1 ? 'Könsuppdelade lönemått redovisas inte eftersom ett av könen saknas i urvalet.'
+        : `Könsuppdelade lönemått redovisas inte eftersom ett kön har färre än ${kTroskel()} personer i urvalet.`;
 }
 
 /**
@@ -1188,7 +1200,7 @@ function _konUtelamnatNot() {
  */
 function _raGapText(reg, fmt) {
     if (!reg || reg.rawGapPct == null) return '–';
-    return _konFarRedovisas(reg.nKvAnalysed, reg.nMaAnalysed) ? fmt(reg.rawGapPct) : `– (ett kön har färre än ${kTroskel()} personer)`;
+    return _konFarRedovisas(reg.nKvAnalysed, reg.nMaAnalysed) ? fmt(reg.rawGapPct) : (kTroskel() <= 1 ? '– (ett av könen saknas)' : `– (ett kön har färre än ${kTroskel()} personer)`);
 }
 
 /**
@@ -1291,9 +1303,9 @@ function _parForRedovisning(pairs) {
     return { par, utelamnade, not: _parUtelamnadeNot(utelamnade) };
 }
 
-/** Raden som anger gällande tröskel (stämpeln), på de utdata som bär den. */
+/** Raden som anger den inställda tröskeln (stämpeln), på de utdata som bär den. */
 function kStampel() {
-    const k = kTroskel();
+    const k = kInstalld();
     return `Minsta gruppstorlek för redovisning: ${k}.`
         + (k < K_STANDARD ? ` Tröskeln är sänkt från standardvärdet ${K_STANDARD}.` : '');
 }
@@ -1349,7 +1361,7 @@ function _kUndantagFor(el, medSma) {
 }
 
 /** Stämpeln när tröskeln är sänkt under standard, annars tom sträng. */
-function _kSanktNot() { return kTroskel() < K_STANDARD ? kStampel() : ''; }
+function _kSanktNot() { return kInstalld() < K_STANDARD ? kStampel() : ''; }
 
 /** Stycket med stämpeln för utskrifter när tröskeln är sänkt (escapat), annars tom sträng. */
 function _kSanktStycke() {
@@ -1381,7 +1393,7 @@ function _gruppAid(r) { const m = String(r.yrke || '').match(/^(\d+)/); return m
 
 /** Sidfot med tillägg när tröskeln är sänkt under standard. */
 function _kSidfot(text) {
-    return kTroskel() < K_STANDARD ? `${text} · minsta gruppstorlek ${kTroskel()} (standard ${K_STANDARD})` : text;
+    return kInstalld() < K_STANDARD ? `${text} · minsta gruppstorlek ${kInstalld()} (standard ${K_STANDARD})` : text;
 }
 
 const _kHarStampel = rows => rows.some(r => Array.isArray(r) && typeof r[0] === 'string' && r[0].includes('Minsta gruppstorlek för redovisning'));
@@ -1390,24 +1402,24 @@ function _csvMedStampel(rows, undantag) { return _kHarStampel(rows) ? rows : [..
 /** Tabell till urklipp: stämpeln bara när tröskeln är sänkt eller exporten hör till ett undantag. */
 function _tsvMedStampel(rows, undantag) { return (_kSanktNot() || undantag) && !_kHarStampel(rows) ? [...rows, [], [kStampelFor(undantag)]] : rows; }
 
-/** Byter {k} mot gällande tröskel och {golv} mot det statistiska golvet. */
+/** Byter {k} mot den inställda tröskeln och {golv} mot det statistiska golvet. */
 function _kText(s) {
-    return String(s ?? '').replace(/\{k\}/g, String(kTroskel())).replace(/\{golv\}/g, String(statGolv()));
+    return String(s ?? '').replace(/\{k\}/g, String(kInstalld())).replace(/\{golv\}/g, String(Math.max(kInstalld(), K_STANDARD)));
 }
 
 /** Fyller de fasta texterna i index.html som nämner talet. */
 function _fyllKTexter() {
-    document.querySelectorAll('[data-k-troskel]').forEach(el => { el.textContent = String(kTroskel()); });
-    document.querySelectorAll('[data-k-golv]').forEach(el => { el.textContent = String(statGolv()); });
+    document.querySelectorAll('[data-k-troskel]').forEach(el => { el.textContent = String(kInstalld()); });
+    document.querySelectorAll('[data-k-golv]').forEach(el => { el.textContent = String(Math.max(kInstalld(), K_STANDARD)); });
     document.querySelectorAll('[data-k-tooltip]').forEach(el => { el.setAttribute('data-tooltip', _kText(el.getAttribute('data-k-tooltip'))); });
     const lbl = document.getElementById('explore-inkludera-sma-label');
-    if (lbl) lbl.textContent = `Ta med grupper under ${kTroskel()} i exporten`;
+    if (lbl) lbl.textContent = `Ta med grupper under ${kInstalld()} i exporten`;
 }
 
 // Fält, varning och texter som visar värdet.
 function _synkaKTroskel() {
     _fyllKTexter();
-    const k = kTroskel();
+    const k = kInstalld();
     const falt = document.getElementById('k-troskel');
     if (falt) /** @type {HTMLInputElement} */ (falt).value = String(k);
     // Paketformuläret bär samma värde, men skrivs inte över medan användaren redigerar det.
@@ -7795,7 +7807,7 @@ function perBasTabeller(rader, opt = {}) {
         const medel = _medel(_loner(rows)), medelKv = konVisas ? _medel(_loner(kv)) : null, medelMa = konVisas ? _medel(_loner(ma)) : null;
         return {
             bas: namn, n: rows.length, medel, medelMa, medelKv,
-            kvot: konVisas && medelMa > 0 && medelKv != null ? medelKv / medelMa * 100 : null,
+            kvot: konVisas && medelMa != null && medelMa > 0 && medelKv != null ? medelKv / medelMa * 100 : null,
             andelKv: rows.length ? kv.length / rows.length * 100 : null,
             alder: _medel(_aldrar(rows)), alderMa: konVisas ? _medel(_aldrar(ma)) : null, alderKv: konVisas ? _medel(_aldrar(kv)) : null,
             konVisas
@@ -7806,6 +7818,7 @@ function perBasTabeller(rader, opt = {}) {
 
     const grupper = aldersgruppNamn(granser);
     const aldersRad = (namn, rows) => {
+        /** @type {any[][]} */
         const per = grupper.map(() => []);
         rows.forEach(r => { if (typeof r.alder === 'number' && isFinite(r.alder) && r.alder > 0) per[_aldersgrupp(r.alder, granser)].push(r); });
         return { bas: namn, n: rows.length, alder: _medel(_aldrar(rows)), medel: _medel(_loner(rows)),
@@ -11004,13 +11017,21 @@ function _chartExportKarna(gd) {
     return !!gd && (!!gd._figur || _rfHarRitat(gd));
 }
 
-/** Det som får exporteras ur ett diagram ritat med diagramkärnan, eller null när inget finns att exportera. */
-function _chartExportUnderlag(gd) {
+/** Det som får exporteras ur ett diagram ritat med diagramkärnan, eller null när inget finns att exportera.
+ *  Går alltid genom exportläget (ADR-51): figuren läses med den inställda tröskeln. Bilden görs asynkront av dem som
+ *  anropar (chartExportRun, diagramTillBild), som själva står i exportläget tills bilden är klar. */
+function _chartExportUnderlag(...a) { return medExportLage(() => _chartExportUnderlagExport.apply(null, /** @type {any} */ (a))); }
+function _chartExportUnderlagExport(gd) {
     // Ett diagram som inte får lämna verktyget (markeraUtanExport) har inget att exportera, vilken väg som än frågar.
     if (!exportTillaten(gd)) return null;
     // Exportgrinden (23-exportgrind.js): diagrammets flik ska vara ritad med det som gäller nu. Ett diagram som en
     // omritning har ersatt (det gamla elementet sitter inte kvar i sidan) har inget att exportera.
-    if (typeof exportSakra === 'function' && !exportSakra(gd)) return null;
+    if (typeof exportSakra === 'function' && !exportSakra(gd)) {
+        // Omritningen kan ha ersatt behållaren: då gäller den nya med samma id.
+        const ny = gd.isConnected === false && gd.id ? document.getElementById(gd.id) : null;
+        if (!ny || ny === gd || !exportSakra(ny)) return null;
+        gd = ny;
+    }
     const ut = _rfExportFigur(gd);
     return ut && !ut.tom ? ut : null;
 }
@@ -11023,6 +11044,7 @@ function _chartExportUnderlag(gd) {
 function chartExportRows(gd, underlag) {
     const ut = underlag === undefined ? _chartExportUnderlag(gd) : underlag;
     if (!ut) return [];
+    if (gd && gd.isConnected === false && gd.id) gd = document.getElementById(gd.id) || gd;   // ersatt av en omritning i grinden
     const medSma = ut.visaSma;
     const rader = _figTillTabell(medSma ? ut.figur : _figUtanSma(ut.figur)).map(r => r.map(_chartExportCell));
     const beskrivning = typeof gd._exportBeskrivning === 'string' ? gd._exportBeskrivning : '';
@@ -11054,7 +11076,9 @@ function diagramRitat(el) {
 /** Ett ritat diagram som PNG (data-URL) — den enda vägen till en diagrambild för rapportunderlag, ZIP, utskrift
  *  och prioriteringsmatrisen (ADR-39): originalfiguren utan små grupper (om inte vyn sagt annat) och med de serier
  *  användaren dolt. `utanRubrik`: bilden får ingen rubrik och fotrad (utskriften sätter egna rubriker). */
-async function diagramTillBild(el, val) {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function diagramTillBild(...a) { return medExportLage(() => _diagramTillBildExport.apply(null, /** @type {any} */ (a))); }
+async function _diagramTillBildExport(el, val) {
     const { bredd, hojd, utanRubrik = false } = val || {};
     const skal = exportSkal(el);
     if (skal) throw new Error(`Diagrammet lämnar inte verktyget: det ${skal}.`);
@@ -11065,7 +11089,9 @@ async function diagramTillBild(el, val) {
     return url;
 }
 
-async function _chartExportImage(gd, val, underlag) {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function _chartExportImage(...a) { return medExportLage(() => __chartExportImageExport.apply(null, /** @type {any} */ (a))); }
+async function __chartExportImageExport(gd, val, underlag) {
     const [width, height] = CHART_EXPORT_STORLEKAR[val];
     const format = val === 'svg' ? 'svg' : 'png';
     // Originalfiguren med visaSma enligt vyn och de serier användaren dolt: samma bild som på skärmen,
@@ -11086,7 +11112,9 @@ async function _chartExportImage(gd, val, underlag) {
     if (typeof _showExportSensitivityToast === 'function') _showExportSensitivityToast();
 }
 
-function chartExportRun(gd, val) {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function chartExportRun(...a) { return medExportLage(() => _chartExportRunExport.apply(null, /** @type {any} */ (a))); }
+function _chartExportRunExport(gd, val) {
     // Underlaget bestäms här, en gång (ett anrop av vyns exportMedSma).
     const underlag = _chartExportKarna(gd) ? _chartExportUnderlag(gd) : undefined;
     // Ett diagram från diagramkärnan utan något att exportera: ingen fil, ingenting på urklipp.
@@ -11404,7 +11432,7 @@ function _mkBorrRad() {
     el.hidden = !_mkTillbaka;
     if (!_mkTillbaka) return;
     el.appendChild(document.createTextNode(`Du kom hit från BAS ${_mkTillbaka.bas}: urvalet är satt till det BAS-intervallet och raderna till yrkesgrupp inom BAS. `
-        + `Grupper med färre än ${kTroskel()} personer visas här markerade och följer inte med i en export om du inte kryssar i rutan. `));
+        + `Grupper med färre än ${kInstalld()} personer följer inte med i en export om du inte kryssar i rutan. `));
     const b = _mkKnapp('tillbaka', 'Tillbaka till föregående urval');
     b.addEventListener('click', nedborrningTillbaka);
     el.appendChild(b);
@@ -11437,7 +11465,7 @@ document.addEventListener('keydown', e => {
  *     targets: any[], minGroupN: number, roundStep: number, years: number,
  *     scenarios: {A: any, B: any}, result: any, _remediation?: any
  *   },
- *   inactivityTimeoutMin: number,
+ *   inactivityTimeoutMin: number, kLage: 'skarm'|'export',
  *   likvardighet: {source: string, kvinnoTrosholdPct: number, minGapPct: number, topN: number, poangBandPct: number, result: any},
  *   arbetsvardering: {byKey: Map<string, number>, [k: string]: any}|null,
  *   columnMap: {[roll: string]: string}|null,
@@ -11459,6 +11487,7 @@ const state = {
     prioConfig: { ...PRIO_CONFIG_DEFAULTS },
     prioWeights: { ...PRIO_WEIGHTS_DEFAULTS },
     costSettings: { ...COST_DEFAULTS },
+    kLage: 'skarm',                    // 'export' medan något som lämnar verktyget ritas eller räknas (ADR-51, 23-exportgrind.js)
     rapportUrval: null,        // rapportens avsnitt: null = hela dokumentationen, annars { ordning, med } (58-rapportmodell.js)
     bristAids: new Set(),         // E: AID-koder markerade som bristyrke
     scenarios: [],                // I: sparade scenarion (max 5)
@@ -11831,8 +11860,11 @@ function _exportText(rot) {
     rot.querySelectorAll('[data-export-text]').forEach(el => { el.textContent = el.getAttribute('data-export-text'); });
 }
 // Tabell → rad-matris (thead + tbody), i nuvarande (ev. sorterade) DOM-ordning.
-function tableToMatrix(tableId) {
-    const table = document.getElementById(tableId);
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function tableToMatrix(...a) { return medExportLage(() => _tableToMatrixExport.apply(null, /** @type {any} */ (a))); }
+function _tableToMatrixExport(tableId) {
+    // Raderna lämnar verktyget (CSV, urklipp): exportläget, och tabellens flik ritad med det som gäller nu (ADR-51).
+    const table = typeof exportElement === 'function' ? exportElement(tableId) : document.getElementById(tableId);
     if (!table) return [];
     const rows = [];
     // En beskrivning av urvalet (Utforska) blir exportens första rad.
@@ -11860,7 +11892,9 @@ function tableToMatrix(tableId) {
     });
     return rows;
 }
-function _copyTableToClipboard(tableId, btn) {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function _copyTableToClipboard(...a) { return medExportLage(() => __copyTableToClipboardExport.apply(null, /** @type {any} */ (a))); }
+function __copyTableToClipboardExport(tableId, btn) {
     const rows = tableToMatrix(tableId);
     if (!rows.length) { alert('Ingen tabelldata att kopiera.'); return; }
     _copyMatrixToClipboard(rows, btn, { undantag: _kUndantagFor(document.getElementById(tableId)) });
@@ -11923,7 +11957,7 @@ function updateCompliance() {
 
     // 1–2. Lönegap > 5 % och könsskevhet — bara i jämförbara BAS (båda könen ≥ k),
     // samma regel som Lika arbete och Underlagets kvalitet använder.
-    const jb = _dqJamforbaraBas(d, kTroskel());
+    const jb = _dqJamforbaraBas(d, kInstalld());   // säger vad exporterna kan jämföra (ADR-51)
     const gapTotal = jb.jamforbara.length;
     const maskText = jb.maskerade.length ? ` · ${jb.maskerade.length} maskeras` : '';
     let gapCrit = 0, skevCount = 0;
@@ -11955,7 +11989,7 @@ function updateCompliance() {
         bas.forEach(b => {
             const pol = policyFor(null, b);
             if (!pol || !pol.p10) return;
-            if (isKMasked(d.filter(r => r.bas === b).length)) return;   // k: medianen för ett litet BAS redovisas inte
+            if (d.filter(r => r.bas === b).length < kInstalld()) return;   // räknar det exporterna kan jämföra (ADR-51)
             polTotal++;
             if (Stat.median(d.filter(r => r.bas === b).map(r => r.lon)) < pol.p10) polLow++;
         });
@@ -12001,10 +12035,10 @@ function bedomningUnderlag() {
     const reg = runOLSRegression();
     const modell = reg.error ? 'fel' : (reg.modelName === 'full' ? 'full' : 'minimal');
     const mde = reg.error ? null : _dqMdeFranSe(reg.seKonR);
-    const b = _dqBedomUnderlag(d, { k: kTroskel(), audit: state.dataAudit, mde, modell });
+    const b = _dqBedomUnderlag(d, { k: kInstalld(), audit: state.dataAudit, mde, modell });   // jämförbarheten gäller det som lämnar verktyget (ADR-51)
     // Kontrollen av AID-kodningen (ADR-33) läggs till datakvalitetens kriterier.
     let aid = [];
-    try { aid = _akAidKriterier(d, { k: kTroskel(), harAnsvar: !!state.ansvarKolumn }); }
+    try { aid = _akAidKriterier(d, { k: kInstalld(), harAnsvar: !!state.ansvarKolumn }); }
     catch (e) { rapporteraFel('Underlagets kvalitet: AID-kodning', e); }
     const kriterier = [...b.kriterier, ...aid];
     const rang = { ok: 0, varning: 1, kritisk: 2 };
@@ -12440,6 +12474,18 @@ function updateDashboardStats() {
     }
 }
 
+/** Översikts delar, i ordning: det som inläsningen ritar och som exportgrinden måste kunna rita om (ADR-51). */
+function renderOversiktDelar() {
+    /** @type {[string, () => void][]} */
+    const delar = [['nyckeltal', () => updateDashboardStats()], ['kompliansöversikt', () => updateCompliance()],
+        ['underlagets kvalitet', () => renderUnderlagetsKvalitet()], ['Att göra', () => renderActionChecklist()],
+        ['processöversikten', () => renderProcessTracker()], ['extremvärden', () => renderOutliers()],
+        ['inläsningsrapporten', () => renderDataValidationReport()]];   // Var uppstår löneskillnaden ritas av kompliansöversikten
+    for (const [namn, fn] of delar) { try { fn(); } catch (e) { rapporteraFel(`Översikt (${namn})`, e); } }
+    const ab = document.getElementById('snapshot-comparison');
+    if (ab && ab.style.display !== 'none' && typeof renderSnapshotComparison === 'function') renderSnapshotComparison();
+}
+
 // ---- Populate BAS selects ----
 function populateSelects() {
     const bas = getBasIntervals();
@@ -12721,7 +12767,7 @@ function renderDataValidationReport() {
         const hasMa = sub.some(r => r.kon === 'man' || r.kon === 'män');
         return !hasKv || !hasMa;
     }).length;
-    const kMaskedBas = bas.filter(b => state.data.filter(r => r.bas === b).length < kTroskel()).length;
+    const kMaskedBas = bas.filter(b => state.data.filter(r => r.bas === b).length < kInstalld()).length;
 
     // Konsistenskontroll
     const dataBas = [...new Set(state.data.map(r => r.bas))].sort();
@@ -12771,7 +12817,7 @@ function renderDataValidationReport() {
                     ? `<div class="dvr-row warn"><span><span class="dvr-icon">${ikon('statusVarning')}</span>Enkönade BAS:</span><span class="dvr-value">${singleSexBas}</span></div>`
                     : `<div class="dvr-row ok"><span><span class="dvr-icon">${ikon('bock')}</span>Alla BAS har båda kön</span><span></span></div>`}
                 ${kMaskedBas > 0
-                    ? `<div class="dvr-row ok"><span><span class="dvr-icon">${ikon('las')}</span>K-maskerade BAS (n&lt;${kTroskel()}):</span><span class="dvr-value">${kMaskedBas}</span></div>`
+                    ? `<div class="dvr-row ok"><span><span class="dvr-icon">${ikon('las')}</span>BAS under minsta gruppstorlek (n&lt;${kInstalld()}, redovisas inte i exporterna):</span><span class="dvr-value">${kMaskedBas}</span></div>`
                     : ''}
                 <div class="text-dampad-xs lh-1_4 marg-t-6">${outliers.length > 0 ? 'Granska Outliers-detektorn nedan för detaljer.' : 'Inga uppenbara registerfel hittades.'}</div>
             </div>
@@ -12923,7 +12969,7 @@ function buildActionChecklist({ endastGrupper = false } = {}) {
         // === Lika arbete: rått gap > 5 % i jämförbara BAS (samma regel som kompliansen) ===
         try {
             const d = getData();
-            const jb = _dqJamforbaraBas(d, kTroskel());
+            const jb = _dqJamforbaraBas(d, kInstalld());
             const reg = runOLSRegression();
             const perBas = (reg && !reg.error && reg.perBas) ? reg.perBas : [];
             jb.jamforbara.forEach(b => {
@@ -13196,7 +13242,7 @@ function renderActionChecklist() {
     });
 
     // CSV-export
-    document.getElementById('btn-export-checklist')?.addEventListener('click', () => exportActionChecklistCSV(items, done));
+    document.getElementById('btn-export-checklist')?.addEventListener('click', () => medExportLage(() => exportActionChecklistCSV(buildActionChecklist(), done)));
 
     // Rensa markeringar
     document.getElementById('btn-checklist-clear-done')?.addEventListener('click', () => {
@@ -13209,7 +13255,9 @@ function renderActionChecklist() {
 /**
  * Exporterar åtgärdslistan som CSV.
  */
-function exportActionChecklistCSV(items, done) {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function exportActionChecklistCSV(...a) { return medExportLage(() => _exportActionChecklistCSVExport.apply(null, /** @type {any} */ (a))); }
+function _exportActionChecklistCSVExport(items, done) {
     if (!items.length) { alert('Ingen åtgärdslista att exportera.'); return; }
     const rows = [[
         'Status', 'Prioritet', 'Kategori', 'Punkt', 'Detalj', 'Källa', 'Flik'
@@ -13252,7 +13300,7 @@ function buildConfigSnapshot() {
         prioConfig: { ...state.prioConfig },
         prioWeights: { ...state.prioWeights },
         costSettings: { ...state.costSettings },
-        kTroskel: kTroskel(),   // minsta gruppstorlek för redovisning (ADR-38); paketets låsningar (ADR-47) bärs inte
+        kTroskel: kInstalld(),  // minsta gruppstorlek för redovisning (ADR-38); paketets låsningar (ADR-47) bärs inte
         rapportUrval: state.rapportUrval ? { ordning: [...state.rapportUrval.ordning], med: [...state.rapportUrval.med] } : null,   // vilka avsnitt som följer med i rapporten
         // Bug-fix: Set-objekt serialiseras inte korrekt med spread/JSON
         bristAids: Array.from(state.bristAids || []),
@@ -13604,7 +13652,9 @@ document.getElementById('btn-config-load')?.addEventListener('change', e => {
 });
 
 // ---- #18 A/B-jämförelse via snapshot ----
-function buildAnalysisSnapshot() {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function buildAnalysisSnapshot(...a) { return medExportLage(() => _buildAnalysisSnapshotExport.apply(null, /** @type {any} */ (a))); }
+function _buildAnalysisSnapshotExport() {
     const d = getData();
     if (!d.length) return null;
     const kv = d.filter(r => r.kon.includes('kvinna'));
@@ -14014,8 +14064,8 @@ function _methodAppendixData() {
         ['p-värden', 't-fördelning vid df < 100, annars normalfördelning; Benjamini-Hochberg (FDR) vid multipla grupptest'],
         ['Konfidensintervall', 'Bootstrap-percentil (B ≥ 1000 sampel) på mediankvot kvinna/man'],
         ['Signifikansnivå', 'α = 0,05'],
-        ['Minsta gruppstorlek för redovisning', `${kTroskel()} personer. Grupper med färre redovisas inte i beskrivande vyer (gäller inte likvärdighetsanalysen).`
-            + (kTroskel() < K_STANDARD ? ` Tröskeln är sänkt från standardvärdet ${K_STANDARD}.` : '')],
+        ['Minsta gruppstorlek för redovisning', `${kInstalld()} personer. Grupper med färre redovisas inte i det som lämnar verktyget (gäller inte likvärdighetsanalysen); på skärmen visas alla grupper.`
+            + (kInstalld() < K_STANDARD ? ` Tröskeln är sänkt från standardvärdet ${K_STANDARD}.` : '')],
         ['Referens för lönenivåer', referensNamn() + referensKalla()],
         ['Jämförelsestatistik', statistikBeskrivning()],
         ['Krav-proxy (likvärdigt arbete)', state.arbetsvardering ? 'Arbetsvärderingspoäng (ur strukturdatans Poäng-kolumn)' : 'BAS-intervall (ordinal rangordning)'],
@@ -14071,7 +14121,10 @@ function _exportVisaAllaRader(klon) {
     });
     return klon;
 }
-function _cloneAndCleanTableForExport(tableId) {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function _cloneAndCleanTableForExport(...a) { return medExportLage(() => __cloneAndCleanTableForExportExport.apply(null, /** @type {any} */ (a))); }
+function __cloneAndCleanTableForExportExport(tableId) {
+    // Exportläget (ADR-51): tabellen läses med den inställda tröskeln, också när anroparen inte gått in i läget.
     const t = exportElement(tableId);   // exportgrinden: tabellens flik är ritad med det som gäller nu
     if (!t || !t.querySelector('tbody tr')) return null;
     const clone = t.cloneNode(true);
@@ -14476,6 +14529,52 @@ function _showExportSensitivityToast(bodyHtml) {
 //     export än en med fel tröskel.
 // tests/ktroskel.test.js prövar varje exportväg mot detta.
 // ====================================================================
+// ---- Exportläget (ADR-51) ----
+// På skärmen maskeras inget (kTroskel() är 1). Allt som lämnar verktyget ritas och räknas i exportläget, där
+// kTroskel() är den inställda tröskeln. Ett byte av läge är som en ändrad tröskel: generationen ökar, så att
+// grinden ritar om varje flik som läses, och efteråt ritas skärmen tillbaka. De två funktioner all export av
+// tabeller och diagram går genom (_cloneAndCleanTableForExport, _chartExportUnderlag) går själva in i
+// exportläget om anroparen inte redan gjort det, så ingen väg kan läsa skärmens omaskade tal.
+function iExportLage() { return state.kLage === 'export'; }
+function _bytKLage(lage) {
+    state.kLage = lage;
+    ritGenerationNy();                                                      // allt som är ritat bär det andra läget
+    // Bara det som räknas med kTroskel() släpps: Lika arbetes minne och livscykelns. Skattningarna (statGolv,
+    // bootstrap, styrka, § 3:10-paren) är desamma i båda lägena och behålls.
+    state._lifecycleCache = null;
+    if (typeof laMinneSlapp === 'function') laMinneSlapp();
+}
+/**
+ * Ritar skärmen tillbaka efter en export: Översikts delar och den öppna fliken (som grinden kan ha ritat i
+ * exportläget), utom Dokumentera & exportera, som alltid ritas i exportläget. Flikar som inte syns töms inte: det
+ * de bär är ritat med den inställda tröskeln (försiktigare än skärmen), och de ritas om när de öppnas.
+ */
+function _ritaOmEfterExport() {
+    if (!state.data.length || typeof _omritningssteg !== 'function') return;
+    for (const [namn, fn] of _omritningssteg()) { if (namn === 'dokumentera' || namn === 'flikar som inte syns') continue; _omritningForsok(namn, fn); }
+}
+/**
+ * Kör fn i exportläget och går tillbaka till skärmläget efteråt (också när fn ger ett löfte eller kastar).
+ * Nästlade anrop byter inte läge. Fn:s värde returneras.
+ * @template T
+ * @param {() => T} fn
+ * @returns {T}
+ */
+let _exportDjup = 0;   // pågående exporter (nästlade eller överlappande i tid): skärmen ritas tillbaka när den sista är klar
+function medExportLage(fn) {
+    // Den yttersta exporten byter läge och ritar tillbaka; ett läge som satts utifrån (state.kLage = 'export') rörs inte.
+    const yttre = _exportDjup === 0 && !iExportLage();
+    if (yttre) _bytKLage('export');
+    _exportDjup++;
+    let synk = true;
+    const tillbaka = () => { _exportDjup = Math.max(0, _exportDjup - 1); if (_exportDjup === 0 && yttre) { _bytKLage('skarm'); _ritaOmEfterExport(); } };
+    try {
+        const r = fn();
+        if (r && typeof /** @type {any} */ (r).then === 'function') { synk = false; return /** @type {any} */ (r).finally(tillbaka); }
+        return r;
+    } finally { if (synk) tillbaka(); }
+}
+
 let _ritGeneration = 1;
 const _ritadVid = new Map();     // flik → generationen då den senast ritades klart
 const _ritasNu = new Set();      // flikar som ritas just nu (ritningen får läsa sina egna diagram)
@@ -14504,7 +14603,9 @@ function exportSakra(el) {
     if (!el) return false;
     const flik = _egFlikFor(el);
     if (!flik) return el.isConnected !== false;   // utanför flikarna (en dialog) — eller ett element som inte sitter kvar i sidan
-    if (!_ritasNu.has(flik) && flikInaktuell(flik)) {
+    // En flik som aldrig ritats genom navigeringen (eller är inaktuell) ritas i det läge som gäller nu — i exportläget
+    // också en flik som ritats direkt av en vy, så att skärmens tal aldrig läses som export (ADR-51).
+    if (!_ritasNu.has(flik) && (flikInaktuell(flik) || (iExportLage() && !_ritadVid.has(flik)))) {
         try { renderTabContent(flik); } catch (e) { rapporteraFel(`exportgrinden (${flik})`, e); }
         if (flikInaktuell(flik)) return false;                      // fliken gick inte att rita om: ingenting exporteras ur den
     }
@@ -14552,7 +14653,9 @@ function tomFlikarUtom(utom = new Set()) {
  * Bladen som "Excel (alla flikar)" kommer att innehålla, i ordning — underlaget till exportens förhandsbesked.
  * Listan följer villkoren i _excelAlltBok nedan; ett test håller dem lika.
  */
-function excelAlltBlad() {
+// Bladlistan räknas som exporten: i exportläget (ADR-51), så att beskedet och arbetsboken får samma blad.
+function excelAlltBlad(...a) { return medExportLage(() => _excelAlltBladExport.apply(null, /** @type {any} */ (a))); }
+function _excelAlltBladExport() {
     if (!state.data.length) return [];
     const harRef = state.policy.length > 0 || state.statistik.length > 0;
     return ['Löneöversikt', 'Per BAS', 'EU-Lonekartlaggning', ...(harRef ? ['Prioritering'] : []), 'Lonegap', 'Konsskevhet', ..._excelDiagramBlad().map(b => b[0]), 'Sektorer',
@@ -14623,7 +14726,9 @@ function _excelLonepolitikMetod(blad) {
     return [['Bladet Lönepolitik', `Läget i referensens lönespann (0 % = P10, 100 % = P90) per yrkesgrupp, per kön och BAS-intervall samt fördelningen i spannets tredjedelar per kön och efterlevnaden per BAS-intervall — samma mått och samma regler för minsta gruppstorlek som fliken Lönepolitik: yrkesgrupper under ${kTroskel()} personer utan lönemått, könsuppdelade mått bara där varje kön har minst ${kTroskel()} personer.`]];
 }
 
-function exportAllToExcel() {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function exportAllToExcel(...a) { return medExportLage(() => _exportAllToExcelExport.apply(null, /** @type {any} */ (a))); }
+function _exportAllToExcelExport() {
     if (!state.data.length) { alert('Ladda upp data först.'); return; }
     if (typeof XLSX === 'undefined') { alert('XLSX-bibliotek saknas.'); return; }
     const wb = _excelAlltBok();
@@ -14632,7 +14737,9 @@ function exportAllToExcel() {
 }
 
 /** Bygger arbetsboken för "Excel (alla flikar)". */
-function _excelAlltBok() {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function _excelAlltBok(...a) { return medExportLage(() => __excelAlltBokExport.apply(null, /** @type {any} */ (a))); }
+function __excelAlltBokExport() {
 
     // Self-healing: säkerställ att flik-tabellerna är renderade innan de läses.
     // Täcker både den deferrade inläsningen (skevhet/kon körs strax efter load)
@@ -14758,7 +14865,9 @@ function _jpaExkluderadeTexter() {
  *
  * Output: lonekartlaggning_JPA_protokoll_YYYY-MM-DD.xlsx
  */
-function exportJPAProtocol() {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function exportJPAProtocol(...a) { return medExportLage(() => _exportJPAProtocolExport.apply(null, /** @type {any} */ (a))); }
+function _exportJPAProtocolExport() {
     if (!state.data.length) { alert('Ladda upp data först.'); return; }
     if (typeof XLSX === 'undefined') { alert('XLSX-bibliotek saknas.'); return; }
 
@@ -16039,7 +16148,7 @@ function lasInPaket(text, _filnamn, { inbakat = false } = {}) {
         if (!kr.ok && kr.fel) varningar.push(`Paketets minsta gruppstorlek ${installningar.kTroskel} används inte: ${kr.fel}`);
     }
     // Gällande tröskel får inte ligga under golvet: den höjs (en höjning kräver ingen bekräftelse).
-    if (nyttGolv != null && kTroskel() < nyttGolv) {
+    if (nyttGolv != null && kInstalld() < nyttGolv) {
         kAndrad = sattKTroskel(nyttGolv, { fraga: false, rita: false }).andrad === true || kAndrad;
         varningar.push(`Minsta gruppstorlek höjs till ${nyttGolv}, paketets lägsta tillåtna.`);
     }
@@ -16108,7 +16217,7 @@ function _fyllPaketFormular() {
     satt('paket-ref-kortnamn', harReferens() && state.policyKortnamn !== state.policyNamn ? (state.policyKortnamn || '') : '');
     satt('paket-po', state.costSettings.poPct);
     satt('paket-manader', state.costSettings.months);
-    satt('paket-k', kTroskel());
+    satt('paket-k', kInstalld());
     // Låsningarna (ADR-47): formuläret visar det som gäller nu; utan paket är inget låst.
     const las = state.paketLas;
     satt('paket-k-lagst', las.kTroskelLagst);
@@ -16568,7 +16677,8 @@ function _renderTabContent(target) {
     else if (target === "likvardighet" && (d.length || state.statistik.length)) renderLikvardighet();
     else if (target === "utforska"     && d.length) { generateRapport(); renderExplorer(); }
     else if (target === "lonepolitik"  && d.length) renderLonepolitik();
-    else if (target === "dokumentera") { if (d.length) renderKvalitetssakring(); renderRapportunderlag(); renderExportBesked(); }
+    else if (target === "dokumentera") medExportLage(() => { if (d.length) renderKvalitetssakring(); renderRapportunderlag(); renderExportBesked(); });   // allt här lämnar verktyget (ADR-51)
+    else if (target === "dashboard" && d.length) renderOversiktDelar();
     else if (target === "info")  renderInfoTab();
     else if (target === "handlingsplan") renderHandlingsplanSeed();
     else if (target === "bestammelser") { if (typeof bes8Uppdatera === 'function') bes8Uppdatera(); }
@@ -17567,7 +17677,7 @@ function computeLikvardighetPairs() {
         kvinnoTrosholdPct: kvinnoThr,
         minGapPct: cfg.minGapPct ?? 0,     // default 0 (visa alla med jämförelseyrket högre)
         topN: cfg.topN ?? 100,
-        k: kTroskel()                      // bara för att räkna små grupper i diagnostiken; analysen maskar inte
+        k: kInstalld()                     // bara för att räkna små grupper i diagnostiken (undantaget gäller exporten); analysen maskar inte
     };
     if (usePoang) {
         opts.poangByKey = av.byKey;
@@ -18272,7 +18382,9 @@ function _lvParFigur(pairs, max = 14) {
 // Metodraden om åldersjusteringen (CSV:ns metadata och Excel-arbetsbokens metadatablad).
 const LV_JUSTERAD_METOD = 'Jämförelseyrkets lön omräknad till det kvinnodominerade yrkets åldersfördelning: log(lön) = a + b·ålder skattas i jämförelseyrket (minst ' + ALDERS_GOLV + ' personer, minst ' + ALDERS_SPRIDNING + ' års åldersspridning), lönen prediceras vid varje person i det kvinnodominerade yrket och medianen av prediktionerna jämförs med dess median. Den råa skillnaden är det lagen prövar; den justerade visar hur mycket som kan bero på åldersstruktur. Bara interna par; tomt när den inte kan räknas.';
 
-function exportLikvardighetCSV() {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function exportLikvardighetCSV(...a) { return medExportLage(() => _exportLikvardighetCSVExport.apply(null, /** @type {any} */ (a))); }
+function _exportLikvardighetCSVExport() {
     const result = likvardighetResultat();
     if (!result || !Array.isArray(result.pairs) || !result.pairs.length) {
         alert('Inga jämförelsepar att exportera. Kontrollera att Steg 3 i fliken visar par.');
@@ -18328,7 +18440,9 @@ function exportLikvardighetCSV() {
     _downloadCSV(rows, 'lonekartlaggning_likvardighet_' + new Date().toISOString().slice(0, 10), { undantag: 'Likvärdigt arbete' });
 }
 
-function exportLikvardighet() {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function exportLikvardighet(...a) { return medExportLage(() => _exportLikvardighetExport.apply(null, /** @type {any} */ (a))); }
+function _exportLikvardighetExport() {
     // STEG 0: Diagnostiska statusmeddelanden så användaren ser EXAKT var det
     // klickar. Om något felar visas alert med stegnamn — användaren kan
     // rapportera, vi kan felsöka.
@@ -18568,7 +18682,7 @@ function renderForecastTargets() {
             <select data-f="pool" aria-label="Pott-typ" title="Ring-fenced pott (visas i kostnad-per-pott)">${[['equity', 'Likalön'], ['marknad', 'Marknad'], ['befordran', 'Befordran'], ['övrigt', 'Övrigt']].map(([v, l]) => `<option value="${v}"${(tg.pool || 'övrigt') === v ? ' selected' : ''}>${l}</option>`).join('')}</select>
             <span class="text-dampad-xs ingen-radbrytning" title="Vad raden förbrukar av potten">≈ ${Math.round(rowCost).toLocaleString('sv-SE')} kr</span>
             <button type="button" data-f="remove" class="btn btn-secondary btn-sm" aria-label="Ta bort rad">${ikon('kryss', 14)}</button>
-        </div>${gruppN(tg) > 0 && isKMasked(gruppN(tg)) ? `<p class="k-mask-note">Raden berör ${gruppN(tg)} ${gruppN(tg) === 1 ? 'person' : 'personer'}, färre än ${kTroskel()} personer — beloppet bygger på enskildas löner och ingår i summorna, även i Excel-exporten.</p>` : (gruppN(tg) === 0 ? '<p class="k-mask-note">Ingen i gruppen matchar kön och lönegräns.</p>' : '')}`;
+        </div>${gruppN(tg) > 0 && gruppN(tg) < kInstalld() ? `<p class="k-mask-note">Raden berör ${gruppN(tg)} ${gruppN(tg) === 1 ? 'person' : 'personer'}, färre än ${kInstalld()} personer — beloppet bygger på enskildas löner och ingår i summorna, även i Excel-exporten.</p>` : (gruppN(tg) === 0 ? '<p class="k-mask-note">Ingen i gruppen matchar kön och lönegräns.</p>' : '')}`;
     }).join('');
     host.querySelectorAll('.forecast-target-row').forEach(rowEl => {
         const i = parseInt(rowEl.getAttribute('data-idx') || '', 10);
@@ -19174,7 +19288,9 @@ function _forecastRemediationSeed() {
     updateForecast();
     if (!added) alert('Grupperna fanns redan som riktade rader.');
 }
-function exportForecast() {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function exportForecast(...a) { return medExportLage(() => _exportForecastExport.apply(null, /** @type {any} */ (a))); }
+function _exportForecastExport() {
     if (typeof XLSX === 'undefined') { alert('Excel-biblioteket kunde inte laddas.'); return; }
     const out = state.forecast.result;
     if (!out) { alert('Ingen prognos att exportera ännu.'); return; }
@@ -19629,7 +19745,9 @@ function _buildNarrative(d, ctx) {
     if (sankt) { lines.push(''); lines.push(sankt); }
     return lines.join('\n');
 }
-function exportEuReport() {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function exportEuReport(...a) { return medExportLage(() => _exportEuReportExport.apply(null, /** @type {any} */ (a))); }
+function _exportEuReportExport() {
     if (typeof XLSX === 'undefined') { alert('Excel-biblioteket kunde inte laddas.'); return; }
     const d = getData();
     if (!d.length) { alert('Ingen data.'); return; }
@@ -20092,10 +20210,10 @@ document.getElementById("search-rapport")?.addEventListener("input", e => {
 });
 
 // Export Excel (bara Löneöversikten)
-document.getElementById("btn-export-excel")?.addEventListener("click", () => {
+document.getElementById("btn-export-excel")?.addEventListener("click", () => medExportLage(() => {
     const wb = tableToCleanBook('rapport-table', 'Rapport');
     if (wb) { _appendMethodSheet(wb); XLSX.writeFile(wb, "lonekartlaggning_rapport.xlsx"); _showExportSensitivityToast(); }
-});
+}));
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 
@@ -20128,7 +20246,7 @@ function renderKon(bas) {
     const ageAdjGap = !konOk ? "–" : expMa > 0 ? svPct((expKv/expMa)*100, 1) : "–";
     // Urvalsraden och avsnittens nyckeltal (ADR-41).
     const urvalText = document.getElementById('ak-urval-text');
-    if (urvalText) urvalText.textContent = `${svTal(df.length, 0)} personer · minsta gruppstorlek ${kTroskel()}`;
+    if (urvalText) urvalText.textContent = `${svTal(df.length, 0)} personer · minsta gruppstorlek ${kInstalld()}`;
     _laNyckel('nyckel-ak-fordelning', konOk && medMa > 0 ? `Kvinnors median ${unadjGap} av mäns` : '');
     _laNyckel('nyckel-ak-alla', `${getBasIntervals().length} BAS-intervall`);
     /** @type {HTMLElement} */ (document.getElementById("kon-kpi-n")).textContent = svTal(df.length, 0);
@@ -23382,10 +23500,10 @@ function generateMotivationSuggestions(item) {
     if (!rows.length) return out;
 
     // 1. Underlag: ett kön under minsta gruppstorlek (beslut av produktägaren 2026-10-16; tidigare ett fast 5)
-    if (item.kvN < kTroskel() || item.maN < kTroskel()) {
+    if (item.kvN < kInstalld() || item.maN < kInstalld()) {   // varningen gäller skattningens säkerhet, inte läget
         out.push({
             type: 'warn',
-            text: `Underlaget är litet (${item.kvN} kvinnor / ${item.maN} män; minsta gruppstorlek ${kTroskel()}). Skillnaden kan inte säkerställas statistiskt — ett tips är att överväga att slå ihop med en näraliggande BAS-grupp eller titta på individerna var för sig.`
+            text: `Underlaget är litet (${item.kvN} kvinnor / ${item.maN} män; minsta gruppstorlek ${kInstalld()}). Skillnaden kan inte säkerställas statistiskt — ett tips är att överväga att slå ihop med en näraliggande BAS-grupp eller titta på individerna var för sig.`
         });
     }
 
@@ -23922,13 +24040,13 @@ document.getElementById('prio-cost-reset')?.addEventListener('click', () => {
 // Initiera period-sammanfattningen vid sidladdning
 setTimeout(_readCostSettings, 0);
 
-document.getElementById('btn-export-prio-excel')?.addEventListener('click', () => {
+document.getElementById('btn-export-prio-excel')?.addEventListener('click', () => medExportLage(() => {
     const table = document.getElementById('prio-table');
     if (table) {
         const wb = tableToCleanBook('prio-table', 'Prioritering');
         if (wb) { _appendMethodSheet(wb); XLSX.writeFile(wb, 'prioriteringslista.xlsx'); _showExportSensitivityToast(); }
     }
-});
+}));
 
 // ---- Print-to-PDF: komplett rapport ----
 // Använder webbläsarens inbyggda "Skriv ut → Spara som PDF". Inga externa beroenden.
@@ -24076,7 +24194,9 @@ function renderHandlingsplanSeed() {
     }
 }
 
-function exportHandlingsplan() {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function exportHandlingsplan(...a) { return medExportLage(() => _exportHandlingsplanExport.apply(null, /** @type {any} */ (a))); }
+function _exportHandlingsplanExport() {
     if (typeof XLSX === 'undefined') { alert('Excel-biblioteket kunde inte laddas.'); return; }
     const header = ['Åtgärd', 'Berörd grupp (AID·BAS)', 'Lagrum', 'Sakligt skäl prövat?', 'Beräknad kostnad (kr/år, inkl. PO)', 'Ansvarig', 'Tidsplan (senast inom 3 år)', 'Status'];
     const seed = _handlingsplanSeedRows();
@@ -24230,6 +24350,7 @@ function rmPerBasAvsnitt(d, k) {
     if (smaYrken) utelamnat.push(`${smaYrken} ${smaYrken === 1 ? 'yrkesgrupp' : 'yrkesgrupper'} med färre än ${k} personer`);
     const konDolda = pb.intervall.filter(i => !i.konVisas).map(i => i.bas);
     if (konDolda.length) utelamnat.push(`könsuppdelade lönemått för BAS ${konDolda.join(', ')} (ett kön har färre än ${k} personer)`);
+    /** @type {any[]} */
     const delar = [
         stycke(`Löneläget i varje BAS-intervall mot ${referensKortnamn()}: organisationen, de yrkesgrupper som når minsta gruppstorlek (med jämförelsestatistikens nivå under, när den finns) och kvinnor och män. P10 och P90 är den tionde och nittionde percentilen.`, 'dampad'),
     ];
@@ -24260,10 +24381,13 @@ function rmPerBasAvsnitt(d, k) {
 /**
  * Rapportens avsnitt i vald ordning, numrerade efter urvalet. Med `alla: true` ges alla avsnitt i standardordning
  * (för listan där urvalet görs). Utan lönefil bär avsnitten bara det som inte kräver den (referens, statistik, metod).
- * @param {{alla?: boolean}} [val]
+ * @param {...any} a - `{ alla?: boolean }`
  * @returns {{titel: string, undertitel: string, demo: boolean, avsnitt: any[], urval: any}}
  */
-function rapportModell({ alla = false } = {}) {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function rapportModell(...a) { return medExportLage(() => _rapportModellExport.apply(null, /** @type {any} */ (a))); }
+/** @param {{alla?: boolean}} [val] */
+function _rapportModellExport({ alla = false } = {}) {
     const d = getData();
     const year = new Date().getFullYear(), today = new Date().toLocaleDateString('sv-SE');
     const k = kTroskel();
@@ -24583,7 +24707,7 @@ function renderExportBesked() {
     try {
         const blad = excelAlltBlad();
         satt('besked-excel', `<strong>Innehåller:</strong> ${esc(_ebAntal(blad.length, 'blad', 'blad'))} — ${esc(blad.join(', '))}<br>`
-            + `<strong>Utelämnar:</strong> ${esc(`grupper med färre än ${kTroskel()} personer, på samma sätt som tabellerna i flikarna`)}`);
+            + `<strong>Utelämnar:</strong> ${esc(`grupper med färre än ${kInstalld()} personer (minsta gruppstorlek; på skärmen visas de)`)}`);
     } catch (e) { rapporteraFel('Förhandsbesked: Excel', e); }
     try {
         satt('besked-zip', `<strong>Innehåller:</strong> ${esc(`Word-utkastet, Excel-filen (${_ebAntal(excelAlltBlad().length, 'blad', 'blad')}) och diagrammen i alla flikar som bilder`)}<br>`
@@ -24675,7 +24799,9 @@ function bibliotekCssForUtskrift() {
     return ut;
 }
 
-async function buildPrintReport() {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function buildPrintReport(...a) { return medExportLage(() => _buildPrintReportExport.apply(null, /** @type {any} */ (a))); }
+async function _buildPrintReportExport() {
     if (!getData().length) { alert('Ladda upp data först.'); return; }
     showLoading();
     try {
@@ -25038,7 +25164,9 @@ async function byggWordUtkast() {
 }
 
 /** Bygger och laddar ner Word-utkastet som .docx. */
-async function exportDocumentationDraft() {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function exportDocumentationDraft(...a) { return medExportLage(() => _exportDocumentationDraftExport.apply(null, /** @type {any} */ (a))); }
+async function _exportDocumentationDraftExport() {
     if (!getData().length) { alert('Ladda upp data först.'); return false; }
     try {
         const { blob, namn } = await byggWordUtkast();
@@ -25165,7 +25293,9 @@ function _wireTablistKeys(buttons) {
  *
  * Inte beroende av vilken metric-knapp som är vald i UI:t — alla värden exporteras alltid.
  */
-function exportBenchmarkExcel() {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function exportBenchmarkExcel(...a) { return medExportLage(() => _exportBenchmarkExcelExport.apply(null, /** @type {any} */ (a))); }
+function _exportBenchmarkExcelExport() {
     if (typeof XLSX === 'undefined') { alert('XLSX-biblioteket är inte laddat.'); return; }
     const d = getData();
     if (!d.length) { alert('Ingen data laddad. Ladda upp strukturdatan först.'); return; }
@@ -25391,11 +25521,11 @@ const INFO_SECTIONS = {
         </p>
 
         <h3>k-anonymitet</h3>
-        <p>Grupper med n &lt; ${kTroskel()} redovisas inte i verktygets analyser och exporter (rapport, EU-matris, prioritering, jämförelsestatistik) — med undantagen nedan. Gällande tröskelvärde är ${kTroskel()}; standardvärdet är ${K_STANDARD} och det kan ändras på Översikt (&quot;Minsta gruppstorlek för redovisning&quot;). Ett värde under ${K_STANDARD} kräver bekräftelse, visas som en varning överst på alla flikar och står i metodbilagan, i exporterad data och — under ${K_STANDARD} — på varje del som kan spridas för sig (diagrambilder, kopierade tabeller, rapporter). Värdet sparas inte mellan gånger. Värdet är verktygets eget val och matchar SCB:s rekommendation för publicerad lönestatistik på små grupper.</p>
-        <p>Raden <strong>utelämnas</strong>, och grupperna räknas upp med namn i en not vid tabellen, så att du ser exakt vilka grupper som inte redovisas. Personerna ingår fortfarande i underlaget och i totalsummorna.</p>
-        <p>Där bara <em>könsuppdelningen</em> är för liten, men gruppen som helhet ligger över tröskeln, redovisas gruppens <strong>samlade median</strong> i stället. Den bygger på n &ge; ${kTroskel()} och röjer ingen enskild, men ger ändå ett lönemått att förhålla sig till. Könsjämförelsen utgår. Samma regel gäller de beskrivande könsuppdelade måtten — ett köns medianlön, det råa lönegapet, regressionens ojusterade steg (&quot;Endast kön&quot;) med den förklarade andelen, en kostnad som räknats ur ett gap — också för hela organisationen: de visas bara när både kvinnor och män är minst ${kTroskel()}. Den justerade löneskillnaden i Lika arbete är en skattning som visas från regressionens eget, fasta golv (5 av varje kön). I Ålder &amp; karriär visas lönegapen bara när båda könen i urvalet är minst ${kTroskel()}, och lutning, trendlinje och låda bara för ett kön som är det; punkterna per person visas alltid.</p>
-        <p><strong>Inte tröskelstyrt:</strong> lönerevisionssimulatorn räknar på det urval du väljer, oavsett storlek. I Löneöversyn får du lägga en egen riktad rad på en grupp under ${kTroskel()} personer: beloppet visas på raden och ingår i summorna, även i Excel-exporten, och bygger då på enskildas löner.</p>
-        <p><strong>Undantag: Utforska.</strong> Där visas även grupper under ${kTroskel()} personer, tonade, eftersom du som använder verktyget redan har tillgång till underlaget. Skyddet ligger på det som lämnar verktyget: tabellens och diagrammens export utelämnar sådana grupper — och lönemått för ett kön under ${kTroskel()} — om du inte själv kryssar i &quot;Ta med grupper under ${kTroskel()} i exporten&quot;; då anger exporten att den kan innehålla grupper under tröskeln. Antal följer alltid med.</p>
+        <p><strong>På skärmen visas allt.</strong> Den som arbetar i verktyget har redan lönefilen, så vyerna maskerar inga grupper: varje yrkesgrupp, varje BAS-intervall och varje könsuppdelat mått visas oavsett storlek (beslut 2026-10-29).</p>
+        <p><strong>Det som lämnar verktyget följer minsta gruppstorlek.</strong> Excel, Word-utkastet, PDF-rapporten, ZIP-filen, CSV, urklipp, diagrambilder, rapportunderlaget och allt under Dokumentera &amp; exportera ritas och räknas med den inställda tröskeln: grupper med n &lt; ${kInstalld()} redovisas inte, utan räknas upp med namn i en not så att det syns vad som saknas. Gällande värde är ${kInstalld()}; standardvärdet är ${K_STANDARD} och det ändras under Inställningar i sidhuvudet (&quot;Minsta gruppstorlek för redovisning&quot;). Personerna ingår fortfarande i underlaget och i totalsummorna.</p>
+        <p>Där bara <em>könsuppdelningen</em> är för liten, men gruppen som helhet når tröskeln, redovisar exporterna gruppens <strong>samlade median</strong> i stället; könsjämförelsen utgår. Samma regel gäller könsuppdelade mått för hela organisationen: varje kön ska nå tröskeln.</p>
+        <p><strong>Inte tröskelstyrt:</strong> i Löneöversyn får du lägga en egen riktad rad på en grupp under ${kInstalld()} personer: beloppet visas på raden och ingår i summorna, även i Excel-exporten, och bygger då på enskildas löner — raden säger det.</p>
+        <p><strong>Utforska.</strong> Tabellens och diagrammens export utelämnar grupper under ${kInstalld()} personer om du inte kryssar i rutan <em>Ta med grupper under ${kInstalld()} i exporten</em>; organisationspaketet kan stänga av rutan.</p>
         <p><strong>Undantag: Likvärdigt arbete.</strong> Lagen kräver att även små kvinnodominerade yrken prövas. Fliken och dess egen export visar därför kandidatpar även när en grupp är under tröskeln; exporten anger det i filen. Alla andra utdata — Rapportunderlaget, Word-utkastet, PDF-rapporten, protokollet för gemensam lönebedömning, Att göra och dess CSV, handlingsplanens förifyllda rader och gruppdossiern — tar bara med par där båda grupperna når tröskeln och anger hur många som utelämnats.</p>
         <p><strong>Undantag: enskilda personer i verktyget.</strong> Personer att granska (Lika arbete) och extremvärdena i Underlagets kvalitet visar enskilda löner med filens radnummer. Personer att granska kan inte exporteras eller skrivas ut.</p>
         <p><strong>Diagramdata.</strong> Alla diagram kan exporteras som bild eller som diagramdata (CSV/urklipp). För diagram som visar enskilda personer — lön mot ålder, individpunkter — innehåller diagramdatan en rad per person (utan namn eller identifierare). Hantera sådana filer som personuppgifter. PDF-rapportens mall <em>Komplett rapport</em> och ZIP-exporten innehåller bilder av sådana diagram. I CSV och urklipp får celler som börjar med = + - @ ett inledande apostrof-tecken, så att Excel inte kör dem som formler.</p>
@@ -25638,7 +25768,9 @@ _wireTablistKeys(/** @type {HTMLElement[]} */ ([...document.querySelectorAll('.i
  * aldrig med, och inte heller ett som inte har något kvar att exportera när små grupper är borta. Bilden ritas
  * av exportvägen (diagramTillBild), som alltid utelämnar små grupper om användaren inte valt annat i Utforska.
  */
-function zipDiagram() {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function zipDiagram(...a) { return medExportLage(() => _zipDiagramExport.apply(null, /** @type {any} */ (a))); }
+function _zipDiagramExport() {
     exportSakraAlla();   // varje flik som har ritats ritas om om den inte är aktuell — före uppräkningen, som annars missar ersatta diagram
     const alla = typeof _rfBehallare !== 'undefined' ? [..._rfBehallare] : [];
     return alla.filter(el => el && el.id && el.isConnected && exportTillaten(el) && diagramRitat(el))
@@ -25649,7 +25781,9 @@ function zipDiagram() {
  * ZIP-filen är "allt" (ADR-40): Word-utkastet, Excel-filen med alla flikar och diagrammen i ALLA
  * flikar. Varje upplåst flik ritas först, så att innehållet inte beror på vilka flikar som råkar ha öppnats.
  */
-async function exportZip() {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function exportZip(...a) { return medExportLage(() => _exportZipExport.apply(null, /** @type {any} */ (a))); }
+async function _exportZipExport() {
     if (typeof JSZip === 'undefined') { alert('JSZip ej laddad.'); return false; }
     if (!getData().length) { alert('Ladda upp data först.'); return false; }
     const zip = new JSZip();
@@ -25720,7 +25854,9 @@ function _rapportHpRader(seedRows) {
 }
 
 /** Alla textblock i den ordning de visas: avsnitt, yrkesgrupper, kandidatpar. */
-function rapportunderlagBlock() {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function rapportunderlagBlock(...a) { return medExportLage(() => _rapportunderlagBlockExport.apply(null, /** @type {any} */ (a))); }
+function _rapportunderlagBlockExport() {
     const d = getData();
     if (!d.length) return [];
     const k = kTroskel();
@@ -25834,7 +25970,9 @@ function renderRapportunderlag() {
 function _ruBlockId(id) { return 'ru-' + String(id).replace(/[^A-Za-z0-9_-]/g, '-'); }
 
 /** Kopierar alla avsnittsblock (utan yrkes- och parblock) i en kopiering. */
-async function kopieraRapportAvsnitt() {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function kopieraRapportAvsnitt(...a) { return medExportLage(() => _kopieraRapportAvsnittExport.apply(null, /** @type {any} */ (a))); }
+async function _kopieraRapportAvsnittExport() {
     const avsnitt = [..._rapportBlockSenast.values()].filter(b => !b.id.includes(':'));
     if (!avsnitt.length) return 'saknas';
     const html = avsnitt.map(b => _ruTillWordHtml(b)).join('\n');
@@ -25878,7 +26016,9 @@ function _rapportKvitto(knapp, text) {
 }
 
 /** Kopierar ett block som formaterad text + ren text. Reserv: markera och kopiera. */
-async function kopieraRapportBlock(id) {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function kopieraRapportBlock(...a) { return medExportLage(() => _kopieraRapportBlockExport.apply(null, /** @type {any} */ (a))); }
+async function _kopieraRapportBlockExport(id) {
     const b = _rapportBlockSenast.get(id);
     if (!b) return 'saknas';
     const html = _ruTillWordHtml(b), text = _ruTillText(b);
@@ -25924,7 +26064,9 @@ function _dataUrlTillBlob(dataUrl) {
 
 /** Kopierar ett diagram som PNG (1600 × 900). Ritar fliken först om diagrammet saknas.
  *  Reserv: PNG laddas ner via exportmenyns väg. */
-async function kopieraRapportDiagram(id) {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function kopieraRapportDiagram(...a) { return medExportLage(() => _kopieraRapportDiagramExport.apply(null, /** @type {any} */ (a))); }
+async function _kopieraRapportDiagramExport(id) {
     const def = _rapportDiagramLista(_rapportParLage.harPar, _rapportParLage.exkluderade).find(g => g.id === id)
         || (id !== 'chart-likvardighet-heatmap' ? RAPPORT_DIAGRAM.find(g => g.id === id) : null);
     if (!def) return 'saknas';
@@ -27994,9 +28136,9 @@ document.addEventListener('keydown', e => {
 document.addEventListener('click', e => {
     if (!/** @type {HTMLElement} */ (e.target).closest('#btn-dossier-copy')) return;
     const sel = document.getElementById('dossier-select');
-    const d = sel ? buildGruppdossier(/** @type {HTMLInputElement} */ (sel).value) : null;
+    const d = sel ? medExportLage(() => buildGruppdossier(/** @type {HTMLInputElement} */ (sel).value)) : null;   // texten lämnar verktyget (ADR-51)
     if (!d) return;
-    const txt = gruppdossierAsText(d);
+    const txt = medExportLage(() => gruppdossierAsText(d));
     const done = () => { if (typeof announceToScreenReader === 'function') announceToScreenReader('Dossier kopierad.'); };
     if (navigator.clipboard?.writeText) navigator.clipboard.writeText(txt).then(done).catch(() => {});
     else done();
@@ -28150,7 +28292,9 @@ function runRobusthet() {
     setTimeout(() => { _renderRobusthetResult(host); }, 30);
 }
 
-function _renderRobusthetResult(host) {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function _renderRobusthetResult(...a) { return medExportLage(() => __renderRobusthetResultExport.apply(null, /** @type {any} */ (a))); }
+function __renderRobusthetResultExport(host) {
     const lv = robusthetLikvardighet();
     const prio = robusthetPrioritering();
 
@@ -28353,7 +28497,7 @@ function stangInstallningar() {
 
 /** Länken "Minsta gruppstorlek N" i flikarnas urvalsrad och i Översikts filrad: öppnar panelen med fokus i fältet. */
 function kTroskelLank() {
-    return `<button type="button" class="ov-filrad-lank" data-oppna-installningar="k-troskel" title="Ändra minsta gruppstorlek">Minsta gruppstorlek ${kTroskel()}</button>`;
+    return `<button type="button" class="ov-filrad-lank" data-oppna-installningar="k-troskel" title="Ändra minsta gruppstorlek">Minsta gruppstorlek ${kInstalld()}</button>`;
 }
 
 function _instRita() {
@@ -28473,7 +28617,7 @@ function _sokRita() {
     if (!text) { lista.hidden = true; lista.innerHTML = ''; falt.setAttribute('aria-expanded', 'false'); falt.removeAttribute('aria-activedescendant'); return; }
     lista.innerHTML = _sokTraffar.length
         ? _sokTraffar.map((t, i) => `<li role="option" id="sok-traff-${i}" data-sok-index="${i}" aria-selected="${i === _sokAktiv}"><span class="sok-namn">${esc(t.namn)}</span><span class="sok-under">${esc(t.under)} · ${svTal(t.n, 0)} personer</span></li>`).join('')
-        : `<li class="sok-ingen" role="presentation">Ingen grupp matchar. Grupper med färre än ${kTroskel()} personer går inte att söka fram.</li>`;
+        : '<li class="sok-ingen" role="presentation">Ingen grupp matchar.</li>';
     lista.hidden = false;
     falt.setAttribute('aria-expanded', 'true');
     _sokMarkeraAktiv();

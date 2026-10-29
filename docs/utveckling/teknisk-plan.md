@@ -230,7 +230,7 @@ adaptern verkligen delegerar vaktas av `tests/drift.test.js`:
   rätt grupp. Utskriftsfönstret för checklistorna (`printScaffoldView`) läser `:root` och allt från `.dold` till
   stilmallens slut ur den körande stilmallen och lägger in det som byggt stilark (`adoptedStyleSheets`): ett `<style>`-element
   som skriptet skapar blockeras av den ärvda CSP:n (`style-src-elem`), så fönstret var tidigare helt ostilat.
-- **Tester:** Vitest — 2397 tester i 66 filer: rena `src/lib/`-moduler, CSV-parsning, jsdom-röktest
+- **Tester:** Vitest — 2418 tester i 66 filer: rena `src/lib/`-moduler, CSV-parsning, jsdom-röktest
   av varje vy (ADR-7; `tests/smoke.test.js` med det delade fönstret och sju `tests/smoke-*.test.js` per
   område), k-tröskeln i åtta `tests/ktroskel*.test.js` med riggen i `tests/helpers/ktroskel-rigg.js`,
   gränssnittet i `tests/granssnitt*.test.js` (riggen `tests/helpers/granssnitt-rigg.js`) och diagramvyerna i
@@ -1113,6 +1113,17 @@ simulatorn i Prioritering är borttagen (`14-lonesimulator.js`); en riktad rad i
 till ett kön (`kon`) och till löner under en gräns (`lonCap`), och lyfta till en nivå (`mode: 'till'`) —
 `targetRows` i `src/lib/loneoversyn.js` är radens urval. PO-påslag och beräkningsperiod, som all kostnad räknas
 med, står under Inställningar i sidhuvudet (*Gäller alla flikar*) i stället för i Prioritering.
+
+**ADR-51 — Minsta gruppstorlek gäller det som lämnar verktyget, inte skärmen.** Beslut 2026-10-29 efter
+användartest: den som arbetar i verktyget har redan lönefilen, så vyerna maskerar inga grupper. `kTroskel()` är 1 i
+skärmläget och den inställda tröskeln `kInstalld()` i exportläget (`state.kLage`). Allt som lämnar verktyget —
+Excel, Word, PDF, ZIP, CSV, urklipp, diagrambilder, rapportunderlaget, gruppdossierns textkopia, Att göra-CSV,
+konfigurationsfilens ögonblicksbild — körs i `medExportLage()` (`23-exportgrind.js`): generationen ökar så att
+grinden ritar om varje flik som läses, och efteråt ritas skärmen tillbaka. De två funktioner all export av tabeller
+och diagram går genom (`_cloneAndCleanTableForExport`, `_chartExportUnderlag`) går själva in i läget, och
+Dokumentera & exportera ritas alltid i det. Inställningen, stämpeln, metodbilagan och texterna om regeln talar om den
+inställda tröskeln; det statistiska golvet `statGolv()` är oförändrat. Testerna prövar vyerna i exportläget
+(`iExport` i riggen) och skärmen positivt.
 
 ## 9. Öppna punkter
 

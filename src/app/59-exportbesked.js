@@ -32,7 +32,7 @@ function renderExportBesked() {
     try {
         const blad = excelAlltBlad();
         satt('besked-excel', `<strong>Innehåller:</strong> ${esc(_ebAntal(blad.length, 'blad', 'blad'))} — ${esc(blad.join(', '))}<br>`
-            + `<strong>Utelämnar:</strong> ${esc(`grupper med färre än ${kTroskel()} personer, på samma sätt som tabellerna i flikarna`)}`);
+            + `<strong>Utelämnar:</strong> ${esc(`grupper med färre än ${kInstalld()} personer (minsta gruppstorlek; på skärmen visas de)`)}`);
     } catch (e) { rapporteraFel('Förhandsbesked: Excel', e); }
     try {
         satt('besked-zip', `<strong>Innehåller:</strong> ${esc(`Word-utkastet, Excel-filen (${_ebAntal(excelAlltBlad().length, 'blad', 'blad')}) och diagrammen i alla flikar som bilder`)}<br>`

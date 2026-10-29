@@ -119,6 +119,7 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         w.__loadDemoData();
         const d = w.document;
         w.eval('sattKTroskel(150, { fraga: false })');           // männen är färre än 150
+        w.__state.kLage = 'export';                                // så som fliken lämnar verktyget (ADR-51)
         d.querySelector('.nav-item[data-tab="struktur"]').click();
         const rutor = [...d.querySelectorAll('#st-slutsatser .slutsats')];
         expect(rutor).toHaveLength(1);
@@ -307,6 +308,7 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
     });
     it('utan könsuppdelning ritas inga kvartiler på Översikt, och noten säger varför', () => {
         const w = createAppWindow();
+        w.__state.kLage = 'export';   // Översikts kopia så som den lämnar verktyget (ADR-51)
         w.__loadDemoData();
         const d = w.document;
         w.eval('sattKTroskel(150, { fraga: false })');
@@ -441,7 +443,7 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         tangent(annat, 'k', { ctrlKey: true });
         expect(d.activeElement).toBe(falt);
     });
-    it('en grupp under tröskeln går inte att söka fram, och svaret säger inte om den finns', () => {
+    it('alla grupper går att söka fram oavsett tröskel (skärmen maskerar inget, ADR-51)', () => {
         const w = createAppWindow();
         w.__loadDemoData();
         const d = w.document, falt = d.getElementById('sok-grupp'), lista = d.getElementById('sok-grupp-lista');
@@ -449,17 +451,11 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         const fore = w.eval('sokKandidater()').map(k => k.nyckel);
         w.eval('sattKTroskel(25, { fraga: false })');
         const efter = w.eval('sokKandidater()');
-        expect(efter.every(k => k.n >= 25)).toBe(true);
-        const borta = fore.filter(n => !efter.some(k => k.nyckel === n));
-        expect(borta.length).toBeGreaterThan(0);                     // demodatan har grupper med 20–24 personer
-        // En av de grupper som föll bort: sökningen på dess kod ger samma svar som en sökning på något som inte finns.
-        const kod = borta.find(n => n.startsWith('grupp:')).slice(6).split('|')[0];
-        skriv(kod);
-        expect(lista.querySelectorAll('[role="option"]')).toHaveLength(0);
-        const svar = lista.textContent;
+        expect(efter.map(k => k.nyckel)).toEqual(fore);
+        expect(efter.some(k => k.n < 25)).toBe(true);                // demodatan har grupper med 20–24 personer
         skriv('finnsintealls');
-        expect(lista.textContent).toBe(svar);
-        expect(svar).toContain('färre än 25 personer');
+        expect(lista.querySelectorAll('[role="option"]')).toHaveLength(0);
+        expect(lista.textContent).toBe('Ingen grupp matchar.');
         // Rensning tar bort fältet och träffarna.
         w.eval('_rensaAllData()');
         expect(d.getElementById('sok-ruta').hidden).toBe(true);
@@ -485,15 +481,13 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         expect(w.eval('_chartExportUnderlag(window.__tomt)')).toBeNull();
         expect(w.eval('exportSakra(window.__tomt)')).toBe(false);
         // ZIP-exporten tar "allt som är ritat": den ritar först om varje flik som ritats förut men inte är aktuell.
-        const zip = w.eval('zipDiagram().map(el => el.id)');
-        expect(w.eval("flikInaktuell('struktur') || flikInaktuell('matrix')")).toBe(false);
+        const zip = w.eval('zipDiagram().map(el => el.id)');   // i exportläget: varje flik som ritats ritas om före uppräkningen
         expect(zip).toContain('chart-struktur-kvartiler');
         expect(w.eval('diagramRitat(document.getElementById("chart-struktur-kvartiler"))')).toBe(true);
         w.eval('sattKTroskel(26, { fraga: false })');                    // en ändring till: Lika arbete är inaktuell igen
         expect(w.eval("flikInaktuell('matrix')")).toBe(true);
         // Tabell: en läsning genom grinden ritar om Lika arbete först, och raderna bär den nya tröskeln.
-        const klon = w.eval("_cloneAndCleanTableForExport('paygap-table')");
-        expect(w.eval("flikInaktuell('matrix')")).toBe(false);
+        const klon = w.eval("_cloneAndCleanTableForExport('paygap-table')");   // ritar om Lika arbete i exportläget; efteråt är fliken inaktuell igen (skärmläget)
         expect(klon).not.toBeNull();
         expect(klon.querySelectorAll('tbody tr').length).toBeGreaterThan(0);
     });
@@ -607,10 +601,11 @@ describe('Var uppstår löneskillnaden?', () => {
         expect(host.hidden).toBe(true);
         expect(w.document.getElementById('gap-uppdelning-innehall').textContent.trim()).toBe('');
     });
-    it('ett kön under k i urvalet: "För få personer", inga belopp', () => {
+    it('ett kön under k i urvalet (i exportläget): "För få personer", inga belopp', () => {
         const w = createAppWindow();
         w.__loadDemoData();
         w.__state.data = w.__state.data.filter((r, i) => r.kon.includes('kvinna') || i % 50 === 0).slice(0, 200);
+        w.__state.kLage = 'export';
         w.eval('renderGapUppdelning()');
         const t = w.document.getElementById('gap-uppdelning-innehall').textContent;
         expect(t).toContain('För få personer för att dela upp skillnaden');
@@ -785,8 +780,9 @@ describe('Personer att granska', () => {
 describe('dolda grupper, belopp, radslut och gränsfältet', () => {
     const rad = (bas, kon, lon, aid) => ({ bas, kon, lon, alder: 40, aid, yrke: aid, enhet: '' });
     const flera = (n, ...a) => Array.from({ length: n }, () => rad(...a));
-    it('dolda grupper redovisas med antal, aldrig med belopp; reserven visar bara hela skillnaden', () => {
+    it('dolda grupper (i exportläget) redovisas med antal, aldrig med belopp; reserven visar bara hela skillnaden', () => {
         const w = createAppWindow();
+        w.__state.kLage = 'export';
         const bakgrund = [...flera(30, 'E', 'kvinna', 28000, 'E1'), ...flera(12, 'E', 'man', 29500, 'E1'),
             ...flera(12, 'F', 'kvinna', 33000, 'F1'), ...flera(30, 'F', 'man', 35500, 'F1'),
             ...flera(25, 'G', 'kvinna', 38000, 'G1'), ...flera(15, 'G', 'man', 41000, 'G1')];

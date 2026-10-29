@@ -364,7 +364,9 @@ function _buildNarrative(d, ctx) {
     if (sankt) { lines.push(''); lines.push(sankt); }
     return lines.join('\n');
 }
-function exportEuReport() {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function exportEuReport(...a) { return medExportLage(() => _exportEuReportExport.apply(null, /** @type {any} */ (a))); }
+function _exportEuReportExport() {
     if (typeof XLSX === 'undefined') { alert('Excel-biblioteket kunde inte laddas.'); return; }
     const d = getData();
     if (!d.length) { alert('Ingen data.'); return; }

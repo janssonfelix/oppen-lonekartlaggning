@@ -845,13 +845,14 @@ describe('k-anonymitet, sortering, efterlevnad och dossiern', () => {
             // 6 personer i BAS A — under K_STANDARD (10)
             win.__state.data = Array.from({ length: 6 }, (_, i) => rad('A', i % 2 ? 'kvinna' : 'man', 26000 + i * 500));
             win.__state.policy = [{ bas: 'A', p10: 25000, med: 30000, p90: 40000 }];
+            win.__state.kLage = 'export';   // så som diagrammet lämnar verktyget (ADR-51)
             win.__renderLonepolitik();
             const el = win.document.getElementById('chart-lp-compliance');
             expect(el).not.toBeNull();
             // Inget aggregat får ritas — i stället en förklaring om tröskeln
             expect(el.textContent).toMatch(/färre än 10 personer/);
         } finally {
-            win.__state.data = sparad; win.__state.policy = sparadPolicy;
+            win.__state.data = sparad; win.__state.policy = sparadPolicy; win.__state.kLage = 'skarm';
         }
     });
 
@@ -1110,7 +1111,7 @@ describe('Utforska: klick till gruppdossiern', () => {
         win.__closeGruppdossier();
     });
 
-    it('klick på en grupp under tröskeln visar ett meddelande i stället', () => {
+    it('klick på en liten grupp öppnar dossiern: skärmen maskerar inget (ADR-51)', () => {
         const w = createAppWindow();
         const rader = [];
         for (let i = 0; i < 20; i++) rader.push({ bas: 'A', kon: i % 2 ? 'man' : 'kvinna', lon: 30000 + i, alder: 40,
@@ -1120,10 +1121,10 @@ describe('Utforska: klick till gruppdossiern', () => {
         w.__state.data = rader;
         w.eval('populateSelects(); unlockTabs();');
         w.__renderTabContent('utforska');
+        expect(w.__explorerDossierTarget(spec(), 'B', null)).toEqual({ key: '200|B' });
+        w.__state.kLage = 'export';
         expect(w.__explorerDossierTarget(spec(), 'B', null)).toEqual({ saknas: true });
-        w.__explorerHandleClick({ rad: 'B', kol: null });
-        expect(w.document.getElementById('dossier-modal').style.display).not.toBe('flex');
-        expect(w.document.getElementById('explore-note').textContent).toContain('ingen gruppdossier');
+        w.__state.kLage = 'skarm';
     });
 });
 
@@ -1548,8 +1549,8 @@ describe('Utforska: Visa, noter, export och diagram', () => {
         expect($('chart-explore').querySelector('text[data-marke="rutatext"]')).toBeNull();
     });
 
-    it('noten nämner könsvärden under tröskeln när man visar per kön', () => {
-        grund(); satt('explore-rad', 'aid'); satt('explore-visa', 'kon'); rita();
+    it('noten nämner könsvärden under tröskeln när man visar per kön (i exportläget)', () => {
+        grund(); win.__state.kLage = 'export'; satt('explore-rad', 'aid'); satt('explore-visa', 'kon'); rita(); win.__state.kLage = 'skarm';
         expect($('explore-note').textContent).toMatch(/könsvärden bygger på färre än 10 personer/);
     });
 
@@ -1558,7 +1559,9 @@ describe('Utforska: Visa, noter, export och diagram', () => {
         const cell = (rad, kol, nKv, nMa) => ({ rad, kol, n: nKv + nMa, nKv, nMa, value: 30000, valueKv: 29000, valueMa: 31000, liten: nKv + nMa < 10, konLiten: nKv < 10 || nMa < 10 });
         win.__m = { spec: { matt: 'median', delaKon: true }, radEtiketter: ['A', 'B'], kolumnEtiketter: ['X', 'Y'],
             celler: [cell('A', 'X', 12, 12), cell('A', 'Y', 3, 14), cell('B', 'X', 2, 3), cell('B', 'Y', 11, 10)] };
+        win.__state.kLage = 'export';   // ränderna följer den inställda tröskeln, som i exporten (ADR-51)
         const f = win.eval('_figGrupperade(window.__m)'), lager = f.lager;
+        win.__state.kLage = 'skarm';
         expect(f.paneler).toBeUndefined();
         const man = lager.filter(l => l.serie.endsWith('· Man'));
         expect(man.length).toBe(2);
@@ -1569,7 +1572,7 @@ describe('Utforska: Visa, noter, export och diagram', () => {
         win.__f = f;
         const svg = win.eval('_rfByggSvg(window.__f, 700, { visaSma: true })');
         const sma = lager.reduce((n, l) => n + l.data.filter(d => d.liten).length, 0);
-        expect(sma).toBe(3);   // tre kvinnor i A·Y, och hela B·X för båda könen
+        expect(sma).toBe(3);   // tre kvinnor i A·Y, och hela B·X för båda könen   // tre kvinnor i A·Y, och hela B·X för båda könen
         expect(svg.querySelectorAll('rect[data-marke="stapel"][stroke-dasharray]').length).toBe(sma);
     });
 });

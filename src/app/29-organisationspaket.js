@@ -133,7 +133,7 @@ function lasInPaket(text, _filnamn, { inbakat = false } = {}) {
         if (!kr.ok && kr.fel) varningar.push(`Paketets minsta gruppstorlek ${installningar.kTroskel} används inte: ${kr.fel}`);
     }
     // Gällande tröskel får inte ligga under golvet: den höjs (en höjning kräver ingen bekräftelse).
-    if (nyttGolv != null && kTroskel() < nyttGolv) {
+    if (nyttGolv != null && kInstalld() < nyttGolv) {
         kAndrad = sattKTroskel(nyttGolv, { fraga: false, rita: false }).andrad === true || kAndrad;
         varningar.push(`Minsta gruppstorlek höjs till ${nyttGolv}, paketets lägsta tillåtna.`);
     }
@@ -202,7 +202,7 @@ function _fyllPaketFormular() {
     satt('paket-ref-kortnamn', harReferens() && state.policyKortnamn !== state.policyNamn ? (state.policyKortnamn || '') : '');
     satt('paket-po', state.costSettings.poPct);
     satt('paket-manader', state.costSettings.months);
-    satt('paket-k', kTroskel());
+    satt('paket-k', kInstalld());
     // Låsningarna (ADR-47): formuläret visar det som gäller nu; utan paket är inget låst.
     const las = state.paketLas;
     satt('paket-k-lagst', las.kTroskelLagst);

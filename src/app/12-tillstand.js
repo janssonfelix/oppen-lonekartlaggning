@@ -20,7 +20,7 @@
  *     targets: any[], minGroupN: number, roundStep: number, years: number,
  *     scenarios: {A: any, B: any}, result: any, _remediation?: any
  *   },
- *   inactivityTimeoutMin: number,
+ *   inactivityTimeoutMin: number, kLage: 'skarm'|'export',
  *   likvardighet: {source: string, kvinnoTrosholdPct: number, minGapPct: number, topN: number, poangBandPct: number, result: any},
  *   arbetsvardering: {byKey: Map<string, number>, [k: string]: any}|null,
  *   columnMap: {[roll: string]: string}|null,
@@ -42,6 +42,7 @@ const state = {
     prioConfig: { ...PRIO_CONFIG_DEFAULTS },
     prioWeights: { ...PRIO_WEIGHTS_DEFAULTS },
     costSettings: { ...COST_DEFAULTS },
+    kLage: 'skarm',                    // 'export' medan något som lämnar verktyget ritas eller räknas (ADR-51, 23-exportgrind.js)
     rapportUrval: null,        // rapportens avsnitt: null = hela dokumentationen, annars { ordning, med } (58-rapportmodell.js)
     bristAids: new Set(),         // E: AID-koder markerade som bristyrke
     scenarios: [],                // I: sparade scenarion (max 5)
@@ -414,8 +415,11 @@ function _exportText(rot) {
     rot.querySelectorAll('[data-export-text]').forEach(el => { el.textContent = el.getAttribute('data-export-text'); });
 }
 // Tabell → rad-matris (thead + tbody), i nuvarande (ev. sorterade) DOM-ordning.
-function tableToMatrix(tableId) {
-    const table = document.getElementById(tableId);
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function tableToMatrix(...a) { return medExportLage(() => _tableToMatrixExport.apply(null, /** @type {any} */ (a))); }
+function _tableToMatrixExport(tableId) {
+    // Raderna lämnar verktyget (CSV, urklipp): exportläget, och tabellens flik ritad med det som gäller nu (ADR-51).
+    const table = typeof exportElement === 'function' ? exportElement(tableId) : document.getElementById(tableId);
     if (!table) return [];
     const rows = [];
     // En beskrivning av urvalet (Utforska) blir exportens första rad.
@@ -443,7 +447,9 @@ function tableToMatrix(tableId) {
     });
     return rows;
 }
-function _copyTableToClipboard(tableId, btn) {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function _copyTableToClipboard(...a) { return medExportLage(() => __copyTableToClipboardExport.apply(null, /** @type {any} */ (a))); }
+function __copyTableToClipboardExport(tableId, btn) {
     const rows = tableToMatrix(tableId);
     if (!rows.length) { alert('Ingen tabelldata att kopiera.'); return; }
     _copyMatrixToClipboard(rows, btn, { undantag: _kUndantagFor(document.getElementById(tableId)) });

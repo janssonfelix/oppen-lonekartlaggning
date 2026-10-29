@@ -5652,7 +5652,7 @@ function perBasTabeller(rader, opt = {}) {
         const medel = _medel(_loner(rows)), medelKv = konVisas ? _medel(_loner(kv)) : null, medelMa = konVisas ? _medel(_loner(ma)) : null;
         return {
             bas: namn, n: rows.length, medel, medelMa, medelKv,
-            kvot: konVisas && medelMa > 0 && medelKv != null ? medelKv / medelMa * 100 : null,
+            kvot: konVisas && medelMa != null && medelMa > 0 && medelKv != null ? medelKv / medelMa * 100 : null,
             andelKv: rows.length ? kv.length / rows.length * 100 : null,
             alder: _medel(_aldrar(rows)), alderMa: konVisas ? _medel(_aldrar(ma)) : null, alderKv: konVisas ? _medel(_aldrar(kv)) : null,
             konVisas
@@ -5663,6 +5663,7 @@ function perBasTabeller(rader, opt = {}) {
 
     const grupper = aldersgruppNamn(granser);
     const aldersRad = (namn, rows) => {
+        /** @type {any[][]} */
         const per = grupper.map(() => []);
         rows.forEach(r => { if (typeof r.alder === 'number' && isFinite(r.alder) && r.alder > 0) per[_aldersgrupp(r.alder, granser)].push(r); });
         return { bas: namn, n: rows.length, alder: _medel(_aldrar(rows)), medel: _medel(_loner(rows)),

@@ -21,7 +21,7 @@ function updateCompliance() {
 
     // 1–2. Lönegap > 5 % och könsskevhet — bara i jämförbara BAS (båda könen ≥ k),
     // samma regel som Lika arbete och Underlagets kvalitet använder.
-    const jb = _dqJamforbaraBas(d, kTroskel());
+    const jb = _dqJamforbaraBas(d, kInstalld());   // säger vad exporterna kan jämföra (ADR-51)
     const gapTotal = jb.jamforbara.length;
     const maskText = jb.maskerade.length ? ` · ${jb.maskerade.length} maskeras` : '';
     let gapCrit = 0, skevCount = 0;
@@ -53,7 +53,7 @@ function updateCompliance() {
         bas.forEach(b => {
             const pol = policyFor(null, b);
             if (!pol || !pol.p10) return;
-            if (isKMasked(d.filter(r => r.bas === b).length)) return;   // k: medianen för ett litet BAS redovisas inte
+            if (d.filter(r => r.bas === b).length < kInstalld()) return;   // räknar det exporterna kan jämföra (ADR-51)
             polTotal++;
             if (Stat.median(d.filter(r => r.bas === b).map(r => r.lon)) < pol.p10) polLow++;
         });
@@ -99,10 +99,10 @@ function bedomningUnderlag() {
     const reg = runOLSRegression();
     const modell = reg.error ? 'fel' : (reg.modelName === 'full' ? 'full' : 'minimal');
     const mde = reg.error ? null : _dqMdeFranSe(reg.seKonR);
-    const b = _dqBedomUnderlag(d, { k: kTroskel(), audit: state.dataAudit, mde, modell });
+    const b = _dqBedomUnderlag(d, { k: kInstalld(), audit: state.dataAudit, mde, modell });   // jämförbarheten gäller det som lämnar verktyget (ADR-51)
     // Kontrollen av AID-kodningen (ADR-33) läggs till datakvalitetens kriterier.
     let aid = [];
-    try { aid = _akAidKriterier(d, { k: kTroskel(), harAnsvar: !!state.ansvarKolumn }); }
+    try { aid = _akAidKriterier(d, { k: kInstalld(), harAnsvar: !!state.ansvarKolumn }); }
     catch (e) { rapporteraFel('Underlagets kvalitet: AID-kodning', e); }
     const kriterier = [...b.kriterier, ...aid];
     const rang = { ok: 0, varning: 1, kritisk: 2 };
@@ -536,6 +536,18 @@ function updateDashboardStats() {
                 `<div class="stat-tip ${tipClass}" title="${esc(tipText)}">rå skillnad, hela organisationen</div>`;
         }
     }
+}
+
+/** Översikts delar, i ordning: det som inläsningen ritar och som exportgrinden måste kunna rita om (ADR-51). */
+function renderOversiktDelar() {
+    /** @type {[string, () => void][]} */
+    const delar = [['nyckeltal', () => updateDashboardStats()], ['kompliansöversikt', () => updateCompliance()],
+        ['underlagets kvalitet', () => renderUnderlagetsKvalitet()], ['Att göra', () => renderActionChecklist()],
+        ['processöversikten', () => renderProcessTracker()], ['extremvärden', () => renderOutliers()],
+        ['inläsningsrapporten', () => renderDataValidationReport()]];   // Var uppstår löneskillnaden ritas av kompliansöversikten
+    for (const [namn, fn] of delar) { try { fn(); } catch (e) { rapporteraFel(`Översikt (${namn})`, e); } }
+    const ab = document.getElementById('snapshot-comparison');
+    if (ab && ab.style.display !== 'none' && typeof renderSnapshotComparison === 'function') renderSnapshotComparison();
 }
 
 // ---- Populate BAS selects ----

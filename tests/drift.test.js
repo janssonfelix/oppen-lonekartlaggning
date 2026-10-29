@@ -172,6 +172,7 @@ const appLVSrc = (() => {
 // kTroskel() läses ur state, som i appen (adaptern skickar värdet vidare till lib).
 const makeAppLV = new Function('state', 'nationellAidKlass', '_lvComputePairs', `
     const kTroskel = () => state.kTroskel ?? 10;
+    const kInstalld = kTroskel;
     // Talformatshjälparna ur 03-hjalpfunktioner.js: adaptern skriver diagnostik med dem.
     const svTal = (v, dec = 0) => Number(v).toFixed(dec).replace('.', ',');
     const svPct = (v, dec = 1) => svTal(v, dec) + ' %';

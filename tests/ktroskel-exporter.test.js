@@ -6,7 +6,7 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
-import { STORA, MELLAN, SMA, FLIKAR, synliga, fonster, ritaAlla, fonsterKon, laddaXlsx, fangaBocker, utskriftAv, TOPP, SENT_MELLAN, SENT_SMA } from './helpers/ktroskel-rigg.js';
+import { STORA, MELLAN, SMA, FLIKAR, synliga, fonster, ritaAlla, fonsterKon, laddaXlsx, fangaBocker, utskriftAv, TOPP, SENT_MELLAN, SENT_SMA, iExport } from './helpers/ktroskel-rigg.js';
 
 // Sviten ritar om hela verktyget i varje test. Under full last tar ett test 4–6 s, så standardgränsen 5 s
 // fäller olika tester från körning till körning.
@@ -169,7 +169,7 @@ describe('paketformuläret, Rensa, Struktur och Likvärdigt arbete med ändrad t
         expect(w.document.getElementById('k-troskel-fel').textContent).toBe('');
     });
     it('Strukturs sammanfattning: stämpeln under 10, och bara BAS som tabellen visar namnges', () => {
-        const text = k => { const w = fonster(k); w.__renderTabContent('struktur'); return w.document.getElementById('struktur-narrative').value; };
+        const text = k => { const w = iExport(fonster(k)); w.__renderTabContent('struktur'); return w.document.getElementById('struktur-narrative').value; };
         expect(text(6).trimEnd().endsWith('Minsta gruppstorlek för redovisning: 6. Tröskeln är sänkt från standardvärdet 10.')).toBe(true);
         expect(text(null)).not.toContain('Minsta gruppstorlek');
         // Segregeringsmeningen jämför första och sista BAS i tabellen: vid 10 får E och F (6 personer) inte namnges.
@@ -182,6 +182,7 @@ describe('paketformuläret, Rensa, Struktur och Likvärdigt arbete med ändrad t
         for (let i = 0; i < 4; i++) r.push(rad('D', 'man', 33000 + i));                                 // 4 personer, 0 % kvinnor
         w.__state.data = r;
         w.eval('populateSelects(); unlockTabs();');
+        iExport(w);
         w.__renderTabContent('struktur');
         const seg = w.document.getElementById('struktur-narrative').value.split('\n').find(l => l.startsWith('Vertikal könssegregering'));
         expect(seg).toMatch(/lägre betalda BAS \(B: 75 %\)/);
@@ -197,7 +198,7 @@ describe('paketformuläret, Rensa, Struktur och Likvärdigt arbete med ändrad t
             lagg(20, 'man', 50000, 'C', '6100'); lagg(6, 'kvinna', 36421, 'C', '5300'); lagg(15, 'kvinna', 37000, 'C', '5301');
             w.__state.data = rader;
             w.eval('populateSelects(); unlockTabs();');
-            return w.eval('likvardighetResultat().diagnostik.organisation.kvDomMedNLessThanK');
+            return w.eval('medExportLage(() => likvardighetResultat().diagnostik.organisation.kvDomMedNLessThanK)');
         };
         expect(antal(5)).toBe(0);
         expect(antal(null)).toBe(1);
@@ -218,11 +219,11 @@ describe('I5: konfigurationsfil och organisationspaket: det som syns ritas om en
         rakna(w);
         w.__cfg = cfg;
         w.eval('applyConfigSnapshot(window.__cfg)');
-        expect(w.eval('kTroskel()')).toBe(25);
+        expect(w.eval('kInstalld()')).toBe(25);
         expect(Object.entries(w.__antal).filter(([, n]) => n !== 1)).toEqual([]);
         expect(Object.keys(w.__antal).length).toBe(1);                              // bara den öppna fliken
         expect(synliga(w, [...SENT_MELLAN, ...SENT_SMA])).toEqual([]);              // övriga är tömda
-        expect(w.document.getElementById('data-validation-report').textContent).toMatch(/K-maskerade BAS \(n<25\):\s*6/);
+        expect(w.document.getElementById('data-validation-report').textContent).toMatch(/BAS under minsta gruppstorlek \(n<25, redovisas inte i exporterna\):\s*6/);
     });
     it('konfigurationsfil med samma tröskel: bara den öppna fliken ritas', () => {
         const a = createAppWindow();

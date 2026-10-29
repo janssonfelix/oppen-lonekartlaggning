@@ -6,15 +6,21 @@
  */
 import { describe, it, expect, beforeAll, vi } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
-import { normalisera, oppnaFlik, KON_BAS, KON_KV, KON_MA, ENSAM, KON_GAP, KON_GAP_1, KON_DOLDA, fonsterKon, harNagon, laddaXlsx, fangaBocker, samlaUtdata, sammanhang, SENT_MELLAN, SENT_SMA, X_KV, X_MA, PAR_KV, PAR_MA } from './helpers/ktroskel-rigg.js';
+import { normalisera, oppnaFlik, iExport, KON_BAS, KON_KV, KON_MA, ENSAM, KON_GAP, KON_GAP_1, KON_DOLDA, fonsterKon, harNagon, laddaXlsx, fangaBocker, samlaUtdata, sammanhang, SENT_MELLAN, SENT_SMA, X_KV, X_MA, PAR_KV, PAR_MA } from './helpers/ktroskel-rigg.js';
 
 // Sviten ritar om hela verktyget i varje test. Under full last tar ett test 4–6 s, så standardgränsen 5 s
 // fäller olika tester från körning till körning.
 vi.setConfig({ testTimeout: 30000 });
 
 describe('I1: Löneöversyn visar ingen kostnad för grupper under tröskeln', () => {
-    it('individnivån: jämförelsen kräver tröskeln i antal män, och kostnaden visas inte där antalet maskeras', () => {
+    it('individnivån: på skärmen visas jämförelsen också mot få män (skärmen maskerar inget, ADR-51)', () => {
         const w = fonsterKon(null);
+        w.__renderTabContent('loneoversyn');
+        w.eval('_forecastRemediation()');
+        expect(w.document.querySelectorAll('#forecast-rem-result tbody tr').length).toBeGreaterThan(0);
+    });
+    it('individnivån i exportläget: jämförelsen kräver tröskeln i antal män, och kostnaden visas inte där antalet maskeras', () => {
+        const w = iExport(fonsterKon(null));
         w.__renderTabContent('loneoversyn');
         w.eval('_forecastRemediation()');
         const t = normalisera(w.document.getElementById('forecast-rem-result').textContent);
@@ -32,6 +38,7 @@ describe('I1: Löneöversyn visar ingen kostnad för grupper under tröskeln', (
         for (let i = 0; i < 12; i++) r.push(rad('kvinna', i < 3 ? 31117 : 40000 + i, i));   // tre kvinnor långt under männens median
         w.__state.data = r;
         w.eval('populateSelects(); unlockTabs();');
+        iExport(w);
         w.__renderTabContent('loneoversyn');
         w.eval('_forecastRemediation()');
         const el = w.document.getElementById('forecast-rem-result');
@@ -42,8 +49,8 @@ describe('I1: Löneöversyn visar ingen kostnad för grupper under tröskeln', (
         w.eval('_forecastRemediationSeed()');
         expect(w.__state.forecast.targets).toEqual([]);
     });
-    it('utfallstabellen och Excel: kostnaden maskeras där medianerna maskeras, och antalet grupper anges', async () => {
-        const w = fonsterKon(null);
+    it('utfallstabellen (i exportläget) och Excel: kostnaden maskeras där medianerna maskeras, och antalet grupper anges', async () => {
+        const w = iExport(fonsterKon(null));
         Object.assign(w.__state.forecast, { generell: { mode: 'pct', value: 2 } });
         w.__renderTabContent('loneoversyn');
         const kostnad = v => String(Math.round(v * 0.02));
@@ -69,7 +76,7 @@ describe('I1: Löneöversyn visar ingen kostnad för grupper under tröskeln', (
         expect(blad.find(r => r.includes('| 6000 |'))).toMatch(/\| \d+$/);
         expect(bok).toMatch(/\d+ grupper med färre än 10 personer ingår i summorna/);
     });
-    it('höjd tröskel tar bort förslag som byggde på par under den nya tröskeln; egna rader står kvar', () => {
+    it('höjd tröskel rör inte förslagen på skärmen (skärmen maskerar inget, ADR-51); egna rader står kvar', () => {
         const w = createAppWindow();
         const rader = [];
         const lagg = (n, kon, lon, bas, aid) => { for (let i = 0; i < n; i++) rader.push({ bas, kon, lon: lon + (i % 3) * 10,
@@ -86,9 +93,11 @@ describe('I1: Löneöversyn visar ingen kostnad för grupper under tröskeln', (
         expect(w.__state.forecast.targets.map(t => t.aid)).toContain('5300');
         w.__state.forecast.targets.push({ bas: 'A', aid: '6000', mode: 'kr', value: 1000, dist: 'lowest', targetLevel: 'median', pool: 'övrigt' });
         w.eval('sattKTroskel(10, { fraga: false })');
-        expect(w.__state.forecast.targets.map(t => t.aid)).toEqual(['6000']);
-        expect(w.document.getElementById('forecast-par-not').textContent).toMatch(/1 par med en grupp under 10 personer redovisas inte här/);
-        expect(normalisera(w.document.getElementById('forecast-targets').innerHTML)).not.toMatch(/selected[^>]*>[^<]*5300/);
+        expect(w.__state.forecast.targets.map(t => t.aid)).toContain('5300');
+        expect(w.__state.forecast.targets.map(t => t.aid)).toContain('6000');
+        expect(w.document.getElementById('forecast-par-not').textContent).toBe('');
+        // Raden på den lilla gruppen säger att beloppet bygger på enskildas löner (R2).
+        expect(w.document.getElementById('forecast-targets').textContent).toMatch(/Raden berör 6 personer, färre än 10 personer/);
     });
 });
 
@@ -144,14 +153,20 @@ describe.each([[10, []], [25, SENT_MELLAN]])('I4: invarianten över flikar och e
         expect(utdata.find(([n]) => n === 'Word-utkastet')[1]).toContain('S1');
         expect(utdata.find(([n]) => n === 'skärm: alla flikar')[1]).toContain('Säkeryrke 0');
     });
-    it('ingen enskild lön, ingen lön för en grupp under tröskeln och ingen lön för ett kön under tröskeln', () => {
+    // Skärmen maskerar inget (ADR-51): den vägen prövas positivt nedan och undantas i läckkontrollerna.
+    const exporter = () => utdata.filter(([n]) => n !== 'skärm: alla flikar');
+    it('skärmen visar grupperna och könen under tröskeln (ADR-51)', () => {
+        const skarm = utdata.find(([n]) => n === 'skärm: alla flikar')[1];
+        expect(harNagon(skarm, [...SENT_SMA, ...KON_MA]).length).toBeGreaterThan(0);
+    });
+    it('ingen enskild lön, ingen lön för en grupp under tröskeln och ingen lön för ett kön under tröskeln i det som lämnar verktyget', () => {
         const lackor = [];
-        for (const [namn, text] of utdata) for (const v of harNagon(text, dolda)) lackor.push(`${namn}: ${v} — "${sammanhang(text, v)}"`);
+        for (const [namn, text] of exporter()) for (const v of harNagon(text, dolda)) lackor.push(`${namn}: ${v} — "${sammanhang(text, v)}"`);
         expect(lackor).toEqual([]);
     });
-    it('inget könsgap för en grupp där ett kön är under tröskeln', () => {
+    it('inget könsgap för en grupp där ett kön är under tröskeln i det som lämnar verktyget', () => {
         const lackor = [];
-        for (const [namn, text] of utdata) {
+        for (const [namn, text] of exporter()) {
             for (const v of harNagon(text, KON_GAP)) lackor.push(`${namn}: ${v} — "${sammanhang(text, v)}"`);
             for (const re of KON_GAP_1) { const m = text.match(re); if (m) lackor.push(`${namn}: ${m[0]} — "${sammanhang(text, m[0])}"`); }
         }

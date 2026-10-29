@@ -75,7 +75,7 @@ function renderForecastTargets() {
             <select data-f="pool" aria-label="Pott-typ" title="Ring-fenced pott (visas i kostnad-per-pott)">${[['equity', 'Likalön'], ['marknad', 'Marknad'], ['befordran', 'Befordran'], ['övrigt', 'Övrigt']].map(([v, l]) => `<option value="${v}"${(tg.pool || 'övrigt') === v ? ' selected' : ''}>${l}</option>`).join('')}</select>
             <span class="text-dampad-xs ingen-radbrytning" title="Vad raden förbrukar av potten">≈ ${Math.round(rowCost).toLocaleString('sv-SE')} kr</span>
             <button type="button" data-f="remove" class="btn btn-secondary btn-sm" aria-label="Ta bort rad">${ikon('kryss', 14)}</button>
-        </div>${gruppN(tg) > 0 && isKMasked(gruppN(tg)) ? `<p class="k-mask-note">Raden berör ${gruppN(tg)} ${gruppN(tg) === 1 ? 'person' : 'personer'}, färre än ${kTroskel()} personer — beloppet bygger på enskildas löner och ingår i summorna, även i Excel-exporten.</p>` : (gruppN(tg) === 0 ? '<p class="k-mask-note">Ingen i gruppen matchar kön och lönegräns.</p>' : '')}`;
+        </div>${gruppN(tg) > 0 && gruppN(tg) < kInstalld() ? `<p class="k-mask-note">Raden berör ${gruppN(tg)} ${gruppN(tg) === 1 ? 'person' : 'personer'}, färre än ${kInstalld()} personer — beloppet bygger på enskildas löner och ingår i summorna, även i Excel-exporten.</p>` : (gruppN(tg) === 0 ? '<p class="k-mask-note">Ingen i gruppen matchar kön och lönegräns.</p>' : '')}`;
     }).join('');
     host.querySelectorAll('.forecast-target-row').forEach(rowEl => {
         const i = parseInt(rowEl.getAttribute('data-idx') || '', 10);
@@ -681,7 +681,9 @@ function _forecastRemediationSeed() {
     updateForecast();
     if (!added) alert('Grupperna fanns redan som riktade rader.');
 }
-function exportForecast() {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function exportForecast(...a) { return medExportLage(() => _exportForecastExport.apply(null, /** @type {any} */ (a))); }
+function _exportForecastExport() {
     if (typeof XLSX === 'undefined') { alert('Excel-biblioteket kunde inte laddas.'); return; }
     const out = state.forecast.result;
     if (!out) { alert('Ingen prognos att exportera ännu.'); return; }

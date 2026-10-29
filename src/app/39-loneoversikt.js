@@ -159,7 +159,7 @@ document.getElementById("search-rapport")?.addEventListener("input", e => {
 });
 
 // Export Excel (bara Löneöversikten)
-document.getElementById("btn-export-excel")?.addEventListener("click", () => {
+document.getElementById("btn-export-excel")?.addEventListener("click", () => medExportLage(() => {
     const wb = tableToCleanBook('rapport-table', 'Rapport');
     if (wb) { _appendMethodSheet(wb); XLSX.writeFile(wb, "lonekartlaggning_rapport.xlsx"); _showExportSensitivityToast(); }
-});
+}));

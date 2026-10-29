@@ -73,7 +73,7 @@ function computeLikvardighetPairs() {
         kvinnoTrosholdPct: kvinnoThr,
         minGapPct: cfg.minGapPct ?? 0,     // default 0 (visa alla med jämförelseyrket högre)
         topN: cfg.topN ?? 100,
-        k: kTroskel()                      // bara för att räkna små grupper i diagnostiken; analysen maskar inte
+        k: kInstalld()                     // bara för att räkna små grupper i diagnostiken (undantaget gäller exporten); analysen maskar inte
     };
     if (usePoang) {
         opts.poangByKey = av.byKey;
@@ -778,7 +778,9 @@ function _lvParFigur(pairs, max = 14) {
 // Metodraden om åldersjusteringen (CSV:ns metadata och Excel-arbetsbokens metadatablad).
 const LV_JUSTERAD_METOD = 'Jämförelseyrkets lön omräknad till det kvinnodominerade yrkets åldersfördelning: log(lön) = a + b·ålder skattas i jämförelseyrket (minst ' + ALDERS_GOLV + ' personer, minst ' + ALDERS_SPRIDNING + ' års åldersspridning), lönen prediceras vid varje person i det kvinnodominerade yrket och medianen av prediktionerna jämförs med dess median. Den råa skillnaden är det lagen prövar; den justerade visar hur mycket som kan bero på åldersstruktur. Bara interna par; tomt när den inte kan räknas.';
 
-function exportLikvardighetCSV() {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function exportLikvardighetCSV(...a) { return medExportLage(() => _exportLikvardighetCSVExport.apply(null, /** @type {any} */ (a))); }
+function _exportLikvardighetCSVExport() {
     const result = likvardighetResultat();
     if (!result || !Array.isArray(result.pairs) || !result.pairs.length) {
         alert('Inga jämförelsepar att exportera. Kontrollera att Steg 3 i fliken visar par.');
@@ -834,7 +836,9 @@ function exportLikvardighetCSV() {
     _downloadCSV(rows, 'lonekartlaggning_likvardighet_' + new Date().toISOString().slice(0, 10), { undantag: 'Likvärdigt arbete' });
 }
 
-function exportLikvardighet() {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function exportLikvardighet(...a) { return medExportLage(() => _exportLikvardighetExport.apply(null, /** @type {any} */ (a))); }
+function _exportLikvardighetExport() {
     // STEG 0: Diagnostiska statusmeddelanden så användaren ser EXAKT var det
     // klickar. Om något felar visas alert med stegnamn — användaren kan
     // rapportera, vi kan felsöka.

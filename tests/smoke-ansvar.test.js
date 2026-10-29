@@ -212,14 +212,16 @@ describe('Utforska: slå ihop små yrkesgrupper', () => {
         satt('explore-rad', 'aid'); w.__renderExplorer();
         expect(d.getElementById('explore-sla-ihop-rad').hidden).toBe(false);
     });
-    it('ikryssad: små yrken i samma AID-mellannivå visas som en grupp', () => {
+    it('ikryssad: små yrken i samma AID-mellannivå visas som en grupp (i exportläget; på skärmen är inga grupper små, ADR-51)', () => {
         satt('explore-rad', 'aid'); satt('explore-kolumn', 'ingen');
         d.getElementById('explore-sla-ihop').checked = true;
+        w.__state.kLage = 'export';
         w.__renderExplorer();
         expect(d.getElementById('explore-table').textContent).toMatch(/Övriga i AID 2070xx \(2 yrken\)/);
         d.getElementById('explore-sla-ihop').checked = false;
         w.__renderExplorer();
         expect(d.getElementById('explore-table').textContent).not.toMatch(/Övriga i/);
+        w.__state.kLage = 'skarm';
     });
     it('klick på en hopslagen grupp förklarar sammanslagningen, inte "under 10"', () => {
         satt('explore-rad', 'aid'); satt('explore-kolumn', 'ingen');

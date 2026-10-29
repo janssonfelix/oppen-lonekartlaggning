@@ -15,7 +15,9 @@
  *
  * Inte beroende av vilken metric-knapp som är vald i UI:t — alla värden exporteras alltid.
  */
-function exportBenchmarkExcel() {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function exportBenchmarkExcel(...a) { return medExportLage(() => _exportBenchmarkExcelExport.apply(null, /** @type {any} */ (a))); }
+function _exportBenchmarkExcelExport() {
     if (typeof XLSX === 'undefined') { alert('XLSX-biblioteket är inte laddat.'); return; }
     const d = getData();
     if (!d.length) { alert('Ingen data laddad. Ladda upp strukturdatan först.'); return; }

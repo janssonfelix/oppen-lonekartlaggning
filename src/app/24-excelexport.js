@@ -5,7 +5,9 @@
  * Bladen som "Excel (alla flikar)" kommer att innehålla, i ordning — underlaget till exportens förhandsbesked.
  * Listan följer villkoren i _excelAlltBok nedan; ett test håller dem lika.
  */
-function excelAlltBlad() {
+// Bladlistan räknas som exporten: i exportläget (ADR-51), så att beskedet och arbetsboken får samma blad.
+function excelAlltBlad(...a) { return medExportLage(() => _excelAlltBladExport.apply(null, /** @type {any} */ (a))); }
+function _excelAlltBladExport() {
     if (!state.data.length) return [];
     const harRef = state.policy.length > 0 || state.statistik.length > 0;
     return ['Löneöversikt', 'Per BAS', 'EU-Lonekartlaggning', ...(harRef ? ['Prioritering'] : []), 'Lonegap', 'Konsskevhet', ..._excelDiagramBlad().map(b => b[0]), 'Sektorer',
@@ -76,7 +78,9 @@ function _excelLonepolitikMetod(blad) {
     return [['Bladet Lönepolitik', `Läget i referensens lönespann (0 % = P10, 100 % = P90) per yrkesgrupp, per kön och BAS-intervall samt fördelningen i spannets tredjedelar per kön och efterlevnaden per BAS-intervall — samma mått och samma regler för minsta gruppstorlek som fliken Lönepolitik: yrkesgrupper under ${kTroskel()} personer utan lönemått, könsuppdelade mått bara där varje kön har minst ${kTroskel()} personer.`]];
 }
 
-function exportAllToExcel() {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function exportAllToExcel(...a) { return medExportLage(() => _exportAllToExcelExport.apply(null, /** @type {any} */ (a))); }
+function _exportAllToExcelExport() {
     if (!state.data.length) { alert('Ladda upp data först.'); return; }
     if (typeof XLSX === 'undefined') { alert('XLSX-bibliotek saknas.'); return; }
     const wb = _excelAlltBok();
@@ -85,7 +89,9 @@ function exportAllToExcel() {
 }
 
 /** Bygger arbetsboken för "Excel (alla flikar)". */
-function _excelAlltBok() {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function _excelAlltBok(...a) { return medExportLage(() => __excelAlltBokExport.apply(null, /** @type {any} */ (a))); }
+function __excelAlltBokExport() {
 
     // Self-healing: säkerställ att flik-tabellerna är renderade innan de läses.
     // Täcker både den deferrade inläsningen (skevhet/kon körs strax efter load)
@@ -211,7 +217,9 @@ function _jpaExkluderadeTexter() {
  *
  * Output: lonekartlaggning_JPA_protokoll_YYYY-MM-DD.xlsx
  */
-function exportJPAProtocol() {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function exportJPAProtocol(...a) { return medExportLage(() => _exportJPAProtocolExport.apply(null, /** @type {any} */ (a))); }
+function _exportJPAProtocolExport() {
     if (!state.data.length) { alert('Ladda upp data först.'); return; }
     if (typeof XLSX === 'undefined') { alert('XLSX-bibliotek saknas.'); return; }
 

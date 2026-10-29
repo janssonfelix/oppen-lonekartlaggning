@@ -285,8 +285,12 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   (regressionstester i `tests/parsing.test.js`).
 
 ### 6.5 k-anonymitet ✔
-- Standardvärdet är 10 (`K_STANDARD`); användaren kan ändra det (ADR-38). Vid 10 redovisas i
-  deskriptiva vyer inga gruppvärden när en grupp har färre än 10 personer. Gruppen utelämnas och namnges i en not vid tabellen.
+- **Regeln gäller det som lämnar verktyget (ADR-51, 2026-10-29).** På skärmen visas alla grupper (`kTroskel()` är 1 i
+  skärmläget); allt som lämnar verktyget ritas och räknas i exportläget (`medExportLage` i `23-exportgrind.js`), där
+  `kTroskel()` är den inställda tröskeln `kInstalld()`. De två funktioner all export av tabeller och diagram går genom
+  går själva in i exportläget, och Dokumentera & exportera ritas alltid i det.
+- Standardvärdet är 10 (`K_STANDARD`); användaren kan ändra det (ADR-38). Vid 10 redovisas i det som
+  lämnar verktyget inga gruppvärden när en grupp har färre än 10 personer. Gruppen utelämnas och namnges i en not vid tabellen.
   Är bara könsuppdelningen för liten (gruppen som helhet n ≥ 10) visas gruppens
   samlade median utan könsjämförelse.
 - **Könsuppdelade mått kräver tröskeln för varje kön** (`_konFarRedovisas` i

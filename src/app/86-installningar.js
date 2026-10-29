@@ -32,7 +32,7 @@ function stangInstallningar() {
 
 /** Länken "Minsta gruppstorlek N" i flikarnas urvalsrad och i Översikts filrad: öppnar panelen med fokus i fältet. */
 function kTroskelLank() {
-    return `<button type="button" class="ov-filrad-lank" data-oppna-installningar="k-troskel" title="Ändra minsta gruppstorlek">Minsta gruppstorlek ${kTroskel()}</button>`;
+    return `<button type="button" class="ov-filrad-lank" data-oppna-installningar="k-troskel" title="Ändra minsta gruppstorlek">Minsta gruppstorlek ${kInstalld()}</button>`;
 }
 
 function _instRita() {

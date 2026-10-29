@@ -25,6 +25,7 @@ function byggDataset() {
     SMA.forEach((bas, g) => { for (let i = 0; i < 6; i++) rader.push(rad(bas, i, SENT_SMA[g], 5400 + g, `Småyrke ${g}`)); });
     return rader;
 }
+const iExport = w => { w.__state.kLage = 'export'; return w; };   // vyerna så som de lämnar verktyget (ADR-51)
 function fonster(k = null, rader = byggDataset()) {
     const win = createAppWindow();
     if (k !== null) win.eval(`sattKTroskel(${k}, { fraga: false })`);
@@ -36,7 +37,7 @@ function fonster(k = null, rader = byggDataset()) {
 const text = el => (el ? el.textContent.replace(/\s+/g, ' ').trim() : '');
 
 describe('Ålder & karriär: demografidelens trendlinje och lutning kräver att urvalet når tröskeln', () => {
-    const rita = (w, bas) => { w.eval(`renderDemografi('${bas}')`); return w.document; };
+    const rita = (w, bas) => { iExport(w); w.eval(`renderDemografi('${bas}')`); return w.document; };
     const harTrend = fig => fig.lager.some(l => l.marke === 'linje' && /^Trend/.test(l.serie));
     it('ett valt BAS med 6 personer: ingen trendlinje, streck i nyckeltalet och en not under diagrammet (vid 10)', () => {
         const d = rita(fonster(), 'E');
@@ -67,7 +68,7 @@ describe('Ålder & karriär: demografidelens trendlinje och lutning kräver att 
 });
 
 describe('Löneöversyn: tröskelmålet (lyft i procent och kostnad) kräver tröskeln för varje kön', () => {
-    const resultat = w => { w.eval("renderTabContent('loneoversyn'); _forecastThreshold()"); return text(w.document.getElementById('forecast-threshold-result')); };
+    const resultat = w => { iExport(w); w.eval("renderTabContent('loneoversyn'); _forecastThreshold()"); return text(w.document.getElementById('forecast-threshold-result')); };
     it('med 6 kvinnor i urvalet: streck och meningen om utelämnat könsuppdelat mått', () => {
         const alla = byggDataset();
         const kvinnor = alla.filter(r => r.kon === 'kvinna').slice(0, 6);
@@ -110,7 +111,7 @@ function parFonsterMedRader() {
     return w;
 }
 
-describe('Konfigurationsfilen: riktade rader bär fältet kalla, så att förslag ur par rensas när tröskeln höjs', () => {
+describe('Konfigurationsfilen: riktade rader bär fältet kalla; på skärmen rensas inga förslag när tröskeln höjs (ADR-51)', () => {
     const aids = w => w.__state.forecast.targets.map(t => t.aid).sort();
     it('filen bär kalla på förslaget men inte på den egna raden, och versionen är oförändrad', () => {
         const cfg = parFonsterMedRader().eval('buildConfigSnapshot()');
@@ -118,24 +119,24 @@ describe('Konfigurationsfilen: riktade rader bär fältet kalla, så att försla
         expect(cfg.forecast.targets.find(t => t.aid === '5300').kalla).toBe('par');
         expect(cfg.forecast.targets.find(t => t.aid === '6000').kalla).toBeUndefined();
     });
-    it('spara vid 5, höj till 10, läs in: förslaget ur paret rensas, den egna raden står kvar med sin not', () => {
+    it('spara vid 5, höj till 10, läs in: båda raderna står kvar (skärmen maskerar inget), och raden på den lilla gruppen får noten', () => {
         const w = parFonsterMedRader();
         const cfg = w.eval('buildConfigSnapshot()');
         delete cfg.kTroskel;   // filen ska inte sänka tröskeln igen
         w.eval('sattKTroskel(10, { fraga: false })');
-        expect(aids(w)).toEqual(['6000']);
+        expect(aids(w)).toEqual(['5300', '6000']);
         w.__cfg = JSON.parse(JSON.stringify(cfg));
         w.eval('applyConfigSnapshot(window.__cfg)');
-        expect(aids(w)).toEqual(['6000']);
-        expect(w.document.getElementById('forecast-targets').textContent).not.toMatch(/5300/);
+        expect(aids(w)).toEqual(['5300', '6000']);
+        expect(w.document.getElementById('forecast-targets').textContent).toMatch(/Raden berör 6 personer, färre än 10 personer/);
         // En egen rad på en grupp under tröskeln läses in som egen och får noten.
         w.__cfg.forecast.targets = [{ bas: 'C', aid: '5300', mode: 'kr', value: 500, dist: 'lowest', targetLevel: 'median', pool: 'övrigt' }];
         w.eval('applyConfigSnapshot(window.__cfg)');
         expect(aids(w)).toEqual(['5300']);
         expect(w.__state.forecast.targets[0].kalla).toBeUndefined();
-        expect(w.document.getElementById('forecast-targets').textContent).toMatch(/Raden berör 1 person, färre än 10 personer/);
+        expect(w.document.getElementById('forecast-targets').textContent).toMatch(/Raden berör 6 personer, färre än 10 personer/);
     });
-    it('läs in vid 5 och höj sedan: raden ur filen behandlas som förslag och rensas', () => {
+    it('läs in vid 5 och höj sedan: raden ur filen bär kalla och står kvar', () => {
         const w = parFonsterMedRader();
         const cfg = w.eval('buildConfigSnapshot()');
         w.__state.forecast.targets = [];
@@ -144,7 +145,7 @@ describe('Konfigurationsfilen: riktade rader bär fältet kalla, så att försla
         expect(aids(w)).toEqual(['5300', '6000']);
         expect(w.__state.forecast.targets.find(t => t.aid === '5300').kalla).toBe('par');
         w.eval('sattKTroskel(10, { fraga: false })');
-        expect(aids(w)).toEqual(['6000']);
+        expect(aids(w)).toEqual(['5300', '6000']);
     });
 });
 
@@ -182,12 +183,13 @@ describe('Processöversiktens steg 4: inget att hantera när alla kandidatpar ha
     });
     it('vid 10 är steget "inget att hantera" med knappen till fliken; vid 5 är paret en punkt att hantera', () => {
         const w10 = parFonster(10);
+        iExport(w10);
         const rad10 = steg4(w10);
         expect(rad10.querySelector('.ptrack-status').dataset.status).toBe('inget');
         expect(text(rad10)).toMatch(/Inget att hantera i Att göra: 1 par har en grupp under 10 personer och redovisas bara i fliken Likvärdigt arbete/);
         expect(text(rad10)).not.toMatch(/redovisas inte här/);
         expect(rad10.querySelector('.ptrack-goto').dataset.gotoTab).toBe('likvardighet');
-        const rad5 = steg4(parFonster(5));
+        const rad5 = steg4(iExport(parFonster(5)));
         expect(rad5.querySelector('.ptrack-status').dataset.status).toBe('delvis');
         expect(text(rad5)).toMatch(/1 kandidatpar/);
     });

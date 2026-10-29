@@ -481,14 +481,14 @@ describe('referensbyte ritar om allt som namnger referensen', () => {
 });
 
 describe('Lika arbete och rapportunderlaget flaggar samma yrken', () => {
-    it('EU-tabellens "Värt att granska" är exakt likaArbeteGrupper(...).flaggad', () => {
+    it('EU-tabellens "Värt att granska" är exakt likaArbeteGrupper(...).flaggad vid k = 1 (skärmen maskerar inget, ADR-51)', () => {
         const w = createAppWindow();
         w.__loadDemoData();
         w.document.querySelector('.nav-item[data-tab="matrix"]').click();
         const iTabell = [...w.document.querySelectorAll('#matrix-table tbody tr')]
             .filter(tr => tr.textContent.includes('Värt att granska'))
             .map(tr => tr._euRow.yrke).sort();
-        const iLib = w.__ruLikaArbeteGrupper(w.__getData(), { k: w.__K }).grupper
+        const iLib = w.__ruLikaArbeteGrupper(w.__getData(), { k: 1 }).grupper
             .filter(g => g.flaggad).map(g => g.yrke).sort();
         expect(iLib.length).toBeGreaterThan(0);
         expect(iTabell).toEqual(iLib);
@@ -512,7 +512,7 @@ describe('rapportunderlag', () => {
         w.__loadDemoData();
         w.document.querySelector('.nav-item[data-tab="dokumentera"]').click();
         const block = w.__rapportunderlagBlock();
-        const flaggade = w.__ruLikaArbeteGrupper(w.__getData(), { k: w.__K }).grupper.filter(g => g.flaggad).length;
+        const flaggade = w.__ruLikaArbeteGrupper(w.__getData(), { k: w.__K }).grupper.filter(g => g.flaggad).length;   // rapportunderlaget lämnar verktyget: inställd tröskel
         const typer = block.map(b => b.id.split(':')[0]);
         expect(typer.filter(t => ['sammanfattning', 'lika', 'likvardigt', 'struktur', 'handlingsplan'].includes(t)).length).toBe(5);
         expect(typer.filter(t => t === 'yrke').length).toBe(flaggade);

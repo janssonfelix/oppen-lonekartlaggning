@@ -37,9 +37,10 @@ describe('Word-utkastet som .docx', () => {
         expect(block.filter(b => b.typ === 'bild').map(b => b.id)).toEqual([...dom.querySelectorAll('figure[data-rm-bild]')].map(f => f.getAttribute('data-rm-bild')));
         expect(text(bText)).toBe(text(dom.body.textContent));
     });
-    it('avsnittet om struktur bär översikten per BAS-intervall — samma rader och tal som fliken Lika arbete öppnar med', () => {
+    it('avsnittet om struktur bär översikten per BAS-intervall — samma rader och tal som fliken Lika arbete öppnar med (i exportläget)', () => {
         const w = createAppWindow();
         w.__loadDemoData();
+        w.__state.kLage = 'export';
         w.__renderTabContent('matrix');
         const ren = t => t.replace(/[\u00a0\u202f]/g, ' ');
         const skarm = [...w.document.querySelectorAll('#la-oversikt tbody tr')].map(tr => [...tr.children].map(c => ren(c.textContent)));
@@ -348,6 +349,7 @@ describe('robusthetspanelen följer minsta gruppstorlek (ADR-38)', () => {
         lagg(6, 'kvinna', 36421, 'C', '5300');
         w.__state.data = rader;
         w.eval('populateSelects(); unlockTabs();');
+        w.__state.kLage = 'export';   // panelen hör till Dokumentera & exportera och ritas alltid i exportläget (ADR-51)
         return w;
     };
     it('paret med en grupp under tröskeln namnges inte; antalet utelämnade par står i panelen och i resultatet', () => {

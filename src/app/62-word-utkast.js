@@ -106,7 +106,9 @@ async function byggWordUtkast() {
 }
 
 /** Bygger och laddar ner Word-utkastet som .docx. */
-async function exportDocumentationDraft() {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function exportDocumentationDraft(...a) { return medExportLage(() => _exportDocumentationDraftExport.apply(null, /** @type {any} */ (a))); }
+async function _exportDocumentationDraftExport() {
     if (!getData().length) { alert('Ladda upp data först.'); return false; }
     try {
         const { blob, namn } = await byggWordUtkast();

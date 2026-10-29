@@ -15,7 +15,7 @@ function buildConfigSnapshot() {
         prioConfig: { ...state.prioConfig },
         prioWeights: { ...state.prioWeights },
         costSettings: { ...state.costSettings },
-        kTroskel: kTroskel(),   // minsta gruppstorlek för redovisning (ADR-38); paketets låsningar (ADR-47) bärs inte
+        kTroskel: kInstalld(),  // minsta gruppstorlek för redovisning (ADR-38); paketets låsningar (ADR-47) bärs inte
         rapportUrval: state.rapportUrval ? { ordning: [...state.rapportUrval.ordning], med: [...state.rapportUrval.med] } : null,   // vilka avsnitt som följer med i rapporten
         // Bug-fix: Set-objekt serialiseras inte korrekt med spread/JSON
         bristAids: Array.from(state.bristAids || []),
@@ -367,7 +367,9 @@ document.getElementById('btn-config-load')?.addEventListener('change', e => {
 });
 
 // ---- #18 A/B-jämförelse via snapshot ----
-function buildAnalysisSnapshot() {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function buildAnalysisSnapshot(...a) { return medExportLage(() => _buildAnalysisSnapshotExport.apply(null, /** @type {any} */ (a))); }
+function _buildAnalysisSnapshotExport() {
     const d = getData();
     if (!d.length) return null;
     const kv = d.filter(r => r.kon.includes('kvinna'));

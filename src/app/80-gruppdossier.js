@@ -347,9 +347,9 @@ document.addEventListener('keydown', e => {
 document.addEventListener('click', e => {
     if (!/** @type {HTMLElement} */ (e.target).closest('#btn-dossier-copy')) return;
     const sel = document.getElementById('dossier-select');
-    const d = sel ? buildGruppdossier(/** @type {HTMLInputElement} */ (sel).value) : null;
+    const d = sel ? medExportLage(() => buildGruppdossier(/** @type {HTMLInputElement} */ (sel).value)) : null;   // texten lämnar verktyget (ADR-51)
     if (!d) return;
-    const txt = gruppdossierAsText(d);
+    const txt = medExportLage(() => gruppdossierAsText(d));
     const done = () => { if (typeof announceToScreenReader === 'function') announceToScreenReader('Dossier kopierad.'); };
     if (navigator.clipboard?.writeText) navigator.clipboard.writeText(txt).then(done).catch(() => {});
     else done();

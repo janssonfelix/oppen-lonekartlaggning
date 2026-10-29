@@ -63,8 +63,12 @@ konsekvensbedömning (DPIA). Lagrumshänvisningarna samlas i
 
 ## 3. Små grupper (k-anonymitet)
 
-Lönemått för grupper med färre än 10 personer redovisas inte i de beskrivande vyerna eller
-i exporterna; gruppen namnges i en not så att det syns vad som saknas. Är gruppen stor nog
+**Regeln gäller det som lämnar verktyget (ADR-51, beslut 2026-10-29).** På skärmen visas alla
+grupper: den som arbetar i verktyget har redan lönefilen. Allt som lämnar verktyget — Excel, Word-utkastet,
+PDF-rapporten, ZIP-filen, CSV, urklipp, diagrambilder, rapportunderlaget, gruppdossierns textkopia och allt
+under *Dokumentera & exportera* — ritas och räknas i ett exportläge där minsta gruppstorlek tillämpas.
+Lönemått för grupper med färre än 10 personer redovisas då inte; gruppen namnges i en not så att det syns
+vad som saknas. Är gruppen stor nog
 men ett av könen för litet visas gruppens samlade median utan könsjämförelse. Samma regel
 gäller de beskrivande könsuppdelade måtten — ett köns median eller percentil, det råa
 lönegapet, regressionens ojusterade steg ("Endast kön") med den förklarade andelen och en
@@ -82,12 +86,12 @@ per kön. Ett diagram som inte får lämna verktyget alls — Personer att grans
 Översiktens kopior av Strukturs diagram — är märkt så i koden med ett uppräknat skäl som står i
 behållarens verktygstips, och ingen exportväg (meny, bild, diagramdata, ZIP, utskrift) tar med det.
 
-**Vad testerna prövar.** Automatiska tester ritar varje flik och bygger Word-utkastet,
+**Vad testerna prövar.** Automatiska tester ritar varje flik i exportläget och bygger Word-utkastet,
 PDF-rapporten i dess tre urval (hela dokumentationen, ledningsbrief och facklig dialog), rapportunderlaget, Excelfilerna (utom likvärdighetsexporten),
 ZIP-filens Excelfil, Att göra-listans CSV, tabellernas CSV, gruppdossiern och diagramdatan
 för de diagram som inte visar enskilda personer — vid tröskeln 10 och vid 25 — och kräver att
 ingen lön för en grupp under tröskeln, för ett kön under tröskeln eller för en enskild person
-finns i dem. Vid 5 prövas flikarna. Egna tester prövar regressionens ojusterade steg (med 7 män
+finns i dem. Vid 5 prövas flikarna i exportläget, och att skärmen visar grupperna prövas för sig. Egna tester prövar regressionens ojusterade steg (med 7 män
 i underlaget) och Ålder & karriär (med 3 män i hela urvalet och med ett valt BAS med en man).
 Testerna prövar inte undantagen nedan eller bilder av diagram.
 

@@ -38,6 +38,8 @@ export function synliga(win, varden) {
     }
     return [...ut].sort();
 }
+/** Sätter fönstret i exportläget (ADR-51): vyerna ritas då med den inställda tröskeln, som exporterna läser dem. */
+export const iExport = w => { w.__state.kLage = 'export'; return w; };
 export function fonster(k) {
     const win = createAppWindow();
     if (k !== null) win.eval(`sattKTroskel(${k}, { fraga: false })`);
@@ -174,7 +176,7 @@ export async function samlaUtdata(w) {
 
     lagg('Word-utkastet', w.__docDraftHtml());
     for (const b of w.__rapportunderlagBlock()) lagg(`rapportunderlag: ${b.id}`, w.__ruTillWordHtml(b) + '\n' + w.__ruTillText(b));
-    lagg('Att göra-punkter', JSON.stringify(w.eval('buildActionChecklist()')));
+    lagg('Att göra-punkter', w.eval('JSON.stringify(medExportLage(() => buildActionChecklist()))'));
     w.eval('window.__csv = null; window.__csvOrig = _downloadCSV; _downloadCSV = rows => { window.__csv = rows; }');
     d.getElementById('btn-export-checklist')?.click();
     lagg('Att göra-CSV', (w.__csv || []).map(r => r.join(' | ')).join('\n'));
@@ -219,13 +221,16 @@ export async function samlaUtdata(w) {
     for (const el of d.querySelectorAll('[id^="chart-"], #lifecycle-chart')) {
         if (!el._figur || undantagen(el) || INDIVIDDIAGRAM.has(el.id) || !w.__exportTillaten(el)) continue;
         diagram++;
-        lagg(`diagramdata: ${el.id}`, w.__chartExportRows(el).map(r => r.join(' | ')).join('\n'));
+        // Ett diagram som finns på skärmen men inte i exportläget (t.ex. Var uppstår löneskillnaden, som skyddar
+        // sig genom att inte dela upp) ger ingen diagramdata: vägen noteras så att tystnaden inte ser ut som en läcka.
+        const rader = w.__chartExportRows(el);
+        lagg(`diagramdata: ${el.id}`, rader.length ? rader.map(r => r.join(' | ')).join('\n') : 'inget att exportera: diagrammet ritas inte i exportläget (ADR-51)');
     }
     if (tabeller < 5 || diagram < 5) throw new Error(`för få tabeller (${tabeller}) eller diagram (${diagram}) prövades`);
 
+    // Gruppdossiern: textkopian lämnar verktyget (exportläget); det som visas på skärmen maskeras inte (ADR-51).
     for (const g of w.__gruppdossierCandidates()) {
-        w.__renderGruppdossier(g.key);
-        lagg(`gruppdossier ${g.key}`, d.getElementById('dossier-body').textContent + '\n' + w.__gruppdossierAsText(w.__buildGruppdossier(g.key)));
+        lagg(`gruppdossier ${g.key}`, w.eval(`medExportLage(() => gruppdossierAsText(buildGruppdossier(${JSON.stringify(g.key)})))`));
     }
     for (const mall of ['komplett', 'ledning', 'facklig']) lagg(`utskrift: ${mall}`, (await utskriftAv(w, mall)).innerHTML.replace(/src="data:[^"]*"/g, ''));
     return ut;

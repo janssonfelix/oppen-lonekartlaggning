@@ -58,10 +58,10 @@ function generateMotivationSuggestions(item) {
     if (!rows.length) return out;
 
     // 1. Underlag: ett kön under minsta gruppstorlek (beslut av produktägaren 2026-10-16; tidigare ett fast 5)
-    if (item.kvN < kTroskel() || item.maN < kTroskel()) {
+    if (item.kvN < kInstalld() || item.maN < kInstalld()) {   // varningen gäller skattningens säkerhet, inte läget
         out.push({
             type: 'warn',
-            text: `Underlaget är litet (${item.kvN} kvinnor / ${item.maN} män; minsta gruppstorlek ${kTroskel()}). Skillnaden kan inte säkerställas statistiskt — ett tips är att överväga att slå ihop med en näraliggande BAS-grupp eller titta på individerna var för sig.`
+            text: `Underlaget är litet (${item.kvN} kvinnor / ${item.maN} män; minsta gruppstorlek ${kInstalld()}). Skillnaden kan inte säkerställas statistiskt — ett tips är att överväga att slå ihop med en näraliggande BAS-grupp eller titta på individerna var för sig.`
         });
     }
 
@@ -598,13 +598,13 @@ document.getElementById('prio-cost-reset')?.addEventListener('click', () => {
 // Initiera period-sammanfattningen vid sidladdning
 setTimeout(_readCostSettings, 0);
 
-document.getElementById('btn-export-prio-excel')?.addEventListener('click', () => {
+document.getElementById('btn-export-prio-excel')?.addEventListener('click', () => medExportLage(() => {
     const table = document.getElementById('prio-table');
     if (table) {
         const wb = tableToCleanBook('prio-table', 'Prioritering');
         if (wb) { _appendMethodSheet(wb); XLSX.writeFile(wb, 'prioriteringslista.xlsx'); _showExportSensitivityToast(); }
     }
-});
+}));
 
 // ---- Print-to-PDF: komplett rapport ----
 // Använder webbläsarens inbyggda "Skriv ut → Spara som PDF". Inga externa beroenden.

@@ -158,7 +158,7 @@ function renderDataValidationReport() {
         const hasMa = sub.some(r => r.kon === 'man' || r.kon === 'män');
         return !hasKv || !hasMa;
     }).length;
-    const kMaskedBas = bas.filter(b => state.data.filter(r => r.bas === b).length < kTroskel()).length;
+    const kMaskedBas = bas.filter(b => state.data.filter(r => r.bas === b).length < kInstalld()).length;
 
     // Konsistenskontroll
     const dataBas = [...new Set(state.data.map(r => r.bas))].sort();
@@ -208,7 +208,7 @@ function renderDataValidationReport() {
                     ? `<div class="dvr-row warn"><span><span class="dvr-icon">${ikon('statusVarning')}</span>Enkönade BAS:</span><span class="dvr-value">${singleSexBas}</span></div>`
                     : `<div class="dvr-row ok"><span><span class="dvr-icon">${ikon('bock')}</span>Alla BAS har båda kön</span><span></span></div>`}
                 ${kMaskedBas > 0
-                    ? `<div class="dvr-row ok"><span><span class="dvr-icon">${ikon('las')}</span>K-maskerade BAS (n&lt;${kTroskel()}):</span><span class="dvr-value">${kMaskedBas}</span></div>`
+                    ? `<div class="dvr-row ok"><span><span class="dvr-icon">${ikon('las')}</span>BAS under minsta gruppstorlek (n&lt;${kInstalld()}, redovisas inte i exporterna):</span><span class="dvr-value">${kMaskedBas}</span></div>`
                     : ''}
                 <div class="text-dampad-xs lh-1_4 marg-t-6">${outliers.length > 0 ? 'Granska Outliers-detektorn nedan för detaljer.' : 'Inga uppenbara registerfel hittades.'}</div>
             </div>

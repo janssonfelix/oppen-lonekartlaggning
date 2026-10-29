@@ -123,6 +123,7 @@ function rmPerBasAvsnitt(d, k) {
     if (smaYrken) utelamnat.push(`${smaYrken} ${smaYrken === 1 ? 'yrkesgrupp' : 'yrkesgrupper'} med färre än ${k} personer`);
     const konDolda = pb.intervall.filter(i => !i.konVisas).map(i => i.bas);
     if (konDolda.length) utelamnat.push(`könsuppdelade lönemått för BAS ${konDolda.join(', ')} (ett kön har färre än ${k} personer)`);
+    /** @type {any[]} */
     const delar = [
         stycke(`Löneläget i varje BAS-intervall mot ${referensKortnamn()}: organisationen, de yrkesgrupper som når minsta gruppstorlek (med jämförelsestatistikens nivå under, när den finns) och kvinnor och män. P10 och P90 är den tionde och nittionde percentilen.`, 'dampad'),
     ];
@@ -153,10 +154,13 @@ function rmPerBasAvsnitt(d, k) {
 /**
  * Rapportens avsnitt i vald ordning, numrerade efter urvalet. Med `alla: true` ges alla avsnitt i standardordning
  * (för listan där urvalet görs). Utan lönefil bär avsnitten bara det som inte kräver den (referens, statistik, metod).
- * @param {{alla?: boolean}} [val]
+ * @param {...any} a - `{ alla?: boolean }`
  * @returns {{titel: string, undertitel: string, demo: boolean, avsnitt: any[], urval: any}}
  */
-function rapportModell({ alla = false } = {}) {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function rapportModell(...a) { return medExportLage(() => _rapportModellExport.apply(null, /** @type {any} */ (a))); }
+/** @param {{alla?: boolean}} [val] */
+function _rapportModellExport({ alla = false } = {}) {
     const d = getData();
     const year = new Date().getFullYear(), today = new Date().toLocaleDateString('sv-SE');
     const k = kTroskel();

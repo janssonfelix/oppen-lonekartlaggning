@@ -70,7 +70,7 @@ function buildActionChecklist({ endastGrupper = false } = {}) {
         // === Lika arbete: rått gap > 5 % i jämförbara BAS (samma regel som kompliansen) ===
         try {
             const d = getData();
-            const jb = _dqJamforbaraBas(d, kTroskel());
+            const jb = _dqJamforbaraBas(d, kInstalld());
             const reg = runOLSRegression();
             const perBas = (reg && !reg.error && reg.perBas) ? reg.perBas : [];
             jb.jamforbara.forEach(b => {
@@ -343,7 +343,7 @@ function renderActionChecklist() {
     });
 
     // CSV-export
-    document.getElementById('btn-export-checklist')?.addEventListener('click', () => exportActionChecklistCSV(items, done));
+    document.getElementById('btn-export-checklist')?.addEventListener('click', () => medExportLage(() => exportActionChecklistCSV(buildActionChecklist(), done)));
 
     // Rensa markeringar
     document.getElementById('btn-checklist-clear-done')?.addEventListener('click', () => {
@@ -356,7 +356,9 @@ function renderActionChecklist() {
 /**
  * Exporterar åtgärdslistan som CSV.
  */
-function exportActionChecklistCSV(items, done) {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function exportActionChecklistCSV(...a) { return medExportLage(() => _exportActionChecklistCSVExport.apply(null, /** @type {any} */ (a))); }
+function _exportActionChecklistCSVExport(items, done) {
     if (!items.length) { alert('Ingen åtgärdslista att exportera.'); return; }
     const rows = [[
         'Status', 'Prioritet', 'Kategori', 'Punkt', 'Detalj', 'Källa', 'Flik'
