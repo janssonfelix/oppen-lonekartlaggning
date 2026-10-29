@@ -201,7 +201,12 @@ export const MODULES = [
     },
     {
         file: 'perbas.js', ns: '__mirrorPerBas',
-        expose: { perBasTabeller: '_pbTabeller', aldersgruppNamn: null, yrkesnamn: null }
+        expose: { perBasTabeller: '_pbTabeller', aldersgruppNamn: null, yrkesnamn: null, perBasStandard: '_pbStandard',
+                  valideraPerBasRecept: '_pbValideraRecept', perBasReceptArStandard: '_pbReceptArStandard' }
+    },
+    {
+        file: 'tabellrecept.js', ns: '__mirrorTabellrecept',
+        expose: { nyttRecept: '_trNytt', valideraRecept: '_trValidera', receptBeskrivning: '_trBeskrivning', receptTillTabeller: '_trTabeller' }
     },
     {
         file: 'figur.js', ns: '__mirrorFigur',

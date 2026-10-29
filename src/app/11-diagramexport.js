@@ -98,6 +98,9 @@ function _chartExportKarna(gd) {
     return !!gd && (!!gd._figur || _rfHarRitat(gd));
 }
 
+/** Behållaren som gäller nu: en omritning i exportgrinden kan ha ersatt den med en ny med samma id. */
+function _chartExportAktuell(gd) { return gd && gd.isConnected === false && gd.id ? (document.getElementById(gd.id) || gd) : gd; }
+
 /** Det som får exporteras ur ett diagram ritat med diagramkärnan, eller null när inget finns att exportera.
  *  Går alltid genom exportläget (ADR-51): figuren läses med den inställda tröskeln. Bilden görs asynkront av dem som
  *  anropar (chartExportRun, diagramTillBild), som själva står i exportläget tills bilden är klar. */
@@ -125,7 +128,7 @@ function _chartExportUnderlagExport(gd) {
 function chartExportRows(gd, underlag) {
     const ut = underlag === undefined ? _chartExportUnderlag(gd) : underlag;
     if (!ut) return [];
-    if (gd && gd.isConnected === false && gd.id) gd = document.getElementById(gd.id) || gd;   // ersatt av en omritning i grinden
+    gd = _chartExportAktuell(gd);
     const medSma = ut.visaSma;
     const rader = _figTillTabell(medSma ? ut.figur : _figUtanSma(ut.figur)).map(r => r.map(_chartExportCell));
     const beskrivning = typeof gd._exportBeskrivning === 'string' ? gd._exportBeskrivning : '';
@@ -164,6 +167,7 @@ async function _diagramTillBildExport(el, val) {
     const skal = exportSkal(el);
     if (skal) throw new Error(`Diagrammet lämnar inte verktyget: det ${skal}.`);
     const ut = _chartExportUnderlag(el);
+    el = _chartExportAktuell(el);
     if (!ut) throw new Error('Det finns inget att exportera i diagrammet.');
     const url = await figurTillBild(ut.bild || ut.figur, 'png', bredd, hojd, { visaSma: ut.visaSma, dolda: ut.dolda, ...(utanRubrik ? {} : _chartExportRubrikFot(el)) });
     if (el._figur !== ut.figur) throw new Error('Diagrammet rensades innan exporten blev klar.');
@@ -178,6 +182,7 @@ async function __chartExportImageExport(gd, val, underlag) {
     // Originalfiguren med visaSma enligt vyn och de serier användaren dolt: samma bild som på skärmen,
     // utan små grupper. Meningen om sänkt tröskel lägger figurTillSvg dit.
     const ut = underlag === undefined ? _chartExportUnderlag(gd) : underlag;
+    gd = _chartExportAktuell(gd);
     if (!ut) throw new Error('Det finns inget att exportera i diagrammet.');
     const url = await figurTillBild(ut.bild || ut.figur, format, width, height, { visaSma: ut.visaSma, dolda: ut.dolda, ..._chartExportRubrikFot(gd) });
     // Bilden görs asynkront. Har diagrammet under tiden rensats (Rensa all data) eller fått en annan figur
@@ -198,6 +203,7 @@ function chartExportRun(...a) { return medExportLage(() => _chartExportRunExport
 function _chartExportRunExport(gd, val) {
     // Underlaget bestäms här, en gång (ett anrop av vyns exportMedSma).
     const underlag = _chartExportKarna(gd) ? _chartExportUnderlag(gd) : undefined;
+    gd = _chartExportAktuell(gd);
     // Ett diagram från diagramkärnan utan något att exportera: ingen fil, ingenting på urklipp.
     if (underlag === null) return Promise.reject(new Error('Det finns inget att exportera i diagrammet.'));
     if (val === 'data-kopiera') return Promise.resolve(_copyMatrixToClipboard(chartExportRows(gd, underlag)));

@@ -244,6 +244,14 @@ också när det är hopfällt.
 Varje diagram har en **Exportera**-knapp i övre högra hörnet: PNG i två storlekar,
 SVG (skarp i Word) och diagramdatan som tabell.
 
+**Egna tabeller i rapporten.** Ovanför tabellen i Utforska finns **Lägg till i rapporten**: ge vyn
+ett namn och lägg till den, så står den som en egen tabell i avsnittet *Egna tabeller* i
+Word-utkastet och PDF-rapporten och i bladet *Egna tabeller* i Excel-filen. Kryssa i **En tabell
+per BAS-intervall** för att få samma tabell upprepad för varje intervall. Det är vyns recept som
+sparas (rader, kolumner, mått och urval), inte talen: tabellen räknas om med minsta gruppstorlek
+när rapporten byggs, och recepten följer med i konfigurationsfilen. Under *Dokumentera &
+exportera* → *Rapportens innehåll* kan ni ordna om och ta bort tabellerna.
+
 ## 5. Producera dokumentationen
 
 1. Öppna fliken **Dokumentera & exportera** (fas 4). Gå först igenom **färdigchecken**
@@ -262,7 +270,10 @@ SVG (skarp i Word) och diagramdatan som tabell.
    yrkesgrupp med jämförelsestatistikens nivå under, kvinnor och män — P10, median, P90 och antal)
    med ett fält för er bedömning av intervallet, och sist två tabeller per BAS: löneskillnader inom
    likvärdigt arbete (medellön per kön, andel kvinnor, medelålder) och löneskillnader i åldersgrupper.
-   Samma tabeller finns i Excel-filens blad **Per BAS**.
+   Samma tabeller finns i Excel-filens blad **Per BAS**. Avsnittet följer ett **recept** som ni kan
+   ändra under *Rapportens innehåll*: upprepa per BAS-intervall eller per sektor, vilka rader och
+   mått tabellerna ska ha, åldersgränserna, och om summeringstabellerna ska med. *Återställ
+   standard* ger utkastets form tillbaka.
 3. **Skriver ni rapporten i en egen mall?** Använd **Rapportunderlag** längre ner i samma
    flik. Överst finns en förteckning över blocken och knappen **Kopiera alla avsnitt**, som
    lägger alla avsnitt i en enda kopiering. Varje avsnitt, varje yrkesgrupp med skillnad över 5 % och varje kandidatpar (där båda grupperna är stora nog att redovisas) har en

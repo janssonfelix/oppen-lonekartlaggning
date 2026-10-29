@@ -5545,6 +5545,7 @@ const __mirrorPerBas = (() => {
     // importer ur tidigare speglade lib-moduler
     const median = __mirrorStat.median;
     const quantile = __mirrorStat.quantile;
+    const sektorsnamn = __mirrorAid.sektorsnamn;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -5565,12 +5566,39 @@ const __mirrorPerBas = (() => {
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
 
+
+// ---- Receptet (ADR-52): vad avsnittet ska innehålla. Standardvärdet är tabellerna som de står i arbetsgivarnas utkast. ----
+const PERBAS_DIMENSIONER = ['bas', 'sektor'];
+const PERBAS_MATT = ['p10', 'p25', 'med', 'p75', 'p90', 'medel'];
+const PERBAS_MATT_ETIKETT = Object.freeze({ p10: 'P10', p25: 'P25', med: 'Median', p75: 'P75', p90: 'P90', medel: 'Medellön' });
+const PERBAS_RADER = ['referens', 'organisation', 'yrken', 'statistik', 'kvinnor', 'man'];
+const PERBAS_RAD_ETIKETT = Object.freeze({ referens: 'Referensen (ställningstagandet)', organisation: 'Organisationen', yrken: 'Yrkesgrupperna',
+    statistik: 'Jämförelsestatistikens rad under varje yrke', kvinnor: 'Kvinnor', man: 'Män' });
+function perBasStandard() {
+    return { dim: 'bas', rader: [...PERBAS_RADER], matt: ['p10', 'med', 'p90'], konsgap: true, aldersgrupper: true, aldersgranser: [35, 50] };
+}
+/** Receptet i giltig form; okända värden faller tillbaka på standard. Null in ger standardreceptet. */
+function valideraPerBasRecept(r) {
+    const std = perBasStandard();
+    if (!r || typeof r !== 'object') return std;
+    const granser = Array.isArray(r.aldersgranser) ? [...new Set(r.aldersgranser.map(Number).filter(x => Number.isInteger(x) && x > 16 && x < 80))].sort((a, b) => a - b) : [];
+    const matt = Array.isArray(r.matt) ? PERBAS_MATT.filter(m => r.matt.includes(m)) : [];
+    return {
+        dim: PERBAS_DIMENSIONER.includes(r.dim) ? r.dim : 'bas',
+        rader: Array.isArray(r.rader) ? PERBAS_RADER.filter(x => r.rader.includes(x)) : std.rader,
+        matt: matt.length ? matt : std.matt,
+        konsgap: r.konsgap !== false, aldersgrupper: r.aldersgrupper !== false,
+        aldersgranser: granser.length ? granser : std.aldersgranser
+    };
+}
+function perBasReceptArStandard(r) { return JSON.stringify(valideraPerBasRecept(r)) === JSON.stringify(perBasStandard()); }
+
 const _arKv = r => String(r.kon || '').includes('kvinna');
 const _arMa = r => r.kon === 'man' || r.kon === 'män';
 const _medel = arr => (arr.length ? arr.reduce((s, x) => s + x, 0) / arr.length : null);
 const _loner = rader => rader.map(r => r.lon).filter(x => typeof x === 'number' && isFinite(x) && x > 0);
 const _aldrar = rader => rader.map(r => r.alder).filter(x => typeof x === 'number' && isFinite(x) && x > 0);
-const _matt = rader => { const l = _loner(rader); return l.length ? { n: rader.length, p10: quantile(l, 0.1), med: median(l), p90: quantile(l, 0.9) } : null; };
+const _matt = rader => { const l = _loner(rader); return l.length ? { n: rader.length, p10: quantile(l, 0.1), p25: quantile(l, 0.25), med: median(l), p75: quantile(l, 0.75), p90: quantile(l, 0.9), medel: _medel(l) } : null; };
 
 /** Yrkesgruppens namn: AID-koden och etiketten. */
 function yrkesnamn(r) {
@@ -5597,48 +5625,55 @@ const _aldersgrupp = (alder, granser) => { let i = 0; while (i < granser.length 
  * @param {Array<{bas:string, aid?:string, yrke?:string, yrkeLabel?:string, kon:string, lon:number, alder?:number}>} rader
  * @param {{k?: number, referens?: ((aid: string|null, bas: string) => ({p10?:number, med?:number, p90?:number}|null))|null,
  *          statistik?: Array<{aid:string, bas?:string, median:number, p10?:number, p90?:number}>|null,
- *          referensNamn?: string, statistikNamn?: string, aldersgranser?: number[]}} [opt]
+ *          referensNamn?: string, statistikNamn?: string, aldersgranser?: number[], recept?: any}} [opt]
+ *   `recept` (ADR-52): dimensionen som upprepas ('bas' eller 'sektor'), vilka rader och mått, och om summeringstabellerna
+ *   ska med; utelämnat ger standardreceptet. Med sektor som dimension finns ingen referensrad (ställningstagandet
+ *   gäller BAS-intervall).
  */
 function perBasTabeller(rader, opt = {}) {
     const k = opt.k ?? 10;
+    const recept = valideraPerBasRecept(opt.recept);
+    const visa = new Set(recept.rader);
+    const dimAv = recept.dim === 'sektor' ? (r => sektorsnamn(r.aid) || '') : (r => String(r.bas ?? ''));
     const referens = typeof opt.referens === 'function' ? opt.referens : () => null;
     const statistik = Array.isArray(opt.statistik) ? opt.statistik : [];
     const referensNamn = opt.referensNamn || 'Referens';
     const statistikNamn = opt.statistikNamn || 'Jämförelsestatistik';
-    const granser = (opt.aldersgranser && opt.aldersgranser.length ? opt.aldersgranser : [35, 50]).slice().sort((a, b) => a - b);
-    const d = (rader || []).filter(r => r && r.bas);
-    const basar = [...new Set(d.map(r => String(r.bas)))].sort((a, b) => a.localeCompare(b, 'sv'));
+    const granser = (opt.aldersgranser && opt.aldersgranser.length ? opt.aldersgranser : recept.aldersgranser).slice().sort((a, b) => a - b);
+    const d = (rader || []).filter(r => r && r.bas && dimAv(r));
+    const basar = [...new Set(d.map(dimAv))].sort((a, b) => a.localeCompare(b, 'sv'));
     const statFor = (aid, bas) => statistik.find(s => String(s.aid) === String(aid) && String(s.bas || '') === String(bas))
         || statistik.find(s => String(s.aid) === String(aid) && !s.bas) || null;
 
     const intervall = [];
     const basUtelamnade = [];
     for (const bas of basar) {
-        const df = d.filter(r => String(r.bas) === bas);
+        const df = d.filter(r => dimAv(r) === bas);
         if (df.length < k) { basUtelamnade.push(bas); continue; }
         const rad = [];
         const utelamnade = [];
-        const ref = referens(null, bas);
+        const ref = recept.dim === 'bas' && visa.has('referens') ? referens(null, bas) : null;
         if (ref && (ref.p10 != null || ref.med != null || ref.p90 != null)) rad.push({ typ: 'referens', namn: referensNamn, n: null, p10: ref.p10 ?? null, med: ref.med ?? null, p90: ref.p90 ?? null });
-        const org = _matt(df);
+        const org = visa.has('organisation') ? _matt(df) : null;
         if (org) rad.push({ typ: 'organisation', namn: 'Organisationen', ...org });
         // Yrkesgrupperna, största först; under varje yrke dess rad i jämförelsestatistiken.
         const perYrke = new Map();
         df.forEach(r => { const key = String(r.aid ?? r.yrke ?? ''); if (!perYrke.has(key)) perYrke.set(key, []); perYrke.get(key).push(r); });
         const yrken = [...perYrke.entries()].sort((a, b) => b[1].length - a[1].length || yrkesnamn(a[1][0]).localeCompare(yrkesnamn(b[1][0]), 'sv'));
         for (const [key, rows] of yrken) {
+            if (!visa.has('yrken')) break;
             const namn = yrkesnamn(rows[0]);
             if (rows.length < k) { utelamnade.push(namn); continue; }
             const m = _matt(rows);
             if (!m) continue;
             rad.push({ typ: 'yrke', namn, aid: key, ...m });
-            const s = rows[0].aid != null ? statFor(rows[0].aid, bas) : null;
+            const s = visa.has('statistik') && rows[0].aid != null && recept.dim === 'bas' ? statFor(rows[0].aid, bas) : null;
             if (s && s.median > 0) rad.push({ typ: 'statistik', namn: `${statistikNamn}: ${namn}`, aid: key, n: null, p10: s.p10 ?? null, med: s.median, p90: s.p90 ?? null });
         }
         const kv = df.filter(_arKv), ma = df.filter(_arMa);
         const konVisas = kv.length >= k && ma.length >= k;
         if (konVisas) {
-            const mk = _matt(kv), mm = _matt(ma);
+            const mk = visa.has('kvinnor') ? _matt(kv) : null, mm = visa.has('man') ? _matt(ma) : null;
             if (mk) rad.push({ typ: 'kvinnor', namn: 'Kvinnor', ...mk });
             if (mm) rad.push({ typ: 'man', namn: 'Män', ...mm });
         }
@@ -5659,7 +5694,7 @@ function perBasTabeller(rader, opt = {}) {
         };
     };
     const visadeBas = basar.filter(b => !basUtelamnade.includes(b));
-    const konsgap = { rader: [konsgapRad('Alla', d), ...visadeBas.map(b => konsgapRad(b, d.filter(r => String(r.bas) === b)))] };
+    const konsgap = { rader: [konsgapRad('Alla', d), ...visadeBas.map(b => konsgapRad(b, d.filter(r => dimAv(r) === b)))] };
 
     const grupper = aldersgruppNamn(granser);
     const aldersRad = (namn, rows) => {
@@ -5669,14 +5704,167 @@ function perBasTabeller(rader, opt = {}) {
         return { bas: namn, n: rows.length, alder: _medel(_aldrar(rows)), medel: _medel(_loner(rows)),
             perGrupp: per.map(g => (g.length >= k ? _medel(_loner(g)) : null)), antalPerGrupp: per.map(g => g.length) };
     };
-    const aldersgrupper = { grupper, rader: [aldersRad('Alla', d), ...visadeBas.map(b => aldersRad(b, d.filter(r => String(r.bas) === b)))] };
+    const aldersgrupper = { grupper, rader: [aldersRad('Alla', d), ...visadeBas.map(b => aldersRad(b, d.filter(r => dimAv(r) === b)))] };
 
-    return { k, intervall, basUtelamnade, konsgap, aldersgrupper };
+    return { k, recept, dim: recept.dim, dimEtikett: recept.dim === 'sektor' ? 'Sektor' : 'BAS-intervall', intervall, basUtelamnade,
+             konsgap: recept.konsgap ? konsgap : null, aldersgrupper: recept.aldersgrupper ? aldersgrupper : null };
 }
 
-    return { perBasTabeller, aldersgruppNamn, yrkesnamn };
+    return { perBasTabeller, aldersgruppNamn, yrkesnamn, perBasStandard, valideraPerBasRecept, perBasReceptArStandard };
 })();
 const _pbTabeller = __mirrorPerBas.perBasTabeller;
+const _pbStandard = __mirrorPerBas.perBasStandard;
+const _pbValideraRecept = __mirrorPerBas.valideraPerBasRecept;
+const _pbReceptArStandard = __mirrorPerBas.perBasReceptArStandard;
+
+// ---- speglar src/lib/tabellrecept.js ----
+const __mirrorTabellrecept = (() => {
+    // importer ur tidigare speglade lib-moduler
+    const computePivot = __mirrorUtforska.computePivot;
+
+// SPDX-License-Identifier: MIT
+// Copyright 2026 Felix Jansson
+/**
+ * Öppen lönekartläggning — egna tabeller i rapporten (ADR-52).
+ *
+ * En tabell som användaren byggt i Utforska sparas som ett RECEPT — rader, kolumner, mått, urval och om tabellen ska
+ * upprepas per BAS-intervall — aldrig som tal. Recepten ritas om i exportläget när Word-utkastet, PDF-rapporten och
+ * Excel-filen byggs, med samma pivot som fliken (computePivot) och samma regler för minsta gruppstorlek som Utforskas
+ * export: en cell under tröskeln blir tom, och rader och kolumner som bara har tomma celler utelämnas och räknas.
+ *
+ * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
+ */
+
+// Samma listor som i src/lib/utforska.js (DIMENSIONER, MATT); tests/tabellrecept.test.js vaktar att de är lika.
+const DIMENSIONER = ['bas', 'aid', 'alder', 'kon', 'alla', 'aidbas', 'lonespann', 'sektor', 'aidniva'];
+const MATT = ['median', 'medel', 'n', 'p10', 'p25', 'p75', 'p90', 'spridning', 'andelKv', 'gap'];
+const RECEPT_DIMENSIONER = DIMENSIONER, RECEPT_MATT = MATT;
+
+const DIM_ETIKETT = Object.freeze({
+    bas: 'BAS-intervall', aid: 'Yrkesgrupp (AID)', alder: 'Åldersgrupp', kon: 'Kön',
+    aidbas: 'Yrkesgrupp inom BAS', lonespann: 'Lönespann', alla: 'Hela urvalet',
+    sektor: 'Sektor (AID-huvudområde)', aidniva: 'AID-mellannivå'
+});
+const MATT_ETIKETT = Object.freeze({
+    median: 'Median månadslön', medel: 'Medellön', n: 'Antal (n)',
+    p10: 'P10', p25: 'P25', p75: 'P75', p90: 'P90',
+    spridning: 'Spridning (P90/P10)', andelKv: 'Andel kvinnor (%)', gap: 'Kvinnors median i % av mäns'
+});
+/** Kolumntyp i rapportmodellen per mått (58-rapportmodell.js: rmCell). */
+const MATT_TYP = Object.freeze({
+    median: 'kr', medel: 'kr', n: 'antal', p10: 'kr', p25: 'kr', p75: 'kr', p90: 'kr', spridning: 'tal2', andelKv: 'pct1', gap: 'pct1'
+});
+const UPPREPNING = ['bas'];
+const MAX_NAMN = 80;
+
+let _nr = 0;
+/** Ett nytt recept ur Utforskas spec. Namnet kortas till 80 tecken; utan namn får tabellen en beskrivning som namn.
+ * @param {any} spec
+ * @param {{namn?: string, upprepa?: string|null}} [val] */
+function nyttRecept(spec, { namn = '', upprepa = null } = {}) {
+    const r = valideraRecept({ id: `t${Date.now().toString(36)}${(++_nr).toString(36)}`, namn: String(namn || '').trim().slice(0, MAX_NAMN), spec, upprepa });
+    if (r && !r.namn) r.namn = receptBeskrivning(r);
+    return r;
+}
+
+/** Receptet i giltig form, eller null när det inte går att använda (okänd dimension eller okänt mått). */
+function valideraRecept(r) {
+    if (!r || typeof r !== 'object' || !r.spec || typeof r.spec !== 'object') return null;
+    const s = r.spec;
+    if (!DIMENSIONER.includes(s.rad)) return null;
+    const kolumn = s.kolumn && s.kolumn !== s.rad && DIMENSIONER.includes(s.kolumn) ? s.kolumn : null;
+    const matt = MATT.includes(s.matt) ? s.matt : 'median';
+    const urval = s.urval && typeof s.urval === 'object' && Array.isArray(s.urval.villkor)
+        ? { lage: s.urval.lage === 'nagot' ? 'nagot' : 'alla', villkor: s.urval.villkor.filter(v => v && typeof v === 'object').map(v => ({ ...v })) }
+        : { lage: 'alla', villkor: [] };
+    const gruppVillkor = Array.isArray(s.gruppVillkor) ? s.gruppVillkor.filter(g => g && typeof g === 'object').map(g => ({ ...g })) : [];
+    return {
+        id: typeof r.id === 'string' && r.id ? r.id.slice(0, 40) : `t${Date.now().toString(36)}`,
+        namn: String(r.namn || '').trim().slice(0, MAX_NAMN),
+        spec: { rad: s.rad, kolumn, matt, delaKon: !!s.delaKon, slaIhop: !!s.slaIhop, urval, gruppVillkor },
+        upprepa: UPPREPNING.includes(r.upprepa) && r.upprepa !== s.rad && r.upprepa !== kolumn ? r.upprepa : null
+    };
+}
+
+/** En rad som beskriver receptet: "Median månadslön per Yrkesgrupp (AID) och Kön, kvinnor och män var för sig, en tabell per BAS-intervall". */
+function receptBeskrivning(r) {
+    const s = r.spec;
+    const delar = [`${MATT_ETIKETT[s.matt]} per ${DIM_ETIKETT[s.rad]}${s.kolumn ? ` och ${DIM_ETIKETT[s.kolumn]}` : ''}`];
+    if (s.delaKon) delar.push('kvinnor och män var för sig');
+    if (s.urval.villkor.length) delar.push(`${s.urval.villkor.length} ${s.urval.villkor.length === 1 ? 'villkor' : 'villkor'} i urvalet`);
+    if (s.gruppVillkor.length) delar.push('gruppvillkor');
+    if (r.upprepa) delar.push(`en tabell per ${DIM_ETIKETT[r.upprepa]}`);
+    return delar.join(', ');
+}
+
+const _bas = rows => [...new Set(rows.map(r => String(r.bas ?? '')).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'sv'));
+const _nText = c => `${c.n} (${c.nKv}/${c.nMa})`;
+
+/**
+ * Tabellerna ur ett recept, i rapportmodellens form: { rubrik, kolumner: [{rubrik, typ}], rader: [[...]], utelamnade, not }.
+ * Flera tabeller när receptet upprepas per BAS-intervall. Tröskeln k tillämpas här.
+ * @param {any[]} rows
+ * @param {any} recept
+ * @param {{k?: number}} [opt]
+ * @returns {Array<{rubrik: string, kolumner: {rubrik: string, typ: string}[], rader: any[][], utelamnade: number, not: string}>}
+ */
+function receptTillTabeller(rows, recept, { k = 10 } = {}) {
+    const r = valideraRecept(recept);
+    if (!r) return [];
+    const bygg = (rader, rubrik) => _tabell(computePivot(rader, r.spec, { k }), r.spec, k, rubrik);
+    if (r.upprepa === 'bas') {
+        return /** @type {any[]} */ (_bas(rows).map(b => bygg(rows.filter(x => String(x.bas) === b), `${r.namn} — BAS ${b}`)).filter(t => t && t.rader.length));
+    }
+    const t = bygg(rows, r.namn);
+    return t && t.rader.length ? [t] : [];   // en tabell där ingen grupp når tröskeln utelämnas (anroparen anger det)
+}
+
+function _tabell(model, spec, k, rubrik) {
+    if (!model || !model.celler.length) return null;
+    const dim = DIM_ETIKETT[spec.rad], typ = MATT_TYP[spec.matt] || 'kr';
+    let kolumner, rader, utelamnade = 0;
+    if (spec.kolumn) {
+        const byKey = new Map(model.celler.map(c => [c.rad + '\u0000' + c.kol, c]));
+        const kol = (model.kolumnEtiketter || []).flatMap(kl => spec.delaKon
+            ? [{ kl, rubrik: `${kl} · Kvinnor`, v: c => c.valueKv, n: c => c.nKv }, { kl, rubrik: `${kl} · Män`, v: c => c.valueMa, n: c => c.nMa }]
+            : [{ kl, rubrik: kl, v: c => c.value, n: c => c.n }]);
+        const liten = (c, d) => c.liten || d.n(c) < k;
+        const varde = (c, d) => {
+            if (!c) return null;
+            if (spec.matt === 'n' && !c.liten) return d.n(c);                      // antal är inte ett lönemått
+            if (liten(c, d) || (spec.matt === 'gap' && c.konLiten)) return null;
+            return d.v(c);
+        };
+        const matris = model.radEtiketter.map(rk => kol.map(d => varde(byKey.get(rk + '\u0000' + d.kl), d)));
+        const kolMed = kol.map((_, j) => matris.some(rad => rad[j] != null));
+        const radMed = matris.map(rad => rad.some(v => v != null));
+        utelamnade = radMed.filter(x => !x).length;
+        kolumner = [{ rubrik: `${dim} \\ ${DIM_ETIKETT[spec.kolumn]}`, typ: 'text' }, ...kol.filter((_, j) => kolMed[j]).map(d => ({ rubrik: d.rubrik, typ }))];
+        rader = model.radEtiketter.map((rk, i) => [rk, ...matris[i].filter((_, j) => kolMed[j])]).filter((_, i) => radMed[i]);
+    } else if (spec.delaKon) {
+        const synliga = model.celler.filter(c => !c.liten);
+        utelamnade = model.celler.length - synliga.length;
+        kolumner = [{ rubrik: dim, typ: 'text' }, { rubrik: 'Kvinnor', typ }, { rubrik: 'Män', typ }, { rubrik: 'n (K/M)', typ: 'text' }];
+        const v = (c, n, x) => (spec.matt === 'n' || n >= k ? x : null);
+        rader = synliga.map(c => [c.rad, v(c, c.nKv, c.valueKv), v(c, c.nMa, c.valueMa), _nText(c)]);
+    } else {
+        const synliga = model.celler.filter(c => !c.liten);
+        utelamnade = model.celler.length - synliga.length;
+        kolumner = [{ rubrik: dim, typ: 'text' }, { rubrik: MATT_ETIKETT[spec.matt], typ }, { rubrik: 'n (K/M)', typ: 'text' }];
+        rader = synliga.map(c => [c.rad, spec.matt === 'gap' && c.konLiten ? null : c.value, _nText(c)]);
+    }
+    const noter = [];
+    if (utelamnade) noter.push(`${utelamnade} ${utelamnade === 1 ? 'grupp' : 'grupper'} med färre än ${k} personer redovisas inte.`);
+    if (model.dolda) noter.push(`${model.dolda} ${model.dolda === 1 ? 'grupp' : 'grupper'} döljs av gruppvillkoren.`);
+    return { rubrik, kolumner, rader, utelamnade, not: noter.join(' ') };
+}
+
+    return { nyttRecept, valideraRecept, receptBeskrivning, receptTillTabeller };
+})();
+const _trNytt = __mirrorTabellrecept.nyttRecept;
+const _trValidera = __mirrorTabellrecept.valideraRecept;
+const _trBeskrivning = __mirrorTabellrecept.receptBeskrivning;
+const _trTabeller = __mirrorTabellrecept.receptTillTabeller;
 
 // ---- speglar src/lib/figur.js ----
 const __mirrorFigur = (() => {

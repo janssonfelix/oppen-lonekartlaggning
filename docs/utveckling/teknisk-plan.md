@@ -230,7 +230,7 @@ adaptern verkligen delegerar vaktas av `tests/drift.test.js`:
   rätt grupp. Utskriftsfönstret för checklistorna (`printScaffoldView`) läser `:root` och allt från `.dold` till
   stilmallens slut ur den körande stilmallen och lägger in det som byggt stilark (`adoptedStyleSheets`): ett `<style>`-element
   som skriptet skapar blockeras av den ärvda CSP:n (`style-src-elem`), så fönstret var tidigare helt ostilat.
-- **Tester:** Vitest — 2418 tester i 66 filer: rena `src/lib/`-moduler, CSV-parsning, jsdom-röktest
+- **Tester:** Vitest — 2436 tester i 68 filer: rena `src/lib/`-moduler, CSV-parsning, jsdom-röktest
   av varje vy (ADR-7; `tests/smoke.test.js` med det delade fönstret och sju `tests/smoke-*.test.js` per
   område), k-tröskeln i åtta `tests/ktroskel*.test.js` med riggen i `tests/helpers/ktroskel-rigg.js`,
   gränssnittet i `tests/granssnitt*.test.js` (riggen `tests/helpers/granssnitt-rigg.js`) och diagramvyerna i
@@ -1124,6 +1124,15 @@ och diagram går genom (`_cloneAndCleanTableForExport`, `_chartExportUnderlag`) 
 Dokumentera & exportera ritas alltid i det. Inställningen, stämpeln, metodbilagan och texterna om regeln talar om den
 inställda tröskeln; det statistiska golvet `statGolv()` är oförändrat. Testerna prövar vyerna i exportläget
 (`iExport` i riggen) och skärmen positivt.
+
+**ADR-52 — Egna tabeller i rapporten som recept, inte tal.** Beslut 2026-10-29. En vy i Utforska sparas med *Lägg
+till i rapporten* som ett recept — rader, kolumner, mått, urval, gruppvillkor och valfri upprepning per BAS-intervall
+(`src/lib/tabellrecept.js`, `state.rapportTabeller`). Recepten ritas om i exportläget (ADR-51) med samma pivot som
+fliken (`computePivot`) och Utforskas exportregler för minsta gruppstorlek, i avsnittet *Egna tabeller* efter
+avsnittet per BAS-intervall (följer med när det gör det) och i Excel-bladet *Egna tabeller*. Avsnittet per
+BAS-intervall följer ett recept (`state.perBasRecept`, `valideraPerBasRecept` i `src/lib/perbas.js`): dimension (BAS
+eller sektor), rader, mått, åldersgränser och summeringstabeller; standardreceptet är arbetsgivarnas utkast och sparas
+som null. Båda bärs av konfigurationsfilen och nollställs av *Rensa all data*.
 
 ## 9. Öppna punkter
 

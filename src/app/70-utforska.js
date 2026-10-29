@@ -474,3 +474,24 @@ _exploreVy?.addEventListener('click', e => {
         renderExplorer();
     }
 });
+
+// ---- Egna tabeller i rapporten (ADR-52) ----
+// Vyn sparas som ett recept (rader, kolumner, mått, urval); talen räknas om när rapporten byggs, i exportläget.
+function explorerTillRapport() {
+    const namnEl = /** @type {HTMLInputElement} */ (document.getElementById('explore-rapport-namn'));
+    const perBas = !!/** @type {HTMLInputElement} */ (document.getElementById('explore-rapport-perbas'))?.checked;
+    const status = document.getElementById('explore-rapport-status');
+    const satt = (text, ok) => { if (status) { status.textContent = text; status.className = `status-msg${ok ? ' success' : ''}`; } };
+    if (!getData().length) { satt('Läs in en lönefil först.', false); return null; }
+    const spec = _explorerSpec();
+    const recept = _trNytt(spec, { namn: namnEl ? namnEl.value : '', upprepa: perBas ? 'bas' : null });
+    if (!recept) { satt('Vyn går inte att spara som tabell.', false); return null; }
+    if (perBas && !recept.upprepa) { satt('En tabell per BAS-intervall går inte när raderna eller kolumnerna redan är BAS-intervall.', false); return null; }
+    state.rapportTabeller = [...(state.rapportTabeller || []), recept];
+    if (namnEl) namnEl.value = '';
+    satt(`Tillagd: ${recept.namn} (${state.rapportTabeller.length} ${state.rapportTabeller.length === 1 ? 'egen tabell' : 'egna tabeller'}). Ordningen ändras under Dokumentera & exportera.`, true);
+    if (typeof announceToScreenReader === 'function') announceToScreenReader(`Tabellen ${recept.namn} är tillagd i rapporten.`);
+    return recept;
+}
+document.getElementById('btn-explore-till-rapport')?.addEventListener('click', explorerTillRapport);
+document.getElementById('explore-rapport-namn')?.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); explorerTillRapport(); } });

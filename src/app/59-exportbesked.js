@@ -57,9 +57,77 @@ function _ebRitaUrval() {
             <label><input type="checkbox" data-urval-med="${esc(id)}"${u.med.includes(id) ? ' checked' : ''}> ${esc(rubriker[id])}</label>
             <span class="urval-flytta"><button type="button" class="btn-table-tool" data-urval-flytta="-1" aria-label="Flytta upp: ${esc(rubriker[id])}"${i === 0 ? ' disabled' : ''}>${ikon('pilUpp', 14)}</button>
             <button type="button" class="btn-table-tool" data-urval-flytta="1" aria-label="Flytta ned: ${esc(rubriker[id])}"${i === finns.length - 1 ? ' disabled' : ''}>${ikon('pilNed', 14)}</button></span></li>`).join('')
-        + `</ol><p class="avsnitt-inledning marg-10-0-0">Urvalet gäller Word-utkastet och PDF-rapporten. Det följer med när du sparar konfigurationen, men lagras inte i webbläsaren.</p>`;
+        + `</ol><p class="avsnitt-inledning marg-10-0-0">Urvalet gäller Word-utkastet och PDF-rapporten. Det följer med när du sparar konfigurationen, men lagras inte i webbläsaren.</p>`
+        + _ebEgnaTabellerHtml() + _ebPerBasReceptHtml();
     _laNyckel('nyckel-ex-urval', u.namn);
 }
+
+// ---- Egna tabeller och receptet för avsnittet per BAS-intervall (ADR-52) ----
+function _ebEgnaTabellerHtml() {
+    const t = state.rapportTabeller || [];
+    const rader = t.map((r, i) => `<li class="urval-rad" data-egen-id="${esc(r.id)}">
+            <span><strong>${esc(r.namn)}</strong><br><small class="f-dampad">${esc(_trBeskrivning(r))}</small></span>
+            <span class="urval-flytta"><button type="button" class="btn-table-tool" data-egen-flytta="-1" aria-label="Flytta upp: ${esc(r.namn)}"${i === 0 ? ' disabled' : ''}>${ikon('pilUpp', 14)}</button>
+            <button type="button" class="btn-table-tool" data-egen-flytta="1" aria-label="Flytta ned: ${esc(r.namn)}"${i === t.length - 1 ? ' disabled' : ''}>${ikon('pilNed', 14)}</button>
+            <button type="button" class="btn-table-tool" data-egen-bort aria-label="Ta bort: ${esc(r.namn)}">Ta bort</button></span></li>`).join('');
+    return `<div id="rapport-egna" class="marg-t-14"><h3 class="fs-md marg-0-0-6">Egna tabeller</h3>
+        <p class="text-dampad-sm marg-0-0-6">Tabeller du byggt i Utforska och lagt till med <em>Lägg till i rapporten</em>. De står i avsnittet <em>Egna tabeller</em> i Word-utkastet och PDF-rapporten och i bladet <em>Egna tabeller</em> i Excel-filen, räknade med minsta gruppstorlek.</p>
+        ${t.length ? `<ol class="urval-lista">${rader}</ol>` : '<p class="text-dampad-sm">Inga egna tabeller ännu.</p>'}</div>`;
+}
+const EB_PERBAS_RADER = [['referens', 'Referensen (ställningstagandet)'], ['organisation', 'Organisationen'], ['yrken', 'Yrkesgrupperna'], ['statistik', 'Jämförelsestatistikens rad under varje yrke'], ['kvinnor', 'Kvinnor'], ['man', 'Män']];
+const EB_PERBAS_MATT = [['p10', 'P10'], ['p25', 'P25'], ['med', 'Median'], ['p75', 'P75'], ['p90', 'P90'], ['medel', 'Medellön']];
+function _ebPerBasReceptHtml() {
+    const r = _pbValideraRecept(state.perBasRecept);
+    const kryss = (id, text, pa) => `<label class="fs-sm"><input type="checkbox" id="${id}"${pa ? ' checked' : ''}> ${esc(text)}</label>`;
+    return `<div id="rapport-perbas" class="marg-t-14"><h3 class="fs-md marg-0-0-6">Tabellerna per BAS-intervall</h3>
+        <p class="text-dampad-sm marg-0-0-6">Avsnittet <em>Lönestruktur per BAS-intervall</em> följer det här receptet. Standard är tabellerna som i en skriven lönekartläggning.</p>
+        <div class="rad-bryt gap-14">
+            <label class="fs-sm">Upprepa per <select id="pb-dim" class="form-select bredd-auto"><option value="bas"${r.dim === 'bas' ? ' selected' : ''}>BAS-intervall</option><option value="sektor"${r.dim === 'sektor' ? ' selected' : ''}>sektor (AID-huvudområde)</option></select></label>
+            <fieldset class="falt-grupp"><legend>Rader i varje tabell</legend>${EB_PERBAS_RADER.map(([v, t]) => kryss('pb-rad-' + v, t, r.rader.includes(v))).join(' ')}</fieldset>
+            <fieldset class="falt-grupp"><legend>Mått</legend>${EB_PERBAS_MATT.map(([v, t]) => kryss('pb-matt-' + v, t, r.matt.includes(v))).join(' ')}</fieldset>
+            <fieldset class="falt-grupp"><legend>Summeringstabeller</legend>${kryss('pb-konsgap', 'Löneskillnader inom likvärdigt arbete', r.konsgap)} ${kryss('pb-aldersgrupper', 'Löneskillnader i åldersgrupper', r.aldersgrupper)}
+                <label class="fs-sm">Åldersgränser <input type="text" id="pb-aldersgranser" class="form-select bredd-6em" value="${esc(r.aldersgranser.join(', '))}" autocomplete="off" title="Gränser mellan åldersgrupperna, t.ex. 35, 50 ger –34, 35–49 och 50–"></label></fieldset>
+        </div>
+        <p class="rad-mitt gap-8 marg-6-0-0"><span id="pb-recept-status" class="text-dampad-sm">${_pbReceptArStandard(state.perBasRecept) ? 'Standardreceptet.' : 'Eget recept — följer med i konfigurationsfilen.'}</span>
+        <button type="button" id="pb-aterstall" class="btn btn-secondary btn-sm"${_pbReceptArStandard(state.perBasRecept) ? ' hidden' : ''}>Återställ standard</button></p></div>`;
+}
+/** Läser receptformuläret till state. Standardreceptet sparas som null. */
+function _ebLasPerBasRecept() {
+    const v = id => /** @type {HTMLInputElement} */ (document.getElementById(id));
+    if (!v('pb-dim')) return;
+    const r = {
+        dim: v('pb-dim').value,
+        rader: EB_PERBAS_RADER.map(([x]) => x).filter(x => v('pb-rad-' + x)?.checked),
+        matt: EB_PERBAS_MATT.map(([x]) => x).filter(x => v('pb-matt-' + x)?.checked),
+        konsgap: !!v('pb-konsgap')?.checked, aldersgrupper: !!v('pb-aldersgrupper')?.checked,
+        aldersgranser: String(v('pb-aldersgranser')?.value || '').split(/[,;\s]+/).map(Number).filter(x => Number.isInteger(x) && x > 0)
+    };
+    const giltigt = _pbValideraRecept(r);
+    state.perBasRecept = _pbReceptArStandard(giltigt) ? null : giltigt;
+}
+document.addEventListener('change', e => {
+    const el = /** @type {HTMLElement} */ (e.target);
+    if (!el || !el.closest || !el.closest('#rapport-perbas')) return;
+    _ebLasPerBasRecept();
+    const fokus = el.id;
+    renderExportBesked();
+    document.getElementById(fokus)?.focus();
+});
+document.addEventListener('click', e => {
+    const t = /** @type {HTMLElement} */ (e.target);
+    if (!t || !t.closest) return;
+    if (t.closest('#pb-aterstall')) { state.perBasRecept = null; renderExportBesked(); return; }
+    const bort = t.closest('[data-egen-bort]'), flytta = t.closest('[data-egen-flytta]');
+    if (!bort && !flytta) return;
+    const id = /** @type {HTMLElement} */ (bort || flytta).closest('[data-egen-id]')?.getAttribute('data-egen-id');
+    const lista = [...(state.rapportTabeller || [])], i = lista.findIndex(r => r.id === id);
+    if (i < 0) return;
+    if (bort) lista.splice(i, 1);
+    else if (flytta) { const j = i + Number(flytta.getAttribute('data-egen-flytta')); if (j < 0 || j >= lista.length) return; [lista[i], lista[j]] = [lista[j], lista[i]]; }
+    state.rapportTabeller = lista;
+    renderExportBesked();
+    if (flytta) /** @type {HTMLElement} */ (document.querySelector(`[data-egen-id="${id}"] [data-egen-flytta="${flytta.getAttribute('data-egen-flytta')}"]:not([disabled])`))?.focus();
+});
 
 document.addEventListener('click', e => {
     if (!/** @type {HTMLElement} */ (e.target).closest) return;

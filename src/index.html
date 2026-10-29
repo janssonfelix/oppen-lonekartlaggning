@@ -2304,6 +2304,13 @@
                         <p id="explore-note" class="explore-note" role="note"></p>
                     </div>
                     <div class="card">
+                        <!-- Egna tabeller i rapporten (ADR-52): vyn sparas som ett recept, inte som tal, och ritas om i exportläget. -->
+                        <div class="rad-bryt-mitt gap-10 marg-0-0-10" id="explore-rapport-rad">
+                            <label class="fs-sm">Namn i rapporten <input type="text" id="explore-rapport-namn" class="form-select" maxlength="80" autocomplete="off" placeholder="t.ex. Median per yrke"></label>
+                            <label class="fs-sm"><input type="checkbox" id="explore-rapport-perbas"> En tabell per BAS-intervall</label>
+                            <button type="button" id="btn-explore-till-rapport" class="btn btn-secondary btn-sm" title="Sparar vyn som en egen tabell i Word-utkastet, PDF-rapporten och Excel-filen. Tabellen räknas om med minsta gruppstorlek när rapporten byggs.">Lägg till i rapporten</button>
+                            <span id="explore-rapport-status" class="status-msg" role="status" aria-live="polite"></span>
+                        </div>
                         <div class="table-container">
                             <table id="explore-table" class="data-table" aria-label="Utforska: valt mått per vald grupp"></table>
                         </div>

@@ -8,6 +8,11 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ### Exporter
 
+- **Egna tabeller i rapporten (ADR-52).** Ovanför tabellen i Utforska finns *Lägg till i rapporten*: vyn sparas som ett
+  recept (rader, kolumner, mått och urval, valfritt en tabell per BAS-intervall) och ritas om med minsta gruppstorlek i
+  avsnittet *Egna tabeller* i Word-utkastet och PDF-rapporten och i bladet *Egna tabeller* i Excel-filen. Tabellerna
+  ordnas och tas bort under *Rapportens innehåll* och följer med i konfigurationsfilen. Avsnittet per BAS-intervall
+  följer ett redigerbart recept: upprepa per BAS eller per sektor, rader, mått, åldersgränser och summeringstabeller.
 - **Tabellerna per BAS-intervall, som i en skriven lönekartläggning.** Word-utkastet har ett nytt avsnitt,
   *Lönestruktur per BAS-intervall*, och Excel-filen ett nytt blad, *Per BAS*, byggda efter arbetsgivarnas egna
   utkast: en tabell per BAS-intervall (referensen, organisationen, varje yrkesgrupp med jämförelsestatistikens nivå

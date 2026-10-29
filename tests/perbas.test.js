@@ -2,7 +2,7 @@
 // Copyright 2026 Felix Jansson
 // Tabellerna per BAS-intervall (src/lib/perbas.js): formen ur arbetsgivarnas utkast och minsta gruppstorlek.
 import { describe, it, expect } from 'vitest';
-import { perBasTabeller, aldersgruppNamn, yrkesnamn } from '../src/lib/perbas.js';
+import { perBasTabeller, aldersgruppNamn, yrkesnamn, perBasStandard, valideraPerBasRecept, perBasReceptArStandard } from '../src/lib/perbas.js';
 
 const rad = (bas, aid, kon, lon, alder, yrkeLabel = `Yrke ${aid}`) => ({ bas, aid, yrke: `${aid} ${yrkeLabel}`, yrkeLabel, kon, lon, alder });
 const grupp = (bas, aid, kon, n, lon0, alder0 = 30) => Array.from({ length: n }, (_, i) => rad(bas, aid, kon, lon0 + i * 100, alder0 + (i % 25)));
@@ -79,5 +79,35 @@ describe('perbas: löneskillnader inom likvärdigt arbete och i åldersgrupper',
         expect(yrkesnamn({ aid: '2071', yrkeLabel: '2071' })).toBe('2071');
         expect(yrkesnamn({ yrke: 'Fritext' })).toBe('Fritext');
         expect(yrkesnamn({})).toBe('(okänt yrke)');
+    });
+});
+
+describe('perbas: receptet (ADR-52)', () => {
+    it('standardreceptet är utkastets tabeller; ogiltiga värden faller tillbaka på standard', () => {
+        expect(perBasStandard()).toEqual({ dim: 'bas', rader: ['referens', 'organisation', 'yrken', 'statistik', 'kvinnor', 'man'], matt: ['p10', 'med', 'p90'], konsgap: true, aldersgrupper: true, aldersgranser: [35, 50] });
+        expect(valideraPerBasRecept(null)).toEqual(perBasStandard());
+        expect(valideraPerBasRecept({ dim: 'x', rader: ['organisation', 'fel'], matt: ['fel'], aldersgranser: [50, 30, 'a', 5] })).toEqual({ dim: 'bas', rader: ['organisation'], matt: ['p10', 'med', 'p90'], konsgap: true, aldersgrupper: true, aldersgranser: [30, 50] });
+        expect(perBasReceptArStandard(undefined)).toBe(true);
+        expect(perBasReceptArStandard({ matt: ['med'] })).toBe(false);
+    });
+    it('raderna och måtten följer receptet; summeringstabellerna kan väljas bort', () => {
+        const t = perBasTabeller(underlag(), { k: 10, referens, statistik, recept: { rader: ['organisation', 'yrken'], matt: ['med', 'medel'], konsgap: false } });
+        const D = t.intervall.find(i => i.bas === 'D');
+        expect(D.rader.map(r => r.typ)).toEqual(['organisation', 'yrke']);
+        expect(D.rader[0].medel).toBeGreaterThan(0);
+        expect(D.rader[0].p25).toBeLessThan(D.rader[0].med);
+        expect(t.konsgap).toBeNull();
+        expect(t.aldersgrupper).not.toBeNull();
+        expect(t.recept.matt).toEqual(['med', 'medel']);
+    });
+    it('per sektor: intervallen är AID-huvudområden, utan referens- och statistikrader', () => {
+        const rader = underlag().map(r => ({ ...r, aid: r.aid === '2071' ? '207011' : r.aid === '1010' ? '101010' : r.aid === '3510' ? '351009' : '103010' }));
+        const t = perBasTabeller(rader, { k: 10, referens, statistik: [{ aid: '207011', median: 1 }], recept: { dim: 'sektor' } });
+        expect(t.dim).toBe('sektor');
+        expect(t.dimEtikett).toBe('Sektor');
+        expect(t.intervall.length).toBeGreaterThan(0);
+        for (const i of t.intervall) expect(i.rader.map(r => r.typ)).not.toContain('referens');
+        for (const i of t.intervall) expect(i.rader.map(r => r.typ)).not.toContain('statistik');
+        expect(t.konsgap.rader[0].bas).toBe('Alla');
     });
 });
