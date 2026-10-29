@@ -54,6 +54,14 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   och textkopior men visas inte. Den gula metodnoten om median mot geometriskt medelvärde står nu kort i *Så
   fungerar regressionen* (*Två råa gap*). Per-BAS-tabellens rad "För få" säger vad som krävs ("kräver minst 10 av
   varje kön").
+- **Ett tecken i hela verktyget: kvinnor mot män, negativt när kvinnor ligger lägre.** Tre ställen räknade åt
+  andra hållet och går nu ihop med huvudtalet i Lika arbete: livscykelmodellens skillnad vid 25 och 65 år
+  (`gapPerAge` i `src/lib/livscykel.js` är nu log(kvinna) − log(man); nyckeltalen heter *Kvinnors lön mot mäns* och
+  en negativ förändring betyder att kvinnorna halkar efter, i texterna, tabellen per BAS och åtgärdslistan),
+  Blinder-Oaxaca-kortet (rågap, förklarat och oförklarat visas kvinnor mot män; metoden räknar internt män mot
+  kvinnor och kortet säger det) och *Var uppstår löneskillnaden?* på Översikt och i rapportunderlaget
+  (`src/lib/gapuppdelning.js` räknar kvinnor − män; negativa belopp betyder att kvinnornas medellön är lägre).
+  Undantaget är EU-lönerapportens blad, som har direktivets tecken (art. 9) med tecknet utskrivet, som förut.
 - **Livscykelns tabell per BAS-intervall** räknar nivåerna ur modellens egna BAS-koefficienter
   (exp(β_BAS − β_visat), ny `basFaktor` i `src/lib/livscykel.js`) i stället för att skala kurvan med kvoten mellan
   intervallens medianlöner; bevisrutan visar faktorn.

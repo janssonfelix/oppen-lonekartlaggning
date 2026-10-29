@@ -1024,8 +1024,12 @@ function renderBlinderOaxacaCard() {
         return;
     }
     const fmtPct = v => (v >= 0 ? '+' : '') + svPct(v, 1);
+    // Metoden räknar män mot kvinnor i log-rummet; kortet visar talen kvinnor mot män, som resten av verktyget.
+    // Komponenterna är additiva på log-skalan, så tecknet byts där och räknas sedan om till procent.
+    const pctKv = c => (Math.exp(-c) - 1) * 100;
+    const ragap = pctKv(r._raw.rawGapLog), forklarat = pctKv(r._raw.q), oforklarat = pctKv(r._raw.u + r._raw.i);
 
-    // Stapeldiagram: rågap = förklarat + oförklarat (i log-rummet, additivt)
+    // Andelar: rågap = förklarat + oförklarat (i log-rummet, additivt)
     const explainedShare = r._raw.q / r._raw.rawGapLog;
     const unexplainedShare = (r._raw.u + r._raw.i) / r._raw.rawGapLog;
     // Visa som positiva andelar oavsett tecken
@@ -1033,13 +1037,13 @@ function renderBlinderOaxacaCard() {
     const unexplainedPctOfGap = Math.abs(unexplainedShare * 100);
 
     // Per-variabel-tabell
-    const compLabel = { intercept: 'Konstant (baseline-nivå)', age: 'Ålder', bas: 'BAS-rangordning' };
+    const compLabel = { intercept: 'Konstant (grundnivå)', age: 'Ålder', bas: 'BAS-rangordning' };
     const compRows = Object.entries(r.components).map(([k, v]) => `
         <tr>
             <td><strong>${compLabel[k]}</strong></td>
-            <td class="t-tal">${fmtPct((Math.exp(v.q) - 1) * 100)}</td>
-            <td class="t-tal">${fmtPct((Math.exp(v.u) - 1) * 100)}</td>
-            <td class="farg-dampad tabelltal ta-hoger">${fmtPct((Math.exp(v.i) - 1) * 100)}</td>
+            <td class="t-tal">${fmtPct(pctKv(v.q))}</td>
+            <td class="t-tal">${fmtPct(pctKv(v.u))}</td>
+            <td class="farg-dampad tabelltal ta-hoger">${fmtPct(pctKv(v.i))}</td>
         </tr>`).join('');
 
     wrap.innerHTML = `
@@ -1056,23 +1060,23 @@ function renderBlinderOaxacaCard() {
 
             <div class="rutnat gap-14 kolumner-3-lika marg-b-18">
                 <div class="bak-accent-yta rund-8 pad-14 ta-mitt">
-                    <div class="etikett-versal">Rågap, män mot kvinnor</div>
-                    <div class="farg-accent-mork fs-nyckeltal fw-700 marg-t-4">${fmtPct(r.rawGapPct)}</div>
+                    <div class="etikett-versal">Rågap, kvinnor mot män</div>
+                    <div class="farg-accent-mork fs-nyckeltal fw-700 marg-t-4">${fmtPct(ragap)}</div>
                     <div class="finstilt">n = ${r.nKv} kvinnor + ${r.nMa} män</div>
                 </div>
                 <div class="bak-ok-bg rund-8 pad-14 ta-mitt">
                     <div class="etikett-versal">Förklarat (struktur)</div>
-                    <div class="farg-ok fs-nyckeltal fw-700 marg-t-4">${fmtPct(r.explainedPct)}</div>
+                    <div class="farg-ok fs-nyckeltal fw-700 marg-t-4">${fmtPct(forklarat)}</div>
                     <div class="finstilt">≈ ${svPct(explainedPctOfGap, 0)} av rågapet</div>
                 </div>
                 <div class="bak-varning-bg rund-8 pad-14 ta-mitt">
                     <div class="etikett-versal">Oförklarat (koef + samspel)</div>
-                    <div class="farg-varning fs-nyckeltal fw-700 marg-t-4">${fmtPct(r.unexplainedPct)}</div>
+                    <div class="farg-varning fs-nyckeltal fw-700 marg-t-4">${fmtPct(oforklarat)}</div>
                     <div class="finstilt">≈ ${svPct(unexplainedPctOfGap, 0)} av rågapet</div>
                 </div>
             </div>
 
-            <p class="text-dampad-sm lh-1_55 marg-0-0-14">Här räknas åt andra hållet än i kortet ovan: mäns lön mot kvinnors, så ett positivt tal betyder att män ligger högre. Den oförklarade delen här och huvudtalet ovan är samma skillnad sedd från två håll; de skiljer sig något eftersom uppdelningen använder BAS som rangordning och skattar kvinnors och mäns lönesättning var för sig.</p>
+            <p class="text-dampad-sm lh-1_55 marg-0-0-14">Samma håll som i kortet ovan: kvinnors lön mot mäns, negativt när kvinnor ligger lägre. Den oförklarade delen här och huvudtalet ovan mäter samma skillnad; de skiljer sig något eftersom uppdelningen använder BAS som rangordning och skattar kvinnors och mäns lönesättning var för sig. (Metoden räknar internt mäns lön mot kvinnors; talen är omräknade.)</p>
 
             <details open>
                 <summary class="farg-text pekare fw-600">Visa uppdelning per variabel</summary>
@@ -1098,9 +1102,9 @@ function renderBlinderOaxacaCard() {
 
             <div class="bak-varning-bg ram-v-3-varning rund-4 fs-sm lh-1_55 marg-t-14 pad-10-12">
                 <strong>Vad betyder detta i samverkan?</strong><br>
-                Den <em>förklarade</em> delen (${fmtPct(r.explainedPct)}) beror på att kvinnor och män
+                Den <em>förklarade</em> delen (${fmtPct(forklarat)}) beror på att kvinnor och män
                 i organisationen har olika ålder och arbetar i olika BAS-intervall. Den hänsyn man rimligt
-                kan ta är dessa strukturella skillnader. Den <em>oförklarade</em> delen (${fmtPct(r.unexplainedPct)})
+                kan ta är dessa strukturella skillnader. Den <em>oförklarade</em> delen (${fmtPct(oforklarat)})
                 är vad lönekartläggningen ska <strong>analysera djupare</strong> — sakliga skäl
                 måste finnas dokumenterade för att motivera den.
             </div>

@@ -4737,15 +4737,16 @@ function livscykelRegression(rader, { fixBas, golv }) {
     const betaBas = b => (b === refBas ? 0 : fit.beta[idxBas(b)]);
     const basFaktor = Object.fromEntries(basList.map(b => [b, Math.exp(betaBas(b) - betaBas(fixBas))]));
 
-    // Gap per ålder: log(man) - log(kvinna) = -[β_kv + β_kv×age·ac + β_kv×age²·ac²]
+    // Gap per ålder, kvinnor mot män som i huvudmodellen: log(kvinna) − log(man) = β_kv + β_kv×age·ac + β_kv×age²·ac²
+    // (negativt när kvinnor ligger lägre).
     // Procentskillnad: (exp(logGap) - 1) × 100
     const gapPerAge = ages.map(a => {
         const ac = a - ageMean;
         const ac2 = ac * ac;
-        const logGap = -(fit.beta[idxKv] + fit.beta[idxKvAge] * ac + fit.beta[idxKvAge2] * ac2);
+        const logGap = fit.beta[idxKv] + fit.beta[idxKvAge] * ac + fit.beta[idxKvAge2] * ac2;
         // SE av logGap-uttrycket (linjär kombination av tre koefficienter)
-        // Var(c1·β1 + c2·β2 + c3·β3) = c'·V·c där c = [-1, -ac, -ac²] över relevanta dimensioner
-        const c = [-1, -ac, -ac2];
+        // Var(c1·β1 + c2·β2 + c3·β3) = c'·V·c där c = [1, ac, ac²] över relevanta dimensioner
+        const c = [1, ac, ac2];
         const idxs = [idxKv, idxKvAge, idxKvAge2];
         let v = 0;
         for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) {
@@ -4758,7 +4759,8 @@ function livscykelRegression(rader, { fixBas, golv }) {
         return { age: a, gapPct, gapLoPct, gapHiPct };
     });
 
-    // Tolkning: nyckeltal för gapet vid 25 och 65 år och förändringen däremellan
+    // Tolkning: nyckeltal för gapet vid 25 och 65 år och förändringen däremellan (kvinnor mot män:
+    // en negativ förändring betyder att kvinnorna halkar efter med åldern)
     const gapAt25 = gapPerAge[0].gapPct;
     const gapAt65 = gapPerAge[gapPerAge.length - 1].gapPct;
     const gapDelta = gapAt65 - gapAt25;
@@ -6277,10 +6279,10 @@ function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
     if (typ === 'uppdelning') {
         const R = 'Var uppstår löneskillnaden?';
         if (!u) return blk(R, [`För få personer för att dela upp skillnaden: ett kön har färre än ${k} personer i urvalet.`], null);
-        const inledning = `Männens medellön är ${_kr(u.medel.ma)} och kvinnornas ${_kr(u.medel.kv)}, en skillnad på ${_kr(u.gap)} (${_pct(u.gapPct)} av männens).`;
+        const inledning = `Kvinnornas medellön är ${_kr(u.medel.kv)} och männens ${_kr(u.medel.ma)}, en skillnad på ${_kr(u.gap)} (${_pct(u.gapPct)} av männens).`;
         if (u.skyddad === false) return blk(R, [inledning, `Skillnaden delas inte upp här: en grupp med färre än ${k} personer står för så stor del av en av delarna att dess bidrag annars skulle kunna räknas fram.`], null);
         const { A, B, C } = u.delar;
-        const st = [`${inledning} Positiva belopp betyder att männens medellön är högre.`,
+        const st = [`${inledning} Beloppen är kvinnor mot män: negativa belopp betyder att kvinnornas medellön är lägre.`,
             `Av skillnaden beror ${_kr(A)} på att kvinnor och män är olika fördelade över BAS, ${_kr(B)} på olika AID inom samma BAS och ${_kr(C)} på löneskillnader inom samma AID och BAS.`];
         if (u.litetGap) st.push('Skillnaden är mindre än 1 % av männens medellön. Delarna kan då peka åt olika håll och vara större än själva skillnaden.');
         const andel = v => u.litetGap ? '—' : _pct(v / u.gap * 100, 0);
@@ -6418,11 +6420,11 @@ const __mirrorGapuppdelning = (() => {
 /**
  * Öppen lönekartläggning — Var uppstår löneskillnaden? (ADR-22)
  *
- * Delar gapet i medellön (män − kvinnor, kr/mån) i tre delar som summerar exakt:
+ * Delar gapet i medellön (kvinnor − män, kr/mån; negativt när kvinnor ligger lägre) i tre delar som summerar exakt:
  *   A  BAS-fördelning       Σ_b Δs_b · (W̄_b − W̄)
  *   B  AID inom BAS         Σ_b s̄_b · Σ_a Δs_a|b · (W̄_ab − W̄_b)
  *   C  inom AID och BAS     Σ_b s̄_b · Σ_a s̄_a|b · ΔW_ab
- * Δx = x_män − x_kvinnor, x̄ = (x_män + x_kvinnor) / 2 (symmetriskt, inget referenskön).
+ * Δx = x_kvinnor − x_män, x̄ = (x_män + x_kvinnor) / 2 (symmetriskt, inget referenskön).
  * Saknas ett kön i en grupp sätts dess medellön lika med det andra könets; gruppen
  * bidrar då bara till fördelningsdelen. Centreringen (− W̄, − W̄_b) ändrar inga summor
  * eftersom Σ Δs = 0, men gör varje grupps post tolkbar.
@@ -6478,7 +6480,7 @@ function _beraknaPoster(rader, k) {
 
     for (const [bas, gb] of _grupper(kv, ma, r => r.bas || '—')) {
         const b = _cell(gb, kv.length, ma.length, k);
-        poster.A.push({ namn: `BAS ${bas}`, kr: (b.sMa - b.sKv) * (b.w - wTot), synlig: b.synlig });
+        poster.A.push({ namn: `BAS ${bas}`, kr: (b.sKv - b.sMa) * (b.w - wTot), synlig: b.synlig });
         if (!b.bada) continue;   // ΔW_b = 0 — BAS:en bidrar varken till B eller C
         const sb = (b.sKv + b.sMa) / 2;
         for (const [aid, ga] of _grupper(gb.kv, gb.ma, r => groupKey(r, 'aid'))) {
@@ -6486,8 +6488,8 @@ function _beraknaPoster(rader, k) {
             const namn = `${aid}, BAS ${bas}`;
             // BAS-medellönen (båda könens) ingår i B-posten, så även BAS:en måste klara k.
             const synlig = a.synlig && b.synlig;
-            poster.B.push({ namn, kr: sb * (a.sMa - a.sKv) * (a.w - b.w), synlig });
-            poster.C.push({ namn, kr: sb * ((a.sKv + a.sMa) / 2) * (a.wMa - a.wKv), synlig });
+            poster.B.push({ namn, kr: sb * (a.sKv - a.sMa) * (a.w - b.w), synlig });
+            poster.C.push({ namn, kr: sb * ((a.sKv + a.sMa) / 2) * (a.wKv - a.wMa), synlig });
         }
     }
     return { kv, ma, medel, poster };
@@ -6529,7 +6531,7 @@ function gapUppdelning(rader, { k } = {}) {
     const r = _beraknaPoster(rader, k);
     if (!r) return null;
     const { kv, ma, medel, poster } = r;
-    const gap = medel.ma - medel.kv;
+    const gap = medel.kv - medel.ma;   // kvinnor mot män, som i resten av verktyget
 
     const delar = {}, topp = {}, ovrigaAntal = {};
     let skyddad = true;
@@ -13301,12 +13303,12 @@ function buildActionChecklist({ endastGrupper = false } = {}) {
         // === 6. Livscykelanalys — växande gap ===
         try {
             const life = (typeof runLifecycleRegression === 'function') ? runLifecycleRegression(_lifecycleFixBas) : null;
-            if (life && life.ok && life.gapDelta > 2 && (life.kvAgePVal < 0.10 || life.kvAge2PVal < 0.10)) {
+            if (life && life.ok && life.gapDelta < -2 && (life.kvAgePVal < 0.10 || life.kvAge2PVal < 0.10)) {   // kvinnor mot män: negativ förändring = växande gap
                 items.push({
                     id: 'livscykel-vaxer',
                     kategori: 'Livscykel',
                     prioritet: 'medel',
-                    titel: `Lönegapet växer med åldern (+${_agTal(life.gapDelta, 1)} procentenheter mellan 25 och 65 år)`,
+                    titel: `Lönegapet växer med åldern (kvinnors lön mot mäns sjunker ${_agTal(Math.abs(life.gapDelta), 1)} procentenheter mellan 25 och 65 år)`,
                     detalj: 'Kan indikera långsammare karriärväg för kvinnor, föräldraledighetseffekter eller könsbias i lönerevisioner. Granska lönerevisionshistorik och befordringsstatistik per kön.',
                     tab: 'kon',
                     källa: 'Livscykelanalys'
@@ -23234,8 +23236,12 @@ function renderBlinderOaxacaCard() {
         return;
     }
     const fmtPct = v => (v >= 0 ? '+' : '') + svPct(v, 1);
+    // Metoden räknar män mot kvinnor i log-rummet; kortet visar talen kvinnor mot män, som resten av verktyget.
+    // Komponenterna är additiva på log-skalan, så tecknet byts där och räknas sedan om till procent.
+    const pctKv = c => (Math.exp(-c) - 1) * 100;
+    const ragap = pctKv(r._raw.rawGapLog), forklarat = pctKv(r._raw.q), oforklarat = pctKv(r._raw.u + r._raw.i);
 
-    // Stapeldiagram: rågap = förklarat + oförklarat (i log-rummet, additivt)
+    // Andelar: rågap = förklarat + oförklarat (i log-rummet, additivt)
     const explainedShare = r._raw.q / r._raw.rawGapLog;
     const unexplainedShare = (r._raw.u + r._raw.i) / r._raw.rawGapLog;
     // Visa som positiva andelar oavsett tecken
@@ -23243,13 +23249,13 @@ function renderBlinderOaxacaCard() {
     const unexplainedPctOfGap = Math.abs(unexplainedShare * 100);
 
     // Per-variabel-tabell
-    const compLabel = { intercept: 'Konstant (baseline-nivå)', age: 'Ålder', bas: 'BAS-rangordning' };
+    const compLabel = { intercept: 'Konstant (grundnivå)', age: 'Ålder', bas: 'BAS-rangordning' };
     const compRows = Object.entries(r.components).map(([k, v]) => `
         <tr>
             <td><strong>${compLabel[k]}</strong></td>
-            <td class="t-tal">${fmtPct((Math.exp(v.q) - 1) * 100)}</td>
-            <td class="t-tal">${fmtPct((Math.exp(v.u) - 1) * 100)}</td>
-            <td class="farg-dampad tabelltal ta-hoger">${fmtPct((Math.exp(v.i) - 1) * 100)}</td>
+            <td class="t-tal">${fmtPct(pctKv(v.q))}</td>
+            <td class="t-tal">${fmtPct(pctKv(v.u))}</td>
+            <td class="farg-dampad tabelltal ta-hoger">${fmtPct(pctKv(v.i))}</td>
         </tr>`).join('');
 
     wrap.innerHTML = `
@@ -23266,23 +23272,23 @@ function renderBlinderOaxacaCard() {
 
             <div class="rutnat gap-14 kolumner-3-lika marg-b-18">
                 <div class="bak-accent-yta rund-8 pad-14 ta-mitt">
-                    <div class="etikett-versal">Rågap, män mot kvinnor</div>
-                    <div class="farg-accent-mork fs-nyckeltal fw-700 marg-t-4">${fmtPct(r.rawGapPct)}</div>
+                    <div class="etikett-versal">Rågap, kvinnor mot män</div>
+                    <div class="farg-accent-mork fs-nyckeltal fw-700 marg-t-4">${fmtPct(ragap)}</div>
                     <div class="finstilt">n = ${r.nKv} kvinnor + ${r.nMa} män</div>
                 </div>
                 <div class="bak-ok-bg rund-8 pad-14 ta-mitt">
                     <div class="etikett-versal">Förklarat (struktur)</div>
-                    <div class="farg-ok fs-nyckeltal fw-700 marg-t-4">${fmtPct(r.explainedPct)}</div>
+                    <div class="farg-ok fs-nyckeltal fw-700 marg-t-4">${fmtPct(forklarat)}</div>
                     <div class="finstilt">≈ ${svPct(explainedPctOfGap, 0)} av rågapet</div>
                 </div>
                 <div class="bak-varning-bg rund-8 pad-14 ta-mitt">
                     <div class="etikett-versal">Oförklarat (koef + samspel)</div>
-                    <div class="farg-varning fs-nyckeltal fw-700 marg-t-4">${fmtPct(r.unexplainedPct)}</div>
+                    <div class="farg-varning fs-nyckeltal fw-700 marg-t-4">${fmtPct(oforklarat)}</div>
                     <div class="finstilt">≈ ${svPct(unexplainedPctOfGap, 0)} av rågapet</div>
                 </div>
             </div>
 
-            <p class="text-dampad-sm lh-1_55 marg-0-0-14">Här räknas åt andra hållet än i kortet ovan: mäns lön mot kvinnors, så ett positivt tal betyder att män ligger högre. Den oförklarade delen här och huvudtalet ovan är samma skillnad sedd från två håll; de skiljer sig något eftersom uppdelningen använder BAS som rangordning och skattar kvinnors och mäns lönesättning var för sig.</p>
+            <p class="text-dampad-sm lh-1_55 marg-0-0-14">Samma håll som i kortet ovan: kvinnors lön mot mäns, negativt när kvinnor ligger lägre. Den oförklarade delen här och huvudtalet ovan mäter samma skillnad; de skiljer sig något eftersom uppdelningen använder BAS som rangordning och skattar kvinnors och mäns lönesättning var för sig. (Metoden räknar internt mäns lön mot kvinnors; talen är omräknade.)</p>
 
             <details open>
                 <summary class="farg-text pekare fw-600">Visa uppdelning per variabel</summary>
@@ -23308,9 +23314,9 @@ function renderBlinderOaxacaCard() {
 
             <div class="bak-varning-bg ram-v-3-varning rund-4 fs-sm lh-1_55 marg-t-14 pad-10-12">
                 <strong>Vad betyder detta i samverkan?</strong><br>
-                Den <em>förklarade</em> delen (${fmtPct(r.explainedPct)}) beror på att kvinnor och män
+                Den <em>förklarade</em> delen (${fmtPct(forklarat)}) beror på att kvinnor och män
                 i organisationen har olika ålder och arbetar i olika BAS-intervall. Den hänsyn man rimligt
-                kan ta är dessa strukturella skillnader. Den <em>oförklarade</em> delen (${fmtPct(r.unexplainedPct)})
+                kan ta är dessa strukturella skillnader. Den <em>oförklarade</em> delen (${fmtPct(oforklarat)})
                 är vad lönekartläggningen ska <strong>analysera djupare</strong> — sakliga skäl
                 måste finnas dokumenterade för att motivera den.
             </div>
@@ -23388,7 +23394,7 @@ function renderLifecycleAnalysis() {
             bas: b, n: dB.length,
             kv25, kv65, ma25, ma65,
             gap25Pct: result.gapAt25, gap65Pct: result.gapAt65,
-            gap25Kr: ma25 - kv25, gap65Kr: ma65 - kv65
+            gap25Kr: kv25 - ma25, gap65Kr: kv65 - ma65   // kvinnor mot män: negativt när kvinnor ligger lägre
         };
     });
 
@@ -23415,14 +23421,14 @@ function renderLifecycleAnalysis() {
         coachKategori = 'konstant';
         coachRubrik = 'Konstant gap över karriären';
         coachText = `Kön×ålder-interaktionen är <strong>inte statistiskt säkerställd</strong> (p<sub>kön×ålder</sub> = ${result.kvAgePVal < 0.001 ? '< 0,001' : svTal(result.kvAgePVal, 3)}, p<sub>kön×ålder²</sub> = ${result.kvAge2PVal < 0.001 ? '< 0,001' : svTal(result.kvAge2PVal, 3)}). Lönegapet uppvisar ingen tydlig åldersvariation — eventuella skillnader är konstanta över karriärspannet. <strong>Att utforska:</strong> fokusera på strukturella analyser (BAS-värdering, likvärdigt arbete) snarare än karriärspecifika.`;
-    } else if (result.gapDelta > 2) {
+    } else if (result.gapDelta < -2) {
         coachKategori = 'växande';
         coachRubrik = 'Gapet växer med åldern';
-        coachText = `Lönegapet är större i de högre åldrarna än i de lägre (+${svTal(result.gapDelta, 1)} procentenheter mellan 25 och 65 år). Kurvorna är ett tvärsnitt och visar inte orsaken, men hypoteser att pröva är (1) <strong>föräldraledighet</strong> vars effekt samlas över karriären, (2) <strong>långsammare karriärväg</strong> för kvinnor — färre steg till högre BAS, (3) <strong>lönerevisioner som slår olika</strong> år efter år. <strong>Att utforska:</strong> granska lönerevisionshistorik per kön i era egna system (verktyget analyserar en kartläggning i taget), kontrollera befordringsstatistik per BAS-nivå, undersök om föräldralediga får samma lönelyft som heltidsarbetande.`;
-    } else if (result.gapDelta < -2) {
+        coachText = `Skillnaden är större i de högre åldrarna än i de lägre: kvinnors lön mot mäns sjunker med ${svTal(Math.abs(result.gapDelta), 1)} procentenheter mellan 25 och 65 år. Kurvorna är ett tvärsnitt och visar inte orsaken, men hypoteser att pröva är (1) <strong>föräldraledighet</strong> vars effekt samlas över karriären, (2) <strong>långsammare karriärväg</strong> för kvinnor — färre steg till högre BAS, (3) <strong>lönerevisioner som slår olika</strong> år efter år. <strong>Att utforska:</strong> granska lönerevisionshistorik per kön i era egna system (verktyget analyserar en kartläggning i taget), kontrollera befordringsstatistik per BAS-nivå, undersök om föräldralediga får samma lönelyft som heltidsarbetande.`;
+    } else if (result.gapDelta > 2) {
         coachKategori = 'krympande';
         coachRubrik = 'Gapet krymper med åldern';
-        coachText = `Lönegapet är mindre i de högre åldrarna än i de lägre (${svTal(result.gapDelta, 1)} procentenheter mellan 25 och 65 år). Kurvorna är ett tvärsnitt och visar inte orsaken, men en hypotes att pröva är att <strong>skillnaden uppstår vid rekryteringen</strong>: kvinnor och män börjar med olika ingångslöner och ligger närmare varandra i de äldre grupperna. <strong>Att utforska:</strong> granska ingångslöner per kön och BAS, undersök rekryteringsprocessen, kontrollera lönesättningsdialog för nya medarbetare.`;
+        coachText = `Skillnaden är mindre i de högre åldrarna än i de lägre: kvinnors lön mot mäns stiger med ${svTal(result.gapDelta, 1)} procentenheter mellan 25 och 65 år. Kurvorna är ett tvärsnitt och visar inte orsaken, men en hypotes att pröva är att <strong>skillnaden uppstår vid rekryteringen</strong>: kvinnor och män börjar med olika ingångslöner och ligger närmare varandra i de äldre grupperna. <strong>Att utforska:</strong> granska ingångslöner per kön och BAS, undersök rekryteringsprocessen, kontrollera lönesättningsdialog för nya medarbetare.`;
     } else {
         coachKategori = 'praktiskt konstant';
         coachRubrik = 'Gapet är praktiskt konstant';
@@ -23457,16 +23463,17 @@ function renderLifecycleAnalysis() {
         <!-- B5: KPI:er + signifikanstest -->
         <div class="rutnat gap-12 kolumner-auto-180 marg-b-14">
             <div class="stat-box">
-                <div class="stat-etikett fs-xs marg-0-0-4">Mäns lön över kvinnors, 25 år</div>
+                <div class="stat-etikett fs-xs marg-0-0-4">Kvinnors lön mot mäns, 25 år</div>
                 <div class="fs-xl fw-700 ${gapKlass(gapStart)}">${gapStart >= 0 ? '+' : ''}${svPct(gapStart, 1)}</div>
             </div>
             <div class="stat-box">
-                <div class="stat-etikett fs-xs marg-0-0-4">Mäns lön över kvinnors, 65 år</div>
+                <div class="stat-etikett fs-xs marg-0-0-4">Kvinnors lön mot mäns, 65 år</div>
                 <div class="fs-xl fw-700 ${gapKlass(gapEnd)}">${gapEnd >= 0 ? '+' : ''}${svPct(gapEnd, 1)}</div>
             </div>
             <div class="stat-box">
                 <div class="stat-etikett fs-xs marg-0-0-4">Förändring 25–65 år, procentenheter</div>
                 <div class="fs-xl fw-700 ${Math.abs(result.gapDelta) > 1 ? 'fg-varning' : 'fg-ok'}">${result.gapDelta >= 0 ? '+' : ''}${svTal(result.gapDelta, 1)}</div>
+                <div class="stat-under">minus: kvinnorna halkar efter</div>
             </div>
             <div class="stat-box" title="Test av om skillnaden förändras med åldern (kön×ålder). Vid p ≥ 0,10 är förändringen inte säkerställd.">
                 <div class="stat-etikett fs-xs marg-0-0-4">Är förändringen säkerställd?</div>
@@ -23506,10 +23513,10 @@ function renderLifecycleAnalysis() {
                             <th class="t-hoger" title="Antal personer i organisationens BAS-intervall">n</th>
                             <th class="t-hoger">Kvinna 25 år</th>
                             <th class="t-hoger">Man 25 år</th>
-                            <th class="t-hoger" title="Mäns modellön minus kvinnors vid 25 år, för detta BAS-intervall">Skillnad 25 år (kr)</th>
+                            <th class="t-hoger" title="Kvinnors modellön minus mäns vid 25 år, för detta BAS-intervall; negativt när kvinnor ligger lägre">Skillnad 25 år (kr)</th>
                             <th class="t-hoger">Kvinna 65 år</th>
                             <th class="t-hoger">Man 65 år</th>
-                            <th class="t-hoger" title="Mäns modellön minus kvinnors vid 65 år">Skillnad 65 år (kr)</th>
+                            <th class="t-hoger" title="Kvinnors modellön minus mäns vid 65 år; negativt när kvinnor ligger lägre">Skillnad 65 år (kr)</th>
                             <th class="t-mitt">Bevis</th>
                         </tr>
                     </thead>
@@ -23520,17 +23527,17 @@ function renderLifecycleAnalysis() {
                                 <td class="t-hoger">${r.n}</td>
                                 <td class="t-hoger">${Math.round(r.kv25).toLocaleString('sv-SE')} kr</td>
                                 <td class="t-hoger">${Math.round(r.ma25).toLocaleString('sv-SE')} kr</td>
-                                <td class="t-hoger halvfet${r.gap25Kr > 1000 ? ' fg-varning' : ''}">${Math.round(r.gap25Kr).toLocaleString('sv-SE')} kr</td>
+                                <td class="t-hoger halvfet${r.gap25Kr < -1000 ? ' fg-varning' : ''}">${Math.round(r.gap25Kr).toLocaleString('sv-SE')} kr</td>
                                 <td class="t-hoger">${Math.round(r.kv65).toLocaleString('sv-SE')} kr</td>
                                 <td class="t-hoger">${Math.round(r.ma65).toLocaleString('sv-SE')} kr</td>
-                                <td class="t-hoger halvfet${r.gap65Kr > 1000 ? ' fg-varning' : ''}">${Math.round(r.gap65Kr).toLocaleString('sv-SE')} kr</td>
+                                <td class="t-hoger halvfet${r.gap65Kr < -1000 ? ' fg-varning' : ''}">${Math.round(r.gap65Kr).toLocaleString('sv-SE')} kr</td>
                                 <td class="t-mitt"><button class="btn-evidence" type="button" data-livscykel-bas="${esc(r.bas)}" title="Visa beräkningen för BAS ${esc(r.bas)}" aria-label="Bevis för BAS ${esc(r.bas)}">${ikon('sok')}</button></td>
                             </tr>`).join('')}
                     </tbody>
                 </table>
                 ${kMaskNote(basUtelamnade, 'BAS-intervall|BAS-intervall')}
                 <p class="text-dampad-xs lh-1_5 marg-10-0-0">
-                    <em>Talen är modellens lönenivåer, inte uppmätta medianer: kurvan räknas för det visade intervallet (${esc(result.fixBas)}) och övriga intervall får sin nivå ur modellens egna BAS-koefficienter. Skillnaden i procent (${svPct(result.gapAt25, 1)} vid 25 år, ${svPct(result.gapAt65, 1)} vid 65) är densamma för alla intervall i modellen; kronorna skiljer eftersom lönenivåerna skiljer.</em>
+                    <em>Talen är modellens lönenivåer, inte uppmätta medianer: kurvan räknas för det visade intervallet (${esc(result.fixBas)}) och övriga intervall får sin nivå ur modellens egna BAS-koefficienter. Skillnaden i procent, kvinnor mot män (${svPct(result.gapAt25, 1)} vid 25 år, ${svPct(result.gapAt65, 1)} vid 65), är densamma för alla intervall i modellen; kronorna skiljer eftersom lönenivåerna skiljer.</em>
                 </p>
             </div>
         </details>
@@ -23616,15 +23623,15 @@ function _evidenceForLifecycleBas(row, result) {
             { label: '— Predikterad lön vid 25 år',         value: '' },
             { label: 'Kvinna',                              value: fmtKr(row.kv25) },
             { label: 'Man',                                  value: fmtKr(row.ma25) },
-            { label: 'Gap (kr)',                            value: fmtKr(row.gap25Kr), note: `Gap i procent: ${fmtPct(row.gap25Pct)}` },
+            { label: 'Skillnad, kvinnor mot män (kr)',      value: fmtKr(row.gap25Kr), note: `I procent: ${fmtPct(row.gap25Pct)}` },
             { label: '— Predikterad lön vid 65 år',         value: '' },
             { label: 'Kvinna',                              value: fmtKr(row.kv65) },
             { label: 'Man',                                  value: fmtKr(row.ma65) },
-            { label: 'Gap (kr)',                            value: fmtKr(row.gap65Kr), note: `Gap i procent: ${fmtPct(row.gap65Pct)}` },
+            { label: 'Skillnad, kvinnor mot män (kr)',      value: fmtKr(row.gap65Kr), note: `I procent: ${fmtPct(row.gap65Pct)}` },
             { label: '— Modellstatistik',                   value: '' },
             { label: 'Kön×ålder (linjär) p-värde',          value: result.kvAgePVal < 0.001 ? '< 0,001' : svTal(result.kvAgePVal, 4) },
             { label: 'Kön×ålder² (kvadratisk) p-värde',     value: result.kvAge2PVal < 0.001 ? '< 0,001' : svTal(result.kvAge2PVal, 4) },
-            { label: 'Förändring 25–65 år',                     value: (result.gapDelta >= 0 ? '+' : '') + svTal(result.gapDelta, 2) + ' procentenheter' }
+            { label: 'Förändring 25–65 år',                     value: (result.gapDelta >= 0 ? '+' : '') + svTal(result.gapDelta, 2) + ' procentenheter', note: 'Kvinnors lön mot mäns; minus betyder att kvinnorna halkar efter.' }
         ],
         formula: `<strong>Beräkning av predikterad lön per BAS:</strong><br>
             För referens-BAS "${result.fixBas}" beräknas direkt från modellen:<br>
@@ -23649,7 +23656,7 @@ function _lifecycleFigur(r) {
     const kurva = (serie, kon, farg, pred, streck) => ({ marke: 'linje', serie, farg, tjocklek: 3, streck, data: pred.map(p => ({ x: p.age, y: p.lon })),
         tips: d => [[`${kon}, ${d.x} år`], ['Predikterad lön', _figTalformat(d.y, 'kr')]] });
     return { beskrivning: `Predikterade lönekurvor för kvinnor och män, ålder 25 till 65, vid BAS ${r.fixBas} (valt intervall). ` +
-            `Vid 25 år är gapet ${svTal(r.gapAt25, 1)} procent, vid 65 år ${svTal(r.gapAt65, 1)} procent. Skuggade band visar 95 % konfidensintervall.`,
+            `Vid 25 år är skillnaden, kvinnor mot män, ${svTal(r.gapAt25, 1)} procent, vid 65 år ${svTal(r.gapAt65, 1)} procent. Skuggade band visar 95 % konfidensintervall.`,
         x: { skala: 'linjar', titel: `Ålder — predikterad lönekurva för BAS ${r.fixBas} (valt intervall)` },
         y: { skala: 'linjar', titel: 'Predikterad månadslön (kr)', format: 'kr' },
         lager: [band('Kvinna 95 % KI', PALETTE.kon.kvinna, r.predKvinna), band('Man 95 % KI', PALETTE.kon.man, r.predMan),
@@ -23682,9 +23689,9 @@ function runLifecycleRegression(fixBas) {
     let interpretation;
     if (kvAgePVal > 0.10 && kvAge2PVal > 0.10) {
         interpretation = 'Gapet är **konstant över karriären** (kön×ålder-interaktionen är ej statistiskt signifikant).';
-    } else if (gapDelta > 1) {
-        interpretation = `Gapet **växer med åldern** — från ${svPct(gapAt25, 1)} vid 25 år till ${svPct(gapAt65, 1)} vid 65 år. Kan indikera glasstaks-mönster och behöver granskas.`;
     } else if (gapDelta < -1) {
+        interpretation = `Gapet **växer med åldern** — från ${svPct(gapAt25, 1)} vid 25 år till ${svPct(gapAt65, 1)} vid 65 år. Kan indikera glasstaks-mönster och behöver granskas.`;
+    } else if (gapDelta > 1) {
         interpretation = `Gapet **krymper med åldern** — från ${svPct(gapAt25, 1)} vid 25 år till ${svPct(gapAt65, 1)} vid 65 år. Kan indikera ikapphämtning över karriären.`;
     } else {
         interpretation = `Gapet är **i princip konstant** över åldersspannet (${svPct(gapAt25, 1)} till ${svPct(gapAt65, 1)}).`;
@@ -26506,9 +26513,9 @@ function renderGapUppdelning() {
         body.innerHTML = demo + `<p>För få personer för att dela upp skillnaden: ett kön har färre än ${kTroskel()} personer i urvalet.</p>`;
         return;
     }
-    const inledning = u.gap >= 0
-        ? `Män har i genomsnitt <strong>${_guKr(u.gap, false)}</strong> (${_guPct(u.gapPct)}) högre medellön än kvinnor.`
-        : `Kvinnor har i genomsnitt <strong>${_guKr(-u.gap, false)}</strong> (${_guPct(-u.gapPct)}) högre medellön än män.`;
+    const inledning = u.gap <= 0
+        ? `Kvinnor har i genomsnitt <strong>${_guKr(-u.gap, false)}</strong> (${_guPct(-u.gapPct)} av mäns medellön) lägre medellön än män.`
+        : `Kvinnor har i genomsnitt <strong>${_guKr(u.gap, false)}</strong> (${_guPct(u.gapPct)} av mäns medellön) högre medellön än män.`;
     const medKv = Stat.median(d.filter(r => r.kon.includes('kvinna') && r.lon > 0).map(r => r.lon));
     const medMa = Stat.median(d.filter(r => (r.kon === 'man' || r.kon === 'män') && r.lon > 0).map(r => r.lon));
     const medianText = medMa > 0 ? ` Kvinnors medianlön är ${_guPct(medKv / medMa * 100)} av mäns.` : '';
@@ -26534,7 +26541,7 @@ function renderGapUppdelning() {
         </div>`;
     }).join('');
     body.innerHTML = demo
-        + `<p class="gu-inledning">${inledning}${medianText} Uppdelningen räknar med medellön, eftersom delarna då summerar exakt. Positiva belopp betyder att männens medellön är högre.</p>`
+        + `<p class="gu-inledning">${inledning}${medianText} Uppdelningen räknar med medellön, eftersom delarna då summerar exakt. Beloppen är kvinnor mot män: negativa belopp betyder att kvinnornas medellön är lägre.</p>`
         + (u.litetGap ? '<p class="gu-not">Skillnaden är mindre än 1 % av männens medellön. Delarna kan då peka åt olika håll och vara större än själva skillnaden.</p>' : '')
         + '<div id="chart-gap-uppdelning" class="marg-6-0-14"></div>'
         + rader
@@ -26553,7 +26560,7 @@ function _guTrappaFigur(u) {
         return { x: kategorier[i], lag: Math.round(Math.min(fore, niva)), hog: Math.round(Math.max(fore, niva)), del: u.delar[d.id], efter: niva,
                  farg: u.delar[d.id] >= 0 ? PALETTE.serie[0] : PALETTE.serie[1] }; });
     const streck = [...steg.map(s => ({ x: s.x, y: Math.round(s.efter), etikett: _guKr(s.del) })), { x: 'Hela skillnaden', y: Math.round(u.gap), etikett: _guKr(u.gap) }];
-    return { beskrivning: 'Skillnaden i medellön mellan män och kvinnor delad i tre delar som läggs på varandra: BAS-fördelning, AID inom BAS och lön inom samma AID och BAS. Positiva belopp betyder att männens medellön är högre. Samma belopp står i raderna under.',
+    return { beskrivning: 'Skillnaden i medellön, kvinnor mot män, delad i tre delar som läggs på varandra: BAS-fördelning, AID inom BAS och lön inom samma AID och BAS. Negativa belopp betyder att kvinnornas medellön är lägre. Samma belopp står i raderna under.',
         legend: false, hojd: 280, x: { skala: 'band', ordning: kategorier }, y: { skala: 'linjar', titel: 'Skillnad i medellön (kr/månad)', format: 'kr', nollinje: true },
         lager: [{ marke: 'stapel', lage: 'overlagrad', serie: 'Hela skillnaden', farg: PALETTE.semantic.neutral, opacitet: 0.4, data: [{ x: 'Hela skillnaden', y: Math.round(u.gap) }], tips: d => [[d.x], ['Skillnad i medellön', _guKr(d.y)]] },
                 { marke: 'intervall', serie: 'Delens bidrag', tjocklek: 44, data: steg, tips: d => [[d.x], ['Bidrag', _guKr(d.del)], ['Summa hit', _guKr(d.efter)]] },

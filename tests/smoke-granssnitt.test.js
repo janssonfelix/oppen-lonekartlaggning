@@ -808,7 +808,7 @@ describe('dolda grupper, belopp, radslut och gränsfältet', () => {
     it('kortet förklarar beloppens tecken', () => {
         const w = createAppWindow();
         w.__loadDemoData();
-        expect(w.document.getElementById('gap-uppdelning').textContent).toContain('Positiva belopp betyder att männens medellön är högre');
+        expect(w.document.getElementById('gap-uppdelning').textContent).toContain('negativa belopp betyder att kvinnornas medellön är lägre');
     });
     it('CSV med bara CR som radslut får radnummer', async () => {
         const { readFileSync } = await import('node:fs');

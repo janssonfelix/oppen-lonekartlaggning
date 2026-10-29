@@ -201,12 +201,12 @@ function buildActionChecklist({ endastGrupper = false } = {}) {
         // === 6. Livscykelanalys — växande gap ===
         try {
             const life = (typeof runLifecycleRegression === 'function') ? runLifecycleRegression(_lifecycleFixBas) : null;
-            if (life && life.ok && life.gapDelta > 2 && (life.kvAgePVal < 0.10 || life.kvAge2PVal < 0.10)) {
+            if (life && life.ok && life.gapDelta < -2 && (life.kvAgePVal < 0.10 || life.kvAge2PVal < 0.10)) {   // kvinnor mot män: negativ förändring = växande gap
                 items.push({
                     id: 'livscykel-vaxer',
                     kategori: 'Livscykel',
                     prioritet: 'medel',
-                    titel: `Lönegapet växer med åldern (+${_agTal(life.gapDelta, 1)} procentenheter mellan 25 och 65 år)`,
+                    titel: `Lönegapet växer med åldern (kvinnors lön mot mäns sjunker ${_agTal(Math.abs(life.gapDelta), 1)} procentenheter mellan 25 och 65 år)`,
                     detalj: 'Kan indikera långsammare karriärväg för kvinnor, föräldraledighetseffekter eller könsbias i lönerevisioner. Granska lönerevisionshistorik och befordringsstatistik per kön.',
                     tab: 'kon',
                     källa: 'Livscykelanalys'

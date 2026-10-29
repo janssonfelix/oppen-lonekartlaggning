@@ -3,11 +3,11 @@
 /**
  * Öppen lönekartläggning — Var uppstår löneskillnaden? (ADR-22)
  *
- * Delar gapet i medellön (män − kvinnor, kr/mån) i tre delar som summerar exakt:
+ * Delar gapet i medellön (kvinnor − män, kr/mån; negativt när kvinnor ligger lägre) i tre delar som summerar exakt:
  *   A  BAS-fördelning       Σ_b Δs_b · (W̄_b − W̄)
  *   B  AID inom BAS         Σ_b s̄_b · Σ_a Δs_a|b · (W̄_ab − W̄_b)
  *   C  inom AID och BAS     Σ_b s̄_b · Σ_a s̄_a|b · ΔW_ab
- * Δx = x_män − x_kvinnor, x̄ = (x_män + x_kvinnor) / 2 (symmetriskt, inget referenskön).
+ * Δx = x_kvinnor − x_män, x̄ = (x_män + x_kvinnor) / 2 (symmetriskt, inget referenskön).
  * Saknas ett kön i en grupp sätts dess medellön lika med det andra könets; gruppen
  * bidrar då bara till fördelningsdelen. Centreringen (− W̄, − W̄_b) ändrar inga summor
  * eftersom Σ Δs = 0, men gör varje grupps post tolkbar.
@@ -64,7 +64,7 @@ function _beraknaPoster(rader, k) {
 
     for (const [bas, gb] of _grupper(kv, ma, r => r.bas || '—')) {
         const b = _cell(gb, kv.length, ma.length, k);
-        poster.A.push({ namn: `BAS ${bas}`, kr: (b.sMa - b.sKv) * (b.w - wTot), synlig: b.synlig });
+        poster.A.push({ namn: `BAS ${bas}`, kr: (b.sKv - b.sMa) * (b.w - wTot), synlig: b.synlig });
         if (!b.bada) continue;   // ΔW_b = 0 — BAS:en bidrar varken till B eller C
         const sb = (b.sKv + b.sMa) / 2;
         for (const [aid, ga] of _grupper(gb.kv, gb.ma, r => groupKey(r, 'aid'))) {
@@ -72,8 +72,8 @@ function _beraknaPoster(rader, k) {
             const namn = `${aid}, BAS ${bas}`;
             // BAS-medellönen (båda könens) ingår i B-posten, så även BAS:en måste klara k.
             const synlig = a.synlig && b.synlig;
-            poster.B.push({ namn, kr: sb * (a.sMa - a.sKv) * (a.w - b.w), synlig });
-            poster.C.push({ namn, kr: sb * ((a.sKv + a.sMa) / 2) * (a.wMa - a.wKv), synlig });
+            poster.B.push({ namn, kr: sb * (a.sKv - a.sMa) * (a.w - b.w), synlig });
+            poster.C.push({ namn, kr: sb * ((a.sKv + a.sMa) / 2) * (a.wKv - a.wMa), synlig });
         }
     }
     return { kv, ma, medel, poster };
@@ -115,7 +115,7 @@ export function gapUppdelning(rader, { k } = {}) {
     const r = _beraknaPoster(rader, k);
     if (!r) return null;
     const { kv, ma, medel, poster } = r;
-    const gap = medel.ma - medel.kv;
+    const gap = medel.kv - medel.ma;   // kvinnor mot män, som i resten av verktyget
 
     const delar = {}, topp = {}, ovrigaAntal = {};
     let skyddad = true;

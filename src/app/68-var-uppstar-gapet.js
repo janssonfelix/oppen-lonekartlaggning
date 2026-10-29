@@ -39,9 +39,9 @@ function renderGapUppdelning() {
         body.innerHTML = demo + `<p>För få personer för att dela upp skillnaden: ett kön har färre än ${kTroskel()} personer i urvalet.</p>`;
         return;
     }
-    const inledning = u.gap >= 0
-        ? `Män har i genomsnitt <strong>${_guKr(u.gap, false)}</strong> (${_guPct(u.gapPct)}) högre medellön än kvinnor.`
-        : `Kvinnor har i genomsnitt <strong>${_guKr(-u.gap, false)}</strong> (${_guPct(-u.gapPct)}) högre medellön än män.`;
+    const inledning = u.gap <= 0
+        ? `Kvinnor har i genomsnitt <strong>${_guKr(-u.gap, false)}</strong> (${_guPct(-u.gapPct)} av mäns medellön) lägre medellön än män.`
+        : `Kvinnor har i genomsnitt <strong>${_guKr(u.gap, false)}</strong> (${_guPct(u.gapPct)} av mäns medellön) högre medellön än män.`;
     const medKv = Stat.median(d.filter(r => r.kon.includes('kvinna') && r.lon > 0).map(r => r.lon));
     const medMa = Stat.median(d.filter(r => (r.kon === 'man' || r.kon === 'män') && r.lon > 0).map(r => r.lon));
     const medianText = medMa > 0 ? ` Kvinnors medianlön är ${_guPct(medKv / medMa * 100)} av mäns.` : '';
@@ -67,7 +67,7 @@ function renderGapUppdelning() {
         </div>`;
     }).join('');
     body.innerHTML = demo
-        + `<p class="gu-inledning">${inledning}${medianText} Uppdelningen räknar med medellön, eftersom delarna då summerar exakt. Positiva belopp betyder att männens medellön är högre.</p>`
+        + `<p class="gu-inledning">${inledning}${medianText} Uppdelningen räknar med medellön, eftersom delarna då summerar exakt. Beloppen är kvinnor mot män: negativa belopp betyder att kvinnornas medellön är lägre.</p>`
         + (u.litetGap ? '<p class="gu-not">Skillnaden är mindre än 1 % av männens medellön. Delarna kan då peka åt olika håll och vara större än själva skillnaden.</p>' : '')
         + '<div id="chart-gap-uppdelning" class="marg-6-0-14"></div>'
         + rader
@@ -86,7 +86,7 @@ function _guTrappaFigur(u) {
         return { x: kategorier[i], lag: Math.round(Math.min(fore, niva)), hog: Math.round(Math.max(fore, niva)), del: u.delar[d.id], efter: niva,
                  farg: u.delar[d.id] >= 0 ? PALETTE.serie[0] : PALETTE.serie[1] }; });
     const streck = [...steg.map(s => ({ x: s.x, y: Math.round(s.efter), etikett: _guKr(s.del) })), { x: 'Hela skillnaden', y: Math.round(u.gap), etikett: _guKr(u.gap) }];
-    return { beskrivning: 'Skillnaden i medellön mellan män och kvinnor delad i tre delar som läggs på varandra: BAS-fördelning, AID inom BAS och lön inom samma AID och BAS. Positiva belopp betyder att männens medellön är högre. Samma belopp står i raderna under.',
+    return { beskrivning: 'Skillnaden i medellön, kvinnor mot män, delad i tre delar som läggs på varandra: BAS-fördelning, AID inom BAS och lön inom samma AID och BAS. Negativa belopp betyder att kvinnornas medellön är lägre. Samma belopp står i raderna under.',
         legend: false, hojd: 280, x: { skala: 'band', ordning: kategorier }, y: { skala: 'linjar', titel: 'Skillnad i medellön (kr/månad)', format: 'kr', nollinje: true },
         lager: [{ marke: 'stapel', lage: 'overlagrad', serie: 'Hela skillnaden', farg: PALETTE.semantic.neutral, opacitet: 0.4, data: [{ x: 'Hela skillnaden', y: Math.round(u.gap) }], tips: d => [[d.x], ['Skillnad i medellön', _guKr(d.y)]] },
                 { marke: 'intervall', serie: 'Delens bidrag', tjocklek: 44, data: steg, tips: d => [[d.x], ['Bidrag', _guKr(d.del)], ['Summa hit', _guKr(d.efter)]] },

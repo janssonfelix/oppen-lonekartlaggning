@@ -96,11 +96,12 @@ describe('livscykelRegression: skattning', () => {
         expect(Math.abs(res.kvCoef - (-0.1))).toBeLessThan(0.02);
     });
 
-    it('gapet vid 25 år följer prediktionerna: 1 − kvinna/man', () => {
+    it('gapet vid 25 år följer prediktionerna, kvinnor mot män: kvinna/man − 1', () => {
         const kvinna = res.predKvinna[0].lon;
         const man = res.predMan[0].lon;
-        expect(res.gapAt25).toBeCloseTo((man / kvinna - 1) * 100, 6);
-        expect(res.gapAt65).toBeCloseTo((res.predMan[40].lon / res.predKvinna[40].lon - 1) * 100, 6);
+        expect(res.gapAt25).toBeCloseTo((kvinna / man - 1) * 100, 6);
+        expect(res.gapAt25).toBeLessThan(0);                                       // kvinnorna ligger lägre i fixturen
+        expect(res.gapAt65).toBeCloseTo((res.predKvinna[40].lon / res.predMan[40].lon - 1) * 100, 6);
         expect(res.gapDelta).toBeCloseTo(res.gapAt65 - res.gapAt25, 10);
     });
 

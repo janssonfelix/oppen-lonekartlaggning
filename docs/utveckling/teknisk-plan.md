@@ -556,7 +556,8 @@ kräver bara att BAS är en bokstav; små intervall skyddas av minsta gruppstorl
 
 **ADR-22 — Var uppstår löneskillnaden? Uppdelning på medellön.** Blinder-Oaxaca säger hur stor del av gapet som
 är "förklarat", men inte var det uppstår. Översiktens avsnitt och ett block i rapportunderlaget (efter
-Sammanfattning) delar därför skillnaden i medellön, män minus kvinnor, i tre delar som summerar exakt:
+Sammanfattning) delar därför skillnaden i medellön, kvinnor minus män (negativ när kvinnor ligger lägre, som
+överallt i verktyget), i tre delar som summerar exakt:
 **BAS-fördelning** (struktur), **AID inom BAS** (likvärdigt arbete) och **lön inom samma AID och BAS** (lika
 arbete), visade som en trappa. Varje steg delas symmetriskt med kvinnors och mäns genomsnitt som vikt, så inget
 kön är referens; saknas ett kön i en grupp får det andra könets medellön och gruppen bidrar bara till

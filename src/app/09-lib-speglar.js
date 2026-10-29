@@ -2583,15 +2583,16 @@ function livscykelRegression(rader, { fixBas, golv }) {
     const betaBas = b => (b === refBas ? 0 : fit.beta[idxBas(b)]);
     const basFaktor = Object.fromEntries(basList.map(b => [b, Math.exp(betaBas(b) - betaBas(fixBas))]));
 
-    // Gap per ålder: log(man) - log(kvinna) = -[β_kv + β_kv×age·ac + β_kv×age²·ac²]
+    // Gap per ålder, kvinnor mot män som i huvudmodellen: log(kvinna) − log(man) = β_kv + β_kv×age·ac + β_kv×age²·ac²
+    // (negativt när kvinnor ligger lägre).
     // Procentskillnad: (exp(logGap) - 1) × 100
     const gapPerAge = ages.map(a => {
         const ac = a - ageMean;
         const ac2 = ac * ac;
-        const logGap = -(fit.beta[idxKv] + fit.beta[idxKvAge] * ac + fit.beta[idxKvAge2] * ac2);
+        const logGap = fit.beta[idxKv] + fit.beta[idxKvAge] * ac + fit.beta[idxKvAge2] * ac2;
         // SE av logGap-uttrycket (linjär kombination av tre koefficienter)
-        // Var(c1·β1 + c2·β2 + c3·β3) = c'·V·c där c = [-1, -ac, -ac²] över relevanta dimensioner
-        const c = [-1, -ac, -ac2];
+        // Var(c1·β1 + c2·β2 + c3·β3) = c'·V·c där c = [1, ac, ac²] över relevanta dimensioner
+        const c = [1, ac, ac2];
         const idxs = [idxKv, idxKvAge, idxKvAge2];
         let v = 0;
         for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) {
@@ -2604,7 +2605,8 @@ function livscykelRegression(rader, { fixBas, golv }) {
         return { age: a, gapPct, gapLoPct, gapHiPct };
     });
 
-    // Tolkning: nyckeltal för gapet vid 25 och 65 år och förändringen däremellan
+    // Tolkning: nyckeltal för gapet vid 25 och 65 år och förändringen däremellan (kvinnor mot män:
+    // en negativ förändring betyder att kvinnorna halkar efter med åldern)
     const gapAt25 = gapPerAge[0].gapPct;
     const gapAt65 = gapPerAge[gapPerAge.length - 1].gapPct;
     const gapDelta = gapAt65 - gapAt25;
@@ -4123,10 +4125,10 @@ function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
     if (typ === 'uppdelning') {
         const R = 'Var uppstår löneskillnaden?';
         if (!u) return blk(R, [`För få personer för att dela upp skillnaden: ett kön har färre än ${k} personer i urvalet.`], null);
-        const inledning = `Männens medellön är ${_kr(u.medel.ma)} och kvinnornas ${_kr(u.medel.kv)}, en skillnad på ${_kr(u.gap)} (${_pct(u.gapPct)} av männens).`;
+        const inledning = `Kvinnornas medellön är ${_kr(u.medel.kv)} och männens ${_kr(u.medel.ma)}, en skillnad på ${_kr(u.gap)} (${_pct(u.gapPct)} av männens).`;
         if (u.skyddad === false) return blk(R, [inledning, `Skillnaden delas inte upp här: en grupp med färre än ${k} personer står för så stor del av en av delarna att dess bidrag annars skulle kunna räknas fram.`], null);
         const { A, B, C } = u.delar;
-        const st = [`${inledning} Positiva belopp betyder att männens medellön är högre.`,
+        const st = [`${inledning} Beloppen är kvinnor mot män: negativa belopp betyder att kvinnornas medellön är lägre.`,
             `Av skillnaden beror ${_kr(A)} på att kvinnor och män är olika fördelade över BAS, ${_kr(B)} på olika AID inom samma BAS och ${_kr(C)} på löneskillnader inom samma AID och BAS.`];
         if (u.litetGap) st.push('Skillnaden är mindre än 1 % av männens medellön. Delarna kan då peka åt olika håll och vara större än själva skillnaden.');
         const andel = v => u.litetGap ? '—' : _pct(v / u.gap * 100, 0);
@@ -4264,11 +4266,11 @@ const __mirrorGapuppdelning = (() => {
 /**
  * Öppen lönekartläggning — Var uppstår löneskillnaden? (ADR-22)
  *
- * Delar gapet i medellön (män − kvinnor, kr/mån) i tre delar som summerar exakt:
+ * Delar gapet i medellön (kvinnor − män, kr/mån; negativt när kvinnor ligger lägre) i tre delar som summerar exakt:
  *   A  BAS-fördelning       Σ_b Δs_b · (W̄_b − W̄)
  *   B  AID inom BAS         Σ_b s̄_b · Σ_a Δs_a|b · (W̄_ab − W̄_b)
  *   C  inom AID och BAS     Σ_b s̄_b · Σ_a s̄_a|b · ΔW_ab
- * Δx = x_män − x_kvinnor, x̄ = (x_män + x_kvinnor) / 2 (symmetriskt, inget referenskön).
+ * Δx = x_kvinnor − x_män, x̄ = (x_män + x_kvinnor) / 2 (symmetriskt, inget referenskön).
  * Saknas ett kön i en grupp sätts dess medellön lika med det andra könets; gruppen
  * bidrar då bara till fördelningsdelen. Centreringen (− W̄, − W̄_b) ändrar inga summor
  * eftersom Σ Δs = 0, men gör varje grupps post tolkbar.
@@ -4324,7 +4326,7 @@ function _beraknaPoster(rader, k) {
 
     for (const [bas, gb] of _grupper(kv, ma, r => r.bas || '—')) {
         const b = _cell(gb, kv.length, ma.length, k);
-        poster.A.push({ namn: `BAS ${bas}`, kr: (b.sMa - b.sKv) * (b.w - wTot), synlig: b.synlig });
+        poster.A.push({ namn: `BAS ${bas}`, kr: (b.sKv - b.sMa) * (b.w - wTot), synlig: b.synlig });
         if (!b.bada) continue;   // ΔW_b = 0 — BAS:en bidrar varken till B eller C
         const sb = (b.sKv + b.sMa) / 2;
         for (const [aid, ga] of _grupper(gb.kv, gb.ma, r => groupKey(r, 'aid'))) {
@@ -4332,8 +4334,8 @@ function _beraknaPoster(rader, k) {
             const namn = `${aid}, BAS ${bas}`;
             // BAS-medellönen (båda könens) ingår i B-posten, så även BAS:en måste klara k.
             const synlig = a.synlig && b.synlig;
-            poster.B.push({ namn, kr: sb * (a.sMa - a.sKv) * (a.w - b.w), synlig });
-            poster.C.push({ namn, kr: sb * ((a.sKv + a.sMa) / 2) * (a.wMa - a.wKv), synlig });
+            poster.B.push({ namn, kr: sb * (a.sKv - a.sMa) * (a.w - b.w), synlig });
+            poster.C.push({ namn, kr: sb * ((a.sKv + a.sMa) / 2) * (a.wKv - a.wMa), synlig });
         }
     }
     return { kv, ma, medel, poster };
@@ -4375,7 +4377,7 @@ function gapUppdelning(rader, { k } = {}) {
     const r = _beraknaPoster(rader, k);
     if (!r) return null;
     const { kv, ma, medel, poster } = r;
-    const gap = medel.ma - medel.kv;
+    const gap = medel.kv - medel.ma;   // kvinnor mot män, som i resten av verktyget
 
     const delar = {}, topp = {}, ovrigaAntal = {};
     let skyddad = true;

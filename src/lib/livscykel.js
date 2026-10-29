@@ -140,15 +140,16 @@ export function livscykelRegression(rader, { fixBas, golv }) {
     const betaBas = b => (b === refBas ? 0 : fit.beta[idxBas(b)]);
     const basFaktor = Object.fromEntries(basList.map(b => [b, Math.exp(betaBas(b) - betaBas(fixBas))]));
 
-    // Gap per ålder: log(man) - log(kvinna) = -[β_kv + β_kv×age·ac + β_kv×age²·ac²]
+    // Gap per ålder, kvinnor mot män som i huvudmodellen: log(kvinna) − log(man) = β_kv + β_kv×age·ac + β_kv×age²·ac²
+    // (negativt när kvinnor ligger lägre).
     // Procentskillnad: (exp(logGap) - 1) × 100
     const gapPerAge = ages.map(a => {
         const ac = a - ageMean;
         const ac2 = ac * ac;
-        const logGap = -(fit.beta[idxKv] + fit.beta[idxKvAge] * ac + fit.beta[idxKvAge2] * ac2);
+        const logGap = fit.beta[idxKv] + fit.beta[idxKvAge] * ac + fit.beta[idxKvAge2] * ac2;
         // SE av logGap-uttrycket (linjär kombination av tre koefficienter)
-        // Var(c1·β1 + c2·β2 + c3·β3) = c'·V·c där c = [-1, -ac, -ac²] över relevanta dimensioner
-        const c = [-1, -ac, -ac2];
+        // Var(c1·β1 + c2·β2 + c3·β3) = c'·V·c där c = [1, ac, ac²] över relevanta dimensioner
+        const c = [1, ac, ac2];
         const idxs = [idxKv, idxKvAge, idxKvAge2];
         let v = 0;
         for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) {
@@ -161,7 +162,8 @@ export function livscykelRegression(rader, { fixBas, golv }) {
         return { age: a, gapPct, gapLoPct, gapHiPct };
     });
 
-    // Tolkning: nyckeltal för gapet vid 25 och 65 år och förändringen däremellan
+    // Tolkning: nyckeltal för gapet vid 25 och 65 år och förändringen däremellan (kvinnor mot män:
+    // en negativ förändring betyder att kvinnorna halkar efter med åldern)
     const gapAt25 = gapPerAge[0].gapPct;
     const gapAt65 = gapPerAge[gapPerAge.length - 1].gapPct;
     const gapDelta = gapAt65 - gapAt25;
