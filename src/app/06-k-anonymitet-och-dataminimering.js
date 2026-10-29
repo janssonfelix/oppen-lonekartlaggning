@@ -392,10 +392,13 @@ function sattKTroskel(v, { fraga = true, rita = true, stegvis = false } = {}) {
     }
     _kVisaFel('');   // ett gammalt felmeddelande hör till ett värde som inte längre gäller
     const hojd = n > state.kTroskel;
+    const golvFore = statGolv();
     state.kTroskel = n;
     state._lifecycleCache = null;
-    if (typeof invalidateStatCaches === 'function') invalidateStatCaches();
-    if (typeof ritGenerationNy === 'function') ritGenerationNy();   // allt som är ritat hittills bär den gamla tröskeln
+    // Skattningarna (bootstrap-KI och styrkan läser statGolv(); § 3:10-paren läser ingen tröskel) räknas om bara när
+    // golvet ändras — på 55 000 rader är bootstrapen sekunder. Det som är ritat bär den gamla tröskeln och ritas om.
+    if (statGolv() !== golvFore && typeof invalidateStatCaches === 'function') invalidateStatCaches();
+    else if (typeof ritGenerationNy === 'function') ritGenerationNy();   // allt som är ritat hittills bär den gamla tröskeln
     // Löneöversynens förslag ur § 3:10-par som inte längre når tröskeln tas bort (egna rader står kvar).
     if (hojd && typeof _fcRensaParMal === 'function') _fcRensaParMal();
     _synkaKTroskel();
@@ -431,8 +434,10 @@ function _omritningssteg() {
     steg.push(['nyckeltal', () => { if (typeof updateDashboardStats === 'function') updateDashboardStats(); }]);
     steg.push(['kompliansöversikt', () => { if (typeof updateCompliance === 'function') updateCompliance(); }]);
     steg.push(['underlagets kvalitet', () => { if (typeof renderUnderlagetsKvalitet === 'function') renderUnderlagetsKvalitet(); }]);
-    steg.push(['Att göra', () => { if (typeof renderActionChecklist === 'function') renderActionChecklist(); }]);
-    steg.push(['processöversikten', () => { if (typeof renderProcessTracker === 'function') renderProcessTracker(); }]);
+    // Processöversikten läser samma punkter som Att göra: listan byggs en gång och skickas vidare (ingen cache).
+    /** @type {any[]|undefined} */ let punkter;
+    steg.push(['Att göra', () => { if (typeof renderActionChecklist === 'function') punkter = renderActionChecklist(); }]);
+    steg.push(['processöversikten', () => { if (typeof renderProcessTracker === 'function') renderProcessTracker({ punkter }); }]);
     steg.push(['extremvärden', () => { if (typeof renderOutliers === 'function') renderOutliers(); }]);
     steg.push(['inläsningsrapporten', () => { if (typeof renderDataValidationReport === 'function') renderDataValidationReport(); }]);
     steg.push(['A/B-jämförelsen', () => {

@@ -378,6 +378,24 @@ export function tillWordHtml(b) {
     return h;
 }
 
+/**
+ * Ett block för en egen tabell ur Utforska (ADR-52): tabellen som receptet gav (receptTillTabeller), med talen
+ * skrivna efter kolumnens typ, och tabellens not som stycke.
+ * @param {{rubrik: string, kolumner: {rubrik: string, typ: string}[], rader: any[][], not?: string}} t
+ * @param {{id: string, k?: number, urval?: string, demo?: boolean, troskelNot?: string}} val
+ */
+export function egenTabellBlock(t, { id, urval, demo, troskelNot }) {
+    const { fore, efter } = _inled({ demo, urval, troskelNot });
+    const skriv = (v, typ) => {
+        if (v == null || v === '') return '–';
+        if (typeof v !== 'number') return String(v);
+        if (!isFinite(v)) return '–';
+        return typ === 'kr' ? _kr(v) : typ === 'pct1' ? _pct(v, 1) : typ === 'antal' ? formatTal(v, 0) : formatTal(v, 2);
+    };
+    return { id, rubrik: t.rubrik, stycken: [...fore, ...(t.not ? [t.not] : []), ...efter], provat: null, fragor: null,
+        tabell: { rubriker: t.kolumner.map(c => c.rubrik), rader: t.rader.map(r => r.map((v, j) => skriv(v, (t.kolumner[j] || {}).typ))) } };
+}
+
 /** Ren text för urklipp (reserv): tabbar mellan kolumner, numrerade frågor. */
 export function tillText(b) {
     const delar = [b.rubrik, ...b.stycken];

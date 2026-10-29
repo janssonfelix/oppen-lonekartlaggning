@@ -290,7 +290,8 @@ function _mdeSigmaInomGrupp(d, arKv, arMa, golv) {
  * inte fäller hela kortet. Länkarna använder `data-goto-tab` (delegerad lyssnare i
  * 03-hjalpfunktioner.js) — inga inline-onclick (hash-CSP, ADR-9).
  */
-function renderProcessTracker() {
+/** @param {{punkter?: any[]}} [val] punkter: Att göras lista när anroparen just byggt den (annars byggs den här) */
+function renderProcessTracker({ punkter: givna } = {}) {
     const host = document.getElementById('process-tracker');
     if (!host) return;
 
@@ -303,7 +304,7 @@ function renderProcessTracker() {
 
     // Ett analyssteg är klart först när dess punkter i Att göra är hanterade — att analysen
     // har körts räcker inte (ADR-29). Listan byggs en gång för alla steg.
-    const punkter = hasData ? safe(() => (typeof buildActionChecklist === 'function' ? buildActionChecklist() : []), []) : [];
+    const punkter = Array.isArray(givna) ? givna : (hasData ? safe(() => (typeof buildActionChecklist === 'function' ? buildActionChecklist() : []), []) : []);
     const klarmarkerade = state._actionChecklistDone || new Set();
     const hanterade = kategorier => _agHanterade(punkter, klarmarkerade, kategorier);   // src/lib/attgora.js
 
@@ -540,10 +541,11 @@ function updateDashboardStats() {
 
 /** Översikts delar, i ordning: det som inläsningen ritar och som exportgrinden måste kunna rita om (ADR-51). */
 function renderOversiktDelar() {
+    /** @type {any[]|undefined} */ let punkter;   // processöversikten läser Att göras punkter: byggs en gång
     /** @type {[string, () => void][]} */
     const delar = [['nyckeltal', () => updateDashboardStats()], ['kompliansöversikt', () => updateCompliance()],
-        ['underlagets kvalitet', () => renderUnderlagetsKvalitet()], ['Att göra', () => renderActionChecklist()],
-        ['processöversikten', () => renderProcessTracker()], ['extremvärden', () => renderOutliers()],
+        ['underlagets kvalitet', () => renderUnderlagetsKvalitet()], ['Att göra', () => { punkter = renderActionChecklist(); }],
+        ['processöversikten', () => renderProcessTracker({ punkter })], ['extremvärden', () => renderOutliers()],
         ['inläsningsrapporten', () => renderDataValidationReport()]];   // Var uppstår löneskillnaden ritas av kompliansöversikten
     for (const [namn, fn] of delar) { try { fn(); } catch (e) { rapporteraFel(`Översikt (${namn})`, e); } }
     const ab = document.getElementById('snapshot-comparison');

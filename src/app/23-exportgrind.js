@@ -72,6 +72,33 @@ function medExportLage(fn) {
     } finally { if (synk) tillbaka(); }
 }
 
+// ---- Förhandsvisning: skärmen i exportläget ----
+/**
+ * Visar flikarna som i det som lämnar verktyget: läget byts till export och det som syns ritas om (Översikts delar
+ * och den öppna fliken; flikar som inte syns töms och ritas när de öppnas). Av igen ritar tillbaka på samma sätt.
+ * Medan förhandsvisningen är på byter exporterna inte läge (de är redan i det). En export som pågår går före:
+ * då byts inget. Svarar om läget byttes.
+ * @param {boolean} pa
+ * @param {{stegvis?: boolean}} [val] stegvis: med förloppsruta, som när tröskeln ändras från gränssnittet
+ */
+function sattForhandsvisning(pa, { stegvis = false } = {}) {
+    if (_exportDjup > 0 || pa === iExportLage()) return false;
+    _bytKLage(pa ? 'export' : 'skarm');
+    document.body.classList.toggle('forhandsvisning', pa);
+    const knapp = document.getElementById('btn-forhandsvisa');
+    if (knapp) knapp.setAttribute('aria-pressed', String(pa));
+    const banner = document.getElementById('forhandsvisning-banner');
+    if (banner) banner.hidden = !pa;
+    if (state.data.length) {
+        if (stegvis && typeof _renderaOmAllaFlikarStegvis === 'function') _renderaOmAllaFlikarStegvis();
+        else if (typeof _renderaOmAllaFlikar === 'function') _renderaOmAllaFlikar();
+    }
+    return true;
+}
+function iForhandsvisning() { return document.body.classList.contains('forhandsvisning'); }
+document.getElementById('btn-forhandsvisa')?.addEventListener('click', () => sattForhandsvisning(!iForhandsvisning(), { stegvis: true }));
+document.getElementById('btn-forhandsvisa-av')?.addEventListener('click', () => sattForhandsvisning(false, { stegvis: true }));
+
 let _ritGeneration = 1;
 const _ritadVid = new Map();     // flik → generationen då den senast ritades klart
 const _ritasNu = new Set();      // flikar som ritas just nu (ritningen får läsa sina egna diagram)
