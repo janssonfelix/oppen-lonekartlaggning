@@ -82,7 +82,9 @@ Exportera en personalfil (CSV eller XLSX) med dessa kolumner:
    metodbilagan och i exporterad data; under 10 står dessutom meningen *Tröskeln är sänkt från
    standardvärdet 10.* på det som kan spridas för sig, till exempel diagrambilder, kopierade tabeller
    och rapporter. Alla flikar räknas om när värdet
-   ändras. Värdet sparas inte mellan gånger men följer med i konfigurationsfilen; en
+   ändras. Knappen **Som export** i sidhuvudet visar flikarna som i det som lämnar verktyget — grupper under
+   minsta gruppstorlek redovisas inte — med en banner och en streckad ram runt innehållet tills du klickar
+   *Visa skärmen igen*. Värdet sparas inte mellan gånger men följer med i konfigurationsfilen; en
    konfigurationsfil utan värdet ändrar det inte. *Återställ till 10* sätter tillbaka
    standardvärdet. Medianlön per kön, det råa lönegapet och regressionens ojusterade steg
    ("Endast kön", med den förklarade andelen) visas bara när både kvinnor och män är minst så
@@ -245,7 +247,8 @@ SVG (skarp i Word) och diagramdatan som tabell.
 
 **Egna tabeller i rapporten.** Ovanför tabellen i Utforska finns **Lägg till i rapporten**: ge vyn
 ett namn och lägg till den, så står den som en egen tabell i avsnittet *Egna tabeller* i
-Word-utkastet och PDF-rapporten och i bladet *Egna tabeller* i Excel-filen. Kryssa i **En tabell
+Word-utkastet och PDF-rapporten, i bladet *Egna tabeller* i Excel-filen och som block under *Egna
+tabeller från Utforska* i rapportunderlaget. Kryssa i **En tabell
 per BAS-intervall** för att få samma tabell upprepad för varje intervall. Det är vyns recept som
 sparas (rader, kolumner, mått och urval), inte talen: tabellen räknas om med minsta gruppstorlek
 när rapporten byggs, och recepten följer med i konfigurationsfilen. Under *Dokumentera &

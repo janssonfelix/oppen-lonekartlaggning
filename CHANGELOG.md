@@ -10,7 +10,8 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 - **Egna tabeller i rapporten (ADR-52).** Ovanför tabellen i Utforska finns *Lägg till i rapporten*: vyn sparas som ett
   recept (rader, kolumner, mått och urval, valfritt en tabell per BAS-intervall) och ritas om med minsta gruppstorlek i
-  avsnittet *Egna tabeller* i Word-utkastet och PDF-rapporten och i bladet *Egna tabeller* i Excel-filen. Tabellerna
+  avsnittet *Egna tabeller* i Word-utkastet och PDF-rapporten, i bladet *Egna tabeller* i Excel-filen och som block
+  i rapportunderlaget. Tabellerna
   ordnas och tas bort under *Rapportens innehåll* och följer med i konfigurationsfilen. Avsnittet per BAS-intervall
   följer ett redigerbart recept: upprepa per BAS eller per sektor, rader, mått, åldersgränser och summeringstabeller.
 - **Tabellerna per BAS-intervall, som i en skriven lönekartläggning.** Word-utkastet har ett nytt avsnitt,
@@ -41,11 +42,16 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 - **Dokumentera & exportera ritas snabbare på stora underlag.** Förhandsbeskedet byggde rapportmodellen tre gånger
   och Excel-bladlistan två; nu en gång var (`rapportModellBada`). Efter en export ritas bara det tillbaka som
   exporten ritade i exportläget, och Lika arbetes minne har ett rum per tröskel, så att ett lägesbyte inte räknar
-  om något. På 55 000 rader gick fliken från 12 s till omkring 3 s, och omritningen efter ändrad minsta
-  gruppstorlek ritar inte längre Översikt två gånger.
+  om något. På 55 000 rader gick fliken från 12 s till omkring 3 s. Ett byte av minsta gruppstorlek ritar inte
+  Översikt två gånger, bygger Att göras lista en gång för Att göra och processöversikten, och räknar om
+  bootstrap-KI och styrkan bara när det statistiska golvet ändras.
 
 ### Gränssnitt
 
+- **Som export — förhandsvisning av exporten.** Knappen i sidhuvudet visar flikarna som i det som lämnar
+  verktyget: grupper under minsta gruppstorlek redovisas inte, en banner och en streckad ram visar att
+  förhandsvisningen är på, och *Visa skärmen igen* ritar tillbaka. Efter användartest: skärmen visar alla grupper,
+  och den som ska skicka en fil vill se vad som faller bort.
 - **Prioritering är vad, Löneöversyn är hur (ADR-50).** Prioritering svarar på vad som bör åtgärdas och vad det
   kostar; Löneöversyn på hur potten fördelas. Lönerevisionssimulatorn i Prioritering är borttagen: en riktad pott i
   Löneöversyn kan i stället begränsas till ett kön eller till löner under en gräns, och lyfta till en nivå

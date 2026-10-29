@@ -169,3 +169,28 @@ describe('exportläget kostar inte mer än det måste (ADR-51)', () => {
         expect(w.__state.kLage).toBe('skarm');
     });
 });
+
+describe('egna tabeller i rapportunderlaget (ADR-20, ADR-52)', () => {
+    it('varje egen tabell blir ett block med formaterade tal, under en egen rubrik, och går att kopiera', () => {
+        const w = fonster();
+        const d = w.document;
+        d.getElementById('explore-rad').value = 'aid'; d.getElementById('explore-measure').value = 'median'; w.__renderExplorer();
+        laggTill(w, 'Median per yrke');
+        const block = w.eval('rapportunderlagBlock()').filter(b => b.id.startsWith('egen:'));
+        expect(block).toHaveLength(1);
+        expect(block[0]).toMatchObject({ id: 'egen:0:0', rubrik: 'Median per yrke' });
+        expect(block[0].tabell.rubriker[0]).toMatch(/Yrkesgrupp/);
+        expect(block[0].tabell.rader.length).toBeGreaterThan(0);
+        expect(block[0].tabell.rader[0][1]).toMatch(/^\d[\d\s ]* kr$/);
+        expect(block[0].stycken.join(' ')).toMatch(/Urval: Hela organisationen/);
+        w.__renderTabContent('dokumentera');
+        const host = d.getElementById('rapportunderlag-innehall');
+        expect(host.textContent).toContain('Egna tabeller från Utforska');
+        expect(host.querySelector('[data-rapport-kopiera="egen:0:0"]')).not.toBeNull();
+        expect(host.querySelector('.ru-toc').textContent).toContain('Median per yrke');
+        // Utan recept finns varken rubrik eller block.
+        w.__state.rapportTabeller = [];
+        w.__renderTabContent('dokumentera');
+        expect(host.textContent).not.toContain('Egna tabeller från Utforska');
+    });
+});

@@ -1493,10 +1493,13 @@ function sattKTroskel(v, { fraga = true, rita = true, stegvis = false } = {}) {
     }
     _kVisaFel('');   // ett gammalt felmeddelande hör till ett värde som inte längre gäller
     const hojd = n > state.kTroskel;
+    const golvFore = statGolv();
     state.kTroskel = n;
     state._lifecycleCache = null;
-    if (typeof invalidateStatCaches === 'function') invalidateStatCaches();
-    if (typeof ritGenerationNy === 'function') ritGenerationNy();   // allt som är ritat hittills bär den gamla tröskeln
+    // Skattningarna (bootstrap-KI och styrkan läser statGolv(); § 3:10-paren läser ingen tröskel) räknas om bara när
+    // golvet ändras — på 55 000 rader är bootstrapen sekunder. Det som är ritat bär den gamla tröskeln och ritas om.
+    if (statGolv() !== golvFore && typeof invalidateStatCaches === 'function') invalidateStatCaches();
+    else if (typeof ritGenerationNy === 'function') ritGenerationNy();   // allt som är ritat hittills bär den gamla tröskeln
     // Löneöversynens förslag ur § 3:10-par som inte längre når tröskeln tas bort (egna rader står kvar).
     if (hojd && typeof _fcRensaParMal === 'function') _fcRensaParMal();
     _synkaKTroskel();
@@ -1532,8 +1535,10 @@ function _omritningssteg() {
     steg.push(['nyckeltal', () => { if (typeof updateDashboardStats === 'function') updateDashboardStats(); }]);
     steg.push(['kompliansöversikt', () => { if (typeof updateCompliance === 'function') updateCompliance(); }]);
     steg.push(['underlagets kvalitet', () => { if (typeof renderUnderlagetsKvalitet === 'function') renderUnderlagetsKvalitet(); }]);
-    steg.push(['Att göra', () => { if (typeof renderActionChecklist === 'function') renderActionChecklist(); }]);
-    steg.push(['processöversikten', () => { if (typeof renderProcessTracker === 'function') renderProcessTracker(); }]);
+    // Processöversikten läser samma punkter som Att göra: listan byggs en gång och skickas vidare (ingen cache).
+    /** @type {any[]|undefined} */ let punkter;
+    steg.push(['Att göra', () => { if (typeof renderActionChecklist === 'function') punkter = renderActionChecklist(); }]);
+    steg.push(['processöversikten', () => { if (typeof renderProcessTracker === 'function') renderProcessTracker({ punkter }); }]);
     steg.push(['extremvärden', () => { if (typeof renderOutliers === 'function') renderOutliers(); }]);
     steg.push(['inläsningsrapporten', () => { if (typeof renderDataValidationReport === 'function') renderDataValidationReport(); }]);
     steg.push(['A/B-jämförelsen', () => {
@@ -6383,6 +6388,24 @@ function tillWordHtml(b) {
     return h;
 }
 
+/**
+ * Ett block för en egen tabell ur Utforska (ADR-52): tabellen som receptet gav (receptTillTabeller), med talen
+ * skrivna efter kolumnens typ, och tabellens not som stycke.
+ * @param {{rubrik: string, kolumner: {rubrik: string, typ: string}[], rader: any[][], not?: string}} t
+ * @param {{id: string, k?: number, urval?: string, demo?: boolean, troskelNot?: string}} val
+ */
+function egenTabellBlock(t, { id, urval, demo, troskelNot }) {
+    const { fore, efter } = _inled({ demo, urval, troskelNot });
+    const skriv = (v, typ) => {
+        if (v == null || v === '') return '–';
+        if (typeof v !== 'number') return String(v);
+        if (!isFinite(v)) return '–';
+        return typ === 'kr' ? _kr(v) : typ === 'pct1' ? _pct(v, 1) : typ === 'antal' ? formatTal(v, 0) : formatTal(v, 2);
+    };
+    return { id, rubrik: t.rubrik, stycken: [...fore, ...(t.not ? [t.not] : []), ...efter], provat: null, fragor: null,
+        tabell: { rubriker: t.kolumner.map(c => c.rubrik), rader: t.rader.map(r => r.map((v, j) => skriv(v, (t.kolumner[j] || {}).typ))) } };
+}
+
 /** Ren text för urklipp (reserv): tabbar mellan kolumner, numrerade frågor. */
 function tillText(b) {
     const delar = [b.rubrik, ...b.stycken];
@@ -6392,7 +6415,7 @@ function tillText(b) {
     return delar.join('\n\n');
 }
 
-    return { likaArbeteGrupper, justeratGapInomYrke, gruppBlock, parBlock, avsnittBlock, tillWordHtml, tillText, stabilitetKort };
+    return { likaArbeteGrupper, justeratGapInomYrke, gruppBlock, parBlock, avsnittBlock, tillWordHtml, tillText, stabilitetKort, egenTabellBlock };
 })();
 const _ruLikaArbeteGrupper = __mirrorRapportunderlag.likaArbeteGrupper;
 const _ruJusteratGap = __mirrorRapportunderlag.justeratGapInomYrke;
@@ -6402,6 +6425,7 @@ const _ruAvsnittBlock = __mirrorRapportunderlag.avsnittBlock;
 const _ruTillWordHtml = __mirrorRapportunderlag.tillWordHtml;
 const _ruTillText = __mirrorRapportunderlag.tillText;
 const _ruStabilitetKort = __mirrorRapportunderlag.stabilitetKort;
+const _ruEgenTabellBlock = __mirrorRapportunderlag.egenTabellBlock;
 
 // ---- speglar src/lib/gapuppdelning.js ----
 const __mirrorGapuppdelning = (() => {
@@ -12423,7 +12447,8 @@ function _mdeSigmaInomGrupp(d, arKv, arMa, golv) {
  * inte fäller hela kortet. Länkarna använder `data-goto-tab` (delegerad lyssnare i
  * 03-hjalpfunktioner.js) — inga inline-onclick (hash-CSP, ADR-9).
  */
-function renderProcessTracker() {
+/** @param {{punkter?: any[]}} [val] punkter: Att göras lista när anroparen just byggt den (annars byggs den här) */
+function renderProcessTracker({ punkter: givna } = {}) {
     const host = document.getElementById('process-tracker');
     if (!host) return;
 
@@ -12436,7 +12461,7 @@ function renderProcessTracker() {
 
     // Ett analyssteg är klart först när dess punkter i Att göra är hanterade — att analysen
     // har körts räcker inte (ADR-29). Listan byggs en gång för alla steg.
-    const punkter = hasData ? safe(() => (typeof buildActionChecklist === 'function' ? buildActionChecklist() : []), []) : [];
+    const punkter = Array.isArray(givna) ? givna : (hasData ? safe(() => (typeof buildActionChecklist === 'function' ? buildActionChecklist() : []), []) : []);
     const klarmarkerade = state._actionChecklistDone || new Set();
     const hanterade = kategorier => _agHanterade(punkter, klarmarkerade, kategorier);   // src/lib/attgora.js
 
@@ -12673,10 +12698,11 @@ function updateDashboardStats() {
 
 /** Översikts delar, i ordning: det som inläsningen ritar och som exportgrinden måste kunna rita om (ADR-51). */
 function renderOversiktDelar() {
+    /** @type {any[]|undefined} */ let punkter;   // processöversikten läser Att göras punkter: byggs en gång
     /** @type {[string, () => void][]} */
     const delar = [['nyckeltal', () => updateDashboardStats()], ['kompliansöversikt', () => updateCompliance()],
-        ['underlagets kvalitet', () => renderUnderlagetsKvalitet()], ['Att göra', () => renderActionChecklist()],
-        ['processöversikten', () => renderProcessTracker()], ['extremvärden', () => renderOutliers()],
+        ['underlagets kvalitet', () => renderUnderlagetsKvalitet()], ['Att göra', () => { punkter = renderActionChecklist(); }],
+        ['processöversikten', () => renderProcessTracker({ punkter })], ['extremvärden', () => renderOutliers()],
         ['inläsningsrapporten', () => renderDataValidationReport()]];   // Var uppstår löneskillnaden ritas av kompliansöversikten
     for (const [namn, fn] of delar) { try { fn(); } catch (e) { rapporteraFel(`Översikt (${namn})`, e); } }
     const ab = document.getElementById('snapshot-comparison');
@@ -13336,15 +13362,16 @@ function _attGoraParNot() {
  * Renderar åtgärdslistan på Översikt. Visar grupperade kategorier, klickbara
  * checkboxar (state i minnet via state._actionChecklistDone-Set), CSV-export.
  */
+/** Ritar Att göra och svarar med punkterna (processöversikten läser dem). */
 function renderActionChecklist() {
     const wrap = document.getElementById('action-checklist-container');
     const kort = document.getElementById('att-gora');
     const borja = document.getElementById('att-gora-borja');
     if (!wrap) return;
-    if (!state.data.length) { wrap.innerHTML = ''; if (kort) kort.hidden = true; if (borja) borja.innerHTML = ''; return; }
+    if (!state.data.length) { wrap.innerHTML = ''; if (kort) kort.hidden = true; if (borja) borja.innerHTML = ''; return []; }
     if (kort) kort.hidden = false;
 
-    const items = buildActionChecklist();
+    const items = buildActionChecklist();   // returneras, så att processöversikten kan läsa samma lista
     // Hela listan är ett avsnitt som fälls ut: "Börja här" ovanför bär det som ska göras först.
     // Listan ritas om vid varje avbockning, så avsnittets läge bevaras.
     const varOppen = !!/** @type {HTMLDetailsElement} */ ((wrap.querySelector('#avsnitt-ov-punkter') || {})).open;
@@ -13447,6 +13474,7 @@ function renderActionChecklist() {
         state._actionChecklistDone = new Set();
         renderActionChecklist();
     });
+    return items;
 }
 
 /**
@@ -14795,6 +14823,33 @@ function medExportLage(fn) {
         return r;
     } finally { if (synk) tillbaka(); }
 }
+
+// ---- Förhandsvisning: skärmen i exportläget ----
+/**
+ * Visar flikarna som i det som lämnar verktyget: läget byts till export och det som syns ritas om (Översikts delar
+ * och den öppna fliken; flikar som inte syns töms och ritas när de öppnas). Av igen ritar tillbaka på samma sätt.
+ * Medan förhandsvisningen är på byter exporterna inte läge (de är redan i det). En export som pågår går före:
+ * då byts inget. Svarar om läget byttes.
+ * @param {boolean} pa
+ * @param {{stegvis?: boolean}} [val] stegvis: med förloppsruta, som när tröskeln ändras från gränssnittet
+ */
+function sattForhandsvisning(pa, { stegvis = false } = {}) {
+    if (_exportDjup > 0 || pa === iExportLage()) return false;
+    _bytKLage(pa ? 'export' : 'skarm');
+    document.body.classList.toggle('forhandsvisning', pa);
+    const knapp = document.getElementById('btn-forhandsvisa');
+    if (knapp) knapp.setAttribute('aria-pressed', String(pa));
+    const banner = document.getElementById('forhandsvisning-banner');
+    if (banner) banner.hidden = !pa;
+    if (state.data.length) {
+        if (stegvis && typeof _renderaOmAllaFlikarStegvis === 'function') _renderaOmAllaFlikarStegvis();
+        else if (typeof _renderaOmAllaFlikar === 'function') _renderaOmAllaFlikar();
+    }
+    return true;
+}
+function iForhandsvisning() { return document.body.classList.contains('forhandsvisning'); }
+document.getElementById('btn-forhandsvisa')?.addEventListener('click', () => sattForhandsvisning(!iForhandsvisning(), { stegvis: true }));
+document.getElementById('btn-forhandsvisa-av')?.addEventListener('click', () => sattForhandsvisning(false, { stegvis: true }));
 
 let _ritGeneration = 1;
 const _ritadVid = new Map();     // flik → generationen då den senast ritades klart
@@ -26298,6 +26353,11 @@ function _rapportunderlagBlockExport() {
         block.push(_ruGruppBlock(g, { ...opt, id: `yrke:${i}`, justerat: _ruJusteratGap(rader, { k: statGolv() }), ki, arsbelopp }));
     });
     par.forEach((p, i) => block.push(_ruParBlock(p, { ...opt, id: `par:${i}`, kravProxy })));
+    // Egna tabeller (ADR-52): ett block per tabell, ur samma recept som Word-utkastet, PDF-rapporten och Excel.
+    (state.rapportTabeller || []).forEach((r, i) => {
+        if (typeof _trTabeller !== 'function' || typeof _ruEgenTabellBlock !== 'function') return;
+        _trTabeller(d, r, { k }).forEach((t, j) => block.push(_ruEgenTabellBlock(t, { ...opt, id: `egen:${i}:${j}` })));
+    });
     return block;
 }
 
@@ -26328,6 +26388,7 @@ function renderRapportunderlag() {
     const avsnitt = block.filter(b => !b.id.includes(':'));
     const yrken = block.filter(b => b.id.startsWith('yrke:'));
     const parBl = block.filter(b => b.id.startsWith('par:'));
+    const egna = block.filter(b => b.id.startsWith('egen:'));
     // Diagrammet över kandidatpar finns bara när det finns par att visa.
     const diagram = _rapportDiagramLista(_rapportParLage.harPar, _rapportParLage.exkluderade).map(g => `
         <article class="ru-block ru-diagram">
@@ -26341,11 +26402,11 @@ function renderRapportunderlag() {
     const toc = (rubrik, lista) => lista.length
         ? `<li><strong>${esc(rubrik)}</strong>: ${lista.map(b => `<a href="#" data-hoppa-till="${esc(_ruBlockId(b.id))}">${esc(b.rubrik)}</a>`).join(' · ')}</li>` : '';
     const forteckning = `<nav class="ru-toc" aria-label="Innehåll i rapportunderlaget"><ul>`
-        + toc('Avsnitt', avsnitt) + toc('Yrkesgrupper', yrken) + toc('Kandidatpar', parBl) + `</ul>`
+        + toc('Avsnitt', avsnitt) + toc('Yrkesgrupper', yrken) + toc('Kandidatpar', parBl) + toc('Egna tabeller', egna) + `</ul>`
         + `<div class="ru-atgard"><button type="button" class="btn btn-secondary btn-sm" id="btn-ru-kopiera-avsnitt">Kopiera alla avsnitt</button>`
         + `<span class="ru-kvitto" role="status"></span></div><div id="ru-alla-avsnitt" class="ru-alla-avsnitt" hidden></div></nav>`;
     host.innerHTML = forteckning + grupp('Avsnitt', avsnitt) + grupp('Yrkesgrupper i Lika arbete', yrken)
-        + grupp('Kandidatpar i Likvärdigt arbete', parBl)
+        + grupp('Kandidatpar i Likvärdigt arbete', parBl) + grupp('Egna tabeller från Utforska', egna)
         + `<h3 class="ru-grupprubrik">Diagram</h3>${diagram}`;
 }
 

@@ -70,6 +70,8 @@ under *Dokumentera & exportera* — ritas och räknas i ett exportläge där min
 Lönemått för grupper med färre än 10 personer redovisas då inte; gruppen namnges i en not så att det syns
 vad som saknas. Där det i det här avsnittet står att ett mått *visas*, *redovisas* eller *ritas* bara när en
 grupp eller ett kön når tröskeln gäller det exportläget — det som lämnar verktyget; på skärmen visas måttet.
+Med knappen *Som export* i sidhuvudet kan användaren se flikarna i exportläget (en banner och en ram visar det);
+exporterna byter då inte läge.
 Är gruppen stor nog
 men ett av könen för litet visas gruppens samlade median utan könsjämförelse. Samma regel
 gäller de beskrivande könsuppdelade måtten — ett köns median eller percentil, det råa

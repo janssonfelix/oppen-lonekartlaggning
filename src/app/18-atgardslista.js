@@ -240,15 +240,16 @@ function _attGoraParNot() {
  * Renderar åtgärdslistan på Översikt. Visar grupperade kategorier, klickbara
  * checkboxar (state i minnet via state._actionChecklistDone-Set), CSV-export.
  */
+/** Ritar Att göra och svarar med punkterna (processöversikten läser dem). */
 function renderActionChecklist() {
     const wrap = document.getElementById('action-checklist-container');
     const kort = document.getElementById('att-gora');
     const borja = document.getElementById('att-gora-borja');
     if (!wrap) return;
-    if (!state.data.length) { wrap.innerHTML = ''; if (kort) kort.hidden = true; if (borja) borja.innerHTML = ''; return; }
+    if (!state.data.length) { wrap.innerHTML = ''; if (kort) kort.hidden = true; if (borja) borja.innerHTML = ''; return []; }
     if (kort) kort.hidden = false;
 
-    const items = buildActionChecklist();
+    const items = buildActionChecklist();   // returneras, så att processöversikten kan läsa samma lista
     // Hela listan är ett avsnitt som fälls ut: "Börja här" ovanför bär det som ska göras först.
     // Listan ritas om vid varje avbockning, så avsnittets läge bevaras.
     const varOppen = !!/** @type {HTMLDetailsElement} */ ((wrap.querySelector('#avsnitt-ov-punkter') || {})).open;
@@ -351,6 +352,7 @@ function renderActionChecklist() {
         state._actionChecklistDone = new Set();
         renderActionChecklist();
     });
+    return items;
 }
 
 /**
