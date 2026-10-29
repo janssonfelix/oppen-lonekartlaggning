@@ -23,7 +23,7 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         rader.push('K;90000;50;Man;7101');
         await lasIn(w, rader);
         expect(w.document.getElementById('data-validation-report').textContent).toContain('Användbarhetsgrad: 100,0 %');
-        expect(w.document.getElementById('data-status').textContent).toContain('1 person i BAS K analyseras manuellt');
+        expect(w.document.getElementById('data-status').textContent).toContain('21 rader');
     });
     it('kompliansrutan för referensens P10 räknar bara BAS med minst k personer', () => {
         const w = createAppWindow();
@@ -636,11 +636,11 @@ describe('radnummer vid inläsning', () => {
         const rader = ['Lönerapport 2026', 'BAS;Månadslön;Ålder;Kön;AID',
             'A;30000;40;Kvinna;5301',   // rad 3
             '',                         // rad 4 (tom)
-            'K;90000;50;Man;7101',      // rad 5 (BAS K, utesluts)
+            'K;90000;50;Man;7101',      // rad 5 (BAS K ingår sedan 2026.10)
             'A;31000;41;Man;5301'];     // rad 6
         w.loadStructureFile(new w.File([rader.join('\n')], 'p.csv', { type: 'text/csv' }));
         await vanta(w);
-        expect(w.__state.data.map(r => r.radnr)).toEqual([3, 6]);
+        expect(w.__state.data.map(r => r.radnr)).toEqual([3, 5, 6]);
     });
     it('Excel: radnr följer bladets rader trots försättsrad och tom rad', async () => {
         const w = createAppWindow();

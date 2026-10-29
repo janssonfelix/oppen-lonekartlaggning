@@ -94,15 +94,6 @@ function buildActionChecklist({ endastGrupper = false } = {}) {
             });
         } catch (e) { rapporteraFel('Att göra: lika arbete per BAS', e); }
 
-        // === BAS ovanför analysens spann: analyseras manuellt av HR ===
-        const manuella = (typeof manuellaBas === 'function') ? manuellaBas() : null;
-        if (manuella) items.push({
-            id: 'bas-ovanfor-grans', kategori: 'Underlag', prioritet: 'medel',
-            titel: `${manuella.n} ${manuella.n === 1 ? 'person' : 'personer'} i BAS ${manuella.spann} ska analyseras manuellt`,
-            detalj: `Verktyget analyserar bara BAS A–${BAS_MAX}. Personerna i högre BAS finns i källfilen och bedöms utanför verktyget.`,
-            tab: 'dashboard', källa: 'Inläsning'
-        });
-
         // === 1b. Oförklarat gap för hela organisationen (regressionen) ===
         try {
             const reg = runOLSRegression();

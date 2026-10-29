@@ -72,17 +72,3 @@ export function groupKey(row, dim) {
     if (dim === 'aidniva') return mellannivaEtikett(row.aid) ?? OKAND_AID_KOD;
     return null;
 }
-
-// Svensk bokstavsordning för BAS-koder (A–Z, Å, Ä, Ö).
-const _BAS_ORDNING = 'ABCDEFGHIJKLMNOPQRSTUVWXYZÅÄÖ';
-
-/**
- * Ligger BAS-koden efter gränsen i bokstavsordning (t.ex. K–Ö när gränsen är J)?
- * Bara enskilda bokstäver jämförs; andra koder (siffror, flera tecken) ligger aldrig ovanför.
- */
-export function basOvanforGrans(bas, grans) {
-    const b = String(bas ?? '').trim().toUpperCase();
-    if (b.length !== 1) return false;
-    const i = _BAS_ORDNING.indexOf(b), g = _BAS_ORDNING.indexOf(String(grans).toUpperCase());
-    return i >= 0 && g >= 0 && i > g;
-}

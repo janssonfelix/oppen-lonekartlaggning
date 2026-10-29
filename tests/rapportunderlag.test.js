@@ -268,8 +268,8 @@ describe('rapportunderlag: struktur, likvärdighet och singular', () => {
         expect(lika.stycken.join(' ')).toContain('1 yrkesgrupp jämfördes');
         const hp = avsnittBlock('handlingsplan', { rader: [{ atgard: 'a', grupp: 'g', underlag: 'u', kostnad: 1000 }], summa: 1000 }, { k: 10 });
         expect(hp.stycken.join(' ')).toContain('1 förifylld åtgärd');
-        const s = avsnittBlock('sammanfattning', { n: 20, nKv: 10, nMa: 10, medKv: 1, medMa: 1, manuellt: { n: 1, spann: 'K' } }, { k: 10 });
-        expect(s.stycken.join(' ')).toContain('1 person i BAS K ingår inte');
+        const s = avsnittBlock('sammanfattning', { n: 20, nKv: 10, nMa: 10, medKv: 1, medMa: 1 }, { k: 10 });
+        expect(s.stycken.join(' ')).toContain('20 anställda');
     });
 });
 

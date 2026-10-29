@@ -223,8 +223,8 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   diagramkärnan, ADR-39, rensas genom ritarens register `_rfRensaAlla` —
   figuren på behållaren, lyssnare och verktygstipsets text — oavsett id och också när behållaren lämnat dokumentet), extremvärdesdetektorns tabell, utskriftsrapporten och panelen
   Personer att granska omedelbart.
-- Inaktivitetstimern rensar sessionen automatiskt efter 30 minuter (standard;
-  15, 30, 60 minuter eller av under *Vad lagras?*), via **samma** rensningsväg
+- Inaktivitetstimern rensar sessionen automatiskt efter 90 minuter (standard;
+  30, 60, 120 minuter eller av under *Vad lagras?*), via **samma** rensningsväg
   (`_rensaAllData`) men utan bekräftelsefråga. Varning och möjlighet att förlänga visas en
   minut innan. Organisationspaketet kan låsa tiden (5–120 minuter; läget av kan inte låsas,
   ADR-47): rullistan står då på värdet och `setInactivityTimeout()` tar inte emot något annat;
@@ -251,10 +251,8 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   PII-detektorn eller läses som kolumn (ADR-23). Verifierat: fälten i
   minnet är exakt `aid, alder, ansvarsgrupp, ansvarskoder, bas, kon, lon, poang, radnr, yrke,
   yrkeLabel` (`ansvarskoder` och `ansvarsgrupp` är tomma när kolumnen saknas).
-- **Bara BAS A–J analyseras (ADR-21):** rader med BAS K eller högre lämnar inläsningen innan de
-  sparas och finns aldrig i `state.data`. Bara antal per BAS behålls i inläsningens räknare, som
-  nollställs av *Rensa all data* och av rensningen vid inaktivitet. Inga löner från raderna visas
-  eller exporteras.
+- **Alla BAS-intervall ingår (ADR-21, upphävd 2026-10):** även chefsnivåerna K och uppåt läses in
+  och analyseras. Små intervall skyddas som alla andra grupper av minsta gruppstorlek vid export.
 - **PII-detektor** (`detectSensitiveColumns`): känner igen och **avvisar**
   strukturfiler (den enda filen med en rad per person) vars kolumner innehåller
   personnummer-, e-post- eller namnmönster, i både CSV- och Excel-vägen. Kontrollen
@@ -710,7 +708,7 @@ Röktestet kördes i Chromium, Firefox och WebKit.
 | Lagringsspärren | Automatiskt test i jsdom och röktest i Chromium och Firefox: `setItem` med olika nycklar, direkt tilldelning och `defineProperty`, i localStorage och sessionStorage; cookie; sökning efter `setItem` i biblioteksfilerna | ✔ varje skrivning kastar, inga undantag, inget lagras; ✔ 0 `setItem` i de fyra biblioteken (§6.2) |
 | Web Workers | Webbläsarröktestet skapar en worker från `blob:` | ✔ avvisas av CSP (`script-src` som reserv för `worker-src`) |
 | Rensning (lagringsminimering, art. 5.1 e och 25.2) | Invariant för båda rensningsvägarna (inkl. extremvärden och utskrift) + körning i Chromium (alla flikar, utskrift, rensa, ladda om) | ✔ inget lönevärde kvar i dokumentet eller minnet; allt ritas igen efter ny inläsning |
-| Dataminimering | `ALLOWED_FIELDS` + `extractMinimalRecord` + test som läser in en fil med extra kolumner och BAS K och kräver exakt de vitlistade fälten i minnet (`tests/smoke-ansvar.test.js`) | ✔ 5 obligatoriska fält + valfri poäng + valfri ansvarskod + radnummer (härledda `aid`/`yrkeLabel`/`ansvarsgrupp`); kolumnen *Ansvar* läses inte in |
+| Dataminimering | `ALLOWED_FIELDS` + `extractMinimalRecord` + test som läser in en fil med extra kolumner och kräver exakt de vitlistade fälten i minnet (`tests/smoke-ansvar.test.js`) | ✔ 5 obligatoriska fält + valfri poäng + valfri ansvarskod + radnummer (härledda `aid`/`yrkeLabel`/`ansvarsgrupp`); kolumnen *Ansvar* läses inte in |
 | PII-avvisning | `detectSensitiveColumns` + körning i Chromium med PII-testfil; rubrikprov i jsdom | ✔ strukturfilen avvisas (0 rader inlästa); policy-/statistikfil kontrolleras inte (dokumenterat, §6.4); ✔ rubrikerna *Förnamn* och *Fornamn* avvisas (§6.4) |
 | Namnmaskering | `_cleanYrkeField` + körning i Chromium | ✔ "101 Anna Andersson" → "101 ***" |
 | k-anonymitet | `kTroskel()` + render-läsning vid 10, 25 och 5 (`tests/ktroskel.test.js` och `tests/ktroskel-hojning.test.js`) | ✔ standard 10, inställbart (ADR-38; undantag likvärdigt arbete dokumenterat) |

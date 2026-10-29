@@ -60,9 +60,8 @@ Exportera en personalfil (CSV eller XLSX) med dessa kolumner:
   och praxis. Verktyget varnar om många löner ligger under en rimlig heltidsnivå.
 - **Teckenkodning** (UTF-8 / Windows-1252 / UTF-16) och avgränsare hanteras
   automatiskt — å/ä/ö blir rätt.
-- **Bara BAS A–J analyseras.** Personer i BAS K och högre läses in men utesluts ur
-  analysen; verktyget visar hur många det gäller per BAS, och de analyseras manuellt
-  av HR utanför verktyget.
+- **All personal ingår.** Alla BAS-intervall analyseras, även chefsnivåerna (K och
+  uppåt). Små intervall skyddas av minsta gruppstorlek vid export.
 - **Ta INTE med personnummer, namn eller e-post.** Verktyget avvisar filer som
   innehåller sådana kolumner (uppgiftsminimering enligt dataskyddsförordningen).
 - **Systemspecifika uttagssteg** (Personec P, Heroma, Visma m.fl.) samt fullständiga

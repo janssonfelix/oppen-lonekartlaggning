@@ -21,7 +21,7 @@ function openDataResidency() {
     const approxKB = Math.round(approxBytes / 1024);
     // Rullistans värden; ett låst värde ur organisationspaketet (ADR-47) finns alltid med, och listan är då låst.
     const last = state.paketLas.inaktivitetMin;
-    const val = [...new Set([0, 15, INAKTIVITET_STANDARD_MIN, 60, ...(last != null ? [last] : [])])].sort((a, b) => a - b);
+    const val = [...new Set([0, 30, 60, INAKTIVITET_STANDARD_MIN, 120, ...(last != null ? [last] : [])])].sort((a, b) => a - b);
 
     let sampleRow = '';
     if (n > 0) {
@@ -106,7 +106,8 @@ document.getElementById('btn-data-residency')?.addEventListener('click', () => {
 // bekräfta att de fortfarande är där — om ingen reaktion inom 60 s rensas data
 // (motsvarande clearAllData utan confirm-prompt).
 //
-// På som standard (30 minuter, dataskydd som standard enligt GDPR art. 25.2). HR kan
+// På som standard (90 minuter: dataskydd som standard enligt GDPR art. 25.2, med en tid som inte
+// avbryter ett normalt arbetspass). HR kan
 // ändra eller stänga av det i "Vad lagras?"-modalen.
 /** @type {ReturnType<typeof setTimeout>|null} */
 let _inactivityIdleTimer  = null;

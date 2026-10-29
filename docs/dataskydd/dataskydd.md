@@ -50,7 +50,7 @@ konsekvensbedömning (DPIA). Lagrumshänvisningarna samlas i
   att Excel inte kör dem (ADR-15).
 - **Rensning:** *Rensa all data* och den automatiska rensningen vid inaktivitet tömmer
   allt — tabeller, diagram, utskriftsrapport och minne. Rensningen vid inaktivitet är på som
-  standard (30 minuter) och kan ändras under *Vad lagras?* — om inte organisationspaketet har
+  standard (90 minuter) och kan ändras under *Vad lagras?* — om inte organisationspaketet har
   låst tiden (ADR-47); då står rullistan på paketets värde och säger varför.
 - **Skarp användning sker i en nedladdad fil:** verklig lönedata läses bara in i en fil som
   laddats ner och vars signatur verifierats (`SECURITY.md`) — inte i en kopia som visas från en

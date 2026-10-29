@@ -39,9 +39,9 @@ describe('säkerhet, dataskydd och HR-logik', () => {
         expect(w.__xss).toBeUndefined();
     });
 
-    it('automatisk rensning vid inaktivitet är på som standard (30 minuter)', () => {
+    it('automatisk rensning vid inaktivitet är på som standard (90 minuter)', () => {
         const w = createAppWindow();
-        expect(w.__state.inactivityTimeoutMin).toBe(30);
+        expect(w.__state.inactivityTimeoutMin).toBe(90);
     });
 
     const inaktivitetsPaket = inst => ({ format: 'lonekartlaggning-organisationspaket', version: 1, organisation: { namn: 'Exempelorganisationen' },
@@ -65,7 +65,7 @@ describe('säkerhet, dataskydd och HR-logik', () => {
         // Rensa all data tar bort låsningen tillsammans med paketet, och tiden går tillbaka till standard.
         w.eval('_rensaAllData()');
         expect(w.__state.paketLas.inaktivitetMin).toBeNull();
-        expect(w.__state.inactivityTimeoutMin).toBe(30);
+        expect(w.__state.inactivityTimeoutMin).toBe(90);
         w.eval('openDataResidency()');
         expect(w.document.getElementById('inactivity-timeout-select').disabled).toBe(false);
         expect(w.document.getElementById('inactivity-last').hidden).toBe(true);
@@ -486,20 +486,19 @@ describe('ansvarskodskolumnen vid inläsning', () => {
         expect(status).toMatch(/Filen avvisad/);
         expect(status).toMatch(/Förnamn/);
     });
-    it('bara vitlistade fält hålls i minnet; övriga kolumner och BAS över J läses aldrig in (riskanalysen §6.4)', async () => {
+    it('bara vitlistade fält hålls i minnet; övriga kolumner läses aldrig in, och alla BAS ingår (riskanalysen §6.4)', async () => {
         const w = createAppWindow();
         await vendorPapa(w);
         const rader = [csv(';Poäng;Anställningsnr;Ansvar;Kostnadsställe', i => `;${300 + i};ANSTNR${9000 + i};ANSVAR${i};KST${i}`)];
         for (let i = 0; i < 3; i++) rader.push(`K;${99000 + i};${40 + i};Kvinna;207011;;${300 + i};ANSTNR${9900 + i};ANSVAR9${i};KST9${i}`);
         w.loadStructureFile(new w.File([rader.join('\n')], 'p.csv', { type: 'text/csv' }));
         for (let i = 0; i < 100 && !w.__state.data.length; i++) await new Promise(r => setTimeout(r, 20));
-        expect(w.__state.data.length).toBe(30);
+        expect(w.__state.data.length).toBe(33);
         const nycklar = [...new Set(w.__state.data.flatMap(r => Object.keys(r)))].sort();
         expect(nycklar).toEqual(['aid', 'alder', 'ansvarsgrupp', 'ansvarskoder', 'bas', 'kon', 'lon', 'poang', 'radnr', 'yrke', 'yrkeLabel']);
         const allt = JSON.stringify(w.__state.data);
         expect(allt).not.toMatch(/ANSTNR|ANSVAR\d|KST\d/);
-        expect(allt).not.toMatch(/99\d{3}/);
-        expect(w.__state.data.some(r => r.bas === 'K')).toBe(false);
+        expect(w.__state.data.filter(r => r.bas === 'K').length).toBe(3);
     });
     it('en avvisad fil ändrar inte ansvarskolumnen för den data som redan finns', async () => {
         const w = createAppWindow();

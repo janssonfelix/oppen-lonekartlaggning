@@ -3532,26 +3532,11 @@ function groupKey(row, dim) {
     return null;
 }
 
-// Svensk bokstavsordning för BAS-koder (A–Z, Å, Ä, Ö).
-const _BAS_ORDNING = 'ABCDEFGHIJKLMNOPQRSTUVWXYZÅÄÖ';
-
-/**
- * Ligger BAS-koden efter gränsen i bokstavsordning (t.ex. K–Ö när gränsen är J)?
- * Bara enskilda bokstäver jämförs; andra koder (siffror, flera tecken) ligger aldrig ovanför.
- */
-function basOvanforGrans(bas, grans) {
-    const b = String(bas ?? '').trim().toUpperCase();
-    if (b.length !== 1) return false;
-    const i = _BAS_ORDNING.indexOf(b), g = _BAS_ORDNING.indexOf(String(grans).toUpperCase());
-    return i >= 0 && g >= 0 && i > g;
-}
-
-    return { groupKey, konOf, jamforAldersgrupp, jamforLonespann, basOvanforGrans };
+    return { groupKey, konOf, jamforAldersgrupp, jamforLonespann };
 })();
 const _utGroupKey = __mirrorFalt.groupKey;
 const _utKonOf = __mirrorFalt.konOf;
 const _faltJamforAlder = __mirrorFalt.jamforAldersgrupp;
-const _faltBasOvanforGrans = __mirrorFalt.basOvanforGrans;
 
 // ---- speglar src/lib/urval.js ----
 const __mirrorUrval = (() => {
@@ -3810,12 +3795,12 @@ function bedomUnderlag(rader, { k, audit, mde, modell } = {}) {
     });
 
     const orimliga = d.filter(r => !(r.lon >= FTE_GOLV && r.lon <= 250000)
-        || !(r.alder >= 18 && r.alder <= 70) || !/^[A-J]$/i.test(r.bas || '')).length;
+        || !(r.alder >= 18 && r.alder <= 70) || !/^[A-ZÅÄÖ]$/i.test(r.bas || '')).length;
     const orimPct = d.length ? orimliga / d.length * 100 : null;
     kriterier.push({
         id: 'rimlighet', namn: 'Rimlighet', status: _stat(orimPct, 1, 5, false), varde: orimPct,
         text: orimPct == null ? 'Inga rader att kontrollera.'
-            : `${orimliga} rader (${_pct(orimPct)}) har lön under ${FTE_GOLV.toLocaleString('sv-SE')} eller över 250 000 kr, ålder utanför 18–70 eller BAS utanför A–J.`,
+            : `${orimliga} rader (${_pct(orimPct)}) har lön under ${FTE_GOLV.toLocaleString('sv-SE')} eller över 250 000 kr, ålder utanför 18–70 eller BAS som inte är en bokstav.`,
     });
 
     const mStatus = modell === 'full' ? 'ok' : modell === 'minimal' ? 'varning' : 'kritisk';
@@ -4099,7 +4084,6 @@ function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
                 ? `Efter hänsyn till ålder är det oförklarade lönegapet ${_pct(u.oforklarat.pct)} (95 % KI ${_ki(u.oforklarat.lo, u.oforklarat.hi)} %). BAS-intervall kunde inte tas med i modellen.`
                 : `Efter hänsyn till ålder och BAS är det oförklarade lönegapet ${_pct(u.oforklarat.pct)} (95 % KI ${_ki(u.oforklarat.lo, u.oforklarat.hi)} %).`);
         }
-        if (u.manuellt) st.push(`${_st(u.manuellt.n, 'person', 'personer')} i BAS ${u.manuellt.spann} ingår inte i analysen och analyseras manuellt.`);
         if (u.kvalitet) {
             const etikett = { ok: 'OK', varning: 'Varning', kritisk: 'Kritisk' }[u.kvalitet.status];
             st.push(`Underlagets kvalitet: ${etikett}` + (u.kvalitet.brister.length ? ` (${u.kvalitet.brister.join(', ')}).` : '.'));

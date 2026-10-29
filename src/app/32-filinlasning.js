@@ -94,8 +94,6 @@ function _afterDataLoaded() {
     generateRapport();
     const bas = getBasIntervals();
     dataStatus.textContent = `${state.data.length} rader · ${bas.length} BAS`;
-    const manuella = manuellaBas();
-    if (manuella) dataStatus.textContent += ` · ${manuella.n} ${manuella.n === 1 ? 'person' : 'personer'} i BAS ${manuella.spann} analyseras manuellt`;
     if (poangCount > 0) dataStatus.textContent += ` · arbetsvärdering: ${poangCount} befattningar (poäng som krav-proxy i likvärdighetsanalysen)`;
     dataStatus.className = "status-msg success";
     markUploadLoaded('upload-cell-data', 'Inläst');
@@ -393,8 +391,6 @@ function loadStructureFile(file) {
         excludedNoBas: 0,
         excludedZeroLon: 0,
         excludedMissingKon: 0,    // rec.kon tomt eller okänt format
-        excludedOverBas: 0,       // BAS ovanför BAS_MAX — analyseras manuellt av HR
-        overBasPerBas: {},        // antal per sådan BAS (bara antal, inga värden)
         invalidLon: 0,            // icke-tom men oparsbar lön
         invalidAlder: 0,          // icke-tom men oparsbar ålder
         invalidAlderUtesluten: 0, // varav rader som ändå uteslöts (räknas inte två gånger i fullständigheten)
@@ -460,12 +456,6 @@ function loadStructureFile(file) {
         delete rec._alderStatus;
         const utesluts = () => { if (alderOgiltig) parseStats.invalidAlderUtesluten++; };
         if (!rec.bas)     { parseStats.excludedNoBas++; utesluts(); return; }
-        if (_faltBasOvanforGrans(rec.bas, BAS_MAX)) {
-            parseStats.excludedOverBas++;
-            parseStats.overBasPerBas[rec.bas] = (parseStats.overBasPerBas[rec.bas] || 0) + 1;
-            utesluts();
-            return;
-        }
         if (rec.lon <= 0) { parseStats.excludedZeroLon++; utesluts(); return; }
         if (!konOk)       { parseStats.excludedMissingKon++; utesluts(); return; }
         rec.radnr = row[_RADNR] ?? null;
@@ -662,7 +652,6 @@ function _visaEjInlast(saknas, stats) {
     else {
         const n = (antal, text) => { if (antal) skal.push(`${antal} ${antal === 1 ? 'rad' : 'rader'} ${text}`); };
         n(stats.excludedNoBas, 'utan BAS-intervall');
-        n(stats.excludedOverBas, `över BAS ${BAS_MAX}`);
         n(stats.excludedZeroLon, 'utan lön');
         n(stats.excludedMissingKon, 'utan kön');
         if (!skal.length) skal.push('filen har inga rader');

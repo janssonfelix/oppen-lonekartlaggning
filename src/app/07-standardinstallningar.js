@@ -1,20 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 
-// ---- Analysens BAS-spann ----
-// Verktyget analyserar bara individer i BAS A–J. Personer i högre BAS (K och uppåt)
-// läses in men utesluts; HR analyserar dem manuellt. Bara antal redovisas.
-const BAS_MAX = 'J';
-
-/** Personer som uteslöts för att de ligger ovanför BAS_MAX: {n, spann: 'K–L'} eller null. */
-function manuellaBas() {
-    const per = (state.dataAudit && state.dataAudit.overBasPerBas) || {};
-    const bas = Object.keys(per).sort((a, b) => a.localeCompare(b, 'sv'));
-    const n = bas.reduce((s, b) => s + per[b], 0);
-    if (!n) return null;
-    return { n, spann: bas.length === 1 ? bas[0] : `${bas[0]}–${bas[bas.length - 1]}`, perBas: per };
-}
-
 // ---- State ----
 const PRIO_CONFIG_DEFAULTS = Object.freeze({
     atgardThreshold:    -5,   // %, gränsvärde för Åtgärd/AKUT
@@ -34,7 +20,7 @@ const COST_DEFAULTS = Object.freeze({
 });
 
 // Automatisk rensning vid inaktivitet: på som standard (GDPR art. 25.2). Organisationspaketet kan låsa värdet (ADR-47).
-const INAKTIVITET_STANDARD_MIN = 30;
+const INAKTIVITET_STANDARD_MIN = 90;
 
 // ---- Profil: organisationens benämningar (ADR-28) ----
 // Verktyget är organisationsneutralt: ingen organisation är inbyggd. Profilen styr externa

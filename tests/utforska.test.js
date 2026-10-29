@@ -265,15 +265,6 @@ describe('nya dimensioner och uppdelning per kön', () => {
     });
 });
 
-import { basOvanforGrans } from '../src/lib/falt.js';
-describe('basOvanforGrans (BAS A–J analyseras, resten manuellt)', () => {
-    it('K och senare bokstäver ligger ovanför J', () => {
-        for (const b of ['K', 'L', 'Z', 'Å', 'Ä', 'Ö', 'k']) expect(basOvanforGrans(b, 'J'), b).toBe(true);
-    });
-    it('A–J och värden som inte är en bokstav ligger inte ovanför', () => {
-        for (const b of ['A', 'E', 'J', 'j', '1', '12', '', 'AB', null]) expect(basOvanforGrans(b, 'J'), String(b)).toBe(false);
-    });
-});
 
 describe('utforska: dimensionerna', () => {
     it('enhet är ingen dimension (se §2 i teknisk-plan.md)', () => expect(DIMENSIONER).not.toContain('enhet'));

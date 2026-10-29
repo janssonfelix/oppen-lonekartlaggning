@@ -549,11 +549,10 @@ verksamheten har (uppdrag, prestation) och skrivs utanför verktyget (§2). Grup
 `src/lib/rapportunderlag.js` och används också av Lika arbetes EU-tabell. Underlaget följer k-regeln strikt:
 kandidatpar med en grupp under tröskeln får inget block, fast fliken Likvärdigt arbete är undantagen.
 
-**ADR-21 — Bara BAS A–J analyseras.** Personer i BAS K och högre läses in men utesluts vid inläsningen
-(`BAS_MAX = 'J'` i `07-standardinstallningar.js`, `basOvanforGrans` i `src/lib/falt.js`). De analyseras manuellt
-av HR. Verktyget redovisar bara antal per BAS — i uppladdningskortet, inläsningsrapporten, åtgärdslistan och
-rapportunderlagets sammanfattning — aldrig löner. Uteslutningen räknas inte som bortfall i Underlagets
-kvalitet; rimlighetskontrollen godkänner BAS A–J.
+**ADR-21 — Alla BAS-intervall ingår (upphävd begränsning).** Till och med 2026.10.19 analyserades bara BAS A–J;
+personer i K och högre räknades men uteslöts. Efter användartest ingår all personal: lönekartläggningen ska
+omfatta hela organisationen, och chefsnivåerna är ofta de grupper där könsskillnaden är störst. Rimlighetskontrollen
+kräver bara att BAS är en bokstav; små intervall skyddas av minsta gruppstorlek vid export.
 
 **ADR-22 — Var uppstår löneskillnaden? Uppdelning på medellön.** Blinder-Oaxaca säger hur stor del av gapet som
 är "förklarat", men inte var det uppstår. Översiktens avsnitt och ett block i rapportunderlaget (efter

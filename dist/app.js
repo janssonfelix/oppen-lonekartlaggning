@@ -1991,20 +1991,6 @@ function detectSensitiveColumns(rows) {
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 
-// ---- Analysens BAS-spann ----
-// Verktyget analyserar bara individer i BAS A–J. Personer i högre BAS (K och uppåt)
-// läses in men utesluts; HR analyserar dem manuellt. Bara antal redovisas.
-const BAS_MAX = 'J';
-
-/** Personer som uteslöts för att de ligger ovanför BAS_MAX: {n, spann: 'K–L'} eller null. */
-function manuellaBas() {
-    const per = (state.dataAudit && state.dataAudit.overBasPerBas) || {};
-    const bas = Object.keys(per).sort((a, b) => a.localeCompare(b, 'sv'));
-    const n = bas.reduce((s, b) => s + per[b], 0);
-    if (!n) return null;
-    return { n, spann: bas.length === 1 ? bas[0] : `${bas[0]}–${bas[bas.length - 1]}`, perBas: per };
-}
-
 // ---- State ----
 const PRIO_CONFIG_DEFAULTS = Object.freeze({
     atgardThreshold:    -5,   // %, gränsvärde för Åtgärd/AKUT
@@ -2024,7 +2010,7 @@ const COST_DEFAULTS = Object.freeze({
 });
 
 // Automatisk rensning vid inaktivitet: på som standard (GDPR art. 25.2). Organisationspaketet kan låsa värdet (ADR-47).
-const INAKTIVITET_STANDARD_MIN = 30;
+const INAKTIVITET_STANDARD_MIN = 90;
 
 // ---- Profil: organisationens benämningar (ADR-28) ----
 // Verktyget är organisationsneutralt: ingen organisation är inbyggd. Profilen styr externa
@@ -5672,26 +5658,11 @@ function groupKey(row, dim) {
     return null;
 }
 
-// Svensk bokstavsordning för BAS-koder (A–Z, Å, Ä, Ö).
-const _BAS_ORDNING = 'ABCDEFGHIJKLMNOPQRSTUVWXYZÅÄÖ';
-
-/**
- * Ligger BAS-koden efter gränsen i bokstavsordning (t.ex. K–Ö när gränsen är J)?
- * Bara enskilda bokstäver jämförs; andra koder (siffror, flera tecken) ligger aldrig ovanför.
- */
-function basOvanforGrans(bas, grans) {
-    const b = String(bas ?? '').trim().toUpperCase();
-    if (b.length !== 1) return false;
-    const i = _BAS_ORDNING.indexOf(b), g = _BAS_ORDNING.indexOf(String(grans).toUpperCase());
-    return i >= 0 && g >= 0 && i > g;
-}
-
-    return { groupKey, konOf, jamforAldersgrupp, jamforLonespann, basOvanforGrans };
+    return { groupKey, konOf, jamforAldersgrupp, jamforLonespann };
 })();
 const _utGroupKey = __mirrorFalt.groupKey;
 const _utKonOf = __mirrorFalt.konOf;
 const _faltJamforAlder = __mirrorFalt.jamforAldersgrupp;
-const _faltBasOvanforGrans = __mirrorFalt.basOvanforGrans;
 
 // ---- speglar src/lib/urval.js ----
 const __mirrorUrval = (() => {
@@ -5950,12 +5921,12 @@ function bedomUnderlag(rader, { k, audit, mde, modell } = {}) {
     });
 
     const orimliga = d.filter(r => !(r.lon >= FTE_GOLV && r.lon <= 250000)
-        || !(r.alder >= 18 && r.alder <= 70) || !/^[A-J]$/i.test(r.bas || '')).length;
+        || !(r.alder >= 18 && r.alder <= 70) || !/^[A-ZÅÄÖ]$/i.test(r.bas || '')).length;
     const orimPct = d.length ? orimliga / d.length * 100 : null;
     kriterier.push({
         id: 'rimlighet', namn: 'Rimlighet', status: _stat(orimPct, 1, 5, false), varde: orimPct,
         text: orimPct == null ? 'Inga rader att kontrollera.'
-            : `${orimliga} rader (${_pct(orimPct)}) har lön under ${FTE_GOLV.toLocaleString('sv-SE')} eller över 250 000 kr, ålder utanför 18–70 eller BAS utanför A–J.`,
+            : `${orimliga} rader (${_pct(orimPct)}) har lön under ${FTE_GOLV.toLocaleString('sv-SE')} eller över 250 000 kr, ålder utanför 18–70 eller BAS som inte är en bokstav.`,
     });
 
     const mStatus = modell === 'full' ? 'ok' : modell === 'minimal' ? 'varning' : 'kritisk';
@@ -6239,7 +6210,6 @@ function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
                 ? `Efter hänsyn till ålder är det oförklarade lönegapet ${_pct(u.oforklarat.pct)} (95 % KI ${_ki(u.oforklarat.lo, u.oforklarat.hi)} %). BAS-intervall kunde inte tas med i modellen.`
                 : `Efter hänsyn till ålder och BAS är det oförklarade lönegapet ${_pct(u.oforklarat.pct)} (95 % KI ${_ki(u.oforklarat.lo, u.oforklarat.hi)} %).`);
         }
-        if (u.manuellt) st.push(`${_st(u.manuellt.n, 'person', 'personer')} i BAS ${u.manuellt.spann} ingår inte i analysen och analyseras manuellt.`);
         if (u.kvalitet) {
             const etikett = { ok: 'OK', varning: 'Varning', kritisk: 'Kritisk' }[u.kvalitet.status];
             st.push(`Underlagets kvalitet: ${etikett}` + (u.kvalitet.brister.length ? ` (${u.kvalitet.brister.join(', ')}).` : '.'));
@@ -12938,13 +12908,12 @@ function renderDataValidationReport() {
                 <h4>Från fil till analys</h4>
                 <div class="dvr-row ok"><span>Total rader i fil:</span><span class="dvr-value">${fmt(totalRaw)}</span></div>
                 ${excludedNoBas > 0 ? `<div class="dvr-row warn"><span><span class="dvr-icon">−</span>Saknar BAS:</span><span class="dvr-value">${fmt(excludedNoBas)}</span></div>` : ''}
-                ${Object.entries(da.overBasPerBas || {}).sort(([a], [b]) => a.localeCompare(b, 'sv')).map(([b, n]) => `<div class="dvr-row"><span><span class="dvr-icon">−</span>BAS ${esc(b)} (analyseras manuellt):</span><span class="dvr-value">${fmt(n)}</span></div>`).join('')}
                 ${excludedZeroLon > 0 ? `<div class="dvr-row warn"><span><span class="dvr-icon">−</span>Lön ≤ 0:</span><span class="dvr-value">${fmt(excludedZeroLon)}</span></div>` : ''}
                 ${excludedMissingKon > 0 ? `<div class="dvr-row warn"><span><span class="dvr-icon">−</span>Saknar/okänt kön:${missingKonExamples.length ? ' <span class="text-dampad-xs">ex: ' + missingKonExamples.map(e => '"' + esc(e) + '"').join(', ') + '</span>' : ''}</span><span class="dvr-value">${fmt(excludedMissingKon)}</span></div>` : ''}
                 ${invalidLon > 0 ? `<div class="dvr-row warn"><span><span class="dvr-icon">${ikon('statusVarning')}</span>Ogiltig lön (text):${invalidLonExamples.length ? ' <span class="text-dampad-xs">ex: ' + invalidLonExamples.map(e => '"' + esc(e) + '"').join(', ') + '</span>' : ''}</span><span class="dvr-value">${fmt(invalidLon)}</span></div>` : ''}
                 ${invalidAlder > 0 ? `<div class="dvr-row warn"><span><span class="dvr-icon">${ikon('statusVarning')}</span>Ogiltig ålder (text):${invalidAlderExamples.length ? ' <span class="text-dampad-xs">ex: ' + invalidAlderExamples.map(e => '"' + esc(e) + '"').join(', ') + '</span>' : ''}</span><span class="dvr-value">${fmt(invalidAlder)}</span></div>` : ''}
                 <div class="dvr-row dvr-total ok"><span>= Inlästa:</span><span class="dvr-value">${fmt(used)}</span></div>
-                ${totalRaw > 0 ? `<div class="text-dampad-xs marg-t-4">Användbarhetsgrad: <strong>${svPct((used / Math.max(1, totalRaw - (da.excludedOverBas || 0)) * 100), 1)}</strong> av filens rader${da.excludedOverBas ? ` (utom BAS ovanför ${esc(BAS_MAX)}, som analyseras manuellt)` : ''}.</div>` : ''}
+                ${totalRaw > 0 ? `<div class="text-dampad-xs marg-t-4">Användbarhetsgrad: <strong>${svPct((used / Math.max(1, totalRaw) * 100), 1)}</strong> av filens rader.</div>` : ''}
                 ${(invalidLon > 0 || invalidAlder > 0 || excludedMissingKon > 0) ? `<div class="farg-varning fs-xs lh-1_4 marg-t-6">Granska om antalet är högt — kan signalera ett systematiskt fel i exporten från lönesystemet. Exempel-värdena ovan visar de första 3 mönstren som föll ut, för felsökning.</div>` : ''}
             </div>
 
@@ -13132,15 +13101,6 @@ function buildActionChecklist({ endastGrupper = false } = {}) {
                 });
             });
         } catch (e) { rapporteraFel('Att göra: lika arbete per BAS', e); }
-
-        // === BAS ovanför analysens spann: analyseras manuellt av HR ===
-        const manuella = (typeof manuellaBas === 'function') ? manuellaBas() : null;
-        if (manuella) items.push({
-            id: 'bas-ovanfor-grans', kategori: 'Underlag', prioritet: 'medel',
-            titel: `${manuella.n} ${manuella.n === 1 ? 'person' : 'personer'} i BAS ${manuella.spann} ska analyseras manuellt`,
-            detalj: `Verktyget analyserar bara BAS A–${BAS_MAX}. Personerna i högre BAS finns i källfilen och bedöms utanför verktyget.`,
-            tab: 'dashboard', källa: 'Inläsning'
-        });
 
         // === 1b. Oförklarat gap för hela organisationen (regressionen) ===
         try {
@@ -15907,7 +15867,7 @@ function openDataResidency() {
     const approxKB = Math.round(approxBytes / 1024);
     // Rullistans värden; ett låst värde ur organisationspaketet (ADR-47) finns alltid med, och listan är då låst.
     const last = state.paketLas.inaktivitetMin;
-    const val = [...new Set([0, 15, INAKTIVITET_STANDARD_MIN, 60, ...(last != null ? [last] : [])])].sort((a, b) => a - b);
+    const val = [...new Set([0, 30, 60, INAKTIVITET_STANDARD_MIN, 120, ...(last != null ? [last] : [])])].sort((a, b) => a - b);
 
     let sampleRow = '';
     if (n > 0) {
@@ -15992,7 +15952,8 @@ document.getElementById('btn-data-residency')?.addEventListener('click', () => {
 // bekräfta att de fortfarande är där — om ingen reaktion inom 60 s rensas data
 // (motsvarande clearAllData utan confirm-prompt).
 //
-// På som standard (30 minuter, dataskydd som standard enligt GDPR art. 25.2). HR kan
+// På som standard (90 minuter: dataskydd som standard enligt GDPR art. 25.2, med en tid som inte
+// avbryter ett normalt arbetspass). HR kan
 // ändra eller stänga av det i "Vad lagras?"-modalen.
 /** @type {ReturnType<typeof setTimeout>|null} */
 let _inactivityIdleTimer  = null;
@@ -16962,8 +16923,6 @@ function _afterDataLoaded() {
     generateRapport();
     const bas = getBasIntervals();
     dataStatus.textContent = `${state.data.length} rader · ${bas.length} BAS`;
-    const manuella = manuellaBas();
-    if (manuella) dataStatus.textContent += ` · ${manuella.n} ${manuella.n === 1 ? 'person' : 'personer'} i BAS ${manuella.spann} analyseras manuellt`;
     if (poangCount > 0) dataStatus.textContent += ` · arbetsvärdering: ${poangCount} befattningar (poäng som krav-proxy i likvärdighetsanalysen)`;
     dataStatus.className = "status-msg success";
     markUploadLoaded('upload-cell-data', 'Inläst');
@@ -17261,8 +17220,6 @@ function loadStructureFile(file) {
         excludedNoBas: 0,
         excludedZeroLon: 0,
         excludedMissingKon: 0,    // rec.kon tomt eller okänt format
-        excludedOverBas: 0,       // BAS ovanför BAS_MAX — analyseras manuellt av HR
-        overBasPerBas: {},        // antal per sådan BAS (bara antal, inga värden)
         invalidLon: 0,            // icke-tom men oparsbar lön
         invalidAlder: 0,          // icke-tom men oparsbar ålder
         invalidAlderUtesluten: 0, // varav rader som ändå uteslöts (räknas inte två gånger i fullständigheten)
@@ -17328,12 +17285,6 @@ function loadStructureFile(file) {
         delete rec._alderStatus;
         const utesluts = () => { if (alderOgiltig) parseStats.invalidAlderUtesluten++; };
         if (!rec.bas)     { parseStats.excludedNoBas++; utesluts(); return; }
-        if (_faltBasOvanforGrans(rec.bas, BAS_MAX)) {
-            parseStats.excludedOverBas++;
-            parseStats.overBasPerBas[rec.bas] = (parseStats.overBasPerBas[rec.bas] || 0) + 1;
-            utesluts();
-            return;
-        }
         if (rec.lon <= 0) { parseStats.excludedZeroLon++; utesluts(); return; }
         if (!konOk)       { parseStats.excludedMissingKon++; utesluts(); return; }
         rec.radnr = row[_RADNR] ?? null;
@@ -17530,7 +17481,6 @@ function _visaEjInlast(saknas, stats) {
     else {
         const n = (antal, text) => { if (antal) skal.push(`${antal} ${antal === 1 ? 'rad' : 'rader'} ${text}`); };
         n(stats.excludedNoBas, 'utan BAS-intervall');
-        n(stats.excludedOverBas, `över BAS ${BAS_MAX}`);
         n(stats.excludedZeroLon, 'utan lön');
         n(stats.excludedMissingKon, 'utan kön');
         if (!skal.length) skal.push('filen har inga rader');
@@ -25879,7 +25829,6 @@ function rapportunderlagBlock() {
         n: d.length, nKv: kvLon.length, nMa: maLon.length, medKv: Stat.median(kvLon), medMa: Stat.median(maLon),
         oforklarat: reg.error ? null : { pct: reg.konPct, lo: reg.konPctLow, hi: reg.konPctHigh, medBas: reg.modelName === 'full' },
         kvalitet: uk ? { status: uk.status, brister: uk.kriterier.filter(c => c.status !== 'ok').map(c => c.namn) } : null,
-        manuellt: manuellaBas(),
     };
 
     // Lika arbete — samma grupper som EU-tabellen

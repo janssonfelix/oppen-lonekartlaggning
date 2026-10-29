@@ -19,7 +19,7 @@ verktygets kod och fyra låsta bibliotek (D3, SheetJS, PapaParse, JSZip).
 | **Ingen lagring** | Ingen kod skriver till localStorage, sessionStorage, IndexedDB eller cookies; en spärr kastar vid försök (reserv) | Lagringen är tom efter full körning i webbläsaren (§6.2) |
 | **Minimerad indata** | Bara fem fält (lön, kön, ålder, yrke/AID, BAS) och två valfria läses in; en fil med kolumner för personnummer, namn eller e-post avvisas | Fälten i minnet efter inläsning; avvisning prövad (§6.4) |
 | **Små grupper** | Lönemått för grupper under minsta gruppstorlek (standard 10) redovisas inte; undantagen är uppräknade | Invarianter över flikar och exporter (§6.5) |
-| **Rensning** | *Rensa all data* och rensning efter 30 minuters inaktivitet (kan låsas i organisationspaketet) tömmer minnet och sidan | Inget lönevärde kvar i dokumentet efter rensning (§6.3) |
+| **Rensning** | *Rensa all data* och rensning efter 90 minuters inaktivitet (kan låsas i organisationspaketet) tömmer minnet och sidan | Inget lönevärde kvar i dokumentet efter rensning (§6.3) |
 | **Äkthet** | Varje version signeras med Sigstore cosign i ett publikt byggflöde; kontrollsumma i `RELEASE.txt` | Verifieringskommandot i [`SECURITY.md`](../../SECURITY.md) |
 
 ## Det som ligger hos organisationen
