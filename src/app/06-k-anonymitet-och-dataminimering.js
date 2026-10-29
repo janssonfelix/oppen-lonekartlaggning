@@ -397,7 +397,8 @@ function sattKTroskel(v, { fraga = true, rita = true, stegvis = false } = {}) {
     state._lifecycleCache = null;
     // Skattningarna (bootstrap-KI och styrkan läser statGolv(); § 3:10-paren läser ingen tröskel) räknas om bara när
     // golvet ändras — på 55 000 rader är bootstrapen sekunder. Det som är ritat bär den gamla tröskeln och ritas om.
-    if (statGolv() !== golvFore && typeof invalidateStatCaches === 'function') invalidateStatCaches();
+    const golvAndrat = statGolv() !== golvFore;
+    if (golvAndrat && typeof invalidateStatCaches === 'function') invalidateStatCaches({ recompute: false });   // räknas om i bakgrunden nedan
     else if (typeof ritGenerationNy === 'function') ritGenerationNy();   // allt som är ritat hittills bär den gamla tröskeln
     // Löneöversynens förslag ur § 3:10-par som inte längre når tröskeln tas bort (egna rader står kvar).
     if (hojd && typeof _fcRensaParMal === 'function') _fcRensaParMal();
@@ -406,7 +407,39 @@ function sattKTroskel(v, { fraga = true, rita = true, stegvis = false } = {}) {
     /** @type {Promise<void>|null} */
     let klar = null;
     if (rita) { if (stegvis) klar = _renderaOmAllaFlikarStegvis(); else _renderaOmAllaFlikar(); }
+    // Skattningarna som läser golvet räknas om i bakgrunden när omritningen är klar (rutan är borta), som vid inläsning.
+    if (golvAndrat) { if (klar) klar.then(() => _skattningarIBakgrunden()); else _skattningarIBakgrunden(); }
     return { ok: true, varde: n, andrad: true, ...(klar ? { klar } : {}) };
+}
+
+/**
+ * Räknar om skattningarna (bootstrap-KI och styrkan, som läser statGolv()) i bakgrunden efter ett tröskelbyte som
+ * ändrade golvet — som vid inläsningen — och ritar sedan om det som visar dem: Översikts nyckeltal och underlagets
+ * kvalitet, och Lika arbete eller Prioritering när den är öppen. Tills dess står nyckeltalen utan intervall.
+ * @returns {Promise<void>}
+ */
+/** @type {Promise<void>|null} */
+let _bakgrundsrakning = null;
+function _skattningarIBakgrunden() {
+    if (_bakgrundsrakning) return _bakgrundsrakning;
+    const status = document.getElementById('data-status');
+    const NOT = ' · förbereder analyser i bakgrunden…';
+    if (status && !status.textContent.includes(NOT)) status.textContent += NOT;
+    _bakgrundsrakning = new Promise(resolve => setTimeout(() => {
+        try {
+            if (state.data.length) {
+                try { computeBootstrapCI(); } catch (_e) { state.bootstrapCI = null; }
+                try { state.powerAnalysis = computePowerAnalysis(); } catch (_e) { state.powerAnalysis = null; }
+                if (typeof updateDashboardStats === 'function') updateDashboardStats();
+                if (typeof renderUnderlagetsKvalitet === 'function') renderUnderlagetsKvalitet();
+                const oppen = document.querySelector('.nav-item.active[data-tab]');
+                const flik = oppen ? oppen.getAttribute('data-tab') : null;
+                if ((flik === 'matrix' || flik === 'prioritering') && typeof renderTabContent === 'function') renderTabContent(flik);
+            }
+        } catch (e) { rapporteraFel('skattningar i bakgrunden', e); }
+        finally { if (status) status.textContent = status.textContent.replace(NOT, ''); _bakgrundsrakning = null; resolve(); }
+    }, 0));
+    return _bakgrundsrakning;
 }
 
 /**

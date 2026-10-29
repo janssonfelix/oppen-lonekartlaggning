@@ -10,7 +10,7 @@
  *   paket: any, paketInbakat: null|{skapad:string, organisation:string, verktygsversion:string, verktygssha:string, text:string}, isDemo: boolean,
  *   prioConfig: {atgardThreshold: number, akutMinN: number, bevakaThreshold: number, analyseraThreshold: number, [k: string]: any},
  *   prioWeights: {avvikelse: number, volym: number, jamstalldhet: number, [k: string]: any}, costSettings: {[k: string]: any},
- *   rapportUrval: {ordning: string[], med: string[]}|null, rapportTabeller: any[], perBasRecept: any,
+ *   rapportUrval: {ordning: string[], med: string[]}|null, rapportTabeller: any[], perBasRecept: any, forraArsbokslut: any,
  *   bristAids: Set<string>, scenarios: any[], snapshot: any, profile: {[k: string]: any},
  *   filnamn: {data: string|null, policy: string|null, statistik: string|null}, kTroskel: number,
  *   paketLas: {kTroskelLagst: number|null, inaktivitetMin: number|null, smaGrupperIExport: boolean},
@@ -49,6 +49,7 @@ const state = {
     bristAids: new Set(),         // E: AID-koder markerade som bristyrke
     scenarios: [],                // I: sparade scenarion (max 5)
     snapshot: null,         // för A/B-jämförelse
+    forraArsbokslut: null,  // förra årets bokslut ur en inläst konfigurationsfil (ADR-54, src/lib/arsbokslut.js)
     profile: { ...DEFAULT_PROFILE },
     filnamn: { data: null, policy: null, statistik: null },   // filrutornas status (ADR-36)  // #14 lokalkalibrering
     kTroskel: K_STANDARD,             // minsta gruppstorlek för redovisning (ADR-38); ändras bara av sattKTroskel()

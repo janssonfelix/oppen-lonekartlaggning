@@ -53,6 +53,8 @@ function buildConfigSnapshot() {
         bes8: (typeof _bes8Areas === 'function' ? _bes8Areas() : [])
             .map(a => ({ n: a.n, status: a.status, note: a.note })),
         actionChecklistDone: Array.from(state._actionChecklistDone || []),
+        // Årsbokslutet (ADR-54): årets k-skyddade sammandrag, eller det inlästa när inget underlag finns.
+        arsbokslut: (typeof byggArsbokslutNu === 'function' ? byggArsbokslutNu() : null) || state.forraArsbokslut || null,
         orgName: orgNamn(''),
         jmfNamn: jmfNamn(''),
         strukturNarrative: (() => {
@@ -250,6 +252,11 @@ function applyConfigSnapshot(cfg) {
         if (giltiga.length < cfg.rapportTabeller.length) varningar.push(`${cfg.rapportTabeller.length - giltiga.length} egna tabeller i filen gick inte att läsa och hoppas över.`);
         tmp.rapportTabeller = giltiga;
     }
+    if (cfg.arsbokslut != null) {
+        const a = typeof _abValidera === 'function' ? _abValidera(cfg.arsbokslut) : null;
+        if (!a) varningar.push('Filens årsbokslut gick inte att läsa och hoppas över.');
+        else tmp.arsbokslut = a;
+    }
     if (cfg.perBasRecept != null) {
         if (typeof cfg.perBasRecept !== 'object') throw new Error('perBasRecept måste vara ett objekt.');
         tmp.perBasRecept = _pbValideraRecept(cfg.perBasRecept);
@@ -288,6 +295,7 @@ function applyConfigSnapshot(cfg) {
     });
     if (typeof bes8Uppdatera === 'function') bes8Uppdatera();
     if (tmp.actionChecklistDone) state._actionChecklistDone = new Set(tmp.actionChecklistDone);
+    if (tmp.arsbokslut) { state.forraArsbokslut = tmp.arsbokslut; if (typeof renderArsjamforelse === 'function') medExportLage(() => renderArsjamforelse()); }
     // Bara namn som finns i filen sätts — en fil utan namn ska inte radera paketets namn.
     if (tmp.orgName) sattOrgNamn(tmp.orgName);
     if (tmp.jmfNamn) sattJmfNamn(tmp.jmfNamn);

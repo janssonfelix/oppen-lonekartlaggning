@@ -1,6 +1,6 @@
 # Risk- och sårbarhetsanalys (dataskydd och informationssäkerhet) — Öppen lönekartläggning
 
-**Bygge:** `2026.10.19` · **Artefakt-SHA-256:** `911b110741ca53a5f78474a1ddd5a4a7f1442645ee49d18332464f746aee20f5` (se `dist/RELEASE.txt`).
+**Bygge:** `2026.10.19` · **Artefakt-SHA-256:** `388ad496a2ffcda535186f4592ebb8c3909cbf5909902f34ac963df280f5f86f` (se `dist/RELEASE.txt`).
 **Granskningsdatum:** 2026-10-20.
 **Granskningsmetod:** kodläsning påstående för påstående + statisk sökning i källkod och bygge +
 körning av det byggda verktyget i jsdom och i Chromium (utan nätverk) med syntetiska testfiler.
@@ -566,7 +566,11 @@ Konfig-JSON:en (**version 2**) innehåller: inställningar
 (trösklar, vikter, kostnadsinställningar, bristyrken,
 löneöversynens inställningar, där en riktad rad bär uppgiften om den föreslogs ur kandidatpar i likvärdigt arbete) samt **HR:s manuella arbete**: § 8-bedömningarna (status + anteckning per granskningsområde),
 avbockningarna i Att göra (punkternas id, som innehåller AID-kod och BAS),
-organisationsnamnet och ett redigerat struktur-narrativ. `state.data` (individrader) ingår **aldrig** — verifierat mot
+organisationsnamnet och ett redigerat struktur-narrativ, samt **årsbokslutet** (ADR-54): nyckeltal för hela
+organisationen, en rad per yrkesgrupp där båda könen når minsta gruppstorlek (antal per kön, medianer, gap) och
+Att göra-punkternas id, titel och läge — byggt i exportläget med den inställda tröskeln, och vid inläsning stryks
+varje grupp där ett kön är under bokslutets k (`valideraArsbokslut`; vaktas av `tests/arsbokslut.test.js` och
+`tests/smoke-arsbokslut.test.js`). `state.data` (individrader) ingår **aldrig** — verifierat mot
 `buildConfigSnapshot()` i koden (ingen `state.data`-referens). Organisationens namn och jämförelsestatistikens namn (användarens
 egna namn; text som liknar personnummer eller e-post avvisas) ingår. Organisationstypen (kommun,
 region eller båda) ingår som inställning. Ansvarskoderna och

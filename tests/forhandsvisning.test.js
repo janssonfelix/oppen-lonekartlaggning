@@ -51,7 +51,7 @@ describe('förhandsvisning: Som export', () => {
 });
 
 describe('tröskelbytet räknar bara om det som beror på tröskeln', () => {
-    it('bootstrap-KI och styrkan står kvar när det statistiska golvet är detsamma, och räknas om när det ändras', () => {
+    it('bootstrap-KI och styrkan står kvar när det statistiska golvet är detsamma, och räknas om i bakgrunden när det ändras', async () => {
         const w = fonster(null);
         w.eval('invalidateStatCaches()');
         const ci = w.__state.bootstrapCI, styrka = w.__state.powerAnalysis;
@@ -59,8 +59,13 @@ describe('tröskelbytet räknar bara om det som beror på tröskeln', () => {
         w.eval('sattKTroskel(8, { fraga: false })');                            // statGolv 10 → 10
         expect(w.__state.bootstrapCI).toBe(ci);
         expect(w.__state.powerAnalysis).toBe(styrka);
-        w.eval('sattKTroskel(12, { fraga: false })');                           // statGolv 10 → 12
+        w.eval('sattKTroskel(12, { fraga: false })');                           // statGolv 10 → 12: räknas om i bakgrunden
+        expect(w.__state.bootstrapCI).toBeNull();
+        expect(w.document.getElementById('data-status').textContent).toMatch(/förbereder analyser i bakgrunden/);
+        await w.eval('_skattningarIBakgrunden()');
+        expect(w.__state.bootstrapCI).not.toBeNull();
         expect(w.__state.bootstrapCI).not.toBe(ci);
+        expect(w.document.getElementById('data-status').textContent).not.toMatch(/förbereder analyser/);
     });
     it('Att göras lista byggs en gång för Att göra och processöversikten tillsammans', () => {
         const w = fonster(null);

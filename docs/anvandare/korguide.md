@@ -300,7 +300,10 @@ exportera* → *Rapportens innehåll* kan ni ordna om och ta bort tabellerna.
 ## 6. Avsluta och arkivera
 
 - **"Spara konfiguration"** (Dokumentera → *Spara och läsa in arbetet*) om du vill återuppta inställningarna senare (datafilen
-  laddas om — själva lönedatan sparas aldrig).
+  laddas om — själva lönedatan sparas aldrig). Filen bär också **årets bokslut**: nyckeltal, en rad per yrkesgrupp
+  där båda könen når minsta gruppstorlek, och Att göra-punkternas läge. Läs in filen nästa år, så visar
+  **Jämförelse med förra året** (samma avsnitt) vad som ändrats: nyckeltalen sida vid sida, vilka yrkesgrupper som
+  är flaggade båda åren, nya och inte längre flaggade, och vilka av förra årets öppna punkter som är klara.
 - **"Rensa all data"** (under **Inställningar**, rubriken *Rensa*) när du är klar — eller stäng bara fliken; inget ligger kvar.
 - Arkivera de färdiga dokumenten (Word/PDF/Excel) enligt era informationshanterings-
   rutiner. Glöm inte att planera in nästa års lönekartläggning.
