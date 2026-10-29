@@ -64,6 +64,15 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   kvinnor och kortet säger det) och *Var uppstår löneskillnaden?* på Översikt och i rapportunderlaget
   (`src/lib/gapuppdelning.js` räknar kvinnor − män; negativa belopp betyder att kvinnornas medellön är lägre).
   Undantaget är EU-lönerapportens blad, som har direktivets tecken (art. 9) med tecknet utskrivet, som förut.
+- **Blinder-Oaxaca med BAS som indikatorer (ADR-53).** Uppdelningen kodar BAS som en indikator per intervall, som
+  huvudregressionen, i stället för som rang; kortets förklarade och oförklarade del vilar därmed på samma variabler
+  som huvudtalet, och skillnaden mellan dem är bara att uppdelningen skattar kvinnors och mäns lönesättning var för
+  sig. Referensintervallet är det alfabetiskt första som finns hos båda könen; ett intervall som bara finns hos ett
+  kön hamnar i samspelet. Raden *BAS-intervall* i tabellen per variabel är summan över indikatorerna.
+  Referensvärdena mot statsmodels är omräknade.
+- **Täthetskurvorna per BAS är borta ur Ålder & karriär.** De handlade inte om ålder; lönespridningen per BAS och
+  kön finns som lådor i Lika arbete, och utskriften använder nu den bilden (*Lönespridning per BAS-intervall och
+  kön*). Avsnittet *Jämför alla BAS-intervall* har kvar lön mot ålder i varje intervall.
 - **Tre småsaker i texterna.** Kronexemplet i regressionskortet säger också hur stor summan är som andel av
   kvinnornas samlade årslön. Blinder-Oaxaca-kortets förklarade och oförklarade del står i procentenheter av
   rågapet ("10,7 procentenheter") i stället för som negativa procenttal. Inledningen till *Var uppstår

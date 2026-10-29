@@ -726,7 +726,7 @@ describe('täthetskurvor: lådmärkets form fiol', () => {
     });
 });
 
-describe('Ålder & karriär: lönefördelningen per BAS-intervall', () => {
+describe('Lönefördelningen per BAS-intervall (figuren och Lika arbetes lådor)', () => {
     const MARKOR = 76555;
     const rad = (bas, kon, lon) => ({ bas, kon, lon, alder: 40, yrke: '100 X', aid: '100', yrkeLabel: 'X', enhet: '' });
     const data = () => [...Array.from({ length: 12 }, (_, i) => rad('A', 'kvinna', 30000 + i * 100)), ...Array.from({ length: 12 }, (_, i) => rad('A', 'man', 32000 + i * 100)),
@@ -745,24 +745,21 @@ describe('Ålder & karriär: lönefördelningen per BAS-intervall', () => {
         expect(kon.utelamnade).toEqual(['BAS B (kvinnor)', 'BAS S (män)']);
         expect(kon.figur.lager[0].data[0].markering).toEqual(['bas:A']);
     });
-    it('vyn: kurvorna ritas i fliken, valet Per kön ritar om, och inget under tröskeln finns i bild, data eller export', () => {
+    it('vyn: lådorna per BAS och kön ritas i Lika arbete, och inget under tröskeln finns i bild, data eller export', () => {
         const w2 = createAppWindow();
         w2.__state.kLage = 'export';   // så som det lämnar verktyget (ADR-51)
         w2.__state.data = data();
         w2.eval('populateSelects(); unlockTabs();');
-        w2.__renderTabContent('kon');
-        const d = w2.document, el = d.getElementById('chart-kon-tathet');
-        expect(el.querySelectorAll('path[data-form="fiol"]')).toHaveLength(2);          // BAS A och B
-        expect(d.getElementById('kon-tathet-not').textContent).toMatch(/Visas inte, färre än 10 personer: BAS S\./);
-        d.getElementById('kon-tathet-visa').value = 'kon';
-        d.getElementById('kon-tathet-visa').dispatchEvent(new w2.Event('change', { bubbles: true }));
-        expect(el.querySelectorAll('path[data-form="fiol"]')).toHaveLength(3);          // A kvinnor, A män, B män
-        expect(d.getElementById('kon-tathet-not').textContent).toMatch(/BAS B \(kvinnor\), BAS S \(män\)/);
-        const allt = (el.outerHTML + JSON.stringify(w2.eval('chartExportRows(document.getElementById("chart-kon-tathet"))'))).replace(/(\d)[\s  ](?=\d)/g, '$1').replace(/\s(?:d|x[12]?|y[12]?|transform|width|height)="[^"]*"/g, '');
+        w2.__renderTabContent('matrix');
+        const d = w2.document, el = d.getElementById('chart-skevhet-lador');
+        expect(el.querySelectorAll('[data-marke="lada"]').length).toBe(3);               // A kvinnor, A män, B män
+        expect(d.getElementById('skevhet-lador-not').textContent).toMatch(/BAS B \(kvinnor\), BAS S \(män\)/);
+        const allt = (el.outerHTML + JSON.stringify(w2.eval('chartExportRows(document.getElementById("chart-skevhet-lador"))'))).replace(/(\d)[\s  ](?=\d)/g, '$1');
         expect(allt).not.toMatch(/7655\d|7665\d|BAS S/);
-        // Diagramdatan: en rad per kurva med median och kvartiler — aldrig en rad per person.
-        expect(w2.eval('chartExportRows(document.getElementById("chart-kon-tathet"))').filter(r => /^BAS /.test(String(r[1])))).toHaveLength(3);
+        // Diagramdatan: en rad per låda med median och kvartiler — aldrig en rad per person.
+        expect(w2.eval('chartExportRows(document.getElementById("chart-skevhet-lador"))').filter(r => /^BAS /.test(String(r[1])))).toHaveLength(3);
     });
+
 });
 
 // ---- Regnmoln, små multiplar, histogram, ytor och trädkarta ----
@@ -1014,7 +1011,7 @@ describe('ZIP-exporten: alla ritade diagram som får exporteras', () => {
         for (const t of ['matrix', 'struktur', 'kon']) w2.__renderTabContent(t);
         const ids = w2.eval('zipDiagram().map(el => el.id)');
         expect(ids).toEqual(ids.slice().sort((a, b) => a.localeCompare(b)));
-        for (const id of ['chart-skevhet-overview', 'chart-skevhet-andel', 'chart-struktur-kvartiler', 'chart-struktur-tradkarta', 'chart-kon-scatter', 'chart-kon-tathet', 'chart-demo-pyramid']) expect(ids, id).toContain(id);
+        for (const id of ['chart-skevhet-overview', 'chart-skevhet-andel', 'chart-struktur-kvartiler', 'chart-struktur-tradkarta', 'chart-kon-scatter', 'chart-skevhet-lador', 'chart-demo-pyramid']) expect(ids, id).toContain(id);
         expect(ids.some(id => id.startsWith('chart-pag-'))).toBe(false);                 // Personer att granska bär inget diagram att exportera
         expect(ids).not.toContain('chart-explore');                                      // Utforska är inte öppnat: inte ritat
         expect(new Set(ids).size).toBe(ids.length);
@@ -1054,7 +1051,7 @@ describe('utskriften ur rapportmodellen', () => {
         expect(hela.textContent).toContain('Låst kopia');
         expect(hela.textContent).not.toContain('UTKAST att färdigställa');
         // Bilagorna: flikarnas tabeller och diagram.
-        for (const r of ['Bilagor: tabeller och diagram ur flikarna', 'Löneöversikt (organisation · kön · yrke)', 'Lönefördelningen per BAS-intervall', 'Bilaga: Metodik & urval (kvalitetssäkring)']) expect(rubriker(hela), r).toContain(r);
+        for (const r of ['Bilagor: tabeller och diagram ur flikarna', 'Löneöversikt (organisation · kön · yrke)', 'Lönespridning per BAS-intervall och kön', 'Bilaga: Metodik & urval (kvalitetssäkring)']) expect(rubriker(hela), r).toContain(r);
         // Ett kortare urval är just avsnitten: inga bilagor, och inga avsnitt utöver urvalet.
         const facklig = await bygg('facklig');
         expect(rubriker(facklig).some(r => /^Bilagor:|Löneöversikt/.test(r))).toBe(false);
@@ -1283,7 +1280,7 @@ describe('Ålder & karriär — ett urval för hela fliken, och avsnitt med nyck
     });
     it('avsnitten: livscykeln är öppen, de övriga hopfällda men ritade, och de som följer urvalet säger sitt nyckeltal', () => {
         const w2 = oppna(), d = w2.document;
-        for (const id of ['chart-demo-spread', 'chart-kon-boxplot', 'chart-kon-histogram', 'chart-demo-hist', 'chart-demo-pyramid', 'chart-kon-tathet', 'chart-kon-multiplar']) {
+        for (const id of ['chart-demo-spread', 'chart-kon-boxplot', 'chart-kon-histogram', 'chart-demo-hist', 'chart-demo-pyramid', 'chart-kon-multiplar']) {
             const el = d.getElementById(id);
             expect(el._figur, id).toBeDefined();
             expect(el.closest('details.avsnitt').open, id).toBe(false);

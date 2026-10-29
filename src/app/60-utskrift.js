@@ -60,7 +60,7 @@ async function _buildPrintReportExport() {
             const imgs = {};
             renderKon('__ALLA__');
             await new Promise(r => setTimeout(r, 250));
-            for (const [nyckel, id, hojd] of [['kon', 'chart-kon-scatter', 600], ['box', 'chart-kon-boxplot', 500], ['tathet', 'chart-kon-tathet', 560]]) {
+            for (const [nyckel, id, hojd] of [['kon', 'chart-kon-scatter', 600], ['box', 'chart-kon-boxplot', 500], ['lador', 'chart-skevhet-lador', 560]]) {
                 const elD = document.getElementById(String(id));
                 if (diagramRitat(elD)) { try { imgs[nyckel] = await diagramTillBild(elD, { bredd: 1400, hojd, utanRubrik: true }); } catch (e) { rapporteraFel(`utskrift: ${id}`, e); } }
             }
@@ -100,7 +100,7 @@ async function _buildPrintReportExport() {
                 + matrixSection + skevhetSection
                 + bildSektion('Löneutveckling mot ålder (alla BAS-intervall)', imgs.kon, 'Punktdiagram: lön mot ålder per kön')
                 + bildSektion('Lönefördelning per kön', imgs.box, 'Lådagram över lönefördelningen')
-                + bildSektion('Lönefördelningen per BAS-intervall', imgs.tathet, 'Täthetskurvor över lönerna per BAS-intervall')
+                + bildSektion('Lönespridning per BAS-intervall och kön', imgs.lador, 'Lådagram över lönerna per BAS-intervall och kön')
                 + rapportSection + bmSection + bilagaSection;
         }
         // Tröskeln står i metodbilagan; saknas den i urvalet står den som en egen rad sist.

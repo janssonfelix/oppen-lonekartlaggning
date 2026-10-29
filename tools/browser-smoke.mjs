@@ -672,16 +672,6 @@ console.log('\n── Punktsvärm, före och efter, övergångar ──');
         await page.waitForTimeout(100);
         ok(await page.evaluate(() => !document.querySelector('#chart-kon-scatter [data-nara]')), 'ringen försvinner när pekaren lämnar diagrammet');
     } else ok(false, 'hittade ingen ensam punkt att pröva närmaste-punkt på');
-    // Täthetskurvorna per BAS-intervall (samma flik som punktdiagrammet).
-    await page.locator('#chart-kon-tathet').scrollIntoViewIfNeeded();
-    const fiol = await page.evaluate(() => ({ kurvor: document.querySelectorAll('#chart-kon-tathet path[data-form="fiol"]').length, avvikare: document.querySelectorAll('#chart-kon-tathet [data-marke="avvikare"]').length }));
-    ok(fiol.kurvor >= 2 && fiol.avvikare === 0, `Ålder & karriär ritar lönefördelningen per BAS-intervall som täthetskurvor (${fiol.kurvor} kurvor, inga avvikarpunkter)`);
-    if (BILDER) await page.locator('#chart-kon-tathet').screenshot({ path: `${BILDER}/tathet-${NAMN}.png` });
-    await page.selectOption('#kon-tathet-visa', 'kon');
-    await page.waitForTimeout(500);
-    ok(await page.evaluate(n => document.querySelectorAll('#chart-kon-tathet path[data-form="fiol"]').length > n, fiol.kurvor), 'valet Per kön ritar en kurva per kön');
-    if (BILDER) await page.locator('#chart-kon-tathet').screenshot({ path: `${BILDER}/tathet-kon-${NAMN}.png` });
-    await page.selectOption('#kon-tathet-visa', 'alla');
     // I samma flik: histogram, percentilband och små multiplar.
     const e2 = await page.evaluate(() => ({ hist: document.querySelectorAll('#chart-kon-histogram rect[data-marke="stapel"]').length,
         band: document.querySelectorAll('#chart-demo-spread [data-marke="band"]').length, paneler: document.querySelectorAll('#chart-kon-multiplar svg[data-del="panel"]').length,

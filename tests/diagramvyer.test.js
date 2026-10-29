@@ -1622,7 +1622,7 @@ describe('metodförbehåll under diagram', () => {
     });
 });
 
-describe('Ålder & karriär: lönefördelningen som kvantilpunkter', () => {
+describe('Lönefördelningen per BAS-intervall som kvantilpunkter (figuren)', () => {
     const p = (kon, lon, bas) => ({ kon, alder: 40, lon, yrke: 'Y', aid: 'Y', bas });
     it('formen kvantiler med 20 prickar; små kön-och-BAS-celler är märkta och lämnar inget i exporten', () => {
         w.__rader = [...Array.from({ length: 30 }, (_, i) => p('kvinna', 30000 + i * 50, 'A')), ...Array.from({ length: 30 }, (_, i) => p('man', 31000 + i * 50, 'A')),
@@ -1634,17 +1634,7 @@ describe('Ålder & karriär: lönefördelningen som kvantilpunkter', () => {
         expect(() => valideraFigur(figur, 't')).not.toThrow();
         expect(JSON.stringify(figurTillTabell(w.eval('_figUtanSma')(figur)))).not.toMatch(/7777/);
     });
-    it('reglaget Form ritar kvantilpunkter i verktyget; standard är täthetskurvan', () => {
-        const w2 = createAppWindow();
-        w2.__loadDemoData();
-        w2.__renderTabContent('kon');
-        const d = w2.document;
-        expect(d.getElementById('kon-tathet-form').value).toBe('fiol');
-        expect(d.querySelectorAll('#chart-kon-tathet [data-marke="kvantilpunkt"]')).toHaveLength(0);
-        d.getElementById('kon-tathet-form').value = 'kvantiler';
-        d.getElementById('kon-tathet-form').dispatchEvent(new w2.Event('change'));
-        expect(d.getElementById('chart-kon-tathet')._figur.lager.every(l => l.form === 'kvantiler')).toBe(true);
-    });
+
 });
 
 describe('radpaneler i vyerna', () => {

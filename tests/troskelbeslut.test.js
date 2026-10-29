@@ -208,7 +208,7 @@ describe('Diagramdata från diagram med en punkt per person säger att filen inn
             expect(r[1], id).toEqual([RAD]);
             expect(w.document.getElementById(id)._figur.individer, id).toBe(true);
         }
-        for (const id of ['chart-kon-boxplot', 'chart-demo-hist', 'chart-kon-tathet', 'chart-demo-spread']) {
+        for (const id of ['chart-kon-boxplot', 'chart-demo-hist', 'chart-demo-spread']) {
             const r = rader(w, id);
             expect(r.length, id).toBeGreaterThan(1);
             expect(JSON.stringify(r), id).not.toContain('rad per person');

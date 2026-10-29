@@ -37,7 +37,7 @@ function _quantileRegression(X, y, tau, maxIter, tol) {
 
 // Blinder-Oaxaca-dekomposition på appens data (getData()).
 function runBlinderOaxaca() {
-    return _rgBlinderOaxaca(getData(), { golv: statGolv(), rang: _lvBasRangFn });
+    return _rgBlinderOaxaca(getData(), { golv: statGolv() });   // BAS som indikatorer, som huvudmodellen (ADR-53)
 }
 
 // Kvantilregression vid τ ∈ {.10, .50, .90} på appens data (getData()).
