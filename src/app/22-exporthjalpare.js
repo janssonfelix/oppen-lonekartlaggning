@@ -24,6 +24,7 @@ function _methodAppendixData() {
             : 'Lokalt uppladdad fil (bearbetad helt i webbläsaren, inga nätverksanrop)'],
         ['Antal personer (inläst)', String(total)],
         ['Antal personer (i denna analys)', String(used)],
+        ['Nationell referens för andel kvinnor', skrForklaring()],
         ['Modell — oförklarat gap', 'OLS på log(månadslön) ~ kön + ålder + BAS-intervall (indikatorvariabler, första BAS som referens); HC3-robusta standardfel (Long & Ervin 2000)'],
         ['Steg + Yrkesgrupp (dekomponeringen)', 'Könsgap med fasta effekter för yrkesgrupp inom BAS (AID×BAS) utöver ålder, skattat med inomtransformation; visas som sista steg, ingår inte i huvudtalet'],
         ['Ålder & karriär (tvärsnitt)', 'Lön mot ålder och livscykelmodellen bygger på ett tvärsnitt: de visar skillnader mellan åldersgrupper i dag, inte hur en persons lön utvecklas över karriären (kohorteffekter)'],

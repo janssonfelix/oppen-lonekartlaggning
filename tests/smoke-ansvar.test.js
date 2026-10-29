@@ -573,10 +573,10 @@ describe('SKR:s kvinnoandel som referensvärde bredvid organisationens egen för
     w.__loadDemoData();
     const rubriker = id => [...w.document.querySelectorAll(`#${id} thead th`)].map(th => th.textContent.trim());
     const kol = (id, namn) => rubriker(id).indexOf(namn);
-    it('Lika arbete: kolumnen "Kvinnor, SKR" per yrke, och underraderna följer kolumnantalet', async () => {
+    it('Lika arbete: kolumnen "Kvinnor nationellt" per yrke, och underraderna följer kolumnantalet', async () => {
         const { skrKvinnoandel } = await import('../src/lib/skrreferens.js');
         w.__renderTabContent('matrix');
-        const i = kol('matrix-table', 'Kvinnor, SKR');
+        const i = kol('matrix-table', 'Kvinnor nationellt');
         expect(i).toBeGreaterThan(-1);
         const tr = [...w.document.querySelectorAll('#matrix-table tbody tr')].find(t => /^207011/.test(t.children[0].textContent.trim()));
         expect(tr.children[i].textContent.trim()).toBe(`${skrKvinnoandel('207011', { del: 'kommun' }).pct.toFixed(0)} %`);   // demot är en kommun
@@ -586,10 +586,10 @@ describe('SKR:s kvinnoandel som referensvärde bredvid organisationens egen för
             expect(bredd).toBe(antal);
         }
     });
-    it('sektorsöversikten: kolumnen "Kvinnor, SKR" per sektor', async () => {
+    it('sektorsöversikten: kolumnen "Kvinnor nationellt" per sektor', async () => {
         const { skrKvinnoandelSektor } = await import('../src/lib/skrreferens.js');
         w.__renderTabContent('struktur');
-        const i = kol('sektor-table', 'Kvinnor, SKR');
+        const i = kol('sektor-table', 'Kvinnor nationellt');
         expect(i).toBeGreaterThan(-1);
         const tr = [...w.document.querySelectorAll('#sektor-table tbody tr')].find(t => /Teknikarbete/.test(t.textContent));
         expect(tr.children[i].textContent.trim()).toBe(`${skrKvinnoandelSektor('Teknikarbete', { del: 'kommun' }).pct.toFixed(1).replace('.', ',')} %`);
@@ -603,8 +603,8 @@ describe('SKR:s kvinnoandel som referensvärde bredvid organisationens egen för
         const key = w.__gruppdossierCandidates().find(c => c.aid === '207011').key;
         const d = w.__buildGruppdossier(key);
         expect(d.skr).toMatchObject({ niva: 'etikett' });
-        expect(w.eval(`_gdRenderBody(__buildGruppdossier(${JSON.stringify(key)}))`)).toMatch(/SKR: \d+ % kvinnor i kommuner</);
-        expect(w.__gruppdossierAsText(d)).toMatch(/Referens SKR: \d+ % kvinnor/);
+        expect(w.eval(`_gdRenderBody(__buildGruppdossier(${JSON.stringify(key)}))`)).toMatch(/nationellt: \d+ % kvinnor i kommuner</);
+        expect(w.__gruppdossierAsText(d)).toMatch(/Nationell referens: \d+ % kvinnor/);
     });
     it('Om verktyget anger SKR:s personalstatistik som källa', () => {
         w.document.querySelector('.nav-item[data-tab="info"]').click();
@@ -617,7 +617,7 @@ describe('organisationstyp: kommun eller region styr SKR-referensen (ADR-34)', (
     const skr = async () => (await import('../src/lib/skrreferens.js'));
     const matrisCell = w => {
         w.__renderTabContent('matrix');
-        const i = [...w.document.querySelectorAll('#matrix-table thead th')].map(t => t.textContent.trim()).indexOf('Kvinnor, SKR');
+        const i = [...w.document.querySelectorAll('#matrix-table thead th')].map(t => t.textContent.trim()).indexOf('Kvinnor nationellt');
         const tr = [...w.document.querySelectorAll('#matrix-table tbody tr')].find(t => /^207011/.test(t.children[0].textContent.trim()));
         return tr.children[i].textContent.trim();
     };
@@ -641,7 +641,7 @@ describe('organisationstyp: kommun eller region styr SKR-referensen (ADR-34)', (
         expect(w.__state.profile.orgTyp).toBe('region');
         expect(matrisCell(w)).toBe(`${skrKvinnoandel('207011', { del: 'region' }).pct.toFixed(0)} %`);
         const key = w.__gruppdossierCandidates().find(c => c.aid === '207011').key;
-        expect(w.__gruppdossierAsText(w.__buildGruppdossier(key))).toMatch(/Referens SKR: \d+ % kvinnor i regioner/);
+        expect(w.__gruppdossierAsText(w.__buildGruppdossier(key))).toMatch(/Nationell referens: \d+ % kvinnor i regioner/);
     });
     it('konfigurationsfilen bär organisationstypen', () => {
         const w = createAppWindow();

@@ -150,10 +150,12 @@ också när det är hopfällt.
    fältet är de där skillnaden är svår att förklara med slumpen. Därefter kommer Personer att granska, sedan
    skillnaden per BAS-intervall (i procent, i kronor och som lönespridning per kön) och sist det **oförklarade**
    lönegapet (regressionen, trappan som visar vad ålder och nivå förklarar, och Blinder-Oaxaca).
-   Kolumnen **Kvinnor, SKR** visar andelen kvinnor i samma yrke enligt SKR:s
-   personalstatistik — ett referensvärde att jämföra er egen könsfördelning mot. Välj under
+   Kolumnen **Kvinnor nationellt** visar andelen kvinnor i samma yrke i landets kommuner och
+   regioner, ur SKR:s personalstatistik (SKR är Sveriges Kommuner och Regioner; perioden står i Om
+   verktyget) — ett referensvärde att jämföra er egen könsfördelning mot. Välj under
    **Inställningar** i sidhuvudet om organisationen är en kommun eller en region, så jämförs ni med rätt
-   del av statistiken.
+   del av statistiken. Samma statistik är reserv för könsfördelningen i Likvärdigt arbete, och
+   SKR:s PO-påslag är standardvärde i kostnadsberäkningen; ordlistan förklarar begreppet SKR.
    Yrkesgrupperna är AID-grupper. AID är inte ett arbetsvärderingssystem — grupperna är en
    **utgångspunkt** för lika arbete som ni bekräftar (se bakgrundspanelen i fliken).
    Har lönefilen AID:s **ansvarskod** visas under yrket en rad per ansvarsgrupp

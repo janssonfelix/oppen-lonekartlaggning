@@ -16,7 +16,7 @@ const PRIO_WEIGHTS_DEFAULTS = Object.freeze({
 // Kostnadsberäknings-defaults — SKR 2025 PO-påslag som standard
 const COST_DEFAULTS = Object.freeze({
     months: 12,         // beräkningsperiod (3/6/9/12 vanligt)
-    poPct:  39.15       // PO-påslag i % (SKR Cirkulär 2024 — sociala avgifter + pensioner)
+    poPct:  39.15       // PO-påslag i % (SKR:s cirkulär 2025 — sociala avgifter + pensioner)
 });
 
 // Automatisk rensning vid inaktivitet: på som standard (GDPR art. 25.2). Organisationspaketet kan låsa värdet (ADR-47).

@@ -278,10 +278,11 @@ SHA-256:    Se <code>RELEASE.txt</code> i utvecklingsmappen för verifiering
 
         <h3>Externa datakällor</h3>
         <ul>
-            <li>SKR Lönestatistik (AID-klassificering)</li>
-            <li>${esc(_skrReferensInfo().kalla)} — andel kvinnor per AID-etikett i kommuner och regioner; referensvärde bredvid organisationens egen könsfördelning och reserv i Likvärdigt arbete</li>
-            <li>SCB Arbetskraftsundersökningen (åldersfördelning för demografi-flik)</li>
-            <li>SKR Cirkulär 2025 (PO-påslag 39,15%)</li>
+            <li><strong>SKR</strong> är Sveriges Kommuner och Regioner, arbetsgivarorganisationen för kommuner och regioner. Verktyget använder tre saker därifrån:</li>
+            <li>AID — yrkesindelningen (Arbetsidentifikation kommuner och regioner), som yrkeskoderna i lönefilen följer</li>
+            <li>${esc(_skrReferensInfo().kalla)} — andel kvinnor per AID-kod i kommuner och regioner. I verktyget kallad <em>Kvinnor nationellt</em>: ett referensvärde bredvid organisationens egen könsfördelning, och reserv i Likvärdigt arbete</li>
+            <li>SKR:s cirkulär 2025 — PO-påslaget 39,15 % som standardvärde i kostnadsberäkningen (andra arbetsgivare sätter sitt eget)</li>
+            <li>SCB, Arbetskraftsundersökningen (AKU) — åldersfördelningen som referens i Ålder &amp; karriär</li>
         </ul>
 
         <h3>Licens</h3>

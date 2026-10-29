@@ -503,6 +503,22 @@ function _skrDel() {
     return t === 'kommun' || t === 'region' ? t : 'alla';
 }
 
+// Så nämns den nationella referensen i gränssnittet. "SKR" ensamt sade användarna inget; därför står
+// alltid vad statistiken är (andel kvinnor per yrke), var den gäller (kommuner och regioner) och från när.
+/** Perioden i ord: '2025-11' → 'november 2025'. */
+function _skrPeriodText(period) {
+    const [ar, man] = String(period || '').split('-');
+    const namn = ['januari', 'februari', 'mars', 'april', 'maj', 'juni', 'juli', 'augusti', 'september', 'oktober', 'november', 'december'][Number(man) - 1];
+    return namn && ar ? `${namn} ${ar}` : String(period || '');
+}
+/** Kort källtext: "SKR:s personalstatistik, november 2025". */
+function skrKallaKort() { return `SKR:s personalstatistik, ${_skrPeriodText(_skrReferensInfo().period)}`; }
+/** Hela förklaringen, för tooltips och metodbilagan. */
+function skrForklaring() {
+    return `Nationell andel kvinnor per yrke (AID-kod) i ${_skrDelText(_skrDel())}, ur ${skrKallaKort()} (SKR är Sveriges Kommuner och Regioner). `
+        + 'Ett referensvärde bredvid organisationens egen könsfördelning, och reserv i Likvärdigt arbete när jämförelsestatistiken saknar könsfördelning. Valet kommun eller region görs under Inställningar.';
+}
+
 function nationellAidKlass(aid) {
     if (!aid) return null;
     const s = String(aid).trim();

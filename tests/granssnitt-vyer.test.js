@@ -102,11 +102,11 @@ describe('kandidatparens tabell', () => {
         }
         const rubriker = [...d.querySelectorAll('#likvardighet-table thead th')].map(th => th.textContent);
         expect(rubriker).toContain('Påverkan (kr/mån)');
-        // SKR:s andel står i verktygstipset, inte i raden (men följer med i cellens text för exporten).
+        // Den nationella andelen står i verktygstipset, med källa och period, inte i raden (men följer med i cellens text för exporten).
         const under = d.querySelector('#likvardighet-table .lv-under');
         const synlig = under.cloneNode(true); synlig.querySelectorAll('.bara-export').forEach(e => e.remove());
-        expect(synlig.textContent).not.toContain('SKR');
-        expect(under.title).toContain('SKR');
+        expect(synlig.textContent).not.toContain('nationellt');
+        expect(under.title).toMatch(/nationellt \(SKR:s personalstatistik, [a-z]+ \d{4}\)/);
         expect(las('src/style.css')).toMatch(/#likvardighet-table td\.t-hoger[^{]*\{ white-space: nowrap; \}/);
     });
 });

@@ -92,7 +92,7 @@ function _evidenceForLikvardighetPair(p) {
             // Endast det som INTE redan står i tabellraden: varför jämförelseyrket räknas
             // som icke-kvinnodominerat, hur säkerheten bedöms, och vad påverkansindex betyder.
             { label: 'Varför jämförbart yrke?',
-              value: ärIntern ? 'Organisationens eget yrke (intern)' : (p.maKlassKort === 'lokal' ? 'Faktisk könsfördelning (jämförelsestatistiken)' : 'SKR:s personalstatistik (nationell reserv)'),
+              value: ärIntern ? 'Organisationens eget yrke (intern)' : (p.maKlassKort === 'lokal' ? 'Faktisk könsfördelning (jämförelsestatistiken)' : `Nationell könsfördelning som reserv (${skrKallaKort()})`),
               note: ärIntern
                 ? `${svPct(p.maKvAndel, 0)} kvinnor i organisationen’s grupp${p.maN != null ? ` (n=${p.maN})` : ''}: icke-kvinnodominerat`
                 : (p.maKlassKort === 'lokal'

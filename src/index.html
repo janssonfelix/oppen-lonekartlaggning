@@ -1081,7 +1081,7 @@
                                         <th data-export-label="Yrkesgrupp (AID + benämning)">Yrkesgrupp</th>
                                         <th data-export-label="Antal personer (kvinnor/män)">Antal (Kv/Mä)</th>
                                         <th data-export-label="Köns-dominans (Kvinno-/Mans-/Blandad)">Dominans</th>
-                                        <th data-export-label="Andel kvinnor i yrket nationellt (SKR:s personalstatistik)" title="Andel kvinnor i yrket (AID-etiketten) enligt SKR:s personalstatistik, i kommuner, regioner eller båda efter organisationstypen — ett referensvärde att jämföra er egen könsfördelning mot">Kvinnor, SKR</th>
+                                        <th data-export-label="Andel kvinnor i yrket nationellt (SKR:s personalstatistik)" title="Andel kvinnor i samma yrke (AID-kod) nationellt — i kommuner, regioner eller båda enligt valet under Inställningar — ur SKR:s personalstatistik (Sveriges Kommuner och Regioner; period i Om verktyget). Ett referensvärde att jämföra er egen könsfördelning mot.">Kvinnor nationellt</th>
                                         <th data-export-label="Median Kvinnor (kr/mån)">Median Kvinnor</th>
                                         <th data-export-label="Median Män (kr/mån)">Median Män</th>
                                         <th data-export-label="Lönegap kvinnor/män (kvinnors median i % av männens)">Kvinnors median i % av mäns</th>
@@ -1392,7 +1392,7 @@
                                                 </th>
                                                 <th class="t-mitt" scope="col" data-export-label="Prioriteringsstatus (Utred / Bevaka / OK / Granska)">Status</th>
                                                 <th class="t-mitt" scope="col" data-no-sort data-export-label="Bristyrke (Ja/Nej)">Brist
-                                                    <span class="info-tip" data-tooltip="Markera som bristyrke (rekryteringssvårighet, SKR-bristlistor). Bristyrken får 1,2× bonus i prioriteringsindexet."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
+                                                    <span class="info-tip" data-tooltip="Markera som bristyrke: yrken ni har svårt att rekrytera till, enligt er egen rekryteringsstatistik eller en nationell bristyrkeslista. Bristyrken får 1,2× bonus i prioriteringsindexet."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
                                                 </th>
                                                 <th class="t-mitt" scope="col" data-no-sort data-export-skip>Detalj
                                                     <span class="info-tip" data-tooltip="Öppna gruppen i Löneöversikten (Utforska) för fördjupad analys."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
@@ -1545,7 +1545,7 @@
 
                                     <hr class="ram-ingen ram-t-1-kant marg-18-0">
                                     <h3 class="fs-md marg-0-0-6">Kostnadsberäkning
-                                        <span class="info-tip" data-tooltip="Påverkar all kostnadsredovisning i Prioriteringen, Lönerevisionssimulatorn och PDF-rapporter. Beräkningsperiod styr över hur många månader kostnaden räknas (bra för delårsbudgetering). PO-påslag är arbetsgivarens sociala avgifter och pensionsavsättningar — SKR:s standardvärde är 39,15% (2024-2025)."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
+                                        <span class="info-tip" data-tooltip="Påverkar all kostnadsredovisning i Prioriteringen, Lönerevisionssimulatorn och PDF-rapporter. Beräkningsperiod styr över hur många månader kostnaden räknas (bra för delårsbudgetering). PO-påslag är arbetsgivarens sociala avgifter och pensionsavsättningar ovanpå lönen. Standardvärdet 39,15 % är det påslag som SKR (Sveriges Kommuner och Regioner) anger för kommuner och regioner i sitt cirkulär 2025; andra arbetsgivare sätter sitt eget värde."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
                                     </h3>
                                     <p class="text-dampad-sm lh-1_5 marg-0-0-10">
                                         Total kostnad = avvikelse (kr/månad) × antal månader × (1 + PO-påslag) × antal personer.
@@ -1564,12 +1564,12 @@
                                         <label>
                                             <span>PO-påslag (%)</span>
                                             <input type="number" id="prio-po-pct" value="39.15" step="0.05" min="0" max="100">
-                                            <small>SKR Cirkulär 2024: 39,15% (sociala avgifter + pensioner). Justera vid behov.</small>
+                                            <small>PO-påslaget 39,15 % är SKR:s värde för kommuner och regioner (cirkulär 2025: sociala avgifter och pensioner). Andra arbetsgivare: ange ert eget.</small>
                                         </label>
                                     </div>
                                     <div class="rad-mitt gap-8 marg-t-12">
                                         <span id="prio-cost-summary" class="text-dampad-sm"></span>
-                                        <button id="prio-cost-reset" class="btn btn-secondary btn-sm marg-v-auto" type="button">Återställ till SKR-standard</button>
+                                        <button id="prio-cost-reset" class="btn btn-secondary btn-sm marg-v-auto" type="button">Återställ standardvärdena</button>
                                     </div>
                                 </div>
                             </details>
@@ -2504,9 +2504,9 @@
                                     <option value="kommun">en kommun</option>
                                     <option value="region">en region</option>
                                 </select>
-                                <span class="info-tip" data-tooltip="Avgör vilken del av SKR:s personalstatistik som är referens för andel kvinnor per yrke — kommunerna, regionerna eller båda. Följer med i organisationspaketet och konfigurationsfilen."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
+                                <span class="info-tip" data-tooltip="Avgör vilken del av den nationella statistiken som är referens för andel kvinnor per yrke: kommunerna, regionerna eller båda. Statistiken är SKR:s personalstatistik (Sveriges Kommuner och Regioner), inbyggd i verktyget; perioden står i Om verktyget. Följer med i organisationspaketet och konfigurationsfilen."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
                             </div>
-                        <p class="inst-paverkar">Påverkar: jämförelsen med SKR:s andel kvinnor per yrke i Lika arbete, Likvärdigt arbete och Struktur.</p>
+                        <p class="inst-paverkar">Påverkar: kolumnen <em>Kvinnor nationellt</em> i Lika arbete och Struktur, och reserven för könsfördelning i Likvärdigt arbete.</p>
                     </div>
                 </section>
                 <section aria-labelledby="inst-lage-rubrik">

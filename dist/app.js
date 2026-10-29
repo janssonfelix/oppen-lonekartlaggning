@@ -729,6 +729,7 @@ const GLOSSARY = [
     // Struktur
     { cat:'Struktur', term:'BAS-intervall', short:'Lönenivå-grad enligt arbetsvärdering', long:'Bokstavskod som speglar arbetets svårighetsgrad och värdering enligt arbetsvärderingen. Varje bokstav motsvarar ett lika brett poängintervall: A är lägst (t.ex. 0–99 poäng), B nästa (100–199) osv. Verktyget analyserar A–J och rangordnar efter bokstaven (A=1, B=2, …); ordningen är en del av BAS-systemet och kan inte ändras.' },
     { cat:'Struktur', term:'AID-kod', short:'Arbetsidentifikationskod (yrkeskod)', long:'Sifferkod som identifierar yrket enligt SKR/SKL:s lönestatistiksystem. Används för att matcha organisationens yrkesgrupper mot jämförelsestatistiken. Format: vanligen 6 siffror följda av yrkesbenämning, t.ex. "402010 Förskollärare".' },
+    { cat:'Struktur', term:'SKR', short:'Sveriges Kommuner och Regioner', long:'Arbetsgivarorganisationen för kommuner och regioner. Verktyget använder tre saker från SKR: yrkesindelningen AID, personalstatistiken (nationell andel kvinnor per yrke, visad som "Kvinnor nationellt" och som reserv i Likvärdigt arbete) och PO-påslaget 39,15 % som standardvärde i kostnadsberäkningen. Perioden för statistiken står i Om verktyget.' },
     { cat:'Struktur', term:'Yrkesgrupp', short:'Personer med samma AID-kod', long:'Den minsta jämförelsegruppen inom "lika arbete". Yrken med samma AID-kod jämförs direkt mellan kön i EU-matrisen.' },
     { cat:'Struktur', term:'Heltidsekvivalent (FTE) lön', short:'Lön omräknad till 100% tjänstgöring', long:'Den lön personen skulle ha haft vid heltidstjänst. Används för att rättvist jämföra deltids- och heltidsanställda. Verktyget förutsätter att månadslönerna i CSV-filen redan är FTE-justerade.' },
 
@@ -1603,6 +1604,22 @@ function _skrDel() {
     return t === 'kommun' || t === 'region' ? t : 'alla';
 }
 
+// Så nämns den nationella referensen i gränssnittet. "SKR" ensamt sade användarna inget; därför står
+// alltid vad statistiken är (andel kvinnor per yrke), var den gäller (kommuner och regioner) och från när.
+/** Perioden i ord: '2025-11' → 'november 2025'. */
+function _skrPeriodText(period) {
+    const [ar, man] = String(period || '').split('-');
+    const namn = ['januari', 'februari', 'mars', 'april', 'maj', 'juni', 'juli', 'augusti', 'september', 'oktober', 'november', 'december'][Number(man) - 1];
+    return namn && ar ? `${namn} ${ar}` : String(period || '');
+}
+/** Kort källtext: "SKR:s personalstatistik, november 2025". */
+function skrKallaKort() { return `SKR:s personalstatistik, ${_skrPeriodText(_skrReferensInfo().period)}`; }
+/** Hela förklaringen, för tooltips och metodbilagan. */
+function skrForklaring() {
+    return `Nationell andel kvinnor per yrke (AID-kod) i ${_skrDelText(_skrDel())}, ur ${skrKallaKort()} (SKR är Sveriges Kommuner och Regioner). `
+        + 'Ett referensvärde bredvid organisationens egen könsfördelning, och reserv i Likvärdigt arbete när jämförelsestatistiken saknar könsfördelning. Valet kommun eller region görs under Inställningar.';
+}
+
 function nationellAidKlass(aid) {
     if (!aid) return null;
     const s = String(aid).trim();
@@ -2006,7 +2023,7 @@ const PRIO_WEIGHTS_DEFAULTS = Object.freeze({
 // Kostnadsberäknings-defaults — SKR 2025 PO-påslag som standard
 const COST_DEFAULTS = Object.freeze({
     months: 12,         // beräkningsperiod (3/6/9/12 vanligt)
-    poPct:  39.15       // PO-påslag i % (SKR Cirkulär 2024 — sociala avgifter + pensioner)
+    poPct:  39.15       // PO-påslag i % (SKR:s cirkulär 2025 — sociala avgifter + pensioner)
 });
 
 // Automatisk rensning vid inaktivitet: på som standard (GDPR art. 25.2). Organisationspaketet kan låsa värdet (ADR-47).
@@ -14161,6 +14178,7 @@ function _methodAppendixData() {
             : 'Lokalt uppladdad fil (bearbetad helt i webbläsaren, inga nätverksanrop)'],
         ['Antal personer (inläst)', String(total)],
         ['Antal personer (i denna analys)', String(used)],
+        ['Nationell referens för andel kvinnor', skrForklaring()],
         ['Modell — oförklarat gap', 'OLS på log(månadslön) ~ kön + ålder + BAS-intervall (indikatorvariabler, första BAS som referens); HC3-robusta standardfel (Long & Ervin 2000)'],
         ['Steg + Yrkesgrupp (dekomponeringen)', 'Könsgap med fasta effekter för yrkesgrupp inom BAS (AID×BAS) utöver ålder, skattat med inomtransformation; visas som sista steg, ingår inte i huvudtalet'],
         ['Ålder & karriär (tvärsnitt)', 'Lön mot ålder och livscykelmodellen bygger på ett tvärsnitt: de visar skillnader mellan åldersgrupper i dag, inte hur en persons lön utvecklas över karriären (kohorteffekter)'],
@@ -15539,7 +15557,7 @@ function _evidenceForLikvardighetPair(p) {
             // Endast det som INTE redan står i tabellraden: varför jämförelseyrket räknas
             // som icke-kvinnodominerat, hur säkerheten bedöms, och vad påverkansindex betyder.
             { label: 'Varför jämförbart yrke?',
-              value: ärIntern ? 'Organisationens eget yrke (intern)' : (p.maKlassKort === 'lokal' ? 'Faktisk könsfördelning (jämförelsestatistiken)' : 'SKR:s personalstatistik (nationell reserv)'),
+              value: ärIntern ? 'Organisationens eget yrke (intern)' : (p.maKlassKort === 'lokal' ? 'Faktisk könsfördelning (jämförelsestatistiken)' : `Nationell könsfördelning som reserv (${skrKallaKort()})`),
               note: ärIntern
                 ? `${svPct(p.maKvAndel, 0)} kvinnor i organisationen’s grupp${p.maN != null ? ` (n=${p.maN})` : ''}: icke-kvinnodominerat`
                 : (p.maKlassKort === 'lokal'
@@ -17683,7 +17701,7 @@ function _lvSkrPct(aid) {
 }
 function _lvSkrKort(aid) {
     const ref = _skrKvinnoandel(aid, { del: _skrDel() });
-    return ref ? ` (SKR ${svPct(ref.pct, 0)})` : '';
+    return ref ? ` (nationellt ${svPct(ref.pct, 0)})` : '';
 }
 
 // Åldersjusteringens krav (speglar ALDERS_GOLV_DEFAULT och ALDERS_SPRIDNING_MIN i src/lib/likvardighet.js).
@@ -17900,7 +17918,7 @@ function renderLikvardighet() {
                     en viss BAS används <em>jämförelsestatistiken</em> som extern proxy
                     ${d.statistik.harLokalKonsdata
                         ? `<span class="farg-ok">(lokal könsfördelning).</span>`
-                        : `<span class="varning-pa-yta">(könsfördelningen hämtas då ur SKR:s personalstatistik: kvinnoandel per AID-etikett i ${_skrDelText(_skrDel())}).</span>`}</li>
+                        : `<span class="varning-pa-yta">(könsfördelningen hämtas då ur den nationella statistiken: andel kvinnor per AID-kod i ${_skrDelText(_skrDel())}, ${esc(skrKallaKort())}).</span>`}</li>
                 <li><strong>Steg 3</strong>: Flagga par där jämförelseyrkets median är högre
                     än det kvinnodominerade yrkets. Varje par får ett
                     <strong>bootstrap-95 %-konfidensintervall</strong> på medianskillnaden.
@@ -17935,13 +17953,13 @@ function renderLikvardighet() {
                     <strong>jämförelsestatistiken</strong>
                     <ul class="lh-1_6 marg-6-0-0 pad-v-18">
                         <li>Totalt inlästa rader: <strong>${d.statistik.totalRader.toLocaleString('sv-SE')}</strong></li>
-                        <li>Lokal könsdata: <strong>${d.statistik.harLokalKonsdata ? 'ja' : 'nej — SKR:s personalstatistik som reserv'}</strong></li>
+                        <li>Lokal könsdata: <strong>${d.statistik.harLokalKonsdata ? 'ja' : `nej — nationell könsfördelning ur ${esc(skrKallaKort())} som reserv`}</strong></li>
                         <li>Klassificering:
                             <strong class="farg-ok">${d.statistik.klass.ickeKv} icke-kv-dom</strong>,
                             ${d.statistik.klass.kvDom} kv-dom,
                             ${d.statistik.klass.blandat} blandat,
                             ${d.statistik.klass.oklassificerad} oklassificerade</li>
-                        <li>Källa: ${d.statistik.klassKalla.lokal} lokal, ${d.statistik.klassKalla.scb} SKR:s personalstatistik</li>
+                        <li>Källa: ${d.statistik.klassKalla.lokal} lokal, ${d.statistik.klassKalla.scb} nationell statistik (SKR)</li>
                         ${d.statistik.exempelIckeKv.length
                             ? `<li class="marg-t-4"><small class="f-dampad">Exempel icke-kv-dom: ${d.statistik.exempelIckeKv.map(esc).join(' · ')}</small></li>`
                             : ''}
@@ -18044,7 +18062,7 @@ function renderLikvardighet() {
     const källBadge = p => {
         if (p.jamforKalla === 'intern') return `<span class="bak-ok-bg rund-8 farg-ok fs-0_72rem pad-1-6" title="Organisationens eget yrke (inom-arbetsgivare-jämförelse)">intern</span>`;
         if (p.maKlassKort === 'lokal') return `<span class="bak-varning-bg rund-8 farg-varning fs-0_72rem pad-1-6" title="jämförelsestatistiken, egen könsfördelning">Statistiken</span>`;
-        return `<span class="bak-varning-bg rund-8 farg-varning fs-0_72rem pad-1-6" title="jämförelsestatistiken, könsfördelning ur SKR:s personalstatistik">SKR</span>`;
+        return `<span class="bak-varning-bg rund-8 farg-varning fs-0_72rem pad-1-6" title="jämförelsestatistiken; könsfördelningen ur den nationella statistiken (${esc(skrKallaKort())})">nationell</span>`;
     };
     const ciCell = p => {
         if (!p.gapCI || p.gapCI.lo == null) return '<span class="f-dampad" title="För få observationer för bootstrap">—</span>';
@@ -18061,7 +18079,7 @@ function renderLikvardighet() {
     const parRows = result.pairs.map((p, i) => `
         <tr>
             <td>${i + 1}</td>
-            <td><strong>${esc(p.kvAid)}</strong>${p.kvLabel && p.kvLabel !== p.kvAid ? ' ' + esc(p.kvLabel) : ''}<br><small class="f-dampad lv-under"${_lvSkrKort(p.kvAid) ? ` title="Andel kvinnor i yrket enligt SKR:s personalstatistik:${esc(_lvSkrKort(p.kvAid).replace(/[()]|SKR/g, ''))}"` : ''}>BAS ${esc(p.kvBas)} · ${svPct(p.kvKvinnoPct, 0)} kv<span class="bara-export">${_lvSkrKort(p.kvAid)}</span> · n=${p.kvN}</small></td>
+            <td><strong>${esc(p.kvAid)}</strong>${p.kvLabel && p.kvLabel !== p.kvAid ? ' ' + esc(p.kvLabel) : ''}<br><small class="f-dampad lv-under"${_lvSkrKort(p.kvAid) ? ` title="Andel kvinnor i yrket nationellt (${esc(skrKallaKort())}):${esc(_lvSkrKort(p.kvAid).replace(/[()]|SKR/g, ''))}"` : ''}>BAS ${esc(p.kvBas)} · ${svPct(p.kvKvinnoPct, 0)} kv<span class="bara-export">${_lvSkrKort(p.kvAid)}</span> · n=${p.kvN}</small></td>
             <td class="t-hoger">${fmtKr(p.kvMedian)}</td>
             <td><strong>${esc(p.maAid)}</strong>${p.maLabel && p.maLabel !== p.maAid ? ' ' + esc(p.maLabel) : ''}<br><small class="f-dampad lv-under">BAS ${esc(p.maBas)} · ${svPct(p.maKvAndel, 0)} kv ${källBadge(p)}${p.maN != null ? ` · n=${p.maN}` : ''}</small></td>
             <td class="t-hoger">${fmtKr(p.maMedian)}</td>
@@ -19694,7 +19712,7 @@ function renderSektorer(d) {
                på att kvinnor och män arbetar i olika sektorer (under 1 %).</p>`
             : `<p class="sektor-andel">Av skillnaden i medellön för hela organisationen (${kr(andel.gapKr)} per månad) beror
                ${kr(andel.sektorKr)} (${pc(andel.andel * 100)}) på att kvinnor och män arbetar i olika sektorer.</p>`;
-    host.innerHTML = `<table class="data-table" id="sektor-table"><thead><tr><th>Sektor</th><th>Antal</th><th>Andel kvinnor</th><th title="Andel kvinnor i samma sektor i ${_skrDelText(_skrDel())} enligt SKR:s personalstatistik — ett referensvärde">Kvinnor, SKR</th>
+    host.innerHTML = `<table class="data-table" id="sektor-table"><thead><tr><th>Sektor</th><th>Antal</th><th>Andel kvinnor</th><th title="Andel kvinnor i samma sektor nationellt, i ${_skrDelText(_skrDel())} enligt ${esc(skrKallaKort())} — ett referensvärde">Kvinnor nationellt</th>
         <th>Median kvinnor</th><th>Median män</th><th>Kvinnors lön i % av mäns</th><th>Justerad (ålder, BAS)</th>
         <th>AID-grupper</th><th>Punkter i Att göra</th>${harLedning ? '<th>Ledningsansvar kv / män</th>' : ''}</tr></thead>
         <tbody>${rader}</tbody></table>${andelText}`;
@@ -21084,8 +21102,8 @@ function _ansvarsUnderraderFor(yrkesRader, fmt) {
 function _skrReferensCell(yrke) {
     const ref = _skrKvinnoandel(yrke, { del: _skrDel() });
     return ref
-        ? `<td data-sort-value="${ref.pct.toFixed(1)}" title="${ref.niva === 'etikett' ? 'AID-etiketten' : 'AID-prefixet ' + esc(ref.prefix)} i ${_skrDelText(ref.del)}, ${esc(_skrReferensInfo().kalla)}">${svPct(ref.pct, 0)}</td>`
-        : '<td data-sort-value="" title="Koden finns inte i SKR:s personalstatistik">–</td>';
+        ? `<td data-sort-value="${ref.pct.toFixed(1)}" title="Andel kvinnor nationellt: ${ref.niva === 'etikett' ? 'AID-etiketten' : 'AID-prefixet ' + esc(ref.prefix)} i ${_skrDelText(ref.del)}, ${esc(skrKallaKort())}">${svPct(ref.pct, 0)}</td>`
+        : `<td data-sort-value="" title="Yrkeskoden finns inte i ${esc(skrKallaKort())}">–</td>`;
 }
 
 function generateEUDirectiveMatrix() {
@@ -24055,7 +24073,7 @@ function _readCostSettings() {
         const isCustom = state.costSettings.months !== COST_DEFAULTS.months || Math.abs(state.costSettings.poPct - COST_DEFAULTS.poPct) > 0.01;
         sum.innerHTML = isCustom
             ? `<strong class="farg-varning">${ikon('kugghjul')} Anpassad konfiguration:</strong> ${state.costSettings.months} mån × ${svPct(state.costSettings.poPct, 2)} PO`
-            : `Standard: ${state.costSettings.months} mån × ${svPct(state.costSettings.poPct, 2)} PO (SKR Cirkulär 2024)`;
+            : `Standard: ${state.costSettings.months} mån × ${svPct(state.costSettings.poPct, 2)} PO (SKR:s cirkulär 2025 för kommuner och regioner)`;
     }
 }
 ['prio-cost-months','prio-po-pct'].forEach(id => {
@@ -25663,10 +25681,11 @@ SHA-256:    Se <code>RELEASE.txt</code> i utvecklingsmappen för verifiering
 
         <h3>Externa datakällor</h3>
         <ul>
-            <li>SKR Lönestatistik (AID-klassificering)</li>
-            <li>${esc(_skrReferensInfo().kalla)} — andel kvinnor per AID-etikett i kommuner och regioner; referensvärde bredvid organisationens egen könsfördelning och reserv i Likvärdigt arbete</li>
-            <li>SCB Arbetskraftsundersökningen (åldersfördelning för demografi-flik)</li>
-            <li>SKR Cirkulär 2025 (PO-påslag 39,15%)</li>
+            <li><strong>SKR</strong> är Sveriges Kommuner och Regioner, arbetsgivarorganisationen för kommuner och regioner. Verktyget använder tre saker därifrån:</li>
+            <li>AID — yrkesindelningen (Arbetsidentifikation kommuner och regioner), som yrkeskoderna i lönefilen följer</li>
+            <li>${esc(_skrReferensInfo().kalla)} — andel kvinnor per AID-kod i kommuner och regioner. I verktyget kallad <em>Kvinnor nationellt</em>: ett referensvärde bredvid organisationens egen könsfördelning, och reserv i Likvärdigt arbete</li>
+            <li>SKR:s cirkulär 2025 — PO-påslaget 39,15 % som standardvärde i kostnadsberäkningen (andra arbetsgivare sätter sitt eget)</li>
+            <li>SCB, Arbetskraftsundersökningen (AKU) — åldersfördelningen som referens i Ålder &amp; karriär</li>
         </ul>
 
         <h3>Licens</h3>
@@ -27966,7 +27985,7 @@ function _gdRenderBody(d) {
         <div class="gd-kpis">
             <div class="gd-kpi"><span>${d.n}</span><small>personer</small></div>
             <div class="gd-kpi"><span>${d.nKv} / ${d.nMa}</span><small>kvinnor / män (${svPct(kvPct, 0)} kv)${d.skr
-                ? `<br>SKR: ${svPct(d.skr.pct, 0)} kvinnor i ${_skrDelText(d.skr.del)}` : ''}</small></div>
+                ? `<br><span title="${esc(skrForklaring())}">nationellt: ${svPct(d.skr.pct, 0)} kvinnor i ${_skrDelText(d.skr.del)}</span>` : ''}</small></div>
             <div class="gd-kpi"><span>${kr(d.median)}</span><small>median</small></div>
             <div class="gd-kpi"><span>${kr(d.p10)} – ${kr(d.p90)}</span><small>P10 – P90</small></div>
         </div>${d.ansvar ? `
@@ -28051,7 +28070,7 @@ function gruppdossierAsText(d) {
     const L = [];
     L.push(`GRUPPDOSSIER: ${gruppNamn(d)} - BAS ${d.bas}`);
     L.push(`Antal: ${d.n} (${d.nKv} kvinnor / ${d.nMa} man) - median ${kr(d.median)} - P10-P90 ${kr(d.p10)}-${kr(d.p90)}`);
-    if (d.skr) L.push(`Referens SKR: ${svPct(d.skr.pct, 0)} kvinnor i ${_skrDelText(d.skr.del)} (${_skrReferensInfo().kalla})`);
+    if (d.skr) L.push(`Nationell referens: ${svPct(d.skr.pct, 0)} kvinnor i ${_skrDelText(d.skr.del)} (${skrKallaKort()})`);
     if (d.ansvar) L.push(`Ansvar: Ledningsansvar ${d.ansvar.ledning.kv} kv / ${d.ansvar.ledning.ma} man - Sarskilt uppdrag ${d.ansvar.uppdrag.kv} kv / ${d.ansvar.uppdrag.ma} man`);
     if (d.gap && d.gap.pct != null) L.push(`Ojusterat gap: ${svPct(d.gap.pct, 1)} av mannens median`);
     if (d.gap && d.gap.arsbelopp) L.push(d.gap.arsbelopp);
