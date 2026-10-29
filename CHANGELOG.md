@@ -4,6 +4,71 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 `dist/oppen-lonekartlaggning.html`, gjort med `npm run bundle`. Byggets SHA-256 står i
 `dist/RELEASE.txt`.
 
+## Oförlöst
+
+### Exporter
+
+- **Egna tabeller i rapporten (ADR-52).** Ovanför tabellen i Utforska finns *Lägg till i rapporten*: vyn sparas som ett
+  recept (rader, kolumner, mått och urval, valfritt en tabell per BAS-intervall) och ritas om med minsta gruppstorlek i
+  avsnittet *Egna tabeller* i Word-utkastet och PDF-rapporten, i bladet *Egna tabeller* i Excel-filen och som block
+  i rapportunderlaget. Tabellerna
+  ordnas och tas bort under *Rapportens innehåll* och följer med i konfigurationsfilen; organisationspaketet kan
+  bära dem och receptet per BAS, så att alla handläggare får samma tabeller. Avsnittet per BAS-intervall
+  följer ett redigerbart recept: upprepa per BAS eller per sektor, rader, mått, åldersgränser och summeringstabeller.
+- **Tabellerna per BAS-intervall, som i en skriven lönekartläggning.** Word-utkastet har ett nytt avsnitt,
+  *Lönestruktur per BAS-intervall*, och Excel-filen ett nytt blad, *Per BAS*, byggda efter arbetsgivarnas egna
+  utkast: en tabell per BAS-intervall (referensen, organisationen, varje yrkesgrupp med jämförelsestatistikens nivå
+  under, kvinnor och män — P10, median, P90 och antal) med ett fält för bedömningen av intervallet, och sist två
+  tabeller per BAS: löneskillnader inom likvärdigt arbete (medellön per kön, kvinnors medellön i procent av mäns,
+  andel kvinnor, medelålder) och löneskillnader i åldersgrupper (–34, 35–49, 50–). Minsta gruppstorlek gäller:
+  yrkesgrupper, intervall och åldersgrupper under gränsen får ingen rad, könsuppdelade mått bara där båda könen når
+  den, och avsnittet säger vad det utelämnar. Beräkningen ligger i `src/lib/perbas.js`.
+
+### Analys
+
+- **All personal ingår, även BAS K och uppåt.** Begränsningen till BAS A–J är borttagen (ADR-21 upphävd):
+  chefsnivåerna läses in och analyseras som alla andra intervall, i stället för att bara räknas. Rimlighetskontrollen
+  kräver bara att BAS är en bokstav. Efter användartest: lönekartläggningen ska omfatta hela organisationen.
+
+### Dataskydd
+
+- **Minsta gruppstorlek gäller det som lämnar verktyget, inte skärmen (ADR-51).** Vyerna visar alla grupper och alla
+  könsuppdelade mått oavsett storlek; allt som lämnar verktyget — Excel, Word, PDF, ZIP, CSV, urklipp, diagrambilder,
+  rapportunderlaget, gruppdossierns textkopia och allt under Dokumentera & exportera — ritas och räknas i ett
+  exportläge med den inställda tröskeln, som förut. Inställningen, stämpeln och metodbilagan är oförändrade; Utforskas
+  ruta gäller fortfarande exporten. Efter användartest: den som arbetar i verktyget har redan lönefilen.
+
+### Prestanda
+
+- **Dokumentera & exportera ritas snabbare på stora underlag.** Förhandsbeskedet byggde rapportmodellen tre gånger
+  och Excel-bladlistan två; nu en gång var (`rapportModellBada`). Efter en export ritas bara det tillbaka som
+  exporten ritade i exportläget, och Lika arbetes minne har ett rum per tröskel, så att ett lägesbyte inte räknar
+  om något. På 55 000 rader gick fliken från 12 s till omkring 3 s. Ett byte av minsta gruppstorlek ritar inte
+  Översikt två gånger, bygger Att göras lista en gång för Att göra och processöversikten, och räknar om
+  bootstrap-KI och styrkan bara när det statistiska golvet ändras. Att göra kör regressionen en gång i stället för
+  fyra och skickar resultatet vidare till underlagsbedömningen (ingen cache, ADR-17 står kvar).
+
+### Gränssnitt
+
+- **Som export — förhandsvisning av exporten.** Knappen i sidhuvudet visar flikarna som i det som lämnar
+  verktyget: grupper under minsta gruppstorlek redovisas inte, en banner och en streckad ram visar att
+  förhandsvisningen är på, och *Visa skärmen igen* ritar tillbaka. Efter användartest: skärmen visar alla grupper,
+  och den som ska skicka en fil vill se vad som faller bort.
+- **Prioritering är vad, Löneöversyn är hur (ADR-50).** Prioritering svarar på vad som bör åtgärdas och vad det
+  kostar; Löneöversyn på hur potten fördelas. Lönerevisionssimulatorn i Prioritering är borttagen: en riktad pott i
+  Löneöversyn kan i stället begränsas till ett kön eller till löner under en gräns, och lyfta till en nivå
+  (*höj till*). PO-påslag och beräkningsperiod står under Inställningar i sidhuvudet (*Gäller alla flikar*) i
+  stället för i Prioritering, och Löneöversyns Excel-export beskriver varje riktad rad. Efter användartest: flikarna
+  gick in i varandra.
+- **Hänvisningarna till SKR är förklarade.** Kolumnerna och märkena som bara sade "SKR" heter nu *Kvinnor nationellt*
+  respektive *nationell*, och verktygstipsen säger vad statistiken är (andel kvinnor per yrke i kommuner och regioner),
+  varifrån den kommer (SKR:s personalstatistik, med period) och vad valet kommun eller region gör. PO-påslagets
+  standardvärde förklaras som SKR:s värde för kommuner och regioner; bristyrkestipset hänvisar inte längre till
+  SKR-listor. Ordlistan har fått posten *SKR*, metodbilagan en rad om den nationella referensen, och *Om verktyget*
+  förklarar de tre sakerna verktyget hämtar från SKR. Efter användartest: "SKR-statistik" var oklart.
+- **Rensning vid inaktivitet: 90 minuter som standard** (tidigare 30). Valen är av, 30, 60, 90 och 120 minuter;
+  organisationspaketet kan fortfarande låsa tiden. Efter användartest: 30 minuter avbröt ett normalt arbetspass.
+
 ## 2026.10.19
 
 ### Analys

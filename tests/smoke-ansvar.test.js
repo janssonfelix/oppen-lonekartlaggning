@@ -39,9 +39,9 @@ describe('säkerhet, dataskydd och HR-logik', () => {
         expect(w.__xss).toBeUndefined();
     });
 
-    it('automatisk rensning vid inaktivitet är på som standard (30 minuter)', () => {
+    it('automatisk rensning vid inaktivitet är på som standard (90 minuter)', () => {
         const w = createAppWindow();
-        expect(w.__state.inactivityTimeoutMin).toBe(30);
+        expect(w.__state.inactivityTimeoutMin).toBe(90);
     });
 
     const inaktivitetsPaket = inst => ({ format: 'lonekartlaggning-organisationspaket', version: 1, organisation: { namn: 'Exempelorganisationen' },
@@ -65,7 +65,7 @@ describe('säkerhet, dataskydd och HR-logik', () => {
         // Rensa all data tar bort låsningen tillsammans med paketet, och tiden går tillbaka till standard.
         w.eval('_rensaAllData()');
         expect(w.__state.paketLas.inaktivitetMin).toBeNull();
-        expect(w.__state.inactivityTimeoutMin).toBe(30);
+        expect(w.__state.inactivityTimeoutMin).toBe(90);
         w.eval('openDataResidency()');
         expect(w.document.getElementById('inactivity-timeout-select').disabled).toBe(false);
         expect(w.document.getElementById('inactivity-last').hidden).toBe(true);
@@ -212,14 +212,16 @@ describe('Utforska: slå ihop små yrkesgrupper', () => {
         satt('explore-rad', 'aid'); w.__renderExplorer();
         expect(d.getElementById('explore-sla-ihop-rad').hidden).toBe(false);
     });
-    it('ikryssad: små yrken i samma AID-mellannivå visas som en grupp', () => {
+    it('ikryssad: små yrken i samma AID-mellannivå visas som en grupp (i exportläget; på skärmen är inga grupper små, ADR-51)', () => {
         satt('explore-rad', 'aid'); satt('explore-kolumn', 'ingen');
         d.getElementById('explore-sla-ihop').checked = true;
+        w.__state.kLage = 'export';
         w.__renderExplorer();
         expect(d.getElementById('explore-table').textContent).toMatch(/Övriga i AID 2070xx \(2 yrken\)/);
         d.getElementById('explore-sla-ihop').checked = false;
         w.__renderExplorer();
         expect(d.getElementById('explore-table').textContent).not.toMatch(/Övriga i/);
+        w.__state.kLage = 'skarm';
     });
     it('klick på en hopslagen grupp förklarar sammanslagningen, inte "under 10"', () => {
         satt('explore-rad', 'aid'); satt('explore-kolumn', 'ingen');
@@ -486,20 +488,19 @@ describe('ansvarskodskolumnen vid inläsning', () => {
         expect(status).toMatch(/Filen avvisad/);
         expect(status).toMatch(/Förnamn/);
     });
-    it('bara vitlistade fält hålls i minnet; övriga kolumner och BAS över J läses aldrig in (riskanalysen §6.4)', async () => {
+    it('bara vitlistade fält hålls i minnet; övriga kolumner läses aldrig in, och alla BAS ingår (riskanalysen §6.4)', async () => {
         const w = createAppWindow();
         await vendorPapa(w);
         const rader = [csv(';Poäng;Anställningsnr;Ansvar;Kostnadsställe', i => `;${300 + i};ANSTNR${9000 + i};ANSVAR${i};KST${i}`)];
         for (let i = 0; i < 3; i++) rader.push(`K;${99000 + i};${40 + i};Kvinna;207011;;${300 + i};ANSTNR${9900 + i};ANSVAR9${i};KST9${i}`);
         w.loadStructureFile(new w.File([rader.join('\n')], 'p.csv', { type: 'text/csv' }));
         for (let i = 0; i < 100 && !w.__state.data.length; i++) await new Promise(r => setTimeout(r, 20));
-        expect(w.__state.data.length).toBe(30);
+        expect(w.__state.data.length).toBe(33);
         const nycklar = [...new Set(w.__state.data.flatMap(r => Object.keys(r)))].sort();
         expect(nycklar).toEqual(['aid', 'alder', 'ansvarsgrupp', 'ansvarskoder', 'bas', 'kon', 'lon', 'poang', 'radnr', 'yrke', 'yrkeLabel']);
         const allt = JSON.stringify(w.__state.data);
         expect(allt).not.toMatch(/ANSTNR|ANSVAR\d|KST\d/);
-        expect(allt).not.toMatch(/99\d{3}/);
-        expect(w.__state.data.some(r => r.bas === 'K')).toBe(false);
+        expect(w.__state.data.filter(r => r.bas === 'K').length).toBe(3);
     });
     it('en avvisad fil ändrar inte ansvarskolumnen för den data som redan finns', async () => {
         const w = createAppWindow();
@@ -574,10 +575,10 @@ describe('SKR:s kvinnoandel som referensvärde bredvid organisationens egen för
     w.__loadDemoData();
     const rubriker = id => [...w.document.querySelectorAll(`#${id} thead th`)].map(th => th.textContent.trim());
     const kol = (id, namn) => rubriker(id).indexOf(namn);
-    it('Lika arbete: kolumnen "Kvinnor, SKR" per yrke, och underraderna följer kolumnantalet', async () => {
+    it('Lika arbete: kolumnen "Kvinnor nationellt" per yrke, och underraderna följer kolumnantalet', async () => {
         const { skrKvinnoandel } = await import('../src/lib/skrreferens.js');
         w.__renderTabContent('matrix');
-        const i = kol('matrix-table', 'Kvinnor, SKR');
+        const i = kol('matrix-table', 'Kvinnor nationellt');
         expect(i).toBeGreaterThan(-1);
         const tr = [...w.document.querySelectorAll('#matrix-table tbody tr')].find(t => /^207011/.test(t.children[0].textContent.trim()));
         expect(tr.children[i].textContent.trim()).toBe(`${skrKvinnoandel('207011', { del: 'kommun' }).pct.toFixed(0)} %`);   // demot är en kommun
@@ -587,10 +588,10 @@ describe('SKR:s kvinnoandel som referensvärde bredvid organisationens egen för
             expect(bredd).toBe(antal);
         }
     });
-    it('sektorsöversikten: kolumnen "Kvinnor, SKR" per sektor', async () => {
+    it('sektorsöversikten: kolumnen "Kvinnor nationellt" per sektor', async () => {
         const { skrKvinnoandelSektor } = await import('../src/lib/skrreferens.js');
         w.__renderTabContent('struktur');
-        const i = kol('sektor-table', 'Kvinnor, SKR');
+        const i = kol('sektor-table', 'Kvinnor nationellt');
         expect(i).toBeGreaterThan(-1);
         const tr = [...w.document.querySelectorAll('#sektor-table tbody tr')].find(t => /Teknikarbete/.test(t.textContent));
         expect(tr.children[i].textContent.trim()).toBe(`${skrKvinnoandelSektor('Teknikarbete', { del: 'kommun' }).pct.toFixed(1).replace('.', ',')} %`);
@@ -604,8 +605,8 @@ describe('SKR:s kvinnoandel som referensvärde bredvid organisationens egen för
         const key = w.__gruppdossierCandidates().find(c => c.aid === '207011').key;
         const d = w.__buildGruppdossier(key);
         expect(d.skr).toMatchObject({ niva: 'etikett' });
-        expect(w.eval(`_gdRenderBody(__buildGruppdossier(${JSON.stringify(key)}))`)).toMatch(/SKR: \d+ % kvinnor i kommuner</);
-        expect(w.__gruppdossierAsText(d)).toMatch(/Referens SKR: \d+ % kvinnor/);
+        expect(w.eval(`_gdRenderBody(__buildGruppdossier(${JSON.stringify(key)}))`)).toMatch(/nationellt: \d+ % kvinnor i kommuner</);
+        expect(w.__gruppdossierAsText(d)).toMatch(/Nationell referens: \d+ % kvinnor/);
     });
     it('Om verktyget anger SKR:s personalstatistik som källa', () => {
         w.document.querySelector('.nav-item[data-tab="info"]').click();
@@ -618,7 +619,7 @@ describe('organisationstyp: kommun eller region styr SKR-referensen (ADR-34)', (
     const skr = async () => (await import('../src/lib/skrreferens.js'));
     const matrisCell = w => {
         w.__renderTabContent('matrix');
-        const i = [...w.document.querySelectorAll('#matrix-table thead th')].map(t => t.textContent.trim()).indexOf('Kvinnor, SKR');
+        const i = [...w.document.querySelectorAll('#matrix-table thead th')].map(t => t.textContent.trim()).indexOf('Kvinnor nationellt');
         const tr = [...w.document.querySelectorAll('#matrix-table tbody tr')].find(t => /^207011/.test(t.children[0].textContent.trim()));
         return tr.children[i].textContent.trim();
     };
@@ -642,7 +643,7 @@ describe('organisationstyp: kommun eller region styr SKR-referensen (ADR-34)', (
         expect(w.__state.profile.orgTyp).toBe('region');
         expect(matrisCell(w)).toBe(`${skrKvinnoandel('207011', { del: 'region' }).pct.toFixed(0)} %`);
         const key = w.__gruppdossierCandidates().find(c => c.aid === '207011').key;
-        expect(w.__gruppdossierAsText(w.__buildGruppdossier(key))).toMatch(/Referens SKR: \d+ % kvinnor i regioner/);
+        expect(w.__gruppdossierAsText(w.__buildGruppdossier(key))).toMatch(/Nationell referens: \d+ % kvinnor i regioner/);
     });
     it('konfigurationsfilen bär organisationstypen', () => {
         const w = createAppWindow();

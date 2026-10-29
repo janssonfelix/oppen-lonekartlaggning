@@ -60,9 +60,8 @@ Exportera en personalfil (CSV eller XLSX) med dessa kolumner:
   och praxis. Verktyget varnar om många löner ligger under en rimlig heltidsnivå.
 - **Teckenkodning** (UTF-8 / Windows-1252 / UTF-16) och avgränsare hanteras
   automatiskt — å/ä/ö blir rätt.
-- **Bara BAS A–J analyseras.** Personer i BAS K och högre läses in men utesluts ur
-  analysen; verktyget visar hur många det gäller per BAS, och de analyseras manuellt
-  av HR utanför verktyget.
+- **All personal ingår.** Alla BAS-intervall analyseras, även chefsnivåerna (K och
+  uppåt). Små intervall skyddas av minsta gruppstorlek vid export.
 - **Ta INTE med personnummer, namn eller e-post.** Verktyget avvisar filer som
   innehåller sådana kolumner (uppgiftsminimering enligt dataskyddsförordningen).
 - **Systemspecifika uttagssteg** (Personec P, Heroma, Visma m.fl.) samt fullständiga
@@ -70,19 +69,22 @@ Exportera en personalfil (CSV eller XLSX) med dessa kolumner:
 
 ## 3. Ladda upp och kvalitetssäkra underlaget
 
-1. Läs in **organisationspaketet** om er organisation har ett (raden *Organisationspaket*
-   under filrutorna — fäll ut den).
-   Det innehåller organisationens ställningstagande, jämförelsestatistik och benämningar
-   (se `organisationspaket.md`). Dra sedan in eller välj strukturfilen i den
-   **obligatoriska** rutan.
+1. Läs in **organisationspaketet** om er organisation har ett — det är **steg 1**, rutan överst
+   i filsektionen på Översikt. Det innehåller organisationens ställningstagande,
+   jämförelsestatistik och benämningar (se `organisationspaket.md`), så rutorna *Referens* och
+   *Jämförelsestatistik* fylls i av sig själva. Dra sedan in eller välj lönefilen i den
+   **obligatoriska** rutan (steg 2).
    **Minsta gruppstorlek för redovisning:** fältet ligger under **Inställningar** i sidhuvudet (värdet
-   *Minsta gruppstorlek* i flikarnas översta rad är en länk dit). Standardvärdet är 10: lönemått för grupper med färre personer än så redovisas
-   inte. Ni kan ändra värdet till ett heltal från 2 (högre skärper skyddet). Ett värde under 10
+   *Minsta gruppstorlek* i flikarnas översta rad är en länk dit). På skärmen visas alla grupper; gränsen gäller
+   det som lämnar verktyget (Excel, Word, PDF, ZIP, CSV, urklipp, diagrambilder, rapportunderlaget). Standardvärdet är 10: lönemått för grupper med färre personer än så redovisas
+   inte där. Ni kan ändra värdet till ett heltal från 2 (högre skärper skyddet). Ett värde under 10
    kräver att ni bekräftar och visas som en varning överst på alla flikar. Värdet står i
    metodbilagan och i exporterad data; under 10 står dessutom meningen *Tröskeln är sänkt från
    standardvärdet 10.* på det som kan spridas för sig, till exempel diagrambilder, kopierade tabeller
    och rapporter. Alla flikar räknas om när värdet
-   ändras. Värdet sparas inte mellan gånger men följer med i konfigurationsfilen; en
+   ändras. Knappen **Som export** i sidhuvudet visar flikarna som i det som lämnar verktyget — grupper under
+   minsta gruppstorlek redovisas inte — med en banner och en streckad ram runt innehållet tills du klickar
+   *Visa skärmen igen*. Värdet sparas inte mellan gånger men följer med i konfigurationsfilen; en
    konfigurationsfil utan värdet ändrar det inte. *Återställ till 10* sätter tillbaka
    standardvärdet. Medianlön per kön, det råa lönegapet och regressionens ojusterade steg
    ("Endast kön", med den förklarade andelen) visas bara när både kvinnor och män är minst så
@@ -151,10 +153,12 @@ också när det är hopfällt.
    fältet är de där skillnaden är svår att förklara med slumpen. Därefter kommer Personer att granska, sedan
    skillnaden per BAS-intervall (i procent, i kronor och som lönespridning per kön) och sist det **oförklarade**
    lönegapet (regressionen, trappan som visar vad ålder och nivå förklarar, och Blinder-Oaxaca).
-   Kolumnen **Kvinnor, SKR** visar andelen kvinnor i samma yrke enligt SKR:s
-   personalstatistik — ett referensvärde att jämföra er egen könsfördelning mot. Välj under
+   Kolumnen **Kvinnor nationellt** visar andelen kvinnor i samma yrke i landets kommuner och
+   regioner, ur SKR:s personalstatistik (SKR är Sveriges Kommuner och Regioner; perioden står i Om
+   verktyget) — ett referensvärde att jämföra er egen könsfördelning mot. Välj under
    **Inställningar** i sidhuvudet om organisationen är en kommun eller en region, så jämförs ni med rätt
-   del av statistiken.
+   del av statistiken. Samma statistik är reserv för könsfördelningen i Likvärdigt arbete, och
+   SKR:s PO-påslag är standardvärde i kostnadsberäkningen; ordlistan förklarar begreppet SKR.
    Yrkesgrupperna är AID-grupper. AID är inte ett arbetsvärderingssystem — grupperna är en
    **utgångspunkt** för lika arbete som ni bekräftar (se bakgrundspanelen i fliken).
    Har lönefilen AID:s **ansvarskod** visas under yrket en rad per ansvarsgrupp
@@ -201,11 +205,16 @@ också när det är hopfällt.
    skillnaden i hela organisationen som beror på att kvinnor och män arbetar i olika
    sektorer. Pilen vid en sektor öppnar dess yrken i Utforska. Lika arbete, likvärdigt arbete
    och övriga analyser gäller alltid hela organisationen.
-5. **Prioritering · Löneöversyn · Handlingsplan** — rangordna grupper,
-   beräkna åtgärdskostnad, simulera budget (generellt + riktat), och låt
-   handlingsplanen förifyllas. I Prioritering visar matrisen varje grupps avvikelse mot referensen och dess
-   storlek, och kostnadsdiagrammet de grupper som kostar mest att lyfta (med den kumulativa andelen av
-   totalkostnaden). I Löneöversyn står potten, vad som gått åt och totalkostnaden överst. Könsgapet i en grupp visas i Prioritering bara när både
+5. **Prioritering · Löneöversyn · Handlingsplan** — tre flikar med var sin fråga.
+   **Prioritering** svarar på *vad* som bör åtgärdas och vad det kostar: matrisen visar varje grupps
+   avvikelse mot referensen och dess storlek, åtgärdslistan rangordnar grupperna, och kostnadsdiagrammet
+   visar de grupper som kostar mest att lyfta (med den kumulativa andelen av totalkostnaden).
+   **Löneöversyn** svarar på *hur* potten fördelas: lägg in en budget, ett generellt påslag och riktade
+   potter per grupp, och se nya löner, vad som gått åt och lönegapet före och efter. En riktad rad kan
+   begränsas till ett kön eller till löner under en gräns, och lyfta till en nivå ("höj till") — det som
+   tidigare hette Lönerevisionssimulatorn. PO-påslag och beräkningsperiod, som all kostnad räknas med,
+   ställs in under **Inställningar** i sidhuvudet. **Handlingsplanen** förifylls ur de två.
+   Könsgapet i en grupp visas i Prioritering bara när både
    kvinnorna och männen i gruppen är tillräckligt många för att redovisas; annars räknas
    gruppens prioritet utan könsgapet. I **Löneöversyn** får ni lägga en egen riktad rad på
    vilken grupp som helst, också en grupp under tröskeln — det är er egen simulering. Radens
@@ -226,8 +235,7 @@ också när det är hopfällt.
    A", alla eller något av villkoren) och på grupper (t.ex. "gap mindre än 95 %").
    Hanteldiagrammet visar gapet per grupp, bubbeldiagrammet om
    kvinnodominerade grupper har lägre lön. Grupper med färre än 10 personer visas
-   tonade — mönstrade staplar, streckad kant på punkter — och följer inte med i exporten om
-   du inte kryssar i det. Klicka på en grupp
+   som alla andra på skärmen men följer inte med i exporten om du inte kryssar i det. Klicka på en grupp
    för att öppna dess gruppdossier. Rader och kolumner kan också vara **Sektor** eller
    **AID-mellannivå** (de fyra första siffrorna, t.ex. "AID 2070xx" för undersköterskor och
    vårdbiträden). När raderna är yrkesgrupper kan små grupper **slås ihop till nästa
@@ -236,6 +244,16 @@ också när det är hopfällt.
 
 Varje diagram har en **Exportera**-knapp i övre högra hörnet: PNG i två storlekar,
 SVG (skarp i Word) och diagramdatan som tabell.
+
+**Egna tabeller i rapporten.** Ovanför tabellen i Utforska finns **Lägg till i rapporten**: ge vyn
+ett namn och lägg till den, så står den som en egen tabell i avsnittet *Egna tabeller* i
+Word-utkastet och PDF-rapporten, i bladet *Egna tabeller* i Excel-filen och som block under *Egna
+tabeller från Utforska* i rapportunderlaget. Kryssa i **En tabell
+per BAS-intervall** för att få samma tabell upprepad för varje intervall. Systemägaren kan lägga
+tabellerna i organisationspaketet, så att alla handläggare får samma. Det är vyns recept som
+sparas (rader, kolumner, mått och urval), inte talen: tabellen räknas om med minsta gruppstorlek
+när rapporten byggs, och recepten följer med i konfigurationsfilen. Under *Dokumentera &
+exportera* → *Rapportens innehåll* kan ni ordna om och ta bort tabellerna.
 
 ## 5. Producera dokumentationen
 
@@ -250,6 +268,15 @@ SVG (skarp i Word) och diagramdatan som tabell.
    **Spara som `.docx`** när dokumentet är klart — detta blir er dokumentation.
    Utkastet och PDF-rapporten tar bara med grupper som är stora nog att redovisas: BAS
    och kandidatpar under gränsen utelämnas, och det står hur många det gäller.
+   Avsnittet **Lönestruktur per BAS-intervall** har tabellerna i den form en skriven
+   lönekartläggning brukar ha: en tabell per BAS-intervall (referensen, organisationen, varje
+   yrkesgrupp med jämförelsestatistikens nivå under, kvinnor och män — P10, median, P90 och antal)
+   med ett fält för er bedömning av intervallet, och sist två tabeller per BAS: löneskillnader inom
+   likvärdigt arbete (medellön per kön, andel kvinnor, medelålder) och löneskillnader i åldersgrupper.
+   Samma tabeller finns i Excel-filens blad **Per BAS**. Avsnittet följer ett **recept** som ni kan
+   ändra under *Rapportens innehåll*: upprepa per BAS-intervall eller per sektor, vilka rader och
+   mått tabellerna ska ha, åldersgränserna, och om summeringstabellerna ska med. *Återställ
+   standard* ger utkastets form tillbaka.
 3. **Skriver ni rapporten i en egen mall?** Använd **Rapportunderlag** längre ner i samma
    flik. Överst finns en förteckning över blocken och knappen **Kopiera alla avsnitt**, som
    lägger alla avsnitt i en enda kopiering. Varje avsnitt, varje yrkesgrupp med skillnad över 5 % och varje kandidatpar (där båda grupperna är stora nog att redovisas) har en

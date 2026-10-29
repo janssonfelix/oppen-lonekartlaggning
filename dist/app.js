@@ -729,6 +729,7 @@ const GLOSSARY = [
     // Struktur
     { cat:'Struktur', term:'BAS-intervall', short:'Lönenivå-grad enligt arbetsvärdering', long:'Bokstavskod som speglar arbetets svårighetsgrad och värdering enligt arbetsvärderingen. Varje bokstav motsvarar ett lika brett poängintervall: A är lägst (t.ex. 0–99 poäng), B nästa (100–199) osv. Verktyget analyserar A–J och rangordnar efter bokstaven (A=1, B=2, …); ordningen är en del av BAS-systemet och kan inte ändras.' },
     { cat:'Struktur', term:'AID-kod', short:'Arbetsidentifikationskod (yrkeskod)', long:'Sifferkod som identifierar yrket enligt SKR/SKL:s lönestatistiksystem. Används för att matcha organisationens yrkesgrupper mot jämförelsestatistiken. Format: vanligen 6 siffror följda av yrkesbenämning, t.ex. "402010 Förskollärare".' },
+    { cat:'Struktur', term:'SKR', short:'Sveriges Kommuner och Regioner', long:'Arbetsgivarorganisationen för kommuner och regioner. Verktyget använder tre saker från SKR: yrkesindelningen AID, personalstatistiken (nationell andel kvinnor per yrke, visad som "Kvinnor nationellt" och som reserv i Likvärdigt arbete) och PO-påslaget 39,15 % som standardvärde i kostnadsberäkningen. Perioden för statistiken står i Om verktyget.' },
     { cat:'Struktur', term:'Yrkesgrupp', short:'Personer med samma AID-kod', long:'Den minsta jämförelsegruppen inom "lika arbete". Yrken med samma AID-kod jämförs direkt mellan kön i EU-matrisen.' },
     { cat:'Struktur', term:'Heltidsekvivalent (FTE) lön', short:'Lön omräknad till 100% tjänstgöring', long:'Den lön personen skulle ha haft vid heltidstjänst. Används för att rättvist jämföra deltids- och heltidsanställda. Verktyget förutsätter att månadslönerna i CSV-filen redan är FTE-justerade.' },
 
@@ -746,7 +747,7 @@ const GLOSSARY = [
     { cat:'Verktyget', term:'Per-BAS conditional gap', short:'Separata regressioner inom varje BAS', long:'För varje BAS-intervall med minst {golv} personer av varje kön körs en separat regression: log(lön) ~ kön + ålder. Visar var inom organisationen den oförklarade löneskillnaden är som störst.' },
 
     // GDPR
-    { cat:'GDPR', term:'K-anonymitet', short:'Skydd mot återidentifiering vid små grupper', long:'Verktygets eget skydd mot återidentifiering, som uttryck för uppgiftsminimering och inbyggt dataskydd i dataskyddsförordningen (art. 5.1 c och 25). Verktyget redovisar inte lönemått för grupper med färre än {k} personer (standard 10; värdet kan ändras på Översikt) eftersom enskilda löner då kan deduceras via t.ex. känd åldersstruktur. I Utforska visas de tonade, men de följer bara med i exporten om du kryssar i det. Likvärdigt arbete visar kandidatpar även när en grupp är mindre, eftersom lagen kräver att små kvinnodominerade yrken prövas; Word-utkastet, PDF-rapporten och rapportunderlaget tar inte med sådana par.' },
+    { cat:'GDPR', term:'K-anonymitet', short:'Skydd mot återidentifiering i det som lämnar verktyget', long:'Verktygets eget skydd mot återidentifiering, som uttryck för uppgiftsminimering och inbyggt dataskydd i dataskyddsförordningen (art. 5.1 c och 25). På skärmen visas alla grupper. Det som lämnar verktyget — Excel, Word, PDF, ZIP, CSV, urklipp, diagrambilder, rapportunderlaget — redovisar inte lönemått för grupper med färre än {k} personer (minsta gruppstorlek, standard 10), och könsuppdelade mått bara när varje kön når den. Värdet ställs in under Inställningar och står i metodbilagan.' },
     { cat:'GDPR', term:'Uppgiftsminimering', short:'Behandla endast nödvändiga uppgifter (dataskyddsförordningen art. 5.1 c)', long:'Personuppgifter ska vara adekvata, relevanta och begränsade till vad som är nödvändigt. Verktyget läser endast in vitlistade fält (BAS, yrke, lön, ålder, kön samt två valfria: arbetsvärderingspoäng och AID:s kod för ledning och särskilda uppdrag) — anställningsnummer, namn, e-post och personnummer plockas inte upp ens om de finns i filen.' },
     { cat:'GDPR', term:'Pseudonymisering', short:'Ersätt direkta identifierare med koder', long:'Direkta personidentifierare ersätts med löpnummer eller koder. Återmappning hålls separat. Möjliggör analys utan direkt återidentifiering. Rekommenderas före CSV-uppladdning.' },
     { cat:'GDPR', term:'Privacy by Design', short:'Inbyggt dataskydd (dataskyddsförordningen art. 25)', long:'Tekniska och organisatoriska åtgärder som standard. Detta verktyg implementerar Privacy by Design genom: lokal-only-arkitektur (data lämnar aldrig enheten), CSP-spärrar mot nätverksanrop, k-anonymitet, vitlistad fältparsning, automatisk avvisning av filer som innehåller personidentifierare.' },
@@ -1102,8 +1103,14 @@ function buildBarCell(percent, scaleMax = 25, options = {}) {
 // Copyright 2026 Felix Jansson
 
 // ---- k-anonymitet (uppgiftsminimering och inbyggt dataskydd, art. 5.1 c och 25) ----
-// Grupper med färre än kTroskel() personer redovisas inte i utdata, så att enskildas löner
-// inte kan räknas fram via t.ex. känd åldersstruktur.
+// Grupper med färre än kTroskel() personer redovisas inte i det som lämnar verktyget, så att enskildas
+// löner inte kan räknas fram via t.ex. känd åldersstruktur.
+//
+// Två lägen (ADR-51, beslut 2026-10-29 efter användartest): på SKÄRMEN maskeras inget — den som använder
+// verktyget har redan lönefilen — och kTroskel() är då 1. Allt som LÄMNAR verktyget (Excel, Word, PDF, ZIP,
+// CSV, urklipp, diagrambilder, rapportunderlaget, Dokumentera & exportera) ritas och räknas i exportläget
+// (23-exportgrind.js: medExportLage), där kTroskel() är den inställda tröskeln, kInstalld(). Inställningen,
+// stämpeln och texterna om regeln talar alltid om den inställda tröskeln.
 //
 // Standardvärdet 10 matchar SCB:s rekommendation för publicerad lönestatistik på små
 // grupper. Användaren kan ändra värdet (ADR-38): ett värde under standard kräver bekräftelse och visas med stående varning. Värdet
@@ -1113,8 +1120,12 @@ const K_STANDARD = 10;
 const K_MIN = 2;
 const K_MAX = 1000;
 
-/** Gällande minsta gruppstorlek för redovisning. Enda vägen att läsa värdet. */
-function kTroskel() { return state.kTroskel; }
+/** På skärmen maskeras inget: tröskeln är 1 (ADR-51). */
+const K_SKARM = 1;
+/** Tröskeln som gäller just nu: den inställda i exportläget, annars 1. Enda vägen att läsa det som ska tillämpas. */
+function kTroskel() { return state.kLage === 'export' ? state.kTroskel : K_SKARM; }
+/** Den inställda minsta gruppstorleken (gäller det som lämnar verktyget), oavsett läge. */
+function kInstalld() { return state.kTroskel; }
 
 /** Organisationspaketets golv för tröskeln (ADR-47), eller null när inget paket satt något. */
 function kTroskelLagst() { return state.paketLas.kTroskelLagst; }
@@ -1126,8 +1137,9 @@ function _kAterstallVarde() { return Math.max(K_STANDARD, kTroskelLagst() ?? K_M
  * Golv för skattningar (regression per BAS, bootstrap, förväntad lön): aldrig under
  * standardvärdet, eftersom gränsen där gäller skattningens tillförlitlighet och inte
  * redovisningen. Följer med uppåt, så att ett skärpt skydd också gäller skattade gruppvärden.
+ * Räknas på den inställda tröskeln i båda lägena (ADR-51), så att skattningarna — och deras cacher — är desamma.
  */
-function statGolv() { return Math.max(kTroskel(), K_STANDARD); }
+function statGolv() { return Math.max(kInstalld(), K_STANDARD); }   // oberoende av läget: skattningarna är desamma på skärmen och i exporten
 
 /**
  * Avgör om en gruppstorlek är under k-tröskeln.
@@ -1175,7 +1187,8 @@ function _konFarRedovisasFor(rader) {
 
 /** Meningen där ett könsuppdelat mått för hela urvalet utelämnats (samma ordalydelse som Rapportunderlaget). */
 function _konUtelamnatNot() {
-    return `Könsuppdelade lönemått redovisas inte eftersom ett kön har färre än ${kTroskel()} personer i urvalet.`;
+    return kTroskel() <= 1 ? 'Könsuppdelade lönemått redovisas inte eftersom ett av könen saknas i urvalet.'
+        : `Könsuppdelade lönemått redovisas inte eftersom ett kön har färre än ${kTroskel()} personer i urvalet.`;
 }
 
 /**
@@ -1187,7 +1200,7 @@ function _konUtelamnatNot() {
  */
 function _raGapText(reg, fmt) {
     if (!reg || reg.rawGapPct == null) return '–';
-    return _konFarRedovisas(reg.nKvAnalysed, reg.nMaAnalysed) ? fmt(reg.rawGapPct) : `– (ett kön har färre än ${kTroskel()} personer)`;
+    return _konFarRedovisas(reg.nKvAnalysed, reg.nMaAnalysed) ? fmt(reg.rawGapPct) : (kTroskel() <= 1 ? '– (ett av könen saknas)' : `– (ett kön har färre än ${kTroskel()} personer)`);
 }
 
 /**
@@ -1290,9 +1303,9 @@ function _parForRedovisning(pairs) {
     return { par, utelamnade, not: _parUtelamnadeNot(utelamnade) };
 }
 
-/** Raden som anger gällande tröskel (stämpeln), på de utdata som bär den. */
+/** Raden som anger den inställda tröskeln (stämpeln), på de utdata som bär den. */
 function kStampel() {
-    const k = kTroskel();
+    const k = kInstalld();
     return `Minsta gruppstorlek för redovisning: ${k}.`
         + (k < K_STANDARD ? ` Tröskeln är sänkt från standardvärdet ${K_STANDARD}.` : '');
 }
@@ -1348,7 +1361,7 @@ function _kUndantagFor(el, medSma) {
 }
 
 /** Stämpeln när tröskeln är sänkt under standard, annars tom sträng. */
-function _kSanktNot() { return kTroskel() < K_STANDARD ? kStampel() : ''; }
+function _kSanktNot() { return kInstalld() < K_STANDARD ? kStampel() : ''; }
 
 /** Stycket med stämpeln för utskrifter när tröskeln är sänkt (escapat), annars tom sträng. */
 function _kSanktStycke() {
@@ -1380,7 +1393,7 @@ function _gruppAid(r) { const m = String(r.yrke || '').match(/^(\d+)/); return m
 
 /** Sidfot med tillägg när tröskeln är sänkt under standard. */
 function _kSidfot(text) {
-    return kTroskel() < K_STANDARD ? `${text} · minsta gruppstorlek ${kTroskel()} (standard ${K_STANDARD})` : text;
+    return kInstalld() < K_STANDARD ? `${text} · minsta gruppstorlek ${kInstalld()} (standard ${K_STANDARD})` : text;
 }
 
 const _kHarStampel = rows => rows.some(r => Array.isArray(r) && typeof r[0] === 'string' && r[0].includes('Minsta gruppstorlek för redovisning'));
@@ -1389,24 +1402,24 @@ function _csvMedStampel(rows, undantag) { return _kHarStampel(rows) ? rows : [..
 /** Tabell till urklipp: stämpeln bara när tröskeln är sänkt eller exporten hör till ett undantag. */
 function _tsvMedStampel(rows, undantag) { return (_kSanktNot() || undantag) && !_kHarStampel(rows) ? [...rows, [], [kStampelFor(undantag)]] : rows; }
 
-/** Byter {k} mot gällande tröskel och {golv} mot det statistiska golvet. */
+/** Byter {k} mot den inställda tröskeln och {golv} mot det statistiska golvet. */
 function _kText(s) {
-    return String(s ?? '').replace(/\{k\}/g, String(kTroskel())).replace(/\{golv\}/g, String(statGolv()));
+    return String(s ?? '').replace(/\{k\}/g, String(kInstalld())).replace(/\{golv\}/g, String(Math.max(kInstalld(), K_STANDARD)));
 }
 
 /** Fyller de fasta texterna i index.html som nämner talet. */
 function _fyllKTexter() {
-    document.querySelectorAll('[data-k-troskel]').forEach(el => { el.textContent = String(kTroskel()); });
-    document.querySelectorAll('[data-k-golv]').forEach(el => { el.textContent = String(statGolv()); });
+    document.querySelectorAll('[data-k-troskel]').forEach(el => { el.textContent = String(kInstalld()); });
+    document.querySelectorAll('[data-k-golv]').forEach(el => { el.textContent = String(Math.max(kInstalld(), K_STANDARD)); });
     document.querySelectorAll('[data-k-tooltip]').forEach(el => { el.setAttribute('data-tooltip', _kText(el.getAttribute('data-k-tooltip'))); });
     const lbl = document.getElementById('explore-inkludera-sma-label');
-    if (lbl) lbl.textContent = `Ta med grupper under ${kTroskel()} i exporten`;
+    if (lbl) lbl.textContent = `Ta med grupper under ${kInstalld()} i exporten`;
 }
 
 // Fält, varning och texter som visar värdet.
 function _synkaKTroskel() {
     _fyllKTexter();
-    const k = kTroskel();
+    const k = kInstalld();
     const falt = document.getElementById('k-troskel');
     if (falt) /** @type {HTMLInputElement} */ (falt).value = String(k);
     // Paketformuläret bär samma värde, men skrivs inte över medan användaren redigerar det.
@@ -1480,10 +1493,13 @@ function sattKTroskel(v, { fraga = true, rita = true, stegvis = false } = {}) {
     }
     _kVisaFel('');   // ett gammalt felmeddelande hör till ett värde som inte längre gäller
     const hojd = n > state.kTroskel;
+    const golvFore = statGolv();
     state.kTroskel = n;
     state._lifecycleCache = null;
-    if (typeof invalidateStatCaches === 'function') invalidateStatCaches();
-    if (typeof ritGenerationNy === 'function') ritGenerationNy();   // allt som är ritat hittills bär den gamla tröskeln
+    // Skattningarna (bootstrap-KI och styrkan läser statGolv(); § 3:10-paren läser ingen tröskel) räknas om bara när
+    // golvet ändras — på 55 000 rader är bootstrapen sekunder. Det som är ritat bär den gamla tröskeln och ritas om.
+    if (statGolv() !== golvFore && typeof invalidateStatCaches === 'function') invalidateStatCaches();
+    else if (typeof ritGenerationNy === 'function') ritGenerationNy();   // allt som är ritat hittills bär den gamla tröskeln
     // Löneöversynens förslag ur § 3:10-par som inte längre når tröskeln tas bort (egna rader står kvar).
     if (hojd && typeof _fcRensaParMal === 'function') _fcRensaParMal();
     _synkaKTroskel();
@@ -1519,8 +1535,10 @@ function _omritningssteg() {
     steg.push(['nyckeltal', () => { if (typeof updateDashboardStats === 'function') updateDashboardStats(); }]);
     steg.push(['kompliansöversikt', () => { if (typeof updateCompliance === 'function') updateCompliance(); }]);
     steg.push(['underlagets kvalitet', () => { if (typeof renderUnderlagetsKvalitet === 'function') renderUnderlagetsKvalitet(); }]);
-    steg.push(['Att göra', () => { if (typeof renderActionChecklist === 'function') renderActionChecklist(); }]);
-    steg.push(['processöversikten', () => { if (typeof renderProcessTracker === 'function') renderProcessTracker(); }]);
+    // Processöversikten läser samma punkter som Att göra: listan byggs en gång och skickas vidare (ingen cache).
+    /** @type {any[]|undefined} */ let punkter;
+    steg.push(['Att göra', () => { if (typeof renderActionChecklist === 'function') punkter = renderActionChecklist(); }]);
+    steg.push(['processöversikten', () => { if (typeof renderProcessTracker === 'function') renderProcessTracker({ punkter }); }]);
     steg.push(['extremvärden', () => { if (typeof renderOutliers === 'function') renderOutliers(); }]);
     steg.push(['inläsningsrapporten', () => { if (typeof renderDataValidationReport === 'function') renderDataValidationReport(); }]);
     steg.push(['A/B-jämförelsen', () => {
@@ -1528,8 +1546,9 @@ function _omritningssteg() {
         if (ab && ab.style.display !== 'none' && typeof renderSnapshotComparison === 'function') renderSnapshotComparison();
     }]);
     // Bara den öppna fliken. De övriga är inaktuella tills de öppnas eller en export behöver dem (exportgrinden).
+    // Översikt är redan ritad av stegen ovan (renderTabContent('dashboard') gör inget annat).
     const oppen = document.querySelector('.nav-item.active[data-tab]');
-    if (oppen) steg.push([oppen.getAttribute('data-tab'), () => renderTabContent(oppen.getAttribute('data-tab'))]);
+    if (oppen && oppen.getAttribute('data-tab') !== 'dashboard') steg.push([oppen.getAttribute('data-tab'), () => renderTabContent(oppen.getAttribute('data-tab'))]);
     // En öppen gruppdossier byggdes med den gamla tröskeln.
     steg.push(['gruppdossiern', () => {
         const dossier = document.getElementById('dossier-body');
@@ -1601,6 +1620,22 @@ function _renderaOmAllaFlikarStegvis() {
 function _skrDel() {
     const t = state.profile && state.profile.orgTyp;
     return t === 'kommun' || t === 'region' ? t : 'alla';
+}
+
+// Så nämns den nationella referensen i gränssnittet. "SKR" ensamt sade användarna inget; därför står
+// alltid vad statistiken är (andel kvinnor per yrke), var den gäller (kommuner och regioner) och från när.
+/** Perioden i ord: '2025-11' → 'november 2025'. */
+function _skrPeriodText(period) {
+    const [ar, man] = String(period || '').split('-');
+    const namn = ['januari', 'februari', 'mars', 'april', 'maj', 'juni', 'juli', 'augusti', 'september', 'oktober', 'november', 'december'][Number(man) - 1];
+    return namn && ar ? `${namn} ${ar}` : String(period || '');
+}
+/** Kort källtext: "SKR:s personalstatistik, november 2025". */
+function skrKallaKort() { return `SKR:s personalstatistik, ${_skrPeriodText(_skrReferensInfo().period)}`; }
+/** Hela förklaringen, för tooltips och metodbilagan. */
+function skrForklaring() {
+    return `Nationell andel kvinnor per yrke (AID-kod) i ${_skrDelText(_skrDel())}, ur ${skrKallaKort()} (SKR är Sveriges Kommuner och Regioner). `
+        + 'Ett referensvärde bredvid organisationens egen könsfördelning, och reserv i Likvärdigt arbete när jämförelsestatistiken saknar könsfördelning. Valet kommun eller region görs under Inställningar.';
 }
 
 function nationellAidKlass(aid) {
@@ -1991,20 +2026,6 @@ function detectSensitiveColumns(rows) {
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 
-// ---- Analysens BAS-spann ----
-// Verktyget analyserar bara individer i BAS A–J. Personer i högre BAS (K och uppåt)
-// läses in men utesluts; HR analyserar dem manuellt. Bara antal redovisas.
-const BAS_MAX = 'J';
-
-/** Personer som uteslöts för att de ligger ovanför BAS_MAX: {n, spann: 'K–L'} eller null. */
-function manuellaBas() {
-    const per = (state.dataAudit && state.dataAudit.overBasPerBas) || {};
-    const bas = Object.keys(per).sort((a, b) => a.localeCompare(b, 'sv'));
-    const n = bas.reduce((s, b) => s + per[b], 0);
-    if (!n) return null;
-    return { n, spann: bas.length === 1 ? bas[0] : `${bas[0]}–${bas[bas.length - 1]}`, perBas: per };
-}
-
 // ---- State ----
 const PRIO_CONFIG_DEFAULTS = Object.freeze({
     atgardThreshold:    -5,   // %, gränsvärde för Åtgärd/AKUT
@@ -2020,11 +2041,11 @@ const PRIO_WEIGHTS_DEFAULTS = Object.freeze({
 // Kostnadsberäknings-defaults — SKR 2025 PO-påslag som standard
 const COST_DEFAULTS = Object.freeze({
     months: 12,         // beräkningsperiod (3/6/9/12 vanligt)
-    poPct:  39.15       // PO-påslag i % (SKR Cirkulär 2024 — sociala avgifter + pensioner)
+    poPct:  39.15       // PO-påslag i % (SKR:s cirkulär 2025 — sociala avgifter + pensioner)
 });
 
 // Automatisk rensning vid inaktivitet: på som standard (GDPR art. 25.2). Organisationspaketet kan låsa värdet (ADR-47).
-const INAKTIVITET_STANDARD_MIN = 30;
+const INAKTIVITET_STANDARD_MIN = 90;
 
 // ---- Profil: organisationens benämningar (ADR-28) ----
 // Verktyget är organisationsneutralt: ingen organisation är inbyggd. Profilen styr externa
@@ -2542,11 +2563,34 @@ function rawGenderGap(rows, getLon) {
 }
 
 /**
+ * Raderna en riktad pott gäller: gruppen (BAS, eller BAS och AID), begränsad till ett kön (`kon`:
+ * 'kvinna' | 'man', annars alla) och till löner under en gräns (`lonCap`, kr/mån, annars alla).
+ * Samma urval som allocate() räknar på, så att gränssnittet kan visa hur många raden berör.
+ * @param {Array} rows - individrader {bas, aid, kon, lon}
+ * @param {{bas:string, aid:string, kon?:string, lonCap?:number|null}} t
+ * @returns {number[]} index i rows
+ */
+function targetRows(rows, t) {
+    const kon = t.kon === 'kvinna' || t.kon === 'man' ? t.kon : 'alla';
+    const cap = t.lonCap != null && isFinite(t.lonCap) && t.lonCap > 0 ? t.lonCap : null;
+    const konOk = r => kon === 'alla' || (kon === 'kvinna' ? String(r.kon || '').includes('kvinna') : (r.kon === 'man' || r.kon === 'män'));
+    const ut = [];
+    (rows || []).forEach((r, i) => {
+        if (r.bas !== t.bas) return;
+        if (t.aid !== '*' && r.aid !== t.aid) return;
+        if (!konOk(r) || (cap != null && !(r.lon < cap))) return;
+        ut.push(i);
+    });
+    return ut;
+}
+
+/**
  * Fördelar generellt + riktat påslag och returnerar nya löner per individ,
  * sammanställning per grupp och totaler.
  * @param {Array} rows - individrader {bas, aid, kon, lon}
  * @param {{mode:string, value:number|null}} generell - generellt påslag till alla (value null = 0)
- * @param {Array<{bas,aid,mode:'pct'|'kr',value,dist:'flat'|'lowest'|'target',targetLevel?:'median'|'p25'}>} targets
+ * @param {Array<{bas,aid,mode:'pct'|'kr'|'till',value,dist:'flat'|'lowest'|'target',targetLevel?:'median'|'p25',kon?:string,lonCap?:number|null}>} targets
+ *   mode 'till' lyfter var och en i urvalet som ligger under beloppet upp till det (ingen pott att fördela).
  * @param {number} [roundStep=0] - avrunda nya löner till närmaste steg (kr), 0 = ingen avrundning
  */
 function allocate(rows, generell, targets, roundStep) {
@@ -2559,22 +2603,17 @@ function allocate(rows, generell, targets, roundStep) {
         genDeltas[i] = g.mode === 'kr' ? gVal : rows[i].lon * gVal / 100;
     }
 
-    // Gruppindex per BAS|AID
-    const groupIdx = new Map();
-    rows.forEach((r, i) => {
-        const k = r.bas + '|' + r.aid;
-        if (!groupIdx.has(k)) groupIdx.set(k, []);
-        groupIdx.get(k).push(i);
-    });
-
     const tgtDeltas = new Array(n).fill(0);
     (targets || []).forEach(t => {
-        // aid === '*' → hela BAS-intervallet (alla yrken i BAS:et)
-        const idxs = t.aid === '*'
-            ? rows.map((r, i) => (r.bas === t.bas ? i : -1)).filter(i => i >= 0)
-            : groupIdx.get(t.bas + '|' + t.aid);
-        if (!idxs || !idxs.length) return;
+        // aid === '*' → hela BAS-intervallet (alla yrken i BAS:et); kön och lönegräns snävar in raden.
+        const idxs = targetRows(rows, t);
+        if (!idxs.length) return;
         const lons = idxs.map(i => rows[i].lon);
+        if (t.mode === 'till') {
+            const mal = isFinite(t.value) ? t.value : 0;
+            idxs.forEach((i, j) => { if (lons[j] > 0 && lons[j] < mal) tgtDeltas[i] += mal - lons[j]; });
+            return;
+        }
         const groupSum = lons.reduce((s, x) => s + (x > 0 ? x : 0), 0);
         const pott = t.mode === 'kr' ? (isFinite(t.value) ? t.value : 0)
                                      : groupSum * (isFinite(t.value) ? t.value : 0) / 100;
@@ -2899,10 +2938,11 @@ function sensitivityCurve(rows, candidates, costOpts, steps) {
     return out;
 }
 
-    return { computePott, allocate, suggestTargets, closureTargets, stagedPlan, summarizeGroups, detectLeapfrog, forecastOutcome, bandStats, individualRemediation, marketTargets, sensitivityCurve, _median };
+    return { computePott, allocate, targetRows, suggestTargets, closureTargets, stagedPlan, summarizeGroups, detectLeapfrog, forecastOutcome, bandStats, individualRemediation, marketTargets, sensitivityCurve, _median };
 })();
 const _fcComputePott = __mirrorForecast.computePott;
 const _fcAllocate = __mirrorForecast.allocate;
+const _fcTargetRows = __mirrorForecast.targetRows;
 const _fcSuggestTargets = __mirrorForecast.suggestTargets;
 const _fcClosureTargets = __mirrorForecast.closureTargets;
 const _fcStagedPlan = __mirrorForecast.stagedPlan;
@@ -5672,26 +5712,11 @@ function groupKey(row, dim) {
     return null;
 }
 
-// Svensk bokstavsordning för BAS-koder (A–Z, Å, Ä, Ö).
-const _BAS_ORDNING = 'ABCDEFGHIJKLMNOPQRSTUVWXYZÅÄÖ';
-
-/**
- * Ligger BAS-koden efter gränsen i bokstavsordning (t.ex. K–Ö när gränsen är J)?
- * Bara enskilda bokstäver jämförs; andra koder (siffror, flera tecken) ligger aldrig ovanför.
- */
-function basOvanforGrans(bas, grans) {
-    const b = String(bas ?? '').trim().toUpperCase();
-    if (b.length !== 1) return false;
-    const i = _BAS_ORDNING.indexOf(b), g = _BAS_ORDNING.indexOf(String(grans).toUpperCase());
-    return i >= 0 && g >= 0 && i > g;
-}
-
-    return { groupKey, konOf, jamforAldersgrupp, jamforLonespann, basOvanforGrans };
+    return { groupKey, konOf, jamforAldersgrupp, jamforLonespann };
 })();
 const _utGroupKey = __mirrorFalt.groupKey;
 const _utKonOf = __mirrorFalt.konOf;
 const _faltJamforAlder = __mirrorFalt.jamforAldersgrupp;
-const _faltBasOvanforGrans = __mirrorFalt.basOvanforGrans;
 
 // ---- speglar src/lib/urval.js ----
 const __mirrorUrval = (() => {
@@ -5950,12 +5975,12 @@ function bedomUnderlag(rader, { k, audit, mde, modell } = {}) {
     });
 
     const orimliga = d.filter(r => !(r.lon >= FTE_GOLV && r.lon <= 250000)
-        || !(r.alder >= 18 && r.alder <= 70) || !/^[A-J]$/i.test(r.bas || '')).length;
+        || !(r.alder >= 18 && r.alder <= 70) || !/^[A-ZÅÄÖ]$/i.test(r.bas || '')).length;
     const orimPct = d.length ? orimliga / d.length * 100 : null;
     kriterier.push({
         id: 'rimlighet', namn: 'Rimlighet', status: _stat(orimPct, 1, 5, false), varde: orimPct,
         text: orimPct == null ? 'Inga rader att kontrollera.'
-            : `${orimliga} rader (${_pct(orimPct)}) har lön under ${FTE_GOLV.toLocaleString('sv-SE')} eller över 250 000 kr, ålder utanför 18–70 eller BAS utanför A–J.`,
+            : `${orimliga} rader (${_pct(orimPct)}) har lön under ${FTE_GOLV.toLocaleString('sv-SE')} eller över 250 000 kr, ålder utanför 18–70 eller BAS som inte är en bokstav.`,
     });
 
     const mStatus = modell === 'full' ? 'ok' : modell === 'minimal' ? 'varning' : 'kritisk';
@@ -6239,7 +6264,6 @@ function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
                 ? `Efter hänsyn till ålder är det oförklarade lönegapet ${_pct(u.oforklarat.pct)} (95 % KI ${_ki(u.oforklarat.lo, u.oforklarat.hi)} %). BAS-intervall kunde inte tas med i modellen.`
                 : `Efter hänsyn till ålder och BAS är det oförklarade lönegapet ${_pct(u.oforklarat.pct)} (95 % KI ${_ki(u.oforklarat.lo, u.oforklarat.hi)} %).`);
         }
-        if (u.manuellt) st.push(`${_st(u.manuellt.n, 'person', 'personer')} i BAS ${u.manuellt.spann} ingår inte i analysen och analyseras manuellt.`);
         if (u.kvalitet) {
             const etikett = { ok: 'OK', varning: 'Varning', kritisk: 'Kritisk' }[u.kvalitet.status];
             st.push(`Underlagets kvalitet: ${etikett}` + (u.kvalitet.brister.length ? ` (${u.kvalitet.brister.join(', ')}).` : '.'));
@@ -6364,6 +6388,24 @@ function tillWordHtml(b) {
     return h;
 }
 
+/**
+ * Ett block för en egen tabell ur Utforska (ADR-52): tabellen som receptet gav (receptTillTabeller), med talen
+ * skrivna efter kolumnens typ, och tabellens not som stycke.
+ * @param {{rubrik: string, kolumner: {rubrik: string, typ: string}[], rader: any[][], not?: string}} t
+ * @param {{id: string, k?: number, urval?: string, demo?: boolean, troskelNot?: string}} val
+ */
+function egenTabellBlock(t, { id, urval, demo, troskelNot }) {
+    const { fore, efter } = _inled({ demo, urval, troskelNot });
+    const skriv = (v, typ) => {
+        if (v == null || v === '') return '–';
+        if (typeof v !== 'number') return String(v);
+        if (!isFinite(v)) return '–';
+        return typ === 'kr' ? _kr(v) : typ === 'pct1' ? _pct(v, 1) : typ === 'antal' ? formatTal(v, 0) : formatTal(v, 2);
+    };
+    return { id, rubrik: t.rubrik, stycken: [...fore, ...(t.not ? [t.not] : []), ...efter], provat: null, fragor: null,
+        tabell: { rubriker: t.kolumner.map(c => c.rubrik), rader: t.rader.map(r => r.map((v, j) => skriv(v, (t.kolumner[j] || {}).typ))) } };
+}
+
 /** Ren text för urklipp (reserv): tabbar mellan kolumner, numrerade frågor. */
 function tillText(b) {
     const delar = [b.rubrik, ...b.stycken];
@@ -6373,7 +6415,7 @@ function tillText(b) {
     return delar.join('\n\n');
 }
 
-    return { likaArbeteGrupper, justeratGapInomYrke, gruppBlock, parBlock, avsnittBlock, tillWordHtml, tillText, stabilitetKort };
+    return { likaArbeteGrupper, justeratGapInomYrke, gruppBlock, parBlock, avsnittBlock, tillWordHtml, tillText, stabilitetKort, egenTabellBlock };
 })();
 const _ruLikaArbeteGrupper = __mirrorRapportunderlag.likaArbeteGrupper;
 const _ruJusteratGap = __mirrorRapportunderlag.justeratGapInomYrke;
@@ -6383,6 +6425,7 @@ const _ruAvsnittBlock = __mirrorRapportunderlag.avsnittBlock;
 const _ruTillWordHtml = __mirrorRapportunderlag.tillWordHtml;
 const _ruTillText = __mirrorRapportunderlag.tillText;
 const _ruStabilitetKort = __mirrorRapportunderlag.stabilitetKort;
+const _ruEgenTabellBlock = __mirrorRapportunderlag.egenTabellBlock;
 
 // ---- speglar src/lib/gapuppdelning.js ----
 const __mirrorGapuppdelning = (() => {
@@ -6833,236 +6876,6 @@ function computePivot(rows, spec, { k = 10 } = {}) {
     return { computePivot };
 })();
 const _utComputePivot = __mirrorUtforska.computePivot;
-
-// ---- speglar src/lib/organisationspaket.js ----
-const __mirrorOrganisationspaket = (() => {
-// SPDX-License-Identifier: MIT
-// Copyright 2026 Felix Jansson
-/**
- * Öppen lönekartläggning — organisationspaket (ADR-28).
- *
- * En systemägare samlar organisationens namn och benämningar, grundinställningar,
- * lönepolitiska ställningstagande och jämförelsestatistik i en JSON-fil som handläggarna
- * läser in i ett steg. Modulen bygger paketet ur appens delar och tolkar ett paket
- * tillbaka till dem. Bara vitlistade fält följer med; allt annat ignoreras, så att en
- * manipulerad fil inte kan föra in något annat än aggregat i verktyget.
- *
- * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
- */
-
-const PAKET_FORMAT = 'lonekartlaggning-organisationspaket';
-const PAKET_VERSION = 1;
-const PAKET_MAX_BYTE = 5 * 1024 * 1024;
-
-const MAX_TEXT = 200;
-const PNR = /\b(19|20)?\d{6}[-+]?\d{4}\b/;
-const EPOST = /\S+@\S+\.\S+/;
-
-/** Liknar texten ett personnummer eller en e-postadress? (Samma mönster som paketkontrollen.) */
-function liknarPersonuppgift(text) {
-    const t = String(text ?? '');
-    return PNR.test(t) || EPOST.test(t);
-}
-
-// Textfält saneras vid inläsning: HTML-metatecken (< > " ' &) tas bort, texten trimmas och kortas
-// till 200 tecken. Fälten är benämningar och koder som aldrig legitimt innehåller tecknen; esc() vid
-// rendering är det egentliga skyddet, detta är ett extra lager på samma sätt som för lönefilen.
-const _text = v => {
-    if (typeof v !== 'string') return undefined;
-    const t = v.replace(/[<>"'&]/g, '').trim();
-    return t ? t.substring(0, MAX_TEXT) : undefined;
-};
-const _tal = (v, min, max) => (typeof v === 'number' && Number.isFinite(v) && v >= min && v <= max ? v : undefined);
-const _talEllerNull = v => (v == null ? null : (typeof v === 'number' && Number.isFinite(v) && v >= 0 ? v : NaN));
-const _utanTomma = o => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined));
-// Minsta gruppstorlek för redovisning (ADR-38): heltal 2–1000, annars utelämnat.
-const _kTroskel = v => (Number.isInteger(v) && v >= 2 && v <= 1000 ? v : undefined);
-// Beräkningsperioden väljs bland verktygets värden (Prioriteringens rullista).
-const PERIODER = [3, 6, 9, 12];
-const _period = v => (PERIODER.includes(v) ? v : undefined);
-// Låsningar som systemägaren kan sätta (ADR-47). Rensning vid inaktivitet: 0 (av) eller 5–120 minuter.
-const INAKTIVITET_MIN = 5;
-const INAKTIVITET_MAX = 120;
-const _inaktivitet = v => (v === 0 || (Number.isInteger(v) && v >= INAKTIVITET_MIN && v <= INAKTIVITET_MAX) ? v : undefined);
-
-// ---- Rader ----
-
-function _referensRad(r) {
-    if (!r || typeof r !== 'object') return null;
-    const bas = _text(r.bas)?.toUpperCase() ?? null;
-    const aid = _text(r.aid) ?? null;
-    if (!bas && !aid) return null;
-    const p10 = _talEllerNull(r.p10), med = _talEllerNull(r.med), p90 = _talEllerNull(r.p90);
-    if ([p10, med, p90].some(Number.isNaN)) return null;
-    return { aid, bas, p10, med, p90 };
-}
-
-function _statistikRad(r) {
-    if (!r || typeof r !== 'object') return null;
-    const aid = _text(r.aid);
-    const median = _tal(r.median, Number.MIN_VALUE, Infinity);
-    if (!aid || median === undefined) return null;
-    const p10 = r.p10 == null ? 0 : _tal(r.p10, 0, Infinity);
-    const p90 = r.p90 == null ? 0 : _tal(r.p90, 0, Infinity);
-    const nKv = _talEllerNull(r.nKv), nMa = _talEllerNull(r.nMa);
-    const andelKv = r.andelKv == null ? null : _tal(r.andelKv, 0, 100);
-    if (p10 === undefined || p90 === undefined || Number.isNaN(nKv) || Number.isNaN(nMa) || andelKv === undefined) return null;
-    return { aid, aidFull: _text(r.aidFull) ?? aid, bas: typeof r.bas === 'string' ? r.bas.trim().toUpperCase().substring(0, 10) : '',
-             median, p10, p90, nKv, nMa, andelKv };
-}
-
-// Organisationstypen styr vilken del av SKR:s personalstatistik som är referens (ADR-34).
-function _orgTyp(v) {
-    return v === 'kommun' || v === 'region' ? v : undefined;
-}
-
-// ---- Bygga ----
-
-/**
- * Bygger ett paket ur appens delar. Tomma delar utelämnas.
- * @param {{organisation:string, utgivare?:string, skapat:string, avserAr?:number,
- *          profil?:Object, installningar?:Object, referens?:Object|null, statistik?:Object|null}} u
- * @returns {Object} JSON-säkert paket
- */
-function byggPaket(u) {
-    const p = u.profil || {}, inst = u.installningar || {};
-    /** @type {{[k:string]:any}} */
-    const paket = {
-        format: PAKET_FORMAT,
-        version: PAKET_VERSION,
-        organisation: { namn: _text(u.organisation) },
-        ..._utanTomma({ utgivare: _text(u.utgivare), skapat: _text(u.skapat), avserAr: _tal(u.avserAr, 2000, 2100) }),
-        profil: _utanTomma({
-            jamforelseNamn: _text(p.benchmarkLabel), jamforelseGenitiv: _text(p.benchmarkLabelGenitive),
-            jamforelseKort: _text(p.benchmarkShort), basSystem: _text(p.basSystem), aidSystem: _text(p.aidSystem),
-            organisationstyp: _orgTyp(p.orgTyp),
-        }),
-        installningar: _utanTomma({
-            poPct: _tal(inst.poPct, 0, 100), poNot: _text(inst.poNot), manader: _period(inst.months), kTroskel: _kTroskel(inst.kTroskel),
-            // Låsningarna (ADR-47): bara giltiga värden följer med; en låsning av rensningstiden kräver ett värde över 0.
-            kTroskelLagst: _kTroskel(inst.kTroskelLagst),
-            inaktivitetMin: _inaktivitet(inst.inaktivitetMin),
-            inaktivitetLast: inst.inaktivitetLast === true && _inaktivitet(inst.inaktivitetMin) > 0 ? true : undefined,
-            smaGrupperIExport: inst.smaGrupperIExport === false ? false : undefined,
-        }),
-    };
-    const refRader = (u.referens?.rader || []).map(_referensRad).filter(Boolean);
-    if (refRader.length) paket.referens = { ..._utanTomma({ namn: _text(u.referens.namn), kortnamn: _text(u.referens.kortnamn) }), rader: refRader };
-    const statRader = (u.statistik?.rader || []).map(_statistikRad).filter(Boolean);
-    if (statRader.length) paket.statistik = { ..._utanTomma({ namn: _text(u.statistik.namn) }), rader: statRader };
-    return paket;
-}
-
-// ---- Tolka ----
-
-// Alla textvärden i paketet, för kontrollen av personuppgifter.
-function _allaTexter(v, ut = []) {
-    if (typeof v === 'string') ut.push(v);
-    else if (Array.isArray(v)) v.forEach(x => _allaTexter(x, ut));
-    else if (v && typeof v === 'object') Object.keys(v).forEach(k => _allaTexter(v[k], ut));
-    return ut;
-}
-
-/**
- * Låsningarna i installningar (ADR-47), normaliserade. Ett ogiltigt värde utelämnas med en varning, så att ett
- * paket aldrig tyst låser något annat än det systemägaren skrev. Rensningstiden kan inte låsas i läget Av (0).
- */
-function _lasningar(inst, varningar) {
-    const ut = {};
-    if (inst.kTroskelLagst != null) {
-        const n = _kTroskel(inst.kTroskelLagst);
-        if (n === undefined) varningar.push('Paketets lägsta tillåtna minsta gruppstorlek är ogiltig och används inte.');
-        else ut.kTroskelLagst = n;
-    }
-    if (inst.inaktivitetMin != null) {
-        const n = _inaktivitet(inst.inaktivitetMin);
-        if (n === undefined) varningar.push(`Paketets tid för rensning vid inaktivitet är ogiltig (0 eller ${INAKTIVITET_MIN}–${INAKTIVITET_MAX} minuter) och används inte.`);
-        else ut.inaktivitetMin = n;
-    }
-    if (inst.inaktivitetLast != null) {
-        if (typeof inst.inaktivitetLast !== 'boolean') varningar.push('Paketets låsning av rensning vid inaktivitet är ogiltig och används inte.');
-        else if (inst.inaktivitetLast) {
-            if (ut.inaktivitetMin === undefined) varningar.push('Paketet låser rensning vid inaktivitet utan ett giltigt värde; låsningen används inte.');
-            else if (ut.inaktivitetMin === 0) varningar.push('Rensning vid inaktivitet kan inte låsas i läget Av; låsningen används inte.');
-            else ut.inaktivitetLast = true;
-        }
-    }
-    if (inst.smaGrupperIExport != null) {
-        if (typeof inst.smaGrupperIExport !== 'boolean') varningar.push('Paketets fält om små grupper i exporten är ogiltigt och används inte.');
-        else ut.smaGrupperIExport = inst.smaGrupperIExport;
-    }
-    return ut;
-}
-
-function _rader(del, radFn, benamning, varningar) {
-    if (!del || typeof del !== 'object' || !Array.isArray(del.rader)) return null;
-    const rader = del.rader.map(radFn).filter(Boolean);
-    const bort = del.rader.length - rader.length;
-    if (bort) varningar.push(`${bort} ${bort === 1 ? 'rad' : 'rader'} i ${benamning} hoppades över (saknade eller ogiltiga värden).`);
-    return rader.length ? rader : null;
-}
-
-/**
- * Tolkar ett paket (filens text) till appens delar.
- * @param {string} text
- * @returns {{ok:true, paket:Object, delar:Object, varningar:string[]} | {ok:false, fel:string}}
- */
-function tolkaPaket(text) {
-    if (typeof text !== 'string') return { ok: false, fel: 'Filen kunde inte läsas.' };
-    if (text.length > PAKET_MAX_BYTE) return { ok: false, fel: 'Filen är för stor för att vara ett organisationspaket (högst 5 MB).' };
-    let o;
-    try { o = JSON.parse(text); } catch (_e) { return { ok: false, fel: 'Filen är inte giltig JSON.' }; }
-    if (!o || typeof o !== 'object' || Array.isArray(o)) return { ok: false, fel: 'Filen är inte ett organisationspaket.' };
-
-    if (o.format !== PAKET_FORMAT) return { ok: false, fel: 'Filen är inte ett organisationspaket för lönekartläggning.' };
-    if (typeof o.version !== 'number' || o.version > PAKET_VERSION) {
-        return { ok: false, fel: `Paketet har version ${o.version}; verktyget läser version ${PAKET_VERSION}. Uppdatera verktyget.` };
-    }
-    const organisation = _text(o.organisation?.namn);
-    if (!organisation) return { ok: false, fel: 'Paketet saknar organisationens namn (organisation.namn).' };
-    const skapat = _text(o.skapat);
-    if (!skapat || !/^\d{4}-\d{2}-\d{2}$/.test(skapat)) return { ok: false, fel: 'Paketet saknar datum (skapat, ÅÅÅÅ-MM-DD).' };
-    if (_allaTexter(o).some(t => PNR.test(t) || EPOST.test(t))) {
-        return { ok: false, fel: 'Paketet innehåller något som liknar personnummer eller e-post och läses inte in.' };
-    }
-
-    const varningar = [];
-    const refRader = _rader(o.referens, _referensRad, 'ställningstagandet', varningar);
-    const statRader = _rader(o.statistik, _statistikRad, 'jämförelsestatistiken', varningar);
-    if (!refRader && !statRader) return { ok: false, fel: 'Paketet innehåller varken ett lönepolitiskt ställningstagande eller jämförelsestatistik.' };
-    if (!refRader) varningar.push('Paketet innehåller inget lönepolitiskt ställningstagande.');
-    if (!statRader) varningar.push('Paketet innehåller ingen jämförelsestatistik.');
-
-    const p = o.profil && typeof o.profil === 'object' ? o.profil : {};
-    const inst = o.installningar && typeof o.installningar === 'object' ? o.installningar : {};
-    if (inst.kTroskel != null && _kTroskel(inst.kTroskel) === undefined) varningar.push('Paketets minsta gruppstorlek är ogiltig och används inte.');
-    const las = _lasningar(inst, varningar);
-    // Paketets egen tröskel får inte ligga under paketets golv: den höjs till golvet, med en varning.
-    let kTroskel = _kTroskel(inst.kTroskel);
-    if (kTroskel !== undefined && las.kTroskelLagst !== undefined && kTroskel < las.kTroskelLagst) {
-        varningar.push(`Paketets minsta gruppstorlek ${kTroskel} är lägre än dess lägsta tillåtna ${las.kTroskelLagst} och höjs till ${las.kTroskelLagst}.`);
-        kTroskel = las.kTroskelLagst;
-    }
-    return {
-        ok: true,
-        paket: _utanTomma({ organisation, utgivare: _text(o.utgivare), skapat, avserAr: _tal(o.avserAr, 2000, 2100) }),
-        delar: {
-            profil: _utanTomma({ name: organisation, benchmarkLabel: _text(p.jamforelseNamn),
-                benchmarkLabelGenitive: _text(p.jamforelseGenitiv), benchmarkShort: _text(p.jamforelseKort),
-                basSystem: _text(p.basSystem), aidSystem: _text(p.aidSystem), orgTyp: _orgTyp(p.organisationstyp) }),
-            installningar: _utanTomma({ poPct: _tal(inst.poPct, 0, 100), poNot: _text(inst.poNot), months: _period(inst.manader), kTroskel, ...las }),
-            referens: refRader ? { ..._utanTomma({ namn: _text(o.referens.namn), kortnamn: _text(o.referens.kortnamn) }), rader: refRader } : null,
-            statistik: statRader ? { ..._utanTomma({ namn: _text(o.statistik.namn) }), rader: statRader } : null,
-        },
-        varningar,
-    };
-}
-
-    return { byggPaket, tolkaPaket, liknarPersonuppgift };
-})();
-const _opByggPaket = __mirrorOrganisationspaket.byggPaket;
-const _opTolkaPaket = __mirrorOrganisationspaket.tolkaPaket;
-const _opLiknarPersonuppgift = __mirrorOrganisationspaket.liknarPersonuppgift;
 
 // ---- speglar src/lib/attgora.js ----
 const __mirrorAttgora = (() => {
@@ -7676,6 +7489,594 @@ function docxDelar(block, { titel, sidfot, skapad }) {
     return { docxDelar };
 })();
 const _docxDelar = __mirrorDocx.docxDelar;
+
+// ---- speglar src/lib/perbas.js ----
+const __mirrorPerBas = (() => {
+    // importer ur tidigare speglade lib-moduler
+    const median = __mirrorStat.median;
+    const quantile = __mirrorStat.quantile;
+    const sektorsnamn = __mirrorAid.sektorsnamn;
+
+// SPDX-License-Identifier: MIT
+// Copyright 2026 Felix Jansson
+/**
+ * Öppen lönekartläggning — tabellerna per BAS-intervall, i den form en skriven lönekartläggning brukar ha.
+ *
+ * Tre tabeller, byggda efter arbetsgivarnas egna utkast:
+ *  1. Per BAS-intervall: referensen (ställningstagandet), organisationen, varje yrkesgrupp med jämförelse-
+ *     statistikens rad under, och sist kvinnor och män — P10, median, P90 och antal.
+ *  2. Löneskillnader inom likvärdigt arbete: per BAS medellön för alla, män och kvinnor, kvinnors
+ *     medellön i procent av mäns, andel kvinnor och medelålder.
+ *  3. Löneskillnader i åldersgrupper: per BAS medellön i tre åldersgrupper.
+ *
+ * Minsta gruppstorlek (k) tillämpas här: en yrkesgrupp, ett BAS-intervall eller en åldersgrupp med färre än
+ * k personer får ingen lönerad, och könsuppdelade mått visas bara när båda könen når k. De utelämnade
+ * räknas upp så att rapporten säger vad den inte redovisar.
+ *
+ * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
+ */
+
+
+// ---- Receptet (ADR-52): vad avsnittet ska innehålla. Standardvärdet är tabellerna som de står i arbetsgivarnas utkast. ----
+const PERBAS_DIMENSIONER = ['bas', 'sektor'];
+const PERBAS_MATT = ['p10', 'p25', 'med', 'p75', 'p90', 'medel'];
+const PERBAS_MATT_ETIKETT = Object.freeze({ p10: 'P10', p25: 'P25', med: 'Median', p75: 'P75', p90: 'P90', medel: 'Medellön' });
+const PERBAS_RADER = ['referens', 'organisation', 'yrken', 'statistik', 'kvinnor', 'man'];
+const PERBAS_RAD_ETIKETT = Object.freeze({ referens: 'Referensen (ställningstagandet)', organisation: 'Organisationen', yrken: 'Yrkesgrupperna',
+    statistik: 'Jämförelsestatistikens rad under varje yrke', kvinnor: 'Kvinnor', man: 'Män' });
+function perBasStandard() {
+    return { dim: 'bas', rader: [...PERBAS_RADER], matt: ['p10', 'med', 'p90'], konsgap: true, aldersgrupper: true, aldersgranser: [35, 50] };
+}
+/** Receptet i giltig form; okända värden faller tillbaka på standard. Null in ger standardreceptet. */
+function valideraPerBasRecept(r) {
+    const std = perBasStandard();
+    if (!r || typeof r !== 'object') return std;
+    const granser = Array.isArray(r.aldersgranser) ? [...new Set(r.aldersgranser.map(Number).filter(x => Number.isInteger(x) && x > 16 && x < 80))].sort((a, b) => a - b) : [];
+    const matt = Array.isArray(r.matt) ? PERBAS_MATT.filter(m => r.matt.includes(m)) : [];
+    return {
+        dim: PERBAS_DIMENSIONER.includes(r.dim) ? r.dim : 'bas',
+        rader: Array.isArray(r.rader) ? PERBAS_RADER.filter(x => r.rader.includes(x)) : std.rader,
+        matt: matt.length ? matt : std.matt,
+        konsgap: r.konsgap !== false, aldersgrupper: r.aldersgrupper !== false,
+        aldersgranser: granser.length ? granser : std.aldersgranser
+    };
+}
+function perBasReceptArStandard(r) { return JSON.stringify(valideraPerBasRecept(r)) === JSON.stringify(perBasStandard()); }
+
+const _arKv = r => String(r.kon || '').includes('kvinna');
+const _arMa = r => r.kon === 'man' || r.kon === 'män';
+const _medel = arr => (arr.length ? arr.reduce((s, x) => s + x, 0) / arr.length : null);
+const _loner = rader => rader.map(r => r.lon).filter(x => typeof x === 'number' && isFinite(x) && x > 0);
+const _aldrar = rader => rader.map(r => r.alder).filter(x => typeof x === 'number' && isFinite(x) && x > 0);
+const _matt = rader => { const l = _loner(rader); return l.length ? { n: rader.length, p10: quantile(l, 0.1), p25: quantile(l, 0.25), med: median(l), p75: quantile(l, 0.75), p90: quantile(l, 0.9), medel: _medel(l) } : null; };
+
+/** Yrkesgruppens namn: AID-koden och etiketten. */
+function yrkesnamn(r) {
+    const aid = r.aid != null ? String(r.aid).trim() : '';
+    const etikett = r.yrkeLabel ? String(r.yrkeLabel).trim() : '';
+    if (aid && etikett && etikett !== aid) return `${aid} ${etikett}`;
+    return aid || etikett || String(r.yrke || '').trim() || '(okänt yrke)';
+}
+
+/**
+ * Åldersgrupperna ur gränserna: [35, 50] → ['–34', '35–49', '50–'].
+ * @param {number[]} granser
+ */
+function aldersgruppNamn(granser) {
+    const g = [...granser].sort((a, b) => a - b);
+    const ut = [`–${g[0] - 1}`];
+    for (let i = 0; i < g.length - 1; i++) ut.push(`${g[i]}–${g[i + 1] - 1}`);
+    ut.push(`${g[g.length - 1]}–`);
+    return ut;
+}
+const _aldersgrupp = (alder, granser) => { let i = 0; while (i < granser.length && alder >= granser[i]) i++; return i; };
+
+/**
+ * @param {Array<{bas:string, aid?:string, yrke?:string, yrkeLabel?:string, kon:string, lon:number, alder?:number}>} rader
+ * @param {{k?: number, referens?: ((aid: string|null, bas: string) => ({p10?:number, med?:number, p90?:number}|null))|null,
+ *          statistik?: Array<{aid:string, bas?:string, median:number, p10?:number, p90?:number}>|null,
+ *          referensNamn?: string, statistikNamn?: string, aldersgranser?: number[], recept?: any}} [opt]
+ *   `recept` (ADR-52): dimensionen som upprepas ('bas' eller 'sektor'), vilka rader och mått, och om summeringstabellerna
+ *   ska med; utelämnat ger standardreceptet. Med sektor som dimension finns ingen referensrad (ställningstagandet
+ *   gäller BAS-intervall).
+ */
+function perBasTabeller(rader, opt = {}) {
+    const k = opt.k ?? 10;
+    const recept = valideraPerBasRecept(opt.recept);
+    const visa = new Set(recept.rader);
+    const dimAv = recept.dim === 'sektor' ? (r => sektorsnamn(r.aid) || '') : (r => String(r.bas ?? ''));
+    const referens = typeof opt.referens === 'function' ? opt.referens : () => null;
+    const statistik = Array.isArray(opt.statistik) ? opt.statistik : [];
+    const referensNamn = opt.referensNamn || 'Referens';
+    const statistikNamn = opt.statistikNamn || 'Jämförelsestatistik';
+    const granser = (opt.aldersgranser && opt.aldersgranser.length ? opt.aldersgranser : recept.aldersgranser).slice().sort((a, b) => a - b);
+    const d = (rader || []).filter(r => r && r.bas && dimAv(r));
+    const basar = [...new Set(d.map(dimAv))].sort((a, b) => a.localeCompare(b, 'sv'));
+    const statFor = (aid, bas) => statistik.find(s => String(s.aid) === String(aid) && String(s.bas || '') === String(bas))
+        || statistik.find(s => String(s.aid) === String(aid) && !s.bas) || null;
+
+    const intervall = [];
+    const basUtelamnade = [];
+    for (const bas of basar) {
+        const df = d.filter(r => dimAv(r) === bas);
+        if (df.length < k) { basUtelamnade.push(bas); continue; }
+        const rad = [];
+        const utelamnade = [];
+        const ref = recept.dim === 'bas' && visa.has('referens') ? referens(null, bas) : null;
+        if (ref && (ref.p10 != null || ref.med != null || ref.p90 != null)) rad.push({ typ: 'referens', namn: referensNamn, n: null, p10: ref.p10 ?? null, med: ref.med ?? null, p90: ref.p90 ?? null });
+        const org = visa.has('organisation') ? _matt(df) : null;
+        if (org) rad.push({ typ: 'organisation', namn: 'Organisationen', ...org });
+        // Yrkesgrupperna, största först; under varje yrke dess rad i jämförelsestatistiken.
+        const perYrke = new Map();
+        df.forEach(r => { const key = String(r.aid ?? r.yrke ?? ''); if (!perYrke.has(key)) perYrke.set(key, []); perYrke.get(key).push(r); });
+        const yrken = [...perYrke.entries()].sort((a, b) => b[1].length - a[1].length || yrkesnamn(a[1][0]).localeCompare(yrkesnamn(b[1][0]), 'sv'));
+        for (const [key, rows] of yrken) {
+            if (!visa.has('yrken')) break;
+            const namn = yrkesnamn(rows[0]);
+            if (rows.length < k) { utelamnade.push(namn); continue; }
+            const m = _matt(rows);
+            if (!m) continue;
+            rad.push({ typ: 'yrke', namn, aid: key, ...m });
+            const s = visa.has('statistik') && rows[0].aid != null && recept.dim === 'bas' ? statFor(rows[0].aid, bas) : null;
+            if (s && s.median > 0) rad.push({ typ: 'statistik', namn: `${statistikNamn}: ${namn}`, aid: key, n: null, p10: s.p10 ?? null, med: s.median, p90: s.p90 ?? null });
+        }
+        const kv = df.filter(_arKv), ma = df.filter(_arMa);
+        const konVisas = kv.length >= k && ma.length >= k;
+        if (konVisas) {
+            const mk = visa.has('kvinnor') ? _matt(kv) : null, mm = visa.has('man') ? _matt(ma) : null;
+            if (mk) rad.push({ typ: 'kvinnor', namn: 'Kvinnor', ...mk });
+            if (mm) rad.push({ typ: 'man', namn: 'Män', ...mm });
+        }
+        intervall.push({ bas, n: df.length, nKv: kv.length, nMa: ma.length, rader: rad, utelamnade, konVisas, antalYrken: perYrke.size });
+    }
+
+    // Könsgap och ålder per BAS, med raden Alla först.
+    const konsgapRad = (namn, rows) => {
+        const kv = rows.filter(_arKv), ma = rows.filter(_arMa);
+        const konVisas = kv.length >= k && ma.length >= k;
+        const medel = _medel(_loner(rows)), medelKv = konVisas ? _medel(_loner(kv)) : null, medelMa = konVisas ? _medel(_loner(ma)) : null;
+        return {
+            bas: namn, n: rows.length, medel, medelMa, medelKv,
+            kvot: konVisas && medelMa != null && medelMa > 0 && medelKv != null ? medelKv / medelMa * 100 : null,
+            andelKv: rows.length ? kv.length / rows.length * 100 : null,
+            alder: _medel(_aldrar(rows)), alderMa: konVisas ? _medel(_aldrar(ma)) : null, alderKv: konVisas ? _medel(_aldrar(kv)) : null,
+            konVisas
+        };
+    };
+    const visadeBas = basar.filter(b => !basUtelamnade.includes(b));
+    const konsgap = { rader: [konsgapRad('Alla', d), ...visadeBas.map(b => konsgapRad(b, d.filter(r => dimAv(r) === b)))] };
+
+    const grupper = aldersgruppNamn(granser);
+    const aldersRad = (namn, rows) => {
+        /** @type {any[][]} */
+        const per = grupper.map(() => []);
+        rows.forEach(r => { if (typeof r.alder === 'number' && isFinite(r.alder) && r.alder > 0) per[_aldersgrupp(r.alder, granser)].push(r); });
+        return { bas: namn, n: rows.length, alder: _medel(_aldrar(rows)), medel: _medel(_loner(rows)),
+            perGrupp: per.map(g => (g.length >= k ? _medel(_loner(g)) : null)), antalPerGrupp: per.map(g => g.length) };
+    };
+    const aldersgrupper = { grupper, rader: [aldersRad('Alla', d), ...visadeBas.map(b => aldersRad(b, d.filter(r => dimAv(r) === b)))] };
+
+    return { k, recept, dim: recept.dim, dimEtikett: recept.dim === 'sektor' ? 'Sektor' : 'BAS-intervall', intervall, basUtelamnade,
+             konsgap: recept.konsgap ? konsgap : null, aldersgrupper: recept.aldersgrupper ? aldersgrupper : null };
+}
+
+    return { perBasTabeller, aldersgruppNamn, yrkesnamn, perBasStandard, valideraPerBasRecept, perBasReceptArStandard };
+})();
+const _pbTabeller = __mirrorPerBas.perBasTabeller;
+const _pbStandard = __mirrorPerBas.perBasStandard;
+const _pbValideraRecept = __mirrorPerBas.valideraPerBasRecept;
+const _pbReceptArStandard = __mirrorPerBas.perBasReceptArStandard;
+
+// ---- speglar src/lib/tabellrecept.js ----
+const __mirrorTabellrecept = (() => {
+    // importer ur tidigare speglade lib-moduler
+    const computePivot = __mirrorUtforska.computePivot;
+
+// SPDX-License-Identifier: MIT
+// Copyright 2026 Felix Jansson
+/**
+ * Öppen lönekartläggning — egna tabeller i rapporten (ADR-52).
+ *
+ * En tabell som användaren byggt i Utforska sparas som ett RECEPT — rader, kolumner, mått, urval och om tabellen ska
+ * upprepas per BAS-intervall — aldrig som tal. Recepten ritas om i exportläget när Word-utkastet, PDF-rapporten och
+ * Excel-filen byggs, med samma pivot som fliken (computePivot) och samma regler för minsta gruppstorlek som Utforskas
+ * export: en cell under tröskeln blir tom, och rader och kolumner som bara har tomma celler utelämnas och räknas.
+ *
+ * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
+ */
+
+// Samma listor som i src/lib/utforska.js (DIMENSIONER, MATT); tests/tabellrecept.test.js vaktar att de är lika.
+const DIMENSIONER = ['bas', 'aid', 'alder', 'kon', 'alla', 'aidbas', 'lonespann', 'sektor', 'aidniva'];
+const MATT = ['median', 'medel', 'n', 'p10', 'p25', 'p75', 'p90', 'spridning', 'andelKv', 'gap'];
+const RECEPT_DIMENSIONER = DIMENSIONER, RECEPT_MATT = MATT;
+
+const DIM_ETIKETT = Object.freeze({
+    bas: 'BAS-intervall', aid: 'Yrkesgrupp (AID)', alder: 'Åldersgrupp', kon: 'Kön',
+    aidbas: 'Yrkesgrupp inom BAS', lonespann: 'Lönespann', alla: 'Hela urvalet',
+    sektor: 'Sektor (AID-huvudområde)', aidniva: 'AID-mellannivå'
+});
+const MATT_ETIKETT = Object.freeze({
+    median: 'Median månadslön', medel: 'Medellön', n: 'Antal (n)',
+    p10: 'P10', p25: 'P25', p75: 'P75', p90: 'P90',
+    spridning: 'Spridning (P90/P10)', andelKv: 'Andel kvinnor (%)', gap: 'Kvinnors median i % av mäns'
+});
+/** Kolumntyp i rapportmodellen per mått (58-rapportmodell.js: rmCell). */
+const MATT_TYP = Object.freeze({
+    median: 'kr', medel: 'kr', n: 'antal', p10: 'kr', p25: 'kr', p75: 'kr', p90: 'kr', spridning: 'tal2', andelKv: 'pct1', gap: 'pct1'
+});
+const UPPREPNING = ['bas'];
+const MAX_NAMN = 80;
+
+let _nr = 0;
+/** Ett nytt recept ur Utforskas spec. Namnet kortas till 80 tecken; utan namn får tabellen en beskrivning som namn.
+ * @param {any} spec
+ * @param {{namn?: string, upprepa?: string|null}} [val] */
+function nyttRecept(spec, { namn = '', upprepa = null } = {}) {
+    const r = valideraRecept({ id: `t${Date.now().toString(36)}${(++_nr).toString(36)}`, namn: String(namn || '').trim().slice(0, MAX_NAMN), spec, upprepa });
+    if (r && !r.namn) r.namn = receptBeskrivning(r);
+    return r;
+}
+
+/** Receptet i giltig form, eller null när det inte går att använda (okänd dimension eller okänt mått). */
+function valideraRecept(r) {
+    if (!r || typeof r !== 'object' || !r.spec || typeof r.spec !== 'object') return null;
+    const s = r.spec;
+    if (!DIMENSIONER.includes(s.rad)) return null;
+    const kolumn = s.kolumn && s.kolumn !== s.rad && DIMENSIONER.includes(s.kolumn) ? s.kolumn : null;
+    const matt = MATT.includes(s.matt) ? s.matt : 'median';
+    const urval = s.urval && typeof s.urval === 'object' && Array.isArray(s.urval.villkor)
+        ? { lage: s.urval.lage === 'nagot' ? 'nagot' : 'alla', villkor: s.urval.villkor.filter(v => v && typeof v === 'object').map(v => ({ ...v })) }
+        : { lage: 'alla', villkor: [] };
+    const gruppVillkor = Array.isArray(s.gruppVillkor) ? s.gruppVillkor.filter(g => g && typeof g === 'object').map(g => ({ ...g })) : [];
+    return {
+        id: typeof r.id === 'string' && r.id ? r.id.slice(0, 40) : `t${Date.now().toString(36)}`,
+        namn: String(r.namn || '').trim().slice(0, MAX_NAMN),
+        spec: { rad: s.rad, kolumn, matt, delaKon: !!s.delaKon, slaIhop: !!s.slaIhop, urval, gruppVillkor },
+        upprepa: UPPREPNING.includes(r.upprepa) && r.upprepa !== s.rad && r.upprepa !== kolumn ? r.upprepa : null
+    };
+}
+
+/** En rad som beskriver receptet: "Median månadslön per Yrkesgrupp (AID) och Kön, kvinnor och män var för sig, en tabell per BAS-intervall". */
+function receptBeskrivning(r) {
+    const s = r.spec;
+    const delar = [`${MATT_ETIKETT[s.matt]} per ${DIM_ETIKETT[s.rad]}${s.kolumn ? ` och ${DIM_ETIKETT[s.kolumn]}` : ''}`];
+    if (s.delaKon) delar.push('kvinnor och män var för sig');
+    if (s.urval.villkor.length) delar.push(`${s.urval.villkor.length} ${s.urval.villkor.length === 1 ? 'villkor' : 'villkor'} i urvalet`);
+    if (s.gruppVillkor.length) delar.push('gruppvillkor');
+    if (r.upprepa) delar.push(`en tabell per ${DIM_ETIKETT[r.upprepa]}`);
+    return delar.join(', ');
+}
+
+const _bas = rows => [...new Set(rows.map(r => String(r.bas ?? '')).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'sv'));
+const _nText = c => `${c.n} (${c.nKv}/${c.nMa})`;
+
+/**
+ * Tabellerna ur ett recept, i rapportmodellens form: { rubrik, kolumner: [{rubrik, typ}], rader: [[...]], utelamnade, not }.
+ * Flera tabeller när receptet upprepas per BAS-intervall. Tröskeln k tillämpas här.
+ * @param {any[]} rows
+ * @param {any} recept
+ * @param {{k?: number}} [opt]
+ * @returns {Array<{rubrik: string, kolumner: {rubrik: string, typ: string}[], rader: any[][], utelamnade: number, not: string}>}
+ */
+function receptTillTabeller(rows, recept, { k = 10 } = {}) {
+    const r = valideraRecept(recept);
+    if (!r) return [];
+    const bygg = (rader, rubrik) => _tabell(computePivot(rader, r.spec, { k }), r.spec, k, rubrik);
+    if (r.upprepa === 'bas') {
+        return /** @type {any[]} */ (_bas(rows).map(b => bygg(rows.filter(x => String(x.bas) === b), `${r.namn} — BAS ${b}`)).filter(t => t && t.rader.length));
+    }
+    const t = bygg(rows, r.namn);
+    return t && t.rader.length ? [t] : [];   // en tabell där ingen grupp når tröskeln utelämnas (anroparen anger det)
+}
+
+function _tabell(model, spec, k, rubrik) {
+    if (!model || !model.celler.length) return null;
+    const dim = DIM_ETIKETT[spec.rad], typ = MATT_TYP[spec.matt] || 'kr';
+    let kolumner, rader, utelamnade = 0;
+    if (spec.kolumn) {
+        const byKey = new Map(model.celler.map(c => [c.rad + '\u0000' + c.kol, c]));
+        const kol = (model.kolumnEtiketter || []).flatMap(kl => spec.delaKon
+            ? [{ kl, rubrik: `${kl} · Kvinnor`, v: c => c.valueKv, n: c => c.nKv }, { kl, rubrik: `${kl} · Män`, v: c => c.valueMa, n: c => c.nMa }]
+            : [{ kl, rubrik: kl, v: c => c.value, n: c => c.n }]);
+        const liten = (c, d) => c.liten || d.n(c) < k;
+        const varde = (c, d) => {
+            if (!c) return null;
+            if (spec.matt === 'n' && !c.liten) return d.n(c);                      // antal är inte ett lönemått
+            if (liten(c, d) || (spec.matt === 'gap' && c.konLiten)) return null;
+            return d.v(c);
+        };
+        const matris = model.radEtiketter.map(rk => kol.map(d => varde(byKey.get(rk + '\u0000' + d.kl), d)));
+        const kolMed = kol.map((_, j) => matris.some(rad => rad[j] != null));
+        const radMed = matris.map(rad => rad.some(v => v != null));
+        utelamnade = radMed.filter(x => !x).length;
+        kolumner = [{ rubrik: `${dim} \\ ${DIM_ETIKETT[spec.kolumn]}`, typ: 'text' }, ...kol.filter((_, j) => kolMed[j]).map(d => ({ rubrik: d.rubrik, typ }))];
+        rader = model.radEtiketter.map((rk, i) => [rk, ...matris[i].filter((_, j) => kolMed[j])]).filter((_, i) => radMed[i]);
+    } else if (spec.delaKon) {
+        const synliga = model.celler.filter(c => !c.liten);
+        utelamnade = model.celler.length - synliga.length;
+        kolumner = [{ rubrik: dim, typ: 'text' }, { rubrik: 'Kvinnor', typ }, { rubrik: 'Män', typ }, { rubrik: 'n (K/M)', typ: 'text' }];
+        const v = (c, n, x) => (spec.matt === 'n' || n >= k ? x : null);
+        rader = synliga.map(c => [c.rad, v(c, c.nKv, c.valueKv), v(c, c.nMa, c.valueMa), _nText(c)]);
+    } else {
+        const synliga = model.celler.filter(c => !c.liten);
+        utelamnade = model.celler.length - synliga.length;
+        kolumner = [{ rubrik: dim, typ: 'text' }, { rubrik: MATT_ETIKETT[spec.matt], typ }, { rubrik: 'n (K/M)', typ: 'text' }];
+        rader = synliga.map(c => [c.rad, spec.matt === 'gap' && c.konLiten ? null : c.value, _nText(c)]);
+    }
+    const noter = [];
+    if (utelamnade) noter.push(`${utelamnade} ${utelamnade === 1 ? 'grupp' : 'grupper'} med färre än ${k} personer redovisas inte.`);
+    if (model.dolda) noter.push(`${model.dolda} ${model.dolda === 1 ? 'grupp' : 'grupper'} döljs av gruppvillkoren.`);
+    return { rubrik, kolumner, rader, utelamnade, not: noter.join(' ') };
+}
+
+    return { nyttRecept, valideraRecept, receptBeskrivning, receptTillTabeller };
+})();
+const _trNytt = __mirrorTabellrecept.nyttRecept;
+const _trValidera = __mirrorTabellrecept.valideraRecept;
+const _trBeskrivning = __mirrorTabellrecept.receptBeskrivning;
+const _trTabeller = __mirrorTabellrecept.receptTillTabeller;
+
+// ---- speglar src/lib/organisationspaket.js ----
+const __mirrorOrganisationspaket = (() => {
+    // importer ur tidigare speglade lib-moduler
+    const valideraRecept = __mirrorTabellrecept.valideraRecept;
+    const valideraPerBasRecept = __mirrorPerBas.valideraPerBasRecept;
+    const perBasReceptArStandard = __mirrorPerBas.perBasReceptArStandard;
+
+// SPDX-License-Identifier: MIT
+// Copyright 2026 Felix Jansson
+/**
+ * Öppen lönekartläggning — organisationspaket (ADR-28).
+ *
+ * En systemägare samlar organisationens namn och benämningar, grundinställningar,
+ * lönepolitiska ställningstagande och jämförelsestatistik i en JSON-fil som handläggarna
+ * läser in i ett steg. Modulen bygger paketet ur appens delar och tolkar ett paket
+ * tillbaka till dem. Bara vitlistade fält följer med; allt annat ignoreras, så att en
+ * manipulerad fil inte kan föra in något annat än aggregat i verktyget.
+ *
+ * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
+ */
+
+
+
+const PAKET_FORMAT = 'lonekartlaggning-organisationspaket';
+const PAKET_VERSION = 1;
+const PAKET_MAX_BYTE = 5 * 1024 * 1024;
+
+const MAX_TEXT = 200;
+const PNR = /\b(19|20)?\d{6}[-+]?\d{4}\b/;
+const EPOST = /\S+@\S+\.\S+/;
+
+/** Liknar texten ett personnummer eller en e-postadress? (Samma mönster som paketkontrollen.) */
+function liknarPersonuppgift(text) {
+    const t = String(text ?? '');
+    return PNR.test(t) || EPOST.test(t);
+}
+
+// Textfält saneras vid inläsning: HTML-metatecken (< > " ' &) tas bort, texten trimmas och kortas
+// till 200 tecken. Fälten är benämningar och koder som aldrig legitimt innehåller tecknen; esc() vid
+// rendering är det egentliga skyddet, detta är ett extra lager på samma sätt som för lönefilen.
+const _text = v => {
+    if (typeof v !== 'string') return undefined;
+    const t = v.replace(/[<>"'&]/g, '').trim();
+    return t ? t.substring(0, MAX_TEXT) : undefined;
+};
+const _tal = (v, min, max) => (typeof v === 'number' && Number.isFinite(v) && v >= min && v <= max ? v : undefined);
+const _talEllerNull = v => (v == null ? null : (typeof v === 'number' && Number.isFinite(v) && v >= 0 ? v : NaN));
+const _utanTomma = o => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined));
+// Minsta gruppstorlek för redovisning (ADR-38): heltal 2–1000, annars utelämnat.
+const _kTroskel = v => (Number.isInteger(v) && v >= 2 && v <= 1000 ? v : undefined);
+// Beräkningsperioden väljs bland verktygets värden (Prioriteringens rullista).
+const PERIODER = [3, 6, 9, 12];
+const _period = v => (PERIODER.includes(v) ? v : undefined);
+// Låsningar som systemägaren kan sätta (ADR-47). Rensning vid inaktivitet: 0 (av) eller 5–120 minuter.
+const INAKTIVITET_MIN = 5;
+const INAKTIVITET_MAX = 120;
+const _inaktivitet = v => (v === 0 || (Number.isInteger(v) && v >= INAKTIVITET_MIN && v <= INAKTIVITET_MAX) ? v : undefined);
+
+// ---- Rader ----
+
+function _referensRad(r) {
+    if (!r || typeof r !== 'object') return null;
+    const bas = _text(r.bas)?.toUpperCase() ?? null;
+    const aid = _text(r.aid) ?? null;
+    if (!bas && !aid) return null;
+    const p10 = _talEllerNull(r.p10), med = _talEllerNull(r.med), p90 = _talEllerNull(r.p90);
+    if ([p10, med, p90].some(Number.isNaN)) return null;
+    return { aid, bas, p10, med, p90 };
+}
+
+function _statistikRad(r) {
+    if (!r || typeof r !== 'object') return null;
+    const aid = _text(r.aid);
+    const median = _tal(r.median, Number.MIN_VALUE, Infinity);
+    if (!aid || median === undefined) return null;
+    const p10 = r.p10 == null ? 0 : _tal(r.p10, 0, Infinity);
+    const p90 = r.p90 == null ? 0 : _tal(r.p90, 0, Infinity);
+    const nKv = _talEllerNull(r.nKv), nMa = _talEllerNull(r.nMa);
+    const andelKv = r.andelKv == null ? null : _tal(r.andelKv, 0, 100);
+    if (p10 === undefined || p90 === undefined || Number.isNaN(nKv) || Number.isNaN(nMa) || andelKv === undefined) return null;
+    return { aid, aidFull: _text(r.aidFull) ?? aid, bas: typeof r.bas === 'string' ? r.bas.trim().toUpperCase().substring(0, 10) : '',
+             median, p10, p90, nKv, nMa, andelKv };
+}
+
+// Organisationstypen styr vilken del av SKR:s personalstatistik som är referens (ADR-34).
+function _orgTyp(v) {
+    return v === 'kommun' || v === 'region' ? v : undefined;
+}
+
+// ---- Bygga ----
+
+/**
+ * Bygger ett paket ur appens delar. Tomma delar utelämnas.
+ * @param {{organisation:string, utgivare?:string, skapat:string, avserAr?:number,
+ *          profil?:Object, installningar?:Object, referens?:Object|null, statistik?:Object|null, rapport?:Object|null}} u
+ * @returns {Object} JSON-säkert paket
+ */
+function byggPaket(u) {
+    const p = u.profil || {}, inst = u.installningar || {};
+    /** @type {{[k:string]:any}} */
+    const paket = {
+        format: PAKET_FORMAT,
+        version: PAKET_VERSION,
+        organisation: { namn: _text(u.organisation) },
+        ..._utanTomma({ utgivare: _text(u.utgivare), skapat: _text(u.skapat), avserAr: _tal(u.avserAr, 2000, 2100) }),
+        profil: _utanTomma({
+            jamforelseNamn: _text(p.benchmarkLabel), jamforelseGenitiv: _text(p.benchmarkLabelGenitive),
+            jamforelseKort: _text(p.benchmarkShort), basSystem: _text(p.basSystem), aidSystem: _text(p.aidSystem),
+            organisationstyp: _orgTyp(p.orgTyp),
+        }),
+        installningar: _utanTomma({
+            poPct: _tal(inst.poPct, 0, 100), poNot: _text(inst.poNot), manader: _period(inst.months), kTroskel: _kTroskel(inst.kTroskel),
+            // Låsningarna (ADR-47): bara giltiga värden följer med; en låsning av rensningstiden kräver ett värde över 0.
+            kTroskelLagst: _kTroskel(inst.kTroskelLagst),
+            inaktivitetMin: _inaktivitet(inst.inaktivitetMin),
+            inaktivitetLast: inst.inaktivitetLast === true && _inaktivitet(inst.inaktivitetMin) > 0 ? true : undefined,
+            smaGrupperIExport: inst.smaGrupperIExport === false ? false : undefined,
+        }),
+    };
+    // Rapportens recept (ADR-52): egna tabeller ur Utforska och receptet för avsnittet per BAS-intervall. Bara
+    // giltiga recept följer med, och standardreceptet per BAS utelämnas (det gäller ändå).
+    const rapport = _rapport(u.rapport, null);
+    if (rapport) paket.rapport = rapport;
+    const refRader = (u.referens?.rader || []).map(_referensRad).filter(Boolean);
+    if (refRader.length) paket.referens = { ..._utanTomma({ namn: _text(u.referens.namn), kortnamn: _text(u.referens.kortnamn) }), rader: refRader };
+    const statRader = (u.statistik?.rader || []).map(_statistikRad).filter(Boolean);
+    if (statRader.length) paket.statistik = { ..._utanTomma({ namn: _text(u.statistik.namn) }), rader: statRader };
+    return paket;
+}
+
+/**
+ * Rapportens recept i giltig form, eller null när inget finns. Ogiltiga tabellrecept faller bort (med en varning
+ * när `varningar` ges); receptet per BAS normaliseras, och standardreceptet blir null.
+ * @param {any} rp
+ * @param {string[]|null} varningar
+ */
+function _rapport(rp, varningar) {
+    if (!rp || typeof rp !== 'object') return null;
+    const in_ = Array.isArray(rp.tabeller) ? rp.tabeller : [];
+    const tabeller = in_.map(t => valideraRecept(t)).filter(Boolean);
+    if (varningar && tabeller.length < in_.length) {
+        const n = in_.length - tabeller.length;
+        varningar.push(`${n} ${n === 1 ? 'egen tabell' : 'egna tabeller'} i paketet gick inte att läsa och hoppas över.`);
+    }
+    let perBasRecept = rp.perBasRecept && typeof rp.perBasRecept === 'object' ? valideraPerBasRecept(rp.perBasRecept) : null;
+    if (perBasRecept && perBasReceptArStandard(perBasRecept)) perBasRecept = null;
+    if (!tabeller.length && !perBasRecept) return null;
+    return { tabeller, ...(perBasRecept ? { perBasRecept } : {}) };
+}
+
+// ---- Tolka ----
+
+// Alla textvärden i paketet, för kontrollen av personuppgifter.
+function _allaTexter(v, ut = []) {
+    if (typeof v === 'string') ut.push(v);
+    else if (Array.isArray(v)) v.forEach(x => _allaTexter(x, ut));
+    else if (v && typeof v === 'object') Object.keys(v).forEach(k => _allaTexter(v[k], ut));
+    return ut;
+}
+
+/**
+ * Låsningarna i installningar (ADR-47), normaliserade. Ett ogiltigt värde utelämnas med en varning, så att ett
+ * paket aldrig tyst låser något annat än det systemägaren skrev. Rensningstiden kan inte låsas i läget Av (0).
+ */
+function _lasningar(inst, varningar) {
+    const ut = {};
+    if (inst.kTroskelLagst != null) {
+        const n = _kTroskel(inst.kTroskelLagst);
+        if (n === undefined) varningar.push('Paketets lägsta tillåtna minsta gruppstorlek är ogiltig och används inte.');
+        else ut.kTroskelLagst = n;
+    }
+    if (inst.inaktivitetMin != null) {
+        const n = _inaktivitet(inst.inaktivitetMin);
+        if (n === undefined) varningar.push(`Paketets tid för rensning vid inaktivitet är ogiltig (0 eller ${INAKTIVITET_MIN}–${INAKTIVITET_MAX} minuter) och används inte.`);
+        else ut.inaktivitetMin = n;
+    }
+    if (inst.inaktivitetLast != null) {
+        if (typeof inst.inaktivitetLast !== 'boolean') varningar.push('Paketets låsning av rensning vid inaktivitet är ogiltig och används inte.');
+        else if (inst.inaktivitetLast) {
+            if (ut.inaktivitetMin === undefined) varningar.push('Paketet låser rensning vid inaktivitet utan ett giltigt värde; låsningen används inte.');
+            else if (ut.inaktivitetMin === 0) varningar.push('Rensning vid inaktivitet kan inte låsas i läget Av; låsningen används inte.');
+            else ut.inaktivitetLast = true;
+        }
+    }
+    if (inst.smaGrupperIExport != null) {
+        if (typeof inst.smaGrupperIExport !== 'boolean') varningar.push('Paketets fält om små grupper i exporten är ogiltigt och används inte.');
+        else ut.smaGrupperIExport = inst.smaGrupperIExport;
+    }
+    return ut;
+}
+
+function _rader(del, radFn, benamning, varningar) {
+    if (!del || typeof del !== 'object' || !Array.isArray(del.rader)) return null;
+    const rader = del.rader.map(radFn).filter(Boolean);
+    const bort = del.rader.length - rader.length;
+    if (bort) varningar.push(`${bort} ${bort === 1 ? 'rad' : 'rader'} i ${benamning} hoppades över (saknade eller ogiltiga värden).`);
+    return rader.length ? rader : null;
+}
+
+/**
+ * Tolkar ett paket (filens text) till appens delar.
+ * @param {string} text
+ * @returns {{ok:true, paket:Object, delar:Object, varningar:string[]} | {ok:false, fel:string}}
+ */
+function tolkaPaket(text) {
+    if (typeof text !== 'string') return { ok: false, fel: 'Filen kunde inte läsas.' };
+    if (text.length > PAKET_MAX_BYTE) return { ok: false, fel: 'Filen är för stor för att vara ett organisationspaket (högst 5 MB).' };
+    let o;
+    try { o = JSON.parse(text); } catch (_e) { return { ok: false, fel: 'Filen är inte giltig JSON.' }; }
+    if (!o || typeof o !== 'object' || Array.isArray(o)) return { ok: false, fel: 'Filen är inte ett organisationspaket.' };
+
+    if (o.format !== PAKET_FORMAT) return { ok: false, fel: 'Filen är inte ett organisationspaket för lönekartläggning.' };
+    if (typeof o.version !== 'number' || o.version > PAKET_VERSION) {
+        return { ok: false, fel: `Paketet har version ${o.version}; verktyget läser version ${PAKET_VERSION}. Uppdatera verktyget.` };
+    }
+    const organisation = _text(o.organisation?.namn);
+    if (!organisation) return { ok: false, fel: 'Paketet saknar organisationens namn (organisation.namn).' };
+    const skapat = _text(o.skapat);
+    if (!skapat || !/^\d{4}-\d{2}-\d{2}$/.test(skapat)) return { ok: false, fel: 'Paketet saknar datum (skapat, ÅÅÅÅ-MM-DD).' };
+    if (_allaTexter(o).some(t => PNR.test(t) || EPOST.test(t))) {
+        return { ok: false, fel: 'Paketet innehåller något som liknar personnummer eller e-post och läses inte in.' };
+    }
+
+    const varningar = [];
+    const refRader = _rader(o.referens, _referensRad, 'ställningstagandet', varningar);
+    const statRader = _rader(o.statistik, _statistikRad, 'jämförelsestatistiken', varningar);
+    if (!refRader && !statRader) return { ok: false, fel: 'Paketet innehåller varken ett lönepolitiskt ställningstagande eller jämförelsestatistik.' };
+    if (!refRader) varningar.push('Paketet innehåller inget lönepolitiskt ställningstagande.');
+    if (!statRader) varningar.push('Paketet innehåller ingen jämförelsestatistik.');
+
+    const p = o.profil && typeof o.profil === 'object' ? o.profil : {};
+    const inst = o.installningar && typeof o.installningar === 'object' ? o.installningar : {};
+    if (inst.kTroskel != null && _kTroskel(inst.kTroskel) === undefined) varningar.push('Paketets minsta gruppstorlek är ogiltig och används inte.');
+    const las = _lasningar(inst, varningar);
+    // Paketets egen tröskel får inte ligga under paketets golv: den höjs till golvet, med en varning.
+    let kTroskel = _kTroskel(inst.kTroskel);
+    if (kTroskel !== undefined && las.kTroskelLagst !== undefined && kTroskel < las.kTroskelLagst) {
+        varningar.push(`Paketets minsta gruppstorlek ${kTroskel} är lägre än dess lägsta tillåtna ${las.kTroskelLagst} och höjs till ${las.kTroskelLagst}.`);
+        kTroskel = las.kTroskelLagst;
+    }
+    return {
+        ok: true,
+        paket: _utanTomma({ organisation, utgivare: _text(o.utgivare), skapat, avserAr: _tal(o.avserAr, 2000, 2100) }),
+        delar: {
+            profil: _utanTomma({ name: organisation, benchmarkLabel: _text(p.jamforelseNamn),
+                benchmarkLabelGenitive: _text(p.jamforelseGenitiv), benchmarkShort: _text(p.jamforelseKort),
+                basSystem: _text(p.basSystem), aidSystem: _text(p.aidSystem), orgTyp: _orgTyp(p.organisationstyp) }),
+            installningar: _utanTomma({ poPct: _tal(inst.poPct, 0, 100), poNot: _text(inst.poNot), months: _period(inst.manader), kTroskel, ...las }),
+            referens: refRader ? { ..._utanTomma({ namn: _text(o.referens.namn), kortnamn: _text(o.referens.kortnamn) }), rader: refRader } : null,
+            statistik: statRader ? { ..._utanTomma({ namn: _text(o.statistik.namn) }), rader: statRader } : null,
+            rapport: _rapport(o.rapport, varningar),
+        },
+        varningar,
+    };
+}
+
+    return { byggPaket, tolkaPaket, liknarPersonuppgift };
+})();
+const _opByggPaket = __mirrorOrganisationspaket.byggPaket;
+const _opTolkaPaket = __mirrorOrganisationspaket.tolkaPaket;
+const _opLiknarPersonuppgift = __mirrorOrganisationspaket.liknarPersonuppgift;
 
 // ---- speglar src/lib/figur.js ----
 const __mirrorFigur = (() => {
@@ -10861,13 +11262,24 @@ function _chartExportKarna(gd) {
     return !!gd && (!!gd._figur || _rfHarRitat(gd));
 }
 
-/** Det som får exporteras ur ett diagram ritat med diagramkärnan, eller null när inget finns att exportera. */
-function _chartExportUnderlag(gd) {
+/** Behållaren som gäller nu: en omritning i exportgrinden kan ha ersatt den med en ny med samma id. */
+function _chartExportAktuell(gd) { return gd && gd.isConnected === false && gd.id ? (document.getElementById(gd.id) || gd) : gd; }
+
+/** Det som får exporteras ur ett diagram ritat med diagramkärnan, eller null när inget finns att exportera.
+ *  Går alltid genom exportläget (ADR-51): figuren läses med den inställda tröskeln. Bilden görs asynkront av dem som
+ *  anropar (chartExportRun, diagramTillBild), som själva står i exportläget tills bilden är klar. */
+function _chartExportUnderlag(...a) { return medExportLage(() => _chartExportUnderlagExport.apply(null, /** @type {any} */ (a))); }
+function _chartExportUnderlagExport(gd) {
     // Ett diagram som inte får lämna verktyget (markeraUtanExport) har inget att exportera, vilken väg som än frågar.
     if (!exportTillaten(gd)) return null;
     // Exportgrinden (23-exportgrind.js): diagrammets flik ska vara ritad med det som gäller nu. Ett diagram som en
     // omritning har ersatt (det gamla elementet sitter inte kvar i sidan) har inget att exportera.
-    if (typeof exportSakra === 'function' && !exportSakra(gd)) return null;
+    if (typeof exportSakra === 'function' && !exportSakra(gd)) {
+        // Omritningen kan ha ersatt behållaren: då gäller den nya med samma id.
+        const ny = gd.isConnected === false && gd.id ? document.getElementById(gd.id) : null;
+        if (!ny || ny === gd || !exportSakra(ny)) return null;
+        gd = ny;
+    }
     const ut = _rfExportFigur(gd);
     return ut && !ut.tom ? ut : null;
 }
@@ -10880,6 +11292,7 @@ function _chartExportUnderlag(gd) {
 function chartExportRows(gd, underlag) {
     const ut = underlag === undefined ? _chartExportUnderlag(gd) : underlag;
     if (!ut) return [];
+    gd = _chartExportAktuell(gd);
     const medSma = ut.visaSma;
     const rader = _figTillTabell(medSma ? ut.figur : _figUtanSma(ut.figur)).map(r => r.map(_chartExportCell));
     const beskrivning = typeof gd._exportBeskrivning === 'string' ? gd._exportBeskrivning : '';
@@ -10911,23 +11324,29 @@ function diagramRitat(el) {
 /** Ett ritat diagram som PNG (data-URL) — den enda vägen till en diagrambild för rapportunderlag, ZIP, utskrift
  *  och prioriteringsmatrisen (ADR-39): originalfiguren utan små grupper (om inte vyn sagt annat) och med de serier
  *  användaren dolt. `utanRubrik`: bilden får ingen rubrik och fotrad (utskriften sätter egna rubriker). */
-async function diagramTillBild(el, val) {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function diagramTillBild(...a) { return medExportLage(() => _diagramTillBildExport.apply(null, /** @type {any} */ (a))); }
+async function _diagramTillBildExport(el, val) {
     const { bredd, hojd, utanRubrik = false } = val || {};
     const skal = exportSkal(el);
     if (skal) throw new Error(`Diagrammet lämnar inte verktyget: det ${skal}.`);
     const ut = _chartExportUnderlag(el);
+    el = _chartExportAktuell(el);
     if (!ut) throw new Error('Det finns inget att exportera i diagrammet.');
     const url = await figurTillBild(ut.bild || ut.figur, 'png', bredd, hojd, { visaSma: ut.visaSma, dolda: ut.dolda, ...(utanRubrik ? {} : _chartExportRubrikFot(el)) });
     if (el._figur !== ut.figur) throw new Error('Diagrammet rensades innan exporten blev klar.');
     return url;
 }
 
-async function _chartExportImage(gd, val, underlag) {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function _chartExportImage(...a) { return medExportLage(() => __chartExportImageExport.apply(null, /** @type {any} */ (a))); }
+async function __chartExportImageExport(gd, val, underlag) {
     const [width, height] = CHART_EXPORT_STORLEKAR[val];
     const format = val === 'svg' ? 'svg' : 'png';
     // Originalfiguren med visaSma enligt vyn och de serier användaren dolt: samma bild som på skärmen,
     // utan små grupper. Meningen om sänkt tröskel lägger figurTillSvg dit.
     const ut = underlag === undefined ? _chartExportUnderlag(gd) : underlag;
+    gd = _chartExportAktuell(gd);
     if (!ut) throw new Error('Det finns inget att exportera i diagrammet.');
     const url = await figurTillBild(ut.bild || ut.figur, format, width, height, { visaSma: ut.visaSma, dolda: ut.dolda, ..._chartExportRubrikFot(gd) });
     // Bilden görs asynkront. Har diagrammet under tiden rensats (Rensa all data) eller fått en annan figur
@@ -10943,9 +11362,12 @@ async function _chartExportImage(gd, val, underlag) {
     if (typeof _showExportSensitivityToast === 'function') _showExportSensitivityToast();
 }
 
-function chartExportRun(gd, val) {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function chartExportRun(...a) { return medExportLage(() => _chartExportRunExport.apply(null, /** @type {any} */ (a))); }
+function _chartExportRunExport(gd, val) {
     // Underlaget bestäms här, en gång (ett anrop av vyns exportMedSma).
     const underlag = _chartExportKarna(gd) ? _chartExportUnderlag(gd) : undefined;
+    gd = _chartExportAktuell(gd);
     // Ett diagram från diagramkärnan utan något att exportera: ingen fil, ingenting på urklipp.
     if (underlag === null) return Promise.reject(new Error('Det finns inget att exportera i diagrammet.'));
     if (val === 'data-kopiera') return Promise.resolve(_copyMatrixToClipboard(chartExportRows(gd, underlag)));
@@ -11261,7 +11683,7 @@ function _mkBorrRad() {
     el.hidden = !_mkTillbaka;
     if (!_mkTillbaka) return;
     el.appendChild(document.createTextNode(`Du kom hit från BAS ${_mkTillbaka.bas}: urvalet är satt till det BAS-intervallet och raderna till yrkesgrupp inom BAS. `
-        + `Grupper med färre än ${kTroskel()} personer visas här markerade och följer inte med i en export om du inte kryssar i rutan. `));
+        + `Grupper med färre än ${kInstalld()} personer följer inte med i en export om du inte kryssar i rutan. `));
     const b = _mkKnapp('tillbaka', 'Tillbaka till föregående urval');
     b.addEventListener('click', nedborrningTillbaka);
     el.appendChild(b);
@@ -11284,7 +11706,7 @@ document.addEventListener('keydown', e => {
  *   paket: any, paketInbakat: null|{skapad:string, organisation:string, verktygsversion:string, verktygssha:string, text:string}, isDemo: boolean,
  *   prioConfig: {atgardThreshold: number, akutMinN: number, bevakaThreshold: number, analyseraThreshold: number, [k: string]: any},
  *   prioWeights: {avvikelse: number, volym: number, jamstalldhet: number, [k: string]: any}, costSettings: {[k: string]: any},
- *   rapportUrval: {ordning: string[], med: string[]}|null,
+ *   rapportUrval: {ordning: string[], med: string[]}|null, rapportTabeller: any[], perBasRecept: any,
  *   bristAids: Set<string>, scenarios: any[], snapshot: any, profile: {[k: string]: any},
  *   filnamn: {data: string|null, policy: string|null, statistik: string|null}, kTroskel: number,
  *   paketLas: {kTroskelLagst: number|null, inaktivitetMin: number|null, smaGrupperIExport: boolean},
@@ -11294,7 +11716,7 @@ document.addEventListener('keydown', e => {
  *     targets: any[], minGroupN: number, roundStep: number, years: number,
  *     scenarios: {A: any, B: any}, result: any, _remediation?: any
  *   },
- *   inactivityTimeoutMin: number,
+ *   inactivityTimeoutMin: number, kLage: 'skarm'|'export',
  *   likvardighet: {source: string, kvinnoTrosholdPct: number, minGapPct: number, topN: number, poangBandPct: number, result: any},
  *   arbetsvardering: {byKey: Map<string, number>, [k: string]: any}|null,
  *   columnMap: {[roll: string]: string}|null,
@@ -11316,7 +11738,10 @@ const state = {
     prioConfig: { ...PRIO_CONFIG_DEFAULTS },
     prioWeights: { ...PRIO_WEIGHTS_DEFAULTS },
     costSettings: { ...COST_DEFAULTS },
+    kLage: 'skarm',                    // 'export' medan något som lämnar verktyget ritas eller räknas (ADR-51, 23-exportgrind.js)
     rapportUrval: null,        // rapportens avsnitt: null = hela dokumentationen, annars { ordning, med } (58-rapportmodell.js)
+    rapportTabeller: [],       // egna tabeller i rapporten: recept ur Utforska (src/lib/tabellrecept.js, ADR-52)
+    perBasRecept: null,        // receptet för avsnittet per BAS-intervall: null = standard (src/lib/perbas.js, ADR-52)
     bristAids: new Set(),         // E: AID-koder markerade som bristyrke
     scenarios: [],                // I: sparade scenarion (max 5)
     snapshot: null,         // för A/B-jämförelse
@@ -11688,8 +12113,11 @@ function _exportText(rot) {
     rot.querySelectorAll('[data-export-text]').forEach(el => { el.textContent = el.getAttribute('data-export-text'); });
 }
 // Tabell → rad-matris (thead + tbody), i nuvarande (ev. sorterade) DOM-ordning.
-function tableToMatrix(tableId) {
-    const table = document.getElementById(tableId);
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function tableToMatrix(...a) { return medExportLage(() => _tableToMatrixExport.apply(null, /** @type {any} */ (a))); }
+function _tableToMatrixExport(tableId) {
+    // Raderna lämnar verktyget (CSV, urklipp): exportläget, och tabellens flik ritad med det som gäller nu (ADR-51).
+    const table = typeof exportElement === 'function' ? exportElement(tableId) : document.getElementById(tableId);
     if (!table) return [];
     const rows = [];
     // En beskrivning av urvalet (Utforska) blir exportens första rad.
@@ -11717,7 +12145,9 @@ function tableToMatrix(tableId) {
     });
     return rows;
 }
-function _copyTableToClipboard(tableId, btn) {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function _copyTableToClipboard(...a) { return medExportLage(() => __copyTableToClipboardExport.apply(null, /** @type {any} */ (a))); }
+function __copyTableToClipboardExport(tableId, btn) {
     const rows = tableToMatrix(tableId);
     if (!rows.length) { alert('Ingen tabelldata att kopiera.'); return; }
     _copyMatrixToClipboard(rows, btn, { undantag: _kUndantagFor(document.getElementById(tableId)) });
@@ -11780,7 +12210,7 @@ function updateCompliance() {
 
     // 1–2. Lönegap > 5 % och könsskevhet — bara i jämförbara BAS (båda könen ≥ k),
     // samma regel som Lika arbete och Underlagets kvalitet använder.
-    const jb = _dqJamforbaraBas(d, kTroskel());
+    const jb = _dqJamforbaraBas(d, kInstalld());   // säger vad exporterna kan jämföra (ADR-51)
     const gapTotal = jb.jamforbara.length;
     const maskText = jb.maskerade.length ? ` · ${jb.maskerade.length} maskeras` : '';
     let gapCrit = 0, skevCount = 0;
@@ -11812,7 +12242,7 @@ function updateCompliance() {
         bas.forEach(b => {
             const pol = policyFor(null, b);
             if (!pol || !pol.p10) return;
-            if (isKMasked(d.filter(r => r.bas === b).length)) return;   // k: medianen för ett litet BAS redovisas inte
+            if (d.filter(r => r.bas === b).length < kInstalld()) return;   // räknar det exporterna kan jämföra (ADR-51)
             polTotal++;
             if (Stat.median(d.filter(r => r.bas === b).map(r => r.lon)) < pol.p10) polLow++;
         });
@@ -11852,16 +12282,17 @@ function updateCompliance() {
 }
 
 // ---- Underlagets kvalitet (ADR-19): svagaste länken avgör ----
-function bedomningUnderlag() {
+/** @param {{reg?: any}} [val] reg: regressionen när anroparen just kört den — ett värde som skickas vidare, ingen cache (ADR-17) */
+function bedomningUnderlag({ reg: given } = {}) {
     const d = getData();
     if (!d.length) return null;
-    const reg = runOLSRegression();
+    const reg = given || runOLSRegression();
     const modell = reg.error ? 'fel' : (reg.modelName === 'full' ? 'full' : 'minimal');
     const mde = reg.error ? null : _dqMdeFranSe(reg.seKonR);
-    const b = _dqBedomUnderlag(d, { k: kTroskel(), audit: state.dataAudit, mde, modell });
+    const b = _dqBedomUnderlag(d, { k: kInstalld(), audit: state.dataAudit, mde, modell });   // jämförbarheten gäller det som lämnar verktyget (ADR-51)
     // Kontrollen av AID-kodningen (ADR-33) läggs till datakvalitetens kriterier.
     let aid = [];
-    try { aid = _akAidKriterier(d, { k: kTroskel(), harAnsvar: !!state.ansvarKolumn }); }
+    try { aid = _akAidKriterier(d, { k: kInstalld(), harAnsvar: !!state.ansvarKolumn }); }
     catch (e) { rapporteraFel('Underlagets kvalitet: AID-kodning', e); }
     const kriterier = [...b.kriterier, ...aid];
     const rang = { ok: 0, varning: 1, kritisk: 2 };
@@ -12049,7 +12480,8 @@ function _mdeSigmaInomGrupp(d, arKv, arMa, golv) {
  * inte fäller hela kortet. Länkarna använder `data-goto-tab` (delegerad lyssnare i
  * 03-hjalpfunktioner.js) — inga inline-onclick (hash-CSP, ADR-9).
  */
-function renderProcessTracker() {
+/** @param {{punkter?: any[]}} [val] punkter: Att göras lista när anroparen just byggt den (annars byggs den här) */
+function renderProcessTracker({ punkter: givna } = {}) {
     const host = document.getElementById('process-tracker');
     if (!host) return;
 
@@ -12062,7 +12494,7 @@ function renderProcessTracker() {
 
     // Ett analyssteg är klart först när dess punkter i Att göra är hanterade — att analysen
     // har körts räcker inte (ADR-29). Listan byggs en gång för alla steg.
-    const punkter = hasData ? safe(() => (typeof buildActionChecklist === 'function' ? buildActionChecklist() : []), []) : [];
+    const punkter = Array.isArray(givna) ? givna : (hasData ? safe(() => (typeof buildActionChecklist === 'function' ? buildActionChecklist() : []), []) : []);
     const klarmarkerade = state._actionChecklistDone || new Set();
     const hanterade = kategorier => _agHanterade(punkter, klarmarkerade, kategorier);   // src/lib/attgora.js
 
@@ -12297,9 +12729,21 @@ function updateDashboardStats() {
     }
 }
 
+/** Översikts delar, i ordning: det som inläsningen ritar och som exportgrinden måste kunna rita om (ADR-51). */
+function renderOversiktDelar() {
+    /** @type {any[]|undefined} */ let punkter;   // processöversikten läser Att göras punkter: byggs en gång
+    /** @type {[string, () => void][]} */
+    const delar = [['nyckeltal', () => updateDashboardStats()], ['kompliansöversikt', () => updateCompliance()],
+        ['underlagets kvalitet', () => renderUnderlagetsKvalitet()], ['Att göra', () => { punkter = renderActionChecklist(); }],
+        ['processöversikten', () => renderProcessTracker({ punkter })], ['extremvärden', () => renderOutliers()],
+        ['inläsningsrapporten', () => renderDataValidationReport()]];   // Var uppstår löneskillnaden ritas av kompliansöversikten
+    for (const [namn, fn] of delar) { try { fn(); } catch (e) { rapporteraFel(`Översikt (${namn})`, e); } }
+    const ab = document.getElementById('snapshot-comparison');
+    if (ab && ab.style.display !== 'none' && typeof renderSnapshotComparison === 'function') renderSnapshotComparison();
+}
+
 // ---- Populate BAS selects ----
 function populateSelects() {
-    populateSimBasSelect();
     const bas = getBasIntervals();
     ['bas-select-kon','bas-select-demo'].forEach(selId => {
         const sel = document.getElementById(selId);
@@ -12319,333 +12763,6 @@ function populateSelects() {
     });
 }
 
-// SPDX-License-Identifier: MIT
-// Copyright 2026 Felix Jansson
-// ---- Lönerevisionssimulator ----
-//
-// Simulatorn följer minsta gruppstorlek (ADR-38): urvalet — kön, BAS-intervall och lönegräns — ska nå
-// tröskeln innan något räknas, och regeln ska beröra minst så många personer innan utfallet visas
-// (kostnaden för "höj till" och de stegvisa lyften är annars skillnaden mot enskildas löner). Lönegapet
-// före och efter är ett könsuppdelat mått för hela organisationen och kräver tröskeln för varje kön
-// (`_konFarRedovisasFor`). Antalet berörda per kön är ett antal, inte ett lönemått, och visas.
-
-/** Urvalet som simulatorns kontroller anger: de rader som matchar kön, BAS-intervall och lönegräns. */
-function _simUrval(d) {
-    const konSel    = /** @type {HTMLInputElement} */ (document.getElementById('sim-kon'))?.value      || 'kvinna';
-    const basSel    = /** @type {HTMLInputElement} */ (document.getElementById('sim-bas'))?.value      || '__ALLA__';
-    const lonCapStr = /** @type {HTMLInputElement} */ (document.getElementById('sim-loncap'))?.value;
-    const lonCap    = lonCapStr ? parseFloat(lonCapStr) : null;
-    const matchesKon = r =>
-        konSel === 'alla' ||
-        (konSel === 'kvinna' && r.kon.includes('kvinna')) ||
-        (konSel === 'man'    && (r.kon === 'man' || r.kon === 'män'));
-    const matchesBas = r => basSel === '__ALLA__' || r.bas === basSel;
-    const underCap   = r => lonCap == null || r.lon < lonCap;
-    const iUrval = r => matchesKon(r) && matchesBas(r) && underCap(r);
-    return { iUrval, urval: d.filter(iUrval) };
-}
-
-/** Meningen när urvalet eller de berörda är färre än tröskeln (samma ordalydelse i knappen och i utfallet). */
-function _simUnderTroskelNot(vad, n) {
-    const k = kTroskel();
-    return `${vad === 'urval' ? 'Simuleringen körs inte: urvalet (kön, BAS-intervall och lönegräns)' : 'Utfallet visas inte: åtgärden berör'}`
-        + ` ${n} ${n === 1 ? 'person' : 'personer'}, färre än ${k} (minsta gruppstorlek för redovisning).`
-        + ` Kostnaden skulle då bygga på enskildas löner. Vidga urvalet${vad === 'urval' ? '' : ' eller ändra åtgärden'}.`;
-}
-
-/**
- * Läget för urvalet i kontrollerna: når det tröskeln? `not` är meningen när det inte gör det.
- * @returns {null | {n:number, ok:boolean, not:string}}
- */
-function _simUrvalStatus() {
-    const d = getData();
-    if (!d.length) return null;
-    const n = _simUrval(d).urval.length;
-    const ok = n >= kTroskel();
-    return { n, ok, not: ok ? '' : _simUnderTroskelNot('urval', n) };
-}
-
-/**
- * Knappen "Beräkna simulering" följer urvalet: under tröskeln är den inaktiv och meningen står där utfallet
- * annars visas. När urvalet åter når tröskeln tas meningen bort (ett visat utfall lämnas orört).
- */
-function _simSynkaKnapp() {
-    const btn = document.getElementById('sim-run');
-    const wrap = document.getElementById('sim-results');
-    if (!btn) return;
-    const st = _simUrvalStatus();
-    const sparr = !!(st && !st.ok);
-    /** @type {HTMLInputElement} */ (btn).disabled = sparr;
-    btn.title = sparr ? st.not : '';
-    if (!wrap) return;
-    if (sparr) {
-        wrap.style.display = 'block';
-        wrap.innerHTML = `<p class="gd-missing">${esc(st.not)}</p>`;
-        wrap._lastSimResult = null;
-        wrap.dataset.simSparr = '1';
-    } else if (wrap.dataset.simSparr) {
-        delete wrap.dataset.simSparr;
-        wrap.style.display = 'none';
-        wrap.innerHTML = '';
-    }
-}
-
-/**
- * Simulerar effekten av en lönerevision: applicerar utvalt påslag (kr eller %)
- * på filtrerad delmängd och rapporterar nya gruppstatistiker, total kostnad
- * (inkl. PO-påslag och period), och risk för "spillover" (att andra grupper hamnar under).
- * Under tröskeln (urvalet eller de berörda) returneras `{ underTroskel: true, not }` utan tal.
- * @returns {null | Object} Strukturerat resultat med before/after + kostnadsblock.
- */
-function runSalarySimulation() {
-    const d = getData();
-    if (!d.length) return null;
-    const actionSel = /** @type {HTMLInputElement} */ (document.getElementById('sim-action'))?.value   || 'add';
-    const amount    = parseFloat(/** @type {HTMLInputElement} */ (document.getElementById('sim-amount'))?.value) || 0;
-    const { iUrval, urval } = _simUrval(d);
-    if (urval.length < kTroskel()) return { affectedCount: 0, underTroskel: true, not: _simUnderTroskelNot('urval', urval.length) };
-
-    // A: Stegvis lyft beräknar målnivå per BAS (P25 eller median) och delar i 3 lika årssteg
-    /** @type {any} */ let stagedTarget = null;
-    if (actionSel === 'staged_p25' || actionSel === 'staged_median') {
-        stagedTarget = {};
-        const basList = [...new Set(d.map(r => r.bas))];
-        basList.forEach(b => {
-            const lons = d.filter(r => r.bas === b).map(r => r.lon).sort((a,bv) => a - bv);
-            if (!lons.length) return;
-            const idx = actionSel === 'staged_p25' ? Math.floor(lons.length * 0.25) : Math.floor(lons.length * 0.5);
-            stagedTarget[b] = lons[Math.min(idx, lons.length - 1)];
-        });
-    }
-
-    // Bygg simulerad data
-    const simData = d.map(r => {
-        const original = r.lon;
-        if (iUrval(r)) {
-            let newLon = original;
-            if (actionSel === 'add')      newLon = original + amount;
-            else if (actionSel === 'pct') newLon = original * (1 + amount / 100);
-            else if (actionSel === 'raise_to' && original < amount) newLon = amount;
-            else if (stagedTarget && stagedTarget[r.bas] && original < stagedTarget[r.bas]) {
-                // År 1: lyft 1/3 av vägen mot målet
-                const totalGap = stagedTarget[r.bas] - original;
-                newLon = original + Math.round(totalGap / 3);
-            }
-            return { ...r, lon: newLon, _delta: newLon - original };
-        }
-        return { ...r, _delta: 0 };
-    });
-
-    // Beräkna effekter (med konfigurerade månader + PO-påslag)
-    const months = (state.costSettings && state.costSettings.months) || 12;
-    const poFactor = 1 + ((state.costSettings && state.costSettings.poPct) || 0) / 100;
-    const affected = simData.filter(r => r._delta > 0);
-    if (affected.length && affected.length < kTroskel()) {
-        return { affectedCount: affected.length, underTroskel: true, not: _simUnderTroskelNot('berorda', affected.length) };
-    }
-    const totalMonthlyCost = affected.reduce((s, r) => s + r._delta, 0);
-    const totalAnnualCost  = totalMonthlyCost * months * poFactor;
-
-    // Råa lönegapet före/efter: ett könsuppdelat mått för hela organisationen — kräver tröskeln för varje kön.
-    const konFar = _konFarRedovisasFor(d);
-    const kvAll = d.filter(r => r.kon.includes('kvinna'));
-    const maAll = d.filter(r => r.kon === 'man' || r.kon === 'män');
-    const beforeGap = konFar && kvAll.length && maAll.length ? (Stat.median(kvAll.map(r=>r.lon)) / Stat.median(maAll.map(r=>r.lon)) - 1) * 100 : null;
-    const kvSim = simData.filter(r => r.kon.includes('kvinna'));
-    const maSim = simData.filter(r => r.kon === 'man' || r.kon === 'män');
-    const afterGap = konFar && kvSim.length && maSim.length ? (Stat.median(kvSim.map(r=>r.lon)) / Stat.median(maSim.map(r=>r.lon)) - 1) * 100 : null;
-    const konNot = konFar ? '' : _konUtelamnatNot();
-
-    // OLS oförklarat gap före/efter (kör regression mot original-data och simulerad)
-    //
-    // Try/finally garanterar att state.data återställs även om
-    // runOLSRegression kastar (t.ex. vid numerisk singularitet i designmatrisen
-    // efter simulerad lönehöjning). Annars kunde en krasch lämna sessionsstaten
-    // med simulerad data permanent skriven över den riktiga.
-    const origData = state.data;
-    let regAfter, regBefore;
-    try {
-        state.data = simData;
-        regAfter = runOLSRegression();
-        // Återställ före regBefore-körningen så den körs mot original
-        state.data = origData;
-        regBefore = runOLSRegression();
-    } finally {
-        // Säkerhetsnät: garantera att original-state återställs även vid undantag
-        state.data = origData;
-    }
-
-    return {
-        affectedCount: affected.length,
-        totalMonthlyCost,
-        totalAnnualCost,
-        beforeGap, afterGap, konNot,
-        beforeUnexplained: regBefore && !regBefore.error ? regBefore.konPct : null,
-        afterUnexplained:  regAfter  && !regAfter.error  ? regAfter.konPct  : null,
-        beforeUnexplainedSig: regBefore && !regBefore.error ? regBefore.pValue < 0.05 : null,
-        afterUnexplainedSig:  regAfter  && !regAfter.error  ? regAfter.pValue  < 0.05 : null,
-        // Effekt per kön
-        affectedKv: affected.filter(r => r.kon.includes('kvinna')).length,
-        affectedMa: affected.filter(r => r.kon === 'man' || r.kon === 'män').length
-    };
-}
-
-function renderSalarySimResults() {
-    const wrap = document.getElementById('sim-results');
-    if (!wrap) return;
-    // J: stöd för min/max-spann
-    const maxEl = document.getElementById('sim-amount-max');
-    const maxVal = maxEl && /** @type {HTMLInputElement} */ (maxEl).value ? parseFloat(/** @type {HTMLInputElement} */ (maxEl).value) : null;
-    const amountEl = /** @type {HTMLInputElement} */ (document.getElementById('sim-amount'));
-    const minVal = parseFloat(/** @type {HTMLInputElement} */ (amountEl).value) || 0;
-    if (maxVal && maxVal > minVal) {
-        const origAmount = /** @type {HTMLInputElement} */ (amountEl).value;
-        /** @type {HTMLInputElement} */ (amountEl).value = String(minVal);
-        const resMin = runSalarySimulation();
-        /** @type {HTMLInputElement} */ (amountEl).value = String(maxVal);
-        const resMax = runSalarySimulation();
-        /** @type {HTMLInputElement} */ (amountEl).value = origAmount;
-        if (!resMin || !resMax) { wrap.style.display = 'none'; return; }
-        const under = [resMin, resMax].find(r => r.underTroskel);
-        if (under) { _renderSimUnderTroskel(wrap, under); return; }
-        _renderSimMinMax(wrap, resMin, resMax, minVal, maxVal);
-        return;
-    }
-    const res = runSalarySimulation();
-    if (!res) { wrap.style.display = 'none'; return; }
-    if (res.underTroskel) { _renderSimUnderTroskel(wrap, res); return; }
-    delete wrap.dataset.simSparr;
-    if (res.affectedCount === 0) {
-        wrap.style.display = 'block';
-        wrap.innerHTML = `<div class="bak-botten rund-6 farg-dampad pad-14-16">Inga personer matchar reglerna. Justera filter eller åtgärd.</div>`;
-        return;
-    }
-    const fmt = new Intl.NumberFormat('sv-SE');
-    const fmtPct = v => v == null ? '–' : (v >= 0 ? '+' : '') + svPct(v, 1);
-    const dGap = (res.beforeGap != null && res.afterGap != null) ? (res.afterGap - res.beforeGap) : null;
-    const dUnexp = (res.beforeUnexplained != null && res.afterUnexplained != null) ? (res.afterUnexplained - res.beforeUnexplained) : null;
-    const dirGap = dGap != null ? (Math.abs(res.afterGap) < Math.abs(res.beforeGap) ? 'närmare 100 % (förbättring)' : 'längre från 100 %') : '';
-    const dirUnexp = dUnexp != null ? (Math.abs(res.afterUnexplained) < Math.abs(res.beforeUnexplained) ? 'närmare 100 % (förbättring)' : 'längre från 100 %') : '';
-
-    wrap.style.display = 'block';
-    wrap._lastSimResult = res;  // cache för bevis-knappen
-    wrap.innerHTML = `
-        <div class="bak-white ram-1-kant rund-8 pad-16-18">
-            <h4 class="rad-mitt fs-md mellan marg-0-0-12">
-                <span>Simuleringseffekt</span>
-                <button class="btn-evidence" id="btn-evidence-sim" type="button" title="Visa beräkningen bakom simuleringsresultatet" aria-label="Visa bevis för simuleringen">Bevis</button>
-            </h4>
-            <div class="summary-stats m-0">
-                <div class="stat-box ram-v-farg-primary">
-                    <div class="stat-etikett">Berörda personer</div>
-                    <div class="stat-val fs-nyckeltal">${fmt.format(res.affectedCount)}</div>
-                    <div class="finstilt">Kvinnor: ${res.affectedKv} · Män: ${res.affectedMa}</div>
-                </div>
-                <div class="stat-box ram-v-farg-kritisk">
-                    <div class="stat-etikett">Total budgetpåverkan</div>
-                    <div class="stat-val fs-xl">${_fmtCost(res.totalAnnualCost)}</div>
-                    <div class="finstilt">
-                        ${fmt.format(Math.round(res.totalMonthlyCost))} kr/månad × ${state.costSettings.months} mån × ${svTal((1 + state.costSettings.poPct/100), 2)} (PO-påslag)
-                    </div>
-                </div>
-                <div class="stat-box ram-v-farg-ok">
-                    <div class="stat-etikett">Kvinnors medianlön i % av mäns</div>
-                    ${res.konNot ? `<div class="gd-missing">${esc(res.konNot)}</div>` : `
-                    <div class="farg-dampad fs-md">Före: ${andelAvMan(res.beforeGap)}</div>
-                    <div class="fs-xl fw-700">Efter: ${andelAvMan(res.afterGap)}</div>
-                    ${dGap != null ? `<div class="text-dampad-xs marg-t-2">Förändring: ${dGap >= 0 ? '+' : ''}${svTal(dGap, 1)} procentenheter · ${dirGap}</div>` : ''}`}
-                </div>
-                <div class="stat-box ram-v-farg-info">
-                    <div class="stat-etikett">Oförklarat gap (regressionen)</div>
-                    <div class="farg-dampad fs-md">Före: ${fmtPct(res.beforeUnexplained)}${res.beforeUnexplainedSig ? ' (sig.)' : ''}</div>
-                    <div class="fs-xl fw-700">Efter: ${fmtPct(res.afterUnexplained)}${res.afterUnexplainedSig ? ' (sig.)' : ''}</div>
-                    ${dUnexp != null ? `<div class="text-dampad-xs marg-t-2">Δ: ${dUnexp >= 0 ? '+' : ''}${svTal(dUnexp, 2)} pp · ${dirUnexp}</div>` : ''}
-                </div>
-            </div>
-            <p class="text-dampad-xs lh-1_5 marg-t-14">
-                <em>Simuleringen körs i minnet — den faktiska datan är oförändrad. Resultatet visar vad som händer om regeln tillämpas.</em>
-            </p>
-            ${_buildSpilloverWarning(res)}
-        </div>
-    `;
-    // Bevis-popup för simulering
-    document.getElementById('btn-evidence-sim')?.addEventListener('click', () => {
-        const cached = wrap._lastSimResult || res;
-        _openEvidenceModal(_evidenceForSimulation(cached));
-    });
-}
-
-// H: Löneglidning-varning — varnar om åtgärden potentiellt triggar krav från andra grupper
-function _buildSpilloverWarning(res) {
-    if (!res || res.affectedCount === 0) return '';
-    // (förenklad heuristik: om åtgärden lyfter en grupp över sin BAS-median, kan andra i samma BAS reagera)
-    const items = computePrioritization(_selectedPrioReference());
-    const akut = items.filter(i => i.status === 'akut' || i.status === 'atgard').length;
-    if (akut === 0) return '';
-    return `<div class="notis-varning fs-sm lh-1_55 marg-t-14 pad-10-14">
-        <strong>${ikon('statusVarning')} Löneglidning att överväga:</strong> Om denna åtgärd genomförs kan andra grupper i samma BAS-intervall eller med liknande lönenivå rikta motsvarande krav. Identifiera dessa proaktivt och planera kommunikation. Granska Prioriteringen efter simuleringen — det finns ${akut} ytterligare grupp${akut>1?'er':''} som också ligger under referensen.
-    </div>`;
-}
-
-/** Utfallet under tröskeln: bara meningen om vad som utelämnats och varför, inga tal. */
-function _renderSimUnderTroskel(wrap, res) {
-    wrap.style.display = 'block';
-    wrap._lastSimResult = null;
-    wrap.dataset.simSparr = '1';
-    wrap.innerHTML = `<p class="gd-missing">${esc(res.not)}</p>`;
-}
-
-// J: rendera min/max-spann sida vid sida
-function _renderSimMinMax(wrap, resMin, resMax, minVal, maxVal) {
-    const fmt = new Intl.NumberFormat('sv-SE');
-    const fmtPct = v => v == null ? '–' : (v >= 0 ? '+' : '') + svPct(v, 1);
-    wrap.style.display = 'block';
-    delete wrap.dataset.simSparr;
-    const konNot = resMin.konNot || resMax.konNot;
-    wrap.innerHTML = `
-        <div class="bak-white ram-1-kant rund-8 pad-16-18">
-            <h4 class="fs-md marg-0-0-12">Simuleringseffekt — min/max-spann</h4>
-            ${konNot ? `<p class="gd-missing">${esc(konNot)}</p>` : ''}
-            <table class="data-table st-09">
-                <thead><tr><th scope="col">Mått</th><th class="t-hoger" scope="col">Min (${fmt.format(minVal)} kr)</th><th class="t-hoger" scope="col">Max (${fmt.format(maxVal)} kr)</th></tr></thead>
-                <tbody>
-                    <tr><th scope="row" class="ram-b-1-kant fw-normal ta-vanster">Berörda personer</th><td class="t-hoger">${fmt.format(resMin.affectedCount)}</td><td class="t-hoger">${fmt.format(resMax.affectedCount)}</td></tr>
-                    <tr><th scope="row" class="ram-b-1-kant fw-normal ta-vanster">Total budgetpåverkan</th><td class="t-hoger">${_fmtCost(resMin.totalAnnualCost)}</td><td class="t-hoger">${_fmtCost(resMax.totalAnnualCost)}</td></tr>
-                    <tr><th scope="row" class="ram-b-1-kant fw-normal ta-vanster">Kvinnors medianlön i % av mäns (efter)</th><td class="t-hoger">${andelAvMan(resMin.afterGap)}</td><td class="t-hoger">${andelAvMan(resMax.afterGap)}</td></tr>
-                    <tr><th scope="row" class="ram-b-1-kant fw-normal ta-vanster">Oförklarat gap (efter)</th><td class="t-hoger">${fmtPct(resMin.afterUnexplained)}</td><td class="t-hoger">${fmtPct(resMax.afterUnexplained)}</td></tr>
-                </tbody>
-            </table>
-            <p class="text-dampad-xs lh-1_5 marg-t-10">
-                <em>Visar effekt vid två olika belopp för budgetdialog. Antal månader och PO-påslag enligt aktuella inställningar.</em>
-            </p>
-        </div>
-    `;
-}
-
-function populateSimBasSelect() {
-    const sel = document.getElementById('sim-bas');
-    if (!sel) return;
-    const bas = getBasIntervals();
-    const cur = /** @type {HTMLInputElement} */ (sel).value;
-    sel.innerHTML = '<option value="__ALLA__">Alla BAS</option>' + bas.map(b => `<option value="${esc(b)}">BAS-${esc(b)}</option>`).join('');
-    if (cur && [.../** @type {HTMLSelectElement} */ (sel).options].some(o => o.value === cur)) /** @type {HTMLInputElement} */ (sel).value = cur;
-    _simSynkaKnapp();
-}
-
-document.getElementById('sim-run')?.addEventListener('click', renderSalarySimResults);
-document.getElementById('sim-reset')?.addEventListener('click', () => {
-    const wrap = document.getElementById('sim-results');
-    if (wrap) { wrap.style.display = 'none'; wrap.innerHTML = ''; delete wrap.dataset.simSparr; }
-    /** @type {HTMLInputElement} */ (document.getElementById('sim-amount')).value = '1500';
-    /** @type {HTMLInputElement} */ (document.getElementById('sim-loncap')).value = '';
-    /** @type {HTMLInputElement} */ (document.getElementById('sim-kon')).value = 'kvinna';
-    /** @type {HTMLInputElement} */ (document.getElementById('sim-bas')).value = '__ALLA__';
-    /** @type {HTMLInputElement} */ (document.getElementById('sim-action')).value = 'add';
-    _simSynkaKnapp();
-});
-// Urvalets kontroller: knappen följer tröskeln medan användaren väljer.
-['sim-kon', 'sim-bas'].forEach(id => document.getElementById(id)?.addEventListener('change', _simSynkaKnapp));
-document.getElementById('sim-loncap')?.addEventListener('input', _simSynkaKnapp);
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 
@@ -12906,7 +13023,7 @@ function renderDataValidationReport() {
         const hasMa = sub.some(r => r.kon === 'man' || r.kon === 'män');
         return !hasKv || !hasMa;
     }).length;
-    const kMaskedBas = bas.filter(b => state.data.filter(r => r.bas === b).length < kTroskel()).length;
+    const kMaskedBas = bas.filter(b => state.data.filter(r => r.bas === b).length < kInstalld()).length;
 
     // Konsistenskontroll
     const dataBas = [...new Set(state.data.map(r => r.bas))].sort();
@@ -12938,13 +13055,12 @@ function renderDataValidationReport() {
                 <h4>Från fil till analys</h4>
                 <div class="dvr-row ok"><span>Total rader i fil:</span><span class="dvr-value">${fmt(totalRaw)}</span></div>
                 ${excludedNoBas > 0 ? `<div class="dvr-row warn"><span><span class="dvr-icon">−</span>Saknar BAS:</span><span class="dvr-value">${fmt(excludedNoBas)}</span></div>` : ''}
-                ${Object.entries(da.overBasPerBas || {}).sort(([a], [b]) => a.localeCompare(b, 'sv')).map(([b, n]) => `<div class="dvr-row"><span><span class="dvr-icon">−</span>BAS ${esc(b)} (analyseras manuellt):</span><span class="dvr-value">${fmt(n)}</span></div>`).join('')}
                 ${excludedZeroLon > 0 ? `<div class="dvr-row warn"><span><span class="dvr-icon">−</span>Lön ≤ 0:</span><span class="dvr-value">${fmt(excludedZeroLon)}</span></div>` : ''}
                 ${excludedMissingKon > 0 ? `<div class="dvr-row warn"><span><span class="dvr-icon">−</span>Saknar/okänt kön:${missingKonExamples.length ? ' <span class="text-dampad-xs">ex: ' + missingKonExamples.map(e => '"' + esc(e) + '"').join(', ') + '</span>' : ''}</span><span class="dvr-value">${fmt(excludedMissingKon)}</span></div>` : ''}
                 ${invalidLon > 0 ? `<div class="dvr-row warn"><span><span class="dvr-icon">${ikon('statusVarning')}</span>Ogiltig lön (text):${invalidLonExamples.length ? ' <span class="text-dampad-xs">ex: ' + invalidLonExamples.map(e => '"' + esc(e) + '"').join(', ') + '</span>' : ''}</span><span class="dvr-value">${fmt(invalidLon)}</span></div>` : ''}
                 ${invalidAlder > 0 ? `<div class="dvr-row warn"><span><span class="dvr-icon">${ikon('statusVarning')}</span>Ogiltig ålder (text):${invalidAlderExamples.length ? ' <span class="text-dampad-xs">ex: ' + invalidAlderExamples.map(e => '"' + esc(e) + '"').join(', ') + '</span>' : ''}</span><span class="dvr-value">${fmt(invalidAlder)}</span></div>` : ''}
                 <div class="dvr-row dvr-total ok"><span>= Inlästa:</span><span class="dvr-value">${fmt(used)}</span></div>
-                ${totalRaw > 0 ? `<div class="text-dampad-xs marg-t-4">Användbarhetsgrad: <strong>${svPct((used / Math.max(1, totalRaw - (da.excludedOverBas || 0)) * 100), 1)}</strong> av filens rader${da.excludedOverBas ? ` (utom BAS ovanför ${esc(BAS_MAX)}, som analyseras manuellt)` : ''}.</div>` : ''}
+                ${totalRaw > 0 ? `<div class="text-dampad-xs marg-t-4">Användbarhetsgrad: <strong>${svPct((used / Math.max(1, totalRaw) * 100), 1)}</strong> av filens rader.</div>` : ''}
                 ${(invalidLon > 0 || invalidAlder > 0 || excludedMissingKon > 0) ? `<div class="farg-varning fs-xs lh-1_4 marg-t-6">Granska om antalet är högt — kan signalera ett systematiskt fel i exporten från lönesystemet. Exempel-värdena ovan visar de första 3 mönstren som föll ut, för felsökning.</div>` : ''}
             </div>
 
@@ -12957,7 +13073,7 @@ function renderDataValidationReport() {
                     ? `<div class="dvr-row warn"><span><span class="dvr-icon">${ikon('statusVarning')}</span>Enkönade BAS:</span><span class="dvr-value">${singleSexBas}</span></div>`
                     : `<div class="dvr-row ok"><span><span class="dvr-icon">${ikon('bock')}</span>Alla BAS har båda kön</span><span></span></div>`}
                 ${kMaskedBas > 0
-                    ? `<div class="dvr-row ok"><span><span class="dvr-icon">${ikon('las')}</span>K-maskerade BAS (n&lt;${kTroskel()}):</span><span class="dvr-value">${kMaskedBas}</span></div>`
+                    ? `<div class="dvr-row ok"><span><span class="dvr-icon">${ikon('las')}</span>BAS under minsta gruppstorlek (n&lt;${kInstalld()}, redovisas inte i exporterna):</span><span class="dvr-value">${kMaskedBas}</span></div>`
                     : ''}
                 <div class="text-dampad-xs lh-1_4 marg-t-6">${outliers.length > 0 ? 'Granska Outliers-detektorn nedan för detaljer.' : 'Inga uppenbara registerfel hittades.'}</div>
             </div>
@@ -13063,13 +13179,15 @@ function buildActionChecklist({ endastGrupper = false } = {}) {
     /** @type {any[]} */
     const items = [];
     if (!state.data.length) return items;
+    // Regressionen körs en gång här och skickas vidare till det som läser den (ADR-17: ingen cache, bara ett värde).
+    const reg = !endastGrupper && typeof runOLSRegression === 'function' ? runOLSRegression() : null;
 
     // Punkterna per grupp (prioriteringen och likvärdighetsparen) bär AID-koden; sektorsöversikten
     // räknar bara dem och bygger därför inte de tunga, organisationsövergripande delarna.
     if (!endastGrupper) {
         // === 1. Underlagets kvalitet (ADR-19) — en punkt per kriterium som inte är OK ===
         try {
-            const uk = (typeof bedomningUnderlag === 'function') ? bedomningUnderlag() : null;
+            const uk = (typeof bedomningUnderlag === 'function') ? bedomningUnderlag({ reg }) : null;
             if (uk) uk.kriterier.filter(c => c.status !== 'ok').forEach(c => items.push({
                 id: 'dq-' + c.id,
                 kategori: 'Underlagets kvalitet',
@@ -13109,8 +13227,7 @@ function buildActionChecklist({ endastGrupper = false } = {}) {
         // === Lika arbete: rått gap > 5 % i jämförbara BAS (samma regel som kompliansen) ===
         try {
             const d = getData();
-            const jb = _dqJamforbaraBas(d, kTroskel());
-            const reg = runOLSRegression();
+            const jb = _dqJamforbaraBas(d, kInstalld());
             const perBas = (reg && !reg.error && reg.perBas) ? reg.perBas : [];
             jb.jamforbara.forEach(b => {
                 const df = d.filter(r => r.bas === b);
@@ -13133,18 +13250,8 @@ function buildActionChecklist({ endastGrupper = false } = {}) {
             });
         } catch (e) { rapporteraFel('Att göra: lika arbete per BAS', e); }
 
-        // === BAS ovanför analysens spann: analyseras manuellt av HR ===
-        const manuella = (typeof manuellaBas === 'function') ? manuellaBas() : null;
-        if (manuella) items.push({
-            id: 'bas-ovanfor-grans', kategori: 'Underlag', prioritet: 'medel',
-            titel: `${manuella.n} ${manuella.n === 1 ? 'person' : 'personer'} i BAS ${manuella.spann} ska analyseras manuellt`,
-            detalj: `Verktyget analyserar bara BAS A–${BAS_MAX}. Personerna i högre BAS finns i källfilen och bedöms utanför verktyget.`,
-            tab: 'dashboard', källa: 'Inläsning'
-        });
-
         // === 1b. Oförklarat gap för hela organisationen (regressionen) ===
         try {
-            const reg = runOLSRegression();
             if (reg && !reg.error && reg.pValue < 0.05) {
                 items.push({
                     id: 'reg-oforklarat', kategori: 'Lika arbete',
@@ -13215,7 +13322,6 @@ function buildActionChecklist({ endastGrupper = false } = {}) {
     if (!endastGrupper) {
         // === 4. EU-Lönekartläggning — per-BAS gap > 5 % efter korrigering för många tester (Benjamini–Hochberg) ===
         try {
-            const reg = (typeof runOLSRegression === 'function') ? runOLSRegression() : null;
             if (reg && !reg.error && reg.perBas) {
                 // BH-justering
                 const okTests = reg.perBas.filter(p => p.status === 'ok' && isFinite(p.pValue));
@@ -13288,15 +13394,16 @@ function _attGoraParNot() {
  * Renderar åtgärdslistan på Översikt. Visar grupperade kategorier, klickbara
  * checkboxar (state i minnet via state._actionChecklistDone-Set), CSV-export.
  */
+/** Ritar Att göra och svarar med punkterna (processöversikten läser dem). */
 function renderActionChecklist() {
     const wrap = document.getElementById('action-checklist-container');
     const kort = document.getElementById('att-gora');
     const borja = document.getElementById('att-gora-borja');
     if (!wrap) return;
-    if (!state.data.length) { wrap.innerHTML = ''; if (kort) kort.hidden = true; if (borja) borja.innerHTML = ''; return; }
+    if (!state.data.length) { wrap.innerHTML = ''; if (kort) kort.hidden = true; if (borja) borja.innerHTML = ''; return []; }
     if (kort) kort.hidden = false;
 
-    const items = buildActionChecklist();
+    const items = buildActionChecklist();   // returneras, så att processöversikten kan läsa samma lista
     // Hela listan är ett avsnitt som fälls ut: "Börja här" ovanför bär det som ska göras först.
     // Listan ritas om vid varje avbockning, så avsnittets läge bevaras.
     const varOppen = !!/** @type {HTMLDetailsElement} */ ((wrap.querySelector('#avsnitt-ov-punkter') || {})).open;
@@ -13391,7 +13498,7 @@ function renderActionChecklist() {
     });
 
     // CSV-export
-    document.getElementById('btn-export-checklist')?.addEventListener('click', () => exportActionChecklistCSV(items, done));
+    document.getElementById('btn-export-checklist')?.addEventListener('click', () => medExportLage(() => exportActionChecklistCSV(buildActionChecklist(), done)));
 
     // Rensa markeringar
     document.getElementById('btn-checklist-clear-done')?.addEventListener('click', () => {
@@ -13399,12 +13506,15 @@ function renderActionChecklist() {
         state._actionChecklistDone = new Set();
         renderActionChecklist();
     });
+    return items;
 }
 
 /**
  * Exporterar åtgärdslistan som CSV.
  */
-function exportActionChecklistCSV(items, done) {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function exportActionChecklistCSV(...a) { return medExportLage(() => _exportActionChecklistCSVExport.apply(null, /** @type {any} */ (a))); }
+function _exportActionChecklistCSVExport(items, done) {
     if (!items.length) { alert('Ingen åtgärdslista att exportera.'); return; }
     const rows = [[
         'Status', 'Prioritet', 'Kategori', 'Punkt', 'Detalj', 'Källa', 'Flik'
@@ -13447,8 +13557,10 @@ function buildConfigSnapshot() {
         prioConfig: { ...state.prioConfig },
         prioWeights: { ...state.prioWeights },
         costSettings: { ...state.costSettings },
-        kTroskel: kTroskel(),   // minsta gruppstorlek för redovisning (ADR-38); paketets låsningar (ADR-47) bärs inte
-        rapportUrval: state.rapportUrval ? { ordning: [...state.rapportUrval.ordning], med: [...state.rapportUrval.med] } : null,   // vilka avsnitt som följer med i rapporten
+        kTroskel: kInstalld(),  // minsta gruppstorlek för redovisning (ADR-38); paketets låsningar (ADR-47) bärs inte
+        rapportUrval: state.rapportUrval ? { ordning: [...state.rapportUrval.ordning], med: [...state.rapportUrval.med] } : null,
+        rapportTabeller: (state.rapportTabeller || []).map(t => JSON.parse(JSON.stringify(t))),   // egna tabeller: recept, inga tal (ADR-52)
+        perBasRecept: state.perBasRecept ? JSON.parse(JSON.stringify(state.perBasRecept)) : null,   // vilka avsnitt som följer med i rapporten
         // Bug-fix: Set-objekt serialiseras inte korrekt med spread/JSON
         bristAids: Array.from(state.bristAids || []),
         likvardighet: state.likvardighet ? {
@@ -13674,6 +13786,16 @@ function applyConfigSnapshot(cfg) {
     // Frågar vid sänkning under standard; nekad bekräftelse behåller värdet och resten läses in.
     // Omritningen görs en gång, sist (se nedan), eftersom mer än tröskeln ändras här.
     const varningar = [];
+    if (cfg.rapportTabeller != null) {
+        if (!Array.isArray(cfg.rapportTabeller)) throw new Error('rapportTabeller måste vara en array.');
+        const giltiga = cfg.rapportTabeller.map(t => _trValidera(t)).filter(Boolean);
+        if (giltiga.length < cfg.rapportTabeller.length) varningar.push(`${cfg.rapportTabeller.length - giltiga.length} egna tabeller i filen gick inte att läsa och hoppas över.`);
+        tmp.rapportTabeller = giltiga;
+    }
+    if (cfg.perBasRecept != null) {
+        if (typeof cfg.perBasRecept !== 'object') throw new Error('perBasRecept måste vara ett objekt.');
+        tmp.perBasRecept = _pbValideraRecept(cfg.perBasRecept);
+    }
     let kAndrad = false;
     if (tmp.kTroskel != null) {
         const kr = sattKTroskel(tmp.kTroskel, { rita: false });
@@ -13683,6 +13805,8 @@ function applyConfigSnapshot(cfg) {
     }
     state.bristAids        = tmp.bristAids || new Set();
     sattRapportUrval(tmp.rapportUrval || null);   // okända avsnitt i filen hoppas över; utan fältet gäller hela dokumentationen
+    if (tmp.rapportTabeller) state.rapportTabeller = tmp.rapportTabeller;
+    if (tmp.perBasRecept) state.perBasRecept = _pbReceptArStandard(tmp.perBasRecept) ? null : tmp.perBasRecept;
     if (tmp.likvardighet) {
         state.likvardighet = { ...state.likvardighet, ...tmp.likvardighet, result: null };
     }
@@ -13799,7 +13923,9 @@ document.getElementById('btn-config-load')?.addEventListener('change', e => {
 });
 
 // ---- #18 A/B-jämförelse via snapshot ----
-function buildAnalysisSnapshot() {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function buildAnalysisSnapshot(...a) { return medExportLage(() => _buildAnalysisSnapshotExport.apply(null, /** @type {any} */ (a))); }
+function _buildAnalysisSnapshotExport() {
     const d = getData();
     if (!d.length) return null;
     const kv = d.filter(r => r.kon.includes('kvinna'));
@@ -14201,6 +14327,7 @@ function _methodAppendixData() {
             : 'Lokalt uppladdad fil (bearbetad helt i webbläsaren, inga nätverksanrop)'],
         ['Antal personer (inläst)', String(total)],
         ['Antal personer (i denna analys)', String(used)],
+        ['Nationell referens för andel kvinnor', skrForklaring()],
         ['Modell — oförklarat gap', 'OLS på log(månadslön) ~ kön + ålder + BAS-intervall (indikatorvariabler, första BAS som referens); HC3-robusta standardfel (Long & Ervin 2000)'],
         ['Steg + Yrkesgrupp (dekomponeringen)', 'Könsgap med fasta effekter för yrkesgrupp inom BAS (AID×BAS) utöver ålder, skattat med inomtransformation; visas som sista steg, ingår inte i huvudtalet'],
         ['Ålder & karriär (tvärsnitt)', 'Lön mot ålder och livscykelmodellen bygger på ett tvärsnitt: de visar skillnader mellan åldersgrupper i dag, inte hur en persons lön utvecklas över karriären (kohorteffekter)'],
@@ -14208,8 +14335,8 @@ function _methodAppendixData() {
         ['p-värden', 't-fördelning vid df < 100, annars normalfördelning; Benjamini-Hochberg (FDR) vid multipla grupptest'],
         ['Konfidensintervall', 'Bootstrap-percentil (B ≥ 1000 sampel) på mediankvot kvinna/man'],
         ['Signifikansnivå', 'α = 0,05'],
-        ['Minsta gruppstorlek för redovisning', `${kTroskel()} personer. Grupper med färre redovisas inte i beskrivande vyer (gäller inte likvärdighetsanalysen).`
-            + (kTroskel() < K_STANDARD ? ` Tröskeln är sänkt från standardvärdet ${K_STANDARD}.` : '')],
+        ['Minsta gruppstorlek för redovisning', `${kInstalld()} personer. Grupper med färre redovisas inte i det som lämnar verktyget (gäller inte likvärdighetsanalysen); på skärmen visas alla grupper.`
+            + (kInstalld() < K_STANDARD ? ` Tröskeln är sänkt från standardvärdet ${K_STANDARD}.` : '')],
         ['Referens för lönenivåer', referensNamn() + referensKalla()],
         ['Jämförelsestatistik', statistikBeskrivning()],
         ['Krav-proxy (likvärdigt arbete)', state.arbetsvardering ? 'Arbetsvärderingspoäng (ur strukturdatans Poäng-kolumn)' : 'BAS-intervall (ordinal rangordning)'],
@@ -14265,7 +14392,10 @@ function _exportVisaAllaRader(klon) {
     });
     return klon;
 }
-function _cloneAndCleanTableForExport(tableId) {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function _cloneAndCleanTableForExport(...a) { return medExportLage(() => __cloneAndCleanTableForExportExport.apply(null, /** @type {any} */ (a))); }
+function __cloneAndCleanTableForExportExport(tableId) {
+    // Exportläget (ADR-51): tabellen läses med den inställda tröskeln, också när anroparen inte gått in i läget.
     const t = exportElement(tableId);   // exportgrinden: tabellens flik är ritad med det som gäller nu
     if (!t || !t.querySelector('tbody tr')) return null;
     const clone = t.cloneNode(true);
@@ -14670,6 +14800,89 @@ function _showExportSensitivityToast(bodyHtml) {
 //     export än en med fel tröskel.
 // tests/ktroskel.test.js prövar varje exportväg mot detta.
 // ====================================================================
+// ---- Exportläget (ADR-51) ----
+// På skärmen maskeras inget (kTroskel() är 1). Allt som lämnar verktyget ritas och räknas i exportläget, där
+// kTroskel() är den inställda tröskeln. Ett byte av läge är som en ändrad tröskel: generationen ökar, så att
+// grinden ritar om varje flik som läses, och efteråt ritas skärmen tillbaka. De två funktioner all export av
+// tabeller och diagram går genom (_cloneAndCleanTableForExport, _chartExportUnderlag) går själva in i
+// exportläget om anroparen inte redan gjort det, så ingen väg kan läsa skärmens omaskade tal.
+function iExportLage() { return state.kLage === 'export'; }
+function _bytKLage(lage) {
+    state.kLage = lage;
+    ritGenerationNy();                                                      // allt som är ritat bär det andra läget
+    // Inget räknat släpps: Lika arbetes minne har ett rum per tröskel (skärmens och exportens), och skattningarna
+    // (statGolv, bootstrap, styrka, § 3:10-paren) är desamma i båda lägena. Livscykelns bevisunderlag hör till det
+    // som är ritat.
+    state._lifecycleCache = null;
+}
+/**
+ * Ritar skärmen tillbaka efter en export: Översikts delar och den öppna fliken, när grinden ritade dem i exportläget
+ * (`ritade`: flikarna som ritades under exporten), utom Dokumentera & exportera, som alltid ritas i exportläget. Det
+ * som inte ritades under exporten visar fortfarande skärmens tal och rörs inte — Dokumentera-fliken i sig ritar inga
+ * andra flikar, och att rita om Översikt kostar sekunder på stora underlag. Flikar som inte syns töms inte: det de
+ * bär är ritat med den inställda tröskeln (försiktigare än skärmen), och de ritas om när de öppnas.
+ * @param {Set<string>} ritade
+ */
+const _OVERSIKT_STEG = new Set(['nyckeltal', 'kompliansöversikt', 'underlagets kvalitet', 'Att göra', 'processöversikten', 'extremvärden', 'inläsningsrapporten', 'A/B-jämförelsen']);
+function _ritaOmEfterExport(ritade) {
+    if (!state.data.length || typeof _omritningssteg !== 'function') return;
+    for (const [namn, fn] of _omritningssteg()) {
+        if (namn === 'dokumentera' || namn === 'flikar som inte syns') continue;
+        const ska = namn === 'gruppdossiern' || (_OVERSIKT_STEG.has(namn) ? ritade.has('dashboard') : ritade.has(namn));
+        if (ska) _omritningForsok(namn, fn);
+    }
+}
+/** Flikarna som är ritade i den generation som gäller nu (under en export: de som ritades i exportläget). */
+function _ritadeNu() { return new Set([..._ritadVid].filter(([, g]) => g === _ritGeneration).map(([f]) => f)); }
+/**
+ * Kör fn i exportläget och går tillbaka till skärmläget efteråt (också när fn ger ett löfte eller kastar).
+ * Nästlade anrop byter inte läge. Fn:s värde returneras.
+ * @template T
+ * @param {() => T} fn
+ * @returns {T}
+ */
+let _exportDjup = 0;   // pågående exporter (nästlade eller överlappande i tid): skärmen ritas tillbaka när den sista är klar
+function medExportLage(fn) {
+    // Den yttersta exporten byter läge och ritar tillbaka; ett läge som satts utifrån (state.kLage = 'export') rörs inte.
+    const yttre = _exportDjup === 0 && !iExportLage();
+    if (yttre) _bytKLage('export');
+    _exportDjup++;
+    let synk = true;
+    const tillbaka = () => { _exportDjup = Math.max(0, _exportDjup - 1); if (_exportDjup === 0 && yttre) { const ritade = _ritadeNu(); _bytKLage('skarm'); _ritaOmEfterExport(ritade); } };
+    try {
+        const r = fn();
+        if (r && typeof /** @type {any} */ (r).then === 'function') { synk = false; return /** @type {any} */ (r).finally(tillbaka); }
+        return r;
+    } finally { if (synk) tillbaka(); }
+}
+
+// ---- Förhandsvisning: skärmen i exportläget ----
+/**
+ * Visar flikarna som i det som lämnar verktyget: läget byts till export och det som syns ritas om (Översikts delar
+ * och den öppna fliken; flikar som inte syns töms och ritas när de öppnas). Av igen ritar tillbaka på samma sätt.
+ * Medan förhandsvisningen är på byter exporterna inte läge (de är redan i det). En export som pågår går före:
+ * då byts inget. Svarar om läget byttes.
+ * @param {boolean} pa
+ * @param {{stegvis?: boolean}} [val] stegvis: med förloppsruta, som när tröskeln ändras från gränssnittet
+ */
+function sattForhandsvisning(pa, { stegvis = false } = {}) {
+    if (_exportDjup > 0 || pa === iExportLage()) return false;
+    _bytKLage(pa ? 'export' : 'skarm');
+    document.body.classList.toggle('forhandsvisning', pa);
+    const knapp = document.getElementById('btn-forhandsvisa');
+    if (knapp) knapp.setAttribute('aria-pressed', String(pa));
+    const banner = document.getElementById('forhandsvisning-banner');
+    if (banner) banner.hidden = !pa;
+    if (state.data.length) {
+        if (stegvis && typeof _renderaOmAllaFlikarStegvis === 'function') _renderaOmAllaFlikarStegvis();
+        else if (typeof _renderaOmAllaFlikar === 'function') _renderaOmAllaFlikar();
+    }
+    return true;
+}
+function iForhandsvisning() { return document.body.classList.contains('forhandsvisning'); }
+document.getElementById('btn-forhandsvisa')?.addEventListener('click', () => sattForhandsvisning(!iForhandsvisning(), { stegvis: true }));
+document.getElementById('btn-forhandsvisa-av')?.addEventListener('click', () => sattForhandsvisning(false, { stegvis: true }));
+
 let _ritGeneration = 1;
 const _ritadVid = new Map();     // flik → generationen då den senast ritades klart
 const _ritasNu = new Set();      // flikar som ritas just nu (ritningen får läsa sina egna diagram)
@@ -14698,7 +14911,9 @@ function exportSakra(el) {
     if (!el) return false;
     const flik = _egFlikFor(el);
     if (!flik) return el.isConnected !== false;   // utanför flikarna (en dialog) — eller ett element som inte sitter kvar i sidan
-    if (!_ritasNu.has(flik) && flikInaktuell(flik)) {
+    // En flik som aldrig ritats genom navigeringen (eller är inaktuell) ritas i det läge som gäller nu — i exportläget
+    // också en flik som ritats direkt av en vy, så att skärmens tal aldrig läses som export (ADR-51).
+    if (!_ritasNu.has(flik) && (flikInaktuell(flik) || (iExportLage() && !_ritadVid.has(flik)))) {
         try { renderTabContent(flik); } catch (e) { rapporteraFel(`exportgrinden (${flik})`, e); }
         if (flikInaktuell(flik)) return false;                      // fliken gick inte att rita om: ingenting exporteras ur den
     }
@@ -14746,11 +14961,66 @@ function tomFlikarUtom(utom = new Set()) {
  * Bladen som "Excel (alla flikar)" kommer att innehålla, i ordning — underlaget till exportens förhandsbesked.
  * Listan följer villkoren i _excelAlltBok nedan; ett test håller dem lika.
  */
-function excelAlltBlad() {
+// Bladlistan räknas som exporten: i exportläget (ADR-51), så att beskedet och arbetsboken får samma blad.
+function excelAlltBlad(...a) { return medExportLage(() => _excelAlltBladExport.apply(null, /** @type {any} */ (a))); }
+function _excelAlltBladExport() {
     if (!state.data.length) return [];
     const harRef = state.policy.length > 0 || state.statistik.length > 0;
-    return ['Löneöversikt', 'EU-Lonekartlaggning', ...(harRef ? ['Prioritering'] : []), 'Lonegap', 'Konsskevhet', ..._excelDiagramBlad().map(b => b[0]), 'Sektorer',
+    return ['Löneöversikt', 'Per BAS', ...((state.rapportTabeller || []).length ? ['Egna tabeller'] : []), 'EU-Lonekartlaggning', ...(harRef ? ['Prioritering'] : []), 'Lonegap', 'Konsskevhet', ..._excelDiagramBlad().map(b => b[0]), 'Sektorer',
         ...(state.statistik.length ? ['Jamforelsestatistik'] : []), ...(bedomningUnderlag() ? ['Underlagets kvalitet'] : []), 'Metodik', 'Metod & parametrar'];
+}
+
+/** Raderna i bladet Egna tabeller, eller null när inga recept finns. Tal som tal, med kolumnrubriken som enhet. */
+function _excelEgnaRader() {
+    const recept = state.rapportTabeller || [];
+    if (!recept.length || typeof _trTabeller !== 'function') return null;
+    const tal = (v, typ) => (v == null || typeof v !== 'number' || !isFinite(v) ? (v == null ? '' : v) : (typ === 'kr' || typ === 'antal' ? Math.round(v) : Math.round(v * 100) / 100));
+    const rows = [['Egna tabeller', `byggda i Utforska; minsta gruppstorlek ${kTroskel()}: grupper med färre personer redovisas inte`], []];
+    for (const r of recept) {
+        const tabeller = _trTabeller(getData(), r, { k: kTroskel() });
+        if (!tabeller.length) { rows.push([r.namn, 'ingen grupp når minsta gruppstorlek'], []); continue; }
+        for (const t of tabeller) {
+            rows.push([t.rubrik, _trBeskrivning(r)]);
+            rows.push(t.kolumner.map(c => c.rubrik + (c.typ === 'kr' ? ' (kr/mån)' : c.typ === 'pct1' ? ' (%)' : '')));
+            t.rader.forEach(rad => rows.push(rad.map((v, i) => tal(v, t.kolumner[i].typ))));
+            if (t.not) rows.push([t.not]);
+            rows.push([]);
+        }
+    }
+    return rows;
+}
+
+/** Raderna i bladet Per BAS, eller null utan underlag. */
+function _excelPerBasRader() {
+    const pb = typeof rmPerBasUnderlag === 'function' ? rmPerBasUnderlag(getData(), kTroskel()) : null;
+    if (!pb || !pb.intervall.length) return null;
+    const tal = v => (v == null || !isFinite(v) ? '' : Math.round(v));
+    const pct = v => (v == null || !isFinite(v) ? '' : Math.round(v * 10) / 10);
+    const MATT = { p10: 'P10', p25: 'P25', med: 'Median', p75: 'P75', p90: 'P90', medel: 'Medellön' };
+    const matt = pb.recept.matt;
+    const per = pb.dim === 'sektor' ? 'sektor' : 'BAS-intervall', kort = pb.dim === 'sektor' ? 'Sektor' : 'BAS';
+    const rows = [[`Lönestruktur per ${per}`, `minsta gruppstorlek ${pb.k}: grupper med färre personer redovisas inte`], []];
+    for (const i of pb.intervall) {
+        rows.push([`${kort} ${i.bas}`, `${i.n} anställda, ${i.nKv} kvinnor och ${i.nMa} män, ${i.antalYrken} yrkesgrupper`]);
+        rows.push(['Grupp', 'Antal', ...matt.map(m => MATT[m])]);
+        i.rader.forEach(r => rows.push([r.namn, r.n == null ? '' : r.n, ...matt.map(m => tal(r[m]))]));
+        if (i.utelamnade.length) rows.push([`Redovisas inte (färre än ${pb.k} personer): ${i.utelamnade.join(', ')}`]);
+        if (!i.konVisas) rows.push([`Kvinnor och män redovisas inte var för sig: ett kön har färre än ${pb.k} personer`]);
+        rows.push([]);
+    }
+    if (pb.basUtelamnade.length) rows.push([`${pb.dimEtikett} som inte redovisas (färre än ${pb.k} personer): ${pb.basUtelamnade.join(', ')}`], []);
+    if (pb.konsgap) {
+    rows.push([`Löneskillnader inom likvärdigt arbete, per ${per}`]);
+    rows.push(['BAS', 'Antal', 'Medellön alla', 'Medellön män', 'Medellön kvinnor', 'Kvinnors medellön i % av mäns', 'Andel kvinnor (%)', 'Medelålder alla', 'Medelålder män', 'Medelålder kvinnor']);
+    pb.konsgap.rader.forEach(r => rows.push([r.bas, r.n, tal(r.medel), tal(r.medelMa), tal(r.medelKv), pct(r.kvot), pct(r.andelKv), tal(r.alder), tal(r.alderMa), tal(r.alderKv)]));
+    rows.push([]);
+    }
+    if (pb.aldersgrupper) {
+    rows.push([`Löneskillnader i åldersgrupper, per ${per}`]);
+    rows.push(['BAS', 'Antal', 'Medelålder', 'Medellön alla', ...pb.aldersgrupper.grupper.map(g => `Medellön ${g} år`)]);
+    pb.aldersgrupper.rader.forEach(r => rows.push([r.bas, r.n, tal(r.alder), tal(r.medel), ...r.perGrupp.map(tal)]));
+    }
+    return rows;
 }
 
 /**
@@ -14792,7 +15062,9 @@ function _excelLonepolitikMetod(blad) {
     return [['Bladet Lönepolitik', `Läget i referensens lönespann (0 % = P10, 100 % = P90) per yrkesgrupp, per kön och BAS-intervall samt fördelningen i spannets tredjedelar per kön och efterlevnaden per BAS-intervall — samma mått och samma regler för minsta gruppstorlek som fliken Lönepolitik: yrkesgrupper under ${kTroskel()} personer utan lönemått, könsuppdelade mått bara där varje kön har minst ${kTroskel()} personer.`]];
 }
 
-function exportAllToExcel() {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function exportAllToExcel(...a) { return medExportLage(() => _exportAllToExcelExport.apply(null, /** @type {any} */ (a))); }
+function _exportAllToExcelExport() {
     if (!state.data.length) { alert('Ladda upp data först.'); return; }
     if (typeof XLSX === 'undefined') { alert('XLSX-bibliotek saknas.'); return; }
     const wb = _excelAlltBok();
@@ -14801,7 +15073,9 @@ function exportAllToExcel() {
 }
 
 /** Bygger arbetsboken för "Excel (alla flikar)". */
-function _excelAlltBok() {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function _excelAlltBok(...a) { return medExportLage(() => __excelAlltBokExport.apply(null, /** @type {any} */ (a))); }
+function __excelAlltBokExport() {
 
     // Self-healing: säkerställ att flik-tabellerna är renderade innan de läses.
     // Täcker både den deferrade inläsningen (skevhet/kon körs strax efter load)
@@ -14825,6 +15099,14 @@ function _excelAlltBok() {
     const rapportSheet = tableToSheet('rapport-table');
     if (rapportSheet) XLSX.utils.book_append_sheet(wb, rapportSheet, 'Löneöversikt');
 
+    // Bladet Per BAS: tabellerna i den form en skriven lönekartläggning brukar ha (samma underlag som Word-utkastets
+    // avsnitt Lönestruktur per BAS-intervall; tröskeln tillämpas i src/lib/perbas.js).
+    const perBasRader = _excelPerBasRader();
+    if (perBasRader) XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(perBasRader), 'Per BAS');
+    // Bladet Egna tabeller (ADR-52): recepten ur Utforska, räknade med tröskeln.
+    const egnaRader = _excelEgnaRader();
+    if (egnaRader) XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(egnaRader), 'Egna tabeller');
+
     // Sheet: EU-Lönekartläggning
     const matrixSheet = tableToSheet('matrix-table');
     if (matrixSheet) XLSX.utils.book_append_sheet(wb, matrixSheet, 'EU-Lonekartlaggning');
@@ -14847,7 +15129,8 @@ function _excelAlltBok() {
     if (sektorSheet) XLSX.utils.book_append_sheet(wb, sektorSheet, 'Sektorer');
 
     // Sheet: Benchmark mot jämförelsestatistiken
-    const bmSheet = tableToSheet('benchmark-table');
+    // Bara med inläst jämförelsestatistik: samma villkor som förhandsbeskedet (excelAlltBlad), oberoende av vilka flikar som visats.
+    const bmSheet = state.statistik.length ? tableToSheet('benchmark-table') : null;
     if (bmSheet) {
         // Tabellen följer flikens filter; säg det i bladet (ADR-35).
         if (jamforelseUrvalText()) XLSX.utils.sheet_add_aoa(bmSheet, [[], [jamforelseUrvalText()]], { origin: -1 });
@@ -14922,7 +15205,9 @@ function _jpaExkluderadeTexter() {
  *
  * Output: lonekartlaggning_JPA_protokoll_YYYY-MM-DD.xlsx
  */
-function exportJPAProtocol() {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function exportJPAProtocol(...a) { return medExportLage(() => _exportJPAProtocolExport.apply(null, /** @type {any} */ (a))); }
+function _exportJPAProtocolExport() {
     if (!state.data.length) { alert('Ladda upp data först.'); return; }
     if (typeof XLSX === 'undefined') { alert('XLSX-bibliotek saknas.'); return; }
 
@@ -15403,6 +15688,8 @@ function _rensaAllData({ inbakat = true } = {}) {
     state.dataAudit = null;
     state.bristAids = new Set();
     state.rapportUrval = null;
+    state.rapportTabeller = [];
+    state.perBasRecept = null;
     // Rensa även historiska snapshots och anteckningar
     state.forecast = { budget: { mode: 'pct', value: null }, generell: { mode: 'pct', value: null }, targets: [], minGroupN: 10, roundStep: 0, years: 1, scenarios: { A: null, B: null }, result: null };
     // Rensa även beräkningscacher som kan innehålla
@@ -15579,7 +15866,7 @@ function _evidenceForLikvardighetPair(p) {
             // Endast det som INTE redan står i tabellraden: varför jämförelseyrket räknas
             // som icke-kvinnodominerat, hur säkerheten bedöms, och vad påverkansindex betyder.
             { label: 'Varför jämförbart yrke?',
-              value: ärIntern ? 'Organisationens eget yrke (intern)' : (p.maKlassKort === 'lokal' ? 'Faktisk könsfördelning (jämförelsestatistiken)' : 'SKR:s personalstatistik (nationell reserv)'),
+              value: ärIntern ? 'Organisationens eget yrke (intern)' : (p.maKlassKort === 'lokal' ? 'Faktisk könsfördelning (jämförelsestatistiken)' : `Nationell könsfördelning som reserv (${skrKallaKort()})`),
               note: ärIntern
                 ? `${svPct(p.maKvAndel, 0)} kvinnor i organisationen’s grupp${p.maN != null ? ` (n=${p.maN})` : ''}: icke-kvinnodominerat`
                 : (p.maKlassKort === 'lokal'
@@ -15844,46 +16131,6 @@ function _evidenceForPaygapRow(p) {
     };
 }
 
-/**
- * Bevis-payload för Lönerevisionssimulatorns resultat-block.
- * @param {Object} res - resultatet från runSalarySimulation()
- */
-function _evidenceForSimulation(res) {
-    const fmtKr = v => v == null ? '—' : Math.round(v).toLocaleString('sv-SE') + ' kr';
-    const fmtN = v => v == null ? '—' : v.toLocaleString('sv-SE');
-    const fmtPct = v => v == null ? '—' : (v >= 0 ? '+' : '') + svPct(v, 2);
-    const months = state.costSettings?.months || 12;
-    const poPct  = state.costSettings?.poPct  || 0;
-    const poFactor = 1 + poPct / 100;
-    const dGap = (res.beforeGap != null && res.afterGap != null) ? res.afterGap - res.beforeGap : null;
-    const dUnexp = (res.beforeUnexplained != null && res.afterUnexplained != null) ? res.afterUnexplained - res.beforeUnexplained : null;
-
-    return {
-        title: 'Bevis — Lönerevisionssimulering',
-        intro: `Simuleringen kör analysen två gånger — en gång på original-data och en gång på data där den valda regeln tillämpats. Inga ändringar görs på den faktiska state.data — allt sker i en in-memory-kopia.`,
-        rows: [
-            { label: 'Berörda personer',                  value: fmtN(res.affectedCount), note: `Kvinnor: ${res.affectedKv} · Män: ${res.affectedMa}` },
-            { label: 'Total månadskostnad (lönelyft)',    value: fmtKr(res.totalMonthlyCost), note: 'Summa av alla lönehöjningar per månad' },
-            { label: 'Total årskostnad (inkl. PO)',       value: fmtKr(res.totalAnnualCost), note: `Månadskostnad × ${months} mån × ${svTal(poFactor, 4)} (PO-faktor)` },
-            { label: '— Rågap (median kvinnor mot män)',    value: '', note: res.konNot || '' },
-            { label: 'Före simulering',                    value: fmtPct(res.beforeGap) },
-            { label: 'Efter simulering',                   value: fmtPct(res.afterGap) },
-            { label: 'Δ Rågap',                            value: dGap != null ? (dGap >= 0 ? '+' : '') + svTal(dGap, 2) + ' pp' : '—', note: dGap != null && Math.abs(res.afterGap) < Math.abs(res.beforeGap) ? 'närmare 0 — förbättring' : 'längre från 0 — försämring' },
-            { label: '— Oförklarat gap (regressionen)',  value: '' },
-            { label: 'Före simulering',                    value: fmtPct(res.beforeUnexplained) + (res.beforeUnexplainedSig ? ' (sig.)' : '') },
-            { label: 'Efter simulering',                   value: fmtPct(res.afterUnexplained) + (res.afterUnexplainedSig ? ' (sig.)' : '') },
-            { label: 'Δ Oförklarat',                       value: dUnexp != null ? (dUnexp >= 0 ? '+' : '') + svTal(dUnexp, 2) + ' pp' : '—' }
-        ],
-        formula: `<strong>Kostnadsberäkning:</strong><br>
-            Årskostnad = Σ(lönehöjning) × ${months} mån × (1 + ${svPct(poPct, 2)} PO)<br>
-            = ${fmtKr(res.totalMonthlyCost)} × ${months} × ${svTal(poFactor, 4)}<br>
-            = <strong>${fmtKr(res.totalAnnualCost)}</strong><br><br>
-            <strong>Effekt på gap:</strong><br>
-            • <em>Rågapet</em> beräknas via direkt median-jämförelse på simulerad data<br>
-            • <em>Oförklarat gap</em> körs om hela OLS-regressionen (log(lön) ~ kön + ålder + BAS) på simulerad data och tar β_kön omräknat till %`,
-        footer: `Simuleringen ändrar inte den underliggande datan — state.data återställs alltid efter beräkningen (try/finally-garanti). PO-faktorn (${svPct(poPct, 2)}) och beräkningsperioden (${months} månader) konfigureras i Prioriteringsflikens kostnadssektion.`
-    };
-}
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 
@@ -15907,7 +16154,7 @@ function openDataResidency() {
     const approxKB = Math.round(approxBytes / 1024);
     // Rullistans värden; ett låst värde ur organisationspaketet (ADR-47) finns alltid med, och listan är då låst.
     const last = state.paketLas.inaktivitetMin;
-    const val = [...new Set([0, 15, INAKTIVITET_STANDARD_MIN, 60, ...(last != null ? [last] : [])])].sort((a, b) => a - b);
+    const val = [...new Set([0, 30, 60, INAKTIVITET_STANDARD_MIN, 120, ...(last != null ? [last] : [])])].sort((a, b) => a - b);
 
     let sampleRow = '';
     if (n > 0) {
@@ -15992,7 +16239,8 @@ document.getElementById('btn-data-residency')?.addEventListener('click', () => {
 // bekräfta att de fortfarande är där — om ingen reaktion inom 60 s rensas data
 // (motsvarande clearAllData utan confirm-prompt).
 //
-// På som standard (30 minuter, dataskydd som standard enligt GDPR art. 25.2). HR kan
+// På som standard (90 minuter: dataskydd som standard enligt GDPR art. 25.2, med en tid som inte
+// avbryter ett normalt arbetspass). HR kan
 // ändra eller stänga av det i "Vad lagras?"-modalen.
 /** @type {ReturnType<typeof setTimeout>|null} */
 let _inactivityIdleTimer  = null;
@@ -16198,7 +16446,7 @@ function lasInPaket(text, _filnamn, { inbakat = false } = {}) {
     // Ett riktigt paket blandas inte med påhittade demosiffror: demot avslutas först.
     if (state.isDemo) _rensaAllData({ inbakat: false });
 
-    const { profil, installningar, referens, statistik } = r.delar;
+    const { profil, installningar, referens, statistik, rapport } = r.delar;
     const varningar = [...r.varningar];
     // Golvet för tröskeln (ADR-47): ett nytt paket får sänka eller ta bort det förra paketets golv bara om
     // användaren bekräftar — samma fråga som vid en sänkt tröskel. Nekas den står det gamla golvet kvar.
@@ -16242,11 +16490,18 @@ function lasInPaket(text, _filnamn, { inbakat = false } = {}) {
         if (!kr.ok && kr.fel) varningar.push(`Paketets minsta gruppstorlek ${installningar.kTroskel} används inte: ${kr.fel}`);
     }
     // Gällande tröskel får inte ligga under golvet: den höjs (en höjning kräver ingen bekräftelse).
-    if (nyttGolv != null && kTroskel() < nyttGolv) {
+    if (nyttGolv != null && kInstalld() < nyttGolv) {
         kAndrad = sattKTroskel(nyttGolv, { fraga: false, rita: false }).andrad === true || kAndrad;
         varningar.push(`Minsta gruppstorlek höjs till ${nyttGolv}, paketets lägsta tillåtna.`);
     }
     state.paket = { ...r.paket, kalla: inbakat ? 'inbakat' : 'fil' };
+    // Rapportens recept (ADR-52) ersätter de egna tabellerna och receptet per BAS; ett paket utan dem rör dem inte.
+    if (rapport) {
+        state.rapportTabeller = rapport.tabeller.map(t => JSON.parse(JSON.stringify(t)));
+        state.perBasRecept = rapport.perBasRecept ? JSON.parse(JSON.stringify(rapport.perBasRecept)) : null;
+        varningar.push(`Paketet ger rapporten ${rapport.tabeller.length} ${rapport.tabeller.length === 1 ? 'egen tabell' : 'egna tabeller'}`
+            + (rapport.perBasRecept ? ' och ett eget recept per BAS-intervall.' : '.'));
+    }
 
     if (referens) {
         state.policy = referens.rader.map(x => ({ ...x }));
@@ -16311,7 +16566,7 @@ function _fyllPaketFormular() {
     satt('paket-ref-kortnamn', harReferens() && state.policyKortnamn !== state.policyNamn ? (state.policyKortnamn || '') : '');
     satt('paket-po', state.costSettings.poPct);
     satt('paket-manader', state.costSettings.months);
-    satt('paket-k', kTroskel());
+    satt('paket-k', kInstalld());
     // Låsningarna (ADR-47): formuläret visar det som gäller nu; utan paket är inget låst.
     const las = state.paketLas;
     satt('paket-k-lagst', las.kTroskelLagst);
@@ -16319,7 +16574,23 @@ function _fyllPaketFormular() {
     const kryss = (id, v) => { const el = _paketFalt(id); if (el) /** @type {HTMLInputElement} */ (el).checked = v; };
     kryss('paket-inaktivitet-last', las.inaktivitetMin != null);
     kryss('paket-sma-export', las.smaGrupperIExport !== false);
+    // Rapportens recept (ADR-52): rutan är förkryssad när något finns att ta med, annars avstängd.
+    const harRecept = _paketHarRecept();
+    kryss('paket-rapport', harRecept);
+    const rr = _paketFalt('paket-rapport');
+    if (rr) /** @type {HTMLInputElement} */ (rr).disabled = !harRecept;
     uppdateraPaketKnapp();
+}
+
+/** Finns egna tabeller eller ett eget recept per BAS att ta med i paketet? */
+function _paketHarRecept() {
+    return (state.rapportTabeller || []).length > 0 || (state.perBasRecept != null && typeof _pbReceptArStandard === 'function' && !_pbReceptArStandard(state.perBasRecept));
+}
+/** Rapportens recept ur formuläret: null när rutan inte är ikryssad eller inget finns. */
+function _paketRapportUrFormular() {
+    const el = /** @type {HTMLInputElement|null} */ (_paketFalt('paket-rapport'));
+    if (!el || !el.checked || !_paketHarRecept()) return null;
+    return { tabeller: state.rapportTabeller || [], perBasRecept: state.perBasRecept || undefined };
 }
 
 /** Formulärets låsningar (ADR-47): tomt fält = paketet anger inget. */
@@ -16370,9 +16641,11 @@ function uppdateraPaketKnapp() {
         const lasText = _paketLasText({ kTroskelLagst: f.kTroskelLagst ?? null, inaktivitetMin: f.inaktivitetLast ? f.inaktivitetMin : null,
                                         smaGrupperIExport: f.smaGrupperIExport });
         const lasDel = lasFel ? ` ${lasFel}` : lasText ? ` Låsningar: ${lasText}.` : ' Paketet låser inget.';
+        const rp = _paketRapportUrFormular();
+        const rpDel = rp ? ` Rapporten: ${rp.tabeller.length} ${rp.tabeller.length === 1 ? 'egen tabell' : 'egna tabeller'}${rp.perBasRecept ? ' och ett eget recept per BAS-intervall' : ''}.` : '';
         sam.textContent = harData
             ? `Paketet får med: ${[harReferens() ? `ställningstagandet "${referensNamn()}" (${state.policy.length} rader)` : null,
-                state.statistik.length ? `jämförelsestatistiken (${state.statistik.length} rader)` : null].filter(Boolean).join(' och ')}.${kDel}${lasDel}`
+                state.statistik.length ? `jämförelsestatistiken (${state.statistik.length} rader)` : null].filter(Boolean).join(' och ')}.${kDel}${lasDel}${rpDel}`
             : 'Läs först in ett ställningstagande eller jämförelsestatistik med rutorna ovan.';
     }
 }
@@ -16401,6 +16674,7 @@ function skapaPaket() {
                                     kortnamn: _paketText('paket-ref-kortnamn') || _paketText('paket-ref-namn') || state.policyKortnamn || undefined,
                                     rader: state.policy } : null,
         statistik: state.statistik.length ? { namn: state.statistikNamn || undefined, rader: state.statistik } : null,
+        rapport: _paketRapportUrFormular(),
     });
 }
 
@@ -16528,6 +16802,7 @@ function visaInbakatPaket() {
         + `${rad('Inbakat', inb.skapad)}${rad('Verktygets version', inb.verktygsversion)}${rad('Verktygsfilens kontrollsumma (SHA-256)', inb.verktygssha)}`
         + `${rad('Benämning på jämförelsestatistiken', obj?.profil?.jamforelseNamn)}${rad('Minsta gruppstorlek', inst.kTroskel)}${rad('Lägsta tillåtna minsta gruppstorlek', inst.kTroskelLagst)}`
         + `${rad('Rensning vid inaktivitet (min)', inst.inaktivitetMin)}${rad('Rensningstiden låst', inst.inaktivitetLast ? 'ja' : null)}${rad('Små grupper i Utforskas export', inst.smaGrupperIExport === false ? 'inte tillåtet' : null)}</dl>`
+        + `${rad('Egna tabeller i rapporten', obj?.rapport?.tabeller?.length)}${rad('Receptet per BAS-intervall', obj?.rapport?.perBasRecept ? 'eget' : null)}`
         + tabell(obj?.referens?.namn || 'Ställningstagandet', obj?.referens?.rader, ['aid', 'bas', 'p10', 'med', 'p90'])
         + tabell(obj?.statistik?.namn || 'Jämförelsestatistiken', obj?.statistik?.rader, ['aid', 'bas', 'median', 'p10', 'p90', 'andelKv'])
         + `<details class="bakgrund-panel marg-t-12"><summary>Råtext (JSON)</summary><pre class="fs-xs max-hojd-420 rulla">${esc(obj ? JSON.stringify(obj, null, 2) : inb.text)}</pre></details>`;
@@ -16771,7 +17046,8 @@ function _renderTabContent(target) {
     else if (target === "likvardighet" && (d.length || state.statistik.length)) renderLikvardighet();
     else if (target === "utforska"     && d.length) { generateRapport(); renderExplorer(); }
     else if (target === "lonepolitik"  && d.length) renderLonepolitik();
-    else if (target === "dokumentera") { if (d.length) renderKvalitetssakring(); renderRapportunderlag(); renderExportBesked(); }
+    else if (target === "dokumentera") medExportLage(() => { if (d.length) renderKvalitetssakring(); renderRapportunderlag(); renderExportBesked(); });   // allt här lämnar verktyget (ADR-51)
+    else if (target === "dashboard" && d.length) renderOversiktDelar();
     else if (target === "info")  renderInfoTab();
     else if (target === "handlingsplan") renderHandlingsplanSeed();
     else if (target === "bestammelser") { if (typeof bes8Uppdatera === 'function') bes8Uppdatera(); }
@@ -16962,8 +17238,6 @@ function _afterDataLoaded() {
     generateRapport();
     const bas = getBasIntervals();
     dataStatus.textContent = `${state.data.length} rader · ${bas.length} BAS`;
-    const manuella = manuellaBas();
-    if (manuella) dataStatus.textContent += ` · ${manuella.n} ${manuella.n === 1 ? 'person' : 'personer'} i BAS ${manuella.spann} analyseras manuellt`;
     if (poangCount > 0) dataStatus.textContent += ` · arbetsvärdering: ${poangCount} befattningar (poäng som krav-proxy i likvärdighetsanalysen)`;
     dataStatus.className = "status-msg success";
     markUploadLoaded('upload-cell-data', 'Inläst');
@@ -17261,8 +17535,6 @@ function loadStructureFile(file) {
         excludedNoBas: 0,
         excludedZeroLon: 0,
         excludedMissingKon: 0,    // rec.kon tomt eller okänt format
-        excludedOverBas: 0,       // BAS ovanför BAS_MAX — analyseras manuellt av HR
-        overBasPerBas: {},        // antal per sådan BAS (bara antal, inga värden)
         invalidLon: 0,            // icke-tom men oparsbar lön
         invalidAlder: 0,          // icke-tom men oparsbar ålder
         invalidAlderUtesluten: 0, // varav rader som ändå uteslöts (räknas inte två gånger i fullständigheten)
@@ -17328,12 +17600,6 @@ function loadStructureFile(file) {
         delete rec._alderStatus;
         const utesluts = () => { if (alderOgiltig) parseStats.invalidAlderUtesluten++; };
         if (!rec.bas)     { parseStats.excludedNoBas++; utesluts(); return; }
-        if (_faltBasOvanforGrans(rec.bas, BAS_MAX)) {
-            parseStats.excludedOverBas++;
-            parseStats.overBasPerBas[rec.bas] = (parseStats.overBasPerBas[rec.bas] || 0) + 1;
-            utesluts();
-            return;
-        }
         if (rec.lon <= 0) { parseStats.excludedZeroLon++; utesluts(); return; }
         if (!konOk)       { parseStats.excludedMissingKon++; utesluts(); return; }
         rec.radnr = row[_RADNR] ?? null;
@@ -17530,7 +17796,6 @@ function _visaEjInlast(saknas, stats) {
     else {
         const n = (antal, text) => { if (antal) skal.push(`${antal} ${antal === 1 ? 'rad' : 'rader'} ${text}`); };
         n(stats.excludedNoBas, 'utan BAS-intervall');
-        n(stats.excludedOverBas, `över BAS ${BAS_MAX}`);
         n(stats.excludedZeroLon, 'utan lön');
         n(stats.excludedMissingKon, 'utan kön');
         if (!skal.length) skal.push('filen har inga rader');
@@ -17733,7 +17998,7 @@ function _lvSkrPct(aid) {
 }
 function _lvSkrKort(aid) {
     const ref = _skrKvinnoandel(aid, { del: _skrDel() });
-    return ref ? ` (SKR ${svPct(ref.pct, 0)})` : '';
+    return ref ? ` (nationellt ${svPct(ref.pct, 0)})` : '';
 }
 
 // Åldersjusteringens krav (speglar ALDERS_GOLV_DEFAULT och ALDERS_SPRIDNING_MIN i src/lib/likvardighet.js).
@@ -17781,7 +18046,7 @@ function computeLikvardighetPairs() {
         kvinnoTrosholdPct: kvinnoThr,
         minGapPct: cfg.minGapPct ?? 0,     // default 0 (visa alla med jämförelseyrket högre)
         topN: cfg.topN ?? 100,
-        k: kTroskel()                      // bara för att räkna små grupper i diagnostiken; analysen maskar inte
+        k: kInstalld()                     // bara för att räkna små grupper i diagnostiken (undantaget gäller exporten); analysen maskar inte
     };
     if (usePoang) {
         opts.poangByKey = av.byKey;
@@ -17950,7 +18215,7 @@ function renderLikvardighet() {
                     en viss BAS används <em>jämförelsestatistiken</em> som extern proxy
                     ${d.statistik.harLokalKonsdata
                         ? `<span class="farg-ok">(lokal könsfördelning).</span>`
-                        : `<span class="varning-pa-yta">(könsfördelningen hämtas då ur SKR:s personalstatistik: kvinnoandel per AID-etikett i ${_skrDelText(_skrDel())}).</span>`}</li>
+                        : `<span class="varning-pa-yta">(könsfördelningen hämtas då ur den nationella statistiken: andel kvinnor per AID-kod i ${_skrDelText(_skrDel())}, ${esc(skrKallaKort())}).</span>`}</li>
                 <li><strong>Steg 3</strong>: Flagga par där jämförelseyrkets median är högre
                     än det kvinnodominerade yrkets. Varje par får ett
                     <strong>bootstrap-95 %-konfidensintervall</strong> på medianskillnaden.
@@ -17985,13 +18250,13 @@ function renderLikvardighet() {
                     <strong>jämförelsestatistiken</strong>
                     <ul class="lh-1_6 marg-6-0-0 pad-v-18">
                         <li>Totalt inlästa rader: <strong>${d.statistik.totalRader.toLocaleString('sv-SE')}</strong></li>
-                        <li>Lokal könsdata: <strong>${d.statistik.harLokalKonsdata ? 'ja' : 'nej — SKR:s personalstatistik som reserv'}</strong></li>
+                        <li>Lokal könsdata: <strong>${d.statistik.harLokalKonsdata ? 'ja' : `nej — nationell könsfördelning ur ${esc(skrKallaKort())} som reserv`}</strong></li>
                         <li>Klassificering:
                             <strong class="farg-ok">${d.statistik.klass.ickeKv} icke-kv-dom</strong>,
                             ${d.statistik.klass.kvDom} kv-dom,
                             ${d.statistik.klass.blandat} blandat,
                             ${d.statistik.klass.oklassificerad} oklassificerade</li>
-                        <li>Källa: ${d.statistik.klassKalla.lokal} lokal, ${d.statistik.klassKalla.scb} SKR:s personalstatistik</li>
+                        <li>Källa: ${d.statistik.klassKalla.lokal} lokal, ${d.statistik.klassKalla.scb} nationell statistik (SKR)</li>
                         ${d.statistik.exempelIckeKv.length
                             ? `<li class="marg-t-4"><small class="f-dampad">Exempel icke-kv-dom: ${d.statistik.exempelIckeKv.map(esc).join(' · ')}</small></li>`
                             : ''}
@@ -18094,7 +18359,7 @@ function renderLikvardighet() {
     const källBadge = p => {
         if (p.jamforKalla === 'intern') return `<span class="bak-ok-bg rund-8 farg-ok fs-0_72rem pad-1-6" title="Organisationens eget yrke (inom-arbetsgivare-jämförelse)">intern</span>`;
         if (p.maKlassKort === 'lokal') return `<span class="bak-varning-bg rund-8 farg-varning fs-0_72rem pad-1-6" title="jämförelsestatistiken, egen könsfördelning">Statistiken</span>`;
-        return `<span class="bak-varning-bg rund-8 farg-varning fs-0_72rem pad-1-6" title="jämförelsestatistiken, könsfördelning ur SKR:s personalstatistik">SKR</span>`;
+        return `<span class="bak-varning-bg rund-8 farg-varning fs-0_72rem pad-1-6" title="jämförelsestatistiken; könsfördelningen ur den nationella statistiken (${esc(skrKallaKort())})">nationell</span>`;
     };
     const ciCell = p => {
         if (!p.gapCI || p.gapCI.lo == null) return '<span class="f-dampad" title="För få observationer för bootstrap">—</span>';
@@ -18111,7 +18376,7 @@ function renderLikvardighet() {
     const parRows = result.pairs.map((p, i) => `
         <tr>
             <td>${i + 1}</td>
-            <td><strong>${esc(p.kvAid)}</strong>${p.kvLabel && p.kvLabel !== p.kvAid ? ' ' + esc(p.kvLabel) : ''}<br><small class="f-dampad lv-under"${_lvSkrKort(p.kvAid) ? ` title="Andel kvinnor i yrket enligt SKR:s personalstatistik:${esc(_lvSkrKort(p.kvAid).replace(/[()]|SKR/g, ''))}"` : ''}>BAS ${esc(p.kvBas)} · ${svPct(p.kvKvinnoPct, 0)} kv<span class="bara-export">${_lvSkrKort(p.kvAid)}</span> · n=${p.kvN}</small></td>
+            <td><strong>${esc(p.kvAid)}</strong>${p.kvLabel && p.kvLabel !== p.kvAid ? ' ' + esc(p.kvLabel) : ''}<br><small class="f-dampad lv-under"${_lvSkrKort(p.kvAid) ? ` title="Andel kvinnor i yrket nationellt (${esc(skrKallaKort())}):${esc(_lvSkrKort(p.kvAid).replace(/[()]|SKR/g, ''))}"` : ''}>BAS ${esc(p.kvBas)} · ${svPct(p.kvKvinnoPct, 0)} kv<span class="bara-export">${_lvSkrKort(p.kvAid)}</span> · n=${p.kvN}</small></td>
             <td class="t-hoger">${fmtKr(p.kvMedian)}</td>
             <td><strong>${esc(p.maAid)}</strong>${p.maLabel && p.maLabel !== p.maAid ? ' ' + esc(p.maLabel) : ''}<br><small class="f-dampad lv-under">BAS ${esc(p.maBas)} · ${svPct(p.maKvAndel, 0)} kv ${källBadge(p)}${p.maN != null ? ` · n=${p.maN}` : ''}</small></td>
             <td class="t-hoger">${fmtKr(p.maMedian)}</td>
@@ -18486,7 +18751,9 @@ function _lvParFigur(pairs, max = 14) {
 // Metodraden om åldersjusteringen (CSV:ns metadata och Excel-arbetsbokens metadatablad).
 const LV_JUSTERAD_METOD = 'Jämförelseyrkets lön omräknad till det kvinnodominerade yrkets åldersfördelning: log(lön) = a + b·ålder skattas i jämförelseyrket (minst ' + ALDERS_GOLV + ' personer, minst ' + ALDERS_SPRIDNING + ' års åldersspridning), lönen prediceras vid varje person i det kvinnodominerade yrket och medianen av prediktionerna jämförs med dess median. Den råa skillnaden är det lagen prövar; den justerade visar hur mycket som kan bero på åldersstruktur. Bara interna par; tomt när den inte kan räknas.';
 
-function exportLikvardighetCSV() {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function exportLikvardighetCSV(...a) { return medExportLage(() => _exportLikvardighetCSVExport.apply(null, /** @type {any} */ (a))); }
+function _exportLikvardighetCSVExport() {
     const result = likvardighetResultat();
     if (!result || !Array.isArray(result.pairs) || !result.pairs.length) {
         alert('Inga jämförelsepar att exportera. Kontrollera att Steg 3 i fliken visar par.');
@@ -18542,7 +18809,9 @@ function exportLikvardighetCSV() {
     _downloadCSV(rows, 'lonekartlaggning_likvardighet_' + new Date().toISOString().slice(0, 10), { undantag: 'Likvärdigt arbete' });
 }
 
-function exportLikvardighet() {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function exportLikvardighet(...a) { return medExportLage(() => _exportLikvardighetExport.apply(null, /** @type {any} */ (a))); }
+function _exportLikvardighetExport() {
     // STEG 0: Diagnostiska statusmeddelanden så användaren ser EXAKT var det
     // klickar. Om något felar visas alert med stegnamn — användaren kan
     // rapportera, vi kan felsöka.
@@ -18751,10 +19020,10 @@ function renderForecastTargets() {
         return;
     }
     const dAll = getData();
-    // Gruppens storlek per rad ("*" = hela BAS-intervallet). En rad som användaren själv lägger på en
-    // grupp under tröskeln är tillåten (egen simulering): beloppet räknas som för
-    // andra rader, och noten under raden säger vad det bygger på.
-    const gruppN = tg => dAll.filter(r => r.bas === tg.bas && (tg.aid === '*' || r.aid === tg.aid)).length;
+    // Radens urval ("*" = hela BAS-intervallet; kön och lönegräns snävar in). En rad som användaren själv
+    // lägger på färre personer än tröskeln är tillåten (egen simulering, ADR-38 R2): beloppet räknas som
+    // för andra rader, och noten under raden säger vad det bygger på.
+    const gruppN = tg => _fcTargetRows(dAll, tg).length;
     host.innerHTML = t.map((tg, i) => {
         // #13 Isolerad kostnad för raden (vad den äter av potten)
         let rowCost = 0;
@@ -18767,17 +19036,22 @@ function renderForecastTargets() {
             .map(([v, l]) => `<option value="${v}"${tg.dist === v ? ' selected' : ''}>${l}</option>`).join('');
         const lvlOpts = [['median', 'BAS-median'], ['p25', 'BAS P25']]
             .map(([v, l]) => `<option value="${v}"${tg.targetLevel === v ? ' selected' : ''}>${l}</option>`).join('');
+        const konOpts = [['alla', 'Alla'], ['kvinna', 'Bara kvinnor'], ['man', 'Bara män']]
+            .map(([v, l]) => `<option value="${v}"${(tg.kon || 'alla') === v ? ' selected' : ''}>${l}</option>`).join('');
+        const till = tg.mode === 'till';
         return `<div class="forecast-target-row" data-idx="${i}">
             <select data-f="bas" aria-label="BAS-intervall">${basOpts}</select>
             <select data-f="aid" aria-label="Yrke (AID)">${aidOpts}</select>
-            <select data-f="mode" aria-label="Beloppstyp"><option value="kr"${tg.mode === 'kr' ? ' selected' : ''}>kr/mån</option><option value="pct"${tg.mode === 'pct' ? ' selected' : ''}>% av grupplön</option></select>
+            <select data-f="kon" aria-label="Kön som omfattas" title="Begränsa raden till ett kön">${konOpts}</select>
+            <label class="ft-cap" title="Bara löner under gränsen omfattas; tomt = alla">under <input type="number" data-f="lonCap" min="0" step="500" value="${tg.lonCap == null ? '' : tg.lonCap}" aria-label="Bara löner under (kr/mån)" placeholder="alla löner"> kr</label>
+            <select data-f="mode" aria-label="Beloppstyp"><option value="kr"${tg.mode === 'kr' ? ' selected' : ''}>kr/mån att fördela</option><option value="pct"${tg.mode === 'pct' ? ' selected' : ''}>% av grupplön</option><option value="till"${till ? ' selected' : ''}>höj till (kr/mån)</option></select>
             <input type="number" data-f="value" min="0" step="100" value="${tg.value == null ? '' : tg.value}" aria-label="Belopp" class="bredd-90">
-            <select data-f="dist" aria-label="Fördelning inom gruppen">${distOpts}</select>
+            <select data-f="dist" aria-label="Fördelning inom gruppen"${till ? ' class="dold"' : ''}>${distOpts}</select>
             <select data-f="targetLevel" aria-label="Målnivå"${tg.dist === 'target' ? '' : ' class="dold"'}>${lvlOpts}</select>
             <select data-f="pool" aria-label="Pott-typ" title="Ring-fenced pott (visas i kostnad-per-pott)">${[['equity', 'Likalön'], ['marknad', 'Marknad'], ['befordran', 'Befordran'], ['övrigt', 'Övrigt']].map(([v, l]) => `<option value="${v}"${(tg.pool || 'övrigt') === v ? ' selected' : ''}>${l}</option>`).join('')}</select>
             <span class="text-dampad-xs ingen-radbrytning" title="Vad raden förbrukar av potten">≈ ${Math.round(rowCost).toLocaleString('sv-SE')} kr</span>
             <button type="button" data-f="remove" class="btn btn-secondary btn-sm" aria-label="Ta bort rad">${ikon('kryss', 14)}</button>
-        </div>${gruppN(tg) > 0 && isKMasked(gruppN(tg)) ? `<p class="k-mask-note">Gruppen har färre än ${kTroskel()} personer — beloppet bygger på enskildas löner och ingår i summorna, även i Excel-exporten.</p>` : ''}`;
+        </div>${gruppN(tg) > 0 && gruppN(tg) < kInstalld() ? `<p class="k-mask-note">Raden berör ${gruppN(tg)} ${gruppN(tg) === 1 ? 'person' : 'personer'}, färre än ${kInstalld()} personer — beloppet bygger på enskildas löner och ingår i summorna, även i Excel-exporten.</p>` : (gruppN(tg) === 0 ? '<p class="k-mask-note">Ingen i gruppen matchar kön och lönegräns.</p>' : '')}`;
     }).join('');
     host.querySelectorAll('.forecast-target-row').forEach(rowEl => {
         const i = parseInt(rowEl.getAttribute('data-idx') || '', 10);
@@ -18790,13 +19064,14 @@ function renderForecastTargets() {
             ctrl.addEventListener('change', () => {
                 const tg = state.forecast.targets[i];
                 if (field === 'value') tg.value = /** @type {HTMLInputElement} */ (ctrl).value === '' ? null : parseFloat(/** @type {HTMLInputElement} */ (ctrl).value);
+                else if (field === 'lonCap') tg.lonCap = /** @type {HTMLInputElement} */ (ctrl).value === '' ? null : parseFloat(/** @type {HTMLInputElement} */ (ctrl).value);
                 else tg[field] = /** @type {HTMLInputElement} */ (ctrl).value;
                 if (field === 'bas') { tg.aid = (_forecastAidsForBas(tg.bas)[0] || {}).aid || ''; renderForecastTargets(); }
-                if (field === 'dist') renderForecastTargets();
+                if (field === 'dist' || field === 'mode' || field === 'kon' || field === 'lonCap') renderForecastTargets();
                 updateForecast();
             });
-            if (field === 'value') ctrl.addEventListener('input', () => {
-                state.forecast.targets[i].value = /** @type {HTMLInputElement} */ (ctrl).value === '' ? null : parseFloat(/** @type {HTMLInputElement} */ (ctrl).value);
+            if (field === 'value' || field === 'lonCap') ctrl.addEventListener('input', () => {
+                state.forecast.targets[i][field] = /** @type {HTMLInputElement} */ (ctrl).value === '' ? null : parseFloat(/** @type {HTMLInputElement} */ (ctrl).value);
                 updateForecast();
             });
         });
@@ -18837,6 +19112,7 @@ function updateForecast() {
     if (gv != null && gv < 0) valWarn.push('Det generella påslaget är negativt.');
     if (state.forecast.generell.mode === 'pct' && gv != null && gv > 25) valWarn.push('Det generella påslaget är ovanligt högt (> 25 %).');
     if (state.forecast.targets.some(t => t.value == null || !(t.value > 0))) valWarn.push('En eller flera riktade rader saknar belopp.');
+    if (state.forecast.targets.some(t => _fcTargetRows(d, t).length === 0)) valWarn.push('En riktad rad matchar ingen person (kön eller lönegräns).');
     const out = _fcForecastOutcome(d, state.forecast.budget, state.forecast.generell, state.forecast.targets, cost);
     const riktade = state.forecast.targets.length;
     _laNyckel('nyckel-lo-riktade', riktade ? `${riktade} ${riktade === 1 ? 'riktad pott' : 'riktade potter'}` : 'Inga riktade potter');
@@ -19381,7 +19657,9 @@ function _forecastRemediationSeed() {
     updateForecast();
     if (!added) alert('Grupperna fanns redan som riktade rader.');
 }
-function exportForecast() {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function exportForecast(...a) { return medExportLage(() => _exportForecastExport.apply(null, /** @type {any} */ (a))); }
+function _exportForecastExport() {
     if (typeof XLSX === 'undefined') { alert('Excel-biblioteket kunde inte laddas.'); return; }
     const out = state.forecast.result;
     if (!out) { alert('Ingen prognos att exportera ännu.'); return; }
@@ -19403,6 +19681,7 @@ function exportForecast() {
         ['Kvar att fördela (kr/mån)', kr(out.kvar)],
         ['Generellt påslag', (state.forecast.generell.value || 0) + (state.forecast.generell.mode === 'kr' ? ' kr/mån' : ' %')],
         ['Minsta gruppstorlek för riktning', state.forecast.minGroupN || 0],
+        ...state.forecast.targets.map((t, i) => [`Riktad pott ${i + 1}`, `BAS ${t.bas}, ${t.aid === '*' ? 'alla yrken' : 'AID ' + t.aid}${t.kon === 'kvinna' ? ', bara kvinnor' : t.kon === 'man' ? ', bara män' : ''}${t.lonCap > 0 ? `, löner under ${Math.round(t.lonCap)} kr` : ''}: ${t.mode === 'till' ? `höj till ${t.value} kr/mån` : t.mode === 'kr' ? `${t.value} kr/mån` : `${t.value} % av grupplön`}${t.mode === 'till' ? '' : ` (${{ flat: 'lika %', lowest: 'lägst först', target: 'mot målnivå' }[t.dist] || t.dist})`}`]),
         ...(_fcParNot ? [['Utelämnade kandidatpar (likvärdigt arbete)', _fcParNot]] : []),
         ['Avrundning av nya löner (kr)', state.forecast.roundStep || 0],
         ['Stegvis plan (antal år)', state.forecast.years || 1],
@@ -19453,7 +19732,7 @@ function exportForecast() {
         const basList = getBasIntervals();
         const bas = basList[0] || '';
         const aid = (_forecastAidsForBas(bas)[0] || {}).aid || '';
-        state.forecast.targets.push({ bas, aid, mode: 'kr', value: null, dist: 'lowest', targetLevel: 'median', pool: 'övrigt' });
+        state.forecast.targets.push({ bas, aid, kon: 'alla', lonCap: null, mode: 'kr', value: null, dist: 'lowest', targetLevel: 'median', pool: 'övrigt' });
         renderForecastTargets();
         updateForecast();
     });
@@ -19744,7 +20023,7 @@ function renderSektorer(d) {
                på att kvinnor och män arbetar i olika sektorer (under 1 %).</p>`
             : `<p class="sektor-andel">Av skillnaden i medellön för hela organisationen (${kr(andel.gapKr)} per månad) beror
                ${kr(andel.sektorKr)} (${pc(andel.andel * 100)}) på att kvinnor och män arbetar i olika sektorer.</p>`;
-    host.innerHTML = `<table class="data-table" id="sektor-table"><thead><tr><th>Sektor</th><th>Antal</th><th>Andel kvinnor</th><th title="Andel kvinnor i samma sektor i ${_skrDelText(_skrDel())} enligt SKR:s personalstatistik — ett referensvärde">Kvinnor, SKR</th>
+    host.innerHTML = `<table class="data-table" id="sektor-table"><thead><tr><th>Sektor</th><th>Antal</th><th>Andel kvinnor</th><th title="Andel kvinnor i samma sektor nationellt, i ${_skrDelText(_skrDel())} enligt ${esc(skrKallaKort())} — ett referensvärde">Kvinnor nationellt</th>
         <th>Median kvinnor</th><th>Median män</th><th>Kvinnors lön i % av mäns</th><th>Justerad (ålder, BAS)</th>
         <th>AID-grupper</th><th>Punkter i Att göra</th>${harLedning ? '<th>Ledningsansvar kv / män</th>' : ''}</tr></thead>
         <tbody>${rader}</tbody></table>${andelText}`;
@@ -19835,7 +20114,9 @@ function _buildNarrative(d, ctx) {
     if (sankt) { lines.push(''); lines.push(sankt); }
     return lines.join('\n');
 }
-function exportEuReport() {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function exportEuReport(...a) { return medExportLage(() => _exportEuReportExport.apply(null, /** @type {any} */ (a))); }
+function _exportEuReportExport() {
     if (typeof XLSX === 'undefined') { alert('Excel-biblioteket kunde inte laddas.'); return; }
     const d = getData();
     if (!d.length) { alert('Ingen data.'); return; }
@@ -20298,10 +20579,10 @@ document.getElementById("search-rapport")?.addEventListener("input", e => {
 });
 
 // Export Excel (bara Löneöversikten)
-document.getElementById("btn-export-excel")?.addEventListener("click", () => {
+document.getElementById("btn-export-excel")?.addEventListener("click", () => medExportLage(() => {
     const wb = tableToCleanBook('rapport-table', 'Rapport');
     if (wb) { _appendMethodSheet(wb); XLSX.writeFile(wb, "lonekartlaggning_rapport.xlsx"); _showExportSensitivityToast(); }
-});
+}));
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 
@@ -20334,7 +20615,7 @@ function renderKon(bas) {
     const ageAdjGap = !konOk ? "–" : expMa > 0 ? svPct((expKv/expMa)*100, 1) : "–";
     // Urvalsraden och avsnittens nyckeltal (ADR-41).
     const urvalText = document.getElementById('ak-urval-text');
-    if (urvalText) urvalText.textContent = `${svTal(df.length, 0)} personer · minsta gruppstorlek ${kTroskel()}`;
+    if (urvalText) urvalText.textContent = `${svTal(df.length, 0)} personer · minsta gruppstorlek ${kInstalld()}`;
     _laNyckel('nyckel-ak-fordelning', konOk && medMa > 0 ? `Kvinnors median ${unadjGap} av mäns` : '');
     _laNyckel('nyckel-ak-alla', `${getBasIntervals().length} BAS-intervall`);
     /** @type {HTMLElement} */ (document.getElementById("kon-kpi-n")).textContent = svTal(df.length, 0);
@@ -20909,15 +21190,20 @@ function _laBootstrapGapCI(kvLons, maLons, B = 1000) {
 }
 // Översiktens rader och trattdiagrammets underlag är dyra (bootstrap respektive omkastning: på 55 000 rader 0,8 s
 // och 1,8 s) och behövs av flera vyer — fliken, rapportmodellen (som byggs flera gånger i Dokumentera) och
-// exporterna. De räknas därför EN gång per underlag och tröskel. Minnet håller en referens till dataraderna och
-// släpps när statistiken ogiltigförklaras och när all data rensas (laMinneSlapp), så att inget ligger kvar.
-/** @type {{d: any[], n: number, k: number, [k: string]: any}|null} */
-let _laMinne = null;
+// exporterna. De räknas därför EN gång per underlag och tröskel. Skärmläget och exportläget (ADR-51) har olika
+// tröskel och var sitt minne, så att ett byte av läge inte räknar om; ett annat underlag tömmer båda. Minnet håller
+// en referens till dataraderna och släpps när statistiken ogiltigförklaras och när all data rensas (laMinneSlapp),
+// så att inget ligger kvar.
+/** @type {Map<number, {d: any[], n: number, k: number, [k: string]: any}>} */
+const _laMinnen = new Map();
 function _laMinneFor(d, k) {
-    if (!_laMinne || _laMinne.d !== d || _laMinne.n !== d.length || _laMinne.k !== k) _laMinne = { d, n: d.length, k };
-    return _laMinne;
+    const forsta = _laMinnen.values().next().value;
+    if (forsta && (forsta.d !== d || forsta.n !== d.length)) _laMinnen.clear();
+    let m = _laMinnen.get(k);
+    if (!m) { m = { d, n: d.length, k }; _laMinnen.set(k, m); }
+    return m;
 }
-function laMinneSlapp() { _laMinne = null; }
+function laMinneSlapp() { _laMinnen.clear(); }
 function _laOversiktRader(d, bas = getBasIntervals(), k = kTroskel()) {
     const minne = _laMinneFor(d, k), nyckel = bas.join('\u0000');
     if (minne.oversikt && minne.oversiktNyckel === nyckel) return minne.oversikt;
@@ -21134,8 +21420,8 @@ function _ansvarsUnderraderFor(yrkesRader, fmt) {
 function _skrReferensCell(yrke) {
     const ref = _skrKvinnoandel(yrke, { del: _skrDel() });
     return ref
-        ? `<td data-sort-value="${ref.pct.toFixed(1)}" title="${ref.niva === 'etikett' ? 'AID-etiketten' : 'AID-prefixet ' + esc(ref.prefix)} i ${_skrDelText(ref.del)}, ${esc(_skrReferensInfo().kalla)}">${svPct(ref.pct, 0)}</td>`
-        : '<td data-sort-value="" title="Koden finns inte i SKR:s personalstatistik">–</td>';
+        ? `<td data-sort-value="${ref.pct.toFixed(1)}" title="Andel kvinnor nationellt: ${ref.niva === 'etikett' ? 'AID-etiketten' : 'AID-prefixet ' + esc(ref.prefix)} i ${_skrDelText(ref.del)}, ${esc(skrKallaKort())}">${svPct(ref.pct, 0)}</td>`
+        : `<td data-sort-value="" title="Yrkeskoden finns inte i ${esc(skrKallaKort())}">–</td>`;
 }
 
 function generateEUDirectiveMatrix() {
@@ -23414,7 +23700,9 @@ function renderLifecycleAnalysis() {
     state._lifecycleCache = { result, basRows, primary };
 
     // Rita diagrammet efter DOM-uppdatering
-    requestAnimationFrame(() => _renderLifecycleChart(result));
+    // I exportläget (ADR-51) ritas figuren direkt: exportgrinden läser den i samma varv som fliken ritas om.
+    if (typeof iExportLage === 'function' && iExportLage()) _renderLifecycleChart(result);
+    else requestAnimationFrame(() => _renderLifecycleChart(result));
 
     // Koppla BAS-dropdown
     const sel = document.getElementById('lifecycle-bas-select');
@@ -23588,10 +23876,10 @@ function generateMotivationSuggestions(item) {
     if (!rows.length) return out;
 
     // 1. Underlag: ett kön under minsta gruppstorlek (beslut av produktägaren 2026-10-16; tidigare ett fast 5)
-    if (item.kvN < kTroskel() || item.maN < kTroskel()) {
+    if (item.kvN < kInstalld() || item.maN < kInstalld()) {   // varningen gäller skattningens säkerhet, inte läget
         out.push({
             type: 'warn',
-            text: `Underlaget är litet (${item.kvN} kvinnor / ${item.maN} män; minsta gruppstorlek ${kTroskel()}). Skillnaden kan inte säkerställas statistiskt — ett tips är att överväga att slå ihop med en näraliggande BAS-grupp eller titta på individerna var för sig.`
+            text: `Underlaget är litet (${item.kvN} kvinnor / ${item.maN} män; minsta gruppstorlek ${kInstalld()}). Skillnaden kan inte säkerställas statistiskt — ett tips är att överväga att slå ihop med en näraliggande BAS-grupp eller titta på individerna var för sig.`
         });
     }
 
@@ -23723,7 +24011,6 @@ function _fmtCost(kr) {
 }
 
 function renderPrioritering() {
-    _simSynkaKnapp();   // simulatorns knapp följer tröskeln och urvalet (14-lonesimulator.js)
     const ref = _selectedPrioReference();
     const empty   = document.getElementById('prio-empty');
     const content = document.getElementById('prio-content');
@@ -24105,35 +24392,37 @@ function _readCostSettings() {
         const isCustom = state.costSettings.months !== COST_DEFAULTS.months || Math.abs(state.costSettings.poPct - COST_DEFAULTS.poPct) > 0.01;
         sum.innerHTML = isCustom
             ? `<strong class="farg-varning">${ikon('kugghjul')} Anpassad konfiguration:</strong> ${state.costSettings.months} mån × ${svPct(state.costSettings.poPct, 2)} PO`
-            : `Standard: ${state.costSettings.months} mån × ${svPct(state.costSettings.poPct, 2)} PO (SKR Cirkulär 2024)`;
+            : `Standard: ${state.costSettings.months} mån × ${svPct(state.costSettings.poPct, 2)} PO (SKR:s cirkulär 2025 för kommuner och regioner)`;
     }
 }
+// Fälten står under Inställningar i sidhuvudet (gäller alla flikar): Prioritering räknas om direkt, och den flik som
+// visas ritas om så att Löneöversyn, gruppdossiern och handlingsplanen följer samma period och påslag.
+function _kostnadAndrad() {
+    _readCostSettings();
+    if (!state.data.length) return;
+    renderPrioritering();
+    const aktiv = document.querySelector('.nav-item.active')?.getAttribute('data-tab');
+    if (aktiv && aktiv !== 'prioritering' && typeof renderTabContent === 'function') renderTabContent(aktiv);
+}
 ['prio-cost-months','prio-po-pct'].forEach(id => {
-    document.getElementById(id)?.addEventListener('input', () => {
-        _readCostSettings();
-        renderPrioritering();
-    });
-    document.getElementById(id)?.addEventListener('change', () => {
-        _readCostSettings();
-        renderPrioritering();
-    });
+    document.getElementById(id)?.addEventListener('input', _kostnadAndrad);
+    document.getElementById(id)?.addEventListener('change', _kostnadAndrad);
 });
 document.getElementById('prio-cost-reset')?.addEventListener('click', () => {
     /** @type {HTMLInputElement} */ (document.getElementById('prio-cost-months')).value = String(COST_DEFAULTS.months);
     /** @type {HTMLInputElement} */ (document.getElementById('prio-po-pct')).value      = String(COST_DEFAULTS.poPct);
-    _readCostSettings();
-    renderPrioritering();
+    _kostnadAndrad();
 });
 // Initiera period-sammanfattningen vid sidladdning
 setTimeout(_readCostSettings, 0);
 
-document.getElementById('btn-export-prio-excel')?.addEventListener('click', () => {
+document.getElementById('btn-export-prio-excel')?.addEventListener('click', () => medExportLage(() => {
     const table = document.getElementById('prio-table');
     if (table) {
         const wb = tableToCleanBook('prio-table', 'Prioritering');
         if (wb) { _appendMethodSheet(wb); XLSX.writeFile(wb, 'prioriteringslista.xlsx'); _showExportSensitivityToast(); }
     }
-});
+}));
 
 // ---- Print-to-PDF: komplett rapport ----
 // Använder webbläsarens inbyggda "Skriv ut → Spara som PDF". Inga externa beroenden.
@@ -24281,7 +24570,9 @@ function renderHandlingsplanSeed() {
     }
 }
 
-function exportHandlingsplan() {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function exportHandlingsplan(...a) { return medExportLage(() => _exportHandlingsplanExport.apply(null, /** @type {any} */ (a))); }
+function _exportHandlingsplanExport() {
     if (typeof XLSX === 'undefined') { alert('Excel-biblioteket kunde inte laddas.'); return; }
     const header = ['Åtgärd', 'Berörd grupp (AID·BAS)', 'Lagrum', 'Sakligt skäl prövat?', 'Beräknad kostnad (kr/år, inkl. PO)', 'Ansvarig', 'Tidsplan (senast inom 3 år)', 'Status'];
     const seed = _handlingsplanSeedRows();
@@ -24320,7 +24611,7 @@ document.getElementById('btn-export-handlingsplan')?.addEventListener('click', e
 //
 // Delar: { typ: 'stycke', text, stil? } (stil: dampad | not) · { typ: 'fyllIn', text } · { typ: 'rubrik', niva, text } ·
 //        { typ: 'tabell', kolumner: [{ rubrik, typ }], rader: [[värde]], nyckel? } · { typ: 'diagram', id, flik, rubrik } ·
-// Kolumntyper: text, antal, kr, krAr, pct0, pct1, pct2, tecken2 (procent med tecken), andelAvMan, direktiv, fyllIn.
+// Kolumntyper: text, antal, ar (ålder i år), kr, krAr, pct0, pct1, pct2, tecken2 (procent med tecken), andelAvMan, direktiv, fyllIn.
 // Ett värde kan också vara { text } (färdig text, t.ex. en förklaring i stället för ett tal) eller null (streck).
 //
 // Dataskydd: tröskeln tillämpas HÄR, när modellen byggs — med samma funktioner som vyerna och rapportunderlaget
@@ -24343,6 +24634,8 @@ function rmCell(v, typ) {
     if (typ === 'text') return String(v);
     if (typeof v !== 'number' || !isFinite(v)) return String(v);
     if (typ === 'antal') return svTal(v, 0);
+    if (typ === 'ar') return `${svTal(v, 0)} år`;
+    if (typ === 'tal2') return svTal(v, 2);
     if (typ === 'kr') return `${svTal(Math.round(v), 0)} kr`;
     if (typ === 'krAr') return `${svTal(Math.round(v), 0)} kr/år`;
     if (typ === 'pct0') return svPct(v, 0);
@@ -24382,11 +24675,11 @@ const RM_DIAGRAM = [
 
 // ---- Urval: vilka avsnitt som följer med, och i vilken ordning ----
 // Urvalet ligger i minnet (state.rapportUrval) och följer med i konfigurationsfilen. null = hela dokumentationen.
-const RM_AVSNITT = ['sammanfattning', 'regler', 'lika', 'likvardigt', 'struktur', 'atgarder', 'samverkan', 'beslut', 'regression', 'metod'];
+const RM_AVSNITT = ['sammanfattning', 'regler', 'lika', 'likvardigt', 'struktur', 'perbas', 'atgarder', 'samverkan', 'beslut', 'regression', 'metod'];
 const RM_URVAL = Object.freeze({
     hela: { namn: 'Hela dokumentationen', med: RM_AVSNITT },
     ledning: { namn: 'Ledningsbrief', med: ['sammanfattning', 'lika', 'likvardigt', 'atgarder'] },
-    facklig: { namn: 'Facklig dialog', med: ['sammanfattning', 'regler', 'lika', 'likvardigt', 'struktur', 'samverkan', 'regression', 'metod'] },
+    facklig: { namn: 'Facklig dialog', med: ['sammanfattning', 'regler', 'lika', 'likvardigt', 'struktur', 'perbas', 'samverkan', 'regression', 'metod'] },
 });
 /** Det gällande urvalet: `ordning` är alla avsnitt i vald ordning, `med` de som följer med, `namn` vad urvalet heter. */
 function rapportUrval() {
@@ -24404,12 +24697,114 @@ function sattRapportUrval(u) {
 }
 
 /**
+ * Underlaget till avsnittet Lönestruktur per BAS-intervall: samma tre tabeller i Word-utkastet och Excel-filen.
+ * @param {any[]} d
+ * @param {number} k
+ */
+function rmPerBasUnderlag(d, k) {
+    if (typeof _pbTabeller !== 'function' || !d.length) return null;
+    return _pbTabeller(d, { k, referens: (aid, bas) => policyFor(aid, bas), statistik: state.statistik, recept: state.perBasRecept,
+        referensNamn: referensKortnamn(), statistikNamn: state.statistik.length ? (state.statistikNamn || 'Jämförelsestatistik') : 'Jämförelsestatistik' });
+}
+
+/**
+ * Avsnittet Lönestruktur per BAS-intervall, i den form en skriven lönekartläggning brukar ha: en tabell per
+ * BAS-intervall (referens, organisationen, yrkesgrupperna med jämförelsestatistikens rad under, kvinnor och män),
+ * ett fält för bedömningen av intervallet, och sist två tabeller per BAS: löneskillnader inom likvärdigt arbete
+ * (medellön per kön, andel kvinnor, medelålder) och löneskillnader i åldersgrupper. Tröskeln tillämpas i
+ * src/lib/perbas.js; avsnittet säger i `utelamnat` vad det inte redovisar.
+ * @param {any[]} d
+ * @param {number} k
+ */
+function rmPerBasAvsnitt(d, k) {
+    const pb = rmPerBasUnderlag(d, k);
+    if (!pb || !pb.intervall.length) return null;
+    const stycke = (text, stil) => ({ typ: 'stycke', text, ...(stil ? { stil } : {}) });
+    const MATT = { p10: 'P10', p25: 'P25', med: 'Median', p75: 'P75', p90: 'P90', medel: 'Medellön' };
+    const matt = pb.recept.matt;
+    const kol = [{ rubrik: 'Grupp', typ: 'text' }, { rubrik: 'Antal', typ: 'antal' }, ...matt.map(m => ({ rubrik: MATT[m], typ: 'kr' }))];
+    const dimEtikett = pb.dimEtikett, kort = pb.dim === 'sektor' ? 'sektor' : 'BAS', per = pb.dim === 'sektor' ? 'sektor' : 'BAS-intervall';
+    const utelamnat = [];
+    if (pb.basUtelamnade.length) utelamnat.push(`BAS ${pb.basUtelamnade.join(', ')} (färre än ${k} personer)`);
+    const smaYrken = pb.intervall.reduce((s, i) => s + i.utelamnade.length, 0);
+    if (smaYrken) utelamnat.push(`${smaYrken} ${smaYrken === 1 ? 'yrkesgrupp' : 'yrkesgrupper'} med färre än ${k} personer`);
+    const konDolda = pb.intervall.filter(i => !i.konVisas).map(i => i.bas);
+    if (konDolda.length) utelamnat.push(`könsuppdelade lönemått för BAS ${konDolda.join(', ')} (ett kön har färre än ${k} personer)`);
+    /** @type {any[]} */
+    const delar = [
+        stycke(pb.dim === 'sektor'
+            ? 'Löneläget i varje sektor (AID-huvudområde): organisationen, de yrkesgrupper som når minsta gruppstorlek, och kvinnor och män. P10 och P90 är den tionde och nittionde percentilen.'
+            : `Löneläget i varje BAS-intervall mot ${referensKortnamn()}: organisationen, de yrkesgrupper som når minsta gruppstorlek (med jämförelsestatistikens nivå under, när den finns) och kvinnor och män. P10 och P90 är den tionde och nittionde percentilen.`, 'dampad'),
+    ];
+    for (const i of pb.intervall) {
+        delar.push({ typ: 'rubrik', niva: 3, text: `${dimEtikett} ${i.bas}` });   // "BAS-intervall D" / "Sektor Vård"
+        delar.push(stycke(`${i.n} ${i.n === 1 ? 'anställd' : 'anställda'} i ${i.antalYrken} ${i.antalYrken === 1 ? 'yrkesgrupp' : 'yrkesgrupper'}, varav ${i.nKv} kvinnor och ${i.nMa} män.`));
+        delar.push({ typ: 'tabell', kolumner: kol, rader: i.rader.map(r => [r.namn, r.n, ...matt.map(m => r[m] ?? null)]) });
+        const noter = [];
+        if (i.utelamnade.length) noter.push(`${i.utelamnade.length} ${i.utelamnade.length === 1 ? 'yrkesgrupp' : 'yrkesgrupper'} med färre än ${k} personer redovisas inte: ${i.utelamnade.join(', ')}.`);
+        if (!i.konVisas) noter.push(`Kvinnor och män redovisas inte var för sig eftersom ett kön har färre än ${k} personer i intervallet.`);
+        if (noter.length) delar.push(stycke(noter.join(' '), 'not'));
+        delar.push({ typ: 'fyllIn', text: `Bedömning av ${kort} ${i.bas}: löneläget mot referensen och jämförelsestatistiken, de största yrkesgrupperna, och om skillnaderna mellan kvinnor och män har sakliga skäl.` });
+    }
+    if (pb.konsgap) {
+    delar.push({ typ: 'rubrik', niva: 3, text: `Löneskillnader inom likvärdigt arbete, per ${per}` });
+    delar.push(stycke('Medellön för alla, män och kvinnor i varje BAS-intervall, kvinnors medellön i procent av mäns, andel kvinnor och medelålder. Könsuppdelade mått visas bara där båda könen når minsta gruppstorlek.', 'dampad'));
+    delar.push({ typ: 'tabell', kolumner: [{ rubrik: 'BAS', typ: 'text' }, { rubrik: 'Antal', typ: 'antal' }, { rubrik: 'Medellön alla', typ: 'kr' }, { rubrik: 'Medellön män', typ: 'kr' }, { rubrik: 'Medellön kvinnor', typ: 'kr' },
+        { rubrik: 'Kvinnors medellön i % av mäns', typ: 'pct1' }, { rubrik: 'Andel kvinnor', typ: 'pct1' }, { rubrik: 'Medelålder alla', typ: 'ar' }, { rubrik: 'Medelålder män', typ: 'ar' }, { rubrik: 'Medelålder kvinnor', typ: 'ar' }],
+        rader: pb.konsgap.rader.map(r => [r.bas, r.n, r.medel, r.medelMa, r.medelKv, r.kvot, r.andelKv, r.alder, r.alderMa, r.alderKv]) });
+    }
+    if (pb.aldersgrupper) {
+    delar.push({ typ: 'rubrik', niva: 3, text: `Löneskillnader i åldersgrupper, per ${per}` });
+    delar.push(stycke(`Medellön i åldersgrupperna ${pb.aldersgrupper.grupper.join(', ')} år. En åldersgrupp med färre än ${k} personer i intervallet får ingen medellön.`, 'dampad'));
+    delar.push({ typ: 'tabell', kolumner: [{ rubrik: 'BAS', typ: 'text' }, { rubrik: 'Antal', typ: 'antal' }, { rubrik: 'Medelålder', typ: 'ar' }, { rubrik: 'Medellön alla', typ: 'kr' },
+        ...pb.aldersgrupper.grupper.map(g => ({ rubrik: `Medellön ${g} år`, typ: 'kr' }))],
+        rader: pb.aldersgrupper.rader.map(r => [r.bas, r.n, r.alder, r.medel, ...r.perGrupp]) });
+    delar.push({ typ: 'fyllIn', text: 'Bedömning: hur lönen utvecklas med åldern i organisationen, och om löneutvecklingen för äldre medarbetare avstannar.' });
+    }
+    return { id: 'perbas', numrerad: true, rubrik: pb.dim === 'sektor' ? 'Lönestruktur per sektor' : 'Lönestruktur per BAS-intervall', utelamnat, delar };
+}
+
+/**
+ * Avsnittet Egna tabeller (ADR-52): tabeller användaren byggt i Utforska och lagt till i rapporten. Recepten
+ * (state.rapportTabeller) ritas om här med samma pivot som fliken och tröskeln k; inga tal lagras.
+ * @param {any[]} d
+ * @param {number} k
+ */
+function rmEgnaAvsnitt(d, k) {
+    const recept = state.rapportTabeller || [];
+    if (!recept.length || !d.length || typeof _trTabeller !== 'function') return null;
+    const stycke = (text, stil) => ({ typ: 'stycke', text, ...(stil ? { stil } : {}) });
+    /** @type {any[]} */
+    const delar = [stycke('Tabeller som byggts i fliken Utforska och lagts till i rapporten. De räknas på samma underlag och med samma minsta gruppstorlek som rapporten i övrigt.', 'dampad')];
+    const utelamnat = [];
+    let antal = 0;
+    for (const r of recept) {
+        const tabeller = _trTabeller(d, r, { k });
+        if (!tabeller.length) { utelamnat.push(`tabellen "${r.namn}" (ingen grupp når minsta gruppstorlek)`); continue; }
+        for (const t of tabeller) {
+            antal++;
+            delar.push({ typ: 'rubrik', niva: 3, text: t.rubrik });
+            delar.push({ typ: 'tabell', kolumner: t.kolumner, rader: t.rader });
+            if (t.not) delar.push(stycke(t.not, 'not'));
+            if (t.utelamnade) utelamnat.push(`${t.utelamnade} ${t.utelamnade === 1 ? 'grupp' : 'grupper'} i "${t.rubrik}" (färre än ${k} personer)`);
+        }
+    }
+    if (!antal) return null;
+    return { id: 'egna', numrerad: true, rubrik: 'Egna tabeller', utelamnat, delar };
+}
+
+/**
  * Rapportens avsnitt i vald ordning, numrerade efter urvalet. Med `alla: true` ges alla avsnitt i standardordning
  * (för listan där urvalet görs). Utan lönefil bär avsnitten bara det som inte kräver den (referens, statistik, metod).
- * @param {{alla?: boolean}} [val]
+ * @param {...any} a - `{ alla?: boolean }`
  * @returns {{titel: string, undertitel: string, demo: boolean, avsnitt: any[], urval: any}}
  */
-function rapportModell({ alla = false } = {}) {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function rapportModell(...a) { return medExportLage(() => _rapportModellExport.apply(null, /** @type {any} */ (a))); }
+/** Modellen i det gällande urvalet och med alla avsnitt ur ett enda bygge (det kostar sekunder på stora underlag). */
+function rapportModellBada() { return medExportLage(() => _rapportModellExport({ bada: true })); }
+/** @param {{alla?: boolean, bada?: boolean}} [val] */
+function _rapportModellExport({ alla = false, bada = false } = {}) {
     const d = getData();
     const year = new Date().getFullYear(), today = new Date().toLocaleDateString('sv-SE');
     const k = kTroskel();
@@ -24426,7 +24821,7 @@ function rapportModell({ alla = false } = {}) {
     const { par, utelamnade: parUtelamnade, not: parNot } = _parForRedovisning(lvRes && lvRes.pairs);   // som rapportunderlaget
     const rep = typeof _stRepresentationByBas === 'function' ? (_stRepresentationByBas(d, { k }) || []) : [];
     const repVisade = rep.filter(g => !isKMasked(g.n)), repDolda = rep.filter(g => isKMasked(g.n)).map(g => g.bas);
-    const dq = typeof bedomningUnderlag === 'function' ? bedomningUnderlag() : null;
+    const dq = typeof bedomningUnderlag === 'function' ? bedomningUnderlag({ reg }) : null;
     const stycke = (text, stil) => ({ typ: 'stycke', text, ...(stil ? { stil } : {}) });
     const dampad = text => stycke(text, 'dampad');
     const fyllIn = text => ({ typ: 'fyllIn', text });
@@ -24546,6 +24941,10 @@ function rapportModell({ alla = false } = {}) {
             ...diagram('struktur'),
         ] } : null;
 
+    // ---- Lönestruktur per BAS-intervall (tabellerna ur arbetsgivarnas egna utkast) ----
+    const perbas = rmPerBasAvsnitt(d, k);
+    const egna = rmEgnaAvsnitt(d, k);
+
     // ---- 6. Åtgärder och tidsplan ----
     /** @type {{id: string, rubrik: string, utelamnat: string[], delar: any[], [k: string]: any}} */
     const atgarder = { id: 'atgarder', numrerad: true, rubrik: 'Åtgärder och tidsplan', utelamnat: [], delar: [
@@ -24611,19 +25010,25 @@ function rapportModell({ alla = false } = {}) {
         { typ: 'tabell', nyckel: true, kolumner: [{ rubrik: '', typ: 'text' }, { rubrik: '', typ: 'text' }], rader: (typeof _methodAppendixData === 'function' ? _methodAppendixData() : []).map(([n, v]) => [String(n), String(v)]) },
     ] };
 
-    return {
+    const finns = /** @type {any[]} */ ([sammanfattning, regler, lika, likvardigt, struktur, perbas, atgarder, samverkan, beslut, regressionAvsnitt, metod].filter(Boolean));
+    /** @param {boolean} alla */
+    const avsnitt = alla => {
+        const urval = rapportUrval();
+        const valda = /** @type {any[]} */ (alla ? finns : urval.med.map(id => finns.find(a => a.id === id)).filter(Boolean));
+        // Egna tabeller (ADR-52) står efter avsnittet per BAS-intervall och följer med när det gör det; de väljs i stället
+        // genom att tabeller läggs till eller tas bort under Dokumentera & exportera.
+        if (egna && (alla || urval.med.includes('perbas'))) { const i = valda.findIndex(a => a.id === 'perbas'); valda.splice(i >= 0 ? i + 1 : valda.length, 0, egna); }
+        let nr = 0;
+        return valda.map(a => ({ ...a, grundrubrik: a.rubrik, rubrik: a.numrerad ? `${++nr}. ${a.rubrik}` : a.rubrik }));
+    };
+    const modell = alla => ({
         titel: `Lönekartläggning ${year} — dokumentation`,
         undertitel: `${orgNamn('') || '[HR fyller i: organisation/arbetsgivare]'} · ${urval} · genererad ${today} · v${APP_VERSION}${dq ? ` · Underlagets kvalitet: ${UK_ETIKETT[dq.status]}` : ''}`,
         demo: !!state.isDemo,
-        avsnitt: (() => {
-            const finns = /** @type {any[]} */ ([sammanfattning, regler, lika, likvardigt, struktur, atgarder, samverkan, beslut, regressionAvsnitt, metod].filter(Boolean));
-            const urval = rapportUrval();
-            const valda = /** @type {any[]} */ (alla ? finns : urval.med.map(id => finns.find(a => a.id === id)).filter(Boolean));
-            let nr = 0;
-            return valda.map(a => ({ ...a, grundrubrik: a.rubrik, rubrik: a.numrerad ? `${++nr}. ${a.rubrik}` : a.rubrik }));
-        })(),
+        avsnitt: avsnitt(alla),
         urval: rapportUrval().namn,
-    };
+    });
+    return bada ? { urval: modell(false), alla: modell(true) } : modell(alla);
 }
 
 /**
@@ -24712,38 +25117,43 @@ function renderExportBesked() {
     const satt = (id, html) => { const el = document.getElementById(id); if (el) el.innerHTML = har ? html : ''; };
     if (!har) { ['besked-word', 'besked-pdf', 'besked-excel', 'besked-zip'].forEach(id => satt(id, '')); _ebRitaUrval(); return; }
     /** @type {any} */ let b = null;
-    try { b = rmBesked(rapportModell()); } catch (e) { rapporteraFel('Förhandsbesked: Word-utkastet', e); }
+    /** @type {any} */ let alla = null;
+    try { const bada = rapportModellBada(); alla = bada.alla; b = rmBesked(bada.urval); } catch (e) { rapporteraFel('Förhandsbesked: Word-utkastet', e); }
     if (b) {
         satt('besked-word', `<strong>Innehåller:</strong> ${esc(_ebText([b.urval, _ebAntal(b.avsnitt, 'avsnitt', 'avsnitt'), _ebAntal(b.tabeller, 'tabell', 'tabeller'), _ebAntal(b.diagram, 'diagram', 'diagram'), `${b.fyllIn} fält att fylla i`]))}`
             + (b.utelamnat.length ? `<br><strong>Utelämnar:</strong> ${esc(b.utelamnat.join(' · '))}` : '<br><strong>Utelämnar:</strong> ingenting'));
         // PDF-rapporten är samma modell; flikarnas tabeller följer med som bilagor när inget avsnitt är bortvalt.
-        const hela = b.avsnitt === rapportModell({ alla: true }).avsnitt.length;
+        const hela = !!alla && b.avsnitt === alla.avsnitt.length;
         satt('besked-pdf', `<strong>Innehåller:</strong> ${esc(_ebText([b.urval, _ebAntal(b.avsnitt, 'avsnitt', 'avsnitt'), _ebAntal(b.tabeller, 'tabell', 'tabeller'), _ebAntal(b.diagram, 'diagram', 'diagram'),
             hela ? 'bilagor med flikarnas tabeller och diagram' : 'inga bilagor (ett kortare urval är just avsnitten)']))}`
             + `<br><strong>Utelämnar:</strong> ${esc(b.utelamnat.length ? b.utelamnat.join(' · ') : 'ingenting')}`);
         _laNyckel('nyckel-ex-urval', b.urval);
     }
+    let blad = /** @type {string[]} */ ([]);
     try {
-        const blad = excelAlltBlad();
+        blad = excelAlltBlad();
         satt('besked-excel', `<strong>Innehåller:</strong> ${esc(_ebAntal(blad.length, 'blad', 'blad'))} — ${esc(blad.join(', '))}<br>`
-            + `<strong>Utelämnar:</strong> ${esc(`grupper med färre än ${kTroskel()} personer, på samma sätt som tabellerna i flikarna`)}`);
+            + `<strong>Utelämnar:</strong> ${esc(`grupper med färre än ${kInstalld()} personer (minsta gruppstorlek; på skärmen visas de)`)}`);
     } catch (e) { rapporteraFel('Förhandsbesked: Excel', e); }
     try {
-        satt('besked-zip', `<strong>Innehåller:</strong> ${esc(`Word-utkastet, Excel-filen (${_ebAntal(excelAlltBlad().length, 'blad', 'blad')}) och diagrammen i alla flikar som bilder`)}<br>`
+        satt('besked-zip', `<strong>Innehåller:</strong> ${esc(`Word-utkastet, Excel-filen (${_ebAntal(blad.length, 'blad', 'blad')}) och diagrammen i alla flikar som bilder`)}<br>`
             + `<strong>Utelämnar:</strong> ${esc(`diagram utan något att visa över tröskeln, och diagrammet i Personer att granska`)}`);
     } catch (e) { rapporteraFel('Förhandsbesked: ZIP', e); }
-    _ebRitaUrval();
+    _ebRitaUrval(alla);
 }
 
-/** Listan där urvalet görs: en rad per avsnitt med ruta och knappar för att flytta upp och ned, och de tre färdiga urvalen. */
-function _ebRitaUrval() {
+/**
+ * Listan där urvalet görs: en rad per avsnitt med ruta och knappar för att flytta upp och ned, och de tre färdiga urvalen.
+ * @param {any} [alla] modellen med alla avsnitt, när anroparen redan byggt den
+ */
+function _ebRitaUrval(alla) {
     const host = document.getElementById('rapport-urval');
     if (!host) return;
     if (!getData().length) { host.innerHTML = ''; _laNyckel('nyckel-ex-urval', ''); return; }
     const u = rapportUrval();
     let rubriker = {};
     try { // Lagrummet i rubriken hör till dokumentet; i gränssnittet står avsnittets namn utan paragrafhänvisning.
-        rubriker = Object.fromEntries(rapportModell({ alla: true }).avsnitt.map(a => [a.id, a.grundrubrik.replace(/\s*\((?:§|EU)[^)]*\)\s*$/, '')])); } catch (e) { rapporteraFel('Urval: avsnitten', e); }
+        rubriker = Object.fromEntries((alla || rapportModell({ alla: true })).avsnitt.map(a => [a.id, a.grundrubrik.replace(/\s*\((?:§|EU)[^)]*\)\s*$/, '')])); } catch (e) { rapporteraFel('Urval: avsnitten', e); }
     const finns = u.ordning.filter(id => rubriker[id]);
     host.innerHTML = `<div class="urval-fasta" role="group" aria-label="Färdiga urval">`
         + Object.entries(RM_URVAL).map(([nyckel, f]) => `<button type="button" class="btn btn-secondary btn-sm" data-urval-fast="${nyckel}" aria-pressed="${u.namn === f.namn}">${esc(f.namn)}</button>`).join('')
@@ -24751,9 +25161,77 @@ function _ebRitaUrval() {
             <label><input type="checkbox" data-urval-med="${esc(id)}"${u.med.includes(id) ? ' checked' : ''}> ${esc(rubriker[id])}</label>
             <span class="urval-flytta"><button type="button" class="btn-table-tool" data-urval-flytta="-1" aria-label="Flytta upp: ${esc(rubriker[id])}"${i === 0 ? ' disabled' : ''}>${ikon('pilUpp', 14)}</button>
             <button type="button" class="btn-table-tool" data-urval-flytta="1" aria-label="Flytta ned: ${esc(rubriker[id])}"${i === finns.length - 1 ? ' disabled' : ''}>${ikon('pilNed', 14)}</button></span></li>`).join('')
-        + `</ol><p class="avsnitt-inledning marg-10-0-0">Urvalet gäller Word-utkastet och PDF-rapporten. Det följer med när du sparar konfigurationen, men lagras inte i webbläsaren.</p>`;
+        + `</ol><p class="avsnitt-inledning marg-10-0-0">Urvalet gäller Word-utkastet och PDF-rapporten. Det följer med när du sparar konfigurationen, men lagras inte i webbläsaren.</p>`
+        + _ebEgnaTabellerHtml() + _ebPerBasReceptHtml();
     _laNyckel('nyckel-ex-urval', u.namn);
 }
+
+// ---- Egna tabeller och receptet för avsnittet per BAS-intervall (ADR-52) ----
+function _ebEgnaTabellerHtml() {
+    const t = state.rapportTabeller || [];
+    const rader = t.map((r, i) => `<li class="urval-rad" data-egen-id="${esc(r.id)}">
+            <span><strong>${esc(r.namn)}</strong><br><small class="f-dampad">${esc(_trBeskrivning(r))}</small></span>
+            <span class="urval-flytta"><button type="button" class="btn-table-tool" data-egen-flytta="-1" aria-label="Flytta upp: ${esc(r.namn)}"${i === 0 ? ' disabled' : ''}>${ikon('pilUpp', 14)}</button>
+            <button type="button" class="btn-table-tool" data-egen-flytta="1" aria-label="Flytta ned: ${esc(r.namn)}"${i === t.length - 1 ? ' disabled' : ''}>${ikon('pilNed', 14)}</button>
+            <button type="button" class="btn-table-tool" data-egen-bort aria-label="Ta bort: ${esc(r.namn)}">Ta bort</button></span></li>`).join('');
+    return `<div id="rapport-egna" class="marg-t-14"><h3 class="fs-md marg-0-0-6">Egna tabeller</h3>
+        <p class="text-dampad-sm marg-0-0-6">Tabeller du byggt i Utforska och lagt till med <em>Lägg till i rapporten</em>. De står i avsnittet <em>Egna tabeller</em> i Word-utkastet och PDF-rapporten och i bladet <em>Egna tabeller</em> i Excel-filen, räknade med minsta gruppstorlek.</p>
+        ${t.length ? `<ol class="urval-lista">${rader}</ol>` : '<p class="text-dampad-sm">Inga egna tabeller ännu.</p>'}</div>`;
+}
+const EB_PERBAS_RADER = [['referens', 'Referensen (ställningstagandet)'], ['organisation', 'Organisationen'], ['yrken', 'Yrkesgrupperna'], ['statistik', 'Jämförelsestatistikens rad under varje yrke'], ['kvinnor', 'Kvinnor'], ['man', 'Män']];
+const EB_PERBAS_MATT = [['p10', 'P10'], ['p25', 'P25'], ['med', 'Median'], ['p75', 'P75'], ['p90', 'P90'], ['medel', 'Medellön']];
+function _ebPerBasReceptHtml() {
+    const r = _pbValideraRecept(state.perBasRecept);
+    const kryss = (id, text, pa) => `<label class="fs-sm"><input type="checkbox" id="${id}"${pa ? ' checked' : ''}> ${esc(text)}</label>`;
+    return `<div id="rapport-perbas" class="marg-t-14"><h3 class="fs-md marg-0-0-6">Tabellerna per BAS-intervall</h3>
+        <p class="text-dampad-sm marg-0-0-6">Avsnittet <em>Lönestruktur per BAS-intervall</em> följer det här receptet. Standard är tabellerna som i en skriven lönekartläggning.</p>
+        <div class="rad-bryt gap-14">
+            <label class="fs-sm">Upprepa per <select id="pb-dim" class="form-select bredd-auto"><option value="bas"${r.dim === 'bas' ? ' selected' : ''}>BAS-intervall</option><option value="sektor"${r.dim === 'sektor' ? ' selected' : ''}>sektor (AID-huvudområde)</option></select></label>
+            <fieldset class="falt-grupp"><legend>Rader i varje tabell</legend>${EB_PERBAS_RADER.map(([v, t]) => kryss('pb-rad-' + v, t, r.rader.includes(v))).join(' ')}</fieldset>
+            <fieldset class="falt-grupp"><legend>Mått</legend>${EB_PERBAS_MATT.map(([v, t]) => kryss('pb-matt-' + v, t, r.matt.includes(v))).join(' ')}</fieldset>
+            <fieldset class="falt-grupp"><legend>Summeringstabeller</legend>${kryss('pb-konsgap', 'Löneskillnader inom likvärdigt arbete', r.konsgap)} ${kryss('pb-aldersgrupper', 'Löneskillnader i åldersgrupper', r.aldersgrupper)}
+                <label class="fs-sm">Åldersgränser <input type="text" id="pb-aldersgranser" class="form-select bredd-6em" value="${esc(r.aldersgranser.join(', '))}" autocomplete="off" title="Gränser mellan åldersgrupperna, t.ex. 35, 50 ger –34, 35–49 och 50–"></label></fieldset>
+        </div>
+        <p class="rad-mitt gap-8 marg-6-0-0"><span id="pb-recept-status" class="text-dampad-sm">${_pbReceptArStandard(state.perBasRecept) ? 'Standardreceptet.' : 'Eget recept — följer med i konfigurationsfilen.'}</span>
+        <button type="button" id="pb-aterstall" class="btn btn-secondary btn-sm"${_pbReceptArStandard(state.perBasRecept) ? ' hidden' : ''}>Återställ standard</button></p></div>`;
+}
+/** Läser receptformuläret till state. Standardreceptet sparas som null. */
+function _ebLasPerBasRecept() {
+    const v = id => /** @type {HTMLInputElement} */ (document.getElementById(id));
+    if (!v('pb-dim')) return;
+    const r = {
+        dim: v('pb-dim').value,
+        rader: EB_PERBAS_RADER.map(([x]) => x).filter(x => v('pb-rad-' + x)?.checked),
+        matt: EB_PERBAS_MATT.map(([x]) => x).filter(x => v('pb-matt-' + x)?.checked),
+        konsgap: !!v('pb-konsgap')?.checked, aldersgrupper: !!v('pb-aldersgrupper')?.checked,
+        aldersgranser: String(v('pb-aldersgranser')?.value || '').split(/[,;\s]+/).map(Number).filter(x => Number.isInteger(x) && x > 0)
+    };
+    const giltigt = _pbValideraRecept(r);
+    state.perBasRecept = _pbReceptArStandard(giltigt) ? null : giltigt;
+}
+document.addEventListener('change', e => {
+    const el = /** @type {HTMLElement} */ (e.target);
+    if (!el || !el.closest || !el.closest('#rapport-perbas')) return;
+    _ebLasPerBasRecept();
+    const fokus = el.id;
+    renderExportBesked();
+    document.getElementById(fokus)?.focus();
+});
+document.addEventListener('click', e => {
+    const t = /** @type {HTMLElement} */ (e.target);
+    if (!t || !t.closest) return;
+    if (t.closest('#pb-aterstall')) { state.perBasRecept = null; renderExportBesked(); return; }
+    const bort = t.closest('[data-egen-bort]'), flytta = t.closest('[data-egen-flytta]');
+    if (!bort && !flytta) return;
+    const id = /** @type {HTMLElement} */ (bort || flytta).closest('[data-egen-id]')?.getAttribute('data-egen-id');
+    const lista = [...(state.rapportTabeller || [])], i = lista.findIndex(r => r.id === id);
+    if (i < 0) return;
+    if (bort) lista.splice(i, 1);
+    else if (flytta) { const j = i + Number(flytta.getAttribute('data-egen-flytta')); if (j < 0 || j >= lista.length) return; [lista[i], lista[j]] = [lista[j], lista[i]]; }
+    state.rapportTabeller = lista;
+    renderExportBesked();
+    if (flytta) /** @type {HTMLElement} */ (document.querySelector(`[data-egen-id="${id}"] [data-egen-flytta="${flytta.getAttribute('data-egen-flytta')}"]:not([disabled])`))?.focus();
+});
 
 document.addEventListener('click', e => {
     if (!/** @type {HTMLElement} */ (e.target).closest) return;
@@ -24818,18 +25296,20 @@ function bibliotekCssForUtskrift() {
     return ut;
 }
 
-async function buildPrintReport() {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function buildPrintReport(...a) { return medExportLage(() => _buildPrintReportExport.apply(null, /** @type {any} */ (a))); }
+async function _buildPrintReportExport() {
     if (!getData().length) { alert('Ladda upp data först.'); return; }
     showLoading();
     try {
         // Rapporten är rapportmodellen med gällande urval — samma innehåll som Word-utkastet (58-rapportmodell.js).
-        const modell = rapportModell();
+        const bada = rapportModellBada(), modell = bada.urval;
         const ritade = new Set(), bilder = new Map();
         for (const del of modell.avsnitt.flatMap(a => a.delar.filter(p => p.typ === 'diagram'))) {
             const b = await rmDiagramBild(del, ritade);
             if (b) bilder.set(del.id, b);
         }
-        const helaDokumentationen = modell.avsnitt.length === rapportModell({ alla: true }).avsnitt.length;
+        const helaDokumentationen = modell.avsnitt.length === bada.alla.avsnitt.length;
         let bilagor = '';
         if (helaDokumentationen) {
             // Bilagor med flikarnas egna tabeller och diagram — underlaget bakom avsnitten. De följer bara med när hela
@@ -25181,7 +25661,9 @@ async function byggWordUtkast() {
 }
 
 /** Bygger och laddar ner Word-utkastet som .docx. */
-async function exportDocumentationDraft() {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function exportDocumentationDraft(...a) { return medExportLage(() => _exportDocumentationDraftExport.apply(null, /** @type {any} */ (a))); }
+async function _exportDocumentationDraftExport() {
     if (!getData().length) { alert('Ladda upp data först.'); return false; }
     try {
         const { blob, namn } = await byggWordUtkast();
@@ -25308,7 +25790,9 @@ function _wireTablistKeys(buttons) {
  *
  * Inte beroende av vilken metric-knapp som är vald i UI:t — alla värden exporteras alltid.
  */
-function exportBenchmarkExcel() {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function exportBenchmarkExcel(...a) { return medExportLage(() => _exportBenchmarkExcelExport.apply(null, /** @type {any} */ (a))); }
+function _exportBenchmarkExcelExport() {
     if (typeof XLSX === 'undefined') { alert('XLSX-biblioteket är inte laddat.'); return; }
     const d = getData();
     if (!d.length) { alert('Ingen data laddad. Ladda upp strukturdatan först.'); return; }
@@ -25534,11 +26018,11 @@ const INFO_SECTIONS = {
         </p>
 
         <h3>k-anonymitet</h3>
-        <p>Grupper med n &lt; ${kTroskel()} redovisas inte i verktygets analyser och exporter (rapport, EU-matris, prioritering, jämförelsestatistik) — med undantagen nedan. Gällande tröskelvärde är ${kTroskel()}; standardvärdet är ${K_STANDARD} och det kan ändras på Översikt (&quot;Minsta gruppstorlek för redovisning&quot;). Ett värde under ${K_STANDARD} kräver bekräftelse, visas som en varning överst på alla flikar och står i metodbilagan, i exporterad data och — under ${K_STANDARD} — på varje del som kan spridas för sig (diagrambilder, kopierade tabeller, rapporter). Värdet sparas inte mellan gånger. Värdet är verktygets eget val och matchar SCB:s rekommendation för publicerad lönestatistik på små grupper.</p>
-        <p>Raden <strong>utelämnas</strong>, och grupperna räknas upp med namn i en not vid tabellen, så att du ser exakt vilka grupper som inte redovisas. Personerna ingår fortfarande i underlaget och i totalsummorna.</p>
-        <p>Där bara <em>könsuppdelningen</em> är för liten, men gruppen som helhet ligger över tröskeln, redovisas gruppens <strong>samlade median</strong> i stället. Den bygger på n &ge; ${kTroskel()} och röjer ingen enskild, men ger ändå ett lönemått att förhålla sig till. Könsjämförelsen utgår. Samma regel gäller de beskrivande könsuppdelade måtten — ett köns medianlön, det råa lönegapet, regressionens ojusterade steg (&quot;Endast kön&quot;) med den förklarade andelen, en kostnad som räknats ur ett gap — också för hela organisationen: de visas bara när både kvinnor och män är minst ${kTroskel()}. Den justerade löneskillnaden i Lika arbete är en skattning som visas från regressionens eget, fasta golv (5 av varje kön). I Ålder &amp; karriär visas lönegapen bara när båda könen i urvalet är minst ${kTroskel()}, och lutning, trendlinje och låda bara för ett kön som är det; punkterna per person visas alltid.</p>
-        <p><strong>Inte tröskelstyrt:</strong> lönerevisionssimulatorn räknar på det urval du väljer, oavsett storlek. I Löneöversyn får du lägga en egen riktad rad på en grupp under ${kTroskel()} personer: beloppet visas på raden och ingår i summorna, även i Excel-exporten, och bygger då på enskildas löner.</p>
-        <p><strong>Undantag: Utforska.</strong> Där visas även grupper under ${kTroskel()} personer, tonade, eftersom du som använder verktyget redan har tillgång till underlaget. Skyddet ligger på det som lämnar verktyget: tabellens och diagrammens export utelämnar sådana grupper — och lönemått för ett kön under ${kTroskel()} — om du inte själv kryssar i &quot;Ta med grupper under ${kTroskel()} i exporten&quot;; då anger exporten att den kan innehålla grupper under tröskeln. Antal följer alltid med.</p>
+        <p><strong>På skärmen visas allt.</strong> Den som arbetar i verktyget har redan lönefilen, så vyerna maskerar inga grupper: varje yrkesgrupp, varje BAS-intervall och varje könsuppdelat mått visas oavsett storlek (beslut 2026-10-29).</p>
+        <p><strong>Det som lämnar verktyget följer minsta gruppstorlek.</strong> Excel, Word-utkastet, PDF-rapporten, ZIP-filen, CSV, urklipp, diagrambilder, rapportunderlaget och allt under Dokumentera &amp; exportera ritas och räknas med den inställda tröskeln: grupper med n &lt; ${kInstalld()} redovisas inte, utan räknas upp med namn i en not så att det syns vad som saknas. Gällande värde är ${kInstalld()}; standardvärdet är ${K_STANDARD} och det ändras under Inställningar i sidhuvudet (&quot;Minsta gruppstorlek för redovisning&quot;). Personerna ingår fortfarande i underlaget och i totalsummorna.</p>
+        <p>Där bara <em>könsuppdelningen</em> är för liten, men gruppen som helhet når tröskeln, redovisar exporterna gruppens <strong>samlade median</strong> i stället; könsjämförelsen utgår. Samma regel gäller könsuppdelade mått för hela organisationen: varje kön ska nå tröskeln.</p>
+        <p><strong>Inte tröskelstyrt:</strong> i Löneöversyn får du lägga en egen riktad rad på en grupp under ${kInstalld()} personer: beloppet visas på raden och ingår i summorna, även i Excel-exporten, och bygger då på enskildas löner — raden säger det.</p>
+        <p><strong>Utforska.</strong> Tabellens och diagrammens export utelämnar grupper under ${kInstalld()} personer om du inte kryssar i rutan <em>Ta med grupper under ${kInstalld()} i exporten</em>; organisationspaketet kan stänga av rutan.</p>
         <p><strong>Undantag: Likvärdigt arbete.</strong> Lagen kräver att även små kvinnodominerade yrken prövas. Fliken och dess egen export visar därför kandidatpar även när en grupp är under tröskeln; exporten anger det i filen. Alla andra utdata — Rapportunderlaget, Word-utkastet, PDF-rapporten, protokollet för gemensam lönebedömning, Att göra och dess CSV, handlingsplanens förifyllda rader och gruppdossiern — tar bara med par där båda grupperna når tröskeln och anger hur många som utelämnats.</p>
         <p><strong>Undantag: enskilda personer i verktyget.</strong> Personer att granska (Lika arbete) och extremvärdena i Underlagets kvalitet visar enskilda löner med filens radnummer. Personer att granska kan inte exporteras eller skrivas ut.</p>
         <p><strong>Diagramdata.</strong> Alla diagram kan exporteras som bild eller som diagramdata (CSV/urklipp). För diagram som visar enskilda personer — lön mot ålder, individpunkter — innehåller diagramdatan en rad per person (utan namn eller identifierare). Hantera sådana filer som personuppgifter. PDF-rapportens mall <em>Komplett rapport</em> och ZIP-exporten innehåller bilder av sådana diagram. I CSV och urklipp får celler som börjar med = + - @ ett inledande apostrof-tecken, så att Excel inte kör dem som formler.</p>
@@ -25587,8 +26071,7 @@ const INFO_SECTIONS = {
         <ul>
             <li><strong>Underlagets kvalitet:</strong> fem kriterier — jämförbarhet, statistisk styrka, fullständighet, rimlighet och modell — som var och ett får OK, Varning eller Kritisk. Underlaget får samma status som det svagaste kriteriet.</li>
             <li><strong>Outliers-detektor:</strong> Z-score per BAS-grupp på log-lön. |Z| ≥ 3 flaggas för manuell granskning och visas med lön och filens radnummer (bara i verktyget)</li>
-            <li><strong>Lönerevisionssimulator:</strong> simulerar regelbaserade höjningar inkl. PO-påslag och beräkningsperiod (3/6/9/12 mån)</li>
-            <li><strong>Löneöversyn (prognos):</strong> budget-först — lägg in en pott (kr eller %), fördela generellt + riktat per BAS och AID, se nya löner, budgetutnyttjande och lönegap före/efter; förslag som riktar potten mot osakliga gap</li>
+            <li><strong>Löneöversyn (prognos):</strong> budget-först — lägg in en pott (kr eller %), fördela generellt + riktat per BAS och AID (en rad kan begränsas till ett kön eller till löner under en gräns, och lyfta till en nivå), se nya löner, budgetutnyttjande och lönegap före/efter; förslag som riktar potten mot osakliga gap. Kostnaden räknas med PO-påslag och beräkningsperiod från Inställningar</li>
             <li><strong>Per-BAS conditional gap:</strong> separat regression inom varje BAS-intervall — visar var i organisationen oförklarat gap ligger</li>
             <li><strong>Motivation-suggestion-engine:</strong> 8 deterministiska regler (ingen LLM) som ger HR testbara hypoteser per prio-rad — åldersskillnad, glasstak-mönster, bristyrke, MDE-tröskel m.fl.</li>
         </ul>
@@ -25713,10 +26196,11 @@ SHA-256:    Se <code>RELEASE.txt</code> i utvecklingsmappen för verifiering
 
         <h3>Externa datakällor</h3>
         <ul>
-            <li>SKR Lönestatistik (AID-klassificering)</li>
-            <li>${esc(_skrReferensInfo().kalla)} — andel kvinnor per AID-etikett i kommuner och regioner; referensvärde bredvid organisationens egen könsfördelning och reserv i Likvärdigt arbete</li>
-            <li>SCB Arbetskraftsundersökningen (åldersfördelning för demografi-flik)</li>
-            <li>SKR Cirkulär 2025 (PO-påslag 39,15%)</li>
+            <li><strong>SKR</strong> är Sveriges Kommuner och Regioner, arbetsgivarorganisationen för kommuner och regioner. Verktyget använder tre saker därifrån:</li>
+            <li>AID — yrkesindelningen (Arbetsidentifikation kommuner och regioner), som yrkeskoderna i lönefilen följer</li>
+            <li>${esc(_skrReferensInfo().kalla)} — andel kvinnor per AID-kod i kommuner och regioner. I verktyget kallad <em>Kvinnor nationellt</em>: ett referensvärde bredvid organisationens egen könsfördelning, och reserv i Likvärdigt arbete</li>
+            <li>SKR:s cirkulär 2025 — PO-påslaget 39,15 % som standardvärde i kostnadsberäkningen (andra arbetsgivare sätter sitt eget)</li>
+            <li>SCB, Arbetskraftsundersökningen (AKU) — åldersfördelningen som referens i Ålder &amp; karriär</li>
         </ul>
 
         <h3>Licens</h3>
@@ -25781,7 +26265,9 @@ _wireTablistKeys(/** @type {HTMLElement[]} */ ([...document.querySelectorAll('.i
  * aldrig med, och inte heller ett som inte har något kvar att exportera när små grupper är borta. Bilden ritas
  * av exportvägen (diagramTillBild), som alltid utelämnar små grupper om användaren inte valt annat i Utforska.
  */
-function zipDiagram() {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function zipDiagram(...a) { return medExportLage(() => _zipDiagramExport.apply(null, /** @type {any} */ (a))); }
+function _zipDiagramExport() {
     exportSakraAlla();   // varje flik som har ritats ritas om om den inte är aktuell — före uppräkningen, som annars missar ersatta diagram
     const alla = typeof _rfBehallare !== 'undefined' ? [..._rfBehallare] : [];
     return alla.filter(el => el && el.id && el.isConnected && exportTillaten(el) && diagramRitat(el))
@@ -25792,7 +26278,9 @@ function zipDiagram() {
  * ZIP-filen är "allt" (ADR-40): Word-utkastet, Excel-filen med alla flikar och diagrammen i ALLA
  * flikar. Varje upplåst flik ritas först, så att innehållet inte beror på vilka flikar som råkar ha öppnats.
  */
-async function exportZip() {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function exportZip(...a) { return medExportLage(() => _exportZipExport.apply(null, /** @type {any} */ (a))); }
+async function _exportZipExport() {
     if (typeof JSZip === 'undefined') { alert('JSZip ej laddad.'); return false; }
     if (!getData().length) { alert('Ladda upp data först.'); return false; }
     const zip = new JSZip();
@@ -25863,7 +26351,9 @@ function _rapportHpRader(seedRows) {
 }
 
 /** Alla textblock i den ordning de visas: avsnitt, yrkesgrupper, kandidatpar. */
-function rapportunderlagBlock() {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function rapportunderlagBlock(...a) { return medExportLage(() => _rapportunderlagBlockExport.apply(null, /** @type {any} */ (a))); }
+function _rapportunderlagBlockExport() {
     const d = getData();
     if (!d.length) return [];
     const k = kTroskel();
@@ -25874,12 +26364,11 @@ function rapportunderlagBlock() {
     // Sammanfattning
     const kvLon = d.filter(arKv).map(r => r.lon), maLon = d.filter(arMa).map(r => r.lon);
     const reg = runOLSRegression();
-    const uk = bedomningUnderlag();
+    const uk = bedomningUnderlag({ reg });
     const sammanfattning = {
         n: d.length, nKv: kvLon.length, nMa: maLon.length, medKv: Stat.median(kvLon), medMa: Stat.median(maLon),
         oforklarat: reg.error ? null : { pct: reg.konPct, lo: reg.konPctLow, hi: reg.konPctHigh, medBas: reg.modelName === 'full' },
         kvalitet: uk ? { status: uk.status, brister: uk.kriterier.filter(c => c.status !== 'ok').map(c => c.namn) } : null,
-        manuellt: manuellaBas(),
     };
 
     // Lika arbete — samma grupper som EU-tabellen
@@ -25923,6 +26412,11 @@ function rapportunderlagBlock() {
         block.push(_ruGruppBlock(g, { ...opt, id: `yrke:${i}`, justerat: _ruJusteratGap(rader, { k: statGolv() }), ki, arsbelopp }));
     });
     par.forEach((p, i) => block.push(_ruParBlock(p, { ...opt, id: `par:${i}`, kravProxy })));
+    // Egna tabeller (ADR-52): ett block per tabell, ur samma recept som Word-utkastet, PDF-rapporten och Excel.
+    (state.rapportTabeller || []).forEach((r, i) => {
+        if (typeof _trTabeller !== 'function' || typeof _ruEgenTabellBlock !== 'function') return;
+        _trTabeller(d, r, { k }).forEach((t, j) => block.push(_ruEgenTabellBlock(t, { ...opt, id: `egen:${i}:${j}` })));
+    });
     return block;
 }
 
@@ -25953,6 +26447,7 @@ function renderRapportunderlag() {
     const avsnitt = block.filter(b => !b.id.includes(':'));
     const yrken = block.filter(b => b.id.startsWith('yrke:'));
     const parBl = block.filter(b => b.id.startsWith('par:'));
+    const egna = block.filter(b => b.id.startsWith('egen:'));
     // Diagrammet över kandidatpar finns bara när det finns par att visa.
     const diagram = _rapportDiagramLista(_rapportParLage.harPar, _rapportParLage.exkluderade).map(g => `
         <article class="ru-block ru-diagram">
@@ -25966,11 +26461,11 @@ function renderRapportunderlag() {
     const toc = (rubrik, lista) => lista.length
         ? `<li><strong>${esc(rubrik)}</strong>: ${lista.map(b => `<a href="#" data-hoppa-till="${esc(_ruBlockId(b.id))}">${esc(b.rubrik)}</a>`).join(' · ')}</li>` : '';
     const forteckning = `<nav class="ru-toc" aria-label="Innehåll i rapportunderlaget"><ul>`
-        + toc('Avsnitt', avsnitt) + toc('Yrkesgrupper', yrken) + toc('Kandidatpar', parBl) + `</ul>`
+        + toc('Avsnitt', avsnitt) + toc('Yrkesgrupper', yrken) + toc('Kandidatpar', parBl) + toc('Egna tabeller', egna) + `</ul>`
         + `<div class="ru-atgard"><button type="button" class="btn btn-secondary btn-sm" id="btn-ru-kopiera-avsnitt">Kopiera alla avsnitt</button>`
         + `<span class="ru-kvitto" role="status"></span></div><div id="ru-alla-avsnitt" class="ru-alla-avsnitt" hidden></div></nav>`;
     host.innerHTML = forteckning + grupp('Avsnitt', avsnitt) + grupp('Yrkesgrupper i Lika arbete', yrken)
-        + grupp('Kandidatpar i Likvärdigt arbete', parBl)
+        + grupp('Kandidatpar i Likvärdigt arbete', parBl) + grupp('Egna tabeller från Utforska', egna)
         + `<h3 class="ru-grupprubrik">Diagram</h3>${diagram}`;
 }
 
@@ -25978,7 +26473,9 @@ function renderRapportunderlag() {
 function _ruBlockId(id) { return 'ru-' + String(id).replace(/[^A-Za-z0-9_-]/g, '-'); }
 
 /** Kopierar alla avsnittsblock (utan yrkes- och parblock) i en kopiering. */
-async function kopieraRapportAvsnitt() {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function kopieraRapportAvsnitt(...a) { return medExportLage(() => _kopieraRapportAvsnittExport.apply(null, /** @type {any} */ (a))); }
+async function _kopieraRapportAvsnittExport() {
     const avsnitt = [..._rapportBlockSenast.values()].filter(b => !b.id.includes(':'));
     if (!avsnitt.length) return 'saknas';
     const html = avsnitt.map(b => _ruTillWordHtml(b)).join('\n');
@@ -26022,7 +26519,9 @@ function _rapportKvitto(knapp, text) {
 }
 
 /** Kopierar ett block som formaterad text + ren text. Reserv: markera och kopiera. */
-async function kopieraRapportBlock(id) {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function kopieraRapportBlock(...a) { return medExportLage(() => _kopieraRapportBlockExport.apply(null, /** @type {any} */ (a))); }
+async function _kopieraRapportBlockExport(id) {
     const b = _rapportBlockSenast.get(id);
     if (!b) return 'saknas';
     const html = _ruTillWordHtml(b), text = _ruTillText(b);
@@ -26068,7 +26567,9 @@ function _dataUrlTillBlob(dataUrl) {
 
 /** Kopierar ett diagram som PNG (1600 × 900). Ritar fliken först om diagrammet saknas.
  *  Reserv: PNG laddas ner via exportmenyns väg. */
-async function kopieraRapportDiagram(id) {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function kopieraRapportDiagram(...a) { return medExportLage(() => _kopieraRapportDiagramExport.apply(null, /** @type {any} */ (a))); }
+async function _kopieraRapportDiagramExport(id) {
     const def = _rapportDiagramLista(_rapportParLage.harPar, _rapportParLage.exkluderade).find(g => g.id === id)
         || (id !== 'chart-likvardighet-heatmap' ? RAPPORT_DIAGRAM.find(g => g.id === id) : null);
     if (!def) return 'saknas';
@@ -26674,6 +27175,27 @@ _exploreVy?.addEventListener('click', e => {
         renderExplorer();
     }
 });
+
+// ---- Egna tabeller i rapporten (ADR-52) ----
+// Vyn sparas som ett recept (rader, kolumner, mått, urval); talen räknas om när rapporten byggs, i exportläget.
+function explorerTillRapport() {
+    const namnEl = /** @type {HTMLInputElement} */ (document.getElementById('explore-rapport-namn'));
+    const perBas = !!/** @type {HTMLInputElement} */ (document.getElementById('explore-rapport-perbas'))?.checked;
+    const status = document.getElementById('explore-rapport-status');
+    const satt = (text, ok) => { if (status) { status.textContent = text; status.className = `status-msg${ok ? ' success' : ''}`; } };
+    if (!getData().length) { satt('Läs in en lönefil först.', false); return null; }
+    const spec = _explorerSpec();
+    const recept = _trNytt(spec, { namn: namnEl ? namnEl.value : '', upprepa: perBas ? 'bas' : null });
+    if (!recept) { satt('Vyn går inte att spara som tabell.', false); return null; }
+    if (perBas && !recept.upprepa) { satt('En tabell per BAS-intervall går inte när raderna eller kolumnerna redan är BAS-intervall.', false); return null; }
+    state.rapportTabeller = [...(state.rapportTabeller || []), recept];
+    if (namnEl) namnEl.value = '';
+    satt(`Tillagd: ${recept.namn} (${state.rapportTabeller.length} ${state.rapportTabeller.length === 1 ? 'egen tabell' : 'egna tabeller'}). Ordningen ändras under Dokumentera & exportera.`, true);
+    if (typeof announceToScreenReader === 'function') announceToScreenReader(`Tabellen ${recept.namn} är tillagd i rapporten.`);
+    return recept;
+}
+document.getElementById('btn-explore-till-rapport')?.addEventListener('click', explorerTillRapport);
+document.getElementById('explore-rapport-namn')?.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); explorerTillRapport(); } });
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 // ====================================================================
@@ -28017,7 +28539,7 @@ function _gdRenderBody(d) {
         <div class="gd-kpis">
             <div class="gd-kpi"><span>${d.n}</span><small>personer</small></div>
             <div class="gd-kpi"><span>${d.nKv} / ${d.nMa}</span><small>kvinnor / män (${svPct(kvPct, 0)} kv)${d.skr
-                ? `<br>SKR: ${svPct(d.skr.pct, 0)} kvinnor i ${_skrDelText(d.skr.del)}` : ''}</small></div>
+                ? `<br><span title="${esc(skrForklaring())}">nationellt: ${svPct(d.skr.pct, 0)} kvinnor i ${_skrDelText(d.skr.del)}</span>` : ''}</small></div>
             <div class="gd-kpi"><span>${kr(d.median)}</span><small>median</small></div>
             <div class="gd-kpi"><span>${kr(d.p10)} – ${kr(d.p90)}</span><small>P10 – P90</small></div>
         </div>${d.ansvar ? `
@@ -28102,7 +28624,7 @@ function gruppdossierAsText(d) {
     const L = [];
     L.push(`GRUPPDOSSIER: ${gruppNamn(d)} - BAS ${d.bas}`);
     L.push(`Antal: ${d.n} (${d.nKv} kvinnor / ${d.nMa} man) - median ${kr(d.median)} - P10-P90 ${kr(d.p10)}-${kr(d.p90)}`);
-    if (d.skr) L.push(`Referens SKR: ${svPct(d.skr.pct, 0)} kvinnor i ${_skrDelText(d.skr.del)} (${_skrReferensInfo().kalla})`);
+    if (d.skr) L.push(`Nationell referens: ${svPct(d.skr.pct, 0)} kvinnor i ${_skrDelText(d.skr.del)} (${skrKallaKort()})`);
     if (d.ansvar) L.push(`Ansvar: Ledningsansvar ${d.ansvar.ledning.kv} kv / ${d.ansvar.ledning.ma} man - Sarskilt uppdrag ${d.ansvar.uppdrag.kv} kv / ${d.ansvar.uppdrag.ma} man`);
     if (d.gap && d.gap.pct != null) L.push(`Ojusterat gap: ${svPct(d.gap.pct, 1)} av mannens median`);
     if (d.gap && d.gap.arsbelopp) L.push(d.gap.arsbelopp);
@@ -28138,9 +28660,9 @@ document.addEventListener('keydown', e => {
 document.addEventListener('click', e => {
     if (!/** @type {HTMLElement} */ (e.target).closest('#btn-dossier-copy')) return;
     const sel = document.getElementById('dossier-select');
-    const d = sel ? buildGruppdossier(/** @type {HTMLInputElement} */ (sel).value) : null;
+    const d = sel ? medExportLage(() => buildGruppdossier(/** @type {HTMLInputElement} */ (sel).value)) : null;   // texten lämnar verktyget (ADR-51)
     if (!d) return;
-    const txt = gruppdossierAsText(d);
+    const txt = medExportLage(() => gruppdossierAsText(d));
     const done = () => { if (typeof announceToScreenReader === 'function') announceToScreenReader('Dossier kopierad.'); };
     if (navigator.clipboard?.writeText) navigator.clipboard.writeText(txt).then(done).catch(() => {});
     else done();
@@ -28294,7 +28816,9 @@ function runRobusthet() {
     setTimeout(() => { _renderRobusthetResult(host); }, 30);
 }
 
-function _renderRobusthetResult(host) {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function _renderRobusthetResult(...a) { return medExportLage(() => __renderRobusthetResultExport.apply(null, /** @type {any} */ (a))); }
+function __renderRobusthetResultExport(host) {
     const lv = robusthetLikvardighet();
     const prio = robusthetPrioritering();
 
@@ -28497,7 +29021,7 @@ function stangInstallningar() {
 
 /** Länken "Minsta gruppstorlek N" i flikarnas urvalsrad och i Översikts filrad: öppnar panelen med fokus i fältet. */
 function kTroskelLank() {
-    return `<button type="button" class="ov-filrad-lank" data-oppna-installningar="k-troskel" title="Ändra minsta gruppstorlek">Minsta gruppstorlek ${kTroskel()}</button>`;
+    return `<button type="button" class="ov-filrad-lank" data-oppna-installningar="k-troskel" title="Ändra minsta gruppstorlek">Minsta gruppstorlek ${kInstalld()}</button>`;
 }
 
 function _instRita() {
@@ -28512,13 +29036,10 @@ function _instRita() {
     const anpassad = a => (a ? 'Anpassade värden' : 'Standardvärden');
     const lv = state.likvardighet || {};
     const prioAnpassad = JSON.stringify(state.prioConfig) !== JSON.stringify(PRIO_CONFIG_DEFAULTS);
-    const kostnad = state.costSettings || COST_DEFAULTS;
     const band = document.getElementById('arbvard-band'), extrem = document.getElementById('outliers-threshold');
     const rader = [
         { flik: 'prioritering', avsnitt: 'avsnitt-pr-installningar', namn: 'Prioritering', vad: 'Trösklar och viktning',
           lage: anpassad(prioAnpassad), andrad: prioAnpassad },
-        { flik: 'prioritering', avsnitt: 'avsnitt-pr-installningar', namn: 'Prioritering', vad: 'PO-påslag och beräkningsperiod',
-          lage: `${svPct(kostnad.poPct, 2)} · ${kostnad.months} månader`, andrad: kostnad.poPct !== COST_DEFAULTS.poPct || kostnad.months !== COST_DEFAULTS.months },
         { flik: 'likvardighet', avsnitt: 'avsnitt-lv-installningar', namn: 'Likvärdigt arbete', vad: 'Kvinnotröskel, minsta gap och antal par',
           lage: anpassad(lv.kvinnoTrosholdPct !== 60 || lv.minGapPct !== 5 || lv.topN !== 20), andrad: lv.kvinnoTrosholdPct !== 60 || lv.minGapPct !== 5 || lv.topN !== 20 },
         { flik: 'likvardighet', avsnitt: 'avsnitt-lv-poang', namn: 'Likvärdigt arbete', vad: 'Ekvivalensband för arbetsvärdering med poäng',
@@ -28620,7 +29141,7 @@ function _sokRita() {
     if (!text) { lista.hidden = true; lista.innerHTML = ''; falt.setAttribute('aria-expanded', 'false'); falt.removeAttribute('aria-activedescendant'); return; }
     lista.innerHTML = _sokTraffar.length
         ? _sokTraffar.map((t, i) => `<li role="option" id="sok-traff-${i}" data-sok-index="${i}" aria-selected="${i === _sokAktiv}"><span class="sok-namn">${esc(t.namn)}</span><span class="sok-under">${esc(t.under)} · ${svTal(t.n, 0)} personer</span></li>`).join('')
-        : `<li class="sok-ingen" role="presentation">Ingen grupp matchar. Grupper med färre än ${kTroskel()} personer går inte att söka fram.</li>`;
+        : '<li class="sok-ingen" role="presentation">Ingen grupp matchar.</li>';
     lista.hidden = false;
     falt.setAttribute('aria-expanded', 'true');
     _sokMarkeraAktiv();

@@ -15,8 +15,10 @@ function buildConfigSnapshot() {
         prioConfig: { ...state.prioConfig },
         prioWeights: { ...state.prioWeights },
         costSettings: { ...state.costSettings },
-        kTroskel: kTroskel(),   // minsta gruppstorlek för redovisning (ADR-38); paketets låsningar (ADR-47) bärs inte
-        rapportUrval: state.rapportUrval ? { ordning: [...state.rapportUrval.ordning], med: [...state.rapportUrval.med] } : null,   // vilka avsnitt som följer med i rapporten
+        kTroskel: kInstalld(),  // minsta gruppstorlek för redovisning (ADR-38); paketets låsningar (ADR-47) bärs inte
+        rapportUrval: state.rapportUrval ? { ordning: [...state.rapportUrval.ordning], med: [...state.rapportUrval.med] } : null,
+        rapportTabeller: (state.rapportTabeller || []).map(t => JSON.parse(JSON.stringify(t))),   // egna tabeller: recept, inga tal (ADR-52)
+        perBasRecept: state.perBasRecept ? JSON.parse(JSON.stringify(state.perBasRecept)) : null,   // vilka avsnitt som följer med i rapporten
         // Bug-fix: Set-objekt serialiseras inte korrekt med spread/JSON
         bristAids: Array.from(state.bristAids || []),
         likvardighet: state.likvardighet ? {
@@ -242,6 +244,16 @@ function applyConfigSnapshot(cfg) {
     // Frågar vid sänkning under standard; nekad bekräftelse behåller värdet och resten läses in.
     // Omritningen görs en gång, sist (se nedan), eftersom mer än tröskeln ändras här.
     const varningar = [];
+    if (cfg.rapportTabeller != null) {
+        if (!Array.isArray(cfg.rapportTabeller)) throw new Error('rapportTabeller måste vara en array.');
+        const giltiga = cfg.rapportTabeller.map(t => _trValidera(t)).filter(Boolean);
+        if (giltiga.length < cfg.rapportTabeller.length) varningar.push(`${cfg.rapportTabeller.length - giltiga.length} egna tabeller i filen gick inte att läsa och hoppas över.`);
+        tmp.rapportTabeller = giltiga;
+    }
+    if (cfg.perBasRecept != null) {
+        if (typeof cfg.perBasRecept !== 'object') throw new Error('perBasRecept måste vara ett objekt.');
+        tmp.perBasRecept = _pbValideraRecept(cfg.perBasRecept);
+    }
     let kAndrad = false;
     if (tmp.kTroskel != null) {
         const kr = sattKTroskel(tmp.kTroskel, { rita: false });
@@ -251,6 +263,8 @@ function applyConfigSnapshot(cfg) {
     }
     state.bristAids        = tmp.bristAids || new Set();
     sattRapportUrval(tmp.rapportUrval || null);   // okända avsnitt i filen hoppas över; utan fältet gäller hela dokumentationen
+    if (tmp.rapportTabeller) state.rapportTabeller = tmp.rapportTabeller;
+    if (tmp.perBasRecept) state.perBasRecept = _pbReceptArStandard(tmp.perBasRecept) ? null : tmp.perBasRecept;
     if (tmp.likvardighet) {
         state.likvardighet = { ...state.likvardighet, ...tmp.likvardighet, result: null };
     }
@@ -367,7 +381,9 @@ document.getElementById('btn-config-load')?.addEventListener('change', e => {
 });
 
 // ---- #18 A/B-jämförelse via snapshot ----
-function buildAnalysisSnapshot() {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function buildAnalysisSnapshot(...a) { return medExportLage(() => _buildAnalysisSnapshotExport.apply(null, /** @type {any} */ (a))); }
+function _buildAnalysisSnapshotExport() {
     const d = getData();
     if (!d.length) return null;
     const kv = d.filter(r => r.kon.includes('kvinna'));

@@ -134,7 +134,8 @@ function _renderTabContent(target) {
     else if (target === "likvardighet" && (d.length || state.statistik.length)) renderLikvardighet();
     else if (target === "utforska"     && d.length) { generateRapport(); renderExplorer(); }
     else if (target === "lonepolitik"  && d.length) renderLonepolitik();
-    else if (target === "dokumentera") { if (d.length) renderKvalitetssakring(); renderRapportunderlag(); renderExportBesked(); }
+    else if (target === "dokumentera") medExportLage(() => { if (d.length) renderKvalitetssakring(); renderRapportunderlag(); renderExportBesked(); });   // allt här lämnar verktyget (ADR-51)
+    else if (target === "dashboard" && d.length) renderOversiktDelar();
     else if (target === "info")  renderInfoTab();
     else if (target === "handlingsplan") renderHandlingsplanSeed();
     else if (target === "bestammelser") { if (typeof bes8Uppdatera === 'function') bes8Uppdatera(); }

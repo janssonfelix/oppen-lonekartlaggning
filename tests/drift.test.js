@@ -52,6 +52,8 @@ import * as libReg from '../src/lib/regression.js';
 import * as libPr from '../src/lib/prioritering.js';
 import * as libLc from '../src/lib/livscykel.js';
 import * as libOf from '../src/lib/organisationsfil.js';
+import * as libPb from '../src/lib/perbas.js';
+import * as libTr from '../src/lib/tabellrecept.js';
 import { MODULES, generateMirrorsSource } from '../tools/gen-mirrors.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -84,7 +86,7 @@ const allEntries = MODULES.flatMap(m => Object.keys(m.expose));
 const M = new Function(`${mirrorsSrc}\n;return { ${[...allAliases, ...MODULES.map(m => m.ns)].join(', ')} };`)();
 const libByFile = { 'stat.js': libStat, 'loneoversyn.js': libFc, 'struktur.js': libSt,
     'lonepolitik.js': libLp, 'rng.js': libRng, 'likvardighet.js': libLv, 'falt.js': libFalt, 'urval.js': libUrval, 'referens.js': libRef, 'datakvalitet.js': libDq, 'rapportunderlag.js': libRu, 'gapuppdelning.js': libGu, 'individflaggor.js': libIf, 'utforska.js': libUt, 'organisationspaket.js': libOp, 'attgora.js': libAg, 'aid-etiketter.js': libAidEt, 'aid.js': libAid, 'sektor.js': libSk, 'ansvar.js': libAn, 'aidkontroll.js': libAk, 'skr-personal.js': libSkrP, 'skrreferens.js': libSkrR, 'jamforelse.js': libJf, 'namn.js': libNamn, 'docx.js': libDocx, 'figur.js': libFigur, 'regression.js': libReg,
-    'prioritering.js': libPr, 'livscykel.js': libLc, 'organisationsfil.js': libOf };
+    'prioritering.js': libPr, 'livscykel.js': libLc, 'organisationsfil.js': libOf, 'perbas.js': libPb, 'tabellrecept.js': libTr };
 
 describe('lib-speglar: 09-lib-speglar.js genereras ur src/lib/', () => {
     it('STALENESS: incheckad 09-lib-speglar.js är i synk med src/lib/ (kör gen-mirrors)', () => {
@@ -171,6 +173,7 @@ const appLVSrc = (() => {
 // kTroskel() läses ur state, som i appen (adaptern skickar värdet vidare till lib).
 const makeAppLV = new Function('state', 'nationellAidKlass', '_lvComputePairs', `
     const kTroskel = () => state.kTroskel ?? 10;
+    const kInstalld = kTroskel;
     // Talformatshjälparna ur 03-hjalpfunktioner.js: adaptern skriver diagnostik med dem.
     const svTal = (v, dec = 0) => Number(v).toFixed(dec).replace('.', ',');
     const svPct = (v, dec = 1) => svTal(v, dec) + ' %';

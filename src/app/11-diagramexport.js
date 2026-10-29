@@ -98,13 +98,24 @@ function _chartExportKarna(gd) {
     return !!gd && (!!gd._figur || _rfHarRitat(gd));
 }
 
-/** Det som får exporteras ur ett diagram ritat med diagramkärnan, eller null när inget finns att exportera. */
-function _chartExportUnderlag(gd) {
+/** Behållaren som gäller nu: en omritning i exportgrinden kan ha ersatt den med en ny med samma id. */
+function _chartExportAktuell(gd) { return gd && gd.isConnected === false && gd.id ? (document.getElementById(gd.id) || gd) : gd; }
+
+/** Det som får exporteras ur ett diagram ritat med diagramkärnan, eller null när inget finns att exportera.
+ *  Går alltid genom exportläget (ADR-51): figuren läses med den inställda tröskeln. Bilden görs asynkront av dem som
+ *  anropar (chartExportRun, diagramTillBild), som själva står i exportläget tills bilden är klar. */
+function _chartExportUnderlag(...a) { return medExportLage(() => _chartExportUnderlagExport.apply(null, /** @type {any} */ (a))); }
+function _chartExportUnderlagExport(gd) {
     // Ett diagram som inte får lämna verktyget (markeraUtanExport) har inget att exportera, vilken väg som än frågar.
     if (!exportTillaten(gd)) return null;
     // Exportgrinden (23-exportgrind.js): diagrammets flik ska vara ritad med det som gäller nu. Ett diagram som en
     // omritning har ersatt (det gamla elementet sitter inte kvar i sidan) har inget att exportera.
-    if (typeof exportSakra === 'function' && !exportSakra(gd)) return null;
+    if (typeof exportSakra === 'function' && !exportSakra(gd)) {
+        // Omritningen kan ha ersatt behållaren: då gäller den nya med samma id.
+        const ny = gd.isConnected === false && gd.id ? document.getElementById(gd.id) : null;
+        if (!ny || ny === gd || !exportSakra(ny)) return null;
+        gd = ny;
+    }
     const ut = _rfExportFigur(gd);
     return ut && !ut.tom ? ut : null;
 }
@@ -117,6 +128,7 @@ function _chartExportUnderlag(gd) {
 function chartExportRows(gd, underlag) {
     const ut = underlag === undefined ? _chartExportUnderlag(gd) : underlag;
     if (!ut) return [];
+    gd = _chartExportAktuell(gd);
     const medSma = ut.visaSma;
     const rader = _figTillTabell(medSma ? ut.figur : _figUtanSma(ut.figur)).map(r => r.map(_chartExportCell));
     const beskrivning = typeof gd._exportBeskrivning === 'string' ? gd._exportBeskrivning : '';
@@ -148,23 +160,29 @@ function diagramRitat(el) {
 /** Ett ritat diagram som PNG (data-URL) — den enda vägen till en diagrambild för rapportunderlag, ZIP, utskrift
  *  och prioriteringsmatrisen (ADR-39): originalfiguren utan små grupper (om inte vyn sagt annat) och med de serier
  *  användaren dolt. `utanRubrik`: bilden får ingen rubrik och fotrad (utskriften sätter egna rubriker). */
-async function diagramTillBild(el, val) {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function diagramTillBild(...a) { return medExportLage(() => _diagramTillBildExport.apply(null, /** @type {any} */ (a))); }
+async function _diagramTillBildExport(el, val) {
     const { bredd, hojd, utanRubrik = false } = val || {};
     const skal = exportSkal(el);
     if (skal) throw new Error(`Diagrammet lämnar inte verktyget: det ${skal}.`);
     const ut = _chartExportUnderlag(el);
+    el = _chartExportAktuell(el);
     if (!ut) throw new Error('Det finns inget att exportera i diagrammet.');
     const url = await figurTillBild(ut.bild || ut.figur, 'png', bredd, hojd, { visaSma: ut.visaSma, dolda: ut.dolda, ...(utanRubrik ? {} : _chartExportRubrikFot(el)) });
     if (el._figur !== ut.figur) throw new Error('Diagrammet rensades innan exporten blev klar.');
     return url;
 }
 
-async function _chartExportImage(gd, val, underlag) {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function _chartExportImage(...a) { return medExportLage(() => __chartExportImageExport.apply(null, /** @type {any} */ (a))); }
+async function __chartExportImageExport(gd, val, underlag) {
     const [width, height] = CHART_EXPORT_STORLEKAR[val];
     const format = val === 'svg' ? 'svg' : 'png';
     // Originalfiguren med visaSma enligt vyn och de serier användaren dolt: samma bild som på skärmen,
     // utan små grupper. Meningen om sänkt tröskel lägger figurTillSvg dit.
     const ut = underlag === undefined ? _chartExportUnderlag(gd) : underlag;
+    gd = _chartExportAktuell(gd);
     if (!ut) throw new Error('Det finns inget att exportera i diagrammet.');
     const url = await figurTillBild(ut.bild || ut.figur, format, width, height, { visaSma: ut.visaSma, dolda: ut.dolda, ..._chartExportRubrikFot(gd) });
     // Bilden görs asynkront. Har diagrammet under tiden rensats (Rensa all data) eller fått en annan figur
@@ -180,9 +198,12 @@ async function _chartExportImage(gd, val, underlag) {
     if (typeof _showExportSensitivityToast === 'function') _showExportSensitivityToast();
 }
 
-function chartExportRun(gd, val) {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function chartExportRun(...a) { return medExportLage(() => _chartExportRunExport.apply(null, /** @type {any} */ (a))); }
+function _chartExportRunExport(gd, val) {
     // Underlaget bestäms här, en gång (ett anrop av vyns exportMedSma).
     const underlag = _chartExportKarna(gd) ? _chartExportUnderlag(gd) : undefined;
+    gd = _chartExportAktuell(gd);
     // Ett diagram från diagramkärnan utan något att exportera: ingen fil, ingenting på urklipp.
     if (underlag === null) return Promise.reject(new Error('Det finns inget att exportera i diagrammet.'));
     if (val === 'data-kopiera') return Promise.resolve(_copyMatrixToClipboard(chartExportRows(gd, underlag)));

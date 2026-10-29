@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { byggPaket, tolkaPaket, PAKET_FORMAT, PAKET_MAX_BYTE } from '../src/lib/organisationspaket.js';
+import { nyttRecept } from '../src/lib/tabellrecept.js';
+import { perBasStandard } from '../src/lib/perbas.js';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -273,5 +275,41 @@ describe('organisationspaket: exemplet i guiden', () => {
         const ombyggt = byggPaket({ organisation: t.paket.organisation, utgivare: t.paket.utgivare, skapat: t.paket.skapat,
             avserAr: t.paket.avserAr, profil: d.profil, installningar: d.installningar, referens: d.referens, statistik: d.statistik });
         expect(ombyggt).toEqual(p);
+    });
+});
+
+describe('organisationspaket: rapportens recept (ADR-52)', () => {
+    const recept = () => nyttRecept({ rad: 'aid', matt: 'median' }, { namn: 'Median per yrke' });
+    it('egna tabeller och ett eget recept per BAS följer med och kommer tillbaka', () => {
+        const r = recept();
+        const perBas = { ...perBasStandard(), dim: 'sektor', matt: ['med'] };
+        const p = byggPaket({ ...underlag(), rapport: { tabeller: [r], perBasRecept: perBas } });
+        expect(p.rapport.tabeller).toEqual([r]);
+        expect(p.rapport.perBasRecept).toMatchObject({ dim: 'sektor', matt: ['med'] });
+        const t = tolka(p);
+        expect(t.ok).toBe(true);
+        expect(t.varningar).toEqual([]);
+        expect(t.delar.rapport).toEqual({ tabeller: [r], perBasRecept: p.rapport.perBasRecept });
+    });
+    it('standardreceptet per BAS och tomma listor utelämnas; utan del är rapport null', () => {
+        expect('rapport' in byggPaket({ ...underlag(), rapport: { tabeller: [], perBasRecept: perBasStandard() } })).toBe(false);
+        expect(tolka(byggPaket(underlag())).delar.rapport).toBeNull();
+        const p = byggPaket({ ...underlag(), rapport: { tabeller: [recept()], perBasRecept: perBasStandard() } });
+        expect('perBasRecept' in p.rapport).toBe(false);
+    });
+    it('ett ogiltigt tabellrecept hoppas över med en varning; ett okänt BAS-recept blir standard och utelämnas', () => {
+        const p = byggPaket({ ...underlag(), rapport: { tabeller: [recept()] } });
+        p.rapport.tabeller.push({ id: 'x', namn: 'Trasig', spec: { rad: 'finns-inte', matt: 'median' } });
+        p.rapport.perBasRecept = { dim: 'galax' };
+        const t = tolka(p);
+        expect(t.ok).toBe(true);
+        expect(t.varningar).toEqual(['1 egen tabell i paketet gick inte att läsa och hoppas över.']);
+        expect(t.delar.rapport.tabeller).toHaveLength(1);
+        expect('perBasRecept' in t.delar.rapport).toBe(false);
+    });
+    it('ett receptnamn som liknar en personuppgift stoppar paketet', () => {
+        const r = nyttRecept({ rad: 'aid', matt: 'median' }, { namn: 'Anna 19850101-1234' });
+        const t = tolka(byggPaket({ ...underlag(), rapport: { tabeller: [r] } }));
+        expect(t.ok).toBe(false);
     });
 });

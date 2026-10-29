@@ -783,6 +783,8 @@ details.avsnitt[open]:not(.card) { padding-bottom: 20px; }
 }
 @media (max-width: 640px) { .upload-row { grid-template-columns: 1fr; } }
 .upload-row-bred { grid-column: 1 / -1; }
+.paket-forst { margin: 0 0 14px; border-top: 3px solid var(--primary); }
+.steg-nr { display: inline-block; margin-right: 6px; padding: 1px 7px; border-radius: 10px; background: var(--primary); color: #fff; font-size: var(--fs-xs); font-weight: 700; letter-spacing: 0.02em; vertical-align: middle; }
 /* Organisationspaket (ADR-28) */
 .paket-innehall { padding: 12px 4px; line-height: 1.6; font-size: var(--fs-sm); }
 .paket-rad { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 10px; }
@@ -1934,6 +1936,8 @@ td > .k-mask-note { position: sticky; left: 0; max-width: calc(100cqw - 24px); w
 }
 .forecast-target-row select,
 .forecast-target-row input { font-size: var(--fs-sm); padding: 4px 6px; border: 1px solid var(--border); border-radius: 4px; }
+.forecast-target-row .ft-cap { font-size: var(--fs-sm); color: var(--text-muted); white-space: nowrap; }
+.forecast-target-row .ft-cap input { width: 96px; }
 
 @media print {
     #view-trend { display: block !important; page-break-before: always; }
@@ -2845,6 +2849,24 @@ summary:focus-visible {
 .k-troskel-varning[hidden] { display: none; }
 .k-troskel-varning a { color: var(--status-kritisk); font-weight: 600; margin-left: auto; }
 .k-troskel-hjalp { margin: 2px 0 0; font-size: var(--fs-xs); color: var(--text-muted); }
+/* Förhandsvisning av exporten (ADR-51): bannern och en streckad ram runt innehållet så länge den är på. */
+.forhandsvisning-banner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0 0 16px;
+    padding: 10px 16px;
+    background: var(--status-varning-yta);
+    border: 1px solid var(--status-varning-kant);
+    border-left: 4px solid var(--status-varning);
+    border-radius: 6px;
+    color: var(--status-varning);
+    font-size: var(--fs-sm);
+}
+.forhandsvisning-banner[hidden] { display: none; }
+.forhandsvisning-av { margin-left: auto; background: none; border: 1px solid var(--status-varning); color: var(--status-varning); border-radius: 6px; padding: 4px 10px; font: inherit; font-weight: 600; cursor: pointer; white-space: nowrap; }
+body.forhandsvisning .content-body { outline: 3px dashed var(--status-varning); outline-offset: -3px; }
+#btn-forhandsvisa[aria-pressed="true"] { background: var(--status-varning-bg); border-color: var(--status-varning); color: var(--status-varning); }
 /* Utskrift går via #print-report; meningen om sänkt gruppstorlek skrivs av rapporten själv. */
 
 /* ---- Smala skärmar, innehållet ----

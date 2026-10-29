@@ -92,7 +92,7 @@ function _evidenceForLikvardighetPair(p) {
             // Endast det som INTE redan står i tabellraden: varför jämförelseyrket räknas
             // som icke-kvinnodominerat, hur säkerheten bedöms, och vad påverkansindex betyder.
             { label: 'Varför jämförbart yrke?',
-              value: ärIntern ? 'Organisationens eget yrke (intern)' : (p.maKlassKort === 'lokal' ? 'Faktisk könsfördelning (jämförelsestatistiken)' : 'SKR:s personalstatistik (nationell reserv)'),
+              value: ärIntern ? 'Organisationens eget yrke (intern)' : (p.maKlassKort === 'lokal' ? 'Faktisk könsfördelning (jämförelsestatistiken)' : `Nationell könsfördelning som reserv (${skrKallaKort()})`),
               note: ärIntern
                 ? `${svPct(p.maKvAndel, 0)} kvinnor i organisationen’s grupp${p.maN != null ? ` (n=${p.maN})` : ''}: icke-kvinnodominerat`
                 : (p.maKlassKort === 'lokal'
@@ -357,43 +357,3 @@ function _evidenceForPaygapRow(p) {
     };
 }
 
-/**
- * Bevis-payload för Lönerevisionssimulatorns resultat-block.
- * @param {Object} res - resultatet från runSalarySimulation()
- */
-function _evidenceForSimulation(res) {
-    const fmtKr = v => v == null ? '—' : Math.round(v).toLocaleString('sv-SE') + ' kr';
-    const fmtN = v => v == null ? '—' : v.toLocaleString('sv-SE');
-    const fmtPct = v => v == null ? '—' : (v >= 0 ? '+' : '') + svPct(v, 2);
-    const months = state.costSettings?.months || 12;
-    const poPct  = state.costSettings?.poPct  || 0;
-    const poFactor = 1 + poPct / 100;
-    const dGap = (res.beforeGap != null && res.afterGap != null) ? res.afterGap - res.beforeGap : null;
-    const dUnexp = (res.beforeUnexplained != null && res.afterUnexplained != null) ? res.afterUnexplained - res.beforeUnexplained : null;
-
-    return {
-        title: 'Bevis — Lönerevisionssimulering',
-        intro: `Simuleringen kör analysen två gånger — en gång på original-data och en gång på data där den valda regeln tillämpats. Inga ändringar görs på den faktiska state.data — allt sker i en in-memory-kopia.`,
-        rows: [
-            { label: 'Berörda personer',                  value: fmtN(res.affectedCount), note: `Kvinnor: ${res.affectedKv} · Män: ${res.affectedMa}` },
-            { label: 'Total månadskostnad (lönelyft)',    value: fmtKr(res.totalMonthlyCost), note: 'Summa av alla lönehöjningar per månad' },
-            { label: 'Total årskostnad (inkl. PO)',       value: fmtKr(res.totalAnnualCost), note: `Månadskostnad × ${months} mån × ${svTal(poFactor, 4)} (PO-faktor)` },
-            { label: '— Rågap (median kvinnor mot män)',    value: '', note: res.konNot || '' },
-            { label: 'Före simulering',                    value: fmtPct(res.beforeGap) },
-            { label: 'Efter simulering',                   value: fmtPct(res.afterGap) },
-            { label: 'Δ Rågap',                            value: dGap != null ? (dGap >= 0 ? '+' : '') + svTal(dGap, 2) + ' pp' : '—', note: dGap != null && Math.abs(res.afterGap) < Math.abs(res.beforeGap) ? 'närmare 0 — förbättring' : 'längre från 0 — försämring' },
-            { label: '— Oförklarat gap (regressionen)',  value: '' },
-            { label: 'Före simulering',                    value: fmtPct(res.beforeUnexplained) + (res.beforeUnexplainedSig ? ' (sig.)' : '') },
-            { label: 'Efter simulering',                   value: fmtPct(res.afterUnexplained) + (res.afterUnexplainedSig ? ' (sig.)' : '') },
-            { label: 'Δ Oförklarat',                       value: dUnexp != null ? (dUnexp >= 0 ? '+' : '') + svTal(dUnexp, 2) + ' pp' : '—' }
-        ],
-        formula: `<strong>Kostnadsberäkning:</strong><br>
-            Årskostnad = Σ(lönehöjning) × ${months} mån × (1 + ${svPct(poPct, 2)} PO)<br>
-            = ${fmtKr(res.totalMonthlyCost)} × ${months} × ${svTal(poFactor, 4)}<br>
-            = <strong>${fmtKr(res.totalAnnualCost)}</strong><br><br>
-            <strong>Effekt på gap:</strong><br>
-            • <em>Rågapet</em> beräknas via direkt median-jämförelse på simulerad data<br>
-            • <em>Oförklarat gap</em> körs om hela OLS-regressionen (log(lön) ~ kön + ålder + BAS) på simulerad data och tar β_kön omräknat till %`,
-        footer: `Simuleringen ändrar inte den underliggande datan — state.data återställs alltid efter beräkningen (try/finally-garanti). PO-faktorn (${svPct(poPct, 2)}) och beräkningsperioden (${months} månader) konfigureras i Prioriteringsflikens kostnadssektion.`
-    };
-}

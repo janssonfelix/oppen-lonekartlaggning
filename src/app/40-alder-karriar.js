@@ -30,7 +30,7 @@ function renderKon(bas) {
     const ageAdjGap = !konOk ? "–" : expMa > 0 ? svPct((expKv/expMa)*100, 1) : "–";
     // Urvalsraden och avsnittens nyckeltal (ADR-41).
     const urvalText = document.getElementById('ak-urval-text');
-    if (urvalText) urvalText.textContent = `${svTal(df.length, 0)} personer · minsta gruppstorlek ${kTroskel()}`;
+    if (urvalText) urvalText.textContent = `${svTal(df.length, 0)} personer · minsta gruppstorlek ${kInstalld()}`;
     _laNyckel('nyckel-ak-fordelning', konOk && medMa > 0 ? `Kvinnors median ${unadjGap} av mäns` : '');
     _laNyckel('nyckel-ak-alla', `${getBasIntervals().length} BAS-intervall`);
     /** @type {HTMLElement} */ (document.getElementById("kon-kpi-n")).textContent = svTal(df.length, 0);

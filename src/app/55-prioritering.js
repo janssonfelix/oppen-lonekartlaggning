@@ -58,10 +58,10 @@ function generateMotivationSuggestions(item) {
     if (!rows.length) return out;
 
     // 1. Underlag: ett kön under minsta gruppstorlek (beslut av produktägaren 2026-10-16; tidigare ett fast 5)
-    if (item.kvN < kTroskel() || item.maN < kTroskel()) {
+    if (item.kvN < kInstalld() || item.maN < kInstalld()) {   // varningen gäller skattningens säkerhet, inte läget
         out.push({
             type: 'warn',
-            text: `Underlaget är litet (${item.kvN} kvinnor / ${item.maN} män; minsta gruppstorlek ${kTroskel()}). Skillnaden kan inte säkerställas statistiskt — ett tips är att överväga att slå ihop med en näraliggande BAS-grupp eller titta på individerna var för sig.`
+            text: `Underlaget är litet (${item.kvN} kvinnor / ${item.maN} män; minsta gruppstorlek ${kInstalld()}). Skillnaden kan inte säkerställas statistiskt — ett tips är att överväga att slå ihop med en näraliggande BAS-grupp eller titta på individerna var för sig.`
         });
     }
 
@@ -193,7 +193,6 @@ function _fmtCost(kr) {
 }
 
 function renderPrioritering() {
-    _simSynkaKnapp();   // simulatorns knapp följer tröskeln och urvalet (14-lonesimulator.js)
     const ref = _selectedPrioReference();
     const empty   = document.getElementById('prio-empty');
     const content = document.getElementById('prio-content');
@@ -575,35 +574,37 @@ function _readCostSettings() {
         const isCustom = state.costSettings.months !== COST_DEFAULTS.months || Math.abs(state.costSettings.poPct - COST_DEFAULTS.poPct) > 0.01;
         sum.innerHTML = isCustom
             ? `<strong class="farg-varning">${ikon('kugghjul')} Anpassad konfiguration:</strong> ${state.costSettings.months} mån × ${svPct(state.costSettings.poPct, 2)} PO`
-            : `Standard: ${state.costSettings.months} mån × ${svPct(state.costSettings.poPct, 2)} PO (SKR Cirkulär 2024)`;
+            : `Standard: ${state.costSettings.months} mån × ${svPct(state.costSettings.poPct, 2)} PO (SKR:s cirkulär 2025 för kommuner och regioner)`;
     }
 }
+// Fälten står under Inställningar i sidhuvudet (gäller alla flikar): Prioritering räknas om direkt, och den flik som
+// visas ritas om så att Löneöversyn, gruppdossiern och handlingsplanen följer samma period och påslag.
+function _kostnadAndrad() {
+    _readCostSettings();
+    if (!state.data.length) return;
+    renderPrioritering();
+    const aktiv = document.querySelector('.nav-item.active')?.getAttribute('data-tab');
+    if (aktiv && aktiv !== 'prioritering' && typeof renderTabContent === 'function') renderTabContent(aktiv);
+}
 ['prio-cost-months','prio-po-pct'].forEach(id => {
-    document.getElementById(id)?.addEventListener('input', () => {
-        _readCostSettings();
-        renderPrioritering();
-    });
-    document.getElementById(id)?.addEventListener('change', () => {
-        _readCostSettings();
-        renderPrioritering();
-    });
+    document.getElementById(id)?.addEventListener('input', _kostnadAndrad);
+    document.getElementById(id)?.addEventListener('change', _kostnadAndrad);
 });
 document.getElementById('prio-cost-reset')?.addEventListener('click', () => {
     /** @type {HTMLInputElement} */ (document.getElementById('prio-cost-months')).value = String(COST_DEFAULTS.months);
     /** @type {HTMLInputElement} */ (document.getElementById('prio-po-pct')).value      = String(COST_DEFAULTS.poPct);
-    _readCostSettings();
-    renderPrioritering();
+    _kostnadAndrad();
 });
 // Initiera period-sammanfattningen vid sidladdning
 setTimeout(_readCostSettings, 0);
 
-document.getElementById('btn-export-prio-excel')?.addEventListener('click', () => {
+document.getElementById('btn-export-prio-excel')?.addEventListener('click', () => medExportLage(() => {
     const table = document.getElementById('prio-table');
     if (table) {
         const wb = tableToCleanBook('prio-table', 'Prioritering');
         if (wb) { _appendMethodSheet(wb); XLSX.writeFile(wb, 'prioriteringslista.xlsx'); _showExportSensitivityToast(); }
     }
-});
+}));
 
 // ---- Print-to-PDF: komplett rapport ----
 // Använder webbläsarens inbyggda "Skriv ut → Spara som PDF". Inga externa beroenden.

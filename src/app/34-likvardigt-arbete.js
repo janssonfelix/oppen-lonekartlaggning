@@ -25,7 +25,7 @@ function _lvSkrPct(aid) {
 }
 function _lvSkrKort(aid) {
     const ref = _skrKvinnoandel(aid, { del: _skrDel() });
-    return ref ? ` (SKR ${svPct(ref.pct, 0)})` : '';
+    return ref ? ` (nationellt ${svPct(ref.pct, 0)})` : '';
 }
 
 // Åldersjusteringens krav (speglar ALDERS_GOLV_DEFAULT och ALDERS_SPRIDNING_MIN i src/lib/likvardighet.js).
@@ -73,7 +73,7 @@ function computeLikvardighetPairs() {
         kvinnoTrosholdPct: kvinnoThr,
         minGapPct: cfg.minGapPct ?? 0,     // default 0 (visa alla med jämförelseyrket högre)
         topN: cfg.topN ?? 100,
-        k: kTroskel()                      // bara för att räkna små grupper i diagnostiken; analysen maskar inte
+        k: kInstalld()                     // bara för att räkna små grupper i diagnostiken (undantaget gäller exporten); analysen maskar inte
     };
     if (usePoang) {
         opts.poangByKey = av.byKey;
@@ -242,7 +242,7 @@ function renderLikvardighet() {
                     en viss BAS används <em>jämförelsestatistiken</em> som extern proxy
                     ${d.statistik.harLokalKonsdata
                         ? `<span class="farg-ok">(lokal könsfördelning).</span>`
-                        : `<span class="varning-pa-yta">(könsfördelningen hämtas då ur SKR:s personalstatistik: kvinnoandel per AID-etikett i ${_skrDelText(_skrDel())}).</span>`}</li>
+                        : `<span class="varning-pa-yta">(könsfördelningen hämtas då ur den nationella statistiken: andel kvinnor per AID-kod i ${_skrDelText(_skrDel())}, ${esc(skrKallaKort())}).</span>`}</li>
                 <li><strong>Steg 3</strong>: Flagga par där jämförelseyrkets median är högre
                     än det kvinnodominerade yrkets. Varje par får ett
                     <strong>bootstrap-95 %-konfidensintervall</strong> på medianskillnaden.
@@ -277,13 +277,13 @@ function renderLikvardighet() {
                     <strong>jämförelsestatistiken</strong>
                     <ul class="lh-1_6 marg-6-0-0 pad-v-18">
                         <li>Totalt inlästa rader: <strong>${d.statistik.totalRader.toLocaleString('sv-SE')}</strong></li>
-                        <li>Lokal könsdata: <strong>${d.statistik.harLokalKonsdata ? 'ja' : 'nej — SKR:s personalstatistik som reserv'}</strong></li>
+                        <li>Lokal könsdata: <strong>${d.statistik.harLokalKonsdata ? 'ja' : `nej — nationell könsfördelning ur ${esc(skrKallaKort())} som reserv`}</strong></li>
                         <li>Klassificering:
                             <strong class="farg-ok">${d.statistik.klass.ickeKv} icke-kv-dom</strong>,
                             ${d.statistik.klass.kvDom} kv-dom,
                             ${d.statistik.klass.blandat} blandat,
                             ${d.statistik.klass.oklassificerad} oklassificerade</li>
-                        <li>Källa: ${d.statistik.klassKalla.lokal} lokal, ${d.statistik.klassKalla.scb} SKR:s personalstatistik</li>
+                        <li>Källa: ${d.statistik.klassKalla.lokal} lokal, ${d.statistik.klassKalla.scb} nationell statistik (SKR)</li>
                         ${d.statistik.exempelIckeKv.length
                             ? `<li class="marg-t-4"><small class="f-dampad">Exempel icke-kv-dom: ${d.statistik.exempelIckeKv.map(esc).join(' · ')}</small></li>`
                             : ''}
@@ -386,7 +386,7 @@ function renderLikvardighet() {
     const källBadge = p => {
         if (p.jamforKalla === 'intern') return `<span class="bak-ok-bg rund-8 farg-ok fs-0_72rem pad-1-6" title="Organisationens eget yrke (inom-arbetsgivare-jämförelse)">intern</span>`;
         if (p.maKlassKort === 'lokal') return `<span class="bak-varning-bg rund-8 farg-varning fs-0_72rem pad-1-6" title="jämförelsestatistiken, egen könsfördelning">Statistiken</span>`;
-        return `<span class="bak-varning-bg rund-8 farg-varning fs-0_72rem pad-1-6" title="jämförelsestatistiken, könsfördelning ur SKR:s personalstatistik">SKR</span>`;
+        return `<span class="bak-varning-bg rund-8 farg-varning fs-0_72rem pad-1-6" title="jämförelsestatistiken; könsfördelningen ur den nationella statistiken (${esc(skrKallaKort())})">nationell</span>`;
     };
     const ciCell = p => {
         if (!p.gapCI || p.gapCI.lo == null) return '<span class="f-dampad" title="För få observationer för bootstrap">—</span>';
@@ -403,7 +403,7 @@ function renderLikvardighet() {
     const parRows = result.pairs.map((p, i) => `
         <tr>
             <td>${i + 1}</td>
-            <td><strong>${esc(p.kvAid)}</strong>${p.kvLabel && p.kvLabel !== p.kvAid ? ' ' + esc(p.kvLabel) : ''}<br><small class="f-dampad lv-under"${_lvSkrKort(p.kvAid) ? ` title="Andel kvinnor i yrket enligt SKR:s personalstatistik:${esc(_lvSkrKort(p.kvAid).replace(/[()]|SKR/g, ''))}"` : ''}>BAS ${esc(p.kvBas)} · ${svPct(p.kvKvinnoPct, 0)} kv<span class="bara-export">${_lvSkrKort(p.kvAid)}</span> · n=${p.kvN}</small></td>
+            <td><strong>${esc(p.kvAid)}</strong>${p.kvLabel && p.kvLabel !== p.kvAid ? ' ' + esc(p.kvLabel) : ''}<br><small class="f-dampad lv-under"${_lvSkrKort(p.kvAid) ? ` title="Andel kvinnor i yrket nationellt (${esc(skrKallaKort())}):${esc(_lvSkrKort(p.kvAid).replace(/[()]|SKR/g, ''))}"` : ''}>BAS ${esc(p.kvBas)} · ${svPct(p.kvKvinnoPct, 0)} kv<span class="bara-export">${_lvSkrKort(p.kvAid)}</span> · n=${p.kvN}</small></td>
             <td class="t-hoger">${fmtKr(p.kvMedian)}</td>
             <td><strong>${esc(p.maAid)}</strong>${p.maLabel && p.maLabel !== p.maAid ? ' ' + esc(p.maLabel) : ''}<br><small class="f-dampad lv-under">BAS ${esc(p.maBas)} · ${svPct(p.maKvAndel, 0)} kv ${källBadge(p)}${p.maN != null ? ` · n=${p.maN}` : ''}</small></td>
             <td class="t-hoger">${fmtKr(p.maMedian)}</td>
@@ -778,7 +778,9 @@ function _lvParFigur(pairs, max = 14) {
 // Metodraden om åldersjusteringen (CSV:ns metadata och Excel-arbetsbokens metadatablad).
 const LV_JUSTERAD_METOD = 'Jämförelseyrkets lön omräknad till det kvinnodominerade yrkets åldersfördelning: log(lön) = a + b·ålder skattas i jämförelseyrket (minst ' + ALDERS_GOLV + ' personer, minst ' + ALDERS_SPRIDNING + ' års åldersspridning), lönen prediceras vid varje person i det kvinnodominerade yrket och medianen av prediktionerna jämförs med dess median. Den råa skillnaden är det lagen prövar; den justerade visar hur mycket som kan bero på åldersstruktur. Bara interna par; tomt när den inte kan räknas.';
 
-function exportLikvardighetCSV() {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function exportLikvardighetCSV(...a) { return medExportLage(() => _exportLikvardighetCSVExport.apply(null, /** @type {any} */ (a))); }
+function _exportLikvardighetCSVExport() {
     const result = likvardighetResultat();
     if (!result || !Array.isArray(result.pairs) || !result.pairs.length) {
         alert('Inga jämförelsepar att exportera. Kontrollera att Steg 3 i fliken visar par.');
@@ -834,7 +836,9 @@ function exportLikvardighetCSV() {
     _downloadCSV(rows, 'lonekartlaggning_likvardighet_' + new Date().toISOString().slice(0, 10), { undantag: 'Likvärdigt arbete' });
 }
 
-function exportLikvardighet() {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function exportLikvardighet(...a) { return medExportLage(() => _exportLikvardighetExport.apply(null, /** @type {any} */ (a))); }
+function _exportLikvardighetExport() {
     // STEG 0: Diagnostiska statusmeddelanden så användaren ser EXAKT var det
     // klickar. Om något felar visas alert med stegnamn — användaren kan
     // rapportera, vi kan felsöka.

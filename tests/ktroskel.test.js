@@ -6,7 +6,7 @@
  */
 import { describe, it, expect, beforeAll, vi } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
-import { FLIKAR, normalisera, synliga, fonster, ritaAlla, SENT_MELLAN, SENT_SMA } from './helpers/ktroskel-rigg.js';
+import { FLIKAR, normalisera, synliga, fonster, ritaAlla, SENT_MELLAN, SENT_SMA, iExport } from './helpers/ktroskel-rigg.js';
 
 // Sviten ritar om hela verktyget i varje test. Under full last tar ett test 4–6 s, så standardgränsen 5 s
 // fäller olika tester från körning till körning.
@@ -14,9 +14,9 @@ vi.setConfig({ testTimeout: 30000 });
 
 describe('k-tröskeln: standardvärde och validering', () => {
     let w;
-    beforeAll(() => { w = createAppWindow(); });
+    beforeAll(() => { w = createAppWindow(); w.__state.kLage = 'export'; });   // isKMasked prövas så som exporterna ser den
     it('är 10 vid start', () => {
-        expect(w.eval('kTroskel()')).toBe(10);
+        expect(w.eval('kInstalld()')).toBe(10);
         expect(w.eval('statGolv()')).toBe(10);
         expect(w.eval('isKMasked(9)')).toBe(true);
         expect(w.eval('isKMasked(10)')).toBe(false);
@@ -26,12 +26,12 @@ describe('k-tröskeln: standardvärde och validering', () => {
         const r = w.eval('sattKTroskel(window.__v, { fraga: false })');
         expect(r.ok).toBe(false);
         expect(r.fel).toMatch(/heltal mellan 2 och 1000/);
-        expect(w.eval('kTroskel()')).toBe(10);
+        expect(w.eval('kInstalld()')).toBe(10);
     });
     it.each([[2, 2], [1000, 1000], ['12', 12], [' 15 ', 15]])('godtar %p', (v, n) => {
         w.__v = v;
         expect(w.eval('sattKTroskel(window.__v, { fraga: false })')).toMatchObject({ ok: true, varde: n });
-        expect(w.eval('kTroskel()')).toBe(n);
+        expect(w.eval('kInstalld()')).toBe(n);
         w.eval('sattKTroskel(10, { fraga: false })');
     });
     it('statistiska golv följer med uppåt men aldrig under 10', () => {
@@ -48,7 +48,7 @@ describe('k-tröskeln: bekräftelse vid sänkning under 10', () => {
         const w = createAppWindow();
         w.confirm = () => false;
         expect(w.eval('sattKTroskel(5)')).toEqual({ ok: false, nekad: true });
-        expect(w.eval('kTroskel()')).toBe(10);
+        expect(w.eval('kInstalld()')).toBe(10);
     });
     it('frågar vid sänkning under 10, inte vid höjning eller ovanför 10', () => {
         const w = createAppWindow();
@@ -66,14 +66,17 @@ describe('k-tröskeln: bekräftelse vid sänkning under 10', () => {
 });
 
 describe('k-tröskeln styr varje flik', () => {
-    it('vid 10 syns mellangrupperna, inte de små', () => {
-        const w = fonster(null);
+    it('på skärmen syns alla grupper, oavsett tröskel (ADR-51)', () => {
+        for (const k of [null, 25]) { const w = fonster(k); ritaAlla(w); expect(synliga(w, [...SENT_MELLAN, ...SENT_SMA]).length, String(k)).toBe(6); }
+    });
+    it('i exportläget vid 10 syns mellangrupperna, inte de små', () => {
+        const w = iExport(fonster(null));
         ritaAlla(w);
         expect(synliga(w, SENT_MELLAN).length).toBeGreaterThan(0);
         expect(synliga(w, SENT_SMA)).toEqual([]);
     });
-    it('vid 25 syns varken mellangrupperna eller de små i någon flik', () => {
-        const w = fonster(25);
+    it('i exportläget vid 25 syns varken mellangrupperna eller de små i någon flik', () => {
+        const w = iExport(fonster(25));
         for (const flik of FLIKAR) {
             w.__renderTabContent(flik);
             expect(synliga(w, [...SENT_MELLAN, ...SENT_SMA]), `fliken ${flik}`).toEqual([]);

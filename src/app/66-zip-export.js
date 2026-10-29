@@ -9,7 +9,9 @@
  * aldrig med, och inte heller ett som inte har något kvar att exportera när små grupper är borta. Bilden ritas
  * av exportvägen (diagramTillBild), som alltid utelämnar små grupper om användaren inte valt annat i Utforska.
  */
-function zipDiagram() {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function zipDiagram(...a) { return medExportLage(() => _zipDiagramExport.apply(null, /** @type {any} */ (a))); }
+function _zipDiagramExport() {
     exportSakraAlla();   // varje flik som har ritats ritas om om den inte är aktuell — före uppräkningen, som annars missar ersatta diagram
     const alla = typeof _rfBehallare !== 'undefined' ? [..._rfBehallare] : [];
     return alla.filter(el => el && el.id && el.isConnected && exportTillaten(el) && diagramRitat(el))
@@ -20,7 +22,9 @@ function zipDiagram() {
  * ZIP-filen är "allt" (ADR-40): Word-utkastet, Excel-filen med alla flikar och diagrammen i ALLA
  * flikar. Varje upplåst flik ritas först, så att innehållet inte beror på vilka flikar som råkar ha öppnats.
  */
-async function exportZip() {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function exportZip(...a) { return medExportLage(() => _exportZipExport.apply(null, /** @type {any} */ (a))); }
+async function _exportZipExport() {
     if (typeof JSZip === 'undefined') { alert('JSZip ej laddad.'); return false; }
     if (!getData().length) { alert('Ladda upp data först.'); return false; }
     const zip = new JSZip();

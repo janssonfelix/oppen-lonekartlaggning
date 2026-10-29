@@ -226,7 +226,7 @@ function _gdRenderBody(d) {
         <div class="gd-kpis">
             <div class="gd-kpi"><span>${d.n}</span><small>personer</small></div>
             <div class="gd-kpi"><span>${d.nKv} / ${d.nMa}</span><small>kvinnor / män (${svPct(kvPct, 0)} kv)${d.skr
-                ? `<br>SKR: ${svPct(d.skr.pct, 0)} kvinnor i ${_skrDelText(d.skr.del)}` : ''}</small></div>
+                ? `<br><span title="${esc(skrForklaring())}">nationellt: ${svPct(d.skr.pct, 0)} kvinnor i ${_skrDelText(d.skr.del)}</span>` : ''}</small></div>
             <div class="gd-kpi"><span>${kr(d.median)}</span><small>median</small></div>
             <div class="gd-kpi"><span>${kr(d.p10)} – ${kr(d.p90)}</span><small>P10 – P90</small></div>
         </div>${d.ansvar ? `
@@ -311,7 +311,7 @@ function gruppdossierAsText(d) {
     const L = [];
     L.push(`GRUPPDOSSIER: ${gruppNamn(d)} - BAS ${d.bas}`);
     L.push(`Antal: ${d.n} (${d.nKv} kvinnor / ${d.nMa} man) - median ${kr(d.median)} - P10-P90 ${kr(d.p10)}-${kr(d.p90)}`);
-    if (d.skr) L.push(`Referens SKR: ${svPct(d.skr.pct, 0)} kvinnor i ${_skrDelText(d.skr.del)} (${_skrReferensInfo().kalla})`);
+    if (d.skr) L.push(`Nationell referens: ${svPct(d.skr.pct, 0)} kvinnor i ${_skrDelText(d.skr.del)} (${skrKallaKort()})`);
     if (d.ansvar) L.push(`Ansvar: Ledningsansvar ${d.ansvar.ledning.kv} kv / ${d.ansvar.ledning.ma} man - Sarskilt uppdrag ${d.ansvar.uppdrag.kv} kv / ${d.ansvar.uppdrag.ma} man`);
     if (d.gap && d.gap.pct != null) L.push(`Ojusterat gap: ${svPct(d.gap.pct, 1)} av mannens median`);
     if (d.gap && d.gap.arsbelopp) L.push(d.gap.arsbelopp);
@@ -347,9 +347,9 @@ document.addEventListener('keydown', e => {
 document.addEventListener('click', e => {
     if (!/** @type {HTMLElement} */ (e.target).closest('#btn-dossier-copy')) return;
     const sel = document.getElementById('dossier-select');
-    const d = sel ? buildGruppdossier(/** @type {HTMLInputElement} */ (sel).value) : null;
+    const d = sel ? medExportLage(() => buildGruppdossier(/** @type {HTMLInputElement} */ (sel).value)) : null;   // texten lämnar verktyget (ADR-51)
     if (!d) return;
-    const txt = gruppdossierAsText(d);
+    const txt = medExportLage(() => gruppdossierAsText(d));
     const done = () => { if (typeof announceToScreenReader === 'function') announceToScreenReader('Dossier kopierad.'); };
     if (navigator.clipboard?.writeText) navigator.clipboard.writeText(txt).then(done).catch(() => {});
     else done();

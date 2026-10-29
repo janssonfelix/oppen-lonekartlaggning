@@ -82,10 +82,11 @@ describe('Lönepolitik: chart-lp-gender och chart-lp-compliance', () => {
         expect(f.y.doman).toEqual([0, 100]);
         expect(() => valideraFigur(f, 't')).not.toThrow();
     });
-    it('ritas av kärnan: bara BAS över tröskeln i diagram, export och diagramdata; noten ligger efter behållaren', () => {
+    it('ritas av kärnan (i exportläget): bara BAS över tröskeln i diagram, export och diagramdata; noten ligger efter behållaren', () => {
         const data = [...Array.from({ length: 14 }, (_, i) => person('A', i % 2 ? 'kvinna' : 'man', 26000 + i * 500)),
                       ...Array.from({ length: 6 }, (_, i) => person('B', i % 2 ? 'kvinna' : 'man', 61111 + i))];
         medData(data, [{ bas: 'A', p10: 25000, med: 30000, p90: 40000 }, { bas: 'B', p10: 25000, med: 30000, p90: 40000 }], () => {
+            w.__state.kLage = 'export';
             w.__renderLonepolitik();
             const el = w.document.getElementById('chart-lp-compliance');
             expect(el.querySelector(':scope > svg[role="group"]').getAttribute('aria-label')).toMatch(/Andel medarbetare/);
@@ -241,11 +242,12 @@ describe('Lika arbete: chart-skevhet-overview och chart-perbas-gap', () => {
         const rader = w2.eval('chartExportRows(document.getElementById("chart-skevhet-overview"))');
         expect(rader.some(r => r.includes('Undre') && r.includes('Övre'))).toBe(true);
     });
-    it('ett BAS där ett kön är under tröskeln når varken diagram, exportbild eller diagramdata', () => {
+    it('ett BAS där ett kön är under tröskeln når varken diagram (i exportläget), exportbild eller diagramdata', () => {
         const data = [...Array.from({ length: 30 }, (_, i) => person('A', i % 2 ? 'kvinna' : 'man', 30000 + i * 100)),
                       ...Array.from({ length: 30 }, (_, i) => person('C', i % 2 ? 'kvinna' : 'man', 32000 + i * 100)),
                       ...Array.from({ length: 24 }, (_, i) => person('B', i < 4 ? 'kvinna' : 'man', i < 4 ? 71111 : 40000 + i))];
         medData(data, [], () => {
+            w.__state.kLage = 'export';
             w.__renderTabContent('matrix');
             const el = w.document.getElementById('chart-skevhet-overview');
             expect(el._figur.y.ordning).toEqual(['BAS A', 'BAS C']);
@@ -292,6 +294,7 @@ describe('Lika arbete: översiktstabellen med inbyggd grafik (huvudvyn)', () => 
         const data = [...Array.from({ length: 30 }, (_, i) => person('A', i % 2 ? 'kvinna' : 'man', 30000 + i * 100)),
                       ...Array.from({ length: 24 }, (_, i) => person('B', i < 4 ? 'kvinna' : 'man', i < 4 ? 71111 : 40000 + i))];
         medData(data, [], () => {
+            w.__state.kLage = 'export';
             w.__renderTabContent('matrix');
             const tb = w.document.querySelector('#la-oversikt tbody');
             expect([...tb.querySelectorAll('tr th')].map(t => t.textContent)).toEqual(['BAS A']);
@@ -353,6 +356,7 @@ describe('diagram i Lika arbete, Struktur och de övriga flikarna', () => {
     it('sju diagram ritas i sina ordinarie behållare och i sin form', () => {
         const w2 = createAppWindow();
         w2.__loadDemoData();
+        w2.__state.kLage = 'export';   // figurerna så som exporterna läser dem (ADR-51)
         for (const t of ['matrix', 'likvardighet', 'prioritering', 'kon', 'lonepolitik', 'loneoversyn']) w2.__renderTabContent(t);
         const d = w2.document, f = id => (d.getElementById(id) || {})._figur;
         const kostnad = f('chart-prio-pareto');
@@ -450,13 +454,13 @@ describe('gap per åldersgrupp, trattdiagram och läget i spannet per kön', () 
         expect(w.eval('_laOversiktRader(window.__d, ["A"], 11)')).toEqual(a);           // … med samma tal här (båda könen når 11)
         w.__d2 = w.__d.slice();
         expect(w.eval('_laTrattUnderlag(window.__d2, 10)')).not.toBe(u);                // annat underlag: räknas om
-        expect(w.eval('_laMinne !== null')).toBe(true);
+        expect(w.eval('_laMinnen.size')).toBeGreaterThan(0);
         w.eval('laMinneSlapp()');
-        expect(w.eval('_laMinne')).toBeNull();
+        expect(w.eval('_laMinnen.size')).toBe(0);
         // Rensningen och ogiltigförklaringen av statistiken släpper minnet (det håller en referens till dataraderna).
         w.eval('_laOversiktRader(window.__d, ["A"], 10)');
         w.eval('invalidateStatCaches({ recompute: false })');
-        expect(w.eval('_laMinne')).toBeNull();
+        expect(w.eval('_laMinnen.size')).toBe(0);
     });
     it('trattdiagrammet: en grupp över 300 personer bedöms med gruppens egen spridning, och högst sex grupper namnges', () => {
         const grupp = (yrke, n, kvLon, maLon) => [...Array.from({ length: n }, (_, i) => p('kvinna', 40, kvLon + (i % 21 - 10) * 150, yrke)), ...Array.from({ length: n }, (_, i) => p('man', 40, maLon + (i % 21 - 10) * 150, yrke))];
@@ -489,6 +493,7 @@ describe('gap per åldersgrupp, trattdiagram och läget i spannet per kön', () 
         expect(() => valideraFigur(f, 't')).not.toThrow();
         const w2 = createAppWindow();
         w2.__loadDemoData();
+        w2.__state.kLage = 'export';
         w2.__renderTabContent('lonepolitik');
         expect(w2.document.getElementById('lp-konlagen-kort').hidden).toBe(false);
         expect(w2.document.getElementById('chart-lp-konlagen')._figur.lager).toHaveLength(5);
@@ -497,9 +502,10 @@ describe('gap per åldersgrupp, trattdiagram och läget i spannet per kön', () 
         expect(w2.document.getElementById('lp-konlagen-kort').hidden).toBe(true);
         expect(w2.document.getElementById('chart-lp-konlagen')._figur).toBeUndefined();
     });
-    it('i verktyget: de tre diagrammen ritas med demodatan, och höjd tröskel tar bort dem utan att något står kvar', () => {
+    it('i exportläget: de tre diagrammen ritas med demodatan, och höjd tröskel tar bort dem utan att något står kvar', () => {
         const w2 = createAppWindow();
         w2.__loadDemoData();
+        w2.__state.kLage = 'export';
         for (const t of ['matrix', 'kon']) w2.__renderTabContent(t);
         const d = w2.document;
         expect(d.getElementById('chart-kon-aldergap')._figur.y.ordning.length).toBeGreaterThan(0);
@@ -611,7 +617,7 @@ describe('Löneutveckling: chart-kon-scatter och chart-kon-boxplot', () => {
             expect(d.getElementById('kon-kohort-not').textContent).toMatch(/tvärsnitt.*inte hur en persons lön utvecklas/);
         });
     });
-    it('tre män: ingen trend, inget band och ingen låda för män — punkterna står kvar, och noterna säger varför', () => {
+    it('tre män (i exportläget): ingen trend, inget band och ingen låda för män — punkterna står kvar, och noterna säger varför', () => {
         rita([...rader(30, 'kvinna'), ...rader(3, 'man')], d => {
             expect(serier('chart-kon-scatter').map(s => s[1])).toEqual(['Kvinna 95 % KI', 'Kvinna', 'Man', 'Kvinna (trend)']);
             const lada = d.getElementById('chart-kon-boxplot');
@@ -671,6 +677,7 @@ describe('Ålder & karriär: chart-demografi, chart-demo-agecurve, chart-demo-sp
     });
     it('ritas av kärnan med demodatan: tre diagram, kurvorna som en linje per serie', () => {
         const w2 = createAppWindow();
+        w2.__state.kLage = 'export';
         w2.__loadDemoData();
         w2.__renderTabContent('demografi');
         const el = id => w2.document.getElementById(id);
@@ -902,6 +909,7 @@ describe('Utforska: små grupper visas markerade och exporteras bara när rutan 
                            ...Array.from({ length: 24 }, (_, i) => rad('B', i % 2 ? 'man' : 'kvinna', 26000 + i * 11, 30 + (i % 3) * 12)),
                            ...Array.from({ length: 4 }, (_, i) => rad('LITEN', i % 2 ? 'man' : 'kvinna', MARKOR + 1 + i))];
         w2.eval('populateSelects(); unlockTabs();');
+        w2.__state.kLage = 'export';   // så som det lämnar verktyget (ADR-51)
         w2.__renderTabContent('utforska');
         return w2;
     };
@@ -1390,7 +1398,7 @@ describe('nedborrning: från ett markerat BAS till yrkesgrupperna i Utforska, oc
         expect(d.getElementById('explore-kolumn').value).toBe('ingen');
         expect(not.hidden).toBe(false);
         expect(not.textContent).toMatch(/Du kom hit från BAS A/);
-        expect(not.textContent).toMatch(/färre än 10 personer visas här markerade/);
+        expect(not.textContent).toMatch(/färre än 10 personer följer inte med i en export/);
         // Diagrammet visar de två yrkesgrupperna i BAS A.
         const etiketter = JSON.stringify(d.getElementById('chart-explore')._figur.lager.map(l => l.data.map(p => p.x ?? p.y)));
         expect(etiketter).toMatch(/Usk/); expect(etiketter).toMatch(/Sys/); expect(etiketter).not.toMatch(/Bsk/);

@@ -481,14 +481,14 @@ describe('referensbyte ritar om allt som namnger referensen', () => {
 });
 
 describe('Lika arbete och rapportunderlaget flaggar samma yrken', () => {
-    it('EU-tabellens "Värt att granska" är exakt likaArbeteGrupper(...).flaggad', () => {
+    it('EU-tabellens "Värt att granska" är exakt likaArbeteGrupper(...).flaggad vid k = 1 (skärmen maskerar inget, ADR-51)', () => {
         const w = createAppWindow();
         w.__loadDemoData();
         w.document.querySelector('.nav-item[data-tab="matrix"]').click();
         const iTabell = [...w.document.querySelectorAll('#matrix-table tbody tr')]
             .filter(tr => tr.textContent.includes('Värt att granska'))
             .map(tr => tr._euRow.yrke).sort();
-        const iLib = w.__ruLikaArbeteGrupper(w.__getData(), { k: w.__K }).grupper
+        const iLib = w.__ruLikaArbeteGrupper(w.__getData(), { k: 1 }).grupper
             .filter(g => g.flaggad).map(g => g.yrke).sort();
         expect(iLib.length).toBeGreaterThan(0);
         expect(iTabell).toEqual(iLib);
@@ -512,7 +512,7 @@ describe('rapportunderlag', () => {
         w.__loadDemoData();
         w.document.querySelector('.nav-item[data-tab="dokumentera"]').click();
         const block = w.__rapportunderlagBlock();
-        const flaggade = w.__ruLikaArbeteGrupper(w.__getData(), { k: w.__K }).grupper.filter(g => g.flaggad).length;
+        const flaggade = w.__ruLikaArbeteGrupper(w.__getData(), { k: w.__K }).grupper.filter(g => g.flaggad).length;   // rapportunderlaget lämnar verktyget: inställd tröskel
         const typer = block.map(b => b.id.split(':')[0]);
         expect(typer.filter(t => ['sammanfattning', 'lika', 'likvardigt', 'struktur', 'handlingsplan'].includes(t)).length).toBe(5);
         expect(typer.filter(t => t === 'yrke').length).toBe(flaggade);
@@ -647,8 +647,8 @@ describe('Struktur: representation i BAS-ordning', () => {
     });
 });
 
-describe('inläsning: bara BAS A–J analyseras', () => {
-    it('personer i BAS K och senare utesluts, räknas per BAS och syns bara som antal', async () => {
+describe('inläsning: alla BAS-intervall ingår', () => {
+    it('personer i BAS K och senare läses in som alla andra, utan särskild räkning', async () => {
         const { readFileSync } = await import('node:fs');
         const { join, dirname } = await import('node:path');
         const { fileURLToPath } = await import('node:url');
@@ -662,21 +662,14 @@ describe('inläsning: bara BAS A–J analyseras', () => {
         const fil = new w.File([rader.join('\n')], 'personal.csv', { type: 'text/csv' });
         w.loadStructureFile(fil);
         for (let i = 0; i < 100 && !w.__state.data.length; i++) await new Promise(r => setTimeout(r, 20));
-        expect(w.__state.data.length).toBe(40);
-        expect(w.__state.data.every(r => ['A', 'B', 'J'].includes(r.bas))).toBe(true);
-        expect(w.__state.dataAudit.excludedOverBas).toBe(7);
-        expect(w.__state.dataAudit.overBasPerBas).toEqual({ K: 5, L: 2 });
+        expect(w.__state.data.length).toBe(47);
+        expect(w.__state.data.filter(r => r.bas === 'K').length).toBe(5);
+        expect(w.__state.data.filter(r => r.bas === 'L').length).toBe(2);
+        expect(w.__state.dataAudit.excludedOverBas).toBeUndefined();
         const status = w.document.getElementById('data-status').textContent;
-        expect(status).toContain('7 personer i BAS K–L analyseras manuellt');
-        w.document.querySelector('.nav-item[data-tab="dashboard"]').click();
-        expect(w.document.getElementById('underlagets-kvalitet').textContent).toContain('BAS K');
-        expect(w.eval('buildActionChecklist()').some(i => i.id === 'bas-ovanfor-grans')).toBe(true);
-        const sammanfattning = w.__rapportunderlagBlock().find(b => b.id === 'sammanfattning');
-        expect(sammanfattning.stycken.join(' ')).toContain('7 personer i BAS K–L ingår inte');
-        // Lönerna i de uteslutna raderna får inte synas någonstans.
-        const allt = w.document.body.textContent.replace(/\s/g, '');
-        expect(allt).not.toContain('88888');
-        expect(allt).not.toContain('99999');
+        expect(status).toContain('47 rader · 5 BAS');
+        expect(status).not.toContain('analyseras manuellt');
+        expect(w.eval('buildActionChecklist()').some(i => i.id === 'bas-ovanfor-grans')).toBe(false);
     });
 });
 

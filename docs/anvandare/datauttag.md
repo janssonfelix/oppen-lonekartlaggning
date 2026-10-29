@@ -65,9 +65,8 @@ Verktyget läser in **`.csv`** och **`.xlsx`** (första bladet). Följande hante
 - **Svenska talformat:** `32 500`, `32 500,50`, `32.500,50` och valutasuffix (`32 500 kr`)
   tolkas korrekt. Mellanslag, hårt mellanslag och apostrof som tusentalsavgränsare stryks.
 
-**BAS-spann:** bara personer i BAS A–J analyseras. Rader med BAS K eller högre läses in,
-utesluts ur analysen och räknas per BAS i inläsningsrapporten — de analyseras manuellt.
-Filen behöver alltså inte filtreras i förväg.
+**BAS-spann:** alla BAS-intervall ingår i analysen, även K och uppåt. Filen ska alltså
+innehålla all tillsvidareanställd personal och behöver inte filtreras i förväg.
 
 Detta **stöds inte** och ger tydligt besked:
 

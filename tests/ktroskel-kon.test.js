@@ -6,7 +6,7 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
-import { STORA, MELLAN, SMA, normalisera, oppnaFlik, KON_BAS, KON_KV, KON_MA, KON_GAP, KON_DOLDA, byggKonDataset, fonsterKon, harNagon, laddaXlsx, fangaBocker, utskriftAv, SENT_MELLAN, SENT_SMA } from './helpers/ktroskel-rigg.js';
+import { STORA, MELLAN, SMA, normalisera, oppnaFlik, KON_BAS, KON_KV, KON_MA, KON_GAP, KON_DOLDA, byggKonDataset, fonsterKon, harNagon, laddaXlsx, fangaBocker, utskriftAv, SENT_MELLAN, SENT_SMA, iExport } from './helpers/ktroskel-rigg.js';
 
 // Sviten ritar om hela verktyget i varje test. Under full last tar ett test 4–6 s, så standardgränsen 5 s
 // fäller olika tester från körning till körning.
@@ -34,8 +34,15 @@ describe('fixturen för kön under tröskeln', () => {
 
 describe('C2: Struktur per BAS visar inget könsgap när ett kön är under tröskeln', () => {
     const radFor = (html, bas) => { const m = html.match(new RegExp(`<tr><td>(?:<strong>)?${bas}(?:</strong>)?</td>.*?</tr>`, 's')); return m ? normalisera(m[0].replace(/&nbsp;/g, ' ').replace(/<[^>]+>/g, ' | ')) : null; };
-    it('fliken Struktur: raden finns kvar med samlad median, utan gap, och noten förklarar', () => {
+    it('fliken Struktur på skärmen: gapet visas också mot en, två och tre män (ADR-51)', () => {
         const w = fonsterKon(null);
+        w.__renderTabContent('struktur');
+        const el = w.document.getElementById('struktur-representation');
+        for (const bas of KON_BAS) expect(radFor(el.innerHTML, bas), bas).not.toMatch(/–[\s|]*$/);   // gapcellen är ifylld
+        expect(el.textContent).not.toMatch(/ett av könen har färre än 10 personer/);
+    });
+    it('fliken Struktur i exportläget: raden finns kvar med samlad median, utan gap, och noten förklarar', () => {
+        const w = iExport(fonsterKon(null));
         w.__renderTabContent('struktur');
         const el = w.document.getElementById('struktur-representation');
         for (const [i, bas] of KON_BAS.entries()) {
@@ -66,8 +73,8 @@ describe('C2: Struktur per BAS visar inget könsgap när ett kön är under trö
         expect(rep).toMatch(/Y1, Y2, Y3/);   // namnges i slutraden om könsgap
         expect(harNagon(eu, KON_GAP)).toEqual([]);
     });
-    it('vid 2 visas gapet för Y2 och Y3 (2 och 3 män)', () => {
-        const w = fonsterKon(2);
+    it('i exportläget vid 2 visas gapet för Y2 och Y3 (2 och 3 män)', () => {
+        const w = iExport(fonsterKon(2));
         w.__renderTabContent('struktur');
         const t = w.document.getElementById('struktur-representation').innerHTML;
         expect(radFor(t, 'Y2')).toContain((KON_KV[1] / KON_MA[1] * 100).toFixed(1).replace('.', ','));   // kvinnors median i % av mäns
@@ -86,6 +93,7 @@ describe('C3: könsuppdelade mått för hela organisationen kräver tröskeln f�
         for (let i = 0; i < 60; i++) r.push(rad(i < 30 ? 'S1' : 'S2', 'kvinna', 25000 + i * 10, 30 + i % 20));
         MAN.forEach((l, i) => r.push(rad('S1', 'man', l, 40 + i)));
         w.__state.data = r;
+        iExport(w);   // måtten prövas så som de lämnar verktyget; skärmen maskerar inget (ADR-51)
         w.eval('populateSelects(); unlockTabs(); refreshCurrentTab();');
         return w;
     };
@@ -144,17 +152,20 @@ describe('C3: könsuppdelade mått för hela organisationen kräver tröskeln f�
         expect(harNagon(t, gap)).toEqual([]);
         expect(t).toMatch(NOT);
     });
-    it('lönerevisionssimulatorn: utfallet för 60 kvinnor visas, men inte medianlönen i % av mäns', () => {
+    it('löneöversyn: en riktad rad till kvinnorna i S1 visar utfallet, men inte medianlönen i % av mäns', () => {
         const w = fonster3(null);
-        const d = w.document;
-        d.getElementById('sim-kon').value = 'kvinna';
-        d.getElementById('sim-bas').value = '__ALLA__';
-        d.getElementById('sim-run').click();
-        const t = normalisera(d.getElementById('sim-results').textContent);
-        expect(t).toMatch(/Berörda personer\s*60/);
+        w.__state.forecast.targets = [{ bas: 'S1', aid: '6000', kon: 'kvinna', lonCap: null, mode: 'kr', value: 500, dist: 'flat', targetLevel: 'median', pool: 'övrigt' }];
+        w.__renderTabContent('loneoversyn');
+        const t = normalisera(w.document.getElementById('forecast-outcome').textContent);
+        expect(t).toMatch(/S1/);
         expect(harNagon(t, [...MAN, ...gap])).toEqual([]);
         expect(t).toMatch(NOT);
-        expect(t).not.toMatch(/Före: \d/);
+    });
+    it('på skärmen redovisas måtten också med 3 män (ADR-51)', () => {
+        const w = fonster3(null);
+        w.__state.kLage = 'skarm';
+        w.__renderTabContent('struktur');
+        expect(normalisera(w.document.getElementById('struktur-distribution').textContent)).toContain(String(MAN[1]));
     });
     it('vid 3 (männens antal) redovisas måtten', async () => {
         const w = fonster3(3);
@@ -241,28 +252,29 @@ describe('C4: allt som visar gruppmått följer tröskeln när den ändras (den 
         w.document.getElementById('btn-export-checklist').click();
         return normalisera((w.__csv || []).map(r => r.join(' | ')).join('\n'));
     };
-    it('5 → 10: Att göra, dess CSV och processöversikten', () => {
+    it('5 → 10: Att göra på skärmen visar paret vid båda; CSV-filen (lämnar verktyget) utelämnar det vid 10 och anger antalet', () => {
         const w = fonsterPar();
         expect(kort(w)).toContain('Yrke 5300');
         expect(w.document.getElementById('process-tracker').textContent).not.toMatch(/par med en grupp under/);
         w.eval('sattKTroskel(10, { fraga: false })');
-        expect(kort(w)).not.toContain('Yrke 5300');
-        expect(kort(w)).toMatch(/1 par med en grupp under 10 personer redovisas inte här/);
+        expect(kort(w)).toContain('Yrke 5300');   // skärmen maskerar inget (ADR-51)
         const fil = csv(w);
         expect(fil).not.toContain('Yrke 5300');
         expect(fil).toMatch(/1 par med en grupp under 10 personer redovisas inte här/);
-        // Steg 4 är inte klart utan "inget att hantera": paret redovisas bara i fliken (tests/troskelbeslut.test.js).
+        // I exportläget är steg 4 "inget att hantera": paret redovisas bara i fliken (tests/troskelbeslut.test.js).
+        w.__state.kLage = 'export'; w.eval('renderProcessTracker()');
         expect(w.document.getElementById('process-tracker').textContent).toMatch(/Inget att hantera i Att göra: 1 par har en grupp under 10 personer/);
     });
     it('10 → 25: inläsningsrapportens antal och extremvärdeslistan', () => {
         const w = fonsterPar();
         w.eval('sattKTroskel(10, { fraga: false })');
         const d = w.document;
-        const maskerade = () => (d.getElementById('data-validation-report').textContent.match(/K-maskerade BAS \(n<(\d+)\):\s*(\d+)/) || []).slice(1).map(Number);
+        const maskerade = () => (d.getElementById('data-validation-report').textContent.match(/BAS under minsta gruppstorlek \(n<(\d+), redovisas inte i exporterna\):\s*(\d+)/) || []).slice(1).map(Number);
         expect(maskerade()).toEqual([]);                      // A 60, C 30, D 20: raden visas bara när något BAS är under tröskeln
         expect(normalisera(d.getElementById('outliers-table-wrap').textContent)).toContain('91357');
         w.eval('sattKTroskel(25, { fraga: false })');
-        expect(maskerade()).toEqual([25, 1]);                 // D (20) är nu under tröskeln
+        expect(maskerade()).toEqual([25, 1]);                 // D (20) är nu under den inställda tröskeln
+        // Extremvärdeslistan följer det statistiska golvet, max(inställd tröskel, 10) — samma i båda lägena (ADR-51).
         expect(normalisera(d.getElementById('outliers-table-wrap').textContent)).not.toContain('91357');
         expect(d.getElementById('data-validation-report').textContent).toMatch(/Inga extremvärden/);
     });
@@ -294,6 +306,7 @@ describe('C6: räkneexemplet i kronor per år bara när båda könen når trösk
         w.__state.data = [...Array.from({ length: 12 }, (_, i) => rad('Gyrke', 8101, 'kvinna', 30000 + i * 37, i)), ...Array.from({ length: 12 }, (_, i) => rad('Gyrke', 8101, 'man', 33000 + i * 41, i)),
                           ...Array.from({ length: 12 }, (_, i) => rad('Hyrke', 8102, 'kvinna', 30000 + i * 29, i)), ...Array.from({ length: 4 }, (_, i) => rad('Hyrke', 8102, 'man', 88123 + i, i))];
         w.eval('populateSelects(); unlockTabs();');
+        w.__state.kLage = 'export';   // dossierns text lämnar verktyget (ADR-51)
         return w;
     };
     it('dossiern och textkopian: kronsumman med prioriteringens formel för G, ingen för H', () => {

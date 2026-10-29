@@ -24,13 +24,15 @@ function buildActionChecklist({ endastGrupper = false } = {}) {
     /** @type {any[]} */
     const items = [];
     if (!state.data.length) return items;
+    // Regressionen körs en gång här och skickas vidare till det som läser den (ADR-17: ingen cache, bara ett värde).
+    const reg = !endastGrupper && typeof runOLSRegression === 'function' ? runOLSRegression() : null;
 
     // Punkterna per grupp (prioriteringen och likvärdighetsparen) bär AID-koden; sektorsöversikten
     // räknar bara dem och bygger därför inte de tunga, organisationsövergripande delarna.
     if (!endastGrupper) {
         // === 1. Underlagets kvalitet (ADR-19) — en punkt per kriterium som inte är OK ===
         try {
-            const uk = (typeof bedomningUnderlag === 'function') ? bedomningUnderlag() : null;
+            const uk = (typeof bedomningUnderlag === 'function') ? bedomningUnderlag({ reg }) : null;
             if (uk) uk.kriterier.filter(c => c.status !== 'ok').forEach(c => items.push({
                 id: 'dq-' + c.id,
                 kategori: 'Underlagets kvalitet',
@@ -70,8 +72,7 @@ function buildActionChecklist({ endastGrupper = false } = {}) {
         // === Lika arbete: rått gap > 5 % i jämförbara BAS (samma regel som kompliansen) ===
         try {
             const d = getData();
-            const jb = _dqJamforbaraBas(d, kTroskel());
-            const reg = runOLSRegression();
+            const jb = _dqJamforbaraBas(d, kInstalld());
             const perBas = (reg && !reg.error && reg.perBas) ? reg.perBas : [];
             jb.jamforbara.forEach(b => {
                 const df = d.filter(r => r.bas === b);
@@ -94,18 +95,8 @@ function buildActionChecklist({ endastGrupper = false } = {}) {
             });
         } catch (e) { rapporteraFel('Att göra: lika arbete per BAS', e); }
 
-        // === BAS ovanför analysens spann: analyseras manuellt av HR ===
-        const manuella = (typeof manuellaBas === 'function') ? manuellaBas() : null;
-        if (manuella) items.push({
-            id: 'bas-ovanfor-grans', kategori: 'Underlag', prioritet: 'medel',
-            titel: `${manuella.n} ${manuella.n === 1 ? 'person' : 'personer'} i BAS ${manuella.spann} ska analyseras manuellt`,
-            detalj: `Verktyget analyserar bara BAS A–${BAS_MAX}. Personerna i högre BAS finns i källfilen och bedöms utanför verktyget.`,
-            tab: 'dashboard', källa: 'Inläsning'
-        });
-
         // === 1b. Oförklarat gap för hela organisationen (regressionen) ===
         try {
-            const reg = runOLSRegression();
             if (reg && !reg.error && reg.pValue < 0.05) {
                 items.push({
                     id: 'reg-oforklarat', kategori: 'Lika arbete',
@@ -176,7 +167,6 @@ function buildActionChecklist({ endastGrupper = false } = {}) {
     if (!endastGrupper) {
         // === 4. EU-Lönekartläggning — per-BAS gap > 5 % efter korrigering för många tester (Benjamini–Hochberg) ===
         try {
-            const reg = (typeof runOLSRegression === 'function') ? runOLSRegression() : null;
             if (reg && !reg.error && reg.perBas) {
                 // BH-justering
                 const okTests = reg.perBas.filter(p => p.status === 'ok' && isFinite(p.pValue));
@@ -249,15 +239,16 @@ function _attGoraParNot() {
  * Renderar åtgärdslistan på Översikt. Visar grupperade kategorier, klickbara
  * checkboxar (state i minnet via state._actionChecklistDone-Set), CSV-export.
  */
+/** Ritar Att göra och svarar med punkterna (processöversikten läser dem). */
 function renderActionChecklist() {
     const wrap = document.getElementById('action-checklist-container');
     const kort = document.getElementById('att-gora');
     const borja = document.getElementById('att-gora-borja');
     if (!wrap) return;
-    if (!state.data.length) { wrap.innerHTML = ''; if (kort) kort.hidden = true; if (borja) borja.innerHTML = ''; return; }
+    if (!state.data.length) { wrap.innerHTML = ''; if (kort) kort.hidden = true; if (borja) borja.innerHTML = ''; return []; }
     if (kort) kort.hidden = false;
 
-    const items = buildActionChecklist();
+    const items = buildActionChecklist();   // returneras, så att processöversikten kan läsa samma lista
     // Hela listan är ett avsnitt som fälls ut: "Börja här" ovanför bär det som ska göras först.
     // Listan ritas om vid varje avbockning, så avsnittets läge bevaras.
     const varOppen = !!/** @type {HTMLDetailsElement} */ ((wrap.querySelector('#avsnitt-ov-punkter') || {})).open;
@@ -352,7 +343,7 @@ function renderActionChecklist() {
     });
 
     // CSV-export
-    document.getElementById('btn-export-checklist')?.addEventListener('click', () => exportActionChecklistCSV(items, done));
+    document.getElementById('btn-export-checklist')?.addEventListener('click', () => medExportLage(() => exportActionChecklistCSV(buildActionChecklist(), done)));
 
     // Rensa markeringar
     document.getElementById('btn-checklist-clear-done')?.addEventListener('click', () => {
@@ -360,12 +351,15 @@ function renderActionChecklist() {
         state._actionChecklistDone = new Set();
         renderActionChecklist();
     });
+    return items;
 }
 
 /**
  * Exporterar åtgärdslistan som CSV.
  */
-function exportActionChecklistCSV(items, done) {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function exportActionChecklistCSV(...a) { return medExportLage(() => _exportActionChecklistCSVExport.apply(null, /** @type {any} */ (a))); }
+function _exportActionChecklistCSVExport(items, done) {
     if (!items.length) { alert('Ingen åtgärdslista att exportera.'); return; }
     const rows = [[
         'Status', 'Prioritet', 'Kategori', 'Punkt', 'Detalj', 'Källa', 'Flik'

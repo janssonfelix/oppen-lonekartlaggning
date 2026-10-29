@@ -162,11 +162,28 @@ beforeAll(() => {
     win.__state.data = byggDataset();
     win.__state.policy = byggPolicy();
     win.eval('populateSelects(); unlockTabs();');
+    // Vyerna ritas här i exportläget (ADR-51): så läser exporterna dem. Skärmläget prövas positivt nedan.
+    win.__state.kLage = 'export';
     sedda = new WeakSet();
     for (const el of rojandeElement(win)) sedda.add(el);
 });
 
-describe('k-anonymitet: invariant över samtliga flikar', () => {
+describe('k-anonymitet: skärmen maskerar inget (ADR-51)', () => {
+    it('på skärmen visar flikarna grupperna under tröskeln; i exportläget inte', () => {
+        const w = createAppWindow();
+        w.__state.data = byggDataset();
+        w.__state.policy = byggPolicy();
+        w.eval('populateSelects(); unlockTabs();');
+        for (const f of ['matrix', 'struktur', 'prioritering']) w.__renderTabContent(f);
+        expect(rojandeElement(w).length).toBeGreaterThan(0);
+        w.__state.kLage = 'export';
+        w.eval('ritGenerationNy()');
+        for (const f of ['matrix', 'struktur', 'prioritering']) w.__renderTabContent(f);
+        expect(rojandeElement(w)).toEqual([]);
+    });
+});
+
+describe('k-anonymitet: invariant över samtliga flikar (i exportläget)', () => {
     it('de små grupperna ligger under tröskeln och de säkra över', () => {
         const perBas = new Map();
         for (const r of win.__state.data) perBas.set(r.bas, (perBas.get(r.bas) || 0) + 1);
@@ -243,6 +260,7 @@ describe('k-anonymitet: samlad median när bara könsuppdelningen är för liten
         }
         w2.__state.data = rader;
         w2.eval('populateSelects(); unlockTabs();');
+        w2.__state.kLage = 'export';   // så som tabellen lämnar verktyget (ADR-51)
         w2.__renderTabContent('matrix');
     });
 
@@ -286,9 +304,13 @@ describe('k-anonymitet: Utforskas export', () => {
         await new Promise(r => setTimeout(r, 0));
     });
 
-    it('vyn visar de tolv små grupperna, tonade', () => {
+    it('vyn visar de tolv små grupperna som andra grupper; i exportläget tonade', () => {
         kryss(false);
+        expect(w3.document.querySelectorAll('#explore-table tr.explore-liten')).toHaveLength(0);
+        expect(w3.document.querySelectorAll('#explore-table tbody tr').length).toBeGreaterThan(12);
+        w3.__state.kLage = 'export'; w3.__renderExplorer();
         expect(w3.document.querySelectorAll('#explore-table tr.explore-liten')).toHaveLength(12);
+        w3.__state.kLage = 'skarm'; w3.__renderExplorer();
     });
     it('tabellens export utelämnar dem när rutan är av', () => {
         kryss(false);
@@ -307,7 +329,6 @@ describe('k-anonymitet: Utforskas export', () => {
     it('ett lönevillkor som skapar en liten grupp: exporten utelämnar den med rutan av', () => {
         w3.__explorerSetUrval({ lage: 'alla', villkor: [{ falt: 'lon', op: 'mellan', varde: [SENTINEL[0], SENTINEL[0]], inte: false }] });
         kryss(false);
-        expect(w3.document.querySelectorAll('#explore-table tr.explore-liten')).toHaveLength(1);
         expect(harSentinel(w3.__tableToMatrix('explore-table').filter(r => !String(r[0]).startsWith('Urval:')))).toBe(false);
         // Rad 2 ("Urval: … mellan 31 417 och 31 417 kr") är användarens egen villkorsgräns,
         // inte gruppens data — vakten gäller dataraderna.
@@ -518,6 +539,7 @@ describe('k-anonymitet: små grupper i Utforska markeras även utan färg', () =
         for (let i = 0; i < 24; i++) rader.push(rad('B', i % 2 ? 'man' : 'kvinna', 26000 + i * 11, 30 + (i % 3) * 12));
         w.__state.data = rader;
         w.eval('populateSelects(); unlockTabs();');
+        w.__state.kLage = 'export';   // nedtoningen hör till exportläget (ADR-51)
         w.__renderTabContent('utforska');
         await new Promise(r => setTimeout(r, 0));
     });
@@ -568,12 +590,13 @@ describe('k-anonymitet: sektorsöversikten', () => {
         for (let i = 0; i < 30; i++) rader.push(rad('207011', i % 2 ? 'man' : 'kvinna', 30000 + i * 17, 25 + i));
         w.__state.data = rader;
         w.eval('populateSelects(); unlockTabs();');
+        w.__state.kLage = 'export';   // tabellen så som Excel-bladet läser den (ADR-51)
         w.__renderTabContent('struktur');
         w.__renderTabContent('dokumentera');
         await new Promise(r => setTimeout(r, 0));
     });
     const harMarkor = s => normalisera(String(s)).includes(String(MARKOR));
-    it('vyn visar samlad median för teknik och ingen markörlön', () => {
+    it('vyn (i exportläget) visar samlad median för teknik och ingen markörlön', () => {
         const t = w.document.getElementById('sektor-table');
         const teknik = [...t.querySelectorAll('tbody tr')].find(tr => /Teknikarbete/.test(tr.textContent));
         expect(teknik.textContent).toMatch(/Samlad median/);
@@ -599,10 +622,11 @@ describe('k-anonymitet: ansvarsunderrader i Lika arbete', () => {
         for (let i = 0; i < 14; i++) rader.push(rad('man', 30300 + i * 43, 31 + i, 'inget'));
         w.__state.data = rader;
         w.eval('populateSelects(); unlockTabs();');
+        w.__state.kLage = 'export';   // tabellen så som Excel-matrisen läser den (ADR-51)
         w.__renderTabContent('matrix');
     });
     const harMarkor = s => normalisera(String(s)).includes(String(MARKOR));
-    it('underraden med tre personer visar ingen lön, varken i tabellen eller Excel-matrisen', () => {
+    it('underraden med tre personer visar ingen lön, varken i tabellen (exportläget) eller Excel-matrisen', () => {
         const t = w.document.getElementById('matrix-table');
         const under = [...t.querySelectorAll('tr.la-underrad')];
         expect(under.some(tr => /Särskilt uppdrag/.test(tr.textContent))).toBe(true);
@@ -619,6 +643,7 @@ describe('k-anonymitet: sektorernas andel när ett kön är under k i hela under
         rader.push({ aid: '502010', yrke: '502010 Y', yrkeLabel: 'Y', bas: 'C', kon: 'man', lon: 47123, alder: 44 });
         w.__state.data = rader;
         w.eval('populateSelects(); unlockTabs();');
+        w.__state.kLage = 'export';
         w.__renderTabContent('struktur');
         w.__renderTabContent('dokumentera');
         expect(w.document.querySelector('#struktur-sektorer .sektor-andel')).toBeNull();
@@ -648,7 +673,7 @@ describe('k-anonymitet: den samlade jämförelseexporten', () => {
         expect(celler.some(c => String(c).includes(String(MARKOR)))).toBe(false);
         expect(celler.some(c => String(c).includes('502010 (BAS C)'))).toBe(true);
     });
-    it('tabellen i fliken visar inte den lilla gruppen', () => {
+    it('tabellen i fliken (i exportläget) visar inte den lilla gruppen', () => {
         const MARKOR = 61237;
         const w = createAppWindow();
         const rad = (yrke, kon, lon) => ({ aid: yrke.slice(0, 6), yrke, yrkeLabel: 'X', bas: 'C', kon, lon, alder: 40 });
@@ -656,6 +681,7 @@ describe('k-anonymitet: den samlade jämförelseexporten', () => {
                           ...Array.from({ length: 3 }, () => rad('502010 Sysutv', 'kvinna', MARKOR))];
         w.__state.statistik = [{ aid: '207011', bas: 'C', median: 31000 }, { aid: '502010', bas: 'C', median: 45000 }];
         w.eval('populateSelects(); unlockTabs();');
+        w.__state.kLage = 'export';
         w.__renderTabContent('benchmark');
         const t = w.document.getElementById('benchmark-table').textContent.replace(/\s/g, '');
         expect(t).not.toMatch(/61237|61 ?237/);
@@ -664,6 +690,7 @@ describe('k-anonymitet: den samlade jämförelseexporten', () => {
     it('diagrammens data innehåller inte den lilla gruppen', () => {
         const MARKOR = 61237;
         const w = createAppWindow();
+        w.__state.kLage = 'export';
         const rad = (yrke, kon, lon) => ({ aid: yrke.slice(0, 6), yrke, yrkeLabel: 'X', bas: 'C', kon, lon, alder: 40 });
         w.__state.data = [...Array.from({ length: 12 }, (_, i) => rad('207011 Usk', i % 2 ? 'man' : 'kvinna', 30000 + i * 100)),
                           ...Array.from({ length: 3 }, () => rad('502010 Sysutv', 'kvinna', MARKOR))];
@@ -703,9 +730,9 @@ describe('k-anonymitet: organisationspaketet kan stänga av små grupper i Utfor
         expect(not().textContent).toMatch(/Organisationspaketet tillåter inte/);
         expect(w.document.getElementById('paket-info').textContent).toMatch(/små grupper tas aldrig med i Utforskas export/);
     });
-    it('vyn visar de små grupperna tonade, men exporten utelämnar dem även om rutan kryssas i programmatiskt', () => {
+    it('vyn visar de små grupperna (tonade i exportläget), men exporten utelämnar dem även om rutan kryssas i programmatiskt', () => {
         w.document.getElementById('explore-inkludera-sma').checked = true;
-        w.__renderExplorer();
+        w.__state.kLage = 'export'; w.__renderExplorer(); w.__state.kLage = 'skarm';
         expect(w.document.querySelectorAll('#explore-table tr.explore-liten')).toHaveLength(12);
         expect(w.document.getElementById('explore-inkludera-sma').checked).toBe(false);
         expect(harSentinel(w.__tableToMatrix('explore-table'))).toBe(false);

@@ -85,12 +85,12 @@ export function bedomUnderlag(rader, { k, audit, mde, modell } = {}) {
     });
 
     const orimliga = d.filter(r => !(r.lon >= FTE_GOLV && r.lon <= 250000)
-        || !(r.alder >= 18 && r.alder <= 70) || !/^[A-J]$/i.test(r.bas || '')).length;
+        || !(r.alder >= 18 && r.alder <= 70) || !/^[A-ZÅÄÖ]$/i.test(r.bas || '')).length;
     const orimPct = d.length ? orimliga / d.length * 100 : null;
     kriterier.push({
         id: 'rimlighet', namn: 'Rimlighet', status: _stat(orimPct, 1, 5, false), varde: orimPct,
         text: orimPct == null ? 'Inga rader att kontrollera.'
-            : `${orimliga} rader (${_pct(orimPct)}) har lön under ${FTE_GOLV.toLocaleString('sv-SE')} eller över 250 000 kr, ålder utanför 18–70 eller BAS utanför A–J.`,
+            : `${orimliga} rader (${_pct(orimPct)}) har lön under ${FTE_GOLV.toLocaleString('sv-SE')} eller över 250 000 kr, ålder utanför 18–70 eller BAS som inte är en bokstav.`,
     });
 
     const mStatus = modell === 'full' ? 'ok' : modell === 'minimal' ? 'varning' : 'kritisk';

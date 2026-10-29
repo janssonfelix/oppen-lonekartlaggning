@@ -5,11 +5,66 @@
  * Bladen som "Excel (alla flikar)" kommer att innehålla, i ordning — underlaget till exportens förhandsbesked.
  * Listan följer villkoren i _excelAlltBok nedan; ett test håller dem lika.
  */
-function excelAlltBlad() {
+// Bladlistan räknas som exporten: i exportläget (ADR-51), så att beskedet och arbetsboken får samma blad.
+function excelAlltBlad(...a) { return medExportLage(() => _excelAlltBladExport.apply(null, /** @type {any} */ (a))); }
+function _excelAlltBladExport() {
     if (!state.data.length) return [];
     const harRef = state.policy.length > 0 || state.statistik.length > 0;
-    return ['Löneöversikt', 'EU-Lonekartlaggning', ...(harRef ? ['Prioritering'] : []), 'Lonegap', 'Konsskevhet', ..._excelDiagramBlad().map(b => b[0]), 'Sektorer',
+    return ['Löneöversikt', 'Per BAS', ...((state.rapportTabeller || []).length ? ['Egna tabeller'] : []), 'EU-Lonekartlaggning', ...(harRef ? ['Prioritering'] : []), 'Lonegap', 'Konsskevhet', ..._excelDiagramBlad().map(b => b[0]), 'Sektorer',
         ...(state.statistik.length ? ['Jamforelsestatistik'] : []), ...(bedomningUnderlag() ? ['Underlagets kvalitet'] : []), 'Metodik', 'Metod & parametrar'];
+}
+
+/** Raderna i bladet Egna tabeller, eller null när inga recept finns. Tal som tal, med kolumnrubriken som enhet. */
+function _excelEgnaRader() {
+    const recept = state.rapportTabeller || [];
+    if (!recept.length || typeof _trTabeller !== 'function') return null;
+    const tal = (v, typ) => (v == null || typeof v !== 'number' || !isFinite(v) ? (v == null ? '' : v) : (typ === 'kr' || typ === 'antal' ? Math.round(v) : Math.round(v * 100) / 100));
+    const rows = [['Egna tabeller', `byggda i Utforska; minsta gruppstorlek ${kTroskel()}: grupper med färre personer redovisas inte`], []];
+    for (const r of recept) {
+        const tabeller = _trTabeller(getData(), r, { k: kTroskel() });
+        if (!tabeller.length) { rows.push([r.namn, 'ingen grupp når minsta gruppstorlek'], []); continue; }
+        for (const t of tabeller) {
+            rows.push([t.rubrik, _trBeskrivning(r)]);
+            rows.push(t.kolumner.map(c => c.rubrik + (c.typ === 'kr' ? ' (kr/mån)' : c.typ === 'pct1' ? ' (%)' : '')));
+            t.rader.forEach(rad => rows.push(rad.map((v, i) => tal(v, t.kolumner[i].typ))));
+            if (t.not) rows.push([t.not]);
+            rows.push([]);
+        }
+    }
+    return rows;
+}
+
+/** Raderna i bladet Per BAS, eller null utan underlag. */
+function _excelPerBasRader() {
+    const pb = typeof rmPerBasUnderlag === 'function' ? rmPerBasUnderlag(getData(), kTroskel()) : null;
+    if (!pb || !pb.intervall.length) return null;
+    const tal = v => (v == null || !isFinite(v) ? '' : Math.round(v));
+    const pct = v => (v == null || !isFinite(v) ? '' : Math.round(v * 10) / 10);
+    const MATT = { p10: 'P10', p25: 'P25', med: 'Median', p75: 'P75', p90: 'P90', medel: 'Medellön' };
+    const matt = pb.recept.matt;
+    const per = pb.dim === 'sektor' ? 'sektor' : 'BAS-intervall', kort = pb.dim === 'sektor' ? 'Sektor' : 'BAS';
+    const rows = [[`Lönestruktur per ${per}`, `minsta gruppstorlek ${pb.k}: grupper med färre personer redovisas inte`], []];
+    for (const i of pb.intervall) {
+        rows.push([`${kort} ${i.bas}`, `${i.n} anställda, ${i.nKv} kvinnor och ${i.nMa} män, ${i.antalYrken} yrkesgrupper`]);
+        rows.push(['Grupp', 'Antal', ...matt.map(m => MATT[m])]);
+        i.rader.forEach(r => rows.push([r.namn, r.n == null ? '' : r.n, ...matt.map(m => tal(r[m]))]));
+        if (i.utelamnade.length) rows.push([`Redovisas inte (färre än ${pb.k} personer): ${i.utelamnade.join(', ')}`]);
+        if (!i.konVisas) rows.push([`Kvinnor och män redovisas inte var för sig: ett kön har färre än ${pb.k} personer`]);
+        rows.push([]);
+    }
+    if (pb.basUtelamnade.length) rows.push([`${pb.dimEtikett} som inte redovisas (färre än ${pb.k} personer): ${pb.basUtelamnade.join(', ')}`], []);
+    if (pb.konsgap) {
+    rows.push([`Löneskillnader inom likvärdigt arbete, per ${per}`]);
+    rows.push(['BAS', 'Antal', 'Medellön alla', 'Medellön män', 'Medellön kvinnor', 'Kvinnors medellön i % av mäns', 'Andel kvinnor (%)', 'Medelålder alla', 'Medelålder män', 'Medelålder kvinnor']);
+    pb.konsgap.rader.forEach(r => rows.push([r.bas, r.n, tal(r.medel), tal(r.medelMa), tal(r.medelKv), pct(r.kvot), pct(r.andelKv), tal(r.alder), tal(r.alderMa), tal(r.alderKv)]));
+    rows.push([]);
+    }
+    if (pb.aldersgrupper) {
+    rows.push([`Löneskillnader i åldersgrupper, per ${per}`]);
+    rows.push(['BAS', 'Antal', 'Medelålder', 'Medellön alla', ...pb.aldersgrupper.grupper.map(g => `Medellön ${g} år`)]);
+    pb.aldersgrupper.rader.forEach(r => rows.push([r.bas, r.n, tal(r.alder), tal(r.medel), ...r.perGrupp.map(tal)]));
+    }
+    return rows;
 }
 
 /**
@@ -51,7 +106,9 @@ function _excelLonepolitikMetod(blad) {
     return [['Bladet Lönepolitik', `Läget i referensens lönespann (0 % = P10, 100 % = P90) per yrkesgrupp, per kön och BAS-intervall samt fördelningen i spannets tredjedelar per kön och efterlevnaden per BAS-intervall — samma mått och samma regler för minsta gruppstorlek som fliken Lönepolitik: yrkesgrupper under ${kTroskel()} personer utan lönemått, könsuppdelade mått bara där varje kön har minst ${kTroskel()} personer.`]];
 }
 
-function exportAllToExcel() {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function exportAllToExcel(...a) { return medExportLage(() => _exportAllToExcelExport.apply(null, /** @type {any} */ (a))); }
+function _exportAllToExcelExport() {
     if (!state.data.length) { alert('Ladda upp data först.'); return; }
     if (typeof XLSX === 'undefined') { alert('XLSX-bibliotek saknas.'); return; }
     const wb = _excelAlltBok();
@@ -60,7 +117,9 @@ function exportAllToExcel() {
 }
 
 /** Bygger arbetsboken för "Excel (alla flikar)". */
-function _excelAlltBok() {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function _excelAlltBok(...a) { return medExportLage(() => __excelAlltBokExport.apply(null, /** @type {any} */ (a))); }
+function __excelAlltBokExport() {
 
     // Self-healing: säkerställ att flik-tabellerna är renderade innan de läses.
     // Täcker både den deferrade inläsningen (skevhet/kon körs strax efter load)
@@ -84,6 +143,14 @@ function _excelAlltBok() {
     const rapportSheet = tableToSheet('rapport-table');
     if (rapportSheet) XLSX.utils.book_append_sheet(wb, rapportSheet, 'Löneöversikt');
 
+    // Bladet Per BAS: tabellerna i den form en skriven lönekartläggning brukar ha (samma underlag som Word-utkastets
+    // avsnitt Lönestruktur per BAS-intervall; tröskeln tillämpas i src/lib/perbas.js).
+    const perBasRader = _excelPerBasRader();
+    if (perBasRader) XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(perBasRader), 'Per BAS');
+    // Bladet Egna tabeller (ADR-52): recepten ur Utforska, räknade med tröskeln.
+    const egnaRader = _excelEgnaRader();
+    if (egnaRader) XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(egnaRader), 'Egna tabeller');
+
     // Sheet: EU-Lönekartläggning
     const matrixSheet = tableToSheet('matrix-table');
     if (matrixSheet) XLSX.utils.book_append_sheet(wb, matrixSheet, 'EU-Lonekartlaggning');
@@ -106,7 +173,8 @@ function _excelAlltBok() {
     if (sektorSheet) XLSX.utils.book_append_sheet(wb, sektorSheet, 'Sektorer');
 
     // Sheet: Benchmark mot jämförelsestatistiken
-    const bmSheet = tableToSheet('benchmark-table');
+    // Bara med inläst jämförelsestatistik: samma villkor som förhandsbeskedet (excelAlltBlad), oberoende av vilka flikar som visats.
+    const bmSheet = state.statistik.length ? tableToSheet('benchmark-table') : null;
     if (bmSheet) {
         // Tabellen följer flikens filter; säg det i bladet (ADR-35).
         if (jamforelseUrvalText()) XLSX.utils.sheet_add_aoa(bmSheet, [[], [jamforelseUrvalText()]], { origin: -1 });
@@ -181,7 +249,9 @@ function _jpaExkluderadeTexter() {
  *
  * Output: lonekartlaggning_JPA_protokoll_YYYY-MM-DD.xlsx
  */
-function exportJPAProtocol() {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function exportJPAProtocol(...a) { return medExportLage(() => _exportJPAProtocolExport.apply(null, /** @type {any} */ (a))); }
+function _exportJPAProtocolExport() {
     if (!state.data.length) { alert('Ladda upp data först.'); return; }
     if (typeof XLSX === 'undefined') { alert('XLSX-bibliotek saknas.'); return; }
 

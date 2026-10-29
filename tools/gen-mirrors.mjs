@@ -44,7 +44,7 @@ export const MODULES = [
     {
         file: 'loneoversyn.js', ns: '__mirrorForecast',
         expose: {
-            computePott: '_fcComputePott', allocate: '_fcAllocate', suggestTargets: '_fcSuggestTargets', closureTargets: '_fcClosureTargets',
+            computePott: '_fcComputePott', allocate: '_fcAllocate', targetRows: '_fcTargetRows', suggestTargets: '_fcSuggestTargets', closureTargets: '_fcClosureTargets',
             stagedPlan: '_fcStagedPlan', summarizeGroups: '_fcSummarizeGroups', detectLeapfrog: '_fcDetectLeapfrog',
             forecastOutcome: '_fcForecastOutcome', bandStats: '_fcBandStats',
             individualRemediation: '_fcIndividualRemediation', marketTargets: '_fcMarketTargets',
@@ -129,7 +129,7 @@ export const MODULES = [
     },
     {
         file: 'falt.js', ns: '__mirrorFalt',
-        expose: { groupKey: '_utGroupKey', konOf: '_utKonOf', jamforAldersgrupp: '_faltJamforAlder', jamforLonespann: null, basOvanforGrans: '_faltBasOvanforGrans' }
+        expose: { groupKey: '_utGroupKey', konOf: '_utKonOf', jamforAldersgrupp: '_faltJamforAlder', jamforLonespann: null }
     },
     {
         file: 'urval.js', ns: '__mirrorUrval',
@@ -152,7 +152,8 @@ export const MODULES = [
         expose: {
             likaArbeteGrupper: '_ruLikaArbeteGrupper', justeratGapInomYrke: '_ruJusteratGap',
             gruppBlock: '_ruGruppBlock', parBlock: '_ruParBlock', avsnittBlock: '_ruAvsnittBlock',
-            tillWordHtml: '_ruTillWordHtml', tillText: '_ruTillText', stabilitetKort: '_ruStabilitetKort'
+            tillWordHtml: '_ruTillWordHtml', tillText: '_ruTillText', stabilitetKort: '_ruStabilitetKort',
+            egenTabellBlock: '_ruEgenTabellBlock'
         }
     },
     {
@@ -168,10 +169,6 @@ export const MODULES = [
         expose: {
             computePivot: '_utComputePivot'
         }
-    },
-    {
-        file: 'organisationspaket.js', ns: '__mirrorOrganisationspaket',
-        expose: { byggPaket: '_opByggPaket', tolkaPaket: '_opTolkaPaket', liknarPersonuppgift: '_opLiknarPersonuppgift' }
     },
     {
         file: 'attgora.js', ns: '__mirrorAttgora',
@@ -198,6 +195,20 @@ export const MODULES = [
     {
         file: 'docx.js', ns: '__mirrorDocx',
         expose: { docxDelar: '_docxDelar' }
+    },
+    {
+        file: 'perbas.js', ns: '__mirrorPerBas',
+        expose: { perBasTabeller: '_pbTabeller', aldersgruppNamn: null, yrkesnamn: null, perBasStandard: '_pbStandard',
+                  valideraPerBasRecept: '_pbValideraRecept', perBasReceptArStandard: '_pbReceptArStandard' }
+    },
+    {
+        file: 'tabellrecept.js', ns: '__mirrorTabellrecept',
+        expose: { nyttRecept: '_trNytt', valideraRecept: '_trValidera', receptBeskrivning: '_trBeskrivning', receptTillTabeller: '_trTabeller' }
+    },
+    {
+        // Organisationspaketet importerar tabellrecept.js och perbas.js (rapportens recept, ADR-52): efter dem.
+        file: 'organisationspaket.js', ns: '__mirrorOrganisationspaket',
+        expose: { byggPaket: '_opByggPaket', tolkaPaket: '_opTolkaPaket', liknarPersonuppgift: '_opLiknarPersonuppgift' }
     },
     {
         file: 'figur.js', ns: '__mirrorFigur',

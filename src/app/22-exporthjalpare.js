@@ -24,6 +24,7 @@ function _methodAppendixData() {
             : 'Lokalt uppladdad fil (bearbetad helt i webbläsaren, inga nätverksanrop)'],
         ['Antal personer (inläst)', String(total)],
         ['Antal personer (i denna analys)', String(used)],
+        ['Nationell referens för andel kvinnor', skrForklaring()],
         ['Modell — oförklarat gap', 'OLS på log(månadslön) ~ kön + ålder + BAS-intervall (indikatorvariabler, första BAS som referens); HC3-robusta standardfel (Long & Ervin 2000)'],
         ['Steg + Yrkesgrupp (dekomponeringen)', 'Könsgap med fasta effekter för yrkesgrupp inom BAS (AID×BAS) utöver ålder, skattat med inomtransformation; visas som sista steg, ingår inte i huvudtalet'],
         ['Ålder & karriär (tvärsnitt)', 'Lön mot ålder och livscykelmodellen bygger på ett tvärsnitt: de visar skillnader mellan åldersgrupper i dag, inte hur en persons lön utvecklas över karriären (kohorteffekter)'],
@@ -31,8 +32,8 @@ function _methodAppendixData() {
         ['p-värden', 't-fördelning vid df < 100, annars normalfördelning; Benjamini-Hochberg (FDR) vid multipla grupptest'],
         ['Konfidensintervall', 'Bootstrap-percentil (B ≥ 1000 sampel) på mediankvot kvinna/man'],
         ['Signifikansnivå', 'α = 0,05'],
-        ['Minsta gruppstorlek för redovisning', `${kTroskel()} personer. Grupper med färre redovisas inte i beskrivande vyer (gäller inte likvärdighetsanalysen).`
-            + (kTroskel() < K_STANDARD ? ` Tröskeln är sänkt från standardvärdet ${K_STANDARD}.` : '')],
+        ['Minsta gruppstorlek för redovisning', `${kInstalld()} personer. Grupper med färre redovisas inte i det som lämnar verktyget (gäller inte likvärdighetsanalysen); på skärmen visas alla grupper.`
+            + (kInstalld() < K_STANDARD ? ` Tröskeln är sänkt från standardvärdet ${K_STANDARD}.` : '')],
         ['Referens för lönenivåer', referensNamn() + referensKalla()],
         ['Jämförelsestatistik', statistikBeskrivning()],
         ['Krav-proxy (likvärdigt arbete)', state.arbetsvardering ? 'Arbetsvärderingspoäng (ur strukturdatans Poäng-kolumn)' : 'BAS-intervall (ordinal rangordning)'],
@@ -88,7 +89,10 @@ function _exportVisaAllaRader(klon) {
     });
     return klon;
 }
-function _cloneAndCleanTableForExport(tableId) {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function _cloneAndCleanTableForExport(...a) { return medExportLage(() => __cloneAndCleanTableForExportExport.apply(null, /** @type {any} */ (a))); }
+function __cloneAndCleanTableForExportExport(tableId) {
+    // Exportläget (ADR-51): tabellen läses med den inställda tröskeln, också när anroparen inte gått in i läget.
     const t = exportElement(tableId);   // exportgrinden: tabellens flik är ritad med det som gäller nu
     if (!t || !t.querySelector('tbody tr')) return null;
     const clone = t.cloneNode(true);

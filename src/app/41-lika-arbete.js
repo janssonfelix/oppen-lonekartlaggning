@@ -25,15 +25,20 @@ function _laBootstrapGapCI(kvLons, maLons, B = 1000) {
 }
 // Översiktens rader och trattdiagrammets underlag är dyra (bootstrap respektive omkastning: på 55 000 rader 0,8 s
 // och 1,8 s) och behövs av flera vyer — fliken, rapportmodellen (som byggs flera gånger i Dokumentera) och
-// exporterna. De räknas därför EN gång per underlag och tröskel. Minnet håller en referens till dataraderna och
-// släpps när statistiken ogiltigförklaras och när all data rensas (laMinneSlapp), så att inget ligger kvar.
-/** @type {{d: any[], n: number, k: number, [k: string]: any}|null} */
-let _laMinne = null;
+// exporterna. De räknas därför EN gång per underlag och tröskel. Skärmläget och exportläget (ADR-51) har olika
+// tröskel och var sitt minne, så att ett byte av läge inte räknar om; ett annat underlag tömmer båda. Minnet håller
+// en referens till dataraderna och släpps när statistiken ogiltigförklaras och när all data rensas (laMinneSlapp),
+// så att inget ligger kvar.
+/** @type {Map<number, {d: any[], n: number, k: number, [k: string]: any}>} */
+const _laMinnen = new Map();
 function _laMinneFor(d, k) {
-    if (!_laMinne || _laMinne.d !== d || _laMinne.n !== d.length || _laMinne.k !== k) _laMinne = { d, n: d.length, k };
-    return _laMinne;
+    const forsta = _laMinnen.values().next().value;
+    if (forsta && (forsta.d !== d || forsta.n !== d.length)) _laMinnen.clear();
+    let m = _laMinnen.get(k);
+    if (!m) { m = { d, n: d.length, k }; _laMinnen.set(k, m); }
+    return m;
 }
-function laMinneSlapp() { _laMinne = null; }
+function laMinneSlapp() { _laMinnen.clear(); }
 function _laOversiktRader(d, bas = getBasIntervals(), k = kTroskel()) {
     const minne = _laMinneFor(d, k), nyckel = bas.join('\u0000');
     if (minne.oversikt && minne.oversiktNyckel === nyckel) return minne.oversikt;
@@ -250,8 +255,8 @@ function _ansvarsUnderraderFor(yrkesRader, fmt) {
 function _skrReferensCell(yrke) {
     const ref = _skrKvinnoandel(yrke, { del: _skrDel() });
     return ref
-        ? `<td data-sort-value="${ref.pct.toFixed(1)}" title="${ref.niva === 'etikett' ? 'AID-etiketten' : 'AID-prefixet ' + esc(ref.prefix)} i ${_skrDelText(ref.del)}, ${esc(_skrReferensInfo().kalla)}">${svPct(ref.pct, 0)}</td>`
-        : '<td data-sort-value="" title="Koden finns inte i SKR:s personalstatistik">–</td>';
+        ? `<td data-sort-value="${ref.pct.toFixed(1)}" title="Andel kvinnor nationellt: ${ref.niva === 'etikett' ? 'AID-etiketten' : 'AID-prefixet ' + esc(ref.prefix)} i ${_skrDelText(ref.del)}, ${esc(skrKallaKort())}">${svPct(ref.pct, 0)}</td>`
+        : `<td data-sort-value="" title="Yrkeskoden finns inte i ${esc(skrKallaKort())}">–</td>`;
 }
 
 function generateEUDirectiveMatrix() {

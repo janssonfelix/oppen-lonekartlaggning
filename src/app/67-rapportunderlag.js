@@ -33,7 +33,9 @@ function _rapportHpRader(seedRows) {
 }
 
 /** Alla textblock i den ordning de visas: avsnitt, yrkesgrupper, kandidatpar. */
-function rapportunderlagBlock() {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function rapportunderlagBlock(...a) { return medExportLage(() => _rapportunderlagBlockExport.apply(null, /** @type {any} */ (a))); }
+function _rapportunderlagBlockExport() {
     const d = getData();
     if (!d.length) return [];
     const k = kTroskel();
@@ -44,12 +46,11 @@ function rapportunderlagBlock() {
     // Sammanfattning
     const kvLon = d.filter(arKv).map(r => r.lon), maLon = d.filter(arMa).map(r => r.lon);
     const reg = runOLSRegression();
-    const uk = bedomningUnderlag();
+    const uk = bedomningUnderlag({ reg });
     const sammanfattning = {
         n: d.length, nKv: kvLon.length, nMa: maLon.length, medKv: Stat.median(kvLon), medMa: Stat.median(maLon),
         oforklarat: reg.error ? null : { pct: reg.konPct, lo: reg.konPctLow, hi: reg.konPctHigh, medBas: reg.modelName === 'full' },
         kvalitet: uk ? { status: uk.status, brister: uk.kriterier.filter(c => c.status !== 'ok').map(c => c.namn) } : null,
-        manuellt: manuellaBas(),
     };
 
     // Lika arbete — samma grupper som EU-tabellen
@@ -93,6 +94,11 @@ function rapportunderlagBlock() {
         block.push(_ruGruppBlock(g, { ...opt, id: `yrke:${i}`, justerat: _ruJusteratGap(rader, { k: statGolv() }), ki, arsbelopp }));
     });
     par.forEach((p, i) => block.push(_ruParBlock(p, { ...opt, id: `par:${i}`, kravProxy })));
+    // Egna tabeller (ADR-52): ett block per tabell, ur samma recept som Word-utkastet, PDF-rapporten och Excel.
+    (state.rapportTabeller || []).forEach((r, i) => {
+        if (typeof _trTabeller !== 'function' || typeof _ruEgenTabellBlock !== 'function') return;
+        _trTabeller(d, r, { k }).forEach((t, j) => block.push(_ruEgenTabellBlock(t, { ...opt, id: `egen:${i}:${j}` })));
+    });
     return block;
 }
 
@@ -123,6 +129,7 @@ function renderRapportunderlag() {
     const avsnitt = block.filter(b => !b.id.includes(':'));
     const yrken = block.filter(b => b.id.startsWith('yrke:'));
     const parBl = block.filter(b => b.id.startsWith('par:'));
+    const egna = block.filter(b => b.id.startsWith('egen:'));
     // Diagrammet över kandidatpar finns bara när det finns par att visa.
     const diagram = _rapportDiagramLista(_rapportParLage.harPar, _rapportParLage.exkluderade).map(g => `
         <article class="ru-block ru-diagram">
@@ -136,11 +143,11 @@ function renderRapportunderlag() {
     const toc = (rubrik, lista) => lista.length
         ? `<li><strong>${esc(rubrik)}</strong>: ${lista.map(b => `<a href="#" data-hoppa-till="${esc(_ruBlockId(b.id))}">${esc(b.rubrik)}</a>`).join(' · ')}</li>` : '';
     const forteckning = `<nav class="ru-toc" aria-label="Innehåll i rapportunderlaget"><ul>`
-        + toc('Avsnitt', avsnitt) + toc('Yrkesgrupper', yrken) + toc('Kandidatpar', parBl) + `</ul>`
+        + toc('Avsnitt', avsnitt) + toc('Yrkesgrupper', yrken) + toc('Kandidatpar', parBl) + toc('Egna tabeller', egna) + `</ul>`
         + `<div class="ru-atgard"><button type="button" class="btn btn-secondary btn-sm" id="btn-ru-kopiera-avsnitt">Kopiera alla avsnitt</button>`
         + `<span class="ru-kvitto" role="status"></span></div><div id="ru-alla-avsnitt" class="ru-alla-avsnitt" hidden></div></nav>`;
     host.innerHTML = forteckning + grupp('Avsnitt', avsnitt) + grupp('Yrkesgrupper i Lika arbete', yrken)
-        + grupp('Kandidatpar i Likvärdigt arbete', parBl)
+        + grupp('Kandidatpar i Likvärdigt arbete', parBl) + grupp('Egna tabeller från Utforska', egna)
         + `<h3 class="ru-grupprubrik">Diagram</h3>${diagram}`;
 }
 
@@ -148,7 +155,9 @@ function renderRapportunderlag() {
 function _ruBlockId(id) { return 'ru-' + String(id).replace(/[^A-Za-z0-9_-]/g, '-'); }
 
 /** Kopierar alla avsnittsblock (utan yrkes- och parblock) i en kopiering. */
-async function kopieraRapportAvsnitt() {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function kopieraRapportAvsnitt(...a) { return medExportLage(() => _kopieraRapportAvsnittExport.apply(null, /** @type {any} */ (a))); }
+async function _kopieraRapportAvsnittExport() {
     const avsnitt = [..._rapportBlockSenast.values()].filter(b => !b.id.includes(':'));
     if (!avsnitt.length) return 'saknas';
     const html = avsnitt.map(b => _ruTillWordHtml(b)).join('\n');
@@ -192,7 +201,9 @@ function _rapportKvitto(knapp, text) {
 }
 
 /** Kopierar ett block som formaterad text + ren text. Reserv: markera och kopiera. */
-async function kopieraRapportBlock(id) {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function kopieraRapportBlock(...a) { return medExportLage(() => _kopieraRapportBlockExport.apply(null, /** @type {any} */ (a))); }
+async function _kopieraRapportBlockExport(id) {
     const b = _rapportBlockSenast.get(id);
     if (!b) return 'saknas';
     const html = _ruTillWordHtml(b), text = _ruTillText(b);
@@ -238,7 +249,9 @@ function _dataUrlTillBlob(dataUrl) {
 
 /** Kopierar ett diagram som PNG (1600 × 900). Ritar fliken först om diagrammet saknas.
  *  Reserv: PNG laddas ner via exportmenyns väg. */
-async function kopieraRapportDiagram(id) {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function kopieraRapportDiagram(...a) { return medExportLage(() => _kopieraRapportDiagramExport.apply(null, /** @type {any} */ (a))); }
+async function _kopieraRapportDiagramExport(id) {
     const def = _rapportDiagramLista(_rapportParLage.harPar, _rapportParLage.exkluderade).find(g => g.id === id)
         || (id !== 'chart-likvardighet-heatmap' ? RAPPORT_DIAGRAM.find(g => g.id === id) : null);
     if (!def) return 'saknas';

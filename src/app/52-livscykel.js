@@ -287,7 +287,9 @@ function renderLifecycleAnalysis() {
     state._lifecycleCache = { result, basRows, primary };
 
     // Rita diagrammet efter DOM-uppdatering
-    requestAnimationFrame(() => _renderLifecycleChart(result));
+    // I exportläget (ADR-51) ritas figuren direkt: exportgrinden läser den i samma varv som fliken ritas om.
+    if (typeof iExportLage === 'function' && iExportLage()) _renderLifecycleChart(result);
+    else requestAnimationFrame(() => _renderLifecycleChart(result));
 
     // Koppla BAS-dropdown
     const sel = document.getElementById('lifecycle-bas-select');

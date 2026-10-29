@@ -687,7 +687,7 @@ console.log('\n── Punktsvärm, före och efter, övergångar ──');
         band: document.querySelectorAll('#chart-demo-spread [data-marke="band"]').length, paneler: document.querySelectorAll('#chart-kon-multiplar svg[data-del="panel"]').length,
         minst: Math.min(...((document.getElementById('chart-demo-spread')._figur || { lager: [0, 0, { data: [{ r: { n: 0 } }] }] }).lager[2].data.map(d => d.r.n))) }));
     ok(e2.hist >= 6, `Ålder & karriär ritar histogrammet med kön mot kön (${e2.hist} staplar)`);
-    ok(e2.band >= 2 && e2.minst >= 10, `Ålder & karriär ritar lönespridningen över ålder som percentilband (minst ${e2.minst} personer i varje åldersgrupp)`);
+    ok(e2.band >= 2 && e2.minst >= 1, `Ålder & karriär ritar lönespridningen över ålder som percentilband (skärmen maskerar inget, ADR-51; minst ${e2.minst} personer i varje åldersgrupp)`);
     ok(e2.paneler >= 2, `Ålder & karriär ritar lön mot ålder i små multiplar (${e2.paneler} paneler)`);
     if (BILDER) for (const id of ['chart-kon-histogram', 'chart-demo-spread', 'chart-kon-multiplar']) { await page.locator('#' + id).scrollIntoViewIfNeeded(); await page.locator('#' + id).screenshot({ path: `${BILDER}/${id}-${NAMN}.png` }); }
     await page.click('.nav-item[data-tab="struktur"]');
@@ -942,8 +942,7 @@ console.log('\n── Noten om små grupper klipps inte i en bred tabell ──'
             bredare: document.getElementById('rapport-table').scrollWidth > Math.ceil(kort.width),
             ikon: noter[0] ? getComputedStyle(noter[0], '::before').content : '' };
     });
-    ok(n.antal > 0 && n.utanfor === 0, `Utforska: ${n.antal} noter om små grupper ryms inom tabellens kort${n.bredare ? ' fast tabellen är bredare' : ''}`);
-    ok(n.ikon === '""', 'noten har en linjeikon, inget bildtecken');
+    ok(n.antal === 0, `Löneöversikten på skärmen har inga noter om små grupper (skärmen maskerar inget, ADR-51; ${n.antal} noter)`);
     await page.setViewportSize({ width: 1400, height: 1000 });
 }
 
@@ -1165,7 +1164,7 @@ await page.waitForTimeout(300);
 await page.click('#ov-filrad [data-oppna-installningar]');
 await page.waitForTimeout(300);
 ok(await page.evaluate(() => document.activeElement.id === 'k-troskel' && document.getElementById('installningar-modal').style.display === 'flex'), 'värdet för minsta gruppstorlek i filraden öppnar inställningarna med fokus i fältet');
-ok(await page.evaluate(() => { const p = document.querySelector('#installningar-modal .glossary-panel').getBoundingClientRect(); return p.width > 300 && p.right <= innerWidth && document.querySelectorAll('#inst-flikar .inst-flik').length === 6; }), 'panelen ryms i fönstret och listar flikarnas egna inställningar');
+ok(await page.evaluate(() => { const p = document.querySelector('#installningar-modal .glossary-panel').getBoundingClientRect(); return p.width > 300 && p.right <= innerWidth && document.querySelectorAll('#inst-flikar .inst-flik').length === 5; }), 'panelen ryms i fönstret och listar flikarnas egna inställningar');
 let bekraftelse = '';
 page.once('dialog', d => { bekraftelse = d.message(); d.accept(); });
 await page.fill('#k-troskel', '6');
@@ -1195,7 +1194,7 @@ ok(await page.inputValue('#k-troskel') === '10', 'fältet visar 10 efter återst
 await page.click('#inst-flikar [data-inst-flik="prioritering"]');
 await page.waitForTimeout(700);
 ok(await page.evaluate(() => document.getElementById('installningar-modal').style.display === 'none' && document.getElementById('view-prioritering').style.display === 'block' && document.getElementById('avsnitt-pr-installningar').open
-    && !!document.getElementById('prio-po-pct').offsetParent), 'Öppna i panelen går till Prioritering, där PO-påslag och beräkningsperiod står kvar');
+    && !!document.getElementById('prio-cfg-atgard').offsetParent), 'Öppna i panelen går till Prioritering, där trösklar och viktning står');
 
 console.log('\n── GDPR: ingen lagring ──');
 const lagring = await page.evaluate(() => {
@@ -1260,8 +1259,8 @@ console.log('\n── Förhandsbesked och urval ──');
     await page.evaluate(() => { sattRapportUrval('hela'); renderExportBesked(); document.getElementById('avsnitt-ex-urval').open = true; });
     const fore = await page.evaluate(() => ({ word: document.getElementById('besked-word').textContent, excel: document.getElementById('besked-excel').textContent, zip: document.getElementById('besked-zip').textContent,
         rader: document.querySelectorAll('#rapport-urval .urval-rad').length, syns: document.getElementById('besked-word').offsetParent !== null }));
-    ok(fore.syns && /Hela dokumentationen · 10 avsnitt · \d+ tabeller · 8 diagram/.test(fore.word) && /Utelämnar:/.test(fore.word), `Word-raden säger vad filen innehåller och utelämnar (${fore.word.slice(0, 90)}…)`);
-    ok(/\d+ blad — Löneöversikt/.test(fore.excel) && /Word-utkastet, Excel-filen \(\d+ blad\) och diagrammen i alla flikar/.test(fore.zip) && fore.rader === 10, 'Excel-raden listar bladen, ZIP-raden säger vad filen bär, och urvalet har tio avsnitt');
+    ok(fore.syns && /Hela dokumentationen · 11 avsnitt · \d+ tabeller · 8 diagram/.test(fore.word) && /Utelämnar:/.test(fore.word), `Word-raden säger vad filen innehåller och utelämnar (${fore.word.slice(0, 90)}…)`);
+    ok(/\d+ blad — Löneöversikt/.test(fore.excel) && /Word-utkastet, Excel-filen \(\d+ blad\) och diagrammen i alla flikar/.test(fore.zip) && fore.rader === 11, 'Excel-raden listar bladen, ZIP-raden säger vad filen bär, och urvalet har elva avsnitt');
     await page.click('[data-urval-fast="ledning"]');
     await page.waitForTimeout(300);
     ok(await page.evaluate(() => /Ledningsbrief · 4 avsnitt/.test(document.getElementById('besked-word').textContent) && document.getElementById('nyckel-ex-urval').textContent === 'Ledningsbrief'), 'ett färdigt urval ändrar beskedet och avsnittets rubrik');
@@ -1305,7 +1304,7 @@ console.log('\n── ZIP-filen och de små exporterna ──');
         return { word, excel, bilder: bilder.length, wordBilder: wz ? Object.keys(wz.files).filter(n => n.startsWith('word/media/')).length : 0, blad: wb ? wb.SheetNames : [], besked: excelAlltBlad(), flikar: [...flikar],
             granska: bilder.some(n => /pag|granska/.test(n)), overlapp: document.getElementById('loading-overlay').style.display }; }, byte.toString('base64'));
     ok(fil.suggestedFilename() === 'lonekartlaggning_export.zip' && !!z.word && z.wordBilder >= 4, `ZIP-filen bär Word-utkastet med sina bilder (${z.word}, ${z.wordBilder} bilder)`);
-    ok(z.excel === 'lonekartlaggning_komplett.xlsx' && JSON.stringify(z.blad) === JSON.stringify(z.besked), `ZIP-filen bär Excel-filen med alla flikar (${z.blad.length} blad, samma som förhandsbeskedet)`);
+    ok(z.excel === 'lonekartlaggning_komplett.xlsx' && JSON.stringify(z.blad) === JSON.stringify(z.besked), `ZIP-filen bär Excel-filen med alla flikar (${z.blad.length} blad, samma som förhandsbeskedet: ${z.blad.join(",")} | ${z.besked.join(",")})`);
     ok(z.bilder >= 15 && z.flikar.length >= 5 && !z.granska, `ZIP-filen bär diagrammen i alla flikar, också de som inte öppnats (${z.bilder} bilder ur ${z.flikar.length} paneler), utom Personer att granska`);
     ok(z.overlapp === 'none', 'väntrutan är borta när filen är klar');
     await page.evaluate(() => document.querySelector('.nav-item[data-tab="struktur"]').click());

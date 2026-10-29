@@ -77,7 +77,8 @@ Icke förhandlingsbara arkitektoniska garantier:
    lagringsobjekt är utbytta mot ombud som kastar vid varje tilldelning. Kvar utanför spärren är IndexedDB och
    Cache API, som ingen kod använder och som CSP och kodgranskning täcker.
 4. **k-anonymitet** (K_STANDARD = 10; användaren kan ändra värdet, ADR-38): grupper med för få
-   individer redovisas inte, för att förhindra återidentifiering. Ett värde under 10 kräver
+   individer redovisas inte i det som lämnar verktyget, för att förhindra återidentifiering; på skärmen
+   visas alla grupper (ADR-51), och det som står nedan om vad som visas gäller exportläget. Ett värde under 10 kräver
    bekräftelse, visas med stående varning och står i metodbilagan, i exporterad data och — under 10 — på varje
    del som kan spridas för sig (diagrambilder, tabeller i urklipp, sidfötter, utskrift, rapportunderlag).
    Redovisningsformen är tvådelad (ADR-12):
@@ -96,12 +97,10 @@ Icke förhandlingsbara arkitektoniska garantier:
    - **Undantag:** likvärdighetsanalysen tillämpar *inte* k-anonymitet (resultatet
      är aggregerat per yrkesgrupp; uttryckligt beslut från användaren).
      Antalet små grupper som ändå ingår redovisas i analysens diagnostik.
-   - **Undantag 2 (ADR-14):** Utforska-fliken *visar* grupper under tröskeln,
-     tonade, eftersom den som använder verktyget redan har rådatan. Skyddet gäller
-     det som lämnar verktyget: tabellens CSV/urklipp och diagrammets exportmeny
-     utelämnar grupperna om inte användaren kryssar i "Ta med grupper under 10 i
-     exporten". K-invarianten undantar det som visas i Utforska och vaktar i stället
-     exporten.
+   - **Undantag 2 (ADR-14):** Utforska-fliken visar grupper under tröskeln, som alla
+     flikar (ADR-51). Skyddet gäller det som lämnar verktyget: tabellens CSV/urklipp och
+     diagrammets exportmeny utelämnar grupperna om inte användaren kryssar i "Ta med grupper
+     under tröskeln i exporten" — rutan är undantaget. K-invarianten vaktar exporten.
    - **Vakt:** `tests/kanonymitet.test.js` är en *invariant*, inte stickprov —
      den renderar samtliga flikar mot ett dataset där varje liten grupps
      mätvärden är unika sentinelvärden och hävdar att inget av dem syns.
@@ -121,7 +120,7 @@ Icke förhandlingsbara arkitektoniska garantier:
 | EU-direktivets rapportmått | EU 2023/970 art. 9 | Struktur & rapportmått: kvartilfördelning, representation per BAS, distributionellt gap, medel- och mediangap, med EU-lönerapporten som Excel. **Tecknet:** verktyget räknar lönegapet som (kvinnor − män) / män och visar det i alla flikar och blad som kvinnors lön i procent av mäns (under 100 % = kvinnor lägre). EU-lönerapportens blad och rapportens avsnitt *Struktur och lönetransparens* (Word/PDF) redovisar i stället direktivets mått, (män − kvinnor) / män i procent, enligt art. 9: positivt tal = kvinnor lägre; kolumnrubriken och en metodrad säger det. Tecknet vänds på ett ställe, `tillDirektivtecken` i `src/lib/struktur.js`; beloppet är detsamma |
 | Lönepolitik | — | Analys mot organisationens ställningstagande: bandkarta, könens läge i spannet och fördelningen i spannets tredjedelar per kön, efterlevnad, täckningsgrad; tomläge utan ställningstagande. Talen följer med som bladet *Lönepolitik* i Excel (alla flikar) — yrkesgrupperna mot sitt spann, läget per kön och BAS-intervall, tredjedelarna och efterlevnaden, med flikens regler för minsta gruppstorlek (`_lpExcelBlad`) — bara när ett ställningstagande är inläst |
 | Organisationspaket | — | En fil med organisationens benämningar, grundinställningar, ställningstagande och jämförelsestatistik; systemägaren skapar det i verktyget, handläggaren läser in det i ett steg (ADR-28) |
-| Utforska | — | Egna vyer: rader × ev. kolumner (BAS, AID, yrkesgrupp inom BAS, sektor, AID-mellannivå, ålder, kön, lönespann; rader även hela urvalet), tio mått, visning som helhet eller per kön, urval med villkor (alla/något, "inte", lön och ålder) och gruppvillkor på uträknat mått, elva diagramtyper (staplar, liggande, hantel, bubbla, låda, individpunkter, punktsvärm, regnmoln, heatmap, grupperade, staplade). Små grupper visas tonade och utelämnas ur export (ADR-14). Klick på en grupp öppnar gruppdossiern |
+| Utforska | — | Egna vyer: rader × ev. kolumner (BAS, AID, yrkesgrupp inom BAS, sektor, AID-mellannivå, ålder, kön, lönespann; rader även hela urvalet), tio mått, visning som helhet eller per kön, urval med villkor (alla/något, "inte", lön och ålder) och gruppvillkor på uträknat mått, elva diagramtyper (staplar, liggande, hantel, bubbla, låda, individpunkter, punktsvärm, regnmoln, heatmap, grupperade, staplade). Små grupper visas som andra på skärmen och utelämnas ur exporten om inte rutan är ikryssad (ADR-14, ADR-51). Klick på en grupp öppnar gruppdossiern |
 | Export | — | Exportmeny på varje diagram: PNG (1920 × 1080 / 1600 × 900), SVG och diagramdata (urklipp/CSV) |
 | Dokumentera & exportera | — | Fas 4: färdigcheck och robusthetspanel, all export, rapportunderlag att klistra in i egen mall (ADR-20), samverkan och Spara och läsa in arbetet (konfiguration, ögonblicksbild, självdiagnostik). De fyra samlade exporterna har var sin uppgift: **Word-utkastet är rapporten, Excel-filen underlaget, PDF-rapporten en låst kopia av Word-utkastet och ZIP-filen allt**. Word och PDF ritas ur samma rapportmodell (`58-rapportmodell.js`), i ett valt urval av avsnitt (hela dokumentationen, ledningsbrief, facklig dialog eller eget); varje export har ett förhandsbesked om vad den innehåller och utelämnar, och exportgrinden ser till att inget läses ur en flik ritad med en äldre tröskel. Därtill JPA-protokoll och handlingsplansunderlag |
 | Gränssnittets form | — | Alla flikar följer en mall: en rad om vad fliken svarar på (*Visa mer*), urval, nyckeltal i en rad, huvudresultat, och fördjupning i hopfällbara avsnitt som säger sitt nyckeltal i rubrikraden. Sök i sidhuvudet markerar en grupp i alla diagram och tabeller (länkade vyer). Panelen Inställningar samlar det som gäller alla flikar. Två lägen: vägledande och kompakt. Byggt för datorskärm; surfplatta och delat fönster fungerar, telefon är inte ett användningsfall (ADR-41) |
@@ -230,7 +229,7 @@ adaptern verkligen delegerar vaktas av `tests/drift.test.js`:
   rätt grupp. Utskriftsfönstret för checklistorna (`printScaffoldView`) läser `:root` och allt från `.dold` till
   stilmallens slut ur den körande stilmallen och lägger in det som byggt stilark (`adoptedStyleSheets`): ett `<style>`-element
   som skriptet skapar blockeras av den ärvda CSP:n (`style-src-elem`), så fönstret var tidigare helt ostilat.
-- **Tester:** Vitest — 2397 tester i 65 filer: rena `src/lib/`-moduler, CSV-parsning, jsdom-röktest
+- **Tester:** Vitest — 2450 tester i 69 filer: rena `src/lib/`-moduler, CSV-parsning, jsdom-röktest
   av varje vy (ADR-7; `tests/smoke.test.js` med det delade fönstret och sju `tests/smoke-*.test.js` per
   område), k-tröskeln i åtta `tests/ktroskel*.test.js` med riggen i `tests/helpers/ktroskel-rigg.js`,
   gränssnittet i `tests/granssnitt*.test.js` (riggen `tests/helpers/granssnitt-rigg.js`) och diagramvyerna i
@@ -479,8 +478,9 @@ drift här. En egen vakt, `tests/version.test.js`, hävdar att stämpeln följer
 **ADR-14 — Utforska visar små grupper; exporten utelämnar dem.** Den som använder verktyget har redan rådatan.
 K-skyddet finns mot *läckage*, alltså det som lämnar verktyget. I Utforska gäller därför:
 
-1. Alla grupper visas. Grupper under tröskeln markeras i diagrammet (ränder och streckad kant) och står i
-   kursiv med n i tabellen.
+1. Alla grupper visas. (Markeringen av grupper under tröskeln på skärmen — ränder, streckad kant, kursiv —
+   utgick med ADR-51: skärmens tröskel är 1, så ingen grupp är liten där. I exportläget får små celler
+   klassen `explore-liten`, som exporten läser.)
 2. Exporten — tabellens CSV/urklipp och diagrammets exportmeny — utelämnar dem, och könsvärden och gap där ena
    könet är under tröskeln, om inte användaren kryssar i "Ta med grupper under k i exporten" (k är tröskelns värde). Regeln bor
    i `src/lib/utforska.js` (markeringen `liten`/`konLiten`) och i `71-utforska-figur.js` (`_explorerVisible`).
@@ -524,7 +524,9 @@ alla flikar och söker igenom den synliga texten.
 rendering (~250 ms). En cache skulle spara den tiden men kräva en invalideringsregel som är bevisbart rätt för
 varje ändring av data, urval och inställningar; ett inaktuellt resultat i en juridisk analys är ett allvarligt
 fel, 250 ms är det inte. Regressionen räknas därför alltid om. *Får inte implementeras*, inte heller som
-memoisering inuti modulen.
+memoisering inuti modulen. Det som är tillåtet är att en funktion som kört regressionen skickar resultatet vidare
+som ett argument till det den själv anropar i samma varv (`bedomningUnderlag({ reg })`, Att göras lista): ett
+värde, ingen lagring, inget att invalidera.
 
 **ADR-19 — Underlagets kvalitet: svagaste länken avgör.** Underlaget bedöms med fem kriterier med status
 OK/Varning/Kritisk: jämförbarhet (andel av personalen i BAS-intervall där båda könen har minst k), statistisk
@@ -549,11 +551,10 @@ verksamheten har (uppdrag, prestation) och skrivs utanför verktyget (§2). Grup
 `src/lib/rapportunderlag.js` och används också av Lika arbetes EU-tabell. Underlaget följer k-regeln strikt:
 kandidatpar med en grupp under tröskeln får inget block, fast fliken Likvärdigt arbete är undantagen.
 
-**ADR-21 — Bara BAS A–J analyseras.** Personer i BAS K och högre läses in men utesluts vid inläsningen
-(`BAS_MAX = 'J'` i `07-standardinstallningar.js`, `basOvanforGrans` i `src/lib/falt.js`). De analyseras manuellt
-av HR. Verktyget redovisar bara antal per BAS — i uppladdningskortet, inläsningsrapporten, åtgärdslistan och
-rapportunderlagets sammanfattning — aldrig löner. Uteslutningen räknas inte som bortfall i Underlagets
-kvalitet; rimlighetskontrollen godkänner BAS A–J.
+**ADR-21 — Alla BAS-intervall ingår (upphävd begränsning).** Till och med 2026.10.19 analyserades bara BAS A–J;
+personer i K och högre räknades men uteslöts. Efter användartest ingår all personal: lönekartläggningen ska
+omfatta hela organisationen, och chefsnivåerna är ofta de grupper där könsskillnaden är störst. Rimlighetskontrollen
+kräver bara att BAS är en bokstav; små intervall skyddas av minsta gruppstorlek vid export.
 
 **ADR-22 — Var uppstår löneskillnaden? Uppdelning på medellön.** Blinder-Oaxaca säger hur stor del av gapet som
 är "förklarat", men inte var det uppstår. Översiktens avsnitt och ett block i rapportunderlaget (efter
@@ -836,13 +837,10 @@ antalet sådana par; beslut av produktägaren). Fyra regler till:
   `_setDiagramKNot` för noten under diagrammet). Demografidelens trendlinje och lutning för hela urvalet
   (alla BAS eller det valda) kräver att urvalet når tröskeln (beslut av produktägaren 2026-10-16); annars
   utelämnas de och noten under diagrammet säger det. Punkterna per person följer sin egen regel (ADR-14).
-- (R4) *Lönerevisionssimulatorn följer tröskeln* (`14-lonesimulator.js`; beslut av produktägaren): urvalet i
-  kontrollerna — kön, BAS-intervall och lönegräns — ska nå tröskeln, annars är knappen inaktiv och en mening
-  står där utfallet annars visas (`_simSynkaKnapp`); åtgärden ska beröra minst så många personer, annars visas
-  meningen i stället för utfallet (kostnaden för "höj till" och de stegvisa lyften är annars skillnaden mot
-  enskildas löner). Lönegapet före och efter är organisationens råa gap och kräver tröskeln för varje kön
-  (`_konFarRedovisasFor`); antalet berörda per kön är ett antal och visas. Vaktas av invarianten (ett urval
-  under och ett över tröskeln), C3 och ett röktest.
+- (R4) *Lönerevisionssimulatorn är borttagen (2026-10, ADR-50).* Det den kunde — begränsa till ett kön och en
+  lönegräns, "höj till" — gör en riktad rad i Löneöversyn, som följer R2: en rad som berör färre personer än
+  tröskeln är användarens egen simulering, beloppet visas på raden med noten om enskildas löner. Lönegapet
+  före och efter kräver tröskeln för varje kön (`_konFarRedovisasFor`). Vaktas av C3 och röktest.
 - (R5) *Löneöversyns tröskelmål följer tröskeln* (`_forecastThreshold`; beslut av produktägaren 2026-10-16):
   lyftet i procent till kvinnor och dess kostnad (kvinnornas lönesumma gånger procentsatsen) visas bara när
   varje kön i urvalet når tröskeln (`_konFarRedovisasFor`), annars ett streck med `_konUtelamnatNot()`.
@@ -1110,6 +1108,43 @@ behövs eftersom en sida från disk inte kan läsa sig själv, och automatisk in
 `tests/smoke-organisation.test.js` och webbläsarröktestet. Lönedata bakas aldrig in: `skapaPaket()` läser
 aldrig `state.data`. Design: [`organisationsfil-design.md`](organisationsfil-design.md).
 
+**ADR-50 — Prioritering är vad, Löneöversyn är hur.** Beslut 2026-10-29 efter användartest: de två flikarna gick
+in i varandra. Prioritering svarar på vad som bör åtgärdas och vad det kostar (matris, åtgärdslista, kostnad);
+Löneöversyn på hur potten fördelas (budget, generellt påslag, riktade potter, utfall, scenarier). Lönerevisions-
+simulatorn i Prioritering är borttagen (`14-lonesimulator.js`); en riktad rad i Löneöversyn kan i stället begränsas
+till ett kön (`kon`) och till löner under en gräns (`lonCap`), och lyfta till en nivå (`mode: 'till'`) —
+`targetRows` i `src/lib/loneoversyn.js` är radens urval. PO-påslag och beräkningsperiod, som all kostnad räknas
+med, står under Inställningar i sidhuvudet (*Gäller alla flikar*) i stället för i Prioritering.
+
+**ADR-51 — Minsta gruppstorlek gäller det som lämnar verktyget, inte skärmen.** Beslut 2026-10-29 efter
+användartest: den som arbetar i verktyget har redan lönefilen, så vyerna maskerar inga grupper. `kTroskel()` är 1 i
+skärmläget och den inställda tröskeln `kInstalld()` i exportläget (`state.kLage`). Allt som lämnar verktyget —
+Excel, Word, PDF, ZIP, CSV, urklipp, diagrambilder, rapportunderlaget, gruppdossierns textkopia, Att göra-CSV,
+konfigurationsfilens ögonblicksbild — körs i `medExportLage()` (`23-exportgrind.js`): generationen ökar så att
+grinden ritar om varje flik som läses, och efteråt ritas skärmen tillbaka. De två funktioner all export av tabeller
+och diagram går genom (`_cloneAndCleanTableForExport`, `_chartExportUnderlag`) går själva in i läget, och
+Dokumentera & exportera ritas alltid i det. Inställningen, stämpeln, metodbilagan och texterna om regeln talar om den
+inställda tröskeln; det statistiska golvet `statGolv()` är oförändrat. Testerna prövar vyerna i exportläget
+(`iExport` i riggen) och skärmen positivt. Knappen *Som export* i sidhuvudet (`sattForhandsvisning`) sätter skärmen i
+exportläget — banner, streckad ram och omritning av det som syns — tills den stängs av; exporterna byter då inte
+läge, och ett byte medan en export pågår avvisas. Efter en export ritas bara det tillbaka som exporten ritade
+(`_ritaOmEfterExport`), Lika arbetes minne har ett rum per tröskel, och ett tröskelbyte räknar om skattningarna
+(`invalidateStatCaches`) bara när `statGolv()` ändras; Att göras lista byggs en gång för Att göra och
+processöversikten (`renderProcessTracker({ punkter })`) — ingen cache, bara ett värde som skickas vidare.
+
+**ADR-52 — Egna tabeller i rapporten som recept, inte tal.** Beslut 2026-10-29. En vy i Utforska sparas med *Lägg
+till i rapporten* som ett recept — rader, kolumner, mått, urval, gruppvillkor och valfri upprepning per BAS-intervall
+(`src/lib/tabellrecept.js`, `state.rapportTabeller`). Recepten ritas om i exportläget (ADR-51) med samma pivot som
+fliken (`computePivot`) och Utforskas exportregler för minsta gruppstorlek, i avsnittet *Egna tabeller* efter
+avsnittet per BAS-intervall (följer med när det gör det), i Excel-bladet *Egna tabeller* och som block i
+rapportunderlaget (`egen:i:j`, `egenTabellBlock` i `src/lib/rapportunderlag.js`). Organisationspaketet kan bära
+recepten (`rapport: { tabeller, perBasRecept }`, `_rapport` i `src/lib/organisationspaket.js`): giltiga recept följer
+med, standardreceptet per BAS utelämnas, ett paket med `rapport` ersätter handläggarens egna tabeller och ett utan
+rör dem inte; formuläret har rutan *Ta med rapportens egna tabeller*. Avsnittet per
+BAS-intervall följer ett recept (`state.perBasRecept`, `valideraPerBasRecept` i `src/lib/perbas.js`): dimension (BAS
+eller sektor), rader, mått, åldersgränser och summeringstabeller; standardreceptet är arbetsgivarnas utkast och sparas
+som null. Båda bärs av konfigurationsfilen och nollställs av *Rensa all data*.
+
 ## 9. Öppna punkter
 
 Kända brister och obesvarade frågor, så att de inte lever bara i en konversationstråd.
@@ -1126,12 +1161,20 @@ Kända brister och obesvarade frågor, så att de inte lever bara i en konversat
    varje grupp görs med omkastning, utom för grupper över 300 personer.
 
 **Prestanda:**
-5. **Ändrad minsta gruppstorlek tar 6,5 s på 55 000 rader**; orsaken är inte undersökt.
+5. **Ändrad minsta gruppstorlek tar 5,9 s på 55 000 rader** (10 → 11): bootstrap-KI (2,7 s, bara när `statGolv()`
+   ändras), Att göra och processöversikten (som läser samma lista, byggd en gång, med regressionen körd en gång
+   och skickad vidare) och den öppna fliken räknas om. Det som återstår är regressionen i processöversikten och
+   underlagets kvalitet, som inte får cachas (ADR-17). Översikt
+   ritas inte två gånger — när Översikt är den öppna fliken är den redan ritad av stegen (`_omritningssteg`).
 
-   Mätvärden med `npm run perf` på 55 000 syntetiska rader: uppladdning till klart gränssnitt ~2 s, till klara
-   bakgrundsanalyser ~5,4 s; Lika arbete 1,5 s, Dokumentera & exportera 2,0 s, Ålder & karriär ~1,0 s, övriga
-   flikar under 0,5 s styck. Det som kostar i Lika arbete är statistik — bootstrap-KI, kvantilregression över
-   alla τ och OLS — utan någon enskild patologisk punkt. Att `runOLSRegression` körs tre gånger per rendering
+   Mätvärden med `npm run perf` på 55 000 syntetiska rader (2026-10-29, efter ADR-51): uppladdning till klart
+   gränssnitt ~2,8 s, till klara bakgrundsanalyser ~7,7 s; Likvärdigt arbete 2,6 s, Lika arbete 2,0 s, Ålder &
+   karriär 1,8 s, Dokumentera & exportera 3,7 s, övriga flikar under 0,6 s styck; hela svepet 19 s. Dokumentera
+   & exportera ritas i exportläget och tog 12 s innan förhandsbeskedet byggde rapportmodellen en gång i stället
+   för tre (`rapportModellBada`), Excel-bladlistan en gång i stället för två, Lika arbetes minne fick ett rum per
+   tröskel och omritningen efteråt begränsades till det exporten ritade (`_ritaOmEfterExport`). Det som kostar i
+   Lika arbete är statistik — bootstrap-KI, kvantilregression över alla τ och OLS — utan någon enskild patologisk
+   punkt. Att `runOLSRegression` körs tre gånger per rendering
    (~250 ms) är ett beslut, inte en brist (ADR-17). ADR-1:s chunking behövs inte.
 
 **Kod och bygge:**

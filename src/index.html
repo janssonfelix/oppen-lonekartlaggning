@@ -80,7 +80,7 @@
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
                     <span class="nav-etikett">Prioritering</span>
                 </button>
-                <button class="nav-item" data-tip="Simulera hur en lönepott kan fördelas och vad det gör med lönegapet. Rör inte era system." data-tab="loneoversyn" id="tab-loneoversyn" aria-disabled="true" title="Ladda upp strukturdata för att aktivera" aria-controls="view-loneoversyn">
+                <button class="nav-item" data-tip="Hur fördelas potten? Simulera generella och riktade påslag och se kostnad och lönegap före och efter. Rör inte era system." data-tab="loneoversyn" id="tab-loneoversyn" aria-disabled="true" title="Ladda upp strukturdata för att aktivera" aria-controls="view-loneoversyn">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
                     <span class="nav-etikett">Löneöversyn</span>
                 </button>
@@ -143,6 +143,10 @@
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
                     Förklaring
                 </button>
+                <button id="btn-forhandsvisa" class="btn btn-secondary btn-sm mitt rad-inline gap-6" type="button" aria-pressed="false" title="Visa flikarna som i det som lämnar verktyget: lönemått för grupper under minsta gruppstorlek redovisas inte">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+                    Som export
+                </button>
                 <button id="btn-open-installningar" class="btn btn-secondary btn-sm mitt rad-inline gap-6" type="button" aria-haspopup="dialog">
                     <svg class="ikon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/></svg>
                     Inställningar
@@ -161,6 +165,12 @@
                 <svg class="ikon ikon-statusVarning" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 4 21 20H3z" fill="currentColor"/></svg>
                 <span id="k-troskel-varning-text"></span>
                 <a href="#k-troskel" id="k-troskel-varning-lank">Ändra</a>
+            </div>
+            <!-- ADR-51: förhandsvisning — flikarna ritas i exportläget tills användaren stänger av den. -->
+            <div id="forhandsvisning-banner" class="forhandsvisning-banner" role="status" aria-live="polite" hidden>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+                <span><strong>Förhandsvisning av exporten.</strong> Flikarna visas som i det som lämnar verktyget: lönemått för grupper med färre än <span data-k-troskel>10</span> personer redovisas inte. I vanligt läge visar skärmen alla grupper.</span>
+                <button id="btn-forhandsvisa-av" type="button" class="forhandsvisning-av">Visa skärmen igen</button>
             </div>
             <div id="demo-mode-banner" class="demo-mode-banner dold" role="status" aria-live="polite">
                 <span class="demo-mode-icon" aria-hidden="true"><svg class="ikon ikon-kolv" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 3h6"/><path d="M10 3v6l-5 9a2 2 0 0 0 1.8 3h10.4a2 2 0 0 0 1.8-3l-5-9V3"/><path d="M7.5 15h9"/></svg></span>
@@ -184,7 +194,7 @@
                     <!-- Första-intryck: visas tills data laddats (döljs av _renderDemoBanner när data finns) -->
                     <div id="first-run-hint" class="first-run-hint">
                         <span class="first-run-hint-icon" aria-hidden="true"></span>
-                        <div><strong>Kom igång:</strong> läs in lönefilen nedan — eller <button type="button" id="first-run-demo-link" class="first-run-demo-link">prova med demodata</button>.</div>
+                        <div><strong>Kom igång:</strong> läs in organisationspaketet nedan om er organisation har ett, sedan lönefilen — eller <button type="button" id="first-run-demo-link" class="first-run-demo-link">prova med demodata</button>.</div>
                     </div>
 
                     <!-- Filrutorna: syns alltid; kompakta efter inläsning (ADR-36) -->
@@ -192,120 +202,23 @@
                     <div id="ov-filrad" class="urvalsrad ov-filrad"></div>
                     <div id="upload-sektion">
                     <div id="upload-sektion-rubrik" class="rad-bryt-mitt gap-12 mellan marg-6-0-8">
-                        <h2 class="fs-md fw-600 marg-0">Filer &amp; uppladdningar <span class="text-dampad-sm fw-400">— en obligatorisk, övriga valfria</span></h2>
+                        <h2 class="fs-md fw-600 marg-0">Filer &amp; uppladdningar <span class="text-dampad-sm fw-400">— paketet först om ni har ett, lönefilen är obligatorisk, resten valfritt</span></h2>
                     </div>
                     <p id="upload-hjalp" class="text-dampad-xs lh-1_5 marg-0-0-8">
                         Osäker på hur du får ut filen ur lönesystemet? Se <strong>datauttag.md</strong>
                         (medföljer verktyget) &mdash; eller ladda ner CSV-mallen nedan och fyll den från valfri rapport.
                     </p>
-                    <!-- Horisontell upload-rad: alla uppladdningskaellor -->
-                    <div class="upload-row" id="upload-row">
-                        <div class="upload-cell required" id="upload-cell-data">
-                            <div class="upload-cell-header">
-                                <h3>Lönefil</h3>
-                                <span class="upload-badge required">Obligatorisk</span>
-                            </div>
-                            <div class="upload-unlocks"><svg class="ikon ikon-lasOppen" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/></svg> Aktiverar <strong>hela analysen</strong> — alla flikar</div>
-                            <div class="file-drop-area" id="drop-area-data">
-                                <input type="file" id="file-input-data" accept=".csv,.xlsx" aria-label="Ladda upp strukturdata">
-                                <p>Klicka eller dra <code>.csv</code>/<code>.xlsx</code> hit</p>
-                            </div>
-                            <div id="data-status" class="status-msg"></div>
-                            <div class="upload-inlast" hidden>
-                                <p class="upload-filnamn"></p>
-                                <label class="upload-namn">Namn <input type="text" id="org-namn" aria-label="Organisationens namn" class="form-select" maxlength="100" autocomplete="off" placeholder="t.ex. Exempelkommunen"></label>
-                                <p class="upload-namn-fel" role="alert" hidden></p>
-                                <div class="upload-knappar">
-                                    <button type="button" class="btn btn-secondary btn-sm" data-byt-fil="file-input-data">Byt fil</button>
-                                    <button type="button" class="btn btn-secondary btn-sm" id="btn-kolumnmappning">Kolumnmappning</button>
-                                </div>
-                            </div>
-                            <details class="upload-help" open>
-                                <summary>Vilka kolumner krävs?</summary>
-                                <div class="upload-help-content">
-                                    <p>Personalfil med <strong>en rad per anställd</strong>:</p>
-                                    <ul>
-                                        <li><strong>BAS-intervall</strong> — A–J analyseras (lönenivå-grad); högre BAS räknas bara</li>
-                                        <li><strong>AID / Yrkesgrupp</strong> — yrkeskod + benämning</li>
-                                        <li><strong>Månadslön</strong> — heltidsekvivalent</li>
-                                        <li><strong>Ålder</strong></li>
-                                        <li><strong>Kön</strong> — Kvinna / Man</li>
-                                        <li><strong>Poäng</strong> <em>(valfri)</em> — arbetsvärderingspoäng per befattning; aktiverar poäng som krav-proxy i likvärdighetsanalysen</li>
-                                    </ul>
-                                    <p class="mt-8">Format: <code>.csv</code> (alla vanliga avgränsare och teckenkodningar detekteras) eller Excel <code>.xlsx</code>.</p>
-                                    <button id="btn-download-csv-template" type="button" class="btn btn-secondary btn-sm mt-8">Ladda ner CSV-mall</button>
-                                </div>
-                            </details>
-                        </div>
-
-                        <div class="upload-cell optional" id="upload-cell-policy">
-                            <div class="upload-cell-header">
-                                <h3>Referens: lönepolitisk målbild</h3>
-                                <span class="upload-badge optional">Valfritt</span>
-                            </div>
-                            <p id="referens-status" class="ref-status" role="status" aria-live="polite"></p>
-                            <div class="upload-unlocks">Jämförs mot i <strong>Prioritering</strong>, <strong>Lönepolitik</strong> och <strong>Handlingsplan</strong></div>
-                            <div class="file-drop-area" id="drop-area-policy">
-                                <input type="file" id="file-input-policy" accept=".csv,.xlsx" aria-label="Ladda upp lönepolitiskt ställningstagande">
-                                <p>Klicka eller dra <code>.csv</code>/<code>.xlsx</code> hit</p>
-                            </div>
-                            <div id="policy-status" class="status-msg"></div>
-                            <div class="upload-inlast" hidden>
-                                <p class="upload-filnamn"></p>
-                                <div class="upload-knappar"><button type="button" class="btn btn-secondary btn-sm" data-byt-fil="file-input-policy">Byt fil</button></div>
-                            </div>
-                            <div id="referens-namn-rad" class="ref-namn-rad" hidden>
-                                <label for="referens-namn">Namn på referensen</label>
-                                <input type="text" id="referens-namn" class="form-select" maxlength="100" autocomplete="off">
-                                <p class="upload-namn-fel" role="alert" hidden></p>
-                            </div>
-                            <button type="button" id="btn-referens-aterga" class="btn btn-secondary btn-sm" hidden></button>
-                            <details class="upload-help" open>
-                                <summary>Vad används det till?</summary>
-                                <div class="upload-help-content">
-                                    <p>Önskade lönenivåer per BAS-intervall — P10 (lägstanivå), Median, P90 (toppnivå). Ladda upp ert lönepolitiska ställningstagande (eller ett organisationspaket) — Prioritering och Lönepolitik jämför mot det. Du kan ge det ett namn.</p>
-                                    <p class="mt-8">Format: <code>.csv</code> eller <code>.xlsx</code>. Kolumner: <code>BAS</code>, <code>P10</code>, <code>Median</code>, <code>P90</code>.</p>
-                                </div>
-                            </details>
-                        </div>
-
-                        <div class="upload-cell optional" id="upload-cell-stat">
-                            <div class="upload-cell-header">
-                                <h3>Jämförelsestatistik</h3>
-                                <span class="upload-badge optional">Valfritt</span>
-                            </div>
-                            <div class="upload-unlocks"><svg class="ikon ikon-lasOppen" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/></svg> Aktiverar fliken <strong>Jämförelsestatistik</strong> + referens i Prioritering &amp; Likvärdigt arbete</div>
-                            <div class="file-drop-area" id="drop-area-stat">
-                                <input type="file" id="file-input-stat" accept=".xlsx,.csv" aria-label="Ladda upp jämförelsestatistik">
-                                <p>Klicka eller dra <code>.xlsx</code> hit</p>
-                            </div>
-                            <div id="stat-status" class="status-msg"></div>
-                            <div class="upload-inlast" hidden>
-                                <p class="upload-filnamn"></p>
-                                <div class="upload-knappar"><button type="button" class="btn btn-secondary btn-sm" data-byt-fil="file-input-stat">Byt fil</button></div>
-                            </div>
-                            <label class="upload-namn">Namn <input type="text" id="jmf-namn" aria-label="Jämförelsestatistikens namn" class="form-select" maxlength="100" autocomplete="off" placeholder="t.ex. SKR:s lönestatistik"></label>
-                            <p class="upload-namn-fel" role="alert" hidden></p>
-                            <details class="upload-help" open>
-                                <summary>Vad används det till?</summary>
-                                <div class="upload-help-content">
-                                    <p>Medianlöner per yrkesgrupp i jämförelsestatistiken — extern referens för marknadsläge och rekryteringsrisk.</p>
-                                    <p class="mt-8">Format: <code>.xlsx</code>. Kolumner: AID-kod, BAS-intervall, Median.</p>
-                                </div>
-                            </details>
-                        </div>
-
                     <!-- Organisationspaket (ADR-28): organisationens benämningar, grundinställningar,
                          ställningstagande och jämförelsestatistik i en fil. Systemägaren skapar det. -->
-                    <details id="organisationspaket" class="prio-config-panel upload-row-bred marg-t-0">
-                        <summary>Organisationspaket
+                    <details id="organisationspaket" class="prio-config-panel paket-forst" open>
+                        <summary><span class="steg-nr">Steg 1</span> Organisationspaket <span class="text-dampad-sm fw-400">— läs in först, om er organisation har ett</span>
                             <span class="info-tip" data-tooltip="Ett organisationspaket innehåller organisationens namn och benämningar, grundinställningar, lönepolitiska ställningstagande och jämförelsestatistik. Systemägaren skapar det; handläggarna läser in det i ett steg. Paketet innehåller bara aggregat — inga personuppgifter."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
                             <span class="text-dampad-sm marg-v-8">Organisation: <strong data-profile-label="name">Er organisation</strong></span>
                             <span id="paket-orgtyp" class="text-dampad-sm marg-v-8"></span>
                             <span id="k-troskel-sammanfattning" class="text-dampad-sm marg-v-8"></span>
                         </summary>
                         <div class="paket-innehall">
-                            <p>Läs in er organisations paket, så används dess ställningstagande, jämförelsestatistik och benämningar. Har ni inget paket går det bra att läsa in ställningstagandet och statistiken var för sig med rutorna ovan.</p>
+                            <p>Har er organisation ett paket? Läs in det först, så används dess ställningstagande, jämförelsestatistik och benämningar i hela verktyget, och rutorna <em>Referens</em> och <em>Jämförelsestatistik</em> nedan fylls i av sig själva. Har ni inget paket går det bra att läsa in ställningstagandet och statistiken var för sig med rutorna ovan.</p>
                             <p class="paket-installningar-not">Organisationstyp och minsta gruppstorlek ställs in under <button type="button" class="ov-filrad-lank" data-oppna-installningar>Inställningar</button>.</p>
                             <div class="paket-rad">
                                 <label class="btn btn-secondary btn-sm pekare">
@@ -348,6 +261,8 @@
                                     <input type="checkbox" id="paket-inaktivitet-last" class="sjalv-start">
                                     <label for="paket-sma-export">Små grupper får tas med i Utforskas export</label>
                                     <input type="checkbox" id="paket-sma-export" checked class="sjalv-start">
+                                    <label for="paket-rapport">Ta med rapportens egna tabeller och receptet per BAS-intervall</label>
+                                    <input type="checkbox" id="paket-rapport" class="sjalv-start">
                                 </div>
                                 <p id="paket-sammanfattning" class="paket-sammanfattning"></p>
                                 <button type="button" id="btn-paket-spara" class="btn btn-secondary btn-sm" disabled>Spara som organisationspaket</button>
@@ -367,6 +282,103 @@
                             </details>
                         </div>
                     </details>
+                    <!-- Horisontell upload-rad: alla uppladdningskaellor -->
+                    <div class="upload-row" id="upload-row">
+                        <div class="upload-cell required" id="upload-cell-data">
+                            <div class="upload-cell-header">
+                                <h3><span class="steg-nr">Steg 2</span> Lönefil</h3>
+                                <span class="upload-badge required">Obligatorisk</span>
+                            </div>
+                            <div class="upload-unlocks"><svg class="ikon ikon-lasOppen" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/></svg> Aktiverar <strong>hela analysen</strong> — alla flikar</div>
+                            <div class="file-drop-area" id="drop-area-data">
+                                <input type="file" id="file-input-data" accept=".csv,.xlsx" aria-label="Ladda upp strukturdata">
+                                <p>Klicka eller dra <code>.csv</code>/<code>.xlsx</code> hit</p>
+                            </div>
+                            <div id="data-status" class="status-msg"></div>
+                            <div class="upload-inlast" hidden>
+                                <p class="upload-filnamn"></p>
+                                <label class="upload-namn">Namn <input type="text" id="org-namn" aria-label="Organisationens namn" class="form-select" maxlength="100" autocomplete="off" placeholder="t.ex. Exempelkommunen"></label>
+                                <p class="upload-namn-fel" role="alert" hidden></p>
+                                <div class="upload-knappar">
+                                    <button type="button" class="btn btn-secondary btn-sm" data-byt-fil="file-input-data">Byt fil</button>
+                                    <button type="button" class="btn btn-secondary btn-sm" id="btn-kolumnmappning">Kolumnmappning</button>
+                                </div>
+                            </div>
+                            <details class="upload-help" open>
+                                <summary>Vilka kolumner krävs?</summary>
+                                <div class="upload-help-content">
+                                    <p>Personalfil med <strong>en rad per anställd</strong>:</p>
+                                    <ul>
+                                        <li><strong>BAS-intervall</strong> — en bokstav per rad (lönenivå-grad); alla intervall ingår, även chefsnivåerna</li>
+                                        <li><strong>AID / Yrkesgrupp</strong> — yrkeskod + benämning</li>
+                                        <li><strong>Månadslön</strong> — heltidsekvivalent</li>
+                                        <li><strong>Ålder</strong></li>
+                                        <li><strong>Kön</strong> — Kvinna / Man</li>
+                                        <li><strong>Poäng</strong> <em>(valfri)</em> — arbetsvärderingspoäng per befattning; aktiverar poäng som krav-proxy i likvärdighetsanalysen</li>
+                                    </ul>
+                                    <p class="mt-8">Format: <code>.csv</code> (alla vanliga avgränsare och teckenkodningar detekteras) eller Excel <code>.xlsx</code>.</p>
+                                    <button id="btn-download-csv-template" type="button" class="btn btn-secondary btn-sm mt-8">Ladda ner CSV-mall</button>
+                                </div>
+                            </details>
+                        </div>
+
+                        <div class="upload-cell optional" id="upload-cell-policy">
+                            <div class="upload-cell-header">
+                                <h3><span class="steg-nr">Steg 3</span> Referens: lönepolitisk målbild</h3>
+                                <span class="upload-badge optional">Valfritt</span>
+                            </div>
+                            <p id="referens-status" class="ref-status" role="status" aria-live="polite"></p>
+                            <div class="upload-unlocks">Jämförs mot i <strong>Prioritering</strong>, <strong>Lönepolitik</strong> och <strong>Handlingsplan</strong></div>
+                            <div class="file-drop-area" id="drop-area-policy">
+                                <input type="file" id="file-input-policy" accept=".csv,.xlsx" aria-label="Ladda upp lönepolitiskt ställningstagande">
+                                <p>Klicka eller dra <code>.csv</code>/<code>.xlsx</code> hit</p>
+                            </div>
+                            <div id="policy-status" class="status-msg"></div>
+                            <div class="upload-inlast" hidden>
+                                <p class="upload-filnamn"></p>
+                                <div class="upload-knappar"><button type="button" class="btn btn-secondary btn-sm" data-byt-fil="file-input-policy">Byt fil</button></div>
+                            </div>
+                            <div id="referens-namn-rad" class="ref-namn-rad" hidden>
+                                <label for="referens-namn">Namn på referensen</label>
+                                <input type="text" id="referens-namn" class="form-select" maxlength="100" autocomplete="off">
+                                <p class="upload-namn-fel" role="alert" hidden></p>
+                            </div>
+                            <button type="button" id="btn-referens-aterga" class="btn btn-secondary btn-sm" hidden></button>
+                            <details class="upload-help" open>
+                                <summary>Vad används det till?</summary>
+                                <div class="upload-help-content">
+                                    <p>Önskade lönenivåer per BAS-intervall — P10 (lägstanivå), Median, P90 (toppnivå). Ladda upp ert lönepolitiska ställningstagande (eller ett organisationspaket) — Prioritering och Lönepolitik jämför mot det. Du kan ge det ett namn.</p>
+                                    <p class="mt-8">Format: <code>.csv</code> eller <code>.xlsx</code>. Kolumner: <code>BAS</code>, <code>P10</code>, <code>Median</code>, <code>P90</code>.</p>
+                                </div>
+                            </details>
+                        </div>
+
+                        <div class="upload-cell optional" id="upload-cell-stat">
+                            <div class="upload-cell-header">
+                                <h3><span class="steg-nr">Steg 4</span> Jämförelsestatistik</h3>
+                                <span class="upload-badge optional">Valfritt</span>
+                            </div>
+                            <div class="upload-unlocks"><svg class="ikon ikon-lasOppen" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/></svg> Aktiverar fliken <strong>Jämförelsestatistik</strong> + referens i Prioritering &amp; Likvärdigt arbete</div>
+                            <div class="file-drop-area" id="drop-area-stat">
+                                <input type="file" id="file-input-stat" accept=".xlsx,.csv" aria-label="Ladda upp jämförelsestatistik">
+                                <p>Klicka eller dra <code>.xlsx</code> hit</p>
+                            </div>
+                            <div id="stat-status" class="status-msg"></div>
+                            <div class="upload-inlast" hidden>
+                                <p class="upload-filnamn"></p>
+                                <div class="upload-knappar"><button type="button" class="btn btn-secondary btn-sm" data-byt-fil="file-input-stat">Byt fil</button></div>
+                            </div>
+                            <label class="upload-namn">Namn <input type="text" id="jmf-namn" aria-label="Jämförelsestatistikens namn" class="form-select" maxlength="100" autocomplete="off" placeholder="t.ex. SKR:s lönestatistik"></label>
+                            <p class="upload-namn-fel" role="alert" hidden></p>
+                            <details class="upload-help" open>
+                                <summary>Vad används det till?</summary>
+                                <div class="upload-help-content">
+                                    <p>Medianlöner per yrkesgrupp i jämförelsestatistiken — extern referens för marknadsläge och rekryteringsrisk.</p>
+                                    <p class="mt-8">Format: <code>.xlsx</code>. Kolumner: AID-kod, BAS-intervall, Median.</p>
+                                </div>
+                            </details>
+                        </div>
+
                     </div>
                     </div>
 
@@ -382,7 +394,7 @@
                                 <h3 class="marg-0-0-8">Uppgiftsminimering</h3>
                                 <p class="fs-md lh-1_6">Verktyget läser <strong>inte</strong> in anställningsnummer, personnummer, namn eller e-post även om de finns i CSV-filen. Filer som innehåller sådana fält avvisas automatiskt med meddelande till användaren.</p>
                                 <h3 class="marg-14-0-8">K-anonymitet</h3>
-                                <p class="fs-md lh-1_6">Lönemått för grupper med färre än <span data-k-troskel>10</span> personer redovisas inte i de beskrivande vyerna och exporterna. Gruppen visas inte som en tom rad, utan räknas upp med namn i en not vid tabellen (<svg class="ikon ikon-las" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>) — så att du ser vad som saknas och varför. Är gruppen stor nog men ett av könen för litet visas gruppens samlade median, utan könsjämförelse. Detta förhindrar att enskilda individers löner kan identifieras via deduktion (t.ex. genom kombination av kön + BAS + ålder). Medianlön per kön, det råa lönegapet och regressionens ojusterade steg visas bara när både kvinnor och män når tröskeln; i Ålder &amp; karriär gäller det också lönegap, trendlinjer och lådor per kön, och en persons punkt visas bara när personens grupp (yrke inom BAS) och kön i gruppen når tröskeln. Undantag: Likvärdigt arbete visar kandidatpar även när en grupp är liten, Utforska visar små grupper tonade (de följer bara med i exporten om du kryssar i det), Personer att granska och extremvärdeslistan visar enskilda personer — bara i verktyget — och diagram med en punkt per person visar enskilda löner.</p>
+                                <p class="fs-md lh-1_6">På skärmen visas alla grupper. I det som lämnar verktyget — Excel, Word, PDF, ZIP, CSV, urklipp, diagrambilder och rapportunderlaget — redovisas inte lönemått för grupper med färre än <span data-k-troskel>10</span> personer. Gruppen visas inte som en tom rad, utan räknas upp med namn i en not vid tabellen (<svg class="ikon ikon-las" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>) — så att du ser vad som saknas och varför. Är gruppen stor nog men ett av könen för litet visas gruppens samlade median, utan könsjämförelse. Detta förhindrar att enskilda individers löner kan identifieras via deduktion (t.ex. genom kombination av kön + BAS + ålder). Medianlön per kön, det råa lönegapet och regressionens ojusterade steg visas bara när både kvinnor och män når tröskeln; i Ålder &amp; karriär gäller det också lönegap, trendlinjer och lådor per kön, och en persons punkt visas bara när personens grupp (yrke inom BAS) och kön i gruppen når tröskeln. Undantag: Likvärdigt arbete visar kandidatpar även när en grupp är liten, Utforska visar små grupper tonade (de följer bara med i exporten om du kryssar i det), Personer att granska och extremvärdeslistan visar enskilda personer — bara i verktyget — och diagram med en punkt per person visar enskilda löner.</p>
                                 <h3 class="marg-14-0-8">Lokal bearbetning</h3>
                                 <p class="fs-md lh-1_6">All data stannar i din webbläsare. Verktyget gör inga nätverksanrop — Content Security Policy (CSP) blockerar alla utgående anslutningar. Data försvinner automatiskt när du stänger webbläsarfliken. Inget skrivs till localStorage, cookies eller IndexedDB.</p>
                                 <h3 class="marg-14-0-8">Defensiv djupgående</h3>
@@ -1081,7 +1093,7 @@
                                         <th data-export-label="Yrkesgrupp (AID + benämning)">Yrkesgrupp</th>
                                         <th data-export-label="Antal personer (kvinnor/män)">Antal (Kv/Mä)</th>
                                         <th data-export-label="Köns-dominans (Kvinno-/Mans-/Blandad)">Dominans</th>
-                                        <th data-export-label="Andel kvinnor i yrket nationellt (SKR:s personalstatistik)" title="Andel kvinnor i yrket (AID-etiketten) enligt SKR:s personalstatistik, i kommuner, regioner eller båda efter organisationstypen — ett referensvärde att jämföra er egen könsfördelning mot">Kvinnor, SKR</th>
+                                        <th data-export-label="Andel kvinnor i yrket nationellt (SKR:s personalstatistik)" title="Andel kvinnor i samma yrke (AID-kod) nationellt — i kommuner, regioner eller båda enligt valet under Inställningar — ur SKR:s personalstatistik (Sveriges Kommuner och Regioner; period i Om verktyget). Ett referensvärde att jämföra er egen könsfördelning mot.">Kvinnor nationellt</th>
                                         <th data-export-label="Median Kvinnor (kr/mån)">Median Kvinnor</th>
                                         <th data-export-label="Median Män (kr/mån)">Median Män</th>
                                         <th data-export-label="Lönegap kvinnor/män (kvinnors median i % av männens)">Kvinnors median i % av mäns</th>
@@ -1243,7 +1255,7 @@
                             <h3>Vid lönerevisionsdialog</h3>
                             <ul>
                                 <li>Diagrammet <em>Vilka yrken avviker mest?</em> rangordnar yrkena; klicka på en stapel för att se raden i tabellen</li>
-                                <li>Använd Lönerevisionssimulatorn (Prioritering-fliken) för att räkna ut budgetpåverkan av att lyfta dessa</li>
+                                <li>Räkna i <strong>Löneöversyn</strong> vad det kostar att lyfta dessa: lägg en riktad pott på gruppen</li>
                             </ul>
                             <h3>Tolkningstips</h3>
                             <ul>
@@ -1392,7 +1404,7 @@
                                                 </th>
                                                 <th class="t-mitt" scope="col" data-export-label="Prioriteringsstatus (Utred / Bevaka / OK / Granska)">Status</th>
                                                 <th class="t-mitt" scope="col" data-no-sort data-export-label="Bristyrke (Ja/Nej)">Brist
-                                                    <span class="info-tip" data-tooltip="Markera som bristyrke (rekryteringssvårighet, SKR-bristlistor). Bristyrken får 1,2× bonus i prioriteringsindexet."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
+                                                    <span class="info-tip" data-tooltip="Markera som bristyrke: yrken ni har svårt att rekrytera till, enligt er egen rekryteringsstatistik eller en nationell bristyrkeslista. Bristyrken får 1,2× bonus i prioriteringsindexet."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
                                                 </th>
                                                 <th class="t-mitt" scope="col" data-no-sort data-export-skip>Detalj
                                                     <span class="info-tip" data-tooltip="Öppna gruppen i Löneöversikten (Utforska) för fördjupad analys."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
@@ -1424,65 +1436,8 @@
                                 </div>
                             </div>
                             </details>
-                            <details class="avsnitt" id="avsnitt-pr-simulator">
-                            <summary><span class="avsnitt-titel"><h2>Lönerevisionssimulator</h2> <span class="info-tip" data-tooltip="Simulera effekten av en lönerevision innan den genomförs. Definiera regler (vilka grupper, hur mycket) och se total kostnad och nytt råa/oförklarat lönegap."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><span class="avsnitt-under">Pröva en revision innan den genomförs</span></span><span class="avsnitt-nyckel" id="nyckel-pr-simulator"></span></summary>
-                            <div class="prio-config-content">
-                                    <p class="text-dampad-sm lh-1_55 marg-0-0-14">
-                                        Definiera en regel för lönehöjning och se omedelbart effekten på budget och lönegap. Simuleringen påverkar inte faktisk data — bara visualiseringen nedan.
-                                    </p>
-                                    <div class="prio-config-grid">
-                                        <label>
-                                            <span>Berör kön</span>
-                                            <select id="sim-kon" class="form-select pad-6-10">
-                                                <option value="kvinna">Endast kvinnor</option>
-                                                <option value="man">Endast män</option>
-                                                <option value="alla">Alla</option>
-                                            </select>
-                                            <small>Vilka som omfattas av höjningen</small>
-                                        </label>
-                                        <label>
-                                            <span>Berör BAS-intervall</span>
-                                            <select id="sim-bas" class="form-select pad-6-10">
-                                                <option value="__ALLA__">Alla BAS</option>
-                                            </select>
-                                            <small>Begränsa till specifik BAS</small>
-                                        </label>
-                                        <label>
-                                            <span>Endast under lönegräns (kr)</span>
-                                            <input type="number" id="sim-loncap" placeholder="t.ex. 35000" step="500" min="0">
-                                            <small>Lämna tom för att inkludera alla</small>
-                                        </label>
-                                        <label>
-                                            <span>Åtgärd</span>
-                                            <select id="sim-action" class="form-select pad-6-10">
-                                                <option value="add">Höj med X kr/månad</option>
-                                                <option value="raise_to">Höj till Y kr/månad (om under)</option>
-                                                <option value="pct">Höj med X procent</option>
-                                                <option value="staged_p25">Stegvis lyft till P25 (3-årsplan)</option>
-                                                <option value="staged_median">Stegvis lyft till median (3-årsplan)</option>
-                                            </select>
-                                            <small>Hur höjningen tillämpas. Stegvisa alternativ visar 3-årsplan.</small>
-                                        </label>
-                                        <label>
-                                            <span>Belopp / procent</span>
-                                            <input type="number" id="sim-amount" value="1500" step="100" min="0">
-                                            <small>Tolkas enligt åtgärden ovan</small>
-                                        </label>
-                                        <label>
-                                            <span>Min/max-spann (valfritt)</span>
-                                            <input type="number" id="sim-amount-max" placeholder="t.ex. 2500" step="100" min="0">
-                                            <small>Om angivet visas både min- och max-scenariot</small>
-                                        </label>
-                                    </div>
-                                    <div class="rad gap-8 marg-t-14">
-                                        <button id="sim-run" class="btn btn-primary btn-sm" type="button">Beräkna simulering</button>
-                                        <button id="sim-reset" class="btn btn-secondary btn-sm" type="button">Rensa</button>
-                                    </div>
-                                    <div id="sim-results" class="marg-t-16 dold"></div>
-                                </div>
-                            </details>
                             <details class="avsnitt" id="avsnitt-pr-installningar">
-                            <summary><span class="avsnitt-titel"><h2>Inställningar</h2><span class="avsnitt-under">Trösklar, viktning och kostnadsberäkning. Standardvärdena räcker för de flesta.</span></span><span class="avsnitt-nyckel" id="nyckel-pr-installningar"></span></summary>
+                            <summary><span class="avsnitt-titel"><h2>Inställningar</h2><span class="avsnitt-under">Trösklar och viktning. Standardvärdena räcker för de flesta; PO-påslag och beräkningsperiod ställs in under Inställningar i sidhuvudet.</span></span><span class="avsnitt-nyckel" id="nyckel-pr-installningar"></span></summary>
                             <div class="prio-config-content">
                                     <p class="text-dampad-sm lh-1_55 marg-0-0-14">
                                         Standardvärdena nedan följer EU-direktivets 5%-tröskel. Justera vid behov för organisationsspecifika regler. Ändringar uppdaterar matrisen, tabellen och statusräknarna direkt.
@@ -1543,34 +1498,6 @@
                                         <button id="prio-w-reset" class="btn btn-secondary btn-sm marg-v-auto" type="button">Återställ till 50/30/20</button>
                                     </div>
 
-                                    <hr class="ram-ingen ram-t-1-kant marg-18-0">
-                                    <h3 class="fs-md marg-0-0-6">Kostnadsberäkning
-                                        <span class="info-tip" data-tooltip="Påverkar all kostnadsredovisning i Prioriteringen, Lönerevisionssimulatorn och PDF-rapporter. Beräkningsperiod styr över hur många månader kostnaden räknas (bra för delårsbudgetering). PO-påslag är arbetsgivarens sociala avgifter och pensionsavsättningar — SKR:s standardvärde är 39,15% (2024-2025)."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
-                                    </h3>
-                                    <p class="text-dampad-sm lh-1_5 marg-0-0-10">
-                                        Total kostnad = avvikelse (kr/månad) × antal månader × (1 + PO-påslag) × antal personer.
-                                    </p>
-                                    <div class="prio-config-grid">
-                                        <label>
-                                            <span>Beräkningsperiod</span>
-                                            <select id="prio-cost-months" class="form-select pad-6-10">
-                                                <option value="3">3 månader (Q1)</option>
-                                                <option value="6">6 månader (halvår)</option>
-                                                <option value="9">9 månader</option>
-                                                <option value="12" selected>12 månader (helår)</option>
-                                            </select>
-                                            <small>För delårsrevision: välj kortare period</small>
-                                        </label>
-                                        <label>
-                                            <span>PO-påslag (%)</span>
-                                            <input type="number" id="prio-po-pct" value="39.15" step="0.05" min="0" max="100">
-                                            <small>SKR Cirkulär 2024: 39,15% (sociala avgifter + pensioner). Justera vid behov.</small>
-                                        </label>
-                                    </div>
-                                    <div class="rad-mitt gap-8 marg-t-12">
-                                        <span id="prio-cost-summary" class="text-dampad-sm"></span>
-                                        <button id="prio-cost-reset" class="btn btn-secondary btn-sm marg-v-auto" type="button">Återställ till SKR-standard</button>
-                                    </div>
                                 </div>
                             </details>
                             <details class="avsnitt" id="avsnitt-pr-metod">
@@ -1590,7 +1517,7 @@
                                     </ul>
                                     <h3>Vid budgetdialog</h3>
                                     <ul>
-                                        <li>Använd Lönerevisionssimulatorn för "om vi gör X, händer Y"-beräkningar</li>
+                                        <li>Pröva "om vi gör X, händer Y" i <strong>Löneöversyn</strong>: riktade potter per grupp, med kön, lönegräns och höj till</li>
                                         <li>Växla mellan ställningstagande (intern policy) och jämförelsestatistiken (marknadsläge) för olika perspektiv</li>
                                     </ul>
                                     <h3>Vid facklig dialog</h3>
@@ -1636,7 +1563,7 @@
                                     </select>
                                 </div>
                             </div>
-                            <p class="text-dampad-xs marg-0 max-bredd-360">Potten är det råa påslaget (kr/mån). PO-påslag och beräkningsperiod (enligt inställningarna i Prioritering) läggs på i totalkostnaden nedan.</p>
+                            <p class="text-dampad-xs marg-0 max-bredd-360">Potten är det råa påslaget (kr/mån). PO-påslag och beräkningsperiod (under Inställningar i sidhuvudet) läggs på i totalkostnaden nedan.</p>
                         </div>
                     </div>
                     <div class="card">
@@ -1681,7 +1608,7 @@
                     </div>
                     <p class="avsnitt-rubrikrad">Fördjupning</p>
                     <details class="avsnitt" id="avsnitt-lo-riktade" open>
-                    <summary><span class="avsnitt-titel"><h2>Riktade potter</h2><span class="avsnitt-under">Rikta en del av potten mot valda BAS-intervall och yrkesgrupper (BAS, sedan AID)</span></span><span class="avsnitt-nyckel" id="nyckel-lo-riktade"></span></summary>
+                    <summary><span class="avsnitt-titel"><h2>Riktade potter</h2><span class="avsnitt-under">Rikta en del av potten mot valda BAS-intervall och yrkesgrupper (BAS, sedan AID). En rad kan begränsas till ett kön eller till löner under en gräns, och lyfta till en nivå.</span></span><span class="avsnitt-nyckel" id="nyckel-lo-riktade"></span></summary>
                     <div class="card">
                         
 
@@ -2266,8 +2193,7 @@
                         <p class="farg-dampad fs-md lh-1_55 marg-0-0-14 max-bredd-70ch">
                             Välj vad raderna och kolumnerna ska vara, vilket mått du vill se och hur det ska visas. Under Urval avgränsar du vilka personer och grupper som tas med.
                             Detta är ett <strong>utforskande underlag</strong> för att hitta grupper värda att titta närmare på —
-                            inte ett lagstadgat mått. Grupper med färre än <span data-k-troskel>10</span> personer visas tonade — randiga staplar,
-                            streckad kant på punkter — och följer inte med i exporten om du inte kryssar i det. Klicka på en grupp för att öppna dess gruppdossier.
+                            inte ett lagstadgat mått. Grupper med färre än <span data-k-troskel>10</span> personer visas på skärmen som andra grupper men följer inte med i exporten om du inte kryssar i rutan. Klicka på en grupp för att öppna dess gruppdossier.
                         </p>
                         <div class="controls-row explore-controls">
                             <div class="explore-ctl">
@@ -2390,6 +2316,13 @@
                         <p id="explore-note" class="explore-note" role="note"></p>
                     </div>
                     <div class="card">
+                        <!-- Egna tabeller i rapporten (ADR-52): vyn sparas som ett recept, inte som tal, och ritas om i exportläget. -->
+                        <div class="rad-bryt-mitt gap-10 marg-0-0-10" id="explore-rapport-rad">
+                            <label class="fs-sm">Namn i rapporten <input type="text" id="explore-rapport-namn" class="form-select" maxlength="80" autocomplete="off" placeholder="t.ex. Median per yrke"></label>
+                            <label class="fs-sm"><input type="checkbox" id="explore-rapport-perbas"> En tabell per BAS-intervall</label>
+                            <button type="button" id="btn-explore-till-rapport" class="btn btn-secondary btn-sm" title="Sparar vyn som en egen tabell i Word-utkastet, PDF-rapporten och Excel-filen. Tabellen räknas om med minsta gruppstorlek när rapporten byggs.">Lägg till i rapporten</button>
+                            <span id="explore-rapport-status" class="status-msg" role="status" aria-live="polite"></span>
+                        </div>
                         <div class="table-container">
                             <table id="explore-table" class="data-table" aria-label="Utforska: valt mått per vald grupp"></table>
                         </div>
@@ -2442,7 +2375,7 @@
                     <tr><td class="fk-cell fk-ikon"><svg class="ikon ikon-las" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></td><td><strong>Utelämnat (k-anonymitet)</strong> — gruppen har färre än <span data-k-troskel>10</span> personer och redovisas inte per grupp; den räknas i stället upp i noten under tabellen</td></tr>
                     <tr><td class="fk-cell fk-ikon"></td><td><strong>Översikt / Iakttagelser</strong></td></tr>
                     <tr><td class="fk-cell fk-ikon"><svg class="ikon ikon-kugghjul" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/></svg></td><td><strong>Anpassad konfiguration aktiv</strong> — tröskelvärden eller viktningar har justerats</td></tr>
-                    <tr><td class="fk-cell fk-ikon"></td><td><strong>Lönerevisionssimulator</strong> — vad-om-analys</td></tr>
+                    <tr><td class="fk-cell fk-ikon"></td><td><strong>Löneöversyn</strong> — vad-om-analys: pott, riktade potter, före och efter</td></tr>
                     <tr><td class="fk-cell fk-ikon"><svg class="ikon ikon-kolv" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 3h6"/><path d="M10 3v6l-5 9a2 2 0 0 0 1.8 3h10.4a2 2 0 0 0 1.8-3l-5-9V3"/><path d="M7.5 15h9"/></svg></td><td><strong>Testdata</strong> — syntetisk data för verktygsverifiering</td></tr>
                 </table>
 
@@ -2490,11 +2423,11 @@
                                 <label for="k-troskel">Minsta gruppstorlek för redovisning</label>
                                 <input type="number" id="k-troskel" class="form-select bredd-6em" min="2" max="1000" step="1" value="10" inputmode="numeric" aria-describedby="k-troskel-hjalp k-troskel-fel">
                                 <button type="button" id="btn-k-aterstall" class="btn btn-secondary btn-sm" hidden>Återställ till 10</button>
-                                <span class="info-tip" data-tooltip="Lönemått redovisas inte för grupper med färre personer än så här. Standard är 10. Ett lägre värde gör att små grupper redovisas, vilket kan peka ut enskilda; värdet står i metodbilagan, i exporterad data och — under 10 — på varje del som kan spridas för sig. Följer med i konfigurationsfilen och kan sättas i organisationspaketet, som också kan ange ett lägsta tillåtet värde."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
+                                <span class="info-tip" data-tooltip="I det som lämnar verktyget (Excel, Word, PDF, ZIP, CSV, urklipp, diagrambilder) redovisas inte lönemått för grupper med färre personer än så här; på skärmen visas alla grupper. Standard är 10. Ett lägre värde gör att små grupper redovisas, vilket kan peka ut enskilda; värdet står i metodbilagan, i exporterad data och — under 10 — på varje del som kan spridas för sig. Följer med i konfigurationsfilen och kan sättas i organisationspaketet, som också kan ange ett lägsta tillåtet värde."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
                             </div>
                             <p id="k-troskel-hjalp" class="k-troskel-hjalp">Standard 10. Ändringen räknar om alla flikar.</p>
                             <p id="k-troskel-fel" class="upload-namn-fel" role="alert" hidden></p>
-                        <p class="inst-paverkar">Påverkar: alla flikar och alla exporter. Grupper under gränsen redovisas inte med lönemått.</p>
+                        <p class="inst-paverkar">Påverkar: alla exporter och Dokumentera &amp; exportera. Grupper under gränsen redovisas inte med lönemått där; på skärmen visas de.</p>
                     </div>
                     <div class="inst-rad">
                             <div class="paket-rad">
@@ -2504,9 +2437,26 @@
                                     <option value="kommun">en kommun</option>
                                     <option value="region">en region</option>
                                 </select>
-                                <span class="info-tip" data-tooltip="Avgör vilken del av SKR:s personalstatistik som är referens för andel kvinnor per yrke — kommunerna, regionerna eller båda. Följer med i organisationspaketet och konfigurationsfilen."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
+                                <span class="info-tip" data-tooltip="Avgör vilken del av den nationella statistiken som är referens för andel kvinnor per yrke: kommunerna, regionerna eller båda. Statistiken är SKR:s personalstatistik (Sveriges Kommuner och Regioner), inbyggd i verktyget; perioden står i Om verktyget. Följer med i organisationspaketet och konfigurationsfilen."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
                             </div>
-                        <p class="inst-paverkar">Påverkar: jämförelsen med SKR:s andel kvinnor per yrke i Lika arbete, Likvärdigt arbete och Struktur.</p>
+                        <p class="inst-paverkar">Påverkar: kolumnen <em>Kvinnor nationellt</em> i Lika arbete och Struktur, och reserven för könsfördelning i Likvärdigt arbete.</p>
+                    </div>
+                    <div class="inst-rad">
+                            <div class="paket-rad">
+                                <label for="prio-cost-months">Beräkningsperiod</label>
+                                <select id="prio-cost-months" class="form-select bredd-auto">
+                                    <option value="3">3 månader (Q1)</option>
+                                    <option value="6">6 månader (halvår)</option>
+                                    <option value="9">9 månader</option>
+                                    <option value="12" selected>12 månader (helår)</option>
+                                </select>
+                                <label for="prio-po-pct">PO-påslag (%)</label>
+                                <input type="number" id="prio-po-pct" class="form-select bredd-6em" value="39.15" step="0.05" min="0" max="100">
+                                <button id="prio-cost-reset" class="btn btn-secondary btn-sm" type="button">Återställ standardvärdena</button>
+                                <span class="info-tip" data-tooltip="Total kostnad = avvikelse (kr/månad) × antal månader × (1 + PO-påslag) × antal personer. Beräkningsperioden styr över hur många månader kostnaden räknas (kortare vid delårsrevision). PO-påslag är arbetsgivarens sociala avgifter och pensionsavsättningar ovanpå lönen; standardvärdet 39,15 % är det påslag som SKR (Sveriges Kommuner och Regioner) anger för kommuner och regioner i sitt cirkulär 2025; andra arbetsgivare sätter sitt eget värde."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
+                            </div>
+                            <p id="prio-cost-summary" class="k-troskel-hjalp"></p>
+                        <p class="inst-paverkar">Påverkar: all kostnadsredovisning — Prioritering, Löneöversyn, gruppdossiern, handlingsplanen och rapporterna.</p>
                     </div>
                 </section>
                 <section aria-labelledby="inst-lage-rubrik">

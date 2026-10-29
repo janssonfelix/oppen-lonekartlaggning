@@ -5,15 +5,15 @@
  * åtta filer så att Vitest fördelar den över flera arbetare.
  */
 import { describe, it, expect, vi } from 'vitest';
-import { FLIKAR, normalisera, synliga, fonster, ritaAlla, SENT_MELLAN, SENT_SMA } from './helpers/ktroskel-rigg.js';
+import { FLIKAR, normalisera, synliga, fonster, ritaAlla, SENT_MELLAN, SENT_SMA, iExport } from './helpers/ktroskel-rigg.js';
 
 // Sviten ritar om hela verktyget i varje test. Under full last tar ett test 4–6 s, så standardgränsen 5 s
 // fäller olika tester från körning till körning.
 vi.setConfig({ testTimeout: 30000 });
 
 describe('k-tröskeln styr varje flik', () => {
-    it('höjning 10 → 25 ritar om redan ritade flikar, utan egen rendering', async () => {
-        const w = fonster(null);
+    it('höjning 10 → 25 ritar om redan ritade flikar, utan egen rendering (exportläget)', async () => {
+        const w = iExport(fonster(null));
         ritaAlla(w);
         w.__renderTabContent('utforska');
         expect(synliga(w, SENT_MELLAN).length).toBeGreaterThan(0);
@@ -83,6 +83,6 @@ describe('k-tröskeln styr varje flik', () => {
     it('Rensa all data återställer till 10', () => {
         const w = fonster(25);
         w.eval('_rensaAllData()');
-        expect(w.eval('kTroskel()')).toBe(10);
+        expect(w.eval('kInstalld()')).toBe(10);
     });
 });

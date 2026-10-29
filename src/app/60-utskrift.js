@@ -35,18 +35,20 @@ function bibliotekCssForUtskrift() {
     return ut;
 }
 
-async function buildPrintReport() {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function buildPrintReport(...a) { return medExportLage(() => _buildPrintReportExport.apply(null, /** @type {any} */ (a))); }
+async function _buildPrintReportExport() {
     if (!getData().length) { alert('Ladda upp data först.'); return; }
     showLoading();
     try {
         // Rapporten är rapportmodellen med gällande urval — samma innehåll som Word-utkastet (58-rapportmodell.js).
-        const modell = rapportModell();
+        const bada = rapportModellBada(), modell = bada.urval;
         const ritade = new Set(), bilder = new Map();
         for (const del of modell.avsnitt.flatMap(a => a.delar.filter(p => p.typ === 'diagram'))) {
             const b = await rmDiagramBild(del, ritade);
             if (b) bilder.set(del.id, b);
         }
-        const helaDokumentationen = modell.avsnitt.length === rapportModell({ alla: true }).avsnitt.length;
+        const helaDokumentationen = modell.avsnitt.length === bada.alla.avsnitt.length;
         let bilagor = '';
         if (helaDokumentationen) {
             // Bilagor med flikarnas egna tabeller och diagram — underlaget bakom avsnitten. De följer bara med när hela

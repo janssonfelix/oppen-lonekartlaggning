@@ -16,6 +16,89 @@
 //     export än en med fel tröskel.
 // tests/ktroskel.test.js prövar varje exportväg mot detta.
 // ====================================================================
+// ---- Exportläget (ADR-51) ----
+// På skärmen maskeras inget (kTroskel() är 1). Allt som lämnar verktyget ritas och räknas i exportläget, där
+// kTroskel() är den inställda tröskeln. Ett byte av läge är som en ändrad tröskel: generationen ökar, så att
+// grinden ritar om varje flik som läses, och efteråt ritas skärmen tillbaka. De två funktioner all export av
+// tabeller och diagram går genom (_cloneAndCleanTableForExport, _chartExportUnderlag) går själva in i
+// exportläget om anroparen inte redan gjort det, så ingen väg kan läsa skärmens omaskade tal.
+function iExportLage() { return state.kLage === 'export'; }
+function _bytKLage(lage) {
+    state.kLage = lage;
+    ritGenerationNy();                                                      // allt som är ritat bär det andra läget
+    // Inget räknat släpps: Lika arbetes minne har ett rum per tröskel (skärmens och exportens), och skattningarna
+    // (statGolv, bootstrap, styrka, § 3:10-paren) är desamma i båda lägena. Livscykelns bevisunderlag hör till det
+    // som är ritat.
+    state._lifecycleCache = null;
+}
+/**
+ * Ritar skärmen tillbaka efter en export: Översikts delar och den öppna fliken, när grinden ritade dem i exportläget
+ * (`ritade`: flikarna som ritades under exporten), utom Dokumentera & exportera, som alltid ritas i exportläget. Det
+ * som inte ritades under exporten visar fortfarande skärmens tal och rörs inte — Dokumentera-fliken i sig ritar inga
+ * andra flikar, och att rita om Översikt kostar sekunder på stora underlag. Flikar som inte syns töms inte: det de
+ * bär är ritat med den inställda tröskeln (försiktigare än skärmen), och de ritas om när de öppnas.
+ * @param {Set<string>} ritade
+ */
+const _OVERSIKT_STEG = new Set(['nyckeltal', 'kompliansöversikt', 'underlagets kvalitet', 'Att göra', 'processöversikten', 'extremvärden', 'inläsningsrapporten', 'A/B-jämförelsen']);
+function _ritaOmEfterExport(ritade) {
+    if (!state.data.length || typeof _omritningssteg !== 'function') return;
+    for (const [namn, fn] of _omritningssteg()) {
+        if (namn === 'dokumentera' || namn === 'flikar som inte syns') continue;
+        const ska = namn === 'gruppdossiern' || (_OVERSIKT_STEG.has(namn) ? ritade.has('dashboard') : ritade.has(namn));
+        if (ska) _omritningForsok(namn, fn);
+    }
+}
+/** Flikarna som är ritade i den generation som gäller nu (under en export: de som ritades i exportläget). */
+function _ritadeNu() { return new Set([..._ritadVid].filter(([, g]) => g === _ritGeneration).map(([f]) => f)); }
+/**
+ * Kör fn i exportläget och går tillbaka till skärmläget efteråt (också när fn ger ett löfte eller kastar).
+ * Nästlade anrop byter inte läge. Fn:s värde returneras.
+ * @template T
+ * @param {() => T} fn
+ * @returns {T}
+ */
+let _exportDjup = 0;   // pågående exporter (nästlade eller överlappande i tid): skärmen ritas tillbaka när den sista är klar
+function medExportLage(fn) {
+    // Den yttersta exporten byter läge och ritar tillbaka; ett läge som satts utifrån (state.kLage = 'export') rörs inte.
+    const yttre = _exportDjup === 0 && !iExportLage();
+    if (yttre) _bytKLage('export');
+    _exportDjup++;
+    let synk = true;
+    const tillbaka = () => { _exportDjup = Math.max(0, _exportDjup - 1); if (_exportDjup === 0 && yttre) { const ritade = _ritadeNu(); _bytKLage('skarm'); _ritaOmEfterExport(ritade); } };
+    try {
+        const r = fn();
+        if (r && typeof /** @type {any} */ (r).then === 'function') { synk = false; return /** @type {any} */ (r).finally(tillbaka); }
+        return r;
+    } finally { if (synk) tillbaka(); }
+}
+
+// ---- Förhandsvisning: skärmen i exportläget ----
+/**
+ * Visar flikarna som i det som lämnar verktyget: läget byts till export och det som syns ritas om (Översikts delar
+ * och den öppna fliken; flikar som inte syns töms och ritas när de öppnas). Av igen ritar tillbaka på samma sätt.
+ * Medan förhandsvisningen är på byter exporterna inte läge (de är redan i det). En export som pågår går före:
+ * då byts inget. Svarar om läget byttes.
+ * @param {boolean} pa
+ * @param {{stegvis?: boolean}} [val] stegvis: med förloppsruta, som när tröskeln ändras från gränssnittet
+ */
+function sattForhandsvisning(pa, { stegvis = false } = {}) {
+    if (_exportDjup > 0 || pa === iExportLage()) return false;
+    _bytKLage(pa ? 'export' : 'skarm');
+    document.body.classList.toggle('forhandsvisning', pa);
+    const knapp = document.getElementById('btn-forhandsvisa');
+    if (knapp) knapp.setAttribute('aria-pressed', String(pa));
+    const banner = document.getElementById('forhandsvisning-banner');
+    if (banner) banner.hidden = !pa;
+    if (state.data.length) {
+        if (stegvis && typeof _renderaOmAllaFlikarStegvis === 'function') _renderaOmAllaFlikarStegvis();
+        else if (typeof _renderaOmAllaFlikar === 'function') _renderaOmAllaFlikar();
+    }
+    return true;
+}
+function iForhandsvisning() { return document.body.classList.contains('forhandsvisning'); }
+document.getElementById('btn-forhandsvisa')?.addEventListener('click', () => sattForhandsvisning(!iForhandsvisning(), { stegvis: true }));
+document.getElementById('btn-forhandsvisa-av')?.addEventListener('click', () => sattForhandsvisning(false, { stegvis: true }));
+
 let _ritGeneration = 1;
 const _ritadVid = new Map();     // flik → generationen då den senast ritades klart
 const _ritasNu = new Set();      // flikar som ritas just nu (ritningen får läsa sina egna diagram)
@@ -44,7 +127,9 @@ function exportSakra(el) {
     if (!el) return false;
     const flik = _egFlikFor(el);
     if (!flik) return el.isConnected !== false;   // utanför flikarna (en dialog) — eller ett element som inte sitter kvar i sidan
-    if (!_ritasNu.has(flik) && flikInaktuell(flik)) {
+    // En flik som aldrig ritats genom navigeringen (eller är inaktuell) ritas i det läge som gäller nu — i exportläget
+    // också en flik som ritats direkt av en vy, så att skärmens tal aldrig läses som export (ADR-51).
+    if (!_ritasNu.has(flik) && (flikInaktuell(flik) || (iExportLage() && !_ritadVid.has(flik)))) {
         try { renderTabContent(flik); } catch (e) { rapporteraFel(`exportgrinden (${flik})`, e); }
         if (flikInaktuell(flik)) return false;                      // fliken gick inte att rita om: ingenting exporteras ur den
     }

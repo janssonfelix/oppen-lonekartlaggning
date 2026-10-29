@@ -8,7 +8,7 @@
 //
 // Delar: { typ: 'stycke', text, stil? } (stil: dampad | not) · { typ: 'fyllIn', text } · { typ: 'rubrik', niva, text } ·
 //        { typ: 'tabell', kolumner: [{ rubrik, typ }], rader: [[värde]], nyckel? } · { typ: 'diagram', id, flik, rubrik } ·
-// Kolumntyper: text, antal, kr, krAr, pct0, pct1, pct2, tecken2 (procent med tecken), andelAvMan, direktiv, fyllIn.
+// Kolumntyper: text, antal, ar (ålder i år), kr, krAr, pct0, pct1, pct2, tecken2 (procent med tecken), andelAvMan, direktiv, fyllIn.
 // Ett värde kan också vara { text } (färdig text, t.ex. en förklaring i stället för ett tal) eller null (streck).
 //
 // Dataskydd: tröskeln tillämpas HÄR, när modellen byggs — med samma funktioner som vyerna och rapportunderlaget
@@ -31,6 +31,8 @@ function rmCell(v, typ) {
     if (typ === 'text') return String(v);
     if (typeof v !== 'number' || !isFinite(v)) return String(v);
     if (typ === 'antal') return svTal(v, 0);
+    if (typ === 'ar') return `${svTal(v, 0)} år`;
+    if (typ === 'tal2') return svTal(v, 2);
     if (typ === 'kr') return `${svTal(Math.round(v), 0)} kr`;
     if (typ === 'krAr') return `${svTal(Math.round(v), 0)} kr/år`;
     if (typ === 'pct0') return svPct(v, 0);
@@ -70,11 +72,11 @@ const RM_DIAGRAM = [
 
 // ---- Urval: vilka avsnitt som följer med, och i vilken ordning ----
 // Urvalet ligger i minnet (state.rapportUrval) och följer med i konfigurationsfilen. null = hela dokumentationen.
-const RM_AVSNITT = ['sammanfattning', 'regler', 'lika', 'likvardigt', 'struktur', 'atgarder', 'samverkan', 'beslut', 'regression', 'metod'];
+const RM_AVSNITT = ['sammanfattning', 'regler', 'lika', 'likvardigt', 'struktur', 'perbas', 'atgarder', 'samverkan', 'beslut', 'regression', 'metod'];
 const RM_URVAL = Object.freeze({
     hela: { namn: 'Hela dokumentationen', med: RM_AVSNITT },
     ledning: { namn: 'Ledningsbrief', med: ['sammanfattning', 'lika', 'likvardigt', 'atgarder'] },
-    facklig: { namn: 'Facklig dialog', med: ['sammanfattning', 'regler', 'lika', 'likvardigt', 'struktur', 'samverkan', 'regression', 'metod'] },
+    facklig: { namn: 'Facklig dialog', med: ['sammanfattning', 'regler', 'lika', 'likvardigt', 'struktur', 'perbas', 'samverkan', 'regression', 'metod'] },
 });
 /** Det gällande urvalet: `ordning` är alla avsnitt i vald ordning, `med` de som följer med, `namn` vad urvalet heter. */
 function rapportUrval() {
@@ -92,12 +94,114 @@ function sattRapportUrval(u) {
 }
 
 /**
+ * Underlaget till avsnittet Lönestruktur per BAS-intervall: samma tre tabeller i Word-utkastet och Excel-filen.
+ * @param {any[]} d
+ * @param {number} k
+ */
+function rmPerBasUnderlag(d, k) {
+    if (typeof _pbTabeller !== 'function' || !d.length) return null;
+    return _pbTabeller(d, { k, referens: (aid, bas) => policyFor(aid, bas), statistik: state.statistik, recept: state.perBasRecept,
+        referensNamn: referensKortnamn(), statistikNamn: state.statistik.length ? (state.statistikNamn || 'Jämförelsestatistik') : 'Jämförelsestatistik' });
+}
+
+/**
+ * Avsnittet Lönestruktur per BAS-intervall, i den form en skriven lönekartläggning brukar ha: en tabell per
+ * BAS-intervall (referens, organisationen, yrkesgrupperna med jämförelsestatistikens rad under, kvinnor och män),
+ * ett fält för bedömningen av intervallet, och sist två tabeller per BAS: löneskillnader inom likvärdigt arbete
+ * (medellön per kön, andel kvinnor, medelålder) och löneskillnader i åldersgrupper. Tröskeln tillämpas i
+ * src/lib/perbas.js; avsnittet säger i `utelamnat` vad det inte redovisar.
+ * @param {any[]} d
+ * @param {number} k
+ */
+function rmPerBasAvsnitt(d, k) {
+    const pb = rmPerBasUnderlag(d, k);
+    if (!pb || !pb.intervall.length) return null;
+    const stycke = (text, stil) => ({ typ: 'stycke', text, ...(stil ? { stil } : {}) });
+    const MATT = { p10: 'P10', p25: 'P25', med: 'Median', p75: 'P75', p90: 'P90', medel: 'Medellön' };
+    const matt = pb.recept.matt;
+    const kol = [{ rubrik: 'Grupp', typ: 'text' }, { rubrik: 'Antal', typ: 'antal' }, ...matt.map(m => ({ rubrik: MATT[m], typ: 'kr' }))];
+    const dimEtikett = pb.dimEtikett, kort = pb.dim === 'sektor' ? 'sektor' : 'BAS', per = pb.dim === 'sektor' ? 'sektor' : 'BAS-intervall';
+    const utelamnat = [];
+    if (pb.basUtelamnade.length) utelamnat.push(`BAS ${pb.basUtelamnade.join(', ')} (färre än ${k} personer)`);
+    const smaYrken = pb.intervall.reduce((s, i) => s + i.utelamnade.length, 0);
+    if (smaYrken) utelamnat.push(`${smaYrken} ${smaYrken === 1 ? 'yrkesgrupp' : 'yrkesgrupper'} med färre än ${k} personer`);
+    const konDolda = pb.intervall.filter(i => !i.konVisas).map(i => i.bas);
+    if (konDolda.length) utelamnat.push(`könsuppdelade lönemått för BAS ${konDolda.join(', ')} (ett kön har färre än ${k} personer)`);
+    /** @type {any[]} */
+    const delar = [
+        stycke(pb.dim === 'sektor'
+            ? 'Löneläget i varje sektor (AID-huvudområde): organisationen, de yrkesgrupper som når minsta gruppstorlek, och kvinnor och män. P10 och P90 är den tionde och nittionde percentilen.'
+            : `Löneläget i varje BAS-intervall mot ${referensKortnamn()}: organisationen, de yrkesgrupper som når minsta gruppstorlek (med jämförelsestatistikens nivå under, när den finns) och kvinnor och män. P10 och P90 är den tionde och nittionde percentilen.`, 'dampad'),
+    ];
+    for (const i of pb.intervall) {
+        delar.push({ typ: 'rubrik', niva: 3, text: `${dimEtikett} ${i.bas}` });   // "BAS-intervall D" / "Sektor Vård"
+        delar.push(stycke(`${i.n} ${i.n === 1 ? 'anställd' : 'anställda'} i ${i.antalYrken} ${i.antalYrken === 1 ? 'yrkesgrupp' : 'yrkesgrupper'}, varav ${i.nKv} kvinnor och ${i.nMa} män.`));
+        delar.push({ typ: 'tabell', kolumner: kol, rader: i.rader.map(r => [r.namn, r.n, ...matt.map(m => r[m] ?? null)]) });
+        const noter = [];
+        if (i.utelamnade.length) noter.push(`${i.utelamnade.length} ${i.utelamnade.length === 1 ? 'yrkesgrupp' : 'yrkesgrupper'} med färre än ${k} personer redovisas inte: ${i.utelamnade.join(', ')}.`);
+        if (!i.konVisas) noter.push(`Kvinnor och män redovisas inte var för sig eftersom ett kön har färre än ${k} personer i intervallet.`);
+        if (noter.length) delar.push(stycke(noter.join(' '), 'not'));
+        delar.push({ typ: 'fyllIn', text: `Bedömning av ${kort} ${i.bas}: löneläget mot referensen och jämförelsestatistiken, de största yrkesgrupperna, och om skillnaderna mellan kvinnor och män har sakliga skäl.` });
+    }
+    if (pb.konsgap) {
+    delar.push({ typ: 'rubrik', niva: 3, text: `Löneskillnader inom likvärdigt arbete, per ${per}` });
+    delar.push(stycke('Medellön för alla, män och kvinnor i varje BAS-intervall, kvinnors medellön i procent av mäns, andel kvinnor och medelålder. Könsuppdelade mått visas bara där båda könen når minsta gruppstorlek.', 'dampad'));
+    delar.push({ typ: 'tabell', kolumner: [{ rubrik: 'BAS', typ: 'text' }, { rubrik: 'Antal', typ: 'antal' }, { rubrik: 'Medellön alla', typ: 'kr' }, { rubrik: 'Medellön män', typ: 'kr' }, { rubrik: 'Medellön kvinnor', typ: 'kr' },
+        { rubrik: 'Kvinnors medellön i % av mäns', typ: 'pct1' }, { rubrik: 'Andel kvinnor', typ: 'pct1' }, { rubrik: 'Medelålder alla', typ: 'ar' }, { rubrik: 'Medelålder män', typ: 'ar' }, { rubrik: 'Medelålder kvinnor', typ: 'ar' }],
+        rader: pb.konsgap.rader.map(r => [r.bas, r.n, r.medel, r.medelMa, r.medelKv, r.kvot, r.andelKv, r.alder, r.alderMa, r.alderKv]) });
+    }
+    if (pb.aldersgrupper) {
+    delar.push({ typ: 'rubrik', niva: 3, text: `Löneskillnader i åldersgrupper, per ${per}` });
+    delar.push(stycke(`Medellön i åldersgrupperna ${pb.aldersgrupper.grupper.join(', ')} år. En åldersgrupp med färre än ${k} personer i intervallet får ingen medellön.`, 'dampad'));
+    delar.push({ typ: 'tabell', kolumner: [{ rubrik: 'BAS', typ: 'text' }, { rubrik: 'Antal', typ: 'antal' }, { rubrik: 'Medelålder', typ: 'ar' }, { rubrik: 'Medellön alla', typ: 'kr' },
+        ...pb.aldersgrupper.grupper.map(g => ({ rubrik: `Medellön ${g} år`, typ: 'kr' }))],
+        rader: pb.aldersgrupper.rader.map(r => [r.bas, r.n, r.alder, r.medel, ...r.perGrupp]) });
+    delar.push({ typ: 'fyllIn', text: 'Bedömning: hur lönen utvecklas med åldern i organisationen, och om löneutvecklingen för äldre medarbetare avstannar.' });
+    }
+    return { id: 'perbas', numrerad: true, rubrik: pb.dim === 'sektor' ? 'Lönestruktur per sektor' : 'Lönestruktur per BAS-intervall', utelamnat, delar };
+}
+
+/**
+ * Avsnittet Egna tabeller (ADR-52): tabeller användaren byggt i Utforska och lagt till i rapporten. Recepten
+ * (state.rapportTabeller) ritas om här med samma pivot som fliken och tröskeln k; inga tal lagras.
+ * @param {any[]} d
+ * @param {number} k
+ */
+function rmEgnaAvsnitt(d, k) {
+    const recept = state.rapportTabeller || [];
+    if (!recept.length || !d.length || typeof _trTabeller !== 'function') return null;
+    const stycke = (text, stil) => ({ typ: 'stycke', text, ...(stil ? { stil } : {}) });
+    /** @type {any[]} */
+    const delar = [stycke('Tabeller som byggts i fliken Utforska och lagts till i rapporten. De räknas på samma underlag och med samma minsta gruppstorlek som rapporten i övrigt.', 'dampad')];
+    const utelamnat = [];
+    let antal = 0;
+    for (const r of recept) {
+        const tabeller = _trTabeller(d, r, { k });
+        if (!tabeller.length) { utelamnat.push(`tabellen "${r.namn}" (ingen grupp når minsta gruppstorlek)`); continue; }
+        for (const t of tabeller) {
+            antal++;
+            delar.push({ typ: 'rubrik', niva: 3, text: t.rubrik });
+            delar.push({ typ: 'tabell', kolumner: t.kolumner, rader: t.rader });
+            if (t.not) delar.push(stycke(t.not, 'not'));
+            if (t.utelamnade) utelamnat.push(`${t.utelamnade} ${t.utelamnade === 1 ? 'grupp' : 'grupper'} i "${t.rubrik}" (färre än ${k} personer)`);
+        }
+    }
+    if (!antal) return null;
+    return { id: 'egna', numrerad: true, rubrik: 'Egna tabeller', utelamnat, delar };
+}
+
+/**
  * Rapportens avsnitt i vald ordning, numrerade efter urvalet. Med `alla: true` ges alla avsnitt i standardordning
  * (för listan där urvalet görs). Utan lönefil bär avsnitten bara det som inte kräver den (referens, statistik, metod).
- * @param {{alla?: boolean}} [val]
+ * @param {...any} a - `{ alla?: boolean }`
  * @returns {{titel: string, undertitel: string, demo: boolean, avsnitt: any[], urval: any}}
  */
-function rapportModell({ alla = false } = {}) {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function rapportModell(...a) { return medExportLage(() => _rapportModellExport.apply(null, /** @type {any} */ (a))); }
+/** Modellen i det gällande urvalet och med alla avsnitt ur ett enda bygge (det kostar sekunder på stora underlag). */
+function rapportModellBada() { return medExportLage(() => _rapportModellExport({ bada: true })); }
+/** @param {{alla?: boolean, bada?: boolean}} [val] */
+function _rapportModellExport({ alla = false, bada = false } = {}) {
     const d = getData();
     const year = new Date().getFullYear(), today = new Date().toLocaleDateString('sv-SE');
     const k = kTroskel();
@@ -114,7 +218,7 @@ function rapportModell({ alla = false } = {}) {
     const { par, utelamnade: parUtelamnade, not: parNot } = _parForRedovisning(lvRes && lvRes.pairs);   // som rapportunderlaget
     const rep = typeof _stRepresentationByBas === 'function' ? (_stRepresentationByBas(d, { k }) || []) : [];
     const repVisade = rep.filter(g => !isKMasked(g.n)), repDolda = rep.filter(g => isKMasked(g.n)).map(g => g.bas);
-    const dq = typeof bedomningUnderlag === 'function' ? bedomningUnderlag() : null;
+    const dq = typeof bedomningUnderlag === 'function' ? bedomningUnderlag({ reg }) : null;
     const stycke = (text, stil) => ({ typ: 'stycke', text, ...(stil ? { stil } : {}) });
     const dampad = text => stycke(text, 'dampad');
     const fyllIn = text => ({ typ: 'fyllIn', text });
@@ -234,6 +338,10 @@ function rapportModell({ alla = false } = {}) {
             ...diagram('struktur'),
         ] } : null;
 
+    // ---- Lönestruktur per BAS-intervall (tabellerna ur arbetsgivarnas egna utkast) ----
+    const perbas = rmPerBasAvsnitt(d, k);
+    const egna = rmEgnaAvsnitt(d, k);
+
     // ---- 6. Åtgärder och tidsplan ----
     /** @type {{id: string, rubrik: string, utelamnat: string[], delar: any[], [k: string]: any}} */
     const atgarder = { id: 'atgarder', numrerad: true, rubrik: 'Åtgärder och tidsplan', utelamnat: [], delar: [
@@ -299,19 +407,25 @@ function rapportModell({ alla = false } = {}) {
         { typ: 'tabell', nyckel: true, kolumner: [{ rubrik: '', typ: 'text' }, { rubrik: '', typ: 'text' }], rader: (typeof _methodAppendixData === 'function' ? _methodAppendixData() : []).map(([n, v]) => [String(n), String(v)]) },
     ] };
 
-    return {
+    const finns = /** @type {any[]} */ ([sammanfattning, regler, lika, likvardigt, struktur, perbas, atgarder, samverkan, beslut, regressionAvsnitt, metod].filter(Boolean));
+    /** @param {boolean} alla */
+    const avsnitt = alla => {
+        const urval = rapportUrval();
+        const valda = /** @type {any[]} */ (alla ? finns : urval.med.map(id => finns.find(a => a.id === id)).filter(Boolean));
+        // Egna tabeller (ADR-52) står efter avsnittet per BAS-intervall och följer med när det gör det; de väljs i stället
+        // genom att tabeller läggs till eller tas bort under Dokumentera & exportera.
+        if (egna && (alla || urval.med.includes('perbas'))) { const i = valda.findIndex(a => a.id === 'perbas'); valda.splice(i >= 0 ? i + 1 : valda.length, 0, egna); }
+        let nr = 0;
+        return valda.map(a => ({ ...a, grundrubrik: a.rubrik, rubrik: a.numrerad ? `${++nr}. ${a.rubrik}` : a.rubrik }));
+    };
+    const modell = alla => ({
         titel: `Lönekartläggning ${year} — dokumentation`,
         undertitel: `${orgNamn('') || '[HR fyller i: organisation/arbetsgivare]'} · ${urval} · genererad ${today} · v${APP_VERSION}${dq ? ` · Underlagets kvalitet: ${UK_ETIKETT[dq.status]}` : ''}`,
         demo: !!state.isDemo,
-        avsnitt: (() => {
-            const finns = /** @type {any[]} */ ([sammanfattning, regler, lika, likvardigt, struktur, atgarder, samverkan, beslut, regressionAvsnitt, metod].filter(Boolean));
-            const urval = rapportUrval();
-            const valda = /** @type {any[]} */ (alla ? finns : urval.med.map(id => finns.find(a => a.id === id)).filter(Boolean));
-            let nr = 0;
-            return valda.map(a => ({ ...a, grundrubrik: a.rubrik, rubrik: a.numrerad ? `${++nr}. ${a.rubrik}` : a.rubrik }));
-        })(),
+        avsnitt: avsnitt(alla),
         urval: rapportUrval().namn,
-    };
+    });
+    return bada ? { urval: modell(false), alla: modell(true) } : modell(alla);
 }
 
 /**

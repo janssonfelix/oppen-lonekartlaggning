@@ -147,7 +147,9 @@ function runRobusthet() {
     setTimeout(() => { _renderRobusthetResult(host); }, 30);
 }
 
-function _renderRobusthetResult(host) {
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function _renderRobusthetResult(...a) { return medExportLage(() => __renderRobusthetResultExport.apply(null, /** @type {any} */ (a))); }
+function __renderRobusthetResultExport(host) {
     const lv = robusthetLikvardighet();
     const prio = robusthetPrioritering();
 

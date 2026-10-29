@@ -1,6 +1,6 @@
 # Risk- och sårbarhetsanalys (dataskydd och informationssäkerhet) — Öppen lönekartläggning
 
-**Bygge:** `2026.10.19` · **Artefakt-SHA-256:** `f100637a845646063acfc31e9c7daff39d597af76205d6728f481cec6cc2ee51` (se `dist/RELEASE.txt`).
+**Bygge:** `2026.10.19` · **Artefakt-SHA-256:** `512fea565856d3b87f56ab37b951b76a652ffe4d70f9276ea76f398884451d21` (se `dist/RELEASE.txt`).
 **Granskningsdatum:** 2026-10-20.
 **Granskningsmetod:** kodläsning påstående för påstående + statisk sökning i källkod och bygge +
 körning av det byggda verktyget i jsdom och i Chromium (utan nätverk) med syntetiska testfiler.
@@ -223,8 +223,8 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   diagramkärnan, ADR-39, rensas genom ritarens register `_rfRensaAlla` —
   figuren på behållaren, lyssnare och verktygstipsets text — oavsett id och också när behållaren lämnat dokumentet), extremvärdesdetektorns tabell, utskriftsrapporten och panelen
   Personer att granska omedelbart.
-- Inaktivitetstimern rensar sessionen automatiskt efter 30 minuter (standard;
-  15, 30, 60 minuter eller av under *Vad lagras?*), via **samma** rensningsväg
+- Inaktivitetstimern rensar sessionen automatiskt efter 90 minuter (standard;
+  30, 60, 120 minuter eller av under *Vad lagras?*), via **samma** rensningsväg
   (`_rensaAllData`) men utan bekräftelsefråga. Varning och möjlighet att förlänga visas en
   minut innan. Organisationspaketet kan låsa tiden (5–120 minuter; läget av kan inte låsas,
   ADR-47): rullistan står då på värdet och `setInactivityTimeout()` tar inte emot något annat;
@@ -251,10 +251,8 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   PII-detektorn eller läses som kolumn (ADR-23). Verifierat: fälten i
   minnet är exakt `aid, alder, ansvarsgrupp, ansvarskoder, bas, kon, lon, poang, radnr, yrke,
   yrkeLabel` (`ansvarskoder` och `ansvarsgrupp` är tomma när kolumnen saknas).
-- **Bara BAS A–J analyseras (ADR-21):** rader med BAS K eller högre lämnar inläsningen innan de
-  sparas och finns aldrig i `state.data`. Bara antal per BAS behålls i inläsningens räknare, som
-  nollställs av *Rensa all data* och av rensningen vid inaktivitet. Inga löner från raderna visas
-  eller exporteras.
+- **Alla BAS-intervall ingår (ADR-21, upphävd 2026-10):** även chefsnivåerna K och uppåt läses in
+  och analyseras. Små intervall skyddas som alla andra grupper av minsta gruppstorlek vid export.
 - **PII-detektor** (`detectSensitiveColumns`): känner igen och **avvisar**
   strukturfiler (den enda filen med en rad per person) vars kolumner innehåller
   personnummer-, e-post- eller namnmönster, i både CSV- och Excel-vägen. Kontrollen
@@ -287,8 +285,17 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   (regressionstester i `tests/parsing.test.js`).
 
 ### 6.5 k-anonymitet ✔
-- Standardvärdet är 10 (`K_STANDARD`); användaren kan ändra det (ADR-38). Vid 10 redovisas i
-  deskriptiva vyer inga gruppvärden när en grupp har färre än 10 personer. Gruppen utelämnas och namnges i en not vid tabellen.
+- **Regeln gäller det som lämnar verktyget (ADR-51, 2026-10-29).** På skärmen visas alla grupper (`kTroskel()` är 1 i
+  skärmläget); allt som lämnar verktyget ritas och räknas i exportläget (`medExportLage` i `23-exportgrind.js`), där
+  `kTroskel()` är den inställda tröskeln `kInstalld()`. De två funktioner all export av tabeller och diagram går genom
+  går själva in i exportläget, och Dokumentera & exportera ritas alltid i det. Där det i punkterna nedan står att
+  ett mått visas, redovisas eller ritas bara när en grupp eller ett kön når tröskeln gäller det exportläget; på
+  skärmen visas måttet. Efter en export ritas bara det tillbaka som exporten ritade i exportläget (`_ritaOmEfterExport`),
+  och Lika arbetes minne har ett rum per tröskel, så att ett lägesbyte inte räknar om något. Knappen *Som export*
+  (`sattForhandsvisning`) sätter skärmen i exportläget tills den stängs av: en export medan den är på lämnar läget
+  som det är, och ett lägesbyte medan en export pågår avvisas (`tests/forhandsvisning.test.js`).
+- Standardvärdet är 10 (`K_STANDARD`); användaren kan ändra det (ADR-38). Vid 10 redovisas i det som
+  lämnar verktyget inga gruppvärden när en grupp har färre än 10 personer. Gruppen utelämnas och namnges i en not vid tabellen.
   Är bara könsuppdelningen för liten (gruppen som helhet n ≥ 10) visas gruppens
   samlade median utan könsjämförelse.
 - **Könsuppdelade mått kräver tröskeln för varje kön** (`_konFarRedovisas` i
@@ -319,7 +326,7 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   — annars utelämnas de, nyckeltalet visar ett streck och noten under diagrammet säger det
   (beslut av produktägaren 2026-10-16). Livscykelanalysen har sitt eget golv
   (`statGolv()`).
-- Skyddet vaktas av två invarianter. `tests/kanonymitet.test.js` ritar samtliga flikar vid
+- Skyddet vaktas av två invarianter. `tests/kanonymitet.test.js` ritar samtliga flikar i exportläget vid
   10 mot ett dataset där varje liten grupps mått är ett unikt sentinelvärde, och kräver att
   inget av dem syns. `tests/ktroskel.test.js`, `tests/ktroskel-hojning.test.js` och `tests/ktroskel-invarianter.test.js`
   prövar flikarna vid 10, 25 och 5 med grupper om 20 och 6 personer, och vid **10 och 25** både flikarna och utdata mot ett underlag där en grupp
@@ -332,8 +339,7 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   person, gruppdossiern och Att göra-punkterna. (PDF-rapporten ritas ur samma rapportmodell som Word-utkastet.) **Inte prövat av invarianten:**
   fliken Likvärdigt arbete och dess export, Utforska på skärmen, Personer att granska och
   extremvärdeslistan (undantagen nedan), diagrambilder (innehållet i en bild går inte att läsa
-  i testet) och Ålder & karriär med ett enskilt BAS valt. Lönerevisionssimulatorn prövas med ett urval under
-  tröskeln och ett över den. Vid 5 prövas
+  i testet) och Ålder & karriär med ett enskilt BAS valt. Vid 5 prövas
   flikarna, inte exporterna. Utanför invarianten har `tests/ktroskel-regression.test.js` egna tester för
   regressionens ojusterade steg (60 kvinnor och 7 män: kortet, utskriftens
   tre urval, Word-utkastet, rapportunderlaget, Excelfilerna och invariantens övriga utdatavägar),
@@ -370,11 +376,11 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
     exportera (yrkesetikett och antal körningar paret träffas i, inget lönemått) — par med en
     grupp under tröskeln utelämnas och antalet anges. Robusthetspanelen vaktas av
     `tests/ktroskel-invarianter.test.js` (invarianten och parfixturen) och `tests/smoke-docx.test.js`.
-- **Medvetet undantag 2 — Utforska (ADR-14):** fliken visar grupper
-  under 10 tonade, eftersom den som använder verktyget redan har rådatan. Skyddet
-  ligger på exporten: tabellens CSV/urklipp och diagrammets export utelämnar små
-  grupper, och lönemått för ett kön under 10, **om inte användaren aktivt kryssar i**
-  att ta med dem. Utan ikryssad ruta går en liten cell inte att skilja från en tom
+- **Medvetet undantag 2 — Utforska (ADR-14):** fliken visar alla grupper på skärmen, som
+  de andra flikarna (ADR-51). Skyddet ligger på exporten: tabellens CSV/urklipp och diagrammets
+  export utelämnar små grupper, och lönemått för ett kön under 10, **om inte användaren aktivt
+  kryssar i** att ta med dem — rutan är undantaget, och med den ikryssad lämnar små grupper
+  verktyget. Utan ikryssad ruta går en liten cell inte att skilja från en tom
   eller dold, och rader/kolumner som bara har små celler utelämnas helt (etiketten
   röjer annars att gruppen finns). **Antal** (n, även per kön) följer alltid med.
   Differensskydd (att räkna fram en liten grupp ur två urval) byggs inte — beslut
@@ -405,8 +411,8 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   med radnummer: den har inga exportverktyg, ingår inte i någon export eller bilaga och döljs vid utskrift
   av fliken (webbläsarröktestet kräver det).
 
-- **Lönepolitik:** fliken har en mellannivå — för en yrkesgrupp med minst 5 men färre än
-  tröskeln visas bara antal, under 5 maskeras gruppen helt och namnges i en not; lönemått och
+- **Lönepolitik:** i exportläget har fliken en mellannivå — för en yrkesgrupp med minst 5 men färre än
+  tröskeln anges bara antal, under 5 maskeras gruppen helt och namnges i en not; lönemått och
   läget per kön kräver tröskeln. Bladet *Lönepolitik* i Excelfilen med alla flikar (och i ZIP-filens
   Excelfil) följer samma trappa och samma regel per kön; vid tröskeln 5 eller lägre finns ingen
   mellannivå. Vaktas av `tests/ktroskel-kon.test.js` (bladet) och `tests/ktroskel-invarianter.test.js`.
@@ -433,18 +439,17 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   grupp med en enda person och ett påslag i procent är beloppet personens lön gånger
   procentsatsen. Det är användarens egen inmatning i en egen simulering och filtreras inte;
   under raden står en not om att gruppen är under tröskeln och att beloppet bygger på enskildas
-  löner. Kostnaden per grupp maskeras i utfallstabellen och i exportens blad
-  *Fördelning*. Risken bärs av användaren, som redan har underlaget; filen ska hanteras som
+  löner. Kostnaden per grupp under tröskeln maskeras i exportens blad *Fördelning* (på skärmen visas
+  den). Risken bärs av användaren, som redan har underlaget; filen ska hanteras som
   personuppgifter (§8).
 - **Löneöversyns scenariojämförelse (A/B)** prövar rågapet mot den tröskel som gäller när
   jämförelsen visas (scenariot bär antalet kvinnor och män): ett scenario sparat vid en lägre
   tröskel visar ett streck och en not när tröskeln har höjts.
-- **Lönerevisionssimulatorn följer tröskeln (beslut av produktägaren, ADR-38 R4):** urvalet i
-  kontrollerna (kön, BAS-intervall och lönegräns) ska nå tröskeln, annars är knappen inaktiv och en
-  mening säger vad som utelämnats och varför; åtgärden ska beröra minst så många personer, annars
-  visas meningen i stället för utfallet. Lönegapet före och efter (organisationens råa gap) kräver
-  tröskeln för varje kön; antalet berörda per kön är ett antal, inte ett lönemått. Vaktas av
-  `tests/ktroskel-invarianter.test.js` och `tests/ktroskel-kon.test.js` (invarianten och C3) och `tests/smoke-docx.test.js`.
+- **Lönerevisionssimulatorn är borttagen (ADR-50, 2026-10-29):** det den kunde gör en riktad rad i
+  Löneöversyn (kön, lönegräns, höj till), som följer regeln för egna rader ovan: en rad som berör
+  färre personer än tröskeln visar beloppet med noten om enskildas löner. Lönegapet före och efter
+  (organisationens råa gap) kräver tröskeln för varje kön. Vaktas av `tests/ktroskel-kon.test.js` (C3)
+  och `tests/smoke-docx.test.js`.
 - **Bilder med en punkt per person följer med (beslut av produktägaren 2026-10-16, ADR-48):** ZIP-exporten
   och utskriftens mall *Komplett rapport* bär bilder av Ålder & karriärs diagram med en punkt per person
   (§6.6); Ålder & karriär visar punkterna på skärmen. Bilderna bär inga namn eller identifierare, och filerna
@@ -710,7 +715,7 @@ Röktestet kördes i Chromium, Firefox och WebKit.
 | Lagringsspärren | Automatiskt test i jsdom och röktest i Chromium och Firefox: `setItem` med olika nycklar, direkt tilldelning och `defineProperty`, i localStorage och sessionStorage; cookie; sökning efter `setItem` i biblioteksfilerna | ✔ varje skrivning kastar, inga undantag, inget lagras; ✔ 0 `setItem` i de fyra biblioteken (§6.2) |
 | Web Workers | Webbläsarröktestet skapar en worker från `blob:` | ✔ avvisas av CSP (`script-src` som reserv för `worker-src`) |
 | Rensning (lagringsminimering, art. 5.1 e och 25.2) | Invariant för båda rensningsvägarna (inkl. extremvärden och utskrift) + körning i Chromium (alla flikar, utskrift, rensa, ladda om) | ✔ inget lönevärde kvar i dokumentet eller minnet; allt ritas igen efter ny inläsning |
-| Dataminimering | `ALLOWED_FIELDS` + `extractMinimalRecord` + test som läser in en fil med extra kolumner och BAS K och kräver exakt de vitlistade fälten i minnet (`tests/smoke-ansvar.test.js`) | ✔ 5 obligatoriska fält + valfri poäng + valfri ansvarskod + radnummer (härledda `aid`/`yrkeLabel`/`ansvarsgrupp`); kolumnen *Ansvar* läses inte in |
+| Dataminimering | `ALLOWED_FIELDS` + `extractMinimalRecord` + test som läser in en fil med extra kolumner och kräver exakt de vitlistade fälten i minnet (`tests/smoke-ansvar.test.js`) | ✔ 5 obligatoriska fält + valfri poäng + valfri ansvarskod + radnummer (härledda `aid`/`yrkeLabel`/`ansvarsgrupp`); kolumnen *Ansvar* läses inte in |
 | PII-avvisning | `detectSensitiveColumns` + körning i Chromium med PII-testfil; rubrikprov i jsdom | ✔ strukturfilen avvisas (0 rader inlästa); policy-/statistikfil kontrolleras inte (dokumenterat, §6.4); ✔ rubrikerna *Förnamn* och *Fornamn* avvisas (§6.4) |
 | Namnmaskering | `_cleanYrkeField` + körning i Chromium | ✔ "101 Anna Andersson" → "101 ***" |
 | k-anonymitet | `kTroskel()` + render-läsning vid 10, 25 och 5 (`tests/ktroskel.test.js` och `tests/ktroskel-hojning.test.js`) | ✔ standard 10, inställbart (ADR-38; undantag likvärdigt arbete dokumenterat) |

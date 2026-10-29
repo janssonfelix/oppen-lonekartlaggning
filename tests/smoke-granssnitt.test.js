@@ -23,7 +23,7 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         rader.push('K;90000;50;Man;7101');
         await lasIn(w, rader);
         expect(w.document.getElementById('data-validation-report').textContent).toContain('Användbarhetsgrad: 100,0 %');
-        expect(w.document.getElementById('data-status').textContent).toContain('1 person i BAS K analyseras manuellt');
+        expect(w.document.getElementById('data-status').textContent).toContain('21 rader');
     });
     it('kompliansrutan för referensens P10 räknar bara BAS med minst k personer', () => {
         const w = createAppWindow();
@@ -119,6 +119,7 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         w.__loadDemoData();
         const d = w.document;
         w.eval('sattKTroskel(150, { fraga: false })');           // männen är färre än 150
+        w.__state.kLage = 'export';                                // så som fliken lämnar verktyget (ADR-51)
         d.querySelector('.nav-item[data-tab="struktur"]').click();
         const rutor = [...d.querySelectorAll('#st-slutsatser .slutsats')];
         expect(rutor).toHaveLength(1);
@@ -307,6 +308,7 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
     });
     it('utan könsuppdelning ritas inga kvartiler på Översikt, och noten säger varför', () => {
         const w = createAppWindow();
+        w.__state.kLage = 'export';   // Översikts kopia så som den lämnar verktyget (ADR-51)
         w.__loadDemoData();
         const d = w.document;
         w.eval('sattKTroskel(150, { fraga: false })');
@@ -320,11 +322,11 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         expect(panel.getAttribute('role')).toBe('dialog');
         expect(panel.style.display).toBe('none');
         // Fälten har flyttat hit ur organisationspaketet; paketet (en fil) står kvar bland filerna.
-        for (const id of ['k-troskel', 'btn-k-aterstall', 'k-troskel-hjalp', 'k-troskel-fel', 'org-typ']) expect(d.getElementById(id).closest('#installningar-modal'), id).not.toBeNull();
+        for (const id of ['k-troskel', 'btn-k-aterstall', 'k-troskel-hjalp', 'k-troskel-fel', 'org-typ', 'prio-po-pct', 'prio-cost-months', 'prio-cost-reset', 'prio-cost-summary']) expect(d.getElementById(id).closest('#installningar-modal'), id).not.toBeNull();
         expect(d.getElementById('file-input-paket').closest('#organisationspaket')).not.toBeNull();
         expect(d.getElementById('organisationspaket').querySelector('[data-oppna-installningar]')).not.toBeNull();
-        // PO-påslag och beräkningsperiod hör till Prioritering och står kvar där, liksom övriga flikars inställningar.
-        for (const [id, avsnitt] of [['prio-po-pct', 'avsnitt-pr-installningar'], ['prio-cost-months', 'avsnitt-pr-installningar'], ['prio-cfg-atgard', 'avsnitt-pr-installningar'],
+        // PO-påslag och beräkningsperiod gäller alla flikar och står i panelen; flikarnas egna inställningar står kvar i flikarna.
+        for (const [id, avsnitt] of [['prio-cfg-atgard', 'avsnitt-pr-installningar'],
             ['arbvard-band', 'avsnitt-lv-poang'], ['pag-grans', 'avsnitt-la-personer'], ['outliers-threshold', 'avsnitt-ov-kvalitet']]) {
             expect(d.getElementById(id).closest('#installningar-modal'), id).toBeNull();
             expect(d.getElementById(id).closest('details.avsnitt').id, id).toBe(avsnitt);
@@ -334,7 +336,7 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         knapp.focus(); knapp.click();
         expect(panel.style.display).toBe('flex');
         const rader = () => [...d.querySelectorAll('#inst-flikar .inst-flik')];
-        expect(rader()).toHaveLength(6);
+        expect(rader()).toHaveLength(5);
         expect(rader().filter(r => r.querySelector('button').disabled).length).toBeGreaterThanOrEqual(4);
         d.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
         expect(panel.style.display).toBe('none');
@@ -343,19 +345,22 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         knapp.click();
         expect(d.getElementById('inst-namn').textContent).toMatch(/Organisation.+Referens.+Jämförelsestatistik/);
         expect(rader().every(r => !r.querySelector('button').disabled)).toBe(true);
-        expect(rader().map(r => r.querySelector('.inst-flik-lage').textContent)).toEqual(['Standardvärden', '39,15 % · 12 månader', 'Standardvärden', '± 5 %', '10 % under förväntad lön', '3,0 standardavvikelser']);
+        expect(rader().map(r => r.querySelector('.inst-flik-lage').textContent)).toEqual(['Standardvärden', 'Standardvärden', '± 5 %', '10 % under förväntad lön', '3,0 standardavvikelser']);
         expect(d.querySelectorAll('#inst-flikar .ar-andrad')).toHaveLength(0);
         // "Öppna" stänger panelen, byter flik och fäller ut avsnittet där inställningen står.
         rader()[0].querySelector('button').click();
         expect(panel.style.display).toBe('none');
         expect(d.getElementById('view-prioritering').style.display).toBe('block');
         expect(d.getElementById('avsnitt-pr-installningar').open).toBe(true);
-        // En ändrad inställning i fliken syns i panelen.
-        const po = d.getElementById('prio-po-pct');
-        po.value = '42'; po.dispatchEvent(new w.Event('input', { bubbles: true })); po.dispatchEvent(new w.Event('change', { bubbles: true }));
+        // PO-påslag och beräkningsperiod står i panelen (gäller alla flikar); en ändring slår igenom direkt och syns i sammanfattningen.
         knapp.click();
-        expect(rader()[1].querySelector('.inst-flik-lage').textContent).toBe('42,00 % · 12 månader');
-        expect(rader()[1].classList.contains('ar-andrad')).toBe(true);
+        const po = d.getElementById('prio-po-pct');
+        expect(po.closest('#installningar-modal')).not.toBeNull();
+        po.value = '42'; po.dispatchEvent(new w.Event('input', { bubbles: true })); po.dispatchEvent(new w.Event('change', { bubbles: true }));
+        expect(w.__state.costSettings.poPct).toBe(42);
+        expect(d.getElementById('prio-cost-summary').textContent).toMatch(/Anpassad.*42,00 %/);
+        d.getElementById('prio-cost-reset').click();
+        expect(w.__state.costSettings.poPct).toBe(39.15);
         w.eval('stangInstallningar()');
     });
     it('minsta gruppstorlek i flikarnas urvalsrad är en länk till inställningarna, och en ändring där slår igenom', () => {
@@ -438,7 +443,7 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         tangent(annat, 'k', { ctrlKey: true });
         expect(d.activeElement).toBe(falt);
     });
-    it('en grupp under tröskeln går inte att söka fram, och svaret säger inte om den finns', () => {
+    it('alla grupper går att söka fram oavsett tröskel (skärmen maskerar inget, ADR-51)', () => {
         const w = createAppWindow();
         w.__loadDemoData();
         const d = w.document, falt = d.getElementById('sok-grupp'), lista = d.getElementById('sok-grupp-lista');
@@ -446,17 +451,11 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         const fore = w.eval('sokKandidater()').map(k => k.nyckel);
         w.eval('sattKTroskel(25, { fraga: false })');
         const efter = w.eval('sokKandidater()');
-        expect(efter.every(k => k.n >= 25)).toBe(true);
-        const borta = fore.filter(n => !efter.some(k => k.nyckel === n));
-        expect(borta.length).toBeGreaterThan(0);                     // demodatan har grupper med 20–24 personer
-        // En av de grupper som föll bort: sökningen på dess kod ger samma svar som en sökning på något som inte finns.
-        const kod = borta.find(n => n.startsWith('grupp:')).slice(6).split('|')[0];
-        skriv(kod);
-        expect(lista.querySelectorAll('[role="option"]')).toHaveLength(0);
-        const svar = lista.textContent;
+        expect(efter.map(k => k.nyckel)).toEqual(fore);
+        expect(efter.some(k => k.n < 25)).toBe(true);                // demodatan har grupper med 20–24 personer
         skriv('finnsintealls');
-        expect(lista.textContent).toBe(svar);
-        expect(svar).toContain('färre än 25 personer');
+        expect(lista.querySelectorAll('[role="option"]')).toHaveLength(0);
+        expect(lista.textContent).toBe('Ingen grupp matchar.');
         // Rensning tar bort fältet och träffarna.
         w.eval('_rensaAllData()');
         expect(d.getElementById('sok-ruta').hidden).toBe(true);
@@ -482,15 +481,13 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         expect(w.eval('_chartExportUnderlag(window.__tomt)')).toBeNull();
         expect(w.eval('exportSakra(window.__tomt)')).toBe(false);
         // ZIP-exporten tar "allt som är ritat": den ritar först om varje flik som ritats förut men inte är aktuell.
-        const zip = w.eval('zipDiagram().map(el => el.id)');
-        expect(w.eval("flikInaktuell('struktur') || flikInaktuell('matrix')")).toBe(false);
+        const zip = w.eval('zipDiagram().map(el => el.id)');   // i exportläget: varje flik som ritats ritas om före uppräkningen
         expect(zip).toContain('chart-struktur-kvartiler');
         expect(w.eval('diagramRitat(document.getElementById("chart-struktur-kvartiler"))')).toBe(true);
         w.eval('sattKTroskel(26, { fraga: false })');                    // en ändring till: Lika arbete är inaktuell igen
         expect(w.eval("flikInaktuell('matrix')")).toBe(true);
         // Tabell: en läsning genom grinden ritar om Lika arbete först, och raderna bär den nya tröskeln.
-        const klon = w.eval("_cloneAndCleanTableForExport('paygap-table')");
-        expect(w.eval("flikInaktuell('matrix')")).toBe(false);
+        const klon = w.eval("_cloneAndCleanTableForExport('paygap-table')");   // ritar om Lika arbete i exportläget; efteråt är fliken inaktuell igen (skärmläget)
         expect(klon).not.toBeNull();
         expect(klon.querySelectorAll('tbody tr').length).toBeGreaterThan(0);
     });
@@ -604,10 +601,11 @@ describe('Var uppstår löneskillnaden?', () => {
         expect(host.hidden).toBe(true);
         expect(w.document.getElementById('gap-uppdelning-innehall').textContent.trim()).toBe('');
     });
-    it('ett kön under k i urvalet: "För få personer", inga belopp', () => {
+    it('ett kön under k i urvalet (i exportläget): "För få personer", inga belopp', () => {
         const w = createAppWindow();
         w.__loadDemoData();
         w.__state.data = w.__state.data.filter((r, i) => r.kon.includes('kvinna') || i % 50 === 0).slice(0, 200);
+        w.__state.kLage = 'export';
         w.eval('renderGapUppdelning()');
         const t = w.document.getElementById('gap-uppdelning-innehall').textContent;
         expect(t).toContain('För få personer för att dela upp skillnaden');
@@ -636,11 +634,11 @@ describe('radnummer vid inläsning', () => {
         const rader = ['Lönerapport 2026', 'BAS;Månadslön;Ålder;Kön;AID',
             'A;30000;40;Kvinna;5301',   // rad 3
             '',                         // rad 4 (tom)
-            'K;90000;50;Man;7101',      // rad 5 (BAS K, utesluts)
+            'K;90000;50;Man;7101',      // rad 5 (BAS K ingår sedan 2026.10)
             'A;31000;41;Man;5301'];     // rad 6
         w.loadStructureFile(new w.File([rader.join('\n')], 'p.csv', { type: 'text/csv' }));
         await vanta(w);
-        expect(w.__state.data.map(r => r.radnr)).toEqual([3, 6]);
+        expect(w.__state.data.map(r => r.radnr)).toEqual([3, 5, 6]);
     });
     it('Excel: radnr följer bladets rader trots försättsrad och tom rad', async () => {
         const w = createAppWindow();
@@ -782,8 +780,9 @@ describe('Personer att granska', () => {
 describe('dolda grupper, belopp, radslut och gränsfältet', () => {
     const rad = (bas, kon, lon, aid) => ({ bas, kon, lon, alder: 40, aid, yrke: aid, enhet: '' });
     const flera = (n, ...a) => Array.from({ length: n }, () => rad(...a));
-    it('dolda grupper redovisas med antal, aldrig med belopp; reserven visar bara hela skillnaden', () => {
+    it('dolda grupper (i exportläget) redovisas med antal, aldrig med belopp; reserven visar bara hela skillnaden', () => {
         const w = createAppWindow();
+        w.__state.kLage = 'export';
         const bakgrund = [...flera(30, 'E', 'kvinna', 28000, 'E1'), ...flera(12, 'E', 'man', 29500, 'E1'),
             ...flera(12, 'F', 'kvinna', 33000, 'F1'), ...flera(30, 'F', 'man', 35500, 'F1'),
             ...flera(25, 'G', 'kvinna', 38000, 'G1'), ...flera(15, 'G', 'man', 41000, 'G1')];

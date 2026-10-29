@@ -12,7 +12,7 @@ ingen server, inga nätverksanrop och ingen lagring. **Lönedata lämnar aldrig 
   underlaget, en PDF som låst kopia, en ZIP-fil med allt, protokoll för gemensam lönebedömning och
   rapportunderlag att klistra in i er egen mall.
 - **Dataskydd inbyggt:** bara de fält analysen behöver läses in (fem obligatoriska, två
-  valfria), filer med personnummer, namn eller e-post avvisas, små grupper skyddas, och en risk- och sårbarhetsanalys ingår som underlag till er konsekvensbedömning.
+  valfria), filer med personnummer, namn eller e-post avvisas, små grupper skyddas i det som lämnar verktyget, och en risk- och sårbarhetsanalys ingår som underlag till er konsekvensbedömning.
 
 ## Prova
 

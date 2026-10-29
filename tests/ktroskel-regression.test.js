@@ -6,7 +6,7 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
-import { FLIKAR, normalisera, synliga, fonster, ritaAlla, oppnaFlik, KON_MA, ENSAM, KON_GAP, fonsterKon, harNagon, laddaXlsx, fangaBocker, utskriftAv, samlaUtdata, sammanhang, SJU_MAN, fonsterMan, tvaDec, somTal, andelText, SENT_MELLAN, SENT_SMA } from './helpers/ktroskel-rigg.js';
+import { FLIKAR, normalisera, synliga, fonster, ritaAlla, oppnaFlik, KON_MA, ENSAM, KON_GAP, fonsterKon, harNagon, laddaXlsx, fangaBocker, utskriftAv, samlaUtdata, sammanhang, SJU_MAN, fonsterMan, tvaDec, somTal, andelText, SENT_MELLAN, SENT_SMA, iExport } from './helpers/ktroskel-rigg.js';
 
 // Sviten ritar om hela verktyget i varje test. Under full last tar ett test 4–6 s, så standardgränsen 5 s
 // fäller olika tester från körning till körning.
@@ -26,8 +26,13 @@ describe('R1: regressionens ojusterade steg ("Endast kön") kräver tröskeln f�
         expect(r.explainedShare).not.toBeNull();
         expect(new Set([forsta, bas, justerat].map(v => Math.abs(v).toFixed(2))).size).toBe(3);
     });
-    it('vid 10: kortet i Lika arbete visar det justerade gapet men varken första steget, budgeten eller förklarad andel', () => {
+    it('på skärmen visar kortet första steget också med 7 män (ADR-51)', () => {
         const w = fonsterMan(null, SJU_MAN);
+        w.__renderTabContent('matrix');
+        expect(w.document.getElementById('regression-card').textContent).toMatch(/Endast kön/);
+    });
+    it('i exportläget vid 10: kortet i Lika arbete visar det justerade gapet men varken första steget, budgeten eller förklarad andel', () => {
+        const w = iExport(fonsterMan(null, SJU_MAN));
         const { forsta, justerat } = tal(w);
         w.__renderTabContent('matrix');
         const kort = w.document.getElementById('regression-card');
@@ -82,7 +87,7 @@ describe('R1: regressionens ojusterade steg ("Endast kön") kräver tröskeln f�
         }
         expect(antal).toBeGreaterThanOrEqual(4);
     });
-    it('vid 10: samma utdatavägar som invarianten (I4) — varken första steget eller männens median i någon av dem', async () => {
+    it('vid 10: samma utdatavägar som invarianten (I4), utom skärmen — varken första steget eller männens median i någon av dem', async () => {
         const w = fonsterMan(null, SJU_MAN);
         // Referens och jämförelsestatistik, så att varje export har något att skriva (som fonsterKon).
         w.__state.policy = ['S1', 'S2'].map(bas => ({ bas, p10: 22000, med: 30000, p90: 52000 }));
@@ -93,7 +98,7 @@ describe('R1: regressionens ojusterade steg ("Endast kön") kräver tröskeln f�
         expect(utdata.length).toBeGreaterThan(20);
         const dolda = [...tvaDec(forsta), SJU_MAN[3]];   // männens median är den fjärde av sju löner
         const lackor = [];
-        for (const [namn, text] of utdata) for (const v of harNagon(text, dolda)) lackor.push(`${namn}: ${v} — "${sammanhang(text, v)}"`);
+        for (const [namn, text] of utdata.filter(([n]) => n !== 'skärm: alla flikar')) for (const v of harNagon(text, dolda)) lackor.push(`${namn}: ${v} — "${sammanhang(text, v)}"`);
         expect(lackor).toEqual([]);
     }, 120000);
     it('Blinder-Oaxaca (som delar upp det råa medelgapet) körs aldrig med ett kön under tröskeln: golvet är max(tröskeln, 10)', () => {
@@ -120,8 +125,8 @@ describe('R1: regressionens ojusterade steg ("Endast kön") kräver tröskeln f�
 });
 
 describe('R2: Löneöversynens scenariojämförelse maskerar ett rågap som sparats vid en lägre tröskel', () => {
-    it('sparat vid 5 med 7 män: rågapet visas vid 5 och döljs när tröskeln höjs till 10', () => {
-        const w = fonsterMan(5, SJU_MAN);
+    it('i exportläget: sparat vid 5 med 7 män, rågapet visas vid 5 och döljs när tröskeln höjs till 10', () => {
+        const w = iExport(fonsterMan(5, SJU_MAN));
         Object.assign(w.__state.forecast, { generell: { mode: 'pct', value: 2 } });
         oppnaFlik(w, 'loneoversyn');
         w.eval("_forecastSaveScenario('A')");
@@ -136,8 +141,8 @@ describe('R2: Löneöversynens scenariojämförelse maskerar ett rågap som spar
         expect(celler[4].textContent.trim()).not.toBe('–');   // det justerade gapet står kvar
         expect(el.textContent).toMatch(/färre än 10 personer/);
     });
-    it('sparat scenario räknar spillover på grupperna över tröskeln, som utfallet på skärmen', () => {
-        const w = fonsterKon(null);
+    it('sparat scenario räknar spillover på grupperna över tröskeln, som utfallet i exportläget', () => {
+        const w = iExport(fonsterKon(null));
         Object.assign(w.__state.forecast, { generell: { mode: 'pct', value: 2 },
             targets: [{ bas: 'S1', aid: '7001', mode: 'kr', value: 40000, dist: 'flat', targetLevel: 'median', pool: 'övrigt' }] });
         w.__renderTabContent('loneoversyn');
@@ -164,7 +169,7 @@ describe('R3: en egen riktad rad på en grupp under tröskeln är tillåten och 
         const noter = [...host.querySelectorAll('.k-mask-note')];
         expect(noter).toHaveLength(1);
         expect(noter[0].previousElementSibling).toBe(rader[0]);
-        expect(noter[0].textContent).toMatch(/Gruppen har färre än 10 personer — beloppet bygger på enskildas löner/);
+        expect(noter[0].textContent).toMatch(/Raden berör 1 person, färre än 10 personer — beloppet bygger på enskildas löner/);
         // Beloppet räknas utan filtrering av användarens egen rad.
         expect(normalisera(rader[0].textContent)).toContain(String(Math.round(ENSAM * 0.1)));
     });
@@ -194,8 +199,14 @@ describe('R4: Ålder & karriär följer regeln för könsuppdelade mått', () =>
         if (!f) return [];
         return id === 'chart-kon-boxplot' ? [...new Set(f.lager.flatMap(l => l.data.map(d => d.x)))] : f.lager.map(l => l.serie);
     };
-    it('vid 10 med 3 män: inget gap, inga mått för män, ingen låda och ingen trendlinje för män; punkterna står kvar', () => {
+    it('på skärmen med 3 män: gap, låda och trendlinje för män visas (ADR-51)', () => {
         const w = fonsterMan(null, TRE_MAN);
+        w.__renderTabContent('kon');
+        expect(namn(w, 'chart-kon-boxplot')).toEqual(['Kvinna', 'Man']);
+        expect(w.document.getElementById('kon-kpi-gap').textContent).toMatch(/^\d+,\d\s%$/);
+    });
+    it('i exportläget vid 10 med 3 män: inget gap, inga mått för män, ingen låda och ingen trendlinje för män; punkterna står kvar', () => {
+        const w = iExport(fonsterMan(null, TRE_MAN));
         w.__renderTabContent('kon');
         const d = w.document;
         const kvLoner = w.__state.data.filter(r => r.kon === 'kvinna').map(r => r.lon).sort((x, y) => x - y);
@@ -223,8 +234,8 @@ describe('R4: Ålder & karriär följer regeln för könsuppdelade mått', () =>
         const rader = w.__chartExportRows(d.getElementById('chart-kon-boxplot')).map(r => r.join(' | ')).join('\n');
         expect(harNagon(normalisera(rader), TRE_MAN)).toEqual([]);
     });
-    it('ett valt BAS med 30 kvinnor och en man: samma regel som för hela urvalet', () => {
-        const w = fonsterKon(null);
+    it('ett valt BAS med 30 kvinnor och en man: samma regel som för hela urvalet (exportläget)', () => {
+        const w = iExport(fonsterKon(null));
         w.__renderTabContent('kon');
         w.eval("renderKon('Y1')");
         const d = w.document;
@@ -238,8 +249,8 @@ describe('R4: Ålder & karriär följer regeln för könsuppdelade mått', () =>
         expect(d.getElementById('chart-kon-boxplot-k-not')).toBeNull();
         expect(namn(w, 'chart-kon-boxplot')).toEqual(['Kvinna', 'Man']);
     });
-    it('färgläggning efter BAS: könens trendlinjer följer samma regel', () => {
-        const w = fonsterMan(null, TRE_MAN);
+    it('färgläggning efter BAS: könens trendlinjer följer samma regel (exportläget)', () => {
+        const w = iExport(fonsterMan(null, TRE_MAN));
         w.__renderTabContent('kon');
         w.document.getElementById('kon-color-by').value = 'bas';
         w.eval("renderKon('__ALLA__')");
@@ -247,8 +258,8 @@ describe('R4: Ålder & karriär följer regeln för könsuppdelade mått', () =>
         expect(spridning).toContain('Kvinna (trend)');
         expect(spridning).not.toContain('Man (trend)');
     });
-    it('vid 3 (männens antal): gap, låda och trendlinje finns, och ingen not', () => {
-        const w = fonsterMan(3, TRE_MAN);
+    it('vid 3 (männens antal): gap, låda och trendlinje finns, och ingen not (exportläget)', () => {
+        const w = iExport(fonsterMan(3, TRE_MAN));
         w.__renderTabContent('kon');
         const d = w.document;
         expect(d.getElementById('kon-kpi-gap').textContent).toMatch(/^\d+,\d\s%$/);   // svenskt format: decimalkomma, mellanslag före %
@@ -259,8 +270,8 @@ describe('R4: Ålder & karriär följer regeln för könsuppdelade mått', () =>
         // Noten säger inget om en utelämnad trendlinje (den kan finnas ändå, om personer i grupper under tröskeln inte visas som punkt).
         expect(d.getElementById('chart-kon-scatter-k-not')?.textContent || '').not.toMatch(/Trendlinje och konfidensband visas inte/);
     });
-    it('noten tas bort när tröskeln sänks så att könet når den', () => {
-        const w = fonsterMan(null, TRE_MAN);
+    it('noten tas bort när tröskeln sänks så att könet når den (exportläget)', () => {
+        const w = iExport(fonsterMan(null, TRE_MAN));
         oppnaFlik(w, 'kon');
         expect(w.document.getElementById('chart-kon-boxplot-k-not')).not.toBeNull();
         w.eval('sattKTroskel(3, { fraga: false })');
@@ -284,7 +295,7 @@ describe('omritning efter ändrad tröskel från gränssnittet: stegvis, med fö
         f.value = '25';
         f.dispatchEvent(new w.Event('change', { bubbles: true }));
         // Direkt efter ändringen: tröskeln gäller, rutan visas, inget är omritat än och sidan tar inte emot klick.
-        expect(w.eval('kTroskel()')).toBe(25);
+        expect(w.eval('kInstalld()')).toBe(25);
         const ruta = d.getElementById('omritning-ruta');
         expect(ruta).not.toBeNull();
         expect(ruta.getAttribute('role')).toBe('status');
@@ -294,11 +305,11 @@ describe('omritning efter ändrad tröskel från gränssnittet: stegvis, med fö
         // En ändring till medan omritningen pågår når inte fältets hanterare (spärrad), och startar ingen ny omritning.
         f.value = '30';
         f.dispatchEvent(new w.Event('change', { bubbles: true }));
-        expect(w.eval('kTroskel()')).toBe(25);
+        expect(w.eval('kInstalld()')).toBe(25);
         await w.eval('_renderaOmAllaFlikarStegvis()');
         expect(d.getElementById('omritning-ruta')).toBeNull();
         const oppen = d.querySelector('.nav-item.active[data-tab]').getAttribute('data-tab');
-        expect(ritade).toEqual([oppen]);                                   // bara den öppna fliken, en gång; övriga töms
+        expect(ritade).toEqual(oppen === 'dashboard' ? [] : [oppen]);     // bara den öppna fliken, en gång (Översikts delar ritas av stegen själva); övriga töms
         expect(synliga(w, [...SENT_MELLAN, ...SENT_SMA])).toEqual([]);         // ingen mellangrupp eller liten grupp syns längre någonstans
         d.body.dispatchEvent(new w.Event('click', { bubbles: true }));
         expect(klick).toBe(1);                                             // spärren är släppt
@@ -337,7 +348,7 @@ describe('k-tröskeln: lägsta tillåtna värde ur organisationspaketet (ADR-47)
         const r = las(w, paket({ kTroskelLagst: 15 }));
         expect(r.ok).toBe(true);
         expect(r.meddelande).toMatch(/höjs till 15/);
-        expect(w.eval('kTroskel()')).toBe(15);
+        expect(w.eval('kInstalld()')).toBe(15);
         expect(w.eval('kTroskelLagst()')).toBe(15);
         expect(fragor).toBe(0);
         expect(w.document.getElementById('paket-info').textContent).toMatch(/minsta gruppstorlek lägst 15/);
@@ -345,7 +356,7 @@ describe('k-tröskeln: lägsta tillåtna värde ur organisationspaketet (ADR-47)
     it('fältet: ett värde under golvet avvisas med felet vid fältet, och fältet återfår gällande värde', () => {
         const w = medGolv(8, 12);
         const f = andra(w, '5');
-        expect(w.eval('kTroskel()')).toBe(12);
+        expect(w.eval('kInstalld()')).toBe(12);
         expect(f.value).toBe('12');
         expect(f.min).toBe('8');
         const fel = w.document.getElementById('k-troskel-fel');
@@ -355,13 +366,13 @@ describe('k-tröskeln: lägsta tillåtna värde ur organisationspaketet (ADR-47)
         // Ett värde på golvet, under 10, godtas efter bekräftelse; felet försvinner.
         w.confirm = () => true;
         andra(w, '8');
-        expect(w.eval('kTroskel()')).toBe(8);
+        expect(w.eval('kInstalld()')).toBe(8);
         expect(fel.hidden).toBe(true);
     });
     it('sattKTroskel avvisar värdet under golvet också utan fråga', () => {
         const w = medGolv(8, 12);
         expect(w.eval('sattKTroskel(7, { fraga: false })')).toEqual({ ok: false, fel: 'Lägst 8 enligt organisationspaketet.' });
-        expect(w.eval('kTroskel()')).toBe(12);
+        expect(w.eval('kInstalld()')).toBe(12);
     });
     it('konfigurationsfilen: ett värde under golvet används inte, resten läses in, och felet står vid fältet', () => {
         const a = createAppWindow();
@@ -376,7 +387,7 @@ describe('k-tröskeln: lägsta tillåtna värde ur organisationspaketet (ADR-47)
         const r = b.eval('applyConfigSnapshot(window.__cfg)');
         expect(r.varningar).toEqual(['Filens minsta gruppstorlek 5 används inte: Lägst 8 enligt organisationspaketet.']);
         expect(fragor).toBe(0);
-        expect(b.eval('kTroskel()')).toBe(12);
+        expect(b.eval('kInstalld()')).toBe(12);
         expect(b.eval('orgNamn("")')).toBe('Ur filen');
         expect(b.document.getElementById('k-troskel-fel').hidden).toBe(false);
     });
@@ -388,7 +399,7 @@ describe('k-tröskeln: lägsta tillåtna värde ur organisationspaketet (ADR-47)
         expect(r.ok).toBe(true);
         expect(fragor).toBe(1);
         expect(w.eval('kTroskelLagst()')).toBe(8);
-        expect(w.eval('kTroskel()')).toBe(12);
+        expect(w.eval('kInstalld()')).toBe(12);
         expect(r.meddelande).toMatch(/Det förra paketets lägsta tillåtna minsta gruppstorlek 8 behålls/);
         expect(r.meddelande).toMatch(/5 används inte: Lägst 8 enligt organisationspaketet/);
         expect(w.eval('orgNamn("")')).toBe('Andra organisationen');   // resten av paketet läses in
@@ -411,7 +422,7 @@ describe('k-tröskeln: lägsta tillåtna värde ur organisationspaketet (ADR-47)
         expect(fragor).toHaveLength(2);
         expect(fragor[0]).toMatch(/från 8 till 3/);
         expect(w.eval('kTroskelLagst()')).toBe(3);
-        expect(w.eval('kTroskel()')).toBe(5);
+        expect(w.eval('kInstalld()')).toBe(5);
     });
     it('ett högre golv i ett nytt paket kräver ingen bekräftelse och höjer tröskeln', () => {
         const w = medGolv(8);
@@ -420,7 +431,7 @@ describe('k-tröskeln: lägsta tillåtna värde ur organisationspaketet (ADR-47)
         las(w, paket({ kTroskelLagst: 20 }, 'Andra organisationen'));
         expect(fragor).toBe(0);
         expect(w.eval('kTroskelLagst()')).toBe(20);
-        expect(w.eval('kTroskel()')).toBe(20);
+        expect(w.eval('kInstalld()')).toBe(20);
     });
     it('återställningsknappen går till golvet när det är över 10', () => {
         const w = medGolv(15, 20);
@@ -428,14 +439,14 @@ describe('k-tröskeln: lägsta tillåtna värde ur organisationspaketet (ADR-47)
         expect(knapp.hidden).toBe(false);
         expect(knapp.textContent).toBe('Återställ till 15');
         knapp.click();
-        expect(w.eval('kTroskel()')).toBe(15);
+        expect(w.eval('kInstalld()')).toBe(15);
         expect(knapp.hidden).toBe(true);
     });
     it('Rensa all data tar bort golvet: hjälptext och gräns återgår, och 5 går att sätta igen', () => {
         const w = medGolv(8, 12);
         w.eval('_rensaAllData()');
         expect(w.eval('kTroskelLagst()')).toBeNull();
-        expect(w.eval('kTroskel()')).toBe(10);
+        expect(w.eval('kInstalld()')).toBe(10);
         expect(w.document.getElementById('k-troskel-hjalp').textContent).toBe('Standard 10. Ändringen räknar om alla flikar.');
         expect(w.document.getElementById('k-troskel').min).toBe('2');
         expect(w.document.getElementById('btn-k-aterstall').textContent).toBe('Återställ till 10');
