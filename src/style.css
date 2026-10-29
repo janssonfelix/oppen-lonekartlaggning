@@ -783,6 +783,8 @@ details.avsnitt[open]:not(.card) { padding-bottom: 20px; }
 }
 @media (max-width: 640px) { .upload-row { grid-template-columns: 1fr; } }
 .upload-row-bred { grid-column: 1 / -1; }
+.paket-forst { margin: 0 0 14px; border-top: 3px solid var(--primary); }
+.steg-nr { display: inline-block; margin-right: 6px; padding: 1px 7px; border-radius: 10px; background: var(--primary); color: #fff; font-size: var(--fs-xs); font-weight: 700; letter-spacing: 0.02em; vertical-align: middle; }
 /* Organisationspaket (ADR-28) */
 .paket-innehall { padding: 12px 4px; line-height: 1.6; font-size: var(--fs-sm); }
 .paket-rad { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 10px; }

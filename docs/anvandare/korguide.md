@@ -69,11 +69,11 @@ Exportera en personalfil (CSV eller XLSX) med dessa kolumner:
 
 ## 3. Ladda upp och kvalitetssäkra underlaget
 
-1. Läs in **organisationspaketet** om er organisation har ett (raden *Organisationspaket*
-   under filrutorna — fäll ut den).
-   Det innehåller organisationens ställningstagande, jämförelsestatistik och benämningar
-   (se `organisationspaket.md`). Dra sedan in eller välj strukturfilen i den
-   **obligatoriska** rutan.
+1. Läs in **organisationspaketet** om er organisation har ett — det är **steg 1**, rutan överst
+   i filsektionen på Översikt. Det innehåller organisationens ställningstagande,
+   jämförelsestatistik och benämningar (se `organisationspaket.md`), så rutorna *Referens* och
+   *Jämförelsestatistik* fylls i av sig själva. Dra sedan in eller välj lönefilen i den
+   **obligatoriska** rutan (steg 2).
    **Minsta gruppstorlek för redovisning:** fältet ligger under **Inställningar** i sidhuvudet (värdet
    *Minsta gruppstorlek* i flikarnas översta rad är en länk dit). Standardvärdet är 10: lönemått för grupper med färre personer än så redovisas
    inte. Ni kan ändra värdet till ett heltal från 2 (högre skärper skyddet). Ett värde under 10

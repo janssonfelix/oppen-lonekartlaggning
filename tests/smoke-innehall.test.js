@@ -177,10 +177,12 @@ describe('Lika arbete och filrutorna: ordning och kompakta rutor', () => {
         expect(w.eval('jmfNamn()')).toBe('Regionstatistiken');
         expect(stat.querySelector('.upload-namn-fel').hidden).toBe(true);
     });
-    it('demots ställningstagande visas kompakt; paketraden är ihopfälld och visar organisationstypen', () => {
+    it('demots ställningstagande visas kompakt; paketrutan står först, utfälld, och visar organisationstypen', () => {
         const w = createAppWindow();
         const d = w.document;
-        expect(d.getElementById('organisationspaket').open).toBe(false);
+        expect(d.getElementById('organisationspaket').open).toBe(true);
+        expect(d.querySelector('#organisationspaket > summary').textContent).toMatch(/Steg 1/);
+        expect(d.getElementById('organisationspaket').compareDocumentPosition(d.getElementById('upload-row')) & 4).toBeTruthy();
         w.__loadDemoData();
         const pol = d.getElementById('upload-cell-policy');
         expect(pol.classList.contains('loaded')).toBe(true);
@@ -194,7 +196,7 @@ describe('Lika arbete och filrutorna: ordning och kompakta rutor', () => {
         const d = w.document;
         expect(d.getElementById('btn-try-demo')).toBeNull();
         expect(d.getElementById('btn-minimize-upload')).toBeNull();
-        expect(d.getElementById('first-run-hint').textContent.replace(/\s+/g, ' ')).toMatch(/Kom igång: läs in lönefilen nedan — eller .*prova med demodata/i);
+        expect(d.getElementById('first-run-hint').textContent.replace(/\s+/g, ' ')).toMatch(/Kom igång: läs in organisationspaketet nedan om er organisation har ett, sedan lönefilen — eller .*prova med demodata/i);
         d.getElementById('first-run-demo-link').click();
         expect(w.__state.data.length).toBeGreaterThan(0);
     });
@@ -386,7 +388,7 @@ describe('BAS-ordningen är fast (se §5 i teknisk-plan.md)', () => {
         w.__loadDemoData();
         const d = w.document;
         expect(d.getElementById('outliers-container').closest('#underlagets-kvalitet')).not.toBeNull();
-        expect(d.getElementById('file-input-paket').closest('#upload-row')).not.toBeNull();
+        expect(d.getElementById('file-input-paket').closest('#upload-sektion')).not.toBeNull();
         for (const id of ['outliers-container', 'file-input-paket']) expect(d.getElementById(id).closest('#view-dokumentera')).toBeNull();
         expect(d.getElementById('dok-installningar-rubrik').textContent).toBe('Spara och läsa in arbetet');
         expect(d.getElementById('outliers-container').style.display).toBe('block');

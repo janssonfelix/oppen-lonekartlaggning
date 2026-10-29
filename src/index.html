@@ -184,7 +184,7 @@
                     <!-- Första-intryck: visas tills data laddats (döljs av _renderDemoBanner när data finns) -->
                     <div id="first-run-hint" class="first-run-hint">
                         <span class="first-run-hint-icon" aria-hidden="true"></span>
-                        <div><strong>Kom igång:</strong> läs in lönefilen nedan — eller <button type="button" id="first-run-demo-link" class="first-run-demo-link">prova med demodata</button>.</div>
+                        <div><strong>Kom igång:</strong> läs in organisationspaketet nedan om er organisation har ett, sedan lönefilen — eller <button type="button" id="first-run-demo-link" class="first-run-demo-link">prova med demodata</button>.</div>
                     </div>
 
                     <!-- Filrutorna: syns alltid; kompakta efter inläsning (ADR-36) -->
@@ -192,120 +192,23 @@
                     <div id="ov-filrad" class="urvalsrad ov-filrad"></div>
                     <div id="upload-sektion">
                     <div id="upload-sektion-rubrik" class="rad-bryt-mitt gap-12 mellan marg-6-0-8">
-                        <h2 class="fs-md fw-600 marg-0">Filer &amp; uppladdningar <span class="text-dampad-sm fw-400">— en obligatorisk, övriga valfria</span></h2>
+                        <h2 class="fs-md fw-600 marg-0">Filer &amp; uppladdningar <span class="text-dampad-sm fw-400">— paketet först om ni har ett, lönefilen är obligatorisk, resten valfritt</span></h2>
                     </div>
                     <p id="upload-hjalp" class="text-dampad-xs lh-1_5 marg-0-0-8">
                         Osäker på hur du får ut filen ur lönesystemet? Se <strong>datauttag.md</strong>
                         (medföljer verktyget) &mdash; eller ladda ner CSV-mallen nedan och fyll den från valfri rapport.
                     </p>
-                    <!-- Horisontell upload-rad: alla uppladdningskaellor -->
-                    <div class="upload-row" id="upload-row">
-                        <div class="upload-cell required" id="upload-cell-data">
-                            <div class="upload-cell-header">
-                                <h3>Lönefil</h3>
-                                <span class="upload-badge required">Obligatorisk</span>
-                            </div>
-                            <div class="upload-unlocks"><svg class="ikon ikon-lasOppen" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/></svg> Aktiverar <strong>hela analysen</strong> — alla flikar</div>
-                            <div class="file-drop-area" id="drop-area-data">
-                                <input type="file" id="file-input-data" accept=".csv,.xlsx" aria-label="Ladda upp strukturdata">
-                                <p>Klicka eller dra <code>.csv</code>/<code>.xlsx</code> hit</p>
-                            </div>
-                            <div id="data-status" class="status-msg"></div>
-                            <div class="upload-inlast" hidden>
-                                <p class="upload-filnamn"></p>
-                                <label class="upload-namn">Namn <input type="text" id="org-namn" aria-label="Organisationens namn" class="form-select" maxlength="100" autocomplete="off" placeholder="t.ex. Exempelkommunen"></label>
-                                <p class="upload-namn-fel" role="alert" hidden></p>
-                                <div class="upload-knappar">
-                                    <button type="button" class="btn btn-secondary btn-sm" data-byt-fil="file-input-data">Byt fil</button>
-                                    <button type="button" class="btn btn-secondary btn-sm" id="btn-kolumnmappning">Kolumnmappning</button>
-                                </div>
-                            </div>
-                            <details class="upload-help" open>
-                                <summary>Vilka kolumner krävs?</summary>
-                                <div class="upload-help-content">
-                                    <p>Personalfil med <strong>en rad per anställd</strong>:</p>
-                                    <ul>
-                                        <li><strong>BAS-intervall</strong> — en bokstav per rad (lönenivå-grad); alla intervall ingår, även chefsnivåerna</li>
-                                        <li><strong>AID / Yrkesgrupp</strong> — yrkeskod + benämning</li>
-                                        <li><strong>Månadslön</strong> — heltidsekvivalent</li>
-                                        <li><strong>Ålder</strong></li>
-                                        <li><strong>Kön</strong> — Kvinna / Man</li>
-                                        <li><strong>Poäng</strong> <em>(valfri)</em> — arbetsvärderingspoäng per befattning; aktiverar poäng som krav-proxy i likvärdighetsanalysen</li>
-                                    </ul>
-                                    <p class="mt-8">Format: <code>.csv</code> (alla vanliga avgränsare och teckenkodningar detekteras) eller Excel <code>.xlsx</code>.</p>
-                                    <button id="btn-download-csv-template" type="button" class="btn btn-secondary btn-sm mt-8">Ladda ner CSV-mall</button>
-                                </div>
-                            </details>
-                        </div>
-
-                        <div class="upload-cell optional" id="upload-cell-policy">
-                            <div class="upload-cell-header">
-                                <h3>Referens: lönepolitisk målbild</h3>
-                                <span class="upload-badge optional">Valfritt</span>
-                            </div>
-                            <p id="referens-status" class="ref-status" role="status" aria-live="polite"></p>
-                            <div class="upload-unlocks">Jämförs mot i <strong>Prioritering</strong>, <strong>Lönepolitik</strong> och <strong>Handlingsplan</strong></div>
-                            <div class="file-drop-area" id="drop-area-policy">
-                                <input type="file" id="file-input-policy" accept=".csv,.xlsx" aria-label="Ladda upp lönepolitiskt ställningstagande">
-                                <p>Klicka eller dra <code>.csv</code>/<code>.xlsx</code> hit</p>
-                            </div>
-                            <div id="policy-status" class="status-msg"></div>
-                            <div class="upload-inlast" hidden>
-                                <p class="upload-filnamn"></p>
-                                <div class="upload-knappar"><button type="button" class="btn btn-secondary btn-sm" data-byt-fil="file-input-policy">Byt fil</button></div>
-                            </div>
-                            <div id="referens-namn-rad" class="ref-namn-rad" hidden>
-                                <label for="referens-namn">Namn på referensen</label>
-                                <input type="text" id="referens-namn" class="form-select" maxlength="100" autocomplete="off">
-                                <p class="upload-namn-fel" role="alert" hidden></p>
-                            </div>
-                            <button type="button" id="btn-referens-aterga" class="btn btn-secondary btn-sm" hidden></button>
-                            <details class="upload-help" open>
-                                <summary>Vad används det till?</summary>
-                                <div class="upload-help-content">
-                                    <p>Önskade lönenivåer per BAS-intervall — P10 (lägstanivå), Median, P90 (toppnivå). Ladda upp ert lönepolitiska ställningstagande (eller ett organisationspaket) — Prioritering och Lönepolitik jämför mot det. Du kan ge det ett namn.</p>
-                                    <p class="mt-8">Format: <code>.csv</code> eller <code>.xlsx</code>. Kolumner: <code>BAS</code>, <code>P10</code>, <code>Median</code>, <code>P90</code>.</p>
-                                </div>
-                            </details>
-                        </div>
-
-                        <div class="upload-cell optional" id="upload-cell-stat">
-                            <div class="upload-cell-header">
-                                <h3>Jämförelsestatistik</h3>
-                                <span class="upload-badge optional">Valfritt</span>
-                            </div>
-                            <div class="upload-unlocks"><svg class="ikon ikon-lasOppen" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/></svg> Aktiverar fliken <strong>Jämförelsestatistik</strong> + referens i Prioritering &amp; Likvärdigt arbete</div>
-                            <div class="file-drop-area" id="drop-area-stat">
-                                <input type="file" id="file-input-stat" accept=".xlsx,.csv" aria-label="Ladda upp jämförelsestatistik">
-                                <p>Klicka eller dra <code>.xlsx</code> hit</p>
-                            </div>
-                            <div id="stat-status" class="status-msg"></div>
-                            <div class="upload-inlast" hidden>
-                                <p class="upload-filnamn"></p>
-                                <div class="upload-knappar"><button type="button" class="btn btn-secondary btn-sm" data-byt-fil="file-input-stat">Byt fil</button></div>
-                            </div>
-                            <label class="upload-namn">Namn <input type="text" id="jmf-namn" aria-label="Jämförelsestatistikens namn" class="form-select" maxlength="100" autocomplete="off" placeholder="t.ex. SKR:s lönestatistik"></label>
-                            <p class="upload-namn-fel" role="alert" hidden></p>
-                            <details class="upload-help" open>
-                                <summary>Vad används det till?</summary>
-                                <div class="upload-help-content">
-                                    <p>Medianlöner per yrkesgrupp i jämförelsestatistiken — extern referens för marknadsläge och rekryteringsrisk.</p>
-                                    <p class="mt-8">Format: <code>.xlsx</code>. Kolumner: AID-kod, BAS-intervall, Median.</p>
-                                </div>
-                            </details>
-                        </div>
-
                     <!-- Organisationspaket (ADR-28): organisationens benämningar, grundinställningar,
                          ställningstagande och jämförelsestatistik i en fil. Systemägaren skapar det. -->
-                    <details id="organisationspaket" class="prio-config-panel upload-row-bred marg-t-0">
-                        <summary>Organisationspaket
+                    <details id="organisationspaket" class="prio-config-panel paket-forst" open>
+                        <summary><span class="steg-nr">Steg 1</span> Organisationspaket <span class="text-dampad-sm fw-400">— läs in först, om er organisation har ett</span>
                             <span class="info-tip" data-tooltip="Ett organisationspaket innehåller organisationens namn och benämningar, grundinställningar, lönepolitiska ställningstagande och jämförelsestatistik. Systemägaren skapar det; handläggarna läser in det i ett steg. Paketet innehåller bara aggregat — inga personuppgifter."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
                             <span class="text-dampad-sm marg-v-8">Organisation: <strong data-profile-label="name">Er organisation</strong></span>
                             <span id="paket-orgtyp" class="text-dampad-sm marg-v-8"></span>
                             <span id="k-troskel-sammanfattning" class="text-dampad-sm marg-v-8"></span>
                         </summary>
                         <div class="paket-innehall">
-                            <p>Läs in er organisations paket, så används dess ställningstagande, jämförelsestatistik och benämningar. Har ni inget paket går det bra att läsa in ställningstagandet och statistiken var för sig med rutorna ovan.</p>
+                            <p>Har er organisation ett paket? Läs in det först, så används dess ställningstagande, jämförelsestatistik och benämningar i hela verktyget, och rutorna <em>Referens</em> och <em>Jämförelsestatistik</em> nedan fylls i av sig själva. Har ni inget paket går det bra att läsa in ställningstagandet och statistiken var för sig med rutorna ovan.</p>
                             <p class="paket-installningar-not">Organisationstyp och minsta gruppstorlek ställs in under <button type="button" class="ov-filrad-lank" data-oppna-installningar>Inställningar</button>.</p>
                             <div class="paket-rad">
                                 <label class="btn btn-secondary btn-sm pekare">
@@ -367,6 +270,103 @@
                             </details>
                         </div>
                     </details>
+                    <!-- Horisontell upload-rad: alla uppladdningskaellor -->
+                    <div class="upload-row" id="upload-row">
+                        <div class="upload-cell required" id="upload-cell-data">
+                            <div class="upload-cell-header">
+                                <h3><span class="steg-nr">Steg 2</span> Lönefil</h3>
+                                <span class="upload-badge required">Obligatorisk</span>
+                            </div>
+                            <div class="upload-unlocks"><svg class="ikon ikon-lasOppen" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/></svg> Aktiverar <strong>hela analysen</strong> — alla flikar</div>
+                            <div class="file-drop-area" id="drop-area-data">
+                                <input type="file" id="file-input-data" accept=".csv,.xlsx" aria-label="Ladda upp strukturdata">
+                                <p>Klicka eller dra <code>.csv</code>/<code>.xlsx</code> hit</p>
+                            </div>
+                            <div id="data-status" class="status-msg"></div>
+                            <div class="upload-inlast" hidden>
+                                <p class="upload-filnamn"></p>
+                                <label class="upload-namn">Namn <input type="text" id="org-namn" aria-label="Organisationens namn" class="form-select" maxlength="100" autocomplete="off" placeholder="t.ex. Exempelkommunen"></label>
+                                <p class="upload-namn-fel" role="alert" hidden></p>
+                                <div class="upload-knappar">
+                                    <button type="button" class="btn btn-secondary btn-sm" data-byt-fil="file-input-data">Byt fil</button>
+                                    <button type="button" class="btn btn-secondary btn-sm" id="btn-kolumnmappning">Kolumnmappning</button>
+                                </div>
+                            </div>
+                            <details class="upload-help" open>
+                                <summary>Vilka kolumner krävs?</summary>
+                                <div class="upload-help-content">
+                                    <p>Personalfil med <strong>en rad per anställd</strong>:</p>
+                                    <ul>
+                                        <li><strong>BAS-intervall</strong> — en bokstav per rad (lönenivå-grad); alla intervall ingår, även chefsnivåerna</li>
+                                        <li><strong>AID / Yrkesgrupp</strong> — yrkeskod + benämning</li>
+                                        <li><strong>Månadslön</strong> — heltidsekvivalent</li>
+                                        <li><strong>Ålder</strong></li>
+                                        <li><strong>Kön</strong> — Kvinna / Man</li>
+                                        <li><strong>Poäng</strong> <em>(valfri)</em> — arbetsvärderingspoäng per befattning; aktiverar poäng som krav-proxy i likvärdighetsanalysen</li>
+                                    </ul>
+                                    <p class="mt-8">Format: <code>.csv</code> (alla vanliga avgränsare och teckenkodningar detekteras) eller Excel <code>.xlsx</code>.</p>
+                                    <button id="btn-download-csv-template" type="button" class="btn btn-secondary btn-sm mt-8">Ladda ner CSV-mall</button>
+                                </div>
+                            </details>
+                        </div>
+
+                        <div class="upload-cell optional" id="upload-cell-policy">
+                            <div class="upload-cell-header">
+                                <h3><span class="steg-nr">Steg 3</span> Referens: lönepolitisk målbild</h3>
+                                <span class="upload-badge optional">Valfritt</span>
+                            </div>
+                            <p id="referens-status" class="ref-status" role="status" aria-live="polite"></p>
+                            <div class="upload-unlocks">Jämförs mot i <strong>Prioritering</strong>, <strong>Lönepolitik</strong> och <strong>Handlingsplan</strong></div>
+                            <div class="file-drop-area" id="drop-area-policy">
+                                <input type="file" id="file-input-policy" accept=".csv,.xlsx" aria-label="Ladda upp lönepolitiskt ställningstagande">
+                                <p>Klicka eller dra <code>.csv</code>/<code>.xlsx</code> hit</p>
+                            </div>
+                            <div id="policy-status" class="status-msg"></div>
+                            <div class="upload-inlast" hidden>
+                                <p class="upload-filnamn"></p>
+                                <div class="upload-knappar"><button type="button" class="btn btn-secondary btn-sm" data-byt-fil="file-input-policy">Byt fil</button></div>
+                            </div>
+                            <div id="referens-namn-rad" class="ref-namn-rad" hidden>
+                                <label for="referens-namn">Namn på referensen</label>
+                                <input type="text" id="referens-namn" class="form-select" maxlength="100" autocomplete="off">
+                                <p class="upload-namn-fel" role="alert" hidden></p>
+                            </div>
+                            <button type="button" id="btn-referens-aterga" class="btn btn-secondary btn-sm" hidden></button>
+                            <details class="upload-help" open>
+                                <summary>Vad används det till?</summary>
+                                <div class="upload-help-content">
+                                    <p>Önskade lönenivåer per BAS-intervall — P10 (lägstanivå), Median, P90 (toppnivå). Ladda upp ert lönepolitiska ställningstagande (eller ett organisationspaket) — Prioritering och Lönepolitik jämför mot det. Du kan ge det ett namn.</p>
+                                    <p class="mt-8">Format: <code>.csv</code> eller <code>.xlsx</code>. Kolumner: <code>BAS</code>, <code>P10</code>, <code>Median</code>, <code>P90</code>.</p>
+                                </div>
+                            </details>
+                        </div>
+
+                        <div class="upload-cell optional" id="upload-cell-stat">
+                            <div class="upload-cell-header">
+                                <h3><span class="steg-nr">Steg 4</span> Jämförelsestatistik</h3>
+                                <span class="upload-badge optional">Valfritt</span>
+                            </div>
+                            <div class="upload-unlocks"><svg class="ikon ikon-lasOppen" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/></svg> Aktiverar fliken <strong>Jämförelsestatistik</strong> + referens i Prioritering &amp; Likvärdigt arbete</div>
+                            <div class="file-drop-area" id="drop-area-stat">
+                                <input type="file" id="file-input-stat" accept=".xlsx,.csv" aria-label="Ladda upp jämförelsestatistik">
+                                <p>Klicka eller dra <code>.xlsx</code> hit</p>
+                            </div>
+                            <div id="stat-status" class="status-msg"></div>
+                            <div class="upload-inlast" hidden>
+                                <p class="upload-filnamn"></p>
+                                <div class="upload-knappar"><button type="button" class="btn btn-secondary btn-sm" data-byt-fil="file-input-stat">Byt fil</button></div>
+                            </div>
+                            <label class="upload-namn">Namn <input type="text" id="jmf-namn" aria-label="Jämförelsestatistikens namn" class="form-select" maxlength="100" autocomplete="off" placeholder="t.ex. SKR:s lönestatistik"></label>
+                            <p class="upload-namn-fel" role="alert" hidden></p>
+                            <details class="upload-help" open>
+                                <summary>Vad används det till?</summary>
+                                <div class="upload-help-content">
+                                    <p>Medianlöner per yrkesgrupp i jämförelsestatistiken — extern referens för marknadsläge och rekryteringsrisk.</p>
+                                    <p class="mt-8">Format: <code>.xlsx</code>. Kolumner: AID-kod, BAS-intervall, Median.</p>
+                                </div>
+                            </details>
+                        </div>
+
                     </div>
                     </div>
 
