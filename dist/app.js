@@ -1541,8 +1541,9 @@ function _omritningssteg() {
         if (ab && ab.style.display !== 'none' && typeof renderSnapshotComparison === 'function') renderSnapshotComparison();
     }]);
     // Bara den öppna fliken. De övriga är inaktuella tills de öppnas eller en export behöver dem (exportgrinden).
+    // Översikt är redan ritad av stegen ovan (renderTabContent('dashboard') gör inget annat).
     const oppen = document.querySelector('.nav-item.active[data-tab]');
-    if (oppen) steg.push([oppen.getAttribute('data-tab'), () => renderTabContent(oppen.getAttribute('data-tab'))]);
+    if (oppen && oppen.getAttribute('data-tab') !== 'dashboard') steg.push([oppen.getAttribute('data-tab'), () => renderTabContent(oppen.getAttribute('data-tab'))]);
     // En öppen gruppdossier byggdes med den gamla tröskeln.
     steg.push(['gruppdossiern', () => {
         const dossier = document.getElementById('dossier-body');
@@ -14749,20 +14750,30 @@ function iExportLage() { return state.kLage === 'export'; }
 function _bytKLage(lage) {
     state.kLage = lage;
     ritGenerationNy();                                                      // allt som är ritat bär det andra läget
-    // Bara det som räknas med kTroskel() släpps: Lika arbetes minne och livscykelns. Skattningarna (statGolv,
-    // bootstrap, styrka, § 3:10-paren) är desamma i båda lägena och behålls.
+    // Inget räknat släpps: Lika arbetes minne har ett rum per tröskel (skärmens och exportens), och skattningarna
+    // (statGolv, bootstrap, styrka, § 3:10-paren) är desamma i båda lägena. Livscykelns bevisunderlag hör till det
+    // som är ritat.
     state._lifecycleCache = null;
-    if (typeof laMinneSlapp === 'function') laMinneSlapp();
 }
 /**
- * Ritar skärmen tillbaka efter en export: Översikts delar och den öppna fliken (som grinden kan ha ritat i
- * exportläget), utom Dokumentera & exportera, som alltid ritas i exportläget. Flikar som inte syns töms inte: det
- * de bär är ritat med den inställda tröskeln (försiktigare än skärmen), och de ritas om när de öppnas.
+ * Ritar skärmen tillbaka efter en export: Översikts delar och den öppna fliken, när grinden ritade dem i exportläget
+ * (`ritade`: flikarna som ritades under exporten), utom Dokumentera & exportera, som alltid ritas i exportläget. Det
+ * som inte ritades under exporten visar fortfarande skärmens tal och rörs inte — Dokumentera-fliken i sig ritar inga
+ * andra flikar, och att rita om Översikt kostar sekunder på stora underlag. Flikar som inte syns töms inte: det de
+ * bär är ritat med den inställda tröskeln (försiktigare än skärmen), och de ritas om när de öppnas.
+ * @param {Set<string>} ritade
  */
-function _ritaOmEfterExport() {
+const _OVERSIKT_STEG = new Set(['nyckeltal', 'kompliansöversikt', 'underlagets kvalitet', 'Att göra', 'processöversikten', 'extremvärden', 'inläsningsrapporten', 'A/B-jämförelsen']);
+function _ritaOmEfterExport(ritade) {
     if (!state.data.length || typeof _omritningssteg !== 'function') return;
-    for (const [namn, fn] of _omritningssteg()) { if (namn === 'dokumentera' || namn === 'flikar som inte syns') continue; _omritningForsok(namn, fn); }
+    for (const [namn, fn] of _omritningssteg()) {
+        if (namn === 'dokumentera' || namn === 'flikar som inte syns') continue;
+        const ska = namn === 'gruppdossiern' || (_OVERSIKT_STEG.has(namn) ? ritade.has('dashboard') : ritade.has(namn));
+        if (ska) _omritningForsok(namn, fn);
+    }
 }
+/** Flikarna som är ritade i den generation som gäller nu (under en export: de som ritades i exportläget). */
+function _ritadeNu() { return new Set([..._ritadVid].filter(([, g]) => g === _ritGeneration).map(([f]) => f)); }
 /**
  * Kör fn i exportläget och går tillbaka till skärmläget efteråt (också när fn ger ett löfte eller kastar).
  * Nästlade anrop byter inte läge. Fn:s värde returneras.
@@ -14777,7 +14788,7 @@ function medExportLage(fn) {
     if (yttre) _bytKLage('export');
     _exportDjup++;
     let synk = true;
-    const tillbaka = () => { _exportDjup = Math.max(0, _exportDjup - 1); if (_exportDjup === 0 && yttre) { _bytKLage('skarm'); _ritaOmEfterExport(); } };
+    const tillbaka = () => { _exportDjup = Math.max(0, _exportDjup - 1); if (_exportDjup === 0 && yttre) { const ritade = _ritadeNu(); _bytKLage('skarm'); _ritaOmEfterExport(ritade); } };
     try {
         const r = fn();
         if (r && typeof /** @type {any} */ (r).then === 'function') { synk = false; return /** @type {any} */ (r).finally(tillbaka); }
@@ -21065,15 +21076,20 @@ function _laBootstrapGapCI(kvLons, maLons, B = 1000) {
 }
 // Översiktens rader och trattdiagrammets underlag är dyra (bootstrap respektive omkastning: på 55 000 rader 0,8 s
 // och 1,8 s) och behövs av flera vyer — fliken, rapportmodellen (som byggs flera gånger i Dokumentera) och
-// exporterna. De räknas därför EN gång per underlag och tröskel. Minnet håller en referens till dataraderna och
-// släpps när statistiken ogiltigförklaras och när all data rensas (laMinneSlapp), så att inget ligger kvar.
-/** @type {{d: any[], n: number, k: number, [k: string]: any}|null} */
-let _laMinne = null;
+// exporterna. De räknas därför EN gång per underlag och tröskel. Skärmläget och exportläget (ADR-51) har olika
+// tröskel och var sitt minne, så att ett byte av läge inte räknar om; ett annat underlag tömmer båda. Minnet håller
+// en referens till dataraderna och släpps när statistiken ogiltigförklaras och när all data rensas (laMinneSlapp),
+// så att inget ligger kvar.
+/** @type {Map<number, {d: any[], n: number, k: number, [k: string]: any}>} */
+const _laMinnen = new Map();
 function _laMinneFor(d, k) {
-    if (!_laMinne || _laMinne.d !== d || _laMinne.n !== d.length || _laMinne.k !== k) _laMinne = { d, n: d.length, k };
-    return _laMinne;
+    const forsta = _laMinnen.values().next().value;
+    if (forsta && (forsta.d !== d || forsta.n !== d.length)) _laMinnen.clear();
+    let m = _laMinnen.get(k);
+    if (!m) { m = { d, n: d.length, k }; _laMinnen.set(k, m); }
+    return m;
 }
-function laMinneSlapp() { _laMinne = null; }
+function laMinneSlapp() { _laMinnen.clear(); }
 function _laOversiktRader(d, bas = getBasIntervals(), k = kTroskel()) {
     const minne = _laMinneFor(d, k), nyckel = bas.join('\u0000');
     if (minne.oversikt && minne.oversiktNyckel === nyckel) return minne.oversikt;
@@ -24671,8 +24687,10 @@ function rmEgnaAvsnitt(d, k) {
  */
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
 function rapportModell(...a) { return medExportLage(() => _rapportModellExport.apply(null, /** @type {any} */ (a))); }
-/** @param {{alla?: boolean}} [val] */
-function _rapportModellExport({ alla = false } = {}) {
+/** Modellen i det gällande urvalet och med alla avsnitt ur ett enda bygge (det kostar sekunder på stora underlag). */
+function rapportModellBada() { return medExportLage(() => _rapportModellExport({ bada: true })); }
+/** @param {{alla?: boolean, bada?: boolean}} [val] */
+function _rapportModellExport({ alla = false, bada = false } = {}) {
     const d = getData();
     const year = new Date().getFullYear(), today = new Date().toLocaleDateString('sv-SE');
     const k = kTroskel();
@@ -24878,22 +24896,25 @@ function _rapportModellExport({ alla = false } = {}) {
         { typ: 'tabell', nyckel: true, kolumner: [{ rubrik: '', typ: 'text' }, { rubrik: '', typ: 'text' }], rader: (typeof _methodAppendixData === 'function' ? _methodAppendixData() : []).map(([n, v]) => [String(n), String(v)]) },
     ] };
 
-    return {
+    const finns = /** @type {any[]} */ ([sammanfattning, regler, lika, likvardigt, struktur, perbas, atgarder, samverkan, beslut, regressionAvsnitt, metod].filter(Boolean));
+    /** @param {boolean} alla */
+    const avsnitt = alla => {
+        const urval = rapportUrval();
+        const valda = /** @type {any[]} */ (alla ? finns : urval.med.map(id => finns.find(a => a.id === id)).filter(Boolean));
+        // Egna tabeller (ADR-52) står efter avsnittet per BAS-intervall och följer med när det gör det; de väljs i stället
+        // genom att tabeller läggs till eller tas bort under Dokumentera & exportera.
+        if (egna && (alla || urval.med.includes('perbas'))) { const i = valda.findIndex(a => a.id === 'perbas'); valda.splice(i >= 0 ? i + 1 : valda.length, 0, egna); }
+        let nr = 0;
+        return valda.map(a => ({ ...a, grundrubrik: a.rubrik, rubrik: a.numrerad ? `${++nr}. ${a.rubrik}` : a.rubrik }));
+    };
+    const modell = alla => ({
         titel: `Lönekartläggning ${year} — dokumentation`,
         undertitel: `${orgNamn('') || '[HR fyller i: organisation/arbetsgivare]'} · ${urval} · genererad ${today} · v${APP_VERSION}${dq ? ` · Underlagets kvalitet: ${UK_ETIKETT[dq.status]}` : ''}`,
         demo: !!state.isDemo,
-        avsnitt: (() => {
-            const finns = /** @type {any[]} */ ([sammanfattning, regler, lika, likvardigt, struktur, perbas, atgarder, samverkan, beslut, regressionAvsnitt, metod].filter(Boolean));
-            const urval = rapportUrval();
-            const valda = /** @type {any[]} */ (alla ? finns : urval.med.map(id => finns.find(a => a.id === id)).filter(Boolean));
-            // Egna tabeller (ADR-52) står efter avsnittet per BAS-intervall och följer med när det gör det; de väljs i stället
-            // genom att tabeller läggs till eller tas bort under Dokumentera & exportera.
-            if (egna && (alla || urval.med.includes('perbas'))) { const i = valda.findIndex(a => a.id === 'perbas'); valda.splice(i >= 0 ? i + 1 : valda.length, 0, egna); }
-            let nr = 0;
-            return valda.map(a => ({ ...a, grundrubrik: a.rubrik, rubrik: a.numrerad ? `${++nr}. ${a.rubrik}` : a.rubrik }));
-        })(),
+        avsnitt: avsnitt(alla),
         urval: rapportUrval().namn,
-    };
+    });
+    return bada ? { urval: modell(false), alla: modell(true) } : modell(alla);
 }
 
 /**
@@ -24982,38 +25003,43 @@ function renderExportBesked() {
     const satt = (id, html) => { const el = document.getElementById(id); if (el) el.innerHTML = har ? html : ''; };
     if (!har) { ['besked-word', 'besked-pdf', 'besked-excel', 'besked-zip'].forEach(id => satt(id, '')); _ebRitaUrval(); return; }
     /** @type {any} */ let b = null;
-    try { b = rmBesked(rapportModell()); } catch (e) { rapporteraFel('Förhandsbesked: Word-utkastet', e); }
+    /** @type {any} */ let alla = null;
+    try { const bada = rapportModellBada(); alla = bada.alla; b = rmBesked(bada.urval); } catch (e) { rapporteraFel('Förhandsbesked: Word-utkastet', e); }
     if (b) {
         satt('besked-word', `<strong>Innehåller:</strong> ${esc(_ebText([b.urval, _ebAntal(b.avsnitt, 'avsnitt', 'avsnitt'), _ebAntal(b.tabeller, 'tabell', 'tabeller'), _ebAntal(b.diagram, 'diagram', 'diagram'), `${b.fyllIn} fält att fylla i`]))}`
             + (b.utelamnat.length ? `<br><strong>Utelämnar:</strong> ${esc(b.utelamnat.join(' · '))}` : '<br><strong>Utelämnar:</strong> ingenting'));
         // PDF-rapporten är samma modell; flikarnas tabeller följer med som bilagor när inget avsnitt är bortvalt.
-        const hela = b.avsnitt === rapportModell({ alla: true }).avsnitt.length;
+        const hela = !!alla && b.avsnitt === alla.avsnitt.length;
         satt('besked-pdf', `<strong>Innehåller:</strong> ${esc(_ebText([b.urval, _ebAntal(b.avsnitt, 'avsnitt', 'avsnitt'), _ebAntal(b.tabeller, 'tabell', 'tabeller'), _ebAntal(b.diagram, 'diagram', 'diagram'),
             hela ? 'bilagor med flikarnas tabeller och diagram' : 'inga bilagor (ett kortare urval är just avsnitten)']))}`
             + `<br><strong>Utelämnar:</strong> ${esc(b.utelamnat.length ? b.utelamnat.join(' · ') : 'ingenting')}`);
         _laNyckel('nyckel-ex-urval', b.urval);
     }
+    let blad = /** @type {string[]} */ ([]);
     try {
-        const blad = excelAlltBlad();
+        blad = excelAlltBlad();
         satt('besked-excel', `<strong>Innehåller:</strong> ${esc(_ebAntal(blad.length, 'blad', 'blad'))} — ${esc(blad.join(', '))}<br>`
             + `<strong>Utelämnar:</strong> ${esc(`grupper med färre än ${kInstalld()} personer (minsta gruppstorlek; på skärmen visas de)`)}`);
     } catch (e) { rapporteraFel('Förhandsbesked: Excel', e); }
     try {
-        satt('besked-zip', `<strong>Innehåller:</strong> ${esc(`Word-utkastet, Excel-filen (${_ebAntal(excelAlltBlad().length, 'blad', 'blad')}) och diagrammen i alla flikar som bilder`)}<br>`
+        satt('besked-zip', `<strong>Innehåller:</strong> ${esc(`Word-utkastet, Excel-filen (${_ebAntal(blad.length, 'blad', 'blad')}) och diagrammen i alla flikar som bilder`)}<br>`
             + `<strong>Utelämnar:</strong> ${esc(`diagram utan något att visa över tröskeln, och diagrammet i Personer att granska`)}`);
     } catch (e) { rapporteraFel('Förhandsbesked: ZIP', e); }
-    _ebRitaUrval();
+    _ebRitaUrval(alla);
 }
 
-/** Listan där urvalet görs: en rad per avsnitt med ruta och knappar för att flytta upp och ned, och de tre färdiga urvalen. */
-function _ebRitaUrval() {
+/**
+ * Listan där urvalet görs: en rad per avsnitt med ruta och knappar för att flytta upp och ned, och de tre färdiga urvalen.
+ * @param {any} [alla] modellen med alla avsnitt, när anroparen redan byggt den
+ */
+function _ebRitaUrval(alla) {
     const host = document.getElementById('rapport-urval');
     if (!host) return;
     if (!getData().length) { host.innerHTML = ''; _laNyckel('nyckel-ex-urval', ''); return; }
     const u = rapportUrval();
     let rubriker = {};
     try { // Lagrummet i rubriken hör till dokumentet; i gränssnittet står avsnittets namn utan paragrafhänvisning.
-        rubriker = Object.fromEntries(rapportModell({ alla: true }).avsnitt.map(a => [a.id, a.grundrubrik.replace(/\s*\((?:§|EU)[^)]*\)\s*$/, '')])); } catch (e) { rapporteraFel('Urval: avsnitten', e); }
+        rubriker = Object.fromEntries((alla || rapportModell({ alla: true })).avsnitt.map(a => [a.id, a.grundrubrik.replace(/\s*\((?:§|EU)[^)]*\)\s*$/, '')])); } catch (e) { rapporteraFel('Urval: avsnitten', e); }
     const finns = u.ordning.filter(id => rubriker[id]);
     host.innerHTML = `<div class="urval-fasta" role="group" aria-label="Färdiga urval">`
         + Object.entries(RM_URVAL).map(([nyckel, f]) => `<button type="button" class="btn btn-secondary btn-sm" data-urval-fast="${nyckel}" aria-pressed="${u.namn === f.namn}">${esc(f.namn)}</button>`).join('')
@@ -25163,13 +25189,13 @@ async function _buildPrintReportExport() {
     showLoading();
     try {
         // Rapporten är rapportmodellen med gällande urval — samma innehåll som Word-utkastet (58-rapportmodell.js).
-        const modell = rapportModell();
+        const bada = rapportModellBada(), modell = bada.urval;
         const ritade = new Set(), bilder = new Map();
         for (const del of modell.avsnitt.flatMap(a => a.delar.filter(p => p.typ === 'diagram'))) {
             const b = await rmDiagramBild(del, ritade);
             if (b) bilder.set(del.id, b);
         }
-        const helaDokumentationen = modell.avsnitt.length === rapportModell({ alla: true }).avsnitt.length;
+        const helaDokumentationen = modell.avsnitt.length === bada.alla.avsnitt.length;
         let bilagor = '';
         if (helaDokumentationen) {
             // Bilagor med flikarnas egna tabeller och diagram — underlaget bakom avsnitten. De följer bara med när hela

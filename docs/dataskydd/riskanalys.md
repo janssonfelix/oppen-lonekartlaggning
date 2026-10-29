@@ -1,6 +1,6 @@
 # Risk- och sårbarhetsanalys (dataskydd och informationssäkerhet) — Öppen lönekartläggning
 
-**Bygge:** `2026.10.19` · **Artefakt-SHA-256:** `f1841d1fd1d88d47414d8a91207a3f51f20f41b72a403cf1908ebd1aa2126536` (se `dist/RELEASE.txt`).
+**Bygge:** `2026.10.19` · **Artefakt-SHA-256:** `a7bd5e930d9e73edb3e4dccd93a8d47af0007c43249b07d80baa35e9350137f9` (se `dist/RELEASE.txt`).
 **Granskningsdatum:** 2026-10-20.
 **Granskningsmetod:** kodläsning påstående för påstående + statisk sökning i källkod och bygge +
 körning av det byggda verktyget i jsdom och i Chromium (utan nätverk) med syntetiska testfiler.
@@ -288,7 +288,10 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
 - **Regeln gäller det som lämnar verktyget (ADR-51, 2026-10-29).** På skärmen visas alla grupper (`kTroskel()` är 1 i
   skärmläget); allt som lämnar verktyget ritas och räknas i exportläget (`medExportLage` i `23-exportgrind.js`), där
   `kTroskel()` är den inställda tröskeln `kInstalld()`. De två funktioner all export av tabeller och diagram går genom
-  går själva in i exportläget, och Dokumentera & exportera ritas alltid i det.
+  går själva in i exportläget, och Dokumentera & exportera ritas alltid i det. Där det i punkterna nedan står att
+  ett mått visas, redovisas eller ritas bara när en grupp eller ett kön når tröskeln gäller det exportläget; på
+  skärmen visas måttet. Efter en export ritas bara det tillbaka som exporten ritade i exportläget (`_ritaOmEfterExport`),
+  och Lika arbetes minne har ett rum per tröskel, så att ett lägesbyte inte räknar om något.
 - Standardvärdet är 10 (`K_STANDARD`); användaren kan ändra det (ADR-38). Vid 10 redovisas i det som
   lämnar verktyget inga gruppvärden när en grupp har färre än 10 personer. Gruppen utelämnas och namnges i en not vid tabellen.
   Är bara könsuppdelningen för liten (gruppen som helhet n ≥ 10) visas gruppens
@@ -321,7 +324,7 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   — annars utelämnas de, nyckeltalet visar ett streck och noten under diagrammet säger det
   (beslut av produktägaren 2026-10-16). Livscykelanalysen har sitt eget golv
   (`statGolv()`).
-- Skyddet vaktas av två invarianter. `tests/kanonymitet.test.js` ritar samtliga flikar vid
+- Skyddet vaktas av två invarianter. `tests/kanonymitet.test.js` ritar samtliga flikar i exportläget vid
   10 mot ett dataset där varje liten grupps mått är ett unikt sentinelvärde, och kräver att
   inget av dem syns. `tests/ktroskel.test.js`, `tests/ktroskel-hojning.test.js` och `tests/ktroskel-invarianter.test.js`
   prövar flikarna vid 10, 25 och 5 med grupper om 20 och 6 personer, och vid **10 och 25** både flikarna och utdata mot ett underlag där en grupp
@@ -371,11 +374,11 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
     exportera (yrkesetikett och antal körningar paret träffas i, inget lönemått) — par med en
     grupp under tröskeln utelämnas och antalet anges. Robusthetspanelen vaktas av
     `tests/ktroskel-invarianter.test.js` (invarianten och parfixturen) och `tests/smoke-docx.test.js`.
-- **Medvetet undantag 2 — Utforska (ADR-14):** fliken visar grupper
-  under 10 tonade, eftersom den som använder verktyget redan har rådatan. Skyddet
-  ligger på exporten: tabellens CSV/urklipp och diagrammets export utelämnar små
-  grupper, och lönemått för ett kön under 10, **om inte användaren aktivt kryssar i**
-  att ta med dem. Utan ikryssad ruta går en liten cell inte att skilja från en tom
+- **Medvetet undantag 2 — Utforska (ADR-14):** fliken visar alla grupper på skärmen, som
+  de andra flikarna (ADR-51). Skyddet ligger på exporten: tabellens CSV/urklipp och diagrammets
+  export utelämnar små grupper, och lönemått för ett kön under 10, **om inte användaren aktivt
+  kryssar i** att ta med dem — rutan är undantaget, och med den ikryssad lämnar små grupper
+  verktyget. Utan ikryssad ruta går en liten cell inte att skilja från en tom
   eller dold, och rader/kolumner som bara har små celler utelämnas helt (etiketten
   röjer annars att gruppen finns). **Antal** (n, även per kön) följer alltid med.
   Differensskydd (att räkna fram en liten grupp ur två urval) byggs inte — beslut
@@ -406,8 +409,8 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   med radnummer: den har inga exportverktyg, ingår inte i någon export eller bilaga och döljs vid utskrift
   av fliken (webbläsarröktestet kräver det).
 
-- **Lönepolitik:** fliken har en mellannivå — för en yrkesgrupp med minst 5 men färre än
-  tröskeln visas bara antal, under 5 maskeras gruppen helt och namnges i en not; lönemått och
+- **Lönepolitik:** i exportläget har fliken en mellannivå — för en yrkesgrupp med minst 5 men färre än
+  tröskeln anges bara antal, under 5 maskeras gruppen helt och namnges i en not; lönemått och
   läget per kön kräver tröskeln. Bladet *Lönepolitik* i Excelfilen med alla flikar (och i ZIP-filens
   Excelfil) följer samma trappa och samma regel per kön; vid tröskeln 5 eller lägre finns ingen
   mellannivå. Vaktas av `tests/ktroskel-kon.test.js` (bladet) och `tests/ktroskel-invarianter.test.js`.
@@ -434,8 +437,8 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   grupp med en enda person och ett påslag i procent är beloppet personens lön gånger
   procentsatsen. Det är användarens egen inmatning i en egen simulering och filtreras inte;
   under raden står en not om att gruppen är under tröskeln och att beloppet bygger på enskildas
-  löner. Kostnaden per grupp maskeras i utfallstabellen och i exportens blad
-  *Fördelning*. Risken bärs av användaren, som redan har underlaget; filen ska hanteras som
+  löner. Kostnaden per grupp under tröskeln maskeras i exportens blad *Fördelning* (på skärmen visas
+  den). Risken bärs av användaren, som redan har underlaget; filen ska hanteras som
   personuppgifter (§8).
 - **Löneöversyns scenariojämförelse (A/B)** prövar rågapet mot den tröskel som gäller när
   jämförelsen visas (scenariot bär antalet kvinnor och män): ett scenario sparat vid en lägre

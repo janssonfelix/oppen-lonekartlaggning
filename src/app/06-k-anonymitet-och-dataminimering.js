@@ -440,8 +440,9 @@ function _omritningssteg() {
         if (ab && ab.style.display !== 'none' && typeof renderSnapshotComparison === 'function') renderSnapshotComparison();
     }]);
     // Bara den öppna fliken. De övriga är inaktuella tills de öppnas eller en export behöver dem (exportgrinden).
+    // Översikt är redan ritad av stegen ovan (renderTabContent('dashboard') gör inget annat).
     const oppen = document.querySelector('.nav-item.active[data-tab]');
-    if (oppen) steg.push([oppen.getAttribute('data-tab'), () => renderTabContent(oppen.getAttribute('data-tab'))]);
+    if (oppen && oppen.getAttribute('data-tab') !== 'dashboard') steg.push([oppen.getAttribute('data-tab'), () => renderTabContent(oppen.getAttribute('data-tab'))]);
     // En öppen gruppdossier byggdes med den gamla tröskeln.
     steg.push(['gruppdossiern', () => {
         const dossier = document.getElementById('dossier-body');

@@ -68,20 +68,22 @@ grupper: den som arbetar i verktyget har redan lönefilen. Allt som lämnar verk
 PDF-rapporten, ZIP-filen, CSV, urklipp, diagrambilder, rapportunderlaget, gruppdossierns textkopia och allt
 under *Dokumentera & exportera* — ritas och räknas i ett exportläge där minsta gruppstorlek tillämpas.
 Lönemått för grupper med färre än 10 personer redovisas då inte; gruppen namnges i en not så att det syns
-vad som saknas. Är gruppen stor nog
+vad som saknas. Där det i det här avsnittet står att ett mått *visas*, *redovisas* eller *ritas* bara när en
+grupp eller ett kön når tröskeln gäller det exportläget — det som lämnar verktyget; på skärmen visas måttet.
+Är gruppen stor nog
 men ett av könen för litet visas gruppens samlade median utan könsjämförelse. Samma regel
 gäller de beskrivande könsuppdelade måtten — ett köns median eller percentil, det råa
 lönegapet, regressionens ojusterade steg ("Endast kön") med den förklarade andelen och en
 kostnad som räknats ur ett gap redovisas bara när varje kön har minst 10 personer, också när
 måttet gäller hela organisationen. Den justerade löneskillnaden ur huvudregressionen i Lika
 arbete följer inte regeln: den visas från regressionens eget fasta golv, 5 personer av varje
-kön (ADR-38). I fliken Ålder & karriär följer lönegapen (ojusterat och åldersjusterat), lutningen
-per kön, trendlinjerna med konfidensband och lådorna per kön regeln: där ett
+kön (ADR-38), också på skärmen. I Ålder & karriärs bilder och diagramdata följer lönegapen (ojusterat och
+åldersjusterat), lutningen per kön, trendlinjerna med konfidensband och lådorna per kön regeln: där ett
 kön är under tröskeln står ett streck, och en not under diagrammet säger vad som utelämnats. I
-spridningsdiagrammen visas en persons punkt bara när personens grupp (yrke inom BAS) och personens
-kön i gruppen når tröskeln; en not säger hur många som inte visas. Fliken Lönepolitik
-har en mellannivå: för grupper med 5 personer eller fler men under tröskeln visas antal, inga
-lönemått; bladet *Lönepolitik* i Excelfilen med alla flikar följer samma trappa och samma regel
+spridningsdiagrammens bilder och diagramdata finns en persons punkt bara när personens grupp (yrke inom BAS)
+och personens kön i gruppen når tröskeln; en not säger hur många som inte är med. Lönepolitik har en
+mellannivå i exporten: för grupper med 5 personer eller fler men under tröskeln anges antal, inga
+lönemått; bladet *Lönepolitik* i Excelfilen med alla flikar följer den trappan och samma regel
 per kön. Ett diagram som inte får lämna verktyget alls — Personer att granskas diagram, och
 Översiktens kopior av Strukturs diagram — är märkt så i koden med ett uppräknat skäl som står i
 behållarens verktygstips, och ingen exportväg (meny, bild, diagramdata, ZIP, utskrift) tar med det.
@@ -124,8 +126,10 @@ Fyra medvetna undantag:
    CSV, handlingsplanens förifyllda rader (på skärmen, i Excel och på utskrift),
    gruppdossiern och robusthetspanelen i Dokumentera & exportera — tas bara par med där båda
    grupperna har minst 10 personer, och utdata anger hur många par som utelämnats.
-2. **Utforska (ADR-14):** fliken visar små grupper tonade, eftersom den som använder
-   verktyget redan har rådatan. De följer bara med i exporten om användaren kryssar i det.
+2. **Utforska (ADR-14):** fliken visar alla grupper på skärmen, som de andra flikarna, och dess
+   export (tabellens CSV och urklipp, diagrammets bild och diagramdata) utelämnar grupper under tröskeln
+   och lönemått för ett kön under tröskeln — om inte användaren kryssar i rutan *Ta med grupper under
+   tröskeln i exporten*. Rutan är undantaget: med den ikryssad lämnar små grupper verktyget.
    Organisationspaketet kan stänga av möjligheten (ADR-47): rutan är då dold, exporten
    utelämnar alltid små grupper, och en rad i fliken säger att paketet inte tillåter det.
 3. **Personer att granska (ADR-23):** Lika arbete listar enskilda personer som ligger klart
@@ -134,10 +138,10 @@ Fyra medvetna undantag:
    på samma sätt enskilda löner med radnummer, på skärmen.
 4. **Diagram med en punkt per person:** spridningsdiagrammen lön mot ålder och låddiagrammet
    per kön (Ålder & karriär) och individpunkterna i Utforska visar varje persons lön.
-   Låddiagrammet ritar bara en låda för ett kön som når tröskeln. I spridningsdiagrammen ritas och
-   exporteras en persons punkt bara när personens grupp (yrke inom BAS) och personens kön i gruppen
-   når tröskeln — övriga personer finns varken i bilden eller i diagramdatan;
-   trendlinjen bygger på alla. Demografidelens trendlinje och lutning för hela urvalet visas bara när
+   I bilder och diagramdata ritar låddiagrammet bara en låda för ett kön som når tröskeln, och i
+   spridningsdiagrammen finns en persons punkt bara när personens grupp (yrke inom BAS) och personens kön
+   i gruppen når tröskeln — övriga personer finns varken i bilden eller i diagramdatan;
+   trendlinjen bygger på alla. Demografidelens trendlinje och lutning för hela urvalet exporteras bara när
    urvalet (alla BAS eller det valda) når tröskeln; annars säger en not under diagrammet det. Lådornas
    avvikare i låddiagrammet per kön är enskilda löner, utan yrke. De får exporteras som bild och som
    diagramdata (en rad per person, utan identifierare), och diagramdatan säger på rad 2 att filen
@@ -149,9 +153,9 @@ Fyra medvetna undantag:
    (produktägaren 2026-10-16, ADR-48): bilderna bär inga namn eller identifierare, och filerna hanteras som
    personuppgifter (§4).
 
-**Vyerna per BAS-intervall, trattdiagrammet och fördelningarna per kön.** Översikten per BAS-intervall i Lika arbete (på skärmen
-och i Word-utkastet och PDF-rapporten) har bara rader för BAS-intervall där både kvinnor och män når tröskeln.
-Trattdiagrammet visar en punkt per yrkesgrupp, och bara yrkesgrupper där båda könen når tröskeln; lådorna över
+**Vyerna per BAS-intervall, trattdiagrammet och fördelningarna per kön.** Översikten per BAS-intervall i Lika arbete har
+i Word-utkastet, PDF-rapporten och flikens export bara rader för BAS-intervall där både kvinnor och män når tröskeln
+(på skärmen alla intervall). I det som exporteras visar trattdiagrammet en punkt per yrkesgrupp, och bara yrkesgrupper där båda könen når tröskeln; lådorna över
 lönespridning per BAS-intervall och kön ritas bara för ett kön som når tröskeln i intervallet, och utan enskilda
 avvikande löner. Lönegapet per åldersgrupp visar bara åldersgrupper där båda könen når tröskeln, och de övriga
 namnges under diagrammet. Fördelningen i lönespannets tredjedelar per kön redovisas bara när båda könen når
@@ -168,8 +172,8 @@ summorna på skärmen och i Löneöversyns Excel-export (raderna *Använt*, *Rik
 en enda person är beloppet den personens lön gånger procentsatsen. Det är användarens egen
 inmatning och filtreras inte; verktyget visar en not under raden ("Raden berör 1 person, färre än 10
 personer — beloppet bygger på enskildas löner …") så att användaren vet vad en export då visar.
-Per grupp maskeras medianer och kostnad i utfallstabellen och i exportens blad
-*Fördelning*.
+I exportens blad *Fördelning* maskeras medianer och kostnad per grupp under tröskeln; utfallstabellen på
+skärmen visar dem.
 
 **Riktade potter med kön och lönegräns följer regeln för egna rader.** En riktad rad i Löneöversyn kan
 begränsas till ett kön och till löner under en gräns (det som tidigare var Lönerevisionssimulatorn).

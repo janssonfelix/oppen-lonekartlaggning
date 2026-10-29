@@ -208,7 +208,7 @@ describe('paketformuläret, Rensa, Struktur och Likvärdigt arbete med ändrad t
 
 describe('I5: konfigurationsfil och organisationspaket: det som syns ritas om en gång när tröskeln ändras, resten töms', () => {
     const rakna = w => w.eval('window.__antal = {}; const __orig = renderTabContent; renderTabContent = function (f) { window.__antal[f] = (window.__antal[f] || 0) + 1; return __orig(f); };');
-    it('konfigurationsfil med annan tröskel: den öppna fliken ritas en gång, övriga töms, och Att göra följer den nya tröskeln', () => {
+    it('konfigurationsfil med annan tröskel: Översikts delar ritas av stegen (ingen flik genom renderTabContent), övriga töms, och Att göra följer den nya tröskeln', () => {
         const a = createAppWindow();
         a.eval('sattKTroskel(25, { fraga: false })');
         const cfg = JSON.parse(JSON.stringify(a.__buildConfigSnapshot()));
@@ -221,7 +221,7 @@ describe('I5: konfigurationsfil och organisationspaket: det som syns ritas om en
         w.eval('applyConfigSnapshot(window.__cfg)');
         expect(w.eval('kInstalld()')).toBe(25);
         expect(Object.entries(w.__antal).filter(([, n]) => n !== 1)).toEqual([]);
-        expect(Object.keys(w.__antal).length).toBe(1);                              // bara den öppna fliken
+        expect(Object.keys(w.__antal).length).toBe(0);                              // den öppna fliken är Översikt, vars delar stegen ritar själva
         expect(synliga(w, [...SENT_MELLAN, ...SENT_SMA])).toEqual([]);              // övriga är tömda
         expect(w.document.getElementById('data-validation-report').textContent).toMatch(/BAS under minsta gruppstorlek \(n<25, redovisas inte i exporterna\):\s*6/);
     });

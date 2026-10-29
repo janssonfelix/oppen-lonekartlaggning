@@ -143,3 +143,29 @@ describe('egna tabeller: receptet för avsnittet per BAS-intervall', () => {
         expect(perbas.delar.filter(p => p.typ === 'tabell').some(t => t.rader.some(r => /ställningstagande/i.test(String(r[0]))))).toBe(false);
     });
 });
+
+describe('exportläget kostar inte mer än det måste (ADR-51)', () => {
+    it('rapportModellBada ger samma modell som rapportModell() och rapportModell({ alla: true }) ur ett bygge', () => {
+        const w = fonster();
+        const bada = w.eval('rapportModellBada()');
+        expect(JSON.stringify(bada.urval)).toBe(JSON.stringify(w.eval('rapportModell()')));
+        expect(JSON.stringify(bada.alla)).toBe(JSON.stringify(w.eval('rapportModell({ alla: true })')));
+        expect(bada.alla.avsnitt.length).toBeGreaterThanOrEqual(bada.urval.avsnitt.length);
+    });
+    it('Lika arbetes minne har ett rum per tröskel: ett lägesbyte räknar inte om översiktens rader', () => {
+        const w = fonster();
+        expect(w.eval('const a = _laOversiktRader(getData()); medExportLage(() => _laOversiktRader(getData())); _laOversiktRader(getData()) === a')).toBe(true);
+        expect(w.eval('medExportLage(() => _laOversiktRader(getData())) === _laOversiktRader(getData())')).toBe(false);
+    });
+    it('efter en export ritas Översikt tillbaka bara när exporten ritade den', () => {
+        const w = fonster();
+        w.__renderTabContent('dashboard');
+        let antal = 0;
+        w.updateDashboardStats = () => { antal++; };
+        w.__renderTabContent('dokumentera');                       // ritar inga andra flikar
+        expect(antal).toBe(0);
+        w.eval("medExportLage(() => renderTabContent('dashboard'))");   // som ZIP-exporten
+        expect(antal).toBe(2);                                     // en gång i exportläget, en gång tillbaka
+        expect(w.__state.kLage).toBe('skarm');
+    });
+});
