@@ -133,7 +133,7 @@ describe('Konfigurationsfilen: riktade rader bär fältet kalla, så att försla
         w.eval('applyConfigSnapshot(window.__cfg)');
         expect(aids(w)).toEqual(['5300']);
         expect(w.__state.forecast.targets[0].kalla).toBeUndefined();
-        expect(w.document.getElementById('forecast-targets').textContent).toMatch(/Gruppen har färre än 10 personer/);
+        expect(w.document.getElementById('forecast-targets').textContent).toMatch(/Raden berör 1 person, färre än 10 personer/);
     });
     it('läs in vid 5 och höj sedan: raden ur filen behandlas som förslag och rensas', () => {
         const w = parFonsterMedRader();

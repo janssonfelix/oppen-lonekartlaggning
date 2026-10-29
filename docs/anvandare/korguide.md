@@ -256,6 +256,12 @@ SVG (skarp i Word) och diagramdatan som tabell.
    **Spara som `.docx`** när dokumentet är klart — detta blir er dokumentation.
    Utkastet och PDF-rapporten tar bara med grupper som är stora nog att redovisas: BAS
    och kandidatpar under gränsen utelämnas, och det står hur många det gäller.
+   Avsnittet **Lönestruktur per BAS-intervall** har tabellerna i den form en skriven
+   lönekartläggning brukar ha: en tabell per BAS-intervall (referensen, organisationen, varje
+   yrkesgrupp med jämförelsestatistikens nivå under, kvinnor och män — P10, median, P90 och antal)
+   med ett fält för er bedömning av intervallet, och sist två tabeller per BAS: löneskillnader inom
+   likvärdigt arbete (medellön per kön, andel kvinnor, medelålder) och löneskillnader i åldersgrupper.
+   Samma tabeller finns i Excel-filens blad **Per BAS**.
 3. **Skriver ni rapporten i en egen mall?** Använd **Rapportunderlag** längre ner i samma
    flik. Överst finns en förteckning över blocken och knappen **Kopiera alla avsnitt**, som
    lägger alla avsnitt i en enda kopiering. Varje avsnitt, varje yrkesgrupp med skillnad över 5 % och varje kandidatpar (där båda grupperna är stora nog att redovisas) har en

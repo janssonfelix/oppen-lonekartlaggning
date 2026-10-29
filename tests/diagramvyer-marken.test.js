@@ -1034,7 +1034,7 @@ describe('utskriften ur rapportmodellen', () => {
         // Ett kortare urval är just avsnitten: inga bilagor, och inga avsnitt utöver urvalet.
         const facklig = await bygg('facklig');
         expect(rubriker(facklig).some(r => /^Bilagor:|Löneöversikt/.test(r))).toBe(false);
-        expect([...facklig.querySelectorAll('section.rm-avsnitt')].map(s => s.dataset.rmAvsnitt)).toEqual(['sammanfattning', 'regler', 'lika', 'likvardigt', 'struktur', 'samverkan', 'regression', 'metod']);
+        expect([...facklig.querySelectorAll('section.rm-avsnitt')].map(s => s.dataset.rmAvsnitt)).toEqual(['sammanfattning', 'regler', 'lika', 'likvardigt', 'struktur', 'perbas', 'samverkan', 'regression', 'metod']);
         expect(facklig.querySelector('.k-stampel')).toBeNull();          // tröskeln står i metodbilagan
         // (Utskriften ritas i samma element varje gång: det som gäller facklig dialog prövas före nästa utskrift.)
         const ledning = await bygg('ledning');

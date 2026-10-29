@@ -8,8 +8,33 @@
 function excelAlltBlad() {
     if (!state.data.length) return [];
     const harRef = state.policy.length > 0 || state.statistik.length > 0;
-    return ['Löneöversikt', 'EU-Lonekartlaggning', ...(harRef ? ['Prioritering'] : []), 'Lonegap', 'Konsskevhet', ..._excelDiagramBlad().map(b => b[0]), 'Sektorer',
+    return ['Löneöversikt', 'Per BAS', 'EU-Lonekartlaggning', ...(harRef ? ['Prioritering'] : []), 'Lonegap', 'Konsskevhet', ..._excelDiagramBlad().map(b => b[0]), 'Sektorer',
         ...(state.statistik.length ? ['Jamforelsestatistik'] : []), ...(bedomningUnderlag() ? ['Underlagets kvalitet'] : []), 'Metodik', 'Metod & parametrar'];
+}
+
+/** Raderna i bladet Per BAS, eller null utan underlag. */
+function _excelPerBasRader() {
+    const pb = typeof rmPerBasUnderlag === 'function' ? rmPerBasUnderlag(getData(), kTroskel()) : null;
+    if (!pb || !pb.intervall.length) return null;
+    const tal = v => (v == null || !isFinite(v) ? '' : Math.round(v));
+    const pct = v => (v == null || !isFinite(v) ? '' : Math.round(v * 10) / 10);
+    const rows = [['Lönestruktur per BAS-intervall', `minsta gruppstorlek ${pb.k}: grupper med färre personer redovisas inte`], []];
+    for (const i of pb.intervall) {
+        rows.push([`BAS ${i.bas}`, `${i.n} anställda, ${i.nKv} kvinnor och ${i.nMa} män, ${i.antalYrken} yrkesgrupper`]);
+        rows.push(['Grupp', 'Antal', 'P10', 'Median', 'P90']);
+        i.rader.forEach(r => rows.push([r.namn, r.n == null ? '' : r.n, tal(r.p10), tal(r.med), tal(r.p90)]));
+        if (i.utelamnade.length) rows.push([`Redovisas inte (färre än ${pb.k} personer): ${i.utelamnade.join(', ')}`]);
+        if (!i.konVisas) rows.push([`Kvinnor och män redovisas inte var för sig: ett kön har färre än ${pb.k} personer`]);
+        rows.push([]);
+    }
+    if (pb.basUtelamnade.length) rows.push([`BAS-intervall som inte redovisas (färre än ${pb.k} personer): ${pb.basUtelamnade.join(', ')}`], []);
+    rows.push(['Löneskillnader inom likvärdigt arbete, per BAS-intervall']);
+    rows.push(['BAS', 'Antal', 'Medellön alla', 'Medellön män', 'Medellön kvinnor', 'Kvinnors medellön i % av mäns', 'Andel kvinnor (%)', 'Medelålder alla', 'Medelålder män', 'Medelålder kvinnor']);
+    pb.konsgap.rader.forEach(r => rows.push([r.bas, r.n, tal(r.medel), tal(r.medelMa), tal(r.medelKv), pct(r.kvot), pct(r.andelKv), tal(r.alder), tal(r.alderMa), tal(r.alderKv)]));
+    rows.push([], ['Löneskillnader i åldersgrupper, per BAS-intervall']);
+    rows.push(['BAS', 'Antal', 'Medelålder', 'Medellön alla', ...pb.aldersgrupper.grupper.map(g => `Medellön ${g} år`)]);
+    pb.aldersgrupper.rader.forEach(r => rows.push([r.bas, r.n, tal(r.alder), tal(r.medel), ...r.perGrupp.map(tal)]));
+    return rows;
 }
 
 /**
@@ -83,6 +108,11 @@ function _excelAlltBok() {
     // Bladet Löneöversikt
     const rapportSheet = tableToSheet('rapport-table');
     if (rapportSheet) XLSX.utils.book_append_sheet(wb, rapportSheet, 'Löneöversikt');
+
+    // Bladet Per BAS: tabellerna i den form en skriven lönekartläggning brukar ha (samma underlag som Word-utkastets
+    // avsnitt Lönestruktur per BAS-intervall; tröskeln tillämpas i src/lib/perbas.js).
+    const perBasRader = _excelPerBasRader();
+    if (perBasRader) XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(perBasRader), 'Per BAS');
 
     // Sheet: EU-Lönekartläggning
     const matrixSheet = tableToSheet('matrix-table');

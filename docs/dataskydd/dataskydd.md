@@ -162,7 +162,7 @@ lägger till för en grupp under tröskeln visar sitt belopp på raden, och belo
 summorna på skärmen och i Löneöversyns Excel-export (raderna *Använt*, *Riktat* och — när gruppen
 är kvinnodominerad — *Varav till kvinnodominerade grupper*). Är påslaget i procent och gruppen
 en enda person är beloppet den personens lön gånger procentsatsen. Det är användarens egen
-inmatning och filtreras inte; verktyget visar en not under raden ("Gruppen har färre än 10
+inmatning och filtreras inte; verktyget visar en not under raden ("Raden berör 1 person, färre än 10
 personer — beloppet bygger på enskildas löner …") så att användaren vet vad en export då visar.
 Per grupp maskeras medianer och kostnad i utfallstabellen och i exportens blad
 *Fördelning*.

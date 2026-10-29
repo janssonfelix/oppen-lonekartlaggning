@@ -200,6 +200,10 @@ export const MODULES = [
         expose: { docxDelar: '_docxDelar' }
     },
     {
+        file: 'perbas.js', ns: '__mirrorPerBas',
+        expose: { perBasTabeller: '_pbTabeller', aldersgruppNamn: null, yrkesnamn: null }
+    },
+    {
         file: 'figur.js', ns: '__mirrorFigur',
         expose: { talformat: '_figTalformat', valideraFigur: '_figValidera', utanSmaGrupper: '_figUtanSma',
                   skalDoman: '_figSkalDoman', ladstatistik: '_figLadstatistik', antalPunkter: '_figAntalPunkter',

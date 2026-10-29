@@ -164,7 +164,7 @@ describe('R3: en egen riktad rad på en grupp under tröskeln är tillåten och 
         const noter = [...host.querySelectorAll('.k-mask-note')];
         expect(noter).toHaveLength(1);
         expect(noter[0].previousElementSibling).toBe(rader[0]);
-        expect(noter[0].textContent).toMatch(/Gruppen har färre än 10 personer — beloppet bygger på enskildas löner/);
+        expect(noter[0].textContent).toMatch(/Raden berör 1 person, färre än 10 personer — beloppet bygger på enskildas löner/);
         // Beloppet räknas utan filtrering av användarens egen rad.
         expect(normalisera(rader[0].textContent)).toContain(String(Math.round(ENSAM * 0.1)));
     });

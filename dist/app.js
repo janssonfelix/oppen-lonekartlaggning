@@ -7683,6 +7683,143 @@ function docxDelar(block, { titel, sidfot, skapad }) {
 })();
 const _docxDelar = __mirrorDocx.docxDelar;
 
+// ---- speglar src/lib/perbas.js ----
+const __mirrorPerBas = (() => {
+    // importer ur tidigare speglade lib-moduler
+    const median = __mirrorStat.median;
+    const quantile = __mirrorStat.quantile;
+
+// SPDX-License-Identifier: MIT
+// Copyright 2026 Felix Jansson
+/**
+ * Öppen lönekartläggning — tabellerna per BAS-intervall, i den form en skriven lönekartläggning brukar ha.
+ *
+ * Tre tabeller, byggda efter arbetsgivarnas egna utkast:
+ *  1. Per BAS-intervall: referensen (ställningstagandet), organisationen, varje yrkesgrupp med jämförelse-
+ *     statistikens rad under, och sist kvinnor och män — P10, median, P90 och antal.
+ *  2. Löneskillnader inom likvärdigt arbete: per BAS medellön för alla, män och kvinnor, kvinnors
+ *     medellön i procent av mäns, andel kvinnor och medelålder.
+ *  3. Löneskillnader i åldersgrupper: per BAS medellön i tre åldersgrupper.
+ *
+ * Minsta gruppstorlek (k) tillämpas här: en yrkesgrupp, ett BAS-intervall eller en åldersgrupp med färre än
+ * k personer får ingen lönerad, och könsuppdelade mått visas bara när båda könen når k. De utelämnade
+ * räknas upp så att rapporten säger vad den inte redovisar.
+ *
+ * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
+ */
+
+const _arKv = r => String(r.kon || '').includes('kvinna');
+const _arMa = r => r.kon === 'man' || r.kon === 'män';
+const _medel = arr => (arr.length ? arr.reduce((s, x) => s + x, 0) / arr.length : null);
+const _loner = rader => rader.map(r => r.lon).filter(x => typeof x === 'number' && isFinite(x) && x > 0);
+const _aldrar = rader => rader.map(r => r.alder).filter(x => typeof x === 'number' && isFinite(x) && x > 0);
+const _matt = rader => { const l = _loner(rader); return l.length ? { n: rader.length, p10: quantile(l, 0.1), med: median(l), p90: quantile(l, 0.9) } : null; };
+
+/** Yrkesgruppens namn: AID-koden och etiketten. */
+function yrkesnamn(r) {
+    const aid = r.aid != null ? String(r.aid).trim() : '';
+    const etikett = r.yrkeLabel ? String(r.yrkeLabel).trim() : '';
+    if (aid && etikett && etikett !== aid) return `${aid} ${etikett}`;
+    return aid || etikett || String(r.yrke || '').trim() || '(okänt yrke)';
+}
+
+/**
+ * Åldersgrupperna ur gränserna: [35, 50] → ['–34', '35–49', '50–'].
+ * @param {number[]} granser
+ */
+function aldersgruppNamn(granser) {
+    const g = [...granser].sort((a, b) => a - b);
+    const ut = [`–${g[0] - 1}`];
+    for (let i = 0; i < g.length - 1; i++) ut.push(`${g[i]}–${g[i + 1] - 1}`);
+    ut.push(`${g[g.length - 1]}–`);
+    return ut;
+}
+const _aldersgrupp = (alder, granser) => { let i = 0; while (i < granser.length && alder >= granser[i]) i++; return i; };
+
+/**
+ * @param {Array<{bas:string, aid?:string, yrke?:string, yrkeLabel?:string, kon:string, lon:number, alder?:number}>} rader
+ * @param {{k?: number, referens?: ((aid: string|null, bas: string) => ({p10?:number, med?:number, p90?:number}|null))|null,
+ *          statistik?: Array<{aid:string, bas?:string, median:number, p10?:number, p90?:number}>|null,
+ *          referensNamn?: string, statistikNamn?: string, aldersgranser?: number[]}} [opt]
+ */
+function perBasTabeller(rader, opt = {}) {
+    const k = opt.k ?? 10;
+    const referens = typeof opt.referens === 'function' ? opt.referens : () => null;
+    const statistik = Array.isArray(opt.statistik) ? opt.statistik : [];
+    const referensNamn = opt.referensNamn || 'Referens';
+    const statistikNamn = opt.statistikNamn || 'Jämförelsestatistik';
+    const granser = (opt.aldersgranser && opt.aldersgranser.length ? opt.aldersgranser : [35, 50]).slice().sort((a, b) => a - b);
+    const d = (rader || []).filter(r => r && r.bas);
+    const basar = [...new Set(d.map(r => String(r.bas)))].sort((a, b) => a.localeCompare(b, 'sv'));
+    const statFor = (aid, bas) => statistik.find(s => String(s.aid) === String(aid) && String(s.bas || '') === String(bas))
+        || statistik.find(s => String(s.aid) === String(aid) && !s.bas) || null;
+
+    const intervall = [];
+    const basUtelamnade = [];
+    for (const bas of basar) {
+        const df = d.filter(r => String(r.bas) === bas);
+        if (df.length < k) { basUtelamnade.push(bas); continue; }
+        const rad = [];
+        const utelamnade = [];
+        const ref = referens(null, bas);
+        if (ref && (ref.p10 != null || ref.med != null || ref.p90 != null)) rad.push({ typ: 'referens', namn: referensNamn, n: null, p10: ref.p10 ?? null, med: ref.med ?? null, p90: ref.p90 ?? null });
+        const org = _matt(df);
+        if (org) rad.push({ typ: 'organisation', namn: 'Organisationen', ...org });
+        // Yrkesgrupperna, största först; under varje yrke dess rad i jämförelsestatistiken.
+        const perYrke = new Map();
+        df.forEach(r => { const key = String(r.aid ?? r.yrke ?? ''); if (!perYrke.has(key)) perYrke.set(key, []); perYrke.get(key).push(r); });
+        const yrken = [...perYrke.entries()].sort((a, b) => b[1].length - a[1].length || yrkesnamn(a[1][0]).localeCompare(yrkesnamn(b[1][0]), 'sv'));
+        for (const [key, rows] of yrken) {
+            const namn = yrkesnamn(rows[0]);
+            if (rows.length < k) { utelamnade.push(namn); continue; }
+            const m = _matt(rows);
+            if (!m) continue;
+            rad.push({ typ: 'yrke', namn, aid: key, ...m });
+            const s = rows[0].aid != null ? statFor(rows[0].aid, bas) : null;
+            if (s && s.median > 0) rad.push({ typ: 'statistik', namn: `${statistikNamn}: ${namn}`, aid: key, n: null, p10: s.p10 ?? null, med: s.median, p90: s.p90 ?? null });
+        }
+        const kv = df.filter(_arKv), ma = df.filter(_arMa);
+        const konVisas = kv.length >= k && ma.length >= k;
+        if (konVisas) {
+            const mk = _matt(kv), mm = _matt(ma);
+            if (mk) rad.push({ typ: 'kvinnor', namn: 'Kvinnor', ...mk });
+            if (mm) rad.push({ typ: 'man', namn: 'Män', ...mm });
+        }
+        intervall.push({ bas, n: df.length, nKv: kv.length, nMa: ma.length, rader: rad, utelamnade, konVisas, antalYrken: perYrke.size });
+    }
+
+    // Könsgap och ålder per BAS, med raden Alla först.
+    const konsgapRad = (namn, rows) => {
+        const kv = rows.filter(_arKv), ma = rows.filter(_arMa);
+        const konVisas = kv.length >= k && ma.length >= k;
+        const medel = _medel(_loner(rows)), medelKv = konVisas ? _medel(_loner(kv)) : null, medelMa = konVisas ? _medel(_loner(ma)) : null;
+        return {
+            bas: namn, n: rows.length, medel, medelMa, medelKv,
+            kvot: konVisas && medelMa > 0 && medelKv != null ? medelKv / medelMa * 100 : null,
+            andelKv: rows.length ? kv.length / rows.length * 100 : null,
+            alder: _medel(_aldrar(rows)), alderMa: konVisas ? _medel(_aldrar(ma)) : null, alderKv: konVisas ? _medel(_aldrar(kv)) : null,
+            konVisas
+        };
+    };
+    const visadeBas = basar.filter(b => !basUtelamnade.includes(b));
+    const konsgap = { rader: [konsgapRad('Alla', d), ...visadeBas.map(b => konsgapRad(b, d.filter(r => String(r.bas) === b)))] };
+
+    const grupper = aldersgruppNamn(granser);
+    const aldersRad = (namn, rows) => {
+        const per = grupper.map(() => []);
+        rows.forEach(r => { if (typeof r.alder === 'number' && isFinite(r.alder) && r.alder > 0) per[_aldersgrupp(r.alder, granser)].push(r); });
+        return { bas: namn, n: rows.length, alder: _medel(_aldrar(rows)), medel: _medel(_loner(rows)),
+            perGrupp: per.map(g => (g.length >= k ? _medel(_loner(g)) : null)), antalPerGrupp: per.map(g => g.length) };
+    };
+    const aldersgrupper = { grupper, rader: [aldersRad('Alla', d), ...visadeBas.map(b => aldersRad(b, d.filter(r => String(r.bas) === b)))] };
+
+    return { k, intervall, basUtelamnade, konsgap, aldersgrupper };
+}
+
+    return { perBasTabeller, aldersgruppNamn, yrkesnamn };
+})();
+const _pbTabeller = __mirrorPerBas.perBasTabeller;
+
 // ---- speglar src/lib/figur.js ----
 const __mirrorFigur = (() => {
     // importer ur tidigare speglade lib-moduler
@@ -14418,8 +14555,33 @@ function tomFlikarUtom(utom = new Set()) {
 function excelAlltBlad() {
     if (!state.data.length) return [];
     const harRef = state.policy.length > 0 || state.statistik.length > 0;
-    return ['Löneöversikt', 'EU-Lonekartlaggning', ...(harRef ? ['Prioritering'] : []), 'Lonegap', 'Konsskevhet', ..._excelDiagramBlad().map(b => b[0]), 'Sektorer',
+    return ['Löneöversikt', 'Per BAS', 'EU-Lonekartlaggning', ...(harRef ? ['Prioritering'] : []), 'Lonegap', 'Konsskevhet', ..._excelDiagramBlad().map(b => b[0]), 'Sektorer',
         ...(state.statistik.length ? ['Jamforelsestatistik'] : []), ...(bedomningUnderlag() ? ['Underlagets kvalitet'] : []), 'Metodik', 'Metod & parametrar'];
+}
+
+/** Raderna i bladet Per BAS, eller null utan underlag. */
+function _excelPerBasRader() {
+    const pb = typeof rmPerBasUnderlag === 'function' ? rmPerBasUnderlag(getData(), kTroskel()) : null;
+    if (!pb || !pb.intervall.length) return null;
+    const tal = v => (v == null || !isFinite(v) ? '' : Math.round(v));
+    const pct = v => (v == null || !isFinite(v) ? '' : Math.round(v * 10) / 10);
+    const rows = [['Lönestruktur per BAS-intervall', `minsta gruppstorlek ${pb.k}: grupper med färre personer redovisas inte`], []];
+    for (const i of pb.intervall) {
+        rows.push([`BAS ${i.bas}`, `${i.n} anställda, ${i.nKv} kvinnor och ${i.nMa} män, ${i.antalYrken} yrkesgrupper`]);
+        rows.push(['Grupp', 'Antal', 'P10', 'Median', 'P90']);
+        i.rader.forEach(r => rows.push([r.namn, r.n == null ? '' : r.n, tal(r.p10), tal(r.med), tal(r.p90)]));
+        if (i.utelamnade.length) rows.push([`Redovisas inte (färre än ${pb.k} personer): ${i.utelamnade.join(', ')}`]);
+        if (!i.konVisas) rows.push([`Kvinnor och män redovisas inte var för sig: ett kön har färre än ${pb.k} personer`]);
+        rows.push([]);
+    }
+    if (pb.basUtelamnade.length) rows.push([`BAS-intervall som inte redovisas (färre än ${pb.k} personer): ${pb.basUtelamnade.join(', ')}`], []);
+    rows.push(['Löneskillnader inom likvärdigt arbete, per BAS-intervall']);
+    rows.push(['BAS', 'Antal', 'Medellön alla', 'Medellön män', 'Medellön kvinnor', 'Kvinnors medellön i % av mäns', 'Andel kvinnor (%)', 'Medelålder alla', 'Medelålder män', 'Medelålder kvinnor']);
+    pb.konsgap.rader.forEach(r => rows.push([r.bas, r.n, tal(r.medel), tal(r.medelMa), tal(r.medelKv), pct(r.kvot), pct(r.andelKv), tal(r.alder), tal(r.alderMa), tal(r.alderKv)]));
+    rows.push([], ['Löneskillnader i åldersgrupper, per BAS-intervall']);
+    rows.push(['BAS', 'Antal', 'Medelålder', 'Medellön alla', ...pb.aldersgrupper.grupper.map(g => `Medellön ${g} år`)]);
+    pb.aldersgrupper.rader.forEach(r => rows.push([r.bas, r.n, tal(r.alder), tal(r.medel), ...r.perGrupp.map(tal)]));
+    return rows;
 }
 
 /**
@@ -14493,6 +14655,11 @@ function _excelAlltBok() {
     // Bladet Löneöversikt
     const rapportSheet = tableToSheet('rapport-table');
     if (rapportSheet) XLSX.utils.book_append_sheet(wb, rapportSheet, 'Löneöversikt');
+
+    // Bladet Per BAS: tabellerna i den form en skriven lönekartläggning brukar ha (samma underlag som Word-utkastets
+    // avsnitt Lönestruktur per BAS-intervall; tröskeln tillämpas i src/lib/perbas.js).
+    const perBasRader = _excelPerBasRader();
+    if (perBasRader) XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(perBasRader), 'Per BAS');
 
     // Sheet: EU-Lönekartläggning
     const matrixSheet = tableToSheet('matrix-table');
@@ -18401,7 +18568,7 @@ function renderForecastTargets() {
             <select data-f="pool" aria-label="Pott-typ" title="Ring-fenced pott (visas i kostnad-per-pott)">${[['equity', 'Likalön'], ['marknad', 'Marknad'], ['befordran', 'Befordran'], ['övrigt', 'Övrigt']].map(([v, l]) => `<option value="${v}"${(tg.pool || 'övrigt') === v ? ' selected' : ''}>${l}</option>`).join('')}</select>
             <span class="text-dampad-xs ingen-radbrytning" title="Vad raden förbrukar av potten">≈ ${Math.round(rowCost).toLocaleString('sv-SE')} kr</span>
             <button type="button" data-f="remove" class="btn btn-secondary btn-sm" aria-label="Ta bort rad">${ikon('kryss', 14)}</button>
-        </div>${gruppN(tg) > 0 && isKMasked(gruppN(tg)) ? `<p class="k-mask-note">Raden berör ${gruppN(tg)} ${gruppN(tg) === 1 ? 'person' : 'personer'}, färre än ${kTroskel()} — beloppet bygger på enskildas löner och ingår i summorna, även i Excel-exporten.</p>` : (gruppN(tg) === 0 ? '<p class="k-mask-note">Ingen i gruppen matchar kön och lönegräns.</p>' : '')}`;
+        </div>${gruppN(tg) > 0 && isKMasked(gruppN(tg)) ? `<p class="k-mask-note">Raden berör ${gruppN(tg)} ${gruppN(tg) === 1 ? 'person' : 'personer'}, färre än ${kTroskel()} personer — beloppet bygger på enskildas löner och ingår i summorna, även i Excel-exporten.</p>` : (gruppN(tg) === 0 ? '<p class="k-mask-note">Ingen i gruppen matchar kön och lönegräns.</p>' : '')}`;
     }).join('');
     host.querySelectorAll('.forecast-target-row').forEach(rowEl => {
         const i = parseInt(rowEl.getAttribute('data-idx') || '', 10);
@@ -23948,7 +24115,7 @@ document.getElementById('btn-export-handlingsplan')?.addEventListener('click', e
 //
 // Delar: { typ: 'stycke', text, stil? } (stil: dampad | not) · { typ: 'fyllIn', text } · { typ: 'rubrik', niva, text } ·
 //        { typ: 'tabell', kolumner: [{ rubrik, typ }], rader: [[värde]], nyckel? } · { typ: 'diagram', id, flik, rubrik } ·
-// Kolumntyper: text, antal, kr, krAr, pct0, pct1, pct2, tecken2 (procent med tecken), andelAvMan, direktiv, fyllIn.
+// Kolumntyper: text, antal, ar (ålder i år), kr, krAr, pct0, pct1, pct2, tecken2 (procent med tecken), andelAvMan, direktiv, fyllIn.
 // Ett värde kan också vara { text } (färdig text, t.ex. en förklaring i stället för ett tal) eller null (streck).
 //
 // Dataskydd: tröskeln tillämpas HÄR, när modellen byggs — med samma funktioner som vyerna och rapportunderlaget
@@ -23971,6 +24138,7 @@ function rmCell(v, typ) {
     if (typ === 'text') return String(v);
     if (typeof v !== 'number' || !isFinite(v)) return String(v);
     if (typ === 'antal') return svTal(v, 0);
+    if (typ === 'ar') return `${svTal(v, 0)} år`;
     if (typ === 'kr') return `${svTal(Math.round(v), 0)} kr`;
     if (typ === 'krAr') return `${svTal(Math.round(v), 0)} kr/år`;
     if (typ === 'pct0') return svPct(v, 0);
@@ -24010,11 +24178,11 @@ const RM_DIAGRAM = [
 
 // ---- Urval: vilka avsnitt som följer med, och i vilken ordning ----
 // Urvalet ligger i minnet (state.rapportUrval) och följer med i konfigurationsfilen. null = hela dokumentationen.
-const RM_AVSNITT = ['sammanfattning', 'regler', 'lika', 'likvardigt', 'struktur', 'atgarder', 'samverkan', 'beslut', 'regression', 'metod'];
+const RM_AVSNITT = ['sammanfattning', 'regler', 'lika', 'likvardigt', 'struktur', 'perbas', 'atgarder', 'samverkan', 'beslut', 'regression', 'metod'];
 const RM_URVAL = Object.freeze({
     hela: { namn: 'Hela dokumentationen', med: RM_AVSNITT },
     ledning: { namn: 'Ledningsbrief', med: ['sammanfattning', 'lika', 'likvardigt', 'atgarder'] },
-    facklig: { namn: 'Facklig dialog', med: ['sammanfattning', 'regler', 'lika', 'likvardigt', 'struktur', 'samverkan', 'regression', 'metod'] },
+    facklig: { namn: 'Facklig dialog', med: ['sammanfattning', 'regler', 'lika', 'likvardigt', 'struktur', 'perbas', 'samverkan', 'regression', 'metod'] },
 });
 /** Det gällande urvalet: `ordning` är alla avsnitt i vald ordning, `med` de som följer med, `namn` vad urvalet heter. */
 function rapportUrval() {
@@ -24029,6 +24197,64 @@ function rapportUrval() {
 function sattRapportUrval(u) {
     if (typeof u === 'string') u = u === 'hela' || !RM_URVAL[u] ? null : { ordning: [...RM_AVSNITT], med: [...RM_URVAL[u].med] };
     state.rapportUrval = u ? { ordning: u.ordning.filter(id => RM_AVSNITT.includes(id)), med: u.med.filter(id => RM_AVSNITT.includes(id)) } : null;
+}
+
+/**
+ * Underlaget till avsnittet Lönestruktur per BAS-intervall: samma tre tabeller i Word-utkastet och Excel-filen.
+ * @param {any[]} d
+ * @param {number} k
+ */
+function rmPerBasUnderlag(d, k) {
+    if (typeof _pbTabeller !== 'function' || !d.length) return null;
+    return _pbTabeller(d, { k, referens: (aid, bas) => policyFor(aid, bas), statistik: state.statistik,
+        referensNamn: referensKortnamn(), statistikNamn: state.statistik.length ? (state.statistikNamn || 'Jämförelsestatistik') : 'Jämförelsestatistik' });
+}
+
+/**
+ * Avsnittet Lönestruktur per BAS-intervall, i den form en skriven lönekartläggning brukar ha: en tabell per
+ * BAS-intervall (referens, organisationen, yrkesgrupperna med jämförelsestatistikens rad under, kvinnor och män),
+ * ett fält för bedömningen av intervallet, och sist två tabeller per BAS: löneskillnader inom likvärdigt arbete
+ * (medellön per kön, andel kvinnor, medelålder) och löneskillnader i åldersgrupper. Tröskeln tillämpas i
+ * src/lib/perbas.js; avsnittet säger i `utelamnat` vad det inte redovisar.
+ * @param {any[]} d
+ * @param {number} k
+ */
+function rmPerBasAvsnitt(d, k) {
+    const pb = rmPerBasUnderlag(d, k);
+    if (!pb || !pb.intervall.length) return null;
+    const stycke = (text, stil) => ({ typ: 'stycke', text, ...(stil ? { stil } : {}) });
+    const kol = [{ rubrik: 'Grupp', typ: 'text' }, { rubrik: 'Antal', typ: 'antal' }, { rubrik: 'P10', typ: 'kr' }, { rubrik: 'Median', typ: 'kr' }, { rubrik: 'P90', typ: 'kr' }];
+    const utelamnat = [];
+    if (pb.basUtelamnade.length) utelamnat.push(`BAS ${pb.basUtelamnade.join(', ')} (färre än ${k} personer)`);
+    const smaYrken = pb.intervall.reduce((s, i) => s + i.utelamnade.length, 0);
+    if (smaYrken) utelamnat.push(`${smaYrken} ${smaYrken === 1 ? 'yrkesgrupp' : 'yrkesgrupper'} med färre än ${k} personer`);
+    const konDolda = pb.intervall.filter(i => !i.konVisas).map(i => i.bas);
+    if (konDolda.length) utelamnat.push(`könsuppdelade lönemått för BAS ${konDolda.join(', ')} (ett kön har färre än ${k} personer)`);
+    const delar = [
+        stycke(`Löneläget i varje BAS-intervall mot ${referensKortnamn()}: organisationen, de yrkesgrupper som når minsta gruppstorlek (med jämförelsestatistikens nivå under, när den finns) och kvinnor och män. P10 och P90 är den tionde och nittionde percentilen.`, 'dampad'),
+    ];
+    for (const i of pb.intervall) {
+        delar.push({ typ: 'rubrik', niva: 3, text: `BAS-intervall ${i.bas}` });
+        delar.push(stycke(`${i.n} ${i.n === 1 ? 'anställd' : 'anställda'} i ${i.antalYrken} ${i.antalYrken === 1 ? 'yrkesgrupp' : 'yrkesgrupper'}, varav ${i.nKv} kvinnor och ${i.nMa} män.`));
+        delar.push({ typ: 'tabell', kolumner: kol, rader: i.rader.map(r => [r.namn, r.n, r.p10, r.med, r.p90]) });
+        const noter = [];
+        if (i.utelamnade.length) noter.push(`${i.utelamnade.length} ${i.utelamnade.length === 1 ? 'yrkesgrupp' : 'yrkesgrupper'} med färre än ${k} personer redovisas inte: ${i.utelamnade.join(', ')}.`);
+        if (!i.konVisas) noter.push(`Kvinnor och män redovisas inte var för sig eftersom ett kön har färre än ${k} personer i intervallet.`);
+        if (noter.length) delar.push(stycke(noter.join(' '), 'not'));
+        delar.push({ typ: 'fyllIn', text: `Bedömning av BAS ${i.bas}: löneläget mot referensen och jämförelsestatistiken, de största yrkesgrupperna, och om skillnaderna mellan kvinnor och män har sakliga skäl.` });
+    }
+    delar.push({ typ: 'rubrik', niva: 3, text: 'Löneskillnader inom likvärdigt arbete, per BAS-intervall' });
+    delar.push(stycke('Medellön för alla, män och kvinnor i varje BAS-intervall, kvinnors medellön i procent av mäns, andel kvinnor och medelålder. Könsuppdelade mått visas bara där båda könen når minsta gruppstorlek.', 'dampad'));
+    delar.push({ typ: 'tabell', kolumner: [{ rubrik: 'BAS', typ: 'text' }, { rubrik: 'Antal', typ: 'antal' }, { rubrik: 'Medellön alla', typ: 'kr' }, { rubrik: 'Medellön män', typ: 'kr' }, { rubrik: 'Medellön kvinnor', typ: 'kr' },
+        { rubrik: 'Kvinnors medellön i % av mäns', typ: 'pct1' }, { rubrik: 'Andel kvinnor', typ: 'pct1' }, { rubrik: 'Medelålder alla', typ: 'ar' }, { rubrik: 'Medelålder män', typ: 'ar' }, { rubrik: 'Medelålder kvinnor', typ: 'ar' }],
+        rader: pb.konsgap.rader.map(r => [r.bas, r.n, r.medel, r.medelMa, r.medelKv, r.kvot, r.andelKv, r.alder, r.alderMa, r.alderKv]) });
+    delar.push({ typ: 'rubrik', niva: 3, text: 'Löneskillnader i åldersgrupper, per BAS-intervall' });
+    delar.push(stycke(`Medellön i åldersgrupperna ${pb.aldersgrupper.grupper.join(', ')} år. En åldersgrupp med färre än ${k} personer i intervallet får ingen medellön.`, 'dampad'));
+    delar.push({ typ: 'tabell', kolumner: [{ rubrik: 'BAS', typ: 'text' }, { rubrik: 'Antal', typ: 'antal' }, { rubrik: 'Medelålder', typ: 'ar' }, { rubrik: 'Medellön alla', typ: 'kr' },
+        ...pb.aldersgrupper.grupper.map(g => ({ rubrik: `Medellön ${g} år`, typ: 'kr' }))],
+        rader: pb.aldersgrupper.rader.map(r => [r.bas, r.n, r.alder, r.medel, ...r.perGrupp]) });
+    delar.push({ typ: 'fyllIn', text: 'Bedömning: hur lönen utvecklas med åldern i organisationen, och om löneutvecklingen för äldre medarbetare avstannar.' });
+    return { id: 'perbas', numrerad: true, rubrik: 'Lönestruktur per BAS-intervall', utelamnat, delar };
 }
 
 /**
@@ -24174,6 +24400,9 @@ function rapportModell({ alla = false } = {}) {
             ...diagram('struktur'),
         ] } : null;
 
+    // ---- Lönestruktur per BAS-intervall (tabellerna ur arbetsgivarnas egna utkast) ----
+    const perbas = rmPerBasAvsnitt(d, k);
+
     // ---- 6. Åtgärder och tidsplan ----
     /** @type {{id: string, rubrik: string, utelamnat: string[], delar: any[], [k: string]: any}} */
     const atgarder = { id: 'atgarder', numrerad: true, rubrik: 'Åtgärder och tidsplan', utelamnat: [], delar: [
@@ -24244,7 +24473,7 @@ function rapportModell({ alla = false } = {}) {
         undertitel: `${orgNamn('') || '[HR fyller i: organisation/arbetsgivare]'} · ${urval} · genererad ${today} · v${APP_VERSION}${dq ? ` · Underlagets kvalitet: ${UK_ETIKETT[dq.status]}` : ''}`,
         demo: !!state.isDemo,
         avsnitt: (() => {
-            const finns = /** @type {any[]} */ ([sammanfattning, regler, lika, likvardigt, struktur, atgarder, samverkan, beslut, regressionAvsnitt, metod].filter(Boolean));
+            const finns = /** @type {any[]} */ ([sammanfattning, regler, lika, likvardigt, struktur, perbas, atgarder, samverkan, beslut, regressionAvsnitt, metod].filter(Boolean));
             const urval = rapportUrval();
             const valda = /** @type {any[]} */ (alla ? finns : urval.med.map(id => finns.find(a => a.id === id)).filter(Boolean));
             let nr = 0;
