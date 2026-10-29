@@ -68,6 +68,7 @@ describe('k-tröskeln styr varje flik', () => {
         const bild = () => FLIKAR.map(f => { w.__renderTabContent(f); return normalisera(w.document.getElementById('view-' + f)?.textContent || ''); });
         // Grundtillstånd som efter en vanlig inläsning (32-filinlasning.js): också Översiktens delar är ritade.
         w.eval('invalidateStatCaches(); renderActionChecklist(); renderProcessTracker(); renderOutliers(); renderDataValidationReport(); refreshCurrentTab();');
+        w.__renderTabContent('matrix'); await w.eval('_regKvantilKlar()');   // kvantilregressionens intervall räknas i bakgrunden efter första ritningen
         const fore = bild();
         // Golvet ändras (10 → 25 → 10): bootstrap-KI och styrkan räknas om i bakgrunden efter omritningen; vänta in den.
         w.eval('sattKTroskel(25, { fraga: false })'); await w.eval('_skattningarIBakgrunden()'); bild();

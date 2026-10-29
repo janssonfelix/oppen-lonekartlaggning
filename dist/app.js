@@ -22852,13 +22852,23 @@ const REG_KVANTIL_KI_B = 200, REG_KVANTIL_KI_MAX_N = 2000;
 // på demodatat, ~11 s på 5 000 rader, därav gränsen 2 000 ≈ 4 s). Nyckeln är datats eget frö (antal och lönesummor per kön) plus ålderssumman.
 /** @type {{nyckel: string, ut: any}|null} */
 let _regKvantilMinne = null;
+// Intervallet räknas i bakgrunden efter att kortet ritats (setTimeout), som bootstrap-KI:t vid inläsning: kortet
+// står med punktskattningarna och raden "räknas i bakgrunden" tills dess, och ritas om när intervallet finns. Det
+// gäller också i exportläget (ADR-51): en bild eller utskrift som görs innan intervallet är klart bär kortet utan det,
+// som nyckeltalen utan bootstrap-KI strax efter en inläsning. Minnet är per underlag, så ett intervall som en gång
+// räknats följer med i allt som ritas sedan. `direkt: true` tvingar en direkt beräkning (tester).
+/** @type {Promise<void>|null} */
+let _regKvantilBakgrund = null;
+/** Löftet för den pågående bakgrundsberäkningen, eller ett uppfyllt när ingen pågår (tester väntar in det). */
+function _regKvantilKlar() { return _regKvantilBakgrund || Promise.resolve(); }
 /**
  * Kvantilregressionens tre skattningar (runQuantileRegressionAtAllTau) med ett percentil-bootstrap-KI per τ.
  * Designmatrisen byggs som i runQuantileRegressionAtAllTau (kön, centrerad ålder, centrerad BAS-rang); raderna
  * omsamplas parvis (X-rad, y), och könskoefficienten är oberoende av centreringen, så omsamplingen centreras inte om.
- * @returns {null | {results: Array<{tau:number, konPct?:number, error?:boolean, ki?:{lag:number, hog:number}|null}>, n:number, kiB:number, kiUtelamnad:string}}
+ * @param {{direkt?: boolean}} [val]
+ * @returns {null | {results: Array<{tau:number, konPct?:number, error?:boolean, ki?:{lag:number, hog:number}|null}>, n:number, kiB:number, kiUtelamnad:string, kiVantar?: boolean, nyckel?: string}}
  */
-function _regKvantilBerakna() {
+function _regKvantilBerakna({ direkt = false } = {}) {
     const qr = runQuantileRegressionAtAllTau();
     if (!qr) return null;
     const results = qr.results.map(r => ({ ...r, ki: null }));
@@ -22869,9 +22879,20 @@ function _regKvantilBerakna() {
     const raw = getData().filter(d => d.lon > 0 && d.alder > 0 && (arKv(d) || d.kon === 'man' || d.kon === 'män'));
     const nyckel = `${_rngSeedFrom(raw.filter(arKv).map(d => d.lon), raw.filter(d => !arKv(d)).map(d => d.lon), raw.map(d => d.alder))}|${raw.length}|${results.map(r => r.konPct).join(',')}`;
     if (_regKvantilMinne && _regKvantilMinne.nyckel === nyckel) return _regKvantilMinne.ut;
-    const ut = _regKvantilBootstrap(raw, results, arKv);
-    _regKvantilMinne = { nyckel, ut: { ...ut, n: qr.n } };
-    return _regKvantilMinne.ut;
+    const rakna = () => { const ut = _regKvantilBootstrap(raw, results.map(r => ({ ...r })), arKv); _regKvantilMinne = { nyckel, ut: { ...ut, n: qr.n } }; return _regKvantilMinne.ut; };
+    if (direkt) return rakna();
+    if (!_regKvantilBakgrund) {
+        _regKvantilBakgrund = new Promise(resolve => setTimeout(() => {
+            try {
+                if (!(_regKvantilMinne && _regKvantilMinne.nyckel === nyckel)) rakna();
+                // Kortet ritas om bara om det fortfarande visar samma underlag, och inte mitt i en export (den ritar själv).
+                const kort = document.getElementById('regression-card');
+                if (kort && kort.dataset.kvantilNyckel === nyckel && state.data.length && !(typeof iExportLage === 'function' && iExportLage())) renderRegressionCard();
+            } catch (e) { rapporteraFel('kvantilregressionens intervall', e); }
+            finally { _regKvantilBakgrund = null; resolve(); }
+        }, 0));
+    }
+    return { results, n: qr.n, kiB: REG_KVANTIL_KI_B, kiUtelamnad: '', kiVantar: true, nyckel };
 }
 function _regKvantilBootstrap(raw, results, arKv) {
     const basList = [...new Set(raw.map(d => d.bas))].sort();
@@ -23328,7 +23349,7 @@ function renderRegressionCard() {
                 const fmtRow = (label, helper, x) => {
                     if (!x || x.error) return `<tr><td>${label}</td><td><em class="f-dampad">Kunde ej estimeras</em></td><td>–</td><td>${helper}</td></tr>`;
                     const color = Math.abs(x.konPct) > 5 ? 'f-kritisk' : Math.abs(x.konPct) > 2 ? 'fg-varning' : '';
-                    const ki = x.ki ? `${pctTecken(x.ki.lag)} till ${pctTecken(x.ki.hog)}` : '<span class="f-dampad">–</span>';
+                    const ki = x.ki ? `${pctTecken(x.ki.lag)} till ${pctTecken(x.ki.hog)}` : qr.kiVantar ? '<span class="f-dampad">räknas i bakgrunden…</span>' : '<span class="f-dampad">–</span>';
                     return `<tr><td>${label}</td><td class="halvfet tabelltal ${color}">${pctTecken(x.konPct)}</td><td class="tabelltal">${ki}</td><td class="text-dampad-sm">${helper}</td></tr>`;
                 };
                 let tolkning = '';
@@ -23342,6 +23363,7 @@ function renderRegressionCard() {
                         tolkning = `Lönegapet är ungefär lika stort i alla delar av lönefördelningen.`;
                     }
                 }
+                if (qr.kiVantar) wrap.dataset.kvantilNyckel = qr.nyckel; else delete wrap.dataset.kvantilNyckel;
                 return `
                 <details class="mt-14" open>
                     <summary class="pekare fw-600 pad-8-0 ej-markerbar">Lönegap i olika delar av lönefördelningen
@@ -23364,7 +23386,7 @@ function renderRegressionCard() {
                     ${tolkning ? `<div class="bak-info-yta ram-v-3-info rund-4 fs-sm marg-t-10 pad-10-14">${tolkning}</div>` : ''}
                     <p class="text-dampad-xs lh-1_5 marg-t-8">
                         <em>Metod: IRLS (Iteratively Reweighted Least Squares) på samma modellspecifikation som huvudregressionen — en approximation av kvantillösningen, inte den exakta minimeringen. Kräver minst 50 observationer för stabilt resultat.
-                        ${qr.kiUtelamnad ? esc(qr.kiUtelamnad) : `Konfidensintervallet är ett percentil-bootstrap med ${qr.kiB} omsamplingar av raderna, seedat ur datat så att det blir detsamma varje gång.`}</em>
+                        ${qr.kiUtelamnad ? esc(qr.kiUtelamnad) : `Konfidensintervallet är ett percentil-bootstrap med ${qr.kiB} omsamplingar av raderna, seedat ur datat så att det blir detsamma varje gång${qr.kiVantar ? '; det räknas i bakgrunden och visas strax' : ''}.`}</em>
                     </p>
                 </details>`;
             })()}

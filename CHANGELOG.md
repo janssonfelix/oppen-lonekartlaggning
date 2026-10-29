@@ -100,6 +100,11 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ### Prestanda
 
+- **Kvantilregressionens konfidensintervall räknas i bakgrunden.** Intervallet (200 omsamplingar × tre
+  kvantiler, ett par sekunder vid tusen personer) höll Lika arbete-fliken tills det var klart; nu ritas kortet
+  med punktskattningarna och intervallet fylls i strax efteråt, som bootstrap-KI:t vid inläsning. En bild eller
+  utskrift som görs innan det är klart bär kortet utan intervall. Testsviten, som ritar fliken i hundratals
+  färska fönster, går omkring en tiondel snabbare (170 → 154 s på sexton trådar).
 - **Dokumentera & exportera ritas snabbare på stora underlag.** Förhandsbeskedet byggde rapportmodellen tre gånger
   och Excel-bladlistan två; nu en gång var (`rapportModellBada`). Efter en export ritas bara det tillbaka som
   exporten ritade i exportläget, och Lika arbetes minne har ett rum per tröskel, så att ett lägesbyte inte räknar

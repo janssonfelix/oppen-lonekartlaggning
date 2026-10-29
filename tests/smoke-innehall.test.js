@@ -499,8 +499,8 @@ describe('BAS-steg räknas i bokstäver överallt (se §5 i teknisk-plan.md)', (
         expect(r.results).toHaveLength(3);
         for (const q of r.results) { expect(q.error).toBeUndefined(); expect(Math.abs(q.konPct)).toBeLessThan(0.5); }
     });
-    it('kvantilregressionen: bootstrap-KI omsluter punktskattningen, är reproducerbart och visas i tabell och diagram', () => {
-        const a = med(0.01).eval('_regKvantilBerakna()');
+    it('kvantilregressionen: bootstrap-KI omsluter punktskattningen, är reproducerbart och visas i tabell och diagram', async () => {
+        const a = med(0.01).eval('_regKvantilBerakna({ direkt: true })');
         expect(a.kiB).toBe(200);
         expect(a.kiUtelamnad).toBe('');
         for (const q of a.results) {
@@ -509,10 +509,15 @@ describe('BAS-steg räknas i bokstäver överallt (se §5 i teknisk-plan.md)', (
             expect(q.ki.hog).toBeGreaterThanOrEqual(q.konPct);
             expect(q.ki.hog - q.ki.lag).toBeGreaterThan(0);
         }
-        const b = med(0.01).eval('_regKvantilBerakna()');   // nytt fönster: samma data → samma intervall
+        const b = med(0.01).eval('_regKvantilBerakna({ direkt: true })');   // nytt fönster: samma data → samma intervall
         expect(b.results).toEqual(a.results);
         const w = med(0.01);
         w.eval('renderRegressionCard()');
+        // På skärmen räknas intervallet i bakgrunden efter att kortet ritats: först står raden om det, sedan ritas kortet om.
+        const tabellFore = [...w.document.querySelectorAll('#regression-card table')].find(t => t.textContent.includes('Klistergolvet'));
+        expect(tabellFore.querySelectorAll('tbody tr')[0].children[2].textContent).toBe('räknas i bakgrunden…');
+        expect(w.document.getElementById('regression-card').textContent).toMatch(/räknas i bakgrunden och visas strax/);
+        await w.eval('_regKvantilKlar()');
         const tabell = [...w.document.querySelectorAll('#regression-card table')].find(t => t.textContent.includes('Klistergolvet'));
         expect(tabell.querySelector('thead').textContent).toContain('95 % KI (bootstrap)');
         expect(tabell.querySelectorAll('tbody tr')[0].children[2].textContent).toMatch(/^[+−]\d+,\d % till [+−]\d+,\d %$/);
