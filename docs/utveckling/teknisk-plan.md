@@ -122,7 +122,7 @@ Icke förhandlingsbara arkitektoniska garantier:
 | Organisationspaket | — | En fil med organisationens benämningar, grundinställningar, ställningstagande och jämförelsestatistik; systemägaren skapar det i verktyget, handläggaren läser in det i ett steg (ADR-28) |
 | Utforska | — | Egna vyer: rader × ev. kolumner (BAS, AID, yrkesgrupp inom BAS, sektor, AID-mellannivå, ålder, kön, lönespann; rader även hela urvalet), tio mått, visning som helhet eller per kön, urval med villkor (alla/något, "inte", lön och ålder) och gruppvillkor på uträknat mått, elva diagramtyper (staplar, liggande, hantel, bubbla, låda, individpunkter, punktsvärm, regnmoln, heatmap, grupperade, staplade). Små grupper visas som andra på skärmen och utelämnas ur exporten om inte rutan är ikryssad (ADR-14, ADR-51). Klick på en grupp öppnar gruppdossiern |
 | Export | — | Exportmeny på varje diagram: PNG (1920 × 1080 / 1600 × 900), SVG och diagramdata (urklipp/CSV) |
-| Dokumentera & exportera | — | Fas 4: färdigcheck och robusthetspanel, all export, rapportunderlag att klistra in i egen mall (ADR-20), samverkan och Spara och läsa in arbetet (konfiguration, ögonblicksbild, självdiagnostik). De fyra samlade exporterna har var sin uppgift: **Word-utkastet är rapporten, Excel-filen underlaget, PDF-rapporten en låst kopia av Word-utkastet och ZIP-filen allt**. Word och PDF ritas ur samma rapportmodell (`58-rapportmodell.js`), i ett valt urval av avsnitt (hela dokumentationen, ledningsbrief, facklig dialog eller eget); varje export har ett förhandsbesked om vad den innehåller och utelämnar, och exportgrinden ser till att inget läses ur en flik ritad med en äldre tröskel. Därtill JPA-protokoll och handlingsplansunderlag |
+| Dokumentera & exportera | — | Fas 4: färdigcheck och robusthetspanel, all export, rapportunderlag att klistra in i egen mall (ADR-20), samverkan och Spara och läsa in arbetet (konfiguration, ögonblicksbild, jämförelse med förra året — ADR-54, självdiagnostik). De fyra samlade exporterna har var sin uppgift: **Word-utkastet är rapporten, Excel-filen underlaget, PDF-rapporten en låst kopia av Word-utkastet och ZIP-filen allt**. Word och PDF ritas ur samma rapportmodell (`58-rapportmodell.js`), i ett valt urval av avsnitt (hela dokumentationen, ledningsbrief, facklig dialog eller eget); varje export har ett förhandsbesked om vad den innehåller och utelämnar, och exportgrinden ser till att inget läses ur en flik ritad med en äldre tröskel. Därtill JPA-protokoll och handlingsplansunderlag |
 | Gränssnittets form | — | Alla flikar följer en mall: en rad om vad fliken svarar på (*Visa mer*), urval, nyckeltal i en rad, huvudresultat, och fördjupning i hopfällbara avsnitt som säger sitt nyckeltal i rubrikraden. Sök i sidhuvudet markerar en grupp i alla diagram och tabeller (länkade vyer). Panelen Inställningar samlar det som gäller alla flikar. Två lägen: vägledande och kompakt. Byggt för datorskärm; surfplatta och delat fönster fungerar, telefon är inte ett användningsfall (ADR-41) |
 | Diagram | — | Ritas av diagramkärnan (D3, ADR-39) ur ett figurformat; formen väljs efter uppgiften och färgen efter vad den ska säga — reglerna står i `diagramkarnan.md` §10. Där ett diagram skulle visa för lite står en tabell med grafik i raden |
 | Underlagets kvalitet | — | Fem kriterier med OK/Varning/Kritisk; svagaste kriteriet avgör (ADR-19) |
@@ -229,7 +229,7 @@ adaptern verkligen delegerar vaktas av `tests/drift.test.js`:
   rätt grupp. Utskriftsfönstret för checklistorna (`printScaffoldView`) läser `:root` och allt från `.dold` till
   stilmallens slut ur den körande stilmallen och lägger in det som byggt stilark (`adoptedStyleSheets`): ett `<style>`-element
   som skriptet skapar blockeras av den ärvda CSP:n (`style-src-elem`), så fönstret var tidigare helt ostilat.
-- **Tester:** Vitest — 2450 tester i 69 filer: rena `src/lib/`-moduler, CSV-parsning, jsdom-röktest
+- **Tester:** Vitest — 2458 tester i 71 filer: rena `src/lib/`-moduler, CSV-parsning, jsdom-röktest
   av varje vy (ADR-7; `tests/smoke.test.js` med det delade fönstret och sju `tests/smoke-*.test.js` per
   område), k-tröskeln i åtta `tests/ktroskel*.test.js` med riggen i `tests/helpers/ktroskel-rigg.js`,
   gränssnittet i `tests/granssnitt*.test.js` (riggen `tests/helpers/granssnitt-rigg.js`) och diagramvyerna i
@@ -1159,6 +1159,19 @@ dussin rader). Referensvärdena i `tests/fixtures/stat-referens-varden.json` är
 (`tests/fixtures/ref-stat-referens.py`); fixturen har ett intervall som bara finns hos männen, så regeln prövas.
 Kvantilregressionen behåller BAS-rangen (den är inte en uppdelning).
 
+**ADR-54 — Jämförelse mellan år genom ett årsbokslut i konfigurationsfilen.** Beslut 2026-10-30. Konfigurationsfilen
+bär ett *årsbokslut* (`src/lib/arsbokslut.js`, `cfg.arsbokslut`): nyckeltal för hela organisationen (antal, medianer
+per kön, kvoten, det oförklarade gapet, antal flaggade yrkesgrupper och kandidatpar), en rad per yrkesgrupp i Lika
+arbete där båda könen når minsta gruppstorlek (antal per kön, medianer, gap, flaggad) och Att göra-punkternas id,
+titel och läge. Aldrig individer, aldrig lönedata; bokslutet byggs i exportläget (ADR-51) med den inställda tröskeln,
+och `valideraArsbokslut` stryker vid inläsning varje grupp där ett kön är under bokslutets k och nollar könsuppdelade
+nyckeltal när ett kön är det. Läses en fil med bokslut in ligger det i `state.forraArsbokslut`, och panelen
+*Jämförelse med förra året* i Dokumentera & exportera (`73-arsbokslut.js`, `jamforArsbokslut`) visar nyckeltal rad för
+rad, flaggade yrkesgrupper som kvar, nya och borta, och vilka av förra årets öppna punkter som är klara i år. Filen
+bär bara ett bokslut: det som sparas i år; utan underlag bär den det inlästa vidare. *Rensa all data* tar bort det.
+Alternativet, en egen bokslutsfil, valdes bort: konfigurationsfilen är redan den fil som sparas när arbetet är klart
+och läses in när det återupptas. Vaktas av `tests/arsbokslut.test.js` och `tests/smoke-arsbokslut.test.js`.
+
 ## 9. Öppna punkter
 
 Kända brister och obesvarade frågor, så att de inte lever bara i en konversationstråd.
@@ -1175,8 +1188,9 @@ Kända brister och obesvarade frågor, så att de inte lever bara i en konversat
    varje grupp görs med omkastning, utom för grupper över 300 personer.
 
 **Prestanda:**
-5. **Ändrad minsta gruppstorlek tar 5,9 s på 55 000 rader** (10 → 11): bootstrap-KI (2,7 s, bara när `statGolv()`
-   ändras), Att göra och processöversikten (som läser samma lista, byggd en gång, med regressionen körd en gång
+5. **Ändrad minsta gruppstorlek tar 4,1 s på 55 000 rader** (10 → 11): bootstrap-KI och styrkan räknas om i
+   bakgrunden efteråt när `statGolv()` ändras (`_skattningarIBakgrunden`, som vid inläsning: nyckeltalen står utan
+   intervall tills det är klart), och Att göra och processöversikten (som läser samma lista, byggd en gång, med regressionen körd en gång
    och skickad vidare) och den öppna fliken räknas om. Det som återstår är regressionen i processöversikten och
    underlagets kvalitet, som inte får cachas (ADR-17). Översikt
    ritas inte två gånger — när Översikt är den öppna fliken är den redan ritad av stegen (`_omritningssteg`).

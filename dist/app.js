@@ -1497,7 +1497,8 @@ function sattKTroskel(v, { fraga = true, rita = true, stegvis = false } = {}) {
     state._lifecycleCache = null;
     // Skattningarna (bootstrap-KI och styrkan läser statGolv(); § 3:10-paren läser ingen tröskel) räknas om bara när
     // golvet ändras — på 55 000 rader är bootstrapen sekunder. Det som är ritat bär den gamla tröskeln och ritas om.
-    if (statGolv() !== golvFore && typeof invalidateStatCaches === 'function') invalidateStatCaches();
+    const golvAndrat = statGolv() !== golvFore;
+    if (golvAndrat && typeof invalidateStatCaches === 'function') invalidateStatCaches({ recompute: false });   // räknas om i bakgrunden nedan
     else if (typeof ritGenerationNy === 'function') ritGenerationNy();   // allt som är ritat hittills bär den gamla tröskeln
     // Löneöversynens förslag ur § 3:10-par som inte längre når tröskeln tas bort (egna rader står kvar).
     if (hojd && typeof _fcRensaParMal === 'function') _fcRensaParMal();
@@ -1506,7 +1507,39 @@ function sattKTroskel(v, { fraga = true, rita = true, stegvis = false } = {}) {
     /** @type {Promise<void>|null} */
     let klar = null;
     if (rita) { if (stegvis) klar = _renderaOmAllaFlikarStegvis(); else _renderaOmAllaFlikar(); }
+    // Skattningarna som läser golvet räknas om i bakgrunden när omritningen är klar (rutan är borta), som vid inläsning.
+    if (golvAndrat) { if (klar) klar.then(() => _skattningarIBakgrunden()); else _skattningarIBakgrunden(); }
     return { ok: true, varde: n, andrad: true, ...(klar ? { klar } : {}) };
+}
+
+/**
+ * Räknar om skattningarna (bootstrap-KI och styrkan, som läser statGolv()) i bakgrunden efter ett tröskelbyte som
+ * ändrade golvet — som vid inläsningen — och ritar sedan om det som visar dem: Översikts nyckeltal och underlagets
+ * kvalitet, och Lika arbete eller Prioritering när den är öppen. Tills dess står nyckeltalen utan intervall.
+ * @returns {Promise<void>}
+ */
+/** @type {Promise<void>|null} */
+let _bakgrundsrakning = null;
+function _skattningarIBakgrunden() {
+    if (_bakgrundsrakning) return _bakgrundsrakning;
+    const status = document.getElementById('data-status');
+    const NOT = ' · förbereder analyser i bakgrunden…';
+    if (status && !status.textContent.includes(NOT)) status.textContent += NOT;
+    _bakgrundsrakning = new Promise(resolve => setTimeout(() => {
+        try {
+            if (state.data.length) {
+                try { computeBootstrapCI(); } catch (_e) { state.bootstrapCI = null; }
+                try { state.powerAnalysis = computePowerAnalysis(); } catch (_e) { state.powerAnalysis = null; }
+                if (typeof updateDashboardStats === 'function') updateDashboardStats();
+                if (typeof renderUnderlagetsKvalitet === 'function') renderUnderlagetsKvalitet();
+                const oppen = document.querySelector('.nav-item.active[data-tab]');
+                const flik = oppen ? oppen.getAttribute('data-tab') : null;
+                if ((flik === 'matrix' || flik === 'prioritering') && typeof renderTabContent === 'function') renderTabContent(flik);
+            }
+        } catch (e) { rapporteraFel('skattningar i bakgrunden', e); }
+        finally { if (status) status.textContent = status.textContent.replace(NOT, ''); _bakgrundsrakning = null; resolve(); }
+    }, 0));
+    return _bakgrundsrakning;
 }
 
 /**
@@ -7811,6 +7844,108 @@ const _trValidera = __mirrorTabellrecept.valideraRecept;
 const _trBeskrivning = __mirrorTabellrecept.receptBeskrivning;
 const _trTabeller = __mirrorTabellrecept.receptTillTabeller;
 
+// ---- speglar src/lib/arsbokslut.js ----
+const __mirrorArsbokslut = (() => {
+// SPDX-License-Identifier: MIT
+// Copyright 2026 Felix Jansson
+// ---- Årsbokslut (ADR-54): jämförelse mellan år ----
+// Ett k-skyddat sammandrag av årets kartläggning som konfigurationsfilen bär, så att nästa års kartläggning kan
+// jämföras mot det. Bara aggregat: nyckeltal för hela organisationen, en rad per jämförbar yrkesgrupp (båda könen
+// minst k) och Att göra-punkternas läge. Aldrig individer, aldrig lönedata. Modulen är ren: ingen DOM, inget state.
+
+const ARSBOKSLUT_VERSION = 1;
+const MAX_TEXT = 200;
+
+const _tal = v => (typeof v === 'number' && isFinite(v) ? v : null);
+const _heltal = (v, lo, hi) => (Number.isInteger(v) && v >= lo && v <= hi ? v : null);
+const _text = v => (typeof v === 'string' ? v.trim().slice(0, MAX_TEXT) : '');
+
+/**
+ * Årsbokslutet i giltig form, eller null när det inte går att läsa. Yrkesgrupper där ett kön har färre än k
+ * personer faller bort (de får inte bära könsuppdelade mått), och ett tal som inte är ändligt blir null.
+ * @param {any} o
+ */
+function valideraArsbokslut(o) {
+    if (!o || typeof o !== 'object' || Array.isArray(o)) return null;
+    const ar = _heltal(o.ar, 2000, 2100);
+    const k = _heltal(o.k, 1, 1000);
+    const skapat = typeof o.skapat === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(o.skapat) ? o.skapat : null;
+    if (ar == null || k == null || !skapat) return null;
+    const n = o.nyckeltal && typeof o.nyckeltal === 'object' ? o.nyckeltal : {};
+    const nKv = _heltal(n.nKv, 0, 10_000_000) ?? 0, nMa = _heltal(n.nMa, 0, 10_000_000) ?? 0;
+    const konOk = nKv >= k && nMa >= k;
+    const nyckeltal = {
+        n: _heltal(n.n, 0, 10_000_000) ?? nKv + nMa, nKv, nMa,
+        medKv: konOk ? _tal(n.medKv) : null, medMa: konOk ? _tal(n.medMa) : null,
+        kvotPct: konOk ? _tal(n.kvotPct) : null,
+        oforklaratPct: _tal(n.oforklaratPct),
+        antalFlaggade: _heltal(n.antalFlaggade, 0, 1_000_000) ?? 0,
+        antalKandidatpar: _heltal(n.antalKandidatpar, 0, 1_000_000) ?? 0,
+        utelamnadePar: _heltal(n.utelamnadePar, 0, 1_000_000) ?? 0,
+    };
+    const grupper = (Array.isArray(o.grupper) ? o.grupper : []).map(g => {
+        if (!g || typeof g !== 'object') return null;
+        const yrke = _text(g.yrke); const gKv = _heltal(g.nKv, 0, 10_000_000), gMa = _heltal(g.nMa, 0, 10_000_000);
+        if (!yrke || gKv == null || gMa == null || gKv < k || gMa < k) return null;
+        return { yrke, nKv: gKv, nMa: gMa, medKv: _tal(g.medKv), medMa: _tal(g.medMa), gapPct: _tal(g.gapPct), flaggad: g.flaggad === true };
+    }).filter(Boolean);
+    const punkter = (Array.isArray(o.punkter) ? o.punkter : []).map(p => {
+        if (!p || typeof p !== 'object') return null;
+        const id = _text(p.id); if (!id) return null;
+        return { id, titel: _text(p.titel), kategori: _text(p.kategori), klar: p.klar === true };
+    }).filter(Boolean);
+    return { version: ARSBOKSLUT_VERSION, ar, skapat, k, verktyg: _text(o.verktyg), nyckeltal, grupper, punkter };
+}
+
+/** Bygger ett årsbokslut ur delarna (samma form som valideraArsbokslut ger); null när delarna inte räcker. */
+function byggArsbokslut({ ar, skapat, k, verktyg, nyckeltal, grupper, punkter }) {
+    return valideraArsbokslut({ ar, skapat, k, verktyg, nyckeltal, grupper, punkter });
+}
+
+/** Nyckeltalens rader i jämförelsen: nyckel, etikett och typ (hur talet skrivs). */
+const ARSBOKSLUT_NYCKELTAL = Object.freeze([
+    ['n', 'Antal personer', 'antal'], ['nKv', 'Kvinnor', 'antal'], ['nMa', 'Män', 'antal'],
+    ['medKv', 'Medianlön kvinnor', 'kr'], ['medMa', 'Medianlön män', 'kr'],
+    ['kvotPct', 'Kvinnors medianlön i % av mäns', 'pct'], ['oforklaratPct', 'Oförklarat lönegap (regressionen, %)', 'pct'],
+    ['antalFlaggade', 'Flaggade yrkesgrupper i Lika arbete', 'antal'], ['antalKandidatpar', 'Kandidatpar i Likvärdigt arbete', 'antal'],
+]);
+
+/**
+ * Jämför förra årets bokslut med årets: nyckeltal rad för rad, flaggade yrkesgrupper (kvar, nya, borta) och
+ * Att göra-punkter (vad som bockades av förra året, vilka av förra årets punkter som är klara nu).
+ * @param {ReturnType<typeof valideraArsbokslut>} forra
+ * @param {ReturnType<typeof valideraArsbokslut>} nu
+ */
+function jamforArsbokslut(forra, nu) {
+    if (!forra || !nu) return null;
+    const nyckeltal = ARSBOKSLUT_NYCKELTAL.map(([nyckel, etikett, typ]) => {
+        const a = forra.nyckeltal[nyckel], b = nu.nyckeltal[nyckel];
+        return { nyckel, etikett, typ, forra: a, nu: b, diff: typeof a === 'number' && typeof b === 'number' ? b - a : null };
+    });
+    const perYrke = lista => new Map(lista.map(g => [g.yrke, g]));
+    const fG = perYrke(forra.grupper), nG = perYrke(nu.grupper);
+    const rad = (yrke, f, n) => ({ yrke, gapForra: f ? f.gapPct : null, gapNu: n ? n.gapPct : null, nKv: n ? n.nKv : (f ? f.nKv : null), nMa: n ? n.nMa : (f ? f.nMa : null) });
+    const kvar = [], nya = [], borta = [];
+    for (const [yrke, n] of nG) { if (!n.flaggad) continue; const f = fG.get(yrke); (f && f.flaggad ? kvar : nya).push(rad(yrke, f, n)); }
+    for (const [yrke, f] of fG) { if (!f.flaggad) continue; const n = nG.get(yrke); if (!n || !n.flaggad) borta.push(rad(yrke, f, n)); }
+    const sortera = l => l.sort((a, b) => Math.abs(b.gapNu ?? b.gapForra ?? 0) - Math.abs(a.gapNu ?? a.gapForra ?? 0));
+    const nuKlar = new Map(nu.punkter.map(p => [p.id, p.klar]));
+    const kvarFranForra = forra.punkter.filter(p => !p.klar).map(p => ({ ...p, finnsNu: nuKlar.has(p.id), klarNu: nuKlar.get(p.id) === true }));
+    return {
+        nyckeltal,
+        grupper: { kvar: sortera(kvar), nya: sortera(nya), borta: sortera(borta), antalForra: forra.grupper.length, antalNu: nu.grupper.length },
+        punkter: { totaltForra: forra.punkter.length, klaraForra: forra.punkter.filter(p => p.klar).length,
+                   totaltNu: nu.punkter.length, klaraNu: nu.punkter.filter(p => p.klar).length, kvarFranForra },
+        samma_k: forra.k === nu.k,
+    };
+}
+
+    return { byggArsbokslut, valideraArsbokslut, jamforArsbokslut };
+})();
+const _abBygg = __mirrorArsbokslut.byggArsbokslut;
+const _abValidera = __mirrorArsbokslut.valideraArsbokslut;
+const _abJamfor = __mirrorArsbokslut.jamforArsbokslut;
+
 // ---- speglar src/lib/organisationspaket.js ----
 const __mirrorOrganisationspaket = (() => {
     // importer ur tidigare speglade lib-moduler
@@ -11701,7 +11836,7 @@ document.addEventListener('keydown', e => {
  *   paket: any, paketInbakat: null|{skapad:string, organisation:string, verktygsversion:string, verktygssha:string, text:string}, isDemo: boolean,
  *   prioConfig: {atgardThreshold: number, akutMinN: number, bevakaThreshold: number, analyseraThreshold: number, [k: string]: any},
  *   prioWeights: {avvikelse: number, volym: number, jamstalldhet: number, [k: string]: any}, costSettings: {[k: string]: any},
- *   rapportUrval: {ordning: string[], med: string[]}|null, rapportTabeller: any[], perBasRecept: any,
+ *   rapportUrval: {ordning: string[], med: string[]}|null, rapportTabeller: any[], perBasRecept: any, forraArsbokslut: any,
  *   bristAids: Set<string>, scenarios: any[], snapshot: any, profile: {[k: string]: any},
  *   filnamn: {data: string|null, policy: string|null, statistik: string|null}, kTroskel: number,
  *   paketLas: {kTroskelLagst: number|null, inaktivitetMin: number|null, smaGrupperIExport: boolean},
@@ -11740,6 +11875,7 @@ const state = {
     bristAids: new Set(),         // E: AID-koder markerade som bristyrke
     scenarios: [],                // I: sparade scenarion (max 5)
     snapshot: null,         // för A/B-jämförelse
+    forraArsbokslut: null,  // förra årets bokslut ur en inläst konfigurationsfil (ADR-54, src/lib/arsbokslut.js)
     profile: { ...DEFAULT_PROFILE },
     filnamn: { data: null, policy: null, statistik: null },   // filrutornas status (ADR-36)  // #14 lokalkalibrering
     kTroskel: K_STANDARD,             // minsta gruppstorlek för redovisning (ADR-38); ändras bara av sattKTroskel()
@@ -13590,6 +13726,8 @@ function buildConfigSnapshot() {
         bes8: (typeof _bes8Areas === 'function' ? _bes8Areas() : [])
             .map(a => ({ n: a.n, status: a.status, note: a.note })),
         actionChecklistDone: Array.from(state._actionChecklistDone || []),
+        // Årsbokslutet (ADR-54): årets k-skyddade sammandrag, eller det inlästa när inget underlag finns.
+        arsbokslut: (typeof byggArsbokslutNu === 'function' ? byggArsbokslutNu() : null) || state.forraArsbokslut || null,
         orgName: orgNamn(''),
         jmfNamn: jmfNamn(''),
         strukturNarrative: (() => {
@@ -13787,6 +13925,11 @@ function applyConfigSnapshot(cfg) {
         if (giltiga.length < cfg.rapportTabeller.length) varningar.push(`${cfg.rapportTabeller.length - giltiga.length} egna tabeller i filen gick inte att läsa och hoppas över.`);
         tmp.rapportTabeller = giltiga;
     }
+    if (cfg.arsbokslut != null) {
+        const a = typeof _abValidera === 'function' ? _abValidera(cfg.arsbokslut) : null;
+        if (!a) varningar.push('Filens årsbokslut gick inte att läsa och hoppas över.');
+        else tmp.arsbokslut = a;
+    }
     if (cfg.perBasRecept != null) {
         if (typeof cfg.perBasRecept !== 'object') throw new Error('perBasRecept måste vara ett objekt.');
         tmp.perBasRecept = _pbValideraRecept(cfg.perBasRecept);
@@ -13825,6 +13968,7 @@ function applyConfigSnapshot(cfg) {
     });
     if (typeof bes8Uppdatera === 'function') bes8Uppdatera();
     if (tmp.actionChecklistDone) state._actionChecklistDone = new Set(tmp.actionChecklistDone);
+    if (tmp.arsbokslut) { state.forraArsbokslut = tmp.arsbokslut; if (typeof renderArsjamforelse === 'function') medExportLage(() => renderArsjamforelse()); }
     // Bara namn som finns i filen sätts — en fil utan namn ska inte radera paketets namn.
     if (tmp.orgName) sattOrgNamn(tmp.orgName);
     if (tmp.jmfNamn) sattJmfNamn(tmp.jmfNamn);
@@ -15680,6 +15824,7 @@ function _rensaAllData({ inbakat = true } = {}) {
     state._dataHeaders = [];
     state.scenarios = [];
     state.snapshot = null;
+    state.forraArsbokslut = null;
     state.dataAudit = null;
     state.bristAids = new Set();
     state.rapportUrval = null;
@@ -17041,7 +17186,7 @@ function _renderTabContent(target) {
     else if (target === "likvardighet" && (d.length || state.statistik.length)) renderLikvardighet();
     else if (target === "utforska"     && d.length) { generateRapport(); renderExplorer(); }
     else if (target === "lonepolitik"  && d.length) renderLonepolitik();
-    else if (target === "dokumentera") medExportLage(() => { if (d.length) renderKvalitetssakring(); renderRapportunderlag(); renderExportBesked(); });   // allt här lämnar verktyget (ADR-51)
+    else if (target === "dokumentera") medExportLage(() => { if (d.length) renderKvalitetssakring(); renderRapportunderlag(); renderExportBesked(); if (typeof renderArsjamforelse === 'function') renderArsjamforelse(); });   // allt här lämnar verktyget (ADR-51)
     else if (target === "dashboard" && d.length) renderOversiktDelar();
     else if (target === "info")  renderInfoTab();
     else if (target === "handlingsplan") renderHandlingsplanSeed();
@@ -27731,6 +27876,77 @@ _urvalPanel?.addEventListener('keydown', e => {
     lista.querySelector('summary')?.focus();
     e.stopPropagation();
 });
+// SPDX-License-Identifier: MIT
+// Copyright 2026 Felix Jansson
+// ---- Årsbokslut och jämförelse med förra året (ADR-54) ----
+// Konfigurationsfilen bär ett k-skyddat årsbokslut (src/lib/arsbokslut.js). Läses förra årets fil in ligger dess
+// bokslut i state.forraArsbokslut, och panelen i Dokumentera & exportera visar skillnaden mot årets. Allt byggs i
+// exportläget (ADR-51): bokslutet lämnar verktyget i filen.
+
+/** Årets bokslut ur det inlästa underlaget, eller null utan underlag. */
+function byggArsbokslutNu() {
+    if (!state.data.length || typeof _abBygg !== 'function') return null;
+    return medExportLage(() => {
+        const d = getData();
+        const k = kTroskel();
+        const bild = buildAnalysisSnapshot();
+        const lika = typeof _ruLikaArbeteGrupper === 'function' ? _ruLikaArbeteGrupper(d, { k, troskel: 5 }) : { grupper: [] };
+        /** @type {any} */ let lv = null;
+        try { lv = typeof likvardighetResultat === 'function' ? likvardighetResultat() : null; } catch (_e) { lv = null; }
+        const { par, utelamnade } = _parForRedovisning(lv && lv.pairs);
+        const klara = state._actionChecklistDone || new Set();
+        const punkter = typeof buildActionChecklist === 'function' ? buildActionChecklist() : [];
+        return _abBygg({
+            ar: new Date().getFullYear(), skapat: new Date().toISOString().slice(0, 10), k, verktyg: `v${APP_VERSION}`,
+            nyckeltal: { n: bild.n, nKv: bild.nKv, nMa: bild.nMa, medKv: bild.medianKv, medMa: bild.medianMa,
+                kvotPct: bild.rawGapPct == null ? null : 100 + bild.rawGapPct, oforklaratPct: bild.unexplainedGapPct,
+                antalFlaggade: lika.grupper.filter(g => g.flaggad).length, antalKandidatpar: par.length, utelamnadePar: utelamnade },
+            grupper: lika.grupper.filter(g => !g.samladMedian).map(g => ({ yrke: g.yrke, nKv: g.nKv, nMa: g.nMa, medKv: g.medKv, medMa: g.medMa, gapPct: g.kvot * 100 - 100, flaggad: g.flaggad })),
+            punkter: punkter.map(p => ({ id: p.id, titel: p.titel, kategori: p.kategori, klar: klara.has(p.id) })),
+        });
+    });
+}
+
+/** Panelen Jämförelse med förra året i Dokumentera & exportera. */
+function renderArsjamforelse() {
+    const host = document.getElementById('arsjamforelse');
+    if (!host) return;
+    const forra = state.forraArsbokslut;
+    if (!forra) {
+        host.innerHTML = '<p class="text-dampad-sm">Inget årsbokslut inläst. Läs in förra årets konfigurationsfil (<em>Ladda konfiguration</em> ovan), så visas skillnaden här. Årets bokslut följer med när du sparar konfigurationen.</p>';
+        return;
+    }
+    const huvud = `<p class="text-dampad-sm marg-0-0-8">Förra årets bokslut: ${esc(String(forra.ar))}, sparat ${esc(forra.skapat)}${forra.verktyg ? ` (${esc(forra.verktyg)})` : ''}, minsta gruppstorlek ${forra.k}.</p>`;
+    if (!state.data.length) { host.innerHTML = huvud + '<p class="text-dampad-sm">Läs in årets lönefil för att se skillnaden.</p>'; return; }
+    const nu = byggArsbokslutNu();
+    const j = nu && typeof _abJamfor === 'function' ? _abJamfor(forra, nu) : null;
+    if (!j) { host.innerHTML = huvud; return; }
+    const kr = v => Math.round(v).toLocaleString('sv-SE') + ' kr';
+    const skriv = (v, typ) => v == null ? '–' : typ === 'kr' ? kr(v) : typ === 'pct' ? svPct(v, 1) : String(Math.round(v)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    const diff = (v, typ) => {
+        if (v == null) return '<span class="f-dampad">–</span>';
+        const tkn = v > 0 ? '+' : v < 0 ? '−' : '±';
+        return `<span class="halvfet">${tkn}${skriv(Math.abs(v), typ === 'pct' ? 'pct' : typ)}${typ === 'pct' ? '-enheter' : ''}</span>`;
+    };
+    const nyckeltal = `<table class="data-table st-088"><thead><tr><th>Mått</th><th class="t-hoger">${forra.ar}</th><th class="t-hoger">${nu.ar}</th><th class="t-hoger">Skillnad</th></tr></thead><tbody>`
+        + j.nyckeltal.map(r => `<tr><td>${esc(r.etikett)}</td><td class="t-tal">${skriv(r.forra, r.typ)}</td><td class="t-tal">${skriv(r.nu, r.typ)}</td><td class="t-tal">${diff(r.diff, r.typ)}</td></tr>`).join('')
+        + '</tbody></table>';
+    const gruppRad = g => `<tr><td>${esc(g.yrke)}</td><td class="t-tal">${g.gapForra == null ? '–' : svPct(g.gapForra, 1)}</td><td class="t-tal">${g.gapNu == null ? '–' : svPct(g.gapNu, 1)}</td></tr>`;
+    const grupptabell = (rubrik, lista, tom) => `<h4 class="fs-sm marg-10-0-4">${esc(rubrik)} (${lista.length})</h4>` + (lista.length
+        ? `<table class="data-table st-088"><thead><tr><th>Yrkesgrupp</th><th class="t-hoger">Gap ${forra.ar}</th><th class="t-hoger">Gap ${nu.ar}</th></tr></thead><tbody>${lista.map(gruppRad).join('')}</tbody></table>`
+        : `<p class="text-dampad-sm marg-0">${esc(tom)}</p>`);
+    const g = j.grupper;
+    const grupper = grupptabell('Flaggade båda åren', g.kvar, 'Ingen yrkesgrupp är flaggad båda åren.')
+        + grupptabell('Nya flaggade', g.nya, 'Inga nya flaggade yrkesgrupper.')
+        + grupptabell('Inte längre flaggade', g.borta, 'Ingen yrkesgrupp har slutat vara flaggad.');
+    const p = j.punkter;
+    const kvar = p.kvarFranForra;
+    const punkter = `<p class="text-dampad-sm marg-8-0-4">Förra året var ${p.klaraForra} av ${p.totaltForra} punkter i Att göra avbockade; i år ${p.klaraNu} av ${p.totaltNu}.</p>`
+        + (kvar.length ? `<p class="text-dampad-sm marg-0-0-4">Förra årets öppna punkter (${kvar.length}):</p><ul class="fs-sm marg-0-0-8">${kvar.map(q => `<li>${esc(q.titel || q.id)}${q.klarNu ? ' — <strong>klar i år</strong>' : q.finnsNu ? ' — fortfarande öppen' : ' — finns inte längre i listan'}</li>`).join('')}</ul>` : '<p class="text-dampad-sm marg-0">Förra året hade inga öppna punkter.</p>');
+    host.innerHTML = huvud + (j.samma_k ? '' : `<p class="k-mask-note">Bokslutet sparades med minsta gruppstorlek ${forra.k}; i år gäller ${nu.k}. Yrkesgrupper jämförs bara där båda könen når respektive års gräns.</p>`)
+        + `<h4 class="fs-sm marg-6-0-4">Nyckeltal</h4>${nyckeltal}<h4 class="fs-sm marg-12-0-2">Lika arbete</h4>${grupper}<h4 class="fs-sm marg-12-0-2">Att göra</h4>${punkter}`
+        + `<p class="text-dampad-xs marg-8-0-0">Lönemått bara för yrkesgrupper där båda könen når minsta gruppstorlek; gapet är kvinnors medianlön mot mäns, negativt när kvinnor ligger lägre.</p>`;
+}
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 // ====================================================================

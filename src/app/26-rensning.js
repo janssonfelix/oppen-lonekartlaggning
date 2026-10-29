@@ -80,6 +80,7 @@ function _rensaAllData({ inbakat = true } = {}) {
     state._dataHeaders = [];
     state.scenarios = [];
     state.snapshot = null;
+    state.forraArsbokslut = null;
     state.dataAudit = null;
     state.bristAids = new Set();
     state.rapportUrval = null;

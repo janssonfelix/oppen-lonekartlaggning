@@ -444,7 +444,8 @@ describe('organisationspaket: läs in och skapa', () => {
         const cfg = w.__buildConfigSnapshot();
         expect(cfg.organisationspaket).toEqual({ organisation: 'Exempelregionen', skapat: '2026-10-01' });
         expect(JSON.stringify(cfg)).not.toContain('Regionens lönepolicy');
-        expect(JSON.stringify(cfg)).not.toContain('100 Yrke');
+        // Yrkets namn finns i lönefilen och får stå i årsbokslutet (ADR-54); paketets egna tal får inte.
+        expect(JSON.stringify(cfg)).not.toMatch(/27000|33000|"andelKv"/);
     });
     it('paket inläst efter lönefilen nollställer sparade likvärdighetspar', () => {
         const w = createAppWindow();

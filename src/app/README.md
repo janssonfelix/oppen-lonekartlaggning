@@ -90,6 +90,7 @@ direkt vid laddning (händelsekopplingar, `const`) körs i den här ordningen.
 | `70-utforska.js` | Utforska: kontroller, tabell, små grupper, klick till gruppdossier |
 | `71-utforska-figur.js` | Utforska: figur per diagramtyp ur pivotmodellen (`src/lib/utforska.js`) |
 | `72-utforska-urval.js` | Utforska: villkorsbyggaren för urval och gruppvillkor (`src/lib/urval.js`) |
+| `73-arsbokslut.js` | Årsbokslutet och panelen *Jämförelse med förra året* i Dokumentera (`src/lib/arsbokslut.js`, ADR-54) |
 | `75-lonepolitik.js` | Lönepolitik: analys mot referensen, bandkartan, könens läge i spannet (hantel) och fördelningen i spannets tredjedelar per kön, efterlevnaden |
 | `80-gruppdossier.js` | Gruppdossier — en yrkesgrupp på en sida (modal), med antal per ansvarsgrupp |
 | `85-robusthet-fardigcheck.js` | Robusthetspanel (kvinnotröskel, prioriteringsreferens) + färdigcheck |

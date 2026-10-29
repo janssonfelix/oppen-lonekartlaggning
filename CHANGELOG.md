@@ -26,6 +26,11 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ### Analys
 
+- **Jämförelse med förra året (ADR-54).** Konfigurationsfilen bär ett årsbokslut: nyckeltal, en rad per yrkesgrupp
+  där båda könen når minsta gruppstorlek, och Att göra-punkternas läge — inga individer. Spara konfigurationen när
+  årets kartläggning är klar och läs in den nästa år, så visar *Jämförelse med förra året* under *Spara och läsa in
+  arbetet* nyckeltalen sida vid sida, vilka yrkesgrupper som är flaggade båda åren, nya och inte längre flaggade, och
+  vilka av förra årets öppna punkter som är klara.
 - **All personal ingår, även BAS K och uppåt.** Begränsningen till BAS A–J är borttagen (ADR-21 upphävd):
   chefsnivåerna läses in och analyseras som alla andra intervall, i stället för att bara räknas. Rimlighetskontrollen
   kräver bara att BAS är en bokstav. Efter användartest: lönekartläggningen ska omfatta hela organisationen.
@@ -100,7 +105,8 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   exporten ritade i exportläget, och Lika arbetes minne har ett rum per tröskel, så att ett lägesbyte inte räknar
   om något. På 55 000 rader gick fliken från 12 s till omkring 3 s. Ett byte av minsta gruppstorlek ritar inte
   Översikt två gånger, bygger Att göras lista en gång för Att göra och processöversikten, och räknar om
-  bootstrap-KI och styrkan bara när det statistiska golvet ändras. Att göra kör regressionen en gång i stället för
+  bootstrap-KI och styrkan bara när det statistiska golvet ändras — och då i bakgrunden efter omritningen, som vid
+  inläsning. Att göra kör regressionen en gång i stället för
   fyra och skickar resultatet vidare till underlagsbedömningen (ingen cache, ADR-17 står kvar).
 
 ### Gränssnitt

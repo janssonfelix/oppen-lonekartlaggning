@@ -63,14 +63,15 @@ describe('k-tröskeln styr varje flik', () => {
         expect(r.find(x => x.bas === 'E').status).toBe('too_few');
         expect(r.find(x => x.bas === 'S1').status).not.toBe('too_few');
     });
-    it('10 → 25 → 10 ger samma flikar som före ändringen (inga kvarlevande cacher)', () => {
+    it('10 → 25 → 10 ger samma flikar som före ändringen (inga kvarlevande cacher)', async () => {
         const w = fonster(null);
         const bild = () => FLIKAR.map(f => { w.__renderTabContent(f); return normalisera(w.document.getElementById('view-' + f)?.textContent || ''); });
         // Grundtillstånd som efter en vanlig inläsning (32-filinlasning.js): också Översiktens delar är ritade.
         w.eval('invalidateStatCaches(); renderActionChecklist(); renderProcessTracker(); renderOutliers(); renderDataValidationReport(); refreshCurrentTab();');
         const fore = bild();
-        w.eval('sattKTroskel(25, { fraga: false })'); bild();
-        w.eval('sattKTroskel(10, { fraga: false })');
+        // Golvet ändras (10 → 25 → 10): bootstrap-KI och styrkan räknas om i bakgrunden efter omritningen; vänta in den.
+        w.eval('sattKTroskel(25, { fraga: false })'); await w.eval('_skattningarIBakgrunden()'); bild();
+        w.eval('sattKTroskel(10, { fraga: false })'); await w.eval('_skattningarIBakgrunden()');
         const efter = bild();
         // Vid en skillnad: säg vilken flik och visa stället, i stället för två hela sidtexter.
         const skillnader = FLIKAR.map((f, i) => {
