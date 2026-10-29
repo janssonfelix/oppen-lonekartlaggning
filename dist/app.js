@@ -23351,13 +23351,13 @@ function renderBlinderOaxacaCard() {
                     <div class="finstilt">n = ${r.nKv} kvinnor + ${r.nMa} män</div>
                 </div>
                 <div class="bak-ok-bg rund-8 pad-14 ta-mitt">
-                    <div class="etikett-versal">Förklarat av ålder och BAS</div>
-                    <div class="farg-ok fs-nyckeltal fw-700 marg-t-4">${svTal(Math.abs(forklarat), 1)} procentenheter</div>
+                    <div class="etikett-versal">Förklarat av ålder och BAS, procentenheter</div>
+                    <div class="farg-ok fs-nyckeltal fw-700 marg-t-4">${svTal(Math.abs(forklarat), 1)}</div>
                     <div class="finstilt">≈ ${svPct(explainedPctOfGap, 0)} av rågapet</div>
                 </div>
                 <div class="bak-varning-bg rund-8 pad-14 ta-mitt">
-                    <div class="etikett-versal">Oförklarat</div>
-                    <div class="farg-varning fs-nyckeltal fw-700 marg-t-4">${svTal(Math.abs(oforklarat), 1)} procentenheter</div>
+                    <div class="etikett-versal">Oförklarat, procentenheter</div>
+                    <div class="farg-varning fs-nyckeltal fw-700 marg-t-4">${svTal(Math.abs(oforklarat), 1)}</div>
                     <div class="finstilt">≈ ${svPct(unexplainedPctOfGap, 0)} av rågapet</div>
                 </div>
             </div>
