@@ -229,7 +229,7 @@ adaptern verkligen delegerar vaktas av `tests/drift.test.js`:
   rätt grupp. Utskriftsfönstret för checklistorna (`printScaffoldView`) läser `:root` och allt från `.dold` till
   stilmallens slut ur den körande stilmallen och lägger in det som byggt stilark (`adoptedStyleSheets`): ett `<style>`-element
   som skriptet skapar blockeras av den ärvda CSP:n (`style-src-elem`), så fönstret var tidigare helt ostilat.
-- **Tester:** Vitest — 2451 tester i 69 filer: rena `src/lib/`-moduler, CSV-parsning, jsdom-röktest
+- **Tester:** Vitest — 2450 tester i 69 filer: rena `src/lib/`-moduler, CSV-parsning, jsdom-röktest
   av varje vy (ADR-7; `tests/smoke.test.js` med det delade fönstret och sju `tests/smoke-*.test.js` per
   område), k-tröskeln i åtta `tests/ktroskel*.test.js` med riggen i `tests/helpers/ktroskel-rigg.js`,
   gränssnittet i `tests/granssnitt*.test.js` (riggen `tests/helpers/granssnitt-rigg.js`) och diagramvyerna i
@@ -1017,7 +1017,7 @@ det alfabetiskt första intervallet i urvalet som referens. Tidigare var BAS ett
 vilket antog att varje bokstavssteg är värt lika många procent i lön; det stämmer sällan, och ett felaktigt
 linjärt antagande lämnar BAS-nivåskillnader kvar i det "oförklarade" gapet. Med indikatorer får varje intervall
 sin egen nivå, och modellen rapporterar nivån per BAS mot referensen (`basEffekter`, `basRef`) i stället för en
-effekt "per BAS-steg". Reservsteget kön + ålder finns kvar när fullmodellen är singulär. **Orört:** Blinder-Oaxaca
+effekt "per BAS-steg". Reservsteget kön + ålder finns kvar när fullmodellen är singulär. **Orört (till ADR-53):** Blinder-Oaxaca
 behåller den linjära rangen, eftersom uppdelningen per komponent (endowment/coefficient/interaction) blir otydlig
 spridd över ett dussin indikatorer; kvantilregressionen och per-BAS-regressionerna (som har BAS i urvalet, inte i
 modellen) berörs inte. Livscykelmodellen använde redan indikatorer. Talen i golden-facit ändrades av bytet.
@@ -1146,6 +1146,19 @@ BAS-intervall följer ett recept (`state.perBasRecept`, `valideraPerBasRecept` i
 eller sektor), rader, mått, åldersgränser och summeringstabeller; standardreceptet är arbetsgivarnas utkast och sparas
 som null. Båda bärs av konfigurationsfilen och nollställs av *Rensa all data*.
 
+**ADR-53 — Blinder-Oaxaca med BAS som indikatorer.** Beslut 2026-10-29, upphäver undantaget i ADR-44. Uppdelningen
+(`blinderOaxaca` i `src/lib/regression.js`) kodar BAS som en indikator per intervall, som huvudregressionen, så att
+kortets förklarade och oförklarade del vilar på samma variabler som huvudtalet; skillnaden mellan dem är då bara att
+uppdelningen skattar kvinnors och mäns lönesättning var för sig. Referensintervallet är det alfabetiskt första som
+finns hos båda könen (huvudmodellen tar det första i urvalet; här måste båda ekvationerna ha ett intervall med alla
+indikatorer noll). Ett intervall som bara finns hos ett kön får en indikator bara i det könets ekvation och β = 0 i
+det andra könets; dess bidrag hamnar därmed i samspelet, som räknas som oförklarat — det är en redovisningsregel,
+inte en skattning av vad intervallet "borde" betala det kön som saknas. Komponenterna redovisas per variabel som
+konstant, ålder och BAS, där BAS är summan över indikatorerna (det som ADR-44 befarade skulle bli otydligt: ett
+dussin rader). Referensvärdena i `tests/fixtures/stat-referens-varden.json` är omräknade med statsmodels
+(`tests/fixtures/ref-stat-referens.py`); fixturen har ett intervall som bara finns hos männen, så regeln prövas.
+Kvantilregressionen behåller BAS-rangen (den är inte en uppdelning).
+
 ## 9. Öppna punkter
 
 Kända brister och obesvarade frågor, så att de inte lever bara i en konversationstråd.
@@ -1198,12 +1211,11 @@ Kända brister och obesvarade frågor, så att de inte lever bara i en konversat
     procent av mäns* används där den är standard (Översikt, Ålder & karriär, direktivets tabeller). Enda
     undantaget är EU-lönerapportens blad med direktivets tecken (art. 9), utskrivet i rubriken.
 9c. **Ålder & karriär ordnad efter tre frågor** (vid samma ålder; över karriären; åldersstruktur), med ett
-    spridningsdiagram där hela urvalets trend är ett valbart lager. Täthetskurvorna per BAS står kvar i fliken
-    för att utskriften använder dem; flyttas de behöver utskriften en annan bild.
+    spridningsdiagram där hela urvalets trend är ett valbart lager. Täthetskurvorna per BAS är borta ur fliken
+    (lönespridningen per BAS och kön finns som lådor i Lika arbete, och utskriften använder den bilden).
 9d. **Dekomponeringen visas som en bild:** trappan med yrkesgruppssteget efter huvudtalet, förklaringsbudgeten
     under den, steglistan som skärmläsaralternativ. Livscykelns nivåer per BAS kommer ur modellens
-    BAS-koefficienter (`basFaktor`). Kvar att besluta: Blinder-Oaxaca på BAS-indikatorer i stället för rang
-    (ADR-44 undantog den), så att uppdelningen vilar på samma modell som huvudtalet.
+    BAS-koefficienter (`basFaktor`). Blinder-Oaxaca kodar BAS som indikatorer sedan ADR-53.
 
 **Export:**
 10. **Svenskt talformat:** jämförelseexporten (`64-jamforelse-export.js`) och CSV-exporternas tolkning (`_CSV_TALLIKT`) är inte

@@ -115,16 +115,16 @@ function renderKon(bas) {
     _setDiagramKNot('chart-kon-scatter', [utan ? `Trendlinje och konfidensband visas inte för ${utan}: ${skal}.` : '',
         trendAllaVald && !trendAllaOk ? _demoTrendNot(df.length) : '', _individNot(dolda)].filter(Boolean).join(' '));
     _setDiagramKNot('chart-kon-boxplot', utan ? `Lådan visas inte för ${utan}: ${skal}.` : '');
-    renderKonTathet();
     renderKonMultiplar();
     renderKonHistogram(dataKv, dataMa, scope2);
     renderKonAlderGap(dataKv, dataMa, scope2);
 }
 
-// ---- Lönefördelningen per BAS-intervall som täthetskurvor (lådmärkets form 'fiol') ----
-// En kurva per BAS-intervall — eller per kön i varje intervall — över alla i urvalet, oberoende av vilket
-// BAS-intervall som är valt ovanför. Visar hur intervallens löner överlappar. En kurva är ett aggregat som lådan:
-// en individ är `liten` när intervallet, eller könet i intervallet, är under tröskeln, och ritas då inte.
+// ---- Lönefördelningen per BAS-intervall (lådmärket: lådor, täthetskurvor eller kvantilpunkter) ----
+// En figur per BAS-intervall — eller per kön i varje intervall — över alla i urvalet. Ritas som lådor i Lika arbete
+// (*Lönespridning per BAS-intervall och kön*); täthetskurvorna i Ålder & karriär är borttagna (översynen 2026-10-29),
+// formerna finns kvar för andra anropare. En figur är ett aggregat som lådan: en individ är `liten` när intervallet,
+// eller könet i intervallet, är under tröskeln, och ritas då inte.
 function _konTathetFigur(rader, perKon, k = kTroskel(), form = 'fiol') {
     const kon = r => (r.kon && r.kon.includes('kvinna') ? 'Kvinna' : (r.kon === 'man' || r.kon === 'män') ? 'Man' : null);
     const giltiga = rader.filter(r => r.lon > 0 && r.bas != null && r.bas !== '' && (!perKon || kon(r)));
@@ -148,19 +148,7 @@ function _konTathetFigur(rader, perKon, k = kTroskel(), form = 'fiol') {
     return { utelamnade, figur: { beskrivning: `Lönefördelningen per BAS-intervall${perKon ? ' och kön' : ''} som täthetskurvor: kurvan är bredast där flest löner ligger. Strecken är median och kvartiler. Kurvan slutar vid morrhårens ändar; enstaka löner långt utanför visas inte.`,
         legend: perKon ? undefined : false, x: { skala: 'band', ordning }, y: { skala: 'linjar', titel: 'Månadslön', format: 'kr' }, hojd: 420, lager } };
 }
-function renderKonTathet() {
-    const el = document.getElementById('chart-kon-tathet');
-    if (!el) return;
-    const perKon = /** @type {HTMLInputElement} */ ((document.getElementById('kon-tathet-visa') || {})).value === 'kon';
-    const form = /** @type {HTMLInputElement} */ ((document.getElementById('kon-tathet-form') || {})).value === 'kvantiler' ? 'kvantiler' : 'fiol';
-    const { figur, utelamnade } = _konTathetFigur(getData(), perKon, kTroskel(), form);
-    if (figur.lager.length) ritaFigur(el, figur, { tomtext: `Inget BAS-intervall har minst ${kTroskel()} personer${perKon ? ' av ett kön' : ''}.` }); else rensaFigur(el);
-    const not = document.getElementById('kon-tathet-not');
-    if (not) { not.hidden = !utelamnade.length; not.textContent = utelamnade.length ? `Visas inte, färre än ${kTroskel()} personer: ${utelamnade.join(', ')}.` : ''; }
-}
-document.getElementById('kon-tathet-visa')?.addEventListener('change', () => renderKonTathet());
 document.getElementById('kon-trend-alla')?.addEventListener('change', () => { const s = /** @type {HTMLInputElement|null} */ (document.getElementById('bas-select-kon')); if (s) renderKon(s.value); });
-document.getElementById('kon-tathet-form')?.addEventListener('change', () => renderKonTathet());
 
 // ---- Löneklasser: indelningen för histogrammet ----
 // Klassbredden väljs bland jämna steg så att spannet ger ungefär `mal` klasser. Spannet mäts mellan 5:e och 95:e

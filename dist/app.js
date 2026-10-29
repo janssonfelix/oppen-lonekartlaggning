@@ -4054,38 +4054,31 @@ function quantileRegression(X, y, tau, maxIter = 60, tol = 1e-5) {
  *    karakteristika (ålder, BAS-fördelning) värderade till kvinnornas
  *    avkastning. Detta är den "förklarade" delen.
  * "Coefficient" = män får olika avkastning på samma karakteristika.
- *    Detta är den klassiskt "diskrimineringsindikerande" delen.
  * "Interaction" = samspel mellan skillnader i karakteristika och
- *    skillnader i avkastning. Mindre lätt att tolka — räknas vanligen
- *    som "oförklarat" i en tredelad uppdelning.
+ *    skillnader i avkastning. Räknas som "oförklarat" i en tredelad uppdelning.
  *
- * Klassisk presentation:
+ * Klassisk presentation (Medlingsinstitutet använder denna form):
  *   Förklarat   = Endowment
  *   Oförklarat  = Coefficient + Interaction
  *
- * Standardpresentation i akademiska och
- * offentliga utredningar (Medlingsinstitutet använder denna form).
- *
- * Modell: ln(lön) ~ ålder (centrerad) + BAS-rang (centrerad)
- * — körs separat för kvinnor respektive män.
- *
- * BAS behålls här som linjär rang (bokstavens plats), till skillnad från huvudregressionen
- * och den sekventiella dekomponeringen som använder indikatorvariabler: med en indikator
- * per BAS skulle uppdelningen per komponent (endowment/coefficient/interaction) spridas
- * över ett dussin kolumner och bli otydlig att redovisa. Avsiktligt orört.
+ * Modell: ln(lön) ~ ålder (centrerad) + en indikator per BAS-intervall — samma kodning som huvudregressionen
+ * (ADR-44, ADR-53) — körd separat för kvinnor respektive män. Referensintervallet är det alfabetiskt första
+ * som finns hos BÅDA könen; ett intervall som bara finns hos ett kön får en indikator bara i det könets modell
+ * (det andra könets koefficient är 0), så dess bidrag hamnar i samspelet. Komponenterna redovisas per
+ * variabel som intercept, ålder och BAS, där BAS är summan över indikatorerna.
  *
  * @param {any[]} rows - råradernas poster; filtreras här på lön, ålder och kön.
- * @param {{golv:number, rang?:(basList:string[]) => (bas:string) => number}} opts
- *   golv = statGolv(); rang = BAS-rangfunktionen (standard basRangFn ur likvardighet.js).
+ * @param {{golv:number}} opts golv = statGolv().
  * @returns {null | {
  *   rawGapPct:number, explainedPct:number, unexplainedPct:number,
  *   endowmentPct:number, coefficientPct:number, interactionPct:number,
  *   components:{age:{q,u,i}, bas:{q,u,i}, intercept:{q,u,i}},
+ *   basRef:string, basIndikatorer:string[],
  *   n:number, nKv:number, nMa:number,
  *   _raw:{rawGapLog:number, q:number, u:number, i:number}
  * }}
  */
-function blinderOaxaca(rows, { golv, rang = basRangFn }) {
+function blinderOaxaca(rows, { golv }) {
     const raw = rows.filter(d => d.lon > 0 && d.alder > 0 &&
         (d.kon.includes('kvinna') || d.kon === 'man' || d.kon === 'män'));
     if (raw.length < 50) return null;
@@ -4093,62 +4086,56 @@ function blinderOaxaca(rows, { golv, rang = basRangFn }) {
     const ma = raw.filter(d => d.kon === 'man' || d.kon === 'män');
     if (kv.length < golv || ma.length < golv) return null;
 
-    // Bygg basRank på poolad data (samma som huvudregression).
-    const basList = [...new Set(raw.map(d => d.bas))].sort();
-    const basRank = {};
-    // BAS-rang = bokstavens plats (A=1); ett steg är alltid ett BAS-intervall (se §5 i teknisk-plan.md).
-    const rangFn = rang(basList);
-    basList.forEach(b => { basRank[b] = rangFn(b); });
-    const ranks = basList.map(b => basRank[b]);
-    const basMean = ranks.reduce((s, r) => s + r, 0) / ranks.length;
     const ageMean = raw.reduce((s, d) => s + d.alder, 0) / raw.length;
+    const basList = [...new Set(raw.map(d => d.bas))].sort();
+    const harKv = new Set(kv.map(d => d.bas)), harMa = new Set(ma.map(d => d.bas));
+    const basRef = basList.find(b => harKv.has(b) && harMa.has(b));
+    if (basRef == null) return null;
+    const indikatorer = basList.filter(b => b !== basRef);
 
-    // Designmatris för en grupp G: X = [1, ålder − ageMean, basRank − basMean]
-    const buildXy = group => {
-        const X = group.map(d => [1, d.alder - ageMean, (basRank[d.bas] || basMean) - basMean]);
-        const y = group.map(d => Math.log(d.lon));
-        return { X, y };
-    };
-    const xyKv = buildXy(kv), xyMa = buildXy(ma);
-    const fitKv = fitOLS(xyKv.X, xyKv.y);
-    const fitMa = fitOLS(xyMa.X, xyMa.y);
-    if (!fitKv || !fitMa) return null;
+    // Designmatris för en grupp: [1, ålder − ageMean, indikator per BAS utom referensen]. En indikator som är noll
+    // för alla i gruppen (intervallet saknas hos könet) lämnas utanför gruppens skattning och får β = 0.
+    const kolumner = group => indikatorer.map(b => group.some(d => d.bas === b));
+    const design = (group, med) => ({
+        X: group.map(d => [1, d.alder - ageMean, ...indikatorer.filter((_, j) => med[j]).map(b => (d.bas === b ? 1 : 0))]),
+        y: group.map(d => Math.log(d.lon)) });
+    const medKv = kolumner(kv), medMa = kolumner(ma);
+    const fitK = fitOLS(design(kv, medKv).X, design(kv, medKv).y);
+    const fitM = fitOLS(design(ma, medMa).X, design(ma, medMa).y);
+    if (!fitK || !fitM) return null;
+    // Koefficienter i full längd (2 + antal indikatorer), 0 där intervallet saknas hos könet.
+    const fullBeta = (fit, med) => { const b = [fit.beta[0], fit.beta[1]]; let j = 2; for (const m of med) b.push(m ? fit.beta[j++] : 0); return b; };
+    const betaKv = fullBeta(fitK, medKv), betaMa = fullBeta(fitM, medMa);
+    const p = betaKv.length;
 
-    // Gruppmedelvärden för X (X̄)
+    // Gruppmedelvärden för X̄ i full längd.
     const meanX = group => {
-        const k = 3;
-        const out = new Array(k).fill(0);
-        for (const d of group) {
-            out[0] += 1;
-            out[1] += d.alder - ageMean;
-            out[2] += (basRank[d.bas] || basMean) - basMean;
-        }
+        const out = new Array(p).fill(0);
+        for (const d of group) { out[0] += 1; out[1] += d.alder - ageMean; indikatorer.forEach((b, j) => { if (d.bas === b) out[2 + j] += 1; }); }
         return out.map(v => v / group.length);
     };
     const xKv = meanX(kv), xMa = meanX(ma);
 
-    // Predikterad ln(lön) per grupp = X̄ · β
     const dot = (a, b) => a.reduce((s, v, i) => s + v * b[i], 0);
-    const lnKv = dot(xKv, fitKv.beta);
-    const lnMa = dot(xMa, fitMa.beta);
+    const lnKv = dot(xKv, betaKv);
+    const lnMa = dot(xMa, betaMa);
     const rawGapLog = lnMa - lnKv;
 
-    // Dekomposition per komponent (intercept, ålder, BAS-rank)
-    const labels = /** @type {const} */ (['intercept', 'age', 'bas']);
+    // Dekomposition per kolumn; BAS-indikatorerna summeras till en komponent.
     /** @type {{intercept:{q:number,u:number,i:number}, age:{q:number,u:number,i:number}, bas:{q:number,u:number,i:number}}} */
     const components = { intercept: { q: 0, u: 0, i: 0 }, age: { q: 0, u: 0, i: 0 }, bas: { q: 0, u: 0, i: 0 } };
     let qSum = 0, uSum = 0, iSum = 0;
-    for (let k = 0; k < 3; k++) {
+    for (let k = 0; k < p; k++) {
         const dx = xMa[k] - xKv[k];          // skillnad i karakteristika
-        const db = fitMa.beta[k] - fitKv.beta[k];  // skillnad i koefficient
-        const q = dx * fitKv.beta[k];        // endowment
+        const db = betaMa[k] - betaKv[k];    // skillnad i koefficient
+        const q = dx * betaKv[k];            // endowment
         const u = xKv[k] * db;               // coefficient
         const i = dx * db;                   // interaction
-        components[labels[k]] = { q, u, i };
+        const c = components[k === 0 ? 'intercept' : k === 1 ? 'age' : 'bas'];
+        c.q += q; c.u += u; c.i += i;
         qSum += q; uSum += u; iSum += i;
     }
-    // Kontroll: qSum + uSum + iSum ≈ rawGapLog
-    // (avvikelse ~1e-10 förväntas pga floating point)
+    // Kontroll: qSum + uSum + iSum ≈ rawGapLog (avvikelse ~1e-10 förväntas pga floating point)
 
     // Konvertera log-komponenter till %-skillnad: (exp(c) − 1) × 100
     const pct = c => (Math.exp(c) - 1) * 100;
@@ -4161,6 +4148,7 @@ function blinderOaxaca(rows, { golv, rang = basRangFn }) {
         explainedPct: pct(qSum),
         unexplainedPct: pct(uSum + iSum),
         components,
+        basRef, basIndikatorer: indikatorer,
         n: raw.length, nKv: kv.length, nMa: ma.length,
         // Råa log-värden för exakt summa-verifiering i tester
         _raw: { rawGapLog, q: qSum, u: uSum, i: iSum }
@@ -20707,16 +20695,16 @@ function renderKon(bas) {
     _setDiagramKNot('chart-kon-scatter', [utan ? `Trendlinje och konfidensband visas inte för ${utan}: ${skal}.` : '',
         trendAllaVald && !trendAllaOk ? _demoTrendNot(df.length) : '', _individNot(dolda)].filter(Boolean).join(' '));
     _setDiagramKNot('chart-kon-boxplot', utan ? `Lådan visas inte för ${utan}: ${skal}.` : '');
-    renderKonTathet();
     renderKonMultiplar();
     renderKonHistogram(dataKv, dataMa, scope2);
     renderKonAlderGap(dataKv, dataMa, scope2);
 }
 
-// ---- Lönefördelningen per BAS-intervall som täthetskurvor (lådmärkets form 'fiol') ----
-// En kurva per BAS-intervall — eller per kön i varje intervall — över alla i urvalet, oberoende av vilket
-// BAS-intervall som är valt ovanför. Visar hur intervallens löner överlappar. En kurva är ett aggregat som lådan:
-// en individ är `liten` när intervallet, eller könet i intervallet, är under tröskeln, och ritas då inte.
+// ---- Lönefördelningen per BAS-intervall (lådmärket: lådor, täthetskurvor eller kvantilpunkter) ----
+// En figur per BAS-intervall — eller per kön i varje intervall — över alla i urvalet. Ritas som lådor i Lika arbete
+// (*Lönespridning per BAS-intervall och kön*); täthetskurvorna i Ålder & karriär är borttagna (översynen 2026-10-29),
+// formerna finns kvar för andra anropare. En figur är ett aggregat som lådan: en individ är `liten` när intervallet,
+// eller könet i intervallet, är under tröskeln, och ritas då inte.
 function _konTathetFigur(rader, perKon, k = kTroskel(), form = 'fiol') {
     const kon = r => (r.kon && r.kon.includes('kvinna') ? 'Kvinna' : (r.kon === 'man' || r.kon === 'män') ? 'Man' : null);
     const giltiga = rader.filter(r => r.lon > 0 && r.bas != null && r.bas !== '' && (!perKon || kon(r)));
@@ -20740,19 +20728,7 @@ function _konTathetFigur(rader, perKon, k = kTroskel(), form = 'fiol') {
     return { utelamnade, figur: { beskrivning: `Lönefördelningen per BAS-intervall${perKon ? ' och kön' : ''} som täthetskurvor: kurvan är bredast där flest löner ligger. Strecken är median och kvartiler. Kurvan slutar vid morrhårens ändar; enstaka löner långt utanför visas inte.`,
         legend: perKon ? undefined : false, x: { skala: 'band', ordning }, y: { skala: 'linjar', titel: 'Månadslön', format: 'kr' }, hojd: 420, lager } };
 }
-function renderKonTathet() {
-    const el = document.getElementById('chart-kon-tathet');
-    if (!el) return;
-    const perKon = /** @type {HTMLInputElement} */ ((document.getElementById('kon-tathet-visa') || {})).value === 'kon';
-    const form = /** @type {HTMLInputElement} */ ((document.getElementById('kon-tathet-form') || {})).value === 'kvantiler' ? 'kvantiler' : 'fiol';
-    const { figur, utelamnade } = _konTathetFigur(getData(), perKon, kTroskel(), form);
-    if (figur.lager.length) ritaFigur(el, figur, { tomtext: `Inget BAS-intervall har minst ${kTroskel()} personer${perKon ? ' av ett kön' : ''}.` }); else rensaFigur(el);
-    const not = document.getElementById('kon-tathet-not');
-    if (not) { not.hidden = !utelamnade.length; not.textContent = utelamnade.length ? `Visas inte, färre än ${kTroskel()} personer: ${utelamnade.join(', ')}.` : ''; }
-}
-document.getElementById('kon-tathet-visa')?.addEventListener('change', () => renderKonTathet());
 document.getElementById('kon-trend-alla')?.addEventListener('change', () => { const s = /** @type {HTMLInputElement|null} */ (document.getElementById('bas-select-kon')); if (s) renderKon(s.value); });
-document.getElementById('kon-tathet-form')?.addEventListener('change', () => renderKonTathet());
 
 // ---- Löneklasser: indelningen för histogrammet ----
 // Klassbredden väljs bland jämna steg så att spannet ger ungefär `mal` klasser. Spannet mäts mellan 5:e och 95:e
@@ -22333,7 +22309,7 @@ function _quantileRegression(X, y, tau, maxIter, tol) {
 
 // Blinder-Oaxaca-dekomposition på appens data (getData()).
 function runBlinderOaxaca() {
-    return _rgBlinderOaxaca(getData(), { golv: statGolv(), rang: _lvBasRangFn });
+    return _rgBlinderOaxaca(getData(), { golv: statGolv() });   // BAS som indikatorer, som huvudmodellen (ADR-53)
 }
 
 // Kvantilregression vid τ ∈ {.10, .50, .90} på appens data (getData()).
@@ -23382,7 +23358,7 @@ function renderBlinderOaxacaCard() {
     const unexplainedPctOfGap = Math.abs(unexplainedShare * 100);
 
     // Per-variabel-tabell
-    const compLabel = { intercept: 'Konstant (grundnivå)', age: 'Ålder', bas: 'BAS-rangordning' };
+    const compLabel = { intercept: 'Konstant (grundnivå)', age: 'Ålder', bas: 'BAS-intervall (alla indikatorer)' };
     const compRows = Object.entries(r.components).map(([k, v]) => `
         <tr>
             <td><strong>${compLabel[k]}</strong></td>
@@ -23421,7 +23397,7 @@ function renderBlinderOaxacaCard() {
                 </div>
             </div>
 
-            <p class="text-dampad-sm lh-1_55 marg-0-0-14">Rågapet räknas som i kortet ovan: kvinnors lön mot mäns, negativt när kvinnor ligger lägre; de två delarna är hur många procentenheter av det som förklaras respektive blir kvar${(forklarat > 0) !== (ragap > 0) ? ' (den förklarade delen drar här åt motsatt håll mot rågapet)' : ''}. Den oförklarade delen här och huvudtalet ovan mäter samma skillnad; de skiljer sig något eftersom uppdelningen använder BAS som rangordning och skattar kvinnors och mäns lönesättning var för sig. (Metoden räknar internt mäns lön mot kvinnors; talen är omräknade.)</p>
+            <p class="text-dampad-sm lh-1_55 marg-0-0-14">Rågapet räknas som i kortet ovan: kvinnors lön mot mäns, negativt när kvinnor ligger lägre; de två delarna är hur många procentenheter av det som förklaras respektive blir kvar${(forklarat > 0) !== (ragap > 0) ? ' (den förklarade delen drar här åt motsatt håll mot rågapet)' : ''}. Den oförklarade delen här och huvudtalet ovan mäter samma skillnad med samma variabler (ålder och en indikator per BAS-intervall, referens BAS ${esc(String(r.basRef))}); de skiljer sig något eftersom uppdelningen skattar kvinnors och mäns lönesättning var för sig. (Metoden räknar internt mäns lön mot kvinnors; talen är omräknade.)</p>
 
             <details open>
                 <summary class="farg-text pekare fw-600">Visa uppdelning per variabel</summary>
@@ -23440,7 +23416,8 @@ function renderBlinderOaxacaCard() {
                     <p data-hjalptext class="text-dampad-xs lh-1_5 marg-10-0-0">
                         <strong>Tolkning:</strong> Klassisk Blinder-Oaxaca-uppdelning. Q = skillnader i egenskaper (ålder, BAS) värderade
                         med kvinnornas lönesättning. U = skillnad i hur samma egenskaper betalas. I = samspel mellan de två.
-                        Förklarat = Q. Oförklarat = U + I.
+                        Förklarat = Q. Oförklarat = U + I. Raden BAS-intervall är summan över alla indikatorer; ett intervall som
+                        bara finns hos ett kön hamnar i samspelet.
                     </p>
                 </div>
             </details>
@@ -25322,7 +25299,7 @@ async function _buildPrintReportExport() {
             const imgs = {};
             renderKon('__ALLA__');
             await new Promise(r => setTimeout(r, 250));
-            for (const [nyckel, id, hojd] of [['kon', 'chart-kon-scatter', 600], ['box', 'chart-kon-boxplot', 500], ['tathet', 'chart-kon-tathet', 560]]) {
+            for (const [nyckel, id, hojd] of [['kon', 'chart-kon-scatter', 600], ['box', 'chart-kon-boxplot', 500], ['lador', 'chart-skevhet-lador', 560]]) {
                 const elD = document.getElementById(String(id));
                 if (diagramRitat(elD)) { try { imgs[nyckel] = await diagramTillBild(elD, { bredd: 1400, hojd, utanRubrik: true }); } catch (e) { rapporteraFel(`utskrift: ${id}`, e); } }
             }
@@ -25362,7 +25339,7 @@ async function _buildPrintReportExport() {
                 + matrixSection + skevhetSection
                 + bildSektion('Löneutveckling mot ålder (alla BAS-intervall)', imgs.kon, 'Punktdiagram: lön mot ålder per kön')
                 + bildSektion('Lönefördelning per kön', imgs.box, 'Lådagram över lönefördelningen')
-                + bildSektion('Lönefördelningen per BAS-intervall', imgs.tathet, 'Täthetskurvor över lönerna per BAS-intervall')
+                + bildSektion('Lönespridning per BAS-intervall och kön', imgs.lador, 'Lådagram över lönerna per BAS-intervall och kön')
                 + rapportSection + bmSection + bilagaSection;
         }
         // Tröskeln står i metodbilagan; saknas den i urvalet står den som en egen rad sist.

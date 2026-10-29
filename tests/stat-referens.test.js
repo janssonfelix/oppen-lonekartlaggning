@@ -14,7 +14,7 @@
  *       t-fördelningens CDF ............................... scipy.stats.t.cdf
  *       kvantilregression τ = 0,1 / 0,5 / 0,9 ............. exakt LP-lösning av check-förlusten (scipy linprog/HiGHS,
  *                                                           ≡ R quantreg::rq); statsmodels QuantReg gav samma β inom 1e-6
- *       Blinder-Oaxaca .................................... två statsmodels-OLS + komponentformeln
+ *       Blinder-Oaxaca .................................... två statsmodels-OLS (BAS som indikatorer, ADR-53) + komponentformeln
  *     Varken statsmodels eller R var installerat på maskinen; statsmodels/scipy installerades i en
  *     tillfällig venv enbart för att räkna fram fixturen. CI behöver inte Python.
  *
@@ -185,21 +185,34 @@ describe('sekventiell dekomponering (BAS som indikatorer, ADR-44)', () => {
     });
 });
 
-describe('Blinder-Oaxaca', () => {
+describe('Blinder-Oaxaca (BAS som indikatorer, ADR-53)', () => {
     const bo = ref.blinderOaxaca;
     it('komponenterna från två fitOLS-regressioner, handräknade i testet, matchar referensens', () => {
-        // Oberoende av app-scope: samma formel som runBlinderOaxaca, men på lib-nivå.
-        const kv = fx.design.filter(d => d.kv === 1), ma = fx.design.filter(d => d.kv === 0);
-        const Xg = g => g.map(d => [1, d.alderC, d.basC]);
-        const fK = fitOLS(Xg(kv), kv.map(d => d.y)), fM = fitOLS(Xg(ma), ma.map(d => d.y));
-        const medel = g => [0, 1, 2].map(j => Xg(g).reduce((s, r) => s + r[j], 0) / g.length);
-        const xK = medel(kv), xM = medel(ma);
-        bo.betaKv.forEach((b, i) => expect(fK.beta[i]).toBeCloseTo(b, 8));
-        bo.betaMa.forEach((b, i) => expect(fM.beta[i]).toBeCloseTo(b, 8));
+        // Oberoende av app-scope: samma regel som blinderOaxaca, men handskriven här. Referens = alfabetiskt första
+        // BAS hos båda könen; ett BAS som saknas hos ett kön får β = 0 i det könets ekvation.
+        const rader = fx.rows.map((r, i) => ({ ...r, y: fx.design[i].y, alderC: fx.design[i].alderC }));
+        const kv = rader.filter(r => r.kon === 'kvinna'), ma = rader.filter(r => r.kon !== 'kvinna');
+        const alla = [...new Set(rader.map(r => r.bas))].sort();
+        const finns = g => new Set(g.map(r => r.bas));
+        const ref0 = alla.find(b => finns(kv).has(b) && finns(ma).has(b));
+        expect(ref0).toBe(bo.basRef);
+        const ind = alla.filter(b => b !== ref0);
+        expect(ind).toEqual(bo.basIndikatorer);
+        const grupp = g => {
+            const kol = ind.filter(b => finns(g).has(b));
+            const f = fitOLS(g.map(r => [1, r.alderC, ...kol.map(b => (r.bas === b ? 1 : 0))]), g.map(r => r.y));
+            const beta = [f.beta[0], f.beta[1], ...ind.map(b => (kol.includes(b) ? f.beta[2 + kol.indexOf(b)] : 0))];
+            const xbar = [1, g.reduce((s, r) => s + r.alderC, 0) / g.length, ...ind.map(b => g.filter(r => r.bas === b).length / g.length)];
+            return { beta, xbar };
+        };
+        const K = grupp(kv), M = grupp(ma);
+        bo.betaKv.forEach((b, i) => expect(K.beta[i]).toBeCloseTo(b, 8));
+        bo.betaMa.forEach((b, i) => expect(M.beta[i]).toBeCloseTo(b, 8));
+        expect(K.beta[2 + ind.indexOf('F')]).toBe(0);            // BAS F finns bara hos männen i fixturen
         let q = 0, u = 0, i = 0;
-        for (let j = 0; j < 3; j++) {
-            const dx = xM[j] - xK[j], db = fM.beta[j] - fK.beta[j];
-            q += dx * fK.beta[j]; u += xK[j] * db; i += dx * db;
+        for (let j = 0; j < K.beta.length; j++) {
+            const dx = M.xbar[j] - K.xbar[j], db = M.beta[j] - K.beta[j];
+            q += dx * K.beta[j]; u += K.xbar[j] * db; i += dx * db;
         }
         expect(q).toBeCloseTo(bo.q, 10);
         expect(u).toBeCloseTo(bo.u, 10);
@@ -213,6 +226,8 @@ describe('Blinder-Oaxaca', () => {
         expect(ut).not.toBeNull();
         expect(ut.nKv).toBe(bo.nKv);
         expect(ut.nMa).toBe(bo.nMa);
+        expect(ut.basRef).toBe(bo.basRef);
+        expect(ut.basIndikatorer).toEqual(bo.basIndikatorer);
         expect(ut._raw.rawGapLog).toBeCloseTo(bo.rawGapLog, 10);
         expect(ut._raw.q).toBeCloseTo(bo.q, 10);
         expect(ut._raw.u).toBeCloseTo(bo.u, 10);

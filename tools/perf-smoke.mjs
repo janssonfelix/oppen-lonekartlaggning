@@ -129,7 +129,7 @@ console.log(kolumn('Utforska, yrke inom BAS × lönespann', tUtforska2d));
 
 // Omritningen av alla flikar efter ändrad minsta gruppstorlek (den stegvisa vägen från gränssnittet), och de
 // tyngsta delarna i Ålder & karriär var för sig — där ligger flest diagram.
-/* global sattKTroskel, getData, renderKonTathet, renderKonMultiplar, individLitenFor, renderDemografi -- funktionerna nedan körs i sidan, där de finns */
+/* global sattKTroskel, getData, renderKonMultiplar, individLitenFor, renderDemografi -- funktionerna nedan körs i sidan, där de finns */
 const tTroskel = await page.evaluate(async () => {
     if (typeof sattKTroskel !== 'function') return null;
     const t0 = performance.now();
@@ -144,7 +144,6 @@ if (tTroskel != null) console.log(kolumn('Ändrad tröskel: det som syns ritas o
 const tKonDelar = await page.evaluate(() => {
     const ut = {}, d = typeof getData === 'function' ? getData() : [];
     const mat = (namn, fn) => { if (typeof fn !== 'function') return; const t0 = performance.now(); try { fn(); } catch (_e) { /* mäts ändå */ } ut[namn] = Math.round(performance.now() - t0); };
-    mat('  täthetskurvor', typeof renderKonTathet === 'function' ? () => renderKonTathet() : null);
     mat('  små multiplar', typeof renderKonMultiplar === 'function' ? () => renderKonMultiplar() : null);
     mat('  individLitenFor', typeof individLitenFor === 'function' ? () => { const f = individLitenFor(d); d.filter(f); } : null);
     mat('  demografi', typeof renderDemografi === 'function' ? () => renderDemografi('__ALLA__') : null);

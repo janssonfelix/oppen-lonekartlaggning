@@ -254,38 +254,31 @@ export function quantileRegression(X, y, tau, maxIter = 60, tol = 1e-5) {
  *    karakteristika (ålder, BAS-fördelning) värderade till kvinnornas
  *    avkastning. Detta är den "förklarade" delen.
  * "Coefficient" = män får olika avkastning på samma karakteristika.
- *    Detta är den klassiskt "diskrimineringsindikerande" delen.
  * "Interaction" = samspel mellan skillnader i karakteristika och
- *    skillnader i avkastning. Mindre lätt att tolka — räknas vanligen
- *    som "oförklarat" i en tredelad uppdelning.
+ *    skillnader i avkastning. Räknas som "oförklarat" i en tredelad uppdelning.
  *
- * Klassisk presentation:
+ * Klassisk presentation (Medlingsinstitutet använder denna form):
  *   Förklarat   = Endowment
  *   Oförklarat  = Coefficient + Interaction
  *
- * Standardpresentation i akademiska och
- * offentliga utredningar (Medlingsinstitutet använder denna form).
- *
- * Modell: ln(lön) ~ ålder (centrerad) + BAS-rang (centrerad)
- * — körs separat för kvinnor respektive män.
- *
- * BAS behålls här som linjär rang (bokstavens plats), till skillnad från huvudregressionen
- * och den sekventiella dekomponeringen som använder indikatorvariabler: med en indikator
- * per BAS skulle uppdelningen per komponent (endowment/coefficient/interaction) spridas
- * över ett dussin kolumner och bli otydlig att redovisa. Avsiktligt orört.
+ * Modell: ln(lön) ~ ålder (centrerad) + en indikator per BAS-intervall — samma kodning som huvudregressionen
+ * (ADR-44, ADR-53) — körd separat för kvinnor respektive män. Referensintervallet är det alfabetiskt första
+ * som finns hos BÅDA könen; ett intervall som bara finns hos ett kön får en indikator bara i det könets modell
+ * (det andra könets koefficient är 0), så dess bidrag hamnar i samspelet. Komponenterna redovisas per
+ * variabel som intercept, ålder och BAS, där BAS är summan över indikatorerna.
  *
  * @param {any[]} rows - råradernas poster; filtreras här på lön, ålder och kön.
- * @param {{golv:number, rang?:(basList:string[]) => (bas:string) => number}} opts
- *   golv = statGolv(); rang = BAS-rangfunktionen (standard basRangFn ur likvardighet.js).
+ * @param {{golv:number}} opts golv = statGolv().
  * @returns {null | {
  *   rawGapPct:number, explainedPct:number, unexplainedPct:number,
  *   endowmentPct:number, coefficientPct:number, interactionPct:number,
  *   components:{age:{q,u,i}, bas:{q,u,i}, intercept:{q,u,i}},
+ *   basRef:string, basIndikatorer:string[],
  *   n:number, nKv:number, nMa:number,
  *   _raw:{rawGapLog:number, q:number, u:number, i:number}
  * }}
  */
-export function blinderOaxaca(rows, { golv, rang = basRangFn }) {
+export function blinderOaxaca(rows, { golv }) {
     const raw = rows.filter(d => d.lon > 0 && d.alder > 0 &&
         (d.kon.includes('kvinna') || d.kon === 'man' || d.kon === 'män'));
     if (raw.length < 50) return null;
@@ -293,62 +286,56 @@ export function blinderOaxaca(rows, { golv, rang = basRangFn }) {
     const ma = raw.filter(d => d.kon === 'man' || d.kon === 'män');
     if (kv.length < golv || ma.length < golv) return null;
 
-    // Bygg basRank på poolad data (samma som huvudregression).
-    const basList = [...new Set(raw.map(d => d.bas))].sort();
-    const basRank = {};
-    // BAS-rang = bokstavens plats (A=1); ett steg är alltid ett BAS-intervall (se §5 i teknisk-plan.md).
-    const rangFn = rang(basList);
-    basList.forEach(b => { basRank[b] = rangFn(b); });
-    const ranks = basList.map(b => basRank[b]);
-    const basMean = ranks.reduce((s, r) => s + r, 0) / ranks.length;
     const ageMean = raw.reduce((s, d) => s + d.alder, 0) / raw.length;
+    const basList = [...new Set(raw.map(d => d.bas))].sort();
+    const harKv = new Set(kv.map(d => d.bas)), harMa = new Set(ma.map(d => d.bas));
+    const basRef = basList.find(b => harKv.has(b) && harMa.has(b));
+    if (basRef == null) return null;
+    const indikatorer = basList.filter(b => b !== basRef);
 
-    // Designmatris för en grupp G: X = [1, ålder − ageMean, basRank − basMean]
-    const buildXy = group => {
-        const X = group.map(d => [1, d.alder - ageMean, (basRank[d.bas] || basMean) - basMean]);
-        const y = group.map(d => Math.log(d.lon));
-        return { X, y };
-    };
-    const xyKv = buildXy(kv), xyMa = buildXy(ma);
-    const fitKv = fitOLS(xyKv.X, xyKv.y);
-    const fitMa = fitOLS(xyMa.X, xyMa.y);
-    if (!fitKv || !fitMa) return null;
+    // Designmatris för en grupp: [1, ålder − ageMean, indikator per BAS utom referensen]. En indikator som är noll
+    // för alla i gruppen (intervallet saknas hos könet) lämnas utanför gruppens skattning och får β = 0.
+    const kolumner = group => indikatorer.map(b => group.some(d => d.bas === b));
+    const design = (group, med) => ({
+        X: group.map(d => [1, d.alder - ageMean, ...indikatorer.filter((_, j) => med[j]).map(b => (d.bas === b ? 1 : 0))]),
+        y: group.map(d => Math.log(d.lon)) });
+    const medKv = kolumner(kv), medMa = kolumner(ma);
+    const fitK = fitOLS(design(kv, medKv).X, design(kv, medKv).y);
+    const fitM = fitOLS(design(ma, medMa).X, design(ma, medMa).y);
+    if (!fitK || !fitM) return null;
+    // Koefficienter i full längd (2 + antal indikatorer), 0 där intervallet saknas hos könet.
+    const fullBeta = (fit, med) => { const b = [fit.beta[0], fit.beta[1]]; let j = 2; for (const m of med) b.push(m ? fit.beta[j++] : 0); return b; };
+    const betaKv = fullBeta(fitK, medKv), betaMa = fullBeta(fitM, medMa);
+    const p = betaKv.length;
 
-    // Gruppmedelvärden för X (X̄)
+    // Gruppmedelvärden för X̄ i full längd.
     const meanX = group => {
-        const k = 3;
-        const out = new Array(k).fill(0);
-        for (const d of group) {
-            out[0] += 1;
-            out[1] += d.alder - ageMean;
-            out[2] += (basRank[d.bas] || basMean) - basMean;
-        }
+        const out = new Array(p).fill(0);
+        for (const d of group) { out[0] += 1; out[1] += d.alder - ageMean; indikatorer.forEach((b, j) => { if (d.bas === b) out[2 + j] += 1; }); }
         return out.map(v => v / group.length);
     };
     const xKv = meanX(kv), xMa = meanX(ma);
 
-    // Predikterad ln(lön) per grupp = X̄ · β
     const dot = (a, b) => a.reduce((s, v, i) => s + v * b[i], 0);
-    const lnKv = dot(xKv, fitKv.beta);
-    const lnMa = dot(xMa, fitMa.beta);
+    const lnKv = dot(xKv, betaKv);
+    const lnMa = dot(xMa, betaMa);
     const rawGapLog = lnMa - lnKv;
 
-    // Dekomposition per komponent (intercept, ålder, BAS-rank)
-    const labels = /** @type {const} */ (['intercept', 'age', 'bas']);
+    // Dekomposition per kolumn; BAS-indikatorerna summeras till en komponent.
     /** @type {{intercept:{q:number,u:number,i:number}, age:{q:number,u:number,i:number}, bas:{q:number,u:number,i:number}}} */
     const components = { intercept: { q: 0, u: 0, i: 0 }, age: { q: 0, u: 0, i: 0 }, bas: { q: 0, u: 0, i: 0 } };
     let qSum = 0, uSum = 0, iSum = 0;
-    for (let k = 0; k < 3; k++) {
+    for (let k = 0; k < p; k++) {
         const dx = xMa[k] - xKv[k];          // skillnad i karakteristika
-        const db = fitMa.beta[k] - fitKv.beta[k];  // skillnad i koefficient
-        const q = dx * fitKv.beta[k];        // endowment
+        const db = betaMa[k] - betaKv[k];    // skillnad i koefficient
+        const q = dx * betaKv[k];            // endowment
         const u = xKv[k] * db;               // coefficient
         const i = dx * db;                   // interaction
-        components[labels[k]] = { q, u, i };
+        const c = components[k === 0 ? 'intercept' : k === 1 ? 'age' : 'bas'];
+        c.q += q; c.u += u; c.i += i;
         qSum += q; uSum += u; iSum += i;
     }
-    // Kontroll: qSum + uSum + iSum ≈ rawGapLog
-    // (avvikelse ~1e-10 förväntas pga floating point)
+    // Kontroll: qSum + uSum + iSum ≈ rawGapLog (avvikelse ~1e-10 förväntas pga floating point)
 
     // Konvertera log-komponenter till %-skillnad: (exp(c) − 1) × 100
     const pct = c => (Math.exp(c) - 1) * 100;
@@ -361,6 +348,7 @@ export function blinderOaxaca(rows, { golv, rang = basRangFn }) {
         explainedPct: pct(qSum),
         unexplainedPct: pct(uSum + iSum),
         components,
+        basRef, basIndikatorer: indikatorer,
         n: raw.length, nKv: kv.length, nMa: ma.length,
         // Råa log-värden för exakt summa-verifiering i tester
         _raw: { rawGapLog, q: qSum, u: uSum, i: iSum }
