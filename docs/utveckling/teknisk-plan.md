@@ -835,13 +835,10 @@ antalet sådana par; beslut av produktägaren). Fyra regler till:
   `_setDiagramKNot` för noten under diagrammet). Demografidelens trendlinje och lutning för hela urvalet
   (alla BAS eller det valda) kräver att urvalet når tröskeln (beslut av produktägaren 2026-10-16); annars
   utelämnas de och noten under diagrammet säger det. Punkterna per person följer sin egen regel (ADR-14).
-- (R4) *Lönerevisionssimulatorn följer tröskeln* (`14-lonesimulator.js`; beslut av produktägaren): urvalet i
-  kontrollerna — kön, BAS-intervall och lönegräns — ska nå tröskeln, annars är knappen inaktiv och en mening
-  står där utfallet annars visas (`_simSynkaKnapp`); åtgärden ska beröra minst så många personer, annars visas
-  meningen i stället för utfallet (kostnaden för "höj till" och de stegvisa lyften är annars skillnaden mot
-  enskildas löner). Lönegapet före och efter är organisationens råa gap och kräver tröskeln för varje kön
-  (`_konFarRedovisasFor`); antalet berörda per kön är ett antal och visas. Vaktas av invarianten (ett urval
-  under och ett över tröskeln), C3 och ett röktest.
+- (R4) *Lönerevisionssimulatorn är borttagen (2026-10, ADR-50).* Det den kunde — begränsa till ett kön och en
+  lönegräns, "höj till" — gör en riktad rad i Löneöversyn, som följer R2: en rad som berör färre personer än
+  tröskeln är användarens egen simulering, beloppet visas på raden med noten om enskildas löner. Lönegapet
+  före och efter kräver tröskeln för varje kön (`_konFarRedovisasFor`). Vaktas av C3 och röktest.
 - (R5) *Löneöversyns tröskelmål följer tröskeln* (`_forecastThreshold`; beslut av produktägaren 2026-10-16):
   lyftet i procent till kvinnor och dess kostnad (kvinnornas lönesumma gånger procentsatsen) visas bara när
   varje kön i urvalet når tröskeln (`_konFarRedovisasFor`), annars ett streck med `_konUtelamnatNot()`.
@@ -1108,6 +1105,14 @@ behövs eftersom en sida från disk inte kan läsa sig själv, och automatisk in
 `lasUt`), vaktad av `tests/organisationsfil.test.js` (inget skript rörs), röktester i
 `tests/smoke-organisation.test.js` och webbläsarröktestet. Lönedata bakas aldrig in: `skapaPaket()` läser
 aldrig `state.data`. Design: [`organisationsfil-design.md`](organisationsfil-design.md).
+
+**ADR-50 — Prioritering är vad, Löneöversyn är hur.** Beslut 2026-10-29 efter användartest: de två flikarna gick
+in i varandra. Prioritering svarar på vad som bör åtgärdas och vad det kostar (matris, åtgärdslista, kostnad);
+Löneöversyn på hur potten fördelas (budget, generellt påslag, riktade potter, utfall, scenarier). Lönerevisions-
+simulatorn i Prioritering är borttagen (`14-lonesimulator.js`); en riktad rad i Löneöversyn kan i stället begränsas
+till ett kön (`kon`) och till löner under en gräns (`lonCap`), och lyfta till en nivå (`mode: 'till'`) —
+`targetRows` i `src/lib/loneoversyn.js` är radens urval. PO-påslag och beräkningsperiod, som all kostnad räknas
+med, står under Inställningar i sidhuvudet (*Gäller alla flikar*) i stället för i Prioritering.
 
 ## 9. Öppna punkter
 

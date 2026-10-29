@@ -193,7 +193,6 @@ function _fmtCost(kr) {
 }
 
 function renderPrioritering() {
-    _simSynkaKnapp();   // simulatorns knapp följer tröskeln och urvalet (14-lonesimulator.js)
     const ref = _selectedPrioReference();
     const empty   = document.getElementById('prio-empty');
     const content = document.getElementById('prio-content');
@@ -578,21 +577,23 @@ function _readCostSettings() {
             : `Standard: ${state.costSettings.months} mån × ${svPct(state.costSettings.poPct, 2)} PO (SKR:s cirkulär 2025 för kommuner och regioner)`;
     }
 }
+// Fälten står under Inställningar i sidhuvudet (gäller alla flikar): Prioritering räknas om direkt, och den flik som
+// visas ritas om så att Löneöversyn, gruppdossiern och handlingsplanen följer samma period och påslag.
+function _kostnadAndrad() {
+    _readCostSettings();
+    if (!state.data.length) return;
+    renderPrioritering();
+    const aktiv = document.querySelector('.nav-item.active')?.getAttribute('data-tab');
+    if (aktiv && aktiv !== 'prioritering' && typeof renderTabContent === 'function') renderTabContent(aktiv);
+}
 ['prio-cost-months','prio-po-pct'].forEach(id => {
-    document.getElementById(id)?.addEventListener('input', () => {
-        _readCostSettings();
-        renderPrioritering();
-    });
-    document.getElementById(id)?.addEventListener('change', () => {
-        _readCostSettings();
-        renderPrioritering();
-    });
+    document.getElementById(id)?.addEventListener('input', _kostnadAndrad);
+    document.getElementById(id)?.addEventListener('change', _kostnadAndrad);
 });
 document.getElementById('prio-cost-reset')?.addEventListener('click', () => {
     /** @type {HTMLInputElement} */ (document.getElementById('prio-cost-months')).value = String(COST_DEFAULTS.months);
     /** @type {HTMLInputElement} */ (document.getElementById('prio-po-pct')).value      = String(COST_DEFAULTS.poPct);
-    _readCostSettings();
-    renderPrioritering();
+    _kostnadAndrad();
 });
 // Initiera period-sammanfattningen vid sidladdning
 setTimeout(_readCostSettings, 0);

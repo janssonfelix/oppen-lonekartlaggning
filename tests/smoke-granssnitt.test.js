@@ -320,11 +320,11 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         expect(panel.getAttribute('role')).toBe('dialog');
         expect(panel.style.display).toBe('none');
         // Fälten har flyttat hit ur organisationspaketet; paketet (en fil) står kvar bland filerna.
-        for (const id of ['k-troskel', 'btn-k-aterstall', 'k-troskel-hjalp', 'k-troskel-fel', 'org-typ']) expect(d.getElementById(id).closest('#installningar-modal'), id).not.toBeNull();
+        for (const id of ['k-troskel', 'btn-k-aterstall', 'k-troskel-hjalp', 'k-troskel-fel', 'org-typ', 'prio-po-pct', 'prio-cost-months', 'prio-cost-reset', 'prio-cost-summary']) expect(d.getElementById(id).closest('#installningar-modal'), id).not.toBeNull();
         expect(d.getElementById('file-input-paket').closest('#organisationspaket')).not.toBeNull();
         expect(d.getElementById('organisationspaket').querySelector('[data-oppna-installningar]')).not.toBeNull();
-        // PO-påslag och beräkningsperiod hör till Prioritering och står kvar där, liksom övriga flikars inställningar.
-        for (const [id, avsnitt] of [['prio-po-pct', 'avsnitt-pr-installningar'], ['prio-cost-months', 'avsnitt-pr-installningar'], ['prio-cfg-atgard', 'avsnitt-pr-installningar'],
+        // PO-påslag och beräkningsperiod gäller alla flikar och står i panelen; flikarnas egna inställningar står kvar i flikarna.
+        for (const [id, avsnitt] of [['prio-cfg-atgard', 'avsnitt-pr-installningar'],
             ['arbvard-band', 'avsnitt-lv-poang'], ['pag-grans', 'avsnitt-la-personer'], ['outliers-threshold', 'avsnitt-ov-kvalitet']]) {
             expect(d.getElementById(id).closest('#installningar-modal'), id).toBeNull();
             expect(d.getElementById(id).closest('details.avsnitt').id, id).toBe(avsnitt);
@@ -334,7 +334,7 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         knapp.focus(); knapp.click();
         expect(panel.style.display).toBe('flex');
         const rader = () => [...d.querySelectorAll('#inst-flikar .inst-flik')];
-        expect(rader()).toHaveLength(6);
+        expect(rader()).toHaveLength(5);
         expect(rader().filter(r => r.querySelector('button').disabled).length).toBeGreaterThanOrEqual(4);
         d.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
         expect(panel.style.display).toBe('none');
@@ -343,19 +343,22 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         knapp.click();
         expect(d.getElementById('inst-namn').textContent).toMatch(/Organisation.+Referens.+Jämförelsestatistik/);
         expect(rader().every(r => !r.querySelector('button').disabled)).toBe(true);
-        expect(rader().map(r => r.querySelector('.inst-flik-lage').textContent)).toEqual(['Standardvärden', '39,15 % · 12 månader', 'Standardvärden', '± 5 %', '10 % under förväntad lön', '3,0 standardavvikelser']);
+        expect(rader().map(r => r.querySelector('.inst-flik-lage').textContent)).toEqual(['Standardvärden', 'Standardvärden', '± 5 %', '10 % under förväntad lön', '3,0 standardavvikelser']);
         expect(d.querySelectorAll('#inst-flikar .ar-andrad')).toHaveLength(0);
         // "Öppna" stänger panelen, byter flik och fäller ut avsnittet där inställningen står.
         rader()[0].querySelector('button').click();
         expect(panel.style.display).toBe('none');
         expect(d.getElementById('view-prioritering').style.display).toBe('block');
         expect(d.getElementById('avsnitt-pr-installningar').open).toBe(true);
-        // En ändrad inställning i fliken syns i panelen.
-        const po = d.getElementById('prio-po-pct');
-        po.value = '42'; po.dispatchEvent(new w.Event('input', { bubbles: true })); po.dispatchEvent(new w.Event('change', { bubbles: true }));
+        // PO-påslag och beräkningsperiod står i panelen (gäller alla flikar); en ändring slår igenom direkt och syns i sammanfattningen.
         knapp.click();
-        expect(rader()[1].querySelector('.inst-flik-lage').textContent).toBe('42,00 % · 12 månader');
-        expect(rader()[1].classList.contains('ar-andrad')).toBe(true);
+        const po = d.getElementById('prio-po-pct');
+        expect(po.closest('#installningar-modal')).not.toBeNull();
+        po.value = '42'; po.dispatchEvent(new w.Event('input', { bubbles: true })); po.dispatchEvent(new w.Event('change', { bubbles: true }));
+        expect(w.__state.costSettings.poPct).toBe(42);
+        expect(d.getElementById('prio-cost-summary').textContent).toMatch(/Anpassad.*42,00 %/);
+        d.getElementById('prio-cost-reset').click();
+        expect(w.__state.costSettings.poPct).toBe(39.15);
         w.eval('stangInstallningar()');
     });
     it('minsta gruppstorlek i flikarnas urvalsrad är en länk till inställningarna, och en ändring där slår igenom', () => {

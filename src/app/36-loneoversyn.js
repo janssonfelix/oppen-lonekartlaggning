@@ -44,10 +44,10 @@ function renderForecastTargets() {
         return;
     }
     const dAll = getData();
-    // Gruppens storlek per rad ("*" = hela BAS-intervallet). En rad som användaren själv lägger på en
-    // grupp under tröskeln är tillåten (egen simulering): beloppet räknas som för
-    // andra rader, och noten under raden säger vad det bygger på.
-    const gruppN = tg => dAll.filter(r => r.bas === tg.bas && (tg.aid === '*' || r.aid === tg.aid)).length;
+    // Radens urval ("*" = hela BAS-intervallet; kön och lönegräns snävar in). En rad som användaren själv
+    // lägger på färre personer än tröskeln är tillåten (egen simulering, ADR-38 R2): beloppet räknas som
+    // för andra rader, och noten under raden säger vad det bygger på.
+    const gruppN = tg => _fcTargetRows(dAll, tg).length;
     host.innerHTML = t.map((tg, i) => {
         // #13 Isolerad kostnad för raden (vad den äter av potten)
         let rowCost = 0;
@@ -60,17 +60,22 @@ function renderForecastTargets() {
             .map(([v, l]) => `<option value="${v}"${tg.dist === v ? ' selected' : ''}>${l}</option>`).join('');
         const lvlOpts = [['median', 'BAS-median'], ['p25', 'BAS P25']]
             .map(([v, l]) => `<option value="${v}"${tg.targetLevel === v ? ' selected' : ''}>${l}</option>`).join('');
+        const konOpts = [['alla', 'Alla'], ['kvinna', 'Bara kvinnor'], ['man', 'Bara män']]
+            .map(([v, l]) => `<option value="${v}"${(tg.kon || 'alla') === v ? ' selected' : ''}>${l}</option>`).join('');
+        const till = tg.mode === 'till';
         return `<div class="forecast-target-row" data-idx="${i}">
             <select data-f="bas" aria-label="BAS-intervall">${basOpts}</select>
             <select data-f="aid" aria-label="Yrke (AID)">${aidOpts}</select>
-            <select data-f="mode" aria-label="Beloppstyp"><option value="kr"${tg.mode === 'kr' ? ' selected' : ''}>kr/mån</option><option value="pct"${tg.mode === 'pct' ? ' selected' : ''}>% av grupplön</option></select>
+            <select data-f="kon" aria-label="Kön som omfattas" title="Begränsa raden till ett kön">${konOpts}</select>
+            <label class="ft-cap" title="Bara löner under gränsen omfattas; tomt = alla">under <input type="number" data-f="lonCap" min="0" step="500" value="${tg.lonCap == null ? '' : tg.lonCap}" aria-label="Bara löner under (kr/mån)" placeholder="alla löner"> kr</label>
+            <select data-f="mode" aria-label="Beloppstyp"><option value="kr"${tg.mode === 'kr' ? ' selected' : ''}>kr/mån att fördela</option><option value="pct"${tg.mode === 'pct' ? ' selected' : ''}>% av grupplön</option><option value="till"${till ? ' selected' : ''}>höj till (kr/mån)</option></select>
             <input type="number" data-f="value" min="0" step="100" value="${tg.value == null ? '' : tg.value}" aria-label="Belopp" class="bredd-90">
-            <select data-f="dist" aria-label="Fördelning inom gruppen">${distOpts}</select>
+            <select data-f="dist" aria-label="Fördelning inom gruppen"${till ? ' class="dold"' : ''}>${distOpts}</select>
             <select data-f="targetLevel" aria-label="Målnivå"${tg.dist === 'target' ? '' : ' class="dold"'}>${lvlOpts}</select>
             <select data-f="pool" aria-label="Pott-typ" title="Ring-fenced pott (visas i kostnad-per-pott)">${[['equity', 'Likalön'], ['marknad', 'Marknad'], ['befordran', 'Befordran'], ['övrigt', 'Övrigt']].map(([v, l]) => `<option value="${v}"${(tg.pool || 'övrigt') === v ? ' selected' : ''}>${l}</option>`).join('')}</select>
             <span class="text-dampad-xs ingen-radbrytning" title="Vad raden förbrukar av potten">≈ ${Math.round(rowCost).toLocaleString('sv-SE')} kr</span>
             <button type="button" data-f="remove" class="btn btn-secondary btn-sm" aria-label="Ta bort rad">${ikon('kryss', 14)}</button>
-        </div>${gruppN(tg) > 0 && isKMasked(gruppN(tg)) ? `<p class="k-mask-note">Gruppen har färre än ${kTroskel()} personer — beloppet bygger på enskildas löner och ingår i summorna, även i Excel-exporten.</p>` : ''}`;
+        </div>${gruppN(tg) > 0 && isKMasked(gruppN(tg)) ? `<p class="k-mask-note">Raden berör ${gruppN(tg)} ${gruppN(tg) === 1 ? 'person' : 'personer'}, färre än ${kTroskel()} — beloppet bygger på enskildas löner och ingår i summorna, även i Excel-exporten.</p>` : (gruppN(tg) === 0 ? '<p class="k-mask-note">Ingen i gruppen matchar kön och lönegräns.</p>' : '')}`;
     }).join('');
     host.querySelectorAll('.forecast-target-row').forEach(rowEl => {
         const i = parseInt(rowEl.getAttribute('data-idx') || '', 10);
@@ -83,13 +88,14 @@ function renderForecastTargets() {
             ctrl.addEventListener('change', () => {
                 const tg = state.forecast.targets[i];
                 if (field === 'value') tg.value = /** @type {HTMLInputElement} */ (ctrl).value === '' ? null : parseFloat(/** @type {HTMLInputElement} */ (ctrl).value);
+                else if (field === 'lonCap') tg.lonCap = /** @type {HTMLInputElement} */ (ctrl).value === '' ? null : parseFloat(/** @type {HTMLInputElement} */ (ctrl).value);
                 else tg[field] = /** @type {HTMLInputElement} */ (ctrl).value;
                 if (field === 'bas') { tg.aid = (_forecastAidsForBas(tg.bas)[0] || {}).aid || ''; renderForecastTargets(); }
-                if (field === 'dist') renderForecastTargets();
+                if (field === 'dist' || field === 'mode' || field === 'kon' || field === 'lonCap') renderForecastTargets();
                 updateForecast();
             });
-            if (field === 'value') ctrl.addEventListener('input', () => {
-                state.forecast.targets[i].value = /** @type {HTMLInputElement} */ (ctrl).value === '' ? null : parseFloat(/** @type {HTMLInputElement} */ (ctrl).value);
+            if (field === 'value' || field === 'lonCap') ctrl.addEventListener('input', () => {
+                state.forecast.targets[i][field] = /** @type {HTMLInputElement} */ (ctrl).value === '' ? null : parseFloat(/** @type {HTMLInputElement} */ (ctrl).value);
                 updateForecast();
             });
         });
@@ -130,6 +136,7 @@ function updateForecast() {
     if (gv != null && gv < 0) valWarn.push('Det generella påslaget är negativt.');
     if (state.forecast.generell.mode === 'pct' && gv != null && gv > 25) valWarn.push('Det generella påslaget är ovanligt högt (> 25 %).');
     if (state.forecast.targets.some(t => t.value == null || !(t.value > 0))) valWarn.push('En eller flera riktade rader saknar belopp.');
+    if (state.forecast.targets.some(t => _fcTargetRows(d, t).length === 0)) valWarn.push('En riktad rad matchar ingen person (kön eller lönegräns).');
     const out = _fcForecastOutcome(d, state.forecast.budget, state.forecast.generell, state.forecast.targets, cost);
     const riktade = state.forecast.targets.length;
     _laNyckel('nyckel-lo-riktade', riktade ? `${riktade} ${riktade === 1 ? 'riktad pott' : 'riktade potter'}` : 'Inga riktade potter');
@@ -696,6 +703,7 @@ function exportForecast() {
         ['Kvar att fördela (kr/mån)', kr(out.kvar)],
         ['Generellt påslag', (state.forecast.generell.value || 0) + (state.forecast.generell.mode === 'kr' ? ' kr/mån' : ' %')],
         ['Minsta gruppstorlek för riktning', state.forecast.minGroupN || 0],
+        ...state.forecast.targets.map((t, i) => [`Riktad pott ${i + 1}`, `BAS ${t.bas}, ${t.aid === '*' ? 'alla yrken' : 'AID ' + t.aid}${t.kon === 'kvinna' ? ', bara kvinnor' : t.kon === 'man' ? ', bara män' : ''}${t.lonCap > 0 ? `, löner under ${Math.round(t.lonCap)} kr` : ''}: ${t.mode === 'till' ? `höj till ${t.value} kr/mån` : t.mode === 'kr' ? `${t.value} kr/mån` : `${t.value} % av grupplön`}${t.mode === 'till' ? '' : ` (${{ flat: 'lika %', lowest: 'lägst först', target: 'mot målnivå' }[t.dist] || t.dist})`}`]),
         ...(_fcParNot ? [['Utelämnade kandidatpar (likvärdigt arbete)', _fcParNot]] : []),
         ['Avrundning av nya löner (kr)', state.forecast.roundStep || 0],
         ['Stegvis plan (antal år)', state.forecast.years || 1],
@@ -746,7 +754,7 @@ function exportForecast() {
         const basList = getBasIntervals();
         const bas = basList[0] || '';
         const aid = (_forecastAidsForBas(bas)[0] || {}).aid || '';
-        state.forecast.targets.push({ bas, aid, mode: 'kr', value: null, dist: 'lowest', targetLevel: 'median', pool: 'övrigt' });
+        state.forecast.targets.push({ bas, aid, kon: 'alla', lonCap: null, mode: 'kr', value: null, dist: 'lowest', targetLevel: 'median', pool: 'övrigt' });
         renderForecastTargets();
         updateForecast();
     });

@@ -45,7 +45,6 @@ direkt vid laddning (händelsekopplingar, `const`) körs i den här ordningen.
 | `11-markering.js` | Länkade vyer: en markerad grupp (BAS eller yrke inom BAS) framhävs i alla diagram; raden som säger vad som är markerat står överst i innehållet och följer med när sidan rullas |
 | `12-tillstand.js` | `state`, dataåtkomst, referensens namn och källa (ingen inbyggd referens, ADR-28), `policyFor`, tal-tolkning, tabellverktyg (kopiera, exportera) |
 | `13-oversikt.js` | Översikt: nyckeltalen, status mot lagkraven, underlagets kvalitet (sammanfattad, med kontrollen av AID-kodningen i `src/lib/aidkontroll.js`), bootstrap-KI, styrka, processkarta (stegens regler i `src/lib/attgora.js`) |
-| `14-lonesimulator.js` | Lönerevisionssimulatorn |
 | `15-extremvarden-basrang.js` | Extremvärden (enskilda löner) i Underlagets kvalitet; BAS-ordningen är fast (se §5 i `teknisk-plan.md`) |
 | `16-inlasningskontroll.js` | Rimlighetskontroll, inläsningsrapport, konsistens mellan filer |
 | `18-atgardslista.js` | Kortet Att göra på Översikt: åtgärdslistan, Börja här (ordningen i `src/lib/attgora.js`) och CSV-export |

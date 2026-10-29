@@ -1936,6 +1936,8 @@ td > .k-mask-note { position: sticky; left: 0; max-width: calc(100cqw - 24px); w
 }
 .forecast-target-row select,
 .forecast-target-row input { font-size: var(--fs-sm); padding: 4px 6px; border: 1px solid var(--border); border-radius: 4px; }
+.forecast-target-row .ft-cap { font-size: var(--fs-sm); color: var(--text-muted); white-space: nowrap; }
+.forecast-target-row .ft-cap input { width: 96px; }
 
 @media print {
     #view-trend { display: block !important; page-break-before: always; }

@@ -167,16 +167,6 @@ export async function samlaUtdata(w) {
     w.eval('_forecastRemediation(); _forecastSensitivity();');
     d.getElementById('explore-inkludera-sma').checked = false;
     w.__renderExplorer();
-    // Lönerevisionssimulatorn (Prioritering): ett urval under tröskeln och ett över den, båda med "höj till".
-    const sim = (kon, bas) => {
-        d.getElementById('sim-kon').value = kon; d.getElementById('sim-bas').value = bas;
-        d.getElementById('sim-action').value = 'raise_to'; d.getElementById('sim-amount').value = String(2 * KON_MA[0]);
-        d.getElementById('sim-bas').dispatchEvent(new w.Event('change'));
-        d.getElementById('sim-run').click();   // gör inget när knappen är inaktiv: meningen står redan där
-        return d.getElementById('sim-results').textContent;
-    };
-    lagg('simulatorn: urval under tröskeln', sim('man', 'Y1'));
-    lagg('simulatorn: urval över tröskeln', sim('kvinna', 'Y1'));
     // Robusthetspanelen (Dokumentera & exportera) räknas bara på knapptryck; här körs den direkt.
     w.eval("_renderRobusthetResult(document.getElementById('robusthet-body'))");
     lagg('robusthetspanelen', d.getElementById('robusthet-body').textContent);

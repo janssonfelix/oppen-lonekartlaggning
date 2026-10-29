@@ -202,11 +202,16 @@ också när det är hopfällt.
    skillnaden i hela organisationen som beror på att kvinnor och män arbetar i olika
    sektorer. Pilen vid en sektor öppnar dess yrken i Utforska. Lika arbete, likvärdigt arbete
    och övriga analyser gäller alltid hela organisationen.
-5. **Prioritering · Löneöversyn · Handlingsplan** — rangordna grupper,
-   beräkna åtgärdskostnad, simulera budget (generellt + riktat), och låt
-   handlingsplanen förifyllas. I Prioritering visar matrisen varje grupps avvikelse mot referensen och dess
-   storlek, och kostnadsdiagrammet de grupper som kostar mest att lyfta (med den kumulativa andelen av
-   totalkostnaden). I Löneöversyn står potten, vad som gått åt och totalkostnaden överst. Könsgapet i en grupp visas i Prioritering bara när både
+5. **Prioritering · Löneöversyn · Handlingsplan** — tre flikar med var sin fråga.
+   **Prioritering** svarar på *vad* som bör åtgärdas och vad det kostar: matrisen visar varje grupps
+   avvikelse mot referensen och dess storlek, åtgärdslistan rangordnar grupperna, och kostnadsdiagrammet
+   visar de grupper som kostar mest att lyfta (med den kumulativa andelen av totalkostnaden).
+   **Löneöversyn** svarar på *hur* potten fördelas: lägg in en budget, ett generellt påslag och riktade
+   potter per grupp, och se nya löner, vad som gått åt och lönegapet före och efter. En riktad rad kan
+   begränsas till ett kön eller till löner under en gräns, och lyfta till en nivå ("höj till") — det som
+   tidigare hette Lönerevisionssimulatorn. PO-påslag och beräkningsperiod, som all kostnad räknas med,
+   ställs in under **Inställningar** i sidhuvudet. **Handlingsplanen** förifylls ur de två.
+   Könsgapet i en grupp visas i Prioritering bara när både
    kvinnorna och männen i gruppen är tillräckligt många för att redovisas; annars räknas
    gruppens prioritet utan könsgapet. I **Löneöversyn** får ni lägga en egen riktad rad på
    vilken grupp som helst, också en grupp under tröskeln — det är er egen simulering. Radens

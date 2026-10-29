@@ -152,8 +152,7 @@ const INFO_SECTIONS = {
         <ul>
             <li><strong>Underlagets kvalitet:</strong> fem kriterier — jämförbarhet, statistisk styrka, fullständighet, rimlighet och modell — som var och ett får OK, Varning eller Kritisk. Underlaget får samma status som det svagaste kriteriet.</li>
             <li><strong>Outliers-detektor:</strong> Z-score per BAS-grupp på log-lön. |Z| ≥ 3 flaggas för manuell granskning och visas med lön och filens radnummer (bara i verktyget)</li>
-            <li><strong>Lönerevisionssimulator:</strong> simulerar regelbaserade höjningar inkl. PO-påslag och beräkningsperiod (3/6/9/12 mån)</li>
-            <li><strong>Löneöversyn (prognos):</strong> budget-först — lägg in en pott (kr eller %), fördela generellt + riktat per BAS och AID, se nya löner, budgetutnyttjande och lönegap före/efter; förslag som riktar potten mot osakliga gap</li>
+            <li><strong>Löneöversyn (prognos):</strong> budget-först — lägg in en pott (kr eller %), fördela generellt + riktat per BAS och AID (en rad kan begränsas till ett kön eller till löner under en gräns, och lyfta till en nivå), se nya löner, budgetutnyttjande och lönegap före/efter; förslag som riktar potten mot osakliga gap. Kostnaden räknas med PO-påslag och beräkningsperiod från Inställningar</li>
             <li><strong>Per-BAS conditional gap:</strong> separat regression inom varje BAS-intervall — visar var i organisationen oförklarat gap ligger</li>
             <li><strong>Motivation-suggestion-engine:</strong> 8 deterministiska regler (ingen LLM) som ger HR testbara hypoteser per prio-rad — åldersskillnad, glasstak-mönster, bristyrke, MDE-tröskel m.fl.</li>
         </ul>

@@ -111,9 +111,8 @@ describe('I1: Löneöversyn visar ingen kostnad för grupper under tröskeln', (
 //  - Låddiagrammet per kön (INDIVIDDIAGRAM nedan): avvikarna är enskilda löner, utan yrke (dataskydd.md § 4).
 //    Spridningsdiagrammen är INTE undantagna: en persons punkt ritas och exporteras bara när
 //    personens grupp och kön i gruppen når tröskeln, så deras export prövas som alla andras.
-//  - Lönerevisionssimulatorn körs här med ett urval under tröskeln (männen i Y1, "höj till" två gånger mannens
-//    lön: utan spärr vore månadskostnaden hans lön) och med ett över den (kvinnorna i Y1), och dess utfall
-//    läses som en egen väg; det råa gapet prövas av C3.
+//  - Riktade potter i Löneöversyn på färre personer än tröskeln är användarens egen simulering (ADR-38 R2) och
+//    visar beloppet på raden; rigg­en lägger inga sådana rader. Det råa gapet före och efter prövas av C3.
 //  - Robusthetspanelen körs här direkt (den räknas annars först på knapptryck) och läses som en egen väg;
 //    att den utelämnar par med en grupp under tröskeln och anger antalet prövas med parfixturen ovan.
 //  - Ålder & karriär ritas här med "Alla BAS". Att fliken följer regeln för ett litet kön, i hela
@@ -128,12 +127,9 @@ describe.each([[10, []], [25, SENT_MELLAN]])('I4: invarianten över flikar och e
         const namn = utdata.map(([n]) => n);
         for (const krav of ['skärm: alla flikar', 'Word-utkastet', 'Att göra-CSV', 'ZIP Excel-filen', 'utskrift: komplett', 'utskrift: ledning', 'utskrift: facklig',
             'tabell-CSV: explore-table', 'diagramdata: chart-explore', 'rapportunderlag: sammanfattning',
-            'simulatorn: urval under tröskeln', 'simulatorn: urval över tröskeln', 'robusthetspanelen'])
+            'robusthetspanelen'])
             expect(namn, krav).toContain(krav);
         expect(utdata.find(([n]) => n === 'robusthetspanelen')[1]).toMatch(/Kvinnodominerat yrke|Inga kandidatpar/);
-        // Simulatorn: spärren står för det lilla urvalet, talen för det stora (annars prövar vägen inget).
-        expect(utdata.find(([n]) => n === 'simulatorn: urval under tröskeln')[1]).toMatch(new RegExp(`1 person, färre än ${k}`));
-        expect(utdata.find(([n]) => n === 'simulatorn: urval över tröskeln')[1]).toMatch(/Berörda personer\s*30/);
         expect(namn.filter(n => n.startsWith('gruppdossier')).length).toBeGreaterThan(5);
         // Varje fångad utdata ska ha innehåll, utan undantag: fixturen ger rader i varje tabell med CSV-knapp,
         // spår i varje ritat diagram, minst en iakttagelse och minst en Att göra-punkt. En export som inte

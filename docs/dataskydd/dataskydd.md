@@ -167,10 +167,11 @@ personer — beloppet bygger på enskildas löner …") så att användaren vet 
 Per grupp maskeras medianer och kostnad i utfallstabellen och i exportens blad
 *Fördelning*.
 
-**Lönerevisionssimulatorn följer regeln.** Urvalet simulatorn räknar på (kön, BAS-intervall och
-lönegräns) måste nå minsta gruppstorlek, annars går simuleringen inte att köra och en mening säger
-varför; åtgärden måste beröra minst så många personer, annars visas meningen i stället för utfallet.
-Kvinnors medianlön i procent av mäns före och efter visas bara när varje kön når tröskeln.
+**Riktade potter med kön och lönegräns följer regeln för egna rader.** En riktad rad i Löneöversyn kan
+begränsas till ett kön och till löner under en gräns (det som tidigare var Lönerevisionssimulatorn).
+Berör raden färre personer än minsta gruppstorlek är det er egen simulering: beloppet visas på raden
+med noten att det bygger på enskildas löner. Kvinnors medianlön i procent av mäns före och efter
+visas bara när varje kön når tröskeln.
 
 **Löneöversyns tröskelmål följer regeln.** Lyftet i procent till kvinnor och dess kostnad visas bara
 när varje kön i urvalet når tröskeln; annars står ett streck och meningen om utelämnat könsuppdelat

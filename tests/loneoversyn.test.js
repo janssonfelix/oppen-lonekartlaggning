@@ -5,7 +5,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import {
-    totalLonSum, computePott, allocate, rawGenderGap, suggestTargets, forecastOutcome,
+    totalLonSum, computePott, allocate, targetRows, rawGenderGap, suggestTargets, forecastOutcome,
     summarizeGroups, detectLeapfrog, closureTargets, stagedPlan,
     bandStats, individualRemediation, marketTargets, sensitivityCurve
 } from '../src/lib/loneoversyn.js';
@@ -45,6 +45,36 @@ describe('forecast: generellt påslag', () => {
         const a = allocate(rows(), { mode: 'kr', value: 1000 }, []);
         expect(a.totals.generellCost).toBe(5000);   // 5 individer × 1000
         expect(a.perPerson[3].nyLon).toBe(41000);
+    });
+});
+
+describe('forecast: riktat — kön, lönegräns och höj till', () => {
+    const t = over => ({ bas: 'A', aid: '5301', mode: 'kr', value: 3000, dist: 'flat', ...over });
+    it('targetRows: gruppen, snävad till kön och löner under gränsen', () => {
+        expect(targetRows(rows(), t())).toEqual([0, 1, 2]);
+        expect(targetRows(rows(), t({ kon: 'kvinna' }))).toEqual([0, 1]);
+        expect(targetRows(rows(), t({ kon: 'man' }))).toEqual([2]);
+        expect(targetRows(rows(), t({ lonCap: 32000 }))).toEqual([0]);
+        expect(targetRows(rows(), t({ aid: '*', kon: 'alla', lonCap: null }))).toEqual([0, 1, 2]);
+        expect(targetRows(rows(), t({ bas: 'B', aid: '*', kon: 'kvinna' }))).toEqual([4]);
+    });
+    it('bara kvinnor: potten fördelas bland kvinnorna, mannen får inget', () => {
+        const a = allocate(rows(), { mode: 'pct', value: 0 }, [t({ kon: 'kvinna' })]);
+        expect(a.perPerson[2].delta).toBe(0);
+        expect(a.perPerson[0].delta + a.perPerson[1].delta).toBeCloseTo(3000, 6);
+    });
+    it('lönegräns: bara den under gränsen får påslaget', () => {
+        const a = allocate(rows(), { mode: 'pct', value: 0 }, [t({ lonCap: 31000 })]);
+        expect(a.perPerson.map(p => p.delta)).toEqual([3000, 0, 0, 0, 0]);
+    });
+    it('höj till: var och en under beloppet lyfts dit, de över rörs inte; fördelningen spelar ingen roll', () => {
+        const a = allocate(rows(), { mode: 'pct', value: 0 }, [t({ mode: 'till', value: 31000, dist: 'lowest' })]);
+        expect(a.perPerson.map(p => p.nyLon)).toEqual([31000, 32000, 34000, 40000, 38000]);
+        expect(a.totals.riktadCost).toBe(1000);
+    });
+    it('en rad utan träff (kön som inte finns i gruppen) kostar inget', () => {
+        const a = allocate(rows(), { mode: 'pct', value: 0 }, [t({ bas: 'B', aid: '2000', kon: 'kvinna', lonCap: 30000 })]);
+        expect(a.totals.riktadCost).toBe(0);
     });
 });
 

@@ -144,17 +144,14 @@ describe('C3: könsuppdelade mått för hela organisationen kräver tröskeln f�
         expect(harNagon(t, gap)).toEqual([]);
         expect(t).toMatch(NOT);
     });
-    it('lönerevisionssimulatorn: utfallet för 60 kvinnor visas, men inte medianlönen i % av mäns', () => {
+    it('löneöversyn: en riktad rad till kvinnorna i S1 visar utfallet, men inte medianlönen i % av mäns', () => {
         const w = fonster3(null);
-        const d = w.document;
-        d.getElementById('sim-kon').value = 'kvinna';
-        d.getElementById('sim-bas').value = '__ALLA__';
-        d.getElementById('sim-run').click();
-        const t = normalisera(d.getElementById('sim-results').textContent);
-        expect(t).toMatch(/Berörda personer\s*60/);
+        w.__state.forecast.targets = [{ bas: 'S1', aid: '6000', kon: 'kvinna', lonCap: null, mode: 'kr', value: 500, dist: 'flat', targetLevel: 'median', pool: 'övrigt' }];
+        w.__renderTabContent('loneoversyn');
+        const t = normalisera(w.document.getElementById('forecast-outcome').textContent);
+        expect(t).toMatch(/S1/);
         expect(harNagon(t, [...MAN, ...gap])).toEqual([]);
         expect(t).toMatch(NOT);
-        expect(t).not.toMatch(/Före: \d/);
     });
     it('vid 3 (männens antal) redovisas måtten', async () => {
         const w = fonster3(3);

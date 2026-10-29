@@ -540,7 +540,6 @@ function updateDashboardStats() {
 
 // ---- Populate BAS selects ----
 function populateSelects() {
-    populateSimBasSelect();
     const bas = getBasIntervals();
     ['bas-select-kon','bas-select-demo'].forEach(selId => {
         const sel = document.getElementById(selId);

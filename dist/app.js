@@ -2545,11 +2545,34 @@ function rawGenderGap(rows, getLon) {
 }
 
 /**
+ * Raderna en riktad pott gäller: gruppen (BAS, eller BAS och AID), begränsad till ett kön (`kon`:
+ * 'kvinna' | 'man', annars alla) och till löner under en gräns (`lonCap`, kr/mån, annars alla).
+ * Samma urval som allocate() räknar på, så att gränssnittet kan visa hur många raden berör.
+ * @param {Array} rows - individrader {bas, aid, kon, lon}
+ * @param {{bas:string, aid:string, kon?:string, lonCap?:number|null}} t
+ * @returns {number[]} index i rows
+ */
+function targetRows(rows, t) {
+    const kon = t.kon === 'kvinna' || t.kon === 'man' ? t.kon : 'alla';
+    const cap = t.lonCap != null && isFinite(t.lonCap) && t.lonCap > 0 ? t.lonCap : null;
+    const konOk = r => kon === 'alla' || (kon === 'kvinna' ? String(r.kon || '').includes('kvinna') : (r.kon === 'man' || r.kon === 'män'));
+    const ut = [];
+    (rows || []).forEach((r, i) => {
+        if (r.bas !== t.bas) return;
+        if (t.aid !== '*' && r.aid !== t.aid) return;
+        if (!konOk(r) || (cap != null && !(r.lon < cap))) return;
+        ut.push(i);
+    });
+    return ut;
+}
+
+/**
  * Fördelar generellt + riktat påslag och returnerar nya löner per individ,
  * sammanställning per grupp och totaler.
  * @param {Array} rows - individrader {bas, aid, kon, lon}
  * @param {{mode:string, value:number|null}} generell - generellt påslag till alla (value null = 0)
- * @param {Array<{bas,aid,mode:'pct'|'kr',value,dist:'flat'|'lowest'|'target',targetLevel?:'median'|'p25'}>} targets
+ * @param {Array<{bas,aid,mode:'pct'|'kr'|'till',value,dist:'flat'|'lowest'|'target',targetLevel?:'median'|'p25',kon?:string,lonCap?:number|null}>} targets
+ *   mode 'till' lyfter var och en i urvalet som ligger under beloppet upp till det (ingen pott att fördela).
  * @param {number} [roundStep=0] - avrunda nya löner till närmaste steg (kr), 0 = ingen avrundning
  */
 function allocate(rows, generell, targets, roundStep) {
@@ -2562,22 +2585,17 @@ function allocate(rows, generell, targets, roundStep) {
         genDeltas[i] = g.mode === 'kr' ? gVal : rows[i].lon * gVal / 100;
     }
 
-    // Gruppindex per BAS|AID
-    const groupIdx = new Map();
-    rows.forEach((r, i) => {
-        const k = r.bas + '|' + r.aid;
-        if (!groupIdx.has(k)) groupIdx.set(k, []);
-        groupIdx.get(k).push(i);
-    });
-
     const tgtDeltas = new Array(n).fill(0);
     (targets || []).forEach(t => {
-        // aid === '*' → hela BAS-intervallet (alla yrken i BAS:et)
-        const idxs = t.aid === '*'
-            ? rows.map((r, i) => (r.bas === t.bas ? i : -1)).filter(i => i >= 0)
-            : groupIdx.get(t.bas + '|' + t.aid);
-        if (!idxs || !idxs.length) return;
+        // aid === '*' → hela BAS-intervallet (alla yrken i BAS:et); kön och lönegräns snävar in raden.
+        const idxs = targetRows(rows, t);
+        if (!idxs.length) return;
         const lons = idxs.map(i => rows[i].lon);
+        if (t.mode === 'till') {
+            const mal = isFinite(t.value) ? t.value : 0;
+            idxs.forEach((i, j) => { if (lons[j] > 0 && lons[j] < mal) tgtDeltas[i] += mal - lons[j]; });
+            return;
+        }
         const groupSum = lons.reduce((s, x) => s + (x > 0 ? x : 0), 0);
         const pott = t.mode === 'kr' ? (isFinite(t.value) ? t.value : 0)
                                      : groupSum * (isFinite(t.value) ? t.value : 0) / 100;
@@ -2902,10 +2920,11 @@ function sensitivityCurve(rows, candidates, costOpts, steps) {
     return out;
 }
 
-    return { computePott, allocate, suggestTargets, closureTargets, stagedPlan, summarizeGroups, detectLeapfrog, forecastOutcome, bandStats, individualRemediation, marketTargets, sensitivityCurve, _median };
+    return { computePott, allocate, targetRows, suggestTargets, closureTargets, stagedPlan, summarizeGroups, detectLeapfrog, forecastOutcome, bandStats, individualRemediation, marketTargets, sensitivityCurve, _median };
 })();
 const _fcComputePott = __mirrorForecast.computePott;
 const _fcAllocate = __mirrorForecast.allocate;
+const _fcTargetRows = __mirrorForecast.targetRows;
 const _fcSuggestTargets = __mirrorForecast.suggestTargets;
 const _fcClosureTargets = __mirrorForecast.closureTargets;
 const _fcStagedPlan = __mirrorForecast.stagedPlan;
@@ -12286,7 +12305,6 @@ function updateDashboardStats() {
 
 // ---- Populate BAS selects ----
 function populateSelects() {
-    populateSimBasSelect();
     const bas = getBasIntervals();
     ['bas-select-kon','bas-select-demo'].forEach(selId => {
         const sel = document.getElementById(selId);
@@ -12306,333 +12324,6 @@ function populateSelects() {
     });
 }
 
-// SPDX-License-Identifier: MIT
-// Copyright 2026 Felix Jansson
-// ---- Lönerevisionssimulator ----
-//
-// Simulatorn följer minsta gruppstorlek (ADR-38): urvalet — kön, BAS-intervall och lönegräns — ska nå
-// tröskeln innan något räknas, och regeln ska beröra minst så många personer innan utfallet visas
-// (kostnaden för "höj till" och de stegvisa lyften är annars skillnaden mot enskildas löner). Lönegapet
-// före och efter är ett könsuppdelat mått för hela organisationen och kräver tröskeln för varje kön
-// (`_konFarRedovisasFor`). Antalet berörda per kön är ett antal, inte ett lönemått, och visas.
-
-/** Urvalet som simulatorns kontroller anger: de rader som matchar kön, BAS-intervall och lönegräns. */
-function _simUrval(d) {
-    const konSel    = /** @type {HTMLInputElement} */ (document.getElementById('sim-kon'))?.value      || 'kvinna';
-    const basSel    = /** @type {HTMLInputElement} */ (document.getElementById('sim-bas'))?.value      || '__ALLA__';
-    const lonCapStr = /** @type {HTMLInputElement} */ (document.getElementById('sim-loncap'))?.value;
-    const lonCap    = lonCapStr ? parseFloat(lonCapStr) : null;
-    const matchesKon = r =>
-        konSel === 'alla' ||
-        (konSel === 'kvinna' && r.kon.includes('kvinna')) ||
-        (konSel === 'man'    && (r.kon === 'man' || r.kon === 'män'));
-    const matchesBas = r => basSel === '__ALLA__' || r.bas === basSel;
-    const underCap   = r => lonCap == null || r.lon < lonCap;
-    const iUrval = r => matchesKon(r) && matchesBas(r) && underCap(r);
-    return { iUrval, urval: d.filter(iUrval) };
-}
-
-/** Meningen när urvalet eller de berörda är färre än tröskeln (samma ordalydelse i knappen och i utfallet). */
-function _simUnderTroskelNot(vad, n) {
-    const k = kTroskel();
-    return `${vad === 'urval' ? 'Simuleringen körs inte: urvalet (kön, BAS-intervall och lönegräns)' : 'Utfallet visas inte: åtgärden berör'}`
-        + ` ${n} ${n === 1 ? 'person' : 'personer'}, färre än ${k} (minsta gruppstorlek för redovisning).`
-        + ` Kostnaden skulle då bygga på enskildas löner. Vidga urvalet${vad === 'urval' ? '' : ' eller ändra åtgärden'}.`;
-}
-
-/**
- * Läget för urvalet i kontrollerna: når det tröskeln? `not` är meningen när det inte gör det.
- * @returns {null | {n:number, ok:boolean, not:string}}
- */
-function _simUrvalStatus() {
-    const d = getData();
-    if (!d.length) return null;
-    const n = _simUrval(d).urval.length;
-    const ok = n >= kTroskel();
-    return { n, ok, not: ok ? '' : _simUnderTroskelNot('urval', n) };
-}
-
-/**
- * Knappen "Beräkna simulering" följer urvalet: under tröskeln är den inaktiv och meningen står där utfallet
- * annars visas. När urvalet åter når tröskeln tas meningen bort (ett visat utfall lämnas orört).
- */
-function _simSynkaKnapp() {
-    const btn = document.getElementById('sim-run');
-    const wrap = document.getElementById('sim-results');
-    if (!btn) return;
-    const st = _simUrvalStatus();
-    const sparr = !!(st && !st.ok);
-    /** @type {HTMLInputElement} */ (btn).disabled = sparr;
-    btn.title = sparr ? st.not : '';
-    if (!wrap) return;
-    if (sparr) {
-        wrap.style.display = 'block';
-        wrap.innerHTML = `<p class="gd-missing">${esc(st.not)}</p>`;
-        wrap._lastSimResult = null;
-        wrap.dataset.simSparr = '1';
-    } else if (wrap.dataset.simSparr) {
-        delete wrap.dataset.simSparr;
-        wrap.style.display = 'none';
-        wrap.innerHTML = '';
-    }
-}
-
-/**
- * Simulerar effekten av en lönerevision: applicerar utvalt påslag (kr eller %)
- * på filtrerad delmängd och rapporterar nya gruppstatistiker, total kostnad
- * (inkl. PO-påslag och period), och risk för "spillover" (att andra grupper hamnar under).
- * Under tröskeln (urvalet eller de berörda) returneras `{ underTroskel: true, not }` utan tal.
- * @returns {null | Object} Strukturerat resultat med before/after + kostnadsblock.
- */
-function runSalarySimulation() {
-    const d = getData();
-    if (!d.length) return null;
-    const actionSel = /** @type {HTMLInputElement} */ (document.getElementById('sim-action'))?.value   || 'add';
-    const amount    = parseFloat(/** @type {HTMLInputElement} */ (document.getElementById('sim-amount'))?.value) || 0;
-    const { iUrval, urval } = _simUrval(d);
-    if (urval.length < kTroskel()) return { affectedCount: 0, underTroskel: true, not: _simUnderTroskelNot('urval', urval.length) };
-
-    // A: Stegvis lyft beräknar målnivå per BAS (P25 eller median) och delar i 3 lika årssteg
-    /** @type {any} */ let stagedTarget = null;
-    if (actionSel === 'staged_p25' || actionSel === 'staged_median') {
-        stagedTarget = {};
-        const basList = [...new Set(d.map(r => r.bas))];
-        basList.forEach(b => {
-            const lons = d.filter(r => r.bas === b).map(r => r.lon).sort((a,bv) => a - bv);
-            if (!lons.length) return;
-            const idx = actionSel === 'staged_p25' ? Math.floor(lons.length * 0.25) : Math.floor(lons.length * 0.5);
-            stagedTarget[b] = lons[Math.min(idx, lons.length - 1)];
-        });
-    }
-
-    // Bygg simulerad data
-    const simData = d.map(r => {
-        const original = r.lon;
-        if (iUrval(r)) {
-            let newLon = original;
-            if (actionSel === 'add')      newLon = original + amount;
-            else if (actionSel === 'pct') newLon = original * (1 + amount / 100);
-            else if (actionSel === 'raise_to' && original < amount) newLon = amount;
-            else if (stagedTarget && stagedTarget[r.bas] && original < stagedTarget[r.bas]) {
-                // År 1: lyft 1/3 av vägen mot målet
-                const totalGap = stagedTarget[r.bas] - original;
-                newLon = original + Math.round(totalGap / 3);
-            }
-            return { ...r, lon: newLon, _delta: newLon - original };
-        }
-        return { ...r, _delta: 0 };
-    });
-
-    // Beräkna effekter (med konfigurerade månader + PO-påslag)
-    const months = (state.costSettings && state.costSettings.months) || 12;
-    const poFactor = 1 + ((state.costSettings && state.costSettings.poPct) || 0) / 100;
-    const affected = simData.filter(r => r._delta > 0);
-    if (affected.length && affected.length < kTroskel()) {
-        return { affectedCount: affected.length, underTroskel: true, not: _simUnderTroskelNot('berorda', affected.length) };
-    }
-    const totalMonthlyCost = affected.reduce((s, r) => s + r._delta, 0);
-    const totalAnnualCost  = totalMonthlyCost * months * poFactor;
-
-    // Råa lönegapet före/efter: ett könsuppdelat mått för hela organisationen — kräver tröskeln för varje kön.
-    const konFar = _konFarRedovisasFor(d);
-    const kvAll = d.filter(r => r.kon.includes('kvinna'));
-    const maAll = d.filter(r => r.kon === 'man' || r.kon === 'män');
-    const beforeGap = konFar && kvAll.length && maAll.length ? (Stat.median(kvAll.map(r=>r.lon)) / Stat.median(maAll.map(r=>r.lon)) - 1) * 100 : null;
-    const kvSim = simData.filter(r => r.kon.includes('kvinna'));
-    const maSim = simData.filter(r => r.kon === 'man' || r.kon === 'män');
-    const afterGap = konFar && kvSim.length && maSim.length ? (Stat.median(kvSim.map(r=>r.lon)) / Stat.median(maSim.map(r=>r.lon)) - 1) * 100 : null;
-    const konNot = konFar ? '' : _konUtelamnatNot();
-
-    // OLS oförklarat gap före/efter (kör regression mot original-data och simulerad)
-    //
-    // Try/finally garanterar att state.data återställs även om
-    // runOLSRegression kastar (t.ex. vid numerisk singularitet i designmatrisen
-    // efter simulerad lönehöjning). Annars kunde en krasch lämna sessionsstaten
-    // med simulerad data permanent skriven över den riktiga.
-    const origData = state.data;
-    let regAfter, regBefore;
-    try {
-        state.data = simData;
-        regAfter = runOLSRegression();
-        // Återställ före regBefore-körningen så den körs mot original
-        state.data = origData;
-        regBefore = runOLSRegression();
-    } finally {
-        // Säkerhetsnät: garantera att original-state återställs även vid undantag
-        state.data = origData;
-    }
-
-    return {
-        affectedCount: affected.length,
-        totalMonthlyCost,
-        totalAnnualCost,
-        beforeGap, afterGap, konNot,
-        beforeUnexplained: regBefore && !regBefore.error ? regBefore.konPct : null,
-        afterUnexplained:  regAfter  && !regAfter.error  ? regAfter.konPct  : null,
-        beforeUnexplainedSig: regBefore && !regBefore.error ? regBefore.pValue < 0.05 : null,
-        afterUnexplainedSig:  regAfter  && !regAfter.error  ? regAfter.pValue  < 0.05 : null,
-        // Effekt per kön
-        affectedKv: affected.filter(r => r.kon.includes('kvinna')).length,
-        affectedMa: affected.filter(r => r.kon === 'man' || r.kon === 'män').length
-    };
-}
-
-function renderSalarySimResults() {
-    const wrap = document.getElementById('sim-results');
-    if (!wrap) return;
-    // J: stöd för min/max-spann
-    const maxEl = document.getElementById('sim-amount-max');
-    const maxVal = maxEl && /** @type {HTMLInputElement} */ (maxEl).value ? parseFloat(/** @type {HTMLInputElement} */ (maxEl).value) : null;
-    const amountEl = /** @type {HTMLInputElement} */ (document.getElementById('sim-amount'));
-    const minVal = parseFloat(/** @type {HTMLInputElement} */ (amountEl).value) || 0;
-    if (maxVal && maxVal > minVal) {
-        const origAmount = /** @type {HTMLInputElement} */ (amountEl).value;
-        /** @type {HTMLInputElement} */ (amountEl).value = String(minVal);
-        const resMin = runSalarySimulation();
-        /** @type {HTMLInputElement} */ (amountEl).value = String(maxVal);
-        const resMax = runSalarySimulation();
-        /** @type {HTMLInputElement} */ (amountEl).value = origAmount;
-        if (!resMin || !resMax) { wrap.style.display = 'none'; return; }
-        const under = [resMin, resMax].find(r => r.underTroskel);
-        if (under) { _renderSimUnderTroskel(wrap, under); return; }
-        _renderSimMinMax(wrap, resMin, resMax, minVal, maxVal);
-        return;
-    }
-    const res = runSalarySimulation();
-    if (!res) { wrap.style.display = 'none'; return; }
-    if (res.underTroskel) { _renderSimUnderTroskel(wrap, res); return; }
-    delete wrap.dataset.simSparr;
-    if (res.affectedCount === 0) {
-        wrap.style.display = 'block';
-        wrap.innerHTML = `<div class="bak-botten rund-6 farg-dampad pad-14-16">Inga personer matchar reglerna. Justera filter eller åtgärd.</div>`;
-        return;
-    }
-    const fmt = new Intl.NumberFormat('sv-SE');
-    const fmtPct = v => v == null ? '–' : (v >= 0 ? '+' : '') + svPct(v, 1);
-    const dGap = (res.beforeGap != null && res.afterGap != null) ? (res.afterGap - res.beforeGap) : null;
-    const dUnexp = (res.beforeUnexplained != null && res.afterUnexplained != null) ? (res.afterUnexplained - res.beforeUnexplained) : null;
-    const dirGap = dGap != null ? (Math.abs(res.afterGap) < Math.abs(res.beforeGap) ? 'närmare 100 % (förbättring)' : 'längre från 100 %') : '';
-    const dirUnexp = dUnexp != null ? (Math.abs(res.afterUnexplained) < Math.abs(res.beforeUnexplained) ? 'närmare 100 % (förbättring)' : 'längre från 100 %') : '';
-
-    wrap.style.display = 'block';
-    wrap._lastSimResult = res;  // cache för bevis-knappen
-    wrap.innerHTML = `
-        <div class="bak-white ram-1-kant rund-8 pad-16-18">
-            <h4 class="rad-mitt fs-md mellan marg-0-0-12">
-                <span>Simuleringseffekt</span>
-                <button class="btn-evidence" id="btn-evidence-sim" type="button" title="Visa beräkningen bakom simuleringsresultatet" aria-label="Visa bevis för simuleringen">Bevis</button>
-            </h4>
-            <div class="summary-stats m-0">
-                <div class="stat-box ram-v-farg-primary">
-                    <div class="stat-etikett">Berörda personer</div>
-                    <div class="stat-val fs-nyckeltal">${fmt.format(res.affectedCount)}</div>
-                    <div class="finstilt">Kvinnor: ${res.affectedKv} · Män: ${res.affectedMa}</div>
-                </div>
-                <div class="stat-box ram-v-farg-kritisk">
-                    <div class="stat-etikett">Total budgetpåverkan</div>
-                    <div class="stat-val fs-xl">${_fmtCost(res.totalAnnualCost)}</div>
-                    <div class="finstilt">
-                        ${fmt.format(Math.round(res.totalMonthlyCost))} kr/månad × ${state.costSettings.months} mån × ${svTal((1 + state.costSettings.poPct/100), 2)} (PO-påslag)
-                    </div>
-                </div>
-                <div class="stat-box ram-v-farg-ok">
-                    <div class="stat-etikett">Kvinnors medianlön i % av mäns</div>
-                    ${res.konNot ? `<div class="gd-missing">${esc(res.konNot)}</div>` : `
-                    <div class="farg-dampad fs-md">Före: ${andelAvMan(res.beforeGap)}</div>
-                    <div class="fs-xl fw-700">Efter: ${andelAvMan(res.afterGap)}</div>
-                    ${dGap != null ? `<div class="text-dampad-xs marg-t-2">Förändring: ${dGap >= 0 ? '+' : ''}${svTal(dGap, 1)} procentenheter · ${dirGap}</div>` : ''}`}
-                </div>
-                <div class="stat-box ram-v-farg-info">
-                    <div class="stat-etikett">Oförklarat gap (regressionen)</div>
-                    <div class="farg-dampad fs-md">Före: ${fmtPct(res.beforeUnexplained)}${res.beforeUnexplainedSig ? ' (sig.)' : ''}</div>
-                    <div class="fs-xl fw-700">Efter: ${fmtPct(res.afterUnexplained)}${res.afterUnexplainedSig ? ' (sig.)' : ''}</div>
-                    ${dUnexp != null ? `<div class="text-dampad-xs marg-t-2">Δ: ${dUnexp >= 0 ? '+' : ''}${svTal(dUnexp, 2)} pp · ${dirUnexp}</div>` : ''}
-                </div>
-            </div>
-            <p class="text-dampad-xs lh-1_5 marg-t-14">
-                <em>Simuleringen körs i minnet — den faktiska datan är oförändrad. Resultatet visar vad som händer om regeln tillämpas.</em>
-            </p>
-            ${_buildSpilloverWarning(res)}
-        </div>
-    `;
-    // Bevis-popup för simulering
-    document.getElementById('btn-evidence-sim')?.addEventListener('click', () => {
-        const cached = wrap._lastSimResult || res;
-        _openEvidenceModal(_evidenceForSimulation(cached));
-    });
-}
-
-// H: Löneglidning-varning — varnar om åtgärden potentiellt triggar krav från andra grupper
-function _buildSpilloverWarning(res) {
-    if (!res || res.affectedCount === 0) return '';
-    // (förenklad heuristik: om åtgärden lyfter en grupp över sin BAS-median, kan andra i samma BAS reagera)
-    const items = computePrioritization(_selectedPrioReference());
-    const akut = items.filter(i => i.status === 'akut' || i.status === 'atgard').length;
-    if (akut === 0) return '';
-    return `<div class="notis-varning fs-sm lh-1_55 marg-t-14 pad-10-14">
-        <strong>${ikon('statusVarning')} Löneglidning att överväga:</strong> Om denna åtgärd genomförs kan andra grupper i samma BAS-intervall eller med liknande lönenivå rikta motsvarande krav. Identifiera dessa proaktivt och planera kommunikation. Granska Prioriteringen efter simuleringen — det finns ${akut} ytterligare grupp${akut>1?'er':''} som också ligger under referensen.
-    </div>`;
-}
-
-/** Utfallet under tröskeln: bara meningen om vad som utelämnats och varför, inga tal. */
-function _renderSimUnderTroskel(wrap, res) {
-    wrap.style.display = 'block';
-    wrap._lastSimResult = null;
-    wrap.dataset.simSparr = '1';
-    wrap.innerHTML = `<p class="gd-missing">${esc(res.not)}</p>`;
-}
-
-// J: rendera min/max-spann sida vid sida
-function _renderSimMinMax(wrap, resMin, resMax, minVal, maxVal) {
-    const fmt = new Intl.NumberFormat('sv-SE');
-    const fmtPct = v => v == null ? '–' : (v >= 0 ? '+' : '') + svPct(v, 1);
-    wrap.style.display = 'block';
-    delete wrap.dataset.simSparr;
-    const konNot = resMin.konNot || resMax.konNot;
-    wrap.innerHTML = `
-        <div class="bak-white ram-1-kant rund-8 pad-16-18">
-            <h4 class="fs-md marg-0-0-12">Simuleringseffekt — min/max-spann</h4>
-            ${konNot ? `<p class="gd-missing">${esc(konNot)}</p>` : ''}
-            <table class="data-table st-09">
-                <thead><tr><th scope="col">Mått</th><th class="t-hoger" scope="col">Min (${fmt.format(minVal)} kr)</th><th class="t-hoger" scope="col">Max (${fmt.format(maxVal)} kr)</th></tr></thead>
-                <tbody>
-                    <tr><th scope="row" class="ram-b-1-kant fw-normal ta-vanster">Berörda personer</th><td class="t-hoger">${fmt.format(resMin.affectedCount)}</td><td class="t-hoger">${fmt.format(resMax.affectedCount)}</td></tr>
-                    <tr><th scope="row" class="ram-b-1-kant fw-normal ta-vanster">Total budgetpåverkan</th><td class="t-hoger">${_fmtCost(resMin.totalAnnualCost)}</td><td class="t-hoger">${_fmtCost(resMax.totalAnnualCost)}</td></tr>
-                    <tr><th scope="row" class="ram-b-1-kant fw-normal ta-vanster">Kvinnors medianlön i % av mäns (efter)</th><td class="t-hoger">${andelAvMan(resMin.afterGap)}</td><td class="t-hoger">${andelAvMan(resMax.afterGap)}</td></tr>
-                    <tr><th scope="row" class="ram-b-1-kant fw-normal ta-vanster">Oförklarat gap (efter)</th><td class="t-hoger">${fmtPct(resMin.afterUnexplained)}</td><td class="t-hoger">${fmtPct(resMax.afterUnexplained)}</td></tr>
-                </tbody>
-            </table>
-            <p class="text-dampad-xs lh-1_5 marg-t-10">
-                <em>Visar effekt vid två olika belopp för budgetdialog. Antal månader och PO-påslag enligt aktuella inställningar.</em>
-            </p>
-        </div>
-    `;
-}
-
-function populateSimBasSelect() {
-    const sel = document.getElementById('sim-bas');
-    if (!sel) return;
-    const bas = getBasIntervals();
-    const cur = /** @type {HTMLInputElement} */ (sel).value;
-    sel.innerHTML = '<option value="__ALLA__">Alla BAS</option>' + bas.map(b => `<option value="${esc(b)}">BAS-${esc(b)}</option>`).join('');
-    if (cur && [.../** @type {HTMLSelectElement} */ (sel).options].some(o => o.value === cur)) /** @type {HTMLInputElement} */ (sel).value = cur;
-    _simSynkaKnapp();
-}
-
-document.getElementById('sim-run')?.addEventListener('click', renderSalarySimResults);
-document.getElementById('sim-reset')?.addEventListener('click', () => {
-    const wrap = document.getElementById('sim-results');
-    if (wrap) { wrap.style.display = 'none'; wrap.innerHTML = ''; delete wrap.dataset.simSparr; }
-    /** @type {HTMLInputElement} */ (document.getElementById('sim-amount')).value = '1500';
-    /** @type {HTMLInputElement} */ (document.getElementById('sim-loncap')).value = '';
-    /** @type {HTMLInputElement} */ (document.getElementById('sim-kon')).value = 'kvinna';
-    /** @type {HTMLInputElement} */ (document.getElementById('sim-bas')).value = '__ALLA__';
-    /** @type {HTMLInputElement} */ (document.getElementById('sim-action')).value = 'add';
-    _simSynkaKnapp();
-});
-// Urvalets kontroller: knappen följer tröskeln medan användaren väljer.
-['sim-kon', 'sim-bas'].forEach(id => document.getElementById(id)?.addEventListener('change', _simSynkaKnapp));
-document.getElementById('sim-loncap')?.addEventListener('input', _simSynkaKnapp);
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 
@@ -15822,46 +15513,6 @@ function _evidenceForPaygapRow(p) {
     };
 }
 
-/**
- * Bevis-payload för Lönerevisionssimulatorns resultat-block.
- * @param {Object} res - resultatet från runSalarySimulation()
- */
-function _evidenceForSimulation(res) {
-    const fmtKr = v => v == null ? '—' : Math.round(v).toLocaleString('sv-SE') + ' kr';
-    const fmtN = v => v == null ? '—' : v.toLocaleString('sv-SE');
-    const fmtPct = v => v == null ? '—' : (v >= 0 ? '+' : '') + svPct(v, 2);
-    const months = state.costSettings?.months || 12;
-    const poPct  = state.costSettings?.poPct  || 0;
-    const poFactor = 1 + poPct / 100;
-    const dGap = (res.beforeGap != null && res.afterGap != null) ? res.afterGap - res.beforeGap : null;
-    const dUnexp = (res.beforeUnexplained != null && res.afterUnexplained != null) ? res.afterUnexplained - res.beforeUnexplained : null;
-
-    return {
-        title: 'Bevis — Lönerevisionssimulering',
-        intro: `Simuleringen kör analysen två gånger — en gång på original-data och en gång på data där den valda regeln tillämpats. Inga ändringar görs på den faktiska state.data — allt sker i en in-memory-kopia.`,
-        rows: [
-            { label: 'Berörda personer',                  value: fmtN(res.affectedCount), note: `Kvinnor: ${res.affectedKv} · Män: ${res.affectedMa}` },
-            { label: 'Total månadskostnad (lönelyft)',    value: fmtKr(res.totalMonthlyCost), note: 'Summa av alla lönehöjningar per månad' },
-            { label: 'Total årskostnad (inkl. PO)',       value: fmtKr(res.totalAnnualCost), note: `Månadskostnad × ${months} mån × ${svTal(poFactor, 4)} (PO-faktor)` },
-            { label: '— Rågap (median kvinnor mot män)',    value: '', note: res.konNot || '' },
-            { label: 'Före simulering',                    value: fmtPct(res.beforeGap) },
-            { label: 'Efter simulering',                   value: fmtPct(res.afterGap) },
-            { label: 'Δ Rågap',                            value: dGap != null ? (dGap >= 0 ? '+' : '') + svTal(dGap, 2) + ' pp' : '—', note: dGap != null && Math.abs(res.afterGap) < Math.abs(res.beforeGap) ? 'närmare 0 — förbättring' : 'längre från 0 — försämring' },
-            { label: '— Oförklarat gap (regressionen)',  value: '' },
-            { label: 'Före simulering',                    value: fmtPct(res.beforeUnexplained) + (res.beforeUnexplainedSig ? ' (sig.)' : '') },
-            { label: 'Efter simulering',                   value: fmtPct(res.afterUnexplained) + (res.afterUnexplainedSig ? ' (sig.)' : '') },
-            { label: 'Δ Oförklarat',                       value: dUnexp != null ? (dUnexp >= 0 ? '+' : '') + svTal(dUnexp, 2) + ' pp' : '—' }
-        ],
-        formula: `<strong>Kostnadsberäkning:</strong><br>
-            Årskostnad = Σ(lönehöjning) × ${months} mån × (1 + ${svPct(poPct, 2)} PO)<br>
-            = ${fmtKr(res.totalMonthlyCost)} × ${months} × ${svTal(poFactor, 4)}<br>
-            = <strong>${fmtKr(res.totalAnnualCost)}</strong><br><br>
-            <strong>Effekt på gap:</strong><br>
-            • <em>Rågapet</em> beräknas via direkt median-jämförelse på simulerad data<br>
-            • <em>Oförklarat gap</em> körs om hela OLS-regressionen (log(lön) ~ kön + ålder + BAS) på simulerad data och tar β_kön omräknat till %`,
-        footer: `Simuleringen ändrar inte den underliggande datan — state.data återställs alltid efter beräkningen (try/finally-garanti). PO-faktorn (${svPct(poPct, 2)}) och beräkningsperioden (${months} månader) konfigureras i Prioriteringsflikens kostnadssektion.`
-    };
-}
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 
@@ -18719,10 +18370,10 @@ function renderForecastTargets() {
         return;
     }
     const dAll = getData();
-    // Gruppens storlek per rad ("*" = hela BAS-intervallet). En rad som användaren själv lägger på en
-    // grupp under tröskeln är tillåten (egen simulering): beloppet räknas som för
-    // andra rader, och noten under raden säger vad det bygger på.
-    const gruppN = tg => dAll.filter(r => r.bas === tg.bas && (tg.aid === '*' || r.aid === tg.aid)).length;
+    // Radens urval ("*" = hela BAS-intervallet; kön och lönegräns snävar in). En rad som användaren själv
+    // lägger på färre personer än tröskeln är tillåten (egen simulering, ADR-38 R2): beloppet räknas som
+    // för andra rader, och noten under raden säger vad det bygger på.
+    const gruppN = tg => _fcTargetRows(dAll, tg).length;
     host.innerHTML = t.map((tg, i) => {
         // #13 Isolerad kostnad för raden (vad den äter av potten)
         let rowCost = 0;
@@ -18735,17 +18386,22 @@ function renderForecastTargets() {
             .map(([v, l]) => `<option value="${v}"${tg.dist === v ? ' selected' : ''}>${l}</option>`).join('');
         const lvlOpts = [['median', 'BAS-median'], ['p25', 'BAS P25']]
             .map(([v, l]) => `<option value="${v}"${tg.targetLevel === v ? ' selected' : ''}>${l}</option>`).join('');
+        const konOpts = [['alla', 'Alla'], ['kvinna', 'Bara kvinnor'], ['man', 'Bara män']]
+            .map(([v, l]) => `<option value="${v}"${(tg.kon || 'alla') === v ? ' selected' : ''}>${l}</option>`).join('');
+        const till = tg.mode === 'till';
         return `<div class="forecast-target-row" data-idx="${i}">
             <select data-f="bas" aria-label="BAS-intervall">${basOpts}</select>
             <select data-f="aid" aria-label="Yrke (AID)">${aidOpts}</select>
-            <select data-f="mode" aria-label="Beloppstyp"><option value="kr"${tg.mode === 'kr' ? ' selected' : ''}>kr/mån</option><option value="pct"${tg.mode === 'pct' ? ' selected' : ''}>% av grupplön</option></select>
+            <select data-f="kon" aria-label="Kön som omfattas" title="Begränsa raden till ett kön">${konOpts}</select>
+            <label class="ft-cap" title="Bara löner under gränsen omfattas; tomt = alla">under <input type="number" data-f="lonCap" min="0" step="500" value="${tg.lonCap == null ? '' : tg.lonCap}" aria-label="Bara löner under (kr/mån)" placeholder="alla löner"> kr</label>
+            <select data-f="mode" aria-label="Beloppstyp"><option value="kr"${tg.mode === 'kr' ? ' selected' : ''}>kr/mån att fördela</option><option value="pct"${tg.mode === 'pct' ? ' selected' : ''}>% av grupplön</option><option value="till"${till ? ' selected' : ''}>höj till (kr/mån)</option></select>
             <input type="number" data-f="value" min="0" step="100" value="${tg.value == null ? '' : tg.value}" aria-label="Belopp" class="bredd-90">
-            <select data-f="dist" aria-label="Fördelning inom gruppen">${distOpts}</select>
+            <select data-f="dist" aria-label="Fördelning inom gruppen"${till ? ' class="dold"' : ''}>${distOpts}</select>
             <select data-f="targetLevel" aria-label="Målnivå"${tg.dist === 'target' ? '' : ' class="dold"'}>${lvlOpts}</select>
             <select data-f="pool" aria-label="Pott-typ" title="Ring-fenced pott (visas i kostnad-per-pott)">${[['equity', 'Likalön'], ['marknad', 'Marknad'], ['befordran', 'Befordran'], ['övrigt', 'Övrigt']].map(([v, l]) => `<option value="${v}"${(tg.pool || 'övrigt') === v ? ' selected' : ''}>${l}</option>`).join('')}</select>
             <span class="text-dampad-xs ingen-radbrytning" title="Vad raden förbrukar av potten">≈ ${Math.round(rowCost).toLocaleString('sv-SE')} kr</span>
             <button type="button" data-f="remove" class="btn btn-secondary btn-sm" aria-label="Ta bort rad">${ikon('kryss', 14)}</button>
-        </div>${gruppN(tg) > 0 && isKMasked(gruppN(tg)) ? `<p class="k-mask-note">Gruppen har färre än ${kTroskel()} personer — beloppet bygger på enskildas löner och ingår i summorna, även i Excel-exporten.</p>` : ''}`;
+        </div>${gruppN(tg) > 0 && isKMasked(gruppN(tg)) ? `<p class="k-mask-note">Raden berör ${gruppN(tg)} ${gruppN(tg) === 1 ? 'person' : 'personer'}, färre än ${kTroskel()} — beloppet bygger på enskildas löner och ingår i summorna, även i Excel-exporten.</p>` : (gruppN(tg) === 0 ? '<p class="k-mask-note">Ingen i gruppen matchar kön och lönegräns.</p>' : '')}`;
     }).join('');
     host.querySelectorAll('.forecast-target-row').forEach(rowEl => {
         const i = parseInt(rowEl.getAttribute('data-idx') || '', 10);
@@ -18758,13 +18414,14 @@ function renderForecastTargets() {
             ctrl.addEventListener('change', () => {
                 const tg = state.forecast.targets[i];
                 if (field === 'value') tg.value = /** @type {HTMLInputElement} */ (ctrl).value === '' ? null : parseFloat(/** @type {HTMLInputElement} */ (ctrl).value);
+                else if (field === 'lonCap') tg.lonCap = /** @type {HTMLInputElement} */ (ctrl).value === '' ? null : parseFloat(/** @type {HTMLInputElement} */ (ctrl).value);
                 else tg[field] = /** @type {HTMLInputElement} */ (ctrl).value;
                 if (field === 'bas') { tg.aid = (_forecastAidsForBas(tg.bas)[0] || {}).aid || ''; renderForecastTargets(); }
-                if (field === 'dist') renderForecastTargets();
+                if (field === 'dist' || field === 'mode' || field === 'kon' || field === 'lonCap') renderForecastTargets();
                 updateForecast();
             });
-            if (field === 'value') ctrl.addEventListener('input', () => {
-                state.forecast.targets[i].value = /** @type {HTMLInputElement} */ (ctrl).value === '' ? null : parseFloat(/** @type {HTMLInputElement} */ (ctrl).value);
+            if (field === 'value' || field === 'lonCap') ctrl.addEventListener('input', () => {
+                state.forecast.targets[i][field] = /** @type {HTMLInputElement} */ (ctrl).value === '' ? null : parseFloat(/** @type {HTMLInputElement} */ (ctrl).value);
                 updateForecast();
             });
         });
@@ -18805,6 +18462,7 @@ function updateForecast() {
     if (gv != null && gv < 0) valWarn.push('Det generella påslaget är negativt.');
     if (state.forecast.generell.mode === 'pct' && gv != null && gv > 25) valWarn.push('Det generella påslaget är ovanligt högt (> 25 %).');
     if (state.forecast.targets.some(t => t.value == null || !(t.value > 0))) valWarn.push('En eller flera riktade rader saknar belopp.');
+    if (state.forecast.targets.some(t => _fcTargetRows(d, t).length === 0)) valWarn.push('En riktad rad matchar ingen person (kön eller lönegräns).');
     const out = _fcForecastOutcome(d, state.forecast.budget, state.forecast.generell, state.forecast.targets, cost);
     const riktade = state.forecast.targets.length;
     _laNyckel('nyckel-lo-riktade', riktade ? `${riktade} ${riktade === 1 ? 'riktad pott' : 'riktade potter'}` : 'Inga riktade potter');
@@ -19371,6 +19029,7 @@ function exportForecast() {
         ['Kvar att fördela (kr/mån)', kr(out.kvar)],
         ['Generellt påslag', (state.forecast.generell.value || 0) + (state.forecast.generell.mode === 'kr' ? ' kr/mån' : ' %')],
         ['Minsta gruppstorlek för riktning', state.forecast.minGroupN || 0],
+        ...state.forecast.targets.map((t, i) => [`Riktad pott ${i + 1}`, `BAS ${t.bas}, ${t.aid === '*' ? 'alla yrken' : 'AID ' + t.aid}${t.kon === 'kvinna' ? ', bara kvinnor' : t.kon === 'man' ? ', bara män' : ''}${t.lonCap > 0 ? `, löner under ${Math.round(t.lonCap)} kr` : ''}: ${t.mode === 'till' ? `höj till ${t.value} kr/mån` : t.mode === 'kr' ? `${t.value} kr/mån` : `${t.value} % av grupplön`}${t.mode === 'till' ? '' : ` (${{ flat: 'lika %', lowest: 'lägst först', target: 'mot målnivå' }[t.dist] || t.dist})`}`]),
         ...(_fcParNot ? [['Utelämnade kandidatpar (likvärdigt arbete)', _fcParNot]] : []),
         ['Avrundning av nya löner (kr)', state.forecast.roundStep || 0],
         ['Stegvis plan (antal år)', state.forecast.years || 1],
@@ -19421,7 +19080,7 @@ function exportForecast() {
         const basList = getBasIntervals();
         const bas = basList[0] || '';
         const aid = (_forecastAidsForBas(bas)[0] || {}).aid || '';
-        state.forecast.targets.push({ bas, aid, mode: 'kr', value: null, dist: 'lowest', targetLevel: 'median', pool: 'övrigt' });
+        state.forecast.targets.push({ bas, aid, kon: 'alla', lonCap: null, mode: 'kr', value: null, dist: 'lowest', targetLevel: 'median', pool: 'övrigt' });
         renderForecastTargets();
         updateForecast();
     });
@@ -23691,7 +23350,6 @@ function _fmtCost(kr) {
 }
 
 function renderPrioritering() {
-    _simSynkaKnapp();   // simulatorns knapp följer tröskeln och urvalet (14-lonesimulator.js)
     const ref = _selectedPrioReference();
     const empty   = document.getElementById('prio-empty');
     const content = document.getElementById('prio-content');
@@ -24076,21 +23734,23 @@ function _readCostSettings() {
             : `Standard: ${state.costSettings.months} mån × ${svPct(state.costSettings.poPct, 2)} PO (SKR:s cirkulär 2025 för kommuner och regioner)`;
     }
 }
+// Fälten står under Inställningar i sidhuvudet (gäller alla flikar): Prioritering räknas om direkt, och den flik som
+// visas ritas om så att Löneöversyn, gruppdossiern och handlingsplanen följer samma period och påslag.
+function _kostnadAndrad() {
+    _readCostSettings();
+    if (!state.data.length) return;
+    renderPrioritering();
+    const aktiv = document.querySelector('.nav-item.active')?.getAttribute('data-tab');
+    if (aktiv && aktiv !== 'prioritering' && typeof renderTabContent === 'function') renderTabContent(aktiv);
+}
 ['prio-cost-months','prio-po-pct'].forEach(id => {
-    document.getElementById(id)?.addEventListener('input', () => {
-        _readCostSettings();
-        renderPrioritering();
-    });
-    document.getElementById(id)?.addEventListener('change', () => {
-        _readCostSettings();
-        renderPrioritering();
-    });
+    document.getElementById(id)?.addEventListener('input', _kostnadAndrad);
+    document.getElementById(id)?.addEventListener('change', _kostnadAndrad);
 });
 document.getElementById('prio-cost-reset')?.addEventListener('click', () => {
     /** @type {HTMLInputElement} */ (document.getElementById('prio-cost-months')).value = String(COST_DEFAULTS.months);
     /** @type {HTMLInputElement} */ (document.getElementById('prio-po-pct')).value      = String(COST_DEFAULTS.poPct);
-    _readCostSettings();
-    renderPrioritering();
+    _kostnadAndrad();
 });
 // Initiera period-sammanfattningen vid sidladdning
 setTimeout(_readCostSettings, 0);
@@ -25555,8 +25215,7 @@ const INFO_SECTIONS = {
         <ul>
             <li><strong>Underlagets kvalitet:</strong> fem kriterier — jämförbarhet, statistisk styrka, fullständighet, rimlighet och modell — som var och ett får OK, Varning eller Kritisk. Underlaget får samma status som det svagaste kriteriet.</li>
             <li><strong>Outliers-detektor:</strong> Z-score per BAS-grupp på log-lön. |Z| ≥ 3 flaggas för manuell granskning och visas med lön och filens radnummer (bara i verktyget)</li>
-            <li><strong>Lönerevisionssimulator:</strong> simulerar regelbaserade höjningar inkl. PO-påslag och beräkningsperiod (3/6/9/12 mån)</li>
-            <li><strong>Löneöversyn (prognos):</strong> budget-först — lägg in en pott (kr eller %), fördela generellt + riktat per BAS och AID, se nya löner, budgetutnyttjande och lönegap före/efter; förslag som riktar potten mot osakliga gap</li>
+            <li><strong>Löneöversyn (prognos):</strong> budget-först — lägg in en pott (kr eller %), fördela generellt + riktat per BAS och AID (en rad kan begränsas till ett kön eller till löner under en gräns, och lyfta till en nivå), se nya löner, budgetutnyttjande och lönegap före/efter; förslag som riktar potten mot osakliga gap. Kostnaden räknas med PO-påslag och beräkningsperiod från Inställningar</li>
             <li><strong>Per-BAS conditional gap:</strong> separat regression inom varje BAS-intervall — visar var i organisationen oförklarat gap ligger</li>
             <li><strong>Motivation-suggestion-engine:</strong> 8 deterministiska regler (ingen LLM) som ger HR testbara hypoteser per prio-rad — åldersskillnad, glasstak-mönster, bristyrke, MDE-tröskel m.fl.</li>
         </ul>
@@ -28480,13 +28139,10 @@ function _instRita() {
     const anpassad = a => (a ? 'Anpassade värden' : 'Standardvärden');
     const lv = state.likvardighet || {};
     const prioAnpassad = JSON.stringify(state.prioConfig) !== JSON.stringify(PRIO_CONFIG_DEFAULTS);
-    const kostnad = state.costSettings || COST_DEFAULTS;
     const band = document.getElementById('arbvard-band'), extrem = document.getElementById('outliers-threshold');
     const rader = [
         { flik: 'prioritering', avsnitt: 'avsnitt-pr-installningar', namn: 'Prioritering', vad: 'Trösklar och viktning',
           lage: anpassad(prioAnpassad), andrad: prioAnpassad },
-        { flik: 'prioritering', avsnitt: 'avsnitt-pr-installningar', namn: 'Prioritering', vad: 'PO-påslag och beräkningsperiod',
-          lage: `${svPct(kostnad.poPct, 2)} · ${kostnad.months} månader`, andrad: kostnad.poPct !== COST_DEFAULTS.poPct || kostnad.months !== COST_DEFAULTS.months },
         { flik: 'likvardighet', avsnitt: 'avsnitt-lv-installningar', namn: 'Likvärdigt arbete', vad: 'Kvinnotröskel, minsta gap och antal par',
           lage: anpassad(lv.kvinnoTrosholdPct !== 60 || lv.minGapPct !== 5 || lv.topN !== 20), andrad: lv.kvinnoTrosholdPct !== 60 || lv.minGapPct !== 5 || lv.topN !== 20 },
         { flik: 'likvardighet', avsnitt: 'avsnitt-lv-poang', namn: 'Likvärdigt arbete', vad: 'Ekvivalensband för arbetsvärdering med poäng',

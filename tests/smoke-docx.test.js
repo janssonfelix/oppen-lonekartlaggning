@@ -281,8 +281,7 @@ describe('Word-utkastet som .docx', () => {
     });
 });
 
-describe('lönerevisionssimulatorn följer minsta gruppstorlek (ADR-38)', () => {
-    // 30 kvinnor och 30 män i A, 6 kvinnor i C: urvalet "kvinnor i C" är under tröskeln 10.
+describe('löneöversyn: riktade potter med kön, lönegräns och höj till (ersätter simulatorn)', () => {
     const fonster = () => {
         const w = createAppWindow();
         const rader = [];
@@ -293,51 +292,47 @@ describe('lönerevisionssimulatorn följer minsta gruppstorlek (ADR-38)', () => 
         w.eval('populateSelects(); unlockTabs();');
         return w;
     };
-    const valj = (w, kon, bas) => {
-        const d = w.document;
-        d.getElementById('sim-kon').value = kon;
-        d.getElementById('sim-bas').value = bas;
-        d.getElementById('sim-bas').dispatchEvent(new w.Event('change'));
+    const rad = (w, over) => {
+        w.__state.forecast.targets = [{ bas: 'A', aid: '6000', kon: 'alla', lonCap: null, mode: 'kr', value: 1000, dist: 'flat', targetLevel: 'median', pool: 'övrigt', ...over }];
+        w.__renderTabContent('loneoversyn');
+        return w.__state.forecast.result.alloc.perPerson;
     };
-    it('urval under tröskeln: knappen är inaktiv och meningen står där utfallet annars visas; vidgat urval tar bort den', () => {
+    const iA = p => p.bas === 'A';
+    it('bara kvinnor: männen i gruppen får inget', () => {
         const w = fonster();
-        const d = w.document;
-        valj(w, 'kvinna', 'C');
-        expect(d.getElementById('sim-run').disabled).toBe(true);
-        expect(d.getElementById('sim-results').style.display).toBe('block');
-        expect(d.getElementById('sim-results').textContent).toMatch(/urvalet \(kön, BAS-intervall och lönegräns\) 6 personer, färre än 10 \(minsta gruppstorlek för redovisning\)/);
-        expect(d.getElementById('sim-results').textContent).not.toMatch(/\d{5}/);
-        valj(w, 'kvinna', 'A');
-        expect(d.getElementById('sim-run').disabled).toBe(false);
-        expect(d.getElementById('sim-results').style.display).toBe('none');
-        d.getElementById('sim-run').click();
-        expect(d.getElementById('sim-results').textContent).toMatch(/Berörda personer\s*30/);
+        const pp = rad(w, { kon: 'kvinna' });
+        expect(pp.filter(p => iA(p) && p.kon === 'man').every(p => p.delta === 0)).toBe(true);
+        expect(pp.filter(p => iA(p) && p.kon === 'kvinna' && p.delta > 0).length).toBe(30);
+        expect(w.document.getElementById('forecast-targets').querySelector('[data-f="kon"]').value).toBe('kvinna');
     });
-    it('åtgärd som berör färre än tröskeln: utfallet ersätts av meningen, också i min/max-spannet', () => {
-        const w = fonster();
-        const d = w.document;
-        valj(w, 'kvinna', 'A');
-        d.getElementById('sim-action').value = 'raise_to';
-        d.getElementById('sim-amount').value = '25150';         // två kvinnor ligger under
-        d.getElementById('sim-run').click();
-        const t = d.getElementById('sim-results').textContent;
-        expect(t).toMatch(/åtgärden berör 2 personer, färre än 10/);
-        expect(t).not.toMatch(/kr/);
-        d.getElementById('sim-amount-max').value = '30000';      // max-scenariot berör alla 30, min-scenariot 2
-        d.getElementById('sim-run').click();
-        expect(d.getElementById('sim-results').textContent).toMatch(/åtgärden berör 2 personer/);
-        expect(d.getElementById('sim-results').textContent).not.toMatch(/min\/max/);
+    it('lönegräns: bara löner under gränsen omfattas', () => {
+        const pp = rad(fonster(), { lonCap: 25500 });
+        expect(pp.filter(p => p.delta > 0).map(p => p.lon).sort((a, b) => a - b)).toEqual([25000, 25100, 25200, 25300, 25400]);
     });
-    it('höjd tröskel efter ett visat utfall: fliken ritas om och knappen blir inaktiv', () => {
+    it('höj till: var och en under beloppet lyfts upp till det, ingen pott att fördela', () => {
+        const pp = rad(fonster(), { kon: 'kvinna', mode: 'till', value: 26000 });
+        const lyfta = pp.filter(p => p.delta > 0);
+        expect(lyfta.length).toBe(10);
+        expect(lyfta.every(p => p.nyLon === 26000 && p.kon === 'kvinna')).toBe(true);
+    });
+    it('en rad som berör färre än tröskeln får noten om enskildas löner; en som berör ingen får besked', () => {
         const w = fonster();
-        const d = w.document;
-        valj(w, 'kvinna', 'A');
-        d.getElementById('sim-run').click();
-        expect(d.getElementById('sim-results').textContent).toMatch(/Berörda personer/);
-        w.eval('sattKTroskel(50, { fraga: false })');
-        w.__renderTabContent('prioritering');
-        expect(d.getElementById('sim-run').disabled).toBe(true);
-        expect(d.getElementById('sim-results').textContent).toMatch(/30 personer, färre än 50/);
+        rad(w, { bas: 'C', aid: '5300' });
+        expect(w.document.getElementById('forecast-targets').textContent).toMatch(/Raden berör 6 personer, färre än 10/);
+        rad(w, { bas: 'C', aid: '5300', kon: 'man' });
+        expect(w.document.getElementById('forecast-targets').textContent).toMatch(/Ingen i gruppen matchar/);
+        expect(w.document.getElementById('forecast-meter').textContent).toMatch(/matchar ingen person/);
+    });
+    it('Excel-exporten beskriver raden med kön, lönegräns och belopp', async () => {
+        const { readFileSync } = await import('node:fs');
+        const w = fonster();
+        w.eval(readFileSync(new URL('../vendor/xlsx.mini.min.js', import.meta.url), 'utf8'));
+        rad(w, { kon: 'kvinna', lonCap: 26000, mode: 'till', value: 26000 });
+        let rader = null;
+        w.XLSX.writeFile = wb => { rader = w.XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1 }); };
+        w.eval('exportForecast()');
+        const r = rader.find(x => String(x[0]).startsWith('Riktad pott 1'));
+        expect(r[1]).toBe('BAS A, AID 6000, bara kvinnor, löner under 26000 kr: höj till 26000 kr/mån');
     });
 });
 

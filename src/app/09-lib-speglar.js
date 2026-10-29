@@ -402,11 +402,34 @@ function rawGenderGap(rows, getLon) {
 }
 
 /**
+ * Raderna en riktad pott gäller: gruppen (BAS, eller BAS och AID), begränsad till ett kön (`kon`:
+ * 'kvinna' | 'man', annars alla) och till löner under en gräns (`lonCap`, kr/mån, annars alla).
+ * Samma urval som allocate() räknar på, så att gränssnittet kan visa hur många raden berör.
+ * @param {Array} rows - individrader {bas, aid, kon, lon}
+ * @param {{bas:string, aid:string, kon?:string, lonCap?:number|null}} t
+ * @returns {number[]} index i rows
+ */
+function targetRows(rows, t) {
+    const kon = t.kon === 'kvinna' || t.kon === 'man' ? t.kon : 'alla';
+    const cap = t.lonCap != null && isFinite(t.lonCap) && t.lonCap > 0 ? t.lonCap : null;
+    const konOk = r => kon === 'alla' || (kon === 'kvinna' ? String(r.kon || '').includes('kvinna') : (r.kon === 'man' || r.kon === 'män'));
+    const ut = [];
+    (rows || []).forEach((r, i) => {
+        if (r.bas !== t.bas) return;
+        if (t.aid !== '*' && r.aid !== t.aid) return;
+        if (!konOk(r) || (cap != null && !(r.lon < cap))) return;
+        ut.push(i);
+    });
+    return ut;
+}
+
+/**
  * Fördelar generellt + riktat påslag och returnerar nya löner per individ,
  * sammanställning per grupp och totaler.
  * @param {Array} rows - individrader {bas, aid, kon, lon}
  * @param {{mode:string, value:number|null}} generell - generellt påslag till alla (value null = 0)
- * @param {Array<{bas,aid,mode:'pct'|'kr',value,dist:'flat'|'lowest'|'target',targetLevel?:'median'|'p25'}>} targets
+ * @param {Array<{bas,aid,mode:'pct'|'kr'|'till',value,dist:'flat'|'lowest'|'target',targetLevel?:'median'|'p25',kon?:string,lonCap?:number|null}>} targets
+ *   mode 'till' lyfter var och en i urvalet som ligger under beloppet upp till det (ingen pott att fördela).
  * @param {number} [roundStep=0] - avrunda nya löner till närmaste steg (kr), 0 = ingen avrundning
  */
 function allocate(rows, generell, targets, roundStep) {
@@ -419,22 +442,17 @@ function allocate(rows, generell, targets, roundStep) {
         genDeltas[i] = g.mode === 'kr' ? gVal : rows[i].lon * gVal / 100;
     }
 
-    // Gruppindex per BAS|AID
-    const groupIdx = new Map();
-    rows.forEach((r, i) => {
-        const k = r.bas + '|' + r.aid;
-        if (!groupIdx.has(k)) groupIdx.set(k, []);
-        groupIdx.get(k).push(i);
-    });
-
     const tgtDeltas = new Array(n).fill(0);
     (targets || []).forEach(t => {
-        // aid === '*' → hela BAS-intervallet (alla yrken i BAS:et)
-        const idxs = t.aid === '*'
-            ? rows.map((r, i) => (r.bas === t.bas ? i : -1)).filter(i => i >= 0)
-            : groupIdx.get(t.bas + '|' + t.aid);
-        if (!idxs || !idxs.length) return;
+        // aid === '*' → hela BAS-intervallet (alla yrken i BAS:et); kön och lönegräns snävar in raden.
+        const idxs = targetRows(rows, t);
+        if (!idxs.length) return;
         const lons = idxs.map(i => rows[i].lon);
+        if (t.mode === 'till') {
+            const mal = isFinite(t.value) ? t.value : 0;
+            idxs.forEach((i, j) => { if (lons[j] > 0 && lons[j] < mal) tgtDeltas[i] += mal - lons[j]; });
+            return;
+        }
         const groupSum = lons.reduce((s, x) => s + (x > 0 ? x : 0), 0);
         const pott = t.mode === 'kr' ? (isFinite(t.value) ? t.value : 0)
                                      : groupSum * (isFinite(t.value) ? t.value : 0) / 100;
@@ -759,10 +777,11 @@ function sensitivityCurve(rows, candidates, costOpts, steps) {
     return out;
 }
 
-    return { computePott, allocate, suggestTargets, closureTargets, stagedPlan, summarizeGroups, detectLeapfrog, forecastOutcome, bandStats, individualRemediation, marketTargets, sensitivityCurve, _median };
+    return { computePott, allocate, targetRows, suggestTargets, closureTargets, stagedPlan, summarizeGroups, detectLeapfrog, forecastOutcome, bandStats, individualRemediation, marketTargets, sensitivityCurve, _median };
 })();
 const _fcComputePott = __mirrorForecast.computePott;
 const _fcAllocate = __mirrorForecast.allocate;
+const _fcTargetRows = __mirrorForecast.targetRows;
 const _fcSuggestTargets = __mirrorForecast.suggestTargets;
 const _fcClosureTargets = __mirrorForecast.closureTargets;
 const _fcStagedPlan = __mirrorForecast.stagedPlan;

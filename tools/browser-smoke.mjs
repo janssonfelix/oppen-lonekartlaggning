@@ -1195,7 +1195,7 @@ ok(await page.inputValue('#k-troskel') === '10', 'fältet visar 10 efter återst
 await page.click('#inst-flikar [data-inst-flik="prioritering"]');
 await page.waitForTimeout(700);
 ok(await page.evaluate(() => document.getElementById('installningar-modal').style.display === 'none' && document.getElementById('view-prioritering').style.display === 'block' && document.getElementById('avsnitt-pr-installningar').open
-    && !!document.getElementById('prio-po-pct').offsetParent), 'Öppna i panelen går till Prioritering, där PO-påslag och beräkningsperiod står kvar');
+    && !!document.getElementById('prio-cfg-atgard').offsetParent), 'Öppna i panelen går till Prioritering, där trösklar och viktning står');
 
 console.log('\n── GDPR: ingen lagring ──');
 const lagring = await page.evaluate(() => {

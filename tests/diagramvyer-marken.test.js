@@ -1288,15 +1288,15 @@ describe('Ålder & karriär — ett urval för hela fliken, och avsnitt med nyck
 describe('Prioritering i formen resultat först', () => {
     const t = s => String(s).replace(/[  ]/g, ' ').replace(/\s+/g, ' ').trim();
     const efter = (a, b) => !!(a.compareDocumentPosition(b) & 4);   // b kommer efter a
-    it('nyckeltalen och matrisen först; åtgärdslistan öppen; kostnad, simulator, inställningar och metod hopfällda — i den ordningen', () => {
+    it('nyckeltalen och matrisen först; åtgärdslistan öppen; kostnad, inställningar och metod hopfällda — i den ordningen', () => {
         const w2 = createAppWindow();
         w2.__loadDemoData();
         w2.__renderTabContent('prioritering');
         const d = w2.document, g = id => d.getElementById(id);
-        const ordning = ['prio-summary', 'chart-prio-matrix', 'avsnitt-pr-lista', 'avsnitt-pr-kostnad', 'avsnitt-pr-simulator', 'avsnitt-pr-installningar', 'avsnitt-pr-metod'].map(g);
+        const ordning = ['prio-summary', 'chart-prio-matrix', 'avsnitt-pr-lista', 'avsnitt-pr-kostnad', 'avsnitt-pr-installningar', 'avsnitt-pr-metod'].map(g);
         for (let i = 1; i < ordning.length; i++) expect(efter(ordning[i - 1], ordning[i]), ordning[i].id).toBe(true);
         expect(g('chart-prio-matrix').closest('details')).toBeNull();
-        expect(['lista', 'kostnad', 'simulator', 'installningar', 'metod'].map(n => g('avsnitt-pr-' + n).open)).toEqual([true, false, false, false, false]);
+        expect(['lista', 'kostnad', 'installningar', 'metod'].map(n => g('avsnitt-pr-' + n).open)).toEqual([true, false, false, false]);
         // Hopfällt men ritat och fungerande.
         expect(g('chart-prio-pareto')._figur).toBeDefined();
         expect(g('prio-cfg-atgard').closest('details').id).toBe('avsnitt-pr-installningar');

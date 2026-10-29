@@ -330,8 +330,7 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   person, gruppdossiern och Att göra-punkterna. (PDF-rapporten ritas ur samma rapportmodell som Word-utkastet.) **Inte prövat av invarianten:**
   fliken Likvärdigt arbete och dess export, Utforska på skärmen, Personer att granska och
   extremvärdeslistan (undantagen nedan), diagrambilder (innehållet i en bild går inte att läsa
-  i testet) och Ålder & karriär med ett enskilt BAS valt. Lönerevisionssimulatorn prövas med ett urval under
-  tröskeln och ett över den. Vid 5 prövas
+  i testet) och Ålder & karriär med ett enskilt BAS valt. Vid 5 prövas
   flikarna, inte exporterna. Utanför invarianten har `tests/ktroskel-regression.test.js` egna tester för
   regressionens ojusterade steg (60 kvinnor och 7 män: kortet, utskriftens
   tre urval, Word-utkastet, rapportunderlaget, Excelfilerna och invariantens övriga utdatavägar),
@@ -437,12 +436,11 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
 - **Löneöversyns scenariojämförelse (A/B)** prövar rågapet mot den tröskel som gäller när
   jämförelsen visas (scenariot bär antalet kvinnor och män): ett scenario sparat vid en lägre
   tröskel visar ett streck och en not när tröskeln har höjts.
-- **Lönerevisionssimulatorn följer tröskeln (beslut av produktägaren, ADR-38 R4):** urvalet i
-  kontrollerna (kön, BAS-intervall och lönegräns) ska nå tröskeln, annars är knappen inaktiv och en
-  mening säger vad som utelämnats och varför; åtgärden ska beröra minst så många personer, annars
-  visas meningen i stället för utfallet. Lönegapet före och efter (organisationens råa gap) kräver
-  tröskeln för varje kön; antalet berörda per kön är ett antal, inte ett lönemått. Vaktas av
-  `tests/ktroskel-invarianter.test.js` och `tests/ktroskel-kon.test.js` (invarianten och C3) och `tests/smoke-docx.test.js`.
+- **Lönerevisionssimulatorn är borttagen (ADR-50, 2026-10-29):** det den kunde gör en riktad rad i
+  Löneöversyn (kön, lönegräns, höj till), som följer regeln för egna rader ovan: en rad som berör
+  färre personer än tröskeln visar beloppet med noten om enskildas löner. Lönegapet före och efter
+  (organisationens råa gap) kräver tröskeln för varje kön. Vaktas av `tests/ktroskel-kon.test.js` (C3)
+  och `tests/smoke-docx.test.js`.
 - **Bilder med en punkt per person följer med (beslut av produktägaren 2026-10-16, ADR-48):** ZIP-exporten
   och utskriftens mall *Komplett rapport* bär bilder av Ålder & karriärs diagram med en punkt per person
   (§6.6); Ålder & karriär visar punkterna på skärmen. Bilderna bär inga namn eller identifierare, och filerna

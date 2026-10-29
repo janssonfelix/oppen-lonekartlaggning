@@ -47,13 +47,10 @@ function _instRita() {
     const anpassad = a => (a ? 'Anpassade värden' : 'Standardvärden');
     const lv = state.likvardighet || {};
     const prioAnpassad = JSON.stringify(state.prioConfig) !== JSON.stringify(PRIO_CONFIG_DEFAULTS);
-    const kostnad = state.costSettings || COST_DEFAULTS;
     const band = document.getElementById('arbvard-band'), extrem = document.getElementById('outliers-threshold');
     const rader = [
         { flik: 'prioritering', avsnitt: 'avsnitt-pr-installningar', namn: 'Prioritering', vad: 'Trösklar och viktning',
           lage: anpassad(prioAnpassad), andrad: prioAnpassad },
-        { flik: 'prioritering', avsnitt: 'avsnitt-pr-installningar', namn: 'Prioritering', vad: 'PO-påslag och beräkningsperiod',
-          lage: `${svPct(kostnad.poPct, 2)} · ${kostnad.months} månader`, andrad: kostnad.poPct !== COST_DEFAULTS.poPct || kostnad.months !== COST_DEFAULTS.months },
         { flik: 'likvardighet', avsnitt: 'avsnitt-lv-installningar', namn: 'Likvärdigt arbete', vad: 'Kvinnotröskel, minsta gap och antal par',
           lage: anpassad(lv.kvinnoTrosholdPct !== 60 || lv.minGapPct !== 5 || lv.topN !== 20), andrad: lv.kvinnoTrosholdPct !== 60 || lv.minGapPct !== 5 || lv.topN !== 20 },
         { flik: 'likvardighet', avsnitt: 'avsnitt-lv-poang', namn: 'Likvärdigt arbete', vad: 'Ekvivalensband för arbetsvärdering med poäng',
