@@ -24,13 +24,15 @@ function buildActionChecklist({ endastGrupper = false } = {}) {
     /** @type {any[]} */
     const items = [];
     if (!state.data.length) return items;
+    // Regressionen körs en gång här och skickas vidare till det som läser den (ADR-17: ingen cache, bara ett värde).
+    const reg = !endastGrupper && typeof runOLSRegression === 'function' ? runOLSRegression() : null;
 
     // Punkterna per grupp (prioriteringen och likvärdighetsparen) bär AID-koden; sektorsöversikten
     // räknar bara dem och bygger därför inte de tunga, organisationsövergripande delarna.
     if (!endastGrupper) {
         // === 1. Underlagets kvalitet (ADR-19) — en punkt per kriterium som inte är OK ===
         try {
-            const uk = (typeof bedomningUnderlag === 'function') ? bedomningUnderlag() : null;
+            const uk = (typeof bedomningUnderlag === 'function') ? bedomningUnderlag({ reg }) : null;
             if (uk) uk.kriterier.filter(c => c.status !== 'ok').forEach(c => items.push({
                 id: 'dq-' + c.id,
                 kategori: 'Underlagets kvalitet',
@@ -71,7 +73,6 @@ function buildActionChecklist({ endastGrupper = false } = {}) {
         try {
             const d = getData();
             const jb = _dqJamforbaraBas(d, kInstalld());
-            const reg = runOLSRegression();
             const perBas = (reg && !reg.error && reg.perBas) ? reg.perBas : [];
             jb.jamforbara.forEach(b => {
                 const df = d.filter(r => r.bas === b);
@@ -96,7 +97,6 @@ function buildActionChecklist({ endastGrupper = false } = {}) {
 
         // === 1b. Oförklarat gap för hela organisationen (regressionen) ===
         try {
-            const reg = runOLSRegression();
             if (reg && !reg.error && reg.pValue < 0.05) {
                 items.push({
                     id: 'reg-oforklarat', kategori: 'Lika arbete',
@@ -167,7 +167,6 @@ function buildActionChecklist({ endastGrupper = false } = {}) {
     if (!endastGrupper) {
         // === 4. EU-Lönekartläggning — per-BAS gap > 5 % efter korrigering för många tester (Benjamini–Hochberg) ===
         try {
-            const reg = (typeof runOLSRegression === 'function') ? runOLSRegression() : null;
             if (reg && !reg.error && reg.perBas) {
                 // BH-justering
                 const okTests = reg.perBas.filter(p => p.status === 'ok' && isFinite(p.pValue));

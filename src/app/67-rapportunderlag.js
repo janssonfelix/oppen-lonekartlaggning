@@ -46,7 +46,7 @@ function _rapportunderlagBlockExport() {
     // Sammanfattning
     const kvLon = d.filter(arKv).map(r => r.lon), maLon = d.filter(arMa).map(r => r.lon);
     const reg = runOLSRegression();
-    const uk = bedomningUnderlag();
+    const uk = bedomningUnderlag({ reg });
     const sammanfattning = {
         n: d.length, nKv: kvLon.length, nMa: maLon.length, medKv: Stat.median(kvLon), medMa: Stat.median(maLon),
         oforklarat: reg.error ? null : { pct: reg.konPct, lo: reg.konPctLow, hi: reg.konPctHigh, medBas: reg.modelName === 'full' },

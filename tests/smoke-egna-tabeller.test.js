@@ -194,3 +194,33 @@ describe('egna tabeller i rapportunderlaget (ADR-20, ADR-52)', () => {
         expect(host.textContent).not.toContain('Egna tabeller från Utforska');
     });
 });
+
+describe('egna tabeller i organisationspaketet (ADR-52)', () => {
+    const paket = rapport => ({ format: 'lonekartlaggning-organisationspaket', version: 1, organisation: { namn: 'Exempelorganisationen' }, skapat: '2026-10-29',
+        referens: { rader: [{ bas: 'A', p10: 22000, med: 30000, p90: 52000 }] }, ...(rapport ? { rapport } : {}) });
+    it('ett paket med recept ersätter de egna tabellerna och receptet per BAS; ett paket utan rör dem inte', () => {
+        const w = fonster();
+        const d = w.document;
+        d.getElementById('explore-rad').value = 'aid'; d.getElementById('explore-measure').value = 'median'; w.__renderExplorer();
+        laggTill(w, 'Min egen');
+        const recept = w.eval("_trNytt({ rad: 'bas', matt: 'p90' }, { namn: 'Paketets tabell' })");
+        const r = w.eval(`lasInPaket(${JSON.stringify(JSON.stringify(paket({ tabeller: [recept], perBasRecept: { dim: 'sektor' } })))}, 'x.lonepaket.json')`);
+        expect(r.ok).toBe(true);
+        expect(w.__state.rapportTabeller.map(t => t.namn)).toEqual(['Paketets tabell']);
+        expect(w.__state.perBasRecept).toMatchObject({ dim: 'sektor' });
+        expect(w.eval("lasInPaket(" + JSON.stringify(JSON.stringify(paket(null))) + ", 'y.lonepaket.json')").ok).toBe(true);
+        expect(w.__state.rapportTabeller.map(t => t.namn)).toEqual(['Paketets tabell']);
+        // Formuläret: rutan är förkryssad när recept finns, och paketet som skapas bär dem.
+        w.eval('_fyllPaketFormular()');
+        expect(d.getElementById('paket-rapport').checked).toBe(true);
+        const p = w.eval('skapaPaket()');
+        expect(p.rapport.tabeller.map(t => t.namn)).toEqual(['Paketets tabell']);
+        expect(p.rapport.perBasRecept).toMatchObject({ dim: 'sektor' });
+        d.getElementById('paket-rapport').checked = false;
+        expect('rapport' in w.eval('skapaPaket()')).toBe(false);
+        // Utan recept är rutan avstängd.
+        w.__state.rapportTabeller = []; w.__state.perBasRecept = null;
+        w.eval('_fyllPaketFormular()');
+        expect(d.getElementById('paket-rapport').disabled).toBe(true);
+    });
+});

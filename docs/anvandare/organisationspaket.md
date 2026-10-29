@@ -18,6 +18,7 @@ filer) finns ingen referens att jämföra mot.
 | Benämningar | Vad jämförelsestatistiken heter (t.ex. "Kommunens lönestatistik") | Rubriker och texter i Jämförelsestatistik, Prioritering och exporter |
 | Grundinställningar | PO-påslag och beräkningsperiod, och *Minsta gruppstorlek för redovisning* (valfritt; utan värde gäller 10 eller det handläggaren har satt) | Kostnadsberäkningarna i Prioritering och Löneöversyn, och vilka grupper som redovisas. Ett värde under 10 ger handläggaren en fråga om bekräftelse när paketet läses in |
 | Låsningar (valfritt) | *Lägsta tillåtna minsta gruppstorlek*, en låst tid för *rensning vid inaktivitet*, och om *små grupper får tas med i Utforskas export* | Det handläggaren inte får ändra, se avsnitt 5 |
+| Rapportens recept (valfritt) | Egna tabeller byggda i Utforska och ett eget recept för avsnittet per BAS-intervall — bara recepten (rader, kolumner, mått, urval), inga tal | Samma tabeller i Word, PDF, Excel och rapportunderlaget hos alla handläggare; ersätter de egna tabeller som finns när paketet läses in |
 | Lönepolitiskt ställningstagande | P10, median och P90 per BAS-intervall (och/eller per yrke) | Prioritering, Lönepolitik och statusrutan i Att göra |
 | Jämförelsestatistik | Median (och gärna P10, P90 och könsfördelning) per yrke och BAS | Fliken Jämförelsestatistik, prioritering mot statistiken och reserven i Likvärdigt arbete |
 
@@ -123,7 +124,11 @@ annat sätt används inte, och handläggaren får en varning när paketet läses
 Filen är JSON (formatversion 1). Den skapas och läses av verktyget; den behöver inte
 redigeras för hand. Verktyget läser bara de fält som hör till formatet och ignorerar allt
 annat. Formatet beskrivs i `docs/utveckling/teknisk-plan.md` (ADR-28) för
-den som vill ta fram paket automatiskt ur ett lönestatistiksystem.
+den som vill ta fram paket automatiskt ur ett lönestatistiksystem. Rapportens recept ligger under
+`rapport`: `tabeller` är en lista med recept som verktyget själv skriver med *Lägg till i rapporten*
+(skapa dem i verktyget och spara paketet; skriv dem inte för hand), och `perBasRecept` receptet för
+avsnittet per BAS-intervall. Ett recept som inte går att läsa hoppas över med en varning; ett
+paket utan `rapport` rör inte handläggarens egna tabeller.
 
 ## 7. Exempelpaket
 

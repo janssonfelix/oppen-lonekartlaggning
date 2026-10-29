@@ -218,7 +218,7 @@ function _rapportModellExport({ alla = false, bada = false } = {}) {
     const { par, utelamnade: parUtelamnade, not: parNot } = _parForRedovisning(lvRes && lvRes.pairs);   // som rapportunderlaget
     const rep = typeof _stRepresentationByBas === 'function' ? (_stRepresentationByBas(d, { k }) || []) : [];
     const repVisade = rep.filter(g => !isKMasked(g.n)), repDolda = rep.filter(g => isKMasked(g.n)).map(g => g.bas);
-    const dq = typeof bedomningUnderlag === 'function' ? bedomningUnderlag() : null;
+    const dq = typeof bedomningUnderlag === 'function' ? bedomningUnderlag({ reg }) : null;
     const stycke = (text, stil) => ({ typ: 'stycke', text, ...(stil ? { stil } : {}) });
     const dampad = text => stycke(text, 'dampad');
     const fyllIn = text => ({ typ: 'fyllIn', text });

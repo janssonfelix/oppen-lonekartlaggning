@@ -171,10 +171,6 @@ export const MODULES = [
         }
     },
     {
-        file: 'organisationspaket.js', ns: '__mirrorOrganisationspaket',
-        expose: { byggPaket: '_opByggPaket', tolkaPaket: '_opTolkaPaket', liknarPersonuppgift: '_opLiknarPersonuppgift' }
-    },
-    {
         file: 'attgora.js', ns: '__mirrorAttgora',
         expose: { borjaHar: '_agBorjaHar', hanterade: '_agHanterade',
                   stegLikaArbete: '_agStegLikaArbete', stegLikvardigt: '_agStegLikvardigt' }
@@ -208,6 +204,11 @@ export const MODULES = [
     {
         file: 'tabellrecept.js', ns: '__mirrorTabellrecept',
         expose: { nyttRecept: '_trNytt', valideraRecept: '_trValidera', receptBeskrivning: '_trBeskrivning', receptTillTabeller: '_trTabeller' }
+    },
+    {
+        // Organisationspaketet importerar tabellrecept.js och perbas.js (rapportens recept, ADR-52): efter dem.
+        file: 'organisationspaket.js', ns: '__mirrorOrganisationspaket',
+        expose: { byggPaket: '_opByggPaket', tolkaPaket: '_opTolkaPaket', liknarPersonuppgift: '_opLiknarPersonuppgift' }
     },
     {
         file: 'figur.js', ns: '__mirrorFigur',

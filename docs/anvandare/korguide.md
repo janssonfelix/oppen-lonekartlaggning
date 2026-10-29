@@ -249,7 +249,8 @@ SVG (skarp i Word) och diagramdatan som tabell.
 ett namn och lägg till den, så står den som en egen tabell i avsnittet *Egna tabeller* i
 Word-utkastet och PDF-rapporten, i bladet *Egna tabeller* i Excel-filen och som block under *Egna
 tabeller från Utforska* i rapportunderlaget. Kryssa i **En tabell
-per BAS-intervall** för att få samma tabell upprepad för varje intervall. Det är vyns recept som
+per BAS-intervall** för att få samma tabell upprepad för varje intervall. Systemägaren kan lägga
+tabellerna i organisationspaketet, så att alla handläggare får samma. Det är vyns recept som
 sparas (rader, kolumner, mått och urval), inte talen: tabellen räknas om med minsta gruppstorlek
 när rapporten byggs, och recepten följer med i konfigurationsfilen. Under *Dokumentera &
 exportera* → *Rapportens innehåll* kan ni ordna om och ta bort tabellerna.
