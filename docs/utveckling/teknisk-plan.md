@@ -1202,8 +1202,11 @@ Kända brister och obesvarade frågor, så att de inte lever bara i en konversat
    för tre (`rapportModellBada`), Excel-bladlistan en gång i stället för två, Lika arbetes minne fick ett rum per
    tröskel och omritningen efteråt begränsades till det exporten ritade (`_ritaOmEfterExport`). Det som kostar i
    Lika arbete är statistik — bootstrap-KI, kvantilregression över alla τ och OLS — utan någon enskild patologisk
-   punkt. Att `runOLSRegression` körs tre gånger per rendering
-   (~250 ms) är ett beslut, inte en brist (ADR-17). ADR-1:s chunking behövs inte.
+   punkt. Kvantilregressionens bootstrap-intervall (200 omsamplingar × tre τ, ~2 s vid 1 000 personer) räknas i
+   bakgrunden efter att kortet ritats, också i exportläget (`_regKvantilBerakna`, minne per underlag): kortet står
+   med punktskattningarna tills dess, och en bild eller utskrift som görs innan intervallet är klart bär kortet
+   utan det — som nyckeltalen utan bootstrap-KI strax efter en inläsning. Att `runOLSRegression` körs tre gånger
+   per rendering (~250 ms) är ett beslut, inte en brist (ADR-17). ADR-1:s chunking behövs inte.
 
 **Kod och bygge:**
 6. **Krasch i Node under testkörning** (V8:s skräpsamlare): orsaken är okänd; `npm test` kör om berörda filer.
