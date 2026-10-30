@@ -4,8 +4,13 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { valideraFigur, figurTillTabell, utanSmaGrupper } from '../src/lib/figur.js';
-import { createAppWindow } from './helpers/app-harness.js';
+import { createAppWindow, delatFonster, utgangslage } from './helpers/app-harness.js';
 import { vanliga, KALLA, person, skapaRigg } from './helpers/diagramvyer-rigg.js';
+
+const demo = delatFonster(w => w.__loadDemoData());
+it('det delade fönstret står i utgångsläget', () => {
+    expect(utgangslage(demo())).toEqual({ troskel: 10, dialoger: 0, flik: 'dashboard' });
+});
 
 const { w, behallare, utdata, medData } = skapaRigg();
 
@@ -220,7 +225,7 @@ describe('före och efter: lutningsdiagrammen', () => {
         ...Array.from({ length: 14 }, (_, i) => rad('6000', 'A', 'kvinna', 30000 + i * 10)), ...Array.from({ length: 10 }, (_, i) => rad('6000', 'A', 'man', 30000 + i * 10)),
         ...Array.from({ length: 10 }, (_, i) => rad('6100', 'A', 'kvinna', 36000 + i * 10)), ...Array.from({ length: 14 }, (_, i) => rad('6100', 'A', 'man', 36000 + i * 10)),
         ...Array.from({ length: 3 }, (_, i) => rad('7000', 'S', 'kvinna', MARKOR + i)), ...Array.from({ length: 12 }, (_, i) => rad('7000', 'S', 'man', 40000 + i * 10))];
-    const oppna = () => {
+    const skapa = () => {
         const w2 = createAppWindow();
         w2.__state.data = data();
         w2.eval('populateSelects(); unlockTabs();');
@@ -229,6 +234,7 @@ describe('före och efter: lutningsdiagrammen', () => {
         w2.__renderTabContent('loneoversyn');
         return w2;
     };
+    const delat = delatFonster(null, skapa), oppna = () => delat();   // ett läsande test delar, ett som ändrar tar skapa()
     const allt = el => (el.outerHTML + JSON.stringify(el._figur || null)).replace(/(\d)[\s  ](?=\d)/g, '$1');
     it('Löneöversyn per BAS: en rad per BAS där båda könen når tröskeln, före som streck och efter som punkt, grönt när gapet närmar sig 100 %', () => {
         const w2 = oppna(), el = w2.document.getElementById('chart-forecast-lutning'), f = el._figur;
@@ -249,7 +255,7 @@ describe('före och efter: lutningsdiagrammen', () => {
         expect(w2.eval('chartExportRows(document.getElementById("chart-forecast-lutning"))').filter(r => r.includes('BAS A'))).toHaveLength(3);
     });
     it('Löneöversyn per yrkesgrupp: bara grupper där gapet ändras; annars en text', () => {
-        const w2 = oppna(), d = w2.document, el = d.getElementById('chart-forecast-lutning');
+        const w2 = skapa(), d = w2.document, el = d.getElementById('chart-forecast-lutning');
         d.getElementById('forecast-lutning-niva').value = 'grupp';
         d.getElementById('forecast-lutning-niva').dispatchEvent(new w2.Event('change', { bubbles: true }));
         expect(el._figur).toBeUndefined();                                            // ett jämnt påslag ändrar inget gap inom gruppen
@@ -275,7 +281,7 @@ describe('före och efter: lutningsdiagrammen', () => {
         expect(() => valideraFigur(f)).not.toThrow();
     });
     it('ögonblicksbilden: medianlön per kön, en rad per kön, bara när könen får visas i båda lägena', () => {
-        const w2 = oppna(), d = w2.document, ruta = d.getElementById('snapshot-lutning-ruta'), el = d.getElementById('chart-snapshot-lutning');
+        const w2 = skapa(), d = w2.document, ruta = d.getElementById('snapshot-lutning-ruta'), el = d.getElementById('chart-snapshot-lutning');
         expect(ruta.hidden).toBe(true);
         w2.__state.snapshot = w2.eval('buildAnalysisSnapshot()');
         w2.__state.snapshot.medianKv -= 1000;
@@ -416,7 +422,7 @@ describe('Lönepolitik: efterlevnaden kring en mittlinje', () => {
 
 describe('Utforska: staplade staplar, i antal eller som andel av raden', () => {
     const MARKOR = 71444;
-    const oppna = () => {
+    const skapa = () => {
         const w2 = createAppWindow();
         const rad = (bas, kon, lon) => ({ bas, kon, lon, alder: 40, yrke: '100 X', aid: '100', yrkeLabel: 'X' });
         w2.__state.data = [...Array.from({ length: 30 }, (_, i) => rad('A', 'man', 30000 + i * 7)), ...Array.from({ length: 10 }, (_, i) => rad('A', 'kvinna', 31000 + i)),
@@ -426,6 +432,7 @@ describe('Utforska: staplade staplar, i antal eller som andel av raden', () => {
         w2.__renderTabContent('utforska');
         return w2;
     };
+    const delat = delatFonster(null, skapa), oppna = () => delat();   // ett läsande test delar, ett som ändrar tar skapa()
     const valj = (w2, val) => { for (const [id, v] of Object.entries(val)) w2.document.getElementById(id).value = v; w2.__renderExplorer(); return w2.document.getElementById('chart-explore'); };
     it('typen kräver en kolumn, låser måttet till antal och visningen till helhet, och valet antal/andel syns bara för den', () => {
         const w2 = oppna(), d = w2.document;
@@ -455,7 +462,7 @@ describe('Utforska: staplade staplar, i antal eller som andel av raden', () => {
         expect(JSON.stringify(rader) + el2.outerHTML).not.toContain(String(MARKOR));
     });
     it('för många kolumnvärden ger en text i stället för ett diagram', () => {
-        const w2 = oppna();
+        const w2 = skapa();
         w2.__state.data = Array.from({ length: 60 }, (_, i) => ({ bas: 'A', kon: 'man', lon: 30000 + i, alder: 40, yrke: `${100 + (i % 15)} Y${i % 15}`, aid: String(100 + (i % 15)), yrkeLabel: `Y${i % 15}` }));
         w2.eval('populateSelects()');
         const el = valj(w2, { 'explore-rad': 'bas', 'explore-kolumn': 'aid', 'explore-typ': 'staplade' });
@@ -474,13 +481,14 @@ describe('andelsstaplar: könsfördelning, ålderspyramid och avvikelse från f�
         ...Array.from({ length: 12 }, (_, i) => rad('6000', 'A', 'man', i === 0 ? 42000 : 30000 + i * 10, 31 + i * 2)),
         // BAS S: tre kvinnor — för få för att visas per kön.
         ...Array.from({ length: 3 }, (_, i) => rad('7000', 'S', 'kvinna', MARKOR + i, 40 + i * 3)), ...Array.from({ length: 12 }, (_, i) => rad('7000', 'S', 'man', 40000 + i * 10, 35 + i * 2))];
-    const oppna = () => {
+    const skapa = () => {
         const w2 = createAppWindow();
         w2.__state.data = data();
         w2.eval('populateSelects(); unlockTabs();');
         w2.__state.kLage = 'export';
         return w2;
     };
+    const delat = delatFonster(null, skapa), oppna = () => delat();   // ett läsande test delar, ett som ändrar tar skapa()
     it('könsfördelning per BAS: staplat till 100 %, linjer vid 40 och 60 %, samma BAS och andelar som tabellen', () => {
         const f = w.eval("_skevhetAndelFigur([{ bas: 'A', tot: 20, pctKv: 75, pctMa: 25 }, { bas: 'B', tot: 10, pctKv: 5, pctMa: 95 }])");
         expect(f.lager.map(l => [l.serie, l.lage, l.riktning, l.farg])).toEqual([['Kvinnor', 'staplad', 'liggande', '#833a8f'], ['Män', 'staplad', 'liggande', '#5f7f16']]);
@@ -497,7 +505,7 @@ describe('andelsstaplar: könsfördelning, ålderspyramid och avvikelse från f�
         expect(el.querySelectorAll('rect[data-marke="stapel"]').length).toBe(tabell.length * 2);
     });
     it('ålderspyramiden: kvinnor åt vänster, män åt höger, äldst överst, samma andelar som histogrammet', () => {
-        const w2 = oppna();
+        const w2 = skapa();
         w2.__renderTabContent('kon');
         w2.eval("renderDemografi('__ALLA__')");
         const pyr = w2.document.getElementById('chart-demo-pyramid')._figur, hist = w2.document.getElementById('chart-demo-hist')._figur;
@@ -513,7 +521,7 @@ describe('andelsstaplar: könsfördelning, ålderspyramid och avvikelse från f�
         expect(figurTillTabell(pyr).slice(1).every(r => r[1] >= 0)).toBe(true);
     });
     it('avvikelse från förväntad lön: andel per kön och BAS, bara där båda könen når tröskeln, i hela procent', () => {
-        const w2 = oppna();
+        const w2 = skapa();
         const rader = w2.eval('_pagAvvikelseRader(getData(), 10)');
         expect(rader.map(r => [r.bas, r.kon, r.n])).toEqual([['A', 'Kvinnor', 12], ['A', 'Män', 12]]);   // BAS S: tre kvinnor
         expect(rader[0].under).toBe(17);                                                // 2 av 12 kvinnor
@@ -1080,8 +1088,7 @@ describe('tal som text har decimalkomma, och texten är svensk', () => {
         expect(w.eval('svPct(null)')).toBe('–');
     });
     it('Ålder & karriär: nyckeltal och insikter har ingen decimalpunkt', () => {
-        const w2 = createAppWindow();
-        w2.__loadDemoData();
+        const w2 = demo();
         w2.__renderTabContent('kon');
         const d = w2.document;
         const texter = ['kon-kpi-gap', 'kon-kpi-agegap', 'kon-kpi-slope', 'demo-kpi-age', 'demo-kpi-age-sub', 'demo-kpi-senior', 'demo-kpi-junior', 'demo-risk-insight', 'kon-insight', 'demo-insight']
@@ -1106,8 +1113,7 @@ describe('lönegapet visas som kvinnors lön i procent av mäns', () => {
         expect(w.eval('andelAvMan(null)')).toBe('–');
     });
     it('Struktur: tabellerna och direktivets mått står i procent av mäns, med direktivets lönegap under', () => {
-        const w2 = createAppWindow();
-        w2.__loadDemoData();
+        const w2 = demo();
         w2.__renderTabContent('struktur');
         const d = w2.document;
         expect(t(d.getElementById('struktur-representation').textContent)).toMatch(/Kvinnors median i % av mäns/);
@@ -1136,8 +1142,7 @@ describe('svenskt talformat i alla vyer, utan att exporterna ändras', () => {
         expect(w.eval('_parseSwedishNumber("85,2 %")')).toBeCloseTo(85.2, 5);
     });
     it('ingen flik visar ett procenttal med decimalpunkt', () => {
-        const w2 = createAppWindow();
-        w2.__loadDemoData();
+        const w2 = demo();
         const kvar = {};
         for (const flik of ['dashboard', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn', 'kon', 'utforska', 'benchmark']) {
             w2.__renderTabContent(flik);
@@ -1185,8 +1190,7 @@ describe('ett bildspråk — linjeikoner i stället för bildtecken', () => {
         expect(BILDTECKEN.test(d.body.textContent.replace(/\s+/g, ' '))).toBe(false);
     });
     it('Lika arbete: tabellen visar kvinnors median i procent av mäns, som dess exportrubrik säger', () => {
-        const w2 = createAppWindow();
-        w2.__loadDemoData();
+        const w2 = demo();
         w2.__renderTabContent('matrix');
         const d = w2.document;
         expect([...d.querySelectorAll('#matrix-table thead th')].some(th => /Kvinnors median i % av mäns/.test(th.textContent))).toBe(true);
@@ -1199,8 +1203,7 @@ describe('Lika arbete — urval, slutsatser och avsnittens nyckeltal', () => {
     const MARKOR = 72666;
     const t = s => String(s).replace(/[  ]/g, ' ').replace(/\s+/g, ' ').trim();
     it('slutsatserna säger detsamma som tabellerna under, och avsnitten bär sina nyckeltal', () => {
-        const w2 = createAppWindow();
-        w2.__loadDemoData();
+        const w2 = demo();
         w2.__renderTabContent('matrix');
         const d = w2.document;
         const rader = [...d.querySelectorAll('#matrix-table tbody tr')].map(tr => tr._euRow).filter(r => r && !r.samladMedian);
@@ -1258,9 +1261,10 @@ describe('Lika arbete — urval, slutsatser och avsnittens nyckeltal', () => {
 // ---- Ålder & karriär i formen resultat först ----
 describe('Ålder & karriär — ett urval för hela fliken, och avsnitt med nyckeltal', () => {
     const t = s => String(s).replace(/[  ]/g, ' ').replace(/\s+/g, ' ').trim();
-    const oppna = () => { const w2 = createAppWindow(); w2.__loadDemoData(); w2.__renderTabContent('kon'); return w2; };
+    const skapa = () => { const w2 = createAppWindow(); w2.__loadDemoData(); w2.__renderTabContent('kon'); return w2; };
+    const delat = delatFonster(null, skapa), oppna = () => delat();   // ett läsande test delar, ett som ändrar tar skapa()
     it('väljaren i urvalsraden styr både lönedelen och åldersstrukturen; den dolda väljaren följer med', () => {
-        const w2 = oppna(), d = w2.document;
+        const w2 = skapa(), d = w2.document;
         const sel = d.getElementById('bas-select-kon'), dold = d.getElementById('bas-select-demo');
         expect(sel.closest('.urvalsrad')).not.toBeNull();
         expect(dold.closest('.controls-row').hidden).toBe(true);
@@ -1312,8 +1316,7 @@ describe('Prioritering i formen resultat först', () => {
     const t = s => String(s).replace(/[  ]/g, ' ').replace(/\s+/g, ' ').trim();
     const efter = (a, b) => !!(a.compareDocumentPosition(b) & 4);   // b kommer efter a
     it('nyckeltalen och matrisen först; åtgärdslistan öppen; kostnad, inställningar och metod hopfällda — i den ordningen', () => {
-        const w2 = createAppWindow();
-        w2.__loadDemoData();
+        const w2 = demo();
         w2.__renderTabContent('prioritering');
         const d = w2.document, g = id => d.getElementById(id);
         const ordning = ['prio-summary', 'chart-prio-matrix', 'avsnitt-pr-lista', 'avsnitt-pr-kostnad', 'avsnitt-pr-installningar', 'avsnitt-pr-metod'].map(g);
