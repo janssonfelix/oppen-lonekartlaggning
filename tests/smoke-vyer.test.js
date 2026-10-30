@@ -339,10 +339,10 @@ describe('menystruktur', () => {
 
     it('menyn har exakt flikarna i ordning; Jämförelse syns med ställningstagandet', () => {
         expect(flikar()).toEqual(['dashboard', 'bestammelser', 'matrix', 'likvardighet', 'struktur',
-            'prioritering', 'loneoversyn', 'handlingsplan', 'dokumentera', 'kon', 'benchmark', 'utforska', 'info']);
+            'prioritering', 'loneoversyn', 'handlingsplan', 'kon', 'benchmark', 'utforska', 'dokumentera', 'info']);
         expect(w.document.querySelector('.nav-item[data-tab="benchmark"]').hidden).toBe(false);
-        expect(w.document.querySelector('.nav-menu').textContent).toContain('4 · Dokumentera');
-        expect(w.document.querySelector('.nav-menu').textContent).toContain('5 · Fördjupa');
+        expect(w.document.querySelector('.nav-menu').textContent).toContain('5 · Dokumentera');
+        expect(w.document.querySelector('.nav-menu').textContent).toContain('4 · Fördjupa');
     });
     it('Ålder & karriär: kohortförbehållet står under livscykelkurvorna, i Om verktygets metodtext och i metodbilagan', () => {
         klicka('kon');
@@ -388,7 +388,7 @@ describe('menystruktur', () => {
         const host = w.document.getElementById('process-tracker');
         expect(host.querySelectorAll('.ptrack-row').length).toBe(8);
         expect([...host.querySelectorAll('.ptrack-fas')].map(e => e.textContent.trim()))
-            .toEqual(['1 · Underlag', '2 · Kartlägg & analysera', '3 · Åtgärda', '4 · Dokumentera']);
+            .toEqual(['1 · Underlag', '2 · Kartlägg & analysera', '3 · Åtgärda', '5 · Dokumentera']);
         const rows = host.querySelectorAll('.ptrack-row');
         [5, 6, 7].forEach(i => expect(rows[i].querySelector('[data-goto-tab]').getAttribute('data-goto-tab')).toBe('dokumentera'));
     });

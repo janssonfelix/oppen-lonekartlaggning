@@ -384,7 +384,7 @@ function renderProcessTracker({ punkter: givna } = {}) {
     const autoTotal = rows.filter(r => r.status !== 'manuell').length;
 
     // Stegen grupperas under samma faser som menyn (en karta).
-    const FASER = { 1: '1 · Underlag', 2: '2 · Kartlägg & analysera', 5: '3 · Åtgärda', 6: '4 · Dokumentera' };
+    const FASER = { 1: '1 · Underlag', 2: '2 · Kartlägg & analysera', 5: '3 · Åtgärda', 6: '5 · Dokumentera' };
     const rowsHtml = rows.map(r => `
         ${FASER[r.n] ? `<div class="ptrack-fas">${FASER[r.n]}</div>` : ''}
         <div class="ptrack-row">

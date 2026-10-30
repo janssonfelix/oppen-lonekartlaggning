@@ -63,6 +63,17 @@ describe('lönefil vars kolumner inte känns igen', () => {
     });
 });
 
+describe('menyns ordning', () => {
+    it('Dokumentera & exportera är sista steget i menyn, efter Fördjupa', () => {
+        const w = createAppWindow();
+        const grupper = [...w.document.querySelectorAll('#sidomeny .nav-group')].map(g => g.textContent.trim());
+        expect(grupper).toEqual(['1 · Underlag', '2 · Kartlägg & analysera', '3 · Åtgärda', '4 · Fördjupa (ej lagkrav)', '5 · Dokumentera', 'Hjälp']);
+        const knappar = [...w.document.querySelectorAll('#sidomeny .nav-item[data-tab]')].map(b => b.dataset.tab);
+        expect(knappar.indexOf('dokumentera')).toBeGreaterThan(knappar.indexOf('utforska'));
+        expect(knappar.indexOf('dokumentera')).toBeLessThan(knappar.indexOf('info'));
+    });
+});
+
 describe('flik utan underlag', () => {
     it('säger att inget underlag är inläst och länkar till Översikt; raden försvinner när underlaget finns', () => {
         const w = createAppWindow();
