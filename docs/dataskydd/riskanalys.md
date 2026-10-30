@@ -1,7 +1,7 @@
 # Risk- och sårbarhetsanalys (dataskydd och informationssäkerhet) — Öppen lönekartläggning
 
-**Bygge:** `2026.10.19` · **Artefakt-SHA-256:** `aeb70db0c97eefea40dab01da4be81d1c16410381e536a471776038b97ca69ef` (se `dist/RELEASE.txt`).
-**Granskningsdatum:** 2026-10-20.
+**Bygge:** `2026.10.19` · **Artefakt-SHA-256:** `c6a717fa44836ab1c072613930521dcf72c50cc73a198aaf4645eec7ecec306d` (se `dist/RELEASE.txt`).
+**Granskningsdatum:** 2026-10-30.
 **Granskningsmetod:** kodläsning påstående för påstående + statisk sökning i källkod och bygge +
 körning av det byggda verktyget i jsdom och i Chromium (utan nätverk) med syntetiska testfiler.
 Varje teknisk kontroll nedan är **verifierad mot koden och i webbläsaren**, inte antagen. Vad
@@ -59,7 +59,7 @@ AID-kod och yrkesetikett (`aid`, `yrkeLabel`) härleds ur yrkesfältet och är i
 uppgifter.
 
 **Klassificering:** Detta är **ordinära personuppgifter**, inte särskild kategori
-(dataskyddsförordningens särskilda kategorier är inte tillämpliga: underlaget innehåller inga sådana uppgifter, och inläsningen avvisar namn, personnummer och e-post). *Men* — lön är integritetskänsligt, och uppgifterna är
+(dataskyddsförordningens särskilda kategorier är inte tillämpliga: underlaget innehåller inga sådana uppgifter; inläsningen avvisar namn, personnummer och e-post, och kolumner vars rubrik antyder en särskild kategori, se §6.4). *Men* — lön är integritetskänsligt, och uppgifterna är
 könsuppdelade och kan i **små grupper vara identifierande** (re-identifieringsrisk,
 se §7.B1). Namn, personnummer och e-post samlas medvetet **inte** in och avvisas
 aktivt vid uppladdning (se §6.4).
@@ -262,7 +262,10 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   av värdekontrollen — men kolumnen läses då ändå inte in, eftersom bara vitlistade
   kolumner läses. Rubrikkontrollen normaliserar rubriken (gemener, å/ä/ö → a/a/o), så
   *Förnamn*, *Fornamn*, *Namn*, *Efternamn*, *Personnummer*, *PNR* och *E-post* känns igen
-  (rubrikprov i `tests/parsing.test.js`, filprov i `tests/smoke-ansvar.test.js`).
+  (rubrikprov i `tests/parsing.test.js`, filprov i `tests/smoke-ansvar.test.js`). Rubrikkontrollen avvisar
+  också kolumner vars rubrik antyder en **särskild kategori av personuppgifter** (fackmedlemskap, hälsa,
+  sjukfrånvaro, diagnos, etnicitet, religion, politisk tillhörighet, sexuell läggning, funktionsnedsättning,
+  genetik, biometri); värdena i sådana kolumner har inget igenkännbart format, så bara rubriken prövas.
   Verifierat i webbläsare: en fil med kolumnen Personnummer avvisades och inga
   rader lästes in. **Filerna med lönepolitiskt ställningstagande och
   jämförelsestatistik kontrolleras inte av detektorn**; från dem läses bara

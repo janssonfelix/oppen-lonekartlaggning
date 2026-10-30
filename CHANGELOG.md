@@ -95,6 +95,9 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ### Dataskydd
 
+- **Spärr mot särskilda kategorier av personuppgifter.** Lönefilen avvisas när en kolumnrubrik antyder fackmedlemskap,
+  hälsa, sjukfrånvaro, diagnos, etnicitet, religion, politisk tillhörighet, sexuell läggning, funktionsnedsättning,
+  genetik eller biometri — som identifierare avvisades redan. Bara rubriken prövas (lagrum.md, C23b).
 - **Minsta gruppstorlek gäller det som lämnar verktyget, inte skärmen (ADR-51).** Vyerna visar alla grupper och alla
   könsuppdelade mått oavsett storlek; allt som lämnar verktyget — Excel, Word, PDF, ZIP, CSV, urklipp, diagrambilder,
   rapportunderlaget, gruppdossierns textkopia och allt under Dokumentera & exportera — ritas och räknas i ett
@@ -154,6 +157,9 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ### Utveckling
 
+- **Programvaruförteckning (SBOM) på releasen.** `npm run sbom` (`tools/sbom.mjs`) skriver `dist/sbom.cdx.json` i
+  CycloneDX med de fyra inbyggda biblioteken (version, licens, kontrollsumma) och artefaktens kontrollsumma;
+  release-arbetsflödet signerar den som de andra filerna. Deterministisk, utan beroenden.
 - **Testwrappern räknar rätt vid omkörning:** när en arbetare kraschar efter att filen rapporterat klart och filen
   körs om, dubblas inte dess tester i kontrollen mot teknisk plan (`tools/test.mjs` prövar båda summorna).
 - **Testriggen schemalägger inget under nedmonteringen** av ett fönster (`requestAnimationFrame` och `setTimeout`

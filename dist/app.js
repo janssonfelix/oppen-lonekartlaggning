@@ -2040,6 +2040,16 @@ function detectSensitiveColumns(rows) {
             issues.push({ col, reason: 'Kolumnrubriken antyder personnamn' });
             return;
         }
+        // Särskilda kategorier av personuppgifter (fackmedlemskap, hälsa, etnicitet, religion, politisk
+        // åskådning, sexualliv, genetik, biometri): hör inte hemma i underlaget och ska inte ens passera
+        // minnet. Bara rubriken prövas; värdena saknar igenkännbart format. Mönstren är valda så att
+        // vanliga rubriker går fria: "sjuk" kräver frånvaro/skrivning/dom (inte Sjukhus), "politisk" inte
+        // Lönepolitik, "religion" som eget ord (inte Religionskunskap), "fack" följt av medlem/lig/forbund/foren
+        // (inte Fackområde).
+        if (/fack(medlem|lig|forbund|foren)|^medlemskap|halsa|halsotillstand|sjuk(franvaro|skriv|dom)|diagnos|etni(sk|citet)|^religion$|trosuppfattning|politisk|sexuel|funktionsned|genetisk|biometri/.test(lcCol)) {
+            issues.push({ col, reason: 'Kolumnrubriken antyder en särskild kategori av personuppgifter (fackmedlemskap, hälsa, etnicitet eller liknande)' });
+            return;
+        }
         // Värdebaserad upptäckt (samplar 50 rader)
         let pnrCount = 0, emailCount = 0, nameCount = 0;
         sample.forEach(r => {
@@ -17368,7 +17378,7 @@ function _renderSensitiveRejection(sensitive) {
         <strong class="f-kritisk">${ikon('stopp')} Filen avvisad – innehåller känsliga personuppgifter</strong><br>
         Följande kolumner verkar innehålla data som inte ska användas i lönekartläggning:
         <ul class="fs-sm marg-8-0-8-20">${list}</ul>
-        <span class="text-dampad-sm">Ta bort kolumnerna i CSV-filen och försök igen. Verktyget kräver endast: BAS-intervall, AID, månadslön, ålder och kön.</span>
+        <span class="text-dampad-sm">Ta bort kolumnerna i filen och försök igen. Verktyget kräver endast: BAS-intervall, AID, månadslön, ålder och kön. Identifierare (personnummer, namn, e-post) och särskilda kategorier av personuppgifter (fackmedlemskap, hälsa med mera) ska inte ingå i uttaget.</span>
     </div>`;
     dataStatus.className = "status-msg";
 }
@@ -26224,7 +26234,7 @@ const INFO_SECTIONS = {
 
         <h4>Lager 2 — Sanitization gate</h4>
         <ul>
-            <li><code>detectSensitiveColumns()</code> avvisar strukturfiler med personnummer, namn eller e-post: kolumnrubrikerna prövas, och värdena i filens 50 första rader. Från filerna med lönepolitik och jämförelsestatistik läses bara vitlistade aggregatkolumner in.</li>
+            <li><code>detectSensitiveColumns()</code> avvisar strukturfiler med personnummer, namn eller e-post: kolumnrubrikerna prövas, och värdena i filens 50 första rader. Rubriker som antyder en särskild kategori av personuppgifter (fackmedlemskap, hälsa med mera) avvisas också. Från filerna med lönepolitik och jämförelsestatistik läses bara vitlistade aggregatkolumner in.</li>
             <li><code>extractMinimalRecord()</code> accepterar <strong>endast 5 fält</strong>: BAS, yrke, lön, ålder, kön — plus valfri arbetsvärderingspoäng per befattning och valfri ansvarskod enligt AID. Radens nummer i filen sparas också.</li>
             <li><code>_cleanYrkeField()</code> trunkerar yrkesfält till AID-kod + 40-tecken etikett, maskerar namn-mönster</li>
         </ul>

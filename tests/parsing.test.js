@@ -332,8 +332,21 @@ describe('detectSensitiveColumns (PII-rubriker)', () => {
         expect(P.detectSensitiveColumns(rader('E-postadress')).map(f => f.reason)).toEqual(['Kolumnrubriken antyder e-postadress']);
     });
     it('vanliga rubriker avvisas inte', () => {
-        for (const kol of ['BAS', 'Månadslön', 'Ålder', 'Kön', 'AID', 'Ansvarskod', 'Enhet', 'Benämning', 'Anställningsnummer']) {
+        for (const kol of ['BAS', 'Månadslön', 'Ålder', 'Kön', 'AID', 'Ansvarskod', 'Enhet', 'Benämning', 'Anställningsnummer',
+                           'Sjukhus', 'Lönepolitik', 'Religionskunskap (ämne)', 'Fackområde']) {
             expect(P.detectSensitiveColumns(rader(kol)), kol).toEqual([]);
+        }
+    });
+    // Särskilda kategorier (dataskyddsförordningen art. 9): underlaget ska inte innehålla dem, och riskanalysen
+    // säger att det inte gör det. Rubrikkontrollen gör påståendet sant i stället för antaget (lagrum.md, C23b).
+    it('rubriker som antyder särskilda kategorier av personuppgifter avvisas', () => {
+        for (const kol of ['Fackmedlemskap', 'Facklig tillhörighet', 'Fackförbund', 'Medlemskap', 'Hälsa', 'Hälsotillstånd',
+                           'Sjukfrånvaro', 'Sjukskrivning', 'Sjukdom', 'Diagnos', 'Etnicitet', 'Etniskt ursprung', 'Religion',
+                           'Trosuppfattning', 'Politisk tillhörighet', 'Sexuell läggning', 'Funktionsnedsättning',
+                           'Genetisk', 'Biometri', 'HALSA', 'sexuell laggning']) {
+            const fel = P.detectSensitiveColumns(rader(kol));
+            expect(fel.map(f => f.col), kol).toEqual([kol]);
+            expect(fel[0].reason, kol).toMatch(/särskild kategori/);
         }
     });
 });
