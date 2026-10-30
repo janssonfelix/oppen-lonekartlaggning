@@ -229,7 +229,7 @@ adaptern verkligen delegerar vaktas av `tests/drift.test.js`:
   rätt grupp. Utskriftsfönstret för checklistorna (`printScaffoldView`) läser `:root` och allt från `.dold` till
   stilmallens slut ur den körande stilmallen och lägger in det som byggt stilark (`adoptedStyleSheets`): ett `<style>`-element
   som skriptet skapar blockeras av den ärvda CSP:n (`style-src-elem`), så fönstret var tidigare helt ostilat.
-- **Tester:** Vitest — 2491 tester i 73 filer: rena `src/lib/`-moduler, CSV-parsning, jsdom-röktest
+- **Tester:** Vitest — 2496 tester i 73 filer: rena `src/lib/`-moduler, CSV-parsning, jsdom-röktest
   av varje vy (ADR-7; `tests/smoke.test.js` med det delade fönstret och sju `tests/smoke-*.test.js` per
   område), k-tröskeln i åtta `tests/ktroskel*.test.js` med riggen i `tests/helpers/ktroskel-rigg.js`,
   gränssnittet i `tests/granssnitt*.test.js` (riggen `tests/helpers/granssnitt-rigg.js`) och diagramvyerna i
@@ -263,6 +263,18 @@ adaptern verkligen delegerar vaktas av `tests/drift.test.js`:
   (var tidigare 250–275 s, då `smoke.test.js` och `ktroskel.test.js` var för sig tog hela tiden); under full
   last tar varje fil omkring dubbelt så lång tid som ensam, och den längsta omkring 90 s.
   *Byggets förminskning av stilmallen* ligger i `tools/lib/minify-css.mjs` med tester i `tests/byggminify.test.js`: strängar och `url()` rörs inte, blanksteg runt `+` och `-` i värden står kvar, och blanksteget före en pseudoklass i en väljare står kvar.
+- **Delade fönster i testerna:** ett fönster och en inläsning av demodatan kostar omkring 0,6 s, så läsande tester kan
+  dela fönster med `delatFonster(forbered, skapa)` i `tests/helpers/app-harness.js`. Gruppen börjar med vakten
+  `utgangslage(w)` (tröskel, öppna dialoger, aktiv flik), och efter varje test jämförs `tillstandsavtryck(w)` (hela
+  `state` utom cachar, Utforskas urval, markeringen och dialogerna): det test som lämnar något ändrat fälls. Avtrycket
+  ser inte allt, till exempel stubbar på fönstret och värden i fält, så ett test som ändrar något sådant behåller ett
+  eget fönster. `tests/granssnitt.test.js` (23,0 → 18,3 s ensam), `tests/diagramvyer.test.js` (22,7 → 18,1 s) och
+  `tests/diagramvyer-marken.test.js` (29,0 → 21,7 s) delar. En fil delar bara om den blir minst 20 % snabbare; under
+  gränsen stannade `smoke-vyer`, `smoke-granssnitt`, `granssnitt-vyer`, `smoke-ansvar`, `smoke-jamforelse`,
+  `smoke-innehall`, `smoke-docx`, `ktroskel-utdata`, `ktroskel-regression`, `ktroskel-exporter` och `ktroskel-kon`,
+  där de flesta tester ändrar något. `smoke`, `kanonymitet` och `diagramritare` delade redan eller har sin tid i
+  ritningen. Hela sviten: 176 och 164 s före mot 168 och 142 s efter, körda växelvis på samma maskin (sexton trådar);
+  variationen mellan körningar är större än vinsten i varje enskild fil.
 - **Demosida:** `npm run site` bygger `site/dist/` (startsidan
   `site/index.html` + bygget + `RELEASE.txt`) för valfri statisk webbplats; sidan har inga
   skript och länkar till verktyget med `?demo=1`, som startar demoläget (ingen annan
