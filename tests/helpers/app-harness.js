@@ -189,12 +189,12 @@ export function utgangslage(w) {
     };
 }
 
-// Det som ett delat fönster inte får lämna ändrat: hela state utom beräkningscacharna, urvalet i Utforska och öppna
+// Det som ett delat fönster inte får lämna ändrat: hela state utom beräkningscacharna, urvalet i Utforska, den markerade gruppen och öppna
 // dialoger. Fliken räknas inte: att byta flik är att läsa.
 const _CACHAR = new Set(['bootstrapCI', 'powerAnalysis', 'result']);
 const _somLista = (k, v) => (_CACHAR.has(k) || /cache/i.test(k) ? undefined : v?.constructor?.name === 'Set' || v?.constructor?.name === 'Map' ? [...v] : v);
 export function tillstandsavtryck(w) {
-    const ut = { urval: JSON.stringify(w.__explorerUrval()), dialoger: utgangslage(w).dialoger };
+    const ut = { urval: JSON.stringify(w.__explorerUrval()), markering: JSON.stringify(w.eval('diagramMarkering()')), dialoger: utgangslage(w).dialoger };
     for (const k of Object.keys(w.__state)) if (!/cache/i.test(k)) ut[k] = JSON.stringify(w.__state[k], _somLista);
     return ut;
 }
