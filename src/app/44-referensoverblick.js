@@ -96,6 +96,30 @@ function _rrStatTabellHtml(rader) {
         + '</tbody></table></div>';
 }
 
+/** Excel-bladet Referenser: skärmens lista med tal som tal, följt av statistiken mot ställningstagandet. */
+function _rrExcelBlad() {
+    const o = referensOverblick();
+    if (!o) return null;
+    const har = { harStatistik: state.statistik.length > 0, harStallningstagande: state.policy.length > 0 };
+    const pct = v => (v == null ? '' : Math.round(v * 100) / 100);
+    const kolumner = _rrKolumner(har);
+    const cell = (k, g) => { const v = k.varde(g); return k.typ === 'pct' ? pct(v) : k.typ === 'kr' ? (v == null ? '' : Math.round(v)) : v ?? ''; };
+    return [
+        ['Löneläget och statistiken mot ställningstagandet (fliken Jämförelse)'],
+        [`Minsta gruppstorlek ${kTroskel()}: yrkesgrupper med färre personer redovisas inte. Ställningstagandet är referenspunkten.`], [],
+        kolumner.map(k => k.rubrik),
+        ...o.grupper.map(g => kolumner.map(k => cell(k, g))),
+        ...(har.harStatistik && har.harStallningstagande ? [[], ['Statistiken mot ställningstagandet (%)'], ['Yrkesgrupp', 'BAS', 'P10', 'Median', 'P90'],
+            ...o.statistikMotStallningstagande.map(r => [r.yrke, r.bas, pct(r.p10), pct(r.median), pct(r.p90)])] : [])
+    ];
+}
+
+/** Utskriftens bilaga: listan ur överblicken och statistiken mot ställningstagandet. cloneTable går genom exportgrinden. */
+function _utskriftReferenserHtml(cloneTable) {
+    if (!state.policy.length && !state.statistik.length) return '';
+    return `<section class="page-break"><h2>Löneläget och statistiken mot ställningstagandet</h2>${cloneTable('ref-tabell')}${cloneTable('ref-stat-mot-stallning')}</section>`;
+}
+
 // Flikens topp: vilka referenser som finns, och hur många grupper som ligger utanför ställningstagandet.
 function _rrRitaTopp(o, { harStatistik, harStallningstagande }) {
     const host = document.getElementById('jmf-slutsatser');

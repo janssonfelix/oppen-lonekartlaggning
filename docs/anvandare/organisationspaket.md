@@ -15,12 +15,12 @@ filer) finns ingen referens att jämföra mot.
 | Del | Innehåll | Används till |
 |---|---|---|
 | Organisation | Organisationens namn, utgivare (t.ex. "Lönefunktionen, HR-avdelningen"), datum, vilket år paketet avser och organisationstypen (kommun, region eller båda) | Visas i verktyget och i exporter, så att det framgår vilket underlag som använts |
-| Benämningar | Vad jämförelsestatistiken heter (t.ex. "Kommunens lönestatistik") | Rubriker och texter i Jämförelsestatistik, Prioritering och exporter |
+| Benämningar | Vad jämförelsestatistiken heter (t.ex. "Kommunens lönestatistik") | Rubriker och texter i Jämförelse, Prioritering och exporter |
 | Grundinställningar | PO-påslag och beräkningsperiod, och *Minsta gruppstorlek för redovisning* (valfritt; utan värde gäller 10 eller det handläggaren har satt) | Kostnadsberäkningarna i Prioritering och Löneöversyn, och vilka grupper som redovisas. Ett värde under 10 ger handläggaren en fråga om bekräftelse när paketet läses in |
 | Låsningar (valfritt) | *Lägsta tillåtna minsta gruppstorlek*, en låst tid för *rensning vid inaktivitet*, och om *små grupper får tas med i Utforskas export* | Det handläggaren inte får ändra, se avsnitt 5 |
 | Rapportens recept (valfritt) | Egna tabeller byggda i Utforska och ett eget recept för avsnittet per BAS-intervall — bara recepten (rader, kolumner, mått, urval), inga tal | Samma tabeller i Word, PDF, Excel och rapportunderlaget hos alla handläggare; ersätter de egna tabeller som finns när paketet läses in |
-| Lönepolitiskt ställningstagande | P10, median och P90 per BAS-intervall (och/eller per yrke) | Prioritering, Lönepolitik och statusrutan i Att göra |
-| Jämförelsestatistik | Median (och gärna P10, P90 och könsfördelning) per yrke och BAS | Fliken Jämförelsestatistik, prioritering mot statistiken och reserven i Likvärdigt arbete |
+| Lönepolitiskt ställningstagande | P10, median och P90 per BAS-intervall (och/eller per yrke) | Prioritering, Jämförelse och statusrutan i Att göra |
+| Jämförelsestatistik | Median (och gärna P10, P90 och könsfördelning) per yrke och BAS | Fliken Jämförelse, prioritering mot statistiken och reserven i Likvärdigt arbete |
 
 Ställningstagandet och jämförelsestatistiken är var för sig valfria, men paketet måste
 innehålla minst det ena. Analysens trösklar (t.ex. 60 % för kvinnodominans och 5 % för

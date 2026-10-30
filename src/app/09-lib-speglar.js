@@ -4261,6 +4261,29 @@ function arsjamforelseBlock(j, { id = 'arsjamforelse', forraAr, nuAr, urval, dem
         tabell: { rubriker: ['Mått', String(forraAr), String(nuAr), 'Skillnad'], rader: j.nyckeltal.map(r => [r.etikett, skriv(r.forra, r.typ), skriv(r.nu, r.typ), diff(r.diff, r.typ)]) } };
 }
 
+/**
+ * Lönerna mot referenserna (ADR-55): överblickens tal i ord och listan. Ställningstagandet är referenspunkten: orden
+ * säger var löneläget och statistiken ligger mot det, aldrig tvärtom.
+ * @param {any} overblick resultatet av referensOverblick (grupper under minsta gruppstorlek är redan borta)
+ */
+function referenserBlock(overblick, { id = 'referenser', urval, demo, troskelNot }) {
+    const { fore, efter } = _inled({ demo, urval, troskelNot });
+    const { grupper, tal } = overblick, pm = tal.perMonster;
+    const tecken = v => (v == null ? '–' : `${v >= 0 ? '+' : '−'}${_pct(Math.abs(v), 1)}`);
+    const skillnad = (g, ref) => (g.org.median != null && ref?.median != null ? tecken((g.org.median / ref.median - 1) * 100) : '–');
+    const mening = (m, text) => `${_st(m.grupper, 'yrkesgrupp', 'yrkesgrupper')} (${_pct(m.andel, 0)} av personalen): ${text}.`;
+    const motPolicy = tal.vagdMedianMotStallningstagandePct != null, motStatistik = tal.vagdMedianMotStatistikPct != null;
+    const st = ['Ställningstagandet är referenspunkten: löneläget och statistiken mäts mot det.',
+        ...(motPolicy && motStatistik ? [mening(pm.badaOver, 'löneläget och statistiken ligger över ställningstagandet'),
+            mening(pm.baraLonelageOver, 'bara löneläget ligger över ställningstagandet'),
+            mening(pm.baraStatistikOver, 'bara statistiken ligger över ställningstagandet'),
+            mening(pm.badaInom, 'löneläget och statistiken ligger inom ställningstagandet')] : []),
+        `Vägd medianskillnad, löneläget mot ${[motPolicy && `ställningstagandet: ${tecken(tal.vagdMedianMotStallningstagandePct)}`, motStatistik && `statistiken: ${tecken(tal.vagdMedianMotStatistikPct)}`].filter(Boolean).join(', mot ')}.`];
+    return { id, rubrik: 'Lönerna mot referenserna', stycken: [...fore, ...st, ...efter], provat: null, fragor: null,
+        tabell: { rubriker: ['Yrkesgrupp', 'n', 'Median (kr)', 'Mot ställningstagandet (%)', 'Mot statistiken (%)', 'Mönster'],
+            rader: grupper.map(g => [`${g.yrke} · BAS ${g.bas}`, formatTal(g.n), formatTal(g.org.median, 0), skillnad(g, g.stallningstagande), skillnad(g, g.statistik), g.monster.text]) } };
+}
+
 /** Ren text för urklipp (reserv): tabbar mellan kolumner, numrerade frågor. */
 function tillText(b) {
     const delar = [b.rubrik, ...b.stycken];
@@ -4270,7 +4293,7 @@ function tillText(b) {
     return delar.join('\n\n');
 }
 
-    return { likaArbeteGrupper, justeratGapInomYrke, gruppBlock, parBlock, avsnittBlock, tillWordHtml, tillText, stabilitetKort, egenTabellBlock, arsjamforelseBlock };
+    return { likaArbeteGrupper, justeratGapInomYrke, gruppBlock, parBlock, avsnittBlock, tillWordHtml, tillText, stabilitetKort, egenTabellBlock, arsjamforelseBlock, referenserBlock };
 })();
 const _ruLikaArbeteGrupper = __mirrorRapportunderlag.likaArbeteGrupper;
 const _ruJusteratGap = __mirrorRapportunderlag.justeratGapInomYrke;
@@ -4282,6 +4305,7 @@ const _ruTillText = __mirrorRapportunderlag.tillText;
 const _ruStabilitetKort = __mirrorRapportunderlag.stabilitetKort;
 const _ruEgenTabellBlock = __mirrorRapportunderlag.egenTabellBlock;
 const _ruArsjamforelseBlock = __mirrorRapportunderlag.arsjamforelseBlock;
+const _ruReferenserBlock = __mirrorRapportunderlag.referenserBlock;
 
 // ---- speglar src/lib/gapuppdelning.js ----
 const __mirrorGapuppdelning = (() => {

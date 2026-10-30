@@ -69,7 +69,7 @@ direkt vid laddning (händelsekopplingar, `const`) körs i den här ordningen.
 | `39-loneoversikt.js` | Löneöversikten (i Utforska): tabell, sök, fäll in/ut, Excel |
 | `40-alder-karriar.js` | Ålder & karriär: lön mot ålder med trend, lönegap per åldersgrupp, percentilband över ålder, lönefördelning per kön, små multiplar, lönefördelningen per BAS som lådor (`_konTathetFigur`, ritad i Lika arbete), åldersstruktur |
 | `41-lika-arbete.js` | Lika arbete: översikten per BAS-intervall (`_laOversiktRader` — en beräkning för skärmens tabell, diagrammen och rapporten), tabellen med grafik i raden, trattdiagrammet (`_laTrattUnderlag`: omkastning per yrkesgrupp), lönespridning per BAS och kön, könsfördelning, yrkesgruppstabellen med underrader per ansvarsgrupp, flikens nyckeltal (`_laSlutsats`, `_laNyckel`) |
-| `42-jamforelse.js` | Jämförelsestatistik: reglage för källa, filter, tabellen i tre block och diagrammen för spannet och avvikelsen (beräkningen i `src/lib/jamforelse.js`) |
+| `42-jamforelse.js` | Jämförelse, avsnittet mot statistiken: filter, tabellen i tre block och diagrammen för spannet och avvikelsen (beräkningen i `src/lib/jamforelse.js`) |
 | `43-personer-att-granska.js` | Panelen "Personer att granska" i Lika arbete: personer minst X % under förväntad lön bland kollegor i samma AID och BAS (logiken i `src/lib/individflaggor.js`), med kolumnen Ansvar när ansvarskoden finns, och tabellen över avvikelsen per kön och BAS-intervall |
 | `44-referensoverblick.js` | Jämförelse, avsnittet Överblick: löneläget och statistiken mot ställningstagandet per yrkesgrupp, med talen, listan, bilden och statistiken mot ställningstagandet (beräkningen i `src/lib/referenser.js`) |
 | `50-regressionsmodeller.js` | Tunn adapter till `src/lib/regression.js` (via spegeln): kollinearitet, gap per BAS, sekventiell dekomponering (med yrkesgrupp- och ansvarssteget), kvantilregression, Blinder-Oaxaca. Läser `getData()` och `statGolv()` |
@@ -92,7 +92,7 @@ direkt vid laddning (händelsekopplingar, `const`) körs i den här ordningen.
 | `71-utforska-figur.js` | Utforska: figur per diagramtyp ur pivotmodellen (`src/lib/utforska.js`) |
 | `72-utforska-urval.js` | Utforska: villkorsbyggaren för urval och gruppvillkor (`src/lib/urval.js`) |
 | `73-arsbokslut.js` | Årsbokslutet och panelen *Jämförelse med förra året* i Dokumentera (`src/lib/arsbokslut.js`, ADR-54) |
-| `75-lonepolitik.js` | Lönepolitik: analys mot referensen, bandkartan, könens läge i spannet (hantel) och fördelningen i spannets tredjedelar per kön, efterlevnaden |
+| `75-lonepolitik.js` | Jämförelse, avsnittet mot ställningstagandet: analys mot referensen, bandkartan, könens läge i spannet (hantel) och fördelningen i spannets tredjedelar per kön, efterlevnaden |
 | `80-gruppdossier.js` | Gruppdossier — en yrkesgrupp på en sida (modal), med antal per ansvarsgrupp |
 | `85-robusthet-fardigcheck.js` | Robusthetspanel (kvinnotröskel, prioriteringsreferens) + färdigcheck |
 | `86-installningar.js` | Panelen Inställningar: det som gäller alla flikar, och en förteckning över flikarnas egna inställningar |

@@ -153,7 +153,7 @@ export const MODULES = [
             likaArbeteGrupper: '_ruLikaArbeteGrupper', justeratGapInomYrke: '_ruJusteratGap',
             gruppBlock: '_ruGruppBlock', parBlock: '_ruParBlock', avsnittBlock: '_ruAvsnittBlock',
             tillWordHtml: '_ruTillWordHtml', tillText: '_ruTillText', stabilitetKort: '_ruStabilitetKort',
-            egenTabellBlock: '_ruEgenTabellBlock', arsjamforelseBlock: '_ruArsjamforelseBlock'
+            egenTabellBlock: '_ruEgenTabellBlock', arsjamforelseBlock: '_ruArsjamforelseBlock', referenserBlock: '_ruReferenserBlock'
         }
     },
     {

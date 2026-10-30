@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
+import { fonster as fonsterK, fangaBocker, laddaXlsx, SENT_SMA, SMA } from './helpers/ktroskel-rigg.js';
 vi.setConfig({ testTimeout: 30000 });
 const fonster = () => { const w = createAppWindow(); w.__loadDemoData(); return w; };
 const medStatistik = (w, { spann = true } = {}) => {
@@ -92,5 +93,63 @@ describe('Lönepolitik är avsnitt två i Jämförelse', () => {
         w.__renderTabContent('kon');
         w.document.querySelector('.nav-item[data-tab="kon"]').click();
         expect(w.document.querySelector('.flow-next-btn').dataset.flowTab).toBe('utforska');
+    });
+});
+describe('överblicken i exporterna', () => {
+    it('Excel-bladet Referenser finns efter Lönepolitik och bär inga grupper under tröskeln', async () => {
+        const w = fonsterK(null);
+        await laddaXlsx(w);
+        const data = [...new Set(w.__state.data.map(r => `${r.aid}|${r.bas}`))];
+        w.__state.statistik = data.map(k => { const [aid, bas] = k.split('|'); return { aid, bas, median: 34000, p10: 30000, p90: 39000 }; });
+        w.__state.statistikHasP10 = true; w.__state.statistikHasP90 = true;
+        const blad = w.eval('excelAlltBlad()');
+        expect(blad.indexOf('Referenser')).toBe(blad.indexOf('Lönepolitik') + 1);
+        const bok = Object.values(fangaBocker(w, () => w.eval('exportAllToExcel()')))[0];
+        const ref = bok.split('[Referenser]')[1].split('\n[')[0];
+        expect(ref).toContain('Statistiken mot ställningstagandet (%)');
+        for (const s of SENT_SMA) expect(ref).not.toContain(String(s));
+    });
+    it('rapportavsnittet och rapportunderlagets block bär inga grupper under tröskeln; skärmen visar dem', () => {
+        const w = fonsterK(null);
+        const namn = w.__state.data.find(r => SMA.includes(r.bas)).yrke;
+        const iRapport = JSON.stringify(w.eval('rapportModell({ alla: true })').avsnitt.find(a => a.id === 'referenser'));
+        const iBlock = JSON.stringify(w.eval('rapportunderlagBlock()').find(x => x.id === 'referenser'));
+        for (const bas of SMA) { expect(iRapport).not.toContain(`BAS ${bas}"`); expect(iBlock).not.toContain(`BAS ${bas}"`); }
+        for (const s of SENT_SMA) { expect(iRapport).not.toContain(String(s)); expect(iBlock).not.toContain(String(s)); }
+        w.__renderTabContent('benchmark');
+        expect(w.document.getElementById('ref-tabell').textContent).toContain(namn);
+        expect(w.document.getElementById('ref-tabell').textContent).toContain(`BAS ${SMA[0]}`);
+    });
+    it('rapporten har avsnittet Lönerna mot referenserna efter Lönestruktur och rapportmått, i hela dokumentationen och facklig dialog men inte i ledningsbriefen', () => {
+        const w = fonster();
+        const ids = w.eval('rapportModell({ alla: true })').avsnitt.map(a => a.id);
+        expect(ids).toHaveLength(12);
+        expect(ids[ids.indexOf('struktur') + 1]).toBe('referenser');
+        w.eval("sattRapportUrval('ledning')");
+        expect(w.eval('rapportModell()').avsnitt.map(a => a.id)).not.toContain('referenser');
+        w.eval("sattRapportUrval('facklig')");
+        expect(w.eval('rapportModell()').avsnitt.map(a => a.id)).toContain('referenser');
+        w.eval("sattRapportUrval('hela')");
+        expect(w.eval('_buildDocumentationDraftHtml()')).toContain('Lönerna mot referenserna');
+        const avsnitt = w.eval('rapportModell()').avsnitt.find(a => a.id === 'referenser');
+        expect(avsnitt.delar.some(p => p.typ === 'diagram' && p.id === 'chart-ref-hantel')).toBe(true);
+    });
+    it('utan någon referens finns avsnittet inte, och räkningen är elva', () => {
+        const w = createAppWindow();
+        w.__state.data = Array.from({ length: 40 }, (_, i) => ({ bas: 'AB'[i % 2], kon: i % 2 ? 'man' : 'kvinna', lon: 30000 + i * 100, alder: 40, aid: '1', yrke: '1 Y', yrkeLabel: 'Y', radnr: i + 2 }));
+        expect(w.eval('rapportModell({ alla: true })').avsnitt).toHaveLength(11);
+    });
+    it('rapportunderlaget har blocket med talen och listan', () => {
+        const w = fonster();
+        const b = w.eval('rapportunderlagBlock()').find(x => x.id === 'referenser');
+        expect(b.rubrik).toBe('Lönerna mot referenserna');
+        expect(b.tabell.rubriker[0]).toBe('Yrkesgrupp');
+        expect(b.stycken.join(' ')).toMatch(/löneläget/);
+    });
+    it('utskriften tar med listan ur överblicken före avsnittet mot statistiken', () => {
+        const w = fonster(); medStatistik(w);
+        w.__renderTabContent('benchmark');
+        w.eval("sattRapportUrval('hela')");
+        expect(w.eval('_utskriftReferenserHtml(id => { const t = document.getElementById(id); return t ? t.outerHTML : ""; })')).toMatch(/ref-tabell[^]*ref-stat-mot-stallning/);
     });
 });

@@ -110,7 +110,7 @@ export function fonsterKon(k) {
     // En rad per AID×BAS; medianen ligger över varje lön i underlaget, så att varje grupp hamnar "under jämförelsen".
     const sedda = new Set();
     win.__state.statistik = data.filter(r => !sedda.has(r.aid + '|' + r.bas) && sedda.add(r.aid + '|' + r.bas))
-        .map(r => ({ aid: r.aid, bas: r.bas, median: 60000, p10: 55000, p90: 71000 }));
+        .map(r => ({ aid: r.aid, bas: r.bas, median: 61700, p10: 55000, p90: 71000 }));
     win.eval('populateSelects(); unlockTabs();');
     return win;
 }

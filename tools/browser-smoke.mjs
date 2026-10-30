@@ -1252,8 +1252,8 @@ console.log('\n── Förhandsbesked och urval ──');
     await page.evaluate(() => { sattRapportUrval('hela'); renderExportBesked(); document.getElementById('avsnitt-ex-urval').open = true; });
     const fore = await page.evaluate(() => ({ word: document.getElementById('besked-word').textContent, excel: document.getElementById('besked-excel').textContent, zip: document.getElementById('besked-zip').textContent,
         rader: document.querySelectorAll('#rapport-urval .urval-rad').length, syns: document.getElementById('besked-word').offsetParent !== null }));
-    ok(fore.syns && /Hela dokumentationen · 11 avsnitt · \d+ tabeller · 8 diagram/.test(fore.word) && /Utelämnar:/.test(fore.word), `Word-raden säger vad filen innehåller och utelämnar (${fore.word.slice(0, 90)}…)`);
-    ok(/\d+ blad — Löneöversikt/.test(fore.excel) && /Word-utkastet, Excel-filen \(\d+ blad\) och diagrammen i alla flikar/.test(fore.zip) && fore.rader === 11, 'Excel-raden listar bladen, ZIP-raden säger vad filen bär, och urvalet har elva avsnitt');
+    ok(fore.syns && /Hela dokumentationen · 12 avsnitt · \d+ tabeller · 9 diagram/.test(fore.word) && /Utelämnar:/.test(fore.word), `Word-raden säger vad filen innehåller och utelämnar (${fore.word.slice(0, 90)}…)`);
+    ok(/\d+ blad — Löneöversikt/.test(fore.excel) && /Word-utkastet, Excel-filen \(\d+ blad\) och diagrammen i alla flikar/.test(fore.zip) && fore.rader === 12, 'Excel-raden listar bladen, ZIP-raden säger vad filen bär, och urvalet har tolv avsnitt');
     await page.click('[data-urval-fast="ledning"]');
     await page.waitForTimeout(300);
     ok(await page.evaluate(() => /Ledningsbrief · 4 avsnitt/.test(document.getElementById('besked-word').textContent) && document.getElementById('nyckel-ex-urval').textContent === 'Ledningsbrief'), 'ett färdigt urval ändrar beskedet och avsnittets rubrik');

@@ -83,10 +83,12 @@ kön (ADR-38), också på skärmen. I Ålder & karriärs bilder och diagramdata 
 åldersjusterat), lutningen per kön, trendlinjerna med konfidensband och lådorna per kön regeln: där ett
 kön är under tröskeln står ett streck, och en not under diagrammet säger vad som utelämnats. I
 spridningsdiagrammens bilder och diagramdata finns en persons punkt bara när personens grupp (yrke inom BAS)
-och personens kön i gruppen når tröskeln; en not säger hur många som inte är med. Lönepolitik har en
+och personens kön i gruppen når tröskeln; en not säger hur många som inte är med. Avsnittet mot ställningstagandet i Jämförelse har en
 mellannivå i exporten: för grupper med 5 personer eller fler men under tröskeln anges antal, inga
 lönemått; bladet *Lönepolitik* i Excelfilen med alla flikar följer den trappan och samma regel
-per kön. Ett diagram som inte får lämna verktyget alls — Personer att granskas diagram, och
+per kön. Överblicken i Jämförelse och bladet *Referenser* redovisar organisationens lönemått bara för yrkesgrupper
+som når tröskeln; referensernas egna tal och tabellen statistiken mot ställningstagandet bär inga
+organisationsvärden och maskeras inte. Ett diagram som inte får lämna verktyget alls — Personer att granskas diagram, och
 Översiktens kopior av Strukturs diagram — är märkt så i koden med ett uppräknat skäl som står i
 behållarens verktygstips, och ingen exportväg (meny, bild, diagramdata, ZIP, utskrift) tar med det.
 
@@ -203,7 +205,7 @@ eller via urklipp — aldrig över nätverket:
 
 | Utdata | Innehåll | Hantering |
 |---|---|---|
-| Excel- och CSV-exporter | Aggregat per grupp. Kandidatpar med små grupper ingår bara i likvärdighetsexporten (§3, undantag 1); övriga exporter utelämnar dem och anger antalet. Likvärdighetsexporten, och Utforskas export när rutan för små grupper är ikryssad, anger i filen att den kan innehålla grupper under tröskeln | Som personuppgifter |
+| Excel- och CSV-exporter | Aggregat per grupp. Bladet *Referenser* bär organisationens lönemått per yrkesgrupp som når tröskeln, och referensernas egna tal. Kandidatpar med små grupper ingår bara i likvärdighetsexporten (§3, undantag 1); övriga exporter utelämnar dem och anger antalet. Likvärdighetsexporten, och Utforskas export när rutan för små grupper är ikryssad, anger i filen att den kan innehålla grupper under tröskeln | Som personuppgifter |
 | Diagramdata från diagram med enskilda personer | En rad per person: lön, kön och ålder eller grupp — utan identifierare | Som personuppgifter |
 | Word-utkast, PDF och utskrift | Verktygets fynd och HR:s egna bedömningar. Tabeller, text och diagrambilder redovisar grupper över tröskeln; kandidatpar med en grupp under tröskeln utelämnas. PDF-rapporten är en låst kopia av Word-utkastet med samma innehåll. Rapportens avsnitt har inga diagram med enskilda personers löner; utskriften av hela dokumentationen (*Komplett rapport*) har bilagor med bilder av Ålder & karriärs spridnings-, låd- och täthetsdiagram (§3, undantag 4) | Som personuppgifter |
 | ZIP-export | Word-utkastet, Excelfilen med alla flikar (aggregat) och bilder av alla ritade diagram från alla flikar. ZIP-filen är alltså inte enbart aggregat: spridningsdiagrammen i Ålder & karriär har en punkt per anställd (bara personer vars grupp och kön i gruppen når tröskeln), och låddiagrammet visar enskilda avvikande löner | Som personuppgifter |

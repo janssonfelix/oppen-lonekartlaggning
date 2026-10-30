@@ -67,6 +67,8 @@ const RM_DIAGRAM = [
     { id: 'chart-kon-aldergap', flik: 'kon', avsnitt: 'struktur', rubrik: 'Lönegap per åldersgrupp — rå skillnad, alla yrken och nivåer',
       om: () => { const v = /** @type {HTMLInputElement} */ ((document.getElementById('bas-select-kon') || {})).value; return !v || v === '__ALLA__'; } },
     { id: 'chart-lp-konlagen', flik: 'benchmark', avsnitt: 'struktur', rubrik: 'Var i referensens lönespann ligger kvinnor och män' },
+    { id: 'chart-ref-hantel', flik: 'benchmark', avsnitt: 'referenser', rubrik: 'Löneläget och statistiken mot ställningstagandet per yrkesgrupp — bandet P10–P90, strecket medianen',
+      om: () => !!(state.policy.length || state.statistik.length) },
     { id: 'chart-likvardighet-heatmap', flik: 'likvardighet', avsnitt: 'likvardigt', rubrik: 'Kandidatpar i likvärdigt arbete', kraverAllaPar: true },
     // Jämförelsen med förra året (ADR-54) ritas av panelen i Dokumentera & exportera, bara när ett bokslut är inläst.
     { id: 'chart-arsjamforelse', flik: 'dokumentera', avsnitt: 'arsjamforelse', rubrik: 'Kvinnors medianlön i procent av mäns per yrkesgrupp, förra året (strecket) och i år (punkten)',
@@ -75,11 +77,11 @@ const RM_DIAGRAM = [
 
 // ---- Urval: vilka avsnitt som följer med, och i vilken ordning ----
 // Urvalet ligger i minnet (state.rapportUrval) och följer med i konfigurationsfilen. null = hela dokumentationen.
-const RM_AVSNITT = ['sammanfattning', 'regler', 'lika', 'likvardigt', 'struktur', 'perbas', 'atgarder', 'samverkan', 'beslut', 'regression', 'metod'];
+const RM_AVSNITT = ['sammanfattning', 'regler', 'lika', 'likvardigt', 'struktur', 'referenser', 'perbas', 'atgarder', 'samverkan', 'beslut', 'regression', 'metod'];
 const RM_URVAL = Object.freeze({
     hela: { namn: 'Hela dokumentationen', med: RM_AVSNITT },
     ledning: { namn: 'Ledningsbrief', med: ['sammanfattning', 'lika', 'likvardigt', 'atgarder'] },
-    facklig: { namn: 'Facklig dialog', med: ['sammanfattning', 'regler', 'lika', 'likvardigt', 'struktur', 'perbas', 'samverkan', 'regression', 'metod'] },
+    facklig: { namn: 'Facklig dialog', med: ['sammanfattning', 'regler', 'lika', 'likvardigt', 'struktur', 'referenser', 'perbas', 'samverkan', 'regression', 'metod'] },
 });
 /** Det gällande urvalet: `ordning` är alla avsnitt i vald ordning, `med` de som följer med, `namn` vad urvalet heter. */
 function rapportUrval() {
@@ -210,6 +212,40 @@ function rmArsjamforelseAvsnitt(diagram) {
     } else delar.push(stycke(`${forra.ar} hade inga öppna punkter.`));
     const utelamnat = j.samma_k ? [] : [`bokslutet sparades med minsta gruppstorlek ${forra.k}, i år gäller ${nu.k}: yrkesgrupper jämförs bara där båda könen når respektive års gräns`];
     return { id: 'arsjamforelse', numrerad: true, rubrik: 'Jämförelse med förra året', utelamnat, delar };
+}
+
+/**
+ * Avsnittet Lönerna mot referenserna (ADR-55): överblickens tal, listan, bilden och statistiken mot ställningstagandet.
+ * Finns bara när minst en referens är inläst.
+ * @param {(avsnitt: string) => any[]} diagram
+ */
+function rmReferenserAvsnitt(diagram) {
+    const o = referensOverblick();
+    if (!o) return null;
+    const harStatistik = state.statistik.length > 0, harStallningstagande = state.policy.length > 0;
+    const pct = (v, ref) => (v != null && ref != null ? (v / ref - 1) * 100 : null);
+    const tecken = v => (v == null ? '—' : `${v >= 0 ? '+' : '−'}${svPct(Math.abs(v), 1)}`);
+    const pm = o.tal.perMonster, monster = m => `${m.grupper} (${svPct(m.andel, 0)} av personalen)`;
+    const tal = [['Yrkesgrupper', String(o.tal.antalGrupper)],
+        ...(harStatistik && harStallningstagande ? [['Löneläget och statistiken över ställningstagandet', monster(pm.badaOver)], ['Bara löneläget över ställningstagandet', monster(pm.baraLonelageOver)],
+            ['Bara statistiken över ställningstagandet', monster(pm.baraStatistikOver)], ['Båda inom ställningstagandet', monster(pm.badaInom)], ['Grupper där förslaget är statistiken', String(o.tal.forslagStatistik)]] : []),
+        ...(harStallningstagande ? [['Vägd medianskillnad mot ställningstagandet', tecken(o.tal.vagdMedianMotStallningstagandePct)]] : []),
+        ...(harStatistik ? [['Vägd medianskillnad mot statistiken', tecken(o.tal.vagdMedianMotStatistikPct)]] : [])];
+    const delar = [
+        { typ: 'stycke', text: 'Ställningstagandet är referenspunkten: löneläget och statistiken mäts mot det. Läget säger var gruppen ligger, inte om en lön är rätt eller fel. Yrkesgrupper under minsta gruppstorlek redovisas inte.', stil: 'dampad' },
+        { typ: 'tabell', nyckel: true, kolumner: [{ rubrik: '', typ: 'text' }, { rubrik: '', typ: 'text' }], rader: tal },
+        { typ: 'tabell', kolumner: [{ rubrik: 'Yrkesgrupp', typ: 'text' }, { rubrik: 'n', typ: 'antal' }, { rubrik: 'Median', typ: 'kr' },
+            ...(harStallningstagande ? [{ rubrik: 'Mot ställningstagandet', typ: 'pct1' }] : []), ...(harStatistik ? [{ rubrik: 'Mot statistiken', typ: 'pct1' }] : []), { rubrik: 'Mönster', typ: 'text' }],
+          rader: o.grupper.map(g => [`${g.yrke} · BAS ${g.bas}`, g.n, g.org.median,
+            ...(harStallningstagande ? [pct(g.org.median, g.stallningstagande.median)] : []), ...(harStatistik ? [pct(g.org.median, g.statistik.median)] : []), g.monster.text]) },
+        ...diagram('referenser'),
+    ];
+    if (o.statistikMotStallningstagande.length) delar.push({ typ: 'rubrik', niva: 3, text: 'Statistiken mot ställningstagandet' },
+        { typ: 'stycke', text: 'Positivt: statistiken ligger över ställningstagandet. Negativt: statistiken ligger under det. Organisationens löner ingår inte.', stil: 'dampad' },
+        { typ: 'tabell', kolumner: [{ rubrik: 'Yrkesgrupp', typ: 'text' }, { rubrik: 'BAS', typ: 'text' }, { rubrik: 'P10', typ: 'pct1' }, { rubrik: 'Median', typ: 'pct1' }, { rubrik: 'P90', typ: 'pct1' }],
+          rader: o.statistikMotStallningstagande.map(r => [r.yrke, r.bas, r.p10, r.median, r.p90]) });
+    const utelamnat = [...(harStatistik ? [] : ['jämförelsestatistik saknas']), ...(harStallningstagande ? [] : ['ställningstagande saknas'])];
+    return { id: 'referenser', numrerad: true, rubrik: 'Lönerna mot referenserna', utelamnat, delar };
 }
 
 function rmEgnaAvsnitt(d, k) {
@@ -385,6 +421,7 @@ function _rapportModellExport({ alla = false, bada = false } = {}) {
 
     // ---- Lönestruktur per BAS-intervall (tabellerna ur arbetsgivarnas egna utkast) ----
     const perbas = rmPerBasAvsnitt(d, k);
+    const referenser = d.length ? rmReferenserAvsnitt(diagram) : null;
     const egna = rmEgnaAvsnitt(d, k);
     const arsjamf = d.length ? rmArsjamforelseAvsnitt(diagram) : null;
 
@@ -453,7 +490,7 @@ function _rapportModellExport({ alla = false, bada = false } = {}) {
         { typ: 'tabell', nyckel: true, kolumner: [{ rubrik: '', typ: 'text' }, { rubrik: '', typ: 'text' }], rader: (typeof _methodAppendixData === 'function' ? _methodAppendixData() : []).map(([n, v]) => [String(n), String(v)]) },
     ] };
 
-    const finns = /** @type {any[]} */ ([sammanfattning, regler, lika, likvardigt, struktur, perbas, atgarder, samverkan, beslut, regressionAvsnitt, metod].filter(Boolean));
+    const finns = /** @type {any[]} */ ([sammanfattning, regler, lika, likvardigt, struktur, referenser, perbas, atgarder, samverkan, beslut, regressionAvsnitt, metod].filter(Boolean));
     /** @param {boolean} alla */
     const avsnitt = alla => {
         const urval = rapportUrval();

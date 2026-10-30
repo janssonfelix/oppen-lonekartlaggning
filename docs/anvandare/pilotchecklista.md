@@ -26,7 +26,7 @@ checklistan täcker det bara en körning med **er data** på **er hårdvara** ka
 
 ## B. Inläsning med skarp data
 - [ ] **Organisationspaketet** (om ni har ett) läses in; organisation, datum och innehåll
-      stämmer, och Prioritering och Lönepolitik använder ert ställningstagande.
+      stämmer, och Prioritering och Jämförelse använder ert ställningstagande.
 - [ ] **Organisationsfilen** (om systemägaren tagit fram en, `organisationspaket.md` avsnitt 3b) startar
       med paketet inläst: filrutan säger *Inbakat i den här filen*, *Visa paketet* visar rätt innehåll,
       och *Om verktyget* anger versionen filen bygger på.
@@ -63,7 +63,7 @@ påhittat underlag med 42 yrken, och Word-utkastet bara i LibreOffice.*
 - [ ] **Många yrkesgrupper:** yrkesgruppstabellen i Lika arbete ryms utan att rulla i sidled, yrkesnamnen går att
       läsa, och grafiken i raderna (punkten mot linjen för lika lön) stämmer med talet bredvid. *Verktyget är
       utvecklat mot ett litet exempelunderlag och ett påhittat större — er fil är det första riktiga provet.*
-- [ ] **Trattdiagrammet** (Lika arbete) och **bandkartan** (Lönepolitik) går att läsa med era grupper: punkterna
+- [ ] **Trattdiagrammet** (Lika arbete) och **bandkartan** (Jämförelse, avsnittet mot ställningstagandet) går att läsa med era grupper: punkterna
       ligger inte på varandra så att de inte går att skilja åt, och namnen krockar inte. Bandkartan är inte prövad
       med många yrken i samma BAS-intervall — notera i avsnitt G om grupper med nästan samma median täcker
       varandra.
