@@ -71,7 +71,8 @@ function _excelPerBasRader() {
  * Talen bakom flikarnas diagram och översiktstabell, som egna blad: det som står i bilden ska gå att räkna vidare på.
  * Samma funktioner som ritar vyerna lämnar raderna, så bladen följer vyernas regler för minsta gruppstorlek — en
  * grupp som inte ritas får ingen rad. Bladen gäller hela organisationen, också när en flik är avgränsad.
- * Sist bladet Lönepolitik (läget i lönespannet per yrkesgrupp och per kön), när ett ställningstagande är inläst.
+ * Sist bladet Lönepolitik (läget i lönespannet per yrkesgrupp och per kön), när ett ställningstagande är inläst, och
+ * bladet Referenser (löneläget och statistiken mot ställningstagandet), när minst en referens är inläst.
  * @returns {[string, any[][]][]} bladets namn och rader
  */
 function _excelDiagramBlad() {
@@ -97,6 +98,8 @@ function _excelDiagramBlad() {
     // Lönepolitik: bara när ett ställningstagande är inläst och matchar underlaget (75-lonepolitik.js).
     const lp = typeof _lpExcelBlad === 'function' ? _lpExcelBlad() : null;
     if (lp) ut.push(['Lönepolitik', lp]);
+    const referenser = _rrExcelBlad();
+    if (referenser) ut.push(['Referenser', referenser]);
     return ut;
 }
 

@@ -189,8 +189,8 @@ describe('organisationsneutralt standardläge', () => {
         const w = utanReferens();
         w.document.querySelector('.nav-item[data-tab="prioritering"]').click();
         expect(w.document.getElementById('view-prioritering').textContent).toMatch(/Ladda upp ert lönepolitiska ställningstagande/);
-        w.document.querySelector('.nav-item[data-tab="lonepolitik"]').click();
-        expect(w.document.getElementById('view-lonepolitik').textContent).toMatch(/Ladda upp ert lönepolitiska ställningstagande/);
+        w.__renderTabContent('benchmark');
+        expect(w.document.getElementById('avsnitt-jmf-stallningstagande').textContent).toMatch(/Ladda upp ert lönepolitiska ställningstagande/);
         expect(w.document.getElementById('comp-pol-val').textContent).toMatch(/Kräver lönepolitiskt ställningstagande/);
     });
     it('Word-utkastet och rapportunderlaget skriver inte null eller undefined utan referens', () => {

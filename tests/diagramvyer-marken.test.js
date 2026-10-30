@@ -1055,7 +1055,7 @@ describe('utskriften ur rapportmodellen', () => {
         // Ett kortare urval är just avsnitten: inga bilagor, och inga avsnitt utöver urvalet.
         const facklig = await bygg('facklig');
         expect(rubriker(facklig).some(r => /^Bilagor:|Löneöversikt/.test(r))).toBe(false);
-        expect([...facklig.querySelectorAll('section.rm-avsnitt')].map(s => s.dataset.rmAvsnitt)).toEqual(['sammanfattning', 'regler', 'lika', 'likvardigt', 'struktur', 'perbas', 'samverkan', 'regression', 'metod']);
+        expect([...facklig.querySelectorAll('section.rm-avsnitt')].map(s => s.dataset.rmAvsnitt)).toEqual(['sammanfattning', 'regler', 'lika', 'likvardigt', 'struktur', 'referenser', 'perbas', 'samverkan', 'regression', 'metod']);
         expect(facklig.querySelector('.k-stampel')).toBeNull();          // tröskeln står i metodbilagan
         // (Utskriften ritas i samma element varje gång: det som gäller facklig dialog prövas före nästa utskrift.)
         const ledning = await bygg('ledning');
@@ -1139,7 +1139,7 @@ describe('svenskt talformat i alla vyer, utan att exporterna ändras', () => {
         const w2 = createAppWindow();
         w2.__loadDemoData();
         const kvar = {};
-        for (const flik of ['dashboard', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn', 'kon', 'lonepolitik', 'utforska', 'benchmark']) {
+        for (const flik of ['dashboard', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn', 'kon', 'utforska', 'benchmark']) {
             w2.__renderTabContent(flik);
             const traffar = new Set();
             for (const el of w2.document.querySelectorAll('.view *, [id^="view-"] *')) {

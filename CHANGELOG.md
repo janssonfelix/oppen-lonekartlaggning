@@ -6,7 +6,25 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ## Oförlöst
 
+### Analys
+
+- **Jämförelse mot båda referenserna (ADR-55).** Fliken Jämförelse visar per yrkesgrupp var löneläget och
+  jämförelsestatistiken ligger mot ställningstagandet, som är referenspunkten: skillnaden percentil för percentil,
+  läget i spannet, mönstret i ord, ett förslag på referens, en bild med de tre spannen och tabellen statistiken mot
+  ställningstagandet. Vyn använder den referens som finns och säger vilken som saknas.
+
+### Gränssnitt
+
+- **Lönepolitik är ett avsnitt i Jämförelse.** Fliken har tre avsnitt: överblick, mot ställningstagandet (dagens
+  Lönepolitik) och mot jämförelsestatistiken. Växeln *Jämför mot* är borttagen, och fliken syns så snart underlaget och
+  en referens är inlästa. Länkar till Lönepolitik leder till Jämförelse.
+- **Dokumentera & exportera är menyns sista steg,** efter Fördjupa, och *Klar här?*-raderna går genom fördjupningen dit.
+
 ### Exporter
+
+- **Lönerna mot referenserna.** Nytt blad *Referenser* i Excel-filen, nytt avsnitt *Lönerna mot referenserna* i
+  Word-utkastet och PDF-rapporten, block i rapportunderlaget och listan i utskriften. Yrkesgrupper under minsta
+  gruppstorlek redovisas inte.
 
 - **Egna tabeller i rapporten (ADR-52).** Ovanför tabellen i Utforska finns *Lägg till i rapporten*: vyn sparas som ett
   recept (rader, kolumner, mått och urval, valfritt en tabell per BAS-intervall) och ritas om med minsta gruppstorlek i

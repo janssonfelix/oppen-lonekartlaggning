@@ -501,7 +501,7 @@ function _lpExcelBlad() {
     const namn = g => (benamning(g) ? `${g.aid} ${benamning(g)}` : String(g.aid));
     /** @type {any[][]} */
     const ut = [
-        [`Lönerna mot ${referensNamn()} (fliken Lönepolitik)`],
+        [`Lönerna mot ${referensNamn()} (fliken Jämförelse)`],
         [`Position är var medianen ligger i referensens spann: 0 % = på P10, 100 % = på P90; under 0 eller över 100 betyder utanför spannet. `
             + `Yrkesgrupper med färre än ${k} personer står med antal men utan lönemått, och med färre än ${Math.min(LP_COUNT_TIER_MIN, k)} utelämnas de; de räknas alltid in i BAS-intervallets rader. `
             + `Könsuppdelade mått redovisas bara där varje kön har minst ${k} personer.`],

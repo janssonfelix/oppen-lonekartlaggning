@@ -153,7 +153,7 @@ export const MODULES = [
             likaArbeteGrupper: '_ruLikaArbeteGrupper', justeratGapInomYrke: '_ruJusteratGap',
             gruppBlock: '_ruGruppBlock', parBlock: '_ruParBlock', avsnittBlock: '_ruAvsnittBlock',
             tillWordHtml: '_ruTillWordHtml', tillText: '_ruTillText', stabilitetKort: '_ruStabilitetKort',
-            egenTabellBlock: '_ruEgenTabellBlock', arsjamforelseBlock: '_ruArsjamforelseBlock'
+            egenTabellBlock: '_ruEgenTabellBlock', arsjamforelseBlock: '_ruArsjamforelseBlock', referenserBlock: '_ruReferenserBlock'
         }
     },
     {
@@ -191,6 +191,11 @@ export const MODULES = [
     {
         file: 'jamforelse.js', ns: '__mirrorJamforelse',
         expose: { jamforelseRader: '_jfRader', avvikelseRangordning: '_jfRangordning' }
+    },
+    {
+        // Löneläget och statistiken mot ställningstagandet (ADR-55); importerar lonepolitik.js
+        file: 'referenser.js', ns: '__mirrorReferenser',
+        expose: { lageISpann: '_rrLage', monster: '_rrMonster', forslag: '_rrForslag', referensOverblick: '_rrOverblick', hantelRader: '_rrHantelRader' }
     },
     {
         file: 'docx.js', ns: '__mirrorDocx',

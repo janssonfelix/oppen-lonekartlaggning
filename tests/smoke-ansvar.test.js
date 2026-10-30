@@ -31,7 +31,7 @@ describe('säkerhet, dataskydd och HR-logik', () => {
         const w = createAppWindow();
         skadligtUnderlag(w);
         for (const t of ['dashboard', 'bestammelser', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn',
-            'handlingsplan', 'dokumentera', 'kon', 'lonepolitik', 'utforska', 'benchmark', 'info']) w.__renderTabContent(t);
+            'handlingsplan', 'dokumentera', 'kon', 'utforska', 'benchmark', 'info']) w.__renderTabContent(t);
         await new Promise(r => setTimeout(r, 300));
         const injicerat = [...w.document.querySelectorAll('img[onerror], [onerror], b.inj')]
             .map(e => `${e.closest('[id]')?.id}: ${e.outerHTML.slice(0, 60)}`);
@@ -153,7 +153,7 @@ describe('interna fel syns i stället för att sväljas', () => {
         const w = createAppWindow();
         w.__loadDemoData();
         for (const t of ['dashboard', 'bestammelser', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn',
-            'handlingsplan', 'dokumentera', 'kon', 'lonepolitik', 'utforska', 'benchmark', 'info']) w.__renderTabContent(t);
+            'handlingsplan', 'dokumentera', 'kon', 'utforska', 'benchmark', 'info']) w.__renderTabContent(t);
         await new Promise(r => setTimeout(r, 300));
         expect(w.__state._interntFel || []).toEqual([]);
         expect(w.document.getElementById('internt-fel-banner').hidden).toBe(true);

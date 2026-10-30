@@ -29,15 +29,27 @@ export const BIBLIOTEK = [
 ];
 
 /**
+ * @typedef {{ alg: string, content: string }} Hash
+ * @typedef {{ type: string, 'bom-ref': string, name: string, version: string, purl: string,
+ *   licenses: Array<{ license: { id: string } }>, hashes: Hash[], properties: Array<{ name: string, value: string }> }} Komponent
+ * @typedef {{ bomFormat: string, specVersion: string, version: number, serialNumber?: string,
+ *   metadata: { timestamp?: string, component: { type: string, 'bom-ref': string, name: string, version: string,
+ *     description: string, licenses: Array<{ license: { id: string } }>, hashes: Hash[],
+ *     externalReferences: Array<{ type: string, url: string }> } },
+ *   components: Komponent[], dependencies: Array<{ ref: string, dependsOn: string[] }> }} Sbom
+ */
+
+/**
  * Bygger förteckningen ur källan. Kastar om en version eller kontrollsumma saknas: hellre ett
  * byggfel än en förteckning som påstår fel sak.
- * @returns {object} CycloneDX-dokumentet.
+ * @returns {Sbom} CycloneDX-dokumentet.
  */
 export function byggSbom() {
     const version = läs('VERSION').replace(/^﻿/, '').trim();
     const summor = Object.fromEntries(läs('vendor/SHA256SUMS').trim().split('\n').map(r => {
         const [sha, fil] = r.trim().split(/\s+/); return [fil, sha];
     }));
+    /** @type {Komponent[]} */
     const components = BIBLIOTEK.map(b => {
         const m = läs(`vendor/${b.fil}`).slice(0, 3000).match(b.version);
         if (!m) throw new Error(`sbom: ingen version i vendor/${b.fil}`);
@@ -54,6 +66,7 @@ export function byggSbom() {
         };
     });
     const artefakt = join(root, 'dist', 'oppen-lonekartlaggning.html');
+    /** @type {Hash[]} */
     const hashes = existsSync(artefakt)
         ? [{ alg: 'SHA-256', content: createHash('sha256').update(readFileSync(artefakt)).digest('hex') }]
         : [];

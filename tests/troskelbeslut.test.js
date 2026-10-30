@@ -233,7 +233,7 @@ describe('Diagramdata från diagram med en punkt per person säger att filen inn
 
 describe('autocomplete="off" på alla fält, också de som skapas efter start', () => {
     const FLIKAR = ['dashboard', 'bestammelser', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn',
-                    'kon', 'demografi', 'benchmark', 'lonepolitik', 'kvalitet', 'rapport', 'handlingsplan', 'info', 'utforska', 'dokumentera', 'livscykel'];
+                    'kon', 'demografi', 'benchmark', 'kvalitet', 'rapport', 'handlingsplan', 'info', 'utforska', 'dokumentera', 'livscykel'];
     const utan = d => [...d.querySelectorAll('input, textarea, select')]
         .filter(el => el.type !== 'file' && el.getAttribute('autocomplete') !== 'off')
         .map(el => `${el.tagName.toLowerCase()}#${el.id || '?'}[name=${el.name || ''}][type=${el.type || ''}]`);

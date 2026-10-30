@@ -14,7 +14,7 @@ export const STORA = ['S1', 'S2', 'S3', 'S4', 'S5', 'S6'], TOPP = 'S7';
 export const MELLAN = ['A', 'B', 'C', 'D'], SENT_MELLAN = [31417, 32719, 33827, 34513];
 export const SMA = ['E', 'F'], SENT_SMA = [35291, 36107];
 export const FLIKAR = ['dashboard', 'bestammelser', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn',
-                'kon', 'demografi', 'benchmark', 'lonepolitik', 'kvalitet', 'rapport', 'handlingsplan', 'info'];
+                'kon', 'demografi', 'benchmark', 'kvalitet', 'rapport', 'handlingsplan', 'info'];
 
 export function byggDataset() {
     const rader = [];
@@ -110,7 +110,7 @@ export function fonsterKon(k) {
     // En rad per AID×BAS; medianen ligger över varje lön i underlaget, så att varje grupp hamnar "under jämförelsen".
     const sedda = new Set();
     win.__state.statistik = data.filter(r => !sedda.has(r.aid + '|' + r.bas) && sedda.add(r.aid + '|' + r.bas))
-        .map(r => ({ aid: r.aid, bas: r.bas, median: 60000, p10: 55000, p90: 71000 }));
+        .map(r => ({ aid: r.aid, bas: r.bas, median: 61700, p10: 55000, p90: 71000 }));
     win.eval('populateSelects(); unlockTabs();');
     return win;
 }

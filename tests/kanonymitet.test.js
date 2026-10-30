@@ -107,7 +107,7 @@ function byggPolicy() {
 
 const FLIKAR = ['dashboard', 'bestammelser', 'matrix', 'likvardighet', 'struktur',
                 'prioritering', 'loneoversyn', 'kon', 'demografi', 'benchmark',
-                'utforska', 'lonepolitik', 'kvalitet', 'rapport', 'handlingsplan', 'info'];
+                'utforska', 'benchmark', 'kvalitet', 'rapport', 'handlingsplan', 'info'];
 
 // Tar bort mellanrum inuti tal ("31 111" / "31 111" -> "31111") så att
 // formaterade belopp går att söka i.

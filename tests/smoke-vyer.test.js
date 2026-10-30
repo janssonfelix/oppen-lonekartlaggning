@@ -51,7 +51,7 @@ describe('Rensa all data: ingen lönedata kvar i dokumentet (invariant)', () => 
         w.__state.data = rader;
         w.eval('populateSelects(); unlockTabs();');
         for (const flik of ['dashboard', 'bestammelser', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn',
-                            'kon', 'demografi', 'benchmark', 'utforska', 'lonepolitik', 'kvalitet', 'rapport', 'handlingsplan']) {
+                            'kon', 'demografi', 'benchmark', 'utforska', 'kvalitet', 'rapport', 'handlingsplan']) {
             try { w.__renderTabContent(flik); } catch (_e) { /* en flik utan data får kasta — det som ritats räknas */ }
         }
         w.eval('renderOutliers()');
@@ -119,7 +119,7 @@ describe('gränssnittet har inga paragrafhänvisningar utanför hjälptexten', (
         const w = createAppWindow();
         w.__loadDemoData();
         for (const flik of ['dashboard', 'bestammelser', 'matrix', 'likvardighet', 'rapport', 'struktur', 'prioritering',
-                            'loneoversyn', 'handlingsplan', 'kon', 'demografi', 'benchmark', 'kvalitet', 'lonepolitik', 'utforska']) {
+                            'loneoversyn', 'handlingsplan', 'kon', 'demografi', 'benchmark', 'kvalitet', 'utforska']) {
             try { w.__renderTabContent(flik); } catch (_e) { /* en flik utan underlag får kasta */ }
         }
         await new Promise(r => setTimeout(r, 0));
@@ -151,8 +151,8 @@ describe('referensen: demoläget, egen fil och rensning (ADR-28)', () => {
         klicka('prioritering');
         expect(w.document.querySelectorAll('#prio-table tbody tr').length).toBeGreaterThan(0);
         expect(w.document.getElementById('view-prioritering').textContent).toContain('Exempelkommunens lönepolitik');
-        klicka('lonepolitik');
-        expect(w.document.getElementById('view-lonepolitik').textContent).toContain('Exempelkommunens lönepolitik');
+        klicka('benchmark');
+        expect(w.document.getElementById('view-benchmark').textContent).toContain('Exempelkommunens lönepolitik');
     });
     it('egen fil med namn ersätter referensen i gränssnitt och export', () => {
         w.__lasInReferens([{ bas: 'A', p10: 20000, med: 25000, p90: 30000 }, { bas: 'B', p10: 21000, med: 26000, p90: 31000 }], 'Min referens.csv');
@@ -160,8 +160,8 @@ describe('referensen: demoläget, egen fil och rensning (ADR-28)', () => {
         expect(w.document.getElementById('referens-namn').value).toBe('Min referens');
         w.__sattReferensNamn('Förskolans LPS');
         expect(w.__referensKortnamn()).toBe('Förskolans LPS');
-        klicka('prioritering'); klicka('lonepolitik'); klicka('dashboard');
-        const ytor = ['view-prioritering', 'view-lonepolitik', 'compliance-overview', 'referens-status']
+        klicka('prioritering'); klicka('benchmark'); klicka('dashboard');
+        const ytor = ['view-prioritering', 'view-benchmark', 'compliance-overview', 'referens-status']
             .map(id => w.document.getElementById(id).textContent).join(' ');
         expect(ytor).toContain('Förskolans LPS');
         expect(ytor).not.toContain('Exempelkommunens lönepolitik');
@@ -337,12 +337,12 @@ describe('menystruktur', () => {
     const klicka = tab => w.document.querySelector(`.nav-item[data-tab="${tab}"]`).click();
     const synlig = id => w.document.getElementById(id).style.display === 'block';
 
-    it('menyn har exakt flikarna i ordning; Jämförelse dold utan statistik', () => {
+    it('menyn har exakt flikarna i ordning; Jämförelse syns med ställningstagandet', () => {
         expect(flikar()).toEqual(['dashboard', 'bestammelser', 'matrix', 'likvardighet', 'struktur',
-            'prioritering', 'loneoversyn', 'handlingsplan', 'dokumentera', 'kon', 'lonepolitik', 'utforska', 'info']);
-        expect(w.document.querySelector('.nav-item[data-tab="benchmark"]').hidden).toBe(true);
-        expect(w.document.querySelector('.nav-menu').textContent).toContain('4 · Dokumentera');
-        expect(w.document.querySelector('.nav-menu').textContent).toContain('5 · Fördjupa');
+            'prioritering', 'loneoversyn', 'handlingsplan', 'kon', 'benchmark', 'utforska', 'dokumentera', 'info']);
+        expect(w.document.querySelector('.nav-item[data-tab="benchmark"]').hidden).toBe(false);
+        expect(w.document.querySelector('.nav-menu').textContent).toContain('5 · Dokumentera');
+        expect(w.document.querySelector('.nav-menu').textContent).toContain('4 · Fördjupa');
     });
     it('Ålder & karriär: kohortförbehållet står under livscykelkurvorna, i Om verktygets metodtext och i metodbilagan', () => {
         klicka('kon');
@@ -388,20 +388,20 @@ describe('menystruktur', () => {
         const host = w.document.getElementById('process-tracker');
         expect(host.querySelectorAll('.ptrack-row').length).toBe(8);
         expect([...host.querySelectorAll('.ptrack-fas')].map(e => e.textContent.trim()))
-            .toEqual(['1 · Underlag', '2 · Kartlägg & analysera', '3 · Åtgärda', '4 · Dokumentera']);
+            .toEqual(['1 · Underlag', '2 · Kartlägg & analysera', '3 · Åtgärda', '5 · Dokumentera']);
         const rows = host.querySelectorAll('.ptrack-row');
         [5, 6, 7].forEach(i => expect(rows[i].querySelector('[data-goto-tab]').getAttribute('data-goto-tab')).toBe('dokumentera'));
     });
-    it('"Nästa steg" från Handlingsplan leder till Dokumentera', () => {
+    it('"Nästa steg" från Handlingsplan leder in i fördjupningen', () => {
         klicka('handlingsplan');
-        expect(w.document.querySelector('.flow-next-bar [data-flow-tab]').getAttribute('data-flow-tab')).toBe('dokumentera');
+        expect(w.document.querySelector('.flow-next-bar [data-flow-tab]').getAttribute('data-flow-tab')).toBe('kon');
     });
-    it('Jämförelse syns efter statistikuppladdning och döljs vid rensning', () => {
+    it('Jämförelse syns efter statistikuppladdning och låses vid rensning', () => {
         w.__state.statistik = [{ aid: '1', bas: 'A', median: 30000 }];
         w.eval('_visaJamforelseFlik(true)');
         expect(w.document.querySelector('.nav-item[data-tab="benchmark"]').hidden).toBe(false);
         w.__clearAllData();
-        expect(w.document.querySelector('.nav-item[data-tab="benchmark"]').hidden).toBe(true);
+        expect(w.document.querySelector('.nav-item[data-tab="benchmark"]').getAttribute('aria-disabled')).toBe('true');
     });
 });
 
@@ -624,7 +624,7 @@ describe('Lönepolitik: organisationens band i bandkartan', () => {
     it('ett band per BAS med minst k personer, bredvid LPS-bandet', () => {
         const w = createAppWindow();
         w.__loadDemoData();
-        w.document.querySelector('.nav-item[data-tab="lonepolitik"]').click();
+        w.document.querySelector('.nav-item[data-tab="benchmark"]').click();
         const lager = w.document.getElementById('chart-lp-bandmap')._figur.lager;   // ritat av diagramkärnan (ADR-39)
         const orgLager = lager.find(l => l.serie === `${w.eval('orgNamn()')} (P10–P90)`);   // demot heter Exempelkommunen (ADR-36)
         expect(orgLager).toBeTruthy();

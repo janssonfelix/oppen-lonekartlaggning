@@ -206,7 +206,7 @@ describe('Lika arbete och filrutorna: ordning och kompakta rutor', () => {
 // per flik. Fackuttrycken får stå i hjälptexten.
 describe('gränssnittets språk, rubriker och hjälpblock', () => {
     const FLIKAR = ['dashboard', 'bestammelser', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn',
-                    'handlingsplan', 'dokumentera', 'kon', 'lonepolitik', 'utforska'];
+                    'handlingsplan', 'dokumentera', 'kon', 'benchmark', 'utforska'];
     const HJALP = '#view-info, .flik-usage, .bakgrund-panel, .lv-hjalp, .audit-panel, #gdpr-info-modal, #glossary-modal, '
         + '#symbols-modal, #data-residency-modal, #evidence-modal, script, style, noscript, [data-hjalptext]';
     const oppna = () => { const w = createAppWindow(); w.__loadDemoData(); return w; };
@@ -326,7 +326,7 @@ describe('innehåll på sidan och i rapportunderlaget', () => {
     it('de långa flikarna har avsnitt, och deras rubriker är innehållsförteckningen', () => {
         const w = createAppWindow();
         w.__loadDemoData();
-        for (const [flik, minst] of [['dashboard', 4], ['matrix', 5], ['likvardighet', 4], ['struktur', 5], ['prioritering', 4], ['loneoversyn', 4], ['dokumentera', 4], ['kon', 5], ['lonepolitik', 4]]) {
+        for (const [flik, minst] of [['dashboard', 4], ['matrix', 5], ['likvardighet', 4], ['struktur', 5], ['prioritering', 4], ['loneoversyn', 4], ['dokumentera', 4], ['kon', 5], ['benchmark', 4]]) {
             oppna(w, flik);
             const synliga = [...w.document.querySelectorAll('.view-panel')].filter(p => p.style.display === 'block' || p.classList.contains('active'));
             const rubriker = synliga.flatMap(p => [...p.querySelectorAll('details.avsnitt > summary h2')]);

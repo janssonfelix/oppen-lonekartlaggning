@@ -179,7 +179,7 @@ describe('diagram: beskrivning för skärmläsare, svenska talformat och Pareto'
         w = createAppWindow();
         w.__loadDemoData();
         for (const t of ['dashboard', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn',
-            'handlingsplan', 'kon', 'lonepolitik', 'utforska', 'benchmark']) w.__renderTabContent(t);
+            'handlingsplan', 'kon', 'utforska', 'benchmark']) w.__renderTabContent(t);
         await new Promise(r => setTimeout(r, 300));
         diagram = [...w.document.querySelectorAll('*')].filter(el => el.layout && el.data);   // ska vara tom: inget annat ritar diagram
         karnans = [...w.document.querySelectorAll('*')].filter(el => el._figur);   // ritade av diagramkärnan (ADR-39)

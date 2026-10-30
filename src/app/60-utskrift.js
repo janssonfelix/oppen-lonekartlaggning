@@ -101,7 +101,7 @@ async function _buildPrintReportExport() {
                 + bildSektion('Löneutveckling mot ålder (alla BAS-intervall)', imgs.kon, 'Punktdiagram: lön mot ålder per kön')
                 + bildSektion('Lönefördelning per kön', imgs.box, 'Lådagram över lönefördelningen')
                 + bildSektion('Lönespridning per BAS-intervall och kön', imgs.lador, 'Lådagram över lönerna per BAS-intervall och kön')
-                + rapportSection + bmSection + bilagaSection;
+                + rapportSection + _utskriftReferenserHtml(cloneTable) + bmSection + bilagaSection;
         }
         // Tröskeln står i metodbilagan; saknas den i urvalet står den som en egen rad sist.
         const harMetod = modell.avsnitt.some(a => a.id === 'metod');

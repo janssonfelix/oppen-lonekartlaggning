@@ -102,7 +102,7 @@ describe('process-tracker: statusar härleds ur inläst data', () => {
 
 describe('#1 röktest: varje flik renderar utan kast', () => {
     const tabs = ['rapport', 'kon', 'demografi', 'benchmark', 'matrix',
-        'prioritering', 'struktur', 'loneoversyn', 'likvardighet', 'utforska', 'lonepolitik', 'kvalitet', 'info'];
+        'prioritering', 'struktur', 'loneoversyn', 'likvardighet', 'utforska', 'benchmark', 'kvalitet', 'info'];
     it.each(tabs)('renderTabContent("%s")', (t) => {
         expect(() => win.__renderTabContent(t)).not.toThrow();
     });
@@ -909,15 +909,11 @@ describe('k-anonymitet, sortering, efterlevnad och dossiern', () => {
     });
 });
 
-describe('a11y: ARIA APG-tangentbord i de två in-page-tablistarna', () => {
+describe('a11y: ARIA APG-tangentbord i den in-page-tablisten', () => {
     // Sidopanelen är navigation (ADR-10) och omfattas INTE — den har alla knappar
-    // i Tab-ordningen med flit. Det här gäller info-sektionerna och
-    // jämförelsens källor, som är äkta tablists. Källorna prövas i ett eget fönster utan
-    // inläst data, där båda går att välja (en källa som inte är inläst kan inte aktiveras).
-    let wJmf;
+    // i Tab-ordningen med flit. Det här gäller info-sektionerna, som är äkta tablists.
     const listor = [
-        ['info-sektionerna', '.info-section-btn', () => win],
-        ['jämförelsens källor', '.benchmark-metric-btn', () => (wJmf ||= createAppWindow())]
+        ['info-sektionerna', '.info-section-btn', () => win]
     ];
 
     for (const [namn, sel, fonster] of listor) {
@@ -973,7 +969,7 @@ describe('exportmeny på alla diagram', () => {
     beforeAll(async () => {
         win.__loadDemoData();
         for (const flik of ['matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn',
-                            'kon', 'demografi', 'utforska', 'lonepolitik', 'kvalitet', 'rapport']) {
+                            'kon', 'demografi', 'utforska', 'benchmark', 'kvalitet', 'rapport']) {
             win.__renderTabContent(flik);
         }
         await vanta();
