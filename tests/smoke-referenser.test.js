@@ -21,6 +21,13 @@ describe('överblicken: löneläget och statistiken mot ställningstagandet', ()
         expect(f.y.ordning.slice(0, 3).map(s => s.split(' · ').pop())).toEqual(['ställningstagandet', 'statistiken', 'organisationen']);
         expect(d.querySelectorAll('#ref-stat-mot-stallning tbody tr').length).toBeGreaterThan(0);
     });
+    it('talet för förslaget böjs efter antalet', () => {
+        const w = fonster();
+        const m = { grupper: 0, andel: 0 };
+        const html = n => w._rrTalHtml({ antalGrupper: 8, perMonster: { badaOver: m, baraLonelageOver: m, baraStatistikOver: m, badaInom: m }, forslagStatistik: n }, { harStatistik: true, harStallningstagande: true });
+        expect(html(1)).toContain('1 grupp<');
+        expect(html(2)).toContain('2 grupper<');
+    });
     it('utan statistik visas överblicken mot ställningstagandet ensamt och säger att statistik saknas', () => {
         const w = fonster();
         w.__renderTabContent('benchmark');
@@ -151,5 +158,13 @@ describe('överblicken i exporterna', () => {
         w.__renderTabContent('benchmark');
         w.eval("sattRapportUrval('hela')");
         expect(w.eval('_utskriftReferenserHtml(id => { const t = document.getElementById(id); return t ? t.outerHTML : ""; })')).toMatch(/ref-tabell[^]*ref-stat-mot-stallning/);
+    });
+});
+describe('fliken följer referenserna', () => {
+    it('Ta bort referensen döljer Jämförelse när ingen annan referens finns', () => {
+        const w = fonster();
+        w.document.getElementById('btn-referens-aterga').click();
+        expect(w.__state.policy).toHaveLength(0);
+        expect(w.document.getElementById('tab-benchmark').hidden).toBe(true);
     });
 });

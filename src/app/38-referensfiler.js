@@ -46,6 +46,7 @@ function renderReferensKort() {
 _kopplaNamnFalt('referens-namn', sattReferensNamn);
 document.getElementById('btn-referens-aterga')?.addEventListener('click', () => {
     aterstallReferens();
+    synkaJamforelseFlik();
     const ps = document.getElementById('policy-status');
     if (ps) { ps.textContent = ''; ps.className = 'status-msg'; }
     const fil = document.getElementById('file-input-policy');

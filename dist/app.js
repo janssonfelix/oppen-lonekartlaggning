@@ -20625,6 +20625,7 @@ function renderReferensKort() {
 _kopplaNamnFalt('referens-namn', sattReferensNamn);
 document.getElementById('btn-referens-aterga')?.addEventListener('click', () => {
     aterstallReferens();
+    synkaJamforelseFlik();
     const ps = document.getElementById('policy-status');
     if (ps) { ps.textContent = ''; ps.className = 'status-msg'; }
     const fil = document.getElementById('file-input-policy');
@@ -22692,7 +22693,7 @@ function _rrTalHtml(tal, { harStatistik, harStallningstagande }) {
         ...(harStatistik && harStallningstagande ? [
             monsterRuta('Båda över ställningstagandet', pm.badaOver), monsterRuta('Bara löneläget över', pm.baraLonelageOver),
             monsterRuta('Bara statistiken över', pm.baraStatistikOver), monsterRuta('Båda inom', pm.badaInom),
-            ruta('Förslaget är statistiken', `${tal.forslagStatistik} grupper`)] : []),
+            ruta('Förslaget är statistiken', `${tal.forslagStatistik} ${tal.forslagStatistik === 1 ? 'grupp' : 'grupper'}`)] : []),
         ...(harStallningstagande ? [ruta('Medianen mot ställningstagandet', _rrPct(tal.vagdMedianMotStallningstagandePct))] : []),
         ...(harStatistik ? [ruta('Medianen mot statistiken', _rrPct(tal.vagdMedianMotStatistikPct))] : [])
     ].join('') + '</div>';
