@@ -41,7 +41,7 @@ varje bygge, också efter de flikar och paneler som tillkommit sedan dess.
 - **Skärmläsare** är inte prövade med en användare. Prövningen ovan är automatisk och strukturell.
 - **Exporterna** (Word, Excel, PDF) är inte granskade mot tillgänglighetskrav för dokument; Word-utkastet har
   rubrikformat (Rubrik 1–3) och bildtexter under diagrammen, och PDF-rapporten skrivs ut från webbläsaren.
-- **Fokusmarkeringen och förstoring** är inte prövade automatiskt; pilotchecklistan (avsnitt E) har kontrollen av fokusmarkeringen.
+- **Fokusmarkeringen och förstoring** är inte prövade automatiskt; checklistan för skarp data (avsnitt E) har kontrollen av fokusmarkeringen.
 
 ## Synpunkter
 

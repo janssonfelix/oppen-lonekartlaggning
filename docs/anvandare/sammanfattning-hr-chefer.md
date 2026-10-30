@@ -39,4 +39,4 @@ Lönekartläggningen är ett årligt lagkrav som kräver statistisk analys, doku
 
 **Viktigt att veta:** Verktyget pekar ut *kandidater* för granskning — det dömer inte. Bedömningen av sakliga skäl och den slutliga dokumentationen är er, i samverkan med facklig part. Verktyget levererar underlagen.
 
-*Öppen lönekartläggning · versionen står i `RELEASE.txt` · körs lokalt, helt utan molntjänst · medföljande dokument: körguide, guide för datauttag, pilotchecklista och risk- och sårbarhetsanalys (`riskanalys.md`).*
+*Öppen lönekartläggning · versionen står i `RELEASE.txt` · körs lokalt, helt utan molntjänst · medföljande dokument: körguide, guide för datauttag, checklistan för skarp data och risk- och sårbarhetsanalys (`riskanalys.md`).*

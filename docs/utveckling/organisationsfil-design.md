@@ -1,15 +1,16 @@
 # Organisationsfil — verktyget med organisationspaketet inbakat
 
-> Design, 2026-10-19. Beslutad med produktägaren i samtal; byggs efter godkännande och blir ett nytt ADR i
-> [`teknisk-plan.md`](teknisk-plan.md). Hänvisningar till *paketet* avser organisationspaketet
-> ([`organisationspaket.md`](../anvandare/organisationspaket.md), ADR-28 och ADR-47).
+> Formatspecifikation och beteende för organisationsfilen (ADR-49 i [`teknisk-plan.md`](teknisk-plan.md)).
+> Hänvisningar till *paketet* avser organisationspaketet
+> ([`organisationspaket.md`](../anvandare/organisationspaket.md), ADR-28 och ADR-47). Riskanalysen §6.9
+> beskriver skydden; den här sidan beskriver vad filen är och hur den fungerar.
 
 ## 1. Avsikt
 
-I dag sprids två filer till handläggarna: verktyget (`oppen-lonekartlaggning.html`) och
-organisationspaketet (`<org>.lonepaket.json`), via mail eller SharePoint. Paketet måste både spridas
-och läsas in som ett eget steg, och det steget glöms eller görs fel. Målet är **en fil som bara
-öppnas och är färdig**: systemägaren tar fram en *organisationsfil* en gång, och det är den som sprids.
+Utan organisationsfil sprids två filer till handläggarna: verktyget (`oppen-lonekartlaggning.html`) och
+organisationspaketet (`<org>.lonepaket.json`). Paketet måste då både spridas och läsas in som ett eget
+steg, och det steget glöms eller görs fel. Organisationsfilen är **en fil som bara öppnas och är färdig**:
+systemägaren tar fram den en gång, och det är den som sprids.
 
 En fil som öppnas från disk kan inte läsa andra filer i samma mapp — webbläsaren förbjuder det, och
 verktygets egen policy (`connect-src 'none'`) stänger all hämtning. Automatisk inläsning av en fil
@@ -30,7 +31,7 @@ den tekniska planen). Paketet måste ligga **inuti** HTML-filen.
 
 **Icke-mål**
 - Ingen verifiering av organisationsfilen mot den publicerade versionens kontrollsumma eller
-  signatur. Produktägarens beslut: att filen kommer från systemägaren internt räcker. Spårbarhet ges
+  signatur (beslut, ADR-49): att filen kommer från systemägaren internt räcker. Spårbarhet ges
   i stället genom att filen anger vilken version av verktyget den bygger på.
 - Ingen automatisk inläsning av filer i samma mapp (omöjligt och oönskat).
 - Ingen ändring av paketets format eller innehåll.
@@ -122,8 +123,7 @@ avsluta elementet.
   organisationsfilen: innehåll, att lönedata aldrig ingår, att paketet valideras som vid inläsning,
   att blocket inte exekveras; `dataskydd.md` §3 en mening. `tests/dokumentation.test.js` vaktar att
   blocket ligger efter sista skriptet i en inbakad fil och att den publicerade byggfilen saknar det.
-- `teknisk-plan.md`: ett nytt ADR ur detta dokument; pilotpaketet nämner organisationsfilen som den
-  fil som sprids.
+- `teknisk-plan.md`: ADR-49; `organisationspaket.md` beskriver hur filen skapas, sprids och uppdateras.
 - Tester: `tests/organisationsfil.test.js` (ren kärna: inbakning, borttagning av tidigare block,
   oförändrade skript, avvisning av fel fil, versionsläsning, `<`-escapning); röktest
   (`tests/smoke-organisation.test.js`): baka in i jsdom ur `dist/oppen-lonekartlaggning.html`, öppna
@@ -134,16 +134,9 @@ avsluta elementet.
   demopaketet i bygget, öppnar den filen under CSP:n från `file://` och kräver noll CSP-överträdelser
   och inläst paket.
 
-## 5. Avgränsningar och sådant byggaren avgör
+## 5. Avgränsningar
 
-- Hur råtexten i *Visa paketet* presenteras (utfällbar `<pre>`) och var knapparna sitter i filrutan.
-- Om filnamnsfältet ska tvinga ändelsen `.html` (förslag: ja, läggs på om den saknas).
-- Varningstexten när den valda verktygsfilen är en annan version än den som körs: varna och tillåt
-  (systemägaren kan medvetet baka in i en nyare fil), eller stoppa. **Förslag: varna och tillåt.**
-
-## 6. Beslut som produktägaren tagit (2026-10-19)
-
-- En fil ska räcka; paketet bakas in i HTML-filen av systemägaren i verktyget.
-- Ingen extern verifiering av organisationsfilen; den kommer från systemägaren internt.
-- Det inbakade paketet ska gå att granska.
-- Filnamnet styrs av systemägaren.
+- Råtexten i *Visa paketet* visas som en utfällbar `<pre>`; knapparna sitter i paketets filruta på Översikt.
+- Filnamnsfältet lägger på ändelsen `.html` när den saknas.
+- När den valda verktygsfilen är en annan version än den som körs varnar verktyget och tillåter ändå
+  (systemägaren kan medvetet baka in i en nyare fil).

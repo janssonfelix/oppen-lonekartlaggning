@@ -26,6 +26,12 @@ representanter (JPA-samråd) och dataskyddsombud.
 
 ## 2. Avgränsning (vad verktyget medvetet INTE gör — "Mål 1")
 
+**Omfång.** Verktyget är allmänt för arbetsgivare som kodar befattningar med AID och BAS-intervall och
+jämför sig med SKR:s personalstatistik; det är i praktiken kommuner och regioner. Allt som är en viss
+organisations — ställningstagande, statistik, benämningar, inställningar, rapportens recept — kommer ur
+organisationspaketet (ADR-28), aldrig ur koden eller dokumenten. Andra arbetsvärderingssystem står som öppen
+punkt i §9.
+
 Detta är en bärande designprincip, inte en begränsning av misstag:
 
 - **Producerar inte** det färdiga, beslutade slutdokumentet. Verktyget genererar
@@ -656,7 +662,7 @@ Steg 3 (Lika arbete) är klart när regressionen gått att köra och alla punkte
 arbete* och *EU 2023/970* är avbockade; steg 4 (Likvärdigt arbete) är klart när analysen inte hittar några
 kandidatpar eller när alla kandidatpar i Att göra är avbockade. Har analysen bara par med en grupp under
 tröskeln (de redovisas bara i fliken Likvärdigt arbete) är steget inte klart utan har tillståndet *inget att
-hantera* med antalet par och en hänvisning till fliken (beslut av produktägaren 2026-10-16). Att göra tar med
+hantera* med antalet par och en hänvisning till fliken (beslut 2026-10-16). Att göra tar med
 kandidatparen även utan jämförelsestatistik (paren kommer i första hand ur organisationens egna yrken). *Börja här* sorterar inom samma
 prioritet: underlaget först, sedan de könsrelaterade fynden, sist avvikelser mot lönepolitiken och övriga
 iakttagelser. Reglerna bor i `src/lib/attgora.js`. **Vakter:** `tests/attgora.test.js` och `tests/smoke-innehall.test.js`.
@@ -816,7 +822,7 @@ lönedata och ska hanteras som personuppgifter.
 livscykelmodellen, extremvärdesdetektorn, det justerade gapet inom yrke, ansvarsindikatorn och Personer att
 granska läser `statGolv()` = `max(kTroskel(), 10)`, eftersom gränsen där gäller skattningens tillförlitlighet.
 De följer med uppåt, så att ett skärpt skydd också gäller skattade gruppvärden. Tre fasta golv står som de är
-(produktägarens beslut): huvudregressionen i Lika arbete med 5 av varje kön, motiveringsregeln om medelålder
+(beslut): huvudregressionen i Lika arbete med 5 av varje kön, motiveringsregeln om medelålder
 per kön med 3 av varje (`55-prioritering.js`) och Löneöversiktens yrkesrader med 5 (`39-loneoversikt.js`).
 Lönepolitikens mellannivå (antal för grupper mellan 5 och k) försvinner när tröskeln är 5 eller lägre. Appens
 texter fylls i ur värdet (`data-k-troskel`, `data-k-tooltip` med `{k}` och `{golv}`, `_kText`); dokumenten anger
@@ -832,7 +838,7 @@ fliken och dess egen CSV- och Excel-export bara när båda grupperna når trösk
 JPA-protokollet, Att göra och dess CSV, handlingsplanens förifyllda rader, gruppdossiern, Löneöversyns
 förslag, mål-läge och känslighetskurva samt robusthetspanelen i Dokumentera & exportera (`robusthetLikvardighet`
 i `85-robusthet-fardigcheck.js`: par med en grupp under tröskeln namnges inte i någon körning, och panelen anger
-antalet sådana par; beslut av produktägaren). Fyra regler till:
+antalet sådana par; beslut). Fyra regler till:
 
 - (R1) *Regressionens ojusterade steg döljs när ett kön är under tröskeln.* Första steget i den stegvisa
   uppdelningen ("Endast kön") är samma slags mått som det råa gapet. `_regStegForRedovisning(reg)` lämnar ut
@@ -849,13 +855,13 @@ antalet sådana par; beslut av produktägaren). Fyra regler till:
 - (R3) *Ålder & karriär följer regeln:* ojusterat och åldersjusterat gap kräver tröskeln för båda könen;
   lutning, trendlinje med konfidensband och låda kräver den för det könet (`40-alder-karriar.js`,
   `_setDiagramKNot` för noten under diagrammet). Demografidelens trendlinje och lutning för hela urvalet
-  (alla BAS eller det valda) kräver att urvalet når tröskeln (beslut av produktägaren 2026-10-16); annars
+  (alla BAS eller det valda) kräver att urvalet når tröskeln (beslut 2026-10-16); annars
   utelämnas de och noten under diagrammet säger det. Punkterna per person följer sin egen regel (ADR-14).
 - (R4) *Lönerevisionssimulatorn är borttagen (2026-10, ADR-50).* Det den kunde — begränsa till ett kön och en
   lönegräns, "höj till" — gör en riktad rad i Löneöversyn, som följer R2: en rad som berör färre personer än
   tröskeln är användarens egen simulering, beloppet visas på raden med noten om enskildas löner. Lönegapet
   före och efter kräver tröskeln för varje kön (`_konFarRedovisasFor`). Vaktas av C3 och röktest.
-- (R5) *Löneöversyns tröskelmål följer tröskeln* (`_forecastThreshold`; beslut av produktägaren 2026-10-16):
+- (R5) *Löneöversyns tröskelmål följer tröskeln* (`_forecastThreshold`; beslut 2026-10-16):
   lyftet i procent till kvinnor och dess kostnad (kvinnornas lönesumma gånger procentsatsen) visas bara när
   varje kön i urvalet når tröskeln (`_konFarRedovisasFor`), annars ett streck med `_konUtelamnatNot()`.
   Vaktas av `tests/troskelbeslut.test.js`.
@@ -1115,7 +1121,7 @@ Vid start läses blocket in på samma väg som en paketfil (`lasInPaket`, `kalla
 data* tar det inbakade tillbaka eftersom det är en del av filen; demoläget (`?demo=1`) går före; en inläst
 paketfil ersätter det inbakade för sessionen. Handläggaren kan granska (*Visa paketet*) och ladda ner det.
 Filen anger verktygets version och verktygsfilens SHA-256 men verifieras inte mot den publicerade
-versionen (produktägarens beslut 2026-10-19: att den kommer från systemägaren internt räcker). Filväljaren
+versionen (beslut 2026-10-19: att den kommer från systemägaren internt räcker). Filväljaren
 behövs eftersom en sida från disk inte kan läsa sig själv, och automatisk inläsning av en fil i samma mapp
 är omöjlig (webbläsaren och `connect-src 'none'`). Ren kärna i `src/lib/organisationsfil.js` (`bakaIn`,
 `lasUt`), vaktad av `tests/organisationsfil.test.js` (inget skript rörs), röktester i
@@ -1222,8 +1228,8 @@ Kända brister och obesvarade frågor, så att de inte lever bara i en konversat
 
 **Användning och prövning:**
 1. **Ingen användare har provat gränssnittet och diagrammen med verklig data**; de är sedda med demodatan och ett
-   påhittat större underlag (42 yrken). Pilotchecklistan har punkter för det som inte går att pröva utan verklig
-   data.
+   påhittat större underlag (42 yrken). Checklistan för skarp data (`pilotchecklista.md`) har punkter för det
+   som inte går att pröva utan verklig data.
 2. **Word-utkastet är inte öppnat i Word**, bara i LibreOffice.
 3. **Punkter som täcker varandra i bandkartan** när många yrkesgrupper i samma BAS-intervall har nästan samma
    median. *Krav mot lön* flyttar isär sådana grupper i sidled, och prioriteringsmatrisens etiketter flyttas isär
@@ -1293,8 +1299,8 @@ Kända brister och obesvarade frågor, så att de inte lever bara i en konversat
     än senaste commit som rör `src/`, `tools/bundle.mjs` eller `vendor/`, eller när riskanalysens kontrollsumma inte
     är byggets; release-arbetsflödet kör samma kontroll.
 18. **Uttagsstegen för Heroma, Personec P och Visma i `datauttag.md` är inte verifierade mot systemen**; de
-    bygger på det gemensamma statistikuttaget och har rader som systemförvaltaren fyller i. Pilotorganisationen
-    ombeds bekräfta dem.
+    bygger på det gemensamma statistikuttaget och har rader som varje organisations systemförvaltare fyller i
+    och bekräftar för sin installation.
 19. **README i roten har ingen bild:** skärmbilder checkas inte in, så en bild där kräver ett
     beslut om att lägga en bildfil i källkoden.
 20. *(Löst: källkoden ligger publikt på GitHub sedan 2026-10-23, med demosidan på GitHub Pages; se §6.)*
@@ -1302,13 +1308,13 @@ Kända brister och obesvarade frågor, så att de inte lever bara i en konversat
     väg in för andra arbetsvärderingssystem än BAS; för offentlig sektor offentlighetsprincipen och
     arkivering av utdata, mall för konsekvensbedömning; en jurist-granskad metodbeskrivning och en handledning
     för facklig samverkan. (Textförslaget till information till de anställda, tillgänglighetsredogörelsen och
-    säkerhetsbeskrivningen på en sida finns i `docs/anvandare/`; textförslaget väntar på dataskyddsombudet.)
+    säkerhetsbeskrivningen på en sida finns i `docs/anvandare/`; textförslaget är inte juridiskt granskat.)
 
-**Juridiska frågor.** Hänvisningarna gicks igenom 2026-10-19 (status *Förslag* i [`lagrum.md`](lagrum.md) tills
-jurist och dataskyddsombud godkänt). Beslut som följde: verktyget hänvisar övergripande
+**Juridiska frågor.** Hänvisningarna gicks igenom 2026-10-19 (status *Förslag* i [`lagrum.md`](lagrum.md): inte
+juridiskt granskade). Beslut som följde: verktyget hänvisar övergripande
 och lagrummen står bara i [`lagrum.md`](lagrum.md) (ADR-16); kvinnodominerat arbete är mer än 60 % kvinnor;
 direktivet beskrivs som inte infört i Sverige, med möjlig direkt verkan mot kommun och region. Kvar att
 pröva: att 5 %-gränsen bara används för gemensam lönebedömning och aldrig för att flagga lika eller likvärdigt
 arbete (metodändring); flikens namn *Handlingsplan*; en spärr mot fält som
-fackmedlemskap eller hälsa; och protokollets täckning av art. 10.2 a–g. Jurist och
-dataskyddsombud är ännu inte utsedda.
+fackmedlemskap eller hälsa; och protokollets täckning av art. 10.2 a–g. Ingen juridisk granskning har gjorts;
+varje arbetsgivare stämmer av mot sin egen rådgivning.

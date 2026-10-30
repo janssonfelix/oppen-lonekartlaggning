@@ -91,8 +91,8 @@ Ta bort sådana kolumner redan i uttaget ur lönesystemet.
 > **Inte verifierat mot systemen.** Stegen nedan bygger på hur lönesystemen i kommuner och
 > regioner brukar vara uppbyggda, inte på provkörningar. Rapportnamn, menyvägar och fältnamn
 > skiljer sig mellan installationer, versioner och hur systemet är inställt hos er. Er
-> systemförvaltare fyller i raderna markerade **[fylls i lokalt]**, och pilotorganisationen
-> ombeds bekräfta eller rätta stegen så att guiden kan förbättras.
+> systemförvaltare fyller i raderna markerade **[fylls i lokalt]**. Rättelser och steg för fler system
+> är välkomna som bidrag (`CONTRIBUTING.md`).
 
 ### Gemensamt för alla system
 
