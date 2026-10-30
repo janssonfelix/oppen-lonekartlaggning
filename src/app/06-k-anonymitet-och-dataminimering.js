@@ -940,6 +940,16 @@ function detectSensitiveColumns(rows) {
             issues.push({ col, reason: 'Kolumnrubriken antyder personnamn' });
             return;
         }
+        // Särskilda kategorier av personuppgifter (fackmedlemskap, hälsa, etnicitet, religion, politisk
+        // åskådning, sexualliv, genetik, biometri): hör inte hemma i underlaget och ska inte ens passera
+        // minnet. Bara rubriken prövas; värdena saknar igenkännbart format. Mönstren är valda så att
+        // vanliga rubriker går fria: "sjuk" kräver frånvaro/skrivning/dom (inte Sjukhus), "politisk" inte
+        // Lönepolitik, "religion" som eget ord (inte Religionskunskap), "fack" följt av medlem/lig/forbund/foren
+        // (inte Fackområde).
+        if (/fack(medlem|lig|forbund|foren)|^medlemskap|halsa|halsotillstand|sjuk(franvaro|skriv|dom)|diagnos|etni(sk|citet)|^religion$|trosuppfattning|politisk|sexuel|funktionsned|genetisk|biometri/.test(lcCol)) {
+            issues.push({ col, reason: 'Kolumnrubriken antyder en särskild kategori av personuppgifter (fackmedlemskap, hälsa, etnicitet eller liknande)' });
+            return;
+        }
         // Värdebaserad upptäckt (samplar 50 rader)
         let pnrCount = 0, emailCount = 0, nameCount = 0;
         sample.forEach(r => {
