@@ -142,6 +142,16 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 - **Rensning vid inaktivitet: 90 minuter som standard** (tidigare 30). Valen är av, 30, 60, 90 och 120 minuter;
   organisationspaketet kan fortfarande låsa tiden. Efter användartest: 30 minuter avbröt ett normalt arbetspass.
 
+### Dokumentation
+
+- **Ansvar och roller, styrning och övertagande.** README har ett avsnitt *Ansvar och roller* (personuppgiftsansvar,
+  cyberresiliensakten och produktansvarsdirektivet, AI-förordningen, lagrummens status *Förslag*), med artiklarna i ett
+  nytt avsnitt *Produkt- och säkerhetsregler* i `docs/utveckling/lagrum.md`. `GOVERNANCE.md` säger vem som beslutar, hur
+  en version släpps och vad som gäller om projektet slutar underhållas; `CODE_OF_CONDUCT.md` är en svensk bearbetning
+  av Contributor Covenant 2.1. `docs/anvandare/overta-verktyget.md` beskriver hur en organisation bygger, ändrar,
+  signerar och sprider sin egen version. Raden om svensk lag om lönetransparens i `lagrum.md` är uppdaterad till
+  läget i oktober 2026.
+
 ### Utveckling
 
 - **Testwrappern räknar rätt vid omkörning:** när en arbetare kraschar efter att filen rapporterat klart och filen

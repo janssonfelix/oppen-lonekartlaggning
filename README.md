@@ -48,8 +48,31 @@ slutliga dokumentationen görs av arbetsgivaren i samverkan med facklig part.
 Felix Jansson. Tredjepartsbibliotekens licenser står i [`LICENSES.md`](LICENSES.md) och
 följer med i den byggda filen.
 
-Vill du bidra, läs [`CONTRIBUTING.md`](CONTRIBUTING.md). Säkerhetsbrister rapporteras enligt
-[`SECURITY.md`](SECURITY.md).
+Vill du bidra, läs [`CONTRIBUTING.md`](CONTRIBUTING.md) och [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md).
+Säkerhetsbrister rapporteras enligt [`SECURITY.md`](SECURITY.md). Hur projektet styrs, och vad som
+gäller om det slutar underhållas, står i [`GOVERNANCE.md`](GOVERNANCE.md).
+
+## Ansvar och roller
+
+Verktyget tillhandahålls fritt — utan avgift, support eller drift — av en privatperson utanför
+kommersiell verksamhet. Det får följder som en IT-avdelning eller ett dataskyddsombud brukar fråga om:
+
+- **Arbetsgivaren som använder verktyget är ensam personuppgiftsansvarig.** Ingen uppgift når
+  upphovspersonen eller någon annan, och inget personuppgiftsbiträde finns
+  ([`sakerhetsbeskrivning.md`](docs/anvandare/sakerhetsbeskrivning.md)).
+- **EU:s cyberresiliensakt och produktansvarsdirektiv** undantar fri programvara som tillhandahålls
+  utanför kommersiell verksamhet och gäller därför inte upphovspersonen. Den som säljer verktyget,
+  drift av det eller support på det sätter en egen produkt på marknaden och bär tillverkarens
+  skyldigheter för den. En organisation som bygger och sprider verktyget internt gör det inom sin egen
+  verksamhet — se [`overta-verktyget.md`](docs/anvandare/overta-verktyget.md).
+- **Verktyget är inte ett AI-system** i AI-förordningens mening: all statistik är klassiska metoder med
+  fasta, dokumenterade formler, inget lärs in och inga beslut om enskilda fattas.
+- **Lagrumshänvisningarna** i [`lagrum.md`](docs/utveckling/lagrum.md) har status *Förslag* tills
+  jurist och dataskyddsombud har stämt av dem. Verktyget hänvisar övergripande till lagen just därför,
+  och ger underlag — inte juridiska bedömningar.
+
+Artiklarna bakom punkterna står i [`lagrum.md`](docs/utveckling/lagrum.md), avsnittet *Produkt- och
+säkerhetsregler*.
 
 ## Mappstruktur
 

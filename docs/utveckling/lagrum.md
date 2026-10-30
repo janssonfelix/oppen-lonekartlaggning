@@ -38,7 +38,7 @@ Status: *Förslag* = väntar på avstämning med jurist och dataskyddsombud ·
 | Ordet *handlingsplan* | inte lagens begrepp sedan 2017 (SFS 2016:828) | fliken heter fortfarande *Handlingsplan*; rapportens avsnitt heter *Åtgärder och tidsplan* | Förslag — flikens namn är ett produktbeslut |
 | Dokumentation | 3 kap. 13 § (25 eller fler anställda, gäller alltid kommun och region) och 14 § (10–24) | *dokumentationen av lönekartläggningen* | Förslag |
 | Ramen | 3 kap. 8–14 §§ | *diskrimineringslagen 3 kap. (lönekartläggning)* | Förslag |
-| Svensk lag om lönetransparens | finns inte (oktober 2026); propositionen stoppades 2026-03-26, DO förbereder | ingen hänvisning; bevakas | Förslag, bevakas |
+| Svensk lag om lönetransparens | finns inte (oktober 2026). Lagrådsremiss 2026-01-15 (ikraftträdande 1 juli 2026); regeringen sköt 2026-03-11 fram det till 1 januari 2027 och meddelade 2026-03-26 att ingen proposition lämnas och att direktivet ska omförhandlas; EU-kommissionen svarade 2026-05-22 att det varken omförhandlas eller senareläggs; DO fick 2026-06-08 ett uppdrag om främjandeinsatser (A2026/00595) med redovisning 2027-11-01. Inget datum finns | ingen hänvisning; bevakas | Förslag, bevakas |
 | Offentlighet och sekretess i kommun och region | 10 kap. 11–14 §§ och 12 kap. 2 § offentlighets- och sekretesslagen (2009:400) i stället för MBL:s tystnadsplikt | nämns i samverkansavsnittet när texten uppdateras | Förslag |
 
 **AID** (SKR:s arbetsidentifikation) är ingen rättskälla. Verktyget använder AID-grupperna som utgångspunkt
@@ -73,3 +73,18 @@ arbeten som är lika eller likvärdiga är arbetsgivarens.
 | Personuppgiftsbiträde | art. 28 inte tillämplig när verktyget körs lokalt; biträdesavtal krävs om drift eller support med tillgång till data tillkommer | *inget biträde* | Förslag |
 | Säkerhet | art. 32 | *säkerhet* | Förslag |
 | Konsekvensbedömning | art. 35; sannolikt motiverad för kommun och region (EDPB WP248: anställda som sårbara registrerade, stor omfattning); dataskyddsombudet avgör | *dataskyddsombudet avgör* | Förslag — DSO avgör |
+
+## Produkt- och säkerhetsregler — gäller verktyget som programvara, inte kartläggningen
+
+Punkterna i README:s avsnitt *Ansvar och roller*, med artiklarna. Förutsättningen är densamma för alla rader:
+verktyget tillhandahålls fritt, utan avgift, support eller drift, av en privatperson utanför kommersiell
+verksamhet. Den som säljer verktyget, drift av det eller support på det ändrar förutsättningen för sin produkt.
+
+| Moment | Rättsakt och bestämmelse | Verktyget skriver | Status |
+|---|---|---|---|
+| Fri programvara utanför kommersiell verksamhet | Cyberresiliensakten, förordning (EU) 2024/2847: definitionen i art. 3.48 och skäl 18–19; tillverkarens skyldigheter (art. 13–14) gäller från 11 december 2027, rapporteringen i art. 14 från 11 september 2026; förvaltare av öppen källkod art. 24 (juridisk person) | *EU:s cyberresiliensakt undantar fri programvara som tillhandahålls utanför kommersiell verksamhet* | Förslag |
+| Produktansvar för programvara | Produktansvarsdirektivet (EU) 2024/2853: programvara är produkt (art. 4.1); undantag för fri programvara utanför kommersiell verksamhet (art. 2.2, skäl 14); gäller produkter som släppts ut på marknaden efter 9 december 2026 (art. 2.1) | *produktansvarsdirektivet gäller inte upphovspersonen* | Förslag |
+| Inte ett AI-system | AI-förordningen (EU) 2024/1689, definitionen i art. 3.1 och kommissionens riktlinjer om definitionen (februari 2025): system med fasta statistiska regler och enkel databehandling, utan inlärning, faller utanför. Hade verktyget varit ett AI-system vore användningen högrisk enligt bilaga III punkt 4 (anställning och anställningsvillkor) | *inte ett AI-system: fasta, dokumenterade formler, inget lärs in, inga beslut om enskilda* | Förslag |
+| Inget personuppgiftsbiträde | dataskyddsförordningen art. 28 inte tillämplig när verktyget körs lokalt (raden ovan under dataskyddsförordningen) | *ensam personuppgiftsansvarig* | Förslag |
+| Leverantörskedjekrav hos kommun och region | NIS2-direktivet (EU) 2022/2555 och cybersäkerhetslagen gäller organisationen, inte verktyget; det som efterfrågas är signerade releaser och en programvaruförteckning (SBOM) | *signerade releaser* (`SECURITY.md`); SBOM är en öppen punkt | Förslag |
+| Öppen programvara i offentlig sektor | DIGG:s policy och riktlinje för öppen programvara (2026-04-07): OSI-godkänd licens, öppen plattform, dokumentation under tillåtande licens | *MIT-licensen* | Förslag |
