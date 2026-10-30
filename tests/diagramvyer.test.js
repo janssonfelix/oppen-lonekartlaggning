@@ -552,7 +552,7 @@ describe('etiketter, långa namn, nollinje', () => {
 });
 
 describe('Ålder & karriär: chart-demo-hist', () => {
-    it('staplat per kön, referensen som prickad linje med punkter, zon över åldersgrupperna 60+', () => {
+    it('staplat per kön, referensen som prickad linje med punkter, ingen zon', () => {
         const AB = ['20–24', '25–29', '30–34', '35–39', '40–44', '45–49', '50–54', '55–59', '60–64', '65+'];
         w.__in = { pctKv: AB.map((_, i) => 6 + i), pctMa: AB.map(() => 4), refPct: AB.map(() => 10), isAll: true };
         const f = w.eval('_demoHistFigur(window.__in)');
@@ -561,19 +561,19 @@ describe('Ålder & karriär: chart-demo-hist', () => {
         expect(f.lager[2]).toMatchObject({ streck: 'prickad', punkter: true });
         expect(f.lager[0].data[9]).toEqual({ x: '65+', y: 15 });
         expect(f.x.ordning).toEqual(AB);
-        expect(f.referens).toEqual([expect.objectContaining({ typ: 'zon', x0: '60–64', x1: '65+' })]);
+        expect(f.referens).toBeUndefined();
         expect(f.y.titel).toBe('Andel av organisationen (%)');
         w.__in.isAll = false;
         expect(w.eval('_demoHistFigur(window.__in)').y.titel).toBe('Andel av BAS-intervall (%)');
         expect(() => valideraFigur(f, 't')).not.toThrow();
     });
-    it('ritas av kärnan: tio raka etiketter också på smal skärm, zonen ritad, ZIP och meny känner diagrammet', () => {
+    it('ritas av kärnan: tio raka etiketter också på smal skärm, ingen zon, ZIP och meny känner diagrammet', () => {
         const w2 = createAppWindow();
         w2.__loadDemoData();
         w2.__renderTabContent('demografi');
         const el = w2.document.getElementById('chart-demo-hist');
         expect(el.data).toBeUndefined();
-        expect(el.querySelectorAll('[data-marke="zon"]')).toHaveLength(1);
+        expect(el.querySelectorAll('[data-marke="zon"]')).toHaveLength(0);
         expect(el.querySelectorAll('[data-marke="stapel"]').length).toBeGreaterThan(0);
         expect(w2.eval('diagramRitat(document.getElementById("chart-demo-hist"))')).toBe(true);
         w2.__f = el._figur;
@@ -654,13 +654,12 @@ describe('Löneutveckling: chart-kon-scatter och chart-kon-boxplot', () => {
 });
 
 describe('Ålder & karriär: chart-demo-agecurve, chart-demo-spread', () => {
-    it('figurerna: monotona kurvor per kön med zon från 60; percentilband per femårsgrupp', () => {
+    it('figurerna: monotona kurvor per kön utan zon; percentilband per femårsgrupp', () => {
         const kurva = { ages: [58, 59, 60, 61, 62], share: [1, 2, 3, 2, 1] };
         w.__k = kurva;
-        const a = w.eval('_demoAgecurveFigur(window.__k, window.__k, 62)');
+        const a = w.eval('_demoAgecurveFigur(window.__k, window.__k)');
         expect(a.lager.map(l => [l.marke, l.serie, l.kurva, l.farg])).toEqual([['linje', 'Kvinna', 'monoton', '#833a8f'], ['linje', 'Man', 'monoton', '#5f7f16']]);
-        expect(a.referens).toEqual([expect.objectContaining({ typ: 'zon', x0: 60, x1: 62 })]);
-        expect(w.eval('_demoAgecurveFigur(window.__k, window.__k, 59)').referens).toEqual([]);
+        expect(a.referens).toBeUndefined();
         expect(a.lager[0].tips({ x: 60, y: 3 })).toEqual([['60 år'], ['Kvinna', '3,0 % av kvinnorna']]);
         // Percentilbandet: tolv personer i 30–34 och tolv i 40–44; de tre i 35–39 är under tröskeln och ritas inte.
         w.__df = [...Array.from({ length: 12 }, (_, i) => ({ alder: 30 + (i % 5), lon: 30000 + i * 1000 })), ...Array.from({ length: 3 }, (_, i) => ({ alder: 36, lon: 71111 + i })),
