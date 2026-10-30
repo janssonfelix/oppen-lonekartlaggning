@@ -4,8 +4,13 @@
 // bildspråket är linjeikoner. Varje test faller om felet det vaktar kommer tillbaka. Delen här: inläsning, flikar utan underlag, utskrift,
 // dossiern, talen och exportknapparna; resten i granssnitt-vyer.test.js (riggen i helpers/granssnitt-rigg.js).
 import { describe, it, expect } from 'vitest';
-import { createAppWindow } from './helpers/app-harness.js';
+import { createAppWindow, delatFonster, utgangslage } from './helpers/app-harness.js';
 import { las, papa, vanta, csvFil, braRader, okandaRader, medDecimalpunkt } from './helpers/granssnitt-rigg.js';
+
+const demo = delatFonster(w => w.__loadDemoData());
+it('det delade fönstret står i utgångsläget', () => {
+    expect(utgangslage(demo())).toEqual({ troskel: 10, dialoger: 0, flik: 'dashboard' });
+});
 
 describe('lönefil vars kolumner inte känns igen', () => {
     const lasIn = async rader => {
@@ -191,8 +196,7 @@ describe('modalerna skriver tal på svenska', () => {
 
 describe('samma tal i samma precision på sidan', () => {
     it('regressionskortet skriver den oförklarade skillnaden med en decimal, som flikens nyckeltal', () => {
-        const w = createAppWindow();
-        w.__loadDemoData();
+        const w = demo();
         w.__renderTabContent('matrix');
         const tal = w.document.querySelector('.reg-hero .hero-number').textContent.trim();
         expect(tal).toMatch(/^[+\u2212-]?\d+,\d\s%$/);
@@ -200,8 +204,7 @@ describe('samma tal i samma precision på sidan', () => {
         expect(w.document.querySelector('.reg-hero .hero-meta').textContent).not.toMatch(/\d,\d\d\s%/);
     });
     it('Prioriteringens tabell skriver avvikelsen med en decimal', () => {
-        const w = createAppWindow();
-        w.__loadDemoData();
+        const w = demo();
         w.__renderTabContent('prioritering');
         const tal = [...w.document.querySelectorAll('#prio-table .cell-bar-value')].map(e => e.textContent.trim()).filter(t => t !== '–');
         expect(tal.length).toBeGreaterThan(4);
@@ -226,8 +229,7 @@ describe('Löneöversyn utan påslag', () => {
 describe('en exportknapp per kort', () => {
     const FLIKAR = ['dashboard', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn', 'kon', 'benchmark', 'utforska'];
     it('varje diagram har en exportmeny, ingen behållare har två, och ingen fristående exportknapp står bredvid', () => {
-        const w = createAppWindow();
-        w.__loadDemoData();
+        const w = demo();
         for (const flik of FLIKAR) w.__renderTabContent(flik);
         const d = w.document;
         const namn = el => (el.closest('.card, .diagramkort')?.querySelector('h2, h3, h4')?.textContent || el.id || '').trim().slice(0, 40);
@@ -263,16 +265,14 @@ describe('en exportknapp per kort', () => {
 
 describe('Personer att granska', () => {
     it('tabellens rullande ruta nås med tangentbordet och har ett namn', () => {
-        const w = createAppWindow();
-        w.__loadDemoData();
+        const w = demo();
         w.eval('renderPersonerAttGranska(true)');
         const ruta = w.document.querySelector('.pag-tabell-wrap');
         expect(ruta.getAttribute('tabindex')).toBe('0');
         expect(ruta.getAttribute('aria-label')).toBe('Personer att granska, rullar i sidled');
     });
     it('metoden står i en not under tabellen, och ansvarsetiketten är kort med hela namnet i verktygstipset', () => {
-        const w = createAppWindow();
-        w.__loadDemoData();
+        const w = demo();
         w.eval('renderPersonerAttGranska(true)');
         const d = w.document;
         const rubriker = [...d.querySelectorAll('#pag-tabell thead th')].map(th => th.textContent);
@@ -304,8 +304,7 @@ describe('Handlingsplanens tabell', () => {
         const css = las('src/style.css');
         expect(css).toMatch(/#handlingsplan-tbody \.handlingsplan-empty \{ display: none; \}/);
         expect(css).toMatch(/@media print \{ #handlingsplan-tbody \.handlingsplan-empty \{ display: table-row; \} \}/);
-        const w = createAppWindow();
-        w.__loadDemoData();
+        const w = demo();
         w.__renderTabContent('handlingsplan');
         expect(w.document.querySelectorAll('#handlingsplan-tbody tr.handlingsplan-empty').length).toBeGreaterThanOrEqual(5);   // finns kvar för utskriften
         expect(w.document.querySelector('#view-handlingsplan .handlingsplan-not').textContent).toContain('fylls i Excel-filen eller på utskriften');
@@ -373,8 +372,7 @@ describe('raden om det markerade', () => {
 
 describe('samma skillnad sägs på ett sätt', () => {
     it('Att göra skriver den råa skillnaden per BAS som kvinnors lön i procent av mäns, som Lika arbete', () => {
-        const w = createAppWindow();
-        w.__loadDemoData();
+        const w = demo();
         const punkter = w.eval('buildActionChecklist()').filter(p => p.id.startsWith('gap-bas-'));
         expect(punkter.length).toBeGreaterThan(0);
         for (const p of punkter) {
@@ -387,8 +385,7 @@ describe('samma skillnad sägs på ett sätt', () => {
         expect(kvoter.some(t => t.includes(`BAS ${b[1]}`) && t.includes(`${b[2]} %`))).toBe(true);
     });
     it('där skillnaden står kvar heter den skillnad, och den oförklarade skillnaden har en decimal där den står som huvudtal', () => {
-        const w = createAppWindow();
-        w.__loadDemoData();
+        const w = demo();
         w.__renderTabContent('matrix');
         w.__renderTabContent('loneoversyn');
         const d = w.document;
