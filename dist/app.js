@@ -12935,7 +12935,7 @@ function renderProcessTracker({ punkter: givna } = {}) {
         <div class="ptrack-row">
             <span class="ptrack-status" data-status="${esc(r.status)}" aria-hidden="true">${ICON[r.status] || ikon('ruta')}</span>
             <div class="ptrack-body">
-                <div class="ptrack-title">${esc(r.title)}</div>
+                <div class="fs-md fw-600">${esc(r.title)}</div>
                 <div class="ptrack-detail">${esc(r.detail)}</div>
                 <button type="button" class="ptrack-goto" data-goto-tab="${esc(r.tab)}">Gå till steget</button>
             </div>
@@ -20610,7 +20610,7 @@ function renderReferensKort() {
     const har = harReferens();
     el.innerHTML = har
         ? `Används: <strong>${esc(referensNamn())}</strong>${esc(referensKalla())}`
-        : '<strong>Ingen referens inläst.</strong><br><span class="ref-hjalp">Ladda upp ert lönepolitiska ställningstagande — eller ett organisationspaket.</span>';
+        : '<strong>Ingen referens inläst.</strong><br><span class="text-dampad-xs">Ladda upp ert lönepolitiska ställningstagande — eller ett organisationspaket.</span>';
     const falt = document.getElementById('referens-namn-rad');
     const input = document.getElementById('referens-namn');
     const aterga = document.getElementById('btn-referens-aterga');
@@ -21899,7 +21899,7 @@ function generateEUDirectiveMatrix() {
     }
     if (lika.grupper.some(g => g.flaggad)) {
         const trS = document.createElement("tr");
-        trS.innerHTML = `<td colspan="9" class="la-stabilitet-not">Skör betyder att skillnaden kan hamna på 5 % eller under om en eller två personer tas bort ur gruppen. Flaggan ligger kvar — märkningen visar var enskilda löner avgör utfallet.</td>`;
+        trS.innerHTML = `<td colspan="9" class="text-dampad-xs">Skör betyder att skillnaden kan hamna på 5 % eller under om en eller två personer tas bort ur gruppen. Flaggan ligger kvar — märkningen visar var enskilda löner avgör utfallet.</td>`;
         tbody.appendChild(trS);
     }
 
@@ -28172,7 +28172,7 @@ function _urvalSignaturFor() {
 function _urvalTalHtml(attr, i, varde, enhet, etikett) {
     const falt = (pos, x) => `<input type="number" class="form-select explore-urval-tal" ${attr}="${i}" data-pos="${pos}" `
         + `value="${x == null ? '' : esc(String(x))}" aria-label="${esc(etikett)}${pos === 1 ? ', övre gräns' : ''}">`;
-    const suffix = enhet ? ` <span class="explore-urval-enhet">${esc(enhet)}</span>` : '';
+    const suffix = enhet ? ` <span class="text-dampad-sm">${esc(enhet)}</span>` : '';
     if (Array.isArray(varde)) return `${falt(0, varde[0])} och ${falt(1, varde[1])}${suffix}`;
     return `${falt(0, varde)}${suffix}`;
 }

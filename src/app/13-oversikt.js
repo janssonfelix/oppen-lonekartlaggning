@@ -390,7 +390,7 @@ function renderProcessTracker({ punkter: givna } = {}) {
         <div class="ptrack-row">
             <span class="ptrack-status" data-status="${esc(r.status)}" aria-hidden="true">${ICON[r.status] || ikon('ruta')}</span>
             <div class="ptrack-body">
-                <div class="ptrack-title">${esc(r.title)}</div>
+                <div class="fs-md fw-600">${esc(r.title)}</div>
                 <div class="ptrack-detail">${esc(r.detail)}</div>
                 <button type="button" class="ptrack-goto" data-goto-tab="${esc(r.tab)}">Gå till steget</button>
             </div>
