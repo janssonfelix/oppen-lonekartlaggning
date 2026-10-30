@@ -162,6 +162,10 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ### Utveckling
 
+- **Riktig Node-typning:** `@types/node` som utvecklingsberoende i stället för den egna minimala typfilen; ett
+  typfel i byggskriptet som typfilen dolde är rättat.
+- **Stilmallens svans:** 26 klasser utan användning är borttagna och fem komponentklasser med samma deklaration som
+  en hjälpklass är utbytta; beräknade stilar jämfördes före och efter i Chromium utan skillnad.
 - **Testwrappern räknar rätt vid omkörning:** när en arbetare kraschar efter att filen rapporterat klart och filen
   körs om, dubblas inte dess tester i kontrollen mot teknisk plan (`tools/test.mjs` prövar båda summorna).
 - **Testriggen schemalägger inget under nedmonteringen** av ett fönster (`requestAnimationFrame` och `setTimeout`

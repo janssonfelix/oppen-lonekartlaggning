@@ -89,7 +89,7 @@ function _urvalSignaturFor() {
 function _urvalTalHtml(attr, i, varde, enhet, etikett) {
     const falt = (pos, x) => `<input type="number" class="form-select explore-urval-tal" ${attr}="${i}" data-pos="${pos}" `
         + `value="${x == null ? '' : esc(String(x))}" aria-label="${esc(etikett)}${pos === 1 ? ', övre gräns' : ''}">`;
-    const suffix = enhet ? ` <span class="explore-urval-enhet">${esc(enhet)}</span>` : '';
+    const suffix = enhet ? ` <span class="text-dampad-sm">${esc(enhet)}</span>` : '';
     if (Array.isArray(varde)) return `${falt(0, varde[0])} och ${falt(1, varde[1])}${suffix}`;
     return `${falt(0, varde)}${suffix}`;
 }

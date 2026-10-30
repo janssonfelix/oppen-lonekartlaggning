@@ -281,8 +281,9 @@ adaptern verkligen delegerar vaktas av `tests/drift.test.js`:
   `tsconfig.app.json` (`typecheck:app`) tar `src/app/*.js` som skript i ett gemensamt globalt scope, precis som
   i `dist/app.js`. `strictNullChecks` är på, `noImplicitAny` av (koden är dynamiskt typad där JSDoc saknas);
   `useUnknownInCatchVariables` av. Biblioteken (`d3`, `XLSX`, `Papa`, `JSZip`) och appens egna fält på
-  DOM-element (`tr._markering` m.fl.) deklareras i `types/globals.d.ts`, Node-modulerna som kortform-ambienta
-  moduler i `types/node-minimal.d.ts` (inget `@types/node`). Röktestet och prestandasvepet
+  DOM-element (`tr._markering` m.fl.) deklareras i `types/globals.d.ts`; Node-API:t typas av `@types/node`
+  (utvecklingsberoende sedan 2026-10-30, `"types": ["node"]` i `tsconfig.json`; den egna minimala typfilen är
+  borta). Röktestet och prestandasvepet
   kör sina callbacks i webbläsarens realm (`page.evaluate`) och är uteslutna, som i `eslint.config.js`.
   Båda projekten är i **nolläge** (CI stoppar på första felet); inga `@ts-ignore`/`@ts-expect-error` används.
   Felen vid införandet, sorterade:
@@ -1248,8 +1249,12 @@ Kända brister och obesvarade frågor, så att de inte lever bara i en konversat
    efter innehåll (flex, grid-template-columns, min-width). Teckenstorlekarna följer en skala i sex steg (`--fs-xs` …
    `--fs-nyckeltal`) i stilmallen; värden inom 0,05 rem från ett steg har tagit steget vid flytten. Utanför skalan står de
    minsta versala etiketterna (0,65–0,72 rem), de stora talen (1,2 rem och uppåt) och utskriftens punktstorlekar;
-   `tests/granssnitt-vyer.test.js` håller taket. Kvar: bibliotekets långa svans (omkring 200 klasser som används en eller två
-   gånger) kan krympa när en flik ändå ändras och en rad får samma avstånd som sina grannar.
+   `tests/granssnitt-vyer.test.js` håller taket. Svansen gicks igenom 2026-10-30: 26 klasser utan användning togs bort
+   (rester efter borttagna vyer: datakvalitetens delkomponenter, exportnavet, källväxeln i Jämförelse) och fem
+   komponentklasser med samma deklaration som en hjälpklass byttes mot den; beräknade stilar för alla element på alla
+   flikar med demodata jämfördes före och efter i Chromium utan en enda skillnad. Kvar är omkring 220 klasser som
+   används en eller två gånger men vars deklarationer är unika — de kan bara krympa med en visuell ändring, när en
+   flik ändå ändras och en rad får samma avstånd som sina grannar.
 8. **Ett gemensamt globalt scope** på omkring 20 000 rader. Logik flyttas till `src/lib/` när en del ändå ändras.
 9. *(Löst: `.github/dependabot.yml` uppdaterar npm och arbetsflödenas steg, §6.)*
 

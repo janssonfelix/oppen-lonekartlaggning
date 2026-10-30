@@ -360,7 +360,7 @@ function generateEUDirectiveMatrix() {
     }
     if (lika.grupper.some(g => g.flaggad)) {
         const trS = document.createElement("tr");
-        trS.innerHTML = `<td colspan="9" class="la-stabilitet-not">Skör betyder att skillnaden kan hamna på 5 % eller under om en eller två personer tas bort ur gruppen. Flaggan ligger kvar — märkningen visar var enskilda löner avgör utfallet.</td>`;
+        trS.innerHTML = `<td colspan="9" class="text-dampad-xs">Skör betyder att skillnaden kan hamna på 5 % eller under om en eller två personer tas bort ur gruppen. Flaggan ligger kvar — märkningen visar var enskilda löner avgör utfallet.</td>`;
         tbody.appendChild(trS);
     }
 
