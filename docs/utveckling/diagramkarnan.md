@@ -436,11 +436,14 @@ ADR-39 gäller för allt som är ett diagram.
 - **Kön:** två färger, plommon för kvinnor och olivgrönt för män — inte rosa och blått, som knyter färgen till en stereotyp. Båda har minst 4,5:1 mot vitt, skiljer sig vid simulerad protanopi och deuteranopi och ligger ifrån status- och seriefärgerna (`tests/farger.test.js`). Används bara för kön, och kön står alltid också med ord i legenden.
 - **Serier:** en fast ordning av tydligt olika färger; en serie behåller sin färg när andra döljs.
 - **Storlek:** en nyans, ljus till mörk. **Avvikelse:** två nyanser kring neutralt grått.
-- **Status** (kritisk, varning, ok): bara för status, och alltid tillsammans med form eller ord — romb, kvadrat,
-  cirkel i diagram; text i tabeller. Sådant som inte är en bedömning (att ett gap *förklaras* av ålder, att en
-  lön ligger *under* ett spann) får inte statusfärg.
-- **Prioriteringens statusar:** «Börja här» och «Värt att granska» är lila, samma lila som i Lika arbetes tabell
-  (användarens beslut) — «titta här först» utan att påstå att något är fel.
+- **Status:** bara för status, och alltid tillsammans med form eller ord. En skillnad som bedöms mot 3- och
+  5-procentsgränserna har ett ordförråd i hela verktyget, `GAP_STATUS` i `10-diagramtema.js`: *Balanserat* (grönt,
+  cirkel), *Följ upp* (bärnsten, kvadrat) och *Värt att granska* (lila, romb) i diagrammen; samma ord, färg och
+  linjeikon i tabellerna. Sådant som inte är en bedömning (att ett gap *förklaras* av ålder, att en lön ligger
+  *under* ett spann) får inte statusfärg.
+- **Prioriteringens statusar:** «Börja här» (rangordningens översta nivå) och «Värt att granska» är lila, samma lila
+  som i Lika arbete (användarens beslut) — «titta här först» utan att påstå att något är fel. «Över referens» är
+  blått: ett läge, ingen allvarlighetsgrad.
 
 **Märken.** Staplar har ett tak för tjockleken och rundade hörn; staplade delar och punkter har en tunn kant i
 ytans färg; axelsiffror är dämpade. Mönster (tunna sneda streck, små prickar) används bara för litet underlag.

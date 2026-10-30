@@ -198,7 +198,7 @@ describe('Lika arbete: chart-skevhet-overview och chart-perbas-gap', () => {
         const f = w.eval(`_skevhetFigur([{ bas: '3', gap: 93.44, n: 40, ci: { lo: 90.1, hi: 96.9 } }, { bas: '5', gap: 96.2, n: 55, ci: { lo: 94, hi: 98.5 } },
                                          { bas: '7', gap: 99.1, n: 61, ci: null }])`);
         expect(f.lager.map(l => [l.serie, l.farg, l.symbol])).toEqual(
-            [['Avviker mer än 5 %', '#b91c1c', 'romb'], ['Avviker 3–5 %', '#d97706', 'kvadrat'], ['Inom 3 %', '#0f766e', 'cirkel']]);
+            [['Värt att granska', '#4338ca', 'romb'], ['Följ upp', '#d97706', 'kvadrat'], ['Balanserat', '#0f766e', 'cirkel']]);
         expect(f.lager.every(l => l.marke === 'punkt' && l.riktning === 'liggande' && !l.monster)).toBe(true);   // ingen stapel från en avkortad axel
         expect(f.lager[0].data).toEqual([{ y: 'BAS 3', x: 93.4, etikett: '93,4 %', n: 40, markering: ['bas:3'], fel: { lag: 90.1, hog: 96.9 } }]);
         expect(f.lager[2].data[0].fel).toBeUndefined();
@@ -210,7 +210,7 @@ describe('Lika arbete: chart-skevhet-overview och chart-perbas-gap', () => {
     });
     it('chart-skevhet-overview: en status utan punkter får inget lager (ingen tom post i förklaringen)', () => {
         const f = w.eval(`_skevhetFigur([{ bas: '7', gap: 99.1, n: 61, ci: null }])`);
-        expect(f.lager.map(l => l.serie)).toEqual(['Inom 3 %']);
+        expect(f.lager.map(l => l.serie)).toEqual(['Balanserat']);
     });
     it('chart-perbas-gap: punkt med intervall, liggande, i given ordning, KI som fel, nollinje, status som serie med symbol', () => {
         const f = w.eval(`_perBasFigur([{ bas: '3', gapPct: -6.214, ciLow: -9, ciHigh: -3.4, pValue: 0.001, n: 40, kvN: 22, maN: 18 },
@@ -1017,7 +1017,7 @@ describe('tydligare diagram: Utforska', () => {
         w.__m = { spec: { matt: 'gap', delaKon: false }, celler: [cell('A', 93), cell('B', 96.5), cell('C', 99.5)] };
         const f = w.eval('_figStaplar(window.__m, false)');
         expect(f.lager.map(l => [l.marke, l.serie, l.symbol, l.data.map(d => d.rad)])).toEqual(
-            [['punkt', 'Avviker mer än 5 %', 'romb', ['A']], ['punkt', 'Avviker 3–5 %', 'kvadrat', ['B']], ['punkt', 'Inom 3 %', 'cirkel', ['C']]]);
+            [['punkt', 'Värt att granska', 'romb', ['A']], ['punkt', 'Följ upp', 'kvadrat', ['B']], ['punkt', 'Balanserat', 'cirkel', ['C']]]);
         expect(f.legend).toBeUndefined();
         expect(f.referens[0]).toMatchObject({ y: 100, etikett: 'Lika lön' });
         expect(f.x.ordning).toEqual(['A', 'B', 'C']);

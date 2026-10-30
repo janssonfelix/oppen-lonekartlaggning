@@ -18,6 +18,13 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 - **En ny flik börjar överst.** Flikbytet rullade inte, så den som stod långt ned i en flik hamnade långt ned i
   nästa. Sidomenyns ikonläge (641–1100 px) döljer etiketterna med genomskinlighet i stället för `visibility: hidden`,
   så att knapparna behåller sina namn för skärmläsare.
+- **Ett statusordförråd.** En skillnad mot 3- och 5-procentsgränserna heter *Balanserat*, *Följ upp* eller *Värt att
+  granska* i alla flikar, diagram och exporter, med samma färg och symbol (lila för *Värt att granska*, också i Lika
+  arbetes BAS-översikt och Utforska). *Börja här* och *Över referens* finns bara i Prioritering. Förklaringen listar
+  orden en gång, med färg och märke bundna till ordet.
+- **Ett mått i nyckeltalsraderna.** Nyckeltalen visar kvinnors lön i % av mäns: regressionens oförklarade skillnad i
+  Lika arbete och livscykelmodellens tal vid 25 och 65 år räknas om, och kortet längre ned säger hur dess skillnad
+  hänger ihop med nyckeltalet. Rågapet på Översikt har neutral färg; det är en utgångspunkt, inget fynd.
 - **Texter som inte hängde med.** Krav mot lön i Likvärdigt arbete sade "minst 1 personer" på skärmen; exportkortens
   *Utelämnar* räknade samma sak två gånger när två avsnitt utelämnade det; "Hur används denna flik vid..." heter
   *Så används fliken i arbetet*; Utforskas rubriker skriver BAS och AID med versaler; Handlingsplanens ingress säger

@@ -57,8 +57,8 @@ function _laOversiktRaderRakna(d, bas, k) {
     }
     return ut;
 }
-/** Radens status i ord, med samma gränser som översiktens symboler (över 5 %, 3–5 %, inom 3 %). */
-function _laOversiktStatus(o) { return _SKEVHET_STATUS.find(s => s.galler(Math.abs(100 - o.gap))) || _SKEVHET_STATUS[_SKEVHET_STATUS.length - 1]; }
+/** Radens status i ord (GAP_STATUS i 10-diagramtema.js): Balanserat högst 3 %, Följ upp 3–5 %, Värt att granska över 5 %. */
+function _laOversiktStatus(o) { return gapStatus(Math.abs(100 - o.gap)); }
 
 function generateSkevhet() {
     const fmt = new Intl.NumberFormat('sv-SE', {style:'currency',currency:'SEK',maximumFractionDigits:0});
@@ -186,7 +186,7 @@ function generateSkevhet() {
             ['Lönegap (Kv mot Mä)', '<code>median(kvinnors lön) / median(mäns lön) × 100%</code>. 100% = lika lön.'],
             ['Lagstadgat tröskelvärde', '|gap − 100%| &gt; 5% (EU-direktiv 2023/970, utredningsgräns)'],
             ['Könsskevhet', 'Andel av ett kön &lt; 40% av gruppen (jämn fördelning kräver att båda könen ≥ 40%)'],
-            ['Översiktsdiagram', 'Stapel per BAS, färg = avvikelse från 100% (grön ≤3%, gul 3-5%, röd &gt;5%)']
+            ['Översiktsdiagram', 'Punkt per BAS; färg och symbol = avvikelse från 100 % (Balanserat ≤ 3 %, grön cirkel · Följ upp 3–5 %, bärnstensgul kvadrat · Värt att granska &gt; 5 %, lila romb)']
         ],
         notes: [
             `Kräver minst ${kTroskel()} personer av <em>varje kön</em> för att medianer ska visas (k-anonymitet)`,
@@ -298,10 +298,10 @@ function generateEUDirectiveMatrix() {
         // Märket står på en rad med tröskeln i verktygstipset. Det som bara exporterna ska bära (tröskeln, hela meningen
         // om stabiliteten) står kvar i cellen som .bara-export: dolt på skärmen, med i cellens text.
         const bara = t => `<span class="bara-export">${t}</span>`;
-        status = `<span class="la-status farg-ok" title="Skillnaden är högst 3 %">${bara('✓')}${ikon('bock')} Balanserat${bara(' (≥ 3%)')}</span>`;
+        status = `<span class="la-status farg-ok" title="Skillnaden är högst 3 %">${bara('✓')}${ikon('bock')} Balanserat${bara(' (≤ 3%)')}</span>`;
         if (g.flaggad) {
             const stabil = _ruStabilitetKort(g.stabilitet, kTroskel());
-            status = `<span class="la-status farg-granska" title="Skillnaden är över 5 % (EU-direktivets utredningströskel)">${ikon('nal')} Värt att granska${bara(' (&gt; 5%)')}</span>`
+            status = `<span class="la-status farg-granska" title="Skillnaden är över 5 % (EU-direktivets utredningströskel)">${ikon('sok')} Värt att granska${bara(' (&gt; 5%)')}</span>`
                 + ` <br><span class="la-stabilitet" title="${esc(stabil)}">${_laStabilitetRad(stabil)}</span>`;
             statusKlass = "rad-granska";
         }
@@ -391,7 +391,7 @@ function generateEUDirectiveMatrix() {
         ],
         formler: [
             ['Lönegap per yrke', '<code>(median Kv / median Mä − 1) × 100%</code>'],
-            ['Status-tröskel', '≥ 3 % Balanserat · 3–5 % Följ upp · &gt; 5 % Värt att granska (EU 2023/970)'],
+            ['Status-tröskel', '≤ 3 % Balanserat · 3–5 % Följ upp · &gt; 5 % Värt att granska (EU 2023/970)'],
             ['Dominans', 'Kvinnodominerad om >60% kvinnor, mansdominerad om >60% män (dvs. ett kön < 40%), annars könsblandad (jämn fördelning = båda könen ≥ 40%)'],
             ['OLS-regression', 'log(lön) ~ kön + ålder + BAS-intervall (indikatorvariabler, första BAS som referens). Standardfel: HC3 robust (Long &amp; Ervin 2000)'],
             ['BAS-rangordning', 'Fast enligt BAS-systemet: A lägst (t.ex. 0–99 poäng), B nästa intervall (100–199) osv.; rang = bokstavens plats (A=1, B=2 …); ett BAS-steg är alltid ett intervall, även när en bokstav saknas i underlaget; högre rang = högre värderat arbete'],
@@ -415,11 +415,8 @@ document.getElementById("search-skevhet")?.addEventListener("input", e => {
 // avkortad axel säger ingenting med sin längd, och det som ska läsas är avståndet till 100 och om intervallet når dit.
 // Statusen är en SERIE med egen symbol — färgen bär den inte ensam,
 // och förklaringen namnger den. `bars` är bara de BAS där båda könen når tröskeln; inga andra når figuren.
-const _SKEVHET_STATUS = [
-    { serie: 'Avviker mer än 5 %', farg: 'kritisk', symbol: 'romb', galler: a => a > 5 },
-    { serie: 'Avviker 3–5 %', farg: 'varning', symbol: 'kvadrat', galler: a => a > 3 },
-    { serie: 'Inom 3 %', farg: 'ok', symbol: 'cirkel', galler: () => true }
-];
+// Statusarna är verktygets gemensamma (GAP_STATUS i 10-diagramtema.js): samma ord, färg och symbol som i tabellerna.
+const _SKEVHET_STATUS = GAP_STATUS;
 function _skevhetFigur(bars) {
     const status = o => _SKEVHET_STATUS.find(s => s.galler(Math.abs(100 - o.gap)));
     const pkt = o => ({ y: 'BAS ' + o.bas, x: +o.gap.toFixed(1), etikett: _figTalformat(o.gap, 'pct'), n: o.n, markering: markeringFor(o.bas),
@@ -490,7 +487,7 @@ function _laOversiktTabell(bars) {
             + `<td class="tal">${skillnad < 0 ? '−' : skillnad > 0 ? '+' : ''}${_figTalformat(Math.abs(skillnad), 'kr')}</td>`
             + `<td class="la-oversikt-cell">${_laOversiktGrafik(o, dom, status)}</td>`
             + `<td class="tal la-oversikt-kvot">${svPct(o.gap, 1)}${o.ci ? `<span class="la-oversikt-ki">${svTal(o.ci.lo, 1)}–${svPct(o.ci.hi, 1)}</span>` : ''}</td>`
-            + `<td><span class="la-status ar-${status.farg}">${esc(status.serie)}</span></td>`;
+            + `<td><span class="la-status ar-${status.farg}" title="Skillnaden är ${status.grans}">${ikon(status.ikon)}${esc(status.serie)}</span></td>`;
         tb.appendChild(tr);
     }
 }
@@ -633,7 +630,8 @@ function _skevhetHantelFigur(bars) {
 //
 // Talen hämtas ur det som fliken redan har ritat — tabellraderna och deras data — så att toppen aldrig kan säga
 // något annat än tabellerna under, och aldrig något som inte får visas: en rad som inte ritats (liten grupp) finns
-// inte att räkna. Regressionens gap står som skillnad, som i kortet.
+// inte att räkna. Alla tal i raden är kvinnors lön i % av mäns (100 = lika lön): regressionens skillnad räknas om till
+// samma mått (reg.konKvot = 100 + konPct), och kortet längre ned säger hur dess skillnad hänger ihop med talet här.
 // ====================================================================
 // Texten under talet är kort (högst 40 tecken) och får två rader; en längre förklaring står i rutans verktygstips.
 function _laSlutsats(etikett, varde, under, kritisk, tips) {
@@ -685,7 +683,8 @@ function renderLikaArbeteTopp() {
         rader.length ? _laSlutsats('Yrkesgrupper att granska', `${granska.length} av ${rader.length}`, granska.length ? 'skillnad över 5 %' : 'ingen skillnad över 5 %', granska.length > 0)
                      : _laSlutsats('Yrkesgrupper att granska', '–', `ingen yrkesgrupp har minst ${kTroskel()} av varje kön`),
         storst ? _laSlutsats('Största skillnaden', svPct(storst.kvot, 1), storst.yrke, false, 'Kvinnors medianlön i procent av mäns i den yrkesgrupp där skillnaden är störst') : '',
-        regOk ? _laSlutsats('Kvar efter ålder och nivå', `${reg.konPct >= 0 ? '+' : ''}${svPct(reg.konPct, 1)}`, 'skillnad, kvinnor mot män', Math.abs(reg.konPct) > 5) : '',
+        regOk ? _laSlutsats('Efter ålder och nivå', svPct(reg.konKvot, 1), 'kvinnors lön i % av mäns när ålder och nivå räknats bort', Math.abs(reg.konPct) > 5,
+            `Regressionen i kortet längre ned: en oförklarad skillnad på ${reg.konPct >= 0 ? '+' : ''}${svPct(reg.konPct, 1)}, kvinnor mot män. Det är samma sak som att kvinnors lön är ${svPct(reg.konKvot, 1)} av mäns.`) : '',
         personer != null ? _laSlutsats('Personer att granska', svTal(personer, 0), `minst ${grans} % under förväntad lön`) : ''
     ].join('');
     _laNyckel('nyckel-la-yrkesgrupper', rader.length ? `${granska.length} att granska${folj.length ? ` · ${folj.length} att följa upp` : ''}` : '', granska.length > 0);

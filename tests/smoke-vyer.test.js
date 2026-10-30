@@ -260,8 +260,12 @@ describe('samma bild på Översikt', () => {
         const t = w.document.getElementById('dashboard-summary').textContent;
         expect(t).not.toContain('bör utredas enligt EU');
         // Under talet står bara vad det är; förklaringen ligger i verktygstipset (nyckeltalsraden är en rad hög).
-        expect(t).toContain('rå skillnad, hela organisationen');
-        expect(w.document.querySelector('#stat-paygap .stat-tip').getAttribute('title')).toContain('före hänsyn till nivå och ålder');
+        expect(t).toContain('rå skillnad, innan yrke och nivå räknats bort');
+        const tip = w.document.querySelector('#stat-paygap .stat-tip');
+        expect(tip.getAttribute('title')).toContain('före hänsyn till yrke, nivå och ålder');
+        // Rågapet är en utgångspunkt, inget fynd: neutral färg också när det är långt från 100 %.
+        expect(tip.classList.contains('crit')).toBe(false);
+        expect(tip.classList.contains('ok')).toBe(false);
     });
     it('inledningen står på en rad med «Visa mer», och fliken upprepar inte sitt namn', () => {
         const d = w.document;

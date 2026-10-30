@@ -1209,11 +1209,14 @@ describe('Lika arbete — urval, slutsatser och avsnittens nyckeltal', () => {
         const rader = [...d.querySelectorAll('#matrix-table tbody tr')].map(tr => tr._euRow).filter(r => r && !r.samladMedian);
         const granska = rader.filter(r => r.niva === 'granska').length;
         const kort = [...d.querySelectorAll('#la-slutsatser .slutsats')].map(k => [t(k.querySelector('.slutsats-etikett').textContent), t(k.querySelector('.slutsats-varde').textContent)]);
-        expect(kort.map(k => k[0])).toEqual(['Yrkesgrupper att granska', 'Största skillnaden', 'Kvar efter ålder och nivå', 'Personer att granska']);
+        expect(kort.map(k => k[0])).toEqual(['Yrkesgrupper att granska', 'Största skillnaden', 'Efter ålder och nivå', 'Personer att granska']);
         expect(kort[0][1]).toBe(`${granska} av ${rader.length}`);
         const storst = rader.slice().sort((a, b) => Math.abs(100 - b.kvot) - Math.abs(100 - a.kvot))[0];
         expect(kort[1][1]).toBe(storst.kvot.toFixed(1).replace('.', ',') + ' %');
-        expect(kort[2][1]).toMatch(/^[+−-]?\d+,\d %$/);                               // regressionens gap: skillnad
+        // Regressionens skillnad omräknad till kvinnors lön i % av mäns (100 + konPct), samma mått som raden i övrigt.
+        const reg = w2.eval('runOLSRegression()');
+        expect(kort[2][1]).toBe((100 + reg.konPct).toFixed(1).replace('.', ',') + ' %');
+        expect(reg.konKvot).toBeCloseTo(100 + reg.konPct, 10);
         expect(kort[3][1]).toBe(String(d.querySelectorAll('#pag-tabell tbody tr').length));
         expect(t(d.getElementById('la-urval').textContent)).toMatch(/Hela urvalet · 260 personer.*Minsta gruppstorlek 10/);
         expect(t(d.getElementById('nyckel-la-yrkesgrupper').textContent)).toMatch(new RegExp(`^${granska} att granska`));

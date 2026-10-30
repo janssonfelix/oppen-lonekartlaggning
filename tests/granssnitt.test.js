@@ -6,6 +6,8 @@
 import { describe, it, expect } from 'vitest';
 import { createAppWindow, delatFonster, utgangslage } from './helpers/app-harness.js';
 import { las, papa, vanta, csvFil, braRader, okandaRader, medDecimalpunkt } from './helpers/granssnitt-rigg.js';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 
 const demo = delatFonster(w => w.__loadDemoData());
 it('det delade fönstret står i utgångsläget', () => {
@@ -397,8 +399,8 @@ describe('samma skillnad sägs på ett sätt', () => {
             const blad = [...el.querySelectorAll('*')].filter(e => !e.children.length && !e.closest('.info-tip') && !/PO\b/.test(e.textContent));
             expect(blad.filter(tvaDec).map(e => e.textContent.trim().slice(0, 50)), sel).toEqual([]);
         }
-        const kort = [...d.querySelectorAll('#la-slutsatser .slutsats')].find(k => k.textContent.includes('Kvar efter ålder och nivå'));
-        expect(kort.textContent).toContain('skillnad, kvinnor mot män');
+        const kort = [...d.querySelectorAll('#la-slutsatser .slutsats')].find(k => k.textContent.includes('Efter ålder och nivå'));
+        expect(kort.textContent).toContain('kvinnors lön i % av mäns när ålder och nivå räknats bort');
     }, 30000);
 });
 
@@ -445,5 +447,54 @@ describe('Regler & praxis visar vad som är bedömt', () => {
     });
     it('fliken påstår inte att svaren inte sparas', () => {
         expect(las('src/index.html')).not.toContain('Verktyget sparar inga svar');
+    });
+});
+
+describe('ett statusordförråd och ett mått i nyckeltalen', () => {
+    const fil = namn => readFileSync(fileURLToPath(new URL('../' + namn, import.meta.url)), 'utf8');
+    it('de gamla statusorden finns inte kvar i bygget eller sidan', () => {
+        for (const namn of ['dist/app.js', 'src/index.html']) {
+            const text = fil(namn);
+            for (const gammalt of ['Inom 3 %', 'Avviker mer än 5', 'Avviker 3–5', 'Värt att följa upp', 'rå skillnad, hela organisationen']) {
+                expect(text.includes(gammalt), `${gammalt} i ${namn}`).toBe(false);
+            }
+        }
+    });
+    it('Förklaringen nämner varje statusord en gång, med färgen bunden till ordet', () => {
+        const d = demo().document;
+        const ord = [...d.querySelectorAll('#symbols-modal strong')].map(e => [e.textContent.trim(), e.className]);
+        for (const [namn, klass] of [['Balanserat', 'farg-ok'], ['Följ upp', 'farg-varning'], ['Värt att granska', 'farg-granska'], ['Börja här', 'farg-granska'], ['Över referens', 'farg-info']]) {
+            expect(ord.filter(o => o[0] === namn), namn).toEqual([[namn, klass]]);
+        }
+        // Ingen separat färgtabell som upprepar orden.
+        expect([...d.querySelectorAll('#symbols-modal h3')].map(h => h.textContent)).not.toContain('Färger för avvikelser och status');
+    });
+    it('Lika arbete och Prioritering säger samma ord med samma färg', () => {
+        const w = demo();
+        w.__renderTabContent('matrix');
+        const d = w.document;
+        const farg = { 'Balanserat': 'ok', 'Följ upp': 'varning', 'Värt att granska': 'granska' };
+        const bas = [...d.querySelectorAll('#la-oversikt tbody .la-status')];
+        expect(bas.length).toBeGreaterThan(0);
+        for (const el of bas) expect(el.classList.contains('ar-' + farg[el.textContent.trim()]), el.textContent).toBe(true);
+        const yrke = [...d.querySelectorAll('#matrix-table tbody .la-status:not(.la-status-liten)')];
+        for (const el of yrke) {
+            const namn = Object.keys(farg).find(k => el.textContent.includes(k));
+            expect(namn, el.textContent).toBeTruthy();
+            expect(el.classList.contains('farg-' + farg[namn])).toBe(true);
+        }
+        const prio = w.eval('Object.values(PRIO_STATUS_INFO)');
+        expect(prio.map(p => p.label)).toEqual(['Börja här', 'Värt att granska', 'Följ upp', 'Balanserat', 'Över referens']);
+    });
+    it('livscykelns nyckeltal är kvinnors lön i % av mäns, och modellens skillnad står bredvid', () => {
+        const w = demo();
+        w.__renderTabContent('kon');
+        w.eval('renderLifecycleAnalysis()');
+        const d = w.document, r = w.eval('runLifecycleRegression(_lifecycleFixBas)');
+        const pct = v => v.toFixed(1).replace('.', ',') + ' %';
+        const rutor = [...d.querySelectorAll('#livscykel-content .stat-box')].map(b => [b.querySelector('.stat-etikett').textContent, b.querySelector('.fs-xl')?.textContent.trim()]);
+        expect(rutor[0]).toEqual(['Kvinnors lön i % av mäns, 25 år', pct(100 + r.gapAt25)]);
+        expect(rutor[1]).toEqual(['Kvinnors lön i % av mäns, 65 år', pct(100 + r.gapAt65)]);
+        expect(d.querySelector('#livscykel-content .livscykel-kvot-not').textContent).toContain('Modellen ger skillnaden i procent');
     });
 });
