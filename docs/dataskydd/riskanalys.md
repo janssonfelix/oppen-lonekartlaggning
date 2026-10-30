@@ -324,7 +324,7 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   lönespridning för hela urvalet. Spridningen kräver tröskeln i varje åldersfönster; trendlinjen
   och lutningen för hela urvalet (alla BAS eller det valda) ritas bara när urvalet når tröskeln
   — annars utelämnas de, nyckeltalet visar ett streck och noten under diagrammet säger det
-  (beslut av produktägaren 2026-10-16). Livscykelanalysen har sitt eget golv
+  (beslut 2026-10-16). Livscykelanalysen har sitt eget golv
   (`statGolv()`).
 - Skyddet vaktas av två invarianter. `tests/kanonymitet.test.js` ritar samtliga flikar i exportläget vid
   10 mot ett dataset där varje liten grupps mått är ett unikt sentinelvärde, och kräver att
@@ -357,7 +357,7 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   ett fält, inte meningen. Skattningarna regression per BAS, Blinder-Oaxaca, bootstrap-KI,
   livscykelmodellen, extremvärdesdetektorn, justerat gap inom yrke och Personer att granska läser
   `statGolv()` = `max(kTroskel(), 10)` och följer inte tröskeln nedåt; verktyget har också andra, fasta
-  golv (ADR-38; de står kvar enligt produktägarens beslut), så detta betyder inte att alla golv är minst 10. En konfigurationsfil eller ett organisationspaket utan fältet ändrar inte gällande värde. En organisation kan sätta sin egen standard i
+  golv (ADR-38; de står kvar enligt beslut), så detta betyder inte att alla golv är minst 10. En konfigurationsfil eller ett organisationspaket utan fältet ändrar inte gällande värde. En organisation kan sätta sin egen standard i
   organisationspaketet.
 - **Medvetet undantag:** likvärdighetsanalysen tillämpar inte k-anon på
   yrkesgruppsnivå (juridiskt nödvändigt för att kunna identifiera kandidatpar;
@@ -433,11 +433,11 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   jämför bara mot mäns median när männen når tröskeln, ger en grupp egen rad på individnivån
   först när tröskeln i antal berörs, och tar bort förslag ur kandidatpar som inte längre når
   en höjd tröskel. Vaktas av `tests/ktroskel-invarianter.test.js` och `tests/ktroskel-regression.test.js` (egna tester och invarianten ovan).
-- **Fasta golv (ADR-38; står kvar enligt produktägarens beslut):**
+- **Fasta golv (ADR-38; står kvar enligt beslut):**
   huvudregressionen i Lika arbete körs när underlaget har 5 kvinnor och 5 män, ett av
   Prioriteringens förslag skriver ut skillnaden i medelålder mellan könen vid 3 av varje kön
   (en ålder, inget lönemått), och Löneöversiktens yrkesrader visas från 5 personer.
-- **Egna riktade rader i Löneöversyn — tillåtna enligt produktägarens beslut:** en
+- **Egna riktade rader i Löneöversyn — tillåtna enligt beslut:** en
   riktad rad som användaren själv lägger till för en grupp under tröskeln visar sitt belopp på
   raden, och beloppet ingår i summorna på skärmen och i Löneöversyns Excel-export (*Använt*,
   *Riktat* och, när gruppen är kvinnodominerad, *Varav till kvinnodominerade grupper*). För en
@@ -455,24 +455,24 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   färre personer än tröskeln visar beloppet med noten om enskildas löner. Lönegapet före och efter
   (organisationens råa gap) kräver tröskeln för varje kön. Vaktas av `tests/ktroskel-kon.test.js` (C3)
   och `tests/smoke-docx.test.js`.
-- **Bilder med en punkt per person följer med (beslut av produktägaren 2026-10-16, ADR-48):** ZIP-exporten
+- **Bilder med en punkt per person följer med (beslut 2026-10-16, ADR-48):** ZIP-exporten
   och utskriftens mall *Komplett rapport* bär bilder av Ålder & karriärs diagram med en punkt per person
   (§6.6); Ålder & karriär visar punkterna på skärmen. Bilderna bär inga namn eller identifierare, och filerna
   hanteras som personuppgifter (§8, punkt 1). Innehållet i en bild går inte att läsa i testet, så bilderna
   prövas inte av invarianten.
-- **Löneöversyns tröskelmål följer tröskeln (beslut av produktägaren 2026-10-16, ADR-38 R5):** lyftet i
+- **Löneöversyns tröskelmål följer tröskeln (beslut 2026-10-16, ADR-38 R5):** lyftet i
   procent till kvinnor och dess kostnad (kvinnornas lönesumma gånger procentsatsen) visas bara när varje kön i
   urvalet når tröskeln; annars ett streck med meningen om utelämnat könsuppdelat mått. Vaktas av
   `tests/troskelbeslut.test.js`.
-- **Riktade rader ur en konfigurationsfil (beslut av produktägaren 2026-10-16):** filen bär på varje riktad
+- **Riktade rader ur en konfigurationsfil (beslut 2026-10-16):** filen bär på varje riktad
   rad uppgiften om raden föreslogs av verktyget ur kandidatpar i likvärdigt arbete (`kalla`), så att en inläst rad behandlas som
   den rad den var: förslag prövas mot gällande tröskel vid inläsningen och rensas när tröskeln höjs, egna
   rader står kvar med noten om att gruppen är under tröskeln. Vaktas av `tests/troskelbeslut.test.js`.
 - **Varningen "underlaget är litet" i Prioriteringens motiveringsförslag** går vid färre än tröskeln av
-  något kön (tidigare ett fast 5) och nämner tröskeln (beslut av produktägaren 2026-10-16).
+  något kön (tidigare ett fast 5) och nämner tröskeln (beslut 2026-10-16).
 - **Processöversiktens steg 4** blir inte klart när alla kandidatpar har en grupp under tröskeln: steget
   säger att inget finns att hantera i Att göra, hur många par som bara redovisas i fliken Likvärdigt arbete,
-  och leder dit (beslut av produktägaren 2026-10-16, ADR-29).
+  och leder dit (beslut 2026-10-16, ADR-29).
 
 - **Aggregerade analyser i Lika arbete (ADR-22, ADR-24, ADR-25):** *Var uppstår löneskillnaden?*
   namnger en grupp bara när varje kön i gruppen och dess BAS når tröskeln. Dolda grupper redovisas
@@ -516,8 +516,8 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   För diagram med en punkt per person — spridningsdiagrammen lön mot ålder i Ålder & karriär, märkta
   `individer` i figuren — är diagramdatan **en rad per person** (lön, kön, ålder eller grupp; inga namn
   eller identifierare), och filen säger det på rad 2: "Filen innehåller en rad per person (lön, kön, ålder
-  eller grupp; inga namn eller identifierare) och ska hanteras som personuppgifter." (beslut av
-  produktägaren 2026-10-16). Utforskas lådor (individpunkter, punktsvärm, regnmoln) exporteras som
+  eller grupp; inga namn eller identifierare) och ska hanteras som personuppgifter." (beslut
+  2026-10-16). Utforskas lådor (individpunkter, punktsvärm, regnmoln) exporteras som
   statistik per grupp, aldrig som individer. Sådana filer ska hanteras som personuppgifter (§8, punkt 1).
 - **Rapportunderlag via urklipp (ADR-20):** aggregerade faktastycken, tabeller och diagram kopieras
   för att klistras in i organisationens egen rapportmall. Blocken följer samma k-regel som Lika
@@ -550,7 +550,7 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   yrkesgrupper, lönegapet per åldersgrupp och fördelningen i lönespannet per kön. **Utskriftens mall *Komplett
   rapport*** (hela dokumentationen) lägger till bilagor med flikarnas tabeller och bilder av Ålder & karriärs
   spridningsdiagram, låddiagram och täthetsdiagram; de kortare urvalen (ledningsbrief, facklig dialog) gör det
-  inte. **Beslut av produktägaren 2026-10-16 (ADR-48):** bilderna följer med i ZIP-exporten och i Komplett
+  inte. **Beslut 2026-10-16 (ADR-48):** bilderna följer med i ZIP-exporten och i Komplett
   rapport. De bär inga namn eller identifierare, punkterna följer tröskeln som ovan, och filerna hanteras som
   personuppgifter (§8, punkt 1).
 - **Vyerna per BAS-intervall, trattdiagrammet och fördelningarna per kön** följer tröskeln för varje kön: översikten per BAS-intervall (skärm, Word,
@@ -605,7 +605,7 @@ personnummer eller e-post), och paketets låsningar (ADR-47) gäller. **Innehål
 benämningar, inställningar, ställningstagande och jämförelsestatistik — aldrig rader ur en lönefil
 (`skapaPaket()` läser aldrig `state.data`; röktestet kräver att organisationsfilen saknar lönefält). Filen
 anger vilken version av verktyget den bygger på och verktygsfilens kontrollsumma; någon verifiering av
-organisationsfilen mot den publicerade versionen görs inte (produktägarens beslut: filen kommer från
+organisationsfilen mot den publicerade versionen görs inte (beslut, ADR-49: filen kommer från
 systemägaren internt). Handläggaren kan granska och ladda ner det inbakade paketet; demoläget går före.
 Webbläsarröktestet öppnar en organisationsfil under CSP:n från `file://` och kräver noll överträdelser.
 
@@ -808,5 +808,5 @@ ska förvaras på behörighetsstyrd yta och inte skickas okrypterat (§8, punkt 
 
 **Hur utvärderar vi utan att använda riktig lönedata?**
 Använd demoläget ("Prova med demodata") — syntetisk exempeldata, tydligt märkt
-DEMODATA i gränssnitt och alla exporter (§5). För pilot med skarp data finns
-`pilotchecklista.md`; för användarflödet `korguide.md`.
+DEMODATA i gränssnitt och alla exporter (§5). För provkörning med skarp data finns
+`pilotchecklista.md` (checklistan för skarp data); för användarflödet `korguide.md`.

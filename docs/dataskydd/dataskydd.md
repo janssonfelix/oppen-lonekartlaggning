@@ -154,7 +154,7 @@ Fyra medvetna undantag:
    rapportmodell, som bara bär diagram över grupper). **Utskriften av hela dokumentationen (mallen *Komplett
    rapport*) har bilagor med bilder av Ålder & karriärs spridningsdiagram, låddiagram och täthetsdiagram**, och
    **ZIP-exporten innehåller bilder av alla ritade diagram från alla flikar**, också dessa. Det är ett beslut
-   (produktägaren 2026-10-16, ADR-48): bilderna bär inga namn eller identifierare, och filerna hanteras som
+   (beslut 2026-10-16, ADR-48): bilderna bär inga namn eller identifierare, och filerna hanteras som
    personuppgifter (§4).
 
 **Vyerna per BAS-intervall, trattdiagrammet och fördelningarna per kön.** Översikten per BAS-intervall i Lika arbete har

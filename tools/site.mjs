@@ -25,7 +25,7 @@ const GUIDER = [
     ['korguide.md', 'Körguide', 'arbetsflödet steg för steg'],
     ['datauttag.md', 'Datauttag', 'vilka fält personalfilen behöver'],
     ['organisationspaket.md', 'Organisationspaket', 'för systemägaren'],
-    ['pilotchecklista.md', 'Pilotchecklista', 'inför första kartläggningen'],
+    ['pilotchecklista.md', 'Checklista för skarp data', 'inför första kartläggningen'],
     ['sakerhetsbeskrivning.md', 'Säkerhetsbeskrivning', 'för IT och dataskyddsombud, på en sida'],
     ['tillganglighetsredogorelse.md', 'Tillgänglighetsredogörelse', 'vad som är prövat och kända begränsningar'],
 ];
@@ -54,7 +54,7 @@ export function byggSida(mall, { version, sha, storlek, guideUrl, bild, slinga }
         guider = '<p>Guider:</p>\n        <ul>\n' + GUIDER.map(([fil, namn, vad]) =>
             `            <li><a href="${esc(bas + fil)}">${namn}</a> — ${vad}</li>`).join('\n') + '\n        </ul>';
     } else {
-        guider = '<p>Guiderna (körguide, datauttag, organisationspaket och pilotchecklista) finns i källkoden under <code>docs/anvandare/</code>.</p>';
+        guider = '<p>Guiderna (körguide, datauttag, organisationspaket och checklistan för skarp data) finns i källkoden under <code>docs/anvandare/</code>.</p>';
     }
     // Slingan kräver stillbilden: den som har bett om mindre rörelse (prefers-reduced-motion) får stillbilden.
     const bildHtml = bild && slinga
