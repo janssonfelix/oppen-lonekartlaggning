@@ -2,7 +2,8 @@
 
 **För:** IT, inköp och tillgänglighetssamordnare. Underlag till organisationens egen bedömning av verktyget;
 redogörelsen gäller verktyget som fil (`oppen-lonekartlaggning.html`), inte en webbplats. Målet är WCAG 2.1
-nivå AA. Bedömd 2026-10-17 mot det aktuella bygget.
+nivå AA. Senast bedömd för hand 2026-10-17; den automatiska prövningen (axe-core i testsviten, ADR-10) körs mot
+varje bygge, också efter de flikar och paneler som tillkommit sedan dess.
 
 ## Hur verktyget är prövat
 
@@ -13,7 +14,8 @@ nivå AA. Bedömd 2026-10-17 mot det aktuella bygget.
   3:1 mot vit bakgrund; varning och ok skiljer sig i ljushet, så att rött och grönt inte behöver skiljas på
   färgtonen (`tests/farger.test.js`, ADR-43).
 - **I webbläsare 2026-10-17:** axe-core (WCAG 2.0 och 2.1, A och AA, med färgkontrast) i Chromium 1400 punkter
-  brett, med demodata, i var och en av de 14 flikarna: **inga överträdelser**. Axe prövar inte kontrasten i
+  brett, med demodata, i var och en av de då 14 flikarna (i dag 13, sedan Lönepolitik blev ett avsnitt i
+  Jämförelse): **inga överträdelser**. Axe prövar inte kontrasten i
   diagrammens SVG-text, och det som axe markerar som "behöver granskas" är inte genomgånget för hand.
 - **Tangentbordet:** jsdom-testerna prövar pilarna och Home mellan flikarna (`tests/smoke.test.js`); röktestet
   i Chromium, Firefox och WebKit prövar att avsnittens rubriker nås med Tab och fälls ut med Enter, menyn i
