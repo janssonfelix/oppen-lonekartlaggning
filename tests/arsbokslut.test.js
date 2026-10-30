@@ -2,7 +2,8 @@
 // Copyright 2026 Felix Jansson
 // Årsbokslutet (ADR-54): validering, k-skydd och jämförelsen mellan två år — den rena modulen.
 import { describe, it, expect } from 'vitest';
-import { byggArsbokslut, valideraArsbokslut, jamforArsbokslut, ARSBOKSLUT_NYCKELTAL } from '../src/lib/arsbokslut.js';
+import { byggArsbokslut, valideraArsbokslut, jamforArsbokslut, hantelRader, ARSBOKSLUT_NYCKELTAL } from '../src/lib/arsbokslut.js';
+import { arsjamforelseBlock, tillWordHtml } from '../src/lib/rapportunderlag.js';
 
 const bokslut = (ar, over = {}) => byggArsbokslut({
     ar, skapat: `${ar}-11-01`, k: 10, verktyg: 'v2026.10.19',
@@ -76,5 +77,34 @@ describe('årsbokslut: jämförelsen mellan två år', () => {
         expect(j.grupper.borta).toEqual([{ yrke: 'Bara förra (BAS A)', gapForra: -8, gapNu: null, nKv: 20, nMa: 20 }]);
         expect(j.grupper.nya).toEqual([{ yrke: 'Bara nu (BAS A)', gapForra: null, gapNu: -9, nKv: 20, nMa: 20 }]);
         expect(j.samma_k).toBe(false);
+    });
+});
+
+describe('årsbokslut: hanteln och blocket i rapportunderlaget', () => {
+    const forra = bokslut(2025), nu = bokslut(2026, {
+        grupper: [
+            { yrke: 'Undersköterska (BAS C)', nKv: 42, nMa: 12, medKv: 30500, medMa: 31500, gapPct: -3.2, flaggad: false },
+            { yrke: 'Kock (BAS B)', nKv: 12, nMa: 15, medKv: 27000, medMa: 29000, gapPct: -6.9, flaggad: true },
+            { yrke: 'Ny (BAS A)', nKv: 12, nMa: 15, medKv: 27000, medMa: 29000, gapPct: -5.5, flaggad: true },
+        ],
+    });
+    it('hanteln har en rad per yrkesgrupp med gap båda åren, kvoten i procent, riktningen och sortering efter förändring', () => {
+        const h = hantelRader(jamforArsbokslut(forra, nu));
+        expect(h.rader.map(r => r.namn)).toEqual(['Kock (BAS B)', 'Undersköterska (BAS C)']);   // Vaktmästare är inte flaggad i år och Ny saknar förra året
+        expect(h.rader[0]).toMatchObject({ fore: 98.2, efter: 93.1, riktning: 'fran' });
+        expect(h.rader[1]).toMatchObject({ fore: 93.5, efter: 96.8, riktning: 'mot' });
+        expect(h.utelamnade).toBe(2);   // Ny (bara i år) och Vaktmästare (flaggad bara förra året, gap båda åren? nej: borta med gapNu null)
+        expect(hantelRader(null)).toEqual({ rader: [], utelamnade: 0 });
+    });
+    it('blocket bär nyckeltalen sida vid sida, flaggade grupper med namn och Att göra, och blir Word-HTML', () => {
+        const b = arsjamforelseBlock(jamforArsbokslut(forra, nu), { forraAr: 2025, nuAr: 2026, urval: 'Hela organisationen' });
+        expect(b.id).toBe('arsjamforelse');
+        expect(b.tabell.rubriker).toEqual(['Mått', '2025', '2026', 'Skillnad']);
+        expect(b.tabell.rader.find(r => r[0] === 'Medianlön kvinnor')).toEqual(['Medianlön kvinnor', '30\u00a0000 kr', '30\u00a0000 kr', '±0 kr']);
+        expect(b.stycken.join(' ')).toMatch(/2 nya \(Kock \(BAS B\), Ny \(BAS A\)\)/);
+        expect(b.stycken.join(' ')).toMatch(/2 inte längre flaggade \(Vaktmästare \(BAS B\), Undersköterska \(BAS C\)\)/);
+        expect(b.stycken.join(' ')).toMatch(/Att göra: 2025 var 1 av 2 punkter avbockade, 2026 1 av 2/);
+        expect(b.stycken.at(-1)).toBe('Urval: Hela organisationen.');
+        expect(tillWordHtml(b)).toContain('<h3>Jämförelse med förra året</h3>');
     });
 });

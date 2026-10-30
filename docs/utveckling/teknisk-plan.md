@@ -229,7 +229,7 @@ adaptern verkligen delegerar vaktas av `tests/drift.test.js`:
   rätt grupp. Utskriftsfönstret för checklistorna (`printScaffoldView`) läser `:root` och allt från `.dold` till
   stilmallens slut ur den körande stilmallen och lägger in det som byggt stilark (`adoptedStyleSheets`): ett `<style>`-element
   som skriptet skapar blockeras av den ärvda CSP:n (`style-src-elem`), så fönstret var tidigare helt ostilat.
-- **Tester:** Vitest — 2458 tester i 71 filer: rena `src/lib/`-moduler, CSV-parsning, jsdom-röktest
+- **Tester:** Vitest — 2462 tester i 71 filer: rena `src/lib/`-moduler, CSV-parsning, jsdom-röktest
   av varje vy (ADR-7; `tests/smoke.test.js` med det delade fönstret och sju `tests/smoke-*.test.js` per
   område), k-tröskeln i åtta `tests/ktroskel*.test.js` med riggen i `tests/helpers/ktroskel-rigg.js`,
   gränssnittet i `tests/granssnitt*.test.js` (riggen `tests/helpers/granssnitt-rigg.js`) och diagramvyerna i
@@ -1170,7 +1170,15 @@ nyckeltal när ett kön är det. Läses en fil med bokslut in ligger det i `stat
 rad, flaggade yrkesgrupper som kvar, nya och borta, och vilka av förra årets öppna punkter som är klara i år. Filen
 bär bara ett bokslut: det som sparas i år; utan underlag bär den det inlästa vidare. *Rensa all data* tar bort det.
 Alternativet, en egen bokslutsfil, valdes bort: konfigurationsfilen är redan den fil som sparas när arbetet är klart
-och läses in när det återupptas. Vaktas av `tests/arsbokslut.test.js` och `tests/smoke-arsbokslut.test.js`.
+och läses in när det återupptas. Jämförelsen följer också med i rapporten: avsnittet *Jämförelse med förra året*
+(`rmArsjamforelseAvsnitt`) står efter *Åtgärder och tidsplan* och följer med när det gör det (som *Egna tabeller*
+följer *per BAS-intervall*; det finns bara när ett bokslut är inläst och ändrar inte avsnittsräkningen), med
+nyckeltalen sida vid sida, de flaggade yrkesgrupperna, hanteln och Att göra; blocket *Jämförelse med förra året*
+i rapportunderlaget (`arsjamforelseBlock`); och hanteln (`hantelRader`, `foreEfterFigur`): kvinnors medianlön i
+procent av mäns per yrkesgrupp, förra året som streck och i år som punkt, grön när kvoten närmat sig lika lön,
+orange när den fjärmat sig, grå när den är oförändrad — en riktning, inte en bedömning. Diagramplanens pilspets
+på strecket är inte gjord: strecket och punkten säger redan vilket år som är vilket. Vaktas av
+`tests/arsbokslut.test.js` och `tests/smoke-arsbokslut.test.js`.
 
 ## 9. Öppna punkter
 

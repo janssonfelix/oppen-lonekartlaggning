@@ -153,7 +153,7 @@ export const MODULES = [
             likaArbeteGrupper: '_ruLikaArbeteGrupper', justeratGapInomYrke: '_ruJusteratGap',
             gruppBlock: '_ruGruppBlock', parBlock: '_ruParBlock', avsnittBlock: '_ruAvsnittBlock',
             tillWordHtml: '_ruTillWordHtml', tillText: '_ruTillText', stabilitetKort: '_ruStabilitetKort',
-            egenTabellBlock: '_ruEgenTabellBlock'
+            egenTabellBlock: '_ruEgenTabellBlock', arsjamforelseBlock: '_ruArsjamforelseBlock'
         }
     },
     {
@@ -207,7 +207,7 @@ export const MODULES = [
     },
     {
         file: 'arsbokslut.js', ns: '__mirrorArsbokslut',
-        expose: { byggArsbokslut: '_abBygg', valideraArsbokslut: '_abValidera', jamforArsbokslut: '_abJamfor' }
+        expose: { byggArsbokslut: '_abBygg', valideraArsbokslut: '_abValidera', jamforArsbokslut: '_abJamfor', hantelRader: '_abHantelRader' }
     },
     {
         // Organisationspaketet importerar tabellrecept.js och perbas.js (rapportens recept, ADR-52): efter dem.

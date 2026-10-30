@@ -59,3 +59,65 @@ describe('årsbokslutet i verktyget', () => {
         expect(w.__state.forraArsbokslut).toBeNull();
     });
 });
+
+describe('årsjämförelsen i rapporten, rapportunderlaget och som hantel (ADR-54)', () => {
+    const medBokslut = () => {
+        const a = fonster(null);
+        const cfg = JSON.parse(JSON.stringify(a.__buildConfigSnapshot()));
+        cfg.arsbokslut.ar -= 1; cfg.arsbokslut.skapat = `${cfg.arsbokslut.ar}-11-01`;
+        // Vartannat yrke var sämre förra året (närmar sig lika lön i år), vart tredje oförändrat men flaggat.
+        cfg.arsbokslut.grupper.forEach((g, i) => { if (i % 2) { g.gapPct -= 4; g.flaggad = true; } else if (i % 3 === 0) g.flaggad = true; });
+        const w = fonster(null);
+        w.__cfg = cfg; w.eval('applyConfigSnapshot(window.__cfg)');
+        return { w, cfg };
+    };
+    it('utan bokslut har rapporten sina elva avsnitt; med bokslut står Jämförelse med förra året efter Åtgärder och tidsplan, också i ledningsbriefen', () => {
+        const u = fonster(null);
+        expect(u.eval('rapportModell({ alla: true })').avsnitt.map(a => a.id)).not.toContain('arsjamforelse');
+        expect(u.eval('rapportModell({ alla: true })').avsnitt).toHaveLength(11);
+        const { w, cfg } = medBokslut();
+        const ids = w.eval('rapportModell({ alla: true })').avsnitt.map(a => a.id);
+        expect(ids[ids.indexOf('atgarder') + 1]).toBe('arsjamforelse');
+        expect(w.eval('rapportUrval()').namn).toBe('Hela dokumentationen');
+        const avsnitt = w.eval('rapportModell()').avsnitt.find(a => a.id === 'arsjamforelse');
+        expect(avsnitt.rubrik).toMatch(/^\d+\. Jämförelse med förra året$/);
+        const tabeller = avsnitt.delar.filter(p => p.typ === 'tabell');
+        expect(tabeller[0].kolumner.map(c => c.rubrik)).toEqual(['Mått', String(cfg.arsbokslut.ar), String(cfg.arsbokslut.ar + 1), 'Skillnad']);
+        expect(avsnitt.delar.some(p => p.typ === 'diagram' && p.id === 'chart-arsjamforelse')).toBe(true);
+        expect(avsnitt.delar.filter(p => p.typ === 'rubrik').map(p => p.text)).toEqual(['Lika arbete', 'Att göra']);
+        for (const s of SENT_SMA) expect(JSON.stringify(avsnitt)).not.toContain(String(s));
+        w.eval("sattRapportUrval('ledning')");
+        expect(w.eval('rapportModell()').avsnitt.map(a => a.id)).toContain('arsjamforelse');
+        w.eval("sattRapportUrval({ ordning: ['sammanfattning', 'lika'], med: ['sammanfattning', 'lika'] })");
+        expect(w.eval('rapportModell()').avsnitt.map(a => a.id)).not.toContain('arsjamforelse');   // utan Åtgärder följer den inte med
+        expect(w.eval('_buildDocumentationDraftHtml()')).not.toContain('Jämförelse med förra året');
+        w.eval("sattRapportUrval('hela')");
+        expect(w.eval('_buildDocumentationDraftHtml()')).toContain('Jämförelse med förra året');
+    });
+    it('rapportunderlaget får blocket, panelen ritar hanteln med båda årens värden, och rapportens bild kommer därifrån', () => {
+        const { w, cfg } = medBokslut();
+        const block = w.eval('rapportunderlagBlock()').find(b => b.id === 'arsjamforelse');
+        expect(block).toBeTruthy();
+        expect(block.tabell.rubriker).toEqual(['Mått', String(cfg.arsbokslut.ar), String(cfg.arsbokslut.ar + 1), 'Skillnad']);
+        w.__renderTabContent('dokumentera');
+        expect(w.document.querySelector('[data-rapport-kopiera="arsjamforelse"]')).not.toBeNull();
+        const el = w.document.getElementById('chart-arsjamforelse');
+        expect(el && el._figur).toBeTruthy();
+        const f = el._figur;
+        expect(f.lager.slice(0, 3).map(l => l.marke)).toEqual(['intervall', 'punkt', 'punkt']);   // ev. ett fjärde lager: årets punkter med etiketten till vänster
+        expect(f.lager[1].serie).toBe(String(cfg.arsbokslut.ar));
+        expect(f.lager[2].serie).toBe(String(cfg.arsbokslut.ar + 1));
+        expect(f.referens[0].x).toBe(100);
+        expect(f.lager.slice(2).reduce((n, l) => n + l.data.length, 0)).toBe(f.lager[0].data.length);   // varje rad har årets punkt
+        const rad = f.lager[0].data[0];
+        expect(typeof rad.r.fore).toBe('number'); expect(typeof rad.r.efter).toBe('number');
+        const farger = w.eval('[PALETTE.semantic.ok, PALETTE.semantic.varning, PALETTE.semantic.neutral]');
+        expect(f.lager[0].data.every(d => farger.includes(d.farg))).toBe(true);                     // en färg per riktning (fjärmat sig prövas i lib-testet)
+        expect(f.lager[0].data.some(d => d.farg === farger[0])).toBe(true);                         // de som närmat sig lika lön
+        expect(f.lager[0].data.some(d => d.farg === farger[2])).toBe(true);                         // de oförändrade
+        for (const s of SENT_SMA) expect(JSON.stringify(f)).not.toContain(String(s));
+        // Rapportens bild görs ur samma figur (rmDiagramBild ritar fliken och läser den; bilden i sig går inte att göra i jsdom).
+        expect(w.eval("diagramRitat(document.getElementById('chart-arsjamforelse'))")).toBe(true);
+        expect(w.eval("RM_DIAGRAM.find(g => g.id === 'chart-arsjamforelse').om()")).toBe(true);
+    });
+});

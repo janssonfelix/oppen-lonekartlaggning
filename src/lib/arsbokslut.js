@@ -91,3 +91,23 @@ export function jamforArsbokslut(forra, nu) {
         samma_k: forra.k === nu.k,
     };
 }
+
+/**
+ * Hantelns rader: en per yrkesgrupp som har ett gap båda åren, med kvinnors medianlön i procent av mäns förra året
+ * (fore) och i år (efter), sorterade efter förändringens storlek. riktning: 'mot' när kvoten närmar sig 100,
+ * 'fran' när den fjärmar sig, 'lika' när den inte ändrats. Grupper som saknar gap ett av åren (under tröskeln,
+ * eller fanns inte) räknas i utelamnade.
+ * @param {ReturnType<typeof jamforArsbokslut>} j
+ */
+export function hantelRader(j) {
+    if (!j) return { rader: [], utelamnade: 0 };
+    const alla = [...j.grupper.kvar, ...j.grupper.nya, ...j.grupper.borta];
+    const med = alla.filter(g => typeof g.gapForra === 'number' && typeof g.gapNu === 'number');
+    const rader = med.map(g => {
+        const fore = 100 + g.gapForra, efter = 100 + g.gapNu;
+        const dFore = Math.abs(fore - 100), dEfter = Math.abs(efter - 100);
+        const riktning = Math.abs(dEfter - dFore) < 0.05 ? 'lika' : dEfter < dFore ? 'mot' : 'fran';
+        return { namn: g.yrke, fore, efter, riktning, andring: efter - fore };
+    }).sort((a, b) => Math.abs(b.andring) - Math.abs(a.andring));
+    return { rader, utelamnade: alla.length - med.length };
+}
