@@ -162,6 +162,12 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ### Utveckling
 
+- **Dokumenten är allmänna.** README och den tekniska planens §2 säger vilket omfång verktyget har i dag (AID,
+  BAS och SKR:s statistik; allt organisationsspecifikt kommer ur paketet). Intern beslutsjargong ("beslut av
+  produktägaren") är ersatt av beslut med datum och ADR; checklistan för skarp data, datauttagsguiden,
+  lagrumshänvisningarna och planens öppna punkter förutsätter ingen viss pilot, jurist eller
+  dataskyddsombud; organisationsfilens designdokument är en formatspecifikation, och dess beslutshistorik
+  ligger utanför repot.
 - **Läsande tester delar fönster:** `delatFonster()` i testriggen, med en vakt som fäller det test som lämnar fönstret
   ändrat. Tre filer delar (20–25 % snabbare var för sig), elva prövades utan tillräcklig vinst och lämnades; hela
   sviten gick från 176 och 164 s till 168 och 142 s körda växelvis (teknisk plan §6).
