@@ -4241,6 +4241,26 @@ function egenTabellBlock(t, { id, urval, demo, troskelNot }) {
         tabell: { rubriker: t.kolumner.map(c => c.rubrik), rader: t.rader.map(r => r.map((v, j) => skriv(v, (t.kolumner[j] || {}).typ))) } };
 }
 
+/**
+ * Blocket Jämförelse med förra året (ADR-54): nyckeltalen sida vid sida ur jämförelsen (jamforArsbokslut) och
+ * stycken om flaggade yrkesgrupper och Att göra. Talen skrivs efter radens typ.
+ * @param {any} j jämförelsen
+ * @param {{id?: string, forraAr: number, nuAr: number, urval?: string, demo?: boolean, troskelNot?: string}} val
+ */
+function arsjamforelseBlock(j, { id = 'arsjamforelse', forraAr, nuAr, urval, demo, troskelNot }) {
+    const { fore, efter } = _inled({ demo, urval, troskelNot });
+    const skriv = (v, typ) => (v == null ? '–' : typ === 'kr' ? _kr(v) : typ === 'pct' ? _pct(v, 1) : formatTal(v, 0));
+    const diff = (v, typ) => (v == null ? '–' : `${v > 0 ? '+' : v < 0 ? '−' : '±'}${skriv(Math.abs(v), typ)}${typ === 'pct' ? '-enheter' : ''}`);
+    const g = j.grupper, p = j.punkter;
+    const namn = l => l.map(x => x.yrke).join(', ');
+    const st = [`Jämfört med lönekartläggningen ${forraAr}. Lönemått bara för yrkesgrupper där båda könen når minsta gruppstorlek; gapet är kvinnors medianlön mot mäns.`,
+        `Flaggade yrkesgrupper i Lika arbete: ${g.kvar.length} båda åren${g.kvar.length ? ` (${namn(g.kvar)})` : ''}, ${g.nya.length} nya${g.nya.length ? ` (${namn(g.nya)})` : ''} och ${g.borta.length} inte längre flaggade${g.borta.length ? ` (${namn(g.borta)})` : ''}.`,
+        `Att göra: ${forraAr} var ${p.klaraForra} av ${p.totaltForra} punkter avbockade, ${nuAr} ${p.klaraNu} av ${p.totaltNu}.`
+            + (p.kvarFranForra.length ? ` Av ${forraAr} års ${p.kvarFranForra.length} öppna punkter är ${p.kvarFranForra.filter(q => q.klarNu).length} klara i år.` : '')];
+    return { id, rubrik: 'Jämförelse med förra året', stycken: [...fore, ...st, ...efter], provat: null, fragor: null,
+        tabell: { rubriker: ['Mått', String(forraAr), String(nuAr), 'Skillnad'], rader: j.nyckeltal.map(r => [r.etikett, skriv(r.forra, r.typ), skriv(r.nu, r.typ), diff(r.diff, r.typ)]) } };
+}
+
 /** Ren text för urklipp (reserv): tabbar mellan kolumner, numrerade frågor. */
 function tillText(b) {
     const delar = [b.rubrik, ...b.stycken];
@@ -4250,7 +4270,7 @@ function tillText(b) {
     return delar.join('\n\n');
 }
 
-    return { likaArbeteGrupper, justeratGapInomYrke, gruppBlock, parBlock, avsnittBlock, tillWordHtml, tillText, stabilitetKort, egenTabellBlock };
+    return { likaArbeteGrupper, justeratGapInomYrke, gruppBlock, parBlock, avsnittBlock, tillWordHtml, tillText, stabilitetKort, egenTabellBlock, arsjamforelseBlock };
 })();
 const _ruLikaArbeteGrupper = __mirrorRapportunderlag.likaArbeteGrupper;
 const _ruJusteratGap = __mirrorRapportunderlag.justeratGapInomYrke;
@@ -4261,6 +4281,7 @@ const _ruTillWordHtml = __mirrorRapportunderlag.tillWordHtml;
 const _ruTillText = __mirrorRapportunderlag.tillText;
 const _ruStabilitetKort = __mirrorRapportunderlag.stabilitetKort;
 const _ruEgenTabellBlock = __mirrorRapportunderlag.egenTabellBlock;
+const _ruArsjamforelseBlock = __mirrorRapportunderlag.arsjamforelseBlock;
 
 // ---- speglar src/lib/gapuppdelning.js ----
 const __mirrorGapuppdelning = (() => {
@@ -5747,11 +5768,32 @@ function jamforArsbokslut(forra, nu) {
     };
 }
 
-    return { byggArsbokslut, valideraArsbokslut, jamforArsbokslut };
+/**
+ * Hantelns rader: en per yrkesgrupp som har ett gap båda åren, med kvinnors medianlön i procent av mäns förra året
+ * (fore) och i år (efter), sorterade efter förändringens storlek. riktning: 'mot' när kvoten närmar sig 100,
+ * 'fran' när den fjärmar sig, 'lika' när den inte ändrats. Grupper som saknar gap ett av åren (under tröskeln,
+ * eller fanns inte) räknas i utelamnade.
+ * @param {ReturnType<typeof jamforArsbokslut>} j
+ */
+function hantelRader(j) {
+    if (!j) return { rader: [], utelamnade: 0 };
+    const alla = [...j.grupper.kvar, ...j.grupper.nya, ...j.grupper.borta];
+    const med = alla.filter(g => typeof g.gapForra === 'number' && typeof g.gapNu === 'number');
+    const rader = med.map(g => {
+        const fore = 100 + g.gapForra, efter = 100 + g.gapNu;
+        const dFore = Math.abs(fore - 100), dEfter = Math.abs(efter - 100);
+        const riktning = Math.abs(dEfter - dFore) < 0.05 ? 'lika' : dEfter < dFore ? 'mot' : 'fran';
+        return { namn: g.yrke, fore, efter, riktning, andring: efter - fore };
+    }).sort((a, b) => Math.abs(b.andring) - Math.abs(a.andring));
+    return { rader, utelamnade: alla.length - med.length };
+}
+
+    return { byggArsbokslut, valideraArsbokslut, jamforArsbokslut, hantelRader };
 })();
 const _abBygg = __mirrorArsbokslut.byggArsbokslut;
 const _abValidera = __mirrorArsbokslut.valideraArsbokslut;
 const _abJamfor = __mirrorArsbokslut.jamforArsbokslut;
+const _abHantelRader = __mirrorArsbokslut.hantelRader;
 
 // ---- speglar src/lib/organisationspaket.js ----
 const __mirrorOrganisationspaket = (() => {

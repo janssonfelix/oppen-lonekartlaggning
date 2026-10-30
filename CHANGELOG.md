@@ -30,7 +30,10 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   där båda könen når minsta gruppstorlek, och Att göra-punkternas läge — inga individer. Spara konfigurationen när
   årets kartläggning är klar och läs in den nästa år, så visar *Jämförelse med förra året* under *Spara och läsa in
   arbetet* nyckeltalen sida vid sida, vilka yrkesgrupper som är flaggade båda åren, nya och inte längre flaggade, och
-  vilka av förra årets öppna punkter som är klara.
+  vilka av förra årets öppna punkter som är klara. Samma jämförelse står som avsnittet *Jämförelse med förra året*
+  i Word-utkastet och PDF-rapporten (efter *Åtgärder och tidsplan*, bara när ett bokslut är inläst), som block i
+  rapportunderlaget och som en hantel per yrkesgrupp: förra årets kvot som streck, årets som punkt, grön när den
+  närmat sig lika lön och orange när den fjärmat sig.
 - **All personal ingår, även BAS K och uppåt.** Begränsningen till BAS A–J är borttagen (ADR-21 upphävd):
   chefsnivåerna läses in och analyseras som alla andra intervall, i stället för att bara räknas. Rimlighetskontrollen
   kräver bara att BAS är en bokstav. Efter användartest: lönekartläggningen ska omfatta hela organisationen.

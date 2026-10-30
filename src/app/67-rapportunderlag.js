@@ -94,6 +94,11 @@ function _rapportunderlagBlockExport() {
         block.push(_ruGruppBlock(g, { ...opt, id: `yrke:${i}`, justerat: _ruJusteratGap(rader, { k: statGolv() }), ki, arsbelopp }));
     });
     par.forEach((p, i) => block.push(_ruParBlock(p, { ...opt, id: `par:${i}`, kravProxy })));
+    // Jämförelsen med förra året (ADR-54), när ett bokslut är inläst.
+    if (typeof arsjamforelse === 'function' && typeof _ruArsjamforelseBlock === 'function') {
+        const jf = arsjamforelse();
+        if (jf) block.push(_ruArsjamforelseBlock(jf.j, { ...opt, forraAr: jf.forra.ar, nuAr: jf.nu.ar }));
+    }
     // Egna tabeller (ADR-52): ett block per tabell, ur samma recept som Word-utkastet, PDF-rapporten och Excel.
     (state.rapportTabeller || []).forEach((r, i) => {
         if (typeof _trTabeller !== 'function' || typeof _ruEgenTabellBlock !== 'function') return;

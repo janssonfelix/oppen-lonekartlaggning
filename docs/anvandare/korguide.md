@@ -304,6 +304,8 @@ exportera* → *Rapportens innehåll* kan ni ordna om och ta bort tabellerna.
   där båda könen når minsta gruppstorlek, och Att göra-punkternas läge. Läs in filen nästa år, så visar
   **Jämförelse med förra året** (samma avsnitt) vad som ändrats: nyckeltalen sida vid sida, vilka yrkesgrupper som
   är flaggade båda åren, nya och inte längre flaggade, och vilka av förra årets öppna punkter som är klara.
+  Samma jämförelse följer med som ett avsnitt i Word-utkastet och PDF-rapporten, som ett block i rapportunderlaget
+  och som ett diagram där varje yrkesgrupp visas som ett streck (förra året) och en punkt (i år).
 - **"Rensa all data"** (under **Inställningar**, rubriken *Rensa*) när du är klar — eller stäng bara fliken; inget ligger kvar.
 - Arkivera de färdiga dokumenten (Word/PDF/Excel) enligt era informationshanterings-
   rutiner. Glöm inte att planera in nästa års lönekartläggning.

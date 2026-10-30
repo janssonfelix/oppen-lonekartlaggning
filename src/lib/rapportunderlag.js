@@ -396,6 +396,26 @@ export function egenTabellBlock(t, { id, urval, demo, troskelNot }) {
         tabell: { rubriker: t.kolumner.map(c => c.rubrik), rader: t.rader.map(r => r.map((v, j) => skriv(v, (t.kolumner[j] || {}).typ))) } };
 }
 
+/**
+ * Blocket Jämförelse med förra året (ADR-54): nyckeltalen sida vid sida ur jämförelsen (jamforArsbokslut) och
+ * stycken om flaggade yrkesgrupper och Att göra. Talen skrivs efter radens typ.
+ * @param {any} j jämförelsen
+ * @param {{id?: string, forraAr: number, nuAr: number, urval?: string, demo?: boolean, troskelNot?: string}} val
+ */
+export function arsjamforelseBlock(j, { id = 'arsjamforelse', forraAr, nuAr, urval, demo, troskelNot }) {
+    const { fore, efter } = _inled({ demo, urval, troskelNot });
+    const skriv = (v, typ) => (v == null ? '–' : typ === 'kr' ? _kr(v) : typ === 'pct' ? _pct(v, 1) : formatTal(v, 0));
+    const diff = (v, typ) => (v == null ? '–' : `${v > 0 ? '+' : v < 0 ? '−' : '±'}${skriv(Math.abs(v), typ)}${typ === 'pct' ? '-enheter' : ''}`);
+    const g = j.grupper, p = j.punkter;
+    const namn = l => l.map(x => x.yrke).join(', ');
+    const st = [`Jämfört med lönekartläggningen ${forraAr}. Lönemått bara för yrkesgrupper där båda könen når minsta gruppstorlek; gapet är kvinnors medianlön mot mäns.`,
+        `Flaggade yrkesgrupper i Lika arbete: ${g.kvar.length} båda åren${g.kvar.length ? ` (${namn(g.kvar)})` : ''}, ${g.nya.length} nya${g.nya.length ? ` (${namn(g.nya)})` : ''} och ${g.borta.length} inte längre flaggade${g.borta.length ? ` (${namn(g.borta)})` : ''}.`,
+        `Att göra: ${forraAr} var ${p.klaraForra} av ${p.totaltForra} punkter avbockade, ${nuAr} ${p.klaraNu} av ${p.totaltNu}.`
+            + (p.kvarFranForra.length ? ` Av ${forraAr} års ${p.kvarFranForra.length} öppna punkter är ${p.kvarFranForra.filter(q => q.klarNu).length} klara i år.` : '')];
+    return { id, rubrik: 'Jämförelse med förra året', stycken: [...fore, ...st, ...efter], provat: null, fragor: null,
+        tabell: { rubriker: ['Mått', String(forraAr), String(nuAr), 'Skillnad'], rader: j.nyckeltal.map(r => [r.etikett, skriv(r.forra, r.typ), skriv(r.nu, r.typ), diff(r.diff, r.typ)]) } };
+}
+
 /** Ren text för urklipp (reserv): tabbar mellan kolumner, numrerade frågor. */
 export function tillText(b) {
     const delar = [b.rubrik, ...b.stycken];

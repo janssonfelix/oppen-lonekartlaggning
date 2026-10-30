@@ -68,6 +68,9 @@ const RM_DIAGRAM = [
       om: () => { const v = /** @type {HTMLInputElement} */ ((document.getElementById('bas-select-kon') || {})).value; return !v || v === '__ALLA__'; } },
     { id: 'chart-lp-konlagen', flik: 'lonepolitik', avsnitt: 'struktur', rubrik: 'Var i referensens lönespann ligger kvinnor och män' },
     { id: 'chart-likvardighet-heatmap', flik: 'likvardighet', avsnitt: 'likvardigt', rubrik: 'Kandidatpar i likvärdigt arbete', kraverAllaPar: true },
+    // Jämförelsen med förra året (ADR-54) ritas av panelen i Dokumentera & exportera, bara när ett bokslut är inläst.
+    { id: 'chart-arsjamforelse', flik: 'dokumentera', avsnitt: 'arsjamforelse', rubrik: 'Kvinnors medianlön i procent av mäns per yrkesgrupp, förra året (strecket) och i år (punkten)',
+      om: () => !!state.forraArsbokslut },
 ];
 
 // ---- Urval: vilka avsnitt som följer med, och i vilken ordning ----
@@ -167,6 +170,48 @@ function rmPerBasAvsnitt(d, k) {
  * @param {any[]} d
  * @param {number} k
  */
+/**
+ * Avsnittet Jämförelse med förra året (ADR-54): nyckeltalen sida vid sida, flaggade yrkesgrupper som kvar, nya och
+ * borta, hanteln och Att göra. Finns bara när ett bokslut är inläst; står efter Åtgärder och tidsplan.
+ * @param {(avsnitt: string) => any[]} diagram
+ */
+function rmArsjamforelseAvsnitt(diagram) {
+    if (typeof arsjamforelse !== 'function') return null;
+    const jf = arsjamforelse();
+    if (!jf) return null;
+    const { forra, nu, j } = jf;
+    if (!j) return null;
+    const stycke = (text, stil) => ({ typ: 'stycke', text, ...(stil ? { stil } : {}) });
+    const skriv = (v, typ) => (v == null ? '—' : typ === 'kr' ? `${svTal(Math.round(v), 0)} kr` : typ === 'pct' ? svPct(v, 1) : svTal(v, 0));
+    const diff = (v, typ) => (v == null ? '—' : `${v > 0 ? '+' : v < 0 ? '−' : '±'}${skriv(Math.abs(v), typ)}${typ === 'pct' ? '-enheter' : ''}`);
+    const text = s => ({ text: s });
+    const delar = [
+        stycke(`Jämfört med lönekartläggningen ${forra.ar} (bokslut sparat ${forra.skapat}, minsta gruppstorlek ${forra.k}). Lönemått bara för yrkesgrupper där båda könen når minsta gruppstorlek; gapet är kvinnors medianlön mot mäns, negativt när kvinnor ligger lägre.`, 'dampad'),
+        { typ: 'tabell', kolumner: [{ rubrik: 'Mått', typ: 'text' }, { rubrik: String(forra.ar), typ: 'text' }, { rubrik: String(nu.ar), typ: 'text' }, { rubrik: 'Skillnad', typ: 'text' }],
+          rader: j.nyckeltal.map(r => [r.etikett, text(skriv(r.forra, r.typ)), text(skriv(r.nu, r.typ)), text(diff(r.diff, r.typ))]) },
+        { typ: 'rubrik', niva: 3, text: 'Lika arbete' },
+    ];
+    const grupptabell = (rubrik, lista, tom) => {
+        if (!lista.length) { delar.push(stycke(`${rubrik}: ${tom}`)); return; }
+        delar.push(stycke(`${rubrik} (${lista.length}):`));
+        delar.push({ typ: 'tabell', kolumner: [{ rubrik: 'Yrkesgrupp', typ: 'text' }, { rubrik: `Gap ${forra.ar}`, typ: 'pct1' }, { rubrik: `Gap ${nu.ar}`, typ: 'pct1' }],
+            rader: lista.map(g => [g.yrke, g.gapForra, g.gapNu]) });
+    };
+    grupptabell('Flaggade båda åren', j.grupper.kvar, 'ingen yrkesgrupp.');
+    grupptabell('Nya flaggade', j.grupper.nya, 'inga.');
+    grupptabell('Inte längre flaggade', j.grupper.borta, 'ingen.');
+    delar.push(...diagram('arsjamforelse'));
+    const p = j.punkter;
+    delar.push({ typ: 'rubrik', niva: 3, text: 'Att göra' });
+    delar.push(stycke(`${forra.ar} var ${p.klaraForra} av ${p.totaltForra} punkter avbockade; ${nu.ar} ${p.klaraNu} av ${p.totaltNu}.`));
+    if (p.kvarFranForra.length) {
+        delar.push({ typ: 'tabell', kolumner: [{ rubrik: `Öppna punkter ${forra.ar}`, typ: 'text' }, { rubrik: 'Läge i år', typ: 'text' }],
+            rader: p.kvarFranForra.map(q => [q.titel || q.id, q.klarNu ? 'klar' : q.finnsNu ? 'fortfarande öppen' : 'finns inte längre i listan']) });
+    } else delar.push(stycke(`${forra.ar} hade inga öppna punkter.`));
+    const utelamnat = j.samma_k ? [] : [`bokslutet sparades med minsta gruppstorlek ${forra.k}, i år gäller ${nu.k}: yrkesgrupper jämförs bara där båda könen når respektive års gräns`];
+    return { id: 'arsjamforelse', numrerad: true, rubrik: 'Jämförelse med förra året', utelamnat, delar };
+}
+
 function rmEgnaAvsnitt(d, k) {
     const recept = state.rapportTabeller || [];
     if (!recept.length || !d.length || typeof _trTabeller !== 'function') return null;
@@ -341,6 +386,7 @@ function _rapportModellExport({ alla = false, bada = false } = {}) {
     // ---- Lönestruktur per BAS-intervall (tabellerna ur arbetsgivarnas egna utkast) ----
     const perbas = rmPerBasAvsnitt(d, k);
     const egna = rmEgnaAvsnitt(d, k);
+    const arsjamf = d.length ? rmArsjamforelseAvsnitt(diagram) : null;
 
     // ---- 6. Åtgärder och tidsplan ----
     /** @type {{id: string, rubrik: string, utelamnat: string[], delar: any[], [k: string]: any}} */
@@ -415,6 +461,9 @@ function _rapportModellExport({ alla = false, bada = false } = {}) {
         // Egna tabeller (ADR-52) står efter avsnittet per BAS-intervall och följer med när det gör det; de väljs i stället
         // genom att tabeller läggs till eller tas bort under Dokumentera & exportera.
         if (egna && (alla || urval.med.includes('perbas'))) { const i = valda.findIndex(a => a.id === 'perbas'); valda.splice(i >= 0 ? i + 1 : valda.length, 0, egna); }
+        // Jämförelsen med förra året (ADR-54) står efter Åtgärder och tidsplan och följer med när det gör det; den finns
+        // bara när ett bokslut är inläst.
+        if (arsjamf && (alla || urval.med.includes('atgarder'))) { const i = valda.findIndex(a => a.id === 'atgarder'); valda.splice(i >= 0 ? i + 1 : valda.length, 0, arsjamf); }
         let nr = 0;
         return valda.map(a => ({ ...a, grundrubrik: a.rubrik, rubrik: a.numrerad ? `${++nr}. ${a.rubrik}` : a.rubrik }));
     };
