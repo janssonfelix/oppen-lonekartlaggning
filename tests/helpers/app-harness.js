@@ -6,14 +6,15 @@
  * PapaParse/JSZip) stubbas, och en shim i SAMMA eval exponerar de top-level
  * `const`-bindningar (state m.fl.) som annars inte läcker till window.
  *
- * Varje anrop ger ett FÄRSKT fönster — testfiler delar inte state.
+ * Varje anrop ger ett FÄRSKT fönster — testfiler delar inte state. Tester som bara läser kan dela ett fönster
+ * med delatFonster(), som fäller det test som lämnar tillståndet ändrat.
  */
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import vm from 'node:vm';
 import { JSDOM } from 'jsdom';
-import { afterAll, afterEach, beforeEach } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach } from 'vitest';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, '..', '..');
@@ -176,4 +177,43 @@ export function createAppWindow({ url = 'http://localhost/', html: sida = html }
     _fonster.add(win);
     if (_iTest) _dettaTest.push(win);
     return win;
+}
+
+/** Vakten för delade fönster: tröskeln, antalet öppna dialoger och den aktiva fliken. */
+export function utgangslage(w) {
+    const d = w.document;
+    return {
+        troskel: w.eval('kInstalld()'),
+        dialoger: d.querySelectorAll('.glossary-modal[style*="flex"], .yrke-modal[style*="flex"], dialog[open]').length,
+        flik: d.querySelector('.nav-item.active')?.getAttribute('data-tab'),
+    };
+}
+
+// Det som ett delat fönster inte får lämna ändrat: hela state utom beräkningscacharna, urvalet i Utforska och öppna
+// dialoger. Fliken räknas inte: att byta flik är att läsa.
+const _CACHAR = new Set(['bootstrapCI', 'powerAnalysis', 'result']);
+const _somLista = (k, v) => (_CACHAR.has(k) || /cache/i.test(k) ? undefined : v?.constructor?.name === 'Set' || v?.constructor?.name === 'Map' ? [...v] : v);
+export function tillstandsavtryck(w) {
+    const ut = { urval: JSON.stringify(w.__explorerUrval()), dialoger: utgangslage(w).dialoger };
+    for (const k of Object.keys(w.__state)) if (!/cache/i.test(k)) ut[k] = JSON.stringify(w.__state[k], _somLista);
+    return ut;
+}
+
+/**
+ * Ett fönster som testerna i gruppen delar (hela filen på toppnivå, annars en describe): skapas i beforeAll, stängs i
+ * afterAll. Bara för tester som läser; afterEach fäller det test som lämnar tillståndet ändrat, så att nästa test
+ * inte passerar eller faller av fel skäl. Håll dem få: varje levande fönster väger 25 MB (se _stang).
+ * @param {((w: any) => any)|null} [forbered] - t.ex. `w => w.__loadDemoData()`
+ * @param {() => any} [skapa] - en annan rigg än createAppWindow, t.ex. `() => fonster(25)`
+ * @returns {() => any} fönstret
+ */
+export function delatFonster(forbered, skapa = createAppWindow) {
+    let w, avtryck;
+    beforeAll(async () => { w = skapa(); await forbered?.(w); avtryck = tillstandsavtryck(w); });
+    afterEach(() => {
+        const nu = tillstandsavtryck(w), andrat = Object.keys(nu).filter(k => nu[k] !== avtryck[k]);
+        if (andrat.length) throw new Error(`Testet ändrade det delade fönstret (${andrat.join(', ')}): det behöver ett eget fönster.`);
+    });
+    afterAll(() => { if (w) _stang(w); });
+    return () => w;
 }

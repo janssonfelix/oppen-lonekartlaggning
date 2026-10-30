@@ -13,7 +13,7 @@
  * att kasta + förväntade element finns", inte exakta värden (det täcks av kärn-testerna).
  */
 import { describe, it, expect, beforeAll } from 'vitest';
-import { createAppWindow } from './helpers/app-harness.js';
+import { createAppWindow, tillstandsavtryck, utgangslage } from './helpers/app-harness.js';
 
 let win;
 
@@ -22,6 +22,25 @@ beforeAll(() => {
 });
 
 describe('#1 röktest: boot', () => {
+    it('det delade fönstret står i utgångsläget', () => {
+        expect(utgangslage(win)).toEqual({ troskel: 10, dialoger: 0, flik: 'dashboard' });
+    });
+
+    it('vakten ser en ändrad tröskel, en öppen dialog och ett ändrat tillstånd, men inte en ritad flik', () => {
+        const w = createAppWindow();
+        w.__loadDemoData();
+        const fore = JSON.stringify(tillstandsavtryck(w));
+        w.document.querySelector('.nav-item[data-tab="struktur"]').click();
+        expect(JSON.stringify(tillstandsavtryck(w))).toBe(fore);
+        w.eval('openGlossary()');
+        w.eval('sattKTroskel(25, { fraga: false })');
+        expect(utgangslage(w)).toEqual({ troskel: 25, dialoger: 1, flik: 'struktur' });
+        const andrat = tillstandsavtryck(w), bas = JSON.parse(fore);
+        expect(Object.keys(andrat).filter(k => andrat[k] !== bas[k])).toEqual(['dialoger', 'kTroskel']);
+        w.__state.data[0].lon = 1;
+        expect(tillstandsavtryck(w).data).not.toBe(bas.data);
+    });
+
     it('app.js bootar utan kast och exponerar nyckel-API', () => {
         expect(win.__bootErr).toBeUndefined();
         expect(typeof win.__renderTabContent).toBe('function');
