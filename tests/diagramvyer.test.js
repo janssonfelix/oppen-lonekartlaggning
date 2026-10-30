@@ -4,8 +4,13 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { valideraFigur, figurTillTabell } from '../src/lib/figur.js';
-import { createAppWindow } from './helpers/app-harness.js';
+import { createAppWindow, delatFonster, utgangslage } from './helpers/app-harness.js';
 import { vanliga, figurMedLiten, person, skapaRigg } from './helpers/diagramvyer-rigg.js';
+
+const demo = delatFonster(w => w.__loadDemoData());
+it('det delade fönstret står i utgångsläget', () => {
+    expect(utgangslage(demo())).toEqual({ troskel: 10, dialoger: 0, flik: 'dashboard' });
+});
 
 const { w, behallare, utdata, medData } = skapaRigg();
 
@@ -137,8 +142,7 @@ describe('Struktur: chart-sektorer', () => {
         expect(() => valideraFigur(f, 't')).not.toThrow();
     });
     it('ritas av kärnan med demodatan: en punkt per sektor och serie, inga staplar, talen i tips stämmer med tabellen', () => {
-        const w2 = createAppWindow();
-        w2.__loadDemoData();
+        const w2 = demo();
         w2.__renderTabContent('struktur');
         const el = w2.document.getElementById('chart-sektorer');
         expect(el.data).toBeUndefined();
@@ -223,8 +227,7 @@ describe('Lika arbete: chart-skevhet-overview och chart-perbas-gap', () => {
         expect(() => valideraFigur(f, 't')).not.toThrow();
     });
     it('ritas av kärnan med demodatan: punkter, intervall och förklaring med symbol för de statusar som finns; inget BAS under tröskeln', () => {
-        const w2 = createAppWindow();
-        w2.__loadDemoData();
+        const w2 = demo();
         w2.__renderTabContent('matrix');
         for (const id of ['chart-skevhet-overview', 'chart-perbas-gap']) {
             const el = w2.document.getElementById(id);
@@ -263,8 +266,7 @@ describe('Lika arbete: chart-skevhet-overview och chart-perbas-gap', () => {
 
 describe('Lika arbete: översiktstabellen med inbyggd grafik (huvudvyn)', () => {
     it('en rad per BAS med antal, medianer, skillnad, kvot med intervall och status — samma tal som figuren', () => {
-        const w2 = createAppWindow();
-        w2.__loadDemoData();
+        const w2 = demo();
         w2.__renderTabContent('matrix');
         const d = w2.document, rader = [...d.querySelectorAll('#la-oversikt tbody tr')];
         const figur = d.getElementById('chart-skevhet-overview')._figur, hantel = d.getElementById('chart-skevhet-hantel')._figur;
@@ -311,8 +313,7 @@ describe('Lika arbete: översiktstabellen med inbyggd grafik (huvudvyn)', () => 
 
 describe('diagram i Lika arbete, Struktur och de övriga flikarna', () => {
     it('lönespridning per BAS och kön: lådor utan enskilda avvikare, och ett kön under tröskeln ritas inte', () => {
-        const w2 = createAppWindow();
-        w2.__loadDemoData();
+        const w2 = demo();
         w2.__renderTabContent('matrix');
         const el = w2.document.getElementById('chart-skevhet-lador'), f = el._figur;
         expect(f.lager.map(l => [l.marke, l.serie, l.avvikare, l.form])).toEqual([['lada', 'Kvinna', false, undefined], ['lada', 'Man', false, undefined]]);
@@ -342,8 +343,7 @@ describe('diagram i Lika arbete, Struktur och de övriga flikarna', () => {
         expect(() => valideraFigur(f, 't')).not.toThrow();
     });
     it('yrkesgruppstabellen ritar kvoten i raden, och exporten bär fortfarande bara talet', () => {
-        const w2 = createAppWindow();
-        w2.__loadDemoData();
+        const w2 = demo();
         w2.__renderTabContent('matrix');
         const rader = [...w2.document.querySelectorAll('#matrix-table tbody tr')].filter(tr => tr._euRow && !tr._euRow.samladMedian);
         expect(rader.length).toBeGreaterThan(0);
@@ -782,8 +782,7 @@ describe('Jämförelsestatistik: figurerna', () => {
 
 describe('Lönepolitik: chart-lp-bandmap', () => {
     it('ritas av kärnan: referensens och organisationens spann som intervall, yrkesgrupper som punkter i tre klasser efter könsfördelning', () => {
-        const w2 = createAppWindow();
-        w2.__loadDemoData();
+        const w2 = demo();
         w2.__renderTabContent('lonepolitik');
         const el = w2.document.getElementById('chart-lp-bandmap'), f = el._figur;
         expect(el.data).toBeUndefined();
@@ -884,8 +883,7 @@ describe('Likvärdigt arbete: chart-likvardighet-heatmap', () => {
         expect(() => valideraFigur(f, 't')).not.toThrow();
     });
     it('exporten bär stämpeln om undantaget för fliken', () => {
-        const w2 = createAppWindow();
-        w2.__loadDemoData();
+        const w2 = demo();
         w2.__renderTabContent('likvardighet');
         const el = w2.document.getElementById('chart-likvardighet-heatmap');
         if (!el || !el._figur) return;   // demodatan har för få kandidatpar: vyns text visas
@@ -897,7 +895,7 @@ describe('Likvärdigt arbete: chart-likvardighet-heatmap', () => {
 // ---- Utforska ----
 describe('Utforska: små grupper visas markerade och exporteras bara när rutan är ikryssad', () => {
     const MARKOR = 71337;
-    const oppna = () => {
+    const skapa = () => {
         const w2 = createAppWindow();
         const rad = (bas, kon, lon, alder = 40) => ({ bas, kon, lon, alder, yrke: '100 X', aid: '100', yrkeLabel: 'X' });
         w2.__state.data = [...Array.from({ length: 12 }, (_, i) => rad('A', 'man', 30000 + i * 7)), ...Array.from({ length: 3 }, () => rad('A', 'kvinna', MARKOR)),
@@ -908,6 +906,7 @@ describe('Utforska: små grupper visas markerade och exporteras bara när rutan 
         w2.__renderTabContent('utforska');
         return w2;
     };
+    const delat = delatFonster(null, skapa), oppna = () => delat();   // ett läsande test delar, ett som ändrar tar skapa()
     const valj = (w2, val) => { for (const [id, v] of Object.entries(val)) w2.document.getElementById(id).value = v; w2.__renderExplorer(); return w2.document.getElementById('chart-explore'); };
     const export_ = w2 => {
         const u = w2.eval('_rfExportFigur(document.getElementById("chart-explore"))');
@@ -951,7 +950,7 @@ describe('Utforska: små grupper visas markerade och exporteras bara när rutan 
         expect(f.lager[0].data.some(d => d.liten && d.varde >= MARKOR)).toBe(true);   // den lilla cellen finns i vyn, märkt
     });
     it('tomt urval: vyns text, ingen figur och inget att exportera', () => {
-        const w2 = oppna();
+        const w2 = skapa();
         w2.__explorerSetFilter({ bas: ['FINNS-INTE-ALLS'] });
         const el = valj(w2, { 'explore-rad': 'bas', 'explore-kolumn': 'ingen', 'explore-typ': 'auto' });
         expect(el._figur).toBeDefined();   // ett okänt filtervärde tas bort tyst: allt visas
@@ -1604,8 +1603,7 @@ describe('metodförbehåll under diagram', () => {
         expect(w.eval('_laTrattGlesNot(0)')).toBeNull();
     });
     it('i verktyget: noten under tratten och samma mening under diagrammet i rapporten; metodbilagan har raden', () => {
-        const w2 = createAppWindow();
-        w2.__loadDemoData();
+        const w2 = demo();
         w2.__renderTabContent('matrix');
         const d = w2.document, antal = d.getElementById('chart-la-tratt')._figur.lager.filter(l => l.marke === 'punkt').reduce((n, l) => n + l.data.length, 0);
         const not = d.getElementById('chart-la-tratt-metod-not');

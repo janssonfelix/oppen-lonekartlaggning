@@ -162,6 +162,9 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ### Utveckling
 
+- **Läsande tester delar fönster:** `delatFonster()` i testriggen, med en vakt som fäller det test som lämnar fönstret
+  ändrat. Tre filer delar (20–25 % snabbare var för sig), elva prövades utan tillräcklig vinst och lämnades; hela
+  sviten gick från 176 och 164 s till 168 och 142 s körda växelvis (teknisk plan §6).
 - **Riktig Node-typning:** `@types/node` som utvecklingsberoende i stället för den egna minimala typfilen; ett
   typfel i byggskriptet som typfilen dolde är rättat.
 - **Stilmallens svans:** 26 klasser utan användning är borttagna och fem komponentklasser med samma deklaration som
