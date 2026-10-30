@@ -19,6 +19,8 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   Lönepolitik) och mot jämförelsestatistiken. Växeln *Jämför mot* är borttagen, och fliken syns så snart underlaget och
   en referens är inlästa. Länkar till Lönepolitik leder till Jämförelse.
 - **Dokumentera & exportera är menyns sista steg,** efter Fördjupa, och *Klar här?*-raderna går genom fördjupningen dit.
+- **Ingen 60+-zon i åldersdiagrammen.** Histogrammet och ålderskurvan i Ålder & karriär markerar inte längre
+  successionszonen med ett rött fält; nyckeltalet *Andel 60+* och riskrutan bär den läsningen.
 
 ### Exporter
 

@@ -21458,7 +21458,7 @@ function renderDemografi(bas) {
     const pol = isAll ? null : policyFor(null, bas);
     // Andel av eget kön per ålder, 5-årigt glidande medel (win=2)
     const aLo = Math.max(18, Math.floor(minA)), aHi = Math.min(67, Math.ceil(maxA));
-    ritaFigur('chart-demo-agecurve', _demoAgecurveFigur(_ageShareCurve(basKv, aLo, aHi, 2), _ageShareCurve(basMa, aLo, aHi, 2), aHi), { hojd: 300 });
+    ritaFigur('chart-demo-agecurve', _demoAgecurveFigur(_ageShareCurve(basKv, aLo, aHi, 2), _ageShareCurve(basMa, aLo, aHi, 2)), { hojd: 300 });
     // P10/median/P90 per femårsgrupp (en åldersgrupp under tröskeln ritas inte). Avsnittets nyckeltal är antalet grupper.
     { const f = _demoBandFigur(df, kTroskel(), pol, aLo, aHi);
       if (f) ritaFigur('chart-demo-spread', f, { hojd: 320 }); else rensaFigur('chart-demo-spread');
@@ -21468,19 +21468,16 @@ function renderDemografi(bas) {
 function _demoTrendNot(n) { return `Trendlinje för hela urvalet visas inte: urvalet har ${n} personer, färre än ${kTroskel()}.`; }
 
 // Åldershistogrammets figur (diagramkärnan, ADR-39): andel per åldersgrupp, staplad per kön, mot Sveriges sysselsatta.
-// Raka etiketter, inte lutade; zonen markerar 60 år och äldre
-// (successionszonen). Zonen har ingen etikett i bilden: kortets text förklarar den, och en etikett hamnar under exportknappen.
+// Raka etiketter, inte lutade. Ingen zon för 60+: nyckeltalet «Andel 60+» ovanför bär successionsläsningen.
 function _demoHistFigur({ pctKv, pctMa, refPct, isAll }) {
     const serie = (namn, farg, varden) => ({
         marke: 'stapel', lage: 'staplad', serie: namn, farg, opacitet: 0.85,
         data: AGE_BRACKETS.map((x, i) => ({ x, y: varden[i] })),
         tips: d => [[d.x], [namn, _figTalformat(d.y, 'pct')]]
     });
-    const aldre = AGE_BRACKETS.filter(a => parseInt(a, 10) >= 60);
     return { beskrivning: 'Åldersfördelning i valt BAS-intervall jämfört med Sveriges sysselsatta befolkning. Nyckeltal i rutorna ovan.',
         x: { skala: 'band', titel: 'Åldersgrupp', ordning: AGE_BRACKETS.slice() },
         y: { skala: 'linjar', titel: isAll ? 'Andel av organisationen (%)' : 'Andel av BAS-intervall (%)' },
-        referens: aldre.length ? [{ typ: 'zon', x0: aldre[0], x1: aldre[aldre.length - 1], farg: PALETTE.semantic.kritisk, opacitet: 0.07 }] : [],
         lager: [serie('Kvinna', PALETTE.kon.kvinna, pctKv), serie('Man', PALETTE.kon.man, pctMa),
             { marke: 'linje', serie: 'Sveriges sysselsatta (SCB AKU)', farg: PALETTE.semantic.referens, streck: 'prickad', punkter: true,
               data: AGE_BRACKETS.map((x, i) => ({ x, y: refPct[i] })),
@@ -21506,12 +21503,11 @@ function _demoPyramidFigur({ pctKv, pctMa, isAll }) {
 }
 
 // Utjämnade kurvor ritas monotont: de går aldrig utanför värdena.
-function _demoAgecurveFigur(kv, ma, aHi) {
+function _demoAgecurveFigur(kv, ma) {
     const kurva = (serie, farg, c, vilka) => ({ marke: 'linje', serie, farg, kurva: 'monoton', tjocklek: 2.5,
         data: c.ages.map((x, i) => ({ x, y: c.share[i] })), tips: d => [[`${d.x} år`], [serie, `${_figTalformat(d.y, 'pct')} av ${vilka}`]] });
     return { beskrivning: 'Åldersfördelning som kurva per kön: andel av det egna könet per ålder, 5-årigt glidande medel.',
         x: { skala: 'linjar', titel: 'Ålder' }, y: { skala: 'linjar', titel: 'Andel av könet (%)' },
-        referens: aHi > 60 ? [{ typ: 'zon', x0: 60, x1: aHi, farg: PALETTE.semantic.kritisk, opacitet: 0.06 }] : [],
         lager: [kurva('Kvinna', PALETTE.kon.kvinna, kv, 'kvinnorna'), kurva('Man', PALETTE.kon.man, ma, 'männen')] };
 }
 
