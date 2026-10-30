@@ -161,6 +161,10 @@ describe('överblicken i exporterna', () => {
     });
 });
 describe('fliken följer referenserna', () => {
+    it('inga texter pekar på den borttagna fliken Lönepolitik', () => {
+        const html = createAppWindow().document.documentElement.outerHTML;
+        expect(html).not.toMatch(/<strong>Lönepolitik|och Lönepolitik jämför|referensen i Lönepolitik/);
+    });
     it('Ta bort referensen döljer Jämförelse när ingen annan referens finns', () => {
         const w = fonster();
         w.document.getElementById('btn-referens-aterga').click();
