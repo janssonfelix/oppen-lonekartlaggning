@@ -1297,9 +1297,9 @@ Kända brister och obesvarade frågor, så att de inte lever bara i en konversat
     ombeds bekräfta dem.
 19. **README i roten har ingen bild:** skärmbilder checkas inte in, så en bild där kräver ett
     beslut om att lägga en bildfil i källkoden.
-20. **Publicering:** plattformen för att publicera källkoden är inte vald.
+20. *(Löst: källkoden ligger publikt på GitHub sedan 2026-10-23, med demosidan på GitHub Pages; se §6.)*
 21. **Inför användning hos fler arbetsgivare:** licens- eller användaravtal, prismodell och support; en beskriven
-    väg in för andra arbetsvärderingssystem än BAS A–J; för offentlig sektor offentlighetsprincipen och
+    väg in för andra arbetsvärderingssystem än BAS; för offentlig sektor offentlighetsprincipen och
     arkivering av utdata, mall för konsekvensbedömning; en jurist-granskad metodbeskrivning och en handledning
     för facklig samverkan. (Textförslaget till information till de anställda, tillgänglighetsredogörelsen och
     säkerhetsbeskrivningen på en sida finns i `docs/anvandare/`; textförslaget väntar på dataskyddsombudet.)

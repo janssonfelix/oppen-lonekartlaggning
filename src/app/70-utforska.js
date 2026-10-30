@@ -7,9 +7,9 @@
 // diagram + tabell direkt. All beräkning sker i src/lib/utforska.js (speglad som
 // _utComputePivot m.fl.); figurerna byggs i 71-utforska-figur.js.
 //
-// SMÅ GRUPPER (ADR-14): Utforska visar grupper under kTroskel(), tonade. Den
-// som använder verktyget har redan rådatan; skyddet gäller det som LÄMNAR
-// verktyget. Exporten — tabellens CSV/urklipp och diagrammets exportmeny —
+// SMÅ GRUPPER (ADR-14, ADR-51): på skärmen visas alla grupper som andra (kTroskel() är 1 där); i exportläget
+// märks grupper under tröskeln med klassen explore-liten, som exporten läser. Den som använder verktyget har
+// redan rådatan; skyddet gäller det som LÄMNAR verktyget. Exporten — tabellens CSV/urklipp och diagrammets exportmeny —
 // utelämnar dem därför om inte rutan "Ta med grupper under k" är ikryssad.
 // ====================================================================
 
@@ -375,14 +375,14 @@ function _renderExplorerNote(model, extra) {
     const antal = model.celler.filter(c => c.liten).length;
     const k = kTroskel();
     const sma = antal
-        ? `${antal} ${antal === 1 ? 'grupp har' : 'grupper har'} under ${k} personer och visas tonade (randiga staplar, streckad kant på punkter). `
+        ? `${antal} ${antal === 1 ? 'grupp har' : 'grupper har'} under ${k} personer. `
           + 'De följer inte med i exporten om du inte kryssar i rutan ovanför diagrammet.'
         : '';
     const konsma = model.spec.delaKon && model.spec.matt !== 'n'
         ? model.celler.filter(c => !c.liten).reduce((s, c) => s + (c.nKv < k ? 1 : 0) + (c.nMa < k ? 1 : 0), 0) : 0;
     const kon = konsma
         ? `${konsma} ${konsma === 1 ? 'könsvärde bygger' : 'könsvärden bygger'} på färre än ${k} personer; `
-          + 'de visas tonade och följer inte med i exporten om du inte kryssar i rutan.'
+          + 'de följer inte med i exporten om du inte kryssar i rutan.'
         : '';
     const dolda = model.dolda
         ? `${model.dolda} ${model.dolda === 1 ? 'grupp döljs' : 'grupper döljs'} av gruppvillkoren.` : '';

@@ -909,7 +909,7 @@ exports[`golden: Excel-exporterna på fast dataset > "Excel (alla flikar)" match
     ],
     [
       "Bladet Lönepolitik",
-      "Läget i referensens lönespann (0 % = P10, 100 % = P90) per yrkesgrupp, per kön och BAS-intervall samt fördelningen i spannets tredjedelar per kön och efterlevnaden per BAS-intervall — samma mått och samma regler för minsta gruppstorlek som fliken Lönepolitik: yrkesgrupper under 10 personer utan lönemått, könsuppdelade mått bara där varje kön har minst 10 personer.",
+      "Läget i referensens lönespann (0 % = P10, 100 % = P90) per yrkesgrupp, per kön och BAS-intervall samt fördelningen i spannets tredjedelar per kön och efterlevnaden per BAS-intervall — samma mått och samma regler för minsta gruppstorlek som avsnittet Mot ställningstagandet i fliken Jämförelse: yrkesgrupper under 10 personer utan lönemått, könsuppdelade mått bara där varje kön har minst 10 personer.",
     ],
   ],
   "Metodik": [
