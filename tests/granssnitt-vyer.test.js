@@ -231,7 +231,7 @@ describe('formulären i Löneöversyn', () => {
 });
 
 describe('informationsikonen har ett utförande', () => {
-    const FLIKAR = ['dashboard', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn', 'kon', 'lonepolitik', 'utforska', 'dokumentera', 'info'];
+    const FLIKAR = ['dashboard', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn', 'kon', 'benchmark', 'utforska', 'dokumentera', 'info'];
     it('varje .info-tip bär linjeikonen «info» och ingen text, också de som ritas av flikarna', () => {
         const w = createAppWindow();
         w.__loadDemoData();
@@ -281,7 +281,7 @@ describe('ett bildspråk: linjeikoner, inga bildtecken', () => {
     it('det ritade gränssnittet har inga bildtecken', () => {
         const w = createAppWindow();
         w.__loadDemoData();
-        for (const f of ['dashboard', 'bestammelser', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn', 'handlingsplan', 'dokumentera', 'kon', 'lonepolitik', 'utforska', 'info']) w.__renderTabContent(f);
+        for (const f of ['dashboard', 'bestammelser', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn', 'handlingsplan', 'dokumentera', 'kon', 'benchmark', 'utforska', 'info']) w.__renderTabContent(f);
         const fynd = new Set();
         // Varje textnod prövas, också text som står bredvid ett element (en ikon framför en fetstilt mening).
         const gang = w.document.createTreeWalker(w.document.body, w.NodeFilter.SHOW_TEXT);
@@ -311,7 +311,7 @@ describe('svenska ord i vyerna', () => {
         w.__loadDemoData();
         w.__state.forecast.budget = { mode: 'pct', value: 2 };
         w.__state.forecast.generell = { mode: 'pct', value: 1 };
-        for (const f of ['dashboard', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn', 'kon', 'lonepolitik', 'utforska', 'dokumentera']) w.__renderTabContent(f);
+        for (const f of ['dashboard', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn', 'kon', 'benchmark', 'utforska', 'dokumentera']) w.__renderTabContent(f);
         const synligt = [...w.document.querySelectorAll('h1, h2, h3, h4, option, summary, label, button, th, .slutsats, .stat-box, .insight-box, .dvr-row')].map(el => el.textContent.replace(/\s+/g, ' ').trim());
         const rester = synligt.filter(t => /(^|[\s(])vs\.?([\s)]|$)|\bOLS\b|[\s(]sd[\s):]|Compa-ratio|grön-cirkl|Z ≥/i.test(t));
         expect(rester.map(t => t.slice(0, 80))).toEqual([]);
@@ -324,7 +324,7 @@ describe('svenska ord i vyerna', () => {
 });
 
 describe('rubriknivåerna hoppar inte', () => {
-    const FLIKAR = ['dashboard', 'bestammelser', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn', 'handlingsplan', 'dokumentera', 'kon', 'lonepolitik', 'utforska', 'benchmark', 'info'];
+    const FLIKAR = ['dashboard', 'bestammelser', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn', 'handlingsplan', 'dokumentera', 'kon', 'utforska', 'benchmark', 'info'];
     it('i varje vy följer rubrikerna på varandra utan att hoppa över en nivå (h1 är sidans rubrik)', () => {
         const w = createAppWindow();
         w.__loadDemoData();
@@ -515,7 +515,7 @@ describe('procenttal i flikarna har en decimal', () => {
         w.__loadDemoData();
         w.__state.forecast.budget = { mode: 'pct', value: 2 };
         w.__state.forecast.generell = { mode: 'pct', value: 1 };
-        for (const f of ['dashboard', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn', 'kon', 'lonepolitik', 'utforska']) w.__renderTabContent(f);
+        for (const f of ['dashboard', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn', 'kon', 'benchmark', 'utforska']) w.__renderTabContent(f);
         const fynd = new Set();
         for (const el of w.document.querySelectorAll('[id^="view-"] *')) {
             if (el.children.length || el.closest('script, style, svg, code, pre, .info-tip, .bara-export, [data-export-text], #diagnostic-results')) continue;

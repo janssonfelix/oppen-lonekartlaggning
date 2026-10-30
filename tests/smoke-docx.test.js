@@ -65,11 +65,11 @@ describe('Word-utkastet som .docx', () => {
         const s2 = (w.eval('rapportModell()').avsnitt.find(a => a.id === 'struktur') || { delar: [] });
         expect(s2.delar.some(d => d.typ === 'rubrik' && d.text === 'Kvinnors och mäns lön per BAS-intervall')).toBe(false);
     });
-    it('rapportmodellen: elva avsnitt, tabeller med tal som tal, och lönegapet som kvinnors lön i procent av mäns', () => {
+    it('rapportmodellen: tolv avsnitt, tabeller med tal som tal, och lönegapet som kvinnors lön i procent av mäns', () => {
         const w = createAppWindow();
         w.__loadDemoData();
         const m = w.eval('rapportModell()');
-        expect(m.avsnitt.map(a => a.id)).toEqual(['sammanfattning', 'regler', 'lika', 'likvardigt', 'struktur', 'perbas', 'atgarder', 'samverkan', 'beslut', 'regression', 'metod']);
+        expect(m.avsnitt.map(a => a.id)).toEqual(['sammanfattning', 'regler', 'lika', 'likvardigt', 'struktur', 'referenser', 'perbas', 'atgarder', 'samverkan', 'beslut', 'regression', 'metod']);
         expect(m.demo).toBe(true);
         const delar = id => m.avsnitt.find(a => a.id === id).delar;
         const tabeller = id => delar(id).filter(p => p.typ === 'tabell');
@@ -146,7 +146,7 @@ describe('Word-utkastet som .docx', () => {
         w.__loadDemoData();
         const rubriker = () => w.eval('rapportModell()').avsnitt.map(a => a.rubrik);
         expect(w.eval('rapportUrval()').namn).toBe('Hela dokumentationen');
-        expect(rubriker().map(r => r.slice(0, 2))).toEqual(['1.', '2.', '3.', '4.', '5.', '6.', '7.', '8.', '9.', 'Bi', 'Bi']);
+        expect(rubriker().map(r => r.slice(0, 2))).toEqual(['1.', '2.', '3.', '4.', '5.', '6.', '7.', '8.', '9.', '10', 'Bi', 'Bi']);
         w.eval("sattRapportUrval('ledning')");
         expect(w.eval('rapportUrval()').namn).toBe('Ledningsbrief');
         expect(w.eval('rapportModell()').avsnitt.map(a => a.id)).toEqual(['sammanfattning', 'lika', 'likvardigt', 'atgarder']);
@@ -155,12 +155,12 @@ describe('Word-utkastet som .docx', () => {
         // Eget urval: annan ordning, ett avsnitt bort; okända namn hoppas över.
         w.eval("sattRapportUrval({ ordning: ['struktur', 'sammanfattning', 'finns-inte', 'lika'], med: ['struktur', 'lika', 'metod', 'finns-inte'] })");
         expect(w.eval('rapportModell()').avsnitt.map(a => a.id)).toEqual(['struktur', 'lika', 'metod']);
-        expect(w.eval('rapportUrval()').namn).toBe('Eget urval (3 av 11 avsnitt)');
+        expect(w.eval('rapportUrval()').namn).toBe('Eget urval (3 av 12 avsnitt)');
         expect(rubriker()[0]).toMatch(/^1\. Struktur/);
         // Utkastet följer urvalet; listan med alla avsnitt gör det inte.
         const html = w.eval('_buildDocumentationDraftHtml()');
         expect(html).not.toMatch(/Samverkan med arbetstagarna/);
-        expect(w.eval('rapportModell({ alla: true })').avsnitt).toHaveLength(11);
+        expect(w.eval('rapportModell({ alla: true })').avsnitt).toHaveLength(12);
         // Rensning återställer urvalet.
         w.eval('_rensaAllData()');
         expect(w.__state.rapportUrval).toBeNull();
@@ -170,7 +170,7 @@ describe('Word-utkastet som .docx', () => {
         w.__loadDemoData();
         w.eval("sattRapportUrval('facklig')");
         const cfg = w.eval('JSON.parse(JSON.stringify(buildConfigSnapshot()))');
-        expect(cfg.rapportUrval.med).toEqual(['sammanfattning', 'regler', 'lika', 'likvardigt', 'struktur', 'perbas', 'samverkan', 'regression', 'metod']);
+        expect(cfg.rapportUrval.med).toEqual(['sammanfattning', 'regler', 'lika', 'likvardigt', 'struktur', 'referenser', 'perbas', 'samverkan', 'regression', 'metod']);
         w.eval("sattRapportUrval('hela')");
         expect(w.eval('buildConfigSnapshot().rapportUrval')).toBeNull();
         w.__cfg = cfg;
@@ -193,7 +193,7 @@ describe('Word-utkastet som .docx', () => {
         d.querySelector('.nav-item[data-tab="dokumentera"]').click();
         const word = () => d.getElementById('besked-word').textContent;
         const m = w.eval('rmBesked(rapportModell())');
-        expect(word()).toContain(`Hela dokumentationen · 11 avsnitt · ${m.tabeller} tabeller · ${m.diagram} diagram · ${m.fyllIn} fält att fylla i`);
+        expect(word()).toContain(`Hela dokumentationen · 12 avsnitt · ${m.tabeller} tabeller · ${m.diagram} diagram · ${m.fyllIn} fält att fylla i`);
         expect(d.getElementById('nyckel-ex-urval').textContent).toBe('Hela dokumentationen');
         // Excel: bladen i beskedet är bladen i filen.
         // Excel: beskedet listar bladen (att listan är filens blad prövas mot en riktig arbetsbok i exports.golden.test.js).
@@ -202,11 +202,11 @@ describe('Word-utkastet som .docx', () => {
         expect(d.getElementById('besked-excel').textContent).toContain('färre än 10 personer');
         expect(d.getElementById('besked-zip').textContent).toContain(`Word-utkastet, Excel-filen (${blad.length} blad) och diagrammen i alla flikar`);
         // PDF-rapporten är samma modell: med hela dokumentationen följer bilagorna med, med ett kortare urval inte.
-        expect(d.getElementById('besked-pdf').textContent).toContain('Hela dokumentationen · 11 avsnitt');
+        expect(d.getElementById('besked-pdf').textContent).toContain('Hela dokumentationen · 12 avsnitt');
         expect(d.getElementById('besked-pdf').textContent).toContain('bilagor med flikarnas tabeller och diagram');
         // Urvalslistan: en rad per avsnitt, utan paragrafhänvisningar; ett färdigt urval ändrar beskedet.
         const rader = () => [...d.querySelectorAll('#rapport-urval .urval-rad')];
-        expect(rader()).toHaveLength(11);
+        expect(rader()).toHaveLength(12);
         expect(d.getElementById('rapport-urval').textContent).not.toMatch(/§|2023\/970/);
         d.querySelector('[data-urval-fast="ledning"]').click();
         expect(word()).toContain('Ledningsbrief · 4 avsnitt');
@@ -216,7 +216,7 @@ describe('Word-utkastet som .docx', () => {
         // En ruta och en flytt ger ett eget urval; första raden kan inte flyttas upp.
         const ruta = d.querySelector('[data-urval-med="metod"]');
         ruta.checked = true; ruta.dispatchEvent(new w.Event('change', { bubbles: true }));
-        expect(word()).toContain('Eget urval (5 av 11 avsnitt)');
+        expect(word()).toContain('Eget urval (5 av 12 avsnitt)');
         expect(rader()[0].querySelector('[data-urval-flytta="-1"]').disabled).toBe(true);
         rader()[2].querySelector('[data-urval-flytta="-1"]').click();
         expect(rader().map(r => r.dataset.urvalId).slice(0, 3)).toEqual(['sammanfattning', 'lika', 'regler']);

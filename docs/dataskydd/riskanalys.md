@@ -1,6 +1,6 @@
 # Risk- och sårbarhetsanalys (dataskydd och informationssäkerhet) — Öppen lönekartläggning
 
-**Bygge:** `2026.10.19` · **Artefakt-SHA-256:** `aeb70db0c97eefea40dab01da4be81d1c16410381e536a471776038b97ca69ef` (se `dist/RELEASE.txt`).
+**Bygge:** `2026.10.19` · **Artefakt-SHA-256:** `aebc2a38e40ddd28990eb7eb25ba5d6127af521dece07326a6afe420ede26321` (se `dist/RELEASE.txt`).
 **Granskningsdatum:** 2026-10-20.
 **Granskningsmetod:** kodläsning påstående för påstående + statisk sökning i källkod och bygge +
 körning av det byggda verktyget i jsdom och i Chromium (utan nätverk) med syntetiska testfiler.
@@ -411,7 +411,12 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   med radnummer: den har inga exportverktyg, ingår inte i någon export eller bilaga och döljs vid utskrift
   av fliken (webbläsarröktestet kräver det).
 
-- **Lönepolitik:** i exportläget har fliken en mellannivå — för en yrkesgrupp med minst 5 men färre än
+- **Jämförelse, överblicken (ADR-55):** organisationens P10, median och P90 per yrkesgrupp är gruppvärden och följer
+  tröskeln i exportläget, så att listan, bilden, talen, bladet *Referenser*, rapportavsnittet *Lönerna mot
+  referenserna* och blocket i rapportunderlaget bara bygger på grupper som når den. Referensernas egna tal och tabellen
+  statistiken mot ställningstagandet bär inga organisationsvärden och maskeras inte. Könsuppdelade mått förekommer
+  inte. Vaktas av `tests/smoke-referenser.test.js`.
+- **Jämförelse, avsnittet mot ställningstagandet (tidigare fliken Lönepolitik):** i exportläget har avsnittet en mellannivå — för en yrkesgrupp med minst 5 men färre än
   tröskeln anges bara antal, under 5 maskeras gruppen helt och namnges i en not; lönemått och
   läget per kön kräver tröskeln. Bladet *Lönepolitik* i Excelfilen med alla flikar (och i ZIP-filens
   Excelfil) följer samma trappa och samma regel per kön; vid tröskeln 5 eller lägre finns ingen
@@ -493,6 +498,7 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   underlaget, PDF-rapporten en låst kopia av Word-utkastet (ritad ur samma rapportmodell, så att de två inte kan
   säga olika saker) och ZIP-filen allt — Word-utkastet, Excel-filen och bilder av diagrammen. Vid varje knapp
   står ett **förhandsbesked** om vad filen innehåller och vad den utelämnar (till exempel grupper under tröskeln).
+- **Bladet *Referenser*** i Excelfilen (och i ZIP-filens Excelfil) byggs i exportläget ur samma rader som överblicken i Jämförelse: grupper under tröskeln får ingen rad (§6.5).
 - **Exportgrinden:** ingen export läser en tabell eller ett diagram ur en flik som är ritad
   med en äldre tröskel. När tröskeln ändras ritas bara den flik som syns om; övriga töms och ritas på nytt när de
   öppnas eller när en export behöver dem.

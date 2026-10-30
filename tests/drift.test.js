@@ -25,6 +25,7 @@ import * as libStat from '../src/lib/stat.js';
 import * as libFc from '../src/lib/loneoversyn.js';
 import * as libSt from '../src/lib/struktur.js';
 import * as libLp from '../src/lib/lonepolitik.js';
+import * as libRf from '../src/lib/referenser.js';
 import * as libRng from '../src/lib/rng.js';
 import * as libLv from '../src/lib/likvardighet.js';
 import * as libFalt from '../src/lib/falt.js';
@@ -86,7 +87,7 @@ const allAliases = MODULES.flatMap(m => Object.values(m.expose)).filter(Boolean)
 const allEntries = MODULES.flatMap(m => Object.keys(m.expose));
 const M = new Function(`${mirrorsSrc}\n;return { ${[...allAliases, ...MODULES.map(m => m.ns)].join(', ')} };`)();
 const libByFile = { 'stat.js': libStat, 'loneoversyn.js': libFc, 'struktur.js': libSt,
-    'lonepolitik.js': libLp, 'rng.js': libRng, 'likvardighet.js': libLv, 'falt.js': libFalt, 'urval.js': libUrval, 'referens.js': libRef, 'datakvalitet.js': libDq, 'rapportunderlag.js': libRu, 'gapuppdelning.js': libGu, 'individflaggor.js': libIf, 'utforska.js': libUt, 'organisationspaket.js': libOp, 'attgora.js': libAg, 'aid-etiketter.js': libAidEt, 'aid.js': libAid, 'sektor.js': libSk, 'ansvar.js': libAn, 'aidkontroll.js': libAk, 'skr-personal.js': libSkrP, 'skrreferens.js': libSkrR, 'jamforelse.js': libJf, 'namn.js': libNamn, 'docx.js': libDocx, 'figur.js': libFigur, 'regression.js': libReg,
+    'lonepolitik.js': libLp, 'rng.js': libRng, 'likvardighet.js': libLv, 'falt.js': libFalt, 'urval.js': libUrval, 'referens.js': libRef, 'datakvalitet.js': libDq, 'rapportunderlag.js': libRu, 'gapuppdelning.js': libGu, 'individflaggor.js': libIf, 'utforska.js': libUt, 'organisationspaket.js': libOp, 'attgora.js': libAg, 'aid-etiketter.js': libAidEt, 'aid.js': libAid, 'sektor.js': libSk, 'ansvar.js': libAn, 'aidkontroll.js': libAk, 'skr-personal.js': libSkrP, 'skrreferens.js': libSkrR, 'jamforelse.js': libJf, 'referenser.js': libRf, 'namn.js': libNamn, 'docx.js': libDocx, 'figur.js': libFigur, 'regression.js': libReg,
     'prioritering.js': libPr, 'livscykel.js': libLc, 'organisationsfil.js': libOf, 'perbas.js': libPb, 'tabellrecept.js': libTr, 'arsbokslut.js': libAb };
 
 describe('lib-speglar: 09-lib-speglar.js genereras ur src/lib/', () => {

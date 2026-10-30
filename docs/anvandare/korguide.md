@@ -103,11 +103,12 @@ Exportera en personalfil (CSV eller XLSX) med dessa kolumner:
    (enskilda löner som avviker kraftigt inom sitt BAS-intervall) — ofta registerfel. Ser
    något fel ut, rätta i källfilen och ladda om.
 4. *(Om ni inte har ett paket)* Läs in ert **lönepolitiska ställningstagande**
-   (P10/median/P90 per BAS) och ge det ett namn — Prioritering, Lönepolitik och statusrutan
+   (P10/median/P90 per BAS) och ge det ett namn — Prioritering, Jämförelse och statusrutan
    i Att göra jämför mot det; utan ställningstagande visar de vad som behöver läsas in.
-   Läs även in **jämförelsestatistik** om ni har den — då visas fliken Jämförelsestatistik. Där står
-   organisationens P10, median och P90 bredvid jämförelsens för varje yrke, och två diagram visar
-   var ni ligger i marknadens spann och vilka yrken som avviker mest. Arbetsvärderingspoäng laddas **inte** upp separat — lägg till kolumnen **Poäng** i strukturfilen (se avsnitt 2).
+   Läs även in **jämförelsestatistik** om ni har den. Fliken **Jämförelse** syns när underlaget och minst
+   en referens är inlästa, och visar överblicken mot båda, avsnittet mot ställningstagandet och avsnittet mot
+   statistiken, där organisationens P10, median och P90 står bredvid statistikens för varje yrke och två
+   diagram visar var ni ligger i marknadens spann och vilka yrken som avviker mest. Arbetsvärderingspoäng laddas **inte** upp separat — lägg till kolumnen **Poäng** i strukturfilen (se avsnitt 2).
 5. Gå igenom kortet **Att göra** på Översikt. Överst står status mot de fyra lagkraven,
    därunder **Börja här** med de tre viktigaste punkterna och sist alla punkter per
    kategori. Bocka av en punkt när du hanterat den; listan kan exporteras som CSV och
@@ -133,7 +134,7 @@ också när det är hopfällt.
   diagram och tabeller. Ett klick på en grupp i ett diagram eller en tabellrad gör samma sak; Escape tar bort markeringen.
 - **Inställningar** (sidhuvudet) har minsta gruppstorlek, kommun eller region, och valet mellan **vägledande läge**
   (förklaringarna syns) och **kompakt läge** (förklaringarna är undanfällda — för den som kan verktyget).
-- Flikarna i huvudflödet (Regler & praxis → Handlingsplan → Dokumentera & exportera) avslutas med en
+- Flikarna i huvudflödet (Regler & praxis → Handlingsplan, fördjupningen → Dokumentera & exportera) avslutas med en
   **"Klar här? Nästa steg"-rad**. Använd **"Visa beräkningen"**-knapparna vid resultaten för att se hur en siffra
   räknats fram.
 - **Tabeller med grafik i raden:** där ett tal jämförs mot lika lön (100 %) är talet också ritat i raden — en punkt
@@ -224,10 +225,16 @@ också när det är hopfällt.
    en not under raden. Tänk på det innan ni delar exporten. Sparade scenarier (A/B) visar
    rågapet bara när båda könen når den tröskel som gäller just då.
 6. **Fördjupa (ej lagkrav)** — **Ålder & karriär** (lön mot ålder, lönegapet per åldersgrupp — var i karriären
-   skillnaden finns —, lönespridning över ålder, åldersstruktur och livscykel), **Lönepolitik** (lönerna mot
-   referensen: bandkartan, könens läge i spannet och hur stor andel av kvinnorna respektive männen som ligger i
-   spannets nedre, mellersta och övre tredjedel) och **Utforska**, som börjar med tabellen **Löneöversikt**
-   (hela löneläget per BAS, kön och yrkesgrupp).
+   skillnaden finns —, lönespridning över ålder, åldersstruktur och livscykel), **Jämförelse** och **Utforska**, som börjar med
+   tabellen **Löneöversikt** (hela löneläget per BAS, kön och yrkesgrupp).
+   **Jämförelse** har tre avsnitt. *Överblick* visar per yrkesgrupp var löneläget och statistiken ligger mot
+   ställningstagandet, som är referenspunkten: skillnaden percentil för percentil, läget i spannet (0 = referensens
+   P10, 100 = dess P90), mönstret i ord, ett förslag på vilken referens som säger något om gruppen, en bild med
+   de tre spannen och tabellen statistiken mot ställningstagandet. Ligger både löneläget och statistiken över
+   ställningstagandet har det halkat efter marknaden; ligger bara löneläget över har organisationen gått före.
+   Förslaget är ett förslag, ingen regel. *Mot ställningstagandet* är bandkartan, könens läge i spannet och hur stor
+   andel av kvinnorna respektive männen som ligger i spannets nedre, mellersta och övre tredjedel. *Mot
+   jämförelsestatistiken* är tabellen och diagrammen mot statistiken, med filter på BAS och sektor.
 7. **Utforska** — bygg egna vyer när en fråga inte besvaras av flikarna
    ovan: välj rader och ev. kolumner, mått och diagramtyp, om du vill se helheten eller
    uppdelat per kön, och begränsa urvalet med
@@ -257,7 +264,7 @@ exportera* → *Rapportens innehåll* kan ni ordna om och ta bort tabellerna.
 
 ## 5. Producera dokumentationen
 
-1. Öppna fliken **Dokumentera & exportera** (fas 4). Gå först igenom **färdigchecken**
+1. Öppna fliken **Dokumentera & exportera**, menyns sista steg. Gå först igenom **färdigchecken**
    och robusthetspanelen överst — de visar om något har missats.
    De fyra exporterna har var sin uppgift: **Word-utkastet är rapporten**, **Excel-filen är underlaget**,
    **PDF-rapporten är en låst kopia** av Word-utkastet att verifiera mot, och **ZIP-filen är allt** (Word, Excel och

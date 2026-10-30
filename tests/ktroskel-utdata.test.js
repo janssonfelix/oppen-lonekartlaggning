@@ -18,7 +18,7 @@ describe('k-tröskeln under 5 i Lönepolitik', () => {
         expect(w.eval('_lpTier(4)')).toBe('full');
         expect(w.eval('_lpTier(2)')).toBe('masked');
         w.__renderTabContent('lonepolitik');
-        expect(w.document.getElementById('view-lonepolitik').textContent).not.toMatch(/under 5 maskeras/);
+        expect(w.document.getElementById('view-benchmark').textContent).not.toMatch(/under 5 maskeras/);
     });
 });
 

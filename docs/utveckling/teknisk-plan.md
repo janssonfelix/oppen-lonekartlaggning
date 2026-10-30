@@ -118,11 +118,11 @@ Icke förhandlingsbara arkitektoniska garantier:
 | Prioritering | — | Prioritetsindex (avvikelse × volym × jämställdhet), kostnadssimulering. Könsgapet i gruppen visas och räknas in i indexet bara när båda könen har minst k personer (ADR-12; annars räknas jämställdhetsdelen som 0). Jämför mot organisationens lönepolitiska ställningstagande (ur ett organisationspaket eller en egen namngiven fil; ingen inbyggd referens, ADR-28) eller mot jämförelsestatistiken |
 | Fördjupning | — | Ålder & karriär (lön mot ålder med trend, lönegap per åldersgrupp, percentilband över ålder, lönefördelning per kön, livscykel ålder×kön×BAS och åldersstruktur), benchmark mot jämförelsestatistik (fliken syns när filen är uppladdad; spannet per yrke och avvikelsen i P10, median och P90) |
 | EU-direktivets rapportmått | EU 2023/970 art. 9 | Struktur & rapportmått: kvartilfördelning, representation per BAS, distributionellt gap, medel- och mediangap, med EU-lönerapporten som Excel. **Tecknet:** verktyget räknar lönegapet som (kvinnor − män) / män och visar det i alla flikar och blad som kvinnors lön i procent av mäns (under 100 % = kvinnor lägre). EU-lönerapportens blad och rapportens avsnitt *Struktur och lönetransparens* (Word/PDF) redovisar i stället direktivets mått, (män − kvinnor) / män i procent, enligt art. 9: positivt tal = kvinnor lägre; kolumnrubriken och en metodrad säger det. Tecknet vänds på ett ställe, `tillDirektivtecken` i `src/lib/struktur.js`; beloppet är detsamma |
-| Lönepolitik | — | Analys mot organisationens ställningstagande: bandkarta, könens läge i spannet och fördelningen i spannets tredjedelar per kön, efterlevnad, täckningsgrad; tomläge utan ställningstagande. Talen följer med som bladet *Lönepolitik* i Excel (alla flikar) — yrkesgrupperna mot sitt spann, läget per kön och BAS-intervall, tredjedelarna och efterlevnaden, med flikens regler för minsta gruppstorlek (`_lpExcelBlad`) — bara när ett ställningstagande är inläst |
+| Jämförelse | — | Löneläget och statistiken mot ställningstagandet per yrkesgrupp (överblick, ADR-55), avsnittet mot jämförelsestatistiken (ADR-35) och avsnittet mot ställningstagandet: bandkarta, könens läge i spannet och fördelningen i spannets tredjedelar per kön, efterlevnad, täckningsgrad; tomläge utan ställningstagande. Talen följer med som bladet *Lönepolitik* i Excel (alla flikar) — yrkesgrupperna mot sitt spann, läget per kön och BAS-intervall, tredjedelarna och efterlevnaden, med flikens regler för minsta gruppstorlek (`_lpExcelBlad`) — bara när ett ställningstagande är inläst |
 | Organisationspaket | — | En fil med organisationens benämningar, grundinställningar, ställningstagande och jämförelsestatistik; systemägaren skapar det i verktyget, handläggaren läser in det i ett steg (ADR-28) |
 | Utforska | — | Egna vyer: rader × ev. kolumner (BAS, AID, yrkesgrupp inom BAS, sektor, AID-mellannivå, ålder, kön, lönespann; rader även hela urvalet), tio mått, visning som helhet eller per kön, urval med villkor (alla/något, "inte", lön och ålder) och gruppvillkor på uträknat mått, elva diagramtyper (staplar, liggande, hantel, bubbla, låda, individpunkter, punktsvärm, regnmoln, heatmap, grupperade, staplade). Små grupper visas som andra på skärmen och utelämnas ur exporten om inte rutan är ikryssad (ADR-14, ADR-51). Klick på en grupp öppnar gruppdossiern |
 | Export | — | Exportmeny på varje diagram: PNG (1920 × 1080 / 1600 × 900), SVG och diagramdata (urklipp/CSV) |
-| Dokumentera & exportera | — | Fas 4: färdigcheck och robusthetspanel, all export, rapportunderlag att klistra in i egen mall (ADR-20), samverkan och Spara och läsa in arbetet (konfiguration, ögonblicksbild, jämförelse med förra året — ADR-54, självdiagnostik). De fyra samlade exporterna har var sin uppgift: **Word-utkastet är rapporten, Excel-filen underlaget, PDF-rapporten en låst kopia av Word-utkastet och ZIP-filen allt**. Word och PDF ritas ur samma rapportmodell (`58-rapportmodell.js`), i ett valt urval av avsnitt (hela dokumentationen, ledningsbrief, facklig dialog eller eget); varje export har ett förhandsbesked om vad den innehåller och utelämnar, och exportgrinden ser till att inget läses ur en flik ritad med en äldre tröskel. Därtill JPA-protokoll och handlingsplansunderlag |
+| Dokumentera & exportera | — | Menyns sista steg: färdigcheck och robusthetspanel, all export, rapportunderlag att klistra in i egen mall (ADR-20), samverkan och Spara och läsa in arbetet (konfiguration, ögonblicksbild, jämförelse med förra året — ADR-54, självdiagnostik). De fyra samlade exporterna har var sin uppgift: **Word-utkastet är rapporten, Excel-filen underlaget, PDF-rapporten en låst kopia av Word-utkastet och ZIP-filen allt**. Word och PDF ritas ur samma rapportmodell (`58-rapportmodell.js`), i ett valt urval av avsnitt (hela dokumentationen, ledningsbrief, facklig dialog eller eget); varje export har ett förhandsbesked om vad den innehåller och utelämnar, och exportgrinden ser till att inget läses ur en flik ritad med en äldre tröskel. Därtill JPA-protokoll och handlingsplansunderlag |
 | Gränssnittets form | — | Alla flikar följer en mall: en rad om vad fliken svarar på (*Visa mer*), urval, nyckeltal i en rad, huvudresultat, och fördjupning i hopfällbara avsnitt som säger sitt nyckeltal i rubrikraden. Sök i sidhuvudet markerar en grupp i alla diagram och tabeller (länkade vyer). Panelen Inställningar samlar det som gäller alla flikar. Två lägen: vägledande och kompakt. Byggt för datorskärm; surfplatta och delat fönster fungerar, telefon är inte ett användningsfall (ADR-41) |
 | Diagram | — | Ritas av diagramkärnan (D3, ADR-39) ur ett figurformat; formen väljs efter uppgiften och färgen efter vad den ska säga — reglerna står i `diagramkarnan.md` §10. Där ett diagram skulle visa för lite står en tabell med grafik i raden |
 | Underlagets kvalitet | — | Fem kriterier med OK/Varning/Kritisk; svagaste kriteriet avgör (ADR-19) |
@@ -229,7 +229,7 @@ adaptern verkligen delegerar vaktas av `tests/drift.test.js`:
   rätt grupp. Utskriftsfönstret för checklistorna (`printScaffoldView`) läser `:root` och allt från `.dold` till
   stilmallens slut ur den körande stilmallen och lägger in det som byggt stilark (`adoptedStyleSheets`): ett `<style>`-element
   som skriptet skapar blockeras av den ärvda CSP:n (`style-src-elem`), så fönstret var tidigare helt ostilat.
-- **Tester:** Vitest — 2462 tester i 71 filer: rena `src/lib/`-moduler, CSV-parsning, jsdom-röktest
+- **Tester:** Vitest — 2491 tester i 73 filer: rena `src/lib/`-moduler, CSV-parsning, jsdom-röktest
   av varje vy (ADR-7; `tests/smoke.test.js` med det delade fönstret och sju `tests/smoke-*.test.js` per
   område), k-tröskeln i åtta `tests/ktroskel*.test.js` med riggen i `tests/helpers/ktroskel-rigg.js`,
   gränssnittet i `tests/granssnitt*.test.js` (riggen `tests/helpers/granssnitt-rigg.js`) och diagramvyerna i
@@ -728,7 +728,7 @@ pekar inte ut vem, och medianen har samma egenskap vid udda antal — användare
 med piltangenterna, och tabellhuvudet är statiskt, så att sorteringen håller när innehållet byts. Valen sparas
 i konfigurationsfilen (`ui.jamforelse`). Excelrubrikerna för jämförelsekolumnerna namnger den valda källan.
 **Fliken kräver jämförelsestatistik:** med bara ett ställningstagande är den dold, och jämförelsen mot
-ställningstagandet görs i fliken Lönepolitik. Inom fliken kan man välja ställningstagandet som källa.
+ställningstagandet görs i fliken Lönepolitik. Inom fliken kan man välja ställningstagandet som källa. (Ersatt av ADR-55: jämförelsen mot ställningstagandet är ett eget avsnitt i Jämförelse.)
 **Vakter:** `tests/jamforelse.test.js`, röktesterna för fliken och diagrammen, k-testerna för export, tabell och
 diagramdata, golden för den samlade exporten och webbläsartestet.
 
@@ -1179,6 +1179,29 @@ procent av mäns per yrkesgrupp, förra året som streck och i år som punkt, gr
 orange när den fjärmat sig, grå när den är oförändrad — en riktning, inte en bedömning. Diagramplanens pilspets
 på strecket är inte gjord: strecket och punkten säger redan vilket år som är vilket. Vaktas av
 `tests/arsbokslut.test.js` och `tests/smoke-arsbokslut.test.js`.
+
+**ADR-55 — Jämförelse mot båda referenserna, Lönepolitik som avsnitt, Dokumentera sist.** Beslut 2026-10-30. Fliken
+Jämförelse samlar organisationens löner mot det de jämförs med, i tre avsnitt: överblicken (`src/lib/referenser.js`,
+`44-referensoverblick.js`), *Mot ställningstagandet* (dagens Lönepolitik, oförändrad i sak; `buildLonepolitikModel`
+behåller sin form) och *Mot jämförelsestatistiken* (dagens Jämförelse, låst till statistiken: växeln *Jämför mot*
+är borttagen). Fliken syns när underlaget och minst en referens är inlästa; `lonepolitik` är ett flikalias
+(`TAB_ALIAS`), så att länkar och äldre konfigurationsfiler hamnar rätt, och ett sparat källval ignoreras.
+Dokumentera & exportera är menyns sista grupp, och *Klar här?*-raderna går genom fördjupningen dit.
+
+**Ställningstagandet är referenspunkten.** Löneläget och statistiken mäts mot det och ligger över eller under det,
+aldrig tvärtom; statistikens skillnad är (S − P) / P. Per yrke inom BAS, som i Jämförelse: *läge i spannet* är
+medianens plats i referensens P10–P90 (`bandPosition`; 0 = P10, 100 = P90), med orden nedanför, i nedre delen, mitt i,
+i övre delen och ovanför. *Mönstret* ställer löneläget mot ställningstagandet (nedanför, inom, ovanför) bredvid
+statistikens median mot samma spann (under, inom, över), eftersom kombinationen bär samtalet: ligger båda över har
+ställningstagandet halkat efter marknaden och organisationen följer den; ligger bara löneläget över har organisationen
+gått före både politik och marknad. *Förslaget på referens* är den referens gruppen ligger inom, ställningstagandet
+om gruppen ligger inom båda, annars den vars spann ligger närmast. Det är ett förslag: inget dolt tröskelvärde avgör
+något, verktyget tillämpar det ingen annanstans. En grupp utan rad i en referens får streck där och ingår inte i
+referensens tal; statistik med bara median ger inget läge och ritas som ett ensamt streck.
+
+Organisationens P10, median och P90 per yrkesgrupp är gruppvärden och följer `kTroskel()` i det som lämnar verktyget
+(ADR-51); referensernas egna tal och tabellen statistiken mot ställningstagandet bär inga organisationsvärden och
+maskeras inte. Vaktas av `tests/referenser.test.js` och `tests/smoke-referenser.test.js`.
 
 ## 9. Öppna punkter
 

@@ -42,7 +42,7 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         const d = w.document;
         d.querySelector('.nav-item[data-tab="dokumentera"]').click();
         // Alla flikens paneler ligger i innehållsytan (det tomma bandet överst kom av att de låg utanför).
-        for (const id of ['view-kvalitet', 'view-dokumentera', 'view-lonepolitik', 'view-utforska']) {
+        for (const id of ['view-kvalitet', 'view-dokumentera', 'view-benchmark', 'view-utforska']) {
             expect(d.getElementById(id).parentElement.className, id).toBe('content-body');
         }
         const fore = (a, b) => !!(d.getElementById(a).compareDocumentPosition(d.getElementById(b)) & 4);
@@ -181,7 +181,7 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         const w = createAppWindow();
         w.__loadDemoData();
         const d = w.document;
-        d.querySelector('.nav-item[data-tab="lonepolitik"]').click();
+        d.querySelector('.nav-item[data-tab="benchmark"]').click();
         const avsnitt = () => [...d.querySelectorAll('details.avsnitt[id^="avsnitt-lp-"]')];
         expect(avsnitt().map(a => a.id.replace('avsnitt-lp-', ''))).toEqual(['tabell', 'kon', 'efterlevnad', 'tackning']);
         expect(avsnitt().filter(a => a.open).map(a => a.id)).toEqual(['avsnitt-lp-tabell']);
@@ -367,7 +367,7 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         const w = createAppWindow();
         w.__loadDemoData();
         const d = w.document;
-        for (const [flik, rad] of [['matrix', 'la-urval'], ['struktur', 'st-urval'], ['likvardighet', 'lv-urval'], ['lonepolitik', 'lp-urval']]) {
+        for (const [flik, rad] of [['matrix', 'la-urval'], ['struktur', 'st-urval'], ['likvardighet', 'lv-urval'], ['benchmark', 'lp-urval']]) {
             d.querySelector(`.nav-item[data-tab="${flik}"]`).click();
             const lank = d.querySelector(`#${rad} [data-oppna-installningar="k-troskel"]`);
             expect(lank, flik).not.toBeNull();

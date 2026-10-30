@@ -11,7 +11,7 @@ Lönekartläggningen är ett årligt lagkrav som kräver statistisk analys, doku
 
 ## Lösningen
 
-**Läs in er personalfil (CSV eller Excel) — få färdiga underlag.** Menyn följer processens faser: **1 Underlag** (inläsning och kontroll av underlaget) → **2 Kartlägg och analysera** (regler och praxis, lika arbete, likvärdigt arbete, struktur) → **3 Åtgärda** (prioritering, löneöversyn, handlingsplan) → **4 Dokumentera** (underlag till rapporten och samverkan). En femte fas, **Fördjupa**, är frivillig.
+**Läs in er personalfil (CSV eller Excel) — få färdiga underlag.** Menyn följer processens faser: **1 Underlag** (inläsning och kontroll av underlaget) → **2 Kartlägg och analysera** (regler och praxis, lika arbete, likvärdigt arbete, struktur) → **3 Åtgärda** (prioritering, löneöversyn, handlingsplan) → **4 Fördjupa** (frivillig) → **5 Dokumentera** (underlag till rapporten och samverkan).
 
 ### Det här får ni
 

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { likaArbeteGrupper, justeratGapInomYrke, gruppBlock, parBlock, avsnittBlock, tillWordHtml, tillText,
-    formatTal, FRAGOR_YRKE, FRAGOR_PAR, stabilitetKort } from '../src/lib/rapportunderlag.js';
+    formatTal, FRAGOR_YRKE, FRAGOR_PAR, stabilitetKort, referenserBlock } from '../src/lib/rapportunderlag.js';
 import { mulberry32 } from '../src/lib/rng.js';
 import { gapUppdelning } from '../src/lib/gapuppdelning.js';
 
@@ -508,5 +508,29 @@ describe('rapportunderlag: not om minsta gruppstorlek', () => {
         expect(med.stycken.at(-2)).toBe('Urval: Hela organisationen.');
         const utan = avsnittBlock('sammanfattning', u, { k: 10, urval: 'Hela organisationen' });
         expect(utan.stycken.at(-1)).toBe('Urval: Hela organisationen.');
+    });
+});
+
+describe('blocket Lönerna mot referenserna', () => {
+    const grupp = { yrke: '1 Yrke', bas: 'C', n: 42, org: { median: 38900 }, stallningstagande: { median: 32000 }, statistik: { median: 37800 },
+        monster: { text: 'löneläget ovanför ställningstagandet, statistiken också över' } };
+    const m = (grupper, personer, andel) => ({ grupper, personer, andel });
+    const overblick = { grupper: [grupp], statistikMotStallningstagande: [],
+        tal: { antalGrupper: 1, perMonster: { badaOver: m(1, 42, 100), baraLonelageOver: m(0, 0, 0), baraStatistikOver: m(0, 0, 0), badaInom: m(0, 0, 0) },
+            forslagStatistik: 1, vagdMedianMotStallningstagandePct: 21.56, vagdMedianMotStatistikPct: 2.91 } };
+    it('säger var löneläget och statistiken ligger mot ställningstagandet, aldrig tvärtom', () => {
+        const b = referenserBlock(overblick, { urval: 'Hela organisationen', demo: false });
+        expect(b).toMatchObject({ id: 'referenser', rubrik: 'Lönerna mot referenserna', provat: null, fragor: null });
+        expect(b.tabell.rubriker).toEqual(['Yrkesgrupp', 'n', 'Median (kr)', 'Mot ställningstagandet (%)', 'Mot statistiken (%)', 'Mönster']);
+        expect(b.tabell.rader[0][0]).toBe('1 Yrke · BAS C');
+        expect(b.tabell.rader[0][5]).toBe(grupp.monster.text);
+        expect(b.stycken.join(' ')).toMatch(/löneläget och statistiken ligger över ställningstagandet/);
+        expect(b.stycken.join(' ')).toMatch(/\+21,6 %/);
+        expect(b.stycken.join(' ')).not.toMatch(/ställningstagandet ligger/);
+    });
+    it('med bara ställningstagandet nämns inga mönster som kräver statistiken', () => {
+        const b = referenserBlock({ ...overblick, tal: { ...overblick.tal, vagdMedianMotStatistikPct: null } }, { urval: 'Hela organisationen', demo: false });
+        expect(b.stycken.join(' ')).not.toMatch(/statistiken ligger över|mot statistiken:/);
+        expect(b.stycken.join(' ')).toMatch(/löneläget mot ställningstagandet: \+21,6 %/);
     });
 });

@@ -154,7 +154,7 @@ ok(true, 'demodata inläst, banner synlig');
 // hidden-attributet måste faktiskt dölja elementet — författar-CSS (display:flex) vinner
 // annars över webbläsarens [hidden]-regel, vilket jsdom-testerna inte kan se.
 const osynlig = sel => page.evaluate(s => { const el = document.querySelector(s); return !!el && getComputedStyle(el).display === 'none'; }, sel);
-ok(await osynlig('.nav-item[data-tab="benchmark"]'), 'Jämförelse är dold utan jämförelsestatistik');
+ok(!(await osynlig('.nav-item[data-tab="benchmark"]')), 'Jämförelse syns med ställningstagandet, utan jämförelsestatistik');
 ok(await osynlig('#referens-namn-rad'), 'namnfältet för egen referens är dolt i demoläget');
 ok(await osynlig('#btn-referens-aterga'), '"Ta bort referensen" är dold i demoläget');
 
@@ -209,7 +209,7 @@ const FLIKAR = [
     ['likvardighet', []],
     ['struktur', ['#chart-sektorer']],
     ['prioritering', ['#chart-prio-pareto', '#chart-prio-matrix']],
-    ['lonepolitik', ['#chart-lp-bandmap', '#chart-lp-compliance']],
+    ['benchmark', ['#chart-lp-bandmap', '#chart-lp-compliance']],
     ['loneoversyn', []],
     ['kon', ['#chart-kon-scatter', '#chart-kon-boxplot', '#chart-demo-hist']],
     ['utforska', ['#chart-explore']],
@@ -240,12 +240,12 @@ console.log('\n── Diagrammen (diagramkärnan, ADR-39) ──');
 // är tomma. Ett diagram som vyn ersätter med en förklarande text
 // (för få grupper i demodatan) räknas som riktigt — då finns ingen figur och ingen bild.
 const DIAGRAMMEN = [['matrix', 'chart-skevhet-overview'], ['matrix', 'chart-perbas-gap'], ['struktur', 'chart-sektorer'],
-                  ['lonepolitik', 'chart-lp-gender'], ['lonepolitik', 'chart-lp-compliance'], ['kon', 'chart-demo-hist'],
+                  ['benchmark', 'chart-lp-gender'], ['benchmark', 'chart-lp-compliance'], ['kon', 'chart-demo-hist'],
                   // linjer, band och lådor
                   ['kon', 'chart-kon-scatter'], ['kon', 'chart-kon-boxplot'],
                   ['kon', 'chart-demo-agecurve'], ['kon', 'chart-demo-spread'], ['matrix', 'lifecycle-chart'],
                   // de sammansatta diagrammen
-                  ['benchmark', 'chart-jamforelse-spann'], ['benchmark', 'chart-jamforelse-avvikelse'], ['lonepolitik', 'chart-lp-bandmap'],
+                  ['benchmark', 'chart-jamforelse-spann'], ['benchmark', 'chart-jamforelse-avvikelse'], ['benchmark', 'chart-lp-bandmap'], ['benchmark', 'chart-ref-hantel'],
                   ['prioritering', 'chart-prio-pareto'], ['prioritering', 'chart-prio-matrix'], ['likvardighet', 'chart-likvardighet-heatmap'],
                   // Utforska
                   ['utforska', 'chart-explore']];
@@ -284,7 +284,7 @@ for (const [flik, id] of DIAGRAMMEN) {
 console.log('\n── Länkade vyer: en markerad grupp framhävs i alla diagram ──');
 /* global diagramMarkering, sattDiagramMarkering, getData, explorerUrval, _chartExportRubrikFot -- funktionerna nedan körs i sidan, där de finns */
 {
-    await page.click('.nav-item[data-tab="lonepolitik"]');
+    await page.click('.nav-item[data-tab="benchmark"]');
     await page.evaluate(() => document.querySelectorAll('details.avsnitt').forEach(d => { d.open = true; }));
     await page.waitForTimeout(400);
     await page.click('.nav-item[data-tab="matrix"]');
@@ -457,7 +457,7 @@ console.log('\n── Dokumentera: checklistan först, exporterna som lista ─�
     await page.click('#avsnitt-dk-rapportunderlag > summary');
     await page.waitForTimeout(300);
     ok(await page.evaluate(() => { const k = document.querySelector('#rapportunderlag-innehall [data-rapport-kopiera]'); return !!k && k.offsetParent !== null; }), 'rapportunderlagets block går att nå när avsnittet fälls ut');
-    for (const f of ['lonepolitik', 'utforska']) {
+    for (const f of ['benchmark', 'utforska']) {
         await page.evaluate(t => document.querySelector(`.nav-item[data-tab="${t}"]`).click(), f);
         await page.waitForTimeout(700);
         const x = await page.evaluate(() => [...document.querySelectorAll('.view-panel')].find(v => v.offsetParent).getBoundingClientRect().left);
@@ -515,9 +515,12 @@ console.log('\n── Struktur, Likvärdigt arbete, Löneöversyn och Lönepolit
     await page.click('#forecast-reset');
     await page.waitForTimeout(500);
 
-    await ga('lonepolitik');
+    await ga('benchmark');
+    await page.evaluate(() => { for (const [id, oppen] of [['avsnitt-jmf-overblick', false], ['avsnitt-jmf-stallningstagande', true], ['avsnitt-jmf-statistik', false]]) document.getElementById(id).open = oppen; });
+    await page.waitForTimeout(300);
     l = await lage('avsnitt-lp-');
-    ok(l.oppna === 'avsnitt-lp-tabell' && l.rutor === 4 && l.skarmar < 4, `Lönepolitik: fyra slutsatser, bandkartan och tabellen utfälld (${l.skarmar.toFixed(1)} skärmar)`);
+    ok(l.oppna === 'avsnitt-lp-tabell' && l.rutor === 6 && l.skarmar < 4, `Jämförelse, avsnittet mot ställningstagandet (utan statistik): flikens två och avsnittets fyra slutsatser, bandkartan och tabellen utfälld (${l.rutor} rutor, ${l.oppna}, ${l.skarmar.toFixed(1)} skärmar)`);
+    await page.evaluate(() => { document.getElementById('avsnitt-jmf-overblick').open = true; });
     b = await fyller('avsnitt-lp-kon', 'chart-lp-gender');
     ok(b === 'ok' || b === 'inget diagram', `Lönepolitik: könspositionen fyller kortet när avsnittet fälls ut (${b})`);
     b = await fyller('avsnitt-lp-efterlevnad', 'chart-lp-compliance');
@@ -614,7 +617,7 @@ console.log('\n── Punktsvärm, före och efter, övergångar ──');
     ok(stapl.segment > 2 && stapl.summor.every(v => v === 100), `Utforska ritar staplade staplar som andel (${stapl.segment} segment, varje rad 100 %)`);
     if (BILDER) await page.locator('#chart-explore').screenshot({ path: `${BILDER}/staplade-${NAMN}.png` });
     await page.evaluate(() => { for (const [id, v] of [['explore-typ', 'auto'], ['explore-kolumn', 'ingen']]) { const e = document.getElementById(id); e.value = v; e.dispatchEvent(new Event('change', { bubbles: true })); } });
-    await page.click('.nav-item[data-tab="lonepolitik"]');
+    await page.click('.nav-item[data-tab="benchmark"]');
     await page.evaluate(() => document.querySelectorAll('details.avsnitt').forEach(d => { d.open = true; }));
     await page.waitForTimeout(500);
     if (await page.evaluate(() => !!document.getElementById('lp-komplians-vy'))) {
@@ -953,7 +956,7 @@ console.log('\n── Sidhuvudet är lika högt på alla flikar ──');
     for (const bredd of [1440, 1100, 1024]) {
         await page.setViewportSize({ width: bredd, height: 900 });
         const hojder = {};
-        for (const flik of ['dashboard', 'bestammelser', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn', 'handlingsplan', 'dokumentera', 'kon', 'lonepolitik', 'utforska', 'info']) {
+        for (const flik of ['dashboard', 'bestammelser', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn', 'handlingsplan', 'dokumentera', 'kon', 'benchmark', 'utforska', 'info']) {
             await page.click(`.nav-item[data-tab="${flik}"]`);
             hojder[flik] = await page.evaluate(() => Math.round(document.querySelector('.top-header').getBoundingClientRect().height));
         }
@@ -971,7 +974,7 @@ console.log('\n── Nyckeltalens förklaring klipps inte ──');
     await page.setViewportSize({ width: 1440, height: 900 });
     const klippta = [];
     let antal = 0;
-    for (const flik of ['dashboard', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn', 'dokumentera', 'kon', 'lonepolitik']) {
+    for (const flik of ['dashboard', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn', 'dokumentera', 'kon', 'benchmark']) {
         await page.click(`.nav-item[data-tab="${flik}"]`);
         await page.waitForTimeout(250);
         const r = await page.evaluate(() => [...document.querySelectorAll('.slutsats-under, .stat-under, .stat-tip')].filter(e => e.getBoundingClientRect().height > 0)
@@ -1249,8 +1252,8 @@ console.log('\n── Förhandsbesked och urval ──');
     await page.evaluate(() => { sattRapportUrval('hela'); renderExportBesked(); document.getElementById('avsnitt-ex-urval').open = true; });
     const fore = await page.evaluate(() => ({ word: document.getElementById('besked-word').textContent, excel: document.getElementById('besked-excel').textContent, zip: document.getElementById('besked-zip').textContent,
         rader: document.querySelectorAll('#rapport-urval .urval-rad').length, syns: document.getElementById('besked-word').offsetParent !== null }));
-    ok(fore.syns && /Hela dokumentationen · 11 avsnitt · \d+ tabeller · 8 diagram/.test(fore.word) && /Utelämnar:/.test(fore.word), `Word-raden säger vad filen innehåller och utelämnar (${fore.word.slice(0, 90)}…)`);
-    ok(/\d+ blad — Löneöversikt/.test(fore.excel) && /Word-utkastet, Excel-filen \(\d+ blad\) och diagrammen i alla flikar/.test(fore.zip) && fore.rader === 11, 'Excel-raden listar bladen, ZIP-raden säger vad filen bär, och urvalet har elva avsnitt');
+    ok(fore.syns && /Hela dokumentationen · 12 avsnitt · \d+ tabeller · 9 diagram/.test(fore.word) && /Utelämnar:/.test(fore.word), `Word-raden säger vad filen innehåller och utelämnar (${fore.word.slice(0, 90)}…)`);
+    ok(/\d+ blad — Löneöversikt/.test(fore.excel) && /Word-utkastet, Excel-filen \(\d+ blad\) och diagrammen i alla flikar/.test(fore.zip) && fore.rader === 12, 'Excel-raden listar bladen, ZIP-raden säger vad filen bär, och urvalet har tolv avsnitt');
     await page.click('[data-urval-fast="ledning"]');
     await page.waitForTimeout(300);
     ok(await page.evaluate(() => /Ledningsbrief · 4 avsnitt/.test(document.getElementById('besked-word').textContent) && document.getElementById('nyckel-ex-urval').textContent === 'Ledningsbrief'), 'ett färdigt urval ändrar beskedet och avsnittets rubrik');
@@ -1374,7 +1377,7 @@ console.log('\n── Byggets förminskning av stilmallen ──');
 
 console.log('\n── Smala skärmar: 1440×800, 768 och 390 punkter ──');
 {
-    const FLIKAR = ['dashboard', 'bestammelser', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn', 'handlingsplan', 'dokumentera', 'kon', 'lonepolitik', 'utforska', 'info'];
+    const FLIKAR = ['dashboard', 'bestammelser', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn', 'handlingsplan', 'dokumentera', 'kon', 'benchmark', 'utforska', 'info'];
     const oppna = async (bredd, hojd) => { const s = await browser.newPage({ viewport: { width: bredd, height: hojd } });
         await s.goto('file://' + FIL + '?demo=1');
         await s.waitForFunction(() => document.getElementById('demo-mode-banner')?.style.display === 'flex', { timeout: 30000 });

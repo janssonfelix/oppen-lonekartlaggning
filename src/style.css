@@ -2818,6 +2818,8 @@ summary:focus-visible {
 .jmf-etikett { font-size: var(--fs-sm); font-weight: 600; }
 .benchmark-metric-btn.jmf-saknas { opacity: 0.45; cursor: not-allowed; }
 .jmf-diagram-rubrik { font-size: var(--fs-md); margin: 16px 0 4px; }
+#ref-tabell td.num { white-space: nowrap; }
+#ref-tabell td:not(.num) { min-width: 170px; text-align: left; }
 #benchmark-table td.num { white-space: nowrap; }
 
 /* Filrutorna efter inläsning (ADR-36): kompakt läge */
