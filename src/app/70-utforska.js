@@ -187,7 +187,8 @@ function _explorerSyncControls(spec, typ, valdTyp, urval) {
 }
 
 function _explorerTitle(spec, typ) {
-    const dim = d => EXPLORE_DIM_LABEL[d].toLowerCase();
+    // Gemen begynnelsebokstav mitt i meningen, men förkortningar (BAS, AID) behåller versalerna.
+    const dim = d => { const s = EXPLORE_DIM_LABEL[d]; return /^[A-ZÅÄÖ]{2}/.test(s) ? s : s.charAt(0).toLowerCase() + s.slice(1); };
     // "per bas-intervall och åldersgrupp", "per åldersgrupp för hela urvalet", "för hela urvalet"
     let fras;
     if (spec.rad === 'alla') fras = spec.kolumn ? `per ${dim(spec.kolumn)} för hela urvalet` : 'för hela urvalet';

@@ -15,6 +15,13 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ### Gränssnitt
 
+- **En ny flik börjar överst.** Flikbytet rullade inte, så den som stod långt ned i en flik hamnade långt ned i
+  nästa. Sidomenyns ikonläge (641–1100 px) döljer etiketterna med genomskinlighet i stället för `visibility: hidden`,
+  så att knapparna behåller sina namn för skärmläsare.
+- **Texter som inte hängde med.** Krav mot lön i Likvärdigt arbete sade "minst 1 personer" på skärmen; exportkortens
+  *Utelämnar* räknade samma sak två gånger när två avsnitt utelämnade det; "Hur används denna flik vid..." heter
+  *Så används fliken i arbetet*; Utforskas rubriker skriver BAS och AID med versaler; Handlingsplanens ingress säger
+  "från likvärdighetsanalysen".
 - **Lönepolitik är ett avsnitt i Jämförelse.** Fliken har tre avsnitt: överblick, mot ställningstagandet (dagens
   Lönepolitik) och mot jämförelsestatistiken. Växeln *Jämför mot* är borttagen, och fliken syns så snart underlaget och
   en referens är inlästa. Länkar till Lönepolitik leder till Jämförelse.

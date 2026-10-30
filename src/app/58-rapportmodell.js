@@ -561,7 +561,7 @@ function rmTillHtml(m, { utskrift = false, bilder = null } = {}) {
 function rmBesked(m) {
     const delar = m.avsnitt.flatMap(a => a.delar);
     return { avsnitt: m.avsnitt.length, tabeller: delar.filter(p => p.typ === 'tabell').length, diagram: delar.filter(p => p.typ === 'diagram').length,
-        fyllIn: delar.filter(p => p.typ === 'fyllIn').length, utelamnat: m.avsnitt.flatMap(a => a.utelamnat || []), urval: m.urval };
+        fyllIn: delar.filter(p => p.typ === 'fyllIn').length, utelamnat: [...new Set(m.avsnitt.flatMap(a => a.utelamnat || []))], urval: m.urval };
 }
 
 /**

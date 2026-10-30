@@ -52,6 +52,8 @@ document.querySelectorAll(".nav-item").forEach(btn => {
         const titleEl = document.getElementById("page-title");
         if (titleEl) titleEl.textContent = titles[target] || target;
         renderTabContent(target);
+        // En ny flik börjar överst: annars står läsaren kvar där förra fliken slutade (granskning 2026-10-30).
+        window.scrollTo(0, 0);
     });
 });
 

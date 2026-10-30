@@ -65,7 +65,7 @@ function renderHandlingsplanSeed() {
     if (note) {
         const parNot = seed.parNot ? ` ${esc(seed.parNot)}` : '';
         note.innerHTML = (seed.rows.length
-            ? `Förifyllt med <strong>${seed.rows.length}</strong> rad${seed.rows.length === 1 ? '' : 'er'} (${seed.prioCount} under referens, ${seed.lvCount} från likvärdighetsanalysen-kandidater) — de grå raderna är ett utgångsläge att granska. Komplettera med sakliga skäl, ansvarig, tidsplan och status; exportera till Excel eller skriv ut för att färdigställa i Word.`
+            ? `Förifyllt med <strong>${seed.rows.length}</strong> rad${seed.rows.length === 1 ? '' : 'er'} (${seed.prioCount} under referens, ${seed.lvCount} från likvärdighetsanalysen) — de grå raderna är ett utgångsläge att granska. Komplettera med sakliga skäl, ansvarig, tidsplan och status; exportera till Excel eller skriv ut för att färdigställa i Word.`
             : 'Mallen förifylls automatiskt med grupperna från Prioritering och Likvärdigt arbete när data och referens finns. Fyll annars i för hand eller ladda upp underlag på <strong>Översikt</strong>.') + parNot;
     }
 }

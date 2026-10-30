@@ -728,7 +728,7 @@ function renderLikvardighetKrav() {
     const not = document.getElementById('lv-krav-not');
     if (u.grupper.length < 3) {
         rensaFigur(el);
-        el.innerHTML = `<p class="text-dampad-sm marg-8-0">För få yrkesgrupper med minst ${k} personer för att visa krav mot lön.</p>`;
+        el.innerHTML = `<p class="text-dampad-sm marg-8-0">För få yrkesgrupper${k > 1 ? ` med minst ${k} personer` : ''} för att visa krav mot lön.</p>`;
         if (not) not.textContent = '';
         return;
     }
@@ -736,7 +736,7 @@ function renderLikvardighetKrav() {
     const under = figur.lager.filter(l => l.serie === 'Kvinnodominerad').flatMap(l => l.data).filter(d => d.avstand < 0).length;
     ritaFigur(el, figur, { exportAnteckning: `${under} ${under === 1 ? 'kvinnodominerad grupp ligger' : 'kvinnodominerade grupper ligger'} under nivån` });
     const uppskattade = u.grupper.filter(g => g.uppskattad).length;
-    if (not) not.textContent = `Bara yrkesgrupper med minst ${k} personer. Punktens storlek följer antalet personer.`
+    if (not) not.textContent = `${k > 1 ? `Bara yrkesgrupper med minst ${k} personer. ` : ''}Punktens storlek följer antalet personer.`
         + (uppskattade ? ` ${uppskattade} ${uppskattade === 1 ? 'grupp saknar' : 'grupper saknar'} poäng i arbetsvärderingen och är placerade efter sitt BAS-intervall (medianpoängen för intervallets värderade grupper).` : '')
         + (u.utanPlats.length ? ` Kan inte placeras (ingen värderad grupp i samma BAS-intervall): ${u.utanPlats.map(g => g.namn).join(', ')}.` : '');
 }

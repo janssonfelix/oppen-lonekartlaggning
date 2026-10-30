@@ -17332,6 +17332,8 @@ document.querySelectorAll(".nav-item").forEach(btn => {
         const titleEl = document.getElementById("page-title");
         if (titleEl) titleEl.textContent = titles[target] || target;
         renderTabContent(target);
+        // En ny flik börjar överst: annars står läsaren kvar där förra fliken slutade (granskning 2026-10-30).
+        window.scrollTo(0, 0);
     });
 });
 
@@ -19078,7 +19080,7 @@ function renderLikvardighetKrav() {
     const not = document.getElementById('lv-krav-not');
     if (u.grupper.length < 3) {
         rensaFigur(el);
-        el.innerHTML = `<p class="text-dampad-sm marg-8-0">För få yrkesgrupper med minst ${k} personer för att visa krav mot lön.</p>`;
+        el.innerHTML = `<p class="text-dampad-sm marg-8-0">För få yrkesgrupper${k > 1 ? ` med minst ${k} personer` : ''} för att visa krav mot lön.</p>`;
         if (not) not.textContent = '';
         return;
     }
@@ -19086,7 +19088,7 @@ function renderLikvardighetKrav() {
     const under = figur.lager.filter(l => l.serie === 'Kvinnodominerad').flatMap(l => l.data).filter(d => d.avstand < 0).length;
     ritaFigur(el, figur, { exportAnteckning: `${under} ${under === 1 ? 'kvinnodominerad grupp ligger' : 'kvinnodominerade grupper ligger'} under nivån` });
     const uppskattade = u.grupper.filter(g => g.uppskattad).length;
-    if (not) not.textContent = `Bara yrkesgrupper med minst ${k} personer. Punktens storlek följer antalet personer.`
+    if (not) not.textContent = `${k > 1 ? `Bara yrkesgrupper med minst ${k} personer. ` : ''}Punktens storlek följer antalet personer.`
         + (uppskattade ? ` ${uppskattade} ${uppskattade === 1 ? 'grupp saknar' : 'grupper saknar'} poäng i arbetsvärderingen och är placerade efter sitt BAS-intervall (medianpoängen för intervallets värderade grupper).` : '')
         + (u.utanPlats.length ? ` Kan inte placeras (ingen värderad grupp i samma BAS-intervall): ${u.utanPlats.map(g => g.namn).join(', ')}.` : '');
 }
@@ -25087,7 +25089,7 @@ function renderHandlingsplanSeed() {
     if (note) {
         const parNot = seed.parNot ? ` ${esc(seed.parNot)}` : '';
         note.innerHTML = (seed.rows.length
-            ? `Förifyllt med <strong>${seed.rows.length}</strong> rad${seed.rows.length === 1 ? '' : 'er'} (${seed.prioCount} under referens, ${seed.lvCount} från likvärdighetsanalysen-kandidater) — de grå raderna är ett utgångsläge att granska. Komplettera med sakliga skäl, ansvarig, tidsplan och status; exportera till Excel eller skriv ut för att färdigställa i Word.`
+            ? `Förifyllt med <strong>${seed.rows.length}</strong> rad${seed.rows.length === 1 ? '' : 'er'} (${seed.prioCount} under referens, ${seed.lvCount} från likvärdighetsanalysen) — de grå raderna är ett utgångsläge att granska. Komplettera med sakliga skäl, ansvarig, tidsplan och status; exportera till Excel eller skriv ut för att färdigställa i Word.`
             : 'Mallen förifylls automatiskt med grupperna från Prioritering och Likvärdigt arbete när data och referens finns. Fyll annars i för hand eller ladda upp underlag på <strong>Översikt</strong>.') + parNot;
     }
 }
@@ -25686,7 +25688,7 @@ function rmTillHtml(m, { utskrift = false, bilder = null } = {}) {
 function rmBesked(m) {
     const delar = m.avsnitt.flatMap(a => a.delar);
     return { avsnitt: m.avsnitt.length, tabeller: delar.filter(p => p.typ === 'tabell').length, diagram: delar.filter(p => p.typ === 'diagram').length,
-        fyllIn: delar.filter(p => p.typ === 'fyllIn').length, utelamnat: m.avsnitt.flatMap(a => a.utelamnat || []), urval: m.urval };
+        fyllIn: delar.filter(p => p.typ === 'fyllIn').length, utelamnat: [...new Set(m.avsnitt.flatMap(a => a.utelamnat || []))], urval: m.urval };
 }
 
 /**
@@ -27502,7 +27504,8 @@ function _explorerSyncControls(spec, typ, valdTyp, urval) {
 }
 
 function _explorerTitle(spec, typ) {
-    const dim = d => EXPLORE_DIM_LABEL[d].toLowerCase();
+    // Gemen begynnelsebokstav mitt i meningen, men förkortningar (BAS, AID) behåller versalerna.
+    const dim = d => { const s = EXPLORE_DIM_LABEL[d]; return /^[A-ZÅÄÖ]{2}/.test(s) ? s : s.charAt(0).toLowerCase() + s.slice(1); };
     // "per bas-intervall och åldersgrupp", "per åldersgrupp för hela urvalet", "för hela urvalet"
     let fras;
     if (spec.rad === 'alla') fras = spec.kolumn ? `per ${dim(spec.kolumn)} för hela urvalet` : 'för hela urvalet';

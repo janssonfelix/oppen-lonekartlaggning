@@ -390,8 +390,9 @@ details.avsnitt[open]:not(.card) { padding-bottom: 20px; }
     .sidebar .nav-item[aria-disabled="true"]::after { content: none; }
     .nav-etikett { position: absolute; left: 100%; top: 50%; transform: translateY(-50%); margin-left: 14px; padding: 5px 10px; border-radius: 6px;
         background: var(--text-main); color: #fff; font-size: var(--fs-xs); font-weight: 500; white-space: nowrap; pointer-events: none;
-        opacity: 0; visibility: hidden; }
-    .nav-item:hover .nav-etikett, .nav-item:focus-visible .nav-etikett { opacity: 1; visibility: visible; }
+        opacity: 0; }
+    /* Bara opacity: visibility: hidden skulle ta bort knappens namn ur tillgänglighetsträdet. */
+    .nav-item:hover .nav-etikett, .nav-item:focus-visible .nav-etikett { opacity: 1; }
 }
 @media (max-width: 640px) {
     .btn.meny-knapp { display: inline-flex; }
