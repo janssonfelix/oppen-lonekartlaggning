@@ -7523,11 +7523,11 @@ function hantelRader(grupper) {
 
     return { lageISpann, monster, forslag, referensOverblick, hantelRader };
 })();
-const _rfLage = __mirrorReferenser.lageISpann;
-const _rfMonster = __mirrorReferenser.monster;
-const _rfForslag = __mirrorReferenser.forslag;
-const _rfOverblick = __mirrorReferenser.referensOverblick;
-const _rfHantelRader = __mirrorReferenser.hantelRader;
+const _rrLage = __mirrorReferenser.lageISpann;
+const _rrMonster = __mirrorReferenser.monster;
+const _rrForslag = __mirrorReferenser.forslag;
+const _rrOverblick = __mirrorReferenser.referensOverblick;
+const _rrHantelRader = __mirrorReferenser.hantelRader;
 
 // ---- speglar src/lib/docx.js ----
 const __mirrorDocx = (() => {
@@ -15972,7 +15972,7 @@ function clearAllData() {
 const RENSA_BEHALLARE = ['struktur-representation', 'struktur-distribution', 'struktur-eu', 'struktur-sektorer', 'forecast-outcome', 'explore-table',
     'outliers-table-wrap', 'print-report'];
 const RENSA_TABELLER = ['rapport-table', 'matrix-table', 'la-oversikt', 'pag-avvikelse-tabell', 'paygap-table', 'skevhet-table', 'benchmark-table', 'prio-table'];
-const RENSA_OVRIGT = ['action-checklist-container', 'outlier-list', 'data-validation-report', 'reality-check', 'snapshot-comparison', 'consistency-banner', 'process-tracker', 'likvardighet-content', 'blinder-oaxaca-card', 'livscykel-content', 'lonepolitik-content', 'robusthet-body', 'fardigcheck-body', 'rapportunderlag-innehall', 'gap-uppdelning-innehall', 'pag-innehall', 'att-gora-borja'];
+const RENSA_OVRIGT = ['action-checklist-container', 'outlier-list', 'data-validation-report', 'reality-check', 'snapshot-comparison', 'consistency-banner', 'process-tracker', 'likvardighet-content', 'blinder-oaxaca-card', 'livscykel-content', 'lonepolitik-content', 'ref-overblick', 'jmf-slutsatser', 'robusthet-body', 'fardigcheck-body', 'rapportunderlag-innehall', 'gap-uppdelning-innehall', 'pag-innehall', 'att-gora-borja'];
 
 function _rensaAllData({ inbakat = true } = {}) {
     if (typeof laMinneSlapp === 'function') laMinneSlapp();   // minnet håller en referens till dataraderna
@@ -15997,7 +15997,7 @@ function _rensaAllData({ inbakat = true } = {}) {
     if (typeof applyProfileLabels === 'function') applyProfileLabels();
     if (typeof _synkaOrgTyp === 'function') _synkaOrgTyp();
     if (typeof synkaNamnFalt === 'function') synkaNamnFalt();
-    if (typeof jamforelseSattVal === 'function') jamforelseSattVal({ kalla: 'statistik', bas: '', sektor: '' });
+    if (typeof jamforelseSattVal === 'function') jamforelseSattVal({ bas: '', sektor: '' });
     // Organisationspaketet (ADR-28): grundinställningarna kom ur paketet — tillbaka till standard.
     if (state.paket) state.costSettings = { ...state.costSettings, poPct: COST_DEFAULTS.poPct, months: COST_DEFAULTS.months };
     state.paket = null;
@@ -16096,7 +16096,7 @@ function _rensaAllData({ inbakat = true } = {}) {
     });
 
     // 4. Lås tabbar
-    ['tab-kon','tab-matrix','tab-prioritering','tab-loneoversyn','tab-struktur','tab-benchmark','tab-likvardighet','tab-utforska','tab-lonepolitik'].forEach(id => {
+    ['tab-kon','tab-matrix','tab-prioritering','tab-loneoversyn','tab-struktur','tab-benchmark','tab-likvardighet','tab-utforska'].forEach(id => {
         const el = document.getElementById(id);
         if (el) { /** @type {HTMLInputElement} */ (el).disabled = true; el.setAttribute('title', 'Ladda upp strukturdata för att aktivera'); }
     });
@@ -16740,7 +16740,7 @@ function _tomStatistik() {
     if (typeof resetUploadCell === 'function') resetUploadCell('upload-cell-stat', 'upload-cell optional', 'Valfritt');
     const ss = document.getElementById('stat-status');
     if (ss) { ss.textContent = ''; ss.className = 'status-msg'; }
-    if (typeof _visaJamforelseFlik === 'function') _visaJamforelseFlik(false);
+    if (typeof synkaJamforelseFlik === 'function') synkaJamforelseFlik();
 }
 
 function _paketStatus(text, ok) {
@@ -16861,8 +16861,8 @@ function lasInPaket(text, _filnamn, { inbakat = false } = {}) {
         markUploadLoaded('upload-cell-stat', 'Från organisationspaketet');
         const ss = document.getElementById('stat-status');
         if (ss) { ss.textContent = `${state.statistik.length} poster ur organisationspaketet`; ss.className = 'status-msg success'; }
-        _visaJamforelseFlik(true);
     }
+    synkaJamforelseFlik();
 
     applyProfileLabels();
     synkaNamnFalt();
@@ -17290,7 +17290,7 @@ document.querySelectorAll(".nav-item").forEach(btn => {
         const titles = {
             dashboard: 'Översikt & Data',
             kon: 'Ålder & karriär', dokumentera: 'Dokumentera & exportera',
-            benchmark: 'Jämförelsestatistik', matrix: 'Lika arbete',
+            benchmark: 'Jämförelse', matrix: 'Lika arbete',
             bestammelser: 'Regler & praxis',
             handlingsplan: 'Handlingsplan',
             prioritering: 'Prioritering',
@@ -17298,7 +17298,6 @@ document.querySelectorAll(".nav-item").forEach(btn => {
             loneoversyn: 'Löneöversyn',
             likvardighet: 'Likvärdigt arbete',
             utforska: 'Utforska',
-            lonepolitik: 'Lönepolitik',
             info: 'Om verktyget'
         };
         const titleEl = document.getElementById("page-title");
@@ -17317,10 +17316,10 @@ const PANEL_GROUPS = {
     dokumentera: ['kvalitet', 'dokumentera']         // Dokumentera & exportera: färdigcheck + export + spara och läsa in arbetet
 };
 // Flikalias: namnen leds om till fliken som visar innehållet, så att inga länkar dör.
-const TAB_ALIAS = { rapport: 'utforska', demografi: 'kon', kvalitet: 'dokumentera' };
+const TAB_ALIAS = { rapport: 'utforska', demografi: 'kon', kvalitet: 'dokumentera', lonepolitik: 'benchmark' };
 function tabMal(namn) { return TAB_ALIAS[namn] || namn; }
 function unlockTabs() {
-    ['tab-kon','tab-matrix','tab-prioritering','tab-loneoversyn','tab-struktur','tab-likvardighet','tab-utforska','tab-lonepolitik'].forEach(id => {
+    ['tab-kon','tab-matrix','tab-prioritering','tab-loneoversyn','tab-struktur','tab-likvardighet','tab-utforska'].forEach(id => {
         const el = document.getElementById(id);
         if (!el) return;
         /** @type {HTMLInputElement} */ (el).disabled = false;
@@ -17330,6 +17329,7 @@ function unlockTabs() {
         const tip = el.getAttribute('data-tip');
         if (tip) el.setAttribute('title', tip); else el.removeAttribute('title');
     });
+    synkaJamforelseFlik();
 }
 
 // Enda källan för "rendera innehållet i flik X". Anropas både av nav-klick och
@@ -17356,7 +17356,7 @@ function renderTabContent(target) {
 }
 // Flikar som bara har något att visa när lönefilen är inläst. Nås en sådan utan underlag (en direktlänk, en
 // konfigurationsfil) säger en rad överst vad som saknas, i stället för tomma rader.
-const KRAVER_UNDERLAG = ['kon', 'matrix', 'prioritering', 'struktur', 'loneoversyn', 'utforska', 'lonepolitik'];
+const KRAVER_UNDERLAG = ['kon', 'matrix', 'prioritering', 'struktur', 'loneoversyn', 'utforska', 'benchmark'];
 function _ritaIngetUnderlag(target, tomt) {
     const vy = document.getElementById('view-' + ((PANEL_GROUPS[target] || [target])[0]));
     if (!vy) return;
@@ -17377,14 +17377,13 @@ function _renderTabContent(target) {
         const s = document.getElementById("bas-select-kon"); if (s) renderKon(/** @type {HTMLInputElement} */ (s).value); renderLifecycleAnalysis();
         const s2 = document.getElementById("bas-select-demo"); if (s2) renderDemografi(/** @type {HTMLInputElement} */ (s2).value);
     }
-    else if (target === "benchmark"    && d.length) generateBenchmark();
+    else if (target === "benchmark"    && d.length) { renderReferensOverblick(); renderLonepolitik(); generateBenchmark(); }
     else if (target === "matrix"       && d.length) { generateSkevhet(); generateEUDirectiveMatrix(); renderPersonerAttGranska(); renderLikaArbeteTopp(); }
     else if (target === "prioritering" && d.length) renderPrioritering();
     else if (target === "struktur"     && d.length) renderStructure();
     else if (target === "loneoversyn"  && d.length) renderForecast();
     else if (target === "likvardighet" && (d.length || state.statistik.length)) renderLikvardighet();
     else if (target === "utforska"     && d.length) { generateRapport(); renderExplorer(); }
-    else if (target === "lonepolitik"  && d.length) renderLonepolitik();
     else if (target === "dokumentera") medExportLage(() => { if (d.length) renderKvalitetssakring(); renderRapportunderlag(); renderExportBesked(); if (typeof renderArsjamforelse === 'function') renderArsjamforelse(); });   // allt här lämnar verktyget (ADR-51)
     else if (target === "dashboard" && d.length) renderOversiktDelar();
     else if (target === "info")  renderInfoTab();
@@ -17406,14 +17405,24 @@ const FLOW_NEXT = {
     struktur:     { tab: 'prioritering',  label: 'Prioritering & åtgärder' },
     prioritering: { tab: 'loneoversyn',   label: 'Löneöversyn' },
     loneoversyn:  { tab: 'handlingsplan', label: 'Handlingsplan' },
-    handlingsplan:{ tab: 'dokumentera',   label: 'Dokumentera & exportera' }
+    handlingsplan:{ tab: 'kon',           label: 'Ålder & karriär' },
+    kon:          { tab: 'benchmark',     label: 'Jämförelse' },
+    benchmark:    { tab: 'utforska',      label: 'Utforska' },
+    utforska:     { tab: 'dokumentera',   label: 'Dokumentera & exportera' }
 };
+// Fördjupningen är valfri: ett sådant steg som är låst eller dolt hoppas över (Jämförelse utan referens, allt utan underlag).
+const _FLOW_VALFRIA = ['kon', 'benchmark', 'utforska'];
+function _flowNasta(target) {
+    let next = FLOW_NEXT[target];
+    while (next && _FLOW_VALFRIA.includes(next.tab) && /** @type {HTMLInputElement|null} */ (document.querySelector(`.nav-item[data-tab="${next.tab}"]`))?.disabled) next = FLOW_NEXT[next.tab];
+    return next;
+}
 function renderFlowNav(target) {
     document.querySelectorAll('.flow-next-bar').forEach(el => el.remove());
-    const next = FLOW_NEXT[target];
+    const next = _flowNasta(target);
     // bestammelser (§ 8) är statisk och alltid tillgänglig; övriga kräver data
     if (!next || (target !== 'bestammelser' && target !== 'handlingsplan' && !getData().length)) return;
-    const view = document.getElementById('view-' + target);
+    const view = document.getElementById('view-' + (PANEL_GROUPS[target] || [target]).at(-1));
     if (!view) return;
     const bar = document.createElement('div');
     bar.className = 'flow-next-bar';
@@ -20625,6 +20634,7 @@ policyInput.addEventListener("change", e => {
             + (nAid ? ` (${nBas} BAS-nivå, ${nAid} AID-specifika)` : ' (BAS-nivå)')
             + ` · ${res.encoding === 'XLSX' ? res.format : res.encoding}`;
         policyStatus.className = "status-msg success";
+        synkaJamforelseFlik();
         markUploadLoaded('upload-cell-policy', 'Inläst');
         state.filnamn.policy = file.name; renderFilrutor();
         hideLoading(); updateCompliance();
@@ -20635,15 +20645,19 @@ policyInput.addEventListener("change", e => {
     });
 });
 
-// Jämförelse-fliken syns bara när jämförelsestatistik är uppladdad.
+// Fliken Jämförelse syns när underlaget och minst en referens är inlästa. Utan underlag är den låst som de andra
+// flikarna; med underlag men utan referens är den dold (ADR-55).
 function _visaJamforelseFlik(synlig) {
     const tb = document.getElementById('tab-benchmark');
     if (!tb) return;
-    tb.hidden = !synlig;
+    tb.hidden = !synlig && state.data.length > 0;
     /** @type {HTMLInputElement} */ (tb).disabled = !synlig;
-    if (synlig) tb.removeAttribute('title');
+    const tip = tb.getAttribute('data-tip');
+    if (synlig && tip) tb.setAttribute('title', tip);
     if (!synlig && tb.classList.contains('active')) /** @type {HTMLElement} */ (document.querySelector('.nav-item[data-tab="dashboard"]'))?.click();
 }
+
+function synkaJamforelseFlik() { _visaJamforelseFlik(state.data.length > 0 && (state.policy.length > 0 || state.statistik.length > 0)); }
 
 // ---- File Upload: External Statistics (Excel) ----
 const statInput = /** @type {HTMLElement} */ (document.getElementById("file-input-stat"));
@@ -20745,7 +20759,7 @@ statInput.addEventListener("change", e => {
             markUploadLoaded('upload-cell-stat', 'Inläst');
             state.filnamn.statistik = file.name; renderFilrutor();
             if (typeof renderPaketInfo === 'function') { renderPaketInfo(); uppdateraPaketKnapp(); }
-            _visaJamforelseFlik(true);
+            synkaJamforelseFlik();
             hideLoading(); updateCompliance();
             renderConsistencyBanner();
             renderActionChecklist();
@@ -22193,14 +22207,13 @@ function renderLikaArbeteTopp() {
 // Copyright 2026 Felix Jansson
 
 // ---- Jämförelsestatistik (ADR-35) ----
-// Raderna räknas i src/lib/jamforelse.js; här finns reglage, filter, tabell och diagram.
-const _JMF_KALLOR = ['statistik', 'stallningstagande'];
-const _jmfVal = { kalla: 'statistik', bas: '', sektor: '' };
+// Raderna räknas i src/lib/jamforelse.js; här finns filter, tabell och diagram. Avsnittet Mot jämförelsestatistiken i
+// fliken Jämförelse: jämförelsen mot ställningstagandet är avsnittet före (75-lonepolitik.js, ADR-55).
+const _jmfVal = { bas: '', sektor: '' };
 
 function jamforelseVal() { return { ..._jmfVal }; }
-/** @param {{kalla?: string, bas?: string, sektor?: string}} [val] */
-function jamforelseSattVal({ kalla, bas, sektor } = {}) {
-    if (kalla !== undefined) _jmfVal.kalla = _JMF_KALLOR.includes(kalla) ? kalla : 'statistik';
+/** @param {{bas?: string, sektor?: string}} [val] */
+function jamforelseSattVal({ bas, sektor } = {}) {
     if (bas !== undefined) _jmfVal.bas = typeof bas === 'string' ? bas : '';
     if (sektor !== undefined) _jmfVal.sektor = typeof sektor === 'string' ? sektor : '';
 }
@@ -22210,13 +22223,7 @@ function jamforelseUnderlag() {
 function _jmfKallaNamn(kalla) {
     return kalla === 'stallningstagande' ? referensKortnamn() : jmfNamn('jämförelsestatistiken');
 }
-// Den källa som faktiskt visas: det sparade valet om den källan är inläst, annars den andra.
-// Valet skrivs inte över, så det gäller igen när källan läses in (och i konfigurationsfilen).
-function jamforelseAktivKalla() {
-    const har = { statistik: state.statistik.length > 0, stallningstagande: state.policy.length > 0 };
-    if (har[_jmfVal.kalla] || (!har.statistik && !har.stallningstagande)) return _jmfVal.kalla;
-    return har.statistik ? 'statistik' : 'stallningstagande';
-}
+function jamforelseAktivKalla() { return 'statistik'; }
 // "Urval: BAS C · sektor X" när ett filter är aktivt, annars tomt — för panel, Excel och utskrift.
 function jamforelseUrvalText() {
     const delar = [];
@@ -22250,27 +22257,13 @@ function generateBenchmark() {
     const infoEl = document.getElementById('benchmark-metric-info');
     if (!tbody) return;
     const d = getData();
-    const har = { statistik: state.statistik.length > 0, stallningstagande: state.policy.length > 0 };
-    // Källknapparna: en källa som inte är inläst är gråmarkerad; är bara en inläst är den vald.
-    const aktivKalla = jamforelseAktivKalla();
-    document.querySelectorAll('.benchmark-metric-btn[data-kalla]').forEach(btn => {
-        const k = /** @type {HTMLElement} */ (btn).dataset.kalla, aktiv = k === aktivKalla;
-        /** @type {HTMLElement} */ (btn).tabIndex = aktiv ? 0 : -1;   // tabbstoppet följer den källa som visas
-        // aria-disabled (inte disabled): knappen ska gå att nå i flikraden med piltangenterna.
-        const saknas = !har[k] && (har.statistik || har.stallningstagande);
-        btn.setAttribute('aria-disabled', saknas ? 'true' : 'false');
-        btn.classList.toggle('jmf-saknas', saknas);
-        /** @type {HTMLElement} */ (btn).title = saknas ? 'Inte inläst' : '';
-        btn.classList.toggle('active', aktiv);
-        btn.setAttribute('aria-selected', aktiv ? 'true' : 'false');
-    });
-
-    if ((!har.statistik && !har.stallningstagande) || !d.length) {
+    if (!state.statistik.length || !d.length) {
         tbody.innerHTML = `<tr><td colspan="12" class="pad-0"><div class="flik-empty-state">
-            <div class="empty-icon">${ikon('tomLada', 32)}</div><h2>Referensdata saknas</h2>
-            <p>Läs in jämförelsestatistik eller ett lönepolitiskt ställningstagande på Översikt.</p>
+            <div class="empty-icon">${ikon('tomLada', 32)}</div><h2>Jämförelsestatistik saknas</h2>
+            <p>Läs in jämförelsestatistik på Översikt, så jämförs organisationens löner mot den här.</p>
             <button class="empty-action" data-goto-tab="dashboard">Gå till uppladdning</button></div></td></tr>`;
         if (infoEl) infoEl.textContent = '';
+        rensaFigur('chart-jamforelse-spann'); rensaFigur('chart-jamforelse-avvikelse');
         const diag = document.getElementById('jmf-diagram'); if (diag) diag.innerHTML = '';
         return;
     }
@@ -22279,7 +22272,7 @@ function generateBenchmark() {
     _jmfVal.bas = _jmfFyllVal(document.getElementById('jmf-bas'), [...new Set(alla.map(r => r.bas))].sort(), _jmfVal.bas);
     _jmfVal.sektor = _jmfFyllVal(document.getElementById('jmf-sektor'), [...new Set(alla.map(r => r.sektor))].sort(_aidJamforSektor), _jmfVal.sektor);
     const rader = alla.filter(r => (!_jmfVal.bas || r.bas === _jmfVal.bas) && (!_jmfVal.sektor || r.sektor === _jmfVal.sektor));
-    const kalla = aktivKalla;
+    const kalla = jamforelseAktivKalla();
 
     // Rubrikerna för jmf-kolumnerna namnger källan, så att exporterna säger vad som jämförs.
     const kallaNamn = _jmfKallaNamn(kalla);
@@ -22349,10 +22342,6 @@ function generateBenchmark() {
     });
 }
 
-document.querySelectorAll('.benchmark-metric-btn[data-kalla]').forEach(btn => {
-    btn.addEventListener('click', () => { if (btn.getAttribute('aria-disabled') === 'true') return; jamforelseSattVal({ kalla: /** @type {HTMLElement} */ (btn).dataset.kalla }); generateBenchmark(); });
-});
-_wireTablistKeys(/** @type {HTMLElement[]} */ ([...document.querySelectorAll('.benchmark-metric-btn[data-kalla]')]));
 document.getElementById('jmf-bas')?.addEventListener('change', e => { jamforelseSattVal({ bas: /** @type {HTMLInputElement} */ (e.target).value }); generateBenchmark(); });
 document.getElementById('jmf-sektor')?.addEventListener('change', e => { jamforelseSattVal({ sektor: /** @type {HTMLInputElement} */ (e.target).value }); generateBenchmark(); });
 
@@ -22614,6 +22603,141 @@ document.getElementById('pag-grans')?.addEventListener('input', () => renderPers
 // När fältet lämnas visas värdet som faktiskt används (klämt till 5–30).
 document.getElementById('pag-grans')?.addEventListener('change', e => { /** @type {HTMLInputElement} */ (e.target).value = String(_pagGrans()); renderPersonerAttGranska(); });
 document.addEventListener('click', e => { if (/** @type {HTMLElement} */ (e.target).closest('#pag-visa-alla')) renderPersonerAttGranska(true); });
+// SPDX-License-Identifier: MIT
+// Copyright 2026 Felix Jansson
+
+// ---- Överblicken i Jämförelse: löneläget och statistiken mot ställningstagandet (ADR-55) ----
+// Beräkningen är src/lib/referenser.js. Ställningstagandet är referenspunkten: dess kolumner och rader står först,
+// och orden säger var löneläget och statistiken ligger mot det, aldrig tvärtom.
+const _RR_MAX = 25;
+
+/** Överblicken ur Jämförelses rader, med den referens som finns; null utan underlag eller utan någon referens. */
+function referensOverblick() {
+    const harStatistik = state.statistik.length > 0, harStallningstagande = state.policy.length > 0;
+    if (!getData().length || (!harStatistik && !harStallningstagande)) return null;
+    return _rrOverblick(jamforelseUnderlag().rader, { harStatistik, harStallningstagande,
+        statistikHarSpann: !!state.statistikHasP10 && !!state.statistikHasP90 });
+}
+const _rrForslagNamn = { stallningstagande: 'Ställningstagandet', statistik: 'Statistiken' };
+const _rrPct = v => (v == null ? '–' : `${v >= 0 ? '+' : '−'}${svTal(Math.abs(v), 1)} %`);
+const _rrSkillnad = (org, ref) => (org != null && ref != null ? (org / ref - 1) * 100 : null);
+const _rrLageText = l => (l.pos == null ? '–' : `${l.ord} (${svTal(l.pos, 0)})`);
+
+// Skärmtabellens och Excel-bladets kolumner, i samma ordning. Ställningstagandets kolumner står före statistikens.
+function _rrKolumner({ harStatistik, harStallningstagande }) {
+    const per = [['P10', 'p10'], ['Median', 'median'], ['P90', 'p90']];
+    const skillnad = (kort, nyckel) => per.map(([t, p]) => ({ rubrik: `${t} mot ${kort} (%)`, typ: 'pct', varde: g => _rrSkillnad(g.org[p], g[nyckel][p]) }));
+    const lage = g => [harStallningstagande && _rrLageText(g.lage.stallningstagande), harStatistik && _rrLageText(g.lage.statistik)].filter(Boolean).join(' · ');
+    return [
+        { rubrik: 'Yrkesgrupp', typ: 'text', varde: g => `${g.yrke} · BAS ${g.bas}` },
+        { rubrik: 'n', typ: 'antal', varde: g => g.n },
+        ...per.map(([t, p]) => ({ rubrik: `${t} (kr/mån)`, typ: 'kr', varde: g => g.org[p] })),
+        ...(harStallningstagande ? skillnad('ställn.', 'stallningstagande') : []),
+        ...(harStatistik ? skillnad('stat.', 'statistik') : []),
+        { rubrik: harStatistik && harStallningstagande ? 'Läge (ställn. · stat.)' : 'Läge i spannet', typ: 'text', varde: lage,
+          sortering: g => (harStallningstagande ? g.lage.stallningstagande.pos : g.lage.statistik.pos) ?? '' },
+        { rubrik: 'Mönster', typ: 'text', varde: g => g.monster.text },
+        { rubrik: 'Förslag på referens', typ: 'text', varde: g => (g.forslag.referens ? `${_rrForslagNamn[g.forslag.referens]}: ${g.forslag.skal}` : '–') }
+    ];
+}
+
+function _rrTabellHtml(kolumner, grupper) {
+    const cell = (k, g) => {
+        const v = k.varde(g);
+        if (k.typ === 'text') return `<td${k.sortering ? ` data-sort-value="${k.sortering(g)}"` : ''}>${esc(v) || '–'}</td>`;
+        if (v == null) return '<td class="num muted" data-sort-value="">–</td>';
+        if (k.typ === 'pct') return `<td class="num" data-sort-value="${v.toFixed(2)}">${_rrPct(v)}</td>`;
+        return `<td class="num" data-sort-value="${v}">${svTal(v, 0)}</td>`;
+    };
+    return `<div class="table-container"><table id="ref-tabell" class="data-table" aria-label="Löneläget och statistiken mot ställningstagandet per yrkesgrupp"><thead><tr>`
+        + kolumner.map(k => `<th scope="col">${esc(k.rubrik)}</th>`).join('')
+        + `</tr></thead><tbody>${grupper.map(g => `<tr>${kolumner.map(k => cell(k, g)).join('')}</tr>`).join('')}</tbody></table></div>`;
+}
+
+function _rrTalHtml(tal, { harStatistik, harStallningstagande }) {
+    const ruta = (etikett, varde) => `<div class="stat-box"><div class="stat-etikett">${esc(etikett)}</div><div class="stat-val">${esc(varde)}</div></div>`;
+    const monsterRuta = (etikett, m) => ruta(etikett, `${m.grupper} · ${svPct(m.andel, 0)}`);
+    const pm = tal.perMonster;
+    return '<div class="summary-stats">' + [
+        ruta('Yrkesgrupper', String(tal.antalGrupper)),
+        ...(harStatistik && harStallningstagande ? [
+            monsterRuta('Båda över ställningstagandet', pm.badaOver), monsterRuta('Bara löneläget över', pm.baraLonelageOver),
+            monsterRuta('Bara statistiken över', pm.baraStatistikOver), monsterRuta('Båda inom', pm.badaInom),
+            ruta('Förslaget är statistiken', `${tal.forslagStatistik} grupper`)] : []),
+        ...(harStallningstagande ? [ruta('Medianen mot ställningstagandet', _rrPct(tal.vagdMedianMotStallningstagandePct))] : []),
+        ...(harStatistik ? [ruta('Medianen mot statistiken', _rrPct(tal.vagdMedianMotStatistikPct))] : [])
+    ].join('') + '</div>';
+}
+
+// Tre rader per yrkesgrupp på en gemensam lönelinje: bandet är P10–P90, strecket medianen. Färgen sitter på punkterna,
+// för raden säger redan vad den visar. En referens med bara median får inget band, bara strecket.
+function _rrHantelFigur(rader, { harStatistik }) {
+    const delar = r => [
+        ['ställningstagandet', r.stallningstagande, PALETTE.semantic.neutral],
+        ...(harStatistik ? [['statistiken', r.statistik, PALETTE.semantic.trend]] : []),
+        ['organisationen', r.org, PALETTE.semantic.mork]
+    ].map(([namn, v, farg]) => ({ namn: r.namn, y: `${r.namn} · ${namn}`, v, farg }));
+    const alla = rader.flatMap(delar), kr = v => _figTalformat(v, 'kr');
+    const med = alla.filter(d => d.v && d.v.median != null);
+    return { beskrivning: 'Månadslönen per yrkesgrupp på tre rader: ställningstagandet, som är referenspunkten, statistiken och organisationen. Bandet är P10–P90 och strecket medianen. Samma värden står i tabellen ovanför.',
+        x: { skala: 'linjar', format: 'kr', titel: 'Månadslön (kr)' }, y: { skala: 'band', ordning: alla.map(d => d.y), etikettMax: 48 },
+        hojd: 60 + 3 * 20 * rader.length,
+        lager: [
+            { marke: 'intervall', riktning: 'liggande', serie: 'P10–P90', farg: PALETTE.semantic.neutral, tjocklek: 10, opacitet: 0.45, legend: false,
+              data: med.filter(d => d.v.p10 != null && d.v.p90 != null).map(d => ({ y: d.y, lag: d.v.p10, hog: d.v.p90, farg: d.farg })),
+              tips: d => [[d.y], ['P10–P90', `${_figTalformat(d.lag, 'kr', { enhet: false })}–${kr(d.hog)}`]] },
+            { marke: 'punkt', symbol: 'streck', serie: 'Median', farg: PALETTE.semantic.mork, storlek: 5, legend: false,
+              data: med.map(d => ({ y: d.y, x: d.v.median, farg: d.farg })), tips: d => [[d.y], ['Median', kr(d.x)]] }
+        ] };
+}
+
+function _rrStatTabellHtml(rader) {
+    return `<h3 class="jmf-diagram-rubrik">Statistiken mot ställningstagandet</h3>
+        <p class="muted">Positivt: statistiken ligger över ställningstagandet. Negativt: statistiken ligger under det. Organisationens löner ingår inte.</p>
+        <div class="table-container"><table id="ref-stat-mot-stallning" class="data-table" aria-label="Statistiken mot ställningstagandet per yrkesgrupp"><thead><tr>
+        <th scope="col">Yrkesgrupp</th><th scope="col">BAS</th><th scope="col">P10 (%)</th><th scope="col">Median (%)</th><th scope="col">P90 (%)</th></tr></thead><tbody>`
+        + rader.map(r => `<tr><td>${esc(r.yrke)}</td><td>${esc(r.bas)}</td>${['p10', 'median', 'p90'].map(p => (r[p] == null
+            ? '<td class="num muted" data-sort-value="">–</td>' : `<td class="num" data-sort-value="${r[p].toFixed(2)}">${_rrPct(r[p])}</td>`)).join('')}</tr>`).join('')
+        + '</tbody></table></div>';
+}
+
+// Flikens topp: vilka referenser som finns, och hur många grupper som ligger utanför ställningstagandet.
+function _rrRitaTopp(o, { harStatistik, harStallningstagande }) {
+    const host = document.getElementById('jmf-slutsatser');
+    if (!host) return;
+    if (!o) { host.innerHTML = ''; return; }
+    const antal = villkor => o.grupper.filter(villkor).length;
+    const grupper = n => `${n} ${n === 1 ? 'yrkesgrupp' : 'yrkesgrupper'}`;
+    host.innerHTML = _laSlutsats('Referenser', harStatistik && harStallningstagande ? 'Båda' : harStatistik ? 'Statistiken' : 'Ställningstagandet',
+            harStatistik && harStallningstagande ? 'Ställningstagandet är referenspunkten' : 'Bara den referensen är inläst')
+        + (harStallningstagande ? _laSlutsats('Löneläget utanför ställningstagandet', grupper(antal(g => g.monster.lonelage === 'ovanför' || g.monster.lonelage === 'nedanför')), `av ${o.tal.antalGrupper}`) : '')
+        + (harStatistik && harStallningstagande ? _laSlutsats('Statistiken över ställningstagandet', grupper(antal(g => g.monster.statistik === 'över')), `av ${o.tal.antalGrupper}`) : '');
+}
+
+function renderReferensOverblick() {
+    const host = document.getElementById('ref-overblick');
+    if (!host) return;
+    rensaFigur('chart-ref-hantel');
+    const o = referensOverblick();
+    _rrRitaTopp(o, { harStatistik: state.statistik.length > 0, harStallningstagande: state.policy.length > 0 });
+    if (!o) { host.innerHTML = '<p class="muted">Ingen referens är inläst. Läs in ett ställningstagande eller jämförelsestatistik på Översikt.</p>'; return; }
+    const har = { harStatistik: state.statistik.length > 0, harStallningstagande: state.policy.length > 0 };
+    const saknas = [!har.harStatistik && 'Jämförelsestatistik saknas — läs in den på Översikt.', !har.harStallningstagande && 'Ställningstagande saknas — läs in det på Översikt.'].filter(Boolean);
+    const utanSpann = har.harStatistik && (!state.statistikHasP10 || !state.statistikHasP90);
+    const flera = o.grupper.length > _RR_MAX;
+    host.innerHTML = `${saknas.map(s => `<p class="urvalsrad">${esc(s)}</p>`).join('')}
+        <p class="muted">Ställningstagandet är referenspunkten: löneläget och statistiken mäts mot det. Läget är var medianen ligger i spannet (0 = P10, 100 = P90), och förslaget är ett förslag, ingen regel.</p>
+        ${_rrTalHtml(o.tal, har)}
+        ${_rrTabellHtml(_rrKolumner(har), o.grupper)}
+        <h3 class="jmf-diagram-rubrik">Lönerna mot ställningstagandet och statistiken</h3>
+        <div class="jmf-diagram-yta"><div id="chart-ref-hantel"></div></div>
+        <p class="muted">${flera ? `Visar de ${_RR_MAX} första yrkesgrupperna av ${o.grupper.length} — tabellen har alla. ` : ''}${utanSpann ? 'P10 och P90 saknas i jämförelsestatistiken: den visas bara med sin median.' : ''}</p>
+        ${har.harStatistik && har.harStallningstagande ? _rrStatTabellHtml(o.statistikMotStallningstagande) : ''}`;
+    try { ritaFigur('chart-ref-hantel', _rrHantelFigur(_rrHantelRader(o.grupper.slice(0, _RR_MAX)), har)); } catch (e) { rapporteraFel('Jämförelse: överblickens bild', e); }
+    addTableExportTools('ref-tabell', 'referenser');
+    enableTableSort('ref-tabell');
+    enableTableSort('ref-stat-mot-stallning');
+}
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 // Regressionsmodeller för lika arbete — app-adaptern
@@ -25013,7 +25137,7 @@ const RM_DIAGRAM = [
     // så att rapporten aldrig bär ett diagram för ett enda intervall under en rubrik som gäller alla.
     { id: 'chart-kon-aldergap', flik: 'kon', avsnitt: 'struktur', rubrik: 'Lönegap per åldersgrupp — rå skillnad, alla yrken och nivåer',
       om: () => { const v = /** @type {HTMLInputElement} */ ((document.getElementById('bas-select-kon') || {})).value; return !v || v === '__ALLA__'; } },
-    { id: 'chart-lp-konlagen', flik: 'lonepolitik', avsnitt: 'struktur', rubrik: 'Var i referensens lönespann ligger kvinnor och män' },
+    { id: 'chart-lp-konlagen', flik: 'benchmark', avsnitt: 'struktur', rubrik: 'Var i referensens lönespann ligger kvinnor och män' },
     { id: 'chart-likvardighet-heatmap', flik: 'likvardighet', avsnitt: 'likvardigt', rubrik: 'Kandidatpar i likvärdigt arbete', kraverAllaPar: true },
     // Jämförelsen med förra året (ADR-54) ritas av panelen i Dokumentera & exportera, bara när ett bokslut är inläst.
     { id: 'chart-arsjamforelse', flik: 'dokumentera', avsnitt: 'arsjamforelse', rubrik: 'Kvinnors medianlön i procent av mäns per yrkesgrupp, förra året (strecket) och i år (punkten)',
@@ -26505,9 +26629,8 @@ const INFO_SECTIONS = {
             <tr><td>3 · Åtgärda</td><td>Handlingsplan</td><td>Mall för åtgärder, kostnad, ansvarig och tidsplan (senast inom tre år) samt dokumentationskrav. Utskrivbar.</td></tr>
             <tr><td>4 · Dokumentera</td><td>Dokumentera &amp; exportera</td><td>Färdigcheck och robusthet, all export (Word-utkast som .docx, PDF, Excel, protokoll för gemensam lönebedömning, handlingsplan), samverkan samt Spara och läsa in arbetet (konfiguration, ögonblicksbild, självdiagnostik)</td></tr>
             <tr><td>5 · Fördjupa (ej lagkrav)</td><td>Ålder &amp; karriär</td><td>Lön mot ålder per kön, demografi (åldersfördelning, successionsrisk) och livscykel: växer eller krymper gapet över karriären</td></tr>
-            <tr><td>5 · Fördjupa (ej lagkrav)</td><td>Lönepolitik</td><td>Lönerna mot referensen (ert lönepolitiska ställningstagande): bandkarta, könsposition i bandet, täckningsgrad</td></tr>
+            <tr><td>5 · Fördjupa (ej lagkrav)</td><td>Jämförelse</td><td>Löneläget och jämförelsestatistiken mot ställningstagandet per yrkesgrupp, avsnittet mot ställningstagandet (bandkarta, könsposition i bandet, täckningsgrad) och avsnittet mot statistiken. Syns när en referens är inläst.</td></tr>
             <tr><td>5 · Fördjupa (ej lagkrav)</td><td>Utforska</td><td>Löneöversikten (hela löneläget per BAS, kön och yrkesgrupp) och egna vyer: rader och kolumner, mått, helhet eller per kön, urval med villkor, elva diagramtyper, klick till gruppdossier</td></tr>
-            <tr><td>5 · Fördjupa (ej lagkrav)</td><td>Jämförelsestatistik</td><td>Skillnad per yrkesgrupp mot jämförelsestatistiken. Syns när statistikfilen är uppladdad.</td></tr>
             <tr><td>Hjälp</td><td>Om verktyget</td><td>Du är här</td></tr>
         </table>
 
@@ -28819,7 +28942,7 @@ function _lpExcelBlad() {
 //
 // Samlar allt verktyget REDAN vet om en vald yrkesgrupp (AID × BAS) på ett
 // ställe, så handläggaren slipper hoppa mellan Lika arbete, Likvärdigt arbete,
-// Prioritering, Jämförelse och Lönepolitik för att förstå en enda grupp.
+// Prioritering och Jämförelse för att förstå en enda grupp.
 //
 // Ingen ny statistik — enbart en sammanställning av befintliga beräkningar.
 // Dossiern DOKUMENTERAR INTE sakliga skäl; det är en medveten produktgräns
@@ -29062,7 +29185,7 @@ function _gdRenderBody(d) {
            <p class="gd-note">Avser BAS-intervallet, inte enbart denna yrkesgrupp.</p>`
         : missing('BAS-intervallet har inte tillräcklig könsbalans för en åldersrensad skattning.');
 
-    // 4. Lönepolitik
+    // 4. Mot ställningstagandet
     const polInner = d.pol
         ? `<p>Referens (${esc(referensKortnamn())}): <strong>${kr(d.pol.p10)} – ${kr(d.pol.p90)}</strong> (median ${kr(d.pol.med)}) · nivå: <strong>${esc(d.polLevel || '–')}</strong></p>
            ${d.band && d.band.position != null
@@ -29390,7 +29513,7 @@ function buildFardigcheck() {
         const utan = getBasIntervals().filter(b => !policyFor(null, b));
         if (utan.length) {
             out.push({
-                id: 'bas-utan-policy', level: 'warn', tab: 'lonepolitik',
+                id: 'bas-utan-policy', level: 'warn', tab: 'benchmark',
                 title: `${utan.length} BAS-intervall saknar lönepolitisk referens`,
                 detail: `Saknas: ${utan.join(', ')}. Grupper utan referens kan inte avvika — "inga avvikelser" kan betyda "ingen referens".`
             });

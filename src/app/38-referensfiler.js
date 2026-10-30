@@ -84,6 +84,7 @@ policyInput.addEventListener("change", e => {
             + (nAid ? ` (${nBas} BAS-nivå, ${nAid} AID-specifika)` : ' (BAS-nivå)')
             + ` · ${res.encoding === 'XLSX' ? res.format : res.encoding}`;
         policyStatus.className = "status-msg success";
+        synkaJamforelseFlik();
         markUploadLoaded('upload-cell-policy', 'Inläst');
         state.filnamn.policy = file.name; renderFilrutor();
         hideLoading(); updateCompliance();
@@ -94,15 +95,19 @@ policyInput.addEventListener("change", e => {
     });
 });
 
-// Jämförelse-fliken syns bara när jämförelsestatistik är uppladdad.
+// Fliken Jämförelse syns när underlaget och minst en referens är inlästa. Utan underlag är den låst som de andra
+// flikarna; med underlag men utan referens är den dold (ADR-55).
 function _visaJamforelseFlik(synlig) {
     const tb = document.getElementById('tab-benchmark');
     if (!tb) return;
-    tb.hidden = !synlig;
+    tb.hidden = !synlig && state.data.length > 0;
     /** @type {HTMLInputElement} */ (tb).disabled = !synlig;
-    if (synlig) tb.removeAttribute('title');
+    const tip = tb.getAttribute('data-tip');
+    if (synlig && tip) tb.setAttribute('title', tip);
     if (!synlig && tb.classList.contains('active')) /** @type {HTMLElement} */ (document.querySelector('.nav-item[data-tab="dashboard"]'))?.click();
 }
+
+function synkaJamforelseFlik() { _visaJamforelseFlik(state.data.length > 0 && (state.policy.length > 0 || state.statistik.length > 0)); }
 
 // ---- File Upload: External Statistics (Excel) ----
 const statInput = /** @type {HTMLElement} */ (document.getElementById("file-input-stat"));
@@ -204,7 +209,7 @@ statInput.addEventListener("change", e => {
             markUploadLoaded('upload-cell-stat', 'Inläst');
             state.filnamn.statistik = file.name; renderFilrutor();
             if (typeof renderPaketInfo === 'function') { renderPaketInfo(); uppdateraPaketKnapp(); }
-            _visaJamforelseFlik(true);
+            synkaJamforelseFlik();
             hideLoading(); updateCompliance();
             renderConsistencyBanner();
             renderActionChecklist();

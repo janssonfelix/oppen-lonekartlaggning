@@ -1139,7 +1139,7 @@ describe('svenskt talformat i alla vyer, utan att exporterna ändras', () => {
         const w2 = createAppWindow();
         w2.__loadDemoData();
         const kvar = {};
-        for (const flik of ['dashboard', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn', 'kon', 'lonepolitik', 'utforska', 'benchmark']) {
+        for (const flik of ['dashboard', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn', 'kon', 'utforska', 'benchmark']) {
             w2.__renderTabContent(flik);
             const traffar = new Set();
             for (const el of w2.document.querySelectorAll('.view *, [id^="view-"] *')) {

@@ -5330,11 +5330,11 @@ function hantelRader(grupper) {
 
     return { lageISpann, monster, forslag, referensOverblick, hantelRader };
 })();
-const _rfLage = __mirrorReferenser.lageISpann;
-const _rfMonster = __mirrorReferenser.monster;
-const _rfForslag = __mirrorReferenser.forslag;
-const _rfOverblick = __mirrorReferenser.referensOverblick;
-const _rfHantelRader = __mirrorReferenser.hantelRader;
+const _rrLage = __mirrorReferenser.lageISpann;
+const _rrMonster = __mirrorReferenser.monster;
+const _rrForslag = __mirrorReferenser.forslag;
+const _rrOverblick = __mirrorReferenser.referensOverblick;
+const _rrHantelRader = __mirrorReferenser.hantelRader;
 
 // ---- speglar src/lib/docx.js ----
 const __mirrorDocx = (() => {

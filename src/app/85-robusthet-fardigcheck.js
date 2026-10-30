@@ -220,7 +220,7 @@ function buildFardigcheck() {
         const utan = getBasIntervals().filter(b => !policyFor(null, b));
         if (utan.length) {
             out.push({
-                id: 'bas-utan-policy', level: 'warn', tab: 'lonepolitik',
+                id: 'bas-utan-policy', level: 'warn', tab: 'benchmark',
                 title: `${utan.length} BAS-intervall saknar lönepolitisk referens`,
                 detail: `Saknas: ${utan.join(', ')}. Grupper utan referens kan inte avvika — "inga avvikelser" kan betyda "ingen referens".`
             });

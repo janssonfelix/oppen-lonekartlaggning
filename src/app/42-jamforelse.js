@@ -2,14 +2,13 @@
 // Copyright 2026 Felix Jansson
 
 // ---- Jämförelsestatistik (ADR-35) ----
-// Raderna räknas i src/lib/jamforelse.js; här finns reglage, filter, tabell och diagram.
-const _JMF_KALLOR = ['statistik', 'stallningstagande'];
-const _jmfVal = { kalla: 'statistik', bas: '', sektor: '' };
+// Raderna räknas i src/lib/jamforelse.js; här finns filter, tabell och diagram. Avsnittet Mot jämförelsestatistiken i
+// fliken Jämförelse: jämförelsen mot ställningstagandet är avsnittet före (75-lonepolitik.js, ADR-55).
+const _jmfVal = { bas: '', sektor: '' };
 
 function jamforelseVal() { return { ..._jmfVal }; }
-/** @param {{kalla?: string, bas?: string, sektor?: string}} [val] */
-function jamforelseSattVal({ kalla, bas, sektor } = {}) {
-    if (kalla !== undefined) _jmfVal.kalla = _JMF_KALLOR.includes(kalla) ? kalla : 'statistik';
+/** @param {{bas?: string, sektor?: string}} [val] */
+function jamforelseSattVal({ bas, sektor } = {}) {
     if (bas !== undefined) _jmfVal.bas = typeof bas === 'string' ? bas : '';
     if (sektor !== undefined) _jmfVal.sektor = typeof sektor === 'string' ? sektor : '';
 }
@@ -19,13 +18,7 @@ function jamforelseUnderlag() {
 function _jmfKallaNamn(kalla) {
     return kalla === 'stallningstagande' ? referensKortnamn() : jmfNamn('jämförelsestatistiken');
 }
-// Den källa som faktiskt visas: det sparade valet om den källan är inläst, annars den andra.
-// Valet skrivs inte över, så det gäller igen när källan läses in (och i konfigurationsfilen).
-function jamforelseAktivKalla() {
-    const har = { statistik: state.statistik.length > 0, stallningstagande: state.policy.length > 0 };
-    if (har[_jmfVal.kalla] || (!har.statistik && !har.stallningstagande)) return _jmfVal.kalla;
-    return har.statistik ? 'statistik' : 'stallningstagande';
-}
+function jamforelseAktivKalla() { return 'statistik'; }
 // "Urval: BAS C · sektor X" när ett filter är aktivt, annars tomt — för panel, Excel och utskrift.
 function jamforelseUrvalText() {
     const delar = [];
@@ -59,27 +52,13 @@ function generateBenchmark() {
     const infoEl = document.getElementById('benchmark-metric-info');
     if (!tbody) return;
     const d = getData();
-    const har = { statistik: state.statistik.length > 0, stallningstagande: state.policy.length > 0 };
-    // Källknapparna: en källa som inte är inläst är gråmarkerad; är bara en inläst är den vald.
-    const aktivKalla = jamforelseAktivKalla();
-    document.querySelectorAll('.benchmark-metric-btn[data-kalla]').forEach(btn => {
-        const k = /** @type {HTMLElement} */ (btn).dataset.kalla, aktiv = k === aktivKalla;
-        /** @type {HTMLElement} */ (btn).tabIndex = aktiv ? 0 : -1;   // tabbstoppet följer den källa som visas
-        // aria-disabled (inte disabled): knappen ska gå att nå i flikraden med piltangenterna.
-        const saknas = !har[k] && (har.statistik || har.stallningstagande);
-        btn.setAttribute('aria-disabled', saknas ? 'true' : 'false');
-        btn.classList.toggle('jmf-saknas', saknas);
-        /** @type {HTMLElement} */ (btn).title = saknas ? 'Inte inläst' : '';
-        btn.classList.toggle('active', aktiv);
-        btn.setAttribute('aria-selected', aktiv ? 'true' : 'false');
-    });
-
-    if ((!har.statistik && !har.stallningstagande) || !d.length) {
+    if (!state.statistik.length || !d.length) {
         tbody.innerHTML = `<tr><td colspan="12" class="pad-0"><div class="flik-empty-state">
-            <div class="empty-icon">${ikon('tomLada', 32)}</div><h2>Referensdata saknas</h2>
-            <p>Läs in jämförelsestatistik eller ett lönepolitiskt ställningstagande på Översikt.</p>
+            <div class="empty-icon">${ikon('tomLada', 32)}</div><h2>Jämförelsestatistik saknas</h2>
+            <p>Läs in jämförelsestatistik på Översikt, så jämförs organisationens löner mot den här.</p>
             <button class="empty-action" data-goto-tab="dashboard">Gå till uppladdning</button></div></td></tr>`;
         if (infoEl) infoEl.textContent = '';
+        rensaFigur('chart-jamforelse-spann'); rensaFigur('chart-jamforelse-avvikelse');
         const diag = document.getElementById('jmf-diagram'); if (diag) diag.innerHTML = '';
         return;
     }
@@ -88,7 +67,7 @@ function generateBenchmark() {
     _jmfVal.bas = _jmfFyllVal(document.getElementById('jmf-bas'), [...new Set(alla.map(r => r.bas))].sort(), _jmfVal.bas);
     _jmfVal.sektor = _jmfFyllVal(document.getElementById('jmf-sektor'), [...new Set(alla.map(r => r.sektor))].sort(_aidJamforSektor), _jmfVal.sektor);
     const rader = alla.filter(r => (!_jmfVal.bas || r.bas === _jmfVal.bas) && (!_jmfVal.sektor || r.sektor === _jmfVal.sektor));
-    const kalla = aktivKalla;
+    const kalla = jamforelseAktivKalla();
 
     // Rubrikerna för jmf-kolumnerna namnger källan, så att exporterna säger vad som jämförs.
     const kallaNamn = _jmfKallaNamn(kalla);
@@ -158,10 +137,6 @@ function generateBenchmark() {
     });
 }
 
-document.querySelectorAll('.benchmark-metric-btn[data-kalla]').forEach(btn => {
-    btn.addEventListener('click', () => { if (btn.getAttribute('aria-disabled') === 'true') return; jamforelseSattVal({ kalla: /** @type {HTMLElement} */ (btn).dataset.kalla }); generateBenchmark(); });
-});
-_wireTablistKeys(/** @type {HTMLElement[]} */ ([...document.querySelectorAll('.benchmark-metric-btn[data-kalla]')]));
 document.getElementById('jmf-bas')?.addEventListener('change', e => { jamforelseSattVal({ bas: /** @type {HTMLInputElement} */ (e.target).value }); generateBenchmark(); });
 document.getElementById('jmf-sektor')?.addEventListener('change', e => { jamforelseSattVal({ sektor: /** @type {HTMLInputElement} */ (e.target).value }); generateBenchmark(); });
 

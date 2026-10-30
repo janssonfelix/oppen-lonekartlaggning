@@ -357,7 +357,7 @@ describe('diagram i Lika arbete, Struktur och de övriga flikarna', () => {
         const w2 = createAppWindow();
         w2.__loadDemoData();
         w2.__state.kLage = 'export';   // figurerna så som exporterna läser dem (ADR-51)
-        for (const t of ['matrix', 'likvardighet', 'prioritering', 'kon', 'lonepolitik', 'loneoversyn']) w2.__renderTabContent(t);
+        for (const t of ['matrix', 'likvardighet', 'prioritering', 'kon', 'benchmark', 'loneoversyn']) w2.__renderTabContent(t);
         const d = w2.document, f = id => (d.getElementById(id) || {})._figur;
         const kostnad = f('chart-prio-pareto');
         expect(kostnad.y2).toBeUndefined();                                       // en axel

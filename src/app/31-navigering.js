@@ -39,7 +39,7 @@ document.querySelectorAll(".nav-item").forEach(btn => {
         const titles = {
             dashboard: 'Översikt & Data',
             kon: 'Ålder & karriär', dokumentera: 'Dokumentera & exportera',
-            benchmark: 'Jämförelsestatistik', matrix: 'Lika arbete',
+            benchmark: 'Jämförelse', matrix: 'Lika arbete',
             bestammelser: 'Regler & praxis',
             handlingsplan: 'Handlingsplan',
             prioritering: 'Prioritering',
@@ -47,7 +47,6 @@ document.querySelectorAll(".nav-item").forEach(btn => {
             loneoversyn: 'Löneöversyn',
             likvardighet: 'Likvärdigt arbete',
             utforska: 'Utforska',
-            lonepolitik: 'Lönepolitik',
             info: 'Om verktyget'
         };
         const titleEl = document.getElementById("page-title");
@@ -66,10 +65,10 @@ const PANEL_GROUPS = {
     dokumentera: ['kvalitet', 'dokumentera']         // Dokumentera & exportera: färdigcheck + export + spara och läsa in arbetet
 };
 // Flikalias: namnen leds om till fliken som visar innehållet, så att inga länkar dör.
-const TAB_ALIAS = { rapport: 'utforska', demografi: 'kon', kvalitet: 'dokumentera' };
+const TAB_ALIAS = { rapport: 'utforska', demografi: 'kon', kvalitet: 'dokumentera', lonepolitik: 'benchmark' };
 function tabMal(namn) { return TAB_ALIAS[namn] || namn; }
 function unlockTabs() {
-    ['tab-kon','tab-matrix','tab-prioritering','tab-loneoversyn','tab-struktur','tab-likvardighet','tab-utforska','tab-lonepolitik'].forEach(id => {
+    ['tab-kon','tab-matrix','tab-prioritering','tab-loneoversyn','tab-struktur','tab-likvardighet','tab-utforska'].forEach(id => {
         const el = document.getElementById(id);
         if (!el) return;
         /** @type {HTMLInputElement} */ (el).disabled = false;
@@ -79,6 +78,7 @@ function unlockTabs() {
         const tip = el.getAttribute('data-tip');
         if (tip) el.setAttribute('title', tip); else el.removeAttribute('title');
     });
+    synkaJamforelseFlik();
 }
 
 // Enda källan för "rendera innehållet i flik X". Anropas både av nav-klick och
@@ -105,7 +105,7 @@ function renderTabContent(target) {
 }
 // Flikar som bara har något att visa när lönefilen är inläst. Nås en sådan utan underlag (en direktlänk, en
 // konfigurationsfil) säger en rad överst vad som saknas, i stället för tomma rader.
-const KRAVER_UNDERLAG = ['kon', 'matrix', 'prioritering', 'struktur', 'loneoversyn', 'utforska', 'lonepolitik'];
+const KRAVER_UNDERLAG = ['kon', 'matrix', 'prioritering', 'struktur', 'loneoversyn', 'utforska', 'benchmark'];
 function _ritaIngetUnderlag(target, tomt) {
     const vy = document.getElementById('view-' + ((PANEL_GROUPS[target] || [target])[0]));
     if (!vy) return;
@@ -126,14 +126,13 @@ function _renderTabContent(target) {
         const s = document.getElementById("bas-select-kon"); if (s) renderKon(/** @type {HTMLInputElement} */ (s).value); renderLifecycleAnalysis();
         const s2 = document.getElementById("bas-select-demo"); if (s2) renderDemografi(/** @type {HTMLInputElement} */ (s2).value);
     }
-    else if (target === "benchmark"    && d.length) generateBenchmark();
+    else if (target === "benchmark"    && d.length) { renderReferensOverblick(); renderLonepolitik(); generateBenchmark(); }
     else if (target === "matrix"       && d.length) { generateSkevhet(); generateEUDirectiveMatrix(); renderPersonerAttGranska(); renderLikaArbeteTopp(); }
     else if (target === "prioritering" && d.length) renderPrioritering();
     else if (target === "struktur"     && d.length) renderStructure();
     else if (target === "loneoversyn"  && d.length) renderForecast();
     else if (target === "likvardighet" && (d.length || state.statistik.length)) renderLikvardighet();
     else if (target === "utforska"     && d.length) { generateRapport(); renderExplorer(); }
-    else if (target === "lonepolitik"  && d.length) renderLonepolitik();
     else if (target === "dokumentera") medExportLage(() => { if (d.length) renderKvalitetssakring(); renderRapportunderlag(); renderExportBesked(); if (typeof renderArsjamforelse === 'function') renderArsjamforelse(); });   // allt här lämnar verktyget (ADR-51)
     else if (target === "dashboard" && d.length) renderOversiktDelar();
     else if (target === "info")  renderInfoTab();
@@ -155,14 +154,24 @@ const FLOW_NEXT = {
     struktur:     { tab: 'prioritering',  label: 'Prioritering & åtgärder' },
     prioritering: { tab: 'loneoversyn',   label: 'Löneöversyn' },
     loneoversyn:  { tab: 'handlingsplan', label: 'Handlingsplan' },
-    handlingsplan:{ tab: 'dokumentera',   label: 'Dokumentera & exportera' }
+    handlingsplan:{ tab: 'kon',           label: 'Ålder & karriär' },
+    kon:          { tab: 'benchmark',     label: 'Jämförelse' },
+    benchmark:    { tab: 'utforska',      label: 'Utforska' },
+    utforska:     { tab: 'dokumentera',   label: 'Dokumentera & exportera' }
 };
+// Fördjupningen är valfri: ett sådant steg som är låst eller dolt hoppas över (Jämförelse utan referens, allt utan underlag).
+const _FLOW_VALFRIA = ['kon', 'benchmark', 'utforska'];
+function _flowNasta(target) {
+    let next = FLOW_NEXT[target];
+    while (next && _FLOW_VALFRIA.includes(next.tab) && /** @type {HTMLInputElement|null} */ (document.querySelector(`.nav-item[data-tab="${next.tab}"]`))?.disabled) next = FLOW_NEXT[next.tab];
+    return next;
+}
 function renderFlowNav(target) {
     document.querySelectorAll('.flow-next-bar').forEach(el => el.remove());
-    const next = FLOW_NEXT[target];
+    const next = _flowNasta(target);
     // bestammelser (§ 8) är statisk och alltid tillgänglig; övriga kräver data
     if (!next || (target !== 'bestammelser' && target !== 'handlingsplan' && !getData().length)) return;
-    const view = document.getElementById('view-' + target);
+    const view = document.getElementById('view-' + (PANEL_GROUPS[target] || [target]).at(-1));
     if (!view) return;
     const bar = document.createElement('div');
     bar.className = 'flow-next-bar';

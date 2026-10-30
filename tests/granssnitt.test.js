@@ -213,7 +213,7 @@ describe('Löneöversyn utan påslag', () => {
 });
 
 describe('en exportknapp per kort', () => {
-    const FLIKAR = ['dashboard', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn', 'kon', 'lonepolitik', 'utforska'];
+    const FLIKAR = ['dashboard', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn', 'kon', 'benchmark', 'utforska'];
     it('varje diagram har en exportmeny, ingen behållare har två, och ingen fristående exportknapp står bredvid', () => {
         const w = createAppWindow();
         w.__loadDemoData();

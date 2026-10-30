@@ -98,17 +98,13 @@
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
                     <span class="nav-etikett">Ålder & karriär</span>
                 </button>
-                <button class="nav-item" data-tip="Hur väl lever lönerna upp till referensen — ert lönepolitiska ställningstagande?" data-tab="lonepolitik" id="tab-lonepolitik" aria-disabled="true" title="Ladda upp strukturdata för att aktivera" aria-controls="view-lonepolitik">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 2v20"></path><path d="M5 7h14"></path><path d="M5 17h14"></path><circle cx="12" cy="12" r="3"></circle></svg>
-                    <span class="nav-etikett">Lönepolitik</span>
+                <button class="nav-item" data-tip="Hur ligger lönerna till mot det ni jämför er med — ställningstagandet och jämförelsestatistiken? Fördjupning, inget lagkrav." data-tab="benchmark" id="tab-benchmark" aria-disabled="true" title="Ladda upp strukturdata för att aktivera" aria-controls="view-benchmark">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="6" x2="12" y2="12"></line><line x1="12" y1="12" x2="16" y2="14"></line></svg>
+                    <span class="nav-etikett">Jämförelse</span>
                 </button>
                 <button class="nav-item" data-tip="Bygg egna vyer: välj vad du vill gruppera på och vilket mått du vill se." data-tab="utforska" id="tab-utforska" aria-disabled="true" title="Ladda upp strukturdata för att aktivera" aria-controls="view-utforska">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><line x1="4" y1="20" x2="4" y2="10"></line><line x1="10" y1="20" x2="10" y2="4"></line><line x1="16" y1="20" x2="16" y2="14"></line><line x1="2" y1="20" x2="22" y2="20"></line></svg>
                     <span class="nav-etikett">Utforska</span>
-                </button>
-                <button class="nav-item" hidden data-tab="benchmark" id="tab-benchmark" aria-disabled="true" title="Ladda upp strukturdata och jämförelsestatistik för att aktivera" aria-controls="view-benchmark">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="6" x2="12" y2="12"></line><line x1="12" y1="12" x2="16" y2="14"></line></svg>
-                    <span class="nav-etikett">Jämförelsestatistik</span>
                 </button>
                 <div class="nav-group" role="presentation" aria-hidden="true">Hjälp</div>
                 <button class="nav-item" data-tab="info" id="tab-info" aria-controls="view-info">
@@ -1156,18 +1152,34 @@
 
                 <!-- Benchmark Tab View -->
                 <div id="view-benchmark" class="view-panel dold">
-                                        <div class="card hojd-vy-150 rulla">
-                        <div class="card-header">
-                            <h2 data-profile-template="Jämförelse mot {benchmarkLabel}">Jämförelse mot jämförelsestatistiken</h2>
-                            <p class="text-dampad-sm lh-1_55 marg-t-4">Jämför organisationens P10, median och P90 per yrke med jämförelsestatistiken eller ställningstagandet. Negativ skillnad (röd) = organisationen ligger lägre än jämförelsen.</p>
+                    <div id="jmf-slutsatser" class="slutsatser"></div>
+                    <details class="avsnitt" id="avsnitt-jmf-overblick" open>
+                    <summary><span class="avsnitt-titel"><h2>Överblick — löneläget och statistiken mot ställningstagandet</h2><span class="avsnitt-under">Per yrkesgrupp: var lönerna ligger mot ställningstagandet, och var statistiken ligger mot det</span></span></summary>
+                    <div id="ref-overblick"></div>
+                    </details>
+                    <details class="avsnitt" id="avsnitt-jmf-stallningstagande">
+                    <summary><span class="avsnitt-titel"><h2>Mot ställningstagandet</h2><span class="avsnitt-under">Täckning, bandkartan, könens läge i spannet och tabellen per yrkesgrupp</span></span></summary>
+                    <div class="flik-intro">
+                        <strong id="lonepolitik-rubrik">Lönerna mot ert lönepolitiska ställningstagande</strong>
+                        Jämför organisationens faktiska löneläge mot referensen — den inbyggda målbilden eller ert eget uppladdade ställningstagande — ner på yrkesgruppsnivå (AID). Policyn kan anges per BAS-intervall, per AID, eller båda — mest specifik referens vinner, och varje rad visar vilken nivå referensen kom ifrån. Detta är ett <strong>analysunderlag</strong>: att ligga utanför spannet är ett fynd att förklara, inte ett konstaterat fel.
+                    </div>
+                    <div id="lp-urval" class="urvalsrad"></div>
+                    <div id="lp-slutsatser" class="slutsatser"></div>
+                    <div id="lonepolitik-empty" class="dold">
+                        <div class="flik-empty-state">
+                            <div class="empty-icon"><svg class="ikon ikon-tomLada" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 13h5l1.5 3h5L16 13h5"/><path d="M5 5h14l2 8v6H3v-6z"/></svg></div>
+                            <h2>Referensen matchar inte underlaget</h2>
+                            <p>Referensen har inga rader för underlagets BAS-intervall eller yrken. Ladda upp en fil med P10/Median/P90 där varje rad har en <strong>BAS</strong>-kolumn, en <strong>AID</strong>-kolumn, eller båda.</p>
+                            <button class="empty-action" data-goto-tab="dashboard">Gå till uppladdning</button>
                         </div>
+                    </div>
+                    <div id="lonepolitik-content" class="dold"></div>
+                    </details>
+                    <details class="avsnitt" id="avsnitt-jmf-statistik">
+                    <summary><span class="avsnitt-titel"><h2 data-profile-template="Mot {benchmarkLabel}">Mot jämförelsestatistiken</h2><span class="avsnitt-under">Organisationens P10, median och P90 per yrke mot statistiken</span></span></summary>
+                        <p class="text-dampad-sm lh-1_55 marg-t-4">Jämför organisationens P10, median och P90 per yrke med jämförelsestatistiken. Negativ skillnad (röd) = organisationen ligger lägre än jämförelsen.</p>
 
                         <div class="benchmark-metric-bar">
-                            <span class="jmf-etikett">Jämför mot:</span>
-                            <div class="jmf-kallor" role="tablist" aria-label="Välj vad organisationens löner jämförs mot">
-                                <button class="benchmark-metric-btn active" data-kalla="statistik" role="tab" aria-selected="true">Jämförelsestatistiken</button>
-                                <button class="benchmark-metric-btn" data-kalla="stallningstagande" role="tab" aria-selected="false">Ställningstagandet</button>
-                            </div>
                             <label class="jmf-filter">BAS-intervall <select id="jmf-bas" class="form-select"><option value="">Alla</option></select></label>
                             <label class="jmf-filter">Sektor <select id="jmf-sektor" class="form-select"><option value="">Alla</option></select></label>
                             <button id="btn-export-benchmark" type="button" class="btn btn-secondary btn-sm marg-v-auto" aria-label="Exportera samlad jämförelsetabell till Excel" title="Exportera alla percentiler (P10, median, P90 och bredd) för organisationen, jämförelsestatistiken och ställningstagandet i en samlad Excel-fil, för alla yrken oavsett filter.">Exportera samlad Excel</button>
@@ -1196,7 +1208,6 @@
                                 <tbody></tbody>
                             </table>
                         </div>
-                    </div>
                     <details class="audit-panel" data-audit-id="benchmark">
                         <summary>Beräkning &amp; urval för denna analys</summary>
                         <div class="audit-content"><em class="f-dampad">Laddar...</em></div>
@@ -1204,6 +1215,13 @@
                     <details class="flik-usage">
                         <summary>Hur används denna flik vid...</summary>
                         <div class="flik-usage-content">
+                            <h3>Så används fliken</h3>
+                            <ul>
+                                <li><strong>Överblicken</strong> visar för varje yrkesgrupp var löneläget och statistiken ligger mot ställningstagandet, som är referenspunkten</li>
+                                <li>Kolumnen <em>Mönster</em> bär samtalet: ligger både löneläget och statistiken över ställningstagandet har det halkat efter marknaden; ligger bara löneläget över har organisationen gått före</li>
+                                <li>Kolumnen <em>Förslag på referens</em> säger vilket mått som säger något om gruppen. Det är ett förslag, ingen regel</li>
+                                <li><strong>Mot ställningstagandet</strong> och <strong>Mot jämförelsestatistiken</strong> fördjupar var sin referens</li>
+                            </ul>
                             <h3>Marknadslöneanalys</h3>
                             <ul>
                                 <li>Identifiera yrkesgrupper där organisationen ligger under jämförelsens median (negativ diff, röd)</li>
@@ -1222,6 +1240,7 @@
                                 <li>Jämför P10 och P90, inte bara medianen: en skillnad bara i P90 tyder på att erfarna inte når upp mot marknaden, en skillnad bara i P10 på låga ingångslöner</li>
                             </ul>
                         </div>
+                    </details>
                     </details>
                 </div>
 
@@ -2115,24 +2134,6 @@
                 </div>
 
                 <!-- Lönepolitik: fördjupad analys mot eget ställningstagande -->
-                <div id="view-lonepolitik" class="view-panel dold">
-                    <div class="flik-intro">
-                        <strong id="lonepolitik-rubrik">Lönerna mot ert lönepolitiska ställningstagande</strong>
-                        Jämför organisationens faktiska löneläge mot referensen — den inbyggda målbilden eller ert eget uppladdade ställningstagande — ner på yrkesgruppsnivå (AID). Policyn kan anges per BAS-intervall, per AID, eller båda — mest specifik referens vinner, och varje rad visar vilken nivå referensen kom ifrån. Detta är ett <strong>analysunderlag</strong>: att ligga utanför spannet är ett fynd att förklara, inte ett konstaterat fel.
-                    </div>
-                    <div id="lp-urval" class="urvalsrad"></div>
-                    <div id="lp-slutsatser" class="slutsatser"></div>
-                    <div id="lonepolitik-empty" class="dold">
-                        <div class="flik-empty-state">
-                            <div class="empty-icon"><svg class="ikon ikon-tomLada" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 13h5l1.5 3h5L16 13h5"/><path d="M5 5h14l2 8v6H3v-6z"/></svg></div>
-                            <h2>Referensen matchar inte underlaget</h2>
-                            <p>Referensen har inga rader för underlagets BAS-intervall eller yrken. Ladda upp en fil med P10/Median/P90 där varje rad har en <strong>BAS</strong>-kolumn, en <strong>AID</strong>-kolumn, eller båda.</p>
-                            <button class="empty-action" data-goto-tab="dashboard">Gå till uppladdning</button>
-                        </div>
-                    </div>
-                    <div id="lonepolitik-content" class="dold"></div>
-                </div>
-
                 <!-- Utforska (fördjupning): egna vyer -->
                 <div id="view-utforska" class="view-panel dold">
                     <div class="card mb-16">

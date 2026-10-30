@@ -5,7 +5,7 @@
 //
 // Samlar allt verktyget REDAN vet om en vald yrkesgrupp (AID × BAS) på ett
 // ställe, så handläggaren slipper hoppa mellan Lika arbete, Likvärdigt arbete,
-// Prioritering, Jämförelse och Lönepolitik för att förstå en enda grupp.
+// Prioritering och Jämförelse för att förstå en enda grupp.
 //
 // Ingen ny statistik — enbart en sammanställning av befintliga beräkningar.
 // Dossiern DOKUMENTERAR INTE sakliga skäl; det är en medveten produktgräns
@@ -248,7 +248,7 @@ function _gdRenderBody(d) {
            <p class="gd-note">Avser BAS-intervallet, inte enbart denna yrkesgrupp.</p>`
         : missing('BAS-intervallet har inte tillräcklig könsbalans för en åldersrensad skattning.');
 
-    // 4. Lönepolitik
+    // 4. Mot ställningstagandet
     const polInner = d.pol
         ? `<p>Referens (${esc(referensKortnamn())}): <strong>${kr(d.pol.p10)} – ${kr(d.pol.p90)}</strong> (median ${kr(d.pol.med)}) · nivå: <strong>${esc(d.polLevel || '–')}</strong></p>
            ${d.band && d.band.position != null

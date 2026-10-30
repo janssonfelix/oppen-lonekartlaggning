@@ -44,7 +44,7 @@ function _tomStatistik() {
     if (typeof resetUploadCell === 'function') resetUploadCell('upload-cell-stat', 'upload-cell optional', 'Valfritt');
     const ss = document.getElementById('stat-status');
     if (ss) { ss.textContent = ''; ss.className = 'status-msg'; }
-    if (typeof _visaJamforelseFlik === 'function') _visaJamforelseFlik(false);
+    if (typeof synkaJamforelseFlik === 'function') synkaJamforelseFlik();
 }
 
 function _paketStatus(text, ok) {
@@ -165,8 +165,8 @@ function lasInPaket(text, _filnamn, { inbakat = false } = {}) {
         markUploadLoaded('upload-cell-stat', 'Från organisationspaketet');
         const ss = document.getElementById('stat-status');
         if (ss) { ss.textContent = `${state.statistik.length} poster ur organisationspaketet`; ss.className = 'status-msg success'; }
-        _visaJamforelseFlik(true);
     }
+    synkaJamforelseFlik();
 
     applyProfileLabels();
     synkaNamnFalt();
