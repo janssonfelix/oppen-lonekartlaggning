@@ -15,78 +15,69 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ### Gränssnitt
 
-- **Sidhuvudet på telefonbredd.** Under 641 punkter är Förklaring, Som i exporten, Inställningar och Ordlista
-  ikonknappar på samma rad som sökfältet; texten finns kvar i knappen för skärmläsare. Sidhuvudet vid 375 punkter är
-  133 punkter högt i stället för 214. Byts fönstret från brett till smalt börjar den smala vyn med menyn stängd, utan
-  att spalten glider ut över innehållet.
-- **Stöd i verktyget med talet.** I Regler & praxis hämtar raden Stöd i verktyget talet från fliken och slutar med
-  *Gå dit*: Likvärdigt arbetes par att titta närmare på, Lika arbetes yrkesgrupper att granska och, under befordran,
-  andelen kvinnor i högsta och lägsta lönekvartilen. Utan underlag står den fasta texten.
-- **Etiketter som säger vad de betyder.** Knappen *Som export* heter *Som i exporten*. Lika arbetes kolumn Dominans
-  skriver *Kvinnodominerad*, *Mansdominerad* och *Könsblandad*. Likvärdigt arbetes *Påverkan (kr/mån)* heter *Summa för
-  gruppen (kr/mån)* med ett verktygstips, också i Excel-bladen och beviset. Nästa steg-knappen till Prioritering heter
-  som menyn.
-- **Ålder & karriär utan förkortningar och formel i löptexten.** Livscykelns nyckeltal säger "inte säkerställd" i
-  stället för "ns"; modelljämförelsen markerar med stjärnor som tabellens not förklarar (* p < 0,05 … *** p < 0,001).
-  Modellformeln, standardfelen och referensintervallet står i flikens nya *Så räknas det* → *Beräkning & urval*;
-  löptexten säger i en mening vad modellen tar hänsyn till. *Jämför alla BAS-intervall* visar alla intervall oavsett
-  urvalet ovan, och underrubriken säger det.
-- **Utforska i två avsnitt, diagramtyperna i två grupper.** *Löneöversikt — alla BAS-intervall* och *Egna vyer* har var
-  sin avsnittsrubrik och är öppna. Diagramtypsväljaren har *Vanliga* (Automatisk, Staplar, Liggande staplar, Låddiagram,
-  Grupperade staplar) och *Fler diagramtyper* (resten); alla går att välja som förut. Heatmap heter Värmekarta.
-- **Dokumentera har bara exporter som rader.** De fyra raderna med *Öppna fliken* är en rad med länkar till Likvärdigt
-  arbete, Struktur & rapportmått, Prioritering och Löneöversyn. Fältet *Organisation* står intill *Generera PDF*, med en
-  mening om att namnet skrivs på rapportens försättsblad och hämtas från organisationspaketet.
+- **Samma ord, färger och mått i alla flikar.** En skillnad mot 3- och 5-procentsgränserna heter *Balanserat*,
+  *Följ upp* eller *Värt att granska* i alla flikar, diagram och exporter, med samma färg och symbol (lila för *Värt
+  att granska*, också i Lika arbetes BAS-översikt och Utforska); *Börja här* och *Över referens* finns bara i
+  Prioritering, och Förklaringen listar orden en gång med färg och märke bundna till ordet. Nyckeltalsraderna visar
+  ett mått, kvinnors lön i % av mäns: regressionens oförklarade skillnad i Lika arbete och livscykelmodellens tal vid
+  25 och 65 år räknas om, och kortet längre ned säger hur dess skillnad hänger ihop med nyckeltalet; rågapet på
+  Översikt har neutral färg, det är en utgångspunkt, inget fynd. Etiketterna säger vad de betyder: *Som i exporten* i
+  stället för *Som export*, *Kvinnodominerad*, *Mansdominerad* och *Könsblandad* i Lika arbetes kolumn Dominans,
+  *Summa för gruppen (kr/mån)* med verktygstips i Likvärdigt arbete, Excel-bladen och beviset, och Nästa steg-knappen
+  till Prioritering heter som menyn. Utforskas rubriker skriver BAS och AID med versaler, Heatmap heter Värmekarta,
+  och "Hur används denna flik vid..." heter *Så används fliken i arbetet*.
+- **Resultatet först, och breda tabeller utan rullist.** Lika arbete öppnar med tabellen *Kvinnor och män i samma
+  yrkesgrupp* och trattdiagrammet under den; tabellen per BAS-intervall och *Lönegap per BAS-intervall* är ett avsnitt
+  i Fördjupning, efter Personer att granska, beviset för en rad står vid intervallets namn, diagrammen med samma kvot
+  och samma kronor som tabellen visas inte längre (kvotbilden följer med i rapporten) och länkarna i Att göra fäller
+  ut avsnittet de leder till. Översikt har Att göra direkt under nyckeltalen, kartan över organisationen står bara i
+  Struktur & rapportmått och lönekvartilerna står efter Att göra i hela bredden. Utforska har två öppna avsnitt,
+  *Löneöversikt — alla BAS-intervall* och *Egna vyer*, och diagramtypsväljaren grupperna *Vanliga* (Automatisk,
+  Staplar, Liggande staplar, Låddiagram, Grupperade staplar) och *Fler diagramtyper*. Dokumentera & exportera är
+  menyns sista steg, efter Fördjupa, och *Klar här?*-raderna går genom fördjupningen dit; fliken har bara exporter
+  som rader, de fyra raderna med *Öppna fliken* är en rad med länkar till Likvärdigt arbete, Struktur & rapportmått,
+  Prioritering och Löneöversyn, och fältet *Organisation* står intill *Generera PDF* med en mening om att namnet
+  skrivs på rapportens försättsblad och hämtas från organisationspaketet. I Löneöversyn står *Föreslå fördelning mot
+  osakliga gap* också i rutan Budget (pott), aktiv när en pott är angiven; knappen fäller ut Riktade potter och rullar
+  dit, och lönesumman säger "från …" bara när den ändrats. Prioriteringslistan, yrkesgruppstabellen i Lika arbete och
+  kandidatparen i Likvärdigt arbete visar det viktigaste först: statusen står direkt efter namnet (i Likvärdigt
+  intervallet med *säker skillnad*, efter Gap (%)), och sekundära kolumner ligger bakom knappen *Fler kolumner* bredvid
+  Kopiera och CSV, så att tabellerna ryms vid 1280 px med menyn utfälld. Valet gäller tabellen under sessionen och
+  lagras inte; Kopiera, CSV, Excel och utskriften tar alltid med alla kolumner, och de gömda talen står i beviset
+  (förstoringsglaset) på raden.
 - **Handlingsplanen fylls i på skärmen.** Sakligt skäl prövat? och Status är rullistor, Ansvarig och Tidsplan
   fritext. Det som fylls i ligger i minnet, följer med i konfigurationsfilen, Excel-filen, utskriften och Word-utkastets
-  åtgärdstabell, och nollas av Rensa all data. Fritext som liknar ett personnummer eller en e-postadress ger en varning.
-- **Handlingsplanens rader i samma form.** Alla rader visar yrkesnamnet ("403010 Barnskötare · BAS C"), och Underlag
-  säger var raden kommer ifrån: *Prioritering (under referensen)* eller *Likvärdigt arbete (kandidatpar)*. Word-utkastets
-  tabell under Åtgärder och tidsplan är handlingsplanen, med kandidatparen.
-- **Förslaget i Löneöversyn vid potten.** *Föreslå fördelning mot osakliga gap* står också i rutan Budget (pott), aktiv
-  när en pott är angiven; knappen fäller ut Riktade potter och rullar dit. Lönesumman säger "från …" bara när den ändrats.
-- **En kolumn för läge och förslag i Jämförelse.** Mönster och Förslag på referens är en kolumn, *Läge och förslag*, där
-  förslaget bara nämns när det är statistiken; skärmen, Excel-bladet Referenser och rapporten säger samma sak. Läget i
-  spannet har skalan i rubriken (0 = P10, 100 = P90) och ett verktygstips. Hanteldiagrammet har en rad per yrkesgrupp,
-  med ställningstagandet, statistiken och organisationen i var sin färg och en förklaring.
-- **Yrkesgrupperna först i Lika arbete.** Fliken öppnar med tabellen *Kvinnor och män i samma yrkesgrupp* och
-  trattdiagrammet under den. Tabellen per BAS-intervall och avsnittet *Lönegap per BAS-intervall* är ett avsnitt i
-  Fördjupning, efter Personer att granska, och beviset för en rad står vid intervallets namn. Diagrammen med samma
-  kvot och samma kronor som tabellen visas inte längre; kvotbilden följer med i rapporten som förut. Länkarna i Att
-  göra fäller ut avsnittet de leder till.
-- **Att göra direkt under nyckeltalen på Översikt.** Kartan över organisationen står bara i Struktur & rapportmått;
-  lönekvartilerna står efter Att göra i hela bredden.
-- **Om verktyget beskriver dagens verktyg.** Översikten säger vad verktyget gör och vad ni gör själva, med Word-utkastet,
-  Regler & praxis och organisationspaketet på plats, och snabbstarten följer kartläggningens steg. Engelska rubriker i
-  dataskydds- och metodavsnitten är svenska.
-- **Inledningar på vardagsspråk.** Prioriteringens inledning och listtext säger vad prioriteten väger ihop utan
-  "sammansatt prioriteringsindex", "yrkesgrupp × BAS-intervall" och "1,2× bonus"; filtret heter *Visa bara små
-  höjningar med stor effekt*; kostnaden anges med PO-påslag utskrivet; *Så räknas det* beskriver statusarna med
-  dagens ord. Jämförelse har fått en inledning som övriga flikar, och Struktur och Utforska har sin fråga i fetstil.
-- **Breda tabeller utan rullist.** Prioriteringslistan, yrkesgruppstabellen i Lika arbete och kandidatparen i
-  Likvärdigt arbete visar det viktigaste först: statusen står direkt efter namnet (i Likvärdigt intervallet med
-  *säker skillnad*, efter Gap (%)). Sekundära kolumner ligger bakom knappen *Fler kolumner* bredvid Kopiera och CSV,
-  så att tabellerna ryms vid 1280 px med menyn utfälld. Valet gäller tabellen under sessionen och lagras inte.
-  Kopiera, CSV, Excel och utskriften tar alltid med alla kolumner, och de gömda talen står i beviset
-  (förstoringsglaset) på raden.
-- **En ny flik börjar överst.** Flikbytet rullade inte, så den som stod långt ned i en flik hamnade långt ned i
-  nästa. Sidomenyns ikonläge (641–1100 px) döljer etiketterna med genomskinlighet i stället för `visibility: hidden`,
-  så att knapparna behåller sina namn för skärmläsare.
-- **Ett statusordförråd.** En skillnad mot 3- och 5-procentsgränserna heter *Balanserat*, *Följ upp* eller *Värt att
-  granska* i alla flikar, diagram och exporter, med samma färg och symbol (lila för *Värt att granska*, också i Lika
-  arbetes BAS-översikt och Utforska). *Börja här* och *Över referens* finns bara i Prioritering. Förklaringen listar
-  orden en gång, med färg och märke bundna till ordet.
-- **Ett mått i nyckeltalsraderna.** Nyckeltalen visar kvinnors lön i % av mäns: regressionens oförklarade skillnad i
-  Lika arbete och livscykelmodellens tal vid 25 och 65 år räknas om, och kortet längre ned säger hur dess skillnad
-  hänger ihop med nyckeltalet. Rågapet på Översikt har neutral färg; det är en utgångspunkt, inget fynd.
-- **Texter som inte hängde med.** Krav mot lön i Likvärdigt arbete sade "minst 1 personer" på skärmen; exportkortens
-  *Utelämnar* räknade samma sak två gånger när två avsnitt utelämnade det; "Hur används denna flik vid..." heter
-  *Så används fliken i arbetet*; Utforskas rubriker skriver BAS och AID med versaler; Handlingsplanens ingress säger
-  "från likvärdighetsanalysen".
-- **Lönepolitik är ett avsnitt i Jämförelse.** Fliken har tre avsnitt: överblick, mot ställningstagandet (dagens
-  Lönepolitik) och mot jämförelsestatistiken. Växeln *Jämför mot* är borttagen, och fliken syns så snart underlaget och
-  en referens är inlästa. Länkar till Lönepolitik leder till Jämförelse.
-- **Dokumentera & exportera är menyns sista steg,** efter Fördjupa, och *Klar här?*-raderna går genom fördjupningen dit.
+  åtgärdstabell, och nollas av Rensa all data; fritext som liknar ett personnummer eller en e-postadress ger en
+  varning. Alla rader har samma form: yrkesnamnet ("403010 Barnskötare · BAS C") och i Underlag var raden kommer
+  ifrån, *Prioritering (under referensen)* eller *Likvärdigt arbete (kandidatpar)*. Word-utkastets tabell under
+  Åtgärder och tidsplan är handlingsplanen, med kandidatparen, och ingressen säger "från likvärdighetsanalysen".
+- **Jämförelse är en flik med tre avsnitt.** Överblick, mot ställningstagandet (dagens Lönepolitik) och mot
+  jämförelsestatistiken; växeln *Jämför mot* är borttagen, fliken syns så snart underlaget och en referens är inlästa,
+  och länkar till Lönepolitik leder till Jämförelse. Fliken har en inledning som övriga flikar. Mönster och Förslag på
+  referens är en kolumn, *Läge och förslag*, där förslaget bara nämns när det är statistiken; skärmen, Excel-bladet
+  Referenser och rapporten säger samma sak. Läget i spannet har skalan i rubriken (0 = P10, 100 = P90) och ett
+  verktygstips, och hanteldiagrammet har en rad per yrkesgrupp, med ställningstagandet, statistiken och organisationen
+  i var sin färg och en förklaring.
+- **Vardagsspråk i inledningar, nyckeltal och hjälptexter.** Prioriteringens inledning och listtext säger vad
+  prioriteten väger ihop utan "sammansatt prioriteringsindex", "yrkesgrupp × BAS-intervall" och "1,2× bonus"; filtret
+  heter *Visa bara små höjningar med stor effekt*, kostnaden anges med PO-påslag utskrivet och *Så räknas det* beskriver
+  statusarna med dagens ord. Struktur och Utforska har sin fråga i fetstil. Om verktyget säger vad verktyget gör och
+  vad ni gör själva, med Word-utkastet, Regler & praxis och organisationspaketet på plats; snabbstarten följer
+  kartläggningens steg och engelska rubriker i dataskydds- och metodavsnitten är svenska. Ålder & karriär säger
+  "inte säkerställd" i stället för "ns", modelljämförelsen markerar med stjärnor som tabellens not förklarar (* p <
+  0,05 … *** p < 0,001), modellformeln, standardfelen och referensintervallet står i flikens nya *Så räknas det* →
+  *Beräkning & urval*, löptexten säger i en mening vad modellen tar hänsyn till, och *Jämför alla BAS-intervall* visar
+  alla intervall oavsett urvalet ovan. I Regler & praxis hämtar raden Stöd i verktyget talet från fliken och slutar med
+  *Gå dit*: Likvärdigt arbetes par att titta närmare på, Lika arbetes yrkesgrupper att granska och, under befordran,
+  andelen kvinnor i högsta och lägsta lönekvartilen; utan underlag står den fasta texten. Krav mot lön i Likvärdigt
+  arbete sade "minst 1 personer" på skärmen, och exportkortens *Utelämnar* räknade samma sak två gånger när två
+  avsnitt utelämnade det.
+- **Menyn, sidhuvudet och flikbytet.** En ny flik börjar överst: flikbytet rullade inte, så den som stod långt ned i
+  en flik hamnade långt ned i nästa. Sidomenyns ikonläge (641–1100 px) döljer etiketterna med genomskinlighet i
+  stället för `visibility: hidden`, så att knapparna behåller sina namn för skärmläsare. Under 641 punkter är
+  Förklaring, Som i exporten, Inställningar och Ordlista ikonknappar på samma rad som sökfältet, med texten kvar i
+  knappen för skärmläsare; sidhuvudet vid 375 punkter är 133 punkter högt i stället för 214, och byts fönstret från
+  brett till smalt börjar den smala vyn med menyn stängd, utan att spalten glider ut över innehållet.
 
 ### Exporter
 

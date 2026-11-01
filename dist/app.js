@@ -25925,11 +25925,11 @@ function _rapportModellExport({ alla = false, bada = false } = {}) {
     const arsjamf = d.length ? rmArsjamforelseAvsnitt(diagram) : null;
 
     // ---- 6. Åtgärder och tidsplan ----
-    /** @type {{id: string, rubrik: string, utelamnat: string[], delar: any[], [k: string]: any}} */
     // Tabellen är handlingsplanen från fliken (samma förifyllning, som redan utelämnar par under tröskeln), med det som
     // fyllts i där; ett tomt fält står kvar att fylla i.
     const hp = typeof _handlingsplanSeedRows === 'function' ? _handlingsplanSeedRows().rows : [];
     const hpFalt = v => v || { text: '[HR fyller i]', fyllIn: true };
+    /** @type {{id: string, rubrik: string, utelamnat: string[], delar: any[], [k: string]: any}} */
     const atgarder = { id: 'atgarder', numrerad: true, rubrik: 'Åtgärder och tidsplan', utelamnat: [], delar: [
         dampad('Planerade lönejusteringar och andra åtgärder, med beslut, ansvar och tidsplan. Tabellen är handlingsplanen: de grupper som ligger under referensen enligt prioriteringen och kandidatparen i likvärdigt arbete, med uppskattad kostnad och det som fyllts i på fliken Handlingsplan.'),
         hp.length
