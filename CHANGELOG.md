@@ -73,6 +73,18 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   andelen kvinnor i högsta och lägsta lönekvartilen; utan underlag står den fasta texten. Krav mot lön i Likvärdigt
   arbete sade "minst 1 personer" på skärmen, och exportkortens *Utelämnar* räknade samma sak två gånger när två
   avsnitt utelämnade det.
+- **Efter genomgången: sju öppna beslut.** Regressionens per-BAS-diagram ritar *Säkerställt, över 5 %* i statusens lila,
+  inte rött; tratten behåller rött för *Utanför slumpens gränser*, som är en annan skala. Lika arbetes avsnittsnyckeltal
+  säger "95,7 % efter ålder och nivå" i stället för "−4,3 % oförklarat", och undertexter över 5 % (Lika arbete, Ålder
+  & karriär) är lila som statusen, inte röda. Trädkartan följer med i Word-utkastet och PDF-rapporten under Struktur.
+  Excel-bladen *Per BAS* och *Lonegap* behålls båda; *Metod & parametrar* säger vad som skiljer dem. Handlingsplanen
+  har knappen *Lägg till rad*: en egen åtgärd med fritext för åtgärd och grupp, som tas bort med *Ta bort* och följer
+  med i konfigurationsfilen, Excel-filen, utskriften och Word-utkastet; kortet *5. Handlingsplan* på Översikt räknar
+  raderna efter statusen som fyllts i (genomförda, planerade eller pågår, skjuts upp, utan ifyllt) i stället för
+  åtgärdslistans bockar. Jämförelsetabellen har *Fler kolumner*: grundvyn visar yrke, BAS, antal och medianens tre
+  kolumner, P10 och P90 ligger bakom knappen. Menyn och rubriken säger *Översikt*, inte *Översikt & Data*; sidhuvudets
+  ikonknappar gäller upp till 900 punkter; sökfältets ledtext är *Sök yrke eller BAS* med kortkommandot i
+  verktygstipset; länkraden i Dokumentera har verktygets länkstil.
 - **Menyn, sidhuvudet och flikbytet.** En ny flik börjar överst: flikbytet rullade inte, så den som stod långt ned i
   en flik hamnade långt ned i nästa. Sidomenyns ikonläge (641–1100 px) döljer etiketterna med genomskinlighet i
   stället för `visibility: hidden`, så att knapparna behåller sina namn för skärmläsare. Under 641 punkter är

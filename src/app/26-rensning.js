@@ -114,7 +114,7 @@ function _rensaAllData({ inbakat = true } = {}) {
     // Urvalsraden i Ålder & karriär bär flikens BAS-väljare, som hör till sidan: där töms bara texten bredvid.
     document.querySelectorAll('.slutsatser, .urvalsrad:not(#ak-urval)').forEach(el => { el.innerHTML = ''; });
     { const t = document.getElementById('ak-urval-text'); if (t) t.textContent = ''; }
-    document.querySelectorAll('.avsnitt-nyckel').forEach(el => { el.textContent = ''; el.classList.remove('ar-kritisk'); });
+    document.querySelectorAll('.avsnitt-nyckel').forEach(el => { el.textContent = ''; el.classList.remove('ar-kritisk', 'ar-granska'); });
     if (typeof _rfRensaAlla === 'function') _rfRensaAlla();
     // Exportmenyerna har också id som börjar med chart- (chart-export-N): de är inte diagram och ska stå kvar.
     document.querySelectorAll('[id^="chart-"]:not(.chart-export-meny)').forEach(el => {

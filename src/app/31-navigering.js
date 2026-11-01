@@ -37,7 +37,7 @@ document.querySelectorAll(".nav-item").forEach(btn => {
         document.querySelectorAll(".nav-item").forEach(t => t.classList.remove("active"));
         btn.classList.add("active");
         const titles = {
-            dashboard: 'Översikt & Data',
+            dashboard: 'Översikt',
             kon: 'Ålder & karriär', dokumentera: 'Dokumentera & exportera',
             benchmark: 'Jämförelse', matrix: 'Lika arbete',
             bestammelser: 'Regler & praxis',

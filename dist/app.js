@@ -12214,7 +12214,7 @@ document.addEventListener('keydown', e => {
  *   dataAudit?: any, statistikHasP10?: boolean, statistikHasP90?: boolean, statistikHasKon?: boolean, _interntFel?: any[],
  *   _actionChecklistDone?: Set<string>, _lastStructureFile?: File|null, _lifecycleCache?: any
  *   flerKolumner: {[tabell: string]: boolean},
- *   handlingsplan: {[nyckel: string]: {sakligt: string, ansvarig: string, tidsplan: string, status: string}},
+ *   handlingsplan: {[nyckel: string]: {sakligt: string, ansvarig: string, tidsplan: string, status: string, egen?: boolean, atgard?: string, grupp?: string}},
  * }} Fälten med `?` sätts först vid inläsning (32-filinlasning.js, 29-organisationspaket.js m.fl.) och nollas av 26-rensning.js.
  */
 const state = {
@@ -13042,18 +13042,24 @@ function renderProcessTracker({ punkter: givna } = {}) {
         return { n: 4, tab: 'likvardighet', title: '4. Likvärdigt arbete', ...steg, detail: steg.detail + (not && steg.status !== 'inget' ? ' ' + not : '') };
     }, { n: 4, tab: 'likvardighet', title: '4. Likvärdigt arbete', status: 'ej', detail: 'Kräver inläst underlag.' }));
 
-    // 5. § 3:11 Handlingsplan (avbockade åtgärdspunkter / totalt)
+    // 5. § 3:11 Handlingsplan: raderna på fliken (förifyllda och egna) och statusen som fyllts i där (56-handlingsplan.js).
     rows.push(safe(() => {
         if (!hasData) return { n: 5, tab: 'handlingsplan', title: '5. Handlingsplan', status: 'ej', detail: 'Kräver inläst underlag.' };
-        const items = punkter;
-        const d = items.filter(it => klarmarkerade.has(it.id)).length;
-        const t = items.length;
+        const rader = typeof _handlingsplanSeedRows === 'function' ? _handlingsplanSeedRows().rows : [];
+        const t = rader.length;
+        const genomforda = rader.filter(r => r[7] === 'Genomförd').length;
+        const planerade = rader.filter(r => r[7] === 'Planerad' || r[7] === 'Pågår').length;
+        const uppskjutna = rader.filter(r => r[7] === 'Skjuts upp').length;
+        const ifyllda = rader.filter(r => r[3] || r[5] || r[6] || r[7]).length;
+        const tomma = t - ifyllda;
         return {
             n: 5, tab: 'handlingsplan', title: '5. Handlingsplan',
-            status: t === 0 ? 'ej' : (d >= t ? 'klar' : (d > 0 ? 'delvis' : 'ej')),
+            status: t === 0 ? 'ej' : genomforda >= t ? 'klar' : ifyllda > 0 ? 'delvis' : 'ej',
             detail: t === 0
-                ? 'Fyll i handlingsplanen på fliken (förifylls från prioriteringen).'
-                : `${d}/${t} åtgärdspunkter hanterade i åtgärdslistan.`
+                ? 'Inga rader att fylla i: ingen grupp under referensen och inga kandidatpar. Egna rader läggs till på fliken.'
+                : ifyllda === 0
+                    ? `${t} ${t === 1 ? 'rad' : 'rader'} att fylla i på fliken: sakligt skäl, ansvarig, tidsplan och status.`
+                    : `${genomforda} av ${t} ${t === 1 ? 'rad' : 'rader'} genomförda${planerade ? `, ${planerade} planerade eller pågår` : ''}${uppskjutna ? `, ${uppskjutna} skjuts upp` : ''}${tomma ? `; ${tomma} utan något ifyllt` : ''}.`
         };
     }, { n: 5, tab: 'handlingsplan', title: '5. Handlingsplan', status: 'ej', detail: 'Kräver inläst underlag.' }));
 
@@ -15460,7 +15466,7 @@ function tomFlikarUtom(utom = new Set()) {
     document.querySelectorAll('.view-panel [id^="chart-"]:not(.chart-export-meny)').forEach(el => { if (ska(el)) el.innerHTML = ''; });
     document.querySelectorAll('.view-panel .slutsatser, .view-panel .urvalsrad:not(#ak-urval)').forEach(el => { if (ska(el)) el.innerHTML = ''; });
     { const t = document.getElementById('ak-urval-text'); if (t && ska(t)) t.textContent = ''; }   // väljaren i samma rad hör till sidan
-    document.querySelectorAll('.view-panel .avsnitt-nyckel').forEach(el => { if (ska(el)) { el.textContent = ''; el.classList.remove('ar-kritisk'); } });
+    document.querySelectorAll('.view-panel .avsnitt-nyckel').forEach(el => { if (ska(el)) { el.textContent = ''; el.classList.remove('ar-kritisk', 'ar-granska'); } });
     const tryck = document.getElementById('print-report');
     if (tryck) tryck.innerHTML = '';     // en färdig utskrift bär kopior av tabellerna
 }
@@ -15690,7 +15696,11 @@ function __excelAlltBokExport() {
     });
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(metRows), 'Metodik');
 
-    _appendMethodSheet(wb, { extra: _excelLonepolitikMetod(diagramBlad) });
+    // Två blad som liknar varandra: Per BAS är lönestrukturen som i en skriven lönekartläggning, Lonegap är Lika arbetes
+    // kvot per intervall. Båda behålls; raden säger vad som skiljer dem.
+    _appendMethodSheet(wb, { extra: [
+        ['Bladen Per BAS och Lonegap', 'Per BAS är lönestrukturen per BAS-intervall som i en skriven lönekartläggning: referensen, organisationen och varje yrkesgrupp med P10, median, P90 och antal, per kön. Lonegap är tabellen ur Lika arbete: kvinnors medianlön i procent av mäns per BAS-intervall, med antal och medianer. Samma underlag, två frågor.'],
+        ..._excelLonepolitikMetod(diagramBlad)] });
     return wb;
 }
 
@@ -16232,7 +16242,7 @@ function _rensaAllData({ inbakat = true } = {}) {
     // Urvalsraden i Ålder & karriär bär flikens BAS-väljare, som hör till sidan: där töms bara texten bredvid.
     document.querySelectorAll('.slutsatser, .urvalsrad:not(#ak-urval)').forEach(el => { el.innerHTML = ''; });
     { const t = document.getElementById('ak-urval-text'); if (t) t.textContent = ''; }
-    document.querySelectorAll('.avsnitt-nyckel').forEach(el => { el.textContent = ''; el.classList.remove('ar-kritisk'); });
+    document.querySelectorAll('.avsnitt-nyckel').forEach(el => { el.textContent = ''; el.classList.remove('ar-kritisk', 'ar-granska'); });
     if (typeof _rfRensaAlla === 'function') _rfRensaAlla();
     // Exportmenyerna har också id som börjar med chart- (chart-export-N): de är inte diagram och ska stå kvar.
     document.querySelectorAll('[id^="chart-"]:not(.chart-export-meny)').forEach(el => {
@@ -17487,7 +17497,7 @@ document.querySelectorAll(".nav-item").forEach(btn => {
         document.querySelectorAll(".nav-item").forEach(t => t.classList.remove("active"));
         btn.classList.add("active");
         const titles = {
-            dashboard: 'Översikt & Data',
+            dashboard: 'Översikt',
             kon: 'Ålder & karriär', dokumentera: 'Dokumentera & exportera',
             benchmark: 'Jämförelse', matrix: 'Lika arbete',
             bestammelser: 'Regler & praxis',
@@ -21243,7 +21253,7 @@ function renderKon(bas) {
     ageGapEl.textContent = ageAdjGap;
     // Över 5 % skillnad sägs i ord under talet (inte med röd siffra utan förklaring).
     { const u = document.getElementById("kon-kpi-agegap-under"), over = konOk && expMa > 0 && Math.abs((expKv/expMa)*100 - 100) > 5;
-      if (u) { u.textContent = over ? "skillnad över 5 %" : "kvinnors lön i % av mäns"; u.classList.toggle("ar-kritisk", over); } }
+      if (u) { u.textContent = over ? "skillnad över 5 %" : "kvinnors lön i % av mäns"; u.classList.toggle("ar-granska", over); } }   // statusens lila, inte rött
     const lutning = (ok, reg) => (ok ? `${reg.m >= 0 ? '+' : '−'}${svTal(Math.abs(Math.round(reg.m)), 0)}` : '–');
     /** @type {HTMLElement} */ (document.getElementById("kon-kpi-slope")).textContent = `${lutning(kvOk, regKv)} / ${lutning(maOk, regMa)} kr`;
     const insightEl = document.getElementById("p-value-insight");
@@ -22394,15 +22404,17 @@ function _skevhetAndelFigur(rader) {
 // samma mått (reg.konKvot = 100 + konPct), och kortet längre ned säger hur dess skillnad hänger ihop med talet här.
 // ====================================================================
 // Texten under talet är kort (högst 40 tecken) och får två rader; en längre förklaring står i rutans verktygstips.
+// `kritisk` är true för rött (ett fel i underlaget), 'granska' för statusens lila (en skillnad över 5 %, Värt att granska).
 function _laSlutsats(etikett, varde, under, kritisk, tips) {
     return `<div class="slutsats"${tips ? ` title="${esc(tips)}"` : ''}><div class="slutsats-etikett">${esc(etikett)}</div><div class="slutsats-varde">${esc(varde)}</div>`
-        + `<div class="slutsats-under${kritisk ? ' ar-kritisk' : ''}">${esc(under)}</div></div>`;
+        + `<div class="slutsats-under${kritisk === 'granska' ? ' ar-granska' : kritisk ? ' ar-kritisk' : ''}">${esc(under)}</div></div>`;
 }
 function _laNyckel(id, text, kritisk) {
     const el = document.getElementById(id);
     if (!el) return;
     el.textContent = text || '';
-    el.classList.toggle('ar-kritisk', !!kritisk);
+    el.classList.toggle('ar-kritisk', kritisk === true);
+    el.classList.toggle('ar-granska', kritisk === 'granska');
 }
 /** Urvalsraden: vad fliken gäller. Det markerade står i raden under den (11-markering.js), i alla flikar. */
 function _laRitaUrval() {
@@ -22440,18 +22452,19 @@ function renderLikaArbeteTopp() {
     catch (e) { rapporteraFel('Lika arbete: toppen', e); }
     const grans = typeof _pagGrans === 'function' ? svTal(_pagGrans(), 0) : '10';
     ut.innerHTML = [
-        rader.length ? _laSlutsats('Yrkesgrupper att granska', `${granska.length} av ${rader.length}`, granska.length ? 'skillnad över 5 %' : 'ingen skillnad över 5 %', granska.length > 0)
+        rader.length ? _laSlutsats('Yrkesgrupper att granska', `${granska.length} av ${rader.length}`, granska.length ? 'skillnad över 5 %' : 'ingen skillnad över 5 %', granska.length > 0 ? 'granska' : false)
                      : _laSlutsats('Yrkesgrupper att granska', '–', `ingen yrkesgrupp har minst ${kTroskel()} av varje kön`),
         storst ? _laSlutsats('Största skillnaden', svPct(storst.kvot, 1), storst.yrke, false, 'Kvinnors medianlön i procent av mäns i den yrkesgrupp där skillnaden är störst') : '',
-        regOk ? _laSlutsats('Efter ålder och nivå', svPct(reg.konKvot, 1), 'kvinnors lön i % av mäns när ålder och nivå räknats bort', Math.abs(reg.konPct) > 5,
+        regOk ? _laSlutsats('Efter ålder och nivå', svPct(reg.konKvot, 1), 'kvinnors lön i % av mäns när ålder och nivå räknats bort', Math.abs(reg.konPct) > 5 ? 'granska' : false,
             `Regressionen i kortet längre ned: en oförklarad skillnad på ${reg.konPct >= 0 ? '+' : ''}${svPct(reg.konPct, 1)}, kvinnor mot män. Det är samma sak som att kvinnors lön är ${svPct(reg.konKvot, 1)} av mäns.`) : '',
         personer != null ? _laSlutsats('Personer att granska', svTal(personer, 0), `minst ${grans} % under förväntad lön`) : ''
     ].join('');
-    _laNyckel('nyckel-la-yrkesgrupper', rader.length ? `${granska.length} att granska${folj.length ? ` · ${folj.length} att följa upp` : ''}` : '', granska.length > 0);
+    _laNyckel('nyckel-la-yrkesgrupper', rader.length ? `${granska.length} att granska${folj.length ? ` · ${folj.length} att följa upp` : ''}` : '', granska.length > 0 ? 'granska' : false);
     _laNyckel('nyckel-la-personer', personer != null ? `${svTal(personer, 0)} ${personer === 1 ? 'person' : 'personer'}` : '');
-    _laNyckel('nyckel-la-bas', basKvot.length ? `${basOver.length} av ${basKvot.length} över 5 %` : '', basOver.length > 0);
+    _laNyckel('nyckel-la-bas', basKvot.length ? `${basOver.length} av ${basKvot.length} över 5 %` : '', basOver.length > 0 ? 'granska' : false);
     _laNyckel('nyckel-la-kon', konRader.length ? `${ojamna} av ${konRader.length} ojämna` : '');
-    _laNyckel('nyckel-la-regression', regOk ? `${reg.konPct >= 0 ? '+' : ''}${svPct(reg.konPct, 1)} oförklarat` : '', regOk && Math.abs(reg.konPct) > 5);
+        // Samma mått som nyckeltalsraden: kvinnors lön i % av mäns när ålder och nivå räknats bort (inte "−4,3 % oförklarat").
+    _laNyckel('nyckel-la-regression', regOk ? `${svPct(reg.konKvot, 1)} efter ålder och nivå` : '', regOk && Math.abs(reg.konPct) > 5 ? 'granska' : false);
 }
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -22502,6 +22515,9 @@ function jamforelseMarkeraRad(aid, bas) {
     return true;
 }
 
+// Grundvyn visar yrke, BAS, antal och medianens tre kolumner; P10 och P90 ligger bakom *Fler kolumner* (05-tabeller-och-lankar.js),
+// så att tabellen ryms utan rullist i sidled. Kopiera, CSV, Excel och utskriften tar alltid med alla.
+const JMF_DOLDA_KOLUMNER = ['p10org', 'p10jmf', 'p10diff', 'p90org', 'p90jmf', 'p90diff'];
 function generateBenchmark() {
     const tbody = document.querySelector('#benchmark-table tbody');
     const infoEl = document.getElementById('benchmark-metric-info');
@@ -22560,6 +22576,7 @@ function generateBenchmark() {
             + `${block(r, 'p10')}${block(r, 'median')}${block(r, 'p90')}</tr>`;
     }
     tbody.innerHTML = html || '<tr><td colspan="12" class="farg-dampad pad-24 ta-mitt">Inga yrken i urvalet.</td></tr>';
+    if (typeof flerKolumner === 'function') flerKolumner('benchmark-table', JMF_DOLDA_KOLUMNER, 'jamforelse');
     try { ritaJamforelseDiagram(rader, kalla); } catch (e) { rapporteraFel('Jämförelse: diagrammen', e); }
 
     // Antalen gäller samma urval som tabellen (filtren på BAS och sektor).
@@ -23369,10 +23386,11 @@ function _renderPerBasGapChart(perBas, bhQByBas) {
 
 // Figuren (diagramkärnan, ADR-39): en punkt med 95 % konfidensintervall mot nollinjen (inget oförklarat gap). Det som
 // ska läsas är om intervallet når noll, och det syns direkt. Statusen är en serie med egen symbol — färgen bär den
-// inte ensam (förbättring 7).
+// inte ensam (förbättring 7). Över 5 % är samma gräns som *Värt att granska* och har därför samma lila; rött används
+// inte för en skillnad i procent (10-diagramtema.js, GAP_STATUS).
 // `sorted` är bara BAS med status 'ok' (tillräcklig könsbalans); inga andra når figuren.
 const _PERBAS_STATUS = [
-    { serie: 'Säkerställt, över 5 %', farg: 'kritisk', symbol: 'romb' },
+    { serie: 'Säkerställt, över 5 %', farg: 'granska', symbol: 'romb' },
     { serie: 'Säkerställt', farg: 'varning', symbol: 'kvadrat' },
     { serie: 'Inte säkerställt', farg: 'neutral', symbol: 'cirkel' }
 ];
@@ -25308,13 +25326,17 @@ function _prioMatrisFigur(items, etikettlage, refLabel, cfg) {
 // Varifrån en förifylld rad kommer, som kolumnen Underlag och exporterna säger det.
 const HP_UNDERLAG_PRIO = 'Prioritering (under referensen)';
 const HP_UNDERLAG_PAR = 'Likvärdigt arbete (kandidatpar)';
+const HP_UNDERLAG_EGEN = 'Egen rad';
 
 // Fälten som fylls i per rad (ligger i state.handlingsplan, nycklade på raden). Rullistornas värden
 // är det som står i exporterna; ett tomt värde betyder att inget är valt.
 const HP_SAKLIGT = [['', '—'], ['Ja, sakligt skäl finns', 'Ja, sakligt skäl finns'], ['Nej, åtgärd behövs', 'Nej, åtgärd behövs'], ['Pågår', 'Pågår']];
 const HP_STATUS = [['', '—'], ['Planerad', 'Planerad'], ['Pågår', 'Pågår'], ['Genomförd', 'Genomförd'], ['Skjuts upp', 'Skjuts upp (motivera under Tidsplan)']];
 const HP_FALT = ['sakligt', 'ansvarig', 'tidsplan', 'status'];
+// En egen rad (tillagd på fliken, nyckel "egen|…") har också åtgärd och grupp som fritext. Den finns tills den tas bort.
+const HP_EGEN_FALT = ['atgard', 'grupp'];
 const HP_MAX_TEXT = 500;
+const _hpArEgen = nyckel => typeof nyckel === 'string' && nyckel.startsWith('egen|');
 
 /** Gruppen som raden gäller, i samma form för alla rader: "403010 Barnskötare · BAS C". */
 function _hpGrupp(aid, namn, bas) {
@@ -25331,18 +25353,40 @@ function _hpNyckel(kalla, ...delar) { return [kalla, ...delar.map(d => d == null
  *  värdena ligger då kvar i minnet tills Rensa all data. */
 function _hpVarden(nyckel) {
     const v = (state.handlingsplan && state.handlingsplan[nyckel]) || {};
-    return { sakligt: v.sakligt || '', ansvarig: v.ansvarig || '', tidsplan: v.tidsplan || '', status: v.status || '' };
+    return { sakligt: v.sakligt || '', ansvarig: v.ansvarig || '', tidsplan: v.tidsplan || '', status: v.status || '',
+             ...(_hpArEgen(nyckel) ? { egen: true, atgard: v.atgard || '', grupp: v.grupp || '' } : {}) };
 }
 
 function _hpSatt(nyckel, falt, varde) {
-    if (!HP_FALT.includes(falt) || !nyckel) return;
+    const egen = _hpArEgen(nyckel);
+    if (!nyckel || !(HP_FALT.includes(falt) || (egen && HP_EGEN_FALT.includes(falt)))) return;
     if (!state.handlingsplan) state.handlingsplan = {};
     const rad = { ..._hpVarden(nyckel), [falt]: String(varde ?? '').slice(0, HP_MAX_TEXT) };
-    if (HP_FALT.every(f => !rad[f])) delete state.handlingsplan[nyckel];
+    // En förifylld rad glöms när alla fält är tomma; en egen rad finns tills den tas bort.
+    if (!egen && HP_FALT.every(f => !rad[f])) delete state.handlingsplan[nyckel];
     else state.handlingsplan[nyckel] = rad;
 }
 
-function _handlingsplanSeedRows() {
+/** Lägger till en egen rad sist i tabellen och sätter fokus i dess första fält. */
+function _hpLaggTillEgen() {
+    if (!state.handlingsplan) state.handlingsplan = {};
+    const nyckel = _hpNyckel('egen', Date.now().toString(36) + Math.random().toString(36).slice(2, 6));
+    state.handlingsplan[nyckel] = { egen: true, atgard: '', grupp: '', sakligt: '', ansvarig: '', tidsplan: '', status: '' };
+    renderHandlingsplanSeed();
+    const forsta = [...document.querySelectorAll('#handlingsplan-tbody .hp-falt')].find(el => /** @type {HTMLElement} */ (el).dataset.hpNyckel === nyckel);
+    if (forsta) /** @type {HTMLElement} */ (forsta).focus();
+    return nyckel;
+}
+function _hpTaBortEgen(nyckel) {
+    if (!_hpArEgen(nyckel) || !state.handlingsplan || !state.handlingsplan[nyckel]) return;
+    delete state.handlingsplan[nyckel];
+    renderHandlingsplanSeed();
+    if (typeof announceToScreenReader === 'function') announceToScreenReader('Raden är borttagen.');
+}
+
+/** Raderna i handlingsplanen: de förifyllda från Prioritering och Likvärdigt arbete, sedan de egna. `baraEgna` hoppar
+ *  över förifyllningen (utan underlag). */
+function _handlingsplanSeedRows({ baraEgna = false } = {}) {
     const months = (state.costSettings && state.costSettings.months) || 12;
     const poFactor = 1 + ((state.costSettings && state.costSettings.poPct) || 0) / 100;
     const rows = [], nycklar = [];
@@ -25353,7 +25397,7 @@ function _handlingsplanSeedRows() {
         rows.push([atgard, grupp, underlag, v.sakligt, kostnad, v.ansvarig, v.tidsplan, v.status]);
         nycklar.push(nyckel);
     };
-    try {
+    if (!baraEgna) try {
         const ref = (typeof _selectedPrioReference === 'function') ? _selectedPrioReference() : 'stallningstagande';
         const hasRef = ref === 'stallningstagande' ? state.policy.length : state.statistik.length;
         if (hasRef) {
@@ -25364,7 +25408,7 @@ function _handlingsplanSeedRows() {
             });
         }
     } catch (e) { rapporteraFel('Handlingsplan: prioriteringen', e); }
-    try {
+    if (!baraEgna) try {
         if (state.statistik.length || state.data.length) {
             const lv = likvardighetResultat();
             // k-anonymitet: par med en grupp under tröskeln förifylls inte (undantaget gäller bara fliken)
@@ -25377,7 +25421,15 @@ function _handlingsplanSeedRows() {
             });
         }
     } catch (e) { rapporteraFel('Handlingsplan: likvärdigt arbete', e); }
-    return { rows, nycklar, prioCount, lvCount, parUtelamnade, parNot: _parUtelamnadeNot(parUtelamnade) };
+    // Egna rader sist, i den ordning de lades till. Ingen kostnad räknas: raden är användarens egen.
+    let egenCount = 0;
+    Object.keys(state.handlingsplan || {}).filter(_hpArEgen).forEach(nyckel => {
+        const v = _hpVarden(nyckel);
+        rows.push([v.atgard || '', v.grupp || '', HP_UNDERLAG_EGEN, v.sakligt, null, v.ansvarig, v.tidsplan, v.status]);
+        nycklar.push(nyckel);
+        egenCount++;
+    });
+    return { rows, nycklar, prioCount, lvCount, egenCount, parUtelamnade, parNot: _parUtelamnadeNot(parUtelamnade) };
 }
 
 // Kolumnen Underlag: raderna bär redan sin källa. Äldre texter (sparade utdrag) översätts till samma ord.
@@ -25407,15 +25459,21 @@ function _hpUppdateraVarning() {
 function renderHandlingsplanSeed() {
     const tbody = document.getElementById('handlingsplan-tbody');
     if (!tbody) return;
-    const seed = getData().length ? _handlingsplanSeedRows() : { rows: [], nycklar: [], prioCount: 0, lvCount: 0, parUtelamnade: 0, parNot: '' };
+    const seed = _handlingsplanSeedRows({ baraEgna: !getData().length });
     const fmtKr = n => (n ? Math.round(n).toLocaleString('sv-SE') + ' kr' : '');
     const lista = (id, nyckel, falt, val, alt, etikett) => `<select id="${id}" class="form-select hp-falt" data-hp-nyckel="${esc(nyckel)}" data-hp-falt="${falt}" aria-label="${esc(etikett)}">`
         + alt.map(([v, l]) => `<option value="${esc(v)}"${v === val ? ' selected' : ''}>${esc(l)}</option>`).join('') + '</select>';
     const text = (id, nyckel, falt, val, platshallare, etikett) => `<input type="text" id="${id}" class="hp-falt" data-hp-nyckel="${esc(nyckel)}" data-hp-falt="${falt}" value="${esc(val)}"`
         + ` maxlength="${HP_MAX_TEXT}" autocomplete="off" placeholder="${esc(platshallare)}" aria-label="${esc(etikett)}">`;
     const seededHtml = seed.rows.map((r, i) => {
-        const n = seed.nycklar[i], g = r[1];
-        return `<tr class="handlingsplan-seeded"><td>${esc(r[0])}</td><td>${esc(g)}</td><td>${esc(r[2])}</td>`
+        const n = seed.nycklar[i], egen = _hpArEgen(n), g = r[1] || (egen ? 'egen rad' : '');
+        // En egen rad har åtgärd och grupp som fält och en knapp som tar bort raden; knappen följer inte med i utskriften.
+        const forsta = egen
+            ? `<td>${text(`hp-${i}-atgard`, n, 'atgard', r[0], 'Vad ska göras?', 'Åtgärd, egen rad')}</td>`
+              + `<td>${text(`hp-${i}-grupp`, n, 'grupp', r[1], 'Grupp eller yrke, inga namn', 'Berörd grupp, egen rad')}</td>`
+              + `<td>${esc(r[2])} <button type="button" class="btn-table-tool hp-ta-bort" data-hp-ta-bort="${esc(n)}" data-noprint aria-label="Ta bort den egna raden">Ta bort</button></td>`
+            : `<td>${esc(r[0])}</td><td>${esc(g)}</td><td>${esc(r[2])}</td>`;
+        return `<tr class="handlingsplan-seeded${egen ? ' handlingsplan-egen' : ''}">${forsta}`
             + `<td>${lista(`hp-${i}-sakligt`, n, 'sakligt', r[3], HP_SAKLIGT, `Sakligt skäl prövat?: ${g}`)}</td>`
             + `<td class="t-hoger">${esc(fmtKr(r[4]))}</td>`
             + `<td>${text(`hp-${i}-ansvarig`, n, 'ansvarig', r[5], 'Roll, t.ex. HR-chef', `Ansvarig: ${g}`)}</td>`
@@ -25430,9 +25488,11 @@ function renderHandlingsplanSeed() {
     const note = document.getElementById('handlingsplan-seed-note');
     if (note) {
         const parNot = seed.parNot ? ` ${esc(seed.parNot)}` : '';
-        note.innerHTML = (seed.rows.length
-            ? `Förifyllt med <strong>${seed.rows.length}</strong> rad${seed.rows.length === 1 ? '' : 'er'} (${seed.prioCount} från Prioritering, under referensen, och ${seed.lvCount} kandidatpar från Likvärdigt arbete) — ett utgångsläge att granska. Fyll i sakligt skäl, ansvarig, tidsplan och status direkt i raderna.`
-            : 'Mallen förifylls automatiskt med grupperna från Prioritering och Likvärdigt arbete när data och referens finns. Fyll annars i för hand eller ladda upp underlag på <strong>Översikt</strong>.') + parNot;
+        const forifyllda = seed.rows.length - seed.egenCount;
+        const egna = seed.egenCount ? ` ${seed.egenCount === 1 ? 'En egen rad' : `${seed.egenCount} egna rader`} står sist.` : '';
+        note.innerHTML = (forifyllda
+            ? `Förifyllt med <strong>${forifyllda}</strong> rad${forifyllda === 1 ? '' : 'er'} (${seed.prioCount} från Prioritering, under referensen, och ${seed.lvCount} kandidatpar från Likvärdigt arbete) — ett utgångsläge att granska. Fyll i sakligt skäl, ansvarig, tidsplan och status direkt i raderna.`
+            : 'Mallen förifylls automatiskt med grupperna från Prioritering och Likvärdigt arbete när data och referens finns. Lägg till egna rader med knappen under tabellen, eller ladda upp underlag på <strong>Översikt</strong>.') + egna + parNot;
     }
 }
 
@@ -25443,11 +25503,16 @@ function renderHandlingsplanSeed() {
     _hpSatt(el.dataset.hpNyckel, el.dataset.hpFalt, el.value);
     if (el.tagName === 'INPUT') _hpUppdateraVarning();
 }));
+document.getElementById('handlingsplan-tbody')?.addEventListener('click', e => {
+    const btn = /** @type {HTMLElement} */ (e.target).closest('[data-hp-ta-bort]');
+    if (btn) _hpTaBortEgen(btn.getAttribute('data-hp-ta-bort'));
+});
+document.getElementById('btn-hp-lagg-till')?.addEventListener('click', () => _hpLaggTillEgen());
 
 /** Det ifyllda i konfigurationsfilen: en post per rad med något ifyllt. */
 function _hpForKonfiguration() {
     return Object.keys(state.handlingsplan || {}).map(nyckel => ({ nyckel, ..._hpVarden(nyckel) }))
-        .filter(r => HP_FALT.some(f => r[f]));
+        .filter(r => r.egen || HP_FALT.some(f => r[f]));
 }
 /** Prövar konfigurationsfilens poster; kastar vid fel form. Okända val i rullistorna läses som tomma. */
 function _hpValideraKonfiguration(lista) {
@@ -25456,11 +25521,13 @@ function _hpValideraKonfiguration(lista) {
     lista.forEach((r, i) => {
         if (!r || typeof r !== 'object') throw new Error(`handlingsplan[${i}] är inte ett objekt.`);
         if (typeof r.nyckel !== 'string' || !r.nyckel || r.nyckel.length > 300) throw new Error(`handlingsplan[${i}].nyckel måste vara en sträng (högst 300 tecken).`);
-        HP_FALT.forEach(f => { if (r[f] != null && typeof r[f] !== 'string') throw new Error(`handlingsplan[${i}].${f} måste vara en sträng.`); });
+        const egen = _hpArEgen(r.nyckel);
+        [...HP_FALT, ...(egen ? HP_EGEN_FALT : [])].forEach(f => { if (r[f] != null && typeof r[f] !== 'string') throw new Error(`handlingsplan[${i}].${f} måste vara en sträng.`); });
         const giltig = (v, alt) => alt.some(([a]) => a === v) ? v : '';
         const rad = { sakligt: giltig(r.sakligt || '', HP_SAKLIGT), ansvarig: String(r.ansvarig || '').slice(0, HP_MAX_TEXT),
-            tidsplan: String(r.tidsplan || '').slice(0, HP_MAX_TEXT), status: giltig(r.status || '', HP_STATUS) };
-        if (HP_FALT.some(f => rad[f])) ut[r.nyckel] = rad;
+            tidsplan: String(r.tidsplan || '').slice(0, HP_MAX_TEXT), status: giltig(r.status || '', HP_STATUS),
+            ...(egen ? { egen: true, atgard: String(r.atgard || '').slice(0, HP_MAX_TEXT), grupp: String(r.grupp || '').slice(0, HP_MAX_TEXT) } : {}) };
+        if (egen || HP_FALT.some(f => rad[f])) ut[r.nyckel] = rad;
     });
     return ut;
 }
@@ -25484,7 +25551,7 @@ function _exportHandlingsplanExport() {
         ['§ 13', 'Lönekartläggningen, analysen och handlingsplanen ska dokumenteras skriftligt.'],
         ['Samverkan', 'Arbetet ska bedrivas i samverkan med arbetstagarna (diskrimineringslagen).'],
         ['', ''],
-        ['Detta underlag', `Förifyllt med ${prioCount} grupp(er) under referens (Prioritering) och ${lvCount} kandidatpar i likvärdigt arbete.${seed.parNot ? ' ' + seed.parNot : ''} Det som fyllts i på fliken Handlingsplan står med; fyll i resten av sakligt skäl, ansvarig, tidsplan och status. Raderna bygger på gruppmått — inga individdata.`],
+        ['Detta underlag', `Förifyllt med ${prioCount} grupp(er) under referens (Prioritering) och ${lvCount} kandidatpar i likvärdigt arbete.${seed.parNot ? ' ' + seed.parNot : ''}${seed.egenCount ? ` ${seed.egenCount} egna rader från fliken står sist.` : ''} Det som fyllts i på fliken Handlingsplan står med; fyll i resten av sakligt skäl, ansvarig, tidsplan och status. Raderna bygger på gruppmått — inga individdata.`],
         ['OBS', 'Detta är ett analysunderlag. Den sammanhållna handlingsplanen färdigställs i arbetsgivarens dokumentation/Word.']
     ];
 
@@ -25555,6 +25622,7 @@ const RM_DIAGRAM = [
     { id: 'chart-skevhet-overview', flik: 'matrix', avsnitt: 'struktur', rubrik: 'Kvinnors medianlön i procent av mäns, per BAS-intervall — samma kvot och intervall som tabellen ovan' },
     { id: 'chart-skevhet-andel', flik: 'matrix', avsnitt: 'struktur', rubrik: 'Könsfördelning per BAS-intervall' },
     { id: 'chart-struktur-kvartiler', flik: 'struktur', avsnitt: 'struktur', rubrik: 'Kvinnor och män per lönekvartil' },
+    { id: 'chart-struktur-tradkarta', flik: 'struktur', avsnitt: 'struktur', rubrik: 'Organisationen som karta — en yta per yrkesgrupp, storleken är antalet personer och färgen andelen kvinnor' },
     { id: 'chart-perbas-gap', flik: 'matrix', avsnitt: 'lika', rubrik: 'Oförklarat lönegap per BAS-intervall' },
     { id: 'chart-la-tratt', flik: 'matrix', avsnitt: 'lika', rubrik: 'Yrkesgrupperna mot slumpens gränser — kvinnors medianlön i procent av mäns mot gruppens storlek',
       // Samma förbehåll som under diagrammet på skärmen, räknat ur den ritade figuren.
@@ -27133,7 +27201,7 @@ const INFO_SECTIONS = {
         <h3>Flikar i verktyget</h3>
         <table>
             <tr><th>Fas</th><th>Flik</th><th>Syfte</th></tr>
-            <tr><td>1 · Underlag</td><td>Översikt &amp; Data</td><td>Filuppladdning och organisationspaket, nyckeltal, processkartan, underlagets kvalitet med extremvärden, Att göra (status mot lagkraven, Börja här och alla punkter) och Var uppstår löneskillnaden?</td></tr>
+            <tr><td>1 · Underlag</td><td>Översikt</td><td>Filuppladdning och organisationspaket, nyckeltal, processkartan, underlagets kvalitet med extremvärden, Att göra (status mot lagkraven, Börja här och alla punkter) och Var uppstår löneskillnaden?</td></tr>
             <tr><td>2 · Kartlägg &amp; analysera</td><td>Regler &amp; praxis</td><td>Kvalitativ granskning av regler och praxis för löner och villkor: status och anteckning per område. Kräver ingen data; följer med i Word-utkastet.</td></tr>
             <tr><td>2 · Kartlägg &amp; analysera</td><td>Lika arbete</td><td>Kvinnor och män i samma yrkesgrupp först, sedan personer att granska, lönegap och könsfördelning per BAS, multivariat regression, vattenfallsdiagram och Blinder-Oaxaca</td></tr>
             <tr><td>2 · Kartlägg &amp; analysera</td><td>Likvärdigt arbete</td><td>Kvinnodominerade yrken mot likvärdiga icke-kvinnodominerade yrken, bootstrap-KI per par</td></tr>

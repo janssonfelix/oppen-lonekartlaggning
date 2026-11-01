@@ -224,7 +224,11 @@ function __excelAlltBokExport() {
     });
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(metRows), 'Metodik');
 
-    _appendMethodSheet(wb, { extra: _excelLonepolitikMetod(diagramBlad) });
+    // Två blad som liknar varandra: Per BAS är lönestrukturen som i en skriven lönekartläggning, Lonegap är Lika arbetes
+    // kvot per intervall. Båda behålls; raden säger vad som skiljer dem.
+    _appendMethodSheet(wb, { extra: [
+        ['Bladen Per BAS och Lonegap', 'Per BAS är lönestrukturen per BAS-intervall som i en skriven lönekartläggning: referensen, organisationen och varje yrkesgrupp med P10, median, P90 och antal, per kön. Lonegap är tabellen ur Lika arbete: kvinnors medianlön i procent av mäns per BAS-intervall, med antal och medianer. Samma underlag, två frågor.'],
+        ..._excelLonepolitikMetod(diagramBlad)] });
     return wb;
 }
 

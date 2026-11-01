@@ -60,7 +60,7 @@ function renderKon(bas) {
     ageGapEl.textContent = ageAdjGap;
     // Över 5 % skillnad sägs i ord under talet (inte med röd siffra utan förklaring).
     { const u = document.getElementById("kon-kpi-agegap-under"), over = konOk && expMa > 0 && Math.abs((expKv/expMa)*100 - 100) > 5;
-      if (u) { u.textContent = over ? "skillnad över 5 %" : "kvinnors lön i % av mäns"; u.classList.toggle("ar-kritisk", over); } }
+      if (u) { u.textContent = over ? "skillnad över 5 %" : "kvinnors lön i % av mäns"; u.classList.toggle("ar-granska", over); } }   // statusens lila, inte rött
     const lutning = (ok, reg) => (ok ? `${reg.m >= 0 ? '+' : '−'}${svTal(Math.abs(Math.round(reg.m)), 0)}` : '–');
     /** @type {HTMLElement} */ (document.getElementById("kon-kpi-slope")).textContent = `${lutning(kvOk, regKv)} / ${lutning(maOk, regMa)} kr`;
     const insightEl = document.getElementById("p-value-insight");
