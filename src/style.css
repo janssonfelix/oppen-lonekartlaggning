@@ -265,6 +265,8 @@ body {
 .slutsats-varde { font-size: 1.7rem; font-weight: 700; line-height: 1.2; letter-spacing: -0.02em; margin: 4px 0 2px; }
 .slutsats-under { font-size: var(--fs-xs); color: var(--text-muted, #475569); }
 .slutsats-under.ar-kritisk { color: var(--status-kritisk, #b91c1c); font-weight: 600; }
+/* En skillnad över 5 % är statusen Värt att granska: samma lila som i tabellerna, inte rött. */
+.slutsats-under.ar-granska, .avsnitt-nyckel.ar-granska { color: var(--status-granska); font-weight: 600; }
 .avsnitt-rubrikrad { margin: 22px 0 8px 2px; font-size: var(--fs-xs); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-muted, #475569); }
 details.avsnitt { margin: 0 0 10px; }
 details.avsnitt:not(.card) { background: var(--bg-card, #fff); border: 1px solid var(--border, #e2e8f0); border-radius: var(--radius); padding: 0 24px; box-shadow: var(--shadow-sm); }
@@ -408,9 +410,10 @@ details.avsnitt[open]:not(.card) { padding-bottom: 20px; }
     details.avsnitt:not(.card) { padding: 0 14px; }
     .avsnitt-nyckel { display: none; }
 }
-/* Sidhuvudet på telefonbredd: de fyra knapparna är ikonknappar och står på samma rad som sökfältet. Texten finns kvar i
-   knappen som visuellt dold text (inte visibility: hidden), så att knappen behåller sitt namn för skärmläsare. */
-@media (max-width: 640px) {
+/* Sidhuvudet upp till 900 px: de fyra knapparna är ikonknappar och står på samma rad som sökfältet (mellan 641 och 900 px
+   bröts knapparna annars på två rader). Texten finns kvar i knappen som visuellt dold text (inte visibility: hidden), så att
+   knappen behåller sitt namn för skärmläsare. */
+@media (max-width: 900px) {
     .header-knappar { gap: 6px; align-items: center; }
     .header-knappar > .btn { padding: 7px 9px; gap: 0; }
     .header-knappar > .btn .knapp-text { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden;
@@ -2274,6 +2277,8 @@ summary:focus-visible {
 .export-hub-row .export-org-forklaring { margin-top: 4px; }
 /* Raden under exporterna: flikarna med egna underlag, som länkar. */
 .export-fler { margin: 12px 2px 0; font-size: var(--fs-sm); color: var(--text-muted); line-height: 1.5; }
+.export-fler a { color: var(--primary, #1d4ed8); font-weight: 500; text-decoration: underline; text-underline-offset: 2px; text-decoration-color: var(--border); }
+.export-fler a:hover { text-decoration-color: currentColor; }
 @media print { #export-hub { display: none !important; } }
 
 /* #UX Handlingsplansmall: förifyllda (read-only) rader vs fyllbara tomrader */
@@ -2281,6 +2286,8 @@ summary:focus-visible {
 #handlingsplan-tbody .handlingsplan-seeded > td:first-child { border-left: 3px solid var(--accent); font-weight: 500; }
 /* De tomma raderna är till för att fylla i för hand: de finns på utskriften (och i Excel-filen), inte på skärmen,
    där de ser ut som ett formulär som inte går att skriva i. */
+#handlingsplan-tbody .handlingsplan-egen > td:first-child { border-left-color: var(--text-muted); font-weight: 400; }
+#handlingsplan-tbody .hp-ta-bort { margin-left: 6px; }
 #handlingsplan-tbody .handlingsplan-empty { display: none; }
 #handlingsplan-tbody .handlingsplan-empty > td { height: 40px; }
 @media print { #handlingsplan-tbody .handlingsplan-empty { display: table-row; } }

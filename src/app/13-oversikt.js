@@ -354,18 +354,24 @@ function renderProcessTracker({ punkter: givna } = {}) {
         return { n: 4, tab: 'likvardighet', title: '4. Likvärdigt arbete', ...steg, detail: steg.detail + (not && steg.status !== 'inget' ? ' ' + not : '') };
     }, { n: 4, tab: 'likvardighet', title: '4. Likvärdigt arbete', status: 'ej', detail: 'Kräver inläst underlag.' }));
 
-    // 5. § 3:11 Handlingsplan (avbockade åtgärdspunkter / totalt)
+    // 5. § 3:11 Handlingsplan: raderna på fliken (förifyllda och egna) och statusen som fyllts i där (56-handlingsplan.js).
     rows.push(safe(() => {
         if (!hasData) return { n: 5, tab: 'handlingsplan', title: '5. Handlingsplan', status: 'ej', detail: 'Kräver inläst underlag.' };
-        const items = punkter;
-        const d = items.filter(it => klarmarkerade.has(it.id)).length;
-        const t = items.length;
+        const rader = typeof _handlingsplanSeedRows === 'function' ? _handlingsplanSeedRows().rows : [];
+        const t = rader.length;
+        const genomforda = rader.filter(r => r[7] === 'Genomförd').length;
+        const planerade = rader.filter(r => r[7] === 'Planerad' || r[7] === 'Pågår').length;
+        const uppskjutna = rader.filter(r => r[7] === 'Skjuts upp').length;
+        const ifyllda = rader.filter(r => r[3] || r[5] || r[6] || r[7]).length;
+        const tomma = t - ifyllda;
         return {
             n: 5, tab: 'handlingsplan', title: '5. Handlingsplan',
-            status: t === 0 ? 'ej' : (d >= t ? 'klar' : (d > 0 ? 'delvis' : 'ej')),
+            status: t === 0 ? 'ej' : genomforda >= t ? 'klar' : ifyllda > 0 ? 'delvis' : 'ej',
             detail: t === 0
-                ? 'Fyll i handlingsplanen på fliken (förifylls från prioriteringen).'
-                : `${d}/${t} åtgärdspunkter hanterade i åtgärdslistan.`
+                ? 'Inga rader att fylla i: ingen grupp under referensen och inga kandidatpar. Egna rader läggs till på fliken.'
+                : ifyllda === 0
+                    ? `${t} ${t === 1 ? 'rad' : 'rader'} att fylla i på fliken: sakligt skäl, ansvarig, tidsplan och status.`
+                    : `${genomforda} av ${t} ${t === 1 ? 'rad' : 'rader'} genomförda${planerade ? `, ${planerade} planerade eller pågår` : ''}${uppskjutna ? `, ${uppskjutna} skjuts upp` : ''}${tomma ? `; ${tomma} utan något ifyllt` : ''}.`
         };
     }, { n: 5, tab: 'handlingsplan', title: '5. Handlingsplan', status: 'ej', detail: 'Kräver inläst underlag.' }));
 

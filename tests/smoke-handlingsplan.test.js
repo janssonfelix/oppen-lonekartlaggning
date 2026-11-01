@@ -91,6 +91,41 @@ describe('Handlingsplan: fälten fylls i på skärmen', () => {
         expect(oppnat[0].html).toContain('HR-chef');
         expect(oppnat[0].html).not.toContain('hp-falt');
     });
+    it('en egen rad läggs till, fylls i, följer med i underlaget och konfigurationsfilen, och tas bort', () => {
+        const w = fonster();
+        w.__renderTabContent('handlingsplan');
+        const fore = rader(w).length;
+        w.document.getElementById('btn-hp-lagg-till').click();
+        const egen = w.document.querySelector('#handlingsplan-tbody tr.handlingsplan-egen');
+        expect(rader(w).length).toBe(fore + 1);
+        expect(rader(w)[fore]).toBe(egen);   // sist
+        expect(egen.cells[2].textContent).toContain('Egen rad');
+        expect(w.document.activeElement).toBe(egen.cells[0].querySelector('input'));
+        fyll(w, egen.cells[0].querySelector('input'), 'Se över lönekriterierna');
+        fyll(w, egen.cells[1].querySelector('input'), 'Alla chefer');
+        fyll(w, egen.cells[7].querySelector('select'), 'Planerad');
+        const nyckel = egen.cells[0].querySelector('input').dataset.hpNyckel;
+        expect(nyckel).toMatch(/^egen\|/);
+        expect(w.__state.handlingsplan[nyckel]).toMatchObject({ egen: true, atgard: 'Se över lönekriterierna', grupp: 'Alla chefer', status: 'Planerad' });
+        const seed = w.eval('_handlingsplanSeedRows()');
+        expect(seed.egenCount).toBe(1);
+        expect(seed.rows[seed.rows.length - 1]).toEqual(['Se över lönekriterierna', 'Alla chefer', 'Egen rad', '', null, '', '', 'Planerad']);
+        expect(w.document.getElementById('handlingsplan-seed-note').textContent).toContain('En egen rad står sist.');
+        // Konfigurationsfilen bär raden med åtgärd och grupp; en annan session läser in den igen.
+        const cfg = JSON.parse(w.eval('JSON.stringify(buildConfigSnapshot())'));
+        expect(cfg.handlingsplan.find(r => r.nyckel === nyckel)).toMatchObject({ egen: true, atgard: 'Se över lönekriterierna', grupp: 'Alla chefer' });
+        const b = fonster();
+        b.__cfg = cfg; b.eval('applyConfigSnapshot(window.__cfg)'); b.__renderTabContent('handlingsplan');
+        expect(b.document.querySelectorAll('#handlingsplan-tbody tr.handlingsplan-egen')).toHaveLength(1);
+        expect(b.document.querySelector('#handlingsplan-tbody tr.handlingsplan-egen').cells[1].querySelector('input').value).toBe('Alla chefer');
+        // Översikt-kortet räknar raderna efter status, inte åtgärdslistans bockar.
+        b.eval('renderProcessTracker()');
+        const kort = [...b.document.querySelectorAll('.ptrack-detail')].map(el => el.textContent).find(t => /rader genomförda/.test(t));
+        expect(kort).toMatch(/^0 av \d+ rader genomförda, 1 planerade eller pågår; \d+ utan något ifyllt\.$/);
+        egen.querySelector('[data-hp-ta-bort]').click();
+        expect(w.__state.handlingsplan[nyckel]).toBeUndefined();
+        expect(rader(w).length).toBe(fore);
+    });
     it('Rensa all data nollar fälten', () => {
         const w = fonster();
         w.__renderTabContent('handlingsplan');

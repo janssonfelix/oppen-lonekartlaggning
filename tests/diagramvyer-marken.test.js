@@ -1204,7 +1204,7 @@ describe('Lika arbete — urval, slutsatser och avsnittens nyckeltal', () => {
         expect(t(d.getElementById('nyckel-la-yrkesgrupper').textContent)).toMatch(new RegExp(`^${granska} att granska`));
         expect(t(d.getElementById('nyckel-la-bas').textContent)).toMatch(/^\d+ av \d+ över 5 %$/);
         expect(t(d.getElementById('nyckel-la-kon').textContent)).toMatch(/^\d+ av \d+ ojämna$/);
-        expect(t(d.getElementById('nyckel-la-regression').textContent)).toMatch(/oförklarat$/);
+        expect(t(d.getElementById('nyckel-la-regression').textContent)).toMatch(/% efter ålder och nivå$/);
         // Huvudvyn — översiktstabellen — ligger i toppen, i mallen för diagramkort.
         const kortet = d.getElementById('la-oversikt').closest('.diagramkort');
         expect(kortet.id).toBe('la-huvuddiagram');

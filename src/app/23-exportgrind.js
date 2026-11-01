@@ -166,7 +166,7 @@ function tomFlikarUtom(utom = new Set()) {
     document.querySelectorAll('.view-panel [id^="chart-"]:not(.chart-export-meny)').forEach(el => { if (ska(el)) el.innerHTML = ''; });
     document.querySelectorAll('.view-panel .slutsatser, .view-panel .urvalsrad:not(#ak-urval)').forEach(el => { if (ska(el)) el.innerHTML = ''; });
     { const t = document.getElementById('ak-urval-text'); if (t && ska(t)) t.textContent = ''; }   // väljaren i samma rad hör till sidan
-    document.querySelectorAll('.view-panel .avsnitt-nyckel').forEach(el => { if (ska(el)) { el.textContent = ''; el.classList.remove('ar-kritisk'); } });
+    document.querySelectorAll('.view-panel .avsnitt-nyckel').forEach(el => { if (ska(el)) { el.textContent = ''; el.classList.remove('ar-kritisk', 'ar-granska'); } });
     const tryck = document.getElementById('print-report');
     if (tryck) tryck.innerHTML = '';     // en färdig utskrift bär kopior av tabellerna
 }

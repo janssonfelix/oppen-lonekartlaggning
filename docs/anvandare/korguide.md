@@ -214,7 +214,8 @@ också när det är hopfällt.
    potter per grupp, och se nya löner, vad som gått åt och lönegapet före och efter. En riktad rad kan
    begränsas till ett kön eller till löner under en gräns, och lyfta till en nivå ("höj till") — det som
    tidigare hette Lönerevisionssimulatorn. PO-påslag och beräkningsperiod, som all kostnad räknas med,
-   ställs in under **Inställningar** i sidhuvudet. **Handlingsplanen** förifylls ur de två.
+   ställs in under **Inställningar** i sidhuvudet. **Handlingsplanen** förifylls ur de två; egna åtgärder läggs
+   till med *Lägg till rad* och följer med i exporterna som de förifyllda.
    Könsgapet i en grupp visas i Prioritering bara när både
    kvinnorna och männen i gruppen är tillräckligt många för att redovisas; annars räknas
    gruppens prioritet utan könsgapet. I **Löneöversyn** får ni lägga en egen riktad rad på
@@ -234,7 +235,8 @@ också när det är hopfällt.
    ställningstagandet har det halkat efter marknaden; ligger bara löneläget över har organisationen gått före.
    Förslaget är ett förslag, ingen regel. *Mot ställningstagandet* är bandkartan, könens läge i spannet och hur stor
    andel av kvinnorna respektive männen som ligger i spannets nedre, mellersta och övre tredjedel. *Mot
-   jämförelsestatistiken* är tabellen och diagrammen mot statistiken, med filter på BAS och sektor.
+   jämförelsestatistiken* är tabellen och diagrammen mot statistiken, med filter på BAS och sektor; tabellen visar
+   medianens kolumner, P10 och P90 ligger bakom *Fler kolumner* (Kopiera, CSV, Excel och utskriften tar med alla).
 7. **Utforska** har två avsnitt: **Löneöversikt — alla BAS-intervall** (den fasta tabellen) och **Egna vyer**. I
    Egna vyer bygger du det som en fråga kräver när flikarna ovan inte besvarar den: välj rader och ev. kolumner, mått
    och diagramtyp (väljaren har de vanliga typerna överst och resten, bland dem värmekartan och regnmolnet, under

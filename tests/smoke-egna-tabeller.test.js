@@ -30,7 +30,7 @@ describe('egna tabeller: från Utforska till rapporten', () => {
         expect(d.getElementById('explore-rapport-namn').value).toBe('');
         const [r] = w.__state.rapportTabeller;
         expect(r).toMatchObject({ namn: 'Median per yrke', spec: { rad: 'aid', kolumn: null, matt: 'median' }, upprepa: null });
-        expect(JSON.stringify(r)).not.toMatch(/\d{5}/);
+        expect(JSON.stringify({ ...r, id: undefined })).not.toMatch(/\d{5}/);   // id:t är slumpat och kan råka innehålla siffror
         // Utan namn får tabellen sin beskrivning som namn; per BAS kräver att raderna inte redan är BAS.
         expect(laggTill(w, '', true)).toMatch(/Tillagd: Median månadslön per Yrkesgrupp \(AID\), en tabell per BAS-intervall/);
         d.getElementById('explore-rad').value = 'bas'; w.__renderExplorer();

@@ -56,7 +56,7 @@
                 <div class="nav-group" role="presentation" aria-hidden="true">1 · Underlag</div>
                 <button class="nav-item active" data-tab="dashboard" aria-current="page" aria-controls="view-dashboard" id="tab-btn-dashboard">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
-                    <span class="nav-etikett">Översikt & Data</span>
+                    <span class="nav-etikett">Översikt</span>
                 </button>
                 <div class="nav-group" role="presentation" aria-hidden="true">2 · Kartlägg &amp; analysera</div>
                 <button class="nav-item" data-tip="Granska om något i era regler, tillägg eller förmåner kan missgynna ett kön. Enligt diskrimineringslagens regler om lönekartläggning." data-tab="bestammelser" id="tab-bestammelser" aria-controls="view-bestammelser">
@@ -121,7 +121,7 @@
             <header class="top-header rad-mitt gap-24 mellan">
                 <div class="header-title">
                     <button id="btn-meny" class="btn btn-secondary btn-sm meny-knapp" type="button" aria-controls="sidomeny" aria-expanded="false"><svg class="ikon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" focusable="false"><path d="M4 6h16M4 12h16M4 18h16"/></svg> Meny</button>
-                    <h1 id="page-title">Översikt & Data</h1>
+                    <h1 id="page-title">Översikt</h1>
                     <div id="gdpr-banner" class="gdpr-banner dold" role="status" aria-live="polite">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
                         <span><strong id="gdpr-banner-count">0</strong> personer<span class="gdpr-banner-lokalt"> bearbetas lokalt</span><span class="gdpr-banner-mer"> · inga personidentifierare lagras</span></span>
@@ -131,7 +131,7 @@
                 <div class="header-knappar">
                 <div id="sok-ruta" class="sok-ruta" hidden>
                     <label for="sok-grupp" class="sr-only">Sök yrke eller BAS-intervall</label>
-                    <input type="search" id="sok-grupp" class="form-select" role="combobox" aria-expanded="false" aria-controls="sok-grupp-lista" aria-autocomplete="list" autocomplete="off" spellcheck="false" placeholder="Sök yrke eller BAS ( / )" aria-describedby="sok-hjalp">
+                    <input type="search" id="sok-grupp" class="form-select" role="combobox" aria-expanded="false" aria-controls="sok-grupp-lista" aria-autocomplete="list" autocomplete="off" spellcheck="false" placeholder="Sök yrke eller BAS" title="Sök yrke eller BAS-intervall. Kortkommando: snedstreck eller Ctrl+K" aria-describedby="sok-hjalp">
                     <span id="sok-hjalp" class="sr-only">Välj en träff för att markera gruppen i alla diagram. Kortkommando: snedstreck eller Ctrl+K.</span>
                     <ul id="sok-grupp-lista" class="sok-lista" role="listbox" aria-label="Träffar" hidden></ul>
                 </div>
@@ -1197,15 +1197,15 @@
                                         <th scope="col" data-export-label="AID / Yrkesgrupp">Yrke</th>
                                         <th scope="col">BAS</th>
                                         <th scope="col" data-export-label="Antal personer (organisationen)">N</th>
-                                        <th scope="col" class="jmf-block" data-export-label="P10 organisationen (kr/mån)">P10 org</th>
-                                        <th scope="col" data-jmf="P10" data-jmf-typ="varde" data-export-label="P10 jämförelse (kr/mån)">P10 jmf</th>
-                                        <th scope="col" data-jmf="P10" data-jmf-typ="diff" data-export-label="P10 skillnad (%)">P10 diff</th>
+                                        <th scope="col" class="jmf-block" data-kol="p10org" data-export-label="P10 organisationen (kr/mån)">P10 org</th>
+                                        <th scope="col" data-jmf="P10" data-jmf-typ="varde" data-kol="p10jmf" data-export-label="P10 jämförelse (kr/mån)">P10 jmf</th>
+                                        <th scope="col" data-jmf="P10" data-jmf-typ="diff" data-kol="p10diff" data-export-label="P10 skillnad (%)">P10 diff</th>
                                         <th scope="col" class="jmf-block" data-export-label="Median organisationen (kr/mån)">Median org</th>
                                         <th scope="col" data-jmf="Median" data-jmf-typ="varde" data-export-label="Median jämförelse (kr/mån)">Median jmf</th>
                                         <th scope="col" data-jmf="Median" data-jmf-typ="diff" data-export-label="Median skillnad (%)">Median diff</th>
-                                        <th scope="col" class="jmf-block" data-export-label="P90 organisationen (kr/mån)">P90 org</th>
-                                        <th scope="col" data-jmf="P90" data-jmf-typ="varde" data-export-label="P90 jämförelse (kr/mån)">P90 jmf</th>
-                                        <th scope="col" data-jmf="P90" data-jmf-typ="diff" data-export-label="P90 skillnad (%)">P90 diff</th>
+                                        <th scope="col" class="jmf-block" data-kol="p90org" data-export-label="P90 organisationen (kr/mån)">P90 org</th>
+                                        <th scope="col" data-jmf="P90" data-jmf-typ="varde" data-kol="p90jmf" data-export-label="P90 jämförelse (kr/mån)">P90 jmf</th>
+                                        <th scope="col" data-jmf="P90" data-jmf-typ="diff" data-kol="p90diff" data-export-label="P90 skillnad (%)">P90 diff</th>
                                     </tr>
                                 </thead>
                                 <tbody></tbody>
@@ -1890,6 +1890,10 @@
                                 <tr class="handlingsplan-empty"><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
                             </tbody>
                         </table>
+                        </div>
+                        <div class="rad-mitt gap-8 marg-t-8" data-noprint>
+                            <button id="btn-hp-lagg-till" class="btn btn-secondary btn-sm" type="button">Lägg till rad</button>
+                            <span class="text-dampad-sm">En egen åtgärd utöver de förifyllda raderna, till exempel en förebyggande åtgärd. Raden följer med i exporterna som de andra.</span>
                         </div>
                         <p id="handlingsplan-varning" class="handlingsplan-varning" role="status" data-noprint hidden>Ett fält liknar ett personnummer eller en e-postadress. Skriv en roll eller en grupp i stället: texten följer med i exporterna.</p>
                         <p class="handlingsplan-not" data-noprint>Det du skriver här följer med i Excel-filen, utskriften och Word-utkastet, men sparas inte när du stänger webbläsarfliken. Spara konfigurationen under <strong>Dokumentera &amp; exportera</strong> om du vill komma tillbaka till det. Skriv på gruppnivå, inga namn eller personnummer.</p>

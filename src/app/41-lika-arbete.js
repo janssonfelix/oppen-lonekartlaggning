@@ -644,15 +644,17 @@ function _skevhetAndelFigur(rader) {
 // samma mått (reg.konKvot = 100 + konPct), och kortet längre ned säger hur dess skillnad hänger ihop med talet här.
 // ====================================================================
 // Texten under talet är kort (högst 40 tecken) och får två rader; en längre förklaring står i rutans verktygstips.
+// `kritisk` är true för rött (ett fel i underlaget), 'granska' för statusens lila (en skillnad över 5 %, Värt att granska).
 function _laSlutsats(etikett, varde, under, kritisk, tips) {
     return `<div class="slutsats"${tips ? ` title="${esc(tips)}"` : ''}><div class="slutsats-etikett">${esc(etikett)}</div><div class="slutsats-varde">${esc(varde)}</div>`
-        + `<div class="slutsats-under${kritisk ? ' ar-kritisk' : ''}">${esc(under)}</div></div>`;
+        + `<div class="slutsats-under${kritisk === 'granska' ? ' ar-granska' : kritisk ? ' ar-kritisk' : ''}">${esc(under)}</div></div>`;
 }
 function _laNyckel(id, text, kritisk) {
     const el = document.getElementById(id);
     if (!el) return;
     el.textContent = text || '';
-    el.classList.toggle('ar-kritisk', !!kritisk);
+    el.classList.toggle('ar-kritisk', kritisk === true);
+    el.classList.toggle('ar-granska', kritisk === 'granska');
 }
 /** Urvalsraden: vad fliken gäller. Det markerade står i raden under den (11-markering.js), i alla flikar. */
 function _laRitaUrval() {
@@ -690,16 +692,17 @@ function renderLikaArbeteTopp() {
     catch (e) { rapporteraFel('Lika arbete: toppen', e); }
     const grans = typeof _pagGrans === 'function' ? svTal(_pagGrans(), 0) : '10';
     ut.innerHTML = [
-        rader.length ? _laSlutsats('Yrkesgrupper att granska', `${granska.length} av ${rader.length}`, granska.length ? 'skillnad över 5 %' : 'ingen skillnad över 5 %', granska.length > 0)
+        rader.length ? _laSlutsats('Yrkesgrupper att granska', `${granska.length} av ${rader.length}`, granska.length ? 'skillnad över 5 %' : 'ingen skillnad över 5 %', granska.length > 0 ? 'granska' : false)
                      : _laSlutsats('Yrkesgrupper att granska', '–', `ingen yrkesgrupp har minst ${kTroskel()} av varje kön`),
         storst ? _laSlutsats('Största skillnaden', svPct(storst.kvot, 1), storst.yrke, false, 'Kvinnors medianlön i procent av mäns i den yrkesgrupp där skillnaden är störst') : '',
-        regOk ? _laSlutsats('Efter ålder och nivå', svPct(reg.konKvot, 1), 'kvinnors lön i % av mäns när ålder och nivå räknats bort', Math.abs(reg.konPct) > 5,
+        regOk ? _laSlutsats('Efter ålder och nivå', svPct(reg.konKvot, 1), 'kvinnors lön i % av mäns när ålder och nivå räknats bort', Math.abs(reg.konPct) > 5 ? 'granska' : false,
             `Regressionen i kortet längre ned: en oförklarad skillnad på ${reg.konPct >= 0 ? '+' : ''}${svPct(reg.konPct, 1)}, kvinnor mot män. Det är samma sak som att kvinnors lön är ${svPct(reg.konKvot, 1)} av mäns.`) : '',
         personer != null ? _laSlutsats('Personer att granska', svTal(personer, 0), `minst ${grans} % under förväntad lön`) : ''
     ].join('');
-    _laNyckel('nyckel-la-yrkesgrupper', rader.length ? `${granska.length} att granska${folj.length ? ` · ${folj.length} att följa upp` : ''}` : '', granska.length > 0);
+    _laNyckel('nyckel-la-yrkesgrupper', rader.length ? `${granska.length} att granska${folj.length ? ` · ${folj.length} att följa upp` : ''}` : '', granska.length > 0 ? 'granska' : false);
     _laNyckel('nyckel-la-personer', personer != null ? `${svTal(personer, 0)} ${personer === 1 ? 'person' : 'personer'}` : '');
-    _laNyckel('nyckel-la-bas', basKvot.length ? `${basOver.length} av ${basKvot.length} över 5 %` : '', basOver.length > 0);
+    _laNyckel('nyckel-la-bas', basKvot.length ? `${basOver.length} av ${basKvot.length} över 5 %` : '', basOver.length > 0 ? 'granska' : false);
     _laNyckel('nyckel-la-kon', konRader.length ? `${ojamna} av ${konRader.length} ojämna` : '');
-    _laNyckel('nyckel-la-regression', regOk ? `${reg.konPct >= 0 ? '+' : ''}${svPct(reg.konPct, 1)} oförklarat` : '', regOk && Math.abs(reg.konPct) > 5);
+        // Samma mått som nyckeltalsraden: kvinnors lön i % av mäns när ålder och nivå räknats bort (inte "−4,3 % oförklarat").
+    _laNyckel('nyckel-la-regression', regOk ? `${svPct(reg.konKvot, 1)} efter ålder och nivå` : '', regOk && Math.abs(reg.konPct) > 5 ? 'granska' : false);
 }

@@ -302,10 +302,11 @@ function _renderPerBasGapChart(perBas, bhQByBas) {
 
 // Figuren (diagramkärnan, ADR-39): en punkt med 95 % konfidensintervall mot nollinjen (inget oförklarat gap). Det som
 // ska läsas är om intervallet når noll, och det syns direkt. Statusen är en serie med egen symbol — färgen bär den
-// inte ensam (förbättring 7).
+// inte ensam (förbättring 7). Över 5 % är samma gräns som *Värt att granska* och har därför samma lila; rött används
+// inte för en skillnad i procent (10-diagramtema.js, GAP_STATUS).
 // `sorted` är bara BAS med status 'ok' (tillräcklig könsbalans); inga andra når figuren.
 const _PERBAS_STATUS = [
-    { serie: 'Säkerställt, över 5 %', farg: 'kritisk', symbol: 'romb' },
+    { serie: 'Säkerställt, över 5 %', farg: 'granska', symbol: 'romb' },
     { serie: 'Säkerställt', farg: 'varning', symbol: 'kvadrat' },
     { serie: 'Inte säkerställt', farg: 'neutral', symbol: 'cirkel' }
 ];
