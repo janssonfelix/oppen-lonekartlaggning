@@ -135,21 +135,21 @@
                     <span id="sok-hjalp" class="sr-only">Välj en träff för att markera gruppen i alla diagram. Kortkommando: snedstreck eller Ctrl+K.</span>
                     <ul id="sok-grupp-lista" class="sok-lista" role="listbox" aria-label="Träffar" hidden></ul>
                 </div>
-                <button id="btn-open-symbols" class="btn btn-secondary btn-sm mitt rad-inline gap-6" type="button" aria-label="Visa förklaring av symboler och färger">
+                <button id="btn-open-symbols" class="btn btn-secondary btn-sm mitt rad-inline gap-6" type="button" aria-label="Visa förklaring av symboler och färger" title="Förklaring av symboler och färger">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
-                    Förklaring
+                    <span class="knapp-text">Förklaring</span>
                 </button>
                 <button id="btn-forhandsvisa" class="btn btn-secondary btn-sm mitt rad-inline gap-6" type="button" aria-pressed="false" title="Visa flikarna som i det som lämnar verktyget: lönemått för grupper under minsta gruppstorlek redovisas inte">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
-                    Som export
+                    <span class="knapp-text">Som i exporten</span>
                 </button>
-                <button id="btn-open-installningar" class="btn btn-secondary btn-sm mitt rad-inline gap-6" type="button" aria-haspopup="dialog">
+                <button id="btn-open-installningar" class="btn btn-secondary btn-sm mitt rad-inline gap-6" type="button" aria-haspopup="dialog" title="Inställningar">
                     <svg class="ikon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/></svg>
-                    Inställningar
+                    <span class="knapp-text">Inställningar</span>
                 </button>
-                <button id="btn-open-glossary" class="btn btn-secondary btn-sm mitt rad-inline gap-6" type="button" aria-label="Öppna ordlistan">
+                <button id="btn-open-glossary" class="btn btn-secondary btn-sm mitt rad-inline gap-6" type="button" aria-label="Öppna ordlistan" title="Ordlista">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
-                    Ordlista
+                    <span class="knapp-text">Ordlista</span>
                 </button>
                 </div>
             </header>
@@ -1763,7 +1763,7 @@
                                 <ul><li>Värderas egenskaper som är vanligare i kvinnodominerade yrken (t.ex. omsorg, bemötande) lägre än egenskaper i mansdominerade yrken?</li>
                                 <li>Är kriterierna kända för medarbetare och chefer?</li></ul>
                                 <h4>Stöd i verktyget</h4>
-                                <ul><li>Likvärdigt arbete visar om kvinnodominerade yrken systematiskt underbetalas vid likvärdiga krav.</li></ul>
+                                <ul><li class="bes8-stod" data-stod="likvardighet">Likvärdigt arbete visar om kvinnodominerade yrken systematiskt underbetalas vid likvärdiga krav.</li></ul>
                                 <div class="bes8-assess"></div>
                             </div>
                         </details>
@@ -1807,7 +1807,7 @@
                                 <h4>Ledande frågor</h4>
                                 <ul><li>Är deltid ett aktivt val eller en strukturell förutsättning i kvinnodominerade verksamheter?</li></ul>
                                 <h4>Stöd i verktyget</h4>
-                                <ul><li>Demografi (kontext) visar ålders- och strukturmönster per BAS-intervall.</li></ul>
+                                <ul><li>Fliken Ålder & karriär visar ålders- och strukturmönster per BAS-intervall.</li></ul>
                                 <div class="bes8-assess"></div>
                             </div>
                         </details>
@@ -1820,7 +1820,7 @@
                                 <h4>Ledande frågor</h4>
                                 <ul><li>Finns ingångslönespann per befattning? Följs avvikelser upp per kön?</li></ul>
                                 <h4>Stöd i verktyget</h4>
-                                <ul><li>Lika arbete visar lönespridning (P10/median/P90) och ojusterat gap per BAS.</li></ul>
+                                <ul><li class="bes8-stod" data-stod="matrix">Lika arbete visar lönespridning (P10/median/P90) och ojusterat gap per BAS.</li></ul>
                                 <div class="bes8-assess"></div>
                             </div>
                         </details>
@@ -1833,7 +1833,8 @@
                                 <h4>Ledande frågor</h4>
                                 <ul><li>Är karriärvägarna lika tillgängliga i kvinno- och mansdominerade verksamheter?</li></ul>
                                 <h4>Stöd i verktyget</h4>
-                                <ul><li>Fliken Ålder & karriär visar om lönegapet växer över karriärspannet — en möjlig indikation på ojämlik befordrings-/lönehöjningspraxis.</li></ul>
+                                <ul><li>Fliken Ålder & karriär visar om lönegapet växer över karriärspannet — en möjlig indikation på ojämlik befordrings-/lönehöjningspraxis.</li>
+                                <li class="bes8-stod" data-stod="struktur">Struktur &amp; rapportmått visar andelen kvinnor i varje lönekvartil: färre kvinnor i de högre kvartilerna kan tyda på att karriärvägarna inte är lika öppna.</li></ul>
                                 <div class="bes8-assess"></div>
                             </div>
                         </details>

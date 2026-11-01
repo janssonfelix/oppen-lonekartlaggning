@@ -289,8 +289,8 @@ function generateEUDirectiveMatrix() {
         // Jämn könsfördelning = båda könen >= 40% (= ena könet inom [40%, 60%]).
         // Strikt olikhet på 0.6 — exakt 60/40 räknas som jämnt.
         let dominans = "Könsblandad";
-        if (pctKv > 0.6) dominans = "Kvinno-dom";
-        else if (pctKv < 0.4) dominans = "Mans-dom";
+        if (pctKv > 0.6) dominans = "Kvinnodominerad";
+        else if (pctKv < 0.4) dominans = "Mansdominerad";
         // k-anonymitet: yrken där ett kön är under k redovisas med gruppens SAMLADE
         // median (den bygger på n >= kTroskel() och röjer ingen enskild); yrken som
         // helt ligger under k utelämnas och räknas upp i noten under tabellen.

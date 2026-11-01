@@ -454,7 +454,7 @@ function renderLikvardighet() {
                             <th data-kol="gappct" title="Skillnad i procent av organisationens median.">Gap (%)</th>
                             <th data-kol="ki" title="95 % bootstrap-konfidensintervall på medianskillnaden. Ligger hela intervallet över 0 är skillnaden statistiskt säker.">95 % KI</th>
                             <th data-kol="justerad" title="Skillnaden när jämförelseyrkets lön räknats om till det kvinnodominerade yrkets åldersfördelning (log(lön) ~ ålder i jämförelseyrket). Den råa skillnaden är det lagen prövar; den här visar hur mycket som kan bero på åldersstruktur. Bara interna par." data-export-label="Justerad för ålder (%)">Justerad för ålder</th>
-                            <th data-kol="paverkan" title="Påverkansindex = |gap kr| × antal medarbetare i det kvinnodominerade yrket. Heuristik för att prioritera de par som rör flest individer och störst lönegap — inte ett lagstadgat mått." data-export-label="Påverkan">Påverkan (kr/mån)</th>
+                            <th data-kol="paverkan" title="Gapet i kronor gånger antalet personer i det kvinnodominerade yrket, per månad">Summa för gruppen (kr/mån)</th>
                             <th data-kol="bevis">Bevis</th>
                         </tr>
                     </thead>
@@ -805,7 +805,7 @@ function _exportLikvardighetCSVExport() {
         'Nr',
         'Org. AID', 'Org. Yrke', 'BAS', 'Org. n', 'Org. % kvinnor', 'Median Org. (kr)',
         'Jämf. AID', 'Jämf. Yrke', 'Jämf. % kvinnor', 'Jämf. n', 'Jämförelsekälla', 'Median Jämf. (kr)',
-        'Gap (kr)', 'Gap (%)', 'Justerad för ålder (%)', 'KI 95% låg (kr)', 'KI 95% hög (kr)', 'Säkerhet', 'Påverkansindex',
+        'Gap (kr)', 'Gap (%)', 'Justerad för ålder (%)', 'KI 95% låg (kr)', 'KI 95% hög (kr)', 'Säkerhet', 'Summa för gruppen (kr/mån)',
         'Sakligt skäl — fylls i', 'Status / åtgärd — fylls i'
     ]];
     result.pairs.forEach((p, i) => {
@@ -890,7 +890,7 @@ function _exportLikvardighetExport() {
             'Nr',
             'Org. AID', 'Org. Yrke', 'BAS', 'Org. n', 'Org. % kvinnor', 'Median Org. (kr)',
             'Jämf. AID', 'Jämf. Yrke', 'Jämf. % kvinnor', 'Jämf. n', 'Jämförelsekälla', 'Median Jämf. (kr)',
-            'Gap (kr)', 'Gap (%)', 'Justerad för ålder (%)', 'KI 95% låg (kr)', 'KI 95% hög (kr)', 'Säkerhet', 'Påverkansindex',
+            'Gap (kr)', 'Gap (%)', 'Justerad för ålder (%)', 'KI 95% låg (kr)', 'KI 95% hög (kr)', 'Säkerhet', 'Summa för gruppen (kr/mån)',
             'Sakligt skäl — fylls i', 'Status / åtgärd — fylls i'
         ];
         const rows = [header];
@@ -974,7 +974,7 @@ function _exportLikvardighetExport() {
             ['Jämförelsekälla', 'Primärt organisationens egna icke-kv-dom yrken (inom-arbetsgivare). Saknas internt jämförelseyrke i en BAS används jämförelsestatistiken som extern proxy.'],
             ['95 % KI', 'Bootstrap B=1000 på medianskillnaden. Intern: omdragning av bägge individurvalen. Extern: omdragning av org-löner mot jämförelsestatistikens median som konstant. Hela intervallet > 0 = säker skillnad.'],
             ['Justerad för ålder (%)', LV_JUSTERAD_METOD],
-            ['Påverkansindex', 'Heuristik för rangordning: |gap kr| × antal medarbetare i gruppen. Inte ett lagstadgat mått.']
+            ['Summa för gruppen (kr/mån)', 'Gapet i kronor gånger antalet personer i det kvinnodominerade yrket, per månad. Används för att rangordna paren, inte ett lagstadgat mått.']
         ];
         const metaSheet = XLSX.utils.aoa_to_sheet(meta);
         metaSheet['!cols'] = [{ wch: 42 }, { wch: 72 }];

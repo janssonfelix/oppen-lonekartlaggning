@@ -101,7 +101,7 @@ describe('kandidatparens tabell', () => {
             expect(w.eval('_tableCellText')(k.closest('td'))).toMatch(/^\[[^\]]+ kr, [^\]]+ kr\]\s?(säker skillnad|inom slumpfel)$/);
         }
         const rubriker = [...d.querySelectorAll('#likvardighet-table thead th')].map(th => th.textContent);
-        expect(rubriker).toContain('Påverkan (kr/mån)');
+        expect(rubriker).toContain('Summa för gruppen (kr/mån)');
         // Den nationella andelen står i verktygstipset, med källa och period, inte i raden (men följer med i cellens text för exporten).
         const under = d.querySelector('#likvardighet-table .lv-under');
         const synlig = under.cloneNode(true); synlig.querySelectorAll('.bara-export').forEach(e => e.remove());
@@ -541,4 +541,104 @@ describe('Krav mot lön med många yrkesgrupper', () => {
         expect(iB.every(v => Math.abs(v) <= 0.36)).toBe(true);              // inom intervallets bredd
         for (const p of punkter.filter(q => q.bas !== 'B' || q.y > 31000)) expect(p.forskjutning).toBeUndefined();
     });
+});
+
+describe('småsaker i texter och etiketter (granskning 2026-10-30, steg H)', () => {
+    it('Lika arbetes kolumn Dominans skriver ut orden, också i cellens text för exporten', () => {
+        const w = createAppWindow();
+        w.__loadDemoData();
+        w.__renderTabContent('matrix');
+        const d = w.document;
+        const rubriker = [...d.querySelectorAll('#matrix-table thead th')];
+        const kol = rubriker.findIndex(th => th.textContent.trim() === 'Dominans');
+        expect(kol).toBeGreaterThan(-1);
+        const varden = [...d.querySelectorAll('#matrix-table tbody tr')].filter(tr => tr._euRow).map(tr => tr.cells[kol].textContent.trim());
+        expect(varden.length).toBeGreaterThan(3);
+        for (const v of varden) expect(v).toMatch(/^(Kvinnodominerad|Mansdominerad|Könsblandad)$/);
+        expect(d.getElementById('view-matrix').closest('body').innerHTML).not.toMatch(/Kvinno-dom|Mans-dom/);
+    });
+    it('Likvärdigt arbetes kolumn heter Summa för gruppen, med verktygstips; Excel-bladen har samma rubrik', () => {
+        const w = createAppWindow();
+        w.__loadDemoData();
+        w.__renderTabContent('likvardighet');
+        const th = w.document.querySelector('#likvardighet-table thead th[data-kol="paverkan"]');
+        expect(th.textContent.trim()).toBe('Summa för gruppen (kr/mån)');
+        expect(th.title).toBe('Gapet i kronor gånger antalet personer i det kvinnodominerade yrket, per månad');
+        expect(th.hasAttribute('data-export-label')).toBe(false);
+        for (const fil of ['src/app/34-likvardigt-arbete.js', 'src/app/24-excelexport.js', 'src/app/27-berakningsbevis.js']) {
+            expect(las(fil), fil).not.toMatch(/Påverkan/);
+            expect(las(fil), fil).toContain('Summa för gruppen (kr/mån)');
+        }
+    });
+    it('varje Nästa steg-knapp heter det menyn heter', () => {
+        const w = createAppWindow();
+        const d = w.document;
+        const steg = w.eval('FLOW_NEXT');
+        for (const { tab, label } of Object.values(steg)) {
+            const meny = d.querySelector(`.nav-item[data-tab="${tab}"] .nav-etikett`);
+            expect(meny, tab).toBeTruthy();
+            expect(label, tab).toBe(meny.textContent.trim());
+        }
+    });
+    it('sidhuvudets fyra knappar har texten i ett eget element, som telefonbredden döljer visuellt men inte för skärmläsare', () => {
+        const w = createAppWindow();
+        const d = w.document;
+        const namn = { 'btn-open-symbols': 'Förklaring', 'btn-forhandsvisa': 'Som i exporten', 'btn-open-installningar': 'Inställningar', 'btn-open-glossary': 'Ordlista' };
+        for (const [id, text] of Object.entries(namn)) {
+            const b = d.getElementById(id);
+            expect(b.querySelector('.knapp-text')?.textContent, id).toBe(text);
+            expect(b.querySelector('svg'), id).toBeTruthy();
+            expect(b.title.length, id).toBeGreaterThan(3);
+        }
+        const css = las('src/style.css');
+        const regel = css.match(/\.header-knappar > \.btn \.knapp-text \{([^}]*)\}/);
+        expect(regel).toBeTruthy();
+        expect(regel[1]).toMatch(/clip-path: inset\(50%\)/);
+        expect(regel[1]).not.toMatch(/visibility|display: none/);
+        expect(css).toMatch(/body\.meny-utan-glidning \.sidebar \{ transition: none !important; \}/);
+    });
+    it('Regler & praxis: områdena är avsnitt vars pil vrids när de fälls ut', () => {
+        const w = createAppWindow();
+        const omraden = [...w.document.querySelectorAll('.bes8-omrade')];
+        expect(omraden).toHaveLength(6);
+        for (const o of omraden) expect(o.matches('details.avsnitt'), o.id).toBe(true);
+        const css = las('src/style.css');
+        expect(css).toMatch(/details\.avsnitt > summary::before \{[^}]*transform: rotate\(-45deg\)/);
+        expect(css).toMatch(/details\.avsnitt\[open\] > summary::before \{ transform: rotate\(45deg\); \}/);
+    });
+    it('Regler & praxis: Stöd i verktyget hämtar flikens tal och slutar med Gå dit; utan underlag står den fasta texten', () => {
+        const w = createAppWindow();
+        const d = w.document;
+        const rader = () => [...d.querySelectorAll('.bes8-stod')];
+        expect(rader().map(l => l.dataset.stod)).toEqual(['likvardighet', 'matrix', 'struktur']);
+        const fast = rader().map(l => l.textContent.trim());
+        for (const l of rader()) { expect(l.querySelector('a')).toBeNull(); expect(l.textContent).not.toContain('Gå dit'); }
+        w.__loadDemoData();
+        w.__renderTabContent('bestammelser');
+        for (const l of rader()) {
+            const a = l.querySelector('a[data-go-to-tab]');
+            expect(a?.dataset.goToTab, l.dataset.stod).toBe(l.dataset.stod);
+            expect(a.textContent).toBe('Gå dit');
+            expect(a.getAttribute('aria-label')).toMatch(/^Gå till /);
+            expect(l.textContent, l.dataset.stod).toMatch(/\d/);
+            expect(l.textContent.trim(), l.dataset.stod).not.toBe(fast[rader().indexOf(l)]);
+        }
+        // Talen är flikarnas egna: samma som i flikarnas toppar.
+        w.__renderTabContent('matrix');
+        w.__renderTabContent('likvardighet');
+        w.__renderTabContent('struktur');
+        const topp = (id, etikett) => [...d.querySelectorAll(`#${id} .slutsats`)].find(s => s.textContent.includes(etikett))?.querySelector('.slutsats-varde')?.textContent.trim();
+        const [lv, la, st] = rader().map(l => l.textContent);
+        expect(la).toContain(`har ${topp('la-slutsatser', 'Yrkesgrupper att granska')} yrkesgrupper att granska`);
+        expect(lv).toContain(`har ${topp('lv-slutsatser', 'Par att titta närmare på')} par att titta närmare på`);
+        expect(st).toContain(`${topp('st-slutsatser', 'Högsta lönekvartilen')} kvinnor i den högsta lönekvartilen`);
+        expect(st).toContain(`${topp('st-slutsatser', 'Lägsta lönekvartilen')} i den lägsta`);
+        // Gå dit byter flik.
+        d.querySelector('.bes8-stod[data-stod="struktur"] a').click();
+        expect(d.querySelector('.nav-item.active').dataset.tab).toBe('struktur');
+        // Rensas underlaget står den fasta texten igen.
+        w.__state.data = [];
+        w.eval('bes8Stod()');
+        expect(rader().map(l => l.textContent.trim())).toEqual(fast);
+    }, 30000);
 });

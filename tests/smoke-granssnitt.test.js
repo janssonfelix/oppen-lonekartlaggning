@@ -252,6 +252,18 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         d.querySelector('.nav-item[data-tab="info"]').focus();
         d.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
         expect(d.activeElement).toBe(d.querySelector('.nav-item[data-tab="info"]'));
+        // Ett byte över brytpunkten 640 punkter stänger menyn utan glidning; ett eget öppnande efteråt står kvar.
+        const byten = w.__mediaLyssnare.filter(l => l.media === '(max-width: 640px)' && l.typ === 'change');
+        expect(byten).toHaveLength(1);
+        knapp.click();
+        expect(d.body.classList.contains('meny-oppen')).toBe(true);
+        byten[0].fn({ matches: true });
+        expect(d.body.classList.contains('meny-oppen')).toBe(false);
+        expect(knapp.getAttribute('aria-expanded')).toBe('false');
+        expect(skugga.hidden).toBe(true);
+        expect(d.body.classList.contains('meny-utan-glidning')).toBe(true);
+        knapp.click();
+        expect(d.body.classList.contains('meny-oppen')).toBe(true);
     });
     it('Översikt är en uppladdningssida före inläsning och visar läget efter', () => {
         const w = createAppWindow();

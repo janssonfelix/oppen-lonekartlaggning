@@ -100,7 +100,7 @@ function _evidenceForLikvardighetPair(p) {
                     : `${svPct(p.maKvAndel, 0)} kvinnor på nationell nivå: under 40 % = icke-kvinnodominerat. Lokal könsdata saknades.`) },
             { label: '95 % säkerhetsintervall (gap)',      value: p.gapCI ? `[${fmtKr(p.gapCI.lo)}, ${fmtKr(p.gapCI.hi)}]` : '—', note: p.gapCI ? ciNote : 'För få observationer i organisationen för bootstrap' },
             { label: 'Säkerhetsbedömning',                 value: sigStatus, isHtml: true, note: p.gapCI ? (p.gapCI.lo > 0 ? 'Hela intervallet > 0, alltså är skillnaden inte slumpmässig' : 'Intervallet rör vid 0, alltså kan det vara slump') : '' },
-            { label: 'Påverkansindex',                     value: fmtN(Math.round(p.allvarsindex)), note: `|gap| × n (i organisationen) = ${fmtKr(Math.abs(p.gapKr))} × ${p.kvN} — heuristik som rangordnar par efter total löneeffekt (ej lagstadgat mått)` },
+            { label: 'Summa för gruppen (kr/mån)',         value: fmtN(Math.round(p.allvarsindex)), note: `|gap| × n (i organisationen) = ${fmtKr(Math.abs(p.gapKr))} × ${p.kvN} — gapet gånger antalet personer i det kvinnodominerade yrket; rangordnar paren, inte ett lagstadgat mått` },
             { label: 'Medelålder',                         value: `${alderText(p.kvMedelAlder)} år mot ${alderText(p.maMedelAlder)} år`, note: 'Det kvinnodominerade yrket mot jämförelseyrket. Skiljer sig åldrarna mycket kan en del av skillnaden vara åldersstruktur.' },
             { label: 'Justerad för ålder',                 value: p.aldersJusterad ? svPct(p.aldersJusterad.gapPct, 1) : '—',
               note: p.aldersJusterad

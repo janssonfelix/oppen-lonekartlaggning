@@ -82,7 +82,7 @@ Exportera en personalfil (CSV eller XLSX) med dessa kolumner:
    metodbilagan och i exporterad data; under 10 står dessutom meningen *Tröskeln är sänkt från
    standardvärdet 10.* på det som kan spridas för sig, till exempel diagrambilder, kopierade tabeller
    och rapporter. Alla flikar räknas om när värdet
-   ändras. Knappen **Som export** i sidhuvudet visar flikarna som i det som lämnar verktyget — grupper under
+   ändras. Knappen **Som i exporten** i sidhuvudet visar flikarna som i det som lämnar verktyget — grupper under
    minsta gruppstorlek redovisas inte — med en banner och en streckad ram runt innehållet tills du klickar
    *Visa skärmen igen*. Värdet sparas inte mellan gånger men följer med i konfigurationsfilen; en
    konfigurationsfil utan värdet ändrar det inte. *Återställ till 10* sätter tillbaka

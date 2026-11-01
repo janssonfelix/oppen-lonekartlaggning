@@ -139,7 +139,7 @@ function _renderTabContent(target) {
     else if (target === "dashboard" && d.length) renderOversiktDelar();
     else if (target === "info")  renderInfoTab();
     else if (target === "handlingsplan") renderHandlingsplanSeed();
-    else if (target === "bestammelser") { if (typeof bes8Uppdatera === 'function') bes8Uppdatera(); }
+    else if (target === "bestammelser") { if (typeof bes8Uppdatera === 'function') bes8Uppdatera(); if (typeof bes8Stod === 'function') bes8Stod(); }
     // Sidans navigering hör till fliken som visas. Ritas en annan flik (t.ex. för att
     // kopiera ett diagram därifrån) ska den synliga flikens rader inte flyttas.
     const aktiv = document.querySelector('.nav-item.active')?.getAttribute('data-tab');
@@ -153,7 +153,7 @@ const FLOW_NEXT = {
     bestammelser: { tab: 'matrix',        label: 'Lika arbete' },
     matrix:       { tab: 'likvardighet',  label: 'Likvärdigt arbete' },
     likvardighet: { tab: 'struktur',      label: 'Struktur & rapportmått' },
-    struktur:     { tab: 'prioritering',  label: 'Prioritering & åtgärder' },
+    struktur:     { tab: 'prioritering',  label: 'Prioritering' },
     prioritering: { tab: 'loneoversyn',   label: 'Löneöversyn' },
     loneoversyn:  { tab: 'handlingsplan', label: 'Handlingsplan' },
     handlingsplan:{ tab: 'kon',           label: 'Ålder & karriär' },
@@ -244,9 +244,17 @@ document.getElementById('btn-meny')?.addEventListener('click', () => sattMeny(!m
 document.getElementById('meny-skugga')?.addEventListener('click', () => sattMeny(false));
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && menyOppen()) sattMeny(false); });
 document.getElementById('sidomeny')?.addEventListener('click', e => { if (/** @type {HTMLElement} */ (e.target).closest('.nav-item')) sattMeny(false, { fokus: false }); });
-// Fönstret breddas medan menyn är öppen: läget nollställs, annars ligger skuggan kvar när menyn åter är en spalt.
+// Fönstret passerar brytpunkten 640 punkter (åt något håll): menyn stängs, och utan glidning. Breddas fönstret medan
+// menyn är öppen ligger annars skuggan kvar när menyn åter är en spalt; smalnas det av gled spalten ut över
+// innehållet på väg utanför bild. Den smala vyn börjar alltså alltid med menyn stängd; öppnar användaren den själv
+// står den kvar tills något stänger den (ändringar inom samma sida av brytpunkten rör den inte).
+function _menyVidBrytpunkt() {
+    document.body.classList.add('meny-utan-glidning');
+    sattMeny(false, { fokus: false });
+    const av = () => document.body.classList.remove('meny-utan-glidning');
+    if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => requestAnimationFrame(av)); else setTimeout(av, 50);
+}
 if (typeof window.matchMedia === 'function') {
-    const bred = window.matchMedia('(min-width: 641px)');
-    const nollstall = () => { if (bred.matches) sattMeny(false, { fokus: false }); };
-    if (bred.addEventListener) bred.addEventListener('change', nollstall);
+    const smal = window.matchMedia('(max-width: 640px)');
+    if (smal.addEventListener) smal.addEventListener('change', _menyVidBrytpunkt);
 }

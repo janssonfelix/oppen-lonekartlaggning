@@ -15933,7 +15933,7 @@ function _exportJPAProtocolExport() {
             'Nr',
             'Org. AID', 'Org. Yrke', 'BAS', 'Org. n', 'Org. % kvinnor', 'Median Org. (kr)',
             'Jämf. AID', 'Jämf. Yrke', 'Jämf. % kvinnor', 'Jämf. n', 'Jämförelsekälla', 'Median Jämf. (kr)',
-            'Gap (kr)', 'Gap (%)', '95 % KI lägre (kr)', '95 % KI övre (kr)', 'Säkerhet', 'Påverkansindex',
+            'Gap (kr)', 'Gap (%)', '95 % KI lägre (kr)', '95 % KI övre (kr)', 'Säkerhet', 'Summa för gruppen (kr/mån)',
             'Sakliga skäl — arbetsgivarens analys',
             'Fackliga partens kommentar',
             'Status efter samråd',
@@ -16243,6 +16243,7 @@ function _rensaAllData({ inbakat = true } = {}) {
     // § 8-ställningens bedömningar (status + anteckning) — nollställ
     document.querySelectorAll('.bes8-field').forEach(el => { /** @type {HTMLInputElement} */ (el).value = ''; });
     if (typeof bes8Uppdatera === 'function') bes8Uppdatera();
+    if (typeof bes8Stod === 'function') bes8Stod();
     // Handlingsplanens ifyllda fält (sakligt skäl, ansvarig, tidsplan, status) — nollställ och rita mallen tom
     state.handlingsplan = {};
     if (typeof renderHandlingsplanSeed === 'function') renderHandlingsplanSeed();
@@ -16391,7 +16392,7 @@ function _evidenceForLikvardighetPair(p) {
                     : `${svPct(p.maKvAndel, 0)} kvinnor på nationell nivå: under 40 % = icke-kvinnodominerat. Lokal könsdata saknades.`) },
             { label: '95 % säkerhetsintervall (gap)',      value: p.gapCI ? `[${fmtKr(p.gapCI.lo)}, ${fmtKr(p.gapCI.hi)}]` : '—', note: p.gapCI ? ciNote : 'För få observationer i organisationen för bootstrap' },
             { label: 'Säkerhetsbedömning',                 value: sigStatus, isHtml: true, note: p.gapCI ? (p.gapCI.lo > 0 ? 'Hela intervallet > 0, alltså är skillnaden inte slumpmässig' : 'Intervallet rör vid 0, alltså kan det vara slump') : '' },
-            { label: 'Påverkansindex',                     value: fmtN(Math.round(p.allvarsindex)), note: `|gap| × n (i organisationen) = ${fmtKr(Math.abs(p.gapKr))} × ${p.kvN} — heuristik som rangordnar par efter total löneeffekt (ej lagstadgat mått)` },
+            { label: 'Summa för gruppen (kr/mån)',         value: fmtN(Math.round(p.allvarsindex)), note: `|gap| × n (i organisationen) = ${fmtKr(Math.abs(p.gapKr))} × ${p.kvN} — gapet gånger antalet personer i det kvinnodominerade yrket; rangordnar paren, inte ett lagstadgat mått` },
             { label: 'Medelålder',                         value: `${alderText(p.kvMedelAlder)} år mot ${alderText(p.maMedelAlder)} år`, note: 'Det kvinnodominerade yrket mot jämförelseyrket. Skiljer sig åldrarna mycket kan en del av skillnaden vara åldersstruktur.' },
             { label: 'Justerad för ålder',                 value: p.aldersJusterad ? svPct(p.aldersJusterad.gapPct, 1) : '—',
               note: p.aldersJusterad
@@ -17588,7 +17589,7 @@ function _renderTabContent(target) {
     else if (target === "dashboard" && d.length) renderOversiktDelar();
     else if (target === "info")  renderInfoTab();
     else if (target === "handlingsplan") renderHandlingsplanSeed();
-    else if (target === "bestammelser") { if (typeof bes8Uppdatera === 'function') bes8Uppdatera(); }
+    else if (target === "bestammelser") { if (typeof bes8Uppdatera === 'function') bes8Uppdatera(); if (typeof bes8Stod === 'function') bes8Stod(); }
     // Sidans navigering hör till fliken som visas. Ritas en annan flik (t.ex. för att
     // kopiera ett diagram därifrån) ska den synliga flikens rader inte flyttas.
     const aktiv = document.querySelector('.nav-item.active')?.getAttribute('data-tab');
@@ -17602,7 +17603,7 @@ const FLOW_NEXT = {
     bestammelser: { tab: 'matrix',        label: 'Lika arbete' },
     matrix:       { tab: 'likvardighet',  label: 'Likvärdigt arbete' },
     likvardighet: { tab: 'struktur',      label: 'Struktur & rapportmått' },
-    struktur:     { tab: 'prioritering',  label: 'Prioritering & åtgärder' },
+    struktur:     { tab: 'prioritering',  label: 'Prioritering' },
     prioritering: { tab: 'loneoversyn',   label: 'Löneöversyn' },
     loneoversyn:  { tab: 'handlingsplan', label: 'Handlingsplan' },
     handlingsplan:{ tab: 'kon',           label: 'Ålder & karriär' },
@@ -17693,11 +17694,19 @@ document.getElementById('btn-meny')?.addEventListener('click', () => sattMeny(!m
 document.getElementById('meny-skugga')?.addEventListener('click', () => sattMeny(false));
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && menyOppen()) sattMeny(false); });
 document.getElementById('sidomeny')?.addEventListener('click', e => { if (/** @type {HTMLElement} */ (e.target).closest('.nav-item')) sattMeny(false, { fokus: false }); });
-// Fönstret breddas medan menyn är öppen: läget nollställs, annars ligger skuggan kvar när menyn åter är en spalt.
+// Fönstret passerar brytpunkten 640 punkter (åt något håll): menyn stängs, och utan glidning. Breddas fönstret medan
+// menyn är öppen ligger annars skuggan kvar när menyn åter är en spalt; smalnas det av gled spalten ut över
+// innehållet på väg utanför bild. Den smala vyn börjar alltså alltid med menyn stängd; öppnar användaren den själv
+// står den kvar tills något stänger den (ändringar inom samma sida av brytpunkten rör den inte).
+function _menyVidBrytpunkt() {
+    document.body.classList.add('meny-utan-glidning');
+    sattMeny(false, { fokus: false });
+    const av = () => document.body.classList.remove('meny-utan-glidning');
+    if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => requestAnimationFrame(av)); else setTimeout(av, 50);
+}
 if (typeof window.matchMedia === 'function') {
-    const bred = window.matchMedia('(min-width: 641px)');
-    const nollstall = () => { if (bred.matches) sattMeny(false, { fokus: false }); };
-    if (bred.addEventListener) bred.addEventListener('change', nollstall);
+    const smal = window.matchMedia('(max-width: 640px)');
+    if (smal.addEventListener) smal.addEventListener('change', _menyVidBrytpunkt);
 }
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -18984,7 +18993,7 @@ function renderLikvardighet() {
                             <th data-kol="gappct" title="Skillnad i procent av organisationens median.">Gap (%)</th>
                             <th data-kol="ki" title="95 % bootstrap-konfidensintervall på medianskillnaden. Ligger hela intervallet över 0 är skillnaden statistiskt säker.">95 % KI</th>
                             <th data-kol="justerad" title="Skillnaden när jämförelseyrkets lön räknats om till det kvinnodominerade yrkets åldersfördelning (log(lön) ~ ålder i jämförelseyrket). Den råa skillnaden är det lagen prövar; den här visar hur mycket som kan bero på åldersstruktur. Bara interna par." data-export-label="Justerad för ålder (%)">Justerad för ålder</th>
-                            <th data-kol="paverkan" title="Påverkansindex = |gap kr| × antal medarbetare i det kvinnodominerade yrket. Heuristik för att prioritera de par som rör flest individer och störst lönegap — inte ett lagstadgat mått." data-export-label="Påverkan">Påverkan (kr/mån)</th>
+                            <th data-kol="paverkan" title="Gapet i kronor gånger antalet personer i det kvinnodominerade yrket, per månad">Summa för gruppen (kr/mån)</th>
                             <th data-kol="bevis">Bevis</th>
                         </tr>
                     </thead>
@@ -19335,7 +19344,7 @@ function _exportLikvardighetCSVExport() {
         'Nr',
         'Org. AID', 'Org. Yrke', 'BAS', 'Org. n', 'Org. % kvinnor', 'Median Org. (kr)',
         'Jämf. AID', 'Jämf. Yrke', 'Jämf. % kvinnor', 'Jämf. n', 'Jämförelsekälla', 'Median Jämf. (kr)',
-        'Gap (kr)', 'Gap (%)', 'Justerad för ålder (%)', 'KI 95% låg (kr)', 'KI 95% hög (kr)', 'Säkerhet', 'Påverkansindex',
+        'Gap (kr)', 'Gap (%)', 'Justerad för ålder (%)', 'KI 95% låg (kr)', 'KI 95% hög (kr)', 'Säkerhet', 'Summa för gruppen (kr/mån)',
         'Sakligt skäl — fylls i', 'Status / åtgärd — fylls i'
     ]];
     result.pairs.forEach((p, i) => {
@@ -19420,7 +19429,7 @@ function _exportLikvardighetExport() {
             'Nr',
             'Org. AID', 'Org. Yrke', 'BAS', 'Org. n', 'Org. % kvinnor', 'Median Org. (kr)',
             'Jämf. AID', 'Jämf. Yrke', 'Jämf. % kvinnor', 'Jämf. n', 'Jämförelsekälla', 'Median Jämf. (kr)',
-            'Gap (kr)', 'Gap (%)', 'Justerad för ålder (%)', 'KI 95% låg (kr)', 'KI 95% hög (kr)', 'Säkerhet', 'Påverkansindex',
+            'Gap (kr)', 'Gap (%)', 'Justerad för ålder (%)', 'KI 95% låg (kr)', 'KI 95% hög (kr)', 'Säkerhet', 'Summa för gruppen (kr/mån)',
             'Sakligt skäl — fylls i', 'Status / åtgärd — fylls i'
         ];
         const rows = [header];
@@ -19504,7 +19513,7 @@ function _exportLikvardighetExport() {
             ['Jämförelsekälla', 'Primärt organisationens egna icke-kv-dom yrken (inom-arbetsgivare). Saknas internt jämförelseyrke i en BAS används jämförelsestatistiken som extern proxy.'],
             ['95 % KI', 'Bootstrap B=1000 på medianskillnaden. Intern: omdragning av bägge individurvalen. Extern: omdragning av org-löner mot jämförelsestatistikens median som konstant. Hela intervallet > 0 = säker skillnad.'],
             ['Justerad för ålder (%)', LV_JUSTERAD_METOD],
-            ['Påverkansindex', 'Heuristik för rangordning: |gap kr| × antal medarbetare i gruppen. Inte ett lagstadgat mått.']
+            ['Summa för gruppen (kr/mån)', 'Gapet i kronor gånger antalet personer i det kvinnodominerade yrket, per månad. Används för att rangordna paren, inte ett lagstadgat mått.']
         ];
         const metaSheet = XLSX.utils.aoa_to_sheet(meta);
         metaSheet['!cols'] = [{ wch: 42 }, { wch: 72 }];
@@ -22034,8 +22043,8 @@ function generateEUDirectiveMatrix() {
         // Jämn könsfördelning = båda könen >= 40% (= ena könet inom [40%, 60%]).
         // Strikt olikhet på 0.6 — exakt 60/40 räknas som jämnt.
         let dominans = "Könsblandad";
-        if (pctKv > 0.6) dominans = "Kvinno-dom";
-        else if (pctKv < 0.4) dominans = "Mans-dom";
+        if (pctKv > 0.6) dominans = "Kvinnodominerad";
+        else if (pctKv < 0.4) dominans = "Mansdominerad";
         // k-anonymitet: yrken där ett kön är under k redovisas med gruppens SAMLADE
         // median (den bygger på n >= kTroskel() och röjer ingen enskild); yrken som
         // helt ligger under k utelämnas och räknas upp i noten under tabellen.
@@ -26535,6 +26544,50 @@ function bes8Uppdatera() {
 }
 document.addEventListener('change', e => { if (/** @type {HTMLElement} */ (e.target).closest && /** @type {HTMLElement} */ (e.target).closest('[id^="bes8-status-"]')) bes8Uppdatera(); });
 bes8Uppdatera();
+
+// ---- Stöd i verktyget: talet från fliken och en länk dit ----
+// Där en flik har ett tal som hör till området (Likvärdigt arbetes par, Lika arbetes yrkesgrupper att granska,
+// Struktur & rapportmåttens lönekvartiler) står talet i områdets rad Stöd i verktyget, med länken Gå dit. Talen
+// hämtas ur samma källor som flikarna själva visar: Likvärdigt arbetes cache (state.likvardighet.result, som
+// Översiktens Att göra också fyller) och de delade funktionerna för yrkesgrupperna och kvartilerna. Utan underlag,
+// eller när fliken inte kan räkna, står radens fasta text kvar.
+const BES8_STOD = {
+    likvardighet(d) {
+        let lv = state.likvardighet ? state.likvardighet.result : null;
+        if (lv == null && typeof computeLikvardighetPairs === 'function') {
+            lv = computeLikvardighetPairs();
+            if (state.likvardighet) state.likvardighet.result = lv;
+        }
+        if (!lv || !Array.isArray(lv.pairs) || !d.length) return null;
+        const par = lv.pairs, sakra = par.filter(p => p.gapCI && p.gapCI.lo != null && p.gapCI.lo > 0).length;
+        return par.length ? `Likvärdigt arbete har ${svTal(par.length, 0)} par att titta närmare på, ${svTal(sakra, 0)} med säker skillnad.`
+            : 'Likvärdigt arbete har inget par att titta närmare på: inget jämförelseyrke ligger högre.';
+    },
+    matrix(d) {
+        const rader = _ruLikaArbeteGrupper(d, { k: kTroskel(), troskel: 5 }).grupper.filter(g => !g.samladMedian);
+        if (!rader.length) return null;
+        const granska = rader.filter(g => g.flaggad).length;
+        return `Lika arbete har ${svTal(granska, 0)} av ${svTal(rader.length, 0)} yrkesgrupper att granska (skillnad över 5 %).`;
+    },
+    struktur(d) {
+        const q = _stQuartileDistribution(d, { k: kTroskel() }) || [];
+        if (!q.length || !q.every(x => x.nKv != null && x.nMa != null && x.n > 0)) return null;
+        return `I Struktur & rapportmått är ${svPct(q[q.length - 1].andelKv, 0)} kvinnor i den högsta lönekvartilen och ${svPct(q[0].andelKv, 0)} i den lägsta.`;
+    }
+};
+const BES8_STOD_FLIK = { likvardighet: 'Likvärdigt arbete', matrix: 'Lika arbete', struktur: 'Struktur & rapportmått' };
+function bes8Stod() {
+    const d = (() => { try { return getData(); } catch (_e) { return []; } })();
+    document.querySelectorAll('.bes8-stod[data-stod]').forEach(el => {
+        const li = /** @type {HTMLElement} */ (el), flik = li.dataset.stod || '';
+        if (li.dataset.fast == null) li.dataset.fast = li.innerHTML;
+        /** @type {string|null} */ let text = null;
+        try { text = d.length && BES8_STOD[flik] ? BES8_STOD[flik](d) : null; } catch (e) { rapporteraFel('Regler & praxis: stöd i verktyget', e); }
+        li.classList.toggle('bes8-stod-tal', !!text);
+        li.innerHTML = text ? `${esc(text)} <a href="#" data-go-to-tab="${esc(flik)}" aria-label="Gå till ${esc(BES8_STOD_FLIK[flik] || flik)}">Gå dit</a>` : li.dataset.fast;
+    });
+}
+bes8Stod();
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 // ---- Word-utkast: hela dokumentationen som redigerbar .doc ----

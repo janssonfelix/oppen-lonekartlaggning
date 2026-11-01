@@ -436,6 +436,26 @@ console.log('\n── Prioritering: resultatet först ──');
     await page.waitForTimeout(400);
 }
 
+console.log('\n── Regler & praxis: pilen och Stöd i verktyget ──');
+{
+    await page.evaluate(() => document.querySelector('.nav-item[data-tab="bestammelser"]').click());
+    await page.waitForTimeout(500);
+    const vinkel = () => page.evaluate(() => { const m = getComputedStyle(document.querySelector('#avsnitt-rp-1 > summary'), '::before').transform.match(/matrix\(([^,]+), ([^,]+)/);
+        return m ? Math.round(Math.atan2(Number(m[2]), Number(m[1])) * 180 / Math.PI) : null; });
+    await page.evaluate(() => { document.getElementById('avsnitt-rp-1').open = false; });
+    await page.waitForTimeout(250);
+    const stangd = await vinkel();
+    await page.click('#avsnitt-rp-1 > summary');
+    await page.waitForTimeout(250);
+    const oppen = await vinkel();
+    ok(stangd === -45 && oppen === 45, `pilen framför ett område pekar åt höger när det är hopfällt och nedåt när det är utfällt (${stangd}° / ${oppen}°)`);
+    const stod = await page.evaluate(() => [...document.querySelectorAll('.bes8-stod')].map(l => ({ flik: l.dataset.stod, text: l.textContent.trim(), lank: l.querySelector('a[data-go-to-tab]')?.dataset.goToTab })));
+    ok(stod.length === 3 && stod.every(x => /\d/.test(x.text) && /Gå dit$/.test(x.text) && x.lank === x.flik), `Stöd i verktyget har talet och en länk till fliken (${stod.map(x => x.flik).join(', ')})`);
+    await page.click('#avsnitt-rp-1 a[data-go-to-tab]');
+    await page.waitForTimeout(600);
+    ok(await page.evaluate(() => document.querySelector('.nav-item.active').dataset.tab === 'likvardighet'), 'länken Gå dit öppnar Likvärdigt arbete');
+}
+
 console.log('\n── Dokumentera: checklistan först, exporterna som lista ──');
 {
     await page.evaluate(() => document.querySelector('.nav-item[data-tab="prioritering"]').click());
@@ -446,10 +466,11 @@ console.log('\n── Dokumentera: checklistan först, exporterna som lista ─�
     const dk = await page.evaluate(() => { const g = id => document.getElementById(id); const r = g('view-kvalitet').getBoundingClientRect(); const top = id => g(id).getBoundingClientRect().top;
         return { x: r.left, y: r.top - document.querySelector('.content-body').getBoundingClientRect().top, ordning: top('dk-slutsatser') < top('dk-checklista') && top('dk-checklista') < top('export-hub') && top('export-hub') < top('avsnitt-dk-robusthet'),
             rutor: document.querySelectorAll('#dk-slutsatser .slutsats').length, rader: [...document.querySelectorAll('.export-lista > .export-hub-row')].filter(e => e.offsetParent).length,
+            fler: [...document.querySelectorAll('.export-fler a[data-go-to-tab]')].map(a => a.dataset.goToTab).join(','),
             oppna: [...document.querySelectorAll('details.avsnitt[id^="avsnitt-dk-"]')].filter(a => a.open).map(a => a.id).join(','), lank: document.querySelectorAll('.sidans-innehall').length,
             skarmar: document.documentElement.scrollHeight / innerHeight }; });
     ok(Math.abs(dk.x - jfr.x) < 1 && Math.abs(dk.y - jfr.y) < 1, `fliken börjar lika långt från innehållsytans kant som andra flikar — inget tomt band (${Math.round(dk.x)},${Math.round(dk.y)} mot ${Math.round(jfr.x)},${Math.round(jfr.y)})`);
-    ok(dk.ordning && dk.rutor === 3 && dk.rader === 10 && dk.lank === 0, 'slutsatser, checklista, tio exportrader och sedan avsnitten');
+    ok(dk.ordning && dk.rutor === 3 && dk.rader === 6 && dk.fler === 'likvardighet,struktur,prioritering,loneoversyn' && dk.lank === 0, `slutsatser, checklista, sex exportrader, en rad med länkar till flikarna och sedan avsnitten (${dk.rader} rader; ${dk.fler})`);
     ok(dk.oppna === 'avsnitt-dk-robusthet' && dk.skarmar < 4, `bara robustheten är utfälld och sidan är ${dk.skarmar.toFixed(1)} skärmar`);
     await page.click('#btn-run-robusthet');
     await page.waitForFunction(() => document.querySelector('#robusthet-body .gd-grid'), { timeout: 60000 });
@@ -697,8 +718,10 @@ console.log('\n── Punktsvärm, före och efter, övergångar ──');
     await page.click('.nav-item[data-tab="likvardighet"]');
     await page.evaluate(() => document.querySelectorAll('details.avsnitt').forEach(d => { d.open = true; }));
     await page.waitForTimeout(900);
-    const krav = await page.evaluate(() => { const el = document.getElementById('chart-likvardighet-krav'); return { punkter: el ? el.querySelectorAll('[data-marke="punkt"]').length : 0, linje: el ? el.querySelectorAll('path[data-marke="linje"]').length : 0, not: (document.getElementById('lv-krav-not') || {}).textContent || '' }; });
-    ok(krav.punkter >= 3 && krav.linje === 1 && /minst \d+ personer/.test(krav.not), `Likvärdigt arbete ritar krav mot lön (${krav.punkter} yrkesgrupper)`);
+    const krav = await page.evaluate(() => { const el = document.getElementById('chart-likvardighet-krav'); return { punkter: el ? el.querySelectorAll('[data-marke="punkt"]').length : 0, linje: el ? el.querySelectorAll('path[data-marke="linje"]').length : 0, not: (document.getElementById('lv-krav-not') || {}).textContent || '', k: window.kTroskel() }; });
+    // Noten nämner gruppstorleken bara när den är större än en person (steg A: aldrig "minst 1 personer").
+    const kravNot = krav.k > 1 ? new RegExp(`minst ${krav.k} personer`).test(krav.not) : !/minst \d+ person/.test(krav.not);
+    ok(krav.punkter >= 3 && krav.linje === 1 && kravNot && /Punktens storlek/.test(krav.not), `Likvärdigt arbete ritar krav mot lön (${krav.punkter} yrkesgrupper, minsta gruppstorlek ${krav.k})`);
     if (BILDER) await page.locator('#chart-likvardighet-krav').screenshot({ path: `${BILDER}/krav-${NAMN}.png` });
 }
 
@@ -1403,12 +1426,12 @@ console.log('\n── Smala skärmar: 1440×800, 768 och 390 punkter ──');
 
     s = await oppna(768, 1024);
     const rad = await s.evaluate(() => { const m = document.querySelector('.sidebar'), e = document.querySelector('.nav-item.active .nav-etikett');
-        return { bredd: Math.round(m.getBoundingClientRect().width), etikett: getComputedStyle(e).visibility, knapp: getComputedStyle(document.getElementById('btn-meny')).display,
+        return { bredd: Math.round(m.getBoundingClientRect().width), etikett: getComputedStyle(e).opacity, synlighet: getComputedStyle(e).visibility, knapp: getComputedStyle(document.getElementById('btn-meny')).display,
             namn: [...document.querySelectorAll('.nav-item:not([hidden])')].every(k => k.textContent.trim().length > 2) }; });
-    ok(rad.bredd === 60 && rad.etikett === 'hidden' && rad.knapp === 'none' && rad.namn, '768 punkter: menyn är en rad med ikoner, och varje knapp har kvar sitt namn');
+    ok(rad.bredd === 60 && rad.etikett === '0' && rad.synlighet === 'visible' && rad.knapp === 'none' && rad.namn, '768 punkter: menyn är en rad med ikoner, och varje knapp har kvar sitt namn');
     await s.hover('.nav-item[data-tab="prioritering"]');
     await s.waitForTimeout(200);
-    ok(await s.evaluate(() => { const e = document.querySelector('.nav-item[data-tab="prioritering"] .nav-etikett'), r = e.getBoundingClientRect(); return getComputedStyle(e).visibility === 'visible' && r.left >= 60 && r.width > 40; }), '768 punkter: etiketten visas bredvid ikonen vid pekaren');
+    ok(await s.evaluate(() => { const e = document.querySelector('.nav-item[data-tab="prioritering"] .nav-etikett'), r = e.getBoundingClientRect(); return getComputedStyle(e).opacity === '1' && r.left >= 60 && r.width > 40; }), '768 punkter: etiketten visas bredvid ikonen vid pekaren');
     bred = await forBred(s);
     ok(bred.length === 0, `768 punkter: ingen flik är bredare än fönstret${bred.length ? ' — ' + bred.join(', ') : ''}`);
     await s.evaluate(() => document.querySelector('.nav-item[data-tab="struktur"]').click());
@@ -1446,6 +1469,35 @@ console.log('\n── Smala skärmar: 1440×800, 768 och 390 punkter ──');
     ok(dia && dia.bredd >= 280 && dia.ryms && dia.minst >= 9, `390 punkter: huvuddiagrammet ryms och texten går att läsa (${dia ? `${dia.bredd} punkter brett, minsta text ${dia.minst.toFixed(1)}` : 'inget diagram'})`);
     bred = await forBred(s);
     ok(bred.length === 0, `390 punkter: ingen flik är bredare än fönstret${bred.length ? ' — ' + bred.join(', ') : ''}`);
+    await s.close();
+
+    // Sidhuvudet: under 641 punkter är Förklaring, Som i exporten, Inställningar och Ordlista ikonknappar på samma rad
+    // som sökfältet, och knappen behåller sitt namn (texten är visuellt dold, inte borttagen).
+    const KNAPPAR = ['btn-open-symbols', 'btn-forhandsvisa', 'btn-open-installningar', 'btn-open-glossary'];
+    for (const [bredd, maxHojd] of [[375, 140], [640, 140], [641, 210], [1024, 110]]) {
+        s = await oppna(bredd, 812);
+        const h = await s.evaluate(ids => ({ hojd: Math.round(document.querySelector('.top-header').getBoundingClientRect().height),
+            sok: (() => { const r = document.getElementById('sok-grupp').getBoundingClientRect(); return r.width > 100 && r.right <= innerWidth; })(),
+            namn: ids.map(id => { const b = document.getElementById(id); return (b.getAttribute('aria-label') || b.textContent).trim(); }),
+            rader: new Set(ids.map(id => Math.round(document.getElementById(id).getBoundingClientRect().top))).size }), KNAPPAR);
+        let klickbara = 0;
+        for (const id of KNAPPAR) { try { await s.click('#' + id, { trial: true, timeout: 2000 }); klickbara++; } catch { /* räknas inte */ } }
+        const smal = bredd <= 640;
+        ok(h.hojd <= maxHojd && h.sok && klickbara === 4 && h.namn.every(n => n.length > 3) && (!smal || h.rader === 1),
+            `${bredd} punkter: sidhuvudet är ${h.hojd} punkter högt (högst ${maxHojd}), sökfältet ryms och alla fyra knappar går att klicka${smal ? ' på en rad' : ''}`);
+        await s.close();
+    }
+    // Byter fönstret från brett till smalt medan sidan är öppen börjar den smala vyn med menyn stängd, utan att
+    // spalten glider ut över innehållet; öppnar man menyn själv står den kvar.
+    s = await oppna(1440, 812);
+    await s.setViewportSize({ width: 375, height: 812 });
+    const efterByte = await s.evaluate(() => { const m = document.querySelector('.sidebar'), r = m.getBoundingClientRect();
+        return { oppen: document.body.classList.contains('meny-oppen'), utanfor: r.right <= 0, expanderad: document.getElementById('btn-meny').getAttribute('aria-expanded') }; });
+    ok(!efterByte.oppen && efterByte.utanfor && efterByte.expanderad === 'false', '1440 → 375 punkter: menyn är stängd och ligger utanför bild direkt efter bytet');
+    await s.click('#btn-meny');
+    await s.setViewportSize({ width: 390, height: 700 });
+    await s.waitForTimeout(300);
+    ok(await s.evaluate(() => document.body.classList.contains('meny-oppen')), '375 → 390 punkter: en meny som användaren öppnat står kvar när bredden ändras inom den smala vyn');
     await s.close();
 }
 

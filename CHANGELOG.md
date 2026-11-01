@@ -15,6 +15,17 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ### Gränssnitt
 
+- **Sidhuvudet på telefonbredd.** Under 641 punkter är Förklaring, Som i exporten, Inställningar och Ordlista
+  ikonknappar på samma rad som sökfältet; texten finns kvar i knappen för skärmläsare. Sidhuvudet vid 375 punkter är
+  133 punkter högt i stället för 214. Byts fönstret från brett till smalt börjar den smala vyn med menyn stängd, utan
+  att spalten glider ut över innehållet.
+- **Stöd i verktyget med talet.** I Regler & praxis hämtar raden Stöd i verktyget talet från fliken och slutar med
+  *Gå dit*: Likvärdigt arbetes par att titta närmare på, Lika arbetes yrkesgrupper att granska och, under befordran,
+  andelen kvinnor i högsta och lägsta lönekvartilen. Utan underlag står den fasta texten.
+- **Etiketter som säger vad de betyder.** Knappen *Som export* heter *Som i exporten*. Lika arbetes kolumn Dominans
+  skriver *Kvinnodominerad*, *Mansdominerad* och *Könsblandad*. Likvärdigt arbetes *Påverkan (kr/mån)* heter *Summa för
+  gruppen (kr/mån)* med ett verktygstips, också i Excel-bladen och beviset. Nästa steg-knappen till Prioritering heter
+  som menyn.
 - **Ålder & karriär utan förkortningar och formel i löptexten.** Livscykelns nyckeltal säger "inte säkerställd" i
   stället för "ns"; modelljämförelsen markerar med stjärnor som tabellens not förklarar (* p < 0,05 … *** p < 0,001).
   Modellformeln, standardfelen och referensintervallet står i flikens nya *Så räknas det* → *Beräkning & urval*;

@@ -1,6 +1,6 @@
 # Risk- och sårbarhetsanalys (dataskydd och informationssäkerhet) — Öppen lönekartläggning
 
-**Bygge:** `2026.10.19` · **Artefakt-SHA-256:** `4511125308f391f63eb2f92ec183dfecbcd818f13c8a172304f3ab172b9f9f55` (se `dist/RELEASE.txt`).
+**Bygge:** `2026.10.19` · **Artefakt-SHA-256:** `b044b5b681a6315cdd892a34871c6df711d29981cd4d42049a567c1c67acc99a` (se `dist/RELEASE.txt`).
 **Granskningsdatum:** 2026-10-20.
 **Granskningsmetod:** kodläsning påstående för påstående + statisk sökning i källkod och bygge +
 körning av det byggda verktyget i jsdom och i Chromium (utan nätverk) med syntetiska testfiler.
@@ -295,7 +295,7 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   går själva in i exportläget, och Dokumentera & exportera ritas alltid i det. Där det i punkterna nedan står att
   ett mått visas, redovisas eller ritas bara när en grupp eller ett kön når tröskeln gäller det exportläget; på
   skärmen visas måttet. Efter en export ritas bara det tillbaka som exporten ritade i exportläget (`_ritaOmEfterExport`),
-  och Lika arbetes minne har ett rum per tröskel, så att ett lägesbyte inte räknar om något. Knappen *Som export*
+  och Lika arbetes minne har ett rum per tröskel, så att ett lägesbyte inte räknar om något. Knappen *Som i exporten*
   (`sattForhandsvisning`) sätter skärmen i exportläget tills den stängs av: en export medan den är på lämnar läget
   som det är, och ett lägesbyte medan en export pågår avvisas (`tests/forhandsvisning.test.js`).
 - Standardvärdet är 10 (`K_STANDARD`); användaren kan ändra det (ADR-38). Vid 10 redovisas i det som
