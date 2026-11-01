@@ -64,7 +64,9 @@ export function createAppWindow({ url = 'http://localhost/', html: sida = html }
     win.print = noop;
     win.scrollTo = noop;
     if (!win.requestAnimationFrame) win.requestAnimationFrame = cb => setTimeout(cb, 0);
-    if (!win.matchMedia) win.matchMedia = () => ({ matches: false, media: '', addEventListener: noop, removeEventListener: noop, addListener: noop, removeListener: noop, dispatchEvent: () => false });
+    // Lyssnarna på medieförfrågningar sparas i __mediaLyssnare, så att ett test kan spela upp ett byte över en brytpunkt.
+    win.__mediaLyssnare = [];
+    if (!win.matchMedia) win.matchMedia = q => ({ matches: false, media: q, addEventListener: (typ, fn) => win.__mediaLyssnare.push({ media: q, typ, fn }), removeEventListener: noop, addListener: noop, removeListener: noop, dispatchEvent: () => false });
     win.URL.createObjectURL = () => 'blob:stub';
     win.URL.revokeObjectURL = noop;
 

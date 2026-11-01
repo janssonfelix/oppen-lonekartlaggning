@@ -152,6 +152,9 @@ function runOLSRegression() {
         diagnostics,
         n: chosen.n, k: chosen.k, ageMean,
         konPct: pct, konPctLow: pctLow, konPctHigh: pctHigh,
+        // Samma skattning som kvinnors lön i % av mäns (log-modellen: exp(β) × 100 = 100 + konPct), måttet i
+        // flikarnas nyckeltalsrader.
+        konKvot: 100 + pct,
         konPctLowClassical: pctLowC, konPctHighClassical: pctHighC,
         seKonR, seKonC,
         tStat, pValue, tKvantil: tq,          // halvbredden för 95 % KI i enheter av SE
@@ -803,7 +806,8 @@ function renderRegressionCard() {
                         <strong>Troligt spann (95 % konfidensintervall):</strong> ${svPct(r.konPctLow, 1)} till ${svPct(r.konPctHigh, 1)}
                         <span class="info-tip" data-tooltip="95% konfidensintervall (HC3 robust). Det &quot;verkliga&quot; värdet ligger med 95% sannolikhet inom detta intervall. Smalt intervall = säker estimering, brett = osäker. Klassisk KI för jämförelse: ${svPct(r.konPctLowClassical, 1)} till ${svPct(r.konPctHighClassical, 1)}.">${ikon('info', 14)}</span><br>
                         <strong>Statistiskt säkerställd:</strong>
-                        <span title="${esc(_sigPlainText(r.pValue))}" class="ram-b-1-prickad-dampad hjalpmarke hjalp-markor">${isSig ? 'Ja' : 'Nej'} (${sig})</span>
+                        <span title="${esc(_sigPlainText(r.pValue))}" class="ram-b-1-prickad-dampad hjalpmarke hjalp-markor">${isSig ? 'Ja' : 'Nej'} (${sig})</span><br>
+                        <span class="reg-hero-kvot">Samma sak som att kvinnors lön är ${svPct(r.konKvot, 1)} av mäns när ålder och nivå räknats bort — talet i nyckeltalsraden överst i fliken.</span>
                     </div>
                 </div>
                 <div class="reg-verdict ${verdict.cls}">

@@ -1,6 +1,6 @@
 # Risk- och sårbarhetsanalys (dataskydd och informationssäkerhet) — Öppen lönekartläggning
 
-**Bygge:** `2026.10.19` · **Artefakt-SHA-256:** `bfceebc7a06b88552a6883ee57fa027989e3b1625c9e3bb6464a76063b7c1708` (se `dist/RELEASE.txt`).
+**Bygge:** `2026.10.19` · **Artefakt-SHA-256:** `914d158b36bbe1db9bdce9d31842002c806d86fd6c211f3fdb27a8f9040db53b` (se `dist/RELEASE.txt`).
 **Granskningsdatum:** 2026-10-20.
 **Granskningsmetod:** kodläsning påstående för påstående + statisk sökning i källkod och bygge +
 körning av det byggda verktyget i jsdom och i Chromium (utan nätverk) med syntetiska testfiler.
@@ -65,10 +65,13 @@ se §7.B1). Namn, personnummer och e-post samlas medvetet **inte** in och avvisa
 aktivt vid uppladdning (se §6.4).
 
 **Användarförfattad text:** HR kan skriva egna
-bedömningar i verktyget — § 8-status + anteckning per granskningsområde och
-redigerat struktur-narrativ. Texten lever endast i minnet,
+bedömningar i verktyget — § 8-status + anteckning per granskningsområde,
+handlingsplanens fält per rad (sakligt skäl prövat, ansvarig, tidsplan, status) och
+redigerat struktur-narrativ. Texten lever endast i minnet (handlingsplanens fält i
+`state.handlingsplan`, nollas av *Rensa all data*),
 saneras inte (det är användarens egna ord) och lämnar verktyget enbart via
-användarinitierade utdata (Word-utkast, utskrift, konfigurationsfil — se §6.6/6.8).
+användarinitierade utdata (Word-utkast, utskrift, konfigurationsfil, och för handlingsplanens fält
+även handlingsplanens Excel-fil — se §6.6/6.8).
 Den är avsedd att vara **gruppnivå-bedömningar** och därmed inte personuppgifter;
 om HR ändå skriver in uppgifter om enskilda blir innehållet personuppgifter och
 omfattas av samma hanteringskrav som exportfilerna (§8, punkt 1). Verktygets
@@ -97,7 +100,8 @@ Personalsystem ──(HR exporterar CSV/XLSX)──▶ HR:s enhet (disk)
                             Webbläsarens minne (state.data) ── analys/render
                                               ▲
 HR:s egna bedömningar ───(§ 8-anteckningar,──┘
-(skrivs i verktyget)      struktur-narrativ)
+(skrivs i verktyget)      handlingsplanens fält,
+                          struktur-narrativ)
                                               │
                          (användaren klickar "Exportera"/"Skriv ut"/"Spara konfiguration")
                                               ▼
@@ -208,8 +212,8 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   localStorage, sessionStorage och cookies tomma.
 - **IndexedDB / Cache Storage:** används inte av verktyget.
 - **Webbläsarens autofyll-historik:** alla fält har `autocomplete="off"` — sidans fasta fält vid start, och
-  varje fält som skapas medan användaren arbetar (anteckningarna i Regler & praxis, Löneöversyns riktade
-  rader, Utforska) genom en observatör som sätter attributet på fält som läggs till i dokumentet
+  varje fält som skapas medan användaren arbetar (anteckningarna i Regler & praxis, handlingsplanens fält,
+  Löneöversyns riktade rader, Utforska) genom en observatör som sätter attributet på fält som läggs till i dokumentet
   (`stangAutofyll`, `01-html-och-tillganglighet.js`), så att organisationsnamn och anteckningar inte sparas i
   autofyll-historiken (som kan synkas till leverantörens moln). Vaktas av `tests/troskelbeslut.test.js`,
   som ritar alla flikar och kräver attributet på varje fält.
@@ -291,7 +295,7 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   går själva in i exportläget, och Dokumentera & exportera ritas alltid i det. Där det i punkterna nedan står att
   ett mått visas, redovisas eller ritas bara när en grupp eller ett kön når tröskeln gäller det exportläget; på
   skärmen visas måttet. Efter en export ritas bara det tillbaka som exporten ritade i exportläget (`_ritaOmEfterExport`),
-  och Lika arbetes minne har ett rum per tröskel, så att ett lägesbyte inte räknar om något. Knappen *Som export*
+  och Lika arbetes minne har ett rum per tröskel, så att ett lägesbyte inte räknar om något. Knappen *Som i exporten*
   (`sattForhandsvisning`) sätter skärmen i exportläget tills den stängs av: en export medan den är på lämnar läget
   som det är, och ett lägesbyte medan en export pågår avvisas (`tests/forhandsvisning.test.js`).
 - Standardvärdet är 10 (`K_STANDARD`); användaren kan ändra det (ADR-38). Vid 10 redovisas i det som
@@ -493,7 +497,8 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
 - Excel/CSV/JSON-export via `Blob` + `<a download>` — lokal nedladdning, ingen
   uppladdning. PDF-rapporten skrivs ut ur sidan själv (`window.print()` på en dold utskriftsyta, `#print-report`,
   som töms av *Rensa all data*); handlingsplanens mall och checklistan skrivs ut via lokalt
-  `window.open`/`document.write` (about:blank, inga skript, inga nätverksanrop).
+  `window.open`/`document.write` (about:blank, inga skript, inga nätverksanrop). Handlingsplanens Excel-fil,
+  utskriften av mallen och Word-utkastets åtgärdstabell bär det som fyllts i på fliken (användarförfattad text, §2).
 - **De fyra samlade exporterna har var sin uppgift:** Word-utkastet är rapporten, Excel-filen
   underlaget, PDF-rapporten en låst kopia av Word-utkastet (ritad ur samma rapportmodell, så att de två inte kan
   säga olika saker) och ZIP-filen allt — Word-utkastet, Excel-filen och bilder av diagrammen. Vid varje knapp
@@ -571,6 +576,8 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
 Konfig-JSON:en (**version 2**) innehåller: inställningar
 (trösklar, vikter, kostnadsinställningar, bristyrken,
 löneöversynens inställningar, där en riktad rad bär uppgiften om den föreslogs ur kandidatpar i likvärdigt arbete) samt **HR:s manuella arbete**: § 8-bedömningarna (status + anteckning per granskningsområde),
+handlingsplanens fält per förifylld rad (`handlingsplan`: radens nyckel — källa, AID och BAS — och sakligt skäl,
+ansvarig, tidsplan och status; rullistornas okända värden läses som tomma, fritexten kortas till 500 tecken),
 avbockningarna i Att göra (punkternas id, som innehåller AID-kod och BAS),
 organisationsnamnet och ett redigerat struktur-narrativ, samt **årsbokslutet** (ADR-54): nyckeltal för hela
 organisationen, en rad per yrkesgrupp där båda könen når minsta gruppstorlek (antal per kön, medianer, gap) och
@@ -588,7 +595,8 @@ teknisk-plan.md). Filen kan alltså innehålla
 inställningar och **användarförfattad text** och ska
 hanteras med samma disciplin som övriga exportfiler (§8, punkt 1);
 anteckningsfältens placeholder påminner om att skriva på gruppnivå utan namn/
-personnummer. Import är transaktionell (tvåfas-validering) och läser bara **version 2**
+personnummer, och handlingsplanens fritextfält varnar (utan att blockera) när texten liknar ett personnummer eller
+en e-postadress. Import är transaktionell (tvåfas-validering) och läser bara **version 2**
 — en korrupt fil eller en fil av annan version lämnar verktygets tillstånd orört (kastar
 före någon mutation).
 
@@ -630,7 +638,7 @@ Skala: Sannolikhet/Konsekvens = Låg / Medel / Hög. Restrisk = efter åtgärd.
 | # | Risk | Sanno. | Konsek. | Åtgärd (i verktyget) | Restrisk |
 |---|---|---|---|---|---|
 | B1 | **Exportfiler lämnar skyddad miljö** (e-post, delning, osäker disk) | Hög | Hög | Endast aggregat i merparten av exporter; varningstexter/känslighetsnotis. Gäller även Word-utkastet och konfigfilen, som därtill kan innehålla **användarförfattade bedömningar** (§2/§6.8), och **diagramdata från individdiagram**, som innehåller en rad per person (§6.6). Det som kopieras till urklipp (tabeller, diagramdata, rapportunderlag) kan synkas till molnet eller andra enheter av operativsystemet eller en urklippshanterare (Windows molnurklipp, Apples universella urklipp); organisationen bör stänga av sådan synkning på de datorer som används | **Medel–hög** → kräver organisatorisk hantering (§8) |
-| B1b | Användaren skriver personuppgifter i fritextfält (§ 8-anteckningar m.m.) | Låg–medel | Medel | Riktlinje i gränssnitt + körguide: "gruppnivå — inga namn/personnummer"; texten lämnar verktyget endast via användarinitierade utdata | **Låg–medel** (organisatorisk, §8) |
+| B1b | Användaren skriver personuppgifter i fritextfält (§ 8-anteckningar, handlingsplanens fält m.m.) | Låg–medel | Medel | Riktlinje i gränssnitt + körguide: "gruppnivå — inga namn/personnummer"; handlingsplanens fält varnar när texten liknar ett personnummer eller en e-postadress; texten lämnar verktyget endast via användarinitierade utdata | **Låg–medel** (organisatorisk, §8) |
 | B2 | Re-identifiering i små grupper | Medel | Medel | k-anon (standard 10, kan ändras — ADR-38; sänkning kräver bekräftelse, ger stående varning och står i metodbilagan, i exporterad data och — under 10 — på varje del som kan spridas för sig) i deskriptiva vyer; undantaget för likvärdigt arbete dokumenterat; Utforska visar små grupper men utelämnar dem ur export som standard (ADR-14); kvartilerna redovisar inga enskilda löner | **Medel** |
 | B2b | Användaren sänker minsta gruppstorlek och sprider en export där små grupper redovisas | Låg–medel | Medel | Standard 10 gäller vid varje start (inget lagras); sänkning kräver bekräftelse, också ur konfigurationsfil och organisationspaket; varning som inte går att stänga på alla flikar, och en mening under rubriken i utskrift; värdet och meningen om sänkning står i exporterna (metodbilaga, diagramdata, tabell-CSV, rapportunderlag; under 10 även diagrambilder, urklipp och sidfötter), så att mottagaren ser det; en konfigurationsfil utan fältet sänker inte ett strängare värde; organisationen kan sätta egen standard i organisationspaketet och ett golv som fältet, konfigurationsfilen och ett senare paket inte kan gå under utan bekräftelse (ADR-47); paketet kan också stänga av att små grupper tas med i Utforskas export | Kvarstår utan golv i paketet: verktyget kan inte hindra en behörig användare som bekräftar. Med golv kan tröskeln inte sänkas under det utan att ett nytt paket läses in och sänkningen bekräftas. Risken bärs av organisationens egna riktlinjer |
 | B3 | Avvikelse feltolkas som "diskriminering" utan saklig prövning | Medel | Medel | Coachande språk, bevis-popups, disclaimers ("verktyget dömer inte") | **Låg–medel** |

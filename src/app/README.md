@@ -32,7 +32,7 @@ direkt vid laddning (händelsekopplingar, `const`) körs i den här ordningen.
 | `03-hjalpfunktioner.js` | Diagrambeskrivning, http-varning, laddningsindikator, fält- och kolumnigenkänning, svenska talformat (`svTal`, `svPct`) |
 | `03-ikoner.js` | Linjeikonerna (`ikon`): ett bildspråk i stället för bildtecken; statusmärken med egen form |
 | `04-ordlista.js` | Ordlistan, symbolförklaringen och metodtexten om AID (`AID_METODTEXT`) |
-| `05-tabeller-och-lankar.js` | Beräkningspaneler (audit), sorterbara (underrader följer sin rad) och hopfällbara tabeller, `navigateTo`, korslänkar, stapelceller |
+| `05-tabeller-och-lankar.js` | Beräkningspaneler (audit), sorterbara (underrader följer sin rad) och hopfällbara tabeller, växeln *Fler kolumner* för breda tabeller (`flerKolumner`; grundvyn gömmer sekundära kolumner, exporterna tar alla), `navigateTo`, korslänkar, stapelceller |
 | `06-k-anonymitet-och-dataminimering.js` | `K_STANDARD`, `kTroskel()`, `statGolv()`, `sattKTroskel()` (ADR-38), maskeringsnoter, SCB-klass, vitlistade fält, normalisering, PII-detektor |
 | `07-standardinstallningar.js` | Standardvärden för prioritering och kostnad, BAS-gränsen (`BAS_MAX`, ADR-21), den neutrala standardprofilen (inga färdiga profiler, ADR-28), profiletiketter, namnen på organisationen och jämförelsestatistiken (`orgNamn`, `jmfNamn`, ADR-36) |
 | `08-version.js` | **AUTO-GENERERAD** ur `VERSION`: `APP_VERSION`, `APP_BUILD_DATE` |

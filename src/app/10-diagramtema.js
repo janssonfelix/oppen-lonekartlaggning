@@ -25,6 +25,7 @@ const PALETTE = {
         kritisk:  FARG.kritisk,
         varning:  '#d97706',
         ok:       FARG.ok,
+        granska:  FARG.granska,   // «Värt att granska»: samma lila som i tabellerna och Prioritering
         neutral:  FARG.svag,
         referens: FARG.svag,
         linje:    FARG.dampad,   // mörk neutral linje (P90, felstaplar)
@@ -56,6 +57,20 @@ const PALETTE = {
     // här först» utan att påstå att något är fel; rött är förbehållet avvikelser över 5 %.
     prio: { akut: FARG.granska, atgard: FARG.granskaLjus, bevaka: '#d97706', ok: FARG.ok, analysera: FARG.info }
 };
+
+// Statusordförrådet för en skillnad som bedöms mot 3- och 5-procentsgränserna — ETT ställe för alla flikar.
+// Varje ord har en färg (nyckel i PALETTE.semantic och klassen ar-<farg>), en linjeikon för tabellerna (03-ikoner.js)
+// och en symbol för diagrammen, så att statusen inte bärs av färgen ensam (WCAG 1.4.1). Samma ord står i Lika arbete,
+// Ålder & karriär, Utforska, Prioritering och Förklaringen. «Börja här» och «Över referens» hör bara till Prioritering
+// (55-prioritering.js): det första är rangordningens översta nivå, det andra ett läge och ingen allvarlighetsgrad.
+// `galler` tar avståndet från lika lön i procent (|100 − kvinnors lön i % av mäns|); ordningen är den som prövas.
+const GAP_STATUS = Object.freeze([
+    { serie: 'Värt att granska', niva: 'granska', farg: 'granska', ikon: 'sok', symbol: 'romb', grans: 'över 5 %', galler: a => a > 5 },
+    { serie: 'Följ upp', niva: 'folj', farg: 'varning', ikon: 'oga', symbol: 'kvadrat', grans: '3–5 %', galler: a => a > 3 },
+    { serie: 'Balanserat', niva: 'balanserat', farg: 'ok', ikon: 'bock', symbol: 'cirkel', grans: 'högst 3 %', galler: () => true }
+]);
+/** Statusen för ett avstånd från lika lön i procent (|100 − kvoten|). */
+function gapStatus(avstand) { return GAP_STATUS.find(s => s.galler(avstand)) || GAP_STATUS[GAP_STATUS.length - 1]; }
 
 // Gemensamt teckensnitt/typografi för diagram (matchar appens sans-stack).
 const CHART_FONT = {

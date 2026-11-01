@@ -94,24 +94,6 @@ describe('Lika arbete: trappan, gapet längs lönefördelningen och hanteln per 
         expect(vanliga(f.lager[1].tips(f.lager[1].data[1]))).toEqual([['Median'], ['Lönegap', '−4,5 %']]);
         expect(() => valideraFigur(f, 't')).not.toThrow();
     });
-    it('hanteln: kvinnors och mäns median per BAS, störst skillnad överst, strecket mellan dem', () => {
-        const f = w.eval(`_skevhetHantelFigur([{ bas: 'A', medKv: 30000, medMa: 31000, nKv: 12, nMa: 14 }, { bas: 'B', medKv: 34000, medMa: 38500, nKv: 20, nMa: 11 }])`);
-        expect(f.y.ordning).toEqual(['BAS B', 'BAS A']);
-        expect(f.lager.map(l => [l.marke, l.serie])).toEqual([['intervall', 'Skillnad kvinnor–män'], ['punkt', 'Kvinnor'], ['punkt', 'Män']]);
-        expect(f.lager[0].data[0]).toEqual({ y: 'BAS B', lag: 34000, hog: 38500, skillnad: 4500, markering: ['bas:B'] });
-        expect(f.lager[1].data[0]).toEqual({ y: 'BAS B', x: 34000, n: 20, markering: ['bas:B'] });
-        expect(() => valideraFigur(f, 't')).not.toThrow();
-    });
-    it('hanteln ritas bara för BAS där båda könen når tröskeln, och följer markeringen', () => {
-        const w2 = createAppWindow();
-        w2.__loadDemoData();
-        w2.__renderTabContent('matrix');
-        const stapel = w2.document.getElementById('chart-skevhet-overview')._figur, hantel = w2.document.getElementById('chart-skevhet-hantel');
-        expect(new Set(hantel._figur.y.ordning)).toEqual(new Set(stapel.y.ordning));
-        const bas = hantel._figur.y.ordning[0].slice(4);
-        w2.eval(`sattDiagramMarkering('bas:${bas}')`);
-        expect(hantel.querySelectorAll('[data-markerad]').length).toBe(3);      // strecket och de två punkterna
-    });
 });
 
 // ---- Före och efter, punktsvärm, övergångar ----
@@ -1209,11 +1191,14 @@ describe('Lika arbete — urval, slutsatser och avsnittens nyckeltal', () => {
         const rader = [...d.querySelectorAll('#matrix-table tbody tr')].map(tr => tr._euRow).filter(r => r && !r.samladMedian);
         const granska = rader.filter(r => r.niva === 'granska').length;
         const kort = [...d.querySelectorAll('#la-slutsatser .slutsats')].map(k => [t(k.querySelector('.slutsats-etikett').textContent), t(k.querySelector('.slutsats-varde').textContent)]);
-        expect(kort.map(k => k[0])).toEqual(['Yrkesgrupper att granska', 'Största skillnaden', 'Kvar efter ålder och nivå', 'Personer att granska']);
+        expect(kort.map(k => k[0])).toEqual(['Yrkesgrupper att granska', 'Största skillnaden', 'Efter ålder och nivå', 'Personer att granska']);
         expect(kort[0][1]).toBe(`${granska} av ${rader.length}`);
         const storst = rader.slice().sort((a, b) => Math.abs(100 - b.kvot) - Math.abs(100 - a.kvot))[0];
         expect(kort[1][1]).toBe(storst.kvot.toFixed(1).replace('.', ',') + ' %');
-        expect(kort[2][1]).toMatch(/^[+−-]?\d+,\d %$/);                               // regressionens gap: skillnad
+        // Regressionens skillnad omräknad till kvinnors lön i % av mäns (100 + konPct), samma mått som raden i övrigt.
+        const reg = w2.eval('runOLSRegression()');
+        expect(kort[2][1]).toBe((100 + reg.konPct).toFixed(1).replace('.', ',') + ' %');
+        expect(reg.konKvot).toBeCloseTo(100 + reg.konPct, 10);
         expect(kort[3][1]).toBe(String(d.querySelectorAll('#pag-tabell tbody tr').length));
         expect(t(d.getElementById('la-urval').textContent)).toMatch(/Hela urvalet · 260 personer.*Minsta gruppstorlek 10/);
         expect(t(d.getElementById('nyckel-la-yrkesgrupper').textContent)).toMatch(new RegExp(`^${granska} att granska`));
@@ -1296,7 +1281,8 @@ describe('Ålder & karriär — ett urval för hela fliken, och avsnitt med nyck
         expect(t(d.getElementById('nyckel-ak-lon').textContent)).toMatch(/^\d+ femårsgrupper$/);
         expect(t(d.getElementById('nyckel-ak-alla').textContent)).toMatch(/^\d+ BAS-intervall$/);
         // Avsnittet som inte följer urvalet säger det i rubriken, inte i en not under varje diagram.
-        expect(t(d.querySelector('#avsnitt-ak-alla > summary').textContent)).toMatch(/Följer inte urvalet/);
+        expect(t(d.querySelector('#avsnitt-ak-alla > summary').textContent)).toMatch(/Visar alla intervall oavsett urvalet ovan/);
+        expect(d.getElementById('avsnitt-ak-alla').textContent).not.toMatch(/Följer inte urvalet/);
         expect(d.getElementById('avsnitt-ak-alla').textContent).not.toMatch(/oavsett valt BAS-intervall/);
     });
     it('ett kön under tröskeln (i exportläget): avsnittet om lönefördelning får inget nyckeltal', () => {

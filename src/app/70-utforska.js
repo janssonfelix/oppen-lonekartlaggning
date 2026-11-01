@@ -34,7 +34,7 @@ const EXPLORE_TYPER = {
     svarm:      { label: 'Punktsvärm', dim: 1 },
     regnmoln:   { label: 'Regnmoln', dim: 1 },
     kvantilpunkter: { label: 'Kvantilpunkter', dim: 1 },
-    heatmap:    { label: 'Heatmap', dim: 2 },
+    heatmap:    { label: 'Värmekarta', dim: 2 },
     grupperade: { label: 'Grupperade staplar', dim: 2 },
     staplade:   { label: 'Staplade staplar', dim: 2 }
 };
@@ -187,8 +187,9 @@ function _explorerSyncControls(spec, typ, valdTyp, urval) {
 }
 
 function _explorerTitle(spec, typ) {
-    const dim = d => EXPLORE_DIM_LABEL[d].toLowerCase();
-    // "per bas-intervall och åldersgrupp", "per åldersgrupp för hela urvalet", "för hela urvalet"
+    // Gemen begynnelsebokstav mitt i meningen, men förkortningar (BAS, AID) behåller versalerna.
+    const dim = d => { const s = EXPLORE_DIM_LABEL[d]; return /^[A-ZÅÄÖ]{2}/.test(s) ? s : s.charAt(0).toLowerCase() + s.slice(1); };
+    // "per BAS-intervall och åldersgrupp", "per åldersgrupp för hela urvalet", "för hela urvalet"
     let fras;
     if (spec.rad === 'alla') fras = spec.kolumn ? `per ${dim(spec.kolumn)} för hela urvalet` : 'för hela urvalet';
     else fras = `per ${dim(spec.rad)}` + (spec.kolumn ? ` och ${dim(spec.kolumn)}` : '');
@@ -273,7 +274,7 @@ function _renderExplorerChart(model, typ, rows) {
     if (typ === 'staplade' && model.kolumnEtiketter.length > EXPLORE_STAPLADE_MAX) {
         if (exportMeny) /** @type {HTMLElement} */ (exportMeny).hidden = true;
         rensaFigur(el);
-        el.innerHTML = `<p class="explore-tom">Kolumnerna har ${model.kolumnEtiketter.length} värden — för många för staplade staplar (högst ${EXPLORE_STAPLADE_MAX}). Välj en annan kolumn eller diagramtypen Heatmap.</p>`;
+        el.innerHTML = `<p class="explore-tom">Kolumnerna har ${model.kolumnEtiketter.length} värden — för många för staplade staplar (högst ${EXPLORE_STAPLADE_MAX}). Välj en annan kolumn eller diagramtypen Värmekarta.</p>`;
         return;
     }
     if (exportMeny) /** @type {HTMLElement} */ (exportMeny).hidden = false;

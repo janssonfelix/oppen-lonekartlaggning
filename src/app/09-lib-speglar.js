@@ -4280,8 +4280,9 @@ function referenserBlock(overblick, { id = 'referenser', urval, demo, troskelNot
             mening(pm.badaInom, 'löneläget och statistiken ligger inom ställningstagandet')] : []),
         `Vägd medianskillnad, löneläget mot ${[motPolicy && `ställningstagandet: ${tecken(tal.vagdMedianMotStallningstagandePct)}`, motStatistik && `statistiken: ${tecken(tal.vagdMedianMotStatistikPct)}`].filter(Boolean).join(', mot ')}.`];
     return { id, rubrik: 'Lönerna mot referenserna', stycken: [...fore, ...st, ...efter], provat: null, fragor: null,
-        tabell: { rubriker: ['Yrkesgrupp', 'n', 'Median (kr)', 'Mot ställningstagandet (%)', 'Mot statistiken (%)', 'Mönster'],
-            rader: grupper.map(g => [`${g.yrke} · BAS ${g.bas}`, formatTal(g.n), formatTal(g.org.median, 0), skillnad(g, g.stallningstagande), skillnad(g, g.statistik), g.monster.text]) } };
+        tabell: { rubriker: ['Yrkesgrupp', 'n', 'Median (kr)', 'Mot ställningstagandet (%)', 'Mot statistiken (%)', 'Läge och förslag'],
+            // Samma text som skärmens kolumn och Excel-bladet (lageOchForslag i referenser.js)
+            rader: grupper.map(g => [`${g.yrke} · BAS ${g.bas}`, formatTal(g.n), formatTal(g.org.median, 0), skillnad(g, g.stallningstagande), skillnad(g, g.statistik), g.lageOchForslag ?? g.monster.text]) } };
 }
 
 /** Ren text för urklipp (reserv): tabbar mellan kolumner, numrerade frågor. */
@@ -5215,9 +5216,9 @@ const __mirrorReferenser = (() => {
  *
  * Ställningstagandet är referenspunkten: löneläget och jämförelsestatistiken mäts mot det, aldrig tvärtom.
  * Modulen bygger på raderna ur jamforelse.js (organisationens P10, median och P90 per yrke och BAS mot båda
- * referenserna) och räknar läget i spannet, mönstret, förslaget på referens och överblickens tal. Grupper under
- * minsta gruppstorlek är redan borta ur raderna; modulen vet inget om tröskeln. Förslaget är ett förslag, ingen
- * regel som verktyget tillämpar någon annanstans.
+ * referenserna) och räknar läget i spannet, mönstret, förslaget på referens, båda i ord (`lageOchForslag`), och
+ * överblickens tal. Grupper under minsta gruppstorlek är redan borta ur raderna; modulen vet inget om tröskeln.
+ * Förslaget är ett förslag, ingen regel som verktyget tillämpar någon annanstans.
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
@@ -5289,6 +5290,27 @@ function forslag(rad) {
     return { referens: narmast, skal: skal(narmast) };
 }
 
+const _forsta = s => (s ? s[0].toUpperCase() + s.slice(1) : '');
+
+/**
+ * Läge och förslag i ord, för skärmens lista, Excel-bladet och rapporten: mönstret, och förslaget på referens bara
+ * när det skiljer sig från ställningstagandet (förslaget är då statistiken, med skälet). Utan mönster står förslagets
+ * skäl ensamt; utan något av dem en tom sträng.
+ * @param {{org?:any, stallningstagande?:any, lage:{stallningstagande:{pos:number|null}, statistik:{pos:number|null}}, monster:{text:string}, forslag:{referens:string|null, skal:string}}} g
+ * @param {{harStallningstagande?:boolean}} [opt]
+ */
+function lageOchForslag(g, { harStallningstagande = true } = {}) {
+    const text = g.monster?.text || '';
+    const f = g.forslag || { referens: null, skal: '' };
+    if (!harStallningstagande || f.referens !== 'statistik') return _forsta(text || f.skal);
+    const statPos = g.lage?.statistik?.pos;
+    const skal = g.stallningstagande?.median == null ? 'ställningstagandet saknar värden för gruppen'
+        : g.lage?.stallningstagande?.pos == null ? (statPos != null && _inom(statPos) ? 'bara statistiken har ett spann, och löneläget ligger inom det' : 'bara statistiken har ett spann')
+        : statPos != null && _inom(statPos) ? 'löneläget ligger inom statistiken men inte inom ställningstagandet'
+        : 'statistikens spann ligger närmast löneläget';
+    return `${text ? `${_forsta(text)}. ` : ''}Förslag: statistiken som referens (${skal}).`;
+}
+
 function _vagd(grupper, nyckel) {
     let summa = 0, n = 0;
     for (const g of grupper) {
@@ -5314,8 +5336,9 @@ function referensOverblick(rader, { harStatistik = true, harStallningstagande = 
         const rad = { ...r, statistik: harStatistik ? r.statistik : tom, stallningstagande: harStallningstagande ? r.stallningstagande : tom };
         const spann = statistikHarSpann ? rad.statistik : { ...rad.statistik, p10: null, p90: null };
         const bedomd = { ...rad, statistik: spann };
-        return { ...rad, lage: { stallningstagande: lageISpann(rad.org?.median, rad.stallningstagande), statistik: lageISpann(rad.org?.median, spann) },
+        const g = { ...rad, lage: { stallningstagande: lageISpann(rad.org?.median, rad.stallningstagande), statistik: lageISpann(rad.org?.median, spann) },
             monster: monster(bedomd), forslag: forslag(bedomd) };
+        return { ...g, lageOchForslag: lageOchForslag(g, { harStallningstagande }) };
     }).sort((a, b) => _utanforMitten(b) - _utanforMitten(a) || (a.yrke < b.yrke ? -1 : a.yrke > b.yrke ? 1 : 0));
 
     const motPolicy = grupper.filter(g => g.monster.lonelage != null);
@@ -5352,13 +5375,14 @@ function hantelRader(grupper) {
     return (grupper || []).map(g => ({ namn: `${g.yrke} · BAS ${g.bas}`, stallningstagande: ref(g.stallningstagande), statistik: ref(g.statistik), org: g.org }));
 }
 
-    return { lageISpann, monster, forslag, referensOverblick, hantelRader };
+    return { lageISpann, monster, forslag, referensOverblick, hantelRader, lageOchForslag };
 })();
 const _rrLage = __mirrorReferenser.lageISpann;
 const _rrMonster = __mirrorReferenser.monster;
 const _rrForslag = __mirrorReferenser.forslag;
 const _rrOverblick = __mirrorReferenser.referensOverblick;
 const _rrHantelRader = __mirrorReferenser.hantelRader;
+const _rrLageOchForslag = __mirrorReferenser.lageOchForslag;
 
 // ---- speglar src/lib/docx.js ----
 const __mirrorDocx = (() => {

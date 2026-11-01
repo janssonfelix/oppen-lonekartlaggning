@@ -157,6 +157,11 @@ function printScaffoldView(viewId, heading) {
         const orig = document.getElementById(ta.id);
         if (orig) ta.textContent = /** @type {HTMLInputElement} */ (orig).value;
     });
+    // Handlingsplanens fält blir text på utskriften: det ifyllda står i cellen, ett tomt fält lämnar cellen att fylla i för hand.
+    /** @type {HTMLElement} */ (clone).querySelectorAll('.hp-falt').forEach(el => {
+        const orig = /** @type {HTMLInputElement|HTMLSelectElement|null} */ (document.getElementById(el.id));
+        el.replaceWith(document.createTextNode(orig ? orig.value : ''));   // rullistornas värden är samma ord som i Excel-filen
+    });
     const w = window.open('', '_blank');
     if (!w) { alert('Tillåt popup-fönster för att skriva ut.'); return; }
     const css = HJALPKLASSER_CSS + bibliotekCssForUtskrift() + `body{font-family:system-ui,-apple-system,Arial,sans-serif;max-width:860px;margin:24px auto;padding:0 18px;color:${FARG.text};line-height:1.55}`

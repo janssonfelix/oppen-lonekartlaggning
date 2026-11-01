@@ -12,13 +12,26 @@ describe('överblicken: löneläget och statistiken mot ställningstagandet', ()
         const w = fonster(); medStatistik(w);
         w.__renderTabContent('benchmark');
         const d = w.document, host = d.getElementById('ref-overblick');
-        expect(host.textContent).toMatch(/löneläget (ovanför|nedanför|inom) ställningstagandet/);
+        expect(host.textContent).toMatch(/löneläget (ovanför|nedanför|inom) ställningstagandet/i);
         expect(host.textContent).not.toMatch(/ställningstagandet ligger/);
         expect(d.querySelectorAll('#ref-tabell tbody tr').length).toBeGreaterThan(0);
-        expect(d.querySelectorAll('#ref-tabell thead th').length).toBe(14);
+        expect(d.querySelectorAll('#ref-tabell thead th').length).toBe(13);
+        // En kolumn för mönstret och förslaget; läget i spannet förklarar talet i rubriken och verktygstipset
+        const rubriker = [...d.querySelectorAll('#ref-tabell thead th')];
+        expect(rubriker.map(th => th.textContent)).toContain('Läge och förslag');
+        expect(rubriker.map(th => th.textContent)).not.toContain('Mönster');
+        expect(rubriker.map(th => th.textContent)).not.toContain('Förslag på referens');
+        const lage = rubriker.find(th => /^Läge i spannet/.test(th.textContent));
+        expect(lage.textContent).toMatch(/0 = P10, 100 = P90/);
+        expect(lage.getAttribute('title')).toMatch(/0 är referensens P10 och 100 dess P90/);
+        // Hanteln: en rad per yrkesgrupp, serierna skiljs med färg och förklaring i stället för i etiketten
         const f = d.getElementById('chart-ref-hantel')._figur;
-        expect(f.lager.map(l => l.marke)).toEqual(['intervall', 'punkt']);
-        expect(f.y.ordning.slice(0, 3).map(s => s.split(' · ').pop())).toEqual(['ställningstagandet', 'statistiken', 'organisationen']);
+        expect(f.lager.map(l => l.serie)).toEqual(['Ställningstagandet', 'Ställningstagandet', 'Statistiken', 'Statistiken', 'Organisationen', 'Organisationen']);
+        expect(f.lager.map(l => l.marke)).toEqual(['intervall', 'punkt', 'intervall', 'punkt', 'intervall', 'punkt']);
+        expect(f.legend).not.toBe(false);
+        expect(new Set(f.lager.map(l => l.farg)).size).toBe(3);
+        expect(f.y.ordning.every(s => !/ställningstagandet|statistiken|organisationen/.test(s))).toBe(true);
+        expect(f.y.ordning).toEqual(w.eval('referensOverblick()').grupper.slice(0, 25).map(g => `${g.yrke} · BAS ${g.bas}`));
         expect(d.querySelectorAll('#ref-stat-mot-stallning tbody tr').length).toBeGreaterThan(0);
     });
     it('talet för förslaget böjs efter antalet', () => {
@@ -34,15 +47,16 @@ describe('överblicken: löneläget och statistiken mot ställningstagandet', ()
         const d = w.document, host = d.getElementById('ref-overblick');
         expect(host.textContent).toMatch(/Jämförelsestatistik saknas/);
         expect(d.getElementById('ref-stat-mot-stallning')).toBeNull();
-        expect(d.querySelectorAll('#ref-tabell thead th').length).toBe(11);
-        expect(d.getElementById('chart-ref-hantel')._figur.y.ordning.some(s => /statistiken$/.test(s))).toBe(false);
+        expect(d.querySelectorAll('#ref-tabell thead th').length).toBe(10);
+        expect(d.getElementById('chart-ref-hantel')._figur.lager.some(l => l.serie === 'Statistiken')).toBe(false);
     });
     it('statistik med bara median: inget läge mot statistiken, hanteln ritar bara strecket för den', () => {
         const w = fonster(); medStatistik(w, { spann: false });
         w.__renderTabContent('benchmark');
         const f = w.document.getElementById('chart-ref-hantel')._figur;
-        expect(f.lager[0].data.some(p => /statistiken$/.test(p.y))).toBe(false);
-        expect(f.lager[1].data.some(p => /statistiken$/.test(p.y))).toBe(true);
+        const stat = f.lager.filter(l => l.serie === 'Statistiken');
+        expect(stat.find(l => l.marke === 'intervall').data).toHaveLength(0);
+        expect(stat.find(l => l.marke === 'punkt').data.length).toBeGreaterThan(0);
         expect(w.document.getElementById('ref-overblick').textContent).toMatch(/P10 och P90 saknas i jämförelsestatistiken/);
     });
     it('ställningstagande per BAS: alla yrken i intervallet mäts mot samma spann', () => {
@@ -56,7 +70,7 @@ describe('överblicken: löneläget och statistiken mot ställningstagandet', ()
         const w = fonster(); medStatistik(w);
         w.__renderTabContent('benchmark');
         const rader = w.document.querySelectorAll('#ref-tabell tbody tr').length;
-        const antal = new Set(w.document.getElementById('chart-ref-hantel')._figur.y.ordning.map(s => s.split(' · ').slice(0, 2).join(' · '))).size;
+        const antal = new Set(w.document.getElementById('chart-ref-hantel')._figur.y.ordning).size;
         expect(antal).toBeLessThanOrEqual(25);
         if (rader > 25) expect(w.document.getElementById('ref-overblick').textContent).toMatch(/tabellen har alla/);
     });
@@ -114,6 +128,9 @@ describe('överblicken i exporterna', () => {
         const bok = Object.values(fangaBocker(w, () => w.eval('exportAllToExcel()')))[0];
         const ref = bok.split('[Referenser]')[1].split('\n[')[0];
         expect(ref).toContain('Statistiken mot ställningstagandet (%)');
+        // Samma kolumner som skärmen: en kolumn för läge och förslag, läget i spannet med sin skala i rubriken
+        expect(ref).toContain('Läge i spannet, ställn. · stat. (0 = P10, 100 = P90) | Läge och förslag');
+        expect(ref).not.toMatch(/Mönster|Förslag på referens/);
         for (const s of SENT_SMA) expect(ref).not.toContain(String(s));
     });
     it('rapportavsnittet och rapportunderlagets block bär inga grupper under tröskeln; skärmen visar dem', () => {

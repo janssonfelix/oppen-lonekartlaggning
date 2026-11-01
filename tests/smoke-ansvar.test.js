@@ -583,9 +583,14 @@ describe('SKR:s kvinnoandel som referensvärde bredvid organisationens egen för
         const tr = [...w.document.querySelectorAll('#matrix-table tbody tr')].find(t => /^207011/.test(t.children[0].textContent.trim()));
         expect(tr.children[i].textContent.trim()).toBe(`${skrKvinnoandel('207011', { del: 'kommun' }).pct.toFixed(0)} %`);   // demot är en kommun
         const antal = rubriker('matrix-table').length;
+        // Hela bredden räknas med data-hel-colspan; i grundvyn (Fler kolumner av) täcker de synliga cellerna de synliga kolumnerna.
+        const synligaRubriker = [...w.document.querySelectorAll('#matrix-table thead th')].filter(th => !th.hidden).length;
+        expect(synligaRubriker).toBeLessThan(antal);
         for (const u of w.document.querySelectorAll('#matrix-table tr.la-underrad')) {
-            const bredd = [...u.children].reduce((s, td) => s + (+td.getAttribute('colspan') || 1), 0);
+            const bredd = [...u.children].reduce((s, td) => s + (+(td.getAttribute('data-hel-colspan') || td.getAttribute('colspan')) || 1), 0);
             expect(bredd).toBe(antal);
+            const synlig = [...u.children].filter(td => !td.hidden).reduce((s, td) => s + (+td.getAttribute('colspan') || 1), 0);
+            expect(synlig).toBe(synligaRubriker);
         }
     });
     it('sektorsöversikten: kolumnen "Kvinnor nationellt" per sektor', async () => {

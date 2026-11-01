@@ -7,7 +7,7 @@ import { fonster, ritaAlla, oppnaFlik, synliga, SENT_MELLAN, SENT_SMA } from './
 
 vi.setConfig({ testTimeout: 60000 });
 
-describe('förhandsvisning: Som export', () => {
+describe('förhandsvisning: Som i exporten', () => {
     it('knappen byter till exportläget, visar bannern och ramen, och det som syns ritas om; av igen ritar tillbaka', () => {
         const w = fonster(null);
         ritaAlla(w);
@@ -15,6 +15,9 @@ describe('förhandsvisning: Som export', () => {
         const d = w.document;
         expect(synliga(w, SENT_MELLAN).length).toBeGreaterThan(0);             // skärmen visar grupperna om 20
         expect(w.__state.kTroskel).toBe(10);
+        // Etiketten säger vad knappen gör; verktygstipset står kvar.
+        expect(d.getElementById('btn-forhandsvisa').textContent.trim()).toBe('Som i exporten');
+        expect(d.getElementById('btn-forhandsvisa').title).toMatch(/^Visa flikarna som i det som lämnar verktyget/);
         d.getElementById('btn-forhandsvisa').click();
         expect(w.__state.kLage).toBe('export');
         expect(d.body.classList.contains('forhandsvisning')).toBe(true);

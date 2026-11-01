@@ -64,7 +64,21 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         expect(d.querySelectorAll('#dk-slutsatser .ar-kritisk')).toHaveLength(0);
         // Exporterna: en rad per underlag med en beskrivning och en knapp eller ett val.
         const rader = [...d.querySelectorAll('#export-hub .export-lista > .export-hub-row')];
-        expect(rader).toHaveLength(10);
+        // Bara det som exporterar står som rader; flikarna med egna underlag är länkar i raden under listan.
+        expect(rader).toHaveLength(6);
+        expect(d.querySelectorAll('#export-hub [data-flow-tab]')).toHaveLength(0);
+        expect(d.getElementById('export-hub').textContent).not.toContain('Öppna fliken');
+        const fler = d.querySelector('#export-hub .export-fler');
+        expect(fler.textContent).toMatch(/^Fler underlag finns i flikarna: Likvärdigt arbete \(kandidatparen\), Struktur & rapportmått \(EU-rapportmåtten\), Prioritering \(åtgärdslistan\), Löneöversyn \(prognosen\)\.$/);
+        expect([...fler.querySelectorAll('a[data-go-to-tab]')].map(a => a.dataset.goToTab)).toEqual(['likvardighet', 'struktur', 'prioritering', 'loneoversyn']);
+        fler.querySelector('a[data-go-to-tab="prioritering"]').click();
+        expect(d.querySelector('.nav-item.active').dataset.tab).toBe('prioritering');
+        d.querySelector('.nav-item[data-tab="dokumentera"]').click();
+        // Organisationens namn står intill Generera PDF, förifyllt och förklarat.
+        const pdfRad = d.getElementById('btn-export-pdf').parentElement;
+        expect(pdfRad.querySelector(':scope > .export-org #kl-org-name')).not.toBeNull();
+        expect(d.getElementById('kl-org-forklaring').textContent).toMatch(/försättsblad.*organisationspaketet/);
+        expect(d.getElementById('kl-org-name').getAttribute('aria-describedby')).toBe('kl-org-forklaring');
         for (const r of rader) {
             expect(r.querySelector('strong').textContent.trim().length).toBeGreaterThan(2);
             expect(r.querySelector('span').textContent.trim().length).toBeGreaterThan(20);
@@ -238,6 +252,18 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         d.querySelector('.nav-item[data-tab="info"]').focus();
         d.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
         expect(d.activeElement).toBe(d.querySelector('.nav-item[data-tab="info"]'));
+        // Ett byte över brytpunkten 640 punkter stänger menyn utan glidning; ett eget öppnande efteråt står kvar.
+        const byten = w.__mediaLyssnare.filter(l => l.media === '(max-width: 640px)' && l.typ === 'change');
+        expect(byten).toHaveLength(1);
+        knapp.click();
+        expect(d.body.classList.contains('meny-oppen')).toBe(true);
+        byten[0].fn({ matches: true });
+        expect(d.body.classList.contains('meny-oppen')).toBe(false);
+        expect(knapp.getAttribute('aria-expanded')).toBe('false');
+        expect(skugga.hidden).toBe(true);
+        expect(d.body.classList.contains('meny-utan-glidning')).toBe(true);
+        knapp.click();
+        expect(d.body.classList.contains('meny-oppen')).toBe(true);
     });
     it('Översikt är en uppladdningssida före inläsning och visar läget efter', () => {
         const w = createAppWindow();
@@ -253,14 +279,15 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         expect(vy.classList.contains('visa-filer')).toBe(false);
         const rad = d.getElementById('ov-filrad');
         expect(rad.textContent).toMatch(/Lönefil: 260 personer.*Referens: .+Jämförelsestatistik: ingen inläst.*Minsta gruppstorlek 10/);
-        // Ordningen: filraden, nyckeltalen, läget (karta och kvartiler), Att göra, och sedan avsnitten.
+        // Ordningen: filraden, nyckeltalen, Att göra, kvartilerna, och sedan avsnitten. Kartan står bara i Struktur.
         const fore = (a, b) => !!(d.getElementById(a).compareDocumentPosition(d.getElementById(b)) & 4);
-        expect(fore('ov-filrad', 'dashboard-summary') && fore('dashboard-summary', 'chart-ov-tradkarta') && fore('chart-ov-kvartiler', 'att-gora')
-            && fore('att-gora', 'avsnitt-ov-process') && fore('avsnitt-ov-process', 'avsnitt-ov-kvalitet') && fore('avsnitt-ov-kvalitet', 'avsnitt-ov-gap')).toBe(true);
-        expect(d.getElementById('chart-ov-tradkarta')._figur.lager.some(l => l.marke === 'yta')).toBe(true);
+        expect(fore('ov-filrad', 'dashboard-summary') && fore('dashboard-summary', 'att-gora') && fore('att-gora', 'chart-ov-kvartiler')
+            && fore('chart-ov-kvartiler', 'avsnitt-ov-process') && fore('avsnitt-ov-process', 'avsnitt-ov-kvalitet') && fore('avsnitt-ov-kvalitet', 'avsnitt-ov-gap')).toBe(true);
+        expect(d.getElementById('chart-ov-tradkarta')).toBeNull();
+        expect(d.getElementById('view-dashboard').textContent).not.toContain('Organisationen som karta');
         expect(d.getElementById('chart-ov-kvartiler')._figur).toBeTruthy();
-        // Kartan och kvartilerna är kopior av Strukturs diagram: de exporteras därifrån, inte två gånger.
-        expect(d.getElementById('chart-ov-tradkarta').closest('[data-no-export]')).not.toBeNull();
+        // Kvartilerna är en kopia av Strukturs diagram: de exporteras därifrån, inte två gånger.
+        expect(d.getElementById('chart-ov-kvartiler').closest('[data-no-export]')).not.toBeNull();
         expect(d.querySelectorAll('#ov-lage .chart-export-btn, #ov-lage [data-chart-export]')).toHaveLength(0);
         // Avsnitten är hopfällda efter inläsning och bär sitt nyckeltal.
         expect([...d.querySelectorAll('#view-dashboard details.avsnitt')].filter(a => a.open)).toHaveLength(0);
@@ -284,7 +311,7 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         w.eval('_rensaAllData()');
         expect(vy.classList.contains('har-data')).toBe(false);
         expect(d.getElementById('ov-filrad').textContent).toBe('');
-        expect(d.getElementById('chart-ov-tradkarta').innerHTML).toBe('');
+        expect(d.getElementById('chart-ov-kvartiler').innerHTML).toBe('');
         expect(d.getElementById('avsnitt-ov-process').open).toBe(true);
     });
     it('Att göra — hela listan är ett avsnitt som står kvar utfällt när en punkt bockas av', () => {
