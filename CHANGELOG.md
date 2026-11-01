@@ -67,7 +67,8 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   "inte säkerställd" i stället för "ns", modelljämförelsen markerar med stjärnor som tabellens not förklarar (* p <
   0,05 … *** p < 0,001), modellformeln, standardfelen och referensintervallet står i flikens nya *Så räknas det* →
   *Beräkning & urval*, löptexten säger i en mening vad modellen tar hänsyn till, och *Jämför alla BAS-intervall* visar
-  alla intervall oavsett urvalet ovan. I Regler & praxis hämtar raden Stöd i verktyget talet från fliken och slutar med
+  alla intervall oavsett urvalet ovan; histogrammet och ålderskurvan markerar inte längre successionszonen 60+ med
+  ett rött fält, nyckeltalet *Andel 60+* och riskrutan bär den läsningen. I Regler & praxis hämtar raden Stöd i verktyget talet från fliken och slutar med
   *Gå dit*: Likvärdigt arbetes par att titta närmare på, Lika arbetes yrkesgrupper att granska och, under befordran,
   andelen kvinnor i högsta och lägsta lönekvartilen; utan underlag står den fasta texten. Krav mot lön i Likvärdigt
   arbete sade "minst 1 personer" på skärmen, och exportkortens *Utelämnar* räknade samma sak två gånger när två
