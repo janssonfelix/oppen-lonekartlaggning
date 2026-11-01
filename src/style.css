@@ -2267,6 +2267,9 @@ summary:focus-visible {
 #handlingsplan-tbody .handlingsplan-empty > td { height: 40px; }
 @media print { #handlingsplan-tbody .handlingsplan-empty { display: table-row; } }
 .handlingsplan-not { margin: 8px 0 0; font-size: var(--fs-sm); color: var(--text-muted); }
+#handlingsplan-tbody .hp-falt { width: 100%; min-width: 7.5em; font: inherit; font-size: var(--fs-sm); padding: 4px 6px; border: 1px solid var(--border); border-radius: 4px; background: var(--bg-card); color: inherit; }
+#handlingsplan-tbody .hp-falt.hp-falt-varning { border-color: var(--status-varning); }
+.handlingsplan-varning { margin: 8px 0 0; font-size: var(--fs-sm); color: var(--status-varning); }
 
 /* ----- Print-rapport (PDF via webbläsarens print-dialog) ----- */
 #print-report { display: none; }
@@ -3506,3 +3509,4 @@ tr.rad-folj { background: rgba(245, 158, 11, 0.1); }
 .block-mb6 { display: block !important; margin-bottom: 6px !important; }
 .underrubrik { margin: 0 0 8px !important; font-size: var(--fs-md) !important; }
 
+#forecast-optimize-pott:disabled { opacity: 0.55; cursor: not-allowed; }   /* aktiv först när en pott är angiven */

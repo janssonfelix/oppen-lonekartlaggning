@@ -6570,8 +6570,9 @@ function referenserBlock(overblick, { id = 'referenser', urval, demo, troskelNot
             mening(pm.badaInom, 'löneläget och statistiken ligger inom ställningstagandet')] : []),
         `Vägd medianskillnad, löneläget mot ${[motPolicy && `ställningstagandet: ${tecken(tal.vagdMedianMotStallningstagandePct)}`, motStatistik && `statistiken: ${tecken(tal.vagdMedianMotStatistikPct)}`].filter(Boolean).join(', mot ')}.`];
     return { id, rubrik: 'Lönerna mot referenserna', stycken: [...fore, ...st, ...efter], provat: null, fragor: null,
-        tabell: { rubriker: ['Yrkesgrupp', 'n', 'Median (kr)', 'Mot ställningstagandet (%)', 'Mot statistiken (%)', 'Mönster'],
-            rader: grupper.map(g => [`${g.yrke} · BAS ${g.bas}`, formatTal(g.n), formatTal(g.org.median, 0), skillnad(g, g.stallningstagande), skillnad(g, g.statistik), g.monster.text]) } };
+        tabell: { rubriker: ['Yrkesgrupp', 'n', 'Median (kr)', 'Mot ställningstagandet (%)', 'Mot statistiken (%)', 'Läge och förslag'],
+            // Samma text som skärmens kolumn och Excel-bladet (lageOchForslag i referenser.js)
+            rader: grupper.map(g => [`${g.yrke} · BAS ${g.bas}`, formatTal(g.n), formatTal(g.org.median, 0), skillnad(g, g.stallningstagande), skillnad(g, g.statistik), g.lageOchForslag ?? g.monster.text]) } };
 }
 
 /** Ren text för urklipp (reserv): tabbar mellan kolumner, numrerade frågor. */
@@ -7505,9 +7506,9 @@ const __mirrorReferenser = (() => {
  *
  * Ställningstagandet är referenspunkten: löneläget och jämförelsestatistiken mäts mot det, aldrig tvärtom.
  * Modulen bygger på raderna ur jamforelse.js (organisationens P10, median och P90 per yrke och BAS mot båda
- * referenserna) och räknar läget i spannet, mönstret, förslaget på referens och överblickens tal. Grupper under
- * minsta gruppstorlek är redan borta ur raderna; modulen vet inget om tröskeln. Förslaget är ett förslag, ingen
- * regel som verktyget tillämpar någon annanstans.
+ * referenserna) och räknar läget i spannet, mönstret, förslaget på referens, båda i ord (`lageOchForslag`), och
+ * överblickens tal. Grupper under minsta gruppstorlek är redan borta ur raderna; modulen vet inget om tröskeln.
+ * Förslaget är ett förslag, ingen regel som verktyget tillämpar någon annanstans.
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
@@ -7579,6 +7580,27 @@ function forslag(rad) {
     return { referens: narmast, skal: skal(narmast) };
 }
 
+const _forsta = s => (s ? s[0].toUpperCase() + s.slice(1) : '');
+
+/**
+ * Läge och förslag i ord, för skärmens lista, Excel-bladet och rapporten: mönstret, och förslaget på referens bara
+ * när det skiljer sig från ställningstagandet (förslaget är då statistiken, med skälet). Utan mönster står förslagets
+ * skäl ensamt; utan något av dem en tom sträng.
+ * @param {{org?:any, stallningstagande?:any, lage:{stallningstagande:{pos:number|null}, statistik:{pos:number|null}}, monster:{text:string}, forslag:{referens:string|null, skal:string}}} g
+ * @param {{harStallningstagande?:boolean}} [opt]
+ */
+function lageOchForslag(g, { harStallningstagande = true } = {}) {
+    const text = g.monster?.text || '';
+    const f = g.forslag || { referens: null, skal: '' };
+    if (!harStallningstagande || f.referens !== 'statistik') return _forsta(text || f.skal);
+    const statPos = g.lage?.statistik?.pos;
+    const skal = g.stallningstagande?.median == null ? 'ställningstagandet saknar värden för gruppen'
+        : g.lage?.stallningstagande?.pos == null ? (statPos != null && _inom(statPos) ? 'bara statistiken har ett spann, och löneläget ligger inom det' : 'bara statistiken har ett spann')
+        : statPos != null && _inom(statPos) ? 'löneläget ligger inom statistiken men inte inom ställningstagandet'
+        : 'statistikens spann ligger närmast löneläget';
+    return `${text ? `${_forsta(text)}. ` : ''}Förslag: statistiken som referens (${skal}).`;
+}
+
 function _vagd(grupper, nyckel) {
     let summa = 0, n = 0;
     for (const g of grupper) {
@@ -7604,8 +7626,9 @@ function referensOverblick(rader, { harStatistik = true, harStallningstagande = 
         const rad = { ...r, statistik: harStatistik ? r.statistik : tom, stallningstagande: harStallningstagande ? r.stallningstagande : tom };
         const spann = statistikHarSpann ? rad.statistik : { ...rad.statistik, p10: null, p90: null };
         const bedomd = { ...rad, statistik: spann };
-        return { ...rad, lage: { stallningstagande: lageISpann(rad.org?.median, rad.stallningstagande), statistik: lageISpann(rad.org?.median, spann) },
+        const g = { ...rad, lage: { stallningstagande: lageISpann(rad.org?.median, rad.stallningstagande), statistik: lageISpann(rad.org?.median, spann) },
             monster: monster(bedomd), forslag: forslag(bedomd) };
+        return { ...g, lageOchForslag: lageOchForslag(g, { harStallningstagande }) };
     }).sort((a, b) => _utanforMitten(b) - _utanforMitten(a) || (a.yrke < b.yrke ? -1 : a.yrke > b.yrke ? 1 : 0));
 
     const motPolicy = grupper.filter(g => g.monster.lonelage != null);
@@ -7642,13 +7665,14 @@ function hantelRader(grupper) {
     return (grupper || []).map(g => ({ namn: `${g.yrke} · BAS ${g.bas}`, stallningstagande: ref(g.stallningstagande), statistik: ref(g.statistik), org: g.org }));
 }
 
-    return { lageISpann, monster, forslag, referensOverblick, hantelRader };
+    return { lageISpann, monster, forslag, referensOverblick, hantelRader, lageOchForslag };
 })();
 const _rrLage = __mirrorReferenser.lageISpann;
 const _rrMonster = __mirrorReferenser.monster;
 const _rrForslag = __mirrorReferenser.forslag;
 const _rrOverblick = __mirrorReferenser.referensOverblick;
 const _rrHantelRader = __mirrorReferenser.hantelRader;
+const _rrLageOchForslag = __mirrorReferenser.lageOchForslag;
 
 // ---- speglar src/lib/docx.js ----
 const __mirrorDocx = (() => {
@@ -12190,6 +12214,7 @@ document.addEventListener('keydown', e => {
  *   dataAudit?: any, statistikHasP10?: boolean, statistikHasP90?: boolean, statistikHasKon?: boolean, _interntFel?: any[],
  *   _actionChecklistDone?: Set<string>, _lastStructureFile?: File|null, _lifecycleCache?: any
  *   flerKolumner: {[tabell: string]: boolean},
+ *   handlingsplan: {[nyckel: string]: {sakligt: string, ansvarig: string, tidsplan: string, status: string}},
  * }} Fälten med `?` sätts först vid inläsning (32-filinlasning.js, 29-organisationspaket.js m.fl.) och nollas av 26-rensning.js.
  */
 const state = {
@@ -12256,7 +12281,10 @@ const state = {
     ansvarKolumn: null,   // AID:s ansvarskod: { namn, giltiga } när kolumnen godkänts (ADR-33)
     _dataHeaders: [],   // rubriker från senast inlästa strukturfil (för guiden)
     // Breda tabeller: true när användaren valt Fler kolumner (05-tabeller-och-lankar.js). Bara i minnet, grundvyn som standard.
-    flerKolumner: {}
+    flerKolumner: {},
+    // Handlingsplanens ifyllda fält per förifylld rad (56-handlingsplan.js): { [nyckel]: { sakligt, ansvarig, tidsplan, status } }.
+    // Bara i minnet; följer med i konfigurationsfilen och exporterna, nollas av Rensa all data.
+    handlingsplan: {}
 };
 
 /**
@@ -14063,6 +14091,8 @@ function buildConfigSnapshot() {
         // (avsedd på gruppnivå) och ska hanteras som övriga exportfiler.
         bes8: (typeof _bes8Areas === 'function' ? _bes8Areas() : [])
             .map(a => ({ n: a.n, status: a.status, note: a.note })),
+        // Handlingsplanens ifyllda fält per rad (sakligt skäl, ansvarig, tidsplan, status): användarförfattad text, som bes8.
+        handlingsplan: (typeof _hpForKonfiguration === 'function' ? _hpForKonfiguration() : []),
         actionChecklistDone: Array.from(state._actionChecklistDone || []),
         // Årsbokslutet (ADR-54): årets k-skyddade sammandrag, eller det inlästa när inget underlag finns.
         arsbokslut: (typeof byggArsbokslutNu === 'function' ? byggArsbokslutNu() : null) || state.forraArsbokslut || null,
@@ -14223,6 +14253,7 @@ function applyConfigSnapshot(cfg) {
             return { n, status: a.status || '', note: a.note || '' };
         });
     }
+    if (cfg.handlingsplan != null) tmp.handlingsplan = _hpValideraKonfiguration(cfg.handlingsplan);
     if (cfg.actionChecklistDone != null) {
         if (!Array.isArray(cfg.actionChecklistDone)) throw new Error('actionChecklistDone måste vara en array.');
         if (!cfg.actionChecklistDone.every(id => typeof id === 'string')) throw new Error('actionChecklistDone får endast innehålla strängar.');
@@ -14305,6 +14336,8 @@ function applyConfigSnapshot(cfg) {
         if (t) /** @type {HTMLInputElement} */ (t).value = a.note;
     });
     if (typeof bes8Uppdatera === 'function') bes8Uppdatera();
+    // Handlingsplanens fält ersätts bara när filen bär dem; rader som inte finns i underlaget nu ligger kvar i minnet.
+    if (tmp.handlingsplan) { state.handlingsplan = tmp.handlingsplan; if (typeof renderHandlingsplanSeed === 'function') renderHandlingsplanSeed(); }
     if (tmp.actionChecklistDone) state._actionChecklistDone = new Set(tmp.actionChecklistDone);
     if (tmp.arsbokslut) { state.forraArsbokslut = tmp.arsbokslut; if (typeof renderArsjamforelse === 'function') medExportLage(() => renderArsjamforelse()); }
     // Bara namn som finns i filen sätts — en fil utan namn ska inte radera paketets namn.
@@ -16210,6 +16243,9 @@ function _rensaAllData({ inbakat = true } = {}) {
     // § 8-ställningens bedömningar (status + anteckning) — nollställ
     document.querySelectorAll('.bes8-field').forEach(el => { /** @type {HTMLInputElement} */ (el).value = ''; });
     if (typeof bes8Uppdatera === 'function') bes8Uppdatera();
+    // Handlingsplanens ifyllda fält (sakligt skäl, ansvarig, tidsplan, status) — nollställ och rita mallen tom
+    state.handlingsplan = {};
+    if (typeof renderHandlingsplanSeed === 'function') renderHandlingsplanSeed();
     const dashSummary = document.getElementById('dashboard-summary');
     if (dashSummary) dashSummary.style.display = 'none';
     const ukPanel = document.getElementById('underlagets-kvalitet');
@@ -19622,6 +19658,7 @@ function updateForecast() {
     const outEl = document.getElementById('forecast-outcome');
     if (!meterEl && !outEl) return;
     _forecastReadControls();
+    _fcUppdateraForslagPott();
     const d = getData();
     if (!d.length) {
         if (meterEl) meterEl.innerHTML = '';
@@ -19662,7 +19699,8 @@ function updateForecast() {
           _laSlutsats('Pott', out.pott > 0 ? kr(out.pott) : '–', out.pott > 0 ? 'kr per månad att fördela' : 'ingen budget angiven'),
           _laSlutsats('Använt', kr(out.använt), out.pott > 0 ? `${svTal(100 * out.använt / out.pott, 0)} % av potten` : 'av påslagen hittills'),
           _laSlutsats('Kvar att fördela', kr(out.kvar), out.kvar < -0.5 ? 'fördelningen överskrider potten' : 'av potten', out.kvar < -0.5),
-          _laSlutsats('Lönesumma per månad', kr(out.lonsummaEfter), `från ${kr(out.lonsummaFore)}`),
+          // "från …" bara när summan har ändrats; före första påslaget står utgångsläget
+          _laSlutsats('Lönesumma per månad', kr(out.lonsummaEfter), Math.round(out.lonsummaEfter) !== Math.round(out.lonsummaFore) ? `från ${kr(out.lonsummaFore)}` : 'utgångsläget'),
           _laSlutsats('Total kostnad', kr(out.totalKostnad), `${cost.months} mån, PO ${svPct(cost.poPct, 2)}`),
       ].join(''); }
     if (meterEl) meterEl.innerHTML = `
@@ -19925,6 +19963,21 @@ function _fcKandidater() {
     const el = document.getElementById('forecast-par-not');
     if (el) el.textContent = r.not;
     return r.par.map(p => ({ bas: p.kvBas, aid: p.kvAid, gapKr: p.gapKr, n: p.kvN }));
+}
+// Förslagsknappen vid potten: samma förslag som knappen under Riktade potter, aktiv först när en pott är angiven.
+function _fcUppdateraForslagPott() {
+    const knapp = /** @type {HTMLButtonElement|null} */ (document.getElementById('forecast-optimize-pott'));
+    if (!knapp) return;
+    const v = state.forecast && state.forecast.budget ? state.forecast.budget.value : null;
+    knapp.disabled = !(typeof v === 'number' && isFinite(v) && v > 0);
+}
+// Fäller ut Riktade potter och rullar dit, så att det syns vad förslaget gjorde.
+function _forecastOptimizeFranPott() {
+    _forecastOptimize();
+    const avsnitt = /** @type {HTMLDetailsElement|null} */ (document.getElementById('avsnitt-lo-riktade'));
+    if (!avsnitt) return;
+    avsnitt.open = true;
+    try { avsnitt.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (_e) { /* äldre webbläsare: utfällt räcker */ }
 }
 function _forecastOptimize() {
     const d = getData();
@@ -20266,6 +20319,8 @@ function _exportForecastExport() {
     });
     document.getElementById('forecast-add-criteria')?.addEventListener('click', _forecastAddByCriteria);
     document.getElementById('forecast-optimize')?.addEventListener('click', _forecastOptimize);
+    document.getElementById('forecast-optimize-pott')?.addEventListener('click', _forecastOptimizeFranPott);
+    _fcUppdateraForslagPott();
     document.getElementById('forecast-export')?.addEventListener('click', exportForecast);
     document.getElementById('forecast-reset')?.addEventListener('click', () => {
         state.forecast = { budget: { mode: 'pct', value: null }, generell: { mode: 'pct', value: null }, targets: [], minGroupN: 10, roundStep: 0, years: 1, scenarios: { A: null, B: null }, result: null };
@@ -22808,7 +22863,8 @@ function referensOverblick() {
     return _rrOverblick(jamforelseUnderlag().rader, { harStatistik, harStallningstagande,
         statistikHarSpann: !!state.statistikHasP10 && !!state.statistikHasP90 });
 }
-const _rrForslagNamn = { stallningstagande: 'Ställningstagandet', statistik: 'Statistiken' };
+// Läget i spannet är ett index: rubriken säger skalan, verktygstipset vad talet betyder.
+const _RR_LAGE_TIPS = 'Var gruppens medianlön ligger i referensens spann: 0 är referensens P10 och 100 dess P90. Under 0 ligger medianen nedanför spannet, över 100 ovanför. Orden före talet säger samma sak.';
 const _rrPct = v => (v == null ? '–' : `${v >= 0 ? '+' : '−'}${svTal(Math.abs(v), 1)} %`);
 const _rrSkillnad = (org, ref) => (org != null && ref != null ? (org / ref - 1) * 100 : null);
 const _rrLageText = l => (l.pos == null ? '–' : `${l.ord} (${svTal(l.pos, 0)})`);
@@ -22824,10 +22880,10 @@ function _rrKolumner({ harStatistik, harStallningstagande }) {
         ...per.map(([t, p]) => ({ rubrik: `${t} (kr/mån)`, typ: 'kr', varde: g => g.org[p] })),
         ...(harStallningstagande ? skillnad('ställn.', 'stallningstagande') : []),
         ...(harStatistik ? skillnad('stat.', 'statistik') : []),
-        { rubrik: harStatistik && harStallningstagande ? 'Läge (ställn. · stat.)' : 'Läge i spannet', typ: 'text', varde: lage,
-          sortering: g => (harStallningstagande ? g.lage.stallningstagande.pos : g.lage.statistik.pos) ?? '' },
-        { rubrik: 'Mönster', typ: 'text', varde: g => g.monster.text },
-        { rubrik: 'Förslag på referens', typ: 'text', varde: g => (g.forslag.referens ? `${_rrForslagNamn[g.forslag.referens]}: ${g.forslag.skal}` : '–') }
+        { rubrik: harStatistik && harStallningstagande ? 'Läge i spannet, ställn. · stat. (0 = P10, 100 = P90)' : 'Läge i spannet (0 = P10, 100 = P90)', tips: _RR_LAGE_TIPS,
+          typ: 'text', varde: lage, sortering: g => (harStallningstagande ? g.lage.stallningstagande.pos : g.lage.statistik.pos) ?? '' },
+        // Mönstret i ord; förslaget på referens bara när det skiljer sig från ställningstagandet (src/lib/referenser.js)
+        { rubrik: 'Läge och förslag', typ: 'text', varde: g => g.lageOchForslag }
     ];
 }
 
@@ -22840,7 +22896,7 @@ function _rrTabellHtml(kolumner, grupper) {
         return `<td class="num" data-sort-value="${v}">${svTal(v, 0)}</td>`;
     };
     return `<div class="table-container"><table id="ref-tabell" class="data-table" aria-label="Löneläget och statistiken mot ställningstagandet per yrkesgrupp"><thead><tr>`
-        + kolumner.map(k => `<th scope="col">${esc(k.rubrik)}</th>`).join('')
+        + kolumner.map(k => `<th scope="col"${k.tips ? ` title="${esc(k.tips)}"` : ''}>${esc(k.rubrik)}</th>`).join('')
         + `</tr></thead><tbody>${grupper.map(g => `<tr>${kolumner.map(k => cell(k, g)).join('')}</tr>`).join('')}</tbody></table></div>`;
 }
 
@@ -22859,26 +22915,32 @@ function _rrTalHtml(tal, { harStatistik, harStallningstagande }) {
     ].join('') + '</div>';
 }
 
-// Tre rader per yrkesgrupp på en gemensam lönelinje: bandet är P10–P90, strecket medianen. Färgen sitter på punkterna,
-// för raden säger redan vad den visar. En referens med bara median får inget band, bara strecket.
+// En rad per yrkesgrupp på en gemensam lönelinje, med ställningstagandet, statistiken och organisationen bredvid
+// varandra i raden: bandet är P10–P90, strecket medianen. Serierna skiljs med färg och förklaring, så att radens
+// etikett bara behöver säga yrkesgruppen. En referens med bara median får inget band, bara strecket.
 function _rrHantelFigur(rader, { harStatistik }) {
-    const delar = r => [
-        ['ställningstagandet', r.stallningstagande, PALETTE.semantic.neutral],
-        ...(harStatistik ? [['statistiken', r.statistik, PALETTE.semantic.trend]] : []),
-        ['organisationen', r.org, PALETTE.semantic.mork]
-    ].map(([namn, v, farg]) => ({ namn: r.namn, y: `${r.namn} · ${namn}`, v, farg }));
-    const alla = rader.flatMap(delar), kr = v => _figTalformat(v, 'kr');
-    const med = alla.filter(d => d.v && d.v.median != null);
-    return { beskrivning: 'Månadslönen per yrkesgrupp på tre rader: ställningstagandet, som är referenspunkten, statistiken och organisationen. Bandet är P10–P90 och strecket medianen. Samma värden står i tabellen ovanför.',
-        x: { skala: 'linjar', format: 'kr', titel: 'Månadslön (kr)' }, y: { skala: 'band', ordning: alla.map(d => d.y), etikettMax: 48 },
-        hojd: 60 + 3 * 20 * rader.length,
-        lager: [
-            { marke: 'intervall', riktning: 'liggande', serie: 'P10–P90', farg: PALETTE.semantic.neutral, tjocklek: 10, opacitet: 0.45, legend: false,
-              data: med.filter(d => d.v.p10 != null && d.v.p90 != null).map(d => ({ y: d.y, lag: d.v.p10, hog: d.v.p90, farg: d.farg })),
-              tips: d => [[d.y], ['P10–P90', `${_figTalformat(d.lag, 'kr', { enhet: false })}–${kr(d.hog)}`]] },
-            { marke: 'punkt', symbol: 'streck', serie: 'Median', farg: PALETTE.semantic.mork, storlek: 5, legend: false,
-              data: med.map(d => ({ y: d.y, x: d.v.median, farg: d.farg })), tips: d => [[d.y], ['Median', kr(d.x)]] }
-        ] };
+    const serier = [
+        { namn: 'Ställningstagandet', nyckel: 'stallningstagande', farg: PALETTE.semantic.neutral },
+        ...(harStatistik ? [{ namn: 'Statistiken', nyckel: 'statistik', farg: PALETTE.semantic.trend }] : []),
+        { namn: 'Organisationen', nyckel: 'org', farg: PALETTE.semantic.mork }
+    ];
+    const steg = serier.length === 3 ? 0.27 : 0.2;   // seriernas läge i raden, i andelar av radens höjd
+    const kr = v => _figTalformat(v, 'kr');
+    const lager = serier.flatMap((s, i) => {
+        const forskjutning = (i - (serier.length - 1) / 2) * steg;
+        const med = rader.map(r => ({ y: r.namn, v: r[s.nyckel] })).filter(d => d.v && d.v.median != null);
+        return [
+            { marke: 'intervall', riktning: 'liggande', serie: s.namn, farg: s.farg, tjocklek: 8, opacitet: 0.45,
+              data: med.filter(d => d.v.p10 != null && d.v.p90 != null).map(d => ({ y: d.y, lag: d.v.p10, hog: d.v.p90, forskjutning })),
+              tips: d => [[d.y], [s.namn], ['P10–P90', `${_figTalformat(d.lag, 'kr', { enhet: false })}–${kr(d.hog)}`]] },
+            { marke: 'punkt', symbol: 'streck', serie: s.namn, farg: s.farg, storlek: 5,
+              data: med.map(d => ({ y: d.y, x: d.v.median, forskjutning })), tips: d => [[d.y], [s.namn], ['Median', kr(d.x)]] }
+        ];
+    });
+    return { beskrivning: `Månadslönen per yrkesgrupp, med ${serier.map(s => s.namn.toLowerCase()).join(', ').replace(/, ([^,]*)$/, ' och $1')} bredvid varandra i raden; ställningstagandet är referenspunkten. Bandet är P10–P90 och strecket medianen. Samma värden står i tabellen ovanför.`,
+        x: { skala: 'linjar', format: 'kr', titel: 'Månadslön (kr)' }, y: { skala: 'band', ordning: rader.map(r => r.namn), etikettMax: 40 },
+        hojd: 80 + serier.length * 18 * rader.length,
+        lager };
 }
 
 function _rrStatTabellHtml(rader) {
@@ -22940,7 +23002,7 @@ function renderReferensOverblick() {
     const utanSpann = har.harStatistik && (!state.statistikHasP10 || !state.statistikHasP90);
     const flera = o.grupper.length > _RR_MAX;
     host.innerHTML = `${saknas.map(s => `<p class="urvalsrad">${esc(s)}</p>`).join('')}
-        <p class="muted">Ställningstagandet är referenspunkten: löneläget och statistiken mäts mot det. Läget är var medianen ligger i spannet (0 = P10, 100 = P90), och förslaget är ett förslag, ingen regel.</p>
+        <p class="muted">Ställningstagandet är referenspunkten: löneläget och statistiken mäts mot det. Läget är var medianen ligger i spannet (0 = P10, 100 = P90). Ett förslag på referens står bara med när det inte är ställningstagandet, och det är ett förslag, ingen regel.</p>
         ${_rrTalHtml(o.tal, har)}
         ${_rrTabellHtml(_rrKolumner(har), o.grupper)}
         <h3 class="jmf-diagram-rubrik">Lönerna mot ställningstagandet och statistiken</h3>
@@ -25203,23 +25265,67 @@ function _prioMatrisFigur(items, etikettlage, refLabel, cfg) {
 // Copyright 2026 Felix Jansson
 // ---- Handlingsplan: mall, förifyllning från Prioritering och Likvärdigt arbete, export ----
 // Förifyllt handlingsplansunderlag (Excel): seedar rader från Prioritering
-// (grupper under referens) och § 3:10-paren. Endast aggregat — inga individdata.
+// (grupper under referens) och § 3:10-paren. Gruppmått, inga individdata; det användaren
+// fyllt i (sakligt skäl, ansvarig, tidsplan, status) ligger i state.handlingsplan och följer med.
 // Renodlar analysflödet: verktyget levererar underlaget, planen färdigställs i Word.
 // Delad seedning av handlingsplanen: rader från Prioritering (under referens, § 9)
 // + § 3:10-par. Returnerar enbart de förifyllda dataraderna (utan tomrader) så att
 // både Excel-exporten och skärm-mallen (renderHandlingsplanSeed) använder samma logik.
+// Varifrån en förifylld rad kommer, som kolumnen Underlag och exporterna säger det.
+const HP_UNDERLAG_PRIO = 'Prioritering (under referensen)';
+const HP_UNDERLAG_PAR = 'Likvärdigt arbete (kandidatpar)';
+
+// Fälten som fylls i per rad (ligger i state.handlingsplan, nycklade på raden). Rullistornas värden
+// är det som står i exporterna; ett tomt värde betyder att inget är valt.
+const HP_SAKLIGT = [['', '—'], ['Ja, sakligt skäl finns', 'Ja, sakligt skäl finns'], ['Nej, åtgärd behövs', 'Nej, åtgärd behövs'], ['Pågår', 'Pågår']];
+const HP_STATUS = [['', '—'], ['Planerad', 'Planerad'], ['Pågår', 'Pågår'], ['Genomförd', 'Genomförd'], ['Skjuts upp', 'Skjuts upp (motivera under Tidsplan)']];
+const HP_FALT = ['sakligt', 'ansvarig', 'tidsplan', 'status'];
+const HP_MAX_TEXT = 500;
+
+/** Gruppen som raden gäller, i samma form för alla rader: "403010 Barnskötare · BAS C". */
+function _hpGrupp(aid, namn, bas) {
+    const a = aid == null ? '' : String(aid).trim();
+    const n = namn == null ? '' : String(namn).trim();
+    const yrke = !n || n === a ? a : (a && !n.startsWith(a) ? `${a} ${n}` : n);
+    return `${yrke} · BAS ${bas}`;
+}
+
+/** Radens nyckel i state.handlingsplan: källa, yrke och BAS (för ett par också jämförelseyrket). */
+function _hpNyckel(kalla, ...delar) { return [kalla, ...delar.map(d => d == null ? '' : String(d))].join('|'); }
+
+/** De ifyllda värdena för en rad (tomma strängar när inget är ifyllt). Raden kan ha försvunnit ur underlaget;
+ *  värdena ligger då kvar i minnet tills Rensa all data. */
+function _hpVarden(nyckel) {
+    const v = (state.handlingsplan && state.handlingsplan[nyckel]) || {};
+    return { sakligt: v.sakligt || '', ansvarig: v.ansvarig || '', tidsplan: v.tidsplan || '', status: v.status || '' };
+}
+
+function _hpSatt(nyckel, falt, varde) {
+    if (!HP_FALT.includes(falt) || !nyckel) return;
+    if (!state.handlingsplan) state.handlingsplan = {};
+    const rad = { ..._hpVarden(nyckel), [falt]: String(varde ?? '').slice(0, HP_MAX_TEXT) };
+    if (HP_FALT.every(f => !rad[f])) delete state.handlingsplan[nyckel];
+    else state.handlingsplan[nyckel] = rad;
+}
+
 function _handlingsplanSeedRows() {
     const months = (state.costSettings && state.costSettings.months) || 12;
     const poFactor = 1 + ((state.costSettings && state.costSettings.poPct) || 0) / 100;
-    const rows = [];
+    const rows = [], nycklar = [];
     let prioCount = 0, lvCount = 0, parUtelamnade = 0;
+    // En rad: [åtgärd, grupp, underlag, sakligt skäl, kostnad, ansvarig, tidsplan, status] — med det som fyllts i på fliken.
+    const lagg = (nyckel, atgard, grupp, underlag, kostnad) => {
+        const v = _hpVarden(nyckel);
+        rows.push([atgard, grupp, underlag, v.sakligt, kostnad, v.ansvarig, v.tidsplan, v.status]);
+        nycklar.push(nyckel);
+    };
     try {
         const ref = (typeof _selectedPrioReference === 'function') ? _selectedPrioReference() : 'stallningstagande';
         const hasRef = ref === 'stallningstagande' ? state.policy.length : state.statistik.length;
         if (hasRef) {
             const thr = (state.prioConfig && state.prioConfig.atgardThreshold != null) ? state.prioConfig.atgardThreshold : -5;
             computePrioritization(ref).filter(i => i.diffPct < thr).forEach(i => {
-                rows.push(['Granska löneläge och väg mot sakliga skäl', `${i.yrke} · BAS ${i.bas}`, 'Lika arbete (referensjämförelse)', '', Math.round(i.annualGapTotal), '', '', '']);
+                lagg(_hpNyckel('prio', i.aid || i.yrke, i.bas), 'Granska löneläge och väg mot sakliga skäl', _hpGrupp(i.aid, i.yrke, i.bas), HP_UNDERLAG_PRIO, Math.round(i.annualGapTotal));
                 prioCount++;
             });
         }
@@ -25232,50 +25338,104 @@ function _handlingsplanSeedRows() {
             parUtelamnade = utelamnade;
             par.forEach(p => {
                 const arsKostnad = Math.round(Math.abs(p.gapKr) * (p.kvN || 1) * months * poFactor);
-                rows.push(['Granska likvärdigt arbete (kvinnodominerat yrke)', `${p.kvAid} · BAS ${p.kvBas}`, 'Likvärdigt arbete', '', arsKostnad, '', '', '']);
+                lagg(_hpNyckel('par', p.kvAid, p.kvBas, p.maAid, p.maBas), 'Granska likvärdigt arbete (kvinnodominerat yrke)', _hpGrupp(p.kvAid, p.kvLabel, p.kvBas), HP_UNDERLAG_PAR, arsKostnad);
                 lvCount++;
             });
         }
     } catch (e) { rapporteraFel('Handlingsplan: likvärdigt arbete', e); }
-    return { rows, prioCount, lvCount, parUtelamnade, parNot: _parUtelamnadeNot(parUtelamnade) };
+    return { rows, nycklar, prioCount, lvCount, parUtelamnade, parNot: _parUtelamnadeNot(parUtelamnade) };
 }
 
-// Lagrumstexten i de förifyllda raderna hör till Excel-exporten; i gränssnittet
-// visas varifrån raden kommer, utan paragrafhänvisning.
-function _handlingsplanUnderlag(lagrum) {
-    if (/^Lika arbete\b/.test(lagrum)) return 'Lika arbete (referensjämförelse)';
-    if (/^Likvärdigt arbete\b/.test(lagrum)) return 'Likvärdigt arbete';
-    return lagrum;
+// Kolumnen Underlag: raderna bär redan sin källa. Äldre texter (sparade utdrag) översätts till samma ord.
+function _handlingsplanUnderlag(underlag) {
+    if (/^Lika arbete\b/.test(underlag)) return HP_UNDERLAG_PRIO;
+    if (/^Likvärdigt arbete$/.test(underlag)) return HP_UNDERLAG_PAR;
+    return underlag;
 }
 
-// #UX Renderar de förifyllda raderna direkt i skärm-mallen (read-only) ovanför
-// fyllbara tomrader — så HR ser underlaget utan att först behöva exportera.
+// Ett fritextfält som liknar ett personnummer eller en e-postadress får en varning; texten står kvar.
+function _hpLiknarPersonuppgift(t) { return !!t && typeof _opLiknarPersonuppgift === 'function' && _opLiknarPersonuppgift(t); }
+function _hpUppdateraVarning() {
+    const tbody = document.getElementById('handlingsplan-tbody');
+    const varning = document.getElementById('handlingsplan-varning');
+    if (!tbody || !varning) return;
+    let traff = 0;
+    tbody.querySelectorAll('input.hp-falt').forEach(el => {
+        const liknar = _hpLiknarPersonuppgift(/** @type {HTMLInputElement} */ (el).value);
+        el.classList.toggle('hp-falt-varning', liknar);
+        if (liknar) { el.setAttribute('aria-describedby', 'handlingsplan-varning'); traff++; } else el.removeAttribute('aria-describedby');
+    });
+    varning.hidden = !traff;
+}
+
+// #UX Renderar de förifyllda raderna direkt i skärm-mallen, med fält för sakligt skäl, ansvarig, tidsplan och status,
+// ovanför tomrader som syns på utskriften — så HR ser underlaget och kan fylla i planen utan att först exportera.
 function renderHandlingsplanSeed() {
     const tbody = document.getElementById('handlingsplan-tbody');
     if (!tbody) return;
-    const seed = getData().length ? _handlingsplanSeedRows() : { rows: [], prioCount: 0, lvCount: 0, parUtelamnade: 0, parNot: '' };
+    const seed = getData().length ? _handlingsplanSeedRows() : { rows: [], nycklar: [], prioCount: 0, lvCount: 0, parUtelamnade: 0, parNot: '' };
     const fmtKr = n => (n ? Math.round(n).toLocaleString('sv-SE') + ' kr' : '');
-    const seededHtml = seed.rows.map(r =>
-        `<tr class="handlingsplan-seeded"><td>${esc(r[0])}</td><td>${esc(r[1])}</td><td>${esc(_handlingsplanUnderlag(r[2]))}</td>` +
-        `<td></td><td class="t-hoger">${esc(fmtKr(r[4]))}</td><td></td><td></td><td></td></tr>`).join('');
+    const lista = (id, nyckel, falt, val, alt, etikett) => `<select id="${id}" class="form-select hp-falt" data-hp-nyckel="${esc(nyckel)}" data-hp-falt="${falt}" aria-label="${esc(etikett)}">`
+        + alt.map(([v, l]) => `<option value="${esc(v)}"${v === val ? ' selected' : ''}>${esc(l)}</option>`).join('') + '</select>';
+    const text = (id, nyckel, falt, val, platshallare, etikett) => `<input type="text" id="${id}" class="hp-falt" data-hp-nyckel="${esc(nyckel)}" data-hp-falt="${falt}" value="${esc(val)}"`
+        + ` maxlength="${HP_MAX_TEXT}" autocomplete="off" placeholder="${esc(platshallare)}" aria-label="${esc(etikett)}">`;
+    const seededHtml = seed.rows.map((r, i) => {
+        const n = seed.nycklar[i], g = r[1];
+        return `<tr class="handlingsplan-seeded"><td>${esc(r[0])}</td><td>${esc(g)}</td><td>${esc(r[2])}</td>`
+            + `<td>${lista(`hp-${i}-sakligt`, n, 'sakligt', r[3], HP_SAKLIGT, `Sakligt skäl prövat?: ${g}`)}</td>`
+            + `<td class="t-hoger">${esc(fmtKr(r[4]))}</td>`
+            + `<td>${text(`hp-${i}-ansvarig`, n, 'ansvarig', r[5], 'Roll, t.ex. HR-chef', `Ansvarig: ${g}`)}</td>`
+            + `<td>${text(`hp-${i}-tidsplan`, n, 'tidsplan', r[6], 'T.ex. lönerevisionen nästa år', `Tidsplan: ${g}`)}</td>`
+            + `<td>${lista(`hp-${i}-status`, n, 'status', r[7], HP_STATUS, `Status: ${g}`)}</td></tr>`;
+    }).join('');
     const emptyN = Math.max(5, 8 - seed.rows.length);
     const emptyHtml = Array.from({ length: emptyN }, () =>
         '<tr class="handlingsplan-empty"><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>').join('');
     tbody.innerHTML = seededHtml + emptyHtml;
+    _hpUppdateraVarning();
     const note = document.getElementById('handlingsplan-seed-note');
     if (note) {
         const parNot = seed.parNot ? ` ${esc(seed.parNot)}` : '';
         note.innerHTML = (seed.rows.length
-            ? `Förifyllt med <strong>${seed.rows.length}</strong> rad${seed.rows.length === 1 ? '' : 'er'} (${seed.prioCount} under referens, ${seed.lvCount} från likvärdighetsanalysen) — de grå raderna är ett utgångsläge att granska. Komplettera med sakliga skäl, ansvarig, tidsplan och status; exportera till Excel eller skriv ut för att färdigställa i Word.`
+            ? `Förifyllt med <strong>${seed.rows.length}</strong> rad${seed.rows.length === 1 ? '' : 'er'} (${seed.prioCount} från Prioritering, under referensen, och ${seed.lvCount} kandidatpar från Likvärdigt arbete) — ett utgångsläge att granska. Fyll i sakligt skäl, ansvarig, tidsplan och status direkt i raderna.`
             : 'Mallen förifylls automatiskt med grupperna från Prioritering och Likvärdigt arbete när data och referens finns. Fyll annars i för hand eller ladda upp underlag på <strong>Översikt</strong>.') + parNot;
     }
+}
+
+// Fälten skriver till state.handlingsplan medan man skriver; tabellen ritas inte om (fokus står kvar).
+['input', 'change'].forEach(typ => document.getElementById('handlingsplan-tbody')?.addEventListener(typ, e => {
+    const el = /** @type {HTMLInputElement} */ (e.target);
+    if (!el || !el.classList || !el.classList.contains('hp-falt')) return;
+    _hpSatt(el.dataset.hpNyckel, el.dataset.hpFalt, el.value);
+    if (el.tagName === 'INPUT') _hpUppdateraVarning();
+}));
+
+/** Det ifyllda i konfigurationsfilen: en post per rad med något ifyllt. */
+function _hpForKonfiguration() {
+    return Object.keys(state.handlingsplan || {}).map(nyckel => ({ nyckel, ..._hpVarden(nyckel) }))
+        .filter(r => HP_FALT.some(f => r[f]));
+}
+/** Prövar konfigurationsfilens poster; kastar vid fel form. Okända val i rullistorna läses som tomma. */
+function _hpValideraKonfiguration(lista) {
+    if (!Array.isArray(lista)) throw new Error('handlingsplan måste vara en array.');
+    /** @type {{[nyckel: string]: any}} */ const ut = {};
+    lista.forEach((r, i) => {
+        if (!r || typeof r !== 'object') throw new Error(`handlingsplan[${i}] är inte ett objekt.`);
+        if (typeof r.nyckel !== 'string' || !r.nyckel || r.nyckel.length > 300) throw new Error(`handlingsplan[${i}].nyckel måste vara en sträng (högst 300 tecken).`);
+        HP_FALT.forEach(f => { if (r[f] != null && typeof r[f] !== 'string') throw new Error(`handlingsplan[${i}].${f} måste vara en sträng.`); });
+        const giltig = (v, alt) => alt.some(([a]) => a === v) ? v : '';
+        const rad = { sakligt: giltig(r.sakligt || '', HP_SAKLIGT), ansvarig: String(r.ansvarig || '').slice(0, HP_MAX_TEXT),
+            tidsplan: String(r.tidsplan || '').slice(0, HP_MAX_TEXT), status: giltig(r.status || '', HP_STATUS) };
+        if (HP_FALT.some(f => rad[f])) ut[r.nyckel] = rad;
+    });
+    return ut;
 }
 
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
 function exportHandlingsplan(...a) { return medExportLage(() => _exportHandlingsplanExport.apply(null, /** @type {any} */ (a))); }
 function _exportHandlingsplanExport() {
     if (typeof XLSX === 'undefined') { alert('Excel-biblioteket kunde inte laddas.'); return; }
-    const header = ['Åtgärd', 'Berörd grupp (AID·BAS)', 'Lagrum', 'Sakligt skäl prövat?', 'Beräknad kostnad (kr/år, inkl. PO)', 'Ansvarig', 'Tidsplan (senast inom 3 år)', 'Status'];
+    const header = ['Åtgärd', 'Berörd grupp (AID·BAS)', 'Underlag', 'Sakligt skäl prövat?', 'Beräknad kostnad (kr/år, inkl. PO)', 'Ansvarig', 'Tidsplan (senast inom 3 år)', 'Status'];
     const seed = _handlingsplanSeedRows();
     const prioCount = seed.prioCount, lvCount = seed.lvCount;
     const rows = seed.rows.slice();
@@ -25290,7 +25450,7 @@ function _exportHandlingsplanExport() {
         ['§ 13', 'Lönekartläggningen, analysen och handlingsplanen ska dokumenteras skriftligt.'],
         ['Samverkan', 'Arbetet ska bedrivas i samverkan med arbetstagarna (diskrimineringslagen).'],
         ['', ''],
-        ['Detta underlag', `Förifyllt med ${prioCount} grupp(er) under referens (Prioritering) och ${lvCount} kandidatpar i likvärdigt arbete.${seed.parNot ? ' ' + seed.parNot : ''} Fyll i sakliga skäl, ansvarig, tidsplan och status. Endast aggregat — inga individdata.`],
+        ['Detta underlag', `Förifyllt med ${prioCount} grupp(er) under referens (Prioritering) och ${lvCount} kandidatpar i likvärdigt arbete.${seed.parNot ? ' ' + seed.parNot : ''} Det som fyllts i på fliken Handlingsplan står med; fyll i resten av sakligt skäl, ansvarig, tidsplan och status. Raderna bygger på gruppmått — inga individdata.`],
         ['OBS', 'Detta är ett analysunderlag. Den sammanhållna handlingsplanen färdigställs i arbetsgivarens dokumentation/Word.']
     ];
 
@@ -25539,9 +25699,9 @@ function rmReferenserAvsnitt(diagram) {
         { typ: 'stycke', text: 'Ställningstagandet är referenspunkten: löneläget och statistiken mäts mot det. Läget säger var gruppen ligger, inte om en lön är rätt eller fel. Yrkesgrupper under minsta gruppstorlek redovisas inte.', stil: 'dampad' },
         { typ: 'tabell', nyckel: true, kolumner: [{ rubrik: '', typ: 'text' }, { rubrik: '', typ: 'text' }], rader: tal },
         { typ: 'tabell', kolumner: [{ rubrik: 'Yrkesgrupp', typ: 'text' }, { rubrik: 'n', typ: 'antal' }, { rubrik: 'Median', typ: 'kr' },
-            ...(harStallningstagande ? [{ rubrik: 'Mot ställningstagandet', typ: 'pct1' }] : []), ...(harStatistik ? [{ rubrik: 'Mot statistiken', typ: 'pct1' }] : []), { rubrik: 'Mönster', typ: 'text' }],
+            ...(harStallningstagande ? [{ rubrik: 'Mot ställningstagandet', typ: 'pct1' }] : []), ...(harStatistik ? [{ rubrik: 'Mot statistiken', typ: 'pct1' }] : []), { rubrik: 'Läge och förslag', typ: 'text' }],
           rader: o.grupper.map(g => [`${g.yrke} · BAS ${g.bas}`, g.n, g.org.median,
-            ...(harStallningstagande ? [pct(g.org.median, g.stallningstagande.median)] : []), ...(harStatistik ? [pct(g.org.median, g.statistik.median)] : []), g.monster.text]) },
+            ...(harStallningstagande ? [pct(g.org.median, g.stallningstagande.median)] : []), ...(harStatistik ? [pct(g.org.median, g.statistik.median)] : []), g.lageOchForslag]) },
         ...diagram('referenser'),
     ];
     if (o.statistikMotStallningstagande.length) delar.push({ typ: 'rubrik', niva: 3, text: 'Statistiken mot ställningstagandet' },
@@ -25596,9 +25756,6 @@ function _rapportModellExport({ alla = false, bada = false } = {}) {
     const konOk = _konFarRedovisas(kvN, maN);
     const medKv = Stat.median(d.filter(arKv).map(r => r.lon)), medMa = Stat.median(d.filter(arMa).map(r => r.lon));
     const reg = typeof runOLSRegression === 'function' ? runOLSRegression() : null;
-    const prioRef = /** @type {HTMLInputElement} */ (document.querySelector('input[name="prio-ref"]:checked'))?.value || 'stallningstagande';
-    const prio = (state.policy.length || state.statistik.length) && typeof computePrioritization === 'function' ? computePrioritization(prioRef) : [];
-    const flaggade = prio.filter(i => i.status === 'akut' || i.status === 'atgard');
     const lvRes = typeof computeLikvardighetPairs === 'function' ? likvardighetResultat() : null;
     const { par, utelamnade: parUtelamnade, not: parNot } = _parForRedovisning(lvRes && lvRes.pairs);   // som rapportunderlaget
     const rep = typeof _stRepresentationByBas === 'function' ? (_stRepresentationByBas(d, { k }) || []) : [];
@@ -25731,12 +25888,16 @@ function _rapportModellExport({ alla = false, bada = false } = {}) {
 
     // ---- 6. Åtgärder och tidsplan ----
     /** @type {{id: string, rubrik: string, utelamnat: string[], delar: any[], [k: string]: any}} */
+    // Tabellen är handlingsplanen från fliken (samma förifyllning, som redan utelämnar par under tröskeln), med det som
+    // fyllts i där; ett tomt fält står kvar att fylla i.
+    const hp = typeof _handlingsplanSeedRows === 'function' ? _handlingsplanSeedRows().rows : [];
+    const hpFalt = v => v || { text: '[HR fyller i]', fyllIn: true };
     const atgarder = { id: 'atgarder', numrerad: true, rubrik: 'Åtgärder och tidsplan', utelamnat: [], delar: [
-        dampad('Planerade lönejusteringar och andra åtgärder, med beslut, ansvar och tidsplan. Tabellen listar de grupper som ligger under referensen enligt prioriteringen, med uppskattad kostnad för att nå den.'),
-        flaggade.length
-            ? { typ: 'tabell', kolumner: [{ rubrik: 'Grupp', typ: 'text' }, { rubrik: 'Uppskattad kostnad', typ: 'krAr' }, { rubrik: 'Beslutad åtgärd (fyll i)', typ: 'fyllIn' }, { rubrik: 'Ansvarig (fyll i)', typ: 'fyllIn' }, { rubrik: 'Klart senast (fyll i)', typ: 'fyllIn' }],
-                rader: flaggade.slice(0, 20).map(it => [`${it.yrke} (BAS ${it.bas})`, it.annualGapTotal ? Math.round(it.annualGapTotal) : null, '', '', '']) }
-            : dampad('Inga prioriterade åtgärdsgrupper (ingen referensdata uppladdad).'),
+        dampad('Planerade lönejusteringar och andra åtgärder, med beslut, ansvar och tidsplan. Tabellen är handlingsplanen: de grupper som ligger under referensen enligt prioriteringen och kandidatparen i likvärdigt arbete, med uppskattad kostnad och det som fyllts i på fliken Handlingsplan.'),
+        hp.length
+            ? { typ: 'tabell', kolumner: [{ rubrik: 'Grupp', typ: 'text' }, { rubrik: 'Underlag', typ: 'text' }, { rubrik: 'Uppskattad kostnad', typ: 'krAr' }, { rubrik: 'Sakligt skäl prövat?', typ: 'fyllIn' }, { rubrik: 'Ansvarig', typ: 'fyllIn' }, { rubrik: 'Tidsplan (senast inom tre år)', typ: 'fyllIn' }, { rubrik: 'Status', typ: 'fyllIn' }],
+                rader: hp.map(r => [r[1], r[2], r[4] ? Math.round(r[4]) : null, hpFalt(r[3]), hpFalt(r[5]), hpFalt(r[6]), hpFalt(r[7])]) }
+            : dampad(state.policy.length || state.statistik.length ? 'Inga grupper under referensen och inga kandidatpar att föra in i handlingsplanen.' : 'Inga prioriterade åtgärdsgrupper (ingen referensdata uppladdad).'),
         fyllIn('Besluta åtgärder, budget och tidsplan (lönejusteringar ska genomföras så snart som möjligt och senast inom tre år). Beskriv även förebyggande åtgärder.'),
     ] };
 
@@ -26204,6 +26365,11 @@ function printScaffoldView(viewId, heading) {
     /** @type {HTMLElement} */ (clone).querySelectorAll('textarea[id]').forEach(ta => {
         const orig = document.getElementById(ta.id);
         if (orig) ta.textContent = /** @type {HTMLInputElement} */ (orig).value;
+    });
+    // Handlingsplanens fält blir text på utskriften: det ifyllda står i cellen, ett tomt fält lämnar cellen att fylla i för hand.
+    /** @type {HTMLElement} */ (clone).querySelectorAll('.hp-falt').forEach(el => {
+        const orig = /** @type {HTMLInputElement|HTMLSelectElement|null} */ (document.getElementById(el.id));
+        el.replaceWith(document.createTextNode(orig ? orig.value : ''));   // rullistornas värden är samma ord som i Excel-filen
     });
     const w = window.open('', '_blank');
     if (!w) { alert('Tillåt popup-fönster för att skriva ut.'); return; }

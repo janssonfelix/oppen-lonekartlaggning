@@ -15,6 +15,18 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ### Gränssnitt
 
+- **Handlingsplanen fylls i på skärmen.** Sakligt skäl prövat? och Status är rullistor, Ansvarig och Tidsplan
+  fritext. Det som fylls i ligger i minnet, följer med i konfigurationsfilen, Excel-filen, utskriften och Word-utkastets
+  åtgärdstabell, och nollas av Rensa all data. Fritext som liknar ett personnummer eller en e-postadress ger en varning.
+- **Handlingsplanens rader i samma form.** Alla rader visar yrkesnamnet ("403010 Barnskötare · BAS C"), och Underlag
+  säger var raden kommer ifrån: *Prioritering (under referensen)* eller *Likvärdigt arbete (kandidatpar)*. Word-utkastets
+  tabell under Åtgärder och tidsplan är handlingsplanen, med kandidatparen.
+- **Förslaget i Löneöversyn vid potten.** *Föreslå fördelning mot osakliga gap* står också i rutan Budget (pott), aktiv
+  när en pott är angiven; knappen fäller ut Riktade potter och rullar dit. Lönesumman säger "från …" bara när den ändrats.
+- **En kolumn för läge och förslag i Jämförelse.** Mönster och Förslag på referens är en kolumn, *Läge och förslag*, där
+  förslaget bara nämns när det är statistiken; skärmen, Excel-bladet Referenser och rapporten säger samma sak. Läget i
+  spannet har skalan i rubriken (0 = P10, 100 = P90) och ett verktygstips. Hanteldiagrammet har en rad per yrkesgrupp,
+  med ställningstagandet, statistiken och organisationen i var sin färg och en förklaring.
 - **Yrkesgrupperna först i Lika arbete.** Fliken öppnar med tabellen *Kvinnor och män i samma yrkesgrupp* och
   trattdiagrammet under den. Tabellen per BAS-intervall och avsnittet *Lönegap per BAS-intervall* är ett avsnitt i
   Fördjupning, efter Personer att granska, och beviset för en rad står vid intervallets namn. Diagrammen med samma

@@ -13,7 +13,8 @@ function referensOverblick() {
     return _rrOverblick(jamforelseUnderlag().rader, { harStatistik, harStallningstagande,
         statistikHarSpann: !!state.statistikHasP10 && !!state.statistikHasP90 });
 }
-const _rrForslagNamn = { stallningstagande: 'Ställningstagandet', statistik: 'Statistiken' };
+// Läget i spannet är ett index: rubriken säger skalan, verktygstipset vad talet betyder.
+const _RR_LAGE_TIPS = 'Var gruppens medianlön ligger i referensens spann: 0 är referensens P10 och 100 dess P90. Under 0 ligger medianen nedanför spannet, över 100 ovanför. Orden före talet säger samma sak.';
 const _rrPct = v => (v == null ? '–' : `${v >= 0 ? '+' : '−'}${svTal(Math.abs(v), 1)} %`);
 const _rrSkillnad = (org, ref) => (org != null && ref != null ? (org / ref - 1) * 100 : null);
 const _rrLageText = l => (l.pos == null ? '–' : `${l.ord} (${svTal(l.pos, 0)})`);
@@ -29,10 +30,10 @@ function _rrKolumner({ harStatistik, harStallningstagande }) {
         ...per.map(([t, p]) => ({ rubrik: `${t} (kr/mån)`, typ: 'kr', varde: g => g.org[p] })),
         ...(harStallningstagande ? skillnad('ställn.', 'stallningstagande') : []),
         ...(harStatistik ? skillnad('stat.', 'statistik') : []),
-        { rubrik: harStatistik && harStallningstagande ? 'Läge (ställn. · stat.)' : 'Läge i spannet', typ: 'text', varde: lage,
-          sortering: g => (harStallningstagande ? g.lage.stallningstagande.pos : g.lage.statistik.pos) ?? '' },
-        { rubrik: 'Mönster', typ: 'text', varde: g => g.monster.text },
-        { rubrik: 'Förslag på referens', typ: 'text', varde: g => (g.forslag.referens ? `${_rrForslagNamn[g.forslag.referens]}: ${g.forslag.skal}` : '–') }
+        { rubrik: harStatistik && harStallningstagande ? 'Läge i spannet, ställn. · stat. (0 = P10, 100 = P90)' : 'Läge i spannet (0 = P10, 100 = P90)', tips: _RR_LAGE_TIPS,
+          typ: 'text', varde: lage, sortering: g => (harStallningstagande ? g.lage.stallningstagande.pos : g.lage.statistik.pos) ?? '' },
+        // Mönstret i ord; förslaget på referens bara när det skiljer sig från ställningstagandet (src/lib/referenser.js)
+        { rubrik: 'Läge och förslag', typ: 'text', varde: g => g.lageOchForslag }
     ];
 }
 
@@ -45,7 +46,7 @@ function _rrTabellHtml(kolumner, grupper) {
         return `<td class="num" data-sort-value="${v}">${svTal(v, 0)}</td>`;
     };
     return `<div class="table-container"><table id="ref-tabell" class="data-table" aria-label="Löneläget och statistiken mot ställningstagandet per yrkesgrupp"><thead><tr>`
-        + kolumner.map(k => `<th scope="col">${esc(k.rubrik)}</th>`).join('')
+        + kolumner.map(k => `<th scope="col"${k.tips ? ` title="${esc(k.tips)}"` : ''}>${esc(k.rubrik)}</th>`).join('')
         + `</tr></thead><tbody>${grupper.map(g => `<tr>${kolumner.map(k => cell(k, g)).join('')}</tr>`).join('')}</tbody></table></div>`;
 }
 
@@ -64,26 +65,32 @@ function _rrTalHtml(tal, { harStatistik, harStallningstagande }) {
     ].join('') + '</div>';
 }
 
-// Tre rader per yrkesgrupp på en gemensam lönelinje: bandet är P10–P90, strecket medianen. Färgen sitter på punkterna,
-// för raden säger redan vad den visar. En referens med bara median får inget band, bara strecket.
+// En rad per yrkesgrupp på en gemensam lönelinje, med ställningstagandet, statistiken och organisationen bredvid
+// varandra i raden: bandet är P10–P90, strecket medianen. Serierna skiljs med färg och förklaring, så att radens
+// etikett bara behöver säga yrkesgruppen. En referens med bara median får inget band, bara strecket.
 function _rrHantelFigur(rader, { harStatistik }) {
-    const delar = r => [
-        ['ställningstagandet', r.stallningstagande, PALETTE.semantic.neutral],
-        ...(harStatistik ? [['statistiken', r.statistik, PALETTE.semantic.trend]] : []),
-        ['organisationen', r.org, PALETTE.semantic.mork]
-    ].map(([namn, v, farg]) => ({ namn: r.namn, y: `${r.namn} · ${namn}`, v, farg }));
-    const alla = rader.flatMap(delar), kr = v => _figTalformat(v, 'kr');
-    const med = alla.filter(d => d.v && d.v.median != null);
-    return { beskrivning: 'Månadslönen per yrkesgrupp på tre rader: ställningstagandet, som är referenspunkten, statistiken och organisationen. Bandet är P10–P90 och strecket medianen. Samma värden står i tabellen ovanför.',
-        x: { skala: 'linjar', format: 'kr', titel: 'Månadslön (kr)' }, y: { skala: 'band', ordning: alla.map(d => d.y), etikettMax: 48 },
-        hojd: 60 + 3 * 20 * rader.length,
-        lager: [
-            { marke: 'intervall', riktning: 'liggande', serie: 'P10–P90', farg: PALETTE.semantic.neutral, tjocklek: 10, opacitet: 0.45, legend: false,
-              data: med.filter(d => d.v.p10 != null && d.v.p90 != null).map(d => ({ y: d.y, lag: d.v.p10, hog: d.v.p90, farg: d.farg })),
-              tips: d => [[d.y], ['P10–P90', `${_figTalformat(d.lag, 'kr', { enhet: false })}–${kr(d.hog)}`]] },
-            { marke: 'punkt', symbol: 'streck', serie: 'Median', farg: PALETTE.semantic.mork, storlek: 5, legend: false,
-              data: med.map(d => ({ y: d.y, x: d.v.median, farg: d.farg })), tips: d => [[d.y], ['Median', kr(d.x)]] }
-        ] };
+    const serier = [
+        { namn: 'Ställningstagandet', nyckel: 'stallningstagande', farg: PALETTE.semantic.neutral },
+        ...(harStatistik ? [{ namn: 'Statistiken', nyckel: 'statistik', farg: PALETTE.semantic.trend }] : []),
+        { namn: 'Organisationen', nyckel: 'org', farg: PALETTE.semantic.mork }
+    ];
+    const steg = serier.length === 3 ? 0.27 : 0.2;   // seriernas läge i raden, i andelar av radens höjd
+    const kr = v => _figTalformat(v, 'kr');
+    const lager = serier.flatMap((s, i) => {
+        const forskjutning = (i - (serier.length - 1) / 2) * steg;
+        const med = rader.map(r => ({ y: r.namn, v: r[s.nyckel] })).filter(d => d.v && d.v.median != null);
+        return [
+            { marke: 'intervall', riktning: 'liggande', serie: s.namn, farg: s.farg, tjocklek: 8, opacitet: 0.45,
+              data: med.filter(d => d.v.p10 != null && d.v.p90 != null).map(d => ({ y: d.y, lag: d.v.p10, hog: d.v.p90, forskjutning })),
+              tips: d => [[d.y], [s.namn], ['P10–P90', `${_figTalformat(d.lag, 'kr', { enhet: false })}–${kr(d.hog)}`]] },
+            { marke: 'punkt', symbol: 'streck', serie: s.namn, farg: s.farg, storlek: 5,
+              data: med.map(d => ({ y: d.y, x: d.v.median, forskjutning })), tips: d => [[d.y], [s.namn], ['Median', kr(d.x)]] }
+        ];
+    });
+    return { beskrivning: `Månadslönen per yrkesgrupp, med ${serier.map(s => s.namn.toLowerCase()).join(', ').replace(/, ([^,]*)$/, ' och $1')} bredvid varandra i raden; ställningstagandet är referenspunkten. Bandet är P10–P90 och strecket medianen. Samma värden står i tabellen ovanför.`,
+        x: { skala: 'linjar', format: 'kr', titel: 'Månadslön (kr)' }, y: { skala: 'band', ordning: rader.map(r => r.namn), etikettMax: 40 },
+        hojd: 80 + serier.length * 18 * rader.length,
+        lager };
 }
 
 function _rrStatTabellHtml(rader) {
@@ -145,7 +152,7 @@ function renderReferensOverblick() {
     const utanSpann = har.harStatistik && (!state.statistikHasP10 || !state.statistikHasP90);
     const flera = o.grupper.length > _RR_MAX;
     host.innerHTML = `${saknas.map(s => `<p class="urvalsrad">${esc(s)}</p>`).join('')}
-        <p class="muted">Ställningstagandet är referenspunkten: löneläget och statistiken mäts mot det. Läget är var medianen ligger i spannet (0 = P10, 100 = P90), och förslaget är ett förslag, ingen regel.</p>
+        <p class="muted">Ställningstagandet är referenspunkten: löneläget och statistiken mäts mot det. Läget är var medianen ligger i spannet (0 = P10, 100 = P90). Ett förslag på referens står bara med när det inte är ställningstagandet, och det är ett förslag, ingen regel.</p>
         ${_rrTalHtml(o.tal, har)}
         ${_rrTabellHtml(_rrKolumner(har), o.grupper)}
         <h3 class="jmf-diagram-rubrik">Lönerna mot ställningstagandet och statistiken</h3>

@@ -34,7 +34,7 @@ konsekvensbedömning (DPIA). Lagrumshänvisningarna samlas i
   inte att en sida navigerar till en annan adress; verktyget har ingen sådan kod, och kod
   som förs in via en fil kan inte köras (se *Skydd mot skadlig indata*).
 - **Ingen autofyll-historik:** alla fält har `autocomplete="off"`, också de som skapas medan du
-  arbetar (anteckningarna i Regler & praxis, Löneöversyns riktade rader), så att organisationsnamn och
+  arbetar (anteckningarna i Regler & praxis, handlingsplanens fält, Löneöversyns riktade rader), så att organisationsnamn och
   anteckningar inte sparas i webbläsarens autofyll-historik.
 - **Ingen lagring på disken:** varken verktyget eller de inbyggda biblioteken skriver till
   localStorage, sessionStorage, IndexedDB, cookies eller cache; det kontrolleras vid varje
@@ -205,12 +205,12 @@ eller via urklipp — aldrig över nätverket:
 
 | Utdata | Innehåll | Hantering |
 |---|---|---|
-| Excel- och CSV-exporter | Aggregat per grupp. Bladet *Referenser* bär organisationens lönemått per yrkesgrupp som når tröskeln, och referensernas egna tal. Kandidatpar med små grupper ingår bara i likvärdighetsexporten (§3, undantag 1); övriga exporter utelämnar dem och anger antalet. Likvärdighetsexporten, och Utforskas export när rutan för små grupper är ikryssad, anger i filen att den kan innehålla grupper under tröskeln | Som personuppgifter |
+| Excel- och CSV-exporter | Aggregat per grupp. Bladet *Referenser* bär organisationens lönemått per yrkesgrupp som når tröskeln, och referensernas egna tal. Kandidatpar med små grupper ingår bara i likvärdighetsexporten (§3, undantag 1); övriga exporter utelämnar dem och anger antalet. Likvärdighetsexporten, och Utforskas export när rutan för små grupper är ikryssad, anger i filen att den kan innehålla grupper under tröskeln. Handlingsplanens Excel-fil bär också det som fyllts i på fliken Handlingsplan (sakligt skäl, ansvarig, tidsplan och status per rad), som Word-utkastets åtgärdstabell och utskriften av mallen | Som personuppgifter |
 | Diagramdata från diagram med enskilda personer | En rad per person: lön, kön och ålder eller grupp — utan identifierare | Som personuppgifter |
 | Word-utkast, PDF och utskrift | Verktygets fynd och HR:s egna bedömningar. Tabeller, text och diagrambilder redovisar grupper över tröskeln; kandidatpar med en grupp under tröskeln utelämnas. PDF-rapporten är en låst kopia av Word-utkastet med samma innehåll. Rapportens avsnitt har inga diagram med enskilda personers löner; utskriften av hela dokumentationen (*Komplett rapport*) har bilagor med bilder av Ålder & karriärs spridnings-, låd- och täthetsdiagram (§3, undantag 4) | Som personuppgifter |
 | ZIP-export | Word-utkastet, Excelfilen med alla flikar (aggregat) och bilder av alla ritade diagram från alla flikar. ZIP-filen är alltså inte enbart aggregat: spridningsdiagrammen i Ålder & karriär har en punkt per anställd (bara personer vars grupp och kön i gruppen når tröskeln), och låddiagrammet visar enskilda avvikande löner | Som personuppgifter |
 | Rapportunderlag via urklipp | Aggregat för grupper som når minsta gruppstorlek (standard 10); kandidatpar med en grupp under tröskeln utelämnas | Som rapportmaterial |
-| Konfigurationsfil | Inställningar, organisationens namn och jämförelsestatistikens namn (användarens egna namn; text som liknar personnummer eller e-post avvisas), HR:s anteckningar och avbockningarna i Att göra, och ett årsbokslut (nyckeltal, en rad per yrkesgrupp där båda könen når minsta gruppstorlek, Att göra-punkternas läge; ADR-54) — aldrig individrader; noterar vilket organisationspaket som användes | Som övriga exportfiler |
+| Konfigurationsfil | Inställningar, organisationens namn och jämförelsestatistikens namn (användarens egna namn; text som liknar personnummer eller e-post avvisas), HR:s anteckningar (bedömningarna i Regler & praxis och det som fyllts i på fliken Handlingsplan: sakligt skäl, ansvarig, tidsplan och status per rad; fritext som liknar personnummer eller e-post ger en varning men sparas) och avbockningarna i Att göra, och ett årsbokslut (nyckeltal, en rad per yrkesgrupp där båda könen når minsta gruppstorlek, Att göra-punkternas läge; ADR-54) — aldrig individrader; noterar vilket organisationspaket som användes | Som övriga exportfiler |
 | Organisationspaket (systemägaren) | Organisationens benämningar, grundinställningar, ställningstagande och jämförelsestatistik — bara aggregat | Kan spridas internt; innehåller inga personuppgifter |
 
 Det som kopieras till urklipp (tabeller, diagramdata och rapportunderlag) kan synkas till

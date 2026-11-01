@@ -118,6 +118,7 @@ function updateForecast() {
     const outEl = document.getElementById('forecast-outcome');
     if (!meterEl && !outEl) return;
     _forecastReadControls();
+    _fcUppdateraForslagPott();
     const d = getData();
     if (!d.length) {
         if (meterEl) meterEl.innerHTML = '';
@@ -158,7 +159,8 @@ function updateForecast() {
           _laSlutsats('Pott', out.pott > 0 ? kr(out.pott) : '–', out.pott > 0 ? 'kr per månad att fördela' : 'ingen budget angiven'),
           _laSlutsats('Använt', kr(out.använt), out.pott > 0 ? `${svTal(100 * out.använt / out.pott, 0)} % av potten` : 'av påslagen hittills'),
           _laSlutsats('Kvar att fördela', kr(out.kvar), out.kvar < -0.5 ? 'fördelningen överskrider potten' : 'av potten', out.kvar < -0.5),
-          _laSlutsats('Lönesumma per månad', kr(out.lonsummaEfter), `från ${kr(out.lonsummaFore)}`),
+          // "från …" bara när summan har ändrats; före första påslaget står utgångsläget
+          _laSlutsats('Lönesumma per månad', kr(out.lonsummaEfter), Math.round(out.lonsummaEfter) !== Math.round(out.lonsummaFore) ? `från ${kr(out.lonsummaFore)}` : 'utgångsläget'),
           _laSlutsats('Total kostnad', kr(out.totalKostnad), `${cost.months} mån, PO ${svPct(cost.poPct, 2)}`),
       ].join(''); }
     if (meterEl) meterEl.innerHTML = `
@@ -421,6 +423,21 @@ function _fcKandidater() {
     const el = document.getElementById('forecast-par-not');
     if (el) el.textContent = r.not;
     return r.par.map(p => ({ bas: p.kvBas, aid: p.kvAid, gapKr: p.gapKr, n: p.kvN }));
+}
+// Förslagsknappen vid potten: samma förslag som knappen under Riktade potter, aktiv först när en pott är angiven.
+function _fcUppdateraForslagPott() {
+    const knapp = /** @type {HTMLButtonElement|null} */ (document.getElementById('forecast-optimize-pott'));
+    if (!knapp) return;
+    const v = state.forecast && state.forecast.budget ? state.forecast.budget.value : null;
+    knapp.disabled = !(typeof v === 'number' && isFinite(v) && v > 0);
+}
+// Fäller ut Riktade potter och rullar dit, så att det syns vad förslaget gjorde.
+function _forecastOptimizeFranPott() {
+    _forecastOptimize();
+    const avsnitt = /** @type {HTMLDetailsElement|null} */ (document.getElementById('avsnitt-lo-riktade'));
+    if (!avsnitt) return;
+    avsnitt.open = true;
+    try { avsnitt.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (_e) { /* äldre webbläsare: utfällt räcker */ }
 }
 function _forecastOptimize() {
     const d = getData();
@@ -762,6 +779,8 @@ function _exportForecastExport() {
     });
     document.getElementById('forecast-add-criteria')?.addEventListener('click', _forecastAddByCriteria);
     document.getElementById('forecast-optimize')?.addEventListener('click', _forecastOptimize);
+    document.getElementById('forecast-optimize-pott')?.addEventListener('click', _forecastOptimizeFranPott);
+    _fcUppdateraForslagPott();
     document.getElementById('forecast-export')?.addEventListener('click', exportForecast);
     document.getElementById('forecast-reset')?.addEventListener('click', () => {
         state.forecast = { budget: { mode: 'pct', value: null }, generell: { mode: 'pct', value: null }, targets: [], minGroupN: 10, roundStep: 0, years: 1, scenarios: { A: null, B: null }, result: null };

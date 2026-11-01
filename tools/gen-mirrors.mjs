@@ -195,7 +195,7 @@ export const MODULES = [
     {
         // Löneläget och statistiken mot ställningstagandet (ADR-55); importerar lonepolitik.js
         file: 'referenser.js', ns: '__mirrorReferenser',
-        expose: { lageISpann: '_rrLage', monster: '_rrMonster', forslag: '_rrForslag', referensOverblick: '_rrOverblick', hantelRader: '_rrHantelRader' }
+        expose: { lageISpann: '_rrLage', monster: '_rrMonster', forslag: '_rrForslag', referensOverblick: '_rrOverblick', hantelRader: '_rrHantelRader', lageOchForslag: '_rrLageOchForslag' }
     },
     {
         file: 'docx.js', ns: '__mirrorDocx',

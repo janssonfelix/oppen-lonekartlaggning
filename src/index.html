@@ -1521,7 +1521,7 @@
                     </div>
                     <div class="first-run-hint marg-t-0">
                         <span class="first-run-hint-icon" aria-hidden="true"><svg class="ikon ikon-blixt" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg></span>
-                        <div><strong>Snabbstart:</strong> ange en <strong>budget</strong> här nedanför och klicka <strong>Föreslå fördelning mot osakliga gap</strong> under Riktade potter — så får du en färdig startpunkt att finjustera.</div>
+                        <div><strong>Snabbstart:</strong> ange en <strong>budget</strong> här nedanför och klicka <strong>Föreslå fördelning mot osakliga gap</strong> bredvid potten — så får du en färdig startpunkt att finjustera.</div>
                     </div>
                     <div id="lo-slutsatser" class="slutsatser" role="group" aria-label="Nyckeltal"></div>
                     <div class="lo-scenario">
@@ -1538,6 +1538,7 @@
                                     </select>
                                 </div>
                             </div>
+                            <button id="forecast-optimize-pott" type="button" class="btn btn-primary btn-sm" disabled title="Föreslår en fördelning som riktar potten mot de osakliga gapen i likvärdigt arbete först, och visar förslaget under Riktade potter. Ange en pott först.">Föreslå fördelning mot osakliga gap</button>
                             <p class="text-dampad-xs marg-0 max-bredd-360">Potten är det råa påslaget (kr/mån). PO-påslag och beräkningsperiod (under Inställningar i sidhuvudet) läggs på i totalkostnaden nedan.</p>
                         </div>
                     </div>
@@ -1862,6 +1863,7 @@
 
                     <div class="card">
                         <div class="card-header"><h2>Handlingsplansmall — en rad per åtgärd</h2></div>
+                        <div class="table-container">
                         <table class="data-table mest-text st-09">
                             <thead>
                                 <tr>
@@ -1883,8 +1885,10 @@
                                 <tr class="handlingsplan-empty"><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
                             </tbody>
                         </table>
-                        <p class="handlingsplan-not" data-noprint>Kolumnerna Sakligt skäl, Ansvarig, Tidsplan och Status fylls i Excel-filen eller på utskriften.</p>
-                        <p id="handlingsplan-seed-note" class="text-dampad-sm marg-t-8">Mallen förifylls automatiskt med grupperna från Prioritering och Likvärdigt arbete när data finns — de grå raderna är ett utgångsläge att granska. Komplettera med sakliga skäl, ansvarig, tidsplan och status. Exportera till Excel eller skriv ut för att färdigställa i Word.</p>
+                        </div>
+                        <p id="handlingsplan-varning" class="handlingsplan-varning" role="status" data-noprint hidden>Ett fält liknar ett personnummer eller en e-postadress. Skriv en roll eller en grupp i stället: texten följer med i exporterna.</p>
+                        <p class="handlingsplan-not" data-noprint>Det du skriver här följer med i Excel-filen, utskriften och Word-utkastet, men sparas inte när du stänger webbläsarfliken. Spara konfigurationen under <strong>Dokumentera &amp; exportera</strong> om du vill komma tillbaka till det. Skriv på gruppnivå, inga namn eller personnummer.</p>
+                        <p id="handlingsplan-seed-note" class="text-dampad-sm marg-t-8">Mallen förifylls automatiskt med grupperna från Prioritering och Likvärdigt arbete när data finns — ett utgångsläge att granska. Fyll i sakligt skäl, ansvarig, tidsplan och status direkt i raderna.</p>
                     </div>
 
                     <div class="card bak-varning-yta ram-v-4-varning">

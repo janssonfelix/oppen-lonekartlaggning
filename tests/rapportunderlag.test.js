@@ -521,7 +521,7 @@ describe('blocket Lönerna mot referenserna', () => {
     it('säger var löneläget och statistiken ligger mot ställningstagandet, aldrig tvärtom', () => {
         const b = referenserBlock(overblick, { urval: 'Hela organisationen', demo: false });
         expect(b).toMatchObject({ id: 'referenser', rubrik: 'Lönerna mot referenserna', provat: null, fragor: null });
-        expect(b.tabell.rubriker).toEqual(['Yrkesgrupp', 'n', 'Median (kr)', 'Mot ställningstagandet (%)', 'Mot statistiken (%)', 'Mönster']);
+        expect(b.tabell.rubriker).toEqual(['Yrkesgrupp', 'n', 'Median (kr)', 'Mot ställningstagandet (%)', 'Mot statistiken (%)', 'Läge och förslag']);
         expect(b.tabell.rader[0][0]).toBe('1 Yrke · BAS C');
         expect(b.tabell.rader[0][5]).toBe(grupp.monster.text);
         expect(b.stycken.join(' ')).toMatch(/löneläget och statistiken ligger över ställningstagandet/);

@@ -235,9 +235,9 @@ function rmReferenserAvsnitt(diagram) {
         { typ: 'stycke', text: 'Ställningstagandet är referenspunkten: löneläget och statistiken mäts mot det. Läget säger var gruppen ligger, inte om en lön är rätt eller fel. Yrkesgrupper under minsta gruppstorlek redovisas inte.', stil: 'dampad' },
         { typ: 'tabell', nyckel: true, kolumner: [{ rubrik: '', typ: 'text' }, { rubrik: '', typ: 'text' }], rader: tal },
         { typ: 'tabell', kolumner: [{ rubrik: 'Yrkesgrupp', typ: 'text' }, { rubrik: 'n', typ: 'antal' }, { rubrik: 'Median', typ: 'kr' },
-            ...(harStallningstagande ? [{ rubrik: 'Mot ställningstagandet', typ: 'pct1' }] : []), ...(harStatistik ? [{ rubrik: 'Mot statistiken', typ: 'pct1' }] : []), { rubrik: 'Mönster', typ: 'text' }],
+            ...(harStallningstagande ? [{ rubrik: 'Mot ställningstagandet', typ: 'pct1' }] : []), ...(harStatistik ? [{ rubrik: 'Mot statistiken', typ: 'pct1' }] : []), { rubrik: 'Läge och förslag', typ: 'text' }],
           rader: o.grupper.map(g => [`${g.yrke} · BAS ${g.bas}`, g.n, g.org.median,
-            ...(harStallningstagande ? [pct(g.org.median, g.stallningstagande.median)] : []), ...(harStatistik ? [pct(g.org.median, g.statistik.median)] : []), g.monster.text]) },
+            ...(harStallningstagande ? [pct(g.org.median, g.stallningstagande.median)] : []), ...(harStatistik ? [pct(g.org.median, g.statistik.median)] : []), g.lageOchForslag]) },
         ...diagram('referenser'),
     ];
     if (o.statistikMotStallningstagande.length) delar.push({ typ: 'rubrik', niva: 3, text: 'Statistiken mot ställningstagandet' },
@@ -292,9 +292,6 @@ function _rapportModellExport({ alla = false, bada = false } = {}) {
     const konOk = _konFarRedovisas(kvN, maN);
     const medKv = Stat.median(d.filter(arKv).map(r => r.lon)), medMa = Stat.median(d.filter(arMa).map(r => r.lon));
     const reg = typeof runOLSRegression === 'function' ? runOLSRegression() : null;
-    const prioRef = /** @type {HTMLInputElement} */ (document.querySelector('input[name="prio-ref"]:checked'))?.value || 'stallningstagande';
-    const prio = (state.policy.length || state.statistik.length) && typeof computePrioritization === 'function' ? computePrioritization(prioRef) : [];
-    const flaggade = prio.filter(i => i.status === 'akut' || i.status === 'atgard');
     const lvRes = typeof computeLikvardighetPairs === 'function' ? likvardighetResultat() : null;
     const { par, utelamnade: parUtelamnade, not: parNot } = _parForRedovisning(lvRes && lvRes.pairs);   // som rapportunderlaget
     const rep = typeof _stRepresentationByBas === 'function' ? (_stRepresentationByBas(d, { k }) || []) : [];
@@ -427,12 +424,16 @@ function _rapportModellExport({ alla = false, bada = false } = {}) {
 
     // ---- 6. Åtgärder och tidsplan ----
     /** @type {{id: string, rubrik: string, utelamnat: string[], delar: any[], [k: string]: any}} */
+    // Tabellen är handlingsplanen från fliken (samma förifyllning, som redan utelämnar par under tröskeln), med det som
+    // fyllts i där; ett tomt fält står kvar att fylla i.
+    const hp = typeof _handlingsplanSeedRows === 'function' ? _handlingsplanSeedRows().rows : [];
+    const hpFalt = v => v || { text: '[HR fyller i]', fyllIn: true };
     const atgarder = { id: 'atgarder', numrerad: true, rubrik: 'Åtgärder och tidsplan', utelamnat: [], delar: [
-        dampad('Planerade lönejusteringar och andra åtgärder, med beslut, ansvar och tidsplan. Tabellen listar de grupper som ligger under referensen enligt prioriteringen, med uppskattad kostnad för att nå den.'),
-        flaggade.length
-            ? { typ: 'tabell', kolumner: [{ rubrik: 'Grupp', typ: 'text' }, { rubrik: 'Uppskattad kostnad', typ: 'krAr' }, { rubrik: 'Beslutad åtgärd (fyll i)', typ: 'fyllIn' }, { rubrik: 'Ansvarig (fyll i)', typ: 'fyllIn' }, { rubrik: 'Klart senast (fyll i)', typ: 'fyllIn' }],
-                rader: flaggade.slice(0, 20).map(it => [`${it.yrke} (BAS ${it.bas})`, it.annualGapTotal ? Math.round(it.annualGapTotal) : null, '', '', '']) }
-            : dampad('Inga prioriterade åtgärdsgrupper (ingen referensdata uppladdad).'),
+        dampad('Planerade lönejusteringar och andra åtgärder, med beslut, ansvar och tidsplan. Tabellen är handlingsplanen: de grupper som ligger under referensen enligt prioriteringen och kandidatparen i likvärdigt arbete, med uppskattad kostnad och det som fyllts i på fliken Handlingsplan.'),
+        hp.length
+            ? { typ: 'tabell', kolumner: [{ rubrik: 'Grupp', typ: 'text' }, { rubrik: 'Underlag', typ: 'text' }, { rubrik: 'Uppskattad kostnad', typ: 'krAr' }, { rubrik: 'Sakligt skäl prövat?', typ: 'fyllIn' }, { rubrik: 'Ansvarig', typ: 'fyllIn' }, { rubrik: 'Tidsplan (senast inom tre år)', typ: 'fyllIn' }, { rubrik: 'Status', typ: 'fyllIn' }],
+                rader: hp.map(r => [r[1], r[2], r[4] ? Math.round(r[4]) : null, hpFalt(r[3]), hpFalt(r[5]), hpFalt(r[6]), hpFalt(r[7])]) }
+            : dampad(state.policy.length || state.statistik.length ? 'Inga grupper under referensen och inga kandidatpar att föra in i handlingsplanen.' : 'Inga prioriterade åtgärdsgrupper (ingen referensdata uppladdad).'),
         fyllIn('Besluta åtgärder, budget och tidsplan (lönejusteringar ska genomföras så snart som möjligt och senast inom tre år). Beskriv även förebyggande åtgärder.'),
     ] };
 

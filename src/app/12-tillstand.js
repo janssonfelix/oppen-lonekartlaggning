@@ -29,6 +29,7 @@
  *   dataAudit?: any, statistikHasP10?: boolean, statistikHasP90?: boolean, statistikHasKon?: boolean, _interntFel?: any[],
  *   _actionChecklistDone?: Set<string>, _lastStructureFile?: File|null, _lifecycleCache?: any
  *   flerKolumner: {[tabell: string]: boolean},
+ *   handlingsplan: {[nyckel: string]: {sakligt: string, ansvarig: string, tidsplan: string, status: string}},
  * }} Fälten med `?` sätts först vid inläsning (32-filinlasning.js, 29-organisationspaket.js m.fl.) och nollas av 26-rensning.js.
  */
 const state = {
@@ -95,7 +96,10 @@ const state = {
     ansvarKolumn: null,   // AID:s ansvarskod: { namn, giltiga } när kolumnen godkänts (ADR-33)
     _dataHeaders: [],   // rubriker från senast inlästa strukturfil (för guiden)
     // Breda tabeller: true när användaren valt Fler kolumner (05-tabeller-och-lankar.js). Bara i minnet, grundvyn som standard.
-    flerKolumner: {}
+    flerKolumner: {},
+    // Handlingsplanens ifyllda fält per förifylld rad (56-handlingsplan.js): { [nyckel]: { sakligt, ansvarig, tidsplan, status } }.
+    // Bara i minnet; följer med i konfigurationsfilen och exporterna, nollas av Rensa all data.
+    handlingsplan: {}
 };
 
 /**

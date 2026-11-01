@@ -125,6 +125,9 @@ function _rensaAllData({ inbakat = true } = {}) {
     // § 8-ställningens bedömningar (status + anteckning) — nollställ
     document.querySelectorAll('.bes8-field').forEach(el => { /** @type {HTMLInputElement} */ (el).value = ''; });
     if (typeof bes8Uppdatera === 'function') bes8Uppdatera();
+    // Handlingsplanens ifyllda fält (sakligt skäl, ansvarig, tidsplan, status) — nollställ och rita mallen tom
+    state.handlingsplan = {};
+    if (typeof renderHandlingsplanSeed === 'function') renderHandlingsplanSeed();
     const dashSummary = document.getElementById('dashboard-summary');
     if (dashSummary) dashSummary.style.display = 'none';
     const ukPanel = document.getElementById('underlagets-kvalitet');

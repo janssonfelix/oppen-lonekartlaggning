@@ -317,14 +317,14 @@ describe('Personer att granska', () => {
 });
 
 describe('Handlingsplanens tabell', () => {
-    it('de tomma raderna visas bara på utskriften, och en rad säger var de tomma kolumnerna fylls i', () => {
+    it('de tomma raderna visas bara på utskriften, och en rad säger vart det ifyllda tar vägen', () => {
         const css = las('src/style.css');
         expect(css).toMatch(/#handlingsplan-tbody \.handlingsplan-empty \{ display: none; \}/);
         expect(css).toMatch(/@media print \{ #handlingsplan-tbody \.handlingsplan-empty \{ display: table-row; \} \}/);
         const w = demo();
         w.__renderTabContent('handlingsplan');
         expect(w.document.querySelectorAll('#handlingsplan-tbody tr.handlingsplan-empty').length).toBeGreaterThanOrEqual(5);   // finns kvar för utskriften
-        expect(w.document.querySelector('#view-handlingsplan .handlingsplan-not').textContent).toContain('fylls i Excel-filen eller på utskriften');
+        expect(w.document.querySelector('#view-handlingsplan .handlingsplan-not').textContent).toContain('följer med i Excel-filen, utskriften och Word-utkastet, men sparas inte');
     });
 });
 

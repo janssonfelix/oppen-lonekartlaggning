@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { lageISpann, monster, forslag, referensOverblick, hantelRader } from '../src/lib/referenser.js';
+import { lageISpann, monster, forslag, referensOverblick, hantelRader, lageOchForslag } from '../src/lib/referenser.js';
 const rad = (over = {}) => ({ aid: '1', yrke: '1 Yrke', bas: 'C', n: 42, org: { p10: 34100, median: 38900, p90: 44200 },
     stallningstagande: { p10: 29000, median: 32000, p90: 36000 }, statistik: { p10: 33700, median: 37800, p90: 42900 }, ...over });
 const alla = { harStatistik: true, harStallningstagande: true, statistikHarSpann: true };
@@ -88,5 +88,29 @@ describe('överblicken', () => {
         expect(h).toHaveLength(2);
         expect(h[0]).toMatchObject({ namn: '1 Yrke · BAS C', org: { median: 38900 }, stallningstagande: { median: 32000 }, statistik: { median: 37800 } });
         expect(hantelRader(referensOverblick([rad({ statistik: { p10: null, median: null, p90: null } })], alla).grupper)[0].statistik).toBeNull();
+    });
+});
+
+describe('läge och förslag i en kolumn', () => {
+    const g = (r, opt = alla) => referensOverblick([r], opt).grupper[0];
+    it('förslaget nämns när det är statistiken, med skälet', () => {
+        expect(g(rad()).lageOchForslag).toBe('Löneläget ovanför ställningstagandet, statistiken också över. Förslag: statistiken som referens (löneläget ligger inom statistiken men inte inom ställningstagandet).');
+        expect(g(rad({ org: { p10: 44000, median: 45000, p90: 46000 } })).lageOchForslag).toMatch(/Förslag: statistiken som referens \(statistikens spann ligger närmast löneläget\)\.$/);
+    });
+    it('när förslaget är ställningstagandet står bara mönstret', () => {
+        const inom = rad({ org: { p10: 30000, median: 32500, p90: 35000 }, statistik: { p10: 30500, median: 33000, p90: 35500 } });
+        expect(g(inom).lageOchForslag).toBe('Löneläget inom ställningstagandet, statistiken också inom');
+        expect(g(rad({ org: { p10: 26000, median: 27000, p90: 28000 } })).lageOchForslag).not.toMatch(/Förslag/);
+    });
+    it('ställningstagande utan spann eller utan värden: skälet säger det', () => {
+        expect(g(rad({ stallningstagande: { p10: null, median: 32000, p90: null } })).lageOchForslag).toMatch(/bara statistiken har ett spann, och löneläget ligger inom det/);
+        const utan = g(rad({ stallningstagande: { p10: null, median: null, p90: null } }));
+        expect(utan.forslag.referens).toBe('statistik');
+        expect(utan.lageOchForslag).toMatch(/ställningstagandet saknar värden för gruppen/);
+    });
+    it('utan inläst ställningstagande nämns inget förslag; mönstret säger redan det', () => {
+        const t = g(rad(), { ...alla, harStallningstagande: false }).lageOchForslag;
+        expect(t).toBe('Ställningstagande saknas; löneläget inom statistiken');
+        expect(lageOchForslag({ lage: { stallningstagande: { pos: null }, statistik: { pos: null } }, monster: { text: '' }, forslag: { referens: null, skal: '' } })).toBe('');
     });
 });
