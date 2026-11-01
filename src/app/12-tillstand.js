@@ -28,6 +28,7 @@
  *   _dataHeaders: string[],
  *   dataAudit?: any, statistikHasP10?: boolean, statistikHasP90?: boolean, statistikHasKon?: boolean, _interntFel?: any[],
  *   _actionChecklistDone?: Set<string>, _lastStructureFile?: File|null, _lifecycleCache?: any
+ *   flerKolumner: {[tabell: string]: boolean},
  * }} Fälten med `?` sätts först vid inläsning (32-filinlasning.js, 29-organisationspaket.js m.fl.) och nollas av 26-rensning.js.
  */
 const state = {
@@ -92,7 +93,9 @@ const state = {
     // missar. null = enbart auto-matchning. Sätts via kolumnmappnings-guiden.
     columnMap: null,
     ansvarKolumn: null,   // AID:s ansvarskod: { namn, giltiga } när kolumnen godkänts (ADR-33)
-    _dataHeaders: []   // rubriker från senast inlästa strukturfil (för guiden)
+    _dataHeaders: [],   // rubriker från senast inlästa strukturfil (för guiden)
+    // Breda tabeller: true när användaren valt Fler kolumner (05-tabeller-och-lankar.js). Bara i minnet, grundvyn som standard.
+    flerKolumner: {}
 };
 
 /**
@@ -403,6 +406,7 @@ function addTableExportTools(tableId, fileBase) {
         + `<button type="button" class="btn-table-tool" data-csv-table="${esc(tableId)}" data-csv-file="${esc(fileBase)}" `
         + `title="Ladda ner tabellen som CSV" aria-label="Ladda ner tabellen som CSV">${ikon('laddaNed', 14)} CSV</button>`;
     anchor.parentNode.insertBefore(bar, anchor);
+    /** @type {any} */ (table)._verktygsrad = bar;   // växeln Fler kolumner (05-tabeller-och-lankar.js) läggs i samma rad
 }
 
 // Ren text ur en cell: knappar/ikoner bort, whitespace normaliserad.
@@ -442,7 +446,7 @@ function _tableToMatrixExport(tableId) {
         const rad = [];
         cells.forEach(c => {
             if (c.hasAttribute('data-export-utelamna')) return;   // hel kolumn utelämnad (ADR-14)
-            const span = Math.max(1, parseInt(c.getAttribute('colspan') || '', 10) || 1);
+            const span = _cellSpann(c);   // hela bredden, också när växeln Fler kolumner har minskat den på skärmen
             rad.push(c.hasAttribute('data-export-tom') ? '' : _tableCellText(c));
             for (let i = 1; i < span; i++) rad.push('');
         });

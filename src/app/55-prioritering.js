@@ -192,6 +192,10 @@ function _fmtCost(kr) {
     return Math.round(kr) + ' kr';
 }
 
+// Kolumnerna som prioriteringslistans grundvy gömmer bakom Fler kolumner (data-kol i src/index.html).
+// Median och Referens göms också: utan dem ryms grundvyn vid 1280 px med menyn utfälld, och Avvikelse % säger hur de
+// förhåller sig. Båda står i beviset (förstoringsglaset), liksom Kv/Mä, avvikelsen i kronor, kostnaden per person och bristyrket.
+const PRIO_DOLDA_KOLUMNER = ['kvma', 'median', 'referens', 'avvikelsekr', 'kostnadpers', 'brist'];
 function renderPrioritering() {
     const ref = _selectedPrioReference();
     const empty   = document.getElementById('prio-empty');
@@ -372,6 +376,7 @@ function renderPrioritering() {
             <td class="sticky-col-1" data-sort-value="${i.priorityIndex}"><div class="rund-12 inline-block fs-sm fw-700 min-bredd-36 pad-3-8 ta-mitt ${i.priorityIndex>60?'bricka-kritisk':i.priorityIndex>40?'bricka-varning':'bricka-neutral'}">${svTal(i.priorityIndex, 0)}</div></td>
             <th scope="row" class="sticky-col-2 ram-b-1-kant fs-md fw-normal ta-vanster">${esc(i.yrke)}${quickwinBadge}${bristBadge}${powerBadge}</th>
             <td>${esc(i.bas)}</td>
+            <td class="t-mitt" data-sort-value="${i.priorityIndex}"><span class="rund-12 inline-block fs-xs fw-600 pad-3-10 ${statusInfo.klass}">${statusInfo.icon ? statusInfo.icon + ' ' : ''}${statusInfo.label}</span></td>
             <td class="t-hoger">${i.n}</td>
             <td class="t-mitt">${i.kvN}/${i.maN}</td>
             <td class="t-hoger" data-sort-value="${i.median}">${fmt.format(Math.round(i.median))}</td>
@@ -381,14 +386,13 @@ function renderPrioritering() {
             <td class="t-hoger">${gapBar}</td>
             <td class="t-hoger${i.costPerPerson > 0 ? ' f-kritisk' : ''}" data-sort-value="${i.costPerPerson}">${costPerPersonTxt}</td>
             <td class="fw-600 ta-hoger" data-sort-value="${costSort}">${costTxt}</td>
-            <td class="t-mitt" data-sort-value="${i.priorityIndex}"><span class="rund-12 inline-block fs-xs fw-600 pad-3-10 ${statusInfo.klass}">${statusInfo.icon ? statusInfo.icon + ' ' : ''}${statusInfo.label}</span></td>
             <td class="t-mitt">
                 <input type="checkbox" class="brist-toggle" data-aid="${esc(i.aid)}" ${i.isBrist ? 'checked' : ''} aria-label="Markera ${esc(i.yrke)} som bristyrke">
             </td>
-            <td class="ta-mitt ingen-radbrytning">
+            <td class="ta-mitt prio-detalj"><div class="prio-detalj-knappar">
                 <button class="row-cross-link" data-target="rapport" data-yrke="${esc(i.yrke)}" data-bas="${esc(i.bas)}" title="Öppna i Löneöversikten" aria-label="Öppna ${esc(i.yrke)} i Löneöversikten">${ikon('pilUt', 14)}</button>${suggestionBtn}
                 <button class="btn-evidence" data-prio-row="1" type="button" title="Visa beräkningen bakom prioritetsindex" aria-label="Visa bevis för ${esc(i.yrke)}">${ikon('sok')}</button>
-                <button class="btn-evidence" data-open-dossier="${esc(i.aid)}|${esc(i.bas)}" type="button" title="Öppna gruppdossiern — allt om denna grupp på en sida" aria-label="Öppna gruppdossier för ${esc(i.yrke)}">${ikon('dokument')}</button>
+                <button class="btn-evidence" data-open-dossier="${esc(i.aid)}|${esc(i.bas)}" type="button" title="Öppna gruppdossiern — allt om denna grupp på en sida" aria-label="Öppna gruppdossier för ${esc(i.yrke)}">${ikon('dokument')}</button></div>
             </td>
         `;
         // Cache item-referensen på TR så suggestion-handler kan plocka upp den
@@ -396,6 +400,8 @@ function renderPrioritering() {
         tbody.appendChild(tr);
     });
     tillampaDataStil(tbody);
+    // Grundvyn gömmer det sekundära; talen finns också i beviset (förstoringsglaset).
+    flerKolumner('prio-table', PRIO_DOLDA_KOLUMNER, 'prio');
 
     // Bevis-popup för prio-rader
     tbody.querySelectorAll('.btn-evidence[data-prio-row]').forEach(btn => {
@@ -434,6 +440,7 @@ function renderPrioritering() {
                 newTr.innerHTML = `<td colspan="${colCount}"><div class="motivation-suggestions"><strong>${ikon('lampa')} Hypoteser att granska för ${esc(item.yrke)} / BAS ${esc(item.bas)}:</strong><ul>${items}</ul><p class="text-dampad-xs kursiv marg-t-6">Förslagen är regelbaserade frågeställningar — inte färdiga motiveringar. Verifiera mot data och dokumentera i kommentarsfältet ovan.</p></div></td>`;
             }
             /** @type {HTMLElement} */ (tr.parentNode).insertBefore(newTr, tr.nextSibling);
+            tillampaFlerKolumner('prio-table');   // radens colspan följer kolumnerna som syns
             btn.setAttribute('aria-expanded', 'true');
             btn.textContent = 'Stäng';
         });

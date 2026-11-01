@@ -150,6 +150,7 @@ function _evidenceForPrioItem(it, _reference) {
             { label: 'Median månadslön',            value: fmtKr(it.median) },
             { label: `Referens (${it.refSource})`,  value: fmtKr(it.refMedian) },
             { label: 'Avvikelse',                   value: `${sgn(it.diffPct)}${svPct(it.diffPct, 2)}  (${sgn(it.diffKr)}${fmtKr(it.diffKr)})` },
+            { label: 'Kostnad per person',          value: it.costPerPerson > 0 ? `${fmtKr(it.costPerPerson)}/mån` : '— (gruppen är ej under referens)', note: 'Genomsnittlig höjning per person och månad för att lyfta gruppen till referensens median' },
             { label: 'Köns-lönegap inom gruppen',   value: it.gapPct == null ? '— ej beräkningsbart' : `${sgn(it.gapPct)}${svPct(it.gapPct, 2)}`, note: it.gapPct == null ? `Kräver minst ${kTroskel()} av varje kön` : `Median kv ${fmtKr(it.medKv)} mot median man ${fmtKr(it.medMa)}` },
             { label: '— Prioritetsindex',           value: `<strong>${svTal(it.priorityIndex, 1)}</strong>`, isHtml: true, note: `Status: ${it.status.toUpperCase()}` },
             { label: 'Avvikelse-poäng (sev)',       value: svTal(sevScore, 1), note: `min(30, |${svPct(it.diffPct, 1)}|) / 30 × 100 · vikt ${w.avvikelse}/${wTotal}` },
@@ -175,6 +176,24 @@ function _evidenceForPrioItem(it, _reference) {
  */
 function _evidenceForEUMatrixRow(r) {
     const fmtKr = v => Math.round(v).toLocaleString('sv-SE') + ' kr';
+    // Andelen kvinnor i yrket nationellt (kolumnen Kvinnor nationellt, som grundvyn gömmer).
+    const skr = _skrKvinnoandel(r.yrke, { del: _skrDel() });
+    const nationellt = { label: 'Andel kvinnor nationellt', value: skr ? svPct(skr.pct, 0) : '–',
+        note: skr ? `${_skrDelText(skr.del)}, ${skrKallaKort()}` : `Yrkeskoden finns inte i ${skrKallaKort()}` };
+    if (r.samladMedian) {
+        return {
+            title: `Bevis — ${r.yrke}`,
+            intro: `Ett av könen har färre än ${kTroskel()} personer i yrkesgruppen. Då redovisas bara gruppens samlade median, så att ingen enskild lön kan räknas fram, och ingen jämförelse mellan kvinnor och män görs.`,
+            rows: [
+                { label: 'Yrkesgrupp',               value: r.yrke },
+                { label: 'Antal medarbetare totalt', value: r.tot.toLocaleString('sv-SE'), note: `${r.nKv} kvinnor · ${r.nMa} män` },
+                { label: 'Könsdominans',             value: r.dominans },
+                nationellt,
+                { label: 'Gruppens median',          value: fmtKr(r.medTot) }
+            ],
+            footer: 'Gruppen kan jämföras först när båda könen når minsta gruppstorlek.'
+        };
+    }
     const ratio = r.medKv / r.medMa;
     const gapSgn = ratio - 1;
     const gapPct = gapSgn * 100;
@@ -187,6 +206,7 @@ function _evidenceForEUMatrixRow(r) {
             { label: 'Antal kvinnor',             value: r.nKv.toLocaleString('sv-SE'), note: r.kMaskedKv ? `Maskerad — under k=${kTroskel()}` : '' },
             { label: 'Antal män',                 value: r.nMa.toLocaleString('sv-SE'), note: r.kMaskedMa ? `Maskerad — under k=${kTroskel()}` : '' },
             { label: 'Könsdominans',              value: r.dominans },
+            nationellt,
             { label: 'Median kvinnor',            value: r.kMaskedKv ? `< ${kTroskel()} pers (maskerad)` : fmtKr(r.medKv) },
             { label: 'Median män',                value: r.kMaskedMa ? `< ${kTroskel()} pers (maskerad)` : fmtKr(r.medMa) },
             { label: '— Mediankvot',              value: r.anyMasked ? '—' : `${svTal(ratio, 4)} (Kv/Man)` },

@@ -996,6 +996,100 @@ function enableTableSort(tableId) {
     });
 }
 
+// ---- "Fler kolumner": sekundära kolumner bakom en växel ----
+// En bred tabell visar i grundvyn bara det som behövs för att läsa raden; knappen "Fler kolumner" i tabellens
+// verktygsrad (bredvid Kopiera och CSV) visar resten. Kolumnerna känns igen på rubrikens data-kol. En gömd kolumn
+// döljs med hidden på varje cell; en cell som spänner över gömda och synliga kolumner får sin colspan minskad, och
+// den hela bredden står kvar i data-hel-colspan. Valet ligger i state.flerKolumner under sessionen (ingenting lagras).
+// Cellerna finns kvar i raden, så sorteringen (cellens index) och exporterna (som läser hela tabellen och tar
+// tillbaka hidden och colspan i sin kopia, se _exportVisaAllaRader) påverkas inte.
+/** @type {{[tableId: string]: {dolda: string[], nyckel: string}}} */
+const _flerKolumnerTabeller = {};
+/** Cellens bredd i tabellens kolumner, också när växeln har minskat den. */
+function _cellSpann(cell) {
+    return Math.max(1, parseInt(cell.getAttribute('data-hel-colspan') || cell.getAttribute('colspan') || '', 10) || 1);
+}
+/**
+ * Kopplar växeln till en tabell och tillämpar vyn. Anropas efter addTableExportTools (knappen läggs i dess verktygsrad)
+ * och efter varje omritning av tabellen; att anropa den igen är ofarligt.
+ * @param {string} tableId
+ * @param {string[]} dolda  data-kol för kolumnerna som grundvyn gömmer
+ * @param {string} nyckel   nyckeln i state.flerKolumner
+ */
+function flerKolumner(tableId, dolda, nyckel) {
+    const table = document.getElementById(tableId);
+    if (!table) return;
+    _flerKolumnerTabeller[tableId] = { dolda, nyckel };
+    const bar = /** @type {any} */ (table)._verktygsrad;
+    if (bar && !bar.querySelector('[data-fler-kolumner]')) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'btn-table-tool btn-fler-kolumner';
+        btn.setAttribute('data-fler-kolumner', tableId);
+        btn.setAttribute('aria-controls', tableId);
+        btn.title = 'Visa eller göm tabellens övriga kolumner. Kopiera och CSV tar alltid med alla.';
+        btn.textContent = 'Fler kolumner';
+        bar.insertBefore(btn, bar.firstChild);
+    }
+    tillampaFlerKolumner(tableId);
+}
+/** Gömmer eller visar kolumnerna efter state.flerKolumner; körs efter varje omritning och när en rad läggs till. */
+function tillampaFlerKolumner(tableId) {
+    const table = document.getElementById(tableId);
+    const cfg = _flerKolumnerTabeller[tableId];
+    if (!table || !cfg) return;
+    const full = !!(state.flerKolumner && state.flerKolumner[cfg.nyckel]);
+    const gomda = new Set();
+    const rubrikrad = table.querySelector('thead tr');
+    if (rubrikrad && !full) {
+        let kol = 0;
+        [...rubrikrad.children].forEach(th => {
+            const span = _cellSpann(th);
+            if (cfg.dolda.includes(th.getAttribute('data-kol') || '')) for (let i = 0; i < span; i++) gomda.add(kol + i);
+            kol += span;
+        });
+    }
+    table.querySelectorAll('tr').forEach(tr => {
+        let kol = 0;
+        [...tr.children].forEach(cell => {
+            const span = _cellSpann(cell);
+            let traffar = 0;
+            for (let i = kol; i < kol + span; i++) if (gomda.has(i)) traffar++;
+            kol += span;
+            const helt = traffar >= span;
+            if (helt) { /** @type {HTMLElement} */ (cell).hidden = true; cell.setAttribute('data-fler-dold', ''); }
+            else if (cell.hasAttribute('data-fler-dold')) { /** @type {HTMLElement} */ (cell).hidden = false; cell.removeAttribute('data-fler-dold'); }
+            if (span > 1 && traffar > 0 && !helt) {
+                cell.setAttribute('data-hel-colspan', String(span));
+                cell.setAttribute('colspan', String(span - traffar));
+            } else if (cell.hasAttribute('data-hel-colspan')) {
+                cell.setAttribute('colspan', String(span));
+                cell.removeAttribute('data-hel-colspan');
+            }
+        });
+    });
+    const btn = document.querySelector(`[data-fler-kolumner="${tableId}"]`);
+    if (btn) btn.setAttribute('aria-pressed', String(full));
+}
+/** Tar tillbaka det växeln har gömt, i en kopia av tabellen som ska lämna skärmen (export, utskrift). */
+function _flerKolumnerAlla(rot) {
+    rot.querySelectorAll('[data-fler-dold]').forEach(c => { c.hidden = false; c.removeAttribute('data-fler-dold'); });
+    rot.querySelectorAll('[data-hel-colspan]').forEach(c => { c.setAttribute('colspan', c.getAttribute('data-hel-colspan')); c.removeAttribute('data-hel-colspan'); });
+    return rot;
+}
+document.addEventListener('click', e => {
+    const btn = /** @type {HTMLElement} */ (e.target).closest('[data-fler-kolumner]');
+    if (!btn) return;
+    const tableId = btn.getAttribute('data-fler-kolumner') || '';
+    const cfg = _flerKolumnerTabeller[tableId];
+    if (!cfg) return;
+    if (!state.flerKolumner) state.flerKolumner = {};
+    state.flerKolumner[cfg.nyckel] = !state.flerKolumner[cfg.nyckel];
+    tillampaFlerKolumner(tableId);
+    if (typeof announceToScreenReader === 'function')
+        announceToScreenReader(state.flerKolumner[cfg.nyckel] ? 'Alla kolumner visas.' : 'Tabellen visar färre kolumner.');
+});
+
 // ---- Collapsible BAS-grupper ----
 function setupCollapsibleGroups(tableId) {
     const tbody = document.querySelector(`#${tableId} tbody`);
@@ -12095,6 +12189,7 @@ document.addEventListener('keydown', e => {
  *   _dataHeaders: string[],
  *   dataAudit?: any, statistikHasP10?: boolean, statistikHasP90?: boolean, statistikHasKon?: boolean, _interntFel?: any[],
  *   _actionChecklistDone?: Set<string>, _lastStructureFile?: File|null, _lifecycleCache?: any
+ *   flerKolumner: {[tabell: string]: boolean},
  * }} Fälten med `?` sätts först vid inläsning (32-filinlasning.js, 29-organisationspaket.js m.fl.) och nollas av 26-rensning.js.
  */
 const state = {
@@ -12159,7 +12254,9 @@ const state = {
     // missar. null = enbart auto-matchning. Sätts via kolumnmappnings-guiden.
     columnMap: null,
     ansvarKolumn: null,   // AID:s ansvarskod: { namn, giltiga } när kolumnen godkänts (ADR-33)
-    _dataHeaders: []   // rubriker från senast inlästa strukturfil (för guiden)
+    _dataHeaders: [],   // rubriker från senast inlästa strukturfil (för guiden)
+    // Breda tabeller: true när användaren valt Fler kolumner (05-tabeller-och-lankar.js). Bara i minnet, grundvyn som standard.
+    flerKolumner: {}
 };
 
 /**
@@ -12470,6 +12567,7 @@ function addTableExportTools(tableId, fileBase) {
         + `<button type="button" class="btn-table-tool" data-csv-table="${esc(tableId)}" data-csv-file="${esc(fileBase)}" `
         + `title="Ladda ner tabellen som CSV" aria-label="Ladda ner tabellen som CSV">${ikon('laddaNed', 14)} CSV</button>`;
     anchor.parentNode.insertBefore(bar, anchor);
+    /** @type {any} */ (table)._verktygsrad = bar;   // växeln Fler kolumner (05-tabeller-och-lankar.js) läggs i samma rad
 }
 
 // Ren text ur en cell: knappar/ikoner bort, whitespace normaliserad.
@@ -12509,7 +12607,7 @@ function _tableToMatrixExport(tableId) {
         const rad = [];
         cells.forEach(c => {
             if (c.hasAttribute('data-export-utelamna')) return;   // hel kolumn utelämnad (ADR-14)
-            const span = Math.max(1, parseInt(c.getAttribute('colspan') || '', 10) || 1);
+            const span = _cellSpann(c);   // hela bredden, också när växeln Fler kolumner har minskat den på skärmen
             rad.push(c.hasAttribute('data-export-tom') ? '' : _tableCellText(c));
             for (let i = 1; i < span; i++) rad.push('');
         });
@@ -14769,7 +14867,7 @@ function _exportVisaAllaRader(klon) {
         tr.hidden = false;
         tr.classList.remove('collapsed');
     });
-    return klon;
+    return _flerKolumnerAlla(klon);   // kolumnerna som växeln Fler kolumner gömmer på skärmen följer med
 }
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
 function _cloneAndCleanTableForExport(...a) { return medExportLage(() => __cloneAndCleanTableForExportExport.apply(null, /** @type {any} */ (a))); }
@@ -16307,6 +16405,7 @@ function _evidenceForPrioItem(it, _reference) {
             { label: 'Median månadslön',            value: fmtKr(it.median) },
             { label: `Referens (${it.refSource})`,  value: fmtKr(it.refMedian) },
             { label: 'Avvikelse',                   value: `${sgn(it.diffPct)}${svPct(it.diffPct, 2)}  (${sgn(it.diffKr)}${fmtKr(it.diffKr)})` },
+            { label: 'Kostnad per person',          value: it.costPerPerson > 0 ? `${fmtKr(it.costPerPerson)}/mån` : '— (gruppen är ej under referens)', note: 'Genomsnittlig höjning per person och månad för att lyfta gruppen till referensens median' },
             { label: 'Köns-lönegap inom gruppen',   value: it.gapPct == null ? '— ej beräkningsbart' : `${sgn(it.gapPct)}${svPct(it.gapPct, 2)}`, note: it.gapPct == null ? `Kräver minst ${kTroskel()} av varje kön` : `Median kv ${fmtKr(it.medKv)} mot median man ${fmtKr(it.medMa)}` },
             { label: '— Prioritetsindex',           value: `<strong>${svTal(it.priorityIndex, 1)}</strong>`, isHtml: true, note: `Status: ${it.status.toUpperCase()}` },
             { label: 'Avvikelse-poäng (sev)',       value: svTal(sevScore, 1), note: `min(30, |${svPct(it.diffPct, 1)}|) / 30 × 100 · vikt ${w.avvikelse}/${wTotal}` },
@@ -16332,6 +16431,24 @@ function _evidenceForPrioItem(it, _reference) {
  */
 function _evidenceForEUMatrixRow(r) {
     const fmtKr = v => Math.round(v).toLocaleString('sv-SE') + ' kr';
+    // Andelen kvinnor i yrket nationellt (kolumnen Kvinnor nationellt, som grundvyn gömmer).
+    const skr = _skrKvinnoandel(r.yrke, { del: _skrDel() });
+    const nationellt = { label: 'Andel kvinnor nationellt', value: skr ? svPct(skr.pct, 0) : '–',
+        note: skr ? `${_skrDelText(skr.del)}, ${skrKallaKort()}` : `Yrkeskoden finns inte i ${skrKallaKort()}` };
+    if (r.samladMedian) {
+        return {
+            title: `Bevis — ${r.yrke}`,
+            intro: `Ett av könen har färre än ${kTroskel()} personer i yrkesgruppen. Då redovisas bara gruppens samlade median, så att ingen enskild lön kan räknas fram, och ingen jämförelse mellan kvinnor och män görs.`,
+            rows: [
+                { label: 'Yrkesgrupp',               value: r.yrke },
+                { label: 'Antal medarbetare totalt', value: r.tot.toLocaleString('sv-SE'), note: `${r.nKv} kvinnor · ${r.nMa} män` },
+                { label: 'Könsdominans',             value: r.dominans },
+                nationellt,
+                { label: 'Gruppens median',          value: fmtKr(r.medTot) }
+            ],
+            footer: 'Gruppen kan jämföras först när båda könen når minsta gruppstorlek.'
+        };
+    }
     const ratio = r.medKv / r.medMa;
     const gapSgn = ratio - 1;
     const gapPct = gapSgn * 100;
@@ -16344,6 +16461,7 @@ function _evidenceForEUMatrixRow(r) {
             { label: 'Antal kvinnor',             value: r.nKv.toLocaleString('sv-SE'), note: r.kMaskedKv ? `Maskerad — under k=${kTroskel()}` : '' },
             { label: 'Antal män',                 value: r.nMa.toLocaleString('sv-SE'), note: r.kMaskedMa ? `Maskerad — under k=${kTroskel()}` : '' },
             { label: 'Könsdominans',              value: r.dominans },
+            nationellt,
             { label: 'Median kvinnor',            value: r.kMaskedKv ? `< ${kTroskel()} pers (maskerad)` : fmtKr(r.medKv) },
             { label: 'Median män',                value: r.kMaskedMa ? `< ${kTroskel()} pers (maskerad)` : fmtKr(r.medMa) },
             { label: '— Mediankvot',              value: r.anyMasked ? '—' : `${svTal(ratio, 4)} (Kv/Man)` },
@@ -18511,6 +18629,8 @@ function _lagreKravHtml(result) {
         ${innehall}</section>`;
 }
 
+// Kolumnerna som partabellens grundvy gömmer bakom Fler kolumner (data-kol på rubrikerna i renderLikvardighet).
+const LV_DOLDA_KOLUMNER = ['median', 'medianjamf', 'gapkr', 'justerad', 'paverkan'];
 /**
  * Renderar § 3:10-flikens UI.
  *
@@ -18776,8 +18896,8 @@ function renderLikvardighet() {
             <td class="t-hoger">${fmtKr(p.maMedian)}</td>
             <td class="t-hoger"><strong>${fmtKr(p.gapKr)}</strong></td>
             <td class="t-hoger"><strong>${svPct(p.gapPct, 1)}</strong></td>
-            <td class="t-hoger">${justCell(p)}</td>
             <td class="lv-ki-cell fs-xs ta-hoger">${ciCell(p)}</td>
+            <td class="t-hoger">${justCell(p)}</td>
             <td class="t-hoger">${Math.round(p.allvarsindex).toLocaleString('sv-SE')}</td>
             <td class="t-mitt"><button class="btn-evidence" data-lv-pair="${i}" type="button" title="Visa beräkningen" aria-label="Bevis för par ${i+1}">${ikon('sok')}</button></td>
         </tr>`).join('');
@@ -18810,17 +18930,17 @@ function renderLikvardighet() {
                 <table id="likvardighet-table" class="data-table">
                     <thead>
                         <tr>
-                            <th>#</th>
-                            <th title="Kvinnodominerat yrke i organisationen (faktisk könsfördelning).">Kvinnodom. yrke (${esc(orgNamn('org.'))})</th>
-                            <th title="Median månadslön i organisationens grupp.">Median ${esc(orgNamn('org.'))}</th>
-                            <th title="Jämförelseyrke: organisationens eget icke-kv-dom yrke (intern) eller jämförelsestatistiken (extern fallback).">Jämförelseyrke</th>
-                            <th title="Median månadslön i jämförelseyrket.">Median jämf.</th>
-                            <th title="Skillnad i kronor (jämförelseyrke − organisation).">Gap (kr)</th>
-                            <th title="Skillnad i procent av organisationens median.">Gap (%)</th>
-                            <th title="Skillnaden när jämförelseyrkets lön räknats om till det kvinnodominerade yrkets åldersfördelning (log(lön) ~ ålder i jämförelseyrket). Den råa skillnaden är det lagen prövar; den här visar hur mycket som kan bero på åldersstruktur. Bara interna par." data-export-label="Justerad för ålder (%)">Justerad för ålder</th>
-                            <th title="95 % bootstrap-konfidensintervall på medianskillnaden. Ligger hela intervallet över 0 är skillnaden statistiskt säker.">95 % KI</th>
-                            <th title="Påverkansindex = |gap kr| × antal medarbetare i det kvinnodominerade yrket. Heuristik för att prioritera de par som rör flest individer och störst lönegap — inte ett lagstadgat mått." data-export-label="Påverkan">Påverkan (kr/mån)</th>
-                            <th>Bevis</th>
+                            <th data-kol="nr">#</th>
+                            <th data-kol="yrke" title="Kvinnodominerat yrke i organisationen (faktisk könsfördelning).">Kvinnodom. yrke (${esc(orgNamn('org.'))})</th>
+                            <th data-kol="median" title="Median månadslön i organisationens grupp.">Median ${esc(orgNamn('org.'))}</th>
+                            <th data-kol="jamfyrke" title="Jämförelseyrke: organisationens eget icke-kv-dom yrke (intern) eller jämförelsestatistiken (extern fallback).">Jämförelseyrke</th>
+                            <th data-kol="medianjamf" title="Median månadslön i jämförelseyrket.">Median jämf.</th>
+                            <th data-kol="gapkr" title="Skillnad i kronor (jämförelseyrke − organisation).">Gap (kr)</th>
+                            <th data-kol="gappct" title="Skillnad i procent av organisationens median.">Gap (%)</th>
+                            <th data-kol="ki" title="95 % bootstrap-konfidensintervall på medianskillnaden. Ligger hela intervallet över 0 är skillnaden statistiskt säker.">95 % KI</th>
+                            <th data-kol="justerad" title="Skillnaden när jämförelseyrkets lön räknats om till det kvinnodominerade yrkets åldersfördelning (log(lön) ~ ålder i jämförelseyrket). Den råa skillnaden är det lagen prövar; den här visar hur mycket som kan bero på åldersstruktur. Bara interna par." data-export-label="Justerad för ålder (%)">Justerad för ålder</th>
+                            <th data-kol="paverkan" title="Påverkansindex = |gap kr| × antal medarbetare i det kvinnodominerade yrket. Heuristik för att prioritera de par som rör flest individer och störst lönegap — inte ett lagstadgat mått." data-export-label="Påverkan">Påverkan (kr/mån)</th>
+                            <th data-kol="bevis">Bevis</th>
                         </tr>
                     </thead>
                     <tbody>${parRows}</tbody>
@@ -18962,6 +19082,8 @@ function renderLikvardighet() {
 
     if (typeof enableTableSort === 'function') enableTableSort('likvardighet-table');
     if (typeof addTableExportTools === 'function') addTableExportTools('likvardighet-table', 'likvardighet');
+    // Grundvyn gömmer det sekundära; talen finns också i beviset (förstoringsglaset i kolumnen Bevis).
+    if (typeof flerKolumner === 'function') flerKolumner('likvardighet-table', LV_DOLDA_KOLUMNER, 'likvardighet');
     if (document.getElementById('likvardighet-lagre-krav-table')) {
         if (typeof enableTableSort === 'function') enableTableSort('likvardighet-lagre-krav-table');
         if (typeof addTableExportTools === 'function') addTableExportTools('likvardighet-lagre-krav-table', 'likvardighet_lagre_krav');
@@ -21791,7 +21913,7 @@ function _ansvarsUnderraderFor(yrkesRader, fmt) {
         if (u.liten) celler = `<td class="t-mitt f-dampad" colspan="3">Färre än ${kTroskel()} personer — inga lönemått</td>`;
         else if (u.samladMedian) celler = `<td class="t-mitt" colspan="2">Gruppens median ${fmt.format(u.medTot)}</td><td>–</td>`;
         else celler = `<td>${fmt.format(u.medKv)}</td><td>${fmt.format(u.medMa)}</td><td>${svPct(u.kvot, 1)}</td>`;
-        tr.innerHTML = `<td class="la-underrad-namn">${esc(u.namn)}</td><td>${u.n} (${u.nKv}/${u.nMa})</td><td></td><td></td>${celler}<td></td><td></td>`;
+        tr.innerHTML = `<td class="la-underrad-namn">${esc(u.namn)}</td><td></td><td>${u.n} (${u.nKv}/${u.nMa})</td><td></td><td></td>${celler}<td></td>`;
         tr.classList.add('la-underrad-ansvar');   // hopfälld tills yrkesradens pil fäller ut den; raden är ritad ändå (exporterna läser tabellen)
         tr.hidden = true;
         return tr;
@@ -21818,6 +21940,10 @@ function _skrReferensCell(yrke) {
         : `<td data-sort-value="" title="Yrkeskoden finns inte i ${esc(skrKallaKort())}">–</td>`;
 }
 
+// Kolumnerna som yrkesgruppstabellens grundvy gömmer bakom Fler kolumner (data-kol i src/index.html).
+// Medianerna står kvar: tabellen ryms ändå vid 1280 px, och ansvarsraderna och raderna med gruppens samlade median
+// bär sina tal där. Dominansen och den nationella andelen står i beviset (förstoringsglaset).
+const LA_DOLDA_KOLUMNER = ['dominans', 'nationellt'];
 function generateEUDirectiveMatrix() {
     renderRegressionCard();
     renderBlinderOaxacaCard();
@@ -21888,7 +22014,7 @@ function generateEUDirectiveMatrix() {
         const powerBadge = lowPower && !r.samladMedian
             ? ` <span title="Låg statistisk styrka — gruppens minsta detekterbara effekt ≈ ${svPct(grpMDE.mdePct, 1)}, ${grpMDE.tooSmall ? 'och underlaget per kön är litet (<5)' : 'större än observerad avvikelse'}. Tolka resultatet med försiktighet." class="farg-varning hjalpmarke hjalp-markor">${ikon('statusVarning', 14)}</span>`
             : '';
-        tr.innerHTML = `<td>${esc(r.yrke)}${powerBadge}</td><td data-sort-value="${r.tot}">${r.tot} (${r.nKv}/${r.nMa})</td><td>${r.dominans}</td>${_skrReferensCell(r.yrke)}${cellKv}${cellMa}<td data-sort-value="${gapSort}">${r.samladMedian ? '–' : `<span class="la-kvotcell"${_kvotcellTitel(r)}>${_laOversiktGrafik({ gap: r.kvot, ci: null }, kvotDoman, _SKEVHET_STATUS.find(s => s.galler(Math.abs(100 - r.kvot))), 64)}<span>${r.displayGap}</span></span>`}</td><td>${r.status}</td><td class="ta-mitt ingen-radbrytning"><button class="row-cross-link" data-target="rapport" data-yrke="${esc(r.yrke)}" title="Öppna i Löneöversikten" aria-label="Öppna ${esc(r.yrke)} i Löneöversikten">${ikon('pilUt', 14)}</button>${r.samladMedian ? '' : ` <button class="btn-evidence" data-eu-row="1" type="button" title="Visa beräkningen bakom denna rad" aria-label="Visa bevis för ${esc(r.yrke)}">${ikon('sok')}</button>`}</td>`;
+        tr.innerHTML = `<td>${esc(r.yrke)}${powerBadge}</td><td class="text">${r.status}</td><td data-sort-value="${r.tot}">${r.tot} (${r.nKv}/${r.nMa})</td><td>${r.dominans}</td>${_skrReferensCell(r.yrke)}${cellKv}${cellMa}<td data-sort-value="${gapSort}">${r.samladMedian ? '–' : `<span class="la-kvotcell"${_kvotcellTitel(r)}>${_laOversiktGrafik({ gap: r.kvot, ci: null }, kvotDoman, _SKEVHET_STATUS.find(s => s.galler(Math.abs(100 - r.kvot))), 64)}<span>${r.displayGap}</span></span>`}</td><td class="ta-mitt ingen-radbrytning"><button class="row-cross-link" data-target="rapport" data-yrke="${esc(r.yrke)}" title="Öppna i Löneöversikten" aria-label="Öppna ${esc(r.yrke)} i Löneöversikten">${ikon('pilUt', 14)}</button> <button class="btn-evidence" data-eu-row="1" type="button" title="Visa beräkningen bakom denna rad" aria-label="Visa bevis för ${esc(r.yrke)}">${ikon('sok')}</button></td>`;
         // Cache rad-data så bevis-handler kan plocka upp objektet
         tr._euRow = r;
         tbody.appendChild(tr);
@@ -21922,6 +22048,9 @@ function generateEUDirectiveMatrix() {
         trS.innerHTML = `<td colspan="9" class="text-dampad-xs">Skör betyder att skillnaden kan hamna på 5 % eller under om en eller två personer tas bort ur gruppen. Flaggan ligger kvar — märkningen visar var enskilda löner avgör utfallet.</td>`;
         tbody.appendChild(trS);
     }
+
+    // Grundvyn gömmer det sekundära; det står också i beviset (förstoringsglaset).
+    flerKolumner('matrix-table', LA_DOLDA_KOLUMNER, 'likaYrke');
 
     // Bevis-popup för EU-matris-rader
     tbody.querySelectorAll('.btn-evidence[data-eu-row]').forEach(btn => {
@@ -24563,6 +24692,10 @@ function _fmtCost(kr) {
     return Math.round(kr) + ' kr';
 }
 
+// Kolumnerna som prioriteringslistans grundvy gömmer bakom Fler kolumner (data-kol i src/index.html).
+// Median och Referens göms också: utan dem ryms grundvyn vid 1280 px med menyn utfälld, och Avvikelse % säger hur de
+// förhåller sig. Båda står i beviset (förstoringsglaset), liksom Kv/Mä, avvikelsen i kronor, kostnaden per person och bristyrket.
+const PRIO_DOLDA_KOLUMNER = ['kvma', 'median', 'referens', 'avvikelsekr', 'kostnadpers', 'brist'];
 function renderPrioritering() {
     const ref = _selectedPrioReference();
     const empty   = document.getElementById('prio-empty');
@@ -24743,6 +24876,7 @@ function renderPrioritering() {
             <td class="sticky-col-1" data-sort-value="${i.priorityIndex}"><div class="rund-12 inline-block fs-sm fw-700 min-bredd-36 pad-3-8 ta-mitt ${i.priorityIndex>60?'bricka-kritisk':i.priorityIndex>40?'bricka-varning':'bricka-neutral'}">${svTal(i.priorityIndex, 0)}</div></td>
             <th scope="row" class="sticky-col-2 ram-b-1-kant fs-md fw-normal ta-vanster">${esc(i.yrke)}${quickwinBadge}${bristBadge}${powerBadge}</th>
             <td>${esc(i.bas)}</td>
+            <td class="t-mitt" data-sort-value="${i.priorityIndex}"><span class="rund-12 inline-block fs-xs fw-600 pad-3-10 ${statusInfo.klass}">${statusInfo.icon ? statusInfo.icon + ' ' : ''}${statusInfo.label}</span></td>
             <td class="t-hoger">${i.n}</td>
             <td class="t-mitt">${i.kvN}/${i.maN}</td>
             <td class="t-hoger" data-sort-value="${i.median}">${fmt.format(Math.round(i.median))}</td>
@@ -24752,14 +24886,13 @@ function renderPrioritering() {
             <td class="t-hoger">${gapBar}</td>
             <td class="t-hoger${i.costPerPerson > 0 ? ' f-kritisk' : ''}" data-sort-value="${i.costPerPerson}">${costPerPersonTxt}</td>
             <td class="fw-600 ta-hoger" data-sort-value="${costSort}">${costTxt}</td>
-            <td class="t-mitt" data-sort-value="${i.priorityIndex}"><span class="rund-12 inline-block fs-xs fw-600 pad-3-10 ${statusInfo.klass}">${statusInfo.icon ? statusInfo.icon + ' ' : ''}${statusInfo.label}</span></td>
             <td class="t-mitt">
                 <input type="checkbox" class="brist-toggle" data-aid="${esc(i.aid)}" ${i.isBrist ? 'checked' : ''} aria-label="Markera ${esc(i.yrke)} som bristyrke">
             </td>
-            <td class="ta-mitt ingen-radbrytning">
+            <td class="ta-mitt prio-detalj"><div class="prio-detalj-knappar">
                 <button class="row-cross-link" data-target="rapport" data-yrke="${esc(i.yrke)}" data-bas="${esc(i.bas)}" title="Öppna i Löneöversikten" aria-label="Öppna ${esc(i.yrke)} i Löneöversikten">${ikon('pilUt', 14)}</button>${suggestionBtn}
                 <button class="btn-evidence" data-prio-row="1" type="button" title="Visa beräkningen bakom prioritetsindex" aria-label="Visa bevis för ${esc(i.yrke)}">${ikon('sok')}</button>
-                <button class="btn-evidence" data-open-dossier="${esc(i.aid)}|${esc(i.bas)}" type="button" title="Öppna gruppdossiern — allt om denna grupp på en sida" aria-label="Öppna gruppdossier för ${esc(i.yrke)}">${ikon('dokument')}</button>
+                <button class="btn-evidence" data-open-dossier="${esc(i.aid)}|${esc(i.bas)}" type="button" title="Öppna gruppdossiern — allt om denna grupp på en sida" aria-label="Öppna gruppdossier för ${esc(i.yrke)}">${ikon('dokument')}</button></div>
             </td>
         `;
         // Cache item-referensen på TR så suggestion-handler kan plocka upp den
@@ -24767,6 +24900,8 @@ function renderPrioritering() {
         tbody.appendChild(tr);
     });
     tillampaDataStil(tbody);
+    // Grundvyn gömmer det sekundära; talen finns också i beviset (förstoringsglaset).
+    flerKolumner('prio-table', PRIO_DOLDA_KOLUMNER, 'prio');
 
     // Bevis-popup för prio-rader
     tbody.querySelectorAll('.btn-evidence[data-prio-row]').forEach(btn => {
@@ -24805,6 +24940,7 @@ function renderPrioritering() {
                 newTr.innerHTML = `<td colspan="${colCount}"><div class="motivation-suggestions"><strong>${ikon('lampa')} Hypoteser att granska för ${esc(item.yrke)} / BAS ${esc(item.bas)}:</strong><ul>${items}</ul><p class="text-dampad-xs kursiv marg-t-6">Förslagen är regelbaserade frågeställningar — inte färdiga motiveringar. Verifiera mot data och dokumentera i kommentarsfältet ovan.</p></div></td>`;
             }
             /** @type {HTMLElement} */ (tr.parentNode).insertBefore(newTr, tr.nextSibling);
+            tillampaFlerKolumner('prio-table');   // radens colspan följer kolumnerna som syns
             btn.setAttribute('aria-expanded', 'true');
             btn.textContent = 'Stäng';
         });

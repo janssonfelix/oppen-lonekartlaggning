@@ -87,7 +87,7 @@ function _exportVisaAllaRader(klon) {
         tr.hidden = false;
         tr.classList.remove('collapsed');
     });
-    return klon;
+    return _flerKolumnerAlla(klon);   // kolumnerna som växeln Fler kolumner gömmer på skärmen följer med
 }
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
 function _cloneAndCleanTableForExport(...a) { return medExportLage(() => __cloneAndCleanTableForExportExport.apply(null, /** @type {any} */ (a))); }

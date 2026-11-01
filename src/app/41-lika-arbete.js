@@ -232,7 +232,7 @@ function _ansvarsUnderraderFor(yrkesRader, fmt) {
         if (u.liten) celler = `<td class="t-mitt f-dampad" colspan="3">Färre än ${kTroskel()} personer — inga lönemått</td>`;
         else if (u.samladMedian) celler = `<td class="t-mitt" colspan="2">Gruppens median ${fmt.format(u.medTot)}</td><td>–</td>`;
         else celler = `<td>${fmt.format(u.medKv)}</td><td>${fmt.format(u.medMa)}</td><td>${svPct(u.kvot, 1)}</td>`;
-        tr.innerHTML = `<td class="la-underrad-namn">${esc(u.namn)}</td><td>${u.n} (${u.nKv}/${u.nMa})</td><td></td><td></td>${celler}<td></td><td></td>`;
+        tr.innerHTML = `<td class="la-underrad-namn">${esc(u.namn)}</td><td></td><td>${u.n} (${u.nKv}/${u.nMa})</td><td></td><td></td>${celler}<td></td>`;
         tr.classList.add('la-underrad-ansvar');   // hopfälld tills yrkesradens pil fäller ut den; raden är ritad ändå (exporterna läser tabellen)
         tr.hidden = true;
         return tr;
@@ -259,6 +259,10 @@ function _skrReferensCell(yrke) {
         : `<td data-sort-value="" title="Yrkeskoden finns inte i ${esc(skrKallaKort())}">–</td>`;
 }
 
+// Kolumnerna som yrkesgruppstabellens grundvy gömmer bakom Fler kolumner (data-kol i src/index.html).
+// Medianerna står kvar: tabellen ryms ändå vid 1280 px, och ansvarsraderna och raderna med gruppens samlade median
+// bär sina tal där. Dominansen och den nationella andelen står i beviset (förstoringsglaset).
+const LA_DOLDA_KOLUMNER = ['dominans', 'nationellt'];
 function generateEUDirectiveMatrix() {
     renderRegressionCard();
     renderBlinderOaxacaCard();
@@ -329,7 +333,7 @@ function generateEUDirectiveMatrix() {
         const powerBadge = lowPower && !r.samladMedian
             ? ` <span title="Låg statistisk styrka — gruppens minsta detekterbara effekt ≈ ${svPct(grpMDE.mdePct, 1)}, ${grpMDE.tooSmall ? 'och underlaget per kön är litet (<5)' : 'större än observerad avvikelse'}. Tolka resultatet med försiktighet." class="farg-varning hjalpmarke hjalp-markor">${ikon('statusVarning', 14)}</span>`
             : '';
-        tr.innerHTML = `<td>${esc(r.yrke)}${powerBadge}</td><td data-sort-value="${r.tot}">${r.tot} (${r.nKv}/${r.nMa})</td><td>${r.dominans}</td>${_skrReferensCell(r.yrke)}${cellKv}${cellMa}<td data-sort-value="${gapSort}">${r.samladMedian ? '–' : `<span class="la-kvotcell"${_kvotcellTitel(r)}>${_laOversiktGrafik({ gap: r.kvot, ci: null }, kvotDoman, _SKEVHET_STATUS.find(s => s.galler(Math.abs(100 - r.kvot))), 64)}<span>${r.displayGap}</span></span>`}</td><td>${r.status}</td><td class="ta-mitt ingen-radbrytning"><button class="row-cross-link" data-target="rapport" data-yrke="${esc(r.yrke)}" title="Öppna i Löneöversikten" aria-label="Öppna ${esc(r.yrke)} i Löneöversikten">${ikon('pilUt', 14)}</button>${r.samladMedian ? '' : ` <button class="btn-evidence" data-eu-row="1" type="button" title="Visa beräkningen bakom denna rad" aria-label="Visa bevis för ${esc(r.yrke)}">${ikon('sok')}</button>`}</td>`;
+        tr.innerHTML = `<td>${esc(r.yrke)}${powerBadge}</td><td class="text">${r.status}</td><td data-sort-value="${r.tot}">${r.tot} (${r.nKv}/${r.nMa})</td><td>${r.dominans}</td>${_skrReferensCell(r.yrke)}${cellKv}${cellMa}<td data-sort-value="${gapSort}">${r.samladMedian ? '–' : `<span class="la-kvotcell"${_kvotcellTitel(r)}>${_laOversiktGrafik({ gap: r.kvot, ci: null }, kvotDoman, _SKEVHET_STATUS.find(s => s.galler(Math.abs(100 - r.kvot))), 64)}<span>${r.displayGap}</span></span>`}</td><td class="ta-mitt ingen-radbrytning"><button class="row-cross-link" data-target="rapport" data-yrke="${esc(r.yrke)}" title="Öppna i Löneöversikten" aria-label="Öppna ${esc(r.yrke)} i Löneöversikten">${ikon('pilUt', 14)}</button> <button class="btn-evidence" data-eu-row="1" type="button" title="Visa beräkningen bakom denna rad" aria-label="Visa bevis för ${esc(r.yrke)}">${ikon('sok')}</button></td>`;
         // Cache rad-data så bevis-handler kan plocka upp objektet
         tr._euRow = r;
         tbody.appendChild(tr);
@@ -363,6 +367,9 @@ function generateEUDirectiveMatrix() {
         trS.innerHTML = `<td colspan="9" class="text-dampad-xs">Skör betyder att skillnaden kan hamna på 5 % eller under om en eller två personer tas bort ur gruppen. Flaggan ligger kvar — märkningen visar var enskilda löner avgör utfallet.</td>`;
         tbody.appendChild(trS);
     }
+
+    // Grundvyn gömmer det sekundära; det står också i beviset (förstoringsglaset).
+    flerKolumner('matrix-table', LA_DOLDA_KOLUMNER, 'likaYrke');
 
     // Bevis-popup för EU-matris-rader
     tbody.querySelectorAll('.btn-evidence[data-eu-row]').forEach(btn => {

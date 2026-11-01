@@ -120,6 +120,100 @@ function enableTableSort(tableId) {
     });
 }
 
+// ---- "Fler kolumner": sekundära kolumner bakom en växel ----
+// En bred tabell visar i grundvyn bara det som behövs för att läsa raden; knappen "Fler kolumner" i tabellens
+// verktygsrad (bredvid Kopiera och CSV) visar resten. Kolumnerna känns igen på rubrikens data-kol. En gömd kolumn
+// döljs med hidden på varje cell; en cell som spänner över gömda och synliga kolumner får sin colspan minskad, och
+// den hela bredden står kvar i data-hel-colspan. Valet ligger i state.flerKolumner under sessionen (ingenting lagras).
+// Cellerna finns kvar i raden, så sorteringen (cellens index) och exporterna (som läser hela tabellen och tar
+// tillbaka hidden och colspan i sin kopia, se _exportVisaAllaRader) påverkas inte.
+/** @type {{[tableId: string]: {dolda: string[], nyckel: string}}} */
+const _flerKolumnerTabeller = {};
+/** Cellens bredd i tabellens kolumner, också när växeln har minskat den. */
+function _cellSpann(cell) {
+    return Math.max(1, parseInt(cell.getAttribute('data-hel-colspan') || cell.getAttribute('colspan') || '', 10) || 1);
+}
+/**
+ * Kopplar växeln till en tabell och tillämpar vyn. Anropas efter addTableExportTools (knappen läggs i dess verktygsrad)
+ * och efter varje omritning av tabellen; att anropa den igen är ofarligt.
+ * @param {string} tableId
+ * @param {string[]} dolda  data-kol för kolumnerna som grundvyn gömmer
+ * @param {string} nyckel   nyckeln i state.flerKolumner
+ */
+function flerKolumner(tableId, dolda, nyckel) {
+    const table = document.getElementById(tableId);
+    if (!table) return;
+    _flerKolumnerTabeller[tableId] = { dolda, nyckel };
+    const bar = /** @type {any} */ (table)._verktygsrad;
+    if (bar && !bar.querySelector('[data-fler-kolumner]')) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'btn-table-tool btn-fler-kolumner';
+        btn.setAttribute('data-fler-kolumner', tableId);
+        btn.setAttribute('aria-controls', tableId);
+        btn.title = 'Visa eller göm tabellens övriga kolumner. Kopiera och CSV tar alltid med alla.';
+        btn.textContent = 'Fler kolumner';
+        bar.insertBefore(btn, bar.firstChild);
+    }
+    tillampaFlerKolumner(tableId);
+}
+/** Gömmer eller visar kolumnerna efter state.flerKolumner; körs efter varje omritning och när en rad läggs till. */
+function tillampaFlerKolumner(tableId) {
+    const table = document.getElementById(tableId);
+    const cfg = _flerKolumnerTabeller[tableId];
+    if (!table || !cfg) return;
+    const full = !!(state.flerKolumner && state.flerKolumner[cfg.nyckel]);
+    const gomda = new Set();
+    const rubrikrad = table.querySelector('thead tr');
+    if (rubrikrad && !full) {
+        let kol = 0;
+        [...rubrikrad.children].forEach(th => {
+            const span = _cellSpann(th);
+            if (cfg.dolda.includes(th.getAttribute('data-kol') || '')) for (let i = 0; i < span; i++) gomda.add(kol + i);
+            kol += span;
+        });
+    }
+    table.querySelectorAll('tr').forEach(tr => {
+        let kol = 0;
+        [...tr.children].forEach(cell => {
+            const span = _cellSpann(cell);
+            let traffar = 0;
+            for (let i = kol; i < kol + span; i++) if (gomda.has(i)) traffar++;
+            kol += span;
+            const helt = traffar >= span;
+            if (helt) { /** @type {HTMLElement} */ (cell).hidden = true; cell.setAttribute('data-fler-dold', ''); }
+            else if (cell.hasAttribute('data-fler-dold')) { /** @type {HTMLElement} */ (cell).hidden = false; cell.removeAttribute('data-fler-dold'); }
+            if (span > 1 && traffar > 0 && !helt) {
+                cell.setAttribute('data-hel-colspan', String(span));
+                cell.setAttribute('colspan', String(span - traffar));
+            } else if (cell.hasAttribute('data-hel-colspan')) {
+                cell.setAttribute('colspan', String(span));
+                cell.removeAttribute('data-hel-colspan');
+            }
+        });
+    });
+    const btn = document.querySelector(`[data-fler-kolumner="${tableId}"]`);
+    if (btn) btn.setAttribute('aria-pressed', String(full));
+}
+/** Tar tillbaka det växeln har gömt, i en kopia av tabellen som ska lämna skärmen (export, utskrift). */
+function _flerKolumnerAlla(rot) {
+    rot.querySelectorAll('[data-fler-dold]').forEach(c => { c.hidden = false; c.removeAttribute('data-fler-dold'); });
+    rot.querySelectorAll('[data-hel-colspan]').forEach(c => { c.setAttribute('colspan', c.getAttribute('data-hel-colspan')); c.removeAttribute('data-hel-colspan'); });
+    return rot;
+}
+document.addEventListener('click', e => {
+    const btn = /** @type {HTMLElement} */ (e.target).closest('[data-fler-kolumner]');
+    if (!btn) return;
+    const tableId = btn.getAttribute('data-fler-kolumner') || '';
+    const cfg = _flerKolumnerTabeller[tableId];
+    if (!cfg) return;
+    if (!state.flerKolumner) state.flerKolumner = {};
+    state.flerKolumner[cfg.nyckel] = !state.flerKolumner[cfg.nyckel];
+    tillampaFlerKolumner(tableId);
+    if (typeof announceToScreenReader === 'function')
+        announceToScreenReader(state.flerKolumner[cfg.nyckel] ? 'Alla kolumner visas.' : 'Tabellen visar färre kolumner.');
+});
+
 // ---- Collapsible BAS-grupper ----
 function setupCollapsibleGroups(tableId) {
     const tbody = document.querySelector(`#${tableId} tbody`);

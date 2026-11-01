@@ -1043,15 +1043,15 @@
                             <table id="matrix-table" class="data-table" aria-label="EU-lönekartläggning: lika arbete-jämförelse mellan kvinnor och män per yrkesgrupp">
                                 <thead>
                                     <tr>
-                                        <th data-export-label="Yrkesgrupp (AID + benämning)">Yrkesgrupp</th>
-                                        <th data-export-label="Antal personer (kvinnor/män)">Antal (Kv/Mä)</th>
-                                        <th data-export-label="Köns-dominans (Kvinno-/Mans-/Blandad)">Dominans</th>
-                                        <th data-export-label="Andel kvinnor i yrket nationellt (SKR:s personalstatistik)" title="Andel kvinnor i samma yrke (AID-kod) nationellt — i kommuner, regioner eller båda enligt valet under Inställningar — ur SKR:s personalstatistik (Sveriges Kommuner och Regioner; period i Om verktyget). Ett referensvärde att jämföra er egen könsfördelning mot.">Kvinnor nationellt</th>
-                                        <th data-export-label="Median Kvinnor (kr/mån)">Median Kvinnor</th>
-                                        <th data-export-label="Median Män (kr/mån)">Median Män</th>
-                                        <th data-export-label="Lönegap kvinnor/män (kvinnors median i % av männens)">Kvinnors median i % av mäns</th>
-                                        <th data-export-label="Status (Lika lön / Avvikelse / Utred)">Status</th>
-                                        <th class="t-mitt" data-no-sort data-export-skip>Detalj</th>
+                                        <th data-kol="yrke" data-export-label="Yrkesgrupp (AID + benämning)">Yrkesgrupp</th>
+                                        <th data-kol="status" class="text" data-export-label="Status (Lika lön / Avvikelse / Utred)">Status</th>
+                                        <th data-kol="antal" data-export-label="Antal personer (kvinnor/män)">Antal (Kv/Mä)</th>
+                                        <th data-kol="dominans" data-export-label="Köns-dominans (Kvinno-/Mans-/Blandad)">Dominans</th>
+                                        <th data-kol="nationellt" data-export-label="Andel kvinnor i yrket nationellt (SKR:s personalstatistik)" title="Andel kvinnor i samma yrke (AID-kod) nationellt — i kommuner, regioner eller båda enligt valet under Inställningar — ur SKR:s personalstatistik (Sveriges Kommuner och Regioner; period i Om verktyget). Ett referensvärde att jämföra er egen könsfördelning mot.">Kvinnor nationellt</th>
+                                        <th data-kol="mediankv" data-export-label="Median Kvinnor (kr/mån)">Median Kvinnor</th>
+                                        <th data-kol="medianma" data-export-label="Median Män (kr/mån)">Median Män</th>
+                                        <th data-kol="kvot" data-export-label="Lönegap kvinnor/män (kvinnors median i % av männens)">Kvinnors median i % av mäns</th>
+                                        <th data-kol="detalj" class="t-mitt" data-no-sort data-export-skip>Detalj</th>
                                     </tr>
                                 </thead>
                                 <tbody></tbody>
@@ -1358,31 +1358,31 @@
                                     <table id="prio-table" class="data-table" aria-label="Prioriteringsanalys: yrkesgrupper rangordnade efter prioriteringsindex">
                                         <thead>
                                             <tr>
-                                                <th class="sticky-col-1" scope="col" data-export-label="Prioriteringsindex (0-100, högt = hantera först)">Prio
+                                                <th data-kol="prio" class="sticky-col-1" scope="col" data-export-label="Prioriteringsindex (0-100, högt = hantera först)">Prio
                                                     <span class="info-tip" data-tooltip="Prioriteringsindex 0-100. Högt = bör hanteras först."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
                                                 </th>
-                                                <th class="sticky-col-2" scope="col" data-export-label="Yrkesgrupp (AID + benämning)">Yrkesgrupp</th>
-                                                <th scope="col" data-export-label="BAS-intervall">BAS</th>
-                                                <th class="t-hoger" scope="col" data-export-label="Antal personer i gruppen">Antal</th>
-                                                <th class="t-mitt" scope="col" data-export-label="Antal kvinnor/män">Kv/Mä</th>
-                                                <th class="t-hoger" scope="col" data-export-label="Median organisationen (kr/mån)">Median</th>
-                                                <th class="t-hoger" scope="col" data-export-label="Referens-median (kr/mån)">Referens</th>
-                                                <th class="t-hoger" scope="col" data-export-label="Avvikelse mot referens (%)">Avvikelse %</th>
-                                                <th class="t-hoger" scope="col" data-export-label="Avvikelse per person (kr/mån)">Avvikelse kr/pers</th>
-                                                <th class="t-hoger" scope="col" data-export-label="Lönegap kvinnor/män (%), negativt tal = kvinnor lägre">Lönegap kön
+                                                <th data-kol="yrke" class="sticky-col-2" scope="col" data-export-label="Yrkesgrupp (AID + benämning)">Yrkesgrupp</th>
+                                                <th data-kol="bas" scope="col" data-export-label="BAS-intervall">BAS</th>
+                                                <th data-kol="status" class="t-mitt" scope="col" data-export-label="Prioriteringsstatus (Börja här / Följ upp / Balanserat / Över referens)">Status</th>
+                                                <th data-kol="antal" class="t-hoger" scope="col" data-export-label="Antal personer i gruppen">Antal</th>
+                                                <th data-kol="kvma" class="t-mitt" scope="col" data-export-label="Antal kvinnor/män">Kv/Mä</th>
+                                                <th data-kol="median" class="t-hoger" scope="col" data-export-label="Median organisationen (kr/mån)">Median</th>
+                                                <th data-kol="referens" class="t-hoger" scope="col" data-export-label="Referens-median (kr/mån)">Referens</th>
+                                                <th data-kol="avvikelse" class="t-hoger" scope="col" data-export-label="Avvikelse mot referens (%)">Avvikelse %</th>
+                                                <th data-kol="avvikelsekr" class="t-hoger" scope="col" data-export-label="Avvikelse per person (kr/mån)">Avvikelse kr/pers</th>
+                                                <th data-kol="lonegap" class="t-hoger" scope="col" data-export-label="Lönegap kvinnor/män (%), negativt tal = kvinnor lägre">Lönegap kön
                                                     <span class="info-tip" data-k-tooltip="Kvinnors median jämfört med männens, i procent. Negativt = kvinnor tjänar mindre. Visas endast om gruppen har minst {k} av varje kön."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
                                                 </th>
-                                                <th class="t-hoger" scope="col" data-export-label="Justeringskostnad per person (kr/mån)">Kostnad/pers (kr/mån)
+                                                <th data-kol="kostnadpers" class="t-hoger" scope="col" data-export-label="Justeringskostnad per person (kr/mån)">Kostnad/pers (kr/mån)
                                                     <span class="info-tip" data-tooltip="Genomsnittlig lönehöjning per person/månad om gruppen lyfts till referensens median. Underlättar val mellan stora/billiga och små/dyra grupper."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
                                                 </th>
-                                                <th class="t-hoger" scope="col" data-export-label="Total åtgärdskostnad (kr för perioden, inkl PO-påslag)">Åtgärdskostnad
+                                                <th data-kol="atgardskostnad" class="t-hoger" scope="col" data-export-label="Total åtgärdskostnad (kr för perioden, inkl PO-påslag)">Åtgärds<wbr>kostnad
                                                     <span class="info-tip" data-tooltip="Total kostnad för att lyfta hela gruppen till referensens medianlön (avvikelse kr/månad × antal månader × (1 + PO-påslag) × antal personer). Period och PO justeras i konfigurationspanelen ovan."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
                                                 </th>
-                                                <th class="t-mitt" scope="col" data-export-label="Prioriteringsstatus (Utred / Bevaka / OK / Granska)">Status</th>
-                                                <th class="t-mitt" scope="col" data-no-sort data-export-label="Bristyrke (Ja/Nej)">Brist
+                                                <th data-kol="brist" class="t-mitt" scope="col" data-no-sort data-export-label="Bristyrke (Ja/Nej)">Brist
                                                     <span class="info-tip" data-tooltip="Markera som bristyrke: yrken ni har svårt att rekrytera till, enligt er egen rekryteringsstatistik eller en nationell bristyrkeslista. Bristyrken får 1,2× bonus i prioriteringsindexet."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
                                                 </th>
-                                                <th class="t-mitt" scope="col" data-no-sort data-export-skip>Detalj
+                                                <th data-kol="detalj" class="t-mitt" scope="col" data-no-sort data-export-skip>Detalj
                                                     <span class="info-tip" data-tooltip="Öppna gruppen i Löneöversikten (Utforska) för fördjupad analys."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
                                                 </th>
                                             </tr>

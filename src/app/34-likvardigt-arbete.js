@@ -144,6 +144,8 @@ function _lagreKravHtml(result) {
         ${innehall}</section>`;
 }
 
+// Kolumnerna som partabellens grundvy gömmer bakom Fler kolumner (data-kol på rubrikerna i renderLikvardighet).
+const LV_DOLDA_KOLUMNER = ['median', 'medianjamf', 'gapkr', 'justerad', 'paverkan'];
 /**
  * Renderar § 3:10-flikens UI.
  *
@@ -409,8 +411,8 @@ function renderLikvardighet() {
             <td class="t-hoger">${fmtKr(p.maMedian)}</td>
             <td class="t-hoger"><strong>${fmtKr(p.gapKr)}</strong></td>
             <td class="t-hoger"><strong>${svPct(p.gapPct, 1)}</strong></td>
-            <td class="t-hoger">${justCell(p)}</td>
             <td class="lv-ki-cell fs-xs ta-hoger">${ciCell(p)}</td>
+            <td class="t-hoger">${justCell(p)}</td>
             <td class="t-hoger">${Math.round(p.allvarsindex).toLocaleString('sv-SE')}</td>
             <td class="t-mitt"><button class="btn-evidence" data-lv-pair="${i}" type="button" title="Visa beräkningen" aria-label="Bevis för par ${i+1}">${ikon('sok')}</button></td>
         </tr>`).join('');
@@ -443,17 +445,17 @@ function renderLikvardighet() {
                 <table id="likvardighet-table" class="data-table">
                     <thead>
                         <tr>
-                            <th>#</th>
-                            <th title="Kvinnodominerat yrke i organisationen (faktisk könsfördelning).">Kvinnodom. yrke (${esc(orgNamn('org.'))})</th>
-                            <th title="Median månadslön i organisationens grupp.">Median ${esc(orgNamn('org.'))}</th>
-                            <th title="Jämförelseyrke: organisationens eget icke-kv-dom yrke (intern) eller jämförelsestatistiken (extern fallback).">Jämförelseyrke</th>
-                            <th title="Median månadslön i jämförelseyrket.">Median jämf.</th>
-                            <th title="Skillnad i kronor (jämförelseyrke − organisation).">Gap (kr)</th>
-                            <th title="Skillnad i procent av organisationens median.">Gap (%)</th>
-                            <th title="Skillnaden när jämförelseyrkets lön räknats om till det kvinnodominerade yrkets åldersfördelning (log(lön) ~ ålder i jämförelseyrket). Den råa skillnaden är det lagen prövar; den här visar hur mycket som kan bero på åldersstruktur. Bara interna par." data-export-label="Justerad för ålder (%)">Justerad för ålder</th>
-                            <th title="95 % bootstrap-konfidensintervall på medianskillnaden. Ligger hela intervallet över 0 är skillnaden statistiskt säker.">95 % KI</th>
-                            <th title="Påverkansindex = |gap kr| × antal medarbetare i det kvinnodominerade yrket. Heuristik för att prioritera de par som rör flest individer och störst lönegap — inte ett lagstadgat mått." data-export-label="Påverkan">Påverkan (kr/mån)</th>
-                            <th>Bevis</th>
+                            <th data-kol="nr">#</th>
+                            <th data-kol="yrke" title="Kvinnodominerat yrke i organisationen (faktisk könsfördelning).">Kvinnodom. yrke (${esc(orgNamn('org.'))})</th>
+                            <th data-kol="median" title="Median månadslön i organisationens grupp.">Median ${esc(orgNamn('org.'))}</th>
+                            <th data-kol="jamfyrke" title="Jämförelseyrke: organisationens eget icke-kv-dom yrke (intern) eller jämförelsestatistiken (extern fallback).">Jämförelseyrke</th>
+                            <th data-kol="medianjamf" title="Median månadslön i jämförelseyrket.">Median jämf.</th>
+                            <th data-kol="gapkr" title="Skillnad i kronor (jämförelseyrke − organisation).">Gap (kr)</th>
+                            <th data-kol="gappct" title="Skillnad i procent av organisationens median.">Gap (%)</th>
+                            <th data-kol="ki" title="95 % bootstrap-konfidensintervall på medianskillnaden. Ligger hela intervallet över 0 är skillnaden statistiskt säker.">95 % KI</th>
+                            <th data-kol="justerad" title="Skillnaden när jämförelseyrkets lön räknats om till det kvinnodominerade yrkets åldersfördelning (log(lön) ~ ålder i jämförelseyrket). Den råa skillnaden är det lagen prövar; den här visar hur mycket som kan bero på åldersstruktur. Bara interna par." data-export-label="Justerad för ålder (%)">Justerad för ålder</th>
+                            <th data-kol="paverkan" title="Påverkansindex = |gap kr| × antal medarbetare i det kvinnodominerade yrket. Heuristik för att prioritera de par som rör flest individer och störst lönegap — inte ett lagstadgat mått." data-export-label="Påverkan">Påverkan (kr/mån)</th>
+                            <th data-kol="bevis">Bevis</th>
                         </tr>
                     </thead>
                     <tbody>${parRows}</tbody>
@@ -595,6 +597,8 @@ function renderLikvardighet() {
 
     if (typeof enableTableSort === 'function') enableTableSort('likvardighet-table');
     if (typeof addTableExportTools === 'function') addTableExportTools('likvardighet-table', 'likvardighet');
+    // Grundvyn gömmer det sekundära; talen finns också i beviset (förstoringsglaset i kolumnen Bevis).
+    if (typeof flerKolumner === 'function') flerKolumner('likvardighet-table', LV_DOLDA_KOLUMNER, 'likvardighet');
     if (document.getElementById('likvardighet-lagre-krav-table')) {
         if (typeof enableTableSort === 'function') enableTableSort('likvardighet-lagre-krav-table');
         if (typeof addTableExportTools === 'function') addTableExportTools('likvardighet-lagre-krav-table', 'likvardighet_lagre_krav');

@@ -15,6 +15,12 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ### Gränssnitt
 
+- **Breda tabeller utan rullist.** Prioriteringslistan, yrkesgruppstabellen i Lika arbete och kandidatparen i
+  Likvärdigt arbete visar det viktigaste först: statusen står direkt efter namnet (i Likvärdigt intervallet med
+  *säker skillnad*, efter Gap (%)). Sekundära kolumner ligger bakom knappen *Fler kolumner* bredvid Kopiera och CSV,
+  så att tabellerna ryms vid 1280 px med menyn utfälld. Valet gäller tabellen under sessionen och lagras inte.
+  Kopiera, CSV, Excel och utskriften tar alltid med alla kolumner, och de gömda talen står i beviset
+  (förstoringsglaset) på raden.
 - **En ny flik börjar överst.** Flikbytet rullade inte, så den som stod långt ned i en flik hamnade långt ned i
   nästa. Sidomenyns ikonläge (641–1100 px) döljer etiketterna med genomskinlighet i stället för `visibility: hidden`,
   så att knapparna behåller sina namn för skärmläsare.

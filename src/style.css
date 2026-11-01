@@ -2405,6 +2405,12 @@ summary:focus-visible {
     outline: 2px solid var(--primary, #1d4ed8);
     outline-offset: 2px;
 }
+/* Växeln Fler kolumner: intryckt när alla kolumner visas (aria-pressed bär läget, färgen följer det) */
+.btn-table-tool[aria-pressed="true"] {
+    color: var(--primary, #1d4ed8);
+    border-color: var(--primary, #1d4ed8);
+    background: var(--accent-yta);
+}
 @media print {
     .table-tools { display: none; }
 }
@@ -3009,6 +3015,16 @@ body.lage-kompakt .flik-intro-rad { margin-bottom: 10px; }
 .pag-tabell-wrap { overflow-x: auto; max-width: 100%; }
 /* Yrkesgruppstabellen har nio kolumner: snävare sidmarginaler i cellerna, så att den ryms utan att rulla i sidled. */
 #matrix-table th, #matrix-table td { padding-left: 8px; padding-right: 8px; }
+/* Prioriteringslistan: smalare sidmarginal i cellerna och en tätare sorteringspil, detaljknapparna två och två, och
+   statusmärket och kronorna på en rad, så att grundvyn ryms vid 1280 px med menyn utfälld. */
+#prio-table td { padding-left: 8px; padding-right: 8px; }
+#prio-table th { padding-left: 8px; }
+#prio-table th:not(.sortable) { padding-right: 8px; }
+#prio-table thead th.sortable { padding-right: 14px; }
+/* Smalare sorteringspil: grundvyn (Fler kolumner) ska rymmas vid 1280 px med menyn utfälld. */
+#prio-table thead th.sortable::after { right: 2px; width: 9px; height: 9px; margin-top: -4px; }
+#prio-table td[data-sort-value], #prio-table td .rund-12 { white-space: nowrap; }
+.prio-detalj-knappar { display: grid; grid-template-columns: repeat(2, auto); gap: 4px; justify-content: center; }
 
 /* Att göra: en grupp av punkter har samma ram och pil som övriga hopfällbara rubriker, och prioriteten är ett märke. */
 .ag-grupp { margin-bottom: 10px; border: 1px solid var(--border); border-radius: 6px; }

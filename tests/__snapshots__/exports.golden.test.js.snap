@@ -5,53 +5,53 @@ exports[`golden: Excel-exporterna på fast dataset > "Excel (alla flikar)" match
   "EU-Lonekartlaggning": [
     [
       "Yrkesgrupp (AID + benämning)",
+      "Status (Lika lön / Avvikelse / Utred)",
       "Antal personer (kvinnor/män)",
       "Köns-dominans (Kvinno-/Mans-/Blandad)",
       "Andel kvinnor i yrket nationellt (SKR:s personalstatistik)",
       "Median Kvinnor (kr/mån)",
       "Median Män (kr/mån)",
       "Lönegap kvinnor/män (kvinnors median i % av männens)",
-      "Status (Lika lön / Avvikelse / Utred)",
     ],
     [
       "5301 Undersköterska",
+      "Könsuppdelningen är för liten (ett kön n < 10)",
       "17 (14/3)",
       "Kvinno-dom",
       "–",
       "Gruppens median 28 800 kr",
       null,
       "–",
-      "Könsuppdelningen är för liten (ett kön n < 10)",
     ],
     [
       "4100 Tekniker",
+      "Könsuppdelningen är för liten (ett kön n < 10)",
       "17 (3/14)",
       "Mans-dom",
       "–",
       "Gruppens median 33 500 kr",
       null,
       "–",
-      "Könsuppdelningen är för liten (ett kön n < 10)",
     ],
     [
       "5500 Sjuksköterska",
+      "Könsuppdelningen är för liten (ett kön n < 10)",
       "14 (12/2)",
       "Kvinno-dom",
       "–",
       "Gruppens median 31 950 kr",
       null,
       "–",
-      "Könsuppdelningen är för liten (ett kön n < 10)",
     ],
     [
       "2000 Ingenjör",
+      "Könsuppdelningen är för liten (ett kön n < 10)",
       "14 (2/12)",
       "Mans-dom",
       "–",
       "Gruppens median 36 675 kr",
       null,
       "–",
-      "Könsuppdelningen är för liten (ett kön n < 10)",
     ],
     [
       "4 yrkesgrupper visas med gruppens samlade median i stället för könsuppdelade medianer: 5301 Undersköterska, 4100 Tekniker, 5500 Sjuksköterska, 2000 Ingenjör. Grupperna är stora nog att redovisa, men ett av könen har färre än 10 personer, så en könsjämförelse skulle peka ut enskilda.",
@@ -1641,6 +1641,7 @@ exports[`golden: Excel-exporterna på fast dataset > "Excel (alla flikar)" match
       "Prioriteringsindex (0-100, högt = hantera först)",
       "Yrkesgrupp (AID + benämning)",
       "BAS-intervall",
+      "Prioriteringsstatus (Börja här / Följ upp / Balanserat / Över referens)",
       "Antal personer i gruppen",
       "Antal kvinnor/män",
       "Median organisationen (kr/mån)",
@@ -1650,13 +1651,13 @@ exports[`golden: Excel-exporterna på fast dataset > "Excel (alla flikar)" match
       "Lönegap kvinnor/män (%), negativt tal = kvinnor lägre",
       "Justeringskostnad per person (kr/mån)",
       "Total åtgärdskostnad (kr för perioden, inkl PO-påslag)",
-      "Prioriteringsstatus (Utred / Bevaka / OK / Granska)",
       "Bristyrke (Ja/Nej)",
     ],
     [
       16.8667,
       "5301 Undersköterska",
       "B",
+      "Följ upp",
       17,
       "14/3",
       28800,
@@ -1666,13 +1667,13 @@ exports[`golden: Excel-exporterna på fast dataset > "Excel (alla flikar)" match
       "–",
       1200,
       340639.2,
-      "Följ upp",
       "Nej",
     ],
     [
       16.1114,
       "5500 Sjuksköterska",
       "C",
+      "Följ upp",
       14,
       "12/2",
       31950,
@@ -1682,13 +1683,13 @@ exports[`golden: Excel-exporterna på fast dataset > "Excel (alla flikar)" match
       "–",
       1550,
       362346.6,
-      "Följ upp",
       "Nej",
     ],
     [
       14.8222,
       "4100 Tekniker",
       "B",
+      "Över referens",
       17,
       "3/14",
       33500,
@@ -1698,13 +1699,13 @@ exports[`golden: Excel-exporterna på fast dataset > "Excel (alla flikar)" match
       "–",
       "–",
       "–",
-      "Över referens",
       "Nej",
     ],
     [
       12.098,
       "2000 Ingenjör",
       "C",
+      "Över referens",
       14,
       "2/12",
       36675,
@@ -1714,7 +1715,6 @@ exports[`golden: Excel-exporterna på fast dataset > "Excel (alla flikar)" match
       "–",
       "–",
       "–",
-      "Över referens",
       "Nej",
     ],
   ],
@@ -3934,18 +3934,18 @@ exports[`golden: PDF/print-rapporten (buildPrintReport) på fast dataset > urval
                 <p class="pr-dampad">Underlaget bakom avsnitten, som det står i verktygets flikar. Grupper under tröskeln är utelämnade på samma sätt som där.</p></section><section class="page-break"><h2>Lika arbete – kvinnor och män i samma yrke (EU 2023/970)</h2><p>Yrkesgrupper med &gt; 5% osaklig löneskillnad är anmälningspliktiga.</p><table id="matrix-table" class="data-table" aria-label="EU-lönekartläggning: lika arbete-jämförelse mellan kvinnor och män per yrkesgrupp">
                                 <thead>
                                     <tr>
-                                        <th data-export-label="Yrkesgrupp (AID + benämning)" class="sortable">Yrkesgrupp</th>
-                                        <th data-export-label="Antal personer (kvinnor/män)" class="sortable">Antal (Kv/Mä)</th>
-                                        <th data-export-label="Köns-dominans (Kvinno-/Mans-/Blandad)" class="sortable">Dominans</th>
-                                        <th data-export-label="Andel kvinnor i yrket nationellt (SKR:s personalstatistik)" title="Andel kvinnor i samma yrke (AID-kod) nationellt — i kommuner, regioner eller båda enligt valet under Inställningar — ur SKR:s personalstatistik (Sveriges Kommuner och Regioner; period i Om verktyget). Ett referensvärde att jämföra er egen könsfördelning mot." class="sortable">Kvinnor nationellt</th>
-                                        <th data-export-label="Median Kvinnor (kr/mån)" class="sortable">Median Kvinnor</th>
-                                        <th data-export-label="Median Män (kr/mån)" class="sortable">Median Män</th>
-                                        <th data-export-label="Lönegap kvinnor/män (kvinnors median i % av männens)" class="sortable">Kvinnors median i % av mäns</th>
-                                        <th data-export-label="Status (Lika lön / Avvikelse / Utred)" class="sortable">Status</th>
-                                        <th class="t-mitt" data-no-sort="" data-export-skip="">Detalj</th>
+                                        <th data-kol="yrke" data-export-label="Yrkesgrupp (AID + benämning)" class="sortable">Yrkesgrupp</th>
+                                        <th data-kol="status" class="text sortable" data-export-label="Status (Lika lön / Avvikelse / Utred)">Status</th>
+                                        <th data-kol="antal" data-export-label="Antal personer (kvinnor/män)" class="sortable">Antal (Kv/Mä)</th>
+                                        <th data-kol="dominans" data-export-label="Köns-dominans (Kvinno-/Mans-/Blandad)" class="sortable">Dominans</th>
+                                        <th data-kol="nationellt" data-export-label="Andel kvinnor i yrket nationellt (SKR:s personalstatistik)" title="Andel kvinnor i samma yrke (AID-kod) nationellt — i kommuner, regioner eller båda enligt valet under Inställningar — ur SKR:s personalstatistik (Sveriges Kommuner och Regioner; period i Om verktyget). Ett referensvärde att jämföra er egen könsfördelning mot." class="sortable">Kvinnor nationellt</th>
+                                        <th data-kol="mediankv" data-export-label="Median Kvinnor (kr/mån)" class="sortable">Median Kvinnor</th>
+                                        <th data-kol="medianma" data-export-label="Median Män (kr/mån)" class="sortable">Median Män</th>
+                                        <th data-kol="kvot" data-export-label="Lönegap kvinnor/män (kvinnors median i % av männens)" class="sortable">Kvinnors median i % av mäns</th>
+                                        <th data-kol="detalj" class="t-mitt" data-no-sort="" data-export-skip="">Detalj</th>
                                     </tr>
                                 </thead>
-                                <tbody><tr><td>5301 Undersköterska</td><td data-sort-value="17">17 (14/3)</td><td>Kvinno-dom</td><td data-sort-value="" title="Yrkeskoden finns inte i SKR:s personalstatistik, november 2025">–</td><td colspan="2" class="t-mitt" data-sort-value="28800">Gruppens median 28&nbsp;800&nbsp;kr</td><td data-sort-value="0">–</td><td><span class="f-dampad la-status la-status-liten" title="Könsuppdelningen är för liten: ett kön har färre än 10 personer"><span class="bara-export">Könsuppdelningen är för liten (</span>ett kön n &lt; 10<span class="bara-export">)</span></span></td><td class="ta-mitt ingen-radbrytning"><button class="row-cross-link" data-target="rapport" data-yrke="5301 Undersköterska" title="Öppna i Löneöversikten" aria-label="Öppna 5301 Undersköterska i Löneöversikten"><svg class="ikon ikon-pilUt" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M7 17 17 7"></path><path d="M9 7h8v8"></path></svg></button></td></tr><tr><td>4100 Tekniker</td><td data-sort-value="17">17 (3/14)</td><td>Mans-dom</td><td data-sort-value="" title="Yrkeskoden finns inte i SKR:s personalstatistik, november 2025">–</td><td colspan="2" class="t-mitt" data-sort-value="33500">Gruppens median 33&nbsp;500&nbsp;kr</td><td data-sort-value="0">–</td><td><span class="f-dampad la-status la-status-liten" title="Könsuppdelningen är för liten: ett kön har färre än 10 personer"><span class="bara-export">Könsuppdelningen är för liten (</span>ett kön n &lt; 10<span class="bara-export">)</span></span></td><td class="ta-mitt ingen-radbrytning"><button class="row-cross-link" data-target="rapport" data-yrke="4100 Tekniker" title="Öppna i Löneöversikten" aria-label="Öppna 4100 Tekniker i Löneöversikten"><svg class="ikon ikon-pilUt" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M7 17 17 7"></path><path d="M9 7h8v8"></path></svg></button></td></tr><tr><td>5500 Sjuksköterska</td><td data-sort-value="14">14 (12/2)</td><td>Kvinno-dom</td><td data-sort-value="" title="Yrkeskoden finns inte i SKR:s personalstatistik, november 2025">–</td><td colspan="2" class="t-mitt" data-sort-value="31950">Gruppens median 31&nbsp;950&nbsp;kr</td><td data-sort-value="0">–</td><td><span class="f-dampad la-status la-status-liten" title="Könsuppdelningen är för liten: ett kön har färre än 10 personer"><span class="bara-export">Könsuppdelningen är för liten (</span>ett kön n &lt; 10<span class="bara-export">)</span></span></td><td class="ta-mitt ingen-radbrytning"><button class="row-cross-link" data-target="rapport" data-yrke="5500 Sjuksköterska" title="Öppna i Löneöversikten" aria-label="Öppna 5500 Sjuksköterska i Löneöversikten"><svg class="ikon ikon-pilUt" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M7 17 17 7"></path><path d="M9 7h8v8"></path></svg></button></td></tr><tr><td>2000 Ingenjör</td><td data-sort-value="14">14 (2/12)</td><td>Mans-dom</td><td data-sort-value="" title="Yrkeskoden finns inte i SKR:s personalstatistik, november 2025">–</td><td colspan="2" class="t-mitt" data-sort-value="36675">Gruppens median 36&nbsp;675&nbsp;kr</td><td data-sort-value="0">–</td><td><span class="f-dampad la-status la-status-liten" title="Könsuppdelningen är för liten: ett kön har färre än 10 personer"><span class="bara-export">Könsuppdelningen är för liten (</span>ett kön n &lt; 10<span class="bara-export">)</span></span></td><td class="ta-mitt ingen-radbrytning"><button class="row-cross-link" data-target="rapport" data-yrke="2000 Ingenjör" title="Öppna i Löneöversikten" aria-label="Öppna 2000 Ingenjör i Löneöversikten"><svg class="ikon ikon-pilUt" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M7 17 17 7"></path><path d="M9 7h8v8"></path></svg></button></td></tr><tr><td colspan="9"><p class="k-mask-note">4 yrkesgrupper visas med gruppens samlade median i stället för könsuppdelade medianer: 5301 Undersköterska, 4100 Tekniker, 5500 Sjuksköterska, 2000 Ingenjör. Grupperna är stora nog att redovisa, men ett av könen har färre än 10 personer, så en könsjämförelse skulle peka ut enskilda.</p></td></tr></tbody>
+                                <tbody><tr><td>5301 Undersköterska</td><td class="text"><span class="f-dampad la-status la-status-liten" title="Könsuppdelningen är för liten: ett kön har färre än 10 personer"><span class="bara-export">Könsuppdelningen är för liten (</span>ett kön n &lt; 10<span class="bara-export">)</span></span></td><td data-sort-value="17">17 (14/3)</td><td>Kvinno-dom</td><td data-sort-value="" title="Yrkeskoden finns inte i SKR:s personalstatistik, november 2025">–</td><td colspan="2" class="t-mitt" data-sort-value="28800">Gruppens median 28&nbsp;800&nbsp;kr</td><td data-sort-value="0">–</td><td class="ta-mitt ingen-radbrytning"><button class="row-cross-link" data-target="rapport" data-yrke="5301 Undersköterska" title="Öppna i Löneöversikten" aria-label="Öppna 5301 Undersköterska i Löneöversikten"><svg class="ikon ikon-pilUt" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M7 17 17 7"></path><path d="M9 7h8v8"></path></svg></button> <button class="btn-evidence" data-eu-row="1" type="button" title="Visa beräkningen bakom denna rad" aria-label="Visa bevis för 5301 Undersköterska"><svg class="ikon ikon-sok" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg></button></td></tr><tr><td>4100 Tekniker</td><td class="text"><span class="f-dampad la-status la-status-liten" title="Könsuppdelningen är för liten: ett kön har färre än 10 personer"><span class="bara-export">Könsuppdelningen är för liten (</span>ett kön n &lt; 10<span class="bara-export">)</span></span></td><td data-sort-value="17">17 (3/14)</td><td>Mans-dom</td><td data-sort-value="" title="Yrkeskoden finns inte i SKR:s personalstatistik, november 2025">–</td><td colspan="2" class="t-mitt" data-sort-value="33500">Gruppens median 33&nbsp;500&nbsp;kr</td><td data-sort-value="0">–</td><td class="ta-mitt ingen-radbrytning"><button class="row-cross-link" data-target="rapport" data-yrke="4100 Tekniker" title="Öppna i Löneöversikten" aria-label="Öppna 4100 Tekniker i Löneöversikten"><svg class="ikon ikon-pilUt" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M7 17 17 7"></path><path d="M9 7h8v8"></path></svg></button> <button class="btn-evidence" data-eu-row="1" type="button" title="Visa beräkningen bakom denna rad" aria-label="Visa bevis för 4100 Tekniker"><svg class="ikon ikon-sok" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg></button></td></tr><tr><td>5500 Sjuksköterska</td><td class="text"><span class="f-dampad la-status la-status-liten" title="Könsuppdelningen är för liten: ett kön har färre än 10 personer"><span class="bara-export">Könsuppdelningen är för liten (</span>ett kön n &lt; 10<span class="bara-export">)</span></span></td><td data-sort-value="14">14 (12/2)</td><td>Kvinno-dom</td><td data-sort-value="" title="Yrkeskoden finns inte i SKR:s personalstatistik, november 2025">–</td><td colspan="2" class="t-mitt" data-sort-value="31950">Gruppens median 31&nbsp;950&nbsp;kr</td><td data-sort-value="0">–</td><td class="ta-mitt ingen-radbrytning"><button class="row-cross-link" data-target="rapport" data-yrke="5500 Sjuksköterska" title="Öppna i Löneöversikten" aria-label="Öppna 5500 Sjuksköterska i Löneöversikten"><svg class="ikon ikon-pilUt" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M7 17 17 7"></path><path d="M9 7h8v8"></path></svg></button> <button class="btn-evidence" data-eu-row="1" type="button" title="Visa beräkningen bakom denna rad" aria-label="Visa bevis för 5500 Sjuksköterska"><svg class="ikon ikon-sok" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg></button></td></tr><tr><td>2000 Ingenjör</td><td class="text"><span class="f-dampad la-status la-status-liten" title="Könsuppdelningen är för liten: ett kön har färre än 10 personer"><span class="bara-export">Könsuppdelningen är för liten (</span>ett kön n &lt; 10<span class="bara-export">)</span></span></td><td data-sort-value="14">14 (2/12)</td><td>Mans-dom</td><td data-sort-value="" title="Yrkeskoden finns inte i SKR:s personalstatistik, november 2025">–</td><td colspan="2" class="t-mitt" data-sort-value="36675">Gruppens median 36&nbsp;675&nbsp;kr</td><td data-sort-value="0">–</td><td class="ta-mitt ingen-radbrytning"><button class="row-cross-link" data-target="rapport" data-yrke="2000 Ingenjör" title="Öppna i Löneöversikten" aria-label="Öppna 2000 Ingenjör i Löneöversikten"><svg class="ikon ikon-pilUt" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M7 17 17 7"></path><path d="M9 7h8v8"></path></svg></button> <button class="btn-evidence" data-eu-row="1" type="button" title="Visa beräkningen bakom denna rad" aria-label="Visa bevis för 2000 Ingenjör"><svg class="ikon ikon-sok" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg></button></td></tr><tr><td colspan="9"><p class="k-mask-note">4 yrkesgrupper visas med gruppens samlade median i stället för könsuppdelade medianer: 5301 Undersköterska, 4100 Tekniker, 5500 Sjuksköterska, 2000 Ingenjör. Grupperna är stora nog att redovisa, men ett av könen har färre än 10 personer, så en könsjämförelse skulle peka ut enskilda.</p></td></tr></tbody>
                             </table></section><section class="page-break"><h2>Lönegap per BAS-intervall (&gt; 5%)</h2><table id="paygap-table" class="data-table">
                                 <thead>
                                     <tr>
