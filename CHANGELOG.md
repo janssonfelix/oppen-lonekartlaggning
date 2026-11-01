@@ -15,6 +15,13 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ### Gränssnitt
 
+- **Om verktyget beskriver dagens verktyg.** Översikten säger vad verktyget gör och vad ni gör själva, med Word-utkastet,
+  Regler & praxis och organisationspaketet på plats, och snabbstarten följer kartläggningens steg. Engelska rubriker i
+  dataskydds- och metodavsnitten är svenska.
+- **Inledningar på vardagsspråk.** Prioriteringens inledning och listtext säger vad prioriteten väger ihop utan
+  "sammansatt prioriteringsindex", "yrkesgrupp × BAS-intervall" och "1,2× bonus"; filtret heter *Visa bara små
+  höjningar med stor effekt*; kostnaden anges med PO-påslag utskrivet; *Så räknas det* beskriver statusarna med
+  dagens ord. Jämförelse har fått en inledning som övriga flikar, och Struktur och Utforska har sin fråga i fetstil.
 - **Breda tabeller utan rullist.** Prioriteringslistan, yrkesgruppstabellen i Lika arbete och kandidatparen i
   Likvärdigt arbete visar det viktigaste först: statusen står direkt efter namnet (i Likvärdigt intervallet med
   *säker skillnad*, efter Gap (%)). Sekundära kolumner ligger bakom knappen *Fler kolumner* bredvid Kopiera och CSV,

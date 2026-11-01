@@ -9,72 +9,72 @@ const INFO_SECTIONS = {
     overview: () => `
         <h3>Vad är detta verktyg?</h3>
         <p>
-            Öppen lönekartläggning är ett <strong>klientsidigt analysverktyg</strong> som stödjer den årliga lönekartläggningen enligt <strong>diskrimineringslagen</strong> (3 kap., aktiva åtgärder om lönefrågor). Det hjälper HR identifiera vilka grupper som ska arbetas vidare med, men dokumentationen av sakliga skäl och produktion av lönekartläggningsrapporten görs separat i Word eller motsvarande dokumentmall hos arbetsgivaren.
+            Öppen lönekartläggning är ett fritt verktyg för den årliga <strong>lönekartläggningen enligt diskrimineringslagen</strong> (3 kap., aktiva åtgärder om lönefrågor). Det tar emot en lönefil, räknar fram löneskillnaderna mellan kvinnor och män för lika och likvärdigt arbete, visar vad som bör prioriteras och vad det kostar, och skriver ett utkast till dokumentationen. Bedömningen av sakliga skäl och den slutliga dokumentationen gör arbetsgivaren i samverkan med facklig part.
         </p>
         <p>
-            Verktyget stödjer också utvalda delar av <strong>EU:s lönetransparensdirektiv 2023/970</strong> — direktivet skulle vara infört senast den 7 juni 2026, men Sverige har inte infört det, och vissa delar kan ha direkt verkan mot kommuner och regioner (se SKR). Lönerapporteringen gäller stegvis arbetsgivare med 100 anställda eller fler. Verktyget stöder särskilt gemensam lönebedömning (Joint Pay Assessment). Anställds informationsrätt enligt Art. 7 hanteras i en separat process hos arbetsgivaren och ingår inte i verktyget. Den statliga rapporteringen enligt Art. 9.1+9.5 omfattas inte av detta verktyg och hanteras separat när Sverige transponerar direktivet.
+            Verktyget är byggt för arbetsgivare som kodar sina befattningar med <strong>AID</strong> och <strong>BAS-intervall</strong> och kan jämföra sig med SKR:s personalstatistik, i praktiken kommuner och regioner. Varje organisation läser in sitt eget ställningstagande, sin statistik och sina benämningar i ett organisationspaket, så att ingenting om en viss organisation är inbyggt.
         </p>
         <p>
-            Verktyget är byggt som en single-file HTML-applikation som körs lokalt i webbläsaren. <strong>Ingen data lämnar enheten.</strong> Inga servrar, inga molntjänster, inga nätverksanrop. Detta är en arkitekturell garanti — inte ett löfte — eftersom Content Security Policy blockerar all utgående trafik på webbläsarnivå.
+            Verktyget stödjer också delar av <strong>EU:s lönetransparensdirektiv 2023/970</strong>: rapportmåtten i Struktur &amp; rapportmått, utredningsgränsen på fem procent och protokollet för gemensam lönebedömning. Direktivet skulle vara infört senast den 7 juni 2026 men är ännu inte infört i Sverige; vissa delar kan ha direkt verkan mot kommuner och regioner. Den anställdes rätt till information och arbetsgivarens rapportering till myndighet ligger utanför verktyget.
+        </p>
+        <p>
+            Hela verktyget är <strong>en enda fil som körs i webbläsaren på din dator</strong>. Ingen data lämnar datorn: inga servrar, inga molntjänster, inga nätverksanrop. Det är inte bara ett löfte utan en spärr i filen själv, som hindrar webbläsaren från att skicka något ut.
         </p>
 
         <h3>För vem är det avsett?</h3>
         <ul>
-            <li><strong>HR-handläggare</strong> som behöver analys och datastrukturering inför den årliga lönekartläggningen</li>
-            <li><strong>Ledningen</strong> som ska fatta åtgärdsbeslut baserat på prioritetsanalys</li>
-            <li><strong>Fackliga representanter</strong> i samverkan kring gemensam lönebedömning (art. 10)</li>
-            <li><strong>Dataskyddsombud</strong> som ska bedöma GDPR-efterlevnad</li>
+            <li><strong>HR</strong>, som genomför kartläggningen och skriver dokumentationen</li>
+            <li><strong>Ledningen</strong>, som beslutar om åtgärder och budget utifrån prioriteringen</li>
+            <li><strong>Fackliga företrädare</strong>, i samverkan och vid en gemensam lönebedömning</li>
+            <li><strong>Dataskyddsombud</strong>, som bedömer hur uppgifterna behandlas</li>
         </ul>
 
-        <h3>Vad verktyget gör — och inte gör</h3>
-        <p><strong>Gör:</strong></p>
+        <h3>Vad verktyget gör, och vad ni gör själva</h3>
+        <p><strong>Verktyget gör:</strong></p>
         <ul>
-            <li>Identifierar och prioriterar yrkesgrupper/BAS-intervall där lönegap bör utredas</li>
-            <li>Beräknar oförklarat gap via multivariat regression med statistisk osäkerhet</li>
-            <li>Jämför mot lönepolitiskt ställningstagande och extern statistik</li>
-            <li>Tar fram en protokollmall för gemensam lönebedömning (art. 10) i facklig samverkan</li>
+            <li>Räknar fram löneskillnaden mellan kvinnor och män i samma yrkesgrupp och mellan kvinnodominerade yrken och jämförelseyrken på samma nivå, och visar hur mycket som finns kvar när ålder och nivå räknats bort</li>
+            <li>Jämför löneläget mot ert lönepolitiska ställningstagande och mot jämförelsestatistiken</li>
+            <li>Ordnar yrkesgrupperna efter var en åtgärd gör störst nytta och räknar vad det kostar; låter er pröva hur en lönepott kan fördelas</li>
+            <li>Ger en checklista för att granska regler och praxis, där ni skriver in er bedömning och ert resonemang</li>
+            <li>Skriver ett redigerbart Word-utkast av dokumentationen med verktygets fynd ifyllda och era bedömningar markerade som fält att fylla i, samt Excel, PDF, protokoll för gemensam lönebedömning och underlag till handlingsplanen</li>
+            <li>Skyddar små grupper: lönemått för grupper under minsta gruppstorlek lämnar aldrig verktyget</li>
         </ul>
-        <p><strong>Gör inte:</strong></p>
+        <p><strong>Ni gör själva:</strong></p>
         <ul>
-            <li>Producerar inte den färdiga lönekartläggningsrapporten — det görs separat i Word/motsvarande utifrån arbetsgivarens egen mall. Verktyget hjälper till med <em>vilka grupper</em> som ska arbetas med, inte med <em>hur dokumentet skrivs</em>.</li>
-            <li>Dokumenterar inte sakliga skäl per grupp internt — den bedömningen och dokumentationen görs i HR:s ordinarie verktyg.</li>
-            <li>Hanterar inte könsneutrala lönestrukturer och lönekriterier (direktivets art. 4 och 6) — detta omfattas av BAS-värderingsarbetet och lönepolitiskt ställningstagande, vilka är input till verktyget snarare än output från det.</li>
-            <li>Skickar inte rapporter till tillsynsmyndighet — du exporterar och lämnar in själv.</li>
-            <li>Använder inte AI/LLM. All statistik är klassiska metoder med spårbara formler.</li>
-            <li>Sparar inte data mellan sessioner. Stäng fliken och allt är borta.</li>
+            <li>Bedömer om en skillnad har sakliga skäl. Verktyget visar var skillnaderna finns och hur stora de är, men en oförklarad skillnad är inte detsamma som en osaklig</li>
+            <li>Färdigställer dokumentationen i Word-utkastet och beslutar om åtgärderna i handlingsplanen</li>
+            <li>Samverkar med facklig part och lämnar det som ska lämnas till myndigheter</li>
+            <li>Ansvarar för arbetsvärderingen: BAS-intervallen, eller era egna poäng, är verktygets mått på arbetets krav</li>
         </ul>
+        <p>Verktyget använder ingen artificiell intelligens. All statistik är klassiska metoder med formler som går att följa, och varje tal går att spåra med knappen <em>Visa beräkningen</em>. Ingenting sparas mellan sessioner: stäng fliken och allt är borta.</p>
 
-        <h3>Designprincip: stabil över tid</h3>
-        <p>
-            Verktyget är medvetet avgränsat till analys + datastrukturering. Rapportering och dokumentation görs i separat Word-mall hos arbetsgivaren. Detta för att verktyget ska kunna leverera värde över flera år utan att behöva uppdateras varje gång rapporteringsformat eller mallstrukturer ändras hos DO, Medlingsinstitutet eller EU.
-        </p>
-
-        <h3>Snabbstart</h3>
+        <h3>Så går en kartläggning till</h3>
         <ol>
-            <li>Ladda upp <code>struktur.csv</code> från ert lönesystem (kolumner: BAS-intervall, AID, lön, ålder, kön)</li>
-            <li>Granska <strong>Underlagets kvalitet</strong> på Översikt (bl.a. statistisk styrka)</li>
-            <li>Gå till <strong>Prioritering</strong> för att se vilka grupper som behöver utredas</li>
-            <li>Använd <strong>Lika arbete</strong> för multivariat regression med BH-FDR-justerade p-värden</li>
-            <li>Exportera underlag (Excel/PDF/ZIP) som bilagor till er egen lönekartläggningsrapport</li>
-            <li>Dokumentera sakliga skäl och slutsatser i ert ordinarie HR-verktyg (Word eller motsvarande)</li>
+            <li>Läs in <strong>organisationspaketet</strong> på Översikt, om er organisation har ett, och sedan <strong>lönefilen</strong> (BAS-intervall, AID, lön, ålder och kön; ansvarskod och arbetsvärderingspoäng är valfria)</li>
+            <li>Titta på <strong>Att göra</strong> och <strong>Underlagets kvalitet</strong> på Översikt: går underlaget att lita på, och var ska ni börja?</li>
+            <li>Gå igenom <strong>Regler &amp; praxis</strong> och skriv in er bedömning per område</li>
+            <li>Gå igenom <strong>Lika arbete</strong>, <strong>Likvärdigt arbete</strong> och <strong>Struktur &amp; rapportmått</strong>: där står skillnaderna och vad som förklarar dem</li>
+            <li>Bestäm i <strong>Prioritering</strong> och <strong>Handlingsplan</strong> vad som ska göras, av vem och när; pröva fördelningen av potten i <strong>Löneöversyn</strong></li>
+            <li>Kör färdigchecken under <strong>Dokumentera &amp; exportera</strong>, hämta Word-utkastet och färdigställ dokumentationen</li>
         </ol>
+        <p>Körguiden som följer med verktyget beskriver varje steg närmare; den står under Källor.</p>
     `,
 
     gdpr: () => `
         <h3>Inbyggt dataskydd (dataskyddsförordningen art. 25)</h3>
         <p>Verktyget är utformat så att dataskydd är en arkitekturell egenskap, inte en process. Tre lager skyddar personuppgifter:</p>
 
-        <h4>Lager 1 — Untrusted ingress (CSV-rad i taget)</h4>
+        <h4>Lager 1 — Filen läses in en rad i taget</h4>
         <p>Filen läses in i webbläsarens minne och avkodas; under inläsningen finns alltså hela filens text där. CSV tolkas sedan med PapaParse rad för rad (<code>step:</code>): de 50 första raderna hålls kvar för kontrollen mot personnummer, namn och e-post, därefter minimeras varje rad direkt och den råa raden släpps. Excel-filer (.xlsx) läses som ett helt blad, kontrolleras och minimeras på samma sätt. När inläsningen är klar finns bara de minimerade posterna kvar.</p>
 
-        <h4>Lager 2 — Sanitization gate</h4>
+        <h4>Lager 2 — Bara det analysen behöver släpps in</h4>
         <ul>
             <li><code>detectSensitiveColumns()</code> avvisar strukturfiler med personnummer, namn eller e-post: kolumnrubrikerna prövas, och värdena i filens 50 första rader. Från filerna med lönepolitik och jämförelsestatistik läses bara vitlistade aggregatkolumner in.</li>
             <li><code>extractMinimalRecord()</code> accepterar <strong>endast 5 fält</strong>: BAS, yrke, lön, ålder, kön — plus valfri arbetsvärderingspoäng per befattning och valfri ansvarskod enligt AID. Radens nummer i filen sparas också.</li>
             <li><code>_cleanYrkeField()</code> trunkerar yrkesfält till AID-kod + 40-tecken etikett, maskerar namn-mönster</li>
         </ul>
 
-        <h4>Lager 3 — Application state (RAM-only)</h4>
+        <h4>Lager 3 — Allt ligger i arbetsminnet</h4>
         <p>Endast minimerade poster lagras i <code>state.data</code>. Inget skrivs till disk: varken verktygets kod eller de inbyggda biblioteken skriver till webbläsarens lagring. En spärr i koden avbryter dessutom anrop till lagringens skrivfunktion och cookies — den är en reserv mot misstag och inte heltäckande (se <code>riskanalys.md</code>). Skrivningar i verktygets kod:</p>
         <table>
             <tr><th>API</th><th>Skrivningar i applikationskod</th></tr>
@@ -93,7 +93,7 @@ const INFO_SECTIONS = {
             <li><strong>Lagringsminimering (art. 5.1 e):</strong> Datan försvinner automatiskt när webbläsarfliken stängs. Ingen retention-policy behövs.</li>
         </ul>
 
-        <h3>Encryption at rest — inte tillämpligt by design</h3>
+        <h3>Kryptering av lagrade uppgifter: inte tillämpligt, inget lagras</h3>
         <p>
             Verktyget krypterar inte data i vila. Detta är ett medvetet arkitekturval. Den motsvarande kontrollen är <strong>RAM-only architecture med automatisk radering</strong>. Eftersom datan aldrig skrivs till disk finns ingen "rest" att kryptera. Detta är en starkare position än krypterad lagring eftersom det inte finns någon nyckel att läcka och ingen tidslucka mellan användning och radering.
         </p>
@@ -108,7 +108,7 @@ const INFO_SECTIONS = {
         <p><strong>Undantag: enskilda personer i verktyget.</strong> Personer att granska (Lika arbete) och extremvärdena i Underlagets kvalitet visar enskilda löner med filens radnummer. Personer att granska kan inte exporteras eller skrivas ut.</p>
         <p><strong>Diagramdata.</strong> Alla diagram kan exporteras som bild eller som diagramdata (CSV/urklipp). För diagram som visar enskilda personer — lön mot ålder, individpunkter — innehåller diagramdatan en rad per person (utan namn eller identifierare). Hantera sådana filer som personuppgifter. PDF-rapportens mall <em>Komplett rapport</em> och ZIP-exporten innehåller bilder av sådana diagram. I CSV och urklipp får celler som börjar med = + - @ ett inledande apostrof-tecken, så att Excel inte kör dem som formler.</p>
 
-        <h3>Defense in depth</h3>
+        <h3>Skydd i flera lager</h3>
         <ul>
             <li><strong>Content Security Policy:</strong> <code>connect-src 'none'</code> blockerar all utgående trafik på webbläsarnivå. Även om en bug skulle försöka göra <code>fetch()</code>, blockeras det.</li>
             <li><strong>Inga tredjeparts-CDN:</strong> Alla bibliotek (PapaParse, SheetJS, D3, JSZip) inlinade i HTML-filen.</li>
@@ -136,13 +136,13 @@ const INFO_SECTIONS = {
         <h3>Ålder &amp; karriär och livscykelmodellen: ett tvärsnitt, inte en karriär</h3>
         <p>Lön mot ålder i Ålder &amp; karriär och livscykelmodellens kurvor bygger på ett tvärsnitt av lönerna vid kartläggningens tidpunkt. De visar skillnader mellan åldersgrupper i dag, inte hur en persons lön utvecklas över karriären: åldersgrupperna skiljer sig också i utbildning, yrkesval och anställningstid (kohorteffekter), och en skillnad mellan 30- och 60-åringar är därför inte en förväntad löneutveckling. Hur lönen faktiskt utvecklas kräver flera års kartläggningar av samma personer.</p>
 
-        <h3>Quantile regression (glasstak/klistergolv)</h3>
+        <h3>Kvantilregression (glastak och klibbigt golv)</h3>
         <p>IRLS-implementation (Iteratively Reweighted Least Squares) körs vid τ ∈ {0,10; 0,50; 0,90}. Visar hur lönegapet beter sig i olika delar av lönefördelningen — glasstak i höga decilier, klistergolv i låga. IRLS är en <em>approximation</em> av kvantillösningen: den minimerar inte check-förlusten exakt (som linjärprogrammering gör) utan närmar sig den med omviktade minsta kvadrater; i verktygets referenstest avviker könskoefficienten några tiondels procentenheter från den exakta lösningen. Könskoefficienten vid varje τ visas med ett 95 % percentil-bootstrap-konfidensintervall: raderna omsamplas 200 gånger, seedat ur datat så att intervallet blir detsamma varje gång. Vid fler än 2 000 personer räknas inget intervall (tiden), och det står i tabellen.</p>
 
         <h3>Bootstrap-konfidensintervall</h3>
         <p>B = 2000 percentil-bootstrap på mediankvoten kvinnor/män. 95% KI visas inline på det "råa lönegapet" så användaren ser osäkerhetsintervallet, inte ett falskt-precist punktestimat. (Efron & Tibshirani 1993)</p>
 
-        <h3>Power-analys</h3>
+        <h3>Statistisk styrka</h3>
         <p>Minsta detekterbara effekt (MDE) vid 80% statistisk styrka, α=0.05 tvåsidig:</p>
         <p class="kursiv pad-8 ta-mitt"><code>MDE = (exp(2,802 × SE) − 1) × 100 %</code></p>
         <p>där SE är könskoefficientens robusta standardfel i huvudregressionen (log-skala). Räknas om vid varje datauppladdning. Kriteriet <em>Statistisk styrka</em> i Underlagets kvalitet på Översikt är OK upp till 2 %, varning upp till 5 % och kritiskt däröver (låg styrka — undvik definitiva slutsatser om enskilda mindre grupper).</p>
@@ -151,10 +151,10 @@ const INFO_SECTIONS = {
         <h3>Andra metoder</h3>
         <ul>
             <li><strong>Underlagets kvalitet:</strong> fem kriterier — jämförbarhet, statistisk styrka, fullständighet, rimlighet och modell — som var och ett får OK, Varning eller Kritisk. Underlaget får samma status som det svagaste kriteriet.</li>
-            <li><strong>Outliers-detektor:</strong> Z-score per BAS-grupp på log-lön. |Z| ≥ 3 flaggas för manuell granskning och visas med lön och filens radnummer (bara i verktyget)</li>
+            <li><strong>Extremvärden:</strong> Z-score per BAS-grupp på log-lön. |Z| ≥ 3 flaggas för manuell granskning och visas med lön och filens radnummer (bara i verktyget)</li>
             <li><strong>Löneöversyn (prognos):</strong> budget-först — lägg in en pott (kr eller %), fördela generellt + riktat per BAS och AID (en rad kan begränsas till ett kön eller till löner under en gräns, och lyfta till en nivå), se nya löner, budgetutnyttjande och lönegap före/efter; förslag som riktar potten mot osakliga gap. Kostnaden räknas med PO-påslag och beräkningsperiod från Inställningar</li>
-            <li><strong>Per-BAS conditional gap:</strong> separat regression inom varje BAS-intervall — visar var i organisationen oförklarat gap ligger</li>
-            <li><strong>Motivation-suggestion-engine:</strong> 8 deterministiska regler (ingen LLM) som ger HR testbara hypoteser per prio-rad — åldersskillnad, glasstak-mönster, bristyrke, MDE-tröskel m.fl.</li>
+            <li><strong>Gap per BAS-intervall:</strong> separat regression inom varje BAS-intervall — visar var i organisationen oförklarat gap ligger</li>
+            <li><strong>Förslag på förklaringar att pröva:</strong> åtta fasta regler (ingen artificiell intelligens) som ger HR testbara hypoteser per prio-rad — åldersskillnad, glasstak-mönster, bristyrke, MDE-tröskel m.fl.</li>
         </ul>
 
         <section id="om-aid">
@@ -174,7 +174,7 @@ const INFO_SECTIONS = {
         <ul>
             <li>Använder inte AI/maskininlärning — all statistik är klassiska metoder med transparenta formler</li>
             <li>Föreslår inte sakliga skäl automatiskt — det är HR:s arbete och kräver mänsklig bedömning</li>
-            <li>Justerar inte för förmåner, bonus, tjänstetillägg — kräver att lönen är FTE-justerad i CSV-input</li>
+            <li>Justerar inte för förmåner, bonus eller tillägg, och förutsätter att lönen i filen är omräknad till heltid</li>
             <li>Avgör inte om en grupp är "likvärdig" — använder BAS-intervall, eller arbetsvärderingens poäng om de finns, som approximation; den slutliga kravvärderingen görs av arbetsgivaren</li>
         </ul>
     `,
@@ -201,8 +201,8 @@ const INFO_SECTIONS = {
         <h3>Genvägar och funktioner</h3>
         <ul>
             <li><strong>Spara/ladda konfiguration:</strong> JSON-export av prio-trösklar, vikter, kostnadsinställningar, bristyrkes-AID:n, löneöversynens inställningar och era § 8-anteckningar. Innehåller inga individrader, men hantera den som övriga exportfiler.</li>
-            <li><strong>A/B-snapshot:</strong> jämför två analyser (t.ex. före/efter filtrering, eller scenario A mot B)</li>
-            <li><strong>Multi-flik Excel-export:</strong> alla resultat-tabeller i en xlsx</li>
+            <li><strong>Jämför scenarier (A/B):</strong> jämför två analyser (t.ex. före/efter filtrering, eller scenario A mot B)</li>
+            <li><strong>Excel med alla flikar:</strong> alla resultat-tabeller i en xlsx</li>
             <li><strong>ZIP-export:</strong> alla diagram (PNG) + Excel i en zip</li>
             <li><strong>PDF-rapport:</strong> en låst kopia av Word-utkastet med samma urval av avsnitt (hela dokumentationen, ledningsbrief eller facklig dialog)</li>
             <li><strong>Organisationspaket:</strong> en fil med organisationens benämningar, grundinställningar, ställningstagande och jämförelsestatistik läses in på Översikt.</li>

@@ -1143,7 +1143,7 @@ exports[`golden: Excel-exporterna på fast dataset > "Excel (alla flikar)" match
     ],
     [
       "  Status",
-      "Prioriterad utredning om avvikelse &lt; -5% och n ≥ 10 · Utredning rekommenderas om avvikelse &lt; -5% · Följ upp om &lt; -2% · Översyn rekommenderas om &gt; +5%",
+      "Börja här om avvikelsen är under -5 % och gruppen har minst 10 personer · Värt att granska om avvikelsen är under -5 % i en mindre grupp · Följ upp om den är under -2 % · Över referens om den är över +5 % · Balanserat däremellan",
     ],
     [
       null,
@@ -1158,7 +1158,7 @@ exports[`golden: Excel-exporterna på fast dataset > "Excel (alla flikar)" match
       null,
     ],
     [
-      "  Tabellen visar topp 30 grupper rankade efter prioriteringsindex",
+      "  Tabellen visar de 30 högst prioriterade grupperna",
       null,
     ],
     [
@@ -4040,8 +4040,8 @@ exports[`golden: PDF/print-rapporten (buildPrintReport) på fast dataset > urval
                             
                             <tr><th><strong>= Använda i denna analys</strong></th><td><strong>4</strong></td></tr>
                         </tbody></table>
-                        <p class="pr-tat"><strong>Formler:</strong></p><ul><li><strong>Avvikelse %:</strong> (organisationens median / referensens median) − 1 i %</li><li><strong>Åtgärdskostnad:</strong> |avvikelse kr/mån| × 12 mån × (1 + 39,15 %/100) × antal personer (endast om under referens, inkl PO-påslag)</li><li><strong>Prioriteringsindex:</strong> riktningsvikt × (avvikelse·50% + volym·30% + jämställdhet·20%), skala 0-100</li><li><strong>Riktningsvikt:</strong> 1.0 om under referens, 0.5 om över (under-betalning vägs tyngre)</li><li><strong>Status:</strong> Prioriterad utredning om avvikelse &lt; -5% och n ≥ 10 · Utredning rekommenderas om avvikelse &lt; -5% · Följ upp om &lt; -2% · Översyn rekommenderas om &gt; +5%</li></ul>
-                        <p class="pr-tat"><strong>Speciella regler:</strong></p><ul><li>Aktuell referens: Eget ställningstagande (per BAS)</li><li>Tabellen visar topp 30 grupper rankade efter prioriteringsindex</li><li>Bubbeldiagrammets storlek = årskostnad, x = avvikelse, y = antal personer (log skala)</li></ul>
+                        <p class="pr-tat"><strong>Formler:</strong></p><ul><li><strong>Avvikelse %:</strong> (organisationens median / referensens median) − 1 i %</li><li><strong>Åtgärdskostnad:</strong> |avvikelse kr/mån| × 12 mån × (1 + 39,15 %/100) × antal personer (endast om under referens, inkl PO-påslag)</li><li><strong>Prioriteringsindex:</strong> riktningsvikt × (avvikelse·50% + volym·30% + jämställdhet·20%), skala 0-100</li><li><strong>Riktningsvikt:</strong> 1.0 om under referens, 0.5 om över (under-betalning vägs tyngre)</li><li><strong>Status:</strong> Börja här om avvikelsen är under -5 % och gruppen har minst 10 personer · Värt att granska om avvikelsen är under -5 % i en mindre grupp · Följ upp om den är under -2 % · Över referens om den är över +5 % · Balanserat däremellan</li></ul>
+                        <p class="pr-tat"><strong>Speciella regler:</strong></p><ul><li>Aktuell referens: Eget ställningstagande (per BAS)</li><li>Tabellen visar de 30 högst prioriterade grupperna</li><li>Bubbeldiagrammets storlek = årskostnad, x = avvikelse, y = antal personer (log skala)</li></ul>
                     
                         <h3 class="pr-ned-14">Jämförelsestatistik</h3>
                         <table class="kpi pr-under">
