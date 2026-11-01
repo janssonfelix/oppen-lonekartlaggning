@@ -92,18 +92,25 @@ describe('ingen organisatorisk enhet i data eller utdata (se §2 i teknisk-plan.
 
 describe('Lika arbete och filrutorna: ordning och kompakta rutor', () => {
     const efter = (a, b) => !!(a.compareDocumentPosition(b) & 4);   // b ligger efter a
-    it('Lika arbete visar slutsatser och huvuddiagram först, sedan yrkesgrupperna, personer att granska, per BAS och sist regressionen', () => {
+    it('Lika arbete visar slutsatser och yrkesgrupperna först, sedan personer att granska, per BAS, könsfördelningen och sist regressionen', () => {
         const w = createAppWindow();
         w.__loadDemoData();
         w.document.querySelector('.nav-item[data-tab="matrix"]').click();
         const d = w.document;
-        // Slutsatserna och översikten per BAS-intervall (en tabell med inbyggd grafik) står överst.
-        const [slut, huvud, yrken, pag, perBas, reg] = ['la-slutsatser', 'la-oversikt', 'matrix-table', 'personer-att-granska', 'paygap-table', 'regression-card'].map(id => d.getElementById(id));
-        expect(efter(slut, huvud)).toBe(true);
-        expect(efter(huvud, yrken)).toBe(true);
-        expect(efter(yrken, pag)).toBe(true);
+        // Slutsatserna och yrkesgrupperna (tabellen och sedan trattdiagrammet) står överst; per BAS-intervall i Fördjupning.
+        const [slut, yrken, tratt, pag, perBas, kon, reg, metod] = ['la-slutsatser', 'matrix-table', 'chart-la-tratt', 'personer-att-granska', 'la-oversikt', 'avsnitt-la-kon', 'regression-card', 'avsnitt-la-metod'].map(id => d.getElementById(id));
+        expect(efter(slut, yrken)).toBe(true);
+        expect(efter(yrken, tratt)).toBe(true);
+        expect(efter(tratt, pag)).toBe(true);
         expect(efter(pag, perBas)).toBe(true);
-        expect(efter(perBas, reg)).toBe(true);
+        expect(efter(perBas, kon)).toBe(true);
+        expect(efter(kon, reg)).toBe(true);
+        expect(efter(reg, metod)).toBe(true);
+        expect(d.getElementById('la-topp').nextElementSibling.id).toBe('avsnitt-la-yrkesgrupper');   // huvudbilden direkt under nyckeltalen
+        expect(d.getElementById('avsnitt-la-bas').contains(perBas)).toBe(true);
+        // Skillnaden per BAS-intervall visas en gång: tabellen och bilden i exporten är dolda på skärmen.
+        expect(d.getElementById('la-bas-exportkopia').hidden).toBe(true);
+        expect(d.getElementById('la-bas-exportkopia').contains(d.getElementById('paygap-table'))).toBe(true);
         for (const el of [yrken, perBas, reg]) expect(el.closest('.view-panel').style.display).toBe('block');
         expect(pag.hidden).toBe(false);
         expect(d.querySelector('.view-panel[style*="block"] .flik-intro').textContent).toContain('Samma jobb, olika lön');

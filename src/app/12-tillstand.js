@@ -372,6 +372,7 @@ const ENHANCED_TABLES = [
     { id: 'rapport-table',      file: 'loneoversikt' },
     { id: 'matrix-table',       file: 'lika-arbete-eu' },
     { id: 'paygap-table',       file: 'lonegap-per-bas' },
+    { id: 'la-oversikt',        file: 'lonegap-per-bas-intervall' },
     { id: 'skevhet-table',      file: 'skevhet-per-bas' },
     { id: 'benchmark-table',    file: 'benchmark' },
     { id: 'prio-table',         file: 'prioritering' },

@@ -81,6 +81,21 @@ describe('menyns ordning', () => {
     });
 });
 
+describe('länkar till ett avsnitt i en annan flik', () => {
+    it('Att göra-länkarna till Lika arbete byter flik och fäller ut avsnittet de leder till', () => {
+        const w = createAppWindow();
+        w.__loadDemoData();
+        const d = w.document;
+        for (const id of ['avsnitt-la-bas', 'avsnitt-la-kon']) d.getElementById(id).open = false;
+        d.querySelector('#comp-gap .comp-lank').click();
+        expect(d.querySelector('.nav-item.active').getAttribute('data-tab')).toBe('matrix');
+        expect(d.getElementById('avsnitt-la-bas').open).toBe(true);
+        expect(d.getElementById('avsnitt-la-kon').open).toBe(false);
+        d.querySelector('#comp-skev .comp-lank').click();
+        expect(d.getElementById('avsnitt-la-kon').open).toBe(true);
+    });
+});
+
 describe('flik utan underlag', () => {
     it('säger att inget underlag är inläst och länkar till Översikt; raden försvinner när underlaget finns', () => {
         const w = createAppWindow();

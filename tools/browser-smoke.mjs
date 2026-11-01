@@ -205,7 +205,7 @@ await page.evaluate(() => {
 });
 // Diagram som MÅSTE ha ritats på demodata: en <svg> i containern.
 const FLIKAR = [
-    ['matrix', ['#chart-skevhet-overview']],
+    ['matrix', ['#chart-la-tratt', '#chart-skevhet-lador']],
     ['likvardighet', []],
     ['struktur', ['#chart-sektorer']],
     ['prioritering', ['#chart-prio-pareto', '#chart-prio-matrix']],
@@ -239,7 +239,7 @@ console.log('\n── Diagrammen (diagramkärnan, ADR-39) ──');
 // Varje diagram ritas av diagramkärnan: en SVG med märken, och exportmenyn ger en PNG och en SVG som inte
 // är tomma. Ett diagram som vyn ersätter med en förklarande text
 // (för få grupper i demodatan) räknas som riktigt — då finns ingen figur och ingen bild.
-const DIAGRAMMEN = [['matrix', 'chart-skevhet-overview'], ['matrix', 'chart-perbas-gap'], ['struktur', 'chart-sektorer'],
+const DIAGRAMMEN = [['matrix', 'chart-la-tratt'], ['matrix', 'chart-skevhet-andel'], ['matrix', 'chart-perbas-gap'], ['struktur', 'chart-sektorer'],
                   ['benchmark', 'chart-lp-gender'], ['benchmark', 'chart-lp-compliance'], ['kon', 'chart-demo-hist'],
                   // linjer, band och lådor
                   ['kon', 'chart-kon-scatter'], ['kon', 'chart-kon-boxplot'],
@@ -290,10 +290,10 @@ console.log('\n── Länkade vyer: en markerad grupp framhävs i alla diagram 
     await page.click('.nav-item[data-tab="matrix"]');
     await page.evaluate(() => document.querySelectorAll('details.avsnitt').forEach(d => { d.open = true; }));
     await page.waitForTimeout(400);
-    await page.locator('#chart-skevhet-overview [data-marke="punkt"]').first().click();
+    await page.locator('#chart-skevhet-andel [data-marke="stapel"]').first().click();
     await page.waitForTimeout(200);
     const efterKlick = await page.evaluate(() => ({ nyckel: diagramMarkering(), rad: (document.getElementById('markering-rad') || {}).textContent || '',
-        har: document.querySelectorAll('#chart-skevhet-overview [data-markerad]').length, andra: document.querySelectorAll('#chart-lp-compliance [data-markerad]').length }));
+        har: document.querySelectorAll('#chart-skevhet-andel [data-markerad]').length, andra: document.querySelectorAll('#chart-lp-compliance [data-markerad]').length }));
     ok(Array.isArray(efterKlick.nyckel) && /^bas:/.test(efterKlick.nyckel[0] || '') && efterKlick.rad.includes('Markerat i alla diagram: BAS'), `ett klick på en stapel markerar dess BAS (${efterKlick.nyckel})`);
     ok(efterKlick.har > 0 && efterKlick.andra > 0, `samma BAS framhävs i ett diagram i en annan flik (${efterKlick.andra} märken i Lönepolitik)`);
     await page.keyboard.press('Escape');
@@ -302,10 +302,10 @@ console.log('\n── Länkade vyer: en markerad grupp framhävs i alla diagram 
     ok(efterEsc.nyckel === null && !efterEsc.rad && efterEsc.kvar === 0, 'Escape tar bort markeringen och återställer diagrammen');
     // Tabellen följer markeringen, och pensling i spridningsdiagrammet framhäver punkterna i området.
     // En rad som hör till ett BAS (rader för BAS där ett kön är under tröskeln byggs för sig och går inte att markera).
-    const radNr = await page.evaluate(() => [...document.querySelectorAll('#paygap-table tbody tr')].findIndex(r => Array.isArray(r._markering)));
-    await page.locator('#paygap-table tbody tr').nth(Math.max(0, radNr)).locator('td').first().click();
+    const radNr = await page.evaluate(() => [...document.querySelectorAll('#la-oversikt tbody tr')].findIndex(r => Array.isArray(r._markering)));
+    await page.locator('#la-oversikt tbody tr').nth(Math.max(0, radNr)).locator('td').first().click();
     await page.waitForTimeout(150);
-    ok(await page.evaluate(() => document.querySelectorAll('#paygap-table tbody tr.rad-markerad').length === 1 && document.querySelectorAll('#chart-skevhet-overview [data-markerad]').length > 0),
+    ok(await page.evaluate(() => document.querySelectorAll('#la-oversikt tbody tr.rad-markerad').length === 1 && document.querySelectorAll('#chart-skevhet-andel [data-markerad]').length > 0),
         'ett klick på en tabellrad markerar gruppen, i tabellen och i diagrammet');
     await page.keyboard.press('Escape');
     await page.click('.nav-item[data-tab="kon"]');
@@ -391,7 +391,7 @@ console.log('\n── Lika arbete i formen resultat först ──');
     console.log(`    (fliken är ${form.skarmar} skärmhöjder med bara första avsnittet öppet)`);
     await page.click('#avsnitt-la-bas > summary');
     await page.waitForTimeout(700);
-    ok(await page.evaluate(() => { const s = document.querySelector('#chart-skevhet-hantel svg'); return !!s && s.getBoundingClientRect().width > 300 && document.querySelector('#paygap-table tbody tr').getBoundingClientRect().height > 0; }),
+    ok(await page.evaluate(() => { const s = document.querySelector('#chart-skevhet-lador svg'); return !!s && s.getBoundingClientRect().width > 300 && document.querySelector('#la-oversikt tbody tr').getBoundingClientRect().height > 0; }),
         'ett avsnitt som fälls ut ritar sitt diagram i full bredd och visar sin tabell');
     await page.keyboard.press('Tab');
     ok(await page.evaluate(() => { const s = document.querySelector('#avsnitt-la-kon > summary'); s.focus(); return document.activeElement === s; }), 'avsnittens rubriker går att nå med tangentbordet');
@@ -1226,11 +1226,11 @@ console.log('\n── Översikt efter inläsning ──');
     await page.waitForTimeout(300);
     const ov = await page.evaluate(() => { const g = id => document.getElementById(id); const syn = id => g(id).offsetParent !== null; const top = id => g(id).getBoundingClientRect().top;
         return { rad: syn('ov-filrad') && /Lönefil: \d+ personer/.test(g('ov-filrad').textContent), filer: syn('upload-row'),
-            ordning: top('ov-filrad') < top('dashboard-summary') && top('dashboard-summary') < top('chart-ov-tradkarta') && top('chart-ov-tradkarta') < top('att-gora') && top('att-gora') < top('avsnitt-ov-process'),
-            karta: !!document.querySelector('#chart-ov-tradkarta svg'), kvartiler: !!document.querySelector('#chart-ov-kvartiler svg'),
+            ordning: top('ov-filrad') < top('dashboard-summary') && top('dashboard-summary') < top('att-gora') && top('att-gora') < top('chart-ov-kvartiler') && top('chart-ov-kvartiler') < top('avsnitt-ov-process'),
+            karta: !g('chart-ov-tradkarta'), kvartiler: !!document.querySelector('#chart-ov-kvartiler svg'),
             oppna: [...document.querySelectorAll('#view-dashboard details.avsnitt')].filter(a => a.open).length, skarmar: document.documentElement.scrollHeight / innerHeight }; });
     ok(ov.rad && !ov.filer, 'filerna är en rad, och uppladdningskorten är undanfällda');
-    ok(ov.ordning && ov.karta && ov.kvartiler, 'nyckeltalen, kartan och kvartilerna står före Att göra och avsnitten');
+    ok(ov.ordning && ov.karta && ov.kvartiler, 'nyckeltalen, Att göra och kvartilerna står i den ordningen före avsnitten, och kartan finns bara i Struktur');
     ok(ov.oppna === 0 && ov.skarmar < 3.5, `avsnitten är hopfällda och sidan är ${ov.skarmar.toFixed(1)} skärmar`);
     await page.click('#btn-ov-filer');
     await page.waitForTimeout(300);

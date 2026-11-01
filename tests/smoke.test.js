@@ -1076,7 +1076,7 @@ describe('exportmeny på alla diagram', () => {
             expect(gd.parentElement.querySelector(':scope > .chart-export'), gd.id).toBeNull();
             expect(win.__chartExportRows(gd), gd.id).toEqual([]);
         }
-        expect(win.document.getElementById('chart-ov-tradkarta')._figur).toBeTruthy();   // och minst ett sådant finns
+        expect(win.document.getElementById('chart-ov-kvartiler')._figur).toBeTruthy();   // och minst ett sådant finns
     });
 
 });

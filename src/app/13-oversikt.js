@@ -417,13 +417,13 @@ function renderProcessTracker({ punkter: givna } = {}) {
 
 /**
  * Översikt efter inläsning. Före inläsning är sidan en uppladdningssida.
- * Efter inläsning krymper filerna till en rad, och sidan visar läget: nyckeltalen, kartan över organisationen,
- * lönekvartilerna och Att göra. Resten är avsnitt som fälls ut. Klassen `har-data` på panelen styr vad som visas
- * (style.css); `visa-filer` fäller ut uppladdningen igen.
+ * Efter inläsning krymper filerna till en rad, och sidan visar läget: nyckeltalen, Att göra och
+ * lönekvartilerna. Kartan över organisationen står bara i Struktur & rapportmått. Resten är avsnitt som fälls ut.
+ * Klassen `har-data` på panelen styr vad som visas (style.css); `visa-filer` fäller ut uppladdningen igen.
  */
 /** @type {boolean|null} */
 let _ovHadeData = null;
-// Kartan och kvartilerna är kopior av Struktur & rapportmåtts diagram och exporteras därifrån, inte två gånger
+// Kvartilerna är en kopia av Struktur & rapportmåtts diagram och exporteras därifrån, inte två gånger
 // (skälet `kopia` i 11-diagramexport.js).
 markeraUtanExport(document.getElementById('ov-lage'), 'kopia');
 function ovRitaLage() {
@@ -443,12 +443,11 @@ function ovRitaLage() {
     _ovRitaFilrad(har, d.length);
     const kvEl = document.getElementById('chart-ov-kvartiler'), kvNot = document.getElementById('ov-kvartiler-not');
     if (!har) {
-        ['chart-ov-tradkarta', 'chart-ov-kvartiler'].forEach(id => { const el = document.getElementById(id); if (el && typeof rensaFigur === 'function') { rensaFigur(el); el.innerHTML = ''; } });
+        if (kvEl && typeof rensaFigur === 'function') { rensaFigur(kvEl); kvEl.innerHTML = ''; }
         if (kvNot) kvNot.textContent = '';
         return;
     }
     try {
-        if (typeof renderStrukturTradkarta === 'function') renderStrukturTradkarta(d, 'chart-ov-tradkarta');
         // Samma villkor som i Struktur: utan könsuppdelning (ett kön under tröskeln) ritas inget diagram.
         const k = kTroskel(), q = _stQuartileDistribution(d, { k });
         const totKv = d.filter(r => r.kon && r.kon.includes('kvinna')).length;

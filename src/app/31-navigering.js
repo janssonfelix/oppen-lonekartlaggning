@@ -213,8 +213,17 @@ document.addEventListener('click', e => {
     const target = /** @type {HTMLElement} */ (a).dataset.goToTab;
     if (target && typeof navigateTo === 'function') navigateTo(target);
     const ankare = /** @type {HTMLElement} */ (a).dataset.goToAnchor && document.getElementById(/** @type {HTMLElement} */ (a).dataset.goToAnchor || '');
-    if (ankare && typeof ankare.scrollIntoView === 'function') ankare.scrollIntoView({ block: 'start' });
+    if (!ankare) return;
+    oppnaHopfallda(ankare);
+    if (typeof ankare.scrollIntoView === 'function') ankare.scrollIntoView({ block: 'start' });
 });
+/** Fäller ut ett avsnitt som en länk leder till: elementet självt om det är ett hopfällt avsnitt, och varje hopfällt
+ *  avsnitt det ligger i. Annars landar länken på en rubrik vars innehåll inte syns. */
+function oppnaHopfallda(el) {
+    for (let n = el; n; n = n.parentElement) {
+        if (n.tagName === 'DETAILS' && !(/** @type {HTMLDetailsElement} */ (n).open)) /** @type {HTMLDetailsElement} */ (n).open = true;
+    }
+}
 
 // ---- Menyn på smala skärmar ----
 // Under 640 punkter ligger menyn utanför bild (se style.css). Knappen Meny öppnar den över innehållet; den stängs

@@ -253,14 +253,15 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         expect(vy.classList.contains('visa-filer')).toBe(false);
         const rad = d.getElementById('ov-filrad');
         expect(rad.textContent).toMatch(/Lönefil: 260 personer.*Referens: .+Jämförelsestatistik: ingen inläst.*Minsta gruppstorlek 10/);
-        // Ordningen: filraden, nyckeltalen, läget (karta och kvartiler), Att göra, och sedan avsnitten.
+        // Ordningen: filraden, nyckeltalen, Att göra, kvartilerna, och sedan avsnitten. Kartan står bara i Struktur.
         const fore = (a, b) => !!(d.getElementById(a).compareDocumentPosition(d.getElementById(b)) & 4);
-        expect(fore('ov-filrad', 'dashboard-summary') && fore('dashboard-summary', 'chart-ov-tradkarta') && fore('chart-ov-kvartiler', 'att-gora')
-            && fore('att-gora', 'avsnitt-ov-process') && fore('avsnitt-ov-process', 'avsnitt-ov-kvalitet') && fore('avsnitt-ov-kvalitet', 'avsnitt-ov-gap')).toBe(true);
-        expect(d.getElementById('chart-ov-tradkarta')._figur.lager.some(l => l.marke === 'yta')).toBe(true);
+        expect(fore('ov-filrad', 'dashboard-summary') && fore('dashboard-summary', 'att-gora') && fore('att-gora', 'chart-ov-kvartiler')
+            && fore('chart-ov-kvartiler', 'avsnitt-ov-process') && fore('avsnitt-ov-process', 'avsnitt-ov-kvalitet') && fore('avsnitt-ov-kvalitet', 'avsnitt-ov-gap')).toBe(true);
+        expect(d.getElementById('chart-ov-tradkarta')).toBeNull();
+        expect(d.getElementById('view-dashboard').textContent).not.toContain('Organisationen som karta');
         expect(d.getElementById('chart-ov-kvartiler')._figur).toBeTruthy();
-        // Kartan och kvartilerna är kopior av Strukturs diagram: de exporteras därifrån, inte två gånger.
-        expect(d.getElementById('chart-ov-tradkarta').closest('[data-no-export]')).not.toBeNull();
+        // Kvartilerna är en kopia av Strukturs diagram: de exporteras därifrån, inte två gånger.
+        expect(d.getElementById('chart-ov-kvartiler').closest('[data-no-export]')).not.toBeNull();
         expect(d.querySelectorAll('#ov-lage .chart-export-btn, #ov-lage [data-chart-export]')).toHaveLength(0);
         // Avsnitten är hopfällda efter inläsning och bär sitt nyckeltal.
         expect([...d.querySelectorAll('#view-dashboard details.avsnitt')].filter(a => a.open)).toHaveLength(0);
@@ -284,7 +285,7 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         w.eval('_rensaAllData()');
         expect(vy.classList.contains('har-data')).toBe(false);
         expect(d.getElementById('ov-filrad').textContent).toBe('');
-        expect(d.getElementById('chart-ov-tradkarta').innerHTML).toBe('');
+        expect(d.getElementById('chart-ov-kvartiler').innerHTML).toBe('');
         expect(d.getElementById('avsnitt-ov-process').open).toBe(true);
     });
     it('Att göra — hela listan är ett avsnitt som står kvar utfällt när en punkt bockas av', () => {

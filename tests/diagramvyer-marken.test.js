@@ -94,24 +94,6 @@ describe('Lika arbete: trappan, gapet längs lönefördelningen och hanteln per 
         expect(vanliga(f.lager[1].tips(f.lager[1].data[1]))).toEqual([['Median'], ['Lönegap', '−4,5 %']]);
         expect(() => valideraFigur(f, 't')).not.toThrow();
     });
-    it('hanteln: kvinnors och mäns median per BAS, störst skillnad överst, strecket mellan dem', () => {
-        const f = w.eval(`_skevhetHantelFigur([{ bas: 'A', medKv: 30000, medMa: 31000, nKv: 12, nMa: 14 }, { bas: 'B', medKv: 34000, medMa: 38500, nKv: 20, nMa: 11 }])`);
-        expect(f.y.ordning).toEqual(['BAS B', 'BAS A']);
-        expect(f.lager.map(l => [l.marke, l.serie])).toEqual([['intervall', 'Skillnad kvinnor–män'], ['punkt', 'Kvinnor'], ['punkt', 'Män']]);
-        expect(f.lager[0].data[0]).toEqual({ y: 'BAS B', lag: 34000, hog: 38500, skillnad: 4500, markering: ['bas:B'] });
-        expect(f.lager[1].data[0]).toEqual({ y: 'BAS B', x: 34000, n: 20, markering: ['bas:B'] });
-        expect(() => valideraFigur(f, 't')).not.toThrow();
-    });
-    it('hanteln ritas bara för BAS där båda könen når tröskeln, och följer markeringen', () => {
-        const w2 = createAppWindow();
-        w2.__loadDemoData();
-        w2.__renderTabContent('matrix');
-        const stapel = w2.document.getElementById('chart-skevhet-overview')._figur, hantel = w2.document.getElementById('chart-skevhet-hantel');
-        expect(new Set(hantel._figur.y.ordning)).toEqual(new Set(stapel.y.ordning));
-        const bas = hantel._figur.y.ordning[0].slice(4);
-        w2.eval(`sattDiagramMarkering('bas:${bas}')`);
-        expect(hantel.querySelectorAll('[data-markerad]').length).toBe(3);      // strecket och de två punkterna
-    });
 });
 
 // ---- Före och efter, punktsvärm, övergångar ----

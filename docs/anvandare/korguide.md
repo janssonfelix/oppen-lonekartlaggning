@@ -145,15 +145,15 @@ också när det är hopfällt.
    skriv en **anteckning** per område — *på gruppnivå: inga namn eller
    personnummer i fritext.* Värdena följer automatiskt med in i Word-utkastet
    och utskriften.
-2. **Lika arbete (§ 9)** — fliken öppnar med en **översikt per BAS-intervall**: antal kvinnor och män, de två
-   medianlönerna, skillnaden i kronor och kvinnors lön i procent av mäns med konfidensintervall och status.
-   Första avsnittet är **yrkesgrupperna**: kvinnors och mäns medianlön i samma yrkesgrupp, där grupper med
-   avvikelse > 5 % flaggas och behöver förklaras med sakliga skäl eller åtgärdas. Diagrammet
-   **Yrkesgrupperna mot slumpens gränser** ovanför tabellen visar varje yrkesgrupp mot gruppens storlek: en liten
+2. **Lika arbete (§ 9)** — fliken öppnar med **yrkesgrupperna**: kvinnors och mäns medianlön i samma yrkesgrupp,
+   där grupper med avvikelse > 5 % flaggas och behöver förklaras med sakliga skäl eller åtgärdas. Diagrammet
+   **Yrkesgrupperna mot slumpens gränser** under tabellen visar varje yrkesgrupp mot gruppens storlek: en liten
    grupp kan ha en stor skillnad av ren slump, en stor grupp kan det inte, och grupperna utanför det skuggade
-   fältet är de där skillnaden är svår att förklara med slumpen. Därefter kommer Personer att granska, sedan
-   skillnaden per BAS-intervall (i procent, i kronor och som lönespridning per kön) och sist det **oförklarade**
-   lönegapet (regressionen, trappan som visar vad ålder och nivå förklarar, och Blinder-Oaxaca).
+   fältet är de där skillnaden är svår att förklara med slumpen. Under Fördjupning kommer Personer att granska,
+   sedan **Lönegap per BAS-intervall** (en tabell per intervall med antal kvinnor och män, de två medianlönerna,
+   skillnaden i kronor och kvinnors lön i procent av mäns med konfidensintervall och status, och lönespridningen
+   per kön), könsfördelningen per BAS-intervall och sist det **oförklarade** lönegapet (regressionen, trappan
+   som visar vad ålder och nivå förklarar, och Blinder-Oaxaca).
    Kolumnen **Kvinnor nationellt** visar andelen kvinnor i samma yrke i landets kommuner och
    regioner, ur SKR:s personalstatistik (SKR är Sveriges Kommuner och Regioner; perioden står i Om
    verktyget) — ett referensvärde att jämföra er egen könsfördelning mot. Välj under

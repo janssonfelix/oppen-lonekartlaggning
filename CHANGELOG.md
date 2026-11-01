@@ -15,6 +15,13 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ### Gränssnitt
 
+- **Yrkesgrupperna först i Lika arbete.** Fliken öppnar med tabellen *Kvinnor och män i samma yrkesgrupp* och
+  trattdiagrammet under den. Tabellen per BAS-intervall och avsnittet *Lönegap per BAS-intervall* är ett avsnitt i
+  Fördjupning, efter Personer att granska, och beviset för en rad står vid intervallets namn. Diagrammen med samma
+  kvot och samma kronor som tabellen visas inte längre; kvotbilden följer med i rapporten som förut. Länkarna i Att
+  göra fäller ut avsnittet de leder till.
+- **Att göra direkt under nyckeltalen på Översikt.** Kartan över organisationen står bara i Struktur & rapportmått;
+  lönekvartilerna står efter Att göra i hela bredden.
 - **Om verktyget beskriver dagens verktyg.** Översikten säger vad verktyget gör och vad ni gör själva, med Word-utkastet,
   Regler & praxis och organisationspaketet på plats, och snabbstarten följer kartläggningens steg. Engelska rubriker i
   dataskydds- och metodavsnitten är svenska.

@@ -269,20 +269,23 @@ describe('Lika arbete: översiktstabellen med inbyggd grafik (huvudvyn)', () => 
         const w2 = demo();
         w2.__renderTabContent('matrix');
         const d = w2.document, rader = [...d.querySelectorAll('#la-oversikt tbody tr')];
-        const figur = d.getElementById('chart-skevhet-overview')._figur, hantel = d.getElementById('chart-skevhet-hantel')._figur;
+        const figur = d.getElementById('chart-skevhet-overview')._figur, ov = w2.eval('_laOversiktRader(getData())');
         expect(rader.map(r => r.querySelector('th').textContent)).toEqual(figur.y.ordning);
         expect(d.getElementById('la-huvuddiagram').contains(d.getElementById('la-oversikt'))).toBe(true);
-        expect(d.getElementById('avsnitt-la-bas').contains(d.getElementById('chart-skevhet-overview'))).toBe(true);   // bilden står i fördjupningen
+        expect(d.getElementById('avsnitt-la-bas').contains(d.getElementById('la-huvuddiagram'))).toBe(true);   // tabellen står i fördjupningen
+        expect(d.getElementById('la-bas-exportkopia').contains(d.getElementById('chart-skevhet-overview'))).toBe(true);   // bilden bara i exporten
+        expect(d.getElementById('la-bas-exportkopia').hidden).toBe(true);
         const punkter = figur.lager.flatMap(l => l.data.map(p => ({ ...p, serie: l.serie })));
         for (const tr of rader) {
             const celler = [...tr.children].map(c => c.textContent.replace(/\u00a0|\u202f/g, ' ')), bas = celler[0];
             const p = punkter.find(x => x.y === bas);
-            const kv = hantel.lager[1].data.find(x => x.y === bas), ma = hantel.lager[2].data.find(x => x.y === bas);
+            const o = ov.find(x => 'BAS ' + x.bas === bas), kv = { n: o.nKv, x: Math.round(o.medKv) }, ma = { n: o.nMa, x: Math.round(o.medMa) };
             expect(celler[1]).toBe(`${kv.n} / ${ma.n}`);
             expect(Number(celler[2].replace(/\D/g, ''))).toBe(kv.x);
             expect(Number(celler[3].replace(/\D/g, ''))).toBe(ma.x);
             expect(celler[4].startsWith(kv.x < ma.x ? '−' : kv.x > ma.x ? '+' : '')).toBe(true);
             expect(Number(celler[4].replace(/\D/g, ''))).toBe(Math.abs(kv.x - ma.x));
+            expect(tr.querySelector('th button.btn-evidence')).not.toBeNull();     // beviset för raden står vid intervallets namn
             expect(celler[6].startsWith(p.etikett.replace(/\u00a0|\u202f/g, ' '))).toBe(true);
             expect(celler[7]).toBe(p.serie);                                      // status i ord, inte bara i färg
             const svg = tr.querySelector('svg.la-oversikt-grafik');

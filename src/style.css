@@ -338,6 +338,7 @@ details.avsnitt[open]:not(.card) { padding-bottom: 20px; }
 .la-oversikt-kvot { font-weight: 600; }
 .la-oversikt-ki { display: block; font-weight: 400; font-size: var(--fs-xs); color: var(--text-muted); }
 .la-oversikt-tom { color: var(--text-muted); text-align: center; padding: 20px; }
+.la-oversikt .la-oversikt-bevis { margin-left: 6px; vertical-align: middle; }
 .la-status { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: var(--fs-xs); font-weight: 600; white-space: nowrap; }
 /* Lila, som «Värt att granska» i yrkesgruppstabellen och «Börja här» i Prioritering. */
 .la-status.ar-granska { background: var(--status-granska-bg); color: var(--status-granska); }
@@ -2849,8 +2850,7 @@ body.forhandsvisning .content-body { outline: 3px dashed var(--status-varning); 
 .ov-filrad .btn { margin-left: auto; }
 .ov-filrad-lank { background: none; border: 0; padding: 0; font: inherit; color: var(--primary, #1d4ed8); text-decoration: underline; cursor: pointer; }
 .ov-filrad-lank:focus-visible { outline: 2px solid var(--primary, #1d4ed8); outline-offset: 2px; border-radius: 2px; }
-.ov-lage { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 16px; margin: 16px 0 8px; }
-@media (max-width: 1100px) { .ov-lage { grid-template-columns: minmax(0, 1fr); } }
+.ov-lage { margin: 16px 0 8px; }   /* kvartilkortet efter Att göra, i hela bredden (trädkartan står i Struktur) */
 details.avsnitt .ptrack > h3 { display: none; }           /* rubriken står i avsnittets sammanfattning */
 details.avsnitt > section.card, details.avsnitt > div > .card.ptrack { box-shadow: none; padding: 0; margin-bottom: 0; }
 @media print { #view-dashboard.har-data #upload-sektion { display: none; } }
