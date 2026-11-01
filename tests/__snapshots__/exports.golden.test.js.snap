@@ -1042,6 +1042,70 @@ exports[`golden: Excel-exporterna på fast dataset > "Excel (alla flikar)" match
       null,
     ],
     [
+      "Ålder & karriär — livscykelmodellen",
+      null,
+    ],
+    [
+      "Total i datafilen",
+      62,
+    ],
+    [
+      "= Använda i analysen",
+      62,
+    ],
+    [
+      null,
+      null,
+    ],
+    [
+      "Formler & definitioner",
+      null,
+    ],
+    [
+      "  Modell",
+      "log(lön) ~ kön + ålder + ålder² + kön×ålder + kön×ålder² + C(BAS), skattad med minsta kvadratmetoden",
+    ],
+    [
+      "  Standardfel",
+      "HC3-robusta standardfel (tål att lönespridningen skiljer mellan grupper)",
+    ],
+    [
+      "  BAS-intervall",
+      "Indikatorvariabler; i kodningen är BAS B referensintervall. Kurvan visas för det valda intervallet (B), övriga intervall får sin nivå ur sin BAS-koefficient",
+    ],
+    [
+      "  Skillnad kvinnor mot män",
+      "(exp(skillnaden på log-skalan) − 1) × 100 vid varje ålder; kvinnors lön i % av mäns är 100 plus skillnaden",
+    ],
+    [
+      "  Skuggade band",
+      "95 % konfidensintervall för den predicerade lönen",
+    ],
+    [
+      "  Säkerställd förändring",
+      "Kön×ålder eller kön×ålder² med p under 0,10 (tolkningsregeln). Stjärnorna i modelljämförelsen: * p under 0,05, ** p under 0,01, *** p under 0,001",
+    ],
+    [
+      null,
+      null,
+    ],
+    [
+      "Speciella regler",
+      null,
+    ],
+    [
+      "  Modellen räknas på hela underlaget, inte på flikens urval av BAS-intervall",
+      null,
+    ],
+    [
+      "  Kurvorna bygger på ett tvärsnitt av lönerna i dag: de visar skillnader mellan åldersgrupper just nu, inte hur en persons lön utvecklas över karriären. Åldersgrupperna skiljer sig också i utbildning, yrkesval och anställningstid (kohorteffekter), så en skillnad mellan 30- och 60-åringar är inte en förväntad löneutveckling.",
+      null,
+    ],
+    [
+      null,
+      null,
+    ],
+    [
       "Lika arbete — multivariat regression",
       null,
     ],
@@ -4010,6 +4074,15 @@ exports[`golden: PDF/print-rapporten (buildPrintReport) på fast dataset > urval
                         </tbody></table>
                         <p class="pr-tat"><strong>Formler:</strong></p><ul><li><strong>Lönegap (Kv mot Mä):</strong> median(kvinnors lön) / median(mäns lön) × 100%. 100% = lika lön.</li><li><strong>Lagstadgat tröskelvärde:</strong> |gap − 100%| &gt; 5% (EU-direktiv 2023/970, utredningsgräns)</li><li><strong>Könsskevhet:</strong> Andel av ett kön &lt; 40% av gruppen (jämn fördelning kräver att båda könen ≥ 40%)</li><li><strong>Översiktsdiagram:</strong> Punkt per BAS; färg och symbol = avvikelse från 100 % (Balanserat ≤ 3 %, grön cirkel · Följ upp 3–5 %, bärnstensgul kvadrat · Värt att granska &gt; 5 %, lila romb)</li></ul>
                         <p class="pr-tat"><strong>Speciella regler:</strong></p><ul><li>Kräver minst 10 personer av varje kön för att medianer ska visas (k-anonymitet)</li><li>Könsfördelning räknas så länge totalen ≥ 5 (även om ena könet har &lt; 5 individer)</li></ul>
+                    
+                        <h3 class="pr-ned-14">Ålder &amp; karriär — livscykelmodellen</h3>
+                        <table class="kpi pr-under">
+                            <tbody><tr><th>Total i datafilen</th><td>62</td></tr>
+                            
+                            <tr><th><strong>= Använda i denna analys</strong></th><td><strong>62</strong></td></tr>
+                        </tbody></table>
+                        <p class="pr-tat"><strong>Formler:</strong></p><ul><li><strong>Modell:</strong> log(lön) ~ kön + ålder + ålder² + kön×ålder + kön×ålder² + C(BAS), skattad med minsta kvadratmetoden</li><li><strong>Standardfel:</strong> HC3-robusta standardfel (tål att lönespridningen skiljer mellan grupper)</li><li><strong>BAS-intervall:</strong> Indikatorvariabler; i kodningen är BAS B referensintervall. Kurvan visas för det valda intervallet (B), övriga intervall får sin nivå ur sin BAS-koefficient</li><li><strong>Skillnad kvinnor mot män:</strong> (exp(skillnaden på log-skalan) − 1) × 100 vid varje ålder; kvinnors lön i % av mäns är 100 plus skillnaden</li><li><strong>Skuggade band:</strong> 95 % konfidensintervall för den predicerade lönen</li><li><strong>Säkerställd förändring:</strong> Kön×ålder eller kön×ålder² med p under 0,10 (tolkningsregeln). Stjärnorna i modelljämförelsen: * p under 0,05, ** p under 0,01, *** p under 0,001</li></ul>
+                        <p class="pr-tat"><strong>Speciella regler:</strong></p><ul><li>Modellen räknas på hela underlaget, inte på flikens urval av BAS-intervall</li><li>Kurvorna bygger på ett tvärsnitt av lönerna i dag: de visar skillnader mellan åldersgrupper just nu, inte hur en persons lön utvecklas över karriären. Åldersgrupperna skiljer sig också i utbildning, yrkesval och anställningstid (kohorteffekter), så en skillnad mellan 30- och 60-åringar är inte en förväntad löneutveckling.</li></ul>
                     
                         <h3 class="pr-ned-14">Lika arbete — multivariat regression</h3>
                         <table class="kpi pr-under">

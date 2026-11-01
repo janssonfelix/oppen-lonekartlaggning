@@ -235,8 +235,10 @@ också när det är hopfällt.
    Förslaget är ett förslag, ingen regel. *Mot ställningstagandet* är bandkartan, könens läge i spannet och hur stor
    andel av kvinnorna respektive männen som ligger i spannets nedre, mellersta och övre tredjedel. *Mot
    jämförelsestatistiken* är tabellen och diagrammen mot statistiken, med filter på BAS och sektor.
-7. **Utforska** — bygg egna vyer när en fråga inte besvaras av flikarna
-   ovan: välj rader och ev. kolumner, mått och diagramtyp, om du vill se helheten eller
+7. **Utforska** har två avsnitt: **Löneöversikt — alla BAS-intervall** (den fasta tabellen) och **Egna vyer**. I
+   Egna vyer bygger du det som en fråga kräver när flikarna ovan inte besvarar den: välj rader och ev. kolumner, mått
+   och diagramtyp (väljaren har de vanliga typerna överst och resten, bland dem värmekartan och regnmolnet, under
+   *Fler diagramtyper*), om du vill se helheten eller
    uppdelat per kön, och begränsa urvalet med
    villkor under **Urval**: på personer (t.ex. "lön minst 30 000 kr", "BAS är inte
    A", alla eller något av villkoren) och på grupper (t.ex. "gap mindre än 95 %").
@@ -294,13 +296,17 @@ exportera* → *Rapportens innehåll* kan ni ordna om och ta bort tabellerna.
    Blocket **Var uppstår löneskillnaden?** kommer direkt efter Sammanfattning.
    Efter Likvärdigt arbete kommer blocket **Lägre krav, högre lön**.
 4. Komplettera vid behov:
-   - **PDF-rapport** via "Generera PDF": en låst kopia av Word-utkastet, att verifiera mot. Under
+   - **PDF-rapport** via "Generera PDF": en låst kopia av Word-utkastet, att verifiera mot. Fältet **Organisation**
+     intill knappen är namnet på rapportens försättsblad; det hämtas från organisationspaketet när ett är inläst. Under
      *Rapportens innehåll* väljer du vilka avsnitt som följer med i båda (hela dokumentationen,
      ledningsbrief, facklig dialog eller ett eget urval).
    - **Protokollet för gemensam lönebedömning** som underlag för **facklig samverkan**
      (finns i samma flik, under Samverkan och uppföljning).
    - **Excel (alla flikar)** för bilagor och egen vidarebearbetning.
    - **ZIP** när ni vill ha allt på en gång: Word-utkastet, Excel-filen och diagrammen från alla flikar som bilder.
+   - Raden under exporterna länkar till flikarna med egna underlag: **Likvärdigt arbete** (kandidatparen), **Struktur &
+     rapportmått** (EU-rapportmåtten), **Prioritering** (åtgärdslistan) och **Löneöversyn** (prognosen). Deras
+     exporter finns i respektive flik.
 5. **Samverka** med arbetstagarorganisationerna och dokumentera datum, parter och
    synpunkter (fältet finns i Word-utkastet).
 

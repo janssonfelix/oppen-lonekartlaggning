@@ -512,4 +512,28 @@ describe('ett statusordförråd och ett mått i nyckeltalen', () => {
         expect(rutor[1]).toEqual(['Kvinnors lön i % av mäns, 65 år', pct(100 + r.gapAt65)]);
         expect(d.querySelector('#livscykel-content .livscykel-kvot-not').textContent).toContain('Modellen ger skillnaden i procent');
     });
+    it('livscykeln säger "inte säkerställd" i ord, stjärnorna förklaras, och modellformeln står i beräkningspanelen', () => {
+        const w = demo();
+        w.__renderTabContent('kon');
+        w.eval('renderLifecycleAnalysis()');
+        const d = w.document, r = w.eval('runLifecycleRegression(_lifecycleFixBas)');
+        const lop = d.getElementById('livscykel-content').textContent;
+        expect(lop).not.toMatch(/(^|[\s(>])ns([\s).,<]|$)/);   // \b räcker inte: å, ä och ö räknas inte som bokstäver där
+        expect(lop).not.toMatch(/log\(lön\)|HC3|C\(BAS\)|referensintervall/);
+        const saker = [...d.querySelectorAll('#livscykel-content .stat-box')].find(b => /säkerställd\?/.test(b.textContent));
+        const ord = p => p < 0.10 ? 'säkerställd' : 'inte säkerställd';
+        expect(saker.querySelector('.fs-md').textContent.replace(/\s+/g, ' ')).toContain(`Linjär: p = ${r.kvAgePVal < 0.001 ? '< 0,001' : r.kvAgePVal.toFixed(3).replace('.', ',')}, ${ord(r.kvAgePVal)}`);
+        expect(d.querySelector('#livscykel-content .livscykel-stjarnor').textContent).toContain('*** p < 0,001');
+        expect(d.querySelector('#livscykel-content .livscykel-modell-not').textContent)
+            .toMatch(/kön, ålder, åldern i kvadrat.*samspelet mellan kön och ålder.*BAS-intervall.*Så räknas det.*Beräkning & urval/s);
+        // Beräkningspanelen i flikens Så räknas det har formeln, standardfelen och referensintervallet.
+        const panel = d.querySelector('details.audit-panel[data-audit-id="livscykel"]');
+        expect(panel.closest('details.avsnitt').querySelector('summary h2').textContent).toBe('Så räknas det');
+        expect(panel.closest('.view-panel').id).toBe('view-livscykel');
+        const innehall = panel.querySelector('.audit-content').textContent;
+        expect(innehall).toContain('log(lön) ~ kön + ålder + ålder² + kön×ålder + kön×ålder² + C(BAS)');
+        expect(innehall).toContain('HC3-robusta standardfel');
+        expect(innehall).toContain(`BAS ${r.refBas} referensintervall`);
+        expect(w.eval('auditRegistry.livscykel').usedInAnalysis).toBe(r.n);
+    });
 });

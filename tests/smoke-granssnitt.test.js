@@ -64,7 +64,21 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         expect(d.querySelectorAll('#dk-slutsatser .ar-kritisk')).toHaveLength(0);
         // Exporterna: en rad per underlag med en beskrivning och en knapp eller ett val.
         const rader = [...d.querySelectorAll('#export-hub .export-lista > .export-hub-row')];
-        expect(rader).toHaveLength(10);
+        // Bara det som exporterar står som rader; flikarna med egna underlag är länkar i raden under listan.
+        expect(rader).toHaveLength(6);
+        expect(d.querySelectorAll('#export-hub [data-flow-tab]')).toHaveLength(0);
+        expect(d.getElementById('export-hub').textContent).not.toContain('Öppna fliken');
+        const fler = d.querySelector('#export-hub .export-fler');
+        expect(fler.textContent).toMatch(/^Fler underlag finns i flikarna: Likvärdigt arbete \(kandidatparen\), Struktur & rapportmått \(EU-rapportmåtten\), Prioritering \(åtgärdslistan\), Löneöversyn \(prognosen\)\.$/);
+        expect([...fler.querySelectorAll('a[data-go-to-tab]')].map(a => a.dataset.goToTab)).toEqual(['likvardighet', 'struktur', 'prioritering', 'loneoversyn']);
+        fler.querySelector('a[data-go-to-tab="prioritering"]').click();
+        expect(d.querySelector('.nav-item.active').dataset.tab).toBe('prioritering');
+        d.querySelector('.nav-item[data-tab="dokumentera"]').click();
+        // Organisationens namn står intill Generera PDF, förifyllt och förklarat.
+        const pdfRad = d.getElementById('btn-export-pdf').parentElement;
+        expect(pdfRad.querySelector(':scope > .export-org #kl-org-name')).not.toBeNull();
+        expect(d.getElementById('kl-org-forklaring').textContent).toMatch(/försättsblad.*organisationspaketet/);
+        expect(d.getElementById('kl-org-name').getAttribute('aria-describedby')).toBe('kl-org-forklaring');
         for (const r of rader) {
             expect(r.querySelector('strong').textContent.trim().length).toBeGreaterThan(2);
             expect(r.querySelector('span').textContent.trim().length).toBeGreaterThan(20);

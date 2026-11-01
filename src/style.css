@@ -2254,8 +2254,14 @@ summary:focus-visible {
 .export-lista { display: grid; gap: 8px; }
 .export-lista .export-hub-row .btn { min-width: 150px; justify-content: center; }
 .export-rad-primar { border-color: var(--primary, #1d4ed8); background: var(--yta); }
-.export-rad-val { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 8px 12px; margin-top: 8px; max-width: 640px; align-items: end; }
-.export-rad-val label { display: block; }
+/* PDF-raden: organisationens namn står intill knappen (etikett, fält, knapp i en rad), med förklaringen i texten. */
+.export-hub-row > .export-org { flex: 0 1 auto; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; max-width: 360px; }
+.export-org label { white-space: nowrap; }
+.export-org input { width: 230px; max-width: 100%; }
+.export-org .upload-namn-fel { flex-basis: 100%; margin: 0; }
+.export-hub-row .export-org-forklaring { margin-top: 4px; }
+/* Raden under exporterna: flikarna med egna underlag, som länkar. */
+.export-fler { margin: 12px 2px 0; font-size: var(--fs-sm); color: var(--text-muted); line-height: 1.5; }
 @media print { #export-hub { display: none !important; } }
 
 /* #UX Handlingsplansmall: förifyllda (read-only) rader vs fyllbara tomrader */
@@ -2823,7 +2829,7 @@ body.forhandsvisning .content-body { outline: 3px dashed var(--status-varning); 
 .table-responsive, #struktur-sektorer { overflow-x: auto; }
 .export-lista { grid-template-columns: minmax(0, 1fr); }
 @media (max-width: 640px) {
-    .export-rad-val { grid-template-columns: minmax(0, 1fr); }
+    .export-hub-row > .export-org { max-width: none; }
     /* Rader och rutnät som är satta direkt på elementet: de bryts respektive staplas på telefonbredd. */
     .view-panel [style*="flex"], .controls-row { flex-wrap: wrap !important; }
     .view-panel [style*="grid-template-columns"] { grid-template-columns: minmax(0, 1fr) !important; }

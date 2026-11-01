@@ -2,7 +2,7 @@
 // Copyright 2026 Felix Jansson
 
 // #5 Export-hubb: direktexporter för de state-drivna underlagen (kräver inte att
-// respektive flik besökts). Övriga hubb-rader navigerar via data-flow-tab.
+// respektive flik besökts). Flikarna med egna underlag nås från länkraden under exporterna (data-go-to-tab).
 document.getElementById('btn-hub-jpa')?.addEventListener('click', () => exportJPAProtocol());
 document.getElementById('btn-hub-handlingsplan')?.addEventListener('click', () => exportHandlingsplan());
 

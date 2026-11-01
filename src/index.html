@@ -617,9 +617,9 @@
                         
                         <strong>Hela löneläget, och egna vyer</strong> Löneöversikten visar lönenivåerna per BAS-intervall, uppdelat på kön och yrkesgrupp; längre ned bygger du egna tabeller och diagram. Börja här om du vill ha helhetsbilden innan du gräver i enskilda grupper.
                     </div>
-                    <div class="card">
+                    <details class="card avsnitt" id="avsnitt-ut-oversikt" open>
+                        <summary><span class="avsnitt-titel"><h2>Löneöversikt — alla BAS-intervall</h2><span class="avsnitt-under">Den fasta tabellen: lönenivåerna per BAS-intervall, uppdelat på kön och yrkesgrupp</span></span><span class="avsnitt-nyckel" id="nyckel-ut-oversikt"></span></summary>
                         <div class="card-header">
-                            <h2>Löneöversikt — alla BAS-intervall</h2>
                             <div class="rad-bryt gap-16">
                                 <button id="rapport-collapse-all" class="btn btn-secondary btn-sm" type="button">Fäll in alla</button>
                                 <button id="rapport-expand-all" class="btn btn-secondary btn-sm" type="button">Fäll ut alla</button>
@@ -654,7 +654,6 @@
                                 </tbody>
                             </table>
                         </div>
-                    </div>
                     <details class="audit-panel" data-audit-id="rapport">
                         <summary>Beräkning &amp; urval för denna analys</summary>
                         <div class="audit-content"><em class="f-dampad">Laddar...</em></div>
@@ -680,6 +679,7 @@
                                 <li><em>Fäll in alla</em> och fäll sedan ut de BAS-intervall som är i fokus, så hålls materialet kort</li>
                             </ul>
                         </div>
+                    </details>
                     </details>
                 </div>
 
@@ -881,7 +881,7 @@
                     </div>
                     </details>
                     <details class="avsnitt" id="avsnitt-ak-alla">
-                        <summary><span class="avsnitt-titel"><h2>Jämför alla BAS-intervall</h2><span class="avsnitt-under">Följer inte urvalet: lön mot ålder i varje intervall, sida vid sida</span></span><span class="avsnitt-nyckel" id="nyckel-ak-alla"></span></summary>
+                        <summary><span class="avsnitt-titel"><h2>Jämför alla BAS-intervall</h2><span class="avsnitt-under">Visar alla intervall oavsett urvalet ovan: lön mot ålder i varje intervall, sida vid sida</span></span><span class="avsnitt-nyckel" id="nyckel-ak-alla"></span></summary>
                         <div class="card marg-16-0-0">
                             <h3 class="fs-lg marg-0-0-8">Lön mot ålder i varje BAS-intervall</h3>
                             <p class="text-dampad-xs marg-0-0-8">Ett litet diagram per BAS-intervall med samma axlar, så att intervallen kan jämföras sida vid sida.</p>
@@ -897,7 +897,11 @@
                     
                     
                     <details class="card avsnitt" id="avsnitt-ak-metod">
-                        <summary><span class="avsnitt-titel"><h2>Så används fliken</h2><span class="avsnitt-under">Tolkningstips och användning i kartläggning och dialog</span></span><span class="avsnitt-nyckel" id="nyckel-ak-metod"></span></summary>
+                        <summary><span class="avsnitt-titel"><h2>Så räknas det</h2><span class="avsnitt-under">Beräkning, urval och hur fliken används</span></span><span class="avsnitt-nyckel" id="nyckel-ak-metod"></span></summary>
+                        <details class="audit-panel" data-audit-id="livscykel">
+                            <summary>Beräkning &amp; urval för denna analys</summary>
+                            <div class="audit-content"><em class="f-dampad">Laddar...</em></div>
+                        </details>
                         <details class="flik-usage">
                         <summary>Så används fliken i arbetet</summary>
                         <div class="flik-usage-content">
@@ -2019,11 +2023,12 @@
                                 <button id="btn-export-docdraft" class="btn btn-primary" aria-label="Ladda ner redigerbart Word-utkast av lönekartläggningens dokumentation">Word-utkast (dokumentation)</button>
                             </div>
                             <div class="export-hub-row">
-                                <div><strong>PDF-rapport</strong><span>Låst kopia av Word-utkastet, att verifiera mot: samma avsnitt i samma ordning. Med hela dokumentationen vald följer flikarnas tabeller och diagram med som bilagor.</span><p class="export-besked" id="besked-pdf"></p><div class="export-rad-val"><div class="namn-falt">
-                                <label for="kl-org-name" class="versal farg-dampad fs-0_72rem fw-600">Organisation (står i PDF-rapporten)</label>
-                                <input type="text" id="kl-org-name" class="form-select fs-sm pad-6-10 bredd-100p" maxlength="100" autocomplete="off" placeholder="t.ex. Exempelkommunen, förskolan">
+                                <div><strong>PDF-rapport</strong><span>Låst kopia av Word-utkastet, att verifiera mot: samma avsnitt i samma ordning. Med hela dokumentationen vald följer flikarnas tabeller och diagram med som bilagor.</span><span class="export-org-forklaring" id="kl-org-forklaring">Organisationens namn skrivs på rapportens försättsblad, i PDF-rapporten och Word-utkastet; det hämtas från organisationspaketet när ett är inläst och är samma namn som på Översikt.</span><p class="export-besked" id="besked-pdf"></p></div>
+                                <div class="namn-falt export-org">
+                                <label for="kl-org-name" class="fs-sm fw-600">Organisation</label>
+                                <input type="text" id="kl-org-name" class="form-select fs-sm pad-6-10" maxlength="100" autocomplete="off" placeholder="t.ex. Exempelkommunen, förskolan" aria-describedby="kl-org-forklaring">
                                 <p class="upload-namn-fel" role="alert" hidden></p>
-                                </div></div></div>
+                                </div>
                                 <button id="btn-export-pdf" class="btn btn-secondary" aria-label="Generera PDF-rapport via skriv ut">Generera PDF</button>
                             </div>
                             <div class="export-hub-row">
@@ -2042,23 +2047,8 @@
                                 <div><strong>Handlingsplansunderlag</strong><span>Förifylld åtgärdslista från Prioritering + Likvärdigt arbete — utgångspunkt för handlingsplanen.</span></div>
                                 <button id="btn-hub-handlingsplan" class="btn btn-secondary btn-sm" type="button"><svg class="ikon ikon-laddaNed" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 4v11"/><path d="m7 11 5 5 5-5"/><path d="M5 20h14"/></svg> Excel</button>
                             </div>
-                            <div class="export-hub-row">
-                                <div><strong>Likvärdighetsanalys</strong><span>Kandidatpar: kvinnodominerade yrken mot jämförelseyrken — justera trösklar i fliken före export.</span></div>
-                                <button class="btn btn-secondary btn-sm" type="button" data-flow-tab="likvardighet">Öppna fliken</button>
-                            </div>
-                            <div class="export-hub-row">
-                                <div><strong>Struktur &amp; EU-rapport</strong><span>Representation, kvartilfördelning och rapportutkast enligt lönetransparensdirektivet.</span></div>
-                                <button class="btn btn-secondary btn-sm" type="button" data-flow-tab="struktur">Öppna fliken</button>
-                            </div>
-                            <div class="export-hub-row">
-                                <div><strong>Prioriteringslista</strong><span>Rangordnade grupper med kostnadsuppskattning — välj referens i fliken före export.</span></div>
-                                <button class="btn btn-secondary btn-sm" type="button" data-flow-tab="prioritering">Öppna fliken</button>
-                            </div>
-                            <div class="export-hub-row">
-                                <div><strong>Löneöversyn (prognos)</strong><span>Budgetscenario med nya löner per grupp — konfigurera pott och riktade satsningar i fliken.</span></div>
-                                <button class="btn btn-secondary btn-sm" type="button" data-flow-tab="loneoversyn">Öppna fliken</button>
-                            </div>
                         </div>
+                        <p class="export-fler">Fler underlag finns i flikarna: <a href="#" data-go-to-tab="likvardighet">Likvärdigt arbete</a> (kandidatparen), <a href="#" data-go-to-tab="struktur">Struktur &amp; rapportmått</a> (EU-rapportmåtten), <a href="#" data-go-to-tab="prioritering">Prioritering</a> (åtgärdslistan), <a href="#" data-go-to-tab="loneoversyn">Löneöversyn</a> (prognosen).</p>
                     </div>
                     <p class="avsnitt-rubrikrad">Fördjupning</p>
                     <details class="avsnitt" id="avsnitt-dk-robusthet" open>
@@ -2139,8 +2129,9 @@
                 <!-- Lönepolitik: fördjupad analys mot eget ställningstagande -->
                 <!-- Utforska (fördjupning): egna vyer -->
                 <div id="view-utforska" class="view-panel dold">
+                    <details class="avsnitt" id="avsnitt-ut-egna" open>
+                    <summary><span class="avsnitt-titel"><h2>Egna vyer</h2><span class="avsnitt-under">Tabeller och diagram du bygger själv: rader, kolumner, mått och urval</span></span><span class="avsnitt-nyckel" id="nyckel-ut-egna"></span></summary>
                     <div class="card mb-16">
-                        <h2 class="fs-xl marg-0-0-6">Utforska — egna vyer</h2>
                         <p class="farg-dampad fs-md lh-1_55 marg-0-0-14 max-bredd-70ch">
                             Välj vad raderna och kolumnerna ska vara, vilket mått du vill se och hur det ska visas. Under Urval avgränsar du vilka personer och grupper som tas med.
                             Detta är ett <strong>utforskande underlag</strong> för att hitta grupper värda att titta närmare på —
@@ -2193,19 +2184,23 @@
                             <div class="explore-ctl">
                                 <label for="explore-typ">Diagramtyp</label>
                                 <select id="explore-typ" class="form-select">
-                                    <option value="auto">Automatisk</option>
-                                    <option value="staplar">Staplar</option>
-                                    <option value="liggande">Liggande staplar</option>
-                                    <option value="hantel">Hanteldiagram</option>
-                                    <option value="bubbla">Bubbeldiagram</option>
-                                    <option value="lada">Låddiagram</option>
-                                    <option value="punkter">Individpunkter</option>
-                                    <option value="svarm">Punktsvärm</option>
-                                    <option value="regnmoln">Regnmoln</option>
-                                    <option value="kvantilpunkter">Kvantilpunkter</option>
-                                    <option value="heatmap">Heatmap</option>
-                                    <option value="grupperade">Grupperade staplar</option>
-                                    <option value="staplade">Staplade staplar</option>
+                                    <optgroup label="Vanliga">
+                                        <option value="auto">Automatisk</option>
+                                        <option value="staplar">Staplar</option>
+                                        <option value="liggande">Liggande staplar</option>
+                                        <option value="lada">Låddiagram</option>
+                                        <option value="grupperade">Grupperade staplar</option>
+                                    </optgroup>
+                                    <optgroup label="Fler diagramtyper">
+                                        <option value="hantel">Hanteldiagram</option>
+                                        <option value="bubbla">Bubbeldiagram</option>
+                                        <option value="punkter">Individpunkter</option>
+                                        <option value="svarm">Punktsvärm</option>
+                                        <option value="regnmoln">Regnmoln</option>
+                                        <option value="kvantilpunkter">Kvantilpunkter</option>
+                                        <option value="heatmap">Värmekarta</option>
+                                        <option value="staplade">Staplade staplar</option>
+                                    </optgroup>
                                 </select>
                             </div>
                             <div class="explore-ctl">
@@ -2278,6 +2273,7 @@
                             <table id="explore-table" class="data-table" aria-label="Utforska: valt mått per vald grupp"></table>
                         </div>
                     </div>
+                    </details>
                 </div>
             </div>
         </main>

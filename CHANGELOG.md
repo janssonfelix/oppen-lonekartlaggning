@@ -15,6 +15,17 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ### Gränssnitt
 
+- **Ålder & karriär utan förkortningar och formel i löptexten.** Livscykelns nyckeltal säger "inte säkerställd" i
+  stället för "ns"; modelljämförelsen markerar med stjärnor som tabellens not förklarar (* p < 0,05 … *** p < 0,001).
+  Modellformeln, standardfelen och referensintervallet står i flikens nya *Så räknas det* → *Beräkning & urval*;
+  löptexten säger i en mening vad modellen tar hänsyn till. *Jämför alla BAS-intervall* visar alla intervall oavsett
+  urvalet ovan, och underrubriken säger det.
+- **Utforska i två avsnitt, diagramtyperna i två grupper.** *Löneöversikt — alla BAS-intervall* och *Egna vyer* har var
+  sin avsnittsrubrik och är öppna. Diagramtypsväljaren har *Vanliga* (Automatisk, Staplar, Liggande staplar, Låddiagram,
+  Grupperade staplar) och *Fler diagramtyper* (resten); alla går att välja som förut. Heatmap heter Värmekarta.
+- **Dokumentera har bara exporter som rader.** De fyra raderna med *Öppna fliken* är en rad med länkar till Likvärdigt
+  arbete, Struktur & rapportmått, Prioritering och Löneöversyn. Fältet *Organisation* står intill *Generera PDF*, med en
+  mening om att namnet skrivs på rapportens försättsblad och hämtas från organisationspaketet.
 - **Handlingsplanen fylls i på skärmen.** Sakligt skäl prövat? och Status är rullistor, Ansvarig och Tidsplan
   fritext. Det som fylls i ligger i minnet, följer med i konfigurationsfilen, Excel-filen, utskriften och Word-utkastets
   åtgärdstabell, och nollas av Rensa all data. Fritext som liknar ett personnummer eller en e-postadress ger en varning.

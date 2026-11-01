@@ -1281,7 +1281,8 @@ describe('Ålder & karriär — ett urval för hela fliken, och avsnitt med nyck
         expect(t(d.getElementById('nyckel-ak-lon').textContent)).toMatch(/^\d+ femårsgrupper$/);
         expect(t(d.getElementById('nyckel-ak-alla').textContent)).toMatch(/^\d+ BAS-intervall$/);
         // Avsnittet som inte följer urvalet säger det i rubriken, inte i en not under varje diagram.
-        expect(t(d.querySelector('#avsnitt-ak-alla > summary').textContent)).toMatch(/Följer inte urvalet/);
+        expect(t(d.querySelector('#avsnitt-ak-alla > summary').textContent)).toMatch(/Visar alla intervall oavsett urvalet ovan/);
+        expect(d.getElementById('avsnitt-ak-alla').textContent).not.toMatch(/Följer inte urvalet/);
         expect(d.getElementById('avsnitt-ak-alla').textContent).not.toMatch(/oavsett valt BAS-intervall/);
     });
     it('ett kön under tröskeln (i exportläget): avsnittet om lönefördelning får inget nyckeltal', () => {
