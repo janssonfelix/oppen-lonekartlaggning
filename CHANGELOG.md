@@ -4,7 +4,7 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 `dist/oppen-lonekartlaggning.html`, gjort med `npm run bundle`. Byggets SHA-256 står i
 `dist/RELEASE.txt`.
 
-## Oförlöst
+## 2026.11.02
 
 ### Gränssnitt
 

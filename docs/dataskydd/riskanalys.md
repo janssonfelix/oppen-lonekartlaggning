@@ -1,7 +1,7 @@
 # Risk- och sårbarhetsanalys (dataskydd och informationssäkerhet) — Öppen lönekartläggning
 
-**Bygge:** `2026.10.19` · **Artefakt-SHA-256:** `995d5f2895c2b3691de32dbcacc6323d1ada6060670e7013192803ae9dbdf995` (se `dist/RELEASE.txt`).
-**Granskningsdatum:** 2026-10-20.
+**Bygge:** `2026.11.02` · **Artefakt-SHA-256:** `f52d08607785feb4759e160925cfabeb0a3243746aed90f5c6828eedb8ffc182` (se `dist/RELEASE.txt`).
+**Granskningsdatum:** 2026-11-02.
 **Granskningsmetod:** kodläsning påstående för påstående + statisk sökning i källkod och bygge +
 körning av det byggda verktyget i jsdom och i Chromium (utan nätverk) med syntetiska testfiler.
 Varje teknisk kontroll nedan är **verifierad mot koden och i webbläsaren**, inte antagen. Vad
@@ -66,8 +66,8 @@ aktivt vid uppladdning (se §6.4).
 
 **Användarförfattad text:** HR kan skriva egna
 bedömningar i verktyget — § 8-status + anteckning per granskningsområde,
-handlingsplanens fält per rad (sakligt skäl prövat, ansvarig, tidsplan, status) och
-redigerat struktur-narrativ. Texten lever endast i minnet (handlingsplanens fält i
+handlingsplanens fält per rad (sakligt skäl prövat, ansvarig, tidsplan, status, och för en egen rad som
+lagts till på fliken även åtgärd och berörd grupp) och redigerat struktur-narrativ. Texten lever endast i minnet (handlingsplanens fält i
 `state.handlingsplan`, nollas av *Rensa all data*),
 saneras inte (det är användarens egna ord) och lämnar verktyget enbart via
 användarinitierade utdata (Word-utkast, utskrift, konfigurationsfil, och för handlingsplanens fält
@@ -576,8 +576,9 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
 Konfig-JSON:en (**version 2**) innehåller: inställningar
 (trösklar, vikter, kostnadsinställningar, bristyrken,
 löneöversynens inställningar, där en riktad rad bär uppgiften om den föreslogs ur kandidatpar i likvärdigt arbete) samt **HR:s manuella arbete**: § 8-bedömningarna (status + anteckning per granskningsområde),
-handlingsplanens fält per förifylld rad (`handlingsplan`: radens nyckel — källa, AID och BAS — och sakligt skäl,
-ansvarig, tidsplan och status; rullistornas okända värden läses som tomma, fritexten kortas till 500 tecken),
+handlingsplanens fält per rad (`handlingsplan`: radens nyckel — källa, AID och BAS, eller `egen|` och ett slumpat
+id för en rad som lagts till på fliken — och sakligt skäl, ansvarig, tidsplan och status; en egen rad bär också sin
+åtgärd och berörda grupp som fritext; rullistornas okända värden läses som tomma, fritexten kortas till 500 tecken),
 avbockningarna i Att göra (punkternas id, som innehåller AID-kod och BAS),
 organisationsnamnet och ett redigerat struktur-narrativ, samt **årsbokslutet** (ADR-54): nyckeltal för hela
 organisationen, en rad per yrkesgrupp där båda könen når minsta gruppstorlek (antal per kön, medianer, gap) och
@@ -638,7 +639,7 @@ Skala: Sannolikhet/Konsekvens = Låg / Medel / Hög. Restrisk = efter åtgärd.
 | # | Risk | Sanno. | Konsek. | Åtgärd (i verktyget) | Restrisk |
 |---|---|---|---|---|---|
 | B1 | **Exportfiler lämnar skyddad miljö** (e-post, delning, osäker disk) | Hög | Hög | Endast aggregat i merparten av exporter; varningstexter/känslighetsnotis. Gäller även Word-utkastet och konfigfilen, som därtill kan innehålla **användarförfattade bedömningar** (§2/§6.8), och **diagramdata från individdiagram**, som innehåller en rad per person (§6.6). Det som kopieras till urklipp (tabeller, diagramdata, rapportunderlag) kan synkas till molnet eller andra enheter av operativsystemet eller en urklippshanterare (Windows molnurklipp, Apples universella urklipp); organisationen bör stänga av sådan synkning på de datorer som används | **Medel–hög** → kräver organisatorisk hantering (§8) |
-| B1b | Användaren skriver personuppgifter i fritextfält (§ 8-anteckningar, handlingsplanens fält m.m.) | Låg–medel | Medel | Riktlinje i gränssnitt + körguide: "gruppnivå — inga namn/personnummer"; handlingsplanens fält varnar när texten liknar ett personnummer eller en e-postadress; texten lämnar verktyget endast via användarinitierade utdata | **Låg–medel** (organisatorisk, §8) |
+| B1b | Användaren skriver personuppgifter i fritextfält (§ 8-anteckningar, handlingsplanens fält inklusive egna raders åtgärd och grupp, m.m.) | Låg–medel | Medel | Riktlinje i gränssnitt + körguide: "gruppnivå — inga namn/personnummer"; handlingsplanens fält varnar när texten liknar ett personnummer eller en e-postadress; texten lämnar verktyget endast via användarinitierade utdata | **Låg–medel** (organisatorisk, §8) |
 | B2 | Re-identifiering i små grupper | Medel | Medel | k-anon (standard 10, kan ändras — ADR-38; sänkning kräver bekräftelse, ger stående varning och står i metodbilagan, i exporterad data och — under 10 — på varje del som kan spridas för sig) i deskriptiva vyer; undantaget för likvärdigt arbete dokumenterat; Utforska visar små grupper men utelämnar dem ur export som standard (ADR-14); kvartilerna redovisar inga enskilda löner | **Medel** |
 | B2b | Användaren sänker minsta gruppstorlek och sprider en export där små grupper redovisas | Låg–medel | Medel | Standard 10 gäller vid varje start (inget lagras); sänkning kräver bekräftelse, också ur konfigurationsfil och organisationspaket; varning som inte går att stänga på alla flikar, och en mening under rubriken i utskrift; värdet och meningen om sänkning står i exporterna (metodbilaga, diagramdata, tabell-CSV, rapportunderlag; under 10 även diagrambilder, urklipp och sidfötter), så att mottagaren ser det; en konfigurationsfil utan fältet sänker inte ett strängare värde; organisationen kan sätta egen standard i organisationspaketet och ett golv som fältet, konfigurationsfilen och ett senare paket inte kan gå under utan bekräftelse (ADR-47); paketet kan också stänga av att små grupper tas med i Utforskas export | Kvarstår utan golv i paketet: verktyget kan inte hindra en behörig användare som bekräftar. Med golv kan tröskeln inte sänkas under det utan att ett nytt paket läses in och sänkningen bekräftas. Risken bärs av organisationens egna riktlinjer |
 | B3 | Avvikelse feltolkas som "diskriminering" utan saklig prövning | Medel | Medel | Coachande språk, bevis-popups, disclaimers ("verktyget dömer inte") | **Låg–medel** |
@@ -702,7 +703,7 @@ tar bort allt minne omedelbart. Verktyget gör inga utskick till de registrerade
 
 Varje påstående i detta dokument är prövat mot koden, med provkörning i jsdom och i Chromium.
 Skyddet bevakas av drift-, golden-, röktest-, k-anonymitets-, dokumentations-, statistik- och
-a11y-sviterna (65 testfiler) och av ett röktest av det byggda verktyget i en riktig webbläsare
+a11y-sviterna (75 testfiler) och av ett röktest av det byggda verktyget i en riktig webbläsare
 (`tools/browser-smoke.mjs`). Röktestet körs lokalt och i CI-arbetsflödet i
 Chromium, Firefox och WebKit. Verifieringen visar också var skyddet är svagare än det kan se ut: lagringsspärren är en
 reserv med kända luckor (§6.2); PII-kontrollens värdekontroll läser filens 50 första rader (§6.4);
@@ -723,6 +724,17 @@ läckt kolumn). Granskningen fann att extremvärdeslistan skrevs ut med Översik
 den bara visas i verktyget; den döljs nu vid utskrift (§6.5). Verktygets egen text om Ålder & karriär sade att
 punkterna per person alltid visas; den är rättad. A6 och §8 punkt 3 hänvisar nu till signaturen.
 Röktestet kördes i Chromium, Firefox och WebKit.
+
+**Granskningen 2026-11-02** prövade dokumentet mot koden som ändrats sedan föregående granskning (2026-10-21 till
+2026-11-01: ADR-50–55 och gränssnittsgenomgången). Kontrollerat på nytt: CSP-raden i bygget (ordagrant som §6.1,
+fem skript och fem hashar), sökningen i `dist/app.js` och biblioteksfilerna efter nätverks- och lagringsanrop
+(träffarna är lagringsspärren och verktygets egen text; 0 `setItem` i biblioteken), att `buildConfigSnapshot()`
+inte läser `state.data`, att *Rensa all data* nollar `state.handlingsplan`, och testsviten med röktestet i Chromium.
+Ett påstående ändrades: handlingsplanen kan nu få egna rader på fliken, och deras åtgärd och berörda grupp är
+fritext som följer med i konfigurationsfilen (nyckel `egen|…`, kortad till 500 tecken, prövad vid inläsning),
+handlingsplanens Excel-fil, Word-utkastets åtgärdstabell och rapportunderlaget — på samma villkor som övriga
+fält: varningen för text som liknar personnummer eller e-post gäller alla fritextfält på fliken, och raderna
+bygger på det användaren skriver, inte på individdata (§2, §6.8, B1b). Testsviten är 75 filer.
 
 | Kontroll | Metod | Resultat |
 |---|---|---|
@@ -748,7 +760,7 @@ Röktestet kördes i Chromium, Firefox och WebKit.
 | Konfigfilens innehåll | Kodläsning av `buildConfigSnapshot()` och importen | ✔ ingen `state.data`-referens; inställningar + användartext + avbockningar i Att göra (§6.8); import läser version 2 och avvisar andra versioner |
 | Word-utkast lokalt | Kodläsning + live-test: Blob fångad, innehåll inspekterat; zip-filen läses tillbaka i röktesterna (ADR-37) | ✔ lokal `Blob` (`.docx`), DEMODATA-märkning fungerar |
 | Tillgänglighet (markup) | axe-core i automatiska sviten (`tests/a11y.test.js`) | ✔ 0 överträdelser |
-| Automatiska tester | `npm test` (Vitest, 65 testfiler; kör om en fil vars arbetare kraschat i Node) + `npm run test:browser` (bygget i Chromium; samma röktest finns för Firefox och WebKit) | ✔ alla gröna |
+| Automatiska tester | `npm test` (Vitest, 75 testfiler; kör om en fil vars arbetare kraschat i Node) + `npm run test:browser` (bygget i Chromium; samma röktest finns för Firefox och WebKit) | ✔ alla gröna |
 | Bundle-integritet | Reproducerbart bygge + SHA-256 i RELEASE.txt; byggskydd mot mojibake och `node --check` (kodläsning av `tools/bundle.mjs`) | ✔ |
 
 ## 12. Slutsats

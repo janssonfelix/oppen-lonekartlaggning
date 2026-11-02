@@ -1,6 +1,6 @@
 {
   "name": "oppen-lonekartlaggning",
-  "version": "2026.10.19",
+  "version": "2026.11.2",
   "private": true,
   "engines": {
     "node": ">=22.12"
