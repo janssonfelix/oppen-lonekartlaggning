@@ -49,9 +49,10 @@ export function mdeFranSe(se) {
 
 /**
  * @param {any[]} rader
- * @param {{k?:number, audit?:any, mde?:number|null, modell?:any}} [opts]
+ * @param {{k?:number, audit?:any, mde?:number|null, modell?:any, modellFras?:string}} [opts] modellFras = frasen för en vald
+ *   förklaringsmodell som inte är standard (ADR-56); utelämnad ger standardtexten.
  */
-export function bedomUnderlag(rader, { k, audit, mde, modell } = {}) {
+export function bedomUnderlag(rader, { k, audit, mde, modell, modellFras } = {}) {
     const d = rader || [];
     const kriterier = [];
 
@@ -96,7 +97,8 @@ export function bedomUnderlag(rader, { k, audit, mde, modell } = {}) {
     const mStatus = modell === 'full' ? 'ok' : modell === 'minimal' ? 'varning' : 'kritisk';
     kriterier.push({
         id: 'modell', namn: 'Modell', status: mStatus, varde: modell ?? null,
-        text: modell === 'full' ? 'Regressionen tar hänsyn till både ålder och BAS-intervall.'
+        // modellFras (ADR-56): frasen för en vald modell som inte är standard; standardtexten ändras inte.
+        text: modell === 'full' ? (modellFras != null ? `Regressionen tar hänsyn till ${modellFras || 'kön, utan att något räknats bort'}.` : 'Regressionen tar hänsyn till både ålder och BAS-intervall.')
             : modell === 'minimal' ? 'Regressionen kunde bara ta hänsyn till ålder, inte BAS-intervall.'
             : 'Regressionen gick inte att skatta.',
     });

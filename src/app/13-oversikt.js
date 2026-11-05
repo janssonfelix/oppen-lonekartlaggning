@@ -98,9 +98,11 @@ function bedomningUnderlag({ reg: given } = {}) {
     const d = getData();
     if (!d.length) return null;
     const reg = given || runOLSRegression();
-    const modell = reg.error ? 'fel' : (reg.modelName === 'full' ? 'full' : 'minimal');
+    const modell = reg.error ? 'fel' : (reg.fellBackFromFull ? 'minimal' : 'full');   // 'full' = den valda modellen gick att skatta (ADR-56)
     const mde = reg.error ? null : _dqMdeFranSe(reg.seKonR);
-    const b = _dqBedomUnderlag(d, { k: kInstalld(), audit: state.dataAudit, mde, modell });   // jämförbarheten gäller det som lämnar verktyget (ADR-51)
+    // Frasen följer med bara när modellen inte är standard, så att standardtexten (och golden-facit) står still (ADR-56).
+    const modellFras = !reg.error && reg.modell && !_rgForklaringsmodellArStandard({ ...reg.modell, skal: '' }) ? reg.fras : undefined;
+    const b = _dqBedomUnderlag(d, { k: kInstalld(), audit: state.dataAudit, mde, modell, modellFras });   // jämförbarheten gäller det som lämnar verktyget (ADR-51)
     // Kontrollen av AID-kodningen (ADR-33) läggs till datakvalitetens kriterier.
     let aid = [];
     try { aid = _akAidKriterier(d, { k: kInstalld(), harAnsvar: !!state.ansvarKolumn }); }

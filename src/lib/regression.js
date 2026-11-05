@@ -245,12 +245,32 @@ function _sekvensRigg(rows, ageMean, basList) {
  *           nGrupper?:number, nGrupperBada?:number, nPersoner?:number, nEnkonade?:number}}
  */
 export function computeYrkesgruppGap(rows, y, isKv, ageC, { medAlder = true, extra = null, name = '+ Yrkesgrupp' } = {}) {
-    const N = rows.length;
     if (!rows.some(d => d.aid || d.yrke)) return { name, status: 'too_few', nGrupper: 0, nGrupperBada: 0, nPersoner: 0, nEnkonade: 0 };
-    const nyckel = d => `${(d.aid || d.yrke || '').toString().trim()}|${d.bas ?? ''}`;
     // Kolumnerna som inomtransformeras: kön, (ålder), (extra kolumner, t.ex. ansvarsindikatorer).
     const kol = rows.map((_, i) => [isKv[i], ...(medAlder ? [ageC[i]] : []), ...(extra ? extra[i] : [])]);
+    const inom = inomYrkesgrupp(rows, y, kol);
+    if (!inom.ok) return { name, status: 'too_few', ...inom.meta };
+    const fit = fitOLS(inom.X, inom.yW);
+    if (!fit) return { name, status: 'singular', ...inom.meta };
+    return {
+        name, status: 'ok',
+        gapPct: (Math.exp(fit.beta[0]) - 1) * 100,
+        R2: inom.R2Total(fit.rss),
+        k: inom.k,
+        ...inom.meta
+    };
+}
+
+/**
+ * Inomtransformationen för yrkesgrupp inom BAS (ADR-46): drar gruppmedelvärdet från log-lön och från varje kolumn i
+ * `kol` inom AID×BAS-gruppen. Delas av steget + Yrkesgrupp och av huvudregressionen när yrkesgrupp är vald (ADR-56).
+ * @param {any[]} rows @param {number[]} y @param {number[][]} kol kolumner per rad (utan intercept)
+ * @returns {{ok:boolean, X:number[][], yW:number[], k:number, nGrupper:number, meta:{nGrupper:number, nGrupperBada:number, nPersoner:number, nEnkonade:number}, R2Total:(rss:number)=>number}}
+ */
+export function inomYrkesgrupp(rows, y, kol) {
+    const N = rows.length;
     const p = kol[0].length;
+    const nyckel = d => `${(d.aid || d.yrke || '').toString().trim()}|${d.bas ?? ''}`;
     const grupper = new Map();   // nyckel → { n, sy, s[] (summa per kolumn), kv, ma }
     const key = new Array(N);
     for (let i = 0; i < N; i++) {
@@ -258,30 +278,23 @@ export function computeYrkesgruppGap(rows, y, isKv, ageC, { medAlder = true, ext
         let g = grupper.get(k);
         if (!g) { g = { n: 0, sy: 0, s: new Array(p).fill(0), kv: 0, ma: 0 }; grupper.set(k, g); }
         g.n++; g.sy += y[i]; for (let j = 0; j < p; j++) g.s[j] += kol[i][j];
-        if (isKv[i]) g.kv++; else g.ma++;
+        if (kol[i][0]) g.kv++; else g.ma++;   // kolumn 0 är könsindikatorn
     }
     let nGrupperBada = 0, nPersoner = 0;
     grupper.forEach(g => { if (g.kv > 0 && g.ma > 0) { nGrupperBada++; nPersoner += g.n; } });
     const meta = { nGrupper: grupper.size, nGrupperBada, nPersoner, nEnkonade: grupper.size - nGrupperBada };
+    const yMedel = y.reduce((s, v) => s + v, 0) / N;
+    let tss = 0; for (let i = 0; i < N; i++) tss += (y[i] - yMedel) ** 2;
+    const R2Total = rss => (tss > 0 ? 1 - rss / tss : 0);
     // Frihetsgrader: lutningarna plus en nivå per grupp
-    if (N < grupper.size + p + 5 || nGrupperBada === 0) return { name, status: 'too_few', ...meta };
+    if (N < grupper.size + p + 5 || nGrupperBada === 0) return { ok: false, X: [], yW: [], k: p + grupper.size, nGrupper: grupper.size, meta, R2Total };
     const X = new Array(N), yW = new Array(N);
     for (let i = 0; i < N; i++) {
         const g = grupper.get(key[i]);
         X[i] = kol[i].map((v, j) => v - g.s[j] / g.n);
         yW[i] = y[i] - g.sy / g.n;
     }
-    const fit = fitOLS(X, yW);
-    if (!fit) return { name, status: 'singular', ...meta };
-    const yMedel = y.reduce((s, v) => s + v, 0) / N;
-    let tss = 0; for (let i = 0; i < N; i++) tss += (y[i] - yMedel) ** 2;
-    return {
-        name, status: 'ok',
-        gapPct: (Math.exp(fit.beta[0]) - 1) * 100,
-        R2: tss > 0 ? 1 - fit.rss / tss : 0,
-        k: p + grupper.size,
-        ...meta
-    };
+    return { ok: true, X, yW, k: p + grupper.size, nGrupper: grupper.size, meta, R2Total };
 }
 
 /**

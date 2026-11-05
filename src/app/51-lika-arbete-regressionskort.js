@@ -28,7 +28,7 @@ function runOLSRegression() {
 
     const basList = [...new Set(raw.map(d => d.bas))].sort();
     // Indikatorvariabler: en kolumn per BAS-intervall utom det första, som är referens.
-    const basRef = basList[0];
+    const basRef0 = basList[0];
     const basInd = _basIndikatorer(basList);
 
     const ageMean = raw.reduce((s,d) => s + d.alder, 0) / raw.length;
@@ -38,21 +38,43 @@ function runOLSRegression() {
     const ageC = raw.map(d => d.alder - ageMean);
     const basD = raw.map(d => basInd.map(b => (d.bas === b ? 1 : 0)));
 
-    const buildX = (incBas) => raw.map((d,i) => {
-        const r = [1, isKv[i], ageC[i]];
+    // Förklaringsmodellen (ADR-56): vilka variabler som räknas bort. "Endast kön" är det ojusterade gapet, som inte får
+    // lämna verktyget när ett kön ligger under den inställda tröskeln (ADR-12); huvudtalet ska vara detsamma på skärmen
+    // och i exporten, så spärren följer den inställda tröskeln oavsett läge (som statGolv). Då gäller standardmodellen
+    // och panelen säger varför.
+    let modell = forklaringsmodell();
+    /** @type {string|null} */ let modellVarning = null;
+    if (!modell.bas && !modell.alder && !(kvN >= kInstalld() && maN >= kInstalld())) {
+        modell = { ...modell, bas: true, alder: true };
+        modellVarning = `Endast kön kan inte väljas: ett kön har färre än ${kInstalld()} personer i modellen (minsta gruppstorlek), så det ojusterade gapet får inte vara huvudtalet. Modellen är kön + BAS-intervall + ålder.`;
+    }
+
+    // Kolumnordningen är fast: [1, kön, (ålder), (BAS-indikatorer)], så att index 2 är ålder när den är vald.
+    const buildX = (incAge, incBas) => raw.map((d,i) => {
+        const r = [1, isKv[i]];
+        if (incAge) r.push(ageC[i]);
         if (incBas) r.push(...basD[i]);
         return r;
     });
-
-    const ladder = [
-        { name:'full',    desc:'kön + ålder + BAS-intervall (indikatorer)', X: buildX(true)  },
-        { name:'minimal', desc:'kön + ålder',                                X: buildX(false) }
-    ];
+    const beskriv = m => _rgModellBeskrivning(m);
+    // Reservstegen tar bort variabler i ordningen yrkesgrupp, BAS; inget bortvalt läggs tillbaka. 'full' = den valda modellen.
+    const ladder = [];
+    if (modell.yrkesgrupp) ladder.push({ name: 'full', desc: beskriv(modell), yrke: true });
+    const utanYrke = { ...modell, yrkesgrupp: false };
+    ladder.push({ name: modell.yrkesgrupp ? 'utanYrke' : 'full', desc: beskriv(utanYrke), X: buildX(utanYrke.alder, utanYrke.bas) });
+    if (modell.bas) { const m2 = { ...utanYrke, bas: false }; ladder.push({ name: 'minimal', desc: beskriv(m2), X: buildX(m2.alder, false) }); }
 
     const triedSteps = [];
     /** @type {any} */
     let chosen = null;
     for (const step of ladder) {
+        if (step.yrke) {
+            const fit = _regInomYrkesgrupp(raw, y, isKv, ageC, modell.alder);
+            if (!fit) { triedSteps.push({ name: step.name, desc: step.desc, status: 'singular', k: null }); continue; }
+            triedSteps.push({ name: step.name, desc: step.desc, status: 'ok', k: fit.k });
+            chosen = { ...fit, modelName: step.name, modelDesc: step.desc };
+            break;
+        }
         if (raw.length < step.X[0].length + 5) {
             triedSteps.push({ name: step.name, desc: step.desc, status: 'too_few', k: step.X[0].length });
             continue;
@@ -74,6 +96,8 @@ function runOLSRegression() {
             triedSteps,
             diagnostics: _diagnoseCollinearity(raw, basList)
         };
+    // Den modell som faktiskt skattades (reservsteget kan ha tagit bort variabler).
+    const skattad = chosen.modelName === 'full' ? modell : chosen.modelName === 'utanYrke' ? utanYrke : { ...utanYrke, bas: false };
 
     // Kön-koefficient (index 1) – HC3 robusta standardfel
     const betaKon  = chosen.beta[1];
@@ -89,18 +113,23 @@ function runOLSRegression() {
     const pctLowC  = (Math.exp(betaKon - tq*seKonC) - 1) * 100;
     const pctHighC = (Math.exp(betaKon + tq*seKonC) - 1) * 100;
 
-    // Ålders-koefficient (index 2): % per år
-    const betaAge   = chosen.beta[2];
-    const seAge     = Math.sqrt(chosen.vcovHC3[2][2]);
-    const ageEffect = (Math.exp(betaAge) - 1) * 100;
-    const ageP      = _pValue2Sided(betaAge/seAge, chosen.n, chosen.k);
+    // Ålders-koefficient (index 2): % per år. null när ålder inte är med i modellen.
+    /** @type {number|null} */ let ageEffect = null;
+    /** @type {number|null} */ let ageP = null;
+    if (skattad.alder) {
+        const betaAge   = chosen.beta[2];
+        const seAge     = Math.sqrt(chosen.vcovHC3[2][2]);
+        ageEffect = (Math.exp(betaAge) - 1) * 100;
+        ageP      = _pValue2Sided(betaAge/seAge, chosen.n, chosen.k);
+    }
 
-    // BAS-koefficienter (index 3..): lönenivå per BAS-intervall i procent mot referensintervallet
-    // (om fullmodell). null när modellen föll tillbaka till kön + ålder.
+    // BAS-koefficienter: lönenivå per BAS-intervall i procent mot referensintervallet, när BAS-indikatorerna är med
+    // (null i reservmodellen och när yrkesgrupp inom BAS är vald, där BAS ingår i gruppnivåerna).
     let basEffekter = null;
-    if (chosen.modelName === 'full') {
+    if (skattad.bas && !skattad.yrkesgrupp) {
+        const forsta = skattad.alder ? 3 : 2;
         basEffekter = basInd.map((b, j) => {
-            const idx = 3 + j;
+            const idx = forsta + j;
             const beta = chosen.beta[idx];
             const se   = Math.sqrt(chosen.vcovHC3[idx][idx]);
             return {
@@ -112,16 +141,17 @@ function runOLSRegression() {
             };
         });
     }
+    const basRef = skattad.bas ? basRef0 : null;
 
-    // Sekventiell dekomponering
+    // Sekventiell dekomponering på den skattade modellen.
     // Ansvarssteget lyfts ut: det redovisas på en egen rad och påverkar inte huvudtalet.
-    const allaSteg = _computeSequentialGap(raw, ageMean, basList);
+    const allaSteg = _computeSequentialGap(raw, ageMean, basList, skattad);
     const ansvarSteg = allaSteg.find(s => s.name === '+ Ansvar') ?? null;
-    // Yrkesgruppssteget (ADR-46) står sist i sequential och visas i kortet och budgeten, men
-    // huvudtalet och den förklarade andelen räknas till och med + Ålder — samma modell som konPct.
+    // Yrkesgruppssteget (ADR-46) står sist i sequential. Är yrkesgrupp vald (ADR-56) är det huvudtalet; annars visas
+    // det efter huvudtalet, och huvudtalet och den förklarade andelen räknas till och med modellens sista OLS-steg.
     const yrkesSteg = allaSteg.find(s => s.name === '+ Yrkesgrupp') ?? null;
     const sequential = allaSteg.filter(s => s.name !== '+ Ansvar');
-    const seqOk = sequential.filter(s => s.status === 'ok' && s.name !== '+ Yrkesgrupp');
+    const seqOk = sequential.filter(s => s.status === 'ok' && (skattad.yrkesgrupp || s.name !== '+ Yrkesgrupp'));
     /** @type {number|null} */ let explainedShare = null;
     if (seqOk.length >= 2) {
         const first = Number(seqOk[0].gapPct);
@@ -130,6 +160,14 @@ function runOLSRegression() {
             explainedShare = ((Math.abs(first) - Math.abs(last)) / Math.abs(first)) * 100;
         }
     }
+
+    // Vad varje variabel tillför (ADR-56), alltid mot fullmodellen, och det som valts bort med sina tal.
+    const tillfor = _computeVariabelTillfor(raw, ageMean, basList);
+    const etikett = { bas: 'BAS-intervall', alder: 'Ålder' };
+    const bortvalt = ['bas', 'alder'].filter(v => !modell[v]).map(v => {
+        const rad = tillfor.rader.find(r => r.variabel === v);
+        return { variabel: v, etikett: etikett[v], deltaR2pp: rad ? rad.deltaR2pp : null, gapUtan: rad ? rad.gapUtan : null, gapMed: rad ? rad.gapMed : null, skal: modell.skal };
+    });
 
     // Per-BAS conditional gap (separata regressioner inom varje BAS)
     const perBas = _computePerBasGap(raw, basList);
@@ -147,6 +185,12 @@ function runOLSRegression() {
     return {
         modelName: chosen.modelName,
         modelDesc: chosen.modelDesc,
+        modell: skattad,                      // den skattade förklaringsmodellen (ADR-56)
+        modellVald: modell,                   // den valda (skiljer sig från modell bara i reservsteget)
+        modellVarning,
+        fras: _rgModellFras(skattad),         // "ålder och nivå" m.fl.; tom för endast kön
+        tillfor,
+        bortvalt,
         fellBackFromFull,
         triedSteps,
         diagnostics,
@@ -173,6 +217,30 @@ function runOLSRegression() {
         nBas: basList.length,
         nKvAnalysed: kvN, nMaAnalysed: maN
     };
+}
+
+/**
+ * Huvudregressionen med yrkesgrupp inom BAS (ADR-56): fasta effekter för AID×BAS med inomtransformation (ADR-46),
+ * som steget + Yrkesgrupp, men här behövs också standardfel. Skattningen görs på de transformerade variablerna
+ * [kön, (ålder)]; koefficienterna är desamma som med en indikator per grupp (Frisch–Waugh–Lovell). Kovarianserna
+ * (klassisk och HC3) skalas med (n − p) / (n − p − G) för gruppnivåernas frihetsgrader, och k räknas med dem, så att
+ * t-kvantilen och p-värdet använder rätt df. Resultatet får samma form som fitOLS med intercept (index 0 är en
+ * tom konstant), så att resten av runOLSRegression läser kön på index 1 och ålder på index 2.
+ * @returns {null | {beta:number[], vcovHC3:number[][], vcovClassic:number[][], R2:number, adjR2:number, n:number, k:number, rss:number}}
+ */
+function _regInomYrkesgrupp(raw, y, isKv, ageC, medAlder) {
+    const kol = raw.map((_, i) => (medAlder ? [isKv[i], ageC[i]] : [isKv[i]]));
+    const inom = _rgInomYrkesgrupp(raw, y, kol);
+    if (!inom.ok) return null;
+    const fit = _fitOLS(inom.X, inom.yW);
+    if (!fit) return null;
+    const n = raw.length, p = kol[0].length, k = inom.k;
+    if (n - k <= 0) return null;
+    const skala = (n - p) / (n - k);
+    const vidga = V => { const ut = [[0, ...V[0].map(() => 0)]]; for (const rad of V) ut.push([0, ...rad.map(v => v * skala)]); return ut; };
+    const R2 = inom.R2Total(fit.rss);
+    return { beta: [0, ...fit.beta], vcovHC3: vidga(fit.vcovHC3), vcovClassic: vidga(fit.vcovClassic), R2,
+        adjR2: 1 - (1 - R2) * (n - 1) / (n - k), n, k, rss: fit.rss };
 }
 
 function _formatPValue(p) {
@@ -262,20 +330,21 @@ function _yrkesStegText(s) {
  */
 function _explanationBudget(seqOk) {
     if (!Array.isArray(seqOk) || seqOk.length < 2) return null;
-    const by = {};
-    seqOk.forEach(s => { if (typeof s.gapPct === 'number') by[s.name] = Math.abs(s.gapPct); });
-    const g0 = by['Endast kön'];
+    const ok = seqOk.filter(s => typeof s.gapPct === 'number');
+    if (ok.length < 2 || ok[0].name !== 'Endast kön') return null;
+    const g0 = Math.abs(ok[0].gapPct);
     if (!(g0 > 0)) return null;
-    const gBas = by['+ BAS-intervall'];
-    const gAge = by['+ Ålder'];
-    const gYrke = by['+ Yrkesgrupp'];
-    const last = gYrke != null && gAge != null ? gYrke : gAge != null ? gAge : gBas;
-    if (last == null) return null;
-
+    // En del per steg efter det första, i den ordning stegen kommer (ADR-56: ordningen följer den valda modellen).
+    const nyckel = { '+ BAS-intervall': 'bas', '+ Ålder': 'alder', '+ Yrkesgrupp': 'yrke' };
+    const etikett = { bas: 'Förklaras av BAS-placering', alder: 'Förklaras av ålder', yrke: 'Förklaras av yrkesgrupp inom BAS' };
     const parts = [];
-    if (gBas != null) parts.push({ key: 'bas', label: 'Förklaras av BAS-placering', val: g0 - gBas });
-    if (gAge != null && gBas != null) parts.push({ key: 'alder', label: 'Förklaras av ålder', val: gBas - gAge });
-    if (gYrke != null && gAge != null) parts.push({ key: 'yrke', label: 'Förklaras av yrkesgrupp inom BAS', val: gAge - gYrke });
+    for (let i = 1; i < ok.length; i++) {
+        const key = nyckel[ok[i].name];
+        if (!key) continue;
+        parts.push({ key, label: etikett[key], val: Math.abs(ok[i - 1].gapPct) - Math.abs(ok[i].gapPct) });
+    }
+    if (!parts.length) return null;
+    const last = Math.abs(ok[ok.length - 1].gapPct);
 
     const anyNegative = parts.some(p => p.val < -0.005);
     const posSum = parts.reduce((s, p) => s + Math.max(0, p.val), 0);

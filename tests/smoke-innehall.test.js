@@ -642,3 +642,80 @@ describe('förklaringsmodellen i tillstånd och konfigurationsfil (ADR-56)', () 
         expect(r.varningar.join(' ')).toMatch(/AID och yrke/);
     });
 });
+
+describe('runOLSRegression på vald modell (ADR-56)', () => {
+    const kor = modell => { const w = createAppWindow(); w.__loadDemoData(); w.__state.forklaringsmodell = modell; return { w, r: w.eval('runOLSRegression()') }; };
+    it('standard: modelDesc som i dag, frasen "ålder och nivå", inget bortvalt, tillför-tabellen med tre rader', () => {
+        const { r } = kor(null);
+        expect(r.error).toBeUndefined();
+        expect(r.modelDesc).toBe('kön + ålder + BAS-intervall (indikatorer)');
+        expect(r.fras).toBe('ålder och nivå');
+        expect(r.bortvalt).toEqual([]);
+        expect(r.modell).toEqual({ bas: true, alder: true, yrkesgrupp: false, skal: '' });
+        expect(r.tillfor.rader.map(x => x.variabel)).toEqual(['bas', 'alder', 'yrkesgrupp']);
+        expect(r.modellVarning).toBeNull();
+    });
+    it('utan ålder: en kolumn färre, ingen ålderseffekt, ålder bortvald, inget steg + Ålder', () => {
+        const std = kor(null).r;
+        const { r } = kor({ bas: true, alder: false, yrkesgrupp: false, skal: 'ingen lön efter ålder' });
+        expect(r.k).toBe(std.k - 1);
+        expect(r.ageEffect).toBeNull();
+        expect(r.ageP).toBeNull();
+        expect(r.bortvalt).toHaveLength(1);
+        expect(r.bortvalt[0]).toMatchObject({ variabel: 'alder', etikett: 'Ålder', skal: 'ingen lön efter ålder' });
+        expect(typeof r.bortvalt[0].deltaR2pp).toBe('number');
+        expect(r.sequential.map(x => x.name)).not.toContain('+ Ålder');
+        expect(r.fras).toBe('nivå');
+        expect(r.konPct).toBeCloseTo(r.sequential.find(x => x.name === '+ BAS-intervall').gapPct, 8);
+    });
+    it('utan BAS: inga BAS-effekter, frasen "ålder"', () => {
+        const { r } = kor({ bas: false, alder: true, yrkesgrupp: false, skal: '' });
+        expect(r.basEffekter).toBeNull();
+        expect(r.basRef).toBeNull();
+        expect(r.fras).toBe('ålder');
+        expect(r.modelDesc).toBe('kön + ålder');
+        expect(r.bortvalt.map(b => b.variabel)).toEqual(['bas']);
+    });
+    it('endast kön: huvudtalet är steget Endast kön, frasen är tom', () => {
+        const { r } = kor({ bas: false, alder: false, yrkesgrupp: false, skal: '' });
+        expect(r.fras).toBe('');
+        expect(r.konPct).toBeCloseTo(r.sequential[0].gapPct, 8);
+        expect(r.sequential.map(x => x.name)).toEqual(['Endast kön']);
+    });
+    it('yrkesgrupp vald: huvudtalet är yrkesgruppssteget och ingår i stegen', () => {
+        const std = kor(null).r;
+        const { r } = kor({ bas: true, alder: true, yrkesgrupp: true, skal: '' });
+        expect(r.konPct).toBeCloseTo(std.yrkesSteg.gapPct, 6);
+        expect(r.fras).toBe('ålder, nivå och yrkesgrupp');
+        expect(r.modelDesc).toBe('kön + ålder + BAS-intervall (indikatorer) + yrkesgrupp inom BAS (fasta effekter)');
+        expect(r.sequential.at(-1).name).toBe('+ Yrkesgrupp');
+        expect(r.yrkesSteg.status).toBe('ok');
+        expect(r.bortvalt).toEqual([]);
+    });
+    it('singulär vald modell (ett enda BAS) faller tillbaka och säger det', () => {
+        const w = createAppWindow();
+        // Kvinnorna i BAS A, männen i BAS B: könsindikatorn och BAS-indikatorn är identiska, så kön + BAS är singulär.
+        w.__state.data = Array.from({ length: 80 }, (_, i) => ({ bas: i % 2 ? 'A' : 'B', kon: i % 2 ? 'kvinna' : 'man', alder: 25 + (i % 30), lon: 30000 + (i % 9) * 500 }));
+        w.__state.forklaringsmodell = { bas: true, alder: false, yrkesgrupp: false, skal: '' };
+        const r = w.eval('runOLSRegression()');
+        expect(r.error).toBeUndefined();
+        expect(r.fellBackFromFull).toBe(true);
+        expect(r.modelDesc).toBe('kön');
+    });
+    it('ett kön under tröskeln: endast kön spärras, modellen blir BAS + ålder med en varning', () => {
+        const w = createAppWindow();
+        w.__state.data = Array.from({ length: 80 }, (_, i) => ({ bas: ['A', 'B', 'C'][i % 3], kon: i < 7 ? 'man' : 'kvinna', alder: 25 + (i % 30), lon: 30000 + (i % 3) * 2000 + (i % 9) * 100 }));
+        w.__state.forklaringsmodell = { bas: false, alder: false, yrkesgrupp: false, skal: '' };
+        const r = w.eval('runOLSRegression()');
+        expect(r.error).toBeUndefined();
+        expect(r.modell).toMatchObject({ bas: true, alder: true });
+        expect(r.modellVarning).toMatch(/under tröskeln|färre än/);
+    });
+    it('_explanationBudget bygger delarna ur stegen som de kommer', () => {
+        const w = createAppWindow();
+        const b = w.eval(`_explanationBudget([{ name: 'Endast kön', status: 'ok', gapPct: -6 }, { name: '+ Ålder', status: 'ok', gapPct: -4 }])`);
+        expect(b.parts.map(p => p.key)).toEqual(['alder']);
+        expect(b.parts[0].val).toBeCloseTo(2, 10);
+        expect(b.remaining).toBe(4);
+    });
+});

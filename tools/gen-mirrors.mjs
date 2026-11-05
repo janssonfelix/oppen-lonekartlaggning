@@ -79,6 +79,7 @@ export const MODULES = [
             blinderOaxaca: '_rgBlinderOaxaca', quantileRegressionAtAllTau: '_rgQuantileRegressionAtAllTau',
             // Förklaringsmodellen (ADR-56)
             computeVariabelTillfor: '_rgComputeVariabelTillfor', normaliseraForklaringsmodell: '_rgNormaliseraForklaringsmodell',
+            inomYrkesgrupp: '_rgInomYrkesgrupp',
             forklaringsmodellArStandard: '_rgForklaringsmodellArStandard', modellVariabler: '_rgModellVariabler',
             modellFras: '_rgModellFras', modellBeskrivning: '_rgModellBeskrivning',
             FORKLARINGSMODELL_STANDARD: '_RG_FORKLARINGSMODELL_STANDARD', TILLFOR_GRANS_PP: '_RG_TILLFOR_GRANS_PP'
