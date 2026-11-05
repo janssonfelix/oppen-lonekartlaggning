@@ -24,9 +24,11 @@ function buildConfigSnapshot() {
         likvardighet: state.likvardighet ? {
             source: state.likvardighet.source,
             kvinnoTrosholdPct: state.likvardighet.kvinnoTrosholdPct,
+            kvDomDefinition: state.likvardighet.kvDomDefinition || 'do',
             minGapPct: state.likvardighet.minGapPct,
             topN: state.likvardighet.topN
         } : null,
+        lonemanad: state.lonemanad || null,   // lönemånaden på bladen per AID och BAS
         // Löneöversyn/prognos: bara inställningar (pott + fördelningsregler), ej utfall
         forecast: state.forecast ? {
             budget:   { ...state.forecast.budget },
@@ -148,7 +150,16 @@ function applyConfigSnapshot(cfg) {
                 lv[k] = cfg.likvardighet[k];
             }
         }
+        if (cfg.likvardighet.kvDomDefinition != null) {
+            if (cfg.likvardighet.kvDomDefinition !== 'do' && cfg.likvardighet.kvDomDefinition !== 'scb')
+                throw new Error('likvardighet.kvDomDefinition måste vara "do" eller "scb".');
+            lv.kvDomDefinition = cfg.likvardighet.kvDomDefinition;
+        }
         tmp.likvardighet = lv;
+    }
+    if (cfg.lonemanad != null) {
+        if (typeof cfg.lonemanad !== 'string' || cfg.lonemanad.length > 40) throw new Error('lonemanad måste vara en text på högst 40 tecken.');
+        tmp.lonemanad = cfg.lonemanad;
     }
     // forecast: löneöversynsinställningar (inga råa rader)
     if (cfg.forecast != null) {
@@ -275,6 +286,7 @@ function applyConfigSnapshot(cfg) {
     sattRapportUrval(tmp.rapportUrval || null);   // okända avsnitt i filen hoppas över; utan fältet gäller hela dokumentationen
     if (tmp.rapportTabeller) state.rapportTabeller = tmp.rapportTabeller;
     if (tmp.perBasRecept) state.perBasRecept = _pbReceptArStandard(tmp.perBasRecept) ? null : tmp.perBasRecept;
+    if (tmp.lonemanad != null && typeof sattLonemanad === 'function') sattLonemanad(tmp.lonemanad);
     if (tmp.likvardighet) {
         state.likvardighet = { ...state.likvardighet, ...tmp.likvardighet, result: null };
     }

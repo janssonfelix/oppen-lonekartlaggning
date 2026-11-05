@@ -21,7 +21,8 @@
  *     scenarios: {A: any, B: any}, result: any, _remediation?: any
  *   },
  *   inactivityTimeoutMin: number, kLage: 'skarm'|'export',
- *   likvardighet: {source: string, kvinnoTrosholdPct: number, minGapPct: number, topN: number, poangBandPct: number, result: any},
+ *   likvardighet: {source: string, kvinnoTrosholdPct: number, kvDomDefinition: 'do'|'scb', minGapPct: number, topN: number, poangBandPct: number, result: any},
+ *   lonemanad: string,
  *   arbetsvardering: {byKey: Map<string, number>, [k: string]: any}|null,
  *   columnMap: {[roll: string]: string}|null,
  *   ansvarKolumn: {namn: string, giltiga?: any, godkand?: boolean}|null,
@@ -82,6 +83,7 @@ const state = {
     likvardighet: {
         source: 'organisation',    // 'organisation' | 'statistik'
         kvinnoTrosholdPct: 60,
+        kvDomDefinition: 'do',     // 'do' (mer än tröskeln) | 'scb' (tröskeln eller mer): tabellerna per AID och BAS (45-aid-bas-tabeller.js)
         minGapPct: 5,
         topN: 20,
         poangBandPct: 5,           // #5: ekvivalensband för arbetsvärderingspoäng (±%)
@@ -90,6 +92,9 @@ const state = {
     // #5: valfri arbetsvärderingstabell (poäng per yrke) som krav-proxy i § 3:10.
     // null = använd BAS-rank. byKey: Map<'AID|BAS' eller 'AID', poäng>.
     arbetsvardering: null,
+    // Lönemånaden underlaget gäller (fritext, t.ex. "2026-10"): står på bladen per AID och BAS. Ingen uppgift i
+    // lönefilen säger det, så användaren anger den; tomt skrivs ut som "inte angiven".
+    lonemanad: '',
     // #11: manuell kolumnmappning (roll → exakt CSV-rubrik) när auto-matchning
     // missar. null = enbart auto-matchning. Sätts via kolumnmappnings-guiden.
     columnMap: null,

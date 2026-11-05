@@ -70,6 +70,13 @@ export const MODULES = [
         expose: { computeLikvardighetPairs: '_lvComputePairs', basRangFn: '_lvBasRangFn' }
     },
     {
+        // Tabellerna per AID-kod och BAS-intervall — importerar stat.js och likvardighet.js
+        file: 'aidbas.js', ns: '__mirrorAidbas',
+        expose: { likaArbeteTabell: '_aidbasLika', likvardigtTabell: '_aidbasLikvardigt', hierarkiskaPar: '_aidbasPar',
+                  individnivaTabell: '_aidbasIndivid', kvDefinitionText: '_aidbasDefinitionText', kvDefinitionNamn: '_aidbasDefinitionNamn',
+                  dominans: '_aidbasDominans', ingaParText: '_aidbasIngaParText', klassNamn: '_aidbasKlassNamn' }
+    },
+    {
         // Regressionsmodellerna (ADR-46-regressionen m.fl.) — importerar stat.js och likvardighet.js
         file: 'regression.js', ns: '__mirrorRegression',
         expose: {

@@ -498,6 +498,13 @@ function renderLikvardighet() {
                     <span>%</span>
                 </div>
                 <div class="mitt rad-inline gap-8">
+                    <label for="lv-kv-definition">Kvinnodominerat enligt:</label>
+                    <select id="lv-kv-definition" class="form-select bredd-auto" title="Gäller tabellerna per AID-kod och BAS-intervall (Likvärdigt arbete, Hierarkisk jämförelse). DO: mer än tröskeln. SCB: tröskeln eller mer.">
+                        <option value="do"${aidbasDefinition() === 'do' ? ' selected' : ''}>DO — mer än ${cfg.kvinnoTrosholdPct} % kvinnor</option>
+                        <option value="scb"${aidbasDefinition() === 'scb' ? ' selected' : ''}>SCB — ${cfg.kvinnoTrosholdPct} % kvinnor eller mer</option>
+                    </select>
+                </div>
+                <div class="mitt rad-inline gap-8">
                     <label for="lv-min-gap">Min gap:</label>
                     <input type="number" id="lv-min-gap" min="0" max="50" step="1" value="${cfg.minGapPct}" class="form-select bredd-64">
                     <span>%</span>
@@ -535,7 +542,7 @@ function renderLikvardighet() {
             ${innehall}</details>`;
     };
     const std = { kvinnoTrosholdPct: 60, minGapPct: 5, topN: 20 };   // samma som utgångsläget i 12-tillstand.js
-    const anpassat = cfg.kvinnoTrosholdPct !== std.kvinnoTrosholdPct || cfg.minGapPct !== std.minGapPct || cfg.topN !== std.topN;
+    const anpassat = cfg.kvinnoTrosholdPct !== std.kvinnoTrosholdPct || cfg.minGapPct !== std.minGapPct || cfg.topN !== std.topN || aidbasDefinition() !== 'do';
     _lvRitaTopp(result, cfg);
     wrap.innerHTML =
         felHtml +
@@ -561,7 +568,7 @@ function renderLikvardighet() {
         avsnitt('underlag', 'Yrkena bakom jämförelsen', 'Steg för steg: de kvinnodominerade yrkena och jämförelseyrkena',
             `${result.orgKvDom.length} kvinnodominerade, ${result.orgIckeKv.length + result.statIckeKv.length} att jämföra med`,
             orgTblHtml + internTblHtml + statTblHtml) +
-        avsnitt('installningar', 'Inställningar', 'Kvinnotröskel, minsta gap och antal par. Standardvärdena räcker för de flesta.',
+        avsnitt('installningar', 'Inställningar', 'Kvinnotröskel, definition av kvinnodominerat, minsta gap och antal par. Standardvärdena räcker för de flesta.',
             anpassat ? 'Anpassade värden' : 'Standardvärden', controlsHtml) +
         avsnitt('analys', 'Så fungerar analysen', 'Metoden, och vad verktyget ser i ert underlag', '', introHtml + diagnostikHtml) +
         debugHtml;
@@ -582,6 +589,10 @@ function renderLikvardighet() {
     onNumChange('lv-kvinno-thr', 'kvinnoTrosholdPct', 50, 70);
     onNumChange('lv-min-gap',    'minGapPct',         0, 50);
     onNumChange('lv-top-n',      'topN',              10, 500);
+    document.getElementById('lv-kv-definition')?.addEventListener('change', e => {
+        state.likvardighet.kvDomDefinition = /** @type {HTMLSelectElement} */ (e.target).value === 'scb' ? 'scb' : 'do';
+        renderLikvardighet(); renderAidBasLikvardigt();
+    });
     document.getElementById('btn-export-likvardighet')?.addEventListener('click', exportLikvardighet);
     document.getElementById('btn-export-likvardighet-csv')?.addEventListener('click', exportLikvardighetCSV);
 

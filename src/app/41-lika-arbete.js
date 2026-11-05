@@ -535,7 +535,7 @@ function _laOversiktTabell(bars, d = getData()) {
 // normalapproximation som i simulering var 4–7 % för snäv vid 10–15 per kön och rätt från cirka 40; faktorn
 // (1 + 0,6/n per kön) rättar det. En punkt kan därför ligga strax
 // innanför fältet och ändå bedömas som utanför, eller tvärtom: punktens färg och form följer omkastningen.
-// Bara yrkesgrupper där båda könen når tröskeln finns med.
+// Bara grupper (yrkesgrupp i ett BAS-intervall) där båda könen når tröskeln finns med.
 const LA_TRATT_OMKAST = 1000, LA_TRATT_STOR = 300;
 // Med färre grupper än så säger trattens form lite: förbehållet under diagrammet.
 const LA_TRATT_GLEST = 10;
@@ -558,16 +558,20 @@ function _laTrattUnderlag(d, k = kTroskel()) {
     if (!('tratt' in minne)) minne.tratt = _laTrattUnderlagRakna(d, k);
     return minne.tratt;
 }
+// Gruppen är AID-kod + BAS-intervall ur varje persons egen rad (lika arbete: samma yrkesgrupp på samma nivå), inte
+// yrkesgruppen över alla intervall. Tidigare grupperades per yrke och gruppen fick BAS från sin första rad, så en
+// yrkesgrupp i flera intervall redovisades i ett godtyckligt av dem med alla sina personer.
 function _laTrattUnderlagRakna(d, k) {
-    const perYrke = new Map();
+    const perGrupp = new Map();
     for (const r of d) {
-        if (!(r.lon > 0)) continue;
+        if (!(r.lon > 0) || !r.bas) continue;
         const kv = r.kon.includes('kvinna'), ma = r.kon === 'man' || r.kon === 'män';
         if (!kv && !ma) continue;
-        if (!perYrke.has(r.yrke)) perYrke.set(r.yrke, { yrke: r.yrke, bas: r.bas, aid: r.aid, kv: [], ma: [] });
-        perYrke.get(r.yrke)[kv ? 'kv' : 'ma'].push(r.lon);
+        const aid = String(r.aid || r.yrke || '').trim(), nyckel = `${aid}|${r.bas}`;
+        if (!perGrupp.has(nyckel)) perGrupp.set(nyckel, { nyckel, yrke: r.yrke, bas: r.bas, aid, kv: [], ma: [] });
+        perGrupp.get(nyckel)[kv ? 'kv' : 'ma'].push(r.lon);
     }
-    const grupper = [...perYrke.values()].filter(g => g.kv.length >= k && g.ma.length >= k);
+    const grupper = [...perGrupp.values()].filter(g => g.kv.length >= k && g.ma.length >= k);
     if (!grupper.length) return null;
     const rest = [];
     for (const g of grupper) {
@@ -583,7 +587,7 @@ function _laTrattUnderlagRakna(d, k) {
     const egenGrans = g => { const r = [...g.kv.map(v => Math.abs(Math.log(v) - Math.log(g.medKv))), ...g.ma.map(v => Math.abs(Math.log(v) - Math.log(g.medMa)))];
         const h = 100 * 1.96 * 1.2533 * 1.4826 * Stat.median(r) * Math.sqrt(1 / g.kv.length + 1 / g.ma.length); return { lag: 100 - h, hog: 100 + h }; };
     return { sigma, halv, punkter: grupper.map(g => { const kvot = g.medKv / g.medMa * 100, grans = g.kv.length + g.ma.length > LA_TRATT_STOR ? egenGrans(g) : _laTrattOmkastning(g.kv, g.ma);
-        return { yrke: g.yrke, bas: g.bas, aid: g.aid, n: g.kv.length + g.ma.length, nKv: g.kv.length, nMa: g.ma.length, medKv: g.medKv, medMa: g.medMa, kvot, gransLag: grans.lag, gransHog: grans.hog,
+        return { nyckel: g.nyckel, yrke: g.yrke, bas: g.bas, aid: g.aid, n: g.kv.length + g.ma.length, nKv: g.kv.length, nMa: g.ma.length, medKv: g.medKv, medMa: g.medMa, kvot, gransLag: grans.lag, gransHog: grans.hog,
                  utanfor: kvot < grans.lag || kvot > grans.hog }; }) };
 }
 function _laTrattFigur(u, k = kTroskel()) {
@@ -591,7 +595,7 @@ function _laTrattFigur(u, k = kTroskel()) {
     // när grupperna i urvalet råkar vara ungefär lika stora.
     const nMax = Math.max(...u.punkter.map(p => p.n)), x0 = Math.max(2, 2 * k), x1 = Math.max(nMax * 1.06, x0 + 10), steg = 40;
     const falt = Array.from({ length: steg + 1 }, (_, i) => { const n = x0 + (x1 - x0) * i / steg, h = u.halv(n / 2, n / 2); return { x: +n.toFixed(1), lag: +(100 - h).toFixed(2), hog: +(100 + h).toFixed(2) }; });
-    const tips = d => [[d.p.yrke], ['Kvinnors median', `${_figTalformat(d.y, 'pct')} av männens`], ..._figKronorTipsRad(d.skillnadKr), ['Antal kvinnor / män', `${d.p.nKv} / ${d.p.nMa}`],
+    const tips = d => [[`${d.p.yrke} · BAS ${d.p.bas}`], ['Kvinnors median', `${_figTalformat(d.y, 'pct')} av männens`], ..._figKronorTipsRad(d.skillnadKr), ['Antal kvinnor / män', `${d.p.nKv} / ${d.p.nMa}`],
         ['Slumpens gränser för gruppen', `${_figTalformat(d.p.gransLag, 'pct', { enhet: false })}–${_figTalformat(d.p.gransHog, 'pct')}`], ['Bedömning', d.p.utanfor ? 'utanför slumpens gränser' : 'inom slumpens gränser']];
     // Bara de sex grupper utanför gränserna som avviker mest namnges i bilden: med fler krockar namnen med varandra.
     // Alla grupper har sitt namn i verktygstipset och i tabellen under.
@@ -599,8 +603,8 @@ function _laTrattFigur(u, k = kTroskel()) {
     const lager = (serie, farg, symbol, valj) => ({ marke: 'punkt', serie, farg, symbol, storlek: 6, etikettLage: 'auto',
         data: u.punkter.filter(valj).map(p => ({ x: p.n, y: +p.kvot.toFixed(1), p, markering: markeringFor(p.bas, p.aid), ..._kronorFalt(p.medKv, p.medMa), ...(namngivna.has(p) ? { etikett: _rfKorta(String(p.yrke), 24) } : {}) })), tips });
     const ys = [...falt.flatMap(f => [f.lag, f.hog]), ...u.punkter.map(p => p.kvot)];
-    return { beskrivning: 'Trattdiagram: kvinnors medianlön i procent av mäns per yrkesgrupp mot gruppens storlek. Det skuggade fältet är de 95-procentiga gränserna för vad slumpen kan ge vid den gruppstorleken, och smalnar när gruppen blir större. Samma grupper finns i tabellen nedan.',
-        x: { skala: 'linjar', titel: 'Antal personer i yrkesgruppen', doman: [x0, x1] },
+    return { beskrivning: 'Trattdiagram: kvinnors medianlön i procent av mäns per yrkesgrupp och BAS-intervall mot gruppens storlek. Det skuggade fältet är de 95-procentiga gränserna för vad slumpen kan ge vid den gruppstorleken, och smalnar när gruppen blir större. Samma grupper finns i tabellen nedan.',
+        x: { skala: 'linjar', titel: 'Antal personer i gruppen', doman: [x0, x1] },
         y: { skala: 'linjar', titel: 'Kvinnors median i % av mäns', doman: [Math.floor(Math.min(...ys) - 1), Math.ceil(Math.max(...ys) + 1)] },
         hojd: 340,
         referens: [{ y: 100, farg: PALETTE.semantic.mork, tjocklek: 1.5, etikett: 'Lika lön' }],
@@ -617,7 +621,7 @@ function _laRitaTratt(d) {
     ritaFigur(el, _laTrattFigur(u));
     _setDiagramMetodNot('chart-la-tratt', _laTrattGlesNot(u.punkter.length));
     const ute = u.punkter.filter(p => p.utanfor).length;
-    if (not) not.textContent = `${u.punkter.length} yrkesgrupper där både kvinnor och män når minsta gruppstorlek; ${ute} ligger utanför gränserna. Punktens färg bygger på en omkastning av könen inom gruppen (1 000 gånger; för grupper över 300 personer en normalapproximation) och gäller gruppens egna löner och antal; det skuggade fältet är en jämn kurva för orientering, ritad för lika många kvinnor som män. Gränserna är ett stöd för bedömningen, inte ett test som friar eller fäller.`;
+    if (not) not.textContent = `${u.punkter.length} grupper (yrkesgrupp i ett BAS-intervall) där både kvinnor och män når minsta gruppstorlek; ${ute} ligger utanför gränserna. Punktens färg bygger på en omkastning av könen inom gruppen (1 000 gånger; för grupper över 300 personer en normalapproximation) och gäller gruppens egna löner och antal; det skuggade fältet är en jämn kurva för orientering, ritad för lika många kvinnor som män. Gränserna är ett stöd för bedömningen, inte ett test som friar eller fäller.`;
 }
 
 // Könsfördelningen per BAS-intervall som staplade staplar till 100 %, med gränserna för jämn könsfördelning

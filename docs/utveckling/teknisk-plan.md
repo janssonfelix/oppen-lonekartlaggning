@@ -235,7 +235,7 @@ adaptern verkligen delegerar vaktas av `tests/drift.test.js`:
   rätt grupp. Utskriftsfönstret för checklistorna (`printScaffoldView`) läser `:root` och allt från `.dold` till
   stilmallens slut ur den körande stilmallen och lägger in det som byggt stilark (`adoptedStyleSheets`): ett `<style>`-element
   som skriptet skapar blockeras av den ärvda CSP:n (`style-src-elem`), så fönstret var tidigare helt ostilat.
-- **Tester:** Vitest — 2536 tester i 75 filer: rena `src/lib/`-moduler, CSV-parsning, jsdom-röktest
+- **Tester:** Vitest — 2557 tester i 77 filer: rena `src/lib/`-moduler, CSV-parsning, jsdom-röktest
   av varje vy (ADR-7; `tests/smoke.test.js` med det delade fönstret och sju `tests/smoke-*.test.js` per
   område), k-tröskeln i åtta `tests/ktroskel*.test.js` med riggen i `tests/helpers/ktroskel-rigg.js`,
   gränssnittet i `tests/granssnitt*.test.js` (riggen `tests/helpers/granssnitt-rigg.js`) och diagramvyerna i
@@ -1222,6 +1222,28 @@ Organisationens P10, median och P90 per yrkesgrupp är gruppvärden och följer 
 (ADR-51); referensernas egna tal och tabellen statistiken mot ställningstagandet bär inga organisationsvärden och
 maskeras inte. Vaktas av `tests/referenser.test.js` och `tests/smoke-referenser.test.js`.
 
+**ADR-56 — Tabellerna per AID-kod och BAS-intervall.** Beslut 2026-11-05. Lika arbete är samma yrkesgrupp (AID-kod) på
+samma nivå (BAS-intervall), och en skriven lönekartläggning behöver tabeller på den nivån. `src/lib/aidbas.js`
+(`45-aid-bas-tabeller.js`) bygger fyra tabeller ur varje persons egen rad — *Lika arbete AID x BAS*, *Likvärdigt
+arbete* med sammanfattning per BAS-intervall, *Hierarkisk jämförelse* och *Analys på individnivå* — som avsnitt i Lika
+arbete och Likvärdigt arbete och som fyra Excel-blad med exakt rapportens kolumnnamn och lönemånaden ovanför. Gränserna
+för slumpen är trattdiagrammets (omkastning av könen inom gruppen), räknade per AID-kod och BAS-intervall; samtidigt
+rättades trattens underlag, som grupperade per yrkesgrupp och tog BAS-intervallet från första raden.
+
+*Små grupper, ett avsteg från ADR-12:* en egen rad kräver minst fem personer i exportläget (`LITET_UNDERLAG`), inte
+`kTroskel()`; mindre grupper räknas upp i en not med namn och antal men utan löner. Avsteget är avsiktligt: tabellerna
+är arbetsgivarens kartläggning av alla grupper, och lagen kräver att också små grupper analyseras, så gruppen och dess
+antal behöver stå i underlaget. Lönemått följer däremot `statGolv()` i båda lägena: ett köns median, kvoten och
+gränserna kräver minst tio personer av varje kön (gruppen står annars som *Analyseras på individnivå*, och i
+arbetslistan utan löner), gruppens median och lönespridning minst tio personer. På skärmen visas alla grupper (ADR-51).
+
+*Kvinnodominerat enligt DO eller SCB:* definitionen väljs i Likvärdigt arbetes inställningar
+(`state.likvardighet.kvDomDefinition`, standard `do`): DO är mer än kvinnotröskeln, SCB kvinnotröskeln eller mer.
+Mansdominerat speglas; övriga könsblandade. *Brukar anses kvinnodominerad* bygger på andelen kvinnor nationellt (SKR:s
+personalstatistik, organisationstypen i Inställningar) med samma definition. *Lönemånaden* (`state.lonemanad`) anges i
+Inställningar, följer med i konfigurationsfilen och skrivs ut som *inte angiven* när den saknas: lönefilen bär ingen
+sådan uppgift och verktyget gissar inte. Vaktas av `tests/aidbas.test.js` och `tests/smoke-aidbas.test.js`.
+
 ## 9. Öppna punkter
 
 Kända brister och obesvarade frågor, så att de inte lever bara i en konversationstråd.
@@ -1289,6 +1311,10 @@ Kända brister och obesvarade frågor, så att de inte lever bara i en konversat
     BAS-koefficienter (`basFaktor`). Blinder-Oaxaca kodar BAS som indikatorer sedan ADR-53.
 
 **Export:**
+22. **En definition av kvinnodominerat i hela verktyget.** Tabellerna per AID-kod och BAS-intervall (ADR-56) följer
+    valet DO/SCB; kandidatparen i Likvärdigt arbete räknar fortfarande med *mer än* tröskeln i `aggregeraOrgKvDom`
+    medan flikens texter säger *minst*, och Lika arbetes kolumn Dominans och Prioritering har sina egna gränser. Alla
+    ska använda samma valda definition (beslut 2026-11-05); görs i ett eget steg eftersom det ändrar befintliga flikar.
 10. **Svenskt talformat:** jämförelseexporten (`64-jamforelse-export.js`) och CSV-exporternas tolkning (`_CSV_TALLIKT`) är inte
     prövade.
 

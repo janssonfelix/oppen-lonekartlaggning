@@ -129,11 +129,11 @@ function _renderTabContent(target) {
         const s2 = document.getElementById("bas-select-demo"); if (s2) renderDemografi(/** @type {HTMLInputElement} */ (s2).value);
     }
     else if (target === "benchmark"    && d.length) { renderReferensOverblick(); renderLonepolitik(); generateBenchmark(); }
-    else if (target === "matrix"       && d.length) { generateSkevhet(); generateEUDirectiveMatrix(); renderPersonerAttGranska(); renderLikaArbeteTopp(); }
+    else if (target === "matrix"       && d.length) { generateSkevhet(); generateEUDirectiveMatrix(); renderPersonerAttGranska(); renderAidBasLika(); renderLikaArbeteTopp(); }
     else if (target === "prioritering" && d.length) renderPrioritering();
     else if (target === "struktur"     && d.length) renderStructure();
     else if (target === "loneoversyn"  && d.length) renderForecast();
-    else if (target === "likvardighet" && (d.length || state.statistik.length)) renderLikvardighet();
+    else if (target === "likvardighet" && (d.length || state.statistik.length)) { renderLikvardighet(); renderAidBasLikvardigt(); }
     else if (target === "utforska"     && d.length) { generateRapport(); renderExplorer(); }
     else if (target === "dokumentera") medExportLage(() => { if (d.length) renderKvalitetssakring(); renderRapportunderlag(); renderExportBesked(); if (typeof renderArsjamforelse === 'function') renderArsjamforelse(); });   // allt här lämnar verktyget (ADR-51)
     else if (target === "dashboard" && d.length) renderOversiktDelar();
