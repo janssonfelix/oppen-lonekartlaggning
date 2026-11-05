@@ -571,8 +571,7 @@ function _fmTexter(m) {
 }
 /** Noteringen om en bortvald variabel, som den står i panelen och i rapporten (ren text). */
 function _fmNoteringText(b) {
-    const tal = typeof b.deltaR2pp === 'number' && isFinite(b.deltaR2pp) ? `tillför ${svTal(Math.abs(b.deltaR2pp), 1)} procentenheter i förklaringsgrad` : 'gick inte att pröva';
-    return `${b.etikett} har kontrollerats och ${tal}; den ingår inte i siffrorna${b.variabel === 'alder' ? ' nedan' : ' nedan'}.${b.skal ? ` Skäl: ${b.skal}` : ''}`;
+    return _ruBortvaltNotering(b).replace('ingår inte i siffrorna.', 'ingår inte i siffrorna nedan.');
 }
 function renderForklaringsmodellPanel(r) {
     const wrap = document.getElementById('forklaringsmodell-panel');
@@ -671,10 +670,10 @@ function renderRegressionCard() {
     if (!wrap) return;
     const r = runOLSRegression();
     renderForklaringsmodellPanel(r);
-    const fmT = r.error ? null : _fmTexter(r.modell);
+    const fmT = _fmTexter(r.error ? _RG_FORKLARINGSMODELL_STANDARD : r.modell);
     const fmRubrik = document.querySelector('[data-fm-rubrik]'), fmInledning = document.querySelector('[data-fm-inledning]');
-    if (fmRubrik) fmRubrik.textContent = !fmT ? 'När ålder och nivå räknats bort, steg för steg' : fmT.fras ? `När ${fmT.fras} räknats bort, steg för steg` : 'Det råa gapet, utan att något räknats bort';
-    if (fmInledning && fmT) fmInledning.innerHTML = fmT.fras
+    if (fmRubrik) fmRubrik.textContent = fmT.fras ? `När ${fmT.fras} räknats bort, steg för steg` : 'Det råa gapet, utan att något räknats bort';
+    if (fmInledning && !r.error) fmInledning.innerHTML = fmT.fras
         ? (fmT.fras === 'ålder och nivå' ? 'Här rensas effekten av att kvinnor och män har olika ålder och arbetar på olika nivåer bort. Det som återstår kan <em>inte</em> förklaras av de faktorerna.' : `Här rensas effekten av att kvinnor och män skiljer sig i ${esc(fmT.forklarasAv)} bort. Det som återstår kan <em>inte</em> förklaras av ${fmT.variabler.length > 2 ? 'de faktorerna' : 'den faktorn'}.`)
         : 'Här visas det råa gapet: ingen variabel räknas bort (valet i panelen nedan).';
 

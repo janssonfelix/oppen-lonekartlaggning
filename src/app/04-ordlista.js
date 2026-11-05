@@ -89,7 +89,7 @@ const STATISTIK_101 = `
         <ol class="marg-6-0-0-18 pad-0">
             <li><strong>Ojusterat lönegap</strong> (kallas ibland "rågap") — ren skillnad i median mellan könen. Påverkas av att kvinnor och män ofta har olika ålder, BAS och yrke. Visar inte diskriminering i sig.</li>
             <li><strong>Åldersjusterat lönegap</strong> — samma jämförelse men vid <em>samma genomsnittsålder</em>. Rensar bort att det ena könet är äldre i snitt.</li>
-            <li><strong>Oförklarat lönegap</strong> — det som blir kvar efter att vi räknat bort effekten av <em>både ålder och BAS-placering</em>. Det som <em>inte</em> kan förklaras av strukturella skillnader. Detta är vad EU-direktivet kallar <em>unexplained gender pay gap</em> och det viktigaste måttet vid diskrimineringsbedömning.</li>
+            <li><strong>Oförklarat lönegap</strong> — det som blir kvar efter att vi räknat bort effekten av de variabler som valts i förklaringsmodellen, som standard <em>både ålder och BAS-placering</em>. Det som <em>inte</em> kan förklaras av strukturella skillnader. Detta är vad EU-direktivet kallar <em>unexplained gender pay gap</em> och det viktigaste måttet vid diskrimineringsbedömning.</li>
         </ol>
         <p class="marg-6-0-0"><strong>Tumregel:</strong> krymper gapet mycket från (1) till (3) förklaras det mesta av struktur; står det kvar stort i (3) finns ett oförklarat gap som är värt att granska närmare.</p>
 

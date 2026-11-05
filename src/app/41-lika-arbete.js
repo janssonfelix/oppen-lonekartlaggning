@@ -695,7 +695,7 @@ function renderLikaArbeteTopp() {
         rader.length ? _laSlutsats('Yrkesgrupper att granska', `${granska.length} av ${rader.length}`, granska.length ? 'skillnad över 5 %' : 'ingen skillnad över 5 %', granska.length > 0 ? 'granska' : false)
                      : _laSlutsats('Yrkesgrupper att granska', '–', `ingen yrkesgrupp har minst ${kTroskel()} av varje kön`),
         storst ? _laSlutsats('Största skillnaden', svPct(storst.kvot, 1), storst.yrke, false, 'Kvinnors medianlön i procent av mäns i den yrkesgrupp där skillnaden är störst') : '',
-        regOk ? _laSlutsats('Efter ålder och nivå', svPct(reg.konKvot, 1), 'kvinnors lön i % av mäns när ålder och nivå räknats bort', Math.abs(reg.konPct) > 5 ? 'granska' : false,
+        regOk ? _laSlutsats(reg.fras ? `Efter ${reg.fras}` : 'Utan kontroller', svPct(reg.konKvot, 1), `kvinnors lön i % av mäns ${reg.fras ? `när ${reg.fras} räknats bort` : 'utan att något räknats bort'}`, Math.abs(reg.konPct) > 5 ? 'granska' : false,
             `Regressionen i kortet längre ned: en oförklarad skillnad på ${reg.konPct >= 0 ? '+' : ''}${svPct(reg.konPct, 1)}, kvinnor mot män. Det är samma sak som att kvinnors lön är ${svPct(reg.konKvot, 1)} av mäns.`) : '',
         personer != null ? _laSlutsats('Personer att granska', svTal(personer, 0), `minst ${grans} % under förväntad lön`) : ''
     ].join('');
@@ -704,5 +704,5 @@ function renderLikaArbeteTopp() {
     _laNyckel('nyckel-la-bas', basKvot.length ? `${basOver.length} av ${basKvot.length} över 5 %` : '', basOver.length > 0 ? 'granska' : false);
     _laNyckel('nyckel-la-kon', konRader.length ? `${ojamna} av ${konRader.length} ojämna` : '');
         // Samma mått som nyckeltalsraden: kvinnors lön i % av mäns när ålder och nivå räknats bort (inte "−4,3 % oförklarat").
-    _laNyckel('nyckel-la-regression', regOk ? `${svPct(reg.konKvot, 1)} efter ålder och nivå` : '', regOk && Math.abs(reg.konPct) > 5 ? 'granska' : false);
+    _laNyckel('nyckel-la-regression', regOk ? `${svPct(reg.konKvot, 1)} ${reg.fras ? `efter ${reg.fras}` : 'utan kontroller'}` : '', regOk && Math.abs(reg.konPct) > 5 ? 'granska' : false);
 }

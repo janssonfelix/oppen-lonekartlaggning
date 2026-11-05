@@ -156,7 +156,7 @@ export const MODULES = [
     {
         file: 'rapportunderlag.js', ns: '__mirrorRapportunderlag',
         expose: {
-            likaArbeteGrupper: '_ruLikaArbeteGrupper', justeratGapInomYrke: '_ruJusteratGap',
+            likaArbeteGrupper: '_ruLikaArbeteGrupper', justeratGapInomYrke: '_ruJusteratGap', bortvaltNotering: '_ruBortvaltNotering',
             gruppBlock: '_ruGruppBlock', parBlock: '_ruParBlock', avsnittBlock: '_ruAvsnittBlock',
             tillWordHtml: '_ruTillWordHtml', tillText: '_ruTillText', stabilitetKort: '_ruStabilitetKort',
             egenTabellBlock: '_ruEgenTabellBlock', arsjamforelseBlock: '_ruArsjamforelseBlock', referenserBlock: '_ruReferenserBlock'

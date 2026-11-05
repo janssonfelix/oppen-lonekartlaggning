@@ -844,3 +844,45 @@ describe('avsnittet följer modellen (ADR-56)', () => {
         expect(oaxText).toMatch(/Förklarat av ålder och nivå/);
     });
 });
+
+describe('huvudtalet följer modellen i nyckeltal, Att göra, Struktur och rapporten (ADR-56)', () => {
+    const rita = modell => { const w = createAppWindow(); w.__loadDemoData(); w.__state.forklaringsmodell = modell; return w; };
+    it('Lika arbetes nyckeltal och Att göra säger "efter nivå" utan ålder', () => {
+        const w = rita({ bas: true, alder: false, yrkesgrupp: false, skal: '' });
+        w.document.querySelector('.nav-item[data-tab="matrix"]').click(); w.eval('renderTabContent("matrix")');
+        expect(w.document.getElementById('nyckel-la-regression').textContent).toMatch(/efter nivå$/);
+        expect(w.document.getElementById('la-slutsatser').textContent).toMatch(/Efter nivå/);
+        expect(w.document.getElementById('la-slutsatser').textContent).not.toMatch(/ålder och nivå/);
+        w.eval('renderActionChecklist()');
+        expect(w.document.getElementById('action-checklist-container').textContent).toMatch(/\(efter nivå\)/);
+    });
+    it('rapportmodellen: raden heter efter nivå, bilagan saknar ålderseffekten och bär noteringen med skälet', () => {
+        const w = rita({ bas: true, alder: false, yrkesgrupp: false, skal: 'ingen lön efter ålder' });
+        const m = w.eval('rapportModell()');
+        const lika = m.avsnitt.find(a => a.id === 'lika');
+        const tab = lika.delar.find(d => d.typ === 'tabell');
+        expect(tab.rader.map(r => r[0])).toContain('Löneskillnad som står kvar efter nivå');
+        const text = JSON.stringify(lika.delar);
+        expect(text).toMatch(/när nivå räknats bort/);
+        expect(text).not.toMatch(/ålder och nivå/);
+        const reg = m.avsnitt.find(a => a.id === 'regression');
+        const regText = JSON.stringify(reg.delar);
+        expect(regText).not.toMatch(/Ålderseffekt/);
+        expect(regText).toMatch(/Ålder har kontrollerats och tillför [0-9,]+ procentenheter i förklaringsgrad; den ingår inte i siffrorna\. Skäl: ingen lön efter ålder/);
+        expect(regText).toMatch(/strukturella variabler \(nivå\)/);
+        expect(regText).not.toMatch(/\+ Ålder/);
+    });
+    it('rapportunderlaget bär frasen och det bortvalda', () => {
+        const w = rita({ bas: false, alder: true, yrkesgrupp: false, skal: '' });
+        const text = w.__rapportunderlagBlock().map(b => w.__ruTillText(b)).join('\n');
+        expect(text).toMatch(/Efter hänsyn till ålder är det oförklarade lönegapet/);
+        expect(text).toMatch(/BAS-intervall har kontrollerats/);
+    });
+    it('standardläget: rapportmodellens rad och texter som förut', () => {
+        const w = rita(null);
+        const m = w.eval('rapportModell()');
+        const lika = m.avsnitt.find(a => a.id === 'lika');
+        expect(lika.delar.find(d => d.typ === 'tabell').rader.map(r => r[0])).toContain('Löneskillnad som står kvar efter ålder och nivå');
+        expect(JSON.stringify(m.avsnitt.find(a => a.id === 'regression').delar)).toMatch(/Ålderseffekt/);
+    });
+});
