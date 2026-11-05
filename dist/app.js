@@ -3919,6 +3919,218 @@ function computeLikvardighetPairs({ data = [], statistik = [], scbKlass = null, 
 const _lvComputePairs = __mirrorLikvardighet.computeLikvardighetPairs;
 const _lvBasRangFn = __mirrorLikvardighet.basRangFn;
 
+// ---- speglar src/lib/aidbas.js ----
+const __mirrorAidbas = (() => {
+    // importer ur tidigare speglade lib-moduler
+    const median = __mirrorStat.median;
+    const quantile = __mirrorStat.quantile;
+    const basRangFn = __mirrorLikvardighet.basRangFn;
+
+// SPDX-License-Identifier: MIT
+// Copyright 2026 Felix Jansson
+/**
+ * Öppen lönekartläggning — Tabellerna per AID-kod och BAS-intervall
+ *
+ * Lika arbete är samma yrkesgrupp (AID-kod) på samma nivå (BAS-intervall). Här byggs de fyra tabeller som en
+ * skriven lönekartläggning behöver på den nivån, ur varje persons egen rad:
+ *
+ *   1. Lika arbete AID x BAS — kvinnors median i procent av mäns per grupp, mot slumpens gränser
+ *   2. Likvärdigt arbete — grupperna per BAS-intervall med könsfördelning, klassning, median och lönespridning
+ *   3. Hierarkisk jämförelse — ett arbete i lägre BAS som inte är kvinnodominerat men har högre median än ett
+ *      kvinnodominerat arbete i högre BAS
+ *   4. Analys på individnivå — grupperna där något kön är för litet för en könsuppdelad jämförelse
+ *
+ * Reglerna för små grupper följer med som parametrar: `k` är antalet per kön (och per grupp i tabell 2 och 3) som
+ * krävs för ett lönemått, `golv` är antalet i gruppen som krävs för en egen rad; mindre grupper räknas upp i `sma`.
+ *
+ * Klassningen av kvinnodominerat arbete har två definitioner: DO:s (mer än gränsen) och SCB:s (gränsen eller mer).
+ * Gränsen är 60 % om inget annat anges. Mansdominerat speglas; övriga är könsblandade.
+ *
+ * Ren modul utan DOM eller state. Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
+ */
+
+
+/** Definitionerna av kvinnodominerat arbete: nyckel → namn och text för metodbladet. */
+const KV_DEFINITIONER = Object.freeze({
+    do: Object.freeze({ namn: 'DO', text: 'mer än {grans} % kvinnor (Diskrimineringsombudsmannen)' }),
+    scb: Object.freeze({ namn: 'SCB', text: '{grans} % kvinnor eller mer (Statistiska centralbyrån)' })
+});
+const KV_GRANS_STANDARD = 60;
+
+const KLASS_KV = 'Kvinnodominerad', KLASS_MA = 'Mansdominerad', KLASS_BLANDAD = 'Könsblandad';
+const BEDOMNING_INOM = 'Inom gränserna', BEDOMNING_UTANFOR = 'Utanför gränserna', BEDOMNING_INDIVID = 'Analyseras på individnivå';
+const INGA_HIERARKISKA_PAR = 'Inga fall där ett lägre värderat arbete som inte är kvinnodominerat har högre lön än ett högre värderat kvinnodominerat arbete.';
+
+/** Definitionens namn: DO eller SCB. */
+function kvDefinitionNamn(definition) { return (KV_DEFINITIONER[definition] || KV_DEFINITIONER.do).namn; }
+/** Klassernas namn, för den som jämför klassningen. */
+function klassNamn() { return { kv: KLASS_KV, ma: KLASS_MA, blandad: KLASS_BLANDAD }; }
+/** Texten när den hierarkiska jämförelsen inte har några par. */
+function ingaParText() { return INGA_HIERARKISKA_PAR; }
+/** Texten för definitionen, med gränsen insatt. */
+function kvDefinitionText(definition, grans = KV_GRANS_STANDARD) {
+    const d = KV_DEFINITIONER[definition] || KV_DEFINITIONER.do;
+    return `${d.namn}: ${d.text.replace('{grans}', String(grans))}`;
+}
+
+/**
+ * Klassningen av en grupp efter andelen kvinnor.
+ * @param {number|null} andelKv - procent kvinnor, eller null när andelen är okänd
+ * @param {'do'|'scb'} [definition]
+ * @param {number} [grans]
+ * @returns {string} Kvinnodominerad, Mansdominerad, Könsblandad eller '' för okänd andel
+ */
+function dominans(andelKv, definition = 'do', grans = KV_GRANS_STANDARD) {
+    if (typeof andelKv !== 'number' || !isFinite(andelKv)) return '';
+    const andelMa = 100 - andelKv;
+    if (definition === 'scb') return andelKv >= grans ? KLASS_KV : andelMa >= grans ? KLASS_MA : KLASS_BLANDAD;
+    return andelKv > grans ? KLASS_KV : andelMa > grans ? KLASS_MA : KLASS_BLANDAD;
+}
+
+const arKv = r => typeof r.kon === 'string' && r.kon.includes('kvinna');
+const arMa = r => r.kon === 'man' || r.kon === 'män';
+
+/**
+ * Grupperar raderna per AID-kod och BAS-intervall, hämtade ur varje persons egen rad. Rader utan lön, kön eller
+ * BAS räknas inte. Rader utan AID-kod grupperas på yrkestexten.
+ * @param {Array<{aid?:string, bas:string, kon:string, lon:number, yrke?:string, yrkeLabel?:string}>} rader
+ * @returns {Array<{aid:string, bas:string, yrke:string, n:number, nKv:number, nMa:number, kvLoner:number[], maLoner:number[], loner:number[]}>}
+ */
+function grupperaAidBas(rader) {
+    const map = new Map();
+    for (const r of rader || []) {
+        if (!r || !r.bas || !(r.lon > 0)) continue;
+        const kv = arKv(r), ma = arMa(r);
+        if (!kv && !ma) continue;
+        const aid = String(r.aid || r.yrke || '').trim();
+        if (!aid) continue;
+        const key = `${aid}|${r.bas}`;
+        if (!map.has(key)) map.set(key, { aid, bas: String(r.bas), yrke: String(r.yrkeLabel || r.yrke || aid), n: 0, nKv: 0, nMa: 0, kvLoner: [], maLoner: [], loner: [] });
+        const g = map.get(key);
+        g.n++;
+        if (kv) { g.nKv++; g.kvLoner.push(r.lon); } else { g.nMa++; g.maLoner.push(r.lon); }
+        g.loner.push(r.lon);
+    }
+    return [...map.values()];
+}
+
+/** Sorterar grupper: BAS-intervall stigande (bokstavsordningen), därefter antal fallande, därefter AID-kod. */
+function sorteraGrupper(grupper) {
+    const rang = basRangFn(grupper.map(g => g.bas));
+    return [...grupper].sort((a, b) => rang(a.bas) - rang(b.bas) || b.n - a.n || String(a.aid).localeCompare(String(b.aid), 'sv'));
+}
+
+const litenRad = g => ({ bas: g.bas, aid: g.aid, yrke: g.yrke, n: g.n, nKv: g.nKv, nMa: g.nMa });
+/** Delar grupperna i de som får en egen rad (minst `golv` personer) och de som räknas upp i noten. */
+function _delaPaGolv(grupper, golv) {
+    const sorterade = sorteraGrupper(grupper);
+    return { rader: sorterade.filter(g => g.n >= golv), sma: sorterade.filter(g => g.n < golv).map(litenRad) };
+}
+
+/**
+ * Tabell 1 — Lika arbete AID x BAS.
+ * @param {Array} rader - personraderna
+ * @param {{k?:number, golv?:number, granser?: ((g:any) => ({lag:number, hog:number}|null))|null}} val
+ *   `granser` ger slumpens 95-procentiga gränser för gruppen (kvinnors median i % av mäns), räknade av anroparen med
+ *   samma metod som trattdiagrammet; anropas bara för grupper där båda könen når k.
+ */
+function likaArbeteTabell(rader, { k = 10, golv = 5, granser } = {}) {
+    const { rader: grupper, sma } = _delaPaGolv(grupperaAidBas(rader), golv);
+    const ut = grupper.map(g => {
+        const bada = g.nKv >= k && g.nMa >= k;
+        /** @type {{bas:string, aid:string, yrke:string, n:number, nKv:number, nMa:number, medKv:number|null, medMa:number|null, kvot:number|null, lag:number|null, hog:number|null, bedomning:string}} */
+        const rad = { bas: g.bas, aid: g.aid, yrke: g.yrke, n: g.n, nKv: g.nKv, nMa: g.nMa, medKv: null, medMa: null, kvot: null, lag: null, hog: null, bedomning: BEDOMNING_INDIVID };
+        if (!bada) return rad;
+        rad.medKv = median(g.kvLoner); rad.medMa = median(g.maLoner);
+        rad.kvot = rad.medMa > 0 ? rad.medKv / rad.medMa * 100 : null;
+        const gr = typeof granser === 'function' ? granser(g) : null;
+        if (gr && isFinite(gr.lag) && isFinite(gr.hog) && rad.kvot != null) {
+            rad.lag = gr.lag; rad.hog = gr.hog;
+            rad.bedomning = rad.kvot < gr.lag || rad.kvot > gr.hog ? BEDOMNING_UTANFOR : BEDOMNING_INOM;
+        } else rad.bedomning = '';   // gränserna kunde inte räknas (t.ex. ingen spridning i underlaget)
+        return rad;
+    });
+    return { rader: ut, sma };
+}
+
+/**
+ * Tabell 2 — Likvärdigt arbete: grupperna per BAS-intervall med könsfördelning och klassning, och sammanfattningen
+ * per intervall där det finns både kvinnodominerade grupper och andra grupper med median.
+ * @param {Array} rader
+ * @param {{k?:number, golv?:number, definition?:'do'|'scb', grans?:number, nationell?: ((aid:string) => (number|null))|null}} val
+ *   `nationell` ger andelen kvinnor nationellt för en AID-kod (procent), eller null när den saknas.
+ */
+function likvardigtTabell(rader, { k = 10, golv = 5, definition = 'do', grans = KV_GRANS_STANDARD, nationell = null } = {}) {
+    const { rader: grupper, sma } = _delaPaGolv(grupperaAidBas(rader), golv);
+    const ut = grupper.map(g => {
+        const andelKv = g.nKv / g.n * 100;
+        const nat = typeof nationell === 'function' ? nationell(g.aid) : null;
+        const andelKvNat = typeof nat === 'number' && isFinite(nat) ? nat : null;
+        const stor = g.n >= k;
+        const med = stor ? median(g.loner) : null, p10 = stor ? quantile(g.loner, 0.1) : null, p90 = stor ? quantile(g.loner, 0.9) : null;
+        const spridning = med != null && p10 != null && p90 != null && med > 0 ? (p90 - p10) / med : null;
+        return { bas: g.bas, aid: g.aid, yrke: g.yrke, n: g.n, nKv: g.nKv, nMa: g.nMa, andelKv, andelKvNat,
+                 klass: dominans(andelKv, definition, grans),
+                 brukar: andelKvNat == null ? '' : dominans(andelKvNat, definition, grans) === KLASS_KV ? 'Ja' : 'Nej',
+                 median: med, p10, p90, spridning };
+    });
+    // Sammanfattningen: högsta och lägsta median bland de kvinnodominerade och bland övriga, per BAS-intervall.
+    const sammanfattning = [];
+    for (const bas of [...new Set(ut.map(r => r.bas))]) {
+        const medMedian = ut.filter(r => r.bas === bas && r.median != null);
+        const kvDom = medMedian.filter(r => r.klass === KLASS_KV).map(r => /** @type {number} */ (r.median)), ovriga = medMedian.filter(r => r.klass !== KLASS_KV).map(r => /** @type {number} */ (r.median));
+        if (!kvDom.length || !ovriga.length) continue;
+        const kvHogst = Math.max(...kvDom), ovHogst = Math.max(...ovriga);
+        sammanfattning.push({ bas, antalKvDom: kvDom.length, antalOvriga: ovriga.length,
+            kvDom: { hogst: kvHogst, lagst: Math.min(...kvDom) }, ovriga: { hogst: ovHogst, lagst: Math.min(...ovriga) },
+            skillnadKr: ovHogst - kvHogst, skillnadPct: kvHogst > 0 ? (ovHogst / kvHogst - 1) * 100 : null });
+    }
+    return { rader: ut, sma, sammanfattning, definition, grans };
+}
+
+/**
+ * Tabell 3 — Hierarkisk jämförelse: par (A, B) där A inte är kvinnodominerad, B är kvinnodominerad, A har lägre
+ * BAS-intervall än B och A har högre median än B. Båda grupperna har minst k personer. Sorterat på skillnaden, störst först.
+ * @param {Array} rader
+ * @param {{k?:number, definition?:'do'|'scb', grans?:number}} val
+ */
+function hierarkiskaPar(rader, { k = 10, definition = 'do', grans = KV_GRANS_STANDARD } = {}) {
+    const grupper = grupperaAidBas(rader).filter(g => g.n >= k)
+        .map(g => ({ aid: g.aid, bas: g.bas, yrke: g.yrke, n: g.n, median: median(g.loner), klass: dominans(g.nKv / g.n * 100, definition, grans) }));
+    const rang = basRangFn(grupper.map(g => g.bas));
+    const par = [];
+    for (const a of grupper.filter(g => g.klass !== KLASS_KV)) {
+        for (const b of grupper.filter(g => g.klass === KLASS_KV)) {
+            if (rang(a.bas) < rang(b.bas) && a.median > b.median) {
+                par.push({ a, b, skillnadKr: a.median - b.median, skillnadPct: b.median > 0 ? (a.median / b.median - 1) * 100 : null });
+            }
+        }
+    }
+    return par.sort((x, y) => y.skillnadKr - x.skillnadKr || rang(x.a.bas) - rang(y.a.bas) || String(x.a.aid).localeCompare(String(y.a.aid), 'sv'));
+}
+
+/**
+ * Tabell 4 — Analys på individnivå: grupperna där något kön har färre än k personer. Inga löner.
+ * @param {Array} rader
+ * @param {{k?:number, golv?:number}} val
+ */
+function individnivaTabell(rader, { k = 10, golv = 5 } = {}) {
+    const { rader: grupper, sma } = _delaPaGolv(grupperaAidBas(rader).filter(g => g.nKv < k || g.nMa < k), golv);
+    return { rader: grupper.map(litenRad), sma };
+}
+
+    return { likaArbeteTabell, likvardigtTabell, hierarkiskaPar, individnivaTabell, kvDefinitionText, kvDefinitionNamn, dominans, ingaParText, klassNamn };
+})();
+const _aidbasLika = __mirrorAidbas.likaArbeteTabell;
+const _aidbasLikvardigt = __mirrorAidbas.likvardigtTabell;
+const _aidbasPar = __mirrorAidbas.hierarkiskaPar;
+const _aidbasIndivid = __mirrorAidbas.individnivaTabell;
+const _aidbasDefinitionText = __mirrorAidbas.kvDefinitionText;
+const _aidbasDefinitionNamn = __mirrorAidbas.kvDefinitionNamn;
+const _aidbasDominans = __mirrorAidbas.dominans;
+const _aidbasIngaParText = __mirrorAidbas.ingaParText;
+const _aidbasKlassNamn = __mirrorAidbas.klassNamn;
+
 // ---- speglar src/lib/regression.js ----
 const __mirrorRegression = (() => {
     // importer ur tidigare speglade lib-moduler
@@ -12361,7 +12573,8 @@ document.addEventListener('keydown', e => {
  *     scenarios: {A: any, B: any}, result: any, _remediation?: any
  *   },
  *   inactivityTimeoutMin: number, kLage: 'skarm'|'export',
- *   likvardighet: {source: string, kvinnoTrosholdPct: number, minGapPct: number, topN: number, poangBandPct: number, result: any},
+ *   likvardighet: {source: string, kvinnoTrosholdPct: number, kvDomDefinition: 'do'|'scb', minGapPct: number, topN: number, poangBandPct: number, result: any},
+ *   lonemanad: string,
  *   arbetsvardering: {byKey: Map<string, number>, [k: string]: any}|null,
  *   columnMap: {[roll: string]: string}|null,
  *   ansvarKolumn: {namn: string, giltiga?: any, godkand?: boolean}|null,
@@ -12423,6 +12636,7 @@ const state = {
     likvardighet: {
         source: 'organisation',    // 'organisation' | 'statistik'
         kvinnoTrosholdPct: 60,
+        kvDomDefinition: 'do',     // 'do' (mer än tröskeln) | 'scb' (tröskeln eller mer): tabellerna per AID och BAS (45-aid-bas-tabeller.js)
         minGapPct: 5,
         topN: 20,
         poangBandPct: 5,           // #5: ekvivalensband för arbetsvärderingspoäng (±%)
@@ -12431,6 +12645,9 @@ const state = {
     // #5: valfri arbetsvärderingstabell (poäng per yrke) som krav-proxy i § 3:10.
     // null = använd BAS-rank. byKey: Map<'AID|BAS' eller 'AID', poäng>.
     arbetsvardering: null,
+    // Lönemånaden underlaget gäller (fritext, t.ex. "2026-10"): står på bladen per AID och BAS. Ingen uppgift i
+    // lönefilen säger det, så användaren anger den; tomt skrivs ut som "inte angiven".
+    lonemanad: '',
     // #11: manuell kolumnmappning (roll → exakt CSV-rubrik) när auto-matchning
     // missar. null = enbart auto-matchning. Sätts via kolumnmappnings-guiden.
     columnMap: null,
@@ -14228,9 +14445,11 @@ function buildConfigSnapshot() {
         likvardighet: state.likvardighet ? {
             source: state.likvardighet.source,
             kvinnoTrosholdPct: state.likvardighet.kvinnoTrosholdPct,
+            kvDomDefinition: state.likvardighet.kvDomDefinition || 'do',
             minGapPct: state.likvardighet.minGapPct,
             topN: state.likvardighet.topN
         } : null,
+        lonemanad: state.lonemanad || null,   // lönemånaden på bladen per AID och BAS
         // Löneöversyn/prognos: bara inställningar (pott + fördelningsregler), ej utfall
         forecast: state.forecast ? {
             budget:   { ...state.forecast.budget },
@@ -14352,7 +14571,16 @@ function applyConfigSnapshot(cfg) {
                 lv[k] = cfg.likvardighet[k];
             }
         }
+        if (cfg.likvardighet.kvDomDefinition != null) {
+            if (cfg.likvardighet.kvDomDefinition !== 'do' && cfg.likvardighet.kvDomDefinition !== 'scb')
+                throw new Error('likvardighet.kvDomDefinition måste vara "do" eller "scb".');
+            lv.kvDomDefinition = cfg.likvardighet.kvDomDefinition;
+        }
         tmp.likvardighet = lv;
+    }
+    if (cfg.lonemanad != null) {
+        if (typeof cfg.lonemanad !== 'string' || cfg.lonemanad.length > 40) throw new Error('lonemanad måste vara en text på högst 40 tecken.');
+        tmp.lonemanad = cfg.lonemanad;
     }
     // forecast: löneöversynsinställningar (inga råa rader)
     if (cfg.forecast != null) {
@@ -14485,6 +14713,7 @@ function applyConfigSnapshot(cfg) {
     if (tmp.rapportTabeller) state.rapportTabeller = tmp.rapportTabeller;
     if (tmp.perBasRecept) state.perBasRecept = _pbReceptArStandard(tmp.perBasRecept) ? null : tmp.perBasRecept;
     state.forklaringsmodell = _rgForklaringsmodellArStandard(fm.modell) ? null : fm.modell;
+    if (tmp.lonemanad != null && typeof sattLonemanad === 'function') sattLonemanad(tmp.lonemanad);
     if (tmp.likvardighet) {
         state.likvardighet = { ...state.likvardighet, ...tmp.likvardighet, result: null };
     }
@@ -15647,7 +15876,7 @@ function excelAlltBlad(...a) { return medExportLage(() => _excelAlltBladExport.a
 function _excelAlltBladExport() {
     if (!state.data.length) return [];
     const harRef = state.policy.length > 0 || state.statistik.length > 0;
-    return ['Löneöversikt', 'Per BAS', ...((state.rapportTabeller || []).length ? ['Egna tabeller'] : []), 'EU-Lonekartlaggning', ...(harRef ? ['Prioritering'] : []), 'Lonegap', 'Konsskevhet', ..._excelDiagramBlad().map(b => b[0]), 'Sektorer',
+    return ['Löneöversikt', 'Per BAS', ...((state.rapportTabeller || []).length ? ['Egna tabeller'] : []), 'EU-Lonekartlaggning', ...(harRef ? ['Prioritering'] : []), 'Lonegap', 'Konsskevhet', ..._excelDiagramBlad().map(b => b[0]), ...AIDBAS_BLADNAMN, 'Sektorer',
         ...(state.statistik.length ? ['Jamforelsestatistik'] : []), ...(bedomningUnderlag() ? ['Underlagets kvalitet'] : []), 'Metodik', 'Metod & parametrar'];
 }
 
@@ -15722,7 +15951,7 @@ function _excelDiagramBlad() {
     const tratt = _laTrattUnderlag(d);
     if (tratt) ut.push(['Slumpens granser', [
         ['Yrkesgrupperna mot slumpens gränser (trattdiagrammet på Lika arbete)'],
-        [`Yrkesgrupper där både kvinnor och män är minst ${k}. Gränserna är de 95-procentiga för gruppens storlek.`], [],
+        [`En rad per yrkesgrupp och BAS-intervall där både kvinnor och män är minst ${k}. Gränserna är de 95-procentiga för gruppens storlek.`], [],
         ['Yrkesgrupp', 'BAS-intervall', 'Antal kvinnor', 'Antal män', 'Kvinnors median i % av mäns', 'Gräns, nedre', 'Gräns, övre', 'Bedömning'],
         ...tratt.punkter.map(p => [p.yrke, p.bas, p.nKv, p.nMa, r1(p.kvot), r1(p.gransLag), r1(p.gransHog), p.utanfor ? 'Utanför gränserna' : 'Inom gränserna'])]]);
     const arKv = r => typeof r.kon === 'string' && r.kon.includes('kvinna'), arMa = r => r.kon === 'man' || r.kon === 'män';
@@ -15806,6 +16035,8 @@ function __excelAlltBokExport() {
     if (skevhetSheet) XLSX.utils.book_append_sheet(wb, skevhetSheet, 'Konsskevhet');
     const diagramBlad = _excelDiagramBlad();
     for (const [namn, rader] of diagramBlad) XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rader), namn);
+    // Tabellerna per AID-kod och BAS-intervall (45-aid-bas-tabeller.js): fyra blad, kalkylbladen färdiga med talformat.
+    for (const [namn, ws] of _aidbasExcelBlad()) XLSX.utils.book_append_sheet(wb, ws, namn);
 
     // Sheet: Sektorer (AID-huvudområden, ADR-33) — samma k-regler som vyn.
     ensure('#sektor-table tbody tr', () => renderSektorer(getData()));
@@ -15859,13 +16090,17 @@ function __excelAlltBokExport() {
             metRows.push([]);
         }
     });
+    // Tabellerna per AID-kod och BAS-intervall: grupperingen, små grupper, gränserna för slumpen och definitionen.
+    metRows.push(['Tabellerna per AID-kod och BAS-intervall']);
+    for (const [rubrik, text] of _aidbasMetodRader()) metRows.push(['  ' + rubrik, text]);
+    metRows.push([]);
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(metRows), 'Metodik');
 
     // Två blad som liknar varandra: Per BAS är lönestrukturen som i en skriven lönekartläggning, Lonegap är Lika arbetes
     // kvot per intervall. Båda behålls; raden säger vad som skiljer dem.
     _appendMethodSheet(wb, { extra: [
         ['Bladen Per BAS och Lonegap', 'Per BAS är lönestrukturen per BAS-intervall som i en skriven lönekartläggning: referensen, organisationen och varje yrkesgrupp med P10, median, P90 och antal, per kön. Lonegap är tabellen ur Lika arbete: kvinnors medianlön i procent av mäns per BAS-intervall, med antal och medianer. Samma underlag, två frågor.'],
-        ..._excelLonepolitikMetod(diagramBlad)] });
+        ..._excelLonepolitikMetod(diagramBlad), ..._aidbasMetodRader()] });
     return wb;
 }
 
@@ -16322,7 +16557,7 @@ function clearAllData() {
 const RENSA_BEHALLARE = ['struktur-representation', 'struktur-distribution', 'struktur-eu', 'struktur-sektorer', 'forecast-outcome', 'explore-table',
     'outliers-table-wrap', 'print-report'];
 const RENSA_TABELLER = ['rapport-table', 'matrix-table', 'la-oversikt', 'pag-avvikelse-tabell', 'paygap-table', 'skevhet-table', 'benchmark-table', 'prio-table'];
-const RENSA_OVRIGT = ['action-checklist-container', 'outlier-list', 'data-validation-report', 'reality-check', 'snapshot-comparison', 'consistency-banner', 'process-tracker', 'likvardighet-content', 'forklaringsmodell-panel', 'blinder-oaxaca-card', 'livscykel-content', 'lonepolitik-content', 'ref-overblick', 'jmf-slutsatser', 'robusthet-body', 'fardigcheck-body', 'rapportunderlag-innehall', 'gap-uppdelning-innehall', 'pag-innehall', 'att-gora-borja'];
+const RENSA_OVRIGT = ['action-checklist-container', 'outlier-list', 'data-validation-report', 'reality-check', 'snapshot-comparison', 'consistency-banner', 'process-tracker', 'likvardighet-content', 'forklaringsmodell-panel', 'blinder-oaxaca-card', 'livscykel-content', 'lonepolitik-content', 'ref-overblick', 'jmf-slutsatser', 'robusthet-body', 'fardigcheck-body', 'rapportunderlag-innehall', 'gap-uppdelning-innehall', 'pag-innehall', 'att-gora-borja', 'aidbas-lika', 'aidbas-individ', 'aidbas-likvardigt', 'aidbas-hierarki'];
 
 function _rensaAllData({ inbakat = true } = {}) {
     if (typeof laMinneSlapp === 'function') laMinneSlapp();   // minnet håller en referens till dataraderna
@@ -16335,6 +16570,7 @@ function _rensaAllData({ inbakat = true } = {}) {
     // 1. Nolla state-objektet
     state.data = [];
     state.kTroskel = K_STANDARD;      // ADR-38: tillbaka till standard
+    state.lonemanad = '';             // lönemånaden hör till underlaget
     // Organisationspaketets låsningar (ADR-47) följer med paketet; en låst rensningstid går tillbaka till standard.
     const inaktivitetVarLast = state.paketLas.inaktivitetMin != null;
     state.paketLas = { kTroskelLagst: null, inaktivitetMin: null, smaGrupperIExport: true };
@@ -17755,11 +17991,11 @@ function _renderTabContent(target) {
         const s2 = document.getElementById("bas-select-demo"); if (s2) renderDemografi(/** @type {HTMLInputElement} */ (s2).value);
     }
     else if (target === "benchmark"    && d.length) { renderReferensOverblick(); renderLonepolitik(); generateBenchmark(); }
-    else if (target === "matrix"       && d.length) { generateSkevhet(); generateEUDirectiveMatrix(); renderPersonerAttGranska(); renderLikaArbeteTopp(); }
+    else if (target === "matrix"       && d.length) { generateSkevhet(); generateEUDirectiveMatrix(); renderPersonerAttGranska(); renderAidBasLika(); renderLikaArbeteTopp(); }
     else if (target === "prioritering" && d.length) renderPrioritering();
     else if (target === "struktur"     && d.length) renderStructure();
     else if (target === "loneoversyn"  && d.length) renderForecast();
-    else if (target === "likvardighet" && (d.length || state.statistik.length)) renderLikvardighet();
+    else if (target === "likvardighet" && (d.length || state.statistik.length)) { renderLikvardighet(); renderAidBasLikvardigt(); }
     else if (target === "utforska"     && d.length) { generateRapport(); renderExplorer(); }
     else if (target === "dokumentera") medExportLage(() => { if (d.length) renderKvalitetssakring(); renderRapportunderlag(); renderExportBesked(); if (typeof renderArsjamforelse === 'function') renderArsjamforelse(); });   // allt här lämnar verktyget (ADR-51)
     else if (target === "dashboard" && d.length) renderOversiktDelar();
@@ -19213,6 +19449,13 @@ function renderLikvardighet() {
                     <span>%</span>
                 </div>
                 <div class="mitt rad-inline gap-8">
+                    <label for="lv-kv-definition">Kvinnodominerat enligt:</label>
+                    <select id="lv-kv-definition" class="form-select bredd-auto" title="Gäller tabellerna per AID-kod och BAS-intervall (Likvärdigt arbete, Hierarkisk jämförelse). DO: mer än tröskeln. SCB: tröskeln eller mer.">
+                        <option value="do"${aidbasDefinition() === 'do' ? ' selected' : ''}>DO — mer än ${cfg.kvinnoTrosholdPct} % kvinnor</option>
+                        <option value="scb"${aidbasDefinition() === 'scb' ? ' selected' : ''}>SCB — ${cfg.kvinnoTrosholdPct} % kvinnor eller mer</option>
+                    </select>
+                </div>
+                <div class="mitt rad-inline gap-8">
                     <label for="lv-min-gap">Min gap:</label>
                     <input type="number" id="lv-min-gap" min="0" max="50" step="1" value="${cfg.minGapPct}" class="form-select bredd-64">
                     <span>%</span>
@@ -19250,7 +19493,7 @@ function renderLikvardighet() {
             ${innehall}</details>`;
     };
     const std = { kvinnoTrosholdPct: 60, minGapPct: 5, topN: 20 };   // samma som utgångsläget i 12-tillstand.js
-    const anpassat = cfg.kvinnoTrosholdPct !== std.kvinnoTrosholdPct || cfg.minGapPct !== std.minGapPct || cfg.topN !== std.topN;
+    const anpassat = cfg.kvinnoTrosholdPct !== std.kvinnoTrosholdPct || cfg.minGapPct !== std.minGapPct || cfg.topN !== std.topN || aidbasDefinition() !== 'do';
     _lvRitaTopp(result, cfg);
     wrap.innerHTML =
         felHtml +
@@ -19276,7 +19519,7 @@ function renderLikvardighet() {
         avsnitt('underlag', 'Yrkena bakom jämförelsen', 'Steg för steg: de kvinnodominerade yrkena och jämförelseyrkena',
             `${result.orgKvDom.length} kvinnodominerade, ${result.orgIckeKv.length + result.statIckeKv.length} att jämföra med`,
             orgTblHtml + internTblHtml + statTblHtml) +
-        avsnitt('installningar', 'Inställningar', 'Kvinnotröskel, minsta gap och antal par. Standardvärdena räcker för de flesta.',
+        avsnitt('installningar', 'Inställningar', 'Kvinnotröskel, definition av kvinnodominerat, minsta gap och antal par. Standardvärdena räcker för de flesta.',
             anpassat ? 'Anpassade värden' : 'Standardvärden', controlsHtml) +
         avsnitt('analys', 'Så fungerar analysen', 'Metoden, och vad verktyget ser i ert underlag', '', introHtml + diagnostikHtml) +
         debugHtml;
@@ -19297,6 +19540,10 @@ function renderLikvardighet() {
     onNumChange('lv-kvinno-thr', 'kvinnoTrosholdPct', 50, 70);
     onNumChange('lv-min-gap',    'minGapPct',         0, 50);
     onNumChange('lv-top-n',      'topN',              10, 500);
+    document.getElementById('lv-kv-definition')?.addEventListener('change', e => {
+        state.likvardighet.kvDomDefinition = /** @type {HTMLSelectElement} */ (e.target).value === 'scb' ? 'scb' : 'do';
+        renderLikvardighet(); renderAidBasLikvardigt();
+    });
     document.getElementById('btn-export-likvardighet')?.addEventListener('click', exportLikvardighet);
     document.getElementById('btn-export-likvardighet-csv')?.addEventListener('click', exportLikvardighetCSV);
 
@@ -22461,7 +22708,7 @@ function _laOversiktTabell(bars, d = getData()) {
 // normalapproximation som i simulering var 4–7 % för snäv vid 10–15 per kön och rätt från cirka 40; faktorn
 // (1 + 0,6/n per kön) rättar det. En punkt kan därför ligga strax
 // innanför fältet och ändå bedömas som utanför, eller tvärtom: punktens färg och form följer omkastningen.
-// Bara yrkesgrupper där båda könen når tröskeln finns med.
+// Bara grupper (yrkesgrupp i ett BAS-intervall) där båda könen når tröskeln finns med.
 const LA_TRATT_OMKAST = 1000, LA_TRATT_STOR = 300;
 // Med färre grupper än så säger trattens form lite: förbehållet under diagrammet.
 const LA_TRATT_GLEST = 10;
@@ -22484,16 +22731,20 @@ function _laTrattUnderlag(d, k = kTroskel()) {
     if (!('tratt' in minne)) minne.tratt = _laTrattUnderlagRakna(d, k);
     return minne.tratt;
 }
+// Gruppen är AID-kod + BAS-intervall ur varje persons egen rad (lika arbete: samma yrkesgrupp på samma nivå), inte
+// yrkesgruppen över alla intervall. Tidigare grupperades per yrke och gruppen fick BAS från sin första rad, så en
+// yrkesgrupp i flera intervall redovisades i ett godtyckligt av dem med alla sina personer.
 function _laTrattUnderlagRakna(d, k) {
-    const perYrke = new Map();
+    const perGrupp = new Map();
     for (const r of d) {
-        if (!(r.lon > 0)) continue;
+        if (!(r.lon > 0) || !r.bas) continue;
         const kv = r.kon.includes('kvinna'), ma = r.kon === 'man' || r.kon === 'män';
         if (!kv && !ma) continue;
-        if (!perYrke.has(r.yrke)) perYrke.set(r.yrke, { yrke: r.yrke, bas: r.bas, aid: r.aid, kv: [], ma: [] });
-        perYrke.get(r.yrke)[kv ? 'kv' : 'ma'].push(r.lon);
+        const aid = String(r.aid || r.yrke || '').trim(), nyckel = `${aid}|${r.bas}`;
+        if (!perGrupp.has(nyckel)) perGrupp.set(nyckel, { nyckel, yrke: r.yrke, bas: r.bas, aid, kv: [], ma: [] });
+        perGrupp.get(nyckel)[kv ? 'kv' : 'ma'].push(r.lon);
     }
-    const grupper = [...perYrke.values()].filter(g => g.kv.length >= k && g.ma.length >= k);
+    const grupper = [...perGrupp.values()].filter(g => g.kv.length >= k && g.ma.length >= k);
     if (!grupper.length) return null;
     const rest = [];
     for (const g of grupper) {
@@ -22509,7 +22760,7 @@ function _laTrattUnderlagRakna(d, k) {
     const egenGrans = g => { const r = [...g.kv.map(v => Math.abs(Math.log(v) - Math.log(g.medKv))), ...g.ma.map(v => Math.abs(Math.log(v) - Math.log(g.medMa)))];
         const h = 100 * 1.96 * 1.2533 * 1.4826 * Stat.median(r) * Math.sqrt(1 / g.kv.length + 1 / g.ma.length); return { lag: 100 - h, hog: 100 + h }; };
     return { sigma, halv, punkter: grupper.map(g => { const kvot = g.medKv / g.medMa * 100, grans = g.kv.length + g.ma.length > LA_TRATT_STOR ? egenGrans(g) : _laTrattOmkastning(g.kv, g.ma);
-        return { yrke: g.yrke, bas: g.bas, aid: g.aid, n: g.kv.length + g.ma.length, nKv: g.kv.length, nMa: g.ma.length, medKv: g.medKv, medMa: g.medMa, kvot, gransLag: grans.lag, gransHog: grans.hog,
+        return { nyckel: g.nyckel, yrke: g.yrke, bas: g.bas, aid: g.aid, n: g.kv.length + g.ma.length, nKv: g.kv.length, nMa: g.ma.length, medKv: g.medKv, medMa: g.medMa, kvot, gransLag: grans.lag, gransHog: grans.hog,
                  utanfor: kvot < grans.lag || kvot > grans.hog }; }) };
 }
 function _laTrattFigur(u, k = kTroskel()) {
@@ -22517,7 +22768,7 @@ function _laTrattFigur(u, k = kTroskel()) {
     // när grupperna i urvalet råkar vara ungefär lika stora.
     const nMax = Math.max(...u.punkter.map(p => p.n)), x0 = Math.max(2, 2 * k), x1 = Math.max(nMax * 1.06, x0 + 10), steg = 40;
     const falt = Array.from({ length: steg + 1 }, (_, i) => { const n = x0 + (x1 - x0) * i / steg, h = u.halv(n / 2, n / 2); return { x: +n.toFixed(1), lag: +(100 - h).toFixed(2), hog: +(100 + h).toFixed(2) }; });
-    const tips = d => [[d.p.yrke], ['Kvinnors median', `${_figTalformat(d.y, 'pct')} av männens`], ..._figKronorTipsRad(d.skillnadKr), ['Antal kvinnor / män', `${d.p.nKv} / ${d.p.nMa}`],
+    const tips = d => [[`${d.p.yrke} · BAS ${d.p.bas}`], ['Kvinnors median', `${_figTalformat(d.y, 'pct')} av männens`], ..._figKronorTipsRad(d.skillnadKr), ['Antal kvinnor / män', `${d.p.nKv} / ${d.p.nMa}`],
         ['Slumpens gränser för gruppen', `${_figTalformat(d.p.gransLag, 'pct', { enhet: false })}–${_figTalformat(d.p.gransHog, 'pct')}`], ['Bedömning', d.p.utanfor ? 'utanför slumpens gränser' : 'inom slumpens gränser']];
     // Bara de sex grupper utanför gränserna som avviker mest namnges i bilden: med fler krockar namnen med varandra.
     // Alla grupper har sitt namn i verktygstipset och i tabellen under.
@@ -22525,8 +22776,8 @@ function _laTrattFigur(u, k = kTroskel()) {
     const lager = (serie, farg, symbol, valj) => ({ marke: 'punkt', serie, farg, symbol, storlek: 6, etikettLage: 'auto',
         data: u.punkter.filter(valj).map(p => ({ x: p.n, y: +p.kvot.toFixed(1), p, markering: markeringFor(p.bas, p.aid), ..._kronorFalt(p.medKv, p.medMa), ...(namngivna.has(p) ? { etikett: _rfKorta(String(p.yrke), 24) } : {}) })), tips });
     const ys = [...falt.flatMap(f => [f.lag, f.hog]), ...u.punkter.map(p => p.kvot)];
-    return { beskrivning: 'Trattdiagram: kvinnors medianlön i procent av mäns per yrkesgrupp mot gruppens storlek. Det skuggade fältet är de 95-procentiga gränserna för vad slumpen kan ge vid den gruppstorleken, och smalnar när gruppen blir större. Samma grupper finns i tabellen nedan.',
-        x: { skala: 'linjar', titel: 'Antal personer i yrkesgruppen', doman: [x0, x1] },
+    return { beskrivning: 'Trattdiagram: kvinnors medianlön i procent av mäns per yrkesgrupp och BAS-intervall mot gruppens storlek. Det skuggade fältet är de 95-procentiga gränserna för vad slumpen kan ge vid den gruppstorleken, och smalnar när gruppen blir större. Samma grupper finns i tabellen nedan.',
+        x: { skala: 'linjar', titel: 'Antal personer i gruppen', doman: [x0, x1] },
         y: { skala: 'linjar', titel: 'Kvinnors median i % av mäns', doman: [Math.floor(Math.min(...ys) - 1), Math.ceil(Math.max(...ys) + 1)] },
         hojd: 340,
         referens: [{ y: 100, farg: PALETTE.semantic.mork, tjocklek: 1.5, etikett: 'Lika lön' }],
@@ -22543,7 +22794,7 @@ function _laRitaTratt(d) {
     ritaFigur(el, _laTrattFigur(u));
     _setDiagramMetodNot('chart-la-tratt', _laTrattGlesNot(u.punkter.length));
     const ute = u.punkter.filter(p => p.utanfor).length;
-    if (not) not.textContent = `${u.punkter.length} yrkesgrupper där både kvinnor och män når minsta gruppstorlek; ${ute} ligger utanför gränserna. Punktens färg bygger på en omkastning av könen inom gruppen (1 000 gånger; för grupper över 300 personer en normalapproximation) och gäller gruppens egna löner och antal; det skuggade fältet är en jämn kurva för orientering, ritad för lika många kvinnor som män. Gränserna är ett stöd för bedömningen, inte ett test som friar eller fäller.`;
+    if (not) not.textContent = `${u.punkter.length} grupper (yrkesgrupp i ett BAS-intervall) där både kvinnor och män når minsta gruppstorlek; ${ute} ligger utanför gränserna. Punktens färg bygger på en omkastning av könen inom gruppen (1 000 gånger; för grupper över 300 personer en normalapproximation) och gäller gruppens egna löner och antal; det skuggade fältet är en jämn kurva för orientering, ritad för lika många kvinnor som män. Gränserna är ett stöd för bedömningen, inte ett test som friar eller fäller.`;
 }
 
 // Könsfördelningen per BAS-intervall som staplade staplar till 100 %, med gränserna för jämn könsfördelning
@@ -23201,6 +23452,240 @@ function renderReferensOverblick() {
     addTableExportTools('ref-tabell', 'referenser');
     enableTableSort('ref-tabell');
     enableTableSort('ref-stat-mot-stallning');
+}
+// SPDX-License-Identifier: MIT
+// Copyright 2026 Felix Jansson
+// ---- Tabellerna per AID-kod och BAS-intervall: lika arbete, likvärdigt arbete, hierarkisk jämförelse, individnivå ----
+//
+// Lika arbete är samma yrkesgrupp (AID-kod) på samma nivå (BAS-intervall). De fyra tabellerna här är de en skriven
+// lönekartläggning behöver på den nivån, med kolumnnamn som går att klistra in i rapporten utan att ändras. Logiken
+// ligger i src/lib/aidbas.js (speglad); här står reglerna som hör till verktyget:
+//
+//   - Könsuppdelade mått (ett köns median, kvoten, gränserna) och gruppens median och spridning kräver statGolv()
+//     personer — standard 10, följer med uppåt när minsta gruppstorlek höjs — i båda lägena, som övriga skattningar.
+//     En grupp där något kön är mindre står som "Analyseras på individnivå" och i arbetslistan.
+//   - En egen rad kräver minst LITET_UNDERLAG (5) personer i exportläget; mindre grupper räknas upp i en not under
+//     tabellen, med namn och antal men utan löner (ADR-12). På skärmen visas alla grupper (ADR-51).
+//   - Gränserna för slumpen är trattdiagrammets (41-lika-arbete.js): omkastning av könen inom gruppen, räknad per
+//     AID-kod och BAS-intervall, så att tabellen och fliken Slumpens gränser säger samma sak.
+//   - Kvinnodominerat enligt DO (mer än tröskeln) eller SCB (tröskeln eller mer): valet i Likvärdigt arbetes
+//     inställningar, standard DO; tröskeln är kvinnotröskeln där (standard 60 %).
+//   - Lönemånaden står ovanför varje tabell; den anges i Inställningar, och tomt skrivs ut som "inte angiven".
+
+/** Antalet per kön (och per grupp för median och spridning) som krävs för ett lönemått. */
+function aidbasK() { return statGolv(); }
+/** Antalet i gruppen som krävs för en egen rad: 5 i exportläget, alla på skärmen (ADR-51). */
+function aidbasGolv() { return kTroskel() > K_SKARM ? LITET_UNDERLAG : 1; }
+/** Vald definition av kvinnodominerat arbete: 'do' eller 'scb'. */
+function aidbasDefinition() { return state.likvardighet && state.likvardighet.kvDomDefinition === 'scb' ? 'scb' : 'do'; }
+/** Gränsen i procent kvinnor: kvinnotröskeln i Likvärdigt arbete. */
+function aidbasGrans() { return (state.likvardighet && state.likvardighet.kvinnoTrosholdPct) || 60; }
+/** Texten om definitionen, för tabellerna och metodbladet. */
+function aidbasDefinitionText() { return _aidbasDefinitionText(aidbasDefinition(), aidbasGrans()); }
+/** Raden om lönemånaden ovanför tabellerna. */
+function lonemanadText() { return `Lönemånad: ${state.lonemanad ? state.lonemanad : 'inte angiven'}`; }
+/** Sätter lönemånaden (från panelen eller konfigurationsfilen) och synkar fältet. */
+function sattLonemanad(v) {
+    state.lonemanad = String(v ?? '').trim().slice(0, 40);
+    const el = /** @type {HTMLInputElement|null} */ (document.getElementById('lonemanad'));
+    if (el && el.value !== state.lonemanad) el.value = state.lonemanad;
+}
+document.getElementById('lonemanad')?.addEventListener('change', e => {
+    sattLonemanad(/** @type {HTMLInputElement} */ (e.target).value);
+    // Den öppna fliken ritas om direkt; övriga ritas när de öppnas.
+    const aktiv = document.querySelector('.nav-item.active')?.getAttribute('data-tab');
+    if (aktiv === 'matrix') renderAidBasLika();
+    if (aktiv === 'likvardighet') renderAidBasLikvardigt();
+});
+
+/** Andelen kvinnor nationellt för en AID-kod (SKR:s personalstatistik, organisationstypen i Inställningar), eller null. */
+function _aidbasNationell(aid) {
+    const r = typeof _skrKvinnoandel === 'function' ? _skrKvinnoandel(aid, { del: _skrDel() }) : null;
+    return r && typeof r.pct === 'number' ? r.pct : null;
+}
+/** Slumpens gränser per grupp ur trattens underlag, räknat med samma antal per kön som tabellen kräver. */
+function _aidbasGranser(d) {
+    const u = _laTrattUnderlag(d, aidbasK());
+    const per = new Map((u ? u.punkter : []).map(p => [p.nyckel, { lag: p.gransLag, hog: p.gransHog }]));
+    return g => per.get(`${g.aid}|${g.bas}`) || null;
+}
+/** De fyra tabellerna ur underlaget, med verktygets regler. */
+function aidbasTabeller(d = getData()) {
+    const k = aidbasK(), golv = aidbasGolv(), definition = aidbasDefinition(), grans = aidbasGrans();
+    return {
+        k, golv, definition, grans,
+        lika: _aidbasLika(d, { k, golv, granser: _aidbasGranser(d) }),
+        likvardigt: _aidbasLikvardigt(d, { k, golv, definition, grans, nationell: _aidbasNationell }),
+        par: _aidbasPar(d, { k, definition, grans }),
+        individ: _aidbasIndivid(d, { k, golv })
+    };
+}
+
+// ---- Kolumnerna: exakt de namn rapporten använder. typ styr talformatet på skärmen och i Excel. ----
+/** @type {{[tabell: string]: Array<[string, string, (r: any) => any]>}} */
+const AIDBAS_KOL = {
+    lika: [['BAS-intervall', 'text', r => r.bas], ['AID-kod', 'text', r => r.aid], ['Yrkesgrupp', 'text', r => r.yrke], ['Antal kvinnor', 'antal', r => r.nKv], ['Antal män', 'antal', r => r.nMa],
+           ['Medianlön kvinnor', 'kr', r => r.medKv], ['Medianlön män', 'kr', r => r.medMa], ['Kvinnors median i % av mäns', 'pct', r => r.kvot],
+           ['Nedre gräns', 'pct', r => r.lag], ['Övre gräns', 'pct', r => r.hog], ['Bedömning', 'text', r => r.bedomning]],
+    likvardigt: [['BAS-intervall', 'text', r => r.bas], ['AID-kod', 'text', r => r.aid], ['Yrkesgrupp', 'text', r => r.yrke], ['Antal', 'antal', r => r.n],
+                 ['Andel kvinnor (%)', 'pct', r => r.andelKv], ['Andel kvinnor nationellt (%)', 'pct', r => r.andelKvNat], ['Klassning', 'text', r => r.klass],
+                 ['Brukar anses kvinnodominerad', 'text', r => r.brukar], ['Medianlön', 'kr', r => r.median], ['Lönespridning', 'kvot', r => r.spridning]],
+    sammanfattning: [['BAS-intervall', 'text', s => s.bas], ['Kvinnodominerade grupper', 'antal', s => s.antalKvDom], ['Högsta medianlön kvinnodominerad', 'kr', s => s.kvDom.hogst], ['Lägsta medianlön kvinnodominerad', 'kr', s => s.kvDom.lagst],
+                     ['Övriga grupper', 'antal', s => s.antalOvriga], ['Högsta medianlön övriga', 'kr', s => s.ovriga.hogst], ['Lägsta medianlön övriga', 'kr', s => s.ovriga.lagst],
+                     ['Skillnad (kr)', 'kr', s => s.skillnadKr], ['Skillnad (%)', 'pct', s => s.skillnadPct]],
+    par: [['Grupp A (ej kvinnodominerad)', 'text', p => `${p.a.aid} ${p.a.yrke}`], ['BAS A', 'text', p => p.a.bas], ['Median A', 'kr', p => p.a.median],
+          ['Grupp B (kvinnodominerad)', 'text', p => `${p.b.aid} ${p.b.yrke}`], ['BAS B', 'text', p => p.b.bas], ['Median B', 'kr', p => p.b.median],
+          ['Skillnad (kr)', 'kr', p => p.skillnadKr], ['Skillnad (%)', 'pct', p => p.skillnadPct]],
+    individ: [['BAS-intervall', 'text', r => r.bas], ['AID-kod', 'text', r => r.aid], ['Yrkesgrupp', 'text', r => r.yrke], ['Antal kvinnor', 'antal', r => r.nKv], ['Antal män', 'antal', r => r.nMa],
+              ['Analys genomförd', 'text', () => ''], ['Resultat', 'text', () => '']]
+};
+/** Noten om grupperna under golvet: namn och antal, inga löner. '' när alla grupper har en rad. */
+function _aidbasSmaNot(sma, golv) {
+    if (!sma.length) return '';
+    return `Grupper med färre än ${golv} personer redovisas inte som egen rad (${sma.length}): ${sma.map(s => `${s.aid} ${s.yrke} · BAS ${s.bas} (${s.nKv} kvinnor, ${s.nMa} män)`).join('; ')}.`;
+}
+/** Sammanfattningen per BAS-intervall som en mening per intervall, för skärmen. */
+function _aidbasSammanfattningText(s) {
+    return `BAS ${s.bas}: kvinnodominerade grupper (${s.antalKvDom}) har medianlön ${svTal(s.kvDom.lagst, 0)}–${svTal(s.kvDom.hogst, 0)} kr, övriga (${s.antalOvriga}) ${svTal(s.ovriga.lagst, 0)}–${svTal(s.ovriga.hogst, 0)} kr; `
+        + `högsta median övriga mot högsta kvinnodominerad: ${s.skillnadKr >= 0 ? '+' : '−'}${svTal(Math.abs(s.skillnadKr), 0)} kr (${s.skillnadPct == null ? '–' : (s.skillnadPct >= 0 ? '+' : '−') + svPct(Math.abs(s.skillnadPct), 1)}).`;
+}
+
+// ---- Skärmen ----
+function _aidbasCell(v, typ) {
+    if (v == null || v === '') return '<td class="tal">–</td>';
+    if (typ === 'text') return `<td>${esc(String(v))}</td>`;
+    const text = typ === 'kr' ? `${svTal(v, 0)} kr` : typ === 'pct' ? svPct(v, 1) : typ === 'kvot' ? svTal(v, 2) : svTal(v, 0);
+    // Sorteringsvärdet avrundas: ett tal med många decimaler kan av en slump innehålla en lön som siffersekvens.
+    return `<td class="tal" data-sort-value="${typeof v === 'number' ? Math.round(v * 100) / 100 : ''}">${text}</td>`;
+}
+/**
+ * En tabell på skärmen: lönemånad, kolumnerna, raderna och noten; sortering och Kopiera/CSV som övriga tabeller.
+ * @param {string} id
+ * @param {Array<[string, string, (r: any) => any]>} kolumner
+ * @param {any[]} rader
+ * @param {{not?: string, tom?: string, fil?: string}} [val]
+ */
+function _aidbasTabellHtml(id, kolumner, rader, { not = '', tom = 'Inga grupper att visa.', fil = id } = {}) {
+    const kropp = rader.length ? rader.map(r => `<tr>${kolumner.map(([, typ, f]) => _aidbasCell(f(r), typ)).join('')}</tr>`).join('') : '';
+    return `<p class="text-dampad-sm marg-0-0-6"><strong>${esc(lonemanadText())}</strong></p>`
+        + (rader.length ? `<div class="table-container"><table id="${id}" class="data-table" data-aidbas-fil="${esc(fil)}"><thead><tr>${kolumner.map(([namn, typ]) => `<th${typ === 'text' ? '' : ' class="tal"'}>${esc(namn)}</th>`).join('')}</tr></thead><tbody>${kropp}</tbody></table></div>`
+                        : `<p class="text-dampad-sm">${esc(tom)}</p>`)
+        + (not ? `<p class="text-dampad-xs marg-8-0-0">${esc(not)}</p>` : '');
+}
+function _aidbasEfter(id) {
+    if (!document.getElementById(id)) return;
+    if (typeof enableTableSort === 'function') enableTableSort(id);
+    if (typeof addTableExportTools === 'function') addTableExportTools(id, document.getElementById(id)?.getAttribute('data-aidbas-fil') || id);
+}
+function _aidbasNyckel(id, text) { const el = document.getElementById(id); if (el) el.textContent = text; }
+
+/** Lika arbete: tabell 1 och arbetslistan (tabell 4). */
+function renderAidBasLika() {
+    const lika = document.getElementById('aidbas-lika'), individ = document.getElementById('aidbas-individ');
+    if (!lika || !individ) return;
+    const d = getData();
+    if (!d.length) { lika.innerHTML = ''; individ.innerHTML = ''; _aidbasNyckel('nyckel-la-aidbas', ''); _aidbasNyckel('nyckel-la-individ', ''); return; }
+    const t = aidbasTabeller(d);
+    lika.innerHTML = _aidbasTabellHtml('aidbas-lika-tabell', AIDBAS_KOL.lika, t.lika.rader, { not: _aidbasSmaNot(t.lika.sma, t.golv), fil: 'lika_arbete_aid_bas' })
+        + `<p class="text-dampad-xs marg-8-0-0">Medianer, kvot och gränser bara när varje kön har minst ${t.k} personer; annars <em>Analyseras på individnivå</em>. Gränserna är de 95-procentiga för slumpen vid gruppens storlek och könsfördelning, räknade med omkastning av könen inom gruppen som i trattdiagrammet.</p>`;
+    _aidbasEfter('aidbas-lika-tabell');
+    const ute = t.lika.rader.filter(r => r.bedomning === 'Utanför gränserna').length, bedomda = t.lika.rader.filter(r => r.bedomning !== 'Analyseras på individnivå').length;
+    _aidbasNyckel('nyckel-la-aidbas', t.lika.rader.length ? `${t.lika.rader.length} grupper · ${ute} av ${bedomda} utanför gränserna` : '');
+    individ.innerHTML = _aidbasTabellHtml('aidbas-individ-tabell', AIDBAS_KOL.individ, t.individ.rader, { not: _aidbasSmaNot(t.individ.sma, t.golv), tom: `Alla grupper har minst ${t.k} kvinnor och ${t.k} män.`, fil: 'analys_pa_individniva' });
+    _aidbasEfter('aidbas-individ-tabell');
+    _aidbasNyckel('nyckel-la-individ', t.individ.rader.length ? `${t.individ.rader.length} grupper` : '');
+}
+/** Likvärdigt arbete: tabell 2 med sammanfattningen, och den hierarkiska jämförelsen (tabell 3). */
+function renderAidBasLikvardigt() {
+    const lv = document.getElementById('aidbas-likvardigt'), hi = document.getElementById('aidbas-hierarki');
+    if (!lv || !hi) return;
+    const d = getData();
+    if (!d.length) { lv.innerHTML = ''; hi.innerHTML = ''; _aidbasNyckel('nyckel-lv-aidbas', ''); _aidbasNyckel('nyckel-lv-hierarki', ''); return; }
+    const t = aidbasTabeller(d);
+    const def = `Kvinnodominerad enligt ${aidbasDefinitionText()}; mansdominerad med samma gräns för män; övriga könsblandade. "Brukar anses kvinnodominerad" bygger på andelen kvinnor nationellt (${skrKallaKort()}) med samma definition.`;
+    lv.innerHTML = _aidbasTabellHtml('aidbas-likvardigt-tabell', AIDBAS_KOL.likvardigt, t.likvardigt.rader, { not: _aidbasSmaNot(t.likvardigt.sma, t.golv), fil: 'likvardigt_arbete' })
+        + `<p class="text-dampad-xs marg-8-0-0">${esc(def)} Medianlön och lönespridning ((P90 − P10) / median) bara för grupper med minst ${t.k} personer.</p>`
+        + (t.likvardigt.sammanfattning.length ? `<h3 class="fs-md marg-14-0-4">Sammanfattning per BAS-intervall</h3><ul class="text-dampad-sm">${t.likvardigt.sammanfattning.map(s => `<li>${esc(_aidbasSammanfattningText(s))}</li>`).join('')}</ul>`
+                                               : `<p class="text-dampad-xs marg-8-0-0">Inget BAS-intervall har både kvinnodominerade grupper och andra grupper med minst ${t.k} personer, så det finns ingen sammanfattning.</p>`);
+    _aidbasEfter('aidbas-likvardigt-tabell');
+    const kvDom = t.likvardigt.rader.filter(r => r.klass === _aidbasKlassNamn().kv).length;
+    _aidbasNyckel('nyckel-lv-aidbas', t.likvardigt.rader.length ? `${t.likvardigt.rader.length} grupper · ${kvDom} kvinnodominerade (${_aidbasDefinitionNamn(t.definition)})` : '');
+    hi.innerHTML = _aidbasTabellHtml('aidbas-hierarki-tabell', AIDBAS_KOL.par, t.par, { tom: _aidbasIngaParText(), fil: 'hierarkisk_jamforelse' })
+        + `<p class="text-dampad-xs marg-8-0-0">Kvinnodominerad enligt ${esc(aidbasDefinitionText())}. Båda grupperna har minst ${t.k} personer. BAS-ordningen är bokstavsordningen.</p>`;
+    _aidbasEfter('aidbas-hierarki-tabell');
+    _aidbasNyckel('nyckel-lv-hierarki', t.par.length ? `${t.par.length} par` : 'inga par');
+}
+
+// ---- Excel: fyra blad, ett per tabell. Tal som tal med svenskt talformat i cellen; procent med en decimal. ----
+const AIDBAS_TALFORMAT = { antal: '#,##0', kr: '#,##0', pct: '#,##0.0', kvot: '0.00' };
+function _aidbasVarde(v, typ) {
+    if (v == null || v === '' || (typeof v === 'number' && !isFinite(v))) return '';
+    if (typ === 'text') return String(v);
+    return typ === 'pct' ? Math.round(v * 10) / 10 : typ === 'kvot' ? Math.round(v * 100) / 100 : Math.round(v);
+}
+/**
+ * Ett blad: rubrik, lönemånad, eventuella inledande rader, kolumnerna, raderna (eller en tom-text) och noter.
+ * @param {string} rubrik
+ * @param {Array<[string, string, (r: any) => any]>} kolumner
+ * @param {any[]} rader
+ * @param {{fore?: string[], efter?: string[], tom?: string}} [val]
+ */
+function _aidbasBlad(rubrik, kolumner, rader, { fore = [], efter = [], tom = '' } = {}) {
+    /** @type {any[][]} */
+    const rows = [[rubrik], [lonemanadText()], ...fore.map(t => [t]), []];
+    const forstaRad = rows.length + 1;   // 1-baserat radnummer för första dataraden
+    rows.push(kolumner.map(([namn]) => namn));
+    if (rader.length) rader.forEach(r => rows.push(kolumner.map(([, typ, f]) => _aidbasVarde(f(r), typ))));
+    else if (tom) rows.push([tom]);
+    for (const t of efter) if (t) rows.push([], [t]);
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    if (rader.length) {
+        kolumner.forEach(([, typ], c) => {
+            const z = AIDBAS_TALFORMAT[typ];
+            if (!z) return;
+            for (let r = 0; r < rader.length; r++) { const cell = ws[XLSX.utils.encode_cell({ c, r: forstaRad + r })]; if (cell && typeof cell.v === 'number') cell.z = z; }
+        });
+    }
+    ws['!cols'] = kolumner.map(([namn, typ]) => ({ wch: typ === 'text' ? Math.max(14, Math.min(44, namn.length + 4)) : Math.max(10, namn.length + 2) }));
+    return ws;
+}
+/** Bladens namn i ordning, som förhandsbeskedet och arbetsboken delar. */
+const AIDBAS_BLADNAMN = ['Lika arbete AID x BAS', 'Likvärdigt arbete', 'Hierarkisk jämförelse', 'Analys på individnivå'];
+/** @returns {[string, any][]} bladets namn och kalkylblad */
+function _aidbasExcelBlad() {
+    const d = getData();
+    if (!d.length) return [];
+    const t = aidbasTabeller(d);
+    const def = `Kvinnodominerad enligt ${aidbasDefinitionText()}; mansdominerad med samma gräns för män; övriga könsblandade.`;
+    const lika = _aidbasBlad('Lika arbete: kvinnors medianlön i procent av mäns per AID-kod och BAS-intervall', AIDBAS_KOL.lika, t.lika.rader,
+        { fore: [`Medianer, kvot och gränser bara när varje kön har minst ${t.k} personer; annars "Analyseras på individnivå". Gränserna är de 95-procentiga för slumpen vid gruppens storlek och könsfördelning (omkastning av könen inom gruppen, som trattdiagrammet).`],
+          efter: [_aidbasSmaNot(t.lika.sma, t.golv)], tom: 'Inga grupper att visa.' });
+    const lv = _aidbasBlad('Likvärdigt arbete: grupperna per BAS-intervall', AIDBAS_KOL.likvardigt, t.likvardigt.rader,
+        { fore: [def, `"Brukar anses kvinnodominerad" bygger på andelen kvinnor nationellt (${skrKallaKort()}) med samma definition. Medianlön och lönespridning ((P90 − P10) / median) bara för grupper med minst ${t.k} personer.`],
+          efter: [_aidbasSmaNot(t.likvardigt.sma, t.golv)], tom: 'Inga grupper att visa.' });
+    // Sammanfattningen per BAS-intervall under tabellen i samma blad.
+    const s = t.likvardigt.sammanfattning;
+    const rad0 = XLSX.utils.decode_range(lv['!ref']).e.r + 3;
+    XLSX.utils.sheet_add_aoa(lv, [['Sammanfattning per BAS-intervall: högsta och lägsta medianlön bland kvinnodominerade grupper och bland övriga; skillnaden är högsta median övriga mot högsta kvinnodominerad.'],
+        ...(s.length ? [AIDBAS_KOL.sammanfattning.map(([namn]) => namn), ...s.map(x => AIDBAS_KOL.sammanfattning.map(([, typ, f]) => _aidbasVarde(f(x), typ)))]
+                     : [[`Inget BAS-intervall har både kvinnodominerade grupper och andra grupper med minst ${t.k} personer.`]])], { origin: rad0 });
+    if (s.length) AIDBAS_KOL.sammanfattning.forEach(([, typ], c) => { const z = AIDBAS_TALFORMAT[typ]; if (!z) return;
+        for (let r = 0; r < s.length; r++) { const cell = lv[XLSX.utils.encode_cell({ c, r: rad0 + 2 + r })]; if (cell && typeof cell.v === 'number') cell.z = z; } });
+    const par = _aidbasBlad('Hierarkisk jämförelse: lägre värderat arbete som inte är kvinnodominerat med högre lön än kvinnodominerat arbete på högre nivå', AIDBAS_KOL.par, t.par,
+        { fore: [`${def} Båda grupperna har minst ${t.k} personer. BAS-ordningen är bokstavsordningen.`], tom: _aidbasIngaParText() });
+    const individ = _aidbasBlad('Analys på individnivå: grupper där något kön har färre än ' + t.k + ' personer', AIDBAS_KOL.individ, t.individ.rader,
+        { fore: ['Arbetslista utan löner. Fyll i kolumnerna Analys genomförd och Resultat.'], efter: [_aidbasSmaNot(t.individ.sma, t.golv)], tom: `Alla grupper har minst ${t.k} kvinnor och ${t.k} män.` });
+    return [[AIDBAS_BLADNAMN[0], lika], [AIDBAS_BLADNAMN[1], lv], [AIDBAS_BLADNAMN[2], par], [AIDBAS_BLADNAMN[3], individ]];
+}
+/** Raderna om tabellerna för bladen Metodik och Metod & parametrar: [rubrik, text]. */
+function _aidbasMetodRader() {
+    const k = aidbasK(), golv = kTroskel() > K_SKARM ? LITET_UNDERLAG : 1;
+    return [
+        ['Tabellerna per AID-kod och BAS-intervall', `Bladen ${AIDBAS_BLADNAMN.join(', ')} grupperar varje person på AID-kod och BAS-intervall ur personens egen rad: lika arbete är samma yrkesgrupp på samma nivå, och en yrkesgrupp i flera intervall får en rad per intervall. ${lonemanadText()}.`],
+        ['Små grupper i tabellerna per AID och BAS', `Grupper med färre än ${golv} personer får ingen egen rad utan räknas upp i en not under tabellen med namn och antal. Ett köns median, kvoten och gränserna redovisas bara när varje kön har minst ${k} personer; gruppens median och lönespridning bara när gruppen har minst ${k} personer. Arbetslistan Analys på individnivå tar upp grupperna där något kön är mindre än ${k}, utan löner.`],
+        ['Gränser för slumpen (Lika arbete AID x BAS, Slumpens gränser)', 'Kvinnors median i procent av mäns jämförs med de mittersta 95 procenten av de kvoter slumpen ger när könen kastas om slumpvis mellan gruppens löner 1 000 gånger (för grupper över 300 personer en normalapproximation med gruppens egen spridning). Gränserna gäller gruppens egna löner, antal och könsfördelning. En kvot utanför gränserna är svår att förklara med slumpen; gränserna är ett stöd för bedömningen, inte ett test som friar eller fäller.'],
+        ['Kvinnodominerat arbete (Likvärdigt arbete, Hierarkisk jämförelse)', `${aidbasDefinitionText()}. Mansdominerad med samma gräns för män; övriga könsblandade. "Brukar anses kvinnodominerad" bygger på andelen kvinnor nationellt i yrket (${skrKallaKort()}) med samma definition — lagen gäller arbete som är eller brukar anses vara kvinnodominerat. Lönespridning = (P90 − P10) / median. Den hierarkiska jämförelsen listar par där en grupp som inte är kvinnodominerad har lägre BAS-intervall och högre median än en kvinnodominerad grupp; BAS-ordningen är bokstavsordningen.`]
+    ];
 }
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -30636,6 +31121,8 @@ function kTroskelLank() {
 
 function _instRita() {
     const namn = document.getElementById('inst-namn'), flikar = document.getElementById('inst-flikar');
+    const lonemanad = /** @type {HTMLInputElement|null} */ (document.getElementById('lonemanad'));
+    if (lonemanad) lonemanad.value = state.lonemanad || '';
     if (namn) {
         namn.innerHTML = [['Organisation', orgNamn('inget namn angivet')], ['Referens', referensNamn()],
             ['Jämförelsestatistik', state.statistik.length ? (state.statistikNamn || 'Jämförelsestatistik') : 'ingen inläst']]
@@ -30650,8 +31137,8 @@ function _instRita() {
     const rader = [
         { flik: 'prioritering', avsnitt: 'avsnitt-pr-installningar', namn: 'Prioritering', vad: 'Trösklar och viktning',
           lage: anpassad(prioAnpassad), andrad: prioAnpassad },
-        { flik: 'likvardighet', avsnitt: 'avsnitt-lv-installningar', namn: 'Likvärdigt arbete', vad: 'Kvinnotröskel, minsta gap och antal par',
-          lage: anpassad(lv.kvinnoTrosholdPct !== 60 || lv.minGapPct !== 5 || lv.topN !== 20), andrad: lv.kvinnoTrosholdPct !== 60 || lv.minGapPct !== 5 || lv.topN !== 20 },
+        { flik: 'likvardighet', avsnitt: 'avsnitt-lv-installningar', namn: 'Likvärdigt arbete', vad: 'Kvinnotröskel, definition av kvinnodominerat (DO/SCB), minsta gap och antal par',
+          lage: anpassad(lv.kvinnoTrosholdPct !== 60 || lv.minGapPct !== 5 || lv.topN !== 20 || aidbasDefinition() !== 'do'), andrad: lv.kvinnoTrosholdPct !== 60 || lv.minGapPct !== 5 || lv.topN !== 20 || aidbasDefinition() !== 'do' },
         { flik: 'likvardighet', avsnitt: 'avsnitt-lv-poang', namn: 'Likvärdigt arbete', vad: 'Ekvivalensband för arbetsvärdering med poäng',
           lage: `± ${band ? /** @type {HTMLInputElement} */ (band).value : 5} %`, andrad: !!band && String(/** @type {HTMLInputElement} */ (band).value) !== '5' },
         { flik: 'matrix', avsnitt: 'avsnitt-la-personer', namn: 'Lika arbete', vad: 'Gräns för personer att granska',

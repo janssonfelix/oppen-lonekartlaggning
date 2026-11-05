@@ -148,7 +148,7 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         const d = w.document;
         d.querySelector('.nav-item[data-tab="likvardighet"]').click();
         const avsnitt = () => [...d.querySelectorAll('details.avsnitt[id^="avsnitt-lv-"]')];
-        expect(avsnitt().map(a => a.id.replace('avsnitt-lv-', ''))).toEqual(['par', 'underlag', 'installningar', 'analys', 'poang', 'metod']);
+        expect(avsnitt().map(a => a.id.replace('avsnitt-lv-', ''))).toEqual(['par', 'underlag', 'installningar', 'analys', 'aidbas', 'hierarki', 'poang', 'metod']);
         expect(avsnitt().filter(a => a.open).map(a => a.id)).toEqual(['avsnitt-lv-par']);
         const fore = (a, b) => !!(d.getElementById(a).compareDocumentPosition(d.getElementById(b)) & 4);
         expect(fore('lv-slutsatser', 'chart-likvardighet-krav') && fore('chart-likvardighet-krav', 'avsnitt-lv-par')).toBe(true);

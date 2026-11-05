@@ -955,6 +955,17 @@
                     <div id="lv-urval" class="urvalsrad"></div>
                     <div id="lv-slutsatser" class="slutsatser"></div>
                     <div id="likvardighet-content"></div>
+                    <!-- Likvärdigt arbete per AID-kod och BAS-intervall: tabellerna för rapporten (45-aid-bas-tabeller.js) -->
+                    <details class="avsnitt" id="avsnitt-lv-aidbas">
+                        <summary><span class="avsnitt-titel"><h2>Likvärdigt arbete per BAS-intervall</h2><span class="avsnitt-under">Grupperna i varje intervall: könsfördelning, klassning, median och lönespridning</span></span><span class="avsnitt-nyckel" id="nyckel-lv-aidbas"></span></summary>
+                        <p class="avsnitt-inledning">Arbeten i samma BAS-intervall har likvärdiga krav. En rad per AID-kod och BAS-intervall, klassad som kvinnodominerad, könsblandad eller mansdominerad efter andelen kvinnor i gruppen, och om yrket <em>brukar anses</em> kvinnodominerat efter andelen kvinnor nationellt. Sammanfattningen under tabellen ställer de kvinnodominerade gruppernas medianer mot de övrigas i samma intervall.</p>
+                        <div id="aidbas-likvardigt"></div>
+                    </details>
+                    <details class="avsnitt" id="avsnitt-lv-hierarki">
+                        <summary><span class="avsnitt-titel"><h2>Hierarkisk jämförelse</h2><span class="avsnitt-under">Lägre värderat arbete som inte är kvinnodominerat men har högre lön än ett kvinnodominerat arbete på högre nivå</span></span><span class="avsnitt-nyckel" id="nyckel-lv-hierarki"></span></summary>
+                        <p class="avsnitt-inledning">Lagen kräver att kvinnodominerat arbete också jämförs med arbete som har lägre krav men högre lön. Här listas varje par där grupp A har lägre BAS-intervall och högre median än den kvinnodominerade grupp B. Båda grupperna har minst tio personer.</p>
+                        <div id="aidbas-hierarki"></div>
+                    </details>
                     <details class="avsnitt" id="avsnitt-lv-poang">
                     <summary><span class="avsnitt-titel"><h2>Arbetsvärdering med poäng</h2><span class="avsnitt-under">Krav-proxy: BAS-intervallet som standard, eller era egna poäng</span></span><span class="avsnitt-nyckel" id="nyckel-lv-poang"></span></summary>
                     <div class="card mb-14">
@@ -1070,6 +1081,17 @@
                         </div>
                     </details>
                     </section>
+                    <!-- Lika arbete per AID-kod och BAS-intervall: tabellerna för rapporten (45-aid-bas-tabeller.js) -->
+                    <details class="card avsnitt" id="avsnitt-la-aidbas">
+                        <summary><span class="avsnitt-titel"><h2>Lika arbete AID x BAS</h2><span class="avsnitt-under">Kvinnors median i procent av mäns per yrkesgrupp och BAS-intervall, mot slumpens gränser</span></span><span class="avsnitt-nyckel" id="nyckel-la-aidbas"></span></summary>
+                        <p class="avsnitt-inledning">Lika arbete är samma yrkesgrupp på samma nivå: en rad per AID-kod och BAS-intervall. Kvoten bedöms mot de 95-procentiga gränserna för vad slumpen kan ge i en grupp av den storleken, med samma metod som trattdiagrammet. Där något kön är för litet för en jämförelse står <em>Analyseras på individnivå</em>; de grupperna står i arbetslistan nedan. Tabellen går att klistra in i rapporten som den är.</p>
+                        <div id="aidbas-lika"></div>
+                    </details>
+                    <details class="card avsnitt" id="avsnitt-la-individ">
+                        <summary><span class="avsnitt-titel"><h2>Analys på individnivå</h2><span class="avsnitt-under">Arbetslista: grupperna där något kön är för litet för en könsuppdelad jämförelse</span></span><span class="avsnitt-nyckel" id="nyckel-la-individ"></span></summary>
+                        <p class="avsnitt-inledning">Lagen kräver att löneskillnader i lika arbete analyseras också när gruppen är liten. Här står grupperna utan löner, med två kolumner att fylla i när analysen är gjord. Fyll i kolumnerna i Excel-filen.</p>
+                        <div id="aidbas-individ"></div>
+                    </details>
                 </div>
 
                 <div id="view-skevhet" class="view-panel dold">
@@ -2404,6 +2426,15 @@
                                 <span class="info-tip" data-tooltip="Avgör vilken del av den nationella statistiken som är referens för andel kvinnor per yrke: kommunerna, regionerna eller båda. Statistiken är SKR:s personalstatistik (Sveriges Kommuner och Regioner), inbyggd i verktyget; perioden står i Om verktyget. Följer med i organisationspaketet och konfigurationsfilen."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
                             </div>
                         <p class="inst-paverkar">Påverkar: kolumnen <em>Kvinnor nationellt</em> i Lika arbete och Struktur, och reserven för könsfördelning i Likvärdigt arbete.</p>
+                    </div>
+                    <div class="inst-rad">
+                            <div class="paket-rad">
+                                <label for="lonemanad">Lönemånad</label>
+                                <input type="text" id="lonemanad" class="form-select bredd-auto" maxlength="40" placeholder="t.ex. 2026-10" autocomplete="off" aria-describedby="lonemanad-hjalp">
+                                <span class="info-tip" data-tooltip="Vilken månads löner underlaget gäller. Lönefilen säger det inte, så ange det här; det skrivs ovanför tabellerna per AID-kod och BAS-intervall (Lika arbete AID x BAS, Likvärdigt arbete, Hierarkisk jämförelse, Analys på individnivå) på skärmen och i Excel-filen. Tomt skrivs ut som ”inte angiven”. Följer med i konfigurationsfilen."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
+                            </div>
+                            <p id="lonemanad-hjalp" class="k-troskel-hjalp">Står ovanför tabellerna per AID-kod och BAS-intervall. Tomt skrivs ut som ”inte angiven”.</p>
+                        <p class="inst-paverkar">Påverkar: tabellerna per AID-kod och BAS-intervall i Lika arbete och Likvärdigt arbete, och deras blad i Excel-filen.</p>
                     </div>
                     <div class="inst-rad">
                             <div class="paket-rad">
