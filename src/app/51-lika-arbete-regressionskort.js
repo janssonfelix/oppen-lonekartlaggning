@@ -594,7 +594,7 @@ function renderForklaringsmodellPanel(r) {
             : x.tillforLite ? 'Tillför lite' : 'Behövs';
         return `<tr><td>${esc(_FM_ETIKETT[x.variabel])}</td>
             <td class="t-tal">${x.status === 'ok' ? `+${svTal(x.deltaR2pp, 1)} procentenheter` : '–'}</td>
-            <td class="t-tal">${x.status === 'ok' ? `${fmtGap(x.gapUtan)} till ${fmtGap(x.gapMed)}` : '–'}</td>
+            <td class="t-tal ingen-radbrytning">${x.status === 'ok' ? `${fmtGap(x.gapUtan)} till ${fmtGap(x.gapMed)}` : '–'}</td>
             <td>${esc(bedomning)}</td></tr>`;
     }).join('');
     const tabort = r.tillfor.forslag.tabort.filter(v => visad[v]);
