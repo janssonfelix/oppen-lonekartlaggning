@@ -109,6 +109,21 @@ describe('dokumentation: k-tröskeln beskrivs med rätt tal överallt', () => {
     }
 });
 
+describe('dokumentation: valbar förklaringsmodell (ADR-56)', () => {
+    it('teknisk plan har ADR-56 med gränsen 0,5 procentenheter och tilläggen i ADR-46 och ADR-53', () => {
+        expect(planMd).toMatch(/\*\*ADR-56 — Valbar förklaringsmodell/);
+        expect(planMd).toMatch(/0,5 procentenheter/);
+        expect(planMd).toMatch(/ADR-46[^]*?ADR-56/);
+        expect(planMd).toMatch(/ADR-53[^]*?valet \(ADR-56\)/);
+    });
+    it('Om verktyget, körguiden och ändringsloggen beskriver valet', () => {
+        expect(läs('src/app/65-om-verktyget.js')).toMatch(/[Ff]örklaringsmodell/);
+        expect(läs('src/app/65-om-verktyget.js')).toMatch(/0,5 procentenheter/);
+        expect(läs('docs/anvandare/korguide.md')).toMatch(/välja om ålder, nivå och yrkesgrupp/);
+        expect(läs('CHANGELOG.md')).toMatch(/\*\*Valbar förklaringsmodell/);
+    });
+});
+
 describe('dokumentation: k-tröskeln är en inställning (ADR-38)', () => {
     it('teknisk plan har ADR-38 och nämner kTroskel() och statGolv()', () => {
         expect(planMd).toMatch(/\*\*ADR-38 — /);

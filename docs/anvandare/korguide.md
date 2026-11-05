@@ -152,8 +152,10 @@ också när det är hopfällt.
    fältet är de där skillnaden är svår att förklara med slumpen. Under Fördjupning kommer Personer att granska,
    sedan **Lönegap per BAS-intervall** (en tabell per intervall med antal kvinnor och män, de två medianlönerna,
    skillnaden i kronor och kvinnors lön i procent av mäns med konfidensintervall och status, och lönespridningen
-   per kön), könsfördelningen per BAS-intervall och sist det **oförklarade** lönegapet (regressionen, trappan
-   som visar vad ålder och nivå förklarar, och Blinder-Oaxaca).
+   per kön), könsfördelningen per BAS-intervall och sist det **oförklarade** lönegapet (regressionen, där ni kan
+   välja om ålder, nivå och yrkesgrupp ska räknas bort och se vad varje variabel tillför, trappan som visar vad
+   varje vald variabel förklarar, och Blinder-Oaxaca; en bortvald variabel redovisas som kontrollerad, med ert skäl,
+   också i rapporten).
    Kolumnen **Kvinnor nationellt** visar andelen kvinnor i samma yrke i landets kommuner och
    regioner, ur SKR:s personalstatistik (SKR är Sveriges Kommuner och Regioner; perioden står i Om
    verktyget) — ett referensvärde att jämföra er egen könsfördelning mot. Välj under

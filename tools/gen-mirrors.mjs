@@ -81,8 +81,7 @@ export const MODULES = [
             computeVariabelTillfor: '_rgComputeVariabelTillfor', normaliseraForklaringsmodell: '_rgNormaliseraForklaringsmodell',
             inomYrkesgrupp: '_rgInomYrkesgrupp',
             forklaringsmodellArStandard: '_rgForklaringsmodellArStandard', modellVariabler: '_rgModellVariabler',
-            modellFras: '_rgModellFras', modellBeskrivning: '_rgModellBeskrivning',
-            FORKLARINGSMODELL_STANDARD: '_RG_FORKLARINGSMODELL_STANDARD', TILLFOR_GRANS_PP: '_RG_TILLFOR_GRANS_PP'
+            modellFras: '_rgModellFras', modellBeskrivning: '_rgModellBeskrivning', tillforGransPp: '_rgTillforGransPp'
         }
     },
     {

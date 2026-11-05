@@ -3956,6 +3956,8 @@ const __mirrorRegression = (() => {
 const FORKLARINGSMODELL_STANDARD = Object.freeze({ bas: true, alder: true, yrkesgrupp: false, skal: '' });
 /** Under så många procentenheter i förklaringsgrad (R²) räknas en variabel som "tillför lite" (beslut 2026-11-05). */
 const TILLFOR_GRANS_PP = 0.5;
+/** Gränsen som funktion, för appens spegel (speglarna bär bara funktioner). */
+function tillforGransPp() { return TILLFOR_GRANS_PP; }
 const SKAL_MAX = 300;
 
 /**
@@ -4449,7 +4451,7 @@ function quantileRegressionAtAllTau(rows, { rang = basRangFn } = {}) {
     return { results, n: raw.length };
 }
 
-    return { diagnoseCollinearity, computePerBasGap, basIndikatorer, computeSequentialGap, quantileRegression, blinderOaxaca, quantileRegressionAtAllTau, computeVariabelTillfor, normaliseraForklaringsmodell, inomYrkesgrupp, forklaringsmodellArStandard, modellVariabler, modellFras, modellBeskrivning, FORKLARINGSMODELL_STANDARD, TILLFOR_GRANS_PP };
+    return { diagnoseCollinearity, computePerBasGap, basIndikatorer, computeSequentialGap, quantileRegression, blinderOaxaca, quantileRegressionAtAllTau, computeVariabelTillfor, normaliseraForklaringsmodell, inomYrkesgrupp, forklaringsmodellArStandard, modellVariabler, modellFras, modellBeskrivning, tillforGransPp };
 })();
 const _rgDiagnoseCollinearity = __mirrorRegression.diagnoseCollinearity;
 const _rgComputePerBasGap = __mirrorRegression.computePerBasGap;
@@ -4465,8 +4467,7 @@ const _rgForklaringsmodellArStandard = __mirrorRegression.forklaringsmodellArSta
 const _rgModellVariabler = __mirrorRegression.modellVariabler;
 const _rgModellFras = __mirrorRegression.modellFras;
 const _rgModellBeskrivning = __mirrorRegression.modellBeskrivning;
-const _RG_FORKLARINGSMODELL_STANDARD = __mirrorRegression.FORKLARINGSMODELL_STANDARD;
-const _RG_TILLFOR_GRANS_PP = __mirrorRegression.TILLFOR_GRANS_PP;
+const _rgTillforGransPp = __mirrorRegression.tillforGransPp;
 
 // ---- speglar src/lib/lonepolitik.js ----
 const __mirrorLonepolitik = (() => {
@@ -23873,7 +23874,7 @@ function renderForklaringsmodellPanel(r) {
             : x.tillforLite ? 'Tillför lite' : 'Behövs';
         return `<tr><td>${esc(_FM_ETIKETT[x.variabel])}</td>
             <td class="t-tal">${x.status === 'ok' ? `+${svTal(x.deltaR2pp, 1)} procentenheter` : '–'}</td>
-            <td class="t-tal">${x.status === 'ok' ? `${fmtGap(x.gapUtan)} → ${fmtGap(x.gapMed)}` : '–'}</td>
+            <td class="t-tal">${x.status === 'ok' ? `${fmtGap(x.gapUtan)} till ${fmtGap(x.gapMed)}` : '–'}</td>
             <td>${esc(bedomning)}</td></tr>`;
     }).join('');
     const tabort = r.tillfor.forslag.tabort.filter(v => visad[v]);
@@ -23900,10 +23901,10 @@ function renderForklaringsmodellPanel(r) {
             ${r.fellBackFromFull ? `<p class="k-mask-note" role="note">Den valda modellen kunde inte skattas (multikollinearitet); verktyget räknar på ${esc(r.modelDesc)}.</p>` : ''}
             <table class="data-table st-09 marg-t-10">
                 <caption class="text-dampad-sm ta-vanster">Vad varje variabel tillför, räknat mot fullmodellen (ändras inte av valet)</caption>
-                <thead><tr><th>Variabel</th><th class="t-hoger" title="Hur mycket förklaringsgraden (R²) ökar när variabeln läggs till sist">Tillför i förklaringsgrad</th><th class="t-hoger" title="Könsgapet utan variabeln → med variabeln">Flyttar gapet</th><th>Bedömning</th></tr></thead>
+                <thead><tr><th>Variabel</th><th class="t-hoger" title="Hur mycket förklaringsgraden (R²) ökar när variabeln läggs till sist">Tillför i förklaringsgrad</th><th class="t-hoger" title="Könsgapet utan variabeln, sedan med variabeln">Flyttar gapet</th><th>Bedömning</th></tr></thead>
                 <tbody>${rader}</tbody>
             </table>
-            <p class="text-dampad-xs marg-t-6">Under ${svTal(_RG_TILLFOR_GRANS_PP, 1)} procentenheter räknas som <em>tillför lite</em>. Förslaget är ett pedagogiskt råd om vad som är värt att visa, inte ett statistiskt test.</p>
+            <p class="text-dampad-xs marg-t-6">Under ${svTal(_rgTillforGransPp(), 1)} procentenheter räknas som <em>tillför lite</em>. Förslaget är ett pedagogiskt råd om vad som är värt att visa, inte ett statistiskt test.</p>
             ${forslagHtml}
             <p class="rad-mitt gap-8 marg-t-10 fs-sm"><label for="fm-skal">Skäl utanför siffrorna (valfritt)</label>
                 <input type="text" id="fm-skal" class="form-select flex-1" maxlength="300" value="${esc(visad.skal || '')}" placeholder="t.ex. organisationen sätter inte lön efter ålder" autocomplete="off"></p>
@@ -23949,7 +23950,7 @@ function renderRegressionCard() {
     if (!wrap) return;
     const r = runOLSRegression();
     renderForklaringsmodellPanel(r);
-    const fmT = _fmTexter(r.error ? _RG_FORKLARINGSMODELL_STANDARD : r.modell);
+    const fmT = _fmTexter(r.error ? _rgNormaliseraForklaringsmodell(null).modell : r.modell);
     const fmRubrik = document.querySelector('[data-fm-rubrik]'), fmInledning = document.querySelector('[data-fm-inledning]');
     if (fmRubrik) fmRubrik.textContent = fmT.fras ? `När ${fmT.fras} räknats bort, steg för steg` : 'Det råa gapet, utan att något räknats bort';
     if (fmInledning && !r.error) fmInledning.innerHTML = fmT.fras
@@ -27546,6 +27547,7 @@ const INFO_SECTIONS = {
         <ul>
             <li><strong>OLS-estimering</strong> med <strong>HC3-robusta standardfel</strong> (Long & Ervin 2000) — rekommenderad default för små/medelstora urval</li>
             <li><strong>Sekventiell dekomponering:</strong> tre steg (Endast kön, sedan +BAS, sedan +Ålder) som visar hur stor del av råa lönegapet som förklaras av strukturella variabler; därefter ett steg +Yrkesgrupp: könsgapet med fasta effekter för yrkesgrupp inom BAS (AID×BAS), skattat med inomtransformation (gruppmedelvärdet dras av från log-lön, kön och ålder, sedan OLS utan intercept) — löneskillnaden mellan kvinnor och män med samma yrkesgrupp, BAS och ålder. Steget visas i kortet och förklaringsbudgeten men ingår inte i huvudtalet; har lönefilen ansvarskod tillkommer ett steg +Ansvar</li>
+            <li><strong>Förklaringsmodellen kan väljas (ADR-56):</strong> panelen <em>Förklaringsmodell</em> i Lika arbete låter er ta bort BAS-intervall eller ålder, eller lägga till yrkesgrupp inom BAS; fullmodellen är utgångsläge. Tabellen i panelen visar vad varje variabel tillför i förklaringsgrad (R²) när den läggs till sist i fullmodellen, och gapet utan och med den; under 0,5 procentenheter föreslår verktyget att variabeln lämnas utanför, som ett pedagogiskt råd, inte ett statistiskt test. Valet styr huvudtalet överallt, trappan, förklaringsbudgeten och Blinder-Oaxaca; en bortvald variabel redovisas som kontrollerad, med ett eventuellt skäl, i panelen och i rapporten. Valet följer med i konfigurationsfilen</li>
             <li><strong>BAS som indikatorvariabler:</strong> en indikator per BAS-intervall, det alfabetiskt första intervallet är referens; varje intervall får sin egen lönenivå utan antagandet att varje bokstavssteg är värt lika mycket. Bokstavsordningen (A lägst) är fast och kan inte ändras</li>
             <li>Konvertering till kr-procent: <code>gapPct = (exp(β) − 1) · 100</code></li>
             <li><strong>Konfidensintervall:</strong> 95 % KI = β ± t<sub>0,975; n−k</sub> × SE, med t-fördelningens kvantil vid färre än 100 frihetsgrader (1,96 först därefter); gäller huvudregressionen, per-BAS-regressionerna och livscykelmodellen</li>

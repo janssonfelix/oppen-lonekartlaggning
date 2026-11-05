@@ -594,7 +594,7 @@ function renderForklaringsmodellPanel(r) {
             : x.tillforLite ? 'Tillför lite' : 'Behövs';
         return `<tr><td>${esc(_FM_ETIKETT[x.variabel])}</td>
             <td class="t-tal">${x.status === 'ok' ? `+${svTal(x.deltaR2pp, 1)} procentenheter` : '–'}</td>
-            <td class="t-tal">${x.status === 'ok' ? `${fmtGap(x.gapUtan)} → ${fmtGap(x.gapMed)}` : '–'}</td>
+            <td class="t-tal">${x.status === 'ok' ? `${fmtGap(x.gapUtan)} till ${fmtGap(x.gapMed)}` : '–'}</td>
             <td>${esc(bedomning)}</td></tr>`;
     }).join('');
     const tabort = r.tillfor.forslag.tabort.filter(v => visad[v]);
@@ -621,10 +621,10 @@ function renderForklaringsmodellPanel(r) {
             ${r.fellBackFromFull ? `<p class="k-mask-note" role="note">Den valda modellen kunde inte skattas (multikollinearitet); verktyget räknar på ${esc(r.modelDesc)}.</p>` : ''}
             <table class="data-table st-09 marg-t-10">
                 <caption class="text-dampad-sm ta-vanster">Vad varje variabel tillför, räknat mot fullmodellen (ändras inte av valet)</caption>
-                <thead><tr><th>Variabel</th><th class="t-hoger" title="Hur mycket förklaringsgraden (R²) ökar när variabeln läggs till sist">Tillför i förklaringsgrad</th><th class="t-hoger" title="Könsgapet utan variabeln → med variabeln">Flyttar gapet</th><th>Bedömning</th></tr></thead>
+                <thead><tr><th>Variabel</th><th class="t-hoger" title="Hur mycket förklaringsgraden (R²) ökar när variabeln läggs till sist">Tillför i förklaringsgrad</th><th class="t-hoger" title="Könsgapet utan variabeln, sedan med variabeln">Flyttar gapet</th><th>Bedömning</th></tr></thead>
                 <tbody>${rader}</tbody>
             </table>
-            <p class="text-dampad-xs marg-t-6">Under ${svTal(_RG_TILLFOR_GRANS_PP, 1)} procentenheter räknas som <em>tillför lite</em>. Förslaget är ett pedagogiskt råd om vad som är värt att visa, inte ett statistiskt test.</p>
+            <p class="text-dampad-xs marg-t-6">Under ${svTal(_rgTillforGransPp(), 1)} procentenheter räknas som <em>tillför lite</em>. Förslaget är ett pedagogiskt råd om vad som är värt att visa, inte ett statistiskt test.</p>
             ${forslagHtml}
             <p class="rad-mitt gap-8 marg-t-10 fs-sm"><label for="fm-skal">Skäl utanför siffrorna (valfritt)</label>
                 <input type="text" id="fm-skal" class="form-select flex-1" maxlength="300" value="${esc(visad.skal || '')}" placeholder="t.ex. organisationen sätter inte lön efter ålder" autocomplete="off"></p>
@@ -670,7 +670,7 @@ function renderRegressionCard() {
     if (!wrap) return;
     const r = runOLSRegression();
     renderForklaringsmodellPanel(r);
-    const fmT = _fmTexter(r.error ? _RG_FORKLARINGSMODELL_STANDARD : r.modell);
+    const fmT = _fmTexter(r.error ? _rgNormaliseraForklaringsmodell(null).modell : r.modell);
     const fmRubrik = document.querySelector('[data-fm-rubrik]'), fmInledning = document.querySelector('[data-fm-inledning]');
     if (fmRubrik) fmRubrik.textContent = fmT.fras ? `När ${fmT.fras} räknats bort, steg för steg` : 'Det råa gapet, utan att något räknats bort';
     if (fmInledning && !r.error) fmInledning.innerHTML = fmT.fras

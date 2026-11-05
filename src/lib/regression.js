@@ -26,6 +26,8 @@ import { basRangFn } from './likvardighet.js';
 export const FORKLARINGSMODELL_STANDARD = Object.freeze({ bas: true, alder: true, yrkesgrupp: false, skal: '' });
 /** Under så många procentenheter i förklaringsgrad (R²) räknas en variabel som "tillför lite" (beslut 2026-11-05). */
 export const TILLFOR_GRANS_PP = 0.5;
+/** Gränsen som funktion, för appens spegel (speglarna bär bara funktioner). */
+export function tillforGransPp() { return TILLFOR_GRANS_PP; }
 const SKAL_MAX = 300;
 
 /**

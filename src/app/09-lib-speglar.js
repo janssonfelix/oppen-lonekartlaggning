@@ -1666,6 +1666,8 @@ const __mirrorRegression = (() => {
 const FORKLARINGSMODELL_STANDARD = Object.freeze({ bas: true, alder: true, yrkesgrupp: false, skal: '' });
 /** Under så många procentenheter i förklaringsgrad (R²) räknas en variabel som "tillför lite" (beslut 2026-11-05). */
 const TILLFOR_GRANS_PP = 0.5;
+/** Gränsen som funktion, för appens spegel (speglarna bär bara funktioner). */
+function tillforGransPp() { return TILLFOR_GRANS_PP; }
 const SKAL_MAX = 300;
 
 /**
@@ -2159,7 +2161,7 @@ function quantileRegressionAtAllTau(rows, { rang = basRangFn } = {}) {
     return { results, n: raw.length };
 }
 
-    return { diagnoseCollinearity, computePerBasGap, basIndikatorer, computeSequentialGap, quantileRegression, blinderOaxaca, quantileRegressionAtAllTau, computeVariabelTillfor, normaliseraForklaringsmodell, inomYrkesgrupp, forklaringsmodellArStandard, modellVariabler, modellFras, modellBeskrivning, FORKLARINGSMODELL_STANDARD, TILLFOR_GRANS_PP };
+    return { diagnoseCollinearity, computePerBasGap, basIndikatorer, computeSequentialGap, quantileRegression, blinderOaxaca, quantileRegressionAtAllTau, computeVariabelTillfor, normaliseraForklaringsmodell, inomYrkesgrupp, forklaringsmodellArStandard, modellVariabler, modellFras, modellBeskrivning, tillforGransPp };
 })();
 const _rgDiagnoseCollinearity = __mirrorRegression.diagnoseCollinearity;
 const _rgComputePerBasGap = __mirrorRegression.computePerBasGap;
@@ -2175,8 +2177,7 @@ const _rgForklaringsmodellArStandard = __mirrorRegression.forklaringsmodellArSta
 const _rgModellVariabler = __mirrorRegression.modellVariabler;
 const _rgModellFras = __mirrorRegression.modellFras;
 const _rgModellBeskrivning = __mirrorRegression.modellBeskrivning;
-const _RG_FORKLARINGSMODELL_STANDARD = __mirrorRegression.FORKLARINGSMODELL_STANDARD;
-const _RG_TILLFOR_GRANS_PP = __mirrorRegression.TILLFOR_GRANS_PP;
+const _rgTillforGransPp = __mirrorRegression.tillforGransPp;
 
 // ---- speglar src/lib/lonepolitik.js ----
 const __mirrorLonepolitik = (() => {

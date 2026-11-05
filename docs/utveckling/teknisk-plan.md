@@ -235,7 +235,7 @@ adaptern verkligen delegerar vaktas av `tests/drift.test.js`:
   rätt grupp. Utskriftsfönstret för checklistorna (`printScaffoldView`) läser `:root` och allt från `.dold` till
   stilmallens slut ur den körande stilmallen och lägger in det som byggt stilark (`adoptedStyleSheets`): ett `<style>`-element
   som skriptet skapar blockeras av den ärvda CSP:n (`style-src-elem`), så fönstret var tidigare helt ostilat.
-- **Tester:** Vitest — 2536 tester i 75 filer: rena `src/lib/`-moduler, CSV-parsning, jsdom-röktest
+- **Tester:** Vitest — 2583 tester i 75 filer: rena `src/lib/`-moduler, CSV-parsning, jsdom-röktest
   av varje vy (ADR-7; `tests/smoke.test.js` med det delade fönstret och sju `tests/smoke-*.test.js` per
   område), k-tröskeln i åtta `tests/ktroskel*.test.js` med riggen i `tests/helpers/ktroskel-rigg.js`,
   gränssnittet i `tests/granssnitt*.test.js` (riggen `tests/helpers/granssnitt-rigg.js`) och diagramvyerna i
@@ -1069,7 +1069,8 @@ en rad i dekomponeringstabellen med samma mening. **Huvudtalet "oförklarad lön
 och PDF-rapporten är fortfarande steget *+ Ålder* (kön + ålder + BAS); den förklarade andelen, trappan och
 ansvarsraden räknas som förut till och med det steget. Beslut 2026-10-16: steget blir inte huvudtalet;
 huvudtalet förblir modellen med kön, ålder och BAS-indikatorer. Metodtexterna (regressionskortet, metodbilagan
-och *Om verktyget*) säger detsamma.
+och *Om verktyget*) säger detsamma. **Tillägg 2026-11-05 (ADR-56):** det gäller som standard; handläggaren kan
+välja in yrkesgrupp i förklaringsmodellen, och då är steget huvudtalet.
 
 **ADR-47 — Organisationspaketet kan låsa tre skydd.** Minsta gruppstorlek (ADR-38), rensningen vid inaktivitet
 och rutan *Ta med grupper under tröskeln i exporten* i Utforska (ADR-14) kan handläggaren annars ställa in
@@ -1176,7 +1177,8 @@ inte en skattning av vad intervallet "borde" betala det kön som saknas. Kompone
 konstant, ålder och BAS, där BAS är summan över indikatorerna (det som ADR-44 befarade skulle bli otydligt: ett
 dussin rader). Referensvärdena i `tests/fixtures/stat-referens-varden.json` är omräknade med statsmodels
 (`tests/fixtures/ref-stat-referens.py`); fixturen har ett intervall som bara finns hos männen, så regeln prövas.
-Kvantilregressionen behåller BAS-rangen (den är inte en uppdelning).
+Kvantilregressionen behåller BAS-rangen (den är inte en uppdelning). Sedan 2026-11-05 styr valet (ADR-56) båda:
+uppdelningen räknar på samma variabler som huvudtalet, också när ålder eller BAS valts bort eller yrkesgrupp valts in.
 
 **ADR-54 — Jämförelse mellan år genom ett årsbokslut i konfigurationsfilen.** Beslut 2026-10-30. Konfigurationsfilen
 bär ett *årsbokslut* (`src/lib/arsbokslut.js`, `cfg.arsbokslut`): nyckeltal för hela organisationen (antal, medianer
@@ -1221,6 +1223,45 @@ referensens tal; statistik med bara median ger inget läge och ritas som ett ens
 Organisationens P10, median och P90 per yrkesgrupp är gruppvärden och följer `kTroskel()` i det som lämnar verktyget
 (ADR-51); referensernas egna tal och tabellen statistiken mot ställningstagandet bär inga organisationsvärden och
 maskeras inte. Vaktas av `tests/referenser.test.js` och `tests/smoke-referenser.test.js`.
+
+**ADR-56 — Valbar förklaringsmodell.** Beslut 2026-11-05. Avsnittet *Vad blir kvar av lönegapet?* räknade alltid på
+kön + ålder + BAS-indikatorer. Det är pedagogiskt onödigt när ålder förklarar en bråkdel: varje tabell och steg bär då en
+variabel som inte säger något. Handläggaren (en HR-person som ska ledas fram till ett svar) kan nu välja vilka
+variabler som räknas bort: BAS-intervall, ålder eller båda, och lägga till yrkesgrupp inom BAS. Fullmodellen (BAS och
+ålder, utan yrkesgrupp) är utgångsläge, så standardhuvudtalet är detsamma som förut (ADR-44, ADR-46, ADR-53).
+
+*Panelen* (`renderForklaringsmodellPanel` i `51-lika-arbete-regressionskort.js`, före huvudtalet) visar kryssrutorna,
+en tabell över vad varje variabel tillför, ett förslag, ett fält för skäl utanför siffrorna och noteringen om det
+bortvalda. Tabellen (`computeVariabelTillfor` i `src/lib/regression.js`) räknas alltid mot fullmodellen, oberoende av
+valet, så att den står still när man kryssar: ΔR² = R²(full) − R²(full utan variabeln) och gapet utan → med; yrkesgrupp
+mäts ovanpå fullmodellen. Under **0,5 procentenheter** i förklaringsgrad räknas en variabel som *tillför lite*, och
+verktyget föreslår att lämna den utanför (bara BAS och ålder föreslås bort; yrkesgrupp är en tilläggsvariabel).
+Förslaget är ett pedagogiskt råd om vad som är värt att visa, inte ett statistiskt test. En bortvald variabel blir en
+mening i stället för siffror, "Ålder har kontrollerats och tillför 0,3 procentenheter i förklaringsgrad; den ingår inte i
+siffrorna. Skäl: …" (`bortvaltNotering` i `src/lib/rapportunderlag.js`), i panelen, i Oaxaca-kortet, i rapportunderlaget
+och i rapportens sammanfattning och bilaga.
+
+*Valet slår igenom överallt där huvudtalet används* (beslut på frågan 2026-11-05): `runOLSRegression` läser
+`state.forklaringsmodell` (null = standard; `normaliseraForklaringsmodell`, `modellFras`, `modellBeskrivning` i
+`src/lib/regression.js`), så Översikt, Att göra, Struktur, Lika arbetes nyckeltal, rapporten och rapportunderlaget
+visar samma tal, och frasen "ålder och nivå" byts överallt mot modellens fras ("nivå", "ålder", "ålder, nivå och
+yrkesgrupp", tom för endast kön: "utan att något räknats bort"). Trappan, förklaringsbudgeten och Blinder-Oaxaca
+räknar på samma modell (ADR-53 består). Sektorsöversikten i Struktur (`src/lib/sektor.js`) har en egen modell och
+följer inte valet. Yrkesgrupp förutsätter BAS; valt in i huvudtalet skattas det med inomtransformation som steget
+(FWL), och kovarianserna (klassisk och HC3) skalas med (n − p)/(n − p − G) för gruppnivåernas frihetsgrader, med k som
+räknar dem (`_regInomYrkesgrupp`); i Oaxaca kodas då en indikator per AID×BAS-grupp i stället för BAS-indikatorerna,
+med ADR-53:s referensregel, och raden heter *Yrkesgrupp inom BAS*. Reservsteget tar bort variabler i ordningen
+yrkesgrupp, BAS, och lägger aldrig tillbaka något bortvalt. *Endast kön* är det ojusterade gapet och får inte vara
+huvudtalet när ett kön ligger under den inställda tröskeln (ADR-12); spärren följer `kInstalld()` oavsett läge, så
+att huvudtalet är detsamma på skärmen och i exporten, och panelen säger varför.
+
+Valet och skälet (högst 300 tecken, samma personuppgiftsvakt som handlingsplanens fritext) bärs av
+konfigurationsfilen (`forklaringsmodell`, null = standard; ett ogiltigt värde ger standard med varning, aldrig fel)
+och nollställs av *Rensa all data*. Organisationspaketet bär det inte: valet är handläggarens. Referensvärdena för
+Oaxaca på modellerna bara BAS, bara ålder och ålder + yrkesgrupp är räknade med statsmodels
+(`tests/fixtures/ref-stat-referens.py`); golden-facit och docx-facit är oförändrade i standardläget, vilket är
+kontrollen att standardmodellen räknar som förut. Vaktas av `tests/regression.test.js`,
+`tests/stat-referens.test.js`, `tests/smoke-innehall.test.js` och `tests/rapportunderlag.test.js`.
 
 ## 9. Öppna punkter
 
