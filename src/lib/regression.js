@@ -20,6 +20,71 @@
 import { fitOLS, invert, matMul, pValue2Sided, tQuantile } from './stat.js';
 import { basRangFn } from './likvardighet.js';
 
+// ---- Förklaringsmodellen som värde (ADR-56) ----
+// Vilka variabler huvudregressionen, trappan och Blinder-Oaxaca räknar bort utöver kön. Standard är ADR-44/46/53-modellen:
+// BAS-intervall och ålder, utan yrkesgrupp. Lagras i appen som null när den är standard (12-tillstand.js).
+export const FORKLARINGSMODELL_STANDARD = Object.freeze({ bas: true, alder: true, yrkesgrupp: false, skal: '' });
+/** Under så många procentenheter i förklaringsgrad (R²) räknas en variabel som "tillför lite" (beslut 2026-11-05). */
+export const TILLFOR_GRANS_PP = 0.5;
+const SKAL_MAX = 300;
+
+/**
+ * Normaliserar ett värde från konfigurationsfilen eller gränssnittet till en giltig modell.
+ * @param {any} v
+ * @param {{harYrke?: boolean}} [opts] harYrke = datat har AID eller yrke (annars kan yrkesgrupp inte väljas)
+ * @returns {{modell: {bas:boolean, alder:boolean, yrkesgrupp:boolean, skal:string}, varningar: string[]}}
+ */
+export function normaliseraForklaringsmodell(v, { harYrke = true } = {}) {
+    const varningar = [];
+    if (v == null) return { modell: { ...FORKLARINGSMODELL_STANDARD }, varningar };
+    if (typeof v !== 'object' || Array.isArray(v)) {
+        varningar.push('Förklaringsmodellen i filen gick inte att läsa; standardmodellen används.');
+        return { modell: { ...FORKLARINGSMODELL_STANDARD }, varningar };
+    }
+    const modell = { bas: v.bas === true, alder: v.alder === true, yrkesgrupp: v.yrkesgrupp === true,
+        skal: typeof v.skal === 'string' ? v.skal.slice(0, SKAL_MAX) : '' };
+    if (modell.yrkesgrupp && !harYrke) {
+        modell.yrkesgrupp = false;
+        varningar.push('Yrkesgrupp inom BAS kan inte väljas: lönefilen saknar AID och yrke.');
+    }
+    if (modell.yrkesgrupp && !modell.bas) {
+        modell.bas = true;
+        varningar.push('Yrkesgrupp inom BAS förutsätter BAS-intervall; BAS är valt.');
+    }
+    return { modell, varningar };
+}
+
+/** @param {{bas:boolean, alder:boolean, yrkesgrupp:boolean, skal:string}} m */
+export function forklaringsmodellArStandard(m) {
+    const n = normaliseraForklaringsmodell(m).modell;
+    return n.bas === FORKLARINGSMODELL_STANDARD.bas && n.alder === FORKLARINGSMODELL_STANDARD.alder
+        && n.yrkesgrupp === FORKLARINGSMODELL_STANDARD.yrkesgrupp && n.skal === FORKLARINGSMODELL_STANDARD.skal;
+}
+
+/** Variablerna i modellen i den fasta ordningen BAS, ålder, yrkesgrupp. @returns {Array<'bas'|'alder'|'yrkesgrupp'>} */
+export function modellVariabler(m) {
+    return /** @type {Array<'bas'|'alder'|'yrkesgrupp'>} */ (['bas', 'alder', 'yrkesgrupp'].filter(k => m && m[k] === true));
+}
+
+/** Frasen i löptext: "när {fras} räknats bort". Tom sträng för endast kön. */
+export function modellFras(m) {
+    const delar = [];
+    if (m && m.alder) delar.push('ålder');
+    if (m && m.bas) delar.push('nivå');
+    if (m && m.yrkesgrupp) delar.push('yrkesgrupp');
+    if (delar.length <= 1) return delar.join('');
+    return `${delar.slice(0, -1).join(', ')} och ${delar[delar.length - 1]}`;
+}
+
+/** Modellen i ord för modelDesc och rapporten: "kön + ålder + BAS-intervall (indikatorer)". */
+export function modellBeskrivning(m) {
+    const delar = ['kön'];
+    if (m && m.alder) delar.push('ålder');
+    if (m && m.bas) delar.push('BAS-intervall (indikatorer)');
+    if (m && m.yrkesgrupp) delar.push('yrkesgrupp inom BAS (fasta effekter)');
+    return delar.join(' + ');
+}
+
 // Diagnostiserar varför modellen misslyckas
 export function diagnoseCollinearity(rows, basList) {
     const issues = [];

@@ -10,7 +10,8 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { computeSequentialGap, quantileRegression } from '../src/lib/regression.js';
+import { computeSequentialGap, quantileRegression, FORKLARINGSMODELL_STANDARD, TILLFOR_GRANS_PP,
+    normaliseraForklaringsmodell, forklaringsmodellArStandard, modellFras, modellBeskrivning, modellVariabler } from '../src/lib/regression.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const las = f => JSON.parse(readFileSync(join(here, 'fixtures', f), 'utf8'));
@@ -50,4 +51,61 @@ describe('quantileRegression mot exakt LP-lösning (≡ quantreg::rq)', () => {
             expect(forlust / ref.quantreg[String(tau)].loss - 1).toBeLessThan(1e-3);
         });
     }
+});
+
+describe('förklaringsmodellen som värde (ADR-56)', () => {
+    const m = (bas, alder, yrkesgrupp = false, skal = '') => ({ bas, alder, yrkesgrupp, skal });
+    it('standard: null och undefined ger fullmodellen utan yrkesgrupp, utan varningar', () => {
+        expect(FORKLARINGSMODELL_STANDARD).toEqual(m(true, true));
+        expect(TILLFOR_GRANS_PP).toBe(0.5);
+        for (const v of [null, undefined]) {
+            const r = normaliseraForklaringsmodell(v);
+            expect(r.modell).toEqual(m(true, true));
+            expect(r.varningar).toEqual([]);
+        }
+        expect(forklaringsmodellArStandard(m(true, true))).toBe(true);
+        expect(forklaringsmodellArStandard(m(true, false))).toBe(false);
+        expect(forklaringsmodellArStandard(m(true, true, false, 'skäl'))).toBe(false);
+    });
+    it('booleska fält tvingas: ett annat värde än true räknas som falskt', () => {
+        const r = normaliseraForklaringsmodell({ alder: 'ja', bas: true });
+        expect(r.modell.alder).toBe(false);
+        expect(r.modell.bas).toBe(true);
+        expect(r.modell.yrkesgrupp).toBe(false);
+    });
+    it('yrkesgrupp kräver BAS: BAS kryssas i med en varning', () => {
+        const r = normaliseraForklaringsmodell({ yrkesgrupp: true, bas: false, alder: true });
+        expect(r.modell).toEqual(m(true, true, true));
+        expect(r.varningar.join(' ')).toMatch(/BAS/);
+    });
+    it('yrkesgrupp utan yrke i datat: stängs av med en varning', () => {
+        const r = normaliseraForklaringsmodell({ yrkesgrupp: true, bas: true, alder: true }, { harYrke: false });
+        expect(r.modell.yrkesgrupp).toBe(false);
+        expect(r.varningar.length).toBe(1);
+    });
+    it('skälet klipps till 300 tecken och blir tomt när det inte är en sträng; fel typ ger standard med varning', () => {
+        expect(normaliseraForklaringsmodell({ bas: true, alder: true, skal: 'x'.repeat(400) }).modell.skal).toHaveLength(300);
+        expect(normaliseraForklaringsmodell({ bas: true, alder: true, skal: 42 }).modell.skal).toBe('');
+        const r = normaliseraForklaringsmodell('full');
+        expect(r.modell).toEqual(m(true, true));
+        expect(r.varningar.length).toBe(1);
+    });
+    it('frasen för de sex kombinationerna', () => {
+        expect(modellFras(m(true, true))).toBe('ålder och nivå');
+        expect(modellFras(m(true, false))).toBe('nivå');
+        expect(modellFras(m(false, true))).toBe('ålder');
+        expect(modellFras(m(true, false, true))).toBe('nivå och yrkesgrupp');
+        expect(modellFras(m(true, true, true))).toBe('ålder, nivå och yrkesgrupp');
+        expect(modellFras(m(false, false))).toBe('');
+    });
+    it('beskrivningen för modelDesc och variablerna i fast ordning', () => {
+        expect(modellBeskrivning(m(true, true))).toBe('kön + ålder + BAS-intervall (indikatorer)');
+        expect(modellBeskrivning(m(true, false))).toBe('kön + BAS-intervall (indikatorer)');
+        expect(modellBeskrivning(m(false, true))).toBe('kön + ålder');
+        expect(modellBeskrivning(m(false, false))).toBe('kön');
+        expect(modellBeskrivning(m(true, false, true))).toBe('kön + BAS-intervall (indikatorer) + yrkesgrupp inom BAS (fasta effekter)');
+        expect(modellVariabler(m(true, true, true))).toEqual(['bas', 'alder', 'yrkesgrupp']);
+        expect(modellVariabler(m(false, true))).toEqual(['alder']);
+        expect(modellVariabler(m(false, false))).toEqual([]);
+    });
 });
