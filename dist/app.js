@@ -2286,8 +2286,8 @@ _kopplaNamnFalt('kl-org-name', sattOrgNamn);
 // Genererad av tools/gen-version.mjs; vaktas av tests/version.test.js.
 // ====================================================================
 
-const APP_VERSION = '2026.11.02';
-const APP_BUILD_DATE = '2026-11-02';
+const APP_VERSION = '2026.11.05';
+const APP_BUILD_DATE = '2026-11-05';
 // ====================================================================
 // AUTO-GENERERAD FIL — RÖR INTE.
 //

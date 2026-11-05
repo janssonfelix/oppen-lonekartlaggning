@@ -1362,7 +1362,7 @@ Kända brister och obesvarade frågor, så att de inte lever bara i en konversat
 **Dokumentation och lansering:**
 17b. **Före varje release: riskanalysen granskas mot koden.** `riskanalys.md` och `dataskydd.md` läses påstående
     för påstående mot den kod som släpps, granskningsdatumet sätts och avvikelser förs hit. Senast gjort
-    2026-11-02. `npm run release:kontroll` (`tools/release.mjs`) stoppar en release när något av datumen är äldre
+    2026-11-05. `npm run release:kontroll` (`tools/release.mjs`) stoppar en release när något av datumen är äldre
     än senaste commit som rör `src/`, `tools/bundle.mjs` eller `vendor/`, eller när riskanalysens kontrollsumma inte
     är byggets; release-arbetsflödet kör samma kontroll.
 18. **Uttagsstegen för Heroma, Personec P och Visma i `datauttag.md` är inte verifierade mot systemen**; de

@@ -1,7 +1,7 @@
 # Risk- och sårbarhetsanalys (dataskydd och informationssäkerhet) — Öppen lönekartläggning
 
-**Bygge:** `2026.11.02` · **Artefakt-SHA-256:** `a9900d946b29853c3fb6b0c42d302cc7a1caca4902c5e076b22237a8b9afe3e7` (se `dist/RELEASE.txt`).
-**Granskningsdatum:** 2026-11-02.
+**Bygge:** `2026.11.05` · **Artefakt-SHA-256:** `3be1e126a7b64f6a2c38d5134643f36c9ae95121af3597a993295dc77a14abfa` (se `dist/RELEASE.txt`).
+**Granskningsdatum:** 2026-11-05.
 **Granskningsmetod:** kodläsning påstående för påstående + statisk sökning i källkod och bygge +
 körning av det byggda verktyget i jsdom och i Chromium (utan nätverk) med syntetiska testfiler.
 Varje teknisk kontroll nedan är **verifierad mot koden och i webbläsaren**, inte antagen. Vad
@@ -67,11 +67,13 @@ aktivt vid uppladdning (se §6.4).
 **Användarförfattad text:** HR kan skriva egna
 bedömningar i verktyget — § 8-status + anteckning per granskningsområde,
 handlingsplanens fält per rad (sakligt skäl prövat, ansvarig, tidsplan, status, och för en egen rad som
-lagts till på fliken även åtgärd och berörd grupp) och redigerat struktur-narrativ. Texten lever endast i minnet (handlingsplanens fält i
-`state.handlingsplan`, nollas av *Rensa all data*),
+lagts till på fliken även åtgärd och berörd grupp), redigerat struktur-narrativ, skälet till en vald
+förklaringsmodell (högst 300 tecken; en text som liknar personnummer eller e-post sparas inte från panelen, ADR-56) och
+lönemånaden som skrivs ovanför tabellerna per AID-kod och BAS-intervall (högst 40 tecken, ADR-57). Texten lever endast i minnet (handlingsplanens fält i
+`state.handlingsplan`, förklaringsmodellen i `state.forklaringsmodell` och lönemånaden i `state.lonemanad`, alla nollade av *Rensa all data*),
 saneras inte (det är användarens egna ord) och lämnar verktyget enbart via
-användarinitierade utdata (Word-utkast, utskrift, konfigurationsfil, och för handlingsplanens fält
-även handlingsplanens Excel-fil — se §6.6/6.8).
+användarinitierade utdata (Word-utkast, utskrift, konfigurationsfil, för handlingsplanens fält
+även handlingsplanens Excel-fil, och för lönemånaden Excel-filens fyra blad per AID-kod och BAS-intervall — se §6.6/6.8).
 Den är avsedd att vara **gruppnivå-bedömningar** och därmed inte personuppgifter;
 om HR ändå skriver in uppgifter om enskilda blir innehållet personuppgifter och
 omfattas av samma hanteringskrav som exportfilerna (§8, punkt 1). Verktygets
@@ -477,6 +479,22 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
 - **Processöversiktens steg 4** blir inte klart när alla kandidatpar har en grupp under tröskeln: steget
   säger att inget finns att hantera i Att göra, hur många par som bara redovisas i fliken Likvärdigt arbete,
   och leder dit (beslut 2026-10-16, ADR-29).
+- **Tabellerna per AID-kod och BAS-intervall (ADR-57, 2026-11-05):** avsnitten *Lika arbete AID x BAS* och *Analys på
+  individnivå* i Lika arbete, *Likvärdigt arbete* per BAS-intervall och *Hierarkisk jämförelse* i Likvärdigt arbete, och
+  de fyra Excel-bladen med samma namn, bygger en rad per AID-kod och BAS-intervall ur varje persons egen rad
+  (`src/lib/aidbas.js`). I exportläget får en grupp en egen rad från 5 personer (`LITET_UNDERLAG`), med antal per kön
+  men utan lönemått; mindre grupper räknas upp i en not under tabellen med namn och antal, som i Jämförelses
+  mellannivå ovan. Ett köns median, kvoten och slumpens gränser kräver tröskeln för varje kön, och gruppens median
+  och lönespridning tröskeln för gruppen (`statGolv()`); annars står *Analyseras på individnivå*. Arbetslistan
+  *Analys på individnivå* tar upp grupperna där något kön är under tröskeln, med antal men utan löner. Golvet 5
+  är ett avsiktligt avsteg i antal, inte i lönemått: tabellerna är arbetsgivarens kartläggning av alla grupper,
+  och lagen kräver att också små grupper analyseras, så gruppen och dess antal står i underlaget. På skärmen
+  visas alla grupper (ADR-51). Vaktas av `tests/aidbas.test.js` och `tests/smoke-aidbas.test.js`; den allmänna
+  invarianten (§11) prövar inte de fyra bladen.
+- **Förklaringsmodellen (ADR-56, 2026-11-05):** valet av variabler i regressionen ändrar inte vilka grupper som
+  syns, men *Endast kön* (det ojusterade gapet) får inte vara huvudtalet när ett kön i underlaget ligger under den
+  inställda tröskeln; spärren följer `kInstalld()` oavsett läge, så att huvudtalet är detsamma på skärmen och i
+  exporten, och panelen säger varför. Vaktas av `tests/smoke-innehall.test.js`.
 
 - **Aggregerade analyser i Lika arbete (ADR-22, ADR-24, ADR-25):** *Var uppstår löneskillnaden?*
   namnger en grupp bara när varje kön i gruppen och dess BAS når tröskeln. Dolda grupper redovisas
@@ -504,6 +522,11 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   säga olika saker) och ZIP-filen allt — Word-utkastet, Excel-filen och bilder av diagrammen. Vid varje knapp
   står ett **förhandsbesked** om vad filen innehåller och vad den utelämnar (till exempel grupper under tröskeln).
 - **Bladet *Referenser*** i Excelfilen (och i ZIP-filens Excelfil) byggs i exportläget ur samma rader som överblicken i Jämförelse: grupper under tröskeln får ingen rad (§6.5).
+- **De fyra bladen per AID-kod och BAS-intervall** (*Lika arbete AID x BAS*, *Likvärdigt arbete*, *Hierarkisk
+  jämförelse* och *Analys på individnivå*) i Excelfilen med alla flikar (och i ZIP-filens Excelfil) byggs i exportläget
+  enligt §6.5, med lönemånaden från Inställningar (användarens fritext, §2) på raden ovanför tabellen och vald
+  definition av kvinnodominerat (DO eller SCB) i bladet *Metodik*. Samma tabeller har Kopiera och CSV i flikarna
+  (ADR-57).
 - **Exportgrinden:** ingen export läser en tabell eller ett diagram ur en flik som är ritad
   med en äldre tröskel. När tröskeln ändras ritas bara den flik som syns om; övriga töms och ritas på nytt när de
   öppnas eller när en export behöver dem.
@@ -575,7 +598,10 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
 ### 6.8 Konfigurationsfilen ("Spara/Läs in konfiguration") — innehåll
 Konfig-JSON:en (**version 2**) innehåller: inställningar
 (trösklar, vikter, kostnadsinställningar, bristyrken,
-löneöversynens inställningar, där en riktad rad bär uppgiften om den föreslogs ur kandidatpar i likvärdigt arbete) samt **HR:s manuella arbete**: § 8-bedömningarna (status + anteckning per granskningsområde),
+löneöversynens inställningar, där en riktad rad bär uppgiften om den föreslogs ur kandidatpar i likvärdigt arbete,
+förklaringsmodellen — `forklaringsmodell`: vilka variabler regressionen räknar bort och skälet som fritext, kortad till
+300 tecken; ett ogiltigt värde ger standard med varning, aldrig fel (ADR-56) — definitionen av kvinnodominerat,
+`likvardighet.kvDomDefinition`, DO eller SCB, och lönemånaden, `lonemanad`, fritext kortad till 40 tecken, ADR-57) samt **HR:s manuella arbete**: § 8-bedömningarna (status + anteckning per granskningsområde),
 handlingsplanens fält per rad (`handlingsplan`: radens nyckel — källa, AID och BAS, eller `egen|` och ett slumpat
 id för en rad som lagts till på fliken — och sakligt skäl, ansvarig, tidsplan och status; en egen rad bär också sin
 åtgärd och berörda grupp som fritext; rullistornas okända värden läses som tomma, fritexten kortas till 500 tecken),
@@ -597,7 +623,8 @@ inställningar och **användarförfattad text** och ska
 hanteras med samma disciplin som övriga exportfiler (§8, punkt 1);
 anteckningsfältens placeholder påminner om att skriva på gruppnivå utan namn/
 personnummer, och handlingsplanens fritextfält varnar (utan att blockera) när texten liknar ett personnummer eller
-en e-postadress. Import är transaktionell (tvåfas-validering) och läser bara **version 2**
+en e-postadress; skälet i förklaringsmodellen sparas inte från panelen när det liknar en sådan, men vid inläsning av en
+fil prövas det bara mot längden, som handlingsplanens fält. Import är transaktionell (tvåfas-validering) och läser bara **version 2**
 — en korrupt fil eller en fil av annan version lämnar verktygets tillstånd orört (kastar
 före någon mutation).
 
@@ -703,7 +730,7 @@ tar bort allt minne omedelbart. Verktyget gör inga utskick till de registrerade
 
 Varje påstående i detta dokument är prövat mot koden, med provkörning i jsdom och i Chromium.
 Skyddet bevakas av drift-, golden-, röktest-, k-anonymitets-, dokumentations-, statistik- och
-a11y-sviterna (75 testfiler) och av ett röktest av det byggda verktyget i en riktig webbläsare
+a11y-sviterna (77 testfiler) och av ett röktest av det byggda verktyget i en riktig webbläsare
 (`tools/browser-smoke.mjs`). Röktestet körs lokalt och i CI-arbetsflödet i
 Chromium, Firefox och WebKit. Verifieringen visar också var skyddet är svagare än det kan se ut: lagringsspärren är en
 reserv med kända luckor (§6.2); PII-kontrollens värdekontroll läser filens 50 första rader (§6.4);
@@ -736,6 +763,18 @@ handlingsplanens Excel-fil, Word-utkastets åtgärdstabell och rapportunderlaget
 fält: varningen för text som liknar personnummer eller e-post gäller alla fritextfält på fliken, och raderna
 bygger på det användaren skriver, inte på individdata (§2, §6.8, B1b). Testsviten är 75 filer.
 
+**Granskningen 2026-11-05** prövade dokumentet mot koden som ändrats sedan föregående granskning (2026-11-02 till
+2026-11-05: ADR-56 valbar förklaringsmodell, ADR-57 tabellerna per AID-kod och BAS-intervall, och ikonerna utan
+inbäddade bilder). Kontrollerat på nytt: CSP-raden i bygget (ordagrant som §6.1), att stilmallen inte längre har
+någon `url(` — hänglåsen och sorteringspilarna var masker ur `data:`-adresser som webbläsarens nätverkspanel visade
+som hämtningar fast inget lämnade datorn; röktestet kräver nu att stilmallen saknar `url(` — att
+`buildConfigSnapshot()` inte läser `state.data`, att *Rensa all data* nollar `state.forklaringsmodell` och
+`state.lonemanad` och tömmer de fyra tabellerna, och testsviten med röktestet i Chromium. Tre påståenden tillkom:
+konfigurationsfilen bär förklaringsmodellen med skälet som fritext, definitionen av kvinnodominerat och lönemånaden
+(§2, §6.8); Excel-filen har fyra blad per AID-kod och BAS-intervall som ger en grupp en egen rad från 5 personer
+med antal men utan lönemått och räknar upp mindre grupper i en not med namn och antal (§6.5, §6.6); och
+regressionens *Endast kön* spärras när ett kön ligger under tröskeln (§6.5). Testsviten är 77 filer.
+
 | Kontroll | Metod | Resultat |
 |---|---|---|
 | Ingen utgående trafik | Statisk sökning (fetch/XHR/WS/beacon/Worker/IndexedDB/Cache) + CSP-läsning + webbläsarröktestet, som registrerar varje förfrågan från alla sidor under en körning med alla flikar, utskriften och samtliga exporter | ✔ 0 verkliga anrop, 0 nätverksförfrågningar |
@@ -757,10 +796,10 @@ bygger på det användaren skriver, inte på individdata (§2, §6.8, B1b). Test
 | Lokala exporter | Blob/`<a download>`/print-läsning | ✔ inga uppladdningar |
 | Hash-baserad CSP (ADR-9) | Hash-jämförelse + webbläsarröktestet: injicerat `<script>`, inline-`onclick` och `<img onerror>`; skadlig text i lönefil och paket i jsdom (`tests/smoke-ansvar.test.js`) | ✔ ingen av dem exekverades; appen fullt funktionell |
 | XSS-utdatakodning | `esc()` escapear `& < > " '` + regressionstester (`tests/parsing.test.js`) | ✔ säker även i attributkontext |
-| Konfigfilens innehåll | Kodläsning av `buildConfigSnapshot()` och importen | ✔ ingen `state.data`-referens; inställningar + användartext + avbockningar i Att göra (§6.8); import läser version 2 och avvisar andra versioner |
+| Konfigfilens innehåll | Kodläsning av `buildConfigSnapshot()` och importen | ✔ ingen `state.data`-referens; inställningar (med förklaringsmodellen, definitionen av kvinnodominerat och lönemånaden) + användartext + avbockningar i Att göra (§6.8); import läser version 2 och avvisar andra versioner |
 | Word-utkast lokalt | Kodläsning + live-test: Blob fångad, innehåll inspekterat; zip-filen läses tillbaka i röktesterna (ADR-37) | ✔ lokal `Blob` (`.docx`), DEMODATA-märkning fungerar |
 | Tillgänglighet (markup) | axe-core i automatiska sviten (`tests/a11y.test.js`) | ✔ 0 överträdelser |
-| Automatiska tester | `npm test` (Vitest, 75 testfiler; kör om en fil vars arbetare kraschat i Node) + `npm run test:browser` (bygget i Chromium; samma röktest finns för Firefox och WebKit) | ✔ alla gröna |
+| Automatiska tester | `npm test` (Vitest, 77 testfiler; kör om en fil vars arbetare kraschat i Node) + `npm run test:browser` (bygget i Chromium; samma röktest finns för Firefox och WebKit) | ✔ alla gröna |
 | Bundle-integritet | Reproducerbart bygge + SHA-256 i RELEASE.txt; byggskydd mot mojibake och `node --check` (kodläsning av `tools/bundle.mjs`) | ✔ |
 
 ## 12. Slutsats

@@ -132,7 +132,8 @@ också när det är hopfällt.
 
 - **Sök** (fältet i sidhuvudet, snedstreck eller Ctrl+K) hittar ett yrke eller BAS-intervall och markerar det i alla
   diagram och tabeller. Ett klick på en grupp i ett diagram eller en tabellrad gör samma sak; Escape tar bort markeringen.
-- **Inställningar** (sidhuvudet) har minsta gruppstorlek, kommun eller region, och valet mellan **vägledande läge**
+- **Inställningar** (sidhuvudet) har minsta gruppstorlek, kommun eller region, **lönemånaden** (skrivs ovanför
+  tabellerna per AID-kod och BAS-intervall; tom skrivs ut som *inte angiven*), och valet mellan **vägledande läge**
   (förklaringarna syns) och **kompakt läge** (förklaringarna är undanfällda — för den som kan verktyget).
 - Flikarna i huvudflödet (Regler & praxis → Handlingsplan, fördjupningen → Dokumentera & exportera) avslutas med en
   **"Klar här? Nästa steg"-rad**. Använd **"Visa beräkningen"**-knapparna vid resultaten för att se hur en siffra
@@ -155,7 +156,10 @@ också när det är hopfällt.
    per kön), könsfördelningen per BAS-intervall och sist det **oförklarade** lönegapet (regressionen, där ni kan
    välja om ålder, nivå och yrkesgrupp ska räknas bort och se vad varje variabel tillför, trappan som visar vad
    varje vald variabel förklarar, och Blinder-Oaxaca; en bortvald variabel redovisas som kontrollerad, med ert skäl,
-   också i rapporten).
+   också i rapporten). Avsnitten **Lika arbete AID x BAS** och **Analys på individnivå** har tabellerna i den form
+   en skriven lönekartläggning brukar ha: en rad per yrkesgrupp och BAS-intervall med kvinnors median i procent av
+   mäns mot slumpens gränser och en bedömning, och en arbetslista över grupperna där något kön är för litet för
+   lönemått, att fylla i efter den individuella granskningen. Båda finns som blad i Excel-filen.
    Kolumnen **Kvinnor nationellt** visar andelen kvinnor i samma yrke i landets kommuner och
    regioner, ur SKR:s personalstatistik (SKR är Sveriges Kommuner och Regioner; perioden står i Om
    verktyget) — ett referensvärde att jämföra er egen könsfördelning mot. Välj under
@@ -188,6 +192,11 @@ också när det är hopfällt.
    Fliken visar som standard högst 20 par med en skillnad på minst 5 %; båda gränserna kan
    ändras i fliken (*Min gap* och antal par). Fliken och dess egen export visar par även
    när en grupp är liten — hantera dem därefter.
+   Avsnitten **Likvärdigt arbete** per BAS-intervall och **Hierarkisk jämförelse** klassar varje yrkesgrupp i varje
+   intervall som kvinnodominerad, könsblandad eller mansdominerad, med en sammanfattning per intervall, och listar
+   par där ett arbete i lägre BAS som inte är kvinnodominerat har högre medianlön än ett kvinnodominerat arbete i
+   högre BAS. Definitionen av kvinnodominerat väljs i flikens inställningar: **DO** (mer än tröskeln, standard)
+   eller **SCB** (tröskeln eller mer); valet står i Excel-bladen och i metodbladet.
    Bredvid skillnaden står kolumnen **Justerad för ålder**: jämförelseyrkets lön omräknad till
    det kvinnodominerade yrkets åldersfördelning. Den råa skillnaden är den lagen prövar —
    lönenivån som sådan; den justerade visar hur mycket av skillnaden som kan bero på att
@@ -286,7 +295,9 @@ exportera* → *Rapportens innehåll* kan ni ordna om och ta bort tabellerna.
    yrkesgrupp med jämförelsestatistikens nivå under, kvinnor och män — P10, median, P90 och antal)
    med ett fält för er bedömning av intervallet, och sist två tabeller per BAS: löneskillnader inom
    likvärdigt arbete (medellön per kön, andel kvinnor, medelålder) och löneskillnader i åldersgrupper.
-   Samma tabeller finns i Excel-filens blad **Per BAS**. Avsnittet följer ett **recept** som ni kan
+   Samma tabeller finns i Excel-filens blad **Per BAS**. Excel-filen har också de fyra bladen **Lika arbete AID x
+   BAS**, **Likvärdigt arbete**, **Hierarkisk jämförelse** och **Analys på individnivå**, med rapportens kolumnnamn
+   och lönemånaden från Inställningar på raden ovanför tabellen. Avsnittet följer ett **recept** som ni kan
    ändra under *Rapportens innehåll*: upprepa per BAS-intervall eller per sektor, vilka rader och
    mått tabellerna ska ha, åldersgränserna, och om summeringstabellerna ska med. *Återställ
    standard* ger utkastets form tillbaka.

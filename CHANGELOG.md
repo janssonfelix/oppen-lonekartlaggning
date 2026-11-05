@@ -4,7 +4,7 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 `dist/oppen-lonekartlaggning.html`, gjort med `npm run bundle`. Byggets SHA-256 står i
 `dist/RELEASE.txt`.
 
-## Oförlöst
+## 2026.11.05
 
 ### Gränssnitt
 
@@ -12,57 +12,6 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   dolda grupper ritades som masker ur inbäddade `data:`-adresser; webbläsarens nätverkspanel visade dem som hämtningar
   fast inget lämnade datorn. Pilarna ritas nu med kanter i CSS, menyns hänglås är en inline-SVG i knappen och notens
   hänglås två pseudo-element, och röktestet kräver att stilmallen inte har någon `url(`.
-
-### Exporter
-
-- **Fyra blad per AID-kod och BAS-intervall (ADR-57).** Excel-filen har bladen *Lika arbete AID x BAS*, *Likvärdigt
-  arbete*, *Hierarkisk jämförelse* och *Analys på individnivå*, med kolumnnamn som går att klistra in i rapporten utan
-  att ändras och lönemånaden på raden ovanför tabellen. Lika arbete är samma yrkesgrupp på samma nivå: en rad per
-  AID-kod och BAS-intervall ur varje persons egen rad, med kvinnors median i procent av mäns mot slumpens gränser
-  (trattdiagrammets omkastning, räknad per grupp) och bedömningen *Inom gränserna*, *Utanför gränserna* eller
-  *Analyseras på individnivå* när något kön har färre än tio personer. Likvärdigt arbete klassar varje grupp som
-  kvinnodominerad, könsblandad eller mansdominerad, säger om yrket *brukar anses* kvinnodominerat efter andelen kvinnor
-  nationellt, ger median och lönespridning ((P90 − P10) / median) för grupper med minst tio personer och en
-  sammanfattning per BAS-intervall. Den hierarkiska jämförelsen listar par där ett arbete i lägre BAS som inte är
-  kvinnodominerat har högre median än ett kvinnodominerat arbete i högre BAS, eller säger att inga sådana fall finns.
-  Arbetslistan för individnivå har grupperna där något kön är under tio, utan löner och med kolumnerna *Analys
-  genomförd* och *Resultat* att fylla i. Grupper med färre än fem personer får ingen egen rad utan räknas upp i en not.
-  Tal skrivs som tal med svenskt talformat i cellen; procent med en decimal. Bladet Metodik beskriver grupperingen,
-  små grupper, gränserna för slumpen och vald definition. Samma tabeller står som avsnitt i Lika arbete och Likvärdigt
-  arbete, med Kopiera och CSV.
-- **Rättat: fliken Slumpens gränser räknar per AID-kod och BAS-intervall.** Trattdiagrammets underlag grupperade per
-  yrkesgrupp över alla BAS-intervall och satte gruppens intervall från dess första rad, så en yrkesgrupp i flera
-  intervall redovisades i ett godtyckligt av dem med alla sina personer. Nu är gruppen yrkesgrupp och intervall, i
-  diagrammet, i bladet och i tabellen *Lika arbete AID x BAS*, som delar gränserna med fliken.
-
-### Analys
-
-- **Valbar förklaringsmodell (ADR-56).** Avsnittet *Vad blir kvar av lönegapet?* i Lika arbete öppnar med panelen
-  *Förklaringsmodell*: ta bort BAS-intervall eller ålder, eller lägg till yrkesgrupp inom BAS; fullmodellen är
-  utgångsläge och räknar som förut. Tabellen visar vad varje variabel tillför i förklaringsgrad och hur gapet
-  flyttar sig, alltid mot fullmodellen, och verktyget föreslår att lämna en variabel utanför när den tillför under
-  0,5 procentenheter. Valet styr huvudtalet överallt (Översikt, Att göra, Struktur, rapporten), trappan,
-  förklaringsbudgeten och Blinder-Oaxaca; en bortvald variabel blir en mening, "har kontrollerats och tillför …", med
-  ett skäl utanför siffrorna som ni kan skriva in, också i rapportens sammanfattning och bilaga. Valet och skälet
-  följer med i konfigurationsfilen. Endast kön kan inte väljas när ett kön ligger under minsta gruppstorlek.
-- **Kvinnodominerat enligt DO eller SCB.** I Likvärdigt arbetes inställningar väljs definitionen för tabellerna per
-  AID-kod och BAS-intervall: DO, mer än kvinnotröskeln (standard), eller SCB, kvinnotröskeln eller mer. En grupp med
-  exakt 60 % kvinnor är könsblandad enligt DO och kvinnodominerad enligt SCB. Valet står i bladen och i Metodik och
-  följer med i konfigurationsfilen. Kandidatparen i Likvärdigt arbete använder tills vidare sin egen gräns
-  (öppen punkt 22 i den tekniska planen).
-- **Lönemånad.** Inställningar har fältet *Lönemånad* (fritext, t.ex. 2026-10) som skrivs ovanför tabellerna per
-  AID-kod och BAS-intervall; tomt skrivs ut som *inte angiven*, eftersom lönefilen inte säger vilken månad den gäller.
-  Följer med i konfigurationsfilen och nollas av Rensa all data.
-
-### Utveckling
-
-- **Testsviten hittar inte andra sessioners arbetskopior.** Vitest utesluter nu `.claude/`, där verktyget lägger
-  arbetskopior av hela repot; annars kördes deras testfiler också och sviten blev tre gånger så lång.
-
-## 2026.11.02
-
-### Gränssnitt
-
 - **Samma ord, färger och mått i alla flikar.** En skillnad mot 3- och 5-procentsgränserna heter *Balanserat*,
   *Följ upp* eller *Värt att granska* i alla flikar, diagram och exporter, med samma färg och symbol (lila för *Värt
   att granska*, också i Lika arbetes BAS-översikt och Utforska); *Börja här* och *Över referens* finns bara i
@@ -164,6 +113,25 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ### Exporter
 
+- **Fyra blad per AID-kod och BAS-intervall (ADR-57).** Excel-filen har bladen *Lika arbete AID x BAS*, *Likvärdigt
+  arbete*, *Hierarkisk jämförelse* och *Analys på individnivå*, med kolumnnamn som går att klistra in i rapporten utan
+  att ändras och lönemånaden på raden ovanför tabellen. Lika arbete är samma yrkesgrupp på samma nivå: en rad per
+  AID-kod och BAS-intervall ur varje persons egen rad, med kvinnors median i procent av mäns mot slumpens gränser
+  (trattdiagrammets omkastning, räknad per grupp) och bedömningen *Inom gränserna*, *Utanför gränserna* eller
+  *Analyseras på individnivå* när något kön har färre än tio personer. Likvärdigt arbete klassar varje grupp som
+  kvinnodominerad, könsblandad eller mansdominerad, säger om yrket *brukar anses* kvinnodominerat efter andelen kvinnor
+  nationellt, ger median och lönespridning ((P90 − P10) / median) för grupper med minst tio personer och en
+  sammanfattning per BAS-intervall. Den hierarkiska jämförelsen listar par där ett arbete i lägre BAS som inte är
+  kvinnodominerat har högre median än ett kvinnodominerat arbete i högre BAS, eller säger att inga sådana fall finns.
+  Arbetslistan för individnivå har grupperna där något kön är under tio, utan löner och med kolumnerna *Analys
+  genomförd* och *Resultat* att fylla i. Grupper med färre än fem personer får ingen egen rad utan räknas upp i en not.
+  Tal skrivs som tal med svenskt talformat i cellen; procent med en decimal. Bladet Metodik beskriver grupperingen,
+  små grupper, gränserna för slumpen och vald definition. Samma tabeller står som avsnitt i Lika arbete och Likvärdigt
+  arbete, med Kopiera och CSV.
+- **Rättat: fliken Slumpens gränser räknar per AID-kod och BAS-intervall.** Trattdiagrammets underlag grupperade per
+  yrkesgrupp över alla BAS-intervall och satte gruppens intervall från dess första rad, så en yrkesgrupp i flera
+  intervall redovisades i ett godtyckligt av dem med alla sina personer. Nu är gruppen yrkesgrupp och intervall, i
+  diagrammet, i bladet och i tabellen *Lika arbete AID x BAS*, som delar gränserna med fliken.
 - **Lönerna mot referenserna.** Nytt blad *Referenser* i Excel-filen, nytt avsnitt *Lönerna mot referenserna* i
   Word-utkastet och PDF-rapporten, block i rapportunderlaget och listan i utskriften. Yrkesgrupper under minsta
   gruppstorlek redovisas inte.
@@ -186,6 +154,22 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ### Analys
 
+- **Valbar förklaringsmodell (ADR-56).** Avsnittet *Vad blir kvar av lönegapet?* i Lika arbete öppnar med panelen
+  *Förklaringsmodell*: ta bort BAS-intervall eller ålder, eller lägg till yrkesgrupp inom BAS; fullmodellen är
+  utgångsläge och räknar som förut. Tabellen visar vad varje variabel tillför i förklaringsgrad och hur gapet
+  flyttar sig, alltid mot fullmodellen, och verktyget föreslår att lämna en variabel utanför när den tillför under
+  0,5 procentenheter. Valet styr huvudtalet överallt (Översikt, Att göra, Struktur, rapporten), trappan,
+  förklaringsbudgeten och Blinder-Oaxaca; en bortvald variabel blir en mening, "har kontrollerats och tillför …", med
+  ett skäl utanför siffrorna som ni kan skriva in, också i rapportens sammanfattning och bilaga. Valet och skälet
+  följer med i konfigurationsfilen. Endast kön kan inte väljas när ett kön ligger under minsta gruppstorlek.
+- **Kvinnodominerat enligt DO eller SCB.** I Likvärdigt arbetes inställningar väljs definitionen för tabellerna per
+  AID-kod och BAS-intervall: DO, mer än kvinnotröskeln (standard), eller SCB, kvinnotröskeln eller mer. En grupp med
+  exakt 60 % kvinnor är könsblandad enligt DO och kvinnodominerad enligt SCB. Valet står i bladen och i Metodik och
+  följer med i konfigurationsfilen. Kandidatparen i Likvärdigt arbete använder tills vidare sin egen gräns
+  (öppen punkt 22 i den tekniska planen).
+- **Lönemånad.** Inställningar har fältet *Lönemånad* (fritext, t.ex. 2026-10) som skrivs ovanför tabellerna per
+  AID-kod och BAS-intervall; tomt skrivs ut som *inte angiven*, eftersom lönefilen inte säger vilken månad den gäller.
+  Följer med i konfigurationsfilen och nollas av Rensa all data.
 - **Jämförelse mot båda referenserna (ADR-55).** Fliken Jämförelse visar per yrkesgrupp var löneläget och
   jämförelsestatistiken ligger mot ställningstagandet, som är referenspunkten: skillnaden percentil för percentil,
   läget i spannet, mönstret i ord, ett förslag på referens, en bild med de tre spannen och tabellen statistiken mot
@@ -283,6 +267,8 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ### Utveckling
 
+- **Testsviten hittar inte andra sessioners arbetskopior.** Vitest utesluter nu `.claude/`, där verktyget lägger
+  arbetskopior av hela repot; annars kördes deras testfiler också och sviten blev tre gånger så lång.
 - **Dokumenten är allmänna.** README och den tekniska planens §2 säger vilket omfång verktyget har i dag (AID,
   BAS och SKR:s statistik; allt organisationsspecifikt kommer ur paketet). Intern beslutsjargong ("beslut av
   produktägaren") är ersatt av beslut med datum och ADR; checklistan för skarp data, datauttagsguiden,
