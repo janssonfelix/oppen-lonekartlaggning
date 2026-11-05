@@ -31,13 +31,16 @@ snart som möjligt, och den som rapporterat nämns i versionsnyheterna om den vi
 - Att något skrivs till webbläsarens lagring. Spärren mot lagring har kända luckor
   (`docs/dataskydd/riskanalys.md` §6.2); de behöver inte rapporteras igen.
 - Att en fil med personnummer, namn eller e-post inte avvisas (kontrollen ser på
-  rubrikerna och de 50 första raderna).
+  rubrikerna och de 50 första raderna), eller att en kolumnrubrik som antyder en särskild
+  kategori av personuppgifter (fackmedlemskap, hälsa, etnicitet, religion, politisk åskådning,
+  sexualliv, genetik, biometri) inte avvisas (kontrollen ser bara på rubriken).
 
 ## Kontrollera att filen är äkta
 
-Varje version publiceras som en GitHub Release med fyra filer: verktyget
-(`oppen-lonekartlaggning.html`), `RELEASE.txt` och ett Sigstore-paket (`.sigstore.json`) för var och en
-av dem. Paketet innehåller signaturen och det certifikat som Sigstore utfärdade för
+Varje version publiceras som en GitHub Release med sex filer: verktyget
+(`oppen-lonekartlaggning.html`), `RELEASE.txt`, programvaruförteckningen `sbom.cdx.json` (CycloneDX: de
+fyra inbyggda biblioteken med version, licens och kontrollsumma, och artefaktens kontrollsumma) och ett
+Sigstore-paket (`.sigstore.json`) för var och en av dem. Paketet innehåller signaturen och det certifikat som Sigstore utfärdade för
 release-arbetsflödet (`.github/workflows/release.yml`) när filen byggdes ur versionens tagg; ingen
 nyckel finns att stjäla, och signeringen står i den publika transparensloggen Rekor.
 

@@ -25,3 +25,6 @@ dist/marknad/
 
 # Genererad demosida (npm run site).
 site/dist/
+
+# Programvaruförteckningen byggs av release-arbetsflödet (npm run sbom) och läggs på releasen.
+dist/sbom.cdx.json

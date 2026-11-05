@@ -4,7 +4,7 @@ name: Release
 #   1. release-grinden (npm run release:kontroll, tools/release.mjs) — versionen står lika i VERSION, package.json,
 #      CHANGELOG och RELEASE.txt, riskanalysen är granskad mot koden som släpps (teknisk-plan.md §9 punkt 17b);
 #   2. bygget görs om och måste bli byte-identiskt med den incheckade artefakten;
-#   3. artefakten och RELEASE.txt signeras med Sigstore cosign utan nyckel (keyless): certifikatet utfärdas för
+#   3. artefakten, RELEASE.txt och programvaruförteckningen (SBOM) signeras med Sigstore cosign utan nyckel (keyless): certifikatet utfärdas för
 #      det här arbetsflödet genom GitHub Actions OIDC-token, så signaturen styrker att filen byggdes här ur taggen;
 #   4. signaturen verifieras med samma kommando som SECURITY.md anger, och allt publiceras som en GitHub Release.
 #
@@ -58,20 +58,26 @@ jobs:
           fi
           echo "Artefakten är byte-identisk med en färsk build ($fore)."
 
+      # Programvaruförteckningen (CycloneDX) över de fyra inbyggda biblioteken och artefaktens kontrollsumma,
+      # byggd ur vendor/ och det verifierade bygget (tools/sbom.mjs).
+      - name: Programvaruförteckning (SBOM)
+        run: npm run sbom
+
       - uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
 
       # Varje fil får ett Sigstore-paket (.sigstore.json) med signaturen, certifikatet och posten i
       # transparensloggen Rekor.
-      - name: Signera artefakten och RELEASE.txt
+      - name: Signera artefakten, RELEASE.txt och programvaruförteckningen
         working-directory: dist
         run: |
           cosign sign-blob --yes --bundle oppen-lonekartlaggning.html.sigstore.json oppen-lonekartlaggning.html
           cosign sign-blob --yes --bundle RELEASE.txt.sigstore.json RELEASE.txt
+          cosign sign-blob --yes --bundle sbom.cdx.json.sigstore.json sbom.cdx.json
 
       - name: Verifiera signaturerna
         working-directory: dist
         run: |
-          for f in oppen-lonekartlaggning.html RELEASE.txt; do
+          for f in oppen-lonekartlaggning.html RELEASE.txt sbom.cdx.json; do
             cosign verify-blob "$f" --bundle "$f.sigstore.json" \
               --certificate-identity "https://github.com/${GITHUB_REPOSITORY}/.github/workflows/release.yml@${GITHUB_REF}" \
               --certificate-oidc-issuer https://token.actions.githubusercontent.com
@@ -89,5 +95,7 @@ jobs:
             --notes-file release-text.md \
             dist/oppen-lonekartlaggning.html \
             dist/RELEASE.txt \
+            dist/sbom.cdx.json \
             dist/oppen-lonekartlaggning.html.sigstore.json \
-            dist/RELEASE.txt.sigstore.json
+            dist/RELEASE.txt.sigstore.json \
+            dist/sbom.cdx.json.sigstore.json

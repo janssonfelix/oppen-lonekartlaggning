@@ -81,6 +81,8 @@ vitlistade fälten ovan, och det **avvisar hela filen** om det upptäcker en ide
 kolumn — antingen på rubriken (t.ex. `Personnummer`, `PNR`, `Namn`, `Efternamn`,
 `E-post`) eller på innehållet (i filens första 50 rader: minst tre celler i personnummer-
 eller e-postformat, eller minst fem som ser ut som för- och efternamn).
+Detsamma gäller kolumner vars rubrik antyder en särskild kategori av personuppgifter
+(`Fackmedlemskap`, `Hälsa`, `Sjukfrånvaro`, `Diagnos`, `Etnicitet` och liknande); där prövas bara rubriken.
 Ta bort sådana kolumner redan i uttaget ur lönesystemet.
 
 > Detta är ett medvetet dataminimeringsskydd (Privacy by Design). Se
