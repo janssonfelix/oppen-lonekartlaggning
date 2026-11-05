@@ -39,10 +39,14 @@ function renderLifecycleAnalysis() {
     const primaryGap = (primary && !primary.error) ? primary.konPct : null;
     const primaryP   = (primary && !primary.error) ? primary.pValue : null;
 
+    // Modelljämförelsens tabell markerar säkerheten med stjärnor, som tabellens not förklarar; utan stjärna är
+    // p ≥ 0,05. Nyckeltalet säger det med ord, med samma gräns som tolkningsregeln (p < 0,10 är säkerställd).
     const sigBadge = p => p < 0.001 ? `<span class="farg-kritisk">***</span>`
                        : p < 0.01  ? `<span class="farg-kritisk">**</span>`
                        : p < 0.05  ? `<span class="farg-varning">*</span>`
-                       : '<span class="f-dampad">ns</span>';
+                       : '';
+    const sakerOrd = p => p < 0.10 ? 'säkerställd' : '<span class="f-dampad">inte säkerställd</span>';
+    const pText = p => p < 0.001 ? '< 0,001' : svTal(p, 3);
 
     const basOptions = result.basList.map(b =>
         `<option value="${esc(b)}"${b === result.fixBas ? ' selected' : ''}>BAS ${esc(b)}</option>`
@@ -52,6 +56,11 @@ function renderLifecycleAnalysis() {
     const gapStart = result.gapAt25;
     const gapEnd   = result.gapAt65;
     const gapKlass = (g) => Math.abs(g) > 5 ? 'fg-kritisk' : Math.abs(g) > 2 ? 'fg-varning' : 'fg-ok';
+    // Nyckeltalen är kvinnors lön i % av mäns, som i resten av verktyget. Modellen är log-linjär och ger skillnaden
+    // (exp(skillnaden på log-skalan) − 1) × 100, så kvoten är 100 + skillnaden; förändringen 25–65 år är densamma i
+    // procentenheter vilket mått man än läser.
+    const kvot25 = 100 + gapStart, kvot65 = 100 + gapEnd;
+    const kvotMening = `Modellen ger skillnaden i procent, kvinnor mot män: ${gapStart >= 0 ? '+' : ''}${svPct(gapStart, 1)} vid 25 år och ${gapEnd >= 0 ? '+' : ''}${svPct(gapEnd, 1)} vid 65 år. Det är samma sak som att kvinnors lön är ${svPct(kvot25, 1)} respektive ${svPct(kvot65, 1)} av mäns, talen ovan.`;
 
     // ====== B4: Översiktstabell — modellens lönenivåer per BAS ======
     // Modellen är en enda regression över alla BAS: kön×ålder-interaktionerna är gemensamma, så gapet i procent
@@ -125,26 +134,29 @@ function renderLifecycleAnalysis() {
         <!-- B5: KPI:er + signifikanstest -->
         <div class="rutnat gap-12 kolumner-auto-180 marg-b-14">
             <div class="stat-box">
-                <div class="stat-etikett fs-xs marg-0-0-4">Kvinnors lön mot mäns, 25 år</div>
-                <div class="fs-xl fw-700 ${gapKlass(gapStart)}">${gapStart >= 0 ? '+' : ''}${svPct(gapStart, 1)}</div>
+                <div class="stat-etikett fs-xs marg-0-0-4">Kvinnors lön i % av mäns, 25 år</div>
+                <div class="fs-xl fw-700 ${gapKlass(gapStart)}">${svPct(kvot25, 1)}</div>
+                <div class="stat-under">när nivå räknats bort, enligt modellen</div>
             </div>
             <div class="stat-box">
-                <div class="stat-etikett fs-xs marg-0-0-4">Kvinnors lön mot mäns, 65 år</div>
-                <div class="fs-xl fw-700 ${gapKlass(gapEnd)}">${gapEnd >= 0 ? '+' : ''}${svPct(gapEnd, 1)}</div>
+                <div class="stat-etikett fs-xs marg-0-0-4">Kvinnors lön i % av mäns, 65 år</div>
+                <div class="fs-xl fw-700 ${gapKlass(gapEnd)}">${svPct(kvot65, 1)}</div>
+                <div class="stat-under">när nivå räknats bort, enligt modellen</div>
             </div>
             <div class="stat-box">
                 <div class="stat-etikett fs-xs marg-0-0-4">Förändring 25–65 år, procentenheter</div>
                 <div class="fs-xl fw-700 ${Math.abs(result.gapDelta) > 1 ? 'fg-varning' : 'fg-ok'}">${result.gapDelta >= 0 ? '+' : ''}${svTal(result.gapDelta, 1)}</div>
-                <div class="stat-under">minus: kvinnorna halkar efter</div>
+                <div class="stat-under">i kvinnors lön i % av mäns; minus: kvinnorna halkar efter</div>
             </div>
             <div class="stat-box" title="Test av om skillnaden förändras med åldern (kön×ålder). Vid p ≥ 0,10 är förändringen inte säkerställd.">
                 <div class="stat-etikett fs-xs marg-0-0-4">Är förändringen säkerställd?</div>
                 <div class="fs-md fw-600">
-                    Linjär: p = ${result.kvAgePVal < 0.001 ? '< 0,001' : svTal(result.kvAgePVal, 3)} ${sigBadge(result.kvAgePVal)}<br>
-                    Kvadratisk: p = ${result.kvAge2PVal < 0.001 ? '< 0,001' : svTal(result.kvAge2PVal, 3)} ${sigBadge(result.kvAge2PVal)}
+                    Linjär: p = ${pText(result.kvAgePVal)}, ${sakerOrd(result.kvAgePVal)}<br>
+                    Kvadratisk: p = ${pText(result.kvAge2PVal)}, ${sakerOrd(result.kvAge2PVal)}
                 </div>
             </div>
         </div>
+        <p class="livscykel-kvot-not text-dampad-sm lh-1_5 marg-0-0-14">${kvotMening}</p>
 
         <!-- B7: HR-coach baserad på mönster -->
         <div class="card mb-14 ${coachKategori === 'växande' ? 'bl4-kritisk' : coachKategori === 'krympande' ? 'bl4-varning' : coachKategori === 'konstant' ? 'bl4-accent' : 'bl4-ok'}">
@@ -222,21 +234,46 @@ function renderLifecycleAnalysis() {
                         <tr><td><strong>Antal personer</strong></td><td>${primary ? primary.n : '—'}</td><td>${result.n}</td></tr>
                         <tr><td><strong>Förklarad del av lönespridningen (justerat R²)</strong></td><td>${primaryAdjR2 != null ? svPct((primaryAdjR2*100), 1) : '—'}</td><td>${svPct((result.adjR2*100), 1)}</td></tr>
                         <tr><td><strong>Löneskillnad kvinnor mot män</strong></td><td>${primaryGap != null ? (primaryGap >= 0 ? '+' : '') + svPct(primaryGap, 1) : '—'}</td><td>${(((Math.exp(result.kvCoef) - 1) * 100) >= 0 ? '+' : '')}${svPct(((Math.exp(result.kvCoef) - 1) * 100), 1)} (vid medelåldern ${Math.round(result.ageMean)} år)</td></tr>
-                        <tr><td><strong>Kön — p-värde</strong></td><td>${primaryP != null ? (primaryP < 0.001 ? '< 0,001' : svTal(primaryP, 3)) : '—'} ${primaryP != null ? sigBadge(primaryP) : ''}</td><td>${result.kvPValue < 0.001 ? '< 0,001' : result.kvPValue.toFixed(3)} ${sigBadge(result.kvPValue)}</td></tr>
+                        <tr><td><strong>Kön — p-värde</strong></td><td>${primaryP != null ? (primaryP < 0.001 ? '< 0,001' : svTal(primaryP, 3)) : '—'} ${primaryP != null ? sigBadge(primaryP) : ''}</td><td>${pText(result.kvPValue)} ${sigBadge(result.kvPValue)}</td></tr>
                         <tr><td><strong>Kön×ålder — p-värde</strong></td><td><em class="f-dampad">ej i modellen</em></td><td>${result.kvAgePVal < 0.001 ? '< 0,001' : svTal(result.kvAgePVal, 3)} ${sigBadge(result.kvAgePVal)}</td></tr>
                         <tr><td><strong>Kön×ålder² — p-värde</strong></td><td><em class="f-dampad">ej i modellen</em></td><td>${result.kvAge2PVal < 0.001 ? '< 0,001' : svTal(result.kvAge2PVal, 3)} ${sigBadge(result.kvAge2PVal)}</td></tr>
                     </tbody>
                 </table>
-                <p class="text-dampad-xs lh-1_5 marg-10-0-0">
+                <p class="livscykel-stjarnor text-dampad-xs lh-1_5 marg-10-0-0">
+                    Stjärnorna visar hur säkert resultatet är: * p &lt; 0,05, ** p &lt; 0,01, *** p &lt; 0,001. Utan stjärna är p minst 0,05.
+                </p>
+                <p class="text-dampad-xs lh-1_5 marg-6-0-0">
                     <strong>Tolkningsregel:</strong> Är kön×ålder inte säkerställd (p ≥ 0,10) räcker huvudmodellen. Är den säkerställd döljer huvudmodellens enda tal att skillnaden varierar med åldern, och livscykelmodellen ger en mer fullständig bild.
                 </p>
             </div>
         </details>
 
-        <p class="text-dampad-xs lh-1_5 marg-t-10">
-            <em>Modell: log(lön) ~ kön + ålder + ålder² + kön×ålder + kön×ålder² + C(BAS) med HC3-robusta standardfel. I kodningen är BAS ${esc(result.refBas)} referensintervall; kurvan ovan visas för det valda intervallet. Skuggade band i kurvan visar 95 % konfidensintervall för predicerad lön.</em>
+        <p class="livscykel-modell-not text-dampad-xs lh-1_5 marg-t-10">
+            Modellen tar hänsyn till kön, ålder, åldern i kvadrat (att lönen planar ut sent i karriären), samspelet mellan kön och ålder, och BAS-intervall. De skuggade banden runt kurvorna visar osäkerheten. Detaljerna står under <em>Så räknas det</em> längst ned i fliken, i <em>Beräkning &amp; urval</em>.
         </p>
     `;
+
+    // Modellformeln och de statistiska detaljerna står i flikens beräkningspanel (Så räknas det), inte i löptexten.
+    const baseL = buildBaseAudit();
+    const utanfor = Math.max(0, baseL.afterFilter - result.n);
+    setAudit('livscykel', {
+        title: 'Ålder & karriär — livscykelmodellen',
+        ...baseL,
+        usedInAnalysis: result.n,
+        analysisExclusions: utanfor > 0 ? [['Saknar ålder eller kön', utanfor]] : [],
+        formler: [
+            ['Modell', '<code>log(lön) ~ kön + ålder + ålder² + kön×ålder + kön×ålder² + C(BAS)</code>, skattad med minsta kvadratmetoden'],
+            ['Standardfel', 'HC3-robusta standardfel (tål att lönespridningen skiljer mellan grupper)'],
+            ['BAS-intervall', `Indikatorvariabler; i kodningen är BAS ${esc(result.refBas)} referensintervall. Kurvan visas för det valda intervallet (${esc(result.fixBas)}), övriga intervall får sin nivå ur sin BAS-koefficient`],
+            ['Skillnad kvinnor mot män', '<code>(exp(skillnaden på log-skalan) − 1) × 100</code> vid varje ålder; kvinnors lön i % av mäns är 100 plus skillnaden'],
+            ['Skuggade band', '95 % konfidensintervall för den predicerade lönen'],
+            ['Säkerställd förändring', 'Kön×ålder eller kön×ålder² med p under 0,10 (tolkningsregeln). Stjärnorna i modelljämförelsen: * p under 0,05, ** p under 0,01, *** p under 0,001']
+        ],
+        notes: [
+            'Modellen räknas på hela underlaget, inte på flikens urval av BAS-intervall',
+            esc(KOHORT_FORBEHALL)
+        ]
+    });
 
     // Cache result + basRows på state för bevis-handlern
     state._lifecycleCache = { result, basRows, primary };

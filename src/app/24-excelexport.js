@@ -10,7 +10,7 @@ function excelAlltBlad(...a) { return medExportLage(() => _excelAlltBladExport.a
 function _excelAlltBladExport() {
     if (!state.data.length) return [];
     const harRef = state.policy.length > 0 || state.statistik.length > 0;
-    return ['Löneöversikt', 'Per BAS', ...((state.rapportTabeller || []).length ? ['Egna tabeller'] : []), 'EU-Lonekartlaggning', ...(harRef ? ['Prioritering'] : []), 'Lonegap', 'Konsskevhet', ..._excelDiagramBlad().map(b => b[0]), 'Sektorer',
+    return ['Löneöversikt', 'Per BAS', ...((state.rapportTabeller || []).length ? ['Egna tabeller'] : []), 'EU-Lonekartlaggning', ...(harRef ? ['Prioritering'] : []), 'Lonegap', 'Konsskevhet', ..._excelDiagramBlad().map(b => b[0]), ...AIDBAS_BLADNAMN, 'Sektorer',
         ...(state.statistik.length ? ['Jamforelsestatistik'] : []), ...(bedomningUnderlag() ? ['Underlagets kvalitet'] : []), 'Metodik', 'Metod & parametrar'];
 }
 
@@ -85,7 +85,7 @@ function _excelDiagramBlad() {
     const tratt = _laTrattUnderlag(d);
     if (tratt) ut.push(['Slumpens granser', [
         ['Yrkesgrupperna mot slumpens gränser (trattdiagrammet på Lika arbete)'],
-        [`Yrkesgrupper där både kvinnor och män är minst ${k}. Gränserna är de 95-procentiga för gruppens storlek.`], [],
+        [`En rad per yrkesgrupp och BAS-intervall där både kvinnor och män är minst ${k}. Gränserna är de 95-procentiga för gruppens storlek.`], [],
         ['Yrkesgrupp', 'BAS-intervall', 'Antal kvinnor', 'Antal män', 'Kvinnors median i % av mäns', 'Gräns, nedre', 'Gräns, övre', 'Bedömning'],
         ...tratt.punkter.map(p => [p.yrke, p.bas, p.nKv, p.nMa, r1(p.kvot), r1(p.gransLag), r1(p.gransHog), p.utanfor ? 'Utanför gränserna' : 'Inom gränserna'])]]);
     const arKv = r => typeof r.kon === 'string' && r.kon.includes('kvinna'), arMa = r => r.kon === 'man' || r.kon === 'män';
@@ -106,7 +106,7 @@ function _excelDiagramBlad() {
 /** Metodraden för bladet Lönepolitik, när det finns i arbetsboken. */
 function _excelLonepolitikMetod(blad) {
     if (!blad.some(b => b[0] === 'Lönepolitik')) return [];
-    return [['Bladet Lönepolitik', `Läget i referensens lönespann (0 % = P10, 100 % = P90) per yrkesgrupp, per kön och BAS-intervall samt fördelningen i spannets tredjedelar per kön och efterlevnaden per BAS-intervall — samma mått och samma regler för minsta gruppstorlek som fliken Lönepolitik: yrkesgrupper under ${kTroskel()} personer utan lönemått, könsuppdelade mått bara där varje kön har minst ${kTroskel()} personer.`]];
+    return [['Bladet Lönepolitik', `Läget i referensens lönespann (0 % = P10, 100 % = P90) per yrkesgrupp, per kön och BAS-intervall samt fördelningen i spannets tredjedelar per kön och efterlevnaden per BAS-intervall — samma mått och samma regler för minsta gruppstorlek som avsnittet Mot ställningstagandet i fliken Jämförelse: yrkesgrupper under ${kTroskel()} personer utan lönemått, könsuppdelade mått bara där varje kön har minst ${kTroskel()} personer.`]];
 }
 
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
@@ -169,6 +169,8 @@ function __excelAlltBokExport() {
     if (skevhetSheet) XLSX.utils.book_append_sheet(wb, skevhetSheet, 'Konsskevhet');
     const diagramBlad = _excelDiagramBlad();
     for (const [namn, rader] of diagramBlad) XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rader), namn);
+    // Tabellerna per AID-kod och BAS-intervall (45-aid-bas-tabeller.js): fyra blad, kalkylbladen färdiga med talformat.
+    for (const [namn, ws] of _aidbasExcelBlad()) XLSX.utils.book_append_sheet(wb, ws, namn);
 
     // Sheet: Sektorer (AID-huvudområden, ADR-33) — samma k-regler som vyn.
     ensure('#sektor-table tbody tr', () => renderSektorer(getData()));
@@ -222,9 +224,17 @@ function __excelAlltBokExport() {
             metRows.push([]);
         }
     });
+    // Tabellerna per AID-kod och BAS-intervall: grupperingen, små grupper, gränserna för slumpen och definitionen.
+    metRows.push(['Tabellerna per AID-kod och BAS-intervall']);
+    for (const [rubrik, text] of _aidbasMetodRader()) metRows.push(['  ' + rubrik, text]);
+    metRows.push([]);
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(metRows), 'Metodik');
 
-    _appendMethodSheet(wb, { extra: _excelLonepolitikMetod(diagramBlad) });
+    // Två blad som liknar varandra: Per BAS är lönestrukturen som i en skriven lönekartläggning, Lonegap är Lika arbetes
+    // kvot per intervall. Båda behålls; raden säger vad som skiljer dem.
+    _appendMethodSheet(wb, { extra: [
+        ['Bladen Per BAS och Lonegap', 'Per BAS är lönestrukturen per BAS-intervall som i en skriven lönekartläggning: referensen, organisationen och varje yrkesgrupp med P10, median, P90 och antal, per kön. Lonegap är tabellen ur Lika arbete: kvinnors medianlön i procent av mäns per BAS-intervall, med antal och medianer. Samma underlag, två frågor.'],
+        ..._excelLonepolitikMetod(diagramBlad), ..._aidbasMetodRader()] });
     return wb;
 }
 
@@ -467,7 +477,7 @@ function _exportJPAProtocolExport() {
             'Nr',
             'Org. AID', 'Org. Yrke', 'BAS', 'Org. n', 'Org. % kvinnor', 'Median Org. (kr)',
             'Jämf. AID', 'Jämf. Yrke', 'Jämf. % kvinnor', 'Jämf. n', 'Jämförelsekälla', 'Median Jämf. (kr)',
-            'Gap (kr)', 'Gap (%)', '95 % KI lägre (kr)', '95 % KI övre (kr)', 'Säkerhet', 'Påverkansindex',
+            'Gap (kr)', 'Gap (%)', '95 % KI lägre (kr)', '95 % KI övre (kr)', 'Säkerhet', 'Summa för gruppen (kr/mån)',
             'Sakliga skäl — arbetsgivarens analys',
             'Fackliga partens kommentar',
             'Status efter samråd',

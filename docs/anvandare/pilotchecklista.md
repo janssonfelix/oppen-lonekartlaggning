@@ -1,12 +1,12 @@
-# Pilotchecklista — verifiering med skarp data
+# Checklista för skarp data — verifiering innan verktyget används på riktigt
 
-Innan bred driftsättning: kör en **pilot** med en verklig lönefil i er egen
+Innan verktyget används för er lönekartläggning: kör en **provkörning** med en verklig lönefil i er egen
 webbläsarmiljö och bekräfta att verktyget fungerar hela vägen — inläsning, analys,
 utdata och dataskydd. Den automatiska testsviten (över två tusen tester, och ett röktest av det byggda verktyget i tre webbläsare)
 täcker logiken; den här
 checklistan täcker det bara en körning med **er data** på **er hårdvara** kan visa.
 
-> **Pilotansvarig:** ______________________  **Datum:** __________  **Bygge/SHA:**
+> **Ansvarig:** ______________________  **Datum:** __________  **Bygge/SHA:**
 > ______________________ (jfr. `RELEASE.txt`)
 
 ---
@@ -112,7 +112,7 @@ påhittat underlag med 42 yrken, och Word-utkastet bara i LibreOffice.*
   | 1 |  |  |  |
   | 2 |  |  |  |
 
-- [ ] **Godkänd för bredare driftsättning** — Pilotansvarig: ______________  Datum:
+- [ ] **Godkänd för användning** — Ansvarig: ______________  Datum:
       __________
 
 ---

@@ -253,22 +253,24 @@ describe('golden: bladen ur HTML-tabellerna bär cellerna som vyn visar dem (typ
         expect(cell('Konsskevhet', 'B2')).toMatchObject({ t: 'n', v: 34 });
     });
     it('EU-Lonekartlaggning: antalet med könsuppdelningen som text, den samlade medianen som text över båda mediankolumnerna, "–" i stället för 0', () => {
-        expect(rad('EU-Lonekartlaggning', 0)[6]).toBe('Lönegap kvinnor/män (kvinnors median i % av männens)');
-        expect(cell('EU-Lonekartlaggning', 'B2')).toMatchObject({ t: 's', v: '17 (14/3)' });
-        expect(cell('EU-Lonekartlaggning', 'E2')).toMatchObject({ t: 's', v: 'Gruppens median 28 800 kr' });
-        expect(wb.Sheets['EU-Lonekartlaggning']['!merges']).toContainEqual({ s: { r: 1, c: 4 }, e: { r: 1, c: 5 } });
-        expect(wb.Sheets['EU-Lonekartlaggning'].F2).toBeUndefined();
-        expect(cell('EU-Lonekartlaggning', 'G2')).toMatchObject({ t: 's', v: '–' });   // data-sort-value="0" är ett sorteringsvärde, inte ett gap
-        expect(cell('EU-Lonekartlaggning', 'H2').v).toMatch(/^Könsuppdelningen är för liten/);
+        // Statusen står efter yrkesgruppen, som på skärmen (steg C); alla kolumner följer med oavsett Fler kolumner.
+        expect(rad('EU-Lonekartlaggning', 0)[7]).toBe('Lönegap kvinnor/män (kvinnors median i % av männens)');
+        expect(cell('EU-Lonekartlaggning', 'B2').v).toMatch(/^Könsuppdelningen är för liten/);
+        expect(cell('EU-Lonekartlaggning', 'C2')).toMatchObject({ t: 's', v: '17 (14/3)' });
+        expect(cell('EU-Lonekartlaggning', 'F2')).toMatchObject({ t: 's', v: 'Gruppens median 28 800 kr' });
+        expect(wb.Sheets['EU-Lonekartlaggning']['!merges']).toContainEqual({ s: { r: 1, c: 5 }, e: { r: 1, c: 6 } });
+        expect(wb.Sheets['EU-Lonekartlaggning'].G2).toBeUndefined();
+        expect(cell('EU-Lonekartlaggning', 'H2')).toMatchObject({ t: 's', v: '–' });   // data-sort-value="0" är ett sorteringsvärde, inte ett gap
         expect(wb.Sheets['EU-Lonekartlaggning']['!ref']).toBe('A1:H6');            // detaljkolumnen följer inte med
     });
     it('Prioritering: avvikelsen i procent, kronor i kronor, antal kvinnor/män som text, statusen som text', () => {
         const r0 = rad('Prioritering', 0);
-        expect(r0[9]).toBe('Lönegap kvinnor/män (%), negativt tal = kvinnor lägre');
-        expect(cell('Prioritering', 'E2')).toMatchObject({ t: 's', v: '14/3' });     // inte 14 mars
-        expect(cell('Prioritering', 'H2')).toMatchObject({ t: 'n', v: -4, z: PCT2 }); // inte −0.04
-        expect(cell('Prioritering', 'I2')).toMatchObject({ t: 'n', v: -1200, z: KR });
-        expect(cell('Prioritering', 'M2')).toMatchObject({ t: 's', v: 'Följ upp' });  // inte prioriteringsindexet
+        expect(r0[10]).toBe('Lönegap kvinnor/män (%), negativt tal = kvinnor lägre');
+        expect(r0).toHaveLength(14);                                                  // alla kolumner utom Detalj, också de som grundvyn gömmer
+        expect(cell('Prioritering', 'F2')).toMatchObject({ t: 's', v: '14/3' });     // inte 14 mars
+        expect(cell('Prioritering', 'I2')).toMatchObject({ t: 'n', v: -4, z: PCT2 }); // inte −0.04
+        expect(cell('Prioritering', 'J2')).toMatchObject({ t: 'n', v: -1200, z: KR });
+        expect(cell('Prioritering', 'D2')).toMatchObject({ t: 's', v: 'Följ upp' });  // inte prioriteringsindexet
         expect(cell('Prioritering', 'A2').z).toBe('0');
         expect(cell('Prioritering', 'A2').v).toBeCloseTo(16.87, 2);                   // sorteringsvärdet förfinar "17"
     });
@@ -339,8 +341,8 @@ describe('tecknet i EU-lönerapporten (EU 2023/970 art. 9)', () => {
         expect(blad(alla, 'Lika arbete per BAS')[2]).toContain('Kvinnors median i % av mäns');
         expect(blad(alla, 'Lika arbete per BAS').find(r => r[0] === 'B')[6]).toBe(92);
         // EU-Lonekartlaggning byggs ur fliktabellen: rubrik och värde hör ihop (kvoten 92, inte gapet 8 ur data-sort-value).
-        expect(blad(alla, 'EU-Lonekartlaggning')[0][6]).toBe('Lönegap kvinnor/män (kvinnors median i % av männens)');
-        expect(blad(alla, 'EU-Lonekartlaggning')[1][6]).toBe(92);
+        expect(blad(alla, 'EU-Lonekartlaggning')[0][7]).toBe('Lönegap kvinnor/män (kvinnors median i % av männens)');
+        expect(blad(alla, 'EU-Lonekartlaggning')[1][7]).toBe(92);
         expect(t).not.toMatch(/positivt tal = kvinnor lägre \|/);   // ingen kolumn med direktivets tecken
     });
 });

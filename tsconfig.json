@@ -12,7 +12,7 @@
       "dom",
       "dom.iterable"
     ],
-    "types": [],
+    "types": ["node"],
     "strict": true,
     "noImplicitAny": false,
     "strictNullChecks": true,

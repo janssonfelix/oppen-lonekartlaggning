@@ -6,7 +6,7 @@
 // och rangordnar efter ett sammansatt prioriteringsindex.
 /**
  * Bygger prioriteringslistan: beräknar avvikelse mot referens, kostnad för utjämning
- * (inkl. PO-påslag och beräkningsperiod), klassning (Utred/Bevaka/Analysera/OK),
+ * (inkl. PO-påslag och beräkningsperiod), klassning (Börja här/Följ upp/Balanserat/Över referens),
  * jämställdhetsindex, och en sammanvägd prio-poäng (avvikelse·volym·jämställdhet).
  * Driver "Prioritering"-tabben + EU-kartläggningens åtgärdslista.
  * @param {string} reference - Referens-mätsticka: 'stallningstagande'|'statistik'
@@ -192,6 +192,10 @@ function _fmtCost(kr) {
     return Math.round(kr) + ' kr';
 }
 
+// Kolumnerna som prioriteringslistans grundvy gömmer bakom Fler kolumner (data-kol i src/index.html).
+// Median och Referens göms också: utan dem ryms grundvyn vid 1280 px med menyn utfälld, och Avvikelse % säger hur de
+// förhåller sig. Båda står i beviset (förstoringsglaset), liksom Kv/Mä, avvikelsen i kronor, kostnaden per person och bristyrket.
+const PRIO_DOLDA_KOLUMNER = ['kvma', 'median', 'referens', 'avvikelsekr', 'kostnadpers', 'brist'];
 function renderPrioritering() {
     const ref = _selectedPrioReference();
     const empty   = document.getElementById('prio-empty');
@@ -238,7 +242,7 @@ function renderPrioritering() {
     const anpassat = JSON.stringify(state.prioConfig) !== JSON.stringify(PRIO_CONFIG_DEFAULTS);
     _laNyckel('nyckel-pr-installningar', anpassat ? 'Anpassade värden' : 'Standardvärden', anpassat);
     const costPerEl = document.getElementById('prio-stat-cost-period');
-    if (costPerEl) costPerEl.textContent = `${state.costSettings.months} mån, inkl ${svPct(state.costSettings.poPct, 2)} PO`;
+    if (costPerEl) costPerEl.textContent = `${state.costSettings.months} månader, inkl. PO-påslag ${svPct(state.costSettings.poPct, 2)}`;
 
     // Sätt rang per item (matchar tabellen)
     items.forEach((it, idx) => { it.rank = idx + 1; });
@@ -262,7 +266,7 @@ function renderPrioritering() {
         if (paretoSummary) {
             paretoSummary.innerHTML = `
                 <div class="farg-primary fw-700 marg-b-4">Total: ${_fmtCost(totalParetoCost)}</div>
-                <div class="text-dampad-xs marg-b-6">${state.costSettings.months} mån × ${svPct(state.costSettings.poPct, 2)} PO</div>
+                <div class="text-dampad-xs marg-b-6">${state.costSettings.months} månader × PO-påslag ${svPct(state.costSettings.poPct, 2)}</div>
                 <div>Topp <strong>${n50}</strong> grupper = 50%</div>
                 <div>Topp <strong>${n80}</strong> grupper = 80%</div>
                 <div class="finstilt">Alla under-betalda grupper sammanställda. Fokus på topp 80%-gränsen ger maximal kostnadseffekt.</div>
@@ -325,12 +329,12 @@ function renderPrioritering() {
             ['Åtgärdskostnad', `<code>|avvikelse kr/mån| × ${state.costSettings.months} mån × (1 + ${svPct(state.costSettings.poPct, 2)}/100) × antal personer</code> (endast om under referens, inkl PO-påslag)`],
             ['Prioriteringsindex', `<code>riktningsvikt × (avvikelse·${state.prioWeights.avvikelse}% + volym·${state.prioWeights.volym}% + jämställdhet·${state.prioWeights.jamstalldhet}%)</code>, skala 0-100`],
             ['Riktningsvikt', '1.0 om under referens, 0.5 om över (under-betalning vägs tyngre)'],
-            ['Status', `Prioriterad utredning om avvikelse &lt; ${state.prioConfig.atgardThreshold}% och n ≥ ${state.prioConfig.akutMinN} · Utredning rekommenderas om avvikelse &lt; ${state.prioConfig.atgardThreshold}% · Följ upp om &lt; ${state.prioConfig.bevakaThreshold}% · Översyn rekommenderas om &gt; +${state.prioConfig.analyseraThreshold}%`]
+            ['Status', `Börja här om avvikelsen är under ${state.prioConfig.atgardThreshold} % och gruppen har minst ${state.prioConfig.akutMinN} personer · Värt att granska om avvikelsen är under ${state.prioConfig.atgardThreshold} % i en mindre grupp · Följ upp om den är under ${state.prioConfig.bevakaThreshold} % · Över referens om den är över +${state.prioConfig.analyseraThreshold} % · Balanserat däremellan`]
         ],
         notes: [
             `Aktuell referens: <strong>${ref === 'stallningstagande' ? esc(referensNamn()) + ' (per BAS)' : 'jämförelsestatistiken (per AID)'}</strong>`,
-            ...(JSON.stringify(state.prioConfig) !== JSON.stringify(PRIO_CONFIG_DEFAULTS) ? [`<strong>${ikon('kugghjul')} Anpassad konfiguration aktiv</strong> – tröskelvärdena har justerats från standardvärdena (Utredning: -5%, "Snarast"-volym: 10, Uppföljning: -2%, Granskning: +5%)`] : []),
-            'Tabellen visar topp 30 grupper rankade efter prioriteringsindex',
+            ...(JSON.stringify(state.prioConfig) !== JSON.stringify(PRIO_CONFIG_DEFAULTS) ? [`<strong>${ikon('kugghjul')} Anpassad konfiguration aktiv</strong> – tröskelvärdena har justerats från standardvärdena (Börja här: −5 % och minst 10 personer, Följ upp: −2 %, Över referens: +5 %)`] : []),
+            'Tabellen visar de 30 högst prioriterade grupperna',
             'Bubbeldiagrammets storlek = årskostnad, x = avvikelse, y = antal personer (log skala)'
         ]
     });
@@ -372,6 +376,7 @@ function renderPrioritering() {
             <td class="sticky-col-1" data-sort-value="${i.priorityIndex}"><div class="rund-12 inline-block fs-sm fw-700 min-bredd-36 pad-3-8 ta-mitt ${i.priorityIndex>60?'bricka-kritisk':i.priorityIndex>40?'bricka-varning':'bricka-neutral'}">${svTal(i.priorityIndex, 0)}</div></td>
             <th scope="row" class="sticky-col-2 ram-b-1-kant fs-md fw-normal ta-vanster">${esc(i.yrke)}${quickwinBadge}${bristBadge}${powerBadge}</th>
             <td>${esc(i.bas)}</td>
+            <td class="t-mitt" data-sort-value="${i.priorityIndex}"><span class="rund-12 inline-block fs-xs fw-600 pad-3-10 ${statusInfo.klass}">${statusInfo.icon ? statusInfo.icon + ' ' : ''}${statusInfo.label}</span></td>
             <td class="t-hoger">${i.n}</td>
             <td class="t-mitt">${i.kvN}/${i.maN}</td>
             <td class="t-hoger" data-sort-value="${i.median}">${fmt.format(Math.round(i.median))}</td>
@@ -381,14 +386,13 @@ function renderPrioritering() {
             <td class="t-hoger">${gapBar}</td>
             <td class="t-hoger${i.costPerPerson > 0 ? ' f-kritisk' : ''}" data-sort-value="${i.costPerPerson}">${costPerPersonTxt}</td>
             <td class="fw-600 ta-hoger" data-sort-value="${costSort}">${costTxt}</td>
-            <td class="t-mitt" data-sort-value="${i.priorityIndex}"><span class="rund-12 inline-block fs-xs fw-600 pad-3-10 ${statusInfo.klass}">${statusInfo.icon ? statusInfo.icon + ' ' : ''}${statusInfo.label}</span></td>
             <td class="t-mitt">
                 <input type="checkbox" class="brist-toggle" data-aid="${esc(i.aid)}" ${i.isBrist ? 'checked' : ''} aria-label="Markera ${esc(i.yrke)} som bristyrke">
             </td>
-            <td class="ta-mitt ingen-radbrytning">
+            <td class="ta-mitt prio-detalj"><div class="prio-detalj-knappar">
                 <button class="row-cross-link" data-target="rapport" data-yrke="${esc(i.yrke)}" data-bas="${esc(i.bas)}" title="Öppna i Löneöversikten" aria-label="Öppna ${esc(i.yrke)} i Löneöversikten">${ikon('pilUt', 14)}</button>${suggestionBtn}
                 <button class="btn-evidence" data-prio-row="1" type="button" title="Visa beräkningen bakom prioritetsindex" aria-label="Visa bevis för ${esc(i.yrke)}">${ikon('sok')}</button>
-                <button class="btn-evidence" data-open-dossier="${esc(i.aid)}|${esc(i.bas)}" type="button" title="Öppna gruppdossiern — allt om denna grupp på en sida" aria-label="Öppna gruppdossier för ${esc(i.yrke)}">${ikon('dokument')}</button>
+                <button class="btn-evidence" data-open-dossier="${esc(i.aid)}|${esc(i.bas)}" type="button" title="Öppna gruppdossiern — allt om denna grupp på en sida" aria-label="Öppna gruppdossier för ${esc(i.yrke)}">${ikon('dokument')}</button></div>
             </td>
         `;
         // Cache item-referensen på TR så suggestion-handler kan plocka upp den
@@ -396,6 +400,8 @@ function renderPrioritering() {
         tbody.appendChild(tr);
     });
     tillampaDataStil(tbody);
+    // Grundvyn gömmer det sekundära; talen finns också i beviset (förstoringsglaset).
+    flerKolumner('prio-table', PRIO_DOLDA_KOLUMNER, 'prio');
 
     // Bevis-popup för prio-rader
     tbody.querySelectorAll('.btn-evidence[data-prio-row]').forEach(btn => {
@@ -434,6 +440,7 @@ function renderPrioritering() {
                 newTr.innerHTML = `<td colspan="${colCount}"><div class="motivation-suggestions"><strong>${ikon('lampa')} Hypoteser att granska för ${esc(item.yrke)} / BAS ${esc(item.bas)}:</strong><ul>${items}</ul><p class="text-dampad-xs kursiv marg-t-6">Förslagen är regelbaserade frågeställningar — inte färdiga motiveringar. Verifiera mot data och dokumentera i kommentarsfältet ovan.</p></div></td>`;
             }
             /** @type {HTMLElement} */ (tr.parentNode).insertBefore(newTr, tr.nextSibling);
+            tillampaFlerKolumner('prio-table');   // radens colspan följer kolumnerna som syns
             btn.setAttribute('aria-expanded', 'true');
             btn.textContent = 'Stäng';
         });

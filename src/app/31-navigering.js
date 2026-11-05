@@ -37,7 +37,7 @@ document.querySelectorAll(".nav-item").forEach(btn => {
         document.querySelectorAll(".nav-item").forEach(t => t.classList.remove("active"));
         btn.classList.add("active");
         const titles = {
-            dashboard: 'Översikt & Data',
+            dashboard: 'Översikt',
             kon: 'Ålder & karriär', dokumentera: 'Dokumentera & exportera',
             benchmark: 'Jämförelse', matrix: 'Lika arbete',
             bestammelser: 'Regler & praxis',
@@ -52,6 +52,8 @@ document.querySelectorAll(".nav-item").forEach(btn => {
         const titleEl = document.getElementById("page-title");
         if (titleEl) titleEl.textContent = titles[target] || target;
         renderTabContent(target);
+        // En ny flik börjar överst: annars står läsaren kvar där förra fliken slutade (granskning 2026-10-30).
+        window.scrollTo(0, 0);
     });
 });
 
@@ -127,17 +129,17 @@ function _renderTabContent(target) {
         const s2 = document.getElementById("bas-select-demo"); if (s2) renderDemografi(/** @type {HTMLInputElement} */ (s2).value);
     }
     else if (target === "benchmark"    && d.length) { renderReferensOverblick(); renderLonepolitik(); generateBenchmark(); }
-    else if (target === "matrix"       && d.length) { generateSkevhet(); generateEUDirectiveMatrix(); renderPersonerAttGranska(); renderLikaArbeteTopp(); }
+    else if (target === "matrix"       && d.length) { generateSkevhet(); generateEUDirectiveMatrix(); renderPersonerAttGranska(); renderAidBasLika(); renderLikaArbeteTopp(); }
     else if (target === "prioritering" && d.length) renderPrioritering();
     else if (target === "struktur"     && d.length) renderStructure();
     else if (target === "loneoversyn"  && d.length) renderForecast();
-    else if (target === "likvardighet" && (d.length || state.statistik.length)) renderLikvardighet();
+    else if (target === "likvardighet" && (d.length || state.statistik.length)) { renderLikvardighet(); renderAidBasLikvardigt(); }
     else if (target === "utforska"     && d.length) { generateRapport(); renderExplorer(); }
     else if (target === "dokumentera") medExportLage(() => { if (d.length) renderKvalitetssakring(); renderRapportunderlag(); renderExportBesked(); if (typeof renderArsjamforelse === 'function') renderArsjamforelse(); });   // allt här lämnar verktyget (ADR-51)
     else if (target === "dashboard" && d.length) renderOversiktDelar();
     else if (target === "info")  renderInfoTab();
     else if (target === "handlingsplan") renderHandlingsplanSeed();
-    else if (target === "bestammelser") { if (typeof bes8Uppdatera === 'function') bes8Uppdatera(); }
+    else if (target === "bestammelser") { if (typeof bes8Uppdatera === 'function') bes8Uppdatera(); if (typeof bes8Stod === 'function') bes8Stod(); }
     // Sidans navigering hör till fliken som visas. Ritas en annan flik (t.ex. för att
     // kopiera ett diagram därifrån) ska den synliga flikens rader inte flyttas.
     const aktiv = document.querySelector('.nav-item.active')?.getAttribute('data-tab');
@@ -151,7 +153,7 @@ const FLOW_NEXT = {
     bestammelser: { tab: 'matrix',        label: 'Lika arbete' },
     matrix:       { tab: 'likvardighet',  label: 'Likvärdigt arbete' },
     likvardighet: { tab: 'struktur',      label: 'Struktur & rapportmått' },
-    struktur:     { tab: 'prioritering',  label: 'Prioritering & åtgärder' },
+    struktur:     { tab: 'prioritering',  label: 'Prioritering' },
     prioritering: { tab: 'loneoversyn',   label: 'Löneöversyn' },
     loneoversyn:  { tab: 'handlingsplan', label: 'Handlingsplan' },
     handlingsplan:{ tab: 'kon',           label: 'Ålder & karriär' },
@@ -211,8 +213,17 @@ document.addEventListener('click', e => {
     const target = /** @type {HTMLElement} */ (a).dataset.goToTab;
     if (target && typeof navigateTo === 'function') navigateTo(target);
     const ankare = /** @type {HTMLElement} */ (a).dataset.goToAnchor && document.getElementById(/** @type {HTMLElement} */ (a).dataset.goToAnchor || '');
-    if (ankare && typeof ankare.scrollIntoView === 'function') ankare.scrollIntoView({ block: 'start' });
+    if (!ankare) return;
+    oppnaHopfallda(ankare);
+    if (typeof ankare.scrollIntoView === 'function') ankare.scrollIntoView({ block: 'start' });
 });
+/** Fäller ut ett avsnitt som en länk leder till: elementet självt om det är ett hopfällt avsnitt, och varje hopfällt
+ *  avsnitt det ligger i. Annars landar länken på en rubrik vars innehåll inte syns. */
+function oppnaHopfallda(el) {
+    for (let n = el; n; n = n.parentElement) {
+        if (n.tagName === 'DETAILS' && !(/** @type {HTMLDetailsElement} */ (n).open)) /** @type {HTMLDetailsElement} */ (n).open = true;
+    }
+}
 
 // ---- Menyn på smala skärmar ----
 // Under 640 punkter ligger menyn utanför bild (se style.css). Knappen Meny öppnar den över innehållet; den stängs
@@ -233,9 +244,17 @@ document.getElementById('btn-meny')?.addEventListener('click', () => sattMeny(!m
 document.getElementById('meny-skugga')?.addEventListener('click', () => sattMeny(false));
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && menyOppen()) sattMeny(false); });
 document.getElementById('sidomeny')?.addEventListener('click', e => { if (/** @type {HTMLElement} */ (e.target).closest('.nav-item')) sattMeny(false, { fokus: false }); });
-// Fönstret breddas medan menyn är öppen: läget nollställs, annars ligger skuggan kvar när menyn åter är en spalt.
+// Fönstret passerar brytpunkten 640 punkter (åt något håll): menyn stängs, och utan glidning. Breddas fönstret medan
+// menyn är öppen ligger annars skuggan kvar när menyn åter är en spalt; smalnas det av gled spalten ut över
+// innehållet på väg utanför bild. Den smala vyn börjar alltså alltid med menyn stängd; öppnar användaren den själv
+// står den kvar tills något stänger den (ändringar inom samma sida av brytpunkten rör den inte).
+function _menyVidBrytpunkt() {
+    document.body.classList.add('meny-utan-glidning');
+    sattMeny(false, { fokus: false });
+    const av = () => document.body.classList.remove('meny-utan-glidning');
+    if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => requestAnimationFrame(av)); else setTimeout(av, 50);
+}
 if (typeof window.matchMedia === 'function') {
-    const bred = window.matchMedia('(min-width: 641px)');
-    const nollstall = () => { if (bred.matches) sattMeny(false, { fokus: false }); };
-    if (bred.addEventListener) bred.addEventListener('change', nollstall);
+    const smal = window.matchMedia('(max-width: 640px)');
+    if (smal.addEventListener) smal.addEventListener('change', _menyVidBrytpunkt);
 }

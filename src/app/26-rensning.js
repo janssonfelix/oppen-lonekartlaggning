@@ -29,7 +29,7 @@ function clearAllData() {
 const RENSA_BEHALLARE = ['struktur-representation', 'struktur-distribution', 'struktur-eu', 'struktur-sektorer', 'forecast-outcome', 'explore-table',
     'outliers-table-wrap', 'print-report'];
 const RENSA_TABELLER = ['rapport-table', 'matrix-table', 'la-oversikt', 'pag-avvikelse-tabell', 'paygap-table', 'skevhet-table', 'benchmark-table', 'prio-table'];
-const RENSA_OVRIGT = ['action-checklist-container', 'outlier-list', 'data-validation-report', 'reality-check', 'snapshot-comparison', 'consistency-banner', 'process-tracker', 'likvardighet-content', 'blinder-oaxaca-card', 'livscykel-content', 'lonepolitik-content', 'ref-overblick', 'jmf-slutsatser', 'robusthet-body', 'fardigcheck-body', 'rapportunderlag-innehall', 'gap-uppdelning-innehall', 'pag-innehall', 'att-gora-borja'];
+const RENSA_OVRIGT = ['action-checklist-container', 'outlier-list', 'data-validation-report', 'reality-check', 'snapshot-comparison', 'consistency-banner', 'process-tracker', 'likvardighet-content', 'forklaringsmodell-panel', 'blinder-oaxaca-card', 'livscykel-content', 'lonepolitik-content', 'ref-overblick', 'jmf-slutsatser', 'robusthet-body', 'fardigcheck-body', 'rapportunderlag-innehall', 'gap-uppdelning-innehall', 'pag-innehall', 'att-gora-borja', 'aidbas-lika', 'aidbas-individ', 'aidbas-likvardigt', 'aidbas-hierarki'];
 
 function _rensaAllData({ inbakat = true } = {}) {
     if (typeof laMinneSlapp === 'function') laMinneSlapp();   // minnet håller en referens till dataraderna
@@ -42,6 +42,7 @@ function _rensaAllData({ inbakat = true } = {}) {
     // 1. Nolla state-objektet
     state.data = [];
     state.kTroskel = K_STANDARD;      // ADR-38: tillbaka till standard
+    state.lonemanad = '';             // lönemånaden hör till underlaget
     // Organisationspaketets låsningar (ADR-47) följer med paketet; en låst rensningstid går tillbaka till standard.
     const inaktivitetVarLast = state.paketLas.inaktivitetMin != null;
     state.paketLas = { kTroskelLagst: null, inaktivitetMin: null, smaGrupperIExport: true };
@@ -86,6 +87,7 @@ function _rensaAllData({ inbakat = true } = {}) {
     state.rapportUrval = null;
     state.rapportTabeller = [];
     state.perBasRecept = null;
+    state.forklaringsmodell = null;
     // Rensa även historiska snapshots och anteckningar
     state.forecast = { budget: { mode: 'pct', value: null }, generell: { mode: 'pct', value: null }, targets: [], minGroupN: 10, roundStep: 0, years: 1, scenarios: { A: null, B: null }, result: null };
     // Rensa även beräkningscacher som kan innehålla
@@ -114,7 +116,7 @@ function _rensaAllData({ inbakat = true } = {}) {
     // Urvalsraden i Ålder & karriär bär flikens BAS-väljare, som hör till sidan: där töms bara texten bredvid.
     document.querySelectorAll('.slutsatser, .urvalsrad:not(#ak-urval)').forEach(el => { el.innerHTML = ''; });
     { const t = document.getElementById('ak-urval-text'); if (t) t.textContent = ''; }
-    document.querySelectorAll('.avsnitt-nyckel').forEach(el => { el.textContent = ''; el.classList.remove('ar-kritisk'); });
+    document.querySelectorAll('.avsnitt-nyckel').forEach(el => { el.textContent = ''; el.classList.remove('ar-kritisk', 'ar-granska'); });
     if (typeof _rfRensaAlla === 'function') _rfRensaAlla();
     // Exportmenyerna har också id som börjar med chart- (chart-export-N): de är inte diagram och ska stå kvar.
     document.querySelectorAll('[id^="chart-"]:not(.chart-export-meny)').forEach(el => {
@@ -125,6 +127,10 @@ function _rensaAllData({ inbakat = true } = {}) {
     // § 8-ställningens bedömningar (status + anteckning) — nollställ
     document.querySelectorAll('.bes8-field').forEach(el => { /** @type {HTMLInputElement} */ (el).value = ''; });
     if (typeof bes8Uppdatera === 'function') bes8Uppdatera();
+    if (typeof bes8Stod === 'function') bes8Stod();
+    // Handlingsplanens ifyllda fält (sakligt skäl, ansvarig, tidsplan, status) — nollställ och rita mallen tom
+    state.handlingsplan = {};
+    if (typeof renderHandlingsplanSeed === 'function') renderHandlingsplanSeed();
     const dashSummary = document.getElementById('dashboard-summary');
     if (dashSummary) dashSummary.style.display = 'none';
     const ukPanel = document.getElementById('underlagets-kvalitet');

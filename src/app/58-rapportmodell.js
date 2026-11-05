@@ -57,6 +57,7 @@ const RM_DIAGRAM = [
     { id: 'chart-skevhet-overview', flik: 'matrix', avsnitt: 'struktur', rubrik: 'Kvinnors medianlön i procent av mäns, per BAS-intervall — samma kvot och intervall som tabellen ovan' },
     { id: 'chart-skevhet-andel', flik: 'matrix', avsnitt: 'struktur', rubrik: 'Könsfördelning per BAS-intervall' },
     { id: 'chart-struktur-kvartiler', flik: 'struktur', avsnitt: 'struktur', rubrik: 'Kvinnor och män per lönekvartil' },
+    { id: 'chart-struktur-tradkarta', flik: 'struktur', avsnitt: 'struktur', rubrik: 'Organisationen som karta — en yta per yrkesgrupp, storleken är antalet personer och färgen andelen kvinnor' },
     { id: 'chart-perbas-gap', flik: 'matrix', avsnitt: 'lika', rubrik: 'Oförklarat lönegap per BAS-intervall' },
     { id: 'chart-la-tratt', flik: 'matrix', avsnitt: 'lika', rubrik: 'Yrkesgrupperna mot slumpens gränser — kvinnors medianlön i procent av mäns mot gruppens storlek',
       // Samma förbehåll som under diagrammet på skärmen, räknat ur den ritade figuren.
@@ -235,9 +236,9 @@ function rmReferenserAvsnitt(diagram) {
         { typ: 'stycke', text: 'Ställningstagandet är referenspunkten: löneläget och statistiken mäts mot det. Läget säger var gruppen ligger, inte om en lön är rätt eller fel. Yrkesgrupper under minsta gruppstorlek redovisas inte.', stil: 'dampad' },
         { typ: 'tabell', nyckel: true, kolumner: [{ rubrik: '', typ: 'text' }, { rubrik: '', typ: 'text' }], rader: tal },
         { typ: 'tabell', kolumner: [{ rubrik: 'Yrkesgrupp', typ: 'text' }, { rubrik: 'n', typ: 'antal' }, { rubrik: 'Median', typ: 'kr' },
-            ...(harStallningstagande ? [{ rubrik: 'Mot ställningstagandet', typ: 'pct1' }] : []), ...(harStatistik ? [{ rubrik: 'Mot statistiken', typ: 'pct1' }] : []), { rubrik: 'Mönster', typ: 'text' }],
+            ...(harStallningstagande ? [{ rubrik: 'Mot ställningstagandet', typ: 'pct1' }] : []), ...(harStatistik ? [{ rubrik: 'Mot statistiken', typ: 'pct1' }] : []), { rubrik: 'Läge och förslag', typ: 'text' }],
           rader: o.grupper.map(g => [`${g.yrke} · BAS ${g.bas}`, g.n, g.org.median,
-            ...(harStallningstagande ? [pct(g.org.median, g.stallningstagande.median)] : []), ...(harStatistik ? [pct(g.org.median, g.statistik.median)] : []), g.monster.text]) },
+            ...(harStallningstagande ? [pct(g.org.median, g.stallningstagande.median)] : []), ...(harStatistik ? [pct(g.org.median, g.statistik.median)] : []), g.lageOchForslag]) },
         ...diagram('referenser'),
     ];
     if (o.statistikMotStallningstagande.length) delar.push({ typ: 'rubrik', niva: 3, text: 'Statistiken mot ställningstagandet' },
@@ -292,9 +293,6 @@ function _rapportModellExport({ alla = false, bada = false } = {}) {
     const konOk = _konFarRedovisas(kvN, maN);
     const medKv = Stat.median(d.filter(arKv).map(r => r.lon)), medMa = Stat.median(d.filter(arMa).map(r => r.lon));
     const reg = typeof runOLSRegression === 'function' ? runOLSRegression() : null;
-    const prioRef = /** @type {HTMLInputElement} */ (document.querySelector('input[name="prio-ref"]:checked'))?.value || 'stallningstagande';
-    const prio = (state.policy.length || state.statistik.length) && typeof computePrioritization === 'function' ? computePrioritization(prioRef) : [];
-    const flaggade = prio.filter(i => i.status === 'akut' || i.status === 'atgard');
     const lvRes = typeof computeLikvardighetPairs === 'function' ? likvardighetResultat() : null;
     const { par, utelamnade: parUtelamnade, not: parNot } = _parForRedovisning(lvRes && lvRes.pairs);   // som rapportunderlaget
     const rep = typeof _stRepresentationByBas === 'function' ? (_stRepresentationByBas(d, { k }) || []) : [];
@@ -343,17 +341,18 @@ function _rapportModellExport({ alla = false, bada = false } = {}) {
     // ---- 3. Lika arbete ----
     /** @type {{id: string, rubrik: string, utelamnat: string[], delar: any[], [k: string]: any}} */
     const lika = { id: 'lika', numrerad: true, rubrik: 'Lika arbete — kvinnor och män i samma yrke', utelamnat: [], delar: [
-        dampad('Den löneskillnad som står kvar när ålder och nivå räknats bort, samt de yrkesgrupper där kvinnors och mäns medianlön skiljer sig mer än 5 % och därför behöver förklaras med sakliga skäl eller åtgärdas.'),
+        dampad(`Den löneskillnad som står kvar ${reg && !reg.error ? (reg.fras ? `när ${reg.fras} räknats bort` : 'utan att något räknats bort') : 'när ålder och nivå räknats bort'}, samt de yrkesgrupper där kvinnors och mäns medianlön skiljer sig mer än 5 % och därför behöver förklaras med sakliga skäl eller åtgärdas.`),
         dampad(AID_METODTEXT),
     ] };
     if (reg && !reg.error) {
         lika.delar.push({ typ: 'tabell', nyckel: true, kolumner: [{ rubrik: '', typ: 'text' }, { rubrik: '', typ: 'text' }], rader: [
             // Det råa gapet är ett beskrivande könsuppdelat mått och följer tröskeln (_raGapText).
             ['Kvinnors medianlön i procent av mäns', _raGapText(reg, v => rmAndelAvMan(v, 1))],
-            ['Löneskillnad som står kvar efter ålder och nivå', { text: `${rmCell(reg.konPct, 'tecken2')} (95 % KI: ${svTal(reg.konPctLow, 2)} till ${svPct(reg.konPctHigh, 2)}; ${_formatPValue(reg.pValue)})`, fet: true }],
+            [reg.fras ? `Löneskillnad som står kvar efter ${reg.fras}` : 'Löneskillnad, inget räknat bort', { text: `${rmCell(reg.konPct, 'tecken2')} (95 % KI: ${svTal(reg.konPctLow, 2)} till ${svPct(reg.konPctHigh, 2)}; ${_formatPValue(reg.pValue)})`, fet: true }],
             ['Modell', `log(lön) ~ ${reg.modelDesc} · ${reg.n} obs · R² ${svPct(reg.R2 * 100, 1)}`],
         ] });
-        lika.delar.push(dampad('Löneskillnaden efter ålder och nivå anges som en skillnad i procent: negativ när kvinnor ligger lägre.'));
+        lika.delar.push(dampad(`Löneskillnaden ${reg.fras ? `efter ${reg.fras}` : 'utan kontroller'} anges som en skillnad i procent: negativ när kvinnor ligger lägre.`));
+        for (const b of reg.bortvalt || []) lika.delar.push(dampad(_ruBortvaltNotering(b)));
     } else {
         lika.delar.push(dampad('Underlaget räcker inte för att räkna fram den justerade löneskillnaden.'));
     }
@@ -426,13 +425,17 @@ function _rapportModellExport({ alla = false, bada = false } = {}) {
     const arsjamf = d.length ? rmArsjamforelseAvsnitt(diagram) : null;
 
     // ---- 6. Åtgärder och tidsplan ----
+    // Tabellen är handlingsplanen från fliken (samma förifyllning, som redan utelämnar par under tröskeln), med det som
+    // fyllts i där; ett tomt fält står kvar att fylla i.
+    const hp = typeof _handlingsplanSeedRows === 'function' ? _handlingsplanSeedRows().rows : [];
+    const hpFalt = v => v || { text: '[HR fyller i]', fyllIn: true };
     /** @type {{id: string, rubrik: string, utelamnat: string[], delar: any[], [k: string]: any}} */
     const atgarder = { id: 'atgarder', numrerad: true, rubrik: 'Åtgärder och tidsplan', utelamnat: [], delar: [
-        dampad('Planerade lönejusteringar och andra åtgärder, med beslut, ansvar och tidsplan. Tabellen listar de grupper som ligger under referensen enligt prioriteringen, med uppskattad kostnad för att nå den.'),
-        flaggade.length
-            ? { typ: 'tabell', kolumner: [{ rubrik: 'Grupp', typ: 'text' }, { rubrik: 'Uppskattad kostnad', typ: 'krAr' }, { rubrik: 'Beslutad åtgärd (fyll i)', typ: 'fyllIn' }, { rubrik: 'Ansvarig (fyll i)', typ: 'fyllIn' }, { rubrik: 'Klart senast (fyll i)', typ: 'fyllIn' }],
-                rader: flaggade.slice(0, 20).map(it => [`${it.yrke} (BAS ${it.bas})`, it.annualGapTotal ? Math.round(it.annualGapTotal) : null, '', '', '']) }
-            : dampad('Inga prioriterade åtgärdsgrupper (ingen referensdata uppladdad).'),
+        dampad('Planerade lönejusteringar och andra åtgärder, med beslut, ansvar och tidsplan. Tabellen är handlingsplanen: de grupper som ligger under referensen enligt prioriteringen och kandidatparen i likvärdigt arbete, med uppskattad kostnad och det som fyllts i på fliken Handlingsplan.'),
+        hp.length
+            ? { typ: 'tabell', kolumner: [{ rubrik: 'Grupp', typ: 'text' }, { rubrik: 'Underlag', typ: 'text' }, { rubrik: 'Uppskattad kostnad', typ: 'krAr' }, { rubrik: 'Sakligt skäl prövat?', typ: 'fyllIn' }, { rubrik: 'Ansvarig', typ: 'fyllIn' }, { rubrik: 'Tidsplan (senast inom tre år)', typ: 'fyllIn' }, { rubrik: 'Status', typ: 'fyllIn' }],
+                rader: hp.map(r => [r[1], r[2], r[4] ? Math.round(r[4]) : null, hpFalt(r[3]), hpFalt(r[5]), hpFalt(r[6]), hpFalt(r[7])]) }
+            : dampad(state.policy.length || state.statistik.length ? 'Inga grupper under referensen och inga kandidatpar att föra in i handlingsplanen.' : 'Inga prioriterade åtgärdsgrupper (ingen referensdata uppladdad).'),
         fyllIn('Besluta åtgärder, budget och tidsplan (lönejusteringar ska genomföras så snart som möjligt och senast inom tre år). Beskriv även förebyggande åtgärder.'),
     ] };
 
@@ -459,18 +462,21 @@ function _rapportModellExport({ alla = false, bada = false } = {}) {
                 ['Antal observationer', `${reg.n} (kvinnor: ${reg.nKvAnalysed}, män: ${reg.nMaAnalysed})`],
                 ['Kvinnors medianlön i procent av mäns', _raGapText(reg, v => rmAndelAvMan(v, 1))],
                 [`Oförklarad skillnad${kritisk ? ' (över 5 % och statistiskt säkerställd)' : ''}`, { text: `${rmCell(reg.konPct, 'tecken2')} (95 % KI: ${svTal(reg.konPctLow, 2)} till ${svTal(reg.konPctHigh, 2)}, ${_formatPValue(reg.pValue)}, t = ${svTal(reg.tStat, 2)}; HC3 robust SE)`, fet: true }],
-                ['Ålderseffekt', `${rmCell(reg.ageEffect, 'tecken2')} per år`],
+                ...(reg.ageEffect != null ? [['Ålderseffekt', `${rmCell(reg.ageEffect, 'tecken2')} per år`]] : []),
                 ['R² / justerad R²', `${svPct(reg.R2 * 100, 1)} / ${svPct(reg.adjR2 * 100, 1)}`],
-                ['BAS-intervall i modellen', `${reg.nBas} (${reg.basList[0]}–${reg.basList[reg.basList.length - 1]}; indikatorvariabler, ${reg.basRef} är referens)`],
+                ...(reg.basRef != null && !reg.modell.yrkesgrupp ? [['BAS-intervall i modellen', `${reg.nBas} (${reg.basList[0]}–${reg.basList[reg.basList.length - 1]}; indikatorvariabler, ${reg.basRef} är referens)`]] : []),
+                ...(reg.modell.yrkesgrupp && reg.yrkesSteg ? [['Yrkesgrupper i modellen', `${reg.yrkesSteg.nGrupper} grupper (AID inom BAS; fasta effekter), ${reg.yrkesSteg.nGrupperBada} med båda könen`]] : []),
                 ...(reg.basEffekter ? [['BAS-effekter', `nivå mot BAS ${reg.basRef}: ${reg.basEffekter.map(e => `${e.bas} ${rmCell(e.pct, 'tecken2')} (${_formatPValue(e.p)})`).join('; ')}`]] : []),
             ]));
-        if (reg.fellBackFromFull && reg.diagnostics.length) regression.delar.push(stycke(`Notering: fullmodellen kunde inte skattas. Föll tillbaka till ${reg.modelDesc}. ${reg.diagnostics.map(utanTaggar).join(' ')}`));
+        // Det bortvalda (ADR-56): en mening per variabel, med skälet.
+        for (const b of reg.bortvalt || []) regression.delar.push(stycke(_ruBortvaltNotering(b)));
+        if (reg.fellBackFromFull && reg.diagnostics.length) regression.delar.push(stycke(`Notering: den valda modellen kunde inte skattas. Föll tillbaka till ${reg.modelDesc}. ${reg.diagnostics.map(utanTaggar).join(' ')}`));
         regression.delar.push({ typ: 'rubrik', niva: 3, text: 'Sekventiell dekomponering' },
             { typ: 'tabell', kolumner: [{ rubrik: 'Modell', typ: 'text' }, { rubrik: 'Lönegap', typ: 'tecken2' }, { rubrik: 'R²', typ: 'pct1' }],
               rader: stegUt.steg.map(st => (st.status !== 'ok' ? [st.name, { text: st.status === 'singular' ? 'singulär' : 'för få obs' }, null] : [st.name, st.gapPct, st.R2 * 100])) });
         if (reg.yrkesSteg?.status === 'ok') regression.delar.push(stycke(`Steget + Yrkesgrupp: ${utanTaggar(_yrkesStegText(reg.yrkesSteg))}`));
         if (stegUt.utelamnat) { regression.delar.push(stycke(stegUt.not, 'not')); regression.utelamnat.push('första steget i dekomponeringen (ett kön under tröskeln)'); }
-        else if (stegUt.explainedShare !== null) regression.delar.push(stycke(`Strukturellt förklarad andel: ${svPct(stegUt.explainedShare, 0)} av råa gapet förklaras av strukturella variabler (ålder och BAS-intervall). Oförklarad rest: ${svPct(100 - stegUt.explainedShare, 0)}.`));
+        else if (stegUt.explainedShare !== null) regression.delar.push(stycke(`Strukturellt förklarad andel: ${svPct(stegUt.explainedShare, 0)} av råa gapet förklaras av strukturella variabler (${reg.fras === 'ålder och nivå' ? 'ålder och BAS-intervall' : reg.fras}). Oförklarad rest: ${svPct(100 - stegUt.explainedShare, 0)}.`));
         const perBas = (reg.perBas || []).filter(pb => pb.status === 'ok');
         if (perBas.length) regression.delar.push({ typ: 'rubrik', niva: 3, text: 'Per BAS-intervall (separata regressioner)' },
             { typ: 'tabell', kolumner: [{ rubrik: 'BAS', typ: 'text' }, { rubrik: 'N', typ: 'antal' }, { rubrik: 'Kvinnor / män', typ: 'text' }, { rubrik: 'Oförklarat gap', typ: 'tecken2' }, { rubrik: 'Signifikans', typ: 'text' }, { rubrik: 'Över 5 % och säkerställd', typ: 'text' }],
@@ -561,7 +567,7 @@ function rmTillHtml(m, { utskrift = false, bilder = null } = {}) {
 function rmBesked(m) {
     const delar = m.avsnitt.flatMap(a => a.delar);
     return { avsnitt: m.avsnitt.length, tabeller: delar.filter(p => p.typ === 'tabell').length, diagram: delar.filter(p => p.typ === 'diagram').length,
-        fyllIn: delar.filter(p => p.typ === 'fyllIn').length, utelamnat: m.avsnitt.flatMap(a => a.utelamnat || []), urval: m.urval };
+        fyllIn: delar.filter(p => p.typ === 'fyllIn').length, utelamnat: [...new Set(m.avsnitt.flatMap(a => a.utelamnat || []))], urval: m.urval };
 }
 
 /**

@@ -8,20 +8,154 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ### Analys
 
-- **Jämförelse mot båda referenserna (ADR-55).** Fliken Jämförelse visar per yrkesgrupp var löneläget och
-  jämförelsestatistiken ligger mot ställningstagandet, som är referenspunkten: skillnaden percentil för percentil,
-  läget i spannet, mönstret i ord, ett förslag på referens, en bild med de tre spannen och tabellen statistiken mot
-  ställningstagandet. Vyn använder den referens som finns och säger vilken som saknas.
+- **Spärr mot särskilda kategorier av personuppgifter.** Lönefilen avvisas när en kolumnrubrik antyder fackmedlemskap,
+  hälsa, sjukfrånvaro, diagnos, etnicitet, religion, politisk tillhörighet, sexuell läggning, funktionsnedsättning,
+  genetik eller biometri — som identifierare avvisades redan. Bara rubriken prövas (lagrum.md, C23b).
+
+### Dokumentation
+
+- **Ansvar och roller, styrning och övertagande.** README har ett avsnitt *Ansvar och roller* (personuppgiftsansvar,
+  cyberresiliensakten och produktansvarsdirektivet, AI-förordningen, lagrummens status *Förslag*), med artiklarna i ett
+  nytt avsnitt *Produkt- och säkerhetsregler* i `docs/utveckling/lagrum.md`. `GOVERNANCE.md` säger vem som beslutar, hur
+  en version släpps och vad som gäller om projektet slutar underhållas; `CODE_OF_CONDUCT.md` är en svensk bearbetning
+  av Contributor Covenant 2.1. `docs/anvandare/overta-verktyget.md` beskriver hur en organisation bygger, ändrar,
+  signerar och sprider sin egen version. Raden om svensk lag om lönetransparens i `lagrum.md` är uppdaterad till
+  läget i oktober 2026.
+
+### Utveckling
+
+- **Programvaruförteckning (SBOM) på releasen.** `npm run sbom` (`tools/sbom.mjs`) skriver `dist/sbom.cdx.json` i
+  CycloneDX med de fyra inbyggda biblioteken (version, licens, kontrollsumma) och artefaktens kontrollsumma;
+  release-arbetsflödet signerar den som de andra filerna. Deterministisk, utan beroenden.
+
+## 2026.11.05
 
 ### Gränssnitt
 
-- **Lönepolitik är ett avsnitt i Jämförelse.** Fliken har tre avsnitt: överblick, mot ställningstagandet (dagens
-  Lönepolitik) och mot jämförelsestatistiken. Växeln *Jämför mot* är borttagen, och fliken syns så snart underlaget och
-  en referens är inlästa. Länkar till Lönepolitik leder till Jämförelse.
-- **Dokumentera & exportera är menyns sista steg,** efter Fördjupa, och *Klar här?*-raderna går genom fördjupningen dit.
+- **Inga bilder i stilmallen.** Sorteringspilarna i tabellhuvuden och hänglåsen på låsta menyflikar och före noten om
+  dolda grupper ritades som masker ur inbäddade `data:`-adresser; webbläsarens nätverkspanel visade dem som hämtningar
+  fast inget lämnade datorn. Pilarna ritas nu med kanter i CSS, menyns hänglås är en inline-SVG i knappen och notens
+  hänglås två pseudo-element, och röktestet kräver att stilmallen inte har någon `url(`.
+- **Samma ord, färger och mått i alla flikar.** En skillnad mot 3- och 5-procentsgränserna heter *Balanserat*,
+  *Följ upp* eller *Värt att granska* i alla flikar, diagram och exporter, med samma färg och symbol (lila för *Värt
+  att granska*, också i Lika arbetes BAS-översikt och Utforska); *Börja här* och *Över referens* finns bara i
+  Prioritering, och Förklaringen listar orden en gång med färg och märke bundna till ordet. Nyckeltalsraderna visar
+  ett mått, kvinnors lön i % av mäns: regressionens oförklarade skillnad i Lika arbete och livscykelmodellens tal vid
+  25 och 65 år räknas om, och kortet längre ned säger hur dess skillnad hänger ihop med nyckeltalet; rågapet på
+  Översikt har neutral färg, det är en utgångspunkt, inget fynd. Etiketterna säger vad de betyder: *Som i exporten* i
+  stället för *Som export*, *Kvinnodominerad*, *Mansdominerad* och *Könsblandad* i Lika arbetes kolumn Dominans,
+  *Summa för gruppen (kr/mån)* med verktygstips i Likvärdigt arbete, Excel-bladen och beviset, och Nästa steg-knappen
+  till Prioritering heter som menyn. Utforskas rubriker skriver BAS och AID med versaler, Heatmap heter Värmekarta,
+  och "Hur används denna flik vid..." heter *Så används fliken i arbetet*.
+- **Resultatet först, och breda tabeller utan rullist.** Lika arbete öppnar med tabellen *Kvinnor och män i samma
+  yrkesgrupp* och trattdiagrammet under den; tabellen per BAS-intervall och *Lönegap per BAS-intervall* är ett avsnitt
+  i Fördjupning, efter Personer att granska, beviset för en rad står vid intervallets namn, diagrammen med samma kvot
+  och samma kronor som tabellen visas inte längre (kvotbilden följer med i rapporten) och länkarna i Att göra fäller
+  ut avsnittet de leder till. Översikt har Att göra direkt under nyckeltalen, kartan över organisationen står bara i
+  Struktur & rapportmått och lönekvartilerna står efter Att göra i hela bredden. Utforska har två öppna avsnitt,
+  *Löneöversikt — alla BAS-intervall* och *Egna vyer*, och diagramtypsväljaren grupperna *Vanliga* (Automatisk,
+  Staplar, Liggande staplar, Låddiagram, Grupperade staplar) och *Fler diagramtyper*. Dokumentera & exportera är
+  menyns sista steg, efter Fördjupa, och *Klar här?*-raderna går genom fördjupningen dit; fliken har bara exporter
+  som rader, de fyra raderna med *Öppna fliken* är en rad med länkar till Likvärdigt arbete, Struktur & rapportmått,
+  Prioritering och Löneöversyn, och fältet *Organisation* står intill *Generera PDF* med en mening om att namnet
+  skrivs på rapportens försättsblad och hämtas från organisationspaketet. I Löneöversyn står *Föreslå fördelning mot
+  osakliga gap* också i rutan Budget (pott), aktiv när en pott är angiven; knappen fäller ut Riktade potter och rullar
+  dit, och lönesumman säger "från …" bara när den ändrats. Prioriteringslistan, yrkesgruppstabellen i Lika arbete och
+  kandidatparen i Likvärdigt arbete visar det viktigaste först: statusen står direkt efter namnet (i Likvärdigt
+  intervallet med *säker skillnad*, efter Gap (%)), och sekundära kolumner ligger bakom knappen *Fler kolumner* bredvid
+  Kopiera och CSV, så att tabellerna ryms vid 1280 px med menyn utfälld. Valet gäller tabellen under sessionen och
+  lagras inte; Kopiera, CSV, Excel och utskriften tar alltid med alla kolumner, och de gömda talen står i beviset
+  (förstoringsglaset) på raden.
+- **Handlingsplanen fylls i på skärmen.** Sakligt skäl prövat? och Status är rullistor, Ansvarig och Tidsplan
+  fritext. Det som fylls i ligger i minnet, följer med i konfigurationsfilen, Excel-filen, utskriften och Word-utkastets
+  åtgärdstabell, och nollas av Rensa all data; fritext som liknar ett personnummer eller en e-postadress ger en
+  varning. Alla rader har samma form: yrkesnamnet ("403010 Barnskötare · BAS C") och i Underlag var raden kommer
+  ifrån, *Prioritering (under referensen)* eller *Likvärdigt arbete (kandidatpar)*. Word-utkastets tabell under
+  Åtgärder och tidsplan är handlingsplanen, med kandidatparen, och ingressen säger "från likvärdighetsanalysen".
+- **Jämförelse är en flik med tre avsnitt.** Överblick, mot ställningstagandet (dagens Lönepolitik) och mot
+  jämförelsestatistiken; växeln *Jämför mot* är borttagen, fliken syns så snart underlaget och en referens är inlästa,
+  och länkar till Lönepolitik leder till Jämförelse. Fliken har en inledning som övriga flikar. Mönster och Förslag på
+  referens är en kolumn, *Läge och förslag*, där förslaget bara nämns när det är statistiken; skärmen, Excel-bladet
+  Referenser och rapporten säger samma sak. Läget i spannet har skalan i rubriken (0 = P10, 100 = P90) och ett
+  verktygstips, och hanteldiagrammet har en rad per yrkesgrupp, med ställningstagandet, statistiken och organisationen
+  i var sin färg och en förklaring.
+- **Vardagsspråk i inledningar, nyckeltal och hjälptexter.** Prioriteringens inledning och listtext säger vad
+  prioriteten väger ihop utan "sammansatt prioriteringsindex", "yrkesgrupp × BAS-intervall" och "1,2× bonus"; filtret
+  heter *Visa bara små höjningar med stor effekt*, kostnaden anges med PO-påslag utskrivet och *Så räknas det* beskriver
+  statusarna med dagens ord. Struktur och Utforska har sin fråga i fetstil. Om verktyget säger vad verktyget gör och
+  vad ni gör själva, med Word-utkastet, Regler & praxis och organisationspaketet på plats; snabbstarten följer
+  kartläggningens steg och engelska rubriker i dataskydds- och metodavsnitten är svenska. Ålder & karriär säger
+  "inte säkerställd" i stället för "ns", modelljämförelsen markerar med stjärnor som tabellens not förklarar (* p <
+  0,05 … *** p < 0,001), modellformeln, standardfelen och referensintervallet står i flikens nya *Så räknas det* →
+  *Beräkning & urval*, löptexten säger i en mening vad modellen tar hänsyn till, och *Jämför alla BAS-intervall* visar
+  alla intervall oavsett urvalet ovan; histogrammet och ålderskurvan markerar inte längre successionszonen 60+ med
+  ett rött fält, nyckeltalet *Andel 60+* och riskrutan bär den läsningen. I Regler & praxis hämtar raden Stöd i verktyget talet från fliken och slutar med
+  *Gå dit*: Likvärdigt arbetes par att titta närmare på, Lika arbetes yrkesgrupper att granska och, under befordran,
+  andelen kvinnor i högsta och lägsta lönekvartilen; utan underlag står den fasta texten. Krav mot lön i Likvärdigt
+  arbete sade "minst 1 personer" på skärmen, och exportkortens *Utelämnar* räknade samma sak två gånger när två
+  avsnitt utelämnade det.
+- **Efter genomgången: sju öppna beslut.** Regressionens per-BAS-diagram ritar *Säkerställt, över 5 %* i statusens lila,
+  inte rött; tratten behåller rött för *Utanför slumpens gränser*, som är en annan skala. Lika arbetes avsnittsnyckeltal
+  säger "95,7 % efter ålder och nivå" i stället för "−4,3 % oförklarat", och undertexter över 5 % (Lika arbete, Ålder
+  & karriär) är lila som statusen, inte röda. Trädkartan följer med i Word-utkastet och PDF-rapporten under Struktur.
+  Excel-bladen *Per BAS* och *Lonegap* behålls båda; *Metod & parametrar* säger vad som skiljer dem. Handlingsplanen
+  har knappen *Lägg till rad*: en egen åtgärd med fritext för åtgärd och grupp, som tas bort med *Ta bort* och följer
+  med i konfigurationsfilen, Excel-filen, utskriften och Word-utkastet; kortet *5. Handlingsplan* på Översikt räknar
+  raderna efter statusen som fyllts i (genomförda, planerade eller pågår, skjuts upp, utan ifyllt) i stället för
+  åtgärdslistans bockar. Jämförelsetabellen har *Fler kolumner*: grundvyn visar yrke, BAS, antal och medianens tre
+  kolumner, P10 och P90 ligger bakom knappen. Menyn och rubriken säger *Översikt*, inte *Översikt & Data*; sidhuvudets
+  ikonknappar gäller upp till 900 punkter; sökfältets ledtext är *Sök yrke eller BAS* med kortkommandot i
+  verktygstipset; länkraden i Dokumentera har verktygets länkstil.
+- **Menyn, sidhuvudet och flikbytet.** En ny flik börjar överst: flikbytet rullade inte, så den som stod långt ned i
+  en flik hamnade långt ned i nästa. Sidomenyns ikonläge (641–1100 px) döljer etiketterna med genomskinlighet i
+  stället för `visibility: hidden`, så att knapparna behåller sina namn för skärmläsare. Under 641 punkter är
+  Förklaring, Som i exporten, Inställningar och Ordlista ikonknappar på samma rad som sökfältet, med texten kvar i
+  knappen för skärmläsare; sidhuvudet vid 375 punkter är 133 punkter högt i stället för 214, och byts fönstret från
+  brett till smalt börjar den smala vyn med menyn stängd, utan att spalten glider ut över innehållet.
+- **Som export — förhandsvisning av exporten.** Knappen i sidhuvudet visar flikarna som i det som lämnar
+  verktyget: grupper under minsta gruppstorlek redovisas inte, en banner och en streckad ram visar att
+  förhandsvisningen är på, och *Visa skärmen igen* ritar tillbaka. Efter användartest: skärmen visar alla grupper,
+  och den som ska skicka en fil vill se vad som faller bort.
+- **Prioritering är vad, Löneöversyn är hur (ADR-50).** Prioritering svarar på vad som bör åtgärdas och vad det
+  kostar; Löneöversyn på hur potten fördelas. Lönerevisionssimulatorn i Prioritering är borttagen: en riktad pott i
+  Löneöversyn kan i stället begränsas till ett kön eller till löner under en gräns, och lyfta till en nivå
+  (*höj till*). PO-påslag och beräkningsperiod står under Inställningar i sidhuvudet (*Gäller alla flikar*) i
+  stället för i Prioritering, och Löneöversyns Excel-export beskriver varje riktad rad. Efter användartest: flikarna
+  gick in i varandra.
+- **Hänvisningarna till SKR är förklarade.** Kolumnerna och märkena som bara sade "SKR" heter nu *Kvinnor nationellt*
+  respektive *nationell*, och verktygstipsen säger vad statistiken är (andel kvinnor per yrke i kommuner och regioner),
+  varifrån den kommer (SKR:s personalstatistik, med period) och vad valet kommun eller region gör. PO-påslagets
+  standardvärde förklaras som SKR:s värde för kommuner och regioner; bristyrkestipset hänvisar inte längre till
+  SKR-listor. Ordlistan har fått posten *SKR*, metodbilagan en rad om den nationella referensen, och *Om verktyget*
+  förklarar de tre sakerna verktyget hämtar från SKR. Efter användartest: "SKR-statistik" var oklart.
+- **Hjälptexterna *Så används fliken*** i Lika arbete, Prioritering och Utforska är omskrivna efter dagens
+  avsnitt, knappar och ord (inte längre "waterfall-uppdelningen", "Quantile regression", "röda romber",
+  "konfig-panelen"); menyn har ett verktygstips för Prioritering, och ordlistan säger att kvoten (85,2 %) och
+  skillnaden (−14,8 %) är samma tal.
+- **Rensning vid inaktivitet: 90 minuter som standard** (tidigare 30). Valen är av, 30, 60, 90 och 120 minuter;
+  organisationspaketet kan fortfarande låsa tiden. Efter användartest: 30 minuter avbröt ett normalt arbetspass.
 
 ### Exporter
 
+- **Fyra blad per AID-kod och BAS-intervall (ADR-57).** Excel-filen har bladen *Lika arbete AID x BAS*, *Likvärdigt
+  arbete*, *Hierarkisk jämförelse* och *Analys på individnivå*, med kolumnnamn som går att klistra in i rapporten utan
+  att ändras och lönemånaden på raden ovanför tabellen. Lika arbete är samma yrkesgrupp på samma nivå: en rad per
+  AID-kod och BAS-intervall ur varje persons egen rad, med kvinnors median i procent av mäns mot slumpens gränser
+  (trattdiagrammets omkastning, räknad per grupp) och bedömningen *Inom gränserna*, *Utanför gränserna* eller
+  *Analyseras på individnivå* när något kön har färre än tio personer. Likvärdigt arbete klassar varje grupp som
+  kvinnodominerad, könsblandad eller mansdominerad, säger om yrket *brukar anses* kvinnodominerat efter andelen kvinnor
+  nationellt, ger median och lönespridning ((P90 − P10) / median) för grupper med minst tio personer och en
+  sammanfattning per BAS-intervall. Den hierarkiska jämförelsen listar par där ett arbete i lägre BAS som inte är
+  kvinnodominerat har högre median än ett kvinnodominerat arbete i högre BAS, eller säger att inga sådana fall finns.
+  Arbetslistan för individnivå har grupperna där något kön är under tio, utan löner och med kolumnerna *Analys
+  genomförd* och *Resultat* att fylla i. Grupper med färre än fem personer får ingen egen rad utan räknas upp i en not.
+  Tal skrivs som tal med svenskt talformat i cellen; procent med en decimal. Bladet Metodik beskriver grupperingen,
+  små grupper, gränserna för slumpen och vald definition. Samma tabeller står som avsnitt i Lika arbete och Likvärdigt
+  arbete, med Kopiera och CSV.
+- **Rättat: fliken Slumpens gränser räknar per AID-kod och BAS-intervall.** Trattdiagrammets underlag grupperade per
+  yrkesgrupp över alla BAS-intervall och satte gruppens intervall från dess första rad, så en yrkesgrupp i flera
+  intervall redovisades i ett godtyckligt av dem med alla sina personer. Nu är gruppen yrkesgrupp och intervall, i
+  diagrammet, i bladet och i tabellen *Lika arbete AID x BAS*, som delar gränserna med fliken.
 - **Lönerna mot referenserna.** Nytt blad *Referenser* i Excel-filen, nytt avsnitt *Lönerna mot referenserna* i
   Word-utkastet och PDF-rapporten, block i rapportunderlaget och listan i utskriften. Yrkesgrupper under minsta
   gruppstorlek redovisas inte.
@@ -44,6 +178,26 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ### Analys
 
+- **Valbar förklaringsmodell (ADR-56).** Avsnittet *Vad blir kvar av lönegapet?* i Lika arbete öppnar med panelen
+  *Förklaringsmodell*: ta bort BAS-intervall eller ålder, eller lägg till yrkesgrupp inom BAS; fullmodellen är
+  utgångsläge och räknar som förut. Tabellen visar vad varje variabel tillför i förklaringsgrad och hur gapet
+  flyttar sig, alltid mot fullmodellen, och verktyget föreslår att lämna en variabel utanför när den tillför under
+  0,5 procentenheter. Valet styr huvudtalet överallt (Översikt, Att göra, Struktur, rapporten), trappan,
+  förklaringsbudgeten och Blinder-Oaxaca; en bortvald variabel blir en mening, "har kontrollerats och tillför …", med
+  ett skäl utanför siffrorna som ni kan skriva in, också i rapportens sammanfattning och bilaga. Valet och skälet
+  följer med i konfigurationsfilen. Endast kön kan inte väljas när ett kön ligger under minsta gruppstorlek.
+- **Kvinnodominerat enligt DO eller SCB.** I Likvärdigt arbetes inställningar väljs definitionen för tabellerna per
+  AID-kod och BAS-intervall: DO, mer än kvinnotröskeln (standard), eller SCB, kvinnotröskeln eller mer. En grupp med
+  exakt 60 % kvinnor är könsblandad enligt DO och kvinnodominerad enligt SCB. Valet står i bladen och i Metodik och
+  följer med i konfigurationsfilen. Kandidatparen i Likvärdigt arbete använder tills vidare sin egen gräns
+  (öppen punkt 22 i den tekniska planen).
+- **Lönemånad.** Inställningar har fältet *Lönemånad* (fritext, t.ex. 2026-10) som skrivs ovanför tabellerna per
+  AID-kod och BAS-intervall; tomt skrivs ut som *inte angiven*, eftersom lönefilen inte säger vilken månad den gäller.
+  Följer med i konfigurationsfilen och nollas av Rensa all data.
+- **Jämförelse mot båda referenserna (ADR-55).** Fliken Jämförelse visar per yrkesgrupp var löneläget och
+  jämförelsestatistiken ligger mot ställningstagandet, som är referenspunkten: skillnaden percentil för percentil,
+  läget i spannet, mönstret i ord, ett förslag på referens, en bild med de tre spannen och tabellen statistiken mot
+  ställningstagandet. Vyn använder den referens som finns och säger vilken som saknas.
 - **Jämförelse med förra året (ADR-54).** Konfigurationsfilen bär ett årsbokslut: nyckeltal, en rad per yrkesgrupp
   där båda könen når minsta gruppstorlek, och Att göra-punkternas läge — inga individer. Spara konfigurationen när
   årets kartläggning är klar och läs in den nästa år, så visar *Jämförelse med förra året* under *Spara och läsa in
@@ -113,9 +267,6 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ### Dataskydd
 
-- **Spärr mot särskilda kategorier av personuppgifter.** Lönefilen avvisas när en kolumnrubrik antyder fackmedlemskap,
-  hälsa, sjukfrånvaro, diagnos, etnicitet, religion, politisk tillhörighet, sexuell läggning, funktionsnedsättning,
-  genetik eller biometri — som identifierare avvisades redan. Bara rubriken prövas (lagrum.md, C23b).
 - **Minsta gruppstorlek gäller det som lämnar verktyget, inte skärmen (ADR-51).** Vyerna visar alla grupper och alla
   könsuppdelade mått oavsett storlek; allt som lämnar verktyget — Excel, Word, PDF, ZIP, CSV, urklipp, diagrambilder,
   rapportunderlaget, gruppdossierns textkopia och allt under Dokumentera & exportera — ritas och räknas i ett
@@ -138,46 +289,23 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   inläsning. Att göra kör regressionen en gång i stället för
   fyra och skickar resultatet vidare till underlagsbedömningen (ingen cache, ADR-17 står kvar).
 
-### Gränssnitt
-
-- **Som export — förhandsvisning av exporten.** Knappen i sidhuvudet visar flikarna som i det som lämnar
-  verktyget: grupper under minsta gruppstorlek redovisas inte, en banner och en streckad ram visar att
-  förhandsvisningen är på, och *Visa skärmen igen* ritar tillbaka. Efter användartest: skärmen visar alla grupper,
-  och den som ska skicka en fil vill se vad som faller bort.
-- **Prioritering är vad, Löneöversyn är hur (ADR-50).** Prioritering svarar på vad som bör åtgärdas och vad det
-  kostar; Löneöversyn på hur potten fördelas. Lönerevisionssimulatorn i Prioritering är borttagen: en riktad pott i
-  Löneöversyn kan i stället begränsas till ett kön eller till löner under en gräns, och lyfta till en nivå
-  (*höj till*). PO-påslag och beräkningsperiod står under Inställningar i sidhuvudet (*Gäller alla flikar*) i
-  stället för i Prioritering, och Löneöversyns Excel-export beskriver varje riktad rad. Efter användartest: flikarna
-  gick in i varandra.
-- **Hänvisningarna till SKR är förklarade.** Kolumnerna och märkena som bara sade "SKR" heter nu *Kvinnor nationellt*
-  respektive *nationell*, och verktygstipsen säger vad statistiken är (andel kvinnor per yrke i kommuner och regioner),
-  varifrån den kommer (SKR:s personalstatistik, med period) och vad valet kommun eller region gör. PO-påslagets
-  standardvärde förklaras som SKR:s värde för kommuner och regioner; bristyrkestipset hänvisar inte längre till
-  SKR-listor. Ordlistan har fått posten *SKR*, metodbilagan en rad om den nationella referensen, och *Om verktyget*
-  förklarar de tre sakerna verktyget hämtar från SKR. Efter användartest: "SKR-statistik" var oklart.
-- **Hjälptexterna *Så används fliken*** i Lika arbete, Prioritering och Utforska är omskrivna efter dagens
-  avsnitt, knappar och ord (inte längre "waterfall-uppdelningen", "Quantile regression", "röda romber",
-  "konfig-panelen"); menyn har ett verktygstips för Prioritering, och ordlistan säger att kvoten (85,2 %) och
-  skillnaden (−14,8 %) är samma tal.
-- **Rensning vid inaktivitet: 90 minuter som standard** (tidigare 30). Valen är av, 30, 60, 90 och 120 minuter;
-  organisationspaketet kan fortfarande låsa tiden. Efter användartest: 30 minuter avbröt ett normalt arbetspass.
-
-### Dokumentation
-
-- **Ansvar och roller, styrning och övertagande.** README har ett avsnitt *Ansvar och roller* (personuppgiftsansvar,
-  cyberresiliensakten och produktansvarsdirektivet, AI-förordningen, lagrummens status *Förslag*), med artiklarna i ett
-  nytt avsnitt *Produkt- och säkerhetsregler* i `docs/utveckling/lagrum.md`. `GOVERNANCE.md` säger vem som beslutar, hur
-  en version släpps och vad som gäller om projektet slutar underhållas; `CODE_OF_CONDUCT.md` är en svensk bearbetning
-  av Contributor Covenant 2.1. `docs/anvandare/overta-verktyget.md` beskriver hur en organisation bygger, ändrar,
-  signerar och sprider sin egen version. Raden om svensk lag om lönetransparens i `lagrum.md` är uppdaterad till
-  läget i oktober 2026.
-
 ### Utveckling
 
-- **Programvaruförteckning (SBOM) på releasen.** `npm run sbom` (`tools/sbom.mjs`) skriver `dist/sbom.cdx.json` i
-  CycloneDX med de fyra inbyggda biblioteken (version, licens, kontrollsumma) och artefaktens kontrollsumma;
-  release-arbetsflödet signerar den som de andra filerna. Deterministisk, utan beroenden.
+- **Testsviten hittar inte andra sessioners arbetskopior.** Vitest utesluter nu `.claude/`, där verktyget lägger
+  arbetskopior av hela repot; annars kördes deras testfiler också och sviten blev tre gånger så lång.
+- **Dokumenten är allmänna.** README och den tekniska planens §2 säger vilket omfång verktyget har i dag (AID,
+  BAS och SKR:s statistik; allt organisationsspecifikt kommer ur paketet). Intern beslutsjargong ("beslut av
+  produktägaren") är ersatt av beslut med datum och ADR; checklistan för skarp data, datauttagsguiden,
+  lagrumshänvisningarna och planens öppna punkter förutsätter ingen viss pilot, jurist eller
+  dataskyddsombud; organisationsfilens designdokument är en formatspecifikation, och dess beslutshistorik
+  ligger utanför repot.
+- **Läsande tester delar fönster:** `delatFonster()` i testriggen, med en vakt som fäller det test som lämnar fönstret
+  ändrat. Tre filer delar (20–25 % snabbare var för sig), elva prövades utan tillräcklig vinst och lämnades; hela
+  sviten gick från 176 och 164 s till 168 och 142 s körda växelvis (teknisk plan §6).
+- **Riktig Node-typning:** `@types/node` som utvecklingsberoende i stället för den egna minimala typfilen; ett
+  typfel i byggskriptet som typfilen dolde är rättat.
+- **Stilmallens svans:** 26 klasser utan användning är borttagna och fem komponentklasser med samma deklaration som
+  en hjälpklass är utbytta; beräknade stilar jämfördes före och efter i Chromium utan skillnad.
 - **Testwrappern räknar rätt vid omkörning:** när en arbetare kraschar efter att filen rapporterat klart och filen
   körs om, dubblas inte dess tester i kontrollen mot teknisk plan (`tools/test.mjs` prövar båda summorna).
 - **Testriggen schemalägger inget under nedmonteringen** av ett fönster (`requestAnimationFrame` och `setTimeout`

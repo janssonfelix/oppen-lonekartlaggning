@@ -82,7 +82,7 @@ Exportera en personalfil (CSV eller XLSX) med dessa kolumner:
    metodbilagan och i exporterad data; under 10 står dessutom meningen *Tröskeln är sänkt från
    standardvärdet 10.* på det som kan spridas för sig, till exempel diagrambilder, kopierade tabeller
    och rapporter. Alla flikar räknas om när värdet
-   ändras. Knappen **Som export** i sidhuvudet visar flikarna som i det som lämnar verktyget — grupper under
+   ändras. Knappen **Som i exporten** i sidhuvudet visar flikarna som i det som lämnar verktyget — grupper under
    minsta gruppstorlek redovisas inte — med en banner och en streckad ram runt innehållet tills du klickar
    *Visa skärmen igen*. Värdet sparas inte mellan gånger men följer med i konfigurationsfilen; en
    konfigurationsfil utan värdet ändrar det inte. *Återställ till 10* sätter tillbaka
@@ -132,7 +132,8 @@ också när det är hopfällt.
 
 - **Sök** (fältet i sidhuvudet, snedstreck eller Ctrl+K) hittar ett yrke eller BAS-intervall och markerar det i alla
   diagram och tabeller. Ett klick på en grupp i ett diagram eller en tabellrad gör samma sak; Escape tar bort markeringen.
-- **Inställningar** (sidhuvudet) har minsta gruppstorlek, kommun eller region, och valet mellan **vägledande läge**
+- **Inställningar** (sidhuvudet) har minsta gruppstorlek, kommun eller region, **lönemånaden** (skrivs ovanför
+  tabellerna per AID-kod och BAS-intervall; tom skrivs ut som *inte angiven*), och valet mellan **vägledande läge**
   (förklaringarna syns) och **kompakt läge** (förklaringarna är undanfällda — för den som kan verktyget).
 - Flikarna i huvudflödet (Regler & praxis → Handlingsplan, fördjupningen → Dokumentera & exportera) avslutas med en
   **"Klar här? Nästa steg"-rad**. Använd **"Visa beräkningen"**-knapparna vid resultaten för att se hur en siffra
@@ -145,15 +146,20 @@ också när det är hopfällt.
    skriv en **anteckning** per område — *på gruppnivå: inga namn eller
    personnummer i fritext.* Värdena följer automatiskt med in i Word-utkastet
    och utskriften.
-2. **Lika arbete (§ 9)** — fliken öppnar med en **översikt per BAS-intervall**: antal kvinnor och män, de två
-   medianlönerna, skillnaden i kronor och kvinnors lön i procent av mäns med konfidensintervall och status.
-   Första avsnittet är **yrkesgrupperna**: kvinnors och mäns medianlön i samma yrkesgrupp, där grupper med
-   avvikelse > 5 % flaggas och behöver förklaras med sakliga skäl eller åtgärdas. Diagrammet
-   **Yrkesgrupperna mot slumpens gränser** ovanför tabellen visar varje yrkesgrupp mot gruppens storlek: en liten
+2. **Lika arbete (§ 9)** — fliken öppnar med **yrkesgrupperna**: kvinnors och mäns medianlön i samma yrkesgrupp,
+   där grupper med avvikelse > 5 % flaggas och behöver förklaras med sakliga skäl eller åtgärdas. Diagrammet
+   **Yrkesgrupperna mot slumpens gränser** under tabellen visar varje yrkesgrupp mot gruppens storlek: en liten
    grupp kan ha en stor skillnad av ren slump, en stor grupp kan det inte, och grupperna utanför det skuggade
-   fältet är de där skillnaden är svår att förklara med slumpen. Därefter kommer Personer att granska, sedan
-   skillnaden per BAS-intervall (i procent, i kronor och som lönespridning per kön) och sist det **oförklarade**
-   lönegapet (regressionen, trappan som visar vad ålder och nivå förklarar, och Blinder-Oaxaca).
+   fältet är de där skillnaden är svår att förklara med slumpen. Under Fördjupning kommer Personer att granska,
+   sedan **Lönegap per BAS-intervall** (en tabell per intervall med antal kvinnor och män, de två medianlönerna,
+   skillnaden i kronor och kvinnors lön i procent av mäns med konfidensintervall och status, och lönespridningen
+   per kön), könsfördelningen per BAS-intervall och sist det **oförklarade** lönegapet (regressionen, där ni kan
+   välja om ålder, nivå och yrkesgrupp ska räknas bort och se vad varje variabel tillför, trappan som visar vad
+   varje vald variabel förklarar, och Blinder-Oaxaca; en bortvald variabel redovisas som kontrollerad, med ert skäl,
+   också i rapporten). Avsnitten **Lika arbete AID x BAS** och **Analys på individnivå** har tabellerna i den form
+   en skriven lönekartläggning brukar ha: en rad per yrkesgrupp och BAS-intervall med kvinnors median i procent av
+   mäns mot slumpens gränser och en bedömning, och en arbetslista över grupperna där något kön är för litet för
+   lönemått, att fylla i efter den individuella granskningen. Båda finns som blad i Excel-filen.
    Kolumnen **Kvinnor nationellt** visar andelen kvinnor i samma yrke i landets kommuner och
    regioner, ur SKR:s personalstatistik (SKR är Sveriges Kommuner och Regioner; perioden står i Om
    verktyget) — ett referensvärde att jämföra er egen könsfördelning mot. Välj under
@@ -186,6 +192,11 @@ också när det är hopfällt.
    Fliken visar som standard högst 20 par med en skillnad på minst 5 %; båda gränserna kan
    ändras i fliken (*Min gap* och antal par). Fliken och dess egen export visar par även
    när en grupp är liten — hantera dem därefter.
+   Avsnitten **Likvärdigt arbete** per BAS-intervall och **Hierarkisk jämförelse** klassar varje yrkesgrupp i varje
+   intervall som kvinnodominerad, könsblandad eller mansdominerad, med en sammanfattning per intervall, och listar
+   par där ett arbete i lägre BAS som inte är kvinnodominerat har högre medianlön än ett kvinnodominerat arbete i
+   högre BAS. Definitionen av kvinnodominerat väljs i flikens inställningar: **DO** (mer än tröskeln, standard)
+   eller **SCB** (tröskeln eller mer); valet står i Excel-bladen och i metodbladet.
    Bredvid skillnaden står kolumnen **Justerad för ålder**: jämförelseyrkets lön omräknad till
    det kvinnodominerade yrkets åldersfördelning. Den råa skillnaden är den lagen prövar —
    lönenivån som sådan; den justerade visar hur mycket av skillnaden som kan bero på att
@@ -214,7 +225,8 @@ också när det är hopfällt.
    potter per grupp, och se nya löner, vad som gått åt och lönegapet före och efter. En riktad rad kan
    begränsas till ett kön eller till löner under en gräns, och lyfta till en nivå ("höj till") — det som
    tidigare hette Lönerevisionssimulatorn. PO-påslag och beräkningsperiod, som all kostnad räknas med,
-   ställs in under **Inställningar** i sidhuvudet. **Handlingsplanen** förifylls ur de två.
+   ställs in under **Inställningar** i sidhuvudet. **Handlingsplanen** förifylls ur de två; egna åtgärder läggs
+   till med *Lägg till rad* och följer med i exporterna som de förifyllda.
    Könsgapet i en grupp visas i Prioritering bara när både
    kvinnorna och männen i gruppen är tillräckligt många för att redovisas; annars räknas
    gruppens prioritet utan könsgapet. I **Löneöversyn** får ni lägga en egen riktad rad på
@@ -234,9 +246,12 @@ också när det är hopfällt.
    ställningstagandet har det halkat efter marknaden; ligger bara löneläget över har organisationen gått före.
    Förslaget är ett förslag, ingen regel. *Mot ställningstagandet* är bandkartan, könens läge i spannet och hur stor
    andel av kvinnorna respektive männen som ligger i spannets nedre, mellersta och övre tredjedel. *Mot
-   jämförelsestatistiken* är tabellen och diagrammen mot statistiken, med filter på BAS och sektor.
-7. **Utforska** — bygg egna vyer när en fråga inte besvaras av flikarna
-   ovan: välj rader och ev. kolumner, mått och diagramtyp, om du vill se helheten eller
+   jämförelsestatistiken* är tabellen och diagrammen mot statistiken, med filter på BAS och sektor; tabellen visar
+   medianens kolumner, P10 och P90 ligger bakom *Fler kolumner* (Kopiera, CSV, Excel och utskriften tar med alla).
+7. **Utforska** har två avsnitt: **Löneöversikt — alla BAS-intervall** (den fasta tabellen) och **Egna vyer**. I
+   Egna vyer bygger du det som en fråga kräver när flikarna ovan inte besvarar den: välj rader och ev. kolumner, mått
+   och diagramtyp (väljaren har de vanliga typerna överst och resten, bland dem värmekartan och regnmolnet, under
+   *Fler diagramtyper*), om du vill se helheten eller
    uppdelat per kön, och begränsa urvalet med
    villkor under **Urval**: på personer (t.ex. "lön minst 30 000 kr", "BAS är inte
    A", alla eller något av villkoren) och på grupper (t.ex. "gap mindre än 95 %").
@@ -280,7 +295,9 @@ exportera* → *Rapportens innehåll* kan ni ordna om och ta bort tabellerna.
    yrkesgrupp med jämförelsestatistikens nivå under, kvinnor och män — P10, median, P90 och antal)
    med ett fält för er bedömning av intervallet, och sist två tabeller per BAS: löneskillnader inom
    likvärdigt arbete (medellön per kön, andel kvinnor, medelålder) och löneskillnader i åldersgrupper.
-   Samma tabeller finns i Excel-filens blad **Per BAS**. Avsnittet följer ett **recept** som ni kan
+   Samma tabeller finns i Excel-filens blad **Per BAS**. Excel-filen har också de fyra bladen **Lika arbete AID x
+   BAS**, **Likvärdigt arbete**, **Hierarkisk jämförelse** och **Analys på individnivå**, med rapportens kolumnnamn
+   och lönemånaden från Inställningar på raden ovanför tabellen. Avsnittet följer ett **recept** som ni kan
    ändra under *Rapportens innehåll*: upprepa per BAS-intervall eller per sektor, vilka rader och
    mått tabellerna ska ha, åldersgränserna, och om summeringstabellerna ska med. *Återställ
    standard* ger utkastets form tillbaka.
@@ -294,13 +311,17 @@ exportera* → *Rapportens innehåll* kan ni ordna om och ta bort tabellerna.
    Blocket **Var uppstår löneskillnaden?** kommer direkt efter Sammanfattning.
    Efter Likvärdigt arbete kommer blocket **Lägre krav, högre lön**.
 4. Komplettera vid behov:
-   - **PDF-rapport** via "Generera PDF": en låst kopia av Word-utkastet, att verifiera mot. Under
+   - **PDF-rapport** via "Generera PDF": en låst kopia av Word-utkastet, att verifiera mot. Fältet **Organisation**
+     intill knappen är namnet på rapportens försättsblad; det hämtas från organisationspaketet när ett är inläst. Under
      *Rapportens innehåll* väljer du vilka avsnitt som följer med i båda (hela dokumentationen,
      ledningsbrief, facklig dialog eller ett eget urval).
    - **Protokollet för gemensam lönebedömning** som underlag för **facklig samverkan**
      (finns i samma flik, under Samverkan och uppföljning).
    - **Excel (alla flikar)** för bilagor och egen vidarebearbetning.
    - **ZIP** när ni vill ha allt på en gång: Word-utkastet, Excel-filen och diagrammen från alla flikar som bilder.
+   - Raden under exporterna länkar till flikarna med egna underlag: **Likvärdigt arbete** (kandidatparen), **Struktur &
+     rapportmått** (EU-rapportmåtten), **Prioritering** (åtgärdslistan) och **Löneöversyn** (prognosen). Deras
+     exporter finns i respektive flik.
 5. **Samverka** med arbetstagarorganisationerna och dokumentera datum, parter och
    synpunkter (fältet finns i Word-utkastet).
 

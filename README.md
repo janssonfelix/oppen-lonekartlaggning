@@ -1,9 +1,14 @@
 # Öppen lönekartläggning
 
 Ett fritt verktyg för den årliga **lönekartläggningen** enligt diskrimineringslagen och EU:s
-lönetransparensdirektiv (2023/970) — byggt för HR i kommuner, regioner och andra
-arbetsgivare. Hela verktyget är **en enda HTML-fil** som körs i webbläsaren på din dator:
-ingen server, inga nätverksanrop och ingen lagring. **Lönedata lämnar aldrig datorn.**
+lönetransparensdirektiv (2023/970). Hela verktyget är **en enda HTML-fil** som körs i webbläsaren på din
+dator: ingen server, inga nätverksanrop och ingen lagring. **Lönedata lämnar aldrig datorn.**
+
+**Omfång i dag:** verktyget är byggt för arbetsgivare som kodar sina befattningar med **AID** och
+**BAS-intervall** och kan jämföra sig med **SKR:s** personalstatistik — i praktiken kommuner och regioner.
+Varje organisation tar in sitt eget ställningstagande, sin statistik och sina benämningar i ett
+organisationspaket, så att ingenting om en viss organisation är inbyggt. Andra arbetsvärderingssystem är en
+öppen punkt (teknisk plan §9).
 
 - **Hela lagkedjan:** genomgång av bestämmelser och praxis, lika arbete (med regression och
   oförklarat gap), likvärdigt arbete, EU-direktivets rapportmått, prioritering med
@@ -34,7 +39,7 @@ verkliga löner och utan installation.
    [`korguide.md`](docs/anvandare/korguide.md) och [`datauttag.md`](docs/anvandare/datauttag.md).
 
 Mer: [sammanfattning för HR-chefer](docs/anvandare/sammanfattning-hr-chefer.md) ·
-[pilotchecklista](docs/anvandare/pilotchecklista.md) ·
+[checklista för skarp data](docs/anvandare/pilotchecklista.md) ·
 [dataskyddsbeskrivning](docs/dataskydd/dataskydd.md) ·
 [risk- och sårbarhetsanalys](docs/dataskydd/riskanalys.md) ·
 [lagrumshänvisningar](docs/utveckling/lagrum.md)

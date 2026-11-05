@@ -100,7 +100,7 @@ function _evidenceForLikvardighetPair(p) {
                     : `${svPct(p.maKvAndel, 0)} kvinnor på nationell nivå: under 40 % = icke-kvinnodominerat. Lokal könsdata saknades.`) },
             { label: '95 % säkerhetsintervall (gap)',      value: p.gapCI ? `[${fmtKr(p.gapCI.lo)}, ${fmtKr(p.gapCI.hi)}]` : '—', note: p.gapCI ? ciNote : 'För få observationer i organisationen för bootstrap' },
             { label: 'Säkerhetsbedömning',                 value: sigStatus, isHtml: true, note: p.gapCI ? (p.gapCI.lo > 0 ? 'Hela intervallet > 0, alltså är skillnaden inte slumpmässig' : 'Intervallet rör vid 0, alltså kan det vara slump') : '' },
-            { label: 'Påverkansindex',                     value: fmtN(Math.round(p.allvarsindex)), note: `|gap| × n (i organisationen) = ${fmtKr(Math.abs(p.gapKr))} × ${p.kvN} — heuristik som rangordnar par efter total löneeffekt (ej lagstadgat mått)` },
+            { label: 'Summa för gruppen (kr/mån)',         value: fmtN(Math.round(p.allvarsindex)), note: `|gap| × n (i organisationen) = ${fmtKr(Math.abs(p.gapKr))} × ${p.kvN} — gapet gånger antalet personer i det kvinnodominerade yrket; rangordnar paren, inte ett lagstadgat mått` },
             { label: 'Medelålder',                         value: `${alderText(p.kvMedelAlder)} år mot ${alderText(p.maMedelAlder)} år`, note: 'Det kvinnodominerade yrket mot jämförelseyrket. Skiljer sig åldrarna mycket kan en del av skillnaden vara åldersstruktur.' },
             { label: 'Justerad för ålder',                 value: p.aldersJusterad ? svPct(p.aldersJusterad.gapPct, 1) : '—',
               note: p.aldersJusterad
@@ -150,6 +150,7 @@ function _evidenceForPrioItem(it, _reference) {
             { label: 'Median månadslön',            value: fmtKr(it.median) },
             { label: `Referens (${it.refSource})`,  value: fmtKr(it.refMedian) },
             { label: 'Avvikelse',                   value: `${sgn(it.diffPct)}${svPct(it.diffPct, 2)}  (${sgn(it.diffKr)}${fmtKr(it.diffKr)})` },
+            { label: 'Kostnad per person',          value: it.costPerPerson > 0 ? `${fmtKr(it.costPerPerson)}/mån` : '— (gruppen är ej under referens)', note: 'Genomsnittlig höjning per person och månad för att lyfta gruppen till referensens median' },
             { label: 'Köns-lönegap inom gruppen',   value: it.gapPct == null ? '— ej beräkningsbart' : `${sgn(it.gapPct)}${svPct(it.gapPct, 2)}`, note: it.gapPct == null ? `Kräver minst ${kTroskel()} av varje kön` : `Median kv ${fmtKr(it.medKv)} mot median man ${fmtKr(it.medMa)}` },
             { label: '— Prioritetsindex',           value: `<strong>${svTal(it.priorityIndex, 1)}</strong>`, isHtml: true, note: `Status: ${it.status.toUpperCase()}` },
             { label: 'Avvikelse-poäng (sev)',       value: svTal(sevScore, 1), note: `min(30, |${svPct(it.diffPct, 1)}|) / 30 × 100 · vikt ${w.avvikelse}/${wTotal}` },
@@ -175,6 +176,24 @@ function _evidenceForPrioItem(it, _reference) {
  */
 function _evidenceForEUMatrixRow(r) {
     const fmtKr = v => Math.round(v).toLocaleString('sv-SE') + ' kr';
+    // Andelen kvinnor i yrket nationellt (kolumnen Kvinnor nationellt, som grundvyn gömmer).
+    const skr = _skrKvinnoandel(r.yrke, { del: _skrDel() });
+    const nationellt = { label: 'Andel kvinnor nationellt', value: skr ? svPct(skr.pct, 0) : '–',
+        note: skr ? `${_skrDelText(skr.del)}, ${skrKallaKort()}` : `Yrkeskoden finns inte i ${skrKallaKort()}` };
+    if (r.samladMedian) {
+        return {
+            title: `Bevis — ${r.yrke}`,
+            intro: `Ett av könen har färre än ${kTroskel()} personer i yrkesgruppen. Då redovisas bara gruppens samlade median, så att ingen enskild lön kan räknas fram, och ingen jämförelse mellan kvinnor och män görs.`,
+            rows: [
+                { label: 'Yrkesgrupp',               value: r.yrke },
+                { label: 'Antal medarbetare totalt', value: r.tot.toLocaleString('sv-SE'), note: `${r.nKv} kvinnor · ${r.nMa} män` },
+                { label: 'Könsdominans',             value: r.dominans },
+                nationellt,
+                { label: 'Gruppens median',          value: fmtKr(r.medTot) }
+            ],
+            footer: 'Gruppen kan jämföras först när båda könen når minsta gruppstorlek.'
+        };
+    }
     const ratio = r.medKv / r.medMa;
     const gapSgn = ratio - 1;
     const gapPct = gapSgn * 100;
@@ -187,6 +206,7 @@ function _evidenceForEUMatrixRow(r) {
             { label: 'Antal kvinnor',             value: r.nKv.toLocaleString('sv-SE'), note: r.kMaskedKv ? `Maskerad — under k=${kTroskel()}` : '' },
             { label: 'Antal män',                 value: r.nMa.toLocaleString('sv-SE'), note: r.kMaskedMa ? `Maskerad — under k=${kTroskel()}` : '' },
             { label: 'Könsdominans',              value: r.dominans },
+            nationellt,
             { label: 'Median kvinnor',            value: r.kMaskedKv ? `< ${kTroskel()} pers (maskerad)` : fmtKr(r.medKv) },
             { label: 'Median män',                value: r.kMaskedMa ? `< ${kTroskel()} pers (maskerad)` : fmtKr(r.medMa) },
             { label: '— Mediankvot',              value: r.anyMasked ? '—' : `${svTal(ratio, 4)} (Kv/Man)` },
@@ -238,7 +258,7 @@ function _evidenceForPerBasRow(p, bhCtx) {
             { label: '95 % konfidensintervall', value: `[${fmtPct(p.ciLow)}, ${fmtPct(p.ciHigh)}]`, note: 'β ± t(0,975; n−k) × HC3-SE (1,96 vid n−k ≥ 100), transformerat tillbaka från log' },
             { label: 'p-värde',                value: p.pValue < 0.001 ? '< 0,001' : svTal(p.pValue, 4), note: isSig ? 'Statistiskt signifikant (p < 0,05)' : 'Ej signifikant' },
             { label: 'BH-FDR-korrektion',      value: bhCtx && bhCtx.q != null ? (bhCtx.q < 0.001 ? '< 0,001' : svTal(bhCtx.q, 4)) : '—', note: bhNote },
-            { label: 'Klassning',              value: sigAfterBH && Math.abs(p.gapPct) > 5 ? 'Värt att granska närmare' : sigAfterBH ? 'Signifikant, under 5 %-tröskeln' : 'Inom statistisk osäkerhet', isHtml: true },
+            { label: 'Klassning',              value: sigAfterBH && Math.abs(p.gapPct) > 5 ? 'Värt att granska' : sigAfterBH ? 'Signifikant, under 5 %-tröskeln' : 'Inom statistisk osäkerhet', isHtml: true },
             { label: 'R² (modellanpassning)',  value: svPct((p.R2 * 100), 1) }
         ],
         formula: `<strong>Statistisk metod:</strong><br>
@@ -348,7 +368,7 @@ function _evidenceForPaygapRow(p) {
             { label: 'Median män',              value: fmtKr(medMa) },
             { label: '— Kvinna i % av Man',     value: svPct(gapPct, 2) },
             { label: 'Avvikelse från 100 %',    value: (diff100 != null && diff100 >= 0 ? '+' : '') + svTal(diff100, 2) + ' pp' },
-            { label: 'Klassning',               value: isCrit ? 'Över 5 % — här aktualiseras EU-direktivets utredningssteg (2023/970)' : Math.abs(diff100 ?? 0) > 3 ? 'Värt att följa upp (3–5 %)' : 'Balanserat (≤ 3 %)', isHtml: true }
+            { label: 'Klassning',               value: isCrit ? 'Värt att granska (över 5 %) — här aktualiseras EU-direktivets utredningssteg (2023/970)' : Math.abs(diff100 ?? 0) > 3 ? 'Följ upp (3–5 %)' : 'Balanserat (högst 3 %)', isHtml: true }
         ],
         formula: `<strong>Beräkning:</strong><br>
             kvot = median(kvinnor) / median(män) = ${fmtKr(medKv)} / ${fmtKr(medMa)} = <strong>${svTal(ratio, 4)}</strong><br>

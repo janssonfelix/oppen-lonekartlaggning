@@ -13,7 +13,7 @@
  * att kasta + förväntade element finns", inte exakta värden (det täcks av kärn-testerna).
  */
 import { describe, it, expect, beforeAll } from 'vitest';
-import { createAppWindow } from './helpers/app-harness.js';
+import { createAppWindow, tillstandsavtryck, utgangslage } from './helpers/app-harness.js';
 
 let win;
 
@@ -22,6 +22,25 @@ beforeAll(() => {
 });
 
 describe('#1 röktest: boot', () => {
+    it('det delade fönstret står i utgångsläget', () => {
+        expect(utgangslage(win)).toEqual({ troskel: 10, dialoger: 0, flik: 'dashboard' });
+    });
+
+    it('vakten ser en ändrad tröskel, en öppen dialog och ett ändrat tillstånd, men inte en ritad flik', () => {
+        const w = createAppWindow();
+        w.__loadDemoData();
+        const fore = JSON.stringify(tillstandsavtryck(w));
+        w.document.querySelector('.nav-item[data-tab="struktur"]').click();
+        expect(JSON.stringify(tillstandsavtryck(w))).toBe(fore);
+        w.eval('openGlossary()');
+        w.eval('sattKTroskel(25, { fraga: false })');
+        expect(utgangslage(w)).toEqual({ troskel: 25, dialoger: 1, flik: 'struktur' });
+        const andrat = tillstandsavtryck(w), bas = JSON.parse(fore);
+        expect(Object.keys(andrat).filter(k => andrat[k] !== bas[k])).toEqual(['dialoger', 'kTroskel']);
+        w.__state.data[0].lon = 1;
+        expect(tillstandsavtryck(w).data).not.toBe(bas.data);
+    });
+
     it('app.js bootar utan kast och exponerar nyckel-API', () => {
         expect(win.__bootErr).toBeUndefined();
         expect(typeof win.__renderTabContent).toBe('function');
@@ -433,6 +452,29 @@ describe('Utforska 2.0', () => {
         const f = rita()._figur;
         expect(f.lager[0].riktning).toBe('liggande');
         expect(f.y.skala).toBe('band');
+    });
+
+    it('diagramtyperna står i två grupper, Vanliga och Fler diagramtyper, och ingen typ har försvunnit', () => {
+        const sel = $('explore-typ');
+        const grupper = [...sel.querySelectorAll(':scope > optgroup')];
+        expect(grupper.map(g => g.label)).toEqual(['Vanliga', 'Fler diagramtyper']);
+        expect(sel.querySelectorAll(':scope > option')).toHaveLength(0);
+        expect([...grupper[0].querySelectorAll('option')].map(o => o.textContent)).toEqual(['Automatisk', 'Staplar', 'Liggande staplar', 'Låddiagram', 'Grupperade staplar']);
+        expect([...grupper[1].querySelectorAll('option')].map(o => o.textContent)).toEqual(['Hanteldiagram', 'Bubbeldiagram', 'Individpunkter', 'Punktsvärm', 'Regnmoln', 'Kvantilpunkter', 'Värmekarta', 'Staplade staplar']);
+        // Varje typ i registret går att välja, och etiketten är densamma som i registret.
+        const typer = win.eval('EXPLORE_TYPER');
+        expect([...sel.options].map(o => o.value).filter(v => v !== 'auto').sort()).toEqual(Object.keys(typer).sort());
+        for (const o of sel.options) if (o.value !== 'auto') expect(o.textContent).toBe(typer[o.value].label);
+        expect(win.document.getElementById('view-utforska').textContent).not.toMatch(/Heatmap/);
+    });
+
+    it('Utforskas två verktyg har var sin avsnittsrubrik och är öppna', () => {
+        const d = win.document;
+        const ov = d.getElementById('avsnitt-ut-oversikt'), egna = d.getElementById('avsnitt-ut-egna');
+        expect(ov.querySelector(':scope > summary h2').textContent).toBe('Löneöversikt — alla BAS-intervall');
+        expect(egna.querySelector(':scope > summary h2').textContent).toBe('Egna vyer');
+        expect(ov.open && egna.open).toBe(true);
+        expect(ov.contains(d.getElementById('rapport-table')) && egna.contains(d.getElementById('chart-explore'))).toBe(true);
     });
 
     it('två dimensioner ger heatmap och korstabell', () => {
@@ -1057,7 +1099,7 @@ describe('exportmeny på alla diagram', () => {
             expect(gd.parentElement.querySelector(':scope > .chart-export'), gd.id).toBeNull();
             expect(win.__chartExportRows(gd), gd.id).toEqual([]);
         }
-        expect(win.document.getElementById('chart-ov-tradkarta')._figur).toBeTruthy();   // och minst ett sådant finns
+        expect(win.document.getElementById('chart-ov-kvartiler')._figur).toBeTruthy();   // och minst ett sådant finns
     });
 
 });

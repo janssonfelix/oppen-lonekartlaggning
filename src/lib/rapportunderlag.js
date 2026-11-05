@@ -23,6 +23,16 @@ const _arMan = r => typeof r.kon === 'string' && !r.kon.includes('kvinna') && (r
  * @param {{k:number, troskel?:number}} opts
  * @returns {{grupper: any[], utelamnade: string[], ejJamforbara: string[]}}
  */
+/**
+ * Noteringen om en variabel som valts bort ur förklaringsmodellen (ADR-56), som den står i rapporten och i panelen.
+ * @param {{etikett:string, deltaR2pp?:number|null, skal?:string}} b
+ */
+export function bortvaltNotering(b) {
+    const tal = typeof b.deltaR2pp === 'number' && isFinite(b.deltaR2pp)
+        ? `tillför ${Math.abs(b.deltaR2pp).toFixed(1).replace('.', ',')} procentenheter i förklaringsgrad` : 'gick inte att pröva';
+    return `${b.etikett} har kontrollerats och ${tal}; den ingår inte i siffrorna.${b.skal ? ` Skäl: ${b.skal}` : ''}`;
+}
+
 export function likaArbeteGrupper(rader, { k, troskel = 5 }) {
     const perYrke = new Map();
     for (const r of rader || []) {
@@ -250,9 +260,12 @@ export function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
             + (litet ? ` Könsuppdelade lönemått redovisas inte eftersom ett kön har färre än ${k} personer i urvalet.`
                      : ` Kvinnornas medianlön är ${_kr(u.medKv)} och männens ${_kr(u.medMa)}, vilket motsvarar ${_pct(kvot)} av männens.`)];
         if (u.oforklarat && !litet) {
-            st.push(u.oforklarat.medBas === false
-                ? `Efter hänsyn till ålder är det oförklarade lönegapet ${_pct(u.oforklarat.pct)} (95 % KI ${_ki(u.oforklarat.lo, u.oforklarat.hi)} %). BAS-intervall kunde inte tas med i modellen.`
-                : `Efter hänsyn till ålder och BAS är det oförklarade lönegapet ${_pct(u.oforklarat.pct)} (95 % KI ${_ki(u.oforklarat.lo, u.oforklarat.hi)} %).`);
+            // Frasen följer förklaringsmodellen (ADR-56); tom fras = endast kön. Det bortvalda får en mening var.
+            const fras = typeof u.oforklarat.fras === 'string' ? u.oforklarat.fras : 'ålder och nivå';
+            st.push(fras
+                ? `Efter hänsyn till ${fras} är det oförklarade lönegapet ${_pct(u.oforklarat.pct)} (95 % KI ${_ki(u.oforklarat.lo, u.oforklarat.hi)} %).`
+                : `Utan att något räknats bort är lönegapet ${_pct(u.oforklarat.pct)} (95 % KI ${_ki(u.oforklarat.lo, u.oforklarat.hi)} %).`);
+            for (const b of (u.oforklarat.bortvalt || [])) st.push(bortvaltNotering(b));
         }
         if (u.kvalitet) {
             const etikett = { ok: 'OK', varning: 'Varning', kritisk: 'Kritisk' }[u.kvalitet.status];
@@ -261,7 +274,7 @@ export function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
         const rader = [['Antal anställda', formatTal(u.n)], ['Kvinnor', formatTal(u.nKv)], ['Män', formatTal(u.nMa)]];
         if (!litet) {
             rader.push(['Medianlön kvinnor', _kr(u.medKv)], ['Medianlön män', _kr(u.medMa)], ['Kvinnors lön i % av mäns', _pct(kvot)]);
-            if (u.oforklarat) rader.push([u.oforklarat.medBas === false ? 'Oförklarat lönegap (ålder)' : 'Oförklarat lönegap (ålder och BAS)', _pct(u.oforklarat.pct)]);
+            if (u.oforklarat) { const fras = typeof u.oforklarat.fras === 'string' ? u.oforklarat.fras : 'ålder och nivå'; rader.push([fras ? `Oförklarat lönegap (${fras})` : 'Lönegap (inget räknat bort)', _pct(u.oforklarat.pct)]); }
         }
         return blk('Sammanfattning', st, { rubriker: ['Nyckeltal', 'Värde'], rader });
     }
@@ -435,8 +448,9 @@ export function referenserBlock(overblick, { id = 'referenser', urval, demo, tro
             mening(pm.badaInom, 'löneläget och statistiken ligger inom ställningstagandet')] : []),
         `Vägd medianskillnad, löneläget mot ${[motPolicy && `ställningstagandet: ${tecken(tal.vagdMedianMotStallningstagandePct)}`, motStatistik && `statistiken: ${tecken(tal.vagdMedianMotStatistikPct)}`].filter(Boolean).join(', mot ')}.`];
     return { id, rubrik: 'Lönerna mot referenserna', stycken: [...fore, ...st, ...efter], provat: null, fragor: null,
-        tabell: { rubriker: ['Yrkesgrupp', 'n', 'Median (kr)', 'Mot ställningstagandet (%)', 'Mot statistiken (%)', 'Mönster'],
-            rader: grupper.map(g => [`${g.yrke} · BAS ${g.bas}`, formatTal(g.n), formatTal(g.org.median, 0), skillnad(g, g.stallningstagande), skillnad(g, g.statistik), g.monster.text]) } };
+        tabell: { rubriker: ['Yrkesgrupp', 'n', 'Median (kr)', 'Mot ställningstagandet (%)', 'Mot statistiken (%)', 'Läge och förslag'],
+            // Samma text som skärmens kolumn och Excel-bladet (lageOchForslag i referenser.js)
+            rader: grupper.map(g => [`${g.yrke} · BAS ${g.bas}`, formatTal(g.n), formatTal(g.org.median, 0), skillnad(g, g.stallningstagande), skillnad(g, g.statistik), g.lageOchForslag ?? g.monster.text]) } };
 }
 
 /** Ren text för urklipp (reserv): tabbar mellan kolumner, numrerade frågor. */

@@ -8,8 +8,8 @@ genomgång av alla hänvisningar: hänvisningar med paragrafnummer sprids inte u
 3 kap. sannolikt numreras om när lönetransparensdirektivet genomförs i svensk rätt, och eftersom ett
 paragrafnummer i en kolumnrubrik lätt blir fel utan att någon märker det.
 
-Status: *Förslag* = väntar på avstämning med jurist och dataskyddsombud ·
-*Avstämd* = godkänt av dem. Källor: diskrimineringslagen (2008:567) t.o.m. SFS 2025:736, direktiv (EU)
+Status: *Förslag* = inte juridiskt granskad; varje arbetsgivare stämmer av mot sin egen juridiska rådgivning
+och sitt dataskyddsombud · *Avstämd* = granskad av jurist (ingen rad ännu). Källor: diskrimineringslagen (2008:567) t.o.m. SFS 2025:736, direktiv (EU)
 2023/970, förordning (EU) 2016/679.
 
 ## Så hänvisar verktyget
@@ -57,7 +57,7 @@ arbeten som är lika eller likvärdiga är arbetsgivarens.
 | Gemensam lönebedömning | art. 10.1 a–c (tre villkor), innehåll 10.2 a–g, tillgänglighet 10.3, åtgärder inom rimlig tid 10.4 | *gemensam lönebedömning* | Förslag |
 | Rätt till information | art. 7 (7.3 årlig information, 7.4 svar inom två månader) | utanför verktygets omfång | Förslag |
 | Könsneutrala lönestrukturer och kriterier | art. 4 (kriterier 4.4) och 6; art. 5 gäller tiden före anställning | *könsneutrala lönestrukturer och lönekriterier (art. 4 och 6)* i Om verktyget | Förslag |
-| Information till anställda om kartläggningen | ingen regel i direktivet (art. 13 gäller social dialog); mallen bygger på dataskyddsförordningen art. 12–13 | mallen i pilotpaketet | Förslag |
+| Information till anställda om kartläggningen | ingen regel i direktivet (art. 13 gäller social dialog); mallen bygger på dataskyddsförordningen art. 12–13 | mallen `information-till-anstallda.md` | Förslag |
 
 ## Dataskyddsförordningen (EU) 2016/679
 

@@ -326,7 +326,7 @@ function _buildNarrative(d, ctx) {
     else lines.push(`  • ${_konUtelamnatNot()}`);
     /** @type {any} */ let reg = null; try { reg = runOLSRegression(); } catch (_e) { reg = null; }
     if (reg && !reg.error) {
-        lines.push(`  • Efter kontroll för ålder och BAS-intervall kvarstår en oförklarad skillnad på ${fmtPct(reg.konPct)} (negativ när kvinnor ligger lägre; ${reg.pValue < 0.05 ? 'statistiskt säkerställt' : 'ej statistiskt säkerställt'}).`);
+        lines.push(`  • ${reg.fras ? `Efter kontroll för ${reg.fras} kvarstår en oförklarad skillnad` : 'Utan att något räknats bort är skillnaden'} på ${fmtPct(reg.konPct)} (negativ när kvinnor ligger lägre; ${reg.pValue < 0.05 ? 'statistiskt säkerställt' : 'ej statistiskt säkerställt'}).`);
         if (reg.pValue < 0.05 && Math.abs(reg.konPct) > 5) lines.push('    Detta överstiger 5 %-tröskeln i EU 2023/970 och bör utredas (sakliga skäl eller gemensam lönebedömning).');
     }
     lines.push('');

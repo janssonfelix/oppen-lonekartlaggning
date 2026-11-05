@@ -3,7 +3,7 @@
 // Årsbokslutet i verktyget (ADR-54): byggs i exportläget, följer med konfigurationsfilen, och panelen i Dokumentera
 // visar skillnaden mot förra året. Riggen har grupper om 20 (synliga vid 10) och om 6 (dolda vid 10).
 import { describe, it, expect, vi } from 'vitest';
-import { fonster, SENT_MELLAN, SENT_SMA } from './helpers/ktroskel-rigg.js';
+import { fonster, SENT_SMA } from './helpers/ktroskel-rigg.js';
 import { createAppWindow } from './helpers/app-harness.js';
 
 vi.setConfig({ testTimeout: 60000 });

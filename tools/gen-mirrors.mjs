@@ -70,13 +70,25 @@ export const MODULES = [
         expose: { computeLikvardighetPairs: '_lvComputePairs', basRangFn: '_lvBasRangFn' }
     },
     {
+        // Tabellerna per AID-kod och BAS-intervall — importerar stat.js och likvardighet.js
+        file: 'aidbas.js', ns: '__mirrorAidbas',
+        expose: { likaArbeteTabell: '_aidbasLika', likvardigtTabell: '_aidbasLikvardigt', hierarkiskaPar: '_aidbasPar',
+                  individnivaTabell: '_aidbasIndivid', kvDefinitionText: '_aidbasDefinitionText', kvDefinitionNamn: '_aidbasDefinitionNamn',
+                  dominans: '_aidbasDominans', ingaParText: '_aidbasIngaParText', klassNamn: '_aidbasKlassNamn' }
+    },
+    {
         // Regressionsmodellerna (ADR-46-regressionen m.fl.) — importerar stat.js och likvardighet.js
         file: 'regression.js', ns: '__mirrorRegression',
         expose: {
             diagnoseCollinearity: '_rgDiagnoseCollinearity', computePerBasGap: '_rgComputePerBasGap',
             basIndikatorer: '_rgBasIndikatorer', computeSequentialGap: '_rgComputeSequentialGap',
             quantileRegression: '_rgQuantileRegression',
-            blinderOaxaca: '_rgBlinderOaxaca', quantileRegressionAtAllTau: '_rgQuantileRegressionAtAllTau'
+            blinderOaxaca: '_rgBlinderOaxaca', quantileRegressionAtAllTau: '_rgQuantileRegressionAtAllTau',
+            // Förklaringsmodellen (ADR-56)
+            computeVariabelTillfor: '_rgComputeVariabelTillfor', normaliseraForklaringsmodell: '_rgNormaliseraForklaringsmodell',
+            inomYrkesgrupp: '_rgInomYrkesgrupp',
+            forklaringsmodellArStandard: '_rgForklaringsmodellArStandard', modellVariabler: '_rgModellVariabler',
+            modellFras: '_rgModellFras', modellBeskrivning: '_rgModellBeskrivning', tillforGransPp: '_rgTillforGransPp'
         }
     },
     {
@@ -150,7 +162,7 @@ export const MODULES = [
     {
         file: 'rapportunderlag.js', ns: '__mirrorRapportunderlag',
         expose: {
-            likaArbeteGrupper: '_ruLikaArbeteGrupper', justeratGapInomYrke: '_ruJusteratGap',
+            likaArbeteGrupper: '_ruLikaArbeteGrupper', justeratGapInomYrke: '_ruJusteratGap', bortvaltNotering: '_ruBortvaltNotering',
             gruppBlock: '_ruGruppBlock', parBlock: '_ruParBlock', avsnittBlock: '_ruAvsnittBlock',
             tillWordHtml: '_ruTillWordHtml', tillText: '_ruTillText', stabilitetKort: '_ruStabilitetKort',
             egenTabellBlock: '_ruEgenTabellBlock', arsjamforelseBlock: '_ruArsjamforelseBlock', referenserBlock: '_ruReferenserBlock'
@@ -195,7 +207,7 @@ export const MODULES = [
     {
         // Löneläget och statistiken mot ställningstagandet (ADR-55); importerar lonepolitik.js
         file: 'referenser.js', ns: '__mirrorReferenser',
-        expose: { lageISpann: '_rrLage', monster: '_rrMonster', forslag: '_rrForslag', referensOverblick: '_rrOverblick', hantelRader: '_rrHantelRader' }
+        expose: { lageISpann: '_rrLage', monster: '_rrMonster', forslag: '_rrForslag', referensOverblick: '_rrOverblick', hantelRader: '_rrHantelRader', lageOchForslag: '_rrLageOchForslag' }
     },
     {
         file: 'docx.js', ns: '__mirrorDocx',

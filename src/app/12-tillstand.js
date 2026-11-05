@@ -11,6 +11,7 @@
  *   prioConfig: {atgardThreshold: number, akutMinN: number, bevakaThreshold: number, analyseraThreshold: number, [k: string]: any},
  *   prioWeights: {avvikelse: number, volym: number, jamstalldhet: number, [k: string]: any}, costSettings: {[k: string]: any},
  *   rapportUrval: {ordning: string[], med: string[]}|null, rapportTabeller: any[], perBasRecept: any, forraArsbokslut: any,
+ *   forklaringsmodell: null|{bas:boolean, alder:boolean, yrkesgrupp:boolean, skal:string},
  *   bristAids: Set<string>, scenarios: any[], snapshot: any, profile: {[k: string]: any},
  *   filnamn: {data: string|null, policy: string|null, statistik: string|null}, kTroskel: number,
  *   paketLas: {kTroskelLagst: number|null, inaktivitetMin: number|null, smaGrupperIExport: boolean},
@@ -21,13 +22,16 @@
  *     scenarios: {A: any, B: any}, result: any, _remediation?: any
  *   },
  *   inactivityTimeoutMin: number, kLage: 'skarm'|'export',
- *   likvardighet: {source: string, kvinnoTrosholdPct: number, minGapPct: number, topN: number, poangBandPct: number, result: any},
+ *   likvardighet: {source: string, kvinnoTrosholdPct: number, kvDomDefinition: 'do'|'scb', minGapPct: number, topN: number, poangBandPct: number, result: any},
+ *   lonemanad: string,
  *   arbetsvardering: {byKey: Map<string, number>, [k: string]: any}|null,
  *   columnMap: {[roll: string]: string}|null,
  *   ansvarKolumn: {namn: string, giltiga?: any, godkand?: boolean}|null,
  *   _dataHeaders: string[],
  *   dataAudit?: any, statistikHasP10?: boolean, statistikHasP90?: boolean, statistikHasKon?: boolean, _interntFel?: any[],
  *   _actionChecklistDone?: Set<string>, _lastStructureFile?: File|null, _lifecycleCache?: any
+ *   flerKolumner: {[tabell: string]: boolean},
+ *   handlingsplan: {[nyckel: string]: {sakligt: string, ansvarig: string, tidsplan: string, status: string, egen?: boolean, atgard?: string, grupp?: string}},
  * }} Fälten med `?` sätts först vid inläsning (32-filinlasning.js, 29-organisationspaket.js m.fl.) och nollas av 26-rensning.js.
  */
 const state = {
@@ -46,6 +50,7 @@ const state = {
     rapportUrval: null,        // rapportens avsnitt: null = hela dokumentationen, annars { ordning, med } (58-rapportmodell.js)
     rapportTabeller: [],       // egna tabeller i rapporten: recept ur Utforska (src/lib/tabellrecept.js, ADR-52)
     perBasRecept: null,        // receptet för avsnittet per BAS-intervall: null = standard (src/lib/perbas.js, ADR-52)
+    forklaringsmodell: null,   // vilka variabler regressionen räknar bort: null = standard (kön + BAS + ålder), ADR-56
     bristAids: new Set(),         // E: AID-koder markerade som bristyrke
     scenarios: [],                // I: sparade scenarion (max 5)
     snapshot: null,         // för A/B-jämförelse
@@ -80,6 +85,7 @@ const state = {
     likvardighet: {
         source: 'organisation',    // 'organisation' | 'statistik'
         kvinnoTrosholdPct: 60,
+        kvDomDefinition: 'do',     // 'do' (mer än tröskeln) | 'scb' (tröskeln eller mer): tabellerna per AID och BAS (45-aid-bas-tabeller.js)
         minGapPct: 5,
         topN: 20,
         poangBandPct: 5,           // #5: ekvivalensband för arbetsvärderingspoäng (±%)
@@ -88,11 +94,19 @@ const state = {
     // #5: valfri arbetsvärderingstabell (poäng per yrke) som krav-proxy i § 3:10.
     // null = använd BAS-rank. byKey: Map<'AID|BAS' eller 'AID', poäng>.
     arbetsvardering: null,
+    // Lönemånaden underlaget gäller (fritext, t.ex. "2026-10"): står på bladen per AID och BAS. Ingen uppgift i
+    // lönefilen säger det, så användaren anger den; tomt skrivs ut som "inte angiven".
+    lonemanad: '',
     // #11: manuell kolumnmappning (roll → exakt CSV-rubrik) när auto-matchning
     // missar. null = enbart auto-matchning. Sätts via kolumnmappnings-guiden.
     columnMap: null,
     ansvarKolumn: null,   // AID:s ansvarskod: { namn, giltiga } när kolumnen godkänts (ADR-33)
-    _dataHeaders: []   // rubriker från senast inlästa strukturfil (för guiden)
+    _dataHeaders: [],   // rubriker från senast inlästa strukturfil (för guiden)
+    // Breda tabeller: true när användaren valt Fler kolumner (05-tabeller-och-lankar.js). Bara i minnet, grundvyn som standard.
+    flerKolumner: {},
+    // Handlingsplanens ifyllda fält per förifylld rad (56-handlingsplan.js): { [nyckel]: { sakligt, ansvarig, tidsplan, status } }.
+    // Bara i minnet; följer med i konfigurationsfilen och exporterna, nollas av Rensa all data.
+    handlingsplan: {}
 };
 
 /**
@@ -369,6 +383,7 @@ const ENHANCED_TABLES = [
     { id: 'rapport-table',      file: 'loneoversikt' },
     { id: 'matrix-table',       file: 'lika-arbete-eu' },
     { id: 'paygap-table',       file: 'lonegap-per-bas' },
+    { id: 'la-oversikt',        file: 'lonegap-per-bas-intervall' },
     { id: 'skevhet-table',      file: 'skevhet-per-bas' },
     { id: 'benchmark-table',    file: 'benchmark' },
     { id: 'prio-table',         file: 'prioritering' },
@@ -403,6 +418,7 @@ function addTableExportTools(tableId, fileBase) {
         + `<button type="button" class="btn-table-tool" data-csv-table="${esc(tableId)}" data-csv-file="${esc(fileBase)}" `
         + `title="Ladda ner tabellen som CSV" aria-label="Ladda ner tabellen som CSV">${ikon('laddaNed', 14)} CSV</button>`;
     anchor.parentNode.insertBefore(bar, anchor);
+    /** @type {any} */ (table)._verktygsrad = bar;   // växeln Fler kolumner (05-tabeller-och-lankar.js) läggs i samma rad
 }
 
 // Ren text ur en cell: knappar/ikoner bort, whitespace normaliserad.
@@ -442,7 +458,7 @@ function _tableToMatrixExport(tableId) {
         const rad = [];
         cells.forEach(c => {
             if (c.hasAttribute('data-export-utelamna')) return;   // hel kolumn utelämnad (ADR-14)
-            const span = Math.max(1, parseInt(c.getAttribute('colspan') || '', 10) || 1);
+            const span = _cellSpann(c);   // hela bredden, också när växeln Fler kolumner har minskat den på skärmen
             rad.push(c.hasAttribute('data-export-tom') ? '' : _tableCellText(c));
             for (let i = 1; i < span; i++) rad.push('');
         });

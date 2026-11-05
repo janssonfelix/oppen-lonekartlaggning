@@ -4,8 +4,13 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { valideraFigur, figurTillTabell } from '../src/lib/figur.js';
-import { createAppWindow } from './helpers/app-harness.js';
+import { createAppWindow, delatFonster, utgangslage } from './helpers/app-harness.js';
 import { vanliga, figurMedLiten, person, skapaRigg } from './helpers/diagramvyer-rigg.js';
+
+const demo = delatFonster(w => w.__loadDemoData());
+it('det delade fönstret står i utgångsläget', () => {
+    expect(utgangslage(demo())).toEqual({ troskel: 10, dialoger: 0, flik: 'dashboard' });
+});
 
 const { w, behallare, utdata, medData } = skapaRigg();
 
@@ -137,8 +142,7 @@ describe('Struktur: chart-sektorer', () => {
         expect(() => valideraFigur(f, 't')).not.toThrow();
     });
     it('ritas av kärnan med demodatan: en punkt per sektor och serie, inga staplar, talen i tips stämmer med tabellen', () => {
-        const w2 = createAppWindow();
-        w2.__loadDemoData();
+        const w2 = demo();
         w2.__renderTabContent('struktur');
         const el = w2.document.getElementById('chart-sektorer');
         expect(el.data).toBeUndefined();
@@ -194,7 +198,7 @@ describe('Lika arbete: chart-skevhet-overview och chart-perbas-gap', () => {
         const f = w.eval(`_skevhetFigur([{ bas: '3', gap: 93.44, n: 40, ci: { lo: 90.1, hi: 96.9 } }, { bas: '5', gap: 96.2, n: 55, ci: { lo: 94, hi: 98.5 } },
                                          { bas: '7', gap: 99.1, n: 61, ci: null }])`);
         expect(f.lager.map(l => [l.serie, l.farg, l.symbol])).toEqual(
-            [['Avviker mer än 5 %', '#b91c1c', 'romb'], ['Avviker 3–5 %', '#d97706', 'kvadrat'], ['Inom 3 %', '#0f766e', 'cirkel']]);
+            [['Värt att granska', '#4338ca', 'romb'], ['Följ upp', '#d97706', 'kvadrat'], ['Balanserat', '#0f766e', 'cirkel']]);
         expect(f.lager.every(l => l.marke === 'punkt' && l.riktning === 'liggande' && !l.monster)).toBe(true);   // ingen stapel från en avkortad axel
         expect(f.lager[0].data).toEqual([{ y: 'BAS 3', x: 93.4, etikett: '93,4 %', n: 40, markering: ['bas:3'], fel: { lag: 90.1, hog: 96.9 } }]);
         expect(f.lager[2].data[0].fel).toBeUndefined();
@@ -206,7 +210,7 @@ describe('Lika arbete: chart-skevhet-overview och chart-perbas-gap', () => {
     });
     it('chart-skevhet-overview: en status utan punkter får inget lager (ingen tom post i förklaringen)', () => {
         const f = w.eval(`_skevhetFigur([{ bas: '7', gap: 99.1, n: 61, ci: null }])`);
-        expect(f.lager.map(l => l.serie)).toEqual(['Inom 3 %']);
+        expect(f.lager.map(l => l.serie)).toEqual(['Balanserat']);
     });
     it('chart-perbas-gap: punkt med intervall, liggande, i given ordning, KI som fel, nollinje, status som serie med symbol', () => {
         const f = w.eval(`_perBasFigur([{ bas: '3', gapPct: -6.214, ciLow: -9, ciHigh: -3.4, pValue: 0.001, n: 40, kvN: 22, maN: 18 },
@@ -223,8 +227,7 @@ describe('Lika arbete: chart-skevhet-overview och chart-perbas-gap', () => {
         expect(() => valideraFigur(f, 't')).not.toThrow();
     });
     it('ritas av kärnan med demodatan: punkter, intervall och förklaring med symbol för de statusar som finns; inget BAS under tröskeln', () => {
-        const w2 = createAppWindow();
-        w2.__loadDemoData();
+        const w2 = demo();
         w2.__renderTabContent('matrix');
         for (const id of ['chart-skevhet-overview', 'chart-perbas-gap']) {
             const el = w2.document.getElementById(id);
@@ -263,24 +266,26 @@ describe('Lika arbete: chart-skevhet-overview och chart-perbas-gap', () => {
 
 describe('Lika arbete: översiktstabellen med inbyggd grafik (huvudvyn)', () => {
     it('en rad per BAS med antal, medianer, skillnad, kvot med intervall och status — samma tal som figuren', () => {
-        const w2 = createAppWindow();
-        w2.__loadDemoData();
+        const w2 = demo();
         w2.__renderTabContent('matrix');
         const d = w2.document, rader = [...d.querySelectorAll('#la-oversikt tbody tr')];
-        const figur = d.getElementById('chart-skevhet-overview')._figur, hantel = d.getElementById('chart-skevhet-hantel')._figur;
+        const figur = d.getElementById('chart-skevhet-overview')._figur, ov = w2.eval('_laOversiktRader(getData())');
         expect(rader.map(r => r.querySelector('th').textContent)).toEqual(figur.y.ordning);
         expect(d.getElementById('la-huvuddiagram').contains(d.getElementById('la-oversikt'))).toBe(true);
-        expect(d.getElementById('avsnitt-la-bas').contains(d.getElementById('chart-skevhet-overview'))).toBe(true);   // bilden står i fördjupningen
+        expect(d.getElementById('avsnitt-la-bas').contains(d.getElementById('la-huvuddiagram'))).toBe(true);   // tabellen står i fördjupningen
+        expect(d.getElementById('la-bas-exportkopia').contains(d.getElementById('chart-skevhet-overview'))).toBe(true);   // bilden bara i exporten
+        expect(d.getElementById('la-bas-exportkopia').hidden).toBe(true);
         const punkter = figur.lager.flatMap(l => l.data.map(p => ({ ...p, serie: l.serie })));
         for (const tr of rader) {
             const celler = [...tr.children].map(c => c.textContent.replace(/\u00a0|\u202f/g, ' ')), bas = celler[0];
             const p = punkter.find(x => x.y === bas);
-            const kv = hantel.lager[1].data.find(x => x.y === bas), ma = hantel.lager[2].data.find(x => x.y === bas);
+            const o = ov.find(x => 'BAS ' + x.bas === bas), kv = { n: o.nKv, x: Math.round(o.medKv) }, ma = { n: o.nMa, x: Math.round(o.medMa) };
             expect(celler[1]).toBe(`${kv.n} / ${ma.n}`);
             expect(Number(celler[2].replace(/\D/g, ''))).toBe(kv.x);
             expect(Number(celler[3].replace(/\D/g, ''))).toBe(ma.x);
             expect(celler[4].startsWith(kv.x < ma.x ? '−' : kv.x > ma.x ? '+' : '')).toBe(true);
             expect(Number(celler[4].replace(/\D/g, ''))).toBe(Math.abs(kv.x - ma.x));
+            expect(tr.querySelector('th button.btn-evidence')).not.toBeNull();     // beviset för raden står vid intervallets namn
             expect(celler[6].startsWith(p.etikett.replace(/\u00a0|\u202f/g, ' '))).toBe(true);
             expect(celler[7]).toBe(p.serie);                                      // status i ord, inte bara i färg
             const svg = tr.querySelector('svg.la-oversikt-grafik');
@@ -311,8 +316,7 @@ describe('Lika arbete: översiktstabellen med inbyggd grafik (huvudvyn)', () => 
 
 describe('diagram i Lika arbete, Struktur och de övriga flikarna', () => {
     it('lönespridning per BAS och kön: lådor utan enskilda avvikare, och ett kön under tröskeln ritas inte', () => {
-        const w2 = createAppWindow();
-        w2.__loadDemoData();
+        const w2 = demo();
         w2.__renderTabContent('matrix');
         const el = w2.document.getElementById('chart-skevhet-lador'), f = el._figur;
         expect(f.lager.map(l => [l.marke, l.serie, l.avvikare, l.form])).toEqual([['lada', 'Kvinna', false, undefined], ['lada', 'Man', false, undefined]]);
@@ -342,8 +346,7 @@ describe('diagram i Lika arbete, Struktur och de övriga flikarna', () => {
         expect(() => valideraFigur(f, 't')).not.toThrow();
     });
     it('yrkesgruppstabellen ritar kvoten i raden, och exporten bär fortfarande bara talet', () => {
-        const w2 = createAppWindow();
-        w2.__loadDemoData();
+        const w2 = demo();
         w2.__renderTabContent('matrix');
         const rader = [...w2.document.querySelectorAll('#matrix-table tbody tr')].filter(tr => tr._euRow && !tr._euRow.samladMedian);
         expect(rader.length).toBeGreaterThan(0);
@@ -511,7 +514,7 @@ describe('gap per åldersgrupp, trattdiagram och läget i spannet per kön', () 
         expect(d.getElementById('chart-kon-aldergap')._figur.y.ordning.length).toBeGreaterThan(0);
         expect(d.getElementById('la-tratt-kort').hidden).toBe(false);
         expect(d.getElementById('chart-la-tratt')._figur.lager[0].marke).toBe('band');
-        expect(d.getElementById('la-tratt-not').textContent).toMatch(/^\d+ yrkesgrupper där både kvinnor och män når minsta gruppstorlek; \d+ ligger utanför gränserna/);
+        expect(d.getElementById('la-tratt-not').textContent).toMatch(/^\d+ grupper \(yrkesgrupp i ett BAS-intervall\) där både kvinnor och män når minsta gruppstorlek; \d+ ligger utanför gränserna/);
         w2.eval('sattKTroskel(200, { fraga: false })');
         for (const t of ['matrix', 'kon']) w2.__renderTabContent(t);
         expect(d.getElementById('la-tratt-kort').hidden).toBe(true);
@@ -552,7 +555,7 @@ describe('etiketter, långa namn, nollinje', () => {
 });
 
 describe('Ålder & karriär: chart-demo-hist', () => {
-    it('staplat per kön, referensen som prickad linje med punkter, zon över åldersgrupperna 60+', () => {
+    it('staplat per kön, referensen som prickad linje med punkter, ingen zon', () => {
         const AB = ['20–24', '25–29', '30–34', '35–39', '40–44', '45–49', '50–54', '55–59', '60–64', '65+'];
         w.__in = { pctKv: AB.map((_, i) => 6 + i), pctMa: AB.map(() => 4), refPct: AB.map(() => 10), isAll: true };
         const f = w.eval('_demoHistFigur(window.__in)');
@@ -561,19 +564,19 @@ describe('Ålder & karriär: chart-demo-hist', () => {
         expect(f.lager[2]).toMatchObject({ streck: 'prickad', punkter: true });
         expect(f.lager[0].data[9]).toEqual({ x: '65+', y: 15 });
         expect(f.x.ordning).toEqual(AB);
-        expect(f.referens).toEqual([expect.objectContaining({ typ: 'zon', x0: '60–64', x1: '65+' })]);
+        expect(f.referens).toBeUndefined();
         expect(f.y.titel).toBe('Andel av organisationen (%)');
         w.__in.isAll = false;
         expect(w.eval('_demoHistFigur(window.__in)').y.titel).toBe('Andel av BAS-intervall (%)');
         expect(() => valideraFigur(f, 't')).not.toThrow();
     });
-    it('ritas av kärnan: tio raka etiketter också på smal skärm, zonen ritad, ZIP och meny känner diagrammet', () => {
+    it('ritas av kärnan: tio raka etiketter också på smal skärm, ingen zon, ZIP och meny känner diagrammet', () => {
         const w2 = createAppWindow();
         w2.__loadDemoData();
         w2.__renderTabContent('demografi');
         const el = w2.document.getElementById('chart-demo-hist');
         expect(el.data).toBeUndefined();
-        expect(el.querySelectorAll('[data-marke="zon"]')).toHaveLength(1);
+        expect(el.querySelectorAll('[data-marke="zon"]')).toHaveLength(0);
         expect(el.querySelectorAll('[data-marke="stapel"]').length).toBeGreaterThan(0);
         expect(w2.eval('diagramRitat(document.getElementById("chart-demo-hist"))')).toBe(true);
         w2.__f = el._figur;
@@ -654,13 +657,12 @@ describe('Löneutveckling: chart-kon-scatter och chart-kon-boxplot', () => {
 });
 
 describe('Ålder & karriär: chart-demo-agecurve, chart-demo-spread', () => {
-    it('figurerna: monotona kurvor per kön med zon från 60; percentilband per femårsgrupp', () => {
+    it('figurerna: monotona kurvor per kön utan zon; percentilband per femårsgrupp', () => {
         const kurva = { ages: [58, 59, 60, 61, 62], share: [1, 2, 3, 2, 1] };
         w.__k = kurva;
-        const a = w.eval('_demoAgecurveFigur(window.__k, window.__k, 62)');
+        const a = w.eval('_demoAgecurveFigur(window.__k, window.__k)');
         expect(a.lager.map(l => [l.marke, l.serie, l.kurva, l.farg])).toEqual([['linje', 'Kvinna', 'monoton', '#833a8f'], ['linje', 'Man', 'monoton', '#5f7f16']]);
-        expect(a.referens).toEqual([expect.objectContaining({ typ: 'zon', x0: 60, x1: 62 })]);
-        expect(w.eval('_demoAgecurveFigur(window.__k, window.__k, 59)').referens).toEqual([]);
+        expect(a.referens).toBeUndefined();
         expect(a.lager[0].tips({ x: 60, y: 3 })).toEqual([['60 år'], ['Kvinna', '3,0 % av kvinnorna']]);
         // Percentilbandet: tolv personer i 30–34 och tolv i 40–44; de tre i 35–39 är under tröskeln och ritas inte.
         w.__df = [...Array.from({ length: 12 }, (_, i) => ({ alder: 30 + (i % 5), lon: 30000 + i * 1000 })), ...Array.from({ length: 3 }, (_, i) => ({ alder: 36, lon: 71111 + i })),
@@ -782,8 +784,7 @@ describe('Jämförelsestatistik: figurerna', () => {
 
 describe('Lönepolitik: chart-lp-bandmap', () => {
     it('ritas av kärnan: referensens och organisationens spann som intervall, yrkesgrupper som punkter i tre klasser efter könsfördelning', () => {
-        const w2 = createAppWindow();
-        w2.__loadDemoData();
+        const w2 = demo();
         w2.__renderTabContent('lonepolitik');
         const el = w2.document.getElementById('chart-lp-bandmap'), f = el._figur;
         expect(el.data).toBeUndefined();
@@ -884,8 +885,7 @@ describe('Likvärdigt arbete: chart-likvardighet-heatmap', () => {
         expect(() => valideraFigur(f, 't')).not.toThrow();
     });
     it('exporten bär stämpeln om undantaget för fliken', () => {
-        const w2 = createAppWindow();
-        w2.__loadDemoData();
+        const w2 = demo();
         w2.__renderTabContent('likvardighet');
         const el = w2.document.getElementById('chart-likvardighet-heatmap');
         if (!el || !el._figur) return;   // demodatan har för få kandidatpar: vyns text visas
@@ -897,7 +897,7 @@ describe('Likvärdigt arbete: chart-likvardighet-heatmap', () => {
 // ---- Utforska ----
 describe('Utforska: små grupper visas markerade och exporteras bara när rutan är ikryssad', () => {
     const MARKOR = 71337;
-    const oppna = () => {
+    const skapa = () => {
         const w2 = createAppWindow();
         const rad = (bas, kon, lon, alder = 40) => ({ bas, kon, lon, alder, yrke: '100 X', aid: '100', yrkeLabel: 'X' });
         w2.__state.data = [...Array.from({ length: 12 }, (_, i) => rad('A', 'man', 30000 + i * 7)), ...Array.from({ length: 3 }, () => rad('A', 'kvinna', MARKOR)),
@@ -908,6 +908,7 @@ describe('Utforska: små grupper visas markerade och exporteras bara när rutan 
         w2.__renderTabContent('utforska');
         return w2;
     };
+    const delat = delatFonster(null, skapa), oppna = () => delat();   // ett läsande test delar, ett som ändrar tar skapa()
     const valj = (w2, val) => { for (const [id, v] of Object.entries(val)) w2.document.getElementById(id).value = v; w2.__renderExplorer(); return w2.document.getElementById('chart-explore'); };
     const export_ = w2 => {
         const u = w2.eval('_rfExportFigur(document.getElementById("chart-explore"))');
@@ -951,7 +952,7 @@ describe('Utforska: små grupper visas markerade och exporteras bara när rutan 
         expect(f.lager[0].data.some(d => d.liten && d.varde >= MARKOR)).toBe(true);   // den lilla cellen finns i vyn, märkt
     });
     it('tomt urval: vyns text, ingen figur och inget att exportera', () => {
-        const w2 = oppna();
+        const w2 = skapa();
         w2.__explorerSetFilter({ bas: ['FINNS-INTE-ALLS'] });
         const el = valj(w2, { 'explore-rad': 'bas', 'explore-kolumn': 'ingen', 'explore-typ': 'auto' });
         expect(el._figur).toBeDefined();   // ett okänt filtervärde tas bort tyst: allt visas
@@ -1018,7 +1019,7 @@ describe('tydligare diagram: Utforska', () => {
         w.__m = { spec: { matt: 'gap', delaKon: false }, celler: [cell('A', 93), cell('B', 96.5), cell('C', 99.5)] };
         const f = w.eval('_figStaplar(window.__m, false)');
         expect(f.lager.map(l => [l.marke, l.serie, l.symbol, l.data.map(d => d.rad)])).toEqual(
-            [['punkt', 'Avviker mer än 5 %', 'romb', ['A']], ['punkt', 'Avviker 3–5 %', 'kvadrat', ['B']], ['punkt', 'Inom 3 %', 'cirkel', ['C']]]);
+            [['punkt', 'Värt att granska', 'romb', ['A']], ['punkt', 'Följ upp', 'kvadrat', ['B']], ['punkt', 'Balanserat', 'cirkel', ['C']]]);
         expect(f.legend).toBeUndefined();
         expect(f.referens[0]).toMatchObject({ y: 100, etikett: 'Lika lön' });
         expect(f.x.ordning).toEqual(['A', 'B', 'C']);
@@ -1604,8 +1605,7 @@ describe('metodförbehåll under diagram', () => {
         expect(w.eval('_laTrattGlesNot(0)')).toBeNull();
     });
     it('i verktyget: noten under tratten och samma mening under diagrammet i rapporten; metodbilagan har raden', () => {
-        const w2 = createAppWindow();
-        w2.__loadDemoData();
+        const w2 = demo();
         w2.__renderTabContent('matrix');
         const d = w2.document, antal = d.getElementById('chart-la-tratt')._figur.lager.filter(l => l.marke === 'punkt').reduce((n, l) => n + l.data.length, 0);
         const not = d.getElementById('chart-la-tratt-metod-not');

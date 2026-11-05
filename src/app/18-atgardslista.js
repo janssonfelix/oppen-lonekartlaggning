@@ -101,7 +101,7 @@ function buildActionChecklist({ endastGrupper = false } = {}) {
                 items.push({
                     id: 'reg-oforklarat', kategori: 'Lika arbete',
                     prioritet: Math.abs(reg.konPct) > 5 ? 'hög' : 'medel',
-                    titel: `Oförklarat lönegap för hela organisationen: kvinnor ${_agPct(reg.konPct)} % ${_agRiktning(reg.konPct)} lön än män (efter ålder och BAS)`,
+                    titel: `Oförklarat lönegap för hela organisationen: kvinnor ${_agPct(reg.konPct)} % ${_agRiktning(reg.konPct)} lön än män (${reg.fras ? `efter ${reg.fras}` : 'inget räknat bort'})`,
                     detalj: 'Ett oförklarat gap är inte samma sak som ett osakligt. Pröva skillnaden per yrkesgrupp i Lika arbete.',
                     tab: 'matrix', källa: 'Regressionen i Lika arbete'
                 });

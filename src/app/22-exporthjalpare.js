@@ -2,7 +2,7 @@
 // Copyright 2026 Felix Jansson
 
 // #5 Export-hubb: direktexporter för de state-drivna underlagen (kräver inte att
-// respektive flik besökts). Övriga hubb-rader navigerar via data-flow-tab.
+// respektive flik besökts). Flikarna med egna underlag nås från länkraden under exporterna (data-go-to-tab).
 document.getElementById('btn-hub-jpa')?.addEventListener('click', () => exportJPAProtocol());
 document.getElementById('btn-hub-handlingsplan')?.addEventListener('click', () => exportHandlingsplan());
 
@@ -87,7 +87,7 @@ function _exportVisaAllaRader(klon) {
         tr.hidden = false;
         tr.classList.remove('collapsed');
     });
-    return klon;
+    return _flerKolumnerAlla(klon);   // kolumnerna som växeln Fler kolumner gömmer på skärmen följer med
 }
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
 function _cloneAndCleanTableForExport(...a) { return medExportLage(() => __cloneAndCleanTableForExportExport.apply(null, /** @type {any} */ (a))); }

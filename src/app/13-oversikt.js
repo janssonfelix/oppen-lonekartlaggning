@@ -98,9 +98,11 @@ function bedomningUnderlag({ reg: given } = {}) {
     const d = getData();
     if (!d.length) return null;
     const reg = given || runOLSRegression();
-    const modell = reg.error ? 'fel' : (reg.modelName === 'full' ? 'full' : 'minimal');
+    const modell = reg.error ? 'fel' : (reg.fellBackFromFull ? 'minimal' : 'full');   // 'full' = den valda modellen gick att skatta (ADR-56)
     const mde = reg.error ? null : _dqMdeFranSe(reg.seKonR);
-    const b = _dqBedomUnderlag(d, { k: kInstalld(), audit: state.dataAudit, mde, modell });   // jämförbarheten gäller det som lämnar verktyget (ADR-51)
+    // Frasen följer med bara när modellen inte är standard, så att standardtexten (och golden-facit) står still (ADR-56).
+    const modellFras = !reg.error && reg.modell && !_rgForklaringsmodellArStandard({ ...reg.modell, skal: '' }) ? reg.fras : undefined;
+    const b = _dqBedomUnderlag(d, { k: kInstalld(), audit: state.dataAudit, mde, modell, modellFras });   // jämförbarheten gäller det som lämnar verktyget (ADR-51)
     // Kontrollen av AID-kodningen (ADR-33) läggs till datakvalitetens kriterier.
     let aid = [];
     try { aid = _akAidKriterier(d, { k: kInstalld(), harAnsvar: !!state.ansvarKolumn }); }
@@ -354,18 +356,24 @@ function renderProcessTracker({ punkter: givna } = {}) {
         return { n: 4, tab: 'likvardighet', title: '4. Likvärdigt arbete', ...steg, detail: steg.detail + (not && steg.status !== 'inget' ? ' ' + not : '') };
     }, { n: 4, tab: 'likvardighet', title: '4. Likvärdigt arbete', status: 'ej', detail: 'Kräver inläst underlag.' }));
 
-    // 5. § 3:11 Handlingsplan (avbockade åtgärdspunkter / totalt)
+    // 5. § 3:11 Handlingsplan: raderna på fliken (förifyllda och egna) och statusen som fyllts i där (56-handlingsplan.js).
     rows.push(safe(() => {
         if (!hasData) return { n: 5, tab: 'handlingsplan', title: '5. Handlingsplan', status: 'ej', detail: 'Kräver inläst underlag.' };
-        const items = punkter;
-        const d = items.filter(it => klarmarkerade.has(it.id)).length;
-        const t = items.length;
+        const rader = typeof _handlingsplanSeedRows === 'function' ? _handlingsplanSeedRows().rows : [];
+        const t = rader.length;
+        const genomforda = rader.filter(r => r[7] === 'Genomförd').length;
+        const planerade = rader.filter(r => r[7] === 'Planerad' || r[7] === 'Pågår').length;
+        const uppskjutna = rader.filter(r => r[7] === 'Skjuts upp').length;
+        const ifyllda = rader.filter(r => r[3] || r[5] || r[6] || r[7]).length;
+        const tomma = t - ifyllda;
         return {
             n: 5, tab: 'handlingsplan', title: '5. Handlingsplan',
-            status: t === 0 ? 'ej' : (d >= t ? 'klar' : (d > 0 ? 'delvis' : 'ej')),
+            status: t === 0 ? 'ej' : genomforda >= t ? 'klar' : ifyllda > 0 ? 'delvis' : 'ej',
             detail: t === 0
-                ? 'Fyll i handlingsplanen på fliken (förifylls från prioriteringen).'
-                : `${d}/${t} åtgärdspunkter hanterade i åtgärdslistan.`
+                ? 'Inga rader att fylla i: ingen grupp under referensen och inga kandidatpar. Egna rader läggs till på fliken.'
+                : ifyllda === 0
+                    ? `${t} ${t === 1 ? 'rad' : 'rader'} att fylla i på fliken: sakligt skäl, ansvarig, tidsplan och status.`
+                    : `${genomforda} av ${t} ${t === 1 ? 'rad' : 'rader'} genomförda${planerade ? `, ${planerade} planerade eller pågår` : ''}${uppskjutna ? `, ${uppskjutna} skjuts upp` : ''}${tomma ? `; ${tomma} utan något ifyllt` : ''}.`
         };
     }, { n: 5, tab: 'handlingsplan', title: '5. Handlingsplan', status: 'ej', detail: 'Kräver inläst underlag.' }));
 
@@ -390,7 +398,7 @@ function renderProcessTracker({ punkter: givna } = {}) {
         <div class="ptrack-row">
             <span class="ptrack-status" data-status="${esc(r.status)}" aria-hidden="true">${ICON[r.status] || ikon('ruta')}</span>
             <div class="ptrack-body">
-                <div class="ptrack-title">${esc(r.title)}</div>
+                <div class="fs-md fw-600">${esc(r.title)}</div>
                 <div class="ptrack-detail">${esc(r.detail)}</div>
                 <button type="button" class="ptrack-goto" data-goto-tab="${esc(r.tab)}">Gå till steget</button>
             </div>
@@ -417,13 +425,13 @@ function renderProcessTracker({ punkter: givna } = {}) {
 
 /**
  * Översikt efter inläsning. Före inläsning är sidan en uppladdningssida.
- * Efter inläsning krymper filerna till en rad, och sidan visar läget: nyckeltalen, kartan över organisationen,
- * lönekvartilerna och Att göra. Resten är avsnitt som fälls ut. Klassen `har-data` på panelen styr vad som visas
- * (style.css); `visa-filer` fäller ut uppladdningen igen.
+ * Efter inläsning krymper filerna till en rad, och sidan visar läget: nyckeltalen, Att göra och
+ * lönekvartilerna. Kartan över organisationen står bara i Struktur & rapportmått. Resten är avsnitt som fälls ut.
+ * Klassen `har-data` på panelen styr vad som visas (style.css); `visa-filer` fäller ut uppladdningen igen.
  */
 /** @type {boolean|null} */
 let _ovHadeData = null;
-// Kartan och kvartilerna är kopior av Struktur & rapportmåtts diagram och exporteras därifrån, inte två gånger
+// Kvartilerna är en kopia av Struktur & rapportmåtts diagram och exporteras därifrån, inte två gånger
 // (skälet `kopia` i 11-diagramexport.js).
 markeraUtanExport(document.getElementById('ov-lage'), 'kopia');
 function ovRitaLage() {
@@ -443,12 +451,11 @@ function ovRitaLage() {
     _ovRitaFilrad(har, d.length);
     const kvEl = document.getElementById('chart-ov-kvartiler'), kvNot = document.getElementById('ov-kvartiler-not');
     if (!har) {
-        ['chart-ov-tradkarta', 'chart-ov-kvartiler'].forEach(id => { const el = document.getElementById(id); if (el && typeof rensaFigur === 'function') { rensaFigur(el); el.innerHTML = ''; } });
+        if (kvEl && typeof rensaFigur === 'function') { rensaFigur(kvEl); kvEl.innerHTML = ''; }
         if (kvNot) kvNot.textContent = '';
         return;
     }
     try {
-        if (typeof renderStrukturTradkarta === 'function') renderStrukturTradkarta(d, 'chart-ov-tradkarta');
         // Samma villkor som i Struktur: utan könsuppdelning (ett kön under tröskeln) ritas inget diagram.
         const k = kTroskel(), q = _stQuartileDistribution(d, { k });
         const totKv = d.filter(r => r.kon && r.kon.includes('kvinna')).length;
@@ -528,14 +535,13 @@ function updateDashboardStats() {
             // k-anonymitet (ADR-12): kvoten pekar ut de få i det mindre könet.
             pgEl.innerHTML = `–<div class="stat-tip">Visas inte: ett kön har färre än ${kTroskel()} personer.</div>`;
         } else {
-            const dev = Math.abs(ratio - 100);
-            const tipClass = dev > 5 ? 'crit' : dev > 3 ? '' : 'ok';
             // Rå kvot för hela organisationen: EU-direktivets 5 %-gräns gäller per
-            // kategori av arbetstagare, inte här — därför ingen hänvisning till den.
-            const tipText = 'Rå skillnad för hela organisationen, före hänsyn till nivå och ålder. Se Lika arbete för skillnaden per grupp.';
+            // kategori av arbetstagare, inte här — därför ingen hänvisning till den, och neutral färg: rågapet
+            // är en utgångspunkt, inget fynd. Bedömningen görs per grupp i Lika arbete.
+            const tipText = 'Rå skillnad för hela organisationen, före hänsyn till yrke, nivå och ålder. Se Lika arbete för skillnaden per grupp.';
             // Förklaringen står i verktygstipset; under talet står bara vad det är för tal (nyckeltalsraden är en rad hög).
             pgEl.innerHTML = svPct(ratio, 1) +
-                `<div class="stat-tip ${tipClass}" title="${esc(tipText)}">rå skillnad, hela organisationen</div>`;
+                `<div class="stat-tip" title="${esc(tipText)}">rå skillnad, innan yrke och nivå räknats bort</div>`;
         }
     }
 }

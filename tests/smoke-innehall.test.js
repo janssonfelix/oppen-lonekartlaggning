@@ -92,18 +92,25 @@ describe('ingen organisatorisk enhet i data eller utdata (se §2 i teknisk-plan.
 
 describe('Lika arbete och filrutorna: ordning och kompakta rutor', () => {
     const efter = (a, b) => !!(a.compareDocumentPosition(b) & 4);   // b ligger efter a
-    it('Lika arbete visar slutsatser och huvuddiagram först, sedan yrkesgrupperna, personer att granska, per BAS och sist regressionen', () => {
+    it('Lika arbete visar slutsatser och yrkesgrupperna först, sedan personer att granska, per BAS, könsfördelningen och sist regressionen', () => {
         const w = createAppWindow();
         w.__loadDemoData();
         w.document.querySelector('.nav-item[data-tab="matrix"]').click();
         const d = w.document;
-        // Slutsatserna och översikten per BAS-intervall (en tabell med inbyggd grafik) står överst.
-        const [slut, huvud, yrken, pag, perBas, reg] = ['la-slutsatser', 'la-oversikt', 'matrix-table', 'personer-att-granska', 'paygap-table', 'regression-card'].map(id => d.getElementById(id));
-        expect(efter(slut, huvud)).toBe(true);
-        expect(efter(huvud, yrken)).toBe(true);
-        expect(efter(yrken, pag)).toBe(true);
+        // Slutsatserna och yrkesgrupperna (tabellen och sedan trattdiagrammet) står överst; per BAS-intervall i Fördjupning.
+        const [slut, yrken, tratt, pag, perBas, kon, reg, metod] = ['la-slutsatser', 'matrix-table', 'chart-la-tratt', 'personer-att-granska', 'la-oversikt', 'avsnitt-la-kon', 'regression-card', 'avsnitt-la-metod'].map(id => d.getElementById(id));
+        expect(efter(slut, yrken)).toBe(true);
+        expect(efter(yrken, tratt)).toBe(true);
+        expect(efter(tratt, pag)).toBe(true);
         expect(efter(pag, perBas)).toBe(true);
-        expect(efter(perBas, reg)).toBe(true);
+        expect(efter(perBas, kon)).toBe(true);
+        expect(efter(kon, reg)).toBe(true);
+        expect(efter(reg, metod)).toBe(true);
+        expect(d.getElementById('la-topp').nextElementSibling.id).toBe('avsnitt-la-yrkesgrupper');   // huvudbilden direkt under nyckeltalen
+        expect(d.getElementById('avsnitt-la-bas').contains(perBas)).toBe(true);
+        // Skillnaden per BAS-intervall visas en gång: tabellen och bilden i exporten är dolda på skärmen.
+        expect(d.getElementById('la-bas-exportkopia').hidden).toBe(true);
+        expect(d.getElementById('la-bas-exportkopia').contains(d.getElementById('paygap-table'))).toBe(true);
         for (const el of [yrken, perBas, reg]) expect(el.closest('.view-panel').style.display).toBe('block');
         expect(pag.hidden).toBe(false);
         expect(d.querySelector('.view-panel[style*="block"] .flik-intro').textContent).toContain('Samma jobb, olika lön');
@@ -589,5 +596,302 @@ describe('MDE per grupp: spridningen inom grupp, inte över hela urvalet', () =>
         const t = w.document.getElementById('view-info').textContent;
         expect(t).toMatch(/poolade standardavvikelsen av residualerna log\(lön\) − log\(gruppens median per kön\)/);
         expect(t).toMatch(/används bara som reserv/);
+    });
+});
+
+describe('förklaringsmodellen i tillstånd och konfigurationsfil (ADR-56)', () => {
+    const fonster = () => { const w = createAppWindow(); w.__loadDemoData(); return w; };
+    it('sattForklaringsmodell sätter tillståndet, standard lagras som null, och snapshoten bär valet', () => {
+        const w = fonster();
+        expect(w.__state.forklaringsmodell).toBeNull();
+        expect(w.eval('forklaringsmodell()')).toEqual({ bas: true, alder: true, yrkesgrupp: false, skal: '' });
+        const r = w.eval('sattForklaringsmodell({ bas: true, alder: false, yrkesgrupp: false, skal: "ingen lön efter ålder" }, { rita: false })');
+        expect(r.ok).toBe(true);
+        expect(w.__state.forklaringsmodell.alder).toBe(false);
+        expect(w.eval('JSON.parse(JSON.stringify(buildConfigSnapshot()))').forklaringsmodell).toEqual({ bas: true, alder: false, yrkesgrupp: false, skal: 'ingen lön efter ålder' });
+        w.eval('sattForklaringsmodell({ bas: true, alder: true, yrkesgrupp: false, skal: "" }, { rita: false })');
+        expect(w.__state.forklaringsmodell).toBeNull();
+        expect(w.eval('JSON.parse(JSON.stringify(buildConfigSnapshot()))').forklaringsmodell).toBeNull();
+    });
+    it('konfigurationsfilen: ett trasigt värde ger standard med varning, en fil utan fältet ger standard utan varning', () => {
+        const w = fonster();
+        w.__cfg = { ...w.eval('JSON.parse(JSON.stringify(buildConfigSnapshot()))'), forklaringsmodell: { alder: 'ja', bas: true } };
+        const r = w.eval('applyConfigSnapshot(window.__cfg)');
+        expect(w.__state.forklaringsmodell).toEqual({ bas: true, alder: false, yrkesgrupp: false, skal: '' });
+        expect(r.varningar.length).toBe(0);   // "ja" tvingas till falskt utan varning: fältet är giltigt men avslaget
+        w.__cfg = { ...w.eval('JSON.parse(JSON.stringify(buildConfigSnapshot()))'), forklaringsmodell: 'full' };
+        const r2 = w.eval('applyConfigSnapshot(window.__cfg)');
+        expect(w.__state.forklaringsmodell).toBeNull();
+        expect(r2.varningar.join(' ')).toMatch(/[Ff]örklaringsmodellen/);
+        const utan = w.eval('JSON.parse(JSON.stringify(buildConfigSnapshot()))'); delete utan.forklaringsmodell;
+        w.__state.forklaringsmodell = { bas: false, alder: true, yrkesgrupp: false, skal: '' };
+        w.__cfg = utan;
+        expect(w.eval('applyConfigSnapshot(window.__cfg)').varningar.length).toBe(0);
+        expect(w.__state.forklaringsmodell).toBeNull();
+    });
+    it('en konfigurationsfil som läses in före lönefilen behåller yrkesgrupp (valet prövas mot datat när det finns)', () => {
+        const w = createAppWindow();
+        w.__cfg = { version: 2, forklaringsmodell: { bas: true, alder: true, yrkesgrupp: true, skal: '' } };
+        const r = w.eval('applyConfigSnapshot(window.__cfg)');
+        expect(r.varningar.length).toBe(0);
+        expect(w.__state.forklaringsmodell).toEqual({ bas: true, alder: true, yrkesgrupp: true, skal: '' });
+        w.__loadDemoData();
+        expect(w.eval('forklaringsmodell()').yrkesgrupp).toBe(true);
+    });
+    it('Rensa all data nollställer valet; yrkesgrupp utan yrke i datat stängs av med varning', () => {
+        const w = fonster();
+        w.eval('sattForklaringsmodell({ bas: true, alder: false, yrkesgrupp: false, skal: "" }, { rita: false })');
+        w.eval('_rensaAllData()');
+        expect(w.__state.forklaringsmodell).toBeNull();
+        const w2 = createAppWindow();
+        const rad = (kon, lon, i) => ({ bas: ['A', 'B', 'C'][i % 3], kon, lon, alder: 25 + (i % 30) });
+        w2.__state.data = Array.from({ length: 120 }, (_, i) => rad(i % 2 ? 'kvinna' : 'man', 30000 + (i % 3) * 2000 + (i % 7) * 100, i));
+        const r = w2.eval('sattForklaringsmodell({ bas: true, alder: true, yrkesgrupp: true, skal: "" }, { rita: false })');
+        expect(r.modell.yrkesgrupp).toBe(false);
+        expect(r.varningar.join(' ')).toMatch(/AID och yrke/);
+    });
+});
+
+describe('runOLSRegression på vald modell (ADR-56)', () => {
+    const kor = modell => { const w = createAppWindow(); w.__loadDemoData(); w.__state.forklaringsmodell = modell; return { w, r: w.eval('runOLSRegression()') }; };
+    it('standard: modelDesc som i dag, frasen "ålder och nivå", inget bortvalt, tillför-tabellen med tre rader', () => {
+        const { r } = kor(null);
+        expect(r.error).toBeUndefined();
+        expect(r.modelDesc).toBe('kön + ålder + BAS-intervall (indikatorer)');
+        expect(r.fras).toBe('ålder och nivå');
+        expect(r.bortvalt).toEqual([]);
+        expect(r.modell).toEqual({ bas: true, alder: true, yrkesgrupp: false, skal: '' });
+        expect(r.tillfor.rader.map(x => x.variabel)).toEqual(['bas', 'alder', 'yrkesgrupp']);
+        expect(r.modellVarning).toBeNull();
+    });
+    it('utan ålder: en kolumn färre, ingen ålderseffekt, ålder bortvald, inget steg + Ålder', () => {
+        const std = kor(null).r;
+        const { r } = kor({ bas: true, alder: false, yrkesgrupp: false, skal: 'ingen lön efter ålder' });
+        expect(r.k).toBe(std.k - 1);
+        expect(r.ageEffect).toBeNull();
+        expect(r.ageP).toBeNull();
+        expect(r.bortvalt).toHaveLength(1);
+        expect(r.bortvalt[0]).toMatchObject({ variabel: 'alder', etikett: 'Ålder', skal: 'ingen lön efter ålder' });
+        expect(typeof r.bortvalt[0].deltaR2pp).toBe('number');
+        expect(r.sequential.map(x => x.name)).not.toContain('+ Ålder');
+        expect(r.fras).toBe('nivå');
+        expect(r.konPct).toBeCloseTo(r.sequential.find(x => x.name === '+ BAS-intervall').gapPct, 8);
+    });
+    it('utan BAS: inga BAS-effekter, frasen "ålder"', () => {
+        const { r } = kor({ bas: false, alder: true, yrkesgrupp: false, skal: '' });
+        expect(r.basEffekter).toBeNull();
+        expect(r.basRef).toBeNull();
+        expect(r.fras).toBe('ålder');
+        expect(r.modelDesc).toBe('kön + ålder');
+        expect(r.bortvalt.map(b => b.variabel)).toEqual(['bas']);
+    });
+    it('endast kön: huvudtalet är steget Endast kön, frasen är tom', () => {
+        const { r } = kor({ bas: false, alder: false, yrkesgrupp: false, skal: '' });
+        expect(r.fras).toBe('');
+        expect(r.konPct).toBeCloseTo(r.sequential[0].gapPct, 8);
+        expect(r.sequential.map(x => x.name)).toEqual(['Endast kön']);
+    });
+    it('yrkesgrupp vald: huvudtalet är yrkesgruppssteget och ingår i stegen', () => {
+        const std = kor(null).r;
+        const { r } = kor({ bas: true, alder: true, yrkesgrupp: true, skal: '' });
+        expect(r.konPct).toBeCloseTo(std.yrkesSteg.gapPct, 6);
+        expect(r.fras).toBe('ålder, nivå och yrkesgrupp');
+        expect(r.modelDesc).toBe('kön + ålder + BAS-intervall (indikatorer) + yrkesgrupp inom BAS (fasta effekter)');
+        expect(r.sequential.at(-1).name).toBe('+ Yrkesgrupp');
+        expect(r.yrkesSteg.status).toBe('ok');
+        expect(r.bortvalt).toEqual([]);
+    });
+    it('singulär vald modell (ett enda BAS) faller tillbaka och säger det', () => {
+        const w = createAppWindow();
+        // Kvinnorna i BAS A, männen i BAS B: könsindikatorn och BAS-indikatorn är identiska, så kön + BAS är singulär.
+        w.__state.data = Array.from({ length: 80 }, (_, i) => ({ bas: i % 2 ? 'A' : 'B', kon: i % 2 ? 'kvinna' : 'man', alder: 25 + (i % 30), lon: 30000 + (i % 9) * 500 }));
+        w.__state.forklaringsmodell = { bas: true, alder: false, yrkesgrupp: false, skal: '' };
+        const r = w.eval('runOLSRegression()');
+        expect(r.error).toBeUndefined();
+        expect(r.fellBackFromFull).toBe(true);
+        expect(r.modelDesc).toBe('kön');
+    });
+    it('ett kön under tröskeln: endast kön spärras, modellen blir BAS + ålder med en varning', () => {
+        const w = createAppWindow();
+        w.__state.data = Array.from({ length: 80 }, (_, i) => ({ bas: ['A', 'B', 'C'][i % 3], kon: i < 7 ? 'man' : 'kvinna', alder: 25 + (i % 30), lon: 30000 + (i % 3) * 2000 + (i % 9) * 100 }));
+        w.__state.forklaringsmodell = { bas: false, alder: false, yrkesgrupp: false, skal: '' };
+        const r = w.eval('runOLSRegression()');
+        expect(r.error).toBeUndefined();
+        expect(r.modell).toMatchObject({ bas: true, alder: true });
+        expect(r.modellVarning).toMatch(/under tröskeln|färre än/);
+    });
+    it('_explanationBudget bygger delarna ur stegen som de kommer', () => {
+        const w = createAppWindow();
+        const b = w.eval(`_explanationBudget([{ name: 'Endast kön', status: 'ok', gapPct: -6 }, { name: '+ Ålder', status: 'ok', gapPct: -4 }])`);
+        expect(b.parts.map(p => p.key)).toEqual(['alder']);
+        expect(b.parts[0].val).toBeCloseTo(2, 10);
+        expect(b.remaining).toBe(4);
+    });
+});
+
+describe('modellpanelen (ADR-56)', () => {
+    const oppna = w => { w.document.querySelector('.nav-item[data-tab="matrix"]').click(); w.eval('renderTabContent("matrix")'); return w.document.getElementById('forklaringsmodell-panel'); };
+    const demo = () => { const w = createAppWindow(); w.__loadDemoData(); return w; };
+    const andra = (w, el, varde) => { if (typeof varde === 'boolean') el.checked = varde; else el.value = varde; el.dispatchEvent(new w.Event('change', { bubbles: true })); };
+    it('panelen ligger före huvudtalet med BAS och ålder ikryssade och en rad per variabel i tabellen', () => {
+        const w = demo();
+        const p = oppna(w);
+        expect(p).not.toBeNull();
+        expect(p.compareDocumentPosition(w.document.getElementById('regression-card')) & w.Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+        expect(p.querySelector('input[data-fm="bas"]').checked).toBe(true);
+        expect(p.querySelector('input[data-fm="alder"]').checked).toBe(true);
+        expect(p.querySelector('input[data-fm="yrkesgrupp"]').checked).toBe(false);
+        expect(p.querySelectorAll('table tbody tr').length).toBe(3);
+        expect(p.textContent).toMatch(/BAS-intervall/);
+        expect(p.textContent).toMatch(/procentenheter/);
+        expect(p.querySelector('[data-fm-notering]')).toBeNull();
+    });
+    it('utan AID och yrke finns ingen kryssruta för yrkesgrupp och tabellen har två rader', () => {
+        const w = createAppWindow();
+        w.__state.data = Array.from({ length: 120 }, (_, i) => ({ bas: ['A', 'B', 'C'][i % 3], kon: i % 2 ? 'kvinna' : 'man', alder: 25 + (i % 30), lon: 30000 + (i % 3) * 2000 + (i % 7) * 100 }));
+        w.eval('populateSelects(); unlockTabs();');
+        const p = oppna(w);
+        expect(p.querySelector('input[data-fm="yrkesgrupp"]')).toBeNull();
+        expect(p.querySelectorAll('table tbody tr').length).toBe(2);
+    });
+    it('att kryssa ur ålder räknar om kortet och visar noteringen; skälet sparas', () => {
+        const w = demo();
+        const p = oppna(w);
+        andra(w, p.querySelector('input[data-fm="alder"]'), false);
+        expect(w.__state.forklaringsmodell.alder).toBe(false);
+        const p2 = w.document.getElementById('forklaringsmodell-panel');
+        expect(p2.querySelector('[data-fm-notering]').textContent).toMatch(/Ålder har kontrollerats och tillför/);
+        expect(w.document.getElementById('regression-card').textContent).toMatch(/nivå/);
+        andra(w, p2.querySelector('#fm-skal'), 'organisationen sätter inte lön efter ålder');
+        expect(w.__state.forklaringsmodell.skal).toBe('organisationen sätter inte lön efter ålder');
+        expect(w.document.getElementById('forklaringsmodell-panel').querySelector('[data-fm-notering]').textContent).toMatch(/Skäl: organisationen sätter inte lön efter ålder/);
+    });
+    it('ett skäl som ser ut som en personuppgift sparas inte och får en not', () => {
+        const w = demo();
+        const p = oppna(w);
+        andra(w, p.querySelector('input[data-fm="alder"]'), false);
+        const p2 = w.document.getElementById('forklaringsmodell-panel');
+        andra(w, p2.querySelector('#fm-skal'), 'lönen sätts av 19800101-1234');
+        expect(w.__state.forklaringsmodell.skal).toBe('');
+        expect(w.document.getElementById('forklaringsmodell-panel').querySelector('.k-mask-note').textContent).toMatch(/personuppgift/);
+    });
+    it('förslaget: knappen följer förslaget och kryssrutan för yrkesgrupp kräver BAS', () => {
+        const w = demo();
+        const p = oppna(w);
+        const forslag = p.querySelector('[data-fm-forslag]');
+        if (forslag) { forslag.click(); expect(w.__state.forklaringsmodell).not.toBeNull(); }
+        else expect(p.textContent).toMatch(/Alla variabler tillför/);
+        const w2 = demo();
+        const q = oppna(w2);
+        andra(w2, q.querySelector('input[data-fm="yrkesgrupp"]'), true);
+        const q2 = w2.document.getElementById('forklaringsmodell-panel');
+        expect(w2.__state.forklaringsmodell.yrkesgrupp).toBe(true);
+        expect(q2.querySelector('input[data-fm="bas"]').checked).toBe(true);
+        expect(q2.querySelector('input[data-fm="bas"]').disabled).toBe(true);
+    });
+    it('med ett kön under tröskeln kan inte båda kryssas ur: BAS och ålder är åter ikryssade och varningen visas', () => {
+        const w = createAppWindow();
+        w.__state.data = Array.from({ length: 80 }, (_, i) => ({ bas: ['A', 'B', 'C'][i % 3], kon: i < 7 ? 'man' : 'kvinna', alder: 25 + (i % 30), lon: 30000 + (i % 3) * 2000 + (i % 9) * 100 }));
+        w.eval('populateSelects(); unlockTabs();');
+        const p = oppna(w);
+        andra(w, p.querySelector('input[data-fm="alder"]'), false);
+        andra(w, w.document.getElementById('forklaringsmodell-panel').querySelector('input[data-fm="bas"]'), false);
+        const p2 = w.document.getElementById('forklaringsmodell-panel');
+        expect(p2.querySelector('input[data-fm="bas"]').checked).toBe(true);
+        expect(p2.querySelector('input[data-fm="alder"]').checked).toBe(true);
+        expect(p2.querySelector('.k-mask-note').textContent).toMatch(/Endast kön kan inte väljas/);
+    });
+    it('Rensa all data tömmer panelen', () => {
+        const w = demo();
+        oppna(w);
+        w.eval('_rensaAllData()');
+        expect(w.document.getElementById('forklaringsmodell-panel').innerHTML).toBe('');
+    });
+});
+
+describe('avsnittet följer modellen (ADR-56)', () => {
+    const rita = modell => {
+        const w = createAppWindow(); w.__loadDemoData(); w.__state.forklaringsmodell = modell;
+        w.document.querySelector('.nav-item[data-tab="matrix"]').click(); w.eval('renderTabContent("matrix")');
+        const kort = w.document.getElementById('regression-card'), oax = w.document.getElementById('blinder-oaxaca-card');
+        const trappa = w.document.getElementById('chart-reg-trappa');
+        return { w, kort, oax, kortText: kort.textContent.replace(/\s+/g, ' '), oaxText: oax.textContent.replace(/\s+/g, ' '), figur: trappa ? trappa._figur : null };
+    };
+    it('utan ålder: inga "ålder och nivå", inget steg + Ålder, trappan slutar efter BAS, Oaxaca utan ålderraden', () => {
+        const { kortText, oaxText, figur, oax } = rita({ bas: true, alder: false, yrkesgrupp: false, skal: '' });
+        expect(kortText).not.toMatch(/ålder och nivå/);
+        expect(kortText).not.toMatch(/ålder och BAS/);
+        expect(kortText).not.toMatch(/BAS-intervall och ålder \(full modell\)/);
+        expect(kortText).toMatch(/Efter kontroll för BAS-intervall/);
+        expect(kortText).toMatch(/när nivå räknats bort/);
+        expect(figur).not.toBeNull();
+        expect(figur.x.ordning).toEqual(['Ojusterat gap', 'BAS-intervall', 'Oförklarat gap', 'Yrkesgrupp inom BAS']);
+        expect(oaxText).toMatch(/Förklarat av nivå/);
+        expect([...oax.querySelectorAll('tbody td:first-child')].map(td => td.textContent)).not.toContain('Ålder');
+        expect(oaxText).toMatch(/Ålder har kontrollerats/);
+    });
+    it('endast kön: Oaxaca-kortet visas inte och kortet säger att inget räknats bort', () => {
+        const { kortText, oax, figur } = rita({ bas: false, alder: false, yrkesgrupp: false, skal: '' });
+        expect(oax.innerHTML).toBe('');
+        expect(kortText).toMatch(/utan att något räknats bort/);
+        expect(figur).toBeNull();
+    });
+    it('yrkesgrupp vald: ordinarie steg i trappan, och Oaxaca har raden Yrkesgrupp inom BAS i stället för BAS-intervall', () => {
+        const { kortText, oax, figur } = rita({ bas: true, alder: true, yrkesgrupp: true, skal: '' });
+        expect(figur.x.ordning).toEqual(['Ojusterat gap', 'BAS-intervall', 'Ålder', 'Yrkesgrupp inom BAS', 'Oförklarat gap']);
+        expect(figur.lager.some(l => /ingår inte i huvudtalet/.test(l.serie))).toBe(false);
+        expect(kortText).not.toMatch(/ingår inte i huvudtalet/);
+        expect(kortText).toMatch(/ålder, nivå och yrkesgrupp räknats bort/);
+        const rader = [...oax.querySelectorAll('tbody td:first-child')].map(td => td.textContent);
+        expect(rader.some(t => /Yrkesgrupp inom BAS/.test(t))).toBe(true);
+        expect(rader.some(t => /^BAS-intervall/.test(t))).toBe(false);
+    });
+    it('standardläget är som förut', () => {
+        const { kortText, figur, oaxText } = rita(null);
+        expect(kortText).toMatch(/när ålder och nivå räknats bort/);
+        expect(figur.x.ordning).toEqual(['Ojusterat gap', 'BAS-intervall', 'Ålder', 'Oförklarat gap', 'Yrkesgrupp inom BAS']);
+        expect(oaxText).toMatch(/Förklarat av ålder och nivå/);
+    });
+});
+
+describe('huvudtalet följer modellen i nyckeltal, Att göra, Struktur och rapporten (ADR-56)', () => {
+    const rita = modell => { const w = createAppWindow(); w.__loadDemoData(); w.__state.forklaringsmodell = modell; return w; };
+    it('Lika arbetes nyckeltal och Att göra säger "efter nivå" utan ålder', () => {
+        const w = rita({ bas: true, alder: false, yrkesgrupp: false, skal: '' });
+        w.document.querySelector('.nav-item[data-tab="matrix"]').click(); w.eval('renderTabContent("matrix")');
+        expect(w.document.getElementById('nyckel-la-regression').textContent).toMatch(/efter nivå$/);
+        expect(w.document.getElementById('la-slutsatser').textContent).toMatch(/Efter nivå/);
+        expect(w.document.getElementById('la-slutsatser').textContent).not.toMatch(/ålder och nivå/);
+        w.eval('renderActionChecklist()');
+        expect(w.document.getElementById('action-checklist-container').textContent).toMatch(/\(efter nivå\)/);
+    });
+    it('rapportmodellen: raden heter efter nivå, bilagan saknar ålderseffekten och bär noteringen med skälet', () => {
+        const w = rita({ bas: true, alder: false, yrkesgrupp: false, skal: 'ingen lön efter ålder' });
+        const m = w.eval('rapportModell()');
+        const lika = m.avsnitt.find(a => a.id === 'lika');
+        const tab = lika.delar.find(d => d.typ === 'tabell');
+        expect(tab.rader.map(r => r[0])).toContain('Löneskillnad som står kvar efter nivå');
+        const text = JSON.stringify(lika.delar);
+        expect(text).toMatch(/när nivå räknats bort/);
+        expect(text).not.toMatch(/ålder och nivå/);
+        const reg = m.avsnitt.find(a => a.id === 'regression');
+        const regText = JSON.stringify(reg.delar);
+        expect(regText).not.toMatch(/Ålderseffekt/);
+        expect(regText).toMatch(/Ålder har kontrollerats och tillför [0-9,]+ procentenheter i förklaringsgrad; den ingår inte i siffrorna\. Skäl: ingen lön efter ålder/);
+        expect(regText).toMatch(/strukturella variabler \(nivå\)/);
+        expect(regText).not.toMatch(/\+ Ålder/);
+    });
+    it('rapportunderlaget bär frasen och det bortvalda', () => {
+        const w = rita({ bas: false, alder: true, yrkesgrupp: false, skal: '' });
+        const text = w.__rapportunderlagBlock().map(b => w.__ruTillText(b)).join('\n');
+        expect(text).toMatch(/Efter hänsyn till ålder är det oförklarade lönegapet/);
+        expect(text).toMatch(/BAS-intervall har kontrollerats/);
+    });
+    it('standardläget: rapportmodellens rad och texter som förut', () => {
+        const w = rita(null);
+        const m = w.eval('rapportModell()');
+        const lika = m.avsnitt.find(a => a.id === 'lika');
+        expect(lika.delar.find(d => d.typ === 'tabell').rader.map(r => r[0])).toContain('Löneskillnad som står kvar efter ålder och nivå');
+        expect(JSON.stringify(m.avsnitt.find(a => a.id === 'regression').delar)).toMatch(/Ålderseffekt/);
     });
 });

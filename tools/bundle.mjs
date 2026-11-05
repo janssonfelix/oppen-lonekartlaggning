@@ -159,7 +159,7 @@ sources.push({ name: 'style.css (minified)', bytes: cssMin.length });
 
 const cssTagPattern = /<link\s+rel="stylesheet"\s+href="style\.css"\s*\/?>/;
 const cssMatch = html.match(cssTagPattern);
-if (!cssMatch) throw new Error('Hittade ej style.css link-tagg');
+if (!cssMatch || cssMatch.index == null) throw new Error('Hittade ej style.css link-tagg');
 html =
     html.substring(0, cssMatch.index) +
     `<style>${cssMin}</style>` +

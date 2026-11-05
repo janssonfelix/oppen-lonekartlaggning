@@ -73,11 +73,8 @@ function explorerFigure(model, typ, rows) {
 // Könsgapets status: en serie per status med egen symbol — färgen bär den inte ensam (WCAG 1.4.1), och
 // förklaringen namnger den. Samma gränser och samma form (punkt, inte stapel) som i Lika arbete: kvoten läses som
 // avstånd till 100 %, och en stapels längd från en avkortad axel säger ingenting.
-const _EXPLORE_GAPSTATUS = [
-    { serie: 'Avviker mer än 5 %', farg: 'kritisk', symbol: 'romb', galler: a => a > 5 },
-    { serie: 'Avviker 3–5 %', farg: 'varning', symbol: 'kvadrat', galler: a => a > 3 },
-    { serie: 'Inom 3 %', farg: 'ok', symbol: 'cirkel', galler: () => true }
-];
+// Statusarna är verktygets gemensamma (GAP_STATUS i 10-diagramtema.js).
+const _EXPLORE_GAPSTATUS = GAP_STATUS;
 
 function _figStaplar(model, liggande) {
     const { matt, delaKon } = model.spec, celler = model.celler;

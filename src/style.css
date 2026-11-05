@@ -265,6 +265,8 @@ body {
 .slutsats-varde { font-size: 1.7rem; font-weight: 700; line-height: 1.2; letter-spacing: -0.02em; margin: 4px 0 2px; }
 .slutsats-under { font-size: var(--fs-xs); color: var(--text-muted, #475569); }
 .slutsats-under.ar-kritisk { color: var(--status-kritisk, #b91c1c); font-weight: 600; }
+/* En skillnad över 5 % är statusen Värt att granska: samma lila som i tabellerna, inte rött. */
+.slutsats-under.ar-granska, .avsnitt-nyckel.ar-granska { color: var(--status-granska); font-weight: 600; }
 .avsnitt-rubrikrad { margin: 22px 0 8px 2px; font-size: var(--fs-xs); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-muted, #475569); }
 details.avsnitt { margin: 0 0 10px; }
 details.avsnitt:not(.card) { background: var(--bg-card, #fff); border: 1px solid var(--border, #e2e8f0); border-radius: var(--radius); padding: 0 24px; box-shadow: var(--shadow-sm); }
@@ -338,11 +340,13 @@ details.avsnitt[open]:not(.card) { padding-bottom: 20px; }
 .la-oversikt-kvot { font-weight: 600; }
 .la-oversikt-ki { display: block; font-weight: 400; font-size: var(--fs-xs); color: var(--text-muted); }
 .la-oversikt-tom { color: var(--text-muted); text-align: center; padding: 20px; }
+.la-oversikt .la-oversikt-bevis { margin-left: 6px; vertical-align: middle; }
 .la-status { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: var(--fs-xs); font-weight: 600; white-space: nowrap; }
 /* Lila, som «Värt att granska» i yrkesgruppstabellen och «Börja här» i Prioritering. */
-.la-status.ar-kritisk { background: var(--status-granska-bg); color: var(--status-granska); }
+.la-status.ar-granska { background: var(--status-granska-bg); color: var(--status-granska); }
 .la-status.ar-varning { background: var(--status-varning-bg); color: var(--status-varning); }
 .la-status.ar-ok { background: var(--status-ok-bg); color: var(--status-ok); }
+.la-status[class*="ar-"] > .ikon { margin-right: 4px; }   /* märket står utan mellanslag, så att cellens text är bara ordet */
 
 /* Linjeikoner (03-ikoner.js): i textens färg, på textens baslinje. Statusmärkena har egen färg och egen form. */
 .ikon { display: inline-block; vertical-align: -0.16em; flex: none; }
@@ -387,11 +391,12 @@ details.avsnitt[open]:not(.card) { padding-bottom: 20px; }
     .nav-group { font-size: 0; padding: 0; height: 1px; margin: 5px 12px; background: rgba(255, 255, 255, 0.12); }
     .nav-group:first-child { display: none; }
     .nav-item { position: relative; justify-content: center; padding: 10px 0; gap: 0; margin: 0 8px; width: calc(100% - 16px); }
-    .sidebar .nav-item[aria-disabled="true"]::after { content: none; }
+    .sidebar .nav-item[aria-disabled="true"] .nav-las { display: none; }
     .nav-etikett { position: absolute; left: 100%; top: 50%; transform: translateY(-50%); margin-left: 14px; padding: 5px 10px; border-radius: 6px;
         background: var(--text-main); color: #fff; font-size: var(--fs-xs); font-weight: 500; white-space: nowrap; pointer-events: none;
-        opacity: 0; visibility: hidden; }
-    .nav-item:hover .nav-etikett, .nav-item:focus-visible .nav-etikett { opacity: 1; visibility: visible; }
+        opacity: 0; }
+    /* Bara opacity: visibility: hidden skulle ta bort knappens namn ur tillgänglighetsträdet. */
+    .nav-item:hover .nav-etikett, .nav-item:focus-visible .nav-etikett { opacity: 1; }
 }
 @media (max-width: 640px) {
     .btn.meny-knapp { display: inline-flex; }
@@ -405,8 +410,21 @@ details.avsnitt[open]:not(.card) { padding-bottom: 20px; }
     details.avsnitt:not(.card) { padding: 0 14px; }
     .avsnitt-nyckel { display: none; }
 }
+/* Sidhuvudet upp till 900 px: de fyra knapparna är ikonknappar och står på samma rad som sökfältet (mellan 641 och 900 px
+   bröts knapparna annars på två rader). Texten finns kvar i knappen som visuellt dold text (inte visibility: hidden), så att
+   knappen behåller sitt namn för skärmläsare. */
+@media (max-width: 900px) {
+    .header-knappar { gap: 6px; align-items: center; }
+    .header-knappar > .btn { padding: 7px 9px; gap: 0; }
+    .header-knappar > .btn .knapp-text { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden;
+        clip: rect(0, 0, 0, 0); clip-path: inset(50%); white-space: nowrap; border: 0; }
+    .header-knappar > .btn svg { width: 18px; height: 18px; }
+    .top-header .header-knappar .sok-ruta { flex: 1 1 120px; min-width: 0; }
+}
 @media (min-width: 641px) { .meny-skugga { display: none; } }
 @media (max-width: 640px) and (prefers-reduced-motion: reduce) { .sidebar, body.meny-oppen .sidebar { transition: none; } }
+/* Vid byte över brytpunkten (31-navigering.js, _menyVidBrytpunkt) hoppar menyn direkt till sitt läge. */
+body.meny-utan-glidning .sidebar { transition: none !important; }
 @media print { .btn.meny-knapp, .meny-skugga { display: none !important; } }
 
 /* Cards & Layout */
@@ -480,7 +498,6 @@ details.avsnitt[open]:not(.card) { padding-bottom: 20px; }
 .status-msg.error { color: var(--danger); }
 .status-msg.warning { color: var(--status-varning); }
 
-.mt-4 { margin-top: 24px; }
 
 /* Dashboard Stats */
 .summary-stats {
@@ -782,7 +799,6 @@ details.avsnitt[open]:not(.card) { padding-bottom: 20px; }
     margin-bottom: 20px;
 }
 @media (max-width: 640px) { .upload-row { grid-template-columns: 1fr; } }
-.upload-row-bred { grid-column: 1 / -1; }
 .paket-forst { margin: 0 0 14px; border-top: 3px solid var(--primary); }
 .steg-nr { display: inline-block; margin-right: 6px; padding: 1px 7px; border-radius: 10px; background: var(--primary); color: #fff; font-size: var(--fs-xs); font-weight: 700; letter-spacing: 0.02em; vertical-align: middle; }
 /* Organisationspaket (ADR-28) */
@@ -1538,18 +1554,24 @@ details.avsnitt[open]:not(.card) { padding-bottom: 20px; }
     padding-right: 22px;
 }
 .data-table thead th.sortable:hover { background-color: var(--border); }
-/* Sorteringens riktning är vinklar ritade som mask i textens färg: båda (osorterad), upp (stigande) eller ned (fallande). */
+/* Sorteringens riktning är vinklar ritade med två kanter i textens färg, utan bild: båda (osorterad), upp (stigande)
+   eller ned (fallande). */
+.data-table thead th.sortable::before,
 .data-table thead th.sortable::after {
     content: "";
     position: absolute;
-    right: 8px; top: 50%;
-    width: 11px; height: 11px; margin-top: -5px;
+    right: 10px; top: 50%;
+    width: 5px; height: 5px;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
     opacity: 0.35;
-    background: currentColor;
-    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m7 9 5-5 5 5'/%3E%3Cpath d='m7 15 5 5 5-5'/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m7 9 5-5 5 5'/%3E%3Cpath d='m7 15 5 5 5-5'/%3E%3C/svg%3E") center / contain no-repeat;
 }
-.data-table thead th.sortable[data-sort-dir="asc"]::after  { opacity: 1; background: var(--primary); -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 15 6-6 6 6'/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 15 6-6 6 6'/%3E%3C/svg%3E") center / contain no-repeat; }
-.data-table thead th.sortable[data-sort-dir="desc"]::after { opacity: 1; background: var(--primary); -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") center / contain no-repeat; }
+.data-table thead th.sortable::before { margin-top: -6px; transform: rotate(-135deg); }
+.data-table thead th.sortable::after  { margin-top: 0; transform: rotate(45deg); }
+.data-table thead th.sortable[data-sort-dir="asc"]::before  { margin-top: -2px; opacity: 1; border-color: var(--primary); }
+.data-table thead th.sortable[data-sort-dir="desc"]::after  { margin-top: -5px; opacity: 1; border-color: var(--primary); }
+.data-table thead th.sortable[data-sort-dir="asc"]::after,
+.data-table thead th.sortable[data-sort-dir="desc"]::before { content: none; }
 
 /* ----- Mini-bars i tabellceller ----- */
 .cell-bar-wrap {
@@ -1668,13 +1690,15 @@ tr.row-highlighted td { animation: rowHighlight 3s ease-out; }
     border-left: 3px solid var(--text-blek);
     border-radius: 0 4px 4px 0;
 }
-/* Låset är linjeikonen «las» (03-ikoner.js) som mask, i textens färg. */
-.k-mask-note::before {
-    content: ""; display: inline-block; width: 14px; height: 14px; margin-right: 6px; vertical-align: -2px; opacity: 0.7;
-    background: currentColor;
-    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='4' y='11' width='16' height='10' rx='2'/%3E%3Cpath d='M8 11V7a4 4 0 0 1 8 0v4'/%3E%3C/svg%3E") center / contain no-repeat;
-    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='4' y='11' width='16' height='10' rx='2'/%3E%3Cpath d='M8 11V7a4 4 0 0 1 8 0v4'/%3E%3C/svg%3E") center / contain no-repeat;
+/* Låset är linjeikonen «las» ritad med två pseudo-element i textens färg, utan bild: bygeln (en båge utan underkant)
+   och kroppen (en kantad rektangel), 14 × 14 i notens vänsterkant. */
+.k-mask-note { position: relative; padding-left: 32px; }
+.k-mask-note::before, .k-mask-note::after {
+    content: ""; position: absolute; box-sizing: border-box; opacity: 0.7;
+    border: 2px solid currentColor;
 }
+.k-mask-note::before { left: 15px; top: 10px; width: 8px; height: 7px; border-bottom: 0; border-radius: 4px 4px 0 0; }
+.k-mask-note::after  { left: 12px; top: 16px; width: 14px; height: 8px; border-radius: 2px; }
 /* En not som står i en tabellrad följer inte med när tabellen rullar i sidled: den håller sig inom det synliga
    kortet och bryter raden där, så att texten aldrig klipps vid kortets kant. */
 .table-container:has(td > .k-mask-note) { container-type: inline-size; }
@@ -1881,26 +1905,6 @@ td > .k-mask-note { position: sticky; left: 0; max-width: calc(100cqw - 24px); w
     padding: 8px 0;
     border-bottom: 1px solid var(--border);
 }
-.benchmark-metric-btn {
-    background: transparent;
-    border: 1px solid var(--border);
-    padding: 6px 12px;
-    border-radius: 999px;
-    font-size: var(--fs-sm);
-    cursor: pointer;
-    color: var(--text-main);
-    transition: all 120ms;
-}
-.benchmark-metric-btn:hover { background: var(--bg-main); }
-.benchmark-metric-btn.active {
-    background: var(--primary);
-    color: white;
-    border-color: var(--primary);
-}
-.benchmark-metric-btn:focus-visible {
-    outline: 2px solid var(--primary);
-    outline-offset: 2px;
-}
 .benchmark-metric-info {
     margin-left: auto;
     font-size: var(--fs-xs);
@@ -1917,7 +1921,6 @@ td > .k-mask-note { position: sticky; left: 0; max-width: calc(100cqw - 24px); w
 .ptrack-row:first-of-type { border-top: none; }
 .ptrack-status { font-size: var(--fs-lg); line-height: 1.35; flex-shrink: 0; }
 .ptrack-body { flex: 1; min-width: 0; }
-.ptrack-title { font-size: var(--fs-md); font-weight: 600; }
 .ptrack-detail { font-size: var(--fs-sm); color: var(--text-muted); margin-top: 2px; line-height: 1.5; }
 .ptrack-goto { margin-top: 5px; background: transparent; border: 1px solid var(--border); color: var(--primary); padding: 2px 10px; border-radius: 4px; cursor: pointer; font-size: var(--fs-xs); }
 .ptrack-goto:hover { background: var(--primary); color: #fff; }
@@ -2073,40 +2076,6 @@ svg rect[data-markerad], svg circle[data-markerad] { stroke: var(--text-main); s
 }
 .prio-size-legend .legend-label { font-variant-numeric: tabular-nums; }
 
-/* ----- Datakvalitetsindex ----- */
-.dq-components {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    gap: 14px;
-    margin-top: 10px;
-}
-.dq-component {
-    padding: 12px 14px;
-    background: var(--bg-main);
-    border-radius: 8px;
-    border: 1px solid var(--border);
-}
-.dq-comp-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    margin-bottom: 6px;
-}
-.dq-comp-name { font-weight: 600; font-size: var(--fs-md); color: var(--text-main); }
-.dq-comp-score { font-weight: 700; font-size: var(--fs-lg); font-variant-numeric: tabular-nums; }
-.dq-comp-bar {
-    height: 6px;
-    background: var(--border);
-    border-radius: 3px;
-    overflow: hidden;
-    margin: 6px 0 8px;
-}
-.dq-comp-fill {
-    height: 100%;
-    border-radius: 3px;
-    transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-}
-.dq-comp-detail { font-size: var(--fs-xs); color: var(--text-main); line-height: 1.45; }
 
 /* ----- WCAG 2.1 AA: Tillgänglighetsförbättringar ----- */
 
@@ -2218,18 +2187,11 @@ summary:focus-visible {
 }
 
 /* Förbättrad kontrast på inaktiva flikar (WCAG AA) */
-/* Låsta flikar: tydligare än enbart nedtoning — hänglås till höger så det syns att de kräver data */
+/* Låsta flikar: tydligare än enbart nedtoning — hänglåset (en inline-SVG i knappen) visas till höger så det syns att
+   de kräver data. */
 .nav-item[aria-disabled="true"] { opacity: 0.55; cursor: not-allowed; }
-.nav-item[aria-disabled="true"]::after {
-    content: "";
-    margin-left: auto;
-    width: 13px; height: 13px; flex: none;
-    background: currentColor;
-    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='4' y='11' width='16' height='10' rx='2'/%3E%3Cpath d='M8 11V7a4 4 0 0 1 8 0v4'/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='4' y='11' width='16' height='10' rx='2'/%3E%3Cpath d='M8 11V7a4 4 0 0 1 8 0v4'/%3E%3C/svg%3E") center / contain no-repeat;
-    opacity: 0.7;
-    flex-shrink: 0;
-    line-height: 1;
-}
+.nav-item .nav-las { display: none; }
+.nav-item[aria-disabled="true"] .nav-las { display: block; margin-left: auto; flex: none; opacity: 0.7; }
 
 /* Första-intryck-hint på Översikt (döljs när data laddats) */
 .first-run-hint {
@@ -2291,30 +2253,6 @@ summary:focus-visible {
 .flow-next-btn:hover { background: var(--primary-dark, #1e40af); }
 @media print { .flow-next-bar, .first-run-hint { display: none !important; } }
 
-/* #5 Export-hubb på Översikt */
-.export-hub-primary {
-    display: grid;
-    grid-template-columns: minmax(220px, 300px) auto;
-    gap: 10px 18px;
-    align-items: start;
-    padding: 14px 16px;
-    background: var(--yta);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    margin-bottom: 14px;
-}
-.export-hub-pdf-config { display: flex; flex-direction: column; gap: 6px; }
-.export-hub-pdf-actions { display: flex; flex-direction: column; gap: 8px; justify-content: center; }
-.export-hub-pdf-actions .btn { justify-content: center; white-space: nowrap; }
-.export-hub-primary-desc {
-    grid-column: 1 / -1;
-    margin: 0;
-    font-size: var(--fs-xs);
-    color: var(--text-muted);
-    line-height: 1.5;
-}
-@media (max-width: 720px) { .export-hub-primary { grid-template-columns: 1fr; } }
-.export-hub-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 10px; }
 .export-hub-row {
     display: flex;
     align-items: center;
@@ -2332,8 +2270,16 @@ summary:focus-visible {
 .export-lista { display: grid; gap: 8px; }
 .export-lista .export-hub-row .btn { min-width: 150px; justify-content: center; }
 .export-rad-primar { border-color: var(--primary, #1d4ed8); background: var(--yta); }
-.export-rad-val { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 8px 12px; margin-top: 8px; max-width: 640px; align-items: end; }
-.export-rad-val label { display: block; }
+/* PDF-raden: organisationens namn står intill knappen (etikett, fält, knapp i en rad), med förklaringen i texten. */
+.export-hub-row > .export-org { flex: 0 1 auto; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; max-width: 360px; }
+.export-org label { white-space: nowrap; }
+.export-org input { width: 230px; max-width: 100%; }
+.export-org .upload-namn-fel { flex-basis: 100%; margin: 0; }
+.export-hub-row .export-org-forklaring { margin-top: 4px; }
+/* Raden under exporterna: flikarna med egna underlag, som länkar. */
+.export-fler { margin: 12px 2px 0; font-size: var(--fs-sm); color: var(--text-muted); line-height: 1.5; }
+.export-fler a { color: var(--primary, #1d4ed8); font-weight: 500; text-decoration: underline; text-underline-offset: 2px; text-decoration-color: var(--border); }
+.export-fler a:hover { text-decoration-color: currentColor; }
 @media print { #export-hub { display: none !important; } }
 
 /* #UX Handlingsplansmall: förifyllda (read-only) rader vs fyllbara tomrader */
@@ -2341,10 +2287,15 @@ summary:focus-visible {
 #handlingsplan-tbody .handlingsplan-seeded > td:first-child { border-left: 3px solid var(--accent); font-weight: 500; }
 /* De tomma raderna är till för att fylla i för hand: de finns på utskriften (och i Excel-filen), inte på skärmen,
    där de ser ut som ett formulär som inte går att skriva i. */
+#handlingsplan-tbody .handlingsplan-egen > td:first-child { border-left-color: var(--text-muted); font-weight: 400; }
+#handlingsplan-tbody .hp-ta-bort { margin-left: 6px; }
 #handlingsplan-tbody .handlingsplan-empty { display: none; }
 #handlingsplan-tbody .handlingsplan-empty > td { height: 40px; }
 @media print { #handlingsplan-tbody .handlingsplan-empty { display: table-row; } }
 .handlingsplan-not { margin: 8px 0 0; font-size: var(--fs-sm); color: var(--text-muted); }
+#handlingsplan-tbody .hp-falt { width: 100%; min-width: 7.5em; font: inherit; font-size: var(--fs-sm); padding: 4px 6px; border: 1px solid var(--border); border-radius: 4px; background: var(--bg-card); color: inherit; }
+#handlingsplan-tbody .hp-falt.hp-falt-varning { border-color: var(--status-varning); }
+.handlingsplan-varning { margin: 8px 0 0; font-size: var(--fs-sm); color: var(--status-varning); }
 
 /* ----- Print-rapport (PDF via webbläsarens print-dialog) ----- */
 #print-report { display: none; }
@@ -2484,6 +2435,12 @@ summary:focus-visible {
     outline: 2px solid var(--primary, #1d4ed8);
     outline-offset: 2px;
 }
+/* Växeln Fler kolumner: intryckt när alla kolumner visas (aria-pressed bär läget, färgen följer det) */
+.btn-table-tool[aria-pressed="true"] {
+    color: var(--primary, #1d4ed8);
+    border-color: var(--primary, #1d4ed8);
+    background: var(--accent-yta);
+}
 @media print {
     .table-tools { display: none; }
 }
@@ -2599,7 +2556,6 @@ summary:focus-visible {
 /* ---- Robusthet & färdigcheck ---- */
 .rb-stable { color:var(--status-ok); font-weight:600; }
 .rb-flip { color:var(--status-varning); font-weight:600; }
-.rb-note-warn { color:var(--status-varning); font-size:var(--fs-sm); }
 .fc-clear { padding:14px 16px; background:var(--status-ok-yta); border:1px solid var(--status-ok-kant); border-radius:8px; font-size:var(--fs-md); line-height:1.6; }
 .fc-list { list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:10px; }
 .fc-item { padding:12px 14px; border-radius:6px; border-left:4px solid var(--border,#e2e8f0); background:var(--bg-main,#f0f4f8); }
@@ -2668,7 +2624,6 @@ summary:focus-visible {
 .explore-urval-rader:empty { display: none; }
 .explore-urval-rad { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .explore-urval-tal { width: 8rem; }
-.explore-urval-enhet { font-size: var(--fs-sm); color: var(--text-muted); }
 .explore-urval-val { position: relative; }
 .explore-urval-val summary { cursor: pointer; font-size: var(--fs-sm); padding: 6px 10px; border: 1px solid var(--border, #e2e8f0); border-radius: 6px; }
 .explore-urval-val[open] > .form-select, .explore-urval-val[open] > .explore-filter-vals { margin-top: 6px; }
@@ -2688,7 +2643,6 @@ summary:focus-visible {
 .ref-status { margin: 6px 0 8px; font-size: var(--fs-sm); line-height: 1.5; }
 
 .ref-namn-rad { display: flex; flex-direction: column; gap: 4px; margin: 8px 0; font-size: var(--fs-sm); }
-.ref-hjalp { font-size: var(--fs-xs); color: var(--text-muted); }
 
 /* Underlagets kvalitet (ADR-19) */
 .uk-panel { margin-top: 24px; }
@@ -2770,8 +2724,6 @@ summary:focus-visible {
 .la-falla:hover { color: var(--text-main); background: var(--yta-stark); }
 .la-falla:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
 @media print { .la-falla { display: none; } .la-underrad-ansvar[hidden] { display: table-row !important; } }
-/* Stabilitet för flaggor (ADR-24): raden under statusmärket står i blocket ovan (.la-stabilitet). */
-.la-stabilitet-not { font-size: var(--fs-xs); color: var(--text-muted); }
 .la-underrad td { font-size: var(--fs-sm); color: var(--text-muted); border-top: none; }
 .la-underrad .la-underrad-namn { padding-left: 1.6rem; }
 .reg-ansvar { font-size: var(--fs-sm); margin: 0.6rem 0 0; }
@@ -2815,8 +2767,6 @@ summary:focus-visible {
 .jmf-neg { color: var(--danger); }
 .jmf-pos { color: var(--status-ok); }
 .jmf-filter { display: inline-flex; gap: 6px; align-items: center; font-size: var(--fs-sm); }
-.jmf-etikett { font-size: var(--fs-sm); font-weight: 600; }
-.benchmark-metric-btn.jmf-saknas { opacity: 0.45; cursor: not-allowed; }
 .jmf-diagram-rubrik { font-size: var(--fs-md); margin: 16px 0 4px; }
 #ref-tabell td.num { white-space: nowrap; }
 #ref-tabell td:not(.num) { min-width: 170px; text-align: left; }
@@ -2899,7 +2849,7 @@ body.forhandsvisning .content-body { outline: 3px dashed var(--status-varning); 
 .table-responsive, #struktur-sektorer { overflow-x: auto; }
 .export-lista { grid-template-columns: minmax(0, 1fr); }
 @media (max-width: 640px) {
-    .export-rad-val { grid-template-columns: minmax(0, 1fr); }
+    .export-hub-row > .export-org { max-width: none; }
     /* Rader och rutnät som är satta direkt på elementet: de bryts respektive staplas på telefonbredd. */
     .view-panel [style*="flex"], .controls-row { flex-wrap: wrap !important; }
     .view-panel [style*="grid-template-columns"] { grid-template-columns: minmax(0, 1fr) !important; }
@@ -2929,8 +2879,7 @@ body.forhandsvisning .content-body { outline: 3px dashed var(--status-varning); 
 .ov-filrad .btn { margin-left: auto; }
 .ov-filrad-lank { background: none; border: 0; padding: 0; font: inherit; color: var(--primary, #1d4ed8); text-decoration: underline; cursor: pointer; }
 .ov-filrad-lank:focus-visible { outline: 2px solid var(--primary, #1d4ed8); outline-offset: 2px; border-radius: 2px; }
-.ov-lage { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 16px; margin: 16px 0 8px; }
-@media (max-width: 1100px) { .ov-lage { grid-template-columns: minmax(0, 1fr); } }
+.ov-lage { margin: 16px 0 8px; }   /* kvartilkortet efter Att göra, i hela bredden (trädkartan står i Struktur) */
 details.avsnitt .ptrack > h3 { display: none; }           /* rubriken står i avsnittets sammanfattning */
 details.avsnitt > section.card, details.avsnitt > div > .card.ptrack { box-shadow: none; padding: 0; margin-bottom: 0; }
 @media print { #view-dashboard.har-data #upload-sektion { display: none; } }
@@ -2955,7 +2904,6 @@ details.avsnitt .insight-feed-header h3 { display: none; }
 .inst-flik-namn { flex: 1 1 260px; min-width: 0; }
 .inst-flik-lage { color: var(--text-muted); }
 .inst-flik.ar-andrad .inst-flik-lage { color: var(--text-main); font-weight: 600; }
-.paket-installningar-not { font-size: var(--fs-sm); color: var(--text-muted); }
 
 /* ---- Sök och hoppa: fältet i sidhuvudet och listan med träffar ---- */
 .sok-ruta { position: relative; flex: 0 1 260px; min-width: 180px; }
@@ -3096,6 +3044,16 @@ body.lage-kompakt .flik-intro-rad { margin-bottom: 10px; }
 .pag-tabell-wrap { overflow-x: auto; max-width: 100%; }
 /* Yrkesgruppstabellen har nio kolumner: snävare sidmarginaler i cellerna, så att den ryms utan att rulla i sidled. */
 #matrix-table th, #matrix-table td { padding-left: 8px; padding-right: 8px; }
+/* Prioriteringslistan: smalare sidmarginal i cellerna och en tätare sorteringspil, detaljknapparna två och två, och
+   statusmärket och kronorna på en rad, så att grundvyn ryms vid 1280 px med menyn utfälld. */
+#prio-table td { padding-left: 8px; padding-right: 8px; }
+#prio-table th { padding-left: 8px; }
+#prio-table th:not(.sortable) { padding-right: 8px; }
+#prio-table thead th.sortable { padding-right: 14px; }
+/* Smalare sorteringspil: grundvyn (Fler kolumner) ska rymmas vid 1280 px med menyn utfälld. */
+#prio-table thead th.sortable::after { right: 2px; width: 9px; height: 9px; margin-top: -4px; }
+#prio-table td[data-sort-value], #prio-table td .rund-12 { white-space: nowrap; }
+.prio-detalj-knappar { display: grid; grid-template-columns: repeat(2, auto); gap: 4px; justify-content: center; }
 
 /* Att göra: en grupp av punkter har samma ram och pil som övriga hopfällbara rubriker, och prioriteten är ett märke. */
 .ag-grupp { margin-bottom: 10px; border: 1px solid var(--border); border-radius: 6px; }
@@ -3508,11 +3466,8 @@ body.lage-kompakt .flik-intro-rad { margin-bottom: 10px; }
 .bg-rosa { background: #e11d48 !important; }
 .bg-blek { background: var(--text-blek) !important; }
 .bg-dampad { background: var(--text-muted) !important; }
-.bg-ok-bg { background: var(--status-ok-bg) !important; }
 .bg-ok-yta { background: var(--status-ok-yta) !important; }
 .bg-info-yta { background: var(--status-info-yta) !important; }
-.bg-accent-yta { background: var(--accent-yta) !important; }
-.bg-yta { background: var(--yta) !important; }
 .bl4-ok { border-left: 4px solid var(--status-ok) !important; }
 .bl4-varning { border-left: 4px solid var(--status-varning) !important; }
 .bl4-kritisk { border-left: 4px solid var(--status-kritisk) !important; }
@@ -3580,3 +3535,4 @@ tr.rad-folj { background: rgba(245, 158, 11, 0.1); }
 .block-mb6 { display: block !important; margin-bottom: 6px !important; }
 .underrubrik { margin: 0 0 8px !important; font-size: var(--fs-md) !important; }
 
+#forecast-optimize-pott:disabled { opacity: 0.55; cursor: not-allowed; }   /* aktiv först när en pott är angiven */

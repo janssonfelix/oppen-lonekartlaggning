@@ -243,3 +243,49 @@ describe('Blinder-Oaxaca (BAS som indikatorer, ADR-53)', () => {
         expect(ut.unexplainedPct).toBeCloseTo(pct(bo.u + bo.i), 8);
     });
 });
+
+describe('Blinder-Oaxaca på vald modell (ADR-56)', () => {
+    // Samma yrkesregel som i ref-stat-referens.py: yrke ur radindex, nyckel yrke|bas.
+    const raderMedYrke = () => fx.rows.map((r, i) => ({ ...r, yrke: i % 2 === 0 ? '100 Yrke ett' : '200 Yrke två' }));
+    const kor = (modell, rader = fx.rows.map(r => ({ ...r }))) => {
+        const w = createAppWindow();
+        w.__state.data = rader;
+        w.__state.forklaringsmodell = modell;
+        return w.eval('runBlinderOaxaca()');
+    };
+    const jamfor = (ut, bo, nycklar) => {
+        expect(ut._raw.rawGapLog).toBeCloseTo(bo.rawGapLog, 10);
+        expect(ut._raw.q).toBeCloseTo(bo.q, 10);
+        expect(ut._raw.u).toBeCloseTo(bo.u, 10);
+        expect(ut._raw.i).toBeCloseTo(bo.i, 10);
+        expect(Object.keys(ut.components).sort()).toEqual(nycklar.slice().sort());
+        for (const lab of nycklar) {
+            expect(ut.components[lab].q).toBeCloseTo(bo.perKomponent[lab].q, 10);
+            expect(ut.components[lab].u).toBeCloseTo(bo.perKomponent[lab].u, 10);
+            expect(ut.components[lab].i).toBeCloseTo(bo.perKomponent[lab].i, 10);
+        }
+    };
+    it('standardmodellen (null i tillståndet) ger samma som referensen för ADR-53', () => {
+        jamfor(kor(null), ref.blinderOaxaca, ['intercept', 'age', 'bas']);
+    });
+    it('bara BAS: ingen ålderskolumn, komponenterna konstant och BAS', () => {
+        const ut = kor({ bas: true, alder: false, yrkesgrupp: false, skal: '' });
+        expect(ut.modell.alder).toBe(false);
+        jamfor(ut, ref.blinderOaxacaBas, ['intercept', 'bas']);
+        expect(ut.basRef).toBe(ref.blinderOaxacaBas.basRef);
+    });
+    it('bara ålder: komponenterna konstant och ålder', () => {
+        const ut = kor({ bas: false, alder: true, yrkesgrupp: false, skal: '' });
+        jamfor(ut, ref.blinderOaxacaAlder, ['intercept', 'age']);
+        expect(ut.basRef).toBeNull();
+    });
+    it('ålder och yrkesgrupp inom BAS: en indikator per AID×BAS-grupp ersätter BAS-indikatorerna', () => {
+        const ut = kor({ bas: true, alder: true, yrkesgrupp: true, skal: '' }, raderMedYrke());
+        jamfor(ut, ref.blinderOaxacaYrke, ['intercept', 'age', 'yrke']);
+        expect(ut.gruppRef).toBe(ref.blinderOaxacaYrke.basRef);
+        expect(ut.gruppIndikatorer).toEqual(ref.blinderOaxacaYrke.basIndikatorer);
+    });
+    it('endast kön: ingen uppdelning (null)', () => {
+        expect(kor({ bas: false, alder: false, yrkesgrupp: false, skal: '' })).toBeNull();
+    });
+});

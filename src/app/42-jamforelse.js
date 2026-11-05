@@ -47,6 +47,9 @@ function jamforelseMarkeraRad(aid, bas) {
     return true;
 }
 
+// Grundvyn visar yrke, BAS, antal och medianens tre kolumner; P10 och P90 ligger bakom *Fler kolumner* (05-tabeller-och-lankar.js),
+// så att tabellen ryms utan rullist i sidled. Kopiera, CSV, Excel och utskriften tar alltid med alla.
+const JMF_DOLDA_KOLUMNER = ['p10org', 'p10jmf', 'p10diff', 'p90org', 'p90jmf', 'p90diff'];
 function generateBenchmark() {
     const tbody = document.querySelector('#benchmark-table tbody');
     const infoEl = document.getElementById('benchmark-metric-info');
@@ -105,6 +108,7 @@ function generateBenchmark() {
             + `${block(r, 'p10')}${block(r, 'median')}${block(r, 'p90')}</tr>`;
     }
     tbody.innerHTML = html || '<tr><td colspan="12" class="farg-dampad pad-24 ta-mitt">Inga yrken i urvalet.</td></tr>';
+    if (typeof flerKolumner === 'function') flerKolumner('benchmark-table', JMF_DOLDA_KOLUMNER, 'jamforelse');
     try { ritaJamforelseDiagram(rader, kalla); } catch (e) { rapporteraFel('Jämförelse: diagrammen', e); }
 
     // Antalen gäller samma urval som tabellen (filtren på BAS och sektor).

@@ -19,14 +19,17 @@ function buildConfigSnapshot() {
         rapportUrval: state.rapportUrval ? { ordning: [...state.rapportUrval.ordning], med: [...state.rapportUrval.med] } : null,
         rapportTabeller: (state.rapportTabeller || []).map(t => JSON.parse(JSON.stringify(t))),   // egna tabeller: recept, inga tal (ADR-52)
         perBasRecept: state.perBasRecept ? JSON.parse(JSON.stringify(state.perBasRecept)) : null,   // vilka avsnitt som följer med i rapporten
+        forklaringsmodell: state.forklaringsmodell ? { ...state.forklaringsmodell } : null,   // regressionens variabler och skälet (ADR-56); null = standard
         // Bug-fix: Set-objekt serialiseras inte korrekt med spread/JSON
         bristAids: Array.from(state.bristAids || []),
         likvardighet: state.likvardighet ? {
             source: state.likvardighet.source,
             kvinnoTrosholdPct: state.likvardighet.kvinnoTrosholdPct,
+            kvDomDefinition: state.likvardighet.kvDomDefinition || 'do',
             minGapPct: state.likvardighet.minGapPct,
             topN: state.likvardighet.topN
         } : null,
+        lonemanad: state.lonemanad || null,   // lönemånaden på bladen per AID och BAS
         // Löneöversyn/prognos: bara inställningar (pott + fördelningsregler), ej utfall
         forecast: state.forecast ? {
             budget:   { ...state.forecast.budget },
@@ -52,6 +55,8 @@ function buildConfigSnapshot() {
         // (avsedd på gruppnivå) och ska hanteras som övriga exportfiler.
         bes8: (typeof _bes8Areas === 'function' ? _bes8Areas() : [])
             .map(a => ({ n: a.n, status: a.status, note: a.note })),
+        // Handlingsplanens ifyllda fält per rad (sakligt skäl, ansvarig, tidsplan, status): användarförfattad text, som bes8.
+        handlingsplan: (typeof _hpForKonfiguration === 'function' ? _hpForKonfiguration() : []),
         actionChecklistDone: Array.from(state._actionChecklistDone || []),
         // Årsbokslutet (ADR-54): årets k-skyddade sammandrag, eller det inlästa när inget underlag finns.
         arsbokslut: (typeof byggArsbokslutNu === 'function' ? byggArsbokslutNu() : null) || state.forraArsbokslut || null,
@@ -146,7 +151,16 @@ function applyConfigSnapshot(cfg) {
                 lv[k] = cfg.likvardighet[k];
             }
         }
+        if (cfg.likvardighet.kvDomDefinition != null) {
+            if (cfg.likvardighet.kvDomDefinition !== 'do' && cfg.likvardighet.kvDomDefinition !== 'scb')
+                throw new Error('likvardighet.kvDomDefinition måste vara "do" eller "scb".');
+            lv.kvDomDefinition = cfg.likvardighet.kvDomDefinition;
+        }
         tmp.likvardighet = lv;
+    }
+    if (cfg.lonemanad != null) {
+        if (typeof cfg.lonemanad !== 'string' || cfg.lonemanad.length > 40) throw new Error('lonemanad måste vara en text på högst 40 tecken.');
+        tmp.lonemanad = cfg.lonemanad;
     }
     // forecast: löneöversynsinställningar (inga råa rader)
     if (cfg.forecast != null) {
@@ -212,6 +226,7 @@ function applyConfigSnapshot(cfg) {
             return { n, status: a.status || '', note: a.note || '' };
         });
     }
+    if (cfg.handlingsplan != null) tmp.handlingsplan = _hpValideraKonfiguration(cfg.handlingsplan);
     if (cfg.actionChecklistDone != null) {
         if (!Array.isArray(cfg.actionChecklistDone)) throw new Error('actionChecklistDone måste vara en array.');
         if (!cfg.actionChecklistDone.every(id => typeof id === 'string')) throw new Error('actionChecklistDone får endast innehålla strängar.');
@@ -261,6 +276,11 @@ function applyConfigSnapshot(cfg) {
         if (typeof cfg.perBasRecept !== 'object') throw new Error('perBasRecept måste vara ett objekt.');
         tmp.perBasRecept = _pbValideraRecept(cfg.perBasRecept);
     }
+    // Förklaringsmodellen (ADR-56): ett ogiltigt värde ger standard med varning, aldrig fel; utan fältet gäller standard.
+    // Utan inläst lönefil prövas inte yrkesgrupp mot datat (det görs av forklaringsmodell() när filen finns).
+    const rader = getData();
+    const fm = _rgNormaliseraForklaringsmodell(cfg.forklaringsmodell, { harYrke: !rader.length || rader.some(d => d.aid || d.yrke) });
+    varningar.push(...fm.varningar);
     let kAndrad = false;
     if (tmp.kTroskel != null) {
         const kr = sattKTroskel(tmp.kTroskel, { rita: false });
@@ -272,6 +292,8 @@ function applyConfigSnapshot(cfg) {
     sattRapportUrval(tmp.rapportUrval || null);   // okända avsnitt i filen hoppas över; utan fältet gäller hela dokumentationen
     if (tmp.rapportTabeller) state.rapportTabeller = tmp.rapportTabeller;
     if (tmp.perBasRecept) state.perBasRecept = _pbReceptArStandard(tmp.perBasRecept) ? null : tmp.perBasRecept;
+    state.forklaringsmodell = _rgForklaringsmodellArStandard(fm.modell) ? null : fm.modell;
+    if (tmp.lonemanad != null && typeof sattLonemanad === 'function') sattLonemanad(tmp.lonemanad);
     if (tmp.likvardighet) {
         state.likvardighet = { ...state.likvardighet, ...tmp.likvardighet, result: null };
     }
@@ -294,6 +316,8 @@ function applyConfigSnapshot(cfg) {
         if (t) /** @type {HTMLInputElement} */ (t).value = a.note;
     });
     if (typeof bes8Uppdatera === 'function') bes8Uppdatera();
+    // Handlingsplanens fält ersätts bara när filen bär dem; rader som inte finns i underlaget nu ligger kvar i minnet.
+    if (tmp.handlingsplan) { state.handlingsplan = tmp.handlingsplan; if (typeof renderHandlingsplanSeed === 'function') renderHandlingsplanSeed(); }
     if (tmp.actionChecklistDone) state._actionChecklistDone = new Set(tmp.actionChecklistDone);
     if (tmp.arsbokslut) { state.forraArsbokslut = tmp.arsbokslut; if (typeof renderArsjamforelse === 'function') medExportLage(() => renderArsjamforelse()); }
     // Bara namn som finns i filen sätts — en fil utan namn ska inte radera paketets namn.

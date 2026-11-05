@@ -4,8 +4,15 @@
 // bildspråket är linjeikoner. Varje test faller om felet det vaktar kommer tillbaka. Delen här: inläsning, flikar utan underlag, utskrift,
 // dossiern, talen och exportknapparna; resten i granssnitt-vyer.test.js (riggen i helpers/granssnitt-rigg.js).
 import { describe, it, expect } from 'vitest';
-import { createAppWindow } from './helpers/app-harness.js';
+import { createAppWindow, delatFonster, utgangslage } from './helpers/app-harness.js';
 import { las, papa, vanta, csvFil, braRader, okandaRader, medDecimalpunkt } from './helpers/granssnitt-rigg.js';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+
+const demo = delatFonster(w => w.__loadDemoData());
+it('det delade fönstret står i utgångsläget', () => {
+    expect(utgangslage(demo())).toEqual({ troskel: 10, dialoger: 0, flik: 'dashboard' });
+});
 
 describe('lönefil vars kolumner inte känns igen', () => {
     const lasIn = async rader => {
@@ -71,6 +78,21 @@ describe('menyns ordning', () => {
         const knappar = [...w.document.querySelectorAll('#sidomeny .nav-item[data-tab]')].map(b => b.dataset.tab);
         expect(knappar.indexOf('dokumentera')).toBeGreaterThan(knappar.indexOf('utforska'));
         expect(knappar.indexOf('dokumentera')).toBeLessThan(knappar.indexOf('info'));
+    });
+});
+
+describe('länkar till ett avsnitt i en annan flik', () => {
+    it('Att göra-länkarna till Lika arbete byter flik och fäller ut avsnittet de leder till', () => {
+        const w = createAppWindow();
+        w.__loadDemoData();
+        const d = w.document;
+        for (const id of ['avsnitt-la-bas', 'avsnitt-la-kon']) d.getElementById(id).open = false;
+        d.querySelector('#comp-gap .comp-lank').click();
+        expect(d.querySelector('.nav-item.active').getAttribute('data-tab')).toBe('matrix');
+        expect(d.getElementById('avsnitt-la-bas').open).toBe(true);
+        expect(d.getElementById('avsnitt-la-kon').open).toBe(false);
+        d.querySelector('#comp-skev .comp-lank').click();
+        expect(d.getElementById('avsnitt-la-kon').open).toBe(true);
     });
 });
 
@@ -191,8 +213,7 @@ describe('modalerna skriver tal på svenska', () => {
 
 describe('samma tal i samma precision på sidan', () => {
     it('regressionskortet skriver den oförklarade skillnaden med en decimal, som flikens nyckeltal', () => {
-        const w = createAppWindow();
-        w.__loadDemoData();
+        const w = demo();
         w.__renderTabContent('matrix');
         const tal = w.document.querySelector('.reg-hero .hero-number').textContent.trim();
         expect(tal).toMatch(/^[+\u2212-]?\d+,\d\s%$/);
@@ -200,8 +221,7 @@ describe('samma tal i samma precision på sidan', () => {
         expect(w.document.querySelector('.reg-hero .hero-meta').textContent).not.toMatch(/\d,\d\d\s%/);
     });
     it('Prioriteringens tabell skriver avvikelsen med en decimal', () => {
-        const w = createAppWindow();
-        w.__loadDemoData();
+        const w = demo();
         w.__renderTabContent('prioritering');
         const tal = [...w.document.querySelectorAll('#prio-table .cell-bar-value')].map(e => e.textContent.trim()).filter(t => t !== '–');
         expect(tal.length).toBeGreaterThan(4);
@@ -226,8 +246,7 @@ describe('Löneöversyn utan påslag', () => {
 describe('en exportknapp per kort', () => {
     const FLIKAR = ['dashboard', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn', 'kon', 'benchmark', 'utforska'];
     it('varje diagram har en exportmeny, ingen behållare har två, och ingen fristående exportknapp står bredvid', () => {
-        const w = createAppWindow();
-        w.__loadDemoData();
+        const w = demo();
         for (const flik of FLIKAR) w.__renderTabContent(flik);
         const d = w.document;
         const namn = el => (el.closest('.card, .diagramkort')?.querySelector('h2, h3, h4')?.textContent || el.id || '').trim().slice(0, 40);
@@ -263,16 +282,14 @@ describe('en exportknapp per kort', () => {
 
 describe('Personer att granska', () => {
     it('tabellens rullande ruta nås med tangentbordet och har ett namn', () => {
-        const w = createAppWindow();
-        w.__loadDemoData();
+        const w = demo();
         w.eval('renderPersonerAttGranska(true)');
         const ruta = w.document.querySelector('.pag-tabell-wrap');
         expect(ruta.getAttribute('tabindex')).toBe('0');
         expect(ruta.getAttribute('aria-label')).toBe('Personer att granska, rullar i sidled');
     });
     it('metoden står i en not under tabellen, och ansvarsetiketten är kort med hela namnet i verktygstipset', () => {
-        const w = createAppWindow();
-        w.__loadDemoData();
+        const w = demo();
         w.eval('renderPersonerAttGranska(true)');
         const d = w.document;
         const rubriker = [...d.querySelectorAll('#pag-tabell thead th')].map(th => th.textContent);
@@ -300,15 +317,14 @@ describe('Personer att granska', () => {
 });
 
 describe('Handlingsplanens tabell', () => {
-    it('de tomma raderna visas bara på utskriften, och en rad säger var de tomma kolumnerna fylls i', () => {
+    it('de tomma raderna visas bara på utskriften, och en rad säger vart det ifyllda tar vägen', () => {
         const css = las('src/style.css');
         expect(css).toMatch(/#handlingsplan-tbody \.handlingsplan-empty \{ display: none; \}/);
         expect(css).toMatch(/@media print \{ #handlingsplan-tbody \.handlingsplan-empty \{ display: table-row; \} \}/);
-        const w = createAppWindow();
-        w.__loadDemoData();
+        const w = demo();
         w.__renderTabContent('handlingsplan');
         expect(w.document.querySelectorAll('#handlingsplan-tbody tr.handlingsplan-empty').length).toBeGreaterThanOrEqual(5);   // finns kvar för utskriften
-        expect(w.document.querySelector('#view-handlingsplan .handlingsplan-not').textContent).toContain('fylls i Excel-filen eller på utskriften');
+        expect(w.document.querySelector('#view-handlingsplan .handlingsplan-not').textContent).toContain('följer med i Excel-filen, utskriften och Word-utkastet, men sparas inte');
     });
 });
 
@@ -373,8 +389,7 @@ describe('raden om det markerade', () => {
 
 describe('samma skillnad sägs på ett sätt', () => {
     it('Att göra skriver den råa skillnaden per BAS som kvinnors lön i procent av mäns, som Lika arbete', () => {
-        const w = createAppWindow();
-        w.__loadDemoData();
+        const w = demo();
         const punkter = w.eval('buildActionChecklist()').filter(p => p.id.startsWith('gap-bas-'));
         expect(punkter.length).toBeGreaterThan(0);
         for (const p of punkter) {
@@ -387,8 +402,7 @@ describe('samma skillnad sägs på ett sätt', () => {
         expect(kvoter.some(t => t.includes(`BAS ${b[1]}`) && t.includes(`${b[2]} %`))).toBe(true);
     });
     it('där skillnaden står kvar heter den skillnad, och den oförklarade skillnaden har en decimal där den står som huvudtal', () => {
-        const w = createAppWindow();
-        w.__loadDemoData();
+        const w = demo();
         w.__renderTabContent('matrix');
         w.__renderTabContent('loneoversyn');
         const d = w.document;
@@ -400,8 +414,8 @@ describe('samma skillnad sägs på ett sätt', () => {
             const blad = [...el.querySelectorAll('*')].filter(e => !e.children.length && !e.closest('.info-tip') && !/PO\b/.test(e.textContent));
             expect(blad.filter(tvaDec).map(e => e.textContent.trim().slice(0, 50)), sel).toEqual([]);
         }
-        const kort = [...d.querySelectorAll('#la-slutsatser .slutsats')].find(k => k.textContent.includes('Kvar efter ålder och nivå'));
-        expect(kort.textContent).toContain('skillnad, kvinnor mot män');
+        const kort = [...d.querySelectorAll('#la-slutsatser .slutsats')].find(k => k.textContent.includes('Efter ålder och nivå'));
+        expect(kort.textContent).toContain('kvinnors lön i % av mäns när ålder och nivå räknats bort');
     }, 30000);
 });
 
@@ -448,5 +462,78 @@ describe('Regler & praxis visar vad som är bedömt', () => {
     });
     it('fliken påstår inte att svaren inte sparas', () => {
         expect(las('src/index.html')).not.toContain('Verktyget sparar inga svar');
+    });
+});
+
+describe('ett statusordförråd och ett mått i nyckeltalen', () => {
+    const fil = namn => readFileSync(fileURLToPath(new URL('../' + namn, import.meta.url)), 'utf8');
+    it('de gamla statusorden finns inte kvar i bygget eller sidan', () => {
+        for (const namn of ['dist/app.js', 'src/index.html']) {
+            const text = fil(namn);
+            for (const gammalt of ['Inom 3 %', 'Avviker mer än 5', 'Avviker 3–5', 'Värt att följa upp', 'rå skillnad, hela organisationen']) {
+                expect(text.includes(gammalt), `${gammalt} i ${namn}`).toBe(false);
+            }
+        }
+    });
+    it('Förklaringen nämner varje statusord en gång, med färgen bunden till ordet', () => {
+        const d = demo().document;
+        const ord = [...d.querySelectorAll('#symbols-modal strong')].map(e => [e.textContent.trim(), e.className]);
+        for (const [namn, klass] of [['Balanserat', 'farg-ok'], ['Följ upp', 'farg-varning'], ['Värt att granska', 'farg-granska'], ['Börja här', 'farg-granska'], ['Över referens', 'farg-info']]) {
+            expect(ord.filter(o => o[0] === namn), namn).toEqual([[namn, klass]]);
+        }
+        // Ingen separat färgtabell som upprepar orden.
+        expect([...d.querySelectorAll('#symbols-modal h3')].map(h => h.textContent)).not.toContain('Färger för avvikelser och status');
+    });
+    it('Lika arbete och Prioritering säger samma ord med samma färg', () => {
+        const w = demo();
+        w.__renderTabContent('matrix');
+        const d = w.document;
+        const farg = { 'Balanserat': 'ok', 'Följ upp': 'varning', 'Värt att granska': 'granska' };
+        const bas = [...d.querySelectorAll('#la-oversikt tbody .la-status')];
+        expect(bas.length).toBeGreaterThan(0);
+        for (const el of bas) expect(el.classList.contains('ar-' + farg[el.textContent.trim()]), el.textContent).toBe(true);
+        const yrke = [...d.querySelectorAll('#matrix-table tbody .la-status:not(.la-status-liten)')];
+        for (const el of yrke) {
+            const namn = Object.keys(farg).find(k => el.textContent.includes(k));
+            expect(namn, el.textContent).toBeTruthy();
+            expect(el.classList.contains('farg-' + farg[namn])).toBe(true);
+        }
+        const prio = w.eval('Object.values(PRIO_STATUS_INFO)');
+        expect(prio.map(p => p.label)).toEqual(['Börja här', 'Värt att granska', 'Följ upp', 'Balanserat', 'Över referens']);
+    });
+    it('livscykelns nyckeltal är kvinnors lön i % av mäns, och modellens skillnad står bredvid', () => {
+        const w = demo();
+        w.__renderTabContent('kon');
+        w.eval('renderLifecycleAnalysis()');
+        const d = w.document, r = w.eval('runLifecycleRegression(_lifecycleFixBas)');
+        const pct = v => v.toFixed(1).replace('.', ',') + ' %';
+        const rutor = [...d.querySelectorAll('#livscykel-content .stat-box')].map(b => [b.querySelector('.stat-etikett').textContent, b.querySelector('.fs-xl')?.textContent.trim()]);
+        expect(rutor[0]).toEqual(['Kvinnors lön i % av mäns, 25 år', pct(100 + r.gapAt25)]);
+        expect(rutor[1]).toEqual(['Kvinnors lön i % av mäns, 65 år', pct(100 + r.gapAt65)]);
+        expect(d.querySelector('#livscykel-content .livscykel-kvot-not').textContent).toContain('Modellen ger skillnaden i procent');
+    });
+    it('livscykeln säger "inte säkerställd" i ord, stjärnorna förklaras, och modellformeln står i beräkningspanelen', () => {
+        const w = demo();
+        w.__renderTabContent('kon');
+        w.eval('renderLifecycleAnalysis()');
+        const d = w.document, r = w.eval('runLifecycleRegression(_lifecycleFixBas)');
+        const lop = d.getElementById('livscykel-content').textContent;
+        expect(lop).not.toMatch(/(^|[\s(>])ns([\s).,<]|$)/);   // \b räcker inte: å, ä och ö räknas inte som bokstäver där
+        expect(lop).not.toMatch(/log\(lön\)|HC3|C\(BAS\)|referensintervall/);
+        const saker = [...d.querySelectorAll('#livscykel-content .stat-box')].find(b => /säkerställd\?/.test(b.textContent));
+        const ord = p => p < 0.10 ? 'säkerställd' : 'inte säkerställd';
+        expect(saker.querySelector('.fs-md').textContent.replace(/\s+/g, ' ')).toContain(`Linjär: p = ${r.kvAgePVal < 0.001 ? '< 0,001' : r.kvAgePVal.toFixed(3).replace('.', ',')}, ${ord(r.kvAgePVal)}`);
+        expect(d.querySelector('#livscykel-content .livscykel-stjarnor').textContent).toContain('*** p < 0,001');
+        expect(d.querySelector('#livscykel-content .livscykel-modell-not').textContent)
+            .toMatch(/kön, ålder, åldern i kvadrat.*samspelet mellan kön och ålder.*BAS-intervall.*Så räknas det.*Beräkning & urval/s);
+        // Beräkningspanelen i flikens Så räknas det har formeln, standardfelen och referensintervallet.
+        const panel = d.querySelector('details.audit-panel[data-audit-id="livscykel"]');
+        expect(panel.closest('details.avsnitt').querySelector('summary h2').textContent).toBe('Så räknas det');
+        expect(panel.closest('.view-panel').id).toBe('view-livscykel');
+        const innehall = panel.querySelector('.audit-content').textContent;
+        expect(innehall).toContain('log(lön) ~ kön + ålder + ålder² + kön×ålder + kön×ålder² + C(BAS)');
+        expect(innehall).toContain('HC3-robusta standardfel');
+        expect(innehall).toContain(`BAS ${r.refBas} referensintervall`);
+        expect(w.eval('auditRegistry.livscykel').usedInAnalysis).toBe(r.n);
     });
 });

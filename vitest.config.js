@@ -15,12 +15,15 @@
 // tyngsta filen håller sig under (tests/helpers/app-harness.js), plus 2 GB åt resten av systemet, räknat på det
 // totala minnet (det lediga varierar från körning till körning och gav olika antal arbetare). På en maskin med få
 // kärnor eller lite minne blir sviten långsammare, inte ofullständig.
+//
+// Uteslutning: .claude/ kan rymma andra sessioners arbetskopior av hela repot (.claude/worktrees/); utan undantaget
+// kör Vitest deras testfiler också, och sviten blir flera gånger så lång.
 import { availableParallelism, totalmem } from 'node:os';
-import { defineConfig } from 'vitest/config';
+import { configDefaults, defineConfig } from 'vitest/config';
 
 const GB = 1024 ** 3;
 const maxWorkers = Math.max(1, Math.min(Math.round(availableParallelism() * 0.75), Math.floor((totalmem() - 2 * GB) / (1.2 * GB))));
 
 export default defineConfig({
-    test: { testTimeout: 30000, hookTimeout: 60000, maxWorkers },
+    test: { testTimeout: 30000, hookTimeout: 60000, maxWorkers, exclude: [...configDefaults.exclude, '.claude/**'] },
 });
