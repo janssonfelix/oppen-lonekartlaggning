@@ -40,10 +40,36 @@ function _quantileRegression(X, y, tau, maxIter, tol) {
     return _rgQuantileRegression(X, y, tau, maxIter, tol);
 }
 
+// ---- Förklaringsmodellen (ADR-56) ----
+/** Den gällande modellen, normaliserad mot datat (yrkesgrupp kan bara väljas när lönefilen har AID eller yrke). */
+function forklaringsmodell() {
+    return _rgNormaliseraForklaringsmodell(state.forklaringsmodell, { harYrke: getData().some(d => d.aid || d.yrke) }).modell;
+}
+
+/**
+ * Sätter förklaringsmodellen. Standard lagras som null. Allt som är ritat bär den gamla modellen (huvudtalet
+ * används i Översikt, Lika arbete, Struktur, Att göra och rapporten) och ritas om på samma väg som när tröskeln
+ * ändras (sattKTroskel utan stegvis).
+ * @param {any} v
+ * @param {{rita?: boolean}} [opts]
+ * @returns {{ok: true, modell: {bas:boolean, alder:boolean, yrkesgrupp:boolean, skal:string}, varningar: string[], andrad: boolean}}
+ */
+function sattForklaringsmodell(v, { rita = true } = {}) {
+    const { modell, varningar } = _rgNormaliseraForklaringsmodell(v, { harYrke: getData().some(d => d.aid || d.yrke) });
+    const ny = _rgForklaringsmodellArStandard(modell) ? null : modell;
+    const andrad = JSON.stringify(ny) !== JSON.stringify(state.forklaringsmodell);
+    state.forklaringsmodell = ny;
+    if (andrad && rita) {
+        if (typeof ritGenerationNy === 'function') ritGenerationNy();
+        if (typeof _renderaOmAllaFlikar === 'function') _renderaOmAllaFlikar();
+    }
+    return { ok: true, modell, varningar, andrad };
+}
+
 // Blinder-Oaxaca-dekomposition på appens data (getData()).
 function runBlinderOaxaca() {
     // Samma variabler som huvudmodellen (ADR-53): förklaringsmodellen ur tillståndet (ADR-56).
-    return _rgBlinderOaxaca(getData(), { golv: statGolv(), modell: state.forklaringsmodell });
+    return _rgBlinderOaxaca(getData(), { golv: statGolv(), modell: forklaringsmodell() });
 }
 
 // Kvantilregression vid τ ∈ {.10, .50, .90} på appens data (getData()).

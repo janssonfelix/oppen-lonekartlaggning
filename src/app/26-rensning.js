@@ -86,6 +86,7 @@ function _rensaAllData({ inbakat = true } = {}) {
     state.rapportUrval = null;
     state.rapportTabeller = [];
     state.perBasRecept = null;
+    state.forklaringsmodell = null;
     // Rensa även historiska snapshots och anteckningar
     state.forecast = { budget: { mode: 'pct', value: null }, generell: { mode: 'pct', value: null }, targets: [], minGroupN: 10, roundStep: 0, years: 1, scenarios: { A: null, B: null }, result: null };
     // Rensa även beräkningscacher som kan innehålla

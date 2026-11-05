@@ -12319,6 +12319,7 @@ document.addEventListener('keydown', e => {
  *   prioConfig: {atgardThreshold: number, akutMinN: number, bevakaThreshold: number, analyseraThreshold: number, [k: string]: any},
  *   prioWeights: {avvikelse: number, volym: number, jamstalldhet: number, [k: string]: any}, costSettings: {[k: string]: any},
  *   rapportUrval: {ordning: string[], med: string[]}|null, rapportTabeller: any[], perBasRecept: any, forraArsbokslut: any,
+ *   forklaringsmodell: null|{bas:boolean, alder:boolean, yrkesgrupp:boolean, skal:string},
  *   bristAids: Set<string>, scenarios: any[], snapshot: any, profile: {[k: string]: any},
  *   filnamn: {data: string|null, policy: string|null, statistik: string|null}, kTroskel: number,
  *   paketLas: {kTroskelLagst: number|null, inaktivitetMin: number|null, smaGrupperIExport: boolean},
@@ -12356,6 +12357,7 @@ const state = {
     rapportUrval: null,        // rapportens avsnitt: null = hela dokumentationen, annars { ordning, med } (58-rapportmodell.js)
     rapportTabeller: [],       // egna tabeller i rapporten: recept ur Utforska (src/lib/tabellrecept.js, ADR-52)
     perBasRecept: null,        // receptet för avsnittet per BAS-intervall: null = standard (src/lib/perbas.js, ADR-52)
+    forklaringsmodell: null,   // vilka variabler regressionen räknar bort: null = standard (kön + BAS + ålder), ADR-56
     bristAids: new Set(),         // E: AID-koder markerade som bristyrke
     scenarios: [],                // I: sparade scenarion (max 5)
     snapshot: null,         // för A/B-jämförelse
@@ -14187,6 +14189,7 @@ function buildConfigSnapshot() {
         rapportUrval: state.rapportUrval ? { ordning: [...state.rapportUrval.ordning], med: [...state.rapportUrval.med] } : null,
         rapportTabeller: (state.rapportTabeller || []).map(t => JSON.parse(JSON.stringify(t))),   // egna tabeller: recept, inga tal (ADR-52)
         perBasRecept: state.perBasRecept ? JSON.parse(JSON.stringify(state.perBasRecept)) : null,   // vilka avsnitt som följer med i rapporten
+        forklaringsmodell: state.forklaringsmodell ? { ...state.forklaringsmodell } : null,   // regressionens variabler och skälet (ADR-56); null = standard
         // Bug-fix: Set-objekt serialiseras inte korrekt med spread/JSON
         bristAids: Array.from(state.bristAids || []),
         likvardighet: state.likvardighet ? {
@@ -14432,6 +14435,9 @@ function applyConfigSnapshot(cfg) {
         if (typeof cfg.perBasRecept !== 'object') throw new Error('perBasRecept måste vara ett objekt.');
         tmp.perBasRecept = _pbValideraRecept(cfg.perBasRecept);
     }
+    // Förklaringsmodellen (ADR-56): ett ogiltigt värde ger standard med varning, aldrig fel; utan fältet gäller standard.
+    const fm = _rgNormaliseraForklaringsmodell(cfg.forklaringsmodell, { harYrke: getData().some(d => d.aid || d.yrke) });
+    varningar.push(...fm.varningar);
     let kAndrad = false;
     if (tmp.kTroskel != null) {
         const kr = sattKTroskel(tmp.kTroskel, { rita: false });
@@ -14443,6 +14449,7 @@ function applyConfigSnapshot(cfg) {
     sattRapportUrval(tmp.rapportUrval || null);   // okända avsnitt i filen hoppas över; utan fältet gäller hela dokumentationen
     if (tmp.rapportTabeller) state.rapportTabeller = tmp.rapportTabeller;
     if (tmp.perBasRecept) state.perBasRecept = _pbReceptArStandard(tmp.perBasRecept) ? null : tmp.perBasRecept;
+    state.forklaringsmodell = _rgForklaringsmodellArStandard(fm.modell) ? null : fm.modell;
     if (tmp.likvardighet) {
         state.likvardighet = { ...state.likvardighet, ...tmp.likvardighet, result: null };
     }
@@ -16337,6 +16344,7 @@ function _rensaAllData({ inbakat = true } = {}) {
     state.rapportUrval = null;
     state.rapportTabeller = [];
     state.perBasRecept = null;
+    state.forklaringsmodell = null;
     // Rensa även historiska snapshots och anteckningar
     state.forecast = { budget: { mode: 'pct', value: null }, generell: { mode: 'pct', value: null }, targets: [], minGroupN: 10, roundStep: 0, years: 1, scenarios: { A: null, B: null }, result: null };
     // Rensa även beräkningscacher som kan innehålla
@@ -23201,10 +23209,36 @@ function _quantileRegression(X, y, tau, maxIter, tol) {
     return _rgQuantileRegression(X, y, tau, maxIter, tol);
 }
 
+// ---- Förklaringsmodellen (ADR-56) ----
+/** Den gällande modellen, normaliserad mot datat (yrkesgrupp kan bara väljas när lönefilen har AID eller yrke). */
+function forklaringsmodell() {
+    return _rgNormaliseraForklaringsmodell(state.forklaringsmodell, { harYrke: getData().some(d => d.aid || d.yrke) }).modell;
+}
+
+/**
+ * Sätter förklaringsmodellen. Standard lagras som null. Allt som är ritat bär den gamla modellen (huvudtalet
+ * används i Översikt, Lika arbete, Struktur, Att göra och rapporten) och ritas om på samma väg som när tröskeln
+ * ändras (sattKTroskel utan stegvis).
+ * @param {any} v
+ * @param {{rita?: boolean}} [opts]
+ * @returns {{ok: true, modell: {bas:boolean, alder:boolean, yrkesgrupp:boolean, skal:string}, varningar: string[], andrad: boolean}}
+ */
+function sattForklaringsmodell(v, { rita = true } = {}) {
+    const { modell, varningar } = _rgNormaliseraForklaringsmodell(v, { harYrke: getData().some(d => d.aid || d.yrke) });
+    const ny = _rgForklaringsmodellArStandard(modell) ? null : modell;
+    const andrad = JSON.stringify(ny) !== JSON.stringify(state.forklaringsmodell);
+    state.forklaringsmodell = ny;
+    if (andrad && rita) {
+        if (typeof ritGenerationNy === 'function') ritGenerationNy();
+        if (typeof _renderaOmAllaFlikar === 'function') _renderaOmAllaFlikar();
+    }
+    return { ok: true, modell, varningar, andrad };
+}
+
 // Blinder-Oaxaca-dekomposition på appens data (getData()).
 function runBlinderOaxaca() {
     // Samma variabler som huvudmodellen (ADR-53): förklaringsmodellen ur tillståndet (ADR-56).
-    return _rgBlinderOaxaca(getData(), { golv: statGolv(), modell: state.forklaringsmodell });
+    return _rgBlinderOaxaca(getData(), { golv: statGolv(), modell: forklaringsmodell() });
 }
 
 // Kvantilregression vid τ ∈ {.10, .50, .90} på appens data (getData()).

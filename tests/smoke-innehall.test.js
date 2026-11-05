@@ -598,3 +598,47 @@ describe('MDE per grupp: spridningen inom grupp, inte över hela urvalet', () =>
         expect(t).toMatch(/används bara som reserv/);
     });
 });
+
+describe('förklaringsmodellen i tillstånd och konfigurationsfil (ADR-56)', () => {
+    const fonster = () => { const w = createAppWindow(); w.__loadDemoData(); return w; };
+    it('sattForklaringsmodell sätter tillståndet, standard lagras som null, och snapshoten bär valet', () => {
+        const w = fonster();
+        expect(w.__state.forklaringsmodell).toBeNull();
+        expect(w.eval('forklaringsmodell()')).toEqual({ bas: true, alder: true, yrkesgrupp: false, skal: '' });
+        const r = w.eval('sattForklaringsmodell({ bas: true, alder: false, yrkesgrupp: false, skal: "ingen lön efter ålder" }, { rita: false })');
+        expect(r.ok).toBe(true);
+        expect(w.__state.forklaringsmodell.alder).toBe(false);
+        expect(w.eval('JSON.parse(JSON.stringify(buildConfigSnapshot()))').forklaringsmodell).toEqual({ bas: true, alder: false, yrkesgrupp: false, skal: 'ingen lön efter ålder' });
+        w.eval('sattForklaringsmodell({ bas: true, alder: true, yrkesgrupp: false, skal: "" }, { rita: false })');
+        expect(w.__state.forklaringsmodell).toBeNull();
+        expect(w.eval('JSON.parse(JSON.stringify(buildConfigSnapshot()))').forklaringsmodell).toBeNull();
+    });
+    it('konfigurationsfilen: ett trasigt värde ger standard med varning, en fil utan fältet ger standard utan varning', () => {
+        const w = fonster();
+        w.__cfg = { ...w.eval('JSON.parse(JSON.stringify(buildConfigSnapshot()))'), forklaringsmodell: { alder: 'ja', bas: true } };
+        const r = w.eval('applyConfigSnapshot(window.__cfg)');
+        expect(w.__state.forklaringsmodell).toEqual({ bas: true, alder: false, yrkesgrupp: false, skal: '' });
+        expect(r.varningar.length).toBe(0);   // "ja" tvingas till falskt utan varning: fältet är giltigt men avslaget
+        w.__cfg = { ...w.eval('JSON.parse(JSON.stringify(buildConfigSnapshot()))'), forklaringsmodell: 'full' };
+        const r2 = w.eval('applyConfigSnapshot(window.__cfg)');
+        expect(w.__state.forklaringsmodell).toBeNull();
+        expect(r2.varningar.join(' ')).toMatch(/[Ff]örklaringsmodellen/);
+        const utan = w.eval('JSON.parse(JSON.stringify(buildConfigSnapshot()))'); delete utan.forklaringsmodell;
+        w.__state.forklaringsmodell = { bas: false, alder: true, yrkesgrupp: false, skal: '' };
+        w.__cfg = utan;
+        expect(w.eval('applyConfigSnapshot(window.__cfg)').varningar.length).toBe(0);
+        expect(w.__state.forklaringsmodell).toBeNull();
+    });
+    it('Rensa all data nollställer valet; yrkesgrupp utan yrke i datat stängs av med varning', () => {
+        const w = fonster();
+        w.eval('sattForklaringsmodell({ bas: true, alder: false, yrkesgrupp: false, skal: "" }, { rita: false })');
+        w.eval('_rensaAllData()');
+        expect(w.__state.forklaringsmodell).toBeNull();
+        const w2 = createAppWindow();
+        const rad = (kon, lon, i) => ({ bas: ['A', 'B', 'C'][i % 3], kon, lon, alder: 25 + (i % 30) });
+        w2.__state.data = Array.from({ length: 120 }, (_, i) => rad(i % 2 ? 'kvinna' : 'man', 30000 + (i % 3) * 2000 + (i % 7) * 100, i));
+        const r = w2.eval('sattForklaringsmodell({ bas: true, alder: true, yrkesgrupp: true, skal: "" }, { rita: false })');
+        expect(r.modell.yrkesgrupp).toBe(false);
+        expect(r.varningar.join(' ')).toMatch(/AID och yrke/);
+    });
+});
