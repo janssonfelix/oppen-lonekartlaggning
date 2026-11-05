@@ -266,7 +266,9 @@ function applyConfigSnapshot(cfg) {
         tmp.perBasRecept = _pbValideraRecept(cfg.perBasRecept);
     }
     // Förklaringsmodellen (ADR-56): ett ogiltigt värde ger standard med varning, aldrig fel; utan fältet gäller standard.
-    const fm = _rgNormaliseraForklaringsmodell(cfg.forklaringsmodell, { harYrke: getData().some(d => d.aid || d.yrke) });
+    // Utan inläst lönefil prövas inte yrkesgrupp mot datat (det görs av forklaringsmodell() när filen finns).
+    const rader = getData();
+    const fm = _rgNormaliseraForklaringsmodell(cfg.forklaringsmodell, { harYrke: !rader.length || rader.some(d => d.aid || d.yrke) });
     varningar.push(...fm.varningar);
     let kAndrad = false;
     if (tmp.kTroskel != null) {

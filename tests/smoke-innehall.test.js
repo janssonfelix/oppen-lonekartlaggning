@@ -629,6 +629,15 @@ describe('förklaringsmodellen i tillstånd och konfigurationsfil (ADR-56)', () 
         expect(w.eval('applyConfigSnapshot(window.__cfg)').varningar.length).toBe(0);
         expect(w.__state.forklaringsmodell).toBeNull();
     });
+    it('en konfigurationsfil som läses in före lönefilen behåller yrkesgrupp (valet prövas mot datat när det finns)', () => {
+        const w = createAppWindow();
+        w.__cfg = { version: 2, forklaringsmodell: { bas: true, alder: true, yrkesgrupp: true, skal: '' } };
+        const r = w.eval('applyConfigSnapshot(window.__cfg)');
+        expect(r.varningar.length).toBe(0);
+        expect(w.__state.forklaringsmodell).toEqual({ bas: true, alder: true, yrkesgrupp: true, skal: '' });
+        w.__loadDemoData();
+        expect(w.eval('forklaringsmodell()').yrkesgrupp).toBe(true);
+    });
     it('Rensa all data nollställer valet; yrkesgrupp utan yrke i datat stängs av med varning', () => {
         const w = fonster();
         w.eval('sattForklaringsmodell({ bas: true, alder: false, yrkesgrupp: false, skal: "" }, { rita: false })');
