@@ -8,6 +8,20 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ### Gränssnitt
 
+- **Inga bilder i stilmallen.** Sorteringspilarna i tabellhuvuden och hänglåsen på låsta menyflikar och före noten om
+  dolda grupper ritades som masker ur inbäddade `data:`-adresser; webbläsarens nätverkspanel visade dem som hämtningar
+  fast inget lämnade datorn. Pilarna ritas nu med kanter i CSS, menyns hänglås är en inline-SVG i knappen och notens
+  hänglås två pseudo-element, och röktestet kräver att stilmallen inte har någon `url(`.
+
+### Utveckling
+
+- **Testsviten hittar inte andra sessioners arbetskopior.** Vitest utesluter nu `.claude/`, där verktyget lägger
+  arbetskopior av hela repot; annars kördes deras testfiler också och sviten blev tre gånger så lång.
+
+## 2026.11.02
+
+### Gränssnitt
+
 - **Samma ord, färger och mått i alla flikar.** En skillnad mot 3- och 5-procentsgränserna heter *Balanserat*,
   *Följ upp* eller *Värt att granska* i alla flikar, diagram och exporter, med samma färg och symbol (lila för *Värt
   att granska*, också i Lika arbetes BAS-översikt och Utforska); *Börja här* och *Över referens* finns bara i
