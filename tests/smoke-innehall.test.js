@@ -799,3 +799,48 @@ describe('modellpanelen (ADR-56)', () => {
         expect(w.document.getElementById('forklaringsmodell-panel').innerHTML).toBe('');
     });
 });
+
+describe('avsnittet följer modellen (ADR-56)', () => {
+    const rita = modell => {
+        const w = createAppWindow(); w.__loadDemoData(); w.__state.forklaringsmodell = modell;
+        w.document.querySelector('.nav-item[data-tab="matrix"]').click(); w.eval('renderTabContent("matrix")');
+        const kort = w.document.getElementById('regression-card'), oax = w.document.getElementById('blinder-oaxaca-card');
+        const trappa = w.document.getElementById('chart-reg-trappa');
+        return { w, kort, oax, kortText: kort.textContent.replace(/\s+/g, ' '), oaxText: oax.textContent.replace(/\s+/g, ' '), figur: trappa ? trappa._figur : null };
+    };
+    it('utan ålder: inga "ålder och nivå", inget steg + Ålder, trappan slutar efter BAS, Oaxaca utan ålderraden', () => {
+        const { kortText, oaxText, figur, oax } = rita({ bas: true, alder: false, yrkesgrupp: false, skal: '' });
+        expect(kortText).not.toMatch(/ålder och nivå/);
+        expect(kortText).not.toMatch(/ålder och BAS/);
+        expect(kortText).not.toMatch(/BAS-intervall och ålder \(full modell\)/);
+        expect(kortText).toMatch(/Efter kontroll för BAS-intervall/);
+        expect(kortText).toMatch(/när nivå räknats bort/);
+        expect(figur).not.toBeNull();
+        expect(figur.x.ordning).toEqual(['Ojusterat gap', 'BAS-intervall', 'Oförklarat gap', 'Yrkesgrupp inom BAS']);
+        expect(oaxText).toMatch(/Förklarat av nivå/);
+        expect([...oax.querySelectorAll('tbody td:first-child')].map(td => td.textContent)).not.toContain('Ålder');
+        expect(oaxText).toMatch(/Ålder har kontrollerats/);
+    });
+    it('endast kön: Oaxaca-kortet visas inte och kortet säger att inget räknats bort', () => {
+        const { kortText, oax, figur } = rita({ bas: false, alder: false, yrkesgrupp: false, skal: '' });
+        expect(oax.innerHTML).toBe('');
+        expect(kortText).toMatch(/utan att något räknats bort/);
+        expect(figur).toBeNull();
+    });
+    it('yrkesgrupp vald: ordinarie steg i trappan, och Oaxaca har raden Yrkesgrupp inom BAS i stället för BAS-intervall', () => {
+        const { kortText, oax, figur } = rita({ bas: true, alder: true, yrkesgrupp: true, skal: '' });
+        expect(figur.x.ordning).toEqual(['Ojusterat gap', 'BAS-intervall', 'Ålder', 'Yrkesgrupp inom BAS', 'Oförklarat gap']);
+        expect(figur.lager.some(l => /ingår inte i huvudtalet/.test(l.serie))).toBe(false);
+        expect(kortText).not.toMatch(/ingår inte i huvudtalet/);
+        expect(kortText).toMatch(/ålder, nivå och yrkesgrupp räknats bort/);
+        const rader = [...oax.querySelectorAll('tbody td:first-child')].map(td => td.textContent);
+        expect(rader.some(t => /Yrkesgrupp inom BAS/.test(t))).toBe(true);
+        expect(rader.some(t => /^BAS-intervall/.test(t))).toBe(false);
+    });
+    it('standardläget är som förut', () => {
+        const { kortText, figur, oaxText } = rita(null);
+        expect(kortText).toMatch(/när ålder och nivå räknats bort/);
+        expect(figur.x.ordning).toEqual(['Ojusterat gap', 'BAS-intervall', 'Ålder', 'Oförklarat gap', 'Yrkesgrupp inom BAS']);
+        expect(oaxText).toMatch(/Förklarat av ålder och nivå/);
+    });
+});

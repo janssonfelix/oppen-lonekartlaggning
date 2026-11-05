@@ -22177,8 +22177,8 @@ function _skrReferensCell(yrke) {
 // bär sina tal där. Dominansen och den nationella andelen står i beviset (förstoringsglaset).
 const LA_DOLDA_KOLUMNER = ['dominans', 'nationellt'];
 function generateEUDirectiveMatrix() {
-    renderRegressionCard();
-    renderBlinderOaxacaCard();
+    // Regressionen körs en gång och skickas vidare (ADR-17): Oaxaca-kortet bär noteringen om det bortvalda (ADR-56).
+    renderBlinderOaxacaCard(renderRegressionCard());
     const tbody = document.querySelector("#matrix-table tbody");
     if (!tbody) return;
     tbody.innerHTML = "";
@@ -23676,9 +23676,9 @@ function _perBasFigur(sorted, bhQByBas) {
 function _regTrappaVisas(stegUt) {
     return !!stegUt && !stegUt.utelamnat && stegUt.steg.filter(s => s.status === 'ok').length >= 2 && stegUt.steg[0].status === 'ok';
 }
-const _REG_TRAPPSTEG = { '+ BAS-intervall': 'BAS-intervall', '+ Ålder': 'Ålder' };
-/** @param {any[]} seqOk @param {any} [yrkesSteg] */
-function _regTrappaFigur(seqOk, yrkesSteg = null) {
+const _REG_TRAPPSTEG = { '+ BAS-intervall': 'BAS-intervall', '+ Ålder': 'Ålder', '+ Yrkesgrupp': 'Yrkesgrupp inom BAS' };
+/** @param {any[]} seqOk @param {any} [yrkesSteg] yrkesgruppssteget efter huvudtalet (när det inte är valt in i modellen) @param {string} [fras] */
+function _regTrappaFigur(seqOk, yrkesSteg = null, fras = 'ålder och nivå') {
     const forst = seqOk[0], sist = seqOk[seqOk.length - 1];
     const yrke = yrkesSteg && yrkesSteg.status === 'ok' && typeof yrkesSteg.gapPct === 'number' ? yrkesSteg : null;
     const pct = v => `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(1).replace('.', ',')} %`;
@@ -23692,7 +23692,7 @@ function _regTrappaFigur(seqOk, yrkesSteg = null) {
                  farg: Math.abs(efter) <= Math.abs(fore) ? PALETTE.serie[0] : PALETTE.serie[1] };
     });
     const niva = (x, v) => ({ x, y: +v.toFixed(2), etikett: pct(v) });
-    return { beskrivning: `Hur lönegapet förklaras steg för steg: från det ojusterade gapet ${pct(forst.gapPct)} till det oförklarade ${pct(sist.gapPct)} när BAS-intervall och ålder räknas in.${yrke ? ` Räknas också yrkesgrupp inom BAS bort blir ${pct(yrke.gapPct)} kvar; det steget ingår inte i huvudtalet.` : ''} Negativt gap betyder att kvinnor har lägre lön. Samma tal står i förklaringsbudgeten.`,
+    return { beskrivning: `Hur lönegapet förklaras steg för steg: från det ojusterade gapet ${pct(forst.gapPct)} till det oförklarade ${pct(sist.gapPct)} när ${fras} räknas in.${yrke ? ` Räknas också yrkesgrupp inom BAS bort blir ${pct(yrke.gapPct)} kvar; det steget ingår inte i huvudtalet.` : ''} Negativt gap betyder att kvinnor har lägre lön. Samma tal står i förklaringsbudgeten.`,
         legend: false, hojd: 300,
         x: { skala: 'band', ordning: kategorier }, y: { skala: 'linjar', titel: 'Lönegap (%)', nollinje: true },
         lager: [
@@ -23819,6 +23819,21 @@ function _regKvantilFigur(resultat) {
 // Vilka variabler som räknas bort, vad var och en tillför (alltid mot fullmodellen), verktygets förslag, skälet
 // utanför siffrorna och noteringen om det bortvalda. Ritas av renderRegressionCard med samma regressionsresultat.
 const _FM_ETIKETT = { bas: 'BAS-intervall', alder: 'Ålder', yrkesgrupp: 'Yrkesgrupp inom BAS' };
+/**
+ * Formuleringarna i kortet för en vald modell (ADR-56). Standardmodellen ger dagens texter.
+ * @param {{bas:boolean, alder:boolean, yrkesgrupp:boolean}} m
+ */
+function _fmTexter(m) {
+    const fras = _rgModellFras(m);
+    const lista = (delar, skilj = ' och ') => (delar.length <= 1 ? delar.join('') : `${delar.slice(0, -1).join(', ')}${skilj}${delar[delar.length - 1]}`);
+    const forklarasAv = lista([...(m.alder ? ['åldersfördelning'] : []), ...(m.bas ? ['BAS-placering'] : []), ...(m.yrkesgrupp ? ['yrkesgrupp inom BAS'] : [])]);
+    const samma = m.alder || m.bas ? `i ${lista([...(m.alder ? ['samma ålder'] : []), ...(m.bas ? ['samma BAS-intervall'] : []), ...(m.yrkesgrupp ? ['samma yrkesgrupp'] : [])])}` : 'oavsett ålder och BAS-intervall';
+    const motiv = lista([...(m.alder ? ['att kvinnor är yngre'] : []), ...(m.bas ? ['arbetar i andra BAS-intervall'] : []), ...(m.yrkesgrupp ? ['finns i andra yrkesgrupper'] : [])], ' eller ');
+    const variabler = ['kön', ...(m.alder ? ['ålder'] : []), ...(m.bas ? ['BAS-intervall'] : []), ...(m.yrkesgrupp ? ['yrkesgrupp inom BAS'] : [])];
+    const antalOrd = ['', 'en sak', 'två saker', 'tre saker', 'fyra saker'][variabler.length];
+    const sista = m.yrkesgrupp ? '+ Yrkesgrupp' : m.alder ? '+ Ålder' : m.bas ? '+ BAS-intervall' : 'Endast kön';
+    return { fras, nar: fras ? `när ${fras} räknats bort` : 'utan att något räknats bort', forklarasAv, samma, motiv, variabler, antalOrd, sista };
+}
 /** Noteringen om en bortvald variabel, som den står i panelen och i rapporten (ren text). */
 function _fmNoteringText(b) {
     const tal = typeof b.deltaR2pp === 'number' && isFinite(b.deltaR2pp) ? `tillför ${svTal(Math.abs(b.deltaR2pp), 1)} procentenheter i förklaringsgrad` : 'gick inte att pröva';
@@ -23921,6 +23936,12 @@ function renderRegressionCard() {
     if (!wrap) return;
     const r = runOLSRegression();
     renderForklaringsmodellPanel(r);
+    const fmT = r.error ? null : _fmTexter(r.modell);
+    const fmRubrik = document.querySelector('[data-fm-rubrik]'), fmInledning = document.querySelector('[data-fm-inledning]');
+    if (fmRubrik) fmRubrik.textContent = !fmT ? 'När ålder och nivå räknats bort, steg för steg' : fmT.fras ? `När ${fmT.fras} räknats bort, steg för steg` : 'Det råa gapet, utan att något räknats bort';
+    if (fmInledning && fmT) fmInledning.innerHTML = fmT.fras
+        ? (fmT.fras === 'ålder och nivå' ? 'Här rensas effekten av att kvinnor och män har olika ålder och arbetar på olika nivåer bort. Det som återstår kan <em>inte</em> förklaras av de faktorerna.' : `Här rensas effekten av att kvinnor och män skiljer sig i ${esc(fmT.forklarasAv)} bort. Det som återstår kan <em>inte</em> förklaras av ${fmT.variabler.length > 2 ? 'de faktorerna' : 'den faktorn'}.`)
+        : 'Här visas det råa gapet: ingen variabel räknas bort (valet i panelen nedan).';
 
     // ----- Felfall: kunde inte estimeras alls -----
     if (r.error) {
@@ -23939,7 +23960,7 @@ function renderRegressionCard() {
                 <p class="text-dampad-sm marg-t-14">Tips: komplettera med fler observationer per yrkesgrupp.</p>
             </div>
         `;
-        return;
+        return r;
     }
 
     // ----- Lyckad estimering -----
@@ -23951,10 +23972,10 @@ function renderRegressionCard() {
     let verdict;
     if (!isSig) {
         verdict = { cls:'ok',   icon: ikon('bock', 28), title:'Inget kvarstående gap',
-                    sub:'När ålder och nivå räknats bort finns ingen skillnad som går att säkerställa. Det betyder inte att allt är perfekt — men datat ger inget stöd för ett generellt gap.' };
+                    sub:`${fmT.nar.charAt(0).toUpperCase()}${fmT.nar.slice(1)} finns ingen skillnad som går att säkerställa. Det betyder inte att allt är perfekt — men datat ger inget stöd för ett generellt gap.` };
     } else if (Math.abs(r.konPct) > 5) {
         verdict = { cls:'crit', icon:ikon('nal', 28),  title:'Här bör ni titta närmare',
-                    sub:'Skillnaden är större än 5 procent och finns kvar även när ålder och nivå räknats bort. Gå igenom grupperna nedan, väg varje skillnad mot sakliga skäl och ta upp frågan med facket.' };
+                    sub:`Skillnaden är större än 5 procent och ${fmT.fras ? `finns kvar även ${fmT.nar}` : 'står utan att något räknats bort'}. Gå igenom grupperna nedan, väg varje skillnad mot sakliga skäl och ta upp frågan med facket.` };
     } else {
         verdict = { cls:'warn', icon:ikon('oga', 28),  title:'Skriv ner varför',
                     sub:'Det finns en skillnad som inte är slump, men den är mindre än 5 procent. Dokumentera vad den beror på så att ni kan visa det vid nästa kartläggning.' };
@@ -23972,24 +23993,25 @@ function renderRegressionCard() {
     // Bidragsuppdelning (visuell waterfall) — visar hur gapet krymper när kontroller läggs till
     // Första steget ("Endast kön") och det som räknas ur det följer tröskeln (ADR-12); se _regStegForRedovisning.
     const stegUt = _regStegForRedovisning(r);
-    // Trappan, budgetens "kvarstår" och ansvarsraden utgår från stegen till och med + Ålder (huvudtalet);
-    // yrkesgruppssteget läggs till där det visas (ADR-46).
-    const seqOk = stegUt.steg.filter(s => s.status === 'ok' && s.name !== '+ Yrkesgrupp');
+    // Trappan, budgetens "kvarstår" och ansvarsraden utgår från modellens steg (huvudtalet, ADR-56); yrkesgruppssteget
+    // ingår när yrkesgrupp är vald och läggs annars till där det visas (ADR-46).
+    const seqOk = stegUt.steg.filter(s => s.status === 'ok' && (r.modell.yrkesgrupp || s.name !== '+ Yrkesgrupp'));
     const stepDescription = {
         'Endast kön':       'Endast kön (utan strukturell kontroll)',
-        '+ BAS-intervall':  'Efter kontroll för BAS-intervall',
-        '+ Ålder':          'Efter kontroll för BAS-intervall och ålder (full modell)',
-        '+ Yrkesgrupp':     'Efter kontroll även för yrkesgrupp inom BAS'
+        '+ BAS-intervall':  r.modell.alder ? 'Efter kontroll för BAS-intervall' : 'Efter kontroll för BAS-intervall (full modell)',
+        '+ Ålder':          r.modell.bas ? 'Efter kontroll för BAS-intervall och ålder (full modell)' : 'Efter kontroll för ålder (full modell)',
+        '+ Yrkesgrupp':     r.modell.yrkesgrupp ? 'Efter kontroll även för yrkesgrupp inom BAS (full modell)' : 'Efter kontroll även för yrkesgrupp inom BAS'
     };
-    const stepTransition = {
-        '+ BAS-intervall':  'rensar bort effekten av att kvinnor och män är olika fördelade över BAS-intervallen',
-        '+ Ålder':          'rensar dessutom bort effekten av att kvinnor och män har olika åldersfördelning',
-        '+ Yrkesgrupp':     'rensar dessutom bort löneskillnader mellan yrkesgrupper inom samma BAS-intervall'
-    };
+    // Övergången: "rensar bort" i första steget efter det ojusterade, "rensar dessutom bort" därefter.
+    const stepTransitionText = (name, forsta) => ({
+        '+ BAS-intervall':  `rensar ${forsta ? '' : 'dessutom '}bort effekten av att kvinnor och män är olika fördelade över BAS-intervallen`,
+        '+ Ålder':          `rensar ${forsta ? '' : 'dessutom '}bort effekten av att kvinnor och män har olika åldersfördelning`,
+        '+ Yrkesgrupp':     `rensar ${forsta ? '' : 'dessutom '}bort löneskillnader mellan yrkesgrupper inom samma BAS-intervall`
+    })[name];
     let waterfallHtml = '';
     // Staplarnas bredd räknas mot de steg som visas: annars kunde ett utelämnat steg räknas fram ur bredden.
-    // Yrkesgruppssteget (ADR-46) ritas efter huvudtalet, som en rad till — huvudtalet är steget + Ålder.
-    const yrkeVisas = r.yrkesSteg?.status === 'ok' && seqOk.some(s => s.name === '+ Ålder');
+    // Yrkesgruppssteget (ADR-46) ritas efter huvudtalet, som en rad till, när det inte är valt in i modellen.
+    const yrkeVisas = r.yrkesSteg?.status === 'ok' && !r.modell.yrkesgrupp && seqOk.some(s => s.name === fmT.sista);
     const stegIKortet = yrkeVisas ? [...seqOk, r.yrkesSteg] : seqOk;
     if (seqOk.length >= (stegUt.utelamnat ? 1 : 2)) {
         const maxAbs = Math.max(...stegIKortet.map(s => Math.abs(s.gapPct)), 0.01);
@@ -23997,7 +24019,7 @@ function renderRegressionCard() {
             const isLast = idx === seqOk.length - 1;
             const isYrke = s.name === '+ Yrkesgrupp';
             const desc = stepDescription[s.name] || s.name;
-            const trans = stepTransition[s.name];
+            const trans = stepTransitionText(s.name, idx === 1);
             const widthPct = (Math.abs(s.gapPct) / maxAbs) * 100;
             const sgnW = s.gapPct >= 0 ? '+' : '−';
             const absVal = svTal(Math.abs(s.gapPct), 2);
@@ -24021,7 +24043,7 @@ function renderRegressionCard() {
     // kvar med det inräknat — annars står två olika "kvarstår" i samma block (30 % här, 15 % i budgeten).
     const explainedRowHtml = budget => stegUt.explainedShare !== null
         ? `<div class="bak-info-bg ram-v-3-info rund-4 fs-sm lh-1_55 marg-t-10 pad-10-14">
-            <strong>Slutsats:</strong> ${svPct(stegUt.explainedShare, 0)} av det råa lönegapet förklaras av åldersfördelning och BAS-placering; <strong>${svPct((100-stegUt.explainedShare), 0)}</strong> blir kvar som huvudtalets oförklarade skillnad.${budget && budget.parts.some(p => p.key === 'yrke') ? ` Räknas också yrkesgrupp inom BAS bort blir ${svPct(budget.remainingShare, 0)} kvar (steget + Yrkesgrupp, som inte ingår i huvudtalet).` : ''} Det oförklarade är det som <em>inte</em> kan tillskrivas dessa faktorer och som lönekartläggningen ska granska närmare.
+            <strong>Slutsats:</strong> ${svPct(stegUt.explainedShare, 0)} av det råa lönegapet förklaras av ${esc(fmT.forklarasAv)}; <strong>${svPct((100-stegUt.explainedShare), 0)}</strong> blir kvar som huvudtalets oförklarade skillnad.${budget && !r.modell.yrkesgrupp && budget.parts.some(p => p.key === 'yrke') ? ` Räknas också yrkesgrupp inom BAS bort blir ${svPct(budget.remainingShare, 0)} kvar (steget + Yrkesgrupp, som inte ingår i huvudtalet).` : ''} Det oförklarade är det som <em>inte</em> kan tillskrivas ${fmT.variabler.length > 2 ? 'dessa faktorer' : 'den faktorn'} och som lönekartläggningen ska granska närmare.
            </div>`
         : '';
 
@@ -24042,7 +24064,7 @@ function renderRegressionCard() {
     // inte bara i ordlistan.
     const caveatInline = `
         <p class="reg-caveat-inline" role="note"><strong>Kom ihåg:</strong> <em>oförklarat</em> betyder att skillnaden
-        inte fångas upp av ålder och BAS-placering — <strong>inte</strong> att den beror på kön eller är osaklig.
+        ${fmT.fras ? `inte fångas upp av ${esc(fmT.forklarasAv)}` : 'här är hela skillnaden, utan att något räknats bort'} — <strong>inte</strong> att den beror på kön eller är osaklig.
         Det är en signal om var ni bör titta närmare, inte ett bevis.</p>`;
 
     // Så fungerar regressionen: tre steg i vardagsspråk, vad som räknas bort och inte, och vilket tal som används
@@ -24054,11 +24076,11 @@ function renderRegressionCard() {
             <div class="bak-yta rund-6 fs-sm lh-1_6 marg-t-8 pad-14-16">
                 <ol class="marg-0-0-10-22 pad-0">
                     <li><strong>Lönen räknas i procent, inte i kronor.</strong> Modellen arbetar med logaritmen av månadslönen, så att en skillnad betyder samma sak i BAS A som i BAS E: fem procent är fem procent.</li>
-                    <li><strong>Varje person jämförs med dem som liknar personen.</strong> Modellen söker den lönenivå som bäst beskriver alla ${svTal(r.n, 0)} personer utifrån tre saker på en gång: kön, ålder och BAS-intervall. Den svarar på frågan: hur mycket skiljer lönen mellan en kvinna och en man <em>i samma BAS-intervall och samma ålder</em>?</li>
+                    <li><strong>Varje person jämförs med dem som liknar personen.</strong> Modellen söker den lönenivå som bäst beskriver alla ${svTal(r.n, 0)} personer utifrån ${fmT.antalOrd} på en gång: ${esc(fmT.variabler.join(', ').replace(/, ([^,]*)$/, ' och $1'))}. Den svarar på frågan: hur mycket skiljer lönen mellan en kvinna och en man <em>${esc(fmT.samma)}</em>?</li>
                     <li><strong>Svaret är ett tal med ett spann.</strong> Huvudtalet (${sign}${svPct(r.konPct, 1)}) är den skillnaden i genomsnitt över hela underlaget. Spannet säger hur säker skattningen är, och p-värdet om skillnaden går att skilja från slumpen.</li>
                 </ol>
-                <p class="marg-0-0-6"><strong>Räknas bort:</strong> ålder och BAS-intervall${r.yrkesSteg?.status === 'ok' ? ', och yrkesgrupp inom BAS i ett eget steg nedan' : ''}. <strong>Räknas inte bort:</strong> ${harAnsvar ? 'ansvar (står på en egen rad), ' : ''}anställningstid, utbildning, deltid, prestation och marknadsläge — sådant som kan vara sakliga skäl men som lönefilen inte innehåller.</p>
-                <p class="marg-0-0-6"><strong>Så läser du kortet:</strong> huvudtalet överst är det som går in i rapporten. <em>Steg för steg</em> visar vad ålder och nivå förklarar, <em>per BAS-intervall</em> var skillnaden finns, och <em>lönefördelningen</em> om den är störst bland lågt eller högt betalda. Ordlistan förklarar begreppen.</p>
+                <p class="marg-0-0-6"><strong>Räknas bort:</strong> ${fmT.fras ? esc(fmT.variabler.slice(1).join(', ').replace(/, ([^,]*)$/, ' och $1')) : 'ingenting'}${r.yrkesSteg?.status === 'ok' && !r.modell.yrkesgrupp ? ', och yrkesgrupp inom BAS i ett eget steg nedan' : ''}. <strong>Räknas inte bort:</strong> ${r.bortvalt.map(b => `${b.etikett.toLowerCase()} (kontrollerad och vald bort i panelen ovan), `).join('')}${harAnsvar ? 'ansvar (står på en egen rad), ' : ''}anställningstid, utbildning, deltid, prestation och marknadsläge — sådant som kan vara sakliga skäl men som lönefilen inte innehåller.</p>
+                <p class="marg-0-0-6"><strong>Så läser du kortet:</strong> huvudtalet överst är det som går in i rapporten. <em>Steg för steg</em> ${fmT.fras ? `visar vad ${esc(fmT.fras)} förklarar` : 'visar det ojusterade gapet'}, <em>per BAS-intervall</em> var skillnaden finns, och <em>lönefördelningen</em> om den är störst bland lågt eller högt betalda. Ordlistan förklarar begreppen.</p>
                 <p class="marg-0 text-dampad-sm"><strong>Två råa gap:</strong> rutan överst räknar det råa gapet på medianlönen, som direktivets tröskel gör; trappans första steg räknar det i modellens procentskala (genomsnitt av logaritmerad lön). Talen skiljer sig något när lönefördelningen är skev. Båda är riktiga: medianen för direktivet, modellens för uppdelningen.</p>
             </div>
         </details>`;
@@ -24074,7 +24096,7 @@ function renderRegressionCard() {
                 <div class="rk-tile"><div class="rk-val">${krFmt(Math.abs(kr.krTotalYear))}</div><div class="rk-lbl">för alla ${r.nKvAnalysed} kvinnor i underlaget, per år${andelAvLonesumma != null ? ` (${svPct(andelAvLonesumma, 1)} av kvinnornas samlade årslön)` : ''}</div></div>
             </div>
             <p class="rk-example"><strong>Konkret:</strong> en man med medianlön tjänar <strong>${krFmt(kr.refMan)}</strong>/mån.
-            En kvinna <em>i samma ålder och samma BAS-intervall</em> förutsägs enligt modellen tjäna
+            En kvinna <em>${esc(fmT.samma)}</em> förutsägs enligt modellen tjäna
             <strong>${krFmt(kr.refKvinna)}</strong>/mån — alltså <strong>${krFmt(Math.abs(kr.krMonth))}</strong>
             ${kr.krMonth >= 0 ? 'mindre' : 'mer'} i månaden.</p>
             <p class="rk-caveat">Räknat med medianlönen som referens. Detta är en <strong>storleksordning</strong> för att göra
@@ -24088,7 +24110,7 @@ function renderRegressionCard() {
     // "kvarstår" är huvudtalet, som inte räknar bort ansvaret (ADR-33).
     let ansvarHtml = '';
     const sistaSteg = seqOk[seqOk.length - 1];
-    if (r.ansvarSteg?.status === 'ok' && sistaSteg?.name === '+ Ålder') {
+    if (r.ansvarSteg?.status === 'ok' && sistaSteg?.name === fmT.sista) {
         ansvarHtml = `<p class="reg-ansvar">${_ansvarRadText(sistaSteg.gapPct, r.ansvarSteg.gapPct)}
             Ansvar är ett tänkbart sakligt skäl — om det är det avgör ni. Huvudtalet ovan räknar inte bort ansvaret.</p>`;
     }
@@ -24115,7 +24137,7 @@ function renderRegressionCard() {
                     <li><span class="rb-key rb-kvar"></span><strong>Kvarstår oförklarat: ${svTal(budget.remaining, 2)} procentenheter</strong>
                         <span class="f-dampad">(${svPct(budget.remainingShare, 0)} av gapet)</span></li>
                 </ul>
-                ${budget.parts.some(p => p.key === 'yrke') ? `<p class="rb-note">Yrkesgrupp inom BAS räknas in i budgeten, inte i huvudtalet ovan: det som kvarstår här är skillnaden mellan kvinnor och män med samma yrkesgrupp, BAS-intervall och ålder.</p>` : ''}
+                ${!r.modell.yrkesgrupp && budget.parts.some(p => p.key === 'yrke') ? `<p class="rb-note">Yrkesgrupp inom BAS räknas in i budgeten, inte i huvudtalet ovan: det som kvarstår här är skillnaden mellan kvinnor och män med samma yrkesgrupp, BAS-intervall och ålder.</p>` : ''}
                 ${budget.anyNegative ? `<p class="rb-note">${ikon('statusVarning')} En kontrollvariabel <em>ökade</em> gapet i stället för att förklara det.
                     Det betyder att den strukturella faktorn <strong>dolde</strong> en del av skillnaden — utan den kontrollen
                     såg läget bättre ut än det är.</p>` : ''}
@@ -24197,9 +24219,9 @@ function renderRegressionCard() {
     const rawCIsuffix = state.bootstrapCI ? fmtCI(state.bootstrapCI.gapPct) : '';
     const tolkning = isSig
         ? (Math.abs(r.konPct) > 5
-            ? `Enligt modellen tjänar kvinnor <strong class="f-kritisk">${svPct(Math.abs(r.konPct), 1)} mindre</strong> än män med samma ålder och samma BAS-intervall, alltså även efter att skillnader i ålder och BAS-placering räknats bort. Detta är <em>oförklarad</em> löneskillnad — den kan <strong>inte</strong> motiveras med att kvinnor är yngre eller arbetar i andra BAS-intervall. Eftersom skillnaden överstiger 5 % och är statistiskt säkerställd aktualiseras EU-direktivets (2023/970) utredningssteg — väg skillnaden mot sakliga skäl.`
+            ? `Enligt modellen tjänar kvinnor <strong class="f-kritisk">${svPct(Math.abs(r.konPct), 1)} mindre</strong> än män ${fmT.fras ? `${esc(fmT.samma)}, alltså även efter att skillnader i ${esc(fmT.forklarasAv)} räknats bort. Detta är <em>oförklarad</em> löneskillnad — den kan <strong>inte</strong> motiveras med ${esc(fmT.motiv)}.` : 'utan att något räknats bort: det är hela skillnaden, inte en oförklarad del av den.'} Eftersom skillnaden överstiger 5 % och är statistiskt säkerställd aktualiseras EU-direktivets (2023/970) utredningssteg — väg skillnaden mot sakliga skäl.`
             : `Det finns en statistiskt säkerställd oförklarad löneskillnad på ${svPct(Math.abs(r.konPct), 1)}, men den är under 5%-tröskeln. Bör dokumenteras med sakliga skäl och följas upp över tid.`)
-        : `<strong>Det råa lönegapet (${_raGapText(r, v => svPct(v, 1) + rawCIsuffix)})</strong> försvinner när vi kontrollerar för att kvinnor och män har olika åldersfördelning och olika BAS-placering. Återstående skillnad (${sign}${svPct(r.konPct, 1)}) är statistiskt obetydlig — datat är förenligt med att ingen verklig oförklarad skillnad finns.`;
+        : `<strong>Det råa lönegapet (${_raGapText(r, v => svPct(v, 1) + rawCIsuffix)})</strong> ${fmT.fras ? `försvinner när vi kontrollerar för att kvinnor och män skiljer sig i ${esc(fmT.forklarasAv)}` : 'är statistiskt obetydligt redan utan kontroller'}. Återstående skillnad (${sign}${svPct(r.konPct, 1)}) är statistiskt obetydlig — datat är förenligt med att ingen verklig oförklarad skillnad finns.`;
 
     // #5 Statistisk transparens: flagga när underlaget gör skattningen
     // osäker — så HR inte övertolkar ett punktvärde som bygger på tunt data.
@@ -24244,7 +24266,7 @@ function renderRegressionCard() {
                         <span class="info-tip" data-tooltip="95% konfidensintervall (HC3 robust). Det &quot;verkliga&quot; värdet ligger med 95% sannolikhet inom detta intervall. Smalt intervall = säker estimering, brett = osäker. Klassisk KI för jämförelse: ${svPct(r.konPctLowClassical, 1)} till ${svPct(r.konPctHighClassical, 1)}.">${ikon('info', 14)}</span><br>
                         <strong>Statistiskt säkerställd:</strong>
                         <span title="${esc(_sigPlainText(r.pValue))}" class="ram-b-1-prickad-dampad hjalpmarke hjalp-markor">${isSig ? 'Ja' : 'Nej'} (${sig})</span><br>
-                        <span class="reg-hero-kvot">Samma sak som att kvinnors lön är ${svPct(r.konKvot, 1)} av mäns när ålder och nivå räknats bort — talet i nyckeltalsraden överst i fliken.</span>
+                        <span class="reg-hero-kvot">Samma sak som att kvinnors lön är ${svPct(r.konKvot, 1)} av mäns ${esc(fmT.nar)} — talet i nyckeltalsraden överst i fliken.</span>
                     </div>
                 </div>
                 <div class="reg-verdict ${verdict.cls}">
@@ -24417,11 +24439,11 @@ function renderRegressionCard() {
                         <tr><th>95% KI (HC3 robust)</th><td>${svPct(r.konPctLow, 4)} till ${svPct(r.konPctHigh, 4)}</td></tr>
                         <tr><th>95% KI (klassisk)</th><td>${svPct(r.konPctLowClassical, 4)} till ${svPct(r.konPctHighClassical, 4)}</td></tr>
                     </table>
-                    <h3>Ålderseffekt</h3>
+                    ${r.ageEffect != null ? `<h3>Ålderseffekt</h3>
                     <table class="reg-tech-table">
                         <tr><th>Procentuell löneförändring per levnadsår</th><td>${r.ageEffect >= 0 ? '+' : ''}${svPct(r.ageEffect, 3)}</td></tr>
                         <tr><th>p-värde</th><td>${_formatPValue(r.ageP)}</td></tr>
-                    </table>
+                    </table>` : ''}
                     ${r.basEffekter ? `
                     <h3>BAS-effekter (indikatorvariabler)</h3>
                     <p>Varje BAS-intervall har en egen indikator; det alfabetiskt första intervallet, <code>${esc(r.basRef)}</code>, är referens. Koefficienten är intervallets lönenivå i procent mot referensen, efter kontroll för kön och ålder — inget antagande om lika stora steg mellan bokstäverna.</p>
@@ -24446,7 +24468,7 @@ function renderRegressionCard() {
     _renderPerBasGapChart(r.perBas, bhQByBas);
     // Trappan och kvantilkurvan: bilder av tal som kortet redan visar i tabell.
     const trappa = document.getElementById('chart-reg-trappa');
-    if (trappa) ritaFigur(trappa, _regTrappaFigur(stegUt.steg.filter(s => s.status === 'ok' && s.name !== '+ Yrkesgrupp'), yrkeVisas ? r.yrkesSteg : null));
+    if (trappa) ritaFigur(trappa, _regTrappaFigur(seqOk, yrkeVisas ? r.yrkesSteg : null, fmT.fras));
     const kvantil = document.getElementById('chart-reg-kvantil');
     if (kvantil && _regKvantilSenast) ritaFigur(kvantil, _regKvantilFigur(_regKvantilSenast));
     const statsToggle = document.getElementById('perbas-show-stats');
@@ -24470,15 +24492,18 @@ function renderRegressionCard() {
             _openEvidenceModal(_evidenceForPerBasRow(p, { q, allM }));
         });
     });
+    return r;
 }
 
 /**
- * Renderar Blinder-Oaxaca-kortet i EU-matris-fliken (efter
- * renderRegressionCard).
+ * Renderar Blinder-Oaxaca-kortet i EU-matris-fliken (efter renderRegressionCard).
+ * @param {any} [reg] huvudregressionens resultat från den som just kört den (ADR-17); bär det bortvalda (ADR-56)
  */
-function renderBlinderOaxacaCard() {
+function renderBlinderOaxacaCard(reg) {
     const wrap = document.getElementById('blinder-oaxaca-card');
     if (!wrap) return;
+    const modell = forklaringsmodell();
+    if (!modell.bas && !modell.alder) { wrap.innerHTML = ''; return; }   // endast kön: inget att dela upp (ADR-56)
     const r = runBlinderOaxaca();
     if (!r) {
         wrap.innerHTML = `<div class="card ram-v-4-dampad">
@@ -24502,8 +24527,14 @@ function renderBlinderOaxacaCard() {
     const explainedPctOfGap = Math.abs(explainedShare * 100);
     const unexplainedPctOfGap = Math.abs(unexplainedShare * 100);
 
+    // Texterna följer modellen (ADR-56); noteringen om det bortvalda tas ur huvudregressionen.
+    const t = _fmTexter(r.modell);
+    const bortvalt = reg && !reg.error && Array.isArray(reg.bortvalt) ? reg.bortvalt : [];
+    const variabelText = [...(r.modell.alder ? ['ålder'] : []),
+        ...(r.modell.bas && !r.modell.yrkesgrupp ? [`en indikator per BAS-intervall, referens BAS ${esc(String(r.basRef))}`] : []),
+        ...(r.modell.yrkesgrupp ? [`en indikator per yrkesgrupp inom BAS, referens ${esc(String(r.gruppRef))}`] : [])].join(' och ');
     // Per-variabel-tabell
-    const compLabel = { intercept: 'Konstant (grundnivå)', age: 'Ålder', bas: 'BAS-intervall (alla indikatorer)' };
+    const compLabel = { intercept: 'Konstant (grundnivå)', age: 'Ålder', bas: 'BAS-intervall (alla indikatorer)', yrke: 'Yrkesgrupp inom BAS (alla indikatorer; BAS ingår)' };
     const compRows = Object.entries(r.components).map(([k, v]) => `
         <tr>
             <td><strong>${compLabel[k]}</strong></td>
@@ -24519,9 +24550,9 @@ function renderBlinderOaxacaCard() {
             </h3>
             <p class="text-dampad-sm lh-1_55 marg-0-0-14">
                 Rågapet i månadslön delas upp i den del som <em>förklaras</em> av strukturella skillnader
-                (ålder, BAS) och den del som är <em>oförklarad</em> — det som <strong>inte</strong> kan
-                tillskrivas att kvinnor och män i organisationen har olika åldrar eller arbetar i olika
-                BAS-intervall. Den oförklarade delen är det lönekartläggningen ska adressera.
+                (${esc(t.fras)}) och den del som är <em>oförklarad</em> — det som <strong>inte</strong> kan
+                tillskrivas att kvinnor och män i organisationen skiljer sig i ${esc(t.forklarasAv)}.
+                Den oförklarade delen är det lönekartläggningen ska adressera.${bortvalt.length ? ` ${esc(bortvalt.map(b => _fmNoteringText(b).replace(' nedan', ' här')).join(' '))}` : ''}
             </p>
 
             <div class="rutnat gap-14 kolumner-3-lika marg-b-18">
@@ -24531,7 +24562,7 @@ function renderBlinderOaxacaCard() {
                     <div class="finstilt">n = ${r.nKv} kvinnor + ${r.nMa} män</div>
                 </div>
                 <div class="bak-ok-bg rund-8 pad-14 ta-mitt">
-                    <div class="etikett-versal">Förklarat av ålder och BAS, procentenheter</div>
+                    <div class="etikett-versal">Förklarat av ${esc(t.fras)}, procentenheter</div>
                     <div class="farg-ok fs-nyckeltal fw-700 marg-t-4">${svTal(Math.abs(forklarat), 1)}</div>
                     <div class="finstilt">≈ ${svPct(explainedPctOfGap, 0)} av rågapet</div>
                 </div>
@@ -24542,7 +24573,7 @@ function renderBlinderOaxacaCard() {
                 </div>
             </div>
 
-            <p class="text-dampad-sm lh-1_55 marg-0-0-14">Rågapet räknas som i kortet ovan: kvinnors lön mot mäns, negativt när kvinnor ligger lägre; de två delarna är hur många procentenheter av det som förklaras respektive blir kvar${(forklarat > 0) !== (ragap > 0) ? ' (den förklarade delen drar här åt motsatt håll mot rågapet)' : ''}. Den oförklarade delen här och huvudtalet ovan mäter samma skillnad med samma variabler (ålder och en indikator per BAS-intervall, referens BAS ${esc(String(r.basRef))}); de skiljer sig något eftersom uppdelningen skattar kvinnors och mäns lönesättning var för sig. (Metoden räknar internt mäns lön mot kvinnors; talen är omräknade.)</p>
+            <p class="text-dampad-sm lh-1_55 marg-0-0-14">Rågapet räknas som i kortet ovan: kvinnors lön mot mäns, negativt när kvinnor ligger lägre; de två delarna är hur många procentenheter av det som förklaras respektive blir kvar${(forklarat > 0) !== (ragap > 0) ? ' (den förklarade delen drar här åt motsatt håll mot rågapet)' : ''}. Den oförklarade delen här och huvudtalet ovan mäter samma skillnad med samma variabler (${variabelText}); de skiljer sig något eftersom uppdelningen skattar kvinnors och mäns lönesättning var för sig. (Metoden räknar internt mäns lön mot kvinnors; talen är omräknade.)</p>
 
             <details open>
                 <summary class="farg-text pekare fw-600">Visa uppdelning per variabel</summary>
@@ -24559,10 +24590,10 @@ function renderBlinderOaxacaCard() {
                         <tbody>${compRows}</tbody>
                     </table>
                     <p data-hjalptext class="text-dampad-xs lh-1_5 marg-10-0-0">
-                        <strong>Tolkning:</strong> Klassisk Blinder-Oaxaca-uppdelning. Q = skillnader i egenskaper (ålder, BAS) värderade
+                        <strong>Tolkning:</strong> Klassisk Blinder-Oaxaca-uppdelning. Q = skillnader i egenskaper (${esc(t.fras)}) värderade
                         med kvinnornas lönesättning. U = skillnad i hur samma egenskaper betalas. I = samspel mellan de två.
-                        Förklarat = Q. Oförklarat = U + I. Raden BAS-intervall är summan över alla indikatorer; ett intervall som
-                        bara finns hos ett kön hamnar i samspelet.
+                        Förklarat = Q. Oförklarat = U + I.${r.modell.bas ? ` Raden ${r.modell.yrkesgrupp ? 'Yrkesgrupp inom BAS' : 'BAS-intervall'} är summan över alla indikatorer; en grupp som
+                        bara finns hos ett kön hamnar i samspelet.` : ''}
                     </p>
                 </div>
             </details>
@@ -24570,7 +24601,7 @@ function renderBlinderOaxacaCard() {
             <div class="bak-varning-bg ram-v-3-varning rund-4 fs-sm lh-1_55 marg-t-14 pad-10-12">
                 <strong>Vad betyder detta i samverkan?</strong><br>
                 Den <em>förklarade</em> delen (${svTal(Math.abs(forklarat), 1)} procentenheter) beror på att kvinnor och män
-                i organisationen har olika ålder och arbetar i olika BAS-intervall. Den hänsyn man rimligt
+                i organisationen skiljer sig i ${esc(t.forklarasAv)}. Den hänsyn man rimligt
                 kan ta är dessa strukturella skillnader. Den <em>oförklarade</em> delen (${svTal(Math.abs(oforklarat), 1)} procentenheter)
                 är vad lönekartläggningen ska <strong>analysera djupare</strong> — sakliga skäl
                 måste finnas dokumenterade för att motivera den.

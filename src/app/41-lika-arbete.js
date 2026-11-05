@@ -268,8 +268,8 @@ function _skrReferensCell(yrke) {
 // bär sina tal där. Dominansen och den nationella andelen står i beviset (förstoringsglaset).
 const LA_DOLDA_KOLUMNER = ['dominans', 'nationellt'];
 function generateEUDirectiveMatrix() {
-    renderRegressionCard();
-    renderBlinderOaxacaCard();
+    // Regressionen körs en gång och skickas vidare (ADR-17): Oaxaca-kortet bär noteringen om det bortvalda (ADR-56).
+    renderBlinderOaxacaCard(renderRegressionCard());
     const tbody = document.querySelector("#matrix-table tbody");
     if (!tbody) return;
     tbody.innerHTML = "";
