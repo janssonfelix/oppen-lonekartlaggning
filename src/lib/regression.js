@@ -355,23 +355,28 @@ export function quantileRegression(X, y, tau, maxIter = 60, tol = 1e-5) {
  *   Oförklarat  = Coefficient + Interaction
  *
  * Modell: ln(lön) ~ ålder (centrerad) + en indikator per BAS-intervall — samma kodning som huvudregressionen
- * (ADR-44, ADR-53) — körd separat för kvinnor respektive män. Referensintervallet är det alfabetiskt första
+ * (ADR-44, ADR-53) — körd separat för kvinnor respektive män. Med förklaringsmodellen (ADR-56) kan ålder eller
+ * BAS utelämnas, och yrkesgrupp inom BAS ersätter BAS-indikatorerna med en indikator per AID×BAS-grupp (samma
+ * referensregel; komponenten heter då yrke). Endast kön ger null. Referensintervallet är det alfabetiskt första
  * som finns hos BÅDA könen; ett intervall som bara finns hos ett kön får en indikator bara i det könets modell
  * (det andra könets koefficient är 0), så dess bidrag hamnar i samspelet. Komponenterna redovisas per
  * variabel som intercept, ålder och BAS, där BAS är summan över indikatorerna.
  *
  * @param {any[]} rows - råradernas poster; filtreras här på lön, ålder och kön.
- * @param {{golv:number}} opts golv = statGolv().
+ * @param {{golv:number, modell?:any}} opts golv = statGolv(); modell = förklaringsmodellen.
  * @returns {null | {
+ *   modell:{bas:boolean, alder:boolean, yrkesgrupp:boolean, skal:string},
  *   rawGapPct:number, explainedPct:number, unexplainedPct:number,
  *   endowmentPct:number, coefficientPct:number, interactionPct:number,
- *   components:{age:{q,u,i}, bas:{q,u,i}, intercept:{q,u,i}},
- *   basRef:string, basIndikatorer:string[],
+ *   components:{[k:string]:{q:number,u:number,i:number}},
+ *   basRef:string|null, basIndikatorer:string[], gruppRef:string|null, gruppIndikatorer:string[],
  *   n:number, nKv:number, nMa:number,
  *   _raw:{rawGapLog:number, q:number, u:number, i:number}
  * }}
  */
-export function blinderOaxaca(rows, { golv }) {
+export function blinderOaxaca(rows, { golv, modell = FORKLARINGSMODELL_STANDARD }) {
+    const m = normaliseraForklaringsmodell(modell, { harYrke: rows.some(d => d.aid || d.yrke) }).modell;
+    if (!m.bas && !m.alder) return null;   // endast kön: inget att dela upp
     const raw = rows.filter(d => d.lon > 0 && d.alder > 0 &&
         (d.kon.includes('kvinna') || d.kon === 'man' || d.kon === 'män'));
     if (raw.length < 50) return null;
@@ -380,43 +385,57 @@ export function blinderOaxaca(rows, { golv }) {
     if (kv.length < golv || ma.length < golv) return null;
 
     const ageMean = raw.reduce((s, d) => s + d.alder, 0) / raw.length;
-    const basList = [...new Set(raw.map(d => d.bas))].sort();
-    const harKv = new Set(kv.map(d => d.bas)), harMa = new Set(ma.map(d => d.bas));
-    const basRef = basList.find(b => harKv.has(b) && harMa.has(b));
-    if (basRef == null) return null;
-    const indikatorer = basList.filter(b => b !== basRef);
+    // Gruppindikatorerna: BAS, eller yrkesgrupp inom BAS (nyckel som computeYrkesgruppGap) när den är vald.
+    const gruppAv = m.yrkesgrupp ? (d => `${(d.aid || d.yrke || '').toString().trim()}|${d.bas ?? ''}`) : (d => d.bas);
+    const gruppNamn = m.yrkesgrupp ? 'yrke' : 'bas';
+    let gruppRef = null, indikatorer = [];
+    if (m.bas) {
+        const alla = [...new Set(raw.map(gruppAv))].sort();
+        const harKv = new Set(kv.map(gruppAv)), harMa = new Set(ma.map(gruppAv));
+        gruppRef = alla.find(g => harKv.has(g) && harMa.has(g));
+        if (gruppRef == null) return null;
+        indikatorer = alla.filter(g => g !== gruppRef);
+    }
+    // Kolumnernas namn: konstant, (ålder), en per indikator. Komponenterna summeras per namn.
+    const kolNamn = ['intercept', ...(m.alder ? ['age'] : []), ...indikatorer.map(() => gruppNamn)];
+    const p = kolNamn.length;
 
-    // Designmatris för en grupp: [1, ålder − ageMean, indikator per BAS utom referensen]. En indikator som är noll
-    // för alla i gruppen (intervallet saknas hos könet) lämnas utanför gruppens skattning och får β = 0.
-    const kolumner = group => indikatorer.map(b => group.some(d => d.bas === b));
+    // Designmatris för en grupp: [1, (ålder − ageMean), indikator per grupp utom referensen]. En indikator som är noll
+    // för alla i gruppen (gruppen saknas hos könet) lämnas utanför gruppens skattning och får β = 0.
+    const kolumner = group => indikatorer.map(g => group.some(d => gruppAv(d) === g));
     const design = (group, med) => ({
-        X: group.map(d => [1, d.alder - ageMean, ...indikatorer.filter((_, j) => med[j]).map(b => (d.bas === b ? 1 : 0))]),
+        X: group.map(d => [1, ...(m.alder ? [d.alder - ageMean] : []), ...indikatorer.filter((_, j) => med[j]).map(g => (gruppAv(d) === g ? 1 : 0))]),
         y: group.map(d => Math.log(d.lon)) });
     const medKv = kolumner(kv), medMa = kolumner(ma);
-    const fitK = fitOLS(design(kv, medKv).X, design(kv, medKv).y);
-    const fitM = fitOLS(design(ma, medMa).X, design(ma, medMa).y);
+    const dKv = design(kv, medKv), dMa = design(ma, medMa);
+    const fitK = fitOLS(dKv.X, dKv.y);
+    const fitM = fitOLS(dMa.X, dMa.y);
     if (!fitK || !fitM) return null;
-    // Koefficienter i full längd (2 + antal indikatorer), 0 där intervallet saknas hos könet.
-    const fullBeta = (fit, med) => { const b = [fit.beta[0], fit.beta[1]]; let j = 2; for (const m of med) b.push(m ? fit.beta[j++] : 0); return b; };
+    const fasta = m.alder ? 2 : 1;
+    // Koefficienter i full längd, 0 där gruppen saknas hos könet.
+    const fullBeta = (fit, med) => { const b = fit.beta.slice(0, fasta); let j = fasta; for (const x of med) b.push(x ? fit.beta[j++] : 0); return b; };
     const betaKv = fullBeta(fitK, medKv), betaMa = fullBeta(fitM, medMa);
-    const p = betaKv.length;
 
     // Gruppmedelvärden för X̄ i full längd.
     const meanX = group => {
         const out = new Array(p).fill(0);
-        for (const d of group) { out[0] += 1; out[1] += d.alder - ageMean; indikatorer.forEach((b, j) => { if (d.bas === b) out[2 + j] += 1; }); }
+        for (const d of group) {
+            out[0] += 1;
+            if (m.alder) out[1] += d.alder - ageMean;
+            const g = gruppAv(d);
+            indikatorer.forEach((b, j) => { if (g === b) out[fasta + j] += 1; });
+        }
         return out.map(v => v / group.length);
     };
     const xKv = meanX(kv), xMa = meanX(ma);
 
     const dot = (a, b) => a.reduce((s, v, i) => s + v * b[i], 0);
-    const lnKv = dot(xKv, betaKv);
-    const lnMa = dot(xMa, betaMa);
-    const rawGapLog = lnMa - lnKv;
+    const rawGapLog = dot(xMa, betaMa) - dot(xKv, betaKv);
 
-    // Dekomposition per kolumn; BAS-indikatorerna summeras till en komponent.
-    /** @type {{intercept:{q:number,u:number,i:number}, age:{q:number,u:number,i:number}, bas:{q:number,u:number,i:number}}} */
-    const components = { intercept: { q: 0, u: 0, i: 0 }, age: { q: 0, u: 0, i: 0 }, bas: { q: 0, u: 0, i: 0 } };
+    // Dekomposition per kolumn; indikatorerna summeras till en komponent (bas eller yrke).
+    /** @type {{[k:string]: {q:number,u:number,i:number}}} */
+    const components = {};
+    for (const k of kolNamn) if (!components[k]) components[k] = { q: 0, u: 0, i: 0 };
     let qSum = 0, uSum = 0, iSum = 0;
     for (let k = 0; k < p; k++) {
         const dx = xMa[k] - xKv[k];          // skillnad i karakteristika
@@ -424,7 +443,7 @@ export function blinderOaxaca(rows, { golv }) {
         const q = dx * betaKv[k];            // endowment
         const u = xKv[k] * db;               // coefficient
         const i = dx * db;                   // interaction
-        const c = components[k === 0 ? 'intercept' : k === 1 ? 'age' : 'bas'];
+        const c = components[kolNamn[k]];
         c.q += q; c.u += u; c.i += i;
         qSum += q; uSum += u; iSum += i;
     }
@@ -434,6 +453,7 @@ export function blinderOaxaca(rows, { golv }) {
     const pct = c => (Math.exp(c) - 1) * 100;
 
     return {
+        modell: m,
         rawGapPct: pct(rawGapLog),
         endowmentPct: pct(qSum),
         coefficientPct: pct(uSum),
@@ -441,7 +461,9 @@ export function blinderOaxaca(rows, { golv }) {
         explainedPct: pct(qSum),
         unexplainedPct: pct(uSum + iSum),
         components,
-        basRef, basIndikatorer: indikatorer,
+        // BAS-fälten när BAS-indikatorer används, gruppfälten när yrkesgrupp inom BAS används (null annars).
+        basRef: m.bas && !m.yrkesgrupp ? gruppRef : null, basIndikatorer: m.bas && !m.yrkesgrupp ? indikatorer : [],
+        gruppRef: m.yrkesgrupp ? gruppRef : null, gruppIndikatorer: m.yrkesgrupp ? indikatorer : [],
         n: raw.length, nKv: kv.length, nMa: ma.length,
         // Råa log-värden för exakt summa-verifiering i tester
         _raw: { rawGapLog, q: qSum, u: uSum, i: iSum }
