@@ -16305,7 +16305,7 @@ function clearAllData() {
 const RENSA_BEHALLARE = ['struktur-representation', 'struktur-distribution', 'struktur-eu', 'struktur-sektorer', 'forecast-outcome', 'explore-table',
     'outliers-table-wrap', 'print-report'];
 const RENSA_TABELLER = ['rapport-table', 'matrix-table', 'la-oversikt', 'pag-avvikelse-tabell', 'paygap-table', 'skevhet-table', 'benchmark-table', 'prio-table'];
-const RENSA_OVRIGT = ['action-checklist-container', 'outlier-list', 'data-validation-report', 'reality-check', 'snapshot-comparison', 'consistency-banner', 'process-tracker', 'likvardighet-content', 'blinder-oaxaca-card', 'livscykel-content', 'lonepolitik-content', 'ref-overblick', 'jmf-slutsatser', 'robusthet-body', 'fardigcheck-body', 'rapportunderlag-innehall', 'gap-uppdelning-innehall', 'pag-innehall', 'att-gora-borja'];
+const RENSA_OVRIGT = ['action-checklist-container', 'outlier-list', 'data-validation-report', 'reality-check', 'snapshot-comparison', 'consistency-banner', 'process-tracker', 'likvardighet-content', 'forklaringsmodell-panel', 'blinder-oaxaca-card', 'livscykel-content', 'lonepolitik-content', 'ref-overblick', 'jmf-slutsatser', 'robusthet-body', 'fardigcheck-body', 'rapportunderlag-innehall', 'gap-uppdelning-innehall', 'pag-innehall', 'att-gora-borja'];
 
 function _rensaAllData({ inbakat = true } = {}) {
     if (typeof laMinneSlapp === 'function') laMinneSlapp();   // minnet håller en referens till dataraderna
@@ -23815,10 +23815,112 @@ function _regKvantilFigur(resultat) {
                   tips: d => [[d.y], ['Lönegap', pct(d.x)], ...(d.fel ? [['95 % KI (bootstrap)', `${pct(d.fel.lag)} till ${pct(d.fel.hog)}`]] : [])] }] };
 }
 
+// ---- Modellpanelen (ADR-56) ----
+// Vilka variabler som räknas bort, vad var och en tillför (alltid mot fullmodellen), verktygets förslag, skälet
+// utanför siffrorna och noteringen om det bortvalda. Ritas av renderRegressionCard med samma regressionsresultat.
+const _FM_ETIKETT = { bas: 'BAS-intervall', alder: 'Ålder', yrkesgrupp: 'Yrkesgrupp inom BAS' };
+/** Noteringen om en bortvald variabel, som den står i panelen och i rapporten (ren text). */
+function _fmNoteringText(b) {
+    const tal = typeof b.deltaR2pp === 'number' && isFinite(b.deltaR2pp) ? `tillför ${svTal(Math.abs(b.deltaR2pp), 1)} procentenheter i förklaringsgrad` : 'gick inte att pröva';
+    return `${b.etikett} har kontrollerats och ${tal}; den ingår inte i siffrorna${b.variabel === 'alder' ? ' nedan' : ' nedan'}.${b.skal ? ` Skäl: ${b.skal}` : ''}`;
+}
+function renderForklaringsmodellPanel(r) {
+    const wrap = document.getElementById('forklaringsmodell-panel');
+    if (!wrap) return;
+    if (!r || r.error) { wrap.innerHTML = ''; return; }
+    // Kryssrutorna visar valet; när "endast kön" spärrats (modellVarning) visas och lagras modellen som faktiskt gäller,
+    // så att konfigurationsfilen inte bär ett val som inte kan användas.
+    const visad = r.modellVarning ? r.modell : r.modellVald;
+    if (r.modellVarning && state.forklaringsmodell && (!state.forklaringsmodell.bas && !state.forklaringsmodell.alder)) {
+        const ny = { ...state.forklaringsmodell, bas: true, alder: true };
+        state.forklaringsmodell = _rgForklaringsmodellArStandard(ny) ? null : ny;
+    }
+    const harYrke = r.tillfor.rader.some(x => x.variabel === 'yrkesgrupp');
+    const fmtGap = v => (typeof v === 'number' && isFinite(v) ? `${v >= 0 ? '+' : '−'}${svPct(Math.abs(v), 1)}` : '–');
+    const kryss = (v, text, pa, { disabled = false, title = '' } = {}) =>
+        `<label class="fs-sm rad-mitt gap-6"><input type="checkbox" data-fm="${v}"${pa ? ' checked' : ''}${disabled ? ' disabled' : ''}${title ? ` title="${esc(title)}"` : ''}> ${esc(text)}</label>`;
+    const rader = r.tillfor.rader.map(x => {
+        const bedomning = x.status !== 'ok' ? 'Gick inte att pröva'
+            : x.variabel === 'yrkesgrupp' ? (x.tillforLite ? 'Tillför lite (ingår inte i standard)' : 'Tillför (ingår inte i standard)')
+            : x.tillforLite ? 'Tillför lite' : 'Behövs';
+        return `<tr><td>${esc(_FM_ETIKETT[x.variabel])}</td>
+            <td class="t-tal">${x.status === 'ok' ? `+${svTal(x.deltaR2pp, 1)} procentenheter` : '–'}</td>
+            <td class="t-tal">${x.status === 'ok' ? `${fmtGap(x.gapUtan)} → ${fmtGap(x.gapMed)}` : '–'}</td>
+            <td>${esc(bedomning)}</td></tr>`;
+    }).join('');
+    const tabort = r.tillfor.forslag.tabort.filter(v => visad[v]);
+    const forslagHtml = tabort.length
+        ? `<div class="bak-ok-bg rund-6 fs-sm lh-1_55 pad-10-12 marg-t-10"><strong>Förslag:</strong> ${tabort.map(v => _FM_ETIKETT[v].toLowerCase()).join(' och ')} kan lämnas utanför. ${tabort.length === 1 ? 'Den' : 'De'} har kontrollerats och förklarar ${tabort.map(v => svTal(r.tillfor.rader.find(x => x.variabel === v).deltaR2pp, 1)).join(' respektive ')} procentenheter av lönespridningen.
+            <button type="button" class="btn btn-secondary btn-sm marg-l-8" data-fm-forslag="${tabort.join(',')}">Ta bort ${tabort.map(v => _FM_ETIKETT[v].toLowerCase()).join(' och ')}</button>
+            <button type="button" class="btn btn-secondary btn-sm" data-fm-behall>Behåll</button></div>`
+        : `<p class="text-dampad-sm marg-t-10">${r.bortvalt.length ? 'Det som är kvar i modellen tillför.' : 'Alla variabler tillför; fullmodellen behålls.'}</p>`;
+    const notering = r.bortvalt.length
+        ? `<p class="text-dampad-sm lh-1_55 marg-t-8" data-fm-notering data-hjalptext>${r.bortvalt.map(b => esc(_fmNoteringText(b))).join(' ')}</p>`
+        : '';
+    wrap.innerHTML = `
+        <div class="card" role="region" aria-label="Förklaringsmodell">
+            <h3 class="marg-0-0-6">Förklaringsmodell
+                <span class="info-tip" data-tooltip="Vilka skillnader mellan kvinnor och män räknas bort innan gapet mäts? Fullmodellen (BAS-intervall och ålder) är utgångsläge. Ta bort en variabel som tillför lite, så blir avsnittet enklare att läsa; den redovisas ändå som kontrollerad, också i rapporten.">${ikon('info', 14)}</span>
+            </h3>
+            <div class="rad-mitt gap-14 rad-bryt fs-sm">
+                <span>Kön +</span>
+                ${kryss('bas', 'BAS-intervall', visad.bas, visad.yrkesgrupp ? { disabled: true, title: 'Yrkesgrupp inom BAS förutsätter BAS' } : {})}
+                ${kryss('alder', 'Ålder', visad.alder)}
+                ${harYrke ? kryss('yrkesgrupp', 'Yrkesgrupp inom BAS', visad.yrkesgrupp) : '<span class="text-dampad-sm">Yrkesgrupp inom BAS kan inte väljas: lönefilen saknar AID och yrke.</span>'}
+            </div>
+            ${r.modellVarning ? `<p class="k-mask-note" role="note">${esc(r.modellVarning)}</p>` : ''}
+            ${r.fellBackFromFull ? `<p class="k-mask-note" role="note">Den valda modellen kunde inte skattas (multikollinearitet); verktyget räknar på ${esc(r.modelDesc)}.</p>` : ''}
+            <table class="data-table st-09 marg-t-10">
+                <caption class="text-dampad-sm ta-vanster">Vad varje variabel tillför, räknat mot fullmodellen (ändras inte av valet)</caption>
+                <thead><tr><th>Variabel</th><th class="t-hoger" title="Hur mycket förklaringsgraden (R²) ökar när variabeln läggs till sist">Tillför i förklaringsgrad</th><th class="t-hoger" title="Könsgapet utan variabeln → med variabeln">Flyttar gapet</th><th>Bedömning</th></tr></thead>
+                <tbody>${rader}</tbody>
+            </table>
+            <p class="text-dampad-xs marg-t-6">Under ${svTal(_RG_TILLFOR_GRANS_PP, 1)} procentenheter räknas som <em>tillför lite</em>. Förslaget är ett pedagogiskt råd om vad som är värt att visa, inte ett statistiskt test.</p>
+            ${forslagHtml}
+            <p class="rad-mitt gap-8 marg-t-10 fs-sm"><label for="fm-skal">Skäl utanför siffrorna (valfritt)</label>
+                <input type="text" id="fm-skal" class="form-select flex-1" maxlength="300" value="${esc(visad.skal || '')}" placeholder="t.ex. organisationen sätter inte lön efter ålder" autocomplete="off"></p>
+            <p class="k-mask-note" id="fm-skal-not" role="note" hidden></p>
+            ${notering}
+        </div>`;
+    wrap.onchange = e => {
+        const t = /** @type {HTMLElement} */ (e.target);
+        const inp = /** @type {HTMLInputElement} */ (t);
+        const nu = forklaringsmodell();
+        if (t.matches('input[data-fm]')) {
+            const v = String(t.dataset.fm);
+            const ny = { ...nu, [v]: inp.checked };
+            if (v === 'yrkesgrupp' && inp.checked) ny.bas = true;
+            if (v === 'bas' && !inp.checked) ny.yrkesgrupp = false;
+            sattForklaringsmodell(ny);
+        } else if (t.id === 'fm-skal') {
+            const not = document.getElementById('fm-skal-not');
+            if (_opLiknarPersonuppgift(inp.value)) {
+                inp.value = nu.skal || '';
+                if (not) { not.textContent = 'Skälet ser ut att innehålla en personuppgift (personnummer eller e-post) och sparas inte. Skriv på gruppnivå.'; not.hidden = false; }
+                return;
+            }
+            if (not) not.hidden = true;
+            sattForklaringsmodell({ ...nu, skal: inp.value.trim() }, { rita: false });
+            renderForklaringsmodellPanel(runOLSRegression());   // noteringen bär skälet; inga tal ändras
+        }
+    };
+    wrap.onclick = e => {
+        const t = /** @type {HTMLElement} */ (e.target).closest('[data-fm-forslag], [data-fm-behall]');
+        if (!t) return;
+        const nu = forklaringsmodell();
+        if (t.hasAttribute('data-fm-behall')) { sattForklaringsmodell(nu); return; }
+        const ny = { ...nu };
+        String(t.getAttribute('data-fm-forslag')).split(',').forEach(v => { if (v) ny[v] = false; });
+        if (!ny.bas) ny.yrkesgrupp = false;
+        sattForklaringsmodell(ny);
+    };
+}
+
 function renderRegressionCard() {
     const wrap = document.getElementById('regression-card');
     if (!wrap) return;
     const r = runOLSRegression();
+    renderForklaringsmodellPanel(r);
 
     // ----- Felfall: kunde inte estimeras alls -----
     if (r.error) {

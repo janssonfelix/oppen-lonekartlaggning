@@ -719,3 +719,83 @@ describe('runOLSRegression på vald modell (ADR-56)', () => {
         expect(b.remaining).toBe(4);
     });
 });
+
+describe('modellpanelen (ADR-56)', () => {
+    const oppna = w => { w.document.querySelector('.nav-item[data-tab="matrix"]').click(); w.eval('renderTabContent("matrix")'); return w.document.getElementById('forklaringsmodell-panel'); };
+    const demo = () => { const w = createAppWindow(); w.__loadDemoData(); return w; };
+    const andra = (w, el, varde) => { if (typeof varde === 'boolean') el.checked = varde; else el.value = varde; el.dispatchEvent(new w.Event('change', { bubbles: true })); };
+    it('panelen ligger före huvudtalet med BAS och ålder ikryssade och en rad per variabel i tabellen', () => {
+        const w = demo();
+        const p = oppna(w);
+        expect(p).not.toBeNull();
+        expect(p.compareDocumentPosition(w.document.getElementById('regression-card')) & w.Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+        expect(p.querySelector('input[data-fm="bas"]').checked).toBe(true);
+        expect(p.querySelector('input[data-fm="alder"]').checked).toBe(true);
+        expect(p.querySelector('input[data-fm="yrkesgrupp"]').checked).toBe(false);
+        expect(p.querySelectorAll('table tbody tr').length).toBe(3);
+        expect(p.textContent).toMatch(/BAS-intervall/);
+        expect(p.textContent).toMatch(/procentenheter/);
+        expect(p.querySelector('[data-fm-notering]')).toBeNull();
+    });
+    it('utan AID och yrke finns ingen kryssruta för yrkesgrupp och tabellen har två rader', () => {
+        const w = createAppWindow();
+        w.__state.data = Array.from({ length: 120 }, (_, i) => ({ bas: ['A', 'B', 'C'][i % 3], kon: i % 2 ? 'kvinna' : 'man', alder: 25 + (i % 30), lon: 30000 + (i % 3) * 2000 + (i % 7) * 100 }));
+        w.eval('populateSelects(); unlockTabs();');
+        const p = oppna(w);
+        expect(p.querySelector('input[data-fm="yrkesgrupp"]')).toBeNull();
+        expect(p.querySelectorAll('table tbody tr').length).toBe(2);
+    });
+    it('att kryssa ur ålder räknar om kortet och visar noteringen; skälet sparas', () => {
+        const w = demo();
+        const p = oppna(w);
+        andra(w, p.querySelector('input[data-fm="alder"]'), false);
+        expect(w.__state.forklaringsmodell.alder).toBe(false);
+        const p2 = w.document.getElementById('forklaringsmodell-panel');
+        expect(p2.querySelector('[data-fm-notering]').textContent).toMatch(/Ålder har kontrollerats och tillför/);
+        expect(w.document.getElementById('regression-card').textContent).toMatch(/nivå/);
+        andra(w, p2.querySelector('#fm-skal'), 'organisationen sätter inte lön efter ålder');
+        expect(w.__state.forklaringsmodell.skal).toBe('organisationen sätter inte lön efter ålder');
+        expect(w.document.getElementById('forklaringsmodell-panel').querySelector('[data-fm-notering]').textContent).toMatch(/Skäl: organisationen sätter inte lön efter ålder/);
+    });
+    it('ett skäl som ser ut som en personuppgift sparas inte och får en not', () => {
+        const w = demo();
+        const p = oppna(w);
+        andra(w, p.querySelector('input[data-fm="alder"]'), false);
+        const p2 = w.document.getElementById('forklaringsmodell-panel');
+        andra(w, p2.querySelector('#fm-skal'), 'lönen sätts av 19800101-1234');
+        expect(w.__state.forklaringsmodell.skal).toBe('');
+        expect(w.document.getElementById('forklaringsmodell-panel').querySelector('.k-mask-note').textContent).toMatch(/personuppgift/);
+    });
+    it('förslaget: knappen följer förslaget och kryssrutan för yrkesgrupp kräver BAS', () => {
+        const w = demo();
+        const p = oppna(w);
+        const forslag = p.querySelector('[data-fm-forslag]');
+        if (forslag) { forslag.click(); expect(w.__state.forklaringsmodell).not.toBeNull(); }
+        else expect(p.textContent).toMatch(/Alla variabler tillför/);
+        const w2 = demo();
+        const q = oppna(w2);
+        andra(w2, q.querySelector('input[data-fm="yrkesgrupp"]'), true);
+        const q2 = w2.document.getElementById('forklaringsmodell-panel');
+        expect(w2.__state.forklaringsmodell.yrkesgrupp).toBe(true);
+        expect(q2.querySelector('input[data-fm="bas"]').checked).toBe(true);
+        expect(q2.querySelector('input[data-fm="bas"]').disabled).toBe(true);
+    });
+    it('med ett kön under tröskeln kan inte båda kryssas ur: BAS och ålder är åter ikryssade och varningen visas', () => {
+        const w = createAppWindow();
+        w.__state.data = Array.from({ length: 80 }, (_, i) => ({ bas: ['A', 'B', 'C'][i % 3], kon: i < 7 ? 'man' : 'kvinna', alder: 25 + (i % 30), lon: 30000 + (i % 3) * 2000 + (i % 9) * 100 }));
+        w.eval('populateSelects(); unlockTabs();');
+        const p = oppna(w);
+        andra(w, p.querySelector('input[data-fm="alder"]'), false);
+        andra(w, w.document.getElementById('forklaringsmodell-panel').querySelector('input[data-fm="bas"]'), false);
+        const p2 = w.document.getElementById('forklaringsmodell-panel');
+        expect(p2.querySelector('input[data-fm="bas"]').checked).toBe(true);
+        expect(p2.querySelector('input[data-fm="alder"]').checked).toBe(true);
+        expect(p2.querySelector('.k-mask-note').textContent).toMatch(/Endast kön kan inte väljas/);
+    });
+    it('Rensa all data tömmer panelen', () => {
+        const w = demo();
+        oppna(w);
+        w.eval('_rensaAllData()');
+        expect(w.document.getElementById('forklaringsmodell-panel').innerHTML).toBe('');
+    });
+});
