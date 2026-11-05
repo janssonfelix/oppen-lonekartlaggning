@@ -25,9 +25,14 @@ function _basIndikatorer(basList) {
     return _rgBasIndikatorer(basList);
 }
 
-// Sekventiell dekomponering: visa hur gapet krymper när kontroller läggs till
-function _computeSequentialGap(rows, ageMean, basList) {
-    return _rgComputeSequentialGap(rows, ageMean, basList, { golv: statGolv() });
+// Sekventiell dekomponering: visa hur gapet krymper när kontroller läggs till. modell = förklaringsmodellen (ADR-56).
+function _computeSequentialGap(rows, ageMean, basList, modell) {
+    return _rgComputeSequentialGap(rows, ageMean, basList, { golv: statGolv(), modell });
+}
+
+// Vad varje variabel tillför (ADR-56), alltid mot fullmodellen; yrkesgrupp bara när lönefilen har AID eller yrke.
+function _computeVariabelTillfor(rows, ageMean, basList) {
+    return _rgComputeVariabelTillfor(rows, ageMean, basList, { golv: statGolv(), harYrke: rows.some(d => d.aid || d.yrke) });
 }
 
 // Kvantilregression via IRLS; standardvärdena för maxIter och tol ligger i src/lib/regression.js.

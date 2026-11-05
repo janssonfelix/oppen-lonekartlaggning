@@ -76,7 +76,12 @@ export const MODULES = [
             diagnoseCollinearity: '_rgDiagnoseCollinearity', computePerBasGap: '_rgComputePerBasGap',
             basIndikatorer: '_rgBasIndikatorer', computeSequentialGap: '_rgComputeSequentialGap',
             quantileRegression: '_rgQuantileRegression',
-            blinderOaxaca: '_rgBlinderOaxaca', quantileRegressionAtAllTau: '_rgQuantileRegressionAtAllTau'
+            blinderOaxaca: '_rgBlinderOaxaca', quantileRegressionAtAllTau: '_rgQuantileRegressionAtAllTau',
+            // Förklaringsmodellen (ADR-56)
+            computeVariabelTillfor: '_rgComputeVariabelTillfor', normaliseraForklaringsmodell: '_rgNormaliseraForklaringsmodell',
+            forklaringsmodellArStandard: '_rgForklaringsmodellArStandard', modellVariabler: '_rgModellVariabler',
+            modellFras: '_rgModellFras', modellBeskrivning: '_rgModellBeskrivning',
+            FORKLARINGSMODELL_STANDARD: '_RG_FORKLARINGSMODELL_STANDARD', TILLFOR_GRANS_PP: '_RG_TILLFOR_GRANS_PP'
         }
     },
     {
