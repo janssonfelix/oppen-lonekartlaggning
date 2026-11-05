@@ -1594,6 +1594,15 @@ console.log('\n── Ingen utgående trafik och inga arbetstrådar ──');
     ok(natverk.length === 0, `inga nätverksförfrågningar under hela körningen${natverk.length ? ': ' + natverk.slice(0, 3).join(' | ') : ''}`);
 }
 
+// Stilmallen hämtar ingen bild, inte heller en inbäddad data:-adress: en sådan syns som en rad i webbläsarens
+// nätverkspanel fast inget lämnar datorn, och ikonerna ritas i stället som inline-SVG eller med kanter i CSS.
+{
+    const bilder = await page.evaluate(() => [...document.styleSheets]
+        .flatMap(s => { try { return [...s.cssRules]; } catch { return []; } })
+        .filter(r => /url\(/.test(r.cssText)).map(r => r.cssText.slice(0, 90)));
+    ok(bilder.length === 0, `stilmallen hämtar ingen bild och har ingen data:-adress${bilder.length ? ': ' + bilder.slice(0, 3).join(' | ') : ''}`);
+}
+
 console.log('\n── Fel under hela körningen ──');
 {
     const brott = await page.evaluate(() => window.__cspBrott || []);
