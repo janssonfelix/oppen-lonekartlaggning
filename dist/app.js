@@ -18041,12 +18041,16 @@ document.addEventListener('click', e => {
     const b = /** @type {HTMLElement} */ (e.target).closest('[data-dok-klick]');
     if (b) document.getElementById(/** @type {HTMLElement} */ (b).dataset.dokKlick || '')?.click();
 });
-// Delegerad klick: "Nästa steg"-knapparna leder till rätt flik via nav-klicket.
+// Delegerad klick: "Nästa steg"-knapparna leder till rätt flik via nav-klicket. En låst flik gör som i menyn:
+// nav-klicket visar lönefilskortet i Filer och kvalitet, och då får sidan inte rullas upp förbi kortet.
 document.addEventListener('click', e => {
     const btn = /** @type {HTMLElement} */ (e.target).closest('[data-flow-tab]');
     if (!btn) return;
     const nav = document.querySelector(`.nav-item[data-tab="${tabMal(btn.getAttribute('data-flow-tab'))}"]`);
-    if (nav && !/** @type {HTMLInputElement} */ (nav).disabled) { /** @type {HTMLElement} */ (nav).click(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+    if (!nav) return;
+    const last = /** @type {HTMLInputElement} */ (nav).disabled;
+    /** @type {HTMLElement} */ (nav).click();
+    if (!last) window.scrollTo({ top: 0, behavior: 'smooth' });
 });
 
 function refreshCurrentTab() {

@@ -213,4 +213,17 @@ describe('Uppgift 5: menyn i rapportens ordning', () => {
         expect(w.eval("_flowNasta('bestammelser').tab")).toBe('matrix');
         expect(w.eval("_flowNasta('struktur').tab")).toBe('prioritering');
     });
+    it('utan lönefil leder Nästa steg till en låst flik som menyn gör: till lönefilen i Filer och kvalitet', () => {
+        for (const [fran, mal] of [['handlingsplan', 'rapporttext'], ['bestammelser', 'matrix']]) {
+            const w = createAppWindow();
+            const d = w.document;
+            /** @type {HTMLElement} */ (d.querySelector(`.nav-item[data-tab="${fran}"]`)).click();
+            const knapp = d.querySelector('.flow-next-bar [data-flow-tab]');
+            expect(knapp?.getAttribute('data-flow-tab'), fran).toBe(mal);
+            /** @type {HTMLElement} */ (knapp).click();
+            expect(d.querySelector('.nav-item.active').dataset.tab, fran).toBe('filer');
+            expect(d.activeElement.id, fran).toBe('file-input-data');
+            expect(d.getElementById('upload-cell-data').classList.contains('visas-nu'), fran).toBe(true);
+        }
+    });
 });
