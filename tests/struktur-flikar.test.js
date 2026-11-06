@@ -75,6 +75,26 @@ describe('Uppgift 2: Lönestruktur', () => {
             .filter(a => a.open).map(a => a.id);
         expect(oppna).toEqual(['avsnitt-st-representation']);
     });
+    it('Organisationen som karta är ett hopfällt avsnitt efter representationen, med antalet yrkesgrupper i rubriken', () => {
+        const w = createAppWindow(); w.__loadDemoData();
+        const d = w.document;
+        d.querySelector('.nav-item[data-tab="struktur"]').click();
+        const karta = d.getElementById('avsnitt-st-karta');
+        expect(karta.tagName).toBe('DETAILS');
+        expect(karta.classList.contains('avsnitt')).toBe(true);
+        expect(karta.open).toBe(false);
+        expect(karta.querySelector(':scope > summary h2').textContent).toBe('Organisationen som karta');
+        expect(karta.contains(d.getElementById('chart-struktur-tradkarta'))).toBe(true);
+        expect(d.getElementById('avsnitt-st-representation').nextElementSibling).toBe(karta);
+        // Yrkesgrupperna: ett yrke inom ett BAS-intervall, som kartans ytor.
+        const n = new Set(w.__state.data.map(r => `${r.aid}|${r.bas}`)).size;
+        expect(d.getElementById('nyckel-st-karta').textContent).toBe(`${n} yrkesgrupper`);
+        // Hopfällt men ritat: rapportmodellen och ZIP-exporten tar diagrammet ur avsnittet.
+        expect(w.eval('diagramRitat(document.getElementById("chart-struktur-tradkarta"))')).toBe(true);
+        expect(w.eval('RM_DIAGRAM').find(r => r.id === 'chart-struktur-tradkarta').flik).toBe('struktur');
+        // Sökregistret leder till avsnittet.
+        expect(w.eval('SOK_FUNKTIONER').some(r => r.avsnitt === 'avsnitt-st-karta' && r.flik === 'struktur')).toBe(true);
+    });
     it('navigateTo("skevhet") och navigateTo("regression") öppnar Lönestruktur', () => {
         const w = createAppWindow(); w.__loadDemoData();
         for (const alias of ['skevhet', 'regression']) {

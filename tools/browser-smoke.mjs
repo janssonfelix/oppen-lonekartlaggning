@@ -622,9 +622,12 @@ console.log('\n── Struktur, Likvärdigt arbete, Löneöversyn och Lönepolit
 
     await ga('struktur');
     let l = await lage('avsnitt-st-');
-    ok(l.oppna === 'avsnitt-st-representation' && l.rutor === 5 && l.lank === 0 && l.skarmar < 4, `Struktur: fem slutsatser, kartan och representationen utfälld (${l.skarmar.toFixed(1)} skärmar)`);
-    ok(await page.evaluate(() => !!document.querySelector('#chart-struktur-tradkarta svg')), 'Struktur: kartan är ritad överst');
-    let b = await fyller('avsnitt-st-eu', 'chart-struktur-kvartiler');
+    ok(l.oppna === 'avsnitt-st-representation' && l.rutor === 5 && l.lank === 0 && l.skarmar < 2.5, `Struktur: fem slutsatser och representationen utfälld, kartan hopfälld (${l.skarmar.toFixed(1)} skärmar)`);
+    console.log(`  Lönestruktur: ${l.skarmar.toFixed(2)} skärmhöjder`);
+    ok(await page.evaluate(() => !!document.querySelector('#chart-struktur-tradkarta svg') && !document.getElementById('avsnitt-st-karta').open), 'Struktur: kartan är ritad i sitt hopfällda avsnitt');
+    let b = await fyller('avsnitt-st-karta', 'chart-struktur-tradkarta');
+    ok(b === 'ok', `Struktur: kartan fyller kortet när avsnittet fälls ut (${b})`);
+    b = await fyller('avsnitt-st-eu', 'chart-struktur-kvartiler');
     ok(b === 'ok', `Struktur: kvartildiagrammet fyller kortet när avsnittet fälls ut (${b})`);
     b = await fyller('avsnitt-st-sektorer', 'chart-sektorer');
     ok(b === 'ok', `Struktur: sektorsdiagrammet fyller kortet när avsnittet fälls ut (${b})`);

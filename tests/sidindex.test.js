@@ -7,6 +7,7 @@ import { describe, it, expect } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
 
 const poster = w => [...w.document.querySelectorAll('#sidindex a')].map(a => a.textContent.trim());
+const KORT = 'Checklista — bestämmelser & praxis att granska';
 const oppna = (w, flik) => w.document.querySelector(`.nav-item[data-tab="${flik}"]`).click();
 
 describe('Sidindex', () => {
@@ -14,7 +15,7 @@ describe('Sidindex', () => {
         const w = createAppWindow(); w.__loadDemoData();
         oppna(w, 'struktur');
         const lista = poster(w);
-        expect(lista[0]).toBe('Organisationen som karta');
+        expect(lista.slice(0, 2)).toEqual(['Representation per BAS-nivå', 'Organisationen som karta']);
         expect(lista).toContain('EU 2023/970 — lönerapportmått');
         // Alla tre panelerna i fliken, i sidans ordning.
         expect(lista.indexOf('Representation per BAS-nivå')).toBeLessThan(lista.indexOf('Lönegap per BAS-intervall'));
@@ -29,15 +30,16 @@ describe('Sidindex', () => {
         expect(new Set(poster(w)).size).toBe(poster(w).length);
     });
     it('rubriker utan id får ett på sitt avsnitt eller kort, och länken pekar dit', () => {
+        // Regler & praxis: checklistans kort har ingen id (Lönestrukturs kort är numera avsnitt med id).
         const w = createAppWindow(); w.__loadDemoData();
-        oppna(w, 'struktur');
-        const a = [...w.document.querySelectorAll('#sidindex a')].find(x => x.textContent.trim() === 'Organisationen som karta');
+        oppna(w, 'bestammelser');
+        const a = [...w.document.querySelectorAll('#sidindex a')].find(x => x.textContent.trim() === KORT);
         const mal = w.document.getElementById(a.dataset.sidindex);
-        expect(a.dataset.sidindex).toMatch(/^avsnitt-struktur-\d+$/);
+        expect(a.dataset.sidindex).toMatch(/^avsnitt-bestammelser-\d+$/);
         expect(mal.classList.contains('card')).toBe(true);
-        expect(mal.querySelector('.card-header > h2').textContent).toBe('Organisationen som karta');
+        expect(mal.querySelector('.card-header > h2').textContent).toBe(KORT);
         // Ombyggt index behåller id:t.
-        w.__renderTabContent('struktur');
+        w.__renderTabContent('bestammelser');
         expect(w.document.querySelector(`#sidindex a[data-sidindex="${a.dataset.sidindex}"]`)).toBeTruthy();
     });
     it('ett klick fäller ut avsnittet och ger summaryn fokus', () => {
@@ -52,15 +54,15 @@ describe('Sidindex', () => {
     });
     it('ett klick på ett kort ger rubriken fokus utan att ta den ur tabbordningen för andra', () => {
         const w = createAppWindow(); w.__loadDemoData();
-        oppna(w, 'struktur');
-        const a = [...w.document.querySelectorAll('#sidindex a')].find(x => x.textContent.trim() === 'Organisationen som karta');
+        oppna(w, 'bestammelser');
+        const a = [...w.document.querySelectorAll('#sidindex a')].find(x => x.textContent.trim() === KORT);
         a.click();
         const h = w.document.getElementById(a.dataset.sidindex).querySelector('.card-header > h2');
         expect(w.document.activeElement).toBe(h);
         expect(h.getAttribute('tabindex')).toBe('-1');
         // Summaryn får aldrig tabindex="-1": den ska gå att nå med Tabb.
-        w.document.querySelector('#sidindex a[data-sidindex="avsnitt-st-eu"]').click();
-        expect(w.document.querySelector('#avsnitt-st-eu > summary').hasAttribute('tabindex')).toBe(false);
+        w.document.querySelector('#sidindex a[data-sidindex="avsnitt-rp-1"]').click();
+        expect(w.document.querySelector('#avsnitt-rp-1 > summary').hasAttribute('tabindex')).toBe(false);
     });
     it('utan IntersectionObserver är första posten aktiv', () => {
         const w = createAppWindow(); w.__loadDemoData();
@@ -73,7 +75,7 @@ describe('Sidindex', () => {
         const w = createAppWindow(); w.__loadDemoData();
         oppna(w, 'struktur');
         const summary = () => w.document.querySelector('#sidindex summary').textContent.replace(/\s+/g, ' ').trim();
-        expect(summary()).toBe('På den här sidan: Organisationen som karta');
+        expect(summary()).toBe('På den här sidan: Representation per BAS-nivå');
         w.eval('_sidindexMarkera("avsnitt-st-eu")');
         expect(summary()).toBe('På den här sidan: EU 2023/970 — lönerapportmått');
         expect(w.document.querySelector('#sidindex a.ar-aktiv').dataset.sidindex).toBe('avsnitt-st-eu');

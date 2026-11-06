@@ -146,9 +146,12 @@ function _stFordelningsMonster(dist) {
 function _stRitaTopp(d, m) {
     const urval = document.getElementById('st-urval'), host = document.getElementById('st-slutsatser');
     if (!urval || !host) return;
-    if (!m) { urval.textContent = ''; host.innerHTML = ''; ['representation', 'fordelning', 'eu'].forEach(n => _laNyckel(`nyckel-st-${n}`, '')); return; }
+    if (!m) { urval.textContent = ''; host.innerHTML = ''; ['representation', 'karta', 'fordelning', 'eu'].forEach(n => _laNyckel(`nyckel-st-${n}`, '')); return; }
     urval.innerHTML = `<span><strong>Hela urvalet</strong> · ${svTal(d.length, 0)} personer</span>${kTroskelLank()}`;
     _laNyckel('nyckel-st-representation', `${m.basAntal} BAS-intervall`);
+    // Kartans yrkesgrupper: ett yrke inom ett BAS-intervall, samma indelning som ytorna (_strukturTradkartaFigur).
+    const yrkesgrupper = new Set(d.filter(r => r.bas != null && r.bas !== '').map(r => `${String(r.aid || r.yrke || 'okänd')}|${r.bas}`)).size;
+    _laNyckel('nyckel-st-karta', yrkesgrupper ? `${svTal(yrkesgrupper, 0)} yrkesgrupper` : '');
     if (!m.konOk) {
         host.innerHTML = _laSlutsats('Kvinnor och män', 'Visas inte', _konUtelamnatNot());
         _laNyckel('nyckel-st-fordelning', ''); _laNyckel('nyckel-st-eu', '');

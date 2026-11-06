@@ -107,15 +107,15 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         d.querySelector('.nav-item[data-tab="dokumentera"]').click();
         expect(d.querySelectorAll('#dk-slutsatser .slutsats')[1].textContent).toContain('Inte körd');
     });
-    it('Struktur har slutsatserna och kartan först; talen i toppen är tabellernas', () => {
+    it('Struktur har slutsatserna först, sedan representationen och kartan; talen i toppen är tabellernas', () => {
         const w = createAppWindow();
         w.__loadDemoData();
         const d = w.document;
         d.querySelector('.nav-item[data-tab="struktur"]').click();
         const fore = (a, b) => !!(d.getElementById(a).compareDocumentPosition(d.getElementById(b)) & 4);
-        expect(fore('st-urval', 'st-slutsatser') && fore('st-slutsatser', 'chart-struktur-tradkarta') && fore('chart-struktur-tradkarta', 'avsnitt-st-representation')).toBe(true);
+        expect(fore('st-urval', 'st-slutsatser') && fore('st-slutsatser', 'avsnitt-st-representation') && fore('avsnitt-st-representation', 'chart-struktur-tradkarta')).toBe(true);
         expect([...d.querySelectorAll('#view-struktur details.avsnitt[id^="avsnitt-st-"]')].map(a => a.id.replace('avsnitt-st-', '')))
-            .toEqual(['representation', 'fordelning', 'sektorer', 'eu', 'metod']);
+            .toEqual(['representation', 'karta', 'fordelning', 'sektorer', 'eu', 'metod']);
         expect(d.querySelectorAll('.sidans-innehall')).toHaveLength(0);
         expect(d.getElementById('st-urval').textContent).toMatch(/260 personer.*Minsta gruppstorlek 10/);
         const rutor = [...d.querySelectorAll('#st-slutsatser .slutsats')].map(r => r.textContent);
