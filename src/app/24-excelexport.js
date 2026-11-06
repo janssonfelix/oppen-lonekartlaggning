@@ -79,7 +79,7 @@ function _excelDiagramBlad() {
     const d = getData(), k = kTroskel(), ut = [], r1 = v => Math.round(v * 10) / 10;
     const bas = _laOversiktRader(d);
     if (bas.length) ut.push(['Lika arbete per BAS', [
-        ['Kvinnors och mäns lön per BAS-intervall (översiktstabellen på Lika arbete)'], [],
+        ['Kvinnors och mäns lön per BAS-intervall (översiktstabellen i Lönestruktur)'], [],
         ['BAS-intervall', 'Antal kvinnor', 'Antal män', 'Median kvinnor (kr)', 'Median män (kr)', 'Skillnad (kr)', 'Kvinnors median i % av mäns', 'Konfidensintervall 95 %, nedre', 'Konfidensintervall 95 %, övre', 'Status'],
         ...bas.map(o => [o.bas, o.nKv, o.nMa, Math.round(o.medKv), Math.round(o.medMa), Math.round(o.medKv - o.medMa), r1(o.gap), o.ci ? r1(o.ci.lo) : '', o.ci ? r1(o.ci.hi) : '', _laOversiktStatus(o).serie])]]);
     const tratt = _laTrattUnderlag(d);
