@@ -231,6 +231,8 @@ describe('ett bokslut sparat med lägre tröskel än årets', () => {
             expect(panel).toContain('24400');   // intervallet står kvar, utan könsmedianerna
             expect(texter[1]).toContain('24400');
             expect(modell).toMatch(/minst 10 personer/);
+            expect(panel).toContain('den högre av årens gränser, 10 personer');
+            expect(modell).not.toMatch(/respektive års gräns/);
         });
     }
 });
