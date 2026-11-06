@@ -218,10 +218,40 @@ const FLIKAR = [
     ['rapporttext', []],
     ['arbetet', []],
 ];
+// Flikarna klickas vid 1440 punkter: där står sidindexet i en spalt bredvid innehållet.
+await page.setViewportSize({ width: 1440, height: 900 });
 for (const [flik, diagram] of FLIKAR) {
     await page.click(`.nav-item[data-tab="${flik}"]`);
     await page.evaluate(() => document.querySelectorAll('details.avsnitt').forEach(d => { d.open = true; }));
     await page.waitForTimeout(400);           // låt fliken rita klart
+    // Sidindexet (89-sidindex.js) har en post per synlig avsnittsrubrik i fliken, och inget alls under tre.
+    const index = await page.evaluate(() => {
+        const rubriker = [...document.querySelectorAll('.view-panel')].filter(p => p.offsetParent !== null)
+            .flatMap(p => [...p.querySelectorAll('details.avsnitt > summary h2, details.avsnitt > summary h3, .card-header > h2')])
+            .filter(h => h.offsetParent !== null).length;
+        const nav = document.getElementById('sidindex');
+        return { rubriker, poster: nav.querySelectorAll('a').length, dolt: nav.hidden };
+    });
+    ok(index.rubriker >= 3 ? index.poster === index.rubriker && !index.dolt : index.poster === 0 && index.dolt,
+        `${flik}: sidindexet har en post per synligt avsnitt (${index.poster} poster, ${index.rubriker} rubriker)`);
+    // Indexet ger ingen tabell en vågrät rullist som den inte har utan indexet: vid 1440 punkter (en rad ovanför
+    // innehållet) och vid 1920, där spalten börjar i marginalen bredvid innehållet.
+    for (const bredd of [1440, 1920]) {
+        if (bredd !== 1440) { await page.setViewportSize({ width: bredd, height: 900 }); await page.waitForTimeout(100); }
+        const rullar = await page.evaluate(() => {
+            const kropp = document.querySelector('.content-body');
+            const tabeller = [...document.querySelectorAll('.view-panel .table-container')].filter(t => t.offsetParent !== null);
+            const matt = () => tabeller.map(t => t.scrollWidth > t.clientWidth + 1);
+            if (!kropp.classList.contains('har-sidindex')) return [];
+            const med = matt();
+            kropp.classList.remove('har-sidindex');
+            const utan = matt();
+            kropp.classList.add('har-sidindex');
+            return tabeller.map((t, i) => med[i] && !utan[i] ? (t.querySelector('table')?.id || t.closest('[id]')?.id || '?') : null).filter(Boolean);
+        });
+        ok(rullar.length === 0, `${flik}: ingen tabell får vågrät rullist av sidindexet vid ${bredd} punkter${rullar.length ? ` (${rullar.join(', ')})` : ''}`);
+    }
+    await page.setViewportSize({ width: 1440, height: 900 });
     for (const sel of diagram) {
         const harSvg = await page.evaluate(s => {
             const el = document.querySelector(s);
@@ -236,6 +266,26 @@ for (const [flik, diagram] of FLIKAR) {
     }
     if (!diagram.length) ok(true, `${flik}: renderade utan fel`);
 }
+{
+    // Från 1920 punkter är sidindexet en spalt bredvid innehållet som följer med när sidan rullas; ett klick fäller
+    // ut avsnittet och ger summaryn fokus.
+    await page.setViewportSize({ width: 1920, height: 900 });
+    await page.click('.nav-item[data-tab="struktur"]');
+    await page.evaluate(() => { document.getElementById('avsnitt-st-eu').open = false; });
+    await page.waitForTimeout(200);
+    await page.click('#sidindex a[data-sidindex="avsnitt-st-eu"]');
+    await page.waitForTimeout(900);
+    const spalt = await page.evaluate(() => {
+        const nav = document.getElementById('sidindex').getBoundingClientRect(), panel = document.getElementById('view-struktur').getBoundingClientRect();
+        return { bredvid: nav.left >= panel.right && nav.right <= innerWidth, topp: Math.round(document.querySelector('#sidindex .sidindex-lista').getBoundingClientRect().top),
+            rullat: Math.round(scrollY), oppen: document.getElementById('avsnitt-st-eu').open,
+            fokus: document.activeElement === document.querySelector('#avsnitt-st-eu > summary'),
+            aktiv: document.querySelector('#sidindex a.ar-aktiv')?.textContent || '' };
+    });
+    ok(spalt.bredvid && spalt.rullat > 300 && spalt.topp >= 0 && spalt.topp < 80 && spalt.oppen && spalt.fokus,
+        `sidindexet står bredvid innehållet och följer med (rullat ${spalt.rullat} px, listan ${spalt.topp} px från överkanten); klicket fällde ut avsnittet och gav fokus (aktiv: ${spalt.aktiv})`);
+}
+await page.setViewportSize({ width: 1400, height: 1000 });
 
 console.log('\n── Diagrammen (diagramkärnan, ADR-39) ──');
 // Varje diagram ritas av diagramkärnan: en SVG med märken, och exportmenyn ger en PNG och en SVG som inte

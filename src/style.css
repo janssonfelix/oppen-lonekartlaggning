@@ -423,6 +423,43 @@ details.avsnitt[open]:not(.card) { padding-bottom: 20px; }
 }
 @media (min-width: 641px) { .meny-skugga { display: none; } }
 @media (max-width: 640px) and (prefers-reduced-motion: reduce) { .sidebar, body.meny-oppen .sidebar { transition: none; } }
+
+/* ---- Sidindex: På den här sidan (89-sidindex.js) ----
+   Flikens avsnitt som en lista. Den står sist i .content-body men visas först (order). Från 1920 punkter är den en
+   spalt till höger om innehållet som följer med när sidan rullas, och spalten tar sina 224 punkter ur marginalen:
+   .content-body växer lika mycket (max-width), så panelerna är lika breda som utan index (1320 punkter). Smalare än
+   så är listan en utfällbar rad ovanför innehållet. Spalten tar inget ur innehållet, för varje punkt den tog hade gett
+   någon tabell en vågrät rullist: med demodatan behöver tabellerna i Lika arbete, Lönestruktur, Prioritering och
+   Löneläget 860–965 punkter breda paneler och AID × BAS 1220–1315, och vid 1440 punkter är panelerna 1080 breda
+   (856 med en spalt).
+   Listan har ingen höjd i flödet, så att den inte gör innehållet högre och dess sticky-område är hela .content-body:
+   ett tvåspaltsgrid hade gjort varje barn till en egen rad, och då slutar raden med det markerade (position: sticky)
+   att följa med. */
+.content-body.har-sidindex { display: flex; flex-direction: column; }
+.sidindex { order: -1; font-size: var(--fs-sm); }
+.sidindex-etikett { display: none; }
+.sidindex-lista { list-style: none; margin: 0; padding: 0; }
+.sidindex-lista a { display: block; padding: 4px 10px; border-left: 2px solid var(--border); color: var(--text-muted); text-decoration: none; line-height: 1.35; }
+.sidindex-lista a:hover { color: var(--text-main); border-left-color: var(--border-stark); }
+.sidindex-lista a.ar-aktiv { color: var(--primary); border-left-color: var(--primary); font-weight: 600; }
+.sidindex-ram { margin: 0 0 14px; padding: 0 14px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); }
+.sidindex-ram > summary { padding: 10px 0; cursor: pointer; font-weight: 600; color: var(--text-main); }
+.sidindex-ram[open] > summary { margin-bottom: 4px; }
+.sidindex-ram[open] { padding-bottom: 10px; }
+@media (min-width: 1920px) {
+    .content-body.har-sidindex { max-width: calc(1400px + 224px); }
+    .content-body.har-sidindex > :not(.sidindex) { margin-right: 224px; }
+    .sidindex { position: sticky; top: 12px; z-index: 20; align-self: flex-end; width: 200px; height: 0; overflow: visible; }
+    .sidindex-etikett { display: block; margin: 0 0 6px 12px; font-size: var(--fs-xs); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-muted); }
+    .sidindex-ram { margin: 0; padding: 0; background: none; border: 0; border-radius: 0; max-height: calc(100vh - 48px); overflow-y: auto; }
+    .sidindex-ram > summary { display: none; }
+    .sidindex-ram[open] { padding-bottom: 0; }
+}
+@media print {
+    .sidindex { display: none !important; }
+    .content-body.har-sidindex { display: block; }
+    .content-body.har-sidindex > * { margin-right: 0; }
+}
 /* Vid byte över brytpunkten (31-navigering.js, _menyVidBrytpunkt) hoppar menyn direkt till sitt läge. */
 body.meny-utan-glidning .sidebar { transition: none !important; }
 @media print { .btn.meny-knapp, .meny-skugga { display: none !important; } }

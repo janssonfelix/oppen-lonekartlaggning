@@ -43,7 +43,7 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         d.querySelector('.nav-item[data-tab="dokumentera"]').click();
         // Alla flikens paneler ligger i innehållsytan (det tomma bandet överst kom av att de låg utanför).
         for (const id of ['view-kvalitet', 'view-dokumentera', 'view-rapporttext', 'view-arbetet', 'view-benchmark', 'view-utforska']) {
-            expect(d.getElementById(id).parentElement.className, id).toBe('content-body');
+            expect(d.getElementById(id).parentElement.classList.contains('content-body'), id).toBe(true);   // har-sidindex kan stå bredvid
         }
         const fore = (a, b) => !!(d.getElementById(a).compareDocumentPosition(d.getElementById(b)) & 4);
         expect(fore('dk-slutsatser', 'fardigcheck-body') && fore('fardigcheck-body', 'avsnitt-dk-robusthet') && fore('avsnitt-dk-robusthet', 'export-hub')).toBe(true);

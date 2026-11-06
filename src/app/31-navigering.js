@@ -151,6 +151,7 @@ function _renderTabContent(target) {
     const aktiv = document.querySelector('.nav-item.active')?.getAttribute('data-tab');
     if (aktiv && tabMal(aktiv) !== target) return;
     renderFlowNav(target);
+    sidindexBygg(target);   // 89-sidindex.js: flikens avsnitt som en lista som följer med
 }
 
 // UX: "Nästa steg"-överlämning längst ner i analysflikarna så processkänslan

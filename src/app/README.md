@@ -99,6 +99,7 @@ direkt vid laddning (händelsekopplingar, `const`) körs i den här ordningen.
 | `86-installningar.js` | Panelen Inställningar: det som gäller alla flikar, och en förteckning över flikarnas egna inställningar |
 | `87-sok.js` | Sök och hoppa: fältet i sidhuvudet som markerar en grupp i alla diagram; bara grupper som får visas går att söka fram |
 | `88-lage.js` | Två lägen: vägledande (varje flik förklarar sig) och kompakt (förklaringarna undanfällda, tätare sidor); lagras inte. Flikarnas inledning på en rad med *Visa mer* (`introRader`) |
+| `89-sidindex.js` | Sidindex (*På den här sidan*): flikens synliga avsnitt som en lista som följer med när sidan rullas, byggs när fliken ritas; ett klick fäller ut och ger fokus |
 | `90-uppstart.js` | Uppstart: anrop som körs en gång sist vid laddning (processkartan, tangentbordsnavigering, profiletiketter, referenskortet) |
 
 Delarna underhålls för hand: `tools/build-app.mjs` slår helt enkelt ihop alla
