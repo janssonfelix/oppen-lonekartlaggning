@@ -33,9 +33,19 @@ bedömningarna och besluten gör och äger arbetsgivaren.
 
 ## 1. (Valfritt men rekommenderat) Lär dig verktyget med demodata
 
-1. Klicka **prova med demodata** i välkomstraden på Översikt.
+1. Klicka **prova med demodata** i välkomstraden på Översikt (samma två val finns i
+   lönefilskortet i **Filer och kvalitet**). Det finns två demon:
+   - **prova med demodata**: 260 påhittade personer i fem BAS-intervall, snabbt att bläddra i.
+     Det är samma underlag som självdiagnostiken bygger på.
+   - **stort demo (7 000 personer)**: en påhittad organisation i storlek med en mindre kommun
+     eller en stor verksamhet, med BAS-intervall A–K och 30 yrkesgrupper. Här syns verktyget i verklig
+     storlek: inlagda löneskillnader i några yrken, ett par för likvärdigt arbete, och små grupper
+     som maskeras i exporterna. Inläsningen tar några sekunder.
+
+   Adressen kan också starta demot direkt: `?demo=1` för det lilla och `?demo=stor` för det stora.
 2. Bläddra igenom flikarna och exporterna med syntetisk exempeldata — ingen verklig
-   lönedata behövs för att utvärdera. Allt märks tydligt **DEMODATA**.
+   lönedata behövs för att utvärdera. Allt märks tydligt **DEMODATA**, och bannern överst säger
+   när det är det stora demot.
 3. Klicka **"Avsluta demo / rensa"** innan du laddar in er skarpa data.
    (Med en egen lönefil inläst finns **"Rensa all data"** under **Inställningar**, rubriken *Rensa*.)
 

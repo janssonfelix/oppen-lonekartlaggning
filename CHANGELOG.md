@@ -8,6 +8,13 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ### Gränssnitt
 
+- **Stort demo: 7 000 personer.** Bredvid *prova med demodata* (260 personer) i Kom igång på Översikt och i
+  lönefilskortet i Filer och kvalitet finns *stort demo (7 000 personer)*: en påhittad organisation i storlek med en
+  mindre kommun, med BAS-intervall A–K, 30 yrkesgrupper med koder ur etikettlistan, ett inlagt
+  oförklarat gap på 2,5–4 % i fyra yrken, ett par för likvärdigt arbete i BAS C och små grupper som maskeras i
+  exporterna. Adressen `?demo=stor` startar det direkt. Demobannern och filraden säger att det är det stora demot.
+  Självdiagnostiken körs bara på det lilla demot, som är oförändrat. Demots ställningstagande har en rad för BAS K
+  i det stora demot.
 - **Fliken Filer och kvalitet.** Filrutorna (organisationspaket, lönefil, ställningstagande och jämförelsestatistik),
   Underlagets kvalitet, extremvärdena och inläsningsrapporten flyttar från Översikt till en egen flik i *1 ·
   Underlag*. Översikt behåller Kom igång, nyckeltalen, Att göra och processen, och raden överst har knappen dit.
