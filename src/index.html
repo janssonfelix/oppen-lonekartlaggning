@@ -838,7 +838,7 @@
                             <div class="stat-val" id="kon-kpi-gap">-</div>
                             <div class="stat-under">medianlön, utan justering</div>
                         </div>
-                        <div class="stat-box" data-tooltip="Kvinnors lön i procent av mäns när båda könen avläses vid urvalets medelålder på sina trendlinjer. Räknar bort att ett kön är äldre i snitt — men inte BAS-intervall eller yrkesgrupp; det gör regressionen i Lika arbete.">
+                        <div class="stat-box" data-tooltip="Kvinnors lön i procent av mäns när båda könen avläses vid urvalets medelålder på sina trendlinjer. Räknar bort att ett kön är äldre i snitt — men inte BAS-intervall eller yrkesgrupp; det gör regressionen i Lönestruktur.">
                             <div class="stat-etikett">Vid samma ålder</div>
                             <div class="stat-val" id="kon-kpi-agegap">-</div>
                             <div class="stat-under" id="kon-kpi-agegap-under">kvinnors lön i % av mäns</div>
@@ -1050,7 +1050,7 @@
                             <ul>
                                 <li>Visa spridningsdiagrammet med trendlinjerna; välj hela urvalet för helhetsbilden eller ett BAS-intervall för detaljerna.</li>
                                 <li>Färglägg efter BAS-intervall eller yrkesgrupp för att se om mönstret beror på var kvinnor och män arbetar.</li>
-                                <li>Lådan och histogrammet visar om lönerna är samlade eller spridda; enskilda löner långt ut granskas under Extremvärden på Översikt.</li>
+                                <li>Lådan och histogrammet visar om lönerna är samlade eller spridda; enskilda löner långt ut granskas under Extremvärden i Filer och kvalitet.</li>
                             </ul>
                             <h3>Åldersstruktur och återväxt</h3>
                             <ul>
@@ -1134,7 +1134,7 @@
                 <div id="view-lika-yrken" class="view-panel dold">
                     <div class="flik-intro">
                         <strong>Samma jobb, olika lön?</strong> <span class="info-tip" data-tooltip="Diskrimineringslagen kräver att varje löneskillnad mellan kvinnor och män i lika arbete analyseras. EU:s lönetransparensdirektiv använder 5 % som gräns för när en gemensam lönebedömning kan krävas."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
-                        Här jämförs kvinnors och mäns lön inom samma yrkesgrupp. Grupper med en skillnad över 5 % flaggas och märks som sköra eller stabila. Därefter kommer personer att granska, lönegapet och könsfördelningen per BAS-intervall, och sist hur mycket som kvarstår när ålder och nivå räknats bort.
+                        Här jämförs kvinnors och mäns lön inom samma yrkesgrupp. Grupper med en skillnad över 5 % flaggas och märks som sköra eller stabila. Därefter kommer personer att granska och tabellerna per AID-kod och BAS-intervall. Lönegapet och könsfördelningen per BAS-intervall, och hur mycket som kvarstår när ålder och nivå räknats bort, står i Lönestruktur.
                     </div>
                     <div id="la-topp">
                         <p id="la-urval" class="urvalsrad" role="status"></p>
@@ -1274,7 +1274,7 @@
                             <div class="empty-icon"><svg class="ikon ikon-tomLada" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 13h5l1.5 3h5L16 13h5"/><path d="M5 5h14l2 8v6H3v-6z"/></svg></div>
                             <h2>Referensen matchar inte underlaget</h2>
                             <p>Referensen har inga rader för underlagets BAS-intervall eller yrken. Ladda upp en fil med P10/Median/P90 där varje rad har en <strong>BAS</strong>-kolumn, en <strong>AID</strong>-kolumn, eller båda.</p>
-                            <button class="empty-action" data-goto-tab="dashboard">Gå till uppladdning</button>
+                            <button class="empty-action" data-goto-tab="filer">Gå till uppladdning</button>
                         </div>
                     </div>
                     <div id="lonepolitik-content" class="dold"></div>
@@ -1340,7 +1340,7 @@
                             <ul>
                                 <li>Negativ diff (röd) = organisationen ligger under jämförelsen — kan motivera höjning</li>
                                 <li>Positiv diff (grön) = över jämförelsen — kan motiveras (specialistkompetens) eller indikera kostnadsdrift</li>
-                                <li>Konsistenskontrollen under Underlagets kvalitet på Översikt visar vilka AID-koder som inte matchar mellan filerna</li>
+                                <li>Konsistenskontrollen under Underlagets kvalitet i Filer och kvalitet visar vilka AID-koder som inte matchar mellan filerna</li>
                                 <li>Jämför P10 och P90, inte bara medianen: en skillnad bara i P90 tyder på att erfarna inte når upp mot marknaden, en skillnad bara i P10 på låga ingångslöner</li>
                             </ul>
                         </div>
@@ -1360,15 +1360,15 @@
                             <label>
                                 <input type="radio" name="prio-ref" value="statistik"> Jämförelsestatistiken (per AID-kod)
                             </label>
-                            <span class="info-tip" data-tooltip="Välj vilken extern referens som löneläget ska jämföras mot. Referensen är den lönepolitiska målbilden per BAS-intervall — ert uppladdade ställningstagande. jämförelsestatistiken är medianlönen för samma yrke (samma AID-kod) i jämförelsestatistiken – speglar marknadsläget och kräver att filen är uppladdad på Översikt."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
+                            <span class="info-tip" data-tooltip="Välj vilken extern referens som löneläget ska jämföras mot. Referensen är den lönepolitiska målbilden per BAS-intervall — ert uppladdade ställningstagande. jämförelsestatistiken är medianlönen för samma yrke (samma AID-kod) i jämförelsestatistiken – speglar marknadsläget och kräver att filen är uppladdad under Filer och kvalitet."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
                         </div>
 
                         <div id="prio-empty" class="dold">
                             <div class="flik-empty-state">
                                 <div class="empty-icon"><svg class="ikon ikon-blixt" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg></div>
                                 <h2>Referensdata saknas för vald jämförelse</h2>
-                                <p id="prio-empty-text">Ladda upp ert lönepolitiska ställningstagande — eller ett organisationspaket — på Översikt. Verktyget kan inte rangordna utan referenspunkt.</p>
-                                <button class="empty-action" data-goto-tab="dashboard">Gå till uppladdning</button>
+                                <p id="prio-empty-text">Ladda upp ert lönepolitiska ställningstagande — eller ett organisationspaket — under Filer och kvalitet. Verktyget kan inte rangordna utan referenspunkt.</p>
+                                <button class="empty-action" data-goto-tab="filer">Gå till uppladdning</button>
                             </div>
                         </div>
 
@@ -1546,7 +1546,7 @@
                                     <ul>
                                         <li>Storlek på bubbla = total åtgärdskostnad (inte antal personer)</li>
                                         <li>Med många grupper är lodräta axeln logaritmisk — små grupper syns ändå tydligt</li>
-                                        <li>Justera vikterna under <em>Viktning av prioriteringsindex</em> om er ledning har andra prioriteringar</li>
+                                        <li>Justera vikterna under <em>Viktning av prioriteringsindex</em> i Inställningar (knappen Ändra ovan) om er ledning har andra prioriteringar</li>
                                     </ul>
                                 </div>
                             </details>
@@ -1858,7 +1858,7 @@
                                 <h4>Ledande frågor</h4>
                                 <ul><li>Finns ingångslönespann per befattning? Följs avvikelser upp per kön?</li></ul>
                                 <h4>Stöd i verktyget</h4>
-                                <ul><li class="bes8-stod" data-stod="matrix">Lika arbete visar lönespridning (P10/median/P90) och ojusterat gap per BAS.</li></ul>
+                                <ul><li class="bes8-stod" data-stod="matrix">Lika arbete visar skillnaden per yrkesgrupp; lönespridningen (P10/median/P90) och det ojusterade gapet per BAS står i Lönestruktur.</li></ul>
                                 <div class="bes8-assess"></div>
                             </div>
                         </details>
@@ -2012,7 +2012,7 @@
                                 <button id="btn-export-docdraft" class="btn btn-primary" aria-label="Ladda ner redigerbart Word-utkast av lönekartläggningens dokumentation">Word-utkast (dokumentation)</button>
                             </div>
                             <div class="export-hub-row">
-                                <div><strong>PDF-rapport</strong><span>Låst kopia av Word-utkastet, att verifiera mot: samma avsnitt i samma ordning. Med hela dokumentationen vald följer flikarnas tabeller och diagram med som bilagor.</span><span class="export-org-forklaring" id="kl-org-forklaring">Organisationens namn skrivs på rapportens försättsblad, i PDF-rapporten och Word-utkastet; det hämtas från organisationspaketet när ett är inläst och är samma namn som på Översikt.</span><p class="export-besked" id="besked-pdf"></p></div>
+                                <div><strong>PDF-rapport</strong><span>Låst kopia av Word-utkastet, att verifiera mot: samma avsnitt i samma ordning. Med hela dokumentationen vald följer flikarnas tabeller och diagram med som bilagor.</span><span class="export-org-forklaring" id="kl-org-forklaring">Organisationens namn skrivs på rapportens försättsblad, i PDF-rapporten och Word-utkastet; det hämtas från organisationspaketet när ett är inläst och är samma namn som i Filer och kvalitet.</span><p class="export-besked" id="besked-pdf"></p></div>
                                 <div class="namn-falt export-org">
                                 <label for="kl-org-name" class="fs-sm fw-600">Organisation</label>
                                 <input type="text" id="kl-org-name" class="form-select fs-sm pad-6-10" maxlength="100" autocomplete="off" placeholder="t.ex. Exempelkommunen, förskolan" aria-describedby="kl-org-forklaring">

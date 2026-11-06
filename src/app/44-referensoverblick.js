@@ -146,9 +146,9 @@ function renderReferensOverblick() {
     rensaFigur('chart-ref-hantel');
     const o = referensOverblick();
     _rrRitaTopp(o, { harStatistik: state.statistik.length > 0, harStallningstagande: state.policy.length > 0 });
-    if (!o) { host.innerHTML = '<p class="muted">Ingen referens är inläst. Läs in ett ställningstagande eller jämförelsestatistik på Översikt.</p>'; return; }
+    if (!o) { host.innerHTML = '<p class="muted">Ingen referens är inläst. Läs in ett ställningstagande eller jämförelsestatistik under Filer och kvalitet.</p>'; return; }
     const har = { harStatistik: state.statistik.length > 0, harStallningstagande: state.policy.length > 0 };
-    const saknas = [!har.harStatistik && 'Jämförelsestatistik saknas — läs in den på Översikt.', !har.harStallningstagande && 'Ställningstagande saknas — läs in det på Översikt.'].filter(Boolean);
+    const saknas = [!har.harStatistik && 'Jämförelsestatistik saknas — läs in den under Filer och kvalitet.', !har.harStallningstagande && 'Ställningstagande saknas — läs in det under Filer och kvalitet.'].filter(Boolean);
     const utanSpann = har.harStatistik && (!state.statistikHasP10 || !state.statistikHasP90);
     const flera = o.grupper.length > _RR_MAX;
     host.innerHTML = `${saknas.map(s => `<p class="urvalsrad">${esc(s)}</p>`).join('')}

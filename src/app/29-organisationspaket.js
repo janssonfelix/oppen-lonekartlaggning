@@ -293,7 +293,7 @@ function uppdateraPaketKnapp() {
     }
 }
 
-/** Samma felmeddelande som fältet på Översikt (sattKTroskel). */
+/** Samma felmeddelande som fältet i Inställningar (sattKTroskel). */
 function _paketKFel() { return `Ange ett heltal mellan ${K_MIN} och ${K_MAX}.`; }
 
 /** Bygger paketet ur det inlästa och formuläret. */

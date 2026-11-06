@@ -3,7 +3,7 @@
 
 // ---- Tab Navigation ----
 // En låst flik är aria-disabled, inte disabled: knappen går att nå och klicka på, skärmläsaren hör den och skälet, och
-// klicket leder till lönefilskortet på Översikt i stället för att ingenting händer. Egenskapen `disabled` på knappen
+// klicket leder till lönefilskortet i Filer och kvalitet i stället för att ingenting händer. Egenskapen `disabled` på knappen
 // läser och sätter aria-disabled, så att resten av koden låser och låser upp flikar som vanligt (el.disabled = true).
 document.querySelectorAll(".nav-item").forEach(btn => {
     Object.defineProperty(btn, 'disabled', {
@@ -119,7 +119,7 @@ function _ritaIngetUnderlag(target, tomt) {
     rad = document.createElement('p');
     rad.className = 'urvalsrad inget-underlag';
     rad.setAttribute('role', 'status');
-    rad.innerHTML = 'Inget underlag inläst — <a href="#" data-go-to-tab="dashboard">läs in lönefilen på Översikt</a>.';
+    rad.innerHTML = 'Inget underlag inläst — <a href="#" data-go-to-tab="filer">läs in lönefilen under Filer och kvalitet</a>.';
     vy.insertBefore(rad, vy.firstChild);
 }
 function _renderTabContent(target) {

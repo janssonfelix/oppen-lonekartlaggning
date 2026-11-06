@@ -401,7 +401,7 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
 - **Kvartilfördelningen (EU-måtten)** redovisar bara gränserna mellan
   kvartilerna — mittpunkten mellan den lägre kvartilens högsta och den högre kvartilens
   lägsta lön — aldrig kvartilernas yttre löner, som för Q1 och Q4 är organisationens
-  lägsta och högsta enskilda lön. Gäller fliken Struktur och EU-lönerapporten; vaktas av
+  lägsta och högsta enskilda lön. Gäller fliken Lönestruktur och EU-lönerapporten; vaktas av
   enhetstest och röktest.
 - **Medvetet undantag 3 — Personer att granska (ADR-23):** panelen i Lika arbete visar enskilda personer (kön, ålder, AID, BAS,
   lön, förväntad lön och filens radnummer) som ligger minst en vald procentsats under
@@ -430,13 +430,13 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   läget per kön kräver tröskeln. Bladet *Lönepolitik* i Excelfilen med alla flikar (och i ZIP-filens
   Excelfil) följer samma trappa och samma regel per kön; vid tröskeln 5 eller lägre finns ingen
   mellannivå. Vaktas av `tests/ktroskel-kon.test.js` (bladet) och `tests/ktroskel-invarianter.test.js`.
-- **Struktur per BAS och Prioritering:** *Struktur per BAS* i Word-utkastet och PDF-rapporten utelämnar
+- **Lönestruktur per BAS-intervall och Prioritering:** *Lönestruktur per BAS-intervall* i Word-utkastet och PDF-rapporten utelämnar
   BAS under tröskeln och namnger dem i en not; Prioritering visar könsgapet i en grupp
   bara när båda könen når tröskeln, och prioritetsindexet räknas då utan könsdel så att
   poängen inte röjer det dolda gapet. Prioriteringens förslag om lägsta
   lönekvintilen kräver tröskeln för båda könen. Vaktas av `tests/ktroskel-utdata.test.js`, som läser
   flikarna, Word-utkastet och utskriften.
-- **Lönegap per BAS, hela organisationen och Löneöversyn:** *Struktur per BAS* visar gapet bara när
+- **Lönegap per BAS, hela organisationen och Löneöversyn:** *Lönestruktur per BAS-intervall* visar gapet bara när
   båda könen når tröskeln, annars ett streck och en not; könsuppdelade mått för hela
   organisationen följer samma regel; Löneöversyn maskerar kostnaden där medianerna maskeras,
   jämför bara mot mäns median när männen når tröskeln, ger en grupp egen rad på individnivån

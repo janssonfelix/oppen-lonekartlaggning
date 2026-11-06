@@ -23,7 +23,7 @@ function _lasInReferens(rader, filnamn) {
     return policy.length;
 }
 
-// Referenskortet på Översikt: vilken referens som används, namnfält för egen fil
+// Referenskortet i Filer och kvalitet: vilken referens som används, namnfält för egen fil
 // och knappen som tar bort den.
 function renderReferensKort() {
     const el = document.getElementById('referens-status');

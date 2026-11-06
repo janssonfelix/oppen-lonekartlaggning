@@ -326,7 +326,7 @@ function _evidenceForRapportRow(p) {
             P10 = värdet vid 10:e percentilen = <strong>${fmtKr(p10)}</strong><br>
             P90 = värdet vid 90:e percentilen = <strong>${fmtKr(p90)}</strong><br>
             Lönespridning = P90 / P10 = ${fmtKr(p90)} / ${fmtKr(p10)} = <strong>${spread != null ? svTal(spread, 2) : '—'}</strong>`,
-        footer: `Detta är en deskriptiv vy — inga statistiska tester eller kontroller görs här. För regressionsanalys (oförklarat gap, ålders-/BAS-kontroll), se fliken Lika arbete.`
+        footer: `Detta är en deskriptiv vy — inga statistiska tester eller kontroller görs här. För regressionsanalys (oförklarat gap, ålders-/BAS-kontroll), se fliken Lönestruktur.`
     };
 }
 
@@ -373,7 +373,7 @@ function _evidenceForPaygapRow(p) {
         formula: `<strong>Beräkning:</strong><br>
             kvot = median(kvinnor) / median(män) = ${fmtKr(medKv)} / ${fmtKr(medMa)} = <strong>${svTal(ratio, 4)}</strong><br>
             Kvinna % av Man = kvot × 100 = <strong>${svPct(gapPct, 2)}</strong>`,
-        footer: `Det här är ett "rågap" inom BAS — ingen kontroll för ålder eller yrke. För kontrollerat oförklarat gap, se per-BAS-regressionsraden i fliken Lika arbete.`
+        footer: `Det här är ett "rågap" inom BAS — ingen kontroll för ålder eller yrke. För kontrollerat oförklarat gap, se per-BAS-regressionsraden i fliken Lönestruktur.`
     };
 }
 

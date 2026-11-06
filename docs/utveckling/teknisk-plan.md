@@ -1314,7 +1314,7 @@ Kända brister och obesvarade frågor, så att de inte lever bara i en konversat
 
    Mätvärden med `npm run perf` på 55 000 syntetiska rader (2026-10-29, efter ADR-51): uppladdning till klart
    gränssnitt ~2,8 s, till klara bakgrundsanalyser ~7,7 s; Likvärdigt arbete 2,6 s, Lika arbete 2,0 s, Ålder &
-   karriär 1,8 s, Dokumentera & exportera 3,7 s, övriga flikar under 0,6 s styck; hela svepet 19 s. Dokumentera
+   karriär 1,8 s, Dokumentera & exportera (då fliken Dokumentera & exportera; nu Exportera, Rapporttext och Spara och jämför år) 3,7 s, övriga flikar under 0,6 s styck; hela svepet 19 s. Dokumentera
    & exportera ritas i exportläget och tog 12 s innan förhandsbeskedet byggde rapportmodellen en gång i stället
    för tre (`rapportModellBada`), Excel-bladlistan en gång i stället för två, Lika arbetes minne fick ett rum per
    tröskel och omritningen efteråt begränsades till det exporten ritade (`_ritaOmEfterExport`). Det som kostar i

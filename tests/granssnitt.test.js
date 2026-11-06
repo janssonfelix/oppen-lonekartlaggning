@@ -98,12 +98,13 @@ describe('länkar till ett avsnitt i en annan flik', () => {
 });
 
 describe('flik utan underlag', () => {
-    it('säger att inget underlag är inläst och länkar till Översikt; raden försvinner när underlaget finns', () => {
+    it('säger att inget underlag är inläst och länkar till Filer och kvalitet; raden försvinner när underlaget finns', () => {
         const w = createAppWindow();
         w.eval("renderTabContent('matrix')");
         const rad = () => w.document.querySelector('#view-lika-yrken > .inget-underlag');
         expect(rad().textContent).toContain('Inget underlag inläst');
-        expect(rad().querySelector('[data-go-to-tab="dashboard"]')).toBeTruthy();
+        expect(rad().querySelector('[data-go-to-tab="filer"]')).toBeTruthy();
+        expect(rad().textContent).toContain('under Filer och kvalitet');
         w.eval("renderTabContent('matrix')");
         expect(w.document.querySelectorAll('#view-lika-yrken > .inget-underlag').length).toBe(1);
         w.__loadDemoData();

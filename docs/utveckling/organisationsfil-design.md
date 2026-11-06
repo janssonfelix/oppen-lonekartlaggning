@@ -44,7 +44,7 @@ den tekniska planen). Paketet måste ligga **inuti** HTML-filen.
 
 ## 3. Hur det ser ut för användaren
 
-**Systemägaren** (panelen *Organisationspaket* på Översikt, under *Skapa organisationspaket*):
+**Systemägaren** (panelen *Organisationspaket* i Filer och kvalitet, under *Skapa organisationspaket*):
 1. Läser in paketet (eller bygger det i formuläret som i dag).
 2. Klickar **Skapa organisationsfil**. En rad fälls ut: en filväljare *Verktygsfilen du öppnade*
    (`.html`), ett fält *Filnamn* förifyllt med `oppen-lonekartlaggning-<organisation>.html`, och
@@ -59,7 +59,7 @@ den tekniska planen). Paketet måste ligga **inuti** HTML-filen.
 **Handläggaren** öppnar organisationsfilen:
 - Paketet läses in vid start, tyst, på samma väg som en inläst paketfil (samma validering, samma
   bekräftelsefrågor om tröskeln sänks, samma låsningar).
-- Filrutan för organisationspaketet på Översikt visar *Inbakat i den här filen: Exempelkommunen,
+- Filrutan för organisationspaketet i Filer och kvalitet visar *Inbakat i den här filen: Exempelkommunen,
   2026-10-19* med två knappar: **Visa paketet** (öppnar paketets innehåll i en läsbar vy: organisation,
   benämningar, inställningar och låsningar som tabell, ställningstagandet och statistiken som
   tabeller, och råtexten i JSON under en utfällbar rad) och **Ladda ner paketet** (sparar
@@ -136,7 +136,7 @@ avsluta elementet.
 
 ## 5. Avgränsningar
 
-- Råtexten i *Visa paketet* visas som en utfällbar `<pre>`; knapparna sitter i paketets filruta på Översikt.
+- Råtexten i *Visa paketet* visas som en utfällbar `<pre>`; knapparna sitter i paketets filruta i Filer och kvalitet.
 - Filnamnsfältet lägger på ändelsen `.html` när den saknas.
 - När den valda verktygsfilen är en annan version än den som körs varnar verktyget och tillåter ändå
   (systemägaren kan medvetet baka in i en nyare fil).
