@@ -1638,6 +1638,9 @@ console.log('\n── Smala skärmar: 1440×800, 768 och 390 punkter ──');
     // spalten glider ut över innehållet; öppnar man menyn själv står den kvar.
     s = await oppna(1440, 812);
     await s.setViewportSize({ width: 375, height: 812 });
+    // Spalten läggs om vid brytpunkten utan glidning, men layouten kan ligga en bildruta efter: vänta in den
+    // (högst två sekunder) innan läget läses, i stället för att läsa mitt i ombrytningen.
+    await s.waitForFunction(() => document.querySelector('.sidebar').getBoundingClientRect().right <= 0, null, { timeout: 2000 }).catch(() => {});
     const efterByte = await s.evaluate(() => { const m = document.querySelector('.sidebar'), r = m.getBoundingClientRect();
         return { oppen: document.body.classList.contains('meny-oppen'), utanfor: r.right <= 0, expanderad: document.getElementById('btn-meny').getAttribute('aria-expanded') }; });
     ok(!efterByte.oppen && efterByte.utanfor && efterByte.expanderad === 'false', '1440 → 375 punkter: menyn är stängd och ligger utanför bild direkt efter bytet');
