@@ -51,7 +51,8 @@ function _rmNotText(html) {
     return d.body.textContent.replace(/\s+/g, ' ').trim();
 }
 
-// Diagram som följer med i rapporten: id på diagrammet, fliken som ritar det och avsnittet det hör till.
+// Diagram som följer med i rapporten: id på diagrammet, fliken som ritar det och avsnittet det hör till (och `del`,
+// när diagrammet står vid en viss tabell i avsnittet i stället för där avsnittet tar sina diagram).
 // Ett diagram som inte ritas — för att underlaget inte når tröskeln — följer inte med.
 const RM_DIAGRAM = [
     { id: 'chart-skevhet-overview', flik: 'struktur', avsnitt: 'struktur', rubrik: 'Kvinnors medianlön i procent av mäns, per BAS-intervall — samma kvot och intervall som tabellen ovan' },
@@ -74,6 +75,10 @@ const RM_DIAGRAM = [
     // Jämförelsen med förra året (ADR-54) ritas av fliken Spara och jämför år, bara när ett bokslut är inläst.
     { id: 'chart-arsjamforelse', flik: 'arbetet', avsnitt: 'arsjamforelse', rubrik: 'Kvinnors medianlön i procent av mäns per yrkesgrupp, förra året (strecket) och i år (punkten)',
       om: () => !!state.forraArsbokslut },
+    // Hanteln per BAS-intervall står under tabellen Löneutveckling per BAS-intervall (del: 'bas'), bara när förra
+    // årets bokslut har raderna per intervall (ett äldre bokslut saknar dem).
+    { id: 'chart-arsjamforelse-bas', flik: 'arbetet', avsnitt: 'arsjamforelse', del: 'bas', rubrik: 'Medianlön per BAS-intervall, förra året (strecket) och i år (punkten)',
+      om: () => !!(state.forraArsbokslut && Array.isArray(state.forraArsbokslut.basIntervall)) },
 ];
 
 // ---- Urval: vilka avsnitt som följer med, och i vilken ordning ----
@@ -224,7 +229,7 @@ function rmBasintervallAvsnitt(k) {
 /**
  * Avsnittet Jämförelse med förra året (ADR-54): nyckeltalen sida vid sida, flaggade yrkesgrupper som kvar, nya och
  * borta, hanteln och Att göra. Finns bara när ett bokslut är inläst; står efter Åtgärder och tidsplan.
- * @param {(avsnitt: string) => any[]} diagram
+ * @param {(avsnitt: string, del?: string) => any[]} diagram
  */
 function rmArsjamforelseAvsnitt(diagram) {
     if (typeof arsjamforelse !== 'function') return null;
@@ -247,7 +252,7 @@ function rmArsjamforelseAvsnitt(diagram) {
         delar.push({ typ: 'tabell', kolumner: [{ rubrik: 'Yrkesgrupp', typ: 'text' }, { rubrik: 'Kvinnor / män', typ: 'text' }, { rubrik: `Gap ${forra.ar}`, typ: 'pct1' }, { rubrik: `Gap ${nu.ar}`, typ: 'pct1' }],
             rader: lista.map(g => [g.yrke, g.nKv != null && g.nMa != null ? `${g.nKv} / ${g.nMa}` : null, g.gapForra, g.gapNu]) });
     };
-    delar.push(...rmBasUtvecklingDelar(j, forra.ar, nu.ar));
+    delar.push(...rmBasUtvecklingDelar(j, forra.ar, nu.ar, diagram('arsjamforelse', 'bas')));
     delar.push({ typ: 'rubrik', niva: 3, text: 'Lika arbete' });
     grupptabell('Flaggade båda åren', j.grupper.kvar, 'ingen yrkesgrupp.');
     grupptabell('Nya flaggade', j.grupper.nya, 'inga.');
@@ -270,7 +275,7 @@ function rmArsjamforelseAvsnitt(diagram) {
  * båda åren har fältet; ett äldre bokslut utan det ger ingenting här (panelen säger att det saknas i filen).
  * Tröskeln är redan tillämpad i bokslutet (src/lib/arsbokslut.js) och i årets bokslut, som byggs i exportläget.
  */
-function rmBasUtvecklingDelar(j, forraAr, nuAr) {
+function rmBasUtvecklingDelar(j, forraAr, nuAr, bilder = []) {
     if (!j || !Array.isArray(j.basIntervall) || !j.basIntervall.length) return [];
     const antal = f => (f.forra == null && f.nu == null ? null : `${f.forra == null ? '–' : svTal(f.forra, 0)} till ${f.nu == null ? '–' : svTal(f.nu, 0)}`);
     const matt = f => (f.forra == null && f.nu == null ? null : { text: `${_abKr(f.forra)} till ${_abKr(f.nu)}${f.diff == null ? '' : ` (${_abForandringText(f)})`}` });
@@ -279,6 +284,7 @@ function rmBasUtvecklingDelar(j, forraAr, nuAr) {
         { typ: 'stycke', stil: 'dampad', text: `Varje mått ${forraAr} till ${nuAr}, med förändringen i kronor och i procent av ${forraAr} års värde. Bara intervall med minst ${j.kGrans} personer båda åren; medianen rör sig också när sammansättningen ändras.` },
         { typ: 'tabell', kolumner: [{ rubrik: 'BAS-intervall', typ: 'text' }, { rubrik: 'Antal', typ: 'text' }, { rubrik: 'P10', typ: 'text' }, { rubrik: 'Median', typ: 'text' }, { rubrik: 'P90', typ: 'text' }],
           rader: j.basIntervall.map(r => [`BAS ${r.bas}`, antal(r.n), matt(r.p10), matt(r.med), matt(r.p90)]) },
+        ...bilder,   // hanteln för medianen (chart-arsjamforelse-bas)
     ];
 }
 
@@ -368,7 +374,8 @@ function _rapportModellExport({ alla = false, bada = false } = {}) {
     const stycke = (text, stil) => ({ typ: 'stycke', text, ...(stil ? { stil } : {}) });
     const dampad = text => stycke(text, 'dampad');
     const fyllIn = text => ({ typ: 'fyllIn', text });
-    const diagram = avsnitt => RM_DIAGRAM.filter(g => g.avsnitt === avsnitt && (!g.kraverAllaPar || (par.length > 0 && !parUtelamnade)) && (!g.om || g.om()))
+    /** @param {string} avsnitt @param {string} [del] */
+    const diagram = (avsnitt, del) => RM_DIAGRAM.filter(g => g.avsnitt === avsnitt && (/** @type {any} */ (g).del || null) === (del || null) && (!g.kraverAllaPar || (par.length > 0 && !parUtelamnade)) && (!g.om || g.om()))
         .flatMap(g => { const not = g.metodNot ? g.metodNot() : null;
             return [{ typ: 'diagram', id: g.id, flik: g.flik, rubrik: g.rubrik }, ...(not ? [dampad(not)] : [])]; });
 

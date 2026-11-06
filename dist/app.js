@@ -6903,10 +6903,11 @@ const _esc = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').r
 function tillWordHtml(b) {
     let h = `<h3>${_esc(b.rubrik)}</h3>`;
     for (const s of b.stycken) h += `<p>${_esc(s)}</p>`;
-    if (b.tabell) {
-        h += '<table border="1" cellpadding="4"><thead><tr>' + b.tabell.rubriker.map(r => `<th>${_esc(r)}</th>`).join('') + '</tr></thead><tbody>'
-            + b.tabell.rader.map(r => '<tr>' + r.map(c => `<td>${_esc(c)}</td>`).join('') + '</tr>').join('') + '</tbody></table>';
-    }
+    const tabell = t => '<table border="1" cellpadding="4"><thead><tr>' + t.rubriker.map(r => `<th>${_esc(r)}</th>`).join('') + '</tr></thead><tbody>'
+        + t.rader.map(r => '<tr>' + r.map(c => `<td>${_esc(c)}</td>`).join('') + '</tr>').join('') + '</tbody></table>';
+    if (b.tabell) h += tabell(b.tabell);
+    // Fler tabeller med egen rubrik (blocket om förra året: Löneutveckling per BAS-intervall).
+    for (const t of b.tabeller || []) h += `<p><strong>${_esc(t.rubrik)}</strong></p>` + tabell(t);
     if (b.provat) h += '<p><strong>Redan prövat</strong></p><ul>' + b.provat.map(p => `<li>${_esc(p)}</li>`).join('') + '</ul>';
     if (b.fragor) h += '<p><strong>Frågor till verksamheten</strong></p><ol>' + b.fragor.map(f => `<li>${_esc(f)}</li>`).join('') + '</ol>';
     return h;
@@ -6947,7 +6948,25 @@ function arsjamforelseBlock(j, { id = 'arsjamforelse', forraAr, nuAr, urval, dem
         `Att göra: ${forraAr} var ${p.klaraForra} av ${p.totaltForra} punkter avbockade, ${nuAr} ${p.klaraNu} av ${p.totaltNu}.`
             + (p.kvarFranForra.length ? ` Av ${forraAr} års ${p.kvarFranForra.length} öppna punkter är ${p.kvarFranForra.filter(q => q.klarNu).length} klara i år.` : '')];
     return { id, rubrik: 'Jämförelse med förra året', stycken: [...fore, ...st, ...efter], provat: null, fragor: null,
-        tabell: { rubriker: ['Mått', String(forraAr), String(nuAr), 'Skillnad'], rader: j.nyckeltal.map(r => [r.etikett, skriv(r.forra, r.typ), skriv(r.nu, r.typ), diff(r.diff, r.typ)]) } };
+        tabell: { rubriker: ['Mått', String(forraAr), String(nuAr), 'Skillnad'], rader: j.nyckeltal.map(r => [r.etikett, skriv(r.forra, r.typ), skriv(r.nu, r.typ), diff(r.diff, r.typ)]) },
+        ...(Array.isArray(j.basIntervall) && j.basIntervall.length ? { tabeller: [_basUtvecklingTabell(j.basIntervall, forraAr, nuAr)] } : {}) };
+}
+
+/**
+ * Tabellen Löneutveckling per BAS-intervall i blocket om förra året: samma kolumner som panelen i Spara och jämför år
+ * (antal, och P10, median och P90 förra året, i år och förändringen i kronor och procent). Raderna kommer ur
+ * jämförelsen av två bokslut, där tröskeln redan är tillämpad (src/lib/arsbokslut.js).
+ * @param {any[]} rader jamforArsbokslut(...).basIntervall
+ * @param {number} forraAr
+ * @param {number} nuAr
+ */
+function _basUtvecklingTabell(rader, forraAr, nuAr) {
+    const tkn = v => (v > 0 ? '+' : v < 0 ? '−' : '±');
+    const forandring = f => (!f || f.diff == null ? '–' : `${tkn(f.diff)}${_kr(Math.abs(f.diff))}${f.pct == null ? '' : ` (${tkn(f.pct)}${_pct(Math.abs(f.pct), 1)})`}`);
+    const matt = [['p10', 'P10'], ['med', 'Median'], ['p90', 'P90']];
+    return { rubrik: 'Löneutveckling per BAS-intervall',
+        rubriker: ['BAS-intervall', `Antal ${forraAr}`, `Antal ${nuAr}`, ...matt.flatMap(([, e]) => [`${e} ${forraAr}`, `${e} ${nuAr}`, `${e} förändring`])],
+        rader: rader.map(r => [`BAS ${r.bas}`, formatTal(r.n.forra), formatTal(r.n.nu), ...matt.flatMap(([m]) => [_kr(r[m].forra), _kr(r[m].nu), forandring(r[m])])]) };
 }
 
 /**
@@ -6994,6 +7013,7 @@ function referenserBlock(overblick, { id = 'referenser', urval, demo, troskelNot
 function tillText(b) {
     const delar = [b.rubrik, ...b.stycken];
     if (b.tabell) delar.push([b.tabell.rubriker, ...b.tabell.rader].map(r => r.join('\t')).join('\n'));
+    for (const t of b.tabeller || []) delar.push(`${t.rubrik}\n` + [t.rubriker, ...t.rader].map(r => r.join('\t')).join('\n'));
     if (b.provat) delar.push('Redan prövat:\n' + b.provat.map(p => `- ${p}`).join('\n'));
     if (b.fragor) delar.push('Frågor till verksamheten:\n' + b.fragor.map((f, i) => `${i + 1}. ${f}`).join('\n'));
     return delar.join('\n\n');
@@ -26884,7 +26904,8 @@ function _rmNotText(html) {
     return d.body.textContent.replace(/\s+/g, ' ').trim();
 }
 
-// Diagram som följer med i rapporten: id på diagrammet, fliken som ritar det och avsnittet det hör till.
+// Diagram som följer med i rapporten: id på diagrammet, fliken som ritar det och avsnittet det hör till (och `del`,
+// när diagrammet står vid en viss tabell i avsnittet i stället för där avsnittet tar sina diagram).
 // Ett diagram som inte ritas — för att underlaget inte når tröskeln — följer inte med.
 const RM_DIAGRAM = [
     { id: 'chart-skevhet-overview', flik: 'struktur', avsnitt: 'struktur', rubrik: 'Kvinnors medianlön i procent av mäns, per BAS-intervall — samma kvot och intervall som tabellen ovan' },
@@ -26907,6 +26928,10 @@ const RM_DIAGRAM = [
     // Jämförelsen med förra året (ADR-54) ritas av fliken Spara och jämför år, bara när ett bokslut är inläst.
     { id: 'chart-arsjamforelse', flik: 'arbetet', avsnitt: 'arsjamforelse', rubrik: 'Kvinnors medianlön i procent av mäns per yrkesgrupp, förra året (strecket) och i år (punkten)',
       om: () => !!state.forraArsbokslut },
+    // Hanteln per BAS-intervall står under tabellen Löneutveckling per BAS-intervall (del: 'bas'), bara när förra
+    // årets bokslut har raderna per intervall (ett äldre bokslut saknar dem).
+    { id: 'chart-arsjamforelse-bas', flik: 'arbetet', avsnitt: 'arsjamforelse', del: 'bas', rubrik: 'Medianlön per BAS-intervall, förra året (strecket) och i år (punkten)',
+      om: () => !!(state.forraArsbokslut && Array.isArray(state.forraArsbokslut.basIntervall)) },
 ];
 
 // ---- Urval: vilka avsnitt som följer med, och i vilken ordning ----
@@ -27057,7 +27082,7 @@ function rmBasintervallAvsnitt(k) {
 /**
  * Avsnittet Jämförelse med förra året (ADR-54): nyckeltalen sida vid sida, flaggade yrkesgrupper som kvar, nya och
  * borta, hanteln och Att göra. Finns bara när ett bokslut är inläst; står efter Åtgärder och tidsplan.
- * @param {(avsnitt: string) => any[]} diagram
+ * @param {(avsnitt: string, del?: string) => any[]} diagram
  */
 function rmArsjamforelseAvsnitt(diagram) {
     if (typeof arsjamforelse !== 'function') return null;
@@ -27080,7 +27105,7 @@ function rmArsjamforelseAvsnitt(diagram) {
         delar.push({ typ: 'tabell', kolumner: [{ rubrik: 'Yrkesgrupp', typ: 'text' }, { rubrik: 'Kvinnor / män', typ: 'text' }, { rubrik: `Gap ${forra.ar}`, typ: 'pct1' }, { rubrik: `Gap ${nu.ar}`, typ: 'pct1' }],
             rader: lista.map(g => [g.yrke, g.nKv != null && g.nMa != null ? `${g.nKv} / ${g.nMa}` : null, g.gapForra, g.gapNu]) });
     };
-    delar.push(...rmBasUtvecklingDelar(j, forra.ar, nu.ar));
+    delar.push(...rmBasUtvecklingDelar(j, forra.ar, nu.ar, diagram('arsjamforelse', 'bas')));
     delar.push({ typ: 'rubrik', niva: 3, text: 'Lika arbete' });
     grupptabell('Flaggade båda åren', j.grupper.kvar, 'ingen yrkesgrupp.');
     grupptabell('Nya flaggade', j.grupper.nya, 'inga.');
@@ -27103,7 +27128,7 @@ function rmArsjamforelseAvsnitt(diagram) {
  * båda åren har fältet; ett äldre bokslut utan det ger ingenting här (panelen säger att det saknas i filen).
  * Tröskeln är redan tillämpad i bokslutet (src/lib/arsbokslut.js) och i årets bokslut, som byggs i exportläget.
  */
-function rmBasUtvecklingDelar(j, forraAr, nuAr) {
+function rmBasUtvecklingDelar(j, forraAr, nuAr, bilder = []) {
     if (!j || !Array.isArray(j.basIntervall) || !j.basIntervall.length) return [];
     const antal = f => (f.forra == null && f.nu == null ? null : `${f.forra == null ? '–' : svTal(f.forra, 0)} till ${f.nu == null ? '–' : svTal(f.nu, 0)}`);
     const matt = f => (f.forra == null && f.nu == null ? null : { text: `${_abKr(f.forra)} till ${_abKr(f.nu)}${f.diff == null ? '' : ` (${_abForandringText(f)})`}` });
@@ -27112,6 +27137,7 @@ function rmBasUtvecklingDelar(j, forraAr, nuAr) {
         { typ: 'stycke', stil: 'dampad', text: `Varje mått ${forraAr} till ${nuAr}, med förändringen i kronor och i procent av ${forraAr} års värde. Bara intervall med minst ${j.kGrans} personer båda åren; medianen rör sig också när sammansättningen ändras.` },
         { typ: 'tabell', kolumner: [{ rubrik: 'BAS-intervall', typ: 'text' }, { rubrik: 'Antal', typ: 'text' }, { rubrik: 'P10', typ: 'text' }, { rubrik: 'Median', typ: 'text' }, { rubrik: 'P90', typ: 'text' }],
           rader: j.basIntervall.map(r => [`BAS ${r.bas}`, antal(r.n), matt(r.p10), matt(r.med), matt(r.p90)]) },
+        ...bilder,   // hanteln för medianen (chart-arsjamforelse-bas)
     ];
 }
 
@@ -27201,7 +27227,8 @@ function _rapportModellExport({ alla = false, bada = false } = {}) {
     const stycke = (text, stil) => ({ typ: 'stycke', text, ...(stil ? { stil } : {}) });
     const dampad = text => stycke(text, 'dampad');
     const fyllIn = text => ({ typ: 'fyllIn', text });
-    const diagram = avsnitt => RM_DIAGRAM.filter(g => g.avsnitt === avsnitt && (!g.kraverAllaPar || (par.length > 0 && !parUtelamnade)) && (!g.om || g.om()))
+    /** @param {string} avsnitt @param {string} [del] */
+    const diagram = (avsnitt, del) => RM_DIAGRAM.filter(g => g.avsnitt === avsnitt && (/** @type {any} */ (g).del || null) === (del || null) && (!g.kraverAllaPar || (par.length > 0 && !parUtelamnade)) && (!g.om || g.om()))
         .flatMap(g => { const not = g.metodNot ? g.metodNot() : null;
             return [{ typ: 'diagram', id: g.id, flik: g.flik, rubrik: g.rubrik }, ...(not ? [dampad(not)] : [])]; });
 
@@ -28751,6 +28778,11 @@ async function _exportZipExport() {
             const flik = knapp.getAttribute('data-tab');
             if (!flik || ['dokumentera', 'rapporttext', 'arbetet', 'info'].includes(flik)) continue;      // som förut: inga diagram hämtas där
             try { renderTabContent(flik); } catch (e) { rapporteraFel(`ZIP: ${flik}`, e); }
+        }
+        // Jämförelsen med förra året (Spara och jämför år) har sina två hantlar när ett bokslut är inläst; panelen ritas
+        // här (som rmDiagramBild gör för Word-utkastet), så att bilderna följer med också när fliken inte har öppnats.
+        if (state.forraArsbokslut) {
+            try { renderTabContent('arbetet'); } catch (e) { rapporteraFel('ZIP: arbetet', e); }
         }
         for (const el of zipDiagram()) {
             try { const b64 = (await diagramTillBild(el, { bredd: 1920, hojd: 1080 })).split(',')[1]; zip.file(`diagram/${el.id}.png`, b64, { base64: true }); } catch (_err) { /* ett diagram som inte går att rita följer inte med */ }

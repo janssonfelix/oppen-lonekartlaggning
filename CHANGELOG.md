@@ -35,7 +35,9 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   med minst k personer: antal (kvinnor, män), P10, median och P90, och kvinnors och mäns median när båda könen når k.
   *Jämförelse med förra året* i Spara och jämför år visar tabellen *Löneutveckling per BAS-intervall* (antal, P10,
   median och P90 förra året och i år, förändringen i kronor och procent) och en hantel för medianen per intervall.
-  Samma tabell står i rapportens avsnitt *Jämförelse med förra året* (Word och PDF). Ett bokslut från en äldre
+  Samma tabell står i rapportens avsnitt *Jämförelse med förra året* (Word och PDF), med hanteln som bild under
+  tabellen, och i rapportunderlagets block *Jämförelse med förra året* (samma kolumner som panelen); hanteln följer
+  också med i ZIP-filen, också när fliken inte har öppnats. Ett bokslut från en äldre
   version saknar raderna; panelen säger det, och resten av jämförelsen är som förut. Har förra årets fil sparats med
   lägre minsta gruppstorlek än årets läses den med årets: intervall, yrkesgrupper och kön under gränsen visas inte.
 - **Antal i grupptabellerna.** Varje tabell som visar ett lönemått för en grupp visar nu också gruppens antal, och

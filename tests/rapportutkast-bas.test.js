@@ -12,6 +12,7 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
+import { arsjamforelseBlock, tillText, tillWordHtml } from '../src/lib/rapportunderlag.js';
 
 vi.setConfig({ testTimeout: 60000 });
 
@@ -234,5 +235,88 @@ describe('rapportunderlaget: Per BAS-intervall', () => {
         const w = demo();
         w.eval('sattKTroskel(25, { fraga: false })');
         expect(w.__rapportunderlagBlock().filter(b => b.id.startsWith('bas:')).map(b => b.id)).toEqual(['bas:A', 'bas:B', 'bas:C', 'bas:D']);
+    });
+});
+
+describe('förra året: tabellen per BAS-intervall i rapportunderlaget och BAS-hanteln som bild', () => {
+    const j = basIntervall => ({
+        nyckeltal: [{ etikett: 'Antal anställda', forra: 100, nu: 110, diff: 10, typ: 'antal' }],
+        grupper: { kvar: [], nya: [], borta: [] }, punkter: { klaraForra: 1, totaltForra: 2, klaraNu: 2, totaltNu: 2, kvarFranForra: [] },
+        kGrans: 10, basIntervall,
+    });
+    const rad = { bas: 'C', n: { forra: 100, nu: 105, diff: 5 }, p10: { forra: 30000, nu: 30500, diff: 500, pct: 500 / 300 },
+        med: { forra: 35000, nu: 35500, diff: 500, pct: 500 / 350 }, p90: { forra: 42000, nu: 42000, diff: 0, pct: 0 } };
+
+    it('lib: blocket får tabellen Löneutveckling per BAS-intervall med panelens kolumner, bara när bokslutet har raderna', () => {
+        const b = arsjamforelseBlock(j([rad]), { forraAr: 2025, nuAr: 2026 });
+        expect(b.tabell.rubriker).toEqual(['Mått', '2025', '2026', 'Skillnad']);   // nyckeltalen som förut
+        expect(b.tabeller).toHaveLength(1);
+        const t = b.tabeller[0];
+        expect(t.rubrik).toBe('Löneutveckling per BAS-intervall');
+        expect(t.rubriker).toEqual(['BAS-intervall', 'Antal 2025', 'Antal 2026', 'P10 2025', 'P10 2026', 'P10 förändring', 'Median 2025', 'Median 2026', 'Median förändring', 'P90 2025', 'P90 2026', 'P90 förändring']);
+        const r = t.rader[0].map(x => x.replace(/ /g, ' '));
+        expect(r.slice(0, 3)).toEqual(['BAS C', '100', '105']);
+        expect(r[6]).toBe('35 000 kr'); expect(r[7]).toBe('35 500 kr'); expect(r[8]).toBe('+500 kr (+1,4 %)');
+        expect(r[11]).toBe('±0 kr (±0,0 %)');
+        expect(tillWordHtml(b)).toContain('Löneutveckling per BAS-intervall');
+        expect(tillText(b)).toContain('Löneutveckling per BAS-intervall');
+        expect(tillText(b)).toContain('BAS C\t100\t105');
+        // Äldre bokslut utan fältet, och ett utan intervall: ingen tabell.
+        expect(arsjamforelseBlock(j(null), { forraAr: 2025, nuAr: 2026 }).tabeller).toBeUndefined();
+        expect(arsjamforelseBlock(j([]), { forraAr: 2025, nuAr: 2026 }).tabeller).toBeUndefined();
+    });
+
+    it('i verktyget: blocket om förra året har tabellen när bokslutet har raderna per intervall', () => {
+        const { w, cfg } = medBokslut();
+        const b = w.__rapportunderlagBlock().find(x => x.id === 'arsjamforelse');
+        expect(b.tabeller[0].rader).toHaveLength(cfg.arsbokslut.basIntervall.length);
+        expect(w.__ruTillWordHtml(b)).toContain('Löneutveckling per BAS-intervall');
+        const { w: w2 } = medBokslut(ab => { delete ab.basIntervall; });
+        expect(w2.__rapportunderlagBlock().find(x => x.id === 'arsjamforelse').tabeller).toBeUndefined();
+    });
+
+    it('RM_DIAGRAM har BAS-hanteln: fliken Spara och jämför år, avsnittet om förra året, bara när bokslutet har basIntervall', () => {
+        const u = demo();
+        const def = u.eval("RM_DIAGRAM.find(g => g.id === 'chart-arsjamforelse-bas')");
+        expect(def).toMatchObject({ flik: 'arbetet', avsnitt: 'arsjamforelse' });
+        expect(u.eval("RM_DIAGRAM.find(g => g.id === 'chart-arsjamforelse-bas').om()")).toBe(false);
+        const alla = m => m.avsnitt.flatMap(a => a.delar).filter(p => p.typ === 'diagram').map(p => p.id);
+        expect(alla(u.eval('rapportModell({ alla: true })'))).not.toContain('chart-arsjamforelse-bas');
+        const { w } = medBokslut();
+        expect(w.eval("RM_DIAGRAM.find(g => g.id === 'chart-arsjamforelse-bas').om()")).toBe(true);
+        const a = w.eval('rapportModell()').avsnitt.find(x => x.id === 'arsjamforelse');
+        const iTab = a.delar.findIndex(p => p.typ === 'rubrik' && p.text === 'Löneutveckling per BAS-intervall');
+        const iBild = a.delar.findIndex(p => p.typ === 'diagram' && p.id === 'chart-arsjamforelse-bas');
+        const iLika = a.delar.findIndex(p => p.typ === 'rubrik' && p.text === 'Lika arbete');
+        expect(iBild).toBeGreaterThan(iTab);
+        expect(iBild).toBeLessThan(iLika);                       // bilden står under tabellen, före Lika arbete
+        expect(a.delar[iBild].flik).toBe('arbetet');
+        // Den andra hanteln står kvar under Lika arbete.
+        expect(a.delar.findIndex(p => p.typ === 'diagram' && p.id === 'chart-arsjamforelse')).toBeGreaterThan(iLika);
+        // Ett bokslut utan fältet: ingen bild.
+        const { w: w2 } = medBokslut(ab => { delete ab.basIntervall; });
+        expect(w2.eval("RM_DIAGRAM.find(g => g.id === 'chart-arsjamforelse-bas').om()")).toBe(false);
+        expect(alla(w2.eval('rapportModell()'))).not.toContain('chart-arsjamforelse-bas');
+        // Bilden görs ur den ritade figuren (rmDiagramBild ritar fliken och läser den).
+        w.__renderTabContent('arbetet');
+        expect(w.eval("diagramRitat(document.getElementById('chart-arsjamforelse-bas'))")).toBe(true);
+    });
+
+    it('ZIP-filen tar BAS-hanteln som övriga diagram när ett bokslut är inläst, också när fliken inte har öppnats', async () => {
+        const run = async w => {
+            const filer = [];
+            w.JSZip = class { file(n) { filer.push(n); } generateAsync() { return Promise.resolve(new w.Blob(['x'])); } };
+            w.URL.createObjectURL = () => 'blob:x';
+            w.HTMLAnchorElement.prototype.click = () => {};
+            w.eval("diagramTillBild = () => Promise.resolve('data:image/png;base64,AAAA'); byggWordUtkast = () => Promise.resolve({ namn: 'x.docx', blob: new Blob(['x']) });");
+            w.document.getElementById('btn-export-zip').click();
+            await new Promise(r => setTimeout(r, 200));
+            return filer;
+        };
+        const { w } = medBokslut();
+        const filer = await run(w);
+        expect(filer).toContain('diagram/chart-arsjamforelse-bas.png');
+        expect(filer).toContain('diagram/chart-arsjamforelse.png');
+        expect(await run(demo())).not.toContain('diagram/chart-arsjamforelse-bas.png');
     });
 });

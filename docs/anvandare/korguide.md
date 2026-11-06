@@ -425,7 +425,9 @@ ni ordna om och ta bort tabellerna.
   är flaggade båda åren, nya och inte längre flaggade, och vilka av förra årets öppna punkter som är klara. En fil
   sparad med en äldre version saknar raderna per BAS-intervall; panelen säger det, och resten av jämförelsen fungerar.
   Samma jämförelse följer med som ett avsnitt i Word-utkastet och PDF-rapporten, som ett block i rapportunderlaget
-  och som ett diagram där varje yrkesgrupp visas som ett streck (förra året) och en punkt (i år).
+  och som ett diagram där varje yrkesgrupp visas som ett streck (förra året) och en punkt (i år). Tabellen och hanteln
+  per BAS-intervall följer med på samma sätt: tabellen i rapportens avsnitt och i rapportunderlagets block, hanteln
+  som bild i Word-utkastet, PDF-rapporten och ZIP-filen.
 - **"Rensa all data"** (under **Inställningar**, rubriken *Rensa*) när du är klar — eller stäng bara fliken; inget ligger kvar.
 - Arkivera de färdiga dokumenten (Word/PDF/Excel) enligt era informationshanterings-
   rutiner. Glöm inte att planera in nästa års lönekartläggning.
