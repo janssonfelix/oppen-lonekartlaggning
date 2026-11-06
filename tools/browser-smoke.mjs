@@ -1763,7 +1763,7 @@ console.log('\n── Stort demo (7 000 personer): tider ──');
     await mat('Översikt ritad', () => s.evaluate(async () => {
         const t0 = performance.now();
         document.getElementById('first-run-stort-demo').click();
-        while (!(/stort demo/.test(document.getElementById('data-status').textContent) && document.querySelector('#view-dashboard svg'))) await new Promise(r => setTimeout(r, 10));
+        while (!(/stort demo/.test(document.getElementById('data-status').textContent) && document.querySelector('#view-dashboard svg'))) { if (performance.now() - t0 > 30000) return 99999; await new Promise(r => setTimeout(r, 10)); }
         await new Promise(r => requestAnimationFrame(() => r()));
         return Math.round(performance.now() - t0);
     }));

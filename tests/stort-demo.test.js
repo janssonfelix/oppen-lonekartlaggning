@@ -190,7 +190,10 @@ describe('det lilla demot är oförändrat', () => {
 });
 
 // Samma form som kanonymitet.test.js: varje grupp under tröskeln (ett yrke under tio, eller ett kön under tio i ett yrke
-// inom ett BAS-intervall) får en egen lön, lika för alla i gruppen, så att varje mått för gruppen är lika med det värdet.
+// inom ett BAS-intervall, också när det andra könet är under tio) får en egen lön c, så att gruppens median och medel är c:
+// hälften får c − D, hälften c + D och, vid udda antal, en c. En lön lika för alla räcker inte när båda könen är små: då
+// består den större gruppen (yrket i BAS-intervallet, som får redovisas) bara av de två lönerna, och dess kvantiler landar
+// på dem. Med två löner per grupp hamnar den större gruppens kvantiler på c ± D, inte på c.
 // Lönen väljs så att ingen annan person har den och så att inget mått som får redovisas landar på den: P10, kvartilerna,
 // medianen, P90 och medel för varje grupp med minst tio personer, i indelningarna yrke inom BAS, yrke, BAS,
 // organisationen, sektor och åldersgrupp, var och en också per kön. En träff i en cell kan då bara komma från ett mått
@@ -215,10 +218,13 @@ function sattSentinel(data, sektor) {
         if (yrkeN.get(rader[0].aid) < 10) { block.push(rader); continue; }
         for (const kon of ['kvinna', 'man']) {
             const del = rader.filter(r => r.kon === kon);
-            if (del.length && del.length < 10 && rader.length - del.length >= 10) block.push(del);
+            if (del.length && del.length < 10) block.push(del);
         }
     }
     const original = new Map(block.map(del => [del, del.map(r => r.lon)]));
+    const D = 1234;
+    // Gruppens löner kring c: median och medel blir c.
+    const satt = (del, c) => { const h = del.length >> 1; del.forEach((r, i) => { r.lon = i < h ? c - D : (del.length % 2 && i === h) ? c : c + D; }); };
     const tilldelat = new Map();   // block → lön
     const allaMatt = () => { const s = new Set(); for (const rader of medlemmar.values()) for (const m of matt(rader)) s.add(m); return s; };
     // Varje placering flyttar rangerna i de större grupperna, så tilldelningen görs om tills alla är lediga på det slutliga
@@ -238,7 +244,7 @@ function sattSentinel(data, sektor) {
             let v = null;
             for (let j = 0; j < 1500 && v === null; j++) for (const c of [med + 7 * j + 3, med - 7 * j - 4]) {
                 if (v !== null || loner.has(c) || ovriga.has(c)) continue;
-                del.forEach(r => { r.lon = c; });
+                satt(del, c);
                 if (!egna.some(rader => matt(rader).includes(c))) v = c;
             }
             if (v === null) { del.forEach((r, i) => { r.lon = original.get(del)[i]; }); if (nu !== undefined) { tilldelat.delete(del); andrat = true; } continue; }
@@ -249,17 +255,22 @@ function sattSentinel(data, sektor) {
     }
     const slut = allaMatt(), varden = [...tilldelat.values()];
     expect(varden.filter(v => slut.has(v))).toEqual([]);
-    return { varden, block: block.length };
+    // Vilka grupper som prövas: yrke, BAS och kön för varje grupp som fick en lön.
+    const provade = [...tilldelat.keys()].map(del => {
+        const yb = medlemmar.get(`yb|${del[0].aid}|${del[0].bas}`), kv = yb.filter(r => r.kon === 'kvinna').length;
+        return { bas: del[0].bas, kon: new Set(del.map(r => r.kon)).size === 1 ? del[0].kon : null, n: del.length, bada: kv < 10 && yb.length - kv < 10 && yb.length >= 10 };
+    });
+    return { varden, block: block.length, provade };
 }
 
 describe('stort demo: Excel (alla flikar) röjer ingen grupp under tröskeln', () => {
-    let w, bok, sentinel, block;
+    let w, bok, sentinel, block, provade;
     beforeAll(() => {
         w = createAppWindow();
         w.eval(readFileSync(join(root, 'vendor', 'xlsx.mini.min.js'), 'utf8'));
         const data = w.eval('generateStortDemo()');
         const sektor = w.eval(`Object.fromEntries(${JSON.stringify([...new Set(data.map(r => r.aid))])}.map(a => [a, _aidSektorsnamn(a)]))`);
-        ({ varden: sentinel, block } = sattSentinel(data, sektor));
+        ({ varden: sentinel, block, provade } = sattSentinel(data, sektor));
         w.__sdJson = JSON.stringify(data);
         w.eval('{ const original = generateStortDemo; generateStortDemo = () => JSON.parse(window.__sdJson); loadStortDemo(); generateStortDemo = original; }');
         w.alert = () => {};
@@ -273,6 +284,10 @@ describe('stort demo: Excel (alla flikar) röjer ingen grupp under tröskeln', (
 
     it('ingen sentinellön för ett litet yrke eller ett kön under tio i någon cell', () => {
         expect(sentinel.length, `${sentinel.length} av ${block} små grupper prövas`).toBeGreaterThanOrEqual(3);
+        // Också en grupp där båda könen är under tio men yrket i BAS-intervallet når tröskeln (som Rektor i H, 8 + 7).
+        expect(provade.filter(p => p.bada && p.kon).length, 'kön där båda är under tio').toBeGreaterThanOrEqual(1);
+        // BAS-nivåns könsgrupper i I, J och K: varje intervall har ett yrke, så könet i yrket är könet i intervallet.
+        for (const bas of ['I', 'J', 'K']) expect(provade.filter(p => p.bas === bas && p.kon).length, `BAS ${bas}`).toBeGreaterThanOrEqual(1);
         const lackor = [];
         for (const { namn, rader } of bok) for (const rad of rader) for (const c of rad) {
             const tal = (String(c ?? '').replace(/(\d)[\s  ](?=\d)/g, '$1').match(/\d+(?:[.,]\d+)?/g) || []).map(t => Number(t.replace(',', '.')));
@@ -285,6 +300,13 @@ describe('stort demo: Excel (alla flikar) röjer ingen grupp under tröskeln', (
         // Varje tabell med kolumnerna "Antal kvinnor" och "Antal män": raderna under rubriken prövas kolumn för kolumn.
         let provade = 0;
         const fel = [];
+        // Ett tal i cellen, också som text ("68 415 kr", "12", "91,7 %"); annars null.
+        const somTal = v => {
+            if (typeof v === 'number') return v;
+            const t = String(v ?? '').replace(/[\s  ]/g, '');
+            return /^-?\d+(?:[.,]\d+)?(?:kr|%)?$/.test(t) ? Number(t.replace(/kr|%/, '').replace(',', '.')) : null;
+        };
+        expect([somTal('68 415 kr'), somTal('12'), somTal('91,7 %'), somTal('–'), somTal('< 10')]).toEqual([68415, 12, 91.7, null, null]);
         for (const { namn, rader } of bok) {
             const i = rader.findIndex(r => r.includes('Antal kvinnor') && r.includes('Antal män'));
             if (i < 0) continue;
@@ -293,9 +315,10 @@ describe('stort demo: Excel (alla flikar) röjer ingen grupp under tröskeln', (
             const lonekolumner = rubrik.map((t, j) => [t, j]).filter(([t]) => /median|medel|lön|%|gräns|kvot/i.test(String(t)) && !/^(Antal|Andel|Underrepresenterat)/.test(String(t))).map(([, j]) => j);
             for (const rad of rader.slice(i + 1)) {
                 if (!rad.length) break;   // tabellen slutar vid första tomma raden; nästa tabell har egna kolumner
-                if (typeof rad[kv] !== 'number' || typeof rad[ma] !== 'number' || (rad[kv] >= 10 && rad[ma] >= 10)) continue;
+                const nKv = somTal(rad[kv]), nMa = somTal(rad[ma]);
+                if (nKv === null || nMa === null || (nKv >= 10 && nMa >= 10)) continue;
                 provade++;
-                const tal = lonekolumner.filter(j => typeof rad[j] === 'number');
+                const tal = lonekolumner.filter(j => somTal(rad[j]) !== null);
                 if (tal.length) fel.push(`${namn}: ${JSON.stringify(rubrik)} ${JSON.stringify(rad).slice(0, 160)}`);
             }
         }
