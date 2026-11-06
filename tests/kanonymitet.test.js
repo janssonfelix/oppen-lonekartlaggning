@@ -105,9 +105,9 @@ function byggPolicy() {
     return [...SAKRA_BAS, TOPP_BAS, ...SMA_BAS].map(b => ({ bas: b, p10: 22000, med: 30000, p90: 52000 }));
 }
 
-const FLIKAR = ['dashboard', 'filer', 'bestammelser', 'matrix', 'likvardighet', 'struktur',
-                'prioritering', 'loneoversyn', 'kon', 'demografi', 'benchmark',
-                'utforska', 'benchmark', 'kvalitet', 'rapport', 'handlingsplan', 'rapporttext', 'arbetet', 'info'];
+const FLIKAR = ['dashboard', 'filer', 'bestammelser', 'benchmark', 'matrix', 'likvardighet', 'struktur',
+                'kon', 'demografi', 'prioritering', 'loneoversyn', 'handlingsplan', 'rapporttext',
+                'kvalitet', 'utforska', 'rapport', 'benchmark', 'arbetet', 'info'];
 
 // Tar bort mellanrum inuti tal ("31 111" / "31 111" -> "31111") så att
 // formaterade belopp går att söka i.
@@ -728,7 +728,7 @@ describe('k-anonymitet: organisationspaketet kan stänga av små grupper i Utfor
         expect(rad().hidden).toBe(true);
         expect(not().hidden).toBe(false);
         expect(not().textContent).toMatch(/Organisationspaketet tillåter inte/);
-        expect(w.document.getElementById('paket-info').textContent).toMatch(/små grupper tas aldrig med i Utforskas export/);
+        expect(w.document.getElementById('paket-info').textContent).toMatch(/små grupper tas aldrig med i exporten från Tabeller och egna vyer/);
     });
     it('vyn visar de små grupperna (tonade i exportläget), men exporten utelämnar dem även om rutan kryssas i programmatiskt', () => {
         w.document.getElementById('explore-inkludera-sma').checked = true;

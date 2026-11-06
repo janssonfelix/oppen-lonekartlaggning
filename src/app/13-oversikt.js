@@ -86,7 +86,7 @@ function updateCompliance() {
         else if (bmLow === 0) setCompCard('comp-bm', 0, bmTotal, `0 av ${bmTotal} yrkesgrupper`, 'ok');
         else setCompCard('comp-bm', bmLow, bmTotal, `${bmLow} av ${bmTotal} yrkesgrupper`, bmLow / bmTotal > 0.5 ? 'crit' : 'warn');
     }
-    // Länken till Jämförelse-fliken bara när fliken finns (jämförelsestatistik inläst).
+    // Länken till fliken Löneläget bara när fliken finns (jämförelsestatistik inläst).
     const bmLank = document.querySelector('#comp-bm .comp-lank');
     if (bmLank) /** @type {HTMLElement} */ (bmLank).hidden = !state.statistik.length;
 }
@@ -317,7 +317,7 @@ function renderProcessTracker({ punkter: givna } = {}) {
         ? { n: 1, status: 'klar', title: '1. Underlag inläst', tab: 'dashboard', detail: `${getData().length} rader inlästa — allt nedan bygger på detta.` }
         : { n: 1, status: 'ej',   title: '1. Underlag inläst', tab: 'dashboard', detail: 'Börja här: ladda upp personalfilen (eller prova med demodata).' });
 
-    // 2. § 8 Bestämmelser & praxis (kvalitativ bedömning per område)
+    // 2. § 8 Regler & praxis (kvalitativ bedömning per område)
     rows.push(safe(() => {
         const areas = (typeof _bes8Areas === 'function') ? _bes8Areas() : [];
         const total = areas.length || 6;
@@ -377,21 +377,21 @@ function renderProcessTracker({ punkter: givna } = {}) {
     }, { n: 5, tab: 'handlingsplan', title: '5. Handlingsplan', status: 'ej', detail: 'Kräver inläst underlag.' }));
 
     // 6. § 3:13 Samverkan — kan inte auto-härledas
-    rows.push({ n: 6, tab: 'dokumentera', title: '6. Samverkan med facket', status: 'manuell', detail: 'Manuellt steg: samverka och dokumentera. Protokollet för gemensam lönebedömning finns under Dokumentera & exportera.' });
+    rows.push({ n: 6, tab: 'dokumentera', title: '6. Samverkan med facket', status: 'manuell', detail: 'Manuellt steg: samverka och dokumentera. Protokollet för gemensam lönebedömning finns under Exportera.' });
 
     // 7. Dokumentation — kan inte auto-härledas
-    rows.push({ n: 7, tab: 'dokumentera', title: '7. Dokumentation', status: 'manuell', detail: 'Manuellt steg: ladda ner Word-utkastet under Dokumentera & exportera, komplettera de gula [HR fyller i]-fälten och spara som er rapport.' });
+    rows.push({ n: 7, tab: 'dokumentera', title: '7. Dokumentation', status: 'manuell', detail: 'Manuellt steg: ladda ner Word-utkastet under Exportera, komplettera de gula [HR fyller i]-fälten och spara som er rapport.' });
 
     // 8. § 3:11–13 Uppföljning. Verktyget stödjer EN kartläggning — uppföljningen
     // av handlingsplanen sker i arbetsgivarens egen process, som samverkan och
     // dokumentation ovan.
-    rows.push({ n: 8, tab: 'dokumentera', title: '8. Uppföljning av handlingsplanen', status: 'manuell', detail: 'Manuellt steg: följ upp planens åtgärder i er egen process. Handlingsplanen exporteras under Dokumentera & exportera.' });
+    rows.push({ n: 8, tab: 'dokumentera', title: '8. Uppföljning av handlingsplanen', status: 'manuell', detail: 'Manuellt steg: följ upp planens åtgärder i er egen process. Handlingsplanen exporteras under Exportera.' });
 
     const autoDone = rows.filter(r => r.status === 'klar').length;
     const autoTotal = rows.filter(r => r.status !== 'manuell').length;
 
-    // Stegen grupperas under samma faser som menyn (en karta).
-    const FASER = { 1: '1 · Underlag', 2: '2 · Kartlägg & analysera', 5: '3 · Åtgärda', 6: '5 · Dokumentera' };
+    // Stegen grupperas under samma faser som menyn (en karta): Regler & praxis hör till Underlag.
+    const FASER = { 1: '1 · Underlag', 3: '2 · Kartläggning', 5: '3 · Åtgärder', 6: '4 · Rapport' };
     const rowsHtml = rows.map(r => `
         ${FASER[r.n] ? `<div class="ptrack-fas">${FASER[r.n]}</div>` : ''}
         <div class="ptrack-row">

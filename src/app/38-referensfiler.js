@@ -96,7 +96,7 @@ policyInput.addEventListener("change", e => {
     });
 });
 
-// Fliken Jämförelse syns när underlaget och minst en referens är inlästa. Utan underlag är den låst som de andra
+// Fliken Löneläget syns när underlaget och minst en referens är inlästa. Utan underlag är den låst som de andra
 // flikarna; med underlag men utan referens är den dold (ADR-55).
 function _visaJamforelseFlik(synlig) {
     const tb = document.getElementById('tab-benchmark');

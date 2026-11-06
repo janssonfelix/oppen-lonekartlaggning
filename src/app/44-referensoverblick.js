@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 
-// ---- Överblicken i Jämförelse: löneläget och statistiken mot ställningstagandet (ADR-55) ----
+// ---- Överblicken i Löneläget: löneläget och statistiken mot ställningstagandet (ADR-55) ----
 // Beräkningen är src/lib/referenser.js. Ställningstagandet är referenspunkten: dess kolumner och rader står först,
 // och orden säger var löneläget och statistiken ligger mot det, aldrig tvärtom.
 const _RR_MAX = 25;
@@ -112,7 +112,7 @@ function _rrExcelBlad() {
     const kolumner = _rrKolumner(har);
     const cell = (k, g) => { const v = k.varde(g); return k.typ === 'pct' ? pct(v) : k.typ === 'kr' ? (v == null ? '' : Math.round(v)) : v ?? ''; };
     return [
-        ['Löneläget och statistiken mot ställningstagandet (fliken Jämförelse)'],
+        ['Löneläget och statistiken mot ställningstagandet (fliken Löneläget)'],
         [`Minsta gruppstorlek ${kTroskel()}: yrkesgrupper med färre personer redovisas inte. Ställningstagandet är referenspunkten.`], [],
         kolumner.map(k => k.rubrik),
         ...o.grupper.map(g => kolumner.map(k => cell(k, g))),
@@ -159,7 +159,7 @@ function renderReferensOverblick() {
         <div class="jmf-diagram-yta"><div id="chart-ref-hantel"></div></div>
         <p class="muted">${flera ? `Visar de ${_RR_MAX} första yrkesgrupperna av ${o.grupper.length} — tabellen har alla. ` : ''}${utanSpann ? 'P10 och P90 saknas i jämförelsestatistiken: den visas bara med sin median.' : ''}</p>
         ${har.harStatistik && har.harStallningstagande ? _rrStatTabellHtml(o.statistikMotStallningstagande) : ''}`;
-    try { ritaFigur('chart-ref-hantel', _rrHantelFigur(_rrHantelRader(o.grupper.slice(0, _RR_MAX)), har)); } catch (e) { rapporteraFel('Jämförelse: överblickens bild', e); }
+    try { ritaFigur('chart-ref-hantel', _rrHantelFigur(_rrHantelRader(o.grupper.slice(0, _RR_MAX)), har)); } catch (e) { rapporteraFel('Löneläget: överblickens bild', e); }
     addTableExportTools('ref-tabell', 'referenser');
     enableTableSort('ref-tabell');
     enableTableSort('ref-stat-mot-stallning');

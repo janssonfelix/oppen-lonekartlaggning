@@ -933,7 +933,7 @@ describe('Utforska: små grupper visas markerade och exporteras bara när rutan 
         if (typ !== 'bubbla') expect(med, typ).toContain('LITEN');   // bubblornas diagramdata är x och y, utan gruppnamn
         expect(med.length, typ).toBeGreaterThan(utan.length);
         if (lonemarken && typ !== 'grupperade' && typ !== 'heatmap') expect(med, typ).toMatch(/7133[789]|71340|71341/);
-        expect(med, typ).toContain('undantag: valt i Utforska');
+        expect(med, typ).toContain('undantag: valt i Tabeller och egna vyer');
         w2.document.getElementById('explore-inkludera-sma').checked = false;
         expect(export_(w2), typ).not.toContain('undantag');
     });

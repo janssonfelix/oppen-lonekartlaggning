@@ -280,9 +280,9 @@ function renderSektorer(d) {
             ? `${pc(100 + r.justerat.pct)} <small class="muted">(${pc(100 + r.justerat.low)}–${pc(100 + r.justerat.high)})</small>`
             : (r.justeratSkal === 'fa' ? '<span class="muted">För få</span>' : '–');
         const ledning = harLedning ? `<td class="num">${pc(r.ledningKv)} / ${pc(r.ledningMa)}</td>` : '';
-        // Namnet står som text (följer med i exporten); pilknappen öppnar sektorn i Utforska.
+        // Namnet står som text (följer med i exporten); pilknappen öppnar sektorn i Tabeller och egna vyer.
         return `<tr><td><span class="sektor-namn">${esc(r.namn)}</span> <button type="button" class="row-cross-link" data-sektor="${esc(r.namn)}"
-                title="Visa sektorns yrken i Utforska" aria-label="Visa ${esc(r.namn)} i Utforska">${ikon('pilUt', 14)}</button></td>
+                title="Visa sektorns yrken i Tabeller och egna vyer" aria-label="Visa ${esc(r.namn)} i Tabeller och egna vyer">${ikon('pilUt', 14)}</button></td>
             <td class="num" data-sort-value="${r.n}">${r.n}</td><td class="num" data-sort-value="${r.andelKv == null ? '' : r.andelKv.toFixed(1)}">${pc(r.andelKv)}</td><td class="num" data-sort-value="${r.skrAndelKv == null ? '' : r.skrAndelKv.toFixed(1)}">${pc(r.skrAndelKv)}</td>${loner}<td>${just}</td>
             <td class="num" data-sort-value="${r.antalAid}">${r.antalAid}</td><td class="num" data-sort-value="${r.punkter}">${r.punkter}</td>${ledning}</tr>`;
     }).join('');

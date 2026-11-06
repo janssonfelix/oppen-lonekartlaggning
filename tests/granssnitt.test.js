@@ -71,12 +71,13 @@ describe('lönefil vars kolumner inte känns igen', () => {
 });
 
 describe('menyns ordning', () => {
-    it('Dokumentera & exportera är sista steget i menyn, efter Fördjupa', () => {
+    it('Rapport kommer efter Åtgärder, och Exportera efter Rapporttext', () => {
         const w = createAppWindow();
         const grupper = [...w.document.querySelectorAll('#sidomeny .nav-group')].map(g => g.textContent.trim());
-        expect(grupper).toEqual(['1 · Underlag', '2 · Kartlägg & analysera', '3 · Åtgärda', '4 · Fördjupa (ej lagkrav)', '5 · Dokumentera', 'Hjälp']);
+        expect(grupper).toEqual(['1 · Underlag', '2 · Kartläggning', '3 · Åtgärder', '4 · Rapport', 'Arbetet', 'Hjälp']);
         const knappar = [...w.document.querySelectorAll('#sidomeny .nav-item[data-tab]')].map(b => b.dataset.tab);
-        expect(knappar.indexOf('dokumentera')).toBeGreaterThan(knappar.indexOf('utforska'));
+        expect(knappar.indexOf('dokumentera')).toBeGreaterThan(knappar.indexOf('rapporttext'));
+        expect(knappar.indexOf('rapporttext')).toBeGreaterThan(knappar.indexOf('handlingsplan'));
         expect(knappar.indexOf('dokumentera')).toBeLessThan(knappar.indexOf('info'));
     });
 });

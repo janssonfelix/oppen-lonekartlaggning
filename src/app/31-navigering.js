@@ -40,14 +40,14 @@ document.querySelectorAll(".nav-item").forEach(btn => {
             dashboard: 'Översikt', filer: 'Filer och kvalitet',
             kon: 'Ålder & karriär', dokumentera: 'Exportera',
             rapporttext: 'Rapporttext', arbetet: 'Spara och jämför år',
-            benchmark: 'Jämförelse', matrix: 'Lika arbete',
+            benchmark: 'Löneläget', matrix: 'Lika arbete',
             bestammelser: 'Regler & praxis',
             handlingsplan: 'Handlingsplan',
             prioritering: 'Prioritering',
             struktur: 'Lönestruktur',
             loneoversyn: 'Löneöversyn',
             likvardighet: 'Likvärdigt arbete',
-            utforska: 'Utforska',
+            utforska: 'Tabeller och egna vyer',
             info: 'Om verktyget'
         };
         const titleEl = document.getElementById("page-title");
@@ -65,7 +65,7 @@ const PANEL_GROUPS = {
     matrix:      ['lika-yrken'],                       // Lika arbete: yrkesgrupperna, personer att granska, AID × BAS
     struktur:    ['struktur', 'skevhet', 'regression'], // Lönestruktur: fördelning, BAS-skevhet, vad som blir kvar (regression/Oaxaca)
     kon:         ['kon', 'demografi', 'livscykel'],  // Ålder & karriär: kurvor per kön, demografi, gap över karriären
-    utforska:    ['rapport', 'utforska'],            // Utforska: Löneöversikten (fast tabell) + egna vyer
+    utforska:    ['rapport', 'utforska'],            // Tabeller och egna vyer: Löneöversikten (fast tabell) + egna vyer
     dokumentera: ['kvalitet', 'dokumentera']         // Exportera: färdigcheck + robusthet + export
 };
 // Flikalias: namnen leds om till fliken som visar innehållet, så att inga länkar dör.
@@ -156,19 +156,19 @@ function _renderTabContent(target) {
 // UX: "Nästa steg"-överlämning längst ner i analysflikarna så processkänslan
 // (processkartans steg) följer med in i flikarna, inte bara på Översikt.
 const FLOW_NEXT = {
-    bestammelser: { tab: 'matrix',        label: 'Lika arbete' },
+    bestammelser: { tab: 'benchmark',     label: 'Löneläget' },
+    benchmark:    { tab: 'matrix',        label: 'Lika arbete' },
     matrix:       { tab: 'likvardighet',  label: 'Likvärdigt arbete' },
     likvardighet: { tab: 'struktur',      label: 'Lönestruktur' },
-    struktur:     { tab: 'prioritering',  label: 'Prioritering' },
+    struktur:     { tab: 'kon',           label: 'Ålder & karriär' },
+    kon:          { tab: 'prioritering',  label: 'Prioritering' },
     prioritering: { tab: 'loneoversyn',   label: 'Löneöversyn' },
     loneoversyn:  { tab: 'handlingsplan', label: 'Handlingsplan' },
-    handlingsplan:{ tab: 'kon',           label: 'Ålder & karriär' },
-    kon:          { tab: 'benchmark',     label: 'Jämförelse' },
-    benchmark:    { tab: 'utforska',      label: 'Utforska' },
-    utforska:     { tab: 'dokumentera',   label: 'Exportera' }
+    handlingsplan:{ tab: 'rapporttext',   label: 'Rapporttext' },
+    rapporttext:  { tab: 'dokumentera',   label: 'Exportera' }
 };
-// Fördjupningen är valfri: ett sådant steg som är låst eller dolt hoppas över (Jämförelse utan referens, allt utan underlag).
-const _FLOW_VALFRIA = ['kon', 'benchmark', 'utforska'];
+// Fördjupningen är valfri: ett sådant steg som är låst eller dolt hoppas över (Löneläget utan referens, allt utan underlag).
+const _FLOW_VALFRIA = ['benchmark', 'kon'];
 function _flowNasta(target) {
     let next = FLOW_NEXT[target];
     while (next && _FLOW_VALFRIA.includes(next.tab) && /** @type {HTMLInputElement|null} */ (document.querySelector(`.nav-item[data-tab="${next.tab}"]`))?.disabled) next = FLOW_NEXT[next.tab];

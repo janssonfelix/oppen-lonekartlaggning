@@ -156,7 +156,7 @@ function _mkRitaRad() {
     if (_mkDossierNyckel()) rad.appendChild(_mkKnapp('dossier', 'Öppna gruppdossier'));
     if (_mkBorrBas() != null) {
         const b = _mkKnapp('borra', 'Visa yrkesgrupperna');
-        b.title = 'Öppnar Utforska med yrkesgrupperna i BAS-intervallet. Där visas också grupper under tröskeln, markerade; de följer inte med i en export om du inte väljer det.';
+        b.title = 'Öppnar Tabeller och egna vyer med yrkesgrupperna i BAS-intervallet. Där visas också grupper under tröskeln, markerade; de följer inte med i en export om du inte väljer det.';
         rad.appendChild(b);
     }
     rad.appendChild(_mkKnapp('rensa', 'Ta bort markeringen'));

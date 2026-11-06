@@ -75,13 +75,13 @@ describe('överblicken: löneläget och statistiken mot ställningstagandet', ()
         if (rader > 25) expect(w.document.getElementById('ref-overblick').textContent).toMatch(/tabellen har alla/);
     });
 });
-describe('Lönepolitik är avsnitt två i Jämförelse', () => {
+describe('Lönepolitik är avsnitt två i Löneläget', () => {
     it('fliken syns med demodata utan statistik, Lönepolitik-knappen finns inte, aliaset leder rätt, källväxeln är borta', () => {
         const w = fonster(); const d = w.document;
         expect(d.getElementById('tab-lonepolitik')).toBeNull();
         expect(d.getElementById('view-lonepolitik')).toBeNull();
         expect(d.getElementById('tab-benchmark').hidden).toBe(false);
-        expect(d.getElementById('tab-benchmark').textContent.trim()).toBe('Jämförelse');
+        expect(d.getElementById('tab-benchmark').textContent.trim()).toBe('Löneläget');
         expect(w.eval("tabMal('lonepolitik')")).toBe('benchmark');
         w.__renderTabContent('lonepolitik');
         expect([...d.querySelectorAll('#view-benchmark > details.avsnitt')].map(a => a.id)).toEqual(['avsnitt-jmf-overblick', 'avsnitt-jmf-stallningstagande', 'avsnitt-jmf-statistik']);
@@ -99,21 +99,20 @@ describe('Lönepolitik är avsnitt två i Jämförelse', () => {
         w.eval('_visaJamforelseFlik(state.data.length > 0 && (state.policy.length > 0 || state.statistik.length > 0))');
         expect(w.document.getElementById('tab-benchmark').hidden).toBe(false);
     });
-    it('länkar till lonepolitik når Jämförelse', () => {
+    it('länkar till lonepolitik når Löneläget', () => {
         const w = fonster(); const d = w.document;
         w.eval("navigateTo('lonepolitik')");
         expect(d.getElementById('tab-benchmark').classList.contains('active')).toBe(true);
-        expect(d.getElementById('page-title').textContent).toBe('Jämförelse');
+        expect(d.getElementById('page-title').textContent).toBe('Löneläget');
         const a = d.createElement('button'); a.setAttribute('data-goto-tab', 'lonepolitik'); d.body.appendChild(a);
         d.querySelector('.nav-item[data-tab="dashboard"]').click(); a.click();
         expect(d.getElementById('tab-benchmark').classList.contains('active')).toBe(true);
     });
-    it('Nästa steg hoppar över Jämförelse när ingen referens finns', () => {
+    it('Nästa steg hoppar över Löneläget när ingen referens finns', () => {
         const w = fonster();
         w.__state.policy = []; w.eval('synkaJamforelseFlik()');
-        w.__renderTabContent('kon');
-        w.document.querySelector('.nav-item[data-tab="kon"]').click();
-        expect(w.document.querySelector('.flow-next-btn').dataset.flowTab).toBe('utforska');
+        w.document.querySelector('.nav-item[data-tab="bestammelser"]').click();
+        expect(w.document.querySelector('.flow-next-btn').dataset.flowTab).toBe('matrix');
     });
 });
 describe('överblicken i exporterna', () => {

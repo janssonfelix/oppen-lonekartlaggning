@@ -154,7 +154,7 @@ ok(true, 'demodata inläst, banner synlig');
 // hidden-attributet måste faktiskt dölja elementet — författar-CSS (display:flex) vinner
 // annars över webbläsarens [hidden]-regel, vilket jsdom-testerna inte kan se.
 const osynlig = sel => page.evaluate(s => { const el = document.querySelector(s); return !!el && getComputedStyle(el).display === 'none'; }, sel);
-ok(!(await osynlig('.nav-item[data-tab="benchmark"]')), 'Jämförelse syns med ställningstagandet, utan jämförelsestatistik');
+ok(!(await osynlig('.nav-item[data-tab="benchmark"]')), 'Löneläget syns med ställningstagandet, utan jämförelsestatistik');
 ok(await osynlig('#referens-namn-rad'), 'namnfältet för egen referens är dolt i demoläget');
 ok(await osynlig('#btn-referens-aterga'), '"Ta bort referensen" är dold i demoläget');
 
@@ -1523,7 +1523,7 @@ console.log('\n── Smala skärmar: 1440×800, 768 och 390 punkter ──');
 // Utskriftsfönstret för checklistorna (printScaffoldView, 60-utskrift.js) ärver verktygets CSP: ett <style> som
 // skriptet skapar får inget ark, så fönstrets stilar kommer som ett byggt stilark (adoptedStyleSheets).
 console.log('\n── Checklistornas utskriftsfönster ──');
-for (const [vy, namn] of [['view-bestammelser', 'Bestämmelser & praxis'], ['view-handlingsplan', 'Handlingsplanens mall']]) {
+for (const [vy, namn] of [['view-bestammelser', 'Regler & praxis'], ['view-handlingsplan', 'Handlingsplanens mall']]) {
     const [fonster] = await Promise.all([
         page.waitForEvent('popup', { timeout: 10000 }),
         page.evaluate(v => document.querySelector(`[data-print-view="${v}"]`).click(), vy),

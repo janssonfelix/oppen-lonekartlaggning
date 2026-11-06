@@ -152,7 +152,7 @@ function renderRapportunderlag() {
         + `<div class="ru-atgard"><button type="button" class="btn btn-secondary btn-sm" id="btn-ru-kopiera-avsnitt">Kopiera alla avsnitt</button>`
         + `<span class="ru-kvitto" role="status"></span></div><div id="ru-alla-avsnitt" class="ru-alla-avsnitt" hidden></div></nav>`;
     host.innerHTML = forteckning + grupp('Avsnitt', avsnitt) + grupp('Yrkesgrupper i Lika arbete', yrken)
-        + grupp('Kandidatpar i Likvärdigt arbete', parBl) + grupp('Egna tabeller från Utforska', egna)
+        + grupp('Kandidatpar i Likvärdigt arbete', parBl) + grupp('Egna tabeller från Tabeller och egna vyer', egna)
         + `<h3 class="ru-grupprubrik">Diagram</h3>${diagram}`;
 }
 

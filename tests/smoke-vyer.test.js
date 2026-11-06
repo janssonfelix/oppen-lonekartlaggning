@@ -282,7 +282,7 @@ describe('samma bild på Översikt', () => {
         expect(d.querySelectorAll('.flik-intro-mer').length).toBe(rader.length);
         // Sidhuvudet bär flikens namn; inledningens fetstil bär frågan, inte namnet en gång till.
         const titlar = Object.values(w.eval('typeof FLIKTITLAR !== "undefined" ? FLIKTITLAR : {}'));
-        for (const st of d.querySelectorAll('.flik-intro > strong:first-child')) expect(st.textContent, st.textContent).not.toMatch(/^(Lika arbete|Likvärdigt arbete|Löneöversyn|Handlingsplan|Regler & praxis|Struktur & rapportmått|Dokumentera & exportera|Löneöversikt) —|^(Struktur & rapportmått|Dokumentera & exportera)$/);
+        for (const st of d.querySelectorAll('.flik-intro > strong:first-child')) expect(st.textContent, st.textContent).not.toMatch(/^(Lika arbete|Likvärdigt arbete|Löneöversyn|Handlingsplan|Regler & praxis|Lönestruktur|Exportera|Löneläget|Tabeller och egna vyer|Löneöversikt) —|^(Lönestruktur|Exportera|Löneläget|Tabeller och egna vyer)$/);
         expect(titlar).toBeDefined();
     });
     it('Löneöversyn och Översikt följer flikmallen: inledning, nyckeltal i toppen, sedan innehållet', () => {
@@ -341,12 +341,12 @@ describe('menystruktur', () => {
     const klicka = tab => w.document.querySelector(`.nav-item[data-tab="${tab}"]`).click();
     const synlig = id => w.document.getElementById(id).style.display === 'block';
 
-    it('menyn har exakt flikarna i ordning; Jämförelse syns med ställningstagandet', () => {
-        expect(flikar()).toEqual(['dashboard', 'filer', 'bestammelser', 'matrix', 'likvardighet', 'struktur',
-            'prioritering', 'loneoversyn', 'handlingsplan', 'kon', 'benchmark', 'utforska', 'dokumentera', 'rapporttext', 'arbetet', 'info']);
+    it('menyn har exakt flikarna i ordning; Löneläget syns med ställningstagandet', () => {
+        expect(flikar()).toEqual(['dashboard', 'filer', 'bestammelser', 'benchmark', 'matrix', 'likvardighet', 'struktur', 'kon',
+            'prioritering', 'loneoversyn', 'handlingsplan', 'rapporttext', 'dokumentera', 'utforska', 'arbetet', 'info']);
         expect(w.document.querySelector('.nav-item[data-tab="benchmark"]').hidden).toBe(false);
-        expect(w.document.querySelector('.nav-menu').textContent).toContain('5 · Dokumentera');
-        expect(w.document.querySelector('.nav-menu').textContent).toContain('4 · Fördjupa');
+        expect(w.document.querySelector('.nav-menu').textContent).toContain('4 · Rapport');
+        expect(w.document.querySelector('.nav-menu').textContent).not.toContain('Fördjupa');
     });
     it('Ålder & karriär: kohortförbehållet står under livscykelkurvorna, i Om verktygets metodtext och i metodbilagan', () => {
         klicka('kon');
@@ -388,20 +388,20 @@ describe('menystruktur', () => {
         const finns = new Set(flikar().concat(['benchmark']));
         mal.forEach(m => expect(finns.has(w.eval(`tabMal(${JSON.stringify(m)})`)), m).toBe(true));
     });
-    it('processkartan har 8 steg grupperade under menyns faser; steg 6–8 leder till Dokumentera', () => {
+    it('processkartan har 8 steg grupperade under menyns faser; steg 6–8 leder till Exportera', () => {
         w.__renderProcessTracker();
         const host = w.document.getElementById('process-tracker');
         expect(host.querySelectorAll('.ptrack-row').length).toBe(8);
         expect([...host.querySelectorAll('.ptrack-fas')].map(e => e.textContent.trim()))
-            .toEqual(['1 · Underlag', '2 · Kartlägg & analysera', '3 · Åtgärda', '5 · Dokumentera']);
+            .toEqual(['1 · Underlag', '2 · Kartläggning', '3 · Åtgärder', '4 · Rapport']);
         const rows = host.querySelectorAll('.ptrack-row');
         [5, 6, 7].forEach(i => expect(rows[i].querySelector('[data-goto-tab]').getAttribute('data-goto-tab')).toBe('dokumentera'));
     });
-    it('"Nästa steg" från Handlingsplan leder in i fördjupningen', () => {
+    it('"Nästa steg" från Handlingsplan leder till Rapporttext', () => {
         klicka('handlingsplan');
-        expect(w.document.querySelector('.flow-next-bar [data-flow-tab]').getAttribute('data-flow-tab')).toBe('kon');
+        expect(w.document.querySelector('.flow-next-bar [data-flow-tab]').getAttribute('data-flow-tab')).toBe('rapporttext');
     });
-    it('Jämförelse syns efter statistikuppladdning och låses vid rensning', () => {
+    it('Löneläget syns efter statistikuppladdning och låses vid rensning', () => {
         w.__state.statistik = [{ aid: '1', bas: 'A', median: 30000 }];
         w.eval('_visaJamforelseFlik(true)');
         expect(w.document.querySelector('.nav-item[data-tab="benchmark"]').hidden).toBe(false);

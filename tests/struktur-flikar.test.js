@@ -170,3 +170,47 @@ describe('Uppgift 4: Prioriteringens trösklar och viktning i Inställningar', (
         expect(d.getElementById('pr-installningar-rad').textContent).toMatch(/anpassade värden/);
     });
 });
+
+describe('Uppgift 5: menyn i rapportens ordning', () => {
+    it('menyn står i rapportens ordning', () => {
+        const d = createAppWindow().document;
+        expect([...d.querySelectorAll('.nav-menu .nav-item')].map(b => b.dataset.tab)).toEqual(
+            ['dashboard', 'filer', 'bestammelser', 'benchmark', 'matrix', 'likvardighet', 'struktur', 'kon',
+             'prioritering', 'loneoversyn', 'handlingsplan', 'rapporttext', 'dokumentera', 'utforska', 'arbetet', 'info']);
+        expect([...d.querySelectorAll('.nav-group')].map(g => g.textContent.trim())).toEqual(
+            ['1 · Underlag', '2 · Kartläggning', '3 · Åtgärder', '4 · Rapport', 'Arbetet', 'Hjälp']);
+        expect(d.querySelector('[data-tab="benchmark"] .nav-etikett').textContent.trim()).toBe('Löneläget');
+    });
+    it('Ålder & karriär och Löneläget säger i inledningen att de inte är lagkrav', () => {
+        const d = createAppWindow().document;
+        for (const v of ['view-kon', 'view-benchmark']) expect(d.querySelector(`#${v} .flik-intro`).textContent).toMatch(/inget lagkrav/i);
+    });
+    it('Ålder & karriär och Löneläget säger först i sin knapptext att de är fördjupning; Tabeller och egna vyer heter så', () => {
+        const d = createAppWindow().document;
+        for (const t of ['kon', 'benchmark']) expect(d.querySelector(`.nav-item[data-tab="${t}"]`).dataset.tip, t).toMatch(/^Fördjupning, inget lagkrav\./);
+        expect(d.querySelector('[data-tab="utforska"] .nav-etikett').textContent.trim()).toBe('Tabeller och egna vyer');
+    });
+    it('sidhuvudet heter som menyn för varje flik', () => {
+        const w = createAppWindow();
+        w.__loadDemoData();
+        const d = w.document;
+        for (const b of d.querySelectorAll('.nav-menu .nav-item')) {
+            if (b.hidden || b.disabled) continue;
+            /** @type {HTMLElement} */ (b).click();
+            expect(d.getElementById('page-title').textContent, b.dataset.tab).toBe(b.querySelector('.nav-etikett').textContent.trim());
+        }
+    });
+    it('Nästa steg följer rapportens ordning; Löneläget och Ålder & karriär hoppas över när de är låsta', () => {
+        const w = createAppWindow();
+        const kedja = [];
+        for (let t = 'bestammelser'; w.eval('FLOW_NEXT')[t]; t = w.eval('FLOW_NEXT')[t].tab) kedja.push(w.eval('FLOW_NEXT')[t].tab);
+        expect(kedja).toEqual(['benchmark', 'matrix', 'likvardighet', 'struktur', 'kon', 'prioritering', 'loneoversyn',
+            'handlingsplan', 'rapporttext', 'dokumentera']);
+        expect(w.eval('_FLOW_VALFRIA')).toEqual(['benchmark', 'kon']);
+        w.__loadDemoData();
+        w.document.querySelector('.nav-item[data-tab="benchmark"]').disabled = true;
+        w.document.querySelector('.nav-item[data-tab="kon"]').disabled = true;
+        expect(w.eval("_flowNasta('bestammelser').tab")).toBe('matrix');
+        expect(w.eval("_flowNasta('struktur').tab")).toBe('prioritering');
+    });
+});

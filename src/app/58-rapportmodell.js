@@ -254,7 +254,7 @@ function rmEgnaAvsnitt(d, k) {
     if (!recept.length || !d.length || typeof _trTabeller !== 'function') return null;
     const stycke = (text, stil) => ({ typ: 'stycke', text, ...(stil ? { stil } : {}) });
     /** @type {any[]} */
-    const delar = [stycke('Tabeller som byggts i fliken Utforska och lagts till i rapporten. De räknas på samma underlag och med samma minsta gruppstorlek som rapporten i övrigt.', 'dampad')];
+    const delar = [stycke('Tabeller som byggts i fliken Tabeller och egna vyer och lagts till i rapporten. De räknas på samma underlag och med samma minsta gruppstorlek som rapporten i övrigt.', 'dampad')];
     const utelamnat = [];
     let antal = 0;
     for (const r of recept) {
@@ -333,7 +333,7 @@ function _rapportModellExport({ alla = false, bada = false } = {}) {
     if (bes8.length) {
         regler.delar.push({ typ: 'tabell', kolumner: [{ rubrik: 'Granskningsområde', typ: 'text' }, { rubrik: 'Bedömning', typ: 'fyllIn' }, { rubrik: 'Iakttagelser / åtgärd', typ: 'fyllIn' }],
             rader: bes8.map(a => [a.title, a.status || { text: '[HR fyller i]', fyllIn: true }, a.note || { text: '[HR fyller i]', fyllIn: true }]) });
-        regler.delar.push(dampad('Bedömningen fylls i på fliken "Bestämmelser & praxis" och följer automatiskt med hit.'));
+        regler.delar.push(dampad('Bedömningen fylls i på fliken "Regler & praxis" och följer automatiskt med hit.'));
     } else {
         regler.delar.push(fyllIn('Granska lönekriterier och hur de tillämpas; lönesättning vid nyanställning, lönerevision och efter föräldraledighet; samt om någon bestämmelse eller praxis kan missgynna ett kön. Beskriv iakttagelser och eventuella åtgärder.'));
     }
@@ -502,7 +502,7 @@ function _rapportModellExport({ alla = false, bada = false } = {}) {
         const urval = rapportUrval();
         const valda = /** @type {any[]} */ (alla ? finns : urval.med.map(id => finns.find(a => a.id === id)).filter(Boolean));
         // Egna tabeller (ADR-52) står efter avsnittet per BAS-intervall och följer med när det gör det; de väljs i stället
-        // genom att tabeller läggs till eller tas bort under Dokumentera & exportera.
+        // genom att tabeller läggs till eller tas bort under Exportera.
         if (egna && (alla || urval.med.includes('perbas'))) { const i = valda.findIndex(a => a.id === 'perbas'); valda.splice(i >= 0 ? i + 1 : valda.length, 0, egna); }
         // Jämförelsen med förra året (ADR-54) står efter Åtgärder och tidsplan och följer med när det gör det; den finns
         // bara när ett bokslut är inläst.

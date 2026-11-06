@@ -349,7 +349,7 @@ describe('robusthetspanelen följer minsta gruppstorlek (ADR-38)', () => {
         lagg(6, 'kvinna', 36421, 'C', '5300');
         w.__state.data = rader;
         w.eval('populateSelects(); unlockTabs();');
-        w.__state.kLage = 'export';   // panelen hör till Dokumentera & exportera och ritas alltid i exportläget (ADR-51)
+        w.__state.kLage = 'export';   // panelen hör till Spara och jämför år och ritas alltid i exportläget (ADR-51)
         return w;
     };
     it('paret med en grupp under tröskeln namnges inte; antalet utelämnade par står i panelen och i resultatet', () => {

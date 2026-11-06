@@ -72,7 +72,7 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         expect(d.querySelectorAll('#export-hub [data-flow-tab]')).toHaveLength(0);
         expect(d.getElementById('export-hub').textContent).not.toContain('Öppna fliken');
         const fler = d.querySelector('#export-hub .export-fler');
-        expect(fler.textContent).toMatch(/^Fler underlag finns i flikarna: Likvärdigt arbete \(kandidatparen\), Struktur & rapportmått \(EU-rapportmåtten\), Prioritering \(åtgärdslistan\), Löneöversyn \(prognosen\)\.$/);
+        expect(fler.textContent).toMatch(/^Fler underlag finns i flikarna: Likvärdigt arbete \(kandidatparen\), Lönestruktur \(EU-rapportmåtten\), Prioritering \(åtgärdslistan\), Löneöversyn \(prognosen\)\.$/);
         expect([...fler.querySelectorAll('a[data-go-to-tab]')].map(a => a.dataset.goToTab)).toEqual(['likvardighet', 'struktur', 'prioritering', 'loneoversyn']);
         fler.querySelector('a[data-go-to-tab="prioritering"]').click();
         expect(d.querySelector('.nav-item.active').dataset.tab).toBe('prioritering');

@@ -24,7 +24,7 @@ describe('I4: listan över flikar är menyns flikar', () => {
 
 describe('I2: exporter som hör till ett undantag säger det, och notisen utlovar ingen aggregering', () => {
     const UNDANTAG_LV = 'Den här filen kan även innehålla grupper under tröskeln (undantag: Likvärdigt arbete).';
-    const UNDANTAG_UT = 'Den här filen kan även innehålla grupper under tröskeln (undantag: valt i Utforska).';
+    const UNDANTAG_UT = 'Den här filen kan även innehålla grupper under tröskeln (undantag: valt i Tabeller och egna vyer).';
     const fangaCsv = w => { w.eval('window.__csv = []; _toCsv = (rows => { window.__csv.push(rows); return ""; })'); return () => w.__csv.at(-1).map(r => r.join(' | ')); };
     it('Likvärdigt arbete: CSV-filens stämpel och Excel-filens metodblad', async () => {
         // Ett par där den kvinnodominerade gruppen har 6 personer: det står i den här exporten (undantaget).
