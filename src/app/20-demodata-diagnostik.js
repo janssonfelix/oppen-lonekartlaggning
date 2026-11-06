@@ -164,9 +164,15 @@ const DEMO_REFERENS = Object.freeze({
         const med = 31000 + i * 5000;
         return Object.freeze({ aid: null, bas, p10: Math.round(med * 0.9 / 100) * 100, med, p90: Math.round(med * 1.12 / 100) * 100 });
     })),
+    // Det stora demot (21-stort-demo.js) har också BAS K. Raden följer samma steg och läses bara in där, så att det
+    // lilla demots ställningstagande har kvar sina tio rader.
+    tillaggStort: Object.freeze(['K'].map((bas, i) => {
+        const med = 31000 + (10 + i) * 5000;
+        return Object.freeze({ aid: null, bas, p10: Math.round(med * 0.9 / 100) * 100, med, p90: Math.round(med * 1.12 / 100) * 100 });
+    })),
 });
-function _lasInDemoReferens() {
-    state.policy = DEMO_REFERENS.rader.map(r => ({ ...r }));
+function _lasInDemoReferens({ stort = false } = {}) {
+    state.policy = (stort ? [...DEMO_REFERENS.rader, ...DEMO_REFERENS.tillaggStort] : DEMO_REFERENS.rader).map(r => ({ ...r }));
     state.policyNamn = DEMO_REFERENS.namn;
     state.policyKortnamn = DEMO_REFERENS.namn;
     state.policyKalla = 'demo';
@@ -178,16 +184,20 @@ function _lasInDemoReferens() {
     if (typeof markUploadLoaded === 'function') markUploadLoaded('upload-cell-policy', 'Demo');
 }
 
-function loadDemoData() {
-    if ((state.data.length || state.paket) && !confirm('Detta ersätter befintlig data i sessionen. Fortsätt?')) return;
+// Det som det lilla och det stora demot (21-stort-demo.js) gör lika: frågan om befintlig data, rensningen av verkliga
+// delar, underlaget, demoläget, referensen och ritningen av Översikt och Filer och kvalitet. Bannern ritar anroparen sist.
+// Ger false om användaren avbröt.
+function _lasInDemounderlag(skapa, { stort = false } = {}) {
+    if ((state.data.length || state.paket) && !confirm('Detta ersätter befintlig data i sessionen. Fortsätt?')) return false;
     // Demot blandas aldrig med verkliga delar (ett organisationspaket, egen referens eller statistik).
     if (state.paket || state.policyKalla === 'fil' || state.policyKalla === 'paket' || state.statistik.length) _rensaAllData({ inbakat: false });
-    state.data = generateDemoData();
+    state.data = skapa();
     state.data.forEach((r, i) => { r.radnr = i + 2; });   // som en fil med rubrik på rad 1
     _deriveArbetsvarderingFromData();   // demodata saknar poäng → rensar ev. kvarvarande
     state.ansvarKolumn = { namn: 'Ansvarskod (demo)', godkand: true, giltiga: 1 };
     state.isDemo = true;   // #9: markera som demoläge — syntetisk data, aldrig verklig analys
-    _lasInDemoReferens();   // demot är självständigt; rensningen tar bort referensen igen
+    state.demoStort = stort;   // bannern och filraden säger vilket demo det är
+    _lasInDemoReferens({ stort });   // demot är självständigt; rensningen tar bort referensen igen
     state.dataAudit = { totalRaw: state.data.length, excludedNoBas: 0, excludedZeroLon: 0 };
     /** @type {HTMLElement} */ (document.getElementById("dashboard-summary")).style.display = "grid";
     unlockTabs();
@@ -206,9 +216,15 @@ function loadDemoData() {
     renderDataValidationReport();
     syncDatakvalitetPanel();
     renderProcessTracker();
-    /** @type {HTMLElement} */ (document.getElementById('data-status')).innerHTML = `<span class="farg-info">${ikon('sok')} Syntetisk testdata: ${state.data.length} personer</span>`;
+    const status = stort ? `Syntetisk testdata, stort demo: ${svTal(state.data.length)} personer` : `Syntetisk testdata: ${state.data.length} personer`;
+    /** @type {HTMLElement} */ (document.getElementById('data-status')).innerHTML = `<span class="farg-info">${ikon('sok')} ${status}</span>`;
     /** @type {HTMLElement} */ (document.getElementById('data-status')).className = 'status-msg';
     markUploadLoaded('upload-cell-data', 'Testdata');
+    return true;
+}
+
+function loadDemoData() {
+    if (!_lasInDemounderlag(generateDemoData)) return;
 
     // Kör diagnostik
     const tests = runDiagnostics();
@@ -241,7 +257,8 @@ function loadDemoData() {
 }
 // #9: samma demoladdning nås från självdiagnostiken, den synliga "Prova"-knappen
 // OCH länken i första-intryck-hinten.
-['btn-test-load', 'first-run-demo-link'].forEach(id =>
+// Lönefilskortet i Filer och kvalitet har samma val (upload-demo-litet; det stora demot i 21-stort-demo.js).
+['btn-test-load', 'first-run-demo-link', 'upload-demo-litet'].forEach(id =>
     document.getElementById(id)?.addEventListener('click', loadDemoData));
 document.getElementById('btn-exit-demo')?.addEventListener('click', clearAllData);
 
@@ -251,6 +268,12 @@ document.getElementById('btn-exit-demo')?.addEventListener('click', clearAllData
 function _renderDemoBanner() {
     const b = document.getElementById('demo-mode-banner');
     if (b) b.style.display = state.isDemo ? 'flex' : 'none';
+    // Det stora demot säger det i bannern; det lilla har kvar sin text.
+    const storlek = document.getElementById('demo-mode-storlek');
+    if (storlek) storlek.textContent = state.isDemo && state.demoStort ? ` (stort demo, ${svTal(state.data.length)} personer)` : '';
+    // Demovalen i lönefilskortet: borta när en riktig lönefil är inläst, kvar i demoläget (byt mellan litet och stort).
+    const val = document.getElementById('upload-demo-val');
+    if (val) val.hidden = state.data.length > 0 && !state.isDemo;
     const h = document.getElementById('first-run-hint');
     if (h) h.style.display = state.data.length ? 'none' : '';
     // #5 Export-hubben är bara meningsfull när det finns data att exportera

@@ -85,6 +85,7 @@ function _afterDataLoaded() {
         if (typeof renderReferensKort === 'function') renderReferensKort();
     }
     state.isDemo = false;   // #9: verklig uppladdning lämnar demoläge
+    state.demoStort = false;
     if (typeof _renderDemoBanner === 'function') _renderDemoBanner();
     /** @type {HTMLElement} */ (document.getElementById("dashboard-summary")).style.display = "grid";
     const poangCount = _deriveArbetsvarderingFromData();
@@ -798,7 +799,7 @@ function renderFilrutor() {
         const el = document.querySelector(`#${cellId} .upload-filnamn`);
         if (el) el.innerHTML = text ? `${ikon('bock', 14)} ${esc(text)}` : '';
     };
-    rad('upload-cell-data', state.isDemo ? 'Demodata' : fn.data);
+    rad('upload-cell-data', state.isDemo ? (state.demoStort ? 'Demodata, stort demo' : 'Demodata') : fn.data);
     rad('upload-cell-policy', state.policyKalla === 'paket' ? 'Ur organisationspaketet' : state.policyKalla === 'demo' ? 'Demots ställningstagande' : fn.policy);
     rad('upload-cell-stat', state.statistikKalla === 'paket' ? 'Ur organisationspaketet' : fn.statistik);
 }

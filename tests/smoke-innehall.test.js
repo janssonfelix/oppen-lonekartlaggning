@@ -201,12 +201,12 @@ describe('Lika arbete och filrutorna: ordning och kompakta rutor', () => {
         w.__clearAllData();
         expect(pol.classList.contains('loaded')).toBe(false);
     });
-    it('välkomstrutan är en rad och demoknappen finns bara där', () => {
+    it('välkomstrutan är en rad med de två demovalen (litet och stort demo)', () => {
         const w = createAppWindow();
         const d = w.document;
         expect(d.getElementById('btn-try-demo')).toBeNull();
         expect(d.getElementById('btn-minimize-upload')).toBeNull();
-        expect(d.getElementById('first-run-hint').textContent.replace(/\s+/g, ' ')).toMatch(/Kom igång: läs in filerna \(organisationspaketet först om er organisation har ett, sedan lönefilen\) — eller prova med demodata\./i);
+        expect(d.getElementById('first-run-hint').textContent.replace(/\s+/g, ' ')).toMatch(/Kom igång: läs in filerna \(organisationspaketet först om er organisation har ett, sedan lönefilen\) — eller prova med demodata eller ett stort demo \(7 000 personer\)\./i);
         d.getElementById('first-run-demo-link').click();
         expect(w.__state.data.length).toBeGreaterThan(0);
     });

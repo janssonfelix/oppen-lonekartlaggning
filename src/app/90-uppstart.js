@@ -14,12 +14,13 @@ applyProfileLabels();  // Tillämpa default-profil vid uppstart
 _synkaKTroskel();      // ADR-38: fyll texter som nämner minsta gruppstorlek
 renderReferensKort();  // ADR-28: visa vilken referens som används redan före uppladdning
 
-// Demosidan: adressen ?demo=1 startar demoläget direkt, så att
+// Demosidan: adressen ?demo=1 startar demoläget direkt, och ?demo=stor det stora demot (7 000 personer), så att
 // en länk från webbplatsen öppnar verktyget med påhittad data. Ingen annan parameter och
 // inget annat värde läses — adressen kan aldrig föra in data eller inställningar.
 try {
-    const demo = new URLSearchParams(window.location.search).get('demo') === '1';
-    if (demo && !state.data.length) loadDemoData();
+    const demoVal = new URLSearchParams(window.location.search).get('demo');
+    const demo = demoVal === '1' || demoVal === 'stor';
+    if (demo && !state.data.length) (demoVal === 'stor' ? loadStortDemo : loadDemoData)();
     // Organisationsfil: paketet som ligger inbakat i den här filen läses in vid start — utom i demoläget,
     // som går före (organisationsfil-design.md §3).
     // Blocket ligger sist i filen, efter skriptet: när skriptet körs medan sidan ännu laddas finns det inte i
