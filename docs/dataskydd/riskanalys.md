@@ -1,6 +1,6 @@
 # Risk- och sårbarhetsanalys (dataskydd och informationssäkerhet) — Öppen lönekartläggning
 
-**Bygge:** `2026.11.05` · **Artefakt-SHA-256:** `65e4444f0fbf1d909d658958f95efe8ae4546b412e4b7ce216c8e45f99544368` (se `dist/RELEASE.txt`).
+**Bygge:** `2026.11.05` · **Artefakt-SHA-256:** `ade6dd6d0d3550d9cac460891fe305f11a5ab2bdc2d7d5ef1ab2088a1476e09c` (se `dist/RELEASE.txt`).
 **Granskningsdatum:** 2026-11-06.
 **Granskningsmetod:** kodläsning påstående för påstående + statisk sökning i källkod och bygge +
 körning av det byggda verktyget i jsdom och i Chromium (utan nätverk) med syntetiska testfiler.
