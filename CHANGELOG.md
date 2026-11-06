@@ -8,6 +8,17 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ### Gränssnitt
 
+- **Antal i grupptabellerna.** Varje tabell som visar ett lönemått för en grupp visar nu också gruppens antal, och
+  exporterna har samma kolumn: *Könsfördelning per BAS-intervall* (Antal kvinnor, Antal män; också i Excel och
+  PDF-bilagan), kandidatparen i Likvärdigt arbete (*Antal (kvinnodom. / jämf.)*, också i Word-utkastet, PDF-rapporten
+  och rapportunderlaget, där också *Lägre krav, högre lön* fått kolumnen), *Lönegap per BAS-intervall före och efter*
+  i Löneöversyn (*Antal (Kv/Mä)*), handlingsplanen (*Antal berörda*: gruppens antal, för ett kandidatpar det
+  kvinnodominerade yrkets, tomt för en egen rad; på skärmen, i Excel-underlaget, i Word-utkastets *Åtgärder och
+  tidsplan* och i rapportunderlaget) och de flaggade yrkesgrupperna i *Jämförelse med förra året* (*Kvinnor / män*).
+  Tabeller där alla rader bygger på samma urval bär antalet i rubrikraden: percentiltabellen i *Var i
+  lönefördelningen sitter gapet?* (EU-rapportens blad *Distributionellt gap* får kolumnerna Antal kvinnor och
+  Antal män), kvantiltabellen, *Vad varje variabel tillför*, Oaxaca-tabellen och modelljämförelsen i Ålder &
+  karriär ("n = 260; 138 kvinnor, 122 män"). Inga tal har ändrats.
 - **Stort demo: 7 000 personer.** Bredvid *prova med demodata* (260 personer) i Kom igång på Översikt och i
   lönefilskortet i Filer och kvalitet finns *stort demo (7 000 personer)*: en påhittad organisation i storlek med en
   mindre kommun, med BAS-intervall A–K, 30 yrkesgrupper med koder ur etikettlistan, ett inlagt

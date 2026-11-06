@@ -288,7 +288,8 @@ describe('stort demo: Excel (alla flikar) röjer ingen grupp under tröskeln', (
             const i = rader.findIndex(r => r.includes('Antal kvinnor') && r.includes('Antal män'));
             if (i < 0) continue;
             const rubrik = rader[i], kv = rubrik.indexOf('Antal kvinnor'), ma = rubrik.indexOf('Antal män');
-            const lonekolumner = rubrik.map((t, j) => [t, j]).filter(([t]) => /median|medel|lön|%|gräns|kvot/i.test(String(t)) && !/^Antal/.test(String(t))).map(([, j]) => j);
+            // Andelar av antalet (andel kvinnor, underrepresenterat kön) är inga lönemått.
+            const lonekolumner = rubrik.map((t, j) => [t, j]).filter(([t]) => /median|medel|lön|%|gräns|kvot/i.test(String(t)) && !/^(Antal|Andel|Underrepresenterat)/.test(String(t))).map(([, j]) => j);
             for (const rad of rader.slice(i + 1)) {
                 if (!rad.length) break;   // tabellen slutar vid första tomma raden; nästa tabell har egna kolumner
                 if (typeof rad[kv] !== 'number' || typeof rad[ma] !== 'number' || (rad[kv] >= 10 && rad[ma] >= 10)) continue;

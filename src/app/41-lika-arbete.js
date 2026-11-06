@@ -162,7 +162,7 @@ function generateSkevhet() {
         const underrep = parseFloat(pctKv)<40?"Kvinna":parseFloat(pctMa)<40?"Man":"-";
         const tr = document.createElement("tr");
         tr._markering = markeringFor(b);   // länkade vyer; en egenskap, inte ett attribut: utskriften kopierar radernas HTML
-        tr.innerHTML = `<td>${esc(b)}</td><td>${tot}</td><td>${svPct(parseFloat(pctKv), 1)}</td><td>${svPct(parseFloat(pctMa), 1)}</td><td${underrep !== '-' ? ' class="f-kritisk"' : ''}>${underrep}</td>`;
+        tr.innerHTML = `<td>${esc(b)}</td><td>${tot}</td><td>${nKv}</td><td>${nMa}</td><td>${svPct(parseFloat(pctKv), 1)}</td><td>${svPct(parseFloat(pctMa), 1)}</td><td${underrep !== '-' ? ' class="f-kritisk"' : ''}>${underrep}</td>`;
         skBody.appendChild(tr);
     });
     const skEl = document.getElementById('chart-skevhet-andel');
@@ -707,7 +707,8 @@ function renderLonestrukturNycklar() {
     const basKvot = bas.map(r => ({ bas: r.bas, kvot: Stat.median(r.kvLons) / Stat.median(r.maLons) * 100 })).filter(r => isFinite(r.kvot));
     const basOver = basKvot.filter(r => Math.abs(100 - r.kvot) > 5);
     const konRader = [...document.querySelectorAll('#skevhet-table tbody tr')];
-    const ojamna = konRader.filter(tr => /** @type {HTMLTableRowElement} */ (tr).cells[4] && /** @type {HTMLTableRowElement} */ (tr).cells[4].textContent.trim() !== '-').length;
+    // Kolumnen Underrep. Kön är radens sista.
+    const ojamna = konRader.filter(tr => { const c = /** @type {HTMLTableRowElement} */ (tr).cells; return c.length && c[c.length - 1].textContent.trim() !== '-'; }).length;
     /** @type {any} */ let reg = null;
     try { reg = runOLSRegression(); } catch (e) { rapporteraFel('Lönestruktur: nyckeltalen', e); }
     const regOk = reg && !reg.error && typeof reg.konPct === 'number';

@@ -100,6 +100,16 @@ function svTal(v, dec = 0) {
 /** Som svTal, med " %" efter. */
 function svPct(v, dec = 1) { return typeof v === 'number' && isFinite(v) ? `${svTal(v, dec)} %` : '–'; }
 
+// ---- Underlagets storlek i en tabell ----
+// En tabell med ett lönemått för en grupp visar gruppens antal (som egen kolumn); en modelltabell, där alla rader
+// bygger på samma urval, bär antalet i sin rubrikrad (caption): "n = 260; 150 kvinnor, 110 män".
+/** @param {number} nKv @param {number} nMa */
+function antalText(nKv, nMa) { return `n = ${svTal(nKv + nMa, 0)}; ${svTal(nKv, 0)} kvinnor, ${svTal(nMa, 0)} män`; }
+/** Rubrikraden med antalet, som HTML; `fore` är en text före antalet (escapas). */
+function antalCaption(nKv, nMa, fore = '') {
+    return `<caption class="text-dampad-sm ta-vanster">${fore ? `${esc(fore)} · ` : ''}${antalText(nKv, nMa)}</caption>`;
+}
+
 // ---- Lönegapets form ----
 // Det råa lönegapet mellan könen visas som KVINNORS LÖN I PROCENT AV MÄNS: 100 % = ingen skillnad, under 100 %
 // = kvinnor ligger lägre. Värdena räknas överallt som skillnad, (kvinnor / män − 1) · 100; andelAvMan gör om den

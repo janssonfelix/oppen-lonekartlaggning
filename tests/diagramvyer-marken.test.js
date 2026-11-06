@@ -482,7 +482,7 @@ describe('andelsstaplar: könsfördelning, ålderspyramid och avvikelse från f�
         const w2 = oppna();
         w2.__renderTabContent('struktur');
         const el = w2.document.getElementById('chart-skevhet-andel');
-        const tabell = [...w2.document.querySelectorAll('#skevhet-table tbody tr')].map(tr => ['BAS ' + tr.cells[0].textContent.trim(), parseFloat(tr.cells[2].textContent)]);
+        const tabell = [...w2.document.querySelectorAll('#skevhet-table tbody tr')].map(tr => ['BAS ' + tr.cells[0].textContent.trim(), parseFloat(tr.cells[4].textContent)]);   // efter BAS, Totalt N, Antal kvinnor och Antal män
         expect(el._figur.lager[0].data.map(d => [d.y, d.x])).toEqual(tabell);
         expect(el.querySelectorAll('rect[data-marke="stapel"]').length).toBe(tabell.length * 2);
     });
@@ -983,8 +983,8 @@ describe('Löneöversyn: gapet per grupp före och efter står också i en tabel
         const celler = [...rader[0].cells].map(c => c.textContent.replace(/[  ]/g, ' '));
         const fmt = v => new Intl.NumberFormat('sv-SE', { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(v).replace(/[  ]/g, ' ') + ' %';
         const fore = f.lager.find(l => l.serie === 'Före').data[0], efter = f.lager.find(l => l.serie === 'Efter').data[0];
-        expect(celler.slice(0, 3)).toEqual(['BAS A', fmt(fore.x), fmt(efter.x)]);
-        expect(celler[3]).toMatch(/procentenheter$/);
+        expect(celler.slice(0, 4)).toEqual(['BAS A', '24/24', fmt(fore.x), fmt(efter.x)]);
+        expect(celler[4]).toMatch(/procentenheter$/);
         expect(rader[0]._markering).toEqual(['bas:A']);
         // Per yrkesgrupp med ett jämnt påslag ändras inget gap: tabellen är tom.
         d.getElementById('forecast-lutning-niva').value = 'grupp';

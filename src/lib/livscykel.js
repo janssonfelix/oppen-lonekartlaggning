@@ -170,7 +170,7 @@ export function livscykelRegression(rader, { fixBas, golv }) {
 
     return {
         ok: true,
-        n, k, R2: fit.R2, adjR2, aic,
+        n, kvN, maN, k, R2: fit.R2, adjR2, aic,
         ageMean,
         basList, fixBas, refBas, basFaktor,
         predKvinna, predMan, gapPerAge,

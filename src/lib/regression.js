@@ -492,7 +492,7 @@ export function blinderOaxaca(rows, { golv, modell = FORKLARINGSMODELL_STANDARD 
  * @param {any[]} rows - råradernas poster; filtreras här på lön, ålder och kön.
  * @param {{rang?:(basList:string[]) => (bas:string) => number}} [opts] rang = BAS-rangfunktionen
  *   (standard basRangFn ur likvardighet.js).
- * @returns {null | {results:Array<{tau:number, konPct?:number, error?:true}>, n:number}}
+ * @returns {null | {results:Array<{tau:number, konPct?:number, error?:true}>, n:number, nKv:number, nMa:number}}
  *   null om N<50 eller för få BAS-intervall.
  */
 export function quantileRegressionAtAllTau(rows, { rang = basRangFn } = {}) {
@@ -518,5 +518,5 @@ export function quantileRegressionAtAllTau(rows, { rang = basRangFn } = {}) {
         const pct = (Math.exp(betaKon) - 1) * 100;
         results.push({ tau, konPct: pct });
     }
-    return { results, n: raw.length };
+    return { results, n: raw.length, nKv: raw.filter(d => d.kon.includes('kvinna')).length, nMa: raw.filter(d => !d.kon.includes('kvinna')).length };
 }
