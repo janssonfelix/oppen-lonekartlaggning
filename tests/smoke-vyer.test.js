@@ -388,14 +388,38 @@ describe('menystruktur', () => {
         const finns = new Set(flikar().concat(['benchmark']));
         mal.forEach(m => expect(finns.has(w.eval(`tabMal(${JSON.stringify(m)})`)), m).toBe(true));
     });
-    it('processkartan har 8 steg grupperade under menyns faser; steg 6–8 leder till Exportera', () => {
+    it('processkartan har 9 steg under menyns faser: Samverkan under Åtgärder, Rapporttext först under Rapport', () => {
         w.__renderProcessTracker();
         const host = w.document.getElementById('process-tracker');
-        expect(host.querySelectorAll('.ptrack-row').length).toBe(8);
-        expect([...host.querySelectorAll('.ptrack-fas')].map(e => e.textContent.trim()))
-            .toEqual(['1 · Underlag', '2 · Kartläggning', '3 · Åtgärder', '4 · Rapport']);
-        const rows = host.querySelectorAll('.ptrack-row');
-        [5, 6, 7].forEach(i => expect(rows[i].querySelector('[data-goto-tab]').getAttribute('data-goto-tab')).toBe('dokumentera'));
+        // Faserna och stegen i den ordning de står: varje fasrubrik följs av sina steg.
+        const faser = {}; let fas = null;
+        for (const el of host.querySelectorAll('.ptrack-fas, .ptrack-row')) {
+            if (el.classList.contains('ptrack-fas')) { fas = el.textContent.trim(); faser[fas] = []; continue; }
+            faser[fas].push(el.querySelector('.fw-600').textContent.trim());
+        }
+        expect(faser).toEqual({
+            '1 · Underlag': ['1. Underlag inläst', '2. Regler & praxis'],
+            '2 · Kartläggning': ['3. Lika arbete — samma yrke', '4. Likvärdigt arbete'],
+            '3 · Åtgärder': ['5. Handlingsplan', '6. Samverkan med facket'],
+            '4 · Rapport': ['7. Rapporttext', '8. Dokumentation', '9. Uppföljning av handlingsplanen'],
+        });
+        const rows = [...host.querySelectorAll('.ptrack-row')], mal = r => r.querySelector('[data-goto-tab]').getAttribute('data-goto-tab');
+        expect(rows.map(mal)).toEqual(['dashboard', 'bestammelser', 'matrix', 'likvardighet', 'handlingsplan', 'handlingsplan', 'rapporttext', 'dokumentera', 'dokumentera']);
+        // Samverkan leder till kortet Samverkan & uppföljning i Handlingsplan.
+        expect(rows[5].querySelector('[data-goto-tab]').getAttribute('data-goto-avsnitt')).toBe('hp-samverkan');
+        const kort = w.document.getElementById('hp-samverkan');
+        expect(kort.closest('#view-handlingsplan')).not.toBeNull();
+        expect(kort.querySelector('h2').textContent).toBe('Samverkan & uppföljning');
+        expect(rows[6].querySelector('.ptrack-status').dataset.status).toBe('manuell');
+    });
+    it('"Gå till steget" för Samverkan öppnar Handlingsplan och går till kortet', () => {
+        w.__renderProcessTracker();
+        const knapp = [...w.document.querySelectorAll('#process-tracker [data-goto-avsnitt]')][0];
+        const kort = w.document.getElementById('hp-samverkan');
+        let rullad = false; kort.scrollIntoView = () => { rullad = true; };
+        knapp.click();
+        expect(w.document.querySelector('.nav-item[data-tab="handlingsplan"]').classList.contains('active')).toBe(true);
+        expect(rullad).toBe(true);
     });
     it('"Nästa steg" från Handlingsplan leder till Rapporttext', () => {
         klicka('handlingsplan');

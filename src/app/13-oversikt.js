@@ -376,22 +376,25 @@ function renderProcessTracker({ punkter: givna } = {}) {
         };
     }, { n: 5, tab: 'handlingsplan', title: '5. Handlingsplan', status: 'ej', detail: 'Kräver inläst underlag.' }));
 
-    // 6. § 3:13 Samverkan — kan inte auto-härledas
-    rows.push({ n: 6, tab: 'dokumentera', title: '6. Samverkan med facket', status: 'manuell', detail: 'Manuellt steg: samverka och dokumentera. Protokollet för gemensam lönebedömning finns under Exportera.' });
+    // 6. § 3:13 Samverkan — kan inte auto-härledas. Hör till Åtgärder: samverkan och uppföljning står på Handlingsplan.
+    rows.push({ n: 6, tab: 'handlingsplan', avsnitt: 'hp-samverkan', title: '6. Samverkan med facket', status: 'manuell', detail: 'Manuellt steg: samverka om kartläggningen, analysen och åtgärderna och dokumentera samverkan. Stöd finns i kortet Samverkan & uppföljning på Handlingsplan; protokollet för gemensam lönebedömning finns under Exportera.' });
 
-    // 7. Dokumentation — kan inte auto-härledas
-    rows.push({ n: 7, tab: 'dokumentera', title: '7. Dokumentation', status: 'manuell', detail: 'Manuellt steg: ladda ner Word-utkastet under Exportera, komplettera de gula [HR fyller i]-fälten och spara som er rapport.' });
+    // 7. Rapporttext — kan inte auto-härledas
+    rows.push({ n: 7, tab: 'rapporttext', title: '7. Rapporttext', status: 'manuell', detail: 'Manuellt steg: gå igenom auto-utkastet och rapportunderlaget i fynd och klarspråk och för in texten i er rapport.' });
 
-    // 8. § 3:11–13 Uppföljning. Verktyget stödjer EN kartläggning — uppföljningen
+    // 8. Dokumentation — kan inte auto-härledas
+    rows.push({ n: 8, tab: 'dokumentera', title: '8. Dokumentation', status: 'manuell', detail: 'Manuellt steg: ladda ner Word-utkastet under Exportera, komplettera de gula [HR fyller i]-fälten och spara som er rapport.' });
+
+    // 9. § 3:11–13 Uppföljning. Verktyget stödjer EN kartläggning — uppföljningen
     // av handlingsplanen sker i arbetsgivarens egen process, som samverkan och
     // dokumentation ovan.
-    rows.push({ n: 8, tab: 'dokumentera', title: '8. Uppföljning av handlingsplanen', status: 'manuell', detail: 'Manuellt steg: följ upp planens åtgärder i er egen process. Handlingsplanen exporteras under Exportera.' });
+    rows.push({ n: 9, tab: 'dokumentera', title: '9. Uppföljning av handlingsplanen', status: 'manuell', detail: 'Manuellt steg: följ upp planens åtgärder i er egen process. Handlingsplanen exporteras under Exportera.' });
 
     const autoDone = rows.filter(r => r.status === 'klar').length;
     const autoTotal = rows.filter(r => r.status !== 'manuell').length;
 
     // Stegen grupperas under samma faser som menyn (en karta): Regler & praxis hör till Underlag.
-    const FASER = { 1: '1 · Underlag', 3: '2 · Kartläggning', 5: '3 · Åtgärder', 6: '4 · Rapport' };
+    const FASER = { 1: '1 · Underlag', 3: '2 · Kartläggning', 5: '3 · Åtgärder', 7: '4 · Rapport' };
     const rowsHtml = rows.map(r => `
         ${FASER[r.n] ? `<div class="ptrack-fas">${FASER[r.n]}</div>` : ''}
         <div class="ptrack-row">
@@ -399,7 +402,7 @@ function renderProcessTracker({ punkter: givna } = {}) {
             <div class="ptrack-body">
                 <div class="fs-md fw-600">${esc(r.title)}</div>
                 <div class="ptrack-detail">${esc(r.detail)}</div>
-                <button type="button" class="ptrack-goto" data-goto-tab="${esc(r.tab)}">Gå till steget</button>
+                <button type="button" class="ptrack-goto" data-goto-tab="${esc(r.tab)}"${r.avsnitt ? ` data-goto-avsnitt="${esc(r.avsnitt)}"` : ''}>Gå till steget</button>
             </div>
         </div>`).join('');
 

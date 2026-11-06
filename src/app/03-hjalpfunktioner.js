@@ -18,13 +18,16 @@ document.getElementById('http-warning-dismiss')?.addEventListener('click', () =>
 // Delegerade klick-hanterare i stället för inline `onclick=` i markup. Krävs av den
 // hash-baserade CSP:n (ADR-9): `script-src` saknar `'unsafe-inline'`, vilket
 // blockerar inline event-handler-attribut. Två mönster täcks:
-//   data-goto-tab="<tab>"   → klickar motsvarande nav-flik (tomt-läges-knappar)
+//   data-goto-tab="<tab>"   → klickar motsvarande nav-flik (tomt-läges-knappar); med data-goto-avsnitt="<id>"
+//                             går sidan sedan till avsnittet eller kortet med det id:t (som sidindexet)
 //   data-dismiss-parent     → tar bort knappens föräldernod (notis-/toast-OK)
 document.addEventListener('click', e => {
     const goto = /** @type {HTMLElement} */ (e.target).closest('[data-goto-tab]');
     if (goto) {
         const nav = document.querySelector('.nav-item[data-tab="' + tabMal(goto.getAttribute('data-goto-tab')) + '"]');
         if (nav) /** @type {HTMLElement} */ (nav).click();
+        const avsnitt = goto.getAttribute('data-goto-avsnitt');
+        if (nav && avsnitt && typeof sidindexGaTill === 'function') sidindexGaTill(avsnitt);
         return;
     }
     const dismiss = /** @type {HTMLElement} */ (e.target).closest('[data-dismiss-parent]');

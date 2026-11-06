@@ -60,7 +60,7 @@ describe('#1 röktest: boot', () => {
         expect(host).toBeTruthy();
         expect(host.innerHTML).toContain('Lönekartläggningsprocessen');
         const rows = host.querySelectorAll('.ptrack-row');
-        expect(rows.length).toBe(8);                       // åtta lagsteg
+        expect(rows.length).toBe(9);                       // nio steg (Rapporttext är steg 7)
         expect(rows[0].querySelector('.ptrack-status').dataset.status).toBe('ej'); // steg 1 ej klart utan data
         expect(host.innerHTML).toContain('data-goto-tab');  // klickbara länkar (CSP-säkra)
         expect(host.innerHTML).not.toContain('onclick');    // inga inline-handlers (hash-CSP)
@@ -84,7 +84,7 @@ describe('process-tracker: statusar härleds ur inläst data', () => {
         win.__renderProcessTracker();
         const host = win.document.getElementById('process-tracker');
         const rows = host.querySelectorAll('.ptrack-row');
-        expect(rows.length).toBe(8);
+        expect(rows.length).toBe(9);
         expect(rows[0].querySelector('.ptrack-status').dataset.status).toBe('klar');   // underlag inläst
         expect(rows[0].textContent).toContain('260');                              // 260 demo-rader
         // Steg 4 (likvärdigt arbete) visar antal kandidatpar. Rubriken är på
@@ -109,11 +109,13 @@ describe('process-tracker: statusar härleds ur inläst data', () => {
         win.document.getElementById('bes8-status-1').value = '';                    // städa
     });
 
-    it('steg 6 (samverkan) och 7 (dokumentation) är manuella (➖)', () => {
+    it('steg 6 (samverkan), 7 (rapporttext) och 8 (dokumentation) är manuella (➖)', () => {
         win.__renderProcessTracker();
         const rows = [...win.document.querySelectorAll('#process-tracker .ptrack-row')];
         const samverkan = rows.find(r => /Samverkan/.test(r.textContent));
         const dok = rows.find(r => /Dokumentation/.test(r.textContent));
+        const text = rows.find(r => /Rapporttext/.test(r.textContent));
+        expect(text.querySelector('.ptrack-status').dataset.status).toBe('manuell');
         expect(samverkan.querySelector('.ptrack-status').dataset.status).toBe('manuell');
         expect(dok.querySelector('.ptrack-status').dataset.status).toBe('manuell');
     });
@@ -758,13 +760,13 @@ describe('lönepolitik: policyFor-kaskad + flik', () => {
 });
 
 describe('process-trackern och § 3:10', () => {
-    it('process-trackern har åtta steg och steg 8 är manuellt (➖)', () => {
+    it('process-trackern har nio steg och steg 9 är manuellt (➖)', () => {
         win.__renderProcessTracker();
         const rows = [...win.document.querySelectorAll('#process-tracker .ptrack-row')];
-        expect(rows.length).toBe(8);
-        const step8 = rows[7];
-        expect(step8.querySelector('.ptrack-status').dataset.status).toBe('manuell');
-        expect(step8.textContent).toMatch(/Uppföljning/);
+        expect(rows.length).toBe(9);
+        const step9 = rows[8];
+        expect(step9.querySelector('.ptrack-status').dataset.status).toBe('manuell');
+        expect(step9.textContent).toMatch(/Uppföljning/);
     });
 
     it('§ 3:10 och A/B-scenariojämförelsen ritas utan fel', () => {
