@@ -20951,6 +20951,26 @@ function _exportForecastExport() {
 // De rena måtten (_st*) genereras i src/app/09-lib-speglar.js från src/lib/struktur.js.
 // ===================================================================
 
+/**
+ * Lönestrukturens mått, räknade på ett ställe för fliken, rapportutkastet i Rapporttext och EU-exporten: andelen
+ * kvinnor, representationen per BAS, percentilerna, kvartilerna och gapet i median- och medellön. Könsuppdelade
+ * mått kräver tröskeln för varje kön (ADR-12); lib-funktionerna får alltid tröskeln `k`.
+ */
+function _stMatt(d, k) {
+    const konOk = _konFarRedovisasFor(d);
+    const kv = d.filter(r => r.kon && r.kon.includes('kvinna')).map(r => r.lon);
+    const ma = d.filter(r => r.kon === 'man' || r.kon === 'män').map(r => r.lon);
+    const totKv = kv.length;
+    const meanGap = (konOk && kv.length && ma.length) ? ((kv.reduce((s, x) => s + x, 0) / kv.length) / (ma.reduce((s, x) => s + x, 0) / ma.length) - 1) * 100 : null;
+    return {
+        konOk, kv, ma, totKv, totAndel: d.length ? 100 * totKv / d.length : 0, meanGap,
+        rep: _stRepresentationByBas(d, { k }),
+        dist: _stDistributionalGap(d, undefined, { k }),
+        q: _stQuartileDistribution(d, { k }),
+        medGap: _stMedianGapPct(d, { k }),
+    };
+}
+
 function renderStructure() {
     const wrap = document.getElementById('view-struktur');
     if (!wrap) return;
@@ -20968,11 +20988,8 @@ function renderStructure() {
     // (1) Representations-pyramid
     // Könsuppdelade mått kräver tröskeln för varje kön (ADR-12); lib-funktionerna får alltid värdet.
     const k = kTroskel();
-    const konOk = _konFarRedovisasFor(d);
+    const { konOk, rep, totKv, totAndel, dist, q, medGap, ma, meanGap } = _stMatt(d, k);
     const konNot = konOk ? '' : `<p class="k-mask-note">${esc(_konUtelamnatNot())}</p>`;
-    const rep = _stRepresentationByBas(d, { k });
-    const totKv = d.filter(r => r.kon && r.kon.includes('kvinna')).length;
-    const totAndel = d.length ? 100 * totKv / d.length : 0;
     // k-anonymitet: lönemåtten (median, gap inom BAS) får inte redovisas för
     // BAS-intervall under tröskeln. Raden utelämnas helt i stället för att
     // fyllas med "< 10"-celler — andelen kvinnor ensam bär inte tabellen, och
@@ -20994,7 +21011,6 @@ function renderStructure() {
         ${kSamladNote(repVisade.filter(g => g.konLitet).map(g => g.bas), 'BAS-intervall|BAS-intervall')}`; if (repEl) tillampaDataStil(repEl);
 
     // (3) Distributionellt gap
-    const dist = _stDistributionalGap(d, undefined, { k });
     if (distEl) {
         if (!dist.length) { distEl.innerHTML = konNot || '<p class="f-dampad">För få av något kön för distributionsanalys.</p>'; }
         else {
@@ -21008,7 +21024,7 @@ function renderStructure() {
             const maxG = Math.max(...dist.map(x => Math.abs(x.gapPct || 0)), 0.01);
             distEl.innerHTML = `<p class="text-dampad-sm marg-0-0-10">Kvinnors lön i procent av mäns vid olika percentiler i fördelningen. Under 100 % betyder att kvinnor ligger lägre.</p>
             <div class="mb-10" id="chart-struktur-percentiler"></div>
-            <table class="data-table st-088">${antalCaption(totKv, d.filter(r => r.kon === 'man' || r.kon === 'män').length)}<thead><tr><th>Percentil</th><th class="t-hoger">Kvinnor</th><th class="t-hoger">Män</th><th class="t-hoger">Kvinnors lön i % av mäns</th><th class="bredd-32p"></th></tr></thead><tbody>
+            <table class="data-table st-088">${antalCaption(totKv, ma.length)}<thead><tr><th>Percentil</th><th class="t-hoger">Kvinnor</th><th class="t-hoger">Män</th><th class="t-hoger">Kvinnors lön i % av mäns</th><th class="bredd-32p"></th></tr></thead><tbody>
             ${dist.map(x => `<tr><td>P${x.p}</td><td class="t-hoger">${kr(x.kv)}</td><td class="t-hoger">${kr(x.ma)}</td><td class="t-hoger${x.gapPct < -5 ? ' fg-rosa halvfet' : ''}">${andelAvMan(x.gapPct)}</td><td><div class="rund-5 hojd-10 min-bredd-2 ${x.gapPct < 0 ? 'bg-rosa' : 'bg-ok'}" data-stil-bredd="${(Math.abs(x.gapPct || 0) / maxG * 100).toFixed(0)}%"></div></td></tr>`).join('')}
             </tbody></table>${tolk ? `<p class="fs-sm marg-8-0-0">${tolk}</p>` : ''}`; tillampaDataStil(distEl);
         }
@@ -21017,12 +21033,7 @@ function renderStructure() {
     { const pEl = document.getElementById('chart-struktur-percentiler'); if (pEl && dist.length && dist.every(x => x.gapPct != null)) ritaFigur(pEl, _strukturPercentilFigur(dist)); }
 
     // (2) EU 2023/970-rapportpaket
-    const q = _stQuartileDistribution(d, { k });
-    const medGap = _stMedianGapPct(d, { k });
-    const kv = d.filter(r => r.kon && r.kon.includes('kvinna')).map(r => r.lon);
-    const ma = d.filter(r => r.kon === 'man' || r.kon === 'män').map(r => r.lon);
     const antal = n => (n == null ? '–' : n);
-    const meanGap = (konOk && kv.length && ma.length) ? ((kv.reduce((s, x) => s + x, 0) / kv.length) / (ma.reduce((s, x) => s + x, 0) / ma.length) - 1) * 100 : null;
     // Diagrammet över kvartilerna ligger i kortets HTML, som byggs om här: den gamla behållaren släpps först.
     const kvGammal = document.getElementById('chart-struktur-kvartiler');
     if (kvGammal) rensaFigur(kvGammal);
@@ -21059,16 +21070,7 @@ function renderStrukturUtkast() {
     if (!d.length) { /** @type {HTMLInputElement} */ (nb).value = ''; return; }
     if (nb.dataset.dirty) return;
     const k = kTroskel();
-    const konOk = _konFarRedovisasFor(d);
-    const rep = _stRepresentationByBas(d, { k });
-    const totKv = d.filter(r => r.kon && r.kon.includes('kvinna')).length;
-    const totAndel = 100 * totKv / d.length;
-    const dist = _stDistributionalGap(d, undefined, { k });
-    const q = _stQuartileDistribution(d, { k });
-    const medGap = _stMedianGapPct(d, { k });
-    const kv = d.filter(r => r.kon && r.kon.includes('kvinna')).map(r => r.lon);
-    const ma = d.filter(r => r.kon === 'man' || r.kon === 'män').map(r => r.lon);
-    const meanGap = (konOk && kv.length && ma.length) ? ((kv.reduce((s, x) => s + x, 0) / kv.length) / (ma.reduce((s, x) => s + x, 0) / ma.length) - 1) * 100 : null;
+    const { konOk, rep, totAndel, dist, q, medGap, meanGap } = _stMatt(d, k);
     /** @type {HTMLInputElement} */ (nb).value = _buildNarrative(d, { rep, dist, q, medGap, meanGap, totAndel, konOk });
 }
 
@@ -21335,26 +21337,20 @@ function _exportEuReportExport() {
     if (!d.length) { alert('Ingen data.'); return; }
     const kr = n => n == null ? '' : Math.round(n);
     const k = kTroskel();
-    const konOk = _konFarRedovisasFor(d);
-    const q = _stQuartileDistribution(d, { k });
-    const rep = _stRepresentationByBas(d, { k });
-    const dist = _stDistributionalGap(d, undefined, { k });
+    const { konOk, q, rep, dist, kv, ma, meanGap, medGap } = _stMatt(d, k);
     // Måtten står med direktivets tecken (art. 9): (män − kvinnor) / män i procent, positivt när kvinnor ligger
     // lägre. Verktyget räknar (kvinnor − män) / män; _stTillDirektivtecken vänder tecknet, bara i den här exporten
     // och rapportens avsnitt om lönetransparens — övriga blad och flikar visar kvinnors lön i procent av mäns.
     const DIREKTIV_RUBRIK = 'Lönegap enligt art. 9 (%), positivt tal = kvinnor lägre';
     const DIREKTIV_METOD = 'Lönegapet är (män − kvinnor) / män i procent, enligt art. 9: positivt tal = kvinnor lägre. Verktygets flikar och övriga blad visar i stället kvinnors lön i procent av mäns; beloppet är detsamma.';
     function direktivRound(v) { const t = _stTillDirektivtecken(v); return t == null ? '–' : +t.toFixed(1); }
-    const kv = d.filter(r => r.kon && r.kon.includes('kvinna')).map(r => r.lon);
-    const ma = d.filter(r => r.kon === 'man' || r.kon === 'män').map(r => r.lon);
-    const meanGap = (konOk && kv.length && ma.length) ? ((kv.reduce((s, x) => s + x, 0) / kv.length) / (ma.reduce((s, x) => s + x, 0) / ma.length) - 1) * 100 : null;
     const meta = [
         ['EU 2023/970 — lönerapportmått', ''],
         ['Genererad', new Date().toLocaleString('sv-SE')],
         ['Verktyg', 'Öppen lönekartläggning v' + (typeof APP_VERSION !== 'undefined' ? APP_VERSION : '–')],
         ['Antal anställda', d.length],
         ['Lönegap i medellön enligt art. 9 (%), positivt tal = kvinnor lägre', direktivRound(meanGap)],
-        ['Lönegap i medianlön enligt art. 9 (%), positivt tal = kvinnor lägre', direktivRound(_stMedianGapPct(d, { k }))],
+        ['Lönegap i medianlön enligt art. 9 (%), positivt tal = kvinnor lägre', direktivRound(medGap)],
         ['Tecken', DIREKTIV_METOD],
         ...(konOk ? [] : [['Könsuppdelade mått', _konUtelamnatNot()]]),
         ['', ''],

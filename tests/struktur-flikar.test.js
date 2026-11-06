@@ -275,3 +275,32 @@ describe('Uppgift 5: menyn i rapportens ordning', () => {
         }
     });
 });
+
+describe('Lönestrukturens mått räknas på ett ställe', () => {
+    it('_stMatt ger fliken, rapportutkastet och EU-exporten samma mått som lib-funktionerna', () => {
+        const w = createAppWindow(); w.__loadDemoData();
+        const d = w.eval('getData()'), k = w.eval('kTroskel()');
+        const m = w.eval('_stMatt')(d, k);
+        const arKv = r => r.kon && r.kon.includes('kvinna'), arMa = r => r.kon === 'man' || r.kon === 'män';
+        const kv = d.filter(arKv).map(r => r.lon), ma = d.filter(arMa).map(r => r.lon);
+        const medel = a => a.reduce((s, x) => s + x, 0) / a.length;
+        expect(m.konOk).toBe(w.eval('_konFarRedovisasFor')(d));
+        expect(m.totKv).toBe(kv.length);
+        expect(m.totAndel).toBe(100 * kv.length / d.length);
+        expect(m.kv).toEqual(kv); expect(m.ma).toEqual(ma);
+        expect(m.meanGap).toBe((medel(kv) / medel(ma) - 1) * 100);
+        expect(m.medGap).toBe(w.eval('_stMedianGapPct')(d, { k }));
+        expect(m.rep).toEqual(w.eval('_stRepresentationByBas')(d, { k }));
+        expect(m.dist).toEqual(w.eval('_stDistributionalGap')(d, undefined, { k }));
+        expect(m.q).toEqual(w.eval('_stQuartileDistribution')(d, { k }));
+        expect(w.eval('_stMatt')([], k)).toMatchObject({ totKv: 0, totAndel: 0, meanGap: null });
+    });
+    it('medellönegapet står en gång i 37-struktur.js, inte i tre kopior', () => {
+        const kalla = readFileSync(join(__dirname, '..', 'src', 'app', '37-struktur.js'), 'utf8');
+        expect(kalla.match(/kv\.reduce\(\(s, x\) => s \+ x, 0\) \/ kv\.length/g)).toHaveLength(1);
+        for (const f of ['renderStructure', 'renderStrukturUtkast', '_exportEuReportExport']) {
+            const kropp = kalla.slice(kalla.indexOf(`function ${f}(`)).split(/\n}\n/)[0];
+            expect(kropp, f).toContain('_stMatt(d, k)');
+        }
+    });
+});
