@@ -33,7 +33,7 @@ describe('årsbokslutet i verktyget', () => {
         w.__cfg = cfg;
         w.eval('applyConfigSnapshot(window.__cfg)');
         expect(w.__state.forraArsbokslut).toMatchObject({ ar: cfg.arsbokslut.ar });
-        w.__renderTabContent('dokumentera');
+        w.__renderTabContent('arbetet');
         const host = w.document.getElementById('arsjamforelse');
         expect(host.textContent).toContain(`Förra årets bokslut: ${cfg.arsbokslut.ar}`);
         expect(host.textContent).toContain('Nyckeltal');
@@ -48,7 +48,7 @@ describe('årsbokslutet i verktyget', () => {
     });
     it('utan bokslut säger panelen hur man får ett; ett trasigt bokslut i filen ger en varning, inte ett stopp', () => {
         const w = createAppWindow();
-        w.__renderTabContent('dokumentera');
+        w.__renderTabContent('arbetet');
         expect(w.document.getElementById('arsjamforelse').textContent).toContain('Inget årsbokslut inläst');
         const cfg = JSON.parse(JSON.stringify(w.__buildConfigSnapshot()));
         expect(cfg.arsbokslut).toBeNull();
@@ -99,8 +99,9 @@ describe('årsjämförelsen i rapporten, rapportunderlaget och som hantel (ADR-5
         const block = w.eval('rapportunderlagBlock()').find(b => b.id === 'arsjamforelse');
         expect(block).toBeTruthy();
         expect(block.tabell.rubriker).toEqual(['Mått', String(cfg.arsbokslut.ar), String(cfg.arsbokslut.ar + 1), 'Skillnad']);
-        w.__renderTabContent('dokumentera');
+        w.__renderTabContent('rapporttext');
         expect(w.document.querySelector('[data-rapport-kopiera="arsjamforelse"]')).not.toBeNull();
+        w.__renderTabContent('arbetet');
         const el = w.document.getElementById('chart-arsjamforelse');
         expect(el && el._figur).toBeTruthy();
         const f = el._figur;

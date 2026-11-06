@@ -55,7 +55,7 @@ Detta är en bärande designprincip, inte en begränsning av misstag:
 - **Analyserar inte** rörliga eller kompletterande lönedelar (tillägg, bonus, förmåner).
   Verktyget har en lönedefinition — heltidsomräknad månadslön — och EU-rapportens mått
   redovisas för den. *Rörlig lön är inte aktuellt i verktyget.*
-- **Sparar inte** vyer eller urval. Utforskas uppställningar (rader, kolumner, mått,
+- **Sparar inte** vyer eller urval. Uppställningarna i Tabeller och egna vyer (rader, kolumner, mått,
   diagramtyp, urval) sparas inte som recept och kan inte läggas in i
   utskriftsrapporten; det som ska bevaras exporteras via diagrammens exportmeny.
   *Kommer inte att byggas.*
@@ -103,7 +103,7 @@ Icke förhandlingsbara arkitektoniska garantier:
    - **Undantag:** likvärdighetsanalysen tillämpar *inte* k-anonymitet (resultatet
      är aggregerat per yrkesgrupp; uttryckligt beslut från användaren).
      Antalet små grupper som ändå ingår redovisas i analysens diagnostik.
-   - **Undantag 2 (ADR-14):** Utforska-fliken visar grupper under tröskeln, som alla
+   - **Undantag 2 (ADR-14):** fliken Tabeller och egna vyer visar grupper under tröskeln, som alla
      flikar (ADR-51). Skyddet gäller det som lämnar verktyget: tabellens CSV/urklipp och
      diagrammets exportmeny utelämnar grupperna om inte användaren kryssar i "Ta med grupper
      under tröskeln i exporten" — rutan är undantaget. K-invarianten vaktar exporten.
@@ -118,21 +118,23 @@ Icke förhandlingsbara arkitektoniska garantier:
 | Område | Lagrum | Funktion |
 |---|---|---|
 | Kartläggning lika arbete | lika arbete (lagrum.md) | EU-Lönekartläggning: median-jämförelse kön inom yrkesgrupp + per-BAS-regression (oförklarat gap, ålderskontroll, HC3-SE, BH-FDR) |
-| Lönegap & könsfördelning | lönekartläggningen (lagrum.md) | Lika arbete-fliken: yrkesgrupperna först; i Fördjupning översikten per BAS-intervall som tabell med grafik i raden (antal, medianer, skillnad i kronor, kvot med bootstrap-intervall, status), samma kvot som diagram bara i exporten, lönespridning per BAS och kön, könsfördelning, 5 %-tröskel (EU Art. 9-analogt). Trattdiagrammet ställer varje yrkesgrupps kvot mot gruppens storlek och bedömer den med omkastning av könen inom gruppen |
+| Lönegap & könsfördelning | lönekartläggningen (lagrum.md) | Lika arbete-fliken: yrkesgrupperna först; trattdiagrammet ställer varje yrkesgrupps kvot mot gruppens storlek och bedömer den med omkastning av könen inom gruppen. Lönestruktur-fliken: översikten per BAS-intervall (*Lönegap per BAS-intervall*) som tabell med grafik i raden (antal, medianer, skillnad i kronor, kvot med bootstrap-intervall, status), samma kvot som diagram bara i exporten, lönespridning per BAS och kön, könsfördelning (*Könsfördelning per BAS-intervall*), 5 %-tröskel (EU Art. 9-analogt) |
 | **Likvärdigt arbete** | **likvärdigt arbete (lagrum.md)** | **Likvärdigt arbete-fliken: organisationens kvinnodominerade AID×BAS mot icke-kvinnodominerade yrken med lika krav — i första hand organisationens egna i samma BAS, annars jämförelsestatistiken; med arbetsvärderingspoäng över BAS-gränserna. Därtill *Lägre krav, högre lön* (ADR-25)** |
-| Hierarkisk översikt | lönekartläggningen (lagrum.md) | Löneöversikten (i Utforska): median/P10/P90/spridning per yrke+BAS, referenslinjer |
+| Hierarkisk översikt | lönekartläggningen (lagrum.md) | Löneöversikten (i Tabeller och egna vyer): median/P10/P90/spridning per yrke+BAS, referenslinjer |
 | Prioritering | — | Prioritetsindex (avvikelse × volym × jämställdhet), kostnadssimulering. Könsgapet i gruppen visas och räknas in i indexet bara när båda könen har minst k personer (ADR-12; annars räknas jämställdhetsdelen som 0). Jämför mot organisationens lönepolitiska ställningstagande (ur ett organisationspaket eller en egen namngiven fil; ingen inbyggd referens, ADR-28) eller mot jämförelsestatistiken |
-| Fördjupning | — | Ålder & karriär (lön mot ålder med trend, lönegap per åldersgrupp, percentilband över ålder, lönefördelning per kön, livscykel ålder×kön×BAS och åldersstruktur), benchmark mot jämförelsestatistik (fliken syns när filen är uppladdad; spannet per yrke och avvikelsen i P10, median och P90) |
-| EU-direktivets rapportmått | EU 2023/970 art. 9 | Struktur & rapportmått: kvartilfördelning, representation per BAS, distributionellt gap, medel- och mediangap, med EU-lönerapporten som Excel. **Tecknet:** verktyget räknar lönegapet som (kvinnor − män) / män och visar det i alla flikar och blad som kvinnors lön i procent av mäns (under 100 % = kvinnor lägre). EU-lönerapportens blad och rapportens avsnitt *Struktur och lönetransparens* (Word/PDF) redovisar i stället direktivets mått, (män − kvinnor) / män i procent, enligt art. 9: positivt tal = kvinnor lägre; kolumnrubriken och en metodrad säger det. Tecknet vänds på ett ställe, `tillDirektivtecken` i `src/lib/struktur.js`; beloppet är detsamma |
-| Jämförelse | — | Löneläget och statistiken mot ställningstagandet per yrkesgrupp (överblick, ADR-55), avsnittet mot jämförelsestatistiken (ADR-35) och avsnittet mot ställningstagandet: bandkarta, könens läge i spannet och fördelningen i spannets tredjedelar per kön, efterlevnad, täckningsgrad; tomläge utan ställningstagande. Talen följer med som bladet *Lönepolitik* i Excel (alla flikar) — yrkesgrupperna mot sitt spann, läget per kön och BAS-intervall, tredjedelarna och efterlevnaden, med flikens regler för minsta gruppstorlek (`_lpExcelBlad`) — bara när ett ställningstagande är inläst |
-| Organisationspaket | — | En fil med organisationens benämningar, grundinställningar, ställningstagande och jämförelsestatistik; systemägaren skapar det i verktyget, handläggaren läser in det i ett steg (ADR-28) |
-| Utforska | — | Egna vyer: rader × ev. kolumner (BAS, AID, yrkesgrupp inom BAS, sektor, AID-mellannivå, ålder, kön, lönespann; rader även hela urvalet), tio mått, visning som helhet eller per kön, urval med villkor (alla/något, "inte", lön och ålder) och gruppvillkor på uträknat mått, tolv diagramtyper i två grupper i väljaren (Vanliga: staplar, liggande, låda, grupperade; Fler diagramtyper: hantel, bubbla, individpunkter, punktsvärm, regnmoln, kvantilpunkter, värmekarta, staplade). Små grupper visas som andra på skärmen och utelämnas ur exporten om inte rutan är ikryssad (ADR-14, ADR-51). Klick på en grupp öppnar gruppdossiern |
+| Fördjupning | — | Två flikar i Kartläggning som inte är lagkrav och säger det i verktygstipset och inledningen: Ålder & karriär (lön mot ålder med trend, lönegap per åldersgrupp, percentilband över ålder, lönefördelning per kön, livscykel ålder×kön×BAS och åldersstruktur) och Löneläget (raden Löneläget nedan). Nästa steg hoppar över dem när de är låsta |
+| EU-direktivets rapportmått | EU 2023/970 art. 9 | Lönestruktur: kvartilfördelning, representation per BAS, distributionellt gap, medel- och mediangap, med EU-lönerapporten som Excel. **Tecknet:** verktyget räknar lönegapet som (kvinnor − män) / män och visar det i alla flikar och blad som kvinnors lön i procent av mäns (under 100 % = kvinnor lägre). EU-lönerapportens blad och rapportens avsnitt *Struktur och lönetransparens* (Word/PDF) redovisar i stället direktivets mått, (män − kvinnor) / män i procent, enligt art. 9: positivt tal = kvinnor lägre; kolumnrubriken och en metodrad säger det. Tecknet vänds på ett ställe, `tillDirektivtecken` i `src/lib/struktur.js`; beloppet är detsamma |
+| Löneläget | — | Fliken `benchmark`, först i Kartläggning: löneläget och statistiken mot ställningstagandet per yrkesgrupp (överblick, ADR-55), avsnittet mot jämförelsestatistiken (ADR-35) och avsnittet mot ställningstagandet: bandkarta, könens läge i spannet och fördelningen i spannets tredjedelar per kön, efterlevnad, täckningsgrad; tomläge utan ställningstagande. Talen följer med som bladet *Lönepolitik* i Excel (alla flikar) — yrkesgrupperna mot sitt spann, läget per kön och BAS-intervall, tredjedelarna och efterlevnaden, med flikens regler för minsta gruppstorlek (`_lpExcelBlad`) — bara när ett ställningstagande är inläst |
+| Organisationspaket | — | En fil med organisationens benämningar, grundinställningar, ställningstagande och jämförelsestatistik; systemägaren skapar det i verktyget, handläggaren läser in det i ett steg i fliken Filer och kvalitet (ADR-28) |
+| Tabeller och egna vyer | — | Fliken `utforska`, sist i Rapport: Löneöversikten och Egna vyer: rader × ev. kolumner (BAS, AID, yrkesgrupp inom BAS, sektor, AID-mellannivå, ålder, kön, lönespann; rader även hela urvalet), tio mått, visning som helhet eller per kön, urval med villkor (alla/något, "inte", lön och ålder) och gruppvillkor på uträknat mått, tolv diagramtyper i två grupper i väljaren (Vanliga: staplar, liggande, låda, grupperade; Fler diagramtyper: hantel, bubbla, individpunkter, punktsvärm, regnmoln, kvantilpunkter, värmekarta, staplade). Små grupper visas som andra på skärmen och utelämnas ur exporten om inte rutan är ikryssad (ADR-14, ADR-51). Klick på en grupp öppnar gruppdossiern |
 | Export | — | Exportmeny på varje diagram: PNG (1920 × 1080 / 1600 × 900), SVG och diagramdata (urklipp/CSV) |
-| Dokumentera & exportera | — | Menyns sista steg: färdigcheck och robusthetspanel, all export, rapportunderlag att klistra in i egen mall (ADR-20), samverkan och Spara och läsa in arbetet (konfiguration, ögonblicksbild, jämförelse med förra året — ADR-54, självdiagnostik). De fyra samlade exporterna har var sin uppgift: **Word-utkastet är rapporten, Excel-filen underlaget, PDF-rapporten en låst kopia av Word-utkastet och ZIP-filen allt**. Word och PDF ritas ur samma rapportmodell (`58-rapportmodell.js`), i ett valt urval av avsnitt (hela dokumentationen, ledningsbrief, facklig dialog eller eget); varje export har ett förhandsbesked om vad den innehåller och utelämnar, och exportgrinden ser till att inget läses ur en flik ritad med en äldre tröskel. Därtill JPA-protokoll och handlingsplansunderlag |
-| Gränssnittets form | — | Alla flikar följer en mall: en rad om vad fliken svarar på (*Visa mer*), urval, nyckeltal i en rad, huvudresultat, och fördjupning i hopfällbara avsnitt som säger sitt nyckeltal i rubrikraden. Sök i sidhuvudet markerar en grupp i alla diagram och tabeller (länkade vyer). Panelen Inställningar samlar det som gäller alla flikar. Två lägen: vägledande och kompakt. Byggt för datorskärm; surfplatta och delat fönster fungerar, telefon är inte ett användningsfall (ADR-41) |
+| Rapporttext | — | Fliken `rapporttext` (låst utan lönefil): auto-rapportutkastet i klarspråk (`renderStrukturUtkast` i `37-struktur.js`) och rapportunderlaget att klistra in i egen mall (ADR-20) |
+| Exportera | — | Fliken `dokumentera` (panelerna `view-kvalitet` och `view-dokumentera`), sista steget i Nästa steg: färdigcheck, robusthetspanel, rapportens innehåll och all export. De fyra samlade exporterna har var sin uppgift: **Word-utkastet är rapporten, Excel-filen underlaget, PDF-rapporten en låst kopia av Word-utkastet och ZIP-filen allt**. Word och PDF ritas ur samma rapportmodell (`58-rapportmodell.js`), i ett valt urval av avsnitt (hela dokumentationen, ledningsbrief, facklig dialog eller eget); varje export har ett förhandsbesked om vad den innehåller och utelämnar, och exportgrinden ser till att inget läses ur en flik ritad med en äldre tröskel. Därtill JPA-protokoll och handlingsplansunderlag, vars knappar också står i Handlingsplans kort *Samverkan & uppföljning* |
+| Spara och jämför år | — | Fliken `arbetet` under Arbetet (öppen utan lönefil): spara och ladda konfigurationen, ögonblicksbilden, jämförelse med förra året (ADR-54) och självdiagnostiken. Rapporttext, Exportera och Spara och jämför år ritas i exportläget (ADR-51) |
+| Gränssnittets form | — | Menyn har 16 flikar i grupperna 1 · Underlag (Översikt, Filer och kvalitet, Regler & praxis), 2 · Kartläggning (Löneläget, Lika arbete, Likvärdigt arbete, Lönestruktur, Ålder & karriär), 3 · Åtgärder (Prioritering, Löneöversyn, Handlingsplan), 4 · Rapport (Rapporttext, Exportera, Tabeller och egna vyer), Arbetet (Spara och jämför år) och Hjälp (Om verktyget); flikgrupperna och aliasen står i `PANEL_GROUPS` och `TAB_ALIAS` i `31-navigering.js`, och en låst flik leder till lönefilskortet i Filer och kvalitet. Alla flikar följer en mall: en rad om vad fliken svarar på (*Visa mer*), urval, nyckeltal i en rad, huvudresultat, och fördjupning i hopfällbara avsnitt som säger sitt nyckeltal i rubrikraden. Sidindexet *På den här sidan* (`89-sidindex.js`) listar flikens synliga avsnitt och följer med när sidan rullas. Sök i sidhuvudet markerar en grupp i alla diagram och tabeller (länkade vyer) och hittar flikarnas avsnitt, dialogerna och fälten i Inställningar (`SOK_FUNKTIONER` i `86-sok-register.js`), också utan lönefil. Panelen Inställningar samlar det som gäller alla flikar, med Prioriteringens trösklar och viktning. Två lägen: vägledande och kompakt. Byggt för datorskärm; surfplatta och delat fönster fungerar, telefon är inte ett användningsfall (ADR-41) |
 | Diagram | — | Ritas av diagramkärnan (D3, ADR-39) ur ett figurformat; formen väljs efter uppgiften och färgen efter vad den ska säga — reglerna står i `diagramkarnan.md` §10. Där ett diagram skulle visa för lite står en tabell med grafik i raden |
-| Underlagets kvalitet | — | Fem kriterier med OK/Varning/Kritisk; svagaste kriteriet avgör (ADR-19) |
-| Var uppstår löneskillnaden? | — | Översiktens avsnitt och rapportunderlagets block: skillnaden i medellön delad på BAS-fördelning, AID inom BAS och inom AID och BAS, visad som en trappa och med de grupper som bidrar mest (ADR-22) |
+| Underlagets kvalitet | — | I fliken Filer och kvalitet, med extremvärdena och inläsningsrapporten: fem kriterier med OK/Varning/Kritisk; svagaste kriteriet avgör (ADR-19) |
+| Var uppstår löneskillnaden? | — | Lönestrukturs avsnitt och rapportunderlagets block: skillnaden i medellön delad på BAS-fördelning, AID inom BAS och inom AID och BAS, visad som en trappa och med de grupper som bidrar mest (ADR-22) |
 | Personer att granska | — | Lika arbete: personer minst X % (standard 10) under förväntad lön bland kollegor i samma AID och BAS, med filens radnummer; lämnar aldrig verktyget (ADR-23) |
 | Stabilitet för flaggor | — | Lika arbete och rapportunderlaget: varje yrkesgrupp över 5 % märks skör (≤ 5 % om 1 eller 2 personer tas bort) eller stabil; flaggan ligger kvar (ADR-24) |
 | Lägre krav, högre lön | — | Likvärdigt arbete och rapportunderlaget: kvinnodominerade yrken med lägre medianlön än ett av organisationens yrken i lägre BAS, med antal BAS-steg (ADR-25) |
@@ -235,13 +237,13 @@ adaptern verkligen delegerar vaktas av `tests/drift.test.js`:
   rätt grupp. Utskriftsfönstret för checklistorna (`printScaffoldView`) läser `:root` och allt från `.dold` till
   stilmallens slut ur den körande stilmallen och lägger in det som byggt stilark (`adoptedStyleSheets`): ett `<style>`-element
   som skriptet skapar blockeras av den ärvda CSP:n (`style-src-elem`), så fönstret var tidigare helt ostilat.
-- **Tester:** Vitest — 2613 tester i 78 filer: rena `src/lib/`-moduler, CSV-parsning, jsdom-röktest
+- **Tester:** Vitest — 2664 tester i 81 filer: rena `src/lib/`-moduler, CSV-parsning, jsdom-röktest
   av varje vy (ADR-7; `tests/smoke.test.js` med det delade fönstret och sju `tests/smoke-*.test.js` per
   område), k-tröskeln i åtta `tests/ktroskel*.test.js` med riggen i `tests/helpers/ktroskel-rigg.js`,
   gränssnittet i `tests/granssnitt*.test.js` (riggen `tests/helpers/granssnitt-rigg.js`) och diagramvyerna i
   `tests/diagramvyer*.test.js` (riggen `tests/helpers/diagramvyer-rigg.js`),
   axe-a11y (ADR-10) samt vakterna `appsource`, `drift`, `exports.golden`,
-  `version`, `release` och `kanonymitet`, samt de rena modulerna bakom Utforska och exportmenyn
+  `version`, `release` och `kanonymitet`, samt de rena modulerna bakom Tabeller och egna vyer och exportmenyn
   (`utforska`, `urval`, `falt`). `tests/figur.test.js` prövar figurformatet och
   `tests/diagramritare.test.js` diagramkärnan (ADR-39) — den ritar med **äkta D3** i jsdom, så SVG:n som prövas är
   den riktiga, och två differentialtester vaktar att små grupper inte lämnar spår på skärmen eller i exporten.
@@ -272,7 +274,7 @@ adaptern verkligen delegerar vaktas av `tests/drift.test.js`:
 - **Delade fönster i testerna:** ett fönster och en inläsning av demodatan kostar omkring 0,6 s, så läsande tester kan
   dela fönster med `delatFonster(forbered, skapa)` i `tests/helpers/app-harness.js`. Gruppen börjar med vakten
   `utgangslage(w)` (tröskel, öppna dialoger, aktiv flik), och efter varje test jämförs `tillstandsavtryck(w)` (hela
-  `state` utom cachar, Utforskas urval, markeringen och dialogerna): det test som lämnar något ändrat fälls. Avtrycket
+  `state` utom cachar, urvalet i Tabeller och egna vyer, markeringen och dialogerna): det test som lämnar något ändrat fälls. Avtrycket
   ser inte allt, till exempel stubbar på fönstret och värden i fält, så ett test som ändrar något sådant behåller ett
   eget fönster. `tests/granssnitt.test.js` (23,0 → 18,3 s ensam), `tests/diagramvyer.test.js` (22,7 → 18,1 s) och
   `tests/diagramvyer-marken.test.js` (29,0 → 21,7 s) delar. En fil delar bara om den blir minst 20 % snabbare; under
@@ -494,8 +496,8 @@ Golden-testerna normaliserar versionen till `<VERSION>` för att slippa snapshot
 drift här. En egen vakt, `tests/version.test.js`, hävdar att stämpeln följer `VERSION` och att ingen annan
 `src/app`-modul hårdkodar en versionssträng.
 
-**ADR-14 — Utforska visar små grupper; exporten utelämnar dem.** Den som använder verktyget har redan rådatan.
-K-skyddet finns mot *läckage*, alltså det som lämnar verktyget. I Utforska gäller därför:
+**ADR-14 — Tabeller och egna vyer visar små grupper; exporten utelämnar dem.** Den som använder verktyget har redan rådatan.
+K-skyddet finns mot *läckage*, alltså det som lämnar verktyget. I Tabeller och egna vyer (fliken `utforska`) gäller därför:
 
 1. Alla grupper visas. (Markeringen av grupper under tröskeln på skärmen — ränder, streckad kant, kursiv —
    utgick med ADR-51: skärmens tröskel är 1, så ingen grupp är liten där. I exportläget får små celler
@@ -503,8 +505,8 @@ K-skyddet finns mot *läckage*, alltså det som lämnar verktyget. I Utforska g�
 2. Exporten — tabellens CSV/urklipp och diagrammets exportmeny — utelämnar dem, och könsvärden och gap där ena
    könet är under tröskeln, om inte användaren kryssar i "Ta med grupper under k i exporten" (k är tröskelns värde). Regeln bor
    i `src/lib/utforska.js` (markeringen `liten`/`konLiten`) och i `71-utforska-figur.js` (`_explorerVisible`).
-3. Diagram med enskilda personers löner (individpunkter) är tillåtna i Utforska, även i export, och följer
-   rutan för små grupper. Utanför Utforska ritas och exporteras en persons punkt i ett spridningsdiagram bara
+3. Diagram med enskilda personers löner (individpunkter) är tillåtna i Tabeller och egna vyer, även i export, och följer
+   rutan för små grupper. Utanför Tabeller och egna vyer ritas och exporteras en persons punkt i ett spridningsdiagram bara
    när personens grupp (yrke inom BAS) och personens kön i gruppen når tröskeln (`individLitenFor` i
    `06-k-anonymitet-och-dataminimering.js`).
 4. Differensskydd (att räkna fram en liten grupp ur två filtrerade urval) byggs inte.
@@ -554,12 +556,12 @@ inläsning), rimlighet och modell. Helheten är det sämsta kriteriet, så att e
 (som den skulle i en viktad summa). Könsfördelningen i organisationen är ett fynd, inte ett kvalitetsmått.
 Logiken bor i `src/lib/datakvalitet.js` och vaktas av `tests/datakvalitet.test.js`. Kompliansöversikten och
 åtgärdslistan räknar bara jämförbara BAS-intervall (samma regel), så att en röd ruta aldrig står bredvid en tom
-åtgärdslista. På Översikt är panelen sammanfattad på en rad och fälls ut när något kriterium är Varning eller
+åtgärdslista. I Filer och kvalitet är panelen sammanfattad på en rad och fälls ut när något kriterium är Varning eller
 Kritisk (ADR-36).
 
 **ADR-20 — Rapportunderlag via urklipp; bedömningen skrivs utanför verktyget.** Rapporten skrivs i
 organisationens egen Word-mall, och det som tar tid är att föra över siffror och tabeller. Panelen
-Rapportunderlag i Dokumentera ger kopierbara block: avsnitten sammanfattning, lika arbete, likvärdigt arbete,
+Rapportunderlag i fliken Rapporttext ger kopierbara block: avsnitten sammanfattning, lika arbete, likvärdigt arbete,
 struktur och handlingsplan, *Var uppstår löneskillnaden?* (ADR-22), *Lägre krav, högre lön* (ADR-25) och
 sektorsavsnittet (ADR-33), ett block per yrkesgrupp med skillnad över 5 % och ett per kandidatpar — med
 faktastycke, ren tabell, vad som redan är prövat (ålder och BAS inom yrket) och frågor till verksamheten — samt
@@ -576,7 +578,7 @@ omfatta hela organisationen, och chefsnivåerna är ofta de grupper där könssk
 kräver bara att BAS är en bokstav; små intervall skyddas av minsta gruppstorlek vid export.
 
 **ADR-22 — Var uppstår löneskillnaden? Uppdelning på medellön.** Blinder-Oaxaca säger hur stor del av gapet som
-är "förklarat", men inte var det uppstår. Översiktens avsnitt och ett block i rapportunderlaget (efter
+är "förklarat", men inte var det uppstår. Ett avsnitt i Lönestruktur och ett block i rapportunderlaget (efter
 Sammanfattning) delar därför skillnaden i medellön, kvinnor minus män (negativ när kvinnor ligger lägre, som
 överallt i verktyget), i tre delar som summerar exakt:
 **BAS-fördelning** (struktur), **AID inom BAS** (likvärdigt arbete) och **lön inom samma AID och BAS** (lika
@@ -592,11 +594,11 @@ bara om dess BAS klarar samma krav (BAS:ens medellön ingår i posten). Dolda gr
 och poster som avrundas till 0 kr visas inte. Topplistan kortas efter en skyddsregel, så att ingen dold grupps
 bidrag går att räkna fram som delens summa minus de visade posterna: för varje dold post ska summan av |belopp|
 för de andra posterna som inte visas vara minst hälften av postens belopp. Går det inte ens med tom lista
-redovisas inga delar, bara hela skillnaden. Översikten och rapportunderlaget visar samma poster. Logiken i
+redovisas inga delar, bara hela skillnaden. Avsnittet och rapportunderlaget visar samma poster. Logiken i
 `src/lib/gapuppdelning.js`.
 
 **ADR-23 — Personer att granska: individlista i verktyget, aldrig i utdata.** Den tredje delen i ADR-22
-(lön inom samma AID och BAS) säger hur mycket av gapet som ligger inom samma AID och BAS, men inte hos vilka. Panelen sist i Lika arbete listar personer vars
+(lön inom samma AID och BAS) säger hur mycket av gapet som ligger inom samma AID och BAS, men inte hos vilka. Panelen Personer att granska i Lika arbete listar personer vars
 lön ligger minst X % (standard 10, inställbar 5–30) under en förväntad lön räknad från **kollegorna** i samma
 AID och BAS — personen själv räknas inte med, annars drar den egna lönen förväntningen mot sig. Förväntan är
 `ln(lön) = a + b · ålder` när kollegornas åldrar skiljer sig minst 5 år, annars deras medianlön. Bara grupper
@@ -609,7 +611,7 @@ samlas in. Ett citerat CSV-fält med radbrytning förskjuter numreringen efter s
 Extremvärdesdetektorn visar samma radnummer. **Utdata:** samma princip som ADR-14 (den som använder verktyget
 har redan rådatan), men utan exportval — tabellen har inga exportverktyg, listan ingår inte i rapportunderlag,
 Word-utkast, PDF, Excel, JPA eller zip och döljs vid utskrift. Panelens diagram går inte heller att exportera
-(`markeraUtanExport` med skälet `individer`, ADR-39). k-invarianten undantar panelen på samma sätt som Utforska; ett eget test kräver att en
+(`markeraUtanExport` med skälet `individer`, ADR-39). k-invarianten undantar panelen på samma sätt som Tabeller och egna vyer; ett eget test kräver att en
 flaggad persons lön inte finns i utdata. Logiken i `src/lib/individflaggor.js`.
 
 **ADR-24 — Stabilitet för flaggor i Lika arbete: märkning, inte nedgradering.** I små yrkesgrupper kan en enda
@@ -623,7 +625,7 @@ kan ge det läge som kommer närmast lika lön). Metoden är verifierad mot utt�
 2-borttagningar på 200 slumpade grupper. Borttagningar som skulle lämna ett kön med färre än k personer prövas
 inte; ett kön med exakt k anges ("prövat bara på män/kvinnor"). Kunde bara en borttagning prövas (ett kön har
 exakt k, det andra k + 1) säger märkningen det i stället för att påstå att två prövats. Kontrollen prövar datan;
-robusthetspanelen i Dokumentera prövar inställningarna. Logiken i `likaArbeteGrupper`
+robusthetspanelen i Exportera prövar inställningarna. Logiken i `likaArbeteGrupper`
 (`src/lib/rapportunderlag.js`).
 
 **ADR-25 — Lägre krav, högre lön: jämförelse över BAS-gränserna.** Med BAS som krav-proxy bildas kandidatparen
@@ -646,7 +648,7 @@ Prioritering, Lönepolitik och statusrutan ett tomläge; profilen är neutral ("
 
 En systemägare samlar organisationens benämningar, grundinställningar (PO-påslag, period, minsta
 gruppstorlek), ställningstagande och jämförelsestatistik i ett **organisationspaket** — en JSON-fil
-(`.lonepaket.json`, version 1) som skapas och läses i verktyget (panelen *Organisationspaket* på Översikt), så
+(`.lonepaket.json`, version 1) som skapas och läses i verktyget (panelen *Organisationspaket* i Filer och kvalitet), så
 att handläggaren läser in allt i ett steg. Bara vitlistade fält läses; paketet avvisas om det innehåller något
 som liknar personnummer eller e-post; det innehåller bara aggregat och lagras aldrig. Exporter och Word-utkast
 anger referensens och statistikens källa (egen fil, organisationspaket med organisation och datum, eller
@@ -694,8 +696,8 @@ webbläsarröktestet.
 
 **ADR-33 — AID-hierarki, sektorsöversikt, ansvarskod och kodkvalitet.** Verktyget känner AID enligt SKR:s
 handbok (2020) och etikettlista. **Sektor = AID-huvudområde** (13 st, första två siffrorna); mellannivån är de
-fyra första. Sektorerna är en **översikt** (kortet *Per sektor* i Struktur & rapportmått, Excel-blad,
-rapportunderlag) och en dimension och ett urvalsvillkor i Utforska — inte ett globalt filter, eftersom ett
+fyra första. Sektorerna är en **översikt** (avsnittet *Per sektor* i Lönestruktur, Excel-blad,
+rapportunderlag) och en dimension och ett urvalsvillkor i Tabeller och egna vyer — inte ett globalt filter, eftersom ett
 filter skulle ändra alla flikars resultat och k-skydd samtidigt. Sektorsöversikten visar även hur stor del av
 organisationens skillnad i medellön som beror på att kvinnor och män arbetar i olika sektorer.
 **Etikettlistan** (version 2026-09-23: kod, etikettnamn, möjliga ansvarskoder — inga beskrivningar) genereras av
@@ -706,7 +708,7 @@ kolumn som bara heter *Ansvar* läses aldrig (ofta ett kostnadsställe). Koderna
 **bredvid** huvudresultaten: underrader i Lika arbete med samma k-regel som yrkesraden, en egen rad under
 förklaringsbudgeten i regressionen — **huvudtalet räknar inte bort ansvaret**, eftersom om ansvaret är ett
 sakligt skäl är arbetsgivarens bedömning. Små yrkesgrupper kan slås ihop till nästa AID-nivå **bara i
-Utforska**, aldrig i Lika arbete, där yrket är jämförelseenheten. **Kodkvaliteten** prövas i Underlagets
+Tabeller och egna vyer**, aldrig i Lika arbete, där yrket är jämförelseenheten. **Kodkvaliteten** prövas i Underlagets
 kvalitet (`src/lib/aidkontroll.js`): okända koder, andel restkoder (…090), lönespridning inom AID och ansvarskod
 mot etikettlistan. Metodtexten ("AID är inte ett arbetsvärderingssystem …") står i Om verktyget, Lika arbete och
 Word-utkastet. **Vakter:** `tests/aid.test.js`, `tests/sektor.test.js`, `tests/ansvar.test.js`,
@@ -747,23 +749,24 @@ pekar inte ut vem, och medianen har samma egenskap vid udda antal — användare
 med piltangenterna, och tabellhuvudet är statiskt, så att sorteringen håller när innehållet byts. Valen sparas
 i konfigurationsfilen (`ui.jamforelse`). Excelrubrikerna för jämförelsekolumnerna namnger den valda källan.
 **Fliken kräver jämförelsestatistik:** med bara ett ställningstagande är den dold, och jämförelsen mot
-ställningstagandet görs i fliken Lönepolitik. Inom fliken kan man välja ställningstagandet som källa. (Ersatt av ADR-55: jämförelsen mot ställningstagandet är ett eget avsnitt i Jämförelse.)
+ställningstagandet görs i fliken Lönepolitik. Inom fliken kan man välja ställningstagandet som källa. (Ersatt av ADR-55: jämförelsen mot ställningstagandet är ett eget avsnitt i Löneläget.)
 **Vakter:** `tests/jamforelse.test.js`, röktesterna för fliken och diagrammen, k-testerna för export, tabell och
 diagramdata, golden för den samlade exporten och webbläsartestet.
 
-**ADR-36 — Översikt: filrutorna syns alltid; namn på organisationen och jämförelsestatistiken.** De tre
+**ADR-36 — Filrutorna syns alltid; namn på organisationen och jämförelsestatistiken.** De tre
 filrutorna syns alltid, så att ställningstagandet och jämförelsestatistiken aldrig döljs bakom en hopfälld rad.
 Efter inläsning är de kompakta (filnamn, namnfält, *Byt fil*, för lönefilen även *Kolumnmappning*), och
 släppytan och hjälptexten visas bara innan en fil är inläst. Demots ställningstagande markerar sin ruta.
-Organisationspaketet ligger som en ihopfälld rad som visar organisationstypen. Ordningen efter inläsning:
-nyckeltal (kvinnor och män), Att göra, processen, Underlagets kvalitet och Var uppstår löneskillnaden?
+Organisationspaketet ligger som en ihopfälld rad som visar organisationstypen. Filrutorna, Underlagets kvalitet och
+extremvärdena står i fliken Filer och kvalitet; Översikt visar efter inläsning en rad om vad som är inläst (med
+knappen till Filer och kvalitet), nyckeltalen, Att göra och processen. *Var uppstår löneskillnaden?* står i Lönestruktur.
 **Underlagets kvalitet** är sammanfattad på en rad ("n av m kriterier OK" och avvikelserna) med detaljerna —
 kriterierna, rimligheten, inläsningen, extremvärdena och konsistensrutan — i en `<details>` som är utfälld när
 något kriterium är Varning eller Kritisk. Välkomstrutan är en rad, och *Prova med demodata* finns bara där.
 **Namnen:** organisationens namn lagras i `profile.name` och jämförelsestatistikens i `profile.benchmarkLabel`
 (genitiv och kortform räknas fram, `src/lib/namn.js`). `orgNamn(standard)` och `jmfNamn(standard)` är enda
 källan för etiketterna — diagramserier, tabell- och Excelrubriker, beräkningsbevis — medan löptext står kvar.
-Utan namn används standardetiketterna. Fältet på Översikt och fältet i Dokumentera är samma namn, och
+Utan namn används standardetiketterna. Fältet i lönefilens ruta och fältet *Organisation* i Exportera är samma namn, och
 Word-utkastet och utskriften läser det. Alla tre namnfälten (även ställningstagandets) avvisar text som liknar
 personnummer eller e-post (`liknarPersonuppgift`, samma mönster som organisationspaketet). Namnen följer med
 konfigurationsfilen och paketet. **Vakter:** `tests/namn.test.js`, röktesterna för Översikt och namnen, vakten
@@ -822,7 +825,7 @@ lönedata och ska hanteras som personuppgifter.
 livscykelmodellen, extremvärdesdetektorn, det justerade gapet inom yrke, ansvarsindikatorn och Personer att
 granska läser `statGolv()` = `max(kTroskel(), 10)`, eftersom gränsen där gäller skattningens tillförlitlighet.
 De följer med uppåt, så att ett skärpt skydd också gäller skattade gruppvärden. Tre fasta golv står som de är
-(beslut): huvudregressionen i Lika arbete med 5 av varje kön, motiveringsregeln om medelålder
+(beslut): huvudregressionen (Lönestruktur) med 5 av varje kön, motiveringsregeln om medelålder
 per kön med 3 av varje (`55-prioritering.js`) och Löneöversiktens yrkesrader med 5 (`39-loneoversikt.js`).
 Lönepolitikens mellannivå (antal för grupper mellan 5 och k) försvinner när tröskeln är 5 eller lägre. Appens
 texter fylls i ur värdet (`data-k-troskel`, `data-k-tooltip` med `{k}` och `{golv}`, `_kText`); dokumenten anger
@@ -836,7 +839,7 @@ Struktur, Word-utkastet, PDF-rapporten och EU-lönerapporten. Kandidatpar ur Lik
 fliken och dess egen CSV- och Excel-export bara när båda grupperna når tröskeln, med antalet utelämnade angivet
 (`_parForRedovisning` i `06-k-anonymitet-och-dataminimering.js`): Word-utkastet, PDF-rapporten,
 JPA-protokollet, Att göra och dess CSV, handlingsplanens förifyllda rader, gruppdossiern, Löneöversyns
-förslag, mål-läge och känslighetskurva samt robusthetspanelen i Dokumentera & exportera (`robusthetLikvardighet`
+förslag, mål-läge och känslighetskurva samt robusthetspanelen i Exportera (`robusthetLikvardighet`
 i `85-robusthet-fardigcheck.js`: par med en grupp under tröskeln namnges inte i någon körning, och panelen anger
 antalet sådana par; beslut). Fyra regler till:
 
@@ -885,9 +888,9 @@ formatet, `ritaFigur`, exporten, rensningen, vyernas skyldigheter och kända luc
 `docs/utveckling/diagramkarnan.md`.
 
 **Skyddet för små grupper är en egenskap hos kärnan:** `ritaFigur` ritar inte datapunkter märkta `liten` om inte
-vyn begär det (bara Utforska, ADR-14), och då med ränder och streckad kant, så att markeringen inte bara bärs av
+vyn begär det (bara Tabeller och egna vyer, ADR-14), och då med ränder och streckad kant, så att markeringen inte bara bärs av
 färg (WCAG 1.4.1). Exporterade bilder ritas utan små grupper och diagramdata filtreras med `utanSmaGrupper`, om
-inte vyn uttryckligen begär annat (`exportMedSma`, Utforskas kryssruta). Skyddet vaktas av två
+inte vyn uttryckligen begär annat (`exportMedSma`, kryssrutan i Tabeller och egna vyer). Skyddet vaktas av två
 differentialtester över samma figurlista (`tests/helpers/ritfigurer.js`): bilden på skärmen, och det som
 exporteras (SVG-text och diagramdata), ska vara tecken för tecken det man får av samma figur där de små punkterna
 tagits bort. Ett test kräver att inget diagram ritas förbi kärnan.
@@ -912,8 +915,7 @@ behållaren saknar figur, eller alla punkter hör till små grupper — lämnar 
 det. Alla vägar som gör bilder av diagram (exportmenyn, ZIP-exporten, rapportunderlagets "Kopiera diagram",
 utskriften) går genom samma väg (`diagramTillBild` i `11-diagramexport.js`). **När ett diagram inte får lämna
 verktyget** står på ett ställe, `11-diagramexport.js`: vyn märker behållaren med `markeraUtanExport(el, skal)`,
-där `skal` måste vara en nyckel i `EXPORT_SKAL` (`individer`: Personer att granska, ADR-23; `kopia`: Översiktens
-kopior av Struktur & rapportmåtts diagram), och skälet står i behållarens verktygstips ("Lämnar inte
+där `skal` måste vara en nyckel i `EXPORT_SKAL` (i dag bara `individer`: Personer att granska, ADR-23), och skälet står i behållarens verktygstips ("Lämnar inte
 verktyget: …"). Varje väg frågar `exportTillaten(behållare)`: ingen meny, ingen bild (`diagramTillBild`), ingen
 diagramdata, inte med i ZIP-filen eller utskriften. Ett test räknar upp varje märkt behållare i det ritade
 dokumentet och kräver ett registrerat skäl.
@@ -928,7 +930,7 @@ export och sparas inte.
   varje diagram och tabell i verktyget som visar något för gruppen framhäver det, också i andra flikar
   (`11-markering.js`, fältet `markering` i figuren). Med Ctrl, Cmd eller Skift läggs en grupp till eller tas
   bort. En rad nere till höger säger vad som är markerat, erbjuder gruppdossiern och — när exakt ett
-  BAS-intervall är markerat — "Visa yrkesgrupperna", som öppnar Utforska med urvalet satt till intervallet.
+  BAS-intervall är markerat — "Visa yrkesgrupperna", som öppnar Tabeller och egna vyer med urvalet satt till intervallet.
   Markeringen försvinner med "Rensa all data".
 - *Pensling och zoom:* i ett diagram med punkter på två talaxlar kan användaren dra en ruta; en rad under
   diagrammet säger antal och median per serie, räknat bara på ritade punkter. "Zooma hit" ritar om diagrammet
@@ -953,7 +955,7 @@ export och sparas inte.
   ritas som de står; en domän eller referenslinje som bygger på en liten grupps värde syns i bild och export.
 - *Sätt alltid `farg` på lagren*, så att ett lager som inte ritas inte lämnar en lucka i färgföljden.
 - *Stämpeln:* allt i fliken Likvärdigt arbete bär "(undantag: Likvärdigt arbete)"; utanför den bär ett diagram
-  "(undantag: valt i Utforska)" bara när exporten faktiskt bär små grupper.
+  "(undantag: valt i Tabeller och egna vyer)" bara när exporten faktiskt bär små grupper.
 - *Ett vakttest per vy* visar att ingen cell under tröskeln når SVG:n, verktygstipset eller diagramdatan.
 
 **Regler för diagram som visar fördelningar:**
@@ -987,9 +989,9 @@ sammanställningar för ledningsbriefen.
 **ADR-41 — Flikmallen: resultatet först.** Alla flikar följer en mall — en rad om vad fliken svarar på (resten
 bakom *Visa mer*), urvalet, **nyckeltalen i en sammanhållen rad**, flikens huvudresultat, och under rubriken
 *Fördjupning* resten i hopfällbara avsnitt som säger sitt viktigaste tal i rubrikraden. Motiv: huvudresultatet
-ska inte ligga flera skärmar ned. Det som gäller alla flikar (minsta gruppstorlek, kommun eller region, läge)
-ligger i panelen Inställningar; det som bara används i en flik stannar där (PO-påslag och beräkningsperiod i
-Prioritering — användarens beslut). Två lägen: vägledande och kompakt (samma avsnitt öppna, förklaringarna
+ska inte ligga flera skärmar ned. Det som gäller alla flikar (minsta gruppstorlek, kommun eller region, läge, PO-påslag och
+beräkningsperiod) ligger i panelen Inställningar, liksom Prioriteringens trösklar och viktning, som styr
+åtgärdslistan, kostnaden, handlingsplanen och rapporterna; det som bara används i en flik stannar där. Två lägen: vägledande och kompakt (samma avsnitt öppna, förklaringarna
 undanfällda). Sök i sidhuvudet markerar en grupp i alla vyer. *Avgränsning (användarens beslut):* verktyget
 anpassas för datorskärm, surfplatta och delat fönster — **aldrig för telefon**. *Skäl till nyckeltalsraden:* med
 ett kort per tal fyller texten 3–31 % av kortens yta, och alla kort i en rad blir lika höga som det högsta.
@@ -1073,7 +1075,7 @@ och *Om verktyget*) säger detsamma. **Tillägg 2026-11-05 (ADR-56):** det gäll
 välja in yrkesgrupp i förklaringsmodellen, och då är steget huvudtalet.
 
 **ADR-47 — Organisationspaketet kan låsa tre skydd.** Minsta gruppstorlek (ADR-38), rensningen vid inaktivitet
-och rutan *Ta med grupper under tröskeln i exporten* i Utforska (ADR-14) kan handläggaren annars ställa in
+och rutan *Ta med grupper under tröskeln i exporten* i Tabeller och egna vyer (ADR-14) kan handläggaren annars ställa in
 själv; en säkerhetsgranskning fann att systemägaren inte kunde tvinga något av dem. Paketets `installningar`
 får därför tre valfria fält: `kTroskelLagst` (heltal 2–1000), `inaktivitetMin` (0 eller 5–120) med
 `inaktivitetLast` (boolean) och `smaGrupperIExport` (boolean, standard tillåtet). Alla tre normaliseras i
@@ -1092,7 +1094,7 @@ byta paket utan att rensa allt. **Rensningstiden:** `setInactivityTimeout()` tar
 låsta värdet; rullistan i *Vad lagras?* är låst (`disabled`) på värdet, som alltid finns bland alternativen, och
 en rad säger att organisationspaketet har låst tiden. Ett `inaktivitetMin` utan `inaktivitetLast` är en
 förinställning som handläggaren får ändra. **Exporten:** `explorerSmaIExport()` är enda vägen att läsa rutan
-(Utforskas tabell, figurens `exportMedSma` och exportgrindens undantagstext); när paketet inte tillåter små
+(tabellen i Tabeller och egna vyer, figurens `exportMedSma` och exportgrindens undantagstext); när paketet inte tillåter små
 grupper är rutan dold och avkryssad, svaret alltid nej, och `#explore-sma-last` säger varför. Paketformuläret
 har de tre fälten (ett ogiltigt värde stoppar sparandet, som för tröskeln), faktarutan listar låsningarna.
 Vaktas av `tests/organisationspaket.test.js` (normaliseringen), `tests/ktroskel-regression.test.js` (golvet från fältet,
@@ -1144,7 +1146,7 @@ Excel, Word, PDF, ZIP, CSV, urklipp, diagrambilder, rapportunderlaget, gruppdoss
 konfigurationsfilens ögonblicksbild — körs i `medExportLage()` (`23-exportgrind.js`): generationen ökar så att
 grinden ritar om varje flik som läses, och efteråt ritas skärmen tillbaka. De två funktioner all export av tabeller
 och diagram går genom (`_cloneAndCleanTableForExport`, `_chartExportUnderlag`) går själva in i läget, och
-Dokumentera & exportera ritas alltid i det. Inställningen, stämpeln, metodbilagan och texterna om regeln talar om den
+Rapporttext, Exportera och Spara och jämför år ritas alltid i det. Inställningen, stämpeln, metodbilagan och texterna om regeln talar om den
 inställda tröskeln; det statistiska golvet `statGolv()` är oförändrat. Testerna prövar vyerna i exportläget
 (`iExport` i riggen) och skärmen positivt. Knappen *Som i exporten* i sidhuvudet (`sattForhandsvisning`) sätter skärmen i
 exportläget — banner, streckad ram och omritning av det som syns — tills den stängs av; exporterna byter då inte
@@ -1153,10 +1155,10 @@ läge, och ett byte medan en export pågår avvisas. Efter en export ritas bara 
 (`invalidateStatCaches`) bara när `statGolv()` ändras; Att göras lista byggs en gång för Att göra och
 processöversikten (`renderProcessTracker({ punkter })`) — ingen cache, bara ett värde som skickas vidare.
 
-**ADR-52 — Egna tabeller i rapporten som recept, inte tal.** Beslut 2026-10-29. En vy i Utforska sparas med *Lägg
+**ADR-52 — Egna tabeller i rapporten som recept, inte tal.** Beslut 2026-10-29. En vy i Tabeller och egna vyer sparas med *Lägg
 till i rapporten* som ett recept — rader, kolumner, mått, urval, gruppvillkor och valfri upprepning per BAS-intervall
 (`src/lib/tabellrecept.js`, `state.rapportTabeller`). Recepten ritas om i exportläget (ADR-51) med samma pivot som
-fliken (`computePivot`) och Utforskas exportregler för minsta gruppstorlek, i avsnittet *Egna tabeller* efter
+fliken (`computePivot`) och exportreglerna i Tabeller och egna vyer för minsta gruppstorlek, i avsnittet *Egna tabeller* efter
 avsnittet per BAS-intervall (följer med när det gör det), i Excel-bladet *Egna tabeller* och som block i
 rapportunderlaget (`egen:i:j`, `egenTabellBlock` i `src/lib/rapportunderlag.js`). Organisationspaketet kan bära
 recepten (`rapport: { tabeller, perBasRecept }`, `_rapport` i `src/lib/organisationspaket.js`): giltiga recept följer
@@ -1187,7 +1189,7 @@ arbete där båda könen når minsta gruppstorlek (antal per kön, medianer, gap
 titel och läge. Aldrig individer, aldrig lönedata; bokslutet byggs i exportläget (ADR-51) med den inställda tröskeln,
 och `valideraArsbokslut` stryker vid inläsning varje grupp där ett kön är under bokslutets k och nollar könsuppdelade
 nyckeltal när ett kön är det. Läses en fil med bokslut in ligger det i `state.forraArsbokslut`, och panelen
-*Jämförelse med förra året* i Dokumentera & exportera (`73-arsbokslut.js`, `jamforArsbokslut`) visar nyckeltal rad för
+*Jämförelse med förra året* i Spara och jämför år (`73-arsbokslut.js`, `jamforArsbokslut`) visar nyckeltal rad för
 rad, flaggade yrkesgrupper som kvar, nya och borta, och vilka av förra årets öppna punkter som är klara i år. Filen
 bär bara ett bokslut: det som sparas i år; utan underlag bär den det inlästa vidare. *Rensa all data* tar bort det.
 Alternativet, en egen bokslutsfil, valdes bort: konfigurationsfilen är redan den fil som sparas när arbetet är klart
@@ -1201,16 +1203,18 @@ orange när den fjärmat sig, grå när den är oförändrad — en riktning, in
 på strecket är inte gjord: strecket och punkten säger redan vilket år som är vilket. Vaktas av
 `tests/arsbokslut.test.js` och `tests/smoke-arsbokslut.test.js`.
 
-**ADR-55 — Jämförelse mot båda referenserna, Lönepolitik som avsnitt, Dokumentera sist.** Beslut 2026-10-30. Fliken
-Jämförelse samlar organisationens löner mot det de jämförs med, i tre avsnitt: överblicken (`src/lib/referenser.js`,
+**ADR-55 — Löneläget mot båda referenserna, Lönepolitik som avsnitt.** Beslut 2026-10-30. Fliken
+Löneläget (id `benchmark`) samlar organisationens löner mot det de jämförs med, i tre avsnitt: överblicken (`src/lib/referenser.js`,
 `44-referensoverblick.js`), *Mot ställningstagandet* (dagens Lönepolitik, oförändrad i sak; `buildLonepolitikModel`
-behåller sin form) och *Mot jämförelsestatistiken* (dagens Jämförelse, låst till statistiken: växeln *Jämför mot*
+behåller sin form) och *Mot jämförelsestatistiken* (den förra fliken Jämförelse, låst till statistiken: växeln *Jämför mot*
 är borttagen). Fliken syns när underlaget och minst en referens är inlästa; `lonepolitik` är ett flikalias
 (`TAB_ALIAS`), så att länkar och äldre konfigurationsfiler hamnar rätt, och ett sparat källval ignoreras.
-Dokumentera & exportera är menyns sista grupp, och *Klar här?*-raderna går genom fördjupningen dit.
+Menyn följer rapportens ordning (1 · Underlag, 2 · Kartläggning, 3 · Åtgärder, 4 · Rapport, Arbetet, Hjälp; omlagd
+2026-11-06): Löneläget står först i Kartläggning, och *Klar här?*-raderna följer menyn till Exportera och hoppar
+över Löneläget och Ålder & karriär när de är låsta.
 
 **Ställningstagandet är referenspunkten.** Löneläget och statistiken mäts mot det och ligger över eller under det,
-aldrig tvärtom; statistikens skillnad är (S − P) / P. Per yrke inom BAS, som i Jämförelse: *läge i spannet* är
+aldrig tvärtom; statistikens skillnad är (S − P) / P. Per yrke inom BAS, som i avsnittet mot statistiken: *läge i spannet* är
 medianens plats i referensens P10–P90 (`bandPosition`; 0 = P10, 100 = P90), med orden nedanför, i nedre delen, mitt i,
 i övre delen och ovanför. *Mönstret* ställer löneläget mot ställningstagandet (nedanför, inom, ovanför) bredvid
 statistikens median mot samma spann (under, inom, över), eftersom kombinationen bär samtalet: ligger båda över har
@@ -1243,7 +1247,7 @@ och i rapportens sammanfattning och bilaga.
 
 *Valet slår igenom överallt där huvudtalet används* (beslut på frågan 2026-11-05): `runOLSRegression` läser
 `state.forklaringsmodell` (null = standard; `normaliseraForklaringsmodell`, `modellFras`, `modellBeskrivning` i
-`src/lib/regression.js`), så Översikt, Att göra, Struktur, Lika arbetes nyckeltal, rapporten och rapportunderlaget
+`src/lib/regression.js`), så Översikt, Att göra, Lönestruktur, Lika arbetes nyckeltal, rapporten och rapportunderlaget
 visar samma tal, och frasen "ålder och nivå" byts överallt mot modellens fras ("nivå", "ålder", "ålder, nivå och
 yrkesgrupp", tom för endast kön: "utan att något räknats bort"). Trappan, förklaringsbudgeten och Blinder-Oaxaca
 räknar på samma modell (ADR-53 består). Sektorsöversikten i Struktur (`src/lib/sektor.js`) har en egen modell och
@@ -1310,7 +1314,7 @@ Kända brister och obesvarade frågor, så att de inte lever bara i en konversat
 
    Mätvärden med `npm run perf` på 55 000 syntetiska rader (2026-10-29, efter ADR-51): uppladdning till klart
    gränssnitt ~2,8 s, till klara bakgrundsanalyser ~7,7 s; Likvärdigt arbete 2,6 s, Lika arbete 2,0 s, Ålder &
-   karriär 1,8 s, Dokumentera & exportera 3,7 s, övriga flikar under 0,6 s styck; hela svepet 19 s. Dokumentera
+   karriär 1,8 s, Dokumentera & exportera (då fliken Dokumentera & exportera; nu Exportera, Rapporttext och Spara och jämför år) 3,7 s, övriga flikar under 0,6 s styck; hela svepet 19 s. Dokumentera
    & exportera ritas i exportläget och tog 12 s innan förhandsbeskedet byggde rapportmodellen en gång i stället
    för tre (`rapportModellBada`), Excel-bladlistan en gång i stället för två, Lika arbetes minne fick ett rum per
    tröskel och omritningen efteråt begränsades till det exporten ritade (`_ritaOmEfterExport`). Det som kostar i
@@ -1346,7 +1350,7 @@ Kända brister och obesvarade frågor, så att de inte lever bara i en konversat
     undantaget är EU-lönerapportens blad med direktivets tecken (art. 9), utskrivet i rubriken.
 9c. **Ålder & karriär ordnad efter tre frågor** (vid samma ålder; över karriären; åldersstruktur), med ett
     spridningsdiagram där hela urvalets trend är ett valbart lager. Täthetskurvorna per BAS är borta ur fliken
-    (lönespridningen per BAS och kön finns som lådor i Lika arbete, och utskriften använder den bilden).
+    (lönespridningen per BAS och kön finns som lådor i Lönestruktur, och utskriften använder den bilden).
 9d. **Dekomponeringen visas som en bild:** trappan med yrkesgruppssteget efter huvudtalet, förklaringsbudgeten
     under den, steglistan som skärmläsaralternativ. Livscykelns nivåer per BAS kommer ur modellens
     BAS-koefficienter (`basFaktor`). Blinder-Oaxaca kodar BAS som indikatorer sedan ADR-53.

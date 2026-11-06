@@ -8,8 +8,8 @@
 
 // Diagram som kan kopieras som bild: id på diagrammet och fliken som ritar det.
 const RAPPORT_DIAGRAM = [
-    { id: 'chart-skevhet-overview', rubrik: 'Lönegap per BAS-intervall', flik: 'matrix' },
-    { id: 'chart-perbas-gap', rubrik: 'Oförklarat gap per BAS-intervall', flik: 'matrix' },
+    { id: 'chart-skevhet-overview', rubrik: 'Lönegap per BAS-intervall', flik: 'struktur' },
+    { id: 'chart-perbas-gap', rubrik: 'Oförklarat gap per BAS-intervall', flik: 'struktur' },
     { id: 'chart-likvardighet-heatmap', rubrik: 'Kandidatpar i likvärdigt arbete', flik: 'likvardighet' },
 ];
 
@@ -112,8 +112,6 @@ function _rapportunderlagBlockExport() {
 function renderRapportunderlag() {
     const host = document.getElementById('rapportunderlag-innehall');
     if (!host) return;
-    // Samverkansknapparna exporterar underlag — inaktiva tills data finns.
-    document.querySelectorAll('[data-dok-klick]').forEach(b => { /** @type {HTMLInputElement} */ (b).disabled = !getData().length; });
     if (!getData().length) {
         _rapportBlockSenast = new Map();
         host.innerHTML = '<p class="ru-tom">Läs in underlag för att få rapportunderlaget.</p>';
@@ -154,7 +152,7 @@ function renderRapportunderlag() {
         + `<div class="ru-atgard"><button type="button" class="btn btn-secondary btn-sm" id="btn-ru-kopiera-avsnitt">Kopiera alla avsnitt</button>`
         + `<span class="ru-kvitto" role="status"></span></div><div id="ru-alla-avsnitt" class="ru-alla-avsnitt" hidden></div></nav>`;
     host.innerHTML = forteckning + grupp('Avsnitt', avsnitt) + grupp('Yrkesgrupper i Lika arbete', yrken)
-        + grupp('Kandidatpar i Likvärdigt arbete', parBl) + grupp('Egna tabeller från Utforska', egna)
+        + grupp('Kandidatpar i Likvärdigt arbete', parBl) + grupp('Egna tabeller från Tabeller och egna vyer', egna)
         + `<h3 class="ru-grupprubrik">Diagram</h3>${diagram}`;
 }
 

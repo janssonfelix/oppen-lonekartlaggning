@@ -71,38 +71,40 @@ describe('lönefil vars kolumner inte känns igen', () => {
 });
 
 describe('menyns ordning', () => {
-    it('Dokumentera & exportera är sista steget i menyn, efter Fördjupa', () => {
+    it('Rapport kommer efter Åtgärder, och Exportera efter Rapporttext', () => {
         const w = createAppWindow();
         const grupper = [...w.document.querySelectorAll('#sidomeny .nav-group')].map(g => g.textContent.trim());
-        expect(grupper).toEqual(['1 · Underlag', '2 · Kartlägg & analysera', '3 · Åtgärda', '4 · Fördjupa (ej lagkrav)', '5 · Dokumentera', 'Hjälp']);
+        expect(grupper).toEqual(['1 · Underlag', '2 · Kartläggning', '3 · Åtgärder', '4 · Rapport', 'Arbetet', 'Hjälp']);
         const knappar = [...w.document.querySelectorAll('#sidomeny .nav-item[data-tab]')].map(b => b.dataset.tab);
-        expect(knappar.indexOf('dokumentera')).toBeGreaterThan(knappar.indexOf('utforska'));
+        expect(knappar.indexOf('dokumentera')).toBeGreaterThan(knappar.indexOf('rapporttext'));
+        expect(knappar.indexOf('rapporttext')).toBeGreaterThan(knappar.indexOf('handlingsplan'));
         expect(knappar.indexOf('dokumentera')).toBeLessThan(knappar.indexOf('info'));
     });
 });
 
 describe('länkar till ett avsnitt i en annan flik', () => {
-    it('Att göra-länkarna till Lika arbete byter flik och fäller ut avsnittet de leder till', () => {
+    it('Att göra-länkarna till Lönestruktur byter flik och fäller ut avsnittet de leder till', () => {
         const w = createAppWindow();
         w.__loadDemoData();
         const d = w.document;
-        for (const id of ['avsnitt-la-bas', 'avsnitt-la-kon']) d.getElementById(id).open = false;
+        for (const id of ['avsnitt-ls-bas', 'avsnitt-ls-kon']) d.getElementById(id).open = false;
         d.querySelector('#comp-gap .comp-lank').click();
-        expect(d.querySelector('.nav-item.active').getAttribute('data-tab')).toBe('matrix');
-        expect(d.getElementById('avsnitt-la-bas').open).toBe(true);
-        expect(d.getElementById('avsnitt-la-kon').open).toBe(false);
+        expect(d.querySelector('.nav-item.active').getAttribute('data-tab')).toBe('struktur');
+        expect(d.getElementById('avsnitt-ls-bas').open).toBe(true);
+        expect(d.getElementById('avsnitt-ls-kon').open).toBe(false);
         d.querySelector('#comp-skev .comp-lank').click();
-        expect(d.getElementById('avsnitt-la-kon').open).toBe(true);
+        expect(d.getElementById('avsnitt-ls-kon').open).toBe(true);
     });
 });
 
 describe('flik utan underlag', () => {
-    it('säger att inget underlag är inläst och länkar till Översikt; raden försvinner när underlaget finns', () => {
+    it('säger att inget underlag är inläst och länkar till Filer och kvalitet; raden försvinner när underlaget finns', () => {
         const w = createAppWindow();
         w.eval("renderTabContent('matrix')");
         const rad = () => w.document.querySelector('#view-lika-yrken > .inget-underlag');
         expect(rad().textContent).toContain('Inget underlag inläst');
-        expect(rad().querySelector('[data-go-to-tab="dashboard"]')).toBeTruthy();
+        expect(rad().querySelector('[data-go-to-tab="filer"]')).toBeTruthy();
+        expect(rad().textContent).toContain('under Filer och kvalitet');
         w.eval("renderTabContent('matrix')");
         expect(w.document.querySelectorAll('#view-lika-yrken > .inget-underlag').length).toBe(1);
         w.__loadDemoData();
@@ -214,7 +216,7 @@ describe('modalerna skriver tal på svenska', () => {
 describe('samma tal i samma precision på sidan', () => {
     it('regressionskortet skriver den oförklarade skillnaden med en decimal, som flikens nyckeltal', () => {
         const w = demo();
-        w.__renderTabContent('matrix');
+        w.__renderTabContent('struktur');
         const tal = w.document.querySelector('.reg-hero .hero-number').textContent.trim();
         expect(tal).toMatch(/^[+\u2212-]?\d+,\d\s%$/);
         expect(w.document.querySelector('.reg-hero .hero-label').textContent).toBe('Oförklarad löneskillnad, kvinnor mot män');

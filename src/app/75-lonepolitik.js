@@ -105,7 +105,7 @@ function renderLonepolitik() {
         if (h && p) {
             if (!harReferens()) {
                 h.textContent = 'Ingen referens inläst';
-                p.textContent = 'Ladda upp ert lönepolitiska ställningstagande — eller ett organisationspaket — på Översikt, så jämförs lönerna mot det.';
+                p.textContent = 'Ladda upp ert lönepolitiska ställningstagande — eller ett organisationspaket — under Filer och kvalitet, så jämförs lönerna mot det.';
             } else {
                 h.textContent = 'Referensen matchar inte underlaget';
                 p.innerHTML = 'Referensen har inga rader för underlagets BAS-intervall eller yrken. Ladda upp en fil med P10/Median/P90 där varje rad har en <strong>BAS</strong>-kolumn, en <strong>AID</strong>-kolumn, eller båda.';
@@ -501,7 +501,7 @@ function _lpExcelBlad() {
     const namn = g => (benamning(g) ? `${g.aid} ${benamning(g)}` : String(g.aid));
     /** @type {any[][]} */
     const ut = [
-        [`Lönerna mot ${referensNamn()} (fliken Jämförelse)`],
+        [`Lönerna mot ${referensNamn()} (fliken Löneläget)`],
         [`Position är var medianen ligger i referensens spann: 0 % = på P10, 100 % = på P90; under 0 eller över 100 betyder utanför spannet. `
             + `Yrkesgrupper med färre än ${k} personer står med antal men utan lönemått, och med färre än ${Math.min(LP_COUNT_TIER_MIN, k)} utelämnas de; de räknas alltid in i BAS-intervallets rader. `
             + `Könsuppdelade mått redovisas bara där varje kön har minst ${k} personer.`],

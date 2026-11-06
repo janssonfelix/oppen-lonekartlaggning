@@ -14,8 +14,8 @@ varje bygge, också efter de flikar och paneler som tillkommit sedan dess.
   3:1 mot vit bakgrund; varning och ok skiljer sig i ljushet, så att rött och grönt inte behöver skiljas på
   färgtonen (`tests/farger.test.js`, ADR-43).
 - **I webbläsare 2026-10-17:** axe-core (WCAG 2.0 och 2.1, A och AA, med färgkontrast) i Chromium 1400 punkter
-  brett, med demodata, i var och en av de då 14 flikarna (i dag 13, sedan Lönepolitik blev ett avsnitt i
-  Jämförelse): **inga överträdelser**. Axe prövar inte kontrasten i
+  brett, med demodata, i var och en av de då 14 flikarna: **inga överträdelser**. Menyn har sedan dess delats om
+  till 16 flikar (2026-11-06); den nya indelningen är inte prövad på det sättet. Axe prövar inte kontrasten i
   diagrammens SVG-text, och det som axe markerar som "behöver granskas" är inte genomgånget för hand.
 - **Tangentbordet:** jsdom-testerna prövar pilarna och Home mellan flikarna (`tests/smoke.test.js`); röktestet
   i Chromium, Firefox och WebKit prövar att avsnittens rubriker nås med Tab och fälls ut med Enter, menyn i

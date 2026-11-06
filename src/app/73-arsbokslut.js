@@ -2,7 +2,7 @@
 // Copyright 2026 Felix Jansson
 // ---- Årsbokslut och jämförelse med förra året (ADR-54) ----
 // Konfigurationsfilen bär ett k-skyddat årsbokslut (src/lib/arsbokslut.js). Läses förra årets fil in ligger dess
-// bokslut i state.forraArsbokslut, och panelen i Dokumentera & exportera visar skillnaden mot årets. Allt byggs i
+// bokslut i state.forraArsbokslut, och panelen i Spara och jämför år visar skillnaden mot årets. Allt byggs i
 // exportläget (ADR-51): bokslutet lämnar verktyget i filen.
 
 /** Årets bokslut ur det inlästa underlaget, eller null utan underlag. */
@@ -56,7 +56,7 @@ function _abHantelFigur(j, forraAr, nuAr) {
     return fig;
 }
 
-/** Panelen Jämförelse med förra året i Dokumentera & exportera. */
+/** Panelen Jämförelse med förra året i Spara och jämför år. */
 function renderArsjamforelse() {
     const host = document.getElementById('arsjamforelse');
     if (!host) return;

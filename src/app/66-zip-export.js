@@ -42,7 +42,7 @@ async function _exportZipExport() {
         for (const knapp of document.querySelectorAll('.nav-item[data-tab]')) {
             if (/** @type {HTMLInputElement} */ (knapp).disabled || /** @type {HTMLElement} */ (knapp).hidden) continue;
             const flik = knapp.getAttribute('data-tab');
-            if (flik === 'dokumentera' || flik === 'info') continue;      // inga diagram att hämta där
+            if (!flik || ['dokumentera', 'rapporttext', 'arbetet', 'info'].includes(flik)) continue;      // som förut: inga diagram hämtas där
             try { renderTabContent(flik); } catch (e) { rapporteraFel(`ZIP: ${flik}`, e); }
         }
         for (const el of zipDiagram()) {

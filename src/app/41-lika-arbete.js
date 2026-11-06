@@ -268,8 +268,6 @@ function _skrReferensCell(yrke) {
 // bär sina tal där. Dominansen och den nationella andelen står i beviset (förstoringsglaset).
 const LA_DOLDA_KOLUMNER = ['dominans', 'nationellt'];
 function generateEUDirectiveMatrix() {
-    // Regressionen körs en gång och skickas vidare (ADR-17): Oaxaca-kortet bär noteringen om det bortvalda (ADR-56).
-    renderBlinderOaxacaCard(renderRegressionCard());
     const tbody = document.querySelector("#matrix-table tbody");
     if (!tbody) return;
     tbody.innerHTML = "";
@@ -645,7 +643,7 @@ function _skevhetAndelFigur(rader) {
 // Talen hämtas ur det som fliken redan har ritat — tabellraderna och deras data — så att toppen aldrig kan säga
 // något annat än tabellerna under, och aldrig något som inte får visas: en rad som inte ritats (liten grupp) finns
 // inte att räkna. Alla tal i raden är kvinnors lön i % av mäns (100 = lika lön): regressionens skillnad räknas om till
-// samma mått (reg.konKvot = 100 + konPct), och kortet längre ned säger hur dess skillnad hänger ihop med talet här.
+// samma mått (reg.konKvot = 100 + konPct), och regressionskortet i Lönestruktur säger hur dess skillnad hänger ihop med talet här.
 // ====================================================================
 // Texten under talet är kort (högst 40 tecken) och får två rader; en längre förklaring står i rutans verktygstips.
 // `kritisk` är true för rött (ett fel i underlaget), 'granska' för statusens lila (en skillnad över 5 %, Värt att granska).
@@ -673,7 +671,7 @@ function renderLikaArbeteTopp() {
     const d = getData();
     if (!d.length) {
         urval.textContent = ''; ut.innerHTML = '';
-        for (const id of ['nyckel-la-yrkesgrupper', 'nyckel-la-personer', 'nyckel-la-bas', 'nyckel-la-kon', 'nyckel-la-regression']) _laNyckel(id, '');
+        for (const id of ['nyckel-la-yrkesgrupper', 'nyckel-la-personer']) _laNyckel(id, '');
         return;
     }
     _laRitaUrval();
@@ -681,12 +679,6 @@ function renderLikaArbeteTopp() {
     const rader = [...document.querySelectorAll('#matrix-table tbody tr')].map(tr => tr._euRow).filter(r => r && !r.samladMedian);
     const granska = rader.filter(r => r.niva === 'granska'), folj = rader.filter(r => r.niva === 'folj');
     const storst = rader.slice().sort((a, b) => Math.abs(100 - b.kvot) - Math.abs(100 - a.kvot))[0];
-    // Per BAS-intervall: de intervall där båda könen når tröskeln.
-    const bas = [...document.querySelectorAll('#paygap-table tbody tr')].map(tr => tr._paygapRow).filter(r => r && !r.masked);
-    const basKvot = bas.map(r => ({ bas: r.bas, kvot: Stat.median(r.kvLons) / Stat.median(r.maLons) * 100 })).filter(r => isFinite(r.kvot));
-    const basOver = basKvot.filter(r => Math.abs(100 - r.kvot) > 5);
-    const konRader = [...document.querySelectorAll('#skevhet-table tbody tr')];
-    const ojamna = konRader.filter(tr => /** @type {HTMLTableRowElement} */ (tr).cells[4] && /** @type {HTMLTableRowElement} */ (tr).cells[4].textContent.trim() !== '-').length;
     // Regressionen och personerna.
     /** @type {any} */ let reg = null;
     try { reg = runOLSRegression(); } catch (e) { rapporteraFel('Lika arbete: toppen', e); }
@@ -700,13 +692,27 @@ function renderLikaArbeteTopp() {
                      : _laSlutsats('Yrkesgrupper att granska', '–', `ingen yrkesgrupp har minst ${kTroskel()} av varje kön`),
         storst ? _laSlutsats('Största skillnaden', svPct(storst.kvot, 1), storst.yrke, false, 'Kvinnors medianlön i procent av mäns i den yrkesgrupp där skillnaden är störst') : '',
         regOk ? _laSlutsats(reg.fras ? `Efter ${reg.fras}` : 'Utan kontroller', svPct(reg.konKvot, 1), `kvinnors lön i % av mäns ${reg.fras ? `när ${reg.fras} räknats bort` : 'utan att något räknats bort'}`, Math.abs(reg.konPct) > 5 ? 'granska' : false,
-            `Regressionen i kortet längre ned: en oförklarad skillnad på ${reg.konPct >= 0 ? '+' : ''}${svPct(reg.konPct, 1)}, kvinnor mot män. Det är samma sak som att kvinnors lön är ${svPct(reg.konKvot, 1)} av mäns.`) : '',
+            `Regressionen i regressionskortet i Lönestruktur: en oförklarad skillnad på ${reg.konPct >= 0 ? '+' : ''}${svPct(reg.konPct, 1)}, kvinnor mot män. Det är samma sak som att kvinnors lön är ${svPct(reg.konKvot, 1)} av mäns.`) : '',
         personer != null ? _laSlutsats('Personer att granska', svTal(personer, 0), `minst ${grans} % under förväntad lön`) : ''
     ].join('');
     _laNyckel('nyckel-la-yrkesgrupper', rader.length ? `${granska.length} att granska${folj.length ? ` · ${folj.length} att följa upp` : ''}` : '', granska.length > 0 ? 'granska' : false);
     _laNyckel('nyckel-la-personer', personer != null ? `${svTal(personer, 0)} ${personer === 1 ? 'person' : 'personer'}` : '');
-    _laNyckel('nyckel-la-bas', basKvot.length ? `${basOver.length} av ${basKvot.length} över 5 %` : '', basOver.length > 0 ? 'granska' : false);
-    _laNyckel('nyckel-la-kon', konRader.length ? `${ojamna} av ${konRader.length} ojämna` : '');
-        // Samma mått som nyckeltalsraden: kvinnors lön i % av mäns när ålder och nivå räknats bort (inte "−4,3 % oförklarat").
-    _laNyckel('nyckel-la-regression', regOk ? `${svPct(reg.konKvot, 1)} ${reg.fras ? `efter ${reg.fras}` : 'utan kontroller'}` : '', regOk && Math.abs(reg.konPct) > 5 ? 'granska' : false);
+}
+
+/** Lönestrukturs avsnittsnyckeltal för BAS-skevheten, könsfördelningen och regressionen. Ritas efter generateSkevhet och regressionskortet. */
+function renderLonestrukturNycklar() {
+    const d = getData();
+    if (!d.length) { for (const id of ['nyckel-ls-bas', 'nyckel-ls-kon', 'nyckel-ls-regression']) _laNyckel(id, ''); return; }
+    const bas = [...document.querySelectorAll('#paygap-table tbody tr')].map(tr => tr._paygapRow).filter(r => r && !r.masked);
+    const basKvot = bas.map(r => ({ bas: r.bas, kvot: Stat.median(r.kvLons) / Stat.median(r.maLons) * 100 })).filter(r => isFinite(r.kvot));
+    const basOver = basKvot.filter(r => Math.abs(100 - r.kvot) > 5);
+    const konRader = [...document.querySelectorAll('#skevhet-table tbody tr')];
+    const ojamna = konRader.filter(tr => /** @type {HTMLTableRowElement} */ (tr).cells[4] && /** @type {HTMLTableRowElement} */ (tr).cells[4].textContent.trim() !== '-').length;
+    /** @type {any} */ let reg = null;
+    try { reg = runOLSRegression(); } catch (e) { rapporteraFel('Lönestruktur: nyckeltalen', e); }
+    const regOk = reg && !reg.error && typeof reg.konPct === 'number';
+    _laNyckel('nyckel-ls-bas', basKvot.length ? `${basOver.length} av ${basKvot.length} över 5 %` : '', basOver.length > 0 ? 'granska' : false);
+    _laNyckel('nyckel-ls-kon', konRader.length ? `${ojamna} av ${konRader.length} ojämna` : '');
+    // Samma mått som Lika arbetes nyckeltalsrad: kvinnors lön i % av mäns när ålder och nivå räknats bort (inte "−4,3 % oförklarat").
+    _laNyckel('nyckel-ls-regression', regOk ? `${svPct(reg.konKvot, 1)} ${reg.fras ? `efter ${reg.fras}` : 'utan kontroller'}` : '', regOk && Math.abs(reg.konPct) > 5 ? 'granska' : false);
 }

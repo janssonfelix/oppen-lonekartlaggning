@@ -13,8 +13,8 @@ import { attributtext } from './attributtext.js';
 export const STORA = ['S1', 'S2', 'S3', 'S4', 'S5', 'S6'], TOPP = 'S7';
 export const MELLAN = ['A', 'B', 'C', 'D'], SENT_MELLAN = [31417, 32719, 33827, 34513];
 export const SMA = ['E', 'F'], SENT_SMA = [35291, 36107];
-export const FLIKAR = ['dashboard', 'bestammelser', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn',
-                'kon', 'demografi', 'benchmark', 'kvalitet', 'rapport', 'handlingsplan', 'info'];
+export const FLIKAR = ['dashboard', 'filer', 'bestammelser', 'benchmark', 'matrix', 'likvardighet', 'struktur', 'kon', 'demografi',
+                'prioritering', 'loneoversyn', 'handlingsplan', 'rapporttext', 'kvalitet', 'rapport', 'arbetet', 'info'];
 
 export function byggDataset() {
     const rader = [];

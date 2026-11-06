@@ -6,6 +6,46 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ## Oförlöst
 
+### Gränssnitt
+
+- **Fliken Filer och kvalitet.** Filrutorna (organisationspaket, lönefil, ställningstagande och jämförelsestatistik),
+  Underlagets kvalitet, extremvärdena och inläsningsrapporten flyttar från Översikt till en egen flik i *1 ·
+  Underlag*. Översikt behåller Kom igång, nyckeltalen, Att göra och processen, och raden överst har knappen dit.
+  Kvartildiagrammet på Översikt är borttaget; Lönestruktur ritar samma bild. En låst flik och kolumnmappningen leder
+  till lönefilskortet i Filer och kvalitet.
+- **Lönestruktur: varför gapet sitter där det sitter.** Struktur & rapportmått heter Lönestruktur och tar över
+  *Lönegap per BAS-intervall*, *Könsfördelning per BAS-intervall* och *Vad blir kvar av lönegapet?* (förklaringsmodellen,
+  regressionen och Blinder-Oaxaca) från Lika arbete, och *Var uppstår löneskillnaden?* från Översikt. Lika arbete
+  behåller yrkesgrupperna med trattdiagrammet, Personer att granska, *Lika arbete AID x BAS* och *Analys på
+  individnivå*; nyckeltalen överst har kvar regressionens tal. I Lönestruktur är bara representationen utfälld när
+  fliken öppnas. Metodbilagans ordning i Excel och utskrift är densamma som förut.
+- **Rapporten i tre flikar.** Dokumentera & exportera delas i **Rapporttext** (auto-rapportutkastet och
+  rapportunderlaget; låst utan lönefil), **Exportera** (färdigchecken, robustheten direkt efter den, rapportens
+  innehåll och all export) och **Spara och jämför år** (konfigurationen, ögonblicksbilden, jämförelsen med förra året
+  och självdiagnostiken; öppen utan lönefil). Avsnittet Samverkan och uppföljning är borttaget: dess två knappar,
+  protokollet för gemensam lönebedömning och handlingsplanen i Excel, står i Handlingsplans kort *Samverkan &
+  uppföljning*. Alla tre flikarna ritas i exportläget.
+- **Prioriteringens trösklar och viktning står i Inställningar.** Granskningsgränsen, *Börja här*-tröskeln,
+  uppföljnings- och över referens-gränsen och viktningen av prioriteringsindexet flyttar ur Prioritering till en egen
+  rubrik i Inställningar, mellan *Gäller alla flikar* och *Läge*. Fliken har raden *Trösklar och viktning*, som säger
+  om värdena är ändrade, med länken *Ändra*. En konfigurationsfil sätter värdena som förut.
+- **Menyn i rapportens ordning.** Grupperna heter *1 · Underlag*, *2 · Kartläggning*, *3 · Åtgärder*, *4 · Rapport*,
+  *Arbetet* och *Hjälp*; *Fördjupa (ej lagkrav)* finns inte längre. Jämförelse heter **Löneläget** och står först i
+  Kartläggning, Ålder & karriär sist; båda säger i verktygstipset och inledningen att de är fördjupning och inget
+  lagkrav. Utforska heter **Tabeller och egna vyer** och står efter Exportera. *Nästa steg* följer menyn (Regler &
+  praxis → Löneläget → … → Handlingsplan → Rapporttext → Exportera) och hoppar över Löneläget och Ålder & karriär
+  när de är låsta; leder raden till en låst flik öppnas lönefilskortet, som menyn gör. Processkartans faser heter
+  som menyn, och fliknamnen i gränssnittet och exporttexterna är bytta.
+- **Sidindex: På den här sidan.** Varje flik med minst tre synliga avsnitt har en lista över dem som följer med när
+  sidan rullas. Från 1920 punkters bredd står den i marginalen till höger; smalare än så är den en rad överst,
+  *På den här sidan: …*, som säger vilket avsnitt läsaren är i och fälls ut med ett klick. Ett klick på ett avsnitt
+  fäller ut det, rullar fram det och ger det fokus. Dolda avsnitt står inte i listan, och den byggs om när fliken
+  ritas om.
+- **Sökrutan hittar funktioner.** Fältet i sidhuvudet hittar också flikarnas avsnitt, exporterna, dialogerna och
+  fälten i Inställningar, med synonymer (*regression* hittar *Vad blir kvar av lönegapet?*), och syns utan lönefil.
+  Träfflistan har grupperna först och funktionerna under rubriken *Funktioner*. En funktion i en låst flik säger
+  *kräver lönefil* och leder till lönefilskortet i Filer och kvalitet.
+
 ### Analys
 
 - **Spärr mot särskilda kategorier av personuppgifter.** Lönefilen avvisas när en kolumnrubrik antyder fackmedlemskap,
@@ -14,6 +54,10 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ### Dokumentation
 
+- **Dokumentationen följer den nya menyn.** Körguiden, pilotchecklistan, sammanfattningen för HR-chefer,
+  organisationspaketets guide, datauttaget, tillgänglighetsredogörelsen, dataskyddsbeskrivningen, riskanalysen, den tekniska
+  planen, diagramkärnans referens, `src/app/README.md` och fliken Om verktyget (flikarna och arbetsgången) beskriver flikarna som de heter
+  och ligger nu. Körguiden har ett avsnitt *Hitta rätt: sök och sidindex*.
 - **Ansvar och roller, styrning och övertagande.** README har ett avsnitt *Ansvar och roller* (personuppgiftsansvar,
   cyberresiliensakten och produktansvarsdirektivet, AI-förordningen, lagrummens status *Förslag*), med artiklarna i ett
   nytt avsnitt *Produkt- och säkerhetsregler* i `docs/utveckling/lagrum.md`. `GOVERNANCE.md` säger vem som beslutar, hur

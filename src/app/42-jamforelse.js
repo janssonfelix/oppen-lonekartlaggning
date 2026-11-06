@@ -3,7 +3,7 @@
 
 // ---- Jämförelsestatistik (ADR-35) ----
 // Raderna räknas i src/lib/jamforelse.js; här finns filter, tabell och diagram. Avsnittet Mot jämförelsestatistiken i
-// fliken Jämförelse: jämförelsen mot ställningstagandet är avsnittet före (75-lonepolitik.js, ADR-55).
+// fliken Löneläget: jämförelsen mot ställningstagandet är avsnittet före (75-lonepolitik.js, ADR-55).
 const _jmfVal = { bas: '', sektor: '' };
 
 function jamforelseVal() { return { ..._jmfVal }; }
@@ -58,8 +58,8 @@ function generateBenchmark() {
     if (!state.statistik.length || !d.length) {
         tbody.innerHTML = `<tr><td colspan="12" class="pad-0"><div class="flik-empty-state">
             <div class="empty-icon">${ikon('tomLada', 32)}</div><h2>Jämförelsestatistik saknas</h2>
-            <p>Läs in jämförelsestatistik på Översikt, så jämförs organisationens löner mot den här.</p>
-            <button class="empty-action" data-goto-tab="dashboard">Gå till uppladdning</button></div></td></tr>`;
+            <p>Läs in jämförelsestatistik under Filer och kvalitet, så jämförs organisationens löner mot den här.</p>
+            <button class="empty-action" data-goto-tab="filer">Gå till uppladdning</button></div></td></tr>`;
         if (infoEl) infoEl.textContent = '';
         rensaFigur('chart-jamforelse-spann'); rensaFigur('chart-jamforelse-avvikelse');
         const diag = document.getElementById('jmf-diagram'); if (diag) diag.innerHTML = '';
@@ -109,7 +109,7 @@ function generateBenchmark() {
     }
     tbody.innerHTML = html || '<tr><td colspan="12" class="farg-dampad pad-24 ta-mitt">Inga yrken i urvalet.</td></tr>';
     if (typeof flerKolumner === 'function') flerKolumner('benchmark-table', JMF_DOLDA_KOLUMNER, 'jamforelse');
-    try { ritaJamforelseDiagram(rader, kalla); } catch (e) { rapporteraFel('Jämförelse: diagrammen', e); }
+    try { ritaJamforelseDiagram(rader, kalla); } catch (e) { rapporteraFel('Löneläget: diagrammen', e); }
 
     // Antalen gäller samma urval som tabellen (filtren på BAS och sektor).
     const utanMatch = rader.filter(r => r[kalla].median == null).length;
@@ -167,8 +167,8 @@ function ritaJamforelseDiagram(rader, kalla) {
         /** @type {HTMLElement} */ (document.getElementById('jmf-avvikelse-not')).textContent = 'Inga yrken i urvalet.';
         return;
     }
-    try { _ritaJmfSpann(rader, kalla, namn); } catch (e) { rapporteraFel('Jämförelse: spanndiagrammet', e); }
-    try { _ritaJmfAvvikelse(rader, kalla, namn); } catch (e) { rapporteraFel('Jämförelse: avvikelsediagrammet', e); }
+    try { _ritaJmfSpann(rader, kalla, namn); } catch (e) { rapporteraFel('Löneläget: spanndiagrammet', e); }
+    try { _ritaJmfAvvikelse(rader, kalla, namn); } catch (e) { rapporteraFel('Löneläget: avvikelsediagrammet', e); }
 }
 
 function _ritaJmfSpann(rader, kalla, namnLitet) {

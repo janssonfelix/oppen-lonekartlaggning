@@ -24,7 +24,7 @@ describe('I4: listan över flikar är menyns flikar', () => {
 
 describe('I2: exporter som hör till ett undantag säger det, och notisen utlovar ingen aggregering', () => {
     const UNDANTAG_LV = 'Den här filen kan även innehålla grupper under tröskeln (undantag: Likvärdigt arbete).';
-    const UNDANTAG_UT = 'Den här filen kan även innehålla grupper under tröskeln (undantag: valt i Utforska).';
+    const UNDANTAG_UT = 'Den här filen kan även innehålla grupper under tröskeln (undantag: valt i Tabeller och egna vyer).';
     const fangaCsv = w => { w.eval('window.__csv = []; _toCsv = (rows => { window.__csv.push(rows); return ""; })'); return () => w.__csv.at(-1).map(r => r.join(' | ')); };
     it('Likvärdigt arbete: CSV-filens stämpel och Excel-filens metodblad', async () => {
         // Ett par där den kvinnodominerade gruppen har 6 personer: det står i den här exporten (undantaget).
@@ -168,8 +168,8 @@ describe('paketformuläret, Rensa, Struktur och Likvärdigt arbete med ändrad t
         expect(w.document.getElementById('k-troskel-fel').hidden).toBe(true);
         expect(w.document.getElementById('k-troskel-fel').textContent).toBe('');
     });
-    it('Strukturs sammanfattning: stämpeln under 10, och bara BAS som tabellen visar namnges', () => {
-        const text = k => { const w = iExport(fonster(k)); w.__renderTabContent('struktur'); return w.document.getElementById('struktur-narrative').value; };
+    it('Auto-utkastet i Rapporttext: stämpeln under 10, och bara BAS som tabellen visar namnges', () => {
+        const text = k => { const w = iExport(fonster(k)); w.__renderTabContent('rapporttext'); return w.document.getElementById('struktur-narrative').value; };
         expect(text(6).trimEnd().endsWith('Minsta gruppstorlek för redovisning: 6. Tröskeln är sänkt från standardvärdet 10.')).toBe(true);
         expect(text(null)).not.toContain('Minsta gruppstorlek');
         // Segregeringsmeningen jämför första och sista BAS i tabellen: vid 10 får E och F (6 personer) inte namnges.
@@ -183,7 +183,7 @@ describe('paketformuläret, Rensa, Struktur och Likvärdigt arbete med ändrad t
         w.__state.data = r;
         w.eval('populateSelects(); unlockTabs();');
         iExport(w);
-        w.__renderTabContent('struktur');
+        w.__renderTabContent('rapporttext');
         const seg = w.document.getElementById('struktur-narrative').value.split('\n').find(l => l.startsWith('Vertikal könssegregering'));
         expect(seg).toMatch(/lägre betalda BAS \(B: 75 %\)/);
         expect(seg).toMatch(/högre betalda \(C: 25 %\)/);

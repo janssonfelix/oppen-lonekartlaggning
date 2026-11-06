@@ -12,7 +12,6 @@ function setCompCard(id, count, total, valueText, cardState) {
 }
 
 function updateCompliance() {
-    renderGapUppdelning();
     const overview = document.getElementById('compliance-overview');
     if (!overview || !getData().length) return;
     overview.style.display = 'block';
@@ -87,7 +86,7 @@ function updateCompliance() {
         else if (bmLow === 0) setCompCard('comp-bm', 0, bmTotal, `0 av ${bmTotal} yrkesgrupper`, 'ok');
         else setCompCard('comp-bm', bmLow, bmTotal, `${bmLow} av ${bmTotal} yrkesgrupper`, bmLow / bmTotal > 0.5 ? 'crit' : 'warn');
     }
-    // Länken till Jämförelse-fliken bara när fliken finns (jämförelsestatistik inläst).
+    // Länken till fliken Löneläget bara när fliken finns (jämförelsestatistik inläst).
     const bmLank = document.querySelector('#comp-bm .comp-lank');
     if (bmLank) /** @type {HTMLElement} */ (bmLank).hidden = !state.statistik.length;
 }
@@ -318,7 +317,7 @@ function renderProcessTracker({ punkter: givna } = {}) {
         ? { n: 1, status: 'klar', title: '1. Underlag inläst', tab: 'dashboard', detail: `${getData().length} rader inlästa — allt nedan bygger på detta.` }
         : { n: 1, status: 'ej',   title: '1. Underlag inläst', tab: 'dashboard', detail: 'Börja här: ladda upp personalfilen (eller prova med demodata).' });
 
-    // 2. § 8 Bestämmelser & praxis (kvalitativ bedömning per område)
+    // 2. § 8 Regler & praxis (kvalitativ bedömning per område)
     rows.push(safe(() => {
         const areas = (typeof _bes8Areas === 'function') ? _bes8Areas() : [];
         const total = areas.length || 6;
@@ -378,21 +377,21 @@ function renderProcessTracker({ punkter: givna } = {}) {
     }, { n: 5, tab: 'handlingsplan', title: '5. Handlingsplan', status: 'ej', detail: 'Kräver inläst underlag.' }));
 
     // 6. § 3:13 Samverkan — kan inte auto-härledas
-    rows.push({ n: 6, tab: 'dokumentera', title: '6. Samverkan med facket', status: 'manuell', detail: 'Manuellt steg: samverka och dokumentera. Protokollet för gemensam lönebedömning finns under Dokumentera & exportera.' });
+    rows.push({ n: 6, tab: 'dokumentera', title: '6. Samverkan med facket', status: 'manuell', detail: 'Manuellt steg: samverka och dokumentera. Protokollet för gemensam lönebedömning finns under Exportera.' });
 
     // 7. Dokumentation — kan inte auto-härledas
-    rows.push({ n: 7, tab: 'dokumentera', title: '7. Dokumentation', status: 'manuell', detail: 'Manuellt steg: ladda ner Word-utkastet under Dokumentera & exportera, komplettera de gula [HR fyller i]-fälten och spara som er rapport.' });
+    rows.push({ n: 7, tab: 'dokumentera', title: '7. Dokumentation', status: 'manuell', detail: 'Manuellt steg: ladda ner Word-utkastet under Exportera, komplettera de gula [HR fyller i]-fälten och spara som er rapport.' });
 
     // 8. § 3:11–13 Uppföljning. Verktyget stödjer EN kartläggning — uppföljningen
     // av handlingsplanen sker i arbetsgivarens egen process, som samverkan och
     // dokumentation ovan.
-    rows.push({ n: 8, tab: 'dokumentera', title: '8. Uppföljning av handlingsplanen', status: 'manuell', detail: 'Manuellt steg: följ upp planens åtgärder i er egen process. Handlingsplanen exporteras under Dokumentera & exportera.' });
+    rows.push({ n: 8, tab: 'dokumentera', title: '8. Uppföljning av handlingsplanen', status: 'manuell', detail: 'Manuellt steg: följ upp planens åtgärder i er egen process. Handlingsplanen exporteras under Exportera.' });
 
     const autoDone = rows.filter(r => r.status === 'klar').length;
     const autoTotal = rows.filter(r => r.status !== 'manuell').length;
 
-    // Stegen grupperas under samma faser som menyn (en karta).
-    const FASER = { 1: '1 · Underlag', 2: '2 · Kartlägg & analysera', 5: '3 · Åtgärda', 6: '5 · Dokumentera' };
+    // Stegen grupperas under samma faser som menyn (en karta): Regler & praxis hör till Underlag.
+    const FASER = { 1: '1 · Underlag', 3: '2 · Kartläggning', 5: '3 · Åtgärder', 6: '4 · Rapport' };
     const rowsHtml = rows.map(r => `
         ${FASER[r.n] ? `<div class="ptrack-fas">${FASER[r.n]}</div>` : ''}
         <div class="ptrack-row">
@@ -425,73 +424,49 @@ function renderProcessTracker({ punkter: givna } = {}) {
 
 /**
  * Översikt efter inläsning. Före inläsning är sidan en uppladdningssida.
- * Efter inläsning krymper filerna till en rad, och sidan visar läget: nyckeltalen, Att göra och
- * lönekvartilerna. Kartan över organisationen står bara i Struktur & rapportmått. Resten är avsnitt som fälls ut.
- * Klassen `har-data` på panelen styr vad som visas (style.css); `visa-filer` fäller ut uppladdningen igen.
+ * Efter inläsning visar sidan läget: filraden, nyckeltalen, Att göra och processen. Filerna, kvaliteten och
+ * kvartilerna står i Filer och kvalitet respektive Lönestruktur. Klassen `har-data` på panelen styr vad som visas.
  */
+/** Filer och kvalitet: underlagets kvalitet, extremvärdena och inläsningsrapporten. Ritas vid inläsning och vid flikbyte. */
+function renderFilerDelar() {
+    /** @type {[string, () => void][]} */
+    const delar = [['underlagets kvalitet', () => renderUnderlagetsKvalitet()], ['extremvärden', () => renderOutliers()],
+        ['inläsningsrapporten', () => renderDataValidationReport()]];
+    for (const [namn, fn] of delar) { try { fn(); } catch (e) { rapporteraFel(`Filer och kvalitet (${namn})`, e); } }
+}
+
 /** @type {boolean|null} */
 let _ovHadeData = null;
-// Kvartilerna är en kopia av Struktur & rapportmåtts diagram och exporteras därifrån, inte två gånger
-// (skälet `kopia` i 11-diagramexport.js).
-markeraUtanExport(document.getElementById('ov-lage'), 'kopia');
 function ovRitaLage() {
     const vy = /** @type {HTMLElement} */ (document.getElementById('view-dashboard'));
     if (!vy) return;
     const d = (() => { try { return getData(); } catch (_e) { return []; } })();
     const har = d.length > 0;
     vy.classList.toggle('har-data', har);
-    if (typeof sokUppdatera === 'function') sokUppdatera();   // sökfältet i sidhuvudet finns bara när det finns grupper att söka i
+    // Filer och kvalitet: Underlagets kvalitet har inget att visa före inläsningen (sidindexet och sökningen hoppar över det då).
+    const kvalitet = document.getElementById('avsnitt-ov-kvalitet');
+    if (kvalitet) kvalitet.hidden = !har;
+    if (typeof sokUppdatera === 'function') sokUppdatera();   // sökfältet i sidhuvudet: en öppen träfflista stängs när lönefilen läses in eller rensas
     if (har !== _ovHadeData) {
         // Läget byter: processen är utfälld före inläsning och hopfälld efter, och uppladdningen fälls ihop.
         const proc = document.getElementById('avsnitt-ov-process');
         if (proc) /** @type {HTMLDetailsElement} */ (proc).open = !har;
-        vy.classList.remove('visa-filer');
         _ovHadeData = har;
     }
     _ovRitaFilrad(har, d.length);
-    const kvEl = document.getElementById('chart-ov-kvartiler'), kvNot = document.getElementById('ov-kvartiler-not');
-    if (!har) {
-        if (kvEl && typeof rensaFigur === 'function') { rensaFigur(kvEl); kvEl.innerHTML = ''; }
-        if (kvNot) kvNot.textContent = '';
-        return;
-    }
-    try {
-        // Samma villkor som i Struktur: utan könsuppdelning (ett kön under tröskeln) ritas inget diagram.
-        const k = kTroskel(), q = _stQuartileDistribution(d, { k });
-        const totKv = d.filter(r => r.kon && r.kon.includes('kvinna')).length;
-        if (kvEl) {
-            if (q.length && q.every(x => x.nKv != null && x.nMa != null && x.n > 0)) {
-                ritaFigur(kvEl, _strukturKvartilFigur(q, 100 * totKv / d.length),
-                    { exportAnteckning: `Andel kvinnor: ${_figTalformat(q[0].andelKv, 'pct')} i lägsta kvartilen, ${_figTalformat(q[q.length - 1].andelKv, 'pct')} i högsta` });
-                if (kvNot) kvNot.textContent = '';
-            } else {
-                rensaFigur(kvEl); kvEl.innerHTML = '';
-                if (kvNot) kvNot.textContent = _konUtelamnatNot();
-            }
-        }
-    } catch (e) { rapporteraFel('Översikt: läget', e); }
 }
 
-/** Raden som ersätter uppladdningskorten efter inläsning: vad som är inläst, och knappen som visar korten igen. */
+/** Raden överst efter inläsning: vad som är inläst, och länken till Filer och kvalitet där korten står. */
 function _ovRitaFilrad(har, antal) {
-    const rad = document.getElementById('ov-filrad'), vy = document.getElementById('view-dashboard');
+    const rad = document.getElementById('ov-filrad');
     if (!rad) return;
     if (!har) { rad.textContent = ''; return; }
-    const oppen = !!vy && vy.classList.contains('visa-filer');
     rad.innerHTML = `<span><strong>Lönefil:</strong> ${svTal(antal, 0)} personer</span>`
         + `<span><strong>Referens:</strong> ${esc(harReferens() ? referensNamn() : 'ingen inläst')}</span>`
         + `<span><strong>Jämförelsestatistik:</strong> ${state.statistik.length ? `${svTal(state.statistik.length, 0)} rader` : 'ingen inläst'}</span>`
         + kTroskelLank()
-        + `<button type="button" id="btn-ov-filer" class="btn btn-secondary btn-sm" aria-expanded="${oppen}" aria-controls="upload-sektion">${oppen ? 'Dölj filer och inställningar' : 'Filer och inställningar'}</button>`;
+        + `<a href="#" class="btn btn-secondary btn-sm" data-go-to-tab="filer">Filer och kvalitet</a>`;
 }
-document.addEventListener('click', e => {
-    if (!/** @type {HTMLElement} */ (e.target).closest) return;
-    const vy = /** @type {HTMLElement} */ (document.getElementById('view-dashboard'));
-    if (!/** @type {HTMLElement} */ (e.target).closest('#btn-ov-filer')) return;
-    vy.classList.toggle('visa-filer');
-    _ovRitaFilrad(true, getData().length);
-    document.getElementById('btn-ov-filer')?.focus();
-});
 
 /**
  * Beräknar MDE för en specifik undergrupp (t.ex. en yrkesgrupp eller BAS-rad).
@@ -551,9 +526,8 @@ function renderOversiktDelar() {
     /** @type {any[]|undefined} */ let punkter;   // processöversikten läser Att göras punkter: byggs en gång
     /** @type {[string, () => void][]} */
     const delar = [['nyckeltal', () => updateDashboardStats()], ['kompliansöversikt', () => updateCompliance()],
-        ['underlagets kvalitet', () => renderUnderlagetsKvalitet()], ['Att göra', () => { punkter = renderActionChecklist(); }],
-        ['processöversikten', () => renderProcessTracker({ punkter })], ['extremvärden', () => renderOutliers()],
-        ['inläsningsrapporten', () => renderDataValidationReport()]];   // Var uppstår löneskillnaden ritas av kompliansöversikten
+        ['Att göra', () => { punkter = renderActionChecklist(); }],
+        ['processöversikten', () => renderProcessTracker({ punkter })]];   // Var uppstår löneskillnaden ritas av Lönestruktur (renderTabContent('struktur'))
     for (const [namn, fn] of delar) { try { fn(); } catch (e) { rapporteraFel(`Översikt (${namn})`, e); } }
     const ab = document.getElementById('snapshot-comparison');
     if (ab && ab.style.display !== 'none' && typeof renderSnapshotComparison === 'function') renderSnapshotComparison();

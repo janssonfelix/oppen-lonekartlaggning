@@ -205,7 +205,7 @@ body {
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 8px 12px;
+    padding: 6px 12px;   /* 16 flikar och sex grupper ryms i ett fönster 800 punkter högt */
     margin: 0 10px;
     background: none;
     border: none;
@@ -423,6 +423,52 @@ details.avsnitt[open]:not(.card) { padding-bottom: 20px; }
 }
 @media (min-width: 641px) { .meny-skugga { display: none; } }
 @media (max-width: 640px) and (prefers-reduced-motion: reduce) { .sidebar, body.meny-oppen .sidebar { transition: none; } }
+
+/* ---- Sidindex: På den här sidan (89-sidindex.js) ----
+   Flikens avsnitt som en lista. Den står sist i .content-body men visas först (order). Från 1920 punkter är den en
+   spalt till höger om innehållet som följer med när sidan rullas, och spalten tar sina 224 punkter ur marginalen:
+   .content-body växer lika mycket (max-width), så panelerna är lika breda som utan index (1320 punkter). Smalare än
+   så är listan en utfällbar rad ovanför innehållet som följer med (sticky överst; sidhuvudet är inte sticky) och
+   säger vilket avsnitt läsaren är i. Raden med det markerade och avsnitt som rullas fram lägger sig under raden
+   (--sidindex-hojd sätts av 89-sidindex.js). Spalten tar inget ur innehållet, för varje punkt den tog hade gett
+   någon tabell en vågrät rullist: med demodatan behöver tabellerna i Lika arbete, Lönestruktur, Prioritering och
+   Löneläget 860–965 punkter breda paneler och AID × BAS 1220–1315, och vid 1440 punkter är panelerna 1080 breda
+   (856 med en spalt).
+   Listan har ingen höjd i flödet, så att den inte gör innehållet högre och dess sticky-område är hela .content-body:
+   ett tvåspaltsgrid hade gjort varje barn till en egen rad, och då slutar raden med det markerade (position: sticky)
+   att följa med. */
+.content-body.har-sidindex { display: flex; flex-direction: column; }
+.sidindex { order: -1; font-size: var(--fs-sm); }
+@media (max-width: 1919px) {
+    .sidindex { position: sticky; top: 0; z-index: 25; background: var(--bg-main); padding: 8px 0; margin: -8px 0 6px; }
+    .content-body.har-sidindex :is(details.avsnitt, .card) { scroll-margin-top: calc(var(--sidindex-hojd, 58px) + 8px); }
+    .sidindex-ram[open] .sidindex-lista { max-height: 50vh; overflow-y: auto; }
+}
+.sidindex-nu { font-weight: 500; color: var(--primary); }
+.sidindex-ram[open] .sidindex-kolon, .sidindex-ram[open] .sidindex-nu { display: none; }
+.sidindex-etikett { display: none; }
+.sidindex-lista { list-style: none; margin: 0; padding: 0; }
+.sidindex-lista a { display: block; padding: 4px 10px; border-left: 2px solid var(--border); color: var(--text-muted); text-decoration: none; line-height: 1.35; }
+.sidindex-lista a:hover { color: var(--text-main); border-left-color: var(--border-stark); }
+.sidindex-lista a.ar-aktiv { color: var(--primary); border-left-color: var(--primary); font-weight: 600; }
+.sidindex-ram { margin: 0; padding: 0 14px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); }
+.sidindex-ram > summary { padding: 10px 0; cursor: pointer; font-weight: 600; color: var(--text-main); }
+.sidindex-ram[open] > summary { margin-bottom: 4px; }
+.sidindex-ram[open] { padding-bottom: 10px; }
+@media (min-width: 1920px) {
+    .content-body.har-sidindex { max-width: calc(1400px + 224px); }
+    .content-body.har-sidindex > :not(.sidindex) { margin-right: 224px; }
+    .sidindex { position: sticky; top: 12px; z-index: 20; align-self: flex-end; width: 200px; height: 0; overflow: visible; }
+    .sidindex-etikett { display: block; margin: 0 0 6px 12px; font-size: var(--fs-xs); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-muted); }
+    .sidindex-ram { margin: 0; padding: 0; background: none; border: 0; border-radius: 0; max-height: calc(100vh - 48px); overflow-y: auto; }
+    .sidindex-ram > summary { display: none; }
+    .sidindex-ram[open] { padding-bottom: 0; }
+}
+@media print {
+    .sidindex { display: none !important; }
+    .content-body.har-sidindex { display: block; }
+    .content-body.har-sidindex > * { margin-right: 0; }
+}
 /* Vid byte över brytpunkten (31-navigering.js, _menyVidBrytpunkt) hoppar menyn direkt till sitt läge. */
 body.meny-utan-glidning .sidebar { transition: none !important; }
 @media print { .btn.meny-knapp, .meny-skugga { display: none !important; } }
@@ -2004,6 +2050,8 @@ svg [data-nara] { stroke: var(--text-main); stroke-width: 2px; stroke-opacity: 1
     color: var(--status-granska); background: var(--status-granska-bg);
     border: 1px solid var(--status-granska-kant); border-radius: var(--radius);
 }
+/* Under sidindexets rad (89-sidindex.js), som också följer med överst smalare än 1920 punkter. */
+@media (max-width: 1919px) { .content-body.har-sidindex > .markering-rad { top: calc(var(--sidindex-hojd, 58px) + 2px); } }
 .markering-rad > span { font-weight: 600; margin-right: auto; }
 @media print { .markering-rad { display: none !important; } }
 /* Tabellrader för en markerad grupp. */
@@ -2871,18 +2919,14 @@ body.forhandsvisning .content-body { outline: 3px dashed var(--status-varning); 
 @media (max-width: 640px) { .view-panel select { min-width: 0; width: 100%; overflow: hidden; text-overflow: ellipsis; } }
 
 /* ---- Översikt efter inläsning ----
-   Före inläsning är sidan en uppladdningssida. Efter inläsning (klassen har-data) krymper filerna till en rad och
-   läget visas: nyckeltalen, kartan, lönekvartilerna och Att göra. Knappen i raden fäller ut filerna igen. */
-#view-dashboard:not(.har-data) .flik-intro-rad, #view-dashboard:not(.har-data) #ov-intro, #view-dashboard:not(.har-data) #ov-filrad, #view-dashboard:not(.har-data) #ov-lage, #view-dashboard:not(.har-data) #ov-fordjupning,
-#view-dashboard:not(.har-data) #avsnitt-ov-kvalitet, #view-dashboard:not(.har-data) #avsnitt-ov-gap { display: none; }
-#view-dashboard.har-data:not(.visa-filer) #upload-sektion { display: none; }
+   Före inläsning visar sidan Kom igång och processen. Efter inläsning (klassen har-data) visas läget: filraden,
+   nyckeltalen, Att göra och processen. Filerna står i Filer och kvalitet. */
+#view-dashboard:not(.har-data) .flik-intro-rad, #view-dashboard:not(.har-data) #ov-intro, #view-dashboard:not(.har-data) #ov-filrad, #view-dashboard:not(.har-data) #ov-fordjupning { display: none; }
 .ov-filrad .btn { margin-left: auto; }
 .ov-filrad-lank { background: none; border: 0; padding: 0; font: inherit; color: var(--primary, #1d4ed8); text-decoration: underline; cursor: pointer; }
 .ov-filrad-lank:focus-visible { outline: 2px solid var(--primary, #1d4ed8); outline-offset: 2px; border-radius: 2px; }
-.ov-lage { margin: 16px 0 8px; }   /* kvartilkortet efter Att göra, i hela bredden (trädkartan står i Struktur) */
 details.avsnitt .ptrack > h3 { display: none; }           /* rubriken står i avsnittets sammanfattning */
 details.avsnitt > section.card, details.avsnitt > div > .card.ptrack { box-shadow: none; padding: 0; margin-bottom: 0; }
-@media print { #view-dashboard.har-data #upload-sektion { display: none; } }
 details.avsnitt .insight-feed-header h3 { display: none; }
 #action-checklist-container { margin-top: 14px; }
 
@@ -2915,6 +2959,7 @@ details.avsnitt .insight-feed-header h3 { display: none; }
 .sok-lista [role="option"][aria-selected="true"], .sok-lista [role="option"]:hover { background: var(--secondary, #eff6ff); }
 .sok-namn { font-size: var(--fs-sm); font-weight: 600; }
 .sok-under { font-size: var(--fs-xs); color: var(--text-muted); }
+.sok-grupprubrik { padding: 8px 10px 2px; font-size: var(--fs-xs); font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
 .sok-ingen { padding: 8px 10px; font-size: var(--fs-sm); color: var(--text-muted); line-height: 1.5; }
 @media (max-width: 640px) { .sok-ruta { flex: 1 1 100%; } .sok-lista { left: 0; right: auto; width: 100%; } }
 @media print { .sok-ruta { display: none !important; } }

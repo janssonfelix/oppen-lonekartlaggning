@@ -23,7 +23,7 @@ function _lasInReferens(rader, filnamn) {
     return policy.length;
 }
 
-// Referenskortet på Översikt: vilken referens som används, namnfält för egen fil
+// Referenskortet i Filer och kvalitet: vilken referens som används, namnfält för egen fil
 // och knappen som tar bort den.
 function renderReferensKort() {
     const el = document.getElementById('referens-status');
@@ -96,7 +96,7 @@ policyInput.addEventListener("change", e => {
     });
 });
 
-// Fliken Jämförelse syns när underlaget och minst en referens är inlästa. Utan underlag är den låst som de andra
+// Fliken Löneläget syns när underlaget och minst en referens är inlästa. Utan underlag är den låst som de andra
 // flikarna; med underlag men utan referens är den dold (ADR-55).
 function _visaJamforelseFlik(synlig) {
     const tb = document.getElementById('tab-benchmark');

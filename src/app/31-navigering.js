@@ -3,7 +3,7 @@
 
 // ---- Tab Navigation ----
 // En låst flik är aria-disabled, inte disabled: knappen går att nå och klicka på, skärmläsaren hör den och skälet, och
-// klicket leder till lönefilskortet på Översikt i stället för att ingenting händer. Egenskapen `disabled` på knappen
+// klicket leder till lönefilskortet i Filer och kvalitet i stället för att ingenting händer. Egenskapen `disabled` på knappen
 // läser och sätter aria-disabled, så att resten av koden låser och låser upp flikar som vanligt (el.disabled = true).
 document.querySelectorAll(".nav-item").forEach(btn => {
     Object.defineProperty(btn, 'disabled', {
@@ -12,17 +12,29 @@ document.querySelectorAll(".nav-item").forEach(btn => {
         set(v) { if (v) this.setAttribute('aria-disabled', 'true'); else this.removeAttribute('aria-disabled'); }
     });
 });
-/** En låst flik har klickats: visa Översikt, rulla fram lönefilskortet, ge filväljaren fokus och markera kortet en stund. */
-function visaLonefilskortet(flikNamn) {
-    const oversikt = document.querySelector('.nav-item[data-tab="dashboard"]');
-    if (oversikt && !oversikt.classList.contains('active')) /** @type {HTMLElement} */ (oversikt).click();
-    const kort = document.getElementById('upload-cell-data');
+/** Visar Filer och kvalitet, rullar fram filkortet `kortId`, ger dess filväljare fokus, markerar kortet en stund och läser upp `text`. */
+function _visaFilkortet(kortId, inputId, text) {
+    const filer = document.querySelector('.nav-item[data-tab="filer"]');
+    if (filer && !filer.classList.contains('active')) /** @type {HTMLElement} */ (filer).click();
+    const kort = document.getElementById(kortId);
     if (!kort) return;
     kort.scrollIntoView?.({ block: 'center' });
     kort.classList.add('visas-nu');
     setTimeout(() => kort.classList.remove('visas-nu'), 2000);
-    document.getElementById('file-input-data')?.focus?.({ preventScroll: true });
-    announceToScreenReader(`${flikNamn ? flikNamn + ' kräver ett underlag. ' : ''}Läs in lönefilen här på Översikt, så låses flikarna upp.`);
+    document.getElementById(inputId)?.focus?.({ preventScroll: true });
+    announceToScreenReader(text);
+}
+/** En låst flik har klickats: visa lönefilskortet i Filer och kvalitet. */
+function visaLonefilskortet(flikNamn) {
+    _visaFilkortet('upload-cell-data', 'file-input-data',
+        `${flikNamn ? flikNamn + ' kräver ett underlag. ' : ''}Läs in lönefilen här under Filer och kvalitet, så låses flikarna upp.`);
+}
+/** Lönefilen är inläst men Löneläget kräver en referens eller jämförelsestatistik (38-referensfiler.js): visa
+ *  referenskortet (ställningstagandet, annars jämförelsestatistiken) i Filer och kvalitet. */
+function visaReferenskortet(namn) {
+    const policy = !!document.getElementById('upload-cell-policy');
+    _visaFilkortet(policy ? 'upload-cell-policy' : 'upload-cell-stat', policy ? 'file-input-policy' : 'file-input-stat',
+        `${namn ? namn + ' kräver en referens eller jämförelsestatistik. ' : ''}Läs in ett lönepolitiskt ställningstagande eller jämförelsestatistik här under Filer och kvalitet, så visas fliken Löneläget.`);
 }
 document.querySelectorAll(".nav-item").forEach(btn => {
     btn.addEventListener("click", () => {
@@ -37,16 +49,17 @@ document.querySelectorAll(".nav-item").forEach(btn => {
         document.querySelectorAll(".nav-item").forEach(t => t.classList.remove("active"));
         btn.classList.add("active");
         const titles = {
-            dashboard: 'Översikt',
-            kon: 'Ålder & karriär', dokumentera: 'Dokumentera & exportera',
-            benchmark: 'Jämförelse', matrix: 'Lika arbete',
+            dashboard: 'Översikt', filer: 'Filer och kvalitet',
+            kon: 'Ålder & karriär', dokumentera: 'Exportera',
+            rapporttext: 'Rapporttext', arbetet: 'Spara och jämför år',
+            benchmark: 'Löneläget', matrix: 'Lika arbete',
             bestammelser: 'Regler & praxis',
             handlingsplan: 'Handlingsplan',
             prioritering: 'Prioritering',
-            struktur: 'Struktur & rapportmått',
+            struktur: 'Lönestruktur',
             loneoversyn: 'Löneöversyn',
             likvardighet: 'Likvärdigt arbete',
-            utforska: 'Utforska',
+            utforska: 'Tabeller och egna vyer',
             info: 'Om verktyget'
         };
         const titleEl = document.getElementById("page-title");
@@ -61,16 +74,17 @@ document.querySelectorAll(".nav-item").forEach(btn => {
 // Sammanslagna flikar: en nav-knapp kan visa/rendera flera view-paneler.
 // Panelerna ligger redan i rätt DOM-ordning (skevhet före matrix, kon före livscykel).
 const PANEL_GROUPS = {
-    matrix:      ['lika-yrken', 'skevhet', 'matrix'], // Lika arbete: yrkesgrupper → per BAS → justerat (regression/Oaxaca)
+    matrix:      ['lika-yrken'],                       // Lika arbete: yrkesgrupperna, personer att granska, AID × BAS
+    struktur:    ['struktur', 'skevhet', 'regression'], // Lönestruktur: fördelning, BAS-skevhet, vad som blir kvar (regression/Oaxaca)
     kon:         ['kon', 'demografi', 'livscykel'],  // Ålder & karriär: kurvor per kön, demografi, gap över karriären
-    utforska:    ['rapport', 'utforska'],            // Utforska: Löneöversikten (fast tabell) + egna vyer
-    dokumentera: ['kvalitet', 'dokumentera']         // Dokumentera & exportera: färdigcheck + export + spara och läsa in arbetet
+    utforska:    ['rapport', 'utforska'],            // Tabeller och egna vyer: Löneöversikten (fast tabell) + egna vyer
+    dokumentera: ['kvalitet', 'dokumentera']         // Exportera: färdigcheck + robusthet + export
 };
 // Flikalias: namnen leds om till fliken som visar innehållet, så att inga länkar dör.
-const TAB_ALIAS = { rapport: 'utforska', demografi: 'kon', kvalitet: 'dokumentera', lonepolitik: 'benchmark' };
+const TAB_ALIAS = { rapport: 'utforska', demografi: 'kon', kvalitet: 'dokumentera', lonepolitik: 'benchmark', skevhet: 'struktur', regression: 'struktur', spara: 'arbetet' };
 function tabMal(namn) { return TAB_ALIAS[namn] || namn; }
 function unlockTabs() {
-    ['tab-kon','tab-matrix','tab-prioritering','tab-loneoversyn','tab-struktur','tab-likvardighet','tab-utforska'].forEach(id => {
+    ['tab-kon','tab-matrix','tab-prioritering','tab-loneoversyn','tab-struktur','tab-likvardighet','tab-utforska','tab-rapporttext'].forEach(id => {
         const el = document.getElementById(id);
         if (!el) return;
         /** @type {HTMLInputElement} */ (el).disabled = false;
@@ -107,7 +121,7 @@ function renderTabContent(target) {
 }
 // Flikar som bara har något att visa när lönefilen är inläst. Nås en sådan utan underlag (en direktlänk, en
 // konfigurationsfil) säger en rad överst vad som saknas, i stället för tomma rader.
-const KRAVER_UNDERLAG = ['kon', 'matrix', 'prioritering', 'struktur', 'loneoversyn', 'utforska', 'benchmark'];
+const KRAVER_UNDERLAG = ['kon', 'matrix', 'prioritering', 'struktur', 'loneoversyn', 'utforska', 'benchmark', 'rapporttext'];
 function _ritaIngetUnderlag(target, tomt) {
     const vy = document.getElementById('view-' + ((PANEL_GROUPS[target] || [target])[0]));
     if (!vy) return;
@@ -117,7 +131,7 @@ function _ritaIngetUnderlag(target, tomt) {
     rad = document.createElement('p');
     rad.className = 'urvalsrad inget-underlag';
     rad.setAttribute('role', 'status');
-    rad.innerHTML = 'Inget underlag inläst — <a href="#" data-go-to-tab="dashboard">läs in lönefilen på Översikt</a>.';
+    rad.innerHTML = 'Inget underlag inläst — <a href="#" data-go-to-tab="filer">läs in lönefilen under Filer och kvalitet</a>.';
     vy.insertBefore(rad, vy.firstChild);
 }
 function _renderTabContent(target) {
@@ -129,14 +143,18 @@ function _renderTabContent(target) {
         const s2 = document.getElementById("bas-select-demo"); if (s2) renderDemografi(/** @type {HTMLInputElement} */ (s2).value);
     }
     else if (target === "benchmark"    && d.length) { renderReferensOverblick(); renderLonepolitik(); generateBenchmark(); }
-    else if (target === "matrix"       && d.length) { generateSkevhet(); generateEUDirectiveMatrix(); renderPersonerAttGranska(); renderAidBasLika(); renderLikaArbeteTopp(); }
+    else if (target === "matrix"       && d.length) { generateEUDirectiveMatrix(); renderPersonerAttGranska(); renderAidBasLika(); renderLikaArbeteTopp(); }
     else if (target === "prioritering" && d.length) renderPrioritering();
-    else if (target === "struktur"     && d.length) renderStructure();
+    else if (target === "struktur"     && d.length) { renderStructure(); generateSkevhet(); renderBlinderOaxacaCard(renderRegressionCard()); renderGapUppdelning(); renderLonestrukturNycklar(); }
     else if (target === "loneoversyn"  && d.length) renderForecast();
     else if (target === "likvardighet" && (d.length || state.statistik.length)) { renderLikvardighet(); renderAidBasLikvardigt(); }
     else if (target === "utforska"     && d.length) { generateRapport(); renderExplorer(); }
-    else if (target === "dokumentera") medExportLage(() => { if (d.length) renderKvalitetssakring(); renderRapportunderlag(); renderExportBesked(); if (typeof renderArsjamforelse === 'function') renderArsjamforelse(); });   // allt här lämnar verktyget (ADR-51)
+    // Allt i de tre dokumentationsflikarna lämnar verktyget och ritas i exportläget (ADR-51).
+    else if (target === "rapporttext") medExportLage(() => { renderStrukturUtkast(); renderRapportunderlag(); });
+    else if (target === "dokumentera") medExportLage(() => { if (d.length) renderKvalitetssakring(); renderExportBesked(); });
+    else if (target === "arbetet")     medExportLage(() => { if (typeof renderArsjamforelse === 'function') renderArsjamforelse(); });
     else if (target === "dashboard" && d.length) renderOversiktDelar();
+    else if (target === "filer"     && d.length) renderFilerDelar();
     else if (target === "info")  renderInfoTab();
     else if (target === "handlingsplan") renderHandlingsplanSeed();
     else if (target === "bestammelser") { if (typeof bes8Uppdatera === 'function') bes8Uppdatera(); if (typeof bes8Stod === 'function') bes8Stod(); }
@@ -145,24 +163,25 @@ function _renderTabContent(target) {
     const aktiv = document.querySelector('.nav-item.active')?.getAttribute('data-tab');
     if (aktiv && tabMal(aktiv) !== target) return;
     renderFlowNav(target);
+    sidindexBygg(target);   // 89-sidindex.js: flikens avsnitt som en lista som följer med
 }
 
 // UX: "Nästa steg"-överlämning längst ner i analysflikarna så processkänslan
 // (processkartans steg) följer med in i flikarna, inte bara på Översikt.
 const FLOW_NEXT = {
-    bestammelser: { tab: 'matrix',        label: 'Lika arbete' },
+    bestammelser: { tab: 'benchmark',     label: 'Löneläget' },
+    benchmark:    { tab: 'matrix',        label: 'Lika arbete' },
     matrix:       { tab: 'likvardighet',  label: 'Likvärdigt arbete' },
-    likvardighet: { tab: 'struktur',      label: 'Struktur & rapportmått' },
-    struktur:     { tab: 'prioritering',  label: 'Prioritering' },
+    likvardighet: { tab: 'struktur',      label: 'Lönestruktur' },
+    struktur:     { tab: 'kon',           label: 'Ålder & karriär' },
+    kon:          { tab: 'prioritering',  label: 'Prioritering' },
     prioritering: { tab: 'loneoversyn',   label: 'Löneöversyn' },
     loneoversyn:  { tab: 'handlingsplan', label: 'Handlingsplan' },
-    handlingsplan:{ tab: 'kon',           label: 'Ålder & karriär' },
-    kon:          { tab: 'benchmark',     label: 'Jämförelse' },
-    benchmark:    { tab: 'utforska',      label: 'Utforska' },
-    utforska:     { tab: 'dokumentera',   label: 'Dokumentera & exportera' }
+    handlingsplan:{ tab: 'rapporttext',   label: 'Rapporttext' },
+    rapporttext:  { tab: 'dokumentera',   label: 'Exportera' }
 };
-// Fördjupningen är valfri: ett sådant steg som är låst eller dolt hoppas över (Jämförelse utan referens, allt utan underlag).
-const _FLOW_VALFRIA = ['kon', 'benchmark', 'utforska'];
+// Fördjupningen är valfri: ett sådant steg som är låst eller dolt hoppas över (Löneläget utan referens, allt utan underlag).
+const _FLOW_VALFRIA = ['benchmark', 'kon'];
 function _flowNasta(target) {
     let next = FLOW_NEXT[target];
     while (next && _FLOW_VALFRIA.includes(next.tab) && /** @type {HTMLInputElement|null} */ (document.querySelector(`.nav-item[data-tab="${next.tab}"]`))?.disabled) next = FLOW_NEXT[next.tab];
@@ -181,17 +200,21 @@ function renderFlowNav(target) {
         + `<button type="button" class="flow-next-btn" data-flow-tab="${next.tab}">${esc(next.label)}</button>`;
     view.appendChild(bar);
 }
-// Delegerad klick: knappar i Dokumentera som återanvänder navets exportknappar.
+// Delegerad klick: knappar utanför Exportera (samverkanskortet i Handlingsplan) som återanvänder navets exportknappar.
 document.addEventListener('click', e => {
     const b = /** @type {HTMLElement} */ (e.target).closest('[data-dok-klick]');
     if (b) document.getElementById(/** @type {HTMLElement} */ (b).dataset.dokKlick || '')?.click();
 });
-// Delegerad klick: "Nästa steg"-knapparna leder till rätt flik via nav-klicket.
+// Delegerad klick: "Nästa steg"-knapparna leder till rätt flik via nav-klicket. En låst flik gör som i menyn:
+// nav-klicket visar lönefilskortet i Filer och kvalitet, och då får sidan inte rullas upp förbi kortet.
 document.addEventListener('click', e => {
     const btn = /** @type {HTMLElement} */ (e.target).closest('[data-flow-tab]');
     if (!btn) return;
     const nav = document.querySelector(`.nav-item[data-tab="${tabMal(btn.getAttribute('data-flow-tab'))}"]`);
-    if (nav && !/** @type {HTMLInputElement} */ (nav).disabled) { /** @type {HTMLElement} */ (nav).click(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+    if (!nav) return;
+    const last = /** @type {HTMLInputElement} */ (nav).disabled;
+    /** @type {HTMLElement} */ (nav).click();
+    if (!last) window.scrollTo({ top: 0, behavior: 'smooth' });
 });
 
 function refreshCurrentTab() {

@@ -2,9 +2,10 @@
 // Copyright 2026 Felix Jansson
 // ---- Inställningar ----
 /**
- * Panelen samlar det som gäller flera flikar: minsta gruppstorlek och organisationstyp. Inställningar för
- * en enda flik står kvar i fliken, bredvid resultatet de påverkar; panelen visar var de finns och om de är ändrade.
- * PO-påslag och beräkningsperiod hör till Prioritering och står kvar där.
+ * Panelen samlar det som gäller flera flikar: minsta gruppstorlek, organisationstyp, PO-påslag och beräkningsperiod,
+ * och Prioriteringens trösklar och viktning (de styr åtgärdslistan, kostnaden, handlingsplanen och rapporterna).
+ * Övriga inställningar för en enda flik står kvar i fliken, bredvid resultatet de påverkar; panelen visar var de
+ * finns och om de är ändrade.
  */
 function installningarOppna() {
     const m = document.getElementById('installningar-modal');
@@ -48,18 +49,15 @@ function _instRita() {
     const last = flik => { const n = document.querySelector(`.nav-item[data-tab="${flik}"]`); return !n || /** @type {HTMLInputElement} */ (n).disabled; };
     const anpassad = a => (a ? 'Anpassade värden' : 'Standardvärden');
     const lv = state.likvardighet || {};
-    const prioAnpassad = JSON.stringify(state.prioConfig) !== JSON.stringify(PRIO_CONFIG_DEFAULTS);
     const band = document.getElementById('arbvard-band'), extrem = document.getElementById('outliers-threshold');
     const rader = [
-        { flik: 'prioritering', avsnitt: 'avsnitt-pr-installningar', namn: 'Prioritering', vad: 'Trösklar och viktning',
-          lage: anpassad(prioAnpassad), andrad: prioAnpassad },
         { flik: 'likvardighet', avsnitt: 'avsnitt-lv-installningar', namn: 'Likvärdigt arbete', vad: 'Kvinnotröskel, definition av kvinnodominerat (DO/SCB), minsta gap och antal par',
           lage: anpassad(lv.kvinnoTrosholdPct !== 60 || lv.minGapPct !== 5 || lv.topN !== 20 || aidbasDefinition() !== 'do'), andrad: lv.kvinnoTrosholdPct !== 60 || lv.minGapPct !== 5 || lv.topN !== 20 || aidbasDefinition() !== 'do' },
         { flik: 'likvardighet', avsnitt: 'avsnitt-lv-poang', namn: 'Likvärdigt arbete', vad: 'Ekvivalensband för arbetsvärdering med poäng',
           lage: `± ${band ? /** @type {HTMLInputElement} */ (band).value : 5} %`, andrad: !!band && String(/** @type {HTMLInputElement} */ (band).value) !== '5' },
         { flik: 'matrix', avsnitt: 'avsnitt-la-personer', namn: 'Lika arbete', vad: 'Gräns för personer att granska',
           lage: `${typeof _pagGrans === 'function' ? _pagGrans() : 10} % under förväntad lön`, andrad: typeof _pagGrans === 'function' && _pagGrans() !== 10 },
-        { flik: 'dashboard', avsnitt: 'avsnitt-ov-kvalitet', namn: 'Översikt', vad: 'Tröskel för extremvärden',
+        { flik: 'filer', avsnitt: 'avsnitt-ov-kvalitet', namn: 'Filer och kvalitet', vad: 'Tröskel för extremvärden',
           lage: `${extrem ? svTal(parseFloat(/** @type {HTMLInputElement} */ (extrem).value) || 3, 1) : '3,0'} standardavvikelser`, andrad: !!extrem && (parseFloat(/** @type {HTMLInputElement} */ (extrem).value) || 3) !== 3 },
     ];
     flikar.innerHTML = rader.map(r => `<li class="inst-flik${r.andrad ? ' ar-andrad' : ''}">
@@ -95,10 +93,8 @@ document.addEventListener('click', e => {
     if (flik) { _instGaTill(flik.getAttribute('data-inst-flik'), flik.getAttribute('data-inst-avsnitt')); return; }
     if (/** @type {HTMLElement} */ (e.target).closest('#inst-till-filer')) {
         stangInstallningar();
-        const nav = document.querySelector('.nav-item[data-tab="dashboard"]');
+        const nav = document.querySelector('.nav-item[data-tab="filer"]');
         if (nav) /** @type {HTMLElement} */ (nav).click();
-        const vy = document.getElementById('view-dashboard');
-        if (vy && vy.classList.contains('har-data') && !vy.classList.contains('visa-filer')) document.getElementById('btn-ov-filer')?.click();
         const rad = document.getElementById('upload-row');
         if (rad && typeof rad.scrollIntoView === 'function') rad.scrollIntoView({ block: 'start' });
     }

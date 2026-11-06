@@ -121,6 +121,7 @@ describe('C3: könsuppdelade mått för hela organisationen kräver tröskeln f�
     it('Struktur: percentiltabellen, EU-nyckeltalen och kvartilernas könsfördelning', () => {
         const w = fonster3(null);
         w.__renderTabContent('struktur');
+        w.__renderTabContent('rapporttext');   // auto-utkastet står i Rapporttext
         const d = w.document;
         expect(harNagon(normalisera(d.getElementById('view-struktur').textContent + d.getElementById('struktur-narrative').value), [...MAN, ...gap])).toEqual([]);
         expect(d.getElementById('struktur-distribution').textContent).toMatch(NOT);

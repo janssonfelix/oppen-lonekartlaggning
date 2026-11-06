@@ -25,19 +25,19 @@ checklistan täcker det bara en körning med **er data** på **er hårdvara** ka
       sessionen (ladda upp, analysera, exportera).
 
 ## B. Inläsning med skarp data
-- [ ] **Organisationspaketet** (om ni har ett) läses in; organisation, datum och innehåll
-      stämmer, och Prioritering och Jämförelse använder ert ställningstagande.
+- [ ] **Organisationspaketet** (om ni har ett) läses in i Filer och kvalitet; organisation, datum och innehåll
+      stämmer, och Prioritering och Löneläget använder ert ställningstagande.
 - [ ] **Organisationsfilen** (om systemägaren tagit fram en, `organisationspaket.md` avsnitt 3b) startar
       med paketet inläst: filrutan säger *Inbakat i den här filen*, *Visa paketet* visar rätt innehåll,
       och *Om verktyget* anger versionen filen bygger på.
 - [ ] **Paketets låsningar** (om paketet har dem, `organisationspaket.md` §5) gäller: *Inställningar*
       avvisar en minsta gruppstorlek under golvet, rullistan under *Vad lagras?* står på den låsta
-      tiden och går inte att ändra, och rutan för små grupper i Utforska är dold. *Rensa all data*
+      tiden och går inte att ändra, och rutan för små grupper i Tabeller och egna vyer är dold. *Rensa all data*
       tar bort låsningarna med paketet.
 - [ ] Strukturfilen läses in; **antal rader** stämmer med förväntat.
 - [ ] Kolumnerna mappas rätt automatiskt — eller via **kolumnmappnings-guiden**.
 - [ ] **å/ä/ö** visas korrekt (testa gärna både en UTF-8- och en Windows-1252-fil).
-- [ ] **Underlagets kvalitet** och inläsningsrapporten visar rimliga uteslutningar med
+- [ ] **Underlagets kvalitet** och inläsningsrapporten (Filer och kvalitet) visar rimliga uteslutningar med
       begripliga skäl.
 - [ ] **Lönerna är heltidsomräknade:** ingen varning om löner under heltidsnivå, eller
       en förklaring till den.
@@ -50,11 +50,11 @@ checklistan täcker det bara en körning med **er data** på **er hårdvara** ka
 *Punkterna om många yrkesgrupper, trattdiagrammet och bandkartan, och Word-utkastet i Word (avsnitt D),
 är det som bara verklig data kan visa (teknisk-plan §9 punkt 1–3): verktyget är prövat med demodata och ett
 påhittat underlag med 42 yrken, och Word-utkastet bara i LibreOffice.*
-- [ ] **§ 9-regressionen** körs; ojusterat och **oförklarat** gap samt per-BAS ser
-      rimliga ut. (Vid tunt underlag visas "Tolka resultatet med försiktighet".)
+- [ ] **§ 9-regressionen** (Lönestruktur, *Vad blir kvar av lönegapet?*) körs; ojusterat och **oförklarat** gap
+      samt per-BAS ser rimliga ut. (Vid tunt underlag visas "Tolka resultatet med försiktighet".)
 - [ ] **Kandidatpar i likvärdigt arbete** genereras i både **BAS-läge** och **poäng-läge** (om
       strukturfilen har kolumnen Poäng).
-- [ ] **Struktur/EU-mått, prioritering, löneöversyn och handlingsplan** renderar utan
+- [ ] **Lönestruktur med EU-måtten, prioritering, löneöversyn och handlingsplan** renderar utan
       fel.
 - [ ] **Diagrammen** renderar. Vid mycket stort underlag (tiotusentals rader): notisen
       *"representativt urval … alla beräkningar använder fullständig data"* visas och
@@ -63,11 +63,13 @@ påhittat underlag med 42 yrken, och Word-utkastet bara i LibreOffice.*
 - [ ] **Många yrkesgrupper:** yrkesgruppstabellen i Lika arbete ryms utan att rulla i sidled, yrkesnamnen går att
       läsa, och grafiken i raderna (punkten mot linjen för lika lön) stämmer med talet bredvid. *Verktyget är
       utvecklat mot ett litet exempelunderlag och ett påhittat större — er fil är det första riktiga provet.*
-- [ ] **Trattdiagrammet** (Lika arbete) och **bandkartan** (Jämförelse, avsnittet mot ställningstagandet) går att läsa med era grupper: punkterna
+- [ ] **Trattdiagrammet** (Lika arbete) och **bandkartan** (Löneläget, avsnittet mot ställningstagandet) går att läsa med era grupper: punkterna
       ligger inte på varandra så att de inte går att skilja åt, och namnen krockar inte. Bandkartan är inte prövad
       med många yrken i samma BAS-intervall — notera i avsnitt G om grupper med nästan samma median täcker
       varandra.
 - [ ] **Sök** (sidhuvudet) hittar ett yrke och markerar det i diagram och tabeller; Escape tar bort markeringen.
+      Ett avsnitt går också att söka fram (prova *regression* eller *förra året*), och sidindexet *På den här sidan*
+      leder till flikens avsnitt.
 
 ## D. Utdata
 - [ ] **Word-utkastet** laddas ner och **öppnas i Word**; bedömningarna av regler och praxis och
@@ -83,7 +85,7 @@ påhittat underlag med 42 yrken, och Word-utkastet bara i LibreOffice.*
 - [ ] Vid test i demoläge: alla exporter märks **DEMODATA** (i innehållet eller med
       `DEMO_` i filnamnet).
 - [ ] **Exportmenyn** på ett diagram ger PNG, SVG och diagramdata som går att öppna.
-- [ ] **Utforska:** med rutan "Ta med grupper under 10 i exporten" *urkryssad* saknas
+- [ ] **Tabeller och egna vyer:** med rutan "Ta med grupper under 10 i exporten" *urkryssad* saknas
       grupper under 10 i tabellens CSV och i diagramdatan.
 
 ## E. Webbläsare & tillgänglighet (på riktig hårdvara — det automatiken inte når)
@@ -99,8 +101,8 @@ påhittat underlag med 42 yrken, och Word-utkastet bara i LibreOffice.*
 - [ ] *(Om relevant)* En **mycket stor fil** laddas inom rimlig tid; bakgrundsnotis
       ("förbereder analyser …") visas och försvinner.
 - [ ] **"Rensa all data"** tömmer allt (tabeller, diagram, § 8-anteckningar) — även i
-      Utforska, Struktur och Löneöversyn.
-- [ ] **"Spara konfiguration"** + **"Ladda konfiguration"** återställer inställningar
+      Tabeller och egna vyer, Lönestruktur och Löneöversyn.
+- [ ] **"Spara konfiguration"** + **"Ladda konfiguration"** (Spara och jämför år) återställer inställningar
       (datafilen laddas om).
 
 ## G. Sammanfattning & sign-off

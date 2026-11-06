@@ -7,7 +7,7 @@
 //
 // Två lägen (ADR-51, beslut 2026-10-29 efter användartest): på SKÄRMEN maskeras inget — den som använder
 // verktyget har redan lönefilen — och kTroskel() är då 1. Allt som LÄMNAR verktyget (Excel, Word, PDF, ZIP,
-// CSV, urklipp, diagrambilder, rapportunderlaget, Dokumentera & exportera) ritas och räknas i exportläget
+// CSV, urklipp, diagrambilder, rapportunderlaget, Rapporttext och Exportera) ritas och räknas i exportläget
 // (23-exportgrind.js: medExportLage), där kTroskel() är den inställda tröskeln, kInstalld(). Inställningen,
 // stämpeln och texterna om regeln talar alltid om den inställda tröskeln.
 //
@@ -253,9 +253,9 @@ function _kUndantagFor(el, medSma) {
     // dem (exportMedSma): undantaget gäller bara när exporten faktiskt bär dem.
     if (el._figur) {
         const bar = typeof medSma === 'boolean' ? medSma : _rfExportFigur(el)?.visaSma;
-        return bar ? 'valt i Utforska' : '';
+        return bar ? 'valt i Tabeller och egna vyer' : '';
     }
-    if ((el.id === 'explore-table' || el.id === 'chart-explore') && typeof explorerSmaIExport === 'function' && explorerSmaIExport()) return 'valt i Utforska';
+    if ((el.id === 'explore-table' || el.id === 'chart-explore') && typeof explorerSmaIExport === 'function' && explorerSmaIExport()) return 'valt i Tabeller och egna vyer';
     return '';
 }
 
@@ -462,8 +462,8 @@ function _omritningssteg() {
         const oppen = document.querySelector('.nav-item.active[data-tab]');
         if (typeof tomFlikarUtom === 'function') tomFlikarUtom(new Set(['dashboard', ...(oppen ? [oppen.getAttribute('data-tab')] : [])]));
     }]);
-    // Översikt: nyckeltal, kompliansöversikt (med "Var uppstår löneskillnaden"), underlagets kvalitet,
-    // processöversikten, Att göra, inläsningsrapporten, extremvärdeslistan och A/B-jämförelsen.
+    // Översikt och Filer och kvalitet: nyckeltal, kompliansöversikt, underlagets kvalitet, processöversikten, Att göra,
+    // inläsningsrapporten, extremvärdeslistan och A/B-jämförelsen. Var uppstår löneskillnaden ritas med Lönestruktur.
     steg.push(['nyckeltal', () => { if (typeof updateDashboardStats === 'function') updateDashboardStats(); }]);
     steg.push(['kompliansöversikt', () => { if (typeof updateCompliance === 'function') updateCompliance(); }]);
     steg.push(['underlagets kvalitet', () => { if (typeof renderUnderlagetsKvalitet === 'function') renderUnderlagetsKvalitet(); }]);

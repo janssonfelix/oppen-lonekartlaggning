@@ -105,9 +105,9 @@ function robusthetPrioritering(topN = 10) {
 // uttag tar det flera sekunder och blockerar gränssnittet, så den startas
 // manuellt i stället för vid varje flikbyte.
 /**
- * Flikens översta rad: läget i kontrollerna och i rapportunderlaget. Varje del lämnar sitt läge här när den ritas,
- * och raden ritas om. Färdigcheckens punkter är observationer och robusthetens gränsfall är förbehåll — inget av dem
- * märks som fel.
+ * Översta raden i Exportera: läget i färdigchecken och robustheten. Varje del lämnar sitt läge här när den ritas, och
+ * raden ritas om. Rapportunderlaget står i fliken Rapporttext och lämnar bara antalet avsnitt i sitt nyckeltal.
+ * Färdigcheckens punkter är observationer och robusthetens gränsfall är förbehåll — inget av dem märks som fel.
  */
 /** @type {{fardig: any[]|null, robust: any, block: any}} */
 const _dkLage = { fardig: null, robust: null, block: null };
@@ -121,8 +121,7 @@ function _dkRitaTopp(del) {
     const robust = r ? (r.flippar ? `${r.flippar} nära en gräns` : 'Står sig') : 'Inte körd';
     host.innerHTML = _laSlutsats('Färdigcheck', f.length ? `${f.length} ${f.length === 1 ? 'punkt' : 'punkter'}` : 'Inga lösa trådar',
             f.length ? (varna ? `${varna} behöver en åtgärd eller en förklaring` : 'Att känna till — inget som behöver åtgärdas') : 'Verktyget hittar inget som missats')
-        + _laSlutsats('Robusthet', robust, r ? `${r.provade} slutsatser prövade på nytt` : 'Körs under Robusthet längre ned')
-        + _laSlutsats('Rapportunderlag', n ? `${n} avsnitt` : '–', 'Färdiga att kopiera till rapporten');
+        + _laSlutsats('Robusthet', robust, r ? `${r.provade} slutsatser prövade på nytt` : 'Körs under Robusthet längre ned');
     _laNyckel('nyckel-dk-robusthet', robust);
     _laNyckel('nyckel-dk-rapportunderlag', n ? `${n} avsnitt` : '');
 }

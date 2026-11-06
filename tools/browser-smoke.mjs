@@ -154,7 +154,7 @@ ok(true, 'demodata inläst, banner synlig');
 // hidden-attributet måste faktiskt dölja elementet — författar-CSS (display:flex) vinner
 // annars över webbläsarens [hidden]-regel, vilket jsdom-testerna inte kan se.
 const osynlig = sel => page.evaluate(s => { const el = document.querySelector(s); return !!el && getComputedStyle(el).display === 'none'; }, sel);
-ok(!(await osynlig('.nav-item[data-tab="benchmark"]')), 'Jämförelse syns med ställningstagandet, utan jämförelsestatistik');
+ok(!(await osynlig('.nav-item[data-tab="benchmark"]')), 'Löneläget syns med ställningstagandet, utan jämförelsestatistik');
 ok(await osynlig('#referens-namn-rad'), 'namnfältet för egen referens är dolt i demoläget');
 ok(await osynlig('#btn-referens-aterga'), '"Ta bort referensen" är dold i demoläget');
 
@@ -205,9 +205,9 @@ await page.evaluate(() => {
 });
 // Diagram som MÅSTE ha ritats på demodata: en <svg> i containern.
 const FLIKAR = [
-    ['matrix', ['#chart-la-tratt', '#chart-skevhet-lador']],
+    ['matrix', ['#chart-la-tratt']],
     ['likvardighet', []],
-    ['struktur', ['#chart-sektorer']],
+    ['struktur', ['#chart-sektorer', '#chart-skevhet-lador']],
     ['prioritering', ['#chart-prio-pareto', '#chart-prio-matrix']],
     ['benchmark', ['#chart-lp-bandmap', '#chart-lp-compliance']],
     ['loneoversyn', []],
@@ -215,11 +215,43 @@ const FLIKAR = [
     ['utforska', ['#chart-explore']],
     ['benchmark', ['#chart-jamforelse-spann', '#chart-jamforelse-avvikelse']],
     ['dokumentera', []],
+    ['rapporttext', []],
+    ['arbetet', []],
 ];
+// Flikarna klickas vid 1440 punkter: där är sidindexet en rad överst (spalten bredvid innehållet börjar vid 1920).
+await page.setViewportSize({ width: 1440, height: 900 });
 for (const [flik, diagram] of FLIKAR) {
     await page.click(`.nav-item[data-tab="${flik}"]`);
     await page.evaluate(() => document.querySelectorAll('details.avsnitt').forEach(d => { d.open = true; }));
     await page.waitForTimeout(400);           // låt fliken rita klart
+    // Sidindexet (89-sidindex.js) har en post per synlig avsnittsrubrik i fliken, och inget alls under tre.
+    const index = await page.evaluate(() => {
+        const rubriker = [...document.querySelectorAll('.view-panel')].filter(p => p.offsetParent !== null)
+            .flatMap(p => [...p.querySelectorAll('details.avsnitt > summary h2, details.avsnitt > summary h3, .card-header > h2')])
+            .filter(h => h.offsetParent !== null).length;
+        const nav = document.getElementById('sidindex');
+        return { rubriker, poster: nav.querySelectorAll('a').length, dolt: nav.hidden };
+    });
+    ok(index.rubriker >= 3 ? index.poster === index.rubriker && !index.dolt : index.poster === 0 && index.dolt,
+        `${flik}: sidindexet har en post per synligt avsnitt (${index.poster} poster, ${index.rubriker} rubriker)`);
+    // Indexet ger ingen tabell en vågrät rullist som den inte har utan indexet: vid 1440 punkter (en rad ovanför
+    // innehållet) och vid 1920, där spalten börjar i marginalen bredvid innehållet.
+    for (const bredd of [1440, 1920]) {
+        if (bredd !== 1440) { await page.setViewportSize({ width: bredd, height: 900 }); await page.waitForTimeout(100); }
+        const rullar = await page.evaluate(() => {
+            const kropp = document.querySelector('.content-body');
+            const tabeller = [...document.querySelectorAll('.view-panel .table-container')].filter(t => t.offsetParent !== null);
+            const matt = () => tabeller.map(t => t.scrollWidth > t.clientWidth + 1);
+            if (!kropp.classList.contains('har-sidindex')) return [];
+            const med = matt();
+            kropp.classList.remove('har-sidindex');
+            const utan = matt();
+            kropp.classList.add('har-sidindex');
+            return tabeller.map((t, i) => med[i] && !utan[i] ? (t.querySelector('table')?.id || t.closest('[id]')?.id || '?') : null).filter(Boolean);
+        });
+        ok(rullar.length === 0, `${flik}: ingen tabell får vågrät rullist av sidindexet vid ${bredd} punkter${rullar.length ? ` (${rullar.join(', ')})` : ''}`);
+    }
+    await page.setViewportSize({ width: 1440, height: 900 });
     for (const sel of diagram) {
         const harSvg = await page.evaluate(s => {
             const el = document.querySelector(s);
@@ -234,12 +266,87 @@ for (const [flik, diagram] of FLIKAR) {
     }
     if (!diagram.length) ok(true, `${flik}: renderade utan fel`);
 }
+{
+    // Smalare än 1920 punkter (här 1440) är sidindexet en rad överst som följer med och säger vilket avsnitt som står i
+    // fönstret; raden med det markerade lägger sig under den, och båda syns.
+    await page.click('.nav-item[data-tab="struktur"]');
+    await page.evaluate(() => document.querySelectorAll('details.avsnitt').forEach(d => { d.open = true; }));
+    await page.waitForTimeout(400);
+    await page.locator('#chart-skevhet-andel [data-marke="stapel"]').first().click();
+    await page.waitForTimeout(200);
+    await page.evaluate(() => document.getElementById('avsnitt-st-eu').scrollIntoView({ block: 'start' }));
+    await page.waitForTimeout(600);
+    const rad = await page.evaluate(() => {
+        const nav = document.getElementById('sidindex').getBoundingClientRect(), mk = document.getElementById('markering-rad')?.getBoundingClientRect();
+        return { topp: Math.round(nav.top), botten: Math.round(nav.bottom), rullat: Math.round(scrollY),
+            summary: document.querySelector('#sidindex summary').textContent.replace(/\s+/g, ' ').trim(),
+            aktiv: document.querySelector('#sidindex a.ar-aktiv')?.textContent || '',
+            // Den aktiva postens rubrik står i fönstrets övre del, under raden.
+            aktivTopp: Math.round(document.querySelector(`#${document.querySelector('#sidindex a.ar-aktiv')?.dataset.sidindex} > summary`)?.getBoundingClientRect().top ?? -1),
+            mk: mk ? { topp: Math.round(mk.top), hojd: Math.round(mk.height) } : null };
+    });
+    ok(rad.rullat > 300 && rad.topp >= 0 && rad.topp <= 4 && rad.aktiv !== '' && rad.summary.includes(rad.aktiv) && rad.aktivTopp >= rad.botten - 4 && rad.aktivTopp <= 0.4 * 900,
+        `sidindexet vid 1440 punkter följer med överst och säger var läsaren är (rullat ${rad.rullat} px, raden ${rad.topp} px från överkanten: "${rad.summary}", rubriken ${rad.aktivTopp} px)`);
+    ok(!!rad.mk && rad.mk.hojd > 0 && rad.mk.topp >= rad.botten - 1 && rad.mk.topp < rad.botten + 20,
+        `raden med det markerade står synlig under sidindexet (sidindexet slutar ${rad.botten} px, markeringen börjar ${rad.mk && rad.mk.topp} px)`);
+    // Ett långt rullsteg som hoppar förbi rubriker: posten är fortfarande avsnittet som läslinjen (40 %) står i.
+    await page.mouse.move(800, 500);
+    await page.mouse.wheel(0, -2200);
+    await page.waitForTimeout(600);
+    const hopp = await page.evaluate(() => {
+        const linje = innerHeight * 0.4, a = document.querySelector('#sidindex a.ar-aktiv');
+        const topp = id => document.querySelector(`#${id} > summary, #${id} .card-header > h2`)?.getBoundingClientRect().top ?? NaN;
+        const alla = [...document.querySelectorAll('#sidindex a')].map(x => x.dataset.sidindex), i = alla.indexOf(a?.dataset.sidindex);
+        return { aktiv: a?.textContent || '', ovan: topp(alla[i]) <= linje || i === 0, nasta: i === alla.length - 1 || topp(alla[i + 1]) > linje,
+            summary: document.querySelector('#sidindex summary').textContent };
+    });
+    ok(hopp.ovan && hopp.nasta && hopp.summary.includes(hopp.aktiv), `efter ett långt rullsteg visar sidindexet avsnittet som står i fönstret (${hopp.aktiv})`);
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(150);
+    // Ett klick på en post i den utfällda raden: raden fälls ihop först, rubriken hamnar under den och raden säger avsnittet.
+    await page.evaluate(() => { window.scrollTo(0, 0); document.querySelector('#sidindex .sidindex-ram').open = true; });
+    await page.waitForTimeout(200);
+    // Den andra posten: långt från sidans slut, så att rubriken kan rullas upp till raden.
+    const postId = await page.evaluate(() => document.querySelectorAll('#sidindex a[data-sidindex]')[1]?.dataset.sidindex || '');
+    await page.click(`#sidindex a[data-sidindex="${postId}"]`);
+    await page.waitForTimeout(900);
+    const klick = await page.evaluate(id => {
+        const nav = document.getElementById('sidindex').getBoundingClientRect(), mal = document.getElementById(id);
+        const rubrik = (mal.querySelector(':scope > summary') || mal.querySelector('.card-header > h2') || mal).getBoundingClientRect();
+        return { hopfalld: !document.querySelector('#sidindex .sidindex-ram').open, botten: Math.round(nav.bottom), rubrikTopp: Math.round(rubrik.top),
+            summary: document.querySelector('#sidindex summary').textContent.replace(/\s+/g, ' ').trim(),
+            post: document.querySelector(`#sidindex a[data-sidindex="${id}"]`).textContent.trim(),
+            rullat: Math.round(scrollY), max: Math.round(document.scrollingElement.scrollHeight - innerHeight) };
+    }, postId);
+    ok(klick.hopfalld && klick.rubrikTopp >= klick.botten - 4 && klick.rubrikTopp <= klick.botten + 60 && klick.summary.includes(klick.post),
+        `ett klick i sidindexet vid 1440 punkter fäller ihop raden och lägger rubriken under den (raden slutar ${klick.botten} px, rubriken ${klick.rubrikTopp} px, rullat ${klick.rullat} av ${klick.max} px, raden: "${klick.summary}")`);
+}
+{
+    // Från 1920 punkter är sidindexet en spalt bredvid innehållet som följer med när sidan rullas; ett klick fäller
+    // ut avsnittet och ger summaryn fokus.
+    await page.setViewportSize({ width: 1920, height: 900 });
+    await page.click('.nav-item[data-tab="struktur"]');
+    await page.evaluate(() => { document.getElementById('avsnitt-st-eu').open = false; });
+    await page.waitForTimeout(200);
+    await page.click('#sidindex a[data-sidindex="avsnitt-st-eu"]');
+    await page.waitForTimeout(900);
+    const spalt = await page.evaluate(() => {
+        const nav = document.getElementById('sidindex').getBoundingClientRect(), panel = document.getElementById('view-struktur').getBoundingClientRect();
+        return { bredvid: nav.left >= panel.right && nav.right <= innerWidth, topp: Math.round(document.querySelector('#sidindex .sidindex-lista').getBoundingClientRect().top),
+            rullat: Math.round(scrollY), oppen: document.getElementById('avsnitt-st-eu').open,
+            fokus: document.activeElement === document.querySelector('#avsnitt-st-eu > summary'),
+            aktiv: document.querySelector('#sidindex a.ar-aktiv')?.textContent || '' };
+    });
+    ok(spalt.bredvid && spalt.rullat > 300 && spalt.topp >= 0 && spalt.topp < 80 && spalt.oppen && spalt.fokus,
+        `sidindexet står bredvid innehållet och följer med (rullat ${spalt.rullat} px, listan ${spalt.topp} px från överkanten); klicket fällde ut avsnittet och gav fokus (aktiv: ${spalt.aktiv})`);
+}
+await page.setViewportSize({ width: 1400, height: 1000 });
 
 console.log('\n── Diagrammen (diagramkärnan, ADR-39) ──');
 // Varje diagram ritas av diagramkärnan: en SVG med märken, och exportmenyn ger en PNG och en SVG som inte
 // är tomma. Ett diagram som vyn ersätter med en förklarande text
 // (för få grupper i demodatan) räknas som riktigt — då finns ingen figur och ingen bild.
-const DIAGRAMMEN = [['matrix', 'chart-la-tratt'], ['matrix', 'chart-skevhet-andel'], ['matrix', 'chart-perbas-gap'], ['struktur', 'chart-sektorer'],
+const DIAGRAMMEN = [['matrix', 'chart-la-tratt'], ['struktur', 'chart-skevhet-andel'], ['struktur', 'chart-perbas-gap'], ['struktur', 'chart-sektorer'],
                   ['benchmark', 'chart-lp-gender'], ['benchmark', 'chart-lp-compliance'], ['kon', 'chart-demo-hist'],
                   // linjer, band och lådor
                   ['kon', 'chart-kon-scatter'], ['kon', 'chart-kon-boxplot'],
@@ -287,7 +394,7 @@ console.log('\n── Länkade vyer: en markerad grupp framhävs i alla diagram 
     await page.click('.nav-item[data-tab="benchmark"]');
     await page.evaluate(() => document.querySelectorAll('details.avsnitt').forEach(d => { d.open = true; }));
     await page.waitForTimeout(400);
-    await page.click('.nav-item[data-tab="matrix"]');
+    await page.click('.nav-item[data-tab="struktur"]');
     await page.evaluate(() => document.querySelectorAll('details.avsnitt').forEach(d => { d.open = true; }));
     await page.waitForTimeout(400);
     await page.locator('#chart-skevhet-andel [data-marke="stapel"]').first().click();
@@ -378,26 +485,35 @@ console.log('\n── Lika arbete i formen resultat först ──');
     await page.waitForTimeout(1500);
     await page.evaluate(() => document.querySelector('.nav-item[data-tab="matrix"]').click());
     await page.waitForTimeout(1200);
-    const form = await page.evaluate(() => { const a = [...document.querySelectorAll('details.avsnitt[id^="avsnitt-la-"]')]; const m = document.getElementById('main-content');
+    const form = await page.evaluate(() => { const a = [...document.querySelectorAll('#view-lika-yrken details.avsnitt[id^="avsnitt-la-"]')]; const m = document.getElementById('main-content');
         return { slutsatser: document.querySelectorAll('#la-slutsatser .slutsats').length, oppna: a.filter(x => x.open).map(x => x.id), antal: a.length,
-            huvud: Math.round(document.getElementById('la-oversikt').getBoundingClientRect().width), rader: document.querySelectorAll('#la-oversikt tbody tr').length, grafik: document.querySelectorAll('#la-oversikt tbody svg.la-oversikt-grafik').length,
-            ryms: document.querySelector('#la-huvuddiagram .table-container').scrollWidth <= document.querySelector('#la-huvuddiagram .table-container').clientWidth + 1,
             nyckel: [...document.querySelectorAll('[id^="nyckel-la-"]')].filter(e => e.textContent.trim()).length, skarmar: +(Math.max(document.documentElement.scrollHeight, m.scrollHeight) / innerHeight).toFixed(1), lankrad: document.querySelectorAll('.sidans-innehall').length }; });
     const huvudet = await page.evaluate(() => { const r = s => document.querySelector(s).getBoundingClientRect(); const delar = ['#sok-grupp', '#btn-open-symbols', '#btn-open-installningar', '#btn-open-glossary'].map(r);
         return { overlapp: delar.some((d, i) => i > 0 && delar[i - 1].right > d.left + 0.5), utanfor: delar[delar.length - 1].right > r('.top-header').right + 0.5 }; });
     ok(!huvudet.overlapp && !huvudet.utanfor, 'sidhuvudet: sökfältet och knapparna står bredvid varandra utan att gå in över varandra');
-    ok(form.slutsatser === 4 && form.huvud > 300 && form.rader > 0 && form.grafik === form.rader && form.ryms, `toppen visar fyra slutsatser och översiktstabellen med grafik i varje rad, utan sidrullning (${form.rader} rader, ${form.huvud} px bred)`);
-    ok(form.antal >= 5 && form.oppna.length === 1 && form.oppna[0] === 'avsnitt-la-yrkesgrupper' && form.nyckel >= 4 && form.lankrad === 0, `${form.antal} avsnitt, bara det första öppet, ${form.nyckel} med nyckeltal, ingen länkrad`);
+    ok(form.slutsatser === 4, 'toppen visar fyra slutsatser');
+    ok(form.antal >= 4 && form.oppna.length === 1 && form.oppna[0] === 'avsnitt-la-yrkesgrupper' && form.nyckel >= 4 && form.lankrad === 0, `${form.antal} avsnitt, bara det första öppet, ${form.nyckel} med nyckeltal, ingen länkrad`);
     console.log(`    (fliken är ${form.skarmar} skärmhöjder med bara första avsnittet öppet)`);
-    await page.click('#avsnitt-la-bas > summary');
+    await page.evaluate(() => document.querySelector('.nav-item[data-tab="struktur"]').click());
+    await page.waitForTimeout(1200);
+    const bas = await page.evaluate(() => ({ huvud: Math.round(document.getElementById('la-oversikt').getBoundingClientRect().width), rader: document.querySelectorAll('#la-oversikt tbody tr').length,
+        grafik: document.querySelectorAll('#la-oversikt tbody svg.la-oversikt-grafik').length,
+        ryms: document.querySelector('#la-huvuddiagram .table-container').scrollWidth <= document.querySelector('#la-huvuddiagram .table-container').clientWidth + 1 }));
+    await page.click('#avsnitt-ls-bas > summary');
     await page.waitForTimeout(700);
+    const basUt = await page.evaluate(() => ({ huvud: Math.round(document.getElementById('la-oversikt').getBoundingClientRect().width), rader: document.querySelectorAll('#la-oversikt tbody tr').length,
+        grafik: document.querySelectorAll('#la-oversikt tbody svg.la-oversikt-grafik').length,
+        ryms: document.querySelector('#la-huvuddiagram .table-container').scrollWidth <= document.querySelector('#la-huvuddiagram .table-container').clientWidth + 1 }));
+    ok(basUt.huvud > 300 && basUt.rader > 0 && basUt.grafik === basUt.rader && basUt.ryms, `Lönestruktur: BAS-tabellen med grafik i varje rad, utan sidrullning (${basUt.rader} rader, ${basUt.huvud} px bred; ${bas.huvud} px innan avsnittet fälldes ut)`);
     ok(await page.evaluate(() => { const s = document.querySelector('#chart-skevhet-lador svg'); return !!s && s.getBoundingClientRect().width > 300 && document.querySelector('#la-oversikt tbody tr').getBoundingClientRect().height > 0; }),
         'ett avsnitt som fälls ut ritar sitt diagram i full bredd och visar sin tabell');
     await page.keyboard.press('Tab');
-    ok(await page.evaluate(() => { const s = document.querySelector('#avsnitt-la-kon > summary'); s.focus(); return document.activeElement === s; }), 'avsnittens rubriker går att nå med tangentbordet');
+    ok(await page.evaluate(() => { const s = document.querySelector('#avsnitt-ls-kon > summary'); s.focus(); return document.activeElement === s; }), 'avsnittens rubriker går att nå med tangentbordet');
     await page.keyboard.press('Enter');
     await page.waitForTimeout(300);
-    ok(await page.evaluate(() => document.getElementById('avsnitt-la-kon').open), 'Enter fäller ut avsnittet');
+    ok(await page.evaluate(() => document.getElementById('avsnitt-ls-kon').open), 'Enter fäller ut avsnittet');
+    // Avsnitten hör till Lönestruktur: fäll in dem igen, annars mäter kontrollen av Lönestruktur nedan dem utfällda.
+    await page.evaluate(() => ['avsnitt-ls-bas', 'avsnitt-ls-kon'].forEach(id => { document.getElementById(id).open = false; }));
 }
 
 console.log('\n── Ålder & karriär: ett urval för hela fliken ──');
@@ -425,15 +541,19 @@ console.log('\n── Prioritering: resultatet först ──');
     await page.evaluate(() => document.querySelector('.nav-item[data-tab="prioritering"]').click());
     await page.waitForTimeout(1200);
     const pr = await page.evaluate(() => { const g = id => document.getElementById(id); const top = el => el.getBoundingClientRect().top;
-        return { matrisForst: top(g('chart-prio-matrix')) < top(g('avsnitt-pr-lista')), sist: top(g('avsnitt-pr-installningar')) > top(g('avsnitt-pr-lista')),
-            oppna: [...document.querySelectorAll('details.avsnitt[id^="avsnitt-pr-"]')].filter(a => a.open).map(a => a.id).join(','), nyckel: g('nyckel-pr-installningar').textContent }; });
-    ok(pr.matrisForst && pr.sist && pr.oppna === 'avsnitt-pr-lista' && pr.nyckel === 'Standardvärden', 'matrisen står före listan, inställningarna sist och hopfällda med nyckeltalet Standardvärden');
-    await page.click('#avsnitt-pr-installningar > summary');
+        return { matrisForst: top(g('chart-prio-matrix')) < top(g('avsnitt-pr-lista')), sist: top(g('pr-installningar-rad')) > top(g('avsnitt-pr-lista')),
+            oppna: [...document.querySelectorAll('details.avsnitt[id^="avsnitt-pr-"]')].filter(a => a.open).map(a => a.id).join(','), rad: g('pr-installningar-rad').textContent }; });
+    ok(pr.matrisForst && pr.sist && pr.oppna === 'avsnitt-pr-lista' && pr.rad.startsWith('Trösklar och viktning: standardvärden'), 'matrisen står före listan, och raden om trösklarna efter den säger standardvärden');
+    await page.click('#pr-installningar-rad [data-oppna-installningar="prio-cfg-atgard"]');
+    await page.waitForTimeout(300);
+    ok(await page.evaluate(() => document.getElementById('installningar-modal').style.display === 'flex' && document.activeElement.id === 'prio-cfg-atgard'), 'Ändra öppnar Inställningar med fokus i granskningsgränsen');
     await page.fill('#prio-cfg-atgard', '-8');
     await page.waitForTimeout(500);
-    ok(await page.evaluate(() => document.getElementById('nyckel-pr-installningar').textContent === 'Anpassade värden'), 'en ändrad tröskel syns i avsnittets rubrik');
+    ok(await page.evaluate(() => document.getElementById('pr-installningar-rad').textContent.startsWith('Trösklar och viktning: anpassade värden')), 'en ändrad tröskel i dialogen syns i flikens rad');
     await page.click('#prio-cfg-reset');
     await page.waitForTimeout(400);
+    await page.keyboard.press('Escape');
+    await page.waitForFunction(() => document.getElementById('installningar-modal').style.display === 'none', { timeout: 5000 });
 }
 
 console.log('\n── Regler & praxis: pilen och Stöd i verktyget ──');
@@ -456,7 +576,7 @@ console.log('\n── Regler & praxis: pilen och Stöd i verktyget ──');
     ok(await page.evaluate(() => document.querySelector('.nav-item.active').dataset.tab === 'likvardighet'), 'länken Gå dit öppnar Likvärdigt arbete');
 }
 
-console.log('\n── Dokumentera: checklistan först, exporterna som lista ──');
+console.log('\n── Exportera: checklistan först, robustheten, exporterna som lista; Rapporttext ──');
 {
     await page.evaluate(() => document.querySelector('.nav-item[data-tab="prioritering"]').click());
     await page.waitForTimeout(600);
@@ -464,17 +584,20 @@ console.log('\n── Dokumentera: checklistan först, exporterna som lista ─�
     await page.evaluate(() => document.querySelector('.nav-item[data-tab="dokumentera"]').click());
     await page.waitForTimeout(1200);
     const dk = await page.evaluate(() => { const g = id => document.getElementById(id); const r = g('view-kvalitet').getBoundingClientRect(); const top = id => g(id).getBoundingClientRect().top;
-        return { x: r.left, y: r.top - document.querySelector('.content-body').getBoundingClientRect().top, ordning: top('dk-slutsatser') < top('dk-checklista') && top('dk-checklista') < top('export-hub') && top('export-hub') < top('avsnitt-dk-robusthet'),
+        return { x: r.left, y: r.top - document.querySelector('.content-body').getBoundingClientRect().top, ordning: top('dk-slutsatser') < top('dk-checklista') && top('dk-checklista') < top('avsnitt-dk-robusthet') && top('avsnitt-dk-robusthet') < top('export-hub'),
             rutor: document.querySelectorAll('#dk-slutsatser .slutsats').length, rader: [...document.querySelectorAll('.export-lista > .export-hub-row')].filter(e => e.offsetParent).length,
             fler: [...document.querySelectorAll('.export-fler a[data-go-to-tab]')].map(a => a.dataset.goToTab).join(','),
             oppna: [...document.querySelectorAll('details.avsnitt[id^="avsnitt-dk-"]')].filter(a => a.open).map(a => a.id).join(','), lank: document.querySelectorAll('.sidans-innehall').length,
             skarmar: document.documentElement.scrollHeight / innerHeight }; });
     ok(Math.abs(dk.x - jfr.x) < 1 && Math.abs(dk.y - jfr.y) < 1, `fliken börjar lika långt från innehållsytans kant som andra flikar — inget tomt band (${Math.round(dk.x)},${Math.round(dk.y)} mot ${Math.round(jfr.x)},${Math.round(jfr.y)})`);
-    ok(dk.ordning && dk.rutor === 3 && dk.rader === 6 && dk.fler === 'likvardighet,struktur,prioritering,loneoversyn' && dk.lank === 0, `slutsatser, checklista, sex exportrader, en rad med länkar till flikarna och sedan avsnitten (${dk.rader} rader; ${dk.fler})`);
+    ok(dk.ordning && dk.rutor === 2 && dk.rader === 6 && dk.fler === 'likvardighet,struktur,prioritering,loneoversyn' && dk.lank === 0, `slutsatser, checklista, robustheten, sex exportrader och en rad med länkar till flikarna (${dk.rader} rader; ${dk.fler})`);
     ok(dk.oppna === 'avsnitt-dk-robusthet' && dk.skarmar < 4, `bara robustheten är utfälld och sidan är ${dk.skarmar.toFixed(1)} skärmar`);
     await page.click('#btn-run-robusthet');
     await page.waitForFunction(() => document.querySelector('#robusthet-body .gd-grid'), { timeout: 60000 });
     ok(await page.evaluate(() => !/Inte körd/.test(document.querySelectorAll('#dk-slutsatser .slutsats')[1].textContent) && document.getElementById('nyckel-dk-robusthet').textContent.length > 3), 'robusthetens utfall står i slutsatserna och i avsnittets rubrik');
+    await page.evaluate(() => document.querySelector('.nav-item[data-tab="rapporttext"]').click());
+    await page.waitForTimeout(1200);
+    ok(await page.evaluate(() => document.getElementById('avsnitt-st-utkast').open && /LÖNEKARTLÄGGNING/.test(document.getElementById('struktur-narrative').value)), 'Rapporttext: auto-utkastet är utfällt och ifyllt');
     await page.click('#avsnitt-dk-rapportunderlag > summary');
     await page.waitForTimeout(300);
     ok(await page.evaluate(() => { const k = document.querySelector('#rapportunderlag-innehall [data-rapport-kopiera]'); return !!k && k.offsetParent !== null; }), 'rapportunderlagets block går att nå när avsnittet fälls ut');
@@ -489,7 +612,7 @@ console.log('\n── Dokumentera: checklistan först, exporterna som lista ─�
 console.log('\n── Struktur, Likvärdigt arbete, Löneöversyn och Lönepolitik ──');
 {
     const ga = async f => { await page.evaluate(t => document.querySelector(`.nav-item[data-tab="${t}"]`).click(), f); await page.waitForTimeout(1000); };
-    const lage = prefix => page.evaluate(p => ({ oppna: [...document.querySelectorAll(`details.avsnitt[id^="${p}"]`)].filter(a => a.open).map(a => a.id).join(','),
+    const lage = prefix => page.evaluate(p => ({ oppna: [...document.querySelectorAll(`details.avsnitt[id^="${p}"]`)].filter(a => a.open && a.offsetParent).map(a => a.id).join(','),   // bara den synliga flikens (auto-utkastet bär avsnitt-st- men står i Rapporttext)
         rutor: [...document.querySelectorAll('.view-panel')].filter(v => v.offsetParent).reduce((n, v) => n + v.querySelectorAll('.slutsatser .slutsats').length, 0),
         lank: document.querySelectorAll('.sidans-innehall').length, skarmar: document.documentElement.scrollHeight / innerHeight }), prefix);
     // Ett diagram i ett hopfällt avsnitt har ingen bredd när det ritas: det ska fylla kortet när avsnittet fälls ut.
@@ -931,7 +1054,7 @@ console.log('\n── Tal står på en rad ──');
     }), sel);
     for (const bredd of [1440, 1100]) {
         await page.setViewportSize({ width: bredd, height: 900 });
-        await page.click('.nav-item[data-tab="matrix"]');
+        await page.click('.nav-item[data-tab="struktur"]');
         await page.evaluate(() => document.querySelectorAll('.view-panel details.avsnitt').forEach(d => { d.open = true; }));
         await page.waitForTimeout(300);
         const hero = await rader('.reg-hero .hero-number');
@@ -979,7 +1102,7 @@ console.log('\n── Sidhuvudet är lika högt på alla flikar ──');
     for (const bredd of [1440, 1100, 1024]) {
         await page.setViewportSize({ width: bredd, height: 900 });
         const hojder = {};
-        for (const flik of ['dashboard', 'bestammelser', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn', 'handlingsplan', 'dokumentera', 'kon', 'benchmark', 'utforska', 'info']) {
+        for (const flik of ['dashboard', 'bestammelser', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn', 'handlingsplan', 'dokumentera', 'rapporttext', 'arbetet', 'kon', 'benchmark', 'utforska', 'info']) {
             await page.click(`.nav-item[data-tab="${flik}"]`);
             hojder[flik] = await page.evaluate(() => Math.round(document.querySelector('.top-header').getBoundingClientRect().height));
         }
@@ -1104,7 +1227,7 @@ console.log('\n── Utskrift av den aktiva fliken (Ctrl+P) ──');
 {
     await page.click('.nav-item[data-tab="matrix"]');
     await page.waitForTimeout(300);
-    const stangda = await page.evaluate(() => [...document.querySelectorAll('#view-lika-yrken details.avsnitt, #view-skevhet details.avsnitt, #view-matrix details.avsnitt')].map(d => d.open));
+    const stangda = await page.evaluate(() => [...document.querySelectorAll('#view-lika-yrken details.avsnitt, #view-skevhet details.avsnitt, #view-regression details.avsnitt')].map(d => d.open));
     await page.evaluate(() => { document.querySelectorAll('.view-panel details.avsnitt').forEach(d => { d.open = false; }); window.dispatchEvent(new Event('beforeprint')); });
     await page.emulateMedia({ media: 'print' });
     const u = await page.evaluate(() => {
@@ -1132,7 +1255,7 @@ console.log('\n── Utskrift av den aktiva fliken (Ctrl+P) ──');
         'med PDF-knappen skrivs bara rapporten ut');
     await page.emulateMedia({ media: 'screen' });
     await page.evaluate(stangda => { document.body.classList.remove('print-mode');
-        [...document.querySelectorAll('#view-lika-yrken details.avsnitt, #view-skevhet details.avsnitt, #view-matrix details.avsnitt')].forEach((d, i) => { d.open = stangda[i]; }); }, stangda);
+        [...document.querySelectorAll('#view-lika-yrken details.avsnitt, #view-skevhet details.avsnitt, #view-regression details.avsnitt')].forEach((d, i) => { d.open = stangda[i]; }); }, stangda);
 }
 
 console.log('\n── Gruppdossier (modal) ──');
@@ -1152,7 +1275,7 @@ if (harDossierKnapp) {
 }
 
 console.log('\n── Rapportunderlag (urklipp) ──');
-await page.click('.nav-item[data-tab="dokumentera"]');
+await page.click('.nav-item[data-tab="rapporttext"]');
 await page.evaluate(() => document.querySelectorAll('details.avsnitt').forEach(d => { d.open = true; }));
 await page.waitForTimeout(300);
 ok(await page.evaluate(() => (document.getElementById('rapportunderlag-innehall')?.textContent || '').includes('Sammanfattning')),
@@ -1180,7 +1303,7 @@ await page.waitForTimeout(300);
 await page.click('#ov-filrad [data-oppna-installningar]');
 await page.waitForTimeout(300);
 ok(await page.evaluate(() => document.activeElement.id === 'k-troskel' && document.getElementById('installningar-modal').style.display === 'flex'), 'värdet för minsta gruppstorlek i filraden öppnar inställningarna med fokus i fältet');
-ok(await page.evaluate(() => { const p = document.querySelector('#installningar-modal .glossary-panel').getBoundingClientRect(); return p.width > 300 && p.right <= innerWidth && document.querySelectorAll('#inst-flikar .inst-flik').length === 5; }), 'panelen ryms i fönstret och listar flikarnas egna inställningar');
+ok(await page.evaluate(() => { const p = document.querySelector('#installningar-modal .glossary-panel').getBoundingClientRect(); return p.width > 300 && p.right <= innerWidth && document.querySelectorAll('#inst-flikar .inst-flik').length === 4; }), 'panelen ryms i fönstret och listar flikarnas egna inställningar');
 let bekraftelse = '';
 page.once('dialog', d => { bekraftelse = d.message(); d.accept(); });
 await page.fill('#k-troskel', '6');
@@ -1207,10 +1330,11 @@ await page.click('#btn-k-aterstall');
 await page.waitForTimeout(500);
 ok(await osynlig('#k-troskel-varning'), 'varningen försvinner efter återställning');
 ok(await page.inputValue('#k-troskel') === '10', 'fältet visar 10 efter återställning');
-await page.click('#inst-flikar [data-inst-flik="prioritering"]');
+ok(await page.evaluate(() => !!document.getElementById('prio-cfg-atgard').offsetParent && !!document.getElementById('prio-w-avvikelse').offsetParent), 'Prioriteringens trösklar och viktning står synliga i panelen');
+await page.click('#inst-flikar [data-inst-flik="likvardighet"]');
 await page.waitForTimeout(700);
-ok(await page.evaluate(() => document.getElementById('installningar-modal').style.display === 'none' && document.getElementById('view-prioritering').style.display === 'block' && document.getElementById('avsnitt-pr-installningar').open
-    && !!document.getElementById('prio-cfg-atgard').offsetParent), 'Öppna i panelen går till Prioritering, där trösklar och viktning står');
+ok(await page.evaluate(() => document.getElementById('installningar-modal').style.display === 'none' && document.getElementById('view-likvardighet').style.display === 'block' && document.getElementById('avsnitt-lv-installningar').open),
+    'Öppna i panelen går till Likvärdigt arbete och fäller ut avsnittet där inställningen står');
 
 console.log('\n── GDPR: ingen lagring ──');
 const lagring = await page.evaluate(() => {
@@ -1243,22 +1367,22 @@ console.log('\n── Översikt efter inläsning ──');
 {
     await page.evaluate(() => { document.querySelector('.nav-item[data-tab="dashboard"]').click(); scrollTo(0, 0); });
     await page.waitForTimeout(900);
-    // Tidigare steg har visat filerna och fällt ut avsnitten: läget ställs tillbaka till det som gäller efter en inläsning.
-    if (await page.evaluate(() => document.getElementById('btn-ov-filer').getAttribute('aria-expanded') === 'true')) await page.click('#btn-ov-filer');
+    // Tidigare steg har fällt ut avsnitten: läget ställs tillbaka till det som gäller efter en inläsning.
     await page.evaluate(() => document.querySelectorAll('#view-dashboard details.avsnitt').forEach(a => { a.open = false; }));
     await page.waitForTimeout(300);
     const ov = await page.evaluate(() => { const g = id => document.getElementById(id); const syn = id => g(id).offsetParent !== null; const top = id => g(id).getBoundingClientRect().top;
-        return { rad: syn('ov-filrad') && /Lönefil: \d+ personer/.test(g('ov-filrad').textContent), filer: syn('upload-row'),
-            ordning: top('ov-filrad') < top('dashboard-summary') && top('dashboard-summary') < top('att-gora') && top('att-gora') < top('chart-ov-kvartiler') && top('chart-ov-kvartiler') < top('avsnitt-ov-process'),
-            karta: !g('chart-ov-tradkarta'), kvartiler: !!document.querySelector('#chart-ov-kvartiler svg'),
+        return { rad: syn('ov-filrad') && /Lönefil: \d+ personer/.test(g('ov-filrad').textContent), filer: !!g('upload-row') && !g('view-dashboard').contains(g('upload-row')),
+            ordning: top('ov-filrad') < top('dashboard-summary') && top('dashboard-summary') < top('att-gora') && top('att-gora') < top('avsnitt-ov-process'),
+            karta: !g('chart-ov-tradkarta'), kvartiler: !g('chart-ov-kvartiler'),
             oppna: [...document.querySelectorAll('#view-dashboard details.avsnitt')].filter(a => a.open).length, skarmar: document.documentElement.scrollHeight / innerHeight }; });
-    ok(ov.rad && !ov.filer, 'filerna är en rad, och uppladdningskorten är undanfällda');
-    ok(ov.ordning && ov.karta && ov.kvartiler, 'nyckeltalen, Att göra och kvartilerna står i den ordningen före avsnitten, och kartan finns bara i Struktur');
+    ok(ov.rad && ov.filer, 'filerna är en rad på Översikt, och uppladdningskorten står i Filer och kvalitet');
+    ok(ov.ordning && ov.karta && ov.kvartiler, 'nyckeltalen och Att göra står i den ordningen före avsnitten; kartan och kvartilerna finns bara i Struktur');
     ok(ov.oppna === 0 && ov.skarmar < 3.5, `avsnitten är hopfällda och sidan är ${ov.skarmar.toFixed(1)} skärmar`);
-    await page.click('#btn-ov-filer');
+    await page.click('#ov-filrad [data-go-to-tab="filer"]');
     await page.waitForTimeout(300);
-    ok(await page.evaluate(() => document.getElementById('upload-row').offsetParent !== null && document.getElementById('btn-ov-filer').getAttribute('aria-expanded') === 'true'), 'knappen i filraden visar uppladdningskorten igen');
-    await page.click('#btn-ov-filer');
+    ok(await page.evaluate(() => document.getElementById('upload-row').offsetParent !== null && document.querySelector('.nav-item.active').dataset.tab === 'filer'), 'länken i filraden öppnar Filer och kvalitet med uppladdningskorten');
+    await page.evaluate(() => { document.querySelector('.nav-item[data-tab="dashboard"]').click(); scrollTo(0, 0); });
+    await page.waitForTimeout(300);
     await page.evaluate(() => { document.getElementById('avsnitt-ov-punkter').open = true; });
     await page.waitForTimeout(300);
     await page.click('#avsnitt-ov-punkter .act-cb');
@@ -1361,13 +1485,33 @@ console.log('\n── Startsidan före inläsning, och de två lägena ──');
     await tom.goto('file://' + FIL);
     await tom.waitForTimeout(1200);
     const start = await tom.evaluate(() => { const syn = id => { const e = document.getElementById(id); return !!e && e.offsetParent !== null; };
-        return { dolda: ['ov-filrad', 'ov-lage', 'ov-fordjupning', 'avsnitt-ov-kvalitet', 'avsnitt-ov-gap', 'sok-ruta'].filter(syn), uppladdning: syn('upload-row'), process: syn('avsnitt-ov-process') }; });
-    ok(start.dolda.length === 0 && start.uppladdning && start.process, `före inläsning visas uppladdningen och processöversikten, inte lägesdelarna${start.dolda.length ? ' — syns: ' + start.dolda.join(', ') : ''}`);
+        return { dolda: ['ov-filrad', 'ov-fordjupning'].filter(syn), komigang: syn('first-run-hint') && !!document.querySelector('#first-run-hint [data-go-to-tab="filer"]'), process: syn('avsnitt-ov-process'), sok: syn('sok-ruta') }; });
+    ok(start.dolda.length === 0 && start.komigang && start.process, `före inläsning visas Kom igång och processöversikten, inte lägesdelarna${start.dolda.length ? ' — syns: ' + start.dolda.join(', ') : ''}`);
+    // Funktionssöket syns före inläsning: ett avsnitt i en öppen flik går att nå, en låst flik säger kräver lönefil.
+    ok(start.sok, 'sökfältet syns före inläsning');
+    await tom.click('#sok-grupp');
+    await tom.keyboard.type('ögonblicksbild');
+    await tom.waitForTimeout(250);
+    const funk = await tom.evaluate(() => { const l = document.getElementById('sok-grupp-lista'), r = l.getBoundingClientRect();
+        return { synlig: !l.hidden && r.height > 20, rubrik: (l.querySelector('.sok-grupprubrik') || {}).textContent || '', forsta: (l.querySelector('[data-sok-funktion] .sok-namn') || {}).textContent || '' }; });
+    ok(funk.synlig && funk.rubrik === 'Funktioner' && /ögonblicksbild/.test(funk.forsta), `funktionssöket visar avsnittet under Funktioner (${funk.forsta})`);
+    await tom.keyboard.press('Enter');
+    await tom.waitForTimeout(600);
+    const gick = await tom.evaluate(() => { const a = document.getElementById('avsnitt-ar-ogonblick'), r = a.getBoundingClientRect();
+        return { flik: document.querySelector('.nav-item.active')?.getAttribute('data-tab'), oppen: a.open, iBild: r.top >= -2 && r.top < innerHeight, fokus: document.activeElement === a.querySelector(':scope > summary') }; });
+    ok(gick.flik === 'arbetet' && gick.oppen && gick.iBild && gick.fokus, `valet leder till avsnittet: utfällt, i bild och med fokus (${JSON.stringify(gick)})`);
+    await tom.click('#sok-grupp');
+    await tom.keyboard.type('regression');
+    await tom.waitForTimeout(250);
+    ok(await tom.evaluate(() => /kräver lönefil/.test(document.querySelector('#sok-grupp-lista [data-sok-funktion]')?.textContent || '')), 'en funktion i en låst flik säger kräver lönefil');
+    await tom.keyboard.press('Enter');
+    await tom.waitForTimeout(400);
+    ok(await tom.evaluate(() => document.querySelector('.nav-item.active')?.getAttribute('data-tab') === 'filer'), 'och leder till Filer och kvalitet');
     await tom.close();
 
     await page.evaluate(() => { document.querySelector('.nav-item[data-tab="matrix"]').click(); scrollTo(0, 0); });
     await page.waitForTimeout(800);
-    const hojd = () => page.evaluate(() => ({ sida: document.documentElement.scrollHeight, intro: document.querySelector('#view-lika-yrken .flik-intro, #view-matrix .flik-intro, .view-panel[style*="block"] .flik-intro').getBoundingClientRect().height,
+    const hojd = () => page.evaluate(() => ({ sida: document.documentElement.scrollHeight, intro: document.querySelector('#view-lika-yrken .flik-intro, #view-regression .flik-intro, .view-panel[style*="block"] .flik-intro').getBoundingClientRect().height,
         lasMer: [...document.querySelectorAll('.flik-intro-mer')].filter(e => e.offsetParent).length,
         under: [...document.querySelectorAll('.avsnitt-under')].filter(e => e.offsetParent).length, noter: [...document.querySelectorAll('.k-mask-note, .reg-caveat-inline, .diagramkort-forklaring')].filter(e => e.offsetParent).length,
         oppna: [...document.querySelectorAll('details.avsnitt')].filter(a => a.open).map(a => a.id).join(',') }));
@@ -1400,7 +1544,7 @@ console.log('\n── Byggets förminskning av stilmallen ──');
 
 console.log('\n── Smala skärmar: 1440×800, 768 och 390 punkter ──');
 {
-    const FLIKAR = ['dashboard', 'bestammelser', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn', 'handlingsplan', 'dokumentera', 'kon', 'benchmark', 'utforska', 'info'];
+    const FLIKAR = ['dashboard', 'bestammelser', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn', 'handlingsplan', 'dokumentera', 'rapporttext', 'arbetet', 'kon', 'benchmark', 'utforska', 'info'];
     const oppna = async (bredd, hojd) => { const s = await browser.newPage({ viewport: { width: bredd, height: hojd } });
         await s.goto('file://' + FIL + '?demo=1');
         await s.waitForFunction(() => document.getElementById('demo-mode-banner')?.style.display === 'flex', { timeout: 30000 });
@@ -1459,11 +1603,11 @@ console.log('\n── Smala skärmar: 1440×800, 768 och 390 punkter ──');
     ok(await s.evaluate(() => getComputedStyle(document.querySelector('.sidebar')).visibility === 'hidden' && document.activeElement.id === 'btn-meny'), '390 punkter: Escape stänger menyn och fokus går tillbaka till knappen');
     await s.click('#btn-meny');
     await s.waitForTimeout(300);
-    await s.click('.nav-item[data-tab="matrix"]');
+    await s.click('.nav-item[data-tab="struktur"]');
     await s.waitForTimeout(900);
-    ok(await s.evaluate(() => getComputedStyle(document.querySelector('.sidebar')).visibility === 'hidden' && document.getElementById('view-matrix').style.display === 'block'), '390 punkter: ett val i menyn byter flik och stänger menyn');
+    ok(await s.evaluate(() => getComputedStyle(document.querySelector('.sidebar')).visibility === 'hidden' && document.getElementById('view-regression').style.display === 'block'), '390 punkter: ett val i menyn byter flik och stänger menyn');
     // Diagrammen ritar för den bredd de får: huvuddiagrammet ska fylla kortet och ha läsbar text.
-    const dia = await s.evaluate(() => { const svg = document.querySelector('#view-matrix svg[role="group"], #view-matrix svg[role="img"]');
+    const dia = await s.evaluate(() => { const svg = document.querySelector('#view-regression svg[role="group"], #view-regression svg[role="img"]');
         if (!svg) return null; const r = svg.getBoundingClientRect(); const txt = [...svg.querySelectorAll('text')].map(t => t.getBoundingClientRect().height).filter(h => h > 0);
         return { bredd: Math.round(r.width), ryms: r.right <= innerWidth + 1, minst: txt.length ? Math.min(...txt) : 0 }; });
     ok(dia && dia.bredd >= 280 && dia.ryms && dia.minst >= 9, `390 punkter: huvuddiagrammet ryms och texten går att läsa (${dia ? `${dia.bredd} punkter brett, minsta text ${dia.minst.toFixed(1)}` : 'inget diagram'})`);
@@ -1504,7 +1648,7 @@ console.log('\n── Smala skärmar: 1440×800, 768 och 390 punkter ──');
 // Utskriftsfönstret för checklistorna (printScaffoldView, 60-utskrift.js) ärver verktygets CSP: ett <style> som
 // skriptet skapar får inget ark, så fönstrets stilar kommer som ett byggt stilark (adoptedStyleSheets).
 console.log('\n── Checklistornas utskriftsfönster ──');
-for (const [vy, namn] of [['view-bestammelser', 'Bestämmelser & praxis'], ['view-handlingsplan', 'Handlingsplanens mall']]) {
+for (const [vy, namn] of [['view-bestammelser', 'Regler & praxis'], ['view-handlingsplan', 'Handlingsplanens mall']]) {
     const [fonster] = await Promise.all([
         page.waitForEvent('popup', { timeout: 10000 }),
         page.evaluate(v => document.querySelector(`[data-print-view="${v}"]`).click(), vy),

@@ -103,7 +103,7 @@ function buildActionChecklist({ endastGrupper = false } = {}) {
                     prioritet: Math.abs(reg.konPct) > 5 ? 'hög' : 'medel',
                     titel: `Oförklarat lönegap för hela organisationen: kvinnor ${_agPct(reg.konPct)} % ${_agRiktning(reg.konPct)} lön än män (${reg.fras ? `efter ${reg.fras}` : 'inget räknat bort'})`,
                     detalj: 'Ett oförklarat gap är inte samma sak som ett osakligt. Pröva skillnaden per yrkesgrupp i Lika arbete.',
-                    tab: 'matrix', källa: 'Regressionen i Lika arbete'
+                    tab: 'struktur', källa: 'Regressionen i Lönestruktur'
                 });
             }
         } catch (e) { rapporteraFel('Att göra: regressionen', e); }

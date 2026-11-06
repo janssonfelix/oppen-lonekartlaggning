@@ -54,7 +54,7 @@ describe('sortering, Att göra, kopiering och Likvärdigt arbete', () => {
         const d = w.document;
         d.querySelector('.nav-item[data-tab="dashboard"]').click();
         w.__renderTabContent('matrix');
-        expect(d.querySelectorAll('#view-matrix .flow-next-bar, #view-lika-yrken .flow-next-bar, #view-skevhet .flow-next-bar').length).toBe(0);
+        expect(d.querySelectorAll('#view-regression .flow-next-bar, #view-lika-yrken .flow-next-bar, #view-skevhet .flow-next-bar').length).toBe(0);
         expect(d.getElementById('view-dashboard').classList.contains('active') || d.getElementById('view-dashboard').style.display === 'block').toBe(true);
     });
     it('Att göra: oförklarat gap skrivs med riktningsord, inte med minustecken', () => {
@@ -65,14 +65,14 @@ describe('sortering, Att göra, kopiering och Likvärdigt arbete', () => {
         expect(it.titel).not.toMatch(/: [−-]/);
         expect(it.titel).toMatch(/kvinnor .* (lägre|högre) lön än män/i);
     });
-    it('Dokumentera räknar likvärdighetsparen en gång och sparar resultatet', () => {
+    it('Rapporttext räknar likvärdighetsparen en gång och sparar resultatet', () => {
         const w = createAppWindow();
         w.__loadDemoData();
         w.__state.likvardighet.result = null;
         const orig = w.computeLikvardighetPairs;
         let n = 0;
         w.computeLikvardighetPairs = (...a) => { n++; return orig(...a); };
-        w.document.querySelector('.nav-item[data-tab="dokumentera"]').click();
+        w.document.querySelector('.nav-item[data-tab="rapporttext"]').click();
         w.__rapportunderlagBlock();
         w.eval('_handlingsplanSeedRows()');
         expect(n).toBe(1);

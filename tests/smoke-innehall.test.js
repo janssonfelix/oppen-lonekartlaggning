@@ -97,22 +97,25 @@ describe('Lika arbete och filrutorna: ordning och kompakta rutor', () => {
         w.__loadDemoData();
         w.document.querySelector('.nav-item[data-tab="matrix"]').click();
         const d = w.document;
-        // Slutsatserna och yrkesgrupperna (tabellen och sedan trattdiagrammet) står överst; per BAS-intervall i Fördjupning.
-        const [slut, yrken, tratt, pag, perBas, kon, reg, metod] = ['la-slutsatser', 'matrix-table', 'chart-la-tratt', 'personer-att-granska', 'la-oversikt', 'avsnitt-la-kon', 'regression-card', 'avsnitt-la-metod'].map(id => d.getElementById(id));
+        // Slutsatserna och yrkesgrupperna (tabellen och sedan trattdiagrammet) står överst; personer att granska och metoden sist.
+        const [slut, yrken, tratt, pag, metod] = ['la-slutsatser', 'matrix-table', 'chart-la-tratt', 'personer-att-granska', 'avsnitt-la-metod'].map(id => d.getElementById(id));
         expect(efter(slut, yrken)).toBe(true);
         expect(efter(yrken, tratt)).toBe(true);
         expect(efter(tratt, pag)).toBe(true);
-        expect(efter(pag, perBas)).toBe(true);
-        expect(efter(perBas, kon)).toBe(true);
-        expect(efter(kon, reg)).toBe(true);
-        expect(efter(reg, metod)).toBe(true);
+        expect(efter(pag, metod)).toBe(true);
         expect(d.getElementById('la-topp').nextElementSibling.id).toBe('avsnitt-la-yrkesgrupper');   // huvudbilden direkt under nyckeltalen
-        expect(d.getElementById('avsnitt-la-bas').contains(perBas)).toBe(true);
+        for (const el of [yrken, metod]) expect(el.closest('.view-panel').style.display).toBe('block');
+        expect(pag.hidden).toBe(false);
+        // BAS-skevheten, könsfördelningen och regressionen står i Lönestruktur, i den ordningen efter strukturavsnitten.
+        w.document.querySelector('.nav-item[data-tab="struktur"]').click();
+        const [perBas, kon, reg] = ['la-oversikt', 'avsnitt-ls-kon', 'regression-card'].map(id => d.getElementById(id));
+        expect(efter(perBas, kon) && efter(kon, reg)).toBe(true);
+        expect(d.getElementById('avsnitt-ls-bas').contains(perBas)).toBe(true);
+        for (const el of [perBas, reg]) expect(el.closest('.view-panel').style.display).toBe('block');
         // Skillnaden per BAS-intervall visas en gång: tabellen och bilden i exporten är dolda på skärmen.
         expect(d.getElementById('la-bas-exportkopia').hidden).toBe(true);
         expect(d.getElementById('la-bas-exportkopia').contains(d.getElementById('paygap-table'))).toBe(true);
-        for (const el of [yrken, perBas, reg]) expect(el.closest('.view-panel').style.display).toBe('block');
-        expect(pag.hidden).toBe(false);
+        w.document.querySelector('.nav-item[data-tab="matrix"]').click();
         expect(d.querySelector('.view-panel[style*="block"] .flik-intro').textContent).toContain('Samma jobb, olika lön');
     });
     it('efter inläsning syns alla tre filrutorna, lönefilens kompakt, och bara ett dataskyddsbesked', () => {
@@ -203,7 +206,7 @@ describe('Lika arbete och filrutorna: ordning och kompakta rutor', () => {
         const d = w.document;
         expect(d.getElementById('btn-try-demo')).toBeNull();
         expect(d.getElementById('btn-minimize-upload')).toBeNull();
-        expect(d.getElementById('first-run-hint').textContent.replace(/\s+/g, ' ')).toMatch(/Kom igång: läs in organisationspaketet nedan om er organisation har ett, sedan lönefilen — eller .*prova med demodata/i);
+        expect(d.getElementById('first-run-hint').textContent.replace(/\s+/g, ' ')).toMatch(/Kom igång: läs in filerna \(organisationspaketet först om er organisation har ett, sedan lönefilen\) — eller prova med demodata\./i);
         d.getElementById('first-run-demo-link').click();
         expect(w.__state.data.length).toBeGreaterThan(0);
     });
@@ -213,7 +216,7 @@ describe('Lika arbete och filrutorna: ordning och kompakta rutor', () => {
 // per flik. Fackuttrycken får stå i hjälptexten.
 describe('gränssnittets språk, rubriker och hjälpblock', () => {
     const FLIKAR = ['dashboard', 'bestammelser', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn',
-                    'handlingsplan', 'dokumentera', 'kon', 'benchmark', 'utforska'];
+                    'handlingsplan', 'dokumentera', 'rapporttext', 'arbetet', 'kon', 'benchmark', 'utforska'];
     const HJALP = '#view-info, .flik-usage, .bakgrund-panel, .lv-hjalp, .audit-panel, #gdpr-info-modal, #glossary-modal, '
         + '#symbols-modal, #data-residency-modal, #evidence-modal, script, style, noscript, [data-hjalptext]';
     const oppna = () => { const w = createAppWindow(); w.__loadDemoData(); return w; };
@@ -286,7 +289,7 @@ describe('Att göra', () => {
     const med = (data) => { const w = createAppWindow(); w.__state.data = data; w.eval('populateSelects(); unlockTabs();'); return w; };
     it('punkten om oförklarat gap: hög vid signifikant gap över 5 %, ingen när gapet inte är signifikant', () => {
         const hog = med(rader(30000, 33000)).eval('buildActionChecklist()').find(i => i.id === 'reg-oforklarat');
-        expect(hog).toMatchObject({ kategori: 'Lika arbete', prioritet: 'hög', tab: 'matrix' });
+        expect(hog).toMatchObject({ kategori: 'Lika arbete', prioritet: 'hög', tab: 'struktur' });
         expect(hog.titel).toMatch(/Oförklarat lönegap för hela organisationen/);
         expect(med(rader(30000, 30000)).eval('buildActionChecklist()').some(i => i.id === 'reg-oforklarat')).toBe(false);
     });
@@ -300,7 +303,7 @@ describe('Att göra', () => {
         expect(d.getElementById('insight-feed-container')).toBeNull();
         expect(d.getElementById('comp-gap-val').textContent).toMatch(/av \d+ jämförbara BAS-intervall|Inga jämförbara/);
         expect(kort.querySelector('#compliance-overview h2')).toBeNull();
-        expect(kort.querySelector('#comp-gap a[data-go-to-tab="matrix"]')).not.toBeNull();
+        expect(kort.querySelector('#comp-gap a[data-go-to-tab="struktur"]')).not.toBeNull();
     });
     it('Börja här: högst tre ej avbockade punkter, hög prioritet först, därefter underlag och könsrelaterade fynd; avbockning byter punkt', () => {
         const w = createAppWindow();
@@ -333,7 +336,7 @@ describe('innehåll på sidan och i rapportunderlaget', () => {
     it('de långa flikarna har avsnitt, och deras rubriker är innehållsförteckningen', () => {
         const w = createAppWindow();
         w.__loadDemoData();
-        for (const [flik, minst] of [['dashboard', 4], ['matrix', 5], ['likvardighet', 4], ['struktur', 5], ['prioritering', 4], ['loneoversyn', 4], ['dokumentera', 4], ['kon', 5], ['benchmark', 4]]) {
+        for (const [flik, minst] of [['dashboard', 2], ['matrix', 4], ['likvardighet', 4], ['struktur', 5], ['prioritering', 4], ['loneoversyn', 4], ['dokumentera', 2], ['rapporttext', 2], ['arbetet', 4], ['kon', 5], ['benchmark', 4]]) {
             oppna(w, flik);
             const synliga = [...w.document.querySelectorAll('.view-panel')].filter(p => p.style.display === 'block' || p.classList.contains('active'));
             const rubriker = synliga.flatMap(p => [...p.querySelectorAll('details.avsnitt > summary h2')]);
@@ -345,8 +348,9 @@ describe('innehåll på sidan och i rapportunderlaget', () => {
     it('rapportunderlaget: förteckning med en länk per block', () => {
         const w = createAppWindow();
         w.__loadDemoData();
-        oppna(w, 'dokumentera');
+        oppna(w, 'rapporttext');
         const block = w.document.querySelectorAll('#rapportunderlag-innehall .ru-block[data-block-id]');
+        expect(block.length).toBeGreaterThan(0);
         const lankar = w.document.querySelectorAll('#rapportunderlag-innehall .ru-toc [data-hoppa-till]');
         expect(lankar.length).toBe(block.length);
         for (const a of lankar) expect(w.document.getElementById(a.dataset.hoppaTill)?.classList.contains('ru-block')).toBe(true);
@@ -354,7 +358,7 @@ describe('innehåll på sidan och i rapportunderlaget', () => {
     it('Kopiera alla avsnitt lägger avsnittens rubriker i ordning på urklipp; reserv utan urklipp', async () => {
         const w = createAppWindow();
         w.__loadDemoData();
-        oppna(w, 'dokumentera');
+        oppna(w, 'rapporttext');
         const fångat = [];
         w.ClipboardItem = class { constructor(o) { this.o = o; } };
         Object.defineProperty(w.navigator, 'clipboard', { configurable: true, value: { write: async items => { fångat.push(...items); } } });
@@ -390,14 +394,15 @@ describe('BAS-ordningen är fast (se §5 i teknisk-plan.md)', () => {
         expect(txt).toMatch(/Likvärdigt arbete|Prioritering/);
         expect(txt).not.toMatch(/Nivåordningen|rangordning/i);
     });
-    it('extremvärden i Underlagets kvalitet, organisationspaketet i uppladdningsytan, Dokumentera heter Spara och läsa in arbetet', () => {
+    it('extremvärden i Underlagets kvalitet, organisationspaketet i uppladdningsytan, Spara och jämför år har fyra avsnitt', () => {
         const w = createAppWindow();
         w.__loadDemoData();
         const d = w.document;
         expect(d.getElementById('outliers-container').closest('#underlagets-kvalitet')).not.toBeNull();
         expect(d.getElementById('file-input-paket').closest('#upload-sektion')).not.toBeNull();
         for (const id of ['outliers-container', 'file-input-paket']) expect(d.getElementById(id).closest('#view-dokumentera')).toBeNull();
-        expect(d.getElementById('dok-installningar-rubrik').textContent).toBe('Spara och läsa in arbetet');
+        expect([...d.querySelectorAll('#view-arbetet details.avsnitt > summary h2')].map(h => h.textContent))
+            .toEqual(['Spara/ladda konfiguration', 'Jämför med en ögonblicksbild', 'Jämförelse med förra året', 'Självdiagnostik (testdata)']);
         expect(d.getElementById('outliers-container').style.display).toBe('block');
         expect(d.getElementById('outliers-table-wrap').textContent).toMatch(/extremvärden|Rad/i);
     });
@@ -730,7 +735,7 @@ describe('runOLSRegression på vald modell (ADR-56)', () => {
 });
 
 describe('modellpanelen (ADR-56)', () => {
-    const oppna = w => { w.document.querySelector('.nav-item[data-tab="matrix"]').click(); w.eval('renderTabContent("matrix")'); return w.document.getElementById('forklaringsmodell-panel'); };
+    const oppna = w => { w.document.querySelector('.nav-item[data-tab="struktur"]').click(); w.eval('renderTabContent("struktur")'); return w.document.getElementById('forklaringsmodell-panel'); };
     const demo = () => { const w = createAppWindow(); w.__loadDemoData(); return w; };
     const andra = (w, el, varde) => { if (typeof varde === 'boolean') el.checked = varde; else el.value = varde; el.dispatchEvent(new w.Event('change', { bubbles: true })); };
     it('panelen ligger före huvudtalet med BAS och ålder ikryssade och en rad per variabel i tabellen', () => {
@@ -812,7 +817,7 @@ describe('modellpanelen (ADR-56)', () => {
 describe('avsnittet följer modellen (ADR-56)', () => {
     const rita = modell => {
         const w = createAppWindow(); w.__loadDemoData(); w.__state.forklaringsmodell = modell;
-        w.document.querySelector('.nav-item[data-tab="matrix"]').click(); w.eval('renderTabContent("matrix")');
+        w.document.querySelector('.nav-item[data-tab="struktur"]').click(); w.eval('renderTabContent("struktur")');
         const kort = w.document.getElementById('regression-card'), oax = w.document.getElementById('blinder-oaxaca-card');
         const trappa = w.document.getElementById('chart-reg-trappa');
         return { w, kort, oax, kortText: kort.textContent.replace(/\s+/g, ' '), oaxText: oax.textContent.replace(/\s+/g, ' '), figur: trappa ? trappa._figur : null };
@@ -858,8 +863,8 @@ describe('huvudtalet följer modellen i nyckeltal, Att göra, Struktur och rappo
     const rita = modell => { const w = createAppWindow(); w.__loadDemoData(); w.__state.forklaringsmodell = modell; return w; };
     it('Lika arbetes nyckeltal och Att göra säger "efter nivå" utan ålder', () => {
         const w = rita({ bas: true, alder: false, yrkesgrupp: false, skal: '' });
-        w.document.querySelector('.nav-item[data-tab="matrix"]').click(); w.eval('renderTabContent("matrix")');
-        expect(w.document.getElementById('nyckel-la-regression').textContent).toMatch(/efter nivå$/);
+        w.document.querySelector('.nav-item[data-tab="matrix"]').click(); w.eval('renderTabContent("matrix"); renderTabContent("struktur")');
+        expect(w.document.getElementById('nyckel-ls-regression').textContent).toMatch(/efter nivå$/);
         expect(w.document.getElementById('la-slutsatser').textContent).toMatch(/Efter nivå/);
         expect(w.document.getElementById('la-slutsatser').textContent).not.toMatch(/ålder och nivå/);
         w.eval('renderActionChecklist()');

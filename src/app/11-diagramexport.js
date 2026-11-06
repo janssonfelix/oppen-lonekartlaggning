@@ -31,9 +31,7 @@
 const EXPORT_SKAL = {
     // Personer att granska (ADR-23): panelen visar enskilda personer med filens radnummer. Diagrammet namnger ingen
     // och bär ingen lön, men hör till panelen, och inget ur den lämnar verktyget.
-    individer: 'hör till Personer att granska, som visar enskilda personer (ADR-23)',
-    // Översiktens kopior av Struktur & rapportmåtts diagram: samma bild exporteras från sin egen flik, en gång.
-    kopia: 'är en kopia av ett diagram i Struktur & rapportmått och exporteras därifrån'
+    individer: 'hör till Personer att granska, som visar enskilda personer (ADR-23)'
 };
 /** Märker en behållare: inget diagram i den lämnar verktyget. `skal` måste vara en nyckel i EXPORT_SKAL. */
 function markeraUtanExport(el, skal) {

@@ -28,13 +28,13 @@ describe('R1: regressionens ojusterade steg ("Endast kön") kräver tröskeln f�
     });
     it('på skärmen visar kortet första steget också med 7 män (ADR-51)', () => {
         const w = fonsterMan(null, SJU_MAN);
-        w.__renderTabContent('matrix');
+        w.__renderTabContent('struktur');
         expect(w.document.getElementById('regression-card').textContent).toMatch(/Endast kön/);
     });
     it('i exportläget vid 10: kortet i Lika arbete visar det justerade gapet men varken första steget, budgeten eller förklarad andel', () => {
         const w = iExport(fonsterMan(null, SJU_MAN));
         const { forsta, justerat } = tal(w);
-        w.__renderTabContent('matrix');
+        w.__renderTabContent('struktur');
         const kort = w.document.getElementById('regression-card');
         const t = normalisera(kort.innerHTML);
         expect(harNagon(t, tvaDec(forsta))).toEqual([]);
@@ -104,13 +104,13 @@ describe('R1: regressionens ojusterade steg ("Endast kön") kräver tröskeln f�
     it('Blinder-Oaxaca (som delar upp det råa medelgapet) körs aldrig med ett kön under tröskeln: golvet är max(tröskeln, 10)', () => {
         for (const k of [null, 5, 7]) expect(fonsterMan(k, SJU_MAN).eval('runBlinderOaxaca()'), String(k)).toBeNull();
         const w = fonsterMan(null, SJU_MAN);
-        w.__renderTabContent('matrix');
+        w.__renderTabContent('struktur');
         expect(w.document.getElementById('blinder-oaxaca-card').textContent).toMatch(/För få observationer/);
     });
     it('vid 5: första steget och förklarad andel visas i kortet och utskriften', async () => {
         const w = fonsterMan(5, SJU_MAN);
         const { forsta } = tal(w);
-        w.__renderTabContent('matrix');
+        w.__renderTabContent('struktur');
         const kort = w.document.getElementById('regression-card');
         expect(kort.textContent).toMatch(/Endast kön/);
         expect(normalisera(kort.innerHTML)).toMatch(somTal(Math.abs(forsta).toFixed(2)));

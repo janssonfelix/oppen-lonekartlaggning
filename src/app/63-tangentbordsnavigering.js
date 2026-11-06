@@ -18,7 +18,7 @@ function setupTabA11y() {
         const target = tab.getAttribute('data-tab');
         if (target) tab.setAttribute('aria-controls', (PANEL_GROUPS[target] || [target]).map(p => `view-${p}`).join(' '));
         tab.addEventListener('keydown', e => {
-            // Dolda flikar (t.ex. Jämförelse utan statistik) och låsta flikar hoppas över.
+            // Dolda flikar (t.ex. Löneläget utan statistik) och låsta flikar hoppas över.
             const enabled = tabs.filter(t => !/** @type {HTMLInputElement} */ (t).disabled && !t.hidden);
             const idx = enabled.indexOf(tab);
             let next = -1;

@@ -131,6 +131,9 @@ function _rensaAllData({ inbakat = true } = {}) {
     // Handlingsplanens ifyllda fält (sakligt skäl, ansvarig, tidsplan, status) — nollställ och rita mallen tom
     state.handlingsplan = {};
     if (typeof renderHandlingsplanSeed === 'function') renderHandlingsplanSeed();
+    // Rapporttextens utkast bär fynden i klarspråk, också ett redigerat: det töms och markeringen tas bort.
+    const utkast = document.getElementById('struktur-narrative');
+    if (utkast) { /** @type {HTMLTextAreaElement} */ (utkast).value = ''; delete utkast.dataset.dirty; }
     const dashSummary = document.getElementById('dashboard-summary');
     if (dashSummary) dashSummary.style.display = 'none';
     const ukPanel = document.getElementById('underlagets-kvalitet');
@@ -159,7 +162,7 @@ function _rensaAllData({ inbakat = true } = {}) {
     });
 
     // 4. Lås tabbar
-    ['tab-kon','tab-matrix','tab-prioritering','tab-loneoversyn','tab-struktur','tab-benchmark','tab-likvardighet','tab-utforska'].forEach(id => {
+    ['tab-kon','tab-matrix','tab-prioritering','tab-loneoversyn','tab-struktur','tab-benchmark','tab-likvardighet','tab-utforska','tab-rapporttext'].forEach(id => {
         const el = document.getElementById(id);
         if (el) { /** @type {HTMLInputElement} */ (el).disabled = true; el.setAttribute('title', 'Ladda upp strukturdata för att aktivera'); }
     });

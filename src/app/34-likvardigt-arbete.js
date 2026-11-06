@@ -173,7 +173,7 @@ function renderLikvardighet() {
                 <strong>${ikon('statusVarning')} Inga datafiler uppladdade</strong>
                 <p class="fs-md lh-1_55 marg-8-0">
                     Ladda upp <strong>strukturdata för organisationen</strong> (CSV) och
-                    <strong>jämförelsestatistik</strong> (Excel) på Översikt för att aktivera analysen.
+                    <strong>jämförelsestatistik</strong> (Excel) under Filer och kvalitet för att aktivera analysen.
                 </p>
             </div>`;
         return;
@@ -379,7 +379,7 @@ function renderLikvardighet() {
                         <tbody>${statTblRows}</tbody>
                     </table></div>`
                     : `<p class="farg-dampad pad-14">${d.statistik.totalRader === 0
-                        ? 'Ingen jämförelsestatistik inläst (valfri). Med en inläst används dess yrken där ett eget jämförelseyrke saknas — läs in den på <a href="#" data-go-to-tab="dashboard">Översikt</a>.'
+                        ? 'Ingen jämförelsestatistik inläst (valfri). Med en inläst används dess yrken där ett eget jämförelseyrke saknas — läs in den under <a href="#" data-go-to-tab="filer">Filer och kvalitet</a>.'
                         : 'Inga icke-kvinnodominerade AID×BAS-grupper hittades i jämförelsestatistiken: alla AID-koder klassificerades som kvinnodominerade eller blandade.'}</p>`}
             </div>
         </details>`;

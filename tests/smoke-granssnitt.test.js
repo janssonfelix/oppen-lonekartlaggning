@@ -36,30 +36,33 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         w.__updateCompliance();
         expect(w.document.getElementById('comp-pol-val').textContent).toMatch(/^0 av 1 BAS-intervall/);
     });
-    it('Dokumentera har checklistan överst, exporterna som lista och resten som avsnitt', () => {
+    it('Exportera har checklistan överst, robustheten och exporterna som lista; rapportunderlaget står i Rapporttext', () => {
         const w = createAppWindow();
         w.__loadDemoData();
         const d = w.document;
         d.querySelector('.nav-item[data-tab="dokumentera"]').click();
         // Alla flikens paneler ligger i innehållsytan (det tomma bandet överst kom av att de låg utanför).
-        for (const id of ['view-kvalitet', 'view-dokumentera', 'view-benchmark', 'view-utforska']) {
-            expect(d.getElementById(id).parentElement.className, id).toBe('content-body');
+        for (const id of ['view-kvalitet', 'view-dokumentera', 'view-rapporttext', 'view-arbetet', 'view-benchmark', 'view-utforska']) {
+            expect(d.getElementById(id).parentElement.classList.contains('content-body'), id).toBe(true);   // har-sidindex kan stå bredvid
         }
         const fore = (a, b) => !!(d.getElementById(a).compareDocumentPosition(d.getElementById(b)) & 4);
-        expect(fore('dk-slutsatser', 'fardigcheck-body') && fore('fardigcheck-body', 'export-hub') && fore('export-hub', 'avsnitt-dk-robusthet')).toBe(true);
-        expect([...d.querySelectorAll('details.avsnitt[id^="avsnitt-dk-"]')].map(a => a.id))
-            .toEqual(['avsnitt-dk-robusthet', 'avsnitt-dk-rapportunderlag', 'avsnitt-dk-samverkan', 'avsnitt-dk-spara']);
-        // Slutsatserna: färdigcheckens punkter, robustheten (inte körd) och antalet avsnitt i rapportunderlaget.
+        expect(fore('dk-slutsatser', 'fardigcheck-body') && fore('fardigcheck-body', 'avsnitt-dk-robusthet') && fore('avsnitt-dk-robusthet', 'export-hub')).toBe(true);
+        expect([...d.querySelectorAll('#view-kvalitet details.avsnitt, #view-dokumentera details.avsnitt[id^="avsnitt-dk-"]')].map(a => a.id))
+            .toEqual(['avsnitt-dk-robusthet']);
+        expect(d.getElementById('avsnitt-dk-robusthet').open).toBe(true);
+        // Slutsatserna: färdigcheckens punkter och robustheten (inte körd).
         const rutor = [...d.querySelectorAll('#dk-slutsatser .slutsats')].map(r => r.textContent);
-        expect(rutor).toHaveLength(3);
+        expect(rutor).toHaveLength(2);
         const punkter = d.querySelectorAll('#fardigcheck-body .fc-item').length;
         expect(rutor[0]).toContain(punkter ? `${punkter} punkt` : 'Inga lösa trådar');
         expect(rutor[1]).toContain('Inte körd');
+        expect(d.getElementById('nyckel-dk-robusthet').textContent).toBe('Inte körd');
+        // Rapportunderlaget ritas av Rapporttext och lämnar antalet avsnitt i sitt nyckeltal.
+        d.querySelector('.nav-item[data-tab="rapporttext"]').click();
         const block = d.querySelectorAll('#rapportunderlag-innehall .ru-block:not(.ru-diagram)').length;
         expect(block).toBeGreaterThan(0);
-        expect(rutor[2]).toContain(`${block} avsnitt`);
         expect(d.getElementById('nyckel-dk-rapportunderlag').textContent).toBe(`${block} avsnitt`);
-        expect(d.getElementById('nyckel-dk-robusthet').textContent).toBe('Inte körd');
+        d.querySelector('.nav-item[data-tab="dokumentera"]').click();
         // Inget i raden märks som fel: punkterna är observationer.
         expect(d.querySelectorAll('#dk-slutsatser .ar-kritisk')).toHaveLength(0);
         // Exporterna: en rad per underlag med en beskrivning och en knapp eller ett val.
@@ -69,7 +72,7 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         expect(d.querySelectorAll('#export-hub [data-flow-tab]')).toHaveLength(0);
         expect(d.getElementById('export-hub').textContent).not.toContain('Öppna fliken');
         const fler = d.querySelector('#export-hub .export-fler');
-        expect(fler.textContent).toMatch(/^Fler underlag finns i flikarna: Likvärdigt arbete \(kandidatparen\), Struktur & rapportmått \(EU-rapportmåtten\), Prioritering \(åtgärdslistan\), Löneöversyn \(prognosen\)\.$/);
+        expect(fler.textContent).toMatch(/^Fler underlag finns i flikarna: Likvärdigt arbete \(kandidatparen\), Lönestruktur \(EU-rapportmåtten\), Prioritering \(åtgärdslistan\), Löneöversyn \(prognosen\)\.$/);
         expect([...fler.querySelectorAll('a[data-go-to-tab]')].map(a => a.dataset.goToTab)).toEqual(['likvardighet', 'struktur', 'prioritering', 'loneoversyn']);
         fler.querySelector('a[data-go-to-tab="prioritering"]').click();
         expect(d.querySelector('.nav-item.active').dataset.tab).toBe('prioritering');
@@ -111,8 +114,8 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         d.querySelector('.nav-item[data-tab="struktur"]').click();
         const fore = (a, b) => !!(d.getElementById(a).compareDocumentPosition(d.getElementById(b)) & 4);
         expect(fore('st-urval', 'st-slutsatser') && fore('st-slutsatser', 'chart-struktur-tradkarta') && fore('chart-struktur-tradkarta', 'avsnitt-st-representation')).toBe(true);
-        expect([...d.querySelectorAll('details.avsnitt[id^="avsnitt-st-"]')].map(a => a.id.replace('avsnitt-st-', '')))
-            .toEqual(['representation', 'fordelning', 'sektorer', 'eu', 'utkast', 'metod']);
+        expect([...d.querySelectorAll('#view-struktur details.avsnitt[id^="avsnitt-st-"]')].map(a => a.id.replace('avsnitt-st-', '')))
+            .toEqual(['representation', 'fordelning', 'sektorer', 'eu', 'metod']);
         expect(d.querySelectorAll('.sidans-innehall')).toHaveLength(0);
         expect(d.getElementById('st-urval').textContent).toMatch(/260 personer.*Minsta gruppstorlek 10/);
         const rutor = [...d.querySelectorAll('#st-slutsatser .slutsats')].map(r => r.textContent);
@@ -265,43 +268,38 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         knapp.click();
         expect(d.body.classList.contains('meny-oppen')).toBe(true);
     });
-    it('Översikt är en uppladdningssida före inläsning och visar läget efter', () => {
+    it('Översikt visar Kom igång före inläsning och läget efter; filerna står i Filer och kvalitet', () => {
         const w = createAppWindow();
         const d = w.document, vy = d.getElementById('view-dashboard');
-        // Före inläsning: ingen filrad, uppladdningen är sidan, och processöversikten är utfälld.
+        // Före inläsning: ingen filrad, Kom igång pekar på Filer och kvalitet, och processöversikten är utfälld.
         expect(vy.classList.contains('har-data')).toBe(false);
         expect(d.getElementById('ov-filrad').textContent).toBe('');
         expect(d.getElementById('avsnitt-ov-process').open).toBe(true);
-        expect(d.getElementById('upload-sektion').contains(d.getElementById('file-input-data'))).toBe(true);
-        expect(d.getElementById('upload-sektion').contains(d.getElementById('organisationspaket'))).toBe(true);
+        expect(d.querySelector('#first-run-hint [data-go-to-tab="filer"]')).not.toBeNull();
+        const filer = d.getElementById('view-filer');
+        expect(filer.contains(d.getElementById('upload-sektion')) && filer.contains(d.getElementById('file-input-data')) && filer.contains(d.getElementById('organisationspaket'))).toBe(true);
+        expect(vy.contains(d.getElementById('upload-sektion'))).toBe(false);
         w.__loadDemoData();
         expect(vy.classList.contains('har-data')).toBe(true);
-        expect(vy.classList.contains('visa-filer')).toBe(false);
         const rad = d.getElementById('ov-filrad');
-        expect(rad.textContent).toMatch(/Lönefil: 260 personer.*Referens: .+Jämförelsestatistik: ingen inläst.*Minsta gruppstorlek 10/);
-        // Ordningen: filraden, nyckeltalen, Att göra, kvartilerna, och sedan avsnitten. Kartan står bara i Struktur.
+        expect(rad.textContent).toMatch(/Lönefil: 260 personer.*Referens: .+Jämförelsestatistik: ingen inläst.*Minsta gruppstorlek 10.*Filer och kvalitet/);
+        // Ordningen: filraden, nyckeltalen, Att göra och sedan avsnitten. Kartan och kvartilerna står i Struktur.
         const fore = (a, b) => !!(d.getElementById(a).compareDocumentPosition(d.getElementById(b)) & 4);
-        expect(fore('ov-filrad', 'dashboard-summary') && fore('dashboard-summary', 'att-gora') && fore('att-gora', 'chart-ov-kvartiler')
-            && fore('chart-ov-kvartiler', 'avsnitt-ov-process') && fore('avsnitt-ov-process', 'avsnitt-ov-kvalitet') && fore('avsnitt-ov-kvalitet', 'avsnitt-ov-gap')).toBe(true);
+        expect(fore('ov-filrad', 'dashboard-summary') && fore('dashboard-summary', 'att-gora') && fore('att-gora', 'avsnitt-ov-process')
+            && fore('avsnitt-ov-process', 'avsnitt-ov-gap')).toBe(true);
         expect(d.getElementById('chart-ov-tradkarta')).toBeNull();
+        expect(d.getElementById('chart-ov-kvartiler')).toBeNull();
         expect(d.getElementById('view-dashboard').textContent).not.toContain('Organisationen som karta');
-        expect(d.getElementById('chart-ov-kvartiler')._figur).toBeTruthy();
-        // Kvartilerna är en kopia av Strukturs diagram: de exporteras därifrån, inte två gånger.
-        expect(d.getElementById('chart-ov-kvartiler').closest('[data-no-export]')).not.toBeNull();
-        expect(d.querySelectorAll('#ov-lage .chart-export-btn, #ov-lage [data-chart-export]')).toHaveLength(0);
-        // Avsnitten är hopfällda efter inläsning och bär sitt nyckeltal.
+        // Avsnitten är hopfällda efter inläsning och bär sitt nyckeltal; kvalitetens nyckeltal står i Filer och kvalitet.
         expect([...d.querySelectorAll('#view-dashboard details.avsnitt')].filter(a => a.open)).toHaveLength(0);
         expect(d.getElementById('nyckel-ov-process').textContent).toMatch(/^\d av \d steg klara$/);
         expect(['OK', 'Varning', 'Kritisk']).toContain(d.getElementById('nyckel-ov-kvalitet').textContent);
         expect(d.getElementById('nyckel-ov-kvalitet').textContent).toBe(d.querySelector('#underlagets-kvalitet-status .uk-marke').textContent);
         expect(d.getElementById('stat-age').textContent).toMatch(/^\d+,\d$/);
-        // Knappen i filraden visar uppladdningen igen, och döljer den.
-        d.getElementById('btn-ov-filer').click();
-        expect(vy.classList.contains('visa-filer')).toBe(true);
-        expect(d.getElementById('btn-ov-filer').getAttribute('aria-expanded')).toBe('true');
-        expect(d.getElementById('btn-ov-filer').textContent).toBe('Dölj filer och inställningar');
-        d.getElementById('btn-ov-filer').click();
-        expect(vy.classList.contains('visa-filer')).toBe(false);
+        // Länken i filraden går till Filer och kvalitet.
+        rad.querySelector('[data-go-to-tab="filer"]').click();
+        expect(d.querySelector('.nav-item.active').getAttribute('data-tab')).toBe('filer');
+        d.querySelector('.nav-item[data-tab="dashboard"]').click();
         // Värdet för minsta gruppstorlek är en länk till inställningarna, med fokus i fältet.
         d.querySelector('#ov-filrad [data-oppna-installningar]').click();
         expect(d.getElementById('installningar-modal').style.display).toBe('flex');
@@ -311,7 +309,6 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         w.eval('_rensaAllData()');
         expect(vy.classList.contains('har-data')).toBe(false);
         expect(d.getElementById('ov-filrad').textContent).toBe('');
-        expect(d.getElementById('chart-ov-kvartiler').innerHTML).toBe('');
         expect(d.getElementById('avsnitt-ov-process').open).toBe(true);
     });
     it('Att göra — hela listan är ett avsnitt som står kvar utfällt när en punkt bockas av', () => {
@@ -333,14 +330,11 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         expect(avsnitt().open).toBe(true);
         expect(d.getElementById('nyckel-ov-punkter').textContent).toBe(`1 av ${antal} hanterade`);
     });
-    it('utan könsuppdelning ritas inga kvartiler på Översikt, och noten säger varför', () => {
+    it('en höjd minsta gruppstorlek syns i Översikts filrad', () => {
         const w = createAppWindow();
-        w.__state.kLage = 'export';   // Översikts kopia så som den lämnar verktyget (ADR-51)
         w.__loadDemoData();
         const d = w.document;
         w.eval('sattKTroskel(150, { fraga: false })');
-        expect(d.getElementById('chart-ov-kvartiler').querySelector('svg')).toBeNull();
-        expect(d.getElementById('ov-kvartiler-not').textContent.length).toBeGreaterThan(20);
         expect(d.getElementById('ov-filrad').textContent).toContain('Minsta gruppstorlek 150');
     });
     it('Inställningar — panelen bär det som gäller alla flikar, och flikarnas egna inställningar står kvar i flikarna', () => {
@@ -349,11 +343,11 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         expect(panel.getAttribute('role')).toBe('dialog');
         expect(panel.style.display).toBe('none');
         // Fälten har flyttat hit ur organisationspaketet; paketet (en fil) står kvar bland filerna.
-        for (const id of ['k-troskel', 'btn-k-aterstall', 'k-troskel-hjalp', 'k-troskel-fel', 'org-typ', 'prio-po-pct', 'prio-cost-months', 'prio-cost-reset', 'prio-cost-summary']) expect(d.getElementById(id).closest('#installningar-modal'), id).not.toBeNull();
+        for (const id of ['k-troskel', 'btn-k-aterstall', 'k-troskel-hjalp', 'k-troskel-fel', 'org-typ', 'prio-po-pct', 'prio-cost-months', 'prio-cost-reset', 'prio-cost-summary', 'prio-cfg-atgard', 'prio-w-avvikelse']) expect(d.getElementById(id).closest('#installningar-modal'), id).not.toBeNull();
         expect(d.getElementById('file-input-paket').closest('#organisationspaket')).not.toBeNull();
         expect(d.getElementById('organisationspaket').querySelector('[data-oppna-installningar]')).not.toBeNull();
-        // PO-påslag och beräkningsperiod gäller alla flikar och står i panelen; flikarnas egna inställningar står kvar i flikarna.
-        for (const [id, avsnitt] of [['prio-cfg-atgard', 'avsnitt-pr-installningar'],
+        // PO-påslag, beräkningsperiod och Prioriteringens trösklar står i panelen; flikarnas egna inställningar står kvar i flikarna.
+        for (const [id, avsnitt] of [
             ['arbvard-band', 'avsnitt-lv-poang'], ['pag-grans', 'avsnitt-la-personer'], ['outliers-threshold', 'avsnitt-ov-kvalitet']]) {
             expect(d.getElementById(id).closest('#installningar-modal'), id).toBeNull();
             expect(d.getElementById(id).closest('details.avsnitt').id, id).toBe(avsnitt);
@@ -363,8 +357,8 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         knapp.focus(); knapp.click();
         expect(panel.style.display).toBe('flex');
         const rader = () => [...d.querySelectorAll('#inst-flikar .inst-flik')];
-        expect(rader()).toHaveLength(5);
-        expect(rader().filter(r => r.querySelector('button').disabled).length).toBeGreaterThanOrEqual(4);
+        expect(rader()).toHaveLength(4);
+        expect(rader().filter(r => r.querySelector('button').disabled).length).toBeGreaterThanOrEqual(3);
         d.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
         expect(panel.style.display).toBe('none');
         expect(d.activeElement).toBe(knapp);
@@ -372,13 +366,13 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         knapp.click();
         expect(d.getElementById('inst-namn').textContent).toMatch(/Organisation.+Referens.+Jämförelsestatistik/);
         expect(rader().every(r => !r.querySelector('button').disabled)).toBe(true);
-        expect(rader().map(r => r.querySelector('.inst-flik-lage').textContent)).toEqual(['Standardvärden', 'Standardvärden', '± 5 %', '10 % under förväntad lön', '3,0 standardavvikelser']);
+        expect(rader().map(r => r.querySelector('.inst-flik-lage').textContent)).toEqual(['Standardvärden', '± 5 %', '10 % under förväntad lön', '3,0 standardavvikelser']);
         expect(d.querySelectorAll('#inst-flikar .ar-andrad')).toHaveLength(0);
         // "Öppna" stänger panelen, byter flik och fäller ut avsnittet där inställningen står.
         rader()[0].querySelector('button').click();
         expect(panel.style.display).toBe('none');
-        expect(d.getElementById('view-prioritering').style.display).toBe('block');
-        expect(d.getElementById('avsnitt-pr-installningar').open).toBe(true);
+        expect(d.getElementById('view-likvardighet').style.display).toBe('block');
+        expect(d.getElementById('avsnitt-lv-installningar').open).toBe(true);
         // PO-påslag och beräkningsperiod står i panelen (gäller alla flikar); en ändring slår igenom direkt och syns i sammanfattningen.
         knapp.click();
         const po = d.getElementById('prio-po-pct');
@@ -415,11 +409,10 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         const d = w.document, falt = d.getElementById('sok-grupp'), lista = d.getElementById('sok-grupp-lista');
         const skriv = t => { falt.value = t; falt.dispatchEvent(new w.Event('input', { bubbles: true })); };
         const tangent = (el, key, extra = {}) => el.dispatchEvent(new w.KeyboardEvent('keydown', { key, bubbles: true, cancelable: true, ...extra }));
-        // Utan data finns inget att söka i: fältet visas inte.
-        expect(d.getElementById('sok-ruta').hidden).toBe(true);
+        // Utan data finns inga grupper att söka i; fältet syns ändå och hittar funktionerna (tests/sok-funktioner.test.js).
+        expect(d.getElementById('sok-ruta').hidden).toBe(false);
         expect(w.eval('sokKandidater()')).toEqual([]);
         w.__loadDemoData();
-        expect(d.getElementById('sok-ruta').hidden).toBe(false);
         expect(falt.getAttribute('role')).toBe('combobox');
         // Kandidaterna är BAS-intervall och yrkesgrupper med minst tröskeln personer — samma urval som gruppdossiern.
         const kand = w.eval('sokKandidater()');
@@ -482,11 +475,12 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         expect(efter.some(k => k.n < 25)).toBe(true);                // demodatan har grupper med 20–24 personer
         skriv('finnsintealls');
         expect(lista.querySelectorAll('[role="option"]')).toHaveLength(0);
-        expect(lista.textContent).toBe('Ingen grupp matchar.');
-        // Rensning tar bort fältet och träffarna.
+        expect(lista.textContent).toBe('Ingen grupp eller funktion matchar.');
+        // Rensning stänger träfflistan; fältet står kvar och hittar funktionerna.
         w.eval('_rensaAllData()');
-        expect(d.getElementById('sok-ruta').hidden).toBe(true);
+        expect(d.getElementById('sok-ruta').hidden).toBe(false);
         expect(lista.hidden).toBe(true);
+        expect(w.eval('sokKandidater()')).toEqual([]);
     });
     it('exportgrinden — en flik som ritades före en ändrad tröskel ritas om innan något läses ur den', () => {
         const w = createAppWindow();
@@ -522,13 +516,13 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         const w = createAppWindow();
         w.__loadDemoData();
         const d = w.document;
-        d.querySelector('.nav-item[data-tab="matrix"]').click();
+        d.querySelector('.nav-item[data-tab="struktur"]').click();
         d.querySelector('.nav-item[data-tab="dashboard"]').click();
         w.eval('sattKTroskel(25, { fraga: false })');
-        w.eval("const __r = _renderTabContent; _renderTabContent = function (f) { if (f === 'matrix') throw new Error('prov'); return __r(f); };");
+        w.eval("const __r = _renderTabContent; _renderTabContent = function (f) { if (f === 'struktur') throw new Error('prov'); return __r(f); };");
         expect(w.eval("_cloneAndCleanTableForExport('paygap-table')")).toBeNull();
         expect(w.eval('exportSakra(document.getElementById("chart-skevhet-overview"))')).toBe(false);
-        expect(w.eval("flikInaktuell('matrix')")).toBe(true);
+        expect(w.eval("flikInaktuell('struktur')")).toBe(true);
     });
     it('"Rensa all data" lämnar exportmenyerna och BAS-väljaren i Ålder & karriär orörda', () => {
         const w = createAppWindow();
@@ -560,7 +554,7 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         expect(d.getElementById('lage-vagledande').getAttribute('aria-pressed')).toBe('true');
         d.querySelector('.nav-item[data-tab="matrix"]').click();
         const oppna = () => [...d.querySelectorAll('details.avsnitt')].filter(a => a.open).map(a => a.id);
-        const fore = { oppna: oppna(), text: d.getElementById('view-matrix').textContent, tal: d.getElementById('la-slutsatser').textContent };
+        const fore = { oppna: oppna(), text: d.getElementById('view-regression').textContent, tal: d.getElementById('la-slutsatser').textContent };
         d.getElementById('lage-kompakt').click();
         expect(w.eval('lage()')).toBe('kompakt');
         expect(d.body.classList.contains('lage-kompakt')).toBe(true);
@@ -568,7 +562,7 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         expect(d.getElementById('lage-vagledande').getAttribute('aria-pressed')).toBe('false');
         // Läget rör inte sidans innehåll: samma text, samma tal och samma avsnitt utfällda (det som döljs döljs av stilmallen).
         expect(oppna()).toEqual(fore.oppna);
-        expect(d.getElementById('view-matrix').textContent).toBe(fore.text);
+        expect(d.getElementById('view-regression').textContent).toBe(fore.text);
         expect(d.getElementById('la-slutsatser').textContent).toBe(fore.tal);
         // Inget lagras och inget följer med i konfigurationsfilen.
         expect(w.localStorage.length).toBe(0);
@@ -585,21 +579,21 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         const { readFileSync } = await import('node:fs');
         const css = readFileSync(new URL('../src/style.css', import.meta.url), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
         // Före inläsning är Översikts lägesdelar dolda, var och en med egen väljare.
-        for (const id of ['ov-filrad', 'ov-lage', 'ov-fordjupning', 'avsnitt-ov-kvalitet', 'avsnitt-ov-gap']) expect(css).toContain(`#view-dashboard:not(.har-data) #${id}`);
+        for (const id of ['ov-filrad', 'ov-fordjupning']) expect(css).toContain(`#view-dashboard:not(.har-data) #${id}`);
         // Kompakt läge döljer förklaringar, men aldrig noter om små grupper eller förbehåll.
         const kompakt = [...css.matchAll(/([^{}]*lage-kompakt[^{}]*)\{([^}]*)\}/g)].filter(m => /display:\s*none/.test(m[2])).map(m => m[1]).join(' ');
         expect(kompakt).toMatch(/\.avsnitt-under/);
         expect(kompakt).not.toMatch(/k-mask-note|reg-caveat|export-besked|diagramkort-forklaring|slutsats/);
     });
-    it('Dokumentera utan data — knapparna för samverkan är inaktiva och panelen heter "Innan du exporterar"', () => {
+    it('utan data är samverkansknapparna i Handlingsplan inaktiva, och Exportera heter "Innan du exporterar"', () => {
         const w = createAppWindow();
-        w.document.querySelector('.nav-item[data-tab="dokumentera"]').click();
+        w.document.querySelector('.nav-item[data-tab="handlingsplan"]').click();
         const knappar = [...w.document.querySelectorAll('[data-dok-klick]')];
         expect(knappar.length).toBe(2);
         expect(knappar.every(b => b.disabled)).toBe(true);
         expect(w.document.getElementById('view-kvalitet').textContent).toMatch(/innan du exporterar/i);
         w.__loadDemoData();
-        w.document.querySelector('.nav-item[data-tab="dokumentera"]').click();
+        w.document.querySelector('.nav-item[data-tab="handlingsplan"]').click();
         expect([...w.document.querySelectorAll('[data-dok-klick]')].every(b => !b.disabled)).toBe(true);
     });
     it('Prioriteringens tomläge talar inte om att ladda upp ett ställningstagande', () => {
@@ -611,7 +605,7 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
 describe('Var uppstår löneskillnaden?', () => {
     it('ritas med demodata: tre delar, demomärkning, noten om rangordning', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__loadDemoData(); w.__renderTabContent('struktur');
         const host = w.document.getElementById('gap-uppdelning');
         expect(host.hidden).toBe(false);
         expect(host.querySelectorAll('[data-gu-del]').length).toBe(3);
@@ -750,7 +744,7 @@ describe('Personer att granska', () => {
     });
     it('del C i "Var uppstår löneskillnaden?" länkar till panelen och skrollar fram den', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__loadDemoData(); w.__renderTabContent('struktur');
         const lank = w.document.querySelector('#gap-uppdelning [data-gu-del="C"] [data-go-to-anchor="personer-att-granska"]');
         expect(lank).not.toBeNull();
         let skrollad = false;
@@ -834,7 +828,7 @@ describe('dolda grupper, belopp, radslut och gränsfältet', () => {
     });
     it('kortet förklarar beloppens tecken', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__loadDemoData(); w.__renderTabContent('struktur');
         expect(w.document.getElementById('gap-uppdelning').textContent).toContain('negativa belopp betyder att kvinnornas medellön är lägre');
     });
     it('CSV med bara CR som radslut får radnummer', async () => {

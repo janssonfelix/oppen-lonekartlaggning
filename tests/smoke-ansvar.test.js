@@ -257,7 +257,7 @@ describe('ansvarskod i Lika arbete', () => {
         const w = createAppWindow();
         w.__state.data = bygg(medAnsvar);
         w.eval('populateSelects(); unlockTabs();');
-        w.__renderTabContent('matrix');
+        w.__renderTabContent('matrix'); w.__renderTabContent('struktur');
         return w;
     };
     it('yrket får en underrad per ansvarsgrupp och raden Utan ledningsansvar', () => {

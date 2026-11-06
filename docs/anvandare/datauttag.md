@@ -156,7 +156,7 @@ CSV-mallen i verktyget** (se avsnitt 6) och fyll den från er rapport.
 | "0 rader inlästa" / tomt resultat | Rubrikraden eller kolumnnamnen känns inte igen | Öppna **kolumnmappnings-guiden** och peka ut rätt kolumn, eller döp om rubrikerna enligt avsnitt 1 |
 | Filen avvisas direkt | En kolumn med personnummer, namn eller e-post upptäcktes | Ta bort den identifierande kolumnen ur uttaget och läs in igen (avsnitt 3) |
 | Åldern ser fel ut | Kolumnen innehöll födelseår | Verktyget räknar om födelseår till ålder automatiskt — verifiera antalet i inläsnings-/audit-panelen |
-| Många rader uteslutna | Saknad BAS, lön = 0, eller tomt/okänt värde i könskolumnen | Läs inläsningsrapporten under Underlagets kvalitet — den visar hur många rader som föll bort och varför; rätta i källfilen och läs om |
+| Många rader uteslutna | Saknad BAS, lön = 0, eller tomt/okänt värde i könskolumnen | Läs inläsningsrapporten under Underlagets kvalitet i Filer och kvalitet — den visar hur många rader som föll bort och varför; rätta i källfilen och läs om |
 
 Inläsningsrapporten visar alltid vilken **teckenkodning** och **avgränsare** som
 upptäcktes samt om försättsrader hoppades över — använd den för att bekräfta att filen
@@ -164,7 +164,7 @@ lästes som du förväntade dig.
 
 ## 6. CSV-mallen
 
-I verktyget, på Översikt-fliken i uppladdningsområdet, finns knappen
+I verktyget, i fliken Filer och kvalitet i lönefilens ruta, finns knappen
 **"📥 Ladda ner CSV-mall"**. Den laddar ner `strukturdata_mall.csv` med rätt
 kolumnrubriker (`BAS-intervall;AID;Manadslon;Alder;Kon;Poang`) och tre
 exempelrader. Öppna den i Excel, ersätt exempelraderna med er data och spara — så vet du

@@ -75,7 +75,7 @@ bes8Uppdatera();
 
 // ---- Stöd i verktyget: talet från fliken och en länk dit ----
 // Där en flik har ett tal som hör till området (Likvärdigt arbetes par, Lika arbetes yrkesgrupper att granska,
-// Struktur & rapportmåttens lönekvartiler) står talet i områdets rad Stöd i verktyget, med länken Gå dit. Talen
+// Lönestrukturens lönekvartiler) står talet i områdets rad Stöd i verktyget, med länken Gå dit. Talen
 // hämtas ur samma källor som flikarna själva visar: Likvärdigt arbetes cache (state.likvardighet.result, som
 // Översiktens Att göra också fyller) och de delade funktionerna för yrkesgrupperna och kvartilerna. Utan underlag,
 // eller när fliken inte kan räkna, står radens fasta text kvar.
@@ -100,10 +100,10 @@ const BES8_STOD = {
     struktur(d) {
         const q = _stQuartileDistribution(d, { k: kTroskel() }) || [];
         if (!q.length || !q.every(x => x.nKv != null && x.nMa != null && x.n > 0)) return null;
-        return `I Struktur & rapportmått är ${svPct(q[q.length - 1].andelKv, 0)} kvinnor i den högsta lönekvartilen och ${svPct(q[0].andelKv, 0)} i den lägsta.`;
+        return `I Lönestruktur är ${svPct(q[q.length - 1].andelKv, 0)} kvinnor i den högsta lönekvartilen och ${svPct(q[0].andelKv, 0)} i den lägsta.`;
     }
 };
-const BES8_STOD_FLIK = { likvardighet: 'Likvärdigt arbete', matrix: 'Lika arbete', struktur: 'Struktur & rapportmått' };
+const BES8_STOD_FLIK = { likvardighet: 'Likvärdigt arbete', matrix: 'Lika arbete', struktur: 'Lönestruktur' };
 function bes8Stod() {
     const d = (() => { try { return getData(); } catch (_e) { return []; } })();
     document.querySelectorAll('.bes8-stod[data-stod]').forEach(el => {

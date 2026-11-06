@@ -2793,7 +2793,7 @@ describe('export av figurer', () => {
         expect(w.eval('_rfExportFigur(window.__el).visaSma')).toBe(false);
         med = true;
         expect(JSON.stringify(w.__chartExportRows(el))).toContain('77777');
-        expect(w.__chartExportRows(el)[0][0]).toContain('Den här filen kan även innehålla grupper under tröskeln (undantag: valt i Utforska).');
+        expect(w.__chartExportRows(el)[0][0]).toContain('Den här filen kan även innehålla grupper under tröskeln (undantag: valt i Tabeller och egna vyer).');
         expect(w.eval('_rfExportFigur(window.__el).visaSma')).toBe(true);
         // En exportMedSma som kastar räknas som nej (och rapporteras) — aldrig som ja.
         w.__state._interntFel = [];
@@ -2829,13 +2829,13 @@ describe('export av figurer', () => {
             w.eval('ritaFigur(window.__el, window.__f, { exportMedSma: () => true })');
             expect(w.__chartExportRows(el)[0][0]).toContain('(undantag: Likvärdigt arbete)');
         } finally { el.closest('.card').remove(); w.document.getElementById('view-likvardighet-test')?.remove(); }
-        // Utanför fliken: "valt i Utforska" bara när exporten faktiskt bär små grupper.
+        // Utanför fliken: "valt i Tabeller och egna vyer" bara när exporten faktiskt bär små grupper.
         const annan = nyBehallare();
         w.__el = annan; w.__f = medSma();
         w.eval('ritaFigur(window.__el, window.__f, {})');
         expect(w.__chartExportRows(annan)[0][0]).not.toContain('undantag');
         w.eval('ritaFigur(window.__el, window.__f, { exportMedSma: () => true })');
-        expect(w.__chartExportRows(annan)[0][0]).toContain('(undantag: valt i Utforska)');
+        expect(w.__chartExportRows(annan)[0][0]).toContain('(undantag: valt i Tabeller och egna vyer)');
     });
     it('exportens underlag bestäms EN gång per export: exportMedSma anropas en gång, och stämpel och innehåll följer samma svar', async () => {
         const el = nyBehallare();
@@ -2852,7 +2852,7 @@ describe('export av figurer', () => {
             const rader = ut.csv[0] || ut.urklipp[0];
             if (rader) {
                 expect(JSON.stringify(rader), v).toContain('77777');
-                expect(rader[0][0], v).toContain('(undantag: valt i Utforska)');
+                expect(rader[0][0], v).toContain('(undantag: valt i Tabeller och egna vyer)');
             } else expect(ut.bilder[0].val.visaSma, v).toBe(true);
         }
         // Tvärtom: nej första gången, ja sedan — varken små grupper eller undantag.

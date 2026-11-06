@@ -1083,11 +1083,11 @@ describe('exportmeny på alla diagram', () => {
     });
 
     it('varje behållare utan export i det ritade dokumentet har ett registrerat skäl', () => {
-        // Alla flikar är ritade (beforeAll); Översikt och Lika arbete bär de märkta behållarna.
+        // Alla flikar är ritade (beforeAll); Lika arbete bär den märkta behållaren.
         win.__renderTabContent('dashboard');
         const skal = win.__exportSkal();
         const markta = [...win.document.querySelectorAll('[data-no-export]')];
-        expect(markta.map(el => el.id).sort()).toEqual(['ov-lage', 'pag-diagram-ruta']);
+        expect(markta.map(el => el.id).sort()).toEqual(['pag-diagram-ruta']);
         for (const el of markta) {
             const s = el.getAttribute('data-no-export');
             expect(Object.keys(skal), el.id).toContain(s);
@@ -1099,7 +1099,6 @@ describe('exportmeny på alla diagram', () => {
             expect(gd.parentElement.querySelector(':scope > .chart-export'), gd.id).toBeNull();
             expect(win.__chartExportRows(gd), gd.id).toEqual([]);
         }
-        expect(win.document.getElementById('chart-ov-kvartiler')._figur).toBeTruthy();   // och minst ett sådant finns
     });
 
 });
