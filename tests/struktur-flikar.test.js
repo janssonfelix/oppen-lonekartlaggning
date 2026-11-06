@@ -115,6 +115,31 @@ describe('Uppgift 3: Rapporttext, Exportera och Spara och jämför år', () => {
         expect(w.__lagen).toEqual(['renderStrukturUtkast:true', 'renderRapportunderlag:true', 'renderArsjamforelse:true']);
         expect(w.eval('iExportLage()')).toBe(false);
     });
+    it('Återskapa i Rapporttext nollar redigeringen och bygger utkastet på nytt i exportläge', () => {
+        const w = createAppWindow(); w.__loadDemoData();
+        const d = w.document, nb = d.getElementById('struktur-narrative');
+        d.getElementById('tab-rapporttext').click();
+        nb.value = 'Egen text';
+        nb.dispatchEvent(new w.Event('input', { bubbles: true }));
+        expect(nb.dataset.dirty).toBe('1');
+        w.eval(`window.__lagen = []; { const o = renderStrukturUtkast; window.renderStrukturUtkast = (...a) => { window.__lagen.push(iExportLage()); return o(...a); }; }`);
+        d.getElementById('struktur-narrative-regen').click();
+        expect(nb.dataset.dirty).toBeUndefined();
+        expect(nb.value).toContain('LÖNEKARTLÄGGNING');
+        expect(nb.value).not.toBe('Egen text');
+        expect(w.__lagen).toEqual([true]);
+        expect(w.eval('iExportLage()')).toBe(false);
+    });
+    it('Rensa all data tömmer rapportutkastet, också ett redigerat', () => {
+        const w = createAppWindow(); w.__loadDemoData();
+        const nb = w.document.getElementById('struktur-narrative');
+        w.__renderTabContent('rapporttext');
+        expect(nb.value).toContain('LÖNEKARTLÄGGNING');
+        nb.dataset.dirty = '1';
+        w.eval('_rensaAllData()');
+        expect(nb.value).toBe('');
+        expect(nb.dataset.dirty).toBeUndefined();
+    });
     it('Lönestruktur bygger inte längre utkastet; årsjämförelsens bild ritas av Spara och jämför år', () => {
         const w = createAppWindow(); w.__loadDemoData();
         w.document.querySelector('.nav-item[data-tab="struktur"]').click();

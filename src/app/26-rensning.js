@@ -131,6 +131,9 @@ function _rensaAllData({ inbakat = true } = {}) {
     // Handlingsplanens ifyllda fält (sakligt skäl, ansvarig, tidsplan, status) — nollställ och rita mallen tom
     state.handlingsplan = {};
     if (typeof renderHandlingsplanSeed === 'function') renderHandlingsplanSeed();
+    // Rapporttextens utkast bär fynden i klarspråk, också ett redigerat: det töms och markeringen tas bort.
+    const utkast = document.getElementById('struktur-narrative');
+    if (utkast) { /** @type {HTMLTextAreaElement} */ (utkast).value = ''; delete utkast.dataset.dirty; }
     const dashSummary = document.getElementById('dashboard-summary');
     if (dashSummary) dashSummary.style.display = 'none';
     const ukPanel = document.getElementById('underlagets-kvalitet');

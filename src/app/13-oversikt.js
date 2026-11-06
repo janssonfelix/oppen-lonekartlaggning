@@ -443,6 +443,9 @@ function ovRitaLage() {
     const d = (() => { try { return getData(); } catch (_e) { return []; } })();
     const har = d.length > 0;
     vy.classList.toggle('har-data', har);
+    // Filer och kvalitet: Underlagets kvalitet har inget att visa före inläsningen (sidindexet och sökningen hoppar över det då).
+    const kvalitet = document.getElementById('avsnitt-ov-kvalitet');
+    if (kvalitet) kvalitet.hidden = !har;
     if (typeof sokUppdatera === 'function') sokUppdatera();   // sökfältet i sidhuvudet: en öppen träfflista stängs när lönefilen läses in eller rensas
     if (har !== _ovHadeData) {
         // Läget byter: processen är utfälld före inläsning och hopfälld efter, och uppladdningen fälls ihop.

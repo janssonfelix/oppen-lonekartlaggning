@@ -108,6 +108,49 @@ describe('Funktionssök', () => {
         expect(aktivFlik(w)).toBe('filer');
     });
 
+    it('med lönefil men utan referens säger Löneläget kräver referens och leder till referenskortet', () => {
+        const w = createAppWindow(), d = w.document;
+        w.__loadDemoData();
+        w.__state.policy = []; w.__state.statistik = [];
+        w.eval('synkaJamforelseFlik()');
+        expect(d.getElementById('tab-benchmark').hidden).toBe(true);
+        w.eval('window.__sagt = []; { const o = announceToScreenReader; window.announceToScreenReader = m => { window.__sagt.push(m); return o(m); }; }');
+        skriv(w, 'ställningstagandet');
+        const li = d.querySelector('#sok-grupp-lista [data-sok-funktion]');
+        expect(li.querySelector('.sok-under').textContent).toContain('kräver referens eller jämförelsestatistik');
+        expect(li.textContent).not.toContain('kräver lönefil');
+        li.click();
+        expect(aktivFlik(w)).toBe('filer');
+        expect(d.activeElement.id).toBe('file-input-policy');
+        expect(w.__sagt.at(-1)).toMatch(/referens eller jämförelsestatistik/);
+    });
+
+    it('Underlagets kvalitet är dold utan lönefil och säger då kräver lönefil', () => {
+        const w = createAppWindow(), d = w.document;
+        expect(d.getElementById('avsnitt-ov-kvalitet').hidden).toBe(true);
+        skriv(w, 'underlagets kvalitet');
+        const li = [...d.querySelectorAll('#sok-grupp-lista [data-sok-funktion]')].find(x => x.querySelector('.sok-namn').textContent === 'Underlagets kvalitet');
+        expect(li.textContent).toContain('kräver lönefil');
+        w.__loadDemoData();
+        expect(d.getElementById('avsnitt-ov-kvalitet').hidden).toBe(false);
+        w.eval('_rensaAllData()');
+        expect(d.getElementById('avsnitt-ov-kvalitet').hidden).toBe(true);
+    });
+
+    it('med lönefil leder ett mål som är dolt av annan orsak till flikens topp och säger det, utan att fokusera det dolda', () => {
+        const w = createAppWindow(), d = w.document;
+        w.__loadDemoData();
+        w.eval('window.__sagt = []; { const o = announceToScreenReader; window.announceToScreenReader = m => { window.__sagt.push(m); return o(m); }; }');
+        // Avsnittet döljs när fliken ritas, som ett avsnitt som inte gäller underlaget.
+        w.eval(`{ const o = renderTabContent; window.renderTabContent = (...a) => { const r = o(...a); document.getElementById('avsnitt-ar-ogonblick').hidden = true; return r; }; }`);
+        skriv(w, 'ögonblicksbild');
+        d.querySelector('#sok-grupp-lista [data-sok-funktion]').click();
+        expect(aktivFlik(w)).toBe('arbetet');
+        expect(d.getElementById('avsnitt-ar-ogonblick').open).toBe(false);
+        expect(d.activeElement).toBe(d.getElementById('main-content'));
+        expect(w.__sagt.at(-1)).toMatch(/visas inte/);
+    });
+
     it('synonymer: "snapshot", "protokoll", "EU", "personalomkostnad" ger träff', () => {
         const w = createAppWindow();
         const traff = t => w.eval(`sokFunktionsTraffar(${JSON.stringify(t)})`);

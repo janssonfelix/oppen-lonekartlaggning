@@ -7,7 +7,8 @@
  *
  * Fältet hittar också funktioner: flikarnas avsnitt, dialogerna och fälten i Inställningar, med synonymer
  * (registret i 86-sok-register.js). Det syns därför också utan lönefil; då visas bara funktioner. En funktion i en
- * flik som kräver lönefilen leder inte dit utan säger "kräver lönefil" och visar lönefilskortet, som menyn gör.
+ * flik som kräver lönefilen leder inte dit utan säger "kräver lönefil" och visar lönefilskortet, som menyn gör; med
+ * lönefil men utan referens säger Löneläget "kräver referens eller jämförelsestatistik" och visar referenskortet.
  *
  * Dataskydd: bara grupper som får visas går att söka fram — BAS-intervall och yrkesgrupper med minst tröskeln
  * personer, samma urval som gruppdossiern och det som går att klicka på i diagrammen. En sökning som inte ger någon
@@ -58,23 +59,31 @@ function sokFunktionsTraffar(text) {
 }
 
 function _sokHarData() { try { return getData().length > 0; } catch (_e) { return false; } }
-/** Funktionen går inte att nå än: fliken är låst, eller (utan lönefil) målet är dolt i sin flik, som exportraderna. */
-function _sokKraverLonefil(p) {
-    if (p.dialog) return false;
-    const nav = /** @type {HTMLInputElement|null} */ (document.querySelector(`.nav-item[data-tab="${p.flik}"]`));
-    if (nav && nav.disabled) return true;
-    if (_sokHarData()) return false;
+/** Avsnittet är dolt i sin flik (hidden, display: none eller .dold utan inline-stil), fram till panelen. */
+function _sokMalDolt(p) {
     for (let n = p.avsnitt ? document.getElementById(p.avsnitt) : null; n && !n.classList.contains('view-panel'); n = n.parentElement) {
         if (n.hidden || n.style.display === 'none' || (n.classList.contains('dold') && !n.style.display)) return true;
     }
     return false;
 }
+/** Vad som behövs innan funktionen går att nå: 'lonefil' (fliken är låst, eller utan lönefil är målet dolt i sin
+ *  flik, som exportraderna), 'referens' (lönefilen är inläst men fliken är ändå låst: Löneläget, som kräver en
+ *  referens eller jämförelsestatistik, 38-referensfiler.js), annars ''. */
+function _sokKraver(p) {
+    if (p.dialog) return '';
+    const nav = /** @type {HTMLInputElement|null} */ (document.querySelector(`.nav-item[data-tab="${p.flik}"]`));
+    const har = _sokHarData();
+    if (nav && nav.disabled) return har ? 'referens' : 'lonefil';
+    return !har && _sokMalDolt(p) ? 'lonefil' : '';
+}
+const SOK_KRAVER_TEXT = { lonefil: 'kräver lönefil', referens: 'kräver referens eller jämförelsestatistik' };
 const SOK_DIALOGNAMN = { installningar: 'Inställningar', ordlista: 'Ordlista', symboler: 'Förklaring', lagras: 'Vad lagras?' };
+function _sokFlikNamn(flik) { return (document.querySelector(`.nav-item[data-tab="${flik}"]`)?.textContent || flik).trim(); }
 function _sokFunktionUnder(p) {
     if (p.falt) return 'Fält i Inställningar';
     if (p.dialog) return `Öppnar ${SOK_DIALOGNAMN[p.dialog]}`;
-    const flik = (document.querySelector(`.nav-item[data-tab="${p.flik}"]`)?.textContent || p.flik).trim();
-    return `I fliken ${flik}${_sokKraverLonefil(p) ? ' · kräver lönefil' : ''}`;
+    const kraver = _sokKraver(p);
+    return `I fliken ${_sokFlikNamn(p.flik)}${kraver ? ' · ' + SOK_KRAVER_TEXT[kraver] : ''}`;
 }
 
 function _sokRita() {
@@ -122,17 +131,25 @@ function sokValj(i) {
     _sokStang();
 }
 /** Leder till funktionen: avsnittet i sin flik (utfällt, med fokus), eller dialogen med fokus i fältet. En funktion
- *  som kräver lönefilen visar lönefilskortet i Filer och kvalitet, som ett klick på en låst flik i menyn. */
+ *  som kräver lönefilen visar lönefilskortet i Filer och kvalitet, som ett klick på en låst flik i menyn; en som
+ *  kräver en referens visar referenskortet. Är avsnittet dolt när fliken har ritats (det gäller inte underlaget)
+ *  hamnar läsaren överst i fliken och får höra det, i stället för att fokus hamnar på något osynligt. */
 function _sokValjFunktion(p) {
     _sokStang();
-    if (_sokKraverLonefil(p)) { visaLonefilskortet(p.namn); return; }
+    const kraver = _sokKraver(p);
+    if (kraver === 'lonefil') { visaLonefilskortet(p.namn); return; }
+    if (kraver === 'referens') { visaReferenskortet(p.namn); return; }
     if (p.dialog === 'installningar') oppnaInstallningar({ fokus: p.falt || null });
     else if (p.dialog === 'ordlista') openGlossary();
     else if (p.dialog === 'lagras') openDataResidency();
     else if (p.dialog === 'symboler') /** @type {HTMLElement|null} */ (document.getElementById('btn-open-symbols'))?.click();
     else {
         navigateTo(p.flik);
-        if (p.avsnitt) sidindexGaTill(p.avsnitt);
+        if (!p.avsnitt) return;
+        if (!_sokMalDolt(p)) { sidindexGaTill(p.avsnitt); return; }
+        window.scrollTo(0, 0);
+        /** @type {HTMLElement|null} */ (document.getElementById('main-content'))?.focus({ preventScroll: true });
+        announceToScreenReader(`${p.namn} visas inte i fliken ${_sokFlikNamn(p.flik)} med det här underlaget.`);
     }
 }
 /** @type {boolean|null} */

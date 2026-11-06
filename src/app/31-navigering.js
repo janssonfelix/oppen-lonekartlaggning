@@ -12,17 +12,29 @@ document.querySelectorAll(".nav-item").forEach(btn => {
         set(v) { if (v) this.setAttribute('aria-disabled', 'true'); else this.removeAttribute('aria-disabled'); }
     });
 });
-/** En låst flik har klickats: visa Filer och kvalitet, rulla fram lönefilskortet, ge filväljaren fokus och markera kortet en stund. */
-function visaLonefilskortet(flikNamn) {
+/** Visar Filer och kvalitet, rullar fram filkortet `kortId`, ger dess filväljare fokus, markerar kortet en stund och läser upp `text`. */
+function _visaFilkortet(kortId, inputId, text) {
     const filer = document.querySelector('.nav-item[data-tab="filer"]');
     if (filer && !filer.classList.contains('active')) /** @type {HTMLElement} */ (filer).click();
-    const kort = document.getElementById('upload-cell-data');
+    const kort = document.getElementById(kortId);
     if (!kort) return;
     kort.scrollIntoView?.({ block: 'center' });
     kort.classList.add('visas-nu');
     setTimeout(() => kort.classList.remove('visas-nu'), 2000);
-    document.getElementById('file-input-data')?.focus?.({ preventScroll: true });
-    announceToScreenReader(`${flikNamn ? flikNamn + ' kräver ett underlag. ' : ''}Läs in lönefilen här under Filer och kvalitet, så låses flikarna upp.`);
+    document.getElementById(inputId)?.focus?.({ preventScroll: true });
+    announceToScreenReader(text);
+}
+/** En låst flik har klickats: visa lönefilskortet i Filer och kvalitet. */
+function visaLonefilskortet(flikNamn) {
+    _visaFilkortet('upload-cell-data', 'file-input-data',
+        `${flikNamn ? flikNamn + ' kräver ett underlag. ' : ''}Läs in lönefilen här under Filer och kvalitet, så låses flikarna upp.`);
+}
+/** Lönefilen är inläst men Löneläget kräver en referens eller jämförelsestatistik (38-referensfiler.js): visa
+ *  referenskortet (ställningstagandet, annars jämförelsestatistiken) i Filer och kvalitet. */
+function visaReferenskortet(namn) {
+    const policy = !!document.getElementById('upload-cell-policy');
+    _visaFilkortet(policy ? 'upload-cell-policy' : 'upload-cell-stat', policy ? 'file-input-policy' : 'file-input-stat',
+        `${namn ? namn + ' kräver en referens eller jämförelsestatistik. ' : ''}Läs in ett lönepolitiskt ställningstagande eller jämförelsestatistik här under Filer och kvalitet, så visas fliken Löneläget.`);
 }
 document.querySelectorAll(".nav-item").forEach(btn => {
     btn.addEventListener("click", () => {
