@@ -83,6 +83,36 @@ describe('Sidindex', () => {
         expect(summary()).toBe('På den här sidan: Per sektor');
         expect(w.document.querySelector('#sidindex details').open).toBe(false);
     });
+    it('ett klickat avsnitt står kvar som aktivt när sidan inte kan rulla fram det, tills läsaren själv rullar', () => {
+        const w = createAppWindow();
+        // Med en observatör följer markeringen rullningen (_sidindexFolj). I jsdom står alla rubriker överst (ingen
+        // layout), som när sidan är slut och de sista avsnitten inte kan nå läslinjen: följningen pekar på den sista.
+        w.IntersectionObserver = class { observe() {} disconnect() {} };
+        w.__loadDemoData();
+        oppna(w, 'struktur');
+        const aktiv = () => w.document.querySelector('#sidindex a.ar-aktiv').dataset.sidindex;
+        const lankar = [...w.document.querySelectorAll('#sidindex a[data-sidindex]')];
+        const forsta = lankar[0].dataset.sidindex, sista = lankar.at(-1).dataset.sidindex;
+        w.eval('_sidindexFolj()');
+        expect(aktiv()).toBe(sista);
+        // Ett klick på ett avsnitt: rullningen som följer (den mjuka rullningen) skriver inte över valet.
+        lankar[1].click();
+        expect(aktiv()).toBe(lankar[1].dataset.sidindex);
+        w.eval('_sidindexFolj()');
+        expect(aktiv()).toBe(lankar[1].dataset.sidindex);
+        expect(w.document.querySelector('#sidindex summary').textContent).toContain(lankar[1].textContent.trim());
+        // Nästa riktiga rullning (hjulet, pekskärmen, tangentbordet) släpper valet.
+        w.dispatchEvent(new w.Event('wheel'));
+        w.eval('_sidindexFolj()');
+        expect(aktiv()).toBe(sista);
+        // Samma via sidindexGaTill (sökningen leder dit), och tangentbordet släpper.
+        w.eval(`sidindexGaTill(${JSON.stringify(forsta)})`);
+        w.eval('_sidindexFolj()');
+        expect(aktiv()).toBe(forsta);
+        w.document.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'PageDown', bubbles: true }));
+        w.eval('_sidindexFolj()');
+        expect(aktiv()).toBe(sista);
+    });
     it('indexet byggs om när fliken ritas om, och döljs på flikar med färre än tre avsnitt', () => {
         const w = createAppWindow(), nav = w.document.getElementById('sidindex'), kropp = w.document.querySelector('.content-body');
         expect(nav.getAttribute('aria-label')).toBe('På den här sidan');
