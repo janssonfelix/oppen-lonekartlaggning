@@ -21096,9 +21096,12 @@ function _stFordelningsMonster(dist) {
 function _stRitaTopp(d, m) {
     const urval = document.getElementById('st-urval'), host = document.getElementById('st-slutsatser');
     if (!urval || !host) return;
-    if (!m) { urval.textContent = ''; host.innerHTML = ''; ['representation', 'fordelning', 'eu'].forEach(n => _laNyckel(`nyckel-st-${n}`, '')); return; }
+    if (!m) { urval.textContent = ''; host.innerHTML = ''; ['representation', 'karta', 'fordelning', 'eu'].forEach(n => _laNyckel(`nyckel-st-${n}`, '')); return; }
     urval.innerHTML = `<span><strong>Hela urvalet</strong> · ${svTal(d.length, 0)} personer</span>${kTroskelLank()}`;
     _laNyckel('nyckel-st-representation', `${m.basAntal} BAS-intervall`);
+    // Kartans yrkesgrupper: ett yrke inom ett BAS-intervall, samma indelning som ytorna (_strukturTradkartaFigur).
+    const yrkesgrupper = new Set(d.filter(r => r.bas != null && r.bas !== '').map(r => `${String(r.aid || r.yrke || 'okänd')}|${r.bas}`)).size;
+    _laNyckel('nyckel-st-karta', yrkesgrupper ? `${svTal(yrkesgrupper, 0)} yrkesgrupper` : '');
     if (!m.konOk) {
         host.innerHTML = _laSlutsats('Kvinnor och män', 'Visas inte', _konUtelamnatNot());
         _laNyckel('nyckel-st-fordelning', ''); _laNyckel('nyckel-st-eu', '');
@@ -27066,8 +27069,8 @@ function _rapportModellExport({ alla = false, bada = false } = {}) {
 
     // ---- 5. Struktur och lönetransparens ----
     // Lönemåtten (median, lönegapet per BAS) redovisas bara för BAS-intervall med minst tröskeln personer.
-    // Gapet per BAS står med direktivets tecken (rmDirektivGap), som i EU-lönerapportens blad; översikten från Lika
-    // arbete längre ned behåller flikens form (kvinnors lön i procent av mäns med konfidensintervall).
+    // Gapet per BAS står med direktivets tecken (rmDirektivGap), som i EU-lönerapportens blad; översikten per
+    // BAS-intervall från Lönestruktur längre ned behåller flikens form (kvinnors lön i procent av mäns med konfidensintervall).
     const repNot = [_rmNotText(kMaskNote(repDolda, 'BAS-intervall|BAS-intervall')), _rmNotText(kSamladNote(repVisade.filter(g => g.konLitet).map(g => g.bas), 'BAS-intervall|BAS-intervall'))].filter(Boolean);
     const oversikt = typeof _laOversiktRader === 'function' ? _laOversiktRader(d, undefined, k) : [];
     const struktur = (repVisade.length || repNot.length) ? { id: 'struktur', numrerad: true, rubrik: 'Struktur och lönetransparens (EU 2023/970)',
@@ -31439,6 +31442,7 @@ const SOK_FUNKTIONER = [
     { namn: 'Underlagets kvalitet', synonymer: ['datakvalitet', 'kontroll', 'saknas', 'extremvärden', 'outliers', 'avvikande löner', 'registerfel'], flik: 'filer', avsnitt: 'avsnitt-ov-kvalitet' },
     // Lönestruktur
     { namn: 'Representation per BAS-nivå', synonymer: ['segregering', 'andel kvinnor', 'könsfördelning'], flik: 'struktur', avsnitt: 'avsnitt-st-representation' },
+    { namn: 'Organisationen som karta', synonymer: ['karta', 'trädkarta', 'yrkesgrupper', 'storlek'], flik: 'struktur', avsnitt: 'avsnitt-st-karta' },
     { namn: 'Var i lönefördelningen sitter gapet?', synonymer: ['kvartil', 'fjärdedel', 'percentil', 'klibbigt golv', 'glastak'], flik: 'struktur', avsnitt: 'avsnitt-st-fordelning' },
     { namn: 'Per sektor', synonymer: ['aid-huvudområde', 'huvudområde', 'yrkesområde'], flik: 'struktur', avsnitt: 'avsnitt-st-sektorer' },
     { namn: 'Var uppstår löneskillnaden?', synonymer: ['gapuppdelning', 'uppdelning', 'trappa', 'medellön'], flik: 'struktur', avsnitt: 'avsnitt-ov-gap' },

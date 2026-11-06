@@ -395,8 +395,8 @@ function _rapportModellExport({ alla = false, bada = false } = {}) {
 
     // ---- 5. Struktur och lönetransparens ----
     // Lönemåtten (median, lönegapet per BAS) redovisas bara för BAS-intervall med minst tröskeln personer.
-    // Gapet per BAS står med direktivets tecken (rmDirektivGap), som i EU-lönerapportens blad; översikten från Lika
-    // arbete längre ned behåller flikens form (kvinnors lön i procent av mäns med konfidensintervall).
+    // Gapet per BAS står med direktivets tecken (rmDirektivGap), som i EU-lönerapportens blad; översikten per
+    // BAS-intervall från Lönestruktur längre ned behåller flikens form (kvinnors lön i procent av mäns med konfidensintervall).
     const repNot = [_rmNotText(kMaskNote(repDolda, 'BAS-intervall|BAS-intervall')), _rmNotText(kSamladNote(repVisade.filter(g => g.konLitet).map(g => g.bas), 'BAS-intervall|BAS-intervall'))].filter(Boolean);
     const oversikt = typeof _laOversiktRader === 'function' ? _laOversiktRader(d, undefined, k) : [];
     const struktur = (repVisade.length || repNot.length) ? { id: 'struktur', numrerad: true, rubrik: 'Struktur och lönetransparens (EU 2023/970)',
