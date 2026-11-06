@@ -10,7 +10,8 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 - **BAS-dossier.** En dialog som samlar ett BAS-intervall på en sida, i rapportens ordning: nyckeltal (antal, kvinnor
   och män, median, P10–P90) och läget mot ställningstagandets rad för intervallet; yrkesgrupperna med antal,
-  medianer per kön, kvinnors median i procent av mäns och Lika arbetes status, med knapp till gruppdossiern;
+  medianer per kön, kvinnors median i procent av mäns och Lika arbetes status för hela yrket (med en not när yrket
+  också finns i andra intervall), med knapp till gruppdossiern;
   kandidatparen och paren *Lägre krav, högre lön* där det kvinnodominerade yrket ligger i intervallet; medianlön per
   åldersgrupp (–34, 35–49, 50–) och kön med länk till Ålder & karriär; och intervallets rad ur förra årets bokslut.
   *Kopiera som text* ger dossiern i rapportens form, byggd i exportläget så att grupper under minsta gruppstorlek
@@ -22,7 +23,8 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   *Jämförelse med förra året* i Spara och jämför år visar tabellen *Löneutveckling per BAS-intervall* (antal, P10,
   median och P90 förra året och i år, förändringen i kronor och procent) och en hantel för medianen per intervall.
   Samma tabell står i rapportens avsnitt *Jämförelse med förra året* (Word och PDF). Ett bokslut från en äldre
-  version saknar raderna; panelen säger det, och resten av jämförelsen är som förut.
+  version saknar raderna; panelen säger det, och resten av jämförelsen är som förut. Har förra årets fil sparats med
+  lägre minsta gruppstorlek än årets läses den med årets: intervall, yrkesgrupper och kön under gränsen visas inte.
 - **Antal i grupptabellerna.** Varje tabell som visar ett lönemått för en grupp visar nu också gruppens antal, och
   exporterna har samma kolumn: *Könsfördelning per BAS-intervall* (Antal kvinnor, Antal män; också i Excel och
   PDF-bilagan), kandidatparen i Likvärdigt arbete (*Antal (kvinnodom. / jämf.)*, också i Word-utkastet, PDF-rapporten

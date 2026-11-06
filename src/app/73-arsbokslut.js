@@ -86,7 +86,7 @@ function _abBasHantelFigur(j, forraAr, nuAr) {
     if (!rader.length) return null;
     const fig = foreEfterFigur({ rader: rader.map(r => ({ namn: r.namn, fore: r.fore, efter: r.efter, farg: PALETTE.semantic.linje, markering: markeringFor(r.bas) })),
         kolumner: [String(forraAr), String(nuAr)], titel: 'Medianlön per BAS-intervall', format: 'kr',
-        beskrivning: `Medianlönen per BAS-intervall, ${forraAr} (strecket) och ${nuAr} (punkten). Bara intervall med minst ${kTroskel()} personer båda åren.` });
+        beskrivning: `Medianlönen per BAS-intervall, ${forraAr} (strecket) och ${nuAr} (punkten). Bara intervall med minst ${j.kGrans} personer båda åren.` });
     return _abEtiketterBortFranStrecket(fig);
 }
 
@@ -108,7 +108,7 @@ function _abBasTabellHtml(j, forraAr, nuAr) {
     if (!Array.isArray(j.basIntervall)) {
         return rubrik + '<p class="text-dampad-sm marg-0">Löneutvecklingen per BAS-intervall saknas i förra årets fil: bokslutet sparades med en äldre version av verktyget. Årets bokslut har den, så nästa års jämförelse får den.</p>';
     }
-    if (!j.basIntervall.length) return rubrik + `<p class="text-dampad-sm marg-0">Inget BAS-intervall har minst ${kTroskel()} personer.</p>`;
+    if (!j.basIntervall.length) return rubrik + `<p class="text-dampad-sm marg-0">Inget BAS-intervall har minst ${j.kGrans} personer.</p>`;
     const matt = [['p10', 'P10'], ['med', 'Median'], ['p90', 'P90']];
     const huvud = `<thead><tr><th scope="col" rowspan="2">BAS-intervall</th><th scope="colgroup" colspan="2" class="t-mitt">Antal</th>`
         + matt.map(([, e]) => `<th scope="colgroup" colspan="3" class="t-mitt">${e}</th>`).join('') + '</tr><tr>'
@@ -122,7 +122,7 @@ function _abBasTabellHtml(j, forraAr, nuAr) {
     return rubrik + `<div class="table-container"><table class="data-table st-088" id="arsjamforelse-bas">${huvud}<tbody>${j.basIntervall.map(rad).join('')}</tbody></table></div>`
         + (h.rader.length ? `<h4 class="fs-sm marg-10-0-4">Medianlön per BAS-intervall, ${forraAr} och ${nuAr}</h4><div class="chart-container"><div id="chart-arsjamforelse-bas"></div></div>` : '')
         + (h.utelamnade ? `<p class="k-mask-note">${h.utelamnade} BAS-intervall har median bara ett av åren (färre än minsta gruppstorlek, eller fanns inte) och visas inte i diagrammet.</p>` : '')
-        + `<p class="text-dampad-xs marg-4-0-0">Bara intervall med minst ${kTroskel()} personer. Förändringen i kronor och i procent av förra årets värde. Medianen rör sig också när sammansättningen ändras: nyanställda och avgångar påverkar den lika mycket som löneökningar.</p>`;
+        + `<p class="text-dampad-xs marg-4-0-0">Bara intervall med minst ${j.kGrans} personer båda åren (den högre av årens minsta gruppstorlek). Förändringen i kronor och i procent av förra årets värde. Medianen rör sig också när sammansättningen ändras: nyanställda och avgångar påverkar den lika mycket som löneökningar.</p>`;
 }
 
 /** Panelen Jämförelse med förra året i Spara och jämför år. */

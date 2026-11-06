@@ -109,7 +109,7 @@ describe('I1: Löneöversyn visar ingen kostnad för grupper under tröskeln', (
 // rapportunderlagets block (HTML och text), Excel (alla flikar, protokollet, EU-lönerapporten,
 // handlingsplanen, jämförelseexporten, Löneöversyn, Löneöversikten, prioriteringslistan, ZIP-filens
 // rapport.xlsx), Att göra-CSV, varje tabell med CSV-knapp, diagramdata för varje ritat diagram,
-// gruppdossiern för varje valbar grupp och Att göra-punkterna.
+// gruppdossiern för varje valbar grupp, BAS-dossiern för varje valbart intervall och Att göra-punkterna.
 //
 // Vad som INTE prövas, och varför:
 //  - #view-likvardighet och dess egen export: dokumenterat undantag (dataskydd.md § 3, undantag 1).
@@ -140,6 +140,7 @@ describe.each([[10, []], [25, SENT_MELLAN]])('I4: invarianten över flikar och e
             expect(namn, krav).toContain(krav);
         expect(utdata.find(([n]) => n === 'robusthetspanelen')[1]).toMatch(/Kvinnodominerat yrke|Inga kandidatpar/);
         expect(namn.filter(n => n.startsWith('gruppdossier')).length).toBeGreaterThan(5);
+        expect(namn.filter(n => n.startsWith('basdossier')).length).toBeGreaterThan(3);
         // Varje fångad utdata ska ha innehåll, utan undantag: fixturen ger rader i varje tabell med CSV-knapp,
         // spår i varje ritat diagram, minst en iakttagelse och minst en Att göra-punkt. En export som inte
         // skriver något (t.ex. en CSV-knapp utan verkan) ska fälla testet, inte passera som "inget läckte".

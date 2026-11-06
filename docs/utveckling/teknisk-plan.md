@@ -237,7 +237,7 @@ adaptern verkligen delegerar vaktas av `tests/drift.test.js`:
   rätt grupp. Utskriftsfönstret för checklistorna (`printScaffoldView`) läser `:root` och allt från `.dold` till
   stilmallens slut ur den körande stilmallen och lägger in det som byggt stilark (`adoptedStyleSheets`): ett `<style>`-element
   som skriptet skapar blockeras av den ärvda CSP:n (`style-src-elem`), så fönstret var tidigare helt ostilat.
-- **Tester:** Vitest — 2718 tester i 84 filer: rena `src/lib/`-moduler, CSV-parsning, jsdom-röktest
+- **Tester:** Vitest — 2723 tester i 84 filer: rena `src/lib/`-moduler, CSV-parsning, jsdom-röktest
   av varje vy (ADR-7; `tests/smoke.test.js` med det delade fönstret och sju `tests/smoke-*.test.js` per
   område), k-tröskeln i åtta `tests/ktroskel*.test.js` med riggen i `tests/helpers/ktroskel-rigg.js`,
   gränssnittet i `tests/granssnitt*.test.js` (riggen `tests/helpers/granssnitt-rigg.js`) och diagramvyerna i
@@ -1208,7 +1208,10 @@ säger då att löneutvecklingen per BAS-intervall saknas i filen. `jamforArsbok
 förra året, i år och förändringen i kronor och procent; panelen visar tabellen *Löneutveckling per BAS-intervall*
 och en hantel för medianen (`basHantelRader`, en färg: en högre median är en förändring, ingen bedömning), och
 rapportmodellen samma tabell under *Jämförelse med förra året* (`rmBasUtvecklingDelar`, en kolumn per mått så att
-den ryms på en stående sida). Vaktas av `tests/arsbokslut.test.js` och `tests/smoke-arsbokslut.test.js`.
+den ryms på en stående sida). Förra årets fil kan ha sparats med en lägre tröskel än årets: `valideraArsbokslut`
+höjer ett k under 2 till 2, och `jamforArsbokslut` läser båda åren med den högre av årens trösklar (`kGrans`,
+`bokslutMedGrans`): rader per BAS-intervall och yrkesgrupper under den faller bort och könsmedianer nollas, så att
+inget som lämnar verktyget bygger på färre personer än årets tröskel. Vaktas av `tests/arsbokslut.test.js` och `tests/smoke-arsbokslut.test.js`.
 
 **ADR-55 — Löneläget mot båda referenserna, Lönepolitik som avsnitt.** Beslut 2026-10-30. Fliken
 Löneläget (id `benchmark`) samlar organisationens löner mot det de jämförs med, i tre avsnitt: överblicken (`src/lib/referenser.js`,
@@ -1302,14 +1305,17 @@ ofta per BAS-intervall, och handläggaren behövde hämta varje intervall ur fem
 BAS-rader, Lönestrukturs tabell per BAS-intervall, gruppdossiern, markeringsraden och sökrutan, där en BAS-träff
 får ett eget alternativ under sig så att listboxens pilar och Retur når det) och har ingen post i menyn. Innehållet
 står i rapportens ordning: nyckeltal och läget mot ställningstagandets rad för intervallet (`policyFor(null, bas)`),
-yrkesgrupperna ur `likaArbeteGrupper` räknade på intervallets rader med Lika arbetes gränser och status, paren ur
+yrkesgrupperna ur `likaArbeteGrupper` med antal och medianer räknade på intervallets rader och statusen ur Lika
+arbetes grupp för hela yrket (Lika arbete grupperar per yrke över alla BAS-intervall; ett yrke som också finns i
+andra intervall får noten *Status gäller hela yrket (N personer), som i Lika arbete; yrket finns också i BAS …*), paren ur
 `likvardighetResultat()` där det kvinnodominerade yrket ligger i intervallet (`_parForRedovisning`), medianlön per
 åldersgrupp (–34, 35–49, 50–, samma gränser som rapportens åldersgruppstabell) och kön, och intervallets rad ur
 förra årets bokslut (ADR-54, `jamforBasIntervall`). Ingen ny statistik. Skärmen följer läget som övriga flikar
 (ADR-51); könsuppdelade mått bara där båda könen når k, i åldersgrupperna per grupp. Textversionen
 (`basdossierText`) lämnar verktyget och byggs därför i exportläget: yrkesgrupper under k står bara med namn, och ett
-intervall under k ger ingen text. En yrkesgrupp som finns i flera BAS-intervall redovisas med sina rader i
-intervallet, som i gruppdossiern (AID × BAS). Vaktas av `tests/basdossier.test.js`.
+intervall under k ger ingen text. Förra årets rad läses med den högre av filens och den inställda tröskeln
+(`bokslutMedGrans`, se ADR-54). Vaktas av `tests/basdossier.test.js` och av k-invarianten i
+`tests/ktroskel-invarianter.test.js`, som prövar texten för varje valbart intervall vid 10 och 25.
 
 ## 9. Öppna punkter
 

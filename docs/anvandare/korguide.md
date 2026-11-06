@@ -187,7 +187,8 @@ också när det är hopfällt.
 - **BAS-dossiern** samlar ett BAS-intervall i rapportens ordning, så att avsnittet om intervallet kan skrivas utan att
   hämta det ur fem flikar: nyckeltalen (antal, kvinnor och män, median, P10–P90) och läget mot ställningstagandets
   rad för intervallet; yrkesgrupperna i intervallet med antal, medianer per kön, kvinnors median i procent av mäns
-  och samma status som i Lika arbete, med en knapp till varje grupps dossier; kandidatparen i Likvärdigt arbete där
+  och samma status som i Lika arbete (statusen gäller hela yrket; finns yrket också i andra intervall säger en not
+  det), med en knapp till varje grupps dossier; kandidatparen i Likvärdigt arbete där
   det kvinnodominerade yrket ligger i intervallet, och paren *Lägre krav, högre lön*; medianlönen per åldersgrupp
   (–34, 35–49, 50–) och kön, med en länk till Ålder & karriär med intervallet valt; och intervallets rad ur förra
   årets bokslut när en konfigurationsfil från förra året är inläst. Den öppnas med knappen *BAS-dossier* i

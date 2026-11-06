@@ -258,3 +258,50 @@ describe('BAS-dossiern: förra året och textversionen', () => {
         expect(w.eval("basdossierText('E')")).toBeNull();
     });
 });
+
+describe('BAS-dossiern: status som i Lika arbete, och sökrutans rad', () => {
+    it('ett yrke som finns i två BAS-intervall får Lika arbetes status för hela yrket, med en not om det', () => {
+        const w = demo();
+        // Flytta undersköterskorna med lön under 37 000 kr från BAS C till BAS D: yrket finns då i två
+        // intervall, och räknat på C:s rader blir statusen Balanserat medan Lika arbete säger Följ upp för hela yrket.
+        w.eval(`(() => { for (const r of state.data) if (r.aid === '207011' && r.bas === 'C' && r.lon < 37000) r.bas = 'D'; invalidateStatCaches(); populateSelects(); })()`);
+        const hela = w.eval("_ruLikaArbeteGrupper(getData(), { k: kTroskel(), troskel: 5 }).grupper.find(g => g.yrke === '207011 Undersköterska')");
+        const helaStatus = hela.samladMedian ? 'liten' : hela.flaggad ? 'granska' : hela.gapPct > 3 ? 'folj' : 'balanserat';
+        const lokal = w.eval("_ruLikaArbeteGrupper(getData().filter(r => r.bas === 'C'), { k: kTroskel(), troskel: 5 }).grupper.find(g => g.yrke === '207011 Undersköterska')");
+        const d = w.eval("buildBasdossier('C')");
+        const y = d.yrken.find(x => x.yrke === '207011 Undersköterska');
+        expect(y.status).toBe(helaStatus);
+        expect(w.eval('_bdStatus')(lokal)).not.toBe(helaStatus);   // räknat på intervallets rader hade statusen blivit en annan
+        expect(y.tot).toBe(lokal.tot);                       // antal och medianer är intervallets
+        expect(y.medKv).toBe(lokal.medKv);
+        expect(y.helaTot).toBe(hela.tot);
+        expect(y.ocksaI).toEqual(['D']);
+        // Samma status som yrkesgruppstabellen i Lika arbete.
+        w.__renderTabContent('matrix');
+        const eu = [...w.document.querySelectorAll('#matrix-table tbody tr')].map(tr => tr._euRow).find(r => r && r.yrke === '207011 Undersköterska');
+        expect({ granska: 'granska', folj: 'folj', balanserat: 'balanserat' }[y.status]).toBe(eu.niva);
+        w.eval("openBasdossier('C')");
+        expect(w.document.getElementById('basdossier-body').textContent).toContain(`Status gäller hela yrket (${hela.tot} personer), som i Lika arbete; yrket finns också i BAS D`);
+        w.eval('closeBasdossier()');
+        // Texten (exportläget, k = 10): gruppens samlade median och noten (Lika arbetes status i exportläget är
+        // "för liten", eftersom yrket har tre män).
+        expect(w.eval("basdossierText('C')")).toMatch(/Undersköterska.*Status gäller hela yrket \(20 personer\), som i Lika arbete; yrket finns också i BAS D/);
+    });
+    it('sökrutans rad finns bara för intervall som går att öppna, och ett intervall som fallit bort sägs', () => {
+        const w = demo();
+        w.eval('sattKTroskel(25, { fraga: false })');
+        // På skärmen är alla intervall valbara; i exportläget (förhandsvisningen) bara de som når 25.
+        w.__state.kLage = 'export';
+        skriv(w, 'bas e');
+        expect(w.document.querySelector('#sok-grupp-lista [data-sok-basdossier="E"]')).toBeNull();
+        const meddelanden = [];
+        w.eval('window.announceToScreenReader = undefined');
+        w.__ann = m => meddelanden.push(m);
+        w.eval('const _org = announceToScreenReader; announceToScreenReader = m => { window.__ann(m); }');
+        w.eval("openBasdossier('E')");
+        expect(w.document.getElementById('basdossier-select').value).toBe('A');
+        expect(meddelanden.join(' ')).toMatch(/BAS E.*visas inte.*BAS A/);
+        w.eval('closeBasdossier()');
+        w.__state.kLage = 'skarm';
+    });
+});

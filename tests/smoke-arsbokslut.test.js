@@ -3,7 +3,7 @@
 // Årsbokslutet i verktyget (ADR-54): byggs i exportläget, följer med konfigurationsfilen, och panelen i Dokumentera
 // visar skillnaden mot förra året. Riggen har grupper om 20 (synliga vid 10) och om 6 (dolda vid 10).
 import { describe, it, expect, vi } from 'vitest';
-import { fonster, SENT_SMA, STORA, TOPP, MELLAN, SENT_MELLAN } from './helpers/ktroskel-rigg.js';
+import { fonster, normalisera, SENT_SMA, STORA, TOPP, MELLAN, SENT_MELLAN } from './helpers/ktroskel-rigg.js';
 import { createAppWindow } from './helpers/app-harness.js';
 
 vi.setConfig({ testTimeout: 60000 });
@@ -201,4 +201,36 @@ describe('löneutveckling per BAS-intervall i bokslutet, i Spara och jämför å
         expect(JSON.stringify(tab.rader[0])).toContain('+300 kr');
         for (const s of SENT_SMA) expect(JSON.stringify(avsnitt)).not.toContain(String(s));
     });
+});
+
+describe('ett bokslut sparat med lägre tröskel än årets', () => {
+    // Förra årets fil med k = 1 eller 5; i år gäller 10. Intervall och kön under 10 får inte lämna verktyget.
+    const SMALL = [77771, 77777, 77779, 66661, 66663];
+    const lagK = k => {
+        const a = fonster(null);
+        const cfg = JSON.parse(JSON.stringify(a.__buildConfigSnapshot()));
+        cfg.arsbokslut.ar -= 1; cfg.arsbokslut.skapat = `${cfg.arsbokslut.ar}-11-01`; cfg.arsbokslut.k = k;
+        cfg.arsbokslut.basIntervall = cfg.arsbokslut.basIntervall.filter(r => r.bas !== MELLAN[0] && r.bas !== STORA[0]);
+        cfg.arsbokslut.basIntervall.push(k === 1 ? { bas: MELLAN[0], n: 1, nKv: 1, nMa: 0, p10: 77771, med: 77777, p90: 77779 }
+            : { bas: MELLAN[0], n: 7, nKv: 4, nMa: 3, p10: 77771, med: 77777, p90: 77779 });
+        cfg.arsbokslut.basIntervall.push({ bas: STORA[0], n: 150, nKv: k === 1 ? 1 : 6, nMa: 149, p10: 24000, med: 24400, p90: 24800, medKv: 66661, medMa: 66663 });
+        const w = fonster(null); w.__cfg = cfg; w.eval('applyConfigSnapshot(window.__cfg)');
+        return w;
+    };
+    for (const k of [1, 5]) {
+        it(`k = ${k} i filen: inga små intervall eller kön i panelen, i rapportmodellen eller i BAS-dossierns text`, () => {
+            const w = lagK(k);
+            expect(w.__state.forraArsbokslut.k).toBe(Math.max(2, k));
+            w.__renderTabContent('arbetet');
+            const panel = normalisera(w.document.getElementById('arsjamforelse').textContent);
+            const modell = normalisera(JSON.stringify(w.eval('medExportLage(() => rapportModell())').avsnitt.find(a => a.id === 'arsjamforelse')));
+            const texter = [MELLAN[0], STORA[0]].map(b => normalisera(w.eval(`basdossierText(${JSON.stringify(b)})`) || ''));
+            for (const [namn, t] of [['panelen', panel], ['rapportmodellen', modell], ...texter.map((t, i) => [`basdossierText ${i}`, t])]) {
+                for (const s of SMALL) expect(t, `${namn}: ${s}`).not.toContain(String(s));
+            }
+            expect(panel).toContain('24400');   // intervallet står kvar, utan könsmedianerna
+            expect(texter[1]).toContain('24400');
+            expect(modell).toMatch(/minst 10 personer/);
+        });
+    }
 });

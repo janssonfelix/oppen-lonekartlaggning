@@ -92,8 +92,10 @@ function _sokRita() {
     if (!falt || !lista) return;
     const text = /** @type {HTMLInputElement} */ (falt).value.trim();
     // Under varje BAS-träff en rad som öppnar BAS-dossiern: ett eget alternativ, så att pilarna och Retur når det.
+    const kand = typeof basdossierKandidater === 'function' && _sokHarData() ? basdossierKandidater() : [];
     const grupper = sokTraffar(text).flatMap(t => {
         const bas = t.nyckel.startsWith('bas:') ? t.nyckel.slice(4) : null;
+        if (bas != null && !kand.some(x => x.bas === bas)) return [{ ...t, typ: 'grupp' }];   // raden öppnar bara ett intervall som går att öppna
         return [{ ...t, typ: 'grupp' }, ...(bas != null ? [{ typ: 'basdossier', bas, namn: `Öppna BAS-dossiern för ${t.namn}` }] : [])];
     });
     const funktioner = sokFunktionsTraffar(text).map(p => ({ ...p, typ: 'funktion' }));

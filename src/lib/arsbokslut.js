@@ -8,6 +8,8 @@
 
 export const ARSBOKSLUT_VERSION = 1;
 const MAX_TEXT = 200;
+/** Den lägsta tröskel ett bokslut kan bära (samma som verktygets K_MIN): ett lägre k i filen höjs hit. */
+export const ARSBOKSLUT_K_MIN = 2;
 
 const _tal = v => (typeof v === 'number' && isFinite(v) ? v : null);
 const _heltal = (v, lo, hi) => (Number.isInteger(v) && v >= lo && v <= hi ? v : null);
@@ -21,7 +23,8 @@ const _text = v => (typeof v === 'string' ? v.trim().slice(0, MAX_TEXT) : '');
 export function valideraArsbokslut(o) {
     if (!o || typeof o !== 'object' || Array.isArray(o)) return null;
     const ar = _heltal(o.ar, 2000, 2100);
-    const k = _heltal(o.k, 1, 1000);
+    const kFil = _heltal(o.k, 1, 1000);
+    const k = kFil == null ? null : Math.max(ARSBOKSLUT_K_MIN, kFil);
     const skapat = typeof o.skapat === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(o.skapat) ? o.skapat : null;
     if (ar == null || k == null || !skapat) return null;
     const n = o.nyckeltal && typeof o.nyckeltal === 'object' ? o.nyckeltal : {};
@@ -115,13 +118,33 @@ export const ARSBOKSLUT_NYCKELTAL = Object.freeze([
 ]);
 
 /**
+ * Förra årets bokslut med den gräns som gäller nu: filen kan ha sparats med en lägre tröskel än årets, och det som
+ * jämförelsen visar lämnar verktyget med årets. Rader per BAS-intervall under gränsen faller bort, könsmedianer
+ * nollas där ett kön är under den, yrkesgrupper där ett kön är under den faller bort, och nyckeltalens
+ * könsuppdelade mått nollas på samma sätt.
+ * @param {NonNullable<ReturnType<typeof valideraArsbokslut>>} b
+ * @param {number} k
+ */
+export function bokslutMedGrans(b, k) {
+    if (!b || !(k > b.k)) return b;
+    const n = b.nyckeltal, konOk = n.nKv >= k && n.nMa >= k;
+    return { ...b, k,
+        nyckeltal: { ...n, medKv: konOk ? n.medKv : null, medMa: konOk ? n.medMa : null, kvotPct: konOk ? n.kvotPct : null },
+        grupper: b.grupper.filter(g => g.nKv >= k && g.nMa >= k),
+        basIntervall: Array.isArray(b.basIntervall) ? _valideraBasIntervall(b.basIntervall, k) : b.basIntervall };
+}
+
+/**
  * Jämför förra årets bokslut med årets: nyckeltal rad för rad, flaggade yrkesgrupper (kvar, nya, borta) och
- * Att göra-punkter (vad som bockades av förra året, vilka av förra årets punkter som är klara nu).
+ * Att göra-punkter (vad som bockades av förra året, vilka av förra årets punkter som är klara nu). Båda åren läses
+ * med den högre av årens trösklar (kGrans, bokslutMedGrans).
  * @param {ReturnType<typeof valideraArsbokslut>} forra
  * @param {ReturnType<typeof valideraArsbokslut>} nu
  */
 export function jamforArsbokslut(forra, nu) {
     if (!forra || !nu) return null;
+    const kGrans = Math.max(forra.k, nu.k), sammaK = forra.k === nu.k;
+    forra = bokslutMedGrans(forra, kGrans); nu = bokslutMedGrans(nu, kGrans);
     const nyckeltal = ARSBOKSLUT_NYCKELTAL.map(([nyckel, etikett, typ]) => {
         const a = forra.nyckeltal[nyckel], b = nu.nyckeltal[nyckel];
         return { nyckel, etikett, typ, forra: a, nu: b, diff: typeof a === 'number' && typeof b === 'number' ? b - a : null };
@@ -140,7 +163,8 @@ export function jamforArsbokslut(forra, nu) {
         grupper: { kvar: sortera(kvar), nya: sortera(nya), borta: sortera(borta), antalForra: forra.grupper.length, antalNu: nu.grupper.length },
         punkter: { totaltForra: forra.punkter.length, klaraForra: forra.punkter.filter(p => p.klar).length,
                    totaltNu: nu.punkter.length, klaraNu: nu.punkter.filter(p => p.klar).length, kvarFranForra },
-        samma_k: forra.k === nu.k,
+        samma_k: sammaK,
+        kGrans,
         basIntervall: jamforBasIntervall(forra.basIntervall, nu.basIntervall),
     };
 }

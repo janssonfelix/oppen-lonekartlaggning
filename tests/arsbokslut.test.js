@@ -163,3 +163,26 @@ describe('årsbokslut: löneutveckling per BAS-intervall (basIntervall)', () => 
         expect(basHantelRader(null)).toEqual({ rader: [], utelamnade: 0 });
     });
 });
+
+describe('årsbokslut: förra årets fil kan ha sparats med en lägre tröskel', () => {
+    it('k under 2 i filen höjs till 2, och jämförelsen tillämpar den högre av årens gränser på förra årets rader', () => {
+        expect(valideraArsbokslut({ ar: 2025, skapat: '2025-01-01', k: 1 }).k).toBe(2);
+        const forra = bokslut(2025, { k: 5,
+            grupper: [{ yrke: 'Liten (BAS A)', nKv: 6, nMa: 7, medKv: 66661, medMa: 66663, gapPct: -3, flaggad: true }],
+            basIntervall: [
+                { bas: 'A', n: 7, nKv: 4, nMa: 3, p10: 77771, med: 77777, p90: 77779 },
+                { bas: 'B', n: 150, nKv: 6, nMa: 144, p10: 24000, med: 25000, p90: 27000, medKv: 66661, medMa: 25100 },
+            ] });
+        const nu = bokslut(2026, { basIntervall: [{ bas: 'B', n: 150, nKv: 75, nMa: 75, p10: 24500, med: 25500, p90: 27500, medKv: 25400, medMa: 25600 }] });
+        expect(forra.basIntervall).toHaveLength(2);   // giltiga med filens k = 5
+        const j = jamforArsbokslut(forra, nu);
+        expect(j.kGrans).toBe(10);
+        expect(j.basIntervall.map(r => r.bas)).toEqual(['B']);
+        expect(j.basIntervall[0].medKv).toEqual({ forra: null, nu: 25400, diff: null, pct: null });
+        expect(j.basIntervall[0].med.forra).toBe(25000);
+        const text = JSON.stringify(j);
+        for (const s of [77771, 77777, 77779, 66661, 66663]) expect(text).not.toContain(String(s));
+        expect(j.grupper.borta).toEqual([]);   // Liten (BAS A) hade 6 kvinnor: under årets gräns
+        expect(hantelRader(j).rader.map(r => r.namn)).not.toContain('Liten (BAS A)');
+    });
+});
