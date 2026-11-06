@@ -405,6 +405,8 @@ console.log('\n── Lika arbete i formen resultat först ──');
     await page.keyboard.press('Enter');
     await page.waitForTimeout(300);
     ok(await page.evaluate(() => document.getElementById('avsnitt-ls-kon').open), 'Enter fäller ut avsnittet');
+    // Avsnitten hör till Lönestruktur: fäll in dem igen, annars mäter kontrollen av Lönestruktur nedan dem utfällda.
+    await page.evaluate(() => ['avsnitt-ls-bas', 'avsnitt-ls-kon'].forEach(id => { document.getElementById(id).open = false; }));
 }
 
 console.log('\n── Ålder & karriär: ett urval för hela fliken ──');

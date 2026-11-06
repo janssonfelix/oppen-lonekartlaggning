@@ -61,6 +61,15 @@ describe('Uppgift 2: Lönestruktur', () => {
         for (const id of ['chart-skevhet-overview', 'chart-skevhet-andel', 'chart-perbas-gap'])
             expect(w.eval('RM_DIAGRAM').find(r => r.id === id).flik, id).toBe('struktur');
     });
+    it('bara representationen är utfälld i Lönestruktur efter inläsning', () => {
+        const w = createAppWindow(); w.__loadDemoData();
+        const d = w.document;
+        d.querySelector('.nav-item[data-tab="struktur"]').click();
+        const oppna = ['view-struktur', 'view-skevhet', 'view-regression']
+            .flatMap(id => [...d.getElementById(id).querySelectorAll('details.avsnitt')])
+            .filter(a => a.open).map(a => a.id);
+        expect(oppna).toEqual(['avsnitt-st-representation']);
+    });
     it('navigateTo("skevhet") och navigateTo("regression") öppnar Lönestruktur', () => {
         const w = createAppWindow(); w.__loadDemoData();
         for (const alias of ['skevhet', 'regression']) {
