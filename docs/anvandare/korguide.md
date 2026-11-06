@@ -132,6 +132,9 @@ också när det är hopfällt.
 
 - **Sök** (fältet i sidhuvudet, snedstreck eller Ctrl+K) hittar ett yrke eller BAS-intervall och markerar det i alla
   diagram och tabeller. Ett klick på en grupp i ett diagram eller en tabellrad gör samma sak; Escape tar bort markeringen.
+  Sökningen hittar också funktioner, också innan lönefilen är inläst: flikarnas avsnitt (*ögonblicksbild*, *förra
+  året*, *regression*), exporterna och fälten i Inställningar (*PO-påslag*, *minsta gruppstorlek*). Ett avsnitt i en
+  flik som kräver lönefilen säger *kräver lönefil* och leder till Filer och kvalitet.
 - **Inställningar** (sidhuvudet) har minsta gruppstorlek, kommun eller region, **lönemånaden** (skrivs ovanför
   tabellerna per AID-kod och BAS-intervall; tom skrivs ut som *inte angiven*), och valet mellan **vägledande läge**
   (förklaringarna syns) och **kompakt läge** (förklaringarna är undanfällda — för den som kan verktyget).

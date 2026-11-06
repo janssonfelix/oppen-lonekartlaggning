@@ -409,11 +409,10 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         const d = w.document, falt = d.getElementById('sok-grupp'), lista = d.getElementById('sok-grupp-lista');
         const skriv = t => { falt.value = t; falt.dispatchEvent(new w.Event('input', { bubbles: true })); };
         const tangent = (el, key, extra = {}) => el.dispatchEvent(new w.KeyboardEvent('keydown', { key, bubbles: true, cancelable: true, ...extra }));
-        // Utan data finns inget att söka i: fältet visas inte.
-        expect(d.getElementById('sok-ruta').hidden).toBe(true);
+        // Utan data finns inga grupper att söka i; fältet syns ändå och hittar funktionerna (tests/sok-funktioner.test.js).
+        expect(d.getElementById('sok-ruta').hidden).toBe(false);
         expect(w.eval('sokKandidater()')).toEqual([]);
         w.__loadDemoData();
-        expect(d.getElementById('sok-ruta').hidden).toBe(false);
         expect(falt.getAttribute('role')).toBe('combobox');
         // Kandidaterna är BAS-intervall och yrkesgrupper med minst tröskeln personer — samma urval som gruppdossiern.
         const kand = w.eval('sokKandidater()');
@@ -476,11 +475,12 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         expect(efter.some(k => k.n < 25)).toBe(true);                // demodatan har grupper med 20–24 personer
         skriv('finnsintealls');
         expect(lista.querySelectorAll('[role="option"]')).toHaveLength(0);
-        expect(lista.textContent).toBe('Ingen grupp matchar.');
-        // Rensning tar bort fältet och träffarna.
+        expect(lista.textContent).toBe('Ingen grupp eller funktion matchar.');
+        // Rensning stänger träfflistan; fältet står kvar och hittar funktionerna.
         w.eval('_rensaAllData()');
-        expect(d.getElementById('sok-ruta').hidden).toBe(true);
+        expect(d.getElementById('sok-ruta').hidden).toBe(false);
         expect(lista.hidden).toBe(true);
+        expect(w.eval('sokKandidater()')).toEqual([]);
     });
     it('exportgrinden — en flik som ritades före en ändrad tröskel ritas om innan något läses ur den', () => {
         const w = createAppWindow();

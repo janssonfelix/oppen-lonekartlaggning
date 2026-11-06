@@ -443,7 +443,7 @@ function ovRitaLage() {
     const d = (() => { try { return getData(); } catch (_e) { return []; } })();
     const har = d.length > 0;
     vy.classList.toggle('har-data', har);
-    if (typeof sokUppdatera === 'function') sokUppdatera();   // sökfältet i sidhuvudet finns bara när det finns grupper att söka i
+    if (typeof sokUppdatera === 'function') sokUppdatera();   // sökfältet i sidhuvudet: en öppen träfflista stängs när lönefilen läses in eller rensas
     if (har !== _ovHadeData) {
         // Läget byter: processen är utfälld före inläsning och hopfälld efter, och uppladdningen fälls ihop.
         const proc = document.getElementById('avsnitt-ov-process');
