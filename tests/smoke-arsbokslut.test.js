@@ -3,7 +3,7 @@
 // Årsbokslutet i verktyget (ADR-54): byggs i exportläget, följer med konfigurationsfilen, och panelen i Dokumentera
 // visar skillnaden mot förra året. Riggen har grupper om 20 (synliga vid 10) och om 6 (dolda vid 10).
 import { describe, it, expect, vi } from 'vitest';
-import { fonster, SENT_SMA } from './helpers/ktroskel-rigg.js';
+import { fonster, SENT_SMA, STORA, TOPP, MELLAN, SENT_MELLAN } from './helpers/ktroskel-rigg.js';
 import { createAppWindow } from './helpers/app-harness.js';
 
 vi.setConfig({ testTimeout: 60000 });
@@ -84,7 +84,7 @@ describe('årsjämförelsen i rapporten, rapportunderlaget och som hantel (ADR-5
         const tabeller = avsnitt.delar.filter(p => p.typ === 'tabell');
         expect(tabeller[0].kolumner.map(c => c.rubrik)).toEqual(['Mått', String(cfg.arsbokslut.ar), String(cfg.arsbokslut.ar + 1), 'Skillnad']);
         expect(avsnitt.delar.some(p => p.typ === 'diagram' && p.id === 'chart-arsjamforelse')).toBe(true);
-        expect(avsnitt.delar.filter(p => p.typ === 'rubrik').map(p => p.text)).toEqual(['Lika arbete', 'Att göra']);
+        expect(avsnitt.delar.filter(p => p.typ === 'rubrik').map(p => p.text)).toEqual(['Löneutveckling per BAS-intervall', 'Lika arbete', 'Att göra']);
         for (const s of SENT_SMA) expect(JSON.stringify(avsnitt)).not.toContain(String(s));
         w.eval("sattRapportUrval('ledning')");
         expect(w.eval('rapportModell()').avsnitt.map(a => a.id)).toContain('arsjamforelse');
@@ -120,5 +120,85 @@ describe('årsjämförelsen i rapporten, rapportunderlaget och som hantel (ADR-5
         // Rapportens bild görs ur samma figur (rmDiagramBild ritar fliken och läser den; bilden i sig går inte att göra i jsdom).
         expect(w.eval("diagramRitat(document.getElementById('chart-arsjamforelse'))")).toBe(true);
         expect(w.eval("RM_DIAGRAM.find(g => g.id === 'chart-arsjamforelse').om()")).toBe(true);
+    });
+});
+
+describe('löneutveckling per BAS-intervall i bokslutet, i Spara och jämför år och i rapporten', () => {
+    // Förra årets bokslut ur årets: medianen 500 kr lägre i varje intervall, P10 och P90 oförändrade.
+    const forraArs = (cfg, andra) => {
+        cfg.arsbokslut.ar -= 1; cfg.arsbokslut.skapat = `${cfg.arsbokslut.ar}-11-01`;
+        if (andra) andra(cfg.arsbokslut);
+        return cfg;
+    };
+    const lasIn = (w, cfg) => { w.__cfg = cfg; w.eval('applyConfigSnapshot(window.__cfg)'); };
+
+    it('bokslutet bär en rad per BAS-intervall med minst k personer, byggd i exportläget; intervallen om 6 saknas', () => {
+        const w = fonster(null);
+        const b = w.eval('byggArsbokslutNu()');
+        expect(b.basIntervall.map(r => r.bas)).toEqual([...STORA, TOPP, ...MELLAN].sort());
+        const a = b.basIntervall.find(r => r.bas === MELLAN[0]);
+        expect(a).toMatchObject({ n: 20, nKv: 10, nMa: 10, p10: SENT_MELLAN[0], med: SENT_MELLAN[0], p90: SENT_MELLAN[0], medKv: SENT_MELLAN[0], medMa: SENT_MELLAN[0] });
+        for (const s of SENT_SMA) expect(JSON.stringify(b.basIntervall)).not.toContain(String(s));
+        expect(w.__state.kLage).toBe('skarm');
+    });
+    it('ett intervall där kvinnorna är 9 får inga könsmedianer i bokslutet', () => {
+        const w = fonster(null);
+        // Ett intervall med 9 kvinnor och 21 män; kvinnornas median (39 004) får inte stå i bokslutet.
+        for (let i = 0; i < 30; i++) w.__state.data.push({ bas: 'J', kon: i < 9 ? 'kvinna' : 'man', lon: i < 9 ? 39000 + i : 40000 + i, alder: 30 + i, yrke: '7000 Nioyrke', aid: '7000', yrkeLabel: 'Nioyrke', enhet: '' });
+        w.eval('invalidateStatCaches(); populateSelects();');
+        const r = w.eval('byggArsbokslutNu()').basIntervall.find(x => x.bas === 'J');
+        expect(r).toMatchObject({ n: 30, nKv: 9, nMa: 21, medKv: null, medMa: null });
+        expect(JSON.stringify(r)).not.toContain('39004');
+    });
+    it('med demodatan och ett konstruerat förra-års-bokslut visar panelen tabellen med antal och hanteln för medianen', () => {
+        const a = createAppWindow(); a.__loadDemoData();
+        const cfg = forraArs(JSON.parse(JSON.stringify(a.__buildConfigSnapshot())), ab => ab.basIntervall.forEach(r => { if (typeof r.med === 'number') r.med -= 500; }));
+        const w = createAppWindow(); w.__loadDemoData();
+        lasIn(w, cfg);
+        w.__renderTabContent('arbetet');
+        const host = w.document.getElementById('arsjamforelse');
+        expect(host.textContent).toContain('Löneutveckling per BAS-intervall');
+        const tab = host.querySelector('#arsjamforelse-bas');
+        expect(tab).not.toBeNull();
+        const rubriker = [...tab.querySelectorAll('thead th')].map(th => th.textContent.trim());
+        expect(rubriker[0]).toBe('BAS-intervall');
+        expect(rubriker).toContain('Antal');
+        expect(rubriker.filter(r => /^Median/.test(r)).length).toBeGreaterThan(0);
+        const rader = [...tab.querySelectorAll('tbody tr')];
+        expect(rader.length).toBe(cfg.arsbokslut.basIntervall.length);
+        expect(rader[0].textContent).toContain('+500 kr');
+        const fig = w.document.getElementById('chart-arsjamforelse-bas')._figur;
+        expect(fig).toBeTruthy();
+        expect(fig.lager[1].serie).toBe(String(cfg.arsbokslut.ar));
+        expect(fig.lager[0].data.length).toBe(cfg.arsbokslut.basIntervall.filter(r => typeof r.med === 'number').length);
+        expect(fig.lager[0].data[0].r.efter - fig.lager[0].data[0].r.fore).toBeCloseTo(500, 5);
+        expect(w.__state.kLage).toBe('skarm');
+    });
+    it('ett bokslut utan fältet (äldre fil) ger en rad om att det saknas, och ingen tabell eller hantel', () => {
+        const a = createAppWindow(); a.__loadDemoData();
+        const cfg = forraArs(JSON.parse(JSON.stringify(a.__buildConfigSnapshot())), ab => { delete ab.basIntervall; });
+        const w = createAppWindow(); w.__loadDemoData();
+        lasIn(w, cfg);
+        expect(w.__state.forraArsbokslut.basIntervall).toBeNull();
+        w.__renderTabContent('arbetet');
+        const host = w.document.getElementById('arsjamforelse');
+        expect(host.textContent).toMatch(/Löneutveckling per BAS-intervall.*saknas i förra årets fil/s);
+        expect(host.querySelector('#arsjamforelse-bas')).toBeNull();
+        expect(w.document.getElementById('chart-arsjamforelse-bas')).toBeNull();
+        expect(w.eval('rapportModell()').avsnitt.find(x => x.id === 'arsjamforelse').delar.some(p => p.typ === 'rubrik' && p.text === 'Löneutveckling per BAS-intervall')).toBe(false);
+    });
+    it('rapportmodellen har tabellen under avsnittet Jämförelse med förra året, med antal och förändringen', () => {
+        const a = fonster(null);
+        const cfg = forraArs(JSON.parse(JSON.stringify(a.__buildConfigSnapshot())), ab => ab.basIntervall.forEach(r => { r.med -= 300; }));
+        const w = fonster(null); lasIn(w, cfg);
+        const avsnitt = w.eval('rapportModell()').avsnitt.find(x => x.id === 'arsjamforelse');
+        const i = avsnitt.delar.findIndex(p => p.typ === 'rubrik' && p.text === 'Löneutveckling per BAS-intervall');
+        expect(i).toBeGreaterThan(-1);
+        const tab = avsnitt.delar.slice(i).find(p => p.typ === 'tabell');
+        expect(tab.kolumner[0].rubrik).toBe('BAS-intervall');
+        expect(tab.kolumner.map(c => c.rubrik)).toContain('Antal');
+        expect(tab.rader.length).toBe(cfg.arsbokslut.basIntervall.length);
+        expect(JSON.stringify(tab.rader[0])).toContain('+300 kr');
+        for (const s of SENT_SMA) expect(JSON.stringify(avsnitt)).not.toContain(String(s));
     });
 });

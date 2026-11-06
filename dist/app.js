@@ -8574,7 +8574,8 @@ const __mirrorArsbokslut = (() => {
 // ---- Årsbokslut (ADR-54): jämförelse mellan år ----
 // Ett k-skyddat sammandrag av årets kartläggning som konfigurationsfilen bär, så att nästa års kartläggning kan
 // jämföras mot det. Bara aggregat: nyckeltal för hela organisationen, en rad per jämförbar yrkesgrupp (båda könen
-// minst k) och Att göra-punkternas läge. Aldrig individer, aldrig lönedata. Modulen är ren: ingen DOM, inget state.
+// minst k), en rad per BAS-intervall med minst k personer (basIntervall; könsmedianerna bara när båda könen når k)
+// och Att göra-punkternas läge. Aldrig individer, aldrig lönedata. Modulen är ren: ingen DOM, inget state.
 
 const ARSBOKSLUT_VERSION = 1;
 const MAX_TEXT = 200;
@@ -8617,12 +8618,63 @@ function valideraArsbokslut(o) {
         const id = _text(p.id); if (!id) return null;
         return { id, titel: _text(p.titel), kategori: _text(p.kategori), klar: p.klar === true };
     }).filter(Boolean);
-    return { version: ARSBOKSLUT_VERSION, ar, skapat, k, verktyg: _text(o.verktyg), nyckeltal, grupper, punkter };
+    return { version: ARSBOKSLUT_VERSION, ar, skapat, k, verktyg: _text(o.verktyg), nyckeltal, grupper, punkter,
+        basIntervall: _valideraBasIntervall(o.basIntervall, k) };
+}
+
+/**
+ * Löneläget per BAS-intervall: en rad per intervall med minst k personer. P10, median och P90 för hela intervallet;
+ * kvinnors och mäns median bara när båda könen når k. Ett intervall under k faller bort helt. Fältet är valfritt:
+ * ett bokslut från en äldre version saknar det och får null (inte en tom lista, som betyder att inget intervall
+ * nådde k).
+ * @param {any} lista
+ * @param {number} k
+ */
+function _valideraBasIntervall(lista, k) {
+    if (!Array.isArray(lista)) return null;
+    return lista.map(r => {
+        if (!r || typeof r !== 'object') return null;
+        const bas = _text(r.bas).slice(0, 20);
+        const nKv = _heltal(r.nKv, 0, 10_000_000) ?? 0, nMa = _heltal(r.nMa, 0, 10_000_000) ?? 0;
+        const n = _heltal(r.n, 0, 10_000_000);
+        if (!bas || n == null || n < k) return null;
+        const konOk = nKv >= k && nMa >= k;
+        return { bas, n, nKv, nMa, p10: _tal(r.p10), med: _tal(r.med), p90: _tal(r.p90),
+            medKv: konOk ? _tal(r.medKv) : null, medMa: konOk ? _tal(r.medMa) : null };
+    }).filter(Boolean);
 }
 
 /** Bygger ett årsbokslut ur delarna (samma form som valideraArsbokslut ger); null när delarna inte räcker. */
-function byggArsbokslut({ ar, skapat, k, verktyg, nyckeltal, grupper, punkter }) {
-    return valideraArsbokslut({ ar, skapat, k, verktyg, nyckeltal, grupper, punkter });
+function byggArsbokslut({ ar, skapat, k, verktyg, nyckeltal, grupper, punkter, basIntervall }) {
+    return valideraArsbokslut({ ar, skapat, k, verktyg, nyckeltal, grupper, punkter, basIntervall });
+}
+
+/** Måtten per BAS-intervall i jämförelsen: nyckel och etikett. Alla är kronor. */
+const ARSBOKSLUT_BAS_MATT = Object.freeze([
+    ['p10', 'P10'], ['med', 'Median'], ['p90', 'P90'], ['medKv', 'Median kvinnor'], ['medMa', 'Median män'],
+]);
+
+/** Ett mått båda åren: förra året, i år, skillnaden och skillnaden i procent av förra året (null när ett saknas). */
+function _forandring(a, b) {
+    const ok = typeof a === 'number' && typeof b === 'number';
+    return { forra: a ?? null, nu: b ?? null, diff: ok ? b - a : null, pct: ok && a !== 0 ? (b - a) / a * 100 : null };
+}
+
+/**
+ * Löneutvecklingen per BAS-intervall: en rad per intervall som finns något av åren (årets ordning först, sedan de
+ * som bara fanns förra året), med antal och varje mått förra året, i år och förändringen i kronor och procent.
+ * null när ett av boksluten saknar fältet.
+ */
+function _jamforBasIntervall(forra, nu) {
+    if (!Array.isArray(forra) || !Array.isArray(nu)) return null;
+    const fB = new Map(forra.map(r => [r.bas, r])), nB = new Map(nu.map(r => [r.bas, r]));
+    const ordning = [...nB.keys(), ...[...fB.keys()].filter(b => !nB.has(b))];
+    return ordning.map(bas => {
+        const f = fB.get(bas) || null, n = nB.get(bas) || null;
+        const rad = { bas, finnsForra: !!f, finnsNu: !!n, n: _forandring(f && f.n, n && n.n), nKv: _forandring(f && f.nKv, n && n.nKv), nMa: _forandring(f && f.nMa, n && n.nMa) };
+        for (const [m] of ARSBOKSLUT_BAS_MATT) rad[m] = _forandring(f && f[m], n && n[m]);
+        return rad;
+    });
 }
 
 /** Nyckeltalens rader i jämförelsen: nyckel, etikett och typ (hur talet skrivs). */
@@ -8660,6 +8712,7 @@ function jamforArsbokslut(forra, nu) {
         punkter: { totaltForra: forra.punkter.length, klaraForra: forra.punkter.filter(p => p.klar).length,
                    totaltNu: nu.punkter.length, klaraNu: nu.punkter.filter(p => p.klar).length, kvarFranForra },
         samma_k: forra.k === nu.k,
+        basIntervall: _jamforBasIntervall(forra.basIntervall, nu.basIntervall),
     };
 }
 
@@ -8683,12 +8736,29 @@ function hantelRader(j) {
     return { rader, utelamnade: alla.length - med.length };
 }
 
-    return { byggArsbokslut, valideraArsbokslut, jamforArsbokslut, hantelRader };
+/**
+ * Hantelns rader för löneutvecklingen per BAS-intervall: medianlönen förra året (fore) och i år (efter), i
+ * intervallens ordning. riktning: 'upp', 'ned' eller 'lika' (en förändring, ingen bedömning). Intervall som saknar
+ * median ett av åren räknas i utelamnade.
+ * @param {ReturnType<typeof jamforArsbokslut>} j
+ */
+function basHantelRader(j) {
+    if (!j || !Array.isArray(j.basIntervall)) return { rader: [], utelamnade: 0 };
+    const med = j.basIntervall.filter(r => typeof r.med.forra === 'number' && typeof r.med.nu === 'number');
+    const rader = med.map(r => {
+        const andring = r.med.nu - r.med.forra;
+        return { namn: `BAS ${r.bas}`, bas: r.bas, fore: r.med.forra, efter: r.med.nu, andring, riktning: andring > 0 ? 'upp' : andring < 0 ? 'ned' : 'lika' };
+    });
+    return { rader, utelamnade: j.basIntervall.length - med.length };
+}
+
+    return { byggArsbokslut, valideraArsbokslut, jamforArsbokslut, hantelRader, basHantelRader };
 })();
 const _abBygg = __mirrorArsbokslut.byggArsbokslut;
 const _abValidera = __mirrorArsbokslut.valideraArsbokslut;
 const _abJamfor = __mirrorArsbokslut.jamforArsbokslut;
 const _abHantelRader = __mirrorArsbokslut.hantelRader;
+const _abBasHantelRader = __mirrorArsbokslut.basHantelRader;
 
 // ---- speglar src/lib/organisationspaket.js ----
 const __mirrorOrganisationspaket = (() => {
@@ -26862,11 +26932,10 @@ function rmArsjamforelseAvsnitt(diagram) {
     const skriv = (v, typ) => (v == null ? '—' : typ === 'kr' ? `${svTal(Math.round(v), 0)} kr` : typ === 'pct' ? svPct(v, 1) : svTal(v, 0));
     const diff = (v, typ) => (v == null ? '—' : `${v > 0 ? '+' : v < 0 ? '−' : '±'}${skriv(Math.abs(v), typ)}${typ === 'pct' ? '-enheter' : ''}`);
     const text = s => ({ text: s });
-    const delar = [
+    /** @type {any[]} */ const delar = [
         stycke(`Jämfört med lönekartläggningen ${forra.ar} (bokslut sparat ${forra.skapat}, minsta gruppstorlek ${forra.k}). Lönemått bara för yrkesgrupper där båda könen når minsta gruppstorlek; gapet är kvinnors medianlön mot mäns, negativt när kvinnor ligger lägre.`, 'dampad'),
         { typ: 'tabell', kolumner: [{ rubrik: 'Mått', typ: 'text' }, { rubrik: String(forra.ar), typ: 'text' }, { rubrik: String(nu.ar), typ: 'text' }, { rubrik: 'Skillnad', typ: 'text' }],
           rader: j.nyckeltal.map(r => [r.etikett, text(skriv(r.forra, r.typ)), text(skriv(r.nu, r.typ)), text(diff(r.diff, r.typ))]) },
-        { typ: 'rubrik', niva: 3, text: 'Lika arbete' },
     ];
     const grupptabell = (rubrik, lista, tom) => {
         if (!lista.length) { delar.push(stycke(`${rubrik}: ${tom}`)); return; }
@@ -26874,6 +26943,8 @@ function rmArsjamforelseAvsnitt(diagram) {
         delar.push({ typ: 'tabell', kolumner: [{ rubrik: 'Yrkesgrupp', typ: 'text' }, { rubrik: 'Kvinnor / män', typ: 'text' }, { rubrik: `Gap ${forra.ar}`, typ: 'pct1' }, { rubrik: `Gap ${nu.ar}`, typ: 'pct1' }],
             rader: lista.map(g => [g.yrke, g.nKv != null && g.nMa != null ? `${g.nKv} / ${g.nMa}` : null, g.gapForra, g.gapNu]) });
     };
+    delar.push(...rmBasUtvecklingDelar(j, forra.ar, nu.ar));
+    delar.push({ typ: 'rubrik', niva: 3, text: 'Lika arbete' });
     grupptabell('Flaggade båda åren', j.grupper.kvar, 'ingen yrkesgrupp.');
     grupptabell('Nya flaggade', j.grupper.nya, 'inga.');
     grupptabell('Inte längre flaggade', j.grupper.borta, 'ingen.');
@@ -26887,6 +26958,24 @@ function rmArsjamforelseAvsnitt(diagram) {
     } else delar.push(stycke(`${forra.ar} hade inga öppna punkter.`));
     const utelamnat = j.samma_k ? [] : [`bokslutet sparades med minsta gruppstorlek ${forra.k}, i år gäller ${nu.k}: yrkesgrupper jämförs bara där båda könen når respektive års gräns`];
     return { id: 'arsjamforelse', numrerad: true, rubrik: 'Jämförelse med förra året', utelamnat, delar };
+}
+
+/**
+ * Löneutvecklingen per BAS-intervall i avsnittet Jämförelse med förra året: en tabell med antal och P10, median och
+ * P90 som "förra året → i år (förändring)", en kolumn per mått så att tabellen ryms på en stående sida. Bara när
+ * båda åren har fältet; ett äldre bokslut utan det ger ingenting här (panelen säger att det saknas i filen).
+ * Tröskeln är redan tillämpad i bokslutet (src/lib/arsbokslut.js) och i årets bokslut, som byggs i exportläget.
+ */
+function rmBasUtvecklingDelar(j, forraAr, nuAr) {
+    if (!j || !Array.isArray(j.basIntervall) || !j.basIntervall.length) return [];
+    const antal = f => (f.forra == null && f.nu == null ? null : `${f.forra == null ? '–' : svTal(f.forra, 0)} → ${f.nu == null ? '–' : svTal(f.nu, 0)}`);
+    const matt = f => (f.forra == null && f.nu == null ? null : { text: `${_abKr(f.forra)} → ${_abKr(f.nu)}${f.diff == null ? '' : ` (${_abForandringText(f)})`}` });
+    return [
+        { typ: 'rubrik', niva: 3, text: 'Löneutveckling per BAS-intervall' },
+        { typ: 'stycke', stil: 'dampad', text: `Varje mått ${forraAr} → ${nuAr}, med förändringen i kronor och i procent av ${forraAr} års värde. Bara intervall med minst ${kTroskel()} personer; medianen rör sig också när sammansättningen ändras.` },
+        { typ: 'tabell', kolumner: [{ rubrik: 'BAS-intervall', typ: 'text' }, { rubrik: 'Antal', typ: 'text' }, { rubrik: 'P10', typ: 'text' }, { rubrik: 'Median', typ: 'text' }, { rubrik: 'P90', typ: 'text' }],
+          rader: j.basIntervall.map(r => [`BAS ${r.bas}`, antal(r.n), matt(r.p10), matt(r.med), matt(r.p90)]) },
+    ];
 }
 
 /**
@@ -30003,8 +30092,25 @@ function byggArsbokslutNu() {
                 antalFlaggade: lika.grupper.filter(g => g.flaggad).length, antalKandidatpar: par.length, utelamnadePar: utelamnade },
             grupper: lika.grupper.filter(g => !g.samladMedian).map(g => ({ yrke: g.yrke, nKv: g.nKv, nMa: g.nMa, medKv: g.medKv, medMa: g.medMa, gapPct: g.kvot * 100 - 100, flaggad: g.flaggad })),
             punkter: punkter.map(p => ({ id: p.id, titel: p.titel, kategori: p.kategori, klar: klara.has(p.id) })),
+            basIntervall: getBasIntervals().map(b => _abBasRad(d, b, k)).filter(Boolean),
         });
     });
+}
+
+/**
+ * Bokslutets rad för ett BAS-intervall: antal, P10, median och P90 när intervallet har minst k personer, och
+ * kvinnors och mäns median bara när båda könen når k (samma regel som Lönestruktur). null under k.
+ * @param {any[]} d
+ * @param {string} bas
+ * @param {number} k
+ */
+function _abBasRad(d, bas, k) {
+    const df = d.filter(r => r.bas === bas && r.lon > 0);
+    if (df.length < k) return null;
+    const kv = df.filter(r => r.kon && r.kon.includes('kvinna')), ma = df.filter(r => r.kon === 'man' || r.kon === 'män');
+    const lon = df.map(r => r.lon), konOk = kv.length >= k && ma.length >= k;
+    return { bas, n: df.length, nKv: kv.length, nMa: ma.length, p10: Stat.quantile(lon, 0.10), med: Stat.median(lon), p90: Stat.quantile(lon, 0.90),
+        medKv: konOk ? Stat.median(kv.map(r => r.lon)) : null, medMa: konOk ? Stat.median(ma.map(r => r.lon)) : null };
 }
 
 /** Jämförelsen mellan förra årets bokslut och årets, eller null utan bokslut eller underlag. Byggs i exportläget. */
@@ -30027,11 +30133,63 @@ function _abHantelFigur(j, forraAr, nuAr) {
     const fig = foreEfterFigur({ rader: rader.map(r => ({ namn: r.namn, fore: +r.fore.toFixed(1), efter: +r.efter.toFixed(1), farg: farg[r.riktning] })),
         kolumner: [String(forraAr), String(nuAr)], titel: 'Kvinnors medianlön i procent av mäns', format: 'pct',
         beskrivning: `Kvinnors medianlön i procent av mäns per yrkesgrupp, ${forraAr} (strecket) och ${nuAr} (punkten), sorterade efter förändringens storlek. Grön när kvoten närmat sig lika lön, orange när den fjärmat sig; linjen vid 100 % är lika lön.` });
-    // Årets värde skrivs på den sida av punkten där strecket inte är: till höger när kvoten stigit, till vänster när den sjunkit.
+    return _abEtiketterBortFranStrecket(fig);
+}
+
+/** Årets värde skrivs på den sida av punkten där strecket inte är: till höger när värdet stigit, till vänster när det sjunkit. */
+function _abEtiketterBortFranStrecket(fig) {
     const punkt = /** @type {any} */ (fig.lager[2]);
     const hoger = punkt.data.filter(d => d.r.efter >= d.r.fore), vanster = punkt.data.filter(d => d.r.efter < d.r.fore);
     fig.lager = /** @type {any} */ ([fig.lager[0], fig.lager[1], { ...punkt, data: hoger }, ...(vanster.length ? [{ ...punkt, data: vanster, etikettLage: 'vanster', legend: false }] : [])]);
     return fig;
+}
+
+/**
+ * Hanteln för löneutvecklingen per BAS-intervall: medianlönen förra året (strecket) och i år (punkten). En färg för
+ * alla rader: en högre median är en förändring, ingen bedömning. Markeringen följer BAS-intervallet.
+ */
+function _abBasHantelFigur(j, forraAr, nuAr) {
+    const { rader } = _abBasHantelRader(j);
+    if (!rader.length) return null;
+    const fig = foreEfterFigur({ rader: rader.map(r => ({ namn: r.namn, fore: r.fore, efter: r.efter, farg: PALETTE.semantic.linje, markering: markeringFor(r.bas) })),
+        kolumner: [String(forraAr), String(nuAr)], titel: 'Medianlön per BAS-intervall', format: 'kr',
+        beskrivning: `Medianlönen per BAS-intervall, ${forraAr} (strecket) och ${nuAr} (punkten). Bara intervall med minst ${kTroskel()} personer båda åren.` });
+    return _abEtiketterBortFranStrecket(fig);
+}
+
+/**
+ * Löneutvecklingen per BAS-intervall som text för skärm och rapport: ett mått förra året och i år, och förändringen
+ * i kronor och procent. Tecknen som i nyckeltalen (+, − och ± för oförändrat).
+ */
+function _abKr(v) { return v == null ? '–' : `${svTal(Math.round(v), 0)} kr`; }
+function _abForandringText(f, { kr = true } = {}) {
+    if (!f || f.diff == null) return '–';
+    const t = v => (v > 0 ? '+' : v < 0 ? '−' : '±');
+    const belopp = kr ? `${t(f.diff)}${_abKr(Math.abs(f.diff))}` : `${t(f.diff)}${svTal(Math.abs(f.diff), 0)}`;
+    return f.pct == null ? belopp : `${belopp} (${t(f.pct)}${svPct(Math.abs(f.pct), 1)})`;
+}
+
+/** Tabellen Löneutveckling per BAS-intervall i panelen, eller raden om att förra årets bokslut saknar fältet. */
+function _abBasTabellHtml(j, forraAr, nuAr) {
+    const rubrik = '<h4 class="fs-sm marg-12-0-2">Löneutveckling per BAS-intervall</h4>';
+    if (!Array.isArray(j.basIntervall)) {
+        return rubrik + '<p class="text-dampad-sm marg-0">Löneutvecklingen per BAS-intervall saknas i förra årets fil: bokslutet sparades med en äldre version av verktyget. Årets bokslut har den, så nästa års jämförelse får den.</p>';
+    }
+    if (!j.basIntervall.length) return rubrik + `<p class="text-dampad-sm marg-0">Inget BAS-intervall har minst ${kTroskel()} personer.</p>`;
+    const matt = [['p10', 'P10'], ['med', 'Median'], ['p90', 'P90']];
+    const huvud = `<thead><tr><th scope="col" rowspan="2">BAS-intervall</th><th scope="colgroup" colspan="2" class="t-mitt">Antal</th>`
+        + matt.map(([, e]) => `<th scope="colgroup" colspan="3" class="t-mitt">${e}</th>`).join('') + '</tr><tr>'
+        + `<th scope="col" class="t-hoger">${forraAr}</th><th scope="col" class="t-hoger">${nuAr}</th>`
+        + matt.map(() => `<th scope="col" class="t-hoger">${forraAr}</th><th scope="col" class="t-hoger">${nuAr}</th><th scope="col" class="t-hoger">Förändring</th>`).join('')
+        + '</tr></thead>';
+    const antal = v => (v == null ? '–' : svTal(v, 0));
+    const rad = r => `<tr><th scope="row">BAS ${esc(r.bas)}</th><td class="t-tal">${antal(r.n.forra)}</td><td class="t-tal">${antal(r.n.nu)}</td>`
+        + matt.map(([m]) => `<td class="t-tal">${_abKr(r[m].forra)}</td><td class="t-tal">${_abKr(r[m].nu)}</td><td class="t-tal halvfet">${_abForandringText(r[m])}</td>`).join('') + '</tr>';
+    const h = _abBasHantelRader(j);
+    return rubrik + `<div class="table-container"><table class="data-table st-088" id="arsjamforelse-bas">${huvud}<tbody>${j.basIntervall.map(rad).join('')}</tbody></table></div>`
+        + (h.rader.length ? `<h4 class="fs-sm marg-10-0-4">Medianlön per BAS-intervall, ${forraAr} och ${nuAr}</h4><div class="chart-container"><div id="chart-arsjamforelse-bas"></div></div>` : '')
+        + (h.utelamnade ? `<p class="k-mask-note">${h.utelamnade} BAS-intervall har median bara ett av åren (färre än minsta gruppstorlek, eller fanns inte) och visas inte i diagrammet.</p>` : '')
+        + `<p class="text-dampad-xs marg-4-0-0">Bara intervall med minst ${kTroskel()} personer. Förändringen i kronor och i procent av förra årets värde. Medianen rör sig också när sammansättningen ändras: nyanställda och avgångar påverkar den lika mycket som löneökningar.</p>`;
 }
 
 /** Panelen Jämförelse med förra året i Spara och jämför år. */
@@ -30075,10 +30233,12 @@ function renderArsjamforelse() {
     const punkter = `<p class="text-dampad-sm marg-8-0-4">Förra året var ${p.klaraForra} av ${p.totaltForra} punkter i Att göra avbockade; i år ${p.klaraNu} av ${p.totaltNu}.</p>`
         + (kvar.length ? `<p class="text-dampad-sm marg-0-0-4">Förra årets öppna punkter (${kvar.length}):</p><ul class="fs-sm marg-0-0-8">${kvar.map(q => `<li>${esc(q.titel || q.id)}${q.klarNu ? ' — <strong>klar i år</strong>' : q.finnsNu ? ' — fortfarande öppen' : ' — finns inte längre i listan'}</li>`).join('')}</ul>` : '<p class="text-dampad-sm marg-0">Förra året hade inga öppna punkter.</p>');
     host.innerHTML = huvud + (j.samma_k ? '' : `<p class="k-mask-note">Bokslutet sparades med minsta gruppstorlek ${forra.k}; i år gäller ${nu.k}. Yrkesgrupper jämförs bara där båda könen når respektive års gräns.</p>`)
-        + `<h4 class="fs-sm marg-6-0-4">Nyckeltal</h4>${nyckeltal}<h4 class="fs-sm marg-12-0-2">Lika arbete</h4>${grupper}<h4 class="fs-sm marg-12-0-2">Att göra</h4>${punkter}`
+        + `<h4 class="fs-sm marg-6-0-4">Nyckeltal</h4>${nyckeltal}${_abBasTabellHtml(j, forra.ar, nu.ar)}<h4 class="fs-sm marg-12-0-2">Lika arbete</h4>${grupper}<h4 class="fs-sm marg-12-0-2">Att göra</h4>${punkter}`
         + `<p class="text-dampad-xs marg-8-0-0">Lönemått bara för yrkesgrupper där båda könen når minsta gruppstorlek; gapet är kvinnors medianlön mot mäns, negativt när kvinnor ligger lägre.</p>`;
     const el = document.getElementById('chart-arsjamforelse');
     if (el) { const fig = _abHantelFigur(j, forra.ar, nu.ar); if (fig) ritaFigur(el, fig); }
+    const elBas = document.getElementById('chart-arsjamforelse-bas');
+    if (elBas) { const fig = _abBasHantelFigur(j, forra.ar, nu.ar); if (fig) ritaFigur(elBas, fig); }
 }
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson

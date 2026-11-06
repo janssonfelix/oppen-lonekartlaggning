@@ -1200,8 +1200,15 @@ nyckeltalen sida vid sida, de flaggade yrkesgrupperna, hanteln och Att göra; bl
 i rapportunderlaget (`arsjamforelseBlock`); och hanteln (`hantelRader`, `foreEfterFigur`): kvinnors medianlön i
 procent av mäns per yrkesgrupp, förra året som streck och i år som punkt, grön när kvoten närmat sig lika lön,
 orange när den fjärmat sig, grå när den är oförändrad — en riktning, inte en bedömning. Diagramplanens pilspets
-på strecket är inte gjord: strecket och punkten säger redan vilket år som är vilket. Vaktas av
-`tests/arsbokslut.test.js` och `tests/smoke-arsbokslut.test.js`.
+på strecket är inte gjord: strecket och punkten säger redan vilket år som är vilket. Sedan 2026-11-06 bär bokslutet
+också `basIntervall`: en rad per BAS-intervall med minst k personer (`bas, n, nKv, nMa, p10, med, p90, medKv, medMa`),
+där kvinnors och mäns median bara står när båda könen når k; ett intervall under k har ingen rad. Fältet är valfritt:
+ett äldre bokslut får `basIntervall: null` (inte en tom lista, som betyder att inget intervall nådde k), och panelen
+säger då att löneutvecklingen per BAS-intervall saknas i filen. `jamforArsbokslut` ger per intervall varje mått
+förra året, i år och förändringen i kronor och procent; panelen visar tabellen *Löneutveckling per BAS-intervall*
+och en hantel för medianen (`basHantelRader`, en färg: en högre median är en förändring, ingen bedömning), och
+rapportmodellen samma tabell under *Jämförelse med förra året* (`rmBasUtvecklingDelar`, en kolumn per mått så att
+den ryms på en stående sida). Vaktas av `tests/arsbokslut.test.js` och `tests/smoke-arsbokslut.test.js`.
 
 **ADR-55 — Löneläget mot båda referenserna, Lönepolitik som avsnitt.** Beslut 2026-10-30. Fliken
 Löneläget (id `benchmark`) samlar organisationens löner mot det de jämförs med, i tre avsnitt: överblicken (`src/lib/referenser.js`,

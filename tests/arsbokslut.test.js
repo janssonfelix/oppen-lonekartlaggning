@@ -2,7 +2,7 @@
 // Copyright 2026 Felix Jansson
 // Årsbokslutet (ADR-54): validering, k-skydd och jämförelsen mellan två år — den rena modulen.
 import { describe, it, expect } from 'vitest';
-import { byggArsbokslut, valideraArsbokslut, jamforArsbokslut, hantelRader, ARSBOKSLUT_NYCKELTAL } from '../src/lib/arsbokslut.js';
+import { byggArsbokslut, valideraArsbokslut, jamforArsbokslut, hantelRader, basHantelRader, ARSBOKSLUT_NYCKELTAL } from '../src/lib/arsbokslut.js';
 import { arsjamforelseBlock, tillWordHtml } from '../src/lib/rapportunderlag.js';
 
 const bokslut = (ar, over = {}) => byggArsbokslut({
@@ -106,5 +106,60 @@ describe('årsbokslut: hanteln och blocket i rapportunderlaget', () => {
         expect(b.stycken.join(' ')).toMatch(/Att göra: 2025 var 1 av 2 punkter avbockade, 2026 1 av 2/);
         expect(b.stycken.at(-1)).toBe('Urval: Hela organisationen.');
         expect(tillWordHtml(b)).toContain('<h3>Jämförelse med förra året</h3>');
+    });
+});
+
+describe('årsbokslut: löneutveckling per BAS-intervall (basIntervall)', () => {
+    const bas = [
+        { bas: 'A', n: 40, nKv: 25, nMa: 15, p10: 24000, med: 26000, p90: 29000, medKv: 25800, medMa: 26400 },
+        { bas: 'C', n: 30, nKv: 9, nMa: 21, p10: 27000, med: 29000, p90: 33000, medKv: 31417, medMa: 29500 },   // 9 kvinnor: inga könsmedianer
+        { bas: 'E', n: 8, nKv: 4, nMa: 4, p10: 35291, med: 36107, p90: 37000 },                                     // under k: ingen rad alls
+    ];
+    it('fältet följer med när det finns; ett intervall under k faller bort och könsmedianerna nollas när ett kön är under k', () => {
+        const b = bokslut(2025, { basIntervall: bas });
+        expect(b.basIntervall.map(r => r.bas)).toEqual(['A', 'C']);
+        expect(b.basIntervall[0]).toEqual({ bas: 'A', n: 40, nKv: 25, nMa: 15, p10: 24000, med: 26000, p90: 29000, medKv: 25800, medMa: 26400 });
+        expect(b.basIntervall[1]).toMatchObject({ bas: 'C', n: 30, nKv: 9, nMa: 21, med: 29000, medKv: null, medMa: null });
+        const text = JSON.stringify(b);
+        for (const s of [31417, 35291, 36107]) expect(text).not.toContain(String(s));
+    });
+    it('ett äldre bokslut utan fältet går att läsa och har basIntervall null; trasiga rader faller', () => {
+        expect(bokslut(2025).basIntervall).toBeNull();
+        expect(valideraArsbokslut({ ar: 2025, skapat: '2025-01-01', k: 10 }).basIntervall).toBeNull();
+        const b = bokslut(2025, { basIntervall: [null, { bas: '', n: 20 }, { bas: 'B', n: 'tjugo' }, { bas: 'D', n: 20, nKv: 10, nMa: 10, med: NaN }] });
+        expect(b.basIntervall).toEqual([{ bas: 'D', n: 20, nKv: 10, nMa: 10, p10: null, med: null, p90: null, medKv: null, medMa: null }]);
+        expect(bokslut(2025, { basIntervall: 'inte en lista' }).basIntervall).toBeNull();
+    });
+    it('jämförelsen ger förra året, i år och förändringen i kronor och procent per mått och intervall', () => {
+        const forra = bokslut(2025, { basIntervall: bas });
+        const nu = bokslut(2026, { basIntervall: [
+            { bas: 'A', n: 42, nKv: 26, nMa: 16, p10: 24480, med: 26780, p90: 29870, medKv: 26600, medMa: 27000 },
+            { bas: 'C', n: 31, nKv: 10, nMa: 21, p10: 27500, med: 29870, p90: 33500, medKv: 29000, medMa: 30000 },
+            { bas: 'K', n: 12, nKv: 6, nMa: 6, p10: 50000, med: 52000, p90: 56000 },
+        ] });
+        const j = jamforArsbokslut(forra, nu);
+        expect(j.basIntervall.map(r => r.bas)).toEqual(['A', 'C', 'K']);
+        const a = j.basIntervall[0];
+        expect(a.n).toEqual({ forra: 40, nu: 42, diff: 2, pct: 5 });
+        expect(a.med).toMatchObject({ forra: 26000, nu: 26780, diff: 780 });
+        expect(a.med.pct).toBeCloseTo(3, 5);
+        expect(a.p10.pct).toBeCloseTo(2, 5);
+        const c = j.basIntervall[1];
+        expect(c.medKv).toEqual({ forra: null, nu: 29000, diff: null, pct: null });   // förra året maskerat
+        expect(j.basIntervall[2].med).toEqual({ forra: null, nu: 52000, diff: null, pct: null });   // nytt intervall
+        expect(j.basIntervall[2].finnsForra).toBe(false);
+        expect(a.finnsForra && a.finnsNu).toBe(true);
+    });
+    it('utan fältet ett av åren är basIntervall null i jämförelsen; hanteln har en rad per intervall med median båda åren', () => {
+        expect(jamforArsbokslut(bokslut(2025), bokslut(2026, { basIntervall: bas })).basIntervall).toBeNull();
+        const forra = bokslut(2025, { basIntervall: bas });
+        const nu = bokslut(2026, { basIntervall: [{ bas: 'A', n: 42, nKv: 26, nMa: 16, med: 26780 }, { bas: 'C', n: 31, nKv: 10, nMa: 21, med: 28500 }, { bas: 'K', n: 12, nKv: 6, nMa: 6, med: 52000 }] });
+        const h = basHantelRader(jamforArsbokslut(forra, nu));
+        expect(h.rader).toEqual([
+            { namn: 'BAS A', bas: 'A', fore: 26000, efter: 26780, andring: 780, riktning: 'upp' },
+            { namn: 'BAS C', bas: 'C', fore: 29000, efter: 28500, andring: -500, riktning: 'ned' },
+        ]);
+        expect(h.utelamnade).toBe(1);
+        expect(basHantelRader(null)).toEqual({ rader: [], utelamnade: 0 });
     });
 });

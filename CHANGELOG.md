@@ -8,6 +8,12 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ### Gränssnitt
 
+- **Löneutveckling per BAS-intervall mot förra året.** Årsbokslutet i konfigurationsfilen har en rad per BAS-intervall
+  med minst k personer: antal (kvinnor, män), P10, median och P90, och kvinnors och mäns median när båda könen når k.
+  *Jämförelse med förra året* i Spara och jämför år visar tabellen *Löneutveckling per BAS-intervall* (antal, P10,
+  median och P90 förra året och i år, förändringen i kronor och procent) och en hantel för medianen per intervall.
+  Samma tabell står i rapportens avsnitt *Jämförelse med förra året* (Word och PDF). Ett bokslut från en äldre
+  version saknar raderna; panelen säger det, och resten av jämförelsen är som förut.
 - **Antal i grupptabellerna.** Varje tabell som visar ett lönemått för en grupp visar nu också gruppens antal, och
   exporterna har samma kolumn: *Könsfördelning per BAS-intervall* (Antal kvinnor, Antal män; också i Excel och
   PDF-bilagan), kandidatparen i Likvärdigt arbete (*Antal (kvinnodom. / jämf.)*, också i Word-utkastet, PDF-rapporten
