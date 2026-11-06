@@ -218,7 +218,7 @@ const FLIKAR = [
     ['rapporttext', []],
     ['arbetet', []],
 ];
-// Flikarna klickas vid 1440 punkter: där står sidindexet i en spalt bredvid innehållet.
+// Flikarna klickas vid 1440 punkter: där är sidindexet en rad överst (spalten bredvid innehållet börjar vid 1920).
 await page.setViewportSize({ width: 1440, height: 900 });
 for (const [flik, diagram] of FLIKAR) {
     await page.click(`.nav-item[data-tab="${flik}"]`);
@@ -303,6 +303,23 @@ for (const [flik, diagram] of FLIKAR) {
     ok(hopp.ovan && hopp.nasta && hopp.summary.includes(hopp.aktiv), `efter ett långt rullsteg visar sidindexet avsnittet som står i fönstret (${hopp.aktiv})`);
     await page.keyboard.press('Escape');
     await page.waitForTimeout(150);
+    // Ett klick på en post i den utfällda raden: raden fälls ihop först, rubriken hamnar under den och raden säger avsnittet.
+    await page.evaluate(() => { window.scrollTo(0, 0); document.querySelector('#sidindex .sidindex-ram').open = true; });
+    await page.waitForTimeout(200);
+    // Den andra posten: långt från sidans slut, så att rubriken kan rullas upp till raden.
+    const postId = await page.evaluate(() => document.querySelectorAll('#sidindex a[data-sidindex]')[1]?.dataset.sidindex || '');
+    await page.click(`#sidindex a[data-sidindex="${postId}"]`);
+    await page.waitForTimeout(900);
+    const klick = await page.evaluate(id => {
+        const nav = document.getElementById('sidindex').getBoundingClientRect(), mal = document.getElementById(id);
+        const rubrik = (mal.querySelector(':scope > summary') || mal.querySelector('.card-header > h2') || mal).getBoundingClientRect();
+        return { hopfalld: !document.querySelector('#sidindex .sidindex-ram').open, botten: Math.round(nav.bottom), rubrikTopp: Math.round(rubrik.top),
+            summary: document.querySelector('#sidindex summary').textContent.replace(/\s+/g, ' ').trim(),
+            post: document.querySelector(`#sidindex a[data-sidindex="${id}"]`).textContent.trim(),
+            rullat: Math.round(scrollY), max: Math.round(document.scrollingElement.scrollHeight - innerHeight) };
+    }, postId);
+    ok(klick.hopfalld && klick.rubrikTopp >= klick.botten - 4 && klick.rubrikTopp <= klick.botten + 60 && klick.summary.includes(klick.post),
+        `ett klick i sidindexet vid 1440 punkter fäller ihop raden och lägger rubriken under den (raden slutar ${klick.botten} px, rubriken ${klick.rubrikTopp} px, rullat ${klick.rullat} av ${klick.max} px, raden: "${klick.summary}")`);
 }
 {
     // Från 1920 punkter är sidindexet en spalt bredvid innehållet som följer med när sidan rullas; ett klick fäller

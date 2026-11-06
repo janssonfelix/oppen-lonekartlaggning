@@ -3,7 +3,12 @@
  * Vaktar var panelerna ligger och vart låsta flikar leder; innehållet i panelerna testas i respektive svit.
  */
 import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { createAppWindow } from './helpers/app-harness.js';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 describe('Uppgift 1: Filer och kvalitet', () => {
     it('Filer och kvalitet bär filrutorna, kvaliteten och extremvärdena; Översikt inte', () => {
@@ -87,15 +92,16 @@ describe('Uppgift 3: Rapporttext, Exportera och Spara och jämför år', () => {
         expect(i('view-arbetet', 'btn-config-save') && i('view-arbetet', 'btn-snapshot-save') && i('view-arbetet', 'arsjamforelse') && i('view-arbetet', 'btn-test-load')).toBe(true);
         expect(d.getElementById('avsnitt-dk-samverkan')).toBeNull();
     });
-    it('Exportera och Spara och jämför år går att öppna utan lönefil; Rapporttext är låst', () => {
+    it('Översikt, Filer och kvalitet, Regler & praxis, Handlingsplan, Exportera, Spara och jämför år och Om verktyget går att öppna utan lönefil; Rapporttext är låst', () => {
         const d = createAppWindow().document;
         expect(d.getElementById('tab-arbetet').getAttribute('aria-disabled')).toBeNull();
         expect(d.getElementById('tab-dokumentera').getAttribute('aria-disabled')).toBeNull();
         expect(d.getElementById('tab-rapporttext').getAttribute('aria-disabled')).toBe('true');
         d.getElementById('tab-rapporttext').click();
         expect(d.querySelector('.nav-item.active').getAttribute('data-tab')).toBe('filer');
-        for (const [flik, titel] of [['arbetet', 'Spara och jämför år'], ['dokumentera', 'Exportera']]) {
-            d.getElementById('tab-' + flik).click();
+        for (const [flik, titel] of [['arbetet', 'Spara och jämför år'], ['dokumentera', 'Exportera'], ['bestammelser', 'Regler & praxis'],
+            ['handlingsplan', 'Handlingsplan'], ['info', 'Om verktyget'], ['filer', 'Filer och kvalitet'], ['dashboard', 'Översikt']]) {
+            d.querySelector(`.nav-item[data-tab="${flik}"]`).click();
             expect(d.querySelector('.nav-item.active').getAttribute('data-tab'), flik).toBe(flik);
             expect(d.getElementById('page-title').textContent).toBe(titel);
         }
@@ -197,6 +203,23 @@ describe('Uppgift 4: Prioriteringens trösklar och viktning i Inställningar', (
 });
 
 describe('Uppgift 5: menyn i rapportens ordning', () => {
+    it('menyknapparnas aria-controls nämner flikens paneler (PANEL_GROUPS), redan i index.html', () => {
+        const w = createAppWindow(), d = w.document, grupper = w.eval('PANEL_GROUPS');
+        // 63-tangentbordsnavigering.js sätter attributet vid start; markeringen i index.html ska säga samma sak.
+        const kalla = new w.DOMParser().parseFromString(readFileSync(join(__dirname, '..', 'src', 'index.html'), 'utf8'), 'text/html');
+        for (const dok of [d, kalla]) {
+            for (const b of dok.querySelectorAll('.nav-menu .nav-item')) {
+                const flik = b.dataset.tab, forvantat = (grupper[flik] || [flik]).map(p => 'view-' + p);
+                expect(b.getAttribute('aria-controls').split(/\s+/), `${dok === d ? 'appen' : 'index.html'}: ${flik}`).toEqual(forvantat);
+                for (const id of forvantat) expect(d.getElementById(id), id).toBeTruthy();
+            }
+        }
+    });
+    it('Inställningar: Viktning av prioriteringsindex är en underrubrik till Prioritering', () => {
+        const d = createAppWindow().document;
+        const rubrik = [...d.querySelectorAll('#installningar-modal h3, #installningar-modal h4')].find(h => /Viktning av prioriteringsindex/.test(h.textContent));
+        expect(rubrik.tagName).toBe('H4');
+    });
     it('menyn står i rapportens ordning', () => {
         const d = createAppWindow().document;
         expect([...d.querySelectorAll('.nav-menu .nav-item')].map(b => b.dataset.tab)).toEqual(

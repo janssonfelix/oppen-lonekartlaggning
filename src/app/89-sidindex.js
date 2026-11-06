@@ -124,6 +124,10 @@ function sidindexGaTill(id) {
     const mal = document.getElementById(id);
     if (!mal) return;
     oppnaHopfallda(mal);
+    // På smal skärm är listan en utfälld rad överst som följer med: den fälls ihop först, så att den inte täcker
+    // avsnittet och rullningen (scroll-margin, radens höjd) räknas på den hopfällda raden.
+    const ram = /** @type {HTMLDetailsElement|null} */ (document.querySelector('#sidindex .sidindex-ram'));
+    if (ram && !_sidindexBred() && ram.open) { ram.open = false; _sidindexHojd(/** @type {HTMLElement} */ (document.getElementById('sidindex'))); }
     const reducerad = typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches === true;
     if (typeof mal.scrollIntoView === 'function') mal.scrollIntoView({ block: 'start', behavior: reducerad ? 'auto' : 'smooth' });
     const fokus = _sidindexFokusmal(mal);
@@ -131,9 +135,6 @@ function sidindexGaTill(id) {
     if (fokus.tagName !== 'SUMMARY' && !fokus.hasAttribute('tabindex')) fokus.setAttribute('tabindex', '-1');
     fokus.focus({ preventScroll: true });
     _sidindexMarkera(id);
-    // På smal skärm är listan en utfälld rad överst som följer med: den fälls ihop så att den inte täcker avsnittet.
-    const ram = /** @type {HTMLDetailsElement|null} */ (document.querySelector('#sidindex .sidindex-ram'));
-    if (ram && !_sidindexBred()) ram.open = false;
 }
 
 // Delegerad klick, som hopplänkarna i 33-sidans-innehall.js: adressen ändras inte.

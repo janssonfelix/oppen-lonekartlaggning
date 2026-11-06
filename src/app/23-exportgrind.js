@@ -31,6 +31,8 @@ function _bytKLage(lage) {
     // som är ritat.
     state._lifecycleCache = null;
 }
+const _ALLTID_EXPORT = new Set(['dokumentera', 'rapporttext', 'arbetet']);
+const _OVERSIKT_STEG = new Set(['nyckeltal', 'kompliansöversikt', 'underlagets kvalitet', 'Att göra', 'processöversikten', 'extremvärden', 'inläsningsrapporten', 'A/B-jämförelsen']);
 /**
  * Ritar skärmen tillbaka efter en export: Översikts delar och den öppna fliken, när grinden ritade dem i exportläget
  * (`ritade`: flikarna som ritades under exporten), utom de tre dokumentationsflikarna (_ALLTID_EXPORT), som alltid ritas i
@@ -39,8 +41,6 @@ function _bytKLage(lage) {
  * bär är ritat med den inställda tröskeln (försiktigare än skärmen), och de ritas om när de öppnas.
  * @param {Set<string>} ritade
  */
-const _ALLTID_EXPORT = new Set(['dokumentera', 'rapporttext', 'arbetet']);
-const _OVERSIKT_STEG = new Set(['nyckeltal', 'kompliansöversikt', 'underlagets kvalitet', 'Att göra', 'processöversikten', 'extremvärden', 'inläsningsrapporten', 'A/B-jämförelsen']);
 function _ritaOmEfterExport(ritade) {
     if (!state.data.length || typeof _omritningssteg !== 'function') return;
     for (const [namn, fn] of _omritningssteg()) {

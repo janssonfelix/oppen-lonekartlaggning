@@ -1666,8 +1666,8 @@ function _omritningssteg() {
         const oppen = document.querySelector('.nav-item.active[data-tab]');
         if (typeof tomFlikarUtom === 'function') tomFlikarUtom(new Set(['dashboard', ...(oppen ? [oppen.getAttribute('data-tab')] : [])]));
     }]);
-    // Översikt: nyckeltal, kompliansöversikt (med "Var uppstår löneskillnaden"), underlagets kvalitet,
-    // processöversikten, Att göra, inläsningsrapporten, extremvärdeslistan och A/B-jämförelsen.
+    // Översikt och Filer och kvalitet: nyckeltal, kompliansöversikt, underlagets kvalitet, processöversikten, Att göra,
+    // inläsningsrapporten, extremvärdeslistan och A/B-jämförelsen. Var uppstår löneskillnaden ritas med Lönestruktur.
     steg.push(['nyckeltal', () => { if (typeof updateDashboardStats === 'function') updateDashboardStats(); }]);
     steg.push(['kompliansöversikt', () => { if (typeof updateCompliance === 'function') updateCompliance(); }]);
     steg.push(['underlagets kvalitet', () => { if (typeof renderUnderlagetsKvalitet === 'function') renderUnderlagetsKvalitet(); }]);
@@ -13603,7 +13603,7 @@ function renderOversiktDelar() {
     /** @type {[string, () => void][]} */
     const delar = [['nyckeltal', () => updateDashboardStats()], ['kompliansöversikt', () => updateCompliance()],
         ['Att göra', () => { punkter = renderActionChecklist(); }],
-        ['processöversikten', () => renderProcessTracker({ punkter })]];   // Var uppstår löneskillnaden ritas av kompliansöversikten
+        ['processöversikten', () => renderProcessTracker({ punkter })]];   // Var uppstår löneskillnaden ritas av Lönestruktur (renderTabContent('struktur'))
     for (const [namn, fn] of delar) { try { fn(); } catch (e) { rapporteraFel(`Översikt (${namn})`, e); } }
     const ab = document.getElementById('snapshot-comparison');
     if (ab && ab.style.display !== 'none' && typeof renderSnapshotComparison === 'function') renderSnapshotComparison();
@@ -15714,6 +15714,8 @@ function _bytKLage(lage) {
     // som är ritat.
     state._lifecycleCache = null;
 }
+const _ALLTID_EXPORT = new Set(['dokumentera', 'rapporttext', 'arbetet']);
+const _OVERSIKT_STEG = new Set(['nyckeltal', 'kompliansöversikt', 'underlagets kvalitet', 'Att göra', 'processöversikten', 'extremvärden', 'inläsningsrapporten', 'A/B-jämförelsen']);
 /**
  * Ritar skärmen tillbaka efter en export: Översikts delar och den öppna fliken, när grinden ritade dem i exportläget
  * (`ritade`: flikarna som ritades under exporten), utom de tre dokumentationsflikarna (_ALLTID_EXPORT), som alltid ritas i
@@ -15722,8 +15724,6 @@ function _bytKLage(lage) {
  * bär är ritat med den inställda tröskeln (försiktigare än skärmen), och de ritas om när de öppnas.
  * @param {Set<string>} ritade
  */
-const _ALLTID_EXPORT = new Set(['dokumentera', 'rapporttext', 'arbetet']);
-const _OVERSIKT_STEG = new Set(['nyckeltal', 'kompliansöversikt', 'underlagets kvalitet', 'Att göra', 'processöversikten', 'extremvärden', 'inläsningsrapporten', 'A/B-jämförelsen']);
 function _ritaOmEfterExport(ritade) {
     if (!state.data.length || typeof _omritningssteg !== 'function') return;
     for (const [namn, fn] of _omritningssteg()) {
@@ -31721,6 +31721,10 @@ function sidindexGaTill(id) {
     const mal = document.getElementById(id);
     if (!mal) return;
     oppnaHopfallda(mal);
+    // På smal skärm är listan en utfälld rad överst som följer med: den fälls ihop först, så att den inte täcker
+    // avsnittet och rullningen (scroll-margin, radens höjd) räknas på den hopfällda raden.
+    const ram = /** @type {HTMLDetailsElement|null} */ (document.querySelector('#sidindex .sidindex-ram'));
+    if (ram && !_sidindexBred() && ram.open) { ram.open = false; _sidindexHojd(/** @type {HTMLElement} */ (document.getElementById('sidindex'))); }
     const reducerad = typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches === true;
     if (typeof mal.scrollIntoView === 'function') mal.scrollIntoView({ block: 'start', behavior: reducerad ? 'auto' : 'smooth' });
     const fokus = _sidindexFokusmal(mal);
@@ -31728,9 +31732,6 @@ function sidindexGaTill(id) {
     if (fokus.tagName !== 'SUMMARY' && !fokus.hasAttribute('tabindex')) fokus.setAttribute('tabindex', '-1');
     fokus.focus({ preventScroll: true });
     _sidindexMarkera(id);
-    // På smal skärm är listan en utfälld rad överst som följer med: den fälls ihop så att den inte täcker avsnittet.
-    const ram = /** @type {HTMLDetailsElement|null} */ (document.querySelector('#sidindex .sidindex-ram'));
-    if (ram && !_sidindexBred()) ram.open = false;
 }
 
 // Delegerad klick, som hopplänkarna i 33-sidans-innehall.js: adressen ändras inte.

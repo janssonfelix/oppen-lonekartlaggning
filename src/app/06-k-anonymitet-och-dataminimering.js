@@ -462,8 +462,8 @@ function _omritningssteg() {
         const oppen = document.querySelector('.nav-item.active[data-tab]');
         if (typeof tomFlikarUtom === 'function') tomFlikarUtom(new Set(['dashboard', ...(oppen ? [oppen.getAttribute('data-tab')] : [])]));
     }]);
-    // Översikt: nyckeltal, kompliansöversikt (med "Var uppstår löneskillnaden"), underlagets kvalitet,
-    // processöversikten, Att göra, inläsningsrapporten, extremvärdeslistan och A/B-jämförelsen.
+    // Översikt och Filer och kvalitet: nyckeltal, kompliansöversikt, underlagets kvalitet, processöversikten, Att göra,
+    // inläsningsrapporten, extremvärdeslistan och A/B-jämförelsen. Var uppstår löneskillnaden ritas med Lönestruktur.
     steg.push(['nyckeltal', () => { if (typeof updateDashboardStats === 'function') updateDashboardStats(); }]);
     steg.push(['kompliansöversikt', () => { if (typeof updateCompliance === 'function') updateCompliance(); }]);
     steg.push(['underlagets kvalitet', () => { if (typeof renderUnderlagetsKvalitet === 'function') renderUnderlagetsKvalitet(); }]);
