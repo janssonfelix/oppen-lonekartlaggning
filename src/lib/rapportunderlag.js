@@ -434,6 +434,22 @@ export function arsjamforelseBlock(j, { id = 'arsjamforelse', forraAr, nuAr, urv
 }
 
 /**
+ * Ett block per BAS-intervall (gruppen Per BAS-intervall): BAS-dossierns stycken i rapportens ordning, med punktens
+ * rubrik som eget stycke, raden att fylla i för bedömningen och intervallets yrkesgruppstabell. Texten byggs av
+ * dossiern i verktyget (basdossierStycken, i exportläget), så att blocket, dossierns kopia och rapporten har samma
+ * text; här formateras bara tabellens tal.
+ * @param {{bas: string, stycken: {rubrik: string, rader: string[]}[], yrken: {aid: string, yrke: string, nKv: number, nMa: number, medKv: number, medMa: number, kvotPct: number, status: string}[], bedomning: string}} b
+ * @param {{id?: string, urval?: string, demo?: boolean, troskelNot?: string}} val
+ */
+export function basintervallBlock(b, { id = `bas:${b.bas}`, urval, demo, troskelNot } = {}) {
+    const { fore, efter } = _inled({ demo, urval, troskelNot });
+    const st = b.stycken.flatMap(x => [x.rubrik, ...x.rader]);
+    return { id, rubrik: `BAS-intervall ${b.bas}`, stycken: [...fore, ...st, `[HR fyller i] ${b.bedomning}`, ...efter], provat: null, fragor: null,
+        tabell: b.yrken.length ? { rubriker: ['AID', 'Yrke', 'Kvinnor / män', 'Median kvinnor', 'Median män', 'Kvinnors median i % av mäns', 'Status'],
+            rader: b.yrken.map(y => [String(y.aid), String(y.yrke), `${formatTal(y.nKv)} / ${formatTal(y.nMa)}`, _kr(y.medKv), _kr(y.medMa), _pct(y.kvotPct, 1), String(y.status)]) } : null };
+}
+
+/**
  * Lönerna mot referenserna (ADR-55): överblickens tal i ord och listan. Ställningstagandet är referenspunkten: orden
  * säger var löneläget och statistiken ligger mot det, aldrig tvärtom.
  * @param {any} overblick resultatet av referensOverblick (grupper under minsta gruppstorlek är redan borta)

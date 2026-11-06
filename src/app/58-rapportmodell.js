@@ -6,7 +6,7 @@
 // Rapportens avsnitt som data: stycken, tabeller med tal som tal, diagram och fält att fylla i. Exporterna ritas ur
 // modellen i stället för att var och en räkna och formulera själv.
 //
-// Delar: { typ: 'stycke', text, stil? } (stil: dampad | not) · { typ: 'fyllIn', text } · { typ: 'rubrik', niva, text } ·
+// Delar: { typ: 'stycke', text, stil? } (stil: dampad | not | fet) · { typ: 'fyllIn', text } · { typ: 'rubrik', niva, text } ·
 //        { typ: 'tabell', kolumner: [{ rubrik, typ }], rader: [[värde]], nyckel? } · { typ: 'diagram', id, flik, rubrik } ·
 // Kolumntyper: text, antal, ar (ålder i år), kr, krAr, pct0, pct1, pct2, tecken2 (procent med tecken), andelAvMan, direktiv, fyllIn.
 // Ett värde kan också vara { text } (färdig text, t.ex. en förklaring i stället för ett tal) eller null (streck).
@@ -78,20 +78,36 @@ const RM_DIAGRAM = [
 
 // ---- Urval: vilka avsnitt som följer med, och i vilken ordning ----
 // Urvalet ligger i minnet (state.rapportUrval) och följer med i konfigurationsfilen. null = hela dokumentationen.
-const RM_AVSNITT = ['sammanfattning', 'regler', 'lika', 'likvardigt', 'struktur', 'referenser', 'perbas', 'atgarder', 'samverkan', 'beslut', 'regression', 'metod'];
+const RM_AVSNITT = ['sammanfattning', 'regler', 'lika', 'likvardigt', 'basintervall', 'struktur', 'referenser', 'perbas', 'atgarder', 'samverkan', 'beslut', 'regression', 'metod'];
 const RM_URVAL = Object.freeze({
     hela: { namn: 'Hela dokumentationen', med: RM_AVSNITT },
     ledning: { namn: 'Ledningsbrief', med: ['sammanfattning', 'lika', 'likvardigt', 'atgarder'] },
-    facklig: { namn: 'Facklig dialog', med: ['sammanfattning', 'regler', 'lika', 'likvardigt', 'struktur', 'referenser', 'perbas', 'samverkan', 'regression', 'metod'] },
+    facklig: { namn: 'Facklig dialog', med: ['sammanfattning', 'regler', 'lika', 'likvardigt', 'basintervall', 'struktur', 'referenser', 'perbas', 'samverkan', 'regression', 'metod'] },
 });
 /** Det gällande urvalet: `ordning` är alla avsnitt i vald ordning, `med` de som följer med, `namn` vad urvalet heter. */
 function rapportUrval() {
     const u = state.rapportUrval;
-    const ordning = u && Array.isArray(u.ordning) ? [...u.ordning.filter(id => RM_AVSNITT.includes(id)), ...RM_AVSNITT.filter(id => !u.ordning.includes(id))] : [...RM_AVSNITT];
+    const ordning = u && Array.isArray(u.ordning) ? _rmMedNyaAvsnitt(u.ordning.filter(id => RM_AVSNITT.includes(id))) : [...RM_AVSNITT];
     const med = u && Array.isArray(u.med) ? ordning.filter(id => u.med.includes(id)) : [...ordning];
     const lika = (a, b) => a.length === b.length && a.every((x, i) => x === b[i]);
     const fast = Object.values(RM_URVAL).find(f => lika(ordning, RM_AVSNITT) && lika(med, f.med));
     return { ordning, med, namn: fast ? fast.namn : `Eget urval (${med.length} av ${ordning.length} avsnitt)` };
+}
+/**
+ * Ett avsnitt som saknas i en sparad ordning (filen sparades före avsnittet) sätts in mellan sina grannar i
+ * standardordningen när de står intill varandra i den sparade ordningen; annars sist, som förut. Det följer inte med
+ * i ett sparat eget urval förrän det kryssas i.
+ * @param {string[]} ordning
+ */
+function _rmMedNyaAvsnitt(ordning) {
+    const ut = [...ordning];
+    RM_AVSNITT.forEach((id, i) => {
+        if (ut.includes(id)) return;
+        const fore = RM_AVSNITT.slice(0, i).reverse().find(x => ut.includes(x)), efter = RM_AVSNITT.slice(i + 1).find(x => ut.includes(x));
+        if (fore && efter && ut.indexOf(efter) === ut.indexOf(fore) + 1) ut.splice(ut.indexOf(efter), 0, id);
+        else ut.push(id);
+    });
+    return ut;
 }
 /** Sätter urvalet. Ett fast urval anges med sitt namn ('hela', 'ledning', 'facklig'); annars { ordning, med }. */
 function sattRapportUrval(u) {
@@ -165,6 +181,38 @@ function rmPerBasAvsnitt(d, k) {
     delar.push({ typ: 'fyllIn', text: 'Bedömning: hur lönen utvecklas med åldern i organisationen, och om löneutvecklingen för äldre medarbetare avstannar.' });
     }
     return { id: 'perbas', numrerad: true, rubrik: pb.dim === 'sektor' ? 'Lönestruktur per sektor' : 'Lönestruktur per BAS-intervall', utelamnat, delar };
+}
+
+/**
+ * Avsnittet Lönekartläggning per BAS-intervall: en underrubrik per intervall som når k, med BAS-dossierns stycken
+ * (basdossierStycken i 81-basdossier.js, samma text som dossierns kopia och rapportutkastet), intervallets
+ * yrkesgruppstabell (bara yrken där båda könen når k) och ett fält för bedömningen. Byggs i exportläget som resten
+ * av modellen: intervall och yrkesgrupper under k står inte med lönemått.
+ * @param {number} k
+ */
+function rmBasintervallAvsnitt(k) {
+    if (typeof basdossierKandidater !== 'function') return null;
+    const kand = basdossierKandidater();
+    if (!kand.length) return null;
+    const stycke = (text, stil) => ({ typ: 'stycke', text, ...(stil ? { stil } : {}) });
+    const under = basdossierUtelamnade();
+    const utelamnat = under.length ? [`BAS ${under.join(', ')} (färre än ${k} personer)`] : [];
+    /** @type {any[]} */
+    const delar = [stycke(`Ett avsnitt per BAS-intervall med minst ${k} personer, i samma ordning som rapporten i övrigt: antal och könsfördelning, läget mot ställningstagandet, yrkesgrupperna med status enligt Lika arbete, likvärdigt arbete, ålder och förra året när ett bokslut är inläst. Tabellen har yrkesgrupperna där både kvinnor och män når minsta gruppstorlek.`, 'dampad')];
+    let smaYrken = 0;
+    for (const { bas } of kand) {
+        const d = buildBasdossier(bas);
+        if (!d) continue;
+        smaYrken += d.yrkenUtelamnade.length;
+        delar.push({ typ: 'rubrik', niva: 3, text: `BAS-intervall ${d.bas}` });
+        for (const s of basdossierStycken(d, { forraBaraMedBokslut: true })) delar.push(stycke(s.rubrik, 'fet'), ...s.rader.map(r => stycke(r)));
+        const rader = basdossierYrkesrader(d);
+        if (rader.length) delar.push({ typ: 'tabell', kolumner: BD_YRKESKOLUMNER.map((rubrik, i) => ({ rubrik, typ: ['text', 'text', 'text', 'kr', 'kr', 'pct1', 'text'][i] })),
+            rader: rader.map(r => [r.aid, r.yrke, `${r.nKv} / ${r.nMa}`, r.medKv, r.medMa, r.kvotPct, r.status]) });
+        delar.push({ typ: 'fyllIn', text: BD_BEDOMNING });
+    }
+    if (smaYrken) utelamnat.push(`lönemått för ${smaYrken} ${smaYrken === 1 ? 'yrkesgrupp' : 'yrkesgrupper'} i intervallen med färre än ${k} personer`);
+    return { id: 'basintervall', numrerad: true, rubrik: 'Lönekartläggning per BAS-intervall', utelamnat, delar };
 }
 
 /**
@@ -438,6 +486,9 @@ function _rapportModellExport({ alla = false, bada = false } = {}) {
             ...diagram('struktur'),
         ] } : null;
 
+    // ---- Lönekartläggning per BAS-intervall (BAS-dossierns stycken, 81-basdossier.js) ----
+    const basintervall = d.length ? rmBasintervallAvsnitt(k) : null;
+
     // ---- Lönestruktur per BAS-intervall (tabellerna ur arbetsgivarnas egna utkast) ----
     const perbas = rmPerBasAvsnitt(d, k);
     const referenser = d.length ? rmReferenserAvsnitt(diagram) : null;
@@ -517,7 +568,7 @@ function _rapportModellExport({ alla = false, bada = false } = {}) {
         { typ: 'tabell', nyckel: true, kolumner: [{ rubrik: '', typ: 'text' }, { rubrik: '', typ: 'text' }], rader: (typeof _methodAppendixData === 'function' ? _methodAppendixData() : []).map(([n, v]) => [String(n), String(v)]) },
     ] };
 
-    const finns = /** @type {any[]} */ ([sammanfattning, regler, lika, likvardigt, struktur, referenser, perbas, atgarder, samverkan, beslut, regressionAvsnitt, metod].filter(Boolean));
+    const finns = /** @type {any[]} */ ([sammanfattning, regler, lika, likvardigt, basintervall, struktur, referenser, perbas, atgarder, samverkan, beslut, regressionAvsnitt, metod].filter(Boolean));
     /** @param {boolean} alla */
     const avsnitt = alla => {
         const urval = rapportUrval();
@@ -558,7 +609,8 @@ function rmTillHtml(m, { utskrift = false, bilder = null } = {}) {
         return t || '&nbsp;';
     };
     const del = p => {
-        if (p.typ === 'stycke') return `<p${p.stil === 'dampad' ? ' class="muted"' : p.stil === 'not' ? ' class="k-mask-note"' : ''}>${esc(p.text)}</p>`;
+        if (p.typ === 'stycke') return p.stil === 'fet' ? `<p><strong>${esc(p.text)}</strong></p>`
+            : `<p${p.stil === 'dampad' ? ' class="muted"' : p.stil === 'not' ? ' class="k-mask-note"' : ''}>${esc(p.text)}</p>`;
         if (p.typ === 'fyllIn') return `<div class="fillin"><strong>[HR fyller i]</strong> ${esc(p.text)}</div>`;
         if (p.typ === 'rubrik') return `<h${p.niva}>${esc(p.text)}</h${p.niva}>`;
         if (p.typ === 'diagram') {

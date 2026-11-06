@@ -175,6 +175,11 @@ export async function samlaUtdata(w) {
     ut.push(['skärm: alla flikar', skarmtext(w)]);
 
     lagg('Word-utkastet', w.__docDraftHtml());
+    // Rapporttextens utkast: textrutans värde (skärmtexten läser inte en textrutas värde), med delen per BAS-intervall,
+    // och rapportens avsnitt Lönekartläggning per BAS-intervall för sig (det står också i Word-utkastet och utskriften).
+    w.__renderTabContent('rapporttext');
+    lagg('rapportutkastet', d.getElementById('struktur-narrative').value);
+    lagg('rapportmodell: basintervall', w.eval("(m => rmTillHtml({ ...m, avsnitt: m.avsnitt.filter(a => a.id === 'basintervall') }))(rapportModell())"));
     for (const b of w.__rapportunderlagBlock()) lagg(`rapportunderlag: ${b.id}`, w.__ruTillWordHtml(b) + '\n' + w.__ruTillText(b));
     lagg('Att göra-punkter', w.eval('JSON.stringify(medExportLage(() => buildActionChecklist()))'));
     w.eval('window.__csv = null; window.__csvOrig = _downloadCSV; _downloadCSV = rows => { window.__csv = rows; }');

@@ -86,6 +86,7 @@ function _rensaAllData({ inbakat = true } = {}) {
     state.dataAudit = null;
     state.bristAids = new Set();
     state.rapportUrval = null;
+    state.utkastPerBas = true;
     state.rapportTabeller = [];
     state.perBasRecept = null;
     state.forklaringsmodell = null;
