@@ -148,7 +148,7 @@ Enda vägen att sätta ett diagram i sidan. `id` är ett element eller ett id. R
 
 | Alternativ | Innebörd |
 |---|---|
-| `visaSma` | Rita små punkter, markerade (streckad kant, ränder). Bara Utforska (ADR-14). |
+| `visaSma` | Rita små punkter, markerade (streckad kant, ränder). Bara Tabeller och egna vyer (ADR-14). |
 | `hojd` | Höjd i pixlar; annars figurens `hojd`, annars 320. |
 | `bredd` | Fast bredd. Diagrammet ritas då inte om när behållaren ändrar storlek. |
 | `tomtext` | Texten i tomt läge; annars "Inget att visa". |
@@ -336,7 +336,7 @@ bilden, diagramdatan och stämpeln.
 **Stämpeln** (`_kUndantagFor`). Allt i fliken Likvärdigt arbete (`#view-likvardighet`) får tillägget
 "(undantag: Likvärdigt arbete)", vad exporten än bär: fliken redovisar
 grupper under tröskeln, och en stämpel som varnar i onödan är ofarlig. Ett diagram från kärnan utanför den
-fliken får "(undantag: valt i Utforska)" bara när exporten faktiskt bär små grupper.
+fliken får "(undantag: valt i Tabeller och egna vyer)" bara när exporten faktiskt bär små grupper.
 
 **Rensning.**
 - `rensaFigur(id)` kopplar loss lyssnare och storleksbevakning, döljer behållarens tips, tar bort figuren och
@@ -366,7 +366,7 @@ ett trasigt diagram.
    det eller en ordning som bygger på det syns i bilden och i exporten.
 5. **Sätt alltid `farg` på lagren.** Utan `farg` tas färgen ur paletten efter lagrets index i figuren; ett
    lager där alla punkter är små och som därför inte ritas lämnar då en lucka i färgföljden.
-6. **Stämpeln.** I Likvärdigt arbete bär varje export undantaget. Annars bär den "valt i Utforska" bara när
+6. **Stämpeln.** I Likvärdigt arbete bär varje export undantaget. Annars bär den "valt i Tabeller och egna vyer" bara när
    `exportMedSma` svarar ja. En vy som redovisar små grupper utan att märka dem `liten` får alltså ingen
    varning utanför Likvärdigt arbete — märk dem.
 7. **`beskrivning`, axel- och paneltitlar, serienamn, `tomtext` och `exportBeskrivning` exporteras som de är
@@ -457,7 +457,7 @@ intervall som överlappar inte visar att skillnaden saknas och inte kan läggas 
 i dag har inget diagram den formen — där verktyget visar intervall jämförs punkten mot en referenslinje, och
 intervallet är skillnadens eget.
 
-**Många kategorier.** Liggande staplar, hantlar och punkter per kategori ritas med `paneler: 'auto'`, så att mer än femton kategorier blir små multiplar (Utforskas hantel, jämförelseflikens två figurer). Kandidatparens figur visar högst 14 par och behöver det inte.
+**Många kategorier.** Liggande staplar, hantlar och punkter per kategori ritas med `paneler: 'auto'`, så att mer än femton kategorier blir små multiplar (hanteln i Tabeller och egna vyer, de två figurerna mot statistiken i Löneläget). Kandidatparens figur visar högst 14 par och behöver det inte.
 
 **Pröva med många grupper.** Demodatan har åtta yrkesgrupper. Tre fel syntes först med ett fyrtiotal: en tabell
 som inte rymdes, namn som låg på varandra och ett diagram som blev över tusen punkter högt. Ett nytt diagram ska

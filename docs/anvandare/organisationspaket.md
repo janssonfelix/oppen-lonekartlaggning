@@ -15,12 +15,12 @@ filer) finns ingen referens att jämföra mot.
 | Del | Innehåll | Används till |
 |---|---|---|
 | Organisation | Organisationens namn, utgivare (t.ex. "Lönefunktionen, HR-avdelningen"), datum, vilket år paketet avser och organisationstypen (kommun, region eller båda) | Visas i verktyget och i exporter, så att det framgår vilket underlag som använts |
-| Benämningar | Vad jämförelsestatistiken heter (t.ex. "Kommunens lönestatistik") | Rubriker och texter i Jämförelse, Prioritering och exporter |
+| Benämningar | Vad jämförelsestatistiken heter (t.ex. "Kommunens lönestatistik") | Rubriker och texter i Löneläget, Prioritering och exporter |
 | Grundinställningar | PO-påslag och beräkningsperiod, och *Minsta gruppstorlek för redovisning* (valfritt; utan värde gäller 10 eller det handläggaren har satt) | Kostnadsberäkningarna i Prioritering och Löneöversyn, och vilka grupper som redovisas. Ett värde under 10 ger handläggaren en fråga om bekräftelse när paketet läses in |
-| Låsningar (valfritt) | *Lägsta tillåtna minsta gruppstorlek*, en låst tid för *rensning vid inaktivitet*, och om *små grupper får tas med i Utforskas export* | Det handläggaren inte får ändra, se avsnitt 5 |
-| Rapportens recept (valfritt) | Egna tabeller byggda i Utforska och ett eget recept för avsnittet per BAS-intervall — bara recepten (rader, kolumner, mått, urval), inga tal | Samma tabeller i Word, PDF, Excel och rapportunderlaget hos alla handläggare; ersätter de egna tabeller som finns när paketet läses in |
-| Lönepolitiskt ställningstagande | P10, median och P90 per BAS-intervall (och/eller per yrke) | Prioritering, Jämförelse och statusrutan i Att göra |
-| Jämförelsestatistik | Median (och gärna P10, P90 och könsfördelning) per yrke och BAS | Fliken Jämförelse, prioritering mot statistiken och reserven i Likvärdigt arbete |
+| Låsningar (valfritt) | *Lägsta tillåtna minsta gruppstorlek*, en låst tid för *rensning vid inaktivitet*, och om *små grupper får tas med i exporten från Tabeller och egna vyer* | Det handläggaren inte får ändra, se avsnitt 5 |
+| Rapportens recept (valfritt) | Egna tabeller byggda i Tabeller och egna vyer och ett eget recept för avsnittet per BAS-intervall — bara recepten (rader, kolumner, mått, urval), inga tal | Samma tabeller i Word, PDF, Excel och rapportunderlaget hos alla handläggare; ersätter de egna tabeller som finns när paketet läses in |
+| Lönepolitiskt ställningstagande | P10, median och P90 per BAS-intervall (och/eller per yrke) | Prioritering, Löneläget och statusrutan i Att göra |
+| Jämförelsestatistik | Median (och gärna P10, P90 och könsfördelning) per yrke och BAS | Fliken Löneläget, prioritering mot statistiken och reserven i Likvärdigt arbete |
 
 Ställningstagandet och jämförelsestatistiken är var för sig valfria, men paketet måste
 innehålla minst det ena. Analysens trösklar (t.ex. 60 % för kvinnodominans och 5 % för
@@ -32,11 +32,11 @@ personnummer eller e-postadresser.
 
 ## 2. Skapa paketet
 
-1. Öppna verktyget och gå till **Översikt**.
+1. Öppna verktyget och gå till **Filer och kvalitet**.
 2. Läs in **ställningstagandet** och **jämförelsestatistiken** i sina rutor, precis som vid en
    vanlig kartläggning. Kontrollera att antalet rader stämmer.
-3. Fäll ut **Skapa organisationspaket (för systemägaren)** i panelen *Organisationspaket*,
-   längst ned i uppladdningsytan.
+3. Fäll ut **Skapa organisationspaket (för systemägaren)** längst ned i panelen *Organisationspaket*
+   (steg 1, överst i fliken).
 4. Fyll i organisationens namn, utgivare och år, vad jämförelsestatistiken ska heta, vad
    ställningstagandet ska heta (fältet är förifyllt med filens namn — byt till ett namn som passar i
    rapporten, t.ex. *Lönepolitiskt ställningstagande 2026*, och en kort form som *ställningstagandet*), samt
@@ -45,7 +45,7 @@ personnummer eller e-postadresser.
    värde (inte ett heltal mellan 2 och 1000) stoppar sparandet.
 5. Fyll i låsningarna om organisationen vill ha dem (avsnitt 5): *Lägsta tillåtna minsta
    gruppstorlek*, *Rensning vid inaktivitet* med rutan *Lås rensningstiden*, och rutan *Små
-   grupper får tas med i Utforskas export*. Tomma fält betyder att paketet inte anger något.
+   grupper får tas med i exporten från Tabeller och egna vyer*. Tomma fält betyder att paketet inte anger något.
 6. Kontrollera sammanfattningen ("Paketet får med: …" — den anger också vilken minsta
    gruppstorlek paketet får och vad det låser) och välj **Spara som
    organisationspaket**. Filen heter `<organisation>.lonepaket.json`.
@@ -58,7 +58,7 @@ Ingen lönefil behövs för att skapa paketet.
   filyta. Den kan skickas som vanlig bilaga — den innehåller inga personuppgifter.
 - Tala om för handläggarna vilket paket som gäller (år och datum). Verktyget visar
   organisation, utgivare, datum och innehåll när paketet läses in.
-- En handläggare läser in paketet med **Läs in organisationspaket** på Översikt. Det sparas
+- En handläggare läser in paketet med **Läs in organisationspaket** i fliken Filer och kvalitet. Det sparas
   inte i verktyget och läses in varje gång, precis som lönefilen. En sparad
   konfigurationsfil påminner om vilket paket som användes.
 
@@ -107,7 +107,7 @@ förvald; ett paket utan fälten låser ingenting.
 |---|---|---|
 | Golv för minsta gruppstorlek | *Lägsta tillåtna minsta gruppstorlek* (heltal 2–1000) | Minsta gruppstorlek kan inte sättas under värdet — inte i *Inställningar*, inte ur en konfigurationsfil och inte av ett annat paket som läses in senare. Fältet i *Inställningar* visar gränsen ("lägst N enligt organisationspaketet") och avvisar lägre värden med samma felmeddelande som ett ogiltigt värde. Är gällande tröskel lägre när paketet läses in höjs den till golvet. Paketets egen *Minsta gruppstorlek* får inte ligga under golvet |
 | Låst rensningstid | *Rensning vid inaktivitet* (0 = av, eller 5–120 minuter) och rutan *Lås rensningstiden* | Rullistan under *Vad lagras?* står på värdet och går inte att ändra; en rad säger att organisationspaketet har låst tiden. Utan rutan är värdet bara en förinställning som handläggaren kan ändra. Läget *Av* (0) kan inte låsas |
-| Små grupper i Utforskas export | Rutan *Små grupper får tas med i Utforskas export* (förvald) | Avkryssad: rutan "Ta med grupper under tröskeln i exporten" i Utforska är dold, exporten utelämnar alltid små grupper, och en rad säger att organisationspaketet inte tillåter det |
+| Små grupper i exporten från Tabeller och egna vyer | Rutan *Små grupper får tas med i exporten från Tabeller och egna vyer* (förvald) | Avkryssad: rutan "Ta med grupper under tröskeln i exporten" i Tabeller och egna vyer är dold, exporten utelämnar alltid små grupper, och en rad säger att organisationspaketet inte tillåter det |
 
 Låsningarna gäller så länge paketet är inläst. *Rensa all data* tar bort dem tillsammans med
 paketet, och konfigurationsfilen bär dem inte — en konfigurationsfil kan alltså varken sätta
@@ -227,7 +227,7 @@ Vad paketet gör när det läses in:
 - PO-påslaget 41,5 % och beräkningsperioden 12 månader används i Prioritering och Löneöversyn;
 - minsta gruppstorlek är 10 och kan inte sättas lägre (`kTroskelLagst`);
 - rensning vid inaktivitet är låst på 30 minuter (`inaktivitetMin` med `inaktivitetLast`);
-- små grupper kan inte tas med i Utforskas export (`smaGrupperIExport: false`);
+- små grupper kan inte tas med i exporten från Tabeller och egna vyer (`smaGrupperIExport: false`);
 - ställningstagandet har spann för BAS A och B och för en yrkesgrupp i BAS C, och statistiken har
   två yrken.
 
@@ -240,8 +240,8 @@ Före spridning:
 - [ ] Inga rader i statistiken bygger på så få personer att en enskild lön kan räknas fram.
 - [ ] Organisationens namn, utgivare och datum stämmer; året (`avserAr`) är kartläggningens år.
 - [ ] PO-påslaget och beräkningsperioden är årets.
-- [ ] Låsningarna är beslutade: golv för minsta gruppstorlek, rensningstid, små grupper i Utforskas
-      export. Beslutet och skälet är dokumenterat, till exempel i dataskyddsombudets bedömning.
+- [ ] Låsningarna är beslutade: golv för minsta gruppstorlek, rensningstid, små grupper i exporten
+      från Tabeller och egna vyer. Beslutet och skälet är dokumenterat, till exempel i dataskyddsombudets bedömning.
 - [ ] Paketet är prövat: läs in det i en ny flik, kontrollera faktarutan (organisation, datum,
       innehåll och låsningar) och att *Inställningar* visar golvet och *Vad lagras?* den låsta tiden.
 

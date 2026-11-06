@@ -27952,7 +27952,7 @@ const INFO_SECTIONS = {
             Verktyget är byggt för arbetsgivare som kodar sina befattningar med <strong>AID</strong> och <strong>BAS-intervall</strong> och kan jämföra sig med SKR:s personalstatistik, i praktiken kommuner och regioner. Varje organisation läser in sitt eget ställningstagande, sin statistik och sina benämningar i ett organisationspaket, så att ingenting om en viss organisation är inbyggt.
         </p>
         <p>
-            Verktyget stödjer också delar av <strong>EU:s lönetransparensdirektiv 2023/970</strong>: rapportmåtten i Struktur &amp; rapportmått, utredningsgränsen på fem procent och protokollet för gemensam lönebedömning. Direktivet skulle vara infört senast den 7 juni 2026 men är ännu inte infört i Sverige; vissa delar kan ha direkt verkan mot kommuner och regioner. Den anställdes rätt till information och arbetsgivarens rapportering till myndighet ligger utanför verktyget.
+            Verktyget stödjer också delar av <strong>EU:s lönetransparensdirektiv 2023/970</strong>: rapportmåtten i Lönestruktur, utredningsgränsen på fem procent och protokollet för gemensam lönebedömning. Direktivet skulle vara infört senast den 7 juni 2026 men är ännu inte infört i Sverige; vissa delar kan ha direkt verkan mot kommuner och regioner. Den anställdes rätt till information och arbetsgivarens rapportering till myndighet ligger utanför verktyget.
         </p>
         <p>
             Hela verktyget är <strong>en enda fil som körs i webbläsaren på din dator</strong>. Ingen data lämnar datorn: inga servrar, inga molntjänster, inga nätverksanrop. Det är inte bara ett löfte utan en spärr i filen själv, som hindrar webbläsaren från att skicka något ut.
@@ -27987,14 +27987,14 @@ const INFO_SECTIONS = {
 
         <h3>Så går en kartläggning till</h3>
         <ol>
-            <li>Läs in <strong>organisationspaketet</strong> på Översikt, om er organisation har ett, och sedan <strong>lönefilen</strong> (BAS-intervall, AID, lön, ålder och kön; ansvarskod och arbetsvärderingspoäng är valfria)</li>
-            <li>Titta på <strong>Att göra</strong> och <strong>Underlagets kvalitet</strong> på Översikt: går underlaget att lita på, och var ska ni börja?</li>
+            <li>Läs in <strong>organisationspaketet</strong> i <strong>Filer och kvalitet</strong>, om er organisation har ett, och sedan <strong>lönefilen</strong> (BAS-intervall, AID, lön, ålder och kön; ansvarskod och arbetsvärderingspoäng är valfria)</li>
+            <li>Titta på <strong>Underlagets kvalitet</strong> i samma flik och på <strong>Att göra</strong> på Översikt: går underlaget att lita på, och var ska ni börja?</li>
             <li>Gå igenom <strong>Regler &amp; praxis</strong> och skriv in er bedömning per område</li>
-            <li>Gå igenom <strong>Lika arbete</strong>, <strong>Likvärdigt arbete</strong> och <strong>Struktur &amp; rapportmått</strong>: där står skillnaderna och vad som förklarar dem</li>
+            <li>Gå igenom <strong>Lika arbete</strong>, <strong>Likvärdigt arbete</strong> och <strong>Lönestruktur</strong> under Kartläggning: där står skillnaderna och vad som förklarar dem. <strong>Löneläget</strong> och <strong>Ålder &amp; karriär</strong> är fördjupning, inget lagkrav</li>
             <li>Bestäm i <strong>Prioritering</strong> och <strong>Handlingsplan</strong> vad som ska göras, av vem och när; pröva fördelningen av potten i <strong>Löneöversyn</strong></li>
-            <li>Kör färdigchecken under <strong>Dokumentera &amp; exportera</strong>, hämta Word-utkastet och färdigställ dokumentationen</li>
+            <li>Ta texten till rapporten ur <strong>Rapporttext</strong>, kör färdigchecken i <strong>Exportera</strong>, hämta Word-utkastet och färdigställ dokumentationen. Spara konfigurationen i <strong>Spara och jämför år</strong>, så kan ni jämföra med förra året nästa gång</li>
         </ol>
-        <p>Körguiden som följer med verktyget beskriver varje steg närmare; den står under Källor.</p>
+        <p>Raden <em>Klar här? Nästa steg</em> sist i flikarna leder vidare i den här ordningen. Sökrutan i sidhuvudet hittar yrken, BAS-intervall och funktioner, och listan <em>På den här sidan</em> leder till flikens avsnitt. Körguiden som följer med verktyget beskriver varje steg närmare; den står under Källor.</p>
     `,
 
     gdpr: () => `
@@ -28037,10 +28037,10 @@ const INFO_SECTIONS = {
 
         <h3>k-anonymitet</h3>
         <p><strong>På skärmen visas allt.</strong> Den som arbetar i verktyget har redan lönefilen, så vyerna maskerar inga grupper: varje yrkesgrupp, varje BAS-intervall och varje könsuppdelat mått visas oavsett storlek (beslut 2026-10-29).</p>
-        <p><strong>Det som lämnar verktyget följer minsta gruppstorlek.</strong> Excel, Word-utkastet, PDF-rapporten, ZIP-filen, CSV, urklipp, diagrambilder, rapportunderlaget och allt under Dokumentera &amp; exportera ritas och räknas med den inställda tröskeln: grupper med n &lt; ${kInstalld()} redovisas inte, utan räknas upp med namn i en not så att det syns vad som saknas. Gällande värde är ${kInstalld()}; standardvärdet är ${K_STANDARD} och det ändras under Inställningar i sidhuvudet (&quot;Minsta gruppstorlek för redovisning&quot;). Personerna ingår fortfarande i underlaget och i totalsummorna.</p>
+        <p><strong>Det som lämnar verktyget följer minsta gruppstorlek.</strong> Excel, Word-utkastet, PDF-rapporten, ZIP-filen, CSV, urklipp, diagrambilder, rapportunderlaget och allt i Rapporttext, Exportera och Spara och jämför år ritas och räknas med den inställda tröskeln: grupper med n &lt; ${kInstalld()} redovisas inte, utan räknas upp med namn i en not så att det syns vad som saknas. Gällande värde är ${kInstalld()}; standardvärdet är ${K_STANDARD} och det ändras under Inställningar i sidhuvudet (&quot;Minsta gruppstorlek för redovisning&quot;). Personerna ingår fortfarande i underlaget och i totalsummorna.</p>
         <p>Där bara <em>könsuppdelningen</em> är för liten, men gruppen som helhet når tröskeln, redovisar exporterna gruppens <strong>samlade median</strong> i stället; könsjämförelsen utgår. Samma regel gäller könsuppdelade mått för hela organisationen: varje kön ska nå tröskeln.</p>
         <p><strong>Inte tröskelstyrt:</strong> i Löneöversyn får du lägga en egen riktad rad på en grupp under ${kInstalld()} personer: beloppet visas på raden och ingår i summorna, även i Excel-exporten, och bygger då på enskildas löner — raden säger det.</p>
-        <p><strong>Utforska.</strong> Tabellens och diagrammens export utelämnar grupper under ${kInstalld()} personer om du inte kryssar i rutan <em>Ta med grupper under ${kInstalld()} i exporten</em>; organisationspaketet kan stänga av rutan.</p>
+        <p><strong>Tabeller och egna vyer.</strong> Tabellens och diagrammens export utelämnar grupper under ${kInstalld()} personer om du inte kryssar i rutan <em>Ta med grupper under ${kInstalld()} i exporten</em>; organisationspaketet kan stänga av rutan.</p>
         <p><strong>Undantag: Likvärdigt arbete.</strong> Lagen kräver att även små kvinnodominerade yrken prövas. Fliken och dess egen export visar därför kandidatpar även när en grupp är under tröskeln; exporten anger det i filen. Alla andra utdata — Rapportunderlaget, Word-utkastet, PDF-rapporten, protokollet för gemensam lönebedömning, Att göra och dess CSV, handlingsplanens förifyllda rader och gruppdossiern — tar bara med par där båda grupperna når tröskeln och anger hur många som utelämnats.</p>
         <p><strong>Undantag: enskilda personer i verktyget.</strong> Personer att granska (Lika arbete) och extremvärdena i Underlagets kvalitet visar enskilda löner med filens radnummer. Personer att granska kan inte exporteras eller skrivas ut.</p>
         <p><strong>Diagramdata.</strong> Alla diagram kan exporteras som bild eller som diagramdata (CSV/urklipp). För diagram som visar enskilda personer — lön mot ålder, individpunkter — innehåller diagramdatan en rad per person (utan namn eller identifierare). Hantera sådana filer som personuppgifter. PDF-rapportens mall <em>Komplett rapport</em> och ZIP-exporten innehåller bilder av sådana diagram. I CSV och urklipp får celler som börjar med = + - @ ett inledande apostrof-tecken, så att Excel inte kör dem som formler.</p>
@@ -28083,7 +28083,7 @@ const INFO_SECTIONS = {
         <h3>Statistisk styrka</h3>
         <p>Minsta detekterbara effekt (MDE) vid 80% statistisk styrka, α=0.05 tvåsidig:</p>
         <p class="kursiv pad-8 ta-mitt"><code>MDE = (exp(2,802 × SE) − 1) × 100 %</code></p>
-        <p>där SE är könskoefficientens robusta standardfel i huvudregressionen (log-skala). Räknas om vid varje datauppladdning. Kriteriet <em>Statistisk styrka</em> i Underlagets kvalitet på Översikt är OK upp till 2 %, varning upp till 5 % och kritiskt däröver (låg styrka — undvik definitiva slutsatser om enskilda mindre grupper).</p>
+        <p>där SE är könskoefficientens robusta standardfel i huvudregressionen (log-skala). Räknas om vid varje datauppladdning. Kriteriet <em>Statistisk styrka</em> i Underlagets kvalitet (Filer och kvalitet) är OK upp till 2 %, varning upp till 5 % och kritiskt däröver (låg styrka — undvik definitiva slutsatser om enskilda mindre grupper).</p>
         <p>Prioriteringens detektionströskel och varningarna per grupp använder en enklare uppskattning utan regression: <code>MDE = (exp(2,802 × σ_log × √(1/n_kv + 1/n_ma)) − 1) × 100 %</code>, där n är gruppens antal kvinnor och män och σ_log är spridningen i log(lön) <em>inom</em> grupp: den poolade standardavvikelsen av residualerna log(lön) − log(gruppens median per kön) över alla yrkesgrupper inom BAS med minst ${statGolv()} av varje kön (samma spridningsmått som trattdiagrammet i Lika arbete). Spridningen över hela urvalet rymmer skillnaderna mellan BAS-intervallen och skulle överskatta spridningen inom en grupp; den används bara som reserv när ingen grupp når golvet eller residualerna är färre än 20. En grupp märks under 3 % som god styrka, under 7 % som måttlig och däröver som låg.</p>
 
         <h3>Andra metoder</h3>
@@ -28099,8 +28099,8 @@ const INFO_SECTIONS = {
         <h3>AID och sektorer</h3>
         <p>${esc(AID_METODTEXT)}</p>
         <p>Verktyget känner till AID:s 13 huvudområden — till exempel vård och omsorg, skola och förskola
-        och teknik — och använder dem som <strong>sektorer</strong> i sektorsöversikten under Struktur &amp; rapportmått
-        och som gruppering i Utforska. Koder som inte finns i etikettlistan ingår i analyserna men får ingen sektor.</p>
+        och teknik — och använder dem som <strong>sektorer</strong> i sektorsöversikten i Lönestruktur
+        och som gruppering i Tabeller och egna vyer. Koder som inte finns i etikettlistan ingår i analyserna men får ingen sektor.</p>
         <p>AID:s <strong>ansvarskod</strong> är valfri. Finns den i lönefilen grupperas den i tre ansvarsgrupper:
         <strong>Ledningsansvar</strong> (A, B, C, L), <strong>Särskilt uppdrag</strong> (F, M, 1001, 1002) och
         <strong>Inget särskilt ansvar</strong>. Ansvaret redovisas bredvid huvudresultaten, aldrig inbakat i dem —
@@ -28121,18 +28121,21 @@ const INFO_SECTIONS = {
         <h3>Flikar i verktyget</h3>
         <table>
             <tr><th>Fas</th><th>Flik</th><th>Syfte</th></tr>
-            <tr><td>1 · Underlag</td><td>Översikt</td><td>Filuppladdning och organisationspaket, nyckeltal, processkartan, underlagets kvalitet med extremvärden, Att göra (status mot lagkraven, Börja här och alla punkter) och Var uppstår löneskillnaden?</td></tr>
-            <tr><td>2 · Kartlägg &amp; analysera</td><td>Regler &amp; praxis</td><td>Kvalitativ granskning av regler och praxis för löner och villkor: status och anteckning per område. Kräver ingen data; följer med i Word-utkastet.</td></tr>
-            <tr><td>2 · Kartlägg &amp; analysera</td><td>Lika arbete</td><td>Kvinnor och män i samma yrkesgrupp först, sedan personer att granska, lönegap och könsfördelning per BAS, multivariat regression, vattenfallsdiagram och Blinder-Oaxaca</td></tr>
-            <tr><td>2 · Kartlägg &amp; analysera</td><td>Likvärdigt arbete</td><td>Kvinnodominerade yrken mot likvärdiga icke-kvinnodominerade yrken, bootstrap-KI per par</td></tr>
-            <tr><td>2 · Kartlägg &amp; analysera</td><td>Struktur &amp; rapportmått</td><td>Organisationen som karta, representation per nivå, fördelningsgap och måtten enligt EU 2023/970 art. 9</td></tr>
-            <tr><td>3 · Åtgärda</td><td>Prioritering</td><td>Bubbeldiagram och sorterad lista med kostnad och förslag på möjliga förklaringar att pröva</td></tr>
-            <tr><td>3 · Åtgärda</td><td>Löneöversyn</td><td>Simulera hur en lönepott kan fördelas och vad det gör med lönegapet</td></tr>
-            <tr><td>3 · Åtgärda</td><td>Handlingsplan</td><td>Mall för åtgärder, kostnad, ansvarig och tidsplan (senast inom tre år) samt dokumentationskrav. Utskrivbar.</td></tr>
-            <tr><td>4 · Fördjupa (ej lagkrav)</td><td>Ålder &amp; karriär</td><td>Lön mot ålder per kön, demografi (åldersfördelning, successionsrisk) och livscykel: växer eller krymper gapet över karriären</td></tr>
-            <tr><td>4 · Fördjupa (ej lagkrav)</td><td>Jämförelse</td><td>Löneläget och jämförelsestatistiken mot ställningstagandet per yrkesgrupp, avsnittet mot ställningstagandet (bandkarta, könsposition i bandet, täckningsgrad) och avsnittet mot statistiken. Syns när en referens är inläst.</td></tr>
-            <tr><td>4 · Fördjupa (ej lagkrav)</td><td>Utforska</td><td>Två avsnitt: Löneöversikten (hela löneläget per BAS, kön och yrkesgrupp) och Egna vyer: rader och kolumner, mått, helhet eller per kön, urval med villkor, tolv diagramtyper (de vanliga först, resten under Fler diagramtyper), klick till gruppdossier</td></tr>
-            <tr><td>5 · Dokumentera</td><td>Dokumentera &amp; exportera</td><td>Färdigcheck och robusthet, all export (Word-utkast som .docx, PDF, Excel, protokoll för gemensam lönebedömning, handlingsplan), samverkan samt Spara och läsa in arbetet (konfiguration, ögonblicksbild, självdiagnostik). Länkar till flikarna med egna underlag (kandidatparen, EU-rapportmåtten, åtgärdslistan, prognosen)</td></tr>
+            <tr><td>1 · Underlag</td><td>Översikt</td><td>Nyckeltal, status mot lagkraven, Att göra (Börja här och alla punkter) och processkartan. Kräver ingen data.</td></tr>
+            <tr><td>1 · Underlag</td><td>Filer och kvalitet</td><td>Filuppladdning: organisationspaket, lönefil, ställningstagande och jämförelsestatistik; underlagets kvalitet med extremvärden och inläsningsrapporten. Kräver ingen data.</td></tr>
+            <tr><td>1 · Underlag</td><td>Regler &amp; praxis</td><td>Kvalitativ granskning av regler och praxis för löner och villkor: status och anteckning per område. Kräver ingen data; följer med i Word-utkastet.</td></tr>
+            <tr><td>2 · Kartläggning</td><td>Löneläget</td><td>Fördjupning, inget lagkrav. Löneläget och jämförelsestatistiken mot ställningstagandet per yrkesgrupp, avsnittet mot ställningstagandet (bandkarta, könsposition i bandet, täckningsgrad) och avsnittet mot statistiken. Går att öppna när en referens är inläst.</td></tr>
+            <tr><td>2 · Kartläggning</td><td>Lika arbete</td><td>Kvinnor och män i samma yrkesgrupp med trattdiagrammet, personer att granska, Lika arbete AID x BAS och analys på individnivå</td></tr>
+            <tr><td>2 · Kartläggning</td><td>Likvärdigt arbete</td><td>Kvinnodominerade yrken mot likvärdiga icke-kvinnodominerade yrken, bootstrap-KI per par</td></tr>
+            <tr><td>2 · Kartläggning</td><td>Lönestruktur</td><td>Organisationen som karta, representation per nivå, fördelningsgap, per sektor, Var uppstår löneskillnaden?, måtten enligt EU 2023/970 art. 9, lönegap och könsfördelning per BAS, och vad som blir kvar av lönegapet: förklaringsmodell, multivariat regression, vattenfallsdiagram och Blinder-Oaxaca</td></tr>
+            <tr><td>2 · Kartläggning</td><td>Ålder &amp; karriär</td><td>Fördjupning, inget lagkrav. Lön mot ålder per kön, demografi (åldersfördelning, successionsrisk) och livscykel: växer eller krymper gapet över karriären</td></tr>
+            <tr><td>3 · Åtgärder</td><td>Prioritering</td><td>Bubbeldiagram och sorterad lista med kostnad och förslag på möjliga förklaringar att pröva. Trösklarna och viktningen ställs in under Inställningar</td></tr>
+            <tr><td>3 · Åtgärder</td><td>Löneöversyn</td><td>Simulera hur en lönepott kan fördelas och vad det gör med lönegapet</td></tr>
+            <tr><td>3 · Åtgärder</td><td>Handlingsplan</td><td>Mall för åtgärder, kostnad, ansvarig och tidsplan (senast inom tre år) samt dokumentationskrav, och samverkan och uppföljning med protokollet för gemensam lönebedömning. Utskrivbar; kräver ingen data.</td></tr>
+            <tr><td>4 · Rapport</td><td>Rapporttext</td><td>Auto-rapportutkastet i klarspråk och rapportunderlaget: färdiga avsnitt att kopiera in i er egen rapportmall</td></tr>
+            <tr><td>4 · Rapport</td><td>Exportera</td><td>Färdigcheck och robusthet, rapportens innehåll och all export (Word-utkast som .docx, PDF, Excel, ZIP, protokoll för gemensam lönebedömning, handlingsplan). Länkar till flikarna med egna underlag (kandidatparen, EU-rapportmåtten, åtgärdslistan, prognosen)</td></tr>
+            <tr><td>4 · Rapport</td><td>Tabeller och egna vyer</td><td>Två avsnitt: Löneöversikten (hela löneläget per BAS, kön och yrkesgrupp) och Egna vyer: rader och kolumner, mått, helhet eller per kön, urval med villkor, tolv diagramtyper (de vanliga först, resten under Fler diagramtyper), klick till gruppdossier</td></tr>
+            <tr><td>Arbetet</td><td>Spara och jämför år</td><td>Spara och ladda konfigurationen, jämför med en ögonblicksbild eller med förra året, och kör självdiagnostiken. Kräver ingen data.</td></tr>
             <tr><td>Hjälp</td><td>Om verktyget</td><td>Du är här</td></tr>
         </table>
 
@@ -28143,7 +28146,9 @@ const INFO_SECTIONS = {
             <li><strong>Excel med alla flikar:</strong> alla resultat-tabeller i en xlsx</li>
             <li><strong>ZIP-export:</strong> alla diagram (PNG) + Excel i en zip</li>
             <li><strong>PDF-rapport:</strong> en låst kopia av Word-utkastet med samma urval av avsnitt (hela dokumentationen, ledningsbrief eller facklig dialog)</li>
-            <li><strong>Organisationspaket:</strong> en fil med organisationens benämningar, grundinställningar, ställningstagande och jämförelsestatistik läses in på Översikt.</li>
+            <li><strong>Organisationspaket:</strong> en fil med organisationens benämningar, grundinställningar, ställningstagande och jämförelsestatistik läses in i Filer och kvalitet.</li>
+            <li><strong>Sök:</strong> fältet i sidhuvudet (snedstreck eller Ctrl+K) hittar yrken och BAS-intervall och markerar dem i alla diagram och tabeller, och hittar flikarnas avsnitt, exporterna och fälten i Inställningar, också utan lönefil. Ett avsnitt i en låst flik säger <em>kräver lönefil</em></li>
+            <li><strong>På den här sidan:</strong> flikens synliga avsnitt i en lista som följer med när sidan rullas; ett klick fäller ut avsnittet och flyttar fokus dit</li>
             <li><strong>Självdiagnostik:</strong> ladda 200 syntetiska poster med kända egenskaper och kör sju kontroller</li>
             <li><strong>Tangentbordsnavigation:</strong> Tab/Shift+Tab mellan kontroller, piltangenter och Home/End i menyn och i flikraderna, Esc stänger modaler och menyer</li>
         </ul>
@@ -28175,7 +28180,7 @@ SHA-256:    Se <code>RELEASE.txt</code> i utvecklingsmappen för verifiering
         </div>
 
         ${state.paketInbakat ? `<h3>Organisationsfil</h3>
-        <p>Den här filen är en organisationsfil: organisationspaketet från <strong>${esc(state.paketInbakat.organisation)}</strong> är inbakat (skapad ${esc(state.paketInbakat.skapad || '–')}) och läses in vid varje start. Filen bygger på verktyget version ${esc(state.paketInbakat.verktygsversion || 'okänd')}${state.paketInbakat.verktygssha ? ` (verktygsfilens SHA-256: <code>${esc(state.paketInbakat.verktygssha)}</code>)` : ''}. Paketet går att granska och ladda ner under <em>Organisationspaket</em> på Översikt. Ingen lönedata ingår i filen.</p>` : ''}
+        <p>Den här filen är en organisationsfil: organisationspaketet från <strong>${esc(state.paketInbakat.organisation)}</strong> är inbakat (skapad ${esc(state.paketInbakat.skapad || '–')}) och läses in vid varje start. Filen bygger på verktyget version ${esc(state.paketInbakat.verktygsversion || 'okänd')}${state.paketInbakat.verktygssha ? ` (verktygsfilens SHA-256: <code>${esc(state.paketInbakat.verktygssha)}</code>)` : ''}. Paketet går att granska och ladda ner under <em>Organisationspaket</em> i Filer och kvalitet. Ingen lönedata ingår i filen.</p>` : ''}
         <h3>Verifiera integriteten</h3>
         <p>Kontrollera att din kopia av <code>oppen-lonekartlaggning.html</code> matchar SHA-256-hashen i <code>RELEASE.txt</code>:</p>
         <h4>Windows (PowerShell):</h4>
@@ -28186,7 +28191,7 @@ SHA-256:    Se <code>RELEASE.txt</code> i utvecklingsmappen för verifiering
         <h3>Bygg- och utvecklarverktyg</h3>
         <ul>
             <li><strong><code>npm run bundle</code></strong> — bygger single-file-HTML:en: inlinerar CSS/JS, minifierar, hårdar CSP med per-script-hashar och beräknar SHA-256</li>
-            <li><strong><code>npm test</code></strong> — Vitest: de rena kärnorna i <code>src/lib/</code> (bl.a. statistik, prognos, struktur, likvärdigt arbete, Utforska, urval), CSV-parsning, boot-/render-röktest i jsdom, a11y (axe-core), golden-lås på Excel-/Word-/PDF-utdata och drift-vakt mot <code>src/lib/</code></li>
+            <li><strong><code>npm test</code></strong> — Vitest: de rena kärnorna i <code>src/lib/</code> (bl.a. statistik, prognos, struktur, likvärdigt arbete, egna vyer, urval), CSV-parsning, boot-/render-röktest i jsdom, a11y (axe-core), golden-lås på Excel-/Word-/PDF-utdata och drift-vakt mot <code>src/lib/</code></li>
             <li><strong><code>npm run test:browser</code></strong> — röktest av den byggda single-file-filen i riktig Chromium (Playwright): att biblioteken laddas under den hårdade CSP:n, att diagrammen faktiskt ritas, att modalen fungerar och att inget skrivs till localStorage</li>
             <li><strong><code>npm run lint</code></strong> — ESLint (flat config)</li>
         </ul>
