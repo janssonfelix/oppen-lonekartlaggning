@@ -25770,8 +25770,12 @@ function renderPrioritering() {
     // Avsnittens nyckeltal (ADR-41): samma tal som rutorna ovanför.
     _laNyckel('nyckel-pr-lista', `${items.length} ${items.length === 1 ? 'grupp' : 'grupper'}${akutCount ? ` · ${akutCount} att börja med` : ''}`, akutCount > 0);
     _laNyckel('nyckel-pr-kostnad', totalCost > 0 ? fmtMkr : '');
-    const anpassat = JSON.stringify(state.prioConfig) !== JSON.stringify(PRIO_CONFIG_DEFAULTS);
-    _laNyckel('nyckel-pr-installningar', anpassat ? 'Anpassade värden' : 'Standardvärden', anpassat);
+    // Trösklarna och viktningen ställs in i Inställningar; fliken säger bara om de är ändrade.
+    const installningarRad = document.getElementById('pr-installningar-rad');
+    if (installningarRad) {
+        const anpassad = JSON.stringify(state.prioConfig) !== JSON.stringify(PRIO_CONFIG_DEFAULTS);
+        installningarRad.innerHTML = `Trösklar och viktning: ${anpassad ? 'anpassade värden' : 'standardvärden'} <button type="button" class="ov-filrad-lank" data-oppna-installningar="prio-cfg-atgard">Ändra</button>`;
+    }
     const costPerEl = document.getElementById('prio-stat-cost-period');
     if (costPerEl) costPerEl.textContent = `${state.costSettings.months} månader, inkl. PO-påslag ${svPct(state.costSettings.poPct, 2)}`;
 
@@ -26049,7 +26053,6 @@ function _readPrioConfigInputs() {
     const isCustom = JSON.stringify(state.prioConfig) !== JSON.stringify(PRIO_CONFIG_DEFAULTS);
     const flag = document.getElementById('prio-cfg-custom-flag');
     if (flag) flag.style.display = isCustom ? 'inline' : 'none';
-    _laNyckel('nyckel-pr-installningar', isCustom ? 'Anpassade värden' : 'Standardvärden', isCustom);
 }
 ['prio-cfg-atgard','prio-cfg-akutN','prio-cfg-bevaka','prio-cfg-analysera'].forEach(id => {
     document.getElementById(id)?.addEventListener('input', () => {
@@ -31106,9 +31109,10 @@ document.addEventListener('click', e => {
 // Copyright 2026 Felix Jansson
 // ---- Inställningar ----
 /**
- * Panelen samlar det som gäller flera flikar: minsta gruppstorlek och organisationstyp. Inställningar för
- * en enda flik står kvar i fliken, bredvid resultatet de påverkar; panelen visar var de finns och om de är ändrade.
- * PO-påslag och beräkningsperiod hör till Prioritering och står kvar där.
+ * Panelen samlar det som gäller flera flikar: minsta gruppstorlek, organisationstyp, PO-påslag och beräkningsperiod,
+ * och Prioriteringens trösklar och viktning (de styr åtgärdslistan, kostnaden, handlingsplanen och rapporterna).
+ * Övriga inställningar för en enda flik står kvar i fliken, bredvid resultatet de påverkar; panelen visar var de
+ * finns och om de är ändrade.
  */
 function installningarOppna() {
     const m = document.getElementById('installningar-modal');
@@ -31152,11 +31156,8 @@ function _instRita() {
     const last = flik => { const n = document.querySelector(`.nav-item[data-tab="${flik}"]`); return !n || /** @type {HTMLInputElement} */ (n).disabled; };
     const anpassad = a => (a ? 'Anpassade värden' : 'Standardvärden');
     const lv = state.likvardighet || {};
-    const prioAnpassad = JSON.stringify(state.prioConfig) !== JSON.stringify(PRIO_CONFIG_DEFAULTS);
     const band = document.getElementById('arbvard-band'), extrem = document.getElementById('outliers-threshold');
     const rader = [
-        { flik: 'prioritering', avsnitt: 'avsnitt-pr-installningar', namn: 'Prioritering', vad: 'Trösklar och viktning',
-          lage: anpassad(prioAnpassad), andrad: prioAnpassad },
         { flik: 'likvardighet', avsnitt: 'avsnitt-lv-installningar', namn: 'Likvärdigt arbete', vad: 'Kvinnotröskel, definition av kvinnodominerat (DO/SCB), minsta gap och antal par',
           lage: anpassad(lv.kvinnoTrosholdPct !== 60 || lv.minGapPct !== 5 || lv.topN !== 20 || aidbasDefinition() !== 'do'), andrad: lv.kvinnoTrosholdPct !== 60 || lv.minGapPct !== 5 || lv.topN !== 20 || aidbasDefinition() !== 'do' },
         { flik: 'likvardighet', avsnitt: 'avsnitt-lv-poang', namn: 'Likvärdigt arbete', vad: 'Ekvivalensband för arbetsvärdering med poäng',

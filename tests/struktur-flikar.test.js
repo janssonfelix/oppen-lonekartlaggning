@@ -134,3 +134,39 @@ describe('Uppgift 3: Rapporttext, Exportera och Spara och jämför år', () => {
         expect(klick).toBe(1);
     });
 });
+
+describe('Uppgift 4: Prioriteringens trösklar och viktning i Inställningar', () => {
+    it('Prioriteringens trösklar och viktning står i Inställningar-dialogen, och fliken länkar dit', () => {
+        const d = createAppWindow().document, m = d.getElementById('installningar-modal');
+        for (const id of ['prio-cfg-atgard', 'prio-cfg-akutN', 'prio-cfg-bevaka', 'prio-cfg-analysera', 'prio-cfg-reset', 'prio-w-avvikelse', 'prio-w-volym', 'prio-w-jamstalldhet', 'prio-w-reset'])
+            expect(m.contains(d.getElementById(id)), id).toBe(true);
+        expect(d.querySelector('#view-prioritering [data-oppna-installningar="prio-cfg-atgard"]')).toBeTruthy();
+        expect(d.getElementById('avsnitt-pr-installningar')).toBeNull();
+    });
+    it('fliken säger om trösklarna är ändrade, och "Ändra" öppnar dialogen med fokus i granskningsgränsen', () => {
+        const w = createAppWindow(), d = w.document;
+        w.__loadDemoData();
+        w.__renderTabContent('prioritering');
+        const rad = d.getElementById('pr-installningar-rad');
+        expect(rad.textContent).toMatch(/^Trösklar och viktning: standardvärden/);
+        rad.querySelector('[data-oppna-installningar]').click();
+        expect(d.getElementById('installningar-modal').style.display).toBe('flex');
+        expect(d.activeElement.id).toBe('prio-cfg-atgard');
+        const falt = d.getElementById('prio-cfg-atgard');
+        falt.value = '-8';
+        falt.dispatchEvent(new w.Event('input', { bubbles: true }));
+        expect(w.__state.prioConfig.atgardThreshold).toBe(-8);
+        expect(rad.textContent).toMatch(/^Trösklar och viktning: anpassade värden/);
+    });
+    it('en konfigurationsfil som läses in före lönefilen sätter trösklarna i dialogen', () => {
+        const w = createAppWindow(), d = w.document;
+        w.eval(`applyConfigSnapshot(${JSON.stringify({ version: 2, prioConfig: { akutMinN: 7 } })})`);
+        const falt = d.getElementById('prio-cfg-akutN');
+        expect(d.getElementById('installningar-modal').contains(falt)).toBe(true);
+        expect(falt.value).toBe('7');
+        w.__loadDemoData();
+        w.__renderTabContent('prioritering');
+        expect(w.__state.prioConfig.akutMinN).toBe(7);
+        expect(d.getElementById('pr-installningar-rad').textContent).toMatch(/anpassade värden/);
+    });
+});

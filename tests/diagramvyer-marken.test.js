@@ -1301,33 +1301,34 @@ describe('Ålder & karriär — ett urval för hela fliken, och avsnitt med nyck
 describe('Prioritering i formen resultat först', () => {
     const t = s => String(s).replace(/[  ]/g, ' ').replace(/\s+/g, ' ').trim();
     const efter = (a, b) => !!(a.compareDocumentPosition(b) & 4);   // b kommer efter a
-    it('nyckeltalen och matrisen först; åtgärdslistan öppen; kostnad, inställningar och metod hopfällda — i den ordningen', () => {
+    it('nyckeltalen och matrisen först; åtgärdslistan öppen; kostnad och metod hopfällda, raden om inställningarna emellan — i den ordningen', () => {
         const w2 = demo();
         w2.__renderTabContent('prioritering');
         const d = w2.document, g = id => d.getElementById(id);
-        const ordning = ['prio-summary', 'chart-prio-matrix', 'avsnitt-pr-lista', 'avsnitt-pr-kostnad', 'avsnitt-pr-installningar', 'avsnitt-pr-metod'].map(g);
+        const ordning = ['prio-summary', 'chart-prio-matrix', 'avsnitt-pr-lista', 'avsnitt-pr-kostnad', 'pr-installningar-rad', 'avsnitt-pr-metod'].map(g);
         for (let i = 1; i < ordning.length; i++) expect(efter(ordning[i - 1], ordning[i]), ordning[i].id).toBe(true);
         expect(g('chart-prio-matrix').closest('details')).toBeNull();
-        expect(['lista', 'kostnad', 'installningar', 'metod'].map(n => g('avsnitt-pr-' + n).open)).toEqual([true, false, false, false]);
+        expect(['lista', 'kostnad', 'metod'].map(n => g('avsnitt-pr-' + n).open)).toEqual([true, false, false]);
         // Hopfällt men ritat och fungerande.
         expect(g('chart-prio-pareto')._figur).toBeDefined();
-        expect(g('prio-cfg-atgard').closest('details').id).toBe('avsnitt-pr-installningar');
+        // Trösklarna och viktningen står i Inställningar; fliken bär bara raden med länken dit.
+        expect(g('prio-cfg-atgard').closest('#installningar-modal')).not.toBeNull();
         expect(d.querySelector('[data-audit-id="prioritering"]').closest('details.avsnitt').id).toBe('avsnitt-pr-metod');
         expect(d.querySelectorAll('#prio-table tbody tr').length).toBeGreaterThan(0);
     });
-    it('nyckeltalen: listan och kostnaden säger samma som rutorna, och inställningarna säger om de är ändrade', () => {
+    it('nyckeltalen: listan och kostnaden säger samma som rutorna, och raden om inställningarna säger om de är ändrade', () => {
         const w2 = createAppWindow();
         w2.__loadDemoData();
         w2.__renderTabContent('prioritering');
         const d = w2.document;
         expect(t(d.getElementById('nyckel-pr-lista').textContent)).toMatch(/^\d+ grupp(er)?/);
         expect(t(d.getElementById('nyckel-pr-kostnad').textContent)).toBe(t(d.getElementById('prio-stat-cost').textContent));
-        expect(t(d.getElementById('nyckel-pr-installningar').textContent)).toBe('Standardvärden');
+        const rad = () => t(d.getElementById('pr-installningar-rad').textContent);
+        expect(rad()).toBe('Trösklar och viktning: standardvärden Ändra');
         const falt = d.getElementById('prio-cfg-atgard');
         falt.value = '-8';
         falt.dispatchEvent(new w2.Event('input', { bubbles: true }));
-        expect(t(d.getElementById('nyckel-pr-installningar').textContent)).toBe('Anpassade värden');
-        expect(d.getElementById('nyckel-pr-installningar').classList.contains('ar-kritisk')).toBe(true);
+        expect(rad()).toBe('Trösklar och viktning: anpassade värden Ändra');
     });
 });
 

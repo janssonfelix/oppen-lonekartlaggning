@@ -436,15 +436,19 @@ console.log('\n── Prioritering: resultatet först ──');
     await page.evaluate(() => document.querySelector('.nav-item[data-tab="prioritering"]').click());
     await page.waitForTimeout(1200);
     const pr = await page.evaluate(() => { const g = id => document.getElementById(id); const top = el => el.getBoundingClientRect().top;
-        return { matrisForst: top(g('chart-prio-matrix')) < top(g('avsnitt-pr-lista')), sist: top(g('avsnitt-pr-installningar')) > top(g('avsnitt-pr-lista')),
-            oppna: [...document.querySelectorAll('details.avsnitt[id^="avsnitt-pr-"]')].filter(a => a.open).map(a => a.id).join(','), nyckel: g('nyckel-pr-installningar').textContent }; });
-    ok(pr.matrisForst && pr.sist && pr.oppna === 'avsnitt-pr-lista' && pr.nyckel === 'Standardvärden', 'matrisen står före listan, inställningarna sist och hopfällda med nyckeltalet Standardvärden');
-    await page.click('#avsnitt-pr-installningar > summary');
+        return { matrisForst: top(g('chart-prio-matrix')) < top(g('avsnitt-pr-lista')), sist: top(g('pr-installningar-rad')) > top(g('avsnitt-pr-lista')),
+            oppna: [...document.querySelectorAll('details.avsnitt[id^="avsnitt-pr-"]')].filter(a => a.open).map(a => a.id).join(','), rad: g('pr-installningar-rad').textContent }; });
+    ok(pr.matrisForst && pr.sist && pr.oppna === 'avsnitt-pr-lista' && pr.rad.startsWith('Trösklar och viktning: standardvärden'), 'matrisen står före listan, och raden om trösklarna efter den säger standardvärden');
+    await page.click('#pr-installningar-rad [data-oppna-installningar="prio-cfg-atgard"]');
+    await page.waitForTimeout(300);
+    ok(await page.evaluate(() => document.getElementById('installningar-modal').style.display === 'flex' && document.activeElement.id === 'prio-cfg-atgard'), 'Ändra öppnar Inställningar med fokus i granskningsgränsen');
     await page.fill('#prio-cfg-atgard', '-8');
     await page.waitForTimeout(500);
-    ok(await page.evaluate(() => document.getElementById('nyckel-pr-installningar').textContent === 'Anpassade värden'), 'en ändrad tröskel syns i avsnittets rubrik');
+    ok(await page.evaluate(() => document.getElementById('pr-installningar-rad').textContent.startsWith('Trösklar och viktning: anpassade värden')), 'en ändrad tröskel i dialogen syns i flikens rad');
     await page.click('#prio-cfg-reset');
     await page.waitForTimeout(400);
+    await page.keyboard.press('Escape');
+    await page.waitForFunction(() => document.getElementById('installningar-modal').style.display === 'none', { timeout: 5000 });
 }
 
 console.log('\n── Regler & praxis: pilen och Stöd i verktyget ──');
@@ -1194,7 +1198,7 @@ await page.waitForTimeout(300);
 await page.click('#ov-filrad [data-oppna-installningar]');
 await page.waitForTimeout(300);
 ok(await page.evaluate(() => document.activeElement.id === 'k-troskel' && document.getElementById('installningar-modal').style.display === 'flex'), 'värdet för minsta gruppstorlek i filraden öppnar inställningarna med fokus i fältet');
-ok(await page.evaluate(() => { const p = document.querySelector('#installningar-modal .glossary-panel').getBoundingClientRect(); return p.width > 300 && p.right <= innerWidth && document.querySelectorAll('#inst-flikar .inst-flik').length === 5; }), 'panelen ryms i fönstret och listar flikarnas egna inställningar');
+ok(await page.evaluate(() => { const p = document.querySelector('#installningar-modal .glossary-panel').getBoundingClientRect(); return p.width > 300 && p.right <= innerWidth && document.querySelectorAll('#inst-flikar .inst-flik').length === 4; }), 'panelen ryms i fönstret och listar flikarnas egna inställningar');
 let bekraftelse = '';
 page.once('dialog', d => { bekraftelse = d.message(); d.accept(); });
 await page.fill('#k-troskel', '6');
@@ -1221,10 +1225,11 @@ await page.click('#btn-k-aterstall');
 await page.waitForTimeout(500);
 ok(await osynlig('#k-troskel-varning'), 'varningen försvinner efter återställning');
 ok(await page.inputValue('#k-troskel') === '10', 'fältet visar 10 efter återställning');
-await page.click('#inst-flikar [data-inst-flik="prioritering"]');
+ok(await page.evaluate(() => !!document.getElementById('prio-cfg-atgard').offsetParent && !!document.getElementById('prio-w-avvikelse').offsetParent), 'Prioriteringens trösklar och viktning står synliga i panelen');
+await page.click('#inst-flikar [data-inst-flik="likvardighet"]');
 await page.waitForTimeout(700);
-ok(await page.evaluate(() => document.getElementById('installningar-modal').style.display === 'none' && document.getElementById('view-prioritering').style.display === 'block' && document.getElementById('avsnitt-pr-installningar').open
-    && !!document.getElementById('prio-cfg-atgard').offsetParent), 'Öppna i panelen går till Prioritering, där trösklar och viktning står');
+ok(await page.evaluate(() => document.getElementById('installningar-modal').style.display === 'none' && document.getElementById('view-likvardighet').style.display === 'block' && document.getElementById('avsnitt-lv-installningar').open),
+    'Öppna i panelen går till Likvärdigt arbete och fäller ut avsnittet där inställningen står');
 
 console.log('\n── GDPR: ingen lagring ──');
 const lagring = await page.evaluate(() => {

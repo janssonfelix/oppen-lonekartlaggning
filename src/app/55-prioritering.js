@@ -239,8 +239,12 @@ function renderPrioritering() {
     // Avsnittens nyckeltal (ADR-41): samma tal som rutorna ovanför.
     _laNyckel('nyckel-pr-lista', `${items.length} ${items.length === 1 ? 'grupp' : 'grupper'}${akutCount ? ` · ${akutCount} att börja med` : ''}`, akutCount > 0);
     _laNyckel('nyckel-pr-kostnad', totalCost > 0 ? fmtMkr : '');
-    const anpassat = JSON.stringify(state.prioConfig) !== JSON.stringify(PRIO_CONFIG_DEFAULTS);
-    _laNyckel('nyckel-pr-installningar', anpassat ? 'Anpassade värden' : 'Standardvärden', anpassat);
+    // Trösklarna och viktningen ställs in i Inställningar; fliken säger bara om de är ändrade.
+    const installningarRad = document.getElementById('pr-installningar-rad');
+    if (installningarRad) {
+        const anpassad = JSON.stringify(state.prioConfig) !== JSON.stringify(PRIO_CONFIG_DEFAULTS);
+        installningarRad.innerHTML = `Trösklar och viktning: ${anpassad ? 'anpassade värden' : 'standardvärden'} <button type="button" class="ov-filrad-lank" data-oppna-installningar="prio-cfg-atgard">Ändra</button>`;
+    }
     const costPerEl = document.getElementById('prio-stat-cost-period');
     if (costPerEl) costPerEl.textContent = `${state.costSettings.months} månader, inkl. PO-påslag ${svPct(state.costSettings.poPct, 2)}`;
 
@@ -518,7 +522,6 @@ function _readPrioConfigInputs() {
     const isCustom = JSON.stringify(state.prioConfig) !== JSON.stringify(PRIO_CONFIG_DEFAULTS);
     const flag = document.getElementById('prio-cfg-custom-flag');
     if (flag) flag.style.display = isCustom ? 'inline' : 'none';
-    _laNyckel('nyckel-pr-installningar', isCustom ? 'Anpassade värden' : 'Standardvärden', isCustom);
 }
 ['prio-cfg-atgard','prio-cfg-akutN','prio-cfg-bevaka','prio-cfg-analysera'].forEach(id => {
     document.getElementById(id)?.addEventListener('input', () => {
