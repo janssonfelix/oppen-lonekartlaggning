@@ -210,7 +210,7 @@
                     <!-- Första-intryck: visas tills data laddats (döljs av _renderDemoBanner när data finns) -->
                     <div id="first-run-hint" class="first-run-hint">
                         <span class="first-run-hint-icon" aria-hidden="true"></span>
-                        <div><strong>Kom igång:</strong> <button type="button" class="first-run-demo-link" data-go-to-tab="filer">läs in filerna</button> (organisationspaketet först om er organisation har ett, sedan lönefilen) — eller <button type="button" id="first-run-demo-link" class="first-run-demo-link">prova med demodata</button> eller ett <button type="button" id="first-run-stort-demo" class="first-run-demo-link">stort demo (7&nbsp;000 personer)</button>.</div>
+                        <div><strong>Kom igång:</strong> <button type="button" class="first-run-demo-link" data-go-to-tab="filer">läs in filerna</button> (organisationspaketet först om er organisation har ett, sedan lönefilen) — eller prova med demodata, <button type="button" id="first-run-demo-link" class="first-run-demo-link" title="Läs in det lilla demot: 260 påhittade personer">litet</button> eller <button type="button" id="first-run-stort-demo" class="first-run-demo-link" title="Läs in det stora demot: 7 000 påhittade personer">stort (7&nbsp;000 personer)</button>.</div>
                     </div>
 
                     <div class="flik-intro" id="ov-intro"><strong>Hur ser organisationen ut, och vad är nästa steg?</strong> Här står underlaget, de viktigaste talen och vad som återstår att göra i kartläggningen. Resultaten finns i flikarna under Kartläggning; allt du läser in stannar i webbläsaren.</div>
@@ -566,17 +566,19 @@
                     </div>
                     <div id="st-urval" class="urvalsrad"></div>
                     <div id="st-slutsatser" class="slutsatser"></div>
-                    <div class="card">
-                        <div class="card-header"><h2>Organisationen som karta</h2></div>
-                        <p class="text-dampad-sm marg-0-0-8">Varje yta är en yrkesgrupp. Storleken är antalet personer och färgen andelen kvinnor (grönt = flest män, plommon = flest kvinnor). Kartan visar inga löner. Små yrkesgrupper är hopslagna till en grå yta per BAS-intervall.</p>
-                        <div id="chart-struktur-tradkarta"></div>
-                    </div>
                     <p class="avsnitt-rubrikrad">Fördjupning</p>
                     <details class="avsnitt" id="avsnitt-st-representation" open>
                     <summary><span class="avsnitt-titel"><h2>Representation per BAS-nivå</h2><span class="avsnitt-under">Sjunker andelen kvinnor mot högre nivåer? (segregering)</span></span><span class="avsnitt-nyckel" id="nyckel-st-representation"></span></summary>
                     <div class="card">
                         
                         <div id="struktur-representation"></div>
+                    </div>
+                    </details>
+                    <details class="avsnitt" id="avsnitt-st-karta">
+                    <summary><span class="avsnitt-titel"><h2>Organisationen som karta</h2><span class="avsnitt-under">Yrkesgrupperna efter storlek och andel kvinnor</span></span><span class="avsnitt-nyckel" id="nyckel-st-karta"></span></summary>
+                    <div class="card">
+                        <p class="text-dampad-sm marg-0-0-8">Varje yta är en yrkesgrupp. Storleken är antalet personer och färgen andelen kvinnor (grönt = flest män, plommon = flest kvinnor). Kartan visar inga löner. Små yrkesgrupper är hopslagna till en grå yta per BAS-intervall.</p>
+                        <div id="chart-struktur-tradkarta"></div>
                     </div>
                     </details>
                     <details class="avsnitt" id="avsnitt-st-fordelning">
@@ -710,6 +712,8 @@
                                     <tr>
                                         <th scope="col" data-export-label="BAS-intervall">BAS-intervall</th>
                                         <th scope="col" data-export-label="Totalt antal personer">Totalt N</th>
+                                        <th scope="col">Antal kvinnor</th>
+                                        <th scope="col">Antal män</th>
                                         <th scope="col" data-export-label="Andel kvinnor (%)">Kvinnor (%)</th>
                                         <th scope="col" data-export-label="Andel män (%)">Män (%)</th>
                                         <th scope="col" data-export-label="Underrepresenterat kön (om < 10% av gruppen)">Underrep. Kön</th>
@@ -1913,6 +1917,7 @@
                                 <tr>
                                     <th>Åtgärd</th>
                                     <th>Berörd grupp / yrke (AID·BAS)</th>
+                                    <th class="tal" title="Antal personer i gruppen; för ett kandidatpar i det kvinnodominerade yrket">Antal berörda</th>
                                     <th>Underlag</th>
                                     <th>Sakligt skäl prövat?</th>
                                     <th class="tal">Beräknad kostnad (kr/år)</th>
@@ -1922,11 +1927,11 @@
                                 </tr>
                             </thead>
                             <tbody id="handlingsplan-tbody">
-                                <tr class="handlingsplan-empty"><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                                <tr class="handlingsplan-empty"><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                                <tr class="handlingsplan-empty"><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                                <tr class="handlingsplan-empty"><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                                <tr class="handlingsplan-empty"><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                                <tr class="handlingsplan-empty"><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                                <tr class="handlingsplan-empty"><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                                <tr class="handlingsplan-empty"><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                                <tr class="handlingsplan-empty"><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                                <tr class="handlingsplan-empty"><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
                             </tbody>
                         </table>
                         </div>
@@ -1945,7 +1950,7 @@
                         </p>
                     </div>
 
-                    <div class="card">
+                    <div class="card" id="hp-samverkan">
                         <div class="card-header"><h2>Samverkan &amp; uppföljning</h2></div>
                         <p class="fs-sm lh-1_6 marg-0-0-10">
                             Lönekartläggningen ska bedrivas i <strong>samverkan</strong> med arbetstagarna, och de fackliga organisationer som är bundna av kollektivavtal har rätt till den information som behövs för att kunna samverka. EU:s lönetransparensdirektiv (2023/970) förstärker arbetstagarrepresentanternas roll, särskilt vid en gemensam lönebedömning (Joint Pay Assessment). Bocka av momenten — för in datum, parter och utfall i lönekartläggningsrapporten.
@@ -2045,8 +2050,8 @@
                 <!-- Rapporttext (4 · Rapport): auto-utkastet och rapportunderlaget. -->
                 <div id="view-rapporttext" class="view-panel dold">
                     <div class="flik-intro"><strong>Vad ska stå i rapporten?</strong> Här finns utkastet i klarspråk och de färdiga avsnitten att klistra in.</div>
-                    <details class="avsnitt" id="avsnitt-st-utkast" open>
-                    <summary><span class="avsnitt-titel"><h2>Auto-rapportutkast</h2><span class="avsnitt-under">Fynden i klarspråk, att redigera och föra in i rapporten</span></span><span class="avsnitt-nyckel" id="nyckel-st-utkast"></span></summary>
+                    <details class="avsnitt" id="avsnitt-rt-utkast" open>
+                    <summary><span class="avsnitt-titel"><h2>Auto-rapportutkast</h2><span class="avsnitt-under">Fynden i klarspråk, att redigera och föra in i rapporten</span></span><span class="avsnitt-nyckel" id="nyckel-rt-utkast"></span></summary>
                     <div class="card">
                         <div class="rad-bryt-mitt gap-12 mellan marg-b-8">
                             <span class="avsnitt-verktyg-rubrik">Utkastet</span>

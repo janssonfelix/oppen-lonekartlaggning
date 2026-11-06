@@ -57,13 +57,15 @@ function _instRita() {
           lage: `± ${band ? /** @type {HTMLInputElement} */ (band).value : 5} %`, andrad: !!band && String(/** @type {HTMLInputElement} */ (band).value) !== '5' },
         { flik: 'matrix', avsnitt: 'avsnitt-la-personer', namn: 'Lika arbete', vad: 'Gräns för personer att granska',
           lage: `${typeof _pagGrans === 'function' ? _pagGrans() : 10} % under förväntad lön`, andrad: typeof _pagGrans === 'function' && _pagGrans() !== 10 },
-        { flik: 'filer', avsnitt: 'avsnitt-ov-kvalitet', namn: 'Filer och kvalitet', vad: 'Tröskel för extremvärden',
+        // Fliken Filer och kvalitet är öppen utan lönefil, men avsnittet med tröskeln är dolt tills en fil är inläst.
+        { flik: 'filer', avsnitt: 'avsnitt-ov-kvalitet', kraverData: true, namn: 'Filer och kvalitet', vad: 'Tröskel för extremvärden',
           lage: `${extrem ? svTal(parseFloat(/** @type {HTMLInputElement} */ (extrem).value) || 3, 1) : '3,0'} standardavvikelser`, andrad: !!extrem && (parseFloat(/** @type {HTMLInputElement} */ (extrem).value) || 3) !== 3 },
     ];
+    const utanData = !getData().length;
     flikar.innerHTML = rader.map(r => `<li class="inst-flik${r.andrad ? ' ar-andrad' : ''}">
         <span class="inst-flik-namn"><strong>${esc(r.namn)}</strong> — ${esc(r.vad)}</span>
         <span class="inst-flik-lage">${esc(r.lage)}</span>
-        <button type="button" class="btn-table-tool" data-inst-flik="${esc(r.flik)}" data-inst-avsnitt="${esc(r.avsnitt)}"${last(r.flik) ? ' disabled title="Läs in en lönefil först"' : ''}>Öppna</button>
+        <button type="button" class="btn-table-tool" data-inst-flik="${esc(r.flik)}" data-inst-avsnitt="${esc(r.avsnitt)}"${last(r.flik) || (r.kraverData && utanData) ? ' disabled title="Läs in en lönefil först"' : ''}>Öppna</button>
     </li>`).join('');
 }
 

@@ -38,6 +38,11 @@ function renderLifecycleAnalysis() {
     const primaryAdjR2 = (primary && !primary.error) ? primary.adjR2 : null;
     const primaryGap = (primary && !primary.error) ? primary.konPct : null;
     const primaryP   = (primary && !primary.error) ? primary.pValue : null;
+    // Modelljämförelsens rubrikrad: urvalet bakom modellerna. Bygger de på samma personer står det en gång.
+    const primaryN = primary && !primary.error ? [primary.nKvAnalysed, primary.nMaAnalysed] : null;
+    const modellCaption = !primaryN || (primaryN[0] === result.kvN && primaryN[1] === result.maN)
+        ? antalCaption(result.kvN, result.maN)
+        : `<caption class="text-dampad-sm ta-vanster">Huvudmodell: ${antalText(primaryN[0], primaryN[1])} · Livscykelmodell: ${antalText(result.kvN, result.maN)}</caption>`;
 
     // Modelljämförelsens tabell markerar säkerheten med stjärnor, som tabellens not förklarar; utan stjärna är
     // p ≥ 0,05. Nyckeltalet säger det med ord, med samma gräns som tolkningsregeln (p < 0,10 är säkerställd).
@@ -222,7 +227,7 @@ function renderLifecycleAnalysis() {
                 Modelljämförelse: huvudmodell mot livscykelmodell
             </summary>
             <div class="pad-10-0">
-                <table class="data-table fs-sm">
+                <table class="data-table fs-sm">${modellCaption}
                     <thead>
                         <tr>
                             <th>Mått</th>

@@ -8,6 +8,26 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ### Gränssnitt
 
+- **Antal i grupptabellerna.** Varje tabell som visar ett lönemått för en grupp visar nu också gruppens antal, och
+  exporterna har samma kolumn: *Könsfördelning per BAS-intervall* (Antal kvinnor, Antal män; också i Excel och
+  PDF-bilagan), kandidatparen i Likvärdigt arbete (*Antal (kvinnodom. / jämf.)*, också i Word-utkastet, PDF-rapporten
+  och rapportunderlaget, där också *Lägre krav, högre lön* fått kolumnen), *Lönegap per BAS-intervall före och efter*
+  i Löneöversyn (*Antal (Kv/Mä)*), handlingsplanen (*Antal berörda*: gruppens antal, för ett kandidatpar det
+  kvinnodominerade yrkets, tomt för en egen rad; på skärmen, i Excel-underlaget, i Word-utkastets *Åtgärder och
+  tidsplan* och i rapportunderlaget) och de flaggade yrkesgrupperna i *Jämförelse med förra året* (*Kvinnor / män*).
+  Tabeller där alla rader bygger på samma urval bär antalet i rubrikraden: percentiltabellen i *Var i
+  lönefördelningen sitter gapet?* (EU-rapportens blad *Distributionellt gap* får kolumnerna Antal kvinnor och
+  Antal män), kvantiltabellen, *Vad varje variabel tillför*, Oaxaca-tabellen och modelljämförelsen i Ålder &
+  karriär ("n = 260; 138 kvinnor, 122 män"). Inga tal har ändrats.
+- **Småsaker efter omläggningen.** *Organisationen som karta* i Lönestruktur är ett eget avsnitt, hopfällt från
+  början och med antalet yrkesgrupper i rubriken, så att fliken öppnar med slutsatserna och representationen.
+  Processkartan på Översikt har nio steg: *Samverkan med facket* står under Åtgärder och leder till kortet
+  *Samverkan & uppföljning* i Handlingsplan, och *Rapporttext* är ett eget steg under Rapport. Kom igång säger
+  "prova med demodata, litet eller stort (7 000 personer)". I Inställningar är knappen till extremvärdenas tröskel
+  låst tills en lönefil är inläst. Funktionssökningens träfflista grupperar Grupper och Funktioner som ARIA-grupper
+  med egen rubrik, och sidindexet behåller det avsnitt man klickat på markerat tills man själv rullar. Lönestrukturens
+  mått räknas på ett ställe för fliken, rapportutkastet och EU-exporten (inga tal har ändrats), och auto-utkastet i
+  Rapporttext har id:t `avsnitt-rt-utkast`.
 - **Stort demo: 7 000 personer.** Bredvid *prova med demodata* (260 personer) i Kom igång på Översikt och i
   lönefilskortet i Filer och kvalitet finns *stort demo (7 000 personer)*: en påhittad organisation i storlek med en
   mindre kommun, med BAS-intervall A–K, 30 yrkesgrupper med koder ur etikettlistan, ett inlagt

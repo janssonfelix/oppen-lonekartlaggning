@@ -248,8 +248,8 @@ describe('golden: bladen ur HTML-tabellerna bär cellerna som vyn visar dem (typ
         expect(wb.Sheets.Lonegap['!ref']).toBe('A1:E3');                           // bevis-kolumnen följer inte med
     });
     it('Konsskevhet: andelarna i procent, inte som andel av 1', () => {
-        expect(cell('Konsskevhet', 'C2')).toMatchObject({ t: 'n', v: 50, z: PCT1 });
-        expect(cell('Konsskevhet', 'D2')).toMatchObject({ t: 'n', v: 50, z: PCT1 });
+        expect(cell('Konsskevhet', 'E2')).toMatchObject({ t: 'n', v: 50, z: PCT1 });   // efter BAS, Totalt N, Antal kvinnor och Antal män
+        expect(cell('Konsskevhet', 'F2')).toMatchObject({ t: 'n', v: 50, z: PCT1 });
         expect(cell('Konsskevhet', 'B2')).toMatchObject({ t: 'n', v: 34 });
     });
     it('EU-Lonekartlaggning: antalet med könsuppdelningen som text, den samlade medianen som text över båda mediankolumnerna, "–" i stället för 0', () => {

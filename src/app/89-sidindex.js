@@ -20,9 +20,13 @@ let _sidindexBevakare = null;
 let _sidindexStorlek = null;
 /** Rubrikerna som följs, i sidans ordning: { el: summary eller kortrubrik, id: avsnittets id }. */
 let _sidindexOrdning = /** @type {{el: Element, id: string}[]} */ ([]);
+/** Avsnittet som läsaren valde i listan (eller sökningen ledde till). Det står kvar som aktivt också när sidan tar
+ *  slut innan avsnittet når läslinjen; den rullning som klicket själv sätter igång skriver inte över det. Nästa
+ *  rullning som läsaren gör (hjul, pekskärm, tangent, musknapp) släpper valet. */
+let _sidindexValt = /** @type {string|null} */ (null);
 /** Markerar avsnittet som läslinjen står i. */
 function _sidindexFolj() {
-    if (!_sidindexOrdning.length) return;
+    if (!_sidindexOrdning.length || _sidindexValt) return;
     const linje = window.innerHeight * 0.4;
     let aktiv = _sidindexOrdning[0];
     for (const o of _sidindexOrdning) { if (o.el.getBoundingClientRect().top <= linje) aktiv = o; else break; }
@@ -90,6 +94,7 @@ function sidindexBygg(flik) {
     if (!nav) return;
     if (_sidindexBevakare) { _sidindexBevakare.disconnect(); _sidindexBevakare = null; }
     _sidindexOrdning = [];
+    _sidindexValt = null;
     const poster = _sidindexRubriker(flik);
     const visas = poster.length >= SIDINDEX_MINST;
     nav.hidden = !visas;
@@ -135,6 +140,7 @@ function sidindexGaTill(id) {
     if (fokus.tagName !== 'SUMMARY' && !fokus.hasAttribute('tabindex')) fokus.setAttribute('tabindex', '-1');
     fokus.focus({ preventScroll: true });
     _sidindexMarkera(id);
+    _sidindexValt = id;
 }
 
 // Delegerad klick, som hopplänkarna i 33-sidans-innehall.js: adressen ändras inte.
@@ -144,6 +150,9 @@ document.addEventListener('click', e => {
     e.preventDefault();
     sidindexGaTill(/** @type {HTMLElement} */ (a).dataset.sidindex || '');
 });
+// Läsarens egen rullning släpper valet. Klicket på en post kommer efter musknappen och Retur-tangenten, så valet sätts
+// efter att de har släppt det förra.
+for (const typ of ['wheel', 'touchstart', 'keydown', 'mousedown']) window.addEventListener(typ, () => { _sidindexValt = null; }, { passive: true, capture: true });
 let _sidindexRam = 0;
 window.addEventListener('scroll', () => {
     if (!_sidindexBevakare || _sidindexRam) return;

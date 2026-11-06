@@ -42,6 +42,7 @@ describe('Funktionssök', () => {
         expect(lista.querySelectorAll('[data-sok-funktion]').length).toBeGreaterThan(0);
         expect(lista.querySelector('.sok-grupprubrik').getAttribute('role')).toBe('presentation');
         expect(lista.querySelector('.sok-grupprubrik').textContent).toBe('Funktioner');
+        expect(lista.querySelector('.sok-grupprubrik').closest('li').getAttribute('role')).toBe('group');
         skriv(w, 'finnsintealls');
         expect(lista.querySelectorAll('[role="option"]')).toHaveLength(0);
         expect(lista.textContent).toBe('Ingen funktion matchar.');
@@ -177,7 +178,21 @@ describe('Funktionssök', () => {
         const rubriker = [...lista.querySelectorAll('.sok-grupprubrik')];
         expect(rubriker.map(r => r.textContent)).toEqual(['Grupper', 'Funktioner']);
         expect(rubriker.every(r => r.getAttribute('role') === 'presentation')).toBe(true);
-        expect(rubriker[1].nextElementSibling).toBe(opts[forstaFunktion]);
+        // ARIA-mönstret för grupper i en listbox: li[role=group] märkt med sin rubrik, alternativen i en inre lista.
+        const grupper = [...lista.querySelectorAll(':scope > li[role="group"]')];
+        expect(grupper).toHaveLength(2);
+        expect([...lista.children].every(li => li.getAttribute('role') === 'group')).toBe(true);
+        grupper.forEach((g, i) => {
+            const rubrik = d.getElementById(g.getAttribute('aria-labelledby'));
+            expect(rubrik).toBe(rubriker[i]);
+            expect(rubrik.tagName).toBe('SPAN');
+            expect(rubrik.parentElement).toBe(g);
+            const inre = g.querySelector(':scope > ul');
+            expect(inre.getAttribute('role')).toBe('presentation');
+            expect([...inre.children].every(li => li.getAttribute('role') === 'option')).toBe(true);
+        });
+        expect(grupper[0].querySelectorAll('[role="option"]:not([data-sok-funktion])').length).toBe(forstaFunktion);
+        expect(grupper[1].querySelector('[role="option"]')).toBe(opts[forstaFunktion]);
         // Pil upp från första träffen går runt till sista funktionen; pil ned därifrån tillbaka till första gruppen.
         tangent(w, 'ArrowUp');
         expect(falt.getAttribute('aria-activedescendant')).toBe(opts.at(-1).id);

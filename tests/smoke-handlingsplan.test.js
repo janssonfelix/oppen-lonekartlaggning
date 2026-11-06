@@ -15,9 +15,9 @@ describe('Handlingsplan: fälten fylls i på skärmen', () => {
         expect(r.length).toBeGreaterThan(0);
         for (const tr of r) {
             expect(tr.cells[1].textContent).toMatch(/^\d+ \S.* · BAS \S+$/);
-            expect(UNDERLAG).toContain(tr.cells[2].textContent);
+            expect(UNDERLAG).toContain(tr.cells[3].textContent);   // efter Åtgärd, grupp och Antal berörda
         }
-        const antal = etikett => r.filter(tr => tr.cells[2].textContent === etikett).length;
+        const antal = etikett => r.filter(tr => tr.cells[3].textContent === etikett).length;
         const not = w.document.getElementById('handlingsplan-seed-note').textContent;
         expect(not).toContain(`${antal(UNDERLAG[0])} från Prioritering, under referensen, och ${antal(UNDERLAG[1])} kandidatpar från Likvärdigt arbete`);
         expect(w.document.querySelector('.handlingsplan-not').textContent).toMatch(/följer med i Excel-filen, utskriften och Word-utkastet, men sparas inte/);
@@ -26,7 +26,7 @@ describe('Handlingsplan: fälten fylls i på skärmen', () => {
         const w = fonster();
         w.__renderTabContent('handlingsplan');
         const tr = rader(w)[0], grupp = tr.cells[1].textContent;
-        const [sakligt, ansvarig, tidsplan, status] = [3, 5, 6, 7].map(i => tr.cells[i].querySelector('.hp-falt'));
+        const [sakligt, ansvarig, tidsplan, status] = [4, 6, 7, 8].map(i => tr.cells[i].querySelector('.hp-falt'));
         expect(sakligt.tagName).toBe('SELECT');
         expect([...sakligt.options].map(o => o.textContent)).toEqual(['—', 'Ja, sakligt skäl finns', 'Nej, åtgärd behövs', 'Pågår']);
         expect([...status.options].map(o => o.value)).toEqual(['', 'Planerad', 'Pågår', 'Genomförd', 'Skjuts upp']);
@@ -37,15 +37,15 @@ describe('Handlingsplan: fälten fylls i på skärmen', () => {
         expect(w.__state.handlingsplan[nyckel]).toEqual({ sakligt: 'Nej, åtgärd behövs', ansvarig: 'HR-chef', tidsplan: 'Lönerevisionen 2027', status: 'Planerad' });
         w.__renderTabContent('dashboard'); w.__renderTabContent('handlingsplan');
         const igen = rader(w)[0];
-        expect(igen.cells[5].querySelector('input').value).toBe('HR-chef');
-        expect(igen.cells[7].querySelector('select').value).toBe('Planerad');
+        expect(igen.cells[6].querySelector('input').value).toBe('HR-chef');
+        expect(igen.cells[8].querySelector('select').value).toBe('Planerad');
     });
     it('ett fält som liknar ett personnummer varnar men texten står kvar', () => {
         const w = fonster();
         w.__renderTabContent('handlingsplan');
         const varning = w.document.getElementById('handlingsplan-varning');
         expect(varning.hidden).toBe(true);
-        const falt = rader(w)[0].cells[5].querySelector('input');
+        const falt = rader(w)[0].cells[6].querySelector('input');
         fyll(w, falt, '19800101-1234');
         expect(varning.hidden).toBe(false);
         expect(falt.getAttribute('aria-describedby')).toBe('handlingsplan-varning');
@@ -56,7 +56,7 @@ describe('Handlingsplan: fälten fylls i på skärmen', () => {
     it('följer med i konfigurationsfilen och läses in igen; felaktiga val läses som tomma', () => {
         const a = fonster();
         a.__renderTabContent('handlingsplan');
-        const falt = rader(a)[0].cells[5].querySelector('input');
+        const falt = rader(a)[0].cells[6].querySelector('input');
         fyll(a, falt, 'Avdelningschef');
         const cfg = JSON.parse(a.eval('JSON.stringify(buildConfigSnapshot())'));
         expect(cfg.handlingsplan).toEqual([{ nyckel: falt.dataset.hpNyckel, sakligt: '', ansvarig: 'Avdelningschef', tidsplan: '', status: '' }]);
@@ -74,16 +74,16 @@ describe('Handlingsplan: fälten fylls i på skärmen', () => {
         await laddaXlsx(w);
         w.__renderTabContent('handlingsplan');
         const tr = rader(w)[0];
-        fyll(w, tr.cells[3].querySelector('select'), 'Ja, sakligt skäl finns'); fyll(w, tr.cells[5].querySelector('input'), 'HR-chef');
+        fyll(w, tr.cells[4].querySelector('select'), 'Ja, sakligt skäl finns'); fyll(w, tr.cells[6].querySelector('input'), 'HR-chef');
         const bok = Object.values(fangaBocker(w, () => w.eval('exportHandlingsplan()')))[0];
         const rad = bok.split('\n').find(l => l.includes('HR-chef'));
         expect(rad).toContain('Ja, sakligt skäl finns');
         expect(rad).toContain(tr.cells[1].textContent);
-        expect(bok).toContain('Åtgärd | Berörd grupp (AID·BAS) | Underlag | Sakligt skäl prövat?');
+        expect(bok).toContain('Åtgärd | Berörd grupp (AID·BAS) | Antal berörda | Underlag | Sakligt skäl prövat?');
         const atgarder = w.eval('rapportModell({ alla: true })').avsnitt.find(a => a.id === 'atgarder');
         const tabell = atgarder.delar.find(p => p.typ === 'tabell');
-        expect(tabell.kolumner.map(k => k.rubrik)).toEqual(['Grupp', 'Underlag', 'Uppskattad kostnad', 'Sakligt skäl prövat?', 'Ansvarig', 'Tidsplan (senast inom tre år)', 'Status']);
-        expect(tabell.rader.find(r => r[0] === tr.cells[1].textContent).slice(3, 5)).toEqual(['Ja, sakligt skäl finns', 'HR-chef']);
+        expect(tabell.kolumner.map(k => k.rubrik)).toEqual(['Grupp', 'Antal berörda', 'Underlag', 'Uppskattad kostnad', 'Sakligt skäl prövat?', 'Ansvarig', 'Tidsplan (senast inom tre år)', 'Status']);
+        expect(tabell.rader.find(r => r[0] === tr.cells[1].textContent).slice(4, 6)).toEqual(['Ja, sakligt skäl finns', 'HR-chef']);
         const oppnat = [];
         w.open = () => { const doc = { html: '', write(s) { this.html += s; }, close() {}, adoptedStyleSheets: [], createElement: () => ({ sheet: { insertRule() {}, cssRules: [] } }), head: { appendChild() {} } };
             oppnat.push(doc); return { document: doc, focus() {}, print() {} }; };
@@ -99,17 +99,17 @@ describe('Handlingsplan: fälten fylls i på skärmen', () => {
         const egen = w.document.querySelector('#handlingsplan-tbody tr.handlingsplan-egen');
         expect(rader(w).length).toBe(fore + 1);
         expect(rader(w)[fore]).toBe(egen);   // sist
-        expect(egen.cells[2].textContent).toContain('Egen rad');
+        expect(egen.cells[3].textContent).toContain('Egen rad');
         expect(w.document.activeElement).toBe(egen.cells[0].querySelector('input'));
         fyll(w, egen.cells[0].querySelector('input'), 'Se över lönekriterierna');
         fyll(w, egen.cells[1].querySelector('input'), 'Alla chefer');
-        fyll(w, egen.cells[7].querySelector('select'), 'Planerad');
+        fyll(w, egen.cells[8].querySelector('select'), 'Planerad');
         const nyckel = egen.cells[0].querySelector('input').dataset.hpNyckel;
         expect(nyckel).toMatch(/^egen\|/);
         expect(w.__state.handlingsplan[nyckel]).toMatchObject({ egen: true, atgard: 'Se över lönekriterierna', grupp: 'Alla chefer', status: 'Planerad' });
         const seed = w.eval('_handlingsplanSeedRows()');
         expect(seed.egenCount).toBe(1);
-        expect(seed.rows[seed.rows.length - 1]).toEqual(['Se över lönekriterierna', 'Alla chefer', 'Egen rad', '', null, '', '', 'Planerad']);
+        expect(seed.rows[seed.rows.length - 1]).toEqual(['Se över lönekriterierna', 'Alla chefer', 'Egen rad', '', null, '', '', 'Planerad', null]);
         expect(w.document.getElementById('handlingsplan-seed-note').textContent).toContain('En egen rad står sist.');
         // Konfigurationsfilen bär raden med åtgärd och grupp; en annan session läser in den igen.
         const cfg = JSON.parse(w.eval('JSON.stringify(buildConfigSnapshot())'));
@@ -129,7 +129,7 @@ describe('Handlingsplan: fälten fylls i på skärmen', () => {
     it('Rensa all data nollar fälten', () => {
         const w = fonster();
         w.__renderTabContent('handlingsplan');
-        fyll(w, rader(w)[0].cells[6].querySelector('input'), 'Våren');
+        fyll(w, rader(w)[0].cells[7].querySelector('input'), 'Våren');
         expect(Object.keys(w.__state.handlingsplan)).toHaveLength(1);
         w.eval('_rensaAllData()');
         expect(w.__state.handlingsplan).toEqual({});

@@ -18,13 +18,16 @@ document.getElementById('http-warning-dismiss')?.addEventListener('click', () =>
 // Delegerade klick-hanterare i stället för inline `onclick=` i markup. Krävs av den
 // hash-baserade CSP:n (ADR-9): `script-src` saknar `'unsafe-inline'`, vilket
 // blockerar inline event-handler-attribut. Två mönster täcks:
-//   data-goto-tab="<tab>"   → klickar motsvarande nav-flik (tomt-läges-knappar)
+//   data-goto-tab="<tab>"   → klickar motsvarande nav-flik (tomt-läges-knappar); med data-goto-avsnitt="<id>"
+//                             går sidan sedan till avsnittet eller kortet med det id:t (som sidindexet)
 //   data-dismiss-parent     → tar bort knappens föräldernod (notis-/toast-OK)
 document.addEventListener('click', e => {
     const goto = /** @type {HTMLElement} */ (e.target).closest('[data-goto-tab]');
     if (goto) {
         const nav = document.querySelector('.nav-item[data-tab="' + tabMal(goto.getAttribute('data-goto-tab')) + '"]');
         if (nav) /** @type {HTMLElement} */ (nav).click();
+        const avsnitt = goto.getAttribute('data-goto-avsnitt');
+        if (nav && avsnitt && typeof sidindexGaTill === 'function') sidindexGaTill(avsnitt);
         return;
     }
     const dismiss = /** @type {HTMLElement} */ (e.target).closest('[data-dismiss-parent]');
@@ -99,6 +102,16 @@ function svTal(v, dec = 0) {
 }
 /** Som svTal, med " %" efter. */
 function svPct(v, dec = 1) { return typeof v === 'number' && isFinite(v) ? `${svTal(v, dec)} %` : '–'; }
+
+// ---- Underlagets storlek i en tabell ----
+// En tabell med ett lönemått för en grupp visar gruppens antal (som egen kolumn); en modelltabell, där alla rader
+// bygger på samma urval, bär antalet i sin rubrikrad (caption): "n = 260; 150 kvinnor, 110 män".
+/** @param {number} nKv @param {number} nMa */
+function antalText(nKv, nMa) { return `n = ${svTal(nKv + nMa, 0)}; ${svTal(nKv, 0)} kvinnor, ${svTal(nMa, 0)} män`; }
+/** Rubrikraden med antalet, som HTML; `fore` är en text före antalet (escapas). */
+function antalCaption(nKv, nMa, fore = '') {
+    return `<caption class="text-dampad-sm ta-vanster">${fore ? `${esc(fore)} · ` : ''}${antalText(nKv, nMa)}</caption>`;
+}
 
 // ---- Lönegapets form ----
 // Det råa lönegapet mellan könen visas som KVINNORS LÖN I PROCENT AV MÄNS: 100 % = ingen skillnad, under 100 %

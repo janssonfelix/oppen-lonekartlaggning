@@ -408,6 +408,7 @@ function renderLikvardighet() {
             <td><strong>${esc(p.kvAid)}</strong>${p.kvLabel && p.kvLabel !== p.kvAid ? ' ' + esc(p.kvLabel) : ''}<br><small class="f-dampad lv-under"${_lvSkrKort(p.kvAid) ? ` title="Andel kvinnor i yrket nationellt (${esc(skrKallaKort())}):${esc(_lvSkrKort(p.kvAid).replace(/[()]|SKR/g, ''))}"` : ''}>BAS ${esc(p.kvBas)} · ${svPct(p.kvKvinnoPct, 0)} kv<span class="bara-export">${_lvSkrKort(p.kvAid)}</span> · n=${p.kvN}</small></td>
             <td class="t-hoger">${fmtKr(p.kvMedian)}</td>
             <td><strong>${esc(p.maAid)}</strong>${p.maLabel && p.maLabel !== p.maAid ? ' ' + esc(p.maLabel) : ''}<br><small class="f-dampad lv-under">BAS ${esc(p.maBas)} · ${svPct(p.maKvAndel, 0)} kv ${källBadge(p)}${p.maN != null ? ` · n=${p.maN}` : ''}</small></td>
+            <td class="t-hoger">${p.kvN} / ${p.maN != null ? p.maN : '–'}</td>
             <td class="t-hoger">${fmtKr(p.maMedian)}</td>
             <td class="t-hoger"><strong>${fmtKr(p.gapKr)}</strong></td>
             <td class="t-hoger"><strong>${svPct(p.gapPct, 1)}</strong></td>
@@ -449,6 +450,7 @@ function renderLikvardighet() {
                             <th data-kol="yrke" title="Kvinnodominerat yrke i organisationen (faktisk könsfördelning).">Kvinnodom. yrke (${esc(orgNamn('org.'))})</th>
                             <th data-kol="median" title="Median månadslön i organisationens grupp.">Median ${esc(orgNamn('org.'))}</th>
                             <th data-kol="jamfyrke" title="Jämförelseyrke: organisationens eget icke-kv-dom yrke (intern) eller jämförelsestatistiken (extern fallback).">Jämförelseyrke</th>
+                            <th data-kol="antal" title="Antal personer i det kvinnodominerade yrket och i jämförelseyrket (– när jämförelsestatistiken inte anger antal).">Antal (kvinnodom. / jämf.)</th>
                             <th data-kol="medianjamf" title="Median månadslön i jämförelseyrket.">Median jämf.</th>
                             <th data-kol="gapkr" title="Skillnad i kronor (jämförelseyrke − organisation).">Gap (kr)</th>
                             <th data-kol="gappct" title="Skillnad i procent av organisationens median.">Gap (%)</th>

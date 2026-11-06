@@ -29,7 +29,7 @@ function _rapportDiagramLista(harPar, exkluderade) {
 // redan bort par med en grupp under k, så raderna används som de är — en enda regel för
 // skärmen, Excel, utskriften och underlaget.
 function _rapportHpRader(seedRows) {
-    return seedRows.map(r => ({ atgard: r[0], grupp: r[1], underlag: _handlingsplanUnderlag(r[2]), kostnad: r[4] }));
+    return seedRows.map(r => ({ atgard: r[0], grupp: r[1], antal: r[8] == null ? null : r[8], underlag: _handlingsplanUnderlag(r[2]), kostnad: r[4] }));
 }
 
 /** Alla textblock i den ordning de visas: avsnitt, yrkesgrupper, kandidatpar. */

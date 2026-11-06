@@ -75,6 +75,26 @@ describe('Uppgift 2: Lönestruktur', () => {
             .filter(a => a.open).map(a => a.id);
         expect(oppna).toEqual(['avsnitt-st-representation']);
     });
+    it('Organisationen som karta är ett hopfällt avsnitt efter representationen, med antalet yrkesgrupper i rubriken', () => {
+        const w = createAppWindow(); w.__loadDemoData();
+        const d = w.document;
+        d.querySelector('.nav-item[data-tab="struktur"]').click();
+        const karta = d.getElementById('avsnitt-st-karta');
+        expect(karta.tagName).toBe('DETAILS');
+        expect(karta.classList.contains('avsnitt')).toBe(true);
+        expect(karta.open).toBe(false);
+        expect(karta.querySelector(':scope > summary h2').textContent).toBe('Organisationen som karta');
+        expect(karta.contains(d.getElementById('chart-struktur-tradkarta'))).toBe(true);
+        expect(d.getElementById('avsnitt-st-representation').nextElementSibling).toBe(karta);
+        // Yrkesgrupperna: ett yrke inom ett BAS-intervall, som kartans ytor.
+        const n = new Set(w.__state.data.map(r => `${r.aid}|${r.bas}`)).size;
+        expect(d.getElementById('nyckel-st-karta').textContent).toBe(`${n} yrkesgrupper`);
+        // Hopfällt men ritat: rapportmodellen och ZIP-exporten tar diagrammet ur avsnittet.
+        expect(w.eval('diagramRitat(document.getElementById("chart-struktur-tradkarta"))')).toBe(true);
+        expect(w.eval('RM_DIAGRAM').find(r => r.id === 'chart-struktur-tradkarta').flik).toBe('struktur');
+        // Sökregistret leder till avsnittet.
+        expect(w.eval('SOK_FUNKTIONER').some(r => r.avsnitt === 'avsnitt-st-karta' && r.flik === 'struktur')).toBe(true);
+    });
     it('navigateTo("skevhet") och navigateTo("regression") öppnar Lönestruktur', () => {
         const w = createAppWindow(); w.__loadDemoData();
         for (const alias of ['skevhet', 'regression']) {
@@ -88,6 +108,9 @@ describe('Uppgift 3: Rapporttext, Exportera och Spara och jämför år', () => {
     it('Rapporttext bär auto-utkastet och rapportunderlaget; Exportera färdigcheck, robusthet, urval och exporter; Arbetet spara, ögonblicksbild, årsjämförelse, självdiagnostik', () => {
         const d = createAppWindow().document, i = (vy, id) => d.getElementById(vy).contains(d.getElementById(id));
         expect(i('view-rapporttext', 'struktur-narrative') && i('view-rapporttext', 'rapportunderlag')).toBe(true);
+        // Auto-utkastets avsnitt bär Rapporttextens prefix (rt-), inte Lönestrukturens.
+        expect(i('view-rapporttext', 'avsnitt-rt-utkast') && i('view-rapporttext', 'nyckel-rt-utkast')).toBe(true);
+        expect(d.querySelector('[id$="st-utkast"]')).toBeNull();
         expect(i('view-dokumentera', 'export-hub') && i('view-dokumentera', 'robusthet-body') && i('view-dokumentera', 'rapport-urval')).toBe(true);
         expect(i('view-arbetet', 'btn-config-save') && i('view-arbetet', 'btn-snapshot-save') && i('view-arbetet', 'arsjamforelse') && i('view-arbetet', 'btn-test-load')).toBe(true);
         expect(d.getElementById('avsnitt-dk-samverkan')).toBeNull();
@@ -272,6 +295,35 @@ describe('Uppgift 5: menyn i rapportens ordning', () => {
             expect(d.querySelector('.nav-item.active').dataset.tab, fran).toBe('filer');
             expect(d.activeElement.id, fran).toBe('file-input-data');
             expect(d.getElementById('upload-cell-data').classList.contains('visas-nu'), fran).toBe(true);
+        }
+    });
+});
+
+describe('Lönestrukturens mått räknas på ett ställe', () => {
+    it('_stMatt ger fliken, rapportutkastet och EU-exporten samma mått som lib-funktionerna', () => {
+        const w = createAppWindow(); w.__loadDemoData();
+        const d = w.eval('getData()'), k = w.eval('kTroskel()');
+        const m = w.eval('_stMatt')(d, k);
+        const arKv = r => r.kon && r.kon.includes('kvinna'), arMa = r => r.kon === 'man' || r.kon === 'män';
+        const kv = d.filter(arKv).map(r => r.lon), ma = d.filter(arMa).map(r => r.lon);
+        const medel = a => a.reduce((s, x) => s + x, 0) / a.length;
+        expect(m.konOk).toBe(w.eval('_konFarRedovisasFor')(d));
+        expect(m.totKv).toBe(kv.length);
+        expect(m.totAndel).toBe(100 * kv.length / d.length);
+        expect(m.kv).toEqual(kv); expect(m.ma).toEqual(ma);
+        expect(m.meanGap).toBe((medel(kv) / medel(ma) - 1) * 100);
+        expect(m.medGap).toBe(w.eval('_stMedianGapPct')(d, { k }));
+        expect(m.rep).toEqual(w.eval('_stRepresentationByBas')(d, { k }));
+        expect(m.dist).toEqual(w.eval('_stDistributionalGap')(d, undefined, { k }));
+        expect(m.q).toEqual(w.eval('_stQuartileDistribution')(d, { k }));
+        expect(w.eval('_stMatt')([], k)).toMatchObject({ totKv: 0, totAndel: 0, meanGap: null });
+    });
+    it('medellönegapet står en gång i 37-struktur.js, inte i tre kopior', () => {
+        const kalla = readFileSync(join(__dirname, '..', 'src', 'app', '37-struktur.js'), 'utf8');
+        expect(kalla.match(/kv\.reduce\(\(s, x\) => s \+ x, 0\) \/ kv\.length/g)).toHaveLength(1);
+        for (const f of ['renderStructure', 'renderStrukturUtkast', '_exportEuReportExport']) {
+            const kropp = kalla.slice(kalla.indexOf(`function ${f}(`)).split(/\n}\n/)[0];
+            expect(kropp, f).toContain('_stMatt(d, k)');
         }
     });
 });

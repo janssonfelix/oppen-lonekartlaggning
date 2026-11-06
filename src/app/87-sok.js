@@ -94,14 +94,17 @@ function _sokRita() {
     _sokTraffar = [...grupper, ...funktioner];
     _sokAktiv = _sokTraffar.length ? 0 : -1;
     if (!text) { lista.hidden = true; lista.innerHTML = ''; falt.setAttribute('aria-expanded', 'false'); falt.removeAttribute('aria-activedescendant'); return; }
-    // Rubrikerna är role="presentation": de är inte alternativ, och pilarna går förbi dem. Grupprubriken behövs bara när båda grupperna finns.
-    const rubrik = t => `<li role="presentation" class="sok-grupprubrik">${t}</li>`;
+    // Grupperna följer ARIA-mönstret för en listbox med grupper: li[role=group] märkt med sin rubrik (en span med
+    // role="presentation", inget alternativ, och pilarna går förbi den) och alternativen i en inre lista. Gruppen
+    // Grupper behövs bara när båda finns; ensamma står grupperna direkt i listan.
+    const grupp = (namn, id, innehall) => `<li role="group" aria-labelledby="${id}"><span role="presentation" class="sok-grupprubrik" id="${id}">${namn}</span>`
+        + `<ul role="presentation" class="sok-grupplista">${innehall}</ul></li>`;
     const alt = (t, i) => t.typ === 'grupp'
         ? `<li role="option" id="sok-traff-${i}" data-sok-index="${i}" aria-selected="${i === _sokAktiv}"><span class="sok-namn">${esc(t.namn)}</span><span class="sok-under">${esc(t.under)} · ${svTal(t.n, 0)} personer</span></li>`
         : `<li role="option" id="sok-traff-${i}" data-sok-index="${i}" data-sok-funktion aria-selected="${i === _sokAktiv}"><span class="sok-namn">${esc(t.namn)}</span><span class="sok-under">${esc(_sokFunktionUnder(t))}</span></li>`;
     lista.innerHTML = _sokTraffar.length
-        ? (grupper.length && funktioner.length ? rubrik('Grupper') : '') + grupper.map(alt).join('')
-            + (funktioner.length ? rubrik('Funktioner') + funktioner.map((t, j) => alt(t, grupper.length + j)).join('') : '')
+        ? (grupper.length && funktioner.length ? grupp('Grupper', 'sok-rubrik-grupper', grupper.map(alt).join('')) : grupper.map(alt).join(''))
+            + (funktioner.length ? grupp('Funktioner', 'sok-rubrik-funktioner', funktioner.map((t, j) => alt(t, grupper.length + j)).join('')) : '')
         : `<li class="sok-ingen" role="presentation">${_sokHarData() ? 'Ingen grupp eller funktion matchar.' : 'Ingen funktion matchar.'}</li>`;
     lista.hidden = false;
     falt.setAttribute('aria-expanded', 'true');

@@ -107,7 +107,7 @@ function byggPolicy() {
 
 const FLIKAR = ['dashboard', 'filer', 'bestammelser', 'benchmark', 'matrix', 'likvardighet', 'struktur',
                 'kon', 'demografi', 'prioritering', 'loneoversyn', 'handlingsplan', 'rapporttext',
-                'kvalitet', 'utforska', 'rapport', 'benchmark', 'arbetet', 'info'];
+                'kvalitet', 'utforska', 'rapport', 'arbetet', 'info'];
 
 // Tar bort mellanrum inuti tal ("31 111" / "31 111" -> "31111") så att
 // formaterade belopp går att söka i.
@@ -217,6 +217,7 @@ describe('k-anonymitet: invariant över samtliga flikar (i exportläget)', () =>
         const tackta = new Set(FLIKAR.map(f => win.eval(`tabMal(${JSON.stringify(f)})`)));
         expect(meny.filter(f => !tackta.has(f))).toEqual([]);
         expect([...tackta].filter(f => !meny.includes(f))).toEqual([]);
+        expect(FLIKAR.filter((f, i) => FLIKAR.indexOf(f) !== i), 'en flik står två gånger').toEqual([]);
     });
 
     for (const flik of FLIKAR) {

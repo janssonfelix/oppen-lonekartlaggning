@@ -2344,7 +2344,7 @@ function blinderOaxaca(rows, { golv, modell = FORKLARINGSMODELL_STANDARD }) {
  * @param {any[]} rows - råradernas poster; filtreras här på lön, ålder och kön.
  * @param {{rang?:(basList:string[]) => (bas:string) => number}} [opts] rang = BAS-rangfunktionen
  *   (standard basRangFn ur likvardighet.js).
- * @returns {null | {results:Array<{tau:number, konPct?:number, error?:true}>, n:number}}
+ * @returns {null | {results:Array<{tau:number, konPct?:number, error?:true}>, n:number, nKv:number, nMa:number}}
  *   null om N<50 eller för få BAS-intervall.
  */
 function quantileRegressionAtAllTau(rows, { rang = basRangFn } = {}) {
@@ -2370,7 +2370,7 @@ function quantileRegressionAtAllTau(rows, { rang = basRangFn } = {}) {
         const pct = (Math.exp(betaKon) - 1) * 100;
         results.push({ tau, konPct: pct });
     }
-    return { results, n: raw.length };
+    return { results, n: raw.length, nKv: raw.filter(d => d.kon.includes('kvinna')).length, nMa: raw.filter(d => !d.kon.includes('kvinna')).length };
 }
 
     return { diagnoseCollinearity, computePerBasGap, basIndikatorer, computeSequentialGap, quantileRegression, blinderOaxaca, quantileRegressionAtAllTau, computeVariabelTillfor, normaliseraForklaringsmodell, inomYrkesgrupp, forklaringsmodellArStandard, modellVariabler, modellFras, modellBeskrivning, tillforGransPp };
@@ -2951,7 +2951,7 @@ function livscykelRegression(rader, { fixBas, golv }) {
 
     return {
         ok: true,
-        n, k, R2: fit.R2, adjR2, aic,
+        n, kvN, maN, k, R2: fit.R2, adjR2, aic,
         ageMean,
         basList, fixBas, refBas, basFaktor,
         predKvinna, predMan, gapPerAge,
@@ -4440,6 +4440,9 @@ function parBlock(p, { id, kravProxy, urval, demo, troskelNot } = {}) {
     };
 }
 
+/** Antalet i ett kandidatpar: det kvinnodominerade yrkets och jämförelseyrkets ("–" när statistiken inte anger antal). */
+const _parAntal = p => `${p.kvN == null ? '–' : p.kvN} / ${p.maN == null ? '–' : p.maN}`;
+
 /** Avsnittsblock per lagsteg: 'sammanfattning' | 'uppdelning' | 'lika' | 'likvardigt' | 'lagreKrav' | 'struktur' | 'handlingsplan'. */
 /**
  * @param {string} typ
@@ -4515,8 +4518,8 @@ function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
         if (u.exkluderade) st.push(`${u.exkluderade} par med en grupp under ${k} personer redovisas inte här.`);
         if (!par.length) return blk('Likvärdigt arbete', [...st, 'Inga kandidatpar att redovisa.'], null);
         const kiText = p => (p.gapCI && p.kvMedian > 0) ? `${_ki(p.gapCI.lo / p.kvMedian * 100, p.gapCI.hi / p.kvMedian * 100)} %` : '–';
-        return blk('Likvärdigt arbete', st, { rubriker: ['Kvinnodominerat yrke', 'Jämförelseyrke', 'Skillnad (kr)', 'Skillnad (%)', '95 % KI'],
-            rader: par.map(p => [`${p.kvLabel} (BAS ${p.kvBas})`, `${p.maLabel} (BAS ${p.maBas})`, _kr(p.gapKr), _pct(p.gapPct), kiText(p)]) });
+        return blk('Likvärdigt arbete', st, { rubriker: ['Kvinnodominerat yrke', 'Jämförelseyrke', 'Antal (kvinnodom. / jämf.)', 'Skillnad (kr)', 'Skillnad (%)', '95 % KI'],
+            rader: par.map(p => [`${p.kvLabel} (BAS ${p.kvBas})`, `${p.maLabel} (BAS ${p.maBas})`, _parAntal(p), _kr(p.gapKr), _pct(p.gapPct), kiText(p)]) });
     }
     if (typ === 'lagreKrav') {
         const R = 'Lägre krav, högre lön';
@@ -4528,8 +4531,8 @@ function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
         if (u.exkluderade) st.push(`${u.exkluderade} par med en grupp under ${k} personer redovisas inte här.`);
         if (!par.length) return blk(R, [...st, 'Inget kvinnodominerat yrke har lägre medianlön än ett yrke i lägre BAS.'], null);
         const kiText = p => (p.gapCI && p.kvMedian > 0) ? `${_ki(p.gapCI.lo / p.kvMedian * 100, p.gapCI.hi / p.kvMedian * 100)} %` : '–';
-        const b = blk(R, st, { rubriker: ['Kvinnodominerat yrke', 'Jämförelseyrke', 'BAS-steg', 'Skillnad (kr)', 'Skillnad (%)', '95 % KI'],
-            rader: par.map(p => [`${p.kvLabel} (BAS ${p.kvBas})`, `${p.maLabel} (BAS ${p.maBas})`, String(p.basSteg), _kr(p.gapKr), _pct(p.gapPct), kiText(p)]) });
+        const b = blk(R, st, { rubriker: ['Kvinnodominerat yrke', 'Jämförelseyrke', 'Antal (kvinnodom. / jämf.)', 'BAS-steg', 'Skillnad (kr)', 'Skillnad (%)', '95 % KI'],
+            rader: par.map(p => [`${p.kvLabel} (BAS ${p.kvBas})`, `${p.maLabel} (BAS ${p.maBas})`, _parAntal(p), String(p.basSteg), _kr(p.gapKr), _pct(p.gapPct), kiText(p)]) });
         return { ...b, fragor: [...FRAGOR_PAR] };
     }
     if (typ === 'struktur') {
@@ -4567,8 +4570,9 @@ function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
         const rader = u.rader || [];
         const st = [`${_st(rader.length, 'förifylld åtgärd', 'förifyllda åtgärder')}` + (u.summa ? ` med en uppskattad kostnad på ${_kr(u.summa)} per år.` : '.')];
         if (!rader.length) return blk('Handlingsplan', st, null);
-        return blk('Handlingsplan', st, { rubriker: ['Åtgärd', 'Grupp', 'Underlag', 'Uppskattad kostnad per år'],
-            rader: rader.map(r => [r.atgard, r.grupp, r.underlag, _kr(r.kostnad)]) });
+        // Antal berörda: gruppens antal (för ett kandidatpar det kvinnodominerade yrkets); tomt för en egen rad.
+        return blk('Handlingsplan', st, { rubriker: ['Åtgärd', 'Grupp', 'Antal berörda', 'Underlag', 'Uppskattad kostnad per år'],
+            rader: rader.map(r => [r.atgard, r.grupp, r.antal == null ? '' : formatTal(r.antal), r.underlag, _kr(r.kostnad)]) });
     }
     throw new Error(`Okänd avsnittstyp: ${typ}`);
 }

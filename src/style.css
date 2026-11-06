@@ -2961,7 +2961,8 @@ details.avsnitt .insight-feed-header h3 { display: none; }
 .sok-lista [role="option"][aria-selected="true"], .sok-lista [role="option"]:hover { background: var(--secondary, #eff6ff); }
 .sok-namn { font-size: var(--fs-sm); font-weight: 600; }
 .sok-under { font-size: var(--fs-xs); color: var(--text-muted); }
-.sok-grupprubrik { padding: 8px 10px 2px; font-size: var(--fs-xs); font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.sok-grupplista { margin: 0; padding: 0; list-style: none; }
+.sok-grupprubrik { display: block; padding: 8px 10px 2px; font-size: var(--fs-xs); font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
 .sok-ingen { padding: 8px 10px; font-size: var(--fs-sm); color: var(--text-muted); line-height: 1.5; }
 @media (max-width: 640px) { .sok-ruta { flex: 1 1 100%; } .sok-lista { left: 0; right: auto; width: 100%; } }
 @media print { .sok-ruta { display: none !important; } }

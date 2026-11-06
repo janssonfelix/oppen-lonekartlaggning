@@ -107,15 +107,15 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         d.querySelector('.nav-item[data-tab="dokumentera"]').click();
         expect(d.querySelectorAll('#dk-slutsatser .slutsats')[1].textContent).toContain('Inte körd');
     });
-    it('Struktur har slutsatserna och kartan först; talen i toppen är tabellernas', () => {
+    it('Struktur har slutsatserna först, sedan representationen och kartan; talen i toppen är tabellernas', () => {
         const w = createAppWindow();
         w.__loadDemoData();
         const d = w.document;
         d.querySelector('.nav-item[data-tab="struktur"]').click();
         const fore = (a, b) => !!(d.getElementById(a).compareDocumentPosition(d.getElementById(b)) & 4);
-        expect(fore('st-urval', 'st-slutsatser') && fore('st-slutsatser', 'chart-struktur-tradkarta') && fore('chart-struktur-tradkarta', 'avsnitt-st-representation')).toBe(true);
+        expect(fore('st-urval', 'st-slutsatser') && fore('st-slutsatser', 'avsnitt-st-representation') && fore('avsnitt-st-representation', 'chart-struktur-tradkarta')).toBe(true);
         expect([...d.querySelectorAll('#view-struktur details.avsnitt[id^="avsnitt-st-"]')].map(a => a.id.replace('avsnitt-st-', '')))
-            .toEqual(['representation', 'fordelning', 'sektorer', 'eu', 'metod']);
+            .toEqual(['representation', 'karta', 'fordelning', 'sektorer', 'eu', 'metod']);
         expect(d.querySelectorAll('.sidans-innehall')).toHaveLength(0);
         expect(d.getElementById('st-urval').textContent).toMatch(/260 personer.*Minsta gruppstorlek 10/);
         const rutor = [...d.querySelectorAll('#st-slutsatser .slutsats')].map(r => r.textContent);
@@ -383,6 +383,24 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         d.getElementById('prio-cost-reset').click();
         expect(w.__state.costSettings.poPct).toBe(39.15);
         w.eval('stangInstallningar()');
+    });
+    it('utan lönefil är varje rad med en inställning i en flik inaktiv, också Tröskel för extremvärden (avsnittet är dolt)', () => {
+        const w = createAppWindow(), d = w.document;
+        d.getElementById('btn-open-installningar').click();
+        const rad = [...d.querySelectorAll('#inst-flikar .inst-flik')].find(r => /Tröskel för extremvärden/.test(r.textContent));
+        const knapp = rad.querySelector('button');
+        expect(d.getElementById('avsnitt-ov-kvalitet').hidden).toBe(true);
+        expect(knapp.disabled).toBe(true);
+        expect(knapp.title).toBe('Läs in en lönefil först');
+        for (const r of d.querySelectorAll('#inst-flikar .inst-flik button')) expect(r.disabled).toBe(true);
+        w.eval('stangInstallningar()');
+        w.__loadDemoData();
+        d.getElementById('btn-open-installningar').click();
+        const igen = [...d.querySelectorAll('#inst-flikar .inst-flik')].find(r => /Tröskel för extremvärden/.test(r.textContent)).querySelector('button');
+        expect(igen.disabled).toBe(false);
+        igen.click();
+        expect(d.getElementById('avsnitt-ov-kvalitet').open).toBe(true);
+        expect(d.getElementById('avsnitt-ov-kvalitet').hidden).toBe(false);
     });
     it('minsta gruppstorlek i flikarnas urvalsrad är en länk till inställningarna, och en ändring där slår igenom', () => {
         const w = createAppWindow();

@@ -597,7 +597,7 @@ console.log('\n── Exportera: checklistan först, robustheten, exporterna som
     ok(await page.evaluate(() => !/Inte körd/.test(document.querySelectorAll('#dk-slutsatser .slutsats')[1].textContent) && document.getElementById('nyckel-dk-robusthet').textContent.length > 3), 'robusthetens utfall står i slutsatserna och i avsnittets rubrik');
     await page.evaluate(() => document.querySelector('.nav-item[data-tab="rapporttext"]').click());
     await page.waitForTimeout(1200);
-    ok(await page.evaluate(() => document.getElementById('avsnitt-st-utkast').open && /LÖNEKARTLÄGGNING/.test(document.getElementById('struktur-narrative').value)), 'Rapporttext: auto-utkastet är utfällt och ifyllt');
+    ok(await page.evaluate(() => document.getElementById('avsnitt-rt-utkast').open && /LÖNEKARTLÄGGNING/.test(document.getElementById('struktur-narrative').value)), 'Rapporttext: auto-utkastet är utfällt och ifyllt');
     await page.click('#avsnitt-dk-rapportunderlag > summary');
     await page.waitForTimeout(300);
     ok(await page.evaluate(() => { const k = document.querySelector('#rapportunderlag-innehall [data-rapport-kopiera]'); return !!k && k.offsetParent !== null; }), 'rapportunderlagets block går att nå när avsnittet fälls ut');
@@ -612,7 +612,7 @@ console.log('\n── Exportera: checklistan först, robustheten, exporterna som
 console.log('\n── Struktur, Likvärdigt arbete, Löneöversyn och Lönepolitik ──');
 {
     const ga = async f => { await page.evaluate(t => document.querySelector(`.nav-item[data-tab="${t}"]`).click(), f); await page.waitForTimeout(1000); };
-    const lage = prefix => page.evaluate(p => ({ oppna: [...document.querySelectorAll(`details.avsnitt[id^="${p}"]`)].filter(a => a.open && a.offsetParent).map(a => a.id).join(','),   // bara den synliga flikens (auto-utkastet bär avsnitt-st- men står i Rapporttext)
+    const lage = prefix => page.evaluate(p => ({ oppna: [...document.querySelectorAll(`details.avsnitt[id^="${p}"]`)].filter(a => a.open).map(a => a.id).join(','),
         rutor: [...document.querySelectorAll('.view-panel')].filter(v => v.offsetParent).reduce((n, v) => n + v.querySelectorAll('.slutsatser .slutsats').length, 0),
         lank: document.querySelectorAll('.sidans-innehall').length, skarmar: document.documentElement.scrollHeight / innerHeight }), prefix);
     // Ett diagram i ett hopfällt avsnitt har ingen bredd när det ritas: det ska fylla kortet när avsnittet fälls ut.
@@ -622,9 +622,12 @@ console.log('\n── Struktur, Likvärdigt arbete, Löneöversyn och Lönepolit
 
     await ga('struktur');
     let l = await lage('avsnitt-st-');
-    ok(l.oppna === 'avsnitt-st-representation' && l.rutor === 5 && l.lank === 0 && l.skarmar < 4, `Struktur: fem slutsatser, kartan och representationen utfälld (${l.skarmar.toFixed(1)} skärmar)`);
-    ok(await page.evaluate(() => !!document.querySelector('#chart-struktur-tradkarta svg')), 'Struktur: kartan är ritad överst');
-    let b = await fyller('avsnitt-st-eu', 'chart-struktur-kvartiler');
+    ok(l.oppna === 'avsnitt-st-representation' && l.rutor === 5 && l.lank === 0 && l.skarmar < 2.5, `Struktur: fem slutsatser och representationen utfälld, kartan hopfälld (${l.skarmar.toFixed(1)} skärmar)`);
+    console.log(`  Lönestruktur: ${l.skarmar.toFixed(2)} skärmhöjder`);
+    ok(await page.evaluate(() => !!document.querySelector('#chart-struktur-tradkarta svg') && !document.getElementById('avsnitt-st-karta').open), 'Struktur: kartan är ritad i sitt hopfällda avsnitt');
+    let b = await fyller('avsnitt-st-karta', 'chart-struktur-tradkarta');
+    ok(b === 'ok', `Struktur: kartan fyller kortet när avsnittet fälls ut (${b})`);
+    b = await fyller('avsnitt-st-eu', 'chart-struktur-kvartiler');
     ok(b === 'ok', `Struktur: kvartildiagrammet fyller kortet när avsnittet fälls ut (${b})`);
     b = await fyller('avsnitt-st-sektorer', 'chart-sektorer');
     ok(b === 'ok', `Struktur: sektorsdiagrammet fyller kortet när avsnittet fälls ut (${b})`);
@@ -1635,6 +1638,9 @@ console.log('\n── Smala skärmar: 1440×800, 768 och 390 punkter ──');
     // spalten glider ut över innehållet; öppnar man menyn själv står den kvar.
     s = await oppna(1440, 812);
     await s.setViewportSize({ width: 375, height: 812 });
+    // Spalten läggs om vid brytpunkten utan glidning, men layouten kan ligga en bildruta efter: vänta in den
+    // (högst två sekunder) innan läget läses, i stället för att läsa mitt i ombrytningen.
+    await s.waitForFunction(() => document.querySelector('.sidebar').getBoundingClientRect().right <= 0, null, { timeout: 2000 }).catch(() => {});
     const efterByte = await s.evaluate(() => { const m = document.querySelector('.sidebar'), r = m.getBoundingClientRect();
         return { oppen: document.body.classList.contains('meny-oppen'), utanfor: r.right <= 0, expanderad: document.getElementById('btn-meny').getAttribute('aria-expanded') }; });
     ok(!efterByte.oppen && efterByte.utanfor && efterByte.expanderad === 'false', '1440 → 375 punkter: menyn är stängd och ligger utanför bild direkt efter bytet');
@@ -1763,7 +1769,7 @@ console.log('\n── Stort demo (7 000 personer): tider ──');
     await mat('Översikt ritad', () => s.evaluate(async () => {
         const t0 = performance.now();
         document.getElementById('first-run-stort-demo').click();
-        while (!(/stort demo/.test(document.getElementById('data-status').textContent) && document.querySelector('#view-dashboard svg'))) await new Promise(r => setTimeout(r, 10));
+        while (!(/stort demo/.test(document.getElementById('data-status').textContent) && document.querySelector('#view-dashboard svg'))) { if (performance.now() - t0 > 30000) return 99999; await new Promise(r => setTimeout(r, 10)); }
         await new Promise(r => requestAnimationFrame(() => r()));
         return Math.round(performance.now() - t0);
     }));

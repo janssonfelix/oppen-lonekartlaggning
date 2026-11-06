@@ -476,20 +476,20 @@ function _regKvantilKlar() { return _regKvantilBakgrund || Promise.resolve(); }
  * Designmatrisen byggs som i runQuantileRegressionAtAllTau (kön, centrerad ålder, centrerad BAS-rang); raderna
  * omsamplas parvis (X-rad, y), och könskoefficienten är oberoende av centreringen, så omsamplingen centreras inte om.
  * @param {{direkt?: boolean}} [val]
- * @returns {null | {results: Array<{tau:number, konPct?:number, error?:boolean, ki?:{lag:number, hog:number}|null}>, n:number, kiB:number, kiUtelamnad:string, kiVantar?: boolean, nyckel?: string}}
+ * @returns {null | {results: Array<{tau:number, konPct?:number, error?:boolean, ki?:{lag:number, hog:number}|null}>, n:number, nKv:number, nMa:number, kiB:number, kiUtelamnad:string, kiVantar?: boolean, nyckel?: string}}
  */
 function _regKvantilBerakna({ direkt = false } = {}) {
     const qr = runQuantileRegressionAtAllTau();
     if (!qr) return null;
     const results = qr.results.map(r => ({ ...r, ki: null }));
     if (qr.n > REG_KVANTIL_KI_MAX_N) {
-        return { results, n: qr.n, kiB: 0, kiUtelamnad: `Konfidensintervallet räknas inte vid fler än ${svTal(REG_KVANTIL_KI_MAX_N, 0)} personer (tiden för ${REG_KVANTIL_KI_B} omsamplingar).` };
+        return { results, n: qr.n, nKv: qr.nKv, nMa: qr.nMa, kiB: 0, kiUtelamnad: `Konfidensintervallet räknas inte vid fler än ${svTal(REG_KVANTIL_KI_MAX_N, 0)} personer (tiden för ${REG_KVANTIL_KI_B} omsamplingar).` };
     }
     const arKv = d => d.kon.includes('kvinna');
     const raw = getData().filter(d => d.lon > 0 && d.alder > 0 && (arKv(d) || d.kon === 'man' || d.kon === 'män'));
     const nyckel = `${_rngSeedFrom(raw.filter(arKv).map(d => d.lon), raw.filter(d => !arKv(d)).map(d => d.lon), raw.map(d => d.alder))}|${raw.length}|${results.map(r => r.konPct).join(',')}`;
     if (_regKvantilMinne && _regKvantilMinne.nyckel === nyckel) return _regKvantilMinne.ut;
-    const rakna = () => { const ut = _regKvantilBootstrap(raw, results.map(r => ({ ...r })), arKv); _regKvantilMinne = { nyckel, ut: { ...ut, n: qr.n } }; return _regKvantilMinne.ut; };
+    const rakna = () => { const ut = _regKvantilBootstrap(raw, results.map(r => ({ ...r })), arKv); _regKvantilMinne = { nyckel, ut: { ...ut, n: qr.n, nKv: qr.nKv, nMa: qr.nMa } }; return _regKvantilMinne.ut; };
     if (direkt) return rakna();
     if (!_regKvantilBakgrund) {
         _regKvantilBakgrund = new Promise(resolve => setTimeout(() => {
@@ -502,7 +502,7 @@ function _regKvantilBerakna({ direkt = false } = {}) {
             finally { _regKvantilBakgrund = null; resolve(); }
         }, 0));
     }
-    return { results, n: qr.n, kiB: REG_KVANTIL_KI_B, kiUtelamnad: '', kiVantar: true, nyckel };
+    return { results, n: qr.n, nKv: qr.nKv, nMa: qr.nMa, kiB: REG_KVANTIL_KI_B, kiUtelamnad: '', kiVantar: true, nyckel };
 }
 function _regKvantilBootstrap(raw, results, arKv) {
     const basList = [...new Set(raw.map(d => d.bas))].sort();
@@ -620,7 +620,7 @@ function renderForklaringsmodellPanel(r) {
             ${r.modellVarning ? `<p class="k-mask-note" role="note">${esc(r.modellVarning)}</p>` : ''}
             ${r.fellBackFromFull ? `<p class="k-mask-note" role="note">Den valda modellen kunde inte skattas (multikollinearitet); verktyget räknar på ${esc(r.modelDesc)}.</p>` : ''}
             <table class="data-table st-09 marg-t-10">
-                <caption class="text-dampad-sm ta-vanster">Vad varje variabel tillför, räknat mot fullmodellen (ändras inte av valet)</caption>
+                ${antalCaption(r.nKvAnalysed, r.nMaAnalysed, 'Vad varje variabel tillför, räknat mot fullmodellen (ändras inte av valet)')}
                 <thead><tr><th>Variabel</th><th class="t-hoger" title="Hur mycket förklaringsgraden (R²) ökar när variabeln läggs till sist">Tillför i förklaringsgrad</th><th class="t-hoger" title="Könsgapet utan variabeln, sedan med variabeln">Flyttar gapet</th><th>Bedömning</th></tr></thead>
                 <tbody>${rader}</tbody>
             </table>
@@ -1108,7 +1108,7 @@ function renderRegressionCard() {
                     </p>
                     <div class="rulla-x">
                         <div class="chart-container"><div id="chart-reg-kvantil"></div></div>
-                        <table class="data-table fs-sm marg-t-8">
+                        <table class="data-table fs-sm marg-t-8">${antalCaption(qr.nKv, qr.nMa)}
                             <thead><tr><th>Position i lönefördelningen</th><th class="t-hoger">Oförklarat gap</th><th>95 % KI (bootstrap)</th><th>Tolkning</th></tr></thead>
                             <tbody>
                                 ${fmtRow('<strong>P10 — Klistergolvet</strong>', 'Lönegapet bland de lägst betalda', p10)}
@@ -1312,7 +1312,7 @@ function renderBlinderOaxacaCard(reg) {
             <details open>
                 <summary class="farg-text pekare fw-600">Visa uppdelning per variabel</summary>
                 <div class="marg-t-10">
-                    <table class="data-table st-09">
+                    <table class="data-table st-09">${antalCaption(r.nKv, r.nMa)}
                         <thead>
                             <tr>
                                 <th>Variabel</th>

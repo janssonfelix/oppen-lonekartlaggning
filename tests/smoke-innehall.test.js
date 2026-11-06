@@ -206,7 +206,10 @@ describe('Lika arbete och filrutorna: ordning och kompakta rutor', () => {
         const d = w.document;
         expect(d.getElementById('btn-try-demo')).toBeNull();
         expect(d.getElementById('btn-minimize-upload')).toBeNull();
-        expect(d.getElementById('first-run-hint').textContent.replace(/\s+/g, ' ')).toMatch(/Kom igång: läs in filerna \(organisationspaketet först om er organisation har ett, sedan lönefilen\) — eller prova med demodata eller ett stort demo \(7 000 personer\)\./i);
+        const text = d.getElementById('first-run-hint').textContent.replace(/\s+/g, ' ').trim();
+        expect(text).toMatch(/^Kom igång: läs in filerna \(organisationspaketet först om er organisation har ett, sedan lönefilen\) — eller prova med demodata, litet eller stort \(7 000 personer\)\.$/i);
+        expect(text.match(/\beller\b/g)).toHaveLength(2);   // inte "eller … eller ett"
+        expect(d.getElementById('first-run-demo-link').textContent).toBe('litet');
         d.getElementById('first-run-demo-link').click();
         expect(w.__state.data.length).toBeGreaterThan(0);
     });

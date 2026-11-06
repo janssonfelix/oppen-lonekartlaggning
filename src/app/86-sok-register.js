@@ -24,6 +24,7 @@ const SOK_FUNKTIONER = [
     { namn: 'Underlagets kvalitet', synonymer: ['datakvalitet', 'kontroll', 'saknas', 'extremvärden', 'outliers', 'avvikande löner', 'registerfel'], flik: 'filer', avsnitt: 'avsnitt-ov-kvalitet' },
     // Lönestruktur
     { namn: 'Representation per BAS-nivå', synonymer: ['segregering', 'andel kvinnor', 'könsfördelning'], flik: 'struktur', avsnitt: 'avsnitt-st-representation' },
+    { namn: 'Organisationen som karta', synonymer: ['karta', 'trädkarta', 'yrkesgrupper', 'storlek'], flik: 'struktur', avsnitt: 'avsnitt-st-karta' },
     { namn: 'Var i lönefördelningen sitter gapet?', synonymer: ['kvartil', 'fjärdedel', 'percentil', 'klibbigt golv', 'glastak'], flik: 'struktur', avsnitt: 'avsnitt-st-fordelning' },
     { namn: 'Per sektor', synonymer: ['aid-huvudområde', 'huvudområde', 'yrkesområde'], flik: 'struktur', avsnitt: 'avsnitt-st-sektorer' },
     { namn: 'Var uppstår löneskillnaden?', synonymer: ['gapuppdelning', 'uppdelning', 'trappa', 'medellön'], flik: 'struktur', avsnitt: 'avsnitt-ov-gap' },
@@ -82,7 +83,7 @@ const SOK_FUNKTIONER = [
     { namn: 'Protokoll för gemensam lönebedömning', synonymer: ['gemensam lönebedömning', 'jpa', 'facklig', 'facket', 'protokoll'], flik: 'dokumentera', avsnitt: 'btn-hub-jpa' },
     { namn: 'Handlingsplansunderlag', synonymer: ['åtgärdslista', 'handlingsplan'], flik: 'dokumentera', avsnitt: 'btn-hub-handlingsplan' },
     // Rapporttext
-    { namn: 'Auto-rapportutkast', synonymer: ['klarspråk', 'fynd', 'rapporttext', 'utkast'], flik: 'rapporttext', avsnitt: 'avsnitt-st-utkast' },
+    { namn: 'Auto-rapportutkast', synonymer: ['klarspråk', 'fynd', 'rapporttext', 'utkast'], flik: 'rapporttext', avsnitt: 'avsnitt-rt-utkast' },
     { namn: 'Rapportunderlag', synonymer: ['rapportmall', 'klistra in', 'kopiera'], flik: 'rapporttext', avsnitt: 'avsnitt-dk-rapportunderlag' },
     // Spara och jämför år
     { namn: 'Spara/ladda konfiguration', synonymer: ['konfiguration', 'spara', 'ladda', 'json', 'inställningsfil'], flik: 'arbetet', avsnitt: 'avsnitt-ar-konfiguration' },

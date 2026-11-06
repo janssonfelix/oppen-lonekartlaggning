@@ -57,7 +57,7 @@ const INFO_SECTIONS = {
             <li>Bestäm i <strong>Prioritering</strong> och <strong>Handlingsplan</strong> vad som ska göras, av vem och när; pröva fördelningen av potten i <strong>Löneöversyn</strong></li>
             <li>Ta texten till rapporten ur <strong>Rapporttext</strong>, kör färdigchecken i <strong>Exportera</strong>, hämta Word-utkastet och färdigställ dokumentationen. Spara konfigurationen i <strong>Spara och jämför år</strong>, så kan ni jämföra med förra året nästa gång</li>
         </ol>
-        <p>Vill ni prova först finns två demon i <strong>Kom igång</strong> på Översikt och i lönefilskortet i Filer och kvalitet: <em>prova med demodata</em> (260 påhittade personer) och <em>stort demo</em> (7 000 påhittade personer i BAS A–K, i storlek med en mindre kommun). Allt i demona är påhittat och märks som demodata.</p>
+        <p>Vill ni prova först finns två demon i <strong>Kom igång</strong> på Översikt och i lönefilskortet i Filer och kvalitet: <em>prova med demodata, litet</em> (260 påhittade personer) och <em>stort</em> (7 000 påhittade personer i BAS A–K, i storlek med en mindre kommun). Allt i demona är påhittat och märks som demodata.</p>
         <p>Raden <em>Klar här? Nästa steg</em> sist i flikarna leder vidare i den här ordningen. Sökrutan i sidhuvudet hittar yrken, BAS-intervall och funktioner, och listan <em>På den här sidan</em> leder till flikens avsnitt. Körguiden som följer med verktyget beskriver varje steg närmare; den står under Källor.</p>
     `,
 
