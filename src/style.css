@@ -441,7 +441,6 @@ details.avsnitt[open]:not(.card) { padding-bottom: 20px; }
 .sidindex { order: -1; font-size: var(--fs-sm); }
 @media (max-width: 1919px) {
     .sidindex { position: sticky; top: 0; z-index: 25; background: var(--bg-main); padding: 8px 0; margin: -8px 0 6px; }
-    .content-body.har-sidindex > .markering-rad { top: calc(var(--sidindex-hojd, 58px) + 2px); }
     .content-body.har-sidindex :is(details.avsnitt, .card) { scroll-margin-top: calc(var(--sidindex-hojd, 58px) + 8px); }
     .sidindex-ram[open] .sidindex-lista { max-height: 50vh; overflow-y: auto; }
 }
@@ -2051,6 +2050,8 @@ svg [data-nara] { stroke: var(--text-main); stroke-width: 2px; stroke-opacity: 1
     color: var(--status-granska); background: var(--status-granska-bg);
     border: 1px solid var(--status-granska-kant); border-radius: var(--radius);
 }
+/* Under sidindexets rad (89-sidindex.js), som också följer med överst smalare än 1920 punkter. */
+@media (max-width: 1919px) { .content-body.har-sidindex > .markering-rad { top: calc(var(--sidindex-hojd, 58px) + 2px); } }
 .markering-rad > span { font-weight: 600; margin-right: auto; }
 @media print { .markering-rad { display: none !important; } }
 /* Tabellrader för en markerad grupp. */
