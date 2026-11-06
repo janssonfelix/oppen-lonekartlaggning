@@ -218,9 +218,9 @@ function loadDemoData() {
     wrap.style.display = 'block';
     wrap.innerHTML = `
         <div class="bak-white ram-1-kant rund-8 pad-14-16">
-            <h4 class="underrubrik">
+            <h3 class="underrubrik">
                 Diagnostik-resultat: ${failCount === 0 ? `<span class="farg-ok">${ikon('bock')} Alla tester lyckades</span>` : `<span class="f-kritisk">${ikon('stopp')} ${failCount} av ${tests.length} tester misslyckades</span>`}
-            </h4>
+            </h3>
             <table class="data-table st-088">
                 <thead><tr><th>Test</th><th>Förväntat</th><th>Faktiskt</th><th>Status</th></tr></thead>
                 <tbody>

@@ -3,7 +3,7 @@
 
 // ===================================================================
 // Struktur & EU-rapport — representation/segregation, kvartilfördelning
-// (EU 2023/970), distributionellt gap, auto-rapportutkast.
+// (EU 2023/970), distributionellt gap. Auto-rapportutkastet (renderStrukturUtkast) står i fliken Rapporttext.
 // De rena måtten (_st*) genereras i src/app/09-lib-speglar.js från src/lib/struktur.js.
 // ===================================================================
 
@@ -16,7 +16,6 @@ function renderStructure() {
     const euEl = document.getElementById('struktur-eu');
     if (!d.length) {
         [repEl, distEl, euEl].forEach(el => { if (el) el.innerHTML = '<p class="farg-dampad pad-14">Ladda upp strukturdata.</p>'; });
-        const nb = document.getElementById('struktur-narrative'); if (nb) /** @type {HTMLInputElement} */ (nb).value = '';
         _stRitaTopp(d, null);
         return;
     }
@@ -100,13 +99,33 @@ function renderStructure() {
     if (kvEl && q.length && q.every(x => x.nKv != null && x.nMa != null && x.n > 0)) ritaFigur(kvEl, _strukturKvartilFigur(q, totAndel),
         { exportAnteckning: `Andel kvinnor: ${_figTalformat(q[0].andelKv, 'pct')} i lägsta kvartilen, ${_figTalformat(q[q.length - 1].andelKv, 'pct')} i högsta` });
 
-    // (4) Auto-rapportutkast
-    const nb = document.getElementById('struktur-narrative');
-    if (nb && !nb.dataset.dirty) /** @type {HTMLInputElement} */ (nb).value = _buildNarrative(d, { rep, dist, q, medGap, meanGap, totAndel, konOk });
-
     renderSektorer(d);
     renderStrukturTradkarta(d);
     _stRitaTopp(d, { konOk, totAndel, medGap, q, dist, basAntal: repVisade.length });
+}
+
+/**
+ * Auto-rapportutkastet i fliken Rapporttext: fynden i klarspråk, ur samma mått som Lönestruktur räknar. Ett utkast
+ * som användaren har redigerat skrivs inte över; "Återskapa" tar bort markeringen och ritar om.
+ */
+function renderStrukturUtkast() {
+    const nb = document.getElementById('struktur-narrative');
+    if (!nb) return;
+    const d = getData();
+    if (!d.length) { /** @type {HTMLInputElement} */ (nb).value = ''; return; }
+    if (nb.dataset.dirty) return;
+    const k = kTroskel();
+    const konOk = _konFarRedovisasFor(d);
+    const rep = _stRepresentationByBas(d, { k });
+    const totKv = d.filter(r => r.kon && r.kon.includes('kvinna')).length;
+    const totAndel = 100 * totKv / d.length;
+    const dist = _stDistributionalGap(d, undefined, { k });
+    const q = _stQuartileDistribution(d, { k });
+    const medGap = _stMedianGapPct(d, { k });
+    const kv = d.filter(r => r.kon && r.kon.includes('kvinna')).map(r => r.lon);
+    const ma = d.filter(r => r.kon === 'man' || r.kon === 'män').map(r => r.lon);
+    const meanGap = (konOk && kv.length && ma.length) ? ((kv.reduce((s, x) => s + x, 0) / kv.length) / (ma.reduce((s, x) => s + x, 0) / ma.length) - 1) * 100 : null;
+    /** @type {HTMLInputElement} */ (nb).value = _buildNarrative(d, { rep, dist, q, medGap, meanGap, totAndel, konOk });
 }
 
 /** Var i lönefördelningen gapet är störst: samma regel som tolkningen under tabellen (mer än en procentenhet). */
@@ -433,7 +452,7 @@ function _exportEuReportExport() {
     document.getElementById('struktur-eu-export')?.addEventListener('click', exportEuReport);
     document.getElementById('struktur-narrative-regen')?.addEventListener('click', () => {
         const nb = document.getElementById('struktur-narrative');
-        if (nb) { delete nb.dataset.dirty; renderStructure(); }
+        if (nb) { delete nb.dataset.dirty; medExportLage(renderStrukturUtkast); }
     });
     document.getElementById('struktur-narrative-copy')?.addEventListener('click', () => {
         const nb = document.getElementById('struktur-narrative');

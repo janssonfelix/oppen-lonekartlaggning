@@ -78,3 +78,59 @@ describe('Uppgift 2: Lönestruktur', () => {
         }
     });
 });
+
+describe('Uppgift 3: Rapporttext, Exportera och Spara och jämför år', () => {
+    it('Rapporttext bär auto-utkastet och rapportunderlaget; Exportera färdigcheck, robusthet, urval och exporter; Arbetet spara, ögonblicksbild, årsjämförelse, självdiagnostik', () => {
+        const d = createAppWindow().document, i = (vy, id) => d.getElementById(vy).contains(d.getElementById(id));
+        expect(i('view-rapporttext', 'struktur-narrative') && i('view-rapporttext', 'rapportunderlag')).toBe(true);
+        expect(i('view-dokumentera', 'export-hub') && i('view-dokumentera', 'robusthet-body') && i('view-dokumentera', 'rapport-urval')).toBe(true);
+        expect(i('view-arbetet', 'btn-config-save') && i('view-arbetet', 'btn-snapshot-save') && i('view-arbetet', 'arsjamforelse') && i('view-arbetet', 'btn-test-load')).toBe(true);
+        expect(d.getElementById('avsnitt-dk-samverkan')).toBeNull();
+    });
+    it('Exportera och Spara och jämför år går att öppna utan lönefil; Rapporttext är låst', () => {
+        const d = createAppWindow().document;
+        expect(d.getElementById('tab-arbetet').getAttribute('aria-disabled')).toBeNull();
+        expect(d.getElementById('tab-dokumentera').getAttribute('aria-disabled')).toBeNull();
+        expect(d.getElementById('tab-rapporttext').getAttribute('aria-disabled')).toBe('true');
+        d.getElementById('tab-rapporttext').click();
+        expect(d.querySelector('.nav-item.active').getAttribute('data-tab')).toBe('filer');
+        for (const [flik, titel] of [['arbetet', 'Spara och jämför år'], ['dokumentera', 'Exportera']]) {
+            d.getElementById('tab-' + flik).click();
+            expect(d.querySelector('.nav-item.active').getAttribute('data-tab'), flik).toBe(flik);
+            expect(d.getElementById('page-title').textContent).toBe(titel);
+        }
+    });
+    it('Rapporttext och årsjämförelsen ritas i exportläge', () => {
+        const w = createAppWindow(); w.__loadDemoData();
+        const d = w.document;
+        w.eval(`window.__lagen = [];
+            for (const namn of ['renderStrukturUtkast', 'renderRapportunderlag', 'renderArsjamforelse']) {
+                const orig = window[namn];
+                window[namn] = (...a) => { window.__lagen.push(namn + ':' + iExportLage()); return orig(...a); };
+            }`);
+        d.getElementById('tab-rapporttext').click();
+        expect(d.getElementById('page-title').textContent).toBe('Rapporttext');
+        expect(d.getElementById('struktur-narrative').value).toContain('LÖNEKARTLÄGGNING');
+        d.getElementById('tab-arbetet').click();
+        expect(w.__lagen).toEqual(['renderStrukturUtkast:true', 'renderRapportunderlag:true', 'renderArsjamforelse:true']);
+        expect(w.eval('iExportLage()')).toBe(false);
+    });
+    it('Lönestruktur bygger inte längre utkastet; årsjämförelsens bild ritas av Spara och jämför år', () => {
+        const w = createAppWindow(); w.__loadDemoData();
+        w.document.querySelector('.nav-item[data-tab="struktur"]').click();
+        expect(w.document.getElementById('struktur-narrative').value).toBe('');
+        expect(w.eval('RM_DIAGRAM').find(r => r.id === 'chart-arsjamforelse').flik).toBe('arbetet');
+        w.eval(`navigateTo('spara')`);
+        expect(w.document.querySelector('.nav-item.active').getAttribute('data-tab')).toBe('arbetet');
+    });
+    it('samverkansknapparna står i Handlingsplan och leder till exporterna', () => {
+        const w = createAppWindow(), d = w.document;
+        const knappar = [...d.querySelectorAll('[data-dok-klick]')];
+        expect(knappar.map(b => b.dataset.dokKlick)).toEqual(['btn-hub-jpa', 'btn-hub-handlingsplan']);
+        expect(knappar.every(b => b.closest('.view-panel').id === 'view-handlingsplan')).toBe(true);
+        let klick = 0;
+        d.getElementById('btn-hub-handlingsplan').addEventListener('click', () => klick++);
+        knappar[1].click();
+        expect(klick).toBe(1);
+    });
+});

@@ -142,6 +142,8 @@ function _hpUppdateraVarning() {
 // #UX Renderar de förifyllda raderna direkt i skärm-mallen, med fält för sakligt skäl, ansvarig, tidsplan och status,
 // ovanför tomrader som syns på utskriften — så HR ser underlaget och kan fylla i planen utan att först exportera.
 function renderHandlingsplanSeed() {
+    // Samverkansknapparna (kortet Samverkan & uppföljning) exporterar underlag — inaktiva tills data finns.
+    document.querySelectorAll('[data-dok-klick]').forEach(b => { /** @type {HTMLInputElement} */ (b).disabled = !getData().length; });
     const tbody = document.getElementById('handlingsplan-tbody');
     if (!tbody) return;
     const seed = _handlingsplanSeedRows({ baraEgna: !getData().length });

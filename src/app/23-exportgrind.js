@@ -33,17 +33,18 @@ function _bytKLage(lage) {
 }
 /**
  * Ritar skärmen tillbaka efter en export: Översikts delar och den öppna fliken, när grinden ritade dem i exportläget
- * (`ritade`: flikarna som ritades under exporten), utom Dokumentera & exportera, som alltid ritas i exportläget. Det
- * som inte ritades under exporten visar fortfarande skärmens tal och rörs inte — Dokumentera-fliken i sig ritar inga
+ * (`ritade`: flikarna som ritades under exporten), utom de tre dokumentationsflikarna (_ALLTID_EXPORT), som alltid ritas i
+ * exportläget. Det som inte ritades under exporten visar fortfarande skärmens tal och rörs inte — de flikarna i sig ritar inga
  * andra flikar, och att rita om Översikt kostar sekunder på stora underlag. Flikar som inte syns töms inte: det de
  * bär är ritat med den inställda tröskeln (försiktigare än skärmen), och de ritas om när de öppnas.
  * @param {Set<string>} ritade
  */
+const _ALLTID_EXPORT = new Set(['dokumentera', 'rapporttext', 'arbetet']);
 const _OVERSIKT_STEG = new Set(['nyckeltal', 'kompliansöversikt', 'underlagets kvalitet', 'Att göra', 'processöversikten', 'extremvärden', 'inläsningsrapporten', 'A/B-jämförelsen']);
 function _ritaOmEfterExport(ritade) {
     if (!state.data.length || typeof _omritningssteg !== 'function') return;
     for (const [namn, fn] of _omritningssteg()) {
-        if (namn === 'dokumentera' || namn === 'flikar som inte syns') continue;
+        if (_ALLTID_EXPORT.has(namn) || namn === 'flikar som inte syns') continue;
         const ska = namn === 'gruppdossiern' || (_OVERSIKT_STEG.has(namn) ? ritade.has('dashboard') : ritade.has(namn));
         if (ska) _omritningForsok(namn, fn);
     }

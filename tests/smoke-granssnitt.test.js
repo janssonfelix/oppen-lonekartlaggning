@@ -36,30 +36,33 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         w.__updateCompliance();
         expect(w.document.getElementById('comp-pol-val').textContent).toMatch(/^0 av 1 BAS-intervall/);
     });
-    it('Dokumentera har checklistan överst, exporterna som lista och resten som avsnitt', () => {
+    it('Exportera har checklistan överst, robustheten och exporterna som lista; rapportunderlaget står i Rapporttext', () => {
         const w = createAppWindow();
         w.__loadDemoData();
         const d = w.document;
         d.querySelector('.nav-item[data-tab="dokumentera"]').click();
         // Alla flikens paneler ligger i innehållsytan (det tomma bandet överst kom av att de låg utanför).
-        for (const id of ['view-kvalitet', 'view-dokumentera', 'view-benchmark', 'view-utforska']) {
+        for (const id of ['view-kvalitet', 'view-dokumentera', 'view-rapporttext', 'view-arbetet', 'view-benchmark', 'view-utforska']) {
             expect(d.getElementById(id).parentElement.className, id).toBe('content-body');
         }
         const fore = (a, b) => !!(d.getElementById(a).compareDocumentPosition(d.getElementById(b)) & 4);
-        expect(fore('dk-slutsatser', 'fardigcheck-body') && fore('fardigcheck-body', 'export-hub') && fore('export-hub', 'avsnitt-dk-robusthet')).toBe(true);
-        expect([...d.querySelectorAll('details.avsnitt[id^="avsnitt-dk-"]')].map(a => a.id))
-            .toEqual(['avsnitt-dk-robusthet', 'avsnitt-dk-rapportunderlag', 'avsnitt-dk-samverkan', 'avsnitt-dk-spara']);
-        // Slutsatserna: färdigcheckens punkter, robustheten (inte körd) och antalet avsnitt i rapportunderlaget.
+        expect(fore('dk-slutsatser', 'fardigcheck-body') && fore('fardigcheck-body', 'avsnitt-dk-robusthet') && fore('avsnitt-dk-robusthet', 'export-hub')).toBe(true);
+        expect([...d.querySelectorAll('#view-kvalitet details.avsnitt, #view-dokumentera details.avsnitt[id^="avsnitt-dk-"]')].map(a => a.id))
+            .toEqual(['avsnitt-dk-robusthet']);
+        expect(d.getElementById('avsnitt-dk-robusthet').open).toBe(true);
+        // Slutsatserna: färdigcheckens punkter och robustheten (inte körd).
         const rutor = [...d.querySelectorAll('#dk-slutsatser .slutsats')].map(r => r.textContent);
-        expect(rutor).toHaveLength(3);
+        expect(rutor).toHaveLength(2);
         const punkter = d.querySelectorAll('#fardigcheck-body .fc-item').length;
         expect(rutor[0]).toContain(punkter ? `${punkter} punkt` : 'Inga lösa trådar');
         expect(rutor[1]).toContain('Inte körd');
+        expect(d.getElementById('nyckel-dk-robusthet').textContent).toBe('Inte körd');
+        // Rapportunderlaget ritas av Rapporttext och lämnar antalet avsnitt i sitt nyckeltal.
+        d.querySelector('.nav-item[data-tab="rapporttext"]').click();
         const block = d.querySelectorAll('#rapportunderlag-innehall .ru-block:not(.ru-diagram)').length;
         expect(block).toBeGreaterThan(0);
-        expect(rutor[2]).toContain(`${block} avsnitt`);
         expect(d.getElementById('nyckel-dk-rapportunderlag').textContent).toBe(`${block} avsnitt`);
-        expect(d.getElementById('nyckel-dk-robusthet').textContent).toBe('Inte körd');
+        d.querySelector('.nav-item[data-tab="dokumentera"]').click();
         // Inget i raden märks som fel: punkterna är observationer.
         expect(d.querySelectorAll('#dk-slutsatser .ar-kritisk')).toHaveLength(0);
         // Exporterna: en rad per underlag med en beskrivning och en knapp eller ett val.
@@ -111,8 +114,8 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         d.querySelector('.nav-item[data-tab="struktur"]').click();
         const fore = (a, b) => !!(d.getElementById(a).compareDocumentPosition(d.getElementById(b)) & 4);
         expect(fore('st-urval', 'st-slutsatser') && fore('st-slutsatser', 'chart-struktur-tradkarta') && fore('chart-struktur-tradkarta', 'avsnitt-st-representation')).toBe(true);
-        expect([...d.querySelectorAll('details.avsnitt[id^="avsnitt-st-"]')].map(a => a.id.replace('avsnitt-st-', '')))
-            .toEqual(['representation', 'fordelning', 'sektorer', 'eu', 'utkast', 'metod']);
+        expect([...d.querySelectorAll('#view-struktur details.avsnitt[id^="avsnitt-st-"]')].map(a => a.id.replace('avsnitt-st-', '')))
+            .toEqual(['representation', 'fordelning', 'sektorer', 'eu', 'metod']);
         expect(d.querySelectorAll('.sidans-innehall')).toHaveLength(0);
         expect(d.getElementById('st-urval').textContent).toMatch(/260 personer.*Minsta gruppstorlek 10/);
         const rutor = [...d.querySelectorAll('#st-slutsatser .slutsats')].map(r => r.textContent);
@@ -582,15 +585,15 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         expect(kompakt).toMatch(/\.avsnitt-under/);
         expect(kompakt).not.toMatch(/k-mask-note|reg-caveat|export-besked|diagramkort-forklaring|slutsats/);
     });
-    it('Dokumentera utan data — knapparna för samverkan är inaktiva och panelen heter "Innan du exporterar"', () => {
+    it('utan data är samverkansknapparna i Handlingsplan inaktiva, och Exportera heter "Innan du exporterar"', () => {
         const w = createAppWindow();
-        w.document.querySelector('.nav-item[data-tab="dokumentera"]').click();
+        w.document.querySelector('.nav-item[data-tab="handlingsplan"]').click();
         const knappar = [...w.document.querySelectorAll('[data-dok-klick]')];
         expect(knappar.length).toBe(2);
         expect(knappar.every(b => b.disabled)).toBe(true);
         expect(w.document.getElementById('view-kvalitet').textContent).toMatch(/innan du exporterar/i);
         w.__loadDemoData();
-        w.document.querySelector('.nav-item[data-tab="dokumentera"]').click();
+        w.document.querySelector('.nav-item[data-tab="handlingsplan"]').click();
         expect([...w.document.querySelectorAll('[data-dok-klick]')].every(b => !b.disabled)).toBe(true);
     });
     it('Prioriteringens tomläge talar inte om att ladda upp ett ställningstagande', () => {

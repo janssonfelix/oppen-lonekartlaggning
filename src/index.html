@@ -118,9 +118,19 @@
                     <svg class="ikon nav-las" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
                 </button>
                 <div class="nav-group" role="presentation" aria-hidden="true">5 · Dokumentera</div>
-                <button class="nav-item" data-tip="Färdigcheck, all export och protokollet för gemensam lönebedömning i samverkan." data-tab="dokumentera" id="tab-dokumentera" aria-controls="view-kvalitet view-dokumentera">
+                <button class="nav-item" data-tip="Färdigcheck, robusthet och all export: Word-utkastet, PDF-rapporten, Excel, ZIP och protokollet för gemensam lönebedömning." data-tab="dokumentera" id="tab-dokumentera" aria-controls="view-kvalitet view-dokumentera">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3v12"></path><path d="m7 10 5 5 5-5"></path><path d="M5 21h14"></path></svg>
-                    <span class="nav-etikett">Dokumentera &amp; exportera</span>
+                    <span class="nav-etikett">Exportera</span>
+                    <svg class="ikon nav-las" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+                </button>
+                <button class="nav-item" data-tip="Utkastet i klarspråk och de färdiga avsnitten att klistra in i rapporten." data-tab="rapporttext" id="tab-rapporttext" aria-disabled="true" title="Ladda upp strukturdata för att aktivera" aria-controls="view-rapporttext">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><path d="M14 2v6h6"></path><path d="M8 13h8"></path><path d="M8 17h8"></path><path d="M8 9h2"></path></svg>
+                    <span class="nav-etikett">Rapporttext</span>
+                    <svg class="ikon nav-las" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+                </button>
+                <button class="nav-item" data-tip="Spara konfigurationen, jämför med en ögonblicksbild eller med förra året, och kör självdiagnostiken." data-tab="arbetet" id="tab-arbetet" aria-controls="view-arbetet">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><path d="M17 21v-8H7v8"></path><path d="M7 3v5h8"></path></svg>
+                    <span class="nav-etikett">Spara och jämför år</span>
                     <svg class="ikon nav-las" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
                 </button>
                 <div class="nav-group" role="presentation" aria-hidden="true">Hjälp</div>
@@ -599,20 +609,6 @@
                             <button id="struktur-eu-export" type="button" class="btn btn-primary btn-sm"><svg class="ikon ikon-laddaNed" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 4v11"/><path d="m7 11 5 5 5-5"/><path d="M5 20h14"/></svg> Exportera EU-rapport (Excel)</button>
                         </div>
                         <div id="struktur-eu" class="marg-t-12"></div>
-                    </div>
-                    </details>
-                    <details class="avsnitt" id="avsnitt-st-utkast">
-                    <summary><span class="avsnitt-titel"><h2>Auto-rapportutkast</h2><span class="avsnitt-under">Fynden i klarspråk, att redigera och föra in i rapporten</span></span><span class="avsnitt-nyckel" id="nyckel-st-utkast"></span></summary>
-                    <div class="card">
-                        <div class="rad-bryt-mitt gap-12 mellan marg-b-8">
-                            <span class="avsnitt-verktyg-rubrik">Utkastet</span>
-                            <div class="rad gap-8">
-                                <button id="struktur-narrative-regen" type="button" class="btn btn-secondary btn-sm" title="Återskapa utkastet från aktuell data"><svg class="ikon ikon-ater" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 12a8 8 0 1 0 2.6-5.9"/><path d="M4 4v5h5"/></svg> Återskapa</button>
-                                <button id="struktur-narrative-copy" type="button" class="btn btn-secondary btn-sm">Kopiera</button>
-                            </div>
-                        </div>
-                        <p class="text-dampad-sm marg-0-0-8">Ett klarspråksutkast av fynden att redigera och föra in i lönekartläggningsrapporten (Word). Redigera fritt — "Återskapa" skriver över med ett färskt utkast.</p>
-                        <textarea id="struktur-narrative" rows="16" class="ram-1-kant rund-6 typsnitt-arv fs-sm lh-1_5 pad-12 storlek-lodrat bredd-100p" aria-label="Auto-genererat rapportutkast"></textarea>
                     </div>
                     </details>
                     <details class="card avsnitt" id="avsnitt-st-metod">
@@ -2028,6 +2024,10 @@
                                 <tr><td>Tidpunkt för nästa årliga lönekartläggning är inplanerad (skyldigheten är årlig).</td><td></td></tr>
                             </tbody>
                         </table>
+                        <div class="dok-knappar">
+                            <button type="button" class="btn btn-secondary btn-sm" data-dok-klick="btn-hub-jpa"><svg class="ikon ikon-laddaNed" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 4v11"/><path d="m7 11 5 5 5-5"/><path d="M5 20h14"/></svg> Protokoll för gemensam lönebedömning (Excel)</button>
+                            <button type="button" class="btn btn-secondary btn-sm" data-dok-klick="btn-hub-handlingsplan"><svg class="ikon ikon-laddaNed" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 4v11"/><path d="m7 11 5 5 5-5"/><path d="M5 20h14"/></svg> Handlingsplan (Excel)</button>
+                        </div>
                     </div>
 
                     <div class="card bak-ok-yta ram-v-4-ok">
@@ -2042,8 +2042,7 @@
                 <!-- Kvalitetssäkring: robusthet + färdigcheck -->
                 <div id="view-kvalitet" class="view-panel dold">
                     <div class="flik-intro">
-                        
-                        Är underlaget klart att lämna vidare? Här finns kontrollen innan du exporterar, exporterna, underlagen till rapporten, protokollet för samverkan och möjligheten att spara och läsa in arbetet.
+                        <strong>Är underlaget klart att lämna vidare?</strong> Här finns kontrollen innan du exporterar, robustheten och exporterna. Rapporttexten och sparandet av arbetet har egna flikar.
                     </div>
                     <div id="dk-slutsatser" class="slutsatser"></div>
                     <div class="card mb-16" id="dk-checklista">
@@ -2053,8 +2052,14 @@
                     </div>
                 </div>
 
-                <!-- Dokumentera & exportera (5 · Dokumentera): export, samverkan, spara och läsa in arbetet. Visas ihop med view-kvalitet. -->
+                <!-- Exportera (5 · Dokumentera): robustheten och all export. Visas ihop med view-kvalitet. -->
                 <div id="view-dokumentera" class="view-panel dold">
+                    <details class="avsnitt" id="avsnitt-dk-robusthet" open>
+                        <summary><span class="avsnitt-titel"><h2>Robusthet — står sig slutsatserna?</h2><span class="avsnitt-under">Kör om slutsatserna med andra rimliga inställningar</span></span><span class="avsnitt-nyckel" id="nyckel-dk-robusthet"></span></summary>
+                        <div class="card">
+                            <div id="robusthet-body"></div>
+                        </div>
+                    </details>
                     <div id="export-hub" class="card dold">
                         <div class="card-header"><h2>Exportera — vilket underlag behöver du?</h2></div>
                         <p class="text-dampad-sm lh-1_5 marg-0-0-14">
@@ -2097,12 +2102,24 @@
                         </div>
                         <p class="export-fler">Fler underlag finns i flikarna: <a href="#" data-go-to-tab="likvardighet">Likvärdigt arbete</a> (kandidatparen), <a href="#" data-go-to-tab="struktur">Struktur &amp; rapportmått</a> (EU-rapportmåtten), <a href="#" data-go-to-tab="prioritering">Prioritering</a> (åtgärdslistan), <a href="#" data-go-to-tab="loneoversyn">Löneöversyn</a> (prognosen).</p>
                     </div>
-                    <p class="avsnitt-rubrikrad">Fördjupning</p>
-                    <details class="avsnitt" id="avsnitt-dk-robusthet" open>
-                        <summary><span class="avsnitt-titel"><h2>Robusthet — står sig slutsatserna?</h2><span class="avsnitt-under">Kör om slutsatserna med andra rimliga inställningar</span></span><span class="avsnitt-nyckel" id="nyckel-dk-robusthet"></span></summary>
-                        <div class="card">
-                            <div id="robusthet-body"></div>
+                </div>
+
+                <!-- Rapporttext (5 · Dokumentera): auto-utkastet och rapportunderlaget. -->
+                <div id="view-rapporttext" class="view-panel dold">
+                    <div class="flik-intro"><strong>Vad ska stå i rapporten?</strong> Här finns utkastet i klarspråk och de färdiga avsnitten att klistra in.</div>
+                    <details class="avsnitt" id="avsnitt-st-utkast" open>
+                    <summary><span class="avsnitt-titel"><h2>Auto-rapportutkast</h2><span class="avsnitt-under">Fynden i klarspråk, att redigera och föra in i rapporten</span></span><span class="avsnitt-nyckel" id="nyckel-st-utkast"></span></summary>
+                    <div class="card">
+                        <div class="rad-bryt-mitt gap-12 mellan marg-b-8">
+                            <span class="avsnitt-verktyg-rubrik">Utkastet</span>
+                            <div class="rad gap-8">
+                                <button id="struktur-narrative-regen" type="button" class="btn btn-secondary btn-sm" title="Återskapa utkastet från aktuell data"><svg class="ikon ikon-ater" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 12a8 8 0 1 0 2.6-5.9"/><path d="M4 4v5h5"/></svg> Återskapa</button>
+                                <button id="struktur-narrative-copy" type="button" class="btn btn-secondary btn-sm">Kopiera</button>
+                            </div>
                         </div>
+                        <p class="text-dampad-sm marg-0-0-8">Ett klarspråksutkast av fynden att redigera och föra in i lönekartläggningsrapporten (Word). Redigera fritt — "Återskapa" skriver över med ett färskt utkast.</p>
+                        <textarea id="struktur-narrative" rows="16" class="ram-1-kant rund-6 typsnitt-arv fs-sm lh-1_5 pad-12 storlek-lodrat bredd-100p" aria-label="Auto-genererat rapportutkast"></textarea>
+                    </div>
                     </details>
                     <details class="avsnitt" id="avsnitt-dk-rapportunderlag">
                         <summary><span class="avsnitt-titel"><h2 id="rapportunderlag-rubrik">Rapportunderlag</h2><span class="avsnitt-under">Färdiga avsnitt att klistra in i er egen rapportmall</span></span><span class="avsnitt-nyckel" id="nyckel-dk-rapportunderlag"></span></summary>
@@ -2113,21 +2130,14 @@
                             </div>
                         </div>
                     </details>
-                    <details class="avsnitt" id="avsnitt-dk-samverkan">
-                        <summary><span class="avsnitt-titel"><h2 id="dok-samverkan-rubrik">Samverkan och uppföljning</h2><span class="avsnitt-under">Protokollet för gemensam lönebedömning och handlingsplanen</span></span><span class="avsnitt-nyckel" id="nyckel-dk-samverkan"></span></summary>
+                </div>
+
+                <!-- Spara och jämför år (5 · Dokumentera): konfiguration, ögonblicksbild, årsjämförelse och självdiagnostik. -->
+                <div id="view-arbetet" class="view-panel dold">
+                    <div class="flik-intro"><strong>Spara arbetet och jämför med förra året.</strong> Konfigurationen är en fil utan personuppgifter; ögonblicksbilden lever i sessionen.</div>
+                    <details class="avsnitt" id="avsnitt-ar-konfiguration" open>
+                        <summary><span class="avsnitt-titel"><h2>Spara/ladda konfiguration</h2><span class="avsnitt-under">Inställningarna som en fil, utan personuppgifter</span></span><span class="avsnitt-nyckel" id="nyckel-ar-konfiguration"></span></summary>
                         <div class="card">
-                            <p>Samverkan med arbetstagarna och uppföljningen av handlingsplanen sker i er egen process. Underlagen nedan är utgångspunkten.</p>
-                            <div class="dok-knappar">
-                            <button type="button" class="btn btn-secondary btn-sm" data-dok-klick="btn-hub-jpa"><svg class="ikon ikon-laddaNed" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 4v11"/><path d="m7 11 5 5 5-5"/><path d="M5 20h14"/></svg> Protokoll för gemensam lönebedömning (Excel)</button>
-                            <button type="button" class="btn btn-secondary btn-sm" data-dok-klick="btn-hub-handlingsplan"><svg class="ikon ikon-laddaNed" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 4v11"/><path d="m7 11 5 5 5-5"/><path d="M5 20h14"/></svg> Handlingsplan (Excel)</button>
-                        </div>
-                        </div>
-                    </details>
-                    <details class="avsnitt" id="avsnitt-dk-spara">
-                        <summary><span class="avsnitt-titel"><h2 id="dok-installningar-rubrik">Spara och läsa in arbetet</h2><span class="avsnitt-under">Konfiguration, ögonblicksbild och självdiagnostik</span></span><span class="avsnitt-nyckel" id="nyckel-dk-spara"></span></summary>
-                        <div class="card">
-                            <div class="prio-config-content">
-                            <h3 class="underrubrik">Spara/ladda konfiguration</h3>
                             <p class="text-dampad-sm lh-1_5 marg-0-0-10">
                                 Spara aktuella inställningar (tröskelvärden, viktningar, filter) som JSON-fil för att dela med kollega eller återställa senare. <strong>Sparar inte</strong> själva datan — bara konfigurationen.
                             </p>
@@ -2137,9 +2147,11 @@
                                 <input type="file" id="btn-config-load" accept=".json" class="dold">
                                 <span id="config-status" class="text-dampad-xs sjalv-mitt"></span>
                             </div>
-
-                            <hr class="ram-ingen ram-t-1-kant marg-14-0">
-                            <h3 class="underrubrik">Jämför med en ögonblicksbild</h3>
+                        </div>
+                    </details>
+                    <details class="avsnitt" id="avsnitt-ar-ogonblick">
+                        <summary><span class="avsnitt-titel"><h2>Jämför med en ögonblicksbild</h2><span class="avsnitt-under">Spara läget i sessionen och jämför efter en ändring</span></span><span class="avsnitt-nyckel" id="nyckel-ar-ogonblick"></span></summary>
+                        <div class="card">
                             <p class="text-dampad-sm lh-1_5 marg-0-0-10">
                                 Spara nuvarande analys som ögonblicksbild (i sessionsminnet, lokalt). Du kan sedan ändra inställningar eller läsa in ny data och jämföra mot ögonblicksbilden.
                             </p>
@@ -2151,16 +2163,20 @@
                             </div>
                             <div id="snapshot-comparison" class="marg-t-8 dold"></div>
                             <div class="mt-8" id="snapshot-lutning-ruta" hidden><div id="chart-snapshot-lutning"></div></div>
-
-                            <hr class="ram-ingen ram-t-1-kant marg-14-0">
-                            <h3 class="underrubrik">Jämförelse med förra året</h3>
+                        </div>
+                    </details>
+                    <details class="avsnitt" id="avsnitt-ar-arsjamforelse">
+                        <summary><span class="avsnitt-titel"><h2>Jämförelse med förra året</h2><span class="avsnitt-under">Årsbokslutet i konfigurationsfilen mot årets underlag</span></span><span class="avsnitt-nyckel" id="nyckel-ar-arsjamforelse"></span></summary>
+                        <div class="card">
                             <p class="text-dampad-sm lh-1_5 marg-0-0-10">
                                 Konfigurationsfilen bär ett årsbokslut: nyckeltal, en rad per yrkesgrupp där båda könen når minsta gruppstorlek, och Att göra-punkternas läge — inga individer. Spara konfigurationen när årets kartläggning är klar; läs in den nästa år, så visas skillnaden här.
                             </p>
                             <div id="arsjamforelse"></div>
-
-                            <hr class="ram-ingen ram-t-1-kant marg-14-0">
-                            <h3 class="underrubrik">Självdiagnostik (testdata)</h3>
+                        </div>
+                    </details>
+                    <details class="avsnitt" id="avsnitt-ar-diagnostik">
+                        <summary><span class="avsnitt-titel"><h2>Självdiagnostik (testdata)</h2><span class="avsnitt-under">Kontrollera verktyget med syntetisk testdata</span></span><span class="avsnitt-nyckel" id="nyckel-ar-diagnostik"></span></summary>
+                        <div class="card">
                             <p class="text-dampad-sm lh-1_5 marg-0-0-10">
                                 Laddar in syntetisk testdata med kända egenskaper och verifierar att analyserna ger förväntade resultat. Användbart efter uppdateringar eller vid kvalitetsrevision av verktyget. <strong>Varning:</strong> ersätter eventuell befintlig data i sessionen.
                             </p>
@@ -2168,7 +2184,6 @@
                                 <button id="btn-test-load" class="btn btn-secondary btn-sm" type="button"><svg class="ikon ikon-kolv" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 3h6"/><path d="M10 3v6l-5 9a2 2 0 0 0 1.8 3h10.4a2 2 0 0 0 1.8-3l-5-9V3"/><path d="M7.5 15h9"/></svg> Ladda testdata + kör diagnostik</button>
                             </div>
                             <div id="diagnostic-results" class="marg-t-10 dold"></div>
-                        </div>
                         </div>
                     </details>
                 </div>

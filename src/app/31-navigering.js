@@ -38,7 +38,8 @@ document.querySelectorAll(".nav-item").forEach(btn => {
         btn.classList.add("active");
         const titles = {
             dashboard: 'Översikt', filer: 'Filer och kvalitet',
-            kon: 'Ålder & karriär', dokumentera: 'Dokumentera & exportera',
+            kon: 'Ålder & karriär', dokumentera: 'Exportera',
+            rapporttext: 'Rapporttext', arbetet: 'Spara och jämför år',
             benchmark: 'Jämförelse', matrix: 'Lika arbete',
             bestammelser: 'Regler & praxis',
             handlingsplan: 'Handlingsplan',
@@ -65,13 +66,13 @@ const PANEL_GROUPS = {
     struktur:    ['struktur', 'skevhet', 'regression'], // Lönestruktur: fördelning, BAS-skevhet, vad som blir kvar (regression/Oaxaca)
     kon:         ['kon', 'demografi', 'livscykel'],  // Ålder & karriär: kurvor per kön, demografi, gap över karriären
     utforska:    ['rapport', 'utforska'],            // Utforska: Löneöversikten (fast tabell) + egna vyer
-    dokumentera: ['kvalitet', 'dokumentera']         // Dokumentera & exportera: färdigcheck + export + spara och läsa in arbetet
+    dokumentera: ['kvalitet', 'dokumentera']         // Exportera: färdigcheck + robusthet + export
 };
 // Flikalias: namnen leds om till fliken som visar innehållet, så att inga länkar dör.
-const TAB_ALIAS = { rapport: 'utforska', demografi: 'kon', kvalitet: 'dokumentera', lonepolitik: 'benchmark', skevhet: 'struktur', regression: 'struktur' };
+const TAB_ALIAS = { rapport: 'utforska', demografi: 'kon', kvalitet: 'dokumentera', lonepolitik: 'benchmark', skevhet: 'struktur', regression: 'struktur', spara: 'arbetet' };
 function tabMal(namn) { return TAB_ALIAS[namn] || namn; }
 function unlockTabs() {
-    ['tab-kon','tab-matrix','tab-prioritering','tab-loneoversyn','tab-struktur','tab-likvardighet','tab-utforska'].forEach(id => {
+    ['tab-kon','tab-matrix','tab-prioritering','tab-loneoversyn','tab-struktur','tab-likvardighet','tab-utforska','tab-rapporttext'].forEach(id => {
         const el = document.getElementById(id);
         if (!el) return;
         /** @type {HTMLInputElement} */ (el).disabled = false;
@@ -108,7 +109,7 @@ function renderTabContent(target) {
 }
 // Flikar som bara har något att visa när lönefilen är inläst. Nås en sådan utan underlag (en direktlänk, en
 // konfigurationsfil) säger en rad överst vad som saknas, i stället för tomma rader.
-const KRAVER_UNDERLAG = ['kon', 'matrix', 'prioritering', 'struktur', 'loneoversyn', 'utforska', 'benchmark'];
+const KRAVER_UNDERLAG = ['kon', 'matrix', 'prioritering', 'struktur', 'loneoversyn', 'utforska', 'benchmark', 'rapporttext'];
 function _ritaIngetUnderlag(target, tomt) {
     const vy = document.getElementById('view-' + ((PANEL_GROUPS[target] || [target])[0]));
     if (!vy) return;
@@ -136,7 +137,10 @@ function _renderTabContent(target) {
     else if (target === "loneoversyn"  && d.length) renderForecast();
     else if (target === "likvardighet" && (d.length || state.statistik.length)) { renderLikvardighet(); renderAidBasLikvardigt(); }
     else if (target === "utforska"     && d.length) { generateRapport(); renderExplorer(); }
-    else if (target === "dokumentera") medExportLage(() => { if (d.length) renderKvalitetssakring(); renderRapportunderlag(); renderExportBesked(); if (typeof renderArsjamforelse === 'function') renderArsjamforelse(); });   // allt här lämnar verktyget (ADR-51)
+    // Allt i de tre dokumentationsflikarna lämnar verktyget och ritas i exportläget (ADR-51).
+    else if (target === "rapporttext") medExportLage(() => { renderStrukturUtkast(); renderRapportunderlag(); });
+    else if (target === "dokumentera") medExportLage(() => { if (d.length) renderKvalitetssakring(); renderExportBesked(); });
+    else if (target === "arbetet")     medExportLage(() => { if (typeof renderArsjamforelse === 'function') renderArsjamforelse(); });
     else if (target === "dashboard" && d.length) renderOversiktDelar();
     else if (target === "filer"     && d.length) renderFilerDelar();
     else if (target === "info")  renderInfoTab();
@@ -161,7 +165,7 @@ const FLOW_NEXT = {
     handlingsplan:{ tab: 'kon',           label: 'Ålder & karriär' },
     kon:          { tab: 'benchmark',     label: 'Jämförelse' },
     benchmark:    { tab: 'utforska',      label: 'Utforska' },
-    utforska:     { tab: 'dokumentera',   label: 'Dokumentera & exportera' }
+    utforska:     { tab: 'dokumentera',   label: 'Exportera' }
 };
 // Fördjupningen är valfri: ett sådant steg som är låst eller dolt hoppas över (Jämförelse utan referens, allt utan underlag).
 const _FLOW_VALFRIA = ['kon', 'benchmark', 'utforska'];
@@ -183,7 +187,7 @@ function renderFlowNav(target) {
         + `<button type="button" class="flow-next-btn" data-flow-tab="${next.tab}">${esc(next.label)}</button>`;
     view.appendChild(bar);
 }
-// Delegerad klick: knappar i Dokumentera som återanvänder navets exportknappar.
+// Delegerad klick: knappar utanför Exportera (samverkanskortet i Handlingsplan) som återanvänder navets exportknappar.
 document.addEventListener('click', e => {
     const b = /** @type {HTMLElement} */ (e.target).closest('[data-dok-klick]');
     if (b) document.getElementById(/** @type {HTMLElement} */ (b).dataset.dokKlick || '')?.click();

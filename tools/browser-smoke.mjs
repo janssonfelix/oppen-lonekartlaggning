@@ -215,6 +215,8 @@ const FLIKAR = [
     ['utforska', ['#chart-explore']],
     ['benchmark', ['#chart-jamforelse-spann', '#chart-jamforelse-avvikelse']],
     ['dokumentera', []],
+    ['rapporttext', []],
+    ['arbetet', []],
 ];
 for (const [flik, diagram] of FLIKAR) {
     await page.click(`.nav-item[data-tab="${flik}"]`);
@@ -465,7 +467,7 @@ console.log('\n── Regler & praxis: pilen och Stöd i verktyget ──');
     ok(await page.evaluate(() => document.querySelector('.nav-item.active').dataset.tab === 'likvardighet'), 'länken Gå dit öppnar Likvärdigt arbete');
 }
 
-console.log('\n── Dokumentera: checklistan först, exporterna som lista ──');
+console.log('\n── Exportera: checklistan först, robustheten, exporterna som lista; Rapporttext ──');
 {
     await page.evaluate(() => document.querySelector('.nav-item[data-tab="prioritering"]').click());
     await page.waitForTimeout(600);
@@ -473,17 +475,20 @@ console.log('\n── Dokumentera: checklistan först, exporterna som lista ─�
     await page.evaluate(() => document.querySelector('.nav-item[data-tab="dokumentera"]').click());
     await page.waitForTimeout(1200);
     const dk = await page.evaluate(() => { const g = id => document.getElementById(id); const r = g('view-kvalitet').getBoundingClientRect(); const top = id => g(id).getBoundingClientRect().top;
-        return { x: r.left, y: r.top - document.querySelector('.content-body').getBoundingClientRect().top, ordning: top('dk-slutsatser') < top('dk-checklista') && top('dk-checklista') < top('export-hub') && top('export-hub') < top('avsnitt-dk-robusthet'),
+        return { x: r.left, y: r.top - document.querySelector('.content-body').getBoundingClientRect().top, ordning: top('dk-slutsatser') < top('dk-checklista') && top('dk-checklista') < top('avsnitt-dk-robusthet') && top('avsnitt-dk-robusthet') < top('export-hub'),
             rutor: document.querySelectorAll('#dk-slutsatser .slutsats').length, rader: [...document.querySelectorAll('.export-lista > .export-hub-row')].filter(e => e.offsetParent).length,
             fler: [...document.querySelectorAll('.export-fler a[data-go-to-tab]')].map(a => a.dataset.goToTab).join(','),
             oppna: [...document.querySelectorAll('details.avsnitt[id^="avsnitt-dk-"]')].filter(a => a.open).map(a => a.id).join(','), lank: document.querySelectorAll('.sidans-innehall').length,
             skarmar: document.documentElement.scrollHeight / innerHeight }; });
     ok(Math.abs(dk.x - jfr.x) < 1 && Math.abs(dk.y - jfr.y) < 1, `fliken börjar lika långt från innehållsytans kant som andra flikar — inget tomt band (${Math.round(dk.x)},${Math.round(dk.y)} mot ${Math.round(jfr.x)},${Math.round(jfr.y)})`);
-    ok(dk.ordning && dk.rutor === 3 && dk.rader === 6 && dk.fler === 'likvardighet,struktur,prioritering,loneoversyn' && dk.lank === 0, `slutsatser, checklista, sex exportrader, en rad med länkar till flikarna och sedan avsnitten (${dk.rader} rader; ${dk.fler})`);
+    ok(dk.ordning && dk.rutor === 2 && dk.rader === 6 && dk.fler === 'likvardighet,struktur,prioritering,loneoversyn' && dk.lank === 0, `slutsatser, checklista, robustheten, sex exportrader och en rad med länkar till flikarna (${dk.rader} rader; ${dk.fler})`);
     ok(dk.oppna === 'avsnitt-dk-robusthet' && dk.skarmar < 4, `bara robustheten är utfälld och sidan är ${dk.skarmar.toFixed(1)} skärmar`);
     await page.click('#btn-run-robusthet');
     await page.waitForFunction(() => document.querySelector('#robusthet-body .gd-grid'), { timeout: 60000 });
     ok(await page.evaluate(() => !/Inte körd/.test(document.querySelectorAll('#dk-slutsatser .slutsats')[1].textContent) && document.getElementById('nyckel-dk-robusthet').textContent.length > 3), 'robusthetens utfall står i slutsatserna och i avsnittets rubrik');
+    await page.evaluate(() => document.querySelector('.nav-item[data-tab="rapporttext"]').click());
+    await page.waitForTimeout(1200);
+    ok(await page.evaluate(() => document.getElementById('avsnitt-st-utkast').open && /LÖNEKARTLÄGGNING/.test(document.getElementById('struktur-narrative').value)), 'Rapporttext: auto-utkastet är utfällt och ifyllt');
     await page.click('#avsnitt-dk-rapportunderlag > summary');
     await page.waitForTimeout(300);
     ok(await page.evaluate(() => { const k = document.querySelector('#rapportunderlag-innehall [data-rapport-kopiera]'); return !!k && k.offsetParent !== null; }), 'rapportunderlagets block går att nå när avsnittet fälls ut');
@@ -498,7 +503,7 @@ console.log('\n── Dokumentera: checklistan först, exporterna som lista ─�
 console.log('\n── Struktur, Likvärdigt arbete, Löneöversyn och Lönepolitik ──');
 {
     const ga = async f => { await page.evaluate(t => document.querySelector(`.nav-item[data-tab="${t}"]`).click(), f); await page.waitForTimeout(1000); };
-    const lage = prefix => page.evaluate(p => ({ oppna: [...document.querySelectorAll(`details.avsnitt[id^="${p}"]`)].filter(a => a.open).map(a => a.id).join(','),
+    const lage = prefix => page.evaluate(p => ({ oppna: [...document.querySelectorAll(`details.avsnitt[id^="${p}"]`)].filter(a => a.open && a.offsetParent).map(a => a.id).join(','),   // bara den synliga flikens (auto-utkastet bär avsnitt-st- men står i Rapporttext)
         rutor: [...document.querySelectorAll('.view-panel')].filter(v => v.offsetParent).reduce((n, v) => n + v.querySelectorAll('.slutsatser .slutsats').length, 0),
         lank: document.querySelectorAll('.sidans-innehall').length, skarmar: document.documentElement.scrollHeight / innerHeight }), prefix);
     // Ett diagram i ett hopfällt avsnitt har ingen bredd när det ritas: det ska fylla kortet när avsnittet fälls ut.
@@ -988,7 +993,7 @@ console.log('\n── Sidhuvudet är lika högt på alla flikar ──');
     for (const bredd of [1440, 1100, 1024]) {
         await page.setViewportSize({ width: bredd, height: 900 });
         const hojder = {};
-        for (const flik of ['dashboard', 'bestammelser', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn', 'handlingsplan', 'dokumentera', 'kon', 'benchmark', 'utforska', 'info']) {
+        for (const flik of ['dashboard', 'bestammelser', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn', 'handlingsplan', 'dokumentera', 'rapporttext', 'arbetet', 'kon', 'benchmark', 'utforska', 'info']) {
             await page.click(`.nav-item[data-tab="${flik}"]`);
             hojder[flik] = await page.evaluate(() => Math.round(document.querySelector('.top-header').getBoundingClientRect().height));
         }
@@ -1161,7 +1166,7 @@ if (harDossierKnapp) {
 }
 
 console.log('\n── Rapportunderlag (urklipp) ──');
-await page.click('.nav-item[data-tab="dokumentera"]');
+await page.click('.nav-item[data-tab="rapporttext"]');
 await page.evaluate(() => document.querySelectorAll('details.avsnitt').forEach(d => { d.open = true; }));
 await page.waitForTimeout(300);
 ok(await page.evaluate(() => (document.getElementById('rapportunderlag-innehall')?.textContent || '').includes('Sammanfattning')),
@@ -1409,7 +1414,7 @@ console.log('\n── Byggets förminskning av stilmallen ──');
 
 console.log('\n── Smala skärmar: 1440×800, 768 och 390 punkter ──');
 {
-    const FLIKAR = ['dashboard', 'bestammelser', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn', 'handlingsplan', 'dokumentera', 'kon', 'benchmark', 'utforska', 'info'];
+    const FLIKAR = ['dashboard', 'bestammelser', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn', 'handlingsplan', 'dokumentera', 'rapporttext', 'arbetet', 'kon', 'benchmark', 'utforska', 'info'];
     const oppna = async (bredd, hojd) => { const s = await browser.newPage({ viewport: { width: bredd, height: hojd } });
         await s.goto('file://' + FIL + '?demo=1');
         await s.waitForFunction(() => document.getElementById('demo-mode-banner')?.style.display === 'flex', { timeout: 30000 });

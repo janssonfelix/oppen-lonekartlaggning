@@ -343,7 +343,7 @@ describe('menystruktur', () => {
 
     it('menyn har exakt flikarna i ordning; Jämförelse syns med ställningstagandet', () => {
         expect(flikar()).toEqual(['dashboard', 'filer', 'bestammelser', 'matrix', 'likvardighet', 'struktur',
-            'prioritering', 'loneoversyn', 'handlingsplan', 'kon', 'benchmark', 'utforska', 'dokumentera', 'info']);
+            'prioritering', 'loneoversyn', 'handlingsplan', 'kon', 'benchmark', 'utforska', 'dokumentera', 'rapporttext', 'arbetet', 'info']);
         expect(w.document.querySelector('.nav-item[data-tab="benchmark"]').hidden).toBe(false);
         expect(w.document.querySelector('.nav-menu').textContent).toContain('5 · Dokumentera');
         expect(w.document.querySelector('.nav-menu').textContent).toContain('4 · Fördjupa');
@@ -365,10 +365,11 @@ describe('menystruktur', () => {
         klicka('dokumentera');
         ['view-kvalitet', 'view-dokumentera'].forEach(id => expect(synlig(id)).toBe(true));
     });
-    it('Dokumentera innehåller export, JPA, färdigcheck och inställningar; Översikt inte', () => {
+    it('Exportera innehåller export och JPA, Spara och jämför år inställningarna; Översikt inte', () => {
         const dok = w.document.getElementById('view-dokumentera');
-        ['export-hub', 'btn-hub-jpa', 'btn-config-save']
+        ['export-hub', 'btn-hub-jpa']
             .forEach(id => expect(dok.contains(w.document.getElementById(id)), id).toBe(true));
+        expect(w.document.getElementById('view-arbetet').contains(w.document.getElementById('btn-config-save'))).toBe(true);
         const oversikt = w.document.getElementById('view-dashboard');
         expect(oversikt.contains(w.document.getElementById('export-hub'))).toBe(false);
     });
@@ -431,9 +432,10 @@ describe('utfällt som standard', () => {
         w.__loadDemoData();
         w.document.querySelector('.nav-item[data-tab="matrix"]').click();
         // Per flik i den nya formen: det första avsnittet öppet, övriga hopfällda.
-        for (const [prefix, forsta] of [['avsnitt-la-', 'avsnitt-la-yrkesgrupper'], ['avsnitt-ak-', 'avsnitt-ak-karriar'], ['avsnitt-dk-', 'avsnitt-dk-robusthet'],
+        for (const [prefix, forsta] of [['avsnitt-la-', 'avsnitt-la-yrkesgrupper'], ['avsnitt-ak-', 'avsnitt-ak-karriar'], ['avsnitt-ar-', 'avsnitt-ar-konfiguration'],
                 ['avsnitt-st-', 'avsnitt-st-representation'], ['avsnitt-lo-', 'avsnitt-lo-riktade']]) {
-            const flikens = [...w.document.querySelectorAll(`details.avsnitt[id^="${prefix}"]`)];
+            // Auto-utkastet behåller sitt id (avsnitt-st-utkast) men står i Rapporttext, där det är flikens första avsnitt.
+            const flikens = [...w.document.querySelectorAll(`details.avsnitt[id^="${prefix}"]`)].filter(a => !a.closest('#view-rapporttext'));
             expect(flikens.length, prefix).toBeGreaterThanOrEqual(4);
             expect(flikens[0].id).toBe(forsta);
             expect(flikens.map(a => a.open), prefix).toEqual([true, ...flikens.slice(1).map(() => false)]);
@@ -509,13 +511,13 @@ describe('rapportunderlag', () => {
     };
     it('utan data visar panelen hur man kommer igång', () => {
         const w = createAppWindow();
-        w.document.querySelector('.nav-item[data-tab="dokumentera"]').click();
+        w.__renderTabContent('rapporttext');   // fliken är låst utan lönefil; en direktlänk ritar den ändå
         expect(w.document.getElementById('rapportunderlag-innehall').textContent).toContain('Läs in underlag');
     });
     it('med demodata: fem avsnitt, ett block per flaggat yrke och godkänt par, tre diagram', () => {
         const w = createAppWindow();
         w.__loadDemoData();
-        w.document.querySelector('.nav-item[data-tab="dokumentera"]').click();
+        w.document.querySelector('.nav-item[data-tab="rapporttext"]').click();
         const block = w.__rapportunderlagBlock();
         const flaggade = w.__ruLikaArbeteGrupper(w.__getData(), { k: w.__K }).grupper.filter(g => g.flaggad).length;   // rapportunderlaget lämnar verktyget: inställd tröskel
         const typer = block.map(b => b.id.split(':')[0]);
@@ -529,7 +531,7 @@ describe('rapportunderlag', () => {
     it('Kopiera lägger ren HTML och text på urklipp', async () => {
         const w = createAppWindow();
         w.__loadDemoData();
-        w.document.querySelector('.nav-item[data-tab="dokumentera"]').click();
+        w.document.querySelector('.nav-item[data-tab="rapporttext"]').click();
         const fångat = stubbaUrklipp(w);
         expect(await w.__kopieraRapportBlock('sammanfattning')).toBe('urklipp');
         const html = await fångat[0].o['text/html'].text();
@@ -541,7 +543,7 @@ describe('rapportunderlag', () => {
     it('utan urklipps-API används reserven och blocket markeras', async () => {
         const w = createAppWindow();
         w.__loadDemoData();
-        w.document.querySelector('.nav-item[data-tab="dokumentera"]').click();
+        w.document.querySelector('.nav-item[data-tab="rapporttext"]').click();
         Object.defineProperty(w.navigator, 'clipboard', { configurable: true, value: undefined });
         w.document.execCommand = () => false;
         expect(await w.__kopieraRapportBlock('lika')).toBe('markerat');
@@ -556,7 +558,7 @@ describe('rapportunderlag', () => {
     it('Rensa all data tömmer panelen', () => {
         const w = createAppWindow();
         w.__loadDemoData();
-        w.document.querySelector('.nav-item[data-tab="dokumentera"]').click();
+        w.document.querySelector('.nav-item[data-tab="rapporttext"]').click();
         w.__clearAllData();
         expect(w.document.getElementById('rapportunderlag-innehall').textContent).not.toContain('Sammanfattning');
     });
@@ -689,7 +691,7 @@ describe('demodata med kandidatpar', () => {
     it('rapportunderlaget får parblock och diagrammet över kandidatpar', () => {
         const w = createAppWindow();
         w.__loadDemoData();
-        w.document.querySelector('.nav-item[data-tab="dokumentera"]').click();
+        w.document.querySelector('.nav-item[data-tab="rapporttext"]').click();
         expect(w.__rapportunderlagBlock().some(b => b.id.startsWith('par:'))).toBe(true);
         expect(w.document.querySelector('[data-rapport-diagram="chart-likvardighet-heatmap"]')).not.toBeNull();
     });

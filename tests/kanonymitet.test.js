@@ -107,7 +107,7 @@ function byggPolicy() {
 
 const FLIKAR = ['dashboard', 'filer', 'bestammelser', 'matrix', 'likvardighet', 'struktur',
                 'prioritering', 'loneoversyn', 'kon', 'demografi', 'benchmark',
-                'utforska', 'benchmark', 'kvalitet', 'rapport', 'handlingsplan', 'info'];
+                'utforska', 'benchmark', 'kvalitet', 'rapport', 'handlingsplan', 'rapporttext', 'arbetet', 'info'];
 
 // Tar bort mellanrum inuti tal ("31 111" / "31 111" -> "31111") så att
 // formaterade belopp går att söka i.
@@ -592,7 +592,7 @@ describe('k-anonymitet: sektorsöversikten', () => {
         w.eval('populateSelects(); unlockTabs();');
         w.__state.kLage = 'export';   // tabellen så som Excel-bladet läser den (ADR-51)
         w.__renderTabContent('struktur');
-        w.__renderTabContent('dokumentera');
+        w.__renderTabContent('rapporttext');
         await new Promise(r => setTimeout(r, 0));
     });
     const harMarkor = s => normalisera(String(s)).includes(String(MARKOR));
@@ -645,7 +645,7 @@ describe('k-anonymitet: sektorernas andel när ett kön är under k i hela under
         w.eval('populateSelects(); unlockTabs();');
         w.__state.kLage = 'export';
         w.__renderTabContent('struktur');
-        w.__renderTabContent('dokumentera');
+        w.__renderTabContent('rapporttext');
         expect(w.document.querySelector('#struktur-sektorer .sektor-andel')).toBeNull();
         expect(w.document.getElementById('rapportunderlag-innehall').textContent).not.toMatch(/skillnaden i medellön för hela organisationen/i);
     });

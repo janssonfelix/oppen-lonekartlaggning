@@ -186,14 +186,14 @@ describe('egna tabeller i rapportunderlaget (ADR-20, ADR-52)', () => {
         expect(block[0].tabell.rader.length).toBeGreaterThan(0);
         expect(block[0].tabell.rader[0][1]).toMatch(/^\d[\d\s ]* kr$/);
         expect(block[0].stycken.join(' ')).toMatch(/Urval: Hela organisationen/);
-        w.__renderTabContent('dokumentera');
+        w.__renderTabContent('rapporttext');
         const host = d.getElementById('rapportunderlag-innehall');
         expect(host.textContent).toContain('Egna tabeller från Utforska');
         expect(host.querySelector('[data-rapport-kopiera="egen:0:0"]')).not.toBeNull();
         expect(host.querySelector('.ru-toc').textContent).toContain('Median per yrke');
         // Utan recept finns varken rubrik eller block.
         w.__state.rapportTabeller = [];
-        w.__renderTabContent('dokumentera');
+        w.__renderTabContent('rapporttext');
         expect(host.textContent).not.toContain('Egna tabeller från Utforska');
     });
 });

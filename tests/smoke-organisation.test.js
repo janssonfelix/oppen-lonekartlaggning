@@ -65,14 +65,14 @@ describe('sortering, Att göra, kopiering och Likvärdigt arbete', () => {
         expect(it.titel).not.toMatch(/: [−-]/);
         expect(it.titel).toMatch(/kvinnor .* (lägre|högre) lön än män/i);
     });
-    it('Dokumentera räknar likvärdighetsparen en gång och sparar resultatet', () => {
+    it('Rapporttext räknar likvärdighetsparen en gång och sparar resultatet', () => {
         const w = createAppWindow();
         w.__loadDemoData();
         w.__state.likvardighet.result = null;
         const orig = w.computeLikvardighetPairs;
         let n = 0;
         w.computeLikvardighetPairs = (...a) => { n++; return orig(...a); };
-        w.document.querySelector('.nav-item[data-tab="dokumentera"]').click();
+        w.document.querySelector('.nav-item[data-tab="rapporttext"]').click();
         w.__rapportunderlagBlock();
         w.eval('_handlingsplanSeedRows()');
         expect(n).toBe(1);

@@ -112,8 +112,6 @@ function _rapportunderlagBlockExport() {
 function renderRapportunderlag() {
     const host = document.getElementById('rapportunderlag-innehall');
     if (!host) return;
-    // Samverkansknapparna exporterar underlag — inaktiva tills data finns.
-    document.querySelectorAll('[data-dok-klick]').forEach(b => { /** @type {HTMLInputElement} */ (b).disabled = !getData().length; });
     if (!getData().length) {
         _rapportBlockSenast = new Map();
         host.innerHTML = '<p class="ru-tom">Läs in underlag för att få rapportunderlaget.</p>';

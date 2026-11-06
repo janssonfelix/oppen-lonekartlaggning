@@ -15158,9 +15158,9 @@ function loadDemoData() {
     wrap.style.display = 'block';
     wrap.innerHTML = `
         <div class="bak-white ram-1-kant rund-8 pad-14-16">
-            <h4 class="underrubrik">
+            <h3 class="underrubrik">
                 Diagnostik-resultat: ${failCount === 0 ? `<span class="farg-ok">${ikon('bock')} Alla tester lyckades</span>` : `<span class="f-kritisk">${ikon('stopp')} ${failCount} av ${tests.length} tester misslyckades</span>`}
-            </h4>
+            </h3>
             <table class="data-table st-088">
                 <thead><tr><th>Test</th><th>Förväntat</th><th>Faktiskt</th><th>Status</th></tr></thead>
                 <tbody>
@@ -15713,17 +15713,18 @@ function _bytKLage(lage) {
 }
 /**
  * Ritar skärmen tillbaka efter en export: Översikts delar och den öppna fliken, när grinden ritade dem i exportläget
- * (`ritade`: flikarna som ritades under exporten), utom Dokumentera & exportera, som alltid ritas i exportläget. Det
- * som inte ritades under exporten visar fortfarande skärmens tal och rörs inte — Dokumentera-fliken i sig ritar inga
+ * (`ritade`: flikarna som ritades under exporten), utom de tre dokumentationsflikarna (_ALLTID_EXPORT), som alltid ritas i
+ * exportläget. Det som inte ritades under exporten visar fortfarande skärmens tal och rörs inte — de flikarna i sig ritar inga
  * andra flikar, och att rita om Översikt kostar sekunder på stora underlag. Flikar som inte syns töms inte: det de
  * bär är ritat med den inställda tröskeln (försiktigare än skärmen), och de ritas om när de öppnas.
  * @param {Set<string>} ritade
  */
+const _ALLTID_EXPORT = new Set(['dokumentera', 'rapporttext', 'arbetet']);
 const _OVERSIKT_STEG = new Set(['nyckeltal', 'kompliansöversikt', 'underlagets kvalitet', 'Att göra', 'processöversikten', 'extremvärden', 'inläsningsrapporten', 'A/B-jämförelsen']);
 function _ritaOmEfterExport(ritade) {
     if (!state.data.length || typeof _omritningssteg !== 'function') return;
     for (const [namn, fn] of _omritningssteg()) {
-        if (namn === 'dokumentera' || namn === 'flikar som inte syns') continue;
+        if (_ALLTID_EXPORT.has(namn) || namn === 'flikar som inte syns') continue;
         const ska = namn === 'gruppdossiern' || (_OVERSIKT_STEG.has(namn) ? ritade.has('dashboard') : ritade.has(namn));
         if (ska) _omritningForsok(namn, fn);
     }
@@ -16673,7 +16674,7 @@ function _rensaAllData({ inbakat = true } = {}) {
     });
 
     // 4. Lås tabbar
-    ['tab-kon','tab-matrix','tab-prioritering','tab-loneoversyn','tab-struktur','tab-benchmark','tab-likvardighet','tab-utforska'].forEach(id => {
+    ['tab-kon','tab-matrix','tab-prioritering','tab-loneoversyn','tab-struktur','tab-benchmark','tab-likvardighet','tab-utforska','tab-rapporttext'].forEach(id => {
         const el = document.getElementById(id);
         if (el) { /** @type {HTMLInputElement} */ (el).disabled = true; el.setAttribute('title', 'Ladda upp strukturdata för att aktivera'); }
     });
@@ -17886,7 +17887,8 @@ document.querySelectorAll(".nav-item").forEach(btn => {
         btn.classList.add("active");
         const titles = {
             dashboard: 'Översikt', filer: 'Filer och kvalitet',
-            kon: 'Ålder & karriär', dokumentera: 'Dokumentera & exportera',
+            kon: 'Ålder & karriär', dokumentera: 'Exportera',
+            rapporttext: 'Rapporttext', arbetet: 'Spara och jämför år',
             benchmark: 'Jämförelse', matrix: 'Lika arbete',
             bestammelser: 'Regler & praxis',
             handlingsplan: 'Handlingsplan',
@@ -17913,13 +17915,13 @@ const PANEL_GROUPS = {
     struktur:    ['struktur', 'skevhet', 'regression'], // Lönestruktur: fördelning, BAS-skevhet, vad som blir kvar (regression/Oaxaca)
     kon:         ['kon', 'demografi', 'livscykel'],  // Ålder & karriär: kurvor per kön, demografi, gap över karriären
     utforska:    ['rapport', 'utforska'],            // Utforska: Löneöversikten (fast tabell) + egna vyer
-    dokumentera: ['kvalitet', 'dokumentera']         // Dokumentera & exportera: färdigcheck + export + spara och läsa in arbetet
+    dokumentera: ['kvalitet', 'dokumentera']         // Exportera: färdigcheck + robusthet + export
 };
 // Flikalias: namnen leds om till fliken som visar innehållet, så att inga länkar dör.
-const TAB_ALIAS = { rapport: 'utforska', demografi: 'kon', kvalitet: 'dokumentera', lonepolitik: 'benchmark', skevhet: 'struktur', regression: 'struktur' };
+const TAB_ALIAS = { rapport: 'utforska', demografi: 'kon', kvalitet: 'dokumentera', lonepolitik: 'benchmark', skevhet: 'struktur', regression: 'struktur', spara: 'arbetet' };
 function tabMal(namn) { return TAB_ALIAS[namn] || namn; }
 function unlockTabs() {
-    ['tab-kon','tab-matrix','tab-prioritering','tab-loneoversyn','tab-struktur','tab-likvardighet','tab-utforska'].forEach(id => {
+    ['tab-kon','tab-matrix','tab-prioritering','tab-loneoversyn','tab-struktur','tab-likvardighet','tab-utforska','tab-rapporttext'].forEach(id => {
         const el = document.getElementById(id);
         if (!el) return;
         /** @type {HTMLInputElement} */ (el).disabled = false;
@@ -17956,7 +17958,7 @@ function renderTabContent(target) {
 }
 // Flikar som bara har något att visa när lönefilen är inläst. Nås en sådan utan underlag (en direktlänk, en
 // konfigurationsfil) säger en rad överst vad som saknas, i stället för tomma rader.
-const KRAVER_UNDERLAG = ['kon', 'matrix', 'prioritering', 'struktur', 'loneoversyn', 'utforska', 'benchmark'];
+const KRAVER_UNDERLAG = ['kon', 'matrix', 'prioritering', 'struktur', 'loneoversyn', 'utforska', 'benchmark', 'rapporttext'];
 function _ritaIngetUnderlag(target, tomt) {
     const vy = document.getElementById('view-' + ((PANEL_GROUPS[target] || [target])[0]));
     if (!vy) return;
@@ -17984,7 +17986,10 @@ function _renderTabContent(target) {
     else if (target === "loneoversyn"  && d.length) renderForecast();
     else if (target === "likvardighet" && (d.length || state.statistik.length)) { renderLikvardighet(); renderAidBasLikvardigt(); }
     else if (target === "utforska"     && d.length) { generateRapport(); renderExplorer(); }
-    else if (target === "dokumentera") medExportLage(() => { if (d.length) renderKvalitetssakring(); renderRapportunderlag(); renderExportBesked(); if (typeof renderArsjamforelse === 'function') renderArsjamforelse(); });   // allt här lämnar verktyget (ADR-51)
+    // Allt i de tre dokumentationsflikarna lämnar verktyget och ritas i exportläget (ADR-51).
+    else if (target === "rapporttext") medExportLage(() => { renderStrukturUtkast(); renderRapportunderlag(); });
+    else if (target === "dokumentera") medExportLage(() => { if (d.length) renderKvalitetssakring(); renderExportBesked(); });
+    else if (target === "arbetet")     medExportLage(() => { if (typeof renderArsjamforelse === 'function') renderArsjamforelse(); });
     else if (target === "dashboard" && d.length) renderOversiktDelar();
     else if (target === "filer"     && d.length) renderFilerDelar();
     else if (target === "info")  renderInfoTab();
@@ -18009,7 +18014,7 @@ const FLOW_NEXT = {
     handlingsplan:{ tab: 'kon',           label: 'Ålder & karriär' },
     kon:          { tab: 'benchmark',     label: 'Jämförelse' },
     benchmark:    { tab: 'utforska',      label: 'Utforska' },
-    utforska:     { tab: 'dokumentera',   label: 'Dokumentera & exportera' }
+    utforska:     { tab: 'dokumentera',   label: 'Exportera' }
 };
 // Fördjupningen är valfri: ett sådant steg som är låst eller dolt hoppas över (Jämförelse utan referens, allt utan underlag).
 const _FLOW_VALFRIA = ['kon', 'benchmark', 'utforska'];
@@ -18031,7 +18036,7 @@ function renderFlowNav(target) {
         + `<button type="button" class="flow-next-btn" data-flow-tab="${next.tab}">${esc(next.label)}</button>`;
     view.appendChild(bar);
 }
-// Delegerad klick: knappar i Dokumentera som återanvänder navets exportknappar.
+// Delegerad klick: knappar utanför Exportera (samverkanskortet i Handlingsplan) som återanvänder navets exportknappar.
 document.addEventListener('click', e => {
     const b = /** @type {HTMLElement} */ (e.target).closest('[data-dok-klick]');
     if (b) document.getElementById(/** @type {HTMLElement} */ (b).dataset.dokKlick || '')?.click();
@@ -20759,7 +20764,7 @@ function _exportForecastExport() {
 
 // ===================================================================
 // Struktur & EU-rapport — representation/segregation, kvartilfördelning
-// (EU 2023/970), distributionellt gap, auto-rapportutkast.
+// (EU 2023/970), distributionellt gap. Auto-rapportutkastet (renderStrukturUtkast) står i fliken Rapporttext.
 // De rena måtten (_st*) genereras i src/app/09-lib-speglar.js från src/lib/struktur.js.
 // ===================================================================
 
@@ -20772,7 +20777,6 @@ function renderStructure() {
     const euEl = document.getElementById('struktur-eu');
     if (!d.length) {
         [repEl, distEl, euEl].forEach(el => { if (el) el.innerHTML = '<p class="farg-dampad pad-14">Ladda upp strukturdata.</p>'; });
-        const nb = document.getElementById('struktur-narrative'); if (nb) /** @type {HTMLInputElement} */ (nb).value = '';
         _stRitaTopp(d, null);
         return;
     }
@@ -20856,13 +20860,33 @@ function renderStructure() {
     if (kvEl && q.length && q.every(x => x.nKv != null && x.nMa != null && x.n > 0)) ritaFigur(kvEl, _strukturKvartilFigur(q, totAndel),
         { exportAnteckning: `Andel kvinnor: ${_figTalformat(q[0].andelKv, 'pct')} i lägsta kvartilen, ${_figTalformat(q[q.length - 1].andelKv, 'pct')} i högsta` });
 
-    // (4) Auto-rapportutkast
-    const nb = document.getElementById('struktur-narrative');
-    if (nb && !nb.dataset.dirty) /** @type {HTMLInputElement} */ (nb).value = _buildNarrative(d, { rep, dist, q, medGap, meanGap, totAndel, konOk });
-
     renderSektorer(d);
     renderStrukturTradkarta(d);
     _stRitaTopp(d, { konOk, totAndel, medGap, q, dist, basAntal: repVisade.length });
+}
+
+/**
+ * Auto-rapportutkastet i fliken Rapporttext: fynden i klarspråk, ur samma mått som Lönestruktur räknar. Ett utkast
+ * som användaren har redigerat skrivs inte över; "Återskapa" tar bort markeringen och ritar om.
+ */
+function renderStrukturUtkast() {
+    const nb = document.getElementById('struktur-narrative');
+    if (!nb) return;
+    const d = getData();
+    if (!d.length) { /** @type {HTMLInputElement} */ (nb).value = ''; return; }
+    if (nb.dataset.dirty) return;
+    const k = kTroskel();
+    const konOk = _konFarRedovisasFor(d);
+    const rep = _stRepresentationByBas(d, { k });
+    const totKv = d.filter(r => r.kon && r.kon.includes('kvinna')).length;
+    const totAndel = 100 * totKv / d.length;
+    const dist = _stDistributionalGap(d, undefined, { k });
+    const q = _stQuartileDistribution(d, { k });
+    const medGap = _stMedianGapPct(d, { k });
+    const kv = d.filter(r => r.kon && r.kon.includes('kvinna')).map(r => r.lon);
+    const ma = d.filter(r => r.kon === 'man' || r.kon === 'män').map(r => r.lon);
+    const meanGap = (konOk && kv.length && ma.length) ? ((kv.reduce((s, x) => s + x, 0) / kv.length) / (ma.reduce((s, x) => s + x, 0) / ma.length) - 1) * 100 : null;
+    /** @type {HTMLInputElement} */ (nb).value = _buildNarrative(d, { rep, dist, q, medGap, meanGap, totAndel, konOk });
 }
 
 /** Var i lönefördelningen gapet är störst: samma regel som tolkningen under tabellen (mer än en procentenhet). */
@@ -21189,7 +21213,7 @@ function _exportEuReportExport() {
     document.getElementById('struktur-eu-export')?.addEventListener('click', exportEuReport);
     document.getElementById('struktur-narrative-regen')?.addEventListener('click', () => {
         const nb = document.getElementById('struktur-narrative');
-        if (nb) { delete nb.dataset.dirty; renderStructure(); }
+        if (nb) { delete nb.dataset.dirty; medExportLage(renderStrukturUtkast); }
     });
     document.getElementById('struktur-narrative-copy')?.addEventListener('click', () => {
         const nb = document.getElementById('struktur-narrative');
@@ -26338,6 +26362,8 @@ function _hpUppdateraVarning() {
 // #UX Renderar de förifyllda raderna direkt i skärm-mallen, med fält för sakligt skäl, ansvarig, tidsplan och status,
 // ovanför tomrader som syns på utskriften — så HR ser underlaget och kan fylla i planen utan att först exportera.
 function renderHandlingsplanSeed() {
+    // Samverkansknapparna (kortet Samverkan & uppföljning) exporterar underlag — inaktiva tills data finns.
+    document.querySelectorAll('[data-dok-klick]').forEach(b => { /** @type {HTMLInputElement} */ (b).disabled = !getData().length; });
     const tbody = document.getElementById('handlingsplan-tbody');
     if (!tbody) return;
     const seed = _handlingsplanSeedRows({ baraEgna: !getData().length });
@@ -26517,8 +26543,8 @@ const RM_DIAGRAM = [
     { id: 'chart-ref-hantel', flik: 'benchmark', avsnitt: 'referenser', rubrik: 'Löneläget och statistiken mot ställningstagandet per yrkesgrupp — bandet P10–P90, strecket medianen',
       om: () => !!(state.policy.length || state.statistik.length) },
     { id: 'chart-likvardighet-heatmap', flik: 'likvardighet', avsnitt: 'likvardigt', rubrik: 'Kandidatpar i likvärdigt arbete', kraverAllaPar: true },
-    // Jämförelsen med förra året (ADR-54) ritas av panelen i Dokumentera & exportera, bara när ett bokslut är inläst.
-    { id: 'chart-arsjamforelse', flik: 'dokumentera', avsnitt: 'arsjamforelse', rubrik: 'Kvinnors medianlön i procent av mäns per yrkesgrupp, förra året (strecket) och i år (punkten)',
+    // Jämförelsen med förra året (ADR-54) ritas av fliken Spara och jämför år, bara när ett bokslut är inläst.
+    { id: 'chart-arsjamforelse', flik: 'arbetet', avsnitt: 'arsjamforelse', rubrik: 'Kvinnors medianlön i procent av mäns per yrkesgrupp, förra året (strecket) och i år (punkten)',
       om: () => !!state.forraArsbokslut },
 ];
 
@@ -28282,7 +28308,7 @@ async function _exportZipExport() {
         for (const knapp of document.querySelectorAll('.nav-item[data-tab]')) {
             if (/** @type {HTMLInputElement} */ (knapp).disabled || /** @type {HTMLElement} */ (knapp).hidden) continue;
             const flik = knapp.getAttribute('data-tab');
-            if (flik === 'dokumentera' || flik === 'info') continue;      // inga diagram att hämta där
+            if (!flik || ['dokumentera', 'rapporttext', 'arbetet', 'info'].includes(flik)) continue;      // som förut: inga diagram hämtas där
             try { renderTabContent(flik); } catch (e) { rapporteraFel(`ZIP: ${flik}`, e); }
         }
         for (const el of zipDiagram()) {
@@ -28414,8 +28440,6 @@ function _rapportunderlagBlockExport() {
 function renderRapportunderlag() {
     const host = document.getElementById('rapportunderlag-innehall');
     if (!host) return;
-    // Samverkansknapparna exporterar underlag — inaktiva tills data finns.
-    document.querySelectorAll('[data-dok-klick]').forEach(b => { /** @type {HTMLInputElement} */ (b).disabled = !getData().length; });
     if (!getData().length) {
         _rapportBlockSenast = new Map();
         host.innerHTML = '<p class="ru-tom">Läs in underlag för att få rapportunderlaget.</p>';
@@ -30866,9 +30890,9 @@ function robusthetPrioritering(topN = 10) {
 // uttag tar det flera sekunder och blockerar gränssnittet, så den startas
 // manuellt i stället för vid varje flikbyte.
 /**
- * Flikens översta rad: läget i kontrollerna och i rapportunderlaget. Varje del lämnar sitt läge här när den ritas,
- * och raden ritas om. Färdigcheckens punkter är observationer och robusthetens gränsfall är förbehåll — inget av dem
- * märks som fel.
+ * Översta raden i Exportera: läget i färdigchecken och robustheten. Varje del lämnar sitt läge här när den ritas, och
+ * raden ritas om. Rapportunderlaget står i fliken Rapporttext och lämnar bara antalet avsnitt i sitt nyckeltal.
+ * Färdigcheckens punkter är observationer och robusthetens gränsfall är förbehåll — inget av dem märks som fel.
  */
 /** @type {{fardig: any[]|null, robust: any, block: any}} */
 const _dkLage = { fardig: null, robust: null, block: null };
@@ -30882,8 +30906,7 @@ function _dkRitaTopp(del) {
     const robust = r ? (r.flippar ? `${r.flippar} nära en gräns` : 'Står sig') : 'Inte körd';
     host.innerHTML = _laSlutsats('Färdigcheck', f.length ? `${f.length} ${f.length === 1 ? 'punkt' : 'punkter'}` : 'Inga lösa trådar',
             f.length ? (varna ? `${varna} behöver en åtgärd eller en förklaring` : 'Att känna till — inget som behöver åtgärdas') : 'Verktyget hittar inget som missats')
-        + _laSlutsats('Robusthet', robust, r ? `${r.provade} slutsatser prövade på nytt` : 'Körs under Robusthet längre ned')
-        + _laSlutsats('Rapportunderlag', n ? `${n} avsnitt` : '–', 'Färdiga att kopiera till rapporten');
+        + _laSlutsats('Robusthet', robust, r ? `${r.provade} slutsatser prövade på nytt` : 'Körs under Robusthet längre ned');
     _laNyckel('nyckel-dk-robusthet', robust);
     _laNyckel('nyckel-dk-rapportunderlag', n ? `${n} avsnitt` : '');
 }

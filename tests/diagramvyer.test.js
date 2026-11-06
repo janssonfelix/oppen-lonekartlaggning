@@ -166,7 +166,7 @@ describe('Struktur: chart-sektorer', () => {
     });
 });
 
-describe('Struktur: sammanfattningens mening om vertikal könssegregering', () => {
+describe('Rapporttext: auto-utkastets mening om vertikal könssegregering', () => {
     // representationByBas sorterar BAS A–Ö: första BAS:et är lägst värderat, sista högst (teknisk-plan §9 punkt 24).
     const text = (andelKvA, andelKvJ) => {
         const win = createAppWindow();
@@ -177,7 +177,7 @@ describe('Struktur: sammanfattningens mening om vertikal könssegregering', () =
         for (let i = 0; i < 40; i++) r.push(rad('J', i < 40 * andelKvJ / 100 ? 'kvinna' : 'man', 60000 + i));
         win.__state.data = r;
         win.eval('populateSelects(); unlockTabs();');
-        win.__renderTabContent('struktur');
+        win.__renderTabContent('rapporttext');
         return win.document.getElementById('struktur-narrative').value.split('\n').find(l => l.startsWith('Vertikal könssegregering'));
     };
     it('hög kvinnoandel i BAS A och låg i BAS J: A kallas lägre betalda och J högre betalda', () => {

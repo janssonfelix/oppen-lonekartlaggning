@@ -159,7 +159,7 @@ function _rensaAllData({ inbakat = true } = {}) {
     });
 
     // 4. Lås tabbar
-    ['tab-kon','tab-matrix','tab-prioritering','tab-loneoversyn','tab-struktur','tab-benchmark','tab-likvardighet','tab-utforska'].forEach(id => {
+    ['tab-kon','tab-matrix','tab-prioritering','tab-loneoversyn','tab-struktur','tab-benchmark','tab-likvardighet','tab-utforska','tab-rapporttext'].forEach(id => {
         const el = document.getElementById(id);
         if (el) { /** @type {HTMLInputElement} */ (el).disabled = true; el.setAttribute('title', 'Ladda upp strukturdata för att aktivera'); }
     });

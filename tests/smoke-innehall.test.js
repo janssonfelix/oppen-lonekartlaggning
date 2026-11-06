@@ -216,7 +216,7 @@ describe('Lika arbete och filrutorna: ordning och kompakta rutor', () => {
 // per flik. Fackuttrycken får stå i hjälptexten.
 describe('gränssnittets språk, rubriker och hjälpblock', () => {
     const FLIKAR = ['dashboard', 'bestammelser', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn',
-                    'handlingsplan', 'dokumentera', 'kon', 'benchmark', 'utforska'];
+                    'handlingsplan', 'dokumentera', 'rapporttext', 'arbetet', 'kon', 'benchmark', 'utforska'];
     const HJALP = '#view-info, .flik-usage, .bakgrund-panel, .lv-hjalp, .audit-panel, #gdpr-info-modal, #glossary-modal, '
         + '#symbols-modal, #data-residency-modal, #evidence-modal, script, style, noscript, [data-hjalptext]';
     const oppna = () => { const w = createAppWindow(); w.__loadDemoData(); return w; };
@@ -336,7 +336,7 @@ describe('innehåll på sidan och i rapportunderlaget', () => {
     it('de långa flikarna har avsnitt, och deras rubriker är innehållsförteckningen', () => {
         const w = createAppWindow();
         w.__loadDemoData();
-        for (const [flik, minst] of [['dashboard', 2], ['matrix', 4], ['likvardighet', 4], ['struktur', 5], ['prioritering', 4], ['loneoversyn', 4], ['dokumentera', 4], ['kon', 5], ['benchmark', 4]]) {
+        for (const [flik, minst] of [['dashboard', 2], ['matrix', 4], ['likvardighet', 4], ['struktur', 5], ['prioritering', 4], ['loneoversyn', 4], ['dokumentera', 2], ['rapporttext', 2], ['arbetet', 4], ['kon', 5], ['benchmark', 4]]) {
             oppna(w, flik);
             const synliga = [...w.document.querySelectorAll('.view-panel')].filter(p => p.style.display === 'block' || p.classList.contains('active'));
             const rubriker = synliga.flatMap(p => [...p.querySelectorAll('details.avsnitt > summary h2')]);
@@ -348,8 +348,9 @@ describe('innehåll på sidan och i rapportunderlaget', () => {
     it('rapportunderlaget: förteckning med en länk per block', () => {
         const w = createAppWindow();
         w.__loadDemoData();
-        oppna(w, 'dokumentera');
+        oppna(w, 'rapporttext');
         const block = w.document.querySelectorAll('#rapportunderlag-innehall .ru-block[data-block-id]');
+        expect(block.length).toBeGreaterThan(0);
         const lankar = w.document.querySelectorAll('#rapportunderlag-innehall .ru-toc [data-hoppa-till]');
         expect(lankar.length).toBe(block.length);
         for (const a of lankar) expect(w.document.getElementById(a.dataset.hoppaTill)?.classList.contains('ru-block')).toBe(true);
@@ -357,7 +358,7 @@ describe('innehåll på sidan och i rapportunderlaget', () => {
     it('Kopiera alla avsnitt lägger avsnittens rubriker i ordning på urklipp; reserv utan urklipp', async () => {
         const w = createAppWindow();
         w.__loadDemoData();
-        oppna(w, 'dokumentera');
+        oppna(w, 'rapporttext');
         const fångat = [];
         w.ClipboardItem = class { constructor(o) { this.o = o; } };
         Object.defineProperty(w.navigator, 'clipboard', { configurable: true, value: { write: async items => { fångat.push(...items); } } });
@@ -393,14 +394,15 @@ describe('BAS-ordningen är fast (se §5 i teknisk-plan.md)', () => {
         expect(txt).toMatch(/Likvärdigt arbete|Prioritering/);
         expect(txt).not.toMatch(/Nivåordningen|rangordning/i);
     });
-    it('extremvärden i Underlagets kvalitet, organisationspaketet i uppladdningsytan, Dokumentera heter Spara och läsa in arbetet', () => {
+    it('extremvärden i Underlagets kvalitet, organisationspaketet i uppladdningsytan, Spara och jämför år har fyra avsnitt', () => {
         const w = createAppWindow();
         w.__loadDemoData();
         const d = w.document;
         expect(d.getElementById('outliers-container').closest('#underlagets-kvalitet')).not.toBeNull();
         expect(d.getElementById('file-input-paket').closest('#upload-sektion')).not.toBeNull();
         for (const id of ['outliers-container', 'file-input-paket']) expect(d.getElementById(id).closest('#view-dokumentera')).toBeNull();
-        expect(d.getElementById('dok-installningar-rubrik').textContent).toBe('Spara och läsa in arbetet');
+        expect([...d.querySelectorAll('#view-arbetet details.avsnitt > summary h2')].map(h => h.textContent))
+            .toEqual(['Spara/ladda konfiguration', 'Jämför med en ögonblicksbild', 'Jämförelse med förra året', 'Självdiagnostik (testdata)']);
         expect(d.getElementById('outliers-container').style.display).toBe('block');
         expect(d.getElementById('outliers-table-wrap').textContent).toMatch(/extremvärden|Rad/i);
     });

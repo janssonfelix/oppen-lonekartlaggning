@@ -71,8 +71,8 @@ const RM_DIAGRAM = [
     { id: 'chart-ref-hantel', flik: 'benchmark', avsnitt: 'referenser', rubrik: 'Löneläget och statistiken mot ställningstagandet per yrkesgrupp — bandet P10–P90, strecket medianen',
       om: () => !!(state.policy.length || state.statistik.length) },
     { id: 'chart-likvardighet-heatmap', flik: 'likvardighet', avsnitt: 'likvardigt', rubrik: 'Kandidatpar i likvärdigt arbete', kraverAllaPar: true },
-    // Jämförelsen med förra året (ADR-54) ritas av panelen i Dokumentera & exportera, bara när ett bokslut är inläst.
-    { id: 'chart-arsjamforelse', flik: 'dokumentera', avsnitt: 'arsjamforelse', rubrik: 'Kvinnors medianlön i procent av mäns per yrkesgrupp, förra året (strecket) och i år (punkten)',
+    // Jämförelsen med förra året (ADR-54) ritas av fliken Spara och jämför år, bara när ett bokslut är inläst.
+    { id: 'chart-arsjamforelse', flik: 'arbetet', avsnitt: 'arsjamforelse', rubrik: 'Kvinnors medianlön i procent av mäns per yrkesgrupp, förra året (strecket) och i år (punkten)',
       om: () => !!state.forraArsbokslut },
 ];
 
