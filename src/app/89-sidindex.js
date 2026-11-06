@@ -9,12 +9,25 @@
  * fäller ut avsnittet, rullar fram det och ger dess summary fokus. Posten för avsnittet som står överst i fönstret
  * är markerad (IntersectionObserver; utan den den första). Kompakt läge ändrar ingenting här.
  * Från 1920 punkter står listan i en spalt i marginalen till höger om innehållet, smalare än så som en utfällbar rad
- * överst (style.css, klassen har-sidindex på .content-body; där står varför spalten börjar först där).
+ * överst som också följer med och säger vilket avsnitt läsaren är i (style.css, klassen har-sidindex på .content-body;
+ * där står varför spalten börjar först vid 1920).
  */
 const SIDINDEX_MINST = 3;
 const SIDINDEX_BRED = '(min-width: 1920px)';   // samma brytpunkt som style.css
 /** @type {IntersectionObserver|null} */
 let _sidindexBevakare = null;
+/** @type {ResizeObserver|null} */
+let _sidindexStorlek = null;
+/** Rubrikerna som följs, i sidans ordning: { el: summary eller kortrubrik, id: avsnittets id }. */
+let _sidindexOrdning = /** @type {{el: Element, id: string}[]} */ ([]);
+/** Markerar avsnittet som läslinjen står i. */
+function _sidindexFolj() {
+    if (!_sidindexOrdning.length) return;
+    const linje = window.innerHeight * 0.4;
+    let aktiv = _sidindexOrdning[0];
+    for (const o of _sidindexOrdning) { if (o.el.getBoundingClientRect().top <= linje) aktiv = o; else break; }
+    _sidindexMarkera(aktiv.id);
+}
 
 /** Elementet eller något ovanför det fram till `stopp` är dolt i markeringen. `.dold` döljer bara när ingen
  *  inline-stil visar elementet (panelerna och exportkortet visas med style.display = 'block'). */
@@ -51,12 +64,24 @@ function _sidindexRubriker(flik) {
 function _sidindexFokusmal(mal) {
     return mal.querySelector(':scope > summary') || mal.querySelector('.card-header > h2') || mal;
 }
+/** Markerar posten för avsnittet `id` och skriver dess rubrik i raden (På den här sidan: …), så att den hopfällda
+ *  raden på smala skärmar säger var läsaren är. */
 function _sidindexMarkera(id) {
+    let rubrik = '';
     document.querySelectorAll('#sidindex a[data-sidindex]').forEach(a => {
         const aktiv = /** @type {HTMLElement} */ (a).dataset.sidindex === id;
         a.classList.toggle('ar-aktiv', aktiv);
-        if (aktiv) a.setAttribute('aria-current', 'location'); else a.removeAttribute('aria-current');
+        if (aktiv) { a.setAttribute('aria-current', 'location'); rubrik = (a.textContent || '').trim(); } else a.removeAttribute('aria-current');
     });
+    const nu = document.querySelector('#sidindex .sidindex-nu');
+    if (nu && rubrik) nu.textContent = rubrik;
+}
+/** Radens höjd som --sidindex-hojd på .content-body: raden med det markerade och avsnitten som rullas fram lägger
+ *  sig under den (style.css). */
+function _sidindexHojd(nav) {
+    const satt = () => nav.parentElement?.style.setProperty('--sidindex-hojd', Math.ceil(nav.getBoundingClientRect().height) + 'px');
+    satt();
+    if (typeof window.ResizeObserver === 'function' && !_sidindexStorlek) { _sidindexStorlek = new ResizeObserver(satt); _sidindexStorlek.observe(nav); }
 }
 
 /** Fyller #sidindex med flikens synliga avsnitt, eller döljer det när de är färre än tre. */
@@ -64,6 +89,7 @@ function sidindexBygg(flik) {
     const nav = document.getElementById('sidindex');
     if (!nav) return;
     if (_sidindexBevakare) { _sidindexBevakare.disconnect(); _sidindexBevakare = null; }
+    _sidindexOrdning = [];
     const poster = _sidindexRubriker(flik);
     const visas = poster.length >= SIDINDEX_MINST;
     nav.hidden = !visas;
@@ -78,20 +104,18 @@ function sidindexBygg(flik) {
     // I spalten är listan alltid utfälld; på smal skärm behåller en ombyggd lista läsarens val (först hopfälld).
     const oppen = _sidindexBred() || /** @type {HTMLDetailsElement|null} */ (nav.querySelector('.sidindex-ram'))?.open === true;
     nav.innerHTML = `<span class="sidindex-etikett" aria-hidden="true">På den här sidan</span>`
-        + `<details class="sidindex-ram"${oppen ? ' open' : ''}><summary>På den här sidan</summary><ul class="sidindex-lista">`
+        + `<details class="sidindex-ram"${oppen ? ' open' : ''}><summary>På den här sidan<span class="sidindex-kolon">: </span><span class="sidindex-nu"></span></summary><ul class="sidindex-lista">`
         + poster.map(({ rubrik, mal }) => `<li><a href="#" data-sidindex="${esc(mal.id)}">${esc(rubrik)}</a></li>`).join('')
         + '</ul></details>';
     _sidindexMarkera(poster[0].mal.id);
+    _sidindexHojd(nav);
     if (typeof window.IntersectionObserver !== 'function') return;
-    // Den översta av rubrikerna i fönstrets övre del är aktiv; rullas ingen dit står markeringen kvar.
-    const synliga = new Set();
-    const ordning = poster.map(({ mal }) => ({ el: _sidindexFokusmal(mal), id: mal.id }));
-    const bevakare = new IntersectionObserver(andrade => {
-        for (const p of andrade) { if (p.isIntersecting) synliga.add(p.target); else synliga.delete(p.target); }
-        const forst = ordning.find(o => synliga.has(o.el));
-        if (forst) _sidindexMarkera(forst.id);
-    }, { rootMargin: '0px 0px -60% 0px' });
-    ordning.forEach(o => bevakare.observe(o.el));
+    // Aktivt är avsnittet som läslinjen (40 % ned i fönstret) står i: den sista rubriken ovanför linjen. Observatören
+    // säger till när en rubrik passerar fönstrets övre del; ett hopp förbi en rubrik (ett långt rullsteg) fångas av
+    // rullningen nedan, som räknar om samma sak.
+    _sidindexOrdning = poster.map(({ mal }) => ({ el: _sidindexFokusmal(mal), id: mal.id }));
+    const bevakare = new IntersectionObserver(_sidindexFolj, { rootMargin: '0px 0px -60% 0px' });
+    _sidindexOrdning.forEach(o => bevakare.observe(o.el));
     _sidindexBevakare = bevakare;
 }
 
@@ -107,6 +131,9 @@ function sidindexGaTill(id) {
     if (fokus.tagName !== 'SUMMARY' && !fokus.hasAttribute('tabindex')) fokus.setAttribute('tabindex', '-1');
     fokus.focus({ preventScroll: true });
     _sidindexMarkera(id);
+    // På smal skärm är listan en utfälld rad överst som följer med: den fälls ihop så att den inte täcker avsnittet.
+    const ram = /** @type {HTMLDetailsElement|null} */ (document.querySelector('#sidindex .sidindex-ram'));
+    if (ram && !_sidindexBred()) ram.open = false;
 }
 
 // Delegerad klick, som hopplänkarna i 33-sidans-innehall.js: adressen ändras inte.
@@ -116,11 +143,17 @@ document.addEventListener('click', e => {
     e.preventDefault();
     sidindexGaTill(/** @type {HTMLElement} */ (a).dataset.sidindex || '');
 });
-// Breddas fönstret förbi brytpunkten står listan i spalten och är alltid utfälld.
+let _sidindexRam = 0;
+window.addEventListener('scroll', () => {
+    if (!_sidindexBevakare || _sidindexRam) return;
+    _sidindexRam = requestAnimationFrame(() => { _sidindexRam = 0; _sidindexFolj(); });
+}, { passive: true });
+// Breddas fönstret förbi brytpunkten står listan i spalten och är alltid utfälld; smalnas det av blir den den
+// hopfällda raden överst, som annars skulle täcka innehållet när den följer med.
 if (typeof window.matchMedia === 'function') {
     const bred = window.matchMedia(SIDINDEX_BRED);
     bred.addEventListener?.('change', () => {
         const ram = /** @type {HTMLDetailsElement|null} */ (document.querySelector('#sidindex .sidindex-ram'));
-        if (ram && bred.matches) ram.open = true;
+        if (ram) ram.open = bred.matches;
     });
 }

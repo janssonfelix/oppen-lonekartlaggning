@@ -428,7 +428,9 @@ details.avsnitt[open]:not(.card) { padding-bottom: 20px; }
    Flikens avsnitt som en lista. Den står sist i .content-body men visas först (order). Från 1920 punkter är den en
    spalt till höger om innehållet som följer med när sidan rullas, och spalten tar sina 224 punkter ur marginalen:
    .content-body växer lika mycket (max-width), så panelerna är lika breda som utan index (1320 punkter). Smalare än
-   så är listan en utfällbar rad ovanför innehållet. Spalten tar inget ur innehållet, för varje punkt den tog hade gett
+   så är listan en utfällbar rad ovanför innehållet som följer med (sticky överst; sidhuvudet är inte sticky) och
+   säger vilket avsnitt läsaren är i. Raden med det markerade och avsnitt som rullas fram lägger sig under raden
+   (--sidindex-hojd sätts av 89-sidindex.js). Spalten tar inget ur innehållet, för varje punkt den tog hade gett
    någon tabell en vågrät rullist: med demodatan behöver tabellerna i Lika arbete, Lönestruktur, Prioritering och
    Löneläget 860–965 punkter breda paneler och AID × BAS 1220–1315, och vid 1440 punkter är panelerna 1080 breda
    (856 med en spalt).
@@ -437,12 +439,20 @@ details.avsnitt[open]:not(.card) { padding-bottom: 20px; }
    att följa med. */
 .content-body.har-sidindex { display: flex; flex-direction: column; }
 .sidindex { order: -1; font-size: var(--fs-sm); }
+@media (max-width: 1919px) {
+    .sidindex { position: sticky; top: 0; z-index: 25; background: var(--bg-main); padding: 8px 0; margin: -8px 0 6px; }
+    .content-body.har-sidindex > .markering-rad { top: calc(var(--sidindex-hojd, 58px) + 2px); }
+    .content-body.har-sidindex :is(details.avsnitt, .card) { scroll-margin-top: calc(var(--sidindex-hojd, 58px) + 8px); }
+    .sidindex-ram[open] .sidindex-lista { max-height: 50vh; overflow-y: auto; }
+}
+.sidindex-nu { font-weight: 500; color: var(--primary); }
+.sidindex-ram[open] .sidindex-kolon, .sidindex-ram[open] .sidindex-nu { display: none; }
 .sidindex-etikett { display: none; }
 .sidindex-lista { list-style: none; margin: 0; padding: 0; }
 .sidindex-lista a { display: block; padding: 4px 10px; border-left: 2px solid var(--border); color: var(--text-muted); text-decoration: none; line-height: 1.35; }
 .sidindex-lista a:hover { color: var(--text-main); border-left-color: var(--border-stark); }
 .sidindex-lista a.ar-aktiv { color: var(--primary); border-left-color: var(--primary); font-weight: 600; }
-.sidindex-ram { margin: 0 0 14px; padding: 0 14px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); }
+.sidindex-ram { margin: 0; padding: 0 14px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); }
 .sidindex-ram > summary { padding: 10px 0; cursor: pointer; font-weight: 600; color: var(--text-main); }
 .sidindex-ram[open] > summary { margin-bottom: 4px; }
 .sidindex-ram[open] { padding-bottom: 10px; }

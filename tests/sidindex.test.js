@@ -69,6 +69,20 @@ describe('Sidindex', () => {
         expect(aktiva.length).toBe(1);
         expect(aktiva[0]).toBe(w.document.querySelector('#sidindex a'));
     });
+    it('raden säger vilket avsnitt läsaren är i: först det första, sedan det som markeras', () => {
+        const w = createAppWindow(); w.__loadDemoData();
+        oppna(w, 'struktur');
+        const summary = () => w.document.querySelector('#sidindex summary').textContent.replace(/\s+/g, ' ').trim();
+        expect(summary()).toBe('På den här sidan: Organisationen som karta');
+        w.eval('_sidindexMarkera("avsnitt-st-eu")');
+        expect(summary()).toBe('På den här sidan: EU 2023/970 — lönerapportmått');
+        expect(w.document.querySelector('#sidindex a.ar-aktiv').dataset.sidindex).toBe('avsnitt-st-eu');
+        // Ett klick på smal skärm fäller ihop listan, så att den inte täcker avsnittet den ledde till.
+        w.document.querySelector('#sidindex details').open = true;
+        w.document.querySelector('#sidindex a[data-sidindex="avsnitt-st-sektorer"]').click();
+        expect(summary()).toBe('På den här sidan: Per sektor');
+        expect(w.document.querySelector('#sidindex details').open).toBe(false);
+    });
     it('indexet byggs om när fliken ritas om, och döljs på flikar med färre än tre avsnitt', () => {
         const w = createAppWindow(), nav = w.document.getElementById('sidindex'), kropp = w.document.querySelector('.content-body');
         expect(nav.getAttribute('aria-label')).toBe('På den här sidan');

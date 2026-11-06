@@ -267,6 +267,44 @@ for (const [flik, diagram] of FLIKAR) {
     if (!diagram.length) ok(true, `${flik}: renderade utan fel`);
 }
 {
+    // Smalare än 1920 punkter (här 1440) är sidindexet en rad överst som följer med och säger vilket avsnitt som står i
+    // fönstret; raden med det markerade lägger sig under den, och båda syns.
+    await page.click('.nav-item[data-tab="struktur"]');
+    await page.evaluate(() => document.querySelectorAll('details.avsnitt').forEach(d => { d.open = true; }));
+    await page.waitForTimeout(400);
+    await page.locator('#chart-skevhet-andel [data-marke="stapel"]').first().click();
+    await page.waitForTimeout(200);
+    await page.evaluate(() => document.getElementById('avsnitt-st-eu').scrollIntoView({ block: 'start' }));
+    await page.waitForTimeout(600);
+    const rad = await page.evaluate(() => {
+        const nav = document.getElementById('sidindex').getBoundingClientRect(), mk = document.getElementById('markering-rad')?.getBoundingClientRect();
+        return { topp: Math.round(nav.top), botten: Math.round(nav.bottom), rullat: Math.round(scrollY),
+            summary: document.querySelector('#sidindex summary').textContent.replace(/\s+/g, ' ').trim(),
+            aktiv: document.querySelector('#sidindex a.ar-aktiv')?.textContent || '',
+            // Den aktiva postens rubrik står i fönstrets övre del, under raden.
+            aktivTopp: Math.round(document.querySelector(`#${document.querySelector('#sidindex a.ar-aktiv')?.dataset.sidindex} > summary`)?.getBoundingClientRect().top ?? -1),
+            mk: mk ? { topp: Math.round(mk.top), hojd: Math.round(mk.height) } : null };
+    });
+    ok(rad.rullat > 300 && rad.topp >= 0 && rad.topp <= 4 && rad.aktiv !== '' && rad.summary.includes(rad.aktiv) && rad.aktivTopp >= rad.botten - 4 && rad.aktivTopp <= 0.4 * 900,
+        `sidindexet vid 1440 punkter följer med överst och säger var läsaren är (rullat ${rad.rullat} px, raden ${rad.topp} px från överkanten: "${rad.summary}", rubriken ${rad.aktivTopp} px)`);
+    ok(!!rad.mk && rad.mk.hojd > 0 && rad.mk.topp >= rad.botten - 1 && rad.mk.topp < rad.botten + 20,
+        `raden med det markerade står synlig under sidindexet (sidindexet slutar ${rad.botten} px, markeringen börjar ${rad.mk && rad.mk.topp} px)`);
+    // Ett långt rullsteg som hoppar förbi rubriker: posten är fortfarande avsnittet som läslinjen (40 %) står i.
+    await page.mouse.move(800, 500);
+    await page.mouse.wheel(0, -2200);
+    await page.waitForTimeout(600);
+    const hopp = await page.evaluate(() => {
+        const linje = innerHeight * 0.4, a = document.querySelector('#sidindex a.ar-aktiv');
+        const topp = id => document.querySelector(`#${id} > summary, #${id} .card-header > h2`)?.getBoundingClientRect().top ?? NaN;
+        const alla = [...document.querySelectorAll('#sidindex a')].map(x => x.dataset.sidindex), i = alla.indexOf(a?.dataset.sidindex);
+        return { aktiv: a?.textContent || '', ovan: topp(alla[i]) <= linje || i === 0, nasta: i === alla.length - 1 || topp(alla[i + 1]) > linje,
+            summary: document.querySelector('#sidindex summary').textContent };
+    });
+    ok(hopp.ovan && hopp.nasta && hopp.summary.includes(hopp.aktiv), `efter ett långt rullsteg visar sidindexet avsnittet som står i fönstret (${hopp.aktiv})`);
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(150);
+}
+{
     // Från 1920 punkter är sidindexet en spalt bredvid innehållet som följer med när sidan rullas; ett klick fäller
     // ut avsnittet och ger summaryn fokus.
     await page.setViewportSize({ width: 1920, height: 900 });
