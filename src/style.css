@@ -908,6 +908,8 @@ body.meny-utan-glidning .sidebar { transition: none !important; }
     color: var(--text-muted);
 }
 .upload-unlocks strong { color: var(--text-main); font-weight: 600; }
+/* Demovalen i lönefilskortet: litet och stort demo (döljs med hidden när en riktig lönefil är inläst) */
+.upload-demo { margin: 6px 0 4px; font-size: var(--fs-xs); line-height: 1.4; color: var(--text-muted); }
 
 .upload-cell .file-drop-area {
     padding: 22px 14px;

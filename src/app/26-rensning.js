@@ -71,6 +71,7 @@ function _rensaAllData({ inbakat = true } = {}) {
     if (typeof _fyllPaketFormular === 'function') _fyllPaketFormular();
     state.statistik = [];
     state.isDemo = false;   // #9: lämna demoläge
+    state.demoStort = false;
     if (typeof _renderDemoBanner === 'function') _renderDemoBanner();
     state._interntFel = [];   // interna fel gällde det rensade underlaget
     if (typeof visaInterntFel === 'function') visaInterntFel();

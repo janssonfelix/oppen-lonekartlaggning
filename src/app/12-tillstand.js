@@ -7,7 +7,7 @@
  * @type {{
  *   data: any[], policy: any[], policyNamn: string|null, policyKortnamn: string|null, policyKalla: 'fil'|'paket'|'demo'|null,
  *   statistik: any[], statistikNamn: string|null, statistikKalla: 'fil'|'paket'|null,
- *   paket: any, paketInbakat: null|{skapad:string, organisation:string, verktygsversion:string, verktygssha:string, text:string}, isDemo: boolean,
+ *   paket: any, paketInbakat: null|{skapad:string, organisation:string, verktygsversion:string, verktygssha:string, text:string}, isDemo: boolean, demoStort: boolean,
  *   prioConfig: {atgardThreshold: number, akutMinN: number, bevakaThreshold: number, analyseraThreshold: number, [k: string]: any},
  *   prioWeights: {avvikelse: number, volym: number, jamstalldhet: number, [k: string]: any}, costSettings: {[k: string]: any},
  *   rapportUrval: {ordning: string[], med: string[]}|null, rapportTabeller: any[], perBasRecept: any, forraArsbokslut: any,
@@ -43,6 +43,7 @@ const state = {
     paket: null,     // inläst organisationspaket: { organisation, utgivare, skapat, avserAr, kalla: 'fil'|'inbakat' } (ADR-28)
     paketInbakat: null,   // paketet som ligger inbakat i den här filen (organisationsfil); läses vid start och efter Rensa all data
     isDemo: false,   // #9: true när syntetisk demodata är inläst (aldrig verklig analys)
+    demoStort: false,   // true i det stora demot (7 000 personer, 21-stort-demo.js); bara bannern och filraden läser det
     prioConfig: { ...PRIO_CONFIG_DEFAULTS },
     prioWeights: { ...PRIO_WEIGHTS_DEFAULTS },
     costSettings: { ...COST_DEFAULTS },
