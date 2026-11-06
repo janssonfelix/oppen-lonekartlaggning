@@ -4,6 +4,13 @@
 // ---- Audit / spårbarhet av beräkningar ("Beräkning & urval") ----
 // Varje analysfunktion fyller i sitt audit-objekt så användaren kan kvalitetssäkra.
 const auditRegistry = {};
+// Metodbilagans ordning i Excel och utskrift: fast, oberoende av i vilken ordning flikarna råkade ritas
+// (strukturomläggningen 2026-11-06 flyttade regressionen till Lönestruktur utan att bilagan ska byta ordning).
+const AUDIT_ORDNING = ['rapport', 'skevhet', 'livscykel', 'matrix', 'prioritering', 'benchmark'];
+function auditPoster() {
+    const ids = [...AUDIT_ORDNING.filter(id => id in auditRegistry), ...Object.keys(auditRegistry).filter(id => !AUDIT_ORDNING.includes(id))];
+    return ids.map(id => /** @type {[string, any]} */ ([id, auditRegistry[id]]));
+}
 
 function buildBaseAudit() {
     const da = state.dataAudit || { totalRaw: 0, excludedNoBas: 0, excludedZeroLon: 0 };

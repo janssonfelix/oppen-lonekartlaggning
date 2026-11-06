@@ -37,11 +37,11 @@ describe('Word-utkastet som .docx', () => {
         expect(block.filter(b => b.typ === 'bild').map(b => b.id)).toEqual([...dom.querySelectorAll('figure[data-rm-bild]')].map(f => f.getAttribute('data-rm-bild')));
         expect(text(bText)).toBe(text(dom.body.textContent));
     });
-    it('avsnittet om struktur bär översikten per BAS-intervall — samma rader och tal som fliken Lika arbete öppnar med (i exportläget)', () => {
+    it('avsnittet om struktur bär översikten per BAS-intervall — samma rader och tal som fliken Lönestruktur visar (i exportläget)', () => {
         const w = createAppWindow();
         w.__loadDemoData();
         w.__state.kLage = 'export';
-        w.__renderTabContent('matrix');
+        w.__renderTabContent('struktur');
         const ren = t => t.replace(/[\u00a0\u202f]/g, ' ');
         const skarm = [...w.document.querySelectorAll('#la-oversikt tbody tr')].map(tr => [...tr.children].map(c => ren(c.textContent)));
         expect(skarm.length).toBeGreaterThan(0);
@@ -100,7 +100,7 @@ describe('Word-utkastet som .docx', () => {
         expect(html).toContain('negativ när kvinnor ligger lägre');
         // Diagrammen hör till ett avsnitt och pekar ut fliken som ritar dem.
         const diagram = m.avsnitt.flatMap(a => a.delar.filter(p => p.typ === 'diagram').map(p => `${a.id}:${p.id}:${p.flik}`));
-        expect(diagram).toEqual(expect.arrayContaining(['struktur:chart-skevhet-overview:matrix', 'struktur:chart-skevhet-andel:matrix', 'struktur:chart-struktur-kvartiler:struktur', 'lika:chart-perbas-gap:matrix']));
+        expect(diagram).toEqual(expect.arrayContaining(['struktur:chart-skevhet-overview:struktur', 'struktur:chart-skevhet-andel:struktur', 'struktur:chart-struktur-kvartiler:struktur', 'lika:chart-perbas-gap:struktur']));
         // Fälten att fylla i finns kvar i varje avsnitt som hade dem.
         for (const id of ['sammanfattning', 'lika', 'likvardigt', 'atgarder', 'samverkan', 'beslut']) expect(delar(id).some(p => p.typ === 'fyllIn'), id).toBe(true);
         // Metodbilagan har en rubrik, inte två.

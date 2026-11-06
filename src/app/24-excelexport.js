@@ -204,7 +204,7 @@ function __excelAlltBokExport() {
         ['Genererad', new Date().toLocaleString('sv-SE')],
         []
     ];
-    Object.entries(auditRegistry).forEach(([id, a]) => {
+    auditPoster().forEach(([id, a]) => {
         metRows.push([a.title || id]);
         metRows.push(['Total i datafilen', a.totalRaw]);
         [...(a.parseExcl||[]), ...(a.analysisExclusions||[])].forEach(([r,c]) => {

@@ -82,17 +82,17 @@ describe('menyns ordning', () => {
 });
 
 describe('länkar till ett avsnitt i en annan flik', () => {
-    it('Att göra-länkarna till Lika arbete byter flik och fäller ut avsnittet de leder till', () => {
+    it('Att göra-länkarna till Lönestruktur byter flik och fäller ut avsnittet de leder till', () => {
         const w = createAppWindow();
         w.__loadDemoData();
         const d = w.document;
-        for (const id of ['avsnitt-la-bas', 'avsnitt-la-kon']) d.getElementById(id).open = false;
+        for (const id of ['avsnitt-ls-bas', 'avsnitt-ls-kon']) d.getElementById(id).open = false;
         d.querySelector('#comp-gap .comp-lank').click();
-        expect(d.querySelector('.nav-item.active').getAttribute('data-tab')).toBe('matrix');
-        expect(d.getElementById('avsnitt-la-bas').open).toBe(true);
-        expect(d.getElementById('avsnitt-la-kon').open).toBe(false);
+        expect(d.querySelector('.nav-item.active').getAttribute('data-tab')).toBe('struktur');
+        expect(d.getElementById('avsnitt-ls-bas').open).toBe(true);
+        expect(d.getElementById('avsnitt-ls-kon').open).toBe(false);
         d.querySelector('#comp-skev .comp-lank').click();
-        expect(d.getElementById('avsnitt-la-kon').open).toBe(true);
+        expect(d.getElementById('avsnitt-ls-kon').open).toBe(true);
     });
 });
 
@@ -214,7 +214,7 @@ describe('modalerna skriver tal på svenska', () => {
 describe('samma tal i samma precision på sidan', () => {
     it('regressionskortet skriver den oförklarade skillnaden med en decimal, som flikens nyckeltal', () => {
         const w = demo();
-        w.__renderTabContent('matrix');
+        w.__renderTabContent('struktur');
         const tal = w.document.querySelector('.reg-hero .hero-number').textContent.trim();
         expect(tal).toMatch(/^[+\u2212-]?\d+,\d\s%$/);
         expect(w.document.querySelector('.reg-hero .hero-label').textContent).toBe('Oförklarad löneskillnad, kvinnor mot män');

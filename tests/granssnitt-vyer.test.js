@@ -418,7 +418,7 @@ describe('en låst flik svarar', () => {
         expect(d.querySelector('.nav-item.active').getAttribute('data-tab')).toBe('info');
         d.getElementById('tab-matrix').click();
         expect(d.querySelector('.nav-item.active').getAttribute('data-tab')).toBe('filer');
-        expect(d.getElementById('view-matrix').style.display).toBe('none');
+        expect(d.getElementById('view-regression').style.display).toBe('none');
         expect(d.getElementById('view-filer').style.display).toBe('block');
         expect(d.getElementById('upload-cell-data').classList.contains('visas-nu')).toBe(true);
         expect(d.activeElement.id).toBe('file-input-data');
@@ -491,7 +491,7 @@ describe('slutgranskningens fynd', () => {
     it('regressionskortets tolkning har samma precision som huvudtalet', () => {
         const w = createAppWindow();
         w.__loadDemoData();
-        w.__renderTabContent('matrix');
+        w.__renderTabContent('struktur');
         expect(w.document.getElementById('regression-card').querySelector('.reg-verdict')?.closest('.card').textContent.match(/\d,\d\d\s% (mindre|mer)|skillnad på \d+,\d\d\s%/)).toBeNull();
     });
     it('piltangent på en låst flik går till närmaste upplåsta flik i den riktningen, inte runt hela menyn', () => {
@@ -556,7 +556,7 @@ describe('småsaker i texter och etiketter (granskning 2026-10-30, steg H)', () 
         const varden = [...d.querySelectorAll('#matrix-table tbody tr')].filter(tr => tr._euRow).map(tr => tr.cells[kol].textContent.trim());
         expect(varden.length).toBeGreaterThan(3);
         for (const v of varden) expect(v).toMatch(/^(Kvinnodominerad|Mansdominerad|Könsblandad)$/);
-        expect(d.getElementById('view-matrix').closest('body').innerHTML).not.toMatch(/Kvinno-dom|Mans-dom/);
+        expect(d.getElementById('view-regression').closest('body').innerHTML).not.toMatch(/Kvinno-dom|Mans-dom/);
     });
     it('Likvärdigt arbetes kolumn heter Summa för gruppen, med verktygstips; Excel-bladen har samma rubrik', () => {
         const w = createAppWindow();

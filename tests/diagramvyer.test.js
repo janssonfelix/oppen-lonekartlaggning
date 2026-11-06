@@ -251,12 +251,12 @@ describe('Lika arbete: chart-skevhet-overview och chart-perbas-gap', () => {
                       ...Array.from({ length: 24 }, (_, i) => person('B', i < 4 ? 'kvinna' : 'man', i < 4 ? 71111 : 40000 + i))];
         medData(data, [], () => {
             w.__state.kLage = 'export';
-            w.__renderTabContent('matrix');
+            w.__renderTabContent('struktur');
             const el = w.document.getElementById('chart-skevhet-overview');
             expect(el._figur.y.ordning).toEqual(['BAS A', 'BAS C']);
             expect(utdata(el)).not.toMatch(/BAS B|71\s?111/);
             w.eval('sattKTroskel(20, { fraga: false })');                          // nu når inget BAS tröskeln per kön
-            w.__renderTabContent('matrix');
+            w.__renderTabContent('struktur');
             const el2 = w.document.getElementById('chart-skevhet-overview');
             expect(el2._figur).toBeUndefined();
             expect(el2.querySelector('svg')).toBeNull();
@@ -272,7 +272,7 @@ describe('Lika arbete: översiktstabellen med inbyggd grafik (huvudvyn)', () => 
         const figur = d.getElementById('chart-skevhet-overview')._figur, ov = w2.eval('_laOversiktRader(getData())');
         expect(rader.map(r => r.querySelector('th').textContent)).toEqual(figur.y.ordning);
         expect(d.getElementById('la-huvuddiagram').contains(d.getElementById('la-oversikt'))).toBe(true);
-        expect(d.getElementById('avsnitt-la-bas').contains(d.getElementById('la-huvuddiagram'))).toBe(true);   // tabellen står i fördjupningen
+        expect(d.getElementById('avsnitt-ls-bas').contains(d.getElementById('la-huvuddiagram'))).toBe(true);   // tabellen står i fördjupningen
         expect(d.getElementById('la-bas-exportkopia').contains(d.getElementById('chart-skevhet-overview'))).toBe(true);   // bilden bara i exporten
         expect(d.getElementById('la-bas-exportkopia').hidden).toBe(true);
         const punkter = figur.lager.flatMap(l => l.data.map(p => ({ ...p, serie: l.serie })));
@@ -300,12 +300,12 @@ describe('Lika arbete: översiktstabellen med inbyggd grafik (huvudvyn)', () => 
                       ...Array.from({ length: 24 }, (_, i) => person('B', i < 4 ? 'kvinna' : 'man', i < 4 ? 71111 : 40000 + i))];
         medData(data, [], () => {
             w.__state.kLage = 'export';
-            w.__renderTabContent('matrix');
+            w.__renderTabContent('struktur');
             const tb = w.document.querySelector('#la-oversikt tbody');
             expect([...tb.querySelectorAll('tr th')].map(t => t.textContent)).toEqual(['BAS A']);
             expect(tb.textContent).not.toMatch(/BAS B|71\s?111/);
             w.eval('sattKTroskel(20, { fraga: false })');
-            w.__renderTabContent('matrix');
+            w.__renderTabContent('struktur');
             expect(tb.querySelectorAll('tr')).toHaveLength(1);
             expect(tb.textContent).toMatch(/För få BAS-intervall/);
             expect(w.document.getElementById('la-oversikt-skala').innerHTML).toBe('');

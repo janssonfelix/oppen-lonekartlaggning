@@ -205,9 +205,9 @@ await page.evaluate(() => {
 });
 // Diagram som MÅSTE ha ritats på demodata: en <svg> i containern.
 const FLIKAR = [
-    ['matrix', ['#chart-la-tratt', '#chart-skevhet-lador']],
+    ['matrix', ['#chart-la-tratt']],
     ['likvardighet', []],
-    ['struktur', ['#chart-sektorer']],
+    ['struktur', ['#chart-sektorer', '#chart-skevhet-lador']],
     ['prioritering', ['#chart-prio-pareto', '#chart-prio-matrix']],
     ['benchmark', ['#chart-lp-bandmap', '#chart-lp-compliance']],
     ['loneoversyn', []],
@@ -239,7 +239,7 @@ console.log('\n── Diagrammen (diagramkärnan, ADR-39) ──');
 // Varje diagram ritas av diagramkärnan: en SVG med märken, och exportmenyn ger en PNG och en SVG som inte
 // är tomma. Ett diagram som vyn ersätter med en förklarande text
 // (för få grupper i demodatan) räknas som riktigt — då finns ingen figur och ingen bild.
-const DIAGRAMMEN = [['matrix', 'chart-la-tratt'], ['matrix', 'chart-skevhet-andel'], ['matrix', 'chart-perbas-gap'], ['struktur', 'chart-sektorer'],
+const DIAGRAMMEN = [['matrix', 'chart-la-tratt'], ['struktur', 'chart-skevhet-andel'], ['struktur', 'chart-perbas-gap'], ['struktur', 'chart-sektorer'],
                   ['benchmark', 'chart-lp-gender'], ['benchmark', 'chart-lp-compliance'], ['kon', 'chart-demo-hist'],
                   // linjer, band och lådor
                   ['kon', 'chart-kon-scatter'], ['kon', 'chart-kon-boxplot'],
@@ -287,7 +287,7 @@ console.log('\n── Länkade vyer: en markerad grupp framhävs i alla diagram 
     await page.click('.nav-item[data-tab="benchmark"]');
     await page.evaluate(() => document.querySelectorAll('details.avsnitt').forEach(d => { d.open = true; }));
     await page.waitForTimeout(400);
-    await page.click('.nav-item[data-tab="matrix"]');
+    await page.click('.nav-item[data-tab="struktur"]');
     await page.evaluate(() => document.querySelectorAll('details.avsnitt').forEach(d => { d.open = true; }));
     await page.waitForTimeout(400);
     await page.locator('#chart-skevhet-andel [data-marke="stapel"]').first().click();
@@ -378,26 +378,33 @@ console.log('\n── Lika arbete i formen resultat först ──');
     await page.waitForTimeout(1500);
     await page.evaluate(() => document.querySelector('.nav-item[data-tab="matrix"]').click());
     await page.waitForTimeout(1200);
-    const form = await page.evaluate(() => { const a = [...document.querySelectorAll('details.avsnitt[id^="avsnitt-la-"]')]; const m = document.getElementById('main-content');
+    const form = await page.evaluate(() => { const a = [...document.querySelectorAll('#view-lika-yrken details.avsnitt[id^="avsnitt-la-"]')]; const m = document.getElementById('main-content');
         return { slutsatser: document.querySelectorAll('#la-slutsatser .slutsats').length, oppna: a.filter(x => x.open).map(x => x.id), antal: a.length,
-            huvud: Math.round(document.getElementById('la-oversikt').getBoundingClientRect().width), rader: document.querySelectorAll('#la-oversikt tbody tr').length, grafik: document.querySelectorAll('#la-oversikt tbody svg.la-oversikt-grafik').length,
-            ryms: document.querySelector('#la-huvuddiagram .table-container').scrollWidth <= document.querySelector('#la-huvuddiagram .table-container').clientWidth + 1,
             nyckel: [...document.querySelectorAll('[id^="nyckel-la-"]')].filter(e => e.textContent.trim()).length, skarmar: +(Math.max(document.documentElement.scrollHeight, m.scrollHeight) / innerHeight).toFixed(1), lankrad: document.querySelectorAll('.sidans-innehall').length }; });
     const huvudet = await page.evaluate(() => { const r = s => document.querySelector(s).getBoundingClientRect(); const delar = ['#sok-grupp', '#btn-open-symbols', '#btn-open-installningar', '#btn-open-glossary'].map(r);
         return { overlapp: delar.some((d, i) => i > 0 && delar[i - 1].right > d.left + 0.5), utanfor: delar[delar.length - 1].right > r('.top-header').right + 0.5 }; });
     ok(!huvudet.overlapp && !huvudet.utanfor, 'sidhuvudet: sökfältet och knapparna står bredvid varandra utan att gå in över varandra');
-    ok(form.slutsatser === 4 && form.huvud > 300 && form.rader > 0 && form.grafik === form.rader && form.ryms, `toppen visar fyra slutsatser och översiktstabellen med grafik i varje rad, utan sidrullning (${form.rader} rader, ${form.huvud} px bred)`);
-    ok(form.antal >= 5 && form.oppna.length === 1 && form.oppna[0] === 'avsnitt-la-yrkesgrupper' && form.nyckel >= 4 && form.lankrad === 0, `${form.antal} avsnitt, bara det första öppet, ${form.nyckel} med nyckeltal, ingen länkrad`);
+    ok(form.slutsatser === 4, 'toppen visar fyra slutsatser');
+    ok(form.antal >= 4 && form.oppna.length === 1 && form.oppna[0] === 'avsnitt-la-yrkesgrupper' && form.nyckel >= 4 && form.lankrad === 0, `${form.antal} avsnitt, bara det första öppet, ${form.nyckel} med nyckeltal, ingen länkrad`);
     console.log(`    (fliken är ${form.skarmar} skärmhöjder med bara första avsnittet öppet)`);
-    await page.click('#avsnitt-la-bas > summary');
+    await page.evaluate(() => document.querySelector('.nav-item[data-tab="struktur"]').click());
+    await page.waitForTimeout(1200);
+    const bas = await page.evaluate(() => ({ huvud: Math.round(document.getElementById('la-oversikt').getBoundingClientRect().width), rader: document.querySelectorAll('#la-oversikt tbody tr').length,
+        grafik: document.querySelectorAll('#la-oversikt tbody svg.la-oversikt-grafik').length,
+        ryms: document.querySelector('#la-huvuddiagram .table-container').scrollWidth <= document.querySelector('#la-huvuddiagram .table-container').clientWidth + 1 }));
+    await page.click('#avsnitt-ls-bas > summary');
     await page.waitForTimeout(700);
+    const basUt = await page.evaluate(() => ({ huvud: Math.round(document.getElementById('la-oversikt').getBoundingClientRect().width), rader: document.querySelectorAll('#la-oversikt tbody tr').length,
+        grafik: document.querySelectorAll('#la-oversikt tbody svg.la-oversikt-grafik').length,
+        ryms: document.querySelector('#la-huvuddiagram .table-container').scrollWidth <= document.querySelector('#la-huvuddiagram .table-container').clientWidth + 1 }));
+    ok(basUt.huvud > 300 && basUt.rader > 0 && basUt.grafik === basUt.rader && basUt.ryms, `Lönestruktur: BAS-tabellen med grafik i varje rad, utan sidrullning (${basUt.rader} rader, ${basUt.huvud} px bred; ${bas.huvud} px innan avsnittet fälldes ut)`);
     ok(await page.evaluate(() => { const s = document.querySelector('#chart-skevhet-lador svg'); return !!s && s.getBoundingClientRect().width > 300 && document.querySelector('#la-oversikt tbody tr').getBoundingClientRect().height > 0; }),
         'ett avsnitt som fälls ut ritar sitt diagram i full bredd och visar sin tabell');
     await page.keyboard.press('Tab');
-    ok(await page.evaluate(() => { const s = document.querySelector('#avsnitt-la-kon > summary'); s.focus(); return document.activeElement === s; }), 'avsnittens rubriker går att nå med tangentbordet');
+    ok(await page.evaluate(() => { const s = document.querySelector('#avsnitt-ls-kon > summary'); s.focus(); return document.activeElement === s; }), 'avsnittens rubriker går att nå med tangentbordet');
     await page.keyboard.press('Enter');
     await page.waitForTimeout(300);
-    ok(await page.evaluate(() => document.getElementById('avsnitt-la-kon').open), 'Enter fäller ut avsnittet');
+    ok(await page.evaluate(() => document.getElementById('avsnitt-ls-kon').open), 'Enter fäller ut avsnittet');
 }
 
 console.log('\n── Ålder & karriär: ett urval för hela fliken ──');
@@ -931,7 +938,7 @@ console.log('\n── Tal står på en rad ──');
     }), sel);
     for (const bredd of [1440, 1100]) {
         await page.setViewportSize({ width: bredd, height: 900 });
-        await page.click('.nav-item[data-tab="matrix"]');
+        await page.click('.nav-item[data-tab="struktur"]');
         await page.evaluate(() => document.querySelectorAll('.view-panel details.avsnitt').forEach(d => { d.open = true; }));
         await page.waitForTimeout(300);
         const hero = await rader('.reg-hero .hero-number');
@@ -1104,7 +1111,7 @@ console.log('\n── Utskrift av den aktiva fliken (Ctrl+P) ──');
 {
     await page.click('.nav-item[data-tab="matrix"]');
     await page.waitForTimeout(300);
-    const stangda = await page.evaluate(() => [...document.querySelectorAll('#view-lika-yrken details.avsnitt, #view-skevhet details.avsnitt, #view-matrix details.avsnitt')].map(d => d.open));
+    const stangda = await page.evaluate(() => [...document.querySelectorAll('#view-lika-yrken details.avsnitt, #view-skevhet details.avsnitt, #view-regression details.avsnitt')].map(d => d.open));
     await page.evaluate(() => { document.querySelectorAll('.view-panel details.avsnitt').forEach(d => { d.open = false; }); window.dispatchEvent(new Event('beforeprint')); });
     await page.emulateMedia({ media: 'print' });
     const u = await page.evaluate(() => {
@@ -1132,7 +1139,7 @@ console.log('\n── Utskrift av den aktiva fliken (Ctrl+P) ──');
         'med PDF-knappen skrivs bara rapporten ut');
     await page.emulateMedia({ media: 'screen' });
     await page.evaluate(stangda => { document.body.classList.remove('print-mode');
-        [...document.querySelectorAll('#view-lika-yrken details.avsnitt, #view-skevhet details.avsnitt, #view-matrix details.avsnitt')].forEach((d, i) => { d.open = stangda[i]; }); }, stangda);
+        [...document.querySelectorAll('#view-lika-yrken details.avsnitt, #view-skevhet details.avsnitt, #view-regression details.avsnitt')].forEach((d, i) => { d.open = stangda[i]; }); }, stangda);
 }
 
 console.log('\n── Gruppdossier (modal) ──');
@@ -1361,13 +1368,13 @@ console.log('\n── Startsidan före inläsning, och de två lägena ──');
     await tom.goto('file://' + FIL);
     await tom.waitForTimeout(1200);
     const start = await tom.evaluate(() => { const syn = id => { const e = document.getElementById(id); return !!e && e.offsetParent !== null; };
-        return { dolda: ['ov-filrad', 'ov-fordjupning', 'avsnitt-ov-gap', 'sok-ruta'].filter(syn), komigang: syn('first-run-hint') && !!document.querySelector('#first-run-hint [data-go-to-tab="filer"]'), process: syn('avsnitt-ov-process') }; });
+        return { dolda: ['ov-filrad', 'ov-fordjupning', 'sok-ruta'].filter(syn), komigang: syn('first-run-hint') && !!document.querySelector('#first-run-hint [data-go-to-tab="filer"]'), process: syn('avsnitt-ov-process') }; });
     ok(start.dolda.length === 0 && start.komigang && start.process, `före inläsning visas Kom igång och processöversikten, inte lägesdelarna${start.dolda.length ? ' — syns: ' + start.dolda.join(', ') : ''}`);
     await tom.close();
 
     await page.evaluate(() => { document.querySelector('.nav-item[data-tab="matrix"]').click(); scrollTo(0, 0); });
     await page.waitForTimeout(800);
-    const hojd = () => page.evaluate(() => ({ sida: document.documentElement.scrollHeight, intro: document.querySelector('#view-lika-yrken .flik-intro, #view-matrix .flik-intro, .view-panel[style*="block"] .flik-intro').getBoundingClientRect().height,
+    const hojd = () => page.evaluate(() => ({ sida: document.documentElement.scrollHeight, intro: document.querySelector('#view-lika-yrken .flik-intro, #view-regression .flik-intro, .view-panel[style*="block"] .flik-intro').getBoundingClientRect().height,
         lasMer: [...document.querySelectorAll('.flik-intro-mer')].filter(e => e.offsetParent).length,
         under: [...document.querySelectorAll('.avsnitt-under')].filter(e => e.offsetParent).length, noter: [...document.querySelectorAll('.k-mask-note, .reg-caveat-inline, .diagramkort-forklaring')].filter(e => e.offsetParent).length,
         oppna: [...document.querySelectorAll('details.avsnitt')].filter(a => a.open).map(a => a.id).join(',') }));
@@ -1459,11 +1466,11 @@ console.log('\n── Smala skärmar: 1440×800, 768 och 390 punkter ──');
     ok(await s.evaluate(() => getComputedStyle(document.querySelector('.sidebar')).visibility === 'hidden' && document.activeElement.id === 'btn-meny'), '390 punkter: Escape stänger menyn och fokus går tillbaka till knappen');
     await s.click('#btn-meny');
     await s.waitForTimeout(300);
-    await s.click('.nav-item[data-tab="matrix"]');
+    await s.click('.nav-item[data-tab="struktur"]');
     await s.waitForTimeout(900);
-    ok(await s.evaluate(() => getComputedStyle(document.querySelector('.sidebar')).visibility === 'hidden' && document.getElementById('view-matrix').style.display === 'block'), '390 punkter: ett val i menyn byter flik och stänger menyn');
+    ok(await s.evaluate(() => getComputedStyle(document.querySelector('.sidebar')).visibility === 'hidden' && document.getElementById('view-regression').style.display === 'block'), '390 punkter: ett val i menyn byter flik och stänger menyn');
     // Diagrammen ritar för den bredd de får: huvuddiagrammet ska fylla kortet och ha läsbar text.
-    const dia = await s.evaluate(() => { const svg = document.querySelector('#view-matrix svg[role="group"], #view-matrix svg[role="img"]');
+    const dia = await s.evaluate(() => { const svg = document.querySelector('#view-regression svg[role="group"], #view-regression svg[role="img"]');
         if (!svg) return null; const r = svg.getBoundingClientRect(); const txt = [...svg.querySelectorAll('text')].map(t => t.getBoundingClientRect().height).filter(h => h > 0);
         return { bredd: Math.round(r.width), ryms: r.right <= innerWidth + 1, minst: txt.length ? Math.min(...txt) : 0 }; });
     ok(dia && dia.bredd >= 280 && dia.ryms && dia.minst >= 9, `390 punkter: huvuddiagrammet ryms och texten går att läsa (${dia ? `${dia.bredd} punkter brett, minsta text ${dia.minst.toFixed(1)}` : 'inget diagram'})`);

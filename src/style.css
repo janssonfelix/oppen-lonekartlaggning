@@ -2873,8 +2873,7 @@ body.forhandsvisning .content-body { outline: 3px dashed var(--status-varning); 
 /* ---- Översikt efter inläsning ----
    Före inläsning visar sidan Kom igång och processen. Efter inläsning (klassen har-data) visas läget: filraden,
    nyckeltalen, Att göra och processen. Filerna står i Filer och kvalitet. */
-#view-dashboard:not(.har-data) .flik-intro-rad, #view-dashboard:not(.har-data) #ov-intro, #view-dashboard:not(.har-data) #ov-filrad, #view-dashboard:not(.har-data) #ov-fordjupning,
-#view-dashboard:not(.har-data) #avsnitt-ov-gap { display: none; }
+#view-dashboard:not(.har-data) .flik-intro-rad, #view-dashboard:not(.har-data) #ov-intro, #view-dashboard:not(.har-data) #ov-filrad, #view-dashboard:not(.har-data) #ov-fordjupning { display: none; }
 .ov-filrad .btn { margin-left: auto; }
 .ov-filrad-lank { background: none; border: 0; padding: 0; font: inherit; color: var(--primary, #1d4ed8); text-decoration: underline; cursor: pointer; }
 .ov-filrad-lank:focus-visible { outline: 2px solid var(--primary, #1d4ed8); outline-offset: 2px; border-radius: 2px; }

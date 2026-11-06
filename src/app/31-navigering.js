@@ -43,7 +43,7 @@ document.querySelectorAll(".nav-item").forEach(btn => {
             bestammelser: 'Regler & praxis',
             handlingsplan: 'Handlingsplan',
             prioritering: 'Prioritering',
-            struktur: 'Struktur & rapportmått',
+            struktur: 'Lönestruktur',
             loneoversyn: 'Löneöversyn',
             likvardighet: 'Likvärdigt arbete',
             utforska: 'Utforska',
@@ -61,13 +61,14 @@ document.querySelectorAll(".nav-item").forEach(btn => {
 // Sammanslagna flikar: en nav-knapp kan visa/rendera flera view-paneler.
 // Panelerna ligger redan i rätt DOM-ordning (skevhet före matrix, kon före livscykel).
 const PANEL_GROUPS = {
-    matrix:      ['lika-yrken', 'skevhet', 'matrix'], // Lika arbete: yrkesgrupper → per BAS → justerat (regression/Oaxaca)
+    matrix:      ['lika-yrken'],                       // Lika arbete: yrkesgrupperna, personer att granska, AID × BAS
+    struktur:    ['struktur', 'skevhet', 'regression'], // Lönestruktur: fördelning, BAS-skevhet, vad som blir kvar (regression/Oaxaca)
     kon:         ['kon', 'demografi', 'livscykel'],  // Ålder & karriär: kurvor per kön, demografi, gap över karriären
     utforska:    ['rapport', 'utforska'],            // Utforska: Löneöversikten (fast tabell) + egna vyer
     dokumentera: ['kvalitet', 'dokumentera']         // Dokumentera & exportera: färdigcheck + export + spara och läsa in arbetet
 };
 // Flikalias: namnen leds om till fliken som visar innehållet, så att inga länkar dör.
-const TAB_ALIAS = { rapport: 'utforska', demografi: 'kon', kvalitet: 'dokumentera', lonepolitik: 'benchmark' };
+const TAB_ALIAS = { rapport: 'utforska', demografi: 'kon', kvalitet: 'dokumentera', lonepolitik: 'benchmark', skevhet: 'struktur', regression: 'struktur' };
 function tabMal(namn) { return TAB_ALIAS[namn] || namn; }
 function unlockTabs() {
     ['tab-kon','tab-matrix','tab-prioritering','tab-loneoversyn','tab-struktur','tab-likvardighet','tab-utforska'].forEach(id => {
@@ -129,9 +130,9 @@ function _renderTabContent(target) {
         const s2 = document.getElementById("bas-select-demo"); if (s2) renderDemografi(/** @type {HTMLInputElement} */ (s2).value);
     }
     else if (target === "benchmark"    && d.length) { renderReferensOverblick(); renderLonepolitik(); generateBenchmark(); }
-    else if (target === "matrix"       && d.length) { generateSkevhet(); generateEUDirectiveMatrix(); renderPersonerAttGranska(); renderAidBasLika(); renderLikaArbeteTopp(); }
+    else if (target === "matrix"       && d.length) { generateEUDirectiveMatrix(); renderPersonerAttGranska(); renderAidBasLika(); renderLikaArbeteTopp(); }
     else if (target === "prioritering" && d.length) renderPrioritering();
-    else if (target === "struktur"     && d.length) renderStructure();
+    else if (target === "struktur"     && d.length) { renderStructure(); generateSkevhet(); renderBlinderOaxacaCard(renderRegressionCard()); renderGapUppdelning(); renderLonestrukturNycklar(); }
     else if (target === "loneoversyn"  && d.length) renderForecast();
     else if (target === "likvardighet" && (d.length || state.statistik.length)) { renderLikvardighet(); renderAidBasLikvardigt(); }
     else if (target === "utforska"     && d.length) { generateRapport(); renderExplorer(); }
@@ -153,7 +154,7 @@ function _renderTabContent(target) {
 const FLOW_NEXT = {
     bestammelser: { tab: 'matrix',        label: 'Lika arbete' },
     matrix:       { tab: 'likvardighet',  label: 'Likvärdigt arbete' },
-    likvardighet: { tab: 'struktur',      label: 'Struktur & rapportmått' },
+    likvardighet: { tab: 'struktur',      label: 'Lönestruktur' },
     struktur:     { tab: 'prioritering',  label: 'Prioritering' },
     prioritering: { tab: 'loneoversyn',   label: 'Löneöversyn' },
     loneoversyn:  { tab: 'handlingsplan', label: 'Handlingsplan' },

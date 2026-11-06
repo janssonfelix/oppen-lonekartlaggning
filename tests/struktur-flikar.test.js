@@ -40,3 +40,32 @@ describe('Uppgift 1: kolumnmappningen', () => {
         expect(d.getElementById('view-filer').contains(d.getElementById('column-map-panel'))).toBe(true);
     });
 });
+
+describe('Uppgift 2: Lönestruktur', () => {
+    it('Lönestruktur visar struktur, BAS-skevhet, regression och gapuppdelningen; Lika arbete bara yrkesgrupperna', () => {
+        const w = createAppWindow(); w.__loadDemoData();
+        const d = w.document, synlig = id => d.getElementById(id).style.display === 'block';
+        d.querySelector('.nav-item[data-tab="struktur"]').click();
+        expect(synlig('view-struktur') && synlig('view-skevhet') && synlig('view-regression')).toBe(true);
+        expect(d.getElementById('view-struktur').contains(d.getElementById('gap-uppdelning'))).toBe(true);
+        expect(d.getElementById('view-regression').querySelector('[data-audit-id="skevhet"]')).toBeTruthy();
+        expect(d.getElementById('regression-card').children.length).toBeGreaterThan(0);
+        d.querySelector('.nav-item[data-tab="matrix"]').click();
+        expect(synlig('view-lika-yrken')).toBe(true);
+        expect(synlig('view-skevhet') || synlig('view-regression')).toBe(false);
+        expect(d.getElementById('view-lika-yrken').querySelector('[data-audit-id="matrix"]')).toBeTruthy();
+        expect(d.getElementById('view-dashboard').contains(d.getElementById('gap-uppdelning'))).toBe(false);
+    });
+    it('rapportmodellens BAS-bilder ritas av Lönestruktur', () => {
+        const w = createAppWindow();
+        for (const id of ['chart-skevhet-overview', 'chart-skevhet-andel', 'chart-perbas-gap'])
+            expect(w.eval('RM_DIAGRAM').find(r => r.id === id).flik, id).toBe('struktur');
+    });
+    it('navigateTo("skevhet") och navigateTo("regression") öppnar Lönestruktur', () => {
+        const w = createAppWindow(); w.__loadDemoData();
+        for (const alias of ['skevhet', 'regression']) {
+            w.eval(`navigateTo('${alias}')`);
+            expect(w.document.querySelector('.nav-item.active').getAttribute('data-tab'), alias).toBe('struktur');
+        }
+    });
+});

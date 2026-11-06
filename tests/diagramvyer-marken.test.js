@@ -58,12 +58,12 @@ describe('Lika arbete: trappan, gapet längs lönefördelningen och hanteln per 
         const w2 = createAppWindow();
         w2.__state.data = [...Array.from({ length: 40 }, (_, i) => rad('kvinna', i, i % 2 ? 'A' : 'B')), ...Array.from({ length: 3 }, (_, i) => rad('man', i, 'A'))];
         w2.eval('populateSelects(); unlockTabs();');
-        w2.__renderTabContent('matrix');
+        w2.__renderTabContent('struktur');
         expect(w2.document.getElementById('chart-reg-trappa')).toBeNull();
         const w3 = createAppWindow();
         w3.__state.data = [...Array.from({ length: 40 }, (_, i) => rad('kvinna', i, i % 2 ? 'A' : 'B')), ...Array.from({ length: 40 }, (_, i) => rad('man', i, i % 3 ? 'A' : 'B'))];
         w3.eval('populateSelects(); unlockTabs();');
-        w3.__renderTabContent('matrix');
+        w3.__renderTabContent('struktur');
         const el = w3.document.getElementById('chart-reg-trappa');
         expect(el && el._figur).toBeTruthy();
         expect(el._figur.x.ordning[0]).toBe('Ojusterat gap');
@@ -480,7 +480,7 @@ describe('andelsstaplar: könsfördelning, ålderspyramid och avvikelse från f�
         expect(f.x.doman).toEqual([0, 100]);
         expect(() => valideraFigur(f, 't')).not.toThrow();
         const w2 = oppna();
-        w2.__renderTabContent('matrix');
+        w2.__renderTabContent('struktur');
         const el = w2.document.getElementById('chart-skevhet-andel');
         const tabell = [...w2.document.querySelectorAll('#skevhet-table tbody tr')].map(tr => ['BAS ' + tr.cells[0].textContent.trim(), parseFloat(tr.cells[2].textContent)]);
         expect(el._figur.lager[0].data.map(d => [d.y, d.x])).toEqual(tabell);
@@ -740,7 +740,7 @@ describe('Lönefördelningen per BAS-intervall (figuren och Lika arbetes lådor)
         w2.__state.kLage = 'export';   // så som det lämnar verktyget (ADR-51)
         w2.__state.data = data();
         w2.eval('populateSelects(); unlockTabs();');
-        w2.__renderTabContent('matrix');
+        w2.__renderTabContent('struktur');
         const d = w2.document, el = d.getElementById('chart-skevhet-lador');
         expect(el.querySelectorAll('[data-marke="lada"]').length).toBe(3);               // A kvinnor, A män, B män
         expect(d.getElementById('skevhet-lador-not').textContent).toMatch(/BAS B \(kvinnor\), BAS S \(män\)/);
@@ -1202,9 +1202,9 @@ describe('Lika arbete — urval, slutsatser och avsnittens nyckeltal', () => {
         expect(kort[3][1]).toBe(String(d.querySelectorAll('#pag-tabell tbody tr').length));
         expect(t(d.getElementById('la-urval').textContent)).toMatch(/Hela urvalet · 260 personer.*Minsta gruppstorlek 10/);
         expect(t(d.getElementById('nyckel-la-yrkesgrupper').textContent)).toMatch(new RegExp(`^${granska} att granska`));
-        expect(t(d.getElementById('nyckel-la-bas').textContent)).toMatch(/^\d+ av \d+ över 5 %$/);
-        expect(t(d.getElementById('nyckel-la-kon').textContent)).toMatch(/^\d+ av \d+ ojämna$/);
-        expect(t(d.getElementById('nyckel-la-regression').textContent)).toMatch(/% efter ålder och nivå$/);
+        expect(t(d.getElementById('nyckel-ls-bas').textContent)).toMatch(/^\d+ av \d+ över 5 %$/);
+        expect(t(d.getElementById('nyckel-ls-kon').textContent)).toMatch(/^\d+ av \d+ ojämna$/);
+        expect(t(d.getElementById('nyckel-ls-regression').textContent)).toMatch(/% efter ålder och nivå$/);
         // Huvudvyn — översiktstabellen — ligger i toppen, i mallen för diagramkort.
         const kortet = d.getElementById('la-oversikt').closest('.diagramkort');
         expect(kortet.id).toBe('la-huvuddiagram');

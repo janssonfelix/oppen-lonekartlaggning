@@ -12,7 +12,6 @@ function setCompCard(id, count, total, valueText, cardState) {
 }
 
 function updateCompliance() {
-    renderGapUppdelning();
     const overview = document.getElementById('compliance-overview');
     if (!overview || !getData().length) return;
     overview.style.display = 'block';

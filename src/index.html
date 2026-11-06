@@ -80,9 +80,9 @@
                     <span class="nav-etikett">Likvärdigt arbete</span>
                     <svg class="ikon nav-las" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
                 </button>
-                <button class="nav-item" data-tip="Strukturella orsaker till gapet, och de mått en större arbetsgivare ska kunna redovisa enligt EU 2023/970 art. 9." data-tab="struktur" id="tab-struktur" aria-disabled="true" title="Ladda upp strukturdata för att aktivera" aria-controls="view-struktur">
+                <button class="nav-item" data-tip="Varför sitter gapet där det sitter: fördelning mellan nivåer, lön inom nivåer, vad som blir kvar när ålder och nivå räknats bort, och EU-direktivets rapportmått." data-tab="struktur" id="tab-struktur" aria-disabled="true" title="Ladda upp strukturdata för att aktivera" aria-controls="view-struktur">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 3v18h18"></path><rect x="7" y="12" width="3" height="6"></rect><rect x="12" y="8" width="3" height="10"></rect><rect x="17" y="4" width="3" height="14"></rect></svg>
-                    <span class="nav-etikett">Struktur &amp; rapportmått</span>
+                    <span class="nav-etikett">Lönestruktur</span>
                     <svg class="ikon nav-las" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
                 </button>
                 <div class="nav-group" role="presentation" aria-hidden="true">3 · Åtgärda</div>
@@ -239,7 +239,7 @@
                                     </div>
                                     <div class="comp-value" id="comp-gap-val">Beräknar...</div>
                                     <div class="comp-sub">EU 2023/970 – tröskel för obligatorisk utredning</div>
-                                    <a href="#" class="comp-lank" data-go-to-tab="matrix" data-go-to-anchor="avsnitt-la-bas" aria-label="Visa lönegap per BAS-intervall i Lika arbete">Visa</a>
+                                    <a href="#" class="comp-lank" data-go-to-tab="struktur" data-go-to-anchor="avsnitt-ls-bas" aria-label="Visa lönegap per BAS-intervall i Lönestruktur">Visa</a>
                                 </div>
                             </div>
                             <div class="compliance-card na" id="comp-skev">
@@ -250,7 +250,7 @@
                                     </div>
                                     <div class="comp-value" id="comp-skev-val">Beräknar...</div>
                                     <div class="comp-sub">Diskrimineringslagen – påverkar jämförbarheten</div>
-                                    <a href="#" class="comp-lank" data-go-to-tab="matrix" data-go-to-anchor="avsnitt-la-kon" aria-label="Visa könsskevhet i Lika arbete">Visa</a>
+                                    <a href="#" class="comp-lank" data-go-to-tab="struktur" data-go-to-anchor="avsnitt-ls-kon" aria-label="Visa könsskevhet i Lönestruktur">Visa</a>
                                 </div>
                             </div>
                             <div class="compliance-card na" id="comp-pol">
@@ -293,14 +293,6 @@
                     <!-- Underlagets kvalitet (ADR-19): fem kriterier, svagaste länken avgör -->
 
 
-                    <!-- Var uppstår löneskillnaden? (ADR-22) -->
-                    <details class="avsnitt" id="avsnitt-ov-gap">
-                    <summary><span class="avsnitt-titel"><h2>Var uppstår löneskillnaden?</h2> <span class="info-tip" data-tooltip="Skillnaden i medellön delas i tre delar som tillsammans blir hela skillnaden: hur kvinnor och män är fördelade över BAS, över AID inom samma BAS, och lön inom samma AID och BAS. Varje del mäts symmetriskt, utan att något kön är referens."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><span class="avsnitt-under">Fördelning över nivåer, över yrken, eller lön inom samma arbete</span></span><span class="avsnitt-nyckel" id="nyckel-ov-gap"></span></summary>
-                    <section id="gap-uppdelning" class="card gu-kort" aria-labelledby="gap-uppdelning-rubrik" hidden>
-                        <h2 id="gap-uppdelning-rubrik" hidden>Var uppstår löneskillnaden?</h2>
-                        <div id="gap-uppdelning-innehall"></div>
-                    </section>
-                    </details>
 
 
                 </div>
@@ -592,6 +584,13 @@
                         <div id="chart-sektorer"></div>
                     </div>
                     </details>
+                    <details class="avsnitt" id="avsnitt-ov-gap">
+                    <summary><span class="avsnitt-titel"><h2>Var uppstår löneskillnaden?</h2> <span class="info-tip" data-tooltip="Skillnaden i medellön delas i tre delar som tillsammans blir hela skillnaden: hur kvinnor och män är fördelade över BAS, över AID inom samma BAS, och lön inom samma AID och BAS. Varje del mäts symmetriskt, utan att något kön är referens."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><span class="avsnitt-under">Fördelning över nivåer, över yrken, eller lön inom samma arbete</span></span><span class="avsnitt-nyckel" id="nyckel-ov-gap"></span></summary>
+                    <section id="gap-uppdelning" class="card gu-kort" aria-labelledby="gap-uppdelning-rubrik" hidden>
+                        <h2 id="gap-uppdelning-rubrik" hidden>Var uppstår löneskillnaden?</h2>
+                        <div id="gap-uppdelning-innehall"></div>
+                    </section>
+                    </details>
                     <details class="avsnitt" id="avsnitt-st-eu">
                     <summary><span class="avsnitt-titel"><h2>EU 2023/970 — lönerapportmått</h2><span class="avsnitt-under">Måtten en större arbetsgivare ska kunna redovisa</span></span><span class="avsnitt-nyckel" id="nyckel-st-eu"></span></summary>
                     <div class="card">
@@ -624,7 +623,124 @@
                             <p>Det aggregerade <strong>könslönegapet</strong> (skillnaden i kvinnors och mäns genomsnittslöner i samhället) är inte samma sak som löneskillnader på er arbetsplats. En stor del av det aggregerade gapet förklaras av att arbetsmarknaden är <strong>könsuppdelad</strong> — kvinnor och män arbetar i stor utsträckning i olika yrken och sektorer med olika lönenivåer.</p>
                             <p>Enligt Medlingsinstitutet återstod 2024 ett <em>oförklarat</em> lönegap på <strong>4,6 %</strong> på samhällsnivå — den del av den totala löneskillnaden (10,2 %) som kvarstår efter standardvägning för yrke, ålder, utbildning och arbetstid. Medlingsinstitutet betonar att detta är oförklarat <em>i statistisk mening</em> och <strong>inte ett mått på diskriminering</strong>. Det säger heller <strong>inget</strong> om huruvida kvinnor och män som utför samma eller likvärdigt arbete på <em>er</em> arbetsplats har olika lön — det är det lönekartläggningen handlar om.</p>
                             <p>Diagrammen nedan visar er egen struktur: hur könsfördelningen ser ut mellan nivåer och var i lönefördelningen eventuella skillnader sitter. Det hjälper er förstå <strong>varför</strong> ett gap uppstår — vilket ofta är en strukturell orsak (segregering), inte nödvändigtvis en osaklig löneskillnad inom lika arbete.</p>
+                            <h3>Oförklarat gap är inte samma sak som osakligt gap</h3>
+                            <p>Regressionen beräknar ett <strong>oförklarat</strong> lönegap genom att kontrollera för de faktorer vi har data om — kön, ålder och BAS-intervall. Att en skillnad är "oförklarad" betyder bara att den <strong>inte fångas av dessa variabler</strong> — inte att den beror på kön eller utgör diskriminering.</p>
+                            <p>Lön påverkas av många faktorer som statistiken inte mäter: arbetsuppgifternas svårighetsgrad, ansvar, dokumenterad erfarenhet, prestation, marknadsläge och individuell lönesättning. En oförklarad skillnad kan därför ha helt <strong>sakliga, könsneutrala</strong> förklaringar (Diskrimineringslagen 3:8).</p>
+                            <p>Diskrimineringslagen talar om <strong>osakliga</strong> löneskillnader — skillnader mellan kvinnor och män som utför lika eller likvärdigt arbete och som <em>inte</em> kan motiveras med könsneutrala kriterier. Den bedömningen är <strong>kvalitativ och görs av er</strong>, inte av statistiken. <strong>Oförklarat ≠ osakligt:</strong> det oförklarade gapet är en signal om <em>var ni bör titta närmare</em>, inte ett bevis. Att blanda ihop begreppen riskerar felaktiga slutsatser.</p>
                         </div>
+                    </details>
+                    </details>
+                </div>
+
+                <!-- Lönestruktur fortsätter: BAS-skevheten och regressionen (visas ihop med view-struktur) -->
+                <div id="view-skevhet" class="view-panel dold">
+                    
+                    
+
+                    <details class="card avsnitt" id="avsnitt-ls-bas">
+                        <summary><span class="avsnitt-titel"><h2>Lönegap per BAS-intervall</h2><span class="avsnitt-under">Var i organisationen är skillnaden störst?</span></span><span class="avsnitt-nyckel" id="nyckel-ls-bas"></span></summary>
+                        <p class="avsnitt-inledning">En rad per nivå: kvinnors och mäns medianlön, skillnaden och kvoten. Använd den för att se var i organisationen du bör titta närmare — stora skillnader i små grupper kan vara slump, små skillnader i stora grupper sällan.</p>
+                        <div class="diagramkort" id="la-huvuddiagram">
+                            <h3 class="diagramkort-rubrik">Kvinnors och mäns lön per BAS-intervall</h3>
+                            <p class="diagramkort-forklaring">En rad per BAS-intervall där båda könen når minsta gruppstorlek. Punkten visar kvinnors medianlön i procent av mäns, och strecket det 95-procentiga konfidensintervallet. Linjen är lika lön (100 %) och det skuggade fältet 95–105 % (EU-direktivets utredningströskel). Når strecket fram till linjen kan skillnaden bero på slumpen.</p>
+                            <div class="table-container">
+                                <table id="la-oversikt" class="data-table la-oversikt">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col">BAS-intervall</th>
+                                            <th scope="col" class="tal" data-export-label="Antal personer (kvinnor/män)">Kvinnor / män</th>
+                                            <th scope="col" class="tal" data-export-label="Median kvinnor (kr/mån)">Median kvinnor</th>
+                                            <th scope="col" class="tal" data-export-label="Median män (kr/mån)">Median män</th>
+                                            <th scope="col" class="tal" data-export-label="Skillnad, kvinnor minus män (kr/mån)">Skillnad</th>
+                                            <th scope="col" class="la-oversikt-skala" data-export-skip data-export-utelamna data-no-sort id="la-oversikt-skala"></th>
+                                            <th scope="col" class="tal" data-export-label="Kvinnors median i % av männens (100 % = lika lön)">Kvinnors lön i % av mäns</th>
+                                            <th scope="col" data-export-label="Status">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                            <div id="la-oversikt-not"></div>
+                        </div>
+                        <div class="diagramkort">
+                            <h3 class="diagramkort-rubrik">Lönespridning per BAS-intervall och kön</h3>
+                            <p class="diagramkort-forklaring">Lådan är mittersta hälften av lönerna, strecket i lådan medianen. Överlappar kvinnors och mäns lådor ligger könen på samma nivå i intervallet; ligger de isär gäller skillnaden de flesta, inte bara medianen.</p>
+                            <div id="chart-skevhet-lador"></div>
+                            <p id="skevhet-lador-not" class="k-mask-note" hidden></p>
+                        </div>
+                        <!-- Exportkopian: samma kvot som tabellen ovan, som bild och som enkel tabell. Visas inte på skärmen (tabellen
+                             ovan säger samma sak), men rapporten, ZIP-filen, Excel-bladet Lonegap och PDF-bilagan läser härifrån.
+                             Innehållet är inte indraget: PDF-bilagan kopierar tabellens HTML med blanktecknen. -->
+                        <div id="la-bas-exportkopia" hidden>
+                        <div class="diagramkort">
+                            <h3 class="diagramkort-rubrik">Kvinnors medianlön i procent av mäns, per BAS-intervall</h3>
+                            <p class="diagramkort-forklaring">Samma kvot som i tabellen, som bild: punkten är kvinnors median i procent av männens, strecket det 95-procentiga konfidensintervallet.</p>
+                            <div id="chart-skevhet-overview"></div>
+                        </div>
+                        <div class="card-header">
+                        
+                            <p class="text-dampad-sm lh-1_55 marg-t-4">Tabellen visar BAS-intervall där medianlönen mellan kvinnor och män skiljer sig mer än 5%. Procentvärdet anger kvinnors lön som andel av männens (100% = lika lön, 95% = kvinnor tjänar 5% mindre). Enligt EU:s lönetransparensdirektiv (2023/970) kan dessa grupper kräva en <em>gemensam lönebedömning</em> om skillnaderna inte kan förklaras med sakliga skäl.</p>
+                        </div>
+                        <div class="table-container">
+                            <table id="paygap-table" class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th scope="col" data-export-label="BAS-intervall">BAS-intervall</th>
+                                        <th scope="col" data-export-label="Antal personer (kvinnor/män)">Antal (Kv/Mä) <span class="info-tip" data-k-tooltip="Antal personer som löneberäkningen för denna BAS baseras på, uppdelat per kön. Är ett kön färre än {k} visas BAS-intervallets samlade median i stället; är hela intervallet under {k} utelämnas raden och namnges i noten under tabellen (k-anonymitet)."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span></th>
+                                        <th scope="col" data-export-label="Kvinnors median i % av männens (100% = lika lön)">Kvinna % av Man</th>
+                                        <th scope="col" data-export-label="Median Kvinna (kr/mån)">Median Kvinna</th>
+                                        <th scope="col" data-export-label="Median Man (kr/mån)">Median Man</th>
+                                        <th scope="col" data-export-skip title="Öppnar bevis-popup med formel och ingångsdata för denna BAS-rad.">Bevis</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                        </div>
+                    </details>
+
+                    <details class="card avsnitt" id="avsnitt-ls-kon">
+                        <summary><span class="avsnitt-titel"><h2>Könsfördelning per BAS-intervall</h2><span class="avsnitt-under">Var ett kön är under 40 %</span></span><span class="avsnitt-nyckel" id="nyckel-ls-kon"></span></summary>
+                        <div class="card-header">
+                            <span class="avsnitt-verktyg-rubrik">Sök i tabellen</span>
+                            <input type="text" id="search-skevhet" class="form-select bredd-200" placeholder="Sök BAS-intervall..." aria-label="Sök i tabellen">
+                        </div>
+                        <p class="text-dampad-sm lh-1_55 marg-b-12"><strong>Jämn könsfördelning</strong> = båda könen utgör minst 40 % av gruppen. Tabellen visar BAS-intervall där ett kön ligger under 40-procentströskeln (könsdominerade grupper). I sådana grupper kan lönejämförelser mellan könen bli statistiskt svårtolkade — ett enskilt utfall kan dra hela snittet. Identifiering är central i lönekartläggningen.</p>
+                        <div id="chart-skevhet-andel" class="marg-b-12"></div>
+                        <div class="table-container">
+                            <table id="skevhet-table" class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th scope="col" data-export-label="BAS-intervall">BAS-intervall</th>
+                                        <th scope="col" data-export-label="Totalt antal personer">Totalt N</th>
+                                        <th scope="col" data-export-label="Andel kvinnor (%)">Kvinnor (%)</th>
+                                        <th scope="col" data-export-label="Andel män (%)">Män (%)</th>
+                                        <th scope="col" data-export-label="Underrepresenterat kön (om < 10% av gruppen)">Underrep. Kön</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </details>
+                    
+                </div>
+
+                <div id="view-regression" class="view-panel dold">
+                    <details class="avsnitt" id="avsnitt-ls-regression">
+                        <summary><span class="avsnitt-titel"><h2>Vad blir kvar av lönegapet?</h2><span class="avsnitt-under" data-fm-rubrik>När ålder och nivå räknats bort, steg för steg</span></span><span class="avsnitt-nyckel" id="nyckel-ls-regression"></span></summary>
+                        <p class="avsnitt-inledning"><span class="info-tip" data-tooltip="Metod: OLS-regression med robusta standardfel, samt Blinder-Oaxaca-uppdelning i förklarad och oförklarad del. Protokollet för gemensam lönebedömning (Dokumentera) stödjer samverkan enligt EU 2023/970 art. 10."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
+                        Panelen ovan visar den råa skillnaden. <span data-fm-inledning>Här rensas effekten av att kvinnor och män har olika ålder och arbetar på olika nivåer bort. Det som återstår kan <em>inte</em> förklaras av de faktorerna.</span> Observera att "oförklarat" inte betyder "osakligt" — det betyder att det är här ni bör titta närmare.</p>
+                    
+                    <div id="forklaringsmodell-panel" class="marg-b-24"></div>
+                    <div id="regression-card" class="marg-b-24"></div>
+                    <div id="blinder-oaxaca-card" class="marg-b-24"></div>
+
+                </details>
+                    <details class="card avsnitt" id="avsnitt-sr-metod">
+                        <summary><span class="avsnitt-titel"><h2>Så räknas det</h2><span class="avsnitt-under">Beräkning och urval för BAS-skevheten</span></span><span class="avsnitt-nyckel" id="nyckel-sr-metod"></span></summary>
+                        <details class="audit-panel" data-audit-id="skevhet">
+                        <summary>Beräkning &amp; urval för denna analys</summary>
+                        <div class="audit-content"><em class="f-dampad">Laddar...</em></div>
                     </details>
                     </details>
                 </div>
@@ -927,7 +1043,7 @@
                             <ul>
                                 <li>Jämför nyckeltalen <em>Kvinnors lön i % av mäns</em> och <em>Vid samma ålder</em>. Krymper skillnaden vid samma ålder beror en del på att könen har olika åldersfördelning.</li>
                                 <li><em>Lön per levnadsår</em> visar om lönen stiger lika mycket med åldern för kvinnor och män. Skiljer sig talen tydligt värderas erfarenhet olika — ett skäl att granska lönekriterierna.</li>
-                                <li>Vad BAS-intervall och yrkesgrupp förklarar står i Lika arbete; den här fliken räknar bara bort åldern.</li>
+                                <li>Vad BAS-intervall och yrkesgrupp förklarar står i Lönestruktur; den här fliken räknar bara bort åldern.</li>
                             </ul>
                             <h3>Hitta var i karriären skillnaden finns</h3>
                             <ul>
@@ -1097,99 +1213,48 @@
                         <p class="avsnitt-inledning">Lagen kräver att löneskillnader i lika arbete analyseras också när gruppen är liten. Här står grupperna utan löner, med två kolumner att fylla i när analysen är gjord. Fyll i kolumnerna i Excel-filen.</p>
                         <div id="aidbas-individ"></div>
                     </details>
-                </div>
-
-                <div id="view-skevhet" class="view-panel dold">
-                    
-                    
-
-                    <details class="card avsnitt" id="avsnitt-la-bas">
-                        <summary><span class="avsnitt-titel"><h2>Lönegap per BAS-intervall</h2><span class="avsnitt-under">Var i organisationen är skillnaden störst?</span></span><span class="avsnitt-nyckel" id="nyckel-la-bas"></span></summary>
-                        <p class="avsnitt-inledning">En rad per nivå: kvinnors och mäns medianlön, skillnaden och kvoten. Använd den för att se var i organisationen du bör titta närmare — stora skillnader i små grupper kan vara slump, små skillnader i stora grupper sällan.</p>
-                        <div class="diagramkort" id="la-huvuddiagram">
-                            <h3 class="diagramkort-rubrik">Kvinnors och mäns lön per BAS-intervall</h3>
-                            <p class="diagramkort-forklaring">En rad per BAS-intervall där båda könen når minsta gruppstorlek. Punkten visar kvinnors medianlön i procent av mäns, och strecket det 95-procentiga konfidensintervallet. Linjen är lika lön (100 %) och det skuggade fältet 95–105 % (EU-direktivets utredningströskel). Når strecket fram till linjen kan skillnaden bero på slumpen.</p>
-                            <div class="table-container">
-                                <table id="la-oversikt" class="data-table la-oversikt">
-                                    <thead>
-                                        <tr>
-                                            <th scope="col">BAS-intervall</th>
-                                            <th scope="col" class="tal" data-export-label="Antal personer (kvinnor/män)">Kvinnor / män</th>
-                                            <th scope="col" class="tal" data-export-label="Median kvinnor (kr/mån)">Median kvinnor</th>
-                                            <th scope="col" class="tal" data-export-label="Median män (kr/mån)">Median män</th>
-                                            <th scope="col" class="tal" data-export-label="Skillnad, kvinnor minus män (kr/mån)">Skillnad</th>
-                                            <th scope="col" class="la-oversikt-skala" data-export-skip data-export-utelamna data-no-sort id="la-oversikt-skala"></th>
-                                            <th scope="col" class="tal" data-export-label="Kvinnors median i % av männens (100 % = lika lön)">Kvinnors lön i % av mäns</th>
-                                            <th scope="col" data-export-label="Status">Status</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody></tbody>
-                                </table>
+                    <details class="card avsnitt" id="avsnitt-la-metod">
+                        <summary><span class="avsnitt-titel"><h2>Så räknas det</h2><span class="avsnitt-under">Metod, begrepp, urval och hur fliken används</span></span><span class="avsnitt-nyckel" id="nyckel-la-metod"></span></summary>
+                        <p id="la-aid-bakgrund" class="la-aid-not"><strong>Om AID-grupperna:</strong> AID är SKR:s och de fackliga organisationernas gemensamma indelning av arbetsuppgifter i ”rimligt homogena” grupper för lönestatistik. AID är inte ett arbetsvärderingssystem och är inte avsett att avgöra vilka arbeten som är lika eller likvärdiga. Verktygets AID-grupper är därför en utgångspunkt för lika arbete, som ni bekräftar; för likvärdigt arbete kompletterar BAS-intervallen eller en egen arbetsvärdering. Källa: SKR, Arbetsidentifikation (AID) — Handbok för kodning (2020).</p>
+                        <div class="notis-varning farg-varning fs-xs lh-1_5 marg-t-10 pad-10-14">
+                                <strong>OBS:</strong> Verktyget identifierar statistiska avvikelser i rådata. Bedömning av om en löneskillnad är <em>osaklig</em> behöver kompletterande granskning av sakliga skäl (t.ex. erfarenhet, prestation, marknadslön). Resultaten utgör underlag – inte juridiska slutsatser.
                             </div>
-                            <div id="la-oversikt-not"></div>
-                        </div>
-                        <div class="diagramkort">
-                            <h3 class="diagramkort-rubrik">Lönespridning per BAS-intervall och kön</h3>
-                            <p class="diagramkort-forklaring">Lådan är mittersta hälften av lönerna, strecket i lådan medianen. Överlappar kvinnors och mäns lådor ligger könen på samma nivå i intervallet; ligger de isär gäller skillnaden de flesta, inte bara medianen.</p>
-                            <div id="chart-skevhet-lador"></div>
-                            <p id="skevhet-lador-not" class="k-mask-note" hidden></p>
-                        </div>
-                        <!-- Exportkopian: samma kvot som tabellen ovan, som bild och som enkel tabell. Visas inte på skärmen (tabellen
-                             ovan säger samma sak), men rapporten, ZIP-filen, Excel-bladet Lonegap och PDF-bilagan läser härifrån.
-                             Innehållet är inte indraget: PDF-bilagan kopierar tabellens HTML med blanktecknen. -->
-                        <div id="la-bas-exportkopia" hidden>
-                        <div class="diagramkort">
-                            <h3 class="diagramkort-rubrik">Kvinnors medianlön i procent av mäns, per BAS-intervall</h3>
-                            <p class="diagramkort-forklaring">Samma kvot som i tabellen, som bild: punkten är kvinnors median i procent av männens, strecket det 95-procentiga konfidensintervallet.</p>
-                            <div id="chart-skevhet-overview"></div>
-                        </div>
-                        <div class="card-header">
-                        
-                            <p class="text-dampad-sm lh-1_55 marg-t-4">Tabellen visar BAS-intervall där medianlönen mellan kvinnor och män skiljer sig mer än 5%. Procentvärdet anger kvinnors lön som andel av männens (100% = lika lön, 95% = kvinnor tjänar 5% mindre). Enligt EU:s lönetransparensdirektiv (2023/970) kan dessa grupper kräva en <em>gemensam lönebedömning</em> om skillnaderna inte kan förklaras med sakliga skäl.</p>
-                        </div>
-                        <div class="table-container">
-                            <table id="paygap-table" class="data-table">
-                                <thead>
-                                    <tr>
-                                        <th scope="col" data-export-label="BAS-intervall">BAS-intervall</th>
-                                        <th scope="col" data-export-label="Antal personer (kvinnor/män)">Antal (Kv/Mä) <span class="info-tip" data-k-tooltip="Antal personer som löneberäkningen för denna BAS baseras på, uppdelat per kön. Är ett kön färre än {k} visas BAS-intervallets samlade median i stället; är hela intervallet under {k} utelämnas raden och namnges i noten under tabellen (k-anonymitet)."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span></th>
-                                        <th scope="col" data-export-label="Kvinnors median i % av männens (100% = lika lön)">Kvinna % av Man</th>
-                                        <th scope="col" data-export-label="Median Kvinna (kr/mån)">Median Kvinna</th>
-                                        <th scope="col" data-export-label="Median Man (kr/mån)">Median Man</th>
-                                        <th scope="col" data-export-skip title="Öppnar bevis-popup med formel och ingångsdata för denna BAS-rad.">Bevis</th>
-                                    </tr>
-                                </thead>
-                                <tbody></tbody>
-                            </table>
-                        </div>
-                        </div>
+                        <details class="audit-panel" data-audit-id="matrix">
+                            <summary>Beräkning &amp; urval för denna analys</summary>
+                            <div class="audit-content"><em class="f-dampad">Laddar...</em></div>
+                        </details>
+                        <details class="flik-usage">
+                        <summary>Så används fliken i arbetet</summary>
+                        <div class="flik-usage-content">
+                            <h3>Lönekartläggning enligt diskrimineringslagen</h3>
+                            <ul>
+                                <li><em>Kvinnor och män i samma yrkesgrupp</em> är kartläggningens kärna: varje yrkesgrupp där båda könen finns, med status. Grupper märkta <em>Börja här</em> och <em>Värt att granska</em> är de som ska utredas och där sakliga skäl ska dokumenteras.</li>
+                                <li><em>Lönegap per BAS-intervall</em> säger var i organisationen skillnaden är störst; <em>Könsfördelning per BAS-intervall</em> var ett kön är under 40 % — där är jämförelserna mindre säkra.</li>
+                                <li><em>Vad blir kvar av lönegapet?</em> ger den oförklarade skillnaden när ålder och nivå räknats bort — det tal Medlingsinstitutet redovisar nationellt. Oförklarat betyder inte osakligt: det är det som ska granskas, inte ett bevis.</li>
+                            </ul>
+                            <h3>Inför gemensam lönebedömning (EU 2023/970)</h3>
+                            <ul>
+                                <li>Lista yrkesgrupperna märkta <em>Värt att granska</em>: där aktualiseras direktivets utredningssteg.</li>
+                                <li>Dokumentera sakliga skäl för varje grupp innan den gemensamma lönebedömningen; <em>Personer att granska</em> under tabellen pekar på enskilda löner som sticker ut.</li>
+                                <li>Välj urvalet <em>Facklig dialog</em> under <em>Rapportens innehåll</em> på Dokumentera &amp; exportera för Word-utkast och PDF till arbetstagarnas företrädare.</li>
+                            </ul>
+                            <h3>Vid frågor från ledning eller arbetstagarnas företrädare</h3>
+                            <ul>
+                                <li>"Är vi diskriminerande?" — det går inte att läsa ur statistiken; peka på den oförklarade skillnaden och på vilka grupper som ska granskas.</li>
+                                <li>"Varför är det råa gapet så stort?" — visa trappan <em>steg för steg</em>: vad åldersfördelningen och BAS-placeringen förklarar.</li>
+                                <li>"Var är problemet störst?" — tabellen under <em>Lönegap per BAS-intervall</em>.</li>
+                            </ul>
+                            <h3>Tolkningstips</h3>
+                            <ul>
+                                <li>Statistiskt säkerställd (p under 0,05) betyder att en så stor skillnad sällan uppstår av slumpen när ingen finns — inte att den är stor. Praktisk betydelse kräver också att den är över 5 %.</li>
+                                <li><em>Lönefördelningen</em> i regressionskortet visar om skillnaden är störst bland de högst betalda (glastak) eller de lägst betalda (klistergolv).</li>
+                                <li>Kvoten 95 % (kvinnors lön av mäns) och skillnaden −5 % är samma tal; regressionskortet använder skillnaden så att den kan jämföras med modellens.</li>
+                            </ul>
+                            </div>
                     </details>
-
-                    <details class="card avsnitt" id="avsnitt-la-kon">
-                        <summary><span class="avsnitt-titel"><h2>Könsfördelning per BAS-intervall</h2><span class="avsnitt-under">Var ett kön är under 40 %</span></span><span class="avsnitt-nyckel" id="nyckel-la-kon"></span></summary>
-                        <div class="card-header">
-                            <span class="avsnitt-verktyg-rubrik">Sök i tabellen</span>
-                            <input type="text" id="search-skevhet" class="form-select bredd-200" placeholder="Sök BAS-intervall..." aria-label="Sök i tabellen">
-                        </div>
-                        <p class="text-dampad-sm lh-1_55 marg-b-12"><strong>Jämn könsfördelning</strong> = båda könen utgör minst 40 % av gruppen. Tabellen visar BAS-intervall där ett kön ligger under 40-procentströskeln (könsdominerade grupper). I sådana grupper kan lönejämförelser mellan könen bli statistiskt svårtolkade — ett enskilt utfall kan dra hela snittet. Identifiering är central i lönekartläggningen.</p>
-                        <div id="chart-skevhet-andel" class="marg-b-12"></div>
-                        <div class="table-container">
-                            <table id="skevhet-table" class="data-table">
-                                <thead>
-                                    <tr>
-                                        <th scope="col" data-export-label="BAS-intervall">BAS-intervall</th>
-                                        <th scope="col" data-export-label="Totalt antal personer">Totalt N</th>
-                                        <th scope="col" data-export-label="Andel kvinnor (%)">Kvinnor (%)</th>
-                                        <th scope="col" data-export-label="Andel män (%)">Män (%)</th>
-                                        <th scope="col" data-export-label="Underrepresenterat kön (om < 10% av gruppen)">Underrep. Kön</th>
-                                    </tr>
-                                </thead>
-                                <tbody></tbody>
-                            </table>
-                        </div>
                     </details>
-                    
                 </div>
+
 
 
                 <!-- Benchmark Tab View -->
@@ -1973,70 +2038,6 @@
                 </div>
 
                 <!-- EU Directive Matrix Tab View -->
-                <div id="view-matrix" class="view-panel dold">
-                    <details class="avsnitt" id="avsnitt-la-regression">
-                        <summary><span class="avsnitt-titel"><h2>Vad blir kvar av lönegapet?</h2><span class="avsnitt-under" data-fm-rubrik>När ålder och nivå räknats bort, steg för steg</span></span><span class="avsnitt-nyckel" id="nyckel-la-regression"></span></summary>
-                        <p class="avsnitt-inledning"><span class="info-tip" data-tooltip="Metod: OLS-regression med robusta standardfel, samt Blinder-Oaxaca-uppdelning i förklarad och oförklarad del. Protokollet för gemensam lönebedömning (Dokumentera) stödjer samverkan enligt EU 2023/970 art. 10."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
-                        Panelen ovan visar den råa skillnaden. <span data-fm-inledning>Här rensas effekten av att kvinnor och män har olika ålder och arbetar på olika nivåer bort. Det som återstår kan <em>inte</em> förklaras av de faktorerna.</span> Observera att "oförklarat" inte betyder "osakligt" — det betyder att det är här ni bör titta närmare.</p>
-                    
-                    <details class="bakgrund-panel">
-                        <summary>Bakgrund: oförklarat gap är inte samma sak som <em>osakligt</em> gap</summary>
-                        <div class="bakgrund-content">
-                            <p>Regressionen beräknar ett <strong>oförklarat</strong> lönegap genom att kontrollera för de faktorer vi har data om — kön, ålder och BAS-intervall. Att en skillnad är "oförklarad" betyder bara att den <strong>inte fångas av dessa variabler</strong> — inte att den beror på kön eller utgör diskriminering.</p>
-                            <p>Lön påverkas av många faktorer som statistiken inte mäter: arbetsuppgifternas svårighetsgrad, ansvar, dokumenterad erfarenhet, prestation, marknadsläge och individuell lönesättning. En oförklarad skillnad kan därför ha helt <strong>sakliga, könsneutrala</strong> förklaringar (Diskrimineringslagen 3:8).</p>
-                            <p>Diskrimineringslagen talar om <strong>osakliga</strong> löneskillnader — skillnader mellan kvinnor och män som utför lika eller likvärdigt arbete och som <em>inte</em> kan motiveras med könsneutrala kriterier. Den bedömningen är <strong>kvalitativ och görs av er</strong>, inte av statistiken. <strong>Oförklarat ≠ osakligt:</strong> det oförklarade gapet är en signal om <em>var ni bör titta närmare</em>, inte ett bevis. Att blanda ihop begreppen riskerar felaktiga slutsatser.</p>
-                        </div>
-                    </details>
-                    <div id="forklaringsmodell-panel" class="marg-b-24"></div>
-                    <div id="regression-card" class="marg-b-24"></div>
-                    <div id="blinder-oaxaca-card" class="marg-b-24"></div>
-
-                </details>
-                    <details class="card avsnitt" id="avsnitt-la-metod">
-                        <summary><span class="avsnitt-titel"><h2>Så räknas det</h2><span class="avsnitt-under">Metod, begrepp, urval och hur fliken används</span></span><span class="avsnitt-nyckel" id="nyckel-la-metod"></span></summary>
-                        <p id="la-aid-bakgrund" class="la-aid-not"><strong>Om AID-grupperna:</strong> AID är SKR:s och de fackliga organisationernas gemensamma indelning av arbetsuppgifter i ”rimligt homogena” grupper för lönestatistik. AID är inte ett arbetsvärderingssystem och är inte avsett att avgöra vilka arbeten som är lika eller likvärdiga. Verktygets AID-grupper är därför en utgångspunkt för lika arbete, som ni bekräftar; för likvärdigt arbete kompletterar BAS-intervallen eller en egen arbetsvärdering. Källa: SKR, Arbetsidentifikation (AID) — Handbok för kodning (2020).</p>
-                        <div class="notis-varning farg-varning fs-xs lh-1_5 marg-t-10 pad-10-14">
-                                <strong>OBS:</strong> Verktyget identifierar statistiska avvikelser i rådata. Bedömning av om en löneskillnad är <em>osaklig</em> behöver kompletterande granskning av sakliga skäl (t.ex. erfarenhet, prestation, marknadslön). Resultaten utgör underlag – inte juridiska slutsatser.
-                            </div>
-                        <details class="audit-panel" data-audit-id="matrix">
-                            <summary>Beräkning &amp; urval för denna analys</summary>
-                            <div class="audit-content"><em class="f-dampad">Laddar...</em></div>
-                        </details>
-                        <details class="audit-panel" data-audit-id="skevhet">
-                        <summary>Beräkning &amp; urval för denna analys</summary>
-                        <div class="audit-content"><em class="f-dampad">Laddar...</em></div>
-                    </details>
-                        <details class="flik-usage">
-                        <summary>Så används fliken i arbetet</summary>
-                        <div class="flik-usage-content">
-                            <h3>Lönekartläggning enligt diskrimineringslagen</h3>
-                            <ul>
-                                <li><em>Kvinnor och män i samma yrkesgrupp</em> är kartläggningens kärna: varje yrkesgrupp där båda könen finns, med status. Grupper märkta <em>Börja här</em> och <em>Värt att granska</em> är de som ska utredas och där sakliga skäl ska dokumenteras.</li>
-                                <li><em>Lönegap per BAS-intervall</em> säger var i organisationen skillnaden är störst; <em>Könsfördelning per BAS-intervall</em> var ett kön är under 40 % — där är jämförelserna mindre säkra.</li>
-                                <li><em>Vad blir kvar av lönegapet?</em> ger den oförklarade skillnaden när ålder och nivå räknats bort — det tal Medlingsinstitutet redovisar nationellt. Oförklarat betyder inte osakligt: det är det som ska granskas, inte ett bevis.</li>
-                            </ul>
-                            <h3>Inför gemensam lönebedömning (EU 2023/970)</h3>
-                            <ul>
-                                <li>Lista yrkesgrupperna märkta <em>Värt att granska</em>: där aktualiseras direktivets utredningssteg.</li>
-                                <li>Dokumentera sakliga skäl för varje grupp innan den gemensamma lönebedömningen; <em>Personer att granska</em> under tabellen pekar på enskilda löner som sticker ut.</li>
-                                <li>Välj urvalet <em>Facklig dialog</em> under <em>Rapportens innehåll</em> på Dokumentera &amp; exportera för Word-utkast och PDF till arbetstagarnas företrädare.</li>
-                            </ul>
-                            <h3>Vid frågor från ledning eller arbetstagarnas företrädare</h3>
-                            <ul>
-                                <li>"Är vi diskriminerande?" — det går inte att läsa ur statistiken; peka på den oförklarade skillnaden och på vilka grupper som ska granskas.</li>
-                                <li>"Varför är det råa gapet så stort?" — visa trappan <em>steg för steg</em>: vad åldersfördelningen och BAS-placeringen förklarar.</li>
-                                <li>"Var är problemet störst?" — tabellen under <em>Lönegap per BAS-intervall</em>.</li>
-                            </ul>
-                            <h3>Tolkningstips</h3>
-                            <ul>
-                                <li>Statistiskt säkerställd (p under 0,05) betyder att en så stor skillnad sällan uppstår av slumpen när ingen finns — inte att den är stor. Praktisk betydelse kräver också att den är över 5 %.</li>
-                                <li><em>Lönefördelningen</em> i regressionskortet visar om skillnaden är störst bland de högst betalda (glastak) eller de lägst betalda (klistergolv).</li>
-                                <li>Kvoten 95 % (kvinnors lön av mäns) och skillnaden −5 % är samma tal; regressionskortet använder skillnaden så att den kan jämföras med modellens.</li>
-                            </ul>
-                            </div>
-                    </details>
-                    </details>
-                </div>
 
                 <!-- Kvalitetssäkring: robusthet + färdigcheck -->
                 <div id="view-kvalitet" class="view-panel dold">
@@ -2430,7 +2431,7 @@
                                 </select>
                                 <span class="info-tip" data-tooltip="Avgör vilken del av den nationella statistiken som är referens för andel kvinnor per yrke: kommunerna, regionerna eller båda. Statistiken är SKR:s personalstatistik (Sveriges Kommuner och Regioner), inbyggd i verktyget; perioden står i Om verktyget. Följer med i organisationspaketet och konfigurationsfilen."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
                             </div>
-                        <p class="inst-paverkar">Påverkar: kolumnen <em>Kvinnor nationellt</em> i Lika arbete och Struktur, och reserven för könsfördelning i Likvärdigt arbete.</p>
+                        <p class="inst-paverkar">Påverkar: kolumnen <em>Kvinnor nationellt</em> i Lika arbete och Lönestruktur, och reserven för könsfördelning i Likvärdigt arbete.</p>
                     </div>
                     <div class="inst-rad">
                             <div class="paket-rad">

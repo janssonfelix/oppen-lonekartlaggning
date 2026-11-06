@@ -24,7 +24,7 @@ function _akInsiktText(lutKv, lutMa, ra, vidSammaAlder) {
         : skillnad > 0
             ? `Vid samma ålder är kvinnors lön ${svPct(vidSammaAlder, 1)} av mäns, mot ${svPct(ra, 1)} utan justering: åldersfördelningen förklarar en del av skillnaden${vidSammaAlder < 95 ? ', men inte hela' : ''}.`
             : `Vid samma ålder är kvinnors lön ${svPct(vidSammaAlder, 1)} av mäns, mot ${svPct(ra, 1)} utan justering: skillnaden blir större när åldern räknas bort, eftersom kvinnorna i urvalet i genomsnitt är äldre.`;
-    return `${lutning} ${justering} Vad BAS-intervall och yrkesgrupp förklarar står i Lika arbete.`;
+    return `${lutning} ${justering} Vad BAS-intervall och yrkesgrupp förklarar står i Lönestruktur.`;
 }
 function renderKon(bas) {
     const isAll = bas === "__ALLA__";

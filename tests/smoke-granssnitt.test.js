@@ -513,13 +513,13 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         const w = createAppWindow();
         w.__loadDemoData();
         const d = w.document;
-        d.querySelector('.nav-item[data-tab="matrix"]').click();
+        d.querySelector('.nav-item[data-tab="struktur"]').click();
         d.querySelector('.nav-item[data-tab="dashboard"]').click();
         w.eval('sattKTroskel(25, { fraga: false })');
-        w.eval("const __r = _renderTabContent; _renderTabContent = function (f) { if (f === 'matrix') throw new Error('prov'); return __r(f); };");
+        w.eval("const __r = _renderTabContent; _renderTabContent = function (f) { if (f === 'struktur') throw new Error('prov'); return __r(f); };");
         expect(w.eval("_cloneAndCleanTableForExport('paygap-table')")).toBeNull();
         expect(w.eval('exportSakra(document.getElementById("chart-skevhet-overview"))')).toBe(false);
-        expect(w.eval("flikInaktuell('matrix')")).toBe(true);
+        expect(w.eval("flikInaktuell('struktur')")).toBe(true);
     });
     it('"Rensa all data" lämnar exportmenyerna och BAS-väljaren i Ålder & karriär orörda', () => {
         const w = createAppWindow();
@@ -551,7 +551,7 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         expect(d.getElementById('lage-vagledande').getAttribute('aria-pressed')).toBe('true');
         d.querySelector('.nav-item[data-tab="matrix"]').click();
         const oppna = () => [...d.querySelectorAll('details.avsnitt')].filter(a => a.open).map(a => a.id);
-        const fore = { oppna: oppna(), text: d.getElementById('view-matrix').textContent, tal: d.getElementById('la-slutsatser').textContent };
+        const fore = { oppna: oppna(), text: d.getElementById('view-regression').textContent, tal: d.getElementById('la-slutsatser').textContent };
         d.getElementById('lage-kompakt').click();
         expect(w.eval('lage()')).toBe('kompakt');
         expect(d.body.classList.contains('lage-kompakt')).toBe(true);
@@ -559,7 +559,7 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         expect(d.getElementById('lage-vagledande').getAttribute('aria-pressed')).toBe('false');
         // Läget rör inte sidans innehåll: samma text, samma tal och samma avsnitt utfällda (det som döljs döljs av stilmallen).
         expect(oppna()).toEqual(fore.oppna);
-        expect(d.getElementById('view-matrix').textContent).toBe(fore.text);
+        expect(d.getElementById('view-regression').textContent).toBe(fore.text);
         expect(d.getElementById('la-slutsatser').textContent).toBe(fore.tal);
         // Inget lagras och inget följer med i konfigurationsfilen.
         expect(w.localStorage.length).toBe(0);
@@ -576,7 +576,7 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         const { readFileSync } = await import('node:fs');
         const css = readFileSync(new URL('../src/style.css', import.meta.url), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
         // Före inläsning är Översikts lägesdelar dolda, var och en med egen väljare.
-        for (const id of ['ov-filrad', 'ov-fordjupning', 'avsnitt-ov-gap']) expect(css).toContain(`#view-dashboard:not(.har-data) #${id}`);
+        for (const id of ['ov-filrad', 'ov-fordjupning']) expect(css).toContain(`#view-dashboard:not(.har-data) #${id}`);
         // Kompakt läge döljer förklaringar, men aldrig noter om små grupper eller förbehåll.
         const kompakt = [...css.matchAll(/([^{}]*lage-kompakt[^{}]*)\{([^}]*)\}/g)].filter(m => /display:\s*none/.test(m[2])).map(m => m[1]).join(' ');
         expect(kompakt).toMatch(/\.avsnitt-under/);
@@ -602,7 +602,7 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
 describe('Var uppstår löneskillnaden?', () => {
     it('ritas med demodata: tre delar, demomärkning, noten om rangordning', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__loadDemoData(); w.__renderTabContent('struktur');
         const host = w.document.getElementById('gap-uppdelning');
         expect(host.hidden).toBe(false);
         expect(host.querySelectorAll('[data-gu-del]').length).toBe(3);
@@ -741,7 +741,7 @@ describe('Personer att granska', () => {
     });
     it('del C i "Var uppstår löneskillnaden?" länkar till panelen och skrollar fram den', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__loadDemoData(); w.__renderTabContent('struktur');
         const lank = w.document.querySelector('#gap-uppdelning [data-gu-del="C"] [data-go-to-anchor="personer-att-granska"]');
         expect(lank).not.toBeNull();
         let skrollad = false;
@@ -825,7 +825,7 @@ describe('dolda grupper, belopp, radslut och gränsfältet', () => {
     });
     it('kortet förklarar beloppens tecken', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__loadDemoData(); w.__renderTabContent('struktur');
         expect(w.document.getElementById('gap-uppdelning').textContent).toContain('negativa belopp betyder att kvinnornas medellön är lägre');
     });
     it('CSV med bara CR som radslut får radnummer', async () => {

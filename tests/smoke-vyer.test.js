@@ -272,7 +272,7 @@ describe('samma bild på Översikt', () => {
         const rader = [...d.querySelectorAll('.flik-intro-rad')];
         expect(rader.length).toBe(d.querySelectorAll('.flik-intro').length);                 // varje inledning ligger i en rad
         expect(rader.every(r => r.querySelectorAll('.flik-intro').length === 1 && r.querySelectorAll('button.flik-intro-mer').length === 1)).toBe(true);
-        const rad = d.querySelector('#view-matrix .flik-intro-rad, #view-lika-yrken .flik-intro-rad') || rader[0], knapp = rad.querySelector('.flik-intro-mer');
+        const rad = d.querySelector('#view-regression .flik-intro-rad, #view-lika-yrken .flik-intro-rad') || rader[0], knapp = rad.querySelector('.flik-intro-mer');
         expect([rad.classList.contains('ar-utfalld'), knapp.getAttribute('aria-expanded'), knapp.textContent]).toEqual([false, 'false', 'Visa mer']);
         knapp.click();
         expect([rad.classList.contains('ar-utfalld'), knapp.getAttribute('aria-expanded'), knapp.textContent]).toEqual([true, 'true', 'Visa mindre']);
@@ -439,7 +439,8 @@ describe('utfällt som standard', () => {
             expect(flikens.map(a => a.open), prefix).toEqual([true, ...flikens.slice(1).map(() => false)]);
         }
         const avsnitt = [...w.document.querySelectorAll('details.avsnitt')];
-        // Hopfällda, men ritade: tabellerna har rader och regressionskortet har innehåll.
+        // Hopfällda, men ritade: tabellerna har rader och regressionskortet har innehåll (de står i Lönestruktur).
+        w.document.querySelector('.nav-item[data-tab="struktur"]').click();
         expect(w.document.querySelectorAll('#paygap-table tbody tr').length).toBeGreaterThan(0);
         expect(w.document.querySelectorAll('#skevhet-table tbody tr').length).toBeGreaterThan(0);
         expect(w.document.getElementById('regression-card').textContent.length).toBeGreaterThan(100);
@@ -612,7 +613,7 @@ describe('rapportunderlag: diagram, kopiering och nedladdning', () => {
         w.figurTillBild = () => Promise.resolve('data:image/png;base64,AAAA');   // diagramkärnans bild: jsdom har ingen canvas
         Object.defineProperty(w.navigator, 'clipboard', { configurable: true, value: undefined });
         await w.__kopieraRapportDiagram('chart-skevhet-overview');
-        expect(anrop).toContain('matrix');
+        expect(anrop).toContain('struktur');
     });
     it('I5: misslyckad nedladdning ger "fel" utan att kasta', async () => {
         const w = createAppWindow();

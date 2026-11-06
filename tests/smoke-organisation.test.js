@@ -54,7 +54,7 @@ describe('sortering, Att göra, kopiering och Likvärdigt arbete', () => {
         const d = w.document;
         d.querySelector('.nav-item[data-tab="dashboard"]').click();
         w.__renderTabContent('matrix');
-        expect(d.querySelectorAll('#view-matrix .flow-next-bar, #view-lika-yrken .flow-next-bar, #view-skevhet .flow-next-bar').length).toBe(0);
+        expect(d.querySelectorAll('#view-regression .flow-next-bar, #view-lika-yrken .flow-next-bar, #view-skevhet .flow-next-bar').length).toBe(0);
         expect(d.getElementById('view-dashboard').classList.contains('active') || d.getElementById('view-dashboard').style.display === 'block').toBe(true);
     });
     it('Att göra: oförklarat gap skrivs med riktningsord, inte med minustecken', () => {

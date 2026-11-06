@@ -74,7 +74,7 @@ async function _buildPrintReportExport() {
             <section class="page-break">
                 <h2>Bilaga: Metodik &amp; urval (kvalitetssäkring)</h2>
                 <p class="pr-dampad">Detalj över varje analys, formler och vilka rader som ingått. Använd för revision och kvalitetskontroll av resultaten.</p>
-                ${Object.entries(auditRegistry).map(([_id, a]) => {
+                ${auditPoster().map(([_id, a]) => {
                     const fmtN = n => n.toLocaleString('sv-SE');
                     const exclRows = [...(a.parseExcl||[]), ...(a.analysisExclusions||[])]
                         // Texten kan innehålla referensens namn (ur fil eller organisationspaket):

@@ -880,6 +880,13 @@ document.addEventListener('keydown', e => {
 // ---- Audit / spårbarhet av beräkningar ("Beräkning & urval") ----
 // Varje analysfunktion fyller i sitt audit-objekt så användaren kan kvalitetssäkra.
 const auditRegistry = {};
+// Metodbilagans ordning i Excel och utskrift: fast, oberoende av i vilken ordning flikarna råkade ritas
+// (strukturomläggningen 2026-11-06 flyttade regressionen till Lönestruktur utan att bilagan ska byta ordning).
+const AUDIT_ORDNING = ['rapport', 'skevhet', 'livscykel', 'matrix', 'prioritering', 'benchmark'];
+function auditPoster() {
+    const ids = [...AUDIT_ORDNING.filter(id => id in auditRegistry), ...Object.keys(auditRegistry).filter(id => !AUDIT_ORDNING.includes(id))];
+    return ids.map(id => /** @type {[string, any]} */ ([id, auditRegistry[id]]));
+}
 
 function buildBaseAudit() {
     const da = state.dataAudit || { totalRaw: 0, excludedNoBas: 0, excludedZeroLon: 0 };
@@ -13081,7 +13088,6 @@ function setCompCard(id, count, total, valueText, cardState) {
 }
 
 function updateCompliance() {
-    renderGapUppdelning();
     const overview = document.getElementById('compliance-overview');
     if (!overview || !getData().length) return;
     overview.style.display = 'block';
@@ -14116,7 +14122,7 @@ function buildActionChecklist({ endastGrupper = false } = {}) {
                     prioritet: Math.abs(reg.konPct) > 5 ? 'hög' : 'medel',
                     titel: `Oförklarat lönegap för hela organisationen: kvinnor ${_agPct(reg.konPct)} % ${_agRiktning(reg.konPct)} lön än män (${reg.fras ? `efter ${reg.fras}` : 'inget räknat bort'})`,
                     detalj: 'Ett oförklarat gap är inte samma sak som ett osakligt. Pröva skillnaden per yrkesgrupp i Lika arbete.',
-                    tab: 'matrix', källa: 'Regressionen i Lika arbete'
+                    tab: 'struktur', källa: 'Regressionen i Lönestruktur'
                 });
             }
         } catch (e) { rapporteraFel('Att göra: regressionen', e); }
@@ -16050,7 +16056,7 @@ function __excelAlltBokExport() {
         ['Genererad', new Date().toLocaleString('sv-SE')],
         []
     ];
-    Object.entries(auditRegistry).forEach(([id, a]) => {
+    auditPoster().forEach(([id, a]) => {
         metRows.push([a.title || id]);
         metRows.push(['Total i datafilen', a.totalRaw]);
         [...(a.parseExcl||[]), ...(a.analysisExclusions||[])].forEach(([r,c]) => {
@@ -17885,7 +17891,7 @@ document.querySelectorAll(".nav-item").forEach(btn => {
             bestammelser: 'Regler & praxis',
             handlingsplan: 'Handlingsplan',
             prioritering: 'Prioritering',
-            struktur: 'Struktur & rapportmått',
+            struktur: 'Lönestruktur',
             loneoversyn: 'Löneöversyn',
             likvardighet: 'Likvärdigt arbete',
             utforska: 'Utforska',
@@ -17903,13 +17909,14 @@ document.querySelectorAll(".nav-item").forEach(btn => {
 // Sammanslagna flikar: en nav-knapp kan visa/rendera flera view-paneler.
 // Panelerna ligger redan i rätt DOM-ordning (skevhet före matrix, kon före livscykel).
 const PANEL_GROUPS = {
-    matrix:      ['lika-yrken', 'skevhet', 'matrix'], // Lika arbete: yrkesgrupper → per BAS → justerat (regression/Oaxaca)
+    matrix:      ['lika-yrken'],                       // Lika arbete: yrkesgrupperna, personer att granska, AID × BAS
+    struktur:    ['struktur', 'skevhet', 'regression'], // Lönestruktur: fördelning, BAS-skevhet, vad som blir kvar (regression/Oaxaca)
     kon:         ['kon', 'demografi', 'livscykel'],  // Ålder & karriär: kurvor per kön, demografi, gap över karriären
     utforska:    ['rapport', 'utforska'],            // Utforska: Löneöversikten (fast tabell) + egna vyer
     dokumentera: ['kvalitet', 'dokumentera']         // Dokumentera & exportera: färdigcheck + export + spara och läsa in arbetet
 };
 // Flikalias: namnen leds om till fliken som visar innehållet, så att inga länkar dör.
-const TAB_ALIAS = { rapport: 'utforska', demografi: 'kon', kvalitet: 'dokumentera', lonepolitik: 'benchmark' };
+const TAB_ALIAS = { rapport: 'utforska', demografi: 'kon', kvalitet: 'dokumentera', lonepolitik: 'benchmark', skevhet: 'struktur', regression: 'struktur' };
 function tabMal(namn) { return TAB_ALIAS[namn] || namn; }
 function unlockTabs() {
     ['tab-kon','tab-matrix','tab-prioritering','tab-loneoversyn','tab-struktur','tab-likvardighet','tab-utforska'].forEach(id => {
@@ -17971,9 +17978,9 @@ function _renderTabContent(target) {
         const s2 = document.getElementById("bas-select-demo"); if (s2) renderDemografi(/** @type {HTMLInputElement} */ (s2).value);
     }
     else if (target === "benchmark"    && d.length) { renderReferensOverblick(); renderLonepolitik(); generateBenchmark(); }
-    else if (target === "matrix"       && d.length) { generateSkevhet(); generateEUDirectiveMatrix(); renderPersonerAttGranska(); renderAidBasLika(); renderLikaArbeteTopp(); }
+    else if (target === "matrix"       && d.length) { generateEUDirectiveMatrix(); renderPersonerAttGranska(); renderAidBasLika(); renderLikaArbeteTopp(); }
     else if (target === "prioritering" && d.length) renderPrioritering();
-    else if (target === "struktur"     && d.length) renderStructure();
+    else if (target === "struktur"     && d.length) { renderStructure(); generateSkevhet(); renderBlinderOaxacaCard(renderRegressionCard()); renderGapUppdelning(); renderLonestrukturNycklar(); }
     else if (target === "loneoversyn"  && d.length) renderForecast();
     else if (target === "likvardighet" && (d.length || state.statistik.length)) { renderLikvardighet(); renderAidBasLikvardigt(); }
     else if (target === "utforska"     && d.length) { generateRapport(); renderExplorer(); }
@@ -17995,7 +18002,7 @@ function _renderTabContent(target) {
 const FLOW_NEXT = {
     bestammelser: { tab: 'matrix',        label: 'Lika arbete' },
     matrix:       { tab: 'likvardighet',  label: 'Likvärdigt arbete' },
-    likvardighet: { tab: 'struktur',      label: 'Struktur & rapportmått' },
+    likvardighet: { tab: 'struktur',      label: 'Lönestruktur' },
     struktur:     { tab: 'prioritering',  label: 'Prioritering' },
     prioritering: { tab: 'loneoversyn',   label: 'Löneöversyn' },
     loneoversyn:  { tab: 'handlingsplan', label: 'Handlingsplan' },
@@ -21614,7 +21621,7 @@ function _akInsiktText(lutKv, lutMa, ra, vidSammaAlder) {
         : skillnad > 0
             ? `Vid samma ålder är kvinnors lön ${svPct(vidSammaAlder, 1)} av mäns, mot ${svPct(ra, 1)} utan justering: åldersfördelningen förklarar en del av skillnaden${vidSammaAlder < 95 ? ', men inte hela' : ''}.`
             : `Vid samma ålder är kvinnors lön ${svPct(vidSammaAlder, 1)} av mäns, mot ${svPct(ra, 1)} utan justering: skillnaden blir större när åldern räknas bort, eftersom kvinnorna i urvalet i genomsnitt är äldre.`;
-    return `${lutning} ${justering} Vad BAS-intervall och yrkesgrupp förklarar står i Lika arbete.`;
+    return `${lutning} ${justering} Vad BAS-intervall och yrkesgrupp förklarar står i Lönestruktur.`;
 }
 function renderKon(bas) {
     const isAll = bas === "__ALLA__";
@@ -22425,8 +22432,6 @@ function _skrReferensCell(yrke) {
 // bär sina tal där. Dominansen och den nationella andelen står i beviset (förstoringsglaset).
 const LA_DOLDA_KOLUMNER = ['dominans', 'nationellt'];
 function generateEUDirectiveMatrix() {
-    // Regressionen körs en gång och skickas vidare (ADR-17): Oaxaca-kortet bär noteringen om det bortvalda (ADR-56).
-    renderBlinderOaxacaCard(renderRegressionCard());
     const tbody = document.querySelector("#matrix-table tbody");
     if (!tbody) return;
     tbody.innerHTML = "";
@@ -22830,7 +22835,7 @@ function renderLikaArbeteTopp() {
     const d = getData();
     if (!d.length) {
         urval.textContent = ''; ut.innerHTML = '';
-        for (const id of ['nyckel-la-yrkesgrupper', 'nyckel-la-personer', 'nyckel-la-bas', 'nyckel-la-kon', 'nyckel-la-regression']) _laNyckel(id, '');
+        for (const id of ['nyckel-la-yrkesgrupper', 'nyckel-la-personer']) _laNyckel(id, '');
         return;
     }
     _laRitaUrval();
@@ -22838,12 +22843,6 @@ function renderLikaArbeteTopp() {
     const rader = [...document.querySelectorAll('#matrix-table tbody tr')].map(tr => tr._euRow).filter(r => r && !r.samladMedian);
     const granska = rader.filter(r => r.niva === 'granska'), folj = rader.filter(r => r.niva === 'folj');
     const storst = rader.slice().sort((a, b) => Math.abs(100 - b.kvot) - Math.abs(100 - a.kvot))[0];
-    // Per BAS-intervall: de intervall där båda könen når tröskeln.
-    const bas = [...document.querySelectorAll('#paygap-table tbody tr')].map(tr => tr._paygapRow).filter(r => r && !r.masked);
-    const basKvot = bas.map(r => ({ bas: r.bas, kvot: Stat.median(r.kvLons) / Stat.median(r.maLons) * 100 })).filter(r => isFinite(r.kvot));
-    const basOver = basKvot.filter(r => Math.abs(100 - r.kvot) > 5);
-    const konRader = [...document.querySelectorAll('#skevhet-table tbody tr')];
-    const ojamna = konRader.filter(tr => /** @type {HTMLTableRowElement} */ (tr).cells[4] && /** @type {HTMLTableRowElement} */ (tr).cells[4].textContent.trim() !== '-').length;
     // Regressionen och personerna.
     /** @type {any} */ let reg = null;
     try { reg = runOLSRegression(); } catch (e) { rapporteraFel('Lika arbete: toppen', e); }
@@ -22862,10 +22861,24 @@ function renderLikaArbeteTopp() {
     ].join('');
     _laNyckel('nyckel-la-yrkesgrupper', rader.length ? `${granska.length} att granska${folj.length ? ` · ${folj.length} att följa upp` : ''}` : '', granska.length > 0 ? 'granska' : false);
     _laNyckel('nyckel-la-personer', personer != null ? `${svTal(personer, 0)} ${personer === 1 ? 'person' : 'personer'}` : '');
-    _laNyckel('nyckel-la-bas', basKvot.length ? `${basOver.length} av ${basKvot.length} över 5 %` : '', basOver.length > 0 ? 'granska' : false);
-    _laNyckel('nyckel-la-kon', konRader.length ? `${ojamna} av ${konRader.length} ojämna` : '');
-        // Samma mått som nyckeltalsraden: kvinnors lön i % av mäns när ålder och nivå räknats bort (inte "−4,3 % oförklarat").
-    _laNyckel('nyckel-la-regression', regOk ? `${svPct(reg.konKvot, 1)} ${reg.fras ? `efter ${reg.fras}` : 'utan kontroller'}` : '', regOk && Math.abs(reg.konPct) > 5 ? 'granska' : false);
+}
+
+/** Lönestrukturs avsnittsnyckeltal för BAS-skevheten, könsfördelningen och regressionen. Ritas efter generateSkevhet och regressionskortet. */
+function renderLonestrukturNycklar() {
+    const d = getData();
+    if (!d.length) { for (const id of ['nyckel-ls-bas', 'nyckel-ls-kon', 'nyckel-ls-regression']) _laNyckel(id, ''); return; }
+    const bas = [...document.querySelectorAll('#paygap-table tbody tr')].map(tr => tr._paygapRow).filter(r => r && !r.masked);
+    const basKvot = bas.map(r => ({ bas: r.bas, kvot: Stat.median(r.kvLons) / Stat.median(r.maLons) * 100 })).filter(r => isFinite(r.kvot));
+    const basOver = basKvot.filter(r => Math.abs(100 - r.kvot) > 5);
+    const konRader = [...document.querySelectorAll('#skevhet-table tbody tr')];
+    const ojamna = konRader.filter(tr => /** @type {HTMLTableRowElement} */ (tr).cells[4] && /** @type {HTMLTableRowElement} */ (tr).cells[4].textContent.trim() !== '-').length;
+    /** @type {any} */ let reg = null;
+    try { reg = runOLSRegression(); } catch (e) { rapporteraFel('Lönestruktur: nyckeltalen', e); }
+    const regOk = reg && !reg.error && typeof reg.konPct === 'number';
+    _laNyckel('nyckel-ls-bas', basKvot.length ? `${basOver.length} av ${basKvot.length} över 5 %` : '', basOver.length > 0 ? 'granska' : false);
+    _laNyckel('nyckel-ls-kon', konRader.length ? `${ojamna} av ${konRader.length} ojämna` : '');
+    // Samma mått som Lika arbetes nyckeltalsrad: kvinnors lön i % av mäns när ålder och nivå räknats bort (inte "−4,3 % oförklarat").
+    _laNyckel('nyckel-ls-regression', regOk ? `${svPct(reg.konKvot, 1)} ${reg.fras ? `efter ${reg.fras}` : 'utan kontroller'}` : '', regOk && Math.abs(reg.konPct) > 5 ? 'granska' : false);
 }
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -25190,7 +25203,7 @@ function renderLifecycleAnalysis() {
         ? (adjR2Delta < 1 ? 'liten' : adjR2Delta < 3 ? 'måttlig' : 'stor')
         : null;
     const modellMening = adjR2Delta != null
-        ? ` Jämfört med huvudmodellen i Lika arbete förklarar livscykelmodellen ${adjR2Delta >= 0 ? '+' : '−'}${svTal(Math.abs(adjR2Delta), 1)} procentenheter mer av lönespridningen (${modelMervarde === 'stor' ? 'ett stort' : modelMervarde === 'måttlig' ? 'ett måttligt' : 'ett litet'} tillägg${modelMervarde === 'liten' ? '; den enklare modellen räcker' : ''}).`
+        ? ` Jämfört med huvudmodellen i Lönestruktur förklarar livscykelmodellen ${adjR2Delta >= 0 ? '+' : '−'}${svTal(Math.abs(adjR2Delta), 1)} procentenheter mer av lönespridningen (${modelMervarde === 'stor' ? 'ett stort' : modelMervarde === 'måttlig' ? 'ett måttligt' : 'ett litet'} tillägg${modelMervarde === 'liten' ? '; den enklare modellen räcker' : ''}).`
         : '';
 
     // ====== B7: Regelbaserad HR-coach ======
@@ -26487,11 +26500,11 @@ function _rmNotText(html) {
 // Diagram som följer med i rapporten: id på diagrammet, fliken som ritar det och avsnittet det hör till.
 // Ett diagram som inte ritas — för att underlaget inte når tröskeln — följer inte med.
 const RM_DIAGRAM = [
-    { id: 'chart-skevhet-overview', flik: 'matrix', avsnitt: 'struktur', rubrik: 'Kvinnors medianlön i procent av mäns, per BAS-intervall — samma kvot och intervall som tabellen ovan' },
-    { id: 'chart-skevhet-andel', flik: 'matrix', avsnitt: 'struktur', rubrik: 'Könsfördelning per BAS-intervall' },
+    { id: 'chart-skevhet-overview', flik: 'struktur', avsnitt: 'struktur', rubrik: 'Kvinnors medianlön i procent av mäns, per BAS-intervall — samma kvot och intervall som tabellen ovan' },
+    { id: 'chart-skevhet-andel', flik: 'struktur', avsnitt: 'struktur', rubrik: 'Könsfördelning per BAS-intervall' },
     { id: 'chart-struktur-kvartiler', flik: 'struktur', avsnitt: 'struktur', rubrik: 'Kvinnor och män per lönekvartil' },
     { id: 'chart-struktur-tradkarta', flik: 'struktur', avsnitt: 'struktur', rubrik: 'Organisationen som karta — en yta per yrkesgrupp, storleken är antalet personer och färgen andelen kvinnor' },
-    { id: 'chart-perbas-gap', flik: 'matrix', avsnitt: 'lika', rubrik: 'Oförklarat lönegap per BAS-intervall' },
+    { id: 'chart-perbas-gap', flik: 'struktur', avsnitt: 'lika', rubrik: 'Oförklarat lönegap per BAS-intervall' },
     { id: 'chart-la-tratt', flik: 'matrix', avsnitt: 'lika', rubrik: 'Yrkesgrupperna mot slumpens gränser — kvinnors medianlön i procent av mäns mot gruppens storlek',
       // Samma förbehåll som under diagrammet på skärmen, räknat ur den ritade figuren.
       metodNot: () => { const f = /** @type {any} */ (document.getElementById('chart-la-tratt'))?._figur;
@@ -27257,7 +27270,7 @@ async function _buildPrintReportExport() {
             <section class="page-break">
                 <h2>Bilaga: Metodik &amp; urval (kvalitetssäkring)</h2>
                 <p class="pr-dampad">Detalj över varje analys, formler och vilka rader som ingått. Använd för revision och kvalitetskontroll av resultaten.</p>
-                ${Object.entries(auditRegistry).map(([_id, a]) => {
+                ${auditPoster().map(([_id, a]) => {
                     const fmtN = n => n.toLocaleString('sv-SE');
                     const exclRows = [...(a.parseExcl||[]), ...(a.analysisExclusions||[])]
                         // Texten kan innehålla referensens namn (ur fil eller organisationspaket):
@@ -28018,7 +28031,7 @@ const INFO_SECTIONS = {
         <ul>
             <li><strong>OLS-estimering</strong> med <strong>HC3-robusta standardfel</strong> (Long & Ervin 2000) — rekommenderad default för små/medelstora urval</li>
             <li><strong>Sekventiell dekomponering:</strong> tre steg (Endast kön, sedan +BAS, sedan +Ålder) som visar hur stor del av råa lönegapet som förklaras av strukturella variabler; därefter ett steg +Yrkesgrupp: könsgapet med fasta effekter för yrkesgrupp inom BAS (AID×BAS), skattat med inomtransformation (gruppmedelvärdet dras av från log-lön, kön och ålder, sedan OLS utan intercept) — löneskillnaden mellan kvinnor och män med samma yrkesgrupp, BAS och ålder. Steget visas i kortet och förklaringsbudgeten men ingår inte i huvudtalet; har lönefilen ansvarskod tillkommer ett steg +Ansvar</li>
-            <li><strong>Förklaringsmodellen kan väljas (ADR-56):</strong> panelen <em>Förklaringsmodell</em> i Lika arbete låter er ta bort BAS-intervall eller ålder, eller lägga till yrkesgrupp inom BAS; fullmodellen är utgångsläge. Tabellen i panelen visar vad varje variabel tillför i förklaringsgrad (R²) när den läggs till sist i fullmodellen, och gapet utan och med den; under 0,5 procentenheter föreslår verktyget att variabeln lämnas utanför, som ett pedagogiskt råd, inte ett statistiskt test. Valet styr huvudtalet överallt, trappan, förklaringsbudgeten och Blinder-Oaxaca; en bortvald variabel redovisas som kontrollerad, med ett eventuellt skäl, i panelen och i rapporten. Valet följer med i konfigurationsfilen</li>
+            <li><strong>Förklaringsmodellen kan väljas (ADR-56):</strong> panelen <em>Förklaringsmodell</em> i Lönestruktur låter er ta bort BAS-intervall eller ålder, eller lägga till yrkesgrupp inom BAS; fullmodellen är utgångsläge. Tabellen i panelen visar vad varje variabel tillför i förklaringsgrad (R²) när den läggs till sist i fullmodellen, och gapet utan och med den; under 0,5 procentenheter föreslår verktyget att variabeln lämnas utanför, som ett pedagogiskt råd, inte ett statistiskt test. Valet styr huvudtalet överallt, trappan, förklaringsbudgeten och Blinder-Oaxaca; en bortvald variabel redovisas som kontrollerad, med ett eventuellt skäl, i panelen och i rapporten. Valet följer med i konfigurationsfilen</li>
             <li><strong>BAS som indikatorvariabler:</strong> en indikator per BAS-intervall, det alfabetiskt första intervallet är referens; varje intervall får sin egen lönenivå utan antagandet att varje bokstavssteg är värt lika mycket. Bokstavsordningen (A lägst) är fast och kan inte ändras</li>
             <li>Konvertering till kr-procent: <code>gapPct = (exp(β) − 1) · 100</code></li>
             <li><strong>Konfidensintervall:</strong> 95 % KI = β ± t<sub>0,975; n−k</sub> × SE, med t-fördelningens kvantil vid färre än 100 frihetsgrader (1,96 först därefter); gäller huvudregressionen, per-BAS-regressionerna och livscykelmodellen</li>
@@ -28297,8 +28310,8 @@ document.getElementById('btn-export-zip')?.addEventListener('click', () => { exp
 
 // Diagram som kan kopieras som bild: id på diagrammet och fliken som ritar det.
 const RAPPORT_DIAGRAM = [
-    { id: 'chart-skevhet-overview', rubrik: 'Lönegap per BAS-intervall', flik: 'matrix' },
-    { id: 'chart-perbas-gap', rubrik: 'Oförklarat gap per BAS-intervall', flik: 'matrix' },
+    { id: 'chart-skevhet-overview', rubrik: 'Lönegap per BAS-intervall', flik: 'struktur' },
+    { id: 'chart-perbas-gap', rubrik: 'Oförklarat gap per BAS-intervall', flik: 'struktur' },
     { id: 'chart-likvardighet-heatmap', rubrik: 'Kandidatpar i likvärdigt arbete', flik: 'likvardighet' },
 ];
 
