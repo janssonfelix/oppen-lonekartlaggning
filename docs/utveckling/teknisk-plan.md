@@ -237,7 +237,7 @@ adaptern verkligen delegerar vaktas av `tests/drift.test.js`:
   rätt grupp. Utskriftsfönstret för checklistorna (`printScaffoldView`) läser `:root` och allt från `.dold` till
   stilmallens slut ur den körande stilmallen och lägger in det som byggt stilark (`adoptedStyleSheets`): ett `<style>`-element
   som skriptet skapar blockeras av den ärvda CSP:n (`style-src-elem`), så fönstret var tidigare helt ostilat.
-- **Tester:** Vitest — 2698 tester i 83 filer: rena `src/lib/`-moduler, CSV-parsning, jsdom-röktest
+- **Tester:** Vitest — 2718 tester i 84 filer: rena `src/lib/`-moduler, CSV-parsning, jsdom-röktest
   av varje vy (ADR-7; `tests/smoke.test.js` med det delade fönstret och sju `tests/smoke-*.test.js` per
   område), k-tröskeln i åtta `tests/ktroskel*.test.js` med riggen i `tests/helpers/ktroskel-rigg.js`,
   gränssnittet i `tests/granssnitt*.test.js` (riggen `tests/helpers/granssnitt-rigg.js`) och diagramvyerna i
@@ -1295,6 +1295,21 @@ Mansdominerat speglas; övriga könsblandade. *Brukar anses kvinnodominerad* byg
 personalstatistik, organisationstypen i Inställningar) med samma definition. *Lönemånaden* (`state.lonemanad`) anges i
 Inställningar, följer med i konfigurationsfilen och skrivs ut som *inte angiven* när den saknas: lönefilen bär ingen
 sådan uppgift och verktyget gissar inte. Vaktas av `tests/aidbas.test.js` och `tests/smoke-aidbas.test.js`.
+
+**ADR-58 — BAS-dossiern: ett BAS-intervall på en sida.** Beslut 2026-11-06. En skriven lönekartläggning disponeras
+ofta per BAS-intervall, och handläggaren behövde hämta varje intervall ur fem flikar. `81-basdossier.js`
+(`#basdossier-modal`) är en dialog som gruppdossiern, inte en flik: den nås från flera ställen (Löneöversiktens
+BAS-rader, Lönestrukturs tabell per BAS-intervall, gruppdossiern, markeringsraden och sökrutan, där en BAS-träff
+får ett eget alternativ under sig så att listboxens pilar och Retur når det) och har ingen post i menyn. Innehållet
+står i rapportens ordning: nyckeltal och läget mot ställningstagandets rad för intervallet (`policyFor(null, bas)`),
+yrkesgrupperna ur `likaArbeteGrupper` räknade på intervallets rader med Lika arbetes gränser och status, paren ur
+`likvardighetResultat()` där det kvinnodominerade yrket ligger i intervallet (`_parForRedovisning`), medianlön per
+åldersgrupp (–34, 35–49, 50–, samma gränser som rapportens åldersgruppstabell) och kön, och intervallets rad ur
+förra årets bokslut (ADR-54, `jamforBasIntervall`). Ingen ny statistik. Skärmen följer läget som övriga flikar
+(ADR-51); könsuppdelade mått bara där båda könen når k, i åldersgrupperna per grupp. Textversionen
+(`basdossierText`) lämnar verktyget och byggs därför i exportläget: yrkesgrupper under k står bara med namn, och ett
+intervall under k ger ingen text. En yrkesgrupp som finns i flera BAS-intervall redovisas med sina rader i
+intervallet, som i gruppdossiern (AID × BAS). Vaktas av `tests/basdossier.test.js`.
 
 ## 9. Öppna punkter
 

@@ -180,6 +180,25 @@ också när det är hopfällt.
   inte i listan, en flik med färre än tre avsnitt har ingen, och listan byggs om när fliken ritas om, till exempel
   efter att lönefilen lästs in.
 
+### Dossierer: en yrkesgrupp eller ett BAS-intervall på en sida
+
+- **Gruppdossiern** samlar allt verktyget vet om en yrkesgrupp i ett BAS-intervall. Den öppnas från tabellraderna,
+  från en grupp i Egna vyer och från raden om markeringen (*Öppna gruppdossier*).
+- **BAS-dossiern** samlar ett BAS-intervall i rapportens ordning, så att avsnittet om intervallet kan skrivas utan att
+  hämta det ur fem flikar: nyckeltalen (antal, kvinnor och män, median, P10–P90) och läget mot ställningstagandets
+  rad för intervallet; yrkesgrupperna i intervallet med antal, medianer per kön, kvinnors median i procent av mäns
+  och samma status som i Lika arbete, med en knapp till varje grupps dossier; kandidatparen i Likvärdigt arbete där
+  det kvinnodominerade yrket ligger i intervallet, och paren *Lägre krav, högre lön*; medianlönen per åldersgrupp
+  (–34, 35–49, 50–) och kön, med en länk till Ålder & karriär med intervallet valt; och intervallets rad ur förra
+  årets bokslut när en konfigurationsfil från förra året är inläst. Den öppnas med knappen *BAS-dossier* i
+  Löneöversiktens BAS-rader (Tabeller och egna vyer), ikonen bredvid intervallets namn i Lönestrukturs tabell per
+  BAS-intervall, *Hela BAS …* i gruppdossiern, *Öppna BAS-dossiern* i raden om markeringen, och i sökrutan: en
+  BAS-träff har raden *Öppna BAS-dossiern för BAS …* under sig (pilarna och Retur når den), och sökordet
+  *BAS-dossier* (eller *intervall*, *per intervall*) öppnar dialogen för det första intervallet. Väljaren överst byter
+  intervall. **Kopiera som text** ger dossiern i rapportens form (rubriken *BAS-intervall …* och ett stycke per
+  punkt), byggd som exporterna: grupper under minsta gruppstorlek står bara med namn, utan lönemått.
+- Ingen av dossiererna dokumenterar sakliga skäl; de samlar underlaget för den bedömningen.
+
 1. **Regler & praxis** *(§ 8 — lagrummet står i flikens tooltip)* — gå igenom de sex granskningsområdena. Sätt
    **status** (Ingen risk / Möjlig risk — utreds / Åtgärd krävs / Ej tillämplig) och
    skriv en **anteckning** per område — *på gruppnivå: inga namn eller

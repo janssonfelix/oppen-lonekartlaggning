@@ -21,7 +21,7 @@ describe('Funktionssök', () => {
             expect(d.querySelector(`.nav-item[data-tab="${p.flik}"]`), p.namn).toBeTruthy();
             if (p.avsnitt) expect(d.getElementById(p.avsnitt), p.namn).toBeTruthy();
             if (p.falt) expect(d.getElementById(p.falt), p.namn).toBeTruthy();
-            if (p.dialog) expect(['installningar', 'ordlista', 'symboler', 'lagras'], p.namn).toContain(p.dialog);
+            if (p.dialog) expect(['installningar', 'ordlista', 'symboler', 'lagras', 'basdossier'], p.namn).toContain(p.dialog);
             expect(!!p.avsnitt !== !!p.dialog, `${p.namn}: antingen ett avsnitt eller en dialog`).toBe(true);
         }
         // Avsnittet står i den flik som visar det.

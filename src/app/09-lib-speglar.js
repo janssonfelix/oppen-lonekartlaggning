@@ -6345,7 +6345,7 @@ function _forandring(a, b) {
  * som bara fanns förra året), med antal och varje mått förra året, i år och förändringen i kronor och procent.
  * null när ett av boksluten saknar fältet.
  */
-function _jamforBasIntervall(forra, nu) {
+function jamforBasIntervall(forra, nu) {
     if (!Array.isArray(forra) || !Array.isArray(nu)) return null;
     const fB = new Map(forra.map(r => [r.bas, r])), nB = new Map(nu.map(r => [r.bas, r]));
     const ordning = [...nB.keys(), ...[...fB.keys()].filter(b => !nB.has(b))];
@@ -6392,7 +6392,7 @@ function jamforArsbokslut(forra, nu) {
         punkter: { totaltForra: forra.punkter.length, klaraForra: forra.punkter.filter(p => p.klar).length,
                    totaltNu: nu.punkter.length, klaraNu: nu.punkter.filter(p => p.klar).length, kvarFranForra },
         samma_k: forra.k === nu.k,
-        basIntervall: _jamforBasIntervall(forra.basIntervall, nu.basIntervall),
+        basIntervall: jamforBasIntervall(forra.basIntervall, nu.basIntervall),
     };
 }
 
@@ -6432,13 +6432,14 @@ function basHantelRader(j) {
     return { rader, utelamnade: j.basIntervall.length - med.length };
 }
 
-    return { byggArsbokslut, valideraArsbokslut, jamforArsbokslut, hantelRader, basHantelRader };
+    return { byggArsbokslut, valideraArsbokslut, jamforArsbokslut, hantelRader, basHantelRader, jamforBasIntervall };
 })();
 const _abBygg = __mirrorArsbokslut.byggArsbokslut;
 const _abValidera = __mirrorArsbokslut.valideraArsbokslut;
 const _abJamfor = __mirrorArsbokslut.jamforArsbokslut;
 const _abHantelRader = __mirrorArsbokslut.hantelRader;
 const _abBasHantelRader = __mirrorArsbokslut.basHantelRader;
+const _abJamforBas = __mirrorArsbokslut.jamforBasIntervall;
 
 // ---- speglar src/lib/organisationspaket.js ----
 const __mirrorOrganisationspaket = (() => {

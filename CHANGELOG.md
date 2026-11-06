@@ -8,6 +8,15 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ### Gränssnitt
 
+- **BAS-dossier.** En dialog som samlar ett BAS-intervall på en sida, i rapportens ordning: nyckeltal (antal, kvinnor
+  och män, median, P10–P90) och läget mot ställningstagandets rad för intervallet; yrkesgrupperna med antal,
+  medianer per kön, kvinnors median i procent av mäns och Lika arbetes status, med knapp till gruppdossiern;
+  kandidatparen och paren *Lägre krav, högre lön* där det kvinnodominerade yrket ligger i intervallet; medianlön per
+  åldersgrupp (–34, 35–49, 50–) och kön med länk till Ålder & karriär; och intervallets rad ur förra årets bokslut.
+  *Kopiera som text* ger dossiern i rapportens form, byggd i exportläget så att grupper under minsta gruppstorlek
+  står utan lönemått. Dossiern öppnas från Löneöversiktens BAS-rader, Lönestrukturs tabell per BAS-intervall,
+  gruppdossiern (*Hela BAS …*), raden om markeringen och sökrutan (en BAS-träff har raden *Öppna BAS-dossiern* under
+  sig; sökordet *BAS-dossier* öppnar den för första intervallet). Könsuppdelade mått bara där båda könen når k.
 - **Löneutveckling per BAS-intervall mot förra året.** Årsbokslutet i konfigurationsfilen har en rad per BAS-intervall
   med minst k personer: antal (kvinnor, män), P10, median och P90, och kvinnors och mäns median när båda könen når k.
   *Jämförelse med förra året* i Spara och jämför år visar tabellen *Löneutveckling per BAS-intervall* (antal, P10,

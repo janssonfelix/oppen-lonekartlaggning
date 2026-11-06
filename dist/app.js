@@ -8665,7 +8665,7 @@ function _forandring(a, b) {
  * som bara fanns förra året), med antal och varje mått förra året, i år och förändringen i kronor och procent.
  * null när ett av boksluten saknar fältet.
  */
-function _jamforBasIntervall(forra, nu) {
+function jamforBasIntervall(forra, nu) {
     if (!Array.isArray(forra) || !Array.isArray(nu)) return null;
     const fB = new Map(forra.map(r => [r.bas, r])), nB = new Map(nu.map(r => [r.bas, r]));
     const ordning = [...nB.keys(), ...[...fB.keys()].filter(b => !nB.has(b))];
@@ -8712,7 +8712,7 @@ function jamforArsbokslut(forra, nu) {
         punkter: { totaltForra: forra.punkter.length, klaraForra: forra.punkter.filter(p => p.klar).length,
                    totaltNu: nu.punkter.length, klaraNu: nu.punkter.filter(p => p.klar).length, kvarFranForra },
         samma_k: forra.k === nu.k,
-        basIntervall: _jamforBasIntervall(forra.basIntervall, nu.basIntervall),
+        basIntervall: jamforBasIntervall(forra.basIntervall, nu.basIntervall),
     };
 }
 
@@ -8752,13 +8752,14 @@ function basHantelRader(j) {
     return { rader, utelamnade: j.basIntervall.length - med.length };
 }
 
-    return { byggArsbokslut, valideraArsbokslut, jamforArsbokslut, hantelRader, basHantelRader };
+    return { byggArsbokslut, valideraArsbokslut, jamforArsbokslut, hantelRader, basHantelRader, jamforBasIntervall };
 })();
 const _abBygg = __mirrorArsbokslut.byggArsbokslut;
 const _abValidera = __mirrorArsbokslut.valideraArsbokslut;
 const _abJamfor = __mirrorArsbokslut.jamforArsbokslut;
 const _abHantelRader = __mirrorArsbokslut.hantelRader;
 const _abBasHantelRader = __mirrorArsbokslut.basHantelRader;
+const _abJamforBas = __mirrorArsbokslut.jamforBasIntervall;
 
 // ---- speglar src/lib/organisationspaket.js ----
 const __mirrorOrganisationspaket = (() => {
@@ -12559,6 +12560,7 @@ function _mkRitaRad() {
             const vad = knapp.getAttribute('data-markering');
             if (vad === 'dossier') { const k = _mkDossierNyckel(); if (k) openGruppdossier(k); }
             else if (vad === 'borra') nedborrningTillUtforska();
+            else if (vad === 'basdossier') { const b = _mkBorrBas(); if (b != null) openBasdossier(b, knapp); }
             else sattDiagramMarkering(null);
         });
     }
@@ -12570,6 +12572,8 @@ function _mkRitaRad() {
     text.title = namn.join('\n');
     rad.appendChild(text);
     if (_mkDossierNyckel()) rad.appendChild(_mkKnapp('dossier', 'Öppna gruppdossier'));
+    // Ett markerat BAS-intervall: dess dossier (81-basdossier.js) ett klick bort, som gruppdossiern för en yrkesgrupp.
+    if (_mkBorrBas() != null && typeof basdossierKandidater === 'function' && basdossierKandidater().some(x => x.bas === _mkBorrBas())) rad.appendChild(_mkKnapp('basdossier', 'Öppna BAS-dossiern'));
     if (_mkBorrBas() != null) {
         const b = _mkKnapp('borra', 'Visa yrkesgrupperna');
         b.title = 'Öppnar Tabeller och egna vyer med yrkesgrupperna i BAS-intervallet. Där visas också grupper under tröskeln, markerade; de följer inte med i en export om du inte väljer det.';
@@ -15521,6 +15525,7 @@ function _exportVisaAllaRader(klon) {
         tr.hidden = false;
         tr.classList.remove('collapsed');
     });
+    klon.querySelectorAll('[data-open-basdossier]').forEach(b => b.remove());   // knapparna till BAS-dossiern gör inget i en export
     return _flerKolumnerAlla(klon);   // kolumnerna som växeln Fler kolumner gömmer på skärmen följer med
 }
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
@@ -21732,7 +21737,7 @@ function generateRapport() {
         const trH = document.createElement("tr");
         trH.className = "group-header";
         trH.dataset.bas = b;
-        trH.innerHTML = `<td colspan="8">BAS ${esc(b)}</td>`;
+        trH.innerHTML = `<td colspan="8">BAS ${esc(b)}${basdossierKandidater().some(x => x.bas === b) ? basdossierKnapp(b) : ''}</td>`;
         tbody.appendChild(trH);
         const basUtelamnade = [];
         if (pol) {
@@ -22953,7 +22958,7 @@ function _laOversiktTabell(bars, d = getData()) {
         tr._markering = markeringFor(o.bas);
         // Bevisknappen står i radens rubrik: uträkningen bakom raden (formel och ingångsdata), som förut i tabellen per
         // BAS-intervall. Knappen har ingen text, så radens text och exporten är desamma som utan den.
-        tr.innerHTML = `<th scope="row">BAS ${esc(o.bas)}<button class="btn-evidence la-oversikt-bevis" data-la-bevis="1" type="button" title="Visa beräkningen bakom raden" aria-label="Visa beräkningen bakom BAS ${esc(o.bas)}">${ikon('sok')}</button></th><td class="tal">${o.nKv} / ${o.nMa}</td><td class="tal">${_figTalformat(Math.round(o.medKv), 'kr')}</td><td class="tal">${_figTalformat(Math.round(o.medMa), 'kr')}</td>`
+        tr.innerHTML = `<th scope="row">BAS ${esc(o.bas)}<button class="btn-evidence la-oversikt-bevis" data-la-bevis="1" type="button" title="Visa beräkningen bakom raden" aria-label="Visa beräkningen bakom BAS ${esc(o.bas)}">${ikon('sok')}</button>${basdossierKnapp(o.bas, { ikonEndast: true })}</th><td class="tal">${o.nKv} / ${o.nMa}</td><td class="tal">${_figTalformat(Math.round(o.medKv), 'kr')}</td><td class="tal">${_figTalformat(Math.round(o.medMa), 'kr')}</td>`
             + `<td class="tal">${skillnad < 0 ? '−' : skillnad > 0 ? '+' : ''}${_figTalformat(Math.abs(skillnad), 'kr')}</td>`
             + `<td class="la-oversikt-cell" data-export-utelamna>${_laOversiktGrafik(o, dom, status)}</td>`
             + `<td class="tal la-oversikt-kvot" data-sort-value="${o.gap.toFixed(3)}">${svPct(o.gap, 1)}${o.ci ? `<span class="la-oversikt-ki">${svTal(o.ci.lo, 1)}–${svPct(o.ci.hi, 1)}</span>` : ''}</td>`
@@ -26962,17 +26967,17 @@ function rmArsjamforelseAvsnitt(diagram) {
 
 /**
  * Löneutvecklingen per BAS-intervall i avsnittet Jämförelse med förra året: en tabell med antal och P10, median och
- * P90 som "förra året → i år (förändring)", en kolumn per mått så att tabellen ryms på en stående sida. Bara när
+ * P90 som "förra året till i år (förändring)", en kolumn per mått så att tabellen ryms på en stående sida. Bara när
  * båda åren har fältet; ett äldre bokslut utan det ger ingenting här (panelen säger att det saknas i filen).
  * Tröskeln är redan tillämpad i bokslutet (src/lib/arsbokslut.js) och i årets bokslut, som byggs i exportläget.
  */
 function rmBasUtvecklingDelar(j, forraAr, nuAr) {
     if (!j || !Array.isArray(j.basIntervall) || !j.basIntervall.length) return [];
-    const antal = f => (f.forra == null && f.nu == null ? null : `${f.forra == null ? '–' : svTal(f.forra, 0)} → ${f.nu == null ? '–' : svTal(f.nu, 0)}`);
-    const matt = f => (f.forra == null && f.nu == null ? null : { text: `${_abKr(f.forra)} → ${_abKr(f.nu)}${f.diff == null ? '' : ` (${_abForandringText(f)})`}` });
+    const antal = f => (f.forra == null && f.nu == null ? null : `${f.forra == null ? '–' : svTal(f.forra, 0)} till ${f.nu == null ? '–' : svTal(f.nu, 0)}`);
+    const matt = f => (f.forra == null && f.nu == null ? null : { text: `${_abKr(f.forra)} till ${_abKr(f.nu)}${f.diff == null ? '' : ` (${_abForandringText(f)})`}` });
     return [
         { typ: 'rubrik', niva: 3, text: 'Löneutveckling per BAS-intervall' },
-        { typ: 'stycke', stil: 'dampad', text: `Varje mått ${forraAr} → ${nuAr}, med förändringen i kronor och i procent av ${forraAr} års värde. Bara intervall med minst ${kTroskel()} personer; medianen rör sig också när sammansättningen ändras.` },
+        { typ: 'stycke', stil: 'dampad', text: `Varje mått ${forraAr} till ${nuAr}, med förändringen i kronor och i procent av ${forraAr} års värde. Bara intervall med minst ${kTroskel()} personer; medianen rör sig också när sammansättningen ändras.` },
         { typ: 'tabell', kolumner: [{ rubrik: 'BAS-intervall', typ: 'text' }, { rubrik: 'Antal', typ: 'text' }, { rubrik: 'P10', typ: 'text' }, { rubrik: 'Median', typ: 'text' }, { rubrik: 'P90', typ: 'text' }],
           rader: j.basIntervall.map(r => [`BAS ${r.bas}`, antal(r.n), matt(r.p10), matt(r.med), matt(r.p90)]) },
     ];
@@ -28434,6 +28439,7 @@ const INFO_SECTIONS = {
             <li><strong>PDF-rapport:</strong> en låst kopia av Word-utkastet med samma urval av avsnitt (hela dokumentationen, ledningsbrief eller facklig dialog)</li>
             <li><strong>Organisationspaket:</strong> en fil med organisationens benämningar, grundinställningar, ställningstagande och jämförelsestatistik läses in i Filer och kvalitet.</li>
             <li><strong>Sök:</strong> fältet i sidhuvudet (snedstreck eller Ctrl+K) hittar yrken och BAS-intervall och markerar dem i alla diagram och tabeller, och hittar flikarnas avsnitt, exporterna och fälten i Inställningar, också utan lönefil. Ett avsnitt i en låst flik säger <em>kräver lönefil</em></li>
+            <li><strong>Dossierer:</strong> gruppdossiern samlar en yrkesgrupp på en sida; BAS-dossiern samlar ett BAS-intervall i rapportens ordning — nyckeltal och läget mot ställningstagandet, yrkesgrupperna, likvärdigt arbete, ålder och förra året — och kopieras som text utan lönemått för grupper under tröskeln. BAS-dossiern öppnas från Löneöversikten, Lönestrukturs tabell per BAS-intervall, gruppdossiern, markeringen och sökrutan</li>
             <li><strong>På den här sidan:</strong> flikens synliga avsnitt i en lista som följer med när sidan rullas; ett klick fäller ut avsnittet och flyttar fokus dit</li>
             <li><strong>Självdiagnostik:</strong> ladda 200 syntetiska poster med kända egenskaper och kör sju kontroller</li>
             <li><strong>Tangentbordsnavigation:</strong> Tab/Shift+Tab mellan kontroller, piltangenter och Home/End i menyn och i flikraderna, Esc stänger modaler och menyer</li>
@@ -31029,7 +31035,7 @@ function _gdRenderBody(d) {
                 ? `<br><span title="${esc(skrForklaring())}">nationellt: ${svPct(d.skr.pct, 0)} kvinnor i ${_skrDelText(d.skr.del)}</span>` : ''}</small></div>
             <div class="gd-kpi"><span>${kr(d.median)}</span><small>median</small></div>
             <div class="gd-kpi"><span>${kr(d.p10)} – ${kr(d.p90)}</span><small>P10 – P90</small></div>
-        </div>${d.ansvar ? `
+        </div>${basdossierKandidater().some(x => x.bas === d.bas) ? `<p class="gd-note">${basdossierKnapp(d.bas, { text: `Hela BAS ${d.bas}` })} allt om intervallet på en sida</p>` : ''}${d.ansvar ? `
         <p class="gd-ansvar">Ansvar: Ledningsansvar ${d.ansvar.ledning.kv} kv / ${d.ansvar.ledning.ma} män ·
             Särskilt uppdrag ${d.ansvar.uppdrag.kv} kv / ${d.ansvar.uppdrag.ma} män</p>` : ''}`;
 
@@ -31153,6 +31159,349 @@ document.addEventListener('click', e => {
     const done = () => { if (typeof announceToScreenReader === 'function') announceToScreenReader('Dossier kopierad.'); };
     if (navigator.clipboard?.writeText) navigator.clipboard.writeText(txt).then(done).catch(() => {});
     else done();
+});
+// SPDX-License-Identifier: MIT
+// Copyright 2026 Felix Jansson
+// ====================================================================
+// 81-basdossier.js — "Ett BAS-intervall, en sida"
+//
+// Samlar det verktyget redan vet om ett BAS-intervall i rapportens ordning, så att avsnittet om intervallet kan
+// skrivas utan att samla ihop det ur fem flikar: nyckeltal och läget mot ställningstagandet, yrkesgrupperna (som i
+// Lika arbete), likvärdigt arbete, ålder, förra året (årsbokslutet, ADR-54) och en textversion.
+//
+// Ingen ny statistik: yrkesgrupperna och deras status kommer ur likaArbeteGrupper (src/lib/rapportunderlag.js) med
+// Lika arbetes gränser, paren ur likvardighetResultat() och förra året ur state.forraArsbokslut. Samma dialogmönster
+// som gruppdossiern (80-gruppdossier.js).
+//
+// Dataskydd: skärmen följer läget (kTroskel(), ADR-51) som övriga flikar; könsuppdelade mått bara där båda könen når
+// k. Textversionen lämnar verktyget och byggs därför i exportläget (basdossierText): grupper under k utelämnas och
+// räknas upp utan lönemått.
+// ====================================================================
+
+const BD_ALDERSGRANSER = [35, 50];   // –34, 35–49, 50– (samma som rapportens tabell Löneskillnader i åldersgrupper)
+
+/** BAS-intervallen som får öppnas i dossiern: minst k personer, i intervallens ordning. */
+function basdossierKandidater() {
+    const d = getData();
+    return getBasIntervals().map(bas => ({ bas, n: d.filter(r => r.bas === bas && r.lon > 0).length }))
+        .filter(x => x.n > 0 && !isKMasked(x.n));
+}
+
+/** Lika arbetes status för en yrkesgrupp ur likaArbeteGrupper (samma gränser som yrkesgruppstabellen i Lika arbete). */
+function _bdStatus(g) {
+    if (g.samladMedian) return 'liten';
+    return g.flaggad ? 'granska' : g.gapPct > 3 ? 'folj' : 'balanserat';
+}
+const BD_STATUS_TEXT = { granska: 'Värt att granska', folj: 'Följ upp', balanserat: 'Balanserat', liten: 'Könsuppdelningen är för liten' };
+const BD_STATUS_KLASS = { granska: ['farg-granska', 'sok'], folj: ['farg-varning', 'oga'], balanserat: ['farg-ok', 'bock'], liten: ['f-dampad', null] };
+
+/**
+ * Dossiern för ett BAS-intervall som ren data, eller null när intervallet saknas eller har färre än k personer.
+ * @param {string} bas
+ */
+function buildBasdossier(bas) {
+    if (!basdossierKandidater().some(x => x.bas === bas)) return null;
+    const k = kTroskel();
+    const df = getData().filter(r => r.bas === bas && r.lon > 0);
+    const arKv = r => !!(r.kon && r.kon.includes('kvinna')), arMa = r => r.kon === 'man' || r.kon === 'män';
+    const kv = df.filter(arKv), ma = df.filter(arMa);
+    const lon = df.map(r => r.lon);
+    const konOk = _konFarRedovisas(kv.length, ma.length);
+    const median = Stat.median(lon), p10 = Stat.quantile(lon, 0.10), p90 = Stat.quantile(lon, 0.90);
+    const medKv = konOk ? Stat.median(kv.map(r => r.lon)) : null, medMa = konOk ? Stat.median(ma.map(r => r.lon)) : null;
+
+    // 1. Läget mot ställningstagandet: referensens rad för BAS-intervallet (inte en yrkesrad).
+    const pol = typeof policyFor === 'function' ? policyFor(null, bas) : null;
+    const pct = (v, ref) => (v != null && ref > 0 ? (v / ref - 1) * 100 : null);
+    const referens = pol ? { namn: referensKortnamn(), p10: pol.p10 ?? null, med: pol.med ?? null, p90: pol.p90 ?? null,
+        diffPct: { p10: pct(p10, pol.p10), med: pct(median, pol.med), p90: pct(p90, pol.p90) } } : null;
+
+    // 2. Yrkesgrupperna i intervallet, som i Lika arbete men räknade på intervallets rader.
+    const lika = _ruLikaArbeteGrupper(df, { k, troskel: 5 });
+    const nycklar = new Set(gruppdossierCandidates().map(g => g.key));
+    const yrken = lika.grupper.map(g => {
+        const m = String(g.yrke || '').match(/^(\d+)/), aid = m ? m[1] : String(g.yrke || '');
+        const delade = !g.samladMedian;
+        return { yrke: g.yrke, aid, nKv: g.nKv, nMa: g.nMa, tot: g.tot, status: _bdStatus(g),
+            medKv: delade ? g.medKv : null, medMa: delade ? g.medMa : null, kvotPct: delade ? g.kvot * 100 : null,
+            medTot: g.samladMedian ? g.medTot : null, dossierKey: nycklar.has(`${aid}|${bas}`) ? `${aid}|${bas}` : null };
+    }).sort((a, b) => b.tot - a.tot || String(a.yrke).localeCompare(String(b.yrke), 'sv'));
+
+    // 3. Likvärdigt arbete: kandidatpar och hierarkiska par där det kvinnodominerade yrket ligger i intervallet.
+    let kandidat = [], hierarkiska = [], parUtelamnade = 0;
+    try {
+        const lv = likvardighetResultat();
+        const a = _parForRedovisning(((lv && lv.pairs) || []).filter(p => p.kvBas === bas));
+        const b = _parForRedovisning(((lv && lv.lagreKrav) || []).filter(p => p.kvBas === bas));
+        kandidat = a.par; hierarkiska = b.par; parUtelamnade = a.utelamnade + b.utelamnade;
+    } catch (e) { rapporteraFel('BAS-dossier: likvärdigt arbete', e); }
+    const parRad = p => ({ kvLabel: p.kvLabel, kvAid: p.kvAid, kvBas: p.kvBas, kvN: p.kvN, kvMedian: p.kvMedian,
+        maLabel: p.maLabel, maAid: p.maAid, maBas: p.maBas, maN: p.maN ?? null, maMedian: p.maMedian, gapKr: p.gapKr, gapPct: p.gapPct });
+
+    // 4. Ålder: medianlön per åldersgrupp och kön; ett köns median bara när båda könen i åldersgruppen når k.
+    const namn = __mirrorPerBas.aldersgruppNamn(BD_ALDERSGRANSER);
+    const iGrupp = (r, i) => { const lo = i === 0 ? -Infinity : BD_ALDERSGRANSER[i - 1], hi = i < BD_ALDERSGRANSER.length ? BD_ALDERSGRANSER[i] : Infinity; return r.alder >= lo && r.alder < hi; };
+    const medAlder = df.filter(r => typeof r.alder === 'number' && r.alder > 0);
+    const alder = namn.map((n, i) => {
+        const rader = medAlder.filter(r => iGrupp(r, i)), gKv = rader.filter(arKv), gMa = rader.filter(arMa);
+        const ok = _konFarRedovisas(gKv.length, gMa.length);
+        return { namn: n, n: rader.length, nKv: gKv.length, nMa: gMa.length,
+            med: rader.length && !isKMasked(rader.length) ? Stat.median(rader.map(r => r.lon)) : null,
+            medKv: ok ? Stat.median(gKv.map(r => r.lon)) : null, medMa: ok ? Stat.median(gMa.map(r => r.lon)) : null };
+    });
+
+    // 5. Förra året: intervallets rad ur förra årets bokslut, jämförd med årets (samma rad som bokslutet bär).
+    const fb = state.forraArsbokslut;
+    /** @type {any} */ let forra = { lage: 'ingetBokslut' };
+    if (fb && !Array.isArray(fb.basIntervall)) forra = { lage: 'saknasFalt', ar: fb.ar };
+    else if (fb) {
+        const f = fb.basIntervall.find(r => r.bas === bas);
+        const nu = typeof _abBasRad === 'function' ? _abBasRad(getData(), bas, k) : null;
+        const j = f && nu ? _abJamforBas([f], [nu]) : null;
+        forra = j && j[0] ? { lage: 'ok', ar: fb.ar, nuAr: new Date().getFullYear(), rad: j[0] } : { lage: 'saknasIntervall', ar: fb.ar };
+    }
+
+    return { bas, n: df.length, nKv: kv.length, nMa: ma.length, andelKv: df.length ? kv.length / df.length * 100 : null,
+        median, p10, p90, konOk, medKv, medMa, kvotPct: medKv != null && medMa != null && medMa > 0 ? medKv / medMa * 100 : null,
+        referens, yrken, yrkenUtelamnade: lika.utelamnade.slice().sort((a, b) => String(a).localeCompare(String(b), 'sv')),
+        ejJamforbara: lika.ejJamforbara.slice(),
+        par: { kandidat: kandidat.map(parRad), hierarkiska: hierarkiska.map(parRad), utelamnade: parUtelamnade },
+        alder, forra, k };
+}
+
+// ---- Rendering --------------------------------------------------------------
+
+/** @type {string|null} */
+let _bdVald = null;
+/** Öppnar dossiern för ett BAS-intervall (eller det första), med fokus tillbaka till öppnaren när den stängs. */
+function openBasdossier(bas, opener) {
+    const modal = document.getElementById('basdossier-modal');
+    if (!modal) return;
+    renderBasdossier(bas);
+    modal.style.display = 'flex';
+    if (typeof trapFocus === 'function') trapFocus(modal, opener || document.activeElement);
+}
+function closeBasdossier() {
+    const modal = document.getElementById('basdossier-modal');
+    if (!modal || modal.style.display !== 'flex') return;
+    if (typeof releaseFocus === 'function') releaseFocus(modal);
+    modal.style.display = 'none';
+}
+
+function renderBasdossier(bas) {
+    const sel = /** @type {HTMLSelectElement|null} */ (document.getElementById('basdossier-select'));
+    const body = document.getElementById('basdossier-body');
+    if (!sel || !body) return;
+    const kand = basdossierKandidater();
+    if (!kand.length) {
+        sel.innerHTML = '';
+        body.innerHTML = `<div class="flik-empty-state"><div class="empty-icon">${ikon('tomLada')}</div>
+            <h3>Inga BAS-intervall att visa</h3><p>Inget BAS-intervall når ${kTroskel()} personer, eller ingen lönefil är inläst.</p></div>`;
+        return;
+    }
+    const onskat = bas || sel.value || _bdVald || kand[0].bas;
+    sel.innerHTML = kand.map(x => `<option value="${esc(x.bas)}">BAS ${esc(x.bas)} (${svTal(x.n, 0)} personer)</option>`).join('');
+    sel.value = kand.some(x => x.bas === onskat) ? onskat : kand[0].bas;
+    _bdVald = sel.value;
+    const d = buildBasdossier(sel.value);
+    body.innerHTML = d ? _bdRenderBody(d) : '<p class="f-dampad">BAS-intervallet kunde inte läsas.</p>';
+    // Fokusfällan cachar de fokuserbara elementen; när innehållet byggs om medan dialogen är öppen läggs den om,
+    // med samma öppnare. Fokus står kvar där det var (väljaren), i stället för att hoppa till stängknappen.
+    const modal = document.getElementById('basdossier-modal');
+    if (modal && modal.style.display === 'flex') {
+        const trap = _focusTraps.get(modal), opener = trap ? trap.opener : null, aktiv = document.activeElement;
+        if (trap) { modal.removeEventListener('keydown', trap.handler); _focusTraps.delete(modal); }
+        trapFocus(modal, opener);
+        if (aktiv && aktiv !== document.body && modal.contains(aktiv)) setTimeout(() => /** @type {HTMLElement} */ (aktiv).focus(), 60);
+    }
+}
+
+const _bdKr = v => (v == null || !isFinite(v) ? '–' : `${svTal(Math.round(v), 0)} kr`);
+const _bdTecken = v => (v > 0 ? '+' : v < 0 ? '−' : '±');
+const _bdPctTecken = v => (v == null ? '–' : `${_bdTecken(v)}${svPct(Math.abs(v), 1)}`);
+
+function _bdRenderBody(d) {
+    const card = (title, inner, note) => `<div class="gd-card bd-card"><h3>${title}</h3>${note ? `<p class="gd-note">${note}</p>` : ''}${inner}</div>`;
+    const missing = txt => `<p class="gd-missing">${txt}</p>`;
+    const k = d.k;
+
+    // 1. Nyckeltal och läget mot ställningstagandet
+    const nyckeltal = `<div class="gd-kpis">
+            <div class="gd-kpi"><span>${svTal(d.n, 0)}</span><small>personer</small></div>
+            <div class="gd-kpi"><span>${d.nKv} / ${d.nMa}</span><small>kvinnor / män (${svPct(d.andelKv, 0)} kvinnor)</small></div>
+            <div class="gd-kpi"><span>${_bdKr(d.median)}</span><small>median</small></div>
+            <div class="gd-kpi"><span>${_bdKr(d.p10)} – ${_bdKr(d.p90)}</span><small>P10 – P90</small></div>
+        </div>`
+        + (d.konOk ? `<p>Kvinnors median ${_bdKr(d.medKv)}, mäns ${_bdKr(d.medMa)}: kvinnors median är ${svPct(d.kvotPct, 1)} av mäns.</p>`
+            : `<p class="gd-note">${esc(_konUtelamnatNot())}</p>`)
+        + (d.referens
+            ? `<table class="data-table st-088 bd-tabell"><thead><tr><th scope="col">Mot ${esc(d.referens.namn)}</th><th scope="col" class="t-hoger">P10</th><th scope="col" class="t-hoger">Median</th><th scope="col" class="t-hoger">P90</th></tr></thead><tbody>`
+              + `<tr><th scope="row">Referensen</th><td class="t-tal">${_bdKr(d.referens.p10)}</td><td class="t-tal">${_bdKr(d.referens.med)}</td><td class="t-tal">${_bdKr(d.referens.p90)}</td></tr>`
+              + `<tr><th scope="row">BAS ${esc(d.bas)}</th><td class="t-tal">${_bdKr(d.p10)}</td><td class="t-tal">${_bdKr(d.median)}</td><td class="t-tal">${_bdKr(d.p90)}</td></tr>`
+              + `<tr><th scope="row">Skillnad</th><td class="t-tal">${_bdPctTecken(d.referens.diffPct.p10)}</td><td class="t-tal">${_bdPctTecken(d.referens.diffPct.med)}</td><td class="t-tal">${_bdPctTecken(d.referens.diffPct.p90)}</td></tr></tbody></table>`
+            : missing('Inget ställningstagande har en rad för intervallet.'));
+
+    // 2. Yrkesgrupperna
+    const status = y => { const [klass, ik] = BD_STATUS_KLASS[y.status]; return `<span class="la-status ${klass}">${ik ? ikon(ik) : ''} ${BD_STATUS_TEXT[y.status]}</span>`; };
+    const yrkesrad = y => `<tr><td>${esc(y.aid)}</td><td>${esc(String(y.yrke).replace(/^\d+\s*/, '') || y.yrke)}</td>`
+        + `<td class="t-tal">${y.tot} (${y.nKv}/${y.nMa})</td>`
+        + (y.status === 'liten' ? `<td colspan="3" class="t-mitt">Gruppens median ${_bdKr(y.medTot)}</td>`
+            : `<td class="t-tal">${_bdKr(y.medKv)}</td><td class="t-tal">${_bdKr(y.medMa)}</td><td class="t-tal">${svPct(y.kvotPct, 1)}</td>`)
+        + `<td>${status(y)}</td><td class="t-mitt">${y.dossierKey ? `<button type="button" class="btn-table-tool" data-bd-gruppdossier="${esc(y.dossierKey)}" aria-label="Öppna gruppdossiern för ${esc(y.yrke)}">Gruppdossier</button>` : ''}</td></tr>`;
+    const yrken = (d.yrken.length
+        ? `<div class="table-container"><table class="data-table st-088 bd-tabell" id="basdossier-yrken"><thead><tr><th scope="col">AID</th><th scope="col">Yrke</th><th scope="col" class="t-hoger">Antal (kv/mä)</th><th scope="col" class="t-hoger">Median kvinnor</th><th scope="col" class="t-hoger">Median män</th><th scope="col" class="t-hoger">Kvinnors median i % av mäns</th><th scope="col">Status</th><th scope="col"><span class="sr-only">Gruppdossier</span></th></tr></thead><tbody>${d.yrken.map(yrkesrad).join('')}</tbody></table></div>`
+        : missing('Ingen yrkesgrupp i intervallet har både kvinnor och män att jämföra.'))
+        + (d.yrkenUtelamnade.length ? kMaskNote(d.yrkenUtelamnade, 'yrkesgrupp|yrkesgrupper') : '')
+        + (d.ejJamforbara.length ? `<p class="gd-note">Inte jämförbara (ett kön har färre än två personer): ${esc(d.ejJamforbara.join(', '))}.</p>` : '');
+
+    // 3. Likvärdigt arbete
+    const parLista = lista => `<ul class="gd-list">${lista.map(p => `<li>${esc(gruppNamn({ aid: p.kvAid, yrke: p.kvLabel }))} (BAS ${esc(p.kvBas)}) mot ${esc(gruppNamn({ aid: p.maAid, yrke: p.maLabel }))} (BAS ${esc(p.maBas)}): ${_bdKr(p.kvMedian)} mot ${_bdKr(p.maMedian)}, skillnad ${_bdKr(p.gapKr)} (${svPct(p.gapPct, 1)})</li>`).join('')}</ul>`;
+    const parNot = d.par.utelamnade ? `<p class="gd-note">${esc(_parUtelamnadeNot(d.par.utelamnade))}</p>` : '';
+    const likvardigt = (d.par.kandidat.length || d.par.hierarkiska.length)
+        ? (d.par.kandidat.length ? `<p><strong>Kandidatpar där det kvinnodominerade yrket ligger i intervallet</strong></p>${parLista(d.par.kandidat)}` : '<p>Inga kandidatpar där det kvinnodominerade yrket ligger i intervallet.</p>')
+          + (d.par.hierarkiska.length ? `<p><strong>Lägre krav, högre lön</strong> (jämförelseyrket ligger i ett lägre intervall)</p>${parLista(d.par.hierarkiska)}` : '') + parNot
+        : (parNot || missing('Inget kvinnodominerat yrke i intervallet ingår i en jämförelse av likvärdigt arbete.'));
+
+    // 4. Ålder
+    const alder = `<table class="data-table st-088 bd-tabell"><thead><tr><th scope="col">Åldersgrupp</th><th scope="col" class="t-hoger">Antal (kv/mä)</th><th scope="col" class="t-hoger">Median</th><th scope="col" class="t-hoger">Median kvinnor</th><th scope="col" class="t-hoger">Median män</th></tr></thead><tbody>`
+        + d.alder.map(a => `<tr><th scope="row">${esc(a.namn)}</th><td class="t-tal">${a.n} (${a.nKv}/${a.nMa})</td><td class="t-tal">${_bdKr(a.med)}</td><td class="t-tal">${_bdKr(a.medKv)}</td><td class="t-tal">${_bdKr(a.medMa)}</td></tr>`).join('')
+        + `</tbody></table><p class="gd-note">Ett köns median står bara där båda könen i åldersgruppen har minst ${k} personer.</p>`
+        + `<p><button type="button" class="btn-table-tool" data-bd-alder="${esc(d.bas)}">${ikon('pilUt', 14)} Ålder &amp; karriär för BAS ${esc(d.bas)}</button></p>`;
+
+    // 5. Förra året
+    const f = d.forra;
+    let forra;
+    if (f.lage === 'ok') {
+        const r = f.rad;
+        forra = `<table class="data-table st-088 bd-tabell"><thead><tr><th scope="col">Mått</th><th scope="col" class="t-hoger">${f.ar}</th><th scope="col" class="t-hoger">I år</th><th scope="col" class="t-hoger">Förändring</th></tr></thead><tbody>`
+            + `<tr><th scope="row">Antal</th><td class="t-tal">${r.n.forra ?? '–'}</td><td class="t-tal">${r.n.nu ?? '–'}</td><td class="t-tal">${r.n.diff == null ? '–' : `${_bdTecken(r.n.diff)}${Math.abs(r.n.diff)}`}</td></tr>`
+            + [['p10', 'P10'], ['med', 'Median'], ['p90', 'P90'], ['medKv', 'Median kvinnor'], ['medMa', 'Median män']].map(([m, e]) => `<tr><th scope="row">${e}</th><td class="t-tal">${_bdKr(r[m].forra)}</td><td class="t-tal">${_bdKr(r[m].nu)}</td><td class="t-tal halvfet">${_abForandringText(r[m])}</td></tr>`).join('')
+            + '</tbody></table>';
+    } else forra = missing(_bdForraText(f));
+
+    return `
+        <div class="gd-head">
+            <h3 class="fs-lg marg-0">BAS-intervall ${esc(d.bas)}</h3>
+            <span class="gd-sub">${svTal(d.n, 0)} personer · ${d.yrken.length} ${d.yrken.length === 1 ? 'yrkesgrupp' : 'yrkesgrupper'}</span>
+            <button type="button" class="btn-table-tool" id="btn-basdossier-copy" title="Kopiera dossiern som text, i rapportens form">${ikon('kopiera', 14)} Kopiera som text</button>
+        </div>
+        <div class="bd-stack">
+            ${card('Nyckeltal', nyckeltal)}
+            ${card('Yrkesgrupperna i intervallet', yrken, 'Samma gränser som i Lika arbete, räknade på intervallets personer. Könsuppdelade mått bara där båda könen når minsta gruppstorlek.')}
+            ${card('Likvärdigt arbete i intervallet', likvardigt)}
+            ${card('Ålder', alder)}
+            ${card('Förra året', forra)}
+        </div>`;
+}
+
+/** Raden i punkt 5 när det inte finns något att jämföra med. */
+function _bdForraText(f) {
+    if (f.lage === 'saknasFalt') return `Förra årets bokslut (${f.ar}) sparades med en äldre version av verktyget och saknar raderna per BAS-intervall. Årets konfigurationsfil har dem.`;
+    if (f.lage === 'saknasIntervall') return `Förra årets bokslut (${f.ar}) har ingen rad för intervallet: det hade färre än minsta gruppstorlek eller fanns inte.`;
+    return 'Inget årsbokslut inläst. Konfigurationsfilen bär bokslutet: läs in förra årets fil i Spara och jämför år, så står intervallets rad här.';
+}
+
+/**
+ * Textversionen i rapportens form: rubriken "BAS-intervall X" och ett stycke per punkt. Byggs ur en modell som
+ * byggts i exportläget (basdossierText), så grupper under k står bara med namn bland de utelämnade.
+ */
+function basdossierAsText(d) {
+    const L = [`BAS-intervall ${d.bas}`, ''];
+    const kr = _bdKr;
+    L.push('Nyckeltal');
+    L.push(`${svTal(d.n, 0)} personer, ${d.nKv} kvinnor och ${d.nMa} män (${svPct(d.andelKv, 0)} kvinnor). Medianlön ${kr(d.median)}, P10–P90 ${kr(d.p10)}–${kr(d.p90)}.`
+        + (d.konOk ? ` Kvinnors median ${kr(d.medKv)} och mäns ${kr(d.medMa)}: kvinnors median är ${svPct(d.kvotPct, 1)} av mäns.` : ` ${_konUtelamnatNot()}`));
+    if (d.referens) L.push(`Mot ${d.referens.namn}: P10 ${kr(d.p10)} mot ${kr(d.referens.p10)} (${_bdPctTecken(d.referens.diffPct.p10)}), median ${kr(d.median)} mot ${kr(d.referens.med)} (${_bdPctTecken(d.referens.diffPct.med)}), P90 ${kr(d.p90)} mot ${kr(d.referens.p90)} (${_bdPctTecken(d.referens.diffPct.p90)}).`);
+    L.push('');
+    L.push('Yrkesgrupperna i intervallet');
+    if (!d.yrken.length) L.push('Ingen yrkesgrupp i intervallet har både kvinnor och män att jämföra.');
+    for (const y of d.yrken) {
+        const antal = `${y.tot} personer (${y.nKv} kvinnor, ${y.nMa} män)`;
+        L.push(y.status === 'liten'
+            ? `- ${y.yrke}: ${antal}. Gruppens median ${kr(y.medTot)}; könsuppdelningen är för liten för en jämförelse.`
+            : `- ${y.yrke}: ${antal}. Kvinnor ${kr(y.medKv)}, män ${kr(y.medMa)}; kvinnors median ${svPct(y.kvotPct, 1)} av mäns. ${BD_STATUS_TEXT[y.status]}.`);
+    }
+    if (d.yrkenUtelamnade.length) L.push(`Redovisas inte (färre än ${d.k} personer): ${d.yrkenUtelamnade.join(', ')}.`);
+    if (d.ejJamforbara.length) L.push(`Inte jämförbara (ett kön har färre än två personer): ${d.ejJamforbara.join(', ')}.`);
+    L.push('');
+    L.push('Likvärdigt arbete i intervallet');
+    const par = p => `- ${gruppNamn({ aid: p.kvAid, yrke: p.kvLabel })} (BAS ${p.kvBas}) mot ${gruppNamn({ aid: p.maAid, yrke: p.maLabel })} (BAS ${p.maBas}): ${kr(p.kvMedian)} mot ${kr(p.maMedian)}, skillnad ${kr(p.gapKr)} (${svPct(p.gapPct, 1)}).`;
+    if (d.par.kandidat.length) { L.push('Kandidatpar där det kvinnodominerade yrket ligger i intervallet:'); d.par.kandidat.forEach(p => L.push(par(p))); }
+    if (d.par.hierarkiska.length) { L.push('Lägre krav, högre lön:'); d.par.hierarkiska.forEach(p => L.push(par(p))); }
+    if (!d.par.kandidat.length && !d.par.hierarkiska.length) L.push('Inget kvinnodominerat yrke i intervallet ingår i en jämförelse av likvärdigt arbete.');
+    if (d.par.utelamnade) L.push(_parUtelamnadeNot(d.par.utelamnade));
+    L.push('');
+    L.push('Ålder');
+    for (const a of d.alder) {
+        const kon = a.medKv != null ? `, kvinnor ${kr(a.medKv)}, män ${kr(a.medMa)}` : '';
+        L.push(`- ${a.namn}: ${a.n} personer (${a.nKv} kvinnor, ${a.nMa} män)${a.med != null ? `, median ${kr(a.med)}${kon}` : ''}.`);
+    }
+    L.push(`Ett köns median står bara där båda könen i åldersgruppen har minst ${d.k} personer.`);
+    L.push('');
+    L.push('Förra året');
+    const f = d.forra;
+    if (f.lage === 'ok') {
+        const r = f.rad;
+        L.push(`Jämfört med ${f.ar}: antal ${r.n.forra ?? '–'} till ${r.n.nu ?? '–'}; `
+            + [['p10', 'P10'], ['med', 'median'], ['p90', 'P90']].map(([m, e]) => `${e} ${kr(r[m].forra)} till ${kr(r[m].nu)} (${_abForandringText(r[m])})`).join('; ') + '.');
+    } else L.push(_bdForraText(f));
+    if (_kSanktNot()) L.push('', _kSanktNot());
+    return L.join('\n');
+}
+
+/** Texten för ett BAS-intervall, byggd i exportläget (ADR-51); null när intervallet inte når den inställda tröskeln. */
+function basdossierText(bas) {
+    return medExportLage(() => { const d = buildBasdossier(bas); return d ? basdossierAsText(d) : null; });
+}
+
+/**
+ * Knappen som öppnar dossiern, för tabellerna (Löneöversikten, Lönestrukturs tabell per BAS-intervall) och
+ * gruppdossiern. `ikonEndast`: bara en ikon, som bevisknappen bredvid, så att radens rubrik har samma text som förut.
+ */
+function basdossierKnapp(bas, { text = 'BAS-dossier', ikonEndast = false } = {}) {
+    const attr = `type="button" data-open-basdossier="${esc(bas)}" aria-label="Öppna BAS-dossiern för BAS ${esc(bas)}" title="BAS-dossier: allt om BAS ${esc(bas)} på en sida"`;
+    return ikonEndast ? `<button ${attr} class="btn-evidence bd-oppna-ikon">${ikon('dokument')}</button>`
+        : `<button ${attr} class="btn-table-tool bd-oppna">${esc(text)}</button>`;
+}
+
+// ---- Wiring ----
+document.getElementById('basdossier-select')?.addEventListener('change', () => renderBasdossier());
+// Knapparna i tabellraderna: fångas före radens egna lyssnare (fäll in/ut, markering), som inte ska reagera.
+document.addEventListener('click', e => {
+    const btn = /** @type {HTMLElement} */ (e.target).closest && /** @type {HTMLElement} */ (e.target).closest('[data-open-basdossier]');
+    if (!btn) return;
+    e.preventDefault(); e.stopPropagation();
+    const bas = btn.getAttribute('data-open-basdossier') || '';
+    // Från gruppdossiern: den stängs först, så att fokus går tillbaka till det som öppnade den när BAS-dossiern stängs.
+    const iGrupp = btn.closest('#dossier-modal');
+    if (iGrupp) { closeGruppdossier(); openBasdossier(bas); } else openBasdossier(bas, btn);
+}, true);
+document.addEventListener('click', e => {
+    const t = /** @type {HTMLElement} */ (e.target);
+    if (!t.closest) return;
+    if (t.closest('[data-basdossier-close]')) { closeBasdossier(); return; }
+    const grupp = t.closest('[data-bd-gruppdossier]');
+    if (grupp) { closeBasdossier(); openGruppdossier(grupp.getAttribute('data-bd-gruppdossier')); return; }
+    const alder = t.closest('[data-bd-alder]');
+    if (alder) {
+        const bas = alder.getAttribute('data-bd-alder') || '';
+        closeBasdossier();
+        const sel = /** @type {HTMLSelectElement|null} */ (document.getElementById('bas-select-kon'));
+        if (sel && [...sel.options].some(o => o.value === bas)) sel.value = bas;
+        navigateTo('kon');
+        return;
+    }
+    if (t.closest('#btn-basdossier-copy')) {
+        const sel = /** @type {HTMLSelectElement|null} */ (document.getElementById('basdossier-select'));
+        const txt = sel ? basdossierText(sel.value) : null;   // texten lämnar verktyget (ADR-51)
+        if (!txt) { announceToScreenReader(`BAS-intervallet har färre än ${kInstalld()} personer och kopieras inte.`); return; }
+        const klart = () => announceToScreenReader('BAS-dossiern kopierad.');
+        if (navigator.clipboard?.writeText) navigator.clipboard.writeText(txt).then(klart).catch(() => {});
+        else klart();
+    }
+});
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && document.getElementById('basdossier-modal')?.style.display === 'flex') closeBasdossier();
 });
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -31592,7 +31941,7 @@ document.addEventListener('click', e => {
  * tests/sok-funktioner.test.js vaktar att varje avsnitt i index.html har en post och att varje post pekar på
  * något som finns. Ett nytt avsnitt får alltså en rad här.
  *
- * @type {{ namn: string, synonymer: string[], flik: string, avsnitt?: string, dialog?: 'installningar'|'ordlista'|'symboler'|'lagras', falt?: string }[]}
+ * @type {{ namn: string, synonymer: string[], flik: string, avsnitt?: string, dialog?: 'installningar'|'ordlista'|'symboler'|'lagras'|'basdossier', falt?: string }[]}
  */
 const SOK_FUNKTIONER = [
     // Översikt
@@ -31675,6 +32024,7 @@ const SOK_FUNKTIONER = [
     { namn: 'Inställningar', synonymer: ['inställning', 'konfigurera'], flik: 'dashboard', dialog: 'installningar' },
     { namn: 'Ordlista', synonymer: ['begrepp', 'termer', 'ord', 'förklaring av ord'], flik: 'info', dialog: 'ordlista' },
     { namn: 'Förklaring av symboler och färger', synonymer: ['symboler', 'färger', 'ikoner', 'teckenförklaring'], flik: 'info', dialog: 'symboler' },
+    { namn: 'BAS-dossier', synonymer: ['intervall', 'bas-intervall', 'dossier', 'per intervall', 'ett intervall', 'intervallet på en sida'], flik: 'struktur', dialog: 'basdossier' },
     { namn: 'Vad lagras?', synonymer: ['lagras', 'minnet', 'dataskydd', 'gdpr', 'personuppgifter'], flik: 'filer', dialog: 'lagras' },
     // Fälten i Inställningar
     { namn: 'Minsta gruppstorlek för redovisning', synonymer: ['minsta gruppstorlek', 'k', 'tröskel', 'anonymitet', 'tio personer'], flik: 'dokumentera', dialog: 'installningar', falt: 'k-troskel' },
@@ -31703,7 +32053,8 @@ const SOK_FUNKTIONER = [
  * träff säger inte om en mindre grupp finns. Söktexten sparas inte och lämnar inte sidan.
  */
 const SOK_MAX_TRAFFAR = 8, SOK_MAX_FUNKTIONER = 5;
-/** Träffarna i listan, grupperna först och funktionerna efter: { typ: 'grupp', nyckel, … } eller { typ: 'funktion', …post i SOK_FUNKTIONER }. */
+/** Träffarna i listan, grupperna först och funktionerna efter: { typ: 'grupp', nyckel, … }, { typ: 'basdossier', bas, namn }
+ *  (raden under en BAS-träff som öppnar BAS-dossiern, 81-basdossier.js) eller { typ: 'funktion', …post i SOK_FUNKTIONER }. */
 let _sokTraffar = [], _sokAktiv = -1;
 
 /** Jämförelseform: gemener utan accenter och prickar, så att "skoterska" hittar "sköterska" (också utan svenskt tangentbord). */
@@ -31758,18 +32109,18 @@ function _sokMalDolt(p) {
  *  flik, som exportraderna), 'referens' (lönefilen är inläst men fliken är ändå låst: Löneläget, som kräver en
  *  referens eller jämförelsestatistik, 38-referensfiler.js), annars ''. */
 function _sokKraver(p) {
-    if (p.dialog) return '';
+    if (p.dialog) return p.dialog === 'basdossier' && !_sokHarData() ? 'lonefil' : '';
     const nav = /** @type {HTMLInputElement|null} */ (document.querySelector(`.nav-item[data-tab="${p.flik}"]`));
     const har = _sokHarData();
     if (nav && nav.disabled) return har ? 'referens' : 'lonefil';
     return !har && _sokMalDolt(p) ? 'lonefil' : '';
 }
 const SOK_KRAVER_TEXT = { lonefil: 'kräver lönefil', referens: 'kräver referens eller jämförelsestatistik' };
-const SOK_DIALOGNAMN = { installningar: 'Inställningar', ordlista: 'Ordlista', symboler: 'Förklaring', lagras: 'Vad lagras?' };
+const SOK_DIALOGNAMN = { installningar: 'Inställningar', ordlista: 'Ordlista', symboler: 'Förklaring', lagras: 'Vad lagras?', basdossier: 'BAS-dossiern' };
 function _sokFlikNamn(flik) { return (document.querySelector(`.nav-item[data-tab="${flik}"]`)?.textContent || flik).trim(); }
 function _sokFunktionUnder(p) {
     if (p.falt) return 'Fält i Inställningar';
-    if (p.dialog) return `Öppnar ${SOK_DIALOGNAMN[p.dialog]}`;
+    if (p.dialog) { const kraver = _sokKraver(p); return kraver ? `Öppnar ${SOK_DIALOGNAMN[p.dialog]} · ${SOK_KRAVER_TEXT[kraver]}` : `Öppnar ${SOK_DIALOGNAMN[p.dialog]}`; }
     const kraver = _sokKraver(p);
     return `I fliken ${_sokFlikNamn(p.flik)}${kraver ? ' · ' + SOK_KRAVER_TEXT[kraver] : ''}`;
 }
@@ -31778,7 +32129,12 @@ function _sokRita() {
     const falt = document.getElementById('sok-grupp'), lista = document.getElementById('sok-grupp-lista');
     if (!falt || !lista) return;
     const text = /** @type {HTMLInputElement} */ (falt).value.trim();
-    const grupper = sokTraffar(text).map(t => ({ ...t, typ: 'grupp' })), funktioner = sokFunktionsTraffar(text).map(p => ({ ...p, typ: 'funktion' }));
+    // Under varje BAS-träff en rad som öppnar BAS-dossiern: ett eget alternativ, så att pilarna och Retur når det.
+    const grupper = sokTraffar(text).flatMap(t => {
+        const bas = t.nyckel.startsWith('bas:') ? t.nyckel.slice(4) : null;
+        return [{ ...t, typ: 'grupp' }, ...(bas != null ? [{ typ: 'basdossier', bas, namn: `Öppna BAS-dossiern för ${t.namn}` }] : [])];
+    });
+    const funktioner = sokFunktionsTraffar(text).map(p => ({ ...p, typ: 'funktion' }));
     _sokTraffar = [...grupper, ...funktioner];
     _sokAktiv = _sokTraffar.length ? 0 : -1;
     if (!text) { lista.hidden = true; lista.innerHTML = ''; falt.setAttribute('aria-expanded', 'false'); falt.removeAttribute('aria-activedescendant'); return; }
@@ -31787,7 +32143,9 @@ function _sokRita() {
     // Grupper behövs bara när båda finns; ensamma står grupperna direkt i listan.
     const grupp = (namn, id, innehall) => `<li role="group" aria-labelledby="${id}"><span role="presentation" class="sok-grupprubrik" id="${id}">${namn}</span>`
         + `<ul role="presentation" class="sok-grupplista">${innehall}</ul></li>`;
-    const alt = (t, i) => t.typ === 'grupp'
+    const alt = (t, i) => t.typ === 'basdossier'
+        ? `<li role="option" id="sok-traff-${i}" data-sok-index="${i}" data-sok-basdossier="${esc(t.bas)}" class="sok-underval" aria-selected="${i === _sokAktiv}"><span class="sok-namn">${esc(t.namn)}</span><span class="sok-under">Intervallet på en sida, i rapportens ordning</span></li>`
+        : t.typ === 'grupp'
         ? `<li role="option" id="sok-traff-${i}" data-sok-index="${i}" aria-selected="${i === _sokAktiv}"><span class="sok-namn">${esc(t.namn)}</span><span class="sok-under">${esc(t.under)} · ${svTal(t.n, 0)} personer</span></li>`
         : `<li role="option" id="sok-traff-${i}" data-sok-index="${i}" data-sok-funktion aria-selected="${i === _sokAktiv}"><span class="sok-namn">${esc(t.namn)}</span><span class="sok-under">${esc(_sokFunktionUnder(t))}</span></li>`;
     lista.innerHTML = _sokTraffar.length
@@ -31817,6 +32175,7 @@ function sokValj(i) {
     const t = _sokTraffar[i];
     if (!t) return;
     if (t.typ === 'funktion') { _sokValjFunktion(t); return; }
+    if (t.typ === 'basdossier') { _sokStang(); openBasdossier(t.bas, document.getElementById('sok-grupp')); return; }
     const nu = diagramMarkering();
     if (!(nu && nu.length === 1 && nu[0] === t.nyckel)) sattDiagramMarkering(t.nyckel);
     _sokStang();
@@ -31833,6 +32192,7 @@ function _sokValjFunktion(p) {
     if (p.dialog === 'installningar') oppnaInstallningar({ fokus: p.falt || null });
     else if (p.dialog === 'ordlista') openGlossary();
     else if (p.dialog === 'lagras') openDataResidency();
+    else if (p.dialog === 'basdossier') openBasdossier((basdossierKandidater()[0] || {}).bas || null, document.getElementById('sok-grupp'));
     else if (p.dialog === 'symboler') /** @type {HTMLElement|null} */ (document.getElementById('btn-open-symbols'))?.click();
     else {
         navigateTo(p.flik);

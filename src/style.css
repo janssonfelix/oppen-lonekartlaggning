@@ -2597,6 +2597,11 @@ summary:focus-visible {
 .gd-big { font-size:1.7rem; font-weight:700; font-variant-numeric:tabular-nums; margin:4px 0; }
 .gd-kpis { display:flex; flex-wrap:wrap; gap:12px; }
 .gd-kpi { flex:1 1 120px; }
+/* ---- BAS-dossier (81-basdossier.js): samma kort som gruppdossiern, ett under det andra i rapportens ordning ---- */
+.bd-stack { display:flex; flex-direction:column; gap:14px; }
+.bd-tabell { margin:6px 0; }
+.bd-tabell th, .bd-tabell td { padding:6px 10px; }
+.bd-oppna { margin-left:8px; font-weight:400; }
 .gd-kpi span { display:block; font-size:var(--fs-lg); font-weight:700; font-variant-numeric:tabular-nums; }
 .gd-kpi small { color:var(--text-muted,#475569); font-size:var(--fs-xs); }
 .gd-list { margin:6px 0 0 18px; padding:0; font-size:var(--fs-sm); line-height:1.65; }
@@ -2961,6 +2966,7 @@ details.avsnitt .insight-feed-header h3 { display: none; }
 .sok-lista [role="option"][aria-selected="true"], .sok-lista [role="option"]:hover { background: var(--secondary, #eff6ff); }
 .sok-namn { font-size: var(--fs-sm); font-weight: 600; }
 .sok-under { font-size: var(--fs-xs); color: var(--text-muted); }
+.sok-underval { padding-left: 22px !important; }
 .sok-grupplista { margin: 0; padding: 0; list-style: none; }
 .sok-grupprubrik { display: block; padding: 8px 10px 2px; font-size: var(--fs-xs); font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
 .sok-ingen { padding: 8px 10px; font-size: var(--fs-sm); color: var(--text-muted); line-height: 1.5; }

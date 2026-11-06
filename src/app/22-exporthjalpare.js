@@ -87,6 +87,7 @@ function _exportVisaAllaRader(klon) {
         tr.hidden = false;
         tr.classList.remove('collapsed');
     });
+    klon.querySelectorAll('[data-open-basdossier]').forEach(b => b.remove());   // knapparna till BAS-dossiern gör inget i en export
     return _flerKolumnerAlla(klon);   // kolumnerna som växeln Fler kolumner gömmer på skärmen följer med
 }
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.

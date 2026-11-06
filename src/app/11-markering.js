@@ -143,6 +143,7 @@ function _mkRitaRad() {
             const vad = knapp.getAttribute('data-markering');
             if (vad === 'dossier') { const k = _mkDossierNyckel(); if (k) openGruppdossier(k); }
             else if (vad === 'borra') nedborrningTillUtforska();
+            else if (vad === 'basdossier') { const b = _mkBorrBas(); if (b != null) openBasdossier(b, knapp); }
             else sattDiagramMarkering(null);
         });
     }
@@ -154,6 +155,8 @@ function _mkRitaRad() {
     text.title = namn.join('\n');
     rad.appendChild(text);
     if (_mkDossierNyckel()) rad.appendChild(_mkKnapp('dossier', 'Öppna gruppdossier'));
+    // Ett markerat BAS-intervall: dess dossier (81-basdossier.js) ett klick bort, som gruppdossiern för en yrkesgrupp.
+    if (_mkBorrBas() != null && typeof basdossierKandidater === 'function' && basdossierKandidater().some(x => x.bas === _mkBorrBas())) rad.appendChild(_mkKnapp('basdossier', 'Öppna BAS-dossiern'));
     if (_mkBorrBas() != null) {
         const b = _mkKnapp('borra', 'Visa yrkesgrupperna');
         b.title = 'Öppnar Tabeller och egna vyer med yrkesgrupperna i BAS-intervallet. Där visas också grupper under tröskeln, markerade; de följer inte med i en export om du inte väljer det.';

@@ -225,7 +225,7 @@ export const MODULES = [
     {
         file: 'arsbokslut.js', ns: '__mirrorArsbokslut',
         expose: { byggArsbokslut: '_abBygg', valideraArsbokslut: '_abValidera', jamforArsbokslut: '_abJamfor', hantelRader: '_abHantelRader',
-                  basHantelRader: '_abBasHantelRader' }
+                  basHantelRader: '_abBasHantelRader', jamforBasIntervall: '_abJamforBas' }
     },
     {
         // Organisationspaketet importerar tabellrecept.js och perbas.js (rapportens recept, ADR-52): efter dem.

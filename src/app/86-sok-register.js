@@ -14,7 +14,7 @@
  * tests/sok-funktioner.test.js vaktar att varje avsnitt i index.html har en post och att varje post pekar på
  * något som finns. Ett nytt avsnitt får alltså en rad här.
  *
- * @type {{ namn: string, synonymer: string[], flik: string, avsnitt?: string, dialog?: 'installningar'|'ordlista'|'symboler'|'lagras', falt?: string }[]}
+ * @type {{ namn: string, synonymer: string[], flik: string, avsnitt?: string, dialog?: 'installningar'|'ordlista'|'symboler'|'lagras'|'basdossier', falt?: string }[]}
  */
 const SOK_FUNKTIONER = [
     // Översikt
@@ -97,6 +97,7 @@ const SOK_FUNKTIONER = [
     { namn: 'Inställningar', synonymer: ['inställning', 'konfigurera'], flik: 'dashboard', dialog: 'installningar' },
     { namn: 'Ordlista', synonymer: ['begrepp', 'termer', 'ord', 'förklaring av ord'], flik: 'info', dialog: 'ordlista' },
     { namn: 'Förklaring av symboler och färger', synonymer: ['symboler', 'färger', 'ikoner', 'teckenförklaring'], flik: 'info', dialog: 'symboler' },
+    { namn: 'BAS-dossier', synonymer: ['intervall', 'bas-intervall', 'dossier', 'per intervall', 'ett intervall', 'intervallet på en sida'], flik: 'struktur', dialog: 'basdossier' },
     { namn: 'Vad lagras?', synonymer: ['lagras', 'minnet', 'dataskydd', 'gdpr', 'personuppgifter'], flik: 'filer', dialog: 'lagras' },
     // Fälten i Inställningar
     { namn: 'Minsta gruppstorlek för redovisning', synonymer: ['minsta gruppstorlek', 'k', 'tröskel', 'anonymitet', 'tio personer'], flik: 'dokumentera', dialog: 'installningar', falt: 'k-troskel' },

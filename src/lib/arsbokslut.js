@@ -94,7 +94,7 @@ function _forandring(a, b) {
  * som bara fanns förra året), med antal och varje mått förra året, i år och förändringen i kronor och procent.
  * null när ett av boksluten saknar fältet.
  */
-function _jamforBasIntervall(forra, nu) {
+export function jamforBasIntervall(forra, nu) {
     if (!Array.isArray(forra) || !Array.isArray(nu)) return null;
     const fB = new Map(forra.map(r => [r.bas, r])), nB = new Map(nu.map(r => [r.bas, r]));
     const ordning = [...nB.keys(), ...[...fB.keys()].filter(b => !nB.has(b))];
@@ -141,7 +141,7 @@ export function jamforArsbokslut(forra, nu) {
         punkter: { totaltForra: forra.punkter.length, klaraForra: forra.punkter.filter(p => p.klar).length,
                    totaltNu: nu.punkter.length, klaraNu: nu.punkter.filter(p => p.klar).length, kvarFranForra },
         samma_k: forra.k === nu.k,
-        basIntervall: _jamforBasIntervall(forra.basIntervall, nu.basIntervall),
+        basIntervall: jamforBasIntervall(forra.basIntervall, nu.basIntervall),
     };
 }
 
