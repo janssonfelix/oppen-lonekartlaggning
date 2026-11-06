@@ -1,7 +1,7 @@
 # Risk- och sårbarhetsanalys (dataskydd och informationssäkerhet) — Öppen lönekartläggning
 
 **Bygge:** `2026.11.05` · **Artefakt-SHA-256:** `250dbada20edcc45dde4148120ccc5020da9ec9f723bd50c96ca43a066657728` (se `dist/RELEASE.txt`).
-**Granskningsdatum:** 2026-11-05.
+**Granskningsdatum:** 2026-11-06.
 **Granskningsmetod:** kodläsning påstående för påstående + statisk sökning i källkod och bygge +
 körning av det byggda verktyget i jsdom och i Chromium (utan nätverk) med syntetiska testfiler.
 Varje teknisk kontroll nedan är **verifierad mot koden och i webbläsaren**, inte antagen. Vad
@@ -733,7 +733,7 @@ tar bort allt minne omedelbart. Verktyget gör inga utskick till de registrerade
 
 Varje påstående i detta dokument är prövat mot koden, med provkörning i jsdom och i Chromium.
 Skyddet bevakas av drift-, golden-, röktest-, k-anonymitets-, dokumentations-, statistik- och
-a11y-sviterna (77 testfiler) och av ett röktest av det byggda verktyget i en riktig webbläsare
+a11y-sviterna (78 testfiler) och av ett röktest av det byggda verktyget i en riktig webbläsare
 (`tools/browser-smoke.mjs`). Röktestet körs lokalt och i CI-arbetsflödet i
 Chromium, Firefox och WebKit. Verifieringen visar också var skyddet är svagare än det kan se ut: lagringsspärren är en
 reserv med kända luckor (§6.2); PII-kontrollens värdekontroll läser filens 50 första rader (§6.4);
@@ -778,6 +778,18 @@ konfigurationsfilen bär förklaringsmodellen med skälet som fritext, definitio
 med antal men utan lönemått och räknar upp mindre grupper i en not med namn och antal (§6.5, §6.6); och
 regressionens *Endast kön* spärras när ett kön ligger under tröskeln (§6.5). Testsviten är 77 filer.
 
+**Granskningen 2026-11-06** prövade dokumentet mot koden som ändrats sedan föregående granskning: spärren mot
+särskilda kategorier av personuppgifter i `detectSensitiveColumns` (§2, §6.4). Mönstret i koden lästes mot texten:
+fackmedlemskap (fack följt av medlem, lig, förbund eller förening, och medlemskap som egen rubrik), hälsa och
+hälsotillstånd, sjukfrånvaro, sjukskrivning och sjukdom, diagnos, etnisk och etnicitet, religion som eget ord och
+trosuppfattning, politisk, sexuell, funktionsnedsättning, genetisk och biometri — avgränsat så att Sjukhus,
+Lönepolitik, Religionskunskap och Fackområde går fria. Bara rubriken prövas, eftersom värdena saknar igenkännbart
+format; rubrikkontrollen sker före värdekontrollen och gäller strukturfilen, som de andra rubrikmönstren. Prövat av
+`tests/parsing.test.js` med 21 rubriker. Dataskyddsbeskrivningen (raden *Uppgifter som avvisas*) och datauttagsguiden
+säger detsamma. Releasen bär dessutom en programvaruförteckning (`sbom.cdx.json`, CycloneDX) som signeras som de
+andra filerna; den innehåller biblioteksversioner och kontrollsummor, inga uppgifter om användare. Testsviten är
+78 filer.
+
 | Kontroll | Metod | Resultat |
 |---|---|---|
 | Ingen utgående trafik | Statisk sökning (fetch/XHR/WS/beacon/Worker/IndexedDB/Cache) + CSP-läsning + webbläsarröktestet, som registrerar varje förfrågan från alla sidor under en körning med alla flikar, utskriften och samtliga exporter | ✔ 0 verkliga anrop, 0 nätverksförfrågningar |
@@ -788,7 +800,7 @@ regressionens *Endast kön* spärras när ett kön ligger under tröskeln (§6.5
 | Web Workers | Webbläsarröktestet skapar en worker från `blob:` | ✔ avvisas av CSP (`script-src` som reserv för `worker-src`) |
 | Rensning (lagringsminimering, art. 5.1 e och 25.2) | Invariant för båda rensningsvägarna (inkl. extremvärden och utskrift) + körning i Chromium (alla flikar, utskrift, rensa, ladda om) | ✔ inget lönevärde kvar i dokumentet eller minnet; allt ritas igen efter ny inläsning |
 | Dataminimering | `ALLOWED_FIELDS` + `extractMinimalRecord` + test som läser in en fil med extra kolumner och kräver exakt de vitlistade fälten i minnet (`tests/smoke-ansvar.test.js`) | ✔ 5 obligatoriska fält + valfri poäng + valfri ansvarskod + radnummer (härledda `aid`/`yrkeLabel`/`ansvarsgrupp`); kolumnen *Ansvar* läses inte in |
-| PII-avvisning | `detectSensitiveColumns` + körning i Chromium med PII-testfil; rubrikprov i jsdom | ✔ strukturfilen avvisas (0 rader inlästa); policy-/statistikfil kontrolleras inte (dokumenterat, §6.4); ✔ rubrikerna *Förnamn* och *Fornamn* avvisas (§6.4) |
+| PII-avvisning | `detectSensitiveColumns` + körning i Chromium med PII-testfil; rubrikprov i jsdom | ✔ strukturfilen avvisas (0 rader inlästa); policy-/statistikfil kontrolleras inte (dokumenterat, §6.4); ✔ rubrikerna *Förnamn* och *Fornamn* avvisas (§6.4); ✔ rubriker som antyder en särskild kategori (fackmedlemskap, hälsa, sjukfrånvaro, diagnos, etnicitet, religion, politisk tillhörighet, sexuell läggning, funktionsnedsättning, genetik, biometri) avvisas, prövat med 21 rubriker i `tests/parsing.test.js` (§6.4) |
 | Namnmaskering | `_cleanYrkeField` + körning i Chromium | ✔ "101 Anna Andersson" → "101 ***" |
 | k-anonymitet | `kTroskel()` + render-läsning vid 10, 25 och 5 (`tests/ktroskel.test.js` och `tests/ktroskel-hojning.test.js`) | ✔ standard 10, inställbart (ADR-38; undantag likvärdigt arbete dokumenterat) |
 | k-anonymitet i Utforska-export (ADR-14) | Exporttester i `tests/kanonymitet.test.js` + genomsökning i Chromium av alla kombinationer rad × kolumn × diagramtyp × helhet/per kön × mått med rutan urkryssad | ✔ inga grupper eller kön under 10 i tabell- eller diagramexport |
@@ -802,7 +814,7 @@ regressionens *Endast kön* spärras när ett kön ligger under tröskeln (§6.5
 | Konfigfilens innehåll | Kodläsning av `buildConfigSnapshot()` och importen | ✔ ingen `state.data`-referens; inställningar (med förklaringsmodellen, definitionen av kvinnodominerat och lönemånaden) + användartext + avbockningar i Att göra (§6.8); import läser version 2 och avvisar andra versioner |
 | Word-utkast lokalt | Kodläsning + live-test: Blob fångad, innehåll inspekterat; zip-filen läses tillbaka i röktesterna (ADR-37) | ✔ lokal `Blob` (`.docx`), DEMODATA-märkning fungerar |
 | Tillgänglighet (markup) | axe-core i automatiska sviten (`tests/a11y.test.js`) | ✔ 0 överträdelser |
-| Automatiska tester | `npm test` (Vitest, 77 testfiler; kör om en fil vars arbetare kraschat i Node) + `npm run test:browser` (bygget i Chromium; samma röktest finns för Firefox och WebKit) | ✔ alla gröna |
+| Automatiska tester | `npm test` (Vitest, 78 testfiler; kör om en fil vars arbetare kraschat i Node) + `npm run test:browser` (bygget i Chromium; samma röktest finns för Firefox och WebKit) | ✔ alla gröna |
 | Bundle-integritet | Reproducerbart bygge + SHA-256 i RELEASE.txt; byggskydd mot mojibake och `node --check` (kodläsning av `tools/bundle.mjs`) | ✔ |
 
 ## 12. Slutsats
