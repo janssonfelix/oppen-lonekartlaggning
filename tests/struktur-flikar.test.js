@@ -88,6 +88,9 @@ describe('Uppgift 3: Rapporttext, Exportera och Spara och jämför år', () => {
     it('Rapporttext bär auto-utkastet och rapportunderlaget; Exportera färdigcheck, robusthet, urval och exporter; Arbetet spara, ögonblicksbild, årsjämförelse, självdiagnostik', () => {
         const d = createAppWindow().document, i = (vy, id) => d.getElementById(vy).contains(d.getElementById(id));
         expect(i('view-rapporttext', 'struktur-narrative') && i('view-rapporttext', 'rapportunderlag')).toBe(true);
+        // Auto-utkastets avsnitt bär Rapporttextens prefix (rt-), inte Lönestrukturens.
+        expect(i('view-rapporttext', 'avsnitt-rt-utkast') && i('view-rapporttext', 'nyckel-rt-utkast')).toBe(true);
+        expect(d.querySelector('[id$="st-utkast"]')).toBeNull();
         expect(i('view-dokumentera', 'export-hub') && i('view-dokumentera', 'robusthet-body') && i('view-dokumentera', 'rapport-urval')).toBe(true);
         expect(i('view-arbetet', 'btn-config-save') && i('view-arbetet', 'btn-snapshot-save') && i('view-arbetet', 'arsjamforelse') && i('view-arbetet', 'btn-test-load')).toBe(true);
         expect(d.getElementById('avsnitt-dk-samverkan')).toBeNull();

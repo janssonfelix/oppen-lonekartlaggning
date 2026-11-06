@@ -434,8 +434,9 @@ describe('utfällt som standard', () => {
         // Per flik i den nya formen: det första avsnittet öppet, övriga hopfällda.
         for (const [prefix, forsta] of [['avsnitt-la-', 'avsnitt-la-yrkesgrupper'], ['avsnitt-ak-', 'avsnitt-ak-karriar'], ['avsnitt-ar-', 'avsnitt-ar-konfiguration'],
                 ['avsnitt-st-', 'avsnitt-st-representation'], ['avsnitt-lo-', 'avsnitt-lo-riktade']]) {
-            // Auto-utkastet behåller sitt id (avsnitt-st-utkast) men står i Rapporttext, där det är flikens första avsnitt.
-            const flikens = [...w.document.querySelectorAll(`details.avsnitt[id^="${prefix}"]`)].filter(a => !a.closest('#view-rapporttext'));
+            const flikens = [...w.document.querySelectorAll(`details.avsnitt[id^="${prefix}"]`)];
+            // Prefixet säger fliken: inget av de här avsnitten står i Rapporttext (dess avsnitt bär prefixet rt-).
+            expect(flikens.filter(a => a.closest('#view-rapporttext')).map(a => a.id), prefix).toEqual([]);
             expect(flikens.length, prefix).toBeGreaterThanOrEqual(4);
             expect(flikens[0].id).toBe(forsta);
             expect(flikens.map(a => a.open), prefix).toEqual([true, ...flikens.slice(1).map(() => false)]);

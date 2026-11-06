@@ -597,7 +597,7 @@ console.log('\n── Exportera: checklistan först, robustheten, exporterna som
     ok(await page.evaluate(() => !/Inte körd/.test(document.querySelectorAll('#dk-slutsatser .slutsats')[1].textContent) && document.getElementById('nyckel-dk-robusthet').textContent.length > 3), 'robusthetens utfall står i slutsatserna och i avsnittets rubrik');
     await page.evaluate(() => document.querySelector('.nav-item[data-tab="rapporttext"]').click());
     await page.waitForTimeout(1200);
-    ok(await page.evaluate(() => document.getElementById('avsnitt-st-utkast').open && /LÖNEKARTLÄGGNING/.test(document.getElementById('struktur-narrative').value)), 'Rapporttext: auto-utkastet är utfällt och ifyllt');
+    ok(await page.evaluate(() => document.getElementById('avsnitt-rt-utkast').open && /LÖNEKARTLÄGGNING/.test(document.getElementById('struktur-narrative').value)), 'Rapporttext: auto-utkastet är utfällt och ifyllt');
     await page.click('#avsnitt-dk-rapportunderlag > summary');
     await page.waitForTimeout(300);
     ok(await page.evaluate(() => { const k = document.querySelector('#rapportunderlag-innehall [data-rapport-kopiera]'); return !!k && k.offsetParent !== null; }), 'rapportunderlagets block går att nå när avsnittet fälls ut');
@@ -612,7 +612,7 @@ console.log('\n── Exportera: checklistan först, robustheten, exporterna som
 console.log('\n── Struktur, Likvärdigt arbete, Löneöversyn och Lönepolitik ──');
 {
     const ga = async f => { await page.evaluate(t => document.querySelector(`.nav-item[data-tab="${t}"]`).click(), f); await page.waitForTimeout(1000); };
-    const lage = prefix => page.evaluate(p => ({ oppna: [...document.querySelectorAll(`details.avsnitt[id^="${p}"]`)].filter(a => a.open && a.offsetParent).map(a => a.id).join(','),   // bara den synliga flikens (auto-utkastet bär avsnitt-st- men står i Rapporttext)
+    const lage = prefix => page.evaluate(p => ({ oppna: [...document.querySelectorAll(`details.avsnitt[id^="${p}"]`)].filter(a => a.open).map(a => a.id).join(','),
         rutor: [...document.querySelectorAll('.view-panel')].filter(v => v.offsetParent).reduce((n, v) => n + v.querySelectorAll('.slutsatser .slutsats').length, 0),
         lank: document.querySelectorAll('.sidans-innehall').length, skarmar: document.documentElement.scrollHeight / innerHeight }), prefix);
     // Ett diagram i ett hopfällt avsnitt har ingen bredd när det ritas: det ska fylla kortet när avsnittet fälls ut.
