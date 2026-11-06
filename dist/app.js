@@ -12060,9 +12060,7 @@ const CHART_FONT = {
 const EXPORT_SKAL = {
     // Personer att granska (ADR-23): panelen visar enskilda personer med filens radnummer. Diagrammet namnger ingen
     // och bär ingen lön, men hör till panelen, och inget ur den lämnar verktyget.
-    individer: 'hör till Personer att granska, som visar enskilda personer (ADR-23)',
-    // Översiktens kopior av Struktur & rapportmåtts diagram: samma bild exporteras från sin egen flik, en gång.
-    kopia: 'är en kopia av ett diagram i Struktur & rapportmått och exporteras därifrån'
+    individer: 'hör till Personer att granska, som visar enskilda personer (ADR-23)'
 };
 /** Märker en behållare: inget diagram i den lämnar verktyget. `skal` måste vara en nyckel i EXPORT_SKAL. */
 function markeraUtanExport(el, skal) {
@@ -13496,15 +13494,19 @@ function renderProcessTracker({ punkter: givna } = {}) {
 
 /**
  * Översikt efter inläsning. Före inläsning är sidan en uppladdningssida.
- * Efter inläsning krymper filerna till en rad, och sidan visar läget: nyckeltalen, Att göra och
- * lönekvartilerna. Kartan över organisationen står bara i Struktur & rapportmått. Resten är avsnitt som fälls ut.
- * Klassen `har-data` på panelen styr vad som visas (style.css); `visa-filer` fäller ut uppladdningen igen.
+ * Efter inläsning visar sidan läget: filraden, nyckeltalen, Att göra och processen. Filerna, kvaliteten och
+ * kvartilerna står i Filer och kvalitet respektive Lönestruktur. Klassen `har-data` på panelen styr vad som visas.
  */
+/** Filer och kvalitet: underlagets kvalitet, extremvärdena och inläsningsrapporten. Ritas vid inläsning och vid flikbyte. */
+function renderFilerDelar() {
+    /** @type {[string, () => void][]} */
+    const delar = [['underlagets kvalitet', () => renderUnderlagetsKvalitet()], ['extremvärden', () => renderOutliers()],
+        ['inläsningsrapporten', () => renderDataValidationReport()]];
+    for (const [namn, fn] of delar) { try { fn(); } catch (e) { rapporteraFel(`Filer och kvalitet (${namn})`, e); } }
+}
+
 /** @type {boolean|null} */
 let _ovHadeData = null;
-// Kvartilerna är en kopia av Struktur & rapportmåtts diagram och exporteras därifrån, inte två gånger
-// (skälet `kopia` i 11-diagramexport.js).
-markeraUtanExport(document.getElementById('ov-lage'), 'kopia');
 function ovRitaLage() {
     const vy = /** @type {HTMLElement} */ (document.getElementById('view-dashboard'));
     if (!vy) return;
@@ -13516,53 +13518,22 @@ function ovRitaLage() {
         // Läget byter: processen är utfälld före inläsning och hopfälld efter, och uppladdningen fälls ihop.
         const proc = document.getElementById('avsnitt-ov-process');
         if (proc) /** @type {HTMLDetailsElement} */ (proc).open = !har;
-        vy.classList.remove('visa-filer');
         _ovHadeData = har;
     }
     _ovRitaFilrad(har, d.length);
-    const kvEl = document.getElementById('chart-ov-kvartiler'), kvNot = document.getElementById('ov-kvartiler-not');
-    if (!har) {
-        if (kvEl && typeof rensaFigur === 'function') { rensaFigur(kvEl); kvEl.innerHTML = ''; }
-        if (kvNot) kvNot.textContent = '';
-        return;
-    }
-    try {
-        // Samma villkor som i Struktur: utan könsuppdelning (ett kön under tröskeln) ritas inget diagram.
-        const k = kTroskel(), q = _stQuartileDistribution(d, { k });
-        const totKv = d.filter(r => r.kon && r.kon.includes('kvinna')).length;
-        if (kvEl) {
-            if (q.length && q.every(x => x.nKv != null && x.nMa != null && x.n > 0)) {
-                ritaFigur(kvEl, _strukturKvartilFigur(q, 100 * totKv / d.length),
-                    { exportAnteckning: `Andel kvinnor: ${_figTalformat(q[0].andelKv, 'pct')} i lägsta kvartilen, ${_figTalformat(q[q.length - 1].andelKv, 'pct')} i högsta` });
-                if (kvNot) kvNot.textContent = '';
-            } else {
-                rensaFigur(kvEl); kvEl.innerHTML = '';
-                if (kvNot) kvNot.textContent = _konUtelamnatNot();
-            }
-        }
-    } catch (e) { rapporteraFel('Översikt: läget', e); }
 }
 
-/** Raden som ersätter uppladdningskorten efter inläsning: vad som är inläst, och knappen som visar korten igen. */
+/** Raden överst efter inläsning: vad som är inläst, och länken till Filer och kvalitet där korten står. */
 function _ovRitaFilrad(har, antal) {
-    const rad = document.getElementById('ov-filrad'), vy = document.getElementById('view-dashboard');
+    const rad = document.getElementById('ov-filrad');
     if (!rad) return;
     if (!har) { rad.textContent = ''; return; }
-    const oppen = !!vy && vy.classList.contains('visa-filer');
     rad.innerHTML = `<span><strong>Lönefil:</strong> ${svTal(antal, 0)} personer</span>`
         + `<span><strong>Referens:</strong> ${esc(harReferens() ? referensNamn() : 'ingen inläst')}</span>`
         + `<span><strong>Jämförelsestatistik:</strong> ${state.statistik.length ? `${svTal(state.statistik.length, 0)} rader` : 'ingen inläst'}</span>`
         + kTroskelLank()
-        + `<button type="button" id="btn-ov-filer" class="btn btn-secondary btn-sm" aria-expanded="${oppen}" aria-controls="upload-sektion">${oppen ? 'Dölj filer och inställningar' : 'Filer och inställningar'}</button>`;
+        + `<a href="#" class="btn btn-secondary btn-sm" data-go-to-tab="filer">Filer och kvalitet</a>`;
 }
-document.addEventListener('click', e => {
-    if (!/** @type {HTMLElement} */ (e.target).closest) return;
-    const vy = /** @type {HTMLElement} */ (document.getElementById('view-dashboard'));
-    if (!/** @type {HTMLElement} */ (e.target).closest('#btn-ov-filer')) return;
-    vy.classList.toggle('visa-filer');
-    _ovRitaFilrad(true, getData().length);
-    document.getElementById('btn-ov-filer')?.focus();
-});
 
 /**
  * Beräknar MDE för en specifik undergrupp (t.ex. en yrkesgrupp eller BAS-rad).
@@ -13622,9 +13593,8 @@ function renderOversiktDelar() {
     /** @type {any[]|undefined} */ let punkter;   // processöversikten läser Att göras punkter: byggs en gång
     /** @type {[string, () => void][]} */
     const delar = [['nyckeltal', () => updateDashboardStats()], ['kompliansöversikt', () => updateCompliance()],
-        ['underlagets kvalitet', () => renderUnderlagetsKvalitet()], ['Att göra', () => { punkter = renderActionChecklist(); }],
-        ['processöversikten', () => renderProcessTracker({ punkter })], ['extremvärden', () => renderOutliers()],
-        ['inläsningsrapporten', () => renderDataValidationReport()]];   // Var uppstår löneskillnaden ritas av kompliansöversikten
+        ['Att göra', () => { punkter = renderActionChecklist(); }],
+        ['processöversikten', () => renderProcessTracker({ punkter })]];   // Var uppstår löneskillnaden ritas av kompliansöversikten
     for (const [namn, fn] of delar) { try { fn(); } catch (e) { rapporteraFel(`Översikt (${namn})`, e); } }
     const ab = document.getElementById('snapshot-comparison');
     if (ab && ab.style.display !== 'none' && typeof renderSnapshotComparison === 'function') renderSnapshotComparison();
@@ -17884,17 +17854,17 @@ document.querySelectorAll(".nav-item").forEach(btn => {
         set(v) { if (v) this.setAttribute('aria-disabled', 'true'); else this.removeAttribute('aria-disabled'); }
     });
 });
-/** En låst flik har klickats: visa Översikt, rulla fram lönefilskortet, ge filväljaren fokus och markera kortet en stund. */
+/** En låst flik har klickats: visa Filer och kvalitet, rulla fram lönefilskortet, ge filväljaren fokus och markera kortet en stund. */
 function visaLonefilskortet(flikNamn) {
-    const oversikt = document.querySelector('.nav-item[data-tab="dashboard"]');
-    if (oversikt && !oversikt.classList.contains('active')) /** @type {HTMLElement} */ (oversikt).click();
+    const filer = document.querySelector('.nav-item[data-tab="filer"]');
+    if (filer && !filer.classList.contains('active')) /** @type {HTMLElement} */ (filer).click();
     const kort = document.getElementById('upload-cell-data');
     if (!kort) return;
     kort.scrollIntoView?.({ block: 'center' });
     kort.classList.add('visas-nu');
     setTimeout(() => kort.classList.remove('visas-nu'), 2000);
     document.getElementById('file-input-data')?.focus?.({ preventScroll: true });
-    announceToScreenReader(`${flikNamn ? flikNamn + ' kräver ett underlag. ' : ''}Läs in lönefilen här på Översikt, så låses flikarna upp.`);
+    announceToScreenReader(`${flikNamn ? flikNamn + ' kräver ett underlag. ' : ''}Läs in lönefilen här under Filer och kvalitet, så låses flikarna upp.`);
 }
 document.querySelectorAll(".nav-item").forEach(btn => {
     btn.addEventListener("click", () => {
@@ -17909,7 +17879,7 @@ document.querySelectorAll(".nav-item").forEach(btn => {
         document.querySelectorAll(".nav-item").forEach(t => t.classList.remove("active"));
         btn.classList.add("active");
         const titles = {
-            dashboard: 'Översikt',
+            dashboard: 'Översikt', filer: 'Filer och kvalitet',
             kon: 'Ålder & karriär', dokumentera: 'Dokumentera & exportera',
             benchmark: 'Jämförelse', matrix: 'Lika arbete',
             bestammelser: 'Regler & praxis',
@@ -18009,6 +17979,7 @@ function _renderTabContent(target) {
     else if (target === "utforska"     && d.length) { generateRapport(); renderExplorer(); }
     else if (target === "dokumentera") medExportLage(() => { if (d.length) renderKvalitetssakring(); renderRapportunderlag(); renderExportBesked(); if (typeof renderArsjamforelse === 'function') renderArsjamforelse(); });   // allt här lämnar verktyget (ADR-51)
     else if (target === "dashboard" && d.length) renderOversiktDelar();
+    else if (target === "filer"     && d.length) renderFilerDelar();
     else if (target === "info")  renderInfoTab();
     else if (target === "handlingsplan") renderHandlingsplanSeed();
     else if (target === "bestammelser") { if (typeof bes8Uppdatera === 'function') bes8Uppdatera(); if (typeof bes8Stod === 'function') bes8Stod(); }
@@ -18808,6 +18779,9 @@ function _visaEjInlast(saknas, stats) {
 function _visaKolumnmappning() {
     const panel = document.getElementById('column-map-panel');
     if (!panel) return;
+    // Mappningen står i Filer och kvalitet: fliken visas om filen lästes in medan en annan flik var öppen.
+    const filer = document.querySelector('.nav-item[data-tab="filer"]');
+    if (filer && !filer.classList.contains('active')) /** @type {HTMLElement} */ (filer).click();
     panel.querySelector('details')?.setAttribute('open', '');
     panel.scrollIntoView?.({ block: 'center' });
     /** @type {HTMLInputElement} */ ((panel.querySelector('select.colmap-saknas') || panel.querySelector('select')))?.focus?.({ preventScroll: true });
@@ -31153,7 +31127,7 @@ function _instRita() {
           lage: `± ${band ? /** @type {HTMLInputElement} */ (band).value : 5} %`, andrad: !!band && String(/** @type {HTMLInputElement} */ (band).value) !== '5' },
         { flik: 'matrix', avsnitt: 'avsnitt-la-personer', namn: 'Lika arbete', vad: 'Gräns för personer att granska',
           lage: `${typeof _pagGrans === 'function' ? _pagGrans() : 10} % under förväntad lön`, andrad: typeof _pagGrans === 'function' && _pagGrans() !== 10 },
-        { flik: 'dashboard', avsnitt: 'avsnitt-ov-kvalitet', namn: 'Översikt', vad: 'Tröskel för extremvärden',
+        { flik: 'filer', avsnitt: 'avsnitt-ov-kvalitet', namn: 'Filer och kvalitet', vad: 'Tröskel för extremvärden',
           lage: `${extrem ? svTal(parseFloat(/** @type {HTMLInputElement} */ (extrem).value) || 3, 1) : '3,0'} standardavvikelser`, andrad: !!extrem && (parseFloat(/** @type {HTMLInputElement} */ (extrem).value) || 3) !== 3 },
     ];
     flikar.innerHTML = rader.map(r => `<li class="inst-flik${r.andrad ? ' ar-andrad' : ''}">
@@ -31189,10 +31163,8 @@ document.addEventListener('click', e => {
     if (flik) { _instGaTill(flik.getAttribute('data-inst-flik'), flik.getAttribute('data-inst-avsnitt')); return; }
     if (/** @type {HTMLElement} */ (e.target).closest('#inst-till-filer')) {
         stangInstallningar();
-        const nav = document.querySelector('.nav-item[data-tab="dashboard"]');
+        const nav = document.querySelector('.nav-item[data-tab="filer"]');
         if (nav) /** @type {HTMLElement} */ (nav).click();
-        const vy = document.getElementById('view-dashboard');
-        if (vy && vy.classList.contains('har-data') && !vy.classList.contains('visa-filer')) document.getElementById('btn-ov-filer')?.click();
         const rad = document.getElementById('upload-row');
         if (rad && typeof rad.scrollIntoView === 'function') rad.scrollIntoView({ block: 'start' });
     }

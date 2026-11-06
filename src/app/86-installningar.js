@@ -59,7 +59,7 @@ function _instRita() {
           lage: `± ${band ? /** @type {HTMLInputElement} */ (band).value : 5} %`, andrad: !!band && String(/** @type {HTMLInputElement} */ (band).value) !== '5' },
         { flik: 'matrix', avsnitt: 'avsnitt-la-personer', namn: 'Lika arbete', vad: 'Gräns för personer att granska',
           lage: `${typeof _pagGrans === 'function' ? _pagGrans() : 10} % under förväntad lön`, andrad: typeof _pagGrans === 'function' && _pagGrans() !== 10 },
-        { flik: 'dashboard', avsnitt: 'avsnitt-ov-kvalitet', namn: 'Översikt', vad: 'Tröskel för extremvärden',
+        { flik: 'filer', avsnitt: 'avsnitt-ov-kvalitet', namn: 'Filer och kvalitet', vad: 'Tröskel för extremvärden',
           lage: `${extrem ? svTal(parseFloat(/** @type {HTMLInputElement} */ (extrem).value) || 3, 1) : '3,0'} standardavvikelser`, andrad: !!extrem && (parseFloat(/** @type {HTMLInputElement} */ (extrem).value) || 3) !== 3 },
     ];
     flikar.innerHTML = rader.map(r => `<li class="inst-flik${r.andrad ? ' ar-andrad' : ''}">
@@ -95,10 +95,8 @@ document.addEventListener('click', e => {
     if (flik) { _instGaTill(flik.getAttribute('data-inst-flik'), flik.getAttribute('data-inst-avsnitt')); return; }
     if (/** @type {HTMLElement} */ (e.target).closest('#inst-till-filer')) {
         stangInstallningar();
-        const nav = document.querySelector('.nav-item[data-tab="dashboard"]');
+        const nav = document.querySelector('.nav-item[data-tab="filer"]');
         if (nav) /** @type {HTMLElement} */ (nav).click();
-        const vy = document.getElementById('view-dashboard');
-        if (vy && vy.classList.contains('har-data') && !vy.classList.contains('visa-filer')) document.getElementById('btn-ov-filer')?.click();
         const rad = document.getElementById('upload-row');
         if (rad && typeof rad.scrollIntoView === 'function') rad.scrollIntoView({ block: 'start' });
     }

@@ -203,7 +203,7 @@ describe('Lika arbete och filrutorna: ordning och kompakta rutor', () => {
         const d = w.document;
         expect(d.getElementById('btn-try-demo')).toBeNull();
         expect(d.getElementById('btn-minimize-upload')).toBeNull();
-        expect(d.getElementById('first-run-hint').textContent.replace(/\s+/g, ' ')).toMatch(/Kom igång: läs in organisationspaketet nedan om er organisation har ett, sedan lönefilen — eller .*prova med demodata/i);
+        expect(d.getElementById('first-run-hint').textContent.replace(/\s+/g, ' ')).toMatch(/Kom igång: läs in filerna \(organisationspaketet först om er organisation har ett, sedan lönefilen\) — eller prova med demodata\./i);
         d.getElementById('first-run-demo-link').click();
         expect(w.__state.data.length).toBeGreaterThan(0);
     });
@@ -333,7 +333,7 @@ describe('innehåll på sidan och i rapportunderlaget', () => {
     it('de långa flikarna har avsnitt, och deras rubriker är innehållsförteckningen', () => {
         const w = createAppWindow();
         w.__loadDemoData();
-        for (const [flik, minst] of [['dashboard', 4], ['matrix', 5], ['likvardighet', 4], ['struktur', 5], ['prioritering', 4], ['loneoversyn', 4], ['dokumentera', 4], ['kon', 5], ['benchmark', 4]]) {
+        for (const [flik, minst] of [['dashboard', 3], ['matrix', 5], ['likvardighet', 4], ['struktur', 5], ['prioritering', 4], ['loneoversyn', 4], ['dokumentera', 4], ['kon', 5], ['benchmark', 4]]) {
             oppna(w, flik);
             const synliga = [...w.document.querySelectorAll('.view-panel')].filter(p => p.style.display === 'block' || p.classList.contains('active'));
             const rubriker = synliga.flatMap(p => [...p.querySelectorAll('details.avsnitt > summary h2')]);

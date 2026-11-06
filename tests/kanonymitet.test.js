@@ -105,7 +105,7 @@ function byggPolicy() {
     return [...SAKRA_BAS, TOPP_BAS, ...SMA_BAS].map(b => ({ bas: b, p10: 22000, med: 30000, p90: 52000 }));
 }
 
-const FLIKAR = ['dashboard', 'bestammelser', 'matrix', 'likvardighet', 'struktur',
+const FLIKAR = ['dashboard', 'filer', 'bestammelser', 'matrix', 'likvardighet', 'struktur',
                 'prioritering', 'loneoversyn', 'kon', 'demografi', 'benchmark',
                 'utforska', 'benchmark', 'kvalitet', 'rapport', 'handlingsplan', 'info'];
 

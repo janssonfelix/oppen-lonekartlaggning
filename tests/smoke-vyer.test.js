@@ -342,7 +342,7 @@ describe('menystruktur', () => {
     const synlig = id => w.document.getElementById(id).style.display === 'block';
 
     it('menyn har exakt flikarna i ordning; Jämförelse syns med ställningstagandet', () => {
-        expect(flikar()).toEqual(['dashboard', 'bestammelser', 'matrix', 'likvardighet', 'struktur',
+        expect(flikar()).toEqual(['dashboard', 'filer', 'bestammelser', 'matrix', 'likvardighet', 'struktur',
             'prioritering', 'loneoversyn', 'handlingsplan', 'kon', 'benchmark', 'utforska', 'dokumentera', 'info']);
         expect(w.document.querySelector('.nav-item[data-tab="benchmark"]').hidden).toBe(false);
         expect(w.document.querySelector('.nav-menu').textContent).toContain('5 · Dokumentera');

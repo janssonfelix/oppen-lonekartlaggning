@@ -676,6 +676,9 @@ function _visaEjInlast(saknas, stats) {
 function _visaKolumnmappning() {
     const panel = document.getElementById('column-map-panel');
     if (!panel) return;
+    // Mappningen står i Filer och kvalitet: fliken visas om filen lästes in medan en annan flik var öppen.
+    const filer = document.querySelector('.nav-item[data-tab="filer"]');
+    if (filer && !filer.classList.contains('active')) /** @type {HTMLElement} */ (filer).click();
     panel.querySelector('details')?.setAttribute('open', '');
     panel.scrollIntoView?.({ block: 'center' });
     /** @type {HTMLInputElement} */ ((panel.querySelector('select.colmap-saknas') || panel.querySelector('select')))?.focus?.({ preventScroll: true });

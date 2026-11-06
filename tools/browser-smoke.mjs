@@ -1243,22 +1243,22 @@ console.log('\n── Översikt efter inläsning ──');
 {
     await page.evaluate(() => { document.querySelector('.nav-item[data-tab="dashboard"]').click(); scrollTo(0, 0); });
     await page.waitForTimeout(900);
-    // Tidigare steg har visat filerna och fällt ut avsnitten: läget ställs tillbaka till det som gäller efter en inläsning.
-    if (await page.evaluate(() => document.getElementById('btn-ov-filer').getAttribute('aria-expanded') === 'true')) await page.click('#btn-ov-filer');
+    // Tidigare steg har fällt ut avsnitten: läget ställs tillbaka till det som gäller efter en inläsning.
     await page.evaluate(() => document.querySelectorAll('#view-dashboard details.avsnitt').forEach(a => { a.open = false; }));
     await page.waitForTimeout(300);
     const ov = await page.evaluate(() => { const g = id => document.getElementById(id); const syn = id => g(id).offsetParent !== null; const top = id => g(id).getBoundingClientRect().top;
-        return { rad: syn('ov-filrad') && /Lönefil: \d+ personer/.test(g('ov-filrad').textContent), filer: syn('upload-row'),
-            ordning: top('ov-filrad') < top('dashboard-summary') && top('dashboard-summary') < top('att-gora') && top('att-gora') < top('chart-ov-kvartiler') && top('chart-ov-kvartiler') < top('avsnitt-ov-process'),
-            karta: !g('chart-ov-tradkarta'), kvartiler: !!document.querySelector('#chart-ov-kvartiler svg'),
+        return { rad: syn('ov-filrad') && /Lönefil: \d+ personer/.test(g('ov-filrad').textContent), filer: !!g('upload-row') && !g('view-dashboard').contains(g('upload-row')),
+            ordning: top('ov-filrad') < top('dashboard-summary') && top('dashboard-summary') < top('att-gora') && top('att-gora') < top('avsnitt-ov-process'),
+            karta: !g('chart-ov-tradkarta'), kvartiler: !g('chart-ov-kvartiler'),
             oppna: [...document.querySelectorAll('#view-dashboard details.avsnitt')].filter(a => a.open).length, skarmar: document.documentElement.scrollHeight / innerHeight }; });
-    ok(ov.rad && !ov.filer, 'filerna är en rad, och uppladdningskorten är undanfällda');
-    ok(ov.ordning && ov.karta && ov.kvartiler, 'nyckeltalen, Att göra och kvartilerna står i den ordningen före avsnitten, och kartan finns bara i Struktur');
+    ok(ov.rad && ov.filer, 'filerna är en rad på Översikt, och uppladdningskorten står i Filer och kvalitet');
+    ok(ov.ordning && ov.karta && ov.kvartiler, 'nyckeltalen och Att göra står i den ordningen före avsnitten; kartan och kvartilerna finns bara i Struktur');
     ok(ov.oppna === 0 && ov.skarmar < 3.5, `avsnitten är hopfällda och sidan är ${ov.skarmar.toFixed(1)} skärmar`);
-    await page.click('#btn-ov-filer');
+    await page.click('#ov-filrad [data-go-to-tab="filer"]');
     await page.waitForTimeout(300);
-    ok(await page.evaluate(() => document.getElementById('upload-row').offsetParent !== null && document.getElementById('btn-ov-filer').getAttribute('aria-expanded') === 'true'), 'knappen i filraden visar uppladdningskorten igen');
-    await page.click('#btn-ov-filer');
+    ok(await page.evaluate(() => document.getElementById('upload-row').offsetParent !== null && document.querySelector('.nav-item.active').dataset.tab === 'filer'), 'länken i filraden öppnar Filer och kvalitet med uppladdningskorten');
+    await page.evaluate(() => { document.querySelector('.nav-item[data-tab="dashboard"]').click(); scrollTo(0, 0); });
+    await page.waitForTimeout(300);
     await page.evaluate(() => { document.getElementById('avsnitt-ov-punkter').open = true; });
     await page.waitForTimeout(300);
     await page.click('#avsnitt-ov-punkter .act-cb');
@@ -1361,8 +1361,8 @@ console.log('\n── Startsidan före inläsning, och de två lägena ──');
     await tom.goto('file://' + FIL);
     await tom.waitForTimeout(1200);
     const start = await tom.evaluate(() => { const syn = id => { const e = document.getElementById(id); return !!e && e.offsetParent !== null; };
-        return { dolda: ['ov-filrad', 'ov-lage', 'ov-fordjupning', 'avsnitt-ov-kvalitet', 'avsnitt-ov-gap', 'sok-ruta'].filter(syn), uppladdning: syn('upload-row'), process: syn('avsnitt-ov-process') }; });
-    ok(start.dolda.length === 0 && start.uppladdning && start.process, `före inläsning visas uppladdningen och processöversikten, inte lägesdelarna${start.dolda.length ? ' — syns: ' + start.dolda.join(', ') : ''}`);
+        return { dolda: ['ov-filrad', 'ov-fordjupning', 'avsnitt-ov-gap', 'sok-ruta'].filter(syn), komigang: syn('first-run-hint') && !!document.querySelector('#first-run-hint [data-go-to-tab="filer"]'), process: syn('avsnitt-ov-process') }; });
+    ok(start.dolda.length === 0 && start.komigang && start.process, `före inläsning visas Kom igång och processöversikten, inte lägesdelarna${start.dolda.length ? ' — syns: ' + start.dolda.join(', ') : ''}`);
     await tom.close();
 
     await page.evaluate(() => { document.querySelector('.nav-item[data-tab="matrix"]').click(); scrollTo(0, 0); });

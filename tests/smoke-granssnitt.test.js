@@ -265,43 +265,38 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         knapp.click();
         expect(d.body.classList.contains('meny-oppen')).toBe(true);
     });
-    it('Översikt är en uppladdningssida före inläsning och visar läget efter', () => {
+    it('Översikt visar Kom igång före inläsning och läget efter; filerna står i Filer och kvalitet', () => {
         const w = createAppWindow();
         const d = w.document, vy = d.getElementById('view-dashboard');
-        // Före inläsning: ingen filrad, uppladdningen är sidan, och processöversikten är utfälld.
+        // Före inläsning: ingen filrad, Kom igång pekar på Filer och kvalitet, och processöversikten är utfälld.
         expect(vy.classList.contains('har-data')).toBe(false);
         expect(d.getElementById('ov-filrad').textContent).toBe('');
         expect(d.getElementById('avsnitt-ov-process').open).toBe(true);
-        expect(d.getElementById('upload-sektion').contains(d.getElementById('file-input-data'))).toBe(true);
-        expect(d.getElementById('upload-sektion').contains(d.getElementById('organisationspaket'))).toBe(true);
+        expect(d.querySelector('#first-run-hint [data-go-to-tab="filer"]')).not.toBeNull();
+        const filer = d.getElementById('view-filer');
+        expect(filer.contains(d.getElementById('upload-sektion')) && filer.contains(d.getElementById('file-input-data')) && filer.contains(d.getElementById('organisationspaket'))).toBe(true);
+        expect(vy.contains(d.getElementById('upload-sektion'))).toBe(false);
         w.__loadDemoData();
         expect(vy.classList.contains('har-data')).toBe(true);
-        expect(vy.classList.contains('visa-filer')).toBe(false);
         const rad = d.getElementById('ov-filrad');
-        expect(rad.textContent).toMatch(/Lönefil: 260 personer.*Referens: .+Jämförelsestatistik: ingen inläst.*Minsta gruppstorlek 10/);
-        // Ordningen: filraden, nyckeltalen, Att göra, kvartilerna, och sedan avsnitten. Kartan står bara i Struktur.
+        expect(rad.textContent).toMatch(/Lönefil: 260 personer.*Referens: .+Jämförelsestatistik: ingen inläst.*Minsta gruppstorlek 10.*Filer och kvalitet/);
+        // Ordningen: filraden, nyckeltalen, Att göra och sedan avsnitten. Kartan och kvartilerna står i Struktur.
         const fore = (a, b) => !!(d.getElementById(a).compareDocumentPosition(d.getElementById(b)) & 4);
-        expect(fore('ov-filrad', 'dashboard-summary') && fore('dashboard-summary', 'att-gora') && fore('att-gora', 'chart-ov-kvartiler')
-            && fore('chart-ov-kvartiler', 'avsnitt-ov-process') && fore('avsnitt-ov-process', 'avsnitt-ov-kvalitet') && fore('avsnitt-ov-kvalitet', 'avsnitt-ov-gap')).toBe(true);
+        expect(fore('ov-filrad', 'dashboard-summary') && fore('dashboard-summary', 'att-gora') && fore('att-gora', 'avsnitt-ov-process')
+            && fore('avsnitt-ov-process', 'avsnitt-ov-gap')).toBe(true);
         expect(d.getElementById('chart-ov-tradkarta')).toBeNull();
+        expect(d.getElementById('chart-ov-kvartiler')).toBeNull();
         expect(d.getElementById('view-dashboard').textContent).not.toContain('Organisationen som karta');
-        expect(d.getElementById('chart-ov-kvartiler')._figur).toBeTruthy();
-        // Kvartilerna är en kopia av Strukturs diagram: de exporteras därifrån, inte två gånger.
-        expect(d.getElementById('chart-ov-kvartiler').closest('[data-no-export]')).not.toBeNull();
-        expect(d.querySelectorAll('#ov-lage .chart-export-btn, #ov-lage [data-chart-export]')).toHaveLength(0);
-        // Avsnitten är hopfällda efter inläsning och bär sitt nyckeltal.
+        // Avsnitten är hopfällda efter inläsning och bär sitt nyckeltal; kvalitetens nyckeltal står i Filer och kvalitet.
         expect([...d.querySelectorAll('#view-dashboard details.avsnitt')].filter(a => a.open)).toHaveLength(0);
         expect(d.getElementById('nyckel-ov-process').textContent).toMatch(/^\d av \d steg klara$/);
         expect(['OK', 'Varning', 'Kritisk']).toContain(d.getElementById('nyckel-ov-kvalitet').textContent);
         expect(d.getElementById('nyckel-ov-kvalitet').textContent).toBe(d.querySelector('#underlagets-kvalitet-status .uk-marke').textContent);
         expect(d.getElementById('stat-age').textContent).toMatch(/^\d+,\d$/);
-        // Knappen i filraden visar uppladdningen igen, och döljer den.
-        d.getElementById('btn-ov-filer').click();
-        expect(vy.classList.contains('visa-filer')).toBe(true);
-        expect(d.getElementById('btn-ov-filer').getAttribute('aria-expanded')).toBe('true');
-        expect(d.getElementById('btn-ov-filer').textContent).toBe('Dölj filer och inställningar');
-        d.getElementById('btn-ov-filer').click();
-        expect(vy.classList.contains('visa-filer')).toBe(false);
+        // Länken i filraden går till Filer och kvalitet.
+        rad.querySelector('[data-go-to-tab="filer"]').click();
+        expect(d.querySelector('.nav-item.active').getAttribute('data-tab')).toBe('filer');
+        d.querySelector('.nav-item[data-tab="dashboard"]').click();
         // Värdet för minsta gruppstorlek är en länk till inställningarna, med fokus i fältet.
         d.querySelector('#ov-filrad [data-oppna-installningar]').click();
         expect(d.getElementById('installningar-modal').style.display).toBe('flex');
@@ -311,7 +306,6 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         w.eval('_rensaAllData()');
         expect(vy.classList.contains('har-data')).toBe(false);
         expect(d.getElementById('ov-filrad').textContent).toBe('');
-        expect(d.getElementById('chart-ov-kvartiler').innerHTML).toBe('');
         expect(d.getElementById('avsnitt-ov-process').open).toBe(true);
     });
     it('Att göra — hela listan är ett avsnitt som står kvar utfällt när en punkt bockas av', () => {
@@ -333,14 +327,11 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         expect(avsnitt().open).toBe(true);
         expect(d.getElementById('nyckel-ov-punkter').textContent).toBe(`1 av ${antal} hanterade`);
     });
-    it('utan könsuppdelning ritas inga kvartiler på Översikt, och noten säger varför', () => {
+    it('en höjd minsta gruppstorlek syns i Översikts filrad', () => {
         const w = createAppWindow();
-        w.__state.kLage = 'export';   // Översikts kopia så som den lämnar verktyget (ADR-51)
         w.__loadDemoData();
         const d = w.document;
         w.eval('sattKTroskel(150, { fraga: false })');
-        expect(d.getElementById('chart-ov-kvartiler').querySelector('svg')).toBeNull();
-        expect(d.getElementById('ov-kvartiler-not').textContent.length).toBeGreaterThan(20);
         expect(d.getElementById('ov-filrad').textContent).toContain('Minsta gruppstorlek 150');
     });
     it('Inställningar — panelen bär det som gäller alla flikar, och flikarnas egna inställningar står kvar i flikarna', () => {
@@ -585,7 +576,7 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         const { readFileSync } = await import('node:fs');
         const css = readFileSync(new URL('../src/style.css', import.meta.url), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
         // Före inläsning är Översikts lägesdelar dolda, var och en med egen väljare.
-        for (const id of ['ov-filrad', 'ov-lage', 'ov-fordjupning', 'avsnitt-ov-kvalitet', 'avsnitt-ov-gap']) expect(css).toContain(`#view-dashboard:not(.har-data) #${id}`);
+        for (const id of ['ov-filrad', 'ov-fordjupning', 'avsnitt-ov-gap']) expect(css).toContain(`#view-dashboard:not(.har-data) #${id}`);
         // Kompakt läge döljer förklaringar, men aldrig noter om små grupper eller förbehåll.
         const kompakt = [...css.matchAll(/([^{}]*lage-kompakt[^{}]*)\{([^}]*)\}/g)].filter(m => /display:\s*none/.test(m[2])).map(m => m[1]).join(' ');
         expect(kompakt).toMatch(/\.avsnitt-under/);

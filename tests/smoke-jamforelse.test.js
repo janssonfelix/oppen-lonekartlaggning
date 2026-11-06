@@ -216,11 +216,12 @@ describe('namn på organisationen och jämförelsestatistiken', () => {
 });
 
 describe('Översikt: ordning, kvalitet och nyckeltal', () => {
-    it('nyckeltal → Att göra → processen → kvaliteten → löneskillnaden', () => {
+    it('nyckeltal → Att göra → processen → löneskillnaden; kvaliteten står i Filer och kvalitet', () => {
         const w = createAppWindow();
         w.__loadDemoData();
         const d = w.document;
-        const ids = ['dashboard-summary', 'att-gora', 'process-tracker', 'underlagets-kvalitet', 'gap-uppdelning'];
+        expect(d.getElementById('view-filer').contains(d.getElementById('underlagets-kvalitet'))).toBe(true);
+        const ids = ['dashboard-summary', 'att-gora', 'process-tracker', 'gap-uppdelning'];
         const pos = ids.map(id => d.getElementById(id));
         for (let i = 1; i < pos.length; i++) {
             expect(pos[i - 1].compareDocumentPosition(pos[i]) & w.Node.DOCUMENT_POSITION_FOLLOWING, `${ids[i - 1]} före ${ids[i]}`).toBeTruthy();

@@ -411,14 +411,15 @@ describe('en låst flik svarar', () => {
         expect(flik.title).toMatch(/Ladda upp/);
         expect(las('src/index.html')).not.toMatch(/<button class="nav-item"[^>]*\sdisabled[\s>]/);
     });
-    it('ett klick går till Översikt, ger filväljaren fokus och markerar lönefilskortet', () => {
+    it('ett klick går till Filer och kvalitet, ger filväljaren fokus och markerar lönefilskortet', () => {
         const w = createAppWindow();
         const d = w.document;
         d.querySelector('.nav-item[data-tab="info"]').click();
         expect(d.querySelector('.nav-item.active').getAttribute('data-tab')).toBe('info');
         d.getElementById('tab-matrix').click();
-        expect(d.querySelector('.nav-item.active').getAttribute('data-tab')).toBe('dashboard');
+        expect(d.querySelector('.nav-item.active').getAttribute('data-tab')).toBe('filer');
         expect(d.getElementById('view-matrix').style.display).toBe('none');
+        expect(d.getElementById('view-filer').style.display).toBe('block');
         expect(d.getElementById('upload-cell-data').classList.contains('visas-nu')).toBe(true);
         expect(d.activeElement.id).toBe('file-input-data');
     });

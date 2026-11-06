@@ -12,17 +12,17 @@ document.querySelectorAll(".nav-item").forEach(btn => {
         set(v) { if (v) this.setAttribute('aria-disabled', 'true'); else this.removeAttribute('aria-disabled'); }
     });
 });
-/** En låst flik har klickats: visa Översikt, rulla fram lönefilskortet, ge filväljaren fokus och markera kortet en stund. */
+/** En låst flik har klickats: visa Filer och kvalitet, rulla fram lönefilskortet, ge filväljaren fokus och markera kortet en stund. */
 function visaLonefilskortet(flikNamn) {
-    const oversikt = document.querySelector('.nav-item[data-tab="dashboard"]');
-    if (oversikt && !oversikt.classList.contains('active')) /** @type {HTMLElement} */ (oversikt).click();
+    const filer = document.querySelector('.nav-item[data-tab="filer"]');
+    if (filer && !filer.classList.contains('active')) /** @type {HTMLElement} */ (filer).click();
     const kort = document.getElementById('upload-cell-data');
     if (!kort) return;
     kort.scrollIntoView?.({ block: 'center' });
     kort.classList.add('visas-nu');
     setTimeout(() => kort.classList.remove('visas-nu'), 2000);
     document.getElementById('file-input-data')?.focus?.({ preventScroll: true });
-    announceToScreenReader(`${flikNamn ? flikNamn + ' kräver ett underlag. ' : ''}Läs in lönefilen här på Översikt, så låses flikarna upp.`);
+    announceToScreenReader(`${flikNamn ? flikNamn + ' kräver ett underlag. ' : ''}Läs in lönefilen här under Filer och kvalitet, så låses flikarna upp.`);
 }
 document.querySelectorAll(".nav-item").forEach(btn => {
     btn.addEventListener("click", () => {
@@ -37,7 +37,7 @@ document.querySelectorAll(".nav-item").forEach(btn => {
         document.querySelectorAll(".nav-item").forEach(t => t.classList.remove("active"));
         btn.classList.add("active");
         const titles = {
-            dashboard: 'Översikt',
+            dashboard: 'Översikt', filer: 'Filer och kvalitet',
             kon: 'Ålder & karriär', dokumentera: 'Dokumentera & exportera',
             benchmark: 'Jämförelse', matrix: 'Lika arbete',
             bestammelser: 'Regler & praxis',
@@ -137,6 +137,7 @@ function _renderTabContent(target) {
     else if (target === "utforska"     && d.length) { generateRapport(); renderExplorer(); }
     else if (target === "dokumentera") medExportLage(() => { if (d.length) renderKvalitetssakring(); renderRapportunderlag(); renderExportBesked(); if (typeof renderArsjamforelse === 'function') renderArsjamforelse(); });   // allt här lämnar verktyget (ADR-51)
     else if (target === "dashboard" && d.length) renderOversiktDelar();
+    else if (target === "filer"     && d.length) renderFilerDelar();
     else if (target === "info")  renderInfoTab();
     else if (target === "handlingsplan") renderHandlingsplanSeed();
     else if (target === "bestammelser") { if (typeof bes8Uppdatera === 'function') bes8Uppdatera(); if (typeof bes8Stod === 'function') bes8Stod(); }

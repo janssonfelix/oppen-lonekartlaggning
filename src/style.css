@@ -2871,18 +2871,15 @@ body.forhandsvisning .content-body { outline: 3px dashed var(--status-varning); 
 @media (max-width: 640px) { .view-panel select { min-width: 0; width: 100%; overflow: hidden; text-overflow: ellipsis; } }
 
 /* ---- Översikt efter inläsning ----
-   Före inläsning är sidan en uppladdningssida. Efter inläsning (klassen har-data) krymper filerna till en rad och
-   läget visas: nyckeltalen, kartan, lönekvartilerna och Att göra. Knappen i raden fäller ut filerna igen. */
-#view-dashboard:not(.har-data) .flik-intro-rad, #view-dashboard:not(.har-data) #ov-intro, #view-dashboard:not(.har-data) #ov-filrad, #view-dashboard:not(.har-data) #ov-lage, #view-dashboard:not(.har-data) #ov-fordjupning,
-#view-dashboard:not(.har-data) #avsnitt-ov-kvalitet, #view-dashboard:not(.har-data) #avsnitt-ov-gap { display: none; }
-#view-dashboard.har-data:not(.visa-filer) #upload-sektion { display: none; }
+   Före inläsning visar sidan Kom igång och processen. Efter inläsning (klassen har-data) visas läget: filraden,
+   nyckeltalen, Att göra och processen. Filerna står i Filer och kvalitet. */
+#view-dashboard:not(.har-data) .flik-intro-rad, #view-dashboard:not(.har-data) #ov-intro, #view-dashboard:not(.har-data) #ov-filrad, #view-dashboard:not(.har-data) #ov-fordjupning,
+#view-dashboard:not(.har-data) #avsnitt-ov-gap { display: none; }
 .ov-filrad .btn { margin-left: auto; }
 .ov-filrad-lank { background: none; border: 0; padding: 0; font: inherit; color: var(--primary, #1d4ed8); text-decoration: underline; cursor: pointer; }
 .ov-filrad-lank:focus-visible { outline: 2px solid var(--primary, #1d4ed8); outline-offset: 2px; border-radius: 2px; }
-.ov-lage { margin: 16px 0 8px; }   /* kvartilkortet efter Att göra, i hela bredden (trädkartan står i Struktur) */
 details.avsnitt .ptrack > h3 { display: none; }           /* rubriken står i avsnittets sammanfattning */
 details.avsnitt > section.card, details.avsnitt > div > .card.ptrack { box-shadow: none; padding: 0; margin-bottom: 0; }
-@media print { #view-dashboard.har-data #upload-sektion { display: none; } }
 details.avsnitt .insight-feed-header h3 { display: none; }
 #action-checklist-container { margin-top: 14px; }
 
