@@ -384,6 +384,24 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         expect(w.__state.costSettings.poPct).toBe(39.15);
         w.eval('stangInstallningar()');
     });
+    it('utan lönefil är varje rad med en inställning i en flik inaktiv, också Tröskel för extremvärden (avsnittet är dolt)', () => {
+        const w = createAppWindow(), d = w.document;
+        d.getElementById('btn-open-installningar').click();
+        const rad = [...d.querySelectorAll('#inst-flikar .inst-flik')].find(r => /Tröskel för extremvärden/.test(r.textContent));
+        const knapp = rad.querySelector('button');
+        expect(d.getElementById('avsnitt-ov-kvalitet').hidden).toBe(true);
+        expect(knapp.disabled).toBe(true);
+        expect(knapp.title).toBe('Läs in en lönefil först');
+        for (const r of d.querySelectorAll('#inst-flikar .inst-flik button')) expect(r.disabled).toBe(true);
+        w.eval('stangInstallningar()');
+        w.__loadDemoData();
+        d.getElementById('btn-open-installningar').click();
+        const igen = [...d.querySelectorAll('#inst-flikar .inst-flik')].find(r => /Tröskel för extremvärden/.test(r.textContent)).querySelector('button');
+        expect(igen.disabled).toBe(false);
+        igen.click();
+        expect(d.getElementById('avsnitt-ov-kvalitet').open).toBe(true);
+        expect(d.getElementById('avsnitt-ov-kvalitet').hidden).toBe(false);
+    });
     it('minsta gruppstorlek i flikarnas urvalsrad är en länk till inställningarna, och en ändring där slår igenom', () => {
         const w = createAppWindow();
         w.__loadDemoData();
