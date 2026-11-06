@@ -33,11 +33,11 @@ bedömningarna och besluten gör och äger arbetsgivaren.
 
 ## 1. (Valfritt men rekommenderat) Lär dig verktyget med demodata
 
-1. Klicka **prova med demodata** i välkomstraden på Översikt (samma två val finns i
-   lönefilskortet i **Filer och kvalitet**). Det finns två demon:
-   - **prova med demodata**: 260 påhittade personer i fem BAS-intervall, snabbt att bläddra i.
+1. Välj ett demo i välkomstraden på Översikt, "prova med demodata, **litet** eller **stort**" (samma
+   två val finns i lönefilskortet i **Filer och kvalitet**, som **Prova med demodata** och **stort demo**):
+   - **litet**: 260 påhittade personer i fem BAS-intervall, snabbt att bläddra i.
      Det är samma underlag som självdiagnostiken bygger på.
-   - **stort demo (7 000 personer)**: en påhittad organisation i storlek med en mindre kommun
+   - **stort (7 000 personer)**: en påhittad organisation i storlek med en mindre kommun
      eller en stor verksamhet, med BAS-intervall A–K och 30 yrkesgrupper. Här syns verktyget i verklig
      storlek: inlagda löneskillnader i några yrken, ett par för likvärdigt arbete, och små grupper
      som maskeras i exporterna. Inläsningen tar några sekunder.

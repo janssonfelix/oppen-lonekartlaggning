@@ -28185,7 +28185,7 @@ const INFO_SECTIONS = {
             <li>Bestäm i <strong>Prioritering</strong> och <strong>Handlingsplan</strong> vad som ska göras, av vem och när; pröva fördelningen av potten i <strong>Löneöversyn</strong></li>
             <li>Ta texten till rapporten ur <strong>Rapporttext</strong>, kör färdigchecken i <strong>Exportera</strong>, hämta Word-utkastet och färdigställ dokumentationen. Spara konfigurationen i <strong>Spara och jämför år</strong>, så kan ni jämföra med förra året nästa gång</li>
         </ol>
-        <p>Vill ni prova först finns två demon i <strong>Kom igång</strong> på Översikt och i lönefilskortet i Filer och kvalitet: <em>prova med demodata</em> (260 påhittade personer) och <em>stort demo</em> (7 000 påhittade personer i BAS A–K, i storlek med en mindre kommun). Allt i demona är påhittat och märks som demodata.</p>
+        <p>Vill ni prova först finns två demon i <strong>Kom igång</strong> på Översikt och i lönefilskortet i Filer och kvalitet: <em>prova med demodata, litet</em> (260 påhittade personer) och <em>stort</em> (7 000 påhittade personer i BAS A–K, i storlek med en mindre kommun). Allt i demona är påhittat och märks som demodata.</p>
         <p>Raden <em>Klar här? Nästa steg</em> sist i flikarna leder vidare i den här ordningen. Sökrutan i sidhuvudet hittar yrken, BAS-intervall och funktioner, och listan <em>På den här sidan</em> leder till flikens avsnitt. Körguiden som följer med verktyget beskriver varje steg närmare; den står under Källor.</p>
     `,
 
@@ -31367,13 +31367,15 @@ function _instRita() {
           lage: `± ${band ? /** @type {HTMLInputElement} */ (band).value : 5} %`, andrad: !!band && String(/** @type {HTMLInputElement} */ (band).value) !== '5' },
         { flik: 'matrix', avsnitt: 'avsnitt-la-personer', namn: 'Lika arbete', vad: 'Gräns för personer att granska',
           lage: `${typeof _pagGrans === 'function' ? _pagGrans() : 10} % under förväntad lön`, andrad: typeof _pagGrans === 'function' && _pagGrans() !== 10 },
-        { flik: 'filer', avsnitt: 'avsnitt-ov-kvalitet', namn: 'Filer och kvalitet', vad: 'Tröskel för extremvärden',
+        // Fliken Filer och kvalitet är öppen utan lönefil, men avsnittet med tröskeln är dolt tills en fil är inläst.
+        { flik: 'filer', avsnitt: 'avsnitt-ov-kvalitet', kraverData: true, namn: 'Filer och kvalitet', vad: 'Tröskel för extremvärden',
           lage: `${extrem ? svTal(parseFloat(/** @type {HTMLInputElement} */ (extrem).value) || 3, 1) : '3,0'} standardavvikelser`, andrad: !!extrem && (parseFloat(/** @type {HTMLInputElement} */ (extrem).value) || 3) !== 3 },
     ];
+    const utanData = !getData().length;
     flikar.innerHTML = rader.map(r => `<li class="inst-flik${r.andrad ? ' ar-andrad' : ''}">
         <span class="inst-flik-namn"><strong>${esc(r.namn)}</strong> — ${esc(r.vad)}</span>
         <span class="inst-flik-lage">${esc(r.lage)}</span>
-        <button type="button" class="btn-table-tool" data-inst-flik="${esc(r.flik)}" data-inst-avsnitt="${esc(r.avsnitt)}"${last(r.flik) ? ' disabled title="Läs in en lönefil först"' : ''}>Öppna</button>
+        <button type="button" class="btn-table-tool" data-inst-flik="${esc(r.flik)}" data-inst-avsnitt="${esc(r.avsnitt)}"${last(r.flik) || (r.kraverData && utanData) ? ' disabled title="Läs in en lönefil först"' : ''}>Öppna</button>
     </li>`).join('');
 }
 
@@ -31614,14 +31616,17 @@ function _sokRita() {
     _sokTraffar = [...grupper, ...funktioner];
     _sokAktiv = _sokTraffar.length ? 0 : -1;
     if (!text) { lista.hidden = true; lista.innerHTML = ''; falt.setAttribute('aria-expanded', 'false'); falt.removeAttribute('aria-activedescendant'); return; }
-    // Rubrikerna är role="presentation": de är inte alternativ, och pilarna går förbi dem. Grupprubriken behövs bara när båda grupperna finns.
-    const rubrik = t => `<li role="presentation" class="sok-grupprubrik">${t}</li>`;
+    // Grupperna följer ARIA-mönstret för en listbox med grupper: li[role=group] märkt med sin rubrik (en span med
+    // role="presentation", inget alternativ, och pilarna går förbi den) och alternativen i en inre lista. Gruppen
+    // Grupper behövs bara när båda finns; ensamma står grupperna direkt i listan.
+    const grupp = (namn, id, innehall) => `<li role="group" aria-labelledby="${id}"><span role="presentation" class="sok-grupprubrik" id="${id}">${namn}</span>`
+        + `<ul role="presentation" class="sok-grupplista">${innehall}</ul></li>`;
     const alt = (t, i) => t.typ === 'grupp'
         ? `<li role="option" id="sok-traff-${i}" data-sok-index="${i}" aria-selected="${i === _sokAktiv}"><span class="sok-namn">${esc(t.namn)}</span><span class="sok-under">${esc(t.under)} · ${svTal(t.n, 0)} personer</span></li>`
         : `<li role="option" id="sok-traff-${i}" data-sok-index="${i}" data-sok-funktion aria-selected="${i === _sokAktiv}"><span class="sok-namn">${esc(t.namn)}</span><span class="sok-under">${esc(_sokFunktionUnder(t))}</span></li>`;
     lista.innerHTML = _sokTraffar.length
-        ? (grupper.length && funktioner.length ? rubrik('Grupper') : '') + grupper.map(alt).join('')
-            + (funktioner.length ? rubrik('Funktioner') + funktioner.map((t, j) => alt(t, grupper.length + j)).join('') : '')
+        ? (grupper.length && funktioner.length ? grupp('Grupper', 'sok-rubrik-grupper', grupper.map(alt).join('')) : grupper.map(alt).join(''))
+            + (funktioner.length ? grupp('Funktioner', 'sok-rubrik-funktioner', funktioner.map((t, j) => alt(t, grupper.length + j)).join('')) : '')
         : `<li class="sok-ingen" role="presentation">${_sokHarData() ? 'Ingen grupp eller funktion matchar.' : 'Ingen funktion matchar.'}</li>`;
     lista.hidden = false;
     falt.setAttribute('aria-expanded', 'true');
@@ -31793,9 +31798,13 @@ let _sidindexBevakare = null;
 let _sidindexStorlek = null;
 /** Rubrikerna som följs, i sidans ordning: { el: summary eller kortrubrik, id: avsnittets id }. */
 let _sidindexOrdning = /** @type {{el: Element, id: string}[]} */ ([]);
+/** Avsnittet som läsaren valde i listan (eller sökningen ledde till). Det står kvar som aktivt också när sidan tar
+ *  slut innan avsnittet når läslinjen; den rullning som klicket själv sätter igång skriver inte över det. Nästa
+ *  rullning som läsaren gör (hjul, pekskärm, tangent, musknapp) släpper valet. */
+let _sidindexValt = /** @type {string|null} */ (null);
 /** Markerar avsnittet som läslinjen står i. */
 function _sidindexFolj() {
-    if (!_sidindexOrdning.length) return;
+    if (!_sidindexOrdning.length || _sidindexValt) return;
     const linje = window.innerHeight * 0.4;
     let aktiv = _sidindexOrdning[0];
     for (const o of _sidindexOrdning) { if (o.el.getBoundingClientRect().top <= linje) aktiv = o; else break; }
@@ -31863,6 +31872,7 @@ function sidindexBygg(flik) {
     if (!nav) return;
     if (_sidindexBevakare) { _sidindexBevakare.disconnect(); _sidindexBevakare = null; }
     _sidindexOrdning = [];
+    _sidindexValt = null;
     const poster = _sidindexRubriker(flik);
     const visas = poster.length >= SIDINDEX_MINST;
     nav.hidden = !visas;
@@ -31908,6 +31918,7 @@ function sidindexGaTill(id) {
     if (fokus.tagName !== 'SUMMARY' && !fokus.hasAttribute('tabindex')) fokus.setAttribute('tabindex', '-1');
     fokus.focus({ preventScroll: true });
     _sidindexMarkera(id);
+    _sidindexValt = id;
 }
 
 // Delegerad klick, som hopplänkarna i 33-sidans-innehall.js: adressen ändras inte.
@@ -31917,6 +31928,9 @@ document.addEventListener('click', e => {
     e.preventDefault();
     sidindexGaTill(/** @type {HTMLElement} */ (a).dataset.sidindex || '');
 });
+// Läsarens egen rullning släpper valet. Klicket på en post kommer efter musknappen och Retur-tangenten, så valet sätts
+// efter att de har släppt det förra.
+for (const typ of ['wheel', 'touchstart', 'keydown', 'mousedown']) window.addEventListener(typ, () => { _sidindexValt = null; }, { passive: true, capture: true });
 let _sidindexRam = 0;
 window.addEventListener('scroll', () => {
     if (!_sidindexBevakare || _sidindexRam) return;

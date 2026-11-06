@@ -126,11 +126,12 @@ describe('stort demo: inläsningen', () => {
 });
 
 describe('stort demo: ingångarna', () => {
-    it('Kom igång har knappen bredvid "prova med demodata"', () => {
+    it('Kom igång har knappen bredvid det lilla demot ("prova med demodata, litet eller stort")', () => {
         const w = bevaka(createAppWindow()), d = w.document;
         const knapp = d.getElementById('first-run-stort-demo');
         expect(knapp.closest('#first-run-hint')).not.toBeNull();
-        expect(utanMellanrum(knapp.textContent)).toBe('stort demo (7 000 personer)');
+        expect(utanMellanrum(knapp.textContent)).toBe('stort (7 000 personer)');
+        expect(knapp.title).toBe('Läs in det stora demot: 7 000 påhittade personer');
         knapp.click();
         expect(w.__state.data).toHaveLength(7000);
         expect(w.__diagnostik).toBe(0);
