@@ -19,6 +19,15 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   lönefördelningen sitter gapet?* (EU-rapportens blad *Distributionellt gap* får kolumnerna Antal kvinnor och
   Antal män), kvantiltabellen, *Vad varje variabel tillför*, Oaxaca-tabellen och modelljämförelsen i Ålder &
   karriär ("n = 260; 138 kvinnor, 122 män"). Inga tal har ändrats.
+- **Småsaker efter omläggningen.** *Organisationen som karta* i Lönestruktur är ett eget avsnitt, hopfällt från
+  början och med antalet yrkesgrupper i rubriken, så att fliken öppnar med slutsatserna och representationen.
+  Processkartan på Översikt har nio steg: *Samverkan med facket* står under Åtgärder och leder till kortet
+  *Samverkan & uppföljning* i Handlingsplan, och *Rapporttext* är ett eget steg under Rapport. Kom igång säger
+  "prova med demodata, litet eller stort (7 000 personer)". I Inställningar är knappen till extremvärdenas tröskel
+  låst tills en lönefil är inläst. Funktionssökningens träfflista grupperar Grupper och Funktioner som ARIA-grupper
+  med egen rubrik, och sidindexet behåller det avsnitt man klickat på markerat tills man själv rullar. Lönestrukturens
+  mått räknas på ett ställe för fliken, rapportutkastet och EU-exporten (inga tal har ändrats), och auto-utkastet i
+  Rapporttext har id:t `avsnitt-rt-utkast`.
 - **Stort demo: 7 000 personer.** Bredvid *prova med demodata* (260 personer) i Kom igång på Översikt och i
   lönefilskortet i Filer och kvalitet finns *stort demo (7 000 personer)*: en påhittad organisation i storlek med en
   mindre kommun, med BAS-intervall A–K, 30 yrkesgrupper med koder ur etikettlistan, ett inlagt

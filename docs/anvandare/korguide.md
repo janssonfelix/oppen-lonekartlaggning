@@ -255,9 +255,10 @@ också när det är hopfällt.
    lägre medianlön än ett av organisationens yrken i *lägre* BAS. Det är ofta den tydligaste
    signalen om undervärdering, men BAS är ett grovt mått på krav — pröva paren mot
    befattningsbeskrivningarna.
-5. **Lönestruktur** — varför gapet sitter där det sitter. Fliken öppnar med **Organisationen som karta**; under
+5. **Lönestruktur** — varför gapet sitter där det sitter. Fliken öppnar med slutsatserna; under
    Fördjupning är bara representationen utfälld, resten fälls ut vid behov. **Representation per BAS-nivå** visar
-   segregeringen (sjunker andelen kvinnor mot högre nivåer?), **Var i lönefördelningen sitter gapet?** lönen vid
+   segregeringen (sjunker andelen kvinnor mot högre nivåer?), **Organisationen som karta** varje yrkesgrupp som en
+   yta efter antal personer och andel kvinnor, **Var i lönefördelningen sitter gapet?** lönen vid
    olika percentiler för kvinnor och män (om skillnaden är störst bland de lägst eller högst betalda), och
    **EU 2023/970 — lönerapportmått** måtten en större arbetsgivare ska kunna redovisa. Avsnittet **Per sektor**
    visar läget sektor för sektor — AID:s 13 huvudområden, t.ex. vård och omsorg, skola och
