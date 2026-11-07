@@ -539,6 +539,7 @@ function loadStructureFile(file) {
             _fkVantar = null;
             state.forhandskontroll = { ...fkEj, ejInlast: true };
             renderForhandskontroll();
+            _resetInactivityTimer();   // de tio raderna på skärmen rensas också vid inaktivitet
             state.ansvarKolumn = tidigareAnsvarKolumn;
             state.importprofil = tidigareImportprofil;
             _senasteInlasningLyckades = false;

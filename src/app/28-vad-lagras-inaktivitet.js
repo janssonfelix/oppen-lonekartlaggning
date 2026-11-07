@@ -173,7 +173,7 @@ function _showInactivityWarning() {
 
 function _autoClearOnInactivity() {
     _hideInactivityWarning();
-    const hadData = state.data.length > 0 || !!_fkVantar;
+    const hadData = state.data.length > 0 || !!_fkVantar || !!state.forhandskontroll;
     // Samma rensning som knappen, utan bekräftelsefrågan (ingen finns vid datorn).
     _rensaAllData();
     if (hadData) {
@@ -192,7 +192,7 @@ function _resetInactivityTimer() {
         _inactivityIdleTimer = null;
     }
     if (state.inactivityTimeoutMin <= 0) return;
-    if (state.data.length === 0 && !_fkVantar) return;   // en fil som väntar på Läs in rensas också
+    if (state.data.length === 0 && !_fkVantar && !state.forhandskontroll) return;   // en väntande fil och en förhandskontroll på skärmen rensas också
     // Visa varningen 60 s INNAN total timeout
     const warnAfterMs = Math.max(0, state.inactivityTimeoutMin * 60 * 1000 - 60 * 1000);
     _inactivityIdleTimer = setTimeout(_showInactivityWarning, warnAfterMs);

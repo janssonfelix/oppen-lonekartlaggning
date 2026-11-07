@@ -242,6 +242,17 @@ describe('en väntande fil och en fil som inte lästes in', () => {
         expect(w.document.body.textContent).toMatch(/Sessionen rensades/);
     });
 
+    it('inaktivitetsrensningen täcker en ej inläst fils förhandskontroll när ingen data finns', async () => {
+        const w = createAppWindow();
+        await lasIn(w, fil({ kon: () => '1' }), 'b.csv');
+        expect(w.__state.data.length).toBe(0);
+        expect(w.__state.forhandskontroll.ejInlast).toBe(true);
+        expect(w.eval('_inactivityIdleTimer')).toBeTruthy();
+        w.eval('_autoClearOnInactivity()');
+        expect(w.__state.forhandskontroll).toBeNull();
+        expect(w.document.body.textContent).toMatch(/Sessionen rensades/);
+    });
+
     it('avsnittet namnger filen det beskriver', async () => {
         const w = createAppWindow();
         await lasIn(w, fil(), 'a.csv');
