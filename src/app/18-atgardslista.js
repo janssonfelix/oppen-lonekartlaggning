@@ -68,7 +68,7 @@ function buildActionChecklist({ endastGrupper = false } = {}) {
                 }
             }
             // Förhandskontrollen av lönefilen (17-forhandskontroll.js): varningarna tills filen läses om utan dem.
-            if (typeof _fkAttGora === 'function') items.push(..._fkAttGora());
+            if (typeof _fkAttGora === 'function') items.push(..._fkAttGora(new Set(items.map(i => i.id))));
         } catch (e) { rapporteraFel('Att göra: underlagets kvalitet', e); }
 
         // === Lika arbete: rått gap > 5 % i jämförbara BAS (samma regel som kompliansen) ===

@@ -213,3 +213,106 @@ describe('Inställningar: stoppa och visa förhandskontrollen innan inläsning',
         expect(avsnitt(w).hidden).toBe(true);
     });
 });
+
+describe('en väntande fil och en fil som inte lästes in', () => {
+    it('Rensa all data släpper en väntande fil också när inget lästs in förut', async () => {
+        const w = createAppWindow();
+        stoppa(w);
+        await lasIn(w, fil());
+        expect(w.eval('_fkVantar')).toBeTruthy();
+        w.confirm = () => true;
+        w.eval('clearAllData()');
+        expect(w.eval('_fkVantar')).toBeNull();
+        expect(w.__state.forhandskontroll).toBeNull();
+        expect(avsnitt(w).hidden).toBe(true);
+        expect(w.document.getElementById('forhandskontroll').textContent).toBe('');
+    });
+
+    it('inaktivitetsrensningen är igång medan filen väntar och släpper den', async () => {
+        const w = createAppWindow();
+        stoppa(w);
+        await lasIn(w, fil());
+        expect(w.eval('_inactivityIdleTimer')).toBeTruthy();
+        // Vad lagras i minnet säger att en fil väntar.
+        w.eval('openDataResidency()');
+        expect(w.document.getElementById('data-residency-content').textContent).toMatch(/väntar på Läs in/);
+        w.eval('_autoClearOnInactivity()');
+        expect(w.eval('_fkVantar')).toBeNull();
+        expect(w.__state.forhandskontroll).toBeNull();
+        expect(w.document.body.textContent).toMatch(/Sessionen rensades/);
+    });
+
+    it('avsnittet namnger filen det beskriver', async () => {
+        const w = createAppWindow();
+        await lasIn(w, fil(), 'a.csv');
+        expect(avsnitt(w).querySelector('.fk-fil').textContent).toContain('a.csv');
+    });
+
+    it('en fil utan användbara rader får en egen förhandskontroll, och det tidigare underlaget står kvar', async () => {
+        const w = createAppWindow();
+        await lasIn(w, fil(), 'a.csv');
+        const forra = w.__state.data;
+        await lasIn(w, fil({ kon: () => '1' }), 'b.csv');
+        expect(status(w)).toMatch(/Inga rader lästes in/);
+        expect(w.__state.data).toBe(forra);
+        expect(w.__state.filnamn.data).toBe('a.csv');
+        const fk = w.__state.forhandskontroll;
+        expect(fk.ejInlast).toBe(true);
+        expect(fk.varningar.map(v => v.kod)).toContain('kon-okand');
+        expect(avsnitt(w).hidden).toBe(false);
+        expect(avsnitt(w).open).toBe(true);
+        expect(avsnitt(w).querySelector('.fk-fil').textContent).toContain('b.csv');
+        expect(avsnitt(w).textContent).toContain('Filen lästes inte in');
+        expect(nyckel(w)).toBe('filen lästes inte in');
+        // Varningarna gäller en fil som inte är inläst: inga punkter i Att göra för det inlästa underlaget.
+        expect(punkter(w)).toEqual([]);
+        expect(w.document.getElementById('data-validation-report').textContent).not.toMatch(/Förhandskontroll:/);
+    });
+
+    it('under pausen visas inte förra filens kolumnmappning, och pausrutan säger när den kan justeras', async () => {
+        const w = createAppWindow();
+        await lasIn(w, fil(), 'a.csv');
+        const panel = () => w.document.getElementById('column-map-panel');
+        expect(panel().style.display).toBe('block');
+        stoppa(w);
+        await lasIn(w, fil({ n: 12 }), 'b.csv');
+        expect(panel().style.display).toBe('none');
+        expect(avsnitt(w).querySelector('.fk-vantar').textContent).toMatch(/kolumnmappningen/i);
+        w.document.getElementById('fk-avbryt').click();
+        expect(panel().style.display).toBe('block');
+        await lasIn(w, fil({ n: 12 }), 'b.csv');
+        w.document.getElementById('fk-las-in').click();
+        expect(panel().style.display).toBe('block');
+    });
+});
+
+describe('förhandskontrollens punkter i Att göra', () => {
+    it('har en titel per varning, och födelseåret har låg prioritet', async () => {
+        const w = createAppWindow();
+        await lasIn(w, fil({ alder: i => String(1978 - (i % 10)), lon: i => 420000 + i }));
+        const p = punkter(w);
+        expect(p.map(x => x.id).sort()).toEqual(['fk-alder-fodelsear', 'fk-lon-arslon']);
+        expect(new Set(p.map(x => x.titel)).size).toBe(p.length);
+        expect(p.find(x => x.id === 'fk-alder-fodelsear')).toMatchObject({ titel: 'Förhandskontrollen: ålder ur födelseår', prioritet: 'låg' });
+    });
+
+    it('bortfallet blir ingen punkt när Datakvalitet eller Fullständighet redan har den', async () => {
+        const w = createAppWindow();
+        // 2 av 30 rader utan BAS och en oläslig lön: Fullständighet och dq-lon säger det redan.
+        await lasIn(w, fil({ lon: i => (i === 5 ? 'abc' : String(30000 + i * 10)) }).map((r, i) => (i === 1 || i === 2 ? r.replace(/^C;/, ';') : r)));
+        const ids = w.eval('buildActionChecklist()').map(p => p.id);
+        expect(ids).toContain('dq-lon');
+        expect(ids).toContain('dq-fullstandighet');
+        expect(w.__state.forhandskontroll.varningar.map(v => v.kod)).toEqual(expect.arrayContaining(['bortfall-bas', 'bortfall-lon']));
+        expect(punkter(w)).toEqual([]);
+    });
+
+    it('bortfallet blir en punkt när ingen annan punkt säger det', async () => {
+        const w = createAppWindow();
+        await lasIn(w, fil({ n: 120, alder: i => String(30 + (i % 30)) }).map((r, i) => (i === 1 ? r.replace(/^C;/, ';') : r)));
+        const ids = w.eval('buildActionChecklist()').map(p => p.id);
+        expect(ids).not.toContain('dq-fullstandighet');
+        expect(punkter(w).map(p => p.id)).toEqual(['fk-bortfall-bas']);
+        expect(punkter(w)[0].titel).toBe('Förhandskontrollen: rader utan BAS-intervall');
+    });
+});

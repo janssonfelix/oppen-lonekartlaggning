@@ -14758,19 +14758,21 @@ function _fkRaknaKon(karta, ra, tolkat) {
 /**
  * Förhandskontrollen för en inläst fil. Kolumnerna som lästes är kolumnmappningens (vald rubrik, importprofil,
  * delsträng); ansvarskoden bara om kolumnen godkändes.
- * @param {{forsta: any[], konVarden: Map<string, any>, parseStats: any, headers: string[], data: any[]}} u
+ * @param {{forsta: any[], konVarden: Map<string, any>, parseStats: any, headers: string[], data: any[], filnamn?: string|null}} u
  */
-function _fkForFil({ forsta, konVarden, parseStats, headers, data }) {
+function _fkForFil({ forsta, konVarden, parseStats, headers, data, filnamn = null }) {
     const mappning = { ..._kolumnval(headers).eff, ansvar: state.ansvarKolumn ? state.ansvarKolumn.namn : null };
     const p = state.importprofil;
-    return _fkBygg({ rader: forsta, data, konVarden: [...konVarden.values()], parseStats, headers, mappning,
+    const fk = _fkBygg({ rader: forsta, data, konVarden: [...konVarden.values()], parseStats, headers, mappning,
         k: kInstalld(), profil: p ? { namn: p.namn, kalla: p.kalla } : null });
+    return { ...fk, filnamn };
 }
 
 /** Nyckeltalet i avsnittets rubrikrad. */
 function _fkNyckeltext(fk) {
     if (!fk) return '';
     if (fk.vantar) return 'väntar på Läs in';
+    if (fk.ejInlast) return 'filen lästes inte in';
     const n = fk.varningar.length;
     return n ? `${n} ${n === 1 ? 'varning' : 'varningar'}` : 'inget att anmärka';
 }
@@ -14784,6 +14786,8 @@ function _fkPausa(fk, lasIn) {
     dataStatus.textContent = 'Förhandskontrollen väntar: filen är inte inläst ännu. Granska tolkningen och välj Läs in eller Avbryt.';
     dataStatus.className = 'status-msg warning';
     renderForhandskontroll();
+    maybeShowColumnMapping();   // förra filens kolumnmappning döljs medan filen väntar
+    _resetInactivityTimer();    // den väntande filen rensas vid inaktivitet som ett inläst underlag
     const av = document.getElementById('avsnitt-fi-forhandskontroll');
     const filer = document.querySelector('.nav-item[data-tab="filer"]');
     if (filer && !filer.classList.contains('active')) /** @type {HTMLElement} */ (filer).click();
@@ -14805,6 +14809,7 @@ function _fkAvbryt() {
     _fkVantar = null;
     state.forhandskontroll = v.tidigare || null;
     renderForhandskontroll();
+    maybeShowColumnMapping();   // det tidigare underlagets kolumnmappning
     dataStatus.textContent = state.data.length
         ? 'Inläsningen avbröts. Det tidigare inlästa underlaget ligger kvar.'
         : 'Inläsningen avbröts. Ingen lönefil är inläst.';
@@ -14819,18 +14824,30 @@ function _fkSlapp() {
     renderForhandskontroll();
 }
 
+/** Titeln per varning i Att göra: olika titlar, så att länkarnas aria-label skiljer punkterna åt. */
+const FK_TITEL = {
+    'lon-arslon': 'lönen ser ut som årslön', 'lon-timlon': 'lönen ser ut som timlön', 'lon-spridning': 'stor spridning i lönen',
+    'alder-fodelsear': 'ålder ur födelseår', 'alder-utanfor': 'ålder utanför det rimliga', 'alder-ogiltig': 'ålder som inte går att läsa',
+    'bas-ovanlig': 'ovanliga BAS-värden', 'kon-okand': 'okända kön-värden', 'bortfall-bas': 'rader utan BAS-intervall', 'bortfall-lon': 'rader utan lön',
+};
+/** Varningar som en annan punkt i Att göra redan säger: punkten läggs inte till två gånger. */
+const FK_SAGS_AV = { 'kon-okand': ['dq-kon'], 'bortfall-lon': ['dq-lon', 'dq-fullstandighet'], 'bortfall-bas': ['dq-fullstandighet'] };
+/** Prioriteten: fel hög, födelseåret låg (en omräkning att bekräfta), annars medel. */
+const _fkPrioritet = v => (v.niva === 'fel' ? 'hög' : v.kod === 'alder-fodelsear' ? 'låg' : 'medel');
+
 /**
- * Varningarna som punkter i Att göra (kategorin Underlagets kvalitet). Okänt kön har redan en punkt (Datakvalitet,
- * dq-kon) och läggs inte till två gånger. Inga punkter medan filen väntar på Läs in.
+ * Varningarna som punkter i Att göra (kategorin Underlagets kvalitet). En varning som en punkt i `befintliga` redan
+ * säger (FK_SAGS_AV) läggs inte till. Inga punkter medan filen väntar på Läs in eller när den inte lästes in.
+ * @param {Set<string>} [befintliga] id för punkterna som redan står i listan
  */
-function _fkAttGora() {
+function _fkAttGora(befintliga = new Set()) {
     const fk = state.forhandskontroll;
-    if (!fk || fk.vantar) return [];
-    return fk.varningar.filter(v => v.kod !== 'kon-okand').map(v => ({
+    if (!fk || fk.vantar || fk.ejInlast) return [];
+    return fk.varningar.filter(v => !(FK_SAGS_AV[v.kod] || []).some(id => befintliga.has(id))).map(v => ({
         id: 'fk-' + v.kod,
         kategori: 'Underlagets kvalitet',
-        prioritet: v.niva === 'fel' ? 'hög' : 'medel',
-        titel: `Förhandskontrollen: ${v.niva === 'fel' ? 'kontrollera filen' : 'att granska'}`,
+        prioritet: _fkPrioritet(v),
+        titel: `Förhandskontrollen: ${FK_TITEL[v.kod] || (v.niva === 'fel' ? 'kontrollera filen' : 'att granska')}`,
         detalj: v.text,
         tab: 'filer',
         ankare: 'avsnitt-fi-forhandskontroll',
@@ -14841,7 +14858,7 @@ function _fkAttGora() {
 /** Raden i inläsningsrapporten: förhandskontrollens nyckeltal och länken till avsnittet. */
 function _fkRapportrad() {
     const fk = state.forhandskontroll;
-    if (!fk || fk.vantar) return '';
+    if (!fk || fk.vantar || fk.ejInlast) return '';
     const n = fk.varningar.length;
     return `<div class="dvr-row ${n ? 'warn' : 'ok'}"><span><span class="dvr-icon">${ikon(n ? 'statusVarning' : 'bock')}</span>Förhandskontroll: ${esc(_fkNyckeltext(fk))}</span>`
         + `<a href="#" class="dvr-value" data-go-to-tab="filer" data-go-to-anchor="avsnitt-fi-forhandskontroll">Visa förhandskontrollen</a></div>`;
@@ -14870,15 +14887,18 @@ function renderForhandskontroll() {
     }
     av.hidden = false;
     const n = fk.varningar.length, fel = fk.varningar.some(v => v.niva === 'fel');
-    _laNyckel('nyckel-fi-forhandskontroll', _fkNyckeltext(fk), fk.vantar ? 'granska' : n ? (fel ? true : 'granska') : false);
-    if (_fkRitad !== fk) { av.open = !!fk.vantar || n > 0; _fkRitad = fk; }
+    _laNyckel('nyckel-fi-forhandskontroll', _fkNyckeltext(fk), fk.ejInlast ? true : fk.vantar ? 'granska' : n ? (fel ? true : 'granska') : false);
+    if (_fkRitad !== fk) { av.open = !!fk.vantar || !!fk.ejInlast || n > 0; _fkRitad = fk; }
     const g = _fkGranser();
     const roller = fk.tolkning.length ? Object.keys(fk.tolkning[0].celler) : ['bas', 'yrke', 'lon', 'alder', 'kon'];
     const p = fk.kolumner.profil;
     const vantar = fk.vantar ? `<div class="fk-vantar">
-            <p><strong>Filen är inte inläst ännu.</strong> Inställningen <em>Stoppa och visa förhandskontrollen innan inläsning</em> är på. Granska tolkningen nedan och välj Läs in, eller Avbryt för att släppa filen${state.data.length ? ' och behålla det underlag som redan är inläst' : ''}.</p>
+            <p><strong>Filen är inte inläst ännu.</strong> Inställningen <em>Stoppa och visa förhandskontrollen innan inläsning</em> är på. Granska tolkningen nedan och välj Läs in, eller Avbryt för att släppa filen${state.data.length ? ' och behålla det underlag som redan är inläst' : ''}. Kolumnmappningen visas när filen är inläst: välj Läs in och justera den därefter.</p>
             <div class="rad-bryt gap-10"><button id="fk-las-in" class="btn btn-primary btn-sm" type="button">Läs in</button><button id="fk-avbryt" class="btn btn-secondary btn-sm" type="button">Avbryt</button></div>
+        </div>` : fk.ejInlast ? `<div class="fk-vantar">
+            <p><strong>Filen lästes inte in.</strong> Ingen rad gick att använda${state.data.length ? ', och det tidigare inlästa underlaget ligger kvar' : ''}. Förhandskontrollen nedan visar hur filen tolkades; rätta filen eller kolumnmappningen och läs in den igen.</p>
         </div>` : '';
+    const filrad = `<p class="fk-fil text-dampad-sm">Fil: ${fk.filnamn ? `<code>${esc(fk.filnamn)}</code>` : 'namnet är okänt'}</p>`;
     const varningar = n
         ? `<ul class="fk-varningar">${fk.varningar.map(v => `<li class="fk-${v.niva}">${ikon(v.niva === 'fel' ? 'statusKritisk' : 'statusVarning', 14)} ${esc(v.text)}</li>`).join('')}</ul>`
         : `<p class="fk-varningar fk-inget">${ikon('bock', 14)} Inget att anmärka: värdena ligger inom de gränser förhandskontrollen prövar.</p>`;
@@ -14909,7 +14929,7 @@ function renderForhandskontroll() {
         'Personnummer, namn och e-post: en kolumn med sådana uppgifter stoppar inläsningen, och filen hade ingen.',
     ]);
 
-    host.innerHTML = `${vantar}
+    host.innerHTML = `${vantar}${filrad}
         <p class="fk-profil text-dampad-sm">${p ? esc(importprofilText(p)) : 'Ingen importprofil kände igen filen: kolumnerna valdes på rubrikernas namn eller i kolumnmappningen.'}</p>
         ${varningar}
         <h3 class="fs-md marg-14-0-8">Tolkningen av de ${esc(svTal(g.antalRader, 0))} första raderna</h3>
@@ -14994,7 +15014,7 @@ function buildActionChecklist({ endastGrupper = false } = {}) {
                 }
             }
             // Förhandskontrollen av lönefilen (17-forhandskontroll.js): varningarna tills filen läses om utan dem.
-            if (typeof _fkAttGora === 'function') items.push(..._fkAttGora());
+            if (typeof _fkAttGora === 'function') items.push(..._fkAttGora(new Set(items.map(i => i.id))));
         } catch (e) { rapporteraFel('Att göra: underlagets kvalitet', e); }
 
         // === Lika arbete: rått gap > 5 % i jämförbara BAS (samma regel som kompliansen) ===
@@ -17608,7 +17628,8 @@ function updateGdprBanner() {
  * knapp gör rensningen till en explicit, dokumenterad åtgärd. Rätten till radering utövas mot källsystemet.
  */
 function clearAllData() {
-    const hasAny = state.data.length || state.policy.length || state.statistik.length || state.snapshot || state.paket || (state.importprofiler || []).length;
+    const hasAny = state.data.length || state.policy.length || state.statistik.length || state.snapshot || state.paket || (state.importprofiler || []).length
+        || _fkVantar || state.forhandskontroll;   // en fil som väntar på Läs in, eller förhandskontrollens tio rader
     if (!hasAny) {
         announceToScreenReader('Ingen data finns i minnet att rensa.');
         return;
@@ -18214,6 +18235,7 @@ function openDataResidency() {
                 <li>Strukturdata: <strong>${n.toLocaleString('sv-SE')}</strong> rader (~${approxKB} KB i minnet)</li>
                 <li>Referens: ${esc(referensNamn())}${esc(referensKalla())}: <strong>${policyN}</strong> rader</li>
                 <li>Jämförelsestatistik: <strong>${statN}</strong> rader</li>
+                ${_fkVantar ? '<li>En lönefil väntar på Läs in i förhandskontrollen: den hålls i minnet men är inte inläst, och Rensa all data eller rensningen vid inaktivitet släpper den.</li>' : ''}
                 <li>Lagring på disk: <strong>0 byte</strong> (inget skrivs till localStorage, IndexedDB eller cookies)</li>
                 <li>Nätverkstrafik: <strong>0 byte</strong> (CSP <code>connect-src 'none'</code> blockerar all utgående trafik)</li>
             </ul>
@@ -18337,7 +18359,7 @@ function _showInactivityWarning() {
 
 function _autoClearOnInactivity() {
     _hideInactivityWarning();
-    const hadData = state.data.length > 0;
+    const hadData = state.data.length > 0 || !!_fkVantar;
     // Samma rensning som knappen, utan bekräftelsefrågan (ingen finns vid datorn).
     _rensaAllData();
     if (hadData) {
@@ -18356,7 +18378,7 @@ function _resetInactivityTimer() {
         _inactivityIdleTimer = null;
     }
     if (state.inactivityTimeoutMin <= 0) return;
-    if (state.data.length === 0) return;
+    if (state.data.length === 0 && !_fkVantar) return;   // en fil som väntar på Läs in rensas också
     // Visa varningen 60 s INNAN total timeout
     const warnAfterMs = Math.max(0, state.inactivityTimeoutMin * 60 * 1000 - 60 * 1000);
     _inactivityIdleTimer = setTimeout(_showInactivityWarning, warnAfterMs);
@@ -19794,7 +19816,14 @@ function loadStructureFile(file) {
         // Saknas en obligatorisk kolumn men raderna går att läsa läses filen in, och kolumnmappningen säger vad som saknas.
         const saknas = (capturedHeaders || []).length ? _kolumnerSomSaknas(capturedHeaders) : [];
         if (!parsed.length) {
+            // Förhandskontrollen beskriver också en fil som inte lästes in: den visar varför raderna föll bort.
+            // En fil som väntade på Läs in ersätts av den här.
+            const fkEj = _fkForFil({ forsta: fkForsta, konVarden: fkKon, parseStats, headers: capturedHeaders || [], data: [], filnamn: file ? file.name : null });
             fkForsta.length = 0;
+            fkKon.clear();
+            _fkVantar = null;
+            state.forhandskontroll = { ...fkEj, ejInlast: true };
+            renderForhandskontroll();
             state.ansvarKolumn = tidigareAnsvarKolumn;
             state.importprofil = tidigareImportprofil;
             _senasteInlasningLyckades = false;
@@ -19804,7 +19833,7 @@ function loadStructureFile(file) {
             return;
         }
         // Förhandskontrollen byggs när ansvarskolumnen är bedömd; de insamlade råvärdena släpps direkt.
-        const fk = _fkForFil({ forsta: fkForsta, konVarden: fkKon, parseStats, headers: capturedHeaders || [], data: parsed });
+        const fk = _fkForFil({ forsta: fkForsta, konVarden: fkKon, parseStats, headers: capturedHeaders || [], data: parsed, filnamn: file ? file.name : null });
         fkForsta.length = 0;
         fkKon.clear();
         const nyAnsvarKolumn = state.ansvarKolumn, nyImportprofil = state.importprofil;
@@ -20093,6 +20122,8 @@ function _visaKolumnmappning() {
 function maybeShowColumnMapping() {
     const headers = state._dataHeaders || [];
     let panel = document.getElementById('column-map-panel');
+    // En fil som väntar på Läs in (förhandskontrollen) har inte tagit över rubrikerna: förra filens mappning visas inte.
+    if (_fkVantar) { if (panel) panel.style.display = 'none'; return; }
     const row = document.getElementById('upload-row');
     if (!panel && row && row.parentNode) {
         panel = document.createElement('div');

@@ -8,7 +8,8 @@
  * knapp gör rensningen till en explicit, dokumenterad åtgärd. Rätten till radering utövas mot källsystemet.
  */
 function clearAllData() {
-    const hasAny = state.data.length || state.policy.length || state.statistik.length || state.snapshot || state.paket || (state.importprofiler || []).length;
+    const hasAny = state.data.length || state.policy.length || state.statistik.length || state.snapshot || state.paket || (state.importprofiler || []).length
+        || _fkVantar || state.forhandskontroll;   // en fil som väntar på Läs in, eller förhandskontrollens tio rader
     if (!hasAny) {
         announceToScreenReader('Ingen data finns i minnet att rensa.');
         return;

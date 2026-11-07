@@ -531,7 +531,14 @@ function loadStructureFile(file) {
         // Saknas en obligatorisk kolumn men raderna går att läsa läses filen in, och kolumnmappningen säger vad som saknas.
         const saknas = (capturedHeaders || []).length ? _kolumnerSomSaknas(capturedHeaders) : [];
         if (!parsed.length) {
+            // Förhandskontrollen beskriver också en fil som inte lästes in: den visar varför raderna föll bort.
+            // En fil som väntade på Läs in ersätts av den här.
+            const fkEj = _fkForFil({ forsta: fkForsta, konVarden: fkKon, parseStats, headers: capturedHeaders || [], data: [], filnamn: file ? file.name : null });
             fkForsta.length = 0;
+            fkKon.clear();
+            _fkVantar = null;
+            state.forhandskontroll = { ...fkEj, ejInlast: true };
+            renderForhandskontroll();
             state.ansvarKolumn = tidigareAnsvarKolumn;
             state.importprofil = tidigareImportprofil;
             _senasteInlasningLyckades = false;
@@ -541,7 +548,7 @@ function loadStructureFile(file) {
             return;
         }
         // Förhandskontrollen byggs när ansvarskolumnen är bedömd; de insamlade råvärdena släpps direkt.
-        const fk = _fkForFil({ forsta: fkForsta, konVarden: fkKon, parseStats, headers: capturedHeaders || [], data: parsed });
+        const fk = _fkForFil({ forsta: fkForsta, konVarden: fkKon, parseStats, headers: capturedHeaders || [], data: parsed, filnamn: file ? file.name : null });
         fkForsta.length = 0;
         fkKon.clear();
         const nyAnsvarKolumn = state.ansvarKolumn, nyImportprofil = state.importprofil;
@@ -830,6 +837,8 @@ function _visaKolumnmappning() {
 function maybeShowColumnMapping() {
     const headers = state._dataHeaders || [];
     let panel = document.getElementById('column-map-panel');
+    // En fil som väntar på Läs in (förhandskontrollen) har inte tagit över rubrikerna: förra filens mappning visas inte.
+    if (_fkVantar) { if (panel) panel.style.display = 'none'; return; }
     const row = document.getElementById('upload-row');
     if (!panel && row && row.parentNode) {
         panel = document.createElement('div');
