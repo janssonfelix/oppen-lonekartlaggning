@@ -877,7 +877,7 @@ describe('Likvärdigt arbete: chart-likvardighet-heatmap', () => {
                    { kvLabel: 'K2', kvBas: 'C', kvMedian: 31000, maLabel: 'J1', maBas: 'C', maMedian: 33000, gapPct: 6.1, gapKr: 2000, allvarsindex: 5 }];
         const f = w.eval('_lvParFigur(window.__par)');
         expect(f.y.ordning).toEqual(['K2 mot J1', 'K1 mot J1']);
-        expect(f.lager.map(l => [l.marke, l.serie])).toEqual([['intervall', 'Gap'], ['punkt', 'Kvinnodominerat yrke'], ['punkt', 'Jämförelseyrke']]);
+        expect(f.lager.map(l => [l.marke, l.serie])).toEqual([['intervall', 'Skillnad'], ['punkt', 'Kvinnodominerat yrke'], ['punkt', 'Jämförelseyrke']]);
         expect(f.lager[0].data.map(d => [d.lag, d.hog])).toEqual([[31000, 33000], [30000, 33000]]);
         expect(f.lager[2].data.map(d => d.etikett)).toEqual(['6,1 %', '9,1 %']);
         expect(f.lager[1].data.every(d => d.etikett === undefined)).toBe(true);

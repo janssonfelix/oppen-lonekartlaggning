@@ -26,8 +26,10 @@ const INAKTIVITET_STANDARD_MIN = 90;
 // Verktyget är organisationsneutralt: ingen organisation är inbyggd. Profilen styr externa
 // benämningar och standard-PO utan att röra analyslogiken; den sätts av ett
 // organisationspaket.
+/** Standardnamnet när inget organisationspaket satt ett namn. */
+const ORG_STANDARDNAMN = 'Organisationen';
 const DEFAULT_PROFILE = Object.freeze({
-    name:                    'Organisationen',
+    name:                    ORG_STANDARDNAMN,
     benchmarkLabel:          'jämförelsestatistiken',
     benchmarkLabelGenitive:  'jämförelsestatistikens',
     benchmarkShort:          'jämförelsen',
@@ -66,7 +68,7 @@ function applyProfileLabels() {
 // ---- Namn på organisationen och jämförelsestatistiken (ADR-36) ----
 // Etiketterna läser namnen härifrån. Utan namn skickas dagens text som standard.
 const _PERSONUPPGIFT_FEL = 'Namnet liknar ett personnummer eller en e-postadress och sparades inte.';
-function orgNamn(standard = 'Organisationen') {
+function orgNamn(standard = ORG_STANDARDNAMN) {
     const n = state.profile && state.profile.name;
     return n && n !== DEFAULT_PROFILE.name ? _namnNormalisera(n) : standard;   // även paketnamn högst 100 tecken
 }
