@@ -8,7 +8,7 @@
  * knapp gör rensningen till en explicit, dokumenterad åtgärd. Rätten till radering utövas mot källsystemet.
  */
 function clearAllData() {
-    const hasAny = state.data.length || state.policy.length || state.statistik.length || state.snapshot || state.paket;
+    const hasAny = state.data.length || state.policy.length || state.statistik.length || state.snapshot || state.paket || (state.importprofiler || []).length;
     if (!hasAny) {
         announceToScreenReader('Ingen data finns i minnet att rensa.');
         return;
@@ -78,6 +78,10 @@ function _rensaAllData({ inbakat = true } = {}) {
     state._lastStructureFile = null;   // släpp filreferensen (GDPR: inget kvar i RAM)
     state.arbetsvardering = null;
     state.columnMap = null;
+    // Importprofilerna: konfigurationsfilens tas bort, och paketets följer paketet ut (state.paket ovan). I en
+    // organisationsfil kommer det inbakade paketets profiler tillbaka med paketet sist i rensningen.
+    state.importprofiler = [];
+    state.importprofil = null;
     state.ansvarKolumn = null;
     state._dataHeaders = [];
     state.scenarios = [];

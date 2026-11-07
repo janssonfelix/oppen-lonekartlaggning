@@ -63,6 +63,7 @@ function renderPaketInfo() {
     const innehall = [
         state.policyKalla === 'paket' ? `ställningstagande ${state.policy.length} rader` : null,
         state.statistikKalla === 'paket' ? `jämförelsestatistik ${state.statistik.length} rader` : null,
+        (n => (n ? `${n} ${n === 1 ? 'importprofil' : 'importprofiler'}` : null))((state.importprofiler || []).filter(x => x.kalla === 'organisationspaket').length),
     ].filter(Boolean).join(', ') || 'bara benämningar och inställningar';
     const rad = (dt, dd) => (dd == null || dd === '' ? '' : `<dt>${esc(dt)}</dt><dd>${esc(String(dd))}</dd>`);
     // Organisationsfil: paketet är inbakat i den här filen, eller ersatt av en inläst fil (organisationsfil-design.md §3).
@@ -89,7 +90,7 @@ function lasInPaket(text, _filnamn, { inbakat = false } = {}) {
     // Ett riktigt paket blandas inte med påhittade demosiffror: demot avslutas först.
     if (state.isDemo) _rensaAllData({ inbakat: false });
 
-    const { profil, installningar, referens, statistik, rapport } = r.delar;
+    const { profil, installningar, referens, statistik, rapport, importprofiler } = r.delar;
     const varningar = [...r.varningar];
     // Golvet för tröskeln (ADR-47): ett nytt paket får sänka eller ta bort det förra paketets golv bara om
     // användaren bekräftar — samma fråga som vid en sänkt tröskel. Nekas den står det gamla golvet kvar.
@@ -138,6 +139,9 @@ function lasInPaket(text, _filnamn, { inbakat = false } = {}) {
         varningar.push(`Minsta gruppstorlek höjs till ${nyttGolv}, paketets lägsta tillåtna.`);
     }
     state.paket = { ...r.paket, kalla: inbakat ? 'inbakat' : 'fil' };
+    // Importprofilerna följer paketet: ett nytt paket ersätter det förras, sessionens egna står kvar.
+    state.importprofiler = [...(state.importprofiler || []).filter(p => p.kalla !== 'organisationspaket'), ...(importprofiler || [])];
+    if (importprofiler && importprofiler.length) varningar.push(`Paketet ger ${importprofiler.length} ${importprofiler.length === 1 ? 'importprofil' : 'importprofiler'} för lönefilens kolumner.`);
     // Rapportens recept (ADR-52) ersätter de egna tabellerna och receptet per BAS; ett paket utan dem rör dem inte.
     if (rapport) {
         state.rapportTabeller = rapport.tabeller.map(t => JSON.parse(JSON.stringify(t)));
@@ -296,9 +300,15 @@ function uppdateraPaketKnapp() {
 /** Samma felmeddelande som fältet i Inställningar (sattKTroskel). */
 function _paketKFel() { return `Ange ett heltal mellan ${K_MIN} och ${K_MAX}.`; }
 
-/** Bygger paketet ur det inlästa och formuläret. */
-function skapaPaket() {
+/**
+ * Bygger paketet ur det inlästa och formuläret. Det inlästa paketets importprofiler följer med; `importprofiler`
+ * läggs till (samma id ersätter).
+ * @param {{importprofiler?: any[]}} [val]
+ */
+function skapaPaket({ importprofiler = [] } = {}) {
     const jamfNamn = _paketText('paket-jamf-namn');
+    const nyaId = new Set(importprofiler.map(p => p.id));
+    const profiler = [...(state.importprofiler || []).filter(p => p.kalla === 'organisationspaket' && !nyaId.has(p.id)), ...importprofiler];
     return _opByggPaket({
         organisation: _paketText('paket-org'),
         utgivare: _paketText('paket-utgivare'),
@@ -318,6 +328,7 @@ function skapaPaket() {
                                     rader: state.policy } : null,
         statistik: state.statistik.length ? { namn: state.statistikNamn || undefined, rader: state.statistik } : null,
         rapport: _paketRapportUrFormular(),
+        importprofiler: profiler,
     });
 }
 

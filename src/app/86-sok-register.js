@@ -119,5 +119,6 @@ const SOK_FUNKTIONER = [
     { namn: 'PO-påslag', synonymer: ['personalomkostnad', 'lönekostnadspåslag', 'po', 'arbetsgivaravgift'], flik: 'prioritering', dialog: 'installningar', falt: 'prio-po-pct' },
     { namn: 'Prioriteringens trösklar', synonymer: ['granskningsgräns', 'uppföljningsgräns', 'gränser', 'trösklar'], flik: 'prioritering', dialog: 'installningar', falt: 'prio-cfg-atgard' },
     { namn: 'Kompakt läge', synonymer: ['kompakt', 'vägledande', 'läge', 'tätare'], flik: 'dashboard', dialog: 'installningar', falt: 'lage-kompakt' },
+    { namn: 'Importprofiler', synonymer: ['importprofil', 'kolumnmappning', 'sparad mappning', 'känd uppsättning', 'lönesystem', 'rubriker', 'kolumner'], flik: 'filer', dialog: 'installningar', falt: 'inst-importprofiler-rubrik' },
     { namn: 'Rensa all data', synonymer: ['rensa', 'ta bort data', 'radera', 'töm'], flik: 'filer', dialog: 'installningar', falt: 'btn-clear-all-data' }
 ];

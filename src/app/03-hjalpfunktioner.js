@@ -61,6 +61,9 @@ function getField(row, possibleNames, role) {
         const mapped = state.columnMap[role];
         if (Object.prototype.hasOwnProperty.call(row, mapped)) return row[mapped];
     }
+    // Därefter importprofilen som gäller för filen (roll → filens rubrik); roller den inte täcker matchas på delsträng.
+    const profil = role && state.importprofil && state.importprofil.mappning[role];
+    if (profil && Object.prototype.hasOwnProperty.call(row, profil)) return row[profil];
     // Yrkesmönstret "aid" matchar på delsträng — en kolumn för AID:s ansvarskod ("AID-ansvar")
     // får aldrig tas för yrke (ADR-33).
     const hoppa = k => role === 'yrke' && typeof _anArRubrik === 'function' && _anArRubrik(k);
@@ -87,6 +90,27 @@ function autoDetectColumnMap(headers) {
         map[role] = found;
     }
     return map;
+}
+
+// ---- Importprofiler: kända kolumnuppsättningar (src/lib/importprofiler.js) ----
+// Ordningen när en fil läses in: organisationspaketets profiler, konfigurationsfilens, de inbyggda, och sist
+// delsträngsmatchningen ovan för de roller ingen profil täcker. _ipMatcha sorterar efter källan.
+/** Alla profiler som prövas: sessionens (paketets och konfigurationsfilens) och de inbyggda. */
+function _importprofilLista() {
+    return [...(state.importprofiler || []), ..._ipInbyggda()];
+}
+/** Profilen som gäller för rubrikerna, som { id, namn, kalla, mappning }, eller null. */
+function _importprofilFor(headers) {
+    const t = _ipMatcha(headers || [], _importprofilLista());
+    return t ? { id: t.profil.id, namn: t.profil.namn, kalla: t.profil.kalla, mappning: t.mappning } : null;
+}
+/** Källan i ord, för raden "Känd uppsättning: … (källa)". */
+function _importprofilKalla(kalla) {
+    return kalla === 'organisationspaket' ? 'organisationspaketet' : kalla === 'konfiguration' ? 'konfigurationsfilen' : 'inbyggd';
+}
+/** "Känd uppsättning: Namn (källa)" för profilen, eller tom sträng. */
+function importprofilText(p) {
+    return p ? `Känd uppsättning: ${p.namn} (${_importprofilKalla(p.kalla)})` : '';
 }
 
 // ---- Tal som text, svenskt format ----

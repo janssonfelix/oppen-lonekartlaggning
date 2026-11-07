@@ -2835,6 +2835,7 @@ summary:focus-visible {
 .upload-cell.loaded .upload-unlocks { display: none; }
 .upload-inlast { margin-top: 6px; }
 .upload-filnamn { margin: 0 0 6px; font-weight: 600; color: var(--status-ok); font-size: var(--fs-sm); }
+.upload-importprofil { margin: 0 0 6px; font-size: var(--fs-sm); color: var(--text-muted); }
 .upload-namn { display: flex; gap: 6px; align-items: center; font-size: var(--fs-sm); margin: 6px 0; }
 .upload-namn input { flex: 1; min-width: 0; }
 .upload-namn-fel { color: var(--danger); font-size: var(--fs-xs); margin: 0 0 6px; }
@@ -2952,6 +2953,8 @@ details.avsnitt .insight-feed-header h3 { display: none; }
 .inst-lista dt { color: var(--text-muted); }
 .inst-lista dd { margin: 0; }
 .inst-flikar { list-style: none; margin: 10px 0 0; padding: 0; }
+.inst-ip-lista { list-style: none; margin: 10px 0 0; padding: 0; }
+.inst-ip { padding: 10px 0; border-top: 1px solid var(--border); }
 .inst-flik { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; padding: 8px 0; border-top: 1px solid var(--border); font-size: var(--fs-sm); }
 .inst-flik:first-child { border-top: 0; }
 .inst-flik-namn { flex: 1 1 260px; min-width: 0; }

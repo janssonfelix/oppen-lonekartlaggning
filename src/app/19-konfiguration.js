@@ -39,6 +39,9 @@ function buildConfigSnapshot() {
             roundStep: state.forecast.roundStep,
             years: state.forecast.years
         } : null,
+        // Egna importprofiler (src/lib/importprofiler.js): bara rubriknamn. Organisationspaketets följer paketet och bärs inte.
+        importprofiler: (state.importprofiler || []).filter(p => p.kalla === 'konfiguration')
+            .map(p => ({ id: p.id, namn: p.namn, rubriker: p.rubriker, kannetecken: p.kannetecken })),
         // Organisationspaketet (ADR-28) bärs inte — bara vilket paket som användes, så att
         // den som läser in konfigurationen kan läsa in samma paket.
         organisationspaket: state.paket ? { organisation: state.paket.organisation, skapat: state.paket.skapat } : null,
@@ -273,6 +276,16 @@ function applyConfigSnapshot(cfg) {
         if (!a) varningar.push('Filens årsbokslut gick inte att läsa och hoppas över.');
         else tmp.arsbokslut = a;
     }
+    // Importprofilerna valideras som i ett organisationspaket (bara rubriknamn); en ogiltig profil hoppas över med en
+    // varning, som årsbokslutet. Utan fältet står sessionens egna profiler kvar.
+    if (cfg.importprofiler != null) {
+        const ip = _ipValideraLista(cfg.importprofiler, { kalla: 'konfiguration' });
+        if (ip.fel) varningar.push(`Filens importprofiler läses inte in: ${ip.fel}`);
+        else {
+            if (ip.bort) varningar.push(`${ip.bort} ${ip.bort === 1 ? 'importprofil' : 'importprofiler'} i filen gick inte att läsa och hoppas över.`);
+            tmp.importprofiler = ip.profiler;
+        }
+    }
     if (cfg.perBasRecept != null) {
         if (typeof cfg.perBasRecept !== 'object') throw new Error('perBasRecept måste vara ett objekt.');
         tmp.perBasRecept = _pbValideraRecept(cfg.perBasRecept);
@@ -320,6 +333,8 @@ function applyConfigSnapshot(cfg) {
     // Handlingsplanens fält ersätts bara när filen bär dem; rader som inte finns i underlaget nu ligger kvar i minnet.
     if (tmp.handlingsplan) { state.handlingsplan = tmp.handlingsplan; if (typeof renderHandlingsplanSeed === 'function') renderHandlingsplanSeed(); }
     if (tmp.actionChecklistDone) state._actionChecklistDone = new Set(tmp.actionChecklistDone);
+    // Filens egna profiler ersätter sessionens egna; organisationspaketets står kvar.
+    if (tmp.importprofiler) state.importprofiler = [...(state.importprofiler || []).filter(p => p.kalla !== 'konfiguration'), ...tmp.importprofiler];
     if (tmp.arsbokslut) { state.forraArsbokslut = tmp.arsbokslut; if (typeof renderArsjamforelse === 'function') medExportLage(() => renderArsjamforelse()); }
     // Bara namn som finns i filen sätts — en fil utan namn ska inte radera paketets namn.
     if (tmp.orgName) sattOrgNamn(tmp.orgName);
