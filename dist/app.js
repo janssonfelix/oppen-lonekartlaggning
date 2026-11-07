@@ -761,7 +761,7 @@ const GLOSSARY = [
     // Lönekartläggning
     { cat:'Lönekartläggning', term:'Lika arbete', short:'Personer i samma yrkesgrupp/AID-kod', long:'Arbete som är lika eller nästan lika, till exempel förskollärare jämförda med andra förskollärare. Verktyget utgår från samma AID-kod, som du bekräftar.' },
     { cat:'Lönekartläggning', term:'Likvärdigt arbete', short:'Olika arbeten som är lika mycket värda', long:'Diskrimineringslagen kräver också att olika arbeten jämförs när de är lika mycket värda utifrån kraven i arbetet: kunskap och färdigheter, ansvar, ansträngning och arbetsförhållanden. Verktyget mäter kraven med BAS-intervallet (yrken i samma BAS-intervall antas ha jämförbara krav) eller, om lönefilen har kolumnen Poäng, med arbetsvärderingens poäng. Den slutliga bedömningen gör organisationen.' },
-    { cat:'Lönekartläggning', term:'Sakliga skäl', short:'Skäl till en löneskillnad som inte har samband med kön', long:'Skäl till en löneskillnad som inte har samband med kön, till exempel ansvar eller erfarenhet. Lagen kräver att du prövar varje skillnad och dokumenterar bedömningen. I Handlingsplan dokumenterar du skälen per grupp med knappen Sakliga skäl: en kategori, ett belopp i kronor per månad och en kort kommentar per skäl. Kategorierna är Marknad, Utbildning, Erfarenhet, Prestation och resultat, Övergång och Annat sakligt skäl. Lagen räknar inte upp några skäl. Kategorierna är verktygets indelning. Verktyget räknar ihop hur stor del av gruppens löneskillnad skälen förklarar; bedömningen är din.' },
+    { cat:'Lönekartläggning', term:'Sakliga skäl', short:'Skäl till en löneskillnad som inte har samband med kön', long:'Skäl till en löneskillnad som inte har samband med kön, till exempel ansvar eller erfarenhet. Lagen kräver att du prövar varje skillnad och dokumenterar bedömningen. I Handlingsplan dokumenterar du skälen per grupp med knappen Sakliga skäl: en kategori, ett belopp i kronor per månad och en kort kommentar per skäl. Kategorierna är Marknad, Utbildning, Erfarenhet, Prestation och resultat, Övergång och Annat sakligt skäl. Lagen räknar inte upp några skäl; indelningen är verktygets. Verktyget räknar ihop hur stor del av gruppens löneskillnad skälen förklarar; bedömningen är din.' },
     { cat:'Lönekartläggning', term:'Osaklig löneskillnad', short:'Löneskillnad inom lika/likvärdigt arbete som ej kan motiveras könsneutralt', long:'Diskrimineringslagens begrepp: en löneskillnad mellan kvinnor och män som utför lika eller likvärdigt arbete och som inte kan motiveras med könsneutrala kriterier. En osaklig skillnad kan — men måste inte — utgöra diskriminering i rättslig mening. Bedömningen görs alltid av den enskilda organisationen. Är inte samma sak som en oförklarad löneskillnad.' },
     { cat:'Statistik', term:'Standardvägning', short:'Metod som jämför löner med hänsyn till mätbara faktorer', long:'En statistisk metod (t.ex. regression) som jämför kvinnors och mäns löner med hänsyn till de lönepåverkande faktorer man har data om. Att en skillnad återstår efter standardvägning betyder att statistiken inte kan säga mer om vad den beror på — andra, omätta faktorer kan förklara den.' },
     { cat:'Statistik', term:'Löneskillnad på samhällsnivå', sok:'könslönegap lönegap', short:'Skillnad i kvinnors och mäns genomsnittslöner i hela samhället', long:'Skillnaden mellan kvinnors och mäns genomsnittslöner på övergripande nivå (samhälle/bransch). En stor del förklaras av att arbetsmarknaden är könsuppdelad — kvinnor och män arbetar i olika yrken och sektorer med olika lönenivåer. Den säger inget om kvinnor och män som gör samma arbete i en viss organisation har olika lön. Det är vad lönekartläggningen undersöker.' },
@@ -6954,19 +6954,31 @@ function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
             const over = sk.grupper.filter(g => g.overstiger);
             if (over.length) b.stycken.push(over.map(g => `${g.grupp}: skälen är tillsammans större än skillnaden (${_kr(g.summa)} mot ${_kr(g.skillnadKr)}).`).join(' ')
                 + ' Ett belopp kan vara för högt, eller så räknar två skäl samma sak. Kontrollera beloppen.');
-            const not = sk.notUtanBelopp || 'belopp utelämnat: ett kön under minsta gruppstorlek';
+            const not = sk.notUtanBelopp || 'belopp och kommentar utelämnade: ett kön har färre personer än minsta gruppstorlek';
             b.tabeller = [
                 { rubrik: 'Sakliga skäl per grupp', rubriker: ['Grupp', 'Antal berörda', 'Medianskillnad (kr/mån)', 'Kategori', 'Belopp (kr/mån)', 'Andel av skillnaden', 'Kommentar'],
                   // En grupp där ett kön är under minsta gruppstorlek: bara kategorin, med noten i kommentarens kolumn.
                   rader: sk.grupper.flatMap(g => g.skal.map((s, i) => [i ? '' : g.grupp, i || g.antal == null ? '' : formatTal(g.antal), i ? '' : _kr(g.skillnadKr),
                       s.namn, g.utanBelopp ? '' : _kr(s.belopp), g.utanBelopp ? '' : andel(s.andel), g.utanBelopp ? not : (s.kommentar || '')])) },
                 { rubrik: 'Sammanställning per kategori', rubriker: ['Kategori', 'Belopp (kr/mån)', 'Andel av skillnaden i grupper med skäl', 'Antal grupper'],
-                  rader: [...pk.kategorier.map(k => [k.namn, _kr(k.summa), andel(k.andel), formatTal(k.antalGrupper)]), ['Totalt', _kr(pk.summa), andel(pk.andel), formatTal(pk.antalGrupper)]] },
+                  rader: [...pk.kategorier.map(k => [k.namn, _kr(k.summa), andel(k.andel), formatTal(k.antalGrupper)]), ['Totalt', _kr(pk.summa), andel(pk.andel), formatTal(pk.antalGrupper)]],
+                  not: skalSammanstallningNot(sk.k ?? k) },
             ];
         }
         return b;
     }
     throw new Error(`Okänd avsnittstyp: ${typ}`);
+}
+
+/**
+ * Noten under Sammanställning per kategori: samma lydelse i Word och PDF (58-rapportmodell.js), Excel-bladet
+ * Sakliga skal (24-excelexport.js) och Rapporttext.
+ * @param {number} k minsta gruppstorlek
+ */
+function skalSammanstallningNot(k) {
+    return 'Totalt i kronor är summan av alla skäl i sammanställningen, också på egna rader, som saknar medianskillnad. '
+        + 'Andelen räknas bara mot den samlade medianskillnaden i de grupper som har en sådan. '
+        + `Grupper där ett kön har färre än ${k} personer ingår inte i sammanställningen; för dem står bara kategorierna i tabellen ovan.`;
 }
 
 const _esc = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -6979,7 +6991,7 @@ function tillWordHtml(b) {
         + t.rader.map(r => '<tr>' + r.map(c => `<td>${_esc(c)}</td>`).join('') + '</tr>').join('') + '</tbody></table>';
     if (b.tabell) h += tabell(b.tabell);
     // Fler tabeller med egen rubrik (blocket om förra året: Löneutveckling per BAS-intervall).
-    for (const t of b.tabeller || []) h += `<p><strong>${_esc(t.rubrik)}</strong></p>` + tabell(t);
+    for (const t of b.tabeller || []) h += `<p><strong>${_esc(t.rubrik)}</strong></p>` + tabell(t) + (t.not ? `<p>${_esc(t.not)}</p>` : '');
     if (b.provat) h += '<p><strong>Redan prövat</strong></p><ul>' + b.provat.map(p => `<li>${_esc(p)}</li>`).join('') + '</ul>';
     if (b.fragor) h += '<p><strong>Frågor till ansvarig chef</strong></p><ol>' + b.fragor.map(f => `<li>${_esc(f)}</li>`).join('') + '</ol>';
     return h;
@@ -7085,13 +7097,13 @@ function referenserBlock(overblick, { id = 'referenser', urval, demo, troskelNot
 function tillText(b) {
     const delar = [b.rubrik, ...b.stycken];
     if (b.tabell) delar.push([b.tabell.rubriker, ...b.tabell.rader].map(r => r.join('\t')).join('\n'));
-    for (const t of b.tabeller || []) delar.push(`${t.rubrik}\n` + [t.rubriker, ...t.rader].map(r => r.join('\t')).join('\n'));
+    for (const t of b.tabeller || []) delar.push(`${t.rubrik}\n` + [t.rubriker, ...t.rader].map(r => r.join('\t')).join('\n') + (t.not ? `\n\n${t.not}` : ''));
     if (b.provat) delar.push('Redan prövat:\n' + b.provat.map(p => `- ${p}`).join('\n'));
     if (b.fragor) delar.push('Frågor till ansvarig chef:\n' + b.fragor.map((f, i) => `${i + 1}. ${f}`).join('\n'));
     return delar.join('\n\n');
 }
 
-    return { likaArbeteGrupper, justeratGapInomYrke, bortvaltNotering, gruppBlock, parBlock, avsnittBlock, tillWordHtml, tillText, stabilitetKort, egenTabellBlock, arsjamforelseBlock, referenserBlock, basintervallBlock };
+    return { likaArbeteGrupper, justeratGapInomYrke, bortvaltNotering, gruppBlock, parBlock, avsnittBlock, tillWordHtml, tillText, stabilitetKort, egenTabellBlock, arsjamforelseBlock, referenserBlock, basintervallBlock, skalSammanstallningNot };
 })();
 const _ruLikaArbeteGrupper = __mirrorRapportunderlag.likaArbeteGrupper;
 const _ruJusteratGap = __mirrorRapportunderlag.justeratGapInomYrke;
@@ -7106,6 +7118,7 @@ const _ruEgenTabellBlock = __mirrorRapportunderlag.egenTabellBlock;
 const _ruArsjamforelseBlock = __mirrorRapportunderlag.arsjamforelseBlock;
 const _ruReferenserBlock = __mirrorRapportunderlag.referenserBlock;
 const _ruBasintervallBlock = __mirrorRapportunderlag.basintervallBlock;
+const _ruSkalNot = __mirrorRapportunderlag.skalSammanstallningNot;
 
 // ---- speglar src/lib/gapuppdelning.js ----
 const __mirrorGapuppdelning = (() => {
@@ -15938,7 +15951,8 @@ function applyConfigSnapshot(cfg) {
     });
     if (typeof bes8Uppdatera === 'function') bes8Uppdatera();
     // Handlingsplanens fält ersätts bara när filen bär dem; rader som inte finns i underlaget nu ligger kvar i minnet.
-    if (tmp.handlingsplan) { state.handlingsplan = tmp.handlingsplan; if (typeof renderHandlingsplanSeed === 'function') renderHandlingsplanSeed(); }
+    // Demots nycklar glöms: filens skäl är användarens, också på en nyckel där demot skrev skäl.
+    if (tmp.handlingsplan) { state.handlingsplan = tmp.handlingsplan; if (typeof _hpDemoNycklar !== 'undefined') _hpDemoNycklar.clear(); if (typeof renderHandlingsplanSeed === 'function') renderHandlingsplanSeed(); }
     if (tmp.actionChecklistDone) state._actionChecklistDone = new Set(tmp.actionChecklistDone);
     // Filens egna profiler ersätter sessionens egna; organisationspaketets står kvar.
     // Bara en fil med profiler ersätter sessionens egna: en äldre fil (eller en tom lista) tar inte bort dem tyst.
@@ -17251,7 +17265,7 @@ function _excelSkalRader() {
     rows.push([], ['Sammanställning per kategori'], ['Kategori', 'Belopp (kr/mån)', 'Andel av skillnaden i grupper med skäl (%)', 'Antal grupper']);
     for (const k of pk.kategorier) rows.push([k.namn, k.summa, pct(k.andel), k.antalGrupper]);
     rows.push(['Totalt', pk.summa, pct(pk.andel), pk.antalGrupper], [],
-        ['Kategorierna och beloppen är organisationens bedömning. Verktyget räknar bara om beloppen till andelar av skillnaden. Andelen per kategori räknas mot den samlade medianskillnaden i de grupper som har skäl; en grupp utan redovisad skillnad räknas bara med belopp.']);
+        ['Kategorierna och beloppen är organisationens bedömning. Verktyget räknar bara om beloppen till andelar av skillnaden. ' + _ruSkalNot(kInstalld())]);
     return rows;
 }
 
@@ -18046,6 +18060,7 @@ function _rensaAllData({ inbakat = true } = {}) {
     if (typeof bes8Stod === 'function') bes8Stod();
     // Handlingsplanens ifyllda fält (sakligt skäl, ansvarig, tidsplan, status) — nollställ och rita mallen tom
     state.handlingsplan = {};
+    if (typeof _hpDemoNycklar !== 'undefined') _hpDemoNycklar.clear();
     if (typeof renderHandlingsplanSeed === 'function') renderHandlingsplanSeed();
     // Rapporttextens utkast bär fynden i klarspråk, också ett redigerat: det töms och markeringen tas bort.
     const utkast = document.getElementById('struktur-narrative');
@@ -28185,7 +28200,7 @@ function _hpSkalUnderlag(seed) {
     return { grupper, perKategori: _sakPerKategori(grupper.filter(g => !g.utanBelopp).map(g => ({ skal: g.sammanstallning.skal, skillnadKr: g.skillnadKr }))) };
 }
 /** Noten i exporterna där belopp, andel och kommentar utelämnas. */
-const HP_SKAL_UTAN_BELOPP = 'belopp utelämnat: ett kön under minsta gruppstorlek';
+const HP_SKAL_UTAN_BELOPP = 'belopp och kommentar utelämnade: ett kön har färre personer än minsta gruppstorlek';
 /**
  * En förifylld rad där den minsta gruppen bakom skillnaden (ett kön) är under den inställda minsta gruppstorleken:
  * i exporterna och bokslutet står då bara kategorierna, utan belopp, andel och kommentar. En egen rad har ingen grupp
@@ -28445,8 +28460,8 @@ function _skalSkillnadHtml() {
     const s = /** @type {NonNullable<typeof _skal>} */ (_skal);
     if (s.kalla === 'egen') return '<p class="skal-skillnad">En egen rad har ingen medianskillnad att räkna andelar mot. Skälen redovisas med belopp. Skälen på en egen rad följer inte med i årsbokslutet.</p>';
     if (!s.iExport) return `<p class="skal-skillnad">Gruppen är för liten för att redovisas (färre än ${kInstalld()} personer). Raden och skälen följer därför inte med i exporterna, och inga andelar räknas.</p>`;
-    if (s.konUnder) return `<p class="skal-skillnad">Medianskillnaden redovisas inte: ett kön i gruppen har färre än ${kInstalld()} personer.</p>`
-        + `<p id="skal-kon-under" class="handlingsplan-varning" role="note">Belopp, andel och kommentar följer inte med i exporterna eller i årsbokslutet, eftersom ett kön i gruppen har färre än ${kInstalld()} personer. Där står bara kategorierna.</p>`;
+    if (s.konUnder) return `<p id="skal-kon-under" class="handlingsplan-varning" role="note">Medianskillnaden redovisas inte, eftersom ett kön i gruppen har färre än ${kInstalld()} personer. `
+        + 'Belopp, andel och kommentar följer därför inte med i exporterna eller i årsbokslutet; där står bara kategorierna.</p>';
     if (s.skillnadKr == null) return '<p class="skal-skillnad">Gruppens medianskillnad redovisas inte. Skälen redovisas med belopp.</p>';
     const par = s.kalla === 'par';
     if (s.skillnadKr <= 0) return par
@@ -28831,7 +28846,7 @@ function rmSakligaSkalDelar(skal, dampad) {
         { typ: 'rubrik', niva: 3, text: 'Sammanställning per kategori' },
         { typ: 'tabell', kolumner: [{ rubrik: 'Kategori', typ: 'text' }, { rubrik: 'Belopp (kr/mån)', typ: 'kr' }, { rubrik: 'Andel av skillnaden i grupper med skäl', typ: 'pct0' }, { rubrik: 'Antal grupper', typ: 'antal' }],
           rader: [...kat, [{ text: 'Totalt', fet: true }, pk.summa, pk.andel != null ? pk.andel * 100 : null, pk.antalGrupper]] },
-        dampad('Kategorierna och beloppen är organisationens bedömning. Verktyget räknar bara om beloppen till andelar av skillnaden. Skillnaden är gruppens medianskillnad i kronor per månad. För en grupp ur prioriteringen är det mäns median minus kvinnors. För ett kandidatpar är det jämförelseyrkets median minus det kvinnodominerade yrkets. Andelen per kategori räknas mot den samlade skillnaden i de grupper som har skäl; en grupp utan redovisad skillnad räknas bara med belopp.'),
+        dampad('Kategorierna och beloppen är organisationens bedömning. Verktyget räknar bara om beloppen till andelar av skillnaden. Skillnaden är gruppens medianskillnad i kronor per månad. För en grupp ur prioriteringen är det mäns median minus kvinnors. För ett kandidatpar är det jämförelseyrkets median minus det kvinnodominerade yrkets. ' + _ruSkalNot(kInstalld())),
     ];
 }
 
@@ -30837,7 +30852,7 @@ function _rapportunderlagBlockExport() {
     // De sakliga skälen per grupp och per kategori (56-handlingsplan.js), ur samma förifyllning.
     const hpSkal = typeof _hpSkalUnderlag === 'function' ? _hpSkalUnderlag(hpSeed) : null;
     const hpSkalBlock = hpSkal && hpSkal.grupper.length ? { grupper: hpSkal.grupper.map(g => ({ grupp: g.grupp, antal: g.antal, skillnadKr: g.skillnadKr, skal: g.sammanstallning.skal,
-        utanBelopp: !!g.utanBelopp, summa: g.sammanstallning.summa, overstiger: !!g.sammanstallning.overstiger })), perKategori: hpSkal.perKategori, notUtanBelopp: HP_SKAL_UTAN_BELOPP } : null;
+        utanBelopp: !!g.utanBelopp, summa: g.sammanstallning.summa, overstiger: !!g.sammanstallning.overstiger })), perKategori: hpSkal.perKategori, notUtanBelopp: HP_SKAL_UTAN_BELOPP, k: kInstalld() } : null;
 
     /** @type {any[]} */
     const block = [
@@ -32415,7 +32430,7 @@ function _abSkalHtml(j, forraAr, nuAr) {
         ? `<p class="text-dampad-sm marg-6-0-2">Hade sakliga skäl förra året men inte i år (${b.saknasIAr.length}). Gruppen kan sakna skäl eller inte längre finnas i handlingsplanen:</p><ul class="fs-sm marg-0-0-4">${b.saknasIAr.map(g => `<li>${esc(_abSkalGrupp(g))}</li>`).join('')}</ul>`
         : '';
     return rubrik + tabell + grupper + saknas
-        + `<p class="text-dampad-xs marg-4-0-0">Beloppen är summan av skälen i kronor per månad; andelen är av skillnaden i de grupper som hade skäl det året. Kategorierna och beloppen är organisationens bedömning. Verktyget räknar bara om beloppen till andelar av skillnaden. Bara grupper med minst ${j.kGrans} personer.</p>`;
+        + `<p class="text-dampad-xs marg-4-0-0">Beloppen är summan av skälen i kronor per månad; andelen är av skillnaden i de grupper som hade skäl det året. Kategorierna och beloppen är organisationens bedömning. Verktyget räknar bara om beloppen till andelar av skillnaden. Bara grupper med minst ${j.kGrans} personer. En grupp där ett kön hade färre personer än minsta gruppstorlek har bara kategorierna i bokslutet och räknas inte med i beloppen.</p>`;
 }
 
 /**
