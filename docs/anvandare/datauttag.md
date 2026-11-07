@@ -105,7 +105,8 @@ profiler du redan har sparat i sessionen.
   och profilen, inget ur sessionen — och sprid det i stället för
   det gamla, så känns uttaget igen hos alla handläggare (se `organisationspaket.md`).
 - **Ordningen:** organisationspaketets profiler prövas först, sedan konfigurationsfilens, sedan
-  verktygets inbyggda (CSV-mallen, testdatans fil och demodatans fältnamn), och sist de vanliga
+  verktygets inbyggda (CSV-mallen, testdatans fil och verktygets grundfält, fältnamnen `bas`, `yrke`,
+  `lon`, `alder` och `kon`), och sist de vanliga
   kolumnnamnen i avsnitt 1. Den första profil vars rubriker alla finns i filen gäller; roller
   den inte täcker känns igen som vanligt.
 - **Se, ta bort och exportera:** *Inställningar › Importprofiler* listar profilerna med namn,

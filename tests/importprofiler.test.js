@@ -159,6 +159,11 @@ describe('INBYGGDA_PROFILER', () => {
         expect(t.mappning).toEqual({ bas: 'BAS', yrke: 'AID-etikett', lon: 'Månadslön', alder: 'Ålder', kon: 'Kön' });
         expect(matchaImportprofil(['bas', 'yrke', 'lon', 'alder', 'kon'], INBYGGDA_PROFILER).profil.id).toBe('inbyggd-demodata');
     });
+    it('profilen för verktygets egna fältnamn heter Verktygets grundfält: en verklig fil med de rubrikerna är ingen demo', () => {
+        const t = matchaImportprofil(['bas', 'yrke', 'lon', 'alder', 'kon'], INBYGGDA_PROFILER);
+        expect(t.profil.namn).toBe('Verktygets grundfält');
+        expect(INBYGGDA_PROFILER.map(p => p.namn).join(' ')).not.toMatch(/[Dd]emo/);
+    });
 });
 
 describe('importprofilerTillJson', () => {

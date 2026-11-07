@@ -166,7 +166,9 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   mot 3,0 s vid 55 000 rader (`npm run perf` vaktar med gränsen 1 s). Motiveringsförslaget om åldersskillnad i Prioritering säger *Vi
   rekommenderar att ni stämmer av*. *Lägg till i organisationspaketet* prövar inte längre formuläret *Skapa
   paket*, som inte påverkar det paketet (*Spara paketet* gör det som förut). Pekar kolumnmappningen ut en annan kolumn än
-  importprofilen som kände igen filen säger lönefilens ruta *Känd uppsättning, ändrad: …*.
+  importprofilen som kände igen filen säger lönefilens ruta *Känd uppsättning, ändrad: …*. Den inbyggda profilen för
+  verktygets egna fältnamn heter *Verktygets grundfält* (förut *Demodatans fält*), så att en verklig fil med de
+  rubrikerna inte kallas demo.
 
 ### Analys
 
