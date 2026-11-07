@@ -199,7 +199,11 @@ describe.each([[10, []], [25, SENT_MELLAN]])('I4: invarianten över flikar och e
     });
     it('inget könsgap för en grupp där ett kön är under tröskeln i det som lämnar verktyget', () => {
         const lackor = [];
-        for (const [namn, text] of exporter()) {
+        // ISO-tidsstämplar (konfigurationsfilen, metadata) tas bort först: sekunder och millisekunder kan se ut som ett
+        // gap ("…:48.30Z"), och då föll testet bara när klockan råkade stå rätt.
+        const utanTid = t => t.replace(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:?\d{2})?/g, '');
+        for (const [namn, rå] of exporter()) {
+            const text = utanTid(rå);
             for (const v of harNagon(text, KON_GAP)) lackor.push(`${namn}: ${v} — "${sammanhang(text, v)}"`);
             for (const re of KON_GAP_1) { const m = text.match(re); if (m) lackor.push(`${namn}: ${m[0]} — "${sammanhang(text, m[0])}"`); }
         }
