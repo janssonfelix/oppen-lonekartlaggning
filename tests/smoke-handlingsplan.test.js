@@ -31,7 +31,7 @@ describe('Handlingsplan: fälten fylls i på skärmen', () => {
         expect([...sakligt.options].map(o => o.textContent)).toEqual(['—', 'Ja, sakligt skäl finns', 'Nej, åtgärd behövs', 'Pågår']);
         expect([...status.options].map(o => o.value)).toEqual(['', 'Planerad', 'Pågår', 'Genomförd', 'Skjuts upp']);
         expect(ansvarig.getAttribute('aria-label')).toBe(`Ansvarig: ${grupp}`);
-        expect(sakligt.getAttribute('aria-label')).toBe(`Sakligt skäl prövat?: ${grupp}`);
+        expect(sakligt.getAttribute('aria-label')).toBe(`Sakliga skäl prövade?: ${grupp}`);
         fyll(w, sakligt, 'Nej, åtgärd behövs'); fyll(w, ansvarig, 'HR-chef'); fyll(w, tidsplan, 'Lönerevisionen 2027'); fyll(w, status, 'Planerad');
         const nyckel = ansvarig.dataset.hpNyckel;
         expect(w.__state.handlingsplan[nyckel]).toEqual({ sakligt: 'Nej, åtgärd behövs', ansvarig: 'HR-chef', tidsplan: 'Lönerevisionen 2027', status: 'Planerad' });
@@ -79,10 +79,10 @@ describe('Handlingsplan: fälten fylls i på skärmen', () => {
         const rad = bok.split('\n').find(l => l.includes('HR-chef'));
         expect(rad).toContain('Ja, sakligt skäl finns');
         expect(rad).toContain(tr.cells[1].textContent);
-        expect(bok).toContain('Åtgärd | Berörd grupp (AID·BAS) | Antal berörda | Underlag | Sakligt skäl prövat?');
+        expect(bok).toContain('Åtgärd | Grupp (yrke och BAS-intervall) | Antal berörda | Underlag | Sakliga skäl prövade?');
         const atgarder = w.eval('rapportModell({ alla: true })').avsnitt.find(a => a.id === 'atgarder');
         const tabell = atgarder.delar.find(p => p.typ === 'tabell');
-        expect(tabell.kolumner.map(k => k.rubrik)).toEqual(['Grupp', 'Antal berörda', 'Underlag', 'Uppskattad kostnad', 'Sakligt skäl prövat?', 'Ansvarig', 'Tidsplan (senast inom tre år)', 'Status']);
+        expect(tabell.kolumner.map(k => k.rubrik)).toEqual(['Grupp', 'Antal berörda', 'Underlag', 'Uppskattad kostnad', 'Sakliga skäl prövade?', 'Ansvarig', 'Tidsplan (senast inom tre år)', 'Status']);
         expect(tabell.rader.find(r => r[0] === tr.cells[1].textContent).slice(4, 6)).toEqual(['Ja, sakligt skäl finns', 'HR-chef']);
         const oppnat = [];
         w.open = () => { const doc = { html: '', write(s) { this.html += s; }, close() {}, adoptedStyleSheets: [], createElement: () => ({ sheet: { insertRule() {}, cssRules: [] } }), head: { appendChild() {} } };

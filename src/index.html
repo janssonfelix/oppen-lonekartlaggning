@@ -1905,14 +1905,14 @@
                 <!-- Handlingsplan Tab View -->
                 <div id="view-handlingsplan" class="view-panel dold">
                     <div class="flik-intro">
-                        <strong>Vad ska göras, av vem och när?</strong> <span class="info-tip" data-tooltip="Diskrimineringslagen: åtgärder ska genomföras så snart som möjligt och senast inom tre år, och arbetet dokumenteras skriftligt."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
-                        Samla de skillnader som behöver åtgärdas, med kostnad, ansvarig och tidsplan. Åtgärder ska genomföras så snart som möjligt, och senast inom tre år. Den här fliken är en mall att arbeta i — verktyget sparar ingenting, så exportera när du är klar.
+                        <strong>Vad ska göras, av vem och när?</strong> <span class="info-tip" data-tooltip="Fliken är en mall för åtgärderna, med kostnad, ansvarig och tidsplan."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
+                        Samla de skillnader som behöver åtgärdas, med kostnad, ansvarig och tidsplan. Diskrimineringslagen kräver att du genomför åtgärderna så snart som möjligt och senast inom tre år, och att du dokumenterar dem med kostnad och tidsplan (3 kap.). Den här fliken är en mall att arbeta i. Verktyget sparar ingenting, så exportera när du är klar.
                     </div>
 
                     <div class="card ram-v-4-accent marg-b-18" data-noprint>
                         <div class="rad-bryt topp gap-16 mellan">
                             <p class="farg-dampad flex-1 fs-md lh-1_6 marg-0 min-bredd-280">
-                                <strong>Underlag:</strong> hämta de grupper som behöver åtgärdas från fliken <strong>Prioritering</strong> (rangordning + årskostnad), <strong>Lika arbete</strong> och <strong>Likvärdigt arbete</strong>. Fyll i en rad per åtgärd. Skriv ut mallen och för in den i lönekartläggningsrapporten.
+                                <strong>Underlag:</strong> hämta de grupper som behöver åtgärdas från fliken <strong>Prioritering</strong> (rangordning + årskostnad), <strong>Lika arbete</strong> och <strong>Likvärdigt arbete</strong>. Fyll i en rad per åtgärd. Skriv ut mallen och för in den i dokumentationen.
                             </p>
                             <div class="rad-bryt gap-8">
                                 <button id="btn-export-handlingsplan" class="btn btn-primary btn-sm ingen-radbrytning" type="button" title="Skapar en Excel-fil förifylld med de grupper som lyfts i Prioritering och Likvärdigt arbete — som utgångspunkt för handlingsplanen"><svg class="ikon ikon-laddaNed" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 4v11"/><path d="m7 11 5 5 5-5"/><path d="M5 20h14"/></svg> Exportera underlag (Excel)</button>
@@ -1928,13 +1928,13 @@
                             <thead>
                                 <tr>
                                     <th>Åtgärd</th>
-                                    <th>Berörd grupp / yrke (AID·BAS)</th>
+                                    <th>Grupp (yrke och BAS-intervall)</th>
                                     <th class="tal" title="Antal personer i gruppen; för ett kandidatpar i det kvinnodominerade yrket">Antal berörda</th>
                                     <th>Underlag</th>
-                                    <th>Sakligt skäl prövat?</th>
+                                    <th>Sakliga skäl prövade?</th>
                                     <th class="tal">Beräknad kostnad (kr/år)</th>
                                     <th>Ansvarig</th>
-                                    <th>Tidsplan (senast inom 3 år)</th>
+                                    <th>Tidsplan (senast inom tre år)</th>
                                     <th>Status</th>
                                 </tr>
                             </thead>
@@ -1951,32 +1951,32 @@
                             <button id="btn-hp-lagg-till" class="btn btn-secondary btn-sm" type="button">Lägg till rad</button>
                             <span class="text-dampad-sm">En egen åtgärd utöver de förifyllda raderna, till exempel en förebyggande åtgärd. Raden följer med i exporterna som de andra.</span>
                         </div>
-                        <p id="handlingsplan-varning" class="handlingsplan-varning" role="status" data-noprint hidden>Ett fält liknar ett personnummer eller en e-postadress. Skriv en roll eller en grupp i stället: texten följer med i exporterna.</p>
+                        <p id="handlingsplan-varning" class="handlingsplan-varning" role="status" data-noprint hidden>Ett fält liknar ett personnummer eller en e-postadress, och texten följer med i exporterna. Skriv en roll eller en grupp i stället.</p>
                         <p class="handlingsplan-not" data-noprint>Det du skriver här följer med i Excel-filen, utskriften och Word-utkastet, men sparas inte när du stänger webbläsarfliken. Spara konfigurationen under <strong>Spara och jämför år</strong> om du vill komma tillbaka till det. Skriv på gruppnivå, inga namn eller personnummer.</p>
                         <p id="handlingsplan-seed-note" class="text-dampad-sm marg-t-8">Mallen förifylls automatiskt med grupperna från Prioritering och Likvärdigt arbete när data finns — ett utgångsläge att granska. Fyll i sakligt skäl, ansvarig, tidsplan och status direkt i raderna.</p>
                     </div>
 
                     <div class="card bak-varning-yta ram-v-4-varning">
                         <p class="fs-md lh-1_6 marg-0">
-                            <svg class="ikon ikon-klocka" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg> <strong>Åtgärder som inte kan genomföras inom tre år</strong> ska dokumenteras särskilt med motivering till varför, samt en plan för när de kan genomföras. Ange sådana åtgärder tydligt i raderna ovan (t.ex. i kolumnen <em>Tidsplan</em>) och utveckla motiveringen i rapporten.
+                            <svg class="ikon ikon-klocka" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg> <strong>Kan en åtgärd inte genomföras inom tre år</strong>, skriv varför och när den kan genomföras. Ange det tydligt i raden (till exempel i kolumnen <em>Tidsplan</em>) och utveckla motiveringen i dokumentationen.
                         </p>
                     </div>
 
                     <div class="card" id="hp-samverkan">
                         <div class="card-header"><h2>Samverkan &amp; uppföljning</h2></div>
                         <p class="fs-sm lh-1_6 marg-0-0-10">
-                            Lönekartläggningen ska bedrivas i <strong>samverkan</strong> med arbetstagarna, och de fackliga organisationer som är bundna av kollektivavtal har rätt till den information som behövs för att kunna samverka. EU:s lönetransparensdirektiv (2023/970) förstärker arbetstagarrepresentanternas roll, särskilt vid en gemensam lönebedömning (Joint Pay Assessment). Bocka av momenten — för in datum, parter och utfall i lönekartläggningsrapporten.
+                            Lagen kräver att kartläggningen görs i <strong>samverkan</strong> med arbetstagarna. Fackförbund som har kollektivavtal med organisationen har rätt till den information de behöver för att kunna samverka. När direktivet gäller görs en gemensam lönebedömning tillsammans med arbetstagarnas företrädare. Bocka av momenten och för in datum, parter och utfall i dokumentationen.
                         </p>
                         <table class="data-table st-09">
                             <thead>
                                 <tr><th class="bredd-55p">Moment</th><th>Genomfört (datum / parter)</th></tr>
                             </thead>
                             <tbody>
-                                <tr><td>Berörda arbetstagarrepresentanter (facklig part) har informerats och getts möjlighet att samverka om kartläggningen och analysen.</td><td></td></tr>
-                                <tr><td>Fackliga organisationer har fått den information som behövs för att bevaka och delta (utan att individers integritet röjs).</td><td></td></tr>
-                                <tr><td>Vid gap &gt; 5 % som inte kan motiveras: gemensam lönebedömning har genomförts/planerats i samverkan med facklig part.</td><td></td></tr>
-                                <tr><td><strong>Uppföljning av föregående års handlingsplan:</strong> tidigare planerade åtgärder är genomförda, och utfallet har stämts av. Verktyget analyserar en kartläggning i taget — avstämningen mot fjolåret görs i era egna system.</td><td></td></tr>
-                                <tr><td>Tidpunkt för nästa årliga lönekartläggning är inplanerad (skyldigheten är årlig).</td><td></td></tr>
+                                <tr><td>Facket har fått information och möjlighet att samverka om kartläggningen och analysen.</td><td></td></tr>
+                                <tr><td>Facket har fått den information som behövs för att bevaka och delta, utan att enskildas uppgifter röjs.</td><td></td></tr>
+                                <tr><td>Om direktivet gäller och en skillnad på 5 procent eller mer saknar sakliga skäl och inte har rättats inom sex månader: en gemensam lönebedömning är gjord eller planerad tillsammans med facket.</td><td></td></tr>
+                                <tr><td><strong>Uppföljning av föregående års handlingsplan:</strong> tidigare planerade åtgärder är genomförda och utfallet är avstämt. Verktyget analyserar en kartläggning i taget, så avstämningen mot fjolåret görs i organisationens egna system.</td><td></td></tr>
+                                <tr><td>Nästa års kartläggning är inplanerad (lagen kräver en kartläggning varje år).</td><td></td></tr>
                             </tbody>
                         </table>
                         <div class="dok-knappar">
@@ -1987,7 +1987,7 @@
 
                     <div class="card bak-ok-yta ram-v-4-ok">
                         <p class="fs-md lh-1_6 marg-0">
-                            <strong>Dokumentationskrav:</strong> själva lönekartläggningen, analysen och handlingsplanen ska dokumenteras skriftligt. Verktyget producerar analysunderlaget (exporter + denna mall); den sammanhållna dokumentationen skrivs i Word-mallen.
+                            <strong>Dokumentation:</strong> lagen kräver att kartläggningen, analysen och åtgärderna dokumenteras skriftligt. Verktyget tar fram underlaget (exporterna och den här mallen). Du skriver dokumentationen i Word-utkastet.
                         </p>
                     </div>
                 </div>
