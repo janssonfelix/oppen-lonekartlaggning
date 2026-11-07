@@ -237,7 +237,7 @@ adaptern verkligen delegerar vaktas av `tests/drift.test.js`:
   rätt grupp. Utskriftsfönstret för checklistorna (`printScaffoldView`) läser `:root` och allt från `.dold` till
   stilmallens slut ur den körande stilmallen och lägger in det som byggt stilark (`adoptedStyleSheets`): ett `<style>`-element
   som skriptet skapar blockeras av den ärvda CSP:n (`style-src-elem`), så fönstret var tidigare helt ostilat.
-- **Tester:** Vitest — 2762 tester i 85 filer: rena `src/lib/`-moduler, CSV-parsning, jsdom-röktest
+- **Tester:** Vitest — 2764 tester i 85 filer: rena `src/lib/`-moduler, CSV-parsning, jsdom-röktest
   av varje vy (ADR-7; `tests/smoke.test.js` med det delade fönstret och sju `tests/smoke-*.test.js` per
   område), k-tröskeln i åtta `tests/ktroskel*.test.js` med riggen i `tests/helpers/ktroskel-rigg.js`,
   gränssnittet i `tests/granssnitt*.test.js` (riggen `tests/helpers/granssnitt-rigg.js`) och diagramvyerna i
@@ -1366,6 +1366,13 @@ Kända brister och obesvarade frågor, så att de inte lever bara i en konversat
    0,8 ms), sökfältets första sökning 8 ms (andra 5 ms), BAS-dossiern öppnad och ritad på 20 ms och gruppdossiern på
    ~0,1 s; hela svepet 8 s. Vid 55 000 rader samma dag: sidindexet under 3 ms, första sökningen 19 ms, BAS-dossiern
    56 ms och gruppdossiern 0,27 s. Inget steg är i närheten av 2 s, så ritningen av hopfällda avsnitt skjuts inte upp.
+   Rapportmodellen med bilagan med gruppdossierer (samma dag, efter rättelsen): 0,48 s mot 0,46 s utan vid 20 000 rader,
+   1,4 s mot 1,3 s vid 55 000. Före rättelsen tog den 4,4 s vid 20 000 rader. Varje dossier räknade då kandidaterna,
+   prioriteringen och gapet per BAS-intervall på nytt, och dessutom ett bootstrap-intervall som textversionen aldrig
+   visar; nästan hela tiden låg i intervallet. Bilagan räknar nu de delade underlagen en gång och hoppar över
+   intervallet. Förhandsbeskedet i Exportera bygger inga dossiertexter (bara antalet och det utelämnade) och tar
+   samma tid med och utan bilagan: ~1,0 s vid 20 000 rader och ~2,9 s vid 55 000. Den tiden är resten av modellen
+   och Excel-bladens lista, inte bilagan.
 
 **Kod och bygge:**
 6. **Krasch i Node under testkörning** (V8:s skräpsamlare): orsaken är okänd; `npm test` kör om berörda filer.

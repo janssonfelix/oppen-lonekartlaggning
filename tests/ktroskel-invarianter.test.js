@@ -153,7 +153,7 @@ describe.each([[10, []], [25, SENT_MELLAN]])('I4: invarianten över flikar och e
         for (const krav of ['rapportunderlag: arsjamforelse (med bokslut)', 'rapportmodell: arsjamforelse (med bokslut)', 'diagramdata: chart-arsjamforelse-bas (med bokslut)', 'konfigurationsfilen: årsbokslutet']) expect(namn, krav).toContain(krav);
         expect(utdata.find(([n]) => n === 'konfigurationsfilen: årsbokslutet')[1]).toContain('"spridning"');
         // Bilagan med gruppdossierer: minst en dossier (de stora grupperna), i rapportmodellen och i utskriften.
-        for (const krav of ['rapportmodell: dossierer', 'utskrift: med gruppdossierer']) expect(utdata.find(([n]) => n === krav)?.[1], krav).toContain('GRUPPDOSSIER: ');
+        for (const krav of ['rapportmodell: dossierer', 'utskrift: med gruppdossierer']) expect(utdata.find(([n]) => n === krav)?.[1], krav).toContain('Gruppdossier: ');
         expect(utdata.find(([n]) => n === 'rapportmodell: arsjamforelse (med bokslut)')[1]).toContain('Lönespridning');
         expect(utdata.find(([n]) => n === 'rapportunderlag: arsjamforelse (med bokslut)')[1]).toContain('Löneutveckling per BAS-intervall');
         // Varje fångad utdata ska ha innehåll, utan undantag: fixturen ger rader i varje tabell med CSV-knapp,

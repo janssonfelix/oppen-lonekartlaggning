@@ -320,22 +320,30 @@ function rmArsjamforelseAvsnitt(diagram) {
  * stycken. Byggs i exportläget, som hela modellen. Yrkesgrupper där ett kön är under k räknas, de namnges inte. BAS-
  * intervallens dossierer står redan i avsnittet Lönekartläggning per BAS-intervall och upprepas inte här.
  * @param {number} k
- * @param {{ stub?: boolean }} [val] stub: bara rubriken (listan över alla avsnitt behöver inte innehållet)
+ * @param {{ stub?: boolean, besked?: boolean }} [val] stub: bara rubriken (listan över alla avsnitt behöver inte innehållet);
+ *   besked: rubriken och det utelämnade, utan texterna (förhandsbeskedet)
  */
-function rmDossierAvsnitt(k, { stub = false } = {}) {
+function rmDossierAvsnitt(k, { stub = false, besked = false } = {}) {
     const avsnitt = { id: 'dossierer', rubrik: 'Bilaga: gruppdossierer', utelamnat: /** @type {string[]} */ ([]), delar: /** @type {any[]} */ ([]) };
     if (stub || typeof gruppdossierCandidates !== 'function') return avsnitt;
-    const dossierer = /** @type {any[]} */ (gruppdossierCandidates().map(g => buildGruppdossier(g.key)).filter(Boolean));
-    const med = dossierer.filter(d => d.nKv >= k && d.nMa >= k);
-    const utan = dossierer.length - med.length;
+    // Vilka grupper som kommer med avgörs av antalet kvinnor och män, som kandidatlistan redan har; dossiererna byggs
+    // bara för dem, och de delade underlagen (kandidaterna, gapet per BAS, prioriteringen) räknas en gång.
+    const delat = gruppdossierDelat({ text: true });
+    const medGrupper = delat.kandidater.filter(g => { const { kv, ma } = _gdKon(g.rows); return kv.length >= k && ma.length >= k; });
+    const utan = delat.kandidater.length - medGrupper.length;
+    if (utan) avsnitt.utelamnat.push(`gruppdossiern för ${utan} ${utan === 1 ? 'yrkesgrupp' : 'yrkesgrupper'} där ett kön har färre än ${k} personer`);
+    // Förhandsbeskedet behöver bara antalet och det utelämnade, inte texterna.
+    if (besked) return avsnitt;
+    const dossierer = /** @type {any[]} */ (medGrupper.map(g => buildGruppdossier(g.key, delat)).filter(Boolean));
     avsnitt.delar.push({ typ: 'stycke', stil: 'dampad', text: `En dossier per yrkesgrupp (yrke inom BAS-intervall) där både kvinnor och män är minst ${k}, störst först — samma text som gruppdossierns kopia. BAS-intervallen står i avsnittet Lönekartläggning per BAS-intervall.` });
-    for (const d of med) {
-        const rader = gruppdossierAsText(d).split('\n');
+    // Meningen om sänkt tröskel en gång för hela bilagan, inte en gång per dossier.
+    if (_kSanktNot()) avsnitt.delar.push({ typ: 'stycke', text: _kSanktNot() });
+    for (const d of dossierer) {
+        const rader = gruppdossierAsText(d, { stampel: false }).split('\n');
         avsnitt.delar.push({ typ: 'rubrik', niva: 3, text: rader[0] });
         for (const r of rader.slice(1)) if (r.trim()) avsnitt.delar.push({ typ: 'stycke', text: r.trim() });
     }
-    if (!med.length) avsnitt.delar.push({ typ: 'stycke', stil: 'dampad', text: `Ingen yrkesgrupp har minst ${k} kvinnor och ${k} män.` });
-    if (utan) avsnitt.utelamnat.push(`gruppdossiern för ${utan} ${utan === 1 ? 'yrkesgrupp' : 'yrkesgrupper'} där ett kön har färre än ${k} personer`);
+    if (!dossierer.length) avsnitt.delar.push({ typ: 'stycke', stil: 'dampad', text: `Ingen yrkesgrupp har minst ${k} kvinnor och ${k} män.` });
     return avsnitt;
 }
 
@@ -426,9 +434,12 @@ function rmEgnaAvsnitt(d, k) {
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
 function rapportModell(...a) { return medExportLage(() => _rapportModellExport.apply(null, /** @type {any} */ (a))); }
 /** Modellen i det gällande urvalet och med alla avsnitt ur ett enda bygge (det kostar sekunder på stora underlag). */
-function rapportModellBada() { return medExportLage(() => _rapportModellExport({ bada: true })); }
-/** @param {{alla?: boolean, bada?: boolean}} [val] */
-function _rapportModellExport({ alla = false, bada = false } = {}) {
+function rapportModellBada({ besked = false } = {}) { return medExportLage(() => _rapportModellExport({ bada: true, besked })); }
+/**
+ * @param {{alla?: boolean, bada?: boolean, besked?: boolean}} [val] besked: för förhandsbeskedet, som bara räknar —
+ *   bilagan med gruppdossierer får då antalet och det utelämnade men inga texter.
+ */
+function _rapportModellExport({ alla = false, bada = false, besked = false } = {}) {
     const d = getData();
     const year = new Date().getFullYear(), today = new Date().toLocaleDateString('sv-SE');
     const k = kTroskel();
@@ -650,7 +661,7 @@ function _rapportModellExport({ alla = false, bada = false } = {}) {
     // Bilagan med gruppdossierer byggs bara när den följer med i urvalet. Listan över alla avsnitt (alla, bada) bär den
     // annars med rubriken och utan innehåll: förhandsbeskedet och urvalslistan behöver bara rubriken, och en bilaga
     // som inte är vald kostar då ingenting.
-    const dossierer = d.length ? rmDossierAvsnitt(k, { stub: !rapportUrval().med.includes('dossierer') }) : null;
+    const dossierer = d.length ? rmDossierAvsnitt(k, { stub: !rapportUrval().med.includes('dossierer'), besked }) : null;
     const finns = /** @type {any[]} */ ([sammanfattning, regler, lika, likvardigt, basintervall, struktur, referenser, perbas, atgarder, samverkan, beslut, regressionAvsnitt, metod, dossierer].filter(Boolean));
     /** @param {boolean} alla */
     const avsnitt = alla => {

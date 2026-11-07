@@ -27204,22 +27204,30 @@ function rmArsjamforelseAvsnitt(diagram) {
  * stycken. Byggs i exportläget, som hela modellen. Yrkesgrupper där ett kön är under k räknas, de namnges inte. BAS-
  * intervallens dossierer står redan i avsnittet Lönekartläggning per BAS-intervall och upprepas inte här.
  * @param {number} k
- * @param {{ stub?: boolean }} [val] stub: bara rubriken (listan över alla avsnitt behöver inte innehållet)
+ * @param {{ stub?: boolean, besked?: boolean }} [val] stub: bara rubriken (listan över alla avsnitt behöver inte innehållet);
+ *   besked: rubriken och det utelämnade, utan texterna (förhandsbeskedet)
  */
-function rmDossierAvsnitt(k, { stub = false } = {}) {
+function rmDossierAvsnitt(k, { stub = false, besked = false } = {}) {
     const avsnitt = { id: 'dossierer', rubrik: 'Bilaga: gruppdossierer', utelamnat: /** @type {string[]} */ ([]), delar: /** @type {any[]} */ ([]) };
     if (stub || typeof gruppdossierCandidates !== 'function') return avsnitt;
-    const dossierer = /** @type {any[]} */ (gruppdossierCandidates().map(g => buildGruppdossier(g.key)).filter(Boolean));
-    const med = dossierer.filter(d => d.nKv >= k && d.nMa >= k);
-    const utan = dossierer.length - med.length;
+    // Vilka grupper som kommer med avgörs av antalet kvinnor och män, som kandidatlistan redan har; dossiererna byggs
+    // bara för dem, och de delade underlagen (kandidaterna, gapet per BAS, prioriteringen) räknas en gång.
+    const delat = gruppdossierDelat({ text: true });
+    const medGrupper = delat.kandidater.filter(g => { const { kv, ma } = _gdKon(g.rows); return kv.length >= k && ma.length >= k; });
+    const utan = delat.kandidater.length - medGrupper.length;
+    if (utan) avsnitt.utelamnat.push(`gruppdossiern för ${utan} ${utan === 1 ? 'yrkesgrupp' : 'yrkesgrupper'} där ett kön har färre än ${k} personer`);
+    // Förhandsbeskedet behöver bara antalet och det utelämnade, inte texterna.
+    if (besked) return avsnitt;
+    const dossierer = /** @type {any[]} */ (medGrupper.map(g => buildGruppdossier(g.key, delat)).filter(Boolean));
     avsnitt.delar.push({ typ: 'stycke', stil: 'dampad', text: `En dossier per yrkesgrupp (yrke inom BAS-intervall) där både kvinnor och män är minst ${k}, störst först — samma text som gruppdossierns kopia. BAS-intervallen står i avsnittet Lönekartläggning per BAS-intervall.` });
-    for (const d of med) {
-        const rader = gruppdossierAsText(d).split('\n');
+    // Meningen om sänkt tröskel en gång för hela bilagan, inte en gång per dossier.
+    if (_kSanktNot()) avsnitt.delar.push({ typ: 'stycke', text: _kSanktNot() });
+    for (const d of dossierer) {
+        const rader = gruppdossierAsText(d, { stampel: false }).split('\n');
         avsnitt.delar.push({ typ: 'rubrik', niva: 3, text: rader[0] });
         for (const r of rader.slice(1)) if (r.trim()) avsnitt.delar.push({ typ: 'stycke', text: r.trim() });
     }
-    if (!med.length) avsnitt.delar.push({ typ: 'stycke', stil: 'dampad', text: `Ingen yrkesgrupp har minst ${k} kvinnor och ${k} män.` });
-    if (utan) avsnitt.utelamnat.push(`gruppdossiern för ${utan} ${utan === 1 ? 'yrkesgrupp' : 'yrkesgrupper'} där ett kön har färre än ${k} personer`);
+    if (!dossierer.length) avsnitt.delar.push({ typ: 'stycke', stil: 'dampad', text: `Ingen yrkesgrupp har minst ${k} kvinnor och ${k} män.` });
     return avsnitt;
 }
 
@@ -27310,9 +27318,12 @@ function rmEgnaAvsnitt(d, k) {
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
 function rapportModell(...a) { return medExportLage(() => _rapportModellExport.apply(null, /** @type {any} */ (a))); }
 /** Modellen i det gällande urvalet och med alla avsnitt ur ett enda bygge (det kostar sekunder på stora underlag). */
-function rapportModellBada() { return medExportLage(() => _rapportModellExport({ bada: true })); }
-/** @param {{alla?: boolean, bada?: boolean}} [val] */
-function _rapportModellExport({ alla = false, bada = false } = {}) {
+function rapportModellBada({ besked = false } = {}) { return medExportLage(() => _rapportModellExport({ bada: true, besked })); }
+/**
+ * @param {{alla?: boolean, bada?: boolean, besked?: boolean}} [val] besked: för förhandsbeskedet, som bara räknar —
+ *   bilagan med gruppdossierer får då antalet och det utelämnade men inga texter.
+ */
+function _rapportModellExport({ alla = false, bada = false, besked = false } = {}) {
     const d = getData();
     const year = new Date().getFullYear(), today = new Date().toLocaleDateString('sv-SE');
     const k = kTroskel();
@@ -27534,7 +27545,7 @@ function _rapportModellExport({ alla = false, bada = false } = {}) {
     // Bilagan med gruppdossierer byggs bara när den följer med i urvalet. Listan över alla avsnitt (alla, bada) bär den
     // annars med rubriken och utan innehåll: förhandsbeskedet och urvalslistan behöver bara rubriken, och en bilaga
     // som inte är vald kostar då ingenting.
-    const dossierer = d.length ? rmDossierAvsnitt(k, { stub: !rapportUrval().med.includes('dossierer') }) : null;
+    const dossierer = d.length ? rmDossierAvsnitt(k, { stub: !rapportUrval().med.includes('dossierer'), besked }) : null;
     const finns = /** @type {any[]} */ ([sammanfattning, regler, lika, likvardigt, basintervall, struktur, referenser, perbas, atgarder, samverkan, beslut, regressionAvsnitt, metod, dossierer].filter(Boolean));
     /** @param {boolean} alla */
     const avsnitt = alla => {
@@ -27648,7 +27659,7 @@ function renderExportBesked() {
     /** @type {any} */ let b = null;
     /** @type {any} */ let alla = null;
     /** @type {any} */ let bada = null;
-    try { bada = rapportModellBada(); alla = bada.alla; b = rmBesked(bada.urval); } catch (e) { rapporteraFel('Förhandsbesked: Word-utkastet', e); }
+    try { bada = rapportModellBada({ besked: true }); alla = bada.alla; b = rmBesked(bada.urval); } catch (e) { rapporteraFel('Förhandsbesked: Word-utkastet', e); }
     if (b) {
         satt('besked-word', `<strong>Innehåller:</strong> ${esc(_ebText([b.urval, _ebAntal(b.avsnitt, 'avsnitt', 'avsnitt'), _ebAntal(b.tabeller, 'tabell', 'tabeller'), _ebAntal(b.diagram, 'diagram', 'diagram'), `${b.fyllIn} fält att fylla i`]))}`
             + (b.utelamnat.length ? `<br><strong>Utelämnar:</strong> ${esc(b.utelamnat.join(' · '))}` : '<br><strong>Utelämnar:</strong> ingenting'));
@@ -31172,14 +31183,33 @@ function gruppdossierCandidates() {
         .sort((a, b) => b.rows.length - a.rows.length);
 }
 
-/** Bygger dossier-modellen för en grupp. Returnerar null om gruppen saknas/maskeras. */
-function buildGruppdossier(key) {
-    const g = gruppdossierCandidates().find(x => x.key === key);
+/** Kvinnorna och männen i en grupps rader, på samma sätt som dossiern räknar dem. */
+function _gdKon(rows) {
+    return { kv: rows.filter(r => typeof r.kon === 'string' && r.kon.includes('kvinna')), ma: rows.filter(r => r.kon === 'man' || r.kon === 'män') };
+}
+
+/**
+ * Det som är lika för alla grupper i ett och samma bygge (rapportens bilaga): kandidatlistan, det åldersrensade gapet
+ * per BAS-intervall och prioriteringen. Utan det räknar varje dossier om allt, vilket kostar sekunder på stora underlag.
+ * Med `text: true` byggs dossiererna för textversionen, som inte visar bootstrap-intervallet; det räknas då inte (det
+ * var nästan hela bilagans kostnad).
+ * @param {{text?: boolean}} [val]
+ */
+function gruppdossierDelat({ text = false } = {}) {
+    return { kandidater: gruppdossierCandidates(), perBas: new Map(), prio: new Map(), text };
+}
+
+/**
+ * Bygger dossier-modellen för en grupp. Returnerar null om gruppen saknas/maskeras.
+ * @param {string} key
+ * @param {any} [delat] ur gruppdossierDelat(), när flera dossierer byggs i samma anrop
+ */
+function buildGruppdossier(key, delat = null) {
+    const g = (delat ? delat.kandidater : gruppdossierCandidates()).find(x => x.key === key);
     if (!g) return null;
 
     const lons = g.rows.map(r => r.lon);
-    const kv = g.rows.filter(r => typeof r.kon === 'string' && r.kon.includes('kvinna'));
-    const ma = g.rows.filter(r => r.kon === 'man' || r.kon === 'män');
+    const { kv, ma } = _gdKon(g.rows);
     const kvLons = kv.map(r => r.lon), maLons = ma.map(r => r.lon);
 
     // Ojusterat gap — visas bara när bägge könen når k-tröskeln
@@ -31189,7 +31219,7 @@ function buildGruppdossier(key) {
         gap = {
             pct: mMa > 0 ? (mKv / mMa) * 100 : null,
             medKv: mKv, medMa: mMa,
-            ci: _gdBootstrapGapCI(kvLons, maLons),
+            ci: delat && delat.text ? null : _gdBootstrapGapCI(kvLons, maLons),
             // Räkneexemplet i kronor per år, med prioriteringens kostnadsinställningar.
             arsbelopp: _prArsbeloppMening({ medKv: mKv, medMa: mMa, nKv: kvLons.length }, state.costSettings, v => _figTalformat(Math.round(v), 'kr'))
         };
@@ -31207,7 +31237,10 @@ function buildGruppdossier(key) {
     // Justerat (åldersrensat) gap för gruppens BAS
     let adjusted = null;
     try {
-        const perBas = _computePerBasGap(getData(), [g.bas]);
+        const rakna = () => _computePerBasGap(getData(), [g.bas]);
+        let perBas;
+        if (!delat) perBas = rakna();
+        else { if (!delat.perBas.has(g.bas)) delat.perBas.set(g.bas, rakna()); perBas = delat.perBas.get(g.bas); }
         adjusted = (perBas || []).find(p => p.bas === g.bas) || null;
     } catch (_e) { adjusted = null; }
 
@@ -31241,7 +31274,10 @@ function buildGruppdossier(key) {
         // medan dossiern grupperar på `aid|bas`. Samma AID kan därför ge flera
         // prio-poster; ta inte bara den första — slå ihop dem, annars visas
         // kostnad och antal för en delmängd av gruppen.
-        const traffar = (computePrioritization(ref) || []).filter(i => i.aid === g.aid && i.bas === g.bas);
+        let alla;
+        if (!delat) alla = computePrioritization(ref);
+        else { if (!delat.prio.has(ref)) delat.prio.set(ref, computePrioritization(ref)); alla = delat.prio.get(ref); }
+        const traffar = (alla || []).filter(i => i.aid === g.aid && i.bas === g.bas);
         if (traffar.length === 1) {
             prio = traffar[0];
         } else if (traffar.length > 1) {
@@ -31426,29 +31462,34 @@ function _gdRenderBody(d) {
         </div>`;
 }
 
-/** Ren textversion för urklipp — praktiskt vid dokumentation i Word. */
-function gruppdossierAsText(d) {
-    const kr = v => v == null || !isFinite(v) ? '-' : Math.round(v).toLocaleString('sv-SE') + ' kr';
+/**
+ * Ren textversion: kopian till urklipp och rapportens bilaga med gruppdossierer. Med `stampel: false` utelämnas
+ * meningen om sänkt tröskel — bilagan skriver den en gång överst i stället för en gång per grupp.
+ * @param {any} d
+ * @param {{stampel?: boolean}} [val]
+ */
+function gruppdossierAsText(d, { stampel = true } = {}) {
+    const kr = v => v == null || !isFinite(v) ? '–' : Math.round(v).toLocaleString('sv-SE') + ' kr';
     const L = [];
-    L.push(`GRUPPDOSSIER: ${gruppNamn(d)} - BAS ${d.bas}`);
-    L.push(`Antal: ${d.n} (${d.nKv} kvinnor / ${d.nMa} man) - median ${kr(d.median)} - P10-P90 ${kr(d.p10)}-${kr(d.p90)}`);
+    L.push(`Gruppdossier: ${gruppNamn(d)} – BAS ${d.bas}`);
+    L.push(`Antal: ${d.n} (${d.nKv} kvinnor, ${d.nMa} män) · median ${kr(d.median)} · P10–P90 ${kr(d.p10)}–${kr(d.p90)}`);
     if (d.skr) L.push(`Nationell referens: ${svPct(d.skr.pct, 0)} kvinnor i ${_skrDelText(d.skr.del)} (${skrKallaKort()})`);
-    if (d.ansvar) L.push(`Ansvar: Ledningsansvar ${d.ansvar.ledning.kv} kv / ${d.ansvar.ledning.ma} man - Sarskilt uppdrag ${d.ansvar.uppdrag.kv} kv / ${d.ansvar.uppdrag.ma} man`);
-    if (d.gap && d.gap.pct != null) L.push(`Ojusterat gap: ${svPct(d.gap.pct, 1)} av mannens median`);
+    if (d.ansvar) L.push(`Ansvar: ledningsansvar ${d.ansvar.ledning.kv} kvinnor / ${d.ansvar.ledning.ma} män · särskilt uppdrag ${d.ansvar.uppdrag.kv} kvinnor / ${d.ansvar.uppdrag.ma} män`);
+    if (d.gap && d.gap.pct != null) L.push(`Ojusterat gap: ${svPct(d.gap.pct, 1)} av männens median`);
     if (d.gap && d.gap.arsbelopp) L.push(d.gap.arsbelopp);
-    if (d.adjusted && d.adjusted.status === 'ok') L.push(`Aldersrensat gap (BAS ${d.bas}): ${svPct(d.adjusted.gapPct, 1)}`);
-    if (d.pol) L.push(`Referensspann ${referensKortnamn()}: ${kr(d.pol.p10)}-${kr(d.pol.p90)} (${d.polLevel})`
-        + (d.band && d.band.position != null ? ` - position ${svPct((d.band.position * 100), 0)}` : ''));
-    if (d.prio) L.push(`Prioritering: ${d.prio.status} - avvikelse ${svPct(d.prio.diffPct, 1)} - ${kr(d.prio.annualGapTotal)}/ar`);
+    if (d.adjusted && d.adjusted.status === 'ok') L.push(`Gap när åldern räknats bort (BAS ${d.bas}): ${svPct(d.adjusted.gapPct, 1)}`);
+    if (d.pol) L.push(`Referensspann ${referensKortnamn()}: ${kr(d.pol.p10)}–${kr(d.pol.p90)} (${d.polLevel})`
+        + (d.band && d.band.position != null ? ` · position ${svPct((d.band.position * 100), 0)}` : ''));
+    if (d.prio) L.push(`Prioritering: ${d.prio.status} · avvikelse ${svPct(d.prio.diffPct, 1)} · ${kr(d.prio.annualGapTotal)} per år`);
     // Förslagen är HTML (fetstil m.m.); textkopian tar bort taggarna och avkodar tecknen
     // utan att tolka HTML.
     const somText = h => String(h).replace(/<[^>]*>/g, '').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
         .replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&');
-    if (d.suggestions.length) { L.push('Hypoteser att undersoka:'); d.suggestions.forEach(s => L.push('  - ' + somText(s.text))); }
+    if (d.suggestions.length) { L.push('Frågor att undersöka:'); d.suggestions.forEach(s => L.push('  – ' + somText(s.text))); }
     if (d.lvUtelamnade) L.push(_parUtelamnadeNot(d.lvUtelamnade));
-    L.push('OBS: Dossiern dokumenterar inte sakliga skal - den bedomningen gors separat.');
+    L.push('Obs! Dossiern dokumenterar inte sakliga skäl – den bedömningen görs separat.');
     // Delbar på egen hand (urklipp): stämpeln när tröskeln är sänkt
-    if (_kSanktNot()) L.push('', _kSanktNot());
+    if (stampel && _kSanktNot()) L.push('', _kSanktNot());
     return L.join('\n');
 }
 

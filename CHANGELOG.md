@@ -120,7 +120,9 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   *Bilaga: gruppdossierer*, förvalt av: kryssat i får rapporten en gruppdossier per yrkesgrupp där både kvinnor och
   män når minsta gruppstorlek, med samma text som dossierns kopia och byggd med minsta gruppstorlek. Grupper där ett
   kön är under gränsen räknas i förhandsbeskedet men namnges inte. BAS-dossiererna står redan i avsnittet per
-  BAS-intervall och upprepas inte.
+  BAS-intervall och upprepas inte. Texten är vanlig svenska med å, ä och ö ("Gruppdossier: …", "män", "sakliga
+  skäl"), också i kopian till urklipp. Meningen om sänkt minsta gruppstorlek står en gång överst i bilagan.
+  Förhandsbeskedet bygger inga dossiertexter, och bilagan kostar ett par tiondels sekunder även på stora underlag.
 
 ### Analys
 

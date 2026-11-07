@@ -437,4 +437,51 @@ describe('Bilaga: gruppdossierer i Word-utkastet och PDF-rapporten', () => {
         expect(a.delar.filter(p => p.typ === 'rubrik').map(p => p.text)).toEqual(forvantat);
         expect(a.utelamnat.join(' ')).toMatch(/yrkesgrupp(er)? där ett kön har färre än 25 personer/);
     });
+    it('texten är svenska med å, ä och ö, och stämpeln om sänkt tröskel står en gång, överst i bilagan', () => {
+        const w = createAppWindow(); w.__loadDemoData();
+        w.eval('sattKTroskel(5, { fraga: false })');
+        MED_DOSSIERER(w);
+        const a = bilaga(w);
+        const text = a.delar.map(p => p.text).join('\n');
+        expect(text).toContain('sakliga skäl');
+        expect(text).toMatch(/\d+ män\b/);
+        expect(text).toMatch(/^Gruppdossier: /m);
+        for (const fel of [/sakliga skal\b/, /\d+ man\b/, /Sarskilt/, /Aldersrensat/, /undersoka/, /kr\/ar\b/, /GRUPPDOSSIER/, /bedomningen gors/]) expect(text).not.toMatch(fel);
+        // Stämpeln en gång, före första dossiern — inte en gång per grupp.
+        const stampel = w.eval('kStampel()');
+        expect(stampel).toBeTruthy();
+        expect(text.split(stampel).length - 1).toBe(1);
+        const iStampel = a.delar.findIndex(p => p.text === stampel), iRubrik = a.delar.findIndex(p => p.typ === 'rubrik');
+        expect(iStampel).toBeGreaterThan(-1);
+        expect(iStampel).toBeLessThan(iRubrik);
+        // Kopian ur gruppdossiern bär fortfarande stämpeln, eftersom den kan spridas för sig.
+        const key = w.eval('gruppdossierCandidates()[0].key');
+        expect(w.eval(`medExportLage(() => gruppdossierAsText(buildGruppdossier(${JSON.stringify(key)})))`)).toContain(stampel);
+    });
+    it('förhandsbeskedet bygger inga dossierer men räknar utelämnat som exporten, och bilagan räknar kandidaterna en gång', () => {
+        const w = createAppWindow(); w.__loadDemoData();
+        w.eval('sattKTroskel(25, { fraga: false })');
+        MED_DOSSIERER(w);
+        const utelamnat = bilaga(w).utelamnat;
+        expect(utelamnat.length).toBe(1);
+        const rakna = namn => { const orig = w[namn]; const r = { n: 0 }; w[namn] = (...x) => { r.n++; return orig(...x); }; return r; };
+        const byggda = rakna('buildGruppdossier'), kandidater = rakna('gruppdossierCandidates'), prio = rakna('computePrioritization'), ki = rakna('_gdBootstrapGapCI');
+        w.eval('renderExportBesked()');
+        expect(byggda.n).toBe(0);
+        expect(w.document.getElementById('besked-word').textContent).toContain(utelamnat[0]);
+        // Vid k = 10 kommer flera grupper med i bilagan.
+        w.eval('sattKTroskel(10, { fraga: false })');
+        // Vad bilagan kostar utöver resten av modellen: kandidaterna en gång, prioriteringen högst en gång, inga bootstrap-intervall.
+        const kor = () => { byggda.n = 0; kandidater.n = 0; prio.n = 0; ki.n = 0; w.eval('rapportModell()'); return { byggda: byggda.n, kandidater: kandidater.n, prio: prio.n, ki: ki.n }; };
+        w.eval("sattRapportUrval('hela')");
+        const utan = kor();
+        MED_DOSSIERER(w);
+        const med = kor();
+        expect(utan.byggda).toBe(0);
+        expect(med.byggda).toBeGreaterThan(1);
+        expect(med.kandidater - utan.kandidater).toBe(1);
+        expect(med.prio - utan.prio).toBeLessThanOrEqual(1);
+        // Textversionen visar inte bootstrap-intervallet, så bilagan räknar det inte (det var nästan hela kostnaden).
+        expect(med.ki).toBe(0);
+    });
 });

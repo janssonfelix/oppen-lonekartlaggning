@@ -157,7 +157,7 @@ for (const [namn, ms] of Object.entries(tKonDelar)) console.log(kolumn(namn, ms)
 
 // Navigeringen: sidindexet per flik (fliken ritas först, sedan mäts bara byggandet av listan), sökfältets första och
 // andra sökning, och dossiererna (öppna tills de är ritade, sedan stängs de).
-/* global sidindexBygg, openBasdossier, closeBasdossier, basdossierKandidater, openGruppdossier, closeGruppdossier -- körs i sidan */
+/* global sidindexBygg, openBasdossier, closeBasdossier, basdossierKandidater, openGruppdossier, closeGruppdossier, rapportUrval, RM_AVSNITT -- körs i sidan */
 const NAV_GRANS_MS = 2000;
 const navLangsam = [];
 const navRad = (t, ms) => { if (ms > NAV_GRANS_MS) navLangsam.push(t); console.log(kolumn(t, ms) + (ms > NAV_GRANS_MS ? `  ← över ${NAV_GRANS_MS} ms` : '')); };
@@ -204,6 +204,24 @@ const tDossier = await page.evaluate(async () => {
 });
 navRad('Öppna BAS-dossiern', tDossier.bas);
 navRad('Öppna gruppdossiern', tDossier.grupp);
+// Rapportmodellen utan och med bilagan med gruppdossierer, och förhandsbeskedet i Exportera med bilagan vald (det ritas
+// om vid varje ändring av urvalet). Urvalet återställs efteråt.
+const tRapport = await page.evaluate(() => {
+    const mat = f => { const t0 = performance.now(); f(); return Math.round(performance.now() - t0); };
+    const fore = rapportUrval();
+    sattRapportUrval({ ordning: [...RM_AVSNITT], med: RM_AVSNITT.filter(id => id !== 'dossierer') });
+    const utan = mat(() => rapportModell());
+    const beskedUtan = mat(() => renderExportBesked());
+    sattRapportUrval({ ordning: [...RM_AVSNITT], med: [...RM_AVSNITT] });
+    const med = mat(() => rapportModell());
+    const besked = mat(() => renderExportBesked());
+    sattRapportUrval({ ordning: fore.ordning, med: fore.med });
+    return { utan, med, beskedUtan, besked };
+});
+navRad('Rapportmodellen utan bilaga', tRapport.utan);
+navRad('Rapportmodell med bilaga', tRapport.med);
+navRad('Förhandsbeskedet utan bilaga', tRapport.beskedUtan);
+navRad('Förhandsbeskedet med bilagan vald', tRapport.besked);
 if (navLangsam.length) console.log(`\n  ⚠ Över ${NAV_GRANS_MS} ms: ${navLangsam.map(s => s.trim()).join(', ')}`);
 console.log(`\n  ${'TOTALT'.padEnd(26)} ${String(summa).padStart(7)} ms`);
 if (sidfel.length) console.log(`\n  ✗ ${sidfel.length} sidfel: ${sidfel[0]}`);

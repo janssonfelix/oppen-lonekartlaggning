@@ -804,8 +804,8 @@ describe('handläggarstöd: gruppdossier, robusthet, färdigcheck', () => {
     it('textversionen innehåller gränsdragningen mot sakliga skäl', () => {
         const d = win.__buildGruppdossier(win.__gruppdossierCandidates()[0].key);
         const txt = win.__gruppdossierAsText(d);
-        expect(txt).toContain('GRUPPDOSSIER');
-        expect(txt).toMatch(/dokumenterar inte sakliga sk/i);
+        expect(txt).toMatch(/^Gruppdossier: /);
+        expect(txt).toContain('dokumenterar inte sakliga skäl');
     });
 
     it('robusthet: kvinnotröskel-körningen ÅTERSTÄLLER state', () => {
