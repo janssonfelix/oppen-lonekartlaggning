@@ -1272,7 +1272,7 @@
 
                 <!-- Benchmark Tab View -->
                 <div id="view-benchmark" class="view-panel dold">
-                    <div class="flik-intro"><strong>Hur ligger lönerna till mot det ni jämför er med?</strong> Här mäts löneläget per yrkesgrupp mot ert lönepolitiska ställningstagande och mot jämförelsestatistiken: var i spannet medianen ligger, var kvinnor och män ligger, och vilka grupper som hamnar utanför. Att ligga utanför är ett fynd att förklara, inte ett konstaterat fel. Fliken är en fördjupning och inget lagkrav.</div>
+                    <div class="flik-intro"><strong>Hur ligger lönerna till mot det organisationen jämför sig med?</strong> Här jämför du lönerna per yrkesgrupp med organisationens lönepolitiska ställningstagande och med jämförelsestatistiken. Du ser var medianen ligger i spannet, var kvinnor och män ligger, och vilka grupper som hamnar utanför. Att ligga utanför är ett fynd att förklara, inte ett konstaterat fel. Fliken är en fördjupning och inget lagkrav.</div>
                     <div id="jmf-slutsatser" class="slutsatser"></div>
                     <details class="avsnitt" id="avsnitt-jmf-overblick" open>
                     <summary><span class="avsnitt-titel"><h2>Överblick — löneläget och statistiken mot ställningstagandet</h2><span class="avsnitt-under">Per yrkesgrupp: var lönerna ligger mot ställningstagandet, och var statistiken ligger mot det</span></span></summary>
@@ -1281,8 +1281,8 @@
                     <details class="avsnitt" id="avsnitt-jmf-stallningstagande">
                     <summary><span class="avsnitt-titel"><h2>Mot ställningstagandet</h2><span class="avsnitt-under">Täckning, bandkartan, könens läge i spannet och tabellen per yrkesgrupp</span></span></summary>
                     <div class="flik-intro">
-                        <strong id="lonepolitik-rubrik">Lönerna mot ert lönepolitiska ställningstagande</strong>
-                        Jämför organisationens faktiska löneläge mot referensen — den inbyggda målbilden eller ert eget uppladdade ställningstagande — ner på yrkesgruppsnivå (AID). Policyn kan anges per BAS-intervall, per AID, eller båda — mest specifik referens vinner, och varje rad visar vilken nivå referensen kom ifrån. Detta är ett <strong>analysunderlag</strong>: att ligga utanför spannet är ett fynd att förklara, inte ett konstaterat fel.
+                        <strong id="lonepolitik-rubrik">Lönerna mot organisationens lönepolitiska ställningstagande</strong>
+                        Jämför organisationens faktiska löneläge med ställningstagandet, ner på yrkesgrupp (AID). Ställningstagandet kan ange lönerna per BAS-intervall, per yrke eller båda. Den mest detaljerade raden gäller, och varje rad i tabellen visar var referensen kom ifrån. Detta är ett <strong>analysunderlag</strong>: att ligga utanför spannet är ett fynd att förklara, inte ett konstaterat fel.
                     </div>
                     <div id="lp-urval" class="urvalsrad"></div>
                     <div id="lp-slutsatser" class="slutsatser"></div>
@@ -1290,8 +1290,8 @@
                         <div class="flik-empty-state">
                             <div class="empty-icon"><svg class="ikon ikon-tomLada" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 13h5l1.5 3h5L16 13h5"/><path d="M5 5h14l2 8v6H3v-6z"/></svg></div>
                             <h2>Referensen matchar inte underlaget</h2>
-                            <p>Referensen har inga rader för underlagets BAS-intervall eller yrken. Ladda upp en fil med P10/Median/P90 där varje rad har en <strong>BAS</strong>-kolumn, en <strong>AID</strong>-kolumn, eller båda.</p>
-                            <button class="empty-action" data-goto-tab="filer">Gå till uppladdning</button>
+                            <p>Referensen har inga rader för underlagets BAS-intervall eller yrken. Läs in en fil med P10/Median/P90 där varje rad har en <strong>BAS</strong>-kolumn, en <strong>AID</strong>-kolumn, eller båda.</p>
+                            <button class="empty-action" data-goto-tab="filer">Gå till Filer och kvalitet</button>
                         </div>
                     </div>
                     <div id="lonepolitik-content" class="dold"></div>
@@ -1316,14 +1316,14 @@
                                         <th scope="col">BAS</th>
                                         <th scope="col" data-export-label="Antal personer (organisationen)">N</th>
                                         <th scope="col" class="jmf-block" data-kol="p10org" data-export-label="P10 organisationen (kr/mån)">P10 org</th>
-                                        <th scope="col" data-jmf="P10" data-jmf-typ="varde" data-kol="p10jmf" data-export-label="P10 jämförelse (kr/mån)">P10 jmf</th>
-                                        <th scope="col" data-jmf="P10" data-jmf-typ="diff" data-kol="p10diff" data-export-label="P10 skillnad (%)">P10 diff</th>
+                                        <th scope="col" data-jmf="P10" data-jmf-typ="varde" data-kol="p10jmf" data-export-label="P10 jämförelse (kr/mån)">P10 statistik</th>
+                                        <th scope="col" data-jmf="P10" data-jmf-typ="diff" data-kol="p10diff" data-export-label="P10 skillnad (%)">P10 skillnad</th>
                                         <th scope="col" class="jmf-block" data-export-label="Median organisationen (kr/mån)">Median org</th>
-                                        <th scope="col" data-jmf="Median" data-jmf-typ="varde" data-export-label="Median jämförelse (kr/mån)">Median jmf</th>
-                                        <th scope="col" data-jmf="Median" data-jmf-typ="diff" data-export-label="Median skillnad (%)">Median diff</th>
+                                        <th scope="col" data-jmf="Median" data-jmf-typ="varde" data-export-label="Median jämförelse (kr/mån)">Median statistik</th>
+                                        <th scope="col" data-jmf="Median" data-jmf-typ="diff" data-export-label="Median skillnad (%)">Median skillnad</th>
                                         <th scope="col" class="jmf-block" data-kol="p90org" data-export-label="P90 organisationen (kr/mån)">P90 org</th>
-                                        <th scope="col" data-jmf="P90" data-jmf-typ="varde" data-kol="p90jmf" data-export-label="P90 jämförelse (kr/mån)">P90 jmf</th>
-                                        <th scope="col" data-jmf="P90" data-jmf-typ="diff" data-kol="p90diff" data-export-label="P90 skillnad (%)">P90 diff</th>
+                                        <th scope="col" data-jmf="P90" data-jmf-typ="varde" data-kol="p90jmf" data-export-label="P90 jämförelse (kr/mån)">P90 statistik</th>
+                                        <th scope="col" data-jmf="P90" data-jmf-typ="diff" data-kol="p90diff" data-export-label="P90 skillnad (%)">P90 skillnad</th>
                                     </tr>
                                 </thead>
                                 <tbody></tbody>
@@ -1339,26 +1339,26 @@
                             <h3>Så används fliken</h3>
                             <ul>
                                 <li><strong>Överblicken</strong> visar för varje yrkesgrupp var löneläget och statistiken ligger mot ställningstagandet, som är referenspunkten</li>
-                                <li>Kolumnen <em>Mönster</em> bär samtalet: ligger både löneläget och statistiken över ställningstagandet har det halkat efter marknaden; ligger bara löneläget över har organisationen gått före</li>
+                                <li>Kolumnen <em>Mönster</em> är utgångspunkten för samtalet: ligger både löneläget och statistiken över ställningstagandet har det halkat efter marknaden; ligger bara löneläget över har organisationen gått före</li>
                                 <li>Kolumnen <em>Förslag på referens</em> säger vilket mått som säger något om gruppen. Det är ett förslag, ingen regel</li>
                                 <li><strong>Mot ställningstagandet</strong> och <strong>Mot jämförelsestatistiken</strong> fördjupar var sin referens</li>
                             </ul>
                             <h3>Marknadslöneanalys</h3>
                             <ul>
-                                <li>Identifiera yrkesgrupper där organisationen ligger under jämförelsens median (negativ diff, röd)</li>
-                                <li>Värdera rekryteringsrisker — låga löner relativt jämförelsen = svårare att rekrytera</li>
+                                <li>Hitta yrkesgrupper där organisationen ligger under jämförelsens median (negativ skillnad, röd)</li>
+                                <li>Bedöm om låga löner gör det svårt att rekrytera</li>
                             </ul>
-                            <h3>Vid lönerevisionsdialog</h3>
+                            <h3>Inför löneöversynen</h3>
                             <ul>
                                 <li>Diagrammet <em>Vilka yrken avviker mest?</em> rangordnar yrkena; klicka på en stapel för att se raden i tabellen</li>
                                 <li>Räkna i <strong>Löneöversyn</strong> vad det kostar att lyfta dessa: lägg en riktad pott på gruppen</li>
                             </ul>
                             <h3>Tolkningstips</h3>
                             <ul>
-                                <li>Negativ diff (röd) = organisationen ligger under jämförelsen — kan motivera höjning</li>
-                                <li>Positiv diff (grön) = över jämförelsen — kan motiveras (specialistkompetens) eller indikera kostnadsdrift</li>
+                                <li>Negativ skillnad (röd): organisationen ligger under jämförelsen, vilket kan motivera en höjning</li>
+                                <li>Positiv skillnad (grön): organisationen ligger över jämförelsen. Det kan ha skäl (specialistkompetens) eller tyda på att lönerna dragit iväg</li>
                                 <li>Konsistenskontrollen under Underlagets kvalitet i Filer och kvalitet visar vilka AID-koder som inte matchar mellan filerna</li>
-                                <li>Jämför P10 och P90, inte bara medianen: en skillnad bara i P90 tyder på att erfarna inte når upp mot marknaden, en skillnad bara i P10 på låga ingångslöner</li>
+                                <li>Jämför P10 och P90, inte bara medianen. En skillnad bara i P90 tyder på att de erfarna inte når upp mot marknaden. En skillnad bara i P10 tyder på låga ingångslöner</li>
                             </ul>
                         </div>
                     </details>
@@ -1384,8 +1384,8 @@
                             <div class="flik-empty-state">
                                 <div class="empty-icon"><svg class="ikon ikon-blixt" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg></div>
                                 <h2>Referensdata saknas för vald jämförelse</h2>
-                                <p id="prio-empty-text">Ladda upp ert lönepolitiska ställningstagande — eller ett organisationspaket — under Filer och kvalitet. Verktyget kan inte rangordna utan referenspunkt.</p>
-                                <button class="empty-action" data-goto-tab="filer">Gå till uppladdning</button>
+                                <p id="prio-empty-text">Det finns inget ställningstagande att jämföra med, och verktyget kan därför inte rangordna grupperna. Läs in organisationens lönepolitiska ställningstagande eller organisationspaketet i Filer och kvalitet.</p>
+                                <button class="empty-action" data-goto-tab="filer">Gå till Filer och kvalitet</button>
                             </div>
                         </div>
 

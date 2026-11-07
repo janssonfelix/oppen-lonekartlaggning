@@ -887,7 +887,7 @@ exports[`golden: Excel-exporterna på fast dataset > "Excel (alla flikar)" match
       35000,
       22.5,
       0,
-      "BAS-nivå",
+      "BAS-intervall",
     ],
     [
       "B",
@@ -899,7 +899,7 @@ exports[`golden: Excel-exporterna på fast dataset > "Excel (alla flikar)" match
       35000,
       81.3,
       0,
-      "BAS-nivå",
+      "BAS-intervall",
     ],
     [
       "C",
@@ -911,7 +911,7 @@ exports[`golden: Excel-exporterna på fast dataset > "Excel (alla flikar)" match
       39000,
       21.7,
       0,
-      "BAS-nivå",
+      "BAS-intervall",
     ],
     [
       "C",
@@ -923,7 +923,7 @@ exports[`golden: Excel-exporterna på fast dataset > "Excel (alla flikar)" match
       39000,
       74.2,
       0,
-      "BAS-nivå",
+      "BAS-intervall",
     ],
     [
       null,
@@ -4571,14 +4571,14 @@ exports[`golden: PDF/print-rapporten (buildPrintReport) på fast dataset > urval
                                         <th scope="col" class="sortable">BAS</th>
                                         <th scope="col" data-export-label="Antal personer (organisationen)" class="sortable">N</th>
                                         <th scope="col" class="jmf-block sortable" data-kol="p10org" data-export-label="P10 Testorganisationen (kr/mån)" data-pctl="P10" title="P10 Testorganisationen (kr/mån)">P10 Testorganisationen</th>
-                                        <th scope="col" data-jmf="P10" data-jmf-typ="varde" data-kol="p10jmf" data-export-label="P10 jämförelsestatistiken (kr/mån)" class="sortable" title="P10 jämförelsestatistiken (kr/mån)">P10 jmf</th>
-                                        <th scope="col" data-jmf="P10" data-jmf-typ="diff" data-kol="p10diff" data-export-label="P10 skillnad mot jämförelsestatistiken (%)" class="sortable" title="P10 skillnad mot jämförelsestatistiken (%)">P10 diff</th>
+                                        <th scope="col" data-jmf="P10" data-jmf-typ="varde" data-kol="p10jmf" data-export-label="P10 jämförelsestatistiken (kr/mån)" class="sortable" title="P10 jämförelsestatistiken (kr/mån)">P10 statistik</th>
+                                        <th scope="col" data-jmf="P10" data-jmf-typ="diff" data-kol="p10diff" data-export-label="P10 skillnad mot jämförelsestatistiken (%)" class="sortable" title="P10 skillnad mot jämförelsestatistiken (%)">P10 skillnad</th>
                                         <th scope="col" class="jmf-block sortable" data-export-label="Median Testorganisationen (kr/mån)" data-pctl="Median" title="Median Testorganisationen (kr/mån)">Median Testorganisationen</th>
-                                        <th scope="col" data-jmf="Median" data-jmf-typ="varde" data-export-label="Median jämförelsestatistiken (kr/mån)" class="sortable" title="Median jämförelsestatistiken (kr/mån)">Median jmf</th>
-                                        <th scope="col" data-jmf="Median" data-jmf-typ="diff" data-export-label="Median skillnad mot jämförelsestatistiken (%)" class="sortable" title="Median skillnad mot jämförelsestatistiken (%)">Median diff</th>
+                                        <th scope="col" data-jmf="Median" data-jmf-typ="varde" data-export-label="Median jämförelsestatistiken (kr/mån)" class="sortable" title="Median jämförelsestatistiken (kr/mån)">Median statistik</th>
+                                        <th scope="col" data-jmf="Median" data-jmf-typ="diff" data-export-label="Median skillnad mot jämförelsestatistiken (%)" class="sortable" title="Median skillnad mot jämförelsestatistiken (%)">Median skillnad</th>
                                         <th scope="col" class="jmf-block sortable" data-kol="p90org" data-export-label="P90 Testorganisationen (kr/mån)" data-pctl="P90" title="P90 Testorganisationen (kr/mån)">P90 Testorganisationen</th>
-                                        <th scope="col" data-jmf="P90" data-jmf-typ="varde" data-kol="p90jmf" data-export-label="P90 jämförelsestatistiken (kr/mån)" class="sortable" title="P90 jämförelsestatistiken (kr/mån)">P90 jmf</th>
-                                        <th scope="col" data-jmf="P90" data-jmf-typ="diff" data-kol="p90diff" data-export-label="P90 skillnad mot jämförelsestatistiken (%)" class="sortable" title="P90 skillnad mot jämförelsestatistiken (%)">P90 diff</th>
+                                        <th scope="col" data-jmf="P90" data-jmf-typ="varde" data-kol="p90jmf" data-export-label="P90 jämförelsestatistiken (kr/mån)" class="sortable" title="P90 jämförelsestatistiken (kr/mån)">P90 statistik</th>
+                                        <th scope="col" data-jmf="P90" data-jmf-typ="diff" data-kol="p90diff" data-export-label="P90 skillnad mot jämförelsestatistiken (%)" class="sortable" title="P90 skillnad mot jämförelsestatistiken (%)">P90 skillnad</th>
                                     </tr>
                                 </thead>
                                 <tbody><tr class="group-header"><td colspan="12">BAS B</td></tr><tr data-rad="4100|B"><td>4100 Tekniker</td><td>B</td><td class="num" data-sort-value="17">17</td><td class="num jmf-block" data-sort-value="32660">32&nbsp;660&nbsp;kr</td><td class="num muted" data-sort-value="">–</td><td class="num muted" data-sort-value="">–</td><td class="num jmf-block" data-sort-value="33500">33&nbsp;500&nbsp;kr</td><td class="num muted" data-sort-value="33800">33&nbsp;800&nbsp;kr</td><td class="num jmf-neg" data-sort-value="-0.89" title="−300&nbsp;kr">−0,9 %</td><td class="num jmf-block" data-sort-value="34140">34&nbsp;140&nbsp;kr</td><td class="num muted" data-sort-value="">–</td><td class="num muted" data-sort-value="">–</td></tr><tr data-rad="5301|B"><td>5301 Undersköterska</td><td>B</td><td class="num" data-sort-value="17">17</td><td class="num jmf-block" data-sort-value="28160">28&nbsp;160&nbsp;kr</td><td class="num muted" data-sort-value="">–</td><td class="num muted" data-sort-value="">–</td><td class="num jmf-block" data-sort-value="28800">28&nbsp;800&nbsp;kr</td><td class="num muted" data-sort-value="29500">29&nbsp;500&nbsp;kr</td><td class="num jmf-neg" data-sort-value="-2.37" title="−700&nbsp;kr">−2,4 %</td><td class="num jmf-block" data-sort-value="29200">29&nbsp;200&nbsp;kr</td><td class="num muted" data-sort-value="">–</td><td class="num muted" data-sort-value="">–</td></tr><tr class="group-header"><td colspan="12">BAS C</td></tr><tr data-rad="2000|C"><td>2000 Ingenjör</td><td>C</td><td class="num" data-sort-value="14">14</td><td class="num jmf-block" data-sort-value="35755">35&nbsp;755&nbsp;kr</td><td class="num muted" data-sort-value="">–</td><td class="num muted" data-sort-value="">–</td><td class="num jmf-block" data-sort-value="36675">36&nbsp;675&nbsp;kr</td><td class="num muted" data-sort-value="36500">36&nbsp;500&nbsp;kr</td><td class="num jmf-pos" data-sort-value="0.48" title="+175&nbsp;kr">+0,5 %</td><td class="num jmf-block" data-sort-value="37455">37&nbsp;455&nbsp;kr</td><td class="num muted" data-sort-value="">–</td><td class="num muted" data-sort-value="">–</td></tr><tr data-rad="5500|C"><td>5500 Sjuksköterska</td><td>C</td><td class="num" data-sort-value="14">14</td><td class="num jmf-block" data-sort-value="31195">31&nbsp;195&nbsp;kr</td><td class="num muted" data-sort-value="">–</td><td class="num muted" data-sort-value="">–</td><td class="num jmf-block" data-sort-value="31950">31&nbsp;950&nbsp;kr</td><td class="num muted" data-sort-value="">–</td><td class="num muted" data-sort-value="">–</td><td class="num jmf-block" data-sort-value="32455">32&nbsp;455&nbsp;kr</td><td class="num muted" data-sort-value="">–</td><td class="num muted" data-sort-value="">–</td></tr></tbody>

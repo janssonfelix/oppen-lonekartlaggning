@@ -31,7 +31,7 @@ function renderReferensKort() {
     const har = harReferens();
     el.innerHTML = har
         ? `Används: <strong>${esc(referensNamn())}</strong>${esc(referensKalla())}`
-        : '<strong>Ingen referens inläst.</strong><br><span class="text-dampad-xs">Ladda upp ert lönepolitiska ställningstagande — eller ett organisationspaket.</span>';
+        : '<strong>Ingen referens inläst.</strong><br><span class="text-dampad-xs">Läs in organisationens lönepolitiska ställningstagande eller organisationspaketet.</span>';
     const falt = document.getElementById('referens-namn-rad');
     const input = document.getElementById('referens-namn');
     const aterga = document.getElementById('btn-referens-aterga');
@@ -82,7 +82,7 @@ policyInput.addEventListener("change", e => {
         const nAid = state.policy.filter(p => p.aid).length;
         const nBas = state.policy.filter(p => p.bas && !p.aid).length;
         policyStatus.textContent = `${state.policy.length} rader inlästa`
-            + (nAid ? ` (${nBas} BAS-nivå, ${nAid} AID-specifika)` : ' (BAS-nivå)')
+            + (nAid ? ` (${nBas} per BAS-intervall, ${nAid} per yrke)` : ' (per BAS-intervall)')
             + ` · ${res.encoding === 'XLSX' ? res.format : res.encoding}`;
         policyStatus.className = "status-msg success";
         synkaJamforelseFlik();

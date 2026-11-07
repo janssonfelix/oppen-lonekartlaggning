@@ -211,8 +211,8 @@ function renderPrioritering() {
         content.style.display = 'none';
         const text = document.getElementById('prio-empty-text');
         if (text) text.textContent = ref === 'stallningstagande'
-            ? 'Ladda upp ert lönepolitiska ställningstagande — eller ett organisationspaket — under Filer och kvalitet. Verktyget kan inte rangordna utan referenspunkt.'
-            : 'Ladda upp jämförelsestatistik — eller ett organisationspaket — under Filer och kvalitet. Verktyget kan inte rangordna utan referenspunkt.';
+            ? 'Det finns inget ställningstagande att jämföra med, och verktyget kan därför inte rangordna grupperna. Läs in organisationens lönepolitiska ställningstagande eller organisationspaketet i Filer och kvalitet.'
+            : 'Det finns ingen jämförelsestatistik att jämföra med, och verktyget kan därför inte rangordna grupperna. Läs in jämförelsestatistiken eller organisationspaketet i Filer och kvalitet.';
         return;
     }
     empty.style.display = 'none';

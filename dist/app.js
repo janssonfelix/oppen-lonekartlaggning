@@ -13440,7 +13440,7 @@ function policyLevelLabel(pol) {
     if (!pol) return null;
     if (pol.aid && pol.bas) return 'AID + BAS';
     if (pol.aid) return 'AID-specifik';
-    return 'BAS-nivå';
+    return 'BAS-intervall';
 }
 
 // ---- Referens (ADR-28): egen fil, organisationspaket eller demoläget — ingen inbyggd ----
@@ -22673,7 +22673,7 @@ function renderReferensKort() {
     const har = harReferens();
     el.innerHTML = har
         ? `Används: <strong>${esc(referensNamn())}</strong>${esc(referensKalla())}`
-        : '<strong>Ingen referens inläst.</strong><br><span class="text-dampad-xs">Ladda upp ert lönepolitiska ställningstagande — eller ett organisationspaket.</span>';
+        : '<strong>Ingen referens inläst.</strong><br><span class="text-dampad-xs">Läs in organisationens lönepolitiska ställningstagande eller organisationspaketet.</span>';
     const falt = document.getElementById('referens-namn-rad');
     const input = document.getElementById('referens-namn');
     const aterga = document.getElementById('btn-referens-aterga');
@@ -22724,7 +22724,7 @@ policyInput.addEventListener("change", e => {
         const nAid = state.policy.filter(p => p.aid).length;
         const nBas = state.policy.filter(p => p.bas && !p.aid).length;
         policyStatus.textContent = `${state.policy.length} rader inlästa`
-            + (nAid ? ` (${nBas} BAS-nivå, ${nAid} AID-specifika)` : ' (BAS-nivå)')
+            + (nAid ? ` (${nBas} per BAS-intervall, ${nAid} per yrke)` : ' (per BAS-intervall)')
             + ` · ${res.encoding === 'XLSX' ? res.format : res.encoding}`;
         policyStatus.className = "status-msg success";
         synkaJamforelseFlik();
@@ -24377,7 +24377,7 @@ function generateBenchmark() {
         tbody.innerHTML = `<tr><td colspan="12" class="pad-0"><div class="flik-empty-state">
             <div class="empty-icon">${ikon('tomLada', 32)}</div><h2>Jämförelsestatistik saknas</h2>
             <p>Läs in jämförelsestatistik under Filer och kvalitet, så jämförs organisationens löner mot den här.</p>
-            <button class="empty-action" data-goto-tab="filer">Gå till uppladdning</button></div></td></tr>`;
+            <button class="empty-action" data-goto-tab="filer">Gå till Filer och kvalitet</button></div></td></tr>`;
         if (infoEl) infoEl.textContent = '';
         rensaFigur('chart-jamforelse-spann'); rensaFigur('chart-jamforelse-avvikelse');
         const diag = document.getElementById('jmf-diagram'); if (diag) diag.innerHTML = '';
@@ -27159,8 +27159,8 @@ function renderPrioritering() {
         content.style.display = 'none';
         const text = document.getElementById('prio-empty-text');
         if (text) text.textContent = ref === 'stallningstagande'
-            ? 'Ladda upp ert lönepolitiska ställningstagande — eller ett organisationspaket — under Filer och kvalitet. Verktyget kan inte rangordna utan referenspunkt.'
-            : 'Ladda upp jämförelsestatistik — eller ett organisationspaket — under Filer och kvalitet. Verktyget kan inte rangordna utan referenspunkt.';
+            ? 'Det finns inget ställningstagande att jämföra med, och verktyget kan därför inte rangordna grupperna. Läs in organisationens lönepolitiska ställningstagande eller organisationspaketet i Filer och kvalitet.'
+            : 'Det finns ingen jämförelsestatistik att jämföra med, och verktyget kan därför inte rangordna grupperna. Läs in jämförelsestatistiken eller organisationspaketet i Filer och kvalitet.';
         return;
     }
     empty.style.display = 'none';
@@ -29458,11 +29458,11 @@ function exportBenchmarkExcel(...a) { return medExportLage(() => _exportBenchmar
 function _exportBenchmarkExcelExport() {
     if (typeof XLSX === 'undefined') { alert('Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.'); return; }
     const d = getData();
-    if (!d.length) { alert('Ingen data laddad. Ladda upp strukturdatan först.'); return; }
+    if (!d.length) { alert('Ingen lönefil är inläst. Läs in lönefilen först.'); return; }
     const hasStat = state.statistik.length > 0;
     const hasPolicy = state.policy.length > 0;
     if (!hasStat && !hasPolicy) {
-        alert('Ingen referensdata laddad — varken jämförelsestatistik eller lönepolitiskt ställningstagande. Inget att jämföra mot.');
+        alert('Det finns inget att jämföra med. Läs in ställningstagandet eller jämförelsestatistiken.');
         return;
     }
 
@@ -31749,10 +31749,10 @@ function renderLonepolitik() {
         if (h && p) {
             if (!harReferens()) {
                 h.textContent = 'Ingen referens inläst';
-                p.textContent = 'Ladda upp ert lönepolitiska ställningstagande — eller ett organisationspaket — under Filer och kvalitet, så jämförs lönerna mot det.';
+                p.textContent = 'Det finns inget ställningstagande att jämföra med. Läs in organisationens lönepolitiska ställningstagande eller organisationspaketet i Filer och kvalitet, så jämförs lönerna mot det.';
             } else {
                 h.textContent = 'Referensen matchar inte underlaget';
-                p.innerHTML = 'Referensen har inga rader för underlagets BAS-intervall eller yrken. Ladda upp en fil med P10/Median/P90 där varje rad har en <strong>BAS</strong>-kolumn, en <strong>AID</strong>-kolumn, eller båda.';
+                p.innerHTML = 'Referensen har inga rader för underlagets BAS-intervall eller yrken. Läs in en fil med P10/Median/P90 där varje rad har en <strong>BAS</strong>-kolumn, en <strong>AID</strong>-kolumn, eller båda.';
             }
         }
         return;
@@ -31914,7 +31914,7 @@ function _lpFigurKonHantel(rows) {
     const alla = rows.flatMap(b => [pos(b, 'kvPos'), pos(b, 'maPos')]);
     const punkt = (namn, farg, falt) => ({ marke: 'punkt', serie: namn, farg, storlek: 6,
         data: rows.map(b => ({ y: y(b), x: pos(b, falt), markering: markeringFor(b.bas) })), tips: d => [[d.y], [namn, `${_figTalformat(d.x, 'pct')} in i spannet`]] });
-    return { beskrivning: 'Kvinnors respektive mäns genomsnittliga position i policyns lönespann per BAS-intervall, som två punkter på spannet: 0 procent är spannets nedre gräns (P10), 100 procent den övre (P90).',
+    return { beskrivning: 'Kvinnors respektive mäns genomsnittliga position i ställningstagandets lönespann per BAS-intervall, som två punkter på spannet: 0 procent är spannets nedre gräns (P10), 100 procent den övre (P90).',
         y: { skala: 'band', ordning: rows.map(y) }, x: { skala: 'linjar', titel: 'Position i spannet (%) — 0 = P10, 100 = P90', doman: [Math.min(0, ...alla) - 4, Math.max(100, ...alla) + 4] },
         hojd: Math.max(170, 100 + rows.length * 34),
         referens: [{ x: 50, streck: 'prickad', farg: PALETTE.semantic.neutral, tjocklek: 1, etikett: 'Mitten' }],
@@ -31973,8 +31973,8 @@ function _lpFigurKomplians(rows) {
         data: rows.map(b => ({ x: 'BAS ' + b.bas, y: pct(b.compliance[falt], b.compliance.n), markering: markeringFor(b.bas) })),
         tips: d => [[d.x], [namn, _figTalformat(d.y, 'pct')]]
     });
-    return { beskrivning: 'Andel medarbetare under, inom och över policyns lönespann per BAS-intervall',
-        x: { skala: 'band' }, y: { skala: 'linjar', titel: 'Andel av medarbetarna (%)', doman: [0, 100] },
+    return { beskrivning: 'Andel anställda under, inom och över ställningstagandets lönespann per BAS-intervall',
+        x: { skala: 'band' }, y: { skala: 'linjar', titel: 'Andel av de anställda (%)', doman: [0, 100] },
         hojd: Math.max(260, 60 + rows.length * 38),
         // Två nyanser kring en neutral mitt (under — inom — över), inte rött och grönt: läget i spannet är en riktning.
         lager: [serie('Under P10', _LP_LAGE.under, 'under'), serie('Inom spann', _LP_LAGE.inom, 'within'),
@@ -31999,9 +31999,9 @@ function _lpFigurKompliansMitt(rows) {
     });
     const storst = Math.max(10, ...sorterade.map(b => Math.max(pct(b.compliance.under, b.compliance.n), pct(b.compliance.over, b.compliance.n))));
     const grans = Math.min(100, Math.ceil(storst * 1.15 / 10) * 10);
-    return { beskrivning: 'Andel medarbetare under respektive över policyns lönespann per BAS-intervall, ställda kring en mittlinje: under åt vänster, över åt höger. Störst andel utanför spannet överst. Resten ligger inom spannet.',
+    return { beskrivning: 'Andel anställda under respektive över ställningstagandets lönespann per BAS-intervall, ställda kring en mittlinje: under åt vänster, över åt höger. Störst andel utanför spannet överst. Resten ligger inom spannet.',
         y: { skala: 'band', ordning: sorterade.map(b => 'BAS ' + b.bas) },
-        x: { skala: 'linjar', titel: 'Under P10 åt vänster · andel av medarbetarna (%) · över P90 åt höger', format: 'pctAbs', doman: [-grans, grans], nollinje: true },
+        x: { skala: 'linjar', titel: 'Under P10 åt vänster · andel av de anställda (%) · över P90 åt höger', format: 'pctAbs', doman: [-grans, grans], nollinje: true },
         hojd: Math.max(260, 70 + sorterade.length * 38),
         lager: [serie('Under P10', _LP_LAGE.under, 'under', -1), serie('Över P90', _LP_LAGE.over, 'over', 1)] };
 }

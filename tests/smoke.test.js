@@ -725,7 +725,7 @@ describe('lönepolitik: policyFor-kaskad + flik', () => {
     it('policyLevelLabel beskriver referensens nivå', () => {
         expect(win.__policyLevelLabel({ aid: '1', bas: 'D' })).toBe('AID + BAS');
         expect(win.__policyLevelLabel({ aid: '1' })).toBe('AID-specifik');
-        expect(win.__policyLevelLabel({ bas: 'D' })).toBe('BAS-nivå');
+        expect(win.__policyLevelLabel({ bas: 'D' })).toBe('BAS-intervall');
         expect(win.__policyLevelLabel(null)).toBeNull();
     });
 

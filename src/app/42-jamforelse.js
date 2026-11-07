@@ -59,7 +59,7 @@ function generateBenchmark() {
         tbody.innerHTML = `<tr><td colspan="12" class="pad-0"><div class="flik-empty-state">
             <div class="empty-icon">${ikon('tomLada', 32)}</div><h2>Jämförelsestatistik saknas</h2>
             <p>Läs in jämförelsestatistik under Filer och kvalitet, så jämförs organisationens löner mot den här.</p>
-            <button class="empty-action" data-goto-tab="filer">Gå till uppladdning</button></div></td></tr>`;
+            <button class="empty-action" data-goto-tab="filer">Gå till Filer och kvalitet</button></div></td></tr>`;
         if (infoEl) infoEl.textContent = '';
         rensaFigur('chart-jamforelse-spann'); rensaFigur('chart-jamforelse-avvikelse');
         const diag = document.getElementById('jmf-diagram'); if (diag) diag.innerHTML = '';

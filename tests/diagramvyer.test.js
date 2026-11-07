@@ -94,7 +94,7 @@ describe('Lönepolitik: chart-lp-gender och chart-lp-compliance', () => {
             w.__state.kLage = 'export';
             w.__renderLonepolitik();
             const el = w.document.getElementById('chart-lp-compliance');
-            expect(el.querySelector(':scope > svg[role="group"]').getAttribute('aria-label')).toMatch(/Andel medarbetare/);
+            expect(el.querySelector(':scope > svg[role="group"]').getAttribute('aria-label')).toMatch(/Andel anställda/);
             expect(el.data).toBeUndefined();                                        // figuren ligger i _figur
             expect(el._figur.lager[0].data.map(d => d.x)).toEqual(['BAS A']);
             expect(utdata(el)).not.toMatch(/BAS B|61\s?11\d/);
