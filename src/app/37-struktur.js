@@ -148,7 +148,7 @@ function _stUtkastPerBas(k) {
     if (typeof basdossierKandidater !== 'function') return null;
     const kand = basdossierKandidater();
     if (!kand.length) return null;
-    const lines = ['PER BAS-INTERVALL', `Ett stycke per BAS-intervall med minst ${k} personer: antal och könsfördelning, läget mot ställningstagandet, yrkesgrupperna, likvärdigt arbete, ålder och förra året när ett bokslut är inläst. Yrkesgrupper med färre än ${k} personer står bara med namn.`];
+    const lines = ['PER BAS-INTERVALL', `Ett stycke per BAS-intervall med minst ${k} personer: antal och könsfördelning, ${state.policy.length ? 'läget mot ställningstagandet, ' : ''}yrkesgrupperna, likvärdigt arbete, ålder och förra året när ett bokslut är inläst. Yrkesgrupper med färre än ${k} personer står bara med namn.`];
     const under = basdossierUtelamnade();
     if (under.length) lines.push(`BAS ${under.join(', ')} redovisas inte (färre än ${k} personer).`);
     for (const { bas } of kand) {

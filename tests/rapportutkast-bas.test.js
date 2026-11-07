@@ -320,3 +320,80 @@ describe('förra året: tabellen per BAS-intervall i rapportunderlaget och BAS-h
         expect(await run(demo())).not.toContain('diagram/chart-arsjamforelse-bas.png');
     });
 });
+
+describe('färdiga urval sparas med sitt id, så att ett nytt avsnitt följer med (fixrunda 1)', () => {
+    const GAMLA_12 = ['sammanfattning', 'regler', 'lika', 'likvardigt', 'struktur', 'referenser', 'perbas', 'atgarder', 'samverkan', 'beslut', 'regression', 'metod'];
+    const GAMLA_FACKLIG = ['sammanfattning', 'regler', 'lika', 'likvardigt', 'struktur', 'referenser', 'perbas', 'samverkan', 'regression', 'metod'];
+    const lasIn = (w, rapportUrval) => {
+        const cfg = JSON.parse(JSON.stringify(w.__buildConfigSnapshot()));
+        w.__cfg = { ...cfg, rapportUrval };
+        w.eval('applyConfigSnapshot(window.__cfg)');
+    };
+    it('ett färdigt urval sparas med fast i state och i konfigurationsfilen, och läses tillbaka som samma urval', () => {
+        const w = demo();
+        w.eval("sattRapportUrval('facklig')");
+        expect(w.__state.rapportUrval.fast).toBe('facklig');
+        const cfg = JSON.parse(JSON.stringify(w.__buildConfigSnapshot()));
+        expect(cfg.rapportUrval.fast).toBe('facklig');
+        const w2 = demo();
+        w2.__cfg = cfg; w2.eval('applyConfigSnapshot(window.__cfg)');
+        expect(w2.__state.rapportUrval.fast).toBe('facklig');
+        expect(w2.eval('rapportUrval()').namn).toBe('Facklig dialog');
+    });
+    it('ett urval med fast följer det färdiga urvalets gällande lista, också när filens lista är äldre', () => {
+        const w = demo();
+        lasIn(w, { ordning: GAMLA_12, med: GAMLA_FACKLIG, fast: 'facklig' });
+        const u = w.eval('rapportUrval()');
+        expect(u.namn).toBe('Facklig dialog');
+        expect(u.med).toContain('basintervall');
+        expect(w.eval('rapportModell()').avsnitt.map(a => a.id)).toContain('basintervall');
+    });
+    it('en äldre fil utan fast: den gamla listan för facklig dialog läses som Facklig dialog, med det nya avsnittet', () => {
+        const w = demo();
+        lasIn(w, { ordning: GAMLA_12, med: GAMLA_FACKLIG });
+        expect(w.eval('rapportUrval()').namn).toBe('Facklig dialog');
+        expect(w.eval('rapportModell()').avsnitt.map(a => a.id)).toContain('basintervall');
+        expect(w.__state.rapportUrval.fast).toBe('facklig');
+    });
+    it('en äldre fil utan fast med alla tolv avsnitt läses som hela dokumentationen', () => {
+        const w = demo();
+        lasIn(w, { ordning: GAMLA_12, med: GAMLA_12 });
+        expect(w.eval('rapportUrval()').namn).toBe('Hela dokumentationen');
+        expect(w.eval('rapportModell()').avsnitt.map(a => a.id)).toContain('basintervall');
+    });
+    it('en egen avvikelse förblir ett eget urval: i en äldre fil, och när ett färdigt urval ändras i listan', () => {
+        const w = demo();
+        lasIn(w, { ordning: GAMLA_12, med: GAMLA_FACKLIG.filter(id => id !== 'regler') });
+        expect(w.eval('rapportUrval()').namn).toMatch(/^Eget urval/);
+        expect(w.eval('rapportModell()').avsnitt.map(a => a.id)).not.toContain('basintervall');
+        const d = w.document;
+        d.querySelector('.nav-item[data-tab="dokumentera"]').click();
+        d.querySelector('[data-urval-fast="facklig"]').click();
+        expect(w.__state.rapportUrval.fast).toBe('facklig');
+        const ruta = /** @type {HTMLInputElement} */ (d.querySelector('[data-urval-med="metod"]'));
+        ruta.checked = false; ruta.dispatchEvent(new w.Event('change', { bubbles: true }));
+        expect(w.__state.rapportUrval.fast).toBeUndefined();
+        expect(w.eval('rapportUrval()').namn).toMatch(/^Eget urval/);
+        expect(JSON.parse(JSON.stringify(w.__buildConfigSnapshot())).rapportUrval).not.toHaveProperty('fast');
+    });
+    it('en fil med ett okänt fast-värde avvisas inte; det hoppas över', () => {
+        const w = demo();
+        lasIn(w, { ordning: GAMLA_12, med: ['sammanfattning'], fast: 'finns-inte' });
+        expect(w.eval('rapportUrval()').namn).toMatch(/^Eget urval/);
+    });
+});
+
+describe('inledningen nämner ställningstagandet bara när ett är inläst (fixrunda 1)', () => {
+    it('utkastet och rapportens avsnitt', () => {
+        const w = demo();
+        w.__renderTabContent('rapporttext');
+        const inledning = () => utkast(w).value.split('\nPER BAS-INTERVALL\n')[1].split('\n')[0];
+        const avsnitt = () => w.eval('rapportModell()').avsnitt.find(a => a.id === 'basintervall').delar[0].text;
+        expect(inledning()).toContain('läget mot ställningstagandet');
+        expect(avsnitt()).toContain('läget mot ställningstagandet');
+        w.__state.policy = [];
+        w.document.getElementById('struktur-narrative-regen').click();
+        expect(inledning()).not.toContain('ställningstagandet');
+        expect(avsnitt()).not.toContain('ställningstagandet');
+    });
+});

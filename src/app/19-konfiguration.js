@@ -16,7 +16,7 @@ function buildConfigSnapshot() {
         prioWeights: { ...state.prioWeights },
         costSettings: { ...state.costSettings },
         kTroskel: kInstalld(),  // minsta gruppstorlek för redovisning (ADR-38); paketets låsningar (ADR-47) bärs inte
-        rapportUrval: state.rapportUrval ? { ordning: [...state.rapportUrval.ordning], med: [...state.rapportUrval.med] } : null,
+        rapportUrval: state.rapportUrval ? { ordning: [...state.rapportUrval.ordning], med: [...state.rapportUrval.med], ...(state.rapportUrval.fast ? { fast: state.rapportUrval.fast } : {}) } : null,
         rapportTabeller: (state.rapportTabeller || []).map(t => JSON.parse(JSON.stringify(t))),   // egna tabeller: recept, inga tal (ADR-52)
         perBasRecept: state.perBasRecept ? JSON.parse(JSON.stringify(state.perBasRecept)) : null,   // vilka avsnitt som följer med i rapporten
         forklaringsmodell: state.forklaringsmodell ? { ...state.forklaringsmodell } : null,   // regressionens variabler och skälet (ADR-56); null = standard
@@ -128,7 +128,8 @@ function applyConfigSnapshot(cfg) {
         const u = cfg.rapportUrval;
         if (typeof u !== 'object' || !Array.isArray(u.ordning) || !Array.isArray(u.med) || ![...u.ordning, ...u.med].every(x => typeof x === 'string'))
             throw new Error('rapportUrval måste ha listorna ordning och med.');
-        tmp.rapportUrval = { ordning: u.ordning, med: u.med };
+        if (u.fast != null && typeof u.fast !== 'string') throw new Error('rapportUrval.fast måste vara en text.');
+        tmp.rapportUrval = { ordning: u.ordning, med: u.med, ...(u.fast ? { fast: u.fast } : {}) };   // fast: ett färdigt urvals id; okänt id hoppas över
     }
     if (cfg.bristAids != null) {
         if (!Array.isArray(cfg.bristAids)) throw new Error('bristAids måste vara en array.');

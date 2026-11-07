@@ -12730,7 +12730,7 @@ document.addEventListener('keydown', e => {
  *   prioConfig: {atgardThreshold: number, akutMinN: number, bevakaThreshold: number, analyseraThreshold: number, [k: string]: any},
  *   prioWeights: {avvikelse: number, volym: number, jamstalldhet: number, [k: string]: any}, costSettings: {[k: string]: any},
  *   utkastPerBas: boolean,
- *   rapportUrval: {ordning: string[], med: string[]}|null, rapportTabeller: any[], perBasRecept: any, forraArsbokslut: any,
+ *   rapportUrval: {ordning: string[], med: string[], fast?: string}|null, rapportTabeller: any[], perBasRecept: any, forraArsbokslut: any,
  *   forklaringsmodell: null|{bas:boolean, alder:boolean, yrkesgrupp:boolean, skal:string},
  *   bristAids: Set<string>, scenarios: any[], snapshot: any, profile: {[k: string]: any},
  *   filnamn: {data: string|null, policy: string|null, statistik: string|null}, kTroskel: number,
@@ -12769,7 +12769,7 @@ const state = {
     costSettings: { ...COST_DEFAULTS },
     kLage: 'skarm',                    // 'export' medan något som lämnar verktyget ritas eller räknas (ADR-51, 23-exportgrind.js)
     utkastPerBas: true,        // Rapporttextens utkast med ett stycke per BAS-intervall (37-struktur.js); i minnet, inte i filen
-    rapportUrval: null,        // rapportens avsnitt: null = hela dokumentationen, annars { ordning, med } (58-rapportmodell.js)
+    rapportUrval: null,        // rapportens avsnitt: null = hela dokumentationen, annars { ordning, med, fast? } (58-rapportmodell.js)
     rapportTabeller: [],       // egna tabeller i rapporten: recept ur Utforska (src/lib/tabellrecept.js, ADR-52)
     perBasRecept: null,        // receptet för avsnittet per BAS-intervall: null = standard (src/lib/perbas.js, ADR-52)
     forklaringsmodell: null,   // vilka variabler regressionen räknar bort: null = standard (kön + BAS + ålder), ADR-56
@@ -14584,7 +14584,7 @@ function buildConfigSnapshot() {
         prioWeights: { ...state.prioWeights },
         costSettings: { ...state.costSettings },
         kTroskel: kInstalld(),  // minsta gruppstorlek för redovisning (ADR-38); paketets låsningar (ADR-47) bärs inte
-        rapportUrval: state.rapportUrval ? { ordning: [...state.rapportUrval.ordning], med: [...state.rapportUrval.med] } : null,
+        rapportUrval: state.rapportUrval ? { ordning: [...state.rapportUrval.ordning], med: [...state.rapportUrval.med], ...(state.rapportUrval.fast ? { fast: state.rapportUrval.fast } : {}) } : null,
         rapportTabeller: (state.rapportTabeller || []).map(t => JSON.parse(JSON.stringify(t))),   // egna tabeller: recept, inga tal (ADR-52)
         perBasRecept: state.perBasRecept ? JSON.parse(JSON.stringify(state.perBasRecept)) : null,   // vilka avsnitt som följer med i rapporten
         forklaringsmodell: state.forklaringsmodell ? { ...state.forklaringsmodell } : null,   // regressionens variabler och skälet (ADR-56); null = standard
@@ -14696,7 +14696,8 @@ function applyConfigSnapshot(cfg) {
         const u = cfg.rapportUrval;
         if (typeof u !== 'object' || !Array.isArray(u.ordning) || !Array.isArray(u.med) || ![...u.ordning, ...u.med].every(x => typeof x === 'string'))
             throw new Error('rapportUrval måste ha listorna ordning och med.');
-        tmp.rapportUrval = { ordning: u.ordning, med: u.med };
+        if (u.fast != null && typeof u.fast !== 'string') throw new Error('rapportUrval.fast måste vara en text.');
+        tmp.rapportUrval = { ordning: u.ordning, med: u.med, ...(u.fast ? { fast: u.fast } : {}) };   // fast: ett färdigt urvals id; okänt id hoppas över
     }
     if (cfg.bristAids != null) {
         if (!Array.isArray(cfg.bristAids)) throw new Error('bristAids måste vara en array.');
@@ -21238,7 +21239,7 @@ function _stUtkastPerBas(k) {
     if (typeof basdossierKandidater !== 'function') return null;
     const kand = basdossierKandidater();
     if (!kand.length) return null;
-    const lines = ['PER BAS-INTERVALL', `Ett stycke per BAS-intervall med minst ${k} personer: antal och könsfördelning, läget mot ställningstagandet, yrkesgrupperna, likvärdigt arbete, ålder och förra året när ett bokslut är inläst. Yrkesgrupper med färre än ${k} personer står bara med namn.`];
+    const lines = ['PER BAS-INTERVALL', `Ett stycke per BAS-intervall med minst ${k} personer: antal och könsfördelning, ${state.policy.length ? 'läget mot ställningstagandet, ' : ''}yrkesgrupperna, likvärdigt arbete, ålder och förra året när ett bokslut är inläst. Yrkesgrupper med färre än ${k} personer står bara med namn.`];
     const under = basdossierUtelamnade();
     if (under.length) lines.push(`BAS ${under.join(', ')} redovisas inte (färre än ${k} personer).`);
     for (const { bas } of kand) {
@@ -26942,9 +26943,25 @@ const RM_URVAL = Object.freeze({
     ledning: { namn: 'Ledningsbrief', med: ['sammanfattning', 'lika', 'likvardigt', 'atgarder'] },
     facklig: { namn: 'Facklig dialog', med: ['sammanfattning', 'regler', 'lika', 'likvardigt', 'basintervall', 'struktur', 'referenser', 'perbas', 'samverkan', 'regression', 'metod'] },
 });
-/** Det gällande urvalet: `ordning` är alla avsnitt i vald ordning, `med` de som följer med, `namn` vad urvalet heter. */
+/**
+ * Färdiga urval som de såg ut i äldre versioner, för filer som sparades innan urvalet bar sitt id (`fast`). En fil vars
+ * ordning och lista är exakt en av dessa läses som det färdiga urvalet, så att avsnitt som tillkommit följer med.
+ * Läggs ett avsnitt till i RM_AVSNITT eller ett färdigt urval ändras, läggs de förra listorna till här.
+ */
+const RM_URVAL_TIDIGARE = Object.freeze([
+    { fast: 'hela', ordning: ['sammanfattning', 'regler', 'lika', 'likvardigt', 'struktur', 'referenser', 'perbas', 'atgarder', 'samverkan', 'beslut', 'regression', 'metod'],
+      med: ['sammanfattning', 'regler', 'lika', 'likvardigt', 'struktur', 'referenser', 'perbas', 'atgarder', 'samverkan', 'beslut', 'regression', 'metod'] },
+    { fast: 'facklig', ordning: ['sammanfattning', 'regler', 'lika', 'likvardigt', 'struktur', 'referenser', 'perbas', 'atgarder', 'samverkan', 'beslut', 'regression', 'metod'],
+      med: ['sammanfattning', 'regler', 'lika', 'likvardigt', 'struktur', 'referenser', 'perbas', 'samverkan', 'regression', 'metod'] },
+]);
+/**
+ * Det gällande urvalet: `ordning` är alla avsnitt i vald ordning, `med` de som följer med, `namn` vad urvalet heter.
+ * Ett färdigt urval (`fast`) följer det urvalets gällande lista, så att ett nytt avsnitt kommer med; en ändring i
+ * listan tar bort `fast` (59-exportbesked.js sätter då { ordning, med }).
+ */
 function rapportUrval() {
     const u = state.rapportUrval;
+    if (u && u.fast && RM_URVAL[u.fast]) return { ordning: [...RM_AVSNITT], med: [...RM_URVAL[u.fast].med], namn: RM_URVAL[u.fast].namn };
     const ordning = u && Array.isArray(u.ordning) ? _rmMedNyaAvsnitt(u.ordning.filter(id => RM_AVSNITT.includes(id))) : [...RM_AVSNITT];
     const med = u && Array.isArray(u.med) ? ordning.filter(id => u.med.includes(id)) : [...ordning];
     const lika = (a, b) => a.length === b.length && a.every((x, i) => x === b[i]);
@@ -26967,10 +26984,20 @@ function _rmMedNyaAvsnitt(ordning) {
     });
     return ut;
 }
-/** Sätter urvalet. Ett fast urval anges med sitt namn ('hela', 'ledning', 'facklig'); annars { ordning, med }. */
+/**
+ * Sätter urvalet. Ett fast urval anges med sitt namn ('hela', 'ledning', 'facklig') och sparas med det (`fast`);
+ * annars { ordning, med, fast? }. Ett urval ur en äldre fil utan `fast` som är exakt ett tidigare färdigt urval
+ * (RM_URVAL_TIDIGARE) blir det urvalet. Ett okänt `fast` hoppas över.
+ */
 function sattRapportUrval(u) {
-    if (typeof u === 'string') u = u === 'hela' || !RM_URVAL[u] ? null : { ordning: [...RM_AVSNITT], med: [...RM_URVAL[u].med] };
-    state.rapportUrval = u ? { ordning: u.ordning.filter(id => RM_AVSNITT.includes(id)), med: u.med.filter(id => RM_AVSNITT.includes(id)) } : null;
+    const lika = (a, b) => a.length === b.length && a.every((x, i) => x === b[i]);
+    if (u && typeof u === 'object' && !(u.fast && RM_URVAL[u.fast])) {
+        const tidigare = RM_URVAL_TIDIGARE.find(t => lika(u.ordning, t.ordning) && lika(u.med, t.med));
+        if (tidigare) u = tidigare.fast;
+    }
+    if (u && typeof u === 'object' && u.fast && RM_URVAL[u.fast]) u = u.fast;
+    if (typeof u === 'string') u = u === 'hela' || !RM_URVAL[u] ? null : { ordning: [...RM_AVSNITT], med: [...RM_URVAL[u].med], fast: u };
+    state.rapportUrval = u ? { ordning: u.ordning.filter(id => RM_AVSNITT.includes(id)), med: u.med.filter(id => RM_AVSNITT.includes(id)), ...(u.fast ? { fast: u.fast } : {}) } : null;
 }
 
 /**
@@ -27056,7 +27083,7 @@ function rmBasintervallAvsnitt(k) {
     const under = basdossierUtelamnade();
     const utelamnat = under.length ? [`BAS ${under.join(', ')} (färre än ${k} personer)`] : [];
     /** @type {any[]} */
-    const delar = [stycke(`Ett avsnitt per BAS-intervall med minst ${k} personer, i samma ordning som rapporten i övrigt: antal och könsfördelning, läget mot ställningstagandet, yrkesgrupperna med status enligt Lika arbete, likvärdigt arbete, ålder och förra året när ett bokslut är inläst. Tabellen har yrkesgrupperna där både kvinnor och män når minsta gruppstorlek.`, 'dampad')];
+    const delar = [stycke(`Ett avsnitt per BAS-intervall med minst ${k} personer, i samma ordning som rapporten i övrigt: antal och könsfördelning, ${state.policy.length ? 'läget mot ställningstagandet, ' : ''}yrkesgrupperna med status enligt Lika arbete, likvärdigt arbete, ålder och förra året när ett bokslut är inläst. Tabellen har yrkesgrupperna där både kvinnor och män når minsta gruppstorlek.`, 'dampad')];
     let smaYrken = 0;
     for (const { bas } of kand) {
         const d = buildBasdossier(bas);

@@ -598,6 +598,17 @@ console.log('\n── Exportera: checklistan först, robustheten, exporterna som
     await page.evaluate(() => document.querySelector('.nav-item[data-tab="rapporttext"]').click());
     await page.waitForTimeout(1200);
     ok(await page.evaluate(() => document.getElementById('avsnitt-rt-utkast').open && /LÖNEKARTLÄGGNING/.test(document.getElementById('struktur-narrative').value)), 'Rapporttext: auto-utkastet är utfällt och ifyllt');
+    // Väljaren Omfång: Hela organisationen tar bort delen per BAS-intervall, och Återskapa följer valet.
+    const perBas = () => page.evaluate(() => /\nPER BAS-INTERVALL\n/.test(document.getElementById('struktur-narrative').value));
+    const medDel = await perBas();
+    await page.selectOption('#struktur-narrative-omfang', 'hela');
+    const utanDel = await perBas();
+    await page.click('#struktur-narrative-regen');
+    const utanEfterAterskapa = await perBas();
+    await page.selectOption('#struktur-narrative-omfang', 'perBas');
+    const tillbaka = await perBas();
+    await page.click('#struktur-narrative-regen');
+    ok(medDel && !utanDel && !utanEfterAterskapa && tillbaka && await perBas(), `Rapporttext: Omfång tar bort och lägger tillbaka PER BAS-INTERVALL, och Återskapa följer valet (${[medDel, utanDel, utanEfterAterskapa, tillbaka].join(', ')})`);
     await page.click('#avsnitt-dk-rapportunderlag > summary');
     await page.waitForTimeout(300);
     ok(await page.evaluate(() => { const k = document.querySelector('#rapportunderlag-innehall [data-rapport-kopiera]'); return !!k && k.offsetParent !== null; }), 'rapportunderlagets block går att nå när avsnittet fälls ut');

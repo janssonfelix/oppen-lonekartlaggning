@@ -17,8 +17,11 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   och PDF-rapporten har avsnittet *Lönekartläggning per BAS-intervall* efter likvärdigt arbete: en underrubrik per
   intervall, samma stycken och intervallets yrkesgruppstabell (AID, yrke, kvinnor / män, median per kön, kvinnors
   median i procent av mäns, status), bara med yrken där båda könen når k. Avsnittet är valbart under *Rapportens
-  innehåll* och förvalt; det ingår i *Facklig dialog*, inte i *Ledningsbrief*. Ett sparat eget urval från före
-  avsnittet får det på sin plats, utan kryss. Rapportunderlaget har gruppen *Per BAS-intervall* med ett kopierbart
+  innehåll* och förvalt; det ingår i *Facklig dialog*, inte i *Ledningsbrief*. Ett färdigt urval sparas nu med sitt
+  id (`fast` i konfigurationsfilens `rapportUrval`) och följer urvalets gällande lista, så att ett nytt avsnitt kommer
+  med; en ändring i listan gör det till ett eget urval. En äldre fil med exakt de tidigare listorna för *Facklig
+  dialog* eller alla tolv avsnitt läses som det färdiga urvalet, med det nya avsnittet. Ett sparat eget urval från
+  före avsnittet får det på sin plats, utan kryss. Rapportunderlaget har gruppen *Per BAS-intervall* med ett kopierbart
   block per intervall. Allt byggs i exportläget: intervall och yrkesgrupper under minsta gruppstorlek står bara med
   namn. Dossierns text är oförändrad; den, utkastet, rapporten och rapportunderlaget har en gemensam textbyggare.
 - **BAS-dossier.** En dialog som samlar ett BAS-intervall på en sida, i rapportens ordning: nyckeltal (antal, kvinnor
