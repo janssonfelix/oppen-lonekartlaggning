@@ -155,7 +155,7 @@ statInput.addEventListener("change", e => {
             const idxAndelKv = hdr.findIndex(t =>
                 /(andel\s*kvinnor|kvinno?andel|%\s*kvinnor)/.test(t)
             );
-            if (idxAID === -1 || idxMed === -1) throw new Error("AID eller Median saknas i filen.");
+            if (idxAID === -1 || idxMed === -1) throw new Error("Filen saknar kolumnen AID eller Median. Kontrollera rubrikraden och läs in filen igen.");
             // Rad-objekten är nycklade på originalrubrikerna — översätt index → nyckel.
             const col = i => i !== -1 ? res.headers[i] : null;
             const cAID = col(idxAID), cBAS = col(idxBAS), cMed = col(idxMed),

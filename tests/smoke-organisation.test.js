@@ -181,7 +181,7 @@ describe('organisationsneutralt standardläge', () => {
         expect(w.__state.policy).toEqual([]);
         expect(w.eval('referensNamn()')).toBe('Ingen referens inläst');
         expect(w.document.getElementById('referens-status').textContent).toContain('Ingen referens inläst');
-        expect(w.__state.profile.name).toBe('Er organisation');
+        expect(w.__state.profile.name).toBe('Organisationen');
         expect(w.__state.profile.benchmarkLabel).toBe('jämförelsestatistiken');
         expect(w.document.getElementById('profile-preset-select')).toBeNull();
     });
@@ -206,7 +206,7 @@ describe('organisationsneutralt standardläge', () => {
         expect(w.__state.profile.name).toBe('Exempelkommunen');
         w.__clearAllData();
         expect(w.__state.policy).toEqual([]);
-        expect(w.__state.profile.name).toBe('Er organisation');
+        expect(w.__state.profile.name).toBe('Organisationen');
         expect(w.eval('referensNamn()')).toBe('Ingen referens inläst');
     });
 });
@@ -433,7 +433,7 @@ describe('organisationspaket: läs in och skapa', () => {
         w.__clearAllData();
         const s = w.__state;
         expect(s.paket).toBeNull();
-        expect(s.profile.name).toBe('Er organisation');
+        expect(s.profile.name).toBe('Organisationen');
         expect(s.costSettings.poPct).toBe(39.15);
         expect(s.policy).toEqual([]);
         expect(s.statistik).toEqual([]);

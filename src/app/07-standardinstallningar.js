@@ -27,7 +27,7 @@ const INAKTIVITET_STANDARD_MIN = 90;
 // benämningar och standard-PO utan att röra analyslogiken; den sätts av ett
 // organisationspaket.
 const DEFAULT_PROFILE = Object.freeze({
-    name:                    'Er organisation',
+    name:                    'Organisationen',
     benchmarkLabel:          'jämförelsestatistiken',
     benchmarkLabelGenitive:  'jämförelsestatistikens',
     benchmarkShort:          'jämförelsen',

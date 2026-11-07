@@ -46,7 +46,7 @@ function openDataResidency() {
         <div class="lh-1_6">
             <p><strong>Datafotavtryck just nu</strong></p>
             <ul class="marg-0-0-14-20">
-                <li>Strukturdata: <strong>${n.toLocaleString('sv-SE')}</strong> rader (~${approxKB} KB i minnet)</li>
+                <li>Lönefilen: <strong>${n.toLocaleString('sv-SE')}</strong> rader (~${approxKB} KB i minnet)</li>
                 <li>Referens: ${esc(referensNamn())}${esc(referensKalla())}: <strong>${policyN}</strong> rader</li>
                 <li>Jämförelsestatistik: <strong>${statN}</strong> rader</li>
                 ${_fkVantar ? '<li>En lönefil väntar på Läs in i förhandskontrollen: den hålls i minnet men är inte inläst, och Rensa all data eller rensningen vid inaktivitet släpper den.</li>' : ''}
@@ -54,16 +54,16 @@ function openDataResidency() {
                 <li>Nätverkstrafik: <strong>0 byte</strong> (CSP <code>connect-src 'none'</code> blockerar all utgående trafik)</li>
             </ul>
             <p><strong>Schema (vitlistade fält per rad)</strong></p>
-            <p class="marg-0-0-6">Verktyget extraherar enbart fem fält ur din fil — BAS, yrke, lön, ålder och kön, plus valfri arbetsvärderingspoäng och valfri ansvarskod enligt AID — och noterar radens nummer i filen. Allt annat — personnummer, namn, e-post, anställningsnummer, fri text bortom yrkesetiketten — droppas vid inläsning och når aldrig den interna datastrukturen.</p>
+            <p class="marg-0-0-6">Verktyget läser bara fem fält ur filen: BAS-intervall, yrke, lön, ålder och kön, plus valfri arbetsvärderingspoäng och valfri ansvarskod enligt AID. Det noterar också radens nummer i filen. Allt annat (personnummer, namn, e-post, anställningsnummer, fri text utöver yrkesbenämningen) tas bort vid inläsningen och sparas aldrig.</p>
             ${sampleRow}
             <p class="bak-ok-yta ram-v-3-ok rund-4 fs-sm marg-t-18 pad-10-14">
-                <strong>Inbyggt dataskydd (art. 25):</strong> minimering sker innan datan landar i state — inte efter. Filen läses in i minnet, raderna minimeras en i taget, och filens övriga innehåll släpps när inläsningen är klar.
+                <strong>Inbyggt dataskydd enligt dataskyddsförordningen:</strong> uppgifterna minimeras innan de sparas i minnet, inte efter. Filen läses in i minnet, raderna minimeras en i taget, och filens övriga innehåll släpps när inläsningen är klar.
             </p>
 
             <!-- Inaktivitetstimer-inställning -->
             <h3 class="fs-md marg-t-18">Automatisk sessionsrensning vid inaktivitet</h3>
             <p class="text-dampad-sm marg-0-0-8">
-                Skydd mot scenariot där du lämnar arbetsstationen olåst. Vid vald timeout visas en varning med möjlighet att förlänga sessionen — om du inte svarar inom 60 sekunder rensas all data automatiskt (motsvarande "Rensa all data"-knappen).
+                Skyddar om du lämnar datorn olåst. När tiden har gått får du en varning och kan förlänga. Svarar du inte inom 60 sekunder rensas allt, som med knappen Rensa all data.
             </p>
             <div class="rad-bryt-mitt gap-10">
                 <label for="inactivity-timeout-select" class="fs-sm fw-600">Timeout:</label>

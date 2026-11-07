@@ -3053,7 +3053,7 @@ function bakaIn(html, paketJson, meta = {}) {
     const k = kannIgenVerktyget(html);
     if (!k.ok) return { ok: false, fel: k.fel || 'Filen är inte verktyget.' };
     let obj;
-    try { obj = JSON.parse(String(paketJson)); } catch (_e) { return { ok: false, fel: 'Paketet är inte giltig JSON.' }; }
+    try { obj = JSON.parse(String(paketJson)); } catch (_e) { return { ok: false, fel: 'Paketet går inte att läsa som JSON. Spara paketet på nytt och försök igen.' }; }
     if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return { ok: false, fel: 'Paketet är inte ett objekt.' };
     const text = JSON.stringify(obj).replace(/</g, '\\u003c').replace(/&/g, '\\u0026');
     const [huvud, svans0] = _delad(html);
@@ -5180,7 +5180,7 @@ const __mirrorAttgora = (() => {
  */
 
 /** Kategorier för fynd som gäller skillnader mellan kvinnor och män (lagkravet). */
-const KONSRELATERADE = ['Lika arbete', 'EU 2023/970', 'Likvärdigt arbete'];
+const KONSRELATERADE = ['Lika arbete', 'Likvärdigt arbete'];
 
 const PRIORITET = { 'hög': 0, medel: 1, 'låg': 2 };
 
@@ -5216,8 +5216,8 @@ function stegLikaArbete({ regressionOk, t, d }) {
     if (!regressionOk) return { status: 'delvis', detail: 'Underlaget räcker ännu inte för en tillförlitlig regression.' };
     return {
         status: d >= t ? 'klar' : 'delvis',
-        detail: t ? `Oförklarat gap beräknat · ${d} av ${t} punkter hanterade i Att göra.`
-                  : 'Oförklarat gap beräknat — inga punkter att förklara eller åtgärda.',
+        detail: t ? `Oförklarad löneskillnad beräknad · ${d} av ${t} punkter hanterade i Att göra.`
+                  : 'Oförklarad löneskillnad beräknad — inga punkter att förklara eller åtgärda.',
     };
 }
 
@@ -5228,14 +5228,14 @@ function stegLikaArbete({ regressionOk, t, d }) {
  * produktägaren 2026-10-16).
  */
 function stegLikvardigt({ analys, antalPar, utelamnade = 0, k, t, d }) {
-    if (!analys) return { status: 'ej', detail: 'Granska likvärdiga arbeten på fliken.' };
+    if (!analys) return { status: 'ej', detail: 'Gå igenom kandidatparen i Likvärdigt arbete.' };
     if (antalPar === 0 && utelamnade > 0) {
         return { status: 'inget', detail: `Inget att hantera i Att göra: ${utelamnade} par har en grupp under ${k != null ? `${k} personer` : 'minsta gruppstorlek'} och redovisas bara i fliken Likvärdigt arbete — gå till steget för att granska dem.` };
     }
     if (antalPar === 0) return { status: 'klar', detail: 'Analysen körd — inga kandidatpar utifrån nuvarande trösklar.' };
     return {
         status: t > 0 && d >= t ? 'klar' : 'delvis',
-        detail: `${antalPar} kandidatpar (kvinnodominerade mot likvärdiga yrken) · ${d} av ${t} kandidatpar hanterade i Att göra.`,
+        detail: `${antalPar} kandidatpar (kvinnodominerade yrken mot jämförelseyrken med likvärdiga krav) · ${d} av ${t} kandidatpar hanterade i Att göra.`,
     };
 }
 
@@ -7213,7 +7213,7 @@ function tolkaPaket(text) {
     if (typeof text !== 'string') return { ok: false, fel: 'Filen kunde inte läsas.' };
     if (text.length > PAKET_MAX_BYTE) return { ok: false, fel: 'Filen är för stor för att vara ett organisationspaket (högst 5 MB).' };
     let o;
-    try { o = JSON.parse(text); } catch (_e) { return { ok: false, fel: 'Filen är inte giltig JSON.' }; }
+    try { o = JSON.parse(text); } catch (_e) { return { ok: false, fel: 'Filen är inte ett organisationspaket (den går inte att läsa som JSON). Be systemägaren om en ny fil.' }; }
     if (!o || typeof o !== 'object' || Array.isArray(o)) return { ok: false, fel: 'Filen är inte ett organisationspaket.' };
 
     if (o.format !== PAKET_FORMAT) return { ok: false, fel: 'Filen är inte ett organisationspaket för lönekartläggning.' };
@@ -7223,7 +7223,7 @@ function tolkaPaket(text) {
     const organisation = _text(o.organisation?.namn);
     if (!organisation) return { ok: false, fel: 'Paketet saknar organisationens namn (organisation.namn).' };
     const skapat = _text(o.skapat);
-    if (!skapat || !/^\d{4}-\d{2}-\d{2}$/.test(skapat)) return { ok: false, fel: 'Paketet saknar datum (skapat, ÅÅÅÅ-MM-DD).' };
+    if (!skapat || !/^\d{4}-\d{2}-\d{2}$/.test(skapat)) return { ok: false, fel: 'Paketet saknar datum (fältet skapat, ÅÅÅÅ-MM-DD). Be systemägaren om en ny fil.' };
     if (_allaTexter(o).some(t => PNR.test(t) || EPOST.test(t))) {
         return { ok: false, fel: 'Paketet innehåller något som liknar personnummer eller e-post och läses inte in.' };
     }

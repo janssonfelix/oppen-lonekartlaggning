@@ -2866,7 +2866,7 @@ exports[`golden: Excel-exporterna på fast dataset > JPA-protokollet matchar fac
     ],
     [
       "Aktiv profil",
-      "Er organisation",
+      "Organisationen",
     ],
     [
       "Jämförelseinstitution",
@@ -3771,7 +3771,7 @@ exports[`golden: Excel-exporterna på fast dataset > den samlade jämförelseexp
     ],
     [
       "Aktiv profil",
-      "Er organisation",
+      "Organisationen",
     ],
     [
       "Jämförelseinstitution",
@@ -4257,7 +4257,7 @@ exports[`golden: Excel-exporterna på fast dataset > § 3:10-exporten matchar fa
     ],
     [
       "Aktiv profil",
-      "Er organisation",
+      "Organisationen",
     ],
     [
       "Modell",

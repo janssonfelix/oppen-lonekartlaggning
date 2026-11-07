@@ -129,7 +129,7 @@ describe('gränssnittet har inga paragrafhänvisningar utanför hjälptexten', (
         const walker = w.document.createTreeWalker(w.document.body, 4 /* NodeFilter.SHOW_TEXT */);
         for (let n = walker.nextNode(); n; n = walker.nextNode()) {
             if (n.parentElement && n.parentElement.closest(hjalp)) continue;
-            if (/§|DiskrL|kap\. ?3|3 kap\.|\b[Aa]rt\. ?\d|[Ll]agen \d+:\d+/.test(n.textContent)) {
+            if (/§|DiskrL|kap\. ?3|3 kap\. ?\d|\b[Aa]rt\. ?\d|[Ll]agen \d+:\d+/.test(n.textContent)) {
                 traffar.push(`${(n.parentElement.closest('[id]') || {}).id}: ${n.textContent.trim().slice(0, 70)}`);
             }
         }
@@ -179,11 +179,11 @@ describe('referensen: demoläget, egen fil och rensning (ADR-28)', () => {
         w.__autoClearOnInactivity();
         expect(w.__state.policy).toEqual([]);
     });
-    it('en ren AID-policy med eget namn ger "saknar BAS-nivårader" i kompliansrutan', () => {
+    it('en ren AID-policy med eget namn ger "saknar rader per BAS-intervall" i kompliansrutan', () => {
         w.__loadDemoData();
         w.__lasInReferens([{ aid: '123456', p10: 1, med: 2, p90: 3 }], 'AID-policy.csv');
         w.__updateCompliance();
-        expect(w.document.getElementById('comp-pol-val').textContent).toContain('saknar BAS-nivårader');
+        expect(w.document.getElementById('comp-pol-val').textContent).toContain('saknar rader per BAS-intervall');
         expect(w.document.getElementById('compliance-overview').textContent).toContain('AID-policy');
         w.__aterstallReferens();
     });

@@ -115,7 +115,7 @@ function _excelLonepolitikMetod(blad) {
 function exportAllToExcel(...a) { return medExportLage(() => _exportAllToExcelExport.apply(null, /** @type {any} */ (a))); }
 function _exportAllToExcelExport() {
     if (!state.data.length) { alert('Ladda upp data först.'); return; }
-    if (typeof XLSX === 'undefined') { alert('XLSX-bibliotek saknas.'); return; }
+    if (typeof XLSX === 'undefined') { alert('Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.'); return; }
     const wb = _excelAlltBok();
     XLSX.writeFile(wb, `lonekartlaggning_komplett_${new Date().toISOString().slice(0,10)}.xlsx`);
     _showExportSensitivityToast();
@@ -268,7 +268,7 @@ function _jpaExkluderadeTexter() {
 function exportJPAProtocol(...a) { return medExportLage(() => _exportJPAProtocolExport.apply(null, /** @type {any} */ (a))); }
 function _exportJPAProtocolExport() {
     if (!state.data.length) { alert('Ladda upp data först.'); return; }
-    if (typeof XLSX === 'undefined') { alert('XLSX-bibliotek saknas.'); return; }
+    if (typeof XLSX === 'undefined') { alert('Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.'); return; }
 
     const d = getData();
     const now = new Date();

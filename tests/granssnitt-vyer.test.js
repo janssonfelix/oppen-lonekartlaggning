@@ -408,7 +408,7 @@ describe('en låst flik svarar', () => {
         expect(flik.hasAttribute('disabled')).toBe(false);
         expect(flik.getAttribute('aria-disabled')).toBe('true');
         expect(flik.disabled).toBe(true);                      // egenskapen läser aria-disabled
-        expect(flik.title).toMatch(/Ladda upp/);
+        expect(flik.title).toMatch(/Läs in lönefilen/);
         expect(las('src/index.html')).not.toMatch(/<button class="nav-item"[^>]*\sdisabled[\s>]/);
     });
     it('ett klick går till Filer och kvalitet, ger filväljaren fokus och markerar lönefilskortet', () => {

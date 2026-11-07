@@ -207,7 +207,7 @@ describe('Lika arbete och filrutorna: ordning och kompakta rutor', () => {
         expect(d.getElementById('btn-try-demo')).toBeNull();
         expect(d.getElementById('btn-minimize-upload')).toBeNull();
         const text = d.getElementById('first-run-hint').textContent.replace(/\s+/g, ' ').trim();
-        expect(text).toMatch(/^Kom igång: läs in filerna \(organisationspaketet först om er organisation har ett, sedan lönefilen\)\. Ingen fil till hands\? Prova med demodata, litet demo eller stort demo \(7 000 personer\)\.$/i);
+        expect(text).toMatch(/^Kom igång: läs in filerna, först organisationspaketet om organisationen har ett och sedan lönefilen\. Ingen fil till hands\? Prova med demodata, litet demo eller stort demo \(7 000 personer\)\.$/i);
         expect(text.match(/\beller\b/g)).toHaveLength(1);   // inte "eller … eller": samma mening som lönefilskortet
         expect(d.getElementById('first-run-demo-link').textContent).toBe('litet demo');
         // Lönefilskortet i Filer och kvalitet har samma ord för samma val.
@@ -298,7 +298,7 @@ describe('Att göra', () => {
     it('punkten om oförklarat gap: hög vid signifikant gap över 5 %, ingen när gapet inte är signifikant', () => {
         const hog = med(rader(30000, 33000)).eval('buildActionChecklist()').find(i => i.id === 'reg-oforklarat');
         expect(hog).toMatchObject({ kategori: 'Lika arbete', prioritet: 'hög', tab: 'struktur' });
-        expect(hog.titel).toMatch(/Oförklarat lönegap för hela organisationen/);
+        expect(hog.titel).toMatch(/Oförklarad löneskillnad i hela organisationen/);
         expect(med(rader(30000, 30000)).eval('buildActionChecklist()').some(i => i.id === 'reg-oforklarat')).toBe(false);
     });
     it('ett kort: statusrad, Börja här och hela listan; inget iakttagelseblock', () => {

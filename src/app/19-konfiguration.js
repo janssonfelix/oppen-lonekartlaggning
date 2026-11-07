@@ -103,7 +103,7 @@ function applyConfigSnapshot(cfg) {
     if (!cfg || typeof cfg !== 'object')
         throw new Error('Konfigurationen är inte ett giltigt objekt.');
     if (cfg.version !== 2)
-        throw new Error(`Okänt konfigurationsformat (version ${cfg.version}). Förväntade version 2.`);
+        throw new Error(`Konfigurationsfilen är från en annan version av verktyget (version ${cfg.version}; den här läser version 2). Spara en ny konfigurationsfil i den här versionen.`);
 
     const tmp = {};
 

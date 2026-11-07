@@ -58,7 +58,7 @@ describe('#1 röktest: boot', () => {
         // finnas ÄVEN innan data laddats (demo laddas i ett senare describe-block).
         const host = win.document.getElementById('process-tracker');
         expect(host).toBeTruthy();
-        expect(host.innerHTML).toContain('Lönekartläggningsprocessen');
+        expect(host.innerHTML).toContain('Kartläggningens steg');
         const rows = host.querySelectorAll('.ptrack-row');
         expect(rows.length).toBe(9);                       // nio steg (Rapporttext är steg 7)
         expect(rows[0].querySelector('.ptrack-status').dataset.status).toBe('ej'); // steg 1 ej klart utan data

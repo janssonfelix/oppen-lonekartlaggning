@@ -2251,7 +2251,7 @@ const INAKTIVITET_STANDARD_MIN = 90;
 // benämningar och standard-PO utan att röra analyslogiken; den sätts av ett
 // organisationspaket.
 const DEFAULT_PROFILE = Object.freeze({
-    name:                    'Er organisation',
+    name:                    'Organisationen',
     benchmarkLabel:          'jämförelsestatistiken',
     benchmarkLabelGenitive:  'jämförelsestatistikens',
     benchmarkShort:          'jämförelsen',
@@ -5413,7 +5413,7 @@ function bakaIn(html, paketJson, meta = {}) {
     const k = kannIgenVerktyget(html);
     if (!k.ok) return { ok: false, fel: k.fel || 'Filen är inte verktyget.' };
     let obj;
-    try { obj = JSON.parse(String(paketJson)); } catch (_e) { return { ok: false, fel: 'Paketet är inte giltig JSON.' }; }
+    try { obj = JSON.parse(String(paketJson)); } catch (_e) { return { ok: false, fel: 'Paketet går inte att läsa som JSON. Spara paketet på nytt och försök igen.' }; }
     if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return { ok: false, fel: 'Paketet är inte ett objekt.' };
     const text = JSON.stringify(obj).replace(/</g, '\\u003c').replace(/&/g, '\\u0026');
     const [huvud, svans0] = _delad(html);
@@ -7540,7 +7540,7 @@ const __mirrorAttgora = (() => {
  */
 
 /** Kategorier för fynd som gäller skillnader mellan kvinnor och män (lagkravet). */
-const KONSRELATERADE = ['Lika arbete', 'EU 2023/970', 'Likvärdigt arbete'];
+const KONSRELATERADE = ['Lika arbete', 'Likvärdigt arbete'];
 
 const PRIORITET = { 'hög': 0, medel: 1, 'låg': 2 };
 
@@ -7576,8 +7576,8 @@ function stegLikaArbete({ regressionOk, t, d }) {
     if (!regressionOk) return { status: 'delvis', detail: 'Underlaget räcker ännu inte för en tillförlitlig regression.' };
     return {
         status: d >= t ? 'klar' : 'delvis',
-        detail: t ? `Oförklarat gap beräknat · ${d} av ${t} punkter hanterade i Att göra.`
-                  : 'Oförklarat gap beräknat — inga punkter att förklara eller åtgärda.',
+        detail: t ? `Oförklarad löneskillnad beräknad · ${d} av ${t} punkter hanterade i Att göra.`
+                  : 'Oförklarad löneskillnad beräknad — inga punkter att förklara eller åtgärda.',
     };
 }
 
@@ -7588,14 +7588,14 @@ function stegLikaArbete({ regressionOk, t, d }) {
  * produktägaren 2026-10-16).
  */
 function stegLikvardigt({ analys, antalPar, utelamnade = 0, k, t, d }) {
-    if (!analys) return { status: 'ej', detail: 'Granska likvärdiga arbeten på fliken.' };
+    if (!analys) return { status: 'ej', detail: 'Gå igenom kandidatparen i Likvärdigt arbete.' };
     if (antalPar === 0 && utelamnade > 0) {
         return { status: 'inget', detail: `Inget att hantera i Att göra: ${utelamnade} par har en grupp under ${k != null ? `${k} personer` : 'minsta gruppstorlek'} och redovisas bara i fliken Likvärdigt arbete — gå till steget för att granska dem.` };
     }
     if (antalPar === 0) return { status: 'klar', detail: 'Analysen körd — inga kandidatpar utifrån nuvarande trösklar.' };
     return {
         status: t > 0 && d >= t ? 'klar' : 'delvis',
-        detail: `${antalPar} kandidatpar (kvinnodominerade mot likvärdiga yrken) · ${d} av ${t} kandidatpar hanterade i Att göra.`,
+        detail: `${antalPar} kandidatpar (kvinnodominerade yrken mot jämförelseyrken med likvärdiga krav) · ${d} av ${t} kandidatpar hanterade i Att göra.`,
     };
 }
 
@@ -9573,7 +9573,7 @@ function tolkaPaket(text) {
     if (typeof text !== 'string') return { ok: false, fel: 'Filen kunde inte läsas.' };
     if (text.length > PAKET_MAX_BYTE) return { ok: false, fel: 'Filen är för stor för att vara ett organisationspaket (högst 5 MB).' };
     let o;
-    try { o = JSON.parse(text); } catch (_e) { return { ok: false, fel: 'Filen är inte giltig JSON.' }; }
+    try { o = JSON.parse(text); } catch (_e) { return { ok: false, fel: 'Filen är inte ett organisationspaket (den går inte att läsa som JSON). Be systemägaren om en ny fil.' }; }
     if (!o || typeof o !== 'object' || Array.isArray(o)) return { ok: false, fel: 'Filen är inte ett organisationspaket.' };
 
     if (o.format !== PAKET_FORMAT) return { ok: false, fel: 'Filen är inte ett organisationspaket för lönekartläggning.' };
@@ -9583,7 +9583,7 @@ function tolkaPaket(text) {
     const organisation = _text(o.organisation?.namn);
     if (!organisation) return { ok: false, fel: 'Paketet saknar organisationens namn (organisation.namn).' };
     const skapat = _text(o.skapat);
-    if (!skapat || !/^\d{4}-\d{2}-\d{2}$/.test(skapat)) return { ok: false, fel: 'Paketet saknar datum (skapat, ÅÅÅÅ-MM-DD).' };
+    if (!skapat || !/^\d{4}-\d{2}-\d{2}$/.test(skapat)) return { ok: false, fel: 'Paketet saknar datum (fältet skapat, ÅÅÅÅ-MM-DD). Be systemägaren om en ny fil.' };
     if (_allaTexter(o).some(t => PNR.test(t) || EPOST.test(t))) {
         return { ok: false, fel: 'Paketet innehåller något som liknar personnummer eller e-post och läses inte in.' };
     }
@@ -13750,7 +13750,7 @@ function _tableToMatrixExport(tableId) {
 function _copyTableToClipboard(...a) { return medExportLage(() => __copyTableToClipboardExport.apply(null, /** @type {any} */ (a))); }
 function __copyTableToClipboardExport(tableId, btn) {
     const rows = tableToMatrix(tableId);
-    if (!rows.length) { alert('Ingen tabelldata att kopiera.'); return; }
+    if (!rows.length) { alert('Tabellen är tom, så det finns inget att kopiera.'); return; }
     _copyMatrixToClipboard(rows, btn, { undantag: _kUndantagFor(document.getElementById(tableId)) });
 }
 // Rad-matris → TSV i urklipp. Delas av tabellverktygen och diagrammens exportmeny.
@@ -13770,7 +13770,7 @@ function _copyMatrixToClipboard(rows, btn, { undantag = '' } = {}) {
             const ta = document.createElement('textarea');
             ta.value = tsv; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.opacity = '0';
             document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); done();
-        } catch (_e) { alert('Kunde inte kopiera automatiskt. Använd CSV-knappen i stället.'); }
+        } catch (_e) { alert('Webbläsaren tillät inte kopieringen. Använd knappen CSV i stället.'); }
     };
     if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(tsv).then(done).catch(fallback);
@@ -13784,7 +13784,7 @@ document.addEventListener('click', e => {
         const rows = tableToMatrix(csvBtn.getAttribute('data-csv-table'));
         if (rows.length) _downloadCSV(rows, csvBtn.getAttribute('data-csv-file') || 'tabell',
             { undantag: _kUndantagFor(document.getElementById(csvBtn.getAttribute('data-csv-table') || '')) });
-        else alert('Ingen tabelldata att exportera.');
+        else alert('Tabellen är tom, så det finns inget att exportera.');
     }
 });
 
@@ -13850,7 +13850,7 @@ function updateCompliance() {
         // ren AID-policy). Då finns inget att jämföra mot — grönt "0 av 0" vore
         // falskt lugnande, så kortet blir 'na'.
         if (polTotal === 0) {
-            setCompCard('comp-pol', 0, 0, `${referensNamn()} saknar BAS-nivårader`, 'na');
+            setCompCard('comp-pol', 0, 0, `${referensNamn()} saknar rader per BAS-intervall`, 'na');
         } else {
             setCompCard('comp-pol', polLow, polTotal, `${polLow} av ${polTotal} BAS-intervall`, polLow === 0 ? 'ok' : polLow >= 2 ? 'crit' : 'warn');
         }
@@ -14124,7 +14124,7 @@ function renderProcessTracker({ punkter: givna } = {}) {
         if (!hasData) return { n: 3, tab: 'matrix', title: '3. Lika arbete — samma yrke', status: 'ej', detail: 'Kräver inläst underlag.' };
         const reg = (typeof runOLSRegression === 'function') ? runOLSRegression() : null;
         const ok = !!(reg && !reg.error);
-        const { t, d } = hanterade(['Lika arbete', 'EU 2023/970']);
+        const { t, d } = hanterade(['Lika arbete']);
         return { n: 3, tab: 'matrix', title: '3. Lika arbete — samma yrke', ..._agStegLikaArbete({ regressionOk: ok, t, d }) };
     }, { n: 3, tab: 'matrix', title: '3. Lika arbete — samma yrke', status: 'ej', detail: 'Kräver inläst underlag.' }));
 
@@ -14170,15 +14170,15 @@ function renderProcessTracker({ punkter: givna } = {}) {
     rows.push({ n: 6, tab: 'handlingsplan', avsnitt: 'hp-samverkan', title: '6. Samverkan med facket', status: 'manuell', detail: 'Manuellt steg: samverka om kartläggningen, analysen och åtgärderna och dokumentera samverkan. Stöd finns i kortet Samverkan & uppföljning på Handlingsplan; protokollet för gemensam lönebedömning finns under Exportera.' });
 
     // 7. Rapporttext — kan inte auto-härledas
-    rows.push({ n: 7, tab: 'rapporttext', title: '7. Rapporttext', status: 'manuell', detail: 'Manuellt steg: gå igenom auto-utkastet och rapportunderlaget i fynd och klarspråk och för in texten i er rapport.' });
+    rows.push({ n: 7, tab: 'rapporttext', title: '7. Rapporttext', status: 'manuell', detail: 'Manuellt steg: gå igenom utkastet och rapportunderlaget och för in texten i dokumentationen.' });
 
     // 8. Dokumentation — kan inte auto-härledas
-    rows.push({ n: 8, tab: 'dokumentera', title: '8. Dokumentation', status: 'manuell', detail: 'Manuellt steg: ladda ner Word-utkastet under Exportera, komplettera de gula [HR fyller i]-fälten och spara som er rapport.' });
+    rows.push({ n: 8, tab: 'dokumentera', title: '8. Dokumentation', status: 'manuell', detail: 'Manuellt steg: ladda ner Word-utkastet under Exportera, fyll i de gula fälten [HR fyller i] och spara filen som organisationens dokumentation.' });
 
     // 9. § 3:11–13 Uppföljning. Verktyget stödjer EN kartläggning — uppföljningen
     // av handlingsplanen sker i arbetsgivarens egen process, som samverkan och
     // dokumentation ovan.
-    rows.push({ n: 9, tab: 'dokumentera', title: '9. Uppföljning av handlingsplanen', status: 'manuell', detail: 'Manuellt steg: följ upp planens åtgärder i er egen process. Handlingsplanen exporteras under Exportera.' });
+    rows.push({ n: 9, tab: 'dokumentera', title: '9. Uppföljning av handlingsplanen', status: 'manuell', detail: 'Manuellt steg: följ upp planens åtgärder i organisationens egen process. Handlingsplanen exporteras under Exportera.' });
 
     const autoDone = rows.filter(r => r.status === 'klar').length;
     const autoTotal = rows.filter(r => r.status !== 'manuell').length;
@@ -14200,11 +14200,11 @@ function renderProcessTracker({ punkter: givna } = {}) {
     // (h3) och datakvalitetspanelens h4:or — en h2 här skulle ge ett h2→h4-hopp som
     // axe-sviten flaggar (heading-order). h3 håller "öka med max ett".
     host.innerHTML = `
-        <div class="card ptrack" role="region" aria-label="Lönekartläggningsprocessen">
-            <h3>Lönekartläggningsprocessen — var står ni?</h3>
+        <div class="card ptrack" role="region" aria-label="Kartläggningens steg">
+            <h3>Kartläggningens steg — var står du?</h3>
             <p class="ptrack-intro">
                 Översikt över hela lönekartläggningen, steg för steg.
-                Statusen härleds automatiskt ur ert arbete och <em>föreslår</em> nästa steg —
+                Statusen härleds automatiskt ur ditt arbete och <em>föreslår</em> nästa steg —
                 den dömer inte. ${autoTotal ? `<strong>${autoDone}/${autoTotal}</strong> auto-härledda steg klara.` : ''}
             </p>
             ${rowsHtml}
@@ -15065,8 +15065,8 @@ function buildActionChecklist({ endastGrupper = false } = {}) {
                 items.push({
                     id: 'reg-oforklarat', kategori: 'Lika arbete',
                     prioritet: Math.abs(reg.konPct) > 5 ? 'hög' : 'medel',
-                    titel: `Oförklarat lönegap för hela organisationen: kvinnor ${_agPct(reg.konPct)} % ${_agRiktning(reg.konPct)} lön än män (${reg.fras ? `efter ${reg.fras}` : 'inget räknat bort'})`,
-                    detalj: 'Ett oförklarat gap är inte samma sak som ett osakligt. Pröva skillnaden per yrkesgrupp i Lika arbete.',
+                    titel: `Oförklarad löneskillnad i hela organisationen: kvinnor har ${_agPct(reg.konPct)} % ${_agRiktning(reg.konPct)} lön än män (${reg.fras ? `efter ${reg.fras}` : 'inget räknat bort'})`,
+                    detalj: 'En oförklarad skillnad är inte samma sak som en osaklig. Pröva skillnaden per yrkesgrupp i Lika arbete.',
                     tab: 'struktur', källa: 'Regressionen i Lönestruktur'
                 });
             }
@@ -15149,10 +15149,10 @@ function buildActionChecklist({ endastGrupper = false } = {}) {
                     if (sig && Math.abs(p.gapPct) > 5) {
                         items.push({
                             id: `eu-bas-${p.bas}`,
-                            kategori: 'EU 2023/970',
+                            kategori: 'Lika arbete',
                             prioritet: 'hög',
-                            titel: `BAS ${p.bas}: kvinnor ${_agPct(p.gapPct)} % ${_agRiktning(p.gapPct)} lön efter ålderskontroll — utredningskrav`,
-                            detalj: `Statistiskt säkerställt också efter korrigering för många samtidiga tester (p=${p.pValue < 0.001 ? '< 0,001' : _agTal(p.pValue, 3)}, q=${q != null && q < 0.001 ? '< 0,001' : (q != null ? _agTal(q, 3) : '—')}). Över 5 %-tröskeln i EU:s lönetransparensdirektiv — här aktualiseras direktivets utredningssteg.`,
+                            titel: `BAS ${p.bas}: kvinnor ${_agPct(p.gapPct)} % ${_agRiktning(p.gapPct)} lön efter ålderskontroll, statistiskt säkerställd`,
+                            detalj: `Statistiskt säkerställt också efter korrigering för många samtidiga tester (p=${p.pValue < 0.001 ? '< 0,001' : _agTal(p.pValue, 3)}, q=${q != null && q < 0.001 ? '< 0,001' : (q != null ? _agTal(q, 3) : '—')}). Skillnaden är över 5 procent. Lagen kräver att den analyseras, och när lönetransparensdirektivet gäller kan den också leda till en gemensam lönebedömning.`,
                             tab: 'matrix',
                             källa: 'Lika arbete'
                         });
@@ -15169,7 +15169,7 @@ function buildActionChecklist({ endastGrupper = false } = {}) {
                     id: 'livscykel-vaxer',
                     kategori: 'Livscykel',
                     prioritet: 'medel',
-                    titel: `Lönegapet växer med åldern (kvinnors lön mot mäns sjunker ${_agTal(Math.abs(life.gapDelta), 1)} procentenheter mellan 25 och 65 år)`,
+                    titel: `Löneskillnaden växer med åldern (kvinnors lön mot mäns sjunker ${_agTal(Math.abs(life.gapDelta), 1)} procentenheter mellan 25 och 65 år)`,
                     detalj: 'Kan indikera långsammare karriärväg för kvinnor, föräldraledighetseffekter eller könsbias i lönerevisioner. Granska lönerevisionshistorik och befordringsstatistik per kön.',
                     tab: 'kon',
                     källa: 'Livscykelanalys'
@@ -15326,7 +15326,7 @@ function renderActionChecklist() {
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
 function exportActionChecklistCSV(...a) { return medExportLage(() => _exportActionChecklistCSVExport.apply(null, /** @type {any} */ (a))); }
 function _exportActionChecklistCSVExport(items, done) {
-    if (!items.length) { alert('Ingen åtgärdslista att exportera.'); return; }
+    if (!items.length) { alert('Det finns inget att exportera ännu. Läs in lönefilen först.'); return; }
     const rows = [[
         'Status', 'Prioritet', 'Kategori', 'Punkt', 'Detalj', 'Källa', 'Flik'
     ]];
@@ -15456,7 +15456,7 @@ function applyConfigSnapshot(cfg) {
     if (!cfg || typeof cfg !== 'object')
         throw new Error('Konfigurationen är inte ett giltigt objekt.');
     if (cfg.version !== 2)
-        throw new Error(`Okänt konfigurationsformat (version ${cfg.version}). Förväntade version 2.`);
+        throw new Error(`Konfigurationsfilen är från en annan version av verktyget (version ${cfg.version}; den här läser version 2). Spara en ny konfigurationsfil i den här versionen.`);
 
     const tmp = {};
 
@@ -17089,7 +17089,7 @@ function _excelLonepolitikMetod(blad) {
 function exportAllToExcel(...a) { return medExportLage(() => _exportAllToExcelExport.apply(null, /** @type {any} */ (a))); }
 function _exportAllToExcelExport() {
     if (!state.data.length) { alert('Ladda upp data först.'); return; }
-    if (typeof XLSX === 'undefined') { alert('XLSX-bibliotek saknas.'); return; }
+    if (typeof XLSX === 'undefined') { alert('Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.'); return; }
     const wb = _excelAlltBok();
     XLSX.writeFile(wb, `lonekartlaggning_komplett_${new Date().toISOString().slice(0,10)}.xlsx`);
     _showExportSensitivityToast();
@@ -17242,7 +17242,7 @@ function _jpaExkluderadeTexter() {
 function exportJPAProtocol(...a) { return medExportLage(() => _exportJPAProtocolExport.apply(null, /** @type {any} */ (a))); }
 function _exportJPAProtocolExport() {
     if (!state.data.length) { alert('Ladda upp data först.'); return; }
-    if (typeof XLSX === 'undefined') { alert('XLSX-bibliotek saknas.'); return; }
+    if (typeof XLSX === 'undefined') { alert('Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.'); return; }
 
     const d = getData();
     const now = new Date();
@@ -17811,7 +17811,7 @@ function _rensaAllData({ inbakat = true } = {}) {
     // 4. Lås tabbar
     ['tab-kon','tab-matrix','tab-prioritering','tab-loneoversyn','tab-struktur','tab-benchmark','tab-likvardighet','tab-utforska','tab-rapporttext'].forEach(id => {
         const el = document.getElementById(id);
-        if (el) { /** @type {HTMLInputElement} */ (el).disabled = true; el.setAttribute('title', 'Ladda upp strukturdata för att aktivera'); }
+        if (el) { /** @type {HTMLInputElement} */ (el).disabled = true; el.setAttribute('title', 'Läs in lönefilen för att öppna fliken'); }
     });
     if (typeof _visaJamforelseFlik === 'function') _visaJamforelseFlik(false);
     state.filnamn = { data: null, policy: null, statistik: null };
@@ -18251,7 +18251,7 @@ function openDataResidency() {
         <div class="lh-1_6">
             <p><strong>Datafotavtryck just nu</strong></p>
             <ul class="marg-0-0-14-20">
-                <li>Strukturdata: <strong>${n.toLocaleString('sv-SE')}</strong> rader (~${approxKB} KB i minnet)</li>
+                <li>Lönefilen: <strong>${n.toLocaleString('sv-SE')}</strong> rader (~${approxKB} KB i minnet)</li>
                 <li>Referens: ${esc(referensNamn())}${esc(referensKalla())}: <strong>${policyN}</strong> rader</li>
                 <li>Jämförelsestatistik: <strong>${statN}</strong> rader</li>
                 ${_fkVantar ? '<li>En lönefil väntar på Läs in i förhandskontrollen: den hålls i minnet men är inte inläst, och Rensa all data eller rensningen vid inaktivitet släpper den.</li>' : ''}
@@ -18259,16 +18259,16 @@ function openDataResidency() {
                 <li>Nätverkstrafik: <strong>0 byte</strong> (CSP <code>connect-src 'none'</code> blockerar all utgående trafik)</li>
             </ul>
             <p><strong>Schema (vitlistade fält per rad)</strong></p>
-            <p class="marg-0-0-6">Verktyget extraherar enbart fem fält ur din fil — BAS, yrke, lön, ålder och kön, plus valfri arbetsvärderingspoäng och valfri ansvarskod enligt AID — och noterar radens nummer i filen. Allt annat — personnummer, namn, e-post, anställningsnummer, fri text bortom yrkesetiketten — droppas vid inläsning och når aldrig den interna datastrukturen.</p>
+            <p class="marg-0-0-6">Verktyget läser bara fem fält ur filen: BAS-intervall, yrke, lön, ålder och kön, plus valfri arbetsvärderingspoäng och valfri ansvarskod enligt AID. Det noterar också radens nummer i filen. Allt annat (personnummer, namn, e-post, anställningsnummer, fri text utöver yrkesbenämningen) tas bort vid inläsningen och sparas aldrig.</p>
             ${sampleRow}
             <p class="bak-ok-yta ram-v-3-ok rund-4 fs-sm marg-t-18 pad-10-14">
-                <strong>Inbyggt dataskydd (art. 25):</strong> minimering sker innan datan landar i state — inte efter. Filen läses in i minnet, raderna minimeras en i taget, och filens övriga innehåll släpps när inläsningen är klar.
+                <strong>Inbyggt dataskydd enligt dataskyddsförordningen:</strong> uppgifterna minimeras innan de sparas i minnet, inte efter. Filen läses in i minnet, raderna minimeras en i taget, och filens övriga innehåll släpps när inläsningen är klar.
             </p>
 
             <!-- Inaktivitetstimer-inställning -->
             <h3 class="fs-md marg-t-18">Automatisk sessionsrensning vid inaktivitet</h3>
             <p class="text-dampad-sm marg-0-0-8">
-                Skydd mot scenariot där du lämnar arbetsstationen olåst. Vid vald timeout visas en varning med möjlighet att förlänga sessionen — om du inte svarar inom 60 sekunder rensas all data automatiskt (motsvarande "Rensa all data"-knappen).
+                Skyddar om du lämnar datorn olåst. När tiden har gått får du en varning och kan förlänga. Svarar du inte inom 60 sekunder rensas allt, som med knappen Rensa all data.
             </p>
             <div class="rad-bryt-mitt gap-10">
                 <label for="inactivity-timeout-select" class="fs-sm fw-600">Timeout:</label>
@@ -19582,7 +19582,7 @@ function _findCsvHeader(text, synonymGroups, minHits = 2, profiler = []) {
  * @throws {Error} om arbetsboken inte kan läsas eller saknar datarader.
  */
 function _xlsxToObjects(buf, synonymGroups, minHits = 2, profiler = []) {
-    if (typeof XLSX === 'undefined') throw new Error('Excel-biblioteket kunde inte laddas.');
+    if (typeof XLSX === 'undefined') throw new Error('Excelfilen kan inte läsas: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.');
     const wb = XLSX.read(new Uint8Array(buf), { type: 'array' });
     const sheetName = wb.SheetNames[0];
     const ws = wb.Sheets[sheetName];
@@ -21183,7 +21183,7 @@ function _exportLikvardighetExport() {
     try {
         stegnamn = 'kontroll XLSX-bibliotek';
         if (typeof XLSX === 'undefined' || !XLSX.utils || typeof XLSX.writeFile !== 'function') {
-            alert('Excel-bibliotek (SheetJS) saknas eller är ofullständigt i bygget. Ladda om sidan med Ctrl+Shift+R.');
+            alert('Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.');
             return;
         }
 
@@ -22041,7 +22041,7 @@ function _forecastRemediationSeed() {
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
 function exportForecast(...a) { return medExportLage(() => _exportForecastExport.apply(null, /** @type {any} */ (a))); }
 function _exportForecastExport() {
-    if (typeof XLSX === 'undefined') { alert('Excel-biblioteket kunde inte laddas.'); return; }
+    if (typeof XLSX === 'undefined') { alert('Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.'); return; }
     const out = state.forecast.result;
     if (!out) { alert('Ingen prognos att exportera ännu.'); return; }
     _fcKandidater();   // uppdaterar meningen om utelämnade par efter gällande tröskel
@@ -22554,7 +22554,7 @@ function _buildNarrative(d, ctx) {
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
 function exportEuReport(...a) { return medExportLage(() => _exportEuReportExport.apply(null, /** @type {any} */ (a))); }
 function _exportEuReportExport() {
-    if (typeof XLSX === 'undefined') { alert('Excel-biblioteket kunde inte laddas.'); return; }
+    if (typeof XLSX === 'undefined') { alert('Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.'); return; }
     const d = getData();
     if (!d.length) { alert('Ingen data.'); return; }
     const kr = n => n == null ? '' : Math.round(n);
@@ -22797,7 +22797,7 @@ statInput.addEventListener("change", e => {
             const idxAndelKv = hdr.findIndex(t =>
                 /(andel\s*kvinnor|kvinno?andel|%\s*kvinnor)/.test(t)
             );
-            if (idxAID === -1 || idxMed === -1) throw new Error("AID eller Median saknas i filen.");
+            if (idxAID === -1 || idxMed === -1) throw new Error("Filen saknar kolumnen AID eller Median. Kontrollera rubrikraden och läs in filen igen.");
             // Rad-objekten är nycklade på originalrubrikerna — översätt index → nyckel.
             const col = i => i !== -1 ? res.headers[i] : null;
             const cAID = col(idxAID), cBAS = col(idxBAS), cMed = col(idxMed),
@@ -27865,7 +27865,7 @@ function _hpValideraKonfiguration(lista) {
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
 function exportHandlingsplan(...a) { return medExportLage(() => _exportHandlingsplanExport.apply(null, /** @type {any} */ (a))); }
 function _exportHandlingsplanExport() {
-    if (typeof XLSX === 'undefined') { alert('Excel-biblioteket kunde inte laddas.'); return; }
+    if (typeof XLSX === 'undefined') { alert('Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.'); return; }
     const header = ['Åtgärd', 'Berörd grupp (AID·BAS)', 'Antal berörda', 'Underlag', 'Sakligt skäl prövat?', 'Beräknad kostnad (kr/år, inkl. PO)', 'Ansvarig', 'Tidsplan (senast inom 3 år)', 'Status'];
     const seed = _handlingsplanSeedRows();
     const prioCount = seed.prioCount, lvCount = seed.lvCount;
@@ -29456,7 +29456,7 @@ function _wireTablistKeys(buttons) {
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
 function exportBenchmarkExcel(...a) { return medExportLage(() => _exportBenchmarkExcelExport.apply(null, /** @type {any} */ (a))); }
 function _exportBenchmarkExcelExport() {
-    if (typeof XLSX === 'undefined') { alert('XLSX-biblioteket är inte laddat.'); return; }
+    if (typeof XLSX === 'undefined') { alert('Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.'); return; }
     const d = getData();
     if (!d.length) { alert('Ingen data laddad. Ladda upp strukturdatan först.'); return; }
     const hasStat = state.statistik.length > 0;
@@ -29953,7 +29953,7 @@ function _zipDiagramExport() {
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
 function exportZip(...a) { return medExportLage(() => _exportZipExport.apply(null, /** @type {any} */ (a))); }
 async function _exportZipExport() {
-    if (typeof JSZip === 'undefined') { alert('JSZip ej laddad.'); return false; }
+    if (typeof JSZip === 'undefined') { alert('Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.'); return false; }
     if (!getData().length) { alert('Ladda upp data först.'); return false; }
     const zip = new JSZip();
     if (typeof showLoading === 'function') showLoading();
@@ -33506,7 +33506,7 @@ document.getElementById('inst-fk-stopp')?.addEventListener('change', e => {
  */
 const SOK_FUNKTIONER = [
     // Översikt
-    { namn: 'Lönekartläggningsprocessen', synonymer: ['steg', 'process', 'arbetsgång', 'kom igång'], flik: 'dashboard', avsnitt: 'avsnitt-ov-process' },
+    { namn: 'Kartläggningens steg', synonymer: ['lönekartläggningsprocessen', 'steg', 'process', 'arbetsgång', 'kom igång'], flik: 'dashboard', avsnitt: 'avsnitt-ov-process' },
     { namn: 'Att göra: alla punkter', synonymer: ['att göra', 'alla punkter', 'checklista', 'avbockning', 'punkter', 'uppgifter'], flik: 'dashboard', avsnitt: 'avsnitt-ov-punkter' },
     // Filer och kvalitet
     { namn: 'Demodata: litet eller stort demo (7 000 personer)', synonymer: ['demo', 'demodata', 'stort demo', 'exempeldata', 'prova', 'syntetisk data', '7000'], flik: 'filer', avsnitt: 'upload-demo-val' },

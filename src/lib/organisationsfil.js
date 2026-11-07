@@ -83,7 +83,7 @@ export function bakaIn(html, paketJson, meta = {}) {
     const k = kannIgenVerktyget(html);
     if (!k.ok) return { ok: false, fel: k.fel || 'Filen är inte verktyget.' };
     let obj;
-    try { obj = JSON.parse(String(paketJson)); } catch (_e) { return { ok: false, fel: 'Paketet är inte giltig JSON.' }; }
+    try { obj = JSON.parse(String(paketJson)); } catch (_e) { return { ok: false, fel: 'Paketet går inte att läsa som JSON. Spara paketet på nytt och försök igen.' }; }
     if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return { ok: false, fel: 'Paketet är inte ett objekt.' };
     const text = JSON.stringify(obj).replace(/</g, '\\u003c').replace(/&/g, '\\u0026');
     const [huvud, svans0] = _delad(html);

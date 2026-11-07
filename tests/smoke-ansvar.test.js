@@ -98,7 +98,7 @@ describe('säkerhet, dataskydd och HR-logik', () => {
         // När alla punkter för lika respektive likvärdigt arbete är hanterade blir stegen klara.
         const punkter = w.eval('buildActionChecklist()');
         const done = w.__state._actionChecklistDone || (w.__state._actionChecklistDone = new w.Set());
-        punkter.filter(p => ['Lika arbete', 'EU 2023/970', 'Likvärdigt arbete'].includes(p.kategori)).forEach(p => done.add(p.id));
+        punkter.filter(p => ['Lika arbete', 'Likvärdigt arbete'].includes(p.kategori)).forEach(p => done.add(p.id));
         w.__renderProcessTracker();
         expect(status(w, /3\. Lika arbete/)).toBe('klar');
         expect(status(w, /4\. Likvärdigt arbete/)).toBe('klar');
@@ -124,7 +124,7 @@ describe('säkerhet, dataskydd och HR-logik', () => {
         w.__loadDemoData();
         w.eval('renderActionChecklist()');
         const forsta = w.document.querySelector('#att-gora-borja li .att-gora-kat').textContent;
-        expect(['Lika arbete', 'EU 2023/970', 'Likvärdigt arbete']).toContain(forsta.trim());
+        expect(['Lika arbete', 'Likvärdigt arbete']).toContain(forsta.trim());
         expect(w.eval('buildActionChecklist()').filter(p => /^(Börja här|Värt att granska):/.test(p.titel))).toEqual([]);
     });
 });

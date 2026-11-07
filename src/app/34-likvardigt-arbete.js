@@ -866,7 +866,7 @@ function _exportLikvardighetExport() {
     try {
         stegnamn = 'kontroll XLSX-bibliotek';
         if (typeof XLSX === 'undefined' || !XLSX.utils || typeof XLSX.writeFile !== 'function') {
-            alert('Excel-bibliotek (SheetJS) saknas eller är ofullständigt i bygget. Ladda om sidan med Ctrl+Shift+R.');
+            alert('Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.');
             return;
         }
 

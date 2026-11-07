@@ -701,7 +701,7 @@ function _forecastRemediationSeed() {
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
 function exportForecast(...a) { return medExportLage(() => _exportForecastExport.apply(null, /** @type {any} */ (a))); }
 function _exportForecastExport() {
-    if (typeof XLSX === 'undefined') { alert('Excel-biblioteket kunde inte laddas.'); return; }
+    if (typeof XLSX === 'undefined') { alert('Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.'); return; }
     const out = state.forecast.result;
     if (!out) { alert('Ingen prognos att exportera ännu.'); return; }
     _fcKandidater();   // uppdaterar meningen om utelämnade par efter gällande tröskel

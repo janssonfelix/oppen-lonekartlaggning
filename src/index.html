@@ -41,7 +41,7 @@
     <div id="http-warning" class="http-warning dold" role="alert">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
         <div class="flex-1">
-            <strong>Osäker anslutning (HTTP).</strong> Verktyget körs över en okrypterad anslutning. För full säkerhet bör du använda HTTPS eller öppna filen direkt från disk (<code>file://</code>). Eventuella nätverksloggare i mellanled kan se URL:en (men inte din lönedata, som aldrig sänds).
+            <strong>Osäker anslutning (HTTP).</strong> Sidan är öppnad över en okrypterad anslutning. Lönedata skickas aldrig, men någon på nätverket kan se adressen. Öppna filen från disken (<code>file://</code>) eller över HTTPS.
         </div>
         <button id="http-warning-dismiss" class="btn btn-secondary btn-sm" aria-label="Stäng varning">×</button>
     </div>
@@ -64,55 +64,55 @@
                     <span class="nav-etikett">Filer och kvalitet</span>
                     <svg class="ikon nav-las" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
                 </button>
-                <button class="nav-item" data-tip="Granska om något i era regler, tillägg eller förmåner kan missgynna ett kön. Enligt diskrimineringslagens regler om lönekartläggning." data-tab="bestammelser" id="tab-bestammelser" aria-controls="view-bestammelser">
+                <button class="nav-item" data-tip="Granska om något i organisationens regler, tillägg eller förmåner kan missgynna ett kön." data-tab="bestammelser" id="tab-bestammelser" aria-controls="view-bestammelser">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
                     <span class="nav-etikett">Regler &amp; praxis</span>
                     <svg class="ikon nav-las" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
                 </button>
                 <div class="nav-group" role="presentation" aria-hidden="true">2 · Kartläggning</div>
-                <button class="nav-item" data-tip="Fördjupning, inget lagkrav. Hur ligger lönerna till mot det ni jämför er med — ställningstagandet och jämförelsestatistiken?" data-tab="benchmark" id="tab-benchmark" aria-disabled="true" title="Ladda upp strukturdata för att aktivera" aria-controls="view-benchmark">
+                <button class="nav-item" data-tip="Fördjupning, inget lagkrav. Hur ligger lönerna till mot det organisationen jämför sig med — ställningstagandet och jämförelsestatistiken?" data-tab="benchmark" id="tab-benchmark" aria-disabled="true" title="Läs in lönefilen för att öppna fliken" aria-controls="view-benchmark">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="6" x2="12" y2="12"></line><line x1="12" y1="12" x2="16" y2="14"></line></svg>
                     <span class="nav-etikett">Löneläget</span>
                     <svg class="ikon nav-las" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
                 </button>
-                <button class="nav-item" data-tip="Kvinnor och män i samma yrke — skiljer sig lönen? Enligt diskrimineringslagen och EU:s lönetransparensdirektiv." data-tab="matrix" id="tab-matrix" aria-disabled="true" title="Ladda upp strukturdata för att aktivera" aria-controls="view-lika-yrken">
+                <button class="nav-item" data-tip="Kvinnor och män i samma yrke — skiljer sig lönen?" data-tab="matrix" id="tab-matrix" aria-disabled="true" title="Läs in lönefilen för att öppna fliken" aria-controls="view-lika-yrken">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
                     <span class="nav-etikett">Lika arbete</span>
                     <svg class="ikon nav-las" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
                 </button>
-                <button class="nav-item" data-tip="Kvinnodominerade yrken jämförs med andra yrken som kräver lika mycket. Enligt diskrimineringslagens regler om likvärdigt arbete." data-tab="likvardighet" id="tab-likvardighet" aria-disabled="true" title="Ladda upp strukturdata för att aktivera" aria-controls="view-likvardighet">
+                <button class="nav-item" data-tip="Kvinnodominerade yrken jämförs med andra yrken som kräver lika mycket." data-tab="likvardighet" id="tab-likvardighet" aria-disabled="true" title="Läs in lönefilen för att öppna fliken" aria-controls="view-likvardighet">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 6h18"></path><path d="M3 12h18"></path><path d="M3 18h18"></path><path d="M8 3v18"></path><path d="M16 3v18"></path></svg>
                     <span class="nav-etikett">Likvärdigt arbete</span>
                     <svg class="ikon nav-las" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
                 </button>
-                <button class="nav-item" data-tip="Varför sitter gapet där det sitter: fördelning mellan nivåer, lön inom nivåer, vad som blir kvar när ålder och nivå räknats bort, och EU-direktivets rapportmått." data-tab="struktur" id="tab-struktur" aria-disabled="true" title="Ladda upp strukturdata för att aktivera" aria-controls="view-struktur view-skevhet view-regression">
+                <button class="nav-item" data-tip="Var uppstår skillnaden? Fördelningen över BAS-intervall, lönen inom dem, vad som blir kvar när ålder och BAS-intervall räknats bort, och måtten i lönetransparensdirektivet." data-tab="struktur" id="tab-struktur" aria-disabled="true" title="Läs in lönefilen för att öppna fliken" aria-controls="view-struktur view-skevhet view-regression">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 3v18h18"></path><rect x="7" y="12" width="3" height="6"></rect><rect x="12" y="8" width="3" height="10"></rect><rect x="17" y="4" width="3" height="14"></rect></svg>
                     <span class="nav-etikett">Lönestruktur</span>
                     <svg class="ikon nav-las" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
                 </button>
-                <button class="nav-item" data-tip="Fördjupning, inget lagkrav. Finns skillnaden kvar vid samma ålder, och är den större i de äldre grupperna?" data-tab="kon" id="tab-kon" aria-disabled="true" title="Ladda upp strukturdata för att aktivera" aria-controls="view-kon view-demografi view-livscykel">
+                <button class="nav-item" data-tip="Fördjupning, inget lagkrav. Finns skillnaden kvar vid samma ålder, och är den större i de äldre grupperna?" data-tab="kon" id="tab-kon" aria-disabled="true" title="Läs in lönefilen för att öppna fliken" aria-controls="view-kon view-demografi view-livscykel">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
                     <span class="nav-etikett">Ålder & karriär</span>
                     <svg class="ikon nav-las" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
                 </button>
                 <div class="nav-group" role="presentation" aria-hidden="true">3 · Åtgärder</div>
-                <button class="nav-item" data-tip="Vad bör åtgärdas först, och vad kostar det? Yrkesgrupperna ordnade efter oförklarad skillnad och kostnaden att rätta den." data-tab="prioritering" id="tab-prioritering" aria-disabled="true" title="Ladda upp strukturdata för att aktivera" aria-controls="view-prioritering">
+                <button class="nav-item" data-tip="Vad bör åtgärdas först, och vad kostar det? Yrkesgrupperna ordnade efter oförklarad skillnad och kostnaden att rätta den." data-tab="prioritering" id="tab-prioritering" aria-disabled="true" title="Läs in lönefilen för att öppna fliken" aria-controls="view-prioritering">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
                     <span class="nav-etikett">Prioritering</span>
                     <svg class="ikon nav-las" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
                 </button>
-                <button class="nav-item" data-tip="Hur fördelas potten? Simulera generella och riktade påslag och se kostnad och lönegap före och efter. Rör inte era system." data-tab="loneoversyn" id="tab-loneoversyn" aria-disabled="true" title="Ladda upp strukturdata för att aktivera" aria-controls="view-loneoversyn">
+                <button class="nav-item" data-tip="Hur fördelas potten? Pröva generella och riktade påslag och se kostnaden och löneskillnaden före och efter. Organisationens system påverkas inte." data-tab="loneoversyn" id="tab-loneoversyn" aria-disabled="true" title="Läs in lönefilen för att öppna fliken" aria-controls="view-loneoversyn">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
                     <span class="nav-etikett">Löneöversyn</span>
                     <svg class="ikon nav-las" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
                 </button>
-                <button class="nav-item" data-tip="Vad ska göras, av vem och när. Enligt diskrimineringslagen: åtgärder så snart som möjligt och senast inom tre år, och skriftlig dokumentation av arbetet." data-tab="handlingsplan" id="tab-handlingsplan" aria-controls="view-handlingsplan">
+                <button class="nav-item" data-tip="Vad ska göras, av vem och när, och vad kostar det." data-tab="handlingsplan" id="tab-handlingsplan" aria-controls="view-handlingsplan">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path><line x1="3" y1="9" x2="3" y2="9"></line></svg>
                     <span class="nav-etikett">Handlingsplan</span>
                     <svg class="ikon nav-las" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
                 </button>
                 <div class="nav-group" role="presentation" aria-hidden="true">4 · Rapport</div>
-                <button class="nav-item" data-tip="Utkastet i klarspråk och de färdiga avsnitten att klistra in i rapporten." data-tab="rapporttext" id="tab-rapporttext" aria-disabled="true" title="Ladda upp strukturdata för att aktivera" aria-controls="view-rapporttext">
+                <button class="nav-item" data-tip="Ett utkast till rapporttexten och de färdiga avsnitten att klistra in i dokumentationen." data-tab="rapporttext" id="tab-rapporttext" aria-disabled="true" title="Läs in lönefilen för att öppna fliken" aria-controls="view-rapporttext">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><path d="M14 2v6h6"></path><path d="M8 13h8"></path><path d="M8 17h8"></path><path d="M8 9h2"></path></svg>
                     <span class="nav-etikett">Rapporttext</span>
                     <svg class="ikon nav-las" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
@@ -122,13 +122,13 @@
                     <span class="nav-etikett">Exportera</span>
                     <svg class="ikon nav-las" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
                 </button>
-                <button class="nav-item" data-tip="Bygg egna vyer: välj vad du vill gruppera på och vilket mått du vill se." data-tab="utforska" id="tab-utforska" aria-disabled="true" title="Ladda upp strukturdata för att aktivera" aria-controls="view-rapport view-utforska">
+                <button class="nav-item" data-tip="Bygg egna vyer: välj vad du vill gruppera på och vilket mått du vill se." data-tab="utforska" id="tab-utforska" aria-disabled="true" title="Läs in lönefilen för att öppna fliken" aria-controls="view-rapport view-utforska">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><line x1="4" y1="20" x2="4" y2="10"></line><line x1="10" y1="20" x2="10" y2="4"></line><line x1="16" y1="20" x2="16" y2="14"></line><line x1="2" y1="20" x2="22" y2="20"></line></svg>
                     <span class="nav-etikett">Tabeller och egna vyer</span>
                     <svg class="ikon nav-las" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
                 </button>
                 <div class="nav-group" role="presentation" aria-hidden="true">Arbetet</div>
-                <button class="nav-item" data-tip="Spara konfigurationen, jämför med en ögonblicksbild eller med förra året, och kör självdiagnostiken." data-tab="arbetet" id="tab-arbetet" aria-controls="view-arbetet">
+                <button class="nav-item" data-tip="Spara konfigurationen, jämför med en ögonblicksbild eller med förra året, och kontrollera verktyget med testdata." data-tab="arbetet" id="tab-arbetet" aria-controls="view-arbetet">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><path d="M17 21v-8H7v8"></path><path d="M7 3v5h8"></path></svg>
                     <span class="nav-etikett">Spara och jämför år</span>
                     <svg class="ikon nav-las" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
@@ -167,7 +167,7 @@
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
                     <span class="knapp-text">Förklaring</span>
                 </button>
-                <button id="btn-forhandsvisa" class="btn btn-secondary btn-sm mitt rad-inline gap-6" type="button" aria-pressed="false" title="Visa flikarna som i det som lämnar verktyget: lönemått för grupper under minsta gruppstorlek redovisas inte">
+                <button id="btn-forhandsvisa" class="btn btn-secondary btn-sm mitt rad-inline gap-6" type="button" aria-pressed="false" title="Visa flikarna som de blir i exporten: lönemått för grupper under minsta gruppstorlek visas inte">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
                     <span class="knapp-text">Som i exporten</span>
                 </button>
@@ -193,7 +193,7 @@
             <!-- ADR-51: förhandsvisning — flikarna ritas i exportläget tills användaren stänger av den. -->
             <div id="forhandsvisning-banner" class="forhandsvisning-banner" role="status" aria-live="polite" hidden>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
-                <span><strong>Förhandsvisning av exporten.</strong> Flikarna visas som i det som lämnar verktyget: lönemått för grupper med färre än <span data-k-troskel>10</span> personer redovisas inte. I vanligt läge visar skärmen alla grupper.</span>
+                <span><strong>Förhandsvisning av exporten.</strong> Du ser flikarna som de blir i exporten: lönemått för grupper med färre än <span data-k-troskel>10</span> personer visas inte. I vanligt läge visar skärmen alla grupper.</span>
                 <button id="btn-forhandsvisa-av" type="button" class="forhandsvisning-av">Visa skärmen igen</button>
             </div>
             <div id="demo-mode-banner" class="demo-mode-banner dold" role="status" aria-live="polite">
@@ -210,10 +210,10 @@
                     <!-- Första-intryck: visas tills data laddats (döljs av _renderDemoBanner när data finns) -->
                     <div id="first-run-hint" class="first-run-hint">
                         <span class="first-run-hint-icon" aria-hidden="true"></span>
-                        <div><strong>Kom igång:</strong> <button type="button" class="first-run-demo-link" data-go-to-tab="filer">läs in filerna</button> (organisationspaketet först om er organisation har ett, sedan lönefilen). Ingen fil till hands? Prova med demodata, <button type="button" id="first-run-demo-link" class="first-run-demo-link" title="Läs in det lilla demot: 260 påhittade personer">litet demo</button> eller <button type="button" id="first-run-stort-demo" class="first-run-demo-link" title="Läs in det stora demot: 7 000 påhittade personer">stort demo (7&nbsp;000 personer)</button>.</div>
+                        <div><strong>Kom igång:</strong> <button type="button" class="first-run-demo-link" data-go-to-tab="filer">läs in filerna</button>, först organisationspaketet om organisationen har ett och sedan lönefilen. Ingen fil till hands? Prova med demodata, <button type="button" id="first-run-demo-link" class="first-run-demo-link" title="Läs in det lilla demot: 260 påhittade personer">litet demo</button> eller <button type="button" id="first-run-stort-demo" class="first-run-demo-link" title="Läs in det stora demot: 7 000 påhittade personer">stort demo (7&nbsp;000 personer)</button>.</div>
                     </div>
 
-                    <div class="flik-intro" id="ov-intro"><strong>Hur ser organisationen ut, och vad är nästa steg?</strong> Här står underlaget, de viktigaste talen och vad som återstår att göra i kartläggningen. Resultaten finns i flikarna under Kartläggning; allt du läser in stannar i webbläsaren.</div>
+                    <div class="flik-intro" id="ov-intro"><strong>Hur ser organisationen ut, och vad är nästa steg?</strong> Diskrimineringslagen kräver att arbetsgivaren varje år kartlägger och analyserar lönerna (3 kap.). Här står underlaget, de viktigaste talen och vad som återstår att göra i kartläggningen. Resultaten finns i flikarna under Kartläggning; allt du läser in stannar i webbläsaren.</div>
                     <div id="ov-filrad" class="urvalsrad ov-filrad"></div>
 
                     <!-- Nyckeltal överst — snabb överblick direkt efter uppladdning -->
@@ -232,7 +232,7 @@
                         </div>
                         <div class="stat-box">
                             <div class="stat-etikett">Kvinnors lön i % av mäns</div>
-                            <div class="stat-val" id="stat-paygap" title="Kvinnors medianlön som procent av mäns (100 % = lika lön). 90 % = kvinnor tjänar 10 % mindre, samma sak som ett lönegap på −10 %. Standardpresentation enligt Medlingsinstitutet / EU 2023/970.">-</div>
+                            <div class="stat-val" id="stat-paygap" title="Kvinnors medianlön som procent av mäns (100 % = lika lön). 90 procent betyder att kvinnor tjänar 10 procent mindre än män. Samma form som Medlingsinstitutet använder; lönetransparensdirektivet räknar skillnaden med omvänt tecken.">-</div>
                         </div>
                     </div>
 
@@ -244,32 +244,32 @@
                             <div class="compliance-card na" id="comp-gap">
                                 <div class="comp-icon" id="comp-gap-icon">—</div>
                                 <div class="comp-body">
-                                    <div class="comp-label">Lönegap &gt; 5%
-                                        <span class="info-tip" data-tooltip="Antal BAS-intervall där medianlönen för kvinnor skiljer sig mer än 5% från medianlönen för män. EU:s lönetransparensdirektiv (2023/970) klassar detta som tröskelvärde för en gemensam lönebedömning när skillnaden inte kan motiveras med sakliga skäl."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
+                                    <div class="comp-label">Löneskillnad över 5 %
+                                        <span class="info-tip" data-tooltip="Antal BAS-intervall där kvinnors medianlön skiljer sig mer än 5 procent från mäns. Lagen kräver att du analyserar varje skillnad, också de mindre. När lönetransparensdirektivet gäller krävs en gemensam lönebedömning om en skillnad på 5 procent eller mer saknar sakliga skäl och inte har rättats inom sex månader."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
                                     </div>
-                                    <div class="comp-value" id="comp-gap-val">Beräknar...</div>
-                                    <div class="comp-sub">EU 2023/970 – tröskel för obligatorisk utredning</div>
-                                    <a href="#" class="comp-lank" data-go-to-tab="struktur" data-go-to-anchor="avsnitt-ls-bas" aria-label="Visa lönegap per BAS-intervall i Lönestruktur">Visa</a>
+                                    <div class="comp-value" id="comp-gap-val">Räknar …</div>
+                                    <div class="comp-sub">Gränsen i direktivets regler om gemensam lönebedömning</div>
+                                    <a href="#" class="comp-lank" data-go-to-tab="struktur" data-go-to-anchor="avsnitt-ls-bas" aria-label="Visa löneskillnad per BAS-intervall i Lönestruktur">Visa</a>
                                 </div>
                             </div>
                             <div class="compliance-card na" id="comp-skev">
                                 <div class="comp-icon" id="comp-skev-icon">—</div>
                                 <div class="comp-body">
-                                    <div class="comp-label">Könsskevhet (ett kön &lt; 40%)
-                                        <span class="info-tip" data-tooltip="Antal BAS-intervall där ett kön utgör mindre än 40% av gruppen. Jämn könsfördelning kräver att båda könen utgör minst 40%. I könsdominerade grupper kan lönejämförelser bli statistiskt svårtolkade. Identifiering är viktig enligt diskrimineringslagens kap. 3."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
+                                    <div class="comp-label">Ojämn könsfördelning (ett kön under 40 %)
+                                        <span class="info-tip" data-tooltip="Antal BAS-intervall där ett kön är mindre än 40 procent av gruppen. Jämn könsfördelning betyder att båda könen är minst 40 procent. I grupper där ett kön dominerar blir lönejämförelserna svårare att tolka."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
                                     </div>
-                                    <div class="comp-value" id="comp-skev-val">Beräknar...</div>
-                                    <div class="comp-sub">Diskrimineringslagen – påverkar jämförbarheten</div>
-                                    <a href="#" class="comp-lank" data-go-to-tab="struktur" data-go-to-anchor="avsnitt-ls-kon" aria-label="Visa könsskevhet i Lönestruktur">Visa</a>
+                                    <div class="comp-value" id="comp-skev-val">Räknar …</div>
+                                    <div class="comp-sub">Påverkar hur säkra jämförelserna är</div>
+                                    <a href="#" class="comp-lank" data-go-to-tab="struktur" data-go-to-anchor="avsnitt-ls-kon" aria-label="Visa könsfördelningen i Lönestruktur">Visa</a>
                                 </div>
                             </div>
                             <div class="compliance-card na" id="comp-pol">
                                 <div class="comp-icon" id="comp-pol-icon">—</div>
                                 <div class="comp-body">
                                     <div class="comp-label"><span id="comp-pol-label">Under ställningstagandets P10</span>
-                                        <span class="info-tip" data-tooltip="Antal BAS-intervall där medianlönen ligger under den lägsta önskade nivån (P10) i ert lönepolitiska ställningstagande. Visar var lönenivåerna inte motsvarar ambitionen."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
+                                        <span class="info-tip" data-tooltip="Antal BAS-intervall där medianlönen ligger under den lägsta önskade nivån (P10) i organisationens lönepolitiska ställningstagande. Visar var lönenivåerna inte motsvarar ambitionen."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
                                     </div>
-                                    <div class="comp-value" id="comp-pol-val">Beräknar...</div>
+                                    <div class="comp-value" id="comp-pol-val">Räknar …</div>
                                     <div class="comp-sub" id="comp-pol-sub">Lönepolitiskt ställningstagande</div>
                                     <a href="#" class="comp-lank" data-go-to-tab="lonepolitik" aria-label="Visa jämförelsen med referensen i Löneläget">Visa</a>
                                 </div>
@@ -278,7 +278,7 @@
                                 <div class="comp-icon" id="comp-bm-icon">—</div>
                                 <div class="comp-body">
                                     <div class="comp-label">Under jämförelsestatistikens median
-                                        <span class="info-tip" data-tooltip="Antal yrkesgrupper där organisationens medianlön ligger under medianen för motsvarande yrke i jämförelsestatistiken. Indikerar att organisationen halkar efter i lönenivåerna – kan signalera marknadslöne-utmaningar och rekryteringsrisker."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
+                                        <span class="info-tip" data-tooltip="Antal yrkesgrupper där organisationens medianlön ligger under medianen för motsvarande yrke i jämförelsestatistiken. Kan tyda på att organisationens löner halkar efter, vilket kan göra det svårare att rekrytera."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
                                     </div>
                                     <div class="comp-value" id="comp-bm-val">Kräver jämförelsestatistik</div>
                                     <div class="comp-sub">Jämförelse mot jämförelsestatistiken</div>
@@ -296,7 +296,7 @@
                     <!-- Process-tracker: statusoversikt for hela lagresan enligt diskrimineringslagen. Syns aven utan data. -->
                     <p class="avsnitt-rubrikrad" id="ov-fordjupning">Fördjupning</p>
                     <details class="avsnitt" id="avsnitt-ov-process" open>
-                    <summary><span class="avsnitt-titel"><h2>Lönekartläggningsprocessen</h2><span class="avsnitt-under">Var står ni, steg för steg?</span></span><span class="avsnitt-nyckel" id="nyckel-ov-process"></span></summary>
+                    <summary><span class="avsnitt-titel"><h2>Kartläggningens steg</h2><span class="avsnitt-under">Var står du, steg för steg?</span></span><span class="avsnitt-nyckel" id="nyckel-ov-process"></span></summary>
                     <div id="process-tracker"></div>
                     </details>
 
@@ -313,32 +313,32 @@
                     <div class="gdpr-info-compact">
                         <span class="gdpr-icon"><svg class="ikon ikon-las" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>
                         <div>
-                            <strong>Lokal bearbetning, GDPR-säker.</strong>
-                            All data stannar i din webbläsare — inga nätverksanrop, ingen lagring, ingen synkning. Personnummer, namn och e-post avvisas automatiskt vid uppladdning.
+                            <strong>Bearbetas bara i din webbläsare.</strong>
+                            All data stannar i webbläsaren — inga nätverksanrop, ingen lagring, ingen synkning. En fil med personnummer, namn eller e-post läses inte in.
                         </div>
                         <button id="gdpr-info-readmore" type="button" class="bak-none ram-ingen farg-ok pekare typsnitt-arv fs-sm fw-600 marg-v-auto pad-0 understruken">Läs mer</button>
                     </div>
                     <div class="flik-intro"><strong>Vilket underlag är inläst, och går det att lita på?</strong> Här läser du in organisationspaketet, lönefilen och referenserna, och här står kontrollen av underlaget: kolumner, avvikelser och extremvärden. Allt stannar i webbläsaren.</div>
                     <div id="upload-sektion">
                     <div id="upload-sektion-rubrik" class="rad-bryt-mitt gap-12 mellan marg-6-0-8">
-                        <h2 class="fs-md fw-600 marg-0">Filer &amp; uppladdningar <span class="text-dampad-sm fw-400">— paketet först om ni har ett, lönefilen är obligatorisk, resten valfritt</span></h2>
+                        <h2 class="fs-md fw-600 marg-0">Filer <span class="text-dampad-sm fw-400">— paketet först om organisationen har ett; lönefilen krävs, resten är valfritt</span></h2>
                     </div>
                     <p id="upload-hjalp" class="text-dampad-xs lh-1_5 marg-0-0-8">
-                        Osäker på hur du får ut filen ur lönesystemet? Se <strong>datauttag.md</strong>
-                        (medföljer verktyget) &mdash; eller ladda ner CSV-mallen nedan och fyll den från valfri rapport.
+                        Osäker på hur du får ut filen ur lönesystemet? Se guiden för datauttag, <strong>datauttag.md</strong>
+                        (följer med verktyget) &mdash; eller ladda ner CSV-mallen nedan och fyll den från valfri rapport.
                     </p>
                     <!-- Organisationspaket (ADR-28): organisationens benämningar, grundinställningar,
                          ställningstagande och jämförelsestatistik i en fil. Systemägaren skapar det. -->
                     <details id="organisationspaket" class="prio-config-panel paket-forst" open>
-                        <summary><span class="steg-nr">Steg 1</span> Organisationspaket <span class="text-dampad-sm fw-400">— läs in först, om er organisation har ett</span>
-                            <span class="info-tip" data-tooltip="Ett organisationspaket innehåller organisationens namn och benämningar, grundinställningar, lönepolitiska ställningstagande och jämförelsestatistik. Systemägaren skapar det; handläggarna läser in det i ett steg. Paketet innehåller bara aggregat — inga personuppgifter."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
-                            <span class="text-dampad-sm marg-v-8">Organisation: <strong data-profile-label="name">Er organisation</strong></span>
+                        <summary><span class="steg-nr">Steg 1</span> Organisationspaket <span class="text-dampad-sm fw-400">— läs in först, om organisationen har ett</span>
+                            <span class="info-tip" data-tooltip="Ett organisationspaket innehåller organisationens namn och benämningar, grundinställningar, lönepolitiska ställningstagande och jämförelsestatistik. Systemägaren skapar det; de som gör kartläggningen läser in det i ett steg. Paketet innehåller bara aggregat — inga personuppgifter."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
+                            <span class="text-dampad-sm marg-v-8">Organisation: <strong data-profile-label="name">Organisationen</strong></span>
                             <span id="paket-orgtyp" class="text-dampad-sm marg-v-8"></span>
                             <span id="k-troskel-sammanfattning" class="text-dampad-sm marg-v-8"></span>
                         </summary>
                         <div class="paket-innehall">
-                            <p>Har er organisation ett paket? Läs in det först, så används dess ställningstagande, jämförelsestatistik och benämningar i hela verktyget, och rutorna <em>Referens</em> och <em>Jämförelsestatistik</em> nedan fylls i av sig själva. Har ni inget paket går det bra att läsa in ställningstagandet och statistiken var för sig med rutorna ovan.</p>
-                            <p class="text-dampad-sm">Organisationstyp och minsta gruppstorlek ställs in under <button type="button" class="ov-filrad-lank" data-oppna-installningar>Inställningar</button>.</p>
+                            <p>Har organisationen ett paket? Läs in det först. Då används paketets ställningstagande, jämförelsestatistik och benämningar i hela verktyget, och rutorna <em>Lönepolitiskt ställningstagande</em> och <em>Jämförelsestatistik</em> nedan fylls i av sig själva. Finns inget paket kan du läsa in ställningstagandet och statistiken var för sig i rutorna nedan.</p>
+                            <p class="text-dampad-sm">Organisationstyp och minsta gruppstorlek väljer du under <button type="button" class="ov-filrad-lank" data-oppna-installningar>Inställningar</button>.</p>
                             <div class="paket-rad">
                                 <label class="btn btn-secondary btn-sm pekare">
                                     Läs in organisationspaket
@@ -349,7 +349,7 @@
                             <div id="paket-info" class="paket-info" hidden></div>
                             <details id="paket-skapa" class="bakgrund-panel">
                                 <summary>Skapa organisationspaket (för systemägaren)</summary>
-                                <p>Läs in ställningstagandet och jämförelsestatistiken med rutorna ovan, fyll i uppgifterna och spara. Handläggarna läser sedan in filen med knappen <em>Läs in organisationspaket</em>.</p>
+                                <p>Läs in ställningstagandet och jämförelsestatistiken med rutorna ovan, fyll i uppgifterna och spara. De som gör kartläggningen läser sedan in filen med knappen <em>Läs in organisationspaket</em>.</p>
                                 <div class="paket-formular">
                                     <label for="paket-org">Organisationens namn</label>
                                     <input type="text" id="paket-org" class="form-select" autocomplete="off" maxlength="200">
@@ -388,7 +388,7 @@
                                 <!-- Organisationsfil (docs/utveckling/organisationsfil-design.md): verktyget med paketet inbakat, en fil att sprida. -->
                                 <div id="organisationsfil-skapa" class="marg-t-12">
                                     <p><strong>Skapa organisationsfil — verktyget med paketet inbakat</strong></p>
-                                    <p>Handläggarna behöver då bara en fil: de öppnar organisationsfilen och paketet är på plats. Peka ut verktygsfilen du öppnade (en sida från disk kan inte läsa sig själv), välj filnamn och ladda ner. Ingen lönedata följer med — bara det paketet innehåller. Ny version av verktyget eller ändrat paket: gör om samma steg.</p>
+                                    <p>De som gör kartläggningen behöver då bara en fil: de öppnar organisationsfilen och paketet är på plats. Peka ut verktygsfilen du öppnade (en sida från disk kan inte läsa sig själv), välj filnamn och ladda ner. Ingen lönedata följer med — bara det paketet innehåller. Ny version av verktyget eller ändrat paket: gör om samma steg.</p>
                                     <div class="paket-formular">
                                         <label for="file-input-verktygsfil">Verktygsfilen du öppnade (.html)</label>
                                         <input type="file" id="file-input-verktygsfil" class="form-select" accept=".html,text/html">
@@ -408,9 +408,9 @@
                                 <h3><span class="steg-nr">Steg 2</span> Lönefil</h3>
                                 <span class="upload-badge required">Obligatorisk</span>
                             </div>
-                            <div class="upload-unlocks"><svg class="ikon ikon-lasOppen" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/></svg> Aktiverar <strong>hela analysen</strong> — alla flikar</div>
+                            <div class="upload-unlocks"><svg class="ikon ikon-lasOppen" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/></svg> Öppnar <strong>alla flikar</strong></div>
                             <div class="file-drop-area" id="drop-area-data">
-                                <input type="file" id="file-input-data" accept=".csv,.xlsx" aria-label="Ladda upp strukturdata">
+                                <input type="file" id="file-input-data" accept=".csv,.xlsx" aria-label="Läs in lönefilen">
                                 <p>Klicka eller dra <code>.csv</code>/<code>.xlsx</code> hit</p>
                             </div>
                             <p class="upload-demo" id="upload-demo-val">Ingen fil till hands? Prova med demodata, <button type="button" id="upload-demo-litet" class="first-run-demo-link" title="Läs in det lilla demot: 260 påhittade personer">litet demo</button> eller <button type="button" id="upload-demo-stort" class="first-run-demo-link" title="Läs in det stora demot: 7 000 påhittade personer">stort demo (7&nbsp;000 personer)</button>.</p>
@@ -428,16 +428,16 @@
                             <details class="upload-help" open>
                                 <summary>Vilka kolumner krävs?</summary>
                                 <div class="upload-help-content">
-                                    <p>Personalfil med <strong>en rad per anställd</strong>:</p>
+                                    <p>Lönefil med <strong>en rad per anställd</strong>:</p>
                                     <ul>
-                                        <li><strong>BAS-intervall</strong> — en bokstav per rad (lönenivå-grad); alla intervall ingår, även chefsnivåerna</li>
+                                        <li><strong>BAS-intervall</strong> — en bokstav per rad; alla intervall ingår, även chefernas</li>
                                         <li><strong>AID / Yrkesgrupp</strong> — yrkeskod + benämning</li>
                                         <li><strong>Månadslön</strong> — heltidsekvivalent</li>
                                         <li><strong>Ålder</strong></li>
                                         <li><strong>Kön</strong> — Kvinna / Man</li>
-                                        <li><strong>Poäng</strong> <em>(valfri)</em> — arbetsvärderingspoäng per befattning; aktiverar poäng som krav-proxy i likvärdighetsanalysen</li>
+                                        <li><strong>Poäng</strong> <em>(valfri)</em> — arbetsvärderingspoäng per befattning; används i stället för BAS-intervallet som mått på kraven i Likvärdigt arbete</li>
                                     </ul>
-                                    <p class="mt-8">Format: <code>.csv</code> (alla vanliga avgränsare och teckenkodningar detekteras) eller Excel <code>.xlsx</code>.</p>
+                                    <p class="mt-8">Format: <code>.csv</code> (verktyget känner igen vanliga avgränsare och teckenkodningar) eller Excel <code>.xlsx</code>.</p>
                                     <button id="btn-download-csv-template" type="button" class="btn btn-secondary btn-sm mt-8">Ladda ner CSV-mall</button>
                                 </div>
                             </details>
@@ -445,13 +445,13 @@
 
                         <div class="upload-cell optional" id="upload-cell-policy">
                             <div class="upload-cell-header">
-                                <h3><span class="steg-nr">Steg 3</span> Referens: lönepolitisk målbild</h3>
+                                <h3><span class="steg-nr">Steg 3</span> Lönepolitiskt ställningstagande</h3>
                                 <span class="upload-badge optional">Valfritt</span>
                             </div>
                             <p id="referens-status" class="ref-status" role="status" aria-live="polite"></p>
-                            <div class="upload-unlocks">Jämförs mot i <strong>Prioritering</strong>, <strong>Löneläget</strong> och <strong>Handlingsplan</strong></div>
+                            <div class="upload-unlocks">Används i <strong>Prioritering</strong>, <strong>Löneläget</strong> och <strong>Handlingsplan</strong></div>
                             <div class="file-drop-area" id="drop-area-policy">
-                                <input type="file" id="file-input-policy" accept=".csv,.xlsx" aria-label="Ladda upp lönepolitiskt ställningstagande">
+                                <input type="file" id="file-input-policy" accept=".csv,.xlsx" aria-label="Läs in lönepolitiskt ställningstagande">
                                 <p>Klicka eller dra <code>.csv</code>/<code>.xlsx</code> hit</p>
                             </div>
                             <div id="policy-status" class="status-msg"></div>
@@ -468,7 +468,7 @@
                             <details class="upload-help" open>
                                 <summary>Vad används det till?</summary>
                                 <div class="upload-help-content">
-                                    <p>Önskade lönenivåer per BAS-intervall — P10 (lägstanivå), Median, P90 (toppnivå). Ladda upp ert lönepolitiska ställningstagande (eller ett organisationspaket) — Prioritering och Löneläget jämför mot det. Du kan ge det ett namn.</p>
+                                    <p>Önskade lönenivåer per BAS-intervall — P10 (lägstanivå), Median, P90 (toppnivå). Läs in organisationens lönepolitiska ställningstagande (eller ett organisationspaket); Prioritering och Löneläget jämför mot det. Du kan ge det ett namn.</p>
                                     <p class="mt-8">Format: <code>.csv</code> eller <code>.xlsx</code>. Kolumner: <code>BAS</code>, <code>P10</code>, <code>Median</code>, <code>P90</code>.</p>
                                 </div>
                             </details>
@@ -479,9 +479,9 @@
                                 <h3><span class="steg-nr">Steg 4</span> Jämförelsestatistik</h3>
                                 <span class="upload-badge optional">Valfritt</span>
                             </div>
-                            <div class="upload-unlocks"><svg class="ikon ikon-lasOppen" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/></svg> Aktiverar fliken <strong>Jämförelsestatistik</strong> + referens i Prioritering &amp; Likvärdigt arbete</div>
+                            <div class="upload-unlocks"><svg class="ikon ikon-lasOppen" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/></svg> Används i <strong>Löneläget</strong>, <strong>Prioritering</strong> och <strong>Likvärdigt arbete</strong></div>
                             <div class="file-drop-area" id="drop-area-stat">
-                                <input type="file" id="file-input-stat" accept=".xlsx,.csv" aria-label="Ladda upp jämförelsestatistik">
+                                <input type="file" id="file-input-stat" accept=".xlsx,.csv" aria-label="Läs in jämförelsestatistik">
                                 <p>Klicka eller dra <code>.xlsx</code> hit</p>
                             </div>
                             <div id="stat-status" class="status-msg"></div>
@@ -494,7 +494,7 @@
                             <details class="upload-help" open>
                                 <summary>Vad används det till?</summary>
                                 <div class="upload-help-content">
-                                    <p>Medianlöner per yrkesgrupp i jämförelsestatistiken — extern referens för marknadsläge och rekryteringsrisk.</p>
+                                    <p>Medianlöner per yrkesgrupp i jämförelsestatistiken, för att jämföra lönerna med andra arbetsgivares.</p>
                                     <p class="mt-8">Format: <code>.xlsx</code>. Kolumner: AID-kod, BAS-intervall, Median.</p>
                                 </div>
                             </details>
@@ -523,17 +523,17 @@
                         <!-- Extremvärden (enskilda löner) -->
                         <details id="outliers-container" class="prio-config-panel marg-t-14 dold" open>
                             <summary>Extremvärden (enskilda löner)
-                                <span class="info-tip" data-tooltip="Hittar enskilda rader vars lön avviker markant från BAS-gruppens snitt. Användbart för att upptäcka registerfel (felinmatade löner) eller specialfall som behöver dokumenteras (t.ex. specialistkompetens). Z-score över 3 motsvarar grovt 0,3% av en normalfördelning."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
+                                <span class="info-tip" data-tooltip="Hittar enskilda rader vars lön ligger långt från snittet i samma BAS-intervall. Det hjälper dig hitta felinmatade löner och specialfall som behöver dokumenteras, till exempel specialistkompetens. Mer än 3 standardavvikelser motsvarar ungefär 0,3 procent av lönerna i en normalfördelning."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
                                 <span id="outliers-count" class="text-dampad-sm marg-v-8"></span>
                             </summary>
                             <div class="prio-config-content">
                                 <p class="text-dampad-sm lh-1_55 marg-0-0-12">
-                                    Anställda vars lön avviker mer än <strong>tröskeln</strong> standardavvikelser från sin BAS-grupps log-medellön. Tabellen är anonymiserad — endast löpnummer används.
+                                    Anställda vars lön ligger långt från andras i samma BAS-intervall (mer än valt antal standardavvikelser från medellönen, räknad på logaritmerade löner). Tabellen visar radnummer, inga namn.
                                 </p>
                                 <div class="rad-bryt-mitt gap-14 marg-b-14">
                                     <label for="outliers-threshold" class="fw-600">Gräns (antal standardavvikelser):</label>
                                     <input type="number" id="outliers-threshold" value="3" min="1.5" max="5" step="0.5" class="form-select pad-5-8 bredd-80">
-                                    <span class="text-dampad-sm">(3.0 = ~0,3% av normalfördelning, 2.5 = ~1,2%, 2.0 = ~4,5%)</span>
+                                    <span class="text-dampad-sm">(3,0 ≈ 0,3 %, 2,5 ≈ 1,2 %, 2,0 ≈ 4,5 % av lönerna i en normalfördelning)</span>
                                 </div>
                                 <div id="outliers-table-wrap"></div>
                             </div>
@@ -548,18 +548,24 @@
                         <div class="yrke-backdrop"></div>
                         <div class="yrke-panel bredd-min720-92vw">
                             <header class="yrke-modal-header">
-                                <h2>GDPR-skydd i detalj</h2>
+                                <h2>Så skyddas uppgifterna</h2>
                                 <button id="gdpr-info-close" class="btn btn-secondary btn-sm" type="button"><svg class="ikon ikon-kryss" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 6l12 12"/><path d="M18 6 6 18"/></svg></button>
                             </header>
                             <div class="yrke-modal-content">
                                 <h3 class="marg-0-0-8">Uppgiftsminimering</h3>
-                                <p class="fs-md lh-1_6">Verktyget läser <strong>inte</strong> in anställningsnummer, personnummer, namn eller e-post även om de finns i CSV-filen. Filer som innehåller sådana fält avvisas automatiskt med meddelande till användaren.</p>
-                                <h3 class="marg-14-0-8">K-anonymitet</h3>
-                                <p class="fs-md lh-1_6">På skärmen visas alla grupper. I det som lämnar verktyget — Excel, Word, PDF, ZIP, CSV, urklipp, diagrambilder och rapportunderlaget — redovisas inte lönemått för grupper med färre än <span data-k-troskel>10</span> personer. Gruppen visas inte som en tom rad, utan räknas upp med namn i en not vid tabellen (<svg class="ikon ikon-las" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>) — så att du ser vad som saknas och varför. Är gruppen stor nog men ett av könen för litet visas gruppens samlade median, utan könsjämförelse. Detta förhindrar att enskilda individers löner kan identifieras via deduktion (t.ex. genom kombination av kön + BAS + ålder). Medianlön per kön, det råa lönegapet och regressionens ojusterade steg visas bara när både kvinnor och män når tröskeln; i Ålder &amp; karriär gäller det också lönegap, trendlinjer och lådor per kön, och en persons punkt visas bara när personens grupp (yrke inom BAS) och kön i gruppen når tröskeln. Undantag: Likvärdigt arbete visar kandidatpar även när en grupp är liten, Tabeller och egna vyer visar små grupper tonade (de följer bara med i exporten om du kryssar i det), Personer att granska och extremvärdeslistan visar enskilda personer — bara i verktyget — och diagram med en punkt per person visar enskilda löner.</p>
+                                <p class="fs-md lh-1_6">Verktyget läser <strong>inte</strong> in anställningsnummer, personnummer, namn eller e-post även om de finns i lönefilen. En fil med sådana kolumner läses inte in, och du får veta varför.</p>
+                                <h3 class="marg-14-0-8">Små grupper</h3>
+                                <p class="fs-md lh-1_6">På skärmen visas alla grupper. I det som lämnar verktyget — Excel, Word, PDF, ZIP, CSV, urklipp, diagrambilder och rapportunderlaget — redovisas inte lönemått för grupper med färre än <span data-k-troskel>10</span> personer. Gruppen visas inte som en tom rad, utan räknas upp med namn i en not vid tabellen (<svg class="ikon ikon-las" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>) — så att du ser vad som saknas och varför. Är gruppen stor nog men ett av könen för litet visas gruppens samlade median, utan könsjämförelse. Det hindrar att någon räknar ut en enskild persons lön genom att lägga ihop kön, BAS-intervall och ålder.</p>
+                                <ul class="fs-md lh-1_6">
+                                    <li><strong>När ett kön är för litet:</strong> medianlön per kön, den råa löneskillnaden och regressionens ojusterade steg visas bara när både kvinnor och män når tröskeln.</li>
+                                    <li><strong>I Ålder &amp; karriär</strong> gäller samma sak för löneskillnad, trendlinjer och lådor per kön. En persons punkt visas bara när personens grupp (yrke inom BAS-intervallet) och kön i gruppen når tröskeln.</li>
+                                    <li><strong>Undantag:</strong> Likvärdigt arbete visar kandidatpar även när en grupp är liten. Tabeller och egna vyer visar små grupper tonade; de följer med i exporten bara om du kryssar i det.</li>
+                                    <li><strong>Enskilda personer:</strong> Personer att granska och extremvärdeslistan visar enskilda personer, bara i verktyget. Diagram med en punkt per person visar enskilda löner.</li>
+                                </ul>
                                 <h3 class="marg-14-0-8">Lokal bearbetning</h3>
                                 <p class="fs-md lh-1_6">All data stannar i din webbläsare. Verktyget gör inga nätverksanrop — Content Security Policy (CSP) blockerar alla utgående anslutningar. Data försvinner automatiskt när du stänger webbläsarfliken. Inget skrivs till localStorage, cookies eller IndexedDB.</p>
-                                <h3 class="marg-14-0-8">Defensiv djupgående</h3>
-                                <p class="fs-md lh-1_6">Autocomplete avstängd på sidans fasta fält så organisationsnamn etc. inte sparas i webbläsarens autofyll-historik (som kan synkas till leverantörens moln). HTTP-varning visas vid osäker anslutning.</p>
+                                <h3 class="marg-14-0-8">Flera skydd i lager</h3>
+                                <p class="fs-md lh-1_6">Webbläsaren sparar inte det du skriver i sidans fasta fält (autofyll är avstängt), eftersom autofyll kan synkas till webbläsarleverantörens moln. Öppnas sidan över en osäker anslutning visas en varning.</p>
                             </div>
                         </div>
                     </div>

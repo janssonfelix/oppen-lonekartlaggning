@@ -17,7 +17,7 @@ describe('förhandsvisning: Som i exporten', () => {
         expect(w.__state.kTroskel).toBe(10);
         // Etiketten säger vad knappen gör; verktygstipset står kvar.
         expect(d.getElementById('btn-forhandsvisa').textContent.trim()).toBe('Som i exporten');
-        expect(d.getElementById('btn-forhandsvisa').title).toMatch(/^Visa flikarna som i det som lämnar verktyget/);
+        expect(d.getElementById('btn-forhandsvisa').title).toMatch(/^Visa flikarna som de blir i exporten/);
         d.getElementById('btn-forhandsvisa').click();
         expect(w.__state.kLage).toBe('export');
         expect(d.body.classList.contains('forhandsvisning')).toBe(true);

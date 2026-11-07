@@ -25,7 +25,7 @@ function _zipDiagramExport() {
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
 function exportZip(...a) { return medExportLage(() => _exportZipExport.apply(null, /** @type {any} */ (a))); }
 async function _exportZipExport() {
-    if (typeof JSZip === 'undefined') { alert('JSZip ej laddad.'); return false; }
+    if (typeof JSZip === 'undefined') { alert('Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.'); return false; }
     if (!getData().length) { alert('Ladda upp data först.'); return false; }
     const zip = new JSZip();
     if (typeof showLoading === 'function') showLoading();
