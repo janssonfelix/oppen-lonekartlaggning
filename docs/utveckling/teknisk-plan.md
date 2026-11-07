@@ -417,7 +417,8 @@ appen i jsdom och ritar varje flik. Diagramkärnan ritar där med äkta D3, så 
 Lagret är brett och snabbt men prövar inte det jsdom saknar: CSP:n (som jsdom inte tillämpar), `file://`-bygget
 och bildexporten via canvas. Därför kör `tools/browser-smoke.mjs` den **byggda** artefakten i Chromium, Firefox
 och WebKit via Playwright. Lagren ersätter inte varandra — jsdom-testet är brett och snabbt, webbläsartestet
-smalt och verkligt. Båda körs i CI.
+smalt och verkligt. Båda körs i CI. Webbläsartestets kontroller ligger per område i `tools/browser-smoke/` med en
+gemensam rigg (`rigg.mjs`); `tools/browser-smoke.mjs` kör dem i en fast ordning och skriver sammanfattningen.
 
 Röktestet mot artefakten har en **färskhetsspärr**: är bygget äldre än källan avbryts det. Utan den blir allt
 grönt medan en gammal artefakt testas, vilket är lätt att gå på.

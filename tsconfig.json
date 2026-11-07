@@ -26,6 +26,7 @@
   ],
   "exclude": [
     "tools/browser-smoke.mjs",
+    "tools/browser-smoke/**",
     "tools/perf-smoke.mjs"
   ],
   "//exclude": "Röktestet och prestandasvepet kör sina callbacks i webbläsarens realm via page.evaluate() (appens globaler, DOM utan null-kontroller) och lintas med egna globaler i eslint.config.js; de typkontrolleras inte."

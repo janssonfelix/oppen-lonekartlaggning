@@ -82,7 +82,7 @@ export default [
         // Röktestet och prestandasvepet kör page.evaluate(), vars callbacks
         // exekveras i webbläsarens realm — document/localStorage och appens egna
         // globaler finns där, inte i Node.
-        files: ['tools/browser-smoke.mjs', 'tools/perf-smoke.mjs'],
+        files: ['tools/browser-smoke.mjs', 'tools/browser-smoke/**/*.mjs', 'tools/perf-smoke.mjs'],
         languageOptions: {
             // Appens egna globaler som skripten anropar inne i sidan.
             globals: { ...globals.browser, XLSX: 'readonly', renderTabContent: 'readonly', renderExplorer: 'readonly', sattRapportUrval: 'readonly', renderExportBesked: 'readonly',
