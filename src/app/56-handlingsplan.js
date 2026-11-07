@@ -274,7 +274,7 @@ function _hpSkalUnderlag(seed) {
     return { grupper, perKategori: _sakPerKategori(grupper.filter(g => !g.utanBelopp).map(g => ({ skal: g.sammanstallning.skal, skillnadKr: g.skillnadKr }))) };
 }
 /** Noten i exporterna där belopp, andel och kommentar utelämnas. */
-const HP_SKAL_UTAN_BELOPP = 'belopp utelämnat: ett kön under minsta gruppstorlek';
+const HP_SKAL_UTAN_BELOPP = 'belopp och kommentar utelämnade: ett kön har färre personer än minsta gruppstorlek';
 /**
  * En förifylld rad där den minsta gruppen bakom skillnaden (ett kön) är under den inställda minsta gruppstorleken:
  * i exporterna och bokslutet står då bara kategorierna, utan belopp, andel och kommentar. En egen rad har ingen grupp

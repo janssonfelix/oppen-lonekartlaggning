@@ -142,10 +142,31 @@ describe('demot följer inte med till en riktig fil', () => {
         w.eval('_hpRensaDemoSkal()');
         expect(medSkal(w).map(([k]) => k)).toEqual([egen]);
     });
+    it('en konfigurationsfil som ersätter handlingsplanen glömmer demots nycklar: filens skäl på en demonyckel står kvar', () => {
+        const w = demo();
+        const [n] = medSkal(w)[0];
+        const cfg = JSON.parse(w.eval('JSON.stringify(buildConfigSnapshot())'));
+        cfg.handlingsplan = [{ nyckel: n, skal: [{ kategori: 'marknad', belopp: 500, kommentar: 'ur filen' }] }];
+        w.__cfg = cfg; w.eval('applyConfigSnapshot(window.__cfg)');
+        expect(w.__state.handlingsplan[n].skal).toEqual([{ kategori: 'marknad', belopp: 500, kommentar: 'ur filen' }]);
+        expect(w.eval('_hpDemoNycklar.size')).toBe(0);
+        // Som när en riktig lönefil läses in efter demot.
+        w.eval('_hpRensaDemoSkal()');
+        expect(w.__state.handlingsplan[n].skal).toEqual([{ kategori: 'marknad', belopp: 500, kommentar: 'ur filen' }]);
+    });
+    it('Rensa all data glömmer demots nycklar', () => {
+        const w = demo();
+        const [n] = medSkal(w)[0];
+        w.eval('_rensaAllData()');
+        expect(w.eval('_hpDemoNycklar.size')).toBe(0);
+        w.eval(`_hpSattSkal(${JSON.stringify(n)}, [{ kategori: 'annat', belopp: 100, kommentar: 'eget' }])`);
+        w.eval('_hpRensaDemoSkal()');
+        expect(w.__state.handlingsplan[n].skal).toEqual([{ kategori: 'annat', belopp: 100, kommentar: 'eget' }]);
+    });
 });
 
 describe('ett kön under minsta gruppstorlek: bara kategorin lämnar verktyget', () => {
-    const NOT = 'belopp utelämnat: ett kön under minsta gruppstorlek';
+    const NOT = 'belopp och kommentar utelämnade: ett kön har färre personer än minsta gruppstorlek';
     /** Demots rad med skäl där ett kön är under tröskeln (prioriteringens grupp), med ett känt belopp och en känd kommentar. */
     const medKonUnder = () => {
         const w = demo();
@@ -198,5 +219,30 @@ describe('Rapporttext: skälen överstiger skillnaden', () => {
         w.__renderTabContent('rapporttext');
         const rt = ren(w.document.getElementById('view-rapporttext').textContent);
         expect(rt).toContain(`skälen är tillsammans större än skillnaden (${kr(skillnader[i] + 300)} kr mot ${kr(skillnader[i])} kr). Ett belopp kan vara för högt, eller så räknar två skäl samma sak. Kontrollera beloppen.`);
+    });
+});
+
+describe('noten under Sammanställning per kategori', () => {
+    const NOT_K = k => `Totalt i kronor är summan av alla skäl i sammanställningen, också på egna rader, som saknar medianskillnad. Andelen räknas bara mot den samlade medianskillnaden i de grupper som har en sådan. Grupper där ett kön har färre än ${k} personer ingår inte i sammanställningen; för dem står bara kategorierna i tabellen ovan.`;
+    it('rapportmodellen (Word och PDF): noten står efter sammanställningen, med k', () => {
+        const w = demo();
+        const a = atgarder(w);
+        const perKat = a.delar.filter(p => p.typ === 'tabell')[2];
+        const efter = a.delar.slice(a.delar.indexOf(perKat) + 1).find(p => p.typ === 'stycke');
+        expect(efter.text).toContain(NOT_K(w.eval('kInstalld()')));
+        expect(efter.text).not.toContain('räknas bara med belopp');
+    });
+    it('Excel-bladet: noten är sista raden', async () => {
+        const w = demo();
+        const rader = w.eval('_excelSkalRader()');
+        expect(rader[rader.length - 1][0]).toContain(NOT_K(w.eval('kInstalld()')));
+    });
+    it('Rapporttext: noten står efter tabellen Sammanställning per kategori', () => {
+        const w = demo();
+        w.__renderTabContent('rapporttext');
+        const rt = ren(w.document.getElementById('view-rapporttext').textContent);
+        const i = rt.lastIndexOf('Sammanställning per kategori');
+        expect(i).toBeGreaterThan(-1);
+        expect(rt.indexOf(NOT_K(w.eval('kInstalld()')), i)).toBeGreaterThan(i);
     });
 });

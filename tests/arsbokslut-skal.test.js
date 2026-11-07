@@ -92,6 +92,10 @@ describe('panelen: Sakliga skäl per kategori', () => {
         expect(ren(host.textContent)).toMatch(/Hade sakliga skäl förra året men inte i år \(1\)\. Gruppen kan sakna skäl eller inte längre finnas i handlingsplanen:[^]*Bortflyttad grupp/);
         expect(ren(host.textContent)).toContain('Kategorierna och beloppen är organisationens bedömning. Verktyget räknar bara om beloppen till andelar av skillnaden.');
     });
+    it('noten säger att grupper med bara kategorier inte räknas med i beloppen', () => {
+        const { host } = medForra();
+        expect(ren(host.textContent)).toContain('En grupp där ett kön hade färre personer än minsta gruppstorlek har bara kategorierna i bokslutet och räknas inte med i beloppen.');
+    });
     it('förra årets fil saknar fältet: en rad om att skälen saknas, ingen tabell', () => {
         const { host } = medForra(f => { const v1 = { ...f, version: 1 }; delete v1.bedomningar; return v1; });
         expect(host.querySelector('#arsjamforelse-skal')).toBeNull();

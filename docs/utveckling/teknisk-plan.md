@@ -1235,7 +1235,7 @@ färre än k personer faller bort. När den minsta gruppen bakom skillnaden (`nM
 beloppen, och posten bär bara kategorierna (`skal: [{ kategori }]`); jämförelsen visar dem med namn men räknar dem inte
 i summorna per kategori. Samma regel gäller med den högre av årens trösklar i `bokslutMedGrans`, och en nyckel som står
 två gånger läses en gång (den första gäller). I exporterna gäller samma sak (`_hpUtanBelopp`): för en rad där ett kön
-är under k står bara kategorin, med noten *belopp utelämnat: ett kön under minsta gruppstorlek*. Ett bokslut från version 1 läses som förut och får
+är under k står bara kategorin, med noten *belopp och kommentar utelämnade: ett kön har färre personer än minsta gruppstorlek*. Ett bokslut från version 1 läses som förut och får
 `bedomningar: null`. `jamforBedomningar` ger summan och andelen per kategori båda åren, skälen per grupp som hade skäl
 båda åren och de grupper som saknar bedömning i år; panelen visar tabellen *Sakliga skäl per kategori*. Vaktas av
 `tests/arsbokslut.test.js` och `tests/arsbokslut-skal.test.js`.

@@ -19,8 +19,9 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   stora demot har skäl på tre rader. Årsbokslutet är version 2 och bär skälen (utan kommentarer), och *Jämförelse med
   förra året* visar *Sakliga skäl per kategori* båda åren och de grupper som hade skäl förra året men inte i år.
   Skälen följer med i konfigurationsfilen; en äldre fil läses som förut. För en grupp där ett kön är under minsta
-  gruppstorlek står i exporterna och i bokslutet bara kategorierna, utan belopp och kommentar. Demots skäl tas bort
-  när en riktig lönefil läses in.
+  gruppstorlek står i exporterna och i bokslutet bara kategorierna, utan belopp och kommentar. En not under
+  *Sammanställning per kategori* säger vad Totalt och andelen räknas av. Demots skäl tas bort när en riktig lönefil
+  läses in; skäl ur en konfigurationsfil rörs inte.
 
 - **Klarspråksputs.** Långa meningar är delade i verktyget och i användar- och dataskyddsdokumenten.
   Termer förklaras första gången de används, och engelska och tekniska ord är utbytta: *Successionszon*

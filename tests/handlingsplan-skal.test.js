@@ -222,8 +222,8 @@ describe('Handlingsplan: knappen Sakliga skäl och dialogen', () => {
         const w = fonster();
         const tr = prioRad(w);
         oppna(w, tr);
-        expect(ren(modal(w).textContent)).toContain('Medianskillnaden redovisas inte: ett kön i gruppen har färre än 10 personer.');
-        expect(ren(modal(w).querySelector('#skal-kon-under').textContent)).toBe('Belopp, andel och kommentar följer inte med i exporterna eller i årsbokslutet, eftersom ett kön i gruppen har färre än 10 personer. Där står bara kategorierna.');
+        expect(ren(modal(w).querySelector('#skal-kon-under').textContent)).toBe('Medianskillnaden redovisas inte, eftersom ett kön i gruppen har färre än 10 personer. Belopp, andel och kommentar följer därför inte med i exporterna eller i årsbokslutet; där står bara kategorierna.');
+        expect(modal(w).querySelectorAll('.skal-skillnad')).toHaveLength(0);
         laggTill(w, 'marknad', 400);
         expect(ren(w.document.getElementById('skal-summa').textContent)).toBe('Förklarat av skälen: 400 kr');
         expect(ren(knapp(tr).textContent)).toBe('Sakliga skäl (1)');
@@ -384,7 +384,7 @@ describe('ordlistan och Om verktyget', () => {
         const w = createAppWindow();
         const post = w.eval('GLOSSARY').find(g => g.term === 'Sakliga skäl');
         for (const k of w.eval('_sakKategorier()')) expect(post.long).toContain(k.namn);
-        expect(post.long).toContain('Lagen räknar inte upp några skäl. Kategorierna är verktygets indelning.');
+        expect(post.long).toContain('Lagen räknar inte upp några skäl; indelningen är verktygets.');
         const om = w.eval('Object.values(INFO_SECTIONS).map(f => f()).join(" ")').replace(/\s+/g, ' ');
         expect(om).toMatch(/sakliga skäl per grupp/i);
     });

@@ -72,8 +72,8 @@ function _skalSkillnadHtml() {
     const s = /** @type {NonNullable<typeof _skal>} */ (_skal);
     if (s.kalla === 'egen') return '<p class="skal-skillnad">En egen rad har ingen medianskillnad att räkna andelar mot. Skälen redovisas med belopp. Skälen på en egen rad följer inte med i årsbokslutet.</p>';
     if (!s.iExport) return `<p class="skal-skillnad">Gruppen är för liten för att redovisas (färre än ${kInstalld()} personer). Raden och skälen följer därför inte med i exporterna, och inga andelar räknas.</p>`;
-    if (s.konUnder) return `<p class="skal-skillnad">Medianskillnaden redovisas inte: ett kön i gruppen har färre än ${kInstalld()} personer.</p>`
-        + `<p id="skal-kon-under" class="handlingsplan-varning" role="note">Belopp, andel och kommentar följer inte med i exporterna eller i årsbokslutet, eftersom ett kön i gruppen har färre än ${kInstalld()} personer. Där står bara kategorierna.</p>`;
+    if (s.konUnder) return `<p id="skal-kon-under" class="handlingsplan-varning" role="note">Medianskillnaden redovisas inte, eftersom ett kön i gruppen har färre än ${kInstalld()} personer. `
+        + 'Belopp, andel och kommentar följer därför inte med i exporterna eller i årsbokslutet; där står bara kategorierna.</p>';
     if (s.skillnadKr == null) return '<p class="skal-skillnad">Gruppens medianskillnad redovisas inte. Skälen redovisas med belopp.</p>';
     const par = s.kalla === 'par';
     if (s.skillnadKr <= 0) return par

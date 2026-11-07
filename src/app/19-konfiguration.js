@@ -346,7 +346,8 @@ function applyConfigSnapshot(cfg) {
     });
     if (typeof bes8Uppdatera === 'function') bes8Uppdatera();
     // Handlingsplanens fält ersätts bara när filen bär dem; rader som inte finns i underlaget nu ligger kvar i minnet.
-    if (tmp.handlingsplan) { state.handlingsplan = tmp.handlingsplan; if (typeof renderHandlingsplanSeed === 'function') renderHandlingsplanSeed(); }
+    // Demots nycklar glöms: filens skäl är användarens, också på en nyckel där demot skrev skäl.
+    if (tmp.handlingsplan) { state.handlingsplan = tmp.handlingsplan; if (typeof _hpDemoNycklar !== 'undefined') _hpDemoNycklar.clear(); if (typeof renderHandlingsplanSeed === 'function') renderHandlingsplanSeed(); }
     if (tmp.actionChecklistDone) state._actionChecklistDone = new Set(tmp.actionChecklistDone);
     // Filens egna profiler ersätter sessionens egna; organisationspaketets står kvar.
     // Bara en fil med profiler ersätter sessionens egna: en äldre fil (eller en tom lista) tar inte bort dem tyst.

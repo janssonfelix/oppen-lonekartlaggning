@@ -199,7 +199,7 @@ function _abSkalHtml(j, forraAr, nuAr) {
         ? `<p class="text-dampad-sm marg-6-0-2">Hade sakliga skäl förra året men inte i år (${b.saknasIAr.length}). Gruppen kan sakna skäl eller inte längre finnas i handlingsplanen:</p><ul class="fs-sm marg-0-0-4">${b.saknasIAr.map(g => `<li>${esc(_abSkalGrupp(g))}</li>`).join('')}</ul>`
         : '';
     return rubrik + tabell + grupper + saknas
-        + `<p class="text-dampad-xs marg-4-0-0">Beloppen är summan av skälen i kronor per månad; andelen är av skillnaden i de grupper som hade skäl det året. Kategorierna och beloppen är organisationens bedömning. Verktyget räknar bara om beloppen till andelar av skillnaden. Bara grupper med minst ${j.kGrans} personer.</p>`;
+        + `<p class="text-dampad-xs marg-4-0-0">Beloppen är summan av skälen i kronor per månad; andelen är av skillnaden i de grupper som hade skäl det året. Kategorierna och beloppen är organisationens bedömning. Verktyget räknar bara om beloppen till andelar av skillnaden. Bara grupper med minst ${j.kGrans} personer. En grupp där ett kön hade färre personer än minsta gruppstorlek har bara kategorierna i bokslutet och räknas inte med i beloppen.</p>`;
 }
 
 /**

@@ -666,8 +666,8 @@ Konfig-JSON:en (**version 2**) innehåller tre slags uppgifter.
   fritexter mot personnummer och e-post (`_hpLiknarPersonuppgift`), och dialogen varnar om den liknar en
   personuppgift. Ogiltiga skäl hoppas över vid inläsning med en varning. För en rad där ett kön är under minsta
   gruppstorlek står i exporterna (rapporten, Rapporttext, Word, PDF och Excel) och i årsbokslutet bara kategorierna:
-  belopp, andel och kommentar utelämnas, med noten *belopp utelämnat: ett kön under minsta gruppstorlek*. Annars
-  skulle beloppen visa en storlek på en skillnad som verktyget inte redovisar. Demots skäl tas bort när en riktig
+  belopp, andel och kommentar utelämnas, med noten *belopp och kommentar utelämnade: ett kön har färre personer än minsta
+  gruppstorlek*. Annars skulle beloppen avslöja hur stor en skillnad är som verktyget inte redovisar. Demots skäl tas bort när en riktig
   lönefil läses in.
 - avbockningarna i Att göra (punkternas id, som innehåller AID-kod och BAS)
 - organisationsnamnet och ett redigerat struktur-narrativ.

@@ -165,7 +165,8 @@ export const MODULES = [
             likaArbeteGrupper: '_ruLikaArbeteGrupper', justeratGapInomYrke: '_ruJusteratGap', bortvaltNotering: '_ruBortvaltNotering',
             gruppBlock: '_ruGruppBlock', parBlock: '_ruParBlock', avsnittBlock: '_ruAvsnittBlock',
             tillWordHtml: '_ruTillWordHtml', tillText: '_ruTillText', stabilitetKort: '_ruStabilitetKort',
-            egenTabellBlock: '_ruEgenTabellBlock', arsjamforelseBlock: '_ruArsjamforelseBlock', referenserBlock: '_ruReferenserBlock', basintervallBlock: '_ruBasintervallBlock'
+            egenTabellBlock: '_ruEgenTabellBlock', arsjamforelseBlock: '_ruArsjamforelseBlock', referenserBlock: '_ruReferenserBlock', basintervallBlock: '_ruBasintervallBlock',
+            skalSammanstallningNot: '_ruSkalNot'
         }
     },
     {

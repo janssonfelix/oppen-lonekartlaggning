@@ -34,7 +34,7 @@ function _excelSkalRader() {
     rows.push([], ['Sammanställning per kategori'], ['Kategori', 'Belopp (kr/mån)', 'Andel av skillnaden i grupper med skäl (%)', 'Antal grupper']);
     for (const k of pk.kategorier) rows.push([k.namn, k.summa, pct(k.andel), k.antalGrupper]);
     rows.push(['Totalt', pk.summa, pct(pk.andel), pk.antalGrupper], [],
-        ['Kategorierna och beloppen är organisationens bedömning. Verktyget räknar bara om beloppen till andelar av skillnaden. Andelen per kategori räknas mot den samlade medianskillnaden i de grupper som har skäl; en grupp utan redovisad skillnad räknas bara med belopp.']);
+        ['Kategorierna och beloppen är organisationens bedömning. Verktyget räknar bara om beloppen till andelar av skillnaden. ' + _ruSkalNot(kInstalld())]);
     return rows;
 }
 

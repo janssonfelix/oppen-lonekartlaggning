@@ -354,21 +354,22 @@ rubrikraden, också när det är hopfällt.
    kategorierna är verktygets indelning. Dialogen räknar ihop hur stor del av skillnaden skälen förklarar och hur
    mycket som återstår. Skriv inga namn eller personnummer i kommentaren. Ett skäl sparas först när beloppet är ett
    heltal mellan 0 och 200 000 kr, och dialogen säger till när det inte är det.
-   - När beloppen täcker hela skillnaden föreslår dialogen att du väljer *Ja, sakligt skäl finns*. Om skälen är
-     sakliga bedömer organisationen; verktyget väljer aldrig själv.
+   - När beloppen täcker hela skillnaden föreslår dialogen att du väljer *Ja, sakligt skäl finns*. Organisationen
+     bedömer om skälen är sakliga; verktyget väljer aldrig själv.
    - När skälen tillsammans är större än skillnaden varnar dialogen med beloppen, och inget förslag visas. Ett belopp
      kan vara för högt, eller så räknar två skäl samma sak. Rapporten har samma varning.
    - En grupp som är för liten för att redovisas (färre än minsta gruppstorlek) får inga andelar, och raden och
      skälen följer inte med i exporterna.
    - När ett kön i gruppen är under gränsen visar dialogen beloppen för dig, men i rapporten, Excel och årsbokslutet
-     står bara kategorierna. Belopp, andel och kommentar utelämnas där med noten *belopp utelämnat: ett kön under
-     minsta gruppstorlek*, och dialogen varnar om det.
+     står bara kategorierna. Belopp, andel och kommentar utelämnas där med noten *belopp och kommentar utelämnade: ett
+     kön har färre personer än minsta gruppstorlek*, och dialogen varnar om det.
    - En egen rad har ingen medianskillnad: skälen redovisas med belopp, och de följer inte med i årsbokslutet och
      jämförs inte med förra året.
 
    Skälen sparas i konfigurationsfilen med kommentarerna. De följer med i Rapporttext, Word och PDF (tabellerna
    *Sakliga skäl per grupp* och *Sammanställning per kategori*), i Excel (bladet *Sakliga skal* och två kolumner i
-   handlingsplansunderlaget) och i årsbokslutet. Bokslutet sparar kategori och belopp, men aldrig kommentarerna.
+   handlingsplansunderlaget) och i årsbokslutet. Bokslutet sparar kategori och belopp (för en grupp där ett kön är under gränsen bara
+   kategorin), men aldrig kommentarerna.
    Gruppdossiern och BAS-dossiern visar bedömningen med en länk till raden. Kategorierna och beloppen är
    organisationens bedömning. Verktyget räknar bara om beloppen till andelar av skillnaden.
    Skillnaden mellan könen i en grupp visas i Prioritering bara när både
@@ -491,7 +492,8 @@ du ordna om och ta bort tabellerna.
   - vilka yrkesgrupper som är flaggade båda åren, nya och inte längre flaggade
   - vilka av förra årets öppna punkter som är klara
   - **Sakliga skäl per kategori**: summan och andelen förra året och i år, och per grupp hur skälen och skillnaden
-    ändrats. Bokslutet sparar kategori och belopp, inte kommentarerna. Egna rader följer inte med.
+    ändrats. Bokslutet sparar kategori och belopp (för en grupp där ett kön är under gränsen bara kategorin), inte
+    kommentarerna. Egna rader följer inte med.
 
   En fil sparad med en äldre version saknar raderna per BAS-intervall och de sakliga skälen. Panelen säger det, och
   resten av jämförelsen fungerar.
