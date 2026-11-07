@@ -161,6 +161,10 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   skäl"), också i kopian till urklipp. Meningen om sänkt minsta gruppstorlek står en gång överst i bilagan.
   Förhandsbeskedet bygger inga dossiertexter, och bilagan kostar ett par tiondels sekunder även på stora underlag.
 
+- **Småsaker efter förhandskontrollen.** Ett färdigt urval under *Rapportens innehåll* med bilagan ikryssad heter
+  urvalet med tillägget *+ bilaga* (*Ledningsbrief + bilaga*), och alla avsnitt med heter *Alla avsnitt*, i stället
+  för *Eget urval (14 av 14 avsnitt)*.
+
 ### Analys
 
 - **Lönespridning i årsbokslutet.** Bokslutets rader per yrkesgrupp och per BAS-intervall bär lönespridningen,

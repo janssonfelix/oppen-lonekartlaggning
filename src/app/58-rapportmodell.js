@@ -118,9 +118,24 @@ function rapportUrval() {
     if (u && u.fast && RM_URVAL[u.fast]) return { ordning: [...RM_AVSNITT], med: [...RM_URVAL[u.fast].med], namn: RM_URVAL[u.fast].namn };
     const ordning = u && Array.isArray(u.ordning) ? _rmMedNyaAvsnitt(u.ordning.filter(id => RM_AVSNITT.includes(id))) : [...RM_AVSNITT];
     const med = u && Array.isArray(u.med) ? ordning.filter(id => u.med.includes(id)) : ordning.filter(id => !RM_FORVALT_AV.includes(id));
+    return { ordning, med, namn: _rmUrvalNamn(ordning, med) };
+}
+/**
+ * Urvalets namn: alla avsnitt med heter "Alla avsnitt"; ett färdigt urval i standardordningen heter urvalet, med
+ * tillägget "+ bilaga" när en förvald bilaga (RM_FORVALT_AV) som urvalet inte har är ikryssad; annars eget urval.
+ * @param {string[]} ordning @param {string[]} med
+ */
+function _rmUrvalNamn(ordning, med) {
+    if (med.length === ordning.length) return 'Alla avsnitt';
     const lika = (a, b) => a.length === b.length && a.every((x, i) => x === b[i]);
-    const fast = Object.values(RM_URVAL).find(f => lika(ordning, RM_AVSNITT) && lika(med, f.med));
-    return { ordning, med, namn: fast ? fast.namn : `Eget urval (${med.length} av ${ordning.length} avsnitt)` };
+    if (lika(ordning, RM_AVSNITT)) {
+        const utanBilagor = med.filter(id => !RM_FORVALT_AV.includes(id));
+        for (const f of Object.values(RM_URVAL)) {
+            if (lika(med, f.med)) return f.namn;
+            if (lika(utanBilagor, f.med)) return `${f.namn} + bilaga`;
+        }
+    }
+    return `Eget urval (${med.length} av ${ordning.length} avsnitt)`;
 }
 /**
  * Ett avsnitt som saknas i en sparad ordning (filen sparades före avsnittet) sätts in mellan sina grannar i
