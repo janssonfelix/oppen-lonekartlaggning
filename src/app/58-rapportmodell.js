@@ -449,12 +449,71 @@ function rmEgnaAvsnitt(d, k) {
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
 function rapportModell(...a) { return medExportLage(() => _rapportModellExport.apply(null, /** @type {any} */ (a))); }
 /** Modellen i det gällande urvalet och med alla avsnitt ur ett enda bygge (det kostar sekunder på stora underlag). */
-function rapportModellBada({ besked = false } = {}) { return medExportLage(() => _rapportModellExport({ bada: true, besked })); }
+function rapportModellBada({ besked = false, ateranvand = false } = {}) { return medExportLage(() => _rapportModellExport({ bada: true, besked, ateranvand })); }
+
+// ---- Förhandsbeskedets minne ----
+// Avsnitten beror inte på urvalet (utom bilagan med gruppdossierer, som byggs för sig). När bara urvalet ändras — ett
+// kryss, en flytt eller ett färdigt urval i listan under Exportera — räknas förhandsbeskedet ur det som byggdes senast,
+// i stället för att varje avsnitt räknas om (det kostar sekunder på stora underlag). Minnet bär bara det beskedet
+// räknar: avsnittens id, rubriker, delarnas typ och det utelämnade — inga tal, inga texter ur analysen och inga rader.
+// Ingen fil ritas ur det (bara `besked` får använda det), så regressionen räknas fortfarande om till varje export
+// (ADR-17). Minnet gäller bara så länge ingenting annat har hänt: varje annan inmatning i sidan (_rmHandelser), ett
+// nytt underlag, en ny tröskel, nya referenser eller bokslut och bakgrundsanalyser som blivit klara gör det ogiltigt.
+let _rmHandelser = 0;
+['input', 'change', 'click', 'keydown'].forEach(typ => document.addEventListener(typ, e => {
+    const el = /** @type {HTMLElement} */ (e.target);
+    if (!(el && el.closest && el.closest('#rapport-urval .urval-rad[data-urval-id], #rapport-urval .urval-fasta'))) _rmHandelser++;
+}, true));
+/** @type {{nyckel: any[], avsnitt: any}|null} */
+let _rmMinne = null;
+function _rmMinnesNyckel() {
+    return [_rmHandelser, state.data.length, getData().length, kTroskel(), state.policy, state.statistik, state.forraArsbokslut, state.rapportTabeller,
+        state.perBasRecept, state.forklaringsmodell, state.bootstrapCI, state.powerAnalysis, state.likvardighet && state.likvardighet.result, state.isDemo];
+}
+/** Ett avsnitt som förhandsbeskedet ser det: id, rubrik, delarnas typ och det utelämnade. */
+function _rmLattAvsnitt(a) {
+    return a && { id: a.id, numrerad: a.numrerad, rubrik: a.rubrik, utelamnat: [...(a.utelamnat || [])], delar: a.delar.map(p => ({ typ: p.typ })) };
+}
 /**
- * @param {{alla?: boolean, bada?: boolean, besked?: boolean}} [val] besked: för förhandsbeskedet, som bara räknar —
- *   bilagan med gruppdossierer får då antalet och det utelämnade men inga texter.
+ * @param {{alla?: boolean, bada?: boolean, besked?: boolean, ateranvand?: boolean}} [val] besked: för förhandsbeskedet,
+ *   som bara räknar — bilagan med gruppdossierer får då antalet och det utelämnade men inga texter. ateranvand (bara med
+ *   besked): bara urvalet har ändrats; avsnitten tas ur förhandsbeskedets minne när det gäller (se ovan).
  */
-function _rapportModellExport({ alla = false, bada = false, besked = false } = {}) {
+function _rapportModellExport({ alla = false, bada = false, besked = false, ateranvand = false } = {}) {
+    const nyckel = _rmMinnesNyckel();
+    const giltigt = besked && ateranvand && _rmMinne && _rmMinne.nyckel.length === nyckel.length && _rmMinne.nyckel.every((v, i) => v === nyckel[i]);
+    const b = giltigt ? /** @type {any} */ (_rmMinne).avsnitt : _rmAvsnittenUtanUrval();
+    if (!giltigt) _rmMinne = { nyckel, avsnitt: { ...b, egna: _rmLattAvsnitt(b.egna), arsjamf: _rmLattAvsnitt(b.arsjamf), fasta: b.fasta.map(_rmLattAvsnitt) } };
+    const { harData, k, year, today, urval, dqStatus, egna, arsjamf } = b;
+    // Bilagan med gruppdossierer byggs bara när den följer med i urvalet. Listan över alla avsnitt (alla, bada) bär den
+    // annars med rubriken och utan innehåll: förhandsbeskedet och urvalslistan behöver bara rubriken, och en bilaga
+    // som inte är vald kostar då ingenting.
+    const dossierer = harData ? rmDossierAvsnitt(k, { stub: !rapportUrval().med.includes('dossierer'), besked }) : null;
+    const finns = /** @type {any[]} */ ([...b.fasta, dossierer].filter(Boolean));
+    /** @param {boolean} alla */
+    const avsnitt = alla => {
+        const urval = rapportUrval();
+        const valda = /** @type {any[]} */ (alla ? finns : urval.med.map(id => finns.find(a => a.id === id)).filter(Boolean));
+        // Egna tabeller (ADR-52) står efter avsnittet per BAS-intervall och följer med när det gör det; de väljs i stället
+        // genom att tabeller läggs till eller tas bort under Exportera.
+        if (egna && (alla || urval.med.includes('perbas'))) { const i = valda.findIndex(a => a.id === 'perbas'); valda.splice(i >= 0 ? i + 1 : valda.length, 0, egna); }
+        // Jämförelsen med förra året (ADR-54) står efter Åtgärder och tidsplan och följer med när det gör det; den finns
+        // bara när ett bokslut är inläst.
+        if (arsjamf && (alla || urval.med.includes('atgarder'))) { const i = valda.findIndex(a => a.id === 'atgarder'); valda.splice(i >= 0 ? i + 1 : valda.length, 0, arsjamf); }
+        let nr = 0;
+        return valda.map(a => ({ ...a, grundrubrik: a.rubrik, rubrik: a.numrerad ? `${++nr}. ${a.rubrik}` : a.rubrik }));
+    };
+    const modell = alla => ({
+        titel: `Lönekartläggning ${year} — dokumentation`,
+        undertitel: `${orgNamn('') || '[HR fyller i: organisation/arbetsgivare]'} · ${urval} · genererad ${today} · v${APP_VERSION}${dqStatus ? ` · Underlagets kvalitet: ${UK_ETIKETT[dqStatus]}` : ''}`,
+        demo: !!state.isDemo,
+        avsnitt: avsnitt(alla),
+        urval: rapportUrval().namn,
+    });
+    return bada ? { urval: modell(false), alla: modell(true) } : modell(alla);
+}
+/** Rapportens avsnitt utom bilagan med gruppdossierer, oberoende av urvalet: det _rapportModellExport väljer och numrerar ur. */
+function _rmAvsnittenUtanUrval() {
     const d = getData();
     const year = new Date().getFullYear(), today = new Date().toLocaleDateString('sv-SE');
     const k = kTroskel();
@@ -673,32 +732,7 @@ function _rapportModellExport({ alla = false, bada = false, besked = false } = {
         { typ: 'tabell', nyckel: true, kolumner: [{ rubrik: '', typ: 'text' }, { rubrik: '', typ: 'text' }], rader: (typeof _methodAppendixData === 'function' ? _methodAppendixData() : []).map(([n, v]) => [String(n), String(v)]) },
     ] };
 
-    // Bilagan med gruppdossierer byggs bara när den följer med i urvalet. Listan över alla avsnitt (alla, bada) bär den
-    // annars med rubriken och utan innehåll: förhandsbeskedet och urvalslistan behöver bara rubriken, och en bilaga
-    // som inte är vald kostar då ingenting.
-    const dossierer = d.length ? rmDossierAvsnitt(k, { stub: !rapportUrval().med.includes('dossierer'), besked }) : null;
-    const finns = /** @type {any[]} */ ([sammanfattning, regler, lika, likvardigt, basintervall, struktur, referenser, perbas, atgarder, samverkan, beslut, regressionAvsnitt, metod, dossierer].filter(Boolean));
-    /** @param {boolean} alla */
-    const avsnitt = alla => {
-        const urval = rapportUrval();
-        const valda = /** @type {any[]} */ (alla ? finns : urval.med.map(id => finns.find(a => a.id === id)).filter(Boolean));
-        // Egna tabeller (ADR-52) står efter avsnittet per BAS-intervall och följer med när det gör det; de väljs i stället
-        // genom att tabeller läggs till eller tas bort under Exportera.
-        if (egna && (alla || urval.med.includes('perbas'))) { const i = valda.findIndex(a => a.id === 'perbas'); valda.splice(i >= 0 ? i + 1 : valda.length, 0, egna); }
-        // Jämförelsen med förra året (ADR-54) står efter Åtgärder och tidsplan och följer med när det gör det; den finns
-        // bara när ett bokslut är inläst.
-        if (arsjamf && (alla || urval.med.includes('atgarder'))) { const i = valda.findIndex(a => a.id === 'atgarder'); valda.splice(i >= 0 ? i + 1 : valda.length, 0, arsjamf); }
-        let nr = 0;
-        return valda.map(a => ({ ...a, grundrubrik: a.rubrik, rubrik: a.numrerad ? `${++nr}. ${a.rubrik}` : a.rubrik }));
-    };
-    const modell = alla => ({
-        titel: `Lönekartläggning ${year} — dokumentation`,
-        undertitel: `${orgNamn('') || '[HR fyller i: organisation/arbetsgivare]'} · ${urval} · genererad ${today} · v${APP_VERSION}${dq ? ` · Underlagets kvalitet: ${UK_ETIKETT[dq.status]}` : ''}`,
-        demo: !!state.isDemo,
-        avsnitt: avsnitt(alla),
-        urval: rapportUrval().namn,
-    });
-    return bada ? { urval: modell(false), alla: modell(true) } : modell(alla);
+    return { harData: d.length > 0, k, year, today, urval, dqStatus: dq ? dq.status : null, egna, arsjamf, fasta: [sammanfattning, regler, lika, likvardigt, basintervall, struktur, referenser, perbas, atgarder, samverkan, beslut, regressionAvsnitt, metod] };
 }
 
 /**

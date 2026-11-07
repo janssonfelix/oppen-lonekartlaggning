@@ -16966,10 +16966,12 @@ function tomFlikarUtom(utom = new Set()) {
 // Bladlistan räknas som exporten: i exportläget (ADR-51), så att beskedet och arbetsboken får samma blad.
 function excelAlltBlad(...a) { return medExportLage(() => _excelAlltBladExport.apply(null, /** @type {any} */ (a))); }
 function _excelAlltBladExport() {
+    // Bladet Underlagets kvalitet finns när bedomningUnderlag() ger något, alltså när det finns rader; listan räknar
+    // inte regressionen för att veta det.
     if (!state.data.length) return [];
     const harRef = state.policy.length > 0 || state.statistik.length > 0;
     return ['Löneöversikt', 'Per BAS', ...((state.rapportTabeller || []).length ? ['Egna tabeller'] : []), 'EU-Lonekartlaggning', ...(harRef ? ['Prioritering'] : []), 'Lonegap', 'Konsskevhet', ..._excelDiagramBlad().map(b => b[0]), ...AIDBAS_BLADNAMN, 'Sektorer',
-        ...(state.statistik.length ? ['Jamforelsestatistik'] : []), ...(bedomningUnderlag() ? ['Underlagets kvalitet'] : []), 'Metodik', 'Metod & parametrar'];
+        ...(state.statistik.length ? ['Jamforelsestatistik'] : []), ...(getData().length ? ['Underlagets kvalitet'] : []), 'Metodik', 'Metod & parametrar'];
 }
 
 /** Raderna i bladet Egna tabeller, eller null när inga recept finns. Tal som tal, med kolumnrubriken som enhet. */
@@ -17654,6 +17656,7 @@ const RENSA_OVRIGT = ['action-checklist-container', 'outlier-list', 'data-valida
 
 function _rensaAllData({ inbakat = true } = {}) {
     if (typeof laMinneSlapp === 'function') laMinneSlapp();   // minnet håller en referens till dataraderna
+    _rmMinne = null;   // förhandsbeskedets minne (58-rapportmodell.js)
     // 0. Utforska håller egna referenser till raderna (senaste modellen,
     //    urvalets värdelistor, diagrammets exportfunktion) — släpp dem också,
     //    annars finns hela underlaget kvar i minnet efter rensningen.
@@ -28327,12 +28330,71 @@ function rmEgnaAvsnitt(d, k) {
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
 function rapportModell(...a) { return medExportLage(() => _rapportModellExport.apply(null, /** @type {any} */ (a))); }
 /** Modellen i det gällande urvalet och med alla avsnitt ur ett enda bygge (det kostar sekunder på stora underlag). */
-function rapportModellBada({ besked = false } = {}) { return medExportLage(() => _rapportModellExport({ bada: true, besked })); }
+function rapportModellBada({ besked = false, ateranvand = false } = {}) { return medExportLage(() => _rapportModellExport({ bada: true, besked, ateranvand })); }
+
+// ---- Förhandsbeskedets minne ----
+// Avsnitten beror inte på urvalet (utom bilagan med gruppdossierer, som byggs för sig). När bara urvalet ändras — ett
+// kryss, en flytt eller ett färdigt urval i listan under Exportera — räknas förhandsbeskedet ur det som byggdes senast,
+// i stället för att varje avsnitt räknas om (det kostar sekunder på stora underlag). Minnet bär bara det beskedet
+// räknar: avsnittens id, rubriker, delarnas typ och det utelämnade — inga tal, inga texter ur analysen och inga rader.
+// Ingen fil ritas ur det (bara `besked` får använda det), så regressionen räknas fortfarande om till varje export
+// (ADR-17). Minnet gäller bara så länge ingenting annat har hänt: varje annan inmatning i sidan (_rmHandelser), ett
+// nytt underlag, en ny tröskel, nya referenser eller bokslut och bakgrundsanalyser som blivit klara gör det ogiltigt.
+let _rmHandelser = 0;
+['input', 'change', 'click', 'keydown'].forEach(typ => document.addEventListener(typ, e => {
+    const el = /** @type {HTMLElement} */ (e.target);
+    if (!(el && el.closest && el.closest('#rapport-urval .urval-rad[data-urval-id], #rapport-urval .urval-fasta'))) _rmHandelser++;
+}, true));
+/** @type {{nyckel: any[], avsnitt: any}|null} */
+let _rmMinne = null;
+function _rmMinnesNyckel() {
+    return [_rmHandelser, state.data.length, getData().length, kTroskel(), state.policy, state.statistik, state.forraArsbokslut, state.rapportTabeller,
+        state.perBasRecept, state.forklaringsmodell, state.bootstrapCI, state.powerAnalysis, state.likvardighet && state.likvardighet.result, state.isDemo];
+}
+/** Ett avsnitt som förhandsbeskedet ser det: id, rubrik, delarnas typ och det utelämnade. */
+function _rmLattAvsnitt(a) {
+    return a && { id: a.id, numrerad: a.numrerad, rubrik: a.rubrik, utelamnat: [...(a.utelamnat || [])], delar: a.delar.map(p => ({ typ: p.typ })) };
+}
 /**
- * @param {{alla?: boolean, bada?: boolean, besked?: boolean}} [val] besked: för förhandsbeskedet, som bara räknar —
- *   bilagan med gruppdossierer får då antalet och det utelämnade men inga texter.
+ * @param {{alla?: boolean, bada?: boolean, besked?: boolean, ateranvand?: boolean}} [val] besked: för förhandsbeskedet,
+ *   som bara räknar — bilagan med gruppdossierer får då antalet och det utelämnade men inga texter. ateranvand (bara med
+ *   besked): bara urvalet har ändrats; avsnitten tas ur förhandsbeskedets minne när det gäller (se ovan).
  */
-function _rapportModellExport({ alla = false, bada = false, besked = false } = {}) {
+function _rapportModellExport({ alla = false, bada = false, besked = false, ateranvand = false } = {}) {
+    const nyckel = _rmMinnesNyckel();
+    const giltigt = besked && ateranvand && _rmMinne && _rmMinne.nyckel.length === nyckel.length && _rmMinne.nyckel.every((v, i) => v === nyckel[i]);
+    const b = giltigt ? /** @type {any} */ (_rmMinne).avsnitt : _rmAvsnittenUtanUrval();
+    if (!giltigt) _rmMinne = { nyckel, avsnitt: { ...b, egna: _rmLattAvsnitt(b.egna), arsjamf: _rmLattAvsnitt(b.arsjamf), fasta: b.fasta.map(_rmLattAvsnitt) } };
+    const { harData, k, year, today, urval, dqStatus, egna, arsjamf } = b;
+    // Bilagan med gruppdossierer byggs bara när den följer med i urvalet. Listan över alla avsnitt (alla, bada) bär den
+    // annars med rubriken och utan innehåll: förhandsbeskedet och urvalslistan behöver bara rubriken, och en bilaga
+    // som inte är vald kostar då ingenting.
+    const dossierer = harData ? rmDossierAvsnitt(k, { stub: !rapportUrval().med.includes('dossierer'), besked }) : null;
+    const finns = /** @type {any[]} */ ([...b.fasta, dossierer].filter(Boolean));
+    /** @param {boolean} alla */
+    const avsnitt = alla => {
+        const urval = rapportUrval();
+        const valda = /** @type {any[]} */ (alla ? finns : urval.med.map(id => finns.find(a => a.id === id)).filter(Boolean));
+        // Egna tabeller (ADR-52) står efter avsnittet per BAS-intervall och följer med när det gör det; de väljs i stället
+        // genom att tabeller läggs till eller tas bort under Exportera.
+        if (egna && (alla || urval.med.includes('perbas'))) { const i = valda.findIndex(a => a.id === 'perbas'); valda.splice(i >= 0 ? i + 1 : valda.length, 0, egna); }
+        // Jämförelsen med förra året (ADR-54) står efter Åtgärder och tidsplan och följer med när det gör det; den finns
+        // bara när ett bokslut är inläst.
+        if (arsjamf && (alla || urval.med.includes('atgarder'))) { const i = valda.findIndex(a => a.id === 'atgarder'); valda.splice(i >= 0 ? i + 1 : valda.length, 0, arsjamf); }
+        let nr = 0;
+        return valda.map(a => ({ ...a, grundrubrik: a.rubrik, rubrik: a.numrerad ? `${++nr}. ${a.rubrik}` : a.rubrik }));
+    };
+    const modell = alla => ({
+        titel: `Lönekartläggning ${year} — dokumentation`,
+        undertitel: `${orgNamn('') || '[HR fyller i: organisation/arbetsgivare]'} · ${urval} · genererad ${today} · v${APP_VERSION}${dqStatus ? ` · Underlagets kvalitet: ${UK_ETIKETT[dqStatus]}` : ''}`,
+        demo: !!state.isDemo,
+        avsnitt: avsnitt(alla),
+        urval: rapportUrval().namn,
+    });
+    return bada ? { urval: modell(false), alla: modell(true) } : modell(alla);
+}
+/** Rapportens avsnitt utom bilagan med gruppdossierer, oberoende av urvalet: det _rapportModellExport väljer och numrerar ur. */
+function _rmAvsnittenUtanUrval() {
     const d = getData();
     const year = new Date().getFullYear(), today = new Date().toLocaleDateString('sv-SE');
     const k = kTroskel();
@@ -28551,32 +28613,7 @@ function _rapportModellExport({ alla = false, bada = false, besked = false } = {
         { typ: 'tabell', nyckel: true, kolumner: [{ rubrik: '', typ: 'text' }, { rubrik: '', typ: 'text' }], rader: (typeof _methodAppendixData === 'function' ? _methodAppendixData() : []).map(([n, v]) => [String(n), String(v)]) },
     ] };
 
-    // Bilagan med gruppdossierer byggs bara när den följer med i urvalet. Listan över alla avsnitt (alla, bada) bär den
-    // annars med rubriken och utan innehåll: förhandsbeskedet och urvalslistan behöver bara rubriken, och en bilaga
-    // som inte är vald kostar då ingenting.
-    const dossierer = d.length ? rmDossierAvsnitt(k, { stub: !rapportUrval().med.includes('dossierer'), besked }) : null;
-    const finns = /** @type {any[]} */ ([sammanfattning, regler, lika, likvardigt, basintervall, struktur, referenser, perbas, atgarder, samverkan, beslut, regressionAvsnitt, metod, dossierer].filter(Boolean));
-    /** @param {boolean} alla */
-    const avsnitt = alla => {
-        const urval = rapportUrval();
-        const valda = /** @type {any[]} */ (alla ? finns : urval.med.map(id => finns.find(a => a.id === id)).filter(Boolean));
-        // Egna tabeller (ADR-52) står efter avsnittet per BAS-intervall och följer med när det gör det; de väljs i stället
-        // genom att tabeller läggs till eller tas bort under Exportera.
-        if (egna && (alla || urval.med.includes('perbas'))) { const i = valda.findIndex(a => a.id === 'perbas'); valda.splice(i >= 0 ? i + 1 : valda.length, 0, egna); }
-        // Jämförelsen med förra året (ADR-54) står efter Åtgärder och tidsplan och följer med när det gör det; den finns
-        // bara när ett bokslut är inläst.
-        if (arsjamf && (alla || urval.med.includes('atgarder'))) { const i = valda.findIndex(a => a.id === 'atgarder'); valda.splice(i >= 0 ? i + 1 : valda.length, 0, arsjamf); }
-        let nr = 0;
-        return valda.map(a => ({ ...a, grundrubrik: a.rubrik, rubrik: a.numrerad ? `${++nr}. ${a.rubrik}` : a.rubrik }));
-    };
-    const modell = alla => ({
-        titel: `Lönekartläggning ${year} — dokumentation`,
-        undertitel: `${orgNamn('') || '[HR fyller i: organisation/arbetsgivare]'} · ${urval} · genererad ${today} · v${APP_VERSION}${dq ? ` · Underlagets kvalitet: ${UK_ETIKETT[dq.status]}` : ''}`,
-        demo: !!state.isDemo,
-        avsnitt: avsnitt(alla),
-        urval: rapportUrval().namn,
-    });
-    return bada ? { urval: modell(false), alla: modell(true) } : modell(alla);
+    return { harData: d.length > 0, k, year, today, urval, dqStatus: dq ? dq.status : null, egna, arsjamf, fasta: [sammanfattning, regler, lika, likvardigt, basintervall, struktur, referenser, perbas, atgarder, samverkan, beslut, regressionAvsnitt, metod] };
 }
 
 /**
@@ -28661,14 +28698,18 @@ async function rmDiagramBild(del, ritade = new Set()) {
 function _ebText(delar) { return delar.filter(Boolean).join(' · '); }
 function _ebAntal(n, en, flera) { return `${n} ${n === 1 ? en : flera}`; }
 
-function renderExportBesked() {
+/**
+ * @param {{baraUrval?: boolean}} [val] baraUrval: bara urvalet i listan har ändrats. Avsnitten tas då ur rapportmodellens
+ *   minne (58-rapportmodell.js) och beskedet för Excel och ZIP, som inte beror på urvalet, står kvar.
+ */
+function renderExportBesked({ baraUrval = false } = {}) {
     const har = getData().length > 0;
     const satt = (id, html) => { const el = document.getElementById(id); if (el) el.innerHTML = har ? html : ''; };
     if (!har) { ['besked-word', 'besked-pdf', 'besked-excel', 'besked-zip'].forEach(id => satt(id, '')); _ebRitaUrval(); return; }
     /** @type {any} */ let b = null;
     /** @type {any} */ let alla = null;
     /** @type {any} */ let bada = null;
-    try { bada = rapportModellBada({ besked: true }); alla = bada.alla; b = rmBesked(bada.urval); } catch (e) { rapporteraFel('Förhandsbesked: Word-utkastet', e); }
+    try { bada = rapportModellBada({ besked: true, ateranvand: baraUrval }); alla = bada.alla; b = rmBesked(bada.urval); } catch (e) { rapporteraFel('Förhandsbesked: Word-utkastet', e); }
     if (b) {
         satt('besked-word', `<strong>Innehåller:</strong> ${esc(_ebText([b.urval, _ebAntal(b.avsnitt, 'avsnitt', 'avsnitt'), _ebAntal(b.tabeller, 'tabell', 'tabeller'), _ebAntal(b.diagram, 'diagram', 'diagram'), `${b.fyllIn} fält att fylla i`]))}`
             + (b.utelamnat.length ? `<br><strong>Utelämnar:</strong> ${esc(b.utelamnat.join(' · '))}` : '<br><strong>Utelämnar:</strong> ingenting'));
@@ -28679,6 +28720,7 @@ function renderExportBesked() {
             + `<br><strong>Utelämnar:</strong> ${esc(b.utelamnat.length ? b.utelamnat.join(' · ') : 'ingenting')}`);
         _laNyckel('nyckel-ex-urval', b.urval);
     }
+    if (baraUrval) { _ebRitaUrval(alla); return; }
     let blad = /** @type {string[]} */ ([]);
     try {
         blad = excelAlltBlad();
@@ -28786,7 +28828,7 @@ document.addEventListener('click', e => {
 document.addEventListener('click', e => {
     if (!/** @type {HTMLElement} */ (e.target).closest) return;
     const fast = /** @type {HTMLElement} */ (e.target).closest('[data-urval-fast]');
-    if (fast) { sattRapportUrval(fast.getAttribute('data-urval-fast')); renderExportBesked(); /** @type {HTMLInputElement} */ (document.querySelector(`[data-urval-fast="${fast.getAttribute('data-urval-fast')}"]`))?.focus(); return; }
+    if (fast) { sattRapportUrval(fast.getAttribute('data-urval-fast')); renderExportBesked({ baraUrval: true }); /** @type {HTMLInputElement} */ (document.querySelector(`[data-urval-fast="${fast.getAttribute('data-urval-fast')}"]`))?.focus(); return; }
     const flytta = /** @type {HTMLElement} */ (e.target).closest('[data-urval-flytta]');
     if (!flytta) return;
     const id = flytta.closest('[data-urval-id]')?.getAttribute('data-urval-id') || '', steg = Number(flytta.getAttribute('data-urval-flytta'));
@@ -28798,7 +28840,7 @@ document.addEventListener('click', e => {
     const j = u.ordning.indexOf(granne), ordning = [...u.ordning];
     ordning.splice(i, 1); ordning.splice(j, 0, id);
     sattRapportUrval({ ordning, med: u.med });
-    renderExportBesked();
+    renderExportBesked({ baraUrval: true });
     /** @type {HTMLInputElement} */ (document.querySelector(`#rapport-urval [data-urval-id="${id}"] [data-urval-flytta="${steg}"]:not([disabled])`))?.focus();
 });
 document.addEventListener('change', e => {
@@ -28806,7 +28848,7 @@ document.addEventListener('change', e => {
     if (!ruta) return;
     const u = rapportUrval(), id = /** @type {HTMLElement} */ (ruta).getAttribute('data-urval-med');
     sattRapportUrval({ ordning: u.ordning, med: /** @type {HTMLInputElement} */ (ruta).checked ? [...u.med, id] : u.med.filter(x => x !== id) });
-    renderExportBesked();
+    renderExportBesked({ baraUrval: true });
     /** @type {HTMLInputElement} */ (document.querySelector(`[data-urval-med="${id}"]`))?.focus();
 });
 // SPDX-License-Identifier: MIT

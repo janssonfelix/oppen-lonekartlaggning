@@ -549,7 +549,9 @@ varje ändring av data, urval och inställningar; ett inaktuellt resultat i en j
 fel, 250 ms är det inte. Regressionen räknas därför alltid om. *Får inte implementeras*, inte heller som
 memoisering inuti modulen. Det som är tillåtet är att en funktion som kört regressionen skickar resultatet vidare
 som ett argument till det den själv anropar i samma varv (`bedomningUnderlag({ reg })`, Att göras lista): ett
-värde, ingen lagring, inget att invalidera.
+värde, ingen lagring, inget att invalidera. Förhandsbeskedets minne i `58-rapportmodell.js` är inte en sådan cache: det
+bär bara avsnittens rubriker, delarnas typ och det utelämnade (inga tal), används bara när ett kryss i urvalet ändras
+och ingen fil ritas ur det.
 
 **ADR-19 — Underlagets kvalitet: svagaste länken avgör.** Underlaget bedöms med fem kriterier med status
 OK/Varning/Kritisk: jämförbarhet (andel av personalen i BAS-intervall där båda könen har minst k), statistisk
@@ -1380,6 +1382,11 @@ Kända brister och obesvarade frågor, så att de inte lever bara i en konversat
    intervallet. Förhandsbeskedet i Exportera bygger inga dossiertexter (bara antalet och det utelämnade) och tar
    samma tid med och utan bilagan: ~1,0 s vid 20 000 rader och ~2,9 s vid 55 000. Den tiden är resten av modellen
    och Excel-bladens lista, inte bilagan.
+   Ett ändrat kryss under *Rapportens innehåll* (2026-11-07) ritade hela förhandsbeskedet: 3,0 s vid 55 000 rader och
+   0,33 s på det stora demot (7 000 personer). Beskedet räknas nu ur förhandsbeskedets minne när bara urvalet ändras,
+   och Excel-bladens lista kör inte regressionen för att veta att bladet *Underlagets kvalitet* följer med: ett kryss
+   tar 0,27 s vid 55 000 rader (gräns 1 s i `npm run perf`; det mesta är omritningen efter exportläget, inte beskedet)
+   och under 5 ms på det stora demot, och hela beskedet 2,5 s mot 3,0 s.
 
 **Kod och bygge:**
 6. **Krasch i Node under testkörning** (V8:s skräpsamlare): orsaken är okänd; `npm test` kör om berörda filer.
