@@ -12,13 +12,16 @@
  *   inställningen främst gör skillnad.
  *
  * tests/sok-funktioner.test.js vaktar att varje avsnitt i index.html har en post och att varje post pekar på
- * något som finns. Ett nytt avsnitt får alltså en rad här.
+ * något som finns. Ett nytt avsnitt får alltså en rad här. Avsnitt som en flik bygger när den ritas (Att göra,
+ * Likvärdigt arbete, Löneläget mot ställningstagandet) står dessutom i testets lista DYNAMISKA, som prövar dem
+ * efter demodata. Finns avsnittet inte i sidan (fliken saknar underlag) räknas det som dolt (_sokMalDolt).
  *
  * @type {{ namn: string, synonymer: string[], flik: string, avsnitt?: string, dialog?: 'installningar'|'ordlista'|'symboler'|'lagras'|'basdossier', falt?: string }[]}
  */
 const SOK_FUNKTIONER = [
     // Översikt
     { namn: 'Lönekartläggningsprocessen', synonymer: ['steg', 'process', 'arbetsgång', 'kom igång'], flik: 'dashboard', avsnitt: 'avsnitt-ov-process' },
+    { namn: 'Att göra: alla punkter', synonymer: ['att göra', 'alla punkter', 'checklista', 'avbockning', 'punkter', 'uppgifter'], flik: 'dashboard', avsnitt: 'avsnitt-ov-punkter' },
     // Filer och kvalitet
     { namn: 'Demodata: litet eller stort demo (7 000 personer)', synonymer: ['demo', 'demodata', 'stort demo', 'exempeldata', 'prova', 'syntetisk data', '7000'], flik: 'filer', avsnitt: 'upload-demo-val' },
     { namn: 'Underlagets kvalitet', synonymer: ['datakvalitet', 'kontroll', 'saknas', 'extremvärden', 'outliers', 'avvikande löner', 'registerfel'], flik: 'filer', avsnitt: 'avsnitt-ov-kvalitet' },
@@ -46,6 +49,11 @@ const SOK_FUNKTIONER = [
     { namn: 'Hierarkisk jämförelse', synonymer: ['lägre värderat', 'högre lön', 'hierarki'], flik: 'likvardighet', avsnitt: 'avsnitt-lv-hierarki' },
     { namn: 'Arbetsvärdering med poäng', synonymer: ['arbetsvärdering', 'poäng', 'krav', 'kravprofil'], flik: 'likvardighet', avsnitt: 'avsnitt-lv-poang' },
     { namn: 'Bakgrund', synonymer: ['osaklig', 'likvärdigt arbete'], flik: 'likvardighet', avsnitt: 'avsnitt-lv-metod' },
+    // Avsnitten nedan byggs när fliken ritas (34-likvardigt-arbete.js, 75-lonepolitik.js; listan i tests/sok-funktioner.test.js)
+    { namn: 'Par att titta närmare på', synonymer: ['kandidatpar', 'par', 'jämförelseyrke', 'kvinnodominerat yrke', 'kandidatparen i kronor'], flik: 'likvardighet', avsnitt: 'avsnitt-lv-par' },
+    { namn: 'Yrkena bakom jämförelsen', synonymer: ['kvinnodominerade yrken', 'jämförelseyrken', 'underlag', 'steg för steg'], flik: 'likvardighet', avsnitt: 'avsnitt-lv-underlag' },
+    { namn: 'Inställningar för Likvärdigt arbete', synonymer: ['kvinnotröskel', 'minsta gap', 'antal par', 'definition av kvinnodominerat', 'do', 'scb'], flik: 'likvardighet', avsnitt: 'avsnitt-lv-installningar' },
+    { namn: 'Så fungerar analysen', synonymer: ['metod', 'likvärdigt arbete', 'diagnostik', 'krav-proxy'], flik: 'likvardighet', avsnitt: 'avsnitt-lv-analys' },
     // Lika arbete
     { namn: 'Kvinnor och män i samma yrkesgrupp', synonymer: ['lika arbete', 'yrkesgrupp', 'status'], flik: 'matrix', avsnitt: 'avsnitt-la-yrkesgrupper' },
     { namn: 'Personer att granska', synonymer: ['individ', 'enskilda löner', 'avvikande löner', 'under förväntad nivå'], flik: 'matrix', avsnitt: 'avsnitt-la-personer' },
@@ -55,6 +63,10 @@ const SOK_FUNKTIONER = [
     // Löneläget
     { namn: 'Överblick — löneläget och statistiken mot ställningstagandet', synonymer: ['löneläge', 'överblick'], flik: 'benchmark', avsnitt: 'avsnitt-jmf-overblick' },
     { namn: 'Mot ställningstagandet', synonymer: ['lönepolitik', 'bandkarta', 'spann', 'referens'], flik: 'benchmark', avsnitt: 'avsnitt-jmf-stallningstagande' },
+    { namn: 'Yrkesgrupper mot sitt spann', synonymer: ['spann', 'lönespann', 'under spannet', 'ställningstagandet per yrkesgrupp'], flik: 'benchmark', avsnitt: 'avsnitt-lp-tabell' },
+    { namn: 'Könsposition i bandet', synonymer: ['könsposition', 'band', 'spannets tredjedelar', 'läge i spannet'], flik: 'benchmark', avsnitt: 'avsnitt-lp-kon' },
+    { namn: 'Efterlevnad', synonymer: ['efterlevnad', 'under spann', 'inom spann', 'över spann'], flik: 'benchmark', avsnitt: 'avsnitt-lp-efterlevnad' },
+    { namn: 'Täckningsgrad', synonymer: ['täckning', 'täckningsgrad', 'policyreferens'], flik: 'benchmark', avsnitt: 'avsnitt-lp-tackning' },
     { namn: 'Mot jämförelsestatistiken', synonymer: ['statistik', 'marknad', 'p10', 'p90', 'benchmark'], flik: 'benchmark', avsnitt: 'avsnitt-jmf-statistik' },
     // Prioritering
     { namn: 'Åtgärdslistan', synonymer: ['prioritering', 'prioritet', 'börja här'], flik: 'prioritering', avsnitt: 'avsnitt-pr-lista' },

@@ -107,6 +107,14 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   fälten i Inställningar, med synonymer (*regression* hittar *Vad blir kvar av lönegapet?*), och syns utan lönefil.
   Träfflistan har grupperna först och funktionerna under rubriken *Funktioner*. En funktion i en låst flik säger
   *kräver lönefil* och leder till lönefilskortet i Filer och kvalitet.
+- **Småsaker ur granskningarna.** Tabellen *BAS-effekter* i regressionens tekniska specifikation och Word-utkastets
+  och PDF-rapportens *Sekventiell dekomponering* bär antalet i rubrikraden (*n = …; … kvinnor, … män*), som de andra
+  modelltabellerna. Årsjämförelsens kolumn heter *Kvinnor / män {år}*; en grupp som inte finns i år visar förra årets
+  antal med förra årets årtal. Sökrutan hittar avsnitten som flikarna bygger när de ritas (*Att göra: alla punkter*,
+  Likvärdigt arbetes fyra avsnitt och Lönelägets fyra mot ställningstagandet). Escape i gruppdossiern och BAS-dossiern
+  stänger bara dialogen; diagrammarkeringen står kvar. Årsjämförelsens not säger att en grupp som förra året hade ett
+  kön under den högre av årens gränser räknas som ny i år. Kom igång och lönefilskortet säger båda *litet demo* och
+  *stort demo (7 000 personer)*.
 
 ### Analys
 

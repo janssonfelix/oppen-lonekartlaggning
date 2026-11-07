@@ -33,11 +33,11 @@ bedömningarna och besluten gör och äger arbetsgivaren.
 
 ## 1. (Valfritt men rekommenderat) Lär dig verktyget med demodata
 
-1. Välj ett demo i välkomstraden på Översikt, "prova med demodata, **litet** eller **stort**" (samma
-   två val finns i lönefilskortet i **Filer och kvalitet**, som **Prova med demodata** och **stort demo**):
-   - **litet**: 260 påhittade personer i fem BAS-intervall, snabbt att bläddra i.
+1. Välj ett demo i välkomstraden på Översikt, "prova med demodata, **litet demo** eller **stort demo**" (samma
+   två val, med samma ord, finns i lönefilskortet i **Filer och kvalitet**):
+   - **litet demo**: 260 påhittade personer i fem BAS-intervall, snabbt att bläddra i.
      Det är samma underlag som självdiagnostiken bygger på.
-   - **stort (7 000 personer)**: en påhittad organisation i storlek med en mindre kommun
+   - **stort demo (7 000 personer)**: en påhittad organisation i storlek med en mindre kommun
      eller en stor verksamhet, med BAS-intervall A–K och 30 yrkesgrupper. Här syns verktyget i verklig
      storlek: inlagda löneskillnader i några yrken, ett par för likvärdigt arbete, och små grupper
      som maskeras i exporterna. Inläsningen tar några sekunder.
@@ -424,6 +424,10 @@ ni ordna om och ta bort tabellerna.
   hantel), vilka yrkesgrupper som
   är flaggade båda åren, nya och inte längre flaggade, och vilka av förra årets öppna punkter som är klara. En fil
   sparad med en äldre version saknar raderna per BAS-intervall; panelen säger det, och resten av jämförelsen fungerar.
+  Sparades förra årets fil med en lägre minsta gruppstorlek än årets läses båda åren med den högre gränsen. En
+  yrkesgrupp som var flaggad förra året men då hade ett kön under den högre gränsen räknas därför som **ny** i år (inte
+  som flaggad båda åren) om den är flaggad nu, och förra årets gap för den visas inte. Det är avsiktligt: ett mått
+  för en grupp under årets gräns lämnar aldrig verktyget. Panelen säger det i sin not.
   Samma jämförelse följer med som ett avsnitt i Word-utkastet och PDF-rapporten, som ett block i rapportunderlaget
   och som ett diagram där varje yrkesgrupp visas som ett streck (förra året) och en punkt (i år). Tabellen och hanteln
   per BAS-intervall följer med på samma sätt: tabellen i rapportens avsnitt och i rapportunderlagets block, hanteln

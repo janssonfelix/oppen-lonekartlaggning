@@ -232,6 +232,8 @@ describe('ett bokslut sparat med lägre tröskel än årets', () => {
             expect(texter[1]).toContain('24400');
             expect(modell).toMatch(/minst 10 personer/);
             expect(panel).toContain('den högre av årens gränser, 10 personer');
+            // Panelens not säger vad det betyder för de flaggade grupperna.
+            expect(panel).toContain('räknas därför som ny i år');
             expect(modell).not.toMatch(/respektive års gräns/);
         });
     }

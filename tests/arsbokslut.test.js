@@ -74,8 +74,9 @@ describe('årsbokslut: jämförelsen mellan två år', () => {
         const forra = bokslut(2025, { k: 12, grupper: [{ yrke: 'Bara förra (BAS A)', nKv: 20, nMa: 20, medKv: 1, medMa: 1, gapPct: -8, flaggad: true }] });
         const nu = bokslut(2026, { grupper: [{ yrke: 'Bara nu (BAS A)', nKv: 20, nMa: 20, medKv: 1, medMa: 1, gapPct: -9, flaggad: true }] });
         const j = jamforArsbokslut(forra, nu);
-        expect(j.grupper.borta).toEqual([{ yrke: 'Bara förra (BAS A)', gapForra: -8, gapNu: null, nKv: 20, nMa: 20 }]);
-        expect(j.grupper.nya).toEqual([{ yrke: 'Bara nu (BAS A)', gapForra: null, gapNu: -9, nKv: 20, nMa: 20 }]);
+        // Antalet är årets när gruppen finns i år, annars förra årets; antalAr säger vilket år det gäller.
+        expect(j.grupper.borta).toEqual([{ yrke: 'Bara förra (BAS A)', gapForra: -8, gapNu: null, nKv: 20, nMa: 20, antalAr: 2025 }]);
+        expect(j.grupper.nya).toEqual([{ yrke: 'Bara nu (BAS A)', gapForra: null, gapNu: -9, nKv: 20, nMa: 20, antalAr: 2026 }]);
         expect(j.samma_k).toBe(false);
     });
 });
@@ -184,5 +185,21 @@ describe('årsbokslut: förra årets fil kan ha sparats med en lägre tröskel',
         for (const s of [77771, 77777, 77779, 66661, 66663]) expect(text).not.toContain(String(s));
         expect(j.grupper.borta).toEqual([]);   // Liten (BAS A) hade 6 kvinnor: under årets gräns
         expect(hantelRader(j).rader.map(r => r.namn)).not.toContain('Liten (BAS A)');
+    });
+    it('en grupp som var flaggad förra året med ett kön under den högre gränsen räknas som ny i år, inte som kvar (avsiktligt)', () => {
+        // Förra året (k = 5): 6 kvinnor och 30 män, flaggad. I år (k = 10): 12 kvinnor, flaggad. Båda åren läses med
+        // gränsen 10, så förra årets rad faller bort och gruppen står bland de nya — förra årets gap lämnar aldrig verktyget.
+        const forra = bokslut(2025, { k: 5, grupper: [{ yrke: 'Tekniker (BAS D)', nKv: 6, nMa: 30, medKv: 31117, medMa: 34000, gapPct: -8.5, flaggad: true }] });
+        const nu = bokslut(2026, { grupper: [{ yrke: 'Tekniker (BAS D)', nKv: 12, nMa: 30, medKv: 31500, medMa: 34000, gapPct: -7.4, flaggad: true }] });
+        expect(forra.grupper).toHaveLength(1);   // giltig med filens k = 5
+        const j = jamforArsbokslut(forra, nu);
+        expect(j.samma_k).toBe(false);
+        expect(j.grupper.kvar).toEqual([]);
+        expect(j.grupper.nya).toEqual([{ yrke: 'Tekniker (BAS D)', gapForra: null, gapNu: -7.4, nKv: 12, nMa: 30, antalAr: 2026 }]);
+        expect(JSON.stringify(j)).not.toContain('-8.5');
+        // Med samma gräns båda åren är gruppen kvar.
+        const sammaK = jamforArsbokslut(bokslut(2025, { grupper: [{ ...forra.grupper[0], nKv: 10 }] }), nu);
+        expect(sammaK.grupper.kvar.map(g => g.yrke)).toEqual(['Tekniker (BAS D)']);
+        expect(sammaK.grupper.nya).toEqual([]);
     });
 });

@@ -326,3 +326,23 @@ describe('BAS-dossiern: status som i Lika arbete, och sökrutans rad', () => {
         w.__state.kLage = 'skarm';
     });
 });
+
+describe('Escape med en öppen dossier', () => {
+    it('stänger bara dialogen: diagrammarkeringen står kvar, i gruppdossiern och i BAS-dossiern; nästa Escape tar bort den', () => {
+        const w = demo(), doc = w.document;
+        w.eval("sattDiagramMarkering('bas:C')");
+        w.eval("openGruppdossier(null)");
+        expect(doc.getElementById('dossier-modal').style.display).toBe('flex');
+        tangent(w, doc.body, 'Escape');
+        expect(doc.getElementById('dossier-modal').style.display).not.toBe('flex');
+        expect(w.eval('diagramMarkering()')).toEqual(['bas:C']);
+        w.eval("openBasdossier('C', null)");
+        expect(oppen(w)).toBe(true);
+        tangent(w, doc.body, 'Escape');
+        expect(oppen(w)).toBe(false);
+        expect(w.eval('diagramMarkering()')).toEqual(['bas:C']);
+        // Utan öppen dialog tar Escape bort markeringen, som förut.
+        tangent(w, doc.body, 'Escape');
+        expect(w.eval('diagramMarkering()')).toBeNull();
+    });
+});

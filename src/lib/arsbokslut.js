@@ -151,7 +151,9 @@ export function jamforArsbokslut(forra, nu) {
     });
     const perYrke = lista => new Map(lista.map(g => [g.yrke, g]));
     const fG = perYrke(forra.grupper), nG = perYrke(nu.grupper);
-    const rad = (yrke, f, n) => ({ yrke, gapForra: f ? f.gapPct : null, gapNu: n ? n.gapPct : null, nKv: n ? n.nKv : (f ? f.nKv : null), nMa: n ? n.nMa : (f ? f.nMa : null) });
+    // Antalet är årets när gruppen finns i år, annars förra årets; antalAr säger vilket år antalet gäller.
+    const rad = (yrke, f, n) => ({ yrke, gapForra: f ? f.gapPct : null, gapNu: n ? n.gapPct : null, nKv: n ? n.nKv : (f ? f.nKv : null), nMa: n ? n.nMa : (f ? f.nMa : null),
+        antalAr: n ? nu.ar : forra.ar });
     const kvar = [], nya = [], borta = [];
     for (const [yrke, n] of nG) { if (!n.flaggad) continue; const f = fG.get(yrke); (f && f.flaggad ? kvar : nya).push(rad(yrke, f, n)); }
     for (const [yrke, f] of fG) { if (!f.flaggad) continue; const n = nG.get(yrke); if (!n || !n.flaggad) borta.push(rad(yrke, f, n)); }

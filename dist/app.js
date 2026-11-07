@@ -8759,7 +8759,9 @@ function jamforArsbokslut(forra, nu) {
     });
     const perYrke = lista => new Map(lista.map(g => [g.yrke, g]));
     const fG = perYrke(forra.grupper), nG = perYrke(nu.grupper);
-    const rad = (yrke, f, n) => ({ yrke, gapForra: f ? f.gapPct : null, gapNu: n ? n.gapPct : null, nKv: n ? n.nKv : (f ? f.nKv : null), nMa: n ? n.nMa : (f ? f.nMa : null) });
+    // Antalet är årets när gruppen finns i år, annars förra årets; antalAr säger vilket år antalet gäller.
+    const rad = (yrke, f, n) => ({ yrke, gapForra: f ? f.gapPct : null, gapNu: n ? n.gapPct : null, nKv: n ? n.nKv : (f ? f.nKv : null), nMa: n ? n.nMa : (f ? f.nMa : null),
+        antalAr: n ? nu.ar : forra.ar });
     const kvar = [], nya = [], borta = [];
     for (const [yrke, n] of nG) { if (!n.flaggad) continue; const f = fG.get(yrke); (f && f.flaggad ? kvar : nya).push(rad(yrke, f, n)); }
     for (const [yrke, f] of fG) { if (!f.flaggad) continue; const n = nG.get(yrke); if (!n || !n.flaggad) borta.push(rad(yrke, f, n)); }
@@ -12712,8 +12714,10 @@ function _mkBorrRad() {
     el.appendChild(b);
 }
 
+// Escape tar bort markeringen och penslingen, utom när en dialog är öppen: då stänger Escape bara dialogen
+// (dialogerna har klassen glossary-modal, de äldre modal; båda visas med display: flex).
 document.addEventListener('keydown', e => {
-    if (e.key !== 'Escape' || document.querySelector('.modal[style*="flex"]')) return;
+    if (e.key !== 'Escape' || document.querySelector('.modal[style*="flex"], .glossary-modal[style*="flex"]')) return;
     if (typeof _rfPenselRensaAlla === 'function') _rfPenselRensaAlla();
     if (_markering.length) sattDiagramMarkering(null);
 });
@@ -25339,7 +25343,7 @@ function renderRegressionCard() {
                     ${r.basEffekter ? `
                     <h3>BAS-effekter (indikatorvariabler)</h3>
                     <p>Varje BAS-intervall har en egen indikator; det alfabetiskt första intervallet, <code>${esc(r.basRef)}</code>, är referens. Koefficienten är intervallets lönenivå i procent mot referensen, efter kontroll för kön och ålder — inget antagande om lika stora steg mellan bokstäverna.</p>
-                    <table class="reg-tech-table">
+                    <table class="reg-tech-table">${antalCaption(r.nKvAnalysed, r.nMaAnalysed)}
                         <tr><th>BAS</th><th>Nivå mot ${esc(r.basRef)}</th><th>95% KI</th><th>p-värde</th></tr>
                         ${r.basEffekter.map(e => `<tr><td>${esc(e.bas)}</td><td>${e.pct >= 0 ? '+' : ''}${svPct(e.pct, 1)}</td><td>${svPct(e.low, 1)} till ${svPct(e.high, 1)}</td><td>${_formatPValue(e.p)}</td></tr>`).join('')}
                     </table>
@@ -26861,7 +26865,8 @@ document.getElementById('btn-export-handlingsplan')?.addEventListener('click', e
 // modellen i stället för att var och en räkna och formulera själv.
 //
 // Delar: { typ: 'stycke', text, stil? } (stil: dampad | not | fet) · { typ: 'fyllIn', text } · { typ: 'rubrik', niva, text } ·
-//        { typ: 'tabell', kolumner: [{ rubrik, typ }], rader: [[värde]], nyckel? } · { typ: 'diagram', id, flik, rubrik } ·
+//        { typ: 'tabell', kolumner: [{ rubrik, typ }], rader: [[värde]], nyckel?, caption? } · { typ: 'diagram', id, flik, rubrik } ·
+// En modelltabell, där alla rader bygger på samma urval, bär antalet i `caption` (antalText: "n = 260; …"), som skärmen.
 // Kolumntyper: text, antal, ar (ålder i år), kr, krAr, pct0, pct1, pct2, tecken2 (procent med tecken), andelAvMan, direktiv, fyllIn.
 // Ett värde kan också vara { text } (färdig text, t.ex. en förklaring i stället för ett tal) eller null (streck).
 //
@@ -27129,8 +27134,8 @@ function rmArsjamforelseAvsnitt(diagram) {
     const grupptabell = (rubrik, lista, tom) => {
         if (!lista.length) { delar.push(stycke(`${rubrik}: ${tom}`)); return; }
         delar.push(stycke(`${rubrik} (${lista.length}):`));
-        delar.push({ typ: 'tabell', kolumner: [{ rubrik: 'Yrkesgrupp', typ: 'text' }, { rubrik: 'Kvinnor / män', typ: 'text' }, { rubrik: `Gap ${forra.ar}`, typ: 'pct1' }, { rubrik: `Gap ${nu.ar}`, typ: 'pct1' }],
-            rader: lista.map(g => [g.yrke, g.nKv != null && g.nMa != null ? `${g.nKv} / ${g.nMa}` : null, g.gapForra, g.gapNu]) });
+        delar.push({ typ: 'tabell', kolumner: [{ rubrik: 'Yrkesgrupp', typ: 'text' }, { rubrik: `Kvinnor / män ${nu.ar}`, typ: 'text' }, { rubrik: `Gap ${forra.ar}`, typ: 'pct1' }, { rubrik: `Gap ${nu.ar}`, typ: 'pct1' }],
+            rader: lista.map(g => [g.yrke, _abGruppAntal(g, nu.ar), g.gapForra, g.gapNu]) });
     };
     delar.push(...rmBasUtvecklingDelar(j, forra.ar, nu.ar, diagram('arsjamforelse', 'bas')));
     delar.push({ typ: 'rubrik', niva: 3, text: 'Lika arbete' });
@@ -27431,7 +27436,7 @@ function _rapportModellExport({ alla = false, bada = false } = {}) {
         for (const b of reg.bortvalt || []) regression.delar.push(stycke(_ruBortvaltNotering(b)));
         if (reg.fellBackFromFull && reg.diagnostics.length) regression.delar.push(stycke(`Notering: den valda modellen kunde inte skattas. Föll tillbaka till ${reg.modelDesc}. ${reg.diagnostics.map(utanTaggar).join(' ')}`));
         regression.delar.push({ typ: 'rubrik', niva: 3, text: 'Sekventiell dekomponering' },
-            { typ: 'tabell', kolumner: [{ rubrik: 'Modell', typ: 'text' }, { rubrik: 'Lönegap', typ: 'tecken2' }, { rubrik: 'R²', typ: 'pct1' }],
+            { typ: 'tabell', caption: antalText(reg.nKvAnalysed, reg.nMaAnalysed), kolumner: [{ rubrik: 'Modell', typ: 'text' }, { rubrik: 'Lönegap', typ: 'tecken2' }, { rubrik: 'R²', typ: 'pct1' }],
               rader: stegUt.steg.map(st => (st.status !== 'ok' ? [st.name, { text: st.status === 'singular' ? 'singulär' : 'för få obs' }, null] : [st.name, st.gapPct, st.R2 * 100])) });
         if (reg.yrkesSteg?.status === 'ok') regression.delar.push(stycke(`Steget + Yrkesgrupp: ${utanTaggar(_yrkesStegText(reg.yrkesSteg))}`));
         if (stegUt.utelamnat) { regression.delar.push(stycke(stegUt.not, 'not')); regression.utelamnat.push('första steget i dekomponeringen (ett kön under tröskeln)'); }
@@ -27507,7 +27512,7 @@ function rmTillHtml(m, { utskrift = false, bilder = null } = {}) {
         }
         if (p.typ === 'tabell') {
             if (p.nyckel) return `<table>${p.rader.map(r => `<tr><th>${esc(rmCell(r[0], 'text'))}</th><td>${cell(r[1], p.kolumner[1].typ)}</td></tr>`).join('')}</table>`;
-            return `<table><thead><tr>${p.kolumner.map(c => `<th>${esc(c.rubrik)}</th>`).join('')}</tr></thead><tbody>`
+            return `<table>${p.caption ? `<caption>${esc(p.caption)}</caption>` : ''}<thead><tr>${p.kolumner.map(c => `<th>${esc(c.rubrik)}</th>`).join('')}</tr></thead><tbody>`
                 + p.rader.map(r => `<tr>${r.map((v, i) => `<td>${cell(v, p.kolumner[i].typ)}</td>`).join('')}</tr>`).join('') + '</tbody></table>';
         }
         return '';
@@ -28102,7 +28107,12 @@ function _utkastTillBlock(html) {
             const tag = n.tagName.toLowerCase();
             const klass = n.classList;
             if (/^h[1-3]$/.test(tag)) block.push({ typ: 'rubrik', niva: +tag[1], delar: trimma(delarAv(n)) });
-            else if (tag === 'table') block.push(tabell(n));
+            else if (tag === 'table') {
+                // Rubrikraden (antalet bakom en modelltabell) står som ett dämpat stycke närmast före tabellen.
+                const cap = n.querySelector(':scope > caption');
+                if (cap) { const d = trimma(delarAv(cap)); if (d.length) block.push({ typ: 'stycke', stil: 'dampad', delar: d }); }
+                block.push(tabell(n));
+            }
             else if (tag === 'figure' && n.hasAttribute('data-rm-bild')) block.push({ typ: 'bild', id: n.getAttribute('data-rm-bild'), flik: n.getAttribute('data-rm-flik'), text: n.textContent.trim() });
             else if (tag === 'div' && klass.contains('fillin')) block.push({ typ: 'stycke', stil: 'fyllIn', delar: trimma(delarAv(n)) });
             else if (tag === 'div' && klass.contains('draftbox')) block.push({ typ: 'stycke', stil: 'utkastruta', delar: trimma(delarAv(n)) });
@@ -30402,6 +30412,15 @@ function _abBasTabellHtml(j, forraAr, nuAr) {
         + `<p class="text-dampad-xs marg-4-0-0">Bara intervall med minst ${j.kGrans} personer båda åren (den högre av årens minsta gruppstorlek). Förändringen i kronor och i procent av förra årets värde. Medianen rör sig också när sammansättningen ändras: nyanställda och avgångar påverkar den lika mycket som löneökningar.</p>`;
 }
 
+/**
+ * Antalet kvinnor och män i en flaggad yrkesgrupp i årsjämförelsen: årets antal, eller förra årets märkt med året när
+ * gruppen inte finns i år (kolumnen heter "Kvinnor / män {år}"). null utan antal.
+ */
+function _abGruppAntal(g, nuAr) {
+    if (g.nKv == null || g.nMa == null) return null;
+    return `${g.nKv} / ${g.nMa}${g.antalAr != null && g.antalAr !== nuAr ? ` (${g.antalAr})` : ''}`;
+}
+
 /** Panelen Jämförelse med förra året i Spara och jämför år. */
 function renderArsjamforelse() {
     const host = document.getElementById('arsjamforelse');
@@ -30426,10 +30445,10 @@ function renderArsjamforelse() {
     const nyckeltal = `<table class="data-table st-088"><thead><tr><th>Mått</th><th class="t-hoger">${forra.ar}</th><th class="t-hoger">${nu.ar}</th><th class="t-hoger">Skillnad</th></tr></thead><tbody>`
         + j.nyckeltal.map(r => `<tr><td>${esc(r.etikett)}</td><td class="t-tal">${skriv(r.forra, r.typ)}</td><td class="t-tal">${skriv(r.nu, r.typ)}</td><td class="t-tal">${diff(r.diff, r.typ)}</td></tr>`).join('')
         + '</tbody></table>';
-    const antal = g => (g.nKv != null && g.nMa != null ? `${g.nKv} / ${g.nMa}` : '–');
+    const antal = g => _abGruppAntal(g, nu.ar) ?? '–';
     const gruppRad = g => `<tr><td>${esc(g.yrke)}</td><td class="t-tal">${antal(g)}</td><td class="t-tal">${g.gapForra == null ? '–' : svPct(g.gapForra, 1)}</td><td class="t-tal">${g.gapNu == null ? '–' : svPct(g.gapNu, 1)}</td></tr>`;
     const grupptabell = (rubrik, lista, tom) => `<h4 class="fs-sm marg-10-0-4">${esc(rubrik)} (${lista.length})</h4>` + (lista.length
-        ? `<table class="data-table st-088"><thead><tr><th>Yrkesgrupp</th><th class="t-hoger">Kvinnor / män</th><th class="t-hoger">Gap ${forra.ar}</th><th class="t-hoger">Gap ${nu.ar}</th></tr></thead><tbody>${lista.map(gruppRad).join('')}</tbody></table>`
+        ? `<table class="data-table st-088"><thead><tr><th>Yrkesgrupp</th><th class="t-hoger">Kvinnor / män ${nu.ar}</th><th class="t-hoger">Gap ${forra.ar}</th><th class="t-hoger">Gap ${nu.ar}</th></tr></thead><tbody>${lista.map(gruppRad).join('')}</tbody></table>`
         : `<p class="text-dampad-sm marg-0">${esc(tom)}</p>`);
     const g = j.grupper;
     const hantel = _abHantelRader(j);
@@ -30442,7 +30461,7 @@ function renderArsjamforelse() {
     const kvar = p.kvarFranForra;
     const punkter = `<p class="text-dampad-sm marg-8-0-4">Förra året var ${p.klaraForra} av ${p.totaltForra} punkter i Att göra avbockade; i år ${p.klaraNu} av ${p.totaltNu}.</p>`
         + (kvar.length ? `<p class="text-dampad-sm marg-0-0-4">Förra årets öppna punkter (${kvar.length}):</p><ul class="fs-sm marg-0-0-8">${kvar.map(q => `<li>${esc(q.titel || q.id)}${q.klarNu ? ' — <strong>klar i år</strong>' : q.finnsNu ? ' — fortfarande öppen' : ' — finns inte längre i listan'}</li>`).join('')}</ul>` : '<p class="text-dampad-sm marg-0">Förra året hade inga öppna punkter.</p>');
-    host.innerHTML = huvud + (j.samma_k ? '' : `<p class="k-mask-note">Bokslutet sparades med minsta gruppstorlek ${forra.k}; i år gäller ${nu.k}. Yrkesgrupper och BAS-intervall jämförs bara där de, och för könsuppdelade mått båda könen, når den högre av årens gränser, ${j.kGrans} personer.</p>`)
+    host.innerHTML = huvud + (j.samma_k ? '' : `<p class="k-mask-note">Bokslutet sparades med minsta gruppstorlek ${forra.k}; i år gäller ${nu.k}. Yrkesgrupper och BAS-intervall jämförs bara där de, och för könsuppdelade mått båda könen, når den högre av årens gränser, ${j.kGrans} personer. En yrkesgrupp som var flaggad förra året men då hade ett kön under ${j.kGrans} personer räknas därför som ny i år om den är flaggad nu, och förra årets gap för den visas inte.</p>`)
         + `<h4 class="fs-sm marg-6-0-4">Nyckeltal</h4>${nyckeltal}${_abBasTabellHtml(j, forra.ar, nu.ar)}<h4 class="fs-sm marg-12-0-2">Lika arbete</h4>${grupper}<h4 class="fs-sm marg-12-0-2">Att göra</h4>${punkter}`
         + `<p class="text-dampad-xs marg-8-0-0">Lönemått bara för yrkesgrupper där båda könen når minsta gruppstorlek; gapet är kvinnors medianlön mot mäns, negativt när kvinnor ligger lägre.</p>`;
     const el = document.getElementById('chart-arsjamforelse');
@@ -32209,13 +32228,16 @@ document.addEventListener('click', e => {
  *   inställningen främst gör skillnad.
  *
  * tests/sok-funktioner.test.js vaktar att varje avsnitt i index.html har en post och att varje post pekar på
- * något som finns. Ett nytt avsnitt får alltså en rad här.
+ * något som finns. Ett nytt avsnitt får alltså en rad här. Avsnitt som en flik bygger när den ritas (Att göra,
+ * Likvärdigt arbete, Löneläget mot ställningstagandet) står dessutom i testets lista DYNAMISKA, som prövar dem
+ * efter demodata. Finns avsnittet inte i sidan (fliken saknar underlag) räknas det som dolt (_sokMalDolt).
  *
  * @type {{ namn: string, synonymer: string[], flik: string, avsnitt?: string, dialog?: 'installningar'|'ordlista'|'symboler'|'lagras'|'basdossier', falt?: string }[]}
  */
 const SOK_FUNKTIONER = [
     // Översikt
     { namn: 'Lönekartläggningsprocessen', synonymer: ['steg', 'process', 'arbetsgång', 'kom igång'], flik: 'dashboard', avsnitt: 'avsnitt-ov-process' },
+    { namn: 'Att göra: alla punkter', synonymer: ['att göra', 'alla punkter', 'checklista', 'avbockning', 'punkter', 'uppgifter'], flik: 'dashboard', avsnitt: 'avsnitt-ov-punkter' },
     // Filer och kvalitet
     { namn: 'Demodata: litet eller stort demo (7 000 personer)', synonymer: ['demo', 'demodata', 'stort demo', 'exempeldata', 'prova', 'syntetisk data', '7000'], flik: 'filer', avsnitt: 'upload-demo-val' },
     { namn: 'Underlagets kvalitet', synonymer: ['datakvalitet', 'kontroll', 'saknas', 'extremvärden', 'outliers', 'avvikande löner', 'registerfel'], flik: 'filer', avsnitt: 'avsnitt-ov-kvalitet' },
@@ -32243,6 +32265,11 @@ const SOK_FUNKTIONER = [
     { namn: 'Hierarkisk jämförelse', synonymer: ['lägre värderat', 'högre lön', 'hierarki'], flik: 'likvardighet', avsnitt: 'avsnitt-lv-hierarki' },
     { namn: 'Arbetsvärdering med poäng', synonymer: ['arbetsvärdering', 'poäng', 'krav', 'kravprofil'], flik: 'likvardighet', avsnitt: 'avsnitt-lv-poang' },
     { namn: 'Bakgrund', synonymer: ['osaklig', 'likvärdigt arbete'], flik: 'likvardighet', avsnitt: 'avsnitt-lv-metod' },
+    // Avsnitten nedan byggs när fliken ritas (34-likvardigt-arbete.js, 75-lonepolitik.js; listan i tests/sok-funktioner.test.js)
+    { namn: 'Par att titta närmare på', synonymer: ['kandidatpar', 'par', 'jämförelseyrke', 'kvinnodominerat yrke', 'kandidatparen i kronor'], flik: 'likvardighet', avsnitt: 'avsnitt-lv-par' },
+    { namn: 'Yrkena bakom jämförelsen', synonymer: ['kvinnodominerade yrken', 'jämförelseyrken', 'underlag', 'steg för steg'], flik: 'likvardighet', avsnitt: 'avsnitt-lv-underlag' },
+    { namn: 'Inställningar för Likvärdigt arbete', synonymer: ['kvinnotröskel', 'minsta gap', 'antal par', 'definition av kvinnodominerat', 'do', 'scb'], flik: 'likvardighet', avsnitt: 'avsnitt-lv-installningar' },
+    { namn: 'Så fungerar analysen', synonymer: ['metod', 'likvärdigt arbete', 'diagnostik', 'krav-proxy'], flik: 'likvardighet', avsnitt: 'avsnitt-lv-analys' },
     // Lika arbete
     { namn: 'Kvinnor och män i samma yrkesgrupp', synonymer: ['lika arbete', 'yrkesgrupp', 'status'], flik: 'matrix', avsnitt: 'avsnitt-la-yrkesgrupper' },
     { namn: 'Personer att granska', synonymer: ['individ', 'enskilda löner', 'avvikande löner', 'under förväntad nivå'], flik: 'matrix', avsnitt: 'avsnitt-la-personer' },
@@ -32252,6 +32279,10 @@ const SOK_FUNKTIONER = [
     // Löneläget
     { namn: 'Överblick — löneläget och statistiken mot ställningstagandet', synonymer: ['löneläge', 'överblick'], flik: 'benchmark', avsnitt: 'avsnitt-jmf-overblick' },
     { namn: 'Mot ställningstagandet', synonymer: ['lönepolitik', 'bandkarta', 'spann', 'referens'], flik: 'benchmark', avsnitt: 'avsnitt-jmf-stallningstagande' },
+    { namn: 'Yrkesgrupper mot sitt spann', synonymer: ['spann', 'lönespann', 'under spannet', 'ställningstagandet per yrkesgrupp'], flik: 'benchmark', avsnitt: 'avsnitt-lp-tabell' },
+    { namn: 'Könsposition i bandet', synonymer: ['könsposition', 'band', 'spannets tredjedelar', 'läge i spannet'], flik: 'benchmark', avsnitt: 'avsnitt-lp-kon' },
+    { namn: 'Efterlevnad', synonymer: ['efterlevnad', 'under spann', 'inom spann', 'över spann'], flik: 'benchmark', avsnitt: 'avsnitt-lp-efterlevnad' },
+    { namn: 'Täckningsgrad', synonymer: ['täckning', 'täckningsgrad', 'policyreferens'], flik: 'benchmark', avsnitt: 'avsnitt-lp-tackning' },
     { namn: 'Mot jämförelsestatistiken', synonymer: ['statistik', 'marknad', 'p10', 'p90', 'benchmark'], flik: 'benchmark', avsnitt: 'avsnitt-jmf-statistik' },
     // Prioritering
     { namn: 'Åtgärdslistan', synonymer: ['prioritering', 'prioritet', 'börja här'], flik: 'prioritering', avsnitt: 'avsnitt-pr-lista' },
@@ -32368,8 +32399,10 @@ function sokFunktionsTraffar(text) {
 }
 
 function _sokHarData() { try { return getData().length > 0; } catch (_e) { return false; } }
-/** Avsnittet är dolt i sin flik (hidden, display: none eller .dold utan inline-stil), fram till panelen. */
+/** Avsnittet är dolt i sin flik (hidden, display: none eller .dold utan inline-stil), fram till panelen. Ett avsnitt
+ *  som fliken bygger när den ritas och som inte finns i sidan räknas som dolt, så att valet säger vad som saknas. */
 function _sokMalDolt(p) {
+    if (p.avsnitt && !document.getElementById(p.avsnitt)) return true;
     for (let n = p.avsnitt ? document.getElementById(p.avsnitt) : null; n && !n.classList.contains('view-panel'); n = n.parentElement) {
         if (n.hidden || n.style.display === 'none' || (n.classList.contains('dold') && !n.style.display)) return true;
     }
