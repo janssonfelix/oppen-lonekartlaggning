@@ -116,6 +116,12 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   kön under den högre av årens gränser räknas som ny i år. Kom igång och lönefilskortet säger båda *litet demo* och
   *stort demo (7 000 personer)*.
 
+- **Bilaga: gruppdossierer i Word-utkastet och PDF-rapporten.** Under *Rapportens innehåll* finns sist avsnittet
+  *Bilaga: gruppdossierer*, förvalt av: kryssat i får rapporten en gruppdossier per yrkesgrupp där både kvinnor och
+  män når minsta gruppstorlek, med samma text som dossierns kopia och byggd med minsta gruppstorlek. Grupper där ett
+  kön är under gränsen räknas i förhandsbeskedet men namnges inte. BAS-dossiererna står redan i avsnittet per
+  BAS-intervall och upprepas inte.
+
 ### Analys
 
 - **Lönespridning i årsbokslutet.** Bokslutets rader per yrkesgrupp och per BAS-intervall bär lönespridningen,

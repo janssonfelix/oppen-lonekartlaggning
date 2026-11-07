@@ -71,10 +71,10 @@ describe('årsjämförelsen i rapporten, rapportunderlaget och som hantel (ADR-5
         w.__cfg = cfg; w.eval('applyConfigSnapshot(window.__cfg)');
         return { w, cfg };
     };
-    it('utan bokslut har rapporten sina tretton avsnitt; med bokslut står Jämförelse med förra året efter Åtgärder och tidsplan, också i ledningsbriefen', () => {
+    it('utan bokslut har rapporten sina fjorton avsnitt (med bilagan med gruppdossierer); med bokslut står Jämförelse med förra året efter Åtgärder och tidsplan, också i ledningsbriefen', () => {
         const u = fonster(null);
         expect(u.eval('rapportModell({ alla: true })').avsnitt.map(a => a.id)).not.toContain('arsjamforelse');
-        expect(u.eval('rapportModell({ alla: true })').avsnitt).toHaveLength(13);
+        expect(u.eval('rapportModell({ alla: true })').avsnitt).toHaveLength(14);
         const { w, cfg } = medBokslut();
         const ids = w.eval('rapportModell({ alla: true })').avsnitt.map(a => a.id);
         expect(ids[ids.indexOf('atgarder') + 1]).toBe('arsjamforelse');

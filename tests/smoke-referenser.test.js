@@ -146,7 +146,7 @@ describe('överblicken i exporterna', () => {
     it('rapporten har avsnittet Lönerna mot referenserna efter Lönestruktur och rapportmått, i hela dokumentationen och facklig dialog men inte i ledningsbriefen', () => {
         const w = fonster();
         const ids = w.eval('rapportModell({ alla: true })').avsnitt.map(a => a.id);
-        expect(ids).toHaveLength(13);
+        expect(ids).toHaveLength(14);   // med bilagan med gruppdossierer (förvald av)
         expect(ids[ids.indexOf('struktur') + 1]).toBe('referenser');
         w.eval("sattRapportUrval('ledning')");
         expect(w.eval('rapportModell()').avsnitt.map(a => a.id)).not.toContain('referenser');
@@ -157,10 +157,10 @@ describe('överblicken i exporterna', () => {
         const avsnitt = w.eval('rapportModell()').avsnitt.find(a => a.id === 'referenser');
         expect(avsnitt.delar.some(p => p.typ === 'diagram' && p.id === 'chart-ref-hantel')).toBe(true);
     });
-    it('utan någon referens finns avsnittet inte, och räkningen är tolv', () => {
+    it('utan någon referens finns avsnittet inte, och räkningen är tretton (med bilagan med gruppdossierer)', () => {
         const w = createAppWindow();
         w.__state.data = Array.from({ length: 40 }, (_, i) => ({ bas: 'AB'[i % 2], kon: i % 2 ? 'man' : 'kvinna', lon: 30000 + i * 100, alder: 40, aid: '1', yrke: '1 Y', yrkeLabel: 'Y', radnr: i + 2 }));
-        expect(w.eval('rapportModell({ alla: true })').avsnitt).toHaveLength(12);
+        expect(w.eval('rapportModell({ alla: true })').avsnitt).toHaveLength(13);
     });
     it('rapportunderlaget har blocket med talen och listan', () => {
         const w = fonster();

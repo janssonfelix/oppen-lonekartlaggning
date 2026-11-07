@@ -155,12 +155,12 @@ describe('Word-utkastet som .docx', () => {
         // Eget urval: annan ordning, ett avsnitt bort; okända namn hoppas över.
         w.eval("sattRapportUrval({ ordning: ['struktur', 'sammanfattning', 'finns-inte', 'lika'], med: ['struktur', 'lika', 'metod', 'finns-inte'] })");
         expect(w.eval('rapportModell()').avsnitt.map(a => a.id)).toEqual(['struktur', 'lika', 'metod']);
-        expect(w.eval('rapportUrval()').namn).toBe('Eget urval (3 av 13 avsnitt)');
+        expect(w.eval('rapportUrval()').namn).toBe('Eget urval (3 av 14 avsnitt)');
         expect(rubriker()[0]).toMatch(/^1\. Struktur/);
         // Utkastet följer urvalet; listan med alla avsnitt gör det inte.
         const html = w.eval('_buildDocumentationDraftHtml()');
         expect(html).not.toMatch(/Samverkan med arbetstagarna/);
-        expect(w.eval('rapportModell({ alla: true })').avsnitt).toHaveLength(13);
+        expect(w.eval('rapportModell({ alla: true })').avsnitt).toHaveLength(14);   // med bilagan med gruppdossierer, som är förvald av
         // Rensning återställer urvalet.
         w.eval('_rensaAllData()');
         expect(w.__state.rapportUrval).toBeNull();
@@ -206,7 +206,7 @@ describe('Word-utkastet som .docx', () => {
         expect(d.getElementById('besked-pdf').textContent).toContain('bilagor med flikarnas tabeller och diagram');
         // Urvalslistan: en rad per avsnitt, utan paragrafhänvisningar; ett färdigt urval ändrar beskedet.
         const rader = () => [...d.querySelectorAll('#rapport-urval .urval-rad')];
-        expect(rader()).toHaveLength(13);
+        expect(rader()).toHaveLength(14);
         expect(d.getElementById('rapport-urval').textContent).not.toMatch(/§|2023\/970/);
         d.querySelector('[data-urval-fast="ledning"]').click();
         expect(word()).toContain('Ledningsbrief · 4 avsnitt');
@@ -216,7 +216,7 @@ describe('Word-utkastet som .docx', () => {
         // En ruta och en flytt ger ett eget urval; första raden kan inte flyttas upp.
         const ruta = d.querySelector('[data-urval-med="metod"]');
         ruta.checked = true; ruta.dispatchEvent(new w.Event('change', { bubbles: true }));
-        expect(word()).toContain('Eget urval (5 av 13 avsnitt)');
+        expect(word()).toContain('Eget urval (5 av 14 avsnitt)');
         expect(rader()[0].querySelector('[data-urval-flytta="-1"]').disabled).toBe(true);
         rader()[2].querySelector('[data-urval-flytta="-1"]').click();
         expect(rader().map(r => r.dataset.urvalId).slice(0, 3)).toEqual(['sammanfattning', 'lika', 'regler']);
@@ -377,5 +377,64 @@ describe('robusthetspanelen följer minsta gruppstorlek (ADR-38)', () => {
         const t = w.document.getElementById('robusthet-body').textContent;
         expect(t).toContain('5300');
         expect(t).not.toMatch(/redovisas inte här/);
+    });
+});
+
+describe('Bilaga: gruppdossierer i Word-utkastet och PDF-rapporten', () => {
+    const MED_DOSSIERER = w => w.eval("sattRapportUrval({ ordning: rapportUrval().ordning, med: [...RM_URVAL.hela.med, 'dossierer'] })");
+    const bilaga = w => w.eval('rapportModell()').avsnitt.find(a => a.id === 'dossierer');
+    it('är förvald av: hela dokumentationen, facklig dialog och ledningsbriefen saknar den; den står sist i ordningen och i urvalslistan, okryssad', () => {
+        const w = createAppWindow(); w.__loadDemoData();
+        expect(w.eval('rapportUrval()').ordning.at(-1)).toBe('dossierer');
+        for (const u of ['hela', 'facklig', 'ledning']) {
+            w.eval(`sattRapportUrval('${u}')`);
+            expect(bilaga(w), u).toBeUndefined();
+            expect(w.eval('_buildDocumentationDraftHtml()'), u).not.toContain('Bilaga: gruppdossierer');
+        }
+        w.eval("sattRapportUrval('hela')");
+        expect(w.eval('rapportUrval()').namn).toBe('Hela dokumentationen');
+        w.document.querySelector('.nav-item[data-tab="dokumentera"]').click();
+        const ruta = w.document.querySelector('[data-urval-med="dossierer"]');
+        expect(ruta).not.toBeNull();
+        expect(ruta.checked).toBe(false);
+        expect(ruta.closest('label').textContent.trim()).toBe('Bilaga: gruppdossierer');
+        // Hela dokumentationen utan bilagan räknas fortfarande som hela: PDF-rapporten får flikarnas bilagor.
+        expect(w.document.getElementById('besked-pdf').textContent).toContain('bilagor med flikarnas tabeller och diagram');
+        // Rutan i listan tar med bilagan.
+        ruta.checked = true; ruta.dispatchEvent(new w.Event('change', { bubbles: true }));
+        expect(bilaga(w)).toBeTruthy();
+    });
+    it('vald: en dossier per yrkesgrupp där båda könen når k, med samma text som gruppdossierns kopia, byggd i exportläget', () => {
+        const w = createAppWindow(); w.__loadDemoData();
+        MED_DOSSIERER(w);
+        const a = bilaga(w);
+        expect(a.rubrik).toBe('Bilaga: gruppdossierer');
+        const k = w.eval('kInstalld()');
+        const nycklar = w.eval('medExportLage(() => gruppdossierCandidates().map(g => buildGruppdossier(g.key)).filter(d => d.nKv >= kTroskel() && d.nMa >= kTroskel()).map(d => d.key))');
+        expect(nycklar.length).toBeGreaterThan(1);
+        const rubriker = a.delar.filter(p => p.typ === 'rubrik');
+        expect(rubriker).toHaveLength(nycklar.length);
+        // Varje dossier: rubriken är textens första rad och styckena resten, rad för rad.
+        const forsta = w.eval(`medExportLage(() => gruppdossierAsText(buildGruppdossier(${JSON.stringify(nycklar[0])})))`).split('\n');
+        const i = a.delar.findIndex(p => p.typ === 'rubrik' && p.text === forsta[0]);
+        expect(i).toBeGreaterThan(-1);
+        const resten = forsta.slice(1).map(t => t.trim()).filter(Boolean);
+        expect(a.delar.slice(i + 1, i + 1 + resten.length).map(p => p.text)).toEqual(resten);
+        // Word-utkastet och PDF-rapporten har avsnittet.
+        expect(w.eval('_buildDocumentationDraftHtml()')).toContain('<h2>Bilaga: gruppdossierer</h2>');
+        expect(k).toBe(10);
+    });
+    it('ingen grupp under k: vid k = 25 faller grupperna där ett kön har färre än 25, och de räknas i utelämnat', () => {
+        const w = createAppWindow(); w.__loadDemoData();
+        w.eval('sattKTroskel(25, { fraga: false })');
+        MED_DOSSIERER(w);
+        const a = bilaga(w);
+        const alla = w.eval('medExportLage(() => gruppdossierCandidates().map(g => buildGruppdossier(g.key)))');
+        const med = alla.filter(d => d.nKv >= 25 && d.nMa >= 25);
+        expect(alla.length).toBeGreaterThan(med.length);
+        // Exakt grupperna där båda könen når 25, i kandidaternas ordning.
+        const forvantat = med.map(d => w.eval(`medExportLage(() => gruppdossierAsText(buildGruppdossier(${JSON.stringify(d.key)})))`).split('\n')[0]);
+        expect(a.delar.filter(p => p.typ === 'rubrik').map(p => p.text)).toEqual(forvantat);
+        expect(a.utelamnat.join(' ')).toMatch(/yrkesgrupp(er)? där ett kön har färre än 25 personer/);
     });
 });

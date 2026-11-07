@@ -402,7 +402,10 @@ ni ordna om och ta bort tabellerna.
    - **PDF-rapport** via "Generera PDF": en låst kopia av Word-utkastet, att verifiera mot. Fältet **Organisation**
      intill knappen är namnet på rapportens försättsblad; det hämtas från organisationspaketet när ett är inläst. Under
      *Rapportens innehåll* väljer du vilka avsnitt som följer med i båda (hela dokumentationen,
-     ledningsbrief, facklig dialog eller ett eget urval).
+     ledningsbrief, facklig dialog eller ett eget urval). Sist i listan står **Bilaga: gruppdossierer**, som är
+     förvald av eftersom den kan bli lång: kryssa i den så får rapporten en gruppdossier per yrkesgrupp där både
+     kvinnor och män når minsta gruppstorlek, med samma text som dossierns knapp *Kopiera*. BAS-intervallens
+     dossierer står redan i avsnittet *Lönekartläggning per BAS-intervall*.
    - **Protokollet för gemensam lönebedömning** som underlag för **facklig samverkan**
      (i Exportera, och som knapp i kortet *Samverkan & uppföljning* i Handlingsplan).
    - **Excel (alla flikar)** för bilagor och egen vidarebearbetning.

@@ -977,7 +977,10 @@ Excel-filen är underlaget, PDF-rapporten är en låst kopia av Word-utkastet oc
 och diagrammen som bilder) — användarens beslut, så att exporterna aldrig säger olika saker om samma underlag.
 Rapportens innehåll byggs som data i en rapportmodell (`58-rapportmodell.js`: avsnitt med stycken, typade
 tabeller, diagram och fält att fylla i), och både Word och PDF ritas ur den — de kan därför inte glida isär.
-Urvalet av avsnitt (hela dokumentationen, ledningsbrief, facklig dialog eller eget) gäller båda. Lönegapet
+Urvalet av avsnitt (hela dokumentationen, ledningsbrief, facklig dialog eller eget) gäller båda. Ett avsnitt kan
+vara förvalt av (`RM_FORVALT_AV`): *Bilaga: gruppdossierer* (`rmDossierAvsnitt`, en gruppdossier per yrkesgrupp där
+båda könen når k, i exportläget) står i listan men följer med först när det kryssas i, och hela dokumentationen
+räknas som hel utan det (`rmArHelaDokumentationen`). Lönegapet
 skrivs i exporterna som på skärmen: kvinnors lön i procent av mäns — utom i EU-lönerapporten och rapportens
 avsnitt om lönetransparens, som har direktivets tecken (§ 4, *EU-direktivets rapportmått*). Varje export har ett förhandsbesked om vad
 den innehåller och utelämnar (`59-exportbesked.js`). Exporterna läser aldrig en flik som är ritad med en annan
