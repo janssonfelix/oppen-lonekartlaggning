@@ -223,6 +223,11 @@ export const MODULES = [
         expose: { nyttRecept: '_trNytt', valideraRecept: '_trValidera', receptBeskrivning: '_trBeskrivning', receptTillTabeller: '_trTabeller' }
     },
     {
+        // Sakliga skäl som strukturerad post (handlingsplanen); årsbokslutet importerar sammanställningen: före det.
+        file: 'sakligaskal.js', ns: '__mirrorSakligaskal',
+        expose: { skalKategorier: '_sakKategorier', valideraSkal: '_sakValidera', skalSammanstallning: '_sakSammanstallning', skalPerKategori: '_sakPerKategori' }
+    },
+    {
         file: 'arsbokslut.js', ns: '__mirrorArsbokslut',
         expose: { byggArsbokslut: '_abBygg', valideraArsbokslut: '_abValidera', jamforArsbokslut: '_abJamfor', hantelRader: '_abHantelRader',
                   basHantelRader: '_abBasHantelRader', jamforBasIntervall: '_abJamforBas', bokslutMedGrans: '_abMedGrans', lonespridning: '_abSpridning' }
