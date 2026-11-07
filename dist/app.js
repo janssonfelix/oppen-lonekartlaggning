@@ -29154,7 +29154,7 @@ function bes8Uppdatera() {
     const topp = document.getElementById('rp-slutsatser');
     if (topp) {
         topp.innerHTML = _laSlutsats('Bedömda områden', `${bedomda} av ${omraden.length}`, bedomda === omraden.length ? 'alla områden är bedömda' : `${omraden.length - bedomda} återstår`)
-            + _laSlutsats('Åtgärd krävs', svTal(atgard, 0), atgard ? 'för in åtgärden i handlingsplanen' : 'inget område', atgard > 0)
+            + _laSlutsats('Åtgärd krävs', svTal(atgard, 0), atgard ? 'för in åtgärden i Handlingsplan' : 'inget område', atgard > 0)
             + _laSlutsats('Möjlig risk', svTal(risk, 0), risk ? 'utreds vidare' : 'inget område');
     }
     for (const a of omraden) {
@@ -33566,12 +33566,12 @@ const SOK_FUNKTIONER = [
     { namn: 'Jämför scenarier (A/B)', synonymer: ['scenario', 'a/b'], flik: 'loneoversyn', avsnitt: 'avsnitt-lo-scenarier' },
     { namn: 'Så ska prognosen läsas', synonymer: ['prognos', 'planeringsunderlag', 'metod'], flik: 'loneoversyn', avsnitt: 'avsnitt-lo-metod' },
     // Regler & praxis
-    { namn: '1. Lönesättningsprinciper & lönekriterier', synonymer: ['lönepolicy', 'kriterier', 'bestämmelser'], flik: 'bestammelser', avsnitt: 'avsnitt-rp-1' },
+    { namn: '1. Lönesättningsprinciper och lönekriterier', synonymer: ['lönepolicy', 'kriterier', 'bestämmelser'], flik: 'bestammelser', avsnitt: 'avsnitt-rp-1' },
     { namn: '2. Lönerevisionsprocessen (löneöversyn)', synonymer: ['lönerevision', 'bestämmelser'], flik: 'bestammelser', avsnitt: 'avsnitt-rp-2' },
-    { namn: '3. Rörlig lön, tillägg & förmåner', synonymer: ['bonus', 'tillägg', 'förmåner', 'bestämmelser'], flik: 'bestammelser', avsnitt: 'avsnitt-rp-3' },
-    { namn: '4. Anställningsvillkor & arbetstid', synonymer: ['deltid', 'arbetstid', 'villkor', 'bestämmelser'], flik: 'bestammelser', avsnitt: 'avsnitt-rp-4' },
-    { namn: '5. Praxis vid nyanställning & ingångslöner', synonymer: ['ingångslön', 'nyanställning', 'rekrytering', 'bestämmelser'], flik: 'bestammelser', avsnitt: 'avsnitt-rp-5' },
-    { namn: '6. Praxis vid befordran & lönehöjning', synonymer: ['befordran', 'lönehöjning', 'karriär', 'bestämmelser'], flik: 'bestammelser', avsnitt: 'avsnitt-rp-6' },
+    { namn: '3. Rörlig lön, tillägg och förmåner', synonymer: ['bonus', 'tillägg', 'förmåner', 'bestämmelser'], flik: 'bestammelser', avsnitt: 'avsnitt-rp-3' },
+    { namn: '4. Anställningsvillkor och arbetstid', synonymer: ['deltid', 'arbetstid', 'villkor', 'bestämmelser'], flik: 'bestammelser', avsnitt: 'avsnitt-rp-4' },
+    { namn: '5. Praxis vid nyanställning och ingångslöner', synonymer: ['ingångslön', 'nyanställning', 'rekrytering', 'bestämmelser'], flik: 'bestammelser', avsnitt: 'avsnitt-rp-5' },
+    { namn: '6. Praxis vid befordran och lönehöjning', synonymer: ['befordran', 'lönehöjning', 'karriär', 'bestämmelser'], flik: 'bestammelser', avsnitt: 'avsnitt-rp-6' },
     // Exportera
     { namn: 'Robusthet — står sig slutsatserna?', synonymer: ['känslighet', 'andra inställningar', 'robust'], flik: 'dokumentera', avsnitt: 'avsnitt-dk-robusthet' },
     { namn: 'Rapportens innehåll', synonymer: ['rapporturval', 'avsnitt i rapporten', 'ordning'], flik: 'dokumentera', avsnitt: 'avsnitt-ex-urval' },

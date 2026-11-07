@@ -7,7 +7,7 @@ import { describe, it, expect } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
 
 const poster = w => [...w.document.querySelectorAll('#sidindex a')].map(a => a.textContent.trim());
-const KORT = 'Checklista — bestämmelser & praxis att granska';
+const KORT = 'Checklista — regler och praxis att granska';
 const oppna = (w, flik) => w.document.querySelector(`.nav-item[data-tab="${flik}"]`).click();
 
 describe('Sidindex', () => {
@@ -132,7 +132,7 @@ describe('Sidindex', () => {
         oppna(w, 'matrix');
         expect(nav.hidden).toBe(false);
         expect(poster(w)).toContain('Personer att granska');
-        expect(poster(w)).not.toContain('Checklista — bestämmelser & praxis att granska');
+        expect(poster(w)).not.toContain('Checklista — regler och praxis att granska');
         oppna(w, 'info');
         expect(nav.hidden).toBe(true);
         expect(kropp.classList.contains('har-sidindex')).toBe(false);

@@ -59,7 +59,7 @@ function bes8Uppdatera() {
     const topp = document.getElementById('rp-slutsatser');
     if (topp) {
         topp.innerHTML = _laSlutsats('Bedömda områden', `${bedomda} av ${omraden.length}`, bedomda === omraden.length ? 'alla områden är bedömda' : `${omraden.length - bedomda} återstår`)
-            + _laSlutsats('Åtgärd krävs', svTal(atgard, 0), atgard ? 'för in åtgärden i handlingsplanen' : 'inget område', atgard > 0)
+            + _laSlutsats('Åtgärd krävs', svTal(atgard, 0), atgard ? 'för in åtgärden i Handlingsplan' : 'inget område', atgard > 0)
             + _laSlutsats('Möjlig risk', svTal(risk, 0), risk ? 'utreds vidare' : 'inget område');
     }
     for (const a of omraden) {
