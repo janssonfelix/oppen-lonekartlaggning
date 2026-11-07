@@ -1,6 +1,6 @@
 # Risk- och sårbarhetsanalys (dataskydd och informationssäkerhet) — Öppen lönekartläggning
 
-**Bygge:** `2026.11.05` · **Artefakt-SHA-256:** `36997a7e1632470a91d010f7e4a2b3a2f46a8b0990a8b7169fe67e491e74082b` (se `dist/RELEASE.txt`).
+**Bygge:** `2026.11.05` · **Artefakt-SHA-256:** `4941961ec610bfd1182cd6fa93ed6aece52f286468b0e487ef147171e0e3017b` (se `dist/RELEASE.txt`).
 **Granskningsdatum:** 2026-11-07.
 **Granskningsmetod:** kodläsning påstående för påstående + statisk sökning i källkod och bygge +
 körning av det byggda verktyget i jsdom och i Chromium (utan nätverk) med syntetiska testfiler.
@@ -296,7 +296,10 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   yrke som det sparats efter saneringen ovan — yrkets råvärde sparas inte — lön, ålder, kön, och poäng och ansvarskod
   när de finns), med filens råvärde kortat till 24 tecken, i `state.forhandskontroll` för sessionen; de ingår inte i
   någon export, i Att göra-punkterna, i rapportunderlaget eller i konfigurationsfilen (k-invariantsviten,
-  `tests/ktroskel-invarianter.test.js`), och Rensa all data tömmer dem.
+  `tests/ktroskel-invarianter.test.js`), och Rensa all data tömmer dem. En fil som väntar på *Läs in* (inställningen
+  *Stoppa och visa förhandskontrollen innan inläsning*) räknas som data i minnet: Rensa all data släpper den även när
+  inget underlag är inläst, rensningen vid inaktivitet är igång under väntan, och *Vad lagras i minnet* säger att en
+  fil väntar.
 
 ### 6.5 k-anonymitet ✔
 - **Regeln gäller det som lämnar verktyget (ADR-51, 2026-10-29).** På skärmen visas alla grupper (`kTroskel()` är 1 i

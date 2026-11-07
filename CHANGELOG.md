@@ -22,6 +22,11 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   som punkter i Att göra (Underlagets kvalitet) tills filen läses om utan dem, och inläsningsrapporten länkar till
   avsnittet. Inställningen *Stoppa och visa förhandskontrollen innan inläsning* (standard av, följer med i
   konfigurationsfilen) låter filen vänta på *Läs in*; *Avbryt* släpper filen och lämnar det tidigare underlaget orört.
+  Under väntan visas inte förra filens kolumnmappning, och en väntande fil släpps av *Rensa all data* och av
+  rensningen vid inaktivitet. Avsnittet namnger filen det beskriver; en fil där ingen rad gick att använda får en
+  egen förhandskontroll med raden *Filen lästes inte in*, och det tidigare underlaget står kvar. Varje punkt i Att
+  göra har en egen titel, och en varning som redan står som punkt under Datakvalitet eller Fullständighet läggs
+  inte till igen.
   Demodata och organisationspaket läses in som förut. Raderna finns bara på skärmen: de ingår inte i någon export
   eller i konfigurationsfilen, vilket k-invariantsviten prövar. Ingen tolkning av värden har ändrats.
 - **Importprofiler: kolumnmappningen görs en gång.** En gjord kolumnmappning kan sparas som en importprofil: när

@@ -114,7 +114,9 @@ Exportera en personalfil (CSV eller XLSX) med dessa kolumner:
    filen. Avsnittet är utfällt när något bör kontrolleras — en medianlön som ser ut som årslön eller timlön, åldrar
    utanför 16–75 år, okända BAS- eller kön-värden — och varningarna står också i Att göra. Vill ni granska tolkningen
    innan filen används kryssar ni i **Stoppa och visa förhandskontrollen innan inläsning** i Inställningar: då väntar
-   filen på *Läs in*, och *Avbryt* lämnar det tidigare underlaget orört. Raderna visas bara på skärmen.
+   filen på *Läs in*, och *Avbryt* lämnar det tidigare underlaget orört; kolumnmappningen visas när filen är
+   inläst. Avsnittet namnger filen det beskriver, också en fil där ingen rad gick att använda. Raderna visas bara
+   på skärmen.
 3. Läs avsnittet **Underlagets kvalitet** i samma flik. Fem kriterier — jämförbarhet, statistisk
    styrka, fullständighet, rimlighet och modell — får OK, Varning eller Kritisk, och
    underlaget får samma status som det svagaste. Under kriterierna står detaljerna:
