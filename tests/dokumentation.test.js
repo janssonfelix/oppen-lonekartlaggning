@@ -425,10 +425,12 @@ describe('vakt: avförda ord och lagrum i användartexten (språkgenomgången 20
         ['anmälningspliktig', /anmälningspliktig/],
         ['utredningsgräns', /utrednings(?:gräns|tröskel|steg)|obligatorisk utredning|[Ll]agstadgat tröskelvärde/],
         // Klarspråksputsen (K-OR7): "Nära pension", och svenska ord i stället för de engelska och tekniska termerna.
-        // Ordlistan får ange den engelska termen gement som förklaring ("eng. privacy by design").
+        // Ordlistan får ange den engelska termen inom parentes som förklaring ("(eng. privacy by design)").
         ['Successionszon', /[Ss]uccessions(?:zon|risk)/],
         ['conditional gap', /[Cc]onditional gap/],
-        ['Privacy by Design', /Privacy by Design/],
+        ['Privacy by Design', /Privacy by [Dd]esign/],
+        // "vitlista" får stå bredvid kodnamnet ALLOWED_FIELDS; annars "godkända fält".
+        ['vitlista', /^(?![\s\S]*ALLOWED_FIELDS)[\s\S]*[Vv]itlist/],
         ['datafunnel', /[Dd]atafunnel/],
         ['lokal-only', /lokal-only/i],
         ['leverage', /[Ll]everage/],
@@ -468,12 +470,12 @@ describe('vakt: avförda ord och lagrum i användartexten (språkgenomgången 20
         for (const t of ['Lönegapet', 'det råa lönegapet', 'Gapet visar', 'ett gap på', 'rågapet', 'Könsgapet',
             'BAS-nivån', 'Ladda upp strukturdata', 'strukturfilen', 'medarbetarna', 'likvärdiga arbeten',
             'osakliga gap', 'anmälningspliktig', 'EU-direktivets utredningströskel', 'Lagstadgat tröskelvärde', 'Gap-analys',
-            'i successionszon', 'Hög successionsrisk', 'Per-BAS conditional gap', 'Privacy by Design', 'Urval (datafunnel)',
+            'i successionszon', 'Hög successionsrisk', 'Per-BAS conditional gap', 'Privacy by Design', 'Privacy by design', 'Urval (datafunnel)', 'bara vitlistade kolumner', 'Fältvitlistan',
             'lokal-only-arkitektur', 'leverage', 'media-mått', 'rekryteringspipelinen'])
             expect(traffar(t, AVFORDA), t).not.toEqual([]);
         for (const t of ['gapPct', 'meanGap', '68-var-uppstar-gapet.js', 'chart-perbas-gap', 'BAS-nivå B',
             'löneskillnad', 'anställda', 'BAS-intervall', 'likvärdigt arbete', 'lönefilen', '`gap`',
-            'Nära pension', 'Inbyggt dataskydd', '(eng. privacy by design)', 'bara godkända fält', 'inflytelserika punkter', 'rekryteringen'])
+            'Nära pension', 'Inbyggt dataskydd', '(eng. privacy by design)', 'bara godkända fält', 'vitlista `ALLOWED_FIELDS`', 'inflytelserika punkter', 'rekryteringen'])
             expect(traffar(t, AVFORDA), t).toEqual([]);
         for (const t of ['(§ 8)', 'art. 9', 'Art. 9', 'artikel 10', '3 kap. 9 §']) expect(traffar(t, LAGRUM_UI), t).not.toEqual([]);
         for (const t of ['Diskrimineringslagen kräver att du analyserar varje skillnad (3 kap.).', 'lagen'])
