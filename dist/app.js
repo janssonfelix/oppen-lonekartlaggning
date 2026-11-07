@@ -27034,7 +27034,7 @@ function generateMotivationSuggestions(item) {
             const who = ageDiff > 0 ? 'Männen' : 'Kvinnorna';
             out.push({
                 type: 'info',
-                text: `${who} är i snitt <strong>${svTal(Math.abs(ageDiff), 1)} år äldre</strong> än motparten i denna grupp (${svTal(meanMaAge, 0)} mot ${svTal(meanKvAge, 0)}). Vi rekommenderar att ni stämmer av om åldersskillnaden kan förklara en del av lönegapet — erfarenhet och tid i yrket är ofta sakliga grunder för löneskillnader.`
+                text: `${who} är i snitt <strong>${svTal(Math.abs(ageDiff), 1)} år äldre</strong> än motparten i denna grupp (${svTal(meanMaAge, 0)} mot ${svTal(meanKvAge, 0)}). Stäm av om åldersskillnaden förklarar en del av löneskillnaden. Erfarenhet och tid i yrket är ofta sakliga skäl för löneskillnader.`
             });
         }
     }
@@ -27443,7 +27443,7 @@ document.getElementById('btn-prio-consequence')?.addEventListener('click', () =>
         <div class="bak-white ram-1-kant rund-8 pad-14-16">
             <h4 class="underrubrik">Stegvis konsekvensanalys: budgetpåverkan om N grupper utreds</h4>
             <p class="text-dampad-sm lh-1_55 marg-0-0-10">
-                Visar kumulativ kostnad och täckningsgrad om de prioriterade grupperna åtgärdas i ordning. Underlättar val mellan ambitioner: "vi tar topp 5 i år" eller "vi tar topp 10".
+                Visar kumulativ kostnad och täckningsgrad om de prioriterade grupperna åtgärdas i ordning. Det gör det lättare att välja ambition, till exempel de fem första i år eller de tio första.
             </p>
             <table class="data-table st-088">
                 <thead><tr><th>Åtgärd</th><th class="t-hoger">Antal personer</th><th class="t-hoger">Total kostnad</th><th class="t-hoger">Andel av total</th></tr></thead>
@@ -27610,7 +27610,7 @@ function _prioMatrisFigur(items, etikettlage, refLabel, cfg) {
     const storst = Math.max(1, ...items.map(kostnad));
     const tips = d => [[`#${d.rang} ${d.yrke}`], [`BAS ${d.bas}`, `n = ${d.y} (Kv: ${d.kvN}, Mä: ${d.maN})`], ['Median', kr(d.median)],
         [`Referens (${d.refKalla})`, kr(d.refMedian)], ['Avvikelse', `${pm(d.x, 2)} % (${pm(d.diffKr, 0).slice(0, 1)}${kr(Math.abs(d.diffKr))}/mån)`],
-        ...(d.gapPct != null ? [['Lönegap kön', `${pm(d.gapPct, 1)} %`]] : []),
+        ...(d.gapPct != null ? [['Skillnad kvinnor–män', `${pm(d.gapPct, 1)} %`]] : []),
         ...(d.atgard > 0 ? [['Åtgärdskostnad/år', kr(d.atgard)]] : d.over > 0 ? [['Överlönekostnad/år', kr(d.over)]] : []),
         ['Prioriteringsindex', `${svTal(d.index, 0)}/100`]];
     const lager = Object.keys(PRIO_STATUS_INFO).map(status => ({

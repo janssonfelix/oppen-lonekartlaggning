@@ -2210,7 +2210,7 @@ exports[`golden: Excel-exporterna på fast dataset > "Excel (alla flikar)" match
   ],
   "Prioritering": [
     [
-      "Prioriteringsindex (0-100, högt = hantera först)",
+      "Prioriteringsindex (0–100, högt = först)",
       "Yrkesgrupp (AID + benämning)",
       "BAS-intervall",
       "Prioriteringsstatus (Börja här / Följ upp / Balanserat / Över referens)",
@@ -2220,7 +2220,7 @@ exports[`golden: Excel-exporterna på fast dataset > "Excel (alla flikar)" match
       "Referens-median (kr/mån)",
       "Avvikelse mot referens (%)",
       "Avvikelse per person (kr/mån)",
-      "Lönegap kvinnor/män (%), negativt tal = kvinnor lägre",
+      "Skillnad kvinnor–män (%), negativt tal = kvinnor lägre",
       "Justeringskostnad per person (kr/mån)",
       "Total åtgärdskostnad (kr för perioden, inkl PO-påslag)",
       "Bristyrke (Ja/Nej)",

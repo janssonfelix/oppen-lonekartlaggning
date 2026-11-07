@@ -262,7 +262,7 @@ describe('autocomplete="off" på alla fält, också de som skapas efter start', 
 });
 
 describe('motiveringsförslagen: åldersskillnaden', () => {
-    it('rådet är rätt stavat: Vi rekommenderar att ni stämmer av', () => {
+    it('rådet är rätt stavat: Stäm av om åldersskillnaden förklarar', () => {
         const w = createAppWindow();
         const rows = [];
         for (let i = 0; i < 12; i++) rows.push({ kon: 'kvinna', lon: 30000 + i, alder: 35 });
@@ -270,7 +270,7 @@ describe('motiveringsförslagen: åldersskillnaden', () => {
         w.__item = { _rows: rows, kvN: 12, maN: 12, n: 24, diffPct: -6, costPerPerson: 0 };
         const text = w.eval('generateMotivationSuggestions(window.__item)').map(f => f.text).join(' ');
         expect(text).toMatch(/år äldre/);
-        expect(text).toContain('Vi rekommenderar att ni stämmer av');
+        expect(text).toContain('Stäm av om åldersskillnaden förklarar');
         expect(text).not.toContain('rekommenderas');
     });
 });

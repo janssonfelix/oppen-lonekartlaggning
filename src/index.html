@@ -1368,7 +1368,7 @@
                 <!-- Prioritering Tab View -->
                 <div id="view-prioritering" class="view-panel dold">
                     <div class="flik-yta">
-                        <div class="flik-intro"><strong>Vilka yrkesgrupper bör prioriteras utifrån löneläget?</strong> Här ordnas yrkesgrupperna efter var en åtgärd gör störst nytta: hur långt under referensen gruppen ligger, hur många som berörs och hur löneläget mellan kvinnor och män ser ut i gruppen. För varje grupp står vad det kostar att lyfta den till referensens medianlön, som underlag till budgeten och handlingsplanen.</div>
+                        <div class="flik-intro"><strong>Vilka yrkesgrupper bör prioriteras utifrån löneläget?</strong> Här ordnar verktyget yrkesgrupperna efter var en åtgärd gör störst nytta. Det väger ihop hur långt under referensen gruppen ligger, hur många som berörs och skillnaden mellan kvinnor och män. För varje grupp står vad det kostar att lyfta den till referensens medianlön, som underlag till budgeten och handlingsplanen.</div>
                         <div class="valrad">
                             <strong>Jämför löneläget mot:</strong>
                             <label>
@@ -1396,17 +1396,17 @@
                                     </div>
                                     <div class="stat-val" id="prio-stat-akut">0</div>
                                 </div>
-                                <div class="stat-box" data-tooltip="Totalt antal grupper där medianlönen ligger mer än 5% under referensvärdet (oavsett gruppstorlek).">
+                                <div class="stat-box" data-tooltip="Antal grupper där medianlönen ligger mer än 5 % under referensen, oavsett gruppstorlek.">
                                     <div class="stat-etikett">Under referens
                                     </div>
                                     <div class="stat-val" id="prio-stat-under">0</div>
                                 </div>
-                                <div class="stat-box" data-tooltip="Antal grupper där medianlönen ligger mer än 5% över referensvärdet. Bör granskas – hög lön kan vara motiverad (specialistkompetens, marknadsläge) eller indikera kostnadsdrift.">
+                                <div class="stat-box" data-tooltip="Antal grupper där medianlönen ligger mer än 5 % över referensen. Granska dem: en hög lön kan ha skäl (specialistkompetens, marknadsläge) eller tyda på att lönerna dragit iväg.">
                                     <div class="stat-etikett">Över referens
                                     </div>
                                     <div class="stat-val" id="prio-stat-over">0</div>
                                 </div>
-                                <div class="stat-box" data-tooltip="Summa av kostnaden för att lyfta alla grupper under referensen, beräknat som: avvikelse (kr/månad) × antal månader × (1 + PO-påslag) × antal personer. Justera period och PO-påslag i konfigurationspanelen ovan.">
+                                <div class="stat-box" data-tooltip="Summa av kostnaden för att lyfta alla grupper under referensen, beräknat som: avvikelse (kr/månad) × antal månader × (1 + PO-påslag) × antal personer. Ändra period och PO-påslag under Inställningar.">
                                     <div class="stat-etikett">Total åtgärdskostnad
                                     </div>
                                     <div class="stat-val" id="prio-stat-cost">–</div>
@@ -1419,11 +1419,11 @@
                                         <h3 class="fs-lg marg-0">Prioriteringsmatris</h3>
                                         <p class="text-dampad-xs lh-1_5 marg-4-0-0">
                                             Varje bubbla = en yrkesgrupp inom ett BAS-intervall.
-                                            <strong>X-axel</strong>: avvikelse mot referens i procent (negativt = under).
-                                            <strong>Y-axel</strong>: antal personer i gruppen.
+                                            <strong>Vågrätt</strong>: avvikelse mot referensen i procent (negativt = under).
+                                            <strong>Lodrätt</strong>: antal personer i gruppen.
                                             <strong>Bubbelstorlek</strong>: total årskostnad för åtgärd.
                                             <strong>Färg</strong>: status.
-                                            Bubbelnummer (#1, #2 …) speglar prioriteringsindexet och matchar tabellen nedan.
+                                            Numret i bubblan är platsen i rangordningen och matchar tabellen nedan.
                                         </p>
                                     </div>
                                     <div class="rad-bryt-mitt gap-10">
@@ -1458,7 +1458,7 @@
                                     </button>
                                 </div>
                                 <p class="text-dampad-sm lh-1_55 marg-b-8">
-                                    De 30 högst prioriterade grupperna. Talet i första kolumnen är <strong>prioriteten</strong> på en skala 0–100 och väger ihop hur långt under referensen gruppen ligger, hur många som berörs och löneläget mellan kvinnor och män; vikterna ställs in under Inställningar nedan. Att ligga under referensen väger tyngre än att ligga över, och bristyrken väger 20 procent tyngre.
+                                    De 30 högst prioriterade grupperna. Talet i första kolumnen är <strong>prioriteten</strong> på en skala 0–100. Den väger ihop hur långt under referensen gruppen ligger, hur många som berörs och skillnaden mellan kvinnor och män. Vikterna ändrar du under Inställningar. Att ligga under referensen väger tyngre än att ligga över, och bristyrken väger 20 procent tyngre.
                                 </p>
                                 <div class="rad-bryt-mitt gap-10 marg-b-12">
                                     <label class="mitt rad-inline fs-sm gap-6">
@@ -1479,7 +1479,7 @@
                                     <table id="prio-table" class="data-table" aria-label="Prioriteringsanalys: yrkesgrupper rangordnade efter prioriteringsindex">
                                         <thead>
                                             <tr>
-                                                <th data-kol="prio" class="sticky-col-1" scope="col" data-export-label="Prioriteringsindex (0-100, högt = hantera först)">Prio
+                                                <th data-kol="prio" class="sticky-col-1" scope="col" data-export-label="Prioriteringsindex (0–100, högt = först)">Prio
                                                     <span class="info-tip" data-tooltip="Prioriteringsindex 0-100. Högt = bör hanteras först."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
                                                 </th>
                                                 <th data-kol="yrke" class="sticky-col-2" scope="col" data-export-label="Yrkesgrupp (AID + benämning)">Yrkesgrupp</th>
@@ -1491,17 +1491,17 @@
                                                 <th data-kol="referens" class="t-hoger" scope="col" data-export-label="Referens-median (kr/mån)">Referens</th>
                                                 <th data-kol="avvikelse" class="t-hoger" scope="col" data-export-label="Avvikelse mot referens (%)">Avvikelse %</th>
                                                 <th data-kol="avvikelsekr" class="t-hoger" scope="col" data-export-label="Avvikelse per person (kr/mån)">Avvikelse kr/pers</th>
-                                                <th data-kol="lonegap" class="t-hoger" scope="col" data-export-label="Lönegap kvinnor/män (%), negativt tal = kvinnor lägre">Lönegap kön
+                                                <th data-kol="lonegap" class="t-hoger" scope="col" data-export-label="Skillnad kvinnor–män (%), negativt tal = kvinnor lägre">Skillnad kön
                                                     <span class="info-tip" data-k-tooltip="Kvinnors median jämfört med männens, i procent. Negativt = kvinnor tjänar mindre. Visas endast om gruppen har minst {k} av varje kön."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
                                                 </th>
                                                 <th data-kol="kostnadpers" class="t-hoger" scope="col" data-export-label="Justeringskostnad per person (kr/mån)">Kostnad/pers (kr/mån)
                                                     <span class="info-tip" data-tooltip="Genomsnittlig lönehöjning per person/månad om gruppen lyfts till referensens median. Underlättar val mellan stora/billiga och små/dyra grupper."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
                                                 </th>
                                                 <th data-kol="atgardskostnad" class="t-hoger" scope="col" data-export-label="Total åtgärdskostnad (kr för perioden, inkl PO-påslag)">Åtgärds<wbr>kostnad
-                                                    <span class="info-tip" data-tooltip="Total kostnad för att lyfta hela gruppen till referensens medianlön (avvikelse kr/månad × antal månader × (1 + PO-påslag) × antal personer). Period och PO justeras i konfigurationspanelen ovan."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
+                                                    <span class="info-tip" data-tooltip="Total kostnad för att lyfta hela gruppen till referensens medianlön (avvikelse kr/månad × antal månader × (1 + PO-påslag) × antal personer). Period och PO-påslag ändrar du under Inställningar."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
                                                 </th>
                                                 <th data-kol="brist" class="t-mitt" scope="col" data-no-sort data-export-label="Bristyrke (Ja/Nej)">Brist
-                                                    <span class="info-tip" data-tooltip="Markera som bristyrke: yrken ni har svårt att rekrytera till, enligt er egen rekryteringsstatistik eller en nationell bristyrkeslista. Bristyrken får 1,2× bonus i prioriteringsindexet."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
+                                                    <span class="info-tip" data-tooltip="Markera som bristyrke: yrken som organisationen har svårt att rekrytera till, enligt den egna rekryteringsstatistiken eller en nationell bristyrkeslista. Bristyrken väger 20 procent tyngre i prioriteringsindexet."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
                                                 </th>
                                                 <th data-kol="detalj" class="t-mitt" scope="col" data-no-sort data-export-skip>Detalj
                                                     <span class="info-tip" data-tooltip="Öppna gruppen i Löneöversikten (Tabeller och egna vyer) för fördjupad analys."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
@@ -1519,11 +1519,11 @@
                                 <div class="chart-header rad-bryt topp gap-12 mellan marg-b-12">
                                     <div class="flex-1 min-bredd-280">
                                         <h3 class="fs-lg marg-0">Så växer åtgärdskostnaden
-                                            <span class="info-tip" data-tooltip="80/20-analys: visar hur stor del av total åtgärdskostnad som koncentreras i topp-grupperna. Vanligen utgör 20% av grupperna ~80% av kostnaden — fokus på dessa ger maximal effekt per krona."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
+                                            <span class="info-tip" data-tooltip="Visar hur stor del av den totala åtgärdskostnaden som ligger i de högst prioriterade grupperna. Ofta står en femtedel av grupperna för det mesta av kostnaden; börjar du med dem räcker pengarna längst."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
                                         </h3>
                                         <p class="text-dampad-xs lh-1_5 marg-4-0-0">
-                                            Staplar = årskostnad per yrkesgrupp (sorterade efter prioriteringsindex). Linje = kumulativ andel av total kostnad.
-                                            Visar vid vilken N-tröskel ni har täckt en given procent av problemet.
+                                            Staplar = årskostnad per yrkesgrupp (sorterade efter prioriteringsindex). Linjen visar hur stor del av den totala kostnaden de första grupperna står för.
+                                            Där ser du hur många grupper som behövs för att täcka en viss andel.
                                         </p>
                                     </div>
                                     <div id="prio-pareto-summary" class="bak-botten rund-6 farg-text fs-sm min-bredd-200 pad-8-14"></div>
@@ -1545,25 +1545,25 @@
                                 <div class="flik-usage-content">
                                     <h3>Inför ledningsmöte</h3>
                                     <ul>
-                                        <li>Topp 10 i tabellen och kostnadsdiagrammet ger 80/20-regelns budgetfokus</li>
+                                        <li>De tio första i tabellen och kostnadsdiagrammet visar de grupper som står för det mesta av kostnaden</li>
                                         <li>Total åtgärdskostnad/år är direkt budgetunderlag</li>
-                                        <li>Exportera matrisen som bild via diagrammets meny Exportera (välj <em>Alla bubblor</em> under <em>Etiketter</em> så är bilden självförklarande) som bilaga</li>
+                                        <li>Spara diagrammet som bild med diagrammets meny Exportera (välj <em>Alla bubblor</em> under <em>Etiketter</em> så är bilden självförklarande) som bilaga</li>
                                     </ul>
                                     <h3>Vid budgetdialog</h3>
                                     <ul>
-                                        <li>Pröva "om vi gör X, händer Y" i <strong>Löneöversyn</strong>: riktade potter per grupp, med kön, lönegräns och höj till</li>
+                                        <li>Pröva vad som händer om organisationen gör en viss satsning i <strong>Löneöversyn</strong>: riktade potter per grupp, med kön, lönegräns och höj till</li>
                                         <li>Växla mellan ställningstagande (intern policy) och jämförelsestatistiken (marknadsläge) för olika perspektiv</li>
                                     </ul>
                                     <h3>Vid samverkan</h3>
                                     <ul>
-                                        <li>Visa matrisen för att skapa visuell konsensus om var fokus bör vara</li>
+                                        <li>Visa diagrammet för att enas om var arbetet ska börja</li>
                                         <li>Knappen <em>Öppna i Löneöversikten</em> på raden visar gruppens löner i Tabeller och egna vyer</li>
                                     </ul>
                                     <h3>Tolkningstips</h3>
                                     <ul>
                                         <li>Storlek på bubbla = total åtgärdskostnad (inte antal personer)</li>
                                         <li>Med många grupper är lodräta axeln logaritmisk — små grupper syns ändå tydligt</li>
-                                        <li>Justera vikterna under <em>Viktning av prioriteringsindex</em> i Inställningar (knappen Ändra ovan) om er ledning har andra prioriteringar</li>
+                                        <li>Justera vikterna under <em>Viktning av prioriteringsindex</em> i Inställningar (knappen Ändra ovan) om ledningen har andra prioriteringar</li>
                                     </ul>
                                 </div>
                             </details>
@@ -2450,7 +2450,7 @@
                     <p class="inst-paverkar">Påverkar: åtgärdslistan, kostnaden, handlingsplanens förifyllning och rapporterna.</p>
                     <div class="prio-config-content">
                         <p class="text-dampad-sm lh-1_55 marg-0-0-14">
-                            Standardvärdena nedan följer EU-direktivets 5%-tröskel. Justera vid behov för organisationsspecifika regler. Ändringar uppdaterar matrisen, tabellen och statusräknarna direkt.
+                            Standardvärdet är 5 procent under referensen. Ändra vid behov efter organisationens egna regler. Ändringar uppdaterar matrisen, tabellen och statusräknarna direkt.
                         </p>
                         <div class="prio-config-grid">
                             <label>
@@ -2484,7 +2484,7 @@
                             <span class="info-tip" data-tooltip="Indexet kombinerar tre dimensioner. Standard: 50% avvikelse, 30% volym, 20% jämställdhet. Olika ledningar kan vilja vikta annorlunda - t.ex. en jämställdhetsfokuserad ledning kan vilja sätta jämställdhet till 50%."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
                         </h4>
                         <p class="text-dampad-sm lh-1_5 marg-0-0-10">
-                            Viktarna behöver inte summera till exakt 100 – verktyget normaliserar automatiskt. Tabellen och matrisen uppdateras direkt.
+                            Vikterna behöver inte bli 100 tillsammans; verktyget räknar om dem. Tabellen och matrisen uppdateras direkt.
                         </p>
                         <div class="prio-config-grid">
                             <label>

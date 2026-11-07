@@ -265,7 +265,7 @@ describe('golden: bladen ur HTML-tabellerna bär cellerna som vyn visar dem (typ
     });
     it('Prioritering: avvikelsen i procent, kronor i kronor, antal kvinnor/män som text, statusen som text', () => {
         const r0 = rad('Prioritering', 0);
-        expect(r0[10]).toBe('Lönegap kvinnor/män (%), negativt tal = kvinnor lägre');
+        expect(r0[10]).toBe('Skillnad kvinnor–män (%), negativt tal = kvinnor lägre');
         expect(r0).toHaveLength(14);                                                  // alla kolumner utom Detalj, också de som grundvyn gömmer
         expect(cell('Prioritering', 'F2')).toMatchObject({ t: 's', v: '14/3' });     // inte 14 mars
         expect(cell('Prioritering', 'I2')).toMatchObject({ t: 'n', v: -4, z: PCT2 }); // inte −0.04
