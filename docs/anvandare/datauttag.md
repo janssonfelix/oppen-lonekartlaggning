@@ -88,7 +88,8 @@ slipper du göra om den nästa år:
    konfigurationsfilen.
 4. Nästa gång: läs in konfigurationsfilen och sedan uttaget. Kolumnerna känns igen utan
    mappning, och lönefilens ruta och kolumnmappningen säger *Känd uppsättning: Vår
-   personallista (konfigurationsfilen)*.
+   personallista (konfigurationsfilen)*. Pekar du sedan ut en annan kolumn än profilens för
+   hand står det *Känd uppsättning, ändrad: …*.
 
 En importprofil bär **bara rubrikernas namn** — vilken rubrik som är BAS-intervall, yrke,
 lön och så vidare, och vilka rubriker som måste finnas för att profilen ska gälla. Inga värden
@@ -104,7 +105,8 @@ profiler du redan har sparat i sessionen.
   och profilen, inget ur sessionen — och sprid det i stället för
   det gamla, så känns uttaget igen hos alla handläggare (se `organisationspaket.md`).
 - **Ordningen:** organisationspaketets profiler prövas först, sedan konfigurationsfilens, sedan
-  verktygets inbyggda (CSV-mallen, testdatans fil och demodatans fältnamn), och sist de vanliga
+  verktygets inbyggda (CSV-mallen, testdatans fil och verktygets grundfält, fältnamnen `bas`, `yrke`,
+  `lon`, `alder` och `kon`), och sist de vanliga
   kolumnnamnen i avsnitt 1. Den första profil vars rubriker alla finns i filen gäller; roller
   den inte täcker känns igen som vanligt.
 - **Se, ta bort och exportera:** *Inställningar › Importprofiler* listar profilerna med namn,

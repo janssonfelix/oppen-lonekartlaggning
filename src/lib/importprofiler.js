@@ -210,8 +210,9 @@ export const INBYGGDA_PROFILER = Object.freeze([
     _inbyggd({ id: 'inbyggd-testdata', namn: 'Verktygets testdata',
         rubriker: { bas: ['BAS'], yrke: ['AID-etikett'], lon: ['Månadslön'], alder: ['Ålder'], kon: ['Kön'] },
         kannetecken: ['Ansvar', 'BAS', 'AID-etikett', 'Månadslön', 'Ålder', 'Kön'] }),
-    // Demodatans fältnamn (fälten i verktygets egna rader).
-    _inbyggd({ id: 'inbyggd-demodata', namn: 'Demodatans fält',
+    // Verktygets egna fältnamn (fälten i dess rader, som demodatan har). Namnet säger inte demo: en verklig fil kan ha
+    // just de rubrikerna. Id:t är det förra.
+    _inbyggd({ id: 'inbyggd-demodata', namn: 'Verktygets grundfält',
         rubriker: { bas: ['bas'], yrke: ['yrke', 'aid'], lon: ['lon'], alder: ['alder'], kon: ['kon'] } }),
 ]);
 
