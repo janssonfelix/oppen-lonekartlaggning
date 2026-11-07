@@ -302,3 +302,13 @@ describe('Dossiererna: läs-raden pekar på bedömningen i handlingsplanen', () 
         expect(ren(w.document.getElementById('dossier-modal').textContent)).toContain('Bedömning i handlingsplanen: inga sakliga skäl angivna ännu.');
     });
 });
+
+describe('ordlistan och Om verktyget', () => {
+    it('termen Sakliga skäl i ordlistan räknar upp kategorierna, och Om verktyget nämner skälen i Handlingsplan', () => {
+        const w = createAppWindow();
+        const post = w.eval('GLOSSARY').find(g => g.term === 'Sakliga skäl');
+        for (const k of w.eval('_sakKategorier()')) expect(post.long).toContain(k.namn);
+        const om = w.eval('Object.values(INFO_SECTIONS).map(f => f()).join(" ")').replace(/\s+/g, ' ');
+        expect(om).toMatch(/sakliga skäl per grupp/i);
+    });
+});

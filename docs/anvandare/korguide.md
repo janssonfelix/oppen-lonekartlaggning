@@ -347,6 +347,15 @@ rubrikraden, också när det är hopfällt.
    till med *Lägg till rad* och följer med i exporterna som de förifyllda. Kortet **Samverkan & uppföljning** i
    Handlingsplan har momenten att bocka av och knapparna för **protokollet för gemensam lönebedömning** och
    **handlingsplanen** som Excel.
+   Knappen **Sakliga skäl** på varje rad öppnar en dialog där du dokumenterar skälen till gruppens löneskillnad: en
+   kategori (Marknad, Utbildning, Erfarenhet, Prestation och resultat, Övergång eller Annat sakligt skäl), ett belopp
+   i kr/mån och en kort kommentar per skäl, högst 8 skäl per grupp. Dialogen räknar ihop hur stor del av skillnaden
+   skälen förklarar och hur mycket som återstår. Skriv inga namn eller personnummer i kommentaren. När skälen
+   förklarar hela skillnaden kan du markera raden som sakligt förklarad. Skälen följer med i Rapporttext, Word och
+   PDF (tabellerna *Sakliga skäl per grupp* och *Sammanställning per kategori*), i Excel (bladet *Sakliga skal*) och i
+   årsbokslutet, så att Spara och jämför år kan visa fördelningen per kategori båda åren. Gruppdossiern och
+   BAS-dossiern visar bedömningen med en länk till raden. Skälen är organisationens bedömning, inte verktygets
+   beräkning.
    Skillnaden mellan könen i en grupp visas i Prioritering bara när både
    kvinnorna och männen i gruppen är tillräckligt många för att redovisas. Annars räknas
    gruppens prioritet utan skillnaden mellan könen. I **Löneöversyn** får du lägga en egen riktad rad på

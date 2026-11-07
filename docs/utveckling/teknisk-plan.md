@@ -237,7 +237,7 @@ adaptern verkligen delegerar vaktas av `tests/drift.test.js`:
   rätt grupp. Utskriftsfönstret för checklistorna (`printScaffoldView`) läser `:root` och allt från `.dold` till
   stilmallens slut ur den körande stilmallen och lägger in det som byggt stilark (`adoptedStyleSheets`): ett `<style>`-element
   som skriptet skapar blockeras av den ärvda CSP:n (`style-src-elem`), så fönstret var tidigare helt ostilat.
-- **Tester:** Vitest — 2945 tester i 94 filer: rena `src/lib/`-moduler, CSV-parsning, jsdom-röktest
+- **Tester:** Vitest — 2947 tester i 94 filer: rena `src/lib/`-moduler, CSV-parsning, jsdom-röktest
   av varje vy (ADR-7; `tests/smoke.test.js` med det delade fönstret och sju `tests/smoke-*.test.js` per
   område), k-tröskeln i åtta `tests/ktroskel*.test.js` med riggen i `tests/helpers/ktroskel-rigg.js`,
   gränssnittet i `tests/granssnitt*.test.js` (riggen `tests/helpers/granssnitt-rigg.js`) och diagramvyerna i
@@ -1228,6 +1228,14 @@ den ryms på en stående sida). Förra årets fil kan ha sparats med en lägre t
 höjer ett k under 2 till 2, och `jamforArsbokslut` läser båda åren med den högre av årens trösklar (`kGrans`,
 `bokslutMedGrans`): rader per BAS-intervall och yrkesgrupper under den faller bort och könsmedianer nollas, så att
 inget som lämnar verktyget bygger på färre personer än årets tröskel. Vaktas av `tests/arsbokslut.test.js` och `tests/smoke-arsbokslut.test.js`.
+Sedan 2026-11-07 är bokslutet **version 2**: fältet `bedomningar` bär handlingsplanens sakliga skäl per grupp
+(`{ nyckel, grupp, n, nMin, skillnadKr, skal: [{ kategori, belopp }] }`; nyckeln är handlingsplanens, kommentarerna
+sparas aldrig). Bara de förifyllda raderna följer med: en egen rad har inget antal att pröva mot k. En grupp med
+färre än k personer faller bort, och skillnaden nollas när den minsta gruppen bakom den (`nMin`) är under k; samma
+regel gäller med den högre av årens trösklar i `bokslutMedGrans`. Ett bokslut från version 1 läses som förut och får
+`bedomningar: null`. `jamforBedomningar` ger summan och andelen per kategori båda åren, skälen per grupp som hade skäl
+båda åren och de grupper som saknar bedömning i år; panelen visar tabellen *Sakliga skäl per kategori*. Vaktas av
+`tests/arsbokslut.test.js` och `tests/arsbokslut-skal.test.js`.
 
 **ADR-55 — Löneläget mot båda referenserna, Lönepolitik som avsnitt.** Beslut 2026-10-30. Fliken
 Löneläget (id `benchmark`) samlar organisationens löner mot det de jämförs med, i tre avsnitt: överblicken (`src/lib/referenser.js`,
