@@ -20040,8 +20040,7 @@ function sparaImportprofil(namn) {
  */
 function laggTillImportprofilIPaket(profil) {
     if (!state.paket) return { ok: false, fel: 'Inget organisationspaket är inläst.' };
-    const formFel = _paketFormularFel();
-    if (formFel) return { ok: false, fel: formFel };
+    // Paketet byggs ur det inlästa paketets delar; formuläret Skapa paket påverkar det inte och prövas inte här.
     const paket = skapaPaketMedImportprofil(profil);
     const kontroll = _opTolkaPaket(JSON.stringify(paket));
     if (!kontroll.ok) return { ok: false, fel: 'Paketet kan inte skapas: ' + kontroll.fel };

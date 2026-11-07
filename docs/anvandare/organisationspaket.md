@@ -139,8 +139,8 @@ tecken spelar ingen roll), `kannetecken` de rubriker som måste finnas i filen f
 att läsa hoppas över med en varning. Profilerna skapas enklast i verktyget: läs in paketet och ett uttag,
 peka ut kolumnerna i kolumnmappningen och välj *Lägg till i organisationspaketet* — det ger ett nytt paket
 med profilen, byggt ur det inlästa paketets egna delar (inställningar, låsningar, ställningstagande och
-statistik som paketet hade, inte sessionens värden), och det inlästa paketets profiler följer med. Ett ogiltigt
-värde i formuläret *Skapa paket* hindrar nedladdningen, som för *Spara paketet*. Profilens id härleds ur namnet
+statistik som paketet hade, inte sessionens värden), och det inlästa paketets profiler följer med. En
+paketprofil som tagits bort i *Inställningar* följer inte med i det nya paketet. Profilens id härleds ur namnet
 och kännetecknen; ett id i filen läses inte. Paket utan fältet fungerar som förut. Ett nytt
 paket ersätter det förras profiler; *Rensa all data* tar bort dem tillsammans med paketet.
 

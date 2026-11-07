@@ -229,18 +229,18 @@ describe('importprofiler: "Lägg till i organisationspaketet" bygger på paketet
         expect(t.delar.importprofiler.map(p => p.namn)).toEqual(['Personallistan ur lönesystemet']);
     });
 
-    it('ett ogiltigt värde för minsta gruppstorlek i formuläret ger ingen nedladdning, med samma besked som Spara paketet', async () => {
+    it('formuläret Skapa paket påverkar inte paketet med profilen: ett ogiltigt värde där hindrar inte nedladdningen', async () => {
         const w = createAppWindow(), d = w.document;
         expect(w.lasInPaket(egetPaket(w)).ok).toBe(true);
         d.getElementById('paket-k').value = '1';
         const f = fanga(w);
         d.getElementById('btn-paket-spara').click();
-        const sparaBesked = d.getElementById('paket-status').textContent;
-        expect(sparaBesked).toMatch(/^Paketet sparades inte\. Minsta gruppstorlek: /);
+        expect(d.getElementById('paket-status').textContent).toMatch(/^Paketet sparades inte\. Minsta gruppstorlek: /);   // Spara paketet har kvar kontrollen
         await tillPaket(w);
-        await new Promise(r => setTimeout(r, 30));
-        expect(f.blob).toBeNull();
-        expect(panel(w).textContent).toContain(sparaBesked);
+        await vanta(() => f.blob);
+        const t = w.eval('_opTolkaPaket')(await f.blob.text());
+        expect(t.ok).toBe(true);
+        expect(t.delar.installningar).toMatchObject({ kTroskel: 7 });
     });
 });
 
