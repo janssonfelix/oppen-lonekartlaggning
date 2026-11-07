@@ -626,7 +626,7 @@ function _forecastMarket() {
     if (!market.size) { alert('Jämförelsestatistiken är inte inläst. Läs in den under Filer och kvalitet.'); return; }
     const groups = _fcSummarizeGroups(d);
     const t = _fcMarketTargets(groups, market, f, state.forecast.minGroupN || 0);
-    if (!t.length) { alert('Ingen grupp med minst ' + (state.forecast.minGroupN || 0) + ' personer ligger under ' + svTal(f * 100, 0) + ' procent av jämförelsestatistikens median.'); return; }
+    if (!t.length) { alert('Ingen grupp med minst ' + (state.forecast.minGroupN || 0) + ' personer ligger under ' + svTal(f * 100, 0) + ' procent av ' + jmfNamnGenitiv() + ' median.'); return; }
     let added = 0;
     t.forEach(x => { if (!state.forecast.targets.some(y => y.bas === x.bas && y.aid === x.aid)) { state.forecast.targets.push({ bas: x.bas, aid: x.aid, mode: 'kr', value: x.value, dist: 'lowest', targetLevel: 'median', pool: 'marknad' }); added++; } });
     renderForecastTargets();

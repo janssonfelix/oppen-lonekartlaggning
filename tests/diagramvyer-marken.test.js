@@ -1114,7 +1114,7 @@ describe('lönegapet visas som kvinnors lön i procent av mäns', () => {
         const ut = t(w2.document.getElementById('forecast-outcome').textContent);
         expect(ut).toMatch(/Kvinnors medianlön i % av mäns: \d+,\d % till \d+,\d %/);
         expect(ut).toMatch(/Oförklarad skillnad \(regressionen\)/);
-        expect(ut).not.toMatch(/Råa (lönegapet|löneskillnaden)/);
+        expect(ut).not.toMatch(/[Rr]åa? (lönegap|löneskillnad)/);
     });
 });
 

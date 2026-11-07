@@ -516,10 +516,10 @@ function updateDashboardStats() {
             // Rå kvot för hela organisationen: EU-direktivets 5 %-gräns gäller per
             // kategori av arbetstagare, inte här — därför ingen hänvisning till den, och neutral färg: rågapet
             // är en utgångspunkt, inget fynd. Bedömningen görs per grupp i Lika arbete.
-            const tipText = 'Rå skillnad för hela organisationen, före hänsyn till yrke, nivå och ålder. Se Lika arbete för skillnaden per grupp.';
+            const tipText = 'Rå skillnad för hela organisationen, före hänsyn till yrke, BAS-intervall och ålder. Se Lika arbete för skillnaden per grupp.';
             // Förklaringen står i verktygstipset; under talet står bara vad det är för tal (nyckeltalsraden är en rad hög).
             pgEl.innerHTML = svPct(ratio, 1) +
-                `<div class="stat-tip" title="${esc(tipText)}">rå skillnad, innan yrke och nivå räknats bort</div>`;
+                `<div class="stat-tip" title="${esc(tipText)}">rå skillnad, innan yrke och BAS-intervall räknats bort</div>`;
         }
     }
 }

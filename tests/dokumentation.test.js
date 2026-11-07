@@ -409,9 +409,14 @@ describe('vakt: avförda ord och lagrum i användartexten (språkgenomgången 20
     // appen och användar- och dataskyddsdokumenten. Kodkommentarer, identifierare, CHANGELOG,
     // docs/utveckling och testerna ligger utanför; sökregistrets synonymer och ordlistans sok-fält också,
     // så att de gamla orden går att söka på.
+    //
+    // Kända luckor: Källor-undantaget i Om verktyget gäller hela mallen references (inte rad för rad);
+    // index.html prövas rad för rad, så ett ord som bryts över två rader kan slinka igenom; ett avfört ord
+    // ensamt i en gemen enordsliteral prövas bara när den är värdet på etikett:, label: eller rubrik:;
+    // "gap-" med gement g följt av bindestreck prövas inte (det är klassnamn och id:n).
     const AVFORDA = [
         ['lönegap', /[Ll]önegap|LÖNEGAP/],
-        ['gap', /(?<![\p{L}\p{N}_.\-\/`])(?:[Gg]ap(?:et|en)?|[Rr]ågap(?:et)?|[Kk]önsgap(?:et)?)(?![\p{L}\p{N}_\-`])/u],
+        ['gap', /(?<![\p{L}\p{N}_.\-\/`])(?:[Gg]ap(?:et|en)?|[Rr]ågap(?:et)?|[Kk]önsgap(?:et)?)(?![\p{L}\p{N}_\-`])|(?<![\p{L}\p{N}_.\-\/`])Gap-\p{L}/u],
         ['medarbetare', /[Mm]edarbetar/],
         ['likvärdiga arbeten', /likvärdiga arbeten/i],
         ['BAS-nivå', /BAS-nivå(?!\s+[A-ZÅÄÖ]\b)/],
@@ -421,7 +426,7 @@ describe('vakt: avförda ord och lagrum i användartexten (språkgenomgången 20
         ['utredningsgräns', /utrednings(?:gräns|tröskel|steg)|obligatorisk utredning|[Ll]agstadgat tröskelvärde/],
     ];
     // I gränssnittet: inget paragraftecken och inget artikelnummer. "3 kap." är tillåtet.
-    const LAGRUM_UI = [['§', /§/], ['artikel', /\bart\.\s*\d|[Aa]rtikel\s+\d/]];
+    const LAGRUM_UI = [['§', /§/], ['artikel', /\b[Aa]rt\.\s*\d|[Aa]rtikel\s+\d/]];
     // I dokumenten är "§6.4" en avsnittshänvisning; ett lagrum skrivs "§ 8", "8 §" eller "§§".
     // Dataskyddsdokumenten och informationsmallen behåller dataskyddsförordningens artiklar (lagrum.md).
     const LAGRUM_DOK = [['§', /§\s+\d|\d\s*§|§§/]];
@@ -435,23 +440,29 @@ describe('vakt: avförda ord och lagrum i användartexten (språkgenomgången 20
         while ((m = re.exec(src))) ut.push(m[0].slice(1, -1).replace(/\$\{[^}]*\}/g, ' '));
         return ut.filter(l => /\s/.test(l) || /^[A-ZÅÄÖ]/.test(l));
     };
+    // Värden på etikett:, label: och rubrik: visas för användaren, också när de är ett gement ord.
+    const etikettVarden = src => [...src.matchAll(/\b(?:etikett|label|rubrik):\s*(['"`])((?:(?!\1)[^\\\n]|\\.)*)\1/g)].map(m => m[2]);
     const appKalla = (fil, src) => {
         let s = utanKommentarer(src).replace(/synonymer:\s*\[[^\]]*\]/g, '').replace(/sok:\s*'[^']*'/g, '');
         if (fil.endsWith('65-om-verktyget.js')) s = s.replace(/references: \(\) => `[\s\S]*?`/, '');   // Källor
         return s;
     };
+    // Attribut som användaren läser (title, aria-label, data-tooltip, alt, placeholder, data-export-label)
+    // står kvar som text också när värdet är ett ord; övriga attribut utan blanksteg (id, klass) rensas.
     const htmlText = src => src.replace(/<!--[\s\S]*?-->/g, '').replace(/<script[\s\S]*?<\/script>/g, '')
-        .replace(/<style[\s\S]*?<\/style>/g, '').replace(/\s[\w-]+="[^"\s]*"/g, '');
+        .replace(/<style[\s\S]*?<\/style>/g, '')
+        .replace(/\s(?:title|aria-label|data-tooltip|alt|placeholder|data-export-label)="([^"]*)"/g, ' [$1] ')
+        .replace(/\s[\w-]+="[^"\s]*"/g, '');
 
     it('mönstren fångar de avförda orden men inte identifierare och tillåtna former', () => {
         for (const t of ['Lönegapet', 'det råa lönegapet', 'Gapet visar', 'ett gap på', 'rågapet', 'Könsgapet',
             'BAS-nivån', 'Ladda upp strukturdata', 'strukturfilen', 'medarbetarna', 'likvärdiga arbeten',
-            'osakliga gap', 'anmälningspliktig', 'EU-direktivets utredningströskel', 'Lagstadgat tröskelvärde'])
+            'osakliga gap', 'anmälningspliktig', 'EU-direktivets utredningströskel', 'Lagstadgat tröskelvärde', 'Gap-analys'])
             expect(traffar(t, AVFORDA), t).not.toEqual([]);
         for (const t of ['gapPct', 'meanGap', '68-var-uppstar-gapet.js', 'chart-perbas-gap', 'BAS-nivå B',
             'löneskillnad', 'anställda', 'BAS-intervall', 'likvärdigt arbete', 'lönefilen', '`gap`'])
             expect(traffar(t, AVFORDA), t).toEqual([]);
-        for (const t of ['(§ 8)', 'art. 9', 'artikel 10', '3 kap. 9 §']) expect(traffar(t, LAGRUM_UI), t).not.toEqual([]);
+        for (const t of ['(§ 8)', 'art. 9', 'Art. 9', 'artikel 10', '3 kap. 9 §']) expect(traffar(t, LAGRUM_UI), t).not.toEqual([]);
         for (const t of ['Diskrimineringslagen kräver att du analyserar varje skillnad (3 kap.).', 'lagen'])
             expect(traffar(t, LAGRUM_UI), t).toEqual([]);
         for (const t of ['§ 8-bedömningarna', '9 §', '§§ 1–11']) expect(traffar(t, LAGRUM_DOK), t).not.toEqual([]);
@@ -461,20 +472,22 @@ describe('vakt: avförda ord och lagrum i användartexten (språkgenomgången 20
         const src = "const lonegapPct = 1; // Lönegapets form\n/* Gapet */ x('gap-uppdelning', 'Gapet visar');\n"
             + "{ synonymer: ['lönegap'] } { sok:'lönegap gap' } y(`Läs in ${'Strukturdata'} först`);";
         expect(textLiteraler(appKalla('x.js', src))).toEqual(['Gapet visar', 'Läs in   först']);
+        expect(etikettVarden("gap: { etikett: 'gap', enhet: '%' }, x: { label: 'medellön' }, y: { rubrik: \"Lönegap\" }"))
+            .toEqual(['gap', 'medellön', 'Lönegap']);
+        expect(htmlText('<th id="lonegap" class="gap" title="Lönegap">Kvinnor</th>')).toBe('<th [Lönegap] >Kvinnor</th>');
     });
 
     const appFiler = [
         ...appDelar.filter(f => f !== '09-lib-speglar.js').map(f => `src/app/${f}`),
-        ...['rapportunderlag', 'attgora', 'arsbokslut', 'organisationspaket', 'organisationsfil', 'importprofiler',
-            'forhandskontroll', 'datakvalitet', 'aidbas'].map(f => `src/lib/${f}.js`),
+        ...readdirSync(join(root, 'src/lib')).filter(f => f.endsWith('.js')).map(f => `src/lib/${f}`),
     ];
     const dokument = ['README.md',
         ...readdirSync(join(root, 'docs/anvandare')).filter(f => f.endsWith('.md')).map(f => `docs/anvandare/${f}`),
         ...readdirSync(join(root, 'docs/dataskydd')).filter(f => f.endsWith('.md')).map(f => `docs/dataskydd/${f}`)];
 
     it('strängarna i appen använder inte de avförda orden, paragrafer eller artiklar', () => {
-        const fel = appFiler.flatMap(f => textLiteraler(appKalla(f, läs(f)))
-            .flatMap(l => traffar(l, [...AVFORDA, ...LAGRUM_UI]).map(n => `${f}: ${n}: ${l.trim().slice(0, 100)}`)));
+        const fel = appFiler.flatMap(f => { const k = appKalla(f, läs(f)); return [...textLiteraler(k), ...etikettVarden(k)]
+            .flatMap(l => traffar(l, [...AVFORDA, ...LAGRUM_UI]).map(n => `${f}: ${n}: ${l.trim().slice(0, 100)}`)); });
         expect(fel).toEqual([]);
     });
     it('index.html använder inte de avförda orden, paragrafer eller artiklar', () => {

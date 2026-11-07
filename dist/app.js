@@ -2304,6 +2304,11 @@ function jmfNamn(standard = 'Jämförelsestatistiken') {
     const n = state.profile && state.profile.benchmarkLabel;
     return n && n !== DEFAULT_PROFILE.benchmarkLabel ? _namnNormalisera(n) : standard;
 }
+/** Jämförelsens namn i genitiv i löptext ("jämförelsestatistikens", eller paketets eget namn). */
+function jmfNamnGenitiv() {
+    const n = state.profile && state.profile.benchmarkLabelGenitive;
+    return n && n !== DEFAULT_PROFILE.benchmarkLabelGenitive ? _namnNormalisera(n) : DEFAULT_PROFILE.benchmarkLabelGenitive;
+}
 // Namn i diagrammens serier visas alltid som text: vinkelparenteser byts mot typografiska, så att ett namn aldrig ser ut som markering.
 function plotNamn(text) {
     return String(text ?? '').replace(/</g, '‹').replace(/>/g, '›');
@@ -4037,7 +4042,7 @@ const KLASS_KV = 'Kvinnodominerad', KLASS_MA = 'Mansdominerad', KLASS_BLANDAD = 
 const BEDOMNING_INOM = 'Inom gränserna', BEDOMNING_UTANFOR = 'Utanför gränserna', BEDOMNING_INDIVID = 'Analyseras på individnivå';
 const INGA_HIERARKISKA_PAR = 'Inga fall där ett arbete med lägre krav, som inte är kvinnodominerat, har högre lön än ett kvinnodominerat arbete med högre krav.';
 
-/** Definitionens namn: DO eller SCB. */
+/** Definitionens namn: Förarbetena eller SCB. */
 function kvDefinitionNamn(definition) { return (KV_DEFINITIONER[definition] || KV_DEFINITIONER.do).namn; }
 /** Klassernas namn, för den som jämför klassningen. */
 function klassNamn() { return { kv: KLASS_KV, ma: KLASS_MA, blandad: KLASS_BLANDAD }; }
@@ -6310,7 +6315,7 @@ const GRUPP_MATT = {
     p90:       { etikett: 'P90', enhet: 'kr' },
     spridning: { etikett: 'spridning (P90/P10)', enhet: '' },
     andelKv:   { etikett: 'andel kvinnor', enhet: '%' },
-    gap:       { etikett: 'gap', enhet: '%' }
+    gap:       { etikett: 'kvinnors median i % av mäns', enhet: '%' }
 };
 const TAL_OP = ['storre', 'minst', 'mindre', 'hogst', 'mellan'];
 const OP_TEXT = { storre: 'större än', minst: 'minst', mindre: 'mindre än', hogst: 'högst', mellan: 'mellan' };
@@ -14312,10 +14317,10 @@ function updateDashboardStats() {
             // Rå kvot för hela organisationen: EU-direktivets 5 %-gräns gäller per
             // kategori av arbetstagare, inte här — därför ingen hänvisning till den, och neutral färg: rågapet
             // är en utgångspunkt, inget fynd. Bedömningen görs per grupp i Lika arbete.
-            const tipText = 'Rå skillnad för hela organisationen, före hänsyn till yrke, nivå och ålder. Se Lika arbete för skillnaden per grupp.';
+            const tipText = 'Rå skillnad för hela organisationen, före hänsyn till yrke, BAS-intervall och ålder. Se Lika arbete för skillnaden per grupp.';
             // Förklaringen står i verktygstipset; under talet står bara vad det är för tal (nyckeltalsraden är en rad hög).
             pgEl.innerHTML = svPct(ratio, 1) +
-                `<div class="stat-tip" title="${esc(tipText)}">rå skillnad, innan yrke och nivå räknats bort</div>`;
+                `<div class="stat-tip" title="${esc(tipText)}">rå skillnad, innan yrke och BAS-intervall räknats bort</div>`;
         }
     }
 }
@@ -15860,7 +15865,7 @@ function renderSnapshotComparison() {
         ['Medianlön män (kr)',         sk(snap.medianMa),                      cur.medianMa,                     v => Math.round(v).toLocaleString('sv-SE')],
         // Visas som kvinnors medianlön i procent av mäns (100 + skillnaden); skillnadskolumnen blir procentenheter.
         ['Kvinnors medianlön i % av mäns', sk(snap.rawGapPct) == null ? null : 100 + snap.rawGapPct, cur.rawGapPct == null ? null : 100 + cur.rawGapPct, v => svPct(v, 1)],
-        ['Oförklarad skillnad (regressionen, %)', snap.unexplainedGapPct,                 cur.unexplainedGapPct,            v => svPct(v, 1)],
+        ['Oförklarad löneskillnad (regressionen, %)', snap.unexplainedGapPct,                 cur.unexplainedGapPct,            v => svPct(v, 1)],
         ['Underlagets kvalitet',       snap.underlag,                          cur.underlag,                     v => v],
         ['Genomsnittsålder',           snap.avgAge,                            cur.avgAge,                       v => svTal(v, 1) + ' år'],
         ['Antal BAS-intervall',        snap.nBas,                              cur.nBas,                         fmt]
@@ -21972,7 +21977,7 @@ function _forecastMarket() {
     if (!market.size) { alert('Jämförelsestatistiken är inte inläst. Läs in den under Filer och kvalitet.'); return; }
     const groups = _fcSummarizeGroups(d);
     const t = _fcMarketTargets(groups, market, f, state.forecast.minGroupN || 0);
-    if (!t.length) { alert('Ingen grupp med minst ' + (state.forecast.minGroupN || 0) + ' personer ligger under ' + svTal(f * 100, 0) + ' procent av jämförelsestatistikens median.'); return; }
+    if (!t.length) { alert('Ingen grupp med minst ' + (state.forecast.minGroupN || 0) + ' personer ligger under ' + svTal(f * 100, 0) + ' procent av ' + jmfNamnGenitiv() + ' median.'); return; }
     let added = 0;
     t.forEach(x => { if (!state.forecast.targets.some(y => y.bas === x.bas && y.aid === x.aid)) { state.forecast.targets.push({ bas: x.bas, aid: x.aid, mode: 'kr', value: x.value, dist: 'lowest', targetLevel: 'median', pool: 'marknad' }); added++; } });
     renderForecastTargets();
@@ -25048,7 +25053,7 @@ function renderAidBasLikvardigt() {
                                                : `<p class="text-dampad-xs marg-8-0-0">Inget BAS-intervall har både kvinnodominerade grupper och andra grupper med minst ${t.k} personer, så det finns ingen sammanfattning.</p>`);
     _aidbasEfter('aidbas-likvardigt-tabell');
     const kvDom = t.likvardigt.rader.filter(r => r.klass === _aidbasKlassNamn().kv).length;
-    _aidbasNyckel('nyckel-lv-aidbas', t.likvardigt.rader.length ? `${t.likvardigt.rader.length} grupper · ${kvDom} kvinnodominerade (${_aidbasDefinitionNamn(t.definition)})` : '');
+    _aidbasNyckel('nyckel-lv-aidbas', t.likvardigt.rader.length ? `${t.likvardigt.rader.length} grupper · ${kvDom} kvinnodominerade (enligt ${_aidbasDefinitionNamn(t.definition) === 'SCB' ? 'SCB' : 'förarbetenas riktmärke'})` : '');
     hi.innerHTML = _aidbasTabellHtml('aidbas-hierarki-tabell', AIDBAS_KOL.par, t.par, { tom: _aidbasIngaParText(), fil: 'hierarkisk_jamforelse' })
         + `<p class="text-dampad-xs marg-8-0-0">Kvinnodominerad enligt ${esc(aidbasDefinitionText())}. Båda grupperna har minst ${t.k} personer. BAS-ordningen är bokstavsordningen.</p>`;
     _aidbasEfter('aidbas-hierarki-tabell');
@@ -26161,7 +26166,7 @@ function renderRegressionCard() {
         ? (Math.abs(r.konPct) > 5
             ? `Enligt modellen tjänar kvinnor <strong class="f-kritisk">${svPct(Math.abs(r.konPct), 1)} mindre</strong> än män ${fmT.fras ? `${esc(fmT.samma)}, alltså även efter att skillnader i ${esc(fmT.forklarasAv)} räknats bort. Detta är <em>oförklarad</em> löneskillnad — den kan <strong>inte</strong> motiveras med ${esc(fmT.motiv)}.` : 'utan att något räknats bort: det är hela skillnaden, inte en oförklarad del av den.'} Skillnaden är över 5 procent och statistiskt säkerställd. Pröva om den har sakliga skäl.`
             : `Det finns en statistiskt säkerställd oförklarad löneskillnad på ${svPct(Math.abs(r.konPct), 1)}, men den är under 5 procent. Lagen kräver att du analyserar också den: dokumentera de sakliga skälen och följ upp den över tid.`)
-        : `<strong>Den råa löneskillnaden (${_raGapText(r, v => svPct(v, 1) + rawCIsuffix)})</strong> ${fmT.fras ? `försvinner när verktyget räknar bort att kvinnor och män skiljer sig i ${esc(fmT.forklarasAv)}` : 'är statistiskt obetydligt redan utan kontroller'}. Återstående skillnad (${sign}${svPct(r.konPct, 1)}) är statistiskt obetydlig : underlaget är förenligt med att ingen verklig oförklarad skillnad finns.`;
+        : `<strong>Den råa löneskillnaden (${_raGapText(r, v => svPct(v, 1) + rawCIsuffix)})</strong> ${fmT.fras ? `försvinner när verktyget räknar bort att kvinnor och män skiljer sig i ${esc(fmT.forklarasAv)}` : 'är statistiskt obetydligt redan utan kontroller'}. Återstående skillnad (${sign}${svPct(r.konPct, 1)}) är statistiskt obetydlig: underlaget är förenligt med att ingen verklig oförklarad skillnad finns.`;
 
     // #5 Statistisk transparens: flagga när underlaget gör skattningen
     // osäker — så HR inte övertolkar ett punktvärde som bygger på tunt data.
@@ -30010,7 +30015,7 @@ document.getElementById('btn-export-zip')?.addEventListener('click', () => { exp
 // Diagram som kan kopieras som bild: id på diagrammet och fliken som ritar det.
 const RAPPORT_DIAGRAM = [
     { id: 'chart-skevhet-overview', rubrik: 'Löneskillnad per BAS-intervall', flik: 'struktur' },
-    { id: 'chart-perbas-gap', rubrik: 'Oförklarad skillnad per BAS-intervall', flik: 'struktur' },
+    { id: 'chart-perbas-gap', rubrik: 'Oförklarad löneskillnad per BAS-intervall', flik: 'struktur' },
     { id: 'chart-likvardighet-heatmap', rubrik: 'Kandidatpar i likvärdigt arbete', flik: 'likvardighet' },
 ];
 

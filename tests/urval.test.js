@@ -97,7 +97,7 @@ describe('beskrivUrval', () => {
             { lage: 'alla', villkor: [v('bas', 'enAv', ['E', 'F']), v('lon', 'minst', 30000), v('alder', 'mellan', [30, 40], true)] },
             [{ matt: 'gap', op: 'mindre', varde: 95 }]));
         expect(t).toBe('Alla av: BAS är en av E, F · Lön minst 30 000 kr · Ålder inte mellan 30 och 40 år. '
-            + 'Grupper: gap mindre än 95 %');
+            + 'Grupper: kvinnors median i % av mäns mindre än 95 %');
         expect(nbsp(beskrivUrval({ lage: 'nagot', villkor: [v('bas', 'enAv', ['B'], true)] }, [])))
             .toBe('Något av: BAS är inte en av B');
     });

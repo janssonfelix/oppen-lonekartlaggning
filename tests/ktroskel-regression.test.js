@@ -40,7 +40,7 @@ describe('R1: regressionens ojusterade steg ("Endast kön") kräver tröskeln f�
         expect(harNagon(t, tvaDec(forsta))).toEqual([]);
         expect(kort.textContent).not.toMatch(/Endast kön/);
         expect(kort.querySelector('.reg-budget')).toBeNull();   // budgeten visar skillnaderna mellan stegen
-        expect(kort.textContent).not.toMatch(/förklarar [^;]*av den råa löneskillnaden/);
+        expect(kort.textContent).not.toMatch(/av den råa löneskillnaden/);
         expect(kort.textContent).toMatch(NOT);
         expect(t).toMatch(somTal(justerat.toFixed(2)));
         // De kvarvarande staplarnas bredd räknas inte mot det dolda stegets värde.

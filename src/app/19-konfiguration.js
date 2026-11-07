@@ -501,7 +501,7 @@ function renderSnapshotComparison() {
         ['Medianlön män (kr)',         sk(snap.medianMa),                      cur.medianMa,                     v => Math.round(v).toLocaleString('sv-SE')],
         // Visas som kvinnors medianlön i procent av mäns (100 + skillnaden); skillnadskolumnen blir procentenheter.
         ['Kvinnors medianlön i % av mäns', sk(snap.rawGapPct) == null ? null : 100 + snap.rawGapPct, cur.rawGapPct == null ? null : 100 + cur.rawGapPct, v => svPct(v, 1)],
-        ['Oförklarad skillnad (regressionen, %)', snap.unexplainedGapPct,                 cur.unexplainedGapPct,            v => svPct(v, 1)],
+        ['Oförklarad löneskillnad (regressionen, %)', snap.unexplainedGapPct,                 cur.unexplainedGapPct,            v => svPct(v, 1)],
         ['Underlagets kvalitet',       snap.underlag,                          cur.underlag,                     v => v],
         ['Genomsnittsålder',           snap.avgAge,                            cur.avgAge,                       v => svTal(v, 1) + ' år'],
         ['Antal BAS-intervall',        snap.nBas,                              cur.nBas,                         fmt]

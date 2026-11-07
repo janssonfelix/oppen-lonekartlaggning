@@ -9,7 +9,7 @@
 // Diagram som kan kopieras som bild: id på diagrammet och fliken som ritar det.
 const RAPPORT_DIAGRAM = [
     { id: 'chart-skevhet-overview', rubrik: 'Löneskillnad per BAS-intervall', flik: 'struktur' },
-    { id: 'chart-perbas-gap', rubrik: 'Oförklarad skillnad per BAS-intervall', flik: 'struktur' },
+    { id: 'chart-perbas-gap', rubrik: 'Oförklarad löneskillnad per BAS-intervall', flik: 'struktur' },
     { id: 'chart-likvardighet-heatmap', rubrik: 'Kandidatpar i likvärdigt arbete', flik: 'likvardighet' },
 ];
 

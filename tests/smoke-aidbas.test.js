@@ -99,7 +99,7 @@ describe('Likvärdigt arbete: avsnitten per BAS-intervall och den hierarkiska j�
         expect(w.__state.likvardighet.kvDomDefinition).toBe('scb');
         expect(b()[6]).toBe('Kvinnodominerad');
         expect(w.document.getElementById('aidbas-likvardigt').textContent).toContain('SCB: 60 % kvinnor eller mer');
-        expect(w.document.getElementById('nyckel-lv-aidbas').textContent).toBe('4 grupper · 2 kvinnodominerade (SCB)');   // skärmen visar också gruppen med 4 personer
+        expect(w.document.getElementById('nyckel-lv-aidbas').textContent).toBe('4 grupper · 2 kvinnodominerade (enligt SCB)');   // skärmen visar också gruppen med 4 personer
     });
     it('den hierarkiska jämförelsen listar paret, och texten om inga par när det inte finns något', () => {
         const w = fonster();

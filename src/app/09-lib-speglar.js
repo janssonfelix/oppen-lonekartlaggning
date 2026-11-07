@@ -1671,7 +1671,7 @@ const KLASS_KV = 'Kvinnodominerad', KLASS_MA = 'Mansdominerad', KLASS_BLANDAD = 
 const BEDOMNING_INOM = 'Inom gränserna', BEDOMNING_UTANFOR = 'Utanför gränserna', BEDOMNING_INDIVID = 'Analyseras på individnivå';
 const INGA_HIERARKISKA_PAR = 'Inga fall där ett arbete med lägre krav, som inte är kvinnodominerat, har högre lön än ett kvinnodominerat arbete med högre krav.';
 
-/** Definitionens namn: DO eller SCB. */
+/** Definitionens namn: Förarbetena eller SCB. */
 function kvDefinitionNamn(definition) { return (KV_DEFINITIONER[definition] || KV_DEFINITIONER.do).namn; }
 /** Klassernas namn, för den som jämför klassningen. */
 function klassNamn() { return { kv: KLASS_KV, ma: KLASS_MA, blandad: KLASS_BLANDAD }; }
@@ -3944,7 +3944,7 @@ const GRUPP_MATT = {
     p90:       { etikett: 'P90', enhet: 'kr' },
     spridning: { etikett: 'spridning (P90/P10)', enhet: '' },
     andelKv:   { etikett: 'andel kvinnor', enhet: '%' },
-    gap:       { etikett: 'gap', enhet: '%' }
+    gap:       { etikett: 'kvinnors median i % av mäns', enhet: '%' }
 };
 const TAL_OP = ['storre', 'minst', 'mindre', 'hogst', 'mellan'];
 const OP_TEXT = { storre: 'större än', minst: 'minst', mindre: 'mindre än', hogst: 'högst', mellan: 'mellan' };

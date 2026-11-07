@@ -260,9 +260,9 @@ describe('samma bild på Översikt', () => {
         const t = w.document.getElementById('dashboard-summary').textContent;
         expect(t).not.toContain('bör utredas enligt EU');
         // Under talet står bara vad det är; förklaringen ligger i verktygstipset (nyckeltalsraden är en rad hög).
-        expect(t).toContain('rå skillnad, innan yrke och nivå räknats bort');
+        expect(t).toContain('rå skillnad, innan yrke och BAS-intervall räknats bort');
         const tip = w.document.querySelector('#stat-paygap .stat-tip');
-        expect(tip.getAttribute('title')).toContain('före hänsyn till yrke, nivå och ålder');
+        expect(tip.getAttribute('title')).toContain('före hänsyn till yrke, BAS-intervall och ålder');
         // Rågapet är en utgångspunkt, inget fynd: neutral färg också när det är långt från 100 %.
         expect(tip.classList.contains('crit')).toBe(false);
         expect(tip.classList.contains('ok')).toBe(false);

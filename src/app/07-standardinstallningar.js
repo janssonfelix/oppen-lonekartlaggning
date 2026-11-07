@@ -76,6 +76,11 @@ function jmfNamn(standard = 'Jämförelsestatistiken') {
     const n = state.profile && state.profile.benchmarkLabel;
     return n && n !== DEFAULT_PROFILE.benchmarkLabel ? _namnNormalisera(n) : standard;
 }
+/** Jämförelsens namn i genitiv i löptext ("jämförelsestatistikens", eller paketets eget namn). */
+function jmfNamnGenitiv() {
+    const n = state.profile && state.profile.benchmarkLabelGenitive;
+    return n && n !== DEFAULT_PROFILE.benchmarkLabelGenitive ? _namnNormalisera(n) : DEFAULT_PROFILE.benchmarkLabelGenitive;
+}
 // Namn i diagrammens serier visas alltid som text: vinkelparenteser byts mot typografiska, så att ett namn aldrig ser ut som markering.
 function plotNamn(text) {
     return String(text ?? '').replace(/</g, '‹').replace(/>/g, '›');
