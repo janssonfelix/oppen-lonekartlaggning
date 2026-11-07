@@ -375,6 +375,7 @@ K7. Skydd som är juridiskt bindande (k-anonymitet, ingen lagring) ska vaktas av
     Invarianterna står i `tests/kanonymitet.test.js` och `tests/ktroskel-invarianter.test.js` (flikar och
     exporter; vad som inte prövas står i testfilerna och i `riskanalys.md` §6.5) och i
     lagringsspärrens test i `tests/sakerhet.test.js`.
+    Varje ny utdata som lämnar verktyget (text, tabell, bild, fil) läggs i k-invariantsviten (`tests/helpers/ktroskel-rigg.js`) och i riskanalysens tabell över utdata innan den checkas in.
 
 ---
 

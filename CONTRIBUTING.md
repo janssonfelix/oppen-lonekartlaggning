@@ -24,6 +24,7 @@ datorn** — det styr hur vi tar emot bidrag.
    `npm run test:browser`. Allt ska vara grönt. En testkörning räknas som grön först när alla testfiler har
    rapporterat (`npm test` kör själv om en fil vars arbetare kraschat). Rör ändringen utseendet eller ett diagram:
    titta på resultatet i webbläsaren, också med ett underlag med många yrkesgrupper — demodatan har bara åtta.
+   Varje ny utdata som lämnar verktyget (text, tabell, bild, fil) läggs i k-invariantsviten (`tests/helpers/ktroskel-rigg.js`) och i riskanalysens tabell över utdata innan den checkas in.
 4. Beskriv ändringen och varför den behövs.
 
 ## Det här checkas aldrig in
