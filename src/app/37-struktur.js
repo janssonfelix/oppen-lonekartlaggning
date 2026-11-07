@@ -35,7 +35,7 @@ function renderStructure() {
     const distEl = document.getElementById('struktur-distribution');
     const euEl = document.getElementById('struktur-eu');
     if (!d.length) {
-        [repEl, distEl, euEl].forEach(el => { if (el) el.innerHTML = '<p class="farg-dampad pad-14">Ladda upp strukturdata.</p>'; });
+        [repEl, distEl, euEl].forEach(el => { if (el) el.innerHTML = '<p class="farg-dampad pad-14">Läs in lönefilen först.</p>'; });
         _stRitaTopp(d, null);
         return;
     }
@@ -75,7 +75,7 @@ function renderStructure() {
             if (p10 && p90 && p10.gapPct != null && p90.gapPct != null) {
                 if (Math.abs(p10.gapPct) > Math.abs(p90.gapPct) + 1) tolk = '<strong>Klibbigt golv:</strong> skillnaden är störst bland de lägst betalda. Granska ingångslöner och lägstanivåer.';
                 else if (Math.abs(p90.gapPct) > Math.abs(p10.gapPct) + 1) tolk = '<strong>Glastak:</strong> skillnaden är störst bland de högst betalda. Granska befordran och lönesättning i toppen.';
-                else tolk = 'Gapet är relativt jämnt fördelat över lönefördelningen.';
+                else tolk = 'Skillnaden är ungefär lika stor i hela lönefördelningen.';
             }
             const maxG = Math.max(...dist.map(x => Math.abs(x.gapPct || 0)), 0.01);
             distEl.innerHTML = `<p class="text-dampad-sm marg-0-0-10">Kvinnors lön i procent av mäns vid olika percentiler i fördelningen. Under 100 % betyder att kvinnor ligger lägre.</p>
@@ -162,9 +162,9 @@ function _stUtkastPerBas(k) {
 function _stFordelningsMonster(dist) {
     const p10 = dist.find(x => x.p === 10), p90 = dist.find(x => x.p === 90);
     if (!p10 || !p90 || p10.gapPct == null || p90.gapPct == null) return null;
-    if (Math.abs(p10.gapPct) > Math.abs(p90.gapPct) + 1) return { namn: 'Klibbigt golv', text: 'Gapet störst bland de lägst betalda' };
-    if (Math.abs(p90.gapPct) > Math.abs(p10.gapPct) + 1) return { namn: 'Glastak', text: 'Gapet störst bland de högst betalda' };
-    return { namn: 'Jämnt', text: 'Gapet lika stort i hela fördelningen' };
+    if (Math.abs(p10.gapPct) > Math.abs(p90.gapPct) + 1) return { namn: 'Klibbigt golv', text: 'Skillnaden störst bland de lägst betalda' };
+    if (Math.abs(p90.gapPct) > Math.abs(p10.gapPct) + 1) return { namn: 'Glastak', text: 'Skillnaden störst bland de högst betalda' };
+    return { namn: 'Jämnt', text: 'Skillnaden lika stor i hela fördelningen' };
 }
 
 /**

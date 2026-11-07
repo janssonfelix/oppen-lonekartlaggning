@@ -241,7 +241,7 @@ function buildFardigcheck() {
             out.push({
                 id: 'maskerade', level: andel > 20 ? 'warn' : 'info', tab: null,
                 title: `${personer} personer (${svPct(andel, 0)}) ligger i ${maskerade} grupper som är för små för att redovisas`,
-                detail: 'De ingår i BAS-nivåns siffror men syns inte per yrkesgrupp. Vid hög andel bör analysen kompletteras på BAS-nivå.'
+                detail: 'De ingår i siffrorna per BAS-intervall men syns inte per yrkesgrupp. Vid hög andel bör du komplettera analysen per BAS-intervall.'
             });
         }
     } catch (e) { rapporteraFel('Färdigcheck: BAS utan referens eller maskerade grupper', e); }

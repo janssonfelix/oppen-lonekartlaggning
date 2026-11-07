@@ -564,7 +564,7 @@ describe('småsaker i texter och etiketter (granskning 2026-10-30, steg H)', () 
         w.__renderTabContent('likvardighet');
         const th = w.document.querySelector('#likvardighet-table thead th[data-kol="paverkan"]');
         expect(th.textContent.trim()).toBe('Summa för gruppen (kr/mån)');
-        expect(th.title).toBe('Gapet i kronor gånger antalet personer i det kvinnodominerade yrket, per månad');
+        expect(th.title).toBe('Skillnaden i kronor gånger antalet personer i det kvinnodominerade yrket, per månad');
         expect(th.hasAttribute('data-export-label')).toBe(false);
         for (const fil of ['src/app/34-likvardigt-arbete.js', 'src/app/24-excelexport.js', 'src/app/27-berakningsbevis.js']) {
             expect(las(fil), fil).not.toMatch(/Påverkan/);

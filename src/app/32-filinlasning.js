@@ -158,12 +158,12 @@ document.getElementById('btn-download-csv-template')?.addEventListener('click', 
     const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = 'strukturdata_mall.csv';
+    a.download = 'lonefil_mall.csv';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-    announceToScreenReader('CSV-mall nedladdad: strukturdata_mall.csv');
+    announceToScreenReader('CSV-mall nedladdad: lonefil_mall.csv');
 });
 
 // #2: Robust CSV-inläsning. Excel-exporterad CSV är ofta Windows-1252 (inte

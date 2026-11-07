@@ -123,7 +123,7 @@ function updateForecast() {
     if (!d.length) {
         if (meterEl) meterEl.innerHTML = '';
         { const topp = document.getElementById('lo-slutsatser'); if (topp) topp.innerHTML = ''; }
-        if (outEl) outEl.innerHTML = '<p class="farg-dampad pad-18 ta-mitt">Ladda upp strukturdata för att prognosticera.</p>';
+        if (outEl) outEl.innerHTML = '<p class="farg-dampad pad-18 ta-mitt">Läs in lönefilen för att göra en prognos.</p>';
         document.getElementById('view-loneoversyn')?.classList.remove('lo-tomt');
         _renderForecastLutning(null, null);
         return;
@@ -255,7 +255,7 @@ function updateForecast() {
             <strong class="block-mb6">Stegvis plan över ${years} år (senast inom tre år)</strong>
             <table class="data-table fs-sm"><thead><tr><th>År</th><th class="t-hoger">Andel infört</th><th class="t-hoger">Ack. kostnad (inkl. PO)</th><th class="t-hoger">Kvinnors median i % av mäns</th></tr></thead>
             <tbody>${plan.map(p => `<tr><td>${p.year}</td><td class="t-hoger">${svPct(p.andelPct, 0)}</td><td class="t-hoger">${kr(p.kumKostnad)}</td><td class="t-hoger">${!konOk || p.rawGap == null ? '–' : andelAvMan(p.rawGap)}</td></tr>`).join('')}</tbody></table>
-            <p class="text-dampad-xs marg-8-0-0">Linjär infasning (1/${years} per år). Gapet visar läget när respektive års andel är införd.</p>
+            <p class="text-dampad-xs marg-8-0-0">Linjär infasning (1/${years} per år). Skillnaden visar läget när varje års andel är införd.</p>
         </div>`;
     }
     // Fördelning av påslaget: generellt / riktat, samt andel till kvinnodom. grupper
