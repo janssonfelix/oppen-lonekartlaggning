@@ -150,6 +150,13 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ### Utveckling
 
+- **Webbläsarröktestet delat per område.** Kontrollerna ligger i `tools/browser-smoke/` (laddning, flikar och diagram,
+  diagramkärnan, exporter, layout, dialoger, säkerhet, demo) med en gemensam rigg; `tools/browser-smoke.mjs` kör dem i
+  samma ordning som förut. Samma kontroller och samma sammanfattning.
+- **Regel för ny utdata.** Varje ny utdata som lämnar verktyget läggs i k-invariantsviten och i riskanalysens tabell
+  över utdata innan den checkas in (teknisk-plan K7 och CONTRIBUTING).
+- **Prestandasvepet mäter navigeringen.** `npm run perf` mäter också sidindexet per flik, den första sökningen och
+  tiden att öppna BAS-dossiern och gruppdossiern.
 - **minimatch 11 under ESLint.** Dependabot larmade om minimatch under 11.0.1 (överbelastning via mönster) men kunde inte
   uppdatera, eftersom ESLint låser 10.x; `overrides` i package.json tvingar fram 11, som ESLint fungerar med. Bara ett
   utvecklingsberoende; verktyget bär inte minimatch.
