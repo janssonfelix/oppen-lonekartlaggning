@@ -8,6 +8,20 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ### Gränssnitt
 
+- **Språklig genomgång av hela verktyget.** Samma ord överallt: *löneskillnad* i stället för lönegap och gap,
+  *anställda*, *BAS-intervall*, *likvärdigt arbete* och *lönefil* i stället för strukturdata och strukturfil.
+  Gränssnittet säger *du* och *organisationen*. Lagen nämns med kapitel: första gången i en vy
+  *Diskrimineringslagen kräver att du … (3 kap.)*, sedan *lagen*; inga paragraf- eller artikelnummer i gränssnitt
+  och exporter (Källor och raden *Rättslig ram* i metodbilagan undantas). Sakfel rättas mot `lagrum.md`: ingen
+  anmälningsplikt; gränsen 5 procent gäller bara villkoret för en gemensam lönebedömning, och lagen kräver analys av
+  varje skillnad; Handlingsplanens rader om samverkan och dokumentation pekar inte längre på fel paragraf;
+  exportens etikett för underrepresenterat kön säger *under 40 %*; p-värdet och konfidensintervallet förklaras
+  rätt i ordlistan, symbolförklaringen och regressionskortet; Medlingsinstitutets tal är desamma i Lönestruktur och
+  ordlistan. Excelbladen *Lonegap* och *Lonegap per alder* heter *Loneskillnad* och *Loneskillnad per alder*;
+  bladet *Distributionellt gap* heter *Skillnad i lönefördelningen*. CSV-mallen heter `lonefil_mall.csv`. Ordlistan
+  har ett eget sökfält, så att de gamla orden fortfarande hittar rätt post, och fyra nya poster (kvinnodominerat
+  arbete, kandidatpar, klibbigt golv, glastak).
+
 - **Förhandskontroll av lönefilen.** Direkt efter inläsningen står avsnittet *Förhandskontroll av lönefilen* överst i
   Filer och kvalitet, under filrutorna: tolkningen av de tio första raderna (BAS, yrke, lön, ålder, kön, och poäng och
   ansvarskod när de finns) med filens värde och verktygets tolkning i samma cell när de skiljer sig (*1978 tolkat som
@@ -185,6 +199,11 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ### Dokumentation
 
+- **Språklig genomgång av dokumenten.** Körguiden, pilotchecklistan, sammanfattningen för HR-chefer, datauttaget,
+  README och guiden för att ta över verktyget säger *du*; orden följer gränssnittet; § 8 och § 9 som namn på flikar
+  är borta; informationen till anställda hänvisar inte längre till direktivets artikel 13. `lagrum.md` har en rubrik
+  om tillgänglighet (DOS-lagen) och säger *löneskillnadens definition*.
+
 - **Importprofiler.** `docs/anvandare/datauttag.md` har avsnittet *Importprofiler: spara mappningen en gång* och en rad
   per system om att ett uttag med sparad profil känns igen automatiskt; `organisationspaket.md` beskriver fältet
   `importprofiler`; `CONTRIBUTING.md` säger hur en verifierad profil bidras (JSON och vilket system och version, utan
@@ -202,6 +221,11 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   läget i oktober 2026.
 
 ### Utveckling
+
+- **Vakttest för ordvalen** i `tests/dokumentation.test.js`: index.html, strängarna i appen och användar- och
+  dataskyddsdokumenten prövas mot de avförda orden, paragraftecken och artikelnummer, med undantag för kommentarer,
+  identifierare, sökregistrets synonymer, ordlistans sökfält och Källor. p-värdevakten fångar fler felaktiga
+  formuleringar och också konfidensintervallets.
 
 - **Importprofilerna i `src/lib/importprofiler.js`** (validering, matchning, profil ur en mappning, de inbyggda),
   speglade i 09. Tester i `tests/importprofiler.test.js` och `tests/importprofiler-app.test.js`; profilexporten ligger
