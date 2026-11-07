@@ -833,8 +833,8 @@
                 <!-- Löneutveckling (Kön) Tab -->
                 <div id="view-kon" class="view-panel dold">
                     <div class="flik-intro">
-                        <strong>Ålder och karriär — tre frågor.</strong>
-                        Finns skillnaden kvar vid samma ålder? Växer den över karriären? Och hur ser åldersstrukturen ut? Nyckeltalen och diagrammet här överst svarar på den första; fördjupningen tar de två andra. Åldern förklarar ofta en del av ett lönegap — men en förklaring är inte automatiskt ett godtagbart skäl. Fliken är en fördjupning och inget lagkrav.
+                        <strong>Ålder & karriär — tre frågor.</strong>
+                        Finns skillnaden kvar vid samma ålder? Växer den över karriären? Och hur ser åldersstrukturen ut? Nyckeltalen och diagrammet här överst svarar på den första; fördjupningen tar de två andra. Åldern förklarar ofta en del av en löneskillnad, men en förklaring är inte automatiskt ett sakligt skäl. Fliken är en fördjupning och inget lagkrav.
                     </div>
                     <div class="urvalsrad" id="ak-urval">
                         <label for="bas-select-kon"><strong>Urval för hela fliken</strong></label>
@@ -850,12 +850,12 @@
                             <div class="stat-val" id="kon-kpi-n">-</div>
                             <div class="stat-under" id="kon-kpi-n-under"></div>
                         </div>
-                        <div class="stat-box" data-tooltip="Kvinnors medianlön som procent av mäns medianlön. 100% = ingen skillnad. Under 95% flaggas enligt lönetransparensdirektivet. Påverkas av t.ex. deltid, erfarenhet och åldersstruktur.">
+                        <div class="stat-box" data-tooltip="Kvinnors medianlön i procent av mäns medianlön. 100 % = ingen skillnad. Påverkas till exempel av deltid, erfarenhet och åldersstruktur.">
                             <div class="stat-etikett">Kvinnors lön i % av mäns</div>
                             <div class="stat-val" id="kon-kpi-gap">-</div>
                             <div class="stat-under">medianlön, utan justering</div>
                         </div>
-                        <div class="stat-box" data-tooltip="Kvinnors lön i procent av mäns när båda könen avläses vid urvalets medelålder på sina trendlinjer. Räknar bort att ett kön är äldre i snitt — men inte BAS-intervall eller yrkesgrupp; det gör regressionen i Lönestruktur.">
+                        <div class="stat-box" data-tooltip="Kvinnors lön i procent av mäns vid samma ålder: båda könen läses av vid urvalets medelålder. Räknar bort att ett kön i snitt är äldre, men inte BAS-intervall eller yrkesgrupp. Det gör regressionen i Lönestruktur.">
                             <div class="stat-etikett">Vid samma ålder</div>
                             <div class="stat-val" id="kon-kpi-agegap">-</div>
                             <div class="stat-under" id="kon-kpi-agegap-under">kvinnors lön i % av mäns</div>
@@ -879,7 +879,7 @@
                                     <select id="kon-color-by" class="form-select fs-sm pad-6-10">
                                         <option value="kon">Kön</option>
                                         <option value="bas">BAS-intervall</option>
-                                        <option value="aid">Yrkesgrupp (AID, top 8)</option>
+                                        <option value="aid">Yrkesgrupp (de åtta största)</option>
                                     </select>
                                 </div>
                             </div>
@@ -889,8 +889,8 @@
                             <p id="kon-kohort-not" class="text-dampad-xs marg-8-0-0"></p>
                         </div>
                         <div class="card diagramkort marg-b-0">
-                            <h3 class="diagramkort-rubrik">Lönegap per åldersgrupp</h3>
-                            <p class="diagramkort-forklaring">Var i karriären finns skillnaden? Punkten är kvinnors medianlön i procent av mäns i åldersgruppen, strecket det 95-procentiga konfidensintervallet. Skillnaden är rå — alla kvinnor mot alla män i åldersgruppen, oavsett yrke och nivå — och säger därför var skillnaden finns, inte att lika arbete betalas olika.</p>
+                            <h3 class="diagramkort-rubrik">Löneskillnad per åldersgrupp</h3>
+                            <p class="diagramkort-forklaring">Var i karriären finns skillnaden? Punkten är kvinnors medianlön i procent av mäns i åldersgruppen, strecket det 95-procentiga konfidensintervallet. Skillnaden är rå: alla kvinnor mot alla män i åldersgruppen, oavsett yrke och BAS-intervall. Den säger därför var skillnaden finns, inte att lika arbete betalas olika.</p>
                             <div id="chart-kon-aldergap"></div>
                             <p id="kon-aldergap-not" class="k-mask-note" hidden></p>
                         </div>
@@ -908,8 +908,8 @@
                     
                     <p class="avsnitt-rubrikrad">Fördjupning</p>
                     <details class="avsnitt" id="avsnitt-ak-karriar" open>
-                        <summary><span class="avsnitt-titel"><h2>Växer gapet med åldern?</h2><span class="avsnitt-under">Lönekurvor för kvinnor och män över ett yrkesliv</span></span><span class="avsnitt-nyckel" id="nyckel-ak-karriar"></span></summary>
-                        <p class="avsnitt-inledning">Om kvinnors och mäns lönekurvor glider isär över ett yrkesliv kan det tyda på långsammare karriärutveckling, effekter av föräldraledighet eller att lönesättningen slår olika. Ett gap som växer med åldern är något annat än ett som funnits från start.</p>
+                        <summary><span class="avsnitt-titel"><h2>Växer skillnaden med åldern?</h2><span class="avsnitt-under">Lönekurvor för kvinnor och män över ett yrkesliv</span></span><span class="avsnitt-nyckel" id="nyckel-ak-karriar"></span></summary>
+                        <p class="avsnitt-inledning">Om kvinnors och mäns lönekurvor glider isär över ett yrkesliv kan det tyda på långsammare karriärutveckling, effekter av föräldraledighet eller att lönesättningen slår olika. En skillnad som växer med åldern är något annat än en som funnits från start.</p>
                         <div id="livscykel-content"></div>
                     </details>
                     <details class="avsnitt" id="avsnitt-ak-lon">
@@ -918,7 +918,7 @@
                         <div class="chart-header rad-mitt mellan marg-b-16">
                             <div>
                                 <h3 class="m-0">Lönespridning över ålder (P10 · Median · P90)</h3>
-                                <p class="text-dampad-xs marg-4-0-0">Lönenivåer per ålder för det valda omfånget (hela urvalet eller valt BAS), per femårsgrupp: linjen är medianen, det mörkare bandet mittersta hälften av lönerna (P25–P75) och det ljusare P10–P90. Åldersgrupper under minsta gruppstorlek visas inte.</p>
+                                <p class="text-dampad-xs marg-4-0-0">Lönerna per ålder i femårsgrupper, för hela urvalet eller valt BAS-intervall. Linjen är medianen, det mörka bandet den mittersta hälften (P25–P75) och det ljusa P10–P90. Åldersgrupper under minsta gruppstorlek visas inte.</p>
                             </div>
                         </div>
                         <div class="chart-container large">
@@ -976,16 +976,16 @@
                         <p class="avsnitt-inledning"><span class="info-tip" data-tooltip="Referensdata: SCB:s arbetskraftsundersökningar (AKU), sysselsatta i Sverige."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
                         Jämför organisationens åldersfördelning med riket, och se om en sned åldersstruktur påverkar lönebilden. Återväxt och pensionsavgångar hör till personalplaneringen, inte till lönekartläggningen — de står här för att samma underlag visar dem.</p>
                         <div class="summary-stats">
-                        <div class="stat-box" data-tooltip="Medianåldern i detta BAS-intervall jämfört med organisationens totala medianålder. Avvikelse &gt;5 år markeras.">
+                        <div class="stat-box" data-tooltip="Medianåldern i detta BAS-intervall jämfört med organisationens medianålder. En skillnad på mer än 5 år markeras.">
                             <div class="stat-etikett">Medianålder</div>
                             <div class="stat-val fs-1_5rem" id="demo-kpi-age">-</div>
                             <div class="stat-under" id="demo-kpi-age-sub"></div>
                         </div>
-                        <div class="stat-box" data-tooltip="Andel anställda 60 år eller äldre. &gt;25% = hög successionsrisk. &gt;15% = bör bevakas. Dessa personers pensionsavgångar bör planeras aktivt.">
+                        <div class="stat-box" data-tooltip="Andel anställda som är 60 år eller äldre. Över 25 procent: många går i pension inom några år. Över 15 procent: håll uppsikt. Planera för pensionsavgångarna.">
                             <div class="stat-etikett">Andel 60+</div>
                             <div class="stat-val fs-1_5rem" id="demo-kpi-senior">-</div>
                         </div>
-                        <div class="stat-box" data-tooltip="Andel anställda under 40 år. Låg andel (&lt;15%) kan indikera brist på återväxt – begränsad tillströmning av yngre kompetens i gruppen.">
+                        <div class="stat-box" data-tooltip="Andel anställda under 40 år. Under 15 procent: få yngre anställda i gruppen, alltså svag återväxt.">
                             <div class="stat-etikett">Andel under 40</div>
                             <div class="stat-val fs-1_5rem" id="demo-kpi-junior">-</div>
                         </div>
@@ -999,7 +999,7 @@
                         <div class="chart-header rad-mitt mellan marg-b-16">
                             <div>
                                 <h3 class="m-0">Åldersfördelning per 5-årsintervall</h3>
-                                <p class="text-dampad-xs marg-4-0-0">Staplar = urvalet (hela organisationen eller valt BAS-intervall), uppdelat per kön. Streckad referenslinje = Sveriges sysselsatta befolkning enligt SCB:s arbetskraftsundersökning (AKU). Avvikelser från referensen indikerar att gruppen har en annan åldersstruktur än arbetsmarknaden i stort.</p>
+                                <p class="text-dampad-xs marg-4-0-0">Staplar = urvalet (hela organisationen eller valt BAS-intervall), uppdelat per kön. Streckad referenslinje = Sveriges sysselsatta befolkning enligt SCB:s arbetskraftsundersökning (AKU). Avviker staplarna från linjen har gruppen en annan åldersstruktur än arbetsmarknaden i stort.</p>
                             </div>
                         </div>
                         <div class="chart-container large">
@@ -1019,7 +1019,7 @@
                         <div class="chart-header rad-mitt mellan marg-b-16">
                             <div>
                                 <h3 class="m-0">Åldersfördelning — kurva per kön</h3>
-                                <p class="text-dampad-xs marg-4-0-0">Andel av respektive kön vid varje ålder (utjämnat med ett 5-årigt glidande medel). Linjernas <em>form</em> visar om kvinnor och män har olika åldersstruktur. Andelarna är beräknade per kön, så kurvorna är jämförbara oavsett gruppstorlek.</p>
+                                <p class="text-dampad-xs marg-4-0-0">Andel av respektive kön vid varje ålder (utjämnat med ett 5-årigt glidande medel). Linjernas <em>form</em> visar om kvinnor och män har olika åldersstruktur. Andelarna räknas per kön, så kurvorna går att jämföra oavsett gruppstorlek.</p>
                             </div>
                         </div>
                         <div class="chart-container large">
@@ -1055,13 +1055,13 @@
                             <h3>Avgöra vad åldern förklarar</h3>
                             <ul>
                                 <li>Jämför nyckeltalen <em>Kvinnors lön i % av mäns</em> och <em>Vid samma ålder</em>. Krymper skillnaden vid samma ålder beror en del på att könen har olika åldersfördelning.</li>
-                                <li><em>Lön per levnadsår</em> visar om lönen stiger lika mycket med åldern för kvinnor och män. Skiljer sig talen tydligt värderas erfarenhet olika — ett skäl att granska lönekriterierna.</li>
+                                <li><em>Lön per levnadsår</em> visar om lönen stiger lika mycket med åldern för kvinnor och män. Skiljer sig talen tydligt värderas erfarenhet olika. Det är ett skäl att granska lönekriterierna.</li>
                                 <li>Vad BAS-intervall och yrkesgrupp förklarar står i Lönestruktur; den här fliken räknar bara bort åldern.</li>
                             </ul>
                             <h3>Hitta var i karriären skillnaden finns</h3>
                             <ul>
-                                <li><em>Lönegap per åldersgrupp</em> visar i vilka åldrar skillnaden är störst. Skillnaden är rå och säger inte att lika arbete betalas olika.</li>
-                                <li><em>Växer gapet med åldern?</em> svarar på om skillnaden är större i de äldre grupperna än i de yngre. Kurvorna är ett tvärsnitt: de visar inte hur en persons lön utvecklas.</li>
+                                <li><em>Löneskillnad per åldersgrupp</em> visar i vilka åldrar skillnaden är störst. Skillnaden är rå och säger inte att lika arbete betalas olika.</li>
+                                <li><em>Växer skillnaden med åldern?</em> svarar på om skillnaden är större i de äldre grupperna än i de yngre. Kurvorna är ett tvärsnitt: de visar inte hur en persons lön utvecklas.</li>
                             </ul>
                             <h3>Vid samverkan</h3>
                             <ul>
@@ -1072,7 +1072,7 @@
                             <h3>Åldersstruktur och återväxt</h3>
                             <ul>
                                 <li>Mer än 25 % som är 60 år eller äldre i ett BAS-intervall betyder många pensionsavgångar på några års sikt; under 15 % som är under 40 år betyder svag återväxt.</li>
-                                <li>Jämförelsen med Sveriges sysselsatta visar var ni avviker från arbetsmarknaden i stort. Det är planeringsunderlag, inte en del av lönekartläggningen.</li>
+                                <li>Jämförelsen med Sveriges sysselsatta visar var organisationen avviker från arbetsmarknaden i stort. Det är planeringsunderlag, inte en del av lönekartläggningen.</li>
                             </ul>
                             </div>
                     </details>
