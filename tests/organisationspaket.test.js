@@ -313,3 +313,47 @@ describe('organisationspaket: rapportens recept (ADR-52)', () => {
         expect(t.ok).toBe(false);
     });
 });
+
+describe('organisationspaket: importprofiler', () => {
+    const tolkaP = p => tolkaPaket(JSON.stringify(p));
+    const profil = { id: 'personallistan', namn: 'Lönesystemets personallista',
+        rubriker: { bas: ['Lönenivå'], yrke: ['Befattningskod'], lon: ['Grundlön heltid'], alder: ['Födelseår'], kon: ['Juridiskt kön'] } };
+    it('följer med i paketet och läses tillbaka med källan organisationspaketet', () => {
+        const p = byggPaket({ ...underlag(), importprofiler: [{ ...profil, kalla: 'konfiguration' }] });
+        expect(p.importprofiler).toEqual([{ id: expect.stringMatching(/^lonesystemets-personallista-/), namn: 'Lönesystemets personallista', rubriker: profil.rubriker,
+            kannetecken: ['Lönenivå', 'Befattningskod', 'Grundlön heltid', 'Födelseår', 'Juridiskt kön'] }]);
+        const t = tolkaP(p);
+        expect(t.ok).toBe(true);
+        expect(t.delar.importprofiler).toHaveLength(1);
+        expect(t.delar.importprofiler[0].kalla).toBe('organisationspaket');
+        expect(t.varningar).toEqual([]);
+    });
+    it('ett äldre paket utan fältet fungerar och ger inga profiler', () => {
+        const p = byggPaket(underlag());
+        expect('importprofiler' in p).toBe(false);
+        const t = tolkaP(p);
+        expect(t.ok).toBe(true);
+        expect(t.delar.importprofiler).toEqual([]);
+    });
+    it('en ogiltig profil hoppas över med en varning; fler än 50 läses inte alls', () => {
+        const p = byggPaket({ ...underlag(), importprofiler: [profil] });
+        p.importprofiler.push({ namn: 'Trasig', rubriker: { lon: ['L'.repeat(81)] } });
+        const t = tolkaP(p);
+        expect(t.ok).toBe(true);
+        expect(t.delar.importprofiler).toHaveLength(1);
+        expect(t.varningar).toEqual(['1 importprofil i paketet gick inte att läsa och hoppas över.']);
+        p.importprofiler = Array.from({ length: 51 }, (_, i) => ({ ...profil, id: `p-${i}` }));
+        const m = tolkaP(p);
+        expect(m.ok).toBe(true);
+        expect(m.delar.importprofiler).toEqual([]);
+        expect(m.varningar.join(' ')).toMatch(/50/);
+    });
+    it('en profil med personnummerliknande text stoppar paketet', () => {
+        const p = byggPaket({ ...underlag(), importprofiler: [profil] });
+        p.importprofiler[0].rubriker.bas = ['19850101-1234'];
+        expect(tolkaP(p).ok).toBe(false);
+    });
+    it('bygget tar bara giltiga profiler', () => {
+        expect('importprofiler' in byggPaket({ ...underlag(), importprofiler: [{ namn: 'x', rubriker: {} }] })).toBe(false);
+    });
+});

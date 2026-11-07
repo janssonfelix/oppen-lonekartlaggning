@@ -235,19 +235,22 @@ function _detectDelimiter(text) {
  * @param {string} text - Avkodad filtext.
  * @param {Array<Array<string>>} synonymGroups - En grupp synonymer per roll.
  * @param {number} [minHits=2] - Min antal roller som måste matcha.
+ * @param {any[]} [profiler] - Importprofiler (lönefilen): den första raden där en profils alla kännetecken finns är
+ *          rubrikraden, också när den har färre delsträngsträffar än en försättsrad.
  * @returns {{line:number, delim:string|null, hits:number}} line = 0-baserat radindex;
  *          vid ingen träff: line 0 + avgränsaren från _detectDelimiter.
  */
-function _findCsvHeader(text, synonymGroups, minHits = 2) {
+function _findCsvHeader(text, synonymGroups, minHits = 2, profiler = []) {
     const lines = text.split(_RADSLUT).slice(0, 15);
     /** @type {{line: number, delim: string|null, hits: number}} */
     let best = { line: 0, delim: null, hits: -1 };
     for (let i = 0; i < lines.length; i++) {
         if (!lines[i] || !lines[i].trim()) continue;
         for (const d of [';', ',', '\t', '|']) {
-            const cells = lines[i].split(d).map(c =>
-                c.replace(/^"+|"+$/g, '').toLowerCase().replace(/[^a-z0-9]/g, ''));
-            if (cells.length < 2) continue;
+            const raa = lines[i].split(d).map(c => c.replace(/^"+|"+$/g, ''));
+            if (raa.length < 2) continue;
+            if (profiler.length && _ipMatcha(raa, profiler)) return { line: i, delim: d, hits: synonymGroups.length };
+            const cells = raa.map(c => c.toLowerCase().replace(/[^a-z0-9]/g, ''));
             let hits = 0;
             for (const group of synonymGroups) {
                 if (group.some(syn => cells.some(c => c.includes(syn)))) hits++;
@@ -269,10 +272,11 @@ function _findCsvHeader(text, synonymGroups, minHits = 2) {
  * @param {ArrayBuffer} buf
  * @param {Array<Array<string>>} synonymGroups - Som i _findCsvHeader.
  * @param {number} [minHits=2]
+ * @param {any[]} [profiler] - Importprofiler, som i _findCsvHeader.
  * @returns {{headers:string[], rows:Array<Object<string,string>>, sheet:string}}
  * @throws {Error} om arbetsboken inte kan läsas eller saknar datarader.
  */
-function _xlsxToObjects(buf, synonymGroups, minHits = 2) {
+function _xlsxToObjects(buf, synonymGroups, minHits = 2, profiler = []) {
     if (typeof XLSX === 'undefined') throw new Error('Excel-biblioteket kunde inte laddas.');
     const wb = XLSX.read(new Uint8Array(buf), { type: 'array' });
     const sheetName = wb.SheetNames[0];
@@ -283,6 +287,7 @@ function _xlsxToObjects(buf, synonymGroups, minHits = 2) {
     // Rubrikradssökning (max 20 rader)
     let hdrIdx = 0, bestHits = -1;
     for (let i = 0; i < Math.min(20, grid.length); i++) {
+        if (profiler.length && _ipMatcha((grid[i] || []).map(c => String(c ?? '').trim()), profiler)) { hdrIdx = i; bestHits = synonymGroups.length; break; }
         const cells = (grid[i] || []).map(c =>
             String(c ?? '').toLowerCase().replace(/[^a-z0-9]/g, ''));
         let hits = 0;
@@ -368,6 +373,7 @@ function loadStructureFile(file) {
     // alltid kan läsa om filen, även om filväljaren tömts. Nollas i clearAllData.
     // Kolumnmappningen läser om den senast inlästa filen, också en som inte gav några rader; den sätts i finishLoad.
     showLoading();
+    _profilBesked = '';
     let capturedHeaders = null;   // #11: rubriker för kolumnmappnings-guiden
 
     // GDPR Art. 25.2: minimal data resident i minnet under parsning.
@@ -411,6 +417,10 @@ function loadStructureFile(file) {
     // Ansvarskolumnen sätts redan på första raden (extractMinimalRecord behöver den). Fallerar
     // inläsningen efteråt ska den data som redan finns behålla sin kolumn.
     const tidigareAnsvarKolumn = state.ansvarKolumn;
+    // Importprofilen (src/lib/importprofiler.js) väljs på filens rubriker innan första raden läses, så att getField
+    // och ansvarskolumnen använder den. Läses filen inte in gäller den förra filens profil igen.
+    const tidigareImportprofil = state.importprofil;
+    const valjImportprofil = headers => { state.importprofil = _importprofilFor(headers); };
     function processRow(row) {
         if (!ansvarBedomd) {
             ansvarBedomd = true;
@@ -466,6 +476,7 @@ function loadStructureFile(file) {
     function rejectFile(sensitive) {
         aborted = true;
         state.ansvarKolumn = tidigareAnsvarKolumn;
+        state.importprofil = tidigareImportprofil;
         // Nolla bufferten direkt så raw rows blir GC-bara
         sampleBuffer = null;
         hideLoading();
@@ -497,6 +508,8 @@ function loadStructureFile(file) {
         const saknas = (capturedHeaders || []).length ? _kolumnerSomSaknas(capturedHeaders) : [];
         if (!parsed.length) {
             state.ansvarKolumn = tidigareAnsvarKolumn;
+            state.importprofil = tidigareImportprofil;
+            _senasteInlasningLyckades = false;
             state._lastStructureFile = file;
             state._dataHeaders = capturedHeaders || [];
             _visaEjInlast(saknas, parseStats);
@@ -507,6 +520,7 @@ function loadStructureFile(file) {
         state.filnamn = { ...(state.filnamn || {}), data: file ? file.name : null };
         state.dataAudit = parseStats;
         state._dataHeaders = capturedHeaders || [];
+        _senasteInlasningLyckades = true;
         _afterDataLoaded();
         maybeShowColumnMapping();   // #11: visa guide om obligatoriska kolumner saknas
         // #2: redovisa detekterat format (transparens)
@@ -520,6 +534,7 @@ function loadStructureFile(file) {
     function failLoad(msg) {
         sampleBuffer = null;
         state.ansvarKolumn = tidigareAnsvarKolumn;
+        state.importprofil = tidigareImportprofil;
         hideLoading();
         dataStatus.textContent = msg;
         dataStatus.className = 'status-msg';
@@ -540,9 +555,10 @@ function loadStructureFile(file) {
           // Excel-väg: hela bladet läses (kan inte strömmas), därefter exakt
           // samma pipeline som CSV — PII-detektering på sample, sedan processRow.
           let x;
-          try { x = _xlsxToObjects(/** @type {ArrayBuffer} */ (buf), Object.values(ALLOWED_FIELDS)); }
+          try { x = _xlsxToObjects(/** @type {ArrayBuffer} */ (buf), Object.values(ALLOWED_FIELDS), 2, _importprofilLista()); }
           catch (err) { failLoad('Kunde inte läsa Excel-filen: ' + err.message); return; }
           capturedHeaders = x.headers.filter(h => h);
+          valjImportprofil(capturedHeaders);
           parseStats.totalRaw = x.rows.length;
           const sensitive = detectSensitiveColumns(x.rows.slice(0, SAMPLE_SIZE));
           if (sensitive.length > 0) { rejectFile(sensitive); return; }
@@ -554,7 +570,7 @@ function loadStructureFile(file) {
       // Text-/CSV-väg: avkoda → hitta rubrikrad (preamble-tolerant) → strömma.
       const _dec = _decodeCsvBuffer(buf);
       detectedEnc = _dec.encoding;
-      const hdrInfo = _findCsvHeader(_dec.text, Object.values(ALLOWED_FIELDS));
+      const hdrInfo = _findCsvHeader(_dec.text, Object.values(ALLOWED_FIELDS), 2, _importprofilLista());
       detectedDelim = hdrInfo.delim || ';';
       // Filen delas i rader en gång: försättsraderna före rubriken tas bort, och filens
       // radnummer för varje datarad räknas ur samma rader. Papa hoppar över tomma rader
@@ -569,7 +585,7 @@ function loadStructureFile(file) {
         header: true, skipEmptyLines: true, delimiter: detectedDelim,
         step: (results, parser) => {
             if (aborted) return;
-            if (!capturedHeaders && results.meta && results.meta.fields) capturedHeaders = results.meta.fields.slice();
+            if (!capturedHeaders && results.meta && results.meta.fields) { capturedHeaders = results.meta.fields.slice(); valjImportprofil(capturedHeaders); }
             if (results.data) results.data[_RADNR] = radLista[radIdx++] ?? null;
             parseStats.totalRaw++;
             if (!detectionDone && sampleBuffer) {
@@ -626,14 +642,96 @@ const COLMAP_ROLES = [
     { role: 'poang',  label: 'Arbetsvärdering (poäng)', required: false },
     { role: 'ansvar', label: 'Ansvarskod (AID)', required: false }
 ];
-/** Vilka värden kolumnmappningen har för varje roll: det användaren valt, annars det som känns igen i rubrikerna. */
+/**
+ * Vilka värden kolumnmappningen har för varje roll: det användaren valt, annars importprofilen som gäller för
+ * rubrikerna (organisationspaketets, konfigurationsfilens, de inbyggda), annars det som känns igen på delsträng.
+ */
 function _kolumnval(headers) {
     const auto = autoDetectColumnMap(headers), eff = {};
+    const profil = _importprofilFor(headers);
+    const prof = profil ? profil.mappning : {};
     COLMAP_ROLES.forEach(({ role }) => {
         const vald = state.columnMap && state.columnMap[role];   // en vald rubrik gäller bara om filen har den
-        eff[role] = role === 'ansvar' && state.columnMap?.ansvar === '' ? '' : (vald && headers.includes(vald) ? vald : '') || auto[role] || '';
+        eff[role] = role === 'ansvar' && state.columnMap?.ansvar === '' ? '' : (vald && headers.includes(vald) ? vald : '') || prof[role] || auto[role] || '';
     });
-    return { auto, eff };
+    /** @type {{[roll: string]: string|null}} */
+    const kand = { ...auto, ...prof };   // det som känns igen utan att användaren valt: profilen före delsträngarna
+    return { auto: kand, eff, profil };
+}
+
+// ---- Spara en gjord mappning som importprofil ----
+// Knappen visas när kolumnerna pekats ut för hand och filen därefter lästs in. Profilen bär bara filens rubriknamn
+// (src/lib/importprofiler.js) och sparas för sessionen; konfigurationsfilen tar den med till nästa gång.
+let _senasteInlasningLyckades = false;
+let _profilBesked = '';
+const IMPORTPROFIL_STANDARDNAMN = 'Vår personallista';
+const IMPORTPROFIL_NAMNFEL = 'Profilen sparades inte: namnet ska vara högst 80 tecken och får inte likna ett personnummer eller en e-postadress.';
+
+/** Den gjorda mappningen som profil (källan konfiguration), eller null när den inte går att spara. */
+function _profilUrMappning(namn) {
+    const headers = state._dataHeaders || [];
+    return _ipFranMappning({ namn, kalla: 'konfiguration', mappning: _kolumnval(headers).eff, rubriker: headers });
+}
+/** En sparad profil med samma rubriker som den gjorda mappningen, eller null. */
+function _sparadProfilForMappning() {
+    const p = _profilUrMappning(IMPORTPROFIL_STANDARDNAMN);
+    if (!p) return null;
+    const nyckel = JSON.stringify(p.rubriker);
+    return (state.importprofiler || []).find(x => JSON.stringify(x.rubriker) === nyckel) || null;
+}
+/**
+ * Sparar den gjorda mappningen som importprofil för sessionen (ersätter en egen profil med samma id).
+ * @returns {{ok:true, profil:any}|{ok:false, fel:string}}
+ */
+function sparaImportprofil(namn) {
+    const p = _profilUrMappning(String(namn ?? '').trim() || IMPORTPROFIL_STANDARDNAMN);
+    if (!p) return { ok: false, fel: IMPORTPROFIL_NAMNFEL };
+    const ovriga = (state.importprofiler || []).filter(x => !(x.kalla === 'konfiguration' && x.id === p.id));
+    const egna = ovriga.filter(x => x.kalla === 'konfiguration');
+    const kontroll = _ipValideraLista([...egna, p], { kalla: 'konfiguration' });
+    if (kontroll.fel) return { ok: false, fel: `Profilen sparades inte: ${kontroll.fel} Ta bort någon i Inställningar först.` };
+    state.importprofiler = [...ovriga, p];
+    return { ok: true, profil: p };
+}
+/**
+ * Bygger ett nytt organisationspaket ur det inlästa paketets egna delar och profilen, och laddar ner det. Samma
+ * vakter som Spara paketet: ett ogiltigt värde i paketformuläret ger ingen nedladdning.
+ */
+function laggTillImportprofilIPaket(profil) {
+    if (!state.paket) return { ok: false, fel: 'Inget organisationspaket är inläst.' };
+    const formFel = _paketFormularFel();
+    if (formFel) return { ok: false, fel: formFel };
+    const paket = skapaPaketMedImportprofil(profil);
+    const kontroll = _opTolkaPaket(JSON.stringify(paket));
+    if (!kontroll.ok) return { ok: false, fel: 'Paketet kan inte skapas: ' + kontroll.fel };
+    const blob = new Blob([JSON.stringify(paket, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = _paketFilnamn(paket.organisation.namn);
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    return { ok: true, filnamn: a.download };
+}
+/** Rutan längst ned i kolumnmappningen: spara mappningen, eller vilken profil den redan är sparad som. */
+function _importprofilRuta(missing) {
+    if (!_senasteInlasningLyckades || !state.columnMap || missing.length || !state.data.length || !_profilUrMappning(IMPORTPROFIL_STANDARDNAMN)) return '';
+    const sparad = _sparadProfilForMappning();
+    const besked = `<p id="colmap-profil-status" class="text-dampad-sm marg-6-0" role="status">${esc(_profilBesked)}</p>`;
+    const paketKnapp = state.paket ? ` <button id="colmap-till-paket" class="btn btn-secondary btn-sm" type="button">Lägg till i organisationspaketet</button>` : '';
+    if (sparad) {
+        return `<div class="colmap-profil ram-t-1-kant pad-t-10 marg-t-12">
+            <p class="fs-sm marg-6-0">${ikon('bock')} Sparad som importprofil <strong>${esc(sparad.namn)}</strong> (${esc(_importprofilKalla(sparad.kalla))}).
+            Spara konfigurationen i Spara och jämför år så följer den med till nästa gång.</p>
+            ${state.paket && sparad.kalla !== 'organisationspaket' ? `<div class="rad-bryt gap-10">${paketKnapp.trim()}</div>` : ''}${besked}</div>`;
+    }
+    return `<div class="colmap-profil ram-t-1-kant pad-t-10 marg-t-12">
+        <strong class="fs-sm">Spara mappningen</strong>
+        <p class="text-dampad-sm lh-1_5 marg-6-0">Nästa gång en fil med samma rubriker läses in känns kolumnerna igen utan mappning. Profilen bär bara rubrikernas namn, inga värden ur filen. Den följer med när du sparar konfigurationen${state.paket ? ', och kan läggas till i organisationspaketet så att fler får den' : ''}.</p>
+        <div class="rad-bryt botten gap-10">
+            <label class="faltkolumn"><span>Profilens namn</span>
+                <input type="text" id="colmap-profil-namn" class="form-select" maxlength="80" autocomplete="off" value="${esc(IMPORTPROFIL_STANDARDNAMN)}"></label>
+            <button id="colmap-spara-profil" class="btn btn-primary btn-sm" type="button">Spara som importprofil</button>${paketKnapp}
+        </div>${besked}</div>`;
 }
 /** De obligatoriska roller som ingen rubrik i filen svarar mot. */
 function _kolumnerSomSaknas(headers) {
@@ -698,7 +796,8 @@ function maybeShowColumnMapping() {
     if (!headers.length) { panel.style.display = 'none'; panel.innerHTML = ''; return; }
 
     const esc2 = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-    const { auto, eff } = _kolumnval(headers);
+    const { auto, eff, profil } = _kolumnval(headers);
+    const profilRad = profil ? `<p class="colmap-kand fs-sm marg-6-0">${esc2(importprofilText(profil))}</p>` : '';
     const missing = COLMAP_ROLES.filter(r => r.required && !eff[r.role]);
 
     const selects = COLMAP_ROLES.map(({ role, label, required }) => {
@@ -715,9 +814,9 @@ function maybeShowColumnMapping() {
     const head = missing.length
         ? `<strong class="f-kritisk">${ikon('statusVarning')} Kolumnmappning behövs</strong>
            <p class="fs-sm lh-1_5 marg-6-0">Verktyget kunde inte auto-känna igen ${missing.map(m => `<strong>${esc2(m.label)}</strong>`).join(', ')}. Peka ut rätt kolumn nedan och läs in igen.</p>
-           <p class="colmap-rubriker f-dampad fs-sm lh-1_5 marg-6-0">Filens rubriker: ${headers.map(h => `<code>${esc2(h)}</code>`).join(', ')}</p>`
+           <p class="colmap-rubriker f-dampad fs-sm lh-1_5 marg-6-0">Filens rubriker: ${headers.map(h => `<code>${esc2(h)}</code>`).join(', ')}</p>${profilRad}`
         : `<strong>${ikon('bock')} Kolumner auto-matchade</strong>
-           <p class="text-dampad-sm marg-6-0">Verktyget kände igen alla obligatoriska kolumner. Justera vid behov om någon matchats fel.</p>`;
+           <p class="text-dampad-sm marg-6-0">Verktyget kände igen alla obligatoriska kolumner. Justera vid behov om någon matchats fel.</p>${profilRad}`;
 
     panel.innerHTML = `
         <details class="card${missing.length ? ' bl4-kritisk' : ''}" open>
@@ -729,9 +828,29 @@ function maybeShowColumnMapping() {
                     <button id="colmap-apply" class="btn btn-primary btn-sm" type="button">Tillämpa mappning &amp; läs in igen</button>
                     <button id="colmap-reset" class="btn btn-secondary btn-sm" type="button">Återställ till auto</button>
                 </div>
+                ${_importprofilRuta(missing)}
             </div>
         </details>`;
     panel.style.display = 'block';
+
+    const namnFalt = () => /** @type {HTMLInputElement|null} */ (panel.querySelector('#colmap-profil-namn'));
+    const visaBesked = text => { _profilBesked = text; maybeShowColumnMapping(); announceToScreenReader(text); };
+    panel.querySelector('#colmap-spara-profil')?.addEventListener('click', () => {
+        const r = sparaImportprofil(namnFalt()?.value);
+        visaBesked(r.ok ? `Importprofilen ${r.profil.namn} är sparad för sessionen.` : r.fel);
+    });
+    panel.querySelector('#colmap-till-paket')?.addEventListener('click', () => {
+        // Rutan har namnfältet tills profilen är sparad; därefter gäller den sparade profilen.
+        let profil = _sparadProfilForMappning();
+        if (namnFalt()) {
+            const r = sparaImportprofil(namnFalt()?.value);
+            if (!r.ok) { visaBesked(r.fel); return; }
+            profil = r.profil;
+        }
+        if (!profil) { visaBesked(IMPORTPROFIL_NAMNFEL); return; }
+        const n = laggTillImportprofilIPaket(profil);
+        visaBesked(n.ok ? `Ett nytt organisationspaket med importprofilen ${profil.namn} är nedladdat (${n.filnamn}). Dela det i stället för det förra.` : n.fel);
+    });
 
     panel.querySelector('#colmap-apply')?.addEventListener('click', () => {
         const map = {};
@@ -802,6 +921,13 @@ function renderFilrutor() {
     rad('upload-cell-data', state.isDemo ? (state.demoStort ? 'Demodata, stort demo' : 'Demodata') : fn.data);
     rad('upload-cell-policy', state.policyKalla === 'paket' ? 'Ur organisationspaketet' : state.policyKalla === 'demo' ? 'Demots ställningstagande' : fn.policy);
     rad('upload-cell-stat', state.statistikKalla === 'paket' ? 'Ur organisationspaketet' : fn.statistik);
+    // Lönefilens importprofil: "Känd uppsättning: Namn (källa)". Demodatan läses inte ur en fil.
+    const ip = /** @type {HTMLElement|null} */ (document.querySelector('#upload-cell-data .upload-importprofil'));
+    if (ip) {
+        const t = !state.isDemo && state.data.length ? importprofilText(state.importprofil) : '';
+        ip.textContent = t;
+        ip.hidden = !t;
+    }
 }
 // "Byt fil" öppnar respektive filväljare direkt.
 document.addEventListener('click', e => {

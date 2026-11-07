@@ -19,6 +19,7 @@ filer) finns ingen referens att jämföra mot.
 | Grundinställningar | PO-påslag och beräkningsperiod, och *Minsta gruppstorlek för redovisning* (valfritt; utan värde gäller 10 eller det handläggaren har satt) | Kostnadsberäkningarna i Prioritering och Löneöversyn, och vilka grupper som redovisas. Ett värde under 10 ger handläggaren en fråga om bekräftelse när paketet läses in |
 | Låsningar (valfritt) | *Lägsta tillåtna minsta gruppstorlek*, en låst tid för *rensning vid inaktivitet*, och om *små grupper får tas med i exporten från Tabeller och egna vyer* | Det handläggaren inte får ändra, se avsnitt 5 |
 | Rapportens recept (valfritt) | Egna tabeller byggda i Tabeller och egna vyer och ett eget recept för avsnittet per BAS-intervall — bara recepten (rader, kolumner, mått, urval), inga tal | Samma tabeller i Word, PDF, Excel och rapportunderlaget hos alla handläggare; ersätter de egna tabeller som finns när paketet läses in |
+| Importprofiler (valfritt) | Sparade kolumnmappningar för lönesystemets uttag: vilken rubrik som är BAS-intervall, yrke, lön, ålder och kön (och poäng och ansvarskod), och vilka rubriker som måste finnas — bara rubrikernas namn, inga värden | Uttaget känns igen utan kolumnmappning hos alla handläggare; paketets profiler prövas före handläggarens egna och verktygets inbyggda |
 | Lönepolitiskt ställningstagande | P10, median och P90 per BAS-intervall (och/eller per yrke) | Prioritering, Löneläget och statusrutan i Att göra |
 | Jämförelsestatistik | Median (och gärna P10, P90 och könsfördelning) per yrke och BAS | Fliken Löneläget, prioritering mot statistiken och reserven i Likvärdigt arbete |
 
@@ -94,7 +95,7 @@ filen är en annan version än den som körs.
 ## 4. Uppdatera paketet
 
 Gör ett nytt paket när ställningstagandet eller jämförelsestatistiken ändras — i regel en
-gång om året. Läs in det gamla paketet, byt ut det som ändrats med rutorna, ändra år i
+gång om året, eller när lönesystemets uttag fått nya kolumnnamn (en ny importprofil). Läs in det gamla paketet, byt ut det som ändrats med rutorna, ändra år i
 formuläret och spara. Datumet i paketet visar vilken version som använts.
 
 ## 5. Låsningar — det handläggaren inte får ändra
@@ -129,6 +130,19 @@ den som vill ta fram paket automatiskt ur ett lönestatistiksystem. Rapportens r
 (skapa dem i verktyget och spara paketet; skriv dem inte för hand), och `perBasRecept` receptet för
 avsnittet per BAS-intervall. Ett recept som inte går att läsa hoppas över med en varning; ett
 paket utan `rapport` rör inte handläggarens egna tabeller.
+
+Importprofilerna ligger under `importprofiler` (valfritt): en lista med högst 50 profiler, var och en
+`{ "id", "namn", "rubriker": { "bas": […], "yrke": […], "lon": […], "alder": […], "kon": […], "poang": […],
+"ansvar": […] }, "kannetecken": […] }`. `rubriker` är rubriknamnen per fält (högst 20 per fält; versaler och
+tecken spelar ingen roll), `kannetecken` de rubriker som måste finnas i filen för att profilen ska gälla
+(utelämnat: de obligatoriska fältens första rubriker). Varje text är högst 80 tecken; en profil som inte går
+att läsa hoppas över med en varning. Profilerna skapas enklast i verktyget: läs in paketet och ett uttag,
+peka ut kolumnerna i kolumnmappningen och välj *Lägg till i organisationspaketet* — det ger ett nytt paket
+med profilen, byggt ur det inlästa paketets egna delar (inställningar, låsningar, ställningstagande och
+statistik som paketet hade, inte sessionens värden), och det inlästa paketets profiler följer med. Ett ogiltigt
+värde i formuläret *Skapa paket* hindrar nedladdningen, som för *Spara paketet*. Profilens id härleds ur namnet
+och kännetecknen; ett id i filen läses inte. Paket utan fältet fungerar som förut. Ett nytt
+paket ersätter det förras profiler; *Rensa all data* tar bort dem tillsammans med paketet.
 
 ## 7. Exempelpaket
 

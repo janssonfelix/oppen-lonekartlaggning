@@ -33,7 +33,8 @@ Exportera en personallista (en rad per anställd) med dessa kolumner:
 
 - Verktyget **auto-matchar** vanliga kolumnnamn (versaler/gemener och å/ä/ö spelar ingen
   roll). Känns en kolumn inte igen finns en **kolumnmappnings-guide** i verktyget där du
-  pekar ut rätt kolumn manuellt.
+  pekar ut rätt kolumn manuellt — och mappningen kan sparas som en **importprofil**, så att
+  samma uttag känns igen nästa gång (avsnitt 2b).
 - **Ålder vs födelseår:** namnge kolumnen så den innehåller "ålder"/"alder". Om cellerna
   innehåller **födelseår** (ett tal 1900–[innevarande år − 15], t.ex. `1985`) räknar
   verktyget automatiskt om dem till ålder och noterar det i inläsningsrapporten
@@ -73,6 +74,45 @@ Detta **stöds inte** och ger tydligt besked:
 - **Äldre `.xls`** (Excel 97–2003): avvisas med *"Filen är i äldre Excel-format (.xls).
   Spara om som .xlsx eller .csv och försök igen."* Öppna i Excel och spara om som `.xlsx`
   eller `.csv`.
+
+## 2b. Importprofiler: spara mappningen en gång
+
+Har lönesystemets uttag egna kolumnnamn (`Lönenivå`, `Befattningskod`, `Grundlön heltid` …)
+behöver du peka ut kolumnerna i kolumnmappningen första gången. Spara sedan mappningen, så
+slipper du göra om den nästa år:
+
+1. Läs in filen, peka ut kolumnerna i **Kolumnmappning** och välj *Tillämpa mappning & läs in igen*.
+2. När filen är inläst visas rutan **Spara mappningen** längst ned i kolumnmappningen. Ge
+   profilen ett namn (förslaget är *Vår personallista*) och välj **Spara som importprofil**.
+3. Spara konfigurationen (*Spara och jämför år › Spara konfiguration*). Profilen följer med i
+   konfigurationsfilen.
+4. Nästa gång: läs in konfigurationsfilen och sedan uttaget. Kolumnerna känns igen utan
+   mappning, och lönefilens ruta och kolumnmappningen säger *Känd uppsättning: Vår
+   personallista (konfigurationsfilen)*.
+
+En importprofil bär **bara rubrikernas namn** — vilken rubrik som är BAS-intervall, yrke,
+lön och så vidare, och vilka rubriker som måste finnas för att profilen ska gälla. Inga värden
+ur filen följer med. Verktyget avvisar en profil med en rubrik längre än 80 tecken eller med
+något som liknar ett personnummer eller en e-postadress.
+
+En sparad profil finns **bara i sessionen** tills du sparar konfigurationen: *Rensa all data* och
+rensningen vid inaktivitet tar bort den. En konfigurationsfil utan profiler tar inte bort de
+profiler du redan har sparat i sessionen.
+
+- **Dela inom organisationen:** är ett organisationspaket inläst finns också knappen **Lägg till
+  i organisationspaketet**. Den laddar ner ett nytt paket — det inlästa paketets egna delar
+  och profilen, inget ur sessionen — och sprid det i stället för
+  det gamla, så känns uttaget igen hos alla handläggare (se `organisationspaket.md`).
+- **Ordningen:** organisationspaketets profiler prövas först, sedan konfigurationsfilens, sedan
+  verktygets inbyggda (CSV-mallen, testdatans fil och demodatans fältnamn), och sist de vanliga
+  kolumnnamnen i avsnitt 1. Den första profil vars rubriker alla finns i filen gäller; roller
+  den inte täcker känns igen som vanligt.
+- **Se, ta bort och exportera:** *Inställningar › Importprofiler* listar profilerna med namn,
+  källa och rubriker per fält. *Exportera JSON* ger profilen som en fil att dela eller bidra med
+  (se `CONTRIBUTING.md`).
+- Verktyget har **inga inbyggda profiler för namngivna lönesystem**: stegen per system nedan är
+  inte verifierade, och en profil som inte prövats mot ett riktigt uttag skulle ge fel kolumner.
+  Profiler för lönesystemen kommer från organisationer som använt verktyget.
 
 ## 3. Ta ALDRIG med (uppgiftsminimering enligt dataskyddsförordningen)
 
@@ -121,6 +161,7 @@ anställningar: ta med huvudanställningen, så att varje person står på en ra
   rapportens namn och var den finns]**
 - Heltidslön: **[fylls i lokalt: fältets namn]**
 - Export: välj `.xlsx` eller `.csv`. **[fylls i lokalt: exportvalet]**
+- Har ni sparat en importprofil känns uttaget igen automatiskt (avsnitt 2b).
 
 ### Personec P
 - Uttag: utgå från uttaget till SKR:s personalstatistik, eller en lista i systemets
@@ -128,17 +169,20 @@ anställningar: ta med huvudanställningen, så att varje person står på en ra
   den finns]**
 - Heltidslön: **[fylls i lokalt: fältets namn]**
 - Export: välj `.xlsx` eller `.csv`. **[fylls i lokalt: exportvalet]**
+- Har ni sparat en importprofil känns uttaget igen automatiskt (avsnitt 2b).
 
 ### Visma
 - Uttag: en personallista ur löne- eller HR-delen med fälten ovan; i en mindre organisation
   kan statistikuttaget saknas, och då behövs heltidslönen räknas fram (tabellen ovan).
   **[fylls i lokalt: produkt, rapportens namn och var den finns]**
 - Export: välj `.xlsx` eller `.csv`. **[fylls i lokalt: exportvalet]**
+- Har ni sparat en importprofil känns uttaget igen automatiskt (avsnitt 2b).
 
 ### Annat system
 Vilket lönesystem som helst fungerar: exportera valfri tabell/rapport som innehåller
 fälten i avsnitt 1, som `.csv` eller `.xlsx`. Vet du inte kolumnformatet — **ladda ner
 CSV-mallen i verktyget** (se avsnitt 6) och fyll den från er rapport.
+Har ni sparat en importprofil känns uttaget igen automatiskt (avsnitt 2b).
 
 ### Kontrollera uttaget innan det läses in
 - [ ] En rad per person, rubrikrad överst.
@@ -153,7 +197,7 @@ CSV-mallen i verktyget** (se avsnitt 6) och fyll den från er rapport.
 | Symptom | Vad det betyder | Så åtgärdar du |
 |---|---|---|
 | å/ä/ö blir konstiga tecken | Ovanlig teckenkodning | Alla vanliga kodningar hanteras automatiskt — kontrollera inläsningsrapporten; kvarstår felet, spara om filen som UTF-8 CSV |
-| "0 rader inlästa" / tomt resultat | Rubrikraden eller kolumnnamnen känns inte igen | Öppna **kolumnmappnings-guiden** och peka ut rätt kolumn, eller döp om rubrikerna enligt avsnitt 1 |
+| "0 rader inlästa" / tomt resultat | Rubrikraden eller kolumnnamnen känns inte igen | Öppna **kolumnmappnings-guiden** och peka ut rätt kolumn, eller döp om rubrikerna enligt avsnitt 1. Spara mappningen som importprofil (avsnitt 2b) så känns filen igen nästa gång |
 | Filen avvisas direkt | En kolumn med personnummer, namn eller e-post upptäcktes | Ta bort den identifierande kolumnen ur uttaget och läs in igen (avsnitt 3) |
 | Åldern ser fel ut | Kolumnen innehöll födelseår | Verktyget räknar om födelseår till ålder automatiskt — verifiera antalet i inläsnings-/audit-panelen |
 | Många rader uteslutna | Saknad BAS, lön = 0, eller tomt/okänt värde i könskolumnen | Läs inläsningsrapporten under Underlagets kvalitet i Filer och kvalitet — den visar hur många rader som föll bort och varför; rätta i källfilen och läs om |

@@ -152,6 +152,12 @@ describe.each([[10, []], [25, SENT_MELLAN]])('I4: invarianten över flikar och e
         // Med förra årets bokslut: tabellen Löneutveckling per BAS-intervall och BAS-hanteln.
         for (const krav of ['rapportunderlag: arsjamforelse (med bokslut)', 'rapportmodell: arsjamforelse (med bokslut)', 'diagramdata: chart-arsjamforelse-bas (med bokslut)', 'konfigurationsfilen: årsbokslutet']) expect(namn, krav).toContain(krav);
         expect(utdata.find(([n]) => n === 'konfigurationsfilen: årsbokslutet')[1]).toContain('"spridning"');
+        // Importprofilerna: bara rubriknamn — inga lönemått, inga tal utöver formatets version (id:t är en kontrollsumma).
+        for (const krav of ['importprofilerna (Exportera JSON)', 'konfigurationsfilen: importprofilerna']) {
+            const t = utdata.find(([n]) => n === krav)?.[1];
+            expect(t, krav).toContain('Vår personallista');
+            expect(t.replace(/"id":\s*"[^"]*"/g, ''), krav).not.toMatch(/\d{2,}/);
+        }
         // Bilagan med gruppdossierer: minst en dossier (de stora grupperna), i rapportmodellen och i utskriften.
         for (const krav of ['rapportmodell: dossierer', 'utskrift: med gruppdossierer']) expect(utdata.find(([n]) => n === krav)?.[1], krav).toContain('Gruppdossier: ');
         expect(utdata.find(([n]) => n === 'rapportmodell: arsjamforelse (med bokslut)')[1]).toContain('Lönespridning');

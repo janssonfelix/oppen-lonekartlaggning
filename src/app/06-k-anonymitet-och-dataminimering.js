@@ -687,6 +687,9 @@ function _hittaAnsvarKolumn(rubriker) {
     if (state.columnMap && state.columnMap.ansvar === '') return null;
     const manuell = state.columnMap && state.columnMap.ansvar;
     if (manuell && (rubriker || []).includes(manuell)) return manuell;
+    // En importprofil som pekar ut ansvarskoden (godkänns ändå bara med ≥ 95 % giltiga värden).
+    const profil = state.importprofil && state.importprofil.mappning.ansvar;
+    if (profil && (rubriker || []).includes(profil)) return profil;
     return (rubriker || []).find(r => _anArRubrik(r)) ?? null;
 }
 

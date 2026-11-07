@@ -228,7 +228,13 @@ export const MODULES = [
                   basHantelRader: '_abBasHantelRader', jamforBasIntervall: '_abJamforBas', bokslutMedGrans: '_abMedGrans', lonespridning: '_abSpridning' }
     },
     {
-        // Organisationspaketet importerar tabellrecept.js och perbas.js (rapportens recept, ADR-52): efter dem.
+        // Importprofiler: kända kolumnuppsättningar (bara rubriknamn). Organisationspaketet importerar valideringen: före det.
+        file: 'importprofiler.js', ns: '__mirrorImportprofiler',
+        expose: { valideraImportprofil: '_ipValidera', valideraImportprofiler: '_ipValideraLista', matchaImportprofil: '_ipMatcha',
+                  profilFranMappning: '_ipFranMappning', importprofilerTillJson: '_ipTillJson', inbyggdaProfiler: '_ipInbyggda' }
+    },
+    {
+        // Organisationspaketet importerar tabellrecept.js, perbas.js och importprofiler.js (rapportens recept, ADR-52): efter dem.
         file: 'organisationspaket.js', ns: '__mirrorOrganisationspaket',
         expose: { byggPaket: '_opByggPaket', tolkaPaket: '_opTolkaPaket', liknarPersonuppgift: '_opLiknarPersonuppgift' }
     },

@@ -241,7 +241,10 @@ describe('organisationspaket: läs in och skapa', () => {
         expect(w.eval('referensNamn()')).toBe('Regionens lönepolicy 2026');
         expect(s.statistik).toHaveLength(1);
         expect(s.statistikNamn).toBe('Lönestatistik 2025');
-        expect(s.paket).toEqual({ organisation: 'Exempelregionen', utgivare: 'HR', skapat: '2026-10-01', avserAr: 2026, kalla: 'fil' });
+        // Paketets validerade delar följer med (ett nytt paket med en importprofil byggs ur dem).
+        const { delar, ...meta } = s.paket;
+        expect(meta).toEqual({ organisation: 'Exempelregionen', utgivare: 'HR', skapat: '2026-10-01', avserAr: 2026, kalla: 'fil' });
+        expect(delar.statistik.namn).toBe('Lönestatistik 2025');
         const d = w.document;
         expect(d.getElementById('upload-cell-policy').textContent).toContain('Från organisationspaketet');
         expect(d.getElementById('upload-cell-stat').textContent).toContain('Från organisationspaketet');

@@ -417,6 +417,7 @@
                             <div id="data-status" class="status-msg"></div>
                             <div class="upload-inlast" hidden>
                                 <p class="upload-filnamn"></p>
+                                <p class="upload-importprofil" hidden></p>
                                 <label class="upload-namn">Namn <input type="text" id="org-namn" aria-label="Organisationens namn" class="form-select" maxlength="100" autocomplete="off" placeholder="t.ex. Exempelkommunen"></label>
                                 <p class="upload-namn-fel" role="alert" hidden></p>
                                 <div class="upload-knappar">
@@ -2502,6 +2503,11 @@
                     <p class="inst-paverkar">Namnen sätts vid respektive fil och används i rubriker, diagram och exporter.</p>
                     <dl id="inst-namn" class="inst-lista"></dl>
                     <button type="button" id="inst-till-filer" class="btn btn-secondary btn-sm">Ändra bland filerna</button>
+                </section>
+                <section aria-labelledby="inst-importprofiler-rubrik">
+                    <h3 id="inst-importprofiler-rubrik" tabindex="-1">Importprofiler</h3>
+                    <p class="inst-paverkar">En importprofil är en sparad kolumnmappning: när en lönefil har samma rubriker känns kolumnerna igen utan mappning. Profilen bär bara rubrikernas namn, inga värden ur filen. Egna profiler sparas i kolumnmappningen och följer med i konfigurationsfilen; organisationspaketets följer paketet. En egen profil finns bara i sessionen tills konfigurationen sparas: Rensa all data och rensningen vid inaktivitet tar bort den. Exportera en profil för att dela den eller bidra med den till verktyget.</p>
+                    <div id="inst-importprofiler"></div>
                 </section>
                 <section aria-labelledby="inst-flikar-rubrik">
                     <h3 id="inst-flikar-rubrik">Inställningar i flikarna</h3>

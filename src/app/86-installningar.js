@@ -45,6 +45,7 @@ function _instRita() {
             ['Jämförelsestatistik', state.statistik.length ? (state.statistikNamn || 'Jämförelsestatistik') : 'ingen inläst']]
             .map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('');
     }
+    _instRitaImportprofiler();
     if (!flikar) return;
     const last = flik => { const n = document.querySelector(`.nav-item[data-tab="${flik}"]`); return !n || /** @type {HTMLInputElement} */ (n).disabled; };
     const anpassad = a => (a ? 'Anpassade värden' : 'Standardvärden');
@@ -69,6 +70,61 @@ function _instRita() {
     </li>`).join('');
 }
 
+// ---- Importprofiler (src/lib/importprofiler.js) ----
+/** Rollernas namn som i kolumnmappningen. */
+function _ipRollNamn(roll) {
+    const r = COLMAP_ROLES.find(x => x.role === roll);
+    return r ? r.label : roll;
+}
+/** Listan i Inställningar: sessionens profiler med namn, källa och rubriker per roll, och de inbyggda med namn. */
+function _instRitaImportprofiler() {
+    const el = document.getElementById('inst-importprofiler');
+    if (!el) return;
+    const profiler = state.importprofiler || [];
+    const rad = p => `<li class="inst-ip">
+        <p class="marg-0"><strong>${esc(p.namn)}</strong> <span class="text-dampad-sm">(${esc(_importprofilKalla(p.kalla))})</span></p>
+        <dl class="inst-lista">${Object.entries(p.rubriker).map(([roll, rubriker]) => `<dt>${esc(_ipRollNamn(roll))}</dt><dd>${rubriker.map(r => esc(r)).join(', ')}</dd>`).join('')}</dl>
+        <p class="text-dampad-sm marg-0">Känns igen på: ${p.kannetecken.map(k => esc(k)).join(', ')}</p>
+        <div class="rad-bryt gap-8 marg-t-12">
+            <button type="button" class="btn btn-secondary btn-sm" data-ip-exportera="${esc(p.id)}">Exportera JSON</button>
+            <button type="button" class="btn btn-secondary btn-sm" data-ip-ta-bort="${esc(p.id)}">Ta bort</button>
+        </div>
+    </li>`;
+    el.innerHTML = (profiler.length ? `<ul class="inst-ip-lista">${profiler.map(rad).join('')}</ul>`
+        : '<p class="text-dampad-sm">Inga sparade importprofiler. Peka ut kolumnerna i kolumnmappningen och spara mappningen där.</p>')
+        + `<p class="text-dampad-sm">Inbyggda (verktygets egna format): ${_ipInbyggda().map(p => esc(p.namn)).join(', ')}.</p>`;
+}
+/** Profilen (eller alla sessionens profiler utan id) som JSON att dela eller bidra med: bara rubriknamn. */
+function importprofilExport(id) {
+    const profiler = (state.importprofiler || []).filter(p => id == null || p.id === id);
+    return _ipTillJson(profiler);
+}
+function _ipExportera(id) {
+    const p = (state.importprofiler || []).find(x => x.id === id);
+    if (!p) return;
+    const blob = new Blob([importprofilExport(id)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `importprofil-${p.id}.json`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    announceToScreenReader(`Importprofilen ${p.namn} är exporterad: ${a.download}`);
+}
+function _ipTaBort(id) {
+    const p = (state.importprofiler || []).find(x => x.id === id);
+    if (!p) return;
+    state.importprofiler = state.importprofiler.filter(x => x !== p);
+    // Gällde profilen för den inlästa filen nollas den, så att filrutan inte nämner en borttagen profil.
+    if (state.importprofil && state.importprofil.id === id) {
+        state.importprofil = null;
+        if (typeof renderFilrutor === 'function') renderFilrutor();
+    }
+    _instRitaImportprofiler();
+    if (typeof maybeShowColumnMapping === 'function' && (state._dataHeaders || []).length) maybeShowColumnMapping();
+    /** @type {HTMLElement|null} */ (document.getElementById('inst-importprofiler-rubrik'))?.focus();
+    announceToScreenReader(`Importprofilen ${p.namn} är borttagen för sessionen.`);
+}
+
 /** Stänger panelen, går till fliken och fäller ut avsnittet där inställningen står. */
 function _instGaTill(flik, avsnitt) {
     stangInstallningar();
@@ -91,6 +147,10 @@ document.addEventListener('click', e => {
     if (!/** @type {HTMLElement} */ (e.target).closest) return;
     const lank = /** @type {HTMLElement} */ (e.target).closest('[data-oppna-installningar]');
     if (lank) { oppnaInstallningar({ fokus: lank.getAttribute('data-oppna-installningar') || null }); return; }
+    const ipExp = /** @type {HTMLElement} */ (e.target).closest('[data-ip-exportera]');
+    if (ipExp) { _ipExportera(ipExp.getAttribute('data-ip-exportera')); return; }
+    const ipBort = /** @type {HTMLElement} */ (e.target).closest('[data-ip-ta-bort]');
+    if (ipBort) { _ipTaBort(ipBort.getAttribute('data-ip-ta-bort')); return; }
     const flik = /** @type {HTMLElement} */ (e.target).closest('[data-inst-flik]');
     if (flik) { _instGaTill(flik.getAttribute('data-inst-flik'), flik.getAttribute('data-inst-avsnitt')); return; }
     if (/** @type {HTMLElement} */ (e.target).closest('#inst-till-filer')) {

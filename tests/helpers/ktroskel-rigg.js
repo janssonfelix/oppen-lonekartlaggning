@@ -247,7 +247,13 @@ export async function samlaUtdata(w) {
     for (const mall of ['komplett', 'ledning', 'facklig']) lagg(`utskrift: ${mall}`, (await utskriftAv(w, mall)).innerHTML.replace(/src="data:[^"]*"/g, ''));
     // Förra årets bokslut (årets, ett år bakåt): rapportunderlagets block om förra året med tabellen Löneutveckling per
     // BAS-intervall, rapportens avsnitt och BAS-hantelns diagramdata. Sist, eftersom inläsningen ändrar tillståndet.
+    // Importprofilerna lämnar verktyget som JSON (Exportera JSON i Inställningar) och i konfigurationsfilen: bara
+    // rubriknamn, inga lönemått. En profil sparas som efter en mappning i kolumnmappningen.
+    w.eval(`state.importprofiler = [_ipFranMappning({ namn: 'Vår personallista', kalla: 'konfiguration',
+        mappning: { bas: 'BAS', yrke: 'AID', lon: 'Månadslön', alder: 'Ålder', kon: 'Kön' }, rubriker: ['BAS', 'AID', 'Månadslön', 'Ålder', 'Kön'] })]`);
+    lagg('importprofilerna (Exportera JSON)', w.eval('importprofilExport()'));
     const cfg = JSON.parse(JSON.stringify(w.__buildConfigSnapshot()));
+    lagg('konfigurationsfilen: importprofilerna', JSON.stringify(cfg.importprofiler));
     // Konfigurationsfilens årsbokslut (nyckeltal, yrkesgrupper och BAS-intervall med lönespridningen) lämnar verktyget i filen.
     lagg('konfigurationsfilen: årsbokslutet', JSON.stringify(cfg.arsbokslut));
     cfg.arsbokslut.ar -= 1; cfg.arsbokslut.skapat = `${cfg.arsbokslut.ar}-11-01`;

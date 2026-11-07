@@ -27,6 +27,8 @@
  *   lonemanad: string,
  *   arbetsvardering: {byKey: Map<string, number>, [k: string]: any}|null,
  *   columnMap: {[roll: string]: string}|null,
+ *   importprofiler: Array<{id: string, namn: string, kalla: string, rubriker: {[roll: string]: string[]}, kannetecken: string[]}>,
+ *   importprofil: null|{id: string, namn: string, kalla: string, mappning: {[roll: string]: string}},
  *   ansvarKolumn: {namn: string, giltiga?: any, godkand?: boolean}|null,
  *   _dataHeaders: string[],
  *   dataAudit?: any, statistikHasP10?: boolean, statistikHasP90?: boolean, statistikHasKon?: boolean, _interntFel?: any[],
@@ -41,7 +43,7 @@ const state = {
     // organisationspaket. policyKalla: null | 'fil' | 'paket' | 'demo'.
     policy: [], policyNamn: null, policyKortnamn: null, policyKalla: null,
     statistik: [], statistikNamn: null, statistikKalla: null,   // statistikKalla: null | 'fil' | 'paket'
-    paket: null,     // inläst organisationspaket: { organisation, utgivare, skapat, avserAr, kalla: 'fil'|'inbakat' } (ADR-28)
+    paket: null,     // inläst organisationspaket: { organisation, utgivare, skapat, avserAr, kalla: 'fil'|'inbakat', delar } (ADR-28); delar = paketets validerade delar
     paketInbakat: null,   // paketet som ligger inbakat i den här filen (organisationsfil); läses vid start och efter Rensa all data
     isDemo: false,   // #9: true när syntetisk demodata är inläst (aldrig verklig analys)
     demoStort: false,   // true i det stora demot (7 000 personer, 21-stort-demo.js); bara bannern och filraden läser det
@@ -103,6 +105,11 @@ const state = {
     // #11: manuell kolumnmappning (roll → exakt CSV-rubrik) när auto-matchning
     // missar. null = enbart auto-matchning. Sätts via kolumnmappnings-guiden.
     columnMap: null,
+    // Importprofiler (src/lib/importprofiler.js): sparade kolumnmappningar som bara bär rubriknamn, med källan
+    // 'konfiguration' (konfigurationsfilen eller sparade i sessionen) eller 'organisationspaket'. De inbyggda ligger i
+    // lib och står inte här. importprofil: den profil som gällde för den senast inlästa lönefilen, eller null.
+    importprofiler: [],
+    importprofil: null,
     ansvarKolumn: null,   // AID:s ansvarskod: { namn, giltiga } när kolumnen godkänts (ADR-33)
     _dataHeaders: [],   // rubriker från senast inlästa strukturfil (för guiden)
     // Breda tabeller: true när användaren valt Fler kolumner (05-tabeller-och-lankar.js). Bara i minnet, grundvyn som standard.

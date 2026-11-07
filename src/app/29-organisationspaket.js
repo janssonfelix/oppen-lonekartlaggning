@@ -63,6 +63,7 @@ function renderPaketInfo() {
     const innehall = [
         state.policyKalla === 'paket' ? `ställningstagande ${state.policy.length} rader` : null,
         state.statistikKalla === 'paket' ? `jämförelsestatistik ${state.statistik.length} rader` : null,
+        (n => (n ? `${n} ${n === 1 ? 'importprofil' : 'importprofiler'}` : null))((state.importprofiler || []).filter(x => x.kalla === 'organisationspaket').length),
     ].filter(Boolean).join(', ') || 'bara benämningar och inställningar';
     const rad = (dt, dd) => (dd == null || dd === '' ? '' : `<dt>${esc(dt)}</dt><dd>${esc(String(dd))}</dd>`);
     // Organisationsfil: paketet är inbakat i den här filen, eller ersatt av en inläst fil (organisationsfil-design.md §3).
@@ -89,7 +90,7 @@ function lasInPaket(text, _filnamn, { inbakat = false } = {}) {
     // Ett riktigt paket blandas inte med påhittade demosiffror: demot avslutas först.
     if (state.isDemo) _rensaAllData({ inbakat: false });
 
-    const { profil, installningar, referens, statistik, rapport } = r.delar;
+    const { profil, installningar, referens, statistik, rapport, importprofiler } = r.delar;
     const varningar = [...r.varningar];
     // Golvet för tröskeln (ADR-47): ett nytt paket får sänka eller ta bort det förra paketets golv bara om
     // användaren bekräftar — samma fråga som vid en sänkt tröskel. Nekas den står det gamla golvet kvar.
@@ -137,7 +138,12 @@ function lasInPaket(text, _filnamn, { inbakat = false } = {}) {
         kAndrad = sattKTroskel(nyttGolv, { fraga: false, rita: false }).andrad === true || kAndrad;
         varningar.push(`Minsta gruppstorlek höjs till ${nyttGolv}, paketets lägsta tillåtna.`);
     }
-    state.paket = { ...r.paket, kalla: inbakat ? 'inbakat' : 'fil' };
+    // Paketets egna, validerade delar sparas med det, så att ett nytt paket med en importprofil (32-filinlasning.js)
+    // byggs ur dem och inte ur sessionens värden.
+    state.paket = { ...r.paket, kalla: inbakat ? 'inbakat' : 'fil', delar: r.delar };
+    // Importprofilerna följer paketet: ett nytt paket ersätter det förras, sessionens egna står kvar.
+    state.importprofiler = [...(state.importprofiler || []).filter(p => p.kalla !== 'organisationspaket'), ...(importprofiler || [])];
+    if (importprofiler && importprofiler.length) varningar.push(`Paketet ger ${importprofiler.length} ${importprofiler.length === 1 ? 'importprofil' : 'importprofiler'} för lönefilens kolumner.`);
     // Rapportens recept (ADR-52) ersätter de egna tabellerna och receptet per BAS; ett paket utan dem rör dem inte.
     if (rapport) {
         state.rapportTabeller = rapport.tabeller.map(t => JSON.parse(JSON.stringify(t)));
@@ -296,9 +302,10 @@ function uppdateraPaketKnapp() {
 /** Samma felmeddelande som fältet i Inställningar (sattKTroskel). */
 function _paketKFel() { return `Ange ett heltal mellan ${K_MIN} och ${K_MAX}.`; }
 
-/** Bygger paketet ur det inlästa och formuläret. */
+/** Bygger paketet ur det inlästa och formuläret. Det inlästa paketets importprofiler följer med. */
 function skapaPaket() {
     const jamfNamn = _paketText('paket-jamf-namn');
+    const profiler = (state.importprofiler || []).filter(p => p.kalla === 'organisationspaket');
     return _opByggPaket({
         organisation: _paketText('paket-org'),
         utgivare: _paketText('paket-utgivare'),
@@ -318,6 +325,7 @@ function skapaPaket() {
                                     rader: state.policy } : null,
         statistik: state.statistik.length ? { namn: state.statistikNamn || undefined, rader: state.statistik } : null,
         rapport: _paketRapportUrFormular(),
+        importprofiler: profiler,
     });
 }
 
@@ -327,14 +335,40 @@ function _paketFilnamn(org) {
     return `${slug || 'organisation'}.lonepaket.json`;
 }
 
+/**
+ * Formulärets fel som hindrar att ett paket sparas (minsta gruppstorlek och låsningarna), som ett färdigt besked,
+ * eller null. Samma vakter för Spara paketet och för Lägg till i organisationspaketet.
+ * @returns {string|null}
+ */
+function _paketFormularFel() {
+    // Ett ogiltigt värde för minsta gruppstorlek får inte tyst falla bort ur paketet (tomt fält = paketet anger inget).
+    const kText = _paketText('paket-k');
+    if (kText !== '' && _kTolka(kText) == null) return 'Paketet sparades inte. Minsta gruppstorlek: ' + _paketKFel();
+    const lasFel = _paketLasFel();
+    return lasFel ? 'Paketet sparades inte. ' + lasFel : null;
+}
+
+/**
+ * Ett nytt paket ur det inlästa paketets egna delar och en importprofil (samma id ersätter). Sessionens värden
+ * (k, PO-påslag, ställningstagandet) och formuläret används inte: bara profilen läggs till, och datumet blir dagens.
+ * @param {any} profil
+ */
+function skapaPaketMedImportprofil(profil) {
+    const p = state.paket, d = p.delar || {};
+    // Paketets profiler som de står i sessionen (en som tagits bort i Inställningar följer inte med).
+    const ovriga = (state.importprofiler || []).filter(x => x.kalla === 'organisationspaket' && x.id !== profil.id);
+    return _opByggPaket({
+        organisation: p.organisation, utgivare: p.utgivare, skapat: new Date().toISOString().slice(0, 10), avserAr: p.avserAr,
+        profil: d.profil, installningar: d.installningar, referens: d.referens, statistik: d.statistik, rapport: d.rapport,
+        importprofiler: [...ovriga, profil],
+    });
+}
+
 document.getElementById('paket-skapa')?.addEventListener('input', uppdateraPaketKnapp);
 document.getElementById('paket-skapa')?.addEventListener('toggle', uppdateraPaketKnapp);
 document.getElementById('btn-paket-spara')?.addEventListener('click', () => {
-    // Ett ogiltigt värde för minsta gruppstorlek får inte tyst falla bort ur paketet (tomt fält = paketet anger inget).
-    const kText = _paketText('paket-k');
-    if (kText !== '' && _kTolka(kText) == null) { _paketStatus('Paketet sparades inte. Minsta gruppstorlek: ' + _paketKFel(), false); return; }
-    const lasFel = _paketLasFel();
-    if (lasFel) { _paketStatus('Paketet sparades inte. ' + lasFel, false); return; }
+    const formFel = _paketFormularFel();
+    if (formFel) { _paketStatus(formFel, false); return; }
     const paket = skapaPaket();
     // Samma kontroll som vid inläsning — ett paket som inte går att läsa in sparas inte.
     const kontroll = _opTolkaPaket(JSON.stringify(paket));
