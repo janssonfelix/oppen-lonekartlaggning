@@ -108,6 +108,13 @@ Exportera en personalfil (CSV eller XLSX) med dessa kolumner:
    ut rätt kolumn. När filen är inläst visar rutan filnamnet; där kan ni **namnge
    organisationen** (namnet syns i diagram, tabeller och exporter) och byta fil. Ge också
    jämförelsestatistiken ett namn i dess ruta.
+   Läs sedan **Förhandskontroll av lönefilen**, avsnittet direkt under filrutorna: det visar hur verktyget tolkade
+   de tio första raderna (filens värde och tolkningen i samma cell, till exempel *1978 tolkat som 48 år*), hur
+   många rader som används och varför andra föll bort, värdena per kolumn och vilken importprofil som kände igen
+   filen. Avsnittet är utfällt när något bör kontrolleras — en medianlön som ser ut som årslön eller timlön, åldrar
+   utanför 16–75 år, okända BAS- eller kön-värden — och varningarna står också i Att göra. Vill ni granska tolkningen
+   innan filen används kryssar ni i **Stoppa och visa förhandskontrollen innan inläsning** i Inställningar: då väntar
+   filen på *Läs in*, och *Avbryt* lämnar det tidigare underlaget orört. Raderna visas bara på skärmen.
 3. Läs avsnittet **Underlagets kvalitet** i samma flik. Fem kriterier — jämförbarhet, statistisk
    styrka, fullständighet, rimlighet och modell — får OK, Varning eller Kritisk, och
    underlaget får samma status som det svagaste. Under kriterierna står detaljerna:

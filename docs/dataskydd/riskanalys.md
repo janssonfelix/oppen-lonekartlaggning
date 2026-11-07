@@ -1,6 +1,6 @@
 # Risk- och sårbarhetsanalys (dataskydd och informationssäkerhet) — Öppen lönekartläggning
 
-**Bygge:** `2026.11.05` · **Artefakt-SHA-256:** `b1c62905207f1021b8b2efdcc3e87ffc00e6703269051d0d75bc4c8f040186d6` (se `dist/RELEASE.txt`).
+**Bygge:** `2026.11.05` · **Artefakt-SHA-256:** `36997a7e1632470a91d010f7e4a2b3a2f46a8b0990a8b7169fe67e491e74082b` (se `dist/RELEASE.txt`).
 **Granskningsdatum:** 2026-11-07.
 **Granskningsmetod:** kodläsning påstående för påstående + statisk sökning i källkod och bygge +
 körning av det byggda verktyget i jsdom och i Chromium (utan nätverk) med syntetiska testfiler.
@@ -292,6 +292,11 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   som "101 ***"); tecknen `< > " ' &` tas bort. `_normalizeBas` tar bort samma tecken ur BAS-värdet.
 - **Utdatakodning:** `esc()` escapear `& < > " '` och är därmed säker även i attributkontext
   (regressionstester i `tests/parsing.test.js`).
+- **Förhandskontrollen av lönefilen visar de tio första raderna bara på skärmen:** fem till sju fält per rad (BAS,
+  yrke som det sparats efter saneringen ovan — yrkets råvärde sparas inte — lön, ålder, kön, och poäng och ansvarskod
+  när de finns), med filens råvärde kortat till 24 tecken, i `state.forhandskontroll` för sessionen; de ingår inte i
+  någon export, i Att göra-punkterna, i rapportunderlaget eller i konfigurationsfilen (k-invariantsviten,
+  `tests/ktroskel-invarianter.test.js`), och Rensa all data tömmer dem.
 
 ### 6.5 k-anonymitet ✔
 - **Regeln gäller det som lämnar verktyget (ADR-51, 2026-10-29).** På skärmen visas alla grupper (`kTroskel()` är 1 i
@@ -606,7 +611,8 @@ Konfig-JSON:en (**version 2**) innehåller: inställningar
 löneöversynens inställningar, där en riktad rad bär uppgiften om den föreslogs ur kandidatpar i likvärdigt arbete,
 förklaringsmodellen — `forklaringsmodell`: vilka variabler regressionen räknar bort och skälet som fritext, kortad till
 300 tecken; ett ogiltigt värde ger standard med varning, aldrig fel (ADR-56) — definitionen av kvinnodominerat,
-`likvardighet.kvDomDefinition`, DO eller SCB, och lönemånaden, `lonemanad`, fritext kortad till 40 tecken, ADR-57) samt **HR:s manuella arbete**: § 8-bedömningarna (status + anteckning per granskningsområde),
+`likvardighet.kvDomDefinition`, DO eller SCB, och lönemånaden, `lonemanad`, fritext kortad till 40 tecken, ADR-57,
+och om inläsningen ska stoppa vid förhandskontrollen, `forhandskontrollStopp`, sant eller falskt — inte förhandskontrollens rader) samt **HR:s manuella arbete**: § 8-bedömningarna (status + anteckning per granskningsområde),
 handlingsplanens fält per rad (`handlingsplan`: radens nyckel — källa, AID och BAS, eller `egen|` och ett slumpat
 id för en rad som lagts till på fliken — och sakligt skäl, ansvarig, tidsplan och status; en egen rad bär också sin
 åtgärd och berörda grupp som fritext; rullistornas okända värden läses som tomma, fritexten kortas till 500 tecken),
@@ -740,7 +746,7 @@ tar bort allt minne omedelbart. Verktyget gör inga utskick till de registrerade
 
 Varje påstående i detta dokument är prövat mot koden, med provkörning i jsdom och i Chromium.
 Skyddet bevakas av drift-, golden-, röktest-, k-anonymitets-, dokumentations-, statistik- och
-a11y-sviterna (87 testfiler) och av ett röktest av det byggda verktyget i en riktig webbläsare
+a11y-sviterna (89 testfiler) och av ett röktest av det byggda verktyget i en riktig webbläsare
 (`tools/browser-smoke.mjs`). Röktestet körs lokalt och i CI-arbetsflödet i
 Chromium, Firefox och WebKit. Verifieringen visar också var skyddet är svagare än det kan se ut: lagringsspärren är en
 reserv med kända luckor (§6.2); PII-kontrollens värdekontroll läser filens 50 första rader (§6.4);
@@ -822,7 +828,7 @@ andra filerna; den innehåller biblioteksversioner och kontrollsummor, inga uppg
 | Konfigfilens innehåll | Kodläsning av `buildConfigSnapshot()` och importen | ✔ ingen `state.data`-referens; inställningar (med förklaringsmodellen, definitionen av kvinnodominerat och lönemånaden) + användartext + avbockningar i Att göra (§6.8) + egna importprofiler (bara rubriknamn, validerade vid inläsning); import läser version 2 och avvisar andra versioner |
 | Word-utkast lokalt | Kodläsning + live-test: Blob fångad, innehåll inspekterat; zip-filen läses tillbaka i röktesterna (ADR-37) | ✔ lokal `Blob` (`.docx`), DEMODATA-märkning fungerar |
 | Tillgänglighet (markup) | axe-core i automatiska sviten (`tests/a11y.test.js`) | ✔ 0 överträdelser |
-| Automatiska tester | `npm test` (Vitest, 87 testfiler; kör om en fil vars arbetare kraschat i Node) + `npm run test:browser` (bygget i Chromium; samma röktest finns för Firefox och WebKit) | ✔ alla gröna |
+| Automatiska tester | `npm test` (Vitest, 89 testfiler; kör om en fil vars arbetare kraschat i Node) + `npm run test:browser` (bygget i Chromium; samma röktest finns för Firefox och WebKit) | ✔ alla gröna |
 | Bundle-integritet | Reproducerbart bygge + SHA-256 i RELEASE.txt; byggskydd mot mojibake och `node --check` (kodläsning av `tools/bundle.mjs`) | ✔ |
 
 ## 12. Slutsats
