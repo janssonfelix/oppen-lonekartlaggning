@@ -237,7 +237,7 @@ adaptern verkligen delegerar vaktas av `tests/drift.test.js`:
   rätt grupp. Utskriftsfönstret för checklistorna (`printScaffoldView`) läser `:root` och allt från `.dold` till
   stilmallens slut ur den körande stilmallen och lägger in det som byggt stilark (`adoptedStyleSheets`): ett `<style>`-element
   som skriptet skapar blockeras av den ärvda CSP:n (`style-src-elem`), så fönstret var tidigare helt ostilat.
-- **Tester:** Vitest — 2853 tester i 89 filer: rena `src/lib/`-moduler, CSV-parsning, jsdom-röktest
+- **Tester:** Vitest — 2878 tester i 90 filer: rena `src/lib/`-moduler, CSV-parsning, jsdom-röktest
   av varje vy (ADR-7; `tests/smoke.test.js` med det delade fönstret och sju `tests/smoke-*.test.js` per
   område), k-tröskeln i åtta `tests/ktroskel*.test.js` med riggen i `tests/helpers/ktroskel-rigg.js`,
   gränssnittet i `tests/granssnitt*.test.js` (riggen `tests/helpers/granssnitt-rigg.js`) och diagramvyerna i
@@ -549,7 +549,9 @@ varje ändring av data, urval och inställningar; ett inaktuellt resultat i en j
 fel, 250 ms är det inte. Regressionen räknas därför alltid om. *Får inte implementeras*, inte heller som
 memoisering inuti modulen. Det som är tillåtet är att en funktion som kört regressionen skickar resultatet vidare
 som ett argument till det den själv anropar i samma varv (`bedomningUnderlag({ reg })`, Att göras lista): ett
-värde, ingen lagring, inget att invalidera.
+värde, ingen lagring, inget att invalidera. Förhandsbeskedets minne i `58-rapportmodell.js` är inte en sådan cache: det
+bär bara avsnittens id, rubriker, delarnas typ och de utelämnade texterna (aggregerade antal; inga personrader och
+inga resultat), används bara när ett kryss i urvalet ändras och ingen fil ritas ur det.
 
 **ADR-19 — Underlagets kvalitet: svagaste länken avgör.** Underlaget bedöms med fem kriterier med status
 OK/Varning/Kritisk: jämförbarhet (andel av personalen i BAS-intervall där båda könen har minst k), statistisk
@@ -1380,6 +1382,11 @@ Kända brister och obesvarade frågor, så att de inte lever bara i en konversat
    intervallet. Förhandsbeskedet i Exportera bygger inga dossiertexter (bara antalet och det utelämnade) och tar
    samma tid med och utan bilagan: ~1,0 s vid 20 000 rader och ~2,9 s vid 55 000. Den tiden är resten av modellen
    och Excel-bladens lista, inte bilagan.
+   Ett ändrat kryss under *Rapportens innehåll* (2026-11-07) ritade hela förhandsbeskedet: 3,0 s vid 55 000 rader och
+   0,33 s på det stora demot (7 000 personer). Beskedet räknas nu ur förhandsbeskedets minne när bara urvalet ändras,
+   och Excel-bladens lista kör inte regressionen för att veta att bladet *Underlagets kvalitet* följer med: ett kryss
+   tar 0,27 s vid 55 000 rader (gräns 1 s i `npm run perf`; det mesta är omritningen efter exportläget, inte beskedet)
+   och under 5 ms på det stora demot, och hela beskedet 2,5 s mot 3,0 s.
 
 **Kod och bygge:**
 6. **Krasch i Node under testkörning** (V8:s skräpsamlare): orsaken är okänd; `npm test` kör om berörda filer.

@@ -332,8 +332,8 @@ describe('k-tröskeln i texterna', () => {
         w.eval('sattKTroskel(5, { fraga: false })');
         w.__state.kLage = 'export';
         const rader = w.eval('_jpaExkluderadeTexter()');
-        expect(rader.yrken).toContain('n<5');
-        expect(rader.bas).toContain('n<10');
+        expect(rader.yrken).toContain('färre än 5 ');
+        expect(rader.bas).toContain('färre än 10 ');
     });
 });
 
@@ -501,10 +501,10 @@ describe('k-tröskeln: motiveringsförslagen visar ingen lönepositionsslutsats 
         return w.eval('medExportLage(() => generateMotivationSuggestions(window.__item)).map(f => f.text).join(" ")');
     };
     it('vid 10 saknas glasstaksmönstret för en grupp med 6 av varje kön', () => {
-        expect(forslag(null)).not.toContain('Glasstaks-/klistergolvsmönster');
+        expect(forslag(null)).not.toContain('Mönster med glastak eller klibbigt golv');
     });
     it('vid 5 finns det', () => {
-        expect(forslag(5)).toContain('Glasstaks-/klistergolvsmönster');
+        expect(forslag(5)).toContain('Mönster med glastak eller klibbigt golv');
     });
 });
 

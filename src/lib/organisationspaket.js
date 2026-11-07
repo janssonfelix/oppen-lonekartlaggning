@@ -220,7 +220,7 @@ export function tolkaPaket(text) {
     if (typeof text !== 'string') return { ok: false, fel: 'Filen kunde inte läsas.' };
     if (text.length > PAKET_MAX_BYTE) return { ok: false, fel: 'Filen är för stor för att vara ett organisationspaket (högst 5 MB).' };
     let o;
-    try { o = JSON.parse(text); } catch (_e) { return { ok: false, fel: 'Filen är inte giltig JSON.' }; }
+    try { o = JSON.parse(text); } catch (_e) { return { ok: false, fel: 'Filen är inte ett organisationspaket (den går inte att läsa som JSON). Be systemägaren om en ny fil.' }; }
     if (!o || typeof o !== 'object' || Array.isArray(o)) return { ok: false, fel: 'Filen är inte ett organisationspaket.' };
 
     if (o.format !== PAKET_FORMAT) return { ok: false, fel: 'Filen är inte ett organisationspaket för lönekartläggning.' };
@@ -230,7 +230,7 @@ export function tolkaPaket(text) {
     const organisation = _text(o.organisation?.namn);
     if (!organisation) return { ok: false, fel: 'Paketet saknar organisationens namn (organisation.namn).' };
     const skapat = _text(o.skapat);
-    if (!skapat || !/^\d{4}-\d{2}-\d{2}$/.test(skapat)) return { ok: false, fel: 'Paketet saknar datum (skapat, ÅÅÅÅ-MM-DD).' };
+    if (!skapat || !/^\d{4}-\d{2}-\d{2}$/.test(skapat)) return { ok: false, fel: 'Paketet saknar datum (fältet skapat, ÅÅÅÅ-MM-DD). Be systemägaren om en ny fil.' };
     if (_allaTexter(o).some(t => PNR.test(t) || EPOST.test(t))) {
         return { ok: false, fel: 'Paketet innehåller något som liknar personnummer eller e-post och läses inte in.' };
     }

@@ -115,7 +115,7 @@ describe('sortering, Att göra, kopiering och Likvärdigt arbete', () => {
         w.__state.likvardighet.result = null;
         w.document.querySelector('.nav-item[data-tab="likvardighet"]').click();
         const t = w.document.getElementById('view-likvardighet').textContent;
-        expect(t).toMatch(/Krav-proxy: arbetsvärdering \(poäng\)/);
+        expect(t).toMatch(/Mått på kraven: arbetsvärdering \(poäng\)/);
         expect(t).toMatch(/Med arbetsvärderingspoäng jämförs yrken redan över BAS-gränserna/);
     });
     it('Att göra: rubrikordning h2 → h3, och länken till Jämförelse döljs utan jämförelsestatistik', () => {
@@ -181,16 +181,16 @@ describe('organisationsneutralt standardläge', () => {
         expect(w.__state.policy).toEqual([]);
         expect(w.eval('referensNamn()')).toBe('Ingen referens inläst');
         expect(w.document.getElementById('referens-status').textContent).toContain('Ingen referens inläst');
-        expect(w.__state.profile.name).toBe('Er organisation');
+        expect(w.__state.profile.name).toBe('Organisationen');
         expect(w.__state.profile.benchmarkLabel).toBe('jämförelsestatistiken');
         expect(w.document.getElementById('profile-preset-select')).toBeNull();
     });
     it('Prioritering och Lönepolitik visar vad som behöver läsas in', () => {
         const w = utanReferens();
         w.document.querySelector('.nav-item[data-tab="prioritering"]').click();
-        expect(w.document.getElementById('view-prioritering').textContent).toMatch(/Ladda upp ert lönepolitiska ställningstagande/);
+        expect(w.document.getElementById('view-prioritering').textContent).toMatch(/Läs in organisationens lönepolitiska ställningstagande/);
         w.__renderTabContent('benchmark');
-        expect(w.document.getElementById('avsnitt-jmf-stallningstagande').textContent).toMatch(/Ladda upp ert lönepolitiska ställningstagande/);
+        expect(w.document.getElementById('avsnitt-jmf-stallningstagande').textContent).toMatch(/Läs in organisationens lönepolitiska ställningstagande/);
         expect(w.document.getElementById('comp-pol-val').textContent).toMatch(/Kräver lönepolitiskt ställningstagande/);
     });
     it('Word-utkastet och rapportunderlaget skriver inte null eller undefined utan referens', () => {
@@ -206,7 +206,7 @@ describe('organisationsneutralt standardläge', () => {
         expect(w.__state.profile.name).toBe('Exempelkommunen');
         w.__clearAllData();
         expect(w.__state.policy).toEqual([]);
-        expect(w.__state.profile.name).toBe('Er organisation');
+        expect(w.__state.profile.name).toBe('Organisationen');
         expect(w.eval('referensNamn()')).toBe('Ingen referens inläst');
     });
 });
@@ -433,7 +433,7 @@ describe('organisationspaket: läs in och skapa', () => {
         w.__clearAllData();
         const s = w.__state;
         expect(s.paket).toBeNull();
-        expect(s.profile.name).toBe('Er organisation');
+        expect(s.profile.name).toBe('Organisationen');
         expect(s.costSettings.poPct).toBe(39.15);
         expect(s.policy).toEqual([]);
         expect(s.statistik).toEqual([]);

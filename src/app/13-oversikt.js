@@ -60,7 +60,7 @@ function updateCompliance() {
         // ren AID-policy). Då finns inget att jämföra mot — grönt "0 av 0" vore
         // falskt lugnande, så kortet blir 'na'.
         if (polTotal === 0) {
-            setCompCard('comp-pol', 0, 0, `${referensNamn()} saknar BAS-nivårader`, 'na');
+            setCompCard('comp-pol', 0, 0, `${referensNamn()} saknar rader per BAS-intervall`, 'na');
         } else {
             setCompCard('comp-pol', polLow, polTotal, `${polLow} av ${polTotal} BAS-intervall`, polLow === 0 ? 'ok' : polLow >= 2 ? 'crit' : 'warn');
         }
@@ -315,7 +315,7 @@ function renderProcessTracker({ punkter: givna } = {}) {
     // 1. Underlag inläst
     rows.push(hasData
         ? { n: 1, status: 'klar', title: '1. Underlag inläst', tab: 'dashboard', detail: `${getData().length} rader inlästa — allt nedan bygger på detta.` }
-        : { n: 1, status: 'ej',   title: '1. Underlag inläst', tab: 'dashboard', detail: 'Börja här: ladda upp personalfilen (eller prova med demodata).' });
+        : { n: 1, status: 'ej',   title: '1. Underlag inläst', tab: 'dashboard', detail: 'Börja här: läs in lönefilen i Filer och kvalitet (eller prova med demodata).' });
 
     // 2. § 8 Regler & praxis (kvalitativ bedömning per område)
     rows.push(safe(() => {
@@ -334,7 +334,7 @@ function renderProcessTracker({ punkter: givna } = {}) {
         if (!hasData) return { n: 3, tab: 'matrix', title: '3. Lika arbete — samma yrke', status: 'ej', detail: 'Kräver inläst underlag.' };
         const reg = (typeof runOLSRegression === 'function') ? runOLSRegression() : null;
         const ok = !!(reg && !reg.error);
-        const { t, d } = hanterade(['Lika arbete', 'EU 2023/970']);
+        const { t, d } = hanterade(['Lika arbete']);
         return { n: 3, tab: 'matrix', title: '3. Lika arbete — samma yrke', ..._agStegLikaArbete({ regressionOk: ok, t, d }) };
     }, { n: 3, tab: 'matrix', title: '3. Lika arbete — samma yrke', status: 'ej', detail: 'Kräver inläst underlag.' }));
 
@@ -380,15 +380,15 @@ function renderProcessTracker({ punkter: givna } = {}) {
     rows.push({ n: 6, tab: 'handlingsplan', avsnitt: 'hp-samverkan', title: '6. Samverkan med facket', status: 'manuell', detail: 'Manuellt steg: samverka om kartläggningen, analysen och åtgärderna och dokumentera samverkan. Stöd finns i kortet Samverkan & uppföljning på Handlingsplan; protokollet för gemensam lönebedömning finns under Exportera.' });
 
     // 7. Rapporttext — kan inte auto-härledas
-    rows.push({ n: 7, tab: 'rapporttext', title: '7. Rapporttext', status: 'manuell', detail: 'Manuellt steg: gå igenom auto-utkastet och rapportunderlaget i fynd och klarspråk och för in texten i er rapport.' });
+    rows.push({ n: 7, tab: 'rapporttext', title: '7. Rapporttext', status: 'manuell', detail: 'Manuellt steg: gå igenom utkastet och rapportunderlaget och för in texten i dokumentationen.' });
 
     // 8. Dokumentation — kan inte auto-härledas
-    rows.push({ n: 8, tab: 'dokumentera', title: '8. Dokumentation', status: 'manuell', detail: 'Manuellt steg: ladda ner Word-utkastet under Exportera, komplettera de gula [HR fyller i]-fälten och spara som er rapport.' });
+    rows.push({ n: 8, tab: 'dokumentera', title: '8. Dokumentation', status: 'manuell', detail: 'Manuellt steg: ladda ner Word-utkastet under Exportera, fyll i de gula fälten [HR fyller i] och spara filen som organisationens dokumentation.' });
 
     // 9. § 3:11–13 Uppföljning. Verktyget stödjer EN kartläggning — uppföljningen
     // av handlingsplanen sker i arbetsgivarens egen process, som samverkan och
     // dokumentation ovan.
-    rows.push({ n: 9, tab: 'dokumentera', title: '9. Uppföljning av handlingsplanen', status: 'manuell', detail: 'Manuellt steg: följ upp planens åtgärder i er egen process. Handlingsplanen exporteras under Exportera.' });
+    rows.push({ n: 9, tab: 'dokumentera', title: '9. Uppföljning av handlingsplanen', status: 'manuell', detail: 'Manuellt steg: följ upp planens åtgärder i organisationens egen process. Handlingsplanen exporteras under Exportera.' });
 
     const autoDone = rows.filter(r => r.status === 'klar').length;
     const autoTotal = rows.filter(r => r.status !== 'manuell').length;
@@ -410,11 +410,11 @@ function renderProcessTracker({ punkter: givna } = {}) {
     // (h3) och datakvalitetspanelens h4:or — en h2 här skulle ge ett h2→h4-hopp som
     // axe-sviten flaggar (heading-order). h3 håller "öka med max ett".
     host.innerHTML = `
-        <div class="card ptrack" role="region" aria-label="Lönekartläggningsprocessen">
-            <h3>Lönekartläggningsprocessen — var står ni?</h3>
+        <div class="card ptrack" role="region" aria-label="Kartläggningens steg">
+            <h3>Kartläggningens steg — var står du?</h3>
             <p class="ptrack-intro">
                 Översikt över hela lönekartläggningen, steg för steg.
-                Statusen härleds automatiskt ur ert arbete och <em>föreslår</em> nästa steg —
+                Statusen härleds automatiskt ur ditt arbete och <em>föreslår</em> nästa steg —
                 den dömer inte. ${autoTotal ? `<strong>${autoDone}/${autoTotal}</strong> auto-härledda steg klara.` : ''}
             </p>
             ${rowsHtml}
@@ -516,10 +516,10 @@ function updateDashboardStats() {
             // Rå kvot för hela organisationen: EU-direktivets 5 %-gräns gäller per
             // kategori av arbetstagare, inte här — därför ingen hänvisning till den, och neutral färg: rågapet
             // är en utgångspunkt, inget fynd. Bedömningen görs per grupp i Lika arbete.
-            const tipText = 'Rå skillnad för hela organisationen, före hänsyn till yrke, nivå och ålder. Se Lika arbete för skillnaden per grupp.';
+            const tipText = 'Rå skillnad för hela organisationen, före hänsyn till yrke, BAS-intervall och ålder. Se Lika arbete för skillnaden per grupp.';
             // Förklaringen står i verktygstipset; under talet står bara vad det är för tal (nyckeltalsraden är en rad hög).
             pgEl.innerHTML = svPct(ratio, 1) +
-                `<div class="stat-tip" title="${esc(tipText)}">rå skillnad, innan yrke och nivå räknats bort</div>`;
+                `<div class="stat-tip" title="${esc(tipText)}">rå skillnad, innan yrke och BAS-intervall räknats bort</div>`;
         }
     }
 }

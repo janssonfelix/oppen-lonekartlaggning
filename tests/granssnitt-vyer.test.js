@@ -212,7 +212,7 @@ describe('formulären i Löneöversyn', () => {
     it('målen står i klartext, utan matematiska tecken eller jargong', () => {
         const w = createAppWindow();
         const text = w.document.getElementById('view-loneoversyn').textContent;
-        expect(text).toContain('Mål: oförklarat gap högst');
+        expect(text).toContain('Mål: oförklarad skillnad högst');
         expect(text).not.toContain('≥ −');
         expect(text).not.toContain('grön-cirklade');
         expect(text).not.toContain('benchmark');
@@ -408,7 +408,7 @@ describe('en låst flik svarar', () => {
         expect(flik.hasAttribute('disabled')).toBe(false);
         expect(flik.getAttribute('aria-disabled')).toBe('true');
         expect(flik.disabled).toBe(true);                      // egenskapen läser aria-disabled
-        expect(flik.title).toMatch(/Ladda upp/);
+        expect(flik.title).toMatch(/Läs in lönefilen/);
         expect(las('src/index.html')).not.toMatch(/<button class="nav-item"[^>]*\sdisabled[\s>]/);
     });
     it('ett klick går till Filer och kvalitet, ger filväljaren fokus och markerar lönefilskortet', () => {
@@ -564,7 +564,7 @@ describe('småsaker i texter och etiketter (granskning 2026-10-30, steg H)', () 
         w.__renderTabContent('likvardighet');
         const th = w.document.querySelector('#likvardighet-table thead th[data-kol="paverkan"]');
         expect(th.textContent.trim()).toBe('Summa för gruppen (kr/mån)');
-        expect(th.title).toBe('Gapet i kronor gånger antalet personer i det kvinnodominerade yrket, per månad');
+        expect(th.title).toBe('Skillnaden i kronor gånger antalet personer i det kvinnodominerade yrket, per månad');
         expect(th.hasAttribute('data-export-label')).toBe(false);
         for (const fil of ['src/app/34-likvardigt-arbete.js', 'src/app/24-excelexport.js', 'src/app/27-berakningsbevis.js']) {
             expect(las(fil), fil).not.toMatch(/Påverkan/);

@@ -8,6 +8,25 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ### Gränssnitt
 
+- **Språklig genomgång av hela verktyget.** Samma ord överallt: *löneskillnad* i stället för lönegap och gap,
+  *anställda*, *BAS-intervall*, *likvärdigt arbete* och *lönefil* i stället för strukturdata och strukturfil.
+  Gränssnittet säger *du* och *organisationen*. Lagen nämns med kapitel: första gången i en vy
+  *Diskrimineringslagen kräver att du … (3 kap.)*, sedan *lagen*; inga paragraf- eller artikelnummer i gränssnitt
+  och exporter (Källor och raden *Rättslig ram* i metodbilagan undantas). Sakfel rättas mot `lagrum.md`: ingen
+  anmälningsplikt; gränsen 5 procent gäller bara villkoret för en gemensam lönebedömning, och lagen kräver analys av
+  varje skillnad; Handlingsplanens rader om samverkan och dokumentation pekar inte längre på fel paragraf;
+  exportens etikett för underrepresenterat kön säger *under 40 %*; p-värdet och konfidensintervallet förklaras
+  rätt i ordlistan, symbolförklaringen och regressionskortet; Medlingsinstitutets tal är desamma i Lönestruktur och
+  ordlistan. Excelbladen *Lonegap* och *Lonegap per alder* heter *Loneskillnad* och *Loneskillnad per alder*;
+  bladet *Distributionellt gap* heter *Skillnad i lönefördelningen*. CSV-mallen heter `lonefil_mall.csv`. Ordlistan
+  har ett eget sökfält, så att de gamla orden fortfarande hittar rätt post, och fyra nya poster (kvinnodominerat
+  arbete, kandidatpar, klibbigt golv, glastak). Kvoten heter *Kvinnors lön i procent av mäns* och den råa
+  skillnaden *Rå (ojusterad) löneskillnad*; modellen säger *ålder och BAS-intervall*; kandidatparen beskrivs som
+  yrken med likvärdiga eller lägre krav; gemensam lönebedömning gäller arbetsgivare som rapporterar
+  löneskillnader (100 anställda eller fler); Utforskas gruppvillkor kallar måttet *kvinnors median i % av mäns*.
+  Bladet *Likvärdighet §3-10* heter *Likvärdigt arbete* och *3b. § 3-10 Likvärdighet* heter *3b. Likvärdigt
+  arbete (krav)*.
+
 - **Förhandskontroll av lönefilen.** Direkt efter inläsningen står avsnittet *Förhandskontroll av lönefilen* överst i
   Filer och kvalitet, under filrutorna: tolkningen av de tio första raderna (BAS, yrke, lön, ålder, kön, och poäng och
   ansvarskod när de finns) med filens värde och verktygets tolkning i samma cell när de skiljer sig (*1978 tolkat som
@@ -37,8 +56,7 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   vanliga kolumnnamnen; den första profil vars kännetecken alla finns gäller, och roller den inte täcker känns igen
   som förut. Rubrikraden hittas också efter försättsrader när bara en profil känner igen den. Lönefilens ruta och
   kolumnmappningen säger *Känd uppsättning: … (källa)*. Med ett organisationspaket inläst laddar *Lägg till i
-  organisationspaketet* ner ett nytt paket med profilen, byggt ur det inlästa paketets egna delar och med samma
-  vakter som *Spara paketet*; paketet har det valfria fältet `importprofiler` (äldre paket
+  organisationspaketet* ner ett nytt paket med profilen, byggt ur det inlästa paketets egna delar; paketet har det valfria fältet `importprofiler` (äldre paket
   utan det fungerar som förut). *Inställningar › Importprofiler* listar profilerna med namn, källa och rubriker per
   fält, med *Ta bort* och *Exportera JSON*; sökrutan hittar avsnittet. De inbyggda profilerna gäller bara verktygets
   egna format (CSV-mallen, testdatans fil och demodatans fältnamn) — inga profiler för namngivna lönesystem. *Rensa
@@ -161,6 +179,17 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   skäl"), också i kopian till urklipp. Meningen om sänkt minsta gruppstorlek står en gång överst i bilagan.
   Förhandsbeskedet bygger inga dossiertexter, och bilagan kostar ett par tiondels sekunder även på stora underlag.
 
+- **Småsaker efter förhandskontrollen.** Ett färdigt urval under *Rapportens innehåll* med bilagan ikryssad heter
+  urvalet med tillägget *+ bilaga* (*Ledningsbrief + bilaga*), och alla avsnitt med heter *Alla avsnitt*, i stället
+  för *Eget urval (14 av 14 avsnitt)*. Ett kryss i listan ritar om förhandsbeskedet utan att räkna om avsnitten: 0,27 s
+  mot 3,0 s vid 55 000 rader (`npm run perf` vaktar med gränsen 1 s). Motiveringsförslaget om åldersskillnad i Prioritering säger *Vi
+  rekommenderar att ni stämmer av*. *Lägg till i organisationspaketet* prövar inte längre formuläret *Skapa
+  paket*, som inte påverkar det paketet (*Spara paketet* gör det som förut). Pekar kolumnmappningen ut en annan kolumn än
+  importprofilen som kände igen filen säger lönefilens ruta *Känd uppsättning, ändrad: …*. Den inbyggda profilen för
+  verktygets egna fältnamn heter *Verktygets grundfält* (förut *Demodatans fält*), så att en verklig fil med de
+  rubrikerna inte kallas demo. Kom igång på Översikt säger *Ingen fil till hands? Prova med demodata, litet demo
+  eller stort demo*, samma mening som lönefilskortet, i stället för *eller … eller*.
+
 ### Analys
 
 - **Lönespridning i årsbokslutet.** Bokslutets rader per yrkesgrupp och per BAS-intervall bär lönespridningen,
@@ -174,6 +203,11 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   genetik eller biometri — som identifierare avvisades redan. Bara rubriken prövas (lagrum.md, C23b).
 
 ### Dokumentation
+
+- **Språklig genomgång av dokumenten.** Körguiden, pilotchecklistan, sammanfattningen för HR-chefer, datauttaget,
+  README och guiden för att ta över verktyget säger *du*; orden följer gränssnittet; § 8 och § 9 som namn på flikar
+  är borta; informationen till anställda hänvisar inte längre till direktivets artikel 13. `lagrum.md` har en rubrik
+  om tillgänglighet (DOS-lagen) och säger *löneskillnadens definition*.
 
 - **Importprofiler.** `docs/anvandare/datauttag.md` har avsnittet *Importprofiler: spara mappningen en gång* och en rad
   per system om att ett uttag med sparad profil känns igen automatiskt; `organisationspaket.md` beskriver fältet
@@ -192,6 +226,12 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   läget i oktober 2026.
 
 ### Utveckling
+
+- **Vakttest för ordvalen** i `tests/dokumentation.test.js`: index.html, strängarna i appen och användar- och
+  dataskyddsdokumenten prövas mot de avförda orden, paragraftecken och artikelnummer, med undantag för kommentarer,
+  identifierare, sökregistrets synonymer, ordlistans sökfält och Källor. p-värdevakten fångar fler felaktiga
+  formuleringar och också konfidensintervallets. Vakten skannar hela `src/lib` och prövar etikettvärden och
+  användarlästa attribut också när de är ett ord.
 
 - **Importprofilerna i `src/lib/importprofiler.js`** (validering, matchning, profil ur en mappning, de inbyggda),
   speglade i 09. Tester i `tests/importprofiler.test.js` och `tests/importprofiler-app.test.js`; profilexporten ligger

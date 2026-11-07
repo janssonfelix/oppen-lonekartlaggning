@@ -1,9 +1,9 @@
 # Information till anställda om lönekartläggningen — textförslag
 
 > **Förslag att stämma av med dataskyddsombudet** innan det används. Texten är inte juridiskt
-> granskad: vilka artiklar informationen ska bygga på (direktivets art. 13 och GDPR art. 13 eller 14)
+> granskad: vilka artiklar informationen ska bygga på (dataskyddsförordningen art. 13 eller 14)
 > behöver stämmas av. Fyll i hakparenteserna, stryk det
-> som inte gäller er och anpassa tonen till organisationens övriga personalinformation.
+> som inte gäller organisationen och anpassa tonen till organisationens övriga personalinformation.
 
 ---
 

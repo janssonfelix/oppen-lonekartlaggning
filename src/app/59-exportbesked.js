@@ -13,14 +13,18 @@
 function _ebText(delar) { return delar.filter(Boolean).join(' · '); }
 function _ebAntal(n, en, flera) { return `${n} ${n === 1 ? en : flera}`; }
 
-function renderExportBesked() {
+/**
+ * @param {{baraUrval?: boolean}} [val] baraUrval: bara urvalet i listan har ändrats. Avsnitten tas då ur rapportmodellens
+ *   minne (58-rapportmodell.js) och beskedet för Excel och ZIP, som inte beror på urvalet, står kvar.
+ */
+function renderExportBesked({ baraUrval = false } = {}) {
     const har = getData().length > 0;
     const satt = (id, html) => { const el = document.getElementById(id); if (el) el.innerHTML = har ? html : ''; };
     if (!har) { ['besked-word', 'besked-pdf', 'besked-excel', 'besked-zip'].forEach(id => satt(id, '')); _ebRitaUrval(); return; }
     /** @type {any} */ let b = null;
     /** @type {any} */ let alla = null;
     /** @type {any} */ let bada = null;
-    try { bada = rapportModellBada({ besked: true }); alla = bada.alla; b = rmBesked(bada.urval); } catch (e) { rapporteraFel('Förhandsbesked: Word-utkastet', e); }
+    try { bada = rapportModellBada({ besked: true, ateranvand: baraUrval }); alla = bada.alla; b = rmBesked(bada.urval); } catch (e) { rapporteraFel('Förhandsbesked: Word-utkastet', e); }
     if (b) {
         satt('besked-word', `<strong>Innehåller:</strong> ${esc(_ebText([b.urval, _ebAntal(b.avsnitt, 'avsnitt', 'avsnitt'), _ebAntal(b.tabeller, 'tabell', 'tabeller'), _ebAntal(b.diagram, 'diagram', 'diagram'), `${b.fyllIn} fält att fylla i`]))}`
             + (b.utelamnat.length ? `<br><strong>Utelämnar:</strong> ${esc(b.utelamnat.join(' · '))}` : '<br><strong>Utelämnar:</strong> ingenting'));
@@ -31,6 +35,7 @@ function renderExportBesked() {
             + `<br><strong>Utelämnar:</strong> ${esc(b.utelamnat.length ? b.utelamnat.join(' · ') : 'ingenting')}`);
         _laNyckel('nyckel-ex-urval', b.urval);
     }
+    if (baraUrval) { _ebRitaUrval(alla); return; }
     let blad = /** @type {string[]} */ ([]);
     try {
         blad = excelAlltBlad();
@@ -49,6 +54,7 @@ function renderExportBesked() {
  * @param {any} [alla] modellen med alla avsnitt, när anroparen redan byggt den
  */
 function _ebRitaUrval(alla) {
+    // Klassen urval-rad med data-urval-id och urval-fasta avgör vilka klick som inte gör förhandsbeskedets minne ogiltigt (_rmHandelser, 58-rapportmodell.js).
     const host = document.getElementById('rapport-urval');
     if (!host) return;
     if (!getData().length) { host.innerHTML = ''; _laNyckel('nyckel-ex-urval', ''); return; }
@@ -138,7 +144,7 @@ document.addEventListener('click', e => {
 document.addEventListener('click', e => {
     if (!/** @type {HTMLElement} */ (e.target).closest) return;
     const fast = /** @type {HTMLElement} */ (e.target).closest('[data-urval-fast]');
-    if (fast) { sattRapportUrval(fast.getAttribute('data-urval-fast')); renderExportBesked(); /** @type {HTMLInputElement} */ (document.querySelector(`[data-urval-fast="${fast.getAttribute('data-urval-fast')}"]`))?.focus(); return; }
+    if (fast) { sattRapportUrval(fast.getAttribute('data-urval-fast')); renderExportBesked({ baraUrval: true }); /** @type {HTMLInputElement} */ (document.querySelector(`[data-urval-fast="${fast.getAttribute('data-urval-fast')}"]`))?.focus(); return; }
     const flytta = /** @type {HTMLElement} */ (e.target).closest('[data-urval-flytta]');
     if (!flytta) return;
     const id = flytta.closest('[data-urval-id]')?.getAttribute('data-urval-id') || '', steg = Number(flytta.getAttribute('data-urval-flytta'));
@@ -150,7 +156,7 @@ document.addEventListener('click', e => {
     const j = u.ordning.indexOf(granne), ordning = [...u.ordning];
     ordning.splice(i, 1); ordning.splice(j, 0, id);
     sattRapportUrval({ ordning, med: u.med });
-    renderExportBesked();
+    renderExportBesked({ baraUrval: true });
     /** @type {HTMLInputElement} */ (document.querySelector(`#rapport-urval [data-urval-id="${id}"] [data-urval-flytta="${steg}"]:not([disabled])`))?.focus();
 });
 document.addEventListener('change', e => {
@@ -158,6 +164,6 @@ document.addEventListener('change', e => {
     if (!ruta) return;
     const u = rapportUrval(), id = /** @type {HTMLElement} */ (ruta).getAttribute('data-urval-med');
     sattRapportUrval({ ordning: u.ordning, med: /** @type {HTMLInputElement} */ (ruta).checked ? [...u.med, id] : u.med.filter(x => x !== id) });
-    renderExportBesked();
+    renderExportBesked({ baraUrval: true });
     /** @type {HTMLInputElement} */ (document.querySelector(`[data-urval-med="${id}"]`))?.focus();
 });

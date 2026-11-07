@@ -31,8 +31,8 @@ och sitt dataskyddsombud · *Avstämd* = granskad av jurist (ingen rad ännu). K
 | Kvinnodominerat arbete mot likvärdigt arbete | 3 kap. 9 § 2 | *likvärdigt arbete* | Förslag |
 | Kvinnodominerat arbete mot arbete med lägre krav och högre lön | 3 kap. 9 § 3 | *lägre krav, högre lön* | Förslag |
 | Vad som är likvärdigt arbete (kraven) | 3 kap. 10 § | *kraven i arbetet*, *arbetsvärdering* | Förslag |
-| Sakliga skäl | följer av 3 kap. 9 § (analys av samband med kön) | *sakliga skäl*, utan paragraf | Förslag |
-| Gränsen för kvinnodominerat arbete | lagen anger ingen siffra ("är eller brukar anses vara"); 60 % är förarbetenas riktmärke | **mer än 60 % kvinnor** (`KVINNO_TROSKEL_DEFAULT`, >); icke-kvinnodominerat under 40 % | Förslag — beslut 2026-10-19 |
+| Sakliga skäl | följer av 3 kap. 9 § (analys av samband med kön); lagen räknar inte upp några skäl — exemplen i verktyget (ansvar, erfarenhet, marknadsläge) är verktygets, inte lagens | *sakliga skäl*, utan paragraf | Förslag |
+| Gränsen för kvinnodominerat arbete | lagen anger ingen siffra ("är eller brukar anses vara"); 60 % är förarbetenas riktmärke | **mer än 60 % kvinnor** (`KVINNO_TROSKEL_DEFAULT`, >); icke-kvinnodominerat under 40 %. Inställningens etikett säger *riktmärket i lagens förarbeten*, inte "DO"; nyckeln `'do'` står kvar | Förslag — beslut 2026-10-19 |
 | Samverkan med arbetstagarna | 3 kap. 11 §; redogörelse 13 § 7; information till facket 12 § | *samverkan med arbetstagarna* | Förslag |
 | Åtgärder, kostnadsberäkning och tidsplan (senast inom tre år) | 3 kap. 13 § andra stycket 4–5 (10–24 anställda via 14 §); allmänt 3 kap. 2 § 3 och 3 § | *åtgärder och tidsplan* | Förslag |
 | Ordet *handlingsplan* | inte lagens begrepp sedan 2017 (SFS 2016:828) | fliken heter fortfarande *Handlingsplan*; rapportens avsnitt heter *Åtgärder och tidsplan* | Förslag — flikens namn är ett produktbeslut |
@@ -50,7 +50,7 @@ arbeten som är lika eller likvärdiga är arbetsgivarens.
 | Moment | Artikel | Verktyget skriver | Status |
 |---|---|---|---|
 | Införandet | art. 34.1, senast 7 juni 2026; Sverige har inte infört direktivet (oktober 2026) | *direktivet skulle vara infört senast den 7 juni 2026; Sverige har inte infört det; delar kan ha direkt verkan mot kommun och region (se SKR)* | Förslag |
-| Lönegapets definition och rapportering | definition art. 3.1 c, rapportering art. 9.1 a; lön enligt art. 3.1 a–b (årslön och timlön brutto, inklusive tillägg) | *direktivets lönegap*; metodbilagan säger att verktyget räknar på månadslön | Förslag |
+| Löneskillnadens definition och rapportering | definition art. 3.1 c, rapportering art. 9.1 a; lön enligt art. 3.1 a–b (årslön och timlön brutto, inklusive tillägg) | *direktivets löneskillnad*; metodbilagan säger att verktyget räknar på månadslön | Förslag |
 | Kvartiler | art. 9.1 f | *lönekvartilerna* | Förslag |
 | Tidplan för rapportering | 250 eller fler: senast 7 juni 2027, därefter årligen (art. 9.2); 150–249: 7 juni 2027, vart tredje år (9.3); 100–149: 7 juni 2031, vart tredje år (9.4) | *stegvis för arbetsgivare med 100 anställda eller fler; svensk tidplan saknas* | Förslag |
 | Femprocentsgränsen | art. 10.1 a: 5 % eller mer; gäller bara som villkor för gemensam lönebedömning, aldrig som gräns för analys av lika eller likvärdigt arbete (3 kap. 9 § kräver analys av varje skillnad) | *gränsen 5 % i direktivets regler om gemensam lönebedömning* | Förslag — metodändring att pröva |
@@ -73,6 +73,12 @@ arbeten som är lika eller likvärdiga är arbetsgivarens.
 | Personuppgiftsbiträde | art. 28 inte tillämplig när verktyget körs lokalt; biträdesavtal krävs om drift eller support med tillgång till data tillkommer | *inget biträde* | Förslag |
 | Säkerhet | art. 32 | *säkerhet* | Förslag |
 | Konsekvensbedömning | art. 35; sannolikt motiverad för kommun och region (EDPB WP248: anställda som sårbara registrerade, stor omfattning); dataskyddsombudet avgör | *dataskyddsombudet avgör* | Förslag — DSO avgör |
+
+## Tillgänglighet
+
+| Moment | Lagrum | Verktyget skriver | Status |
+|---|---|---|---|
+| Tillgänglighetskrav och tillgänglighetsredogörelse | lagen (2018:1937) om tillgänglighet till digital offentlig service (DOS-lagen), som genomför direktiv (EU) 2016/2102; kraven följer standarden EN 301 549, som hänvisar till WCAG 2.1 nivå AA | *DOS-lagen* och *WCAG 2.1 nivå AA* under Källor i Om verktyget; `docs/anvandare/tillganglighetsredogorelse.md` | Förslag |
 
 ## Produkt- och säkerhetsregler — gäller verktyget som programvara, inte kartläggningen
 

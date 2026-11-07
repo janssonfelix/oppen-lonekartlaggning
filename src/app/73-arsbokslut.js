@@ -177,7 +177,7 @@ function renderArsjamforelse() {
     const gruppRad = g => `<tr><td>${esc(g.yrke)}</td><td class="t-tal">${antal(g)}</td><td class="t-tal">${g.gapForra == null ? '–' : svPct(g.gapForra, 1)}</td><td class="t-tal">${g.gapNu == null ? '–' : svPct(g.gapNu, 1)}</td>`
         + `<td class="t-tal">${_abSpridningText(g.spridningForra)}</td><td class="t-tal">${_abSpridningText(g.spridningNu)}</td></tr>`;
     const grupptabell = (rubrik, lista, tom) => `<h4 class="fs-sm marg-10-0-4">${esc(rubrik)} (${lista.length})</h4>` + (lista.length
-        ? `<table class="data-table st-088"><thead><tr><th>Yrkesgrupp</th><th class="t-hoger">Kvinnor / män ${nu.ar}</th><th class="t-hoger">Gap ${forra.ar}</th><th class="t-hoger">Gap ${nu.ar}</th><th class="t-hoger">Lönespridning ${forra.ar}</th><th class="t-hoger">Lönespridning ${nu.ar}</th></tr></thead><tbody>${lista.map(gruppRad).join('')}</tbody></table>`
+        ? `<table class="data-table st-088"><thead><tr><th>Yrkesgrupp</th><th class="t-hoger">Kvinnor / män ${nu.ar}</th><th class="t-hoger">Skillnad ${forra.ar}</th><th class="t-hoger">Skillnad ${nu.ar}</th><th class="t-hoger">Lönespridning ${forra.ar}</th><th class="t-hoger">Lönespridning ${nu.ar}</th></tr></thead><tbody>${lista.map(gruppRad).join('')}</tbody></table>`
         : `<p class="text-dampad-sm marg-0">${esc(tom)}</p>`);
     const g = j.grupper;
     const hantel = _abHantelRader(j);
@@ -185,14 +185,14 @@ function renderArsjamforelse() {
         + grupptabell('Nya flaggade', g.nya, 'Inga nya flaggade yrkesgrupper.')
         + grupptabell('Inte längre flaggade', g.borta, 'Ingen yrkesgrupp har slutat vara flaggad.')
         + (hantel.rader.length ? `<h4 class="fs-sm marg-10-0-4">Förändring per yrkesgrupp</h4><div class="chart-container"><div id="chart-arsjamforelse"></div></div>` : '')
-        + (hantel.utelamnade ? `<p class="k-mask-note">${hantel.utelamnade} ${hantel.utelamnade === 1 ? 'yrkesgrupp' : 'yrkesgrupper'} har gap bara ett av åren (under tröskeln eller fanns inte) och visas inte i diagrammet.</p>` : '');
+        + (hantel.utelamnade ? `<p class="k-mask-note">${hantel.utelamnade} ${hantel.utelamnade === 1 ? 'yrkesgrupp' : 'yrkesgrupper'} har en löneskillnad bara ett av åren (under tröskeln eller fanns inte) och visas inte i diagrammet.</p>` : '');
     const p = j.punkter;
     const kvar = p.kvarFranForra;
     const punkter = `<p class="text-dampad-sm marg-8-0-4">Förra året var ${p.klaraForra} av ${p.totaltForra} punkter i Att göra avbockade; i år ${p.klaraNu} av ${p.totaltNu}.</p>`
         + (kvar.length ? `<p class="text-dampad-sm marg-0-0-4">Förra årets öppna punkter (${kvar.length}):</p><ul class="fs-sm marg-0-0-8">${kvar.map(q => `<li>${esc(q.titel || q.id)}${q.klarNu ? ' — <strong>klar i år</strong>' : q.finnsNu ? ' — fortfarande öppen' : ' — finns inte längre i listan'}</li>`).join('')}</ul>` : '<p class="text-dampad-sm marg-0">Förra året hade inga öppna punkter.</p>');
-    host.innerHTML = huvud + (j.samma_k ? '' : `<p class="k-mask-note">Bokslutet sparades med minsta gruppstorlek ${forra.k}; i år gäller ${nu.k}. Yrkesgrupper och BAS-intervall jämförs bara där de, och för könsuppdelade mått båda könen, når den högre av årens gränser, ${j.kGrans} personer. En yrkesgrupp som var flaggad förra året men då hade ett kön under ${j.kGrans} personer räknas därför som ny i år om den är flaggad nu, och förra årets gap för den visas inte.</p>`)
+    host.innerHTML = huvud + (j.samma_k ? '' : `<p class="k-mask-note">Bokslutet sparades med minsta gruppstorlek ${forra.k}; i år gäller ${nu.k}. Yrkesgrupper och BAS-intervall jämförs bara där de, och för könsuppdelade mått båda könen, når den högre av årens gränser, ${j.kGrans} personer. En yrkesgrupp som var flaggad förra året men då hade ett kön under ${j.kGrans} personer räknas därför som ny i år om den är flaggad nu, och förra årets löneskillnad för den visas inte.</p>`)
         + `<h4 class="fs-sm marg-6-0-4">Nyckeltal</h4>${nyckeltal}${_abBasTabellHtml(j, forra.ar, nu.ar)}<h4 class="fs-sm marg-12-0-2">Lika arbete</h4>${grupper}<h4 class="fs-sm marg-12-0-2">Att göra</h4>${punkter}`
-        + `<p class="text-dampad-xs marg-8-0-0">Lönemått bara för yrkesgrupper där båda könen når minsta gruppstorlek; gapet är kvinnors medianlön mot mäns, negativt när kvinnor ligger lägre. ${AB_SPRIDNING_NOT}</p>`;
+        + `<p class="text-dampad-xs marg-8-0-0">Lönemått bara för yrkesgrupper där båda könen når minsta gruppstorlek; skillnaden är kvinnors medianlön mot mäns, negativt när kvinnor ligger lägre. ${AB_SPRIDNING_NOT}</p>`;
     const el = document.getElementById('chart-arsjamforelse');
     if (el) { const fig = _abHantelFigur(j, forra.ar, nu.ar); if (fig) ritaFigur(el, fig); }
     const elBas = document.getElementById('chart-arsjamforelse-bas');

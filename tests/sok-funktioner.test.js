@@ -256,3 +256,19 @@ describe('Funktionssök', () => {
         expect(lista.hidden).toBe(true);
     });
 });
+
+describe('ordlistans sökning: de gamla orden hittar rätt post (fältet sok)', () => {
+    const termer = (w, t) => { w.eval(`renderGlossary(${JSON.stringify(t)})`);
+        return [...w.document.querySelectorAll('#glossary-content .glossary-term')].map(e => e.textContent); };
+    it('"lönegap" hittar kvoten och de tre sorternas löneskillnad, fast ordet inte står i posterna', () => {
+        const w = createAppWindow();
+        const traffar = termer(w, 'lönegap');
+        expect(traffar).toContain('Kvinnors lön i procent av mäns');
+        expect(traffar).toContain('Rå (ojusterad) löneskillnad');
+        expect(traffar).toContain('Oförklarad löneskillnad');
+        expect(w.document.getElementById('glossary-content').textContent).not.toMatch(/[Ll]önegap/);
+    });
+    it('"rågap" hittar den råa löneskillnaden', () => {
+        expect(termer(createAppWindow(), 'rågap')).toContain('Rå (ojusterad) löneskillnad');
+    });
+});

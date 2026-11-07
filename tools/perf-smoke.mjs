@@ -18,7 +18,8 @@
 // Efter flikarna mäts också navigeringen: sidindexets byggtid per flik, sökfältets första sökning (registret och
 // grupperna byggs då) och tiden att öppna BAS-dossiern och gruppdossiern. Ett steg över 2 s flaggas.
 //
-// VAKT: tiden tills gränssnittet är klart, med en snäv budget (5 s).
+// VAKT: tiden tills gränssnittet är klart, med en snäv budget (5 s), och förhandsbeskedet efter ett ändrat kryss
+// under Rapportens innehåll (1 s).
 //
 // Budgeten är snäv för att en O(n²)-loop ska synas: en sådan loop kan stå för
 // ~8 s av inläsningen på 55 000 rader och ändå rymmas i en total budget på 60 s.
@@ -222,6 +223,21 @@ navRad('Rapportmodellen utan bilaga', tRapport.utan);
 navRad('Rapportmodell med bilaga', tRapport.med);
 navRad('Förhandsbeskedet utan bilaga', tRapport.beskedUtan);
 navRad('Förhandsbeskedet med bilagan vald', tRapport.besked);
+// Ett kryss i listan under Rapportens innehåll: förhandsbeskedet ritas om ur rapportmodellens minne (avsnitten räknas
+// inte om när bara urvalet ändras). Fliken Exportera öppnas och ritas först; sedan mäts ett kryss ur och ett i.
+// Tröskeln är hård: över KRYSS_GRANS_MS fallerar svepet.
+const KRYSS_GRANS_MS = Number(arg('kryss-budget') || 1000);
+const tKryss = await page.evaluate(async () => {
+    const ritad = () => new Promise(r => requestAnimationFrame(() => r()));
+    /** @type {HTMLElement} */ (document.querySelector('.nav-item[data-tab="dokumentera"]')).click();
+    await ritad();
+    const kryssa = pa => { const ruta = /** @type {HTMLInputElement} */ (document.querySelector('[data-urval-med="metod"]'));
+        const t0 = performance.now(); ruta.checked = pa; ruta.dispatchEvent(new Event('change', { bubbles: true })); return Math.round(performance.now() - t0); };
+    const ur = kryssa(false), i = kryssa(true);
+    return Math.max(ur, i);
+});
+const kryssOk = tKryss <= KRYSS_GRANS_MS;
+console.log(kolumn('Förhandsbeskedet, ändrat kryss', tKryss) + (kryssOk ? `   ✓ (gräns ${KRYSS_GRANS_MS} ms)` : `   ✗ över ${KRYSS_GRANS_MS} ms`));
 if (navLangsam.length) console.log(`\n  ⚠ Över ${NAV_GRANS_MS} ms: ${navLangsam.map(s => s.trim()).join(', ')}`);
 console.log(`\n  ${'TOTALT'.padEnd(26)} ${String(summa).padStart(7)} ms`);
 if (sidfel.length) console.log(`\n  ✗ ${sidfel.length} sidfel: ${sidfel[0]}`);
@@ -229,8 +245,9 @@ if (sidfel.length) console.log(`\n  ✗ ${sidfel.length} sidfel: ${sidfel[0]}`);
 await browser.close();
 
 const brutenBudget = summa > BUDGET_MS;
-if (sidfel.length || brutenBudget || !uiOk) {
+if (sidfel.length || brutenBudget || !uiOk || !kryssOk) {
     if (brutenBudget) console.log(`\n✗ Över budget: ${summa} ms > ${BUDGET_MS} ms.`);
+    if (!kryssOk) console.log(`\n✗ Förhandsbeskedet efter ett ändrat kryss tog ${tKryss} ms (gräns ${KRYSS_GRANS_MS} ms).`);
     if (!uiOk) console.log(`\n✗ Gränssnittet blev klart först efter ${stor.tSynlig} ms (budget ${UI_BUDGET_MS} ms).`);
     process.exit(1);
 }

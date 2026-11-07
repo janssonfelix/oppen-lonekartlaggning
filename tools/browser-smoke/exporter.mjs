@@ -35,12 +35,12 @@ export async function wordUtkast() {
             const text = new DOMParser().parseFromString(xml, 'application/xml').documentElement.textContent;
             return { png, ritningar: (xml.match(/<w:drawing>/g) || []).length, relationer: (rel.match(/relationships\/image"/g) || []).length, pngTyp: typer.includes('Extension="png"'),
                 form: /Kvinnors medianlön i procent av mäns\d{2,3},\d %/.test(text), misslyckad: /bilden kunde inte skapas/.test(text),
-                bildtexter: ['Könsfördelning per BAS-intervall', 'Kvinnor och män per lönekvartil', 'Oförklarat lönegap per BAS-intervall'].every(t => text.includes(t)) };
+                bildtexter: ['Könsfördelning per BAS-intervall', 'Kvinnor och män per lönekvartil', 'Oförklarad löneskillnad per BAS-intervall'].every(t => text.includes(t)) };
         }, wordBytes.toString('base64'));
         ok(w.png.length >= 4 && w.png.every(b => b.signatur && b.byte > 4000) && w.ritningar === w.png.length && w.relationer === w.png.length && w.pngTyp && !w.misslyckad,
             `Word-utkastet har diagrammen som bilder (${w.png.length} PNG, ${w.png.map(b => Math.round(b.byte / 1024) + ' kB').join(', ')}), var och en med relation och ritning`);
         ok(w.bildtexter, 'varje bild har sin bildtext');
-        ok(w.form, 'lönegapet står som kvinnors lön i procent av mäns');
+        ok(w.form, 'löneskillnaden står som kvinnors lön i procent av mäns');
         if (BILDER) writeFileSync(join(BILDER, 'word-utkast.docx'), wordBytes);
     }
 }
@@ -128,7 +128,7 @@ export async function beskedPdfZip() {
         await page.waitForTimeout(900);
         await page.evaluate(() => { document.getElementById('avsnitt-st-eu').open = true; });
         const eu = await page.evaluate(() => document.getElementById('struktur-eu').textContent.replace(/\s+/g, ' '));
-        ok(/Kvinnors medianlön i procent av mäns\s*\d+,\d %\s*Lönegap enligt direktivet: \d+,\d %/.test(eu) && !/\(skillnad\)/.test(eu), 'direktivets mått står som kvinnors lön i procent av mäns, med direktivets lönegap som positivt tal under');
+        ok(/Kvinnors medianlön i procent av mäns\s*\d+,\d %\s*Löneskillnad enligt direktivet: \d+,\d %/.test(eu) && !/\(skillnad\)/.test(eu), 'direktivets mått står som kvinnors lön i procent av mäns, med direktivets löneskillnad som positivt tal under');
     }
 }
 

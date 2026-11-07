@@ -176,7 +176,7 @@ function policyLevelLabel(pol) {
     if (!pol) return null;
     if (pol.aid && pol.bas) return 'AID + BAS';
     if (pol.aid) return 'AID-specifik';
-    return 'BAS-nivå';
+    return 'BAS-intervall';
 }
 
 // ---- Referens (ADR-28): egen fil, organisationspaket eller demoläget — ingen inbyggd ----
@@ -486,7 +486,7 @@ function _tableToMatrixExport(tableId) {
 function _copyTableToClipboard(...a) { return medExportLage(() => __copyTableToClipboardExport.apply(null, /** @type {any} */ (a))); }
 function __copyTableToClipboardExport(tableId, btn) {
     const rows = tableToMatrix(tableId);
-    if (!rows.length) { alert('Ingen tabelldata att kopiera.'); return; }
+    if (!rows.length) { alert('Tabellen är tom, så det finns inget att kopiera.'); return; }
     _copyMatrixToClipboard(rows, btn, { undantag: _kUndantagFor(document.getElementById(tableId)) });
 }
 // Rad-matris → TSV i urklipp. Delas av tabellverktygen och diagrammens exportmeny.
@@ -506,7 +506,7 @@ function _copyMatrixToClipboard(rows, btn, { undantag = '' } = {}) {
             const ta = document.createElement('textarea');
             ta.value = tsv; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.opacity = '0';
             document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); done();
-        } catch (_e) { alert('Kunde inte kopiera automatiskt. Använd CSV-knappen i stället.'); }
+        } catch (_e) { alert('Webbläsaren tillät inte kopieringen. Använd knappen CSV i stället.'); }
     };
     if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(tsv).then(done).catch(fallback);
@@ -520,7 +520,7 @@ document.addEventListener('click', e => {
         const rows = tableToMatrix(csvBtn.getAttribute('data-csv-table'));
         if (rows.length) _downloadCSV(rows, csvBtn.getAttribute('data-csv-file') || 'tabell',
             { undantag: _kUndantagFor(document.getElementById(csvBtn.getAttribute('data-csv-table') || '')) });
-        else alert('Ingen tabelldata att exportera.');
+        else alert('Tabellen är tom, så det finns inget att exportera.');
     }
 });
 

@@ -49,7 +49,7 @@ function runDiagnostics() {
     const ma = state.data.filter(r => r.kon === 'man' || r.kon === 'män');
     const rawGap = (Stat.median(kv.map(r=>r.lon)) / Stat.median(ma.map(r=>r.lon)) - 1) * 100;
     tests.push({
-        name: 'Råa lönegapet är negativt (kvinnor lägre lön)',
+        name: 'Den råa löneskillnaden är negativ (kvinnor lägre lön)',
         expected: '< -3%',
         actual: svPct(rawGap, 2),
         pass: rawGap < -3
@@ -59,13 +59,13 @@ function runDiagnostics() {
     const reg = runOLSRegression();
     if (!reg.error) {
         tests.push({
-            name: 'Oförklarat gap nära -3% (injicerad kön-effekt)',
+            name: 'Oförklarad skillnad nära −3 % (inlagd könseffekt)',
             expected: '-1% till -5%',
             actual: svPct(reg.konPct, 2),
             pass: reg.konPct > -5 && reg.konPct < -1
         });
         tests.push({
-            name: 'Oförklarat gap är statistiskt signifikant (p < 0,05)',
+            name: 'Oförklarad skillnad är statistiskt signifikant (p < 0,05)',
             expected: 'p < 0,05',
             actual: _formatPValue(reg.pValue),
             pass: reg.pValue < 0.05
@@ -188,7 +188,7 @@ function _lasInDemoReferens({ stort = false } = {}) {
 // delar, underlaget, demoläget, referensen och ritningen av Översikt och Filer och kvalitet. Bannern ritar anroparen sist.
 // Ger false om användaren avbröt.
 function _lasInDemounderlag(skapa, { stort = false } = {}) {
-    if ((state.data.length || state.paket) && !confirm('Detta ersätter befintlig data i sessionen. Fortsätt?')) return false;
+    if ((state.data.length || state.paket) && !confirm('Lönefilen du har läst in ersätts. Vill du fortsätta?')) return false;
     // Demot blandas aldrig med verkliga delar (ett organisationspaket, egen referens eller statistik).
     if (state.paket || state.policyKalla === 'fil' || state.policyKalla === 'paket' || state.statistik.length) _rensaAllData({ inbakat: false });
     state.data = skapa();
@@ -252,7 +252,7 @@ function loadDemoData() {
                     `).join('')}
                 </tbody>
             </table>
-            <p class="text-dampad-xs marg-t-8">Testdatan har 200 personer fördelade jämnt mellan kön. Modellen är konstruerad så att ett oförklarat gap på ~−3% ska kvarstå efter kontroll för ålder och BAS. Kvinnor är i snitt yngre och tenderar att placeras i lägre BAS, vilket ger ett större råa gap som delvis förklaras strukturellt.</p>
+            <p class="text-dampad-xs marg-t-8">Testdatan har 200 personer fördelade jämnt mellan kön. Modellen är konstruerad så att en oförklarad skillnad på ungefär −3 % ska finnas kvar efter kontroll för ålder och BAS. Kvinnor är i snitt yngre och tenderar att placeras i lägre BAS, vilket ger en större rå löneskillnad som delvis förklaras av strukturen.</p>
         </div>
     `;
     _renderDemoBanner();

@@ -92,14 +92,14 @@ describe('Likvärdigt arbete: avsnitten per BAS-intervall och den hierarkiska j�
         expect(t.rubriker).toEqual(['BAS-intervall', 'AID-kod', 'Yrkesgrupp', 'Antal', 'Andel kvinnor (%)', 'Andel kvinnor nationellt (%)', 'Klassning', 'Brukar anses kvinnodominerad', 'Medianlön', 'Lönespridning']);
         const b = () => tabell(w, 'aidbas-likvardigt-tabell').rader.find(r => r[1] === '3003');
         expect(b()[4]).toBe('60,0 %'); expect(b()[6]).toBe('Könsblandad'); expect(b()[8]).toBe('–');   // 5 personer: ingen median
-        expect(w.document.getElementById('aidbas-likvardigt').textContent).toContain('DO: mer än 60 % kvinnor');
+        expect(w.document.getElementById('aidbas-likvardigt').textContent).toContain('Förarbetena: mer än 60 % kvinnor');
         const val = w.document.getElementById('lv-kv-definition');
         expect(val).not.toBeNull();
         val.value = 'scb'; val.dispatchEvent(new w.Event('change'));
         expect(w.__state.likvardighet.kvDomDefinition).toBe('scb');
         expect(b()[6]).toBe('Kvinnodominerad');
         expect(w.document.getElementById('aidbas-likvardigt').textContent).toContain('SCB: 60 % kvinnor eller mer');
-        expect(w.document.getElementById('nyckel-lv-aidbas').textContent).toBe('4 grupper · 2 kvinnodominerade (SCB)');   // skärmen visar också gruppen med 4 personer
+        expect(w.document.getElementById('nyckel-lv-aidbas').textContent).toBe('4 grupper · 2 kvinnodominerade (enligt SCB)');   // skärmen visar också gruppen med 4 personer
     });
     it('den hierarkiska jämförelsen listar paret, och texten om inga par när det inte finns något', () => {
         const w = fonster();
@@ -110,7 +110,7 @@ describe('Likvärdigt arbete: avsnitten per BAS-intervall och den hierarkiska j�
         const w2 = fonster(TVA_BAS);
         w2.__renderTabContent('likvardighet');
         expect(tabell(w2, 'aidbas-hierarki-tabell')).toBeNull();
-        expect(w2.document.getElementById('aidbas-hierarki').textContent).toContain('Inga fall där ett lägre värderat arbete som inte är kvinnodominerat har högre lön än ett högre värderat kvinnodominerat arbete.');
+        expect(w2.document.getElementById('aidbas-hierarki').textContent).toContain('Inga fall där ett arbete med lägre krav, som inte är kvinnodominerat, har högre lön än ett kvinnodominerat arbete med högre krav.');
     });
 });
 
@@ -157,13 +157,13 @@ describe('Excel (alla flikar): de fyra bladen', () => {
         const met = blad('Metodik').flat().join('\n');
         expect(met).toContain('Tabellerna per AID-kod och BAS-intervall');
         expect(met).toContain('Gränser för slumpen (Lika arbete AID x BAS, Slumpens gränser)');
-        expect(met).toContain('DO: mer än 60 % kvinnor');
+        expect(met).toContain('Förarbetena: mer än 60 % kvinnor');
         expect(w.eval('_excelAlltBok()').Sheets['Metod & parametrar']).toBeDefined();
     });
     it('utan par står texten om inga fall i bladet Hierarkisk jämförelse', async () => {
         const w = fonster(TVA_BAS);
         const { blad } = await bok(w);
-        expect(blad('Hierarkisk jämförelse').flat()).toContain('Inga fall där ett lägre värderat arbete som inte är kvinnodominerat har högre lön än ett högre värderat kvinnodominerat arbete.');
+        expect(blad('Hierarkisk jämförelse').flat()).toContain('Inga fall där ett arbete med lägre krav, som inte är kvinnodominerat, har högre lön än ett kvinnodominerat arbete med högre krav.');
     });
 });
 

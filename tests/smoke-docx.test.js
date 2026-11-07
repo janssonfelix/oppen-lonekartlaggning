@@ -82,7 +82,7 @@ describe('Word-utkastet som .docx', () => {
         const html = w.eval('rmTillHtml(rapportModell())');
         const dok = new w.DOMParser().parseFromString(`<div>${html}</div>`, 'text/html');
         // Avsnittet om lönetransparens: direktivets tecken, utskrivet, positivt när kvinnor ligger lägre.
-        const direktiv = [...dok.querySelectorAll('table')].find(t => /Andel kvinnor/.test(t.textContent) && /Lönegap enligt art\. 9/.test(t.textContent));
+        const direktiv = [...dok.querySelectorAll('table')].find(t => /Andel kvinnor/.test(t.textContent) && /Löneskillnad enligt direktivet/.test(t.textContent));
         const dVarden = [...direktiv.querySelectorAll('tbody tr')].map(tr => tr.lastElementChild.textContent);
         expect(dVarden.length).toBeGreaterThan(0);
         for (const v of dVarden) expect(v).toMatch(/^([+−]\d{1,2},\d %|0,0 %|—)$/);
@@ -94,9 +94,9 @@ describe('Word-utkastet som .docx', () => {
         expect(varden.length).toBeGreaterThan(0);
         for (const v of varden) expect(v).toMatch(/^(\d{2,3},\d %|—)$/);
         expect(html).toMatch(/<th>Kvinnors medianlön i procent av mäns<\/th><td>\d{2,3},\d %<\/td>/);
-        expect(html).not.toMatch(/Ojusterat lönegap|Gap \(Kv vs Mä\)/);
+        expect(html).not.toMatch(/Ojusterat lönegap|Ojusterad löneskillnad|Gap \(Kv vs Mä\)/);
         // Regressionens gap behåller sin form, och det sägs i klartext.
-        expect(html).toMatch(/Löneskillnad som står kvar efter ålder och nivå<\/th><td><strong>[+−]\d+,\d\d %/);
+        expect(html).toMatch(/Löneskillnad som står kvar efter ålder och BAS-intervall<\/th><td><strong>[+−]\d+,\d\d %/);
         expect(html).toContain('negativ när kvinnor ligger lägre');
         // Diagrammen hör till ett avsnitt och pekar ut fliken som ritar dem.
         const diagram = m.avsnitt.flatMap(a => a.delar.filter(p => p.typ === 'diagram').map(p => `${a.id}:${p.id}:${p.flik}`));
@@ -349,7 +349,7 @@ describe('robusthetspanelen följer minsta gruppstorlek (ADR-38)', () => {
         lagg(6, 'kvinna', 36421, 'C', '5300');
         w.__state.data = rader;
         w.eval('populateSelects(); unlockTabs();');
-        w.__state.kLage = 'export';   // panelen hör till Spara och jämför år och ritas alltid i exportläget (ADR-51)
+        w.__state.kLage = 'export';   // panelen hör till Exportera och ritas alltid i exportläget (ADR-51)
         return w;
     };
     it('paret med en grupp under tröskeln namnges inte; antalet utelämnade par står i panelen och i resultatet', () => {

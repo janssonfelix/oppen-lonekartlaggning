@@ -164,7 +164,7 @@ function renderHandlingsplanSeed() {
               + `<td>${esc(r[2])} <button type="button" class="btn-table-tool hp-ta-bort" data-hp-ta-bort="${esc(n)}" data-noprint aria-label="Ta bort den egna raden">Ta bort</button></td>`
             : `<td>${esc(r[0])}</td><td>${esc(g)}</td>${antal}<td>${esc(r[2])}</td>`;
         return `<tr class="handlingsplan-seeded${egen ? ' handlingsplan-egen' : ''}">${forsta}`
-            + `<td>${lista(`hp-${i}-sakligt`, n, 'sakligt', r[3], HP_SAKLIGT, `Sakligt skäl prövat?: ${g}`)}</td>`
+            + `<td>${lista(`hp-${i}-sakligt`, n, 'sakligt', r[3], HP_SAKLIGT, `Sakliga skäl prövade?: ${g}`)}</td>`
             + `<td class="t-hoger">${esc(fmtKr(r[4]))}</td>`
             + `<td>${text(`hp-${i}-ansvarig`, n, 'ansvarig', r[5], 'Roll, t.ex. HR-chef', `Ansvarig: ${g}`)}</td>`
             + `<td>${text(`hp-${i}-tidsplan`, n, 'tidsplan', r[6], 'T.ex. lönerevisionen nästa år', `Tidsplan: ${g}`)}</td>`
@@ -182,7 +182,7 @@ function renderHandlingsplanSeed() {
         const egna = seed.egenCount ? ` ${seed.egenCount === 1 ? 'En egen rad' : `${seed.egenCount} egna rader`} står sist.` : '';
         note.innerHTML = (forifyllda
             ? `Förifyllt med <strong>${forifyllda}</strong> rad${forifyllda === 1 ? '' : 'er'} (${seed.prioCount} från Prioritering, under referensen, och ${seed.lvCount} kandidatpar från Likvärdigt arbete) — ett utgångsläge att granska. Fyll i sakligt skäl, ansvarig, tidsplan och status direkt i raderna.`
-            : 'Mallen förifylls automatiskt med grupperna från Prioritering och Likvärdigt arbete när data och referens finns. Lägg till egna rader med knappen under tabellen, eller ladda upp underlag på <strong>Översikt</strong>.') + egna + parNot;
+            : 'Mallen förifylls automatiskt med grupperna från Prioritering och Likvärdigt arbete när data och referens finns. Lägg till egna rader med knappen under tabellen, eller läs in ställningstagandet eller jämförelsestatistiken i <strong>Filer och kvalitet</strong>.') + egna + parNot;
     }
 }
 
@@ -225,8 +225,8 @@ function _hpValideraKonfiguration(lista) {
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
 function exportHandlingsplan(...a) { return medExportLage(() => _exportHandlingsplanExport.apply(null, /** @type {any} */ (a))); }
 function _exportHandlingsplanExport() {
-    if (typeof XLSX === 'undefined') { alert('Excel-biblioteket kunde inte laddas.'); return; }
-    const header = ['Åtgärd', 'Berörd grupp (AID·BAS)', 'Antal berörda', 'Underlag', 'Sakligt skäl prövat?', 'Beräknad kostnad (kr/år, inkl. PO)', 'Ansvarig', 'Tidsplan (senast inom 3 år)', 'Status'];
+    if (typeof XLSX === 'undefined') { alert('Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.'); return; }
+    const header = ['Åtgärd', 'Grupp (yrke och BAS-intervall)', 'Antal berörda', 'Underlag', 'Sakliga skäl prövade?', 'Beräknad kostnad (kr/år, inkl. PO)', 'Ansvarig', 'Tidsplan (senast inom tre år)', 'Status'];
     const seed = _handlingsplanSeedRows();
     const prioCount = seed.prioCount, lvCount = seed.lvCount;
     // Bladets kolumner i skärmens ordning: Antal berörda efter gruppen (tomt för en egen rad).
@@ -236,14 +236,14 @@ function _exportHandlingsplanExport() {
     const guide = [
         ['Handlingsplan för jämställda löner — vägledning', ''],
         ['Lagrum', 'Diskrimineringslagen 3 kap.: åtgärder, kostnadsberäkning och tidsplan i dokumentationen av lönekartläggningen'],
-        ['§ 11', 'Arbetsgivare med minst 10 anställda ska upprätta en handlingsplan med åtgärder, kostnadsberäkning och tidsplan.'],
+        ['Lagen', 'Åtgärder, kostnadsberäkning och tidsplan ska stå i dokumentationen av lönekartläggningen.'],
         ['Tidsplan', 'Åtgärderna ska genomföras så snart som möjligt, dock senast inom tre år.'],
-        ['Ej inom 3 år', 'Åtgärder som inte kan genomföras inom tre år ska dokumenteras särskilt med motivering och plan för när de kan genomföras.'],
-        ['§ 13', 'Lönekartläggningen, analysen och handlingsplanen ska dokumenteras skriftligt.'],
-        ['Samverkan', 'Arbetet ska bedrivas i samverkan med arbetstagarna (diskrimineringslagen).'],
+        ['Inte inom tre år', 'Kan en åtgärd inte genomföras inom tre år, skriv varför och när den kan genomföras.'],
+        ['Dokumentation', 'Kartläggningen, analysen och åtgärderna ska dokumenteras skriftligt.'],
+        ['Samverkan', 'Arbetet ska göras i samverkan med arbetstagarna (lagen).'],
         ['', ''],
         ['Detta underlag', `Förifyllt med ${prioCount} grupp(er) under referens (Prioritering) och ${lvCount} kandidatpar i likvärdigt arbete.${seed.parNot ? ' ' + seed.parNot : ''}${seed.egenCount ? ` ${seed.egenCount} egna rader från fliken står sist.` : ''} Det som fyllts i på fliken Handlingsplan står med; fyll i resten av sakligt skäl, ansvarig, tidsplan och status. Raderna bygger på gruppmått — inga individdata.`],
-        ['OBS', 'Detta är ett analysunderlag. Den sammanhållna handlingsplanen färdigställs i arbetsgivarens dokumentation/Word.']
+        ['OBS', 'Det här är ett underlag. Du skriver dokumentationen i Word-utkastet.']
     ];
 
     const wb = XLSX.utils.book_new();

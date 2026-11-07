@@ -240,7 +240,7 @@ describe('Löneöversyn utan påslag', () => {
         w.__renderTabContent('loneoversyn');
         const text = w.document.getElementById('forecast-outcome').textContent.replace(/\s+/g, ' ');
         expect(text).toMatch(/Kvinnors medianlön i % av mäns: [\d,]+ % till [\d,]+ % oförändrat/);
-        expect(text).toMatch(/Oförklarat gap \(regressionen\): \S+ % till \S+ % oförändrat/);
+        expect(text).toMatch(/Oförklarad skillnad \(regressionen\): \S+ % till \S+ % oförändrat/);
         expect(text).not.toMatch(/[\u2190-\u21FF]/);
     });
 });
@@ -416,8 +416,8 @@ describe('samma skillnad sägs på ett sätt', () => {
             const blad = [...el.querySelectorAll('*')].filter(e => !e.children.length && !e.closest('.info-tip') && !/PO\b/.test(e.textContent));
             expect(blad.filter(tvaDec).map(e => e.textContent.trim().slice(0, 50)), sel).toEqual([]);
         }
-        const kort = [...d.querySelectorAll('#la-slutsatser .slutsats')].find(k => k.textContent.includes('Efter ålder och nivå'));
-        expect(kort.textContent).toContain('kvinnors lön i % av mäns när ålder och nivå räknats bort');
+        const kort = [...d.querySelectorAll('#la-slutsatser .slutsats')].find(k => k.textContent.includes('Efter ålder och BAS-intervall'));
+        expect(kort.textContent).toContain('kvinnors lön i % av mäns när ålder och BAS-intervall räknats bort');
     }, 30000);
 });
 

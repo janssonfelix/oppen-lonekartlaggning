@@ -18,13 +18,13 @@
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
 function exportBenchmarkExcel(...a) { return medExportLage(() => _exportBenchmarkExcelExport.apply(null, /** @type {any} */ (a))); }
 function _exportBenchmarkExcelExport() {
-    if (typeof XLSX === 'undefined') { alert('XLSX-biblioteket är inte laddat.'); return; }
+    if (typeof XLSX === 'undefined') { alert('Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.'); return; }
     const d = getData();
-    if (!d.length) { alert('Ingen data laddad. Ladda upp strukturdatan först.'); return; }
+    if (!d.length) { alert('Ingen lönefil är inläst. Läs in lönefilen först.'); return; }
     const hasStat = state.statistik.length > 0;
     const hasPolicy = state.policy.length > 0;
     if (!hasStat && !hasPolicy) {
-        alert('Ingen referensdata laddad — varken jämförelsestatistik eller lönepolitiskt ställningstagande. Inget att jämföra mot.');
+        alert('Det finns inget att jämföra med. Läs in ställningstagandet eller jämförelsestatistiken.');
         return;
     }
 
