@@ -76,11 +76,10 @@ function _id(namn, kannetecken) {
         .replace(/^-+|-+$/g, '').slice(0, 40);
     return `${slug || 'profil'}-${_hash(namn + '|' + kannetecken.map(normaliseraRubrik).join('|'))}`;
 }
-const _arId = v => typeof v === 'string' && /^[a-z0-9-]{1,80}$/.test(v);
-
 /**
  * Validerar en profil. Bara vitlistade fält följer med; en profil med en ogiltig text (för lång, personnummer- eller
- * e-postliknande) avvisas helt.
+ * e-postliknande) avvisas helt. Id:t härleds alltid ur namnet och kännetecknen: ett id i filen läses aldrig, så det
+ * kan inte bli en okontrollerad textkanal (till exempel ett personnummer) i exporter och paket.
  * @param {any} o
  * @param {{kalla?: string}} [val] Källan sätts av den som läser in (en fil kan inte göra sin profil inbyggd).
  * @returns {{id:string, namn:string, kalla:string, rubriker:{[roll:string]:string[]}, kannetecken:string[]}|null}
@@ -109,7 +108,7 @@ export function valideraImportprofil(o, { kalla } = {}) {
     }
     const k = IMPORTPROFIL_KALLOR.includes(/** @type {string} */ (kalla)) ? /** @type {string} */ (kalla)
         : (o.kalla === 'organisationspaket' ? 'organisationspaket' : 'konfiguration');
-    return { id: _arId(o.id) ? o.id : _id(namn, kannetecken), namn, kalla: k, rubriker, kannetecken };
+    return { id: _id(namn, kannetecken), namn, kalla: k, rubriker, kannetecken };
 }
 
 /**
@@ -195,7 +194,9 @@ export function importprofilerTillJson(profiler) {
 
 // ---- Inbyggda profiler: bara format som projektet självt definierar ----
 const _inbyggd = o => {
-    const p = /** @type {NonNullable<ReturnType<typeof valideraImportprofil>>} */ (valideraImportprofil(o, { kalla: 'inbyggd' }));
+    // De inbyggda profilerna har fasta id:n i koden (inte ur en fil), så de sätts efter valideringen.
+    const v = /** @type {NonNullable<ReturnType<typeof valideraImportprofil>>} */ (valideraImportprofil(o, { kalla: 'inbyggd' }));
+    const p = { ...v, id: o.id };
     Object.values(p.rubriker).forEach(Object.freeze);
     Object.freeze(p.rubriker); Object.freeze(p.kannetecken);
     return Object.freeze(p);

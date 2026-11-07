@@ -49,6 +49,14 @@ describe('valideraImportprofil', () => {
         expect(valideraImportprofil(null)).toBeNull();
         expect(valideraImportprofil(profil({ namn: '' }))).toBeNull();
     });
+    it('id:t härleds alltid ur namnet och kännetecknen: ett inkommande id (en okontrollerad textkanal) används aldrig', () => {
+        const harlett = valideraImportprofil(profil({ id: undefined }));
+        const p = valideraImportprofil(profil({ id: '198501011234' }));
+        expect(p.id).toBe(harlett.id);
+        expect(p.id).not.toMatch(/198501011234/);
+        expect(valideraImportprofil(profil({ id: 'annat-id' })).id).toBe(harlett.id);
+        expect(p.id).toMatch(/^var-personallista-[a-z0-9]+$/);
+    });
     it('tar bort HTML-tecken ur texten', () => {
         const p = valideraImportprofil(profil({ namn: 'Vår <b>lista</b>' }));
         expect(p.namn).toBe('Vår blista/b');
@@ -79,7 +87,7 @@ describe('matchaImportprofil', () => {
     const p = valideraImportprofil(profil(), { kalla: 'konfiguration' });
     it('gäller när alla kännetecken finns bland filens rubriker, och ger mappningen roll → filens rubrik', () => {
         const t = matchaImportprofil(FIL, [p]);
-        expect(t.profil.id).toBe('var-personallista');
+        expect(t.profil.id).toBe(p.id);
         expect(t.mappning).toEqual({ bas: 'Lönenivå', yrke: 'Befattningskod', lon: 'Grundlön heltid', alder: 'Födelseår', kon: 'Juridiskt kön' });
     });
     it('kräver alla kännetecken', () => {
@@ -103,7 +111,7 @@ describe('matchaImportprofil', () => {
         // Inom samma källa vinner den första som gäller.
         const a = valideraImportprofil(profil({ id: 'a', namn: 'A' }), { kalla: 'konfiguration' });
         const b = valideraImportprofil(profil({ id: 'b', namn: 'B' }), { kalla: 'konfiguration' });
-        expect(matchaImportprofil(FIL, [a, b]).profil.id).toBe('a');
+        expect(matchaImportprofil(FIL, [a, b]).profil.namn).toBe('A');
     });
     it('ingen profil gäller: null', () => {
         expect(matchaImportprofil(['BAS', 'AID'], [p])).toBeNull();
@@ -139,7 +147,7 @@ describe('INBYGGDA_PROFILER', () => {
         expect(inbyggdaProfiler()).toBe(INBYGGDA_PROFILER);
         for (const p of INBYGGDA_PROFILER) {
             expect(p.kalla).toBe('inbyggd');
-            expect(valideraImportprofil(p, { kalla: 'inbyggd' })).toEqual(p);
+            expect({ ...valideraImportprofil(p, { kalla: 'inbyggd' }), id: p.id }).toEqual(p);
             expect(Object.isFrozen(p)).toBe(true);
         }
     });

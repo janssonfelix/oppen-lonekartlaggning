@@ -320,7 +320,7 @@ describe('organisationspaket: importprofiler', () => {
         rubriker: { bas: ['Lönenivå'], yrke: ['Befattningskod'], lon: ['Grundlön heltid'], alder: ['Födelseår'], kon: ['Juridiskt kön'] } };
     it('följer med i paketet och läses tillbaka med källan organisationspaketet', () => {
         const p = byggPaket({ ...underlag(), importprofiler: [{ ...profil, kalla: 'konfiguration' }] });
-        expect(p.importprofiler).toEqual([{ id: 'personallistan', namn: 'Lönesystemets personallista', rubriker: profil.rubriker,
+        expect(p.importprofiler).toEqual([{ id: expect.stringMatching(/^lonesystemets-personallista-/), namn: 'Lönesystemets personallista', rubriker: profil.rubriker,
             kannetecken: ['Lönenivå', 'Befattningskod', 'Grundlön heltid', 'Födelseår', 'Juridiskt kön'] }]);
         const t = tolkaP(p);
         expect(t.ok).toBe(true);

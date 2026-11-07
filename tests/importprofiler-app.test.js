@@ -6,6 +6,7 @@ import { describe, it, expect } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
 import { papa, vanta, csvFil, okandaRader, braRader, rot } from './helpers/granssnitt-rigg.js';
 import { bakaIn } from '../src/lib/organisationsfil.js';
+import { valideraImportprofil } from '../src/lib/importprofiler.js';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -34,6 +35,9 @@ const mallRader = (poang = false) => {
 };
 const PROFIL = { id: 'personallistan', namn: 'Lönesystemets personallista',
     rubriker: { bas: ['Avd'], yrke: ['Befattning'], lon: ['Grundlon'], alder: ['Fodd'], kon: ['Sex'] } };
+// Id:t härleds ur namnet och kännetecknen (src/lib/importprofiler.js); filens id används aldrig.
+const PID = valideraImportprofil(PROFIL).id;
+const EID = valideraImportprofil({ ...PROFIL, namn: 'Egen lista' }).id;
 const paketText = (w, profiler = [PROFIL], org = 'Exempelregionen') => {
     w.__p = profiler;
     return w.eval(`JSON.stringify(_opByggPaket({ organisation: ${JSON.stringify(org)}, skapat: '2026-10-01',
@@ -91,7 +95,7 @@ describe('importprofiler: spara en gjord mappning och känna igen filen nästa g
         w.__cfg = cfg;
         const r = w.eval('applyConfigSnapshot(window.__cfg)');
         expect(r.varningar.join(' ')).toMatch(/1 importprofil i filen gick inte att läsa/);
-        expect(w.__state.importprofiler.map(p => p.id)).toEqual(['personallistan']);
+        expect(w.__state.importprofiler.map(p => p.id)).toEqual([PID]);
         cfg.importprofiler = Array.from({ length: 51 }, (_, i) => ({ ...PROFIL, id: `p-${i}` }));
         expect(w.eval('applyConfigSnapshot(window.__cfg)').varningar.join(' ')).toMatch(/50/);
     });
@@ -117,7 +121,7 @@ describe('importprofiler: spara en gjord mappning och känna igen filen nästa g
         // Grundlon): utan profilen tas försättsraden, den första, för rubrikrad.
         await lasIn(w, ['Rapport uttagen;Lonelista;Kontor', 'Avd;Befattning;Grundlon;Fodd;Sex', ...okandaRader().slice(1)]);
         expect(w.__state.data.length).toBe(30);
-        expect(w.__state.importprofil?.id).toBe('personallistan');
+        expect(w.__state.importprofil?.id).toBe(PID);
         expect(status(w)).toContain('1 försättsrad överhoppad');
     });
 });
@@ -128,7 +132,7 @@ describe('importprofiler: organisationspaketet', () => {
         w.__p = [{ ...PROFIL, id: 'egen', namn: 'Egen lista' }];
         w.eval("state.importprofiler = _ipValideraLista(window.__p, { kalla: 'konfiguration' }).profiler");
         expect(w.lasInPaket(paketText(w)).ok).toBe(true);
-        expect(w.__state.importprofiler.map(p => `${p.kalla}:${p.id}`)).toEqual(['konfiguration:egen', 'organisationspaket:personallistan']);
+        expect(w.__state.importprofiler.map(p => `${p.kalla}:${p.id}`)).toEqual(['konfiguration:' + EID, 'organisationspaket:' + PID]);
         expect(w.document.getElementById('paket-info').textContent).toContain('1 importprofil');
         await lasIn(w, okandaRader());
         expect(w.__state.data.length).toBe(30);
@@ -181,9 +185,9 @@ describe('importprofiler: Inställningar, rensning och demodata', () => {
         let fangad = null;
         w.URL.createObjectURL = b => { fangad = b; return 'blob:x'; };
         w.HTMLAnchorElement.prototype.click = () => {};
-        lista.querySelector('[data-ip-exportera="personallistan"]').click();
+        lista.querySelector(`[data-ip-exportera="${PID}"]`).click();
         expect(fangad).not.toBeNull();
-        lista.querySelector('[data-ip-ta-bort="personallistan"]').click();
+        lista.querySelector(`[data-ip-ta-bort="${PID}"]`).click();
         expect(w.__state.importprofiler).toEqual([]);
         expect(d.getElementById('inst-importprofiler').textContent).toContain('Inga sparade importprofiler');
     });
@@ -192,9 +196,9 @@ describe('importprofiler: Inställningar, rensning och demodata', () => {
         const w = createAppWindow();
         w.__p = [PROFIL];
         w.eval("state.importprofiler = _ipValideraLista(window.__p, { kalla: 'organisationspaket' }).profiler");
-        const o = JSON.parse(w.eval("importprofilExport('personallistan')"));
+        const o = JSON.parse(w.eval(`importprofilExport('${PID}')`));
         expect(o.format).toBe('lonekartlaggning-importprofiler');
-        expect(o.profiler).toEqual([{ id: 'personallistan', namn: PROFIL.namn, rubriker: PROFIL.rubriker,
+        expect(o.profiler).toEqual([{ id: PID, namn: PROFIL.namn, rubriker: PROFIL.rubriker,
             kannetecken: ['Avd', 'Befattning', 'Grundlon', 'Fodd', 'Sex'] }]);
     });
 
@@ -226,7 +230,7 @@ describe('importprofiler: Inställningar, rensning och demodata', () => {
         w.__p = [{ ...PROFIL, id: 'egen', namn: 'Egen lista' }];
         w.eval("state.importprofiler.push(..._ipValideraLista(window.__p, { kalla: 'konfiguration' }).profiler)");
         w.__clearAllData();
-        expect(w.__state.importprofiler.map(p => `${p.kalla}:${p.id}`)).toEqual(['organisationspaket:personallistan']);
+        expect(w.__state.importprofiler.map(p => `${p.kalla}:${p.id}`)).toEqual(['organisationspaket:' + PID]);
     });
 
     it('demodatan har ingen känd uppsättning (den läses inte ur en fil)', async () => {
