@@ -14,6 +14,7 @@
 
 import { valideraRecept } from './tabellrecept.js';
 import { valideraPerBasRecept, perBasReceptArStandard } from './perbas.js';
+import { valideraImportprofiler } from './importprofiler.js';
 
 export const PAKET_FORMAT = 'lonekartlaggning-organisationspaket';
 export const PAKET_VERSION = 1;
@@ -86,7 +87,8 @@ function _orgTyp(v) {
 /**
  * Bygger ett paket ur appens delar. Tomma delar utelämnas.
  * @param {{organisation:string, utgivare?:string, skapat:string, avserAr?:number,
- *          profil?:Object, installningar?:Object, referens?:Object|null, statistik?:Object|null, rapport?:Object|null}} u
+ *          profil?:Object, installningar?:Object, referens?:Object|null, statistik?:Object|null, rapport?:Object|null,
+ *          importprofiler?:Object[]}} u
  * @returns {Object} JSON-säkert paket
  */
 export function byggPaket(u) {
@@ -115,6 +117,10 @@ export function byggPaket(u) {
     // giltiga recept följer med, och standardreceptet per BAS utelämnas (det gäller ändå).
     const rapport = _rapport(u.rapport, null);
     if (rapport) paket.rapport = rapport;
+    // Importprofilerna: bara rubriknamn (src/lib/importprofiler.js). Källan följer inte med; den sätts vid inläsningen.
+    const profiler = valideraImportprofiler(u.importprofiler || []).profiler
+        .map(p => ({ id: p.id, namn: p.namn, rubriker: p.rubriker, kannetecken: p.kannetecken }));
+    if (profiler.length) paket.importprofiler = profiler;
     const refRader = (u.referens?.rader || []).map(_referensRad).filter(Boolean);
     if (refRader.length) paket.referens = { ..._utanTomma({ namn: _text(u.referens.namn), kortnamn: _text(u.referens.kortnamn) }), rader: refRader };
     const statRader = (u.statistik?.rader || []).map(_statistikRad).filter(Boolean);
@@ -140,6 +146,20 @@ function _rapport(rp, varningar) {
     if (perBasRecept && perBasReceptArStandard(perBasRecept)) perBasRecept = null;
     if (!tabeller.length && !perBasRecept) return null;
     return { tabeller, ...(perBasRecept ? { perBasRecept } : {}) };
+}
+
+/**
+ * Paketets importprofiler, med källan organisationspaketet. Fältet är valfritt: ett äldre paket utan det ger en tom
+ * lista. Ogiltiga profiler hoppas över med en varning; fler än 50 läses inte alls.
+ * @param {any} lista
+ * @param {string[]} varningar
+ */
+function _importprofiler(lista, varningar) {
+    if (lista == null) return [];
+    const r = valideraImportprofiler(lista, { kalla: 'organisationspaket' });
+    if (r.fel) { varningar.push(`Paketets importprofiler läses inte in: ${r.fel}`); return []; }
+    if (r.bort) varningar.push(`${r.bort} ${r.bort === 1 ? 'importprofil' : 'importprofiler'} i paketet gick inte att läsa och hoppas över.`);
+    return r.profiler;
 }
 
 // ---- Tolka ----
@@ -243,6 +263,7 @@ export function tolkaPaket(text) {
             referens: refRader ? { ..._utanTomma({ namn: _text(o.referens.namn), kortnamn: _text(o.referens.kortnamn) }), rader: refRader } : null,
             statistik: statRader ? { ..._utanTomma({ namn: _text(o.statistik.namn) }), rader: statRader } : null,
             rapport: _rapport(o.rapport, varningar),
+            importprofiler: _importprofiler(o.importprofiler, varningar),
         },
         varningar,
     };
