@@ -14,7 +14,7 @@ function clearAllData() {
         announceToScreenReader('Ingen data finns i minnet att rensa.');
         return;
     }
-    if (!confirm('Detta raderar all data ur minnet (struktur, policy, statistik, scenarion, snapshot). Detta går inte att ångra. Fortsätt?')) return;
+    if (!confirm('All data försvinner ur minnet: lönefilen, ställningstagandet, statistiken, scenarierna och ögonblicksbilden. Det går inte att ångra. Vill du fortsätta?')) return;
 
     _rensaAllData();
 }

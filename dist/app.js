@@ -16111,7 +16111,7 @@ function _lasInDemoReferens({ stort = false } = {}) {
 // delar, underlaget, demoläget, referensen och ritningen av Översikt och Filer och kvalitet. Bannern ritar anroparen sist.
 // Ger false om användaren avbröt.
 function _lasInDemounderlag(skapa, { stort = false } = {}) {
-    if ((state.data.length || state.paket) && !confirm('Detta ersätter befintlig data i sessionen. Fortsätt?')) return false;
+    if ((state.data.length || state.paket) && !confirm('Lönefilen du har läst in ersätts. Vill du fortsätta?')) return false;
     // Demot blandas aldrig med verkliga delar (ett organisationspaket, egen referens eller statistik).
     if (state.paket || state.policyKalla === 'fil' || state.policyKalla === 'paket' || state.statistik.length) _rensaAllData({ inbakat: false });
     state.data = skapa();
@@ -17658,7 +17658,7 @@ function clearAllData() {
         announceToScreenReader('Ingen data finns i minnet att rensa.');
         return;
     }
-    if (!confirm('Detta raderar all data ur minnet (struktur, policy, statistik, scenarion, snapshot). Detta går inte att ångra. Fortsätt?')) return;
+    if (!confirm('All data försvinner ur minnet: lönefilen, ställningstagandet, statistiken, scenarierna och ögonblicksbilden. Det går inte att ångra. Vill du fortsätta?')) return;
 
     _rensaAllData();
 }
@@ -33594,7 +33594,7 @@ const SOK_FUNKTIONER = [
     { namn: 'Spara/ladda konfiguration', synonymer: ['konfiguration', 'spara', 'ladda', 'json', 'inställningsfil'], flik: 'arbetet', avsnitt: 'avsnitt-ar-konfiguration' },
     { namn: 'Jämför med en ögonblicksbild', synonymer: ['ögonblicksbild', 'snapshot', 'jämför inställningar', 'före efter'], flik: 'arbetet', avsnitt: 'avsnitt-ar-ogonblick' },
     { namn: 'Jämförelse med förra året', synonymer: ['årsjämförelse', 'förra året', 'fjolår', 'fjolåret', 'årsbokslut'], flik: 'arbetet', avsnitt: 'avsnitt-ar-arsjamforelse' },
-    { namn: 'Självdiagnostik (testdata)', synonymer: ['självdiagnostik', 'testdata', 'syntetisk', 'kontrollera verktyget'], flik: 'arbetet', avsnitt: 'avsnitt-ar-diagnostik' },
+    { namn: 'Kontrollera verktyget med testdata', synonymer: ['självdiagnostik', 'testdata', 'syntetisk'], flik: 'arbetet', avsnitt: 'avsnitt-ar-diagnostik' },
     // Tabeller och egna vyer
     { namn: 'Löneöversikt — alla BAS-intervall', synonymer: ['tabell', 'lönenivåer', 'fast tabell'], flik: 'utforska', avsnitt: 'avsnitt-ut-oversikt' },
     { namn: 'Egna vyer', synonymer: ['pivot', 'egen tabell', 'eget diagram', 'utforska'], flik: 'utforska', avsnitt: 'avsnitt-ut-egna' },

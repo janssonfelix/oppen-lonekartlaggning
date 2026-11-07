@@ -188,7 +188,7 @@ function _lasInDemoReferens({ stort = false } = {}) {
 // delar, underlaget, demoläget, referensen och ritningen av Översikt och Filer och kvalitet. Bannern ritar anroparen sist.
 // Ger false om användaren avbröt.
 function _lasInDemounderlag(skapa, { stort = false } = {}) {
-    if ((state.data.length || state.paket) && !confirm('Detta ersätter befintlig data i sessionen. Fortsätt?')) return false;
+    if ((state.data.length || state.paket) && !confirm('Lönefilen du har läst in ersätts. Vill du fortsätta?')) return false;
     // Demot blandas aldrig med verkliga delar (ett organisationspaket, egen referens eller statistik).
     if (state.paket || state.policyKalla === 'fil' || state.policyKalla === 'paket' || state.statistik.length) _rensaAllData({ inbakat: false });
     state.data = skapa();

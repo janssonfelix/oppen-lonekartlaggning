@@ -102,7 +102,7 @@ const SOK_FUNKTIONER = [
     { namn: 'Spara/ladda konfiguration', synonymer: ['konfiguration', 'spara', 'ladda', 'json', 'inställningsfil'], flik: 'arbetet', avsnitt: 'avsnitt-ar-konfiguration' },
     { namn: 'Jämför med en ögonblicksbild', synonymer: ['ögonblicksbild', 'snapshot', 'jämför inställningar', 'före efter'], flik: 'arbetet', avsnitt: 'avsnitt-ar-ogonblick' },
     { namn: 'Jämförelse med förra året', synonymer: ['årsjämförelse', 'förra året', 'fjolår', 'fjolåret', 'årsbokslut'], flik: 'arbetet', avsnitt: 'avsnitt-ar-arsjamforelse' },
-    { namn: 'Självdiagnostik (testdata)', synonymer: ['självdiagnostik', 'testdata', 'syntetisk', 'kontrollera verktyget'], flik: 'arbetet', avsnitt: 'avsnitt-ar-diagnostik' },
+    { namn: 'Kontrollera verktyget med testdata', synonymer: ['självdiagnostik', 'testdata', 'syntetisk'], flik: 'arbetet', avsnitt: 'avsnitt-ar-diagnostik' },
     // Tabeller och egna vyer
     { namn: 'Löneöversikt — alla BAS-intervall', synonymer: ['tabell', 'lönenivåer', 'fast tabell'], flik: 'utforska', avsnitt: 'avsnitt-ut-oversikt' },
     { namn: 'Egna vyer', synonymer: ['pivot', 'egen tabell', 'eget diagram', 'utforska'], flik: 'utforska', avsnitt: 'avsnitt-ut-egna' },

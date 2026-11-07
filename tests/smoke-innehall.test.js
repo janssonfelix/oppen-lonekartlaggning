@@ -410,7 +410,7 @@ describe('BAS-ordningen är fast (se §5 i teknisk-plan.md)', () => {
         expect(d.getElementById('file-input-paket').closest('#upload-sektion')).not.toBeNull();
         for (const id of ['outliers-container', 'file-input-paket']) expect(d.getElementById(id).closest('#view-dokumentera')).toBeNull();
         expect([...d.querySelectorAll('#view-arbetet details.avsnitt > summary h2')].map(h => h.textContent))
-            .toEqual(['Spara/ladda konfiguration', 'Jämför med en ögonblicksbild', 'Jämförelse med förra året', 'Självdiagnostik (testdata)']);
+            .toEqual(['Spara/ladda konfiguration', 'Jämför med en ögonblicksbild', 'Jämförelse med förra året', 'Kontrollera verktyget med testdata']);
         expect(d.getElementById('outliers-container').style.display).toBe('block');
         expect(d.getElementById('outliers-table-wrap').textContent).toMatch(/extremvärden|Rad/i);
     });
