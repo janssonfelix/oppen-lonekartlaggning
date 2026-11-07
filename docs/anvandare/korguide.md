@@ -382,7 +382,14 @@ ni ordna om och ta bort tabellerna.
    mått tabellerna ska ha, åldersgränserna, och om summeringstabellerna ska med. *Återställ
    standard* ger utkastets form tillbaka.
 3. **Skriver ni rapporten i en egen mall?** Öppna fliken **Rapporttext**. Avsnittet **Auto-rapportutkast** har
-   fynden i klarspråk att redigera och kopiera (*Återskapa* skriver över med ett färskt utkast), och avsnittet
+   fynden i klarspråk att redigera och kopiera (*Återskapa* skriver över med ett färskt utkast). Väljaren **Omfång**
+   ovanför textrutan avgör om utkastet bara har helheten (*Hela organisationen*) eller också ett stycke per
+   BAS-intervall (*Hela organisationen + per BAS-intervall*, standard): varje intervall med minst k personer får samma
+   text som BAS-dossiern, med förra året när ett bokslut är inläst, och slutar med raden *[HR fyller i] Bedömning*.
+   Valet sparas inte i konfigurationsfilen; *Återskapa* följer det, och ett redigerat utkast skrivs inte över när
+   du byter. Samma stycken står i Word-utkastets och PDF-rapportens avsnitt **Lönekartläggning per BAS-intervall**
+   (med intervallets yrkesgruppstabell; avsnittet väljs bort under *Rapportens innehåll*) och i rapportunderlagets
+   grupp **Per BAS-intervall**. Avsnittet
    **Rapportunderlag** har de färdiga avsnitten att klistra in. Överst i rapportunderlaget finns en förteckning över blocken och knappen **Kopiera alla avsnitt**, som
    lägger alla avsnitt i en enda kopiering. Varje avsnitt, varje yrkesgrupp med skillnad över 5 % och varje kandidatpar (där båda grupperna är stora nog att redovisas) har en
    knapp **Kopiera**: faktastycket och tabellen hamnar på urklipp och tar mallens format när
@@ -418,7 +425,9 @@ ni ordna om och ta bort tabellerna.
   är flaggade båda åren, nya och inte längre flaggade, och vilka av förra årets öppna punkter som är klara. En fil
   sparad med en äldre version saknar raderna per BAS-intervall; panelen säger det, och resten av jämförelsen fungerar.
   Samma jämförelse följer med som ett avsnitt i Word-utkastet och PDF-rapporten, som ett block i rapportunderlaget
-  och som ett diagram där varje yrkesgrupp visas som ett streck (förra året) och en punkt (i år).
+  och som ett diagram där varje yrkesgrupp visas som ett streck (förra året) och en punkt (i år). Tabellen och hanteln
+  per BAS-intervall följer med på samma sätt: tabellen i rapportens avsnitt och i rapportunderlagets block, hanteln
+  som bild i Word-utkastet, PDF-rapporten och ZIP-filen.
 - **"Rensa all data"** (under **Inställningar**, rubriken *Rensa*) när du är klar — eller stäng bara fliken; inget ligger kvar.
 - Arkivera de färdiga dokumenten (Word/PDF/Excel) enligt era informationshanterings-
   rutiner. Glöm inte att planera in nästa års lönekartläggning.

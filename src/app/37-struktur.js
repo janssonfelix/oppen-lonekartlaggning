@@ -122,12 +122,40 @@ function renderStructure() {
 function renderStrukturUtkast() {
     const nb = document.getElementById('struktur-narrative');
     if (!nb) return;
+    _stSynkaUtkastValjare();
     const d = getData();
     if (!d.length) { /** @type {HTMLInputElement} */ (nb).value = ''; return; }
     if (nb.dataset.dirty) return;
     const k = kTroskel();
     const { konOk, rep, totAndel, dist, q, medGap, meanGap } = _stMatt(d, k);
-    /** @type {HTMLInputElement} */ (nb).value = _buildNarrative(d, { rep, dist, q, medGap, meanGap, totAndel, konOk });
+    const perBas = state.utkastPerBas !== false ? _stUtkastPerBas(k) : null;
+    /** @type {HTMLInputElement} */ (nb).value = _buildNarrative(d, { rep, dist, q, medGap, meanGap, totAndel, konOk, perBas });
+}
+
+/** Väljaren ovanför utkastet visar valet i state (Hela organisationen, eller med ett stycke per BAS-intervall). */
+function _stSynkaUtkastValjare() {
+    const sel = /** @type {HTMLSelectElement|null} */ (document.getElementById('struktur-narrative-omfang'));
+    if (sel) sel.value = state.utkastPerBas !== false ? 'perBas' : 'hela';
+}
+
+/**
+ * Utkastets del per BAS-intervall: ett stycke per intervall som når k, i samma text som BAS-dossiern
+ * (basintervallUtkastText i 81-basdossier.js) och med raden att fylla i sist. Utkastet ritas i exportläget
+ * (Rapporttext), så intervall och yrkesgrupper under k står bara med namn.
+ * @param {number} k
+ */
+function _stUtkastPerBas(k) {
+    if (typeof basdossierKandidater !== 'function') return null;
+    const kand = basdossierKandidater();
+    if (!kand.length) return null;
+    const lines = ['PER BAS-INTERVALL', `Ett stycke per BAS-intervall med minst ${k} personer: antal och könsfördelning, ${state.policy.length ? 'läget mot ställningstagandet, ' : ''}yrkesgrupperna, likvärdigt arbete, ålder och förra året när ett bokslut är inläst. Yrkesgrupper med färre än ${k} personer står bara med namn.`];
+    const under = basdossierUtelamnade();
+    if (under.length) lines.push(`BAS ${under.join(', ')} redovisas inte (färre än ${k} personer).`);
+    for (const { bas } of kand) {
+        const d = buildBasdossier(bas);
+        if (d) lines.push('', basintervallUtkastText(d));
+    }
+    return lines.join('\n');
 }
 
 /** Var i lönefördelningen gapet är störst: samma regel som tolkningen under tabellen (mer än en procentenhet). */
@@ -383,6 +411,8 @@ function _buildNarrative(d, ctx) {
     else ctx.q.forEach(x => lines.push(`  • Q${x.q}: ${svPct(x.andelKv, 0)} kvinnor (n=${x.n}).`));
     lines.push('');
     lines.push('Detta utkast är ett analysunderlag och ersätter inte den slutliga lönekartläggningsrapporten, som arbetsgivaren författar och som ska dokumentera sakliga skäl, åtgärder, kostnader och tidsplan.');
+    // Delen per BAS-intervall står efter helheten (väljaren ovanför utkastet).
+    if (ctx.perBas) { lines.push(''); lines.push(ctx.perBas); }
     // Texten kopieras och sprids för sig: under standardvärdet bär den meningen om sänkt tröskel.
     const sankt = _kSanktNot();
     if (sankt) { lines.push(''); lines.push(sankt); }
@@ -453,6 +483,14 @@ function _exportEuReportExport() {
     document.getElementById('struktur-narrative-regen')?.addEventListener('click', () => {
         const nb = document.getElementById('struktur-narrative');
         if (nb) { delete nb.dataset.dirty; medExportLage(renderStrukturUtkast); }
+    });
+    // Väljaren ovanför utkastet: valet ligger i state (inte i konfigurationsfilen). Ett redigerat utkast skrivs inte
+    // över; Återskapa ritar om det med valet.
+    document.getElementById('struktur-narrative-omfang')?.addEventListener('change', e => {
+        state.utkastPerBas = /** @type {HTMLSelectElement} */ (e.target).value !== 'hela';
+        const nb = document.getElementById('struktur-narrative');
+        if (nb && nb.dataset.dirty) { if (typeof announceToScreenReader === 'function') announceToScreenReader('Utkastet är redigerat och skrivs inte över. Återskapa ritar om det med valet.'); return; }
+        medExportLage(renderStrukturUtkast);
     });
     document.getElementById('struktur-narrative-copy')?.addEventListener('click', () => {
         const nb = document.getElementById('struktur-narrative');

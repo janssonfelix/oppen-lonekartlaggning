@@ -8,6 +8,22 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ### Gränssnitt
 
+- **Rapportutkastet per BAS-intervall.** Auto-rapportutkastet i Rapporttext har efter helheten delen *PER
+  BAS-INTERVALL*: ett stycke per intervall med minst k personer, i samma text som BAS-dossierns kopia (antal och
+  könsfördelning, läget mot ställningstagandet, yrkesgrupperna med Lika arbetes status, kandidatpar och *Lägre krav,
+  högre lön*, åldersgrupperna och förra året när ett bokslut är inläst), och raden *[HR fyller i] Bedömning: …* sist.
+  Väljaren *Omfång* ovanför textrutan byter mellan *Hela organisationen* och *Hela organisationen + per
+  BAS-intervall* (standard); valet ligger i minnet, inte i konfigurationsfilen, och *Återskapa* följer det. Word-utkastet
+  och PDF-rapporten har avsnittet *Lönekartläggning per BAS-intervall* efter likvärdigt arbete: en underrubrik per
+  intervall, samma stycken och intervallets yrkesgruppstabell (AID, yrke, kvinnor / män, median per kön, kvinnors
+  median i procent av mäns, status), bara med yrken där båda könen når k. Avsnittet är valbart under *Rapportens
+  innehåll* och förvalt; det ingår i *Facklig dialog*, inte i *Ledningsbrief*. Ett färdigt urval sparas nu med sitt
+  id (`fast` i konfigurationsfilens `rapportUrval`) och följer urvalets gällande lista, så att ett nytt avsnitt kommer
+  med; en ändring i listan gör det till ett eget urval. En äldre fil med exakt de tidigare listorna för *Facklig
+  dialog* eller alla tolv avsnitt läses som det färdiga urvalet, med det nya avsnittet. Ett sparat eget urval från
+  före avsnittet får det på sin plats, utan kryss. Rapportunderlaget har gruppen *Per BAS-intervall* med ett kopierbart
+  block per intervall. Allt byggs i exportläget: intervall och yrkesgrupper under minsta gruppstorlek står bara med
+  namn. Dossierns text är oförändrad; den, utkastet, rapporten och rapportunderlaget har en gemensam textbyggare.
 - **BAS-dossier.** En dialog som samlar ett BAS-intervall på en sida, i rapportens ordning: nyckeltal (antal, kvinnor
   och män, median, P10–P90) och läget mot ställningstagandets rad för intervallet; yrkesgrupperna med antal,
   medianer per kön, kvinnors median i procent av mäns och Lika arbetes status för hela yrket (med en not när yrket
@@ -22,7 +38,9 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   med minst k personer: antal (kvinnor, män), P10, median och P90, och kvinnors och mäns median när båda könen når k.
   *Jämförelse med förra året* i Spara och jämför år visar tabellen *Löneutveckling per BAS-intervall* (antal, P10,
   median och P90 förra året och i år, förändringen i kronor och procent) och en hantel för medianen per intervall.
-  Samma tabell står i rapportens avsnitt *Jämförelse med förra året* (Word och PDF). Ett bokslut från en äldre
+  Samma tabell står i rapportens avsnitt *Jämförelse med förra året* (Word och PDF), med hanteln som bild under
+  tabellen, och i rapportunderlagets block *Jämförelse med förra året* (samma kolumner som panelen); hanteln följer
+  också med i ZIP-filen, också när fliken inte har öppnats. Ett bokslut från en äldre
   version saknar raderna; panelen säger det, och resten av jämförelsen är som förut. Har förra årets fil sparats med
   lägre minsta gruppstorlek än årets läses den med årets: intervall, yrkesgrupper och kön under gränsen visas inte.
 - **Antal i grupptabellerna.** Varje tabell som visar ett lönemått för en grupp visar nu också gruppens antal, och

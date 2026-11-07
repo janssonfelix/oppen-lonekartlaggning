@@ -598,6 +598,17 @@ console.log('\n── Exportera: checklistan först, robustheten, exporterna som
     await page.evaluate(() => document.querySelector('.nav-item[data-tab="rapporttext"]').click());
     await page.waitForTimeout(1200);
     ok(await page.evaluate(() => document.getElementById('avsnitt-rt-utkast').open && /LÖNEKARTLÄGGNING/.test(document.getElementById('struktur-narrative').value)), 'Rapporttext: auto-utkastet är utfällt och ifyllt');
+    // Väljaren Omfång: Hela organisationen tar bort delen per BAS-intervall, och Återskapa följer valet.
+    const perBas = () => page.evaluate(() => /\nPER BAS-INTERVALL\n/.test(document.getElementById('struktur-narrative').value));
+    const medDel = await perBas();
+    await page.selectOption('#struktur-narrative-omfang', 'hela');
+    const utanDel = await perBas();
+    await page.click('#struktur-narrative-regen');
+    const utanEfterAterskapa = await perBas();
+    await page.selectOption('#struktur-narrative-omfang', 'perBas');
+    const tillbaka = await perBas();
+    await page.click('#struktur-narrative-regen');
+    ok(medDel && !utanDel && !utanEfterAterskapa && tillbaka && await perBas(), `Rapporttext: Omfång tar bort och lägger tillbaka PER BAS-INTERVALL, och Återskapa följer valet (${[medDel, utanDel, utanEfterAterskapa, tillbaka].join(', ')})`);
     await page.click('#avsnitt-dk-rapportunderlag > summary');
     await page.waitForTimeout(300);
     ok(await page.evaluate(() => { const k = document.querySelector('#rapportunderlag-innehall [data-rapport-kopiera]'); return !!k && k.offsetParent !== null; }), 'rapportunderlagets block går att nå när avsnittet fälls ut');
@@ -1402,8 +1413,8 @@ console.log('\n── Förhandsbesked och urval ──');
     await page.evaluate(() => { sattRapportUrval('hela'); renderExportBesked(); document.getElementById('avsnitt-ex-urval').open = true; });
     const fore = await page.evaluate(() => ({ word: document.getElementById('besked-word').textContent, excel: document.getElementById('besked-excel').textContent, zip: document.getElementById('besked-zip').textContent,
         rader: document.querySelectorAll('#rapport-urval .urval-rad').length, syns: document.getElementById('besked-word').offsetParent !== null }));
-    ok(fore.syns && /Hela dokumentationen · 12 avsnitt · \d+ tabeller · 10 diagram/.test(fore.word) && /Utelämnar:/.test(fore.word), `Word-raden säger vad filen innehåller och utelämnar (${fore.word.slice(0, 90)}…)`);
-    ok(/\d+ blad — Löneöversikt/.test(fore.excel) && /Word-utkastet, Excel-filen \(\d+ blad\) och diagrammen i alla flikar/.test(fore.zip) && fore.rader === 12, 'Excel-raden listar bladen, ZIP-raden säger vad filen bär, och urvalet har tolv avsnitt');
+    ok(fore.syns && /Hela dokumentationen · 13 avsnitt · \d+ tabeller · 10 diagram/.test(fore.word) && /Utelämnar:/.test(fore.word), `Word-raden säger vad filen innehåller och utelämnar (${fore.word.slice(0, 90)}…)`);
+    ok(/\d+ blad — Löneöversikt/.test(fore.excel) && /Word-utkastet, Excel-filen \(\d+ blad\) och diagrammen i alla flikar/.test(fore.zip) && fore.rader === 13, 'Excel-raden listar bladen, ZIP-raden säger vad filen bär, och urvalet har tretton avsnitt');
     await page.click('[data-urval-fast="ledning"]');
     await page.waitForTimeout(300);
     ok(await page.evaluate(() => /Ledningsbrief · 4 avsnitt/.test(document.getElementById('besked-word').textContent) && document.getElementById('nyckel-ex-urval').textContent === 'Ledningsbrief'), 'ett färdigt urval ändrar beskedet och avsnittets rubrik');

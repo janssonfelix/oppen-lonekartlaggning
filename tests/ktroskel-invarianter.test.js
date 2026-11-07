@@ -109,7 +109,9 @@ describe('I1: Löneöversyn visar ingen kostnad för grupper under tröskeln', (
 // rapportunderlagets block (HTML och text), Excel (alla flikar, protokollet, EU-lönerapporten,
 // handlingsplanen, jämförelseexporten, Löneöversyn, Löneöversikten, prioriteringslistan, ZIP-filens
 // rapport.xlsx), Att göra-CSV, varje tabell med CSV-knapp, diagramdata för varje ritat diagram,
-// gruppdossiern för varje valbar grupp, BAS-dossiern för varje valbart intervall och Att göra-punkterna.
+// gruppdossiern för varje valbar grupp, BAS-dossiern för varje valbart intervall, Rapporttextens utkast (med delen
+// per BAS-intervall), rapportens avsnitt Lönekartläggning per BAS-intervall, med förra årets bokslut inläst blocket
+// och avsnittet om förra året (tabellen per BAS-intervall) och BAS-hantelns diagramdata, och Att göra-punkterna.
 //
 // Vad som INTE prövas, och varför:
 //  - #view-likvardighet och dess egen export: dokumenterat undantag (dataskydd.md § 3, undantag 1).
@@ -141,6 +143,14 @@ describe.each([[10, []], [25, SENT_MELLAN]])('I4: invarianten över flikar och e
         expect(utdata.find(([n]) => n === 'robusthetspanelen')[1]).toMatch(/Kvinnodominerat yrke|Inga kandidatpar/);
         expect(namn.filter(n => n.startsWith('gruppdossier')).length).toBeGreaterThan(5);
         expect(namn.filter(n => n.startsWith('basdossier')).length).toBeGreaterThan(3);
+        // Rapportutkastet och rapportens avsnitt per BAS-intervall, och rapportunderlagets block per intervall.
+        for (const krav of ['rapportutkastet', 'rapportmodell: basintervall']) expect(namn, krav).toContain(krav);
+        expect(utdata.find(([n]) => n === 'rapportutkastet')[1]).toContain('PER BAS-INTERVALL');
+        expect(utdata.find(([n]) => n === 'rapportmodell: basintervall')[1]).toContain('BAS-intervall S1');
+        expect(namn.filter(n => n.startsWith('rapportunderlag: bas:')).length).toBeGreaterThan(3);
+        // Med förra årets bokslut: tabellen Löneutveckling per BAS-intervall och BAS-hanteln.
+        for (const krav of ['rapportunderlag: arsjamforelse (med bokslut)', 'rapportmodell: arsjamforelse (med bokslut)', 'diagramdata: chart-arsjamforelse-bas (med bokslut)']) expect(namn, krav).toContain(krav);
+        expect(utdata.find(([n]) => n === 'rapportunderlag: arsjamforelse (med bokslut)')[1]).toContain('Löneutveckling per BAS-intervall');
         // Varje fångad utdata ska ha innehåll, utan undantag: fixturen ger rader i varje tabell med CSV-knapp,
         // spår i varje ritat diagram, minst en iakttagelse och minst en Att göra-punkt. En export som inte
         // skriver något (t.ex. en CSV-knapp utan verkan) ska fälla testet, inte passera som "inget läckte".

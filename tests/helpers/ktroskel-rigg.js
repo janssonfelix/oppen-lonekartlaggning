@@ -175,6 +175,11 @@ export async function samlaUtdata(w) {
     ut.push(['skärm: alla flikar', skarmtext(w)]);
 
     lagg('Word-utkastet', w.__docDraftHtml());
+    // Rapporttextens utkast: textrutans värde (skärmtexten läser inte en textrutas värde), med delen per BAS-intervall,
+    // och rapportens avsnitt Lönekartläggning per BAS-intervall för sig (det står också i Word-utkastet och utskriften).
+    w.__renderTabContent('rapporttext');
+    lagg('rapportutkastet', d.getElementById('struktur-narrative').value);
+    lagg('rapportmodell: basintervall', w.eval("(m => rmTillHtml({ ...m, avsnitt: m.avsnitt.filter(a => a.id === 'basintervall') }))(rapportModell())"));
     for (const b of w.__rapportunderlagBlock()) lagg(`rapportunderlag: ${b.id}`, w.__ruTillWordHtml(b) + '\n' + w.__ruTillText(b));
     lagg('Att göra-punkter', w.eval('JSON.stringify(medExportLage(() => buildActionChecklist()))'));
     w.eval('window.__csv = null; window.__csvOrig = _downloadCSV; _downloadCSV = rows => { window.__csv = rows; }');
@@ -235,6 +240,19 @@ export async function samlaUtdata(w) {
     // BAS-dossiern: textkopian byggs i exportläget (basdossierText), för varje intervall som når den inställda tröskeln.
     for (const { bas } of w.eval('medExportLage(() => basdossierKandidater())')) lagg(`basdossier ${bas}`, w.eval(`basdossierText(${JSON.stringify(bas)})`));
     for (const mall of ['komplett', 'ledning', 'facklig']) lagg(`utskrift: ${mall}`, (await utskriftAv(w, mall)).innerHTML.replace(/src="data:[^"]*"/g, ''));
+    // Förra årets bokslut (årets, ett år bakåt): rapportunderlagets block om förra året med tabellen Löneutveckling per
+    // BAS-intervall, rapportens avsnitt och BAS-hantelns diagramdata. Sist, eftersom inläsningen ändrar tillståndet.
+    const cfg = JSON.parse(JSON.stringify(w.__buildConfigSnapshot()));
+    cfg.arsbokslut.ar -= 1; cfg.arsbokslut.skapat = `${cfg.arsbokslut.ar}-11-01`;
+    w.__cfg = cfg; w.eval("applyConfigSnapshot(window.__cfg); sattRapportUrval('hela')");
+    const ars = w.__rapportunderlagBlock().find(b => b.id === 'arsjamforelse');
+    if (!ars || !ars.tabeller) throw new Error('blocket om förra året saknar tabellen per BAS-intervall');
+    lagg('rapportunderlag: arsjamforelse (med bokslut)', w.__ruTillWordHtml(ars) + '\n' + w.__ruTillText(ars));
+    lagg('rapportmodell: arsjamforelse (med bokslut)', w.eval("(m => rmTillHtml({ ...m, avsnitt: m.avsnitt.filter(a => a.id === 'arsjamforelse') }))(rapportModell())"));
+    w.__renderTabContent('arbetet');
+    const hantel = d.getElementById('chart-arsjamforelse-bas');
+    if (!hantel || !hantel._figur) throw new Error('BAS-hanteln ritades inte');
+    lagg('diagramdata: chart-arsjamforelse-bas (med bokslut)', w.__chartExportRows(hantel).map(r => r.join(' | ')).join('\n'));
     return ut;
 }
 

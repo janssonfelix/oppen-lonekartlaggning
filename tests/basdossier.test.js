@@ -241,6 +241,27 @@ describe('BAS-dossiern: förra året och textversionen', () => {
         expect(texter).toEqual([text]);
     });
 
+    it('textbyggaren är delad: dossierns text, utkastets stycke och rapportens avsnitt byggs ur samma stycken', () => {
+        const { w } = medBokslut(ab => ab.basIntervall.forEach(r => { r.med -= 800; }));
+        const stycken = w.eval("medExportLage(() => basdossierStycken(buildBasdossier('C')))");
+        expect(stycken.map(s => s.rubrik)).toEqual(['Nyckeltal', 'Yrkesgrupperna i intervallet', 'Likvärdigt arbete i intervallet', 'Ålder', 'Förra året']);
+        expect(stycken.every(s => s.rader.length > 0 && s.rader.every(r => typeof r === 'string' && r.length > 0))).toBe(true);
+        // Dossierns text är rubriken och styckena, åtskilda av en tom rad.
+        const text = w.eval("basdossierText('C')");
+        expect(text).toBe(['BAS-intervall C', '', ...stycken.flatMap((s, i) => [...(i ? [''] : []), s.rubrik, ...s.rader])].join('\n'));
+        // Utkastets stycke för intervallet: samma rader, och raden att fylla i sist.
+        const utkast = w.eval("medExportLage(() => basintervallUtkastText(buildBasdossier('C')))");
+        expect(utkast.startsWith(text)).toBe(true);
+        expect(utkast.split('\n').pop()).toMatch(/^\[HR fyller i\] Bedömning: /);
+        // Utan bokslut har dossiern raden om hur man får ett; utkastet och rapporten hoppar över punkten.
+        const u = demo();
+        expect(u.eval("medExportLage(() => basdossierStycken(buildBasdossier('C')))").map(s => s.rubrik)).toContain('Förra året');
+        expect(u.eval("medExportLage(() => basdossierStycken(buildBasdossier('C'), { forraBaraMedBokslut: true }))").map(s => s.rubrik)).not.toContain('Förra året');
+        // Ett äldre bokslut utan fältet: raden om det står kvar också i utkastet.
+        const { w: w2 } = medBokslut(ab => { delete ab.basIntervall; });
+        expect(w2.eval("medExportLage(() => basdossierStycken(buildBasdossier('C'), { forraBaraMedBokslut: true }))").map(s => s.rubrik)).toContain('Förra året');
+    });
+
     it('texten innehåller inga lönemått för en grupp under k; skärmen visar gruppen, som övriga flikar', () => {
         // Ett yrke med sex personer och en unik lön i ett stort BAS-intervall: på skärmen syns det, i texten inte.
         const w = fonster(null);

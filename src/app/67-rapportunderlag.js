@@ -32,7 +32,7 @@ function _rapportHpRader(seedRows) {
     return seedRows.map(r => ({ atgard: r[0], grupp: r[1], antal: r[8] == null ? null : r[8], underlag: _handlingsplanUnderlag(r[2]), kostnad: r[4] }));
 }
 
-/** Alla textblock i den ordning de visas: avsnitt, yrkesgrupper, kandidatpar. */
+/** Alla textblock: avsnitt, yrkesgrupper, kandidatpar, förra året, per BAS-intervall och egna tabeller (visas i grupper). */
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
 function rapportunderlagBlock(...a) { return medExportLage(() => _rapportunderlagBlockExport.apply(null, /** @type {any} */ (a))); }
 function _rapportunderlagBlockExport() {
@@ -101,6 +101,14 @@ function _rapportunderlagBlockExport() {
         const jf = arsjamforelse();
         if (jf) block.push(_ruArsjamforelseBlock(jf.j, { ...opt, forraAr: jf.forra.ar, nuAr: jf.nu.ar }));
     }
+    // Per BAS-intervall: ett block per intervall som når k, med BAS-dossierns stycken (samma text som dossierns kopia,
+    // rapportutkastet och rapportens avsnitt) och intervallets yrkesgruppstabell.
+    if (typeof basdossierKandidater === 'function' && typeof _ruBasintervallBlock === 'function') {
+        for (const { bas } of basdossierKandidater()) {
+            const bd = buildBasdossier(bas);
+            if (bd) block.push(_ruBasintervallBlock({ bas, stycken: basdossierStycken(bd, { forraBaraMedBokslut: true }), yrken: basdossierYrkesrader(bd), bedomning: BD_BEDOMNING }, opt));
+        }
+    }
     // Egna tabeller (ADR-52): ett block per tabell, ur samma recept som Word-utkastet, PDF-rapporten och Excel.
     (state.rapportTabeller || []).forEach((r, i) => {
         if (typeof _trTabeller !== 'function' || typeof _ruEgenTabellBlock !== 'function') return;
@@ -135,6 +143,7 @@ function renderRapportunderlag() {
     const yrken = block.filter(b => b.id.startsWith('yrke:'));
     const parBl = block.filter(b => b.id.startsWith('par:'));
     const egna = block.filter(b => b.id.startsWith('egen:'));
+    const basBl = block.filter(b => b.id.startsWith('bas:'));
     // Diagrammet över kandidatpar finns bara när det finns par att visa.
     const diagram = _rapportDiagramLista(_rapportParLage.harPar, _rapportParLage.exkluderade).map(g => `
         <article class="ru-block ru-diagram">
@@ -148,10 +157,10 @@ function renderRapportunderlag() {
     const toc = (rubrik, lista) => lista.length
         ? `<li><strong>${esc(rubrik)}</strong>: ${lista.map(b => `<a href="#" data-hoppa-till="${esc(_ruBlockId(b.id))}">${esc(b.rubrik)}</a>`).join(' · ')}</li>` : '';
     const forteckning = `<nav class="ru-toc" aria-label="Innehåll i rapportunderlaget"><ul>`
-        + toc('Avsnitt', avsnitt) + toc('Yrkesgrupper', yrken) + toc('Kandidatpar', parBl) + toc('Egna tabeller', egna) + `</ul>`
+        + toc('Avsnitt', avsnitt) + toc('Per BAS-intervall', basBl) + toc('Yrkesgrupper', yrken) + toc('Kandidatpar', parBl) + toc('Egna tabeller', egna) + `</ul>`
         + `<div class="ru-atgard"><button type="button" class="btn btn-secondary btn-sm" id="btn-ru-kopiera-avsnitt">Kopiera alla avsnitt</button>`
         + `<span class="ru-kvitto" role="status"></span></div><div id="ru-alla-avsnitt" class="ru-alla-avsnitt" hidden></div></nav>`;
-    host.innerHTML = forteckning + grupp('Avsnitt', avsnitt) + grupp('Yrkesgrupper i Lika arbete', yrken)
+    host.innerHTML = forteckning + grupp('Avsnitt', avsnitt) + grupp('Per BAS-intervall', basBl) + grupp('Yrkesgrupper i Lika arbete', yrken)
         + grupp('Kandidatpar i Likvärdigt arbete', parBl) + grupp('Egna tabeller från Tabeller och egna vyer', egna)
         + `<h3 class="ru-grupprubrik">Diagram</h3>${diagram}`;
 }

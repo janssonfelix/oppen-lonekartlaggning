@@ -386,10 +386,11 @@ const _esc = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').r
 export function tillWordHtml(b) {
     let h = `<h3>${_esc(b.rubrik)}</h3>`;
     for (const s of b.stycken) h += `<p>${_esc(s)}</p>`;
-    if (b.tabell) {
-        h += '<table border="1" cellpadding="4"><thead><tr>' + b.tabell.rubriker.map(r => `<th>${_esc(r)}</th>`).join('') + '</tr></thead><tbody>'
-            + b.tabell.rader.map(r => '<tr>' + r.map(c => `<td>${_esc(c)}</td>`).join('') + '</tr>').join('') + '</tbody></table>';
-    }
+    const tabell = t => '<table border="1" cellpadding="4"><thead><tr>' + t.rubriker.map(r => `<th>${_esc(r)}</th>`).join('') + '</tr></thead><tbody>'
+        + t.rader.map(r => '<tr>' + r.map(c => `<td>${_esc(c)}</td>`).join('') + '</tr>').join('') + '</tbody></table>';
+    if (b.tabell) h += tabell(b.tabell);
+    // Fler tabeller med egen rubrik (blocket om förra året: Löneutveckling per BAS-intervall).
+    for (const t of b.tabeller || []) h += `<p><strong>${_esc(t.rubrik)}</strong></p>` + tabell(t);
     if (b.provat) h += '<p><strong>Redan prövat</strong></p><ul>' + b.provat.map(p => `<li>${_esc(p)}</li>`).join('') + '</ul>';
     if (b.fragor) h += '<p><strong>Frågor till verksamheten</strong></p><ol>' + b.fragor.map(f => `<li>${_esc(f)}</li>`).join('') + '</ol>';
     return h;
@@ -430,7 +431,41 @@ export function arsjamforelseBlock(j, { id = 'arsjamforelse', forraAr, nuAr, urv
         `Att göra: ${forraAr} var ${p.klaraForra} av ${p.totaltForra} punkter avbockade, ${nuAr} ${p.klaraNu} av ${p.totaltNu}.`
             + (p.kvarFranForra.length ? ` Av ${forraAr} års ${p.kvarFranForra.length} öppna punkter är ${p.kvarFranForra.filter(q => q.klarNu).length} klara i år.` : '')];
     return { id, rubrik: 'Jämförelse med förra året', stycken: [...fore, ...st, ...efter], provat: null, fragor: null,
-        tabell: { rubriker: ['Mått', String(forraAr), String(nuAr), 'Skillnad'], rader: j.nyckeltal.map(r => [r.etikett, skriv(r.forra, r.typ), skriv(r.nu, r.typ), diff(r.diff, r.typ)]) } };
+        tabell: { rubriker: ['Mått', String(forraAr), String(nuAr), 'Skillnad'], rader: j.nyckeltal.map(r => [r.etikett, skriv(r.forra, r.typ), skriv(r.nu, r.typ), diff(r.diff, r.typ)]) },
+        ...(Array.isArray(j.basIntervall) && j.basIntervall.length ? { tabeller: [_basUtvecklingTabell(j.basIntervall, forraAr, nuAr)] } : {}) };
+}
+
+/**
+ * Tabellen Löneutveckling per BAS-intervall i blocket om förra året: samma kolumner som panelen i Spara och jämför år
+ * (antal, och P10, median och P90 förra året, i år och förändringen i kronor och procent). Raderna kommer ur
+ * jämförelsen av två bokslut, där tröskeln redan är tillämpad (src/lib/arsbokslut.js).
+ * @param {any[]} rader jamforArsbokslut(...).basIntervall
+ * @param {number} forraAr
+ * @param {number} nuAr
+ */
+function _basUtvecklingTabell(rader, forraAr, nuAr) {
+    const tkn = v => (v > 0 ? '+' : v < 0 ? '−' : '±');
+    const forandring = f => (!f || f.diff == null ? '–' : `${tkn(f.diff)}${_kr(Math.abs(f.diff))}${f.pct == null ? '' : ` (${tkn(f.pct)}${_pct(Math.abs(f.pct), 1)})`}`);
+    const matt = [['p10', 'P10'], ['med', 'Median'], ['p90', 'P90']];
+    return { rubrik: 'Löneutveckling per BAS-intervall',
+        rubriker: ['BAS-intervall', `Antal ${forraAr}`, `Antal ${nuAr}`, ...matt.flatMap(([, e]) => [`${e} ${forraAr}`, `${e} ${nuAr}`, `${e} förändring`])],
+        rader: rader.map(r => [`BAS ${r.bas}`, formatTal(r.n.forra), formatTal(r.n.nu), ...matt.flatMap(([m]) => [_kr(r[m].forra), _kr(r[m].nu), forandring(r[m])])]) };
+}
+
+/**
+ * Ett block per BAS-intervall (gruppen Per BAS-intervall): BAS-dossierns stycken i rapportens ordning, med punktens
+ * rubrik som eget stycke, raden att fylla i för bedömningen och intervallets yrkesgruppstabell. Texten byggs av
+ * dossiern i verktyget (basdossierStycken, i exportläget), så att blocket, dossierns kopia och rapporten har samma
+ * text; här formateras bara tabellens tal.
+ * @param {{bas: string, stycken: {rubrik: string, rader: string[]}[], yrken: {aid: string, yrke: string, nKv: number, nMa: number, medKv: number, medMa: number, kvotPct: number, status: string}[], bedomning: string}} b
+ * @param {{id?: string, urval?: string, demo?: boolean, troskelNot?: string}} val
+ */
+export function basintervallBlock(b, { id = `bas:${b.bas}`, urval, demo, troskelNot } = {}) {
+    const { fore, efter } = _inled({ demo, urval, troskelNot });
+    const st = b.stycken.flatMap(x => [x.rubrik, ...x.rader]);
+    return { id, rubrik: `BAS-intervall ${b.bas}`, stycken: [...fore, ...st, `[HR fyller i] ${b.bedomning}`, ...efter], provat: null, fragor: null,
+        tabell: b.yrken.length ? { rubriker: ['AID', 'Yrke', 'Kvinnor / män', 'Median kvinnor', 'Median män', 'Kvinnors median i % av mäns', 'Status'],
+            rader: b.yrken.map(y => [String(y.aid), String(y.yrke), `${formatTal(y.nKv)} / ${formatTal(y.nMa)}`, _kr(y.medKv), _kr(y.medMa), _pct(y.kvotPct, 1), String(y.status)]) } : null };
 }
 
 /**
@@ -461,6 +496,7 @@ export function referenserBlock(overblick, { id = 'referenser', urval, demo, tro
 export function tillText(b) {
     const delar = [b.rubrik, ...b.stycken];
     if (b.tabell) delar.push([b.tabell.rubriker, ...b.tabell.rader].map(r => r.join('\t')).join('\n'));
+    for (const t of b.tabeller || []) delar.push(`${t.rubrik}\n` + [t.rubriker, ...t.rader].map(r => r.join('\t')).join('\n'));
     if (b.provat) delar.push('Redan prövat:\n' + b.provat.map(p => `- ${p}`).join('\n'));
     if (b.fragor) delar.push('Frågor till verksamheten:\n' + b.fragor.map((f, i) => `${i + 1}. ${f}`).join('\n'));
     return delar.join('\n\n');

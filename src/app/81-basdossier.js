@@ -255,52 +255,102 @@ function _bdForraText(f) {
 }
 
 /**
- * Textversionen i rapportens form: rubriken "BAS-intervall X" och ett stycke per punkt. Byggs ur en modell som
- * byggts i exportläget (basdossierText), så grupper under k står bara med namn bland de utelämnade.
+ * Textens stycken för ett BAS-intervall, i rapportens ordning: en rubrik och raderna under den per punkt. En enda
+ * textbyggare för dossierns textkopia (basdossierAsText), rapportutkastet i Rapporttext (basintervallUtkastText),
+ * avsnittet Lönekartläggning per BAS-intervall i Word och PDF (58-rapportmodell.js) och rapportunderlagets block
+ * per intervall (67-rapportunderlag.js), så att de inte kan säga olika saker. Modellen ska vara byggd i exportläget:
+ * grupper under k står då bara med namn bland de utelämnade.
+ * @param {any} d modellen ur buildBasdossier
+ * @param {{forraBaraMedBokslut?: boolean}} [val] forraBaraMedBokslut: punkten Förra året bara när ett bokslut är
+ *   inläst (rapporten); dossiern säger annars hur man får ett
+ * @returns {{rubrik: string, rader: string[]}[]}
  */
-function basdossierAsText(d) {
-    const L = [`BAS-intervall ${d.bas}`, ''];
+function basdossierStycken(d, { forraBaraMedBokslut = false } = {}) {
     const kr = _bdKr;
-    L.push('Nyckeltal');
-    L.push(`${svTal(d.n, 0)} personer, ${d.nKv} kvinnor och ${d.nMa} män (${svPct(d.andelKv, 0)} kvinnor). Medianlön ${kr(d.median)}, P10–P90 ${kr(d.p10)}–${kr(d.p90)}.`
-        + (d.konOk ? ` Kvinnors median ${kr(d.medKv)} och mäns ${kr(d.medMa)}: kvinnors median är ${svPct(d.kvotPct, 1)} av mäns.` : ` ${_konUtelamnatNot()}`));
-    if (d.referens) L.push(`Mot ${d.referens.namn}: P10 ${kr(d.p10)} mot ${kr(d.referens.p10)} (${_bdPctTecken(d.referens.diffPct.p10)}), median ${kr(d.median)} mot ${kr(d.referens.med)} (${_bdPctTecken(d.referens.diffPct.med)}), P90 ${kr(d.p90)} mot ${kr(d.referens.p90)} (${_bdPctTecken(d.referens.diffPct.p90)}).`);
-    L.push('');
-    L.push('Yrkesgrupperna i intervallet');
-    if (!d.yrken.length) L.push('Ingen yrkesgrupp i intervallet har både kvinnor och män att jämföra.');
+    const ut = [];
+    const nyckeltal = [`${svTal(d.n, 0)} personer, ${d.nKv} kvinnor och ${d.nMa} män (${svPct(d.andelKv, 0)} kvinnor). Medianlön ${kr(d.median)}, P10–P90 ${kr(d.p10)}–${kr(d.p90)}.`
+        + (d.konOk ? ` Kvinnors median ${kr(d.medKv)} och mäns ${kr(d.medMa)}: kvinnors median är ${svPct(d.kvotPct, 1)} av mäns.` : ` ${_konUtelamnatNot()}`)];
+    if (d.referens) nyckeltal.push(`Mot ${d.referens.namn}: P10 ${kr(d.p10)} mot ${kr(d.referens.p10)} (${_bdPctTecken(d.referens.diffPct.p10)}), median ${kr(d.median)} mot ${kr(d.referens.med)} (${_bdPctTecken(d.referens.diffPct.med)}), P90 ${kr(d.p90)} mot ${kr(d.referens.p90)} (${_bdPctTecken(d.referens.diffPct.p90)}).`);
+    ut.push({ rubrik: 'Nyckeltal', rader: nyckeltal });
+
+    const yrken = [];
+    if (!d.yrken.length) yrken.push('Ingen yrkesgrupp i intervallet har både kvinnor och män att jämföra.');
     for (const y of d.yrken) {
         const antal = `${y.tot} personer (${y.nKv} kvinnor, ${y.nMa} män)`;
-        L.push((y.samlad
+        yrken.push((y.samlad
             ? `- ${y.yrke}: ${antal}. Gruppens median ${kr(y.medTot)}; könsuppdelningen är för liten för en jämförelse.${y.ocksaI.length && y.status !== 'liten' ? ` ${BD_STATUS_TEXT[y.status]}.` : ''}`
             : `- ${y.yrke}: ${antal}. Kvinnor ${kr(y.medKv)}, män ${kr(y.medMa)}; kvinnors median ${svPct(y.kvotPct, 1)} av mäns. ${BD_STATUS_TEXT[y.status]}.`)
             + (y.ocksaI.length ? ` ${_bdHelaYrketNot(y)}.` : ''));
     }
-    if (d.yrkenUtelamnade.length) L.push(`Redovisas inte (färre än ${d.k} personer): ${d.yrkenUtelamnade.join(', ')}.`);
-    if (d.ejJamforbara.length) L.push(`Inte jämförbara (ett kön har färre än två personer): ${d.ejJamforbara.join(', ')}.`);
-    L.push('');
-    L.push('Likvärdigt arbete i intervallet');
+    if (d.yrkenUtelamnade.length) yrken.push(`Redovisas inte (färre än ${d.k} personer): ${d.yrkenUtelamnade.join(', ')}.`);
+    if (d.ejJamforbara.length) yrken.push(`Inte jämförbara (ett kön har färre än två personer): ${d.ejJamforbara.join(', ')}.`);
+    ut.push({ rubrik: 'Yrkesgrupperna i intervallet', rader: yrken });
+
+    const likvardigt = [];
     const par = p => `- ${gruppNamn({ aid: p.kvAid, yrke: p.kvLabel })} (BAS ${p.kvBas}) mot ${gruppNamn({ aid: p.maAid, yrke: p.maLabel })} (BAS ${p.maBas}): ${kr(p.kvMedian)} mot ${kr(p.maMedian)}, skillnad ${kr(p.gapKr)} (${svPct(p.gapPct, 1)}).`;
-    if (d.par.kandidat.length) { L.push('Kandidatpar där det kvinnodominerade yrket ligger i intervallet:'); d.par.kandidat.forEach(p => L.push(par(p))); }
-    if (d.par.hierarkiska.length) { L.push('Lägre krav, högre lön:'); d.par.hierarkiska.forEach(p => L.push(par(p))); }
-    if (!d.par.kandidat.length && !d.par.hierarkiska.length) L.push('Inget kvinnodominerat yrke i intervallet ingår i en jämförelse av likvärdigt arbete.');
-    if (d.par.utelamnade) L.push(_parUtelamnadeNot(d.par.utelamnade));
-    L.push('');
-    L.push('Ålder');
-    for (const a of d.alder) {
+    if (d.par.kandidat.length) { likvardigt.push('Kandidatpar där det kvinnodominerade yrket ligger i intervallet:'); d.par.kandidat.forEach(p => likvardigt.push(par(p))); }
+    if (d.par.hierarkiska.length) { likvardigt.push('Lägre krav, högre lön:'); d.par.hierarkiska.forEach(p => likvardigt.push(par(p))); }
+    if (!d.par.kandidat.length && !d.par.hierarkiska.length) likvardigt.push('Inget kvinnodominerat yrke i intervallet ingår i en jämförelse av likvärdigt arbete.');
+    if (d.par.utelamnade) likvardigt.push(_parUtelamnadeNot(d.par.utelamnade));
+    ut.push({ rubrik: 'Likvärdigt arbete i intervallet', rader: likvardigt });
+
+    const alder = d.alder.map(a => {
         const kon = a.medKv != null ? `, kvinnor ${kr(a.medKv)}, män ${kr(a.medMa)}` : '';
-        L.push(`- ${a.namn}: ${a.n} personer (${a.nKv} kvinnor, ${a.nMa} män)${a.med != null ? `, median ${kr(a.med)}${kon}` : ''}.`);
-    }
-    L.push(`Ett köns median står bara där båda könen i åldersgruppen har minst ${d.k} personer.`);
-    L.push('');
-    L.push('Förra året');
+        return `- ${a.namn}: ${a.n} personer (${a.nKv} kvinnor, ${a.nMa} män)${a.med != null ? `, median ${kr(a.med)}${kon}` : ''}.`;
+    });
+    alder.push(`Ett köns median står bara där båda könen i åldersgruppen har minst ${d.k} personer.`);
+    ut.push({ rubrik: 'Ålder', rader: alder });
+
     const f = d.forra;
     if (f.lage === 'ok') {
         const r = f.rad;
-        L.push(`Jämfört med ${f.ar}: antal ${r.n.forra ?? '–'} till ${r.n.nu ?? '–'}; `
-            + [['p10', 'P10'], ['med', 'median'], ['p90', 'P90']].map(([m, e]) => `${e} ${kr(r[m].forra)} till ${kr(r[m].nu)} (${_abForandringText(r[m])})`).join('; ') + '.');
-    } else L.push(_bdForraText(f));
+        ut.push({ rubrik: 'Förra året', rader: [`Jämfört med ${f.ar}: antal ${r.n.forra ?? '–'} till ${r.n.nu ?? '–'}; `
+            + [['p10', 'P10'], ['med', 'median'], ['p90', 'P90']].map(([m, e]) => `${e} ${kr(r[m].forra)} till ${kr(r[m].nu)} (${_abForandringText(r[m])})`).join('; ') + '.'] });
+    } else if (!(forraBaraMedBokslut && f.lage === 'ingetBokslut')) ut.push({ rubrik: 'Förra året', rader: [_bdForraText(f)] });
+    return ut;
+}
+
+/** Fältet att fylla i som avslutar ett intervall i rapportutkastet, Word-utkastet och rapportunderlaget. */
+const BD_BEDOMNING = 'Bedömning: har skillnaderna mellan kvinnor och män i intervallets yrkesgrupper sakliga skäl, och motsvarar lönen i de kvinnodominerade yrkena kraven i arbetet? Ange åtgärd där det behövs.';
+
+/** Textens rader: rubriken "BAS-intervall X" och styckena, åtskilda av en tom rad. */
+function _bdTextRader(d, val) {
+    return [`BAS-intervall ${d.bas}`, '', ...basdossierStycken(d, val).flatMap((s, i) => [...(i ? [''] : []), s.rubrik, ...s.rader])];
+}
+
+/**
+ * Textversionen i rapportens form: rubriken "BAS-intervall X" och ett stycke per punkt. Byggs ur en modell som
+ * byggts i exportläget (basdossierText), så grupper under k står bara med namn bland de utelämnade.
+ */
+function basdossierAsText(d) {
+    const L = _bdTextRader(d);
     if (_kSanktNot()) L.push('', _kSanktNot());
     return L.join('\n');
+}
+
+/**
+ * Intervallets stycke i rapportutkastet (Rapporttext): dossierns text, förra året bara när ett bokslut är inläst, och
+ * raden att fylla i sist. Meningen om sänkt tröskel står en gång, sist i utkastet. Modellen byggs i exportläget.
+ */
+function basintervallUtkastText(d) {
+    return [..._bdTextRader(d, { forraBaraMedBokslut: true }), '', `[HR fyller i] ${BD_BEDOMNING}`].join('\n');
+}
+
+/**
+ * Yrkesgruppstabellen i rapportens avsnitt och rapportunderlagets block: bara yrken där båda könen når k (de övriga
+ * står i texten, med gruppens median eller bland de utelämnade). Talen som tal; den som ritar formaterar.
+ * @param {any} d modellen ur buildBasdossier, byggd i exportläget
+ */
+function basdossierYrkesrader(d) {
+    return d.yrken.filter(y => !y.samlad).map(y => ({ aid: y.aid, yrke: String(y.yrke).replace(/^\d+\s*/, '') || String(y.yrke),
+        nKv: y.nKv, nMa: y.nMa, medKv: y.medKv, medMa: y.medMa, kvotPct: y.kvotPct, status: BD_STATUS_TEXT[y.status] }));
+}
+const BD_YRKESKOLUMNER = ['AID', 'Yrke', 'Kvinnor / män', 'Median kvinnor', 'Median män', 'Kvinnors median i % av mäns', 'Status'];
+
+/** BAS-intervallen med lönerader som inte når k: de nämns i rapporten och utkastet, utan mått (som i Lönestruktur). */
+function basdossierUtelamnade() {
+    const d = getData(), kand = new Set(basdossierKandidater().map(x => x.bas));
+    return getBasIntervals().filter(b => !kand.has(b) && d.some(r => r.bas === b && r.lon > 0));
 }
 
 /** Texten för ett BAS-intervall, byggd i exportläget (ADR-51); null när intervallet inte når den inställda tröskeln. */

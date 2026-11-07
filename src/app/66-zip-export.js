@@ -45,6 +45,11 @@ async function _exportZipExport() {
             if (!flik || ['dokumentera', 'rapporttext', 'arbetet', 'info'].includes(flik)) continue;      // som förut: inga diagram hämtas där
             try { renderTabContent(flik); } catch (e) { rapporteraFel(`ZIP: ${flik}`, e); }
         }
+        // Jämförelsen med förra året (Spara och jämför år) har sina två hantlar när ett bokslut är inläst; panelen ritas
+        // här (som rmDiagramBild gör för Word-utkastet), så att bilderna följer med också när fliken inte har öppnats.
+        if (state.forraArsbokslut) {
+            try { renderTabContent('arbetet'); } catch (e) { rapporteraFel('ZIP: arbetet', e); }
+        }
         for (const el of zipDiagram()) {
             try { const b64 = (await diagramTillBild(el, { bredd: 1920, hojd: 1080 })).split(',')[1]; zip.file(`diagram/${el.id}.png`, b64, { base64: true }); } catch (_err) { /* ett diagram som inte går att rita följer inte med */ }
         }

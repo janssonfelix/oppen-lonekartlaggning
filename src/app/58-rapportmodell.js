@@ -6,7 +6,7 @@
 // Rapportens avsnitt som data: stycken, tabeller med tal som tal, diagram och fält att fylla i. Exporterna ritas ur
 // modellen i stället för att var och en räkna och formulera själv.
 //
-// Delar: { typ: 'stycke', text, stil? } (stil: dampad | not) · { typ: 'fyllIn', text } · { typ: 'rubrik', niva, text } ·
+// Delar: { typ: 'stycke', text, stil? } (stil: dampad | not | fet) · { typ: 'fyllIn', text } · { typ: 'rubrik', niva, text } ·
 //        { typ: 'tabell', kolumner: [{ rubrik, typ }], rader: [[värde]], nyckel? } · { typ: 'diagram', id, flik, rubrik } ·
 // Kolumntyper: text, antal, ar (ålder i år), kr, krAr, pct0, pct1, pct2, tecken2 (procent med tecken), andelAvMan, direktiv, fyllIn.
 // Ett värde kan också vara { text } (färdig text, t.ex. en förklaring i stället för ett tal) eller null (streck).
@@ -51,7 +51,8 @@ function _rmNotText(html) {
     return d.body.textContent.replace(/\s+/g, ' ').trim();
 }
 
-// Diagram som följer med i rapporten: id på diagrammet, fliken som ritar det och avsnittet det hör till.
+// Diagram som följer med i rapporten: id på diagrammet, fliken som ritar det och avsnittet det hör till (och `del`,
+// när diagrammet står vid en viss tabell i avsnittet i stället för där avsnittet tar sina diagram).
 // Ett diagram som inte ritas — för att underlaget inte når tröskeln — följer inte med.
 const RM_DIAGRAM = [
     { id: 'chart-skevhet-overview', flik: 'struktur', avsnitt: 'struktur', rubrik: 'Kvinnors medianlön i procent av mäns, per BAS-intervall — samma kvot och intervall som tabellen ovan' },
@@ -74,29 +75,75 @@ const RM_DIAGRAM = [
     // Jämförelsen med förra året (ADR-54) ritas av fliken Spara och jämför år, bara när ett bokslut är inläst.
     { id: 'chart-arsjamforelse', flik: 'arbetet', avsnitt: 'arsjamforelse', rubrik: 'Kvinnors medianlön i procent av mäns per yrkesgrupp, förra året (strecket) och i år (punkten)',
       om: () => !!state.forraArsbokslut },
+    // Hanteln per BAS-intervall står under tabellen Löneutveckling per BAS-intervall (del: 'bas'), bara när förra
+    // årets bokslut har raderna per intervall (ett äldre bokslut saknar dem).
+    { id: 'chart-arsjamforelse-bas', flik: 'arbetet', avsnitt: 'arsjamforelse', del: 'bas', rubrik: 'Medianlön per BAS-intervall, förra året (strecket) och i år (punkten)',
+      om: () => !!(state.forraArsbokslut && Array.isArray(state.forraArsbokslut.basIntervall)) },
 ];
 
 // ---- Urval: vilka avsnitt som följer med, och i vilken ordning ----
 // Urvalet ligger i minnet (state.rapportUrval) och följer med i konfigurationsfilen. null = hela dokumentationen.
-const RM_AVSNITT = ['sammanfattning', 'regler', 'lika', 'likvardigt', 'struktur', 'referenser', 'perbas', 'atgarder', 'samverkan', 'beslut', 'regression', 'metod'];
+const RM_AVSNITT = ['sammanfattning', 'regler', 'lika', 'likvardigt', 'basintervall', 'struktur', 'referenser', 'perbas', 'atgarder', 'samverkan', 'beslut', 'regression', 'metod'];
 const RM_URVAL = Object.freeze({
     hela: { namn: 'Hela dokumentationen', med: RM_AVSNITT },
     ledning: { namn: 'Ledningsbrief', med: ['sammanfattning', 'lika', 'likvardigt', 'atgarder'] },
-    facklig: { namn: 'Facklig dialog', med: ['sammanfattning', 'regler', 'lika', 'likvardigt', 'struktur', 'referenser', 'perbas', 'samverkan', 'regression', 'metod'] },
+    facklig: { namn: 'Facklig dialog', med: ['sammanfattning', 'regler', 'lika', 'likvardigt', 'basintervall', 'struktur', 'referenser', 'perbas', 'samverkan', 'regression', 'metod'] },
 });
-/** Det gällande urvalet: `ordning` är alla avsnitt i vald ordning, `med` de som följer med, `namn` vad urvalet heter. */
+/**
+ * Färdiga urval som de såg ut i äldre versioner, för filer som sparades innan urvalet bar sitt id (`fast`). En fil vars
+ * ordning och lista är exakt en av dessa läses som det färdiga urvalet, så att avsnitt som tillkommit följer med.
+ * Läggs ett avsnitt till i RM_AVSNITT eller ett färdigt urval ändras, läggs de förra listorna till här.
+ */
+const RM_URVAL_TIDIGARE = Object.freeze([
+    { fast: 'hela', ordning: ['sammanfattning', 'regler', 'lika', 'likvardigt', 'struktur', 'referenser', 'perbas', 'atgarder', 'samverkan', 'beslut', 'regression', 'metod'],
+      med: ['sammanfattning', 'regler', 'lika', 'likvardigt', 'struktur', 'referenser', 'perbas', 'atgarder', 'samverkan', 'beslut', 'regression', 'metod'] },
+    { fast: 'facklig', ordning: ['sammanfattning', 'regler', 'lika', 'likvardigt', 'struktur', 'referenser', 'perbas', 'atgarder', 'samverkan', 'beslut', 'regression', 'metod'],
+      med: ['sammanfattning', 'regler', 'lika', 'likvardigt', 'struktur', 'referenser', 'perbas', 'samverkan', 'regression', 'metod'] },
+]);
+/**
+ * Det gällande urvalet: `ordning` är alla avsnitt i vald ordning, `med` de som följer med, `namn` vad urvalet heter.
+ * Ett färdigt urval (`fast`) följer det urvalets gällande lista, så att ett nytt avsnitt kommer med; en ändring i
+ * listan tar bort `fast` (59-exportbesked.js sätter då { ordning, med }).
+ */
 function rapportUrval() {
     const u = state.rapportUrval;
-    const ordning = u && Array.isArray(u.ordning) ? [...u.ordning.filter(id => RM_AVSNITT.includes(id)), ...RM_AVSNITT.filter(id => !u.ordning.includes(id))] : [...RM_AVSNITT];
+    if (u && u.fast && RM_URVAL[u.fast]) return { ordning: [...RM_AVSNITT], med: [...RM_URVAL[u.fast].med], namn: RM_URVAL[u.fast].namn };
+    const ordning = u && Array.isArray(u.ordning) ? _rmMedNyaAvsnitt(u.ordning.filter(id => RM_AVSNITT.includes(id))) : [...RM_AVSNITT];
     const med = u && Array.isArray(u.med) ? ordning.filter(id => u.med.includes(id)) : [...ordning];
     const lika = (a, b) => a.length === b.length && a.every((x, i) => x === b[i]);
     const fast = Object.values(RM_URVAL).find(f => lika(ordning, RM_AVSNITT) && lika(med, f.med));
     return { ordning, med, namn: fast ? fast.namn : `Eget urval (${med.length} av ${ordning.length} avsnitt)` };
 }
-/** Sätter urvalet. Ett fast urval anges med sitt namn ('hela', 'ledning', 'facklig'); annars { ordning, med }. */
+/**
+ * Ett avsnitt som saknas i en sparad ordning (filen sparades före avsnittet) sätts in mellan sina grannar i
+ * standardordningen när de står intill varandra i den sparade ordningen; annars sist, som förut. Det följer inte med
+ * i ett sparat eget urval förrän det kryssas i.
+ * @param {string[]} ordning
+ */
+function _rmMedNyaAvsnitt(ordning) {
+    const ut = [...ordning];
+    RM_AVSNITT.forEach((id, i) => {
+        if (ut.includes(id)) return;
+        const fore = RM_AVSNITT.slice(0, i).reverse().find(x => ut.includes(x)), efter = RM_AVSNITT.slice(i + 1).find(x => ut.includes(x));
+        if (fore && efter && ut.indexOf(efter) === ut.indexOf(fore) + 1) ut.splice(ut.indexOf(efter), 0, id);
+        else ut.push(id);
+    });
+    return ut;
+}
+/**
+ * Sätter urvalet. Ett fast urval anges med sitt namn ('hela', 'ledning', 'facklig') och sparas med det (`fast`);
+ * annars { ordning, med, fast? }. Ett urval ur en äldre fil utan `fast` som är exakt ett tidigare färdigt urval
+ * (RM_URVAL_TIDIGARE) blir det urvalet. Ett okänt `fast` hoppas över.
+ */
 function sattRapportUrval(u) {
-    if (typeof u === 'string') u = u === 'hela' || !RM_URVAL[u] ? null : { ordning: [...RM_AVSNITT], med: [...RM_URVAL[u].med] };
-    state.rapportUrval = u ? { ordning: u.ordning.filter(id => RM_AVSNITT.includes(id)), med: u.med.filter(id => RM_AVSNITT.includes(id)) } : null;
+    const lika = (a, b) => a.length === b.length && a.every((x, i) => x === b[i]);
+    if (u && typeof u === 'object' && !(u.fast && RM_URVAL[u.fast])) {
+        const tidigare = RM_URVAL_TIDIGARE.find(t => lika(u.ordning, t.ordning) && lika(u.med, t.med));
+        if (tidigare) u = tidigare.fast;
+    }
+    if (u && typeof u === 'object' && u.fast && RM_URVAL[u.fast]) u = u.fast;
+    if (typeof u === 'string') u = u === 'hela' || !RM_URVAL[u] ? null : { ordning: [...RM_AVSNITT], med: [...RM_URVAL[u].med], fast: u };
+    state.rapportUrval = u ? { ordning: u.ordning.filter(id => RM_AVSNITT.includes(id)), med: u.med.filter(id => RM_AVSNITT.includes(id)), ...(u.fast ? { fast: u.fast } : {}) } : null;
 }
 
 /**
@@ -168,6 +215,38 @@ function rmPerBasAvsnitt(d, k) {
 }
 
 /**
+ * Avsnittet Lönekartläggning per BAS-intervall: en underrubrik per intervall som når k, med BAS-dossierns stycken
+ * (basdossierStycken i 81-basdossier.js, samma text som dossierns kopia och rapportutkastet), intervallets
+ * yrkesgruppstabell (bara yrken där båda könen når k) och ett fält för bedömningen. Byggs i exportläget som resten
+ * av modellen: intervall och yrkesgrupper under k står inte med lönemått.
+ * @param {number} k
+ */
+function rmBasintervallAvsnitt(k) {
+    if (typeof basdossierKandidater !== 'function') return null;
+    const kand = basdossierKandidater();
+    if (!kand.length) return null;
+    const stycke = (text, stil) => ({ typ: 'stycke', text, ...(stil ? { stil } : {}) });
+    const under = basdossierUtelamnade();
+    const utelamnat = under.length ? [`BAS ${under.join(', ')} (färre än ${k} personer)`] : [];
+    /** @type {any[]} */
+    const delar = [stycke(`Ett avsnitt per BAS-intervall med minst ${k} personer, i samma ordning som rapporten i övrigt: antal och könsfördelning, ${state.policy.length ? 'läget mot ställningstagandet, ' : ''}yrkesgrupperna med status enligt Lika arbete, likvärdigt arbete, ålder och förra året när ett bokslut är inläst. Tabellen har yrkesgrupperna där både kvinnor och män når minsta gruppstorlek.`, 'dampad')];
+    let smaYrken = 0;
+    for (const { bas } of kand) {
+        const d = buildBasdossier(bas);
+        if (!d) continue;
+        smaYrken += d.yrkenUtelamnade.length;
+        delar.push({ typ: 'rubrik', niva: 3, text: `BAS-intervall ${d.bas}` });
+        for (const s of basdossierStycken(d, { forraBaraMedBokslut: true })) delar.push(stycke(s.rubrik, 'fet'), ...s.rader.map(r => stycke(r)));
+        const rader = basdossierYrkesrader(d);
+        if (rader.length) delar.push({ typ: 'tabell', kolumner: BD_YRKESKOLUMNER.map((rubrik, i) => ({ rubrik, typ: ['text', 'text', 'text', 'kr', 'kr', 'pct1', 'text'][i] })),
+            rader: rader.map(r => [r.aid, r.yrke, `${r.nKv} / ${r.nMa}`, r.medKv, r.medMa, r.kvotPct, r.status]) });
+        delar.push({ typ: 'fyllIn', text: BD_BEDOMNING });
+    }
+    if (smaYrken) utelamnat.push(`lönemått för ${smaYrken} ${smaYrken === 1 ? 'yrkesgrupp' : 'yrkesgrupper'} i intervallen med färre än ${k} personer`);
+    return { id: 'basintervall', numrerad: true, rubrik: 'Lönekartläggning per BAS-intervall', utelamnat, delar };
+}
+
+/**
  * Avsnittet Egna tabeller (ADR-52): tabeller användaren byggt i Utforska och lagt till i rapporten. Recepten
  * (state.rapportTabeller) ritas om här med samma pivot som fliken och tröskeln k; inga tal lagras.
  * @param {any[]} d
@@ -176,7 +255,7 @@ function rmPerBasAvsnitt(d, k) {
 /**
  * Avsnittet Jämförelse med förra året (ADR-54): nyckeltalen sida vid sida, flaggade yrkesgrupper som kvar, nya och
  * borta, hanteln och Att göra. Finns bara när ett bokslut är inläst; står efter Åtgärder och tidsplan.
- * @param {(avsnitt: string) => any[]} diagram
+ * @param {(avsnitt: string, del?: string) => any[]} diagram
  */
 function rmArsjamforelseAvsnitt(diagram) {
     if (typeof arsjamforelse !== 'function') return null;
@@ -199,7 +278,7 @@ function rmArsjamforelseAvsnitt(diagram) {
         delar.push({ typ: 'tabell', kolumner: [{ rubrik: 'Yrkesgrupp', typ: 'text' }, { rubrik: 'Kvinnor / män', typ: 'text' }, { rubrik: `Gap ${forra.ar}`, typ: 'pct1' }, { rubrik: `Gap ${nu.ar}`, typ: 'pct1' }],
             rader: lista.map(g => [g.yrke, g.nKv != null && g.nMa != null ? `${g.nKv} / ${g.nMa}` : null, g.gapForra, g.gapNu]) });
     };
-    delar.push(...rmBasUtvecklingDelar(j, forra.ar, nu.ar));
+    delar.push(...rmBasUtvecklingDelar(j, forra.ar, nu.ar, diagram('arsjamforelse', 'bas')));
     delar.push({ typ: 'rubrik', niva: 3, text: 'Lika arbete' });
     grupptabell('Flaggade båda åren', j.grupper.kvar, 'ingen yrkesgrupp.');
     grupptabell('Nya flaggade', j.grupper.nya, 'inga.');
@@ -222,7 +301,7 @@ function rmArsjamforelseAvsnitt(diagram) {
  * båda åren har fältet; ett äldre bokslut utan det ger ingenting här (panelen säger att det saknas i filen).
  * Tröskeln är redan tillämpad i bokslutet (src/lib/arsbokslut.js) och i årets bokslut, som byggs i exportläget.
  */
-function rmBasUtvecklingDelar(j, forraAr, nuAr) {
+function rmBasUtvecklingDelar(j, forraAr, nuAr, bilder = []) {
     if (!j || !Array.isArray(j.basIntervall) || !j.basIntervall.length) return [];
     const antal = f => (f.forra == null && f.nu == null ? null : `${f.forra == null ? '–' : svTal(f.forra, 0)} till ${f.nu == null ? '–' : svTal(f.nu, 0)}`);
     const matt = f => (f.forra == null && f.nu == null ? null : { text: `${_abKr(f.forra)} till ${_abKr(f.nu)}${f.diff == null ? '' : ` (${_abForandringText(f)})`}` });
@@ -231,6 +310,7 @@ function rmBasUtvecklingDelar(j, forraAr, nuAr) {
         { typ: 'stycke', stil: 'dampad', text: `Varje mått ${forraAr} till ${nuAr}, med förändringen i kronor och i procent av ${forraAr} års värde. Bara intervall med minst ${j.kGrans} personer båda åren; medianen rör sig också när sammansättningen ändras.` },
         { typ: 'tabell', kolumner: [{ rubrik: 'BAS-intervall', typ: 'text' }, { rubrik: 'Antal', typ: 'text' }, { rubrik: 'P10', typ: 'text' }, { rubrik: 'Median', typ: 'text' }, { rubrik: 'P90', typ: 'text' }],
           rader: j.basIntervall.map(r => [`BAS ${r.bas}`, antal(r.n), matt(r.p10), matt(r.med), matt(r.p90)]) },
+        ...bilder,   // hanteln för medianen (chart-arsjamforelse-bas)
     ];
 }
 
@@ -320,7 +400,8 @@ function _rapportModellExport({ alla = false, bada = false } = {}) {
     const stycke = (text, stil) => ({ typ: 'stycke', text, ...(stil ? { stil } : {}) });
     const dampad = text => stycke(text, 'dampad');
     const fyllIn = text => ({ typ: 'fyllIn', text });
-    const diagram = avsnitt => RM_DIAGRAM.filter(g => g.avsnitt === avsnitt && (!g.kraverAllaPar || (par.length > 0 && !parUtelamnade)) && (!g.om || g.om()))
+    /** @param {string} avsnitt @param {string} [del] */
+    const diagram = (avsnitt, del) => RM_DIAGRAM.filter(g => g.avsnitt === avsnitt && (/** @type {any} */ (g).del || null) === (del || null) && (!g.kraverAllaPar || (par.length > 0 && !parUtelamnade)) && (!g.om || g.om()))
         .flatMap(g => { const not = g.metodNot ? g.metodNot() : null;
             return [{ typ: 'diagram', id: g.id, flik: g.flik, rubrik: g.rubrik }, ...(not ? [dampad(not)] : [])]; });
 
@@ -438,6 +519,9 @@ function _rapportModellExport({ alla = false, bada = false } = {}) {
             ...diagram('struktur'),
         ] } : null;
 
+    // ---- Lönekartläggning per BAS-intervall (BAS-dossierns stycken, 81-basdossier.js) ----
+    const basintervall = d.length ? rmBasintervallAvsnitt(k) : null;
+
     // ---- Lönestruktur per BAS-intervall (tabellerna ur arbetsgivarnas egna utkast) ----
     const perbas = rmPerBasAvsnitt(d, k);
     const referenser = d.length ? rmReferenserAvsnitt(diagram) : null;
@@ -517,7 +601,7 @@ function _rapportModellExport({ alla = false, bada = false } = {}) {
         { typ: 'tabell', nyckel: true, kolumner: [{ rubrik: '', typ: 'text' }, { rubrik: '', typ: 'text' }], rader: (typeof _methodAppendixData === 'function' ? _methodAppendixData() : []).map(([n, v]) => [String(n), String(v)]) },
     ] };
 
-    const finns = /** @type {any[]} */ ([sammanfattning, regler, lika, likvardigt, struktur, referenser, perbas, atgarder, samverkan, beslut, regressionAvsnitt, metod].filter(Boolean));
+    const finns = /** @type {any[]} */ ([sammanfattning, regler, lika, likvardigt, basintervall, struktur, referenser, perbas, atgarder, samverkan, beslut, regressionAvsnitt, metod].filter(Boolean));
     /** @param {boolean} alla */
     const avsnitt = alla => {
         const urval = rapportUrval();
@@ -558,7 +642,8 @@ function rmTillHtml(m, { utskrift = false, bilder = null } = {}) {
         return t || '&nbsp;';
     };
     const del = p => {
-        if (p.typ === 'stycke') return `<p${p.stil === 'dampad' ? ' class="muted"' : p.stil === 'not' ? ' class="k-mask-note"' : ''}>${esc(p.text)}</p>`;
+        if (p.typ === 'stycke') return p.stil === 'fet' ? `<p><strong>${esc(p.text)}</strong></p>`
+            : `<p${p.stil === 'dampad' ? ' class="muted"' : p.stil === 'not' ? ' class="k-mask-note"' : ''}>${esc(p.text)}</p>`;
         if (p.typ === 'fyllIn') return `<div class="fillin"><strong>[HR fyller i]</strong> ${esc(p.text)}</div>`;
         if (p.typ === 'rubrik') return `<h${p.niva}>${esc(p.text)}</h${p.niva}>`;
         if (p.typ === 'diagram') {
