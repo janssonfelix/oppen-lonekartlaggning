@@ -1358,6 +1358,13 @@ Kända brister och obesvarade frågor, så att de inte lever bara i en konversat
    utan det — som nyckeltalen utan bootstrap-KI strax efter en inläsning. Att `runOLSRegression` körs tre gånger
    per rendering (~250 ms) är ett beslut, inte en brist (ADR-17). ADR-1:s chunking behövs inte.
 
+   Navigeringen med `node tools/perf-smoke.mjs --rader=20000` (2026-11-07): uppladdning till klart gränssnitt ~1,1 s,
+   till klara bakgrundsanalyser ~2,7 s; sidindexets bygge under 3 ms på varje flik (Ålder & karriär 2,1 ms med sex
+   poster, Lönestruktur 1,3 ms med elva, Löneöversyn 1,4 ms, Likvärdigt arbete 0,9 ms, Lika arbete 0,7 ms, Exportera
+   0,8 ms), sökfältets första sökning 8 ms (andra 5 ms), BAS-dossiern öppnad och ritad på 20 ms och gruppdossiern på
+   ~0,1 s; hela svepet 8 s. Vid 55 000 rader samma dag: sidindexet under 3 ms, första sökningen 19 ms, BAS-dossiern
+   56 ms och gruppdossiern 0,27 s. Inget steg är i närheten av 2 s, så ritningen av hopfällda avsnitt skjuts inte upp.
+
 **Kod och bygge:**
 6. **Krasch i Node under testkörning** (V8:s skräpsamlare): orsaken är okänd; `npm test` kör om berörda filer.
 7. **Stilen var spridd — åtgärdad.** De omkring 780 stilattributen i `index.html` och flikarnas mallar är flyttade till
