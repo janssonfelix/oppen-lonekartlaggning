@@ -72,7 +72,7 @@ export function modellVariabler(m) {
 export function modellFras(m) {
     const delar = [];
     if (m && m.alder) delar.push('ålder');
-    if (m && m.bas) delar.push('nivå');
+    if (m && m.bas) delar.push('BAS-intervall');
     if (m && m.yrkesgrupp) delar.push('yrkesgrupp');
     if (delar.length <= 1) return delar.join('');
     return `${delar.slice(0, -1).join(', ')} och ${delar[delar.length - 1]}`;

@@ -449,7 +449,7 @@ function _forecastOptimize() {
     const cand = _fcKandidater();
     const targets = _fcSuggestTargets(cand, riktadPott, state.forecast.minGroupN || 0);
     if (!targets.length) {
-        alert('Verktyget hittade inga skillnader i likvärdigt arbete i grupper med minst ' + (state.forecast.minGroupN || 0) + ' personer, eller så har det generella påslaget tagit hela potten. Sänk minsta gruppstorlek eller lägg till riktade rader själv.');
+        alert('Verktyget hittade inga skillnader i likvärdigt arbete i grupper med minst ' + (state.forecast.minGroupN || 0) + ' personer, eller så har det generella påslaget tagit hela potten. Sänk minsta antal personer i gruppen eller lägg till riktade rader själv.');
         return;
     }
     state.forecast.targets = targets.map(t => ({ bas: t.bas, aid: t.aid, mode: 'kr', value: t.value, dist: 'lowest', targetLevel: 'median', pool: 'equity', kalla: 'par' }));
@@ -496,7 +496,7 @@ function _forecastAddByCriteria() {
     };
     const pool = matcher === 'kvdom' ? 'equity' : 'övrigt';
     const picked = groups.filter(match);
-    if (!picked.length) { alert('Ingen grupp passar villkoret. Sänk minsta gruppstorlek (nu ' + minN + ').'); return; }
+    if (!picked.length) { alert('Ingen grupp passar villkoret. Sänk minsta antal personer i gruppen (nu ' + minN + ').'); return; }
     let added = 0;
     picked.forEach(g => {
         if (!state.forecast.targets.some(t => t.bas === g.bas && t.aid === g.aid)) {
@@ -721,7 +721,7 @@ function _exportForecastExport() {
         ['Använt (kr/mån)', kr(out.använt)],
         ['Kvar att fördela (kr/mån)', kr(out.kvar)],
         ['Generellt påslag', (state.forecast.generell.value || 0) + (state.forecast.generell.mode === 'kr' ? ' kr/mån' : ' %')],
-        ['Minsta gruppstorlek för riktning', state.forecast.minGroupN || 0],
+        ['Minsta antal personer i gruppen för riktning', state.forecast.minGroupN || 0],
         ...state.forecast.targets.map((t, i) => [`Riktad pott ${i + 1}`, `BAS ${t.bas}, ${t.aid === '*' ? 'alla yrken' : 'AID ' + t.aid}${t.kon === 'kvinna' ? ', bara kvinnor' : t.kon === 'man' ? ', bara män' : ''}${t.lonCap > 0 ? `, löner under ${Math.round(t.lonCap)} kr` : ''}: ${t.mode === 'till' ? `höj till ${t.value} kr/mån` : t.mode === 'kr' ? `${t.value} kr/mån` : `${t.value} % av grupplön`}${t.mode === 'till' ? '' : ` (${{ flat: 'lika %', lowest: 'lägst först', target: 'mot målnivå' }[t.dist] || t.dist})`}`]),
         ...(_fcParNot ? [['Utelämnade kandidatpar (likvärdigt arbete)', _fcParNot]] : []),
         ['Avrundning av nya löner (kr)', state.forecast.roundStep || 0],

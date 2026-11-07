@@ -58,7 +58,7 @@ const SOK_FUNKTIONER = [
     // Lika arbete
     { namn: 'Kvinnor och män i samma yrkesgrupp', synonymer: ['lika arbete', 'yrkesgrupp', 'status'], flik: 'matrix', avsnitt: 'avsnitt-la-yrkesgrupper' },
     { namn: 'Personer att granska', synonymer: ['individ', 'enskilda löner', 'avvikande löner', 'under förväntad nivå'], flik: 'matrix', avsnitt: 'avsnitt-la-personer' },
-    { namn: 'Lika arbete AID x BAS', synonymer: ['matris', 'slumpens gränser', 'median i procent'], flik: 'matrix', avsnitt: 'avsnitt-la-aidbas' },
+    { namn: 'Lika arbete AID × BAS', synonymer: ['matris', 'slumpens gränser', 'median i procent'], flik: 'matrix', avsnitt: 'avsnitt-la-aidbas' },
     { namn: 'Analys på individnivå', synonymer: ['arbetslista', 'för litet', 'små grupper'], flik: 'matrix', avsnitt: 'avsnitt-la-individ' },
     { namn: 'Så räknas det', synonymer: ['metod', 'beräkning', 'begrepp', 'lika arbete'], flik: 'matrix', avsnitt: 'avsnitt-la-metod' },
     // Löneläget
@@ -75,7 +75,7 @@ const SOK_FUNKTIONER = [
     { namn: 'Så räknas det', synonymer: ['metod', 'beräkning', 'prioriteringsindex', 'viktning'], flik: 'prioritering', avsnitt: 'avsnitt-pr-metod' },
     // Löneöversyn
     { namn: 'Riktade potter', synonymer: ['pott', 'satsning', 'löneöversyn'], flik: 'loneoversyn', avsnitt: 'avsnitt-lo-riktade' },
-    { namn: 'Avancerat & planering', synonymer: ['avrundning', 'stegvis plan', 'mål för gapet', 'marknadsläge'], flik: 'loneoversyn', avsnitt: 'avsnitt-lo-planering' },
+    { namn: 'Avancerat och planering', synonymer: ['avrundning', 'stegvis plan', 'mål för skillnaden', 'mål för gapet', 'marknadsläge'], flik: 'loneoversyn', avsnitt: 'avsnitt-lo-planering' },
     { namn: 'Individuell analys — lika arbete', synonymer: ['jämförelsevärde', 'lyfta kvinnor'], flik: 'loneoversyn', avsnitt: 'avsnitt-lo-individ' },
     { namn: 'Jämför scenarier (A/B)', synonymer: ['scenario', 'a/b'], flik: 'loneoversyn', avsnitt: 'avsnitt-lo-scenarier' },
     { namn: 'Så ska prognosen läsas', synonymer: ['prognos', 'planeringsunderlag', 'metod'], flik: 'loneoversyn', avsnitt: 'avsnitt-lo-metod' },

@@ -49,7 +49,7 @@ function runDiagnostics() {
     const ma = state.data.filter(r => r.kon === 'man' || r.kon === 'män');
     const rawGap = (Stat.median(kv.map(r=>r.lon)) / Stat.median(ma.map(r=>r.lon)) - 1) * 100;
     tests.push({
-        name: 'Råa löneskillnaden är negativ (kvinnor lägre lön)',
+        name: 'Den råa löneskillnaden är negativ (kvinnor lägre lön)',
         expected: '< -3%',
         actual: svPct(rawGap, 2),
         pass: rawGap < -3

@@ -225,7 +225,7 @@ function renderDataValidationReport() {
                     ? statStatus.ok
                         ? `<div class="dvr-row ok"><span><span class="dvr-icon">${ikon('bock')}</span>Jämförelsestatistik:</span><span class="dvr-value">OK</span></div>`
                         : `<div class="dvr-row warn"><span><span class="dvr-icon">${ikon('statusVarning')}</span>Jämförelsestatistik:</span><span class="dvr-value">${statStatus.missing.length} AID saknas</span></div>`
-                    : '<div class="dvr-row f-dampad"><span><span class="dvr-icon">' + ikon('statusIngen') + '</span>Jämförelsestatistik:</span><span>Ej uppladdad</span></div>'}
+                    : '<div class="dvr-row f-dampad"><span><span class="dvr-icon">' + ikon('statusIngen') + '</span>Jämförelsestatistik:</span><span>Inte inläst</span></div>'}
                 <div class="text-dampad-xs lh-1_4 marg-t-6">Detaljer i konsistens-bannern nedan.</div>
             </div>
         </div>

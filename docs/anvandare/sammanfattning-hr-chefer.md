@@ -7,11 +7,11 @@
 
 ## Problemet
 
-Lönekartläggningen är ett årligt lagkrav som kräver statistisk analys, dokumentation och handlingsplan — och lönetransparensdirektivet skärper kraven när det införs. Alternativen är ofta dyra konsulttimmar, molntjänster som kräver upphandling och biträdesavtal, eller manuellt Excel-arbete där metoden är svår att försvara i samverkan.
+Lönekartläggningen är ett årligt lagkrav: lönerna ska kartläggas och analyseras, skillnader utan sakliga skäl åtgärdas och arbetet dokumenteras. Lönetransparensdirektivet skärper kraven när det införs. Alternativen är ofta dyra konsulttimmar, molntjänster som kräver upphandling och biträdesavtal, eller manuellt Excel-arbete där metoden är svår att försvara i samverkan.
 
 ## Lösningen
 
-**Läs in din personalfil (CSV eller Excel) — få färdiga underlag.** Menyn följer rapportens ordning: **1 Underlag** (översikt, inläsning och kontroll av underlaget, regler och praxis), **2 Kartläggning** (löneläget, lika arbete, likvärdigt arbete, lönestruktur, ålder och karriär; löneläget och ålder och karriär är fördjupning, inget lagkrav), **3 Åtgärder** (prioritering, löneöversyn, handlingsplan) och **4 Rapport** (rapporttext, export och egna tabeller), och därtill **Spara och jämför år** (arbetet sparat som fil och jämfört med förra året). Sökrutan hittar både yrken och funktioner, och flikarna har en lista över sina avsnitt som följer med när sidan rullas.
+**Läs in lönefilen (CSV eller Excel) — få färdiga underlag.** Menyn följer rapportens ordning: **1 Underlag** (översikt, inläsning och kontroll av underlaget, regler och praxis), **2 Kartläggning** (löneläget, lika arbete, likvärdigt arbete, lönestruktur, ålder och karriär; löneläget och ålder och karriär är fördjupning, inget lagkrav), **3 Åtgärder** (prioritering, löneöversyn, handlingsplan) och **4 Rapport** (rapporttext, export och egna tabeller), och därtill **Spara och jämför år** (arbetet sparat som fil och jämfört med förra året). Sökrutan hittar både yrken och funktioner, och flikarna har en lista över sina avsnitt som följer med när sidan rullas.
 
 ### Det här får du
 
@@ -33,7 +33,7 @@ Lönekartläggningen är ett årligt lagkrav som kräver statistisk analys, doku
 
 1. Öppna filen i webbläsaren på en dator — ingen installation, ingen IT-beställning.
 2. Klicka **"litet demo"** (under *Prova med demodata*) och utforska hela verktyget med påhittad exempeldata — ingen verklig lönedata behövs för att utvärdera.
-3. När du är redo: läs in organisationens **organisationspaket** (ställningstagande, jämförelsestatistik och benämningar i en fil, som organisationens systemägare tar fram i verktyget) och därefter personalfilen ur lönesystemet (heltidsomräknade månadslöner, CSV eller Excel).
+3. När du är redo: läs in organisationens **organisationspaket** (ställningstagande, jämförelsestatistik och benämningar i en fil, som organisationens systemägare tar fram i verktyget) och därefter lönefilen ur lönesystemet (heltidsomräknade månadslöner, CSV eller Excel).
 
 ---
 

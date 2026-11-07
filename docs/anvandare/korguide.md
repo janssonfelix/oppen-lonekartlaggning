@@ -51,7 +51,7 @@ bedömningarna och besluten gör och äger arbetsgivaren.
 
 ## 2. Exportera och förbered data ur lönesystemet
 
-Exportera en personalfil (CSV eller XLSX) med dessa kolumner:
+Exportera en lönefil (CSV eller XLSX) med dessa kolumner:
 
 | Fält | Obligatoriskt | Kommentar |
 |---|---|---|
@@ -77,7 +77,7 @@ Exportera en personalfil (CSV eller XLSX) med dessa kolumner:
 - **Systemspecifika uttagssteg** (Personec P, Heroma, Visma m.fl.) samt fullständiga
   format- och felsökningsdetaljer: se `datauttag.md`.
 
-## 3. Ladda upp och kvalitetssäkra underlaget
+## 3. Läs in och kvalitetssäkra underlaget
 
 1. Öppna fliken **Filer och kvalitet** (menyns första grupp, *1 · Underlag*; raden *läs in filerna* på Översikt
    leder dit). Läs in **organisationspaketet** om organisationen har ett — det är **steg 1**, rutan överst
@@ -226,12 +226,13 @@ också när det är hopfällt.
    jämförelsestatistiken* är tabellen och diagrammen mot statistiken, med filter på BAS och sektor; tabellen visar
    medianens kolumner, P10 och P90 ligger bakom *Fler kolumner* (Kopiera, CSV, Excel och utskriften tar med alla).
 3. **Lika arbete** — fliken öppnar med **yrkesgrupperna**: kvinnors och mäns medianlön i samma yrkesgrupp,
-   där grupper med avvikelse > 5 % flaggas och behöver förklaras med sakliga skäl eller åtgärdas. Diagrammet
+   där grupper med en skillnad över 5 procent markeras så att du vet var du ska börja. Lagen kräver att du prövar
+   varje skillnad, också de mindre. Diagrammet
    **Yrkesgrupperna mot slumpens gränser** under tabellen visar varje yrkesgrupp mot gruppens storlek: en liten
    grupp kan ha en stor skillnad av ren slump, en stor grupp kan det inte, och grupperna utanför det skuggade
    fältet är de där skillnaden är svår att förklara med slumpen. Nyckeltalen överst tar med hur stor skillnaden är
-   när ålder och nivå räknats bort (regressionen, som står i Lönestruktur). Under Fördjupning kommer Personer att
-   granska och avsnitten **Lika arbete AID x BAS** och **Analys på individnivå**, som har tabellerna i den form
+   när ålder och BAS-intervall räknats bort (regressionen, som står i Lönestruktur). Under Fördjupning kommer Personer att
+   granska och avsnitten **Lika arbete AID × BAS** och **Analys på individnivå**, som har tabellerna i den form
    en skriven lönekartläggning brukar ha: en rad per yrkesgrupp och BAS-intervall med kvinnors median i procent av
    mäns mot slumpens gränser och en bedömning, och en arbetslista över grupperna där något kön är för litet för
    lönemått, att fylla i efter den individuella granskningen. Båda finns som blad i Excel-filen.
@@ -270,7 +271,7 @@ också när det är hopfällt.
    Avsnitten **Likvärdigt arbete** per BAS-intervall och **Hierarkisk jämförelse** klassar varje yrkesgrupp i varje
    intervall som kvinnodominerad, könsblandad eller mansdominerad, med en sammanfattning per intervall, och listar
    par där ett arbete i lägre BAS som inte är kvinnodominerat har högre medianlön än ett kvinnodominerat arbete i
-   högre BAS. Definitionen av kvinnodominerat väljs i flikens inställningar: **DO** (mer än tröskeln, standard)
+   högre BAS. Definitionen av kvinnodominerat väljs i flikens inställningar: **Förarbetena** (mer än tröskeln, standard)
    eller **SCB** (tröskeln eller mer); valet står i Excel-bladen och i metodbladet.
    Bredvid skillnaden står kolumnen **Justerad för ålder**: jämförelseyrkets lön omräknad till
    det kvinnodominerade yrkets åldersfördelning. Den råa skillnaden är den lagen prövar —
@@ -307,7 +308,7 @@ också när det är hopfällt.
    skillnaden i kronor och kvinnors lön i procent av mäns med konfidensintervall och status, och lönespridningen
    per kön; **Könsfördelning per BAS-intervall** visar var ett kön är under 40 %. Sist kommer
    **Vad blir kvar av löneskillnaden?**, den **oförklarade** löneskillnaden: regressionen, där du i panelen
-   *Förklaringsmodell* kan välja om ålder, nivå och yrkesgrupp ska räknas bort och se vad varje variabel tillför,
+   *Förklaringsmodell* kan välja om ålder, BAS-intervall och yrkesgrupp ska räknas bort och se vad varje variabel tillför,
    trappan som visar vad varje vald variabel förklarar, och Blinder-Oaxaca. En bortvald variabel redovisas som
    kontrollerad, med ditt skäl, också i rapporten.
 6. **Ålder & karriär** *(fördjupning, inget lagkrav)* — lön mot ålder, löneskillnaden per åldersgrupp (var i karriären

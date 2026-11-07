@@ -501,10 +501,10 @@ describe('k-tröskeln: motiveringsförslagen visar ingen lönepositionsslutsats 
         return w.eval('medExportLage(() => generateMotivationSuggestions(window.__item)).map(f => f.text).join(" ")');
     };
     it('vid 10 saknas glasstaksmönstret för en grupp med 6 av varje kön', () => {
-        expect(forslag(null)).not.toContain('Glasstaks-/klistergolvsmönster');
+        expect(forslag(null)).not.toContain('Mönster med glastak eller klibbigt golv');
     });
     it('vid 5 finns det', () => {
-        expect(forslag(5)).toContain('Glasstaks-/klistergolvsmönster');
+        expect(forslag(5)).toContain('Mönster med glastak eller klibbigt golv');
     });
 });
 

@@ -405,11 +405,11 @@ describe('menystruktur', () => {
         });
         const rows = [...host.querySelectorAll('.ptrack-row')], mal = r => r.querySelector('[data-goto-tab]').getAttribute('data-goto-tab');
         expect(rows.map(mal)).toEqual(['dashboard', 'bestammelser', 'matrix', 'likvardighet', 'handlingsplan', 'handlingsplan', 'rapporttext', 'dokumentera', 'dokumentera']);
-        // Samverkan leder till kortet Samverkan & uppföljning i Handlingsplan.
+        // Samverkan leder till kortet Samverkan och uppföljning i Handlingsplan.
         expect(rows[5].querySelector('[data-goto-tab]').getAttribute('data-goto-avsnitt')).toBe('hp-samverkan');
         const kort = w.document.getElementById('hp-samverkan');
         expect(kort.closest('#view-handlingsplan')).not.toBeNull();
-        expect(kort.querySelector('h2').textContent).toBe('Samverkan & uppföljning');
+        expect(kort.querySelector('h2').textContent).toBe('Samverkan och uppföljning');
         expect(rows[6].querySelector('.ptrack-status').dataset.status).toBe('manuell');
     });
     it('"Gå till steget" för Samverkan öppnar Handlingsplan och går till kortet', () => {

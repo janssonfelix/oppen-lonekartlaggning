@@ -190,7 +190,7 @@ function buildActionChecklist({ endastGrupper = false } = {}) {
                             kategori: 'Lika arbete',
                             prioritet: 'hög',
                             titel: `BAS ${p.bas}: kvinnor ${_agPct(p.gapPct)} % ${_agRiktning(p.gapPct)} lön efter ålderskontroll, statistiskt säkerställd`,
-                            detalj: `Statistiskt säkerställt också efter korrigering för många samtidiga tester (p=${p.pValue < 0.001 ? '< 0,001' : _agTal(p.pValue, 3)}, q=${q != null && q < 0.001 ? '< 0,001' : (q != null ? _agTal(q, 3) : '—')}). Skillnaden är över 5 procent. Lagen kräver att den analyseras, och när lönetransparensdirektivet gäller kan den också leda till en gemensam lönebedömning.`,
+                            detalj: `Statistiskt säkerställt också efter korrigering för många samtidiga tester (p=${p.pValue < 0.001 ? '< 0,001' : _agTal(p.pValue, 3)}, q=${q != null && q < 0.001 ? '< 0,001' : (q != null ? _agTal(q, 3) : '—')}). Skillnaden är över 5 procent. Lagen kräver att den analyseras, och när lönetransparensdirektivet gäller kan den också leda till en gemensam lönebedömning hos en arbetsgivare som rapporterar löneskillnader (100 anställda eller fler).`,
                             tab: 'matrix',
                             källa: 'Lika arbete'
                         });

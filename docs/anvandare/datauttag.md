@@ -1,6 +1,6 @@
 # Datauttag: från lönesystem till giltig fil
 
-En praktisk guide för att få ut rätt personalfil ur lönesystemet och läsa in den i
+En praktisk guide för att få ut rätt lönefil ur lönesystemet och läsa in den i
 Öppen lönekartläggning. Verktyget är byggt för att vara **förlåtande** vid inläsning —
 teckenkodning, avgränsare och talformat hanteras automatiskt — men filen måste
 innehålla rätt **fält** och får **aldrig** innehålla identifierande personuppgifter.

@@ -96,7 +96,7 @@ describe('Word-utkastet som .docx', () => {
         expect(html).toMatch(/<th>Kvinnors medianlön i procent av mäns<\/th><td>\d{2,3},\d %<\/td>/);
         expect(html).not.toMatch(/Ojusterat lönegap|Ojusterad löneskillnad|Gap \(Kv vs Mä\)/);
         // Regressionens gap behåller sin form, och det sägs i klartext.
-        expect(html).toMatch(/Löneskillnad som står kvar efter ålder och nivå<\/th><td><strong>[+−]\d+,\d\d %/);
+        expect(html).toMatch(/Löneskillnad som står kvar efter ålder och BAS-intervall<\/th><td><strong>[+−]\d+,\d\d %/);
         expect(html).toContain('negativ när kvinnor ligger lägre');
         // Diagrammen hör till ett avsnitt och pekar ut fliken som ritar dem.
         const diagram = m.avsnitt.flatMap(a => a.delar.filter(p => p.typ === 'diagram').map(p => `${a.id}:${p.id}:${p.flik}`));

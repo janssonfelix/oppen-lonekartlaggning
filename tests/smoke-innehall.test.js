@@ -534,11 +534,11 @@ describe('BAS-steg räknas i bokstäver överallt (se §5 i teknisk-plan.md)', (
         const w = med(0.01);
         w.eval('renderRegressionCard()');
         // På skärmen räknas intervallet i bakgrunden efter att kortet ritats: först står raden om det, sedan ritas kortet om.
-        const tabellFore = [...w.document.querySelectorAll('#regression-card table')].find(t => t.textContent.includes('Klistergolvet'));
+        const tabellFore = [...w.document.querySelectorAll('#regression-card table')].find(t => t.textContent.includes('Klibbigt golv'));
         expect(tabellFore.querySelectorAll('tbody tr')[0].children[2].textContent).toBe('räknas i bakgrunden…');
         expect(w.document.getElementById('regression-card').textContent).toMatch(/räknas i bakgrunden och visas strax/);
         await w.eval('_regKvantilKlar()');
-        const tabell = [...w.document.querySelectorAll('#regression-card table')].find(t => t.textContent.includes('Klistergolvet'));
+        const tabell = [...w.document.querySelectorAll('#regression-card table')].find(t => t.textContent.includes('Klibbigt golv'));
         expect(tabell.querySelector('thead').textContent).toContain('95 % KI (bootstrap)');
         expect(tabell.querySelectorAll('tbody tr')[0].children[2].textContent).toMatch(/^[+−]\d+,\d % till [+−]\d+,\d %$/);
         expect(w.document.getElementById('regression-card').textContent).toMatch(/approximation av kvantillösningen/);
@@ -667,11 +667,11 @@ describe('förklaringsmodellen i tillstånd och konfigurationsfil (ADR-56)', () 
 
 describe('runOLSRegression på vald modell (ADR-56)', () => {
     const kor = modell => { const w = createAppWindow(); w.__loadDemoData(); w.__state.forklaringsmodell = modell; return { w, r: w.eval('runOLSRegression()') }; };
-    it('standard: modelDesc som i dag, frasen "ålder och nivå", inget bortvalt, tillför-tabellen med tre rader', () => {
+    it('standard: modelDesc som i dag, frasen "ålder och BAS-intervall", inget bortvalt, tillför-tabellen med tre rader', () => {
         const { r } = kor(null);
         expect(r.error).toBeUndefined();
         expect(r.modelDesc).toBe('kön + ålder + BAS-intervall (indikatorer)');
-        expect(r.fras).toBe('ålder och nivå');
+        expect(r.fras).toBe('ålder och BAS-intervall');
         expect(r.bortvalt).toEqual([]);
         expect(r.modell).toEqual({ bas: true, alder: true, yrkesgrupp: false, skal: '' });
         expect(r.tillfor.rader.map(x => x.variabel)).toEqual(['bas', 'alder', 'yrkesgrupp']);
@@ -687,7 +687,7 @@ describe('runOLSRegression på vald modell (ADR-56)', () => {
         expect(r.bortvalt[0]).toMatchObject({ variabel: 'alder', etikett: 'Ålder', skal: 'ingen lön efter ålder' });
         expect(typeof r.bortvalt[0].deltaR2pp).toBe('number');
         expect(r.sequential.map(x => x.name)).not.toContain('+ Ålder');
-        expect(r.fras).toBe('nivå');
+        expect(r.fras).toBe('BAS-intervall');
         expect(r.konPct).toBeCloseTo(r.sequential.find(x => x.name === '+ BAS-intervall').gapPct, 8);
     });
     it('utan BAS: inga BAS-effekter, frasen "ålder"', () => {
@@ -708,7 +708,7 @@ describe('runOLSRegression på vald modell (ADR-56)', () => {
         const std = kor(null).r;
         const { r } = kor({ bas: true, alder: true, yrkesgrupp: true, skal: '' });
         expect(r.konPct).toBeCloseTo(std.yrkesSteg.gapPct, 6);
-        expect(r.fras).toBe('ålder, nivå och yrkesgrupp');
+        expect(r.fras).toBe('ålder, BAS-intervall och yrkesgrupp');
         expect(r.modelDesc).toBe('kön + ålder + BAS-intervall (indikatorer) + yrkesgrupp inom BAS (fasta effekter)');
         expect(r.sequential.at(-1).name).toBe('+ Yrkesgrupp');
         expect(r.yrkesSteg.status).toBe('ok');
@@ -830,16 +830,16 @@ describe('avsnittet följer modellen (ADR-56)', () => {
         const trappa = w.document.getElementById('chart-reg-trappa');
         return { w, kort, oax, kortText: kort.textContent.replace(/\s+/g, ' '), oaxText: oax.textContent.replace(/\s+/g, ' '), figur: trappa ? trappa._figur : null };
     };
-    it('utan ålder: inga "ålder och nivå", inget steg + Ålder, trappan slutar efter BAS, Oaxaca utan ålderraden', () => {
+    it('utan ålder: inga "ålder och BAS-intervall", inget steg + Ålder, trappan slutar efter BAS, Oaxaca utan ålderraden', () => {
         const { kortText, oaxText, figur, oax } = rita({ bas: true, alder: false, yrkesgrupp: false, skal: '' });
-        expect(kortText).not.toMatch(/ålder och nivå/);
+        expect(kortText).not.toMatch(/ålder och BAS-intervall/);
         expect(kortText).not.toMatch(/ålder och BAS/);
         expect(kortText).not.toMatch(/BAS-intervall och ålder \(full modell\)/);
         expect(kortText).toMatch(/Efter kontroll för BAS-intervall/);
-        expect(kortText).toMatch(/när nivå räknats bort/);
+        expect(kortText).toMatch(/när BAS-intervall räknats bort/);
         expect(figur).not.toBeNull();
         expect(figur.x.ordning).toEqual(['Ojusterad skillnad', 'BAS-intervall', 'Oförklarad skillnad', 'Yrkesgrupp inom BAS']);
-        expect(oaxText).toMatch(/Förklarat av nivå/);
+        expect(oaxText).toMatch(/Förklarat av BAS-intervall/);
         expect([...oax.querySelectorAll('tbody td:first-child')].map(td => td.textContent)).not.toContain('Ålder');
         expect(oaxText).toMatch(/Ålder har kontrollerats/);
     });
@@ -854,44 +854,44 @@ describe('avsnittet följer modellen (ADR-56)', () => {
         expect(figur.x.ordning).toEqual(['Ojusterad skillnad', 'BAS-intervall', 'Ålder', 'Yrkesgrupp inom BAS', 'Oförklarad skillnad']);
         expect(figur.lager.some(l => /ingår inte i huvudtalet/.test(l.serie))).toBe(false);
         expect(kortText).not.toMatch(/ingår inte i huvudtalet/);
-        expect(kortText).toMatch(/ålder, nivå och yrkesgrupp räknats bort/);
+        expect(kortText).toMatch(/ålder, BAS-intervall och yrkesgrupp räknats bort/);
         const rader = [...oax.querySelectorAll('tbody td:first-child')].map(td => td.textContent);
         expect(rader.some(t => /Yrkesgrupp inom BAS/.test(t))).toBe(true);
         expect(rader.some(t => /^BAS-intervall/.test(t))).toBe(false);
     });
     it('standardläget är som förut', () => {
         const { kortText, figur, oaxText } = rita(null);
-        expect(kortText).toMatch(/när ålder och nivå räknats bort/);
+        expect(kortText).toMatch(/när ålder och BAS-intervall räknats bort/);
         expect(figur.x.ordning).toEqual(['Ojusterad skillnad', 'BAS-intervall', 'Ålder', 'Oförklarad skillnad', 'Yrkesgrupp inom BAS']);
-        expect(oaxText).toMatch(/Förklarat av ålder och nivå/);
+        expect(oaxText).toMatch(/Förklarat av ålder och BAS-intervall/);
     });
 });
 
 describe('huvudtalet följer modellen i nyckeltal, Att göra, Struktur och rapporten (ADR-56)', () => {
     const rita = modell => { const w = createAppWindow(); w.__loadDemoData(); w.__state.forklaringsmodell = modell; return w; };
-    it('Lika arbetes nyckeltal och Att göra säger "efter nivå" utan ålder', () => {
+    it('Lika arbetes nyckeltal och Att göra säger "efter BAS-intervall" utan ålder', () => {
         const w = rita({ bas: true, alder: false, yrkesgrupp: false, skal: '' });
         w.document.querySelector('.nav-item[data-tab="matrix"]').click(); w.eval('renderTabContent("matrix"); renderTabContent("struktur")');
-        expect(w.document.getElementById('nyckel-ls-regression').textContent).toMatch(/efter nivå$/);
-        expect(w.document.getElementById('la-slutsatser').textContent).toMatch(/Efter nivå/);
-        expect(w.document.getElementById('la-slutsatser').textContent).not.toMatch(/ålder och nivå/);
+        expect(w.document.getElementById('nyckel-ls-regression').textContent).toMatch(/efter BAS-intervall$/);
+        expect(w.document.getElementById('la-slutsatser').textContent).toMatch(/Efter BAS-intervall/);
+        expect(w.document.getElementById('la-slutsatser').textContent).not.toMatch(/ålder och BAS-intervall/);
         w.eval('renderActionChecklist()');
-        expect(w.document.getElementById('action-checklist-container').textContent).toMatch(/\(efter nivå\)/);
+        expect(w.document.getElementById('action-checklist-container').textContent).toMatch(/\(efter BAS-intervall\)/);
     });
-    it('rapportmodellen: raden heter efter nivå, bilagan saknar ålderseffekten och bär noteringen med skälet', () => {
+    it('rapportmodellen: raden heter efter BAS-intervall, bilagan saknar ålderseffekten och bär noteringen med skälet', () => {
         const w = rita({ bas: true, alder: false, yrkesgrupp: false, skal: 'ingen lön efter ålder' });
         const m = w.eval('rapportModell()');
         const lika = m.avsnitt.find(a => a.id === 'lika');
         const tab = lika.delar.find(d => d.typ === 'tabell');
-        expect(tab.rader.map(r => r[0])).toContain('Löneskillnad som står kvar efter nivå');
+        expect(tab.rader.map(r => r[0])).toContain('Löneskillnad som står kvar efter BAS-intervall');
         const text = JSON.stringify(lika.delar);
-        expect(text).toMatch(/när nivå räknats bort/);
-        expect(text).not.toMatch(/ålder och nivå/);
+        expect(text).toMatch(/när BAS-intervall räknats bort/);
+        expect(text).not.toMatch(/ålder och BAS-intervall/);
         const reg = m.avsnitt.find(a => a.id === 'regression');
         const regText = JSON.stringify(reg.delar);
         expect(regText).not.toMatch(/Ålderseffekt/);
         expect(regText).toMatch(/Ålder har kontrollerats och tillför [0-9,]+ procentenheter i förklaringsgrad; den ingår inte i siffrorna\. Skäl: ingen lön efter ålder/);
-        expect(regText).toMatch(/strukturella variabler \(nivå\)/);
+        expect(regText).toMatch(/strukturella variabler \(BAS-intervall\)/);
         expect(regText).not.toMatch(/\+ Ålder/);
     });
     it('rapportunderlaget bär frasen och det bortvalda', () => {
@@ -904,7 +904,7 @@ describe('huvudtalet följer modellen i nyckeltal, Att göra, Struktur och rappo
         const w = rita(null);
         const m = w.eval('rapportModell()');
         const lika = m.avsnitt.find(a => a.id === 'lika');
-        expect(lika.delar.find(d => d.typ === 'tabell').rader.map(r => r[0])).toContain('Löneskillnad som står kvar efter ålder och nivå');
+        expect(lika.delar.find(d => d.typ === 'tabell').rader.map(r => r[0])).toContain('Löneskillnad som står kvar efter ålder och BAS-intervall');
         expect(JSON.stringify(m.avsnitt.find(a => a.id === 'regression').delar)).toMatch(/Ålderseffekt/);
     });
 });

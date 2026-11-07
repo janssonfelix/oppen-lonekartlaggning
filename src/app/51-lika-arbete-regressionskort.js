@@ -188,7 +188,7 @@ function runOLSRegression() {
         modell: skattad,                      // den skattade förklaringsmodellen (ADR-56)
         modellVald: modell,                   // den valda (skiljer sig från modell bara i reservsteget)
         modellVarning,
-        fras: _rgModellFras(skattad),         // "ålder och nivå" m.fl.; tom för endast kön
+        fras: _rgModellFras(skattad),         // "ålder och BAS-intervall" m.fl.; tom för endast kön
         tillfor,
         bortvalt,
         fellBackFromFull,
@@ -413,7 +413,7 @@ function _regTrappaVisas(stegUt) {
 }
 const _REG_TRAPPSTEG = { '+ BAS-intervall': 'BAS-intervall', '+ Ålder': 'Ålder', '+ Yrkesgrupp': 'Yrkesgrupp inom BAS' };
 /** @param {any[]} seqOk @param {any} [yrkesSteg] yrkesgruppssteget efter huvudtalet (när det inte är valt in i modellen) @param {string} [fras] */
-function _regTrappaFigur(seqOk, yrkesSteg = null, fras = 'ålder och nivå') {
+function _regTrappaFigur(seqOk, yrkesSteg = null, fras = 'ålder och BAS-intervall') {
     const forst = seqOk[0], sist = seqOk[seqOk.length - 1];
     const yrke = yrkesSteg && yrkesSteg.status === 'ok' && typeof yrkesSteg.gapPct === 'number' ? yrkesSteg : null;
     const pct = v => `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(1).replace('.', ',')} %`;
@@ -450,7 +450,7 @@ function _regTrappaFigur(seqOk, yrkesSteg = null, fras = 'ålder och nivå') {
 
 // ---- Gapet längs lönefördelningen ----
 // Kvantilregressionens tre skattningar (P10, median, P90): är strecket längst i toppen är gapet störst bland de
-// högst betalda (glastak), längst i botten bland de lägst betalda (klistergolv). Samma tal som tabellen under.
+// högst betalda (glastak), längst i botten bland de lägst betalda (klibbigt golv). Samma tal som tabellen under.
 /** @type {any[]|null} */
 let _regKvantilSenast = null;
 // Bootstrap-KI på könskoefficienten: B omsamplingar av raderna, percentilintervall, seedat ur datat (_rngFor) så
@@ -674,7 +674,7 @@ function renderRegressionCard() {
     const fmRubrik = document.querySelector('[data-fm-rubrik]'), fmInledning = document.querySelector('[data-fm-inledning]');
     if (fmRubrik) fmRubrik.textContent = fmT.fras ? `När ${fmT.fras} räknats bort, steg för steg` : 'Den råa skillnaden, utan att något räknats bort';
     if (fmInledning && !r.error) fmInledning.innerHTML = fmT.fras
-        ? (fmT.fras === 'ålder och nivå' ? 'Här räknar verktyget bort att kvinnor och män har olika ålder och arbetar i olika BAS-intervall. Det som blir kvar kan <em>inte</em> förklaras av de faktorerna.' : `Här räknar verktyget bort att kvinnor och män skiljer sig i ${esc(fmT.forklarasAv)}. Det som blir kvar kan <em>inte</em> förklaras av ${fmT.variabler.length > 2 ? 'de faktorerna' : 'den faktorn'}.`)
+        ? (fmT.fras === 'ålder och BAS-intervall' ? 'Här räknar verktyget bort att kvinnor och män har olika ålder och arbetar i olika BAS-intervall. Det som blir kvar kan <em>inte</em> förklaras av de faktorerna.' : `Här räknar verktyget bort att kvinnor och män skiljer sig i ${esc(fmT.forklarasAv)}. Det som blir kvar kan <em>inte</em> förklaras av ${fmT.variabler.length > 2 ? 'de faktorerna' : 'den faktorn'}.`)
         : 'Här visas den råa skillnaden: ingen variabel räknas bort (valet i panelen nedan).';
 
     // ----- Felfall: kunde inte estimeras alls -----
@@ -1090,9 +1090,9 @@ function renderRegressionCard() {
                 if (p10 && p50 && p90 && !p10.error && !p50.error && !p90.error) {
                     const diff_10_90 = Math.abs(Number(p10.konPct)) - Math.abs(Number(p90.konPct));
                     if (diff_10_90 > 1) {
-                        tolkning = `<strong>Klistergolvet är värre än glasstaket</strong> — kvinnor i den lägre delen av löneskalan halkar efter mer än kvinnor i toppen.`;
+                        tolkning = `<strong>Det klibbiga golvet väger tyngre än glastaket</strong> — kvinnor i den lägre delen av löneskalan halkar efter mer än kvinnor i toppen.`;
                     } else if (diff_10_90 < -1) {
-                        tolkning = `<strong>Glasstaket är värre än klistergolvet</strong> — kvinnor i den högre delen av löneskalan halkar efter mer än kvinnor i botten.`;
+                        tolkning = `<strong>Glastaket väger tyngre än det klibbiga golvet</strong> — kvinnor i den högre delen av löneskalan halkar efter mer än kvinnor i botten.`;
                     } else {
                         tolkning = `Löneskillnaden är ungefär lika stor i alla delar av lönefördelningen.`;
                     }
@@ -1101,7 +1101,7 @@ function renderRegressionCard() {
                 return `
                 <details class="mt-14" open>
                     <summary class="pekare fw-600 pad-8-0 ej-markerbar">Löneskillnad i olika delar av lönefördelningen
-                        <span class="info-tip" data-tooltip="Huvudmodellen skattar löneskillnaden i medelvärdet. Kvantilregression skattar skillnaden i olika delar av fördelningen var för sig. P10 = botten av lönefördelningen ('klistergolvet'), P50 = median, P90 = toppen ('glasstaket'). Visar om skillnaden är större i vissa lönenivåer.">${ikon('info', 14)}</span>
+                        <span class="info-tip" data-tooltip="Huvudmodellen skattar löneskillnaden i medelvärdet. Kvantilregression skattar skillnaden i olika delar av fördelningen var för sig. P10 = botten av lönefördelningen (det klibbiga golvet), P50 = median, P90 = toppen (glastaket). Visar om skillnaden är större i vissa lönenivåer.">${ikon('info', 14)}</span>
                     </summary>
                     <p data-hjalptext class="text-dampad-sm lh-1_55 marg-8-0-6">
                         Huvudmodellen ovan skattar löneskillnaden vid <em>medelvärdet</em>. Kvantilregression visar skillnaden i olika delar av lönefördelningen. Det är viktigt om skillnaden är ojämnt fördelad, till exempel större bland de lägst betalda än bland de högst betalda.
@@ -1111,9 +1111,9 @@ function renderRegressionCard() {
                         <table class="data-table fs-sm marg-t-8">${antalCaption(qr.nKv, qr.nMa)}
                             <thead><tr><th>Position i lönefördelningen</th><th class="t-hoger">Oförklarad skillnad</th><th>95 % KI (bootstrap)</th><th>Tolkning</th></tr></thead>
                             <tbody>
-                                ${fmtRow('<strong>P10 — Klistergolvet</strong>', 'Löneskillnaden bland de lägst betalda', p10)}
+                                ${fmtRow('<strong>P10 — Klibbigt golv</strong>', 'Löneskillnaden bland de lägst betalda', p10)}
                                 ${fmtRow('<strong>P50 — Medianen</strong>',     'Löneskillnaden i mittersta delen av lönefördelningen', p50)}
-                                ${fmtRow('<strong>P90 — Glasstaket</strong>',   'Löneskillnaden bland de högst betalda', p90)}
+                                ${fmtRow('<strong>P90 — Glastak</strong>',   'Löneskillnaden bland de högst betalda', p90)}
                             </tbody>
                         </table>
                     </div>

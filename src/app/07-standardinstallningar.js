@@ -39,7 +39,7 @@ const DEFAULT_PROFILE = Object.freeze({
     poPctNote:               'SKR Cirkulär 2025',
     orgTyp:                  'alla',   // 'kommun' | 'region' | 'alla' — SKR-referensens del (ADR-34)
     locale:                  'sv-SE',
-    notes:                   'Neutral standard. Läs in ett organisationspaket för er organisations benämningar.'
+    notes:                   'Neutral standard. Läs in ett organisationspaket för organisationens benämningar.'
 });
 
 /**

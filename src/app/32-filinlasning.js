@@ -917,7 +917,7 @@ function maybeShowColumnMapping() {
         state.columnMap = Object.keys(map).length ? map : null;
         const f = state._lastStructureFile || (/** @type {HTMLInputElement} */ (dataInput).files && /** @type {HTMLInputElement} */ (dataInput).files?.[0]);
         if (f) loadStructureFile(f);
-        else { dataStatus.textContent = 'Ladda upp filen igen för att tillämpa mappningen.'; dataStatus.className = 'status-msg'; }
+        else { dataStatus.textContent = 'Läs in filen igen för att tillämpa mappningen.'; dataStatus.className = 'status-msg'; }
     });
     panel.querySelector('#colmap-reset')?.addEventListener('click', () => {
         state.columnMap = null;

@@ -1191,7 +1191,7 @@ describe('Lika arbete — urval, slutsatser och avsnittens nyckeltal', () => {
         const rader = [...d.querySelectorAll('#matrix-table tbody tr')].map(tr => tr._euRow).filter(r => r && !r.samladMedian);
         const granska = rader.filter(r => r.niva === 'granska').length;
         const kort = [...d.querySelectorAll('#la-slutsatser .slutsats')].map(k => [t(k.querySelector('.slutsats-etikett').textContent), t(k.querySelector('.slutsats-varde').textContent)]);
-        expect(kort.map(k => k[0])).toEqual(['Yrkesgrupper att granska', 'Största skillnaden', 'Efter ålder och nivå', 'Personer att granska']);
+        expect(kort.map(k => k[0])).toEqual(['Yrkesgrupper att granska', 'Största skillnaden', 'Efter ålder och BAS-intervall', 'Personer att granska']);
         expect(kort[0][1]).toBe(`${granska} av ${rader.length}`);
         const storst = rader.slice().sort((a, b) => Math.abs(100 - b.kvot) - Math.abs(100 - a.kvot))[0];
         expect(kort[1][1]).toBe(storst.kvot.toFixed(1).replace('.', ',') + ' %');
@@ -1204,7 +1204,7 @@ describe('Lika arbete — urval, slutsatser och avsnittens nyckeltal', () => {
         expect(t(d.getElementById('nyckel-la-yrkesgrupper').textContent)).toMatch(new RegExp(`^${granska} att granska`));
         expect(t(d.getElementById('nyckel-ls-bas').textContent)).toMatch(/^\d+ av \d+ över 5 %$/);
         expect(t(d.getElementById('nyckel-ls-kon').textContent)).toMatch(/^\d+ av \d+ ojämna$/);
-        expect(t(d.getElementById('nyckel-ls-regression').textContent)).toMatch(/% efter ålder och nivå$/);
+        expect(t(d.getElementById('nyckel-ls-regression').textContent)).toMatch(/% efter ålder och BAS-intervall$/);
         // Huvudvyn — översiktstabellen — ligger i toppen, i mallen för diagramkort.
         const kortet = d.getElementById('la-oversikt').closest('.diagramkort');
         expect(kortet.id).toBe('la-huvuddiagram');

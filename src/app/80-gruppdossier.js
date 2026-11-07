@@ -322,7 +322,7 @@ function _gdRenderBody(d) {
             ${card('Nyckeltal', nyckeltal)}
             ${card('Ojusterad löneskillnad', gapInner)}
             ${card('Skillnad när åldern räknats bort', adjInner)}
-            ${card('Mot er lönepolitik', polInner)}
+            ${card('Mot organisationens lönepolitik', polInner)}
             ${card('Likvärdigt arbete', lvInner)}
             ${card('Extern jämförelse', benchInner)}
             ${card('Hur angeläget — och vad kostar det?', prioInner)}

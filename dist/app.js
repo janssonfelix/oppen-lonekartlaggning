@@ -742,8 +742,8 @@ const AID_METODTEXT = 'AID är SKR:s och de fackliga organisationernas gemensamm
 const GLOSSARY = [
     // Statistik
     { cat:'Statistik', term:'Median (P50)', short:'Mittersta värdet av sorterad lista', long:'Den lön där exakt hälften av gruppen tjänar mer och hälften tjänar mindre. Påverkas mindre än medelvärdet av enstaka mycket höga eller låga löner.' },
-    { cat:'Statistik', term:'P10 (10:e percentilen)', short:'Värdet där 10% av gruppen tjänar mindre', long:'Speglar lönenivån för de lägst betalda i gruppen. Används som "lägsta önskad nivå" i lönepolitiska ställningstaganden.' },
-    { cat:'Statistik', term:'P90 (90:e percentilen)', short:'Värdet där 90% av gruppen tjänar mindre', long:'Speglar lönenivån för de högst betalda. Används som "toppnivå" i lönepolitiska ställningstaganden.' },
+    { cat:'Statistik', term:'P10 (10:e percentilen)', short:'Värdet där 10 % av gruppen tjänar mindre', long:'Speglar lönenivån för de lägst betalda i gruppen. Används som "lägsta önskad nivå" i lönepolitiska ställningstaganden.' },
+    { cat:'Statistik', term:'P90 (90:e percentilen)', short:'Värdet där 90 % av gruppen tjänar mindre', long:'Speglar lönenivån för de högst betalda. Används som "toppnivå" i lönepolitiska ställningstaganden.' },
     { cat:'Statistik', term:'Lönespridning', short:'P90 / P10 — bredd i lönenivåer inom en grupp', long:'1,0 = alla tjänar lika. 1,3 = de högst betalda tjänar 30 % mer än de lägst betalda. Värden över ungefär 1,5 kan tyda på stora löneskillnader inom gruppen som bör granskas.' },
     { cat:'Statistik', term:'OLS-regression', short:'Standardmetoden för att räkna ut hur lönen hänger ihop med kön, ålder m.m. (eng. OLS)', long:'Estimerar samband mellan en förklarad variabel (t.ex. lön) och flera förklarande variabler (kön, ålder, BAS) genom att minimera summan av kvadrerade residualer. Vanlig metod i lönekartläggning.' },
     { cat:'Statistik', term:'HC3 robust standardfel', short:'Felmarginal som tål att höga löner varierar mer än låga — ger mer pålitlig osäkerhet', long:'Standardfel som korrigeras för heteroskedasticitet och inflytelserika punkter. Lönedata uppvisar typiskt heteroskedasticitet (variansen växer med lönenivån), och klassiska SE underskattar då osäkerheten. HC3 är det vanliga valet för små och medelstora urval.' },
@@ -765,23 +765,23 @@ const GLOSSARY = [
     { cat:'Lönekartläggning', term:'Osaklig löneskillnad', short:'Löneskillnad inom lika/likvärdigt arbete som ej kan motiveras könsneutralt', long:'Diskrimineringslagens begrepp: en löneskillnad mellan kvinnor och män som utför lika eller likvärdigt arbete och som inte kan motiveras med könsneutrala kriterier. En osaklig skillnad kan — men måste inte — utgöra diskriminering i rättslig mening. Bedömningen görs alltid av den enskilda organisationen. Är inte samma sak som en oförklarad löneskillnad.' },
     { cat:'Statistik', term:'Standardvägning', short:'Metod som jämför löner med hänsyn till mätbara faktorer', long:'En statistisk metod (t.ex. regression) som jämför kvinnors och mäns löner med hänsyn till de lönepåverkande faktorer man har data om. Att en skillnad återstår efter standardvägning betyder att statistiken inte kan säga mer om vad den beror på — andra, omätta faktorer kan förklara den.' },
     { cat:'Statistik', term:'Löneskillnad på samhällsnivå', sok:'könslönegap lönegap', short:'Skillnad i kvinnors och mäns genomsnittslöner i hela samhället', long:'Skillnaden mellan kvinnors och mäns genomsnittslöner på övergripande nivå (samhälle/bransch). En stor del förklaras av att arbetsmarknaden är könsuppdelad — kvinnor och män arbetar i olika yrken och sektorer med olika lönenivåer. Den säger inget om kvinnor och män som gör samma arbete i en viss organisation har olika lön. Det är vad lönekartläggningen undersöker.' },
-    { cat:'Lönekartläggning', term:'Gemensam lönebedömning', short:'Joint Pay Assessment enligt lönetransparensdirektivet', long:'Gemensam lönebedömning enligt lönetransparensdirektivet. Krävs hos arbetsgivare som lönerapporterar när rapporten visar en skillnad på 5 % eller mer i någon grupp av arbetstagare som utför lika eller likvärdigt arbete, som inte motiveras av objektiva, könsneutrala kriterier och som inte åtgärdats inom sex månader. Görs tillsammans med arbetstagarnas företrädare. Direktivet skulle vara infört i svensk rätt 7 juni 2026; svensk lag och ikraftträdande dateras när de är kända.' },
-    { cat:'Lönekartläggning', term:'Löneskillnad (kön)', sok:'lönegap', short:'Skillnad i lön mellan kvinnor och män, i procent', long:'Beräknas som median(kvinnor) / median(män) × 100. 100 % = lika lön. 95 % = kvinnor tjänar i median 5 % mindre än män. Samma tal skrivs ibland som skillnad: 85,2 % av mäns lön är detsamma som −14,8 %; verktyget använder kvoten på Översikt och i Ålder & karriär och skillnaden i Lika arbete, där den jämförs med modellens tal.' },
-    { cat:'Lönekartläggning', term:'Ojusterad löneskillnad', sok:'lönegap rågap', short:'Löneskillnad utan kontroll för andra variabler', long:'Ren skillnad i median mellan män och kvinnor. Påverkas av strukturella faktorer som åldersstruktur, BAS-fördelning och yrkesval. Det vanligaste måttet i medierna, men det säger lite om diskriminering i sig.' },
+    { cat:'Lönekartläggning', term:'Gemensam lönebedömning', short:'Bedömning tillsammans med arbetstagarnas företrädare när en skillnad är 5 procent eller mer', long:'Gemensam lönebedömning enligt lönetransparensdirektivet. Krävs hos arbetsgivare som lönerapporterar när rapporten visar en skillnad på 5 % eller mer i någon grupp av arbetstagare som utför lika eller likvärdigt arbete, som inte motiveras av objektiva, könsneutrala kriterier och som inte åtgärdats inom sex månader. Görs tillsammans med arbetstagarnas företrädare. Direktivet skulle vara infört i svensk rätt 7 juni 2026; svensk lag och ikraftträdande dateras när de är kända.' },
+    { cat:'Lönekartläggning', term:'Kvinnors lön i procent av mäns', sok:'lönegap löneskillnad kön', short:'Kvinnors medianlön som andel av mäns', long:'Beräknas som median(kvinnor) / median(män) × 100. 100 % = lika lön. 95 % = kvinnor tjänar i median 5 % mindre än män. Samma tal skrivs ibland som skillnad: 85,2 % av mäns lön är detsamma som −14,8 %; verktyget använder kvoten på Översikt och i Ålder & karriär och skillnaden i Lika arbete, där den jämförs med modellens tal.' },
+    { cat:'Lönekartläggning', term:'Rå (ojusterad) löneskillnad', sok:'lönegap rågap ojusterad löneskillnad', short:'Löneskillnad utan kontroll för andra variabler', long:'Ren skillnad i median mellan män och kvinnor. Påverkas av strukturella faktorer som åldersstruktur, BAS-fördelning och yrkesval. Det vanligaste måttet i medierna, men det säger lite om diskriminering i sig.' },
     { cat:'Lönekartläggning', term:'Åldersjusterad löneskillnad', short:'Löneskillnad vid samma genomsnittsålder', long:'Beräknas med en trendlinje per kön som läses av vid genomsnittsåldern. Räknar bort att ett kön i snitt är äldre. Mer rättvisande än den ojusterade.' },
-    { cat:'Lönekartläggning', term:'Oförklarad löneskillnad', sok:'lönegap', short:'Skillnad efter kontroll för strukturella variabler', long:'En regression med kön, ålder och BAS-intervall ger könskoefficienten. Den motsvarar Medlingsinstitutets standardvägda löneskillnad. Viktigt: "oförklarat" betyder att skillnaden inte fångas av variablerna — inte att den beror på kön eller är osaklig. Det är en signal om var man bör titta närmare, inte ett bevis, och ska inte blandas ihop med "osaklig löneskillnad".' },
+    { cat:'Lönekartläggning', term:'Oförklarad löneskillnad', sok:'lönegap', short:'Skillnad efter kontroll för strukturella variabler', long:'En regression med kön, ålder och BAS-intervall ger könskoefficienten. Den är samma slags mått som Medlingsinstitutets standardvägda löneskillnad, men Medlingsinstitutet räknar bort fler faktorer. Viktigt: "oförklarat" betyder att skillnaden inte fångas av variablerna — inte att den beror på kön eller är osaklig. Det är en signal om var man bör titta närmare, inte ett bevis, och ska inte blandas ihop med "osaklig löneskillnad".' },
     { cat:'Lönekartläggning', term:'Kvinnodominerat arbete', short:'Ett arbete där klart fler än hälften är kvinnor', long:'Verktyget räknar ett yrke som kvinnodominerat när andelen kvinnor är över gränsen under Inställningar (standard 60 procent, riktmärket i lagens förarbeten). Likvärdigt arbete jämför kvinnodominerade yrken med yrken som inte är kvinnodominerade.' },
-    { cat:'Lönekartläggning', term:'Kandidatpar', short:'Ett kvinnodominerat yrke och ett jämförelseyrke med minst lika höga krav', long:'Ett par i Likvärdigt arbete där det kvinnodominerade yrket har lägre lön än ett yrke med jämförbara eller lägre krav. Paret är en kandidat att granska, inget konstaterande: om arbetena verkligen är likvärdiga avgör du.' },
+    { cat:'Lönekartläggning', term:'Kandidatpar', short:'Ett kvinnodominerat yrke och ett jämförelseyrke med likvärdiga eller lägre krav', long:'Ett par i Likvärdigt arbete där det kvinnodominerade yrket har lägre lön än ett yrke med jämförbara eller lägre krav. Paret är en kandidat att granska, inget konstaterande: om arbetena verkligen är likvärdiga avgör du.' },
     { cat:'Struktur', term:'Klibbigt golv', short:'Löneskillnaden är störst bland de lägst betalda', long:'När skillnaden mellan kvinnors och mäns lön är större vid P10 än vid P90 talar man om ett klibbigt golv: kvinnor blir kvar i de lägsta lönelägena. Granska ingångslöner och lägstanivåer.' },
     { cat:'Struktur', term:'Glastak', short:'Löneskillnaden är störst bland de högst betalda', long:'När skillnaden mellan kvinnors och mäns lön är större vid P90 än vid P10, eller andelen kvinnor sjunker mot högre BAS-intervall, talar man om ett glastak. Granska befordran och lönesättningen i toppen.' },
-    { cat:'Lönekartläggning', term:'Jämn könsfördelning', short:'Båda könen utgör minst 40 % av gruppen', long:'En grupp anses ha jämn könsfördelning när minst 40 % är kvinnor och minst 40 % är män. Skillnader 60/40 räknas alltså som jämnt; från 61/39 och uppåt blir gruppen ojämn (könsdominerad). Gränsen 40/60 är verktygets; lagen anger ingen siffra. Förarbetena använder 60 procent som riktmärke för kvinnodominerat arbete.' },
+    { cat:'Lönekartläggning', term:'Jämn könsfördelning', short:'Båda könen utgör minst 40 % av gruppen', long:'En grupp anses ha jämn könsfördelning när minst 40 % är kvinnor och minst 40 % är män. En fördelning på 60/40 räknas alltså som jämn; från 61/39 och uppåt blir gruppen ojämn (könsdominerad). Gränsen 40/60 är verktygets; lagen anger ingen siffra. Förarbetena använder 60 procent som riktmärke för kvinnodominerat arbete.' },
     { cat:'Lönekartläggning', term:'Könsskevhet', short:'Ojämn könsfördelning i en grupp', long:'När ett kön utgör mindre än 40 % av en grupp betraktas könsfördelningen som ojämn (könsdominerad). I sådana grupper kan lönejämförelser bli statistiskt svårtolkade.' },
-    { cat:'Lönekartläggning', term:'Lönepolitiskt ställningstagande', short:'Organisationens egen ambitionsnivå per BAS', long:'Anger önskade lönenivåer (P10, Median, P90) per BAS-intervall. Används för att jämföra faktiskt löneläge mot egen policy.' },
+    { cat:'Lönekartläggning', term:'Lönepolitiskt ställningstagande', short:'Organisationens egen ambitionsnivå per BAS-intervall', long:'Anger önskade lönenivåer (P10, Median, P90) per BAS-intervall. Används för att jämföra faktiskt löneläge mot egen policy.' },
     { cat:'Lönekartläggning', term:'Diskrimineringslagen 3 kap.', short:'Aktiva åtgärder och lönekartläggning', long:'Reglerar arbetsgivares skyldighet att varje år kartlägga och analysera bestämmelser, praxis och löneskillnader mellan kvinnor och män i lika och likvärdigt arbete, att genomföra åtgärder så snart som möjligt och senast inom tre år, att samverka med arbetstagarna och att dokumentera arbetet skriftligt (fullständigt med 25 anställda eller fler, i förenklad form med 10–24). De enskilda lagrummen står i verktygets dokumentation (lagrum.md).' },
     { cat:'Lönekartläggning', term:'Lönetransparensdirektivet 2023/970', short:'EU-direktiv om lönetransparens', long:'Kräver att större arbetsgivare rapporterar löneskillnaden mellan kvinnor och män, och kräver gemensam lönebedömning när en rapporterande arbetsgivare har en skillnad på 5 procent eller mer som inte är motiverad och inte rättad inom sex månader. Skulle vara infört i svensk rätt 7 juni 2026 (svensk lag och ikraftträdande dateras när de är kända); lönerapporteringen införs stegvis för arbetsgivare med minst 100 anställda, först för de största.' },
 
     // Struktur
-    { cat:'Struktur', term:'BAS-intervall', short:'Lönenivå enligt arbetsvärdering', long:'Bokstavskod som speglar arbetets svårighetsgrad och värdering enligt arbetsvärderingen. Varje bokstav motsvarar ett lika brett poängintervall: A är lägst (t.ex. 0–99 poäng), B nästa (100–199) osv. Verktyget analyserar de BAS-intervall som finns i lönefilen (vanligen A–K) och rangordnar efter bokstaven (A=1, B=2, …); ordningen är en del av BAS-systemet och kan inte ändras.' },
+    { cat:'Struktur', term:'BAS-intervall', short:'Kravnivå enligt arbetsvärdering', long:'Bokstavskod som speglar arbetets svårighetsgrad och värdering enligt arbetsvärderingen. Varje bokstav motsvarar ett lika brett poängintervall: A är lägst (t.ex. 0–99 poäng), B nästa (100–199) osv. Verktyget analyserar de BAS-intervall som finns i lönefilen (vanligen A–K) och rangordnar efter bokstaven (A=1, B=2, …); ordningen är en del av BAS-systemet och kan inte ändras.' },
     { cat:'Struktur', term:'AID-kod', short:'Arbetsidentifikationskod (yrkeskod)', long:'Sifferkod som identifierar yrket enligt SKR:s lönestatistiksystem. Används för att matcha organisationens yrkesgrupper mot jämförelsestatistiken. Format: vanligen 6 siffror följda av yrkesbenämning, t.ex. "402010 Förskollärare".' },
     { cat:'Struktur', term:'SKR', short:'Sveriges Kommuner och Regioner', long:'Arbetsgivarorganisationen för kommuner och regioner. Verktyget använder tre saker från SKR: yrkesindelningen AID, personalstatistiken (nationell andel kvinnor per yrke, visad som "Kvinnor nationellt" och som reserv i Likvärdigt arbete) och PO-påslaget 39,15 % som standardvärde i kostnadsberäkningen. Perioden för statistiken står i Om verktyget.' },
     { cat:'Struktur', term:'Yrkesgrupp', short:'Personer med samma AID-kod', long:'Den minsta jämförelsegruppen inom "lika arbete". Yrken med samma AID-kod jämförs mellan könen i Lika arbete.' },
@@ -806,7 +806,7 @@ const GLOSSARY = [
     { cat:'GDPR', term:'K-anonymitet', short:'Skydd mot återidentifiering i det som lämnar verktyget', long:'Verktygets eget skydd mot återidentifiering, som uttryck för uppgiftsminimering och inbyggt dataskydd enligt dataskyddsförordningen. På skärmen visas alla grupper. Det som lämnar verktyget — Excel, Word, PDF, ZIP, CSV, urklipp, diagrambilder, rapportunderlaget — redovisar inte lönemått för grupper med färre än {k} personer (minsta gruppstorlek, standard 10), och könsuppdelade mått bara när varje kön når den. Värdet ställs in under Inställningar och står i metodbilagan.' },
     { cat:'GDPR', term:'Uppgiftsminimering', short:'Behandla bara nödvändiga uppgifter (enligt dataskyddsförordningen)', long:'Personuppgifter ska vara adekvata, relevanta och begränsade till vad som är nödvändigt. Verktyget läser bara in godkända fält (BAS, yrke, lön, ålder, kön samt två valfria: arbetsvärderingspoäng och AID:s kod för ledning och särskilda uppdrag) — anställningsnummer, namn, e-post och personnummer plockas inte upp ens om de finns i filen.' },
     { cat:'GDPR', term:'Pseudonymisering', short:'Ersätt direkta identifierare med koder', long:'Direkta personidentifierare ersätts med löpnummer eller koder. Återmappning hålls separat. Möjliggör analys utan direkt återidentifiering. Rekommenderas innan lönefilen läses in.' },
-    { cat:'GDPR', term:'Inbyggt dataskydd', short:'Dataskydd som standard (enligt dataskyddsförordningen; eng. privacy by design)', long:'Tekniska och organisatoriska åtgärder som standard. Verktyget har inbyggt dataskydd genom att allt körs bara lokalt (data lämnar aldrig enheten), CSP-spärrar mot nätverksanrop, k-anonymitet, att bara godkända fält läses och att filer med personidentifierare avvisas automatiskt.' },
+    { cat:'GDPR', term:'Inbyggt dataskydd', short:'Dataskydd inbyggt från början (eng. privacy by design)', long:'Tekniska och organisatoriska åtgärder som standard. Verktyget har inbyggt dataskydd genom att allt körs bara lokalt (data lämnar aldrig enheten), CSP-spärrar mot nätverksanrop, k-anonymitet, att bara godkända fält läses och att filer med personidentifierare avvisas automatiskt.' },
     { cat:'GDPR', term:'Content Security Policy (CSP)', short:'Webbläsar-policy som blockerar nätverksanrop', long:'En meta-tagg i HTML-filen som instruerar webbläsaren att förbjuda alla utgående nätverksanslutningar (connect-src \'none\'). Hård teknisk spärr mot att data förs ut: även om en framtida bug skulle försöka göra fetch/XHR/WebSocket blockeras anropet.' },
     { cat:'GDPR', term:'Beräkning och urval', short:'Spårbarhet från lönefil till analys', long:'I flera analysflikar finns en panel "Beräkning och urval" som redovisar exakt hur många rader som ingår, vilka som exkluderats och varför. Möjliggör kvalitetssäkring och svar på frågan "Stämmer denna siffra?".' }
 ];
@@ -821,11 +821,11 @@ const STATISTIK_101 = `
         <p>Sortera alla löner från lägst till högst. Mittersta värdet är medianen. Hälften tjänar mer, hälften mindre. Den påverkas mindre än medelvärdet av enstaka mycket höga löner.</p>
 
         <h4 class="farg-accent-mork marg-14-0-4">Vad är en löneskillnad?</h4>
-        <p>Procentuell skillnad mellan kvinnors och mäns medianlöner. <strong>100 % = lika lön.</strong> 95 % = kvinnor tjänar i median 5 % mindre än män. Verktyget markerar skillnader över 5 procent, men lagen kräver att du analyserar varje skillnad.</p>
+        <p>Verktyget visar oftast kvinnors medianlön i procent av mäns: <strong>100 % betyder lika lön</strong>, 95 % att kvinnor tjänar 5 procent mindre. Löneskillnaden är samma tal räknat som skillnad (−5 %). Verktyget markerar skillnader över 5 procent, men lagen kräver att du analyserar varje skillnad.</p>
 
         <h4 class="farg-accent-mork marg-14-0-4">Tre sorters löneskillnad (samma tre ord används i hela verktyget)</h4>
         <ol class="marg-6-0-0-18 pad-0">
-            <li><strong>Ojusterad löneskillnad</strong> (kallas ibland rå skillnad): ren skillnad i median mellan könen. Påverkas av att kvinnor och män ofta har olika ålder, BAS och yrke. Visar inte diskriminering i sig.</li>
+            <li><strong>Rå (ojusterad) löneskillnad</strong>: ren skillnad i median mellan könen. Påverkas av att kvinnor och män ofta har olika ålder, BAS-intervall och yrke. Visar inte diskriminering i sig.</li>
             <li><strong>Åldersjusterad löneskillnad</strong>: samma jämförelse men vid <em>samma genomsnittsålder</em>. Räknar bort att det ena könet i snitt är äldre.</li>
             <li><strong>Oförklarad löneskillnad</strong>: det som blir kvar när verktyget räknat bort de variabler som valts i förklaringsmodellen, som standard <em>både ålder och BAS-intervall</em>. Det som <em>inte</em> kan förklaras av strukturella skillnader.</li>
         </ol>
@@ -985,7 +985,7 @@ function renderAuditHtml(a) {
             <ul>
                 <li>Lönefil: ${fmt(a.totalRaw)} rader inlästa, ${fmt(a.afterParse)} efter validering</li>
                 <li>Referens: ${esc(referensNamn())}${esc(referensKalla())} — ${state.policy.length} rader</li>
-                <li>Jämförelsestatistik: ${state.statistik.length ? state.statistik.length + ' poster inlästa' : '<em>Ej uppladdad</em>'}</li>
+                <li>Jämförelsestatistik: ${state.statistik.length ? state.statistik.length + ' poster inlästa' : '<em>Inte inläst</em>'}</li>
             </ul>
         </div>
     `;
@@ -2267,7 +2267,7 @@ const DEFAULT_PROFILE = Object.freeze({
     poPctNote:               'SKR Cirkulär 2025',
     orgTyp:                  'alla',   // 'kommun' | 'region' | 'alla' — SKR-referensens del (ADR-34)
     locale:                  'sv-SE',
-    notes:                   'Neutral standard. Läs in ett organisationspaket för er organisations benämningar.'
+    notes:                   'Neutral standard. Läs in ett organisationspaket för organisationens benämningar.'
 });
 
 /**
@@ -4290,7 +4290,7 @@ function modellVariabler(m) {
 function modellFras(m) {
     const delar = [];
     if (m && m.alder) delar.push('ålder');
-    if (m && m.bas) delar.push('nivå');
+    if (m && m.bas) delar.push('BAS-intervall');
     if (m && m.yrkesgrupp) delar.push('yrkesgrupp');
     if (delar.length <= 1) return delar.join('');
     return `${delar.slice(0, -1).join(', ')} och ${delar[delar.length - 1]}`;
@@ -6827,7 +6827,7 @@ function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
                      : ` Kvinnornas medianlön är ${_kr(u.medKv)} och männens ${_kr(u.medMa)}, vilket motsvarar ${_pct(kvot)} av männens.`)];
         if (u.oforklarat && !litet) {
             // Frasen följer förklaringsmodellen (ADR-56); tom fras = endast kön. Det bortvalda får en mening var.
-            const fras = typeof u.oforklarat.fras === 'string' ? u.oforklarat.fras : 'ålder och nivå';
+            const fras = typeof u.oforklarat.fras === 'string' ? u.oforklarat.fras : 'ålder och BAS-intervall';
             st.push(fras
                 ? `Efter hänsyn till ${fras} är den oförklarade löneskillnaden ${_pct(u.oforklarat.pct)} (95 % KI ${_ki(u.oforklarat.lo, u.oforklarat.hi)} %).`
                 : `Utan att något räknats bort är löneskillnaden ${_pct(u.oforklarat.pct)} (95 % KI ${_ki(u.oforklarat.lo, u.oforklarat.hi)} %).`);
@@ -6840,7 +6840,7 @@ function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
         const rader = [['Antal anställda', formatTal(u.n)], ['Kvinnor', formatTal(u.nKv)], ['Män', formatTal(u.nMa)]];
         if (!litet) {
             rader.push(['Medianlön kvinnor', _kr(u.medKv)], ['Medianlön män', _kr(u.medMa)], ['Kvinnors lön i % av mäns', _pct(kvot)]);
-            if (u.oforklarat) { const fras = typeof u.oforklarat.fras === 'string' ? u.oforklarat.fras : 'ålder och nivå'; rader.push([fras ? `Oförklarad löneskillnad (${fras})` : 'Löneskillnad (inget räknat bort)', _pct(u.oforklarat.pct)]); }
+            if (u.oforklarat) { const fras = typeof u.oforklarat.fras === 'string' ? u.oforklarat.fras : 'ålder och BAS-intervall'; rader.push([fras ? `Oförklarad löneskillnad (${fras})` : 'Löneskillnad (inget räknat bort)', _pct(u.oforklarat.pct)]); }
         }
         return blk('Sammanfattning', st, { rubriker: ['Nyckeltal', 'Värde'], rader });
     }
@@ -14111,7 +14111,7 @@ function renderProcessTracker({ punkter: givna } = {}) {
     // 1. Underlag inläst
     rows.push(hasData
         ? { n: 1, status: 'klar', title: '1. Underlag inläst', tab: 'dashboard', detail: `${getData().length} rader inlästa — allt nedan bygger på detta.` }
-        : { n: 1, status: 'ej',   title: '1. Underlag inläst', tab: 'dashboard', detail: 'Börja här: ladda upp personalfilen (eller prova med demodata).' });
+        : { n: 1, status: 'ej',   title: '1. Underlag inläst', tab: 'dashboard', detail: 'Börja här: läs in lönefilen i Filer och kvalitet (eller prova med demodata).' });
 
     // 2. § 8 Regler & praxis (kvalitativ bedömning per område)
     rows.push(safe(() => {
@@ -14680,7 +14680,7 @@ function renderDataValidationReport() {
                     ? statStatus.ok
                         ? `<div class="dvr-row ok"><span><span class="dvr-icon">${ikon('bock')}</span>Jämförelsestatistik:</span><span class="dvr-value">OK</span></div>`
                         : `<div class="dvr-row warn"><span><span class="dvr-icon">${ikon('statusVarning')}</span>Jämförelsestatistik:</span><span class="dvr-value">${statStatus.missing.length} AID saknas</span></div>`
-                    : '<div class="dvr-row f-dampad"><span><span class="dvr-icon">' + ikon('statusIngen') + '</span>Jämförelsestatistik:</span><span>Ej uppladdad</span></div>'}
+                    : '<div class="dvr-row f-dampad"><span><span class="dvr-icon">' + ikon('statusIngen') + '</span>Jämförelsestatistik:</span><span>Inte inläst</span></div>'}
                 <div class="text-dampad-xs lh-1_4 marg-t-6">Detaljer i konsistens-bannern nedan.</div>
             </div>
         </div>
@@ -15158,7 +15158,7 @@ function buildActionChecklist({ endastGrupper = false } = {}) {
                             kategori: 'Lika arbete',
                             prioritet: 'hög',
                             titel: `BAS ${p.bas}: kvinnor ${_agPct(p.gapPct)} % ${_agRiktning(p.gapPct)} lön efter ålderskontroll, statistiskt säkerställd`,
-                            detalj: `Statistiskt säkerställt också efter korrigering för många samtidiga tester (p=${p.pValue < 0.001 ? '< 0,001' : _agTal(p.pValue, 3)}, q=${q != null && q < 0.001 ? '< 0,001' : (q != null ? _agTal(q, 3) : '—')}). Skillnaden är över 5 procent. Lagen kräver att den analyseras, och när lönetransparensdirektivet gäller kan den också leda till en gemensam lönebedömning.`,
+                            detalj: `Statistiskt säkerställt också efter korrigering för många samtidiga tester (p=${p.pValue < 0.001 ? '< 0,001' : _agTal(p.pValue, 3)}, q=${q != null && q < 0.001 ? '< 0,001' : (q != null ? _agTal(q, 3) : '—')}). Skillnaden är över 5 procent. Lagen kräver att den analyseras, och när lönetransparensdirektivet gäller kan den också leda till en gemensam lönebedömning hos en arbetsgivare som rapporterar löneskillnader (100 anställda eller fler).`,
                             tab: 'matrix',
                             källa: 'Lika arbete'
                         });
@@ -15972,7 +15972,7 @@ function runDiagnostics() {
     const ma = state.data.filter(r => r.kon === 'man' || r.kon === 'män');
     const rawGap = (Stat.median(kv.map(r=>r.lon)) / Stat.median(ma.map(r=>r.lon)) - 1) * 100;
     tests.push({
-        name: 'Råa löneskillnaden är negativ (kvinnor lägre lön)',
+        name: 'Den råa löneskillnaden är negativ (kvinnor lägre lön)',
         expected: '< -3%',
         actual: svPct(rawGap, 2),
         pass: rawGap < -3
@@ -16362,8 +16362,8 @@ function _methodAppendixData() {
         ['Referens för lönenivåer', referensNamn() + referensKalla()],
         ['Jämförelsestatistik', statistikBeskrivning()],
         ['Mått på kraven (likvärdigt arbete)', state.arbetsvardering ? 'Arbetsvärderingspoäng (ur lönefilens Poäng-kolumn)' : 'BAS-intervall (rangordning)'],
-        ['Löneskillnadens tecken', 'Verktyget räknar skillnaden som (kvinnor − män) / män och visar den som kvinnors lön i procent av mäns (under 100 = kvinnor lägre). EU-lönerapporten och rapportens avsnitt om lönetransparens redovisar i stället direktivets löneskillnad, (män − kvinnor) / män i procent: positivt tal = kvinnor lägre. Beloppet är detsamma.'],
-        ['Tolkningsregel', 'En oförklarad skillnad är en statistisk signal om var man bör titta närmare, inte ett bevis för en osaklig (diskriminerande) löneskillnad. Den bedömningen görs kvalitativt av arbetsgivaren.'],
+        ['Löneskillnadens tecken', 'Verktyget räknar skillnaden som (kvinnor − män) / män och visar den som kvinnors lön i procent av mäns (under 100 = kvinnor lägre). EU-lönerapporten och rapportens avsnitt om lönetransparens redovisar i stället direktivets löneskillnad, (män − kvinnor) / män i procent: positivt tal = kvinnor lägre. Talet är lika stort.'],
+        ['Tolkningsregel', 'En oförklarad skillnad är en statistisk signal om var man bör titta närmare, inte ett bevis för en osaklig löneskillnad. Den bedömningen görs av organisationen.'],
         ['Rättslig ram', 'Diskrimineringslagen 3 kap. (lönekartläggning); direktiv (EU) 2023/970 om lönetransparens. De enskilda lagrummen står i docs/utveckling/lagrum.md.']
     ];
 }
@@ -18391,7 +18391,7 @@ function _autoClearOnInactivity() {
         // Liten persistent notis så användaren förstår vad som hände när de kommer tillbaka
         const notice = document.createElement('div');
         notice.style.cssText = `position:fixed; top:20px; right:20px; background:${FARG.text}; color:white; padding:14px 18px; border-radius:8px; box-shadow:0 4px 14px rgba(0,0,0,0.25); z-index:99999; max-width:340px; font-size:0.88rem; line-height:1.5;`;
-        notice.innerHTML = `<strong>${ikon('klocka')} Sessionen rensades</strong><br>Av säkerhetsskäl har all data raderats efter inaktivitet. Ladda upp dina filer på nytt för att fortsätta. <button data-dismiss-parent class="bak-transparent ram-1-white rund-4 farg-white pekare marg-v-8 pad-2-8">OK</button>`;
+        notice.innerHTML = `<strong>${ikon('klocka')} Sessionen rensades</strong><br>Av säkerhetsskäl har all data raderats efter inaktivitet. Läs in filerna på nytt för att fortsätta. <button data-dismiss-parent class="bak-transparent ram-1-white rund-4 farg-white pekare marg-v-8 pad-2-8">OK</button>`;
         document.body.appendChild(notice);
         setTimeout(() => { if (notice.parentNode) notice.remove(); }, 30000);
     }
@@ -20227,7 +20227,7 @@ function maybeShowColumnMapping() {
         state.columnMap = Object.keys(map).length ? map : null;
         const f = state._lastStructureFile || (/** @type {HTMLInputElement} */ (dataInput).files && /** @type {HTMLInputElement} */ (dataInput).files?.[0]);
         if (f) loadStructureFile(f);
-        else { dataStatus.textContent = 'Ladda upp filen igen för att tillämpa mappningen.'; dataStatus.className = 'status-msg'; }
+        else { dataStatus.textContent = 'Läs in filen igen för att tillämpa mappningen.'; dataStatus.className = 'status-msg'; }
     });
     panel.querySelector('#colmap-reset')?.addEventListener('click', () => {
         state.columnMap = null;
@@ -20824,7 +20824,7 @@ function renderLikvardighet() {
                 </div>
                 <div class="mitt rad-inline gap-8">
                     <label for="lv-kv-definition">Kvinnodominerat enligt:</label>
-                    <select id="lv-kv-definition" class="form-select bredd-auto" title="Gäller tabellerna per AID-kod och BAS-intervall (Likvärdigt arbete, Hierarkisk jämförelse). Förarbetena: mer än tröskeln (riktmärket i lagens förarbeten). SCB: tröskeln eller mer.">
+                    <select id="lv-kv-definition" class="form-select bredd-auto" title="Gäller tabellerna per AID-kod och BAS-intervall (Likvärdigt arbete, Hierarkisk jämförelse). Förarbetena: fler kvinnor än gränsen (lagens förarbeten använder 60 procent som riktmärke). SCB: gränsen eller fler.">
                         <option value="do"${aidbasDefinition() === 'do' ? ' selected' : ''}>Förarbetena — mer än ${cfg.kvinnoTrosholdPct} % kvinnor</option>
                         <option value="scb"${aidbasDefinition() === 'scb' ? ' selected' : ''}>SCB — ${cfg.kvinnoTrosholdPct} % kvinnor eller mer</option>
                     </select>
@@ -21795,7 +21795,7 @@ function _forecastOptimize() {
     const cand = _fcKandidater();
     const targets = _fcSuggestTargets(cand, riktadPott, state.forecast.minGroupN || 0);
     if (!targets.length) {
-        alert('Verktyget hittade inga skillnader i likvärdigt arbete i grupper med minst ' + (state.forecast.minGroupN || 0) + ' personer, eller så har det generella påslaget tagit hela potten. Sänk minsta gruppstorlek eller lägg till riktade rader själv.');
+        alert('Verktyget hittade inga skillnader i likvärdigt arbete i grupper med minst ' + (state.forecast.minGroupN || 0) + ' personer, eller så har det generella påslaget tagit hela potten. Sänk minsta antal personer i gruppen eller lägg till riktade rader själv.');
         return;
     }
     state.forecast.targets = targets.map(t => ({ bas: t.bas, aid: t.aid, mode: 'kr', value: t.value, dist: 'lowest', targetLevel: 'median', pool: 'equity', kalla: 'par' }));
@@ -21842,7 +21842,7 @@ function _forecastAddByCriteria() {
     };
     const pool = matcher === 'kvdom' ? 'equity' : 'övrigt';
     const picked = groups.filter(match);
-    if (!picked.length) { alert('Ingen grupp passar villkoret. Sänk minsta gruppstorlek (nu ' + minN + ').'); return; }
+    if (!picked.length) { alert('Ingen grupp passar villkoret. Sänk minsta antal personer i gruppen (nu ' + minN + ').'); return; }
     let added = 0;
     picked.forEach(g => {
         if (!state.forecast.targets.some(t => t.bas === g.bas && t.aid === g.aid)) {
@@ -22067,7 +22067,7 @@ function _exportForecastExport() {
         ['Använt (kr/mån)', kr(out.använt)],
         ['Kvar att fördela (kr/mån)', kr(out.kvar)],
         ['Generellt påslag', (state.forecast.generell.value || 0) + (state.forecast.generell.mode === 'kr' ? ' kr/mån' : ' %')],
-        ['Minsta gruppstorlek för riktning', state.forecast.minGroupN || 0],
+        ['Minsta antal personer i gruppen för riktning', state.forecast.minGroupN || 0],
         ...state.forecast.targets.map((t, i) => [`Riktad pott ${i + 1}`, `BAS ${t.bas}, ${t.aid === '*' ? 'alla yrken' : 'AID ' + t.aid}${t.kon === 'kvinna' ? ', bara kvinnor' : t.kon === 'man' ? ', bara män' : ''}${t.lonCap > 0 ? `, löner under ${Math.round(t.lonCap)} kr` : ''}: ${t.mode === 'till' ? `höj till ${t.value} kr/mån` : t.mode === 'kr' ? `${t.value} kr/mån` : `${t.value} % av grupplön`}${t.mode === 'till' ? '' : ` (${{ flat: 'lika %', lowest: 'lägst först', target: 'mot målnivå' }[t.dist] || t.dist})`}`]),
         ...(_fcParNot ? [['Utelämnade kandidatpar (likvärdigt arbete)', _fcParNot]] : []),
         ['Avrundning av nya löner (kr)', state.forecast.roundStep || 0],
@@ -22570,7 +22570,7 @@ function _exportEuReportExport() {
     // lägre. Verktyget räknar (kvinnor − män) / män; _stTillDirektivtecken vänder tecknet, bara i den här exporten
     // och rapportens avsnitt om lönetransparens — övriga blad och flikar visar kvinnors lön i procent av mäns.
     const DIREKTIV_RUBRIK = 'Löneskillnad enligt direktivet (%), positivt tal = kvinnor lägre';
-    const DIREKTIV_METOD = 'Löneskillnaden är (män − kvinnor) / män i procent, enligt direktivet: positivt tal = kvinnor lägre. Verktygets flikar och övriga blad visar i stället kvinnors lön i procent av mäns; beloppet är detsamma.';
+    const DIREKTIV_METOD = 'Löneskillnaden är (män − kvinnor) / män i procent, enligt direktivet: positivt tal = kvinnor lägre. Verktygets flikar och övriga blad visar i stället kvinnors lön i procent av mäns; talet är lika stort.';
     function direktivRound(v) { const t = _stTillDirektivtecken(v); return t == null ? '–' : +t.toFixed(1); }
     const meta = [
         ['Lönetransparensdirektivets mått', ''],
@@ -25394,7 +25394,7 @@ function runOLSRegression() {
         modell: skattad,                      // den skattade förklaringsmodellen (ADR-56)
         modellVald: modell,                   // den valda (skiljer sig från modell bara i reservsteget)
         modellVarning,
-        fras: _rgModellFras(skattad),         // "ålder och nivå" m.fl.; tom för endast kön
+        fras: _rgModellFras(skattad),         // "ålder och BAS-intervall" m.fl.; tom för endast kön
         tillfor,
         bortvalt,
         fellBackFromFull,
@@ -25619,7 +25619,7 @@ function _regTrappaVisas(stegUt) {
 }
 const _REG_TRAPPSTEG = { '+ BAS-intervall': 'BAS-intervall', '+ Ålder': 'Ålder', '+ Yrkesgrupp': 'Yrkesgrupp inom BAS' };
 /** @param {any[]} seqOk @param {any} [yrkesSteg] yrkesgruppssteget efter huvudtalet (när det inte är valt in i modellen) @param {string} [fras] */
-function _regTrappaFigur(seqOk, yrkesSteg = null, fras = 'ålder och nivå') {
+function _regTrappaFigur(seqOk, yrkesSteg = null, fras = 'ålder och BAS-intervall') {
     const forst = seqOk[0], sist = seqOk[seqOk.length - 1];
     const yrke = yrkesSteg && yrkesSteg.status === 'ok' && typeof yrkesSteg.gapPct === 'number' ? yrkesSteg : null;
     const pct = v => `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(1).replace('.', ',')} %`;
@@ -25656,7 +25656,7 @@ function _regTrappaFigur(seqOk, yrkesSteg = null, fras = 'ålder och nivå') {
 
 // ---- Gapet längs lönefördelningen ----
 // Kvantilregressionens tre skattningar (P10, median, P90): är strecket längst i toppen är gapet störst bland de
-// högst betalda (glastak), längst i botten bland de lägst betalda (klistergolv). Samma tal som tabellen under.
+// högst betalda (glastak), längst i botten bland de lägst betalda (klibbigt golv). Samma tal som tabellen under.
 /** @type {any[]|null} */
 let _regKvantilSenast = null;
 // Bootstrap-KI på könskoefficienten: B omsamplingar av raderna, percentilintervall, seedat ur datat (_rngFor) så
@@ -25880,7 +25880,7 @@ function renderRegressionCard() {
     const fmRubrik = document.querySelector('[data-fm-rubrik]'), fmInledning = document.querySelector('[data-fm-inledning]');
     if (fmRubrik) fmRubrik.textContent = fmT.fras ? `När ${fmT.fras} räknats bort, steg för steg` : 'Den råa skillnaden, utan att något räknats bort';
     if (fmInledning && !r.error) fmInledning.innerHTML = fmT.fras
-        ? (fmT.fras === 'ålder och nivå' ? 'Här räknar verktyget bort att kvinnor och män har olika ålder och arbetar i olika BAS-intervall. Det som blir kvar kan <em>inte</em> förklaras av de faktorerna.' : `Här räknar verktyget bort att kvinnor och män skiljer sig i ${esc(fmT.forklarasAv)}. Det som blir kvar kan <em>inte</em> förklaras av ${fmT.variabler.length > 2 ? 'de faktorerna' : 'den faktorn'}.`)
+        ? (fmT.fras === 'ålder och BAS-intervall' ? 'Här räknar verktyget bort att kvinnor och män har olika ålder och arbetar i olika BAS-intervall. Det som blir kvar kan <em>inte</em> förklaras av de faktorerna.' : `Här räknar verktyget bort att kvinnor och män skiljer sig i ${esc(fmT.forklarasAv)}. Det som blir kvar kan <em>inte</em> förklaras av ${fmT.variabler.length > 2 ? 'de faktorerna' : 'den faktorn'}.`)
         : 'Här visas den råa skillnaden: ingen variabel räknas bort (valet i panelen nedan).';
 
     // ----- Felfall: kunde inte estimeras alls -----
@@ -26296,9 +26296,9 @@ function renderRegressionCard() {
                 if (p10 && p50 && p90 && !p10.error && !p50.error && !p90.error) {
                     const diff_10_90 = Math.abs(Number(p10.konPct)) - Math.abs(Number(p90.konPct));
                     if (diff_10_90 > 1) {
-                        tolkning = `<strong>Klistergolvet är värre än glasstaket</strong> — kvinnor i den lägre delen av löneskalan halkar efter mer än kvinnor i toppen.`;
+                        tolkning = `<strong>Det klibbiga golvet väger tyngre än glastaket</strong> — kvinnor i den lägre delen av löneskalan halkar efter mer än kvinnor i toppen.`;
                     } else if (diff_10_90 < -1) {
-                        tolkning = `<strong>Glasstaket är värre än klistergolvet</strong> — kvinnor i den högre delen av löneskalan halkar efter mer än kvinnor i botten.`;
+                        tolkning = `<strong>Glastaket väger tyngre än det klibbiga golvet</strong> — kvinnor i den högre delen av löneskalan halkar efter mer än kvinnor i botten.`;
                     } else {
                         tolkning = `Löneskillnaden är ungefär lika stor i alla delar av lönefördelningen.`;
                     }
@@ -26307,7 +26307,7 @@ function renderRegressionCard() {
                 return `
                 <details class="mt-14" open>
                     <summary class="pekare fw-600 pad-8-0 ej-markerbar">Löneskillnad i olika delar av lönefördelningen
-                        <span class="info-tip" data-tooltip="Huvudmodellen skattar löneskillnaden i medelvärdet. Kvantilregression skattar skillnaden i olika delar av fördelningen var för sig. P10 = botten av lönefördelningen ('klistergolvet'), P50 = median, P90 = toppen ('glasstaket'). Visar om skillnaden är större i vissa lönenivåer.">${ikon('info', 14)}</span>
+                        <span class="info-tip" data-tooltip="Huvudmodellen skattar löneskillnaden i medelvärdet. Kvantilregression skattar skillnaden i olika delar av fördelningen var för sig. P10 = botten av lönefördelningen (det klibbiga golvet), P50 = median, P90 = toppen (glastaket). Visar om skillnaden är större i vissa lönenivåer.">${ikon('info', 14)}</span>
                     </summary>
                     <p data-hjalptext class="text-dampad-sm lh-1_55 marg-8-0-6">
                         Huvudmodellen ovan skattar löneskillnaden vid <em>medelvärdet</em>. Kvantilregression visar skillnaden i olika delar av lönefördelningen. Det är viktigt om skillnaden är ojämnt fördelad, till exempel större bland de lägst betalda än bland de högst betalda.
@@ -26317,9 +26317,9 @@ function renderRegressionCard() {
                         <table class="data-table fs-sm marg-t-8">${antalCaption(qr.nKv, qr.nMa)}
                             <thead><tr><th>Position i lönefördelningen</th><th class="t-hoger">Oförklarad skillnad</th><th>95 % KI (bootstrap)</th><th>Tolkning</th></tr></thead>
                             <tbody>
-                                ${fmtRow('<strong>P10 — Klistergolvet</strong>', 'Löneskillnaden bland de lägst betalda', p10)}
+                                ${fmtRow('<strong>P10 — Klibbigt golv</strong>', 'Löneskillnaden bland de lägst betalda', p10)}
                                 ${fmtRow('<strong>P50 — Medianen</strong>',     'Löneskillnaden i mittersta delen av lönefördelningen', p50)}
-                                ${fmtRow('<strong>P90 — Glasstaket</strong>',   'Löneskillnaden bland de högst betalda', p90)}
+                                ${fmtRow('<strong>P90 — Glastak</strong>',   'Löneskillnaden bland de högst betalda', p90)}
                             </tbody>
                         </table>
                     </div>
@@ -27055,7 +27055,7 @@ function generateMotivationSuggestions(item) {
         if (kvShareInQ1 >= 0.4 && kvShareInQ1 - maShareInQ1 >= 0.2) {
             out.push({
                 type: 'flag',
-                text: `<strong>Glasstaks-/klistergolvsmönster:</strong> ${svPct((kvShareInQ1*100), 0)} av kvinnorna i denna grupp ligger i den lägsta lönekvintilen, jämfört med ${svPct((maShareInQ1*100), 0)} av männen. Det kan vara värdefullt att titta närmare på hur karriärvägar, befordringar och lönesättningsbeslut ser ut för gruppen.`
+                text: `<strong>Mönster med glastak eller klibbigt golv:</strong> ${svPct((kvShareInQ1*100), 0)} av kvinnorna i denna grupp ligger i den lägsta lönekvintilen, jämfört med ${svPct((maShareInQ1*100), 0)} av männen. Det kan vara värdefullt att titta närmare på hur karriärvägar, befordringar och lönesättningsbeslut ser ut för gruppen.`
             });
         }
     }
@@ -27287,13 +27287,13 @@ function renderPrioritering() {
             ['Åtgärdskostnad', `<code>|avvikelse kr/mån| × ${state.costSettings.months} mån × (1 + ${svPct(state.costSettings.poPct, 2)}/100) × antal personer</code> (endast om under referens, inkl PO-påslag)`],
             ['Prioriteringsindex', `<code>riktningsvikt × (avvikelse·${state.prioWeights.avvikelse}% + volym·${state.prioWeights.volym}% + jämställdhet·${state.prioWeights.jamstalldhet}%)</code>, skala 0-100`],
             ['Riktningsvikt', '1.0 om under referens, 0.5 om över (under-betalning vägs tyngre)'],
-            ['Status', `Börja här om avvikelsen är under ${state.prioConfig.atgardThreshold} % och gruppen har minst ${state.prioConfig.akutMinN} personer · Värt att granska om avvikelsen är under ${state.prioConfig.atgardThreshold} % i en mindre grupp · Följ upp om den är under ${state.prioConfig.bevakaThreshold} % · Över referens om den är över +${state.prioConfig.analyseraThreshold} % · Balanserat däremellan`]
+            ['Status', `Statusen sätts efter avvikelsen mot referensen: <br>• Börja här: under ${state.prioConfig.atgardThreshold} % och minst ${state.prioConfig.akutMinN} personer <br>• Värt att granska: under ${state.prioConfig.atgardThreshold} % i en mindre grupp <br>• Följ upp: under ${state.prioConfig.bevakaThreshold} % <br>• Över referens: över +${state.prioConfig.analyseraThreshold} % <br>• Balanserat: däremellan`]
         ],
         notes: [
             `Aktuell referens: <strong>${ref === 'stallningstagande' ? esc(referensNamn()) + ' (per BAS)' : 'jämförelsestatistiken (per AID)'}</strong>`,
             ...(JSON.stringify(state.prioConfig) !== JSON.stringify(PRIO_CONFIG_DEFAULTS) ? [`<strong>${ikon('kugghjul')} Anpassad konfiguration aktiv</strong> – tröskelvärdena har justerats från standardvärdena (Börja här: −5 % och minst 10 personer, Följ upp: −2 %, Över referens: +5 %)`] : []),
             'Tabellen visar de 30 högst prioriterade grupperna',
-            'Bubbeldiagrammets storlek = årskostnad, x = avvikelse, y = antal personer (log skala)'
+            'Bubblornas storlek visar kostnaden för perioden, den vågräta axeln avvikelsen och den lodräta antalet personer (logaritmisk skala)'
         ]
     });
 
@@ -27828,7 +27828,7 @@ function renderHandlingsplanSeed() {
         const egna = seed.egenCount ? ` ${seed.egenCount === 1 ? 'En egen rad' : `${seed.egenCount} egna rader`} står sist.` : '';
         note.innerHTML = (forifyllda
             ? `Förifyllt med <strong>${forifyllda}</strong> rad${forifyllda === 1 ? '' : 'er'} (${seed.prioCount} från Prioritering, under referensen, och ${seed.lvCount} kandidatpar från Likvärdigt arbete) — ett utgångsläge att granska. Fyll i sakligt skäl, ansvarig, tidsplan och status direkt i raderna.`
-            : 'Mallen förifylls automatiskt med grupperna från Prioritering och Likvärdigt arbete när data och referens finns. Lägg till egna rader med knappen under tabellen, eller ladda upp underlag på <strong>Översikt</strong>.') + egna + parNot;
+            : 'Mallen förifylls automatiskt med grupperna från Prioritering och Likvärdigt arbete när data och referens finns. Lägg till egna rader med knappen under tabellen, eller läs in ställningstagandet eller jämförelsestatistiken i <strong>Filer och kvalitet</strong>.') + egna + parNot;
     }
 }
 
@@ -28461,7 +28461,7 @@ function _rmAvsnittenUtanUrval() {
     ] };
     if (repVisade.length >= 2) {   // bara BAS som får redovisas rangordnas efter median och namnges
         const sorterade = [...repVisade].sort((a, b) => b.median - a.median), topp = sorterade[0], botten = sorterade[sorterade.length - 1];
-        if (botten.andelKv - topp.andelKv > 15) regler.delar.push(stycke(`Automatisk iakttagelse: andelen kvinnor är högre i lägre betalda BAS-intervall (${botten.bas}: ${svPct(botten.andelKv, 0)}) än i högre betalda (${topp.bas}: ${svPct(topp.andelKv, 0)}. Det kan tyda på att kvinnor och män är ojämnt fördelade mellan BAS-intervallen, och det är värt att ta med i granskningen av regler och praxis.`));
+        if (botten.andelKv - topp.andelKv > 15) regler.delar.push(stycke(`Automatisk iakttagelse: andelen kvinnor är högre i lägre betalda BAS-intervall (${botten.bas}: ${svPct(botten.andelKv, 0)}) än i högre betalda (${topp.bas}: ${svPct(topp.andelKv, 0)}). Det kan tyda på att kvinnor och män är ojämnt fördelade mellan BAS-intervallen, och det är värt att ta med i granskningen av regler och praxis.`));
     }
     const bes8 = typeof _bes8Areas === 'function' ? _bes8Areas() : [];
     if (bes8.length) {
@@ -28475,7 +28475,7 @@ function _rmAvsnittenUtanUrval() {
     // ---- 3. Lika arbete ----
     /** @type {{id: string, rubrik: string, utelamnat: string[], delar: any[], [k: string]: any}} */
     const lika = { id: 'lika', numrerad: true, rubrik: 'Lika arbete — kvinnor och män i samma yrke', utelamnat: [], delar: [
-        dampad(`Den löneskillnad som står kvar ${reg && !reg.error ? (reg.fras ? `när ${reg.fras} räknats bort` : 'utan att något räknats bort') : 'när ålder och nivå räknats bort'}, och de yrkesgrupper där skillnaden mellan kvinnors och mäns medianlön är över 5 procent. Lagen kräver att varje skillnad prövas; de här är störst.`),
+        dampad(`Den löneskillnad som står kvar ${reg && !reg.error ? (reg.fras ? `när ${reg.fras} räknats bort` : 'utan att något räknats bort') : 'när ålder och BAS-intervall räknats bort'}, och de yrkesgrupper där skillnaden mellan kvinnors och mäns medianlön är över 5 procent. Lagen kräver att varje skillnad prövas; de här är störst.`),
         dampad(AID_METODTEXT),
     ] };
     if (reg && !reg.error) {
@@ -28511,7 +28511,7 @@ function _rmAvsnittenUtanUrval() {
     // ---- 4. Likvärdigt arbete ----
     /** @type {{id: string, rubrik: string, utelamnat: string[], delar: any[], [k: string]: any}} */
     const likvardigt = { id: 'likvardigt', numrerad: true, rubrik: 'Likvärdigt arbete — kvinnodominerade yrken', utelamnat: [], delar: [
-        dampad('Kvinnodominerade yrken med lägre lön än ett yrke med minst lika höga krav. Listan är kandidater att granska. Det är organisationen som avgör om kraven verkligen är likvärdiga.'),
+        dampad('Kvinnodominerade yrken med lägre lön än ett yrke med likvärdiga eller lägre krav. Listan är kandidater att granska. Det är organisationen som avgör om kraven verkligen är likvärdiga.'),
     ] };
     const medNamn = (aid, namn, bas) => `${aid}${namn && namn !== aid ? ' ' + namn : ''} (BAS ${bas})`;
     if (par.length) {
@@ -28574,7 +28574,7 @@ function _rmAvsnittenUtanUrval() {
             ? { typ: 'tabell', kolumner: [{ rubrik: 'Grupp', typ: 'text' }, { rubrik: 'Antal berörda', typ: 'antal' }, { rubrik: 'Underlag', typ: 'text' }, { rubrik: 'Uppskattad kostnad', typ: 'krAr' }, { rubrik: 'Sakliga skäl prövade?', typ: 'fyllIn' }, { rubrik: 'Ansvarig', typ: 'fyllIn' }, { rubrik: 'Tidsplan (senast inom tre år)', typ: 'fyllIn' }, { rubrik: 'Status', typ: 'fyllIn' }],
                 // Antal berörda: gruppens antal (för ett kandidatpar det kvinnodominerade yrkets); tomt för en egen rad.
                 rader: hp.map(r => [r[1], r[8] != null ? r[8] : { text: '' }, r[2], r[4] ? Math.round(r[4]) : null, hpFalt(r[3]), hpFalt(r[5]), hpFalt(r[6]), hpFalt(r[7])]) }
-            : dampad(state.policy.length || state.statistik.length ? 'Inga grupper under referensen och inga kandidatpar att föra in i handlingsplanen.' : 'Inga prioriterade åtgärdsgrupper (ingen referensdata uppladdad).'),
+            : dampad(state.policy.length || state.statistik.length ? 'Inga grupper under referensen och inga kandidatpar att föra in i handlingsplanen.' : 'Inga prioriterade åtgärdsgrupper (inget ställningstagande eller ingen jämförelsestatistik inläst).'),
         fyllIn('Besluta åtgärder, budget och tidsplan (lönejusteringar ska genomföras så snart som möjligt och senast inom tre år). Beskriv även förebyggande åtgärder.'),
     ] };
 
@@ -28615,7 +28615,7 @@ function _rmAvsnittenUtanUrval() {
               rader: stegUt.steg.map(st => (st.status !== 'ok' ? [st.name, { text: st.status === 'singular' ? 'singulär' : 'för få obs' }, null] : [st.name, st.gapPct, st.R2 * 100])) });
         if (reg.yrkesSteg?.status === 'ok') regression.delar.push(stycke(`Steget + Yrkesgrupp: ${utanTaggar(_yrkesStegText(reg.yrkesSteg))}`));
         if (stegUt.utelamnat) { regression.delar.push(stycke(stegUt.not, 'not')); regression.utelamnat.push('första steget i dekomponeringen (ett kön under tröskeln)'); }
-        else if (stegUt.explainedShare !== null) regression.delar.push(stycke(`Strukturellt förklarad andel: ${svPct(stegUt.explainedShare, 0)} av den råa löneskillnaden förklaras av strukturella variabler (${reg.fras === 'ålder och nivå' ? 'ålder och BAS-intervall' : reg.fras}). Oförklarad rest: ${svPct(100 - stegUt.explainedShare, 0)}.`));
+        else if (stegUt.explainedShare !== null) regression.delar.push(stycke(`Strukturellt förklarad andel: ${svPct(stegUt.explainedShare, 0)} av den råa löneskillnaden förklaras av strukturella variabler (${reg.fras}). Oförklarad rest: ${svPct(100 - stegUt.explainedShare, 0)}.`));
         const perBas = (reg.perBas || []).filter(pb => pb.status === 'ok');
         if (perBas.length) regression.delar.push({ typ: 'rubrik', niva: 3, text: 'Per BAS-intervall (separata regressioner)' },
             { typ: 'tabell', kolumner: [{ rubrik: 'BAS', typ: 'text' }, { rubrik: 'N', typ: 'antal' }, { rubrik: 'Kvinnor / män', typ: 'text' }, { rubrik: 'Oförklarad skillnad', typ: 'tecken2' }, { rubrik: 'Signifikans', typ: 'text' }, { rubrik: 'Över 5 % och säkerställd', typ: 'text' }],
@@ -29677,7 +29677,7 @@ const INFO_SECTIONS = {
 
         <h3>Radering och insyn</h3>
         <ul>
-            <li><strong>Rensa all data:</strong> knappen under Inställningar tömmer minnet omedelbart utan att vänta på att fliken stängs : lagringsminimering och dataskydd som standard. De registrerades rätt till radering utövas mot källsystemet, inte i verktyget.</li>
+            <li><strong>Rensa all data:</strong> knappen under Inställningar tömmer minnet omedelbart utan att vänta på att fliken stängs: lagringsminimering och dataskydd som standard. De registrerades rätt till radering utövas mot källsystemet, inte i verktyget.</li>
             <li><strong>Vad lagras?</strong> — panelen visar live schema, antal rader, ungefärlig minnesfootprint och en maskerad exempel-post.</li>
             <li><strong>Lagringsminimering:</strong> Datan försvinner automatiskt när webbläsarfliken stängs. Ingen retention-policy behövs.</li>
         </ul>
@@ -32530,7 +32530,7 @@ function _gdRenderBody(d) {
             ${card('Nyckeltal', nyckeltal)}
             ${card('Ojusterad löneskillnad', gapInner)}
             ${card('Skillnad när åldern räknats bort', adjInner)}
-            ${card('Mot er lönepolitik', polInner)}
+            ${card('Mot organisationens lönepolitik', polInner)}
             ${card('Likvärdigt arbete', lvInner)}
             ${card('Extern jämförelse', benchInner)}
             ${card('Hur angeläget — och vad kostar det?', prioInner)}
@@ -33550,7 +33550,7 @@ const SOK_FUNKTIONER = [
     // Lika arbete
     { namn: 'Kvinnor och män i samma yrkesgrupp', synonymer: ['lika arbete', 'yrkesgrupp', 'status'], flik: 'matrix', avsnitt: 'avsnitt-la-yrkesgrupper' },
     { namn: 'Personer att granska', synonymer: ['individ', 'enskilda löner', 'avvikande löner', 'under förväntad nivå'], flik: 'matrix', avsnitt: 'avsnitt-la-personer' },
-    { namn: 'Lika arbete AID x BAS', synonymer: ['matris', 'slumpens gränser', 'median i procent'], flik: 'matrix', avsnitt: 'avsnitt-la-aidbas' },
+    { namn: 'Lika arbete AID × BAS', synonymer: ['matris', 'slumpens gränser', 'median i procent'], flik: 'matrix', avsnitt: 'avsnitt-la-aidbas' },
     { namn: 'Analys på individnivå', synonymer: ['arbetslista', 'för litet', 'små grupper'], flik: 'matrix', avsnitt: 'avsnitt-la-individ' },
     { namn: 'Så räknas det', synonymer: ['metod', 'beräkning', 'begrepp', 'lika arbete'], flik: 'matrix', avsnitt: 'avsnitt-la-metod' },
     // Löneläget
@@ -33567,7 +33567,7 @@ const SOK_FUNKTIONER = [
     { namn: 'Så räknas det', synonymer: ['metod', 'beräkning', 'prioriteringsindex', 'viktning'], flik: 'prioritering', avsnitt: 'avsnitt-pr-metod' },
     // Löneöversyn
     { namn: 'Riktade potter', synonymer: ['pott', 'satsning', 'löneöversyn'], flik: 'loneoversyn', avsnitt: 'avsnitt-lo-riktade' },
-    { namn: 'Avancerat & planering', synonymer: ['avrundning', 'stegvis plan', 'mål för gapet', 'marknadsläge'], flik: 'loneoversyn', avsnitt: 'avsnitt-lo-planering' },
+    { namn: 'Avancerat och planering', synonymer: ['avrundning', 'stegvis plan', 'mål för skillnaden', 'mål för gapet', 'marknadsläge'], flik: 'loneoversyn', avsnitt: 'avsnitt-lo-planering' },
     { namn: 'Individuell analys — lika arbete', synonymer: ['jämförelsevärde', 'lyfta kvinnor'], flik: 'loneoversyn', avsnitt: 'avsnitt-lo-individ' },
     { namn: 'Jämför scenarier (A/B)', synonymer: ['scenario', 'a/b'], flik: 'loneoversyn', avsnitt: 'avsnitt-lo-scenarier' },
     { namn: 'Så ska prognosen läsas', synonymer: ['prognos', 'planeringsunderlag', 'metod'], flik: 'loneoversyn', avsnitt: 'avsnitt-lo-metod' },

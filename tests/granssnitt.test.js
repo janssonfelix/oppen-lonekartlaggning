@@ -416,8 +416,8 @@ describe('samma skillnad sägs på ett sätt', () => {
             const blad = [...el.querySelectorAll('*')].filter(e => !e.children.length && !e.closest('.info-tip') && !/PO\b/.test(e.textContent));
             expect(blad.filter(tvaDec).map(e => e.textContent.trim().slice(0, 50)), sel).toEqual([]);
         }
-        const kort = [...d.querySelectorAll('#la-slutsatser .slutsats')].find(k => k.textContent.includes('Efter ålder och nivå'));
-        expect(kort.textContent).toContain('kvinnors lön i % av mäns när ålder och nivå räknats bort');
+        const kort = [...d.querySelectorAll('#la-slutsatser .slutsats')].find(k => k.textContent.includes('Efter ålder och BAS-intervall'));
+        expect(kort.textContent).toContain('kvinnors lön i % av mäns när ålder och BAS-intervall räknats bort');
     }, 30000);
 });
 
