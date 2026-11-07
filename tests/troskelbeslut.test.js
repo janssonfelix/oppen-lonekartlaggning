@@ -260,3 +260,17 @@ describe('autocomplete="off" på alla fält, också de som skapas efter start', 
         expect(w.document.getElementById('sent-text').getAttribute('autocomplete')).toBe('off');
     });
 });
+
+describe('motiveringsförslagen: åldersskillnaden', () => {
+    it('rådet är rätt stavat: Vi rekommenderar att ni stämmer av', () => {
+        const w = createAppWindow();
+        const rows = [];
+        for (let i = 0; i < 12; i++) rows.push({ kon: 'kvinna', lon: 30000 + i, alder: 35 });
+        for (let i = 0; i < 12; i++) rows.push({ kon: 'man', lon: 32000 + i, alder: 45 });
+        w.__item = { _rows: rows, kvN: 12, maN: 12, n: 24, diffPct: -6, costPerPerson: 0 };
+        const text = w.eval('generateMotivationSuggestions(window.__item)').map(f => f.text).join(' ');
+        expect(text).toMatch(/år äldre/);
+        expect(text).toContain('Vi rekommenderar att ni stämmer av');
+        expect(text).not.toContain('rekommenderas');
+    });
+});

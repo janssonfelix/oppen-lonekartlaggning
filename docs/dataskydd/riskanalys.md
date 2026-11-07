@@ -1,6 +1,6 @@
 # Risk- och sårbarhetsanalys (dataskydd och informationssäkerhet) — Öppen lönekartläggning
 
-**Bygge:** `2026.11.05` · **Artefakt-SHA-256:** `0db1305b10ccdad1e5927223bc4528e7585bc2c644c81378eb702ea00d4806d9` (se `dist/RELEASE.txt`).
+**Bygge:** `2026.11.05` · **Artefakt-SHA-256:** `d4892d6f01134b8d6a49cf8d09989a0aa16b998a3fc1b2cfb66ed4cf52677876` (se `dist/RELEASE.txt`).
 **Granskningsdatum:** 2026-11-07.
 **Granskningsmetod:** kodläsning påstående för påstående + statisk sökning i källkod och bygge +
 körning av det byggda verktyget i jsdom och i Chromium (utan nätverk) med syntetiska testfiler.
@@ -749,7 +749,7 @@ tar bort allt minne omedelbart. Verktyget gör inga utskick till de registrerade
 
 Varje påstående i detta dokument är prövat mot koden, med provkörning i jsdom och i Chromium.
 Skyddet bevakas av drift-, golden-, röktest-, k-anonymitets-, dokumentations-, statistik- och
-a11y-sviterna (89 testfiler) och av ett röktest av det byggda verktyget i en riktig webbläsare
+a11y-sviterna (90 testfiler) och av ett röktest av det byggda verktyget i en riktig webbläsare
 (`tools/browser-smoke.mjs`). Röktestet körs lokalt och i CI-arbetsflödet i
 Chromium, Firefox och WebKit. Verifieringen visar också var skyddet är svagare än det kan se ut: lagringsspärren är en
 reserv med kända luckor (§6.2); PII-kontrollens värdekontroll läser filens 50 första rader (§6.4);
@@ -831,7 +831,7 @@ andra filerna; den innehåller biblioteksversioner och kontrollsummor, inga uppg
 | Konfigfilens innehåll | Kodläsning av `buildConfigSnapshot()` och importen | ✔ ingen `state.data`-referens; inställningar (med förklaringsmodellen, definitionen av kvinnodominerat och lönemånaden) + användartext + avbockningar i Att göra (§6.8) + egna importprofiler (bara rubriknamn, validerade vid inläsning); import läser version 2 och avvisar andra versioner |
 | Word-utkast lokalt | Kodläsning + live-test: Blob fångad, innehåll inspekterat; zip-filen läses tillbaka i röktesterna (ADR-37) | ✔ lokal `Blob` (`.docx`), DEMODATA-märkning fungerar |
 | Tillgänglighet (markup) | axe-core i automatiska sviten (`tests/a11y.test.js`) | ✔ 0 överträdelser |
-| Automatiska tester | `npm test` (Vitest, 89 testfiler; kör om en fil vars arbetare kraschat i Node) + `npm run test:browser` (bygget i Chromium; samma röktest finns för Firefox och WebKit) | ✔ alla gröna |
+| Automatiska tester | `npm test` (Vitest, 90 testfiler; kör om en fil vars arbetare kraschat i Node) + `npm run test:browser` (bygget i Chromium; samma röktest finns för Firefox och WebKit) | ✔ alla gröna |
 | Bundle-integritet | Reproducerbart bygge + SHA-256 i RELEASE.txt; byggskydd mot mojibake och `node --check` (kodläsning av `tools/bundle.mjs`) | ✔ |
 
 ## 12. Slutsats

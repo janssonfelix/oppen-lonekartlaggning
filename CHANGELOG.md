@@ -37,8 +37,7 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   vanliga kolumnnamnen; den första profil vars kännetecken alla finns gäller, och roller den inte täcker känns igen
   som förut. Rubrikraden hittas också efter försättsrader när bara en profil känner igen den. Lönefilens ruta och
   kolumnmappningen säger *Känd uppsättning: … (källa)*. Med ett organisationspaket inläst laddar *Lägg till i
-  organisationspaketet* ner ett nytt paket med profilen, byggt ur det inlästa paketets egna delar och med samma
-  vakter som *Spara paketet*; paketet har det valfria fältet `importprofiler` (äldre paket
+  organisationspaketet* ner ett nytt paket med profilen, byggt ur det inlästa paketets egna delar; paketet har det valfria fältet `importprofiler` (äldre paket
   utan det fungerar som förut). *Inställningar › Importprofiler* listar profilerna med namn, källa och rubriker per
   fält, med *Ta bort* och *Exportera JSON*; sökrutan hittar avsnittet. De inbyggda profilerna gäller bara verktygets
   egna format (CSV-mallen, testdatans fil och demodatans fältnamn) — inga profiler för namngivna lönesystem. *Rensa
@@ -160,6 +159,17 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   BAS-intervall och upprepas inte. Texten är vanlig svenska med å, ä och ö ("Gruppdossier: …", "män", "sakliga
   skäl"), också i kopian till urklipp. Meningen om sänkt minsta gruppstorlek står en gång överst i bilagan.
   Förhandsbeskedet bygger inga dossiertexter, och bilagan kostar ett par tiondels sekunder även på stora underlag.
+
+- **Småsaker efter förhandskontrollen.** Ett färdigt urval under *Rapportens innehåll* med bilagan ikryssad heter
+  urvalet med tillägget *+ bilaga* (*Ledningsbrief + bilaga*), och alla avsnitt med heter *Alla avsnitt*, i stället
+  för *Eget urval (14 av 14 avsnitt)*. Ett kryss i listan ritar om förhandsbeskedet utan att räkna om avsnitten: 0,27 s
+  mot 3,0 s vid 55 000 rader (`npm run perf` vaktar med gränsen 1 s). Motiveringsförslaget om åldersskillnad i Prioritering säger *Vi
+  rekommenderar att ni stämmer av*. *Lägg till i organisationspaketet* prövar inte längre formuläret *Skapa
+  paket*, som inte påverkar det paketet (*Spara paketet* gör det som förut). Pekar kolumnmappningen ut en annan kolumn än
+  importprofilen som kände igen filen säger lönefilens ruta *Känd uppsättning, ändrad: …*. Den inbyggda profilen för
+  verktygets egna fältnamn heter *Verktygets grundfält* (förut *Demodatans fält*), så att en verklig fil med de
+  rubrikerna inte kallas demo. Kom igång på Översikt säger *Ingen fil till hands? Prova med demodata, litet demo
+  eller stort demo*, samma mening som lönefilskortet, i stället för *eller … eller*.
 
 ### Analys
 
