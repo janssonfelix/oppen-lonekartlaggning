@@ -25,8 +25,8 @@ function _methodAppendixData() {
         ['Antal personer (inläst)', String(total)],
         ['Antal personer (i denna analys)', String(used)],
         ['Nationell referens för andel kvinnor', skrForklaring()],
-        ['Modell — oförklarat gap', 'OLS på log(månadslön) ~ kön + ålder + BAS-intervall (indikatorvariabler, första BAS som referens); HC3-robusta standardfel (Long & Ervin 2000)'],
-        ['Steg + Yrkesgrupp (dekomponeringen)', 'Könsgap med fasta effekter för yrkesgrupp inom BAS (AID×BAS) utöver ålder, skattat med inomtransformation; visas som sista steg, ingår inte i huvudtalet'],
+        ['Modell — oförklarad skillnad', 'OLS på log(månadslön) ~ kön + ålder + BAS-intervall (indikatorvariabler, första BAS som referens); HC3-robusta standardfel (Long & Ervin 2000)'],
+        ['Steg + Yrkesgrupp (dekomponeringen)', 'Löneskillnad mellan könen med fasta effekter för yrkesgrupp inom BAS (AID×BAS) utöver ålder, skattat med inomtransformation; visas som sista steg, ingår inte i huvudtalet'],
         ['Ålder & karriär (tvärsnitt)', 'Lön mot ålder och livscykelmodellen bygger på ett tvärsnitt: de visar skillnader mellan åldersgrupper i dag, inte hur en persons lön utvecklas över karriären (kohorteffekter)'],
         ['Trattdiagrammet', 'Med färre än tio yrkesgrupper säger trattens form lite; varje grupp bedöms då för sig i tabellen. Punktens bedömning bygger på en omkastning av könen inom gruppen'],
         ['p-värden', 't-fördelning vid df < 100, annars normalfördelning; Benjamini-Hochberg (FDR) vid multipla grupptest'],
@@ -37,8 +37,8 @@ function _methodAppendixData() {
         ['Referens för lönenivåer', referensNamn() + referensKalla()],
         ['Jämförelsestatistik', statistikBeskrivning()],
         ['Krav-proxy (likvärdigt arbete)', state.arbetsvardering ? 'Arbetsvärderingspoäng (ur strukturdatans Poäng-kolumn)' : 'BAS-intervall (ordinal rangordning)'],
-        ['Lönegapets tecken', 'Verktyget räknar skillnaden som (kvinnor − män) / män och visar den som kvinnors lön i procent av mäns (under 100 = kvinnor lägre). EU-lönerapporten och rapportens avsnitt om lönetransparens redovisar i stället direktivets lönegap, (män − kvinnor) / män i procent, enligt art. 9: positivt tal = kvinnor lägre. Beloppet är detsamma.'],
-        ['Tolkningsregel', 'Ett oförklarat gap är en statistisk signal om var man bör titta närmare — inte ett bevis för osaklig (diskriminerande) löneskillnad. Den bedömningen görs kvalitativt av arbetsgivaren.'],
+        ['Löneskillnadens tecken', 'Verktyget räknar skillnaden som (kvinnor − män) / män och visar den som kvinnors lön i procent av mäns (under 100 = kvinnor lägre). EU-lönerapporten och rapportens avsnitt om lönetransparens redovisar i stället direktivets lönegap, (män − kvinnor) / män i procent, enligt art. 9: positivt tal = kvinnor lägre. Beloppet är detsamma.'],
+        ['Tolkningsregel', 'En oförklarad skillnad är en statistisk signal om var man bör titta närmare, inte ett bevis för en osaklig (diskriminerande) löneskillnad. Den bedömningen görs kvalitativt av arbetsgivaren.'],
         ['Rättslig ram', 'Diskrimineringslagen 3 kap. (lönekartläggning); direktiv (EU) 2023/970 om lönetransparens. De enskilda lagrummen står i docs/utveckling/lagrum.md.']
     ];
 }

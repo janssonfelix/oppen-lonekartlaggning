@@ -19,19 +19,19 @@ describe('Lika arbete: trappan, gapet längs lönefördelningen och hanteln per 
     it('trappan: ojusterat och oförklarat gap som staplar, varje steg som ett spann från gapet före till gapet efter', () => {
         w.__s = steg;
         const f = w.eval('_regTrappaFigur(window.__s)');
-        expect(f.x.ordning).toEqual(['Ojusterat gap', 'BAS-intervall', 'Ålder', 'Oförklarat gap']);
+        expect(f.x.ordning).toEqual(['Ojusterad skillnad', 'BAS-intervall', 'Ålder', 'Oförklarad skillnad']);
         expect(f.lager.map(l => l.marke)).toEqual(['stapel', 'intervall', 'punkt']);
-        expect(f.lager[0].data).toEqual([{ x: 'Ojusterat gap', y: -9.4 }, { x: 'Oförklarat gap', y: -4.6 }]);
+        expect(f.lager[0].data).toEqual([{ x: 'Ojusterad skillnad', y: -9.4 }, { x: 'Oförklarad skillnad', y: -4.6 }]);
         expect(f.lager[1].data.map(d => [d.x, d.lag, d.hog, d.farg])).toEqual([['BAS-intervall', -9.4, -4.1, '#2a78d6'], ['Ålder', -4.6, -4.1, '#eb6834']]);   // krymper: seriens blå; växer: orange — inga statusfärger
         expect(f.lager[2].data.map(d => d.etikett)).toEqual(['−9,4 %', '−4,1 %', '−4,6 %', '−4,6 %']);
         expect(f.y.nollinje).toBe(true);
-        expect(vanliga([f.lager[1].tips(f.lager[1].data[0])[1]])[0]).toEqual(['Ändrar gapet med', '+5,3 procentenheter']);
+        expect(vanliga([f.lager[1].tips(f.lager[1].data[0])[1]])[0]).toEqual(['Ändrar skillnaden med', '+5,3 procentenheter']);
         expect(() => valideraFigur(f, 't')).not.toThrow();
     });
     it('trappan med yrkesgruppssteget: ett ljusare spann efter huvudtalet, med egen nivå, och beskrivningen säger att det inte ingår i huvudtalet', () => {
         w.__s = steg; w.__y = { name: '+ Yrkesgrupp', status: 'ok', gapPct: -2.3 };
         const f = w.eval('_regTrappaFigur(window.__s, window.__y)');
-        expect(f.x.ordning).toEqual(['Ojusterat gap', 'BAS-intervall', 'Ålder', 'Oförklarat gap', 'Yrkesgrupp inom BAS']);
+        expect(f.x.ordning).toEqual(['Ojusterad skillnad', 'BAS-intervall', 'Ålder', 'Oförklarad skillnad', 'Yrkesgrupp inom BAS']);
         expect(f.lager.map(l => l.marke)).toEqual(['stapel', 'intervall', 'intervall', 'punkt']);
         expect(f.lager[2]).toMatchObject({ opacitet: 0.45, serie: 'Yrkesgrupp inom BAS (ingår inte i huvudtalet)' });
         expect(f.lager[2].data.map(d => [d.x, d.lag, d.hog, d.farg])).toEqual([['Yrkesgrupp inom BAS', -4.6, -2.3, '#2a78d6']]);
@@ -66,7 +66,7 @@ describe('Lika arbete: trappan, gapet längs lönefördelningen och hanteln per 
         w3.__renderTabContent('struktur');
         const el = w3.document.getElementById('chart-reg-trappa');
         expect(el && el._figur).toBeTruthy();
-        expect(el._figur.x.ordning[0]).toBe('Ojusterat gap');
+        expect(el._figur.x.ordning[0]).toBe('Ojusterad skillnad');
         expect(el.querySelectorAll('[data-marke="intervall"]').length).toBe(el._figur.lager.filter(l => l.marke === 'intervall').reduce((n, l) => n + l.data.length, 0));   // med yrkesgruppssteget när det visas
     });
     it('gapet längs lönefördelningen: tre rader från nollinjen, med värdet utskrivet och noll inom axeln', () => {
@@ -90,8 +90,8 @@ describe('Lika arbete: trappan, gapet längs lönefördelningen och hanteln per 
         expect(f.x.doman[0]).toBeLessThan(-9.46);
         expect(f.x.doman[1]).toBeGreaterThan(1.23);
         expect(f.beskrivning).toMatch(/bootstrap-konfidensintervall/);
-        expect(vanliga(f.lager[1].tips(f.lager[1].data[0]))).toEqual([['P10 (lägst betalda)'], ['Lönegap', '−6,1 %'], ['95 % KI (bootstrap)', '−9,5 % till −2,1 %']]);
-        expect(vanliga(f.lager[1].tips(f.lager[1].data[1]))).toEqual([['Median'], ['Lönegap', '−4,5 %']]);
+        expect(vanliga(f.lager[1].tips(f.lager[1].data[0]))).toEqual([['P10 (lägst betalda)'], ['Löneskillnad', '−6,1 %'], ['95 % KI (bootstrap)', '−9,5 % till −2,1 %']]);
+        expect(vanliga(f.lager[1].tips(f.lager[1].data[1]))).toEqual([['Median'], ['Löneskillnad', '−4,5 %']]);
         expect(() => valideraFigur(f, 't')).not.toThrow();
     });
 });
@@ -1102,7 +1102,7 @@ describe('lönegapet visas som kvinnors lön i procent av mäns', () => {
         expect(t(d.getElementById('struktur-distribution').textContent)).toMatch(/Kvinnors lön i % av mäns/);
         const eu = t(d.getElementById('struktur-eu').textContent);
         // Direktivets mått står i samma form som resten, med direktivets lönegap under: positivt när kvinnor ligger lägre.
-        expect(eu).toMatch(/Kvinnors medianlön i procent av mäns\s*\d+,\d %\s*Lönegap enligt direktivet: \d+,\d %/);
+        expect(eu).toMatch(/Kvinnors medianlön i procent av mäns\s*\d+,\d %\s*Löneskillnad enligt direktivet: \d+,\d %/);
         expect(eu).toMatch(/positiv när kvinnor ligger lägre/);
         expect(eu).not.toMatch(/\(skillnad\)/);
     });

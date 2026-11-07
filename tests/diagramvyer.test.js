@@ -993,8 +993,8 @@ describe('tydligare diagram: kärnan', () => {
     });
     it('exporterad bild har rubrik och fotrad; skärmens diagram har det inte', () => {
         w.__f = staplar(['A', 'B']);
-        const svg = w.figurTillSvg(w.__f, 1600, 900, { rubrik: 'Lönegap per BAS-intervall', fot: 'Lönekartläggning 2026-10-09 · Urval: BAS A' });
-        expect(svg).toMatch(/data-del="rubrik"[^>]*>Lönegap per BAS-intervall</);
+        const svg = w.figurTillSvg(w.__f, 1600, 900, { rubrik: 'Löneskillnad per BAS-intervall', fot: 'Lönekartläggning 2026-10-09 · Urval: BAS A' });
+        expect(svg).toMatch(/data-del="rubrik"[^>]*>Löneskillnad per BAS-intervall</);
         expect(svg).toMatch(/data-del="fot"[^>]*>Lönekartläggning 2026-10-09 · Urval: BAS A</);
         expect(w.figurTillSvg(w.__f, 1600, 900, {})).not.toMatch(/data-del="(rubrik|fot)"/);
         expect(w.eval('_rfByggSvg(window.__f, 600, {})').querySelector('[data-del="rubrik"], [data-del="fot"]')).toBeNull();

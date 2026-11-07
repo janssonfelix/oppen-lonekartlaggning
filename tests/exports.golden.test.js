@@ -239,7 +239,7 @@ describe('golden: bladen ur HTML-tabellerna bär cellerna som vyn visar dem (typ
         expect(wb).toBeTruthy();
     });
     it('Lonegap: kvoten som procenttal med procentformat, antalen som text, medianerna i kronor', () => {
-        expect(rad('Lonegap', 0)).toEqual(['BAS-intervall', 'Antal personer (kvinnor/män)', 'Kvinnors median i % av männens (100% = lika lön)', 'Median Kvinna (kr/mån)', 'Median Man (kr/mån)']);
+        expect(rad('Lonegap', 0)).toEqual(['BAS-intervall', 'Antal personer (kvinnor/män)', 'Kvinnors median i % av männens (100 % = lika lön)', 'Median kvinnor (kr/mån)', 'Median män (kr/mån)']);
         expect(cell('Lonegap', 'B2')).toMatchObject({ t: 's', v: '17/17' });      // inte datumet 17 (ogiltigt) eller ett tal
         expect(cell('Lonegap', 'C2')).toMatchObject({ t: 'n', v: 86, z: PCT1 });  // inte 0.86
         expect(cell('Lonegap', 'C3')).toMatchObject({ t: 'n', v: 87.2, z: PCT1 });
@@ -320,19 +320,19 @@ describe('tecknet i EU-lönerapporten (EU 2023/970 art. 9)', () => {
     });
     it('EU-bladen skriver +8 med direktivets rubrik, i sammanfattningen, per BAS och per percentil', () => {
         const samman = blad(eu, 'Sammanfattning');
-        expect(samman.find(r => /medianlön enligt art\. 9/.test(r[0]))).toEqual(['Lönegap i medianlön enligt art. 9 (%), positivt tal = kvinnor lägre', 8]);
-        expect(samman.find(r => /medellön enligt art\. 9/.test(r[0]))[1]).toBe(8);
+        expect(samman.find(r => /medianlön enligt direktivet/.test(r[0]))).toEqual(['Löneskillnad i medianlön enligt direktivet (%), positivt tal = kvinnor lägre', 8]);
+        expect(samman.find(r => /medellön enligt direktivet/.test(r[0]))[1]).toBe(8);
         expect(samman.find(r => r[0] === 'Tecken')[1]).toMatch(/positivt tal = kvinnor lägre/);
         const rep = blad(eu, 'Representation');
-        expect(rep[0][4]).toBe('Lönegap enligt art. 9 (%), positivt tal = kvinnor lägre');
+        expect(rep[0][4]).toBe('Löneskillnad enligt direktivet (%), positivt tal = kvinnor lägre');
         expect(rep.find(r => r[0] === 'B')[4]).toBe(8);
-        const dist = blad(eu, 'Distributionellt gap');
-        expect(dist[0][3]).toMatch(/^Lönegap enligt art\. 9/);
+        const dist = blad(eu, 'Skillnad i lönefördelningen');
+        expect(dist[0][3]).toMatch(/^Löneskillnad enligt direktivet/);
         for (const r of dist.slice(1)) expect(r[3]).toBe(8);
         // Metodbladet säger vad tecknet betyder, i den här filen och i den allmänna raden.
         const metod = text(eu).split('[Metod & parametrar]')[1];
-        expect(metod).toMatch(/Lönegapets tecken i den här filen \| .*positivt tal = kvinnor lägre/);
-        expect(metod).toMatch(/Lönegapets tecken \| Verktyget räknar/);
+        expect(metod).toMatch(/Löneskillnadens tecken i den här filen \| .*positivt tal = kvinnor lägre/);
+        expect(metod).toMatch(/Löneskillnadens tecken \| Verktyget räknar/);
         expect(text(eu)).not.toMatch(/\| -8(\.\d+)? \||\| 92(\.\d+)? \|/);
     });
     it('övriga blad är oförändrade: kvinnors lön i procent av mäns (92), ingen direktivkolumn', () => {

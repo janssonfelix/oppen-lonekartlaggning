@@ -7,8 +7,8 @@
  * src/lib/gapuppdelning.js (_guGapUppdelning). Anropas först i updateCompliance().
  */
 const _GU_DELAR = [
-    { id: 'A', namn: 'BAS-fördelning', betyder: 'Kvinnor och män är olika fördelade över BAS.',
-      atgard: 'Hör till karriärvägar och rekrytering — inte till lönesättningen.', flik: 'struktur', flikNamn: 'Struktur' },
+    { id: 'A', namn: 'BAS-fördelning', betyder: 'Kvinnor och män är olika fördelade över BAS-intervallen.',
+      atgard: 'Hör till karriärvägar och rekrytering — inte till lönesättningen.', flik: 'struktur', flikNamn: 'Lönestruktur' },
     { id: 'B', namn: 'AID inom BAS', betyder: 'Kvinnor och män har olika AID inom samma BAS.',
       atgard: 'Kan kräva en lönesatsning på yrket; pröva likvärdigt arbete.', flik: 'likvardighet', flikNamn: 'Likvärdigt arbete' },
     { id: 'C', namn: 'Inom AID och BAS', betyder: 'Kvinnor och män har olika lön i samma AID och BAS.',

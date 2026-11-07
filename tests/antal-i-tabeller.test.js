@@ -18,7 +18,7 @@ const nText = rader => `n = ${tal(rader.length)}; ${tal(rader.filter(arKv).lengt
 const demo = delatFonster(w => { w.__loadDemoData(); });
 
 describe('Lönestruktur: antal i tabellerna', () => {
-    it('Var i lönefördelningen sitter gapet? bär antalet kvinnor och män i tabellens rubrikrad', () => {
+    it('Var i lönefördelningen är skillnaden störst? bär antalet kvinnor och män i tabellens rubrikrad', () => {
         const w = demo();
         w.__renderTabContent('struktur');
         const d = w.__state.data.filter(r => arKv(r) || arMa(r));
@@ -27,13 +27,13 @@ describe('Lönestruktur: antal i tabellerna', () => {
         expect(ren(tabell.querySelector('caption').textContent)).toBe(nText(d));
     });
 
-    it('EU-rapportens blad Distributionellt gap har kolumnerna Antal kvinnor och Antal män', async () => {
+    it('EU-rapportens blad Skillnad i lönefördelningen har kolumnerna Antal kvinnor och Antal män', async () => {
         const w = createAppWindow(); w.__loadDemoData();
         await laddaXlsx(w);
         let bok = null;
         w.XLSX.writeFile = wb => { bok = wb; };
         w.eval('exportEuReport()');
-        const rader = w.XLSX.utils.sheet_to_json(bok.Sheets['Distributionellt gap'], { header: 1, raw: true });
+        const rader = w.XLSX.utils.sheet_to_json(bok.Sheets['Skillnad i lönefördelningen'], { header: 1, raw: true });
         const kv = rader[0].indexOf('Antal kvinnor'), ma = rader[0].indexOf('Antal män');
         expect(kv).toBeGreaterThan(0);
         expect(ma).toBeGreaterThan(0);

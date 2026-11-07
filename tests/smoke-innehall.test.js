@@ -838,7 +838,7 @@ describe('avsnittet följer modellen (ADR-56)', () => {
         expect(kortText).toMatch(/Efter kontroll för BAS-intervall/);
         expect(kortText).toMatch(/när nivå räknats bort/);
         expect(figur).not.toBeNull();
-        expect(figur.x.ordning).toEqual(['Ojusterat gap', 'BAS-intervall', 'Oförklarat gap', 'Yrkesgrupp inom BAS']);
+        expect(figur.x.ordning).toEqual(['Ojusterad skillnad', 'BAS-intervall', 'Oförklarad skillnad', 'Yrkesgrupp inom BAS']);
         expect(oaxText).toMatch(/Förklarat av nivå/);
         expect([...oax.querySelectorAll('tbody td:first-child')].map(td => td.textContent)).not.toContain('Ålder');
         expect(oaxText).toMatch(/Ålder har kontrollerats/);
@@ -851,7 +851,7 @@ describe('avsnittet följer modellen (ADR-56)', () => {
     });
     it('yrkesgrupp vald: ordinarie steg i trappan, och Oaxaca har raden Yrkesgrupp inom BAS i stället för BAS-intervall', () => {
         const { kortText, oax, figur } = rita({ bas: true, alder: true, yrkesgrupp: true, skal: '' });
-        expect(figur.x.ordning).toEqual(['Ojusterat gap', 'BAS-intervall', 'Ålder', 'Yrkesgrupp inom BAS', 'Oförklarat gap']);
+        expect(figur.x.ordning).toEqual(['Ojusterad skillnad', 'BAS-intervall', 'Ålder', 'Yrkesgrupp inom BAS', 'Oförklarad skillnad']);
         expect(figur.lager.some(l => /ingår inte i huvudtalet/.test(l.serie))).toBe(false);
         expect(kortText).not.toMatch(/ingår inte i huvudtalet/);
         expect(kortText).toMatch(/ålder, nivå och yrkesgrupp räknats bort/);
@@ -862,7 +862,7 @@ describe('avsnittet följer modellen (ADR-56)', () => {
     it('standardläget är som förut', () => {
         const { kortText, figur, oaxText } = rita(null);
         expect(kortText).toMatch(/när ålder och nivå räknats bort/);
-        expect(figur.x.ordning).toEqual(['Ojusterat gap', 'BAS-intervall', 'Ålder', 'Oförklarat gap', 'Yrkesgrupp inom BAS']);
+        expect(figur.x.ordning).toEqual(['Ojusterad skillnad', 'BAS-intervall', 'Ålder', 'Oförklarad skillnad', 'Yrkesgrupp inom BAS']);
         expect(oaxText).toMatch(/Förklarat av ålder och nivå/);
     });
 });
