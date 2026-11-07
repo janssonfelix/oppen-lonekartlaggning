@@ -5,7 +5,8 @@ delar av lönetransparensdirektivet. Hela verktyget är **en enda HTML-fil** som
 dator: ingen server, inga nätverksanrop och ingen lagring. **Lönedata lämnar aldrig datorn.**
 
 **Omfång i dag:** verktyget är byggt för arbetsgivare som kodar sina befattningar med **AID** och
-**BAS-intervall** och kan jämföra sig med **SKR:s** personalstatistik — i praktiken kommuner och regioner.
+**BAS-intervall**. De ska också kunna jämföra sig med **SKR:s** personalstatistik, så i praktiken gäller
+det kommuner och regioner.
 Varje organisation tar in sitt eget ställningstagande, sin statistik och sina benämningar i ett
 organisationspaket, så att ingenting om en viss organisation är inbyggt. Andra arbetsvärderingssystem är en
 öppen punkt (teknisk plan §9).
@@ -14,10 +15,12 @@ organisationspaket, så att ingenting om en viss organisation är inbyggt. Andra
   oförklarad löneskillnad), likvärdigt arbete, direktivets rapportmått, prioritering med
   kostnadsberäkning och handlingsplan.
 - **Färdiga underlag:** ett redigerbart Word-utkast av dokumentationen (rapporten), en Excel-fil med
-  underlaget, en PDF som låst kopia, en ZIP-fil med allt, protokoll för gemensam lönebedömning och
-  rapportunderlag att klistra in i din egen mall.
+  underlaget och en PDF som låst kopia. Dessutom en ZIP-fil med allt, protokoll för gemensam
+  lönebedömning och rapportunderlag att klistra in i din egen mall.
 - **Dataskydd inbyggt:** bara de fält analysen behöver läses in (fem obligatoriska, två
-  valfria), filer med personnummer, namn eller e-post avvisas, små grupper skyddas i det som lämnar verktyget, och en risk- och sårbarhetsanalys ingår som underlag till organisationens konsekvensbedömning.
+  valfria). Filer med personnummer, namn eller e-post avvisas, och små grupper skyddas i det som
+  lämnar verktyget. En risk- och sårbarhetsanalys ingår som underlag till organisationens
+  konsekvensbedömning.
 
 ## Prova
 
@@ -27,13 +30,13 @@ verkliga löner och utan installation.
 ## Kom igång
 
 1. **Ladda ner** `oppen-lonekartlaggning.html` från den senaste versionen under
-   [Releases](https://github.com/janssonfelix/oppen-lonekartlaggning/releases) och **verifiera
-   signaturen** innan verklig lönedata läses in — kommandot står i [`SECURITY.md`](SECURITY.md),
+   [Releases](https://github.com/janssonfelix/oppen-lonekartlaggning/releases). **Verifiera
+   signaturen** innan du läser in verklig lönedata. Kommandot står i [`SECURITY.md`](SECURITY.md),
    avsnittet *Kontrollera att filen är äkta*. Öppna filen i webbläsaren (Chrome, Edge, Firefox
    eller Safari) på en dator.
-2. **Läs in organisationens paket** — ställningstagande, jämförelsestatistik och benämningar i
-   en fil som organisationens systemägare tar fram i verktyget — eller öppna **organisationsfilen**, där
-   systemägaren bakat in paketet så att en fil räcker:
+2. **Läs in organisationens paket**: ställningstagande, jämförelsestatistik och benämningar i en
+   fil som organisationens systemägare tar fram i verktyget. Du kan också öppna
+   **organisationsfilen**, där systemägaren bakat in paketet så att en fil räcker:
    [`organisationspaket.md`](docs/anvandare/organisationspaket.md).
 3. **Läs in lönefilen** och följ körguiden:
    [`korguide.md`](docs/anvandare/korguide.md) och [`datauttag.md`](docs/anvandare/datauttag.md).
@@ -70,8 +73,8 @@ kommersiell verksamhet. Det får följder som en IT-avdelning eller ett dataskyd
   drift av det eller support på det sätter en egen produkt på marknaden och bär tillverkarens
   skyldigheter för den. En organisation som bygger och sprider verktyget internt gör det inom sin egen
   verksamhet — se [`overta-verktyget.md`](docs/anvandare/overta-verktyget.md).
-- **Verktyget är inte ett AI-system** i AI-förordningens mening: all statistik är klassiska metoder med
-  fasta, dokumenterade formler, inget lärs in och inga beslut om enskilda fattas.
+- **Verktyget är inte ett AI-system** i AI-förordningens mening. All statistik är klassiska metoder med
+  fasta, dokumenterade formler. Inget lärs in, och inga beslut om enskilda fattas.
 - **Lagrumshänvisningarna** i [`lagrum.md`](docs/utveckling/lagrum.md) har status *Förslag* tills
   jurist och dataskyddsombud har stämt av dem. Verktyget hänvisar övergripande till lagen just därför,
   och ger underlag — inte juridiska bedömningar.
@@ -112,7 +115,7 @@ npm run perf           # prestandamätning på 55 000 rader (kör bundle först)
 npm run site           # demosidan i site/dist/ (kör bundle först)
 ```
 
-`src/index.html` är källan till bygget och går inte att köra direkt i webbläsaren: dess
+`src/index.html` är källan till bygget och går inte att köra direkt i webbläsaren. Dess
 innehållssäkerhetspolicy (CSP) tillåter inga externa filer, så stilmallen, biblioteken i
 `vendor/` och `dist/app.js` blockeras. Kör `npm run bundle` och öppna
 `dist/oppen-lonekartlaggning.html` för att se en ändring.

@@ -1,10 +1,9 @@
 # Checklista för skarp data — verifiering innan verktyget används på riktigt
 
 Innan verktyget används för organisationens lönekartläggning: kör en **provkörning** med en verklig lönefil i din egen
-webbläsarmiljö och bekräfta att verktyget fungerar hela vägen — inläsning, analys,
-utdata och dataskydd. Den automatiska testsviten (över två tusen tester, och ett röktest av det byggda verktyget i tre webbläsare)
-täcker logiken; den här
-checklistan täcker det bara en körning med **din data** på **din hårdvara** kan visa.
+webbläsarmiljö. Bekräfta att verktyget fungerar hela vägen: inläsning, analys, utdata och dataskydd. Den automatiska
+testsviten täcker logiken, med över två tusen tester och ett röktest av det byggda verktyget i tre webbläsare. Den här
+checklistan täcker det som bara en körning med **din data** på **din hårdvara** kan visa.
 
 > **Ansvarig:** ______________________  **Datum:** __________  **Bygge/SHA:**
 > ______________________ (jfr. `RELEASE.txt`)
@@ -19,7 +18,7 @@ checklistan täcker det bara en körning med **din data** på **din hårdvara** 
       (kommandot i `SECURITY.md`); svaret är `Verified OK`.
 - [ ] Filens **SHA-256 matchar `RELEASE.txt`** (kontrollerar att den kopia du använder är den verifierade).
       En organisationsfil har en egen kontrollsumma. *Visa paketet* anger kontrollsumman för den verktygsfil den
-      byggdes av, och den ska matcha `RELEASE.txt`; uppgiften står i filen och styrker inte äktheten, så hämta
+      byggdes av, och den ska matcha `RELEASE.txt`. Uppgiften står i filen och styrker inte äktheten. Hämta därför
       organisationsfilen bara från din behörighetsstyrda interna yta.
 - [ ] **Nätverksfliken** i utvecklarverktygen visar **noll utgående anrop** under hela
       sessionen (ladda upp, analysera, exportera).
@@ -28,11 +27,11 @@ checklistan täcker det bara en körning med **din data** på **din hårdvara** 
 - [ ] **Organisationspaketet** (om du har ett) läses in i Filer och kvalitet; organisation, datum och innehåll
       stämmer, och Prioritering och Löneläget använder ditt ställningstagande.
 - [ ] **Organisationsfilen** (om systemägaren tagit fram en, `organisationspaket.md` avsnitt 3b) startar
-      med paketet inläst: filrutan säger *Inbakat i den här filen*, *Visa paketet* visar rätt innehåll,
-      och *Om verktyget* anger versionen filen bygger på.
-- [ ] **Paketets låsningar** (om paketet har dem, `organisationspaket.md` §5) gäller: *Inställningar*
-      avvisar en minsta gruppstorlek under golvet, rullistan under *Vad lagras?* står på den låsta
-      tiden och går inte att ändra, och rutan för små grupper i Tabeller och egna vyer är dold. *Rensa all data*
+      med paketet inläst. Filrutan säger *Inbakat i den här filen* och *Visa paketet* visar rätt innehåll.
+      *Om verktyget* anger versionen filen bygger på.
+- [ ] **Paketets låsningar** (om paketet har dem, `organisationspaket.md` §5) gäller. *Inställningar*
+      avvisar en minsta gruppstorlek under golvet. Rullistan under *Vad lagras?* står på den låsta
+      tiden och går inte att ändra. Rutan för små grupper i Tabeller och egna vyer är dold. *Rensa all data*
       tar bort låsningarna med paketet.
 - [ ] Lönefilen läses in; **antal rader** stämmer med förväntat.
 - [ ] Kolumnerna mappas rätt automatiskt — eller via **kolumnmappnings-guiden**.
@@ -47,9 +46,9 @@ checklistan täcker det bara en körning med **din data** på **din hårdvara** 
 
 ## C. Analys
 
-*Punkterna om många yrkesgrupper, trattdiagrammet och bandkartan, och Word-utkastet i Word (avsnitt D),
-är det som bara verklig data kan visa (teknisk-plan §9 punkt 1–3): verktyget är prövat med demodata och ett
-påhittat underlag med 42 yrken, och Word-utkastet bara i LibreOffice.*
+*Några punkter kan bara verklig data visa (teknisk-plan §9 punkt 1–3): många yrkesgrupper, trattdiagrammet
+och bandkartan, och Word-utkastet i Word (avsnitt D). Verktyget är prövat med demodata och ett påhittat
+underlag med 42 yrken, och Word-utkastet bara i LibreOffice.*
 - [ ] **Regressionen** (Lönestruktur, *Vad blir kvar av löneskillnaden?*) körs; ojusterad och **oförklarad** skillnad
       samt per-BAS ser rimliga ut. (Vid tunt underlag visas "Tolka resultatet med försiktighet".)
 - [ ] **Kandidatpar i likvärdigt arbete** genereras i både **BAS-läge** och **poäng-läge** (om
@@ -60,11 +59,11 @@ påhittat underlag med 42 yrken, och Word-utkastet bara i LibreOffice.*
       *"representativt urval … alla beräkningar använder fullständig data"* visas och
       **KPI:erna räknas på hela underlaget**.
 - [ ] **Regler & praxis:** status och anteckning kan fyllas i för alla sex granskningsområden.
-- [ ] **Många yrkesgrupper:** yrkesgruppstabellen i Lika arbete ryms utan att rulla i sidled, yrkesnamnen går att
-      läsa, och grafiken i raderna (punkten mot linjen för lika lön) stämmer med talet bredvid. *Verktyget är
+- [ ] **Många yrkesgrupper:** yrkesgruppstabellen i Lika arbete ryms utan att rulla i sidled, och yrkesnamnen går att
+      läsa. Grafiken i raderna (punkten mot linjen för lika lön) stämmer med talet bredvid. *Verktyget är
       utvecklat mot ett litet exempelunderlag och ett påhittat större — din fil är det första riktiga provet.*
-- [ ] **Trattdiagrammet** (Lika arbete) och **bandkartan** (Löneläget, avsnittet mot ställningstagandet) går att läsa med dina grupper: punkterna
-      ligger inte på varandra så att de inte går att skilja åt, och namnen krockar inte. Bandkartan är inte prövad
+- [ ] **Trattdiagrammet** (Lika arbete) och **bandkartan** (Löneläget, avsnittet mot ställningstagandet) går att läsa med dina grupper.
+      Punkterna går att skilja åt, och namnen krockar inte. Bandkartan är inte prövad
       med många yrken i samma BAS-intervall — notera i avsnitt G om grupper med nästan samma median täcker
       varandra.
 - [ ] **Sök** (sidhuvudet) hittar ett yrke och markerar det i diagram och tabeller; Escape tar bort markeringen.
@@ -72,11 +71,11 @@ påhittat underlag med 42 yrken, och Word-utkastet bara i LibreOffice.*
       leder till flikens avsnitt.
 
 ## D. Utdata
-- [ ] **Word-utkastet** laddas ner och **öppnas i Word**; bedömningarna av regler och praxis och
-      verktygets fynd är med, och de gula `[HR fyller i]`-fälten syns och går att
-      redigera. *Utkastet är under utvecklingen bara prövat i LibreOffice — kontrollera särskilt i Word att*
-      *tabellerna (bland dem översikten per BAS-intervall med åtta kolumner) ryms på sidan och att*
-      *diagrambilderna syns och har sina bildtexter.*
+- [ ] **Word-utkastet** laddas ner och **öppnas i Word**. Bedömningarna av regler och praxis och
+      verktygets fynd är med. De gula `[HR fyller i]`-fälten syns och går att
+      redigera. *Utkastet är under utvecklingen bara prövat i LibreOffice. Kontrollera särskilt i Word att*
+      *tabellerna ryms på sidan, bland dem översikten per BAS-intervall med åtta kolumner. Kontrollera också*
+      *att diagrambilderna syns och har sina bildtexter.*
 - [ ] **ZIP-filen** innehåller Word-utkastet, Excel-filen och diagrammen som bilder, och bilderna går att öppna.
 - [ ] **PDF-rapporten** (testa de tre urvalen: hela dokumentationen, ledningsbrief och facklig dialog) skrivs ut korrekt med **svensk
       talformatering**.

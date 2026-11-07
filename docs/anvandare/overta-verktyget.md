@@ -1,10 +1,10 @@
 # Så tar du över verktyget — bygg, signera och sprid din egen version
 
 **För:** IT, systemägare och den som ansvarar för verktyget hos arbetsgivaren. Verktyget är byggt för
-att varje organisation ska kunna äga sitt exemplar helt: bygga det från källan, ändra det, signera det
-med egen identitet och sprida det internt — utan konto hos, tjänst från eller beroende av projektet.
-Allt som behövs finns i källkoden under MIT-licensen; det finns inga hemligheter, nycklar eller
-tjänster att få tillgång till.
+att varje organisation ska kunna äga sitt exemplar helt. Du kan bygga det från källan, ändra det,
+signera det med egen identitet och sprida det internt. Du behöver inget konto hos, ingen tjänst från
+och inget beroende av projektet. Allt som behövs finns i källkoden under MIT-licensen. Det finns inga
+hemligheter, nycklar eller tjänster att få tillgång till.
 
 Du behöver inte göra allt nedan. De flesta organisationer stannar vid steg 1–3 (verifiera, bygg
 själva, organisationsfil). Steg 4–6 är för den som ändrar i verktyget eller vill signera i eget namn.
@@ -42,11 +42,11 @@ Biblioteken i `vendor/` kontrolleras mot `vendor/SHA256SUMS` av testerna och vid
 ## 3. Gör verktyget till ditt: organisationsfilen
 
 Organisationens benämningar, grundinställningar, lönepolitiska ställningstagande, jämförelsestatistik och
-låsningar läggs i ett **organisationspaket**, som systemägaren bakar in i verktyget till **en
-organisationsfil** att sprida — handläggaren öppnar en fil och allt är på plats. Hur, steg för steg:
+låsningar läggs i ett **organisationspaket**. Systemägaren bakar in paketet i verktyget till **en
+organisationsfil** att sprida. Handläggaren öppnar en fil, och allt är på plats. Hur, steg för steg:
 [`organisationspaket.md`](organisationspaket.md), särskilt avsnitt 3b och checklistan i avsnitt 8.
 
-Paketet ligger i filen som data, inte som kod: koden förblir identisk med den verifierade versionen,
+Paketet ligger i filen som data, inte som kod. Koden förblir identisk med den verifierade versionen,
 och inget i paketet kan köra kod (innehållssäkerhetspolicyn tillåter bara de inbyggda skripten). Paketet
 innehåller inga personuppgifter och kan spridas internt som vilken fil som helst.
 
@@ -63,7 +63,7 @@ Vill du ändra något — en text, en tröskel, ett diagram, ett nytt arbetsvär
    `npm run lint`, `npm run bundle` och `npm run test:browser`. Testsviten innehåller invarianter som
    vaktar dataskyddet (ingen utgående trafik, ingen lagring, små grupper i exporter) — låt dem stå.
 3. Ge din version ett eget versionsnamn i `VERSION` (till exempel `2026.11.03-kommunen`) och en rad i
-   `CHANGELOG.md`, så att det syns i *Om verktyget* och i `RELEASE.txt` vilken fil som är din.
+   `CHANGELOG.md`. Då syns det i *Om verktyget* och i `RELEASE.txt` vilken fil som är din.
 4. Byt det som pekar på projektet: säkerhetskontakten i [`SECURITY.md`](../../SECURITY.md) och
    verifieringskommandots identitet (steg 5). Licens- och upphovsnotiserna (`LICENSE`, `NOTICE`,
    SPDX-raderna och licenstexterna i `src/licenser.txt`) ska följa med enligt MIT-licensen; lägg din
@@ -101,7 +101,7 @@ cosign sign-blob --key cosign.key --bundle oppen-lonekartlaggning.html.sigstore.
 Verifiering hos handläggarens IT: `cosign verify-blob --key cosign.pub --bundle … oppen-lonekartlaggning.html`.
 Den publika nyckeln sprids internt tillsammans med verktyget.
 
-I båda fallen: signera `RELEASE.txt` också, och skriv kontrollsumman från ditt bygge på rad 3 i
+I båda fallen: signera `RELEASE.txt` också. Skriv sedan kontrollsumman från ditt bygge på rad 3 i
 `docs/dataskydd/riskanalys.md`, så att grinden i steg 4.5 går igenom.
 
 ## 6. Underhåll över tid
@@ -115,8 +115,8 @@ I båda fallen: signera `RELEASE.txt` också, och skriv kontrollsumman från dit
   i den byggda filen.
 - **Sårbarheter** som du hittar i verktyget: rapportera dem till projektet enligt `SECURITY.md`, så att
   rättningen når alla, också om du rättar dem själv först.
-- **Om projektet slutar underhållas** gäller [`GOVERNANCE.md`](../../GOVERNANCE.md): efter tolv månader
-  utan releaser eller svar uppmuntras en fork som tar över, och allt du behöver för det har du redan
+- **Om projektet slutar underhållas** gäller [`GOVERNANCE.md`](../../GOVERNANCE.md). Efter tolv månader
+  utan releaser eller svar uppmuntras en fork som tar över. Allt du behöver för det har du redan
   efter steg 1–5.
 
 ## Vad som inte följer med
