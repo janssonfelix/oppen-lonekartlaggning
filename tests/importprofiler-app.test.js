@@ -17,6 +17,13 @@ const lasIn = async (w, rader, namn) => {
     w.loadStructureFile(csvFil(w, rader, namn));
     await vanta(() => status(w) && !/läser|Läser/.test(status(w)));
 };
+// Som lasIn, men väntar tills state.data bytts ut (statusraden kan stå kvar från förra filen medan den nya läses).
+const lasInNy = async (w, rader) => {
+    papa(w);
+    const fore = w.__state.data;
+    w.loadStructureFile(csvFil(w, rader));
+    await vanta(() => w.__state.data !== fore);
+};
 const panel = w => w.document.getElementById('column-map-panel');
 const kortet = w => w.document.querySelector('#upload-cell-data .upload-importprofil');
 // Kolumnerna som okandaRader() har och som delsträngarna inte känner igen.
@@ -95,10 +102,9 @@ describe('importprofiler: spara en gjord mappning och känna igen filen nästa g
         await lasIn(w, okandaRader());
         expect(kortet(w).textContent).toBe('Känd uppsättning: Lönesystemets personallista (konfigurationsfilen)');
         // Samma rubriker som profilen ger i varje val: ingen ändring.
-        w.document.getElementById('data-status').textContent = '';
+        const fore = w.__state.data;   // lasIn tilldelar state.data i samma synkrona uppgift som ritar kortet
         panel(w).querySelector('#colmap-apply').click();
-        await vanta(() => w.__state.columnMap && w.__state.data.length === 30 && status(w) && !/läser|Läser/.test(status(w)));
-        await new Promise(r => setTimeout(r, 300));   // omläsningen ritar kortet efter att statusraden satts
+        await vanta(() => w.__state.data !== fore);
         expect(kortet(w).textContent).toBe('Känd uppsättning: Lönesystemets personallista (konfigurationsfilen)');
         // Yrket ur en annan kolumn än profilens.
         panel(w).querySelector('[data-colmap-role="yrke"]').value = 'Avd';
@@ -125,13 +131,52 @@ describe('importprofiler: spara en gjord mappning och känna igen filen nästa g
         await lasIn(w, mallRader(true));
         expect(w.__state.importprofil).toMatchObject({ namn: 'Mallen utan poäng' });
         expect(kortet(w).textContent).toBe('Känd uppsättning: Mallen utan poäng (konfigurationsfilen)');
-        w.document.getElementById('data-status').textContent = '';
+        const fore = w.__state.data;   // lasIn tilldelar state.data i samma synkrona uppgift som ritar kortet
         panel(w).querySelector('#colmap-apply').click();
-        await vanta(() => w.__state.columnMap && w.__state.data.length === 30 && status(w) && !/läser|Läser/.test(status(w)));
-        await new Promise(r => setTimeout(r, 300));   // omläsningen ritar kortet efter att statusraden satts
+        await vanta(() => w.__state.data !== fore);
         expect(w.__state.columnMap).toMatchObject({ poang: 'Poang' });
         expect(kortet(w).textContent).toBe('Känd uppsättning: Mallen utan poäng (konfigurationsfilen)');
         expect(panel(w).textContent).not.toContain('ändrad');
+    });
+
+    it('en mappning för en fil följer inte med som "ändrad" till nästa fil som en profil känner igen', async () => {
+        const w = createAppWindow();
+        w.__p = [{ id: 'utan-poang', namn: 'Mallen utan poäng', rubriker: { bas: ['BAS-intervall'], yrke: ['AID'], lon: ['Manadslon'], alder: ['Alder'], kon: ['Kon'] } }, PROFIL];
+        w.eval("state.importprofiler = _ipValideraLista(window.__p, { kalla: 'konfiguration' }).profiler");
+        await lasIn(w, mallRader(true));
+        const fore = w.__state.data;
+        panel(w).querySelector('#colmap-apply').click();   // fil A tillämpad utan ändring: columnMap bär A:s rubriker
+        await vanta(() => w.__state.data !== fore);
+        expect(w.__state.columnMap).toMatchObject({ bas: 'BAS-intervall', poang: 'Poang' });
+        await lasInNy(w, okandaRader());   // fil B, som profilen Personallistan känner igen
+        expect(w.__state.importprofil).toMatchObject({ namn: 'Lönesystemets personallista' });
+        expect(w.__state.data.every(d => d.bas === 'X')).toBe(true);
+        expect(kortet(w).textContent).toBe('Känd uppsättning: Lönesystemets personallista (konfigurationsfilen)');
+        expect(w.document.querySelector('#avsnitt-fi-forhandskontroll .fk-profil').textContent).toBe('Känd uppsättning: Lönesystemets personallista (konfigurationsfilen)');
+    });
+
+    it('samma sak i stoppläget: förhandskontrollen för den väntande filen och efter Läs in säger inte "ändrad"', async () => {
+        const w = createAppWindow();
+        w.__p = [{ id: 'utan-poang', namn: 'Mallen utan poäng', rubriker: { bas: ['BAS-intervall'], yrke: ['AID'], lon: ['Manadslon'], alder: ['Alder'], kon: ['Kon'] } }, PROFIL];
+        w.eval("state.importprofiler = _ipValideraLista(window.__p, { kalla: 'konfiguration' }).profiler");
+        await lasIn(w, mallRader(true));
+        const fore = w.__state.data;
+        panel(w).querySelector('#colmap-apply').click();
+        await vanta(() => w.__state.data !== fore);
+        w.eval('oppnaInstallningar()');
+        const ruta = w.document.getElementById('inst-fk-stopp');
+        ruta.checked = true; ruta.dispatchEvent(new w.Event('change', { bubbles: true }));
+        w.eval('stangInstallningar()');
+        papa(w);
+        w.loadStructureFile(csvFil(w, okandaRader()));
+        await vanta(() => w.document.getElementById('fk-las-in'));   // filen väntar på Läs in
+        const fkProfil = () => w.document.querySelector('#avsnitt-fi-forhandskontroll .fk-profil').textContent;
+        expect(w.document.getElementById('fk-las-in')).not.toBeNull();
+        expect(fkProfil()).toBe('Känd uppsättning: Lönesystemets personallista (konfigurationsfilen)');
+        w.document.getElementById('fk-las-in').click();
+        expect(w.__state.data.every(d => d.bas === 'X')).toBe(true);
+        expect(fkProfil()).toBe('Känd uppsättning: Lönesystemets personallista (konfigurationsfilen)');
+        expect(kortet(w).textContent).toBe('Känd uppsättning: Lönesystemets personallista (konfigurationsfilen)');
     });
 
     it('en äldre konfigurationsfil utan profiler tar inte bort sessionens sparade profil', async () => {

@@ -587,16 +587,20 @@ function _importprofilKalla(kalla) {
     return kalla === 'organisationspaket' ? 'organisationspaketet' : kalla === 'konfiguration' ? 'konfigurationsfilen' : 'inbyggd';
 }
 /**
- * "Känd uppsättning: Namn (källa)" för profilen, eller tom sträng. "Känd uppsättning, ändrad: …" när kolumnmappningen
- * (state.columnMap) för någon roll pekar ut en annan rubrik än den som känns igen utan val: profilen och, för roller
- * den inte täcker, rubrikernas namn (_kolumnval i 32-filinlasning.js). Tillämpa sparar varje ifylld rullista, också
- * de roller som bara rubriknamnen fyllde.
+ * "Känd uppsättning: Namn (källa)" för profilen, eller tom sträng. "Känd uppsättning, ändrad: …" när det effektiva
+ * valet för filens rubriker (`headers`) skiljer sig från det som känns igen utan val: profilen och, för roller den
+ * inte täcker, rubrikernas namn (_kolumnval i 32-filinlasning.js). En vald rubrik som filen inte har gäller inte och
+ * räknas inte; ett aktivt "— ingen —" för ansvarskoden räknas som en ändring.
+ * @param {any} p
+ * @param {string[]} [headers] rubrikerna i filen profilen gäller (standard: den inlästa lönefilens)
  */
-function importprofilText(p) {
+function importprofilText(p, headers = state._dataHeaders) {
     if (!p) return '';
-    const m = state.columnMap || {};
-    const kand = typeof _kolumnval === 'function' ? _kolumnval(state._dataHeaders || []).auto : (p.mappning || {});
-    const andrad = Object.keys(m).some(roll => (m[roll] || '') !== (kand[roll] || ''));
+    let andrad = false;
+    if (typeof _kolumnval === 'function') {
+        const { auto, eff } = _kolumnval(headers || []);
+        andrad = Object.keys(auto).concat(Object.keys(eff)).some(r => (eff[r] || '') !== (auto[r] || ''));
+    }
     return `Känd uppsättning${andrad ? ', ändrad' : ''}: ${p.namn} (${_importprofilKalla(p.kalla)})`;
 }
 
@@ -14775,6 +14779,8 @@ function _fkForFil({ forsta, konVarden, parseStats, headers, data, filnamn = nul
     const p = state.importprofil;
     const fk = _fkBygg({ rader: forsta, data, konVarden: [...konVarden.values()], parseStats, headers, mappning,
         k: kInstalld(), profil: p ? { namn: p.namn, kalla: p.kalla } : null });
+    // Raden om importprofilen räknas här, ur den här filens rubriker (en väntande fil är ännu inte den inlästa).
+    if (fk.kolumner.profil) fk.kolumner.profil.text = importprofilText(p, headers);
     return { ...fk, filnamn };
 }
 
@@ -14940,7 +14946,7 @@ function renderForhandskontroll() {
     ]);
 
     host.innerHTML = `${vantar}${filrad}
-        <p class="fk-profil text-dampad-sm">${p ? esc(importprofilText(p)) : 'Ingen importprofil kände igen filen: kolumnerna valdes på rubrikernas namn eller i kolumnmappningen.'}</p>
+        <p class="fk-profil text-dampad-sm">${p ? esc(p.text || importprofilText(p)) : 'Ingen importprofil kände igen filen: kolumnerna valdes på rubrikernas namn eller i kolumnmappningen.'}</p>
         ${varningar}
         <h3 class="fs-md marg-14-0-8">Tolkningen av de ${esc(svTal(g.antalRader, 0))} första raderna</h3>
         <p class="text-dampad-sm lh-1_5 marg-0-0-8">Filens värde och verktygets tolkning står i samma cell när de skiljer sig. En markerad cell gick inte att tolka eller ligger utanför det rimliga; en dämpad rad används inte i analysen. Raderna visas bara här, på skärmen, och följer inte med i någon export eller i konfigurationsfilen.</p>
