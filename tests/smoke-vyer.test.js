@@ -129,7 +129,7 @@ describe('gränssnittet har inga paragrafhänvisningar utanför hjälptexten', (
         const walker = w.document.createTreeWalker(w.document.body, 4 /* NodeFilter.SHOW_TEXT */);
         for (let n = walker.nextNode(); n; n = walker.nextNode()) {
             if (n.parentElement && n.parentElement.closest(hjalp)) continue;
-            if (/§|DiskrL|kap\. ?3|3 kap\.|\b[Aa]rt\. ?\d|[Ll]agen \d+:\d+/.test(n.textContent)) {
+            if (/§|DiskrL|kap\. ?3|3 kap\. ?\d|\b[Aa]rt\. ?\d|[Ll]agen \d+:\d+/.test(n.textContent)) {
                 traffar.push(`${(n.parentElement.closest('[id]') || {}).id}: ${n.textContent.trim().slice(0, 70)}`);
             }
         }
@@ -179,11 +179,11 @@ describe('referensen: demoläget, egen fil och rensning (ADR-28)', () => {
         w.__autoClearOnInactivity();
         expect(w.__state.policy).toEqual([]);
     });
-    it('en ren AID-policy med eget namn ger "saknar BAS-nivårader" i kompliansrutan', () => {
+    it('en ren AID-policy med eget namn ger "saknar rader per BAS-intervall" i kompliansrutan', () => {
         w.__loadDemoData();
         w.__lasInReferens([{ aid: '123456', p10: 1, med: 2, p90: 3 }], 'AID-policy.csv');
         w.__updateCompliance();
-        expect(w.document.getElementById('comp-pol-val').textContent).toContain('saknar BAS-nivårader');
+        expect(w.document.getElementById('comp-pol-val').textContent).toContain('saknar rader per BAS-intervall');
         expect(w.document.getElementById('compliance-overview').textContent).toContain('AID-policy');
         w.__aterstallReferens();
     });
@@ -260,9 +260,9 @@ describe('samma bild på Översikt', () => {
         const t = w.document.getElementById('dashboard-summary').textContent;
         expect(t).not.toContain('bör utredas enligt EU');
         // Under talet står bara vad det är; förklaringen ligger i verktygstipset (nyckeltalsraden är en rad hög).
-        expect(t).toContain('rå skillnad, innan yrke och nivå räknats bort');
+        expect(t).toContain('rå skillnad, innan yrke och BAS-intervall räknats bort');
         const tip = w.document.querySelector('#stat-paygap .stat-tip');
-        expect(tip.getAttribute('title')).toContain('före hänsyn till yrke, nivå och ålder');
+        expect(tip.getAttribute('title')).toContain('före hänsyn till yrke, BAS-intervall och ålder');
         // Rågapet är en utgångspunkt, inget fynd: neutral färg också när det är långt från 100 %.
         expect(tip.classList.contains('crit')).toBe(false);
         expect(tip.classList.contains('ok')).toBe(false);
@@ -405,11 +405,11 @@ describe('menystruktur', () => {
         });
         const rows = [...host.querySelectorAll('.ptrack-row')], mal = r => r.querySelector('[data-goto-tab]').getAttribute('data-goto-tab');
         expect(rows.map(mal)).toEqual(['dashboard', 'bestammelser', 'matrix', 'likvardighet', 'handlingsplan', 'handlingsplan', 'rapporttext', 'dokumentera', 'dokumentera']);
-        // Samverkan leder till kortet Samverkan & uppföljning i Handlingsplan.
+        // Samverkan leder till kortet Samverkan och uppföljning i Handlingsplan.
         expect(rows[5].querySelector('[data-goto-tab]').getAttribute('data-goto-avsnitt')).toBe('hp-samverkan');
         const kort = w.document.getElementById('hp-samverkan');
         expect(kort.closest('#view-handlingsplan')).not.toBeNull();
-        expect(kort.querySelector('h2').textContent).toBe('Samverkan & uppföljning');
+        expect(kort.querySelector('h2').textContent).toBe('Samverkan och uppföljning');
         expect(rows[6].querySelector('.ptrack-status').dataset.status).toBe('manuell');
     });
     it('"Gå till steget" för Samverkan öppnar Handlingsplan och går till kortet', () => {

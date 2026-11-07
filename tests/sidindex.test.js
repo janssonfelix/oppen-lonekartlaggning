@@ -7,7 +7,7 @@ import { describe, it, expect } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
 
 const poster = w => [...w.document.querySelectorAll('#sidindex a')].map(a => a.textContent.trim());
-const KORT = 'Checklista — bestämmelser & praxis att granska';
+const KORT = 'Checklista — regler och praxis att granska';
 const oppna = (w, flik) => w.document.querySelector(`.nav-item[data-tab="${flik}"]`).click();
 
 describe('Sidindex', () => {
@@ -15,11 +15,11 @@ describe('Sidindex', () => {
         const w = createAppWindow(); w.__loadDemoData();
         oppna(w, 'struktur');
         const lista = poster(w);
-        expect(lista.slice(0, 2)).toEqual(['Representation per BAS-nivå', 'Organisationen som karta']);
-        expect(lista).toContain('EU 2023/970 — lönerapportmått');
+        expect(lista.slice(0, 2)).toEqual(['Representation per BAS-intervall', 'Organisationen som karta']);
+        expect(lista).toContain('Lönetransparensdirektivets mått');
         // Alla tre panelerna i fliken, i sidans ordning.
-        expect(lista.indexOf('Representation per BAS-nivå')).toBeLessThan(lista.indexOf('Lönegap per BAS-intervall'));
-        expect(lista.indexOf('Lönegap per BAS-intervall')).toBeLessThan(lista.indexOf('Vad blir kvar av lönegapet?'));
+        expect(lista.indexOf('Representation per BAS-intervall')).toBeLessThan(lista.indexOf('Löneskillnad per BAS-intervall'));
+        expect(lista.indexOf('Löneskillnad per BAS-intervall')).toBeLessThan(lista.indexOf('Vad blir kvar av löneskillnaden?'));
         // Ett avsnitt som döljs är borta när fliken ritas om.
         expect(lista).toContain('Var uppstår löneskillnaden?');
         w.document.getElementById('avsnitt-ov-gap').hidden = true;
@@ -75,9 +75,9 @@ describe('Sidindex', () => {
         const w = createAppWindow(); w.__loadDemoData();
         oppna(w, 'struktur');
         const summary = () => w.document.querySelector('#sidindex summary').textContent.replace(/\s+/g, ' ').trim();
-        expect(summary()).toBe('På den här sidan: Representation per BAS-nivå');
+        expect(summary()).toBe('På den här sidan: Representation per BAS-intervall');
         w.eval('_sidindexMarkera("avsnitt-st-eu")');
-        expect(summary()).toBe('På den här sidan: EU 2023/970 — lönerapportmått');
+        expect(summary()).toBe('På den här sidan: Lönetransparensdirektivets mått');
         expect(w.document.querySelector('#sidindex a.ar-aktiv').dataset.sidindex).toBe('avsnitt-st-eu');
         // Ett klick på smal skärm fäller ihop listan, så att den inte täcker avsnittet den ledde till.
         w.document.querySelector('#sidindex details').open = true;
@@ -132,7 +132,7 @@ describe('Sidindex', () => {
         oppna(w, 'matrix');
         expect(nav.hidden).toBe(false);
         expect(poster(w)).toContain('Personer att granska');
-        expect(poster(w)).not.toContain('Checklista — bestämmelser & praxis att granska');
+        expect(poster(w)).not.toContain('Checklista — regler och praxis att granska');
         oppna(w, 'info');
         expect(nav.hidden).toBe(true);
         expect(kropp.classList.contains('har-sidindex')).toBe(false);

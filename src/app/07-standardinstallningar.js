@@ -26,8 +26,10 @@ const INAKTIVITET_STANDARD_MIN = 90;
 // Verktyget är organisationsneutralt: ingen organisation är inbyggd. Profilen styr externa
 // benämningar och standard-PO utan att röra analyslogiken; den sätts av ett
 // organisationspaket.
+/** Standardnamnet när inget organisationspaket satt ett namn. */
+const ORG_STANDARDNAMN = 'Organisationen';
 const DEFAULT_PROFILE = Object.freeze({
-    name:                    'Er organisation',
+    name:                    ORG_STANDARDNAMN,
     benchmarkLabel:          'jämförelsestatistiken',
     benchmarkLabelGenitive:  'jämförelsestatistikens',
     benchmarkShort:          'jämförelsen',
@@ -37,7 +39,7 @@ const DEFAULT_PROFILE = Object.freeze({
     poPctNote:               'SKR Cirkulär 2025',
     orgTyp:                  'alla',   // 'kommun' | 'region' | 'alla' — SKR-referensens del (ADR-34)
     locale:                  'sv-SE',
-    notes:                   'Neutral standard. Läs in ett organisationspaket för er organisations benämningar.'
+    notes:                   'Neutral standard. Läs in ett organisationspaket för organisationens benämningar.'
 });
 
 /**
@@ -66,13 +68,18 @@ function applyProfileLabels() {
 // ---- Namn på organisationen och jämförelsestatistiken (ADR-36) ----
 // Etiketterna läser namnen härifrån. Utan namn skickas dagens text som standard.
 const _PERSONUPPGIFT_FEL = 'Namnet liknar ett personnummer eller en e-postadress och sparades inte.';
-function orgNamn(standard = 'Organisationen') {
+function orgNamn(standard = ORG_STANDARDNAMN) {
     const n = state.profile && state.profile.name;
     return n && n !== DEFAULT_PROFILE.name ? _namnNormalisera(n) : standard;   // även paketnamn högst 100 tecken
 }
 function jmfNamn(standard = 'Jämförelsestatistiken') {
     const n = state.profile && state.profile.benchmarkLabel;
     return n && n !== DEFAULT_PROFILE.benchmarkLabel ? _namnNormalisera(n) : standard;
+}
+/** Jämförelsens namn i genitiv i löptext ("jämförelsestatistikens", eller paketets eget namn). */
+function jmfNamnGenitiv() {
+    const n = state.profile && state.profile.benchmarkLabelGenitive;
+    return n && n !== DEFAULT_PROFILE.benchmarkLabelGenitive ? _namnNormalisera(n) : DEFAULT_PROFILE.benchmarkLabelGenitive;
 }
 // Namn i diagrammens serier visas alltid som text: vinkelparenteser byts mot typografiska, så att ett namn aldrig ser ut som markering.
 function plotNamn(text) {

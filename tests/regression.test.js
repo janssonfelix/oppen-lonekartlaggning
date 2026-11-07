@@ -93,11 +93,11 @@ describe('förklaringsmodellen som värde (ADR-56)', () => {
         expect(r.varningar.length).toBe(1);
     });
     it('frasen för de sex kombinationerna', () => {
-        expect(modellFras(m(true, true))).toBe('ålder och nivå');
-        expect(modellFras(m(true, false))).toBe('nivå');
+        expect(modellFras(m(true, true))).toBe('ålder och BAS-intervall');
+        expect(modellFras(m(true, false))).toBe('BAS-intervall');
         expect(modellFras(m(false, true))).toBe('ålder');
-        expect(modellFras(m(true, false, true))).toBe('nivå och yrkesgrupp');
-        expect(modellFras(m(true, true, true))).toBe('ålder, nivå och yrkesgrupp');
+        expect(modellFras(m(true, false, true))).toBe('BAS-intervall och yrkesgrupp');
+        expect(modellFras(m(true, true, true))).toBe('ålder, BAS-intervall och yrkesgrupp');
         expect(modellFras(m(false, false))).toBe('');
     });
     it('beskrivningen för modelDesc och variablerna i fast ordning', () => {

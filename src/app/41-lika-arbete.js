@@ -104,7 +104,7 @@ function generateSkevhet() {
         const nCell = `<td class="t-hoger">${kv.length}/${ma.length}</td>`;
         const masked = isKMasked(kv.length) || isKMasked(ma.length);
         // Bevis-knapp per BAS-rad
-        const evidenceCell = `<td class="t-mitt"><button class="btn-evidence" data-paygap-row="1" type="button" title="Visa beräkningen bakom denna BAS-rad" aria-label="Visa bevis för BAS ${esc(b)}">${ikon('sok')}</button></td>`;
+        const evidenceCell = `<td class="t-mitt"><button class="btn-evidence" data-paygap-row="1" type="button" title="Visa beräkningen bakom denna BAS-rad" aria-label="Visa beräkningen för BAS ${esc(b)}">${ikon('sok')}</button></td>`;
         // k-anonymitet, samma tvådelade regel som i EU-matrisen:
         //  * hela BAS-intervallet för litet -> raden utelämnas (den hade bara
         //    innehållit "< 10" och gett ingenting att analysera)
@@ -179,7 +179,7 @@ function generateSkevhet() {
         if (isKMasked(kv.length) || isKMasked(ma.length)) pgKMasked++;
     });
     setAudit('skevhet', {
-        title: 'Lönegap & Könsfördelning',
+        title: 'Löneskillnad och könsfördelning',
         ...baseS,
         usedInAnalysis: baseS.afterFilter,
         analysisExclusions: [
@@ -187,9 +187,9 @@ function generateSkevhet() {
             ...(skBasMaskCount > 0 ? [[`BAS-intervall för små för könsskevhetsanalys (n&lt;5 totalt)`, skBasMaskCount]] : [])
         ],
         formler: [
-            ['Lönegap (Kv mot Mä)', '<code>median(kvinnors lön) / median(mäns lön) × 100%</code>. 100% = lika lön.'],
-            ['Lagstadgat tröskelvärde', '|gap − 100%| &gt; 5% (EU-direktiv 2023/970, utredningsgräns)'],
-            ['Könsskevhet', 'Andel av ett kön &lt; 40% av gruppen (jämn fördelning kräver att båda könen ≥ 40%)'],
+            ['Kvinnors lön i % av mäns', '<code>median(kvinnors lön) / median(mäns lön) × 100 %</code>. 100 % = lika lön.'],
+            ['Gräns för markering', '|kvot − 100 %| &gt; 5 % (gränsen i direktivets regler om gemensam lönebedömning; lagen kräver analys av varje skillnad)'],
+            ['Ojämn könsfördelning', 'Ett kön är under 40 % av gruppen (jämn fördelning betyder att båda könen är minst 40 %)'],
             ['Översiktsdiagram', 'Punkt per BAS; färg och symbol = avvikelse från 100 % (Balanserat ≤ 3 %, grön cirkel · Följ upp 3–5 %, bärnstensgul kvadrat · Värt att granska &gt; 5 %, lila romb)']
         ],
         notes: [
@@ -307,7 +307,7 @@ function generateEUDirectiveMatrix() {
         status = `<span class="la-status farg-ok" title="Skillnaden är högst 3 %">${bara('✓')}${ikon('bock')} Balanserat${bara(' (≤ 3%)')}</span>`;
         if (g.flaggad) {
             const stabil = _ruStabilitetKort(g.stabilitet, kTroskel());
-            status = `<span class="la-status farg-granska" title="Skillnaden är över 5 % (EU-direktivets utredningströskel)">${ikon('sok')} Värt att granska${bara(' (&gt; 5%)')}</span>`
+            status = `<span class="la-status farg-granska" title="Skillnaden är över 5 %">${ikon('sok')} Värt att granska${bara(' (&gt; 5%)')}</span>`
                 + ` <br><span class="la-stabilitet" title="${esc(stabil)}">${_laStabilitetRad(stabil)}</span>`;
             statusKlass = "rad-granska";
         }
@@ -399,8 +399,8 @@ function generateEUDirectiveMatrix() {
             ...(maskedYrken > 0 ? [[`Yrkesgrupper utelämnade, k-anonymitet (kön n&lt;${kTroskel()})`, maskedYrken]] : [])
         ],
         formler: [
-            ['Lönegap per yrke', '<code>(median Kv / median Mä − 1) × 100%</code>'],
-            ['Status-tröskel', '≤ 3 % Balanserat · 3–5 % Följ upp · &gt; 5 % Värt att granska (EU 2023/970)'],
+            ['Löneskillnad per yrke', '<code>(median kvinnor / median män − 1) × 100 %</code>'],
+            ['Statusgränser', '≤ 3 % Balanserat · 3–5 % Följ upp · &gt; 5 % Värt att granska'],
             ['Dominans', 'Kvinnodominerad om >60% kvinnor, mansdominerad om >60% män (dvs. ett kön < 40%), annars könsblandad (jämn fördelning = båda könen ≥ 40%)'],
             ['OLS-regression', 'log(lön) ~ kön + ålder + BAS-intervall (indikatorvariabler, första BAS som referens). Standardfel: HC3 robust (Long &amp; Ervin 2000)'],
             ['BAS-rangordning', 'Fast enligt BAS-systemet: A lägst (t.ex. 0–99 poäng), B nästa intervall (100–199) osv.; rang = bokstavens plats (A=1, B=2 …); ett BAS-steg är alltid ett intervall, även när en bokstav saknas i underlaget; högre rang = högre värderat arbete'],
@@ -408,7 +408,7 @@ function generateEUDirectiveMatrix() {
         ],
         notes: [
             regNote,
-            'Bedömning av "saklig/osaklig" skillnad kräver kompletterande granskning – verktyget identifierar endast statistiska avvikelser'
+            'Om en skillnad har sakliga skäl avgör du – verktyget hittar bara skillnaderna'
         ]
     });
 }

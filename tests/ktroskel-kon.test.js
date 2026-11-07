@@ -145,7 +145,7 @@ describe('C3: könsuppdelade mått för hela organisationen kräver tröskeln f�
         expect(s.rawGapPct).toBeNull();
         expect(s.nMa).toBe(3);
     });
-    it('Löneöversyn: råa lönegapet före och efter visas inte', () => {
+    it('Löneöversyn: den råa löneskillnaden före och efter visas inte', () => {
         const w = fonster3(null);
         Object.assign(w.__state.forecast, { generell: { mode: 'pct', value: 2 } });
         w.__renderTabContent('loneoversyn');
@@ -207,14 +207,14 @@ describe('C5: bladet Lönepolitik i Excel (alla flikar) följer tröskeln som fl
         expect(b.yrken).not.toMatch(/Litet \| 4/);
         expect(b.yrken).toMatch(/Visas inte \(färre än 5 personer\): .*7002 Litet/);
         // Ett stort yrke har alla mått.
-        expect(b.yrken.split('\n').find(r => /Säkeryrke 0/.test(r))).toMatch(/^S1 \| 6000 \| Säkeryrke 0 \| 15\d \| \d+ \| 22000 \| 52000 \| -?\d+(\.\d+)? \| \d+ \| BAS-nivå$/);
+        expect(b.yrken.split('\n').find(r => /Säkeryrke 0/.test(r))).toMatch(/^S1 \| 6000 \| Säkeryrke 0 \| 15\d \| \d+ \| 22000 \| 52000 \| -?\d+(\.\d+)? \| \d+ \| BAS-intervall$/);
         for (const v of harNagon(b.text, [...KON_DOLDA, ...SENT_SMA])) expect.fail(`dolt värde i bladet: ${v}`);
     });
     it('vid 25: A–D (20 personer) mister efterlevnad och lönemått men behåller antal', async () => {
         const b = await bladet(25);
         for (const bas of MELLAN) expect(rader(b.efterlevnad, bas), bas).toHaveLength(0);
         expect(b.efterlevnad).toMatch(/Visas inte \(färre än 25 personer\): .*A, B, C, D/);
-        expect(b.yrken.split('\n').find(r => /Mellanyrke 0/.test(r))).toMatch(/^A \| 5300 \| Mellanyrke 0 \| 20 \| {2}\| {2}\| {2}\| {2}\| \d+ \| BAS-nivå$/);
+        expect(b.yrken.split('\n').find(r => /Mellanyrke 0/.test(r))).toMatch(/^A \| 5300 \| Mellanyrke 0 \| 20 \| {2}\| {2}\| {2}\| {2}\| \d+ \| BAS-intervall$/);
         for (const v of harNagon(b.text, [...KON_DOLDA, ...SENT_SMA, ...SENT_MELLAN])) expect.fail(`dolt värde i bladet: ${v}`);
         expect(b.tredjedelar).toMatch(/Kvinnor \| \d+ \|/);   // hela urvalet har hundratals av varje kön
     });

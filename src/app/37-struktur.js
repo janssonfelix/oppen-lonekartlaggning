@@ -35,7 +35,7 @@ function renderStructure() {
     const distEl = document.getElementById('struktur-distribution');
     const euEl = document.getElementById('struktur-eu');
     if (!d.length) {
-        [repEl, distEl, euEl].forEach(el => { if (el) el.innerHTML = '<p class="farg-dampad pad-14">Ladda upp strukturdata.</p>'; });
+        [repEl, distEl, euEl].forEach(el => { if (el) el.innerHTML = '<p class="farg-dampad pad-14">Läs in lönefilen först.</p>'; });
         _stRitaTopp(d, null);
         return;
     }
@@ -53,7 +53,7 @@ function renderStructure() {
     const repVisade = rep.filter(g => !isKMasked(g.n));
     const repUtelamnade = rep.filter(g => isKMasked(g.n)).map(g => g.bas);
     if (repEl) repEl.innerHTML = `
-        <p class="text-dampad-sm marg-0-0-10">Andel kvinnor per BAS-nivå, i ordning A–Ö. Om andelen kvinnor sjunker mot högre BAS-nivåer (längre ner i tabellen) finns <strong>vertikal könssegregering</strong> (glastak) — en strukturell orsak till lönegapet.</p>
+        <p class="text-dampad-sm marg-0-0-10">Andel kvinnor per BAS-intervall, i ordning A–Ö. Sjunker andelen kvinnor mot högre BAS-intervall (längre ner i tabellen) finns <strong>vertikal könssegregering</strong> (glastak). Det är en strukturell orsak till löneskillnaden.</p>
         ${repVisade.length ? `<table class="data-table st-088"><thead><tr><th>BAS</th><th class="t-hoger">n</th><th class="t-hoger">Median</th><th class="t-hoger">Andel kvinnor</th><th class="bredd-34p">Andel kvinnor (mot ${svPct(totAndel, 0)} totalt)</th><th class="t-hoger">Kvinnors median i % av mäns</th></tr></thead><tbody>
         ${repVisade.map(g => {
             const over = g.andelKv > totAndel + 10, under = g.andelKv < totAndel - 10;
@@ -73,9 +73,9 @@ function renderStructure() {
             const p10 = dist.find(x => x.p === 10), p90 = dist.find(x => x.p === 90);
             let tolk = '';
             if (p10 && p90 && p10.gapPct != null && p90.gapPct != null) {
-                if (Math.abs(p10.gapPct) > Math.abs(p90.gapPct) + 1) tolk = '<strong>Klibbigt golv:</strong> gapet är störst bland de lägst betalda — fokusera på ingångslöner och lägstanivåer.';
-                else if (Math.abs(p90.gapPct) > Math.abs(p10.gapPct) + 1) tolk = '<strong>Glastak:</strong> gapet är störst bland de högst betalda — granska befordran och lönesättning i toppen.';
-                else tolk = 'Gapet är relativt jämnt fördelat över lönefördelningen.';
+                if (Math.abs(p10.gapPct) > Math.abs(p90.gapPct) + 1) tolk = '<strong>Klibbigt golv:</strong> skillnaden är störst bland de lägst betalda. Granska ingångslöner och lägstanivåer.';
+                else if (Math.abs(p90.gapPct) > Math.abs(p10.gapPct) + 1) tolk = '<strong>Glastak:</strong> skillnaden är störst bland de högst betalda. Granska befordran och lönesättning i toppen.';
+                else tolk = 'Skillnaden är ungefär lika stor i hela lönefördelningen.';
             }
             const maxG = Math.max(...dist.map(x => Math.abs(x.gapPct || 0)), 0.01);
             distEl.innerHTML = `<p class="text-dampad-sm marg-0-0-10">Kvinnors lön i procent av mäns vid olika percentiler i fördelningen. Under 100 % betyder att kvinnor ligger lägre.</p>
@@ -94,10 +94,10 @@ function renderStructure() {
     const kvGammal = document.getElementById('chart-struktur-kvartiler');
     if (kvGammal) rensaFigur(kvGammal);
     if (euEl) euEl.innerHTML = `
-        <p class="text-dampad-sm marg-0-0-10">Mått i linje med EU:s lönetransparensdirektiv. Här står kvinnors lön i procent av mäns, som i resten av verktyget, med direktivets lönegap under: skillnaden i procent av mäns lön, positiv när kvinnor ligger lägre. Kompletterande/rörliga lönedelar redovisas ej (verktyget hanterar en lönedefinition).</p>
+        <p class="text-dampad-sm marg-0-0-10">Måtten i direktivet. Här står kvinnors lön i procent av mäns, som i resten av verktyget, med direktivets löneskillnad under: skillnaden i procent av mäns lön, positiv när kvinnor ligger lägre. Rörliga och kompletterande lönedelar redovisas inte, eftersom verktyget räknar med en lönedefinition.</p>
         <div class="rutnat gap-12 kolumner-auto-180 marg-b-14">
-            <div class="card m-0"><div class="text-dampad-xs">Kvinnors medellön i procent av mäns</div><div class="fs-lg fw-700">${andelAvMan(meanGap)}</div><div class="text-dampad-xs">Lönegap enligt direktivet: ${direktivGap(meanGap)}</div></div>
-            <div class="card m-0"><div class="text-dampad-xs">Kvinnors medianlön i procent av mäns</div><div class="fs-lg fw-700">${andelAvMan(medGap)}</div><div class="text-dampad-xs">Lönegap enligt direktivet: ${direktivGap(medGap)}</div></div>
+            <div class="card m-0"><div class="text-dampad-xs">Kvinnors medellön i procent av mäns</div><div class="fs-lg fw-700">${andelAvMan(meanGap)}</div><div class="text-dampad-xs">Löneskillnad enligt direktivet: ${direktivGap(meanGap)}</div></div>
+            <div class="card m-0"><div class="text-dampad-xs">Kvinnors medianlön i procent av mäns</div><div class="fs-lg fw-700">${andelAvMan(medGap)}</div><div class="text-dampad-xs">Löneskillnad enligt direktivet: ${direktivGap(medGap)}</div></div>
         </div>
         <strong class="block-mb6">Andel kvinnor/män per lönekvartil</strong>
         <div class="mb-10" id="chart-struktur-kvartiler"></div>
@@ -162,9 +162,9 @@ function _stUtkastPerBas(k) {
 function _stFordelningsMonster(dist) {
     const p10 = dist.find(x => x.p === 10), p90 = dist.find(x => x.p === 90);
     if (!p10 || !p90 || p10.gapPct == null || p90.gapPct == null) return null;
-    if (Math.abs(p10.gapPct) > Math.abs(p90.gapPct) + 1) return { namn: 'Klibbigt golv', text: 'Gapet störst bland de lägst betalda' };
-    if (Math.abs(p90.gapPct) > Math.abs(p10.gapPct) + 1) return { namn: 'Glastak', text: 'Gapet störst bland de högst betalda' };
-    return { namn: 'Jämnt', text: 'Gapet lika stort i hela fördelningen' };
+    if (Math.abs(p10.gapPct) > Math.abs(p90.gapPct) + 1) return { namn: 'Klibbigt golv', text: 'Skillnaden störst bland de lägst betalda' };
+    if (Math.abs(p90.gapPct) > Math.abs(p10.gapPct) + 1) return { namn: 'Glastak', text: 'Skillnaden störst bland de högst betalda' };
+    return { namn: 'Jämnt', text: 'Skillnaden lika stor i hela fördelningen' };
 }
 
 /**
@@ -373,20 +373,20 @@ function _buildNarrative(d, ctx) {
     lines.push('');
     lines.push(`Underlaget omfattar ${d.length} anställda (${svPct(ctx.totAndel, 0)} kvinnor) fördelade på ${getBasIntervals().length} BAS-intervall.`);
     lines.push('');
-    lines.push('Lönegap (kvinnors lön i procent av mäns):');
+    lines.push('Löneskillnad (kvinnors lön i procent av mäns):');
     if (ctx.konOk) lines.push(`  • Kvinnors genomsnittslön är ${andelAvMan(ctx.meanGap)} av mäns, och medianlönen ${andelAvMan(ctx.medGap)} av mäns.`);
     else lines.push(`  • ${_konUtelamnatNot()}`);
     /** @type {any} */ let reg = null; try { reg = runOLSRegression(); } catch (_e) { reg = null; }
     if (reg && !reg.error) {
         lines.push(`  • ${reg.fras ? `Efter kontroll för ${reg.fras} kvarstår en oförklarad skillnad` : 'Utan att något räknats bort är skillnaden'} på ${fmtPct(reg.konPct)} (negativ när kvinnor ligger lägre; ${reg.pValue < 0.05 ? 'statistiskt säkerställt' : 'ej statistiskt säkerställt'}).`);
-        if (reg.pValue < 0.05 && Math.abs(reg.konPct) > 5) lines.push('    Detta överstiger 5 %-tröskeln i EU 2023/970 och bör utredas (sakliga skäl eller gemensam lönebedömning).');
+        if (reg.pValue < 0.05 && Math.abs(reg.konPct) > 5) lines.push('    Skillnaden är över 5 procent. Pröva om den har sakliga skäl.');
     }
     lines.push('');
     // Distributionsmönster
     const p10 = ctx.dist.find(x => x.p === 10), p90 = ctx.dist.find(x => x.p === 90);
     if (p10 && p90 && p10.gapPct != null && p90.gapPct != null) {
-        if (Math.abs(p10.gapPct) > Math.abs(p90.gapPct) + 1) lines.push(`Lönegapet är störst bland de lägst betalda (kvinnors lön vid P10: ${andelAvMan(p10.gapPct)} av mäns, vid P90: ${andelAvMan(p90.gapPct)}) — ett klibbigt golv. Granska ingångslöner och lägstanivåer.`);
-        else if (Math.abs(p90.gapPct) > Math.abs(p10.gapPct) + 1) lines.push(`Lönegapet är störst bland de högst betalda (kvinnors lön vid P90: ${andelAvMan(p90.gapPct)} av mäns, vid P10: ${andelAvMan(p10.gapPct)}) — ett glastak. Granska befordran och lönesättning i toppen.`);
+        if (Math.abs(p10.gapPct) > Math.abs(p90.gapPct) + 1) lines.push(`Löneskillnaden är störst bland de lägst betalda (kvinnors lön vid P10: ${andelAvMan(p10.gapPct)} av mäns, vid P90: ${andelAvMan(p90.gapPct)}) — ett klibbigt golv. Granska ingångslöner och lägstanivåer.`);
+        else if (Math.abs(p90.gapPct) > Math.abs(p10.gapPct) + 1) lines.push(`Löneskillnaden är störst bland de högst betalda (kvinnors lön vid P90: ${andelAvMan(p90.gapPct)} av mäns, vid P10: ${andelAvMan(p10.gapPct)}) — ett glastak. Granska befordran och lönesättning i toppen.`);
     }
     // Segregation
     // Bara BAS som tabellen visar namnges (k-anonymitet).
@@ -394,7 +394,7 @@ function _buildNarrative(d, ctx) {
     const sorted = ctx.rep.filter(g => !isKMasked(g.n));
     if (sorted.length >= 2) {
         const lagsta = sorted[0], hogsta = sorted[sorted.length - 1];
-        if (lagsta.andelKv - hogsta.andelKv > 15) lines.push(`Vertikal könssegregering: andelen kvinnor är högre i lägre betalda BAS (${lagsta.bas}: ${svPct(lagsta.andelKv, 0)}) än i högre betalda (${hogsta.bas}: ${svPct(hogsta.andelKv, 0)}). Detta är en strukturell orsak till lönegapet.`);
+        if (lagsta.andelKv - hogsta.andelKv > 15) lines.push(`Vertikal könssegregering: andelen kvinnor är högre i lägre betalda BAS (${lagsta.bas}: ${svPct(lagsta.andelKv, 0)}) än i högre betalda (${hogsta.bas}: ${svPct(hogsta.andelKv, 0)}). Det är en strukturell orsak till löneskillnaden.`);
     }
     // § 3:10
     /** @type {any} */ let lv = null; try { lv = likvardighetResultat(); } catch (_e) { lv = null; }
@@ -406,11 +406,11 @@ function _buildNarrative(d, ctx) {
         if (lvPar.not) lines.push(lvPar.par.length ? lvPar.not : `Likvärdigt arbete: ${lvPar.not}`);
     }
     lines.push('');
-    lines.push('Kvartilfördelning (EU:s lönetransparensdirektiv):');
+    lines.push('Kvartilfördelning (direktivets mått):');
     if (ctx.q.some(x => x.konDolt)) lines.push(`  • ${_konUtelamnatNot()}`);
     else ctx.q.forEach(x => lines.push(`  • Q${x.q}: ${svPct(x.andelKv, 0)} kvinnor (n=${x.n}).`));
     lines.push('');
-    lines.push('Detta utkast är ett analysunderlag och ersätter inte den slutliga lönekartläggningsrapporten, som arbetsgivaren författar och som ska dokumentera sakliga skäl, åtgärder, kostnader och tidsplan.');
+    lines.push('Utkastet är ett underlag. Organisationen skriver själv dokumentationen, med sakliga skäl, åtgärder, kostnader och tidsplan.');
     // Delen per BAS-intervall står efter helheten (väljaren ovanför utkastet).
     if (ctx.perBas) { lines.push(''); lines.push(ctx.perBas); }
     // Texten kopieras och sprids för sig: under standardvärdet bär den meningen om sänkt tröskel.
@@ -421,7 +421,7 @@ function _buildNarrative(d, ctx) {
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
 function exportEuReport(...a) { return medExportLage(() => _exportEuReportExport.apply(null, /** @type {any} */ (a))); }
 function _exportEuReportExport() {
-    if (typeof XLSX === 'undefined') { alert('Excel-biblioteket kunde inte laddas.'); return; }
+    if (typeof XLSX === 'undefined') { alert('Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.'); return; }
     const d = getData();
     if (!d.length) { alert('Ingen data.'); return; }
     const kr = n => n == null ? '' : Math.round(n);
@@ -430,16 +430,16 @@ function _exportEuReportExport() {
     // Måtten står med direktivets tecken (art. 9): (män − kvinnor) / män i procent, positivt när kvinnor ligger
     // lägre. Verktyget räknar (kvinnor − män) / män; _stTillDirektivtecken vänder tecknet, bara i den här exporten
     // och rapportens avsnitt om lönetransparens — övriga blad och flikar visar kvinnors lön i procent av mäns.
-    const DIREKTIV_RUBRIK = 'Lönegap enligt art. 9 (%), positivt tal = kvinnor lägre';
-    const DIREKTIV_METOD = 'Lönegapet är (män − kvinnor) / män i procent, enligt art. 9: positivt tal = kvinnor lägre. Verktygets flikar och övriga blad visar i stället kvinnors lön i procent av mäns; beloppet är detsamma.';
+    const DIREKTIV_RUBRIK = 'Löneskillnad enligt direktivet (%), positivt tal = kvinnor lägre';
+    const DIREKTIV_METOD = 'Löneskillnaden är (män − kvinnor) / män i procent, enligt direktivet: positivt tal = kvinnor lägre. Verktygets flikar och övriga blad visar i stället kvinnors lön i procent av mäns; talet är lika stort.';
     function direktivRound(v) { const t = _stTillDirektivtecken(v); return t == null ? '–' : +t.toFixed(1); }
     const meta = [
-        ['EU 2023/970 — lönerapportmått', ''],
+        ['Lönetransparensdirektivets mått', ''],
         ['Genererad', new Date().toLocaleString('sv-SE')],
         ['Verktyg', 'Öppen lönekartläggning v' + (typeof APP_VERSION !== 'undefined' ? APP_VERSION : '–')],
         ['Antal anställda', d.length],
-        ['Lönegap i medellön enligt art. 9 (%), positivt tal = kvinnor lägre', direktivRound(meanGap)],
-        ['Lönegap i medianlön enligt art. 9 (%), positivt tal = kvinnor lägre', direktivRound(medGap)],
+        ['Löneskillnad i medellön enligt direktivet (%), positivt tal = kvinnor lägre', direktivRound(meanGap)],
+        ['Löneskillnad i medianlön enligt direktivet (%), positivt tal = kvinnor lägre', direktivRound(medGap)],
         ['Tecken', DIREKTIV_METOD],
         ...(konOk ? [] : [['Könsuppdelade mått', _konUtelamnatNot()]]),
         ['', ''],
@@ -462,7 +462,7 @@ function _exportEuReportExport() {
     const repKonLitet = rep.filter(g => !isKMasked(g.n) && g.konLitet).map(g => g.bas);
     if (repKonLitet.length) {
         repArr.push([]);
-        repArr.push([`Lönegapet utelämnat (ett kön har färre än ${kTroskel()} personer): ${repKonLitet.join(', ')}`]);
+        repArr.push([`Löneskillnaden utelämnad (ett kön har färre än ${kTroskel()} personer): ${repKonLitet.join(', ')}`]);
     }
     /** @type {any[][]} */
     // Antalet kvinnor och män bakom percentilerna (samma för alla rader; på skärmen står det i tabellens rubrikrad).
@@ -473,8 +473,8 @@ function _exportEuReportExport() {
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(meta), 'Sammanfattning');
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(quart), 'Kvartilfördelning');
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(repArr), 'Representation');
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(distArr), 'Distributionellt gap');
-    _appendMethodSheet(wb, { extra: [['Lönegapets tecken i den här filen', DIREKTIV_METOD]] });
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(distArr), 'Skillnad i lönefördelningen');
+    _appendMethodSheet(wb, { extra: [['Löneskillnadens tecken i den här filen', DIREKTIV_METOD]] });
     XLSX.writeFile(wb, `eu_lonerapport_${new Date().toISOString().slice(0, 10)}.xlsx`);
     if (typeof announceToScreenReader === 'function') announceToScreenReader('EU-lönerapport exporterad.');
 }

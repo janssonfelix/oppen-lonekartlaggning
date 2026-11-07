@@ -103,8 +103,8 @@ function buildActionChecklist({ endastGrupper = false } = {}) {
                 items.push({
                     id: 'reg-oforklarat', kategori: 'Lika arbete',
                     prioritet: Math.abs(reg.konPct) > 5 ? 'hög' : 'medel',
-                    titel: `Oförklarat lönegap för hela organisationen: kvinnor ${_agPct(reg.konPct)} % ${_agRiktning(reg.konPct)} lön än män (${reg.fras ? `efter ${reg.fras}` : 'inget räknat bort'})`,
-                    detalj: 'Ett oförklarat gap är inte samma sak som ett osakligt. Pröva skillnaden per yrkesgrupp i Lika arbete.',
+                    titel: `Oförklarad löneskillnad i hela organisationen: kvinnor har ${_agPct(reg.konPct)} % ${_agRiktning(reg.konPct)} lön än män (${reg.fras ? `efter ${reg.fras}` : 'inget räknat bort'})`,
+                    detalj: 'En oförklarad skillnad är inte samma sak som en osaklig. Pröva skillnaden per yrkesgrupp i Lika arbete.',
                     tab: 'struktur', källa: 'Regressionen i Lönestruktur'
                 });
             }
@@ -187,10 +187,10 @@ function buildActionChecklist({ endastGrupper = false } = {}) {
                     if (sig && Math.abs(p.gapPct) > 5) {
                         items.push({
                             id: `eu-bas-${p.bas}`,
-                            kategori: 'EU 2023/970',
+                            kategori: 'Lika arbete',
                             prioritet: 'hög',
-                            titel: `BAS ${p.bas}: kvinnor ${_agPct(p.gapPct)} % ${_agRiktning(p.gapPct)} lön efter ålderskontroll — utredningskrav`,
-                            detalj: `Statistiskt säkerställt också efter korrigering för många samtidiga tester (p=${p.pValue < 0.001 ? '< 0,001' : _agTal(p.pValue, 3)}, q=${q != null && q < 0.001 ? '< 0,001' : (q != null ? _agTal(q, 3) : '—')}). Över 5 %-tröskeln i EU:s lönetransparensdirektiv — här aktualiseras direktivets utredningssteg.`,
+                            titel: `BAS ${p.bas}: kvinnor ${_agPct(p.gapPct)} % ${_agRiktning(p.gapPct)} lön efter ålderskontroll, statistiskt säkerställd`,
+                            detalj: `Statistiskt säkerställt också efter korrigering för många samtidiga tester (p=${p.pValue < 0.001 ? '< 0,001' : _agTal(p.pValue, 3)}, q=${q != null && q < 0.001 ? '< 0,001' : (q != null ? _agTal(q, 3) : '—')}). Skillnaden är över 5 procent. Lagen kräver att den analyseras, och när lönetransparensdirektivet gäller kan den också leda till en gemensam lönebedömning hos en arbetsgivare som rapporterar löneskillnader (100 anställda eller fler).`,
                             tab: 'matrix',
                             källa: 'Lika arbete'
                         });
@@ -207,7 +207,7 @@ function buildActionChecklist({ endastGrupper = false } = {}) {
                     id: 'livscykel-vaxer',
                     kategori: 'Livscykel',
                     prioritet: 'medel',
-                    titel: `Lönegapet växer med åldern (kvinnors lön mot mäns sjunker ${_agTal(Math.abs(life.gapDelta), 1)} procentenheter mellan 25 och 65 år)`,
+                    titel: `Löneskillnaden växer med åldern (kvinnors lön mot mäns sjunker ${_agTal(Math.abs(life.gapDelta), 1)} procentenheter mellan 25 och 65 år)`,
                     detalj: 'Kan indikera långsammare karriärväg för kvinnor, föräldraledighetseffekter eller könsbias i lönerevisioner. Granska lönerevisionshistorik och befordringsstatistik per kön.',
                     tab: 'kon',
                     källa: 'Livscykelanalys'
@@ -364,7 +364,7 @@ function renderActionChecklist() {
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
 function exportActionChecklistCSV(...a) { return medExportLage(() => _exportActionChecklistCSVExport.apply(null, /** @type {any} */ (a))); }
 function _exportActionChecklistCSVExport(items, done) {
-    if (!items.length) { alert('Ingen åtgärdslista att exportera.'); return; }
+    if (!items.length) { alert('Det finns inget att exportera ännu. Läs in lönefilen först.'); return; }
     const rows = [[
         'Status', 'Prioritet', 'Kategori', 'Punkt', 'Detalj', 'Källa', 'Flik'
     ]];

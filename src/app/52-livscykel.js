@@ -107,20 +107,20 @@ function renderLifecycleAnalysis() {
     let coachKategori, coachRubrik, coachText;
     if (!interaktionSig) {
         coachKategori = 'konstant';
-        coachRubrik = 'Konstant gap över karriären';
-        coachText = `Kön×ålder-interaktionen är <strong>inte statistiskt säkerställd</strong> (p<sub>kön×ålder</sub> = ${result.kvAgePVal < 0.001 ? '< 0,001' : svTal(result.kvAgePVal, 3)}, p<sub>kön×ålder²</sub> = ${result.kvAge2PVal < 0.001 ? '< 0,001' : svTal(result.kvAge2PVal, 3)}). Lönegapet uppvisar ingen tydlig åldersvariation — eventuella skillnader är konstanta över karriärspannet. <strong>Att utforska:</strong> fokusera på strukturella analyser (BAS-värdering, likvärdigt arbete) snarare än karriärspecifika.`;
+        coachRubrik = 'Samma skillnad över karriären';
+        coachText = `Skillnaden ändras <strong>inte säkert</strong> med åldern (p<sub>kön×ålder</sub> = ${result.kvAgePVal < 0.001 ? '< 0,001' : svTal(result.kvAgePVal, 3)}, p<sub>kön×ålder²</sub> = ${result.kvAge2PVal < 0.001 ? '< 0,001' : svTal(result.kvAge2PVal, 3)}). Skillnaden är ungefär densamma i alla åldrar. <strong>Att utforska:</strong> lägg kraften på de strukturella analyserna (BAS-intervall, likvärdigt arbete) snarare än på karriären.`;
     } else if (result.gapDelta < -2) {
         coachKategori = 'växande';
-        coachRubrik = 'Gapet växer med åldern';
-        coachText = `Skillnaden är större i de högre åldrarna än i de lägre: kvinnors lön mot mäns sjunker med ${svTal(Math.abs(result.gapDelta), 1)} procentenheter mellan 25 och 65 år. Kurvorna är ett tvärsnitt och visar inte orsaken, men hypoteser att pröva är (1) <strong>föräldraledighet</strong> vars effekt samlas över karriären, (2) <strong>långsammare karriärväg</strong> för kvinnor — färre steg till högre BAS, (3) <strong>lönerevisioner som slår olika</strong> år efter år. <strong>Att utforska:</strong> granska lönerevisionshistorik per kön i era egna system (verktyget analyserar en kartläggning i taget), kontrollera befordringsstatistik per BAS-nivå, undersök om föräldralediga får samma lönelyft som heltidsarbetande.`;
+        coachRubrik = 'Skillnaden växer med åldern';
+        coachText = `Skillnaden är större i de högre åldrarna än i de lägre: kvinnors lön mot mäns sjunker med ${svTal(Math.abs(result.gapDelta), 1)} procentenheter mellan 25 och 65 år. Kurvorna är ett tvärsnitt och visar inte orsaken, men hypoteser att pröva är (1) <strong>föräldraledighet</strong> vars effekt samlas över karriären, (2) <strong>långsammare karriärväg</strong> för kvinnor — färre steg till högre BAS, (3) <strong>lönerevisioner som slår olika</strong> år efter år. <strong>Att utforska:</strong> granska löneöversynernas utfall per kön i organisationens egna system (verktyget analyserar en kartläggning i taget), kontrollera befordringar per BAS-intervall, undersök om föräldralediga får samma lönelyft som heltidsarbetande.`;
     } else if (result.gapDelta > 2) {
         coachKategori = 'krympande';
-        coachRubrik = 'Gapet krymper med åldern';
-        coachText = `Skillnaden är mindre i de högre åldrarna än i de lägre: kvinnors lön mot mäns stiger med ${svTal(result.gapDelta, 1)} procentenheter mellan 25 och 65 år. Kurvorna är ett tvärsnitt och visar inte orsaken, men en hypotes att pröva är att <strong>skillnaden uppstår vid rekryteringen</strong>: kvinnor och män börjar med olika ingångslöner och ligger närmare varandra i de äldre grupperna. <strong>Att utforska:</strong> granska ingångslöner per kön och BAS, undersök rekryteringsprocessen, kontrollera lönesättningsdialog för nya medarbetare.`;
+        coachRubrik = 'Skillnaden krymper med åldern';
+        coachText = `Skillnaden är mindre i de högre åldrarna än i de lägre: kvinnors lön mot mäns stiger med ${svTal(result.gapDelta, 1)} procentenheter mellan 25 och 65 år. Kurvorna är ett tvärsnitt och visar inte orsaken, men en hypotes att pröva är att <strong>skillnaden uppstår vid rekryteringen</strong>: kvinnor och män börjar med olika ingångslöner och ligger närmare varandra i de äldre grupperna. <strong>Att utforska:</strong> granska ingångslöner per kön och BAS, undersök rekryteringsprocessen, kontrollera lönesättningen för nyanställda.`;
     } else {
         coachKategori = 'praktiskt konstant';
-        coachRubrik = 'Gapet är praktiskt konstant';
-        coachText = `Lönegapet är statistiskt åldersvarierande (p < 0,10) men förändringen är liten (${result.gapDelta >= 0 ? '+' : ''}${svTal(result.gapDelta, 1)} procentenheter). I praktiken är gapet stabilt över karriären. <strong>Att utforska:</strong> behandla som ett strukturellt gap — adressera via huvudregressionen och BAS-värderingen, inte via karriärspecifika insatser.`;
+        coachRubrik = 'Skillnaden är i praktiken densamma';
+        coachText = `Löneskillnaden ändras med åldern (p under 0,10), men lite: ${result.gapDelta >= 0 ? '+' : ''}${svTal(result.gapDelta, 1)} procentenheter. I praktiken är skillnaden densamma över karriären. <strong>Att utforska:</strong> behandla den som en strukturell skillnad och arbeta med huvudregressionen och BAS-intervallen, inte med insatser för karriären.`;
     }
 
     coachText += modellMening;
@@ -131,8 +131,8 @@ function renderLifecycleAnalysis() {
         <div class="insight-box info ram-v-4-accent marg-b-14">
             <strong>Vad analyserar livscykelmodellen?</strong>
             <p class="fs-md lh-1_55 marg-8-0">
-                Den här analysen svarar på frågan: <em>"Är lönegapet mellan kvinnor och män
-                konstant över karriären, eller växer/krymper det med åldern?"</em> Svaret, och vad det kan bero på, står i tolkningen under kurvan. Bygger på ${svTal(result.n, 0)} personer.
+                Den här analysen svarar på frågan: <em>"Är löneskillnaden mellan kvinnor och män
+                densamma över karriären, eller växer eller krymper den med åldern?"</em> Svaret, och vad det kan bero på, står i tolkningen under kurvan. Bygger på ${svTal(result.n, 0)} personer.
             </p>
         </div>
 
@@ -196,7 +196,7 @@ function renderLifecycleAnalysis() {
                             <th class="t-hoger">Kvinna 65 år</th>
                             <th class="t-hoger">Man 65 år</th>
                             <th class="t-hoger" title="Kvinnors modellön minus mäns vid 65 år; negativt när kvinnor ligger lägre">Skillnad 65 år (kr)</th>
-                            <th class="t-mitt">Bevis</th>
+                            <th class="t-mitt">Beräkning</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -210,7 +210,7 @@ function renderLifecycleAnalysis() {
                                 <td class="t-hoger">${Math.round(r.kv65).toLocaleString('sv-SE')} kr</td>
                                 <td class="t-hoger">${Math.round(r.ma65).toLocaleString('sv-SE')} kr</td>
                                 <td class="t-hoger halvfet${r.gap65Kr < -1000 ? ' fg-varning' : ''}">${Math.round(r.gap65Kr).toLocaleString('sv-SE')} kr</td>
-                                <td class="t-mitt"><button class="btn-evidence" type="button" data-livscykel-bas="${esc(r.bas)}" title="Visa beräkningen för BAS ${esc(r.bas)}" aria-label="Bevis för BAS ${esc(r.bas)}">${ikon('sok')}</button></td>
+                                <td class="t-mitt"><button class="btn-evidence" type="button" data-livscykel-bas="${esc(r.bas)}" title="Visa beräkningen för BAS ${esc(r.bas)}" aria-label="Visa beräkningen för BAS ${esc(r.bas)}">${ikon('sok')}</button></td>
                             </tr>`).join('')}
                     </tbody>
                 </table>
@@ -315,7 +315,7 @@ function _evidenceForLifecycleBas(row, result) {
     const fmtKr = v => v == null || !isFinite(v) ? '—' : Math.round(v).toLocaleString('sv-SE') + ' kr';
     const fmtPct = v => v == null || !isFinite(v) ? '—' : (v >= 0 ? '+' : '') + svPct(v, 1);
     return {
-        title: `Bevis — BAS ${row.bas} (livscykelanalys)`,
+        title: `Beräkningen — BAS ${row.bas} (ålder och karriär)`,
         intro: `Predikterade lönenivåer från livscykelmodellen för BAS <strong>${esc(row.bas)}</strong>. Modellen är global (en regression över alla BAS samtidigt); nivån per BAS kommer ur modellens egen BAS-koefficient.`,
         rows: [
             { label: 'BAS-intervall',                       value: row.bas },
@@ -340,8 +340,8 @@ function _evidenceForLifecycleBas(row, result) {
             ln(lön) = β₀ + β_kön·isKv + β_ålder·(ålder−medel) + β_ålder²·(ålder−medel)² + β_kön×ålder·... + Σβ_BAS·dummies<br><br>
             För andra BAS ger modellens BAS-koefficient nivån:<br>
             lön(BAS) = lön(${result.fixBas}) × <em>exp(β_BAS − β_${result.fixBas})</em><br><br>
-            <em>Notera: detta är en additiv modell — BAS påverkar nivån men inte gap-utvecklingen. Därför är procent-gapet identiskt över alla BAS, men kronvärdet skiljer eftersom lönenivåerna skiljer.</em>`,
-        footer: `Livscykelmodellen tillåter att gapet varierar med åldern (via kön×ålder-interaktioner). Är interaktionerna ej signifikanta (p ≥ 0,10) är gapet i praktiken konstant — då räcker huvudregressionen. Är de signifikanta måste karriärspecifika åtgärder övervägas.`
+            <em>Obs! Modellen är additiv: BAS-intervallet påverkar lönenivån men inte hur skillnaden utvecklas. Därför är skillnaden i procent densamma i alla BAS-intervall, medan beloppet i kronor skiljer eftersom lönenivåerna skiljer.</em>`,
+        footer: `Livscykelmodellen låter skillnaden variera med åldern (via samspelet mellan kön och ålder). Är samspelet inte signifikant (p minst 0,10) är skillnaden i praktiken densamma, och då räcker huvudregressionen. Är det signifikant behöver du överväga åtgärder som rör karriären.`
     };
 }
 
@@ -390,13 +390,13 @@ function runLifecycleRegression(fixBas) {
     // Tolkningstexten är presentation och hör därför till appen.
     let interpretation;
     if (kvAgePVal > 0.10 && kvAge2PVal > 0.10) {
-        interpretation = 'Gapet är **konstant över karriären** (kön×ålder-interaktionen är ej statistiskt signifikant).';
+        interpretation = 'Skillnaden är **densamma över karriären** (samspelet mellan kön och ålder är inte statistiskt signifikant).';
     } else if (gapDelta < -1) {
-        interpretation = `Gapet **växer med åldern** — från ${svPct(gapAt25, 1)} vid 25 år till ${svPct(gapAt65, 1)} vid 65 år. Kan indikera glasstaks-mönster och behöver granskas.`;
+        interpretation = `Skillnaden **växer med åldern**, från ${svPct(gapAt25, 1)} vid 25 år till ${svPct(gapAt65, 1)} vid 65 år. Det kan tyda på ett glastak och behöver granskas.`;
     } else if (gapDelta > 1) {
-        interpretation = `Gapet **krymper med åldern** — från ${svPct(gapAt25, 1)} vid 25 år till ${svPct(gapAt65, 1)} vid 65 år. Kan indikera ikapphämtning över karriären.`;
+        interpretation = `Skillnaden **krymper med åldern**, från ${svPct(gapAt25, 1)} vid 25 år till ${svPct(gapAt65, 1)} vid 65 år. Det kan tyda på att kvinnorna hämtar in under karriären.`;
     } else {
-        interpretation = `Gapet är **i princip konstant** över åldersspannet (${svPct(gapAt25, 1)} till ${svPct(gapAt65, 1)}).`;
+        interpretation = `Skillnaden är **i princip densamma** över åldersspannet (${svPct(gapAt25, 1)} till ${svPct(gapAt65, 1)}).`;
     }
 
     return { ...res, interpretation };

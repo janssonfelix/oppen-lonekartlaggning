@@ -210,7 +210,7 @@ describe('tillWordHtml och tillText', () => {
 describe('rapportunderlag: små kön, modeller och texter', () => {
     it('sammanfattningen visar inga könsuppdelade lönemått när ett kön är under k', () => {
         const b = avsnittBlock('sammanfattning', { n: 15, nKv: 12, nMa: 3, medKv: 30000, medMa: 77777,
-            oforklarat: { pct: -3, lo: -5, hi: -1, fras: 'ålder och nivå', bortvalt: [] }, kvalitet: null }, { k: 10 });
+            oforklarat: { pct: -3, lo: -5, hi: -1, fras: 'ålder och BAS-intervall', bortvalt: [] }, kvalitet: null }, { k: 10 });
         const allt = norm(tillText(b));
         expect(allt).not.toContain('77 777');
         expect(allt).not.toContain('30 000');
@@ -224,20 +224,20 @@ describe('rapportunderlag: små kön, modeller och texter', () => {
     });
     it('modellen formuleras med frasen, och det bortvalda får sin notering med skäl (ADR-56)', () => {
         const b = avsnittBlock('sammanfattning', { n: 200, nKv: 100, nMa: 100, medKv: 36000, medMa: 40000,
-            oforklarat: { pct: -2, lo: -3, hi: -1, fras: 'nivå', bortvalt: [{ variabel: 'alder', etikett: 'Ålder', deltaR2pp: 0.3, skal: 'ingen lön efter ålder' }] }, kvalitet: null }, { k: 10 });
+            oforklarat: { pct: -2, lo: -3, hi: -1, fras: 'BAS-intervall', bortvalt: [{ variabel: 'alder', etikett: 'Ålder', deltaR2pp: 0.3, skal: 'ingen lön efter ålder' }] }, kvalitet: null }, { k: 10 });
         const t = norm(tillText(b));
         expect(t).not.toContain('ålder och BAS');
-        expect(t).toContain('Efter hänsyn till nivå är det oförklarade lönegapet');
-        expect(t).toContain('Oförklarat lönegap (nivå)');
+        expect(t).toContain('Efter hänsyn till BAS-intervall är den oförklarade löneskillnaden');
+        expect(t).toContain('Oförklarad löneskillnad (BAS-intervall)');
         expect(t).toContain('Ålder har kontrollerats och tillför 0,3 procentenheter i förklaringsgrad; den ingår inte i siffrorna. Skäl: ingen lön efter ålder');
         const std = norm(tillText(avsnittBlock('sammanfattning', { n: 200, nKv: 100, nMa: 100, medKv: 36000, medMa: 40000,
-            oforklarat: { pct: -2, lo: -3, hi: -1, fras: 'ålder och nivå', bortvalt: [] }, kvalitet: null }, { k: 10 })));
-        expect(std).toContain('Efter hänsyn till ålder och nivå');
-        expect(std).toContain('Oförklarat lönegap (ålder och nivå)');
+            oforklarat: { pct: -2, lo: -3, hi: -1, fras: 'ålder och BAS-intervall', bortvalt: [] }, kvalitet: null }, { k: 10 })));
+        expect(std).toContain('Efter hänsyn till ålder och BAS-intervall');
+        expect(std).toContain('Oförklarad löneskillnad (ålder och BAS-intervall)');
         const kon = norm(tillText(avsnittBlock('sammanfattning', { n: 200, nKv: 100, nMa: 100, medKv: 36000, medMa: 40000,
             oforklarat: { pct: -2, lo: -3, hi: -1, fras: '', bortvalt: [] }, kvalitet: null }, { k: 10 })));
-        expect(kon).toContain('Utan att något räknats bort är lönegapet');
-        expect(kon).toContain('Lönegap (inget räknat bort)');
+        expect(kon).toContain('Utan att något räknats bort är löneskillnaden');
+        expect(kon).toContain('Löneskillnad (inget räknat bort)');
     });
     it('skillnad som byter tecken efter justering beskrivs som det', () => {
         const b = gruppBlock({ ...yrkesgrupp, kvot: 0.92 }, { id: 'yrke:0', justerat: { gapPct: 3, n: 84 } });

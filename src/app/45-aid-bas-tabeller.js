@@ -154,7 +154,7 @@ function renderAidBasLikvardigt() {
                                                : `<p class="text-dampad-xs marg-8-0-0">Inget BAS-intervall har både kvinnodominerade grupper och andra grupper med minst ${t.k} personer, så det finns ingen sammanfattning.</p>`);
     _aidbasEfter('aidbas-likvardigt-tabell');
     const kvDom = t.likvardigt.rader.filter(r => r.klass === _aidbasKlassNamn().kv).length;
-    _aidbasNyckel('nyckel-lv-aidbas', t.likvardigt.rader.length ? `${t.likvardigt.rader.length} grupper · ${kvDom} kvinnodominerade (${_aidbasDefinitionNamn(t.definition)})` : '');
+    _aidbasNyckel('nyckel-lv-aidbas', t.likvardigt.rader.length ? `${t.likvardigt.rader.length} grupper · ${kvDom} kvinnodominerade (enligt ${_aidbasDefinitionNamn(t.definition) === 'SCB' ? 'SCB' : 'förarbetenas riktmärke'})` : '');
     hi.innerHTML = _aidbasTabellHtml('aidbas-hierarki-tabell', AIDBAS_KOL.par, t.par, { tom: _aidbasIngaParText(), fil: 'hierarkisk_jamforelse' })
         + `<p class="text-dampad-xs marg-8-0-0">Kvinnodominerad enligt ${esc(aidbasDefinitionText())}. Båda grupperna har minst ${t.k} personer. BAS-ordningen är bokstavsordningen.</p>`;
     _aidbasEfter('aidbas-hierarki-tabell');
@@ -216,7 +216,7 @@ function _aidbasExcelBlad() {
                      : [[`Inget BAS-intervall har både kvinnodominerade grupper och andra grupper med minst ${t.k} personer.`]])], { origin: rad0 });
     if (s.length) AIDBAS_KOL.sammanfattning.forEach(([, typ], c) => { const z = AIDBAS_TALFORMAT[typ]; if (!z) return;
         for (let r = 0; r < s.length; r++) { const cell = lv[XLSX.utils.encode_cell({ c, r: rad0 + 2 + r })]; if (cell && typeof cell.v === 'number') cell.z = z; } });
-    const par = _aidbasBlad('Hierarkisk jämförelse: lägre värderat arbete som inte är kvinnodominerat med högre lön än kvinnodominerat arbete på högre nivå', AIDBAS_KOL.par, t.par,
+    const par = _aidbasBlad('Hierarkisk jämförelse: arbete med lägre krav, som inte är kvinnodominerat, med högre lön än kvinnodominerat arbete med högre krav', AIDBAS_KOL.par, t.par,
         { fore: [`${def} Båda grupperna har minst ${t.k} personer. BAS-ordningen är bokstavsordningen.`], tom: _aidbasIngaParText() });
     const individ = _aidbasBlad('Analys på individnivå: grupper där något kön har färre än ' + t.k + ' personer', AIDBAS_KOL.individ, t.individ.rader,
         { fore: ['Arbetslista utan löner. Fyll i kolumnerna Analys genomförd och Resultat.'], efter: [_aidbasSmaNot(t.individ.sma, t.golv)], tom: `Alla grupper har minst ${t.k} kvinnor och ${t.k} män.` });

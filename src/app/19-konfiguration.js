@@ -103,7 +103,7 @@ function applyConfigSnapshot(cfg) {
     if (!cfg || typeof cfg !== 'object')
         throw new Error('Konfigurationen är inte ett giltigt objekt.');
     if (cfg.version !== 2)
-        throw new Error(`Okänt konfigurationsformat (version ${cfg.version}). Förväntade version 2.`);
+        throw new Error(`Konfigurationsfilen är från en annan version av verktyget (version ${cfg.version}; den här läser version 2). Spara en ny konfigurationsfil i den här versionen.`);
 
     const tmp = {};
 
@@ -501,7 +501,7 @@ function renderSnapshotComparison() {
         ['Medianlön män (kr)',         sk(snap.medianMa),                      cur.medianMa,                     v => Math.round(v).toLocaleString('sv-SE')],
         // Visas som kvinnors medianlön i procent av mäns (100 + skillnaden); skillnadskolumnen blir procentenheter.
         ['Kvinnors medianlön i % av mäns', sk(snap.rawGapPct) == null ? null : 100 + snap.rawGapPct, cur.rawGapPct == null ? null : 100 + cur.rawGapPct, v => svPct(v, 1)],
-        ['Oförklarat gap (regressionen, %)',    snap.unexplainedGapPct,                 cur.unexplainedGapPct,            v => svPct(v, 1)],
+        ['Oförklarad löneskillnad (regressionen, %)', snap.unexplainedGapPct,                 cur.unexplainedGapPct,            v => svPct(v, 1)],
         ['Underlagets kvalitet',       snap.underlag,                          cur.underlag,                     v => v],
         ['Genomsnittsålder',           snap.avgAge,                            cur.avgAge,                       v => svTal(v, 1) + ' år'],
         ['Antal BAS-intervall',        snap.nBas,                              cur.nBas,                         fmt]
@@ -540,7 +540,7 @@ function _snapshotLutning(snap, cur) {
 
 document.getElementById('btn-snapshot-save')?.addEventListener('click', () => {
     const snap = buildAnalysisSnapshot();
-    if (!snap) { alert('Ladda upp data först.'); return; }
+    if (!snap) { alert('Läs in lönefilen först.'); return; }
     // I: möjlighet att namnge scenariot
     const name = (prompt('Namn på scenariot (lämna tomt för standardnamn):', snap.label) || snap.label).slice(0, 80);
     snap.label = name;

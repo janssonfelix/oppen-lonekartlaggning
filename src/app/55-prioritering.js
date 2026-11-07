@@ -84,7 +84,7 @@ function generateMotivationSuggestions(item) {
             const who = ageDiff > 0 ? 'Männen' : 'Kvinnorna';
             out.push({
                 type: 'info',
-                text: `${who} är i snitt <strong>${svTal(Math.abs(ageDiff), 1)} år äldre</strong> än motparten i denna grupp (${svTal(meanMaAge, 0)} mot ${svTal(meanKvAge, 0)}). Vi rekommenderar att ni stämmer av om åldersskillnaden kan förklara en del av lönegapet — erfarenhet och tid i yrket är ofta sakliga grunder för löneskillnader.`
+                text: `${who} är i snitt <strong>${svTal(Math.abs(ageDiff), 1)} år äldre</strong> än motparten i denna grupp (${svTal(meanMaAge, 0)} mot ${svTal(meanKvAge, 0)}). Stäm av om åldersskillnaden förklarar en del av löneskillnaden. Erfarenhet och tid i yrket är ofta sakliga skäl för löneskillnader.`
             });
         }
     }
@@ -101,7 +101,7 @@ function generateMotivationSuggestions(item) {
         if (kvShareInQ1 >= 0.4 && kvShareInQ1 - maShareInQ1 >= 0.2) {
             out.push({
                 type: 'flag',
-                text: `<strong>Glasstaks-/klistergolvsmönster:</strong> ${svPct((kvShareInQ1*100), 0)} av kvinnorna i denna grupp ligger i den lägsta lönekvintilen, jämfört med ${svPct((maShareInQ1*100), 0)} av männen. Det kan vara värdefullt att titta närmare på hur karriärvägar, befordringar och lönesättningsbeslut ser ut för gruppen.`
+                text: `<strong>Mönster med glastak eller klibbigt golv:</strong> ${svPct((kvShareInQ1*100), 0)} av kvinnorna i denna grupp ligger i den lägsta lönekvintilen, jämfört med ${svPct((maShareInQ1*100), 0)} av männen. Det kan vara värdefullt att titta närmare på hur karriärvägar, befordringar och lönesättningsbeslut ser ut för gruppen.`
             });
         }
     }
@@ -211,8 +211,8 @@ function renderPrioritering() {
         content.style.display = 'none';
         const text = document.getElementById('prio-empty-text');
         if (text) text.textContent = ref === 'stallningstagande'
-            ? 'Ladda upp ert lönepolitiska ställningstagande — eller ett organisationspaket — under Filer och kvalitet. Verktyget kan inte rangordna utan referenspunkt.'
-            : 'Ladda upp jämförelsestatistik — eller ett organisationspaket — under Filer och kvalitet. Verktyget kan inte rangordna utan referenspunkt.';
+            ? 'Det finns inget ställningstagande att jämföra med, och verktyget kan därför inte rangordna grupperna. Läs in organisationens lönepolitiska ställningstagande eller organisationspaketet i Filer och kvalitet.'
+            : 'Det finns ingen jämförelsestatistik att jämföra med, och verktyget kan därför inte rangordna grupperna. Läs in jämförelsestatistiken eller organisationspaketet i Filer och kvalitet.';
         return;
     }
     empty.style.display = 'none';
@@ -220,7 +220,7 @@ function renderPrioritering() {
 
     const items = computePrioritization(ref);
     if (!items.length) {
-        content.innerHTML = `<p class="farg-dampad pad-32 ta-mitt">Ingen yrkesgrupp har matchande referens i den valda jämförelsen. Kontrollera att <code>${ref === 'stallningstagande' ? 'BAS-intervallen' : 'AID-koderna'}</code> i din strukturdata matchar jämförelsefilen.</p>`;
+        content.innerHTML = `<p class="farg-dampad pad-32 ta-mitt">Ingen yrkesgrupp har matchande referens i den valda jämförelsen. Kontrollera att <code>${ref === 'stallningstagande' ? 'BAS-intervallen' : 'AID-koderna'}</code> i lönefilen matchar jämförelsefilen.</p>`;
         return;
     }
 
@@ -333,13 +333,13 @@ function renderPrioritering() {
             ['Åtgärdskostnad', `<code>|avvikelse kr/mån| × ${state.costSettings.months} mån × (1 + ${svPct(state.costSettings.poPct, 2)}/100) × antal personer</code> (endast om under referens, inkl PO-påslag)`],
             ['Prioriteringsindex', `<code>riktningsvikt × (avvikelse·${state.prioWeights.avvikelse}% + volym·${state.prioWeights.volym}% + jämställdhet·${state.prioWeights.jamstalldhet}%)</code>, skala 0-100`],
             ['Riktningsvikt', '1.0 om under referens, 0.5 om över (under-betalning vägs tyngre)'],
-            ['Status', `Börja här om avvikelsen är under ${state.prioConfig.atgardThreshold} % och gruppen har minst ${state.prioConfig.akutMinN} personer · Värt att granska om avvikelsen är under ${state.prioConfig.atgardThreshold} % i en mindre grupp · Följ upp om den är under ${state.prioConfig.bevakaThreshold} % · Över referens om den är över +${state.prioConfig.analyseraThreshold} % · Balanserat däremellan`]
+            ['Status', `Statusen sätts efter avvikelsen mot referensen: <br>• Börja här: under ${state.prioConfig.atgardThreshold} % och minst ${state.prioConfig.akutMinN} personer <br>• Värt att granska: under ${state.prioConfig.atgardThreshold} % i en mindre grupp <br>• Följ upp: under ${state.prioConfig.bevakaThreshold} % <br>• Över referens: över +${state.prioConfig.analyseraThreshold} % <br>• Balanserat: däremellan`]
         ],
         notes: [
             `Aktuell referens: <strong>${ref === 'stallningstagande' ? esc(referensNamn()) + ' (per BAS)' : 'jämförelsestatistiken (per AID)'}</strong>`,
             ...(JSON.stringify(state.prioConfig) !== JSON.stringify(PRIO_CONFIG_DEFAULTS) ? [`<strong>${ikon('kugghjul')} Anpassad konfiguration aktiv</strong> – tröskelvärdena har justerats från standardvärdena (Börja här: −5 % och minst 10 personer, Följ upp: −2 %, Över referens: +5 %)`] : []),
             'Tabellen visar de 30 högst prioriterade grupperna',
-            'Bubbeldiagrammets storlek = årskostnad, x = avvikelse, y = antal personer (log skala)'
+            'Bubblornas storlek visar kostnaden för perioden, den vågräta axeln avvikelsen och den lodräta antalet personer (logaritmisk skala)'
         ]
     });
 
@@ -395,7 +395,7 @@ function renderPrioritering() {
             </td>
             <td class="ta-mitt prio-detalj"><div class="prio-detalj-knappar">
                 <button class="row-cross-link" data-target="rapport" data-yrke="${esc(i.yrke)}" data-bas="${esc(i.bas)}" title="Öppna i Löneöversikten" aria-label="Öppna ${esc(i.yrke)} i Löneöversikten">${ikon('pilUt', 14)}</button>${suggestionBtn}
-                <button class="btn-evidence" data-prio-row="1" type="button" title="Visa beräkningen bakom prioritetsindex" aria-label="Visa bevis för ${esc(i.yrke)}">${ikon('sok')}</button>
+                <button class="btn-evidence" data-prio-row="1" type="button" title="Visa beräkningen bakom prioritetsindex" aria-label="Visa beräkningen för ${esc(i.yrke)}">${ikon('sok')}</button>
                 <button class="btn-evidence" data-open-dossier="${esc(i.aid)}|${esc(i.bas)}" type="button" title="Öppna gruppdossiern — allt om denna grupp på en sida" aria-label="Öppna gruppdossier för ${esc(i.yrke)}">${ikon('dokument')}</button></div>
             </td>
         `;
@@ -493,7 +493,7 @@ document.getElementById('btn-prio-consequence')?.addEventListener('click', () =>
         <div class="bak-white ram-1-kant rund-8 pad-14-16">
             <h4 class="underrubrik">Stegvis konsekvensanalys: budgetpåverkan om N grupper utreds</h4>
             <p class="text-dampad-sm lh-1_55 marg-0-0-10">
-                Visar kumulativ kostnad och täckningsgrad om de prioriterade grupperna åtgärdas i ordning. Underlättar val mellan ambitioner: "vi tar topp 5 i år" eller "vi tar topp 10".
+                Visar kumulativ kostnad och täckningsgrad om de prioriterade grupperna åtgärdas i ordning. Det gör det lättare att välja ambition, till exempel de fem första i år eller de tio första.
             </p>
             <table class="data-table st-088">
                 <thead><tr><th>Åtgärd</th><th class="t-hoger">Antal personer</th><th class="t-hoger">Total kostnad</th><th class="t-hoger">Andel av total</th></tr></thead>
@@ -660,7 +660,7 @@ function _prioMatrisFigur(items, etikettlage, refLabel, cfg) {
     const storst = Math.max(1, ...items.map(kostnad));
     const tips = d => [[`#${d.rang} ${d.yrke}`], [`BAS ${d.bas}`, `n = ${d.y} (Kv: ${d.kvN}, Mä: ${d.maN})`], ['Median', kr(d.median)],
         [`Referens (${d.refKalla})`, kr(d.refMedian)], ['Avvikelse', `${pm(d.x, 2)} % (${pm(d.diffKr, 0).slice(0, 1)}${kr(Math.abs(d.diffKr))}/mån)`],
-        ...(d.gapPct != null ? [['Lönegap kön', `${pm(d.gapPct, 1)} %`]] : []),
+        ...(d.gapPct != null ? [['Skillnad kvinnor–män', `${pm(d.gapPct, 1)} %`]] : []),
         ...(d.atgard > 0 ? [['Åtgärdskostnad/år', kr(d.atgard)]] : d.over > 0 ? [['Överlönekostnad/år', kr(d.over)]] : []),
         ['Prioriteringsindex', `${svTal(d.index, 0)}/100`]];
     const lager = Object.keys(PRIO_STATUS_INFO).map(status => ({

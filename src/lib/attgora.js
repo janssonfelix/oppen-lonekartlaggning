@@ -11,7 +11,7 @@
  */
 
 /** Kategorier för fynd som gäller skillnader mellan kvinnor och män (lagkravet). */
-export const KONSRELATERADE = ['Lika arbete', 'EU 2023/970', 'Likvärdigt arbete'];
+export const KONSRELATERADE = ['Lika arbete', 'Likvärdigt arbete'];
 
 const PRIORITET = { 'hög': 0, medel: 1, 'låg': 2 };
 
@@ -47,8 +47,8 @@ export function stegLikaArbete({ regressionOk, t, d }) {
     if (!regressionOk) return { status: 'delvis', detail: 'Underlaget räcker ännu inte för en tillförlitlig regression.' };
     return {
         status: d >= t ? 'klar' : 'delvis',
-        detail: t ? `Oförklarat gap beräknat · ${d} av ${t} punkter hanterade i Att göra.`
-                  : 'Oförklarat gap beräknat — inga punkter att förklara eller åtgärda.',
+        detail: t ? `Oförklarad löneskillnad beräknad · ${d} av ${t} punkter hanterade i Att göra.`
+                  : 'Oförklarad löneskillnad beräknad — inga punkter att förklara eller åtgärda.',
     };
 }
 
@@ -59,13 +59,13 @@ export function stegLikaArbete({ regressionOk, t, d }) {
  * produktägaren 2026-10-16).
  */
 export function stegLikvardigt({ analys, antalPar, utelamnade = 0, k, t, d }) {
-    if (!analys) return { status: 'ej', detail: 'Granska likvärdiga arbeten på fliken.' };
+    if (!analys) return { status: 'ej', detail: 'Gå igenom kandidatparen i Likvärdigt arbete.' };
     if (antalPar === 0 && utelamnade > 0) {
         return { status: 'inget', detail: `Inget att hantera i Att göra: ${utelamnade} par har en grupp under ${k != null ? `${k} personer` : 'minsta gruppstorlek'} och redovisas bara i fliken Likvärdigt arbete — gå till steget för att granska dem.` };
     }
     if (antalPar === 0) return { status: 'klar', detail: 'Analysen körd — inga kandidatpar utifrån nuvarande trösklar.' };
     return {
         status: t > 0 && d >= t ? 'klar' : 'delvis',
-        detail: `${antalPar} kandidatpar (kvinnodominerade mot likvärdiga yrken) · ${d} av ${t} kandidatpar hanterade i Att göra.`,
+        detail: `${antalPar} kandidatpar (kvinnodominerade yrken mot jämförelseyrken med likvärdiga krav) · ${d} av ${t} kandidatpar hanterade i Att göra.`,
     };
 }

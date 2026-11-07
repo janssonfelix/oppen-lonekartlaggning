@@ -22,8 +22,8 @@ describe('Jämförelsestatistik: tre block och filter', () => {
     it('rubrikerna har P10, median och P90 med Org, Jmf och Diff', () => {
         const w = oppna();
         const org = w.eval("orgNamn('org')");   // demot heter Exempelkommunen (ADR-36)
-        expect(rubriker(w)).toEqual(['Yrke', 'BAS', 'N', `P10 ${org}`, 'P10 jmf', 'P10 diff', `Median ${org}`, 'Median jmf', 'Median diff',
-            `P90 ${org}`, 'P90 jmf', 'P90 diff']);
+        expect(rubriker(w)).toEqual(['Yrke', 'BAS', 'N', `P10 ${org}`, 'P10 statistik', 'P10 skillnad', `Median ${org}`, 'Median statistik', 'Median skillnad',
+            `P90 ${org}`, 'P90 statistik', 'P90 skillnad']);
         expect(w.document.querySelectorAll('.benchmark-metric-btn[data-metric]').length).toBe(0);
     });
     it('värdena stämmer med modulen för ett demoyrke', () => {

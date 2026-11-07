@@ -170,10 +170,10 @@ function renderLikvardighet() {
         _lvRitaTopp(null);
         wrap.innerHTML = `
             <div class="insight-box warn pad-18">
-                <strong>${ikon('statusVarning')} Inga datafiler uppladdade</strong>
+                <strong>${ikon('statusVarning')} Inga filer inlästa</strong>
                 <p class="fs-md lh-1_55 marg-8-0">
-                    Ladda upp <strong>strukturdata för organisationen</strong> (CSV) och
-                    <strong>jämförelsestatistik</strong> (Excel) under Filer och kvalitet för att aktivera analysen.
+                    Läs in <strong>lönefilen</strong> (CSV) och
+                    <strong>jämförelsestatistiken</strong> (Excel) i Filer och kvalitet för att starta analysen.
                 </p>
             </div>`;
         return;
@@ -223,15 +223,15 @@ function renderLikvardighet() {
             <strong>${ikon('info')} Så här fungerar likvärdighetsanalysen</strong>
             <p class="fs-md lh-1_55 marg-8-0">
                 Lagen kräver att kvinnodominerade yrken jämförs med icke-kvinnodominerade yrken
-                som har <em>likvärdiga eller lägre krav</em>. Likvärdighetsanalysen är en
-                <strong>inom-arbetsgivare-analys</strong> — därför jämförs i första hand
+                som har <em>likvärdiga eller lägre krav</em>. Analysen är en
+                <strong>jämförelse inom organisationen</strong> — därför jämförs i första hand
                 organisationens egna yrken med varandra.
             </p>
             ${d.jämförelse.kravProxy === 'poäng'
                 ? `<p class="bak-ok-bg ram-v-4-ok rund-4 fs-sm marg-8-0 pad-8-12">
-                       <strong>Krav-proxy: arbetsvärdering (poäng)</strong> — yrken paras på likvärdiga eller lägre krav enligt er uppladdade poängtabell, ekvivalensband ±${result.opts.poangBandPct ?? 5} %.${d.jämförelse.kvUtanPoang ? ` <span class="varning-pa-yta">${d.jämförelse.kvUtanPoang} kvinnodominerade yrken saknar poäng och uteslöts.</span>` : ''}</p>`
+                       <strong>Mått på kraven: arbetsvärdering (poäng)</strong> — yrken paras på likvärdiga eller lägre krav enligt organisationens poäng, lika krav inom ±${result.opts.poangBandPct ?? 5} %.${d.jämförelse.kvUtanPoang ? ` <span class="varning-pa-yta">${d.jämförelse.kvUtanPoang} kvinnodominerade yrken saknar poäng och uteslöts.</span>` : ''}</p>`
                 : `<p class="bak-accent-yta ram-v-4-accent rund-4 fs-sm marg-8-0 pad-8-12">
-                       <strong>Krav-proxy: BAS-rank</strong> — yrken inom samma BAS-intervall antas ha likvärdiga krav. Har ni en egen arbetsvärdering kan ni ladda upp en poängtabell ovan för en juridiskt starkare jämförelse.</p>`}
+                       <strong>Mått på kraven: BAS-intervallet</strong> — yrken inom samma BAS-intervall antas ha likvärdiga krav. Har organisationen en egen arbetsvärdering kan du lägga till poängen i lönefilen; poäng mäter kraven i arbetet bättre.</p>`}
             <ul class="fs-sm lh-1_6 marg-8-0 pad-v-22">
                 <li><strong>Steg 1</strong>: Identifiera <em>organisationens kvinnodominerade</em>
                     AID×BAS-grupper (≥ ${cfg.kvinnoTrosholdPct} % kvinnor).
@@ -240,8 +240,8 @@ function renderLikvardighet() {
                 <li><strong>Steg 2</strong>: Välj jämförelseyrken inom samma BAS-intervall
                     (likvärdiga krav). <strong>Primärt</strong> används organisationens egna
                     icke-kvinnodominerade yrken (≤ ${100 - cfg.kvinnoTrosholdPct} % kvinnor)
-                    — en äkta inom-arbetsgivare-jämförelse. Saknas internt jämförelseyrke i
-                    en viss BAS används <em>jämförelsestatistiken</em> som extern proxy
+                    — en jämförelse inom organisationen. Saknas ett jämförelseyrke i organisationen i
+                    ett BAS-intervall används <em>jämförelsestatistiken</em> i stället
                     ${d.statistik.harLokalKonsdata
                         ? `<span class="farg-ok">(lokal könsfördelning).</span>`
                         : `<span class="varning-pa-yta">(könsfördelningen hämtas då ur den nationella statistiken: andel kvinnor per AID-kod i ${_skrDelText(_skrDel())}, ${esc(skrKallaKort())}).</span>`}</li>
@@ -281,13 +281,13 @@ function renderLikvardighet() {
                         <li>Totalt inlästa rader: <strong>${d.statistik.totalRader.toLocaleString('sv-SE')}</strong></li>
                         <li>Lokal könsdata: <strong>${d.statistik.harLokalKonsdata ? 'ja' : `nej — nationell könsfördelning ur ${esc(skrKallaKort())} som reserv`}</strong></li>
                         <li>Klassificering:
-                            <strong class="farg-ok">${d.statistik.klass.ickeKv} icke-kv-dom</strong>,
+                            <strong class="farg-ok">${d.statistik.klass.ickeKv} inte kvinnodominerade</strong>,
                             ${d.statistik.klass.kvDom} kv-dom,
                             ${d.statistik.klass.blandat} blandat,
                             ${d.statistik.klass.oklassificerad} oklassificerade</li>
                         <li>Källa: ${d.statistik.klassKalla.lokal} lokal, ${d.statistik.klassKalla.scb} nationell statistik (SKR)</li>
                         ${d.statistik.exempelIckeKv.length
-                            ? `<li class="marg-t-4"><small class="f-dampad">Exempel icke-kv-dom: ${d.statistik.exempelIckeKv.map(esc).join(' · ')}</small></li>`
+                            ? `<li class="marg-t-4"><small class="f-dampad">Exempel, inte kvinnodominerade: ${d.statistik.exempelIckeKv.map(esc).join(' · ')}</small></li>`
                             : ''}
                     </ul>
                 </div>
@@ -386,7 +386,7 @@ function renderLikvardighet() {
 
     // ====== Sektion 4: § 3:10-kandidatpar (huvudtabellen) ======
     const källBadge = p => {
-        if (p.jamforKalla === 'intern') return `<span class="bak-ok-bg rund-8 farg-ok fs-0_72rem pad-1-6" title="Organisationens eget yrke (inom-arbetsgivare-jämförelse)">intern</span>`;
+        if (p.jamforKalla === 'intern') return `<span class="bak-ok-bg rund-8 farg-ok fs-0_72rem pad-1-6" title="Organisationens eget yrke (jämförelse inom organisationen)">intern</span>`;
         if (p.maKlassKort === 'lokal') return `<span class="bak-varning-bg rund-8 farg-varning fs-0_72rem pad-1-6" title="jämförelsestatistiken, egen könsfördelning">Statistiken</span>`;
         return `<span class="bak-varning-bg rund-8 farg-varning fs-0_72rem pad-1-6" title="jämförelsestatistiken; könsfördelningen ur den nationella statistiken (${esc(skrKallaKort())})">nationell</span>`;
     };
@@ -415,7 +415,7 @@ function renderLikvardighet() {
             <td class="lv-ki-cell fs-xs ta-hoger">${ciCell(p)}</td>
             <td class="t-hoger">${justCell(p)}</td>
             <td class="t-hoger">${Math.round(p.allvarsindex).toLocaleString('sv-SE')}</td>
-            <td class="t-mitt"><button class="btn-evidence" data-lv-pair="${i}" type="button" title="Visa beräkningen" aria-label="Bevis för par ${i+1}">${ikon('sok')}</button></td>
+            <td class="t-mitt"><button class="btn-evidence" data-lv-pair="${i}" type="button" title="Visa beräkningen" aria-label="Visa beräkningen för par ${i+1}">${ikon('sok')}</button></td>
         </tr>`).join('');
     let parTblHtml;
     if (!jämförOK) {
@@ -434,10 +434,10 @@ function renderLikvardighet() {
                 <strong>${ikon('info')} Inga kandidatpar hittades</strong>
                 <p class="fs-md marg-8-0">
                     Organisationen har ${result.orgKvDom.length} kvinnodominerade grupper och
-                    ${result.orgIckeKv.length} interna + ${result.statIckeKv.length} externa jämförelseyrken — men
-                    inom de ${d.jämförelse.gemensammaBas} gemensamma BAS-intervallen är inget
-                    jämförelseyrke högre avlönat än organisationens kvinnodominerade yrken.
-                    ${cfg.minGapPct > 0 ? `(Min gap-tröskeln är satt till ${cfg.minGapPct} %.)` : ''}
+                    ${result.orgIckeKv.length} interna och ${result.statIckeKv.length} externa jämförelseyrken.
+                    Inom de ${d.jämförelse.gemensammaBas} gemensamma BAS-intervallen har inget
+                    jämförelseyrke högre lön än organisationens kvinnodominerade yrken.
+                    ${cfg.minGapPct > 0 ? `(Minsta skillnad är satt till ${cfg.minGapPct} %.)` : ''}
                 </p>
             </div>`;
     } else {
@@ -449,15 +449,15 @@ function renderLikvardighet() {
                             <th data-kol="nr">#</th>
                             <th data-kol="yrke" title="Kvinnodominerat yrke i organisationen (faktisk könsfördelning).">Kvinnodom. yrke (${esc(orgNamn('org.'))})</th>
                             <th data-kol="median" title="Median månadslön i organisationens grupp.">Median ${esc(orgNamn('org.'))}</th>
-                            <th data-kol="jamfyrke" title="Jämförelseyrke: organisationens eget icke-kv-dom yrke (intern) eller jämförelsestatistiken (extern fallback).">Jämförelseyrke</th>
+                            <th data-kol="jamfyrke" title="Jämförelseyrke: organisationens eget yrke som inte är kvinnodominerat (intern), annars jämförelsestatistiken (extern).">Jämförelseyrke</th>
                             <th data-kol="antal" title="Antal personer i det kvinnodominerade yrket och i jämförelseyrket (– när jämförelsestatistiken inte anger antal).">Antal (kvinnodom. / jämf.)</th>
                             <th data-kol="medianjamf" title="Median månadslön i jämförelseyrket.">Median jämf.</th>
-                            <th data-kol="gapkr" title="Skillnad i kronor (jämförelseyrke − organisation).">Gap (kr)</th>
-                            <th data-kol="gappct" title="Skillnad i procent av organisationens median.">Gap (%)</th>
+                            <th data-kol="gapkr" title="Skillnad i kronor (jämförelseyrke − organisation).">Skillnad (kr)</th>
+                            <th data-kol="gappct" title="Skillnad i procent av organisationens median.">Skillnad (%)</th>
                             <th data-kol="ki" title="95 % bootstrap-konfidensintervall på medianskillnaden. Ligger hela intervallet över 0 är skillnaden statistiskt säker.">95 % KI</th>
                             <th data-kol="justerad" title="Skillnaden när jämförelseyrkets lön räknats om till det kvinnodominerade yrkets åldersfördelning (log(lön) ~ ålder i jämförelseyrket). Den råa skillnaden är det lagen prövar; den här visar hur mycket som kan bero på åldersstruktur. Bara interna par." data-export-label="Justerad för ålder (%)">Justerad för ålder</th>
-                            <th data-kol="paverkan" title="Gapet i kronor gånger antalet personer i det kvinnodominerade yrket, per månad">Summa för gruppen (kr/mån)</th>
-                            <th data-kol="bevis">Bevis</th>
+                            <th data-kol="paverkan" title="Skillnaden i kronor gånger antalet personer i det kvinnodominerade yrket, per månad">Summa för gruppen (kr/mån)</th>
+                            <th data-kol="bevis">Beräkning</th>
                         </tr>
                     </thead>
                     <tbody>${parRows}</tbody>
@@ -501,13 +501,13 @@ function renderLikvardighet() {
                 </div>
                 <div class="mitt rad-inline gap-8">
                     <label for="lv-kv-definition">Kvinnodominerat enligt:</label>
-                    <select id="lv-kv-definition" class="form-select bredd-auto" title="Gäller tabellerna per AID-kod och BAS-intervall (Likvärdigt arbete, Hierarkisk jämförelse). DO: mer än tröskeln. SCB: tröskeln eller mer.">
-                        <option value="do"${aidbasDefinition() === 'do' ? ' selected' : ''}>DO — mer än ${cfg.kvinnoTrosholdPct} % kvinnor</option>
+                    <select id="lv-kv-definition" class="form-select bredd-auto" title="Gäller tabellerna per AID-kod och BAS-intervall (Likvärdigt arbete, Hierarkisk jämförelse). Förarbetena: fler kvinnor än gränsen (lagens förarbeten använder 60 procent som riktmärke). SCB: gränsen eller fler.">
+                        <option value="do"${aidbasDefinition() === 'do' ? ' selected' : ''}>Förarbetena — mer än ${cfg.kvinnoTrosholdPct} % kvinnor</option>
                         <option value="scb"${aidbasDefinition() === 'scb' ? ' selected' : ''}>SCB — ${cfg.kvinnoTrosholdPct} % kvinnor eller mer</option>
                     </select>
                 </div>
                 <div class="mitt rad-inline gap-8">
-                    <label for="lv-min-gap">Min gap:</label>
+                    <label for="lv-min-gap">Minsta skillnad:</label>
                     <input type="number" id="lv-min-gap" min="0" max="50" step="1" value="${cfg.minGapPct}" class="form-select bredd-64">
                     <span>%</span>
                 </div>
@@ -555,13 +555,13 @@ function renderLikvardighet() {
             <p id="lv-krav-not" class="text-dampad-xs marg-8-0-0"></p>
         </div>` +
         `<p class="avsnitt-rubrikrad">Fördjupning</p>` +
-        avsnitt('par', 'Par att titta närmare på', 'Kvinnodominerade yrken mot högre avlönade jämförelseyrken på samma nivå', `${result.pairs.length} par`,
+        avsnitt('par', 'Par att titta närmare på', 'Kvinnodominerade yrken mot jämförelseyrken med högre lön i samma BAS-intervall', `${result.pairs.length} par`,
         exportHtml +
         ((jämförOK && result.pairs.length) ? `
         <div class="card mb-14">
             <div class="chart-header rad-bryt-mitt gap-12 mellan marg-b-8">
                 <h3 class="fs-md marg-0">Kandidatparen i kronor</h3>
-                <span class="text-dampad-xs">Ett par per rad: avståndet mellan punkterna är gapet, allvarligast först</span>
+                <span class="text-dampad-xs">Ett par per rad: avståndet mellan punkterna är skillnaden, störst först</span>
             </div>
             <div id="chart-likvardighet-heatmap"></div>
         </div>` : '') +
@@ -570,9 +570,9 @@ function renderLikvardighet() {
         avsnitt('underlag', 'Yrkena bakom jämförelsen', 'Steg för steg: de kvinnodominerade yrkena och jämförelseyrkena',
             `${result.orgKvDom.length} kvinnodominerade, ${result.orgIckeKv.length + result.statIckeKv.length} att jämföra med`,
             orgTblHtml + internTblHtml + statTblHtml) +
-        avsnitt('installningar', 'Inställningar', 'Kvinnotröskel, definition av kvinnodominerat, minsta gap och antal par. Standardvärdena räcker för de flesta.',
+        avsnitt('installningar', 'Inställningar', 'Kvinnotröskel, definition av kvinnodominerat, minsta skillnad och antal par. Standardvärdena räcker för de flesta.',
             anpassat ? 'Anpassade värden' : 'Standardvärden', controlsHtml) +
-        avsnitt('analys', 'Så fungerar analysen', 'Metoden, och vad verktyget ser i ert underlag', '', introHtml + diagnostikHtml) +
+        avsnitt('analys', 'Så fungerar analysen', 'Metoden, och vad verktyget ser i underlaget', '', introHtml + diagnostikHtml) +
         debugHtml;
 
     // ====== Event-hooks ======
@@ -776,13 +776,13 @@ function _lvParFigur(pairs, max = 14) {
     const rader = [], sedda = new Set();
     for (const p of top) { const y = namn(p); if (!sedda.has(y) && isFinite(p.kvMedian) && isFinite(p.maMedian)) { sedda.add(y); rader.push({ p, y }); } }
     const kr = v => _figTalformat(Math.round(v), 'kr');
-    const tips = ({ p }) => [[`${p.kvLabel} (BAS ${p.kvBas})`], ['Median', kr(p.kvMedian)], [`${p.maLabel} (BAS ${p.maBas})`], ['Median', kr(p.maMedian)], ['Gap', `${svPct(p.gapPct, 1)} (${kr(p.gapKr)})`]];
+    const tips = ({ p }) => [[`${p.kvLabel} (BAS ${p.kvBas})`], ['Median', kr(p.kvMedian)], [`${p.maLabel} (BAS ${p.maBas})`], ['Median', kr(p.maMedian)], ['Skillnad', `${svPct(p.gapPct, 1)} (${kr(p.gapKr)})`]];
     const punkt = (serie, farg, falt, extra = {}) => ({ marke: 'punkt', serie, farg, storlek: 6, ...extra,
         data: rader.map(r => ({ y: r.y, x: Math.round(r.p[falt]), p: r.p, ...(extra.etikettLage ? { etikett: svPct(r.p.gapPct, 1) } : {}) })), tips: d => tips(d) });
-    return { beskrivning: 'Kandidatpar i likvärdigt arbete: det kvinnodominerade yrkets och jämförelseyrkets medianlön per par, med gapet i procent. Samma par finns i kandidatpar-tabellen nedan.',
+    return { beskrivning: 'Kandidatpar i likvärdigt arbete: det kvinnodominerade yrkets och jämförelseyrkets medianlön per par, med skillnaden i procent. Samma par finns i kandidatpar-tabellen nedan.',
         x: { skala: 'linjar', titel: 'Medianlön (kr/månad)', format: 'kr' }, y: { skala: 'band', ordning: rader.map(r => r.y), etikettMax: 48 },
         hojd: Math.max(160, 96 + rader.length * 32),
-        lager: [{ marke: 'intervall', riktning: 'liggande', serie: 'Gap', farg: PALETTE.semantic.neutral, tjocklek: 2, legend: false,
+        lager: [{ marke: 'intervall', riktning: 'liggande', serie: 'Skillnad', farg: PALETTE.semantic.neutral, tjocklek: 2, legend: false,
                   data: rader.map(r => ({ y: r.y, lag: Math.round(Math.min(r.p.kvMedian, r.p.maMedian)), hog: Math.round(Math.max(r.p.kvMedian, r.p.maMedian)), p: r.p })), tips: d => tips(d) },
                 punkt('Kvinnodominerat yrke', PALETTE.kon.kvinna, 'kvMedian'), punkt('Jämförelseyrke', PALETTE.kon.man, 'maMedian', { etikettLage: 'hoger' })] };
 }
@@ -803,7 +803,7 @@ function exportLikvardighetCSV(...a) { return medExportLage(() => _exportLikvard
 function _exportLikvardighetCSVExport() {
     const result = likvardighetResultat();
     if (!result || !Array.isArray(result.pairs) || !result.pairs.length) {
-        alert('Inga jämförelsepar att exportera. Kontrollera att Steg 3 i fliken visar par.');
+        alert('Det finns inga kandidatpar att exportera. Sänk minsta skillnad i fliken, eller kontrollera att lönefilen har kvinnodominerade yrken.');
         return;
     }
     const num = (v, dec) => {
@@ -818,7 +818,7 @@ function _exportLikvardighetCSVExport() {
         'Nr',
         'Org. AID', 'Org. Yrke', 'BAS', 'Org. n', 'Org. % kvinnor', 'Median Org. (kr)',
         'Jämf. AID', 'Jämf. Yrke', 'Jämf. % kvinnor', 'Jämf. n', 'Jämförelsekälla', 'Median Jämf. (kr)',
-        'Gap (kr)', 'Gap (%)', 'Justerad för ålder (%)', 'KI 95% låg (kr)', 'KI 95% hög (kr)', 'Säkerhet', 'Summa för gruppen (kr/mån)',
+        'Skillnad (kr)', 'Skillnad (%)', 'Justerad för ålder (%)', 'KI 95% låg (kr)', 'KI 95% hög (kr)', 'Säkerhet', 'Summa för gruppen (kr/mån)',
         'Sakligt skäl — fylls i', 'Status / åtgärd — fylls i'
     ]];
     result.pairs.forEach((p, i) => {
@@ -843,7 +843,7 @@ function _exportLikvardighetCSVExport() {
     rows.push(['Genererad', new Date().toLocaleString('sv-SE')]);
     rows.push(['Verktyg', 'Öppen lönekartläggning v' + (typeof APP_VERSION !== 'undefined' ? APP_VERSION : '–')]);
     rows.push(['Kvinnotröskel (%)', result.opts.kvinnoTrosholdPct]);
-    rows.push(['Min gap (%)', result.opts.minGapPct]);
+    rows.push(['Minsta skillnad (%)', result.opts.minGapPct]);
     rows.push(['Antal par', result.pairs.length]);
     rows.push(['•varav interna (organisation mot organisation)', result.diagnostik?.jämförelse?.internaPar ?? 0]);
     rows.push(['•varav externa (mot jämförelsestatistiken)', result.diagnostik?.jämförelse?.externaPar ?? 0]);
@@ -866,18 +866,18 @@ function _exportLikvardighetExport() {
     try {
         stegnamn = 'kontroll XLSX-bibliotek';
         if (typeof XLSX === 'undefined' || !XLSX.utils || typeof XLSX.writeFile !== 'function') {
-            alert('Excel-bibliotek (SheetJS) saknas eller är ofullständigt i bygget. Ladda om sidan med Ctrl+Shift+R.');
+            alert('Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.');
             return;
         }
 
         stegnamn = 'hämta result från state';
         const result = likvardighetResultat();
         if (!result) {
-            alert('Internt fel: result är null. Renderera fliken igen.');
+            alert('Något gick fel i verktyget. Öppna fliken igen; hjälper det inte, rapportera felet.');
             return;
         }
         if (!Array.isArray(result.pairs) || result.pairs.length === 0) {
-            alert(`Inga jämförelsepar att exportera (pairs.length = ${result.pairs ? result.pairs.length : 'undefined'}).\n\nKontrollera att Steg 3 i fliken visar par i tabellen.`);
+            alert('Det finns inga kandidatpar att exportera. Sänk minsta skillnad i fliken, eller kontrollera att lönefilen har kvinnodominerade yrken.');
             return;
         }
         const { pairs } = result;
@@ -903,7 +903,7 @@ function _exportLikvardighetExport() {
             'Nr',
             'Org. AID', 'Org. Yrke', 'BAS', 'Org. n', 'Org. % kvinnor', 'Median Org. (kr)',
             'Jämf. AID', 'Jämf. Yrke', 'Jämf. % kvinnor', 'Jämf. n', 'Jämförelsekälla', 'Median Jämf. (kr)',
-            'Gap (kr)', 'Gap (%)', 'Justerad för ålder (%)', 'KI 95% låg (kr)', 'KI 95% hög (kr)', 'Säkerhet', 'Summa för gruppen (kr/mån)',
+            'Skillnad (kr)', 'Skillnad (%)', 'Justerad för ålder (%)', 'KI 95% låg (kr)', 'KI 95% hög (kr)', 'Säkerhet', 'Summa för gruppen (kr/mån)',
             'Sakligt skäl — fylls i', 'Status / åtgärd — fylls i'
         ];
         const rows = [header];
@@ -934,7 +934,7 @@ function _exportLikvardighetExport() {
         ];
         // Hoppar över !freeze (icke-standard i mini-versionen) och num-format
         // (icke-kritisk kosmetik). Datat står sig utan.
-        XLSX.utils.book_append_sheet(wb, sheet, 'Likvärdighet §3-10');
+        XLSX.utils.book_append_sheet(wb, sheet, 'Likvärdigt arbete');
 
         stegnamn = 'bygg metadatablad';
         // Säker getter — diagnostik-objektet kan ha varit ofullständigt om
@@ -947,16 +947,16 @@ function _exportLikvardighetExport() {
             } catch (_e) { return fallback; }
         };
         const meta = [
-            ['LIKVÄRDIGHETSANALYS — DISKRIMINERINGSLAGEN KAP. 3 § 10', ''],
+            ['Likvärdigt arbete — kvinnodominerade yrken', ''],
             ['', ''],
             ['Genererad', new Date().toLocaleString('sv-SE')],
             ['Verktyg', 'Öppen lönekartläggning (v' + (typeof APP_VERSION !== 'undefined' ? APP_VERSION : '–') + ')'],
             ['Aktiv profil', safe(() => state.profile.name)],
-            ['Modell', 'Organisationens kvinnodominerade AID×BAS jämförs inom samma BAS, primärt mot organisationens egna icke-kv-dom yrken (intern), annars jämförelsestatistiken (extern fallback)'],
+            ['Modell', 'Organisationens kvinnodominerade AID×BAS jämförs inom samma BAS, i första hand mot organisationens egna yrken som inte är kvinnodominerade (intern), annars mot jämförelsestatistiken (extern)'],
             ['', ''],
             ['— PARAMETRAR —', ''],
             ['Kvinnotröskel (%)', safe(() => opts.kvinnoTrosholdPct, '')],
-            ['Min gap (%)', safe(() => opts.minGapPct, '')],
+            ['Minsta skillnad (%)', safe(() => opts.minGapPct, '')],
             ['Visa max antal par', safe(() => opts.topN, '')],
             ['k-anonymitet', 'Tillämpas EJ i denna analys'],
             ['', ''],
@@ -983,11 +983,11 @@ function _exportLikvardighetExport() {
             ['', ''],
             ['— RÄTTSLIG GRUND —', ''],
             ['Diskrimineringslagen', 'Arbetsgivaren ska analysera om kvinnodominerade yrken har lägre lön än icke-kvinnodominerade yrken med likvärdiga eller lägre krav.'],
-            ['Krav-proxy', 'Jämförelsen sker INOM samma BAS — likvärdighet är datadefinierad förutsättning.'],
-            ['Jämförelsekälla', 'Primärt organisationens egna icke-kv-dom yrken (inom-arbetsgivare). Saknas internt jämförelseyrke i en BAS används jämförelsestatistiken som extern proxy.'],
+            ['Mått på kraven', 'Jämförelsen sker inom samma BAS-intervall; verktyget utgår från att kraven där är likvärdiga.'],
+            ['Jämförelsekälla', 'I första hand organisationens egna yrken som inte är kvinnodominerade. Saknas ett sådant yrke i ett BAS-intervall används jämförelsestatistiken i stället.'],
             ['95 % KI', 'Bootstrap B=1000 på medianskillnaden. Intern: omdragning av bägge individurvalen. Extern: omdragning av org-löner mot jämförelsestatistikens median som konstant. Hela intervallet > 0 = säker skillnad.'],
             ['Justerad för ålder (%)', LV_JUSTERAD_METOD],
-            ['Summa för gruppen (kr/mån)', 'Gapet i kronor gånger antalet personer i det kvinnodominerade yrket, per månad. Används för att rangordna paren, inte ett lagstadgat mått.']
+            ['Summa för gruppen (kr/mån)', 'Skillnaden i kronor gånger antalet personer i det kvinnodominerade yrket, per månad. Används för att rangordna paren, inte ett lagstadgat mått.']
         ];
         const metaSheet = XLSX.utils.aoa_to_sheet(meta);
         metaSheet['!cols'] = [{ wch: 42 }, { wch: 72 }];
@@ -1004,7 +1004,7 @@ function _exportLikvardighetExport() {
     } catch (err) {
         const msg = err && err.message ? err.message : String(err);
         const stackPreview = err && err.stack ? ('\n\nStack:\n' + String(err.stack).split('\n').slice(0, 4).join('\n')) : '';
-        alert('Excel-export misslyckades vid steg "' + stegnamn + '":\n\n' + msg + stackPreview + '\n\nKontrollera att ingen annan applikation har en låst kopia av filen, eller rapportera detta meddelande till verktygsutvecklaren.');
+        alert('Excelfilen kunde inte skapas (steg "' + stegnamn + '"):\n\n' + msg + stackPreview + '\n\nStäng filen om den är öppen i Excel och försök igen. Hjälper det inte, rapportera meddelandet.');
     }
 }
 

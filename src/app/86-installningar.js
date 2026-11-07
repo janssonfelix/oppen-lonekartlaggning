@@ -54,7 +54,7 @@ function _instRita() {
     const lv = state.likvardighet || {};
     const band = document.getElementById('arbvard-band'), extrem = document.getElementById('outliers-threshold');
     const rader = [
-        { flik: 'likvardighet', avsnitt: 'avsnitt-lv-installningar', namn: 'Likvärdigt arbete', vad: 'Kvinnotröskel, definition av kvinnodominerat (DO/SCB), minsta gap och antal par',
+        { flik: 'likvardighet', avsnitt: 'avsnitt-lv-installningar', namn: 'Likvärdigt arbete', vad: 'Kvinnotröskel, definition av kvinnodominerat (förarbetena eller SCB), minsta skillnad och antal par',
           lage: anpassad(lv.kvinnoTrosholdPct !== 60 || lv.minGapPct !== 5 || lv.topN !== 20 || aidbasDefinition() !== 'do'), andrad: lv.kvinnoTrosholdPct !== 60 || lv.minGapPct !== 5 || lv.topN !== 20 || aidbasDefinition() !== 'do' },
         { flik: 'likvardighet', avsnitt: 'avsnitt-lv-poang', namn: 'Likvärdigt arbete', vad: 'Ekvivalensband för arbetsvärdering med poäng',
           lage: `± ${band ? /** @type {HTMLInputElement} */ (band).value : 5} %`, andrad: !!band && String(/** @type {HTMLInputElement} */ (band).value) !== '5' },

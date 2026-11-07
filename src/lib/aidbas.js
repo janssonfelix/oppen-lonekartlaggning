@@ -25,16 +25,16 @@ import { basRangFn } from './likvardighet.js';
 
 /** Definitionerna av kvinnodominerat arbete: nyckel → namn och text för metodbladet. */
 export const KV_DEFINITIONER = Object.freeze({
-    do: Object.freeze({ namn: 'DO', text: 'mer än {grans} % kvinnor (Diskrimineringsombudsmannen)' }),
+    do: Object.freeze({ namn: 'Förarbetena', text: 'mer än {grans} % kvinnor (riktmärket i lagens förarbeten)' }),
     scb: Object.freeze({ namn: 'SCB', text: '{grans} % kvinnor eller mer (Statistiska centralbyrån)' })
 });
 export const KV_GRANS_STANDARD = 60;
 
 export const KLASS_KV = 'Kvinnodominerad', KLASS_MA = 'Mansdominerad', KLASS_BLANDAD = 'Könsblandad';
 export const BEDOMNING_INOM = 'Inom gränserna', BEDOMNING_UTANFOR = 'Utanför gränserna', BEDOMNING_INDIVID = 'Analyseras på individnivå';
-export const INGA_HIERARKISKA_PAR = 'Inga fall där ett lägre värderat arbete som inte är kvinnodominerat har högre lön än ett högre värderat kvinnodominerat arbete.';
+export const INGA_HIERARKISKA_PAR = 'Inga fall där ett arbete med lägre krav, som inte är kvinnodominerat, har högre lön än ett kvinnodominerat arbete med högre krav.';
 
-/** Definitionens namn: DO eller SCB. */
+/** Definitionens namn: Förarbetena eller SCB. */
 export function kvDefinitionNamn(definition) { return (KV_DEFINITIONER[definition] || KV_DEFINITIONER.do).namn; }
 /** Klassernas namn, för den som jämför klassningen. */
 export function klassNamn() { return { kv: KLASS_KV, ma: KLASS_MA, blandad: KLASS_BLANDAD }; }

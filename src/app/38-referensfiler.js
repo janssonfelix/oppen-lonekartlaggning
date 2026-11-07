@@ -31,7 +31,7 @@ function renderReferensKort() {
     const har = harReferens();
     el.innerHTML = har
         ? `Används: <strong>${esc(referensNamn())}</strong>${esc(referensKalla())}`
-        : '<strong>Ingen referens inläst.</strong><br><span class="text-dampad-xs">Ladda upp ert lönepolitiska ställningstagande — eller ett organisationspaket.</span>';
+        : '<strong>Ingen referens inläst.</strong><br><span class="text-dampad-xs">Läs in organisationens lönepolitiska ställningstagande eller organisationspaketet.</span>';
     const falt = document.getElementById('referens-namn-rad');
     const input = document.getElementById('referens-namn');
     const aterga = document.getElementById('btn-referens-aterga');
@@ -82,7 +82,7 @@ policyInput.addEventListener("change", e => {
         const nAid = state.policy.filter(p => p.aid).length;
         const nBas = state.policy.filter(p => p.bas && !p.aid).length;
         policyStatus.textContent = `${state.policy.length} rader inlästa`
-            + (nAid ? ` (${nBas} BAS-nivå, ${nAid} AID-specifika)` : ' (BAS-nivå)')
+            + (nAid ? ` (${nBas} per BAS-intervall, ${nAid} per yrke)` : ' (per BAS-intervall)')
             + ` · ${res.encoding === 'XLSX' ? res.format : res.encoding}`;
         policyStatus.className = "status-msg success";
         synkaJamforelseFlik();
@@ -155,7 +155,7 @@ statInput.addEventListener("change", e => {
             const idxAndelKv = hdr.findIndex(t =>
                 /(andel\s*kvinnor|kvinno?andel|%\s*kvinnor)/.test(t)
             );
-            if (idxAID === -1 || idxMed === -1) throw new Error("AID eller Median saknas i filen.");
+            if (idxAID === -1 || idxMed === -1) throw new Error("Filen saknar kolumnen AID eller Median. Kontrollera rubrikraden och läs in filen igen.");
             // Rad-objekten är nycklade på originalrubrikerna — översätt index → nyckel.
             const col = i => i !== -1 ? res.headers[i] : null;
             const cAID = col(idxAID), cBAS = col(idxBAS), cMed = col(idxMed),

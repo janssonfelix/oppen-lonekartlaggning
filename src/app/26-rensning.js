@@ -14,7 +14,7 @@ function clearAllData() {
         announceToScreenReader('Ingen data finns i minnet att rensa.');
         return;
     }
-    if (!confirm('Detta raderar all data ur minnet (struktur, policy, statistik, scenarion, snapshot). Detta går inte att ångra. Fortsätt?')) return;
+    if (!confirm('All data försvinner ur minnet: lönefilen, ställningstagandet, statistiken, scenarierna och ögonblicksbilden. Det går inte att ångra. Vill du fortsätta?')) return;
 
     _rensaAllData();
 }
@@ -173,7 +173,7 @@ function _rensaAllData({ inbakat = true } = {}) {
     // 4. Lås tabbar
     ['tab-kon','tab-matrix','tab-prioritering','tab-loneoversyn','tab-struktur','tab-benchmark','tab-likvardighet','tab-utforska','tab-rapporttext'].forEach(id => {
         const el = document.getElementById(id);
-        if (el) { /** @type {HTMLInputElement} */ (el).disabled = true; el.setAttribute('title', 'Ladda upp strukturdata för att aktivera'); }
+        if (el) { /** @type {HTMLInputElement} */ (el).disabled = true; el.setAttribute('title', 'Läs in lönefilen för att öppna fliken'); }
     });
     if (typeof _visaJamforelseFlik === 'function') _visaJamforelseFlik(false);
     state.filnamn = { data: null, policy: null, statistik: null };

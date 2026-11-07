@@ -158,12 +158,12 @@ document.getElementById('btn-download-csv-template')?.addEventListener('click', 
     const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = 'strukturdata_mall.csv';
+    a.download = 'lonefil_mall.csv';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-    announceToScreenReader('CSV-mall nedladdad: strukturdata_mall.csv');
+    announceToScreenReader('CSV-mall nedladdad: lonefil_mall.csv');
 });
 
 // #2: Robust CSV-inläsning. Excel-exporterad CSV är ofta Windows-1252 (inte
@@ -278,7 +278,7 @@ function _findCsvHeader(text, synonymGroups, minHits = 2, profiler = []) {
  * @throws {Error} om arbetsboken inte kan läsas eller saknar datarader.
  */
 function _xlsxToObjects(buf, synonymGroups, minHits = 2, profiler = []) {
-    if (typeof XLSX === 'undefined') throw new Error('Excel-biblioteket kunde inte laddas.');
+    if (typeof XLSX === 'undefined') throw new Error('Excelfilen kan inte läsas: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.');
     const wb = XLSX.read(new Uint8Array(buf), { type: 'array' });
     const sheetName = wb.SheetNames[0];
     const ws = wb.Sheets[sheetName];
@@ -917,7 +917,7 @@ function maybeShowColumnMapping() {
         state.columnMap = Object.keys(map).length ? map : null;
         const f = state._lastStructureFile || (/** @type {HTMLInputElement} */ (dataInput).files && /** @type {HTMLInputElement} */ (dataInput).files?.[0]);
         if (f) loadStructureFile(f);
-        else { dataStatus.textContent = 'Ladda upp filen igen för att tillämpa mappningen.'; dataStatus.className = 'status-msg'; }
+        else { dataStatus.textContent = 'Läs in filen igen för att tillämpa mappningen.'; dataStatus.className = 'status-msg'; }
     });
     panel.querySelector('#colmap-reset')?.addEventListener('click', () => {
         state.columnMap = null;

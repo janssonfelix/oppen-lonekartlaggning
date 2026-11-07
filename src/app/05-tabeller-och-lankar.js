@@ -53,9 +53,9 @@ function renderAuditHtml(a) {
         <div class="audit-section">
             <div class="audit-section-header">Datakälla</div>
             <ul>
-                <li>Strukturfil: ${fmt(a.totalRaw)} rader inlästa, ${fmt(a.afterParse)} efter validering</li>
+                <li>Lönefil: ${fmt(a.totalRaw)} rader inlästa, ${fmt(a.afterParse)} efter validering</li>
                 <li>Referens: ${esc(referensNamn())}${esc(referensKalla())} — ${state.policy.length} rader</li>
-                <li>Jämförelsestatistik: ${state.statistik.length ? state.statistik.length + ' poster inlästa' : '<em>Ej uppladdad</em>'}</li>
+                <li>Jämförelsestatistik: ${state.statistik.length ? state.statistik.length + ' poster inlästa' : '<em>Inte inläst</em>'}</li>
             </ul>
         </div>
     `;

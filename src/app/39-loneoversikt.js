@@ -56,7 +56,7 @@ function generateRapport() {
             }
             // Bevis-knapp i kategori-cellen
             // (ingen ny kolumn — håller rapportstrukturen oförändrad).
-            const evidenceBtn = ` <button class="btn-evidence" data-rapport-row="1" type="button" title="Visa beräkningen bakom denna rad" aria-label="Visa bevis för ${esc(kategori)}">${ikon('sok')}</button>`;
+            const evidenceBtn = ` <button class="btn-evidence" data-rapport-row="1" type="button" title="Visa beräkningen bakom denna rad" aria-label="Visa beräkningen för ${esc(kategori)}">${ikon('sok')}</button>`;
             const tr = document.createElement("tr");
             // data-sort-value på talceller → Excel-exporten får riktiga tal
             const svMed = statRefMedian != null ? ` data-sort-value="${statRefMedian}"` : '';

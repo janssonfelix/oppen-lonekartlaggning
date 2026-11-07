@@ -1662,16 +1662,16 @@ const __mirrorAidbas = (() => {
 
 /** Definitionerna av kvinnodominerat arbete: nyckel → namn och text för metodbladet. */
 const KV_DEFINITIONER = Object.freeze({
-    do: Object.freeze({ namn: 'DO', text: 'mer än {grans} % kvinnor (Diskrimineringsombudsmannen)' }),
+    do: Object.freeze({ namn: 'Förarbetena', text: 'mer än {grans} % kvinnor (riktmärket i lagens förarbeten)' }),
     scb: Object.freeze({ namn: 'SCB', text: '{grans} % kvinnor eller mer (Statistiska centralbyrån)' })
 });
 const KV_GRANS_STANDARD = 60;
 
 const KLASS_KV = 'Kvinnodominerad', KLASS_MA = 'Mansdominerad', KLASS_BLANDAD = 'Könsblandad';
 const BEDOMNING_INOM = 'Inom gränserna', BEDOMNING_UTANFOR = 'Utanför gränserna', BEDOMNING_INDIVID = 'Analyseras på individnivå';
-const INGA_HIERARKISKA_PAR = 'Inga fall där ett lägre värderat arbete som inte är kvinnodominerat har högre lön än ett högre värderat kvinnodominerat arbete.';
+const INGA_HIERARKISKA_PAR = 'Inga fall där ett arbete med lägre krav, som inte är kvinnodominerat, har högre lön än ett kvinnodominerat arbete med högre krav.';
 
-/** Definitionens namn: DO eller SCB. */
+/** Definitionens namn: Förarbetena eller SCB. */
 function kvDefinitionNamn(definition) { return (KV_DEFINITIONER[definition] || KV_DEFINITIONER.do).namn; }
 /** Klassernas namn, för den som jämför klassningen. */
 function klassNamn() { return { kv: KLASS_KV, ma: KLASS_MA, blandad: KLASS_BLANDAD }; }
@@ -1924,7 +1924,7 @@ function modellVariabler(m) {
 function modellFras(m) {
     const delar = [];
     if (m && m.alder) delar.push('ålder');
-    if (m && m.bas) delar.push('nivå');
+    if (m && m.bas) delar.push('BAS-intervall');
     if (m && m.yrkesgrupp) delar.push('yrkesgrupp');
     if (delar.length <= 1) return delar.join('');
     return `${delar.slice(0, -1).join(', ')} och ${delar[delar.length - 1]}`;
@@ -3053,7 +3053,7 @@ function bakaIn(html, paketJson, meta = {}) {
     const k = kannIgenVerktyget(html);
     if (!k.ok) return { ok: false, fel: k.fel || 'Filen är inte verktyget.' };
     let obj;
-    try { obj = JSON.parse(String(paketJson)); } catch (_e) { return { ok: false, fel: 'Paketet är inte giltig JSON.' }; }
+    try { obj = JSON.parse(String(paketJson)); } catch (_e) { return { ok: false, fel: 'Paketet går inte att läsa som JSON. Spara paketet på nytt och försök igen.' }; }
     if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return { ok: false, fel: 'Paketet är inte ett objekt.' };
     const text = JSON.stringify(obj).replace(/</g, '\\u003c').replace(/&/g, '\\u0026');
     const [huvud, svans0] = _delad(html);
@@ -3944,7 +3944,7 @@ const GRUPP_MATT = {
     p90:       { etikett: 'P90', enhet: 'kr' },
     spridning: { etikett: 'spridning (P90/P10)', enhet: '' },
     andelKv:   { etikett: 'andel kvinnor', enhet: '%' },
-    gap:       { etikett: 'gap', enhet: '%' }
+    gap:       { etikett: 'kvinnors median i % av mäns', enhet: '%' }
 };
 const TAL_OP = ['storre', 'minst', 'mindre', 'hogst', 'mellan'];
 const OP_TEXT = { storre: 'större än', minst: 'minst', mindre: 'mindre än', hogst: 'högst', mellan: 'mellan' };
@@ -4461,10 +4461,10 @@ function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
                      : ` Kvinnornas medianlön är ${_kr(u.medKv)} och männens ${_kr(u.medMa)}, vilket motsvarar ${_pct(kvot)} av männens.`)];
         if (u.oforklarat && !litet) {
             // Frasen följer förklaringsmodellen (ADR-56); tom fras = endast kön. Det bortvalda får en mening var.
-            const fras = typeof u.oforklarat.fras === 'string' ? u.oforklarat.fras : 'ålder och nivå';
+            const fras = typeof u.oforklarat.fras === 'string' ? u.oforklarat.fras : 'ålder och BAS-intervall';
             st.push(fras
-                ? `Efter hänsyn till ${fras} är det oförklarade lönegapet ${_pct(u.oforklarat.pct)} (95 % KI ${_ki(u.oforklarat.lo, u.oforklarat.hi)} %).`
-                : `Utan att något räknats bort är lönegapet ${_pct(u.oforklarat.pct)} (95 % KI ${_ki(u.oforklarat.lo, u.oforklarat.hi)} %).`);
+                ? `Efter hänsyn till ${fras} är den oförklarade löneskillnaden ${_pct(u.oforklarat.pct)} (95 % KI ${_ki(u.oforklarat.lo, u.oforklarat.hi)} %).`
+                : `Utan att något räknats bort är löneskillnaden ${_pct(u.oforklarat.pct)} (95 % KI ${_ki(u.oforklarat.lo, u.oforklarat.hi)} %).`);
             for (const b of (u.oforklarat.bortvalt || [])) st.push(bortvaltNotering(b));
         }
         if (u.kvalitet) {
@@ -4474,7 +4474,7 @@ function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
         const rader = [['Antal anställda', formatTal(u.n)], ['Kvinnor', formatTal(u.nKv)], ['Män', formatTal(u.nMa)]];
         if (!litet) {
             rader.push(['Medianlön kvinnor', _kr(u.medKv)], ['Medianlön män', _kr(u.medMa)], ['Kvinnors lön i % av mäns', _pct(kvot)]);
-            if (u.oforklarat) { const fras = typeof u.oforklarat.fras === 'string' ? u.oforklarat.fras : 'ålder och nivå'; rader.push([fras ? `Oförklarat lönegap (${fras})` : 'Lönegap (inget räknat bort)', _pct(u.oforklarat.pct)]); }
+            if (u.oforklarat) { const fras = typeof u.oforklarat.fras === 'string' ? u.oforklarat.fras : 'ålder och BAS-intervall'; rader.push([fras ? `Oförklarad löneskillnad (${fras})` : 'Löneskillnad (inget räknat bort)', _pct(u.oforklarat.pct)]); }
         }
         return blk('Sammanfattning', st, { rubriker: ['Nyckeltal', 'Värde'], rader });
     }
@@ -4589,7 +4589,7 @@ function tillWordHtml(b) {
     // Fler tabeller med egen rubrik (blocket om förra året: Löneutveckling per BAS-intervall).
     for (const t of b.tabeller || []) h += `<p><strong>${_esc(t.rubrik)}</strong></p>` + tabell(t);
     if (b.provat) h += '<p><strong>Redan prövat</strong></p><ul>' + b.provat.map(p => `<li>${_esc(p)}</li>`).join('') + '</ul>';
-    if (b.fragor) h += '<p><strong>Frågor till verksamheten</strong></p><ol>' + b.fragor.map(f => `<li>${_esc(f)}</li>`).join('') + '</ol>';
+    if (b.fragor) h += '<p><strong>Frågor till ansvarig chef</strong></p><ol>' + b.fragor.map(f => `<li>${_esc(f)}</li>`).join('') + '</ol>';
     return h;
 }
 
@@ -4623,7 +4623,7 @@ function arsjamforelseBlock(j, { id = 'arsjamforelse', forraAr, nuAr, urval, dem
     const diff = (v, typ) => (v == null ? '–' : `${v > 0 ? '+' : v < 0 ? '−' : '±'}${skriv(Math.abs(v), typ)}${typ === 'pct' ? '-enheter' : ''}`);
     const g = j.grupper, p = j.punkter;
     const namn = l => l.map(x => x.yrke).join(', ');
-    const st = [`Jämfört med lönekartläggningen ${forraAr}. Lönemått bara för yrkesgrupper där båda könen når minsta gruppstorlek; gapet är kvinnors medianlön mot mäns.`,
+    const st = [`Jämfört med lönekartläggningen ${forraAr}. Lönemått bara för yrkesgrupper där båda könen når minsta gruppstorlek; skillnaden är kvinnors medianlön mot mäns.`,
         `Flaggade yrkesgrupper i Lika arbete: ${g.kvar.length} båda åren${g.kvar.length ? ` (${namn(g.kvar)})` : ''}, ${g.nya.length} nya${g.nya.length ? ` (${namn(g.nya)})` : ''} och ${g.borta.length} inte längre flaggade${g.borta.length ? ` (${namn(g.borta)})` : ''}.`,
         `Att göra: ${forraAr} var ${p.klaraForra} av ${p.totaltForra} punkter avbockade, ${nuAr} ${p.klaraNu} av ${p.totaltNu}.`
             + (p.kvarFranForra.length ? ` Av ${forraAr} års ${p.kvarFranForra.length} öppna punkter är ${p.kvarFranForra.filter(q => q.klarNu).length} klara i år.` : '')];
@@ -4695,7 +4695,7 @@ function tillText(b) {
     if (b.tabell) delar.push([b.tabell.rubriker, ...b.tabell.rader].map(r => r.join('\t')).join('\n'));
     for (const t of b.tabeller || []) delar.push(`${t.rubrik}\n` + [t.rubriker, ...t.rader].map(r => r.join('\t')).join('\n'));
     if (b.provat) delar.push('Redan prövat:\n' + b.provat.map(p => `- ${p}`).join('\n'));
-    if (b.fragor) delar.push('Frågor till verksamheten:\n' + b.fragor.map((f, i) => `${i + 1}. ${f}`).join('\n'));
+    if (b.fragor) delar.push('Frågor till ansvarig chef:\n' + b.fragor.map((f, i) => `${i + 1}. ${f}`).join('\n'));
     return delar.join('\n\n');
 }
 
@@ -5180,7 +5180,7 @@ const __mirrorAttgora = (() => {
  */
 
 /** Kategorier för fynd som gäller skillnader mellan kvinnor och män (lagkravet). */
-const KONSRELATERADE = ['Lika arbete', 'EU 2023/970', 'Likvärdigt arbete'];
+const KONSRELATERADE = ['Lika arbete', 'Likvärdigt arbete'];
 
 const PRIORITET = { 'hög': 0, medel: 1, 'låg': 2 };
 
@@ -5216,8 +5216,8 @@ function stegLikaArbete({ regressionOk, t, d }) {
     if (!regressionOk) return { status: 'delvis', detail: 'Underlaget räcker ännu inte för en tillförlitlig regression.' };
     return {
         status: d >= t ? 'klar' : 'delvis',
-        detail: t ? `Oförklarat gap beräknat · ${d} av ${t} punkter hanterade i Att göra.`
-                  : 'Oförklarat gap beräknat — inga punkter att förklara eller åtgärda.',
+        detail: t ? `Oförklarad löneskillnad beräknad · ${d} av ${t} punkter hanterade i Att göra.`
+                  : 'Oförklarad löneskillnad beräknad — inga punkter att förklara eller åtgärda.',
     };
 }
 
@@ -5228,14 +5228,14 @@ function stegLikaArbete({ regressionOk, t, d }) {
  * produktägaren 2026-10-16).
  */
 function stegLikvardigt({ analys, antalPar, utelamnade = 0, k, t, d }) {
-    if (!analys) return { status: 'ej', detail: 'Granska likvärdiga arbeten på fliken.' };
+    if (!analys) return { status: 'ej', detail: 'Gå igenom kandidatparen i Likvärdigt arbete.' };
     if (antalPar === 0 && utelamnade > 0) {
         return { status: 'inget', detail: `Inget att hantera i Att göra: ${utelamnade} par har en grupp under ${k != null ? `${k} personer` : 'minsta gruppstorlek'} och redovisas bara i fliken Likvärdigt arbete — gå till steget för att granska dem.` };
     }
     if (antalPar === 0) return { status: 'klar', detail: 'Analysen körd — inga kandidatpar utifrån nuvarande trösklar.' };
     return {
         status: t > 0 && d >= t ? 'klar' : 'delvis',
-        detail: `${antalPar} kandidatpar (kvinnodominerade mot likvärdiga yrken) · ${d} av ${t} kandidatpar hanterade i Att göra.`,
+        detail: `${antalPar} kandidatpar (kvinnodominerade yrken mot jämförelseyrken med likvärdiga krav) · ${d} av ${t} kandidatpar hanterade i Att göra.`,
     };
 }
 
@@ -6426,7 +6426,7 @@ function jamforBasIntervall(forra, nu) {
 const ARSBOKSLUT_NYCKELTAL = Object.freeze([
     ['n', 'Antal personer', 'antal'], ['nKv', 'Kvinnor', 'antal'], ['nMa', 'Män', 'antal'],
     ['medKv', 'Medianlön kvinnor', 'kr'], ['medMa', 'Medianlön män', 'kr'],
-    ['kvotPct', 'Kvinnors medianlön i % av mäns', 'pct'], ['oforklaratPct', 'Oförklarat lönegap (regressionen, %)', 'pct'],
+    ['kvotPct', 'Kvinnors medianlön i % av mäns', 'pct'], ['oforklaratPct', 'Oförklarad löneskillnad (regressionen, %)', 'pct'],
     ['antalFlaggade', 'Flaggade yrkesgrupper i Lika arbete', 'antal'], ['antalKandidatpar', 'Kandidatpar i Likvärdigt arbete', 'antal'],
 ]);
 
@@ -7213,7 +7213,7 @@ function tolkaPaket(text) {
     if (typeof text !== 'string') return { ok: false, fel: 'Filen kunde inte läsas.' };
     if (text.length > PAKET_MAX_BYTE) return { ok: false, fel: 'Filen är för stor för att vara ett organisationspaket (högst 5 MB).' };
     let o;
-    try { o = JSON.parse(text); } catch (_e) { return { ok: false, fel: 'Filen är inte giltig JSON.' }; }
+    try { o = JSON.parse(text); } catch (_e) { return { ok: false, fel: 'Filen är inte ett organisationspaket (den går inte att läsa som JSON). Be systemägaren om en ny fil.' }; }
     if (!o || typeof o !== 'object' || Array.isArray(o)) return { ok: false, fel: 'Filen är inte ett organisationspaket.' };
 
     if (o.format !== PAKET_FORMAT) return { ok: false, fel: 'Filen är inte ett organisationspaket för lönekartläggning.' };
@@ -7223,7 +7223,7 @@ function tolkaPaket(text) {
     const organisation = _text(o.organisation?.namn);
     if (!organisation) return { ok: false, fel: 'Paketet saknar organisationens namn (organisation.namn).' };
     const skapat = _text(o.skapat);
-    if (!skapat || !/^\d{4}-\d{2}-\d{2}$/.test(skapat)) return { ok: false, fel: 'Paketet saknar datum (skapat, ÅÅÅÅ-MM-DD).' };
+    if (!skapat || !/^\d{4}-\d{2}-\d{2}$/.test(skapat)) return { ok: false, fel: 'Paketet saknar datum (fältet skapat, ÅÅÅÅ-MM-DD). Be systemägaren om en ny fil.' };
     if (_allaTexter(o).some(t => PNR.test(t) || EPOST.test(t))) {
         return { ok: false, fel: 'Paketet innehåller något som liknar personnummer eller e-post och läses inte in.' };
     }

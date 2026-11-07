@@ -94,7 +94,7 @@ describe('Lönepolitik: chart-lp-gender och chart-lp-compliance', () => {
             w.__state.kLage = 'export';
             w.__renderLonepolitik();
             const el = w.document.getElementById('chart-lp-compliance');
-            expect(el.querySelector(':scope > svg[role="group"]').getAttribute('aria-label')).toMatch(/Andel medarbetare/);
+            expect(el.querySelector(':scope > svg[role="group"]').getAttribute('aria-label')).toMatch(/Andel anställda/);
             expect(el.data).toBeUndefined();                                        // figuren ligger i _figur
             expect(el._figur.lager[0].data.map(d => d.x)).toEqual(['BAS A']);
             expect(utdata(el)).not.toMatch(/BAS B|61\s?11\d/);
@@ -877,7 +877,7 @@ describe('Likvärdigt arbete: chart-likvardighet-heatmap', () => {
                    { kvLabel: 'K2', kvBas: 'C', kvMedian: 31000, maLabel: 'J1', maBas: 'C', maMedian: 33000, gapPct: 6.1, gapKr: 2000, allvarsindex: 5 }];
         const f = w.eval('_lvParFigur(window.__par)');
         expect(f.y.ordning).toEqual(['K2 mot J1', 'K1 mot J1']);
-        expect(f.lager.map(l => [l.marke, l.serie])).toEqual([['intervall', 'Gap'], ['punkt', 'Kvinnodominerat yrke'], ['punkt', 'Jämförelseyrke']]);
+        expect(f.lager.map(l => [l.marke, l.serie])).toEqual([['intervall', 'Skillnad'], ['punkt', 'Kvinnodominerat yrke'], ['punkt', 'Jämförelseyrke']]);
         expect(f.lager[0].data.map(d => [d.lag, d.hog])).toEqual([[31000, 33000], [30000, 33000]]);
         expect(f.lager[2].data.map(d => d.etikett)).toEqual(['6,1 %', '9,1 %']);
         expect(f.lager[1].data.every(d => d.etikett === undefined)).toBe(true);
@@ -993,8 +993,8 @@ describe('tydligare diagram: kärnan', () => {
     });
     it('exporterad bild har rubrik och fotrad; skärmens diagram har det inte', () => {
         w.__f = staplar(['A', 'B']);
-        const svg = w.figurTillSvg(w.__f, 1600, 900, { rubrik: 'Lönegap per BAS-intervall', fot: 'Lönekartläggning 2026-10-09 · Urval: BAS A' });
-        expect(svg).toMatch(/data-del="rubrik"[^>]*>Lönegap per BAS-intervall</);
+        const svg = w.figurTillSvg(w.__f, 1600, 900, { rubrik: 'Löneskillnad per BAS-intervall', fot: 'Lönekartläggning 2026-10-09 · Urval: BAS A' });
+        expect(svg).toMatch(/data-del="rubrik"[^>]*>Löneskillnad per BAS-intervall</);
         expect(svg).toMatch(/data-del="fot"[^>]*>Lönekartläggning 2026-10-09 · Urval: BAS A</);
         expect(w.figurTillSvg(w.__f, 1600, 900, {})).not.toMatch(/data-del="(rubrik|fot)"/);
         expect(w.eval('_rfByggSvg(window.__f, 600, {})').querySelector('[data-del="rubrik"], [data-del="fot"]')).toBeNull();
