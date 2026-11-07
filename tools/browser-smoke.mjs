@@ -26,6 +26,7 @@ import { utseende, smalaSkarmar } from './browser-smoke/layout.mjs';
 import { gruppdossier, kTroskel, sokOchBasdossier } from './browser-smoke/dialoger.mjs';
 import { ingenLagring, ingenTrafik, felUnderKorningen } from './browser-smoke/sakerhet.mjs';
 import { stortDemo } from './browser-smoke/demo.mjs';
+import { importprofiler } from './browser-smoke/importprofiler.mjs';
 
 await laddningOchDemo();
 await flikarOchDiagram();
@@ -43,6 +44,7 @@ await startsidan();
 await smalaSkarmar();
 await checklistor();
 await organisationsfilen();
+await importprofiler();
 await ingenTrafik();
 await stortDemo();
 await felUnderKorningen();
