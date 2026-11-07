@@ -115,7 +115,7 @@ describe('sortering, Att göra, kopiering och Likvärdigt arbete', () => {
         w.__state.likvardighet.result = null;
         w.document.querySelector('.nav-item[data-tab="likvardighet"]').click();
         const t = w.document.getElementById('view-likvardighet').textContent;
-        expect(t).toMatch(/Krav-proxy: arbetsvärdering \(poäng\)/);
+        expect(t).toMatch(/Mått på kraven: arbetsvärdering \(poäng\)/);
         expect(t).toMatch(/Med arbetsvärderingspoäng jämförs yrken redan över BAS-gränserna/);
     });
     it('Att göra: rubrikordning h2 → h3, och länken till Jämförelse döljs utan jämförelsestatistik', () => {

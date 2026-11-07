@@ -149,7 +149,7 @@ exports[`golden: Excel-exporterna på fast dataset > "Excel (alla flikar)" match
   ],
   "Hierarkisk jämförelse": [
     [
-      "Hierarkisk jämförelse: lägre värderat arbete som inte är kvinnodominerat med högre lön än kvinnodominerat arbete på högre nivå",
+      "Hierarkisk jämförelse: arbete med lägre krav, som inte är kvinnodominerat, med högre lön än kvinnodominerat arbete med högre krav",
       null,
       null,
       null,
@@ -169,7 +169,7 @@ exports[`golden: Excel-exporterna på fast dataset > "Excel (alla flikar)" match
       null,
     ],
     [
-      "Kvinnodominerad enligt DO: mer än 60 % kvinnor (Diskrimineringsombudsmannen); mansdominerad med samma gräns för män; övriga könsblandade. Båda grupperna har minst 10 personer. BAS-ordningen är bokstavsordningen.",
+      "Kvinnodominerad enligt Förarbetena: mer än 60 % kvinnor (riktmärket i lagens förarbeten); mansdominerad med samma gräns för män; övriga könsblandade. Båda grupperna har minst 10 personer. BAS-ordningen är bokstavsordningen.",
       null,
       null,
       null,
@@ -573,7 +573,7 @@ exports[`golden: Excel-exporterna på fast dataset > "Excel (alla flikar)" match
       null,
     ],
     [
-      "Kvinnodominerad enligt DO: mer än 60 % kvinnor (Diskrimineringsombudsmannen); mansdominerad med samma gräns för män; övriga könsblandade.",
+      "Kvinnodominerad enligt Förarbetena: mer än 60 % kvinnor (riktmärket i lagens förarbeten); mansdominerad med samma gräns för män; övriga könsblandade.",
       null,
       null,
       null,
@@ -1393,7 +1393,7 @@ exports[`golden: Excel-exporterna på fast dataset > "Excel (alla flikar)" match
     ],
     [
       "Kvinnodominerat arbete (Likvärdigt arbete, Hierarkisk jämförelse)",
-      "DO: mer än 60 % kvinnor (Diskrimineringsombudsmannen). Mansdominerad med samma gräns för män; övriga könsblandade. "Brukar anses kvinnodominerad" bygger på andelen kvinnor nationellt i yrket (SKR:s personalstatistik, november 2025) med samma definition — lagen gäller arbete som är eller brukar anses vara kvinnodominerat. Lönespridning = (P90 − P10) / median. Den hierarkiska jämförelsen listar par där en grupp som inte är kvinnodominerad har lägre BAS-intervall och högre median än en kvinnodominerad grupp; BAS-ordningen är bokstavsordningen.",
+      "Förarbetena: mer än 60 % kvinnor (riktmärket i lagens förarbeten). Mansdominerad med samma gräns för män; övriga könsblandade. "Brukar anses kvinnodominerad" bygger på andelen kvinnor nationellt i yrket (SKR:s personalstatistik, november 2025) med samma definition — lagen gäller arbete som är eller brukar anses vara kvinnodominerat. Lönespridning = (P90 − P10) / median. Den hierarkiska jämförelsen listar par där en grupp som inte är kvinnodominerad har lägre BAS-intervall och högre median än en kvinnodominerad grupp; BAS-ordningen är bokstavsordningen.",
     ],
   ],
   "Metodik": [
@@ -1795,7 +1795,7 @@ exports[`golden: Excel-exporterna på fast dataset > "Excel (alla flikar)" match
     ],
     [
       "  Kvinnodominerat arbete (Likvärdigt arbete, Hierarkisk jämförelse)",
-      "DO: mer än 60 % kvinnor (Diskrimineringsombudsmannen). Mansdominerad med samma gräns för män; övriga könsblandade. "Brukar anses kvinnodominerad" bygger på andelen kvinnor nationellt i yrket (SKR:s personalstatistik, november 2025) med samma definition — lagen gäller arbete som är eller brukar anses vara kvinnodominerat. Lönespridning = (P90 − P10) / median. Den hierarkiska jämförelsen listar par där en grupp som inte är kvinnodominerad har lägre BAS-intervall och högre median än en kvinnodominerad grupp; BAS-ordningen är bokstavsordningen.",
+      "Förarbetena: mer än 60 % kvinnor (riktmärket i lagens förarbeten). Mansdominerad med samma gräns för män; övriga könsblandade. "Brukar anses kvinnodominerad" bygger på andelen kvinnor nationellt i yrket (SKR:s personalstatistik, november 2025) med samma definition — lagen gäller arbete som är eller brukar anses vara kvinnodominerat. Lönespridning = (P90 − P10) / median. Den hierarkiska jämförelsen listar par där en grupp som inte är kvinnodominerad har lägre BAS-intervall och högre median än en kvinnodominerad grupp; BAS-ordningen är bokstavsordningen.",
     ],
   ],
   "Per BAS": [
@@ -4164,7 +4164,7 @@ exports[`golden: Excel-exporterna på fast dataset > handlingsplansunderlaget ma
 
 exports[`golden: Excel-exporterna på fast dataset > § 3:10-exporten matchar facit 1`] = `
 {
-  "Likvärdighet §3-10": [
+  "Likvärdigt arbete": [
     [
       "Nr",
       "Org. AID",
@@ -4179,8 +4179,8 @@ exports[`golden: Excel-exporterna på fast dataset > § 3:10-exporten matchar fa
       "Jämf. n",
       "Jämförelsekälla",
       "Median Jämf. (kr)",
-      "Gap (kr)",
-      "Gap (%)",
+      "Skillnad (kr)",
+      "Skillnad (%)",
       "Justerad för ålder (%)",
       "KI 95% låg (kr)",
       "KI 95% hög (kr)",
@@ -4240,7 +4240,7 @@ exports[`golden: Excel-exporterna på fast dataset > § 3:10-exporten matchar fa
   ],
   "Metadata": [
     [
-      "LIKVÄRDIGHETSANALYS — DISKRIMINERINGSLAGEN KAP. 3 § 10",
+      "Likvärdigt arbete — kvinnodominerade yrken",
       "",
     ],
     [
@@ -4261,7 +4261,7 @@ exports[`golden: Excel-exporterna på fast dataset > § 3:10-exporten matchar fa
     ],
     [
       "Modell",
-      "Organisationens kvinnodominerade AID×BAS jämförs inom samma BAS, primärt mot organisationens egna icke-kv-dom yrken (intern), annars jämförelsestatistiken (extern fallback)",
+      "Organisationens kvinnodominerade AID×BAS jämförs inom samma BAS, i första hand mot organisationens egna yrken som inte är kvinnodominerade (intern), annars mot jämförelsestatistiken (extern)",
     ],
     [
       "",
@@ -4276,7 +4276,7 @@ exports[`golden: Excel-exporterna på fast dataset > § 3:10-exporten matchar fa
       60,
     ],
     [
-      "Min gap (%)",
+      "Minsta skillnad (%)",
       5,
     ],
     [
@@ -4384,12 +4384,12 @@ exports[`golden: Excel-exporterna på fast dataset > § 3:10-exporten matchar fa
       "Arbetsgivaren ska analysera om kvinnodominerade yrken har lägre lön än icke-kvinnodominerade yrken med likvärdiga eller lägre krav.",
     ],
     [
-      "Krav-proxy",
-      "Jämförelsen sker INOM samma BAS — likvärdighet är datadefinierad förutsättning.",
+      "Mått på kraven",
+      "Jämförelsen sker inom samma BAS-intervall; verktyget utgår från att kraven där är likvärdiga.",
     ],
     [
       "Jämförelsekälla",
-      "Primärt organisationens egna icke-kv-dom yrken (inom-arbetsgivare). Saknas internt jämförelseyrke i en BAS används jämförelsestatistiken som extern proxy.",
+      "I första hand organisationens egna yrken som inte är kvinnodominerade. Saknas ett sådant yrke i ett BAS-intervall används jämförelsestatistiken i stället.",
     ],
     [
       "95 % KI",

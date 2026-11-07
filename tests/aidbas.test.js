@@ -39,7 +39,7 @@ describe('aidbas: gruppering och dominans', () => {
         expect(dominans(39.9, 'do')).toBe('Mansdominerad');
         expect(dominans(null, 'do')).toBe('');
         expect(Object.keys(KV_DEFINITIONER)).toEqual(['do', 'scb']);
-        expect(kvDefinitionText('do')).toBe('DO: mer än 60 % kvinnor (Diskrimineringsombudsmannen)');
+        expect(kvDefinitionText('do')).toBe('Förarbetena: mer än 60 % kvinnor (riktmärket i lagens förarbeten)');
         expect(kvDefinitionText('scb', 55)).toBe('SCB: 55 % kvinnor eller mer (Statistiska centralbyrån)');
         expect(kvDefinitionNamn('scb')).toBe('SCB');
         expect(klassNamn().kv).toBe('Kvinnodominerad');

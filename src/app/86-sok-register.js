@@ -47,13 +47,13 @@ const SOK_FUNKTIONER = [
     { namn: 'Så räknas det', synonymer: ['metod', 'beräkning', 'urval', 'ålder'], flik: 'kon', avsnitt: 'avsnitt-ak-metod' },
     // Likvärdigt arbete
     { namn: 'Likvärdigt arbete per BAS-intervall', synonymer: ['klassning', 'kvinnodominerad', 'aid x bas'], flik: 'likvardighet', avsnitt: 'avsnitt-lv-aidbas' },
-    { namn: 'Hierarkisk jämförelse', synonymer: ['lägre värderat', 'högre lön', 'hierarki'], flik: 'likvardighet', avsnitt: 'avsnitt-lv-hierarki' },
+    { namn: 'Hierarkisk jämförelse', synonymer: ['lägre krav, högre lön', 'lägre värderat', 'högre lön', 'hierarki'], flik: 'likvardighet', avsnitt: 'avsnitt-lv-hierarki' },
     { namn: 'Arbetsvärdering med poäng', synonymer: ['arbetsvärdering', 'poäng', 'krav', 'kravprofil'], flik: 'likvardighet', avsnitt: 'avsnitt-lv-poang' },
     { namn: 'Bakgrund', synonymer: ['osaklig', 'likvärdigt arbete'], flik: 'likvardighet', avsnitt: 'avsnitt-lv-metod' },
     // Avsnitten nedan byggs när fliken ritas (34-likvardigt-arbete.js, 75-lonepolitik.js; listan i tests/sok-funktioner.test.js)
     { namn: 'Par att titta närmare på', synonymer: ['kandidatpar', 'par', 'jämförelseyrke', 'kvinnodominerat yrke', 'kandidatparen i kronor'], flik: 'likvardighet', avsnitt: 'avsnitt-lv-par' },
     { namn: 'Yrkena bakom jämförelsen', synonymer: ['kvinnodominerade yrken', 'jämförelseyrken', 'underlag', 'steg för steg'], flik: 'likvardighet', avsnitt: 'avsnitt-lv-underlag' },
-    { namn: 'Inställningar för Likvärdigt arbete', synonymer: ['kvinnotröskel', 'minsta gap', 'antal par', 'definition av kvinnodominerat', 'do', 'scb'], flik: 'likvardighet', avsnitt: 'avsnitt-lv-installningar' },
+    { namn: 'Inställningar för Likvärdigt arbete', synonymer: ['kvinnotröskel', 'minsta skillnad', 'minsta gap', 'antal par', 'definition av kvinnodominerat', 'förarbetena', 'do', 'scb'], flik: 'likvardighet', avsnitt: 'avsnitt-lv-installningar' },
     { namn: 'Så fungerar analysen', synonymer: ['metod', 'likvärdigt arbete', 'diagnostik', 'krav-proxy'], flik: 'likvardighet', avsnitt: 'avsnitt-lv-analys' },
     // Lika arbete
     { namn: 'Kvinnor och män i samma yrkesgrupp', synonymer: ['lika arbete', 'yrkesgrupp', 'status'], flik: 'matrix', avsnitt: 'avsnitt-la-yrkesgrupper' },
