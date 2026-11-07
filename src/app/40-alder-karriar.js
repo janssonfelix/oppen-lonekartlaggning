@@ -469,8 +469,8 @@ function renderDemografi(bas) {
     if (iqrEl) iqrEl.textContent = `${q25}–${q75} år`;
     // Risk text
     const risks = [];
-    if (pct60p > 25) risks.push(`<strong>Hög successionsrisk:</strong> ${svPct(pct60p, 1)} av ${scopeShort} är 60+ år. Aktiv planering för kompetensöverföring rekommenderas — riktålder 60–67 betyder att en betydande del kan avgå inom 0–7 år.`);
-    else if (pct60p > 15) risks.push(`<strong>Bevakas – 60+:</strong> ${svPct(pct60p, 1)} i successionszon.`);
+    if (pct60p > 25) risks.push(`<strong>Många nära pension:</strong> ${svPct(pct60p, 1)} av ${scopeShort} är 60 år eller äldre. Med riktåldern 60–67 kan en stor del gå i pension inom 0–7 år. Planera för att deras kunskap förs vidare.`);
+    else if (pct60p > 15) risks.push(`<strong>Håll uppsikt – nära pension:</strong> ${svPct(pct60p, 1)} är 60 år eller äldre.`);
     if (pctU40 < 15) risks.push(`<strong>Brist på återväxt:</strong> Endast ${svPct(pctU40, 1)} är under 40 år.`);
     if (!isAll) {
         if (ageDiff > 5) risks.push(`Medelåldern är ${svTal(ageDiff, 1)} år <em>högre</em> än organisationssnittet.`);

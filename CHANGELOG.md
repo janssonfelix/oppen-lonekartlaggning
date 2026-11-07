@@ -8,6 +8,9 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ### Gränssnitt
 
+- **Klarspråksputs.** Långa meningar är delade i verktyget och i användar- och dataskyddsdokumenten.
+  Termer förklaras första gången de används, och engelska och tekniska ord är utbytta: *Successionszon*
+  heter nu *Nära pension*. Diagramtyperna i Tabeller och egna vyer har förklarande hjälptext.
 - **Språklig genomgång av hela verktyget.** Samma ord överallt: *löneskillnad* i stället för lönegap och gap,
   *anställda*, *BAS-intervall*, *likvärdigt arbete* och *lönefil* i stället för strukturdata och strukturfil.
   Gränssnittet säger *du* och *organisationen*. Lagen nämns med kapitel: första gången i en vy

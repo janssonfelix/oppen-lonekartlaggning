@@ -15,8 +15,9 @@ samverkan med de fackliga organisationerna. Syftet är att upptäcka och rätta 
 bedöma enskilda personer.
 
 **Vilka uppgifter används?**
-Från personal- och lönesystemet tas för varje anställd: månadslön omräknad till heltid, kön, ålder,
-yrkesgrupp och befattningens nivå i arbetsvärderingen[, och om du har ett chefs- eller specialistuppdrag].
+Från personal- och lönesystemet tas följande uppgifter om varje anställd: månadslön omräknad till heltid, kön,
+ålder, yrkesgrupp och befattningens nivå i arbetsvärderingen.[ Dessutom tas uppgift om chefs- eller
+specialistuppdrag med.]
 Namn, personnummer och kontaktuppgifter tas inte med.
 
 **Hur går analysen till?**
@@ -39,8 +40,8 @@ Analysunderlag med lönedata sparas [tid och plats enligt informationshanterings
 Dokumentationen sparas [tid].
 
 **Dina rättigheter**
-Du har rätt att få veta vilka uppgifter om dig som behandlas, att få felaktiga uppgifter rättade och att
-lämna klagomål till Integritetsskyddsmyndigheten (IMY). Uppgifterna rättas i personal- och lönesystemet,
+Du har rätt att få veta vilka uppgifter om dig som behandlas och att få felaktiga uppgifter rättade. Du
+har också rätt att lämna klagomål till Integritetsskyddsmyndigheten (IMY). Uppgifterna rättas i personal- och lönesystemet,
 som är källan.
 
 **Kontakt**

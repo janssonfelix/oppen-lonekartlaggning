@@ -1,7 +1,7 @@
 # Organisationspaket — guide för systemägaren
 
-Ett **organisationspaket** är en fil som samlar det som är gemensamt för hela organisationen,
-så att varje HR-handläggare läser in det i ett steg i stället för att hämta och ladda upp
+Ett **organisationspaket** är en fil som samlar det som är gemensamt för hela organisationen.
+Varje HR-handläggare läser då in det i ett steg, i stället för att hämta och ladda upp
 flera filer var för sig. Verktyget har ingen inbyggd organisation: utan paket (eller egna
 filer) finns ingen referens att jämföra mot.
 
@@ -19,7 +19,7 @@ filer) finns ingen referens att jämföra mot.
 | Grundinställningar | PO-påslag och beräkningsperiod, och *Minsta gruppstorlek för redovisning* (valfritt; utan värde gäller 10 eller det handläggaren har satt) | Kostnadsberäkningarna i Prioritering och Löneöversyn, och vilka grupper som redovisas. Ett värde under 10 ger handläggaren en fråga om bekräftelse när paketet läses in |
 | Låsningar (valfritt) | *Lägsta tillåtna minsta gruppstorlek*, en låst tid för *rensning vid inaktivitet*, och om *små grupper får tas med i exporten från Tabeller och egna vyer* | Det handläggaren inte får ändra, se avsnitt 5 |
 | Rapportens recept (valfritt) | Egna tabeller byggda i Tabeller och egna vyer och ett eget recept för avsnittet per BAS-intervall — bara recepten (rader, kolumner, mått, urval), inga tal | Samma tabeller i Word, PDF, Excel och rapportunderlaget hos alla handläggare; ersätter de egna tabeller som finns när paketet läses in |
-| Importprofiler (valfritt) | Sparade kolumnmappningar för lönesystemets uttag: vilken rubrik som är BAS-intervall, yrke, lön, ålder och kön (och poäng och ansvarskod), och vilka rubriker som måste finnas — bara rubrikernas namn, inga värden | Uttaget känns igen utan kolumnmappning hos alla handläggare; paketets profiler prövas före handläggarens egna och verktygets inbyggda |
+| Importprofiler (valfritt) | Sparade kolumnmappningar för lönesystemets uttag: vilken rubrik som är BAS-intervall, yrke, lön, ålder och kön (och poäng och ansvarskod). Dessutom vilka rubriker som måste finnas. Bara rubrikernas namn, inga värden | Uttaget känns igen utan kolumnmappning hos alla handläggare; paketets profiler prövas före handläggarens egna och verktygets inbyggda |
 | Lönepolitiskt ställningstagande | P10, median och P90 per BAS-intervall (och/eller per yrke) | Prioritering, Löneläget och statusrutan i Att göra |
 | Jämförelsestatistik | Median (och gärna P10, P90 och könsfördelning) per yrke och BAS | Fliken Löneläget, prioritering mot statistiken och reserven i Likvärdigt arbete |
 
@@ -38,11 +38,12 @@ personnummer eller e-postadresser.
    vanlig kartläggning. Kontrollera att antalet rader stämmer.
 3. Fäll ut **Skapa organisationspaket (för systemägaren)** längst ned i panelen *Organisationspaket*
    (steg 1, överst i fliken).
-4. Fyll i organisationens namn, utgivare och år, vad jämförelsestatistiken ska heta, vad
-   ställningstagandet ska heta (fältet är förifyllt med filens namn — byt till ett namn som passar i
-   rapporten, t.ex. *Lönepolitiskt ställningstagande 2026*, och en kort form som *ställningstagandet*), samt
-   PO-påslag och beräkningsperiod. Fältet *Minsta gruppstorlek för redovisning* är ifyllt med
-   det värde som gäller just nu; lämna det tomt om paketet inte ska ange något. Ett ogiltigt
+4. Fyll i organisationens namn, utgivare och år, vad jämförelsestatistiken ska heta och vad
+   ställningstagandet ska heta. Fyll också i PO-påslag och beräkningsperiod. Fältet för
+   ställningstagandets namn är förifyllt med filens namn. Byt till ett namn som passar i rapporten,
+   t.ex. *Lönepolitiskt ställningstagande 2026*, och en kort form som *ställningstagandet*. Fältet
+   *Minsta gruppstorlek för redovisning* är ifyllt med det värde som gäller just nu. Lämna det tomt
+   om paketet inte ska ange något. Ett ogiltigt
    värde (inte ett heltal mellan 2 och 1000) stoppar sparandet.
 5. Fyll i låsningarna om organisationen vill ha dem (avsnitt 5): *Lägsta tillåtna minsta
    gruppstorlek*, *Rensning vid inaktivitet* med rutan *Lås rensningstiden*, och rutan *Små
@@ -66,7 +67,7 @@ Ingen lönefil behövs för att skapa paketet.
 ## 3b. Organisationsfil — en enda fil att sprida
 
 Handläggarna behöver inte få paketet som en egen fil. Systemägaren kan i stället baka in paketet
-i själva verktyget och sprida **en organisationsfil**: handläggaren öppnar den, och benämningar,
+i själva verktyget och sprida **en organisationsfil**. Handläggaren öppnar den, och benämningar,
 ställningstagande, jämförelsestatistik och låsningar är på plats utan att något läses in.
 
 1. Läs in paketet (eller bygg det i formuläret under *Skapa organisationspaket*).
@@ -82,10 +83,10 @@ filen. Inget skript ändras, så skyddet mot nätverk och lagring och kontrollsu
 innehållssäkerhetspolicyn gäller som förut. **Ingen lönedata ingår** — bara det paketet bär.
 Filen visar i *Om verktyget* vilken version av verktyget den bygger på.
 
-För handläggaren: filrutan *Organisationspaket* visar *Inbakat i den här filen* med knapparna
-**Visa paketet** (innehållet som tabeller och råtext) och **Ladda ner paketet** (sparar det som
-`.lonepaket.json`, så att det kan granskas, ändras och bakas in på nytt). Den som läser in en annan
-paketfil ersätter det inbakade för sessionen; *Rensa all data* går tillbaka till det inbakade.
+För handläggaren: filrutan *Organisationspaket* visar *Inbakat i den här filen* med två knappar.
+**Visa paketet** visar innehållet som tabeller och råtext. **Ladda ner paketet** sparar det som
+`.lonepaket.json`, så att det kan granskas, ändras och bakas in på nytt. Den som läser in en annan
+paketfil ersätter det inbakade för sessionen. *Rensa all data* går tillbaka till det inbakade.
 Demoläget (`?demo=1`) går före och använder inte det inbakade paketet.
 
 **Ny version av verktyget eller ändrat paket:** gör om stegen ovan med den nya verktygsfilen eller
@@ -108,13 +109,13 @@ förvald; ett paket utan fälten låser ingenting.
 |---|---|---|
 | Golv för minsta gruppstorlek | *Lägsta tillåtna minsta gruppstorlek* (heltal 2–1000) | Minsta gruppstorlek kan inte sättas under värdet — inte i *Inställningar*, inte ur en konfigurationsfil och inte av ett annat paket som läses in senare. Fältet i *Inställningar* visar gränsen ("lägst N enligt organisationspaketet") och avvisar lägre värden med samma felmeddelande som ett ogiltigt värde. Är gällande tröskel lägre när paketet läses in höjs den till golvet. Paketets egen *Minsta gruppstorlek* får inte ligga under golvet |
 | Låst rensningstid | *Rensning vid inaktivitet* (0 = av, eller 5–120 minuter) och rutan *Lås rensningstiden* | Rullistan under *Vad lagras?* står på värdet och går inte att ändra; en rad säger att organisationspaketet har låst tiden. Utan rutan är värdet bara en förinställning som handläggaren kan ändra. Läget *Av* (0) kan inte låsas |
-| Små grupper i exporten från Tabeller och egna vyer | Rutan *Små grupper får tas med i exporten från Tabeller och egna vyer* (förvald) | Avkryssad: rutan "Ta med grupper under tröskeln i exporten" i Tabeller och egna vyer är dold, exporten utelämnar alltid små grupper, och en rad säger att organisationspaketet inte tillåter det |
+| Små grupper i exporten från Tabeller och egna vyer | Rutan *Små grupper får tas med i exporten från Tabeller och egna vyer* (förvald) | Avkryssad: rutan "Ta med grupper under tröskeln i exporten" i Tabeller och egna vyer är dold, och exporten utelämnar alltid små grupper. En rad säger att organisationspaketet inte tillåter det |
 
 Låsningarna gäller så länge paketet är inläst. *Rensa all data* tar bort dem tillsammans med
 paketet, och konfigurationsfilen bär dem inte — en konfigurationsfil kan alltså varken sätta
 eller häva en låsning. Läser handläggaren in ett **annat paket** som har ett lägre golv, eller
-inget golv alls, frågar verktyget om bekräftelse (samma fråga som vid en sänkt tröskel); nekas
-den står det gamla golvet kvar och resten av det nya paketet läses in. Ett högre golv kräver
+inget golv alls, frågar verktyget om bekräftelse (samma fråga som vid en sänkt tröskel). Nekar
+handläggaren står det gamla golvet kvar, och resten av det nya paketet läses in. Ett högre golv kräver
 ingen bekräftelse.
 
 Ett ogiltigt värde i formuläret stoppar sparandet. Ett ogiltigt värde i en fil som skapats på
@@ -126,20 +127,22 @@ Filen är JSON (formatversion 1). Den skapas och läses av verktyget; den behöv
 redigeras för hand. Verktyget läser bara de fält som hör till formatet och ignorerar allt
 annat. Formatet beskrivs i `docs/utveckling/teknisk-plan.md` (ADR-28) för
 den som vill ta fram paket automatiskt ur ett lönestatistiksystem. Rapportens recept ligger under
-`rapport`: `tabeller` är en lista med recept som verktyget själv skriver med *Lägg till i rapporten*
-(skapa dem i verktyget och spara paketet; skriv dem inte för hand), och `perBasRecept` receptet för
-avsnittet per BAS-intervall. Ett recept som inte går att läsa hoppas över med en varning; ett
+`rapport`. `tabeller` är en lista med recept som verktyget själv skriver med *Lägg till i rapporten*.
+Skapa dem i verktyget och spara paketet; skriv dem inte för hand. `perBasRecept` är receptet för
+avsnittet per BAS-intervall. Ett recept som inte går att läsa hoppas över med en varning. Ett
 paket utan `rapport` rör inte handläggarens egna tabeller.
 
 Importprofilerna ligger under `importprofiler` (valfritt): en lista med högst 50 profiler, var och en
 `{ "id", "namn", "rubriker": { "bas": […], "yrke": […], "lon": […], "alder": […], "kon": […], "poang": […],
 "ansvar": […] }, "kannetecken": […] }`. `rubriker` är rubriknamnen per fält (högst 20 per fält; versaler och
-tecken spelar ingen roll), `kannetecken` de rubriker som måste finnas i filen för att profilen ska gälla
-(utelämnat: de obligatoriska fältens första rubriker). Varje text är högst 80 tecken; en profil som inte går
-att läsa hoppas över med en varning. Profilerna skapas enklast i verktyget: läs in paketet och ett uttag,
-peka ut kolumnerna i kolumnmappningen och välj *Lägg till i organisationspaketet* — det ger ett nytt paket
-med profilen, byggt ur det inlästa paketets egna delar (inställningar, låsningar, ställningstagande och
-statistik som paketet hade, inte sessionens värden), och det inlästa paketets profiler följer med. En
+tecken spelar ingen roll). `kannetecken` är de rubriker som måste finnas i filen för att profilen ska gälla
+(utelämnat: de obligatoriska fältens första rubriker). Varje text är högst 80 tecken. En profil som inte går
+att läsa hoppas över med en varning.
+
+Profilerna skapas enklast i verktyget. Läs in paketet och ett uttag, peka ut kolumnerna i
+kolumnmappningen och välj *Lägg till i organisationspaketet*. Det ger ett nytt paket med profilen,
+byggt ur det inlästa paketets egna delar: inställningar, låsningar, ställningstagande och statistik
+som paketet hade, inte sessionens värden. Det inlästa paketets profiler följer med. En
 paketprofil som tagits bort i *Inställningar* följer inte med i det nya paketet. Profilens id härleds ur namnet
 och kännetecknen; ett id i filen läses inte. Paket utan fältet fungerar som förut. Ett nytt
 paket ersätter det förras profiler; *Rensa all data* tar bort dem tillsammans med paketet.
@@ -148,7 +151,7 @@ paket ersätter det förras profiler; *Rensa all data* tar bort dem tillsammans 
 
 Ett komplett paket för en **påhittad** organisation, med alla tre låsningarna ifyllda. Talen är
 påhittade och ska inte användas som referens. Det är skrivet av verktygets egen funktion för att
-bygga paket och läses in utan varningar (vaktas av `tests/organisationspaket.test.js`); använd det
+bygga paket och läses in utan varningar (vaktas av `tests/organisationspaket.test.js`). Använd det
 för att se vad formuläret i avsnitt 2 ger, inte som mall att redigera för hand.
 
 ```json
@@ -256,12 +259,12 @@ Före spridning:
 - [ ] PO-påslaget och beräkningsperioden är årets.
 - [ ] Låsningarna är beslutade: golv för minsta gruppstorlek, rensningstid, små grupper i exporten
       från Tabeller och egna vyer. Beslutet och skälet är dokumenterat, till exempel i dataskyddsombudets bedömning.
-- [ ] Paketet är prövat: läs in det i en ny flik, kontrollera faktarutan (organisation, datum,
-      innehåll och låsningar) och att *Inställningar* visar golvet och *Vad lagras?* den låsta tiden.
+- [ ] Paketet är prövat: läs in det i en ny flik och kontrollera faktarutan (organisation, datum,
+      innehåll och låsningar). Kontrollera också att *Inställningar* visar golvet och *Vad lagras?* den låsta tiden.
 
 Vid spridning:
 
-- [ ] Paketet ligger bredvid verktyget på den interna filytan, med ett namn som visar året — eller
-      organisationsfilen (avsnitt 3b) är det som ligger där, så att handläggarna bara behöver en fil.
+- [ ] Paketet ligger bredvid verktyget på den interna filytan, med ett namn som visar året. Alternativt
+      ligger organisationsfilen (avsnitt 3b) där, så att handläggarna bara behöver en fil.
 - [ ] Handläggarna vet vilket paket som gäller och att det läses in varje gång verktyget öppnas.
 - [ ] Det gamla paketet är borttaget eller tydligt markerat som ersatt.

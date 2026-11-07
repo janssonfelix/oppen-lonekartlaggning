@@ -2,25 +2,25 @@
 
 **För:** IT, inköp och tillgänglighetssamordnare. Underlag till organisationens egen bedömning av verktyget;
 redogörelsen gäller verktyget som fil (`oppen-lonekartlaggning.html`), inte en webbplats. Målet är WCAG 2.1
-nivå AA. Senast bedömd för hand 2026-10-17; den automatiska prövningen (axe-core i testsviten, ADR-10) körs mot
+nivå AA. Senast bedömd för hand 2026-10-17. Den automatiska prövningen (axe-core i testsviten, ADR-10) körs mot
 varje bygge, också efter de flikar och paneler som tillkommit sedan dess.
 
 ## Hur verktyget är prövat
 
-- **Automatiskt i varje testkörning:** axe-core granskar markeringen i alla flikar med demodata (roller,
-  etiketter, namn på knappar och länkar, ARIA, tabellrelationer) och kräver noll överträdelser
-  (`tests/a11y.test.js`). Testmiljön saknar layout, så färgkontrasten prövas inte där.
+- **Automatiskt i varje testkörning:** axe-core granskar markeringen i alla flikar med demodata och kräver
+  noll överträdelser (`tests/a11y.test.js`). Den prövar roller, etiketter, namn på knappar och länkar, ARIA
+  och tabellrelationer. Testmiljön saknar layout, så färgkontrasten prövas inte där.
 - **Färgerna:** statusfärgerna har minst 4,5:1 mot sin bakgrund som text, och diagrammens statusfärger minst
-  3:1 mot vit bakgrund; varning och ok skiljer sig i ljushet, så att rött och grönt inte behöver skiljas på
+  3:1 mot vit bakgrund. Varning och ok skiljer sig i ljushet, så att rött och grönt inte behöver skiljas på
   färgtonen (`tests/farger.test.js`, ADR-43).
-- **I webbläsare 2026-10-17:** axe-core (WCAG 2.0 och 2.1, A och AA, med färgkontrast) i Chromium 1400 punkter
-  brett, med demodata, i var och en av de då 14 flikarna: **inga överträdelser**. Menyn har sedan dess delats om
-  till 16 flikar (2026-11-06); den nya indelningen är inte prövad på det sättet. Axe prövar inte kontrasten i
+- **I webbläsare 2026-10-17:** axe-core (WCAG 2.0 och 2.1, A och AA, med färgkontrast) prövade var och en av de
+  då 14 flikarna med demodata, i Chromium 1400 punkter brett. Resultatet: **inga överträdelser**. Menyn har sedan
+  dess delats om till 16 flikar (2026-11-06), och den nya indelningen är inte prövad på det sättet. Axe prövar inte kontrasten i
   diagrammens SVG-text, och det som axe markerar som "behöver granskas" är inte genomgånget för hand.
-- **Tangentbordet:** jsdom-testerna prövar pilarna och Home mellan flikarna (`tests/smoke.test.js`); röktestet
-  i Chromium, Firefox och WebKit prövar att avsnittens rubriker nås med Tab och fälls ut med Enter, menyn i
-  smalt fönster (öppnas, fokus flyttas dit, Escape stänger och lämnar tillbaka fokus) och att ingen flik är
-  bredare än fönstret vid 390 punkter.
+- **Tangentbordet:** jsdom-testerna prövar pilarna och Home mellan flikarna (`tests/smoke.test.js`). Röktestet
+  i Chromium, Firefox och WebKit prövar tre saker. Avsnittens rubriker nås med Tab och fälls ut med Enter.
+  Menyn i smalt fönster öppnas, fokus flyttas dit, och Escape stänger den och lämnar tillbaka fokus. Ingen
+  flik är bredare än fönstret vid 390 punkter.
 
 ## Det som stöds
 

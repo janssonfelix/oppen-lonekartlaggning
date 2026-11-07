@@ -1102,14 +1102,14 @@ describe('ritaren: ruta och färgskala', () => {
 describe('ritaren: referenser, paneler och y2', () => {
     it('referenslinje och zon med etikett; zonen ligger under märkena, linjen över', () => {
         const svg = rita({ beskrivning: 'b', x: { skala: 'linjar', doman: [0, 100] }, y: { skala: 'linjar' },
-            referens: [{ typ: 'linje', x: 40, streck: 'streckad' }, { typ: 'linje', y: 5 }, { typ: 'zon', x0: 60, x1: 100, farg: '#fee2e2', etikett: 'Successionszon' }],
+            referens: [{ typ: 'linje', x: 40, streck: 'streckad' }, { typ: 'linje', y: 5 }, { typ: 'zon', x0: 60, x1: 100, farg: '#fee2e2', etikett: 'Nära pension' }],
             lager: [{ marke: 'punkt', data: [{ x: 10, y: 1 }, { x: 90, y: 9 }] }] });
         const ordning = alla(svg, '[data-marke]').map(e => e.getAttribute('data-marke'));
         expect(ordning.filter(m => m === 'referenslinje')).toHaveLength(2);
         expect(ordning.indexOf('zon')).toBeLessThan(ordning.indexOf('punkt'));
         expect(ordning.lastIndexOf('referenslinje')).toBeGreaterThan(ordning.lastIndexOf('punkt'));
         expect(alla(svg, '[data-marke="referenslinje"]')[0].getAttribute('stroke-dasharray')).toBe('6 4');
-        expect(alla(svg, 'text').map(t => t.textContent)).toContain('Successionszon');
+        expect(alla(svg, 'text').map(t => t.textContent)).toContain('Nära pension');
         const zon = alla(svg, '[data-marke="zon"]')[0];
         expect(tal(zon, 'width')).toBeGreaterThan(0);
         expect(zon.getAttribute('fill')).toBe('#fee2e2');
@@ -1426,9 +1426,9 @@ describe('Uppgift 5: referenser', () => {
     // Etikettens utsträckning i x, i panelens koordinater (etiketten ligger i panelens oklippta textgrupp).
     const xled = e => { const br = texten(e).length * tal(e, 'font-size') * NF, a = e.getAttribute('text-anchor'); const x0 = a === 'middle' ? tal(e, 'x') - br / 2 : a === 'end' ? tal(e, 'x') - br : tal(e, 'x'); return [x0, x0 + br]; };
     it('V1: zonens etikett ligger i den oklippta textgruppen, över märken och linjer, med vit kant — och inom sin zons bredd', () => {
-        const svg = rita(xy([{ typ: 'zon', x0: 60, x1: 100, farg: '#fee2e2', etikett: 'Successionszon' }, { typ: 'zon', x0: 0, x1: 30, etikett: 'Nya' }, { typ: 'linje', x: 80 }], { x: { skala: 'linjar', doman: [0, 100], nollinje: true } }));
+        const svg = rita(xy([{ typ: 'zon', x0: 60, x1: 100, farg: '#fee2e2', etikett: 'Nära pension' }, { typ: 'zon', x0: 0, x1: 30, etikett: 'Nya' }, { typ: 'linje', x: 80 }], { x: { skala: 'linjar', doman: [0, 100], nollinje: true } }));
         const t = zontexter(svg), zoner = alla(svg, '[data-marke="zon"]');
-        expect(t.map(texten)).toEqual(['Successionszon', 'Nya']);
+        expect(t.map(texten)).toEqual(['Nära pension', 'Nya']);
         const panel = svg.querySelector('svg[data-del="panel"]');
         for (const [i, e] of t.entries()) {
             expect(e.closest('svg[data-del="panel"]')).toBeNull();                                           // inte klippt
@@ -1459,7 +1459,7 @@ describe('Uppgift 5: referenser', () => {
         expect(alla(svg, '[data-marke="zon"]')).toHaveLength(3);   // zonen ritas även när etiketten utelämnas
     });
     it('V1: en zonetikett läggs inte över en stapeletikett eller en annan zonetikett; vågrät zon har etiketten i sitt övre vänstra hörn', () => {
-        const f = staplar({ y: { skala: 'linjar', titel: 'Antal' }, referens: [{ typ: 'zon', y0: 80, farg: '#fee2e2', etikett: 'Successionszon (60+)' }, { typ: 'zon', y0: 90, etikett: 'Överst' }],
+        const f = staplar({ y: { skala: 'linjar', titel: 'Antal' }, referens: [{ typ: 'zon', y0: 80, farg: '#fee2e2', etikett: 'Nära pension (60+)' }, { typ: 'zon', y0: 90, etikett: 'Överst' }],
             lager: [{ marke: 'stapel', serie: 'Antal', data: ['a', 'b', 'c'].map((x, i) => ({ x, y: [108, 60, 107][i], etikett: `${[108, 60, 107][i]} st` })) }] });
         for (const b of [600, 340]) {
             const svg = rita(f, b);
@@ -1542,7 +1542,7 @@ describe('Uppgift 5: text innanför bilden för de nya märkena', () => {
             fargskala: { typ: 'sekventiell', doman: [0, 250000], titel: 'Kostnad', format: 'kr' },
             lager: [{ marke: 'punkt', serie: 'P', data: [{ x: 'A', y: 30000, fargvarde: 1000 }, { x: 'B', y: 41000, fargvarde: 240000 }] }, { marke: 'linje', axel: 'y2', serie: 'N', data: [{ x: 'A', y: 5 }, { x: 'B', y: 1500 }] }] }],
         ['zoner och referenslinjer', { beskrivning: 'b', x: { skala: 'linjar', titel: 'Ålder', doman: [18, 70] }, y: { skala: 'linjar', titel: 'Lön', format: 'kr' },
-            referens: [{ typ: 'zon', x0: 60, x1: 70, farg: '#fee2e2', etikett: 'Successionszon' }, { typ: 'zon', x0: 18, x1: 25, etikett: 'Nya i yrket' }, { typ: 'linje', x: 40, streck: 'streckad' }, { typ: 'linje', y: 35000, streck: 'prickad' }],
+            referens: [{ typ: 'zon', x0: 60, x1: 70, farg: '#fee2e2', etikett: 'Nära pension' }, { typ: 'zon', x0: 18, x1: 25, etikett: 'Nya i yrket' }, { typ: 'linje', x: 40, streck: 'streckad' }, { typ: 'linje', y: 35000, streck: 'prickad' }],
             lager: [{ marke: 'punkt', serie: 'Anställda', data: Array.from({ length: 40 }, (_, i) => ({ x: 19 + (i * 37) % 50, y: 26000 + ((i * 7919) % 20000) })) }] }],
     ];
     for (const [namn, f] of figurer) {

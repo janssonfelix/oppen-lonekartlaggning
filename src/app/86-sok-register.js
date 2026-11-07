@@ -42,7 +42,7 @@ const SOK_FUNKTIONER = [
     { namn: 'Växer skillnaden med åldern?', synonymer: ['gapet', 'karriär', 'lönekurva', 'yrkesliv', 'livscykel'], flik: 'kon', avsnitt: 'avsnitt-ak-karriar' },
     { namn: 'Lönespridning över ålder', synonymer: ['percentilband', 'femårsgrupp', 'median'], flik: 'kon', avsnitt: 'avsnitt-ak-lon' },
     { namn: 'Lönefördelning för kvinnor och män', synonymer: ['låddiagram', 'histogram', 'spridning'], flik: 'kon', avsnitt: 'avsnitt-ak-fordelning' },
-    { namn: 'Åldersstruktur', synonymer: ['återväxt', 'pension', 'pensionsavgångar', 'demografi'], flik: 'kon', avsnitt: 'avsnitt-ak-struktur' },
+    { namn: 'Åldersstruktur', synonymer: ['återväxt', 'pension', 'nära pension', 'pensionsavgångar', 'successionszon', 'demografi'], flik: 'kon', avsnitt: 'avsnitt-ak-struktur' },
     { namn: 'Jämför alla BAS-intervall', synonymer: ['lön mot ålder', 'sida vid sida'], flik: 'kon', avsnitt: 'avsnitt-ak-alla' },
     { namn: 'Så räknas det', synonymer: ['metod', 'beräkning', 'urval', 'ålder'], flik: 'kon', avsnitt: 'avsnitt-ak-metod' },
     // Likvärdigt arbete

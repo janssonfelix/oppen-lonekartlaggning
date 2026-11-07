@@ -1,8 +1,8 @@
 # Datauttag: från lönesystem till giltig fil
 
 En praktisk guide för att få ut rätt lönefil ur lönesystemet och läsa in den i
-Öppen lönekartläggning. Verktyget är byggt för att vara **förlåtande** vid inläsning —
-teckenkodning, avgränsare och talformat hanteras automatiskt — men filen måste
+Öppen lönekartläggning. Verktyget är byggt för att vara **förlåtande** vid inläsning:
+teckenkodning, avgränsare och talformat hanteras automatiskt. Men filen måste
 innehålla rätt **fält** och får **aldrig** innehålla identifierande personuppgifter.
 
 > Stegen per lönesystem (avsnitt 4) är **inte verifierade mot systemen**; organisationens
@@ -33,7 +33,7 @@ Exportera en personallista (en rad per anställd) med dessa kolumner:
 
 - Verktyget **auto-matchar** vanliga kolumnnamn (versaler/gemener och å/ä/ö spelar ingen
   roll). Känns en kolumn inte igen finns en **kolumnmappnings-guide** i verktyget där du
-  pekar ut rätt kolumn manuellt — och mappningen kan sparas som en **importprofil**, så att
+  pekar ut rätt kolumn manuellt. Mappningen kan sparas som en **importprofil**, så att
   samma uttag känns igen nästa gång (avsnitt 2b).
 - **Ålder vs födelseår:** namnge kolumnen så den innehåller "ålder"/"alder". Om cellerna
   innehåller **födelseår** (ett tal 1900–[innevarande år − 15], t.ex. `1985`) räknar
@@ -91,8 +91,8 @@ slipper du göra om den nästa år:
    personallista (konfigurationsfilen)*. Pekar du sedan ut en annan kolumn än profilens för
    hand står det *Känd uppsättning, ändrad: …*.
 
-En importprofil bär **bara rubrikernas namn** — vilken rubrik som är BAS-intervall, yrke,
-lön och så vidare, och vilka rubriker som måste finnas för att profilen ska gälla. Inga värden
+En importprofil innehåller **bara rubrikernas namn**: vilken rubrik som är BAS-intervall, yrke,
+lön och så vidare. Den anger också vilka rubriker som måste finnas för att profilen ska gälla. Inga värden
 ur filen följer med. Verktyget avvisar en profil med en rubrik längre än 80 tecken eller med
 något som liknar ett personnummer eller en e-postadress.
 
@@ -101,33 +101,32 @@ rensningen vid inaktivitet tar bort den. En konfigurationsfil utan profiler tar 
 profiler du redan har sparat i sessionen.
 
 - **Dela inom organisationen:** är ett organisationspaket inläst finns också knappen **Lägg till
-  i organisationspaketet**. Den laddar ner ett nytt paket — det inlästa paketets egna delar
-  och profilen, inget ur sessionen — och sprid det i stället för
-  det gamla, så känns uttaget igen hos alla handläggare (se `organisationspaket.md`).
-- **Ordningen:** organisationspaketets profiler prövas först, sedan konfigurationsfilens, sedan
-  verktygets inbyggda (CSV-mallen, testdatans fil och verktygets grundfält, fältnamnen `bas`, `yrke`,
-  `lon`, `alder` och `kon`), och sist de vanliga
-  kolumnnamnen i avsnitt 1. Den första profil vars rubriker alla finns i filen gäller; roller
-  den inte täcker känns igen som vanligt.
+  i organisationspaketet**. Den laddar ner ett nytt paket med det inlästa paketets egna delar
+  och profilen, inget ur sessionen. Sprid det i stället för det gamla, så känns uttaget igen
+  hos alla handläggare (se `organisationspaket.md`).
+- **Ordningen:** organisationspaketets profiler prövas först, sedan konfigurationsfilens. Därefter
+  prövas verktygets inbyggda: CSV-mallen, testdatans fil och verktygets grundfält (fältnamnen `bas`,
+  `yrke`, `lon`, `alder` och `kon`). Sist prövas de vanliga kolumnnamnen i avsnitt 1. Den första
+  profil vars rubriker alla finns i filen gäller. Roller som den inte täcker känns igen som vanligt.
 - **Se, ta bort och exportera:** *Inställningar › Importprofiler* listar profilerna med namn,
   källa och rubriker per fält. *Exportera JSON* ger profilen som en fil att dela eller bidra med
   (se `CONTRIBUTING.md`).
-- Verktyget har **inga inbyggda profiler för namngivna lönesystem**: stegen per system nedan är
+- Verktyget har **inga inbyggda profiler för namngivna lönesystem**. Stegen per system nedan är
   inte verifierade, och en profil som inte prövats mot ett riktigt uttag skulle ge fel kolumner.
   Profiler för lönesystemen kommer från organisationer som använt verktyget.
 
 ## 3. Ta ALDRIG med (uppgiftsminimering enligt dataskyddsförordningen)
 
 Ta **inte** med personnummer, namn eller e-post i uttaget. Verktyget läser bara in de
-vitlistade fälten ovan, och det **avvisar hela filen** om det upptäcker en identifierande
-kolumn — antingen på rubriken (t.ex. `Personnummer`, `PNR`, `Namn`, `Efternamn`,
-`E-post`) eller på innehållet (i filens första 50 rader: minst tre celler i personnummer-
-eller e-postformat, eller minst fem som ser ut som för- och efternamn).
+fält som står ovan. Det **avvisar hela filen** om det upptäcker en identifierande kolumn,
+antingen på rubriken (t.ex. `Personnummer`, `PNR`, `Namn`, `Efternamn`, `E-post`) eller på
+innehållet. Innehållet prövas i filens första 50 rader: minst tre celler i personnummer-
+eller e-postformat, eller minst fem som ser ut som för- och efternamn.
 Detsamma gäller kolumner vars rubrik antyder en särskild kategori av personuppgifter
 (`Fackmedlemskap`, `Hälsa`, `Sjukfrånvaro`, `Diagnos`, `Etnicitet` och liknande); där prövas bara rubriken.
 Ta bort sådana kolumner redan i uttaget ur lönesystemet.
 
-> Detta är ett medvetet dataminimeringsskydd (Privacy by Design). Se
+> Det är ett medvetet skydd: verktyget tar bara in de uppgifter det behöver (inbyggt dataskydd). Se
 > `riskanalys.md` för hela dataskyddsmodellen.
 
 ## 4. Per system — så här tar du fram de fem fälten
@@ -174,8 +173,8 @@ anställningar: ta med huvudanställningen, så att varje person står på en ra
 - Har du sparat en importprofil känns uttaget igen automatiskt (avsnitt 2b).
 
 ### Visma
-- Uttag: en personallista ur löne- eller HR-delen med fälten ovan; i en mindre organisation
-  kan statistikuttaget saknas, och då behövs heltidslönen räknas fram (tabellen ovan).
+- Uttag: en personallista ur löne- eller HR-delen med fälten ovan. I en mindre organisation
+  kan statistikuttaget saknas, och då behöver heltidslönen räknas fram (tabellen ovan).
   **[fylls i lokalt: produkt, rapportens namn och var den finns]**
 - Export: välj `.xlsx` eller `.csv`. **[fylls i lokalt: exportvalet]**
 - Har du sparat en importprofil känns uttaget igen automatiskt (avsnitt 2b).
@@ -194,9 +193,10 @@ Har du sparat en importprofil känns uttaget igen automatiskt (avsnitt 2b).
 - [ ] BAS-intervall finns på alla rader som ska analyseras.
 - [ ] Filen sparas på en behörighetsstyrd yta, inte i Hämtade filer.
 - [ ] Efter inläsningen: läs **Förhandskontroll av lönefilen** överst i Filer och kvalitet. Den visar hur de tio
-      första raderna tolkades och varnar när lönen ser ut som årslön eller timlön, när åldern ligger utanför 16–75
-      år eller tolkats ur födelseår och när BAS eller kön har värden som verktyget inte känner igen. Vill du se
-      tolkningen innan filen används, kryssa i *Stoppa och visa förhandskontrollen innan inläsning* i Inställningar.
+      första raderna tolkades. Den varnar när lönen ser ut som årslön eller timlön och när åldern ligger utanför
+      16–75 år eller tolkats ur födelseår. Den varnar också när BAS eller kön har värden som verktyget inte känner
+      igen. Vill du se tolkningen innan filen används, kryssa i *Stoppa och visa förhandskontrollen innan
+      inläsning* i Inställningar.
 
 ## 5. Vanliga fel & verktygets besked
 
@@ -209,7 +209,7 @@ Har du sparat en importprofil känns uttaget igen automatiskt (avsnitt 2b).
 | Många rader uteslutna | Saknad BAS, lön = 0, eller tomt/okänt värde i könskolumnen | Läs inläsningsrapporten under Underlagets kvalitet i Filer och kvalitet — den visar hur många rader som föll bort och varför; rätta i källfilen och läs om |
 
 Inläsningsrapporten visar alltid vilken **teckenkodning** och **avgränsare** som
-upptäcktes samt om försättsrader hoppades över — använd den för att bekräfta att filen
+upptäcktes, och om försättsrader hoppades över. Använd den för att bekräfta att filen
 lästes som du förväntade dig.
 
 ## 6. CSV-mallen

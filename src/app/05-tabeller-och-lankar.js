@@ -41,7 +41,7 @@ function renderAuditHtml(a) {
 
     return `
         <div class="audit-section">
-            <div class="audit-section-header">Urval (datafunnel)</div>
+            <div class="audit-section-header">Urval</div>
             <table class="audit-table">
                 <tr><td>Total i datafilen:</td><td class="tabelltal fw-600 ta-hoger">${fmt(a.totalRaw)}</td></tr>
                 ${exclRows}
