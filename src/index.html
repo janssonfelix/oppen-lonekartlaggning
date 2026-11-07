@@ -680,7 +680,7 @@
                             <p id="skevhet-lador-not" class="k-mask-note" hidden></p>
                         </div>
                         <!-- Exportkopian: samma kvot som tabellen ovan, som bild och som enkel tabell. Visas inte på skärmen (tabellen
-                             ovan säger samma sak), men rapporten, ZIP-filen, Excel-bladet Lonegap och PDF-bilagan läser härifrån.
+                             ovan säger samma sak), men rapporten, ZIP-filen, Excel-bladet Loneskillnad och PDF-bilagan läser härifrån.
                              Innehållet är inte indraget: PDF-bilagan kopierar tabellens HTML med blanktecknen. -->
                         <div id="la-bas-exportkopia" hidden>
                         <div class="diagramkort">
@@ -2002,7 +2002,7 @@
                     <div id="dk-slutsatser" class="slutsatser"></div>
                     <div class="card mb-16" id="dk-checklista">
                         <h2 class="fs-1_25rem marg-0-0-6">Färdigcheck — har något missats innan du exporterar?</h2>
-                        <p class="avsnitt-inledning">Två kontroller innan underlaget lämnas vidare: <strong>finns lösa trådar</strong> kvar, och <strong>håller slutsatserna</strong> om förutsättningarna ändras? Den första står här. Den andra kör du under Robusthet längre ned.</p>
+                        <p class="avsnitt-inledning">Två kontroller innan du lämnar underlaget vidare: <strong>finns lösa trådar</strong> kvar, och <strong>håller slutsatserna</strong> om förutsättningarna ändras? Den första står här. Den andra kör du under Robusthet längre ned.</p>
                         <div id="fardigcheck-body"></div>
                     </div>
                 </div>
@@ -2018,7 +2018,7 @@
                     <div id="export-hub" class="card dold">
                         <div class="card-header"><h2>Exportera — vilket underlag behöver du?</h2></div>
                         <p class="text-dampad-sm lh-1_5 marg-0-0-14">
-                            Alla utdata samlade på ett ställe. Varje export innehåller en metod-bilaga (modell, trösklar, version) så resultaten går att återskapa. Den slutliga lönekartläggningsrapporten skriver ni själva i Word — verktyget levererar underlagen.
+                            Alla utdata samlade på ett ställe. Varje export innehåller en metodbilaga (modell, gränser, version), så att resultaten går att återskapa. Dokumentationen skriver du i Word-utkastet; verktyget tar fram underlagen.
                         </p>
                         <details class="avsnitt" id="avsnitt-ex-urval">
                         <summary><span class="avsnitt-titel"><h2>Rapportens innehåll</h2><span class="avsnitt-under">Välj vilka avsnitt som följer med i Word-utkastet och PDF-rapporten, och i vilken ordning</span></span><span class="avsnitt-nyckel" id="nyckel-ex-urval"></span></summary>
@@ -2026,7 +2026,7 @@
                         </details>
                         <div class="export-lista">
                             <div class="export-hub-row export-rad-primar">
-                                <div><strong>Word-utkast (dokumentation)</strong><span>Hela dokumentationen som en <em>redigerbar</em> .docx-fil: verktygets fynd är ifyllda och era kvalitativa bedömningar markeras som gula <code>[HR fyller i …]</code>-fält — öppna i Word, komplettera och spara som .docx. Diagrammen följer med som bilder.</span><p class="export-besked" id="besked-word" aria-live="polite"></p></div>
+                                <div><strong>Word-utkast (dokumentation)</strong><span>Hela dokumentationen som en <em>redigerbar</em> .docx-fil: verktygets fynd är ifyllda och dina bedömningar står som gula fält <code>[HR fyller i …]</code>. Öppna filen i Word, fyll i och spara. Diagrammen följer med som bilder.</span><p class="export-besked" id="besked-word" aria-live="polite"></p></div>
                                 <button id="btn-export-docdraft" class="btn btn-primary" aria-label="Ladda ner redigerbart Word-utkast av lönekartläggningens dokumentation">Word-utkast (dokumentation)</button>
                             </div>
                             <div class="export-hub-row">
@@ -2047,7 +2047,7 @@
                                 <button id="btn-export-zip" class="btn btn-secondary" aria-label="Exportera grafer och rapport som ZIP-fil">Exportera ZIP</button>
                             </div>
                             <div class="export-hub-row">
-                                <div><strong>Protokoll för gemensam lönebedömning</strong><span>Underlag för gemensam lönebedömning enligt lönetransparensdirektivet — 7 Excel-ark för granskning med facklig part.</span></div>
+                                <div><strong>Protokoll för gemensam lönebedömning</strong><span>Underlag för gemensam lönebedömning enligt lönetransparensdirektivet: sju Excelblad att granska med facket.</span></div>
                                 <button id="btn-hub-jpa" class="btn btn-secondary btn-sm" type="button"><svg class="ikon ikon-laddaNed" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 4v11"/><path d="m7 11 5 5 5-5"/><path d="M5 20h14"/></svg> Excel</button>
                             </div>
                             <div class="export-hub-row">
@@ -2055,7 +2055,7 @@
                                 <button id="btn-hub-handlingsplan" class="btn btn-secondary btn-sm" type="button"><svg class="ikon ikon-laddaNed" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 4v11"/><path d="m7 11 5 5 5-5"/><path d="M5 20h14"/></svg> Excel</button>
                             </div>
                         </div>
-                        <p class="export-fler">Fler underlag finns i flikarna: <a href="#" data-go-to-tab="likvardighet">Likvärdigt arbete</a> (kandidatparen), <a href="#" data-go-to-tab="struktur">Lönestruktur</a> (EU-rapportmåtten), <a href="#" data-go-to-tab="prioritering">Prioritering</a> (åtgärdslistan), <a href="#" data-go-to-tab="loneoversyn">Löneöversyn</a> (prognosen).</p>
+                        <p class="export-fler">Fler underlag finns i flikarna: <a href="#" data-go-to-tab="likvardighet">Likvärdigt arbete</a> (kandidatparen), <a href="#" data-go-to-tab="struktur">Lönestruktur</a> (direktivets mått), <a href="#" data-go-to-tab="prioritering">Prioritering</a> (åtgärdslistan), <a href="#" data-go-to-tab="loneoversyn">Löneöversyn</a> (prognosen).</p>
                     </div>
                 </div>
 

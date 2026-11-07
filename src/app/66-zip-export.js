@@ -26,7 +26,7 @@ function _zipDiagramExport() {
 function exportZip(...a) { return medExportLage(() => _exportZipExport.apply(null, /** @type {any} */ (a))); }
 async function _exportZipExport() {
     if (typeof JSZip === 'undefined') { alert('Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.'); return false; }
-    if (!getData().length) { alert('Ladda upp data först.'); return false; }
+    if (!getData().length) { alert('Läs in lönefilen först.'); return false; }
     const zip = new JSZip();
     if (typeof showLoading === 'function') showLoading();
     try {

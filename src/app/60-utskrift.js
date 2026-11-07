@@ -38,7 +38,7 @@ function bibliotekCssForUtskrift() {
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
 function buildPrintReport(...a) { return medExportLage(() => _buildPrintReportExport.apply(null, /** @type {any} */ (a))); }
 async function _buildPrintReportExport() {
-    if (!getData().length) { alert('Ladda upp data först.'); return; }
+    if (!getData().length) { alert('Läs in lönefilen först.'); return; }
     showLoading();
     try {
         // Rapporten är rapportmodellen med gällande urval — samma innehåll som Word-utkastet (58-rapportmodell.js).

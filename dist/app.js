@@ -15895,7 +15895,7 @@ function _snapshotLutning(snap, cur) {
 
 document.getElementById('btn-snapshot-save')?.addEventListener('click', () => {
     const snap = buildAnalysisSnapshot();
-    if (!snap) { alert('Ladda upp data först.'); return; }
+    if (!snap) { alert('Läs in lönefilen först.'); return; }
     // I: möjlighet att namnge scenariot
     const name = (prompt('Namn på scenariot (lämna tomt för standardnamn):', snap.label) || snap.label).slice(0, 80);
     snap.label = name;
@@ -16357,7 +16357,7 @@ function _methodAppendixData() {
             + (kInstalld() < K_STANDARD ? ` Tröskeln är sänkt från standardvärdet ${K_STANDARD}.` : '')],
         ['Referens för lönenivåer', referensNamn() + referensKalla()],
         ['Jämförelsestatistik', statistikBeskrivning()],
-        ['Krav-proxy (likvärdigt arbete)', state.arbetsvardering ? 'Arbetsvärderingspoäng (ur strukturdatans Poäng-kolumn)' : 'BAS-intervall (ordinal rangordning)'],
+        ['Mått på kraven (likvärdigt arbete)', state.arbetsvardering ? 'Arbetsvärderingspoäng (ur lönefilens Poäng-kolumn)' : 'BAS-intervall (rangordning)'],
         ['Löneskillnadens tecken', 'Verktyget räknar skillnaden som (kvinnor − män) / män och visar den som kvinnors lön i procent av mäns (under 100 = kvinnor lägre). EU-lönerapporten och rapportens avsnitt om lönetransparens redovisar i stället direktivets lönegap, (män − kvinnor) / män i procent, enligt art. 9: positivt tal = kvinnor lägre. Beloppet är detsamma.'],
         ['Tolkningsregel', 'En oförklarad skillnad är en statistisk signal om var man bör titta närmare, inte ett bevis för en osaklig (diskriminerande) löneskillnad. Den bedömningen görs kvalitativt av arbetsgivaren.'],
         ['Rättslig ram', 'Diskrimineringslagen 3 kap. (lönekartläggning); direktiv (EU) 2023/970 om lönetransparens. De enskilda lagrummen står i docs/utveckling/lagrum.md.']
@@ -16988,7 +16988,7 @@ function _excelAlltBladExport() {
     // inte regressionen för att veta det.
     if (!state.data.length) return [];
     const harRef = state.policy.length > 0 || state.statistik.length > 0;
-    return ['Löneöversikt', 'Per BAS', ...((state.rapportTabeller || []).length ? ['Egna tabeller'] : []), 'EU-Lonekartlaggning', ...(harRef ? ['Prioritering'] : []), 'Lonegap', 'Konsskevhet', ..._excelDiagramBlad().map(b => b[0]), ...AIDBAS_BLADNAMN, 'Sektorer',
+    return ['Löneöversikt', 'Per BAS', ...((state.rapportTabeller || []).length ? ['Egna tabeller'] : []), 'EU-Lonekartlaggning', ...(harRef ? ['Prioritering'] : []), 'Loneskillnad', 'Konsskevhet', ..._excelDiagramBlad().map(b => b[0]), ...AIDBAS_BLADNAMN, 'Sektorer',
         ...(state.statistik.length ? ['Jamforelsestatistik'] : []), ...(getData().length ? ['Underlagets kvalitet'] : []), 'Metodik', 'Metod & parametrar'];
 }
 
@@ -17068,8 +17068,8 @@ function _excelDiagramBlad() {
         ...tratt.punkter.map(p => [p.yrke, p.bas, p.nKv, p.nMa, r1(p.kvot), r1(p.gransLag), r1(p.gransHog), p.utanfor ? 'Utanför gränserna' : 'Inom gränserna'])]]);
     const arKv = r => typeof r.kon === 'string' && r.kon.includes('kvinna'), arMa = r => r.kon === 'man' || r.kon === 'män';
     const alder = _konAlderGapRader(d.filter(arKv), d.filter(arMa), k);
-    if (alder.visade.length) ut.push(['Lonegap per alder', [
-        ['Lönegap per åldersgrupp (Ålder & karriär)'],
+    if (alder.visade.length) ut.push(['Loneskillnad per alder', [
+        ['Löneskillnad per åldersgrupp (Ålder & karriär)'],
         ...(alder.dolda.length ? [[`Visas inte, ett kön har färre än ${k} personer: ${alder.dolda.join(', ')}.`]] : []), [],
         ['Åldersgrupp', 'Antal kvinnor', 'Antal män', 'Median kvinnor (kr)', 'Median män (kr)', 'Kvinnors median i % av mäns', 'Konfidensintervall 95 %, nedre', 'Konfidensintervall 95 %, övre'],
         ...alder.visade.map(a => [a.namn, a.nKv, a.nMa, Math.round(a.medKv), Math.round(a.medMa), r1(a.gap), a.ci ? r1(a.ci.lo) : '', a.ci ? r1(a.ci.hi) : ''])]]);
@@ -17090,7 +17090,7 @@ function _excelLonepolitikMetod(blad) {
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
 function exportAllToExcel(...a) { return medExportLage(() => _exportAllToExcelExport.apply(null, /** @type {any} */ (a))); }
 function _exportAllToExcelExport() {
-    if (!state.data.length) { alert('Ladda upp data först.'); return; }
+    if (!state.data.length) { alert('Läs in lönefilen först.'); return; }
     if (typeof XLSX === 'undefined') { alert('Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.'); return; }
     const wb = _excelAlltBok();
     XLSX.writeFile(wb, `lonekartlaggning_komplett_${new Date().toISOString().slice(0,10)}.xlsx`);
@@ -17142,7 +17142,7 @@ function __excelAlltBokExport() {
 
     // Sheet: Lönegap & Könsfördelning
     const paygapSheet = tableToSheet('paygap-table');
-    if (paygapSheet) XLSX.utils.book_append_sheet(wb, paygapSheet, 'Lonegap');
+    if (paygapSheet) XLSX.utils.book_append_sheet(wb, paygapSheet, 'Loneskillnad');
     const skevhetSheet = tableToSheet('skevhet-table');
     if (skevhetSheet) XLSX.utils.book_append_sheet(wb, skevhetSheet, 'Konsskevhet');
     const diagramBlad = _excelDiagramBlad();
@@ -17211,7 +17211,7 @@ function __excelAlltBokExport() {
     // Två blad som liknar varandra: Per BAS är lönestrukturen som i en skriven lönekartläggning, Lonegap är Lika arbetes
     // kvot per intervall. Båda behålls; raden säger vad som skiljer dem.
     _appendMethodSheet(wb, { extra: [
-        ['Bladen Per BAS och Lonegap', 'Per BAS är lönestrukturen per BAS-intervall som i en skriven lönekartläggning: referensen, organisationen och varje yrkesgrupp med P10, median, P90 och antal, per kön. Lonegap är tabellen ur Lönestruktur: kvinnors medianlön i procent av mäns per BAS-intervall, med antal och medianer. Samma underlag, två frågor.'],
+        ['Bladen Per BAS och Loneskillnad', 'Per BAS är lönestrukturen per BAS-intervall som i en skriven lönekartläggning: referensen, organisationen och varje yrkesgrupp med P10, median, P90 och antal, per kön. Loneskillnad är tabellen ur Lönestruktur: kvinnors medianlön i procent av mäns per BAS-intervall, med antal och medianer. Samma underlag, två frågor.'],
         ..._excelLonepolitikMetod(diagramBlad), ..._aidbasMetodRader()] });
     return wb;
 }
@@ -17224,8 +17224,8 @@ function __excelAlltBokExport() {
  */
 function _jpaExkluderadeTexter() {
     return {
-        yrken: `  Exkluderade p.g.a. k-anonymitet (n<${kTroskel()} per kön)`,
-        bas: `  Exkluderade p.g.a. k-anonymitet (n<${statGolv()} per kön)`
+        yrken: `  Utelämnade: färre än ${kTroskel()} av ett kön (k-anonymitet)`,
+        bas: `  Utelämnade: färre än ${statGolv()} av ett kön (k-anonymitet)`
     };
 }
 /**
@@ -17243,7 +17243,7 @@ function _jpaExkluderadeTexter() {
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
 function exportJPAProtocol(...a) { return medExportLage(() => _exportJPAProtocolExport.apply(null, /** @type {any} */ (a))); }
 function _exportJPAProtocolExport() {
-    if (!state.data.length) { alert('Ladda upp data först.'); return; }
+    if (!state.data.length) { alert('Läs in lönefilen först.'); return; }
     if (typeof XLSX === 'undefined') { alert('Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.'); return; }
 
     const d = getData();
@@ -17328,7 +17328,7 @@ function _exportJPAProtocolExport() {
         ['— OMFATTNING —', ''],
         ['Totalt antal personer i underlaget', d.length],
         ['Antal yrkesgrupper där kvinnors och mäns median skiljer sig mer än 5 % (lika arbete)', jpaYrken.length],
-        ['Antal BAS-intervall med >5% oförklarat gap (likvärdigt arbete)', jpaBas.length],
+        ['Antal BAS-intervall med en oförklarad skillnad över 5 %', jpaBas.length],
         [`Antal ${lvRedovisning.not ? 'redovisade ' : ''}kandidatpar i likvärdigt arbete (kvinnodominerat yrke mot icke-kvinnodominerat yrke med lika eller lägre krav)`, lvPairsCount],
         ...(lvRedovisning.not ? [['  Utelämnade kandidatpar', lvRedovisning.not]] : []),
         ['', ''],
@@ -17353,7 +17353,7 @@ function _exportJPAProtocolExport() {
         ['Tidplan för åtgärder', ''],
         ['Nästa uppföljning (datum)', ''],
         ['', ''],
-        ['Detta protokoll ska bifogas arbetsgivarens lönekartläggning för året.', ''],
+        ['Bifoga protokollet till årets dokumentation av lönekartläggningen.', ''],
         ['Originalexemplar förvaras i låst arkiv enligt arbetsgivarens dokumenthanteringsplan.', '']
     ];
     const coverSheet = XLSX.utils.aoa_to_sheet(coverRows);
@@ -17379,7 +17379,7 @@ function _exportJPAProtocolExport() {
     ];
     const yrkenRows = [yrkenHeaderRow];
     if (jpaYrken.length === 0) {
-        yrkenRows.push(['—', 'Inga yrkesgrupper där kvinnors och mäns median skiljer sig mer än 5 %, efter k-anonymitet', '', '', '', '', '', '', '', '', '', '', '', '', '']);
+        yrkenRows.push(['—', 'Inga yrkesgrupper där kvinnors och mäns median skiljer sig mer än 5 %, bland grupperna som når minsta gruppstorlek', '', '', '', '', '', '', '', '', '', '', '', '', '']);
     } else {
         jpaYrken.forEach((j, idx) => {
             yrkenRows.push([
@@ -17402,7 +17402,7 @@ function _exportJPAProtocolExport() {
     // === Sheet 3: BAS-intervall med >5% oförklarat gap (likvärdigt arbete) ===
     const basHeaderRow = [
         'Nr', 'BAS-intervall', 'N totalt', 'N kvinnor', 'N män',
-        'Oförklarat gap (%)', '95% KI lägre', '95% KI övre',
+        'Oförklarad skillnad (%)', '95 % KI lägre', '95 % KI övre',
         'p-värde', 'R² för modellen', 'Statistiskt säkerställd',
         // Protokoll-fält
         'Sakliga skäl — arbetsgivarens analys',
@@ -17414,7 +17414,7 @@ function _exportJPAProtocolExport() {
     ];
     const basRows = [basHeaderRow];
     if (jpaBas.length === 0) {
-        basRows.push(['—', 'Inga BAS-intervall med oförklarat gap >5% efter k-anonymitet', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '']);
+        basRows.push(['—', 'Inga BAS-intervall med en oförklarad skillnad över 5 %, bland intervallen som når minsta gruppstorlek', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '']);
     } else {
         jpaBas.forEach((b, idx) => {
             basRows.push([
@@ -17443,7 +17443,7 @@ function _exportJPAProtocolExport() {
     // är från samma compute.
     if (lvResult && lvResult.pairs.length && !lvRedovisning.par.length) {
         // Alla par har en grupp under tröskeln: arket anger det i stället för att tiga eller påstå att par saknas.
-        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([[lvRedovisning.not]]), '3b. § 3-10 Likvärdighet');
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([[lvRedovisning.not]]), '3b. Likvärdigt arbete (krav)');
     }
     if (lvRedovisning.par.length) {
         // Inom-organisationen-jämförelse primär, jämförelsestatistiken
@@ -17455,7 +17455,7 @@ function _exportJPAProtocolExport() {
             'Nr',
             'Org. AID', 'Org. Yrke', 'BAS', 'Org. n', 'Org. % kvinnor', 'Median Org. (kr)',
             'Jämf. AID', 'Jämf. Yrke', 'Jämf. % kvinnor', 'Jämf. n', 'Jämförelsekälla', 'Median Jämf. (kr)',
-            'Gap (kr)', 'Gap (%)', '95 % KI lägre (kr)', '95 % KI övre (kr)', 'Säkerhet', 'Summa för gruppen (kr/mån)',
+            'Skillnad (kr)', 'Skillnad (%)', '95 % KI lägre (kr)', '95 % KI övre (kr)', 'Säkerhet', 'Summa för gruppen (kr/mån)',
             'Sakliga skäl — arbetsgivarens analys',
             'Fackliga partens kommentar',
             'Status efter samråd',
@@ -17487,7 +17487,7 @@ function _exportJPAProtocolExport() {
         _applyColumnNumFormats(lvSheet, SV_NUM_FORMATS);
         // OBS: kolon är förbjudet i Excel-arknamn (SheetJS kastar) — därav "3-10".
         // Demodata saknar § 3:10-par, så arket prövas bara med riktiga par.
-        XLSX.utils.book_append_sheet(wb, lvSheet, '3b. § 3-10 Likvärdighet');
+        XLSX.utils.book_append_sheet(wb, lvSheet, '3b. Likvärdigt arbete (krav)');
     }
 
     // === Sheet 4: Exkluderade grupper (transparens om k-anonymitet) ===
@@ -17498,14 +17498,14 @@ function _exportJPAProtocolExport() {
         ['', ''],
         ['Lika arbete (yrkesgrupper):', ''],
         [_jpaExkluderadeTexter().yrken, yrkenExkluderadeMaskerade],
-        ['  Under 5%-tröskeln (rågap ≥ 5%)', yrkenExkluderadeOjamn],
+        ['  Under gränsen 5 % (rå skillnad)', yrkenExkluderadeOjamn],
         ['', ''],
         ['Likvärdigt arbete (BAS-intervall):', ''],
         [_jpaExkluderadeTexter().bas, basExkluderadeMaskerade],
-        ['  Exkluderade p.g.a. singulär regression (multikollinearitet)', basExkluderadeSingular],
-        ['  Under 5%-tröskeln (oförklarat gap ≥ 5%)', basExkluderadeUnderTröskel],
+        ['  Utelämnade: regressionen gick inte att skatta (multikollinearitet)', basExkluderadeSingular],
+        ['  Under gränsen 5 % (oförklarad skillnad)', basExkluderadeUnderTröskel],
         ['', ''],
-        ['Gränsen 5 % kommer från direktivets regler om gemensam lönebedömning (art. 10).', ''],
+        ['Gränsen 5 % kommer från direktivets regler om gemensam lönebedömning. Lagen kräver ändå att varje skillnad analyseras.', ''],
         [`k-anonymitet (n<${kTroskel()}) skyddar enskilda anställdas integritet (uppgiftsminimering och inbyggt dataskydd enligt dataskyddsförordningen).`, ''],
         ['Grupper under k-tröskeln kan inte analyseras säkert utan risk för återidentifiering.', ''],
         ['Om dessa grupper behöver granskas separat bör det ske utan numeriska bilagor.', '']
@@ -17519,16 +17519,16 @@ function _exportJPAProtocolExport() {
         ['METODIK & RÄTTSLIG GRUND', ''],
         ['', ''],
         ['— Rättslig grund —', ''],
-        ['Direktiv (EU) 2023/970, art. 10', 'Gemensam lönebedömning krävs hos arbetsgivare som lönerapporterar när skillnaden i någon kategori arbetstagare är 5 % eller mer, inte motiveras av objektiva könsneutrala kriterier och inte åtgärdats inom sex månader.'],
-        ['Direktiv (EU) 2023/970, art. 10', 'Bedömningen görs tillsammans med arbetstagarrepresentanterna; åtgärder inom rimlig tid.'],
-        ['Diskrimineringslagen, lönekartläggning', 'Löneskillnad ska kunna motiveras med sakliga skäl: arbetets svårighet, ansvar, krav på utbildning/erfarenhet eller andra särskilda omständigheter.'],
-        ['Diskrimineringslagen, likvärdigt arbete', 'Likvärdigt arbete bedöms genom analys av krav som arbetet ställer (utbildning, ansvar, ansträngning, arbetsförhållanden).'],
+        ['Lönetransparensdirektivet, gemensam lönebedömning', 'Gemensam lönebedömning krävs hos arbetsgivare som lönerapporterar när skillnaden i någon kategori arbetstagare är 5 % eller mer, inte motiveras av objektiva könsneutrala kriterier och inte åtgärdats inom sex månader.'],
+        ['Lönetransparensdirektivet, gemensam lönebedömning', 'Bedömningen görs tillsammans med arbetstagarnas företrädare; åtgärder inom rimlig tid.'],
+        ['Diskrimineringslagen, lönekartläggning', 'Lagen kräver att du prövar om en skillnad har samband med kön. En skillnad som har sakliga skäl, till exempel ansvar eller erfarenhet, är inte osaklig.'],
+        ['Diskrimineringslagen, likvärdigt arbete', 'Likvärdigt arbete bedöms utifrån de krav arbetet ställer (kunskap och färdigheter, ansvar, ansträngning och arbetsförhållanden).'],
         ['Diskrimineringslagen, kvinnodominerat arbete', 'Arbetsgivaren ska analysera om kvinnodominerade yrken har lägre lön än icke-kvinnodominerade yrken med likvärdiga eller lägre krav i arbetet. BAS-rank används i flik 3b som ordinal proxy för arbetskrav — slutgiltig kravvärdering kräver kvalitativ granskning.'],
-        ['Diskrimineringslagen 3:11', 'Konstaterade osakliga löneskillnader ska åtgärdas så snart som möjligt, senast inom 3 år.'],
+        ['Diskrimineringslagen, åtgärder', 'Löneskillnader som saknar sakliga skäl ska rättas så snart som möjligt och senast inom tre år.'],
         ['', ''],
         ['— Statistisk metodik —', ''],
         ['Lika arbete (yrkesgrupp)', 'Direkt median-jämförelse mellan kvinnors och mäns löner inom samma AID-kod. Kvinnors median i procent av mäns = median_kv / median_mä × 100; under 100 betyder att kvinnor ligger lägre.'],
-        ['Likvärdigt arbete (BAS-intervall)', 'OLS-regression: log(lön) ~ kön + ålder (centrerad) inom varje BAS. Oförklarat gap = kön-koefficient omräknad till procentskillnad. HC3-robusta standardfel (Long & Ervin 2000).'],
+        ['Likvärdigt arbete (BAS-intervall)', 'OLS-regression: log(lön) ~ kön + ålder (centrerad) inom varje BAS. Oförklarad skillnad = könskoefficienten omräknad till procentskillnad. HC3-robusta standardfel (Long & Ervin 2000).'],
         ['Konfidensintervall', '95% KI = β ± t(0,975; n−k) × HC3 robust SE, transformerat tillbaka från log-skala; t-kvantilen är 1,96 vid n−k ≥ 100 och större vid färre frihetsgrader.'],
         ['Statistisk signifikans', 'p < 0.05 = ej slumpmässig skillnad. Tröskel följer Medlingsinstitutets praxis.'],
         ['', ''],
@@ -17593,7 +17593,7 @@ function _exportJPAProtocolExport() {
     _appendMethodSheet(wb);
     XLSX.writeFile(wb, filename);
     _showExportSensitivityToast();
-    announceToScreenReader(`Protokoll för gemensam lönebedömning exporterat: ${jpaYrken.length} yrkesgrupp${jpaYrken.length === 1 ? '' : 'er'} och ${jpaBas.length} BAS-intervall över 5%-tröskeln.`);
+    announceToScreenReader(`Protokoll för gemensam lönebedömning exporterat: ${jpaYrken.length} yrkesgrupp${jpaYrken.length === 1 ? '' : 'er'} och ${jpaBas.length} BAS-intervall över gränsen 5 %.`);
 }
 
 // Multi-flik Excel-export
@@ -28910,7 +28910,7 @@ function bibliotekCssForUtskrift() {
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
 function buildPrintReport(...a) { return medExportLage(() => _buildPrintReportExport.apply(null, /** @type {any} */ (a))); }
 async function _buildPrintReportExport() {
-    if (!getData().length) { alert('Ladda upp data först.'); return; }
+    if (!getData().length) { alert('Läs in lönefilen först.'); return; }
     showLoading();
     try {
         // Rapporten är rapportmodellen med gällande urval — samma innehåll som Word-utkastet (58-rapportmodell.js).
@@ -29329,7 +29329,7 @@ async function byggWordUtkast() {
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
 function exportDocumentationDraft(...a) { return medExportLage(() => _exportDocumentationDraftExport.apply(null, /** @type {any} */ (a))); }
 async function _exportDocumentationDraftExport() {
-    if (!getData().length) { alert('Ladda upp data först.'); return false; }
+    if (!getData().length) { alert('Läs in lönefilen först.'); return false; }
     try {
         const { blob, namn } = await byggWordUtkast();
         _laddaNerBlob(blob, namn);
@@ -29956,7 +29956,7 @@ function _zipDiagramExport() {
 function exportZip(...a) { return medExportLage(() => _exportZipExport.apply(null, /** @type {any} */ (a))); }
 async function _exportZipExport() {
     if (typeof JSZip === 'undefined') { alert('Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.'); return false; }
-    if (!getData().length) { alert('Ladda upp data först.'); return false; }
+    if (!getData().length) { alert('Läs in lönefilen först.'); return false; }
     const zip = new JSZip();
     if (typeof showLoading === 'function') showLoading();
     try {

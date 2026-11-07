@@ -1036,7 +1036,7 @@ describe('utskriften ur rapportmodellen', () => {
         expect([...hela.querySelectorAll('section.rm-avsnitt')].map(s => s.dataset.rmAvsnitt)).toEqual(modell.map(a => a.id));
         expect([...hela.querySelectorAll('section.rm-avsnitt > h2')].map(h => h.textContent)).toEqual(modell.map(a => a.rubrik));
         const bildtexter = [...hela.querySelectorAll('figure.rm-bild figcaption')].map(f => f.textContent);
-        for (const t of ['Kvinnors medianlön i procent av mäns, per BAS-intervall — samma kvot och intervall som tabellen ovan', 'Könsfördelning per BAS-intervall', 'Kvinnor och män per lönekvartil', 'Oförklarat lönegap per BAS-intervall']) expect(bildtexter, t).toContain(t);
+        for (const t of ['Kvinnors medianlön i procent av mäns, per BAS-intervall — samma kvot och intervall som tabellen ovan', 'Könsfördelning per BAS-intervall', 'Kvinnor och män per lönekvartil', 'Oförklarad löneskillnad per BAS-intervall']) expect(bildtexter, t).toContain(t);
         expect([...hela.querySelectorAll('img')].every(i => (i.getAttribute('alt') || '').length > 10 && /^data:image\/png/.test(i.getAttribute('src')))).toBe(true);
         expect(hela.textContent).toContain('Låst kopia');
         expect(hela.textContent).not.toContain('UTKAST att färdigställa');

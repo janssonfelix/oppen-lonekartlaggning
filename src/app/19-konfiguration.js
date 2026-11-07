@@ -540,7 +540,7 @@ function _snapshotLutning(snap, cur) {
 
 document.getElementById('btn-snapshot-save')?.addEventListener('click', () => {
     const snap = buildAnalysisSnapshot();
-    if (!snap) { alert('Ladda upp data först.'); return; }
+    if (!snap) { alert('Läs in lönefilen först.'); return; }
     // I: möjlighet att namnge scenariot
     const name = (prompt('Namn på scenariot (lämna tomt för standardnamn):', snap.label) || snap.label).slice(0, 80);
     snap.label = name;

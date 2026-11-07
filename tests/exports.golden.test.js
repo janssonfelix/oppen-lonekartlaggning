@@ -200,7 +200,7 @@ describe('golden: Excel-exporterna på fast dataset', () => {
         expect(snapshotWorkbook(name)).toMatchSnapshot();
     });
 
-    it('§ 3:10-exporten matchar facit', () => {
+    it('exporten om likvärdigt arbete matchar facit', () => {
         const name = filenames.find(f => /likvardighet/i.test(f));
         expect(snapshotWorkbook(name)).toMatchSnapshot();
     });
@@ -218,7 +218,7 @@ describe('golden: Excel-exporterna på fast dataset', () => {
 /**
  * Bladen som byggs ur flikarnas HTML-tabeller, cell för cell med typ och talformat. Tabellstädningen bestämde
  * tidigare inte celltypen själv utan lät kalkylbladsläsaren gissa, och skrev data-sort-value rakt över texten:
- *   - "86 %" tolkades som andelen 0.86 under en rubrik som säger procent (Lonegap, Konsskevhet, Prioritering);
+ *   - "86 %" tolkades som andelen 0.86 under en rubrik som säger procent (Loneskillnad, Konsskevhet, Prioritering);
  *   - "17/17", "14/3" och "15/8" i antalskolumnerna tolkades som datum (15 aug 2001 = 37117.9);
  *   - data-sort-value togs i stället för celltexten: gapet (6,4) under rubriken "kvinnors median i % av männens",
  *     andelen −0,0445 under "Avvikelse mot referens (%)", prioriteringsindexet under "Prioriteringsstatus",
@@ -238,14 +238,14 @@ describe('golden: bladen ur HTML-tabellerna bär cellerna som vyn visar dem (typ
         wb = win.__captured[filenames.find(f => /lonekartlaggning_komplett/.test(f))];
         expect(wb).toBeTruthy();
     });
-    it('Lonegap: kvoten som procenttal med procentformat, antalen som text, medianerna i kronor', () => {
-        expect(rad('Lonegap', 0)).toEqual(['BAS-intervall', 'Antal personer (kvinnor/män)', 'Kvinnors median i % av männens (100 % = lika lön)', 'Median kvinnor (kr/mån)', 'Median män (kr/mån)']);
-        expect(cell('Lonegap', 'B2')).toMatchObject({ t: 's', v: '17/17' });      // inte datumet 17 (ogiltigt) eller ett tal
-        expect(cell('Lonegap', 'C2')).toMatchObject({ t: 'n', v: 86, z: PCT1 });  // inte 0.86
-        expect(cell('Lonegap', 'C3')).toMatchObject({ t: 'n', v: 87.2, z: PCT1 });
-        expect(cell('Lonegap', 'D2')).toMatchObject({ t: 'n', v: 28800, z: KR });
-        expect(cell('Lonegap', 'E2')).toMatchObject({ t: 'n', v: 33500, z: KR });
-        expect(wb.Sheets.Lonegap['!ref']).toBe('A1:E3');                           // bevis-kolumnen följer inte med
+    it('Loneskillnad: kvoten som procenttal med procentformat, antalen som text, medianerna i kronor', () => {
+        expect(rad('Loneskillnad', 0)).toEqual(['BAS-intervall', 'Antal personer (kvinnor/män)', 'Kvinnors median i % av männens (100 % = lika lön)', 'Median kvinnor (kr/mån)', 'Median män (kr/mån)']);
+        expect(cell('Loneskillnad', 'B2')).toMatchObject({ t: 's', v: '17/17' });      // inte datumet 17 (ogiltigt) eller ett tal
+        expect(cell('Loneskillnad', 'C2')).toMatchObject({ t: 'n', v: 86, z: PCT1 });  // inte 0.86
+        expect(cell('Loneskillnad', 'C3')).toMatchObject({ t: 'n', v: 87.2, z: PCT1 });
+        expect(cell('Loneskillnad', 'D2')).toMatchObject({ t: 'n', v: 28800, z: KR });
+        expect(cell('Loneskillnad', 'E2')).toMatchObject({ t: 'n', v: 33500, z: KR });
+        expect(wb.Sheets.Loneskillnad['!ref']).toBe('A1:E3');                           // bevis-kolumnen följer inte med
     });
     it('Konsskevhet: andelarna i procent, inte som andel av 1', () => {
         expect(cell('Konsskevhet', 'E2')).toMatchObject({ t: 'n', v: 50, z: PCT1 });   // efter BAS, Totalt N, Antal kvinnor och Antal män
@@ -425,7 +425,7 @@ describe('golden: Word-utkastet (§§ 8–14) på fast dataset', () => {
         win.__loadFixture();
         const { bok } = win.__excelBlad();
         // Testunderlaget har inget yrke med båda könen över tröskeln, så trattdiagrammets blad saknas — som i vyn.
-        for (const blad of ['Lika arbete per BAS', 'Lonegap per alder', 'Lönepolitik']) expect(bok, blad).toContain(blad);
+        for (const blad of ['Lika arbete per BAS', 'Loneskillnad per alder', 'Lönepolitik']) expect(bok, blad).toContain(blad);
         expect(bok).not.toContain('Slumpens granser');
     });
     it('bladet Lönepolitik finns bara med ett ställningstagande, och metodbladet säger då vad det bär', () => {

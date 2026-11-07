@@ -332,8 +332,8 @@ describe('k-tröskeln i texterna', () => {
         w.eval('sattKTroskel(5, { fraga: false })');
         w.__state.kLage = 'export';
         const rader = w.eval('_jpaExkluderadeTexter()');
-        expect(rader.yrken).toContain('n<5');
-        expect(rader.bas).toContain('n<10');
+        expect(rader.yrken).toContain('färre än 5 ');
+        expect(rader.bas).toContain('färre än 10 ');
     });
 });
 
