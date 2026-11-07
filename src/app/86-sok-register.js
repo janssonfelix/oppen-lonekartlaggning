@@ -24,6 +24,7 @@ const SOK_FUNKTIONER = [
     { namn: 'Att göra: alla punkter', synonymer: ['att göra', 'alla punkter', 'checklista', 'avbockning', 'punkter', 'uppgifter'], flik: 'dashboard', avsnitt: 'avsnitt-ov-punkter' },
     // Filer och kvalitet
     { namn: 'Demodata: litet eller stort demo (7 000 personer)', synonymer: ['demo', 'demodata', 'stort demo', 'exempeldata', 'prova', 'syntetisk data', '7000'], flik: 'filer', avsnitt: 'upload-demo-val' },
+    { namn: 'Förhandskontroll av lönefilen', synonymer: ['förhandskontroll', 'tolkning', 'hur filen tolkades', 'årslön', 'timlön', 'födelseår', 'kön-kod', 'kontrollera filen'], flik: 'filer', avsnitt: 'avsnitt-fi-forhandskontroll' },
     { namn: 'Underlagets kvalitet', synonymer: ['datakvalitet', 'kontroll', 'saknas', 'extremvärden', 'outliers', 'avvikande löner', 'registerfel'], flik: 'filer', avsnitt: 'avsnitt-ov-kvalitet' },
     // Lönestruktur
     { namn: 'Representation per BAS-nivå', synonymer: ['segregering', 'andel kvinnor', 'könsfördelning'], flik: 'struktur', avsnitt: 'avsnitt-st-representation' },
@@ -115,6 +116,7 @@ const SOK_FUNKTIONER = [
     { namn: 'Minsta gruppstorlek för redovisning', synonymer: ['minsta gruppstorlek', 'k', 'tröskel', 'anonymitet', 'tio personer'], flik: 'dokumentera', dialog: 'installningar', falt: 'k-troskel' },
     { namn: 'Organisationstyp', synonymer: ['organisationen är', 'offentlig', 'privat', 'sektor'], flik: 'filer', dialog: 'installningar', falt: 'org-typ' },
     { namn: 'Lönemånad', synonymer: ['månad', 'period', 'datum'], flik: 'filer', dialog: 'installningar', falt: 'lonemanad' },
+    { namn: 'Stoppa och visa förhandskontrollen innan inläsning', synonymer: ['stoppa', 'förhandskontroll', 'innan inläsning', 'granska filen först'], flik: 'filer', dialog: 'installningar', falt: 'inst-fk-stopp' },
     { namn: 'Beräkningsperiod', synonymer: ['månader', 'kostnad per år', 'helår'], flik: 'prioritering', dialog: 'installningar', falt: 'prio-cost-months' },
     { namn: 'PO-påslag', synonymer: ['personalomkostnad', 'lönekostnadspåslag', 'po', 'arbetsgivaravgift'], flik: 'prioritering', dialog: 'installningar', falt: 'prio-po-pct' },
     { namn: 'Prioriteringens trösklar', synonymer: ['granskningsgräns', 'uppföljningsgräns', 'gränser', 'trösklar'], flik: 'prioritering', dialog: 'installningar', falt: 'prio-cfg-atgard' },

@@ -82,6 +82,7 @@ function _rensaAllData({ inbakat = true } = {}) {
     // organisationsfil kommer det inbakade paketets profiler tillbaka med paketet sist i rensningen.
     state.importprofiler = [];
     state.importprofil = null;
+    if (typeof _fkSlapp === 'function') _fkSlapp();   // förhandskontrollen och en fil som väntar på Läs in
     state.ansvarKolumn = null;
     state._dataHeaders = [];
     state.scenarios = [];

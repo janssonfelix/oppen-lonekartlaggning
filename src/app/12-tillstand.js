@@ -30,6 +30,7 @@
  *   importprofiler: Array<{id: string, namn: string, kalla: string, rubriker: {[roll: string]: string[]}, kannetecken: string[]}>,
  *   importprofil: null|{id: string, namn: string, kalla: string, mappning: {[roll: string]: string}},
  *   ansvarKolumn: {namn: string, giltiga?: any, godkand?: boolean}|null,
+ *   forhandskontroll: any, forhandskontrollStopp: boolean,
  *   _dataHeaders: string[],
  *   dataAudit?: any, statistikHasP10?: boolean, statistikHasP90?: boolean, statistikHasKon?: boolean, _interntFel?: any[],
  *   _actionChecklistDone?: Set<string>, _lastStructureFile?: File|null, _lifecycleCache?: any
@@ -110,6 +111,11 @@ const state = {
     // lib och står inte här. importprofil: den profil som gällde för den senast inlästa lönefilen, eller null.
     importprofiler: [],
     importprofil: null,
+    // Förhandskontrollen av lönefilen (src/lib/forhandskontroll.js, 17-forhandskontroll.js): hur den senast inlästa
+    // filen tolkades, med de tio första raderna, eller null. Bara i minnet: ingår inte i konfigurationsfilen eller
+    // någon export. vantar: true medan filen väntar på Läs in (forhandskontrollStopp, en inställning, standard av).
+    forhandskontroll: null,
+    forhandskontrollStopp: false,
     ansvarKolumn: null,   // AID:s ansvarskod: { namn, giltiga } när kolumnen godkänts (ADR-33)
     _dataHeaders: [],   // rubriker från senast inlästa strukturfil (för guiden)
     // Breda tabeller: true när användaren valt Fler kolumner (05-tabeller-och-lankar.js). Bara i minnet, grundvyn som standard.

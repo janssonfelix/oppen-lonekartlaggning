@@ -9173,14 +9173,14 @@ const _fkPersoner = n => `${n} ${n === 1 ? 'person' : 'personer'}`;
 
 /**
  * En cell: råvärdet (kortat), tolkningen, skälet till att cellen markeras (eller null) och texten som visas —
- * "rå → tolkat" när tolkningen skiljer sig från råvärdet.
+ * "rå tolkat som …" när tolkningen skiljer sig från råvärdet (med ord: gränssnittet har inga pilar).
  */
 function _fkCell(roll, rad) {
     const ra = _fkKorta(rad.ra?.[roll]);
     const tolkat = rad.tolkat?.[roll];
     const status = (rad.status && rad.status[roll]) || 'ok';
     const tom = ra === '';
-    const visa = (tolkatText, lika) => (tom ? '(tom)' : lika ? ra : `${ra} → ${tolkatText}`);
+    const visa = (tolkatText, lika) => (tom ? '(tom)' : lika ? ra : `${ra} tolkat som ${tolkatText}`);
     if (roll === 'yrke') {
         const t = String(tolkat ?? '');
         return { 'rå': null, tolkat: t, fel: t ? null : 'saknas', text: t || '(tom)' };
@@ -9199,7 +9199,7 @@ function _fkCell(roll, rad) {
     if (roll === 'ansvar') {
         const t = ANSVAR_TEXT[tolkat] || '';
         const fel = status === 'invalid' ? 'ogiltig kod: räknas som inget särskilt ansvar' : null;
-        return { 'rå': ra, tolkat: tolkat ?? null, fel, text: tom ? '(tom)' : `${ra} → ${t || ANSVAR_TEXT.inget}` };
+        return { 'rå': ra, tolkat: tolkat ?? null, fel, text: tom ? '(tom)' : `${ra} tolkat som ${t || ANSVAR_TEXT.inget}` };
     }
     // Tal: lön, ålder och poäng.
     const n = typeof tolkat === 'number' && isFinite(tolkat) ? tolkat : null;
@@ -9210,7 +9210,7 @@ function _fkCell(roll, rad) {
         return { 'rå': ra, tolkat: n, fel, text: status === 'invalid' ? ra : visa(_fkTal(n), lika) };
     }
     if (roll === 'alder') {
-        if (status === 'birthyear') return { 'rå': ra, tolkat: n, fel: null, text: `${ra} → ${_fkTal(n)} år` };
+        if (status === 'birthyear') return { 'rå': ra, tolkat: n, fel: null, text: `${ra} tolkat som ${_fkTal(n)} år` };
         const fel = status === 'invalid' ? 'kan inte läsas som tal' : tom ? 'saknas'
             : n != null && (n < FK_ALDER_MIN || n > FK_ALDER_MAX) ? `utanför ${FK_ALDER_MIN}–${FK_ALDER_MAX} år` : null;
         return { 'rå': ra, tolkat: n, fel, text: status === 'invalid' ? ra : visa(`${_fkTal(n)} år`, lika) };
@@ -9231,7 +9231,7 @@ function _fkCell(roll, rad) {
  *   k?: number,
  *   profil?: {namn: string, kalla: string}|null
  * }} indata - `rader`: filens första rader (råvärde, tolkning, status för lön/ålder/poäng/ansvar, om raden
- *   används); `data`: de använda raderna; `konVarden`: kön-kolumnens värden i hela filen; `mappning`: roll → rubrik
+ *   används); `data`: de använda raderna; `konVarden`: kön-kolumnens värden i hela filen; `mappning`: roll till rubrik
  *   som lästes; `k`: minsta gruppstorlek; `profil`: importprofilen som kände igen filen.
  */
 function byggForhandskontroll({ rader = [], data = [], konVarden = [], parseStats = {}, headers = [], mappning = {}, k = FK_SMA_GRUPP, profil = null } = {}) {
@@ -13280,6 +13280,7 @@ document.addEventListener('keydown', e => {
  *   importprofiler: Array<{id: string, namn: string, kalla: string, rubriker: {[roll: string]: string[]}, kannetecken: string[]}>,
  *   importprofil: null|{id: string, namn: string, kalla: string, mappning: {[roll: string]: string}},
  *   ansvarKolumn: {namn: string, giltiga?: any, godkand?: boolean}|null,
+ *   forhandskontroll: any, forhandskontrollStopp: boolean,
  *   _dataHeaders: string[],
  *   dataAudit?: any, statistikHasP10?: boolean, statistikHasP90?: boolean, statistikHasKon?: boolean, _interntFel?: any[],
  *   _actionChecklistDone?: Set<string>, _lastStructureFile?: File|null, _lifecycleCache?: any
@@ -13360,6 +13361,11 @@ const state = {
     // lib och står inte här. importprofil: den profil som gällde för den senast inlästa lönefilen, eller null.
     importprofiler: [],
     importprofil: null,
+    // Förhandskontrollen av lönefilen (src/lib/forhandskontroll.js, 17-forhandskontroll.js): hur den senast inlästa
+    // filen tolkades, med de tio första raderna, eller null. Bara i minnet: ingår inte i konfigurationsfilen eller
+    // någon export. vantar: true medan filen väntar på Läs in (forhandskontrollStopp, en inställning, standard av).
+    forhandskontroll: null,
+    forhandskontrollStopp: false,
     ansvarKolumn: null,   // AID:s ansvarskod: { namn, giltiga } när kolumnen godkänts (ADR-33)
     _dataHeaders: [],   // rubriker från senast inlästa strukturfil (för guiden)
     // Breda tabeller: true när användaren valt Fler kolumner (05-tabeller-och-lankar.js). Bara i minnet, grundvyn som standard.
@@ -14624,6 +14630,7 @@ function renderDataValidationReport() {
                 ${invalidLon > 0 ? `<div class="dvr-row warn"><span><span class="dvr-icon">${ikon('statusVarning')}</span>Ogiltig lön (text):${invalidLonExamples.length ? ' <span class="text-dampad-xs">ex: ' + invalidLonExamples.map(e => '"' + esc(e) + '"').join(', ') + '</span>' : ''}</span><span class="dvr-value">${fmt(invalidLon)}</span></div>` : ''}
                 ${invalidAlder > 0 ? `<div class="dvr-row warn"><span><span class="dvr-icon">${ikon('statusVarning')}</span>Ogiltig ålder (text):${invalidAlderExamples.length ? ' <span class="text-dampad-xs">ex: ' + invalidAlderExamples.map(e => '"' + esc(e) + '"').join(', ') + '</span>' : ''}</span><span class="dvr-value">${fmt(invalidAlder)}</span></div>` : ''}
                 <div class="dvr-row dvr-total ok"><span>= Inlästa:</span><span class="dvr-value">${fmt(used)}</span></div>
+                ${typeof _fkRapportrad === 'function' ? _fkRapportrad() : ''}
                 ${totalRaw > 0 ? `<div class="text-dampad-xs marg-t-4">Användbarhetsgrad: <strong>${svPct((used / Math.max(1, totalRaw) * 100), 1)}</strong> av filens rader.</div>` : ''}
                 ${(invalidLon > 0 || invalidAlder > 0 || excludedMissingKon > 0) ? `<div class="farg-varning fs-xs lh-1_4 marg-t-6">Granska om antalet är högt — kan signalera ett systematiskt fel i exporten från lönesystemet. Exempel-värdena ovan visar de första 3 mönstren som föll ut, för felsökning.</div>` : ''}
             </div>
@@ -14719,6 +14726,206 @@ function renderConsistencyBanner() {
 }
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
+
+// ---- Förhandskontroll av lönefilen ----
+// Avsnittet överst i Filer och kvalitet: hur den senast inlästa lönefilen tolkades — de tio första raderna med filens
+// värde och verktygets tolkning, sammandraget, värdefördelningen med varningar och kolumnerna. Logiken bor i
+// src/lib/forhandskontroll.js (_fkBygg); inläsningen (32-filinlasning.js) samlar raderna och kallar _fkForFil.
+// Det som visas finns bara i state.forhandskontroll, i minnet: inte i konfigurationsfilen eller någon export.
+// Varningarna står också i Att göra (18-atgardslista.js, _fkAttGora) och i inläsningsrapporten.
+//
+// Med inställningen "Stoppa och visa förhandskontrollen innan inläsning" (state.forhandskontrollStopp, standard av)
+// väntar en inläst fil här på Läs in eller Avbryt (_fkVantar); demo och organisationspaket läses inte via lönefilen
+// och påverkas inte.
+
+/** Den fil som väntar på Läs in: { lasIn, tidigare } (tidigare: förhandskontrollen som gällde före), eller null. */
+let _fkVantar = /** @type {{lasIn: () => void, tidigare: any}|null} */ (null);
+/** Förhandskontrollen som avsnittet senast ritades för: utfällt eller hopfällt sätts bara när en ny ritas. */
+let _fkRitad = /** @type {any} */ (null);
+const FK_MAX_KONVARDEN = 20;
+const FK_OVRIGA = '(övriga värden)';
+const FK_ROLLNAMN = { bas: 'BAS', yrke: 'Yrke / AID', lon: 'Lön', alder: 'Ålder', kon: 'Kön', poang: 'Poäng', ansvar: 'Ansvar' };
+
+/** Räknar ett värde i kön-kolumnen med verktygets tolkning (kvinna, man eller null). Högst 20 olika värden. */
+function _fkRaknaKon(karta, ra, tolkat) {
+    const nyckel = String(ra ?? '').trim();
+    const k = karta.has(nyckel) || karta.size < FK_MAX_KONVARDEN ? nyckel : FK_OVRIGA;
+    const v = karta.get(k) || { 'rå': k, tolkat: k === FK_OVRIGA ? null : tolkat, antal: 0 };
+    v.antal++;
+    karta.set(k, v);
+}
+
+/**
+ * Förhandskontrollen för en inläst fil. Kolumnerna som lästes är kolumnmappningens (vald rubrik, importprofil,
+ * delsträng); ansvarskoden bara om kolumnen godkändes.
+ * @param {{forsta: any[], konVarden: Map<string, any>, parseStats: any, headers: string[], data: any[]}} u
+ */
+function _fkForFil({ forsta, konVarden, parseStats, headers, data }) {
+    const mappning = { ..._kolumnval(headers).eff, ansvar: state.ansvarKolumn ? state.ansvarKolumn.namn : null };
+    const p = state.importprofil;
+    return _fkBygg({ rader: forsta, data, konVarden: [...konVarden.values()], parseStats, headers, mappning,
+        k: kInstalld(), profil: p ? { namn: p.namn, kalla: p.kalla } : null });
+}
+
+/** Nyckeltalet i avsnittets rubrikrad. */
+function _fkNyckeltext(fk) {
+    if (!fk) return '';
+    if (fk.vantar) return 'väntar på Läs in';
+    const n = fk.varningar.length;
+    return n ? `${n} ${n === 1 ? 'varning' : 'varningar'}` : 'inget att anmärka';
+}
+
+/** Filen väntar på Läs in: förhandskontrollen visas med knapparna, och det tidigare underlaget ligger kvar. */
+function _fkPausa(fk, lasIn) {
+    const tidigare = _fkVantar ? _fkVantar.tidigare : state.forhandskontroll;
+    _fkVantar = { lasIn, tidigare };
+    state.forhandskontroll = { ...fk, vantar: true };
+    hideLoading();
+    dataStatus.textContent = 'Förhandskontrollen väntar: filen är inte inläst ännu. Granska tolkningen och välj Läs in eller Avbryt.';
+    dataStatus.className = 'status-msg warning';
+    renderForhandskontroll();
+    const av = document.getElementById('avsnitt-fi-forhandskontroll');
+    const filer = document.querySelector('.nav-item[data-tab="filer"]');
+    if (filer && !filer.classList.contains('active')) /** @type {HTMLElement} */ (filer).click();
+    av?.scrollIntoView?.({ block: 'start' });
+    /** @type {HTMLElement|null} */ (document.getElementById('fk-las-in'))?.focus?.({ preventScroll: true });
+    announceToScreenReader(dataStatus.textContent);
+}
+/** Läs in: filen läses in som om inställningen vore av. */
+function _fkLasIn() {
+    const v = _fkVantar;
+    if (!v) return;
+    _fkVantar = null;
+    v.lasIn();
+}
+/** Avbryt: det inlästa släpps, och det tidigare underlaget och dess förhandskontroll står kvar. */
+function _fkAvbryt() {
+    const v = _fkVantar;
+    if (!v) return;
+    _fkVantar = null;
+    state.forhandskontroll = v.tidigare || null;
+    renderForhandskontroll();
+    dataStatus.textContent = state.data.length
+        ? 'Inläsningen avbröts. Det tidigare inlästa underlaget ligger kvar.'
+        : 'Inläsningen avbröts. Ingen lönefil är inläst.';
+    dataStatus.className = 'status-msg';
+    announceToScreenReader(dataStatus.textContent);
+}
+/** Rensa all data och en ny inläsning av demot: förhandskontrollen och en väntande fil släpps. */
+function _fkSlapp() {
+    _fkVantar = null;
+    _fkRitad = null;
+    state.forhandskontroll = null;
+    renderForhandskontroll();
+}
+
+/**
+ * Varningarna som punkter i Att göra (kategorin Underlagets kvalitet). Okänt kön har redan en punkt (Datakvalitet,
+ * dq-kon) och läggs inte till två gånger. Inga punkter medan filen väntar på Läs in.
+ */
+function _fkAttGora() {
+    const fk = state.forhandskontroll;
+    if (!fk || fk.vantar) return [];
+    return fk.varningar.filter(v => v.kod !== 'kon-okand').map(v => ({
+        id: 'fk-' + v.kod,
+        kategori: 'Underlagets kvalitet',
+        prioritet: v.niva === 'fel' ? 'hög' : 'medel',
+        titel: `Förhandskontrollen: ${v.niva === 'fel' ? 'kontrollera filen' : 'att granska'}`,
+        detalj: v.text,
+        tab: 'filer',
+        ankare: 'avsnitt-fi-forhandskontroll',
+        källa: 'Förhandskontroll av lönefilen'
+    }));
+}
+
+/** Raden i inläsningsrapporten: förhandskontrollens nyckeltal och länken till avsnittet. */
+function _fkRapportrad() {
+    const fk = state.forhandskontroll;
+    if (!fk || fk.vantar) return '';
+    const n = fk.varningar.length;
+    return `<div class="dvr-row ${n ? 'warn' : 'ok'}"><span><span class="dvr-icon">${ikon(n ? 'statusVarning' : 'bock')}</span>Förhandskontroll: ${esc(_fkNyckeltext(fk))}</span>`
+        + `<a href="#" class="dvr-value" data-go-to-tab="filer" data-go-to-anchor="avsnitt-fi-forhandskontroll">Visa förhandskontrollen</a></div>`;
+}
+
+function _fkCellHtml(cell) {
+    if (!cell) return '<td></td>';
+    if (!cell.fel) return `<td>${esc(cell.text)}</td>`;
+    return `<td class="fk-fel">${ikon('statusVarning', 14)} <span class="fk-varde">${esc(cell.text)}</span><span class="fk-skal">${esc(cell.fel)}</span></td>`;
+}
+const _fkLista = (rader) => `<ul class="fk-lista">${rader.map(r => `<li>${r}</li>`).join('')}</ul>`;
+const _fkKr = v => (typeof v === 'number' ? `${svTal(v, 0)} kr` : '–');
+
+/** Ritar avsnittet Förhandskontroll av lönefilen ur state.forhandskontroll (dolt när den saknas). */
+function renderForhandskontroll() {
+    const av = /** @type {HTMLDetailsElement|null} */ (document.getElementById('avsnitt-fi-forhandskontroll'));
+    const host = document.getElementById('forhandskontroll');
+    if (!av || !host) return;
+    const fk = state.forhandskontroll;
+    if (!fk) {
+        av.hidden = true;
+        host.innerHTML = '';
+        _laNyckel('nyckel-fi-forhandskontroll', '');
+        _fkRitad = null;
+        return;
+    }
+    av.hidden = false;
+    const n = fk.varningar.length, fel = fk.varningar.some(v => v.niva === 'fel');
+    _laNyckel('nyckel-fi-forhandskontroll', _fkNyckeltext(fk), fk.vantar ? 'granska' : n ? (fel ? true : 'granska') : false);
+    if (_fkRitad !== fk) { av.open = !!fk.vantar || n > 0; _fkRitad = fk; }
+    const g = _fkGranser();
+    const roller = fk.tolkning.length ? Object.keys(fk.tolkning[0].celler) : ['bas', 'yrke', 'lon', 'alder', 'kon'];
+    const p = fk.kolumner.profil;
+    const vantar = fk.vantar ? `<div class="fk-vantar">
+            <p><strong>Filen är inte inläst ännu.</strong> Inställningen <em>Stoppa och visa förhandskontrollen innan inläsning</em> är på. Granska tolkningen nedan och välj Läs in, eller Avbryt för att släppa filen${state.data.length ? ' och behålla det underlag som redan är inläst' : ''}.</p>
+            <div class="rad-bryt gap-10"><button id="fk-las-in" class="btn btn-primary btn-sm" type="button">Läs in</button><button id="fk-avbryt" class="btn btn-secondary btn-sm" type="button">Avbryt</button></div>
+        </div>` : '';
+    const varningar = n
+        ? `<ul class="fk-varningar">${fk.varningar.map(v => `<li class="fk-${v.niva}">${ikon(v.niva === 'fel' ? 'statusKritisk' : 'statusVarning', 14)} ${esc(v.text)}</li>`).join('')}</ul>`
+        : `<p class="fk-varningar fk-inget">${ikon('bock', 14)} Inget att anmärka: värdena ligger inom de gränser förhandskontrollen prövar.</p>`;
+
+    const s = fk.sammandrag;
+    const bortfall = s.bortfall.map(b => `${esc(svTal(b.antal, 0))} ${b.antal === 1 ? 'rad' : 'rader'} ${esc(b.text)}${b.exempel.length ? ` (t.ex. ${b.exempel.map(e => `"${esc(e)}"`).join(', ')})` : ''}`);
+    const sammandrag = _fkLista([
+        `Rader i filen: <strong>${esc(svTal(s.totalt, 0))}</strong>; används: <strong>${esc(svTal(s.anvands, 0))}</strong>`,
+        ...(bortfall.length ? bortfall.map(t => `Faller bort: ${t}`) : ['Inga rader faller bort']),
+        ...(s.ogiltigAlder.antal ? [`Ålder som inte går att läsa som tal: ${esc(svTal(s.ogiltigAlder.antal, 0))} rader (t.ex. ${s.ogiltigAlder.exempel.map(e => `"${esc(e)}"`).join(', ')}); raderna används med okänd ålder`] : []),
+        `Ålder tolkad ur födelseår: ${esc(svTal(s.fodelsear, 0))} rader`,
+    ]);
+
+    const f = fk.fordelning;
+    const kon = f.kon.map(v => `${v['rå'] ? `"${esc(v['rå'])}"` : '(tom)'} ${v.tolkat ? `tolkat som ${esc(v.tolkat)}` : 'tolkas inte'} (${esc(svTal(v.antal, 0))})`).join(', ');
+    const fordelning = _fkLista([
+        `BAS-värden: ${f.bas.varden.map(b => `${esc(b.bas)} (${esc(svTal(b.antal, 0))})`).join(', ') || '–'}${f.bas.ovanliga.length ? `; inte en bokstav A–N: ${f.bas.ovanliga.map(esc).join(', ')}` : ''}`,
+        `Kön-värden: ${kon || '–'}`,
+        `Lön: lägst ${_fkKr(f.lon?.min)}, median ${_fkKr(f.lon?.median)}, högst ${_fkKr(f.lon?.max)} (en median över ${esc(svTal(g.arslonMedian, 0))} kr ser ut som årslön, under ${esc(svTal(g.timlonMedian, 0))} kr som timlön)`,
+        `Ålder: ${f.alder ? `lägst ${esc(svTal(f.alder.min, 0))}, högst ${esc(svTal(f.alder.max, 0))} år; utanför ${g.alderMin}–${g.alderMax} år: ${esc(svTal(f.alder.utanfor, 0))}` : '–'}`,
+        `BAS-intervall med färre än ${esc(svTal(f.smaBas.k, 0))} personer: ${f.smaBas.bas.length ? `${f.smaBas.bas.map(esc).join(', ')} (${esc(svPct(f.smaBas.andel * 100, 1))} av raderna)` : 'inga'}`,
+    ]);
+
+    const kol = fk.kolumner;
+    const kolumner = _fkLista([
+        `Används: ${kol.anvanda.map(a => `${esc(FK_ROLLNAMN[a.roll] || a.roll)}: <code>${esc(a.rubrik)}</code>`).join(', ')}`,
+        `Används inte: ${kol.oanvanda.length ? kol.oanvanda.map(h => `<code>${esc(h)}</code>`).join(', ') : 'inga'}`,
+        'Personnummer, namn och e-post: en kolumn med sådana uppgifter stoppar inläsningen, och filen hade ingen.',
+    ]);
+
+    host.innerHTML = `${vantar}
+        <p class="fk-profil text-dampad-sm">${p ? esc(importprofilText(p)) : 'Ingen importprofil kände igen filen: kolumnerna valdes på rubrikernas namn eller i kolumnmappningen.'}</p>
+        ${varningar}
+        <h3 class="fs-md marg-14-0-8">Tolkningen av de ${esc(svTal(g.antalRader, 0))} första raderna</h3>
+        <p class="text-dampad-sm lh-1_5 marg-0-0-8">Filens värde och verktygets tolkning står i samma cell när de skiljer sig. En markerad cell gick inte att tolka eller ligger utanför det rimliga; en dämpad rad används inte i analysen. Raderna visas bara här, på skärmen, och följer inte med i någon export eller i konfigurationsfilen.</p>
+        <div class="rulla-x"><table id="fk-tolkning" class="data-table">
+            <thead><tr><th scope="col">Rad i filen</th>${roller.map(r => `<th scope="col">${esc(FK_ROLLNAMN[r] || r)}</th>`).join('')}</tr></thead>
+            <tbody>${fk.tolkning.map(rad => `<tr${rad.anvands ? '' : ' class="fk-bort"'}><td>${rad.radnr != null ? esc(String(rad.radnr)) : '–'}${rad.anvands ? '' : ' <span class="fk-skal">används inte</span>'}</td>${roller.map(r => _fkCellHtml(rad.celler[r])).join('')}</tr>`).join('')}</tbody>
+        </table></div>
+        <h3 class="fs-md marg-14-0-8">Sammandrag</h3>${sammandrag}
+        <h3 class="fs-md marg-14-0-8">Värdefördelning</h3>${fordelning}
+        <h3 class="fs-md marg-14-0-8">Kolumner</h3>${kolumner}`;
+    host.querySelector('#fk-las-in')?.addEventListener('click', _fkLasIn);
+    host.querySelector('#fk-avbryt')?.addEventListener('click', _fkAvbryt);
+}
+// SPDX-License-Identifier: MIT
+// Copyright 2026 Felix Jansson
 // ============================================================================
 // ÅTGÄRDSLISTA — samlad checklist från alla flikar
 // ============================================================================
@@ -14786,6 +14993,8 @@ function buildActionChecklist({ endastGrupper = false } = {}) {
                     });
                 }
             }
+            // Förhandskontrollen av lönefilen (17-forhandskontroll.js): varningarna tills filen läses om utan dem.
+            if (typeof _fkAttGora === 'function') items.push(..._fkAttGora());
         } catch (e) { rapporteraFel('Att göra: underlagets kvalitet', e); }
 
         // === Lika arbete: rått gap > 5 % i jämförbara BAS (samma regel som kompliansen) ===
@@ -14937,11 +15146,13 @@ function buildActionChecklist({ endastGrupper = false } = {}) {
 }
 
 // Länk till punktens flik. Datakvalitetspunkter hör till Översikt, där användaren
-// redan är — de leder till Underlagets kvalitet i stället. aria-label skiljer
+// redan är — de leder till Underlagets kvalitet i stället; en punkt med eget ankare
+// (förhandskontrollen) leder dit. aria-label skiljer
 // länkarna åt för skärmläsare (annars heter alla "Gå dit").
 function _attGoraLank(it, text, klass = '') {
     if (!it.tab) return '';
-    const ankare = it.tab === 'dashboard' ? ' data-go-to-anchor="underlagets-kvalitet"' : '';
+    const mal = it.ankare || (it.tab === 'dashboard' ? 'underlagets-kvalitet' : '');
+    const ankare = mal ? ` data-go-to-anchor="${esc(mal)}"` : '';
     // Namnet börjar med den synliga texten (WCAG 2.5.3), följd av punkten.
     return `<a href="#" data-go-to-tab="${esc(it.tab)}"${ankare} aria-label="${esc(text)}: ${esc(it.titel)}"${klass ? ` class="${klass}"` : ''}>${text}</a>`;
 }
@@ -15143,6 +15354,7 @@ function buildConfigSnapshot() {
             topN: state.likvardighet.topN
         } : null,
         lonemanad: state.lonemanad || null,   // lönemånaden på bladen per AID och BAS
+        forhandskontrollStopp: state.forhandskontrollStopp === true,   // stoppa och visa förhandskontrollen innan inläsning
         // Löneöversyn/prognos: bara inställningar (pott + fördelningsregler), ej utfall
         forecast: state.forecast ? {
             budget:   { ...state.forecast.budget },
@@ -15278,6 +15490,10 @@ function applyConfigSnapshot(cfg) {
     if (cfg.lonemanad != null) {
         if (typeof cfg.lonemanad !== 'string' || cfg.lonemanad.length > 40) throw new Error('lonemanad måste vara en text på högst 40 tecken.');
         tmp.lonemanad = cfg.lonemanad;
+    }
+    if (cfg.forhandskontrollStopp != null) {
+        if (typeof cfg.forhandskontrollStopp !== 'boolean') throw new Error('forhandskontrollStopp måste vara true eller false.');
+        tmp.forhandskontrollStopp = cfg.forhandskontrollStopp;
     }
     // forecast: löneöversynsinställningar (inga råa rader)
     if (cfg.forecast != null) {
@@ -15421,6 +15637,7 @@ function applyConfigSnapshot(cfg) {
     if (tmp.perBasRecept) state.perBasRecept = _pbReceptArStandard(tmp.perBasRecept) ? null : tmp.perBasRecept;
     state.forklaringsmodell = _rgForklaringsmodellArStandard(fm.modell) ? null : fm.modell;
     if (tmp.lonemanad != null && typeof sattLonemanad === 'function') sattLonemanad(tmp.lonemanad);
+    if (tmp.forhandskontrollStopp != null) state.forhandskontrollStopp = tmp.forhandskontrollStopp;
     if (tmp.likvardighet) {
         state.likvardighet = { ...state.likvardighet, ...tmp.likvardighet, result: null };
     }
@@ -15857,6 +16074,7 @@ function _lasInDemounderlag(skapa, { stort = false } = {}) {
     if (state.paket || state.policyKalla === 'fil' || state.policyKalla === 'paket' || state.statistik.length) _rensaAllData({ inbakat: false });
     state.data = skapa();
     state.importprofil = null;   // demodatan läses inte ur en fil: ingen känd uppsättning
+    _fkSlapp();   // inte heller någon förhandskontroll, och en fil som väntade på Läs in släpps
     state.data.forEach((r, i) => { r.radnr = i + 2; });   // som en fil med rubrik på rad 1
     _deriveArbetsvarderingFromData();   // demodata saknar poäng → rensar ev. kvarvarande
     state.ansvarKolumn = { namn: 'Ansvarskod (demo)', godkand: true, giltiga: 1 };
@@ -17464,6 +17682,7 @@ function _rensaAllData({ inbakat = true } = {}) {
     // organisationsfil kommer det inbakade paketets profiler tillbaka med paketet sist i rensningen.
     state.importprofiler = [];
     state.importprofil = null;
+    if (typeof _fkSlapp === 'function') _fkSlapp();   // förhandskontrollen och en fil som väntar på Läs in
     state.ansvarKolumn = null;
     state._dataHeaders = [];
     state.scenarios = [];
@@ -18917,6 +19136,8 @@ function _renderTabContent(target) {
     else if (target === "info")  renderInfoTab();
     else if (target === "handlingsplan") renderHandlingsplanSeed();
     else if (target === "bestammelser") { if (typeof bes8Uppdatera === 'function') bes8Uppdatera(); if (typeof bes8Stod === 'function') bes8Stod(); }
+    // Förhandskontrollen står i Filer och kvalitet också medan en fil väntar på Läs in, innan något är inläst.
+    if (target === "filer") renderForhandskontroll();
     // Sidans navigering hör till fliken som visas. Ritas en annan flik (t.ex. för att
     // kopiera ett diagram därifrån) ska den synliga flikens rader inte flyttas.
     const aktiv = document.querySelector('.nav-item.active')?.getAttribute('data-tab');
@@ -19150,6 +19371,7 @@ function _afterDataLoaded() {
     renderOutliers();
     renderRealityCheck();
     renderDataValidationReport();
+    renderForhandskontroll();
     syncDatakvalitetPanel();
     announceToScreenReader(`Datafil inläst: ${state.data.length} personer i ${getBasIntervals().length} BAS-intervall. Analyserna är nu tillgängliga i menyn.`);
     hideLoading();
@@ -19450,6 +19672,11 @@ function loadStructureFile(file) {
     };
     let detectionDone = false;
     let aborted = false;
+    // Förhandskontrollen (17-forhandskontroll.js): de tio första raderna med filens råvärde och verktygets tolkning
+    // (yrkets råvärde sparas inte), och kön-kolumnens värden med antal. Bara i minnet; släpps i finishLoad.
+    const fkForsta = [];
+    const fkKon = new Map();
+    const FK_RADER = _fkGranser().antalRader;
 
     // AID:s ansvarskod (ADR-33): kolumnen väljs på första raden och godkänns
     // i finishLoad när hela filen är läst (≥ 95 % giltiga värden). Bara kolumnens värden
@@ -19498,9 +19725,26 @@ function loadStructureFile(file) {
         // (efter normalisering till lowercase utan icke-bokstäver).
         const konOk = typeof rec.kon === 'string' &&
                       (rec.kon.includes('kvinna') || rec.kon === 'man' || rec.kon === 'män');
+        const rawKon = getField(row, ALLOWED_FIELDS.kon, 'kon');
         if (!konOk && parseStats.missingKonExamples.length < 3) {
-            const rawKon = getField(row, ALLOWED_FIELDS.kon, 'kon');
             parseStats.missingKonExamples.push(truncEx(rawKon));
+        }
+        _fkRaknaKon(fkKon, rawKon, konOk ? (rec.kon.includes('kvinna') ? 'kvinna' : 'man') : null);
+        /** @type {any} */
+        let fkRad = null;
+        if (fkForsta.length < FK_RADER) {
+            const poangRa = getField(row, ALLOWED_FIELDS.poang, 'poang');
+            const ansvarRa = state.ansvarKolumn ? row[state.ansvarKolumn.namn] : undefined;
+            fkRad = {
+                radnr: row[_RADNR] ?? null, anvands: false,
+                ra: { bas: getField(row, ALLOWED_FIELDS.bas, 'bas'), lon: getField(row, ALLOWED_FIELDS.lon, 'lon'),
+                      alder: getField(row, ALLOWED_FIELDS.alder, 'alder'), kon: rawKon, poang: poangRa, ansvar: ansvarRa },
+                tolkat: { bas: rec.bas, yrke: rec.yrke, lon: rec.lon, alder: rec.alder, kon: rec.kon, poang: rec.poang, ansvar: rec.ansvarsgrupp },
+                status: { lon: rec._lonStatus, alder: rec._alderStatus,
+                          poang: String(poangRa ?? '').trim() === '' ? 'empty' : rec.poang == null ? 'invalid' : 'ok',
+                          ansvar: String(ansvarRa ?? '').trim() === '' ? 'empty' : _anTolka(ansvarRa) === null ? 'invalid' : 'ok' }
+            };
+            fkForsta.push(fkRad);
         }
         // Plocka bort spårningsfält innan state.data — Privacy by Design,
         // staten ska bara innehålla strikt minimerade fält
@@ -19512,6 +19756,7 @@ function loadStructureFile(file) {
         if (rec.lon <= 0) { parseStats.excludedZeroLon++; utesluts(); return; }
         if (!konOk)       { parseStats.excludedMissingKon++; utesluts(); return; }
         rec.radnr = row[_RADNR] ?? null;
+        if (fkRad) fkRad.anvands = true;
         parsed.push(rec);
     }
 
@@ -19549,6 +19794,7 @@ function loadStructureFile(file) {
         // Saknas en obligatorisk kolumn men raderna går att läsa läses filen in, och kolumnmappningen säger vad som saknas.
         const saknas = (capturedHeaders || []).length ? _kolumnerSomSaknas(capturedHeaders) : [];
         if (!parsed.length) {
+            fkForsta.length = 0;
             state.ansvarKolumn = tidigareAnsvarKolumn;
             state.importprofil = tidigareImportprofil;
             _senasteInlasningLyckades = false;
@@ -19557,21 +19803,41 @@ function loadStructureFile(file) {
             _visaEjInlast(saknas, parseStats);
             return;
         }
-        state.data = parsed;
-        state._lastStructureFile = file;
-        state.filnamn = { ...(state.filnamn || {}), data: file ? file.name : null };
-        state.dataAudit = parseStats;
-        state._dataHeaders = capturedHeaders || [];
-        _senasteInlasningLyckades = true;
-        _afterDataLoaded();
-        maybeShowColumnMapping();   // #11: visa guide om obligatoriska kolumner saknas
-        // #2: redovisa detekterat format (transparens)
-        if (dataStatus) {
-            dataStatus.textContent += ` · ${metaText}${ansvarNot}`;
-            if (parseStats.alderFromBirthYear > 0) {
-                dataStatus.textContent += ` · ålder tolkad från födelseår (${parseStats.alderFromBirthYear} rader)`;
+        // Förhandskontrollen byggs när ansvarskolumnen är bedömd; de insamlade råvärdena släpps direkt.
+        const fk = _fkForFil({ forsta: fkForsta, konVarden: fkKon, parseStats, headers: capturedHeaders || [], data: parsed });
+        fkForsta.length = 0;
+        fkKon.clear();
+        const nyAnsvarKolumn = state.ansvarKolumn, nyImportprofil = state.importprofil;
+        const lasIn = () => {
+            _fkVantar = null;   // en fil som väntade på Läs in ersätts av den här
+            state.ansvarKolumn = nyAnsvarKolumn;
+            state.importprofil = nyImportprofil;
+            state.forhandskontroll = fk;
+            state.data = parsed;
+            state._lastStructureFile = file;
+            state.filnamn = { ...(state.filnamn || {}), data: file ? file.name : null };
+            state.dataAudit = parseStats;
+            state._dataHeaders = capturedHeaders || [];
+            _senasteInlasningLyckades = true;
+            _afterDataLoaded();
+            maybeShowColumnMapping();   // #11: visa guide om obligatoriska kolumner saknas
+            // #2: redovisa detekterat format (transparens)
+            if (dataStatus) {
+                dataStatus.textContent += ` · ${metaText}${ansvarNot}`;
+                if (parseStats.alderFromBirthYear > 0) {
+                    dataStatus.textContent += ` · ålder tolkad från födelseår (${parseStats.alderFromBirthYear} rader)`;
+                }
             }
+        };
+        // Stoppa och visa förhandskontrollen innan inläsning (Inställningar, standard av): filen väntar på Läs in,
+        // och det tidigare underlaget behåller sin ansvarskolumn och importprofil så länge.
+        if (state.forhandskontrollStopp) {
+            state.ansvarKolumn = tidigareAnsvarKolumn;
+            state.importprofil = tidigareImportprofil;
+            _fkPausa(fk, lasIn);
+            return;
         }
+        lasIn();
     }
     function failLoad(msg) {
         sampleBuffer = null;
@@ -29421,6 +29687,7 @@ const INFO_SECTIONS = {
             <li><strong>ZIP-export:</strong> alla diagram (PNG) + Excel i en zip</li>
             <li><strong>PDF-rapport:</strong> en låst kopia av Word-utkastet med samma urval av avsnitt (hela dokumentationen, ledningsbrief eller facklig dialog)</li>
             <li><strong>Organisationspaket:</strong> en fil med organisationens benämningar, grundinställningar, ställningstagande och jämförelsestatistik läses in i Filer och kvalitet.</li>
+            <li><strong>Förhandskontroll av lönefilen:</strong> direkt efter inläsningen visar Filer och kvalitet hur filen tolkades: de tio första raderna med filens värde och verktygets tolkning (till exempel födelseår som räknats om till ålder), hur många rader som används och varför andra faller bort, värdena per kolumn och varningar när lönen ser ut som årslön eller timlön, när åldern ligger utanför 16–75 år eller när BAS eller kön har okända värden. Varningarna står också i Att göra. Med inställningen <em>Stoppa och visa förhandskontrollen innan inläsning</em> läses filen in först när du väljer <em>Läs in</em>. Raderna visas bara på skärmen.</li>
             <li><strong>Importprofiler:</strong> en kolumnmappning som gjorts för hand sparas i kolumnmappningen och känns igen nästa gång samma uttag läses in (<em>Känd uppsättning</em>). Profilen bär bara rubrikernas namn; den följer med i konfigurationsfilen och kan läggas i organisationspaketet. Listan, <em>Ta bort</em> och <em>Exportera JSON</em> står i Inställningar.</li>
             <li><strong>Sök:</strong> fältet i sidhuvudet (snedstreck eller Ctrl+K) hittar yrken och BAS-intervall och markerar dem i alla diagram och tabeller, och hittar flikarnas avsnitt, exporterna och fälten i Inställningar, också utan lönefil. Ett avsnitt i en låst flik säger <em>kräver lönefil</em></li>
             <li><strong>Dossierer:</strong> gruppdossiern samlar en yrkesgrupp på en sida; BAS-dossiern samlar ett BAS-intervall i rapportens ordning — nyckeltal och läget mot ställningstagandet, yrkesgrupperna, likvärdigt arbete, ålder och förra året — och kopieras som text utan lönemått för grupper under tröskeln. BAS-dossiern öppnas från Löneöversikten, Lönestrukturs tabell per BAS-intervall, gruppdossiern, markeringen och sökrutan</li>
@@ -32983,6 +33250,8 @@ function _instRita() {
     const namn = document.getElementById('inst-namn'), flikar = document.getElementById('inst-flikar');
     const lonemanad = /** @type {HTMLInputElement|null} */ (document.getElementById('lonemanad'));
     if (lonemanad) lonemanad.value = state.lonemanad || '';
+    const fkStopp = /** @type {HTMLInputElement|null} */ (document.getElementById('inst-fk-stopp'));
+    if (fkStopp) fkStopp.checked = state.forhandskontrollStopp === true;
     if (namn) {
         namn.innerHTML = [['Organisation', orgNamn('inget namn angivet')], ['Referens', referensNamn()],
             ['Jämförelsestatistik', state.statistik.length ? (state.statistikNamn || 'Jämförelsestatistik') : 'ingen inläst']]
@@ -33104,6 +33373,11 @@ document.addEventListener('click', e => {
         if (rad && typeof rad.scrollIntoView === 'function') rad.scrollIntoView({ block: 'start' });
     }
 });
+
+// Stoppa och visa förhandskontrollen innan inläsning (17-forhandskontroll.js): standard av, följer med i konfigurationsfilen.
+document.getElementById('inst-fk-stopp')?.addEventListener('change', e => {
+    state.forhandskontrollStopp = /** @type {HTMLInputElement} */ (e.target).checked;
+});
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 // ---- Sökregistret: funktioner, avsnitt, dialoger och fält ----
@@ -33130,6 +33404,7 @@ const SOK_FUNKTIONER = [
     { namn: 'Att göra: alla punkter', synonymer: ['att göra', 'alla punkter', 'checklista', 'avbockning', 'punkter', 'uppgifter'], flik: 'dashboard', avsnitt: 'avsnitt-ov-punkter' },
     // Filer och kvalitet
     { namn: 'Demodata: litet eller stort demo (7 000 personer)', synonymer: ['demo', 'demodata', 'stort demo', 'exempeldata', 'prova', 'syntetisk data', '7000'], flik: 'filer', avsnitt: 'upload-demo-val' },
+    { namn: 'Förhandskontroll av lönefilen', synonymer: ['förhandskontroll', 'tolkning', 'hur filen tolkades', 'årslön', 'timlön', 'födelseår', 'kön-kod', 'kontrollera filen'], flik: 'filer', avsnitt: 'avsnitt-fi-forhandskontroll' },
     { namn: 'Underlagets kvalitet', synonymer: ['datakvalitet', 'kontroll', 'saknas', 'extremvärden', 'outliers', 'avvikande löner', 'registerfel'], flik: 'filer', avsnitt: 'avsnitt-ov-kvalitet' },
     // Lönestruktur
     { namn: 'Representation per BAS-nivå', synonymer: ['segregering', 'andel kvinnor', 'könsfördelning'], flik: 'struktur', avsnitt: 'avsnitt-st-representation' },
@@ -33221,6 +33496,7 @@ const SOK_FUNKTIONER = [
     { namn: 'Minsta gruppstorlek för redovisning', synonymer: ['minsta gruppstorlek', 'k', 'tröskel', 'anonymitet', 'tio personer'], flik: 'dokumentera', dialog: 'installningar', falt: 'k-troskel' },
     { namn: 'Organisationstyp', synonymer: ['organisationen är', 'offentlig', 'privat', 'sektor'], flik: 'filer', dialog: 'installningar', falt: 'org-typ' },
     { namn: 'Lönemånad', synonymer: ['månad', 'period', 'datum'], flik: 'filer', dialog: 'installningar', falt: 'lonemanad' },
+    { namn: 'Stoppa och visa förhandskontrollen innan inläsning', synonymer: ['stoppa', 'förhandskontroll', 'innan inläsning', 'granska filen först'], flik: 'filer', dialog: 'installningar', falt: 'inst-fk-stopp' },
     { namn: 'Beräkningsperiod', synonymer: ['månader', 'kostnad per år', 'helår'], flik: 'prioritering', dialog: 'installningar', falt: 'prio-cost-months' },
     { namn: 'PO-påslag', synonymer: ['personalomkostnad', 'lönekostnadspåslag', 'po', 'arbetsgivaravgift'], flik: 'prioritering', dialog: 'installningar', falt: 'prio-po-pct' },
     { namn: 'Prioriteringens trösklar', synonymer: ['granskningsgräns', 'uppföljningsgräns', 'gränser', 'trösklar'], flik: 'prioritering', dialog: 'installningar', falt: 'prio-cfg-atgard' },

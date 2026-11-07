@@ -6826,14 +6826,14 @@ const _fkPersoner = n => `${n} ${n === 1 ? 'person' : 'personer'}`;
 
 /**
  * En cell: råvärdet (kortat), tolkningen, skälet till att cellen markeras (eller null) och texten som visas —
- * "rå → tolkat" när tolkningen skiljer sig från råvärdet.
+ * "rå tolkat som …" när tolkningen skiljer sig från råvärdet (med ord: gränssnittet har inga pilar).
  */
 function _fkCell(roll, rad) {
     const ra = _fkKorta(rad.ra?.[roll]);
     const tolkat = rad.tolkat?.[roll];
     const status = (rad.status && rad.status[roll]) || 'ok';
     const tom = ra === '';
-    const visa = (tolkatText, lika) => (tom ? '(tom)' : lika ? ra : `${ra} → ${tolkatText}`);
+    const visa = (tolkatText, lika) => (tom ? '(tom)' : lika ? ra : `${ra} tolkat som ${tolkatText}`);
     if (roll === 'yrke') {
         const t = String(tolkat ?? '');
         return { 'rå': null, tolkat: t, fel: t ? null : 'saknas', text: t || '(tom)' };
@@ -6852,7 +6852,7 @@ function _fkCell(roll, rad) {
     if (roll === 'ansvar') {
         const t = ANSVAR_TEXT[tolkat] || '';
         const fel = status === 'invalid' ? 'ogiltig kod: räknas som inget särskilt ansvar' : null;
-        return { 'rå': ra, tolkat: tolkat ?? null, fel, text: tom ? '(tom)' : `${ra} → ${t || ANSVAR_TEXT.inget}` };
+        return { 'rå': ra, tolkat: tolkat ?? null, fel, text: tom ? '(tom)' : `${ra} tolkat som ${t || ANSVAR_TEXT.inget}` };
     }
     // Tal: lön, ålder och poäng.
     const n = typeof tolkat === 'number' && isFinite(tolkat) ? tolkat : null;
@@ -6863,7 +6863,7 @@ function _fkCell(roll, rad) {
         return { 'rå': ra, tolkat: n, fel, text: status === 'invalid' ? ra : visa(_fkTal(n), lika) };
     }
     if (roll === 'alder') {
-        if (status === 'birthyear') return { 'rå': ra, tolkat: n, fel: null, text: `${ra} → ${_fkTal(n)} år` };
+        if (status === 'birthyear') return { 'rå': ra, tolkat: n, fel: null, text: `${ra} tolkat som ${_fkTal(n)} år` };
         const fel = status === 'invalid' ? 'kan inte läsas som tal' : tom ? 'saknas'
             : n != null && (n < FK_ALDER_MIN || n > FK_ALDER_MAX) ? `utanför ${FK_ALDER_MIN}–${FK_ALDER_MAX} år` : null;
         return { 'rå': ra, tolkat: n, fel, text: status === 'invalid' ? ra : visa(`${_fkTal(n)} år`, lika) };
@@ -6884,7 +6884,7 @@ function _fkCell(roll, rad) {
  *   k?: number,
  *   profil?: {namn: string, kalla: string}|null
  * }} indata - `rader`: filens första rader (råvärde, tolkning, status för lön/ålder/poäng/ansvar, om raden
- *   används); `data`: de använda raderna; `konVarden`: kön-kolumnens värden i hela filen; `mappning`: roll → rubrik
+ *   används); `data`: de använda raderna; `konVarden`: kön-kolumnens värden i hela filen; `mappning`: roll till rubrik
  *   som lästes; `k`: minsta gruppstorlek; `profil`: importprofilen som kände igen filen.
  */
 function byggForhandskontroll({ rader = [], data = [], konVarden = [], parseStats = {}, headers = [], mappning = {}, k = FK_SMA_GRUPP, profil = null } = {}) {

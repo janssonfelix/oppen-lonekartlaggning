@@ -50,7 +50,7 @@ describe('gränsvärdena', () => {
 describe('byggForhandskontroll: allt rent', () => {
     const fk = bygg(trettio());
     it('ger inga varningar', () => expect(fk.varningar).toEqual([]));
-    it('tolkningen har de tio första raderna med rå, tolkat och fel per roll, utan pil när tolkningen är råvärdet', () => {
+    it('tolkningen har de tio första raderna med rå, tolkat och fel per roll, utan tolkning när den är råvärdet', () => {
         expect(fk.tolkning).toHaveLength(10);
         expect(fk.tolkning[0].radnr).toBe(2);
         expect(Object.keys(fk.tolkning[0].celler)).toEqual(['bas', 'yrke', 'lon', 'alder', 'kon']);
@@ -60,11 +60,11 @@ describe('byggForhandskontroll: allt rent', () => {
         expect(c.alder.text).toBe('30');
         for (const rad of fk.tolkning) for (const cell of Object.values(rad.celler)) expect(cell.fel).toBeNull();
     });
-    it('kön som skrivs ut tolkas med pil (Kvinna → kvinna gäller inte: samma ord)', () => {
+    it('kön som skrivs förkortat visar tolkningen (Kvinna och kvinna är samma ord)', () => {
         expect(fk.tolkning[0].celler.kon.text).toBe('Kvinna');
         const k = bygg(trettio(r => ({ ...r, ra: { ...r.ra, kon: r.tolkat.kon === 'man' ? 'M' : 'K' } })));
-        expect(k.tolkning[0].celler.kon.text).toBe('K → kvinna');
-        expect(k.tolkning[1].celler.kon.text).toBe('M → man');
+        expect(k.tolkning[0].celler.kon.text).toBe('K tolkat som kvinna');
+        expect(k.tolkning[1].celler.kon.text).toBe('M tolkat som man');
     });
     it('sammandraget räknar raderna i filen och de som används', () => {
         expect(fk.sammandrag).toMatchObject({ totalt: 30, anvands: 30, fodelsear: 0 });
@@ -106,15 +106,15 @@ describe('byggForhandskontroll: felläsningar', () => {
         expect(fk.varningar[0].niva).toBe('varning');
         expect(fk.varningar[0].text).not.toContain('400');
     });
-    it('lönen tolkad ur ett format med decimaler: 36 500,00 → 36 500', () => {
+    it('lönen tolkad ur ett format med decimaler: 36 500,00 tolkat som 36 500', () => {
         const fk = bygg(trettio((r, i) => (i === 0 ? { ...r, ra: { ...r.ra, lon: '36 500,00' }, tolkat: { ...r.tolkat, lon: 36500 } } : r)));
-        expect(fk.tolkning[0].celler.lon.text).toMatch(/^36 500,00 → 36\s500$/);
+        expect(fk.tolkning[0].celler.lon.text).toMatch(/^36 500,00 tolkat som 36\s500$/);
         expect(fk.tolkning[0].celler.lon.fel).toBeNull();
     });
-    it('födelseår: cellen visar 1978 → 48 år, sammandraget räknar raderna och det blir en varning', () => {
+    it('födelseår: cellen visar 1978 tolkat som 48 år, sammandraget räknar raderna och det blir en varning', () => {
         const rader = trettio((r, i) => ({ ...r, ra: { ...r.ra, alder: String(1978 - (i % 10)) }, tolkat: { ...r.tolkat, alder: 48 + (i % 10) }, status: { ...r.status, alder: 'birthyear' } }));
         const fk = bygg(rader, { parseStats: stats({ alderFromBirthYear: 30 }) });
-        expect(fk.tolkning[0].celler.alder).toMatchObject({ 'rå': '1978', tolkat: 48, fel: null, text: '1978 → 48 år' });
+        expect(fk.tolkning[0].celler.alder).toMatchObject({ 'rå': '1978', tolkat: 48, fel: null, text: '1978 tolkat som 48 år' });
         expect(fk.sammandrag.fodelsear).toBe(30);
         expect(koder(fk)).toEqual(['alder-fodelsear']);
         expect(fk.varningar[0]).toMatchObject({ niva: 'varning' });
@@ -134,7 +134,7 @@ describe('byggForhandskontroll: felläsningar', () => {
     it('BAS med skräp: cellen markeras, värdet är ovanligt och det blir en varning', () => {
         const rader = trettio((r, i) => (i < 12 ? { ...r, ra: { ...r.ra, bas: 'C (chef)' }, tolkat: { ...r.tolkat, bas: 'C (CHEF)' } } : r));
         const fk = bygg(rader);
-        expect(fk.tolkning[0].celler.bas).toMatchObject({ 'rå': 'C (chef)', tolkat: 'C (CHEF)', text: 'C (chef) → C (CHEF)' });
+        expect(fk.tolkning[0].celler.bas).toMatchObject({ 'rå': 'C (chef)', tolkat: 'C (CHEF)', text: 'C (chef) tolkat som C (CHEF)' });
         expect(fk.tolkning[0].celler.bas.fel).toMatch(/A–N/);
         expect(fk.fordelning.bas.ovanliga).toEqual(['C (CHEF)']);
         expect(koder(fk)).toEqual(['bas-ovanlig']);

@@ -153,12 +153,26 @@ export function skarmtext(w) {
     return ut.map(normalisera).join('\n');   // var för sig: annars läses två celler "26 833" och "27 198" som ett tal
 }
 
+// Förhandskontrollens råvärden (de tio första raderna i filen): märkord som inte finns någon annanstans i underlaget.
+export const FK_RA = ['FKBAS', 'FKLON', 'FKALDER', 'FKKON', 'FKKOLUMN'];
+
 export async function samlaUtdata(w) {
     const d = w.document;
     const ut = [];
     const lagg = (namn, text) => ut.push([namn, String(text ?? '').split('\n').map(normalisera).join('\n')]);
     await laddaXlsx(w);
     w.URL.createObjectURL = () => 'blob:x';
+    // Förhandskontrollen som efter en inläsning: tio rader med märkorden som råvärden, en oanvänd kolumn och en varning
+    // (ålder ur födelseår), så att den syns i Filer och kvalitet och i Att göra.
+    w.eval(`state.forhandskontroll = _fkBygg({
+        rader: Array.from({ length: 10 }, (_, i) => ({ radnr: i + 2, anvands: true,
+            ra: { bas: 'FKBAS', lon: 'FKLON', alder: 'FKALDER', kon: 'FKKON' },
+            tolkat: { bas: 'S1', yrke: '6000 Säkeryrke 0', lon: 24000, alder: 40, kon: 'kvinna' },
+            status: { lon: 'ok', alder: 'birthyear' } })),
+        data: state.data, konVarden: [{ 'rå': 'FKKON', tolkat: 'kvinna', antal: state.data.length }],
+        parseStats: { totalRaw: state.data.length, alderFromBirthYear: 10 },
+        headers: ['BAS', 'AID', 'Lön', 'Ålder', 'Kön', 'FKKOLUMN'],
+        mappning: { bas: 'BAS', yrke: 'AID', lon: 'Lön', alder: 'Ålder', kon: 'Kön' }, k: kInstalld() })`);
     // Översikt som efter en inläsning, och en prognos i Löneöversyn så att utfallstabellen finns.
     w.eval('invalidateStatCaches(); renderActionChecklist(); renderProcessTracker(); renderOutliers(); renderDataValidationReport(); refreshCurrentTab();');
     // Påslaget är 100 %: då är varje grupps kostnad lika med gruppens lönesumma, och kostnaden för en
@@ -254,6 +268,7 @@ export async function samlaUtdata(w) {
     lagg('importprofilerna (Exportera JSON)', w.eval('importprofilExport()'));
     const cfg = JSON.parse(JSON.stringify(w.__buildConfigSnapshot()));
     lagg('konfigurationsfilen: importprofilerna', JSON.stringify(cfg.importprofiler));
+    lagg('konfigurationsfilen (hela)', JSON.stringify(cfg));
     // Konfigurationsfilens årsbokslut (nyckeltal, yrkesgrupper och BAS-intervall med lönespridningen) lämnar verktyget i filen.
     lagg('konfigurationsfilen: årsbokslutet', JSON.stringify(cfg.arsbokslut));
     cfg.arsbokslut.ar -= 1; cfg.arsbokslut.skapat = `${cfg.arsbokslut.ar}-11-01`;

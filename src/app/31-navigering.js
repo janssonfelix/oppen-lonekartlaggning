@@ -158,6 +158,8 @@ function _renderTabContent(target) {
     else if (target === "info")  renderInfoTab();
     else if (target === "handlingsplan") renderHandlingsplanSeed();
     else if (target === "bestammelser") { if (typeof bes8Uppdatera === 'function') bes8Uppdatera(); if (typeof bes8Stod === 'function') bes8Stod(); }
+    // Förhandskontrollen står i Filer och kvalitet också medan en fil väntar på Läs in, innan något är inläst.
+    if (target === "filer") renderForhandskontroll();
     // Sidans navigering hör till fliken som visas. Ritas en annan flik (t.ex. för att
     // kopiera ett diagram därifrån) ska den synliga flikens rader inte flyttas.
     const aktiv = document.querySelector('.nav-item.active')?.getAttribute('data-tab');

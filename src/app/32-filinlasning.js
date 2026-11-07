@@ -108,6 +108,7 @@ function _afterDataLoaded() {
     renderOutliers();
     renderRealityCheck();
     renderDataValidationReport();
+    renderForhandskontroll();
     syncDatakvalitetPanel();
     announceToScreenReader(`Datafil inläst: ${state.data.length} personer i ${getBasIntervals().length} BAS-intervall. Analyserna är nu tillgängliga i menyn.`);
     hideLoading();
@@ -408,6 +409,11 @@ function loadStructureFile(file) {
     };
     let detectionDone = false;
     let aborted = false;
+    // Förhandskontrollen (17-forhandskontroll.js): de tio första raderna med filens råvärde och verktygets tolkning
+    // (yrkets råvärde sparas inte), och kön-kolumnens värden med antal. Bara i minnet; släpps i finishLoad.
+    const fkForsta = [];
+    const fkKon = new Map();
+    const FK_RADER = _fkGranser().antalRader;
 
     // AID:s ansvarskod (ADR-33): kolumnen väljs på första raden och godkänns
     // i finishLoad när hela filen är läst (≥ 95 % giltiga värden). Bara kolumnens värden
@@ -456,9 +462,26 @@ function loadStructureFile(file) {
         // (efter normalisering till lowercase utan icke-bokstäver).
         const konOk = typeof rec.kon === 'string' &&
                       (rec.kon.includes('kvinna') || rec.kon === 'man' || rec.kon === 'män');
+        const rawKon = getField(row, ALLOWED_FIELDS.kon, 'kon');
         if (!konOk && parseStats.missingKonExamples.length < 3) {
-            const rawKon = getField(row, ALLOWED_FIELDS.kon, 'kon');
             parseStats.missingKonExamples.push(truncEx(rawKon));
+        }
+        _fkRaknaKon(fkKon, rawKon, konOk ? (rec.kon.includes('kvinna') ? 'kvinna' : 'man') : null);
+        /** @type {any} */
+        let fkRad = null;
+        if (fkForsta.length < FK_RADER) {
+            const poangRa = getField(row, ALLOWED_FIELDS.poang, 'poang');
+            const ansvarRa = state.ansvarKolumn ? row[state.ansvarKolumn.namn] : undefined;
+            fkRad = {
+                radnr: row[_RADNR] ?? null, anvands: false,
+                ra: { bas: getField(row, ALLOWED_FIELDS.bas, 'bas'), lon: getField(row, ALLOWED_FIELDS.lon, 'lon'),
+                      alder: getField(row, ALLOWED_FIELDS.alder, 'alder'), kon: rawKon, poang: poangRa, ansvar: ansvarRa },
+                tolkat: { bas: rec.bas, yrke: rec.yrke, lon: rec.lon, alder: rec.alder, kon: rec.kon, poang: rec.poang, ansvar: rec.ansvarsgrupp },
+                status: { lon: rec._lonStatus, alder: rec._alderStatus,
+                          poang: String(poangRa ?? '').trim() === '' ? 'empty' : rec.poang == null ? 'invalid' : 'ok',
+                          ansvar: String(ansvarRa ?? '').trim() === '' ? 'empty' : _anTolka(ansvarRa) === null ? 'invalid' : 'ok' }
+            };
+            fkForsta.push(fkRad);
         }
         // Plocka bort spårningsfält innan state.data — Privacy by Design,
         // staten ska bara innehålla strikt minimerade fält
@@ -470,6 +493,7 @@ function loadStructureFile(file) {
         if (rec.lon <= 0) { parseStats.excludedZeroLon++; utesluts(); return; }
         if (!konOk)       { parseStats.excludedMissingKon++; utesluts(); return; }
         rec.radnr = row[_RADNR] ?? null;
+        if (fkRad) fkRad.anvands = true;
         parsed.push(rec);
     }
 
@@ -507,6 +531,7 @@ function loadStructureFile(file) {
         // Saknas en obligatorisk kolumn men raderna går att läsa läses filen in, och kolumnmappningen säger vad som saknas.
         const saknas = (capturedHeaders || []).length ? _kolumnerSomSaknas(capturedHeaders) : [];
         if (!parsed.length) {
+            fkForsta.length = 0;
             state.ansvarKolumn = tidigareAnsvarKolumn;
             state.importprofil = tidigareImportprofil;
             _senasteInlasningLyckades = false;
@@ -515,21 +540,41 @@ function loadStructureFile(file) {
             _visaEjInlast(saknas, parseStats);
             return;
         }
-        state.data = parsed;
-        state._lastStructureFile = file;
-        state.filnamn = { ...(state.filnamn || {}), data: file ? file.name : null };
-        state.dataAudit = parseStats;
-        state._dataHeaders = capturedHeaders || [];
-        _senasteInlasningLyckades = true;
-        _afterDataLoaded();
-        maybeShowColumnMapping();   // #11: visa guide om obligatoriska kolumner saknas
-        // #2: redovisa detekterat format (transparens)
-        if (dataStatus) {
-            dataStatus.textContent += ` · ${metaText}${ansvarNot}`;
-            if (parseStats.alderFromBirthYear > 0) {
-                dataStatus.textContent += ` · ålder tolkad från födelseår (${parseStats.alderFromBirthYear} rader)`;
+        // Förhandskontrollen byggs när ansvarskolumnen är bedömd; de insamlade råvärdena släpps direkt.
+        const fk = _fkForFil({ forsta: fkForsta, konVarden: fkKon, parseStats, headers: capturedHeaders || [], data: parsed });
+        fkForsta.length = 0;
+        fkKon.clear();
+        const nyAnsvarKolumn = state.ansvarKolumn, nyImportprofil = state.importprofil;
+        const lasIn = () => {
+            _fkVantar = null;   // en fil som väntade på Läs in ersätts av den här
+            state.ansvarKolumn = nyAnsvarKolumn;
+            state.importprofil = nyImportprofil;
+            state.forhandskontroll = fk;
+            state.data = parsed;
+            state._lastStructureFile = file;
+            state.filnamn = { ...(state.filnamn || {}), data: file ? file.name : null };
+            state.dataAudit = parseStats;
+            state._dataHeaders = capturedHeaders || [];
+            _senasteInlasningLyckades = true;
+            _afterDataLoaded();
+            maybeShowColumnMapping();   // #11: visa guide om obligatoriska kolumner saknas
+            // #2: redovisa detekterat format (transparens)
+            if (dataStatus) {
+                dataStatus.textContent += ` · ${metaText}${ansvarNot}`;
+                if (parseStats.alderFromBirthYear > 0) {
+                    dataStatus.textContent += ` · ålder tolkad från födelseår (${parseStats.alderFromBirthYear} rader)`;
+                }
             }
+        };
+        // Stoppa och visa förhandskontrollen innan inläsning (Inställningar, standard av): filen väntar på Läs in,
+        // och det tidigare underlaget behåller sin ansvarskolumn och importprofil så länge.
+        if (state.forhandskontrollStopp) {
+            state.ansvarKolumn = tidigareAnsvarKolumn;
+            state.importprofil = tidigareImportprofil;
+            _fkPausa(fk, lasIn);
+            return;
         }
+        lasIn();
     }
     function failLoad(msg) {
         sampleBuffer = null;

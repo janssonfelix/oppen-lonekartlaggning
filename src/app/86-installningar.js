@@ -40,6 +40,8 @@ function _instRita() {
     const namn = document.getElementById('inst-namn'), flikar = document.getElementById('inst-flikar');
     const lonemanad = /** @type {HTMLInputElement|null} */ (document.getElementById('lonemanad'));
     if (lonemanad) lonemanad.value = state.lonemanad || '';
+    const fkStopp = /** @type {HTMLInputElement|null} */ (document.getElementById('inst-fk-stopp'));
+    if (fkStopp) fkStopp.checked = state.forhandskontrollStopp === true;
     if (namn) {
         namn.innerHTML = [['Organisation', orgNamn('inget namn angivet')], ['Referens', referensNamn()],
             ['Jämförelsestatistik', state.statistik.length ? (state.statistikNamn || 'Jämförelsestatistik') : 'ingen inläst']]
@@ -160,4 +162,9 @@ document.addEventListener('click', e => {
         const rad = document.getElementById('upload-row');
         if (rad && typeof rad.scrollIntoView === 'function') rad.scrollIntoView({ block: 'start' });
     }
+});
+
+// Stoppa och visa förhandskontrollen innan inläsning (17-forhandskontroll.js): standard av, följer med i konfigurationsfilen.
+document.getElementById('inst-fk-stopp')?.addEventListener('change', e => {
+    state.forhandskontrollStopp = /** @type {HTMLInputElement} */ (e.target).checked;
 });

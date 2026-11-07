@@ -37,6 +37,7 @@ function buildConfigSnapshot() {
             topN: state.likvardighet.topN
         } : null,
         lonemanad: state.lonemanad || null,   // lönemånaden på bladen per AID och BAS
+        forhandskontrollStopp: state.forhandskontrollStopp === true,   // stoppa och visa förhandskontrollen innan inläsning
         // Löneöversyn/prognos: bara inställningar (pott + fördelningsregler), ej utfall
         forecast: state.forecast ? {
             budget:   { ...state.forecast.budget },
@@ -172,6 +173,10 @@ function applyConfigSnapshot(cfg) {
     if (cfg.lonemanad != null) {
         if (typeof cfg.lonemanad !== 'string' || cfg.lonemanad.length > 40) throw new Error('lonemanad måste vara en text på högst 40 tecken.');
         tmp.lonemanad = cfg.lonemanad;
+    }
+    if (cfg.forhandskontrollStopp != null) {
+        if (typeof cfg.forhandskontrollStopp !== 'boolean') throw new Error('forhandskontrollStopp måste vara true eller false.');
+        tmp.forhandskontrollStopp = cfg.forhandskontrollStopp;
     }
     // forecast: löneöversynsinställningar (inga råa rader)
     if (cfg.forecast != null) {
@@ -315,6 +320,7 @@ function applyConfigSnapshot(cfg) {
     if (tmp.perBasRecept) state.perBasRecept = _pbReceptArStandard(tmp.perBasRecept) ? null : tmp.perBasRecept;
     state.forklaringsmodell = _rgForklaringsmodellArStandard(fm.modell) ? null : fm.modell;
     if (tmp.lonemanad != null && typeof sattLonemanad === 'function') sattLonemanad(tmp.lonemanad);
+    if (tmp.forhandskontrollStopp != null) state.forhandskontrollStopp = tmp.forhandskontrollStopp;
     if (tmp.likvardighet) {
         state.likvardighet = { ...state.likvardighet, ...tmp.likvardighet, result: null };
     }
