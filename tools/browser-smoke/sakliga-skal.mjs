@@ -1,0 +1,49 @@
+// SPDX-License-Identifier: MIT
+// Copyright 2026 Felix Jansson
+// Webbläsar-röktestet, del: Sakliga skäl — på demodata öppnas dialogen från en rad i Handlingsplan, ett skäl läggs
+// till, sammanfattningen räknas om och radens knapp visar antalet, och tabellerna står i Rapporttext. Körs i en egen
+// sida, så att skälet inte följer med i de övriga kontrollerna. Körs av tools/browser-smoke.mjs.
+import { FIL, ok, browser } from './rigg.mjs';
+/* global state -- används i page.evaluate, där det finns i sidan */
+
+export async function sakligaSkal() {
+    console.log('\n── Sakliga skäl: dialogen i Handlingsplan och tabellerna i Rapporttext ──');
+    const sida = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+    await sida.goto('file://' + FIL + '?demo=1');
+    await sida.waitForFunction(() => document.getElementById('demo-mode-banner')?.style.display === 'flex', { timeout: 15000 });
+    await sida.click('.nav-item[data-tab="handlingsplan"]');
+    await sida.waitForSelector('#handlingsplan-tbody [data-hp-skal]', { timeout: 15000 });
+    // En rad utan skäl (demot har fyllt i tre rader); finns ingen tas den första.
+    const nyckel = await sida.evaluate(() => {
+        const knappar = [...document.querySelectorAll('#handlingsplan-tbody [data-hp-skal]')];
+        const tom = knappar.find(k => k.querySelector('.hp-skal-sammanfattning')?.textContent.trim() === '—') || knappar[0];
+        return tom.getAttribute('data-hp-skal');
+    });
+    const knapp = `#handlingsplan-tbody [data-hp-skal="${nyckel}"]`;
+    const forut = await sida.evaluate(n => (state.handlingsplan[n]?.skal || []).length, nyckel);
+    await sida.click(knapp);
+    await sida.waitForFunction(() => document.getElementById('skal-modal').style.display === 'flex', { timeout: 5000 });
+    ok(true, 'knappen Sakliga skäl öppnar dialogen');
+    // Fokusfällan sätter fokus efter en kort stund (trapFocus), som i de övriga dialogerna.
+    ok(await sida.waitForFunction(() => document.getElementById('skal-modal').contains(document.activeElement), null, { timeout: 2000 }).then(() => true, () => false), 'fokus står i dialogen');
+    await sida.click('#skal-lagg-till');
+    const sista = '#skal-body .skal-rad:last-of-type';
+    await sida.selectOption(`${sista} select.skal-kategori`, 'marknad');
+    await sida.fill(`${sista} input.skal-belopp`, '700');
+    await sida.fill(`${sista} input.skal-kommentar`, 'Svårrekryterat i regionen');
+    const summa = ((await sida.textContent('#skal-summa')) || '').replace(/\s+/g, ' ').trim();
+    ok(/Förklarat/.test(summa), `sammanfattningen räknas om («${summa}»)`);
+    const sparat = await sida.evaluate(n => state.handlingsplan[n]?.skal || [], nyckel);
+    ok(sparat.length === forut + 1 && sparat.some(s => s.kategori === 'marknad' && s.belopp === 700), 'skälet sparas på raden');
+    await sida.keyboard.press('Escape');
+    await sida.waitForFunction(() => document.getElementById('skal-modal').style.display === 'none', { timeout: 5000 });
+    const text = ((await sida.textContent(`${knapp} .hp-skal-sammanfattning`)) || '').trim();
+    ok(text.startsWith(`${forut + 1} skäl`), `radens knapp visar antalet («${text}»)`);
+    ok(await sida.evaluate(k => document.activeElement === document.querySelector(k), knapp), 'Escape stänger dialogen och fokus går tillbaka till knappen');
+    await sida.click('.nav-item[data-tab="rapporttext"]');
+    await sida.waitForFunction(() => /Sakliga skäl per grupp/.test(document.getElementById('view-rapporttext')?.textContent || ''), { timeout: 15000 }).catch(() => {});
+    const rt = await sida.evaluate(() => document.getElementById('view-rapporttext').textContent || '');
+    ok(/Sakliga skäl per grupp/.test(rt) && /Sammanställning per kategori/.test(rt), 'Rapporttext har tabellerna Sakliga skäl per grupp och Sammanställning per kategori');
+    ok(/Svårrekryterat i regionen/.test(rt), 'kommentaren står i tabellen');
+    await sida.close();
+}

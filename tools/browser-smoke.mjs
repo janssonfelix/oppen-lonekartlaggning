@@ -28,6 +28,7 @@ import { ingenLagring, ingenTrafik, felUnderKorningen } from './browser-smoke/sa
 import { stortDemo } from './browser-smoke/demo.mjs';
 import { importprofiler } from './browser-smoke/importprofiler.mjs';
 import { forhandskontroll } from './browser-smoke/forhandskontroll.mjs';
+import { sakligaSkal } from './browser-smoke/sakliga-skal.mjs';
 
 await laddningOchDemo();
 await flikarOchDiagram();
@@ -47,6 +48,7 @@ await checklistor();
 await organisationsfilen();
 await importprofiler();
 await forhandskontroll();
+await sakligaSkal();
 await ingenTrafik();
 await stortDemo();
 await felUnderKorningen();
