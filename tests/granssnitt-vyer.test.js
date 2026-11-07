@@ -212,7 +212,7 @@ describe('formulären i Löneöversyn', () => {
     it('målen står i klartext, utan matematiska tecken eller jargong', () => {
         const w = createAppWindow();
         const text = w.document.getElementById('view-loneoversyn').textContent;
-        expect(text).toContain('Mål: oförklarat gap högst');
+        expect(text).toContain('Mål: oförklarad skillnad högst');
         expect(text).not.toContain('≥ −');
         expect(text).not.toContain('grön-cirklade');
         expect(text).not.toContain('benchmark');

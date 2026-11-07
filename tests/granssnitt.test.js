@@ -240,7 +240,7 @@ describe('Löneöversyn utan påslag', () => {
         w.__renderTabContent('loneoversyn');
         const text = w.document.getElementById('forecast-outcome').textContent.replace(/\s+/g, ' ');
         expect(text).toMatch(/Kvinnors medianlön i % av mäns: [\d,]+ % till [\d,]+ % oförändrat/);
-        expect(text).toMatch(/Oförklarat gap \(regressionen\): \S+ % till \S+ % oförändrat/);
+        expect(text).toMatch(/Oförklarad skillnad \(regressionen\): \S+ % till \S+ % oförändrat/);
         expect(text).not.toMatch(/[\u2190-\u21FF]/);
     });
 });

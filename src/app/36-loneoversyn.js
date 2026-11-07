@@ -267,7 +267,7 @@ function updateForecast() {
                 Generellt påslag: <strong>${kr(out.generellCost)}</strong> &nbsp;·&nbsp; Riktade potter: <strong>${kr(out.riktadCost)}</strong><br>
                 Varav till kvinnodominerade grupper (≥60 %): <strong>${kr(out.equityCost)}</strong>${equityPctOfPott != null ? ` <span class="f-dampad">(${svPct(equityPctOfPott, 0)} av potten)</span>` : ''}
             </div>
-            <p class="text-dampad-xs marg-8-0-0">Andelen till kvinnodominerade grupper är en indikation på hur mycket av översynen som riktas mot de osakliga gapen.</p>
+            <p class="text-dampad-xs marg-8-0-0">Andelen till kvinnodominerade grupper visar ungefär hur mycket av översynen som riktas mot skillnaderna i likvärdigt arbete.</p>
         </div>` : '';
     // Spillover-/leapfrog-varning
     // Jämförelsen visar gruppmedianer: bara grupper som når tröskeln tas med.
@@ -283,13 +283,13 @@ function updateForecast() {
         </div>` : '';
     if (outEl) outEl.innerHTML = `
         <div class="card ram-v-4-accent marg-0-0-14">
-            <strong class="block-mb6">Lönegap före och efter</strong>
+            <strong class="block-mb6">Löneskillnad före och efter</strong>
             <div class="fs-md lh-1_8">
                 Kvinnors medianlön i % av mäns: ${konOk ? andelCell(out.rawGapFore, out.rawGapEfter) : esc(_konUtelamnatNot()) + '<br>'}
                 ${konOk ? gapBar(out.rawGapFore, out.rawGapEfter) : ''}
-                Oförklarat gap (regressionen): ${ols.fore == null && ols.efter == null ? '<span class="f-dampad">— (för få obs för regression)</span>' : gapCell(ols.fore, ols.efter)}
+                Oförklarad skillnad (regressionen): ${ols.fore == null && ols.efter == null ? '<span class="f-dampad">— (för få obs för regression)</span>' : gapCell(ols.fore, ols.efter)}
             </div>
-            <p class="text-dampad-xs marg-8-0-0">Under 100 % betyder att kvinnors medianlön är lägre än mäns. Det oförklarade gapet anges som skillnad i procent (negativt = kvinnor lägre; "minskar" = närmare noll) och körs om via OLS på de simulerade lönerna.</p>
+            <p class="text-dampad-xs marg-8-0-0">Under 100 % betyder att kvinnors medianlön är lägre än mäns. Den oförklarade skillnaden anges i procent (negativt = kvinnor lägre; "minskar" = närmare noll) och räknas om med regressionen på de simulerade lönerna.</p>
         </div>
         ${splitHtml}
         ${poolHtml}
@@ -364,7 +364,7 @@ function _forecastLutningTabell(rader, niva) {
     if (!rader.length) { host.innerHTML = ''; return; }
     const p = v => _figTalformat(v, 'pct'), diff = v => (v > 0 ? '+' : '') + _figTalformat(v, undefined) + ' procentenheter';
     host.innerHTML = `<table id="forecast-lutning-table" class="data-table fs-sm marg-t-10">
-        <thead><tr><th>${niva === 'bas' ? 'BAS-intervall' : 'Yrkesgrupp'}</th><th class="t-hoger">Antal (Kv/Mä)</th><th class="t-hoger">Kvinnors median i % av mäns, före</th><th class="t-hoger">Efter</th><th class="t-hoger">Förändring</th></tr></thead>
+        <thead><tr><th>${niva === 'bas' ? 'BAS-intervall' : 'Yrkesgrupp'}</th><th class="t-hoger">Kvinnor / män</th><th class="t-hoger">Kvinnors median i % av mäns, före</th><th class="t-hoger">Efter</th><th class="t-hoger">Förändring</th></tr></thead>
         <tbody>${rader.map(r => `<tr><td>${esc(r.namn)}</td><td class="t-hoger">${r.nKv}/${r.nMa}</td><td class="t-hoger">${p(r.fore)}</td><td class="fw-600 ta-hoger">${p(r.efter)}</td><td class="t-hoger">${diff(+(r.efter - r.fore).toFixed(1))}</td></tr>`).join('')}</tbody></table>`;
     for (const [i, tr] of [...host.querySelectorAll('tbody tr')].entries()) if (rader[i].markering) tr._markering = rader[i].markering;
 }
@@ -383,7 +383,7 @@ function _renderForecastLutning(d, sim) {
         _forecastLutningTabell(andrade, niva);   // tabellen bär alla ändrade grupper, också dem diagrammet inte ryms
     } else _forecastLutningTabell(rader, niva);
     if (not) not.textContent = !rader.length ? '' : `Det lodräta strecket är värdet före, punkten värdet efter. Grönt: närmar sig 100 % (lika lön). Rött: längre från 100 %. Grått: oförändrat. Bara ${niva === 'bas' ? 'BAS-intervall' : 'yrkesgrupper'} med minst ${k} kvinnor och ${k} män visas.`
-        + (fler ? ` Visar de ${FORECAST_LUTNING_MAX} yrkesgrupper där gapet ändras mest; ${fler} till ändras mindre.` : '');
+        + (fler ? ` Visar de ${FORECAST_LUTNING_MAX} yrkesgrupper där skillnaden ändras mest; ${fler} till ändras mindre.` : '');
     if (!rader.length) {
         rensaFigur(el);
         const text = !d ? '' : niva === 'bas' ? `Inget BAS-intervall har minst ${k} kvinnor och ${k} män, så kvinnors median i procent av mäns visas inte per BAS-intervall.`
@@ -449,7 +449,7 @@ function _forecastOptimize() {
     const cand = _fcKandidater();
     const targets = _fcSuggestTargets(cand, riktadPott, state.forecast.minGroupN || 0);
     if (!targets.length) {
-        alert('Inga osakliga gap kunde identifieras i likvärdighetsanalysen för grupper ≥ ' + (state.forecast.minGroupN || 0) + ' personer, eller ingen riktad pott återstår efter det generella påslaget. Sänk minsta storlek eller lägg till riktade potter manuellt.');
+        alert('Verktyget hittade inga skillnader i likvärdigt arbete i grupper med minst ' + (state.forecast.minGroupN || 0) + ' personer, eller så har det generella påslaget tagit hela potten. Sänk minsta gruppstorlek eller lägg till riktade rader själv.');
         return;
     }
     state.forecast.targets = targets.map(t => ({ bas: t.bas, aid: t.aid, mode: 'kr', value: t.value, dist: 'lowest', targetLevel: 'median', pool: 'equity', kalla: 'par' }));
@@ -482,7 +482,7 @@ function _forecastAddByCriteria() {
     const dist = /** @type {HTMLInputElement} */ (document.getElementById('forecast-rule-dist'))?.value || 'lowest';
     const value = parseFloat(/** @type {HTMLInputElement} */ (document.getElementById('forecast-rule-value'))?.value);
     const minN = state.forecast.minGroupN || 0;
-    if (!isFinite(value) || value <= 0) { alert('Ange ett belopp (kr eller %) för massregeln.'); return; }
+    if (!isFinite(value) || value <= 0) { alert('Skriv ett belopp i kronor eller procent.'); return; }
     const groups = _fcSummarizeGroups(d);
     const basMed = {}, basP25 = {};
     getBasIntervals().forEach(b => { basMed[b] = _fcMedian(d.filter(r => r.bas === b).map(r => r.lon)); });
@@ -496,7 +496,7 @@ function _forecastAddByCriteria() {
     };
     const pool = matcher === 'kvdom' ? 'equity' : 'övrigt';
     const picked = groups.filter(match);
-    if (!picked.length) { alert('Inga grupper matchar kriteriet (kontrollera minsta gruppstorlek = ' + minN + ').'); return; }
+    if (!picked.length) { alert('Ingen grupp passar villkoret. Sänk minsta gruppstorlek (nu ' + minN + ').'); return; }
     let added = 0;
     picked.forEach(g => {
         if (!state.forecast.targets.some(t => t.bas === g.bas && t.aid === g.aid)) {
@@ -506,7 +506,7 @@ function _forecastAddByCriteria() {
     });
     renderForecastTargets();
     updateForecast();
-    if (added === 0) alert('De matchande grupperna fanns redan som riktade rader.');
+    if (added === 0) alert('Grupperna finns redan bland de riktade raderna.');
 }
 // Mål-läge: bygg riktade rader som stänger en andel av de osakliga gapen (§ 3:10).
 function _forecastClosure() {
@@ -514,10 +514,10 @@ function _forecastClosure() {
     if (!d.length) return;
     _forecastReadControls();
     const fracPct = parseFloat(/** @type {HTMLInputElement} */ (document.getElementById('forecast-closure-pct'))?.value);
-    if (!isFinite(fracPct) || fracPct <= 0) { alert('Ange hur stor andel av de osakliga gapen som ska stängas (%).'); return; }
+    if (!isFinite(fracPct) || fracPct <= 0) { alert('Ange med hur många procent skillnaderna i likvärdigt arbete ska minska.'); return; }
     const cand = _fcKandidater();
     const targets = _fcClosureTargets(cand, fracPct / 100, state.forecast.minGroupN || 0);
-    if (!targets.length) { alert('Inga osakliga gap i likvärdigt arbete att stänga för grupper ≥ ' + (state.forecast.minGroupN || 0) + ' personer.'); return; }
+    if (!targets.length) { alert('Verktyget hittade inga skillnader i likvärdigt arbete i grupper med minst ' + (state.forecast.minGroupN || 0) + ' personer.'); return; }
     state.forecast.targets = targets.map(t => ({ bas: t.bas, aid: t.aid, mode: 'kr', value: t.value, dist: 'lowest', targetLevel: 'median', pool: 'equity', kalla: 'par' }));
     renderForecastTargets();
     updateForecast();
@@ -525,7 +525,7 @@ function _forecastClosure() {
 // Scenario A/B: spara nuläget som ett scenario och jämför.
 function _forecastSaveScenario(slot) {
     const o = state.forecast.result;
-    if (!o) { alert('Ingen prognos att spara ännu.'); return; }
+    if (!o) { alert('Det finns ingen prognos att spara. Ange en pott först.'); return; }
     const d = getData();
     const sim = d.map((r, i) => ({ ...r, lon: o.alloc.perPerson[i].nyLon }));
     const ols = _forecastOlsGap(d, sim);
@@ -598,7 +598,7 @@ function _forecastThreshold() {
         const g = _forecastOlsOn(sim);
         return { ...g, cost: women.reduce((s, r) => s + r.lon * x / 100, 0) };
     };
-    if (okFor(base)) { host.innerHTML = `<span class="farg-ok">${ikon('bock')} Målet är redan uppfyllt (oförklarat gap ${svPct(base.konPct, 1)}${useSig ? `, p=${base.pValue == null ? '–' : svTal(base.pValue, 3)}` : ''}).</span>`; return; }
+    if (okFor(base)) { host.innerHTML = `<span class="farg-ok">${ikon('bock')} Målet är redan uppfyllt (oförklarad skillnad ${svPct(base.konPct, 1)}${useSig ? `, p=${base.pValue == null ? '–' : svTal(base.pValue, 3)}` : ''}).</span>`; return; }
     let lo = 0, hi = 40;
     if (!okFor(evalLift(hi))) { host.innerHTML = `<span class="f-kritisk">Mer än 40 % likalönslyft skulle krävas — kontrollera datan/modellen.</span>`; return; }
     for (let it = 0; it < 22; it++) { const mid = (lo + hi) / 2; if (okFor(evalLift(mid))) hi = mid; else lo = mid; }
@@ -606,8 +606,8 @@ function _forecastThreshold() {
     const months = (state.costSettings && state.costSettings.months) || 12;
     const poFactor = 1 + ((state.costSettings && state.costSettings.poPct) || 0) / 100;
     host.innerHTML = `<div class="fs-sm lh-1_6">
-        För att nå <strong>${useSig ? 'icke-signifikant oförklarat gap (p&gt;0,05)' : 'oförklarat gap ≥ −' + tgt + ' %'}</strong> krävs ett likalönslyft på <strong>≈ ${svPct(hi, 1)}</strong> till kvinnor.
-        <br>Kostnad: <strong>≈ ${Math.round(res.cost).toLocaleString('sv-SE')} kr/mån</strong> (≈ ${Math.round(res.cost * months * poFactor).toLocaleString('sv-SE')} kr inkl. PO/period). Oförklarat gap då: ${res.konPct == null ? '–' : svPct(res.konPct, 2)}.
+        För att nå <strong>${useSig ? 'en oförklarad skillnad som inte är signifikant (p över 0,05)' : 'en oförklarad skillnad på högst ' + tgt + ' %'}</strong> krävs ett likalönslyft på <strong>≈ ${svPct(hi, 1)}</strong> till kvinnor.
+        <br>Kostnad: <strong>≈ ${Math.round(res.cost).toLocaleString('sv-SE')} kr/mån</strong> (≈ ${Math.round(res.cost * months * poFactor).toLocaleString('sv-SE')} kr inkl. PO/period). Oförklarad skillnad då: ${res.konPct == null ? '–' : svPct(res.konPct, 2)}.
         <br><span class="text-dampad-xs">Informativ beräkning (jämn lyft-procent till kvinnor) — för fördelning per grupp, använd förslags-/mål-knapparna.</span>
     </div>`;
 }
@@ -623,15 +623,15 @@ function _forecastMarket() {
         if (s.aid != null && s.bas != null) market.set(String(s.aid) + '|' + String(s.bas), s.median);
         if (s.aid != null && !market.has(String(s.aid))) market.set(String(s.aid), s.median);
     });
-    if (!market.size) { alert('Ingen marknadsstatistik inläst (ladda upp jämförelsestatistik).'); return; }
+    if (!market.size) { alert('Jämförelsestatistiken är inte inläst. Läs in den under Filer och kvalitet.'); return; }
     const groups = _fcSummarizeGroups(d);
     const t = _fcMarketTargets(groups, market, f, state.forecast.minGroupN || 0);
-    if (!t.length) { alert('Inga grupper ligger under marknad × ' + svTal(f * 100, 0) + ' % (eller marknadsmatchning saknas) för grupper ≥ ' + (state.forecast.minGroupN || 0) + '.'); return; }
+    if (!t.length) { alert('Ingen grupp med minst ' + (state.forecast.minGroupN || 0) + ' personer ligger under ' + svTal(f * 100, 0) + ' procent av jämförelsestatistikens median.'); return; }
     let added = 0;
     t.forEach(x => { if (!state.forecast.targets.some(y => y.bas === x.bas && y.aid === x.aid)) { state.forecast.targets.push({ bas: x.bas, aid: x.aid, mode: 'kr', value: x.value, dist: 'lowest', targetLevel: 'median', pool: 'marknad' }); added++; } });
     renderForecastTargets();
     updateForecast();
-    if (!added) alert('De matchande grupperna fanns redan som riktade rader.');
+    if (!added) alert('Grupperna finns redan bland de riktade raderna.');
 }
 // (F) Budgetkänslighetskurva (§3:10-stängning 0→100 %).
 function _forecastSensitivity() {
@@ -641,15 +641,15 @@ function _forecastSensitivity() {
     if (!d.length) { host.innerHTML = ''; return; }
     _forecastReadControls();
     const cand = _fcKandidater();
-    if (!cand.length) { host.innerHTML = '<span class="text-dampad-sm">Inga gap i likvärdigt arbete att svepa (kräver identifierade osakliga gap).</span>'; return; }
+    if (!cand.length) { host.innerHTML = '<span class="text-dampad-sm">Verktyget hittade inga skillnader i likvärdigt arbete att räkna på.</span>'; return; }
     const cost = { months: (state.costSettings && state.costSettings.months) || 12, poPct: (state.costSettings && state.costSettings.poPct) || 0, roundStep: state.forecast.roundStep || 0 };
     const curve = _fcSensitivityCurve(d, cand, cost, 10);
     if (!_konFarRedovisasFor(d)) curve.forEach(c => { c.rawGap = null; });   // k: det råa gapet följer tröskeln
     const maxGap = Math.max(...curve.map(c => Math.abs(c.rawGap || 0)), 0.01);
     const kr = n => Math.round(n).toLocaleString('sv-SE') + ' kr';
-    host.innerHTML = `<table class="data-table fs-sm"><thead><tr><th>Stängt av gap</th><th class="t-hoger">Total kostnad</th><th class="t-hoger">Kvinnors median i % av mäns</th><th>　</th></tr></thead><tbody>
+    host.innerHTML = `<table class="data-table fs-sm"><thead><tr><th>Minskning av skillnaderna</th><th class="t-hoger">Total kostnad</th><th class="t-hoger">Kvinnors median i % av mäns</th><th>　</th></tr></thead><tbody>
         ${curve.map(c => `<tr><td>${svPct((c.fraction * 100), 0)}</td><td class="t-hoger">${kr(c.kostnad)}</td><td class="t-hoger">${c.rawGap == null ? '–' : andelAvMan(c.rawGap)}</td><td><div class="rund-4 hojd-9 min-bredd-2 bg-info" data-stil-bredd="${(Math.abs(c.rawGap || 0) / maxGap * 100).toFixed(0)}%"></div></td></tr>`).join('')}
-    </tbody></table><p class="text-dampad-xs marg-6-0-0">Avtagande avkastning: visar hur det råa gapet och kostnaden utvecklas när en allt större andel av gapen i likvärdigt arbete stängs.${_fcParNot ? ' ' + esc(_fcParNot) : ''}</p>`; tillampaDataStil(host);
+    </tbody></table><p class="text-dampad-xs marg-6-0-0">Avtagande avkastning: visar hur den råa skillnaden och kostnaden utvecklas när skillnaderna i likvärdigt arbete minskar allt mer.${_fcParNot ? ' ' + esc(_fcParNot) : ''}</p>`; tillampaDataStil(host);
 }
 // (B) Individnivå-remediation (DiskrL 3:9).
 function _forecastRemediation() {
@@ -683,7 +683,7 @@ function _forecastRemediation() {
 }
 function _forecastRemediationSeed() {
     const rem = state.forecast._remediation;
-    if (!rem || !rem.perGroup.length) { alert('Kör analysen först.'); return; }
+    if (!rem || !rem.perGroup.length) { alert('Klicka på Analysera först.'); return; }
     let added = 0;
     // Bara grupper som fått egen rad blir riktade rader (beloppet står i raden).
     const visade = rem.perGroup.filter(g => g.count >= kTroskel());
@@ -696,14 +696,14 @@ function _forecastRemediationSeed() {
     });
     renderForecastTargets();
     updateForecast();
-    if (!added) alert('Grupperna fanns redan som riktade rader.');
+    if (!added) alert('Grupperna finns redan bland de riktade raderna.');
 }
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
 function exportForecast(...a) { return medExportLage(() => _exportForecastExport.apply(null, /** @type {any} */ (a))); }
 function _exportForecastExport() {
     if (typeof XLSX === 'undefined') { alert('Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.'); return; }
     const out = state.forecast.result;
-    if (!out) { alert('Ingen prognos att exportera ännu.'); return; }
+    if (!out) { alert('Det finns ingen prognos att exportera. Ange en pott först.'); return; }
     _fcKandidater();   // uppdaterar meningen om utelämnade par efter gällande tröskel
     const kr = n => Math.round(n);
     const K = kTroskel();
@@ -738,7 +738,7 @@ function _exportForecastExport() {
         ...(konOk ? [] : [['Könsuppdelade mått', _konUtelamnatNot()]]),
         ...(antalMaskerade ? [['Grupper under tröskeln', `${antalMaskerade} ${antalMaskerade === 1 ? 'grupp' : 'grupper'} med färre än ${K} personer ingår i summorna, men ${antalMaskerade === 1 ? 'dess' : 'deras'} medianer och kostnad redovisas inte per grupp.`]] : []),
         ['', ''],
-        ['OBS', 'Endast aggregat. Råa individlöner ingår ej (Privacy by Design). Slutlig löneöversyn dokumenteras i Word/handlingsplan.']
+        ['OBS', 'Bara summor. Enskildas löner ingår inte (inbyggt dataskydd). Den slutliga löneöversynen dokumenteras i Word-utkastet och Handlingsplan.']
     ];
     const header = ['BAS', 'Yrke (AID)', 'n', 'Andel kvinnor (%)', 'Gammal median', 'Ny median', 'Förändring (%)', 'Kostnad (kr/mån)'];
     const body = exportGrupper.map(g => {

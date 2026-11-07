@@ -145,8 +145,8 @@ describe('Likvärdigt arbete: kandidatparen', () => {
     });
 });
 
-describe('Löneöversyn: lönegap per BAS-intervall före och efter', () => {
-    it('kolumnen Antal (Kv/Mä) per intervall', () => {
+describe('Löneöversyn: löneskillnad per BAS-intervall före och efter', () => {
+    it('kolumnen Kvinnor / män per intervall', () => {
         const w = createAppWindow();
         const rad = (aid, bas, kon, lon) => ({ bas, kon, lon, alder: 40, yrke: `${aid} Yrke${aid}`, aid, yrkeLabel: `Yrke${aid}`, enhet: '' });
         w.__state.data = [...Array.from({ length: 14 }, (_, i) => rad('6000', 'A', 'kvinna', 30000 + i * 10)), ...Array.from({ length: 10 }, (_, i) => rad('6000', 'A', 'man', 30000 + i * 10)),
@@ -155,7 +155,7 @@ describe('Löneöversyn: lönegap per BAS-intervall före och efter', () => {
         w.__state.forecast.targets = [{ bas: 'A', aid: '6000', mode: 'pct', value: 10, dist: 'flat', targetLevel: 'median', pool: 'övrigt' }];
         w.__renderTabContent('loneoversyn');
         const tabell = w.document.getElementById('forecast-lutning-table');
-        const i = rubriker(tabell).indexOf('Antal (Kv/Mä)');
+        const i = rubriker(tabell).indexOf('Kvinnor / män');
         expect(i).toBe(1);
         expect(ren(tabell.querySelector('tbody tr').cells[i].textContent)).toBe('24/24');
     });

@@ -1575,12 +1575,12 @@
                 <!-- Löneöversyn (prognos) Tab View -->
                 <div id="view-loneoversyn" class="view-panel dold">
                     <div class="flik-intro">
-                        <strong>Vad händer om vi fördelar potten så här?</strong>
-                        Lägg in en budget och pröva olika sätt att fördela den — generellt till alla, eller riktat till valda yrkesgrupper. Du ser nya löner, hur mycket av potten som går åt och hur lönegapet påverkas. <strong>Ingenting ändras i era system</strong> — det här är en simulering att tänka med.
+                        <strong>Vad händer om potten fördelas så här?</strong>
+                        Lägg in en budget och pröva olika sätt att fördela den — generellt till alla, eller riktat till valda yrkesgrupper. Du ser nya löner, hur mycket av potten som går åt och hur löneskillnaden påverkas. <strong>Inget ändras i organisationens system</strong>; det här är en beräkning att pröva idéer med.
                     </div>
                     <div class="first-run-hint marg-t-0">
                         <span class="first-run-hint-icon" aria-hidden="true"><svg class="ikon ikon-blixt" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg></span>
-                        <div><strong>Snabbstart:</strong> ange en <strong>budget</strong> här nedanför och klicka <strong>Föreslå fördelning mot osakliga gap</strong> bredvid potten — så får du en färdig startpunkt att finjustera.</div>
+                        <div><strong>Snabbstart:</strong> ange en <strong>budget</strong> här nedanför och klicka <strong>Föreslå fördelning mot skillnaderna i likvärdigt arbete</strong> bredvid potten — så får du en färdig startpunkt att finjustera.</div>
                     </div>
                     <div id="lo-slutsatser" class="slutsatser" role="group" aria-label="Nyckeltal"></div>
                     <div class="lo-scenario">
@@ -1597,8 +1597,8 @@
                                     </select>
                                 </div>
                             </div>
-                            <button id="forecast-optimize-pott" type="button" class="btn btn-primary btn-sm" disabled title="Föreslår en fördelning som riktar potten mot de osakliga gapen i likvärdigt arbete först, och visar förslaget under Riktade potter. Ange en pott först.">Föreslå fördelning mot osakliga gap</button>
-                            <p class="text-dampad-xs marg-0 max-bredd-360">Potten är det råa påslaget (kr/mån). PO-påslag och beräkningsperiod (under Inställningar i sidhuvudet) läggs på i totalkostnaden nedan.</p>
+                            <button id="forecast-optimize-pott" type="button" class="btn btn-primary btn-sm" disabled title="Föreslår en fördelning som först riktar potten mot skillnaderna i likvärdigt arbete och visar förslaget under Riktade potter. Ange en pott först.">Föreslå fördelning mot skillnaderna i likvärdigt arbete</button>
+                            <p class="text-dampad-xs marg-0 max-bredd-360">Potten är påslaget på lönerna i kronor per månad. Verktyget lägger på PO-påslag och beräkningsperiod (under Inställningar) i totalkostnaden nedan.</p>
                         </div>
                     </div>
                     <div class="card">
@@ -1629,7 +1629,7 @@
                         <div id="forecast-outcome" class="marg-t-12"></div>
                         <div class="card lo-med-utfall marg-14-0-0">
                             <div class="rad-bryt-mitt gap-12 mellan marg-b-6">
-                                <strong>Lönegapet per grupp, före och efter</strong>
+                                <strong>Löneskillnaden per grupp, före och efter</strong>
                                 <span><label for="forecast-lutning-niva" class="fs-sm marg-h-6">Visa per</label>
                                 <select id="forecast-lutning-niva" class="form-select pad-4-8 bredd-auto">
                                     <option value="bas">BAS-intervall</option>
@@ -1643,12 +1643,12 @@
                     </div>
                     <p class="avsnitt-rubrikrad">Fördjupning</p>
                     <details class="avsnitt" id="avsnitt-lo-riktade" open>
-                    <summary><span class="avsnitt-titel"><h2>Riktade potter</h2><span class="avsnitt-under">Rikta en del av potten mot valda BAS-intervall och yrkesgrupper (BAS, sedan AID). En rad kan begränsas till ett kön eller till löner under en gräns, och lyfta till en nivå.</span></span><span class="avsnitt-nyckel" id="nyckel-lo-riktade"></span></summary>
+                    <summary><span class="avsnitt-titel"><h2>Riktade potter</h2><span class="avsnitt-under">Rikta en del av potten mot valda BAS-intervall och yrkesgrupper (BAS, sedan AID). En rad kan gälla bara ett kön eller löner under en gräns, och lyfta lönerna till en viss nivå.</span></span><span class="avsnitt-nyckel" id="nyckel-lo-riktade"></span></summary>
                     <div class="card">
                         
 
                         <fieldset class="falt-grupp">
-                            <legend>Massregel — lägg till flera grupper på en gång</legend>
+                            <legend>Flera grupper på en gång</legend>
                             <div class="falt">
                                 <label class="falt-etikett" for="forecast-rule-match">Vilka grupper</label>
                                 <select id="forecast-rule-match" class="form-select">
@@ -1674,14 +1674,14 @@
                             </div>
                             <div class="falt">
                                 <label class="falt-etikett" for="forecast-rule-dist">Fördelning</label>
-                                <select id="forecast-rule-dist" class="form-select"><option value="lowest">Lägst först</option><option value="flat">Lika %</option><option value="target">Mot målnivå</option></select>
+                                <select id="forecast-rule-dist" class="form-select"><option value="lowest">Lägsta lönerna först</option><option value="flat">Lika många procent</option><option value="target">Upp till målnivån</option></select>
                             </div>
                             <button id="forecast-add-criteria" type="button" class="btn btn-secondary btn-sm">Lägg till matchande</button>
                         </fieldset>
 
                         <div class="rad-bryt gap-10 marg-b-10">
                             <button id="forecast-add-target" type="button" class="btn btn-secondary btn-sm">Lägg till riktad pott</button>
-                            <button id="forecast-optimize" type="button" class="btn btn-secondary btn-sm" title="Föreslår en fördelning som riktar potten mot de osakliga gapen i likvärdigt arbete först, begränsat till minsta gruppstorlek">Föreslå fördelning mot osakliga gap</button>
+                            <button id="forecast-optimize" type="button" class="btn btn-secondary btn-sm" title="Föreslår en fördelning som först riktar potten mot skillnaderna i likvärdigt arbete, i grupper som når minsta gruppstorlek">Föreslå fördelning mot skillnaderna i likvärdigt arbete</button>
                             <button id="forecast-reset" type="button" class="btn btn-secondary btn-sm">Nollställ</button>
                         </div>
                         <div id="forecast-targets"></div>
@@ -1689,7 +1689,7 @@
                     </div>
                     </details>
                     <details class="avsnitt" id="avsnitt-lo-planering">
-                    <summary><span class="avsnitt-titel"><h2>Avancerat &amp; planering</h2><span class="avsnitt-under">Avrundning, stegvis plan, mål för gapet och marknadsläge</span></span><span class="avsnitt-nyckel" id="nyckel-lo-planering"></span></summary>
+                    <summary><span class="avsnitt-titel"><h2>Avancerat &amp; planering</h2><span class="avsnitt-under">Avrundning, stegvis plan, mål för skillnaden och marknadsläge</span></span><span class="avsnitt-nyckel" id="nyckel-lo-planering"></span></summary>
                     <div class="card">
                         
                         <div class="rad-bryt botten gap-18">
@@ -1702,33 +1702,33 @@
                                 </select>
                             </div>
                             <div class="falt"><label class="falt-etikett" for="forecast-years">Stegvis plan</label>
-                                <select id="forecast-years" class="form-select" title="Fasa in fördelningen linjärt över flera år (åtgärder ska vara genomförda senast inom tre år)">
+                                <select id="forecast-years" class="form-select" title="Fasa in fördelningen jämnt över flera år. Diskrimineringslagen kräver att åtgärderna är genomförda senast inom tre år (3 kap.).">
                                     <option value="1">1 år (allt nu)</option>
                                     <option value="2">2 år</option>
                                     <option value="3">3 år</option>
                                 </select>
                             </div>
                             <div class="falt">
-                                <label class="falt-etikett" for="forecast-closure-pct">Stäng en andel av de osakliga gapen</label>
+                                <label class="falt-etikett" for="forecast-closure-pct">Minska skillnaderna i likvärdigt arbete med</label>
                                 <div class="falt-rad">
                                     <input type="number" id="forecast-closure-pct" class="form-input" min="0" max="100" step="5" placeholder="50">
                                     <span class="falt-enhet">%</span>
                                 </div>
                             </div>
-                            <button id="forecast-closure" type="button" class="btn btn-secondary btn-sm" title="Bygger riktade rader som stänger angiven andel av de osakliga gapen och visar kostnaden">Beräkna kostnad</button>
+                            <button id="forecast-closure" type="button" class="btn btn-secondary btn-sm" title="Bygger riktade rader som minskar skillnaderna i likvärdigt arbete med angiven andel och visar kostnaden">Beräkna kostnad</button>
                             <div class="falt">
-                                <label class="falt-etikett" for="forecast-market-factor">Lyft mot andel av marknadsmedianen</label>
+                                <label class="falt-etikett" for="forecast-market-factor">Lyft mot en andel av jämförelsestatistikens median</label>
                                 <div class="falt-rad">
                                     <input type="number" id="forecast-market-factor" class="form-input" min="50" max="120" step="1" value="95">
                                     <span class="falt-enhet">%</span>
                                 </div>
                             </div>
-                            <button id="forecast-market-btn" type="button" class="btn btn-secondary btn-sm" title="Lyfter grupper som ligger under den andelen av jämförelsestatistikens median mot den nivån (kräver inläst jämförelsestatistik)">Lägg till</button>
+                            <button id="forecast-market-btn" type="button" class="btn btn-secondary btn-sm" title="Lyfter grupper som ligger under den andelen av jämförelsestatistikens median mot den nivån. Kräver att jämförelsestatistiken är inläst.">Lägg till</button>
                         </div>
 
                         <div class="falt-rad-yttre ram-t-1-kant marg-t-14 pad-t-12">
                             <div class="falt">
-                                <label class="falt-etikett" for="forecast-threshold-pct">Mål: oförklarat gap högst</label>
+                                <label class="falt-etikett" for="forecast-threshold-pct">Mål: oförklarad skillnad högst</label>
                                 <div class="falt-rad">
                                     <input type="number" id="forecast-threshold-pct" class="form-input" min="0" max="20" step="0.5" value="5">
                                     <span class="falt-enhet">%</span>
@@ -1750,7 +1750,7 @@
                     <div class="card">
                         
                         <p class="text-dampad-sm lh-1_55 marg-0-0-10">
-                            Identifierar enskilda kvinnor som ligger under sitt jämförelsevärde (mäns median i samma yrke, annars i samma BAS) och beräknar kostnaden att lyfta dem dit. Endast aggregat visas; den slutliga bedömningen av sakliga skäl görs manuellt.
+                            Verktyget hittar kvinnor vars lön ligger under jämförelsevärdet (mäns median i samma yrke, annars i samma BAS-intervall) och räknar vad det kostar att lyfta dem dit. Du ser bara summor. Om skillnaden har sakliga skäl avgör du.
                         </p>
                         <div class="falt-rad-yttre marg-b-10">
                             <div class="falt">
@@ -1761,7 +1761,7 @@
                                 </div>
                             </div>
                             <button id="forecast-rem-btn" type="button" class="btn btn-secondary btn-sm">Analysera</button>
-                            <button id="forecast-rem-seed" type="button" class="btn btn-secondary btn-sm" title="Skapar riktade rader (Likalön-pott) för de flaggade grupperna">Skapa riktade rader</button>
+                            <button id="forecast-rem-seed" type="button" class="btn btn-secondary btn-sm" title="Lägger till riktade rader för grupperna">Skapa riktade rader</button>
                         </div>
                         <div id="forecast-rem-result"></div>
                     </div>
@@ -1782,7 +1782,7 @@
                     <details class="card avsnitt" id="avsnitt-lo-metod">
                     <summary><span class="avsnitt-titel"><h2>Så ska prognosen läsas</h2><span class="avsnitt-under">Ett planeringsunderlag, inte ett beslut</span></span><span class="avsnitt-nyckel" id="nyckel-lo-metod"></span></summary>
                     <p class="fs-sm lh-1_6 marg-0">
-                            Prognosen är ett <strong>planeringsunderlag</strong>. Den föreslagna fördelningen mot osakliga gap bygger på likvärdighetsanalysen; den slutliga bedömningen av sakliga skäl och de faktiska nya lönerna beslutas i lönerevisionen och dokumenteras i handlingsplanen.
+                            Prognosen är ett <strong>planeringsunderlag</strong>. Den föreslagna fördelningen mot skillnaderna i likvärdigt arbete bygger på analysen i Likvärdigt arbete. Om skillnaderna har sakliga skäl och vilka de nya lönerna blir beslutas i löneöversynen. Skriv in åtgärderna i Handlingsplan.
                         </p>
                     </details>
                 </div>

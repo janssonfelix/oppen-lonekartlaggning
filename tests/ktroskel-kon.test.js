@@ -145,7 +145,7 @@ describe('C3: könsuppdelade mått för hela organisationen kräver tröskeln f�
         expect(s.rawGapPct).toBeNull();
         expect(s.nMa).toBe(3);
     });
-    it('Löneöversyn: råa lönegapet före och efter visas inte', () => {
+    it('Löneöversyn: den råa löneskillnaden före och efter visas inte', () => {
         const w = fonster3(null);
         Object.assign(w.__state.forecast, { generell: { mode: 'pct', value: 2 } });
         w.__renderTabContent('loneoversyn');
