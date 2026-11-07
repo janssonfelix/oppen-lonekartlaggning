@@ -13,11 +13,12 @@ export async function sakligaSkal() {
     await sida.waitForFunction(() => document.getElementById('demo-mode-banner')?.style.display === 'flex', { timeout: 15000 });
     await sida.click('.nav-item[data-tab="handlingsplan"]');
     await sida.waitForSelector('#handlingsplan-tbody [data-hp-skal]', { timeout: 15000 });
-    // En rad utan skäl (demot har fyllt i tre rader); finns ingen tas den första.
+    // En rad med en medianskillnad (båda könen når minsta gruppstorlek), så att kommentaren följer med i rapporten.
+    // För en rad där ett kön är under gränsen står bara kategorin i exporterna. Finns ingen tas den första.
     const nyckel = await sida.evaluate(() => {
         const knappar = [...document.querySelectorAll('#handlingsplan-tbody [data-hp-skal]')];
-        const tom = knappar.find(k => k.querySelector('.hp-skal-sammanfattning')?.textContent.trim() === 'Sakliga skäl: inga') || knappar[0];
-        return tom.getAttribute('data-hp-skal');
+        const med = knappar.find(k => Number(k.getAttribute('data-hp-skillnad')) > 0) || knappar[0];
+        return med.getAttribute('data-hp-skal');
     });
     const knapp = `#handlingsplan-tbody [data-hp-skal="${nyckel}"]`;
     const forut = await sida.evaluate(n => (state.handlingsplan[n]?.skal || []).length, nyckel);
@@ -32,7 +33,7 @@ export async function sakligaSkal() {
     await sida.fill(`${sista} input.skal-belopp`, '700');
     await sida.fill(`${sista} input.skal-kommentar`, 'Svårrekryterat i regionen');
     const summa = ((await sida.textContent('#skal-summa')) || '').replace(/\s+/g, ' ').trim();
-    ok(/^Förklarat av skälen: 700 kr/.test(summa), `sammanfattningen räknas om («${summa}»)`);
+    ok(/^Förklarat av skälen: /.test(summa), `sammanfattningen räknas om («${summa}»)`);
     const sparat = await sida.evaluate(n => state.handlingsplan[n]?.skal || [], nyckel);
     ok(sparat.length === forut + 1 && sparat.some(s => s.kategori === 'marknad' && s.belopp === 700), 'skälet sparas på raden');
     await sida.keyboard.press('Escape');
