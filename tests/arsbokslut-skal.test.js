@@ -24,7 +24,8 @@ describe('årets bokslut bär de sakliga skälen', () => {
         for (const x of b.bedomningar) {
             expect(x.n).toBeGreaterThanOrEqual(10);
             const v = w.__state.handlingsplan[x.nyckel];
-            expect(x.skal).toEqual(v.skal.map(s => ({ kategori: s.kategori, belopp: s.belopp })));
+            // En rad där ett kön är under minsta gruppstorlek (demots prioriteringsrad) bär bara kategorierna.
+            expect(x.skal).toEqual(v.skal.map(s => (x.nMin >= 10 ? { kategori: s.kategori, belopp: s.belopp } : { kategori: s.kategori })));
         }
         const text = JSON.stringify(b);
         for (const [, v] of rader) for (const s of v.skal) expect(text).not.toContain(s.kommentar);

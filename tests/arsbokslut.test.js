@@ -259,10 +259,16 @@ describe('årsbokslut version 2: de sakliga skälen (bedomningar)', () => {
         expect(b.grupper).toHaveLength(3);
         expect(med(2026, []).bedomningar).toEqual([]);
     });
-    it('k: en grupp med färre än k personer faller bort; skillnaden nollas när den minsta gruppen bakom den är under k', () => {
-        const b = med(2026, [bed('a', 1500, [{ kategori: 'marknad', belopp: 500 }], { n: 9 }), bed('b', 2345, [{ kategori: 'marknad', belopp: 500 }], { nMin: 7 })]);
-        expect(b.bedomningar.map(x => [x.nyckel, x.skillnadKr])).toEqual([['b', null]]);
+    it('k: en grupp med färre än k personer faller bort; under k i den minsta gruppen stryks skillnaden och beloppen', () => {
+        const b = med(2026, [bed('a', 1500, [{ kategori: 'marknad', belopp: 500 }], { n: 9 }),
+            bed('b', 2345, [{ kategori: 'marknad', belopp: 13579 }, { kategori: 'okand', belopp: 1 }, { kategori: 'marknad', belopp: 2 }], { nMin: 7 })]);
+        expect(b.bedomningar).toEqual([{ nyckel: 'b', grupp: 'Grupp b', n: 20, nMin: 7, skillnadKr: null, skal: [{ kategori: 'marknad' }] }]);
         expect(JSON.stringify(b)).not.toContain('2345');
+        expect(JSON.stringify(b)).not.toContain('13579');
+    });
+    it('en nyckel som står två gånger: den första gäller', () => {
+        const b = med(2026, [bed('a', 1000, [{ kategori: 'marknad', belopp: 100 }]), bed('a', 2000, [{ kategori: 'annat', belopp: 200 }])]);
+        expect(b.bedomningar.map(x => [x.nyckel, x.skillnadKr, x.skal])).toEqual([['a', 1000, [{ kategori: 'marknad', belopp: 100 }]]]);
     });
     it('ogiltiga skäl och poster utan skäl faller bort; en nyckel som inte är text faller bort', () => {
         const b = med(2026, [bed('a', 1000, [{ kategori: 'okand', belopp: 5 }]), bed('b', 1000, []), { ...bed('c', 1000, [{ kategori: 'annat', belopp: 5 }]), nyckel: 7 }, null,
@@ -274,7 +280,18 @@ describe('årsbokslut version 2: de sakliga skälen (bedomningar)', () => {
         const nu = bokslut(2026, { k: 12, bedomningar: [] });
         const j = jamforArsbokslut(forra, nu);
         expect(j.bedomningar.saknasIAr.map(g => g.nyckel)).toEqual(['b']);
-        expect(j.bedomningar.kategorier[0].forra).toEqual({ summa: 500, andel: null });
+        // Med årets högre gräns är den minsta gruppen bakom b under k: beloppet stryks, och kategorin räknas inte i summorna.
+        expect(j.bedomningar.kategorier).toEqual([]);
+    });
+    it('jämförelsen: en grupp med bara kategorier (ett kön under k) visas med kategorinamnen och ger inga belopp', () => {
+        const forra = med(2025, [bed('a', 1000, [{ kategori: 'marknad', belopp: 400 }]), bed('b', null, [{ kategori: 'utbildning', belopp: 300 }], { nMin: 5 })]);
+        const nu = med(2026, [bed('a', 1000, [{ kategori: 'marknad', belopp: 500 }]), bed('b', null, [{ kategori: 'utbildning', belopp: 200 }], { nMin: 5 })]);
+        const j = jamforArsbokslut(forra, nu).bedomningar;
+        expect(j.kategorier).toEqual([{ kategori: 'marknad', namn: 'Marknad', forra: { summa: 400, andel: 0.4 }, nu: { summa: 500, andel: 0.5 }, diff: 100 }]);
+        expect(j.grupper.find(g => g.nyckel === 'b')).toEqual({ nyckel: 'b', grupp: 'Grupp b',
+            forra: { skillnadKr: null, skal: [{ kategori: 'utbildning', namn: 'Utbildning', belopp: null, andel: null }] },
+            nu: { skillnadKr: null, skal: [{ kategori: 'utbildning', namn: 'Utbildning', belopp: null, andel: null }] } });
+        expect(JSON.stringify(j)).not.toMatch(/NaN/);
     });
 });
 

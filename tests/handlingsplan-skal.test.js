@@ -57,6 +57,26 @@ describe('Handlingsplan: gruppens skillnad per rad', () => {
     });
 });
 
+describe('Handlingsplan: prioriteringsradens skillnad har rätt tecken', () => {
+    it('båda könen når minsta gruppstorlek: skillnaden är mäns median minus kvinnors', () => {
+        const w = createAppWindow();
+        w.eval(`(() => {
+            const rows = [];
+            const add = (n, kon, lon0) => { for (let i = 0; i < n; i++) rows.push({ bas: 'B', yrke: '5301 Undersköterska', aid: '5301', yrkeLabel: 'Undersköterska', lon: lon0 + i * 100, alder: 30 + i, kon, poang: null, enhet: '1234' }); };
+            add(12, 'kvinna', 28000); add(12, 'man', 30000);
+            state.data = rows;
+            state.dataAudit = { totalRaw: rows.length, excludedNoBas: 0, excludedZeroLon: 0 };
+            state.policy = [{ bas: 'B', p10: 35000, med: 40000, p90: 45000 }];
+            state.handlingsplan = {};
+        })()`);
+        const { nycklar, skillnader } = seedExport(w);
+        const i = nycklar.indexOf('prio|5301|B');
+        expect(i, 'fixturen ger en prioriteringsrad').toBeGreaterThanOrEqual(0);
+        // Kvinnornas median 28 550, männens 30 550.
+        expect(skillnader[i]).toBe(2000);
+    });
+});
+
 describe('Handlingsplan: knappen Sakliga skäl och dialogen', () => {
     it('varje förifylld rad har knappen i kolumnen Sakliga skäl prövade?, med "Sakliga skäl: inga" när inga skäl finns', () => {
         const w = fonster();
@@ -152,6 +172,17 @@ describe('Handlingsplan: knappen Sakliga skäl och dialogen', () => {
         fyll(w, r.querySelector('input.skal-belopp'), '');
         expect(fel().hidden).toBe(false);
     });
+    it('ett annat fält ändras: skälen står kvar; en rad med bara skäl finns kvar när övriga fält töms', () => {
+        const w = fonster();
+        const tr = radMedSkillnad(w);
+        const nyckel = knapp(tr).dataset.hpSkal;
+        w.eval(`_hpSattSkal(${JSON.stringify(nyckel)}, [{ kategori: 'marknad', belopp: 500, kommentar: 'Kvar' }])`);
+        const ansvarig = tr.querySelector('input[data-hp-falt="ansvarig"]');
+        fyll(w, ansvarig, 'Lönechef');
+        expect(w.__state.handlingsplan[nyckel]).toMatchObject({ ansvarig: 'Lönechef', skal: [{ kategori: 'marknad', belopp: 500, kommentar: 'Kvar' }] });
+        fyll(w, ansvarig, '');
+        expect(w.__state.handlingsplan[nyckel]).toEqual({ sakligt: '', ansvarig: '', tidsplan: '', status: '', skal: [{ kategori: 'marknad', belopp: 500, kommentar: 'Kvar' }] });
+    });
     it('högst 8 skäl: knappen Lägg till skäl blir inaktiv', () => {
         const w = fonster();
         oppna(w, radMedSkillnad(w));
@@ -192,6 +223,7 @@ describe('Handlingsplan: knappen Sakliga skäl och dialogen', () => {
         const tr = prioRad(w);
         oppna(w, tr);
         expect(ren(modal(w).textContent)).toContain('Medianskillnaden redovisas inte: ett kön i gruppen har färre än 10 personer.');
+        expect(ren(modal(w).querySelector('#skal-kon-under').textContent)).toBe('Belopp, andel och kommentar följer inte med i exporterna eller i årsbokslutet, eftersom ett kön i gruppen har färre än 10 personer. Där står bara kategorierna.');
         laggTill(w, 'marknad', 400);
         expect(ren(w.document.getElementById('skal-summa').textContent)).toBe('Förklarat av skälen: 400 kr');
         expect(ren(knapp(tr).textContent)).toBe('Sakliga skäl (1)');
@@ -321,6 +353,22 @@ describe('Dossiererna: läs-raden pekar på bedömningen i handlingsplanen', () 
         const utan = w.eval(`gruppdossierCandidates().map(g => g.key).find(k => !_handlingsplanSeedRows().nycklar.some(n => n.split('|')[1] === k.split('|')[0] && n.split('|')[2] === k.split('|')[1]))`);
         w.eval(`closeBasdossier(); openGruppdossier(${JSON.stringify(utan)})`);
         expect(w.document.querySelector('#dossier-modal .hp-bedomningar')).toBeNull();
+    });
+    it('matchningen: AID eller yrke som i prioriteringens nyckel, och kandidatparet också i jämförelseyrkets dossier', () => {
+        const w = fonster();
+        const p = (n, aid, yrke, bas) => w.eval(`_hpPassarGrupp(${JSON.stringify(n.split('|'))}, ${JSON.stringify(aid)}, ${JSON.stringify(yrke)}, ${JSON.stringify(bas)})`);
+        expect(p('prio|5301|C', '5301', '5301 Undersköterska', 'C')).toBe('grupp');
+        expect(p('prio|Kock|B', 'Kock', 'Kock', 'B')).toBe('grupp');            // yrke utan AID-kod: nyckeln bär yrket
+        expect(p('prio|5301 Undersköterska|C', '5301', '5301 Undersköterska', 'C')).toBe('grupp');
+        expect(p('par|5301|C|7001|C', '5301', '5301 Undersköterska', 'C')).toBe('grupp');
+        expect(p('par|5301|C|7001|C', '7001', '7001 Drifttekniker', 'C')).toBe('jamforelse');
+        expect(p('par|5301|C|7001|C', '7001', '7001 Drifttekniker', 'D')).toBe('');
+        expect(p('egen|x', '5301', '5301 Undersköterska', 'C')).toBe('');
+        // I jämförelseyrkets dossier märks raden.
+        const tr = radMedSkillnad(w);
+        const [, , , maAid, maBas] = knapp(tr).dataset.hpSkal.split('|');
+        w.eval(`openGruppdossier(${JSON.stringify(`${maAid}|${maBas}`)})`);
+        expect(ren(w.document.getElementById('dossier-modal').textContent)).toContain(`${tr.cells[1].textContent} (kandidatpar, jämförelseyrke): Bedömning i handlingsplanen`);
     });
     it('en rad utan skäl: läs-raden säger att inga skäl är angivna', () => {
         const w = fonster();

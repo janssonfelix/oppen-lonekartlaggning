@@ -317,7 +317,7 @@ function _gdRenderBody(d) {
             <button type="button" class="btn-table-tool" id="btn-dossier-copy" title="Kopiera dossiern som text">${ikon('kopiera', 14)} Kopiera</button>
         </div>
         <p class="reg-caveat-inline"><strong>Dossiern dokumenterar inte sakliga skäl.</strong> Skälen dokumenterar du i Handlingsplan.</p>
-        ${_hpBedomningHtml(_hpBedomningar(([kalla, aid, bas]) => (kalla === 'prio' || kalla === 'par') && aid === String(d.aid) && bas === String(d.bas)), { medGrupp: true })}
+        ${_hpBedomningHtml(_hpBedomningar(delar => _hpPassarGrupp(delar, String(d.aid), String(d.yrke), String(d.bas))), { medGrupp: true })}
         <div class="gd-grid">
             ${card('Nyckeltal', nyckeltal)}
             ${card('Ojusterad löneskillnad', gapInner)}

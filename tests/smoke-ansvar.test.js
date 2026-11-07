@@ -418,8 +418,9 @@ describe('ansvarskoden och konfigurationsfilen', () => {
     it('konfigurationsfilen innehåller varken ansvarskoder eller ansvarskolumnen', () => {
         const w = createAppWindow();
         w.__loadDemoData();
-        // Handlingsplanens fält "ansvarig" (en roll, demots rader med sakliga skäl bär det) är inte ansvarskoden.
-        expect(JSON.stringify(w.__buildConfigSnapshot()).replace(/"ansvarig":/g, '')).not.toMatch(/ansvar/i);
+        // Handlingsplanens rader (demots förifyllda skäl) har fältet "ansvarig", en roll och inte ansvarskoden: töms här.
+        w.__state.handlingsplan = {};
+        expect(JSON.stringify(w.__buildConfigSnapshot())).not.toMatch(/ansvar/i);
     });
 });
 

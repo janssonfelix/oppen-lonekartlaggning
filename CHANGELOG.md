@@ -18,7 +18,9 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   kategori*, Excel (alla flikar) bladet *Sakliga skal* och handlingsplansunderlaget två kolumner. Det lilla och det
   stora demot har skäl på tre rader. Årsbokslutet är version 2 och bär skälen (utan kommentarer), och *Jämförelse med
   förra året* visar *Sakliga skäl per kategori* båda åren och de grupper som hade skäl förra året men inte i år.
-  Skälen följer med i konfigurationsfilen; en äldre fil läses som förut.
+  Skälen följer med i konfigurationsfilen; en äldre fil läses som förut. För en grupp där ett kön är under minsta
+  gruppstorlek står i exporterna och i bokslutet bara kategorierna, utan belopp och kommentar. Demots skäl tas bort
+  när en riktig lönefil läses in.
 
 - **Klarspråksputs.** Långa meningar är delade i verktyget och i användar- och dataskyddsdokumenten.
   Termer förklaras första gången de används, och engelska och tekniska ord är utbytta: *Successionszon*

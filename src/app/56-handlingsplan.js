@@ -205,15 +205,32 @@ function _hpSkalKnapp(nyckel, grupp, skillnadKr) {
  * Bedömningarna i handlingsplanen för en grupp, för läs-raden i gruppdossiern och BAS-dossiern (80, 81): en post per
  * förifylld rad som `passar` (nyckelns delar), med antal skäl och förklarad andel. Dossiererna dokumenterar inte skäl
  * själva; raden pekar på bedömningen här.
- * @param {(delar: string[]) => boolean} passar
+ * @param {(delar: string[]) => string|boolean} passar
  */
 function _hpBedomningar(passar) {
     const seed = _handlingsplanSeedRows({ baraEgna: !getData().length });
-    return seed.nycklar.map((nyckel, i) => ({ nyckel, i })).filter(({ nyckel }) => !_hpArEgen(nyckel) && passar(nyckel.split('|')))
-        .map(({ nyckel, i }) => {
+    return seed.nycklar.map((nyckel, i) => ({ nyckel, i, roll: _hpArEgen(nyckel) ? '' : passar(nyckel.split('|')) })).filter(x => x.roll)
+        .map(({ nyckel, i, roll }) => {
             const s = _sakSammanstallning(_hpVarden(nyckel).skal || [], seed.skillnader[i]);
-            return { nyckel, grupp: seed.rows[i][1], kalla: nyckel.split('|')[0], antal: s.antal, summa: s.summa, andel: s.forklaradAndel };
+            return { nyckel, grupp: seed.rows[i][1], kalla: nyckel.split('|')[0], roll, antal: s.antal, summa: s.summa, andel: s.forklaradAndel };
         });
+}
+/**
+ * Hör handlingsplanens rad (nyckelns delar) till gruppdossierns grupp? 'grupp' för prioriteringens rad och för ett
+ * kandidatpar där gruppen är det kvinnodominerade yrket, 'jamforelse' för ett kandidatpar där gruppen är
+ * jämförelseyrket, annars ''. Prioriteringens nyckel bär AID-koden eller, utan kod, yrket (`i.aid || i.yrke`), så
+ * båda prövas.
+ * @param {string[]} delar
+ * @param {string} aid
+ * @param {string} yrke
+ * @param {string} bas
+ */
+function _hpPassarGrupp(delar, aid, yrke, bas) {
+    const [kalla, a1, b1, a2, b2] = delar;
+    const ar = (a, b) => (a === aid || a === yrke) && b === bas;
+    if (kalla === 'prio') return ar(a1, b1) ? 'grupp' : '';
+    if (kalla === 'par') return ar(a1, b1) ? 'grupp' : ar(a2, b2) ? 'jamforelse' : '';
+    return '';
 }
 /** Läs-raden för en bedömning: "Bedömning i handlingsplanen: 3 skäl, 80 % av skillnaden förklarad". */
 function _hpBedomningText(b) {
@@ -224,7 +241,8 @@ function _hpBedomningText(b) {
 /** Läs-raderna som HTML med länk till raden i Handlingsplan, eller tom sträng utan rader. `medGrupp`: gruppen först. */
 function _hpBedomningHtml(lista, { medGrupp = false } = {}) {
     if (!lista.length) return '';
-    return `<ul class="gd-list hp-bedomningar">${lista.map(b => `<li>${medGrupp ? `${esc(b.grupp)}${b.kalla === 'par' ? ' (kandidatpar)' : ''}: ` : ''}${esc(_hpBedomningText(b))}. `
+    const markning = b => (b.kalla !== 'par' ? '' : b.roll === 'jamforelse' ? ' (kandidatpar, jämförelseyrke)' : ' (kandidatpar)');
+    return `<ul class="gd-list hp-bedomningar">${lista.map(b => `<li>${medGrupp ? `${esc(b.grupp)}${markning(b)}: ` : ''}${esc(_hpBedomningText(b))}. `
         + `<a href="#" data-hp-ga-till="${esc(b.nyckel)}" aria-label="${esc(`Gå till raden i Handlingsplan: ${b.grupp}`)}">Gå till raden</a></li>`).join('')}</ul>`;
 }
 /** Visar raden i Handlingsplan med fokus på dess knapp Sakliga skäl. */
@@ -247,13 +265,37 @@ function _hpGaTillRad(nyckel) {
 function _hpSkalUnderlag(seed) {
     const s = seed || _handlingsplanSeedRows();
     const grupper = s.nycklar.map((nyckel, i) => ({ nyckel, i, skal: _hpVarden(nyckel).skal || [] })).filter(g => g.skal.length)
-        .map(({ nyckel, i, skal }) => ({ nyckel, grupp: s.rows[i][1] || 'Egen rad', underlag: s.rows[i][2], antal: s.rows[i][8], nMin: s.minsta[i], skillnadKr: s.skillnader[i],
-            sammanstallning: _sakSammanstallning(skal, s.skillnader[i]) }));
-    return { grupper, perKategori: _sakPerKategori(grupper.map(g => ({ skal: g.sammanstallning.skal, skillnadKr: g.skillnadKr }))) };
+        .map(({ nyckel, i, skal }) => {
+            const utanBelopp = _hpUtanBelopp(nyckel, s.minsta[i]);
+            return { nyckel, grupp: s.rows[i][1] || 'Egen rad', underlag: s.rows[i][2], antal: s.rows[i][8], nMin: s.minsta[i], skillnadKr: utanBelopp ? null : s.skillnader[i],
+                utanBelopp, sammanstallning: utanBelopp ? _hpBaraKategorier(skal) : _sakSammanstallning(skal, s.skillnader[i]) };
+        });
+    // Summan per kategori bara över grupper med belopp.
+    return { grupper, perKategori: _sakPerKategori(grupper.filter(g => !g.utanBelopp).map(g => ({ skal: g.sammanstallning.skal, skillnadKr: g.skillnadKr }))) };
 }
-/** Radens skäl som text för exporterna: "Marknad 800 kr; Erfarenhet 400 kr". */
+/** Noten i exporterna där belopp, andel och kommentar utelämnas. */
+const HP_SKAL_UTAN_BELOPP = 'belopp utelämnat: ett kön under minsta gruppstorlek';
+/**
+ * En förifylld rad där den minsta gruppen bakom skillnaden (ett kön) är under den inställda minsta gruppstorleken:
+ * i exporterna och bokslutet står då bara kategorierna, utan belopp, andel och kommentar. En egen rad har ingen grupp
+ * och bär sina belopp.
+ * @param {string} nyckel
+ * @param {number|null} nMin
+ */
+function _hpUtanBelopp(nyckel, nMin) {
+    return !_hpArEgen(nyckel) && !(Number.isFinite(nMin) && /** @type {number} */ (nMin) >= kInstalld());
+}
+/** Sammanställningen för en rad utan belopp: kategorierna med namn, inga belopp, andelar eller kommentarer. */
+function _hpBaraKategorier(skal) {
+    const namn = new Map(_sakKategorier().map(k => [k.id, k.namn]));
+    return { skal: skal.map(x => ({ kategori: x.kategori, namn: namn.get(x.kategori) || x.kategori, belopp: null, andel: null, kommentar: '' })),
+        antal: skal.length, summa: null, skillnadKr: null, forklaradAndel: null, aterstar: null, aterstarAndel: null, overstiger: false };
+}
+/** Radens skäl som text för exporterna: "Marknad 800 kr; Erfarenhet 400 kr"; utan belopp bara kategorierna med noten. */
 function _hpSkalText(skal) {
-    return (skal || []).map(s => `${s.namn || s.kategori} ${svTal(s.belopp, 0)} kr`).join('; ');
+    const lista = skal || [];
+    if (lista.length && lista.every(s => s.belopp == null)) return `${lista.map(s => s.namn || s.kategori).join('; ')} (${HP_SKAL_UTAN_BELOPP})`;
+    return lista.map(s => `${s.namn || s.kategori} ${svTal(s.belopp, 0)} kr`).join('; ');
 }
 
 // Demots exempel på sakliga skäl (andel av gruppens skillnad, eller belopp när gruppen saknar skillnad), så att
@@ -263,6 +305,18 @@ const HP_DEMO_SKAL = [
     [['overgang', 0.5, 'Exempel i demot: lön som följde med vid en omorganisation']],
     [['utbildning', 0.3, 'Exempel i demot: vidareutbildning utöver kraven'], ['prestation', 0.2, 'Exempel i demot: bedömning enligt lönekriterierna']],
 ];
+/** Nycklarna där demot skrev skäl: de tas bort när en riktig lönefil läses in (_afterDataLoaded, 32-filinlasning.js). */
+const _hpDemoNycklar = new Set();
+/** Tar bort skälen som demot skrev, och raden om inget annat är ifyllt. Övriga rader och egna rader rörs inte. */
+function _hpRensaDemoSkal() {
+    for (const nyckel of _hpDemoNycklar) {
+        const rad = state.handlingsplan && state.handlingsplan[nyckel];
+        if (!rad) continue;
+        delete rad.skal;
+        if (!_hpArEgen(nyckel) && !_hpHarIfyllt(rad)) delete state.handlingsplan[nyckel];
+    }
+    _hpDemoNycklar.clear();
+}
 /** Förifyller demots skäl på tre rader som följer med i exporterna: rader med en medianskillnad först. Rör inte rader som redan har skäl. */
 function _hpDemoSkal() {
     const seed = medExportLage(() => _handlingsplanSeedRows());
@@ -270,6 +324,7 @@ function _hpDemoSkal() {
     const ordning = [...kand.filter(x => x.s > 0), ...kand.filter(x => !(x.s > 0))].slice(0, HP_DEMO_SKAL.length);
     ordning.forEach(({ nyckel, s }, j) => {
         if ((_hpVarden(nyckel).skal || []).length) return;
+        _hpDemoNycklar.add(nyckel);
         _hpSattSkal(nyckel, HP_DEMO_SKAL[j].map(([kategori, andel, kommentar]) => ({ kategori, kommentar,
             belopp: s > 0 ? Math.round(s * Number(andel) / 100) * 100 : Math.round(Number(andel) * 2000 / 100) * 100 })));
     });
@@ -379,7 +434,7 @@ function _exportHandlingsplanExport() {
     // ("Marknad 800 kr; Erfarenhet 400 kr") och hur stor andel av gruppens medianskillnad de förklarar.
     const rows = seed.rows.map((r, i) => {
         const sk = _hpVarden(seed.nycklar[i]).skal || [];
-        const sum = _sakSammanstallning(sk, seed.skillnader[i]);
+        const sum = sk.length && _hpUtanBelopp(seed.nycklar[i], seed.minsta[i]) ? _hpBaraKategorier(sk) : _sakSammanstallning(sk, seed.skillnader[i]);
         return [r[0], r[1], r[8] != null ? r[8] : '', ...r.slice(2, 8), _hpSkalText(sum.skal), sum.antal && sum.forklaradAndel != null ? Math.round(sum.forklaradAndel * 1000) / 10 : ''];
     });
     for (let i = 0; i < 5; i++) rows.push(['', '', '', '', '', '', '', '', '', '', '']);   // tomma rader för manuella tillägg

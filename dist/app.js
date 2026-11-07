@@ -6950,10 +6950,16 @@ function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
             const andel = v => (v == null ? '–' : _pct(v * 100, 0));
             const pk = sk.perKategori;
             b.stycken.push('Tabellerna visar de sakliga skäl som organisationen har angett per grupp. Beloppet är den del av gruppens medianskillnad, i kronor per månad, som skälet förklarar. Kategorierna och beloppen är organisationens bedömning. Verktyget räknar bara om beloppen till andelar av skillnaden.');
+            // Skälen överstiger skillnaden: samma mening som rapportmodellen (58-rapportmodell.js).
+            const over = sk.grupper.filter(g => g.overstiger);
+            if (over.length) b.stycken.push(over.map(g => `${g.grupp}: skälen är tillsammans större än skillnaden (${_kr(g.summa)} mot ${_kr(g.skillnadKr)}).`).join(' ')
+                + ' Ett belopp kan vara för högt, eller så räknar två skäl samma sak. Kontrollera beloppen.');
+            const not = sk.notUtanBelopp || 'belopp utelämnat: ett kön under minsta gruppstorlek';
             b.tabeller = [
                 { rubrik: 'Sakliga skäl per grupp', rubriker: ['Grupp', 'Antal berörda', 'Medianskillnad (kr/mån)', 'Kategori', 'Belopp (kr/mån)', 'Andel av skillnaden', 'Kommentar'],
+                  // En grupp där ett kön är under minsta gruppstorlek: bara kategorin, med noten i kommentarens kolumn.
                   rader: sk.grupper.flatMap(g => g.skal.map((s, i) => [i ? '' : g.grupp, i || g.antal == null ? '' : formatTal(g.antal), i ? '' : _kr(g.skillnadKr),
-                      s.namn, _kr(s.belopp), andel(s.andel), s.kommentar || ''])) },
+                      s.namn, g.utanBelopp ? '' : _kr(s.belopp), g.utanBelopp ? '' : andel(s.andel), g.utanBelopp ? not : (s.kommentar || '')])) },
                 { rubrik: 'Sammanställning per kategori', rubriker: ['Kategori', 'Belopp (kr/mån)', 'Andel av skillnaden i grupper med skäl', 'Antal grupper'],
                   rader: [...pk.kategorier.map(k => [k.namn, _kr(k.summa), andel(k.andel), formatTal(k.antalGrupper)]), ['Totalt', _kr(pk.summa), andel(pk.andel), formatTal(pk.antalGrupper)]] },
             ];
@@ -8889,14 +8895,23 @@ function valideraArsbokslut(o) {
  */
 function _valideraBedomningar(lista, k) {
     if (!Array.isArray(lista)) return null;
+    const kategorier = new Set(skalKategorier().map(x => x.id));
+    const sedda = new Set();
     return lista.map(b => {
         if (!b || typeof b !== 'object' || typeof b.nyckel !== 'string' || !b.nyckel || b.nyckel.length > 300) return null;
+        if (sedda.has(b.nyckel)) return null;   // samma nyckel två gånger: den första gäller
         const n = _heltal(b.n, 0, 10_000_000), nMin = _heltal(b.nMin, 0, 10_000_000);
         if (n == null || n < k) return null;
-        const skal = valideraSkal(Array.isArray(b.skal) ? b.skal.map(s => (s && typeof s === 'object' ? { kategori: s.kategori, belopp: s.belopp } : s)) : b.skal).skal
-            .map(s => ({ kategori: s.kategori, belopp: s.belopp }));
+        const overK = nMin != null && nMin >= k;
+        // Under k i den minsta gruppen bakom skillnaden (ett kön under k) bär posten bara kategorierna: inga belopp.
+        const skal = overK
+            ? valideraSkal(Array.isArray(b.skal) ? b.skal.map(s => (s && typeof s === 'object' ? { kategori: s.kategori, belopp: s.belopp } : s)) : b.skal).skal
+                .map(s => ({ kategori: s.kategori, belopp: s.belopp }))
+            : [...new Set((Array.isArray(b.skal) ? b.skal : []).map(s => (s && typeof s === 'object' ? s.kategori : null)).filter(id => kategorier.has(id)))]
+                .slice(0, 8).map(kategori => ({ kategori }));
         if (!skal.length) return null;
-        return { nyckel: b.nyckel, grupp: _text(b.grupp), n, nMin: nMin ?? 0, skillnadKr: nMin != null && nMin >= k ? _tal(b.skillnadKr) : null, skal };
+        sedda.add(b.nyckel);
+        return { nyckel: b.nyckel, grupp: _text(b.grupp), n, nMin: nMin ?? 0, skillnadKr: overK ? _tal(b.skillnadKr) : null, skal };
     }).filter(Boolean);
 }
 
@@ -8994,14 +9009,18 @@ function bokslutMedGrans(b, k) {
  */
 function jamforBedomningar(forra, nu) {
     if (!Array.isArray(forra) || !Array.isArray(nu)) return null;
-    const pkF = skalPerKategori(forra), pkN = skalPerKategori(nu);
+    // En post med bara kategorier (ett kön under k) ger inga belopp och räknas inte i summorna per kategori.
+    const harBelopp = b => b.skal.every(s => typeof s.belopp === 'number');
+    const pkF = skalPerKategori(forra.filter(harBelopp)), pkN = skalPerKategori(nu.filter(harBelopp));
+    const namn = new Map(skalKategorier().map(x => [x.id, x.namn]));
     const fK = new Map(pkF.kategorier.map(k => [k.kategori, k])), nK = new Map(pkN.kategorier.map(k => [k.kategori, k]));
     const kategorier = skalKategorier().filter(k => fK.has(k.id) || nK.has(k.id)).map(k => {
         const f = fK.get(k.id), n = nK.get(k.id);
         return { kategori: k.id, namn: k.namn, forra: f ? { summa: f.summa, andel: f.andel } : null, nu: n ? { summa: n.summa, andel: n.andel } : null,
             diff: f && n ? n.summa - f.summa : null };
     });
-    const ar = (b) => { const s = skalSammanstallning(b.skal, b.skillnadKr);
+    const ar = (b) => { if (!harBelopp(b)) return { skillnadKr: null, skal: b.skal.map(x => ({ kategori: x.kategori, namn: namn.get(x.kategori) || x.kategori, belopp: null, andel: null })) };
+        const s = skalSammanstallning(b.skal, b.skillnadKr);
         return { skillnadKr: b.skillnadKr, skal: s.skal.map(x => ({ kategori: x.kategori, namn: x.namn, belopp: x.belopp, andel: x.andel })) }; };
     const nuMap = new Map(nu.map(b => [b.nyckel, b]));
     const grupper = forra.filter(b => nuMap.has(b.nyckel)).map(b => ({ nyckel: b.nyckel, grupp: nuMap.get(b.nyckel).grupp || b.grupp, forra: ar(b), nu: ar(nuMap.get(b.nyckel)) }));
@@ -17227,7 +17246,8 @@ function _excelSkalRader() {
     const rows = [['Sakliga skäl per grupp', 'Tabellerna visar de sakliga skäl som organisationen har angett per grupp. Beloppet är den del av gruppens medianskillnad, i kronor per månad, som skälet förklarar.'],
         ['Grupp', 'Underlag', 'Antal berörda', 'Medianskillnad (kr/mån)', 'Kategori', 'Belopp (kr/mån)', 'Andel av skillnaden (%)', 'Kommentar']];
     for (const g of grupper) for (const s of g.sammanstallning.skal)
-        rows.push([g.grupp, g.underlag, g.antal == null ? '' : g.antal, g.skillnadKr == null ? '' : g.skillnadKr, s.namn, s.belopp, pct(s.andel), s.kommentar || '']);
+        rows.push([g.grupp, g.underlag, g.antal == null ? '' : g.antal, g.skillnadKr == null ? '' : g.skillnadKr, s.namn,
+            g.utanBelopp ? '' : s.belopp, g.utanBelopp ? '' : pct(s.andel), g.utanBelopp ? HP_SKAL_UTAN_BELOPP : (s.kommentar || '')]);
     rows.push([], ['Sammanställning per kategori'], ['Kategori', 'Belopp (kr/mån)', 'Andel av skillnaden i grupper med skäl (%)', 'Antal grupper']);
     for (const k of pk.kategorier) rows.push([k.namn, k.summa, pct(k.andel), k.antalGrupper]);
     rows.push(['Totalt', pk.summa, pct(pk.andel), pk.antalGrupper], [],
@@ -19628,6 +19648,8 @@ function _afterDataLoaded() {
     // hör till den påhittade organisationen och tas bort (ADR-36).
     if (state.isDemo) {
         state.profile = { ...DEFAULT_PROFILE };
+        // Demots sakliga skäl hör till demots grupper: en riktig fil kan ha samma AID och BAS.
+        if (typeof _hpRensaDemoSkal === 'function') _hpRensaDemoSkal();
         if (state.policyKalla === 'demo') {
             aterstallReferens();
             resetUploadCell('upload-cell-policy', 'upload-cell optional', 'Valfritt');
@@ -28094,15 +28116,32 @@ function _hpSkalKnapp(nyckel, grupp, skillnadKr) {
  * Bedömningarna i handlingsplanen för en grupp, för läs-raden i gruppdossiern och BAS-dossiern (80, 81): en post per
  * förifylld rad som `passar` (nyckelns delar), med antal skäl och förklarad andel. Dossiererna dokumenterar inte skäl
  * själva; raden pekar på bedömningen här.
- * @param {(delar: string[]) => boolean} passar
+ * @param {(delar: string[]) => string|boolean} passar
  */
 function _hpBedomningar(passar) {
     const seed = _handlingsplanSeedRows({ baraEgna: !getData().length });
-    return seed.nycklar.map((nyckel, i) => ({ nyckel, i })).filter(({ nyckel }) => !_hpArEgen(nyckel) && passar(nyckel.split('|')))
-        .map(({ nyckel, i }) => {
+    return seed.nycklar.map((nyckel, i) => ({ nyckel, i, roll: _hpArEgen(nyckel) ? '' : passar(nyckel.split('|')) })).filter(x => x.roll)
+        .map(({ nyckel, i, roll }) => {
             const s = _sakSammanstallning(_hpVarden(nyckel).skal || [], seed.skillnader[i]);
-            return { nyckel, grupp: seed.rows[i][1], kalla: nyckel.split('|')[0], antal: s.antal, summa: s.summa, andel: s.forklaradAndel };
+            return { nyckel, grupp: seed.rows[i][1], kalla: nyckel.split('|')[0], roll, antal: s.antal, summa: s.summa, andel: s.forklaradAndel };
         });
+}
+/**
+ * Hör handlingsplanens rad (nyckelns delar) till gruppdossierns grupp? 'grupp' för prioriteringens rad och för ett
+ * kandidatpar där gruppen är det kvinnodominerade yrket, 'jamforelse' för ett kandidatpar där gruppen är
+ * jämförelseyrket, annars ''. Prioriteringens nyckel bär AID-koden eller, utan kod, yrket (`i.aid || i.yrke`), så
+ * båda prövas.
+ * @param {string[]} delar
+ * @param {string} aid
+ * @param {string} yrke
+ * @param {string} bas
+ */
+function _hpPassarGrupp(delar, aid, yrke, bas) {
+    const [kalla, a1, b1, a2, b2] = delar;
+    const ar = (a, b) => (a === aid || a === yrke) && b === bas;
+    if (kalla === 'prio') return ar(a1, b1) ? 'grupp' : '';
+    if (kalla === 'par') return ar(a1, b1) ? 'grupp' : ar(a2, b2) ? 'jamforelse' : '';
+    return '';
 }
 /** Läs-raden för en bedömning: "Bedömning i handlingsplanen: 3 skäl, 80 % av skillnaden förklarad". */
 function _hpBedomningText(b) {
@@ -28113,7 +28152,8 @@ function _hpBedomningText(b) {
 /** Läs-raderna som HTML med länk till raden i Handlingsplan, eller tom sträng utan rader. `medGrupp`: gruppen först. */
 function _hpBedomningHtml(lista, { medGrupp = false } = {}) {
     if (!lista.length) return '';
-    return `<ul class="gd-list hp-bedomningar">${lista.map(b => `<li>${medGrupp ? `${esc(b.grupp)}${b.kalla === 'par' ? ' (kandidatpar)' : ''}: ` : ''}${esc(_hpBedomningText(b))}. `
+    const markning = b => (b.kalla !== 'par' ? '' : b.roll === 'jamforelse' ? ' (kandidatpar, jämförelseyrke)' : ' (kandidatpar)');
+    return `<ul class="gd-list hp-bedomningar">${lista.map(b => `<li>${medGrupp ? `${esc(b.grupp)}${markning(b)}: ` : ''}${esc(_hpBedomningText(b))}. `
         + `<a href="#" data-hp-ga-till="${esc(b.nyckel)}" aria-label="${esc(`Gå till raden i Handlingsplan: ${b.grupp}`)}">Gå till raden</a></li>`).join('')}</ul>`;
 }
 /** Visar raden i Handlingsplan med fokus på dess knapp Sakliga skäl. */
@@ -28136,13 +28176,37 @@ function _hpGaTillRad(nyckel) {
 function _hpSkalUnderlag(seed) {
     const s = seed || _handlingsplanSeedRows();
     const grupper = s.nycklar.map((nyckel, i) => ({ nyckel, i, skal: _hpVarden(nyckel).skal || [] })).filter(g => g.skal.length)
-        .map(({ nyckel, i, skal }) => ({ nyckel, grupp: s.rows[i][1] || 'Egen rad', underlag: s.rows[i][2], antal: s.rows[i][8], nMin: s.minsta[i], skillnadKr: s.skillnader[i],
-            sammanstallning: _sakSammanstallning(skal, s.skillnader[i]) }));
-    return { grupper, perKategori: _sakPerKategori(grupper.map(g => ({ skal: g.sammanstallning.skal, skillnadKr: g.skillnadKr }))) };
+        .map(({ nyckel, i, skal }) => {
+            const utanBelopp = _hpUtanBelopp(nyckel, s.minsta[i]);
+            return { nyckel, grupp: s.rows[i][1] || 'Egen rad', underlag: s.rows[i][2], antal: s.rows[i][8], nMin: s.minsta[i], skillnadKr: utanBelopp ? null : s.skillnader[i],
+                utanBelopp, sammanstallning: utanBelopp ? _hpBaraKategorier(skal) : _sakSammanstallning(skal, s.skillnader[i]) };
+        });
+    // Summan per kategori bara över grupper med belopp.
+    return { grupper, perKategori: _sakPerKategori(grupper.filter(g => !g.utanBelopp).map(g => ({ skal: g.sammanstallning.skal, skillnadKr: g.skillnadKr }))) };
 }
-/** Radens skäl som text för exporterna: "Marknad 800 kr; Erfarenhet 400 kr". */
+/** Noten i exporterna där belopp, andel och kommentar utelämnas. */
+const HP_SKAL_UTAN_BELOPP = 'belopp utelämnat: ett kön under minsta gruppstorlek';
+/**
+ * En förifylld rad där den minsta gruppen bakom skillnaden (ett kön) är under den inställda minsta gruppstorleken:
+ * i exporterna och bokslutet står då bara kategorierna, utan belopp, andel och kommentar. En egen rad har ingen grupp
+ * och bär sina belopp.
+ * @param {string} nyckel
+ * @param {number|null} nMin
+ */
+function _hpUtanBelopp(nyckel, nMin) {
+    return !_hpArEgen(nyckel) && !(Number.isFinite(nMin) && /** @type {number} */ (nMin) >= kInstalld());
+}
+/** Sammanställningen för en rad utan belopp: kategorierna med namn, inga belopp, andelar eller kommentarer. */
+function _hpBaraKategorier(skal) {
+    const namn = new Map(_sakKategorier().map(k => [k.id, k.namn]));
+    return { skal: skal.map(x => ({ kategori: x.kategori, namn: namn.get(x.kategori) || x.kategori, belopp: null, andel: null, kommentar: '' })),
+        antal: skal.length, summa: null, skillnadKr: null, forklaradAndel: null, aterstar: null, aterstarAndel: null, overstiger: false };
+}
+/** Radens skäl som text för exporterna: "Marknad 800 kr; Erfarenhet 400 kr"; utan belopp bara kategorierna med noten. */
 function _hpSkalText(skal) {
-    return (skal || []).map(s => `${s.namn || s.kategori} ${svTal(s.belopp, 0)} kr`).join('; ');
+    const lista = skal || [];
+    if (lista.length && lista.every(s => s.belopp == null)) return `${lista.map(s => s.namn || s.kategori).join('; ')} (${HP_SKAL_UTAN_BELOPP})`;
+    return lista.map(s => `${s.namn || s.kategori} ${svTal(s.belopp, 0)} kr`).join('; ');
 }
 
 // Demots exempel på sakliga skäl (andel av gruppens skillnad, eller belopp när gruppen saknar skillnad), så att
@@ -28152,6 +28216,18 @@ const HP_DEMO_SKAL = [
     [['overgang', 0.5, 'Exempel i demot: lön som följde med vid en omorganisation']],
     [['utbildning', 0.3, 'Exempel i demot: vidareutbildning utöver kraven'], ['prestation', 0.2, 'Exempel i demot: bedömning enligt lönekriterierna']],
 ];
+/** Nycklarna där demot skrev skäl: de tas bort när en riktig lönefil läses in (_afterDataLoaded, 32-filinlasning.js). */
+const _hpDemoNycklar = new Set();
+/** Tar bort skälen som demot skrev, och raden om inget annat är ifyllt. Övriga rader och egna rader rörs inte. */
+function _hpRensaDemoSkal() {
+    for (const nyckel of _hpDemoNycklar) {
+        const rad = state.handlingsplan && state.handlingsplan[nyckel];
+        if (!rad) continue;
+        delete rad.skal;
+        if (!_hpArEgen(nyckel) && !_hpHarIfyllt(rad)) delete state.handlingsplan[nyckel];
+    }
+    _hpDemoNycklar.clear();
+}
 /** Förifyller demots skäl på tre rader som följer med i exporterna: rader med en medianskillnad först. Rör inte rader som redan har skäl. */
 function _hpDemoSkal() {
     const seed = medExportLage(() => _handlingsplanSeedRows());
@@ -28159,6 +28235,7 @@ function _hpDemoSkal() {
     const ordning = [...kand.filter(x => x.s > 0), ...kand.filter(x => !(x.s > 0))].slice(0, HP_DEMO_SKAL.length);
     ordning.forEach(({ nyckel, s }, j) => {
         if ((_hpVarden(nyckel).skal || []).length) return;
+        _hpDemoNycklar.add(nyckel);
         _hpSattSkal(nyckel, HP_DEMO_SKAL[j].map(([kategori, andel, kommentar]) => ({ kategori, kommentar,
             belopp: s > 0 ? Math.round(s * Number(andel) / 100) * 100 : Math.round(Number(andel) * 2000 / 100) * 100 })));
     });
@@ -28268,7 +28345,7 @@ function _exportHandlingsplanExport() {
     // ("Marknad 800 kr; Erfarenhet 400 kr") och hur stor andel av gruppens medianskillnad de förklarar.
     const rows = seed.rows.map((r, i) => {
         const sk = _hpVarden(seed.nycklar[i]).skal || [];
-        const sum = _sakSammanstallning(sk, seed.skillnader[i]);
+        const sum = sk.length && _hpUtanBelopp(seed.nycklar[i], seed.minsta[i]) ? _hpBaraKategorier(sk) : _sakSammanstallning(sk, seed.skillnader[i]);
         return [r[0], r[1], r[8] != null ? r[8] : '', ...r.slice(2, 8), _hpSkalText(sum.skal), sum.antal && sum.forklaradAndel != null ? Math.round(sum.forklaradAndel * 1000) / 10 : ''];
     });
     for (let i = 0; i < 5; i++) rows.push(['', '', '', '', '', '', '', '', '', '', '']);   // tomma rader för manuella tillägg
@@ -28310,7 +28387,7 @@ document.getElementById('btn-export-handlingsplan')?.addEventListener('click', e
 // Samma dialogmönster som BAS-dossiern (81-basdossier.js).
 // ====================================================================
 
-/** @type {{nyckel: string, grupp: string, kalla: string, skillnadKr: number|null, iExport: boolean, rader: {kategori: string, belopp: string, kommentar: string}[]}|null} */
+/** @type {{nyckel: string, grupp: string, kalla: string, skillnadKr: number|null, iExport: boolean, konUnder: boolean, rader: {kategori: string, belopp: string, kommentar: string}[]}|null} */
 let _skal = null;
 const SKAL_JA = 'Ja, sakligt skäl finns';
 const _skalKr = v => `${svTal(Math.round(v), 0)} kr`;
@@ -28343,6 +28420,7 @@ function openSkalDialog(nyckel, opener) {
         grupp: (rad && rad[1]) || (egen ? 'Egen rad' : nyckel),
         skillnadKr: i >= 0 ? iExport.skillnader[i] : null,
         iExport: i >= 0 || egen,
+        konUnder: i >= 0 && !egen && _hpUtanBelopp(nyckel, iExport.minsta[i]),
         rader: (_hpVarden(nyckel).skal || []).map(s => ({ kategori: s.kategori, belopp: String(s.belopp), kommentar: s.kommentar || '' })),
     };
     _skalRender();
@@ -28367,7 +28445,9 @@ function _skalSkillnadHtml() {
     const s = /** @type {NonNullable<typeof _skal>} */ (_skal);
     if (s.kalla === 'egen') return '<p class="skal-skillnad">En egen rad har ingen medianskillnad att räkna andelar mot. Skälen redovisas med belopp. Skälen på en egen rad följer inte med i årsbokslutet.</p>';
     if (!s.iExport) return `<p class="skal-skillnad">Gruppen är för liten för att redovisas (färre än ${kInstalld()} personer). Raden och skälen följer därför inte med i exporterna, och inga andelar räknas.</p>`;
-    if (s.skillnadKr == null) return `<p class="skal-skillnad">Medianskillnaden redovisas inte: ett kön i gruppen har färre än ${kInstalld()} personer. Skälen redovisas med belopp.</p>`;
+    if (s.konUnder) return `<p class="skal-skillnad">Medianskillnaden redovisas inte: ett kön i gruppen har färre än ${kInstalld()} personer.</p>`
+        + `<p id="skal-kon-under" class="handlingsplan-varning" role="note">Belopp, andel och kommentar följer inte med i exporterna eller i årsbokslutet, eftersom ett kön i gruppen har färre än ${kInstalld()} personer. Där står bara kategorierna.</p>`;
+    if (s.skillnadKr == null) return '<p class="skal-skillnad">Gruppens medianskillnad redovisas inte. Skälen redovisas med belopp.</p>';
     const par = s.kalla === 'par';
     if (s.skillnadKr <= 0) return par
         ? `<p class="skal-skillnad">Det kvinnodominerade yrkets median är inte lägre än jämförelseyrkets (${svTal(s.skillnadKr, 0)} kr/mån). Andelar räknas inte.</p>`
@@ -28733,9 +28813,11 @@ function rmArHelaDokumentationen(modell, alla) {
 function rmSakligaSkalDelar(skal, dampad) {
     if (!skal || !skal.grupper.length) return [];
     const tom = { text: '' };
+    // En grupp där ett kön är under minsta gruppstorlek: bara kategorin, med noten i kommentarens kolumn.
     const rader = skal.grupper.flatMap(g => g.sammanstallning.skal.map((s, i) => [
         i ? tom : g.grupp, i ? tom : (g.antal != null ? g.antal : tom), i ? tom : g.skillnadKr,
-        s.namn, s.belopp, s.andel != null ? s.andel * 100 : null, s.kommentar ? s.kommentar : tom]));
+        s.namn, g.utanBelopp ? tom : s.belopp, g.utanBelopp || s.andel == null ? null : s.andel * 100,
+        g.utanBelopp ? { text: HP_SKAL_UTAN_BELOPP } : s.kommentar ? s.kommentar : tom]));
     const pk = skal.perKategori;
     const kat = pk.kategorier.map(k => [k.namn, k.summa, k.andel != null ? k.andel * 100 : null, k.antalGrupper]);
     const over = skal.grupper.filter(g => g.sammanstallning.overstiger);
@@ -30754,7 +30836,8 @@ function _rapportunderlagBlockExport() {
     const hpRader = _rapportHpRader(hpSeed.rows);
     // De sakliga skälen per grupp och per kategori (56-handlingsplan.js), ur samma förifyllning.
     const hpSkal = typeof _hpSkalUnderlag === 'function' ? _hpSkalUnderlag(hpSeed) : null;
-    const hpSkalBlock = hpSkal && hpSkal.grupper.length ? { grupper: hpSkal.grupper.map(g => ({ grupp: g.grupp, antal: g.antal, skillnadKr: g.skillnadKr, skal: g.sammanstallning.skal })), perKategori: hpSkal.perKategori } : null;
+    const hpSkalBlock = hpSkal && hpSkal.grupper.length ? { grupper: hpSkal.grupper.map(g => ({ grupp: g.grupp, antal: g.antal, skillnadKr: g.skillnadKr, skal: g.sammanstallning.skal,
+        utanBelopp: !!g.utanBelopp, summa: g.sammanstallning.summa, overstiger: !!g.sammanstallning.overstiger })), perKategori: hpSkal.perKategori, notUtanBelopp: HP_SKAL_UTAN_BELOPP } : null;
 
     /** @type {any[]} */
     const block = [
@@ -32180,7 +32263,9 @@ function byggArsbokslutNu() {
 function _abBedomningarNu() {
     if (typeof _hpSkalUnderlag !== 'function') return [];
     return _hpSkalUnderlag().grupper.filter(g => !_hpArEgen(g.nyckel))
-        .map(g => ({ nyckel: g.nyckel, grupp: g.grupp, n: g.antal, nMin: g.nMin, skillnadKr: g.skillnadKr, skal: g.sammanstallning.skal }));
+        .map(g => ({ nyckel: g.nyckel, grupp: g.grupp, n: g.antal, nMin: g.nMin, skillnadKr: g.skillnadKr,
+            // Ett kön under minsta gruppstorlek: bara kategorierna (lib-valideringen gör samma sak vid inläsning).
+            skal: g.utanBelopp ? g.sammanstallning.skal.map(s => ({ kategori: s.kategori })) : g.sammanstallning.skal }));
 }
 
 /**
@@ -32293,7 +32378,7 @@ function _abSkalVarde(v) {
 }
 /** Ett års skäl i en mening: "Marknad 50 %, Erfarenhet 20 %", med belopp där andelen saknas. */
 function _abSkalLista(skal) {
-    return skal.map(s => `${s.namn} ${typeof s.andel === 'number' ? svPct(s.andel * 100, 0) : _abKr(s.belopp)}`).join(', ');
+    return skal.map(s => (typeof s.andel === 'number' ? `${s.namn} ${svPct(s.andel * 100, 0)}` : s.belopp != null ? `${s.namn} ${_abKr(s.belopp)}` : s.namn)).join(', ');
 }
 /** Hur gruppens skillnad ändrades: " Skillnaden minskade från 1 800 till 1 200 kr/mån.", eller tomt när ett år saknar den. */
 function _abSkillnadText(f, n) {
@@ -33268,7 +33353,7 @@ function _gdRenderBody(d) {
             <button type="button" class="btn-table-tool" id="btn-dossier-copy" title="Kopiera dossiern som text">${ikon('kopiera', 14)} Kopiera</button>
         </div>
         <p class="reg-caveat-inline"><strong>Dossiern dokumenterar inte sakliga skäl.</strong> Skälen dokumenterar du i Handlingsplan.</p>
-        ${_hpBedomningHtml(_hpBedomningar(([kalla, aid, bas]) => (kalla === 'prio' || kalla === 'par') && aid === String(d.aid) && bas === String(d.bas)), { medGrupp: true })}
+        ${_hpBedomningHtml(_hpBedomningar(delar => _hpPassarGrupp(delar, String(d.aid), String(d.yrke), String(d.bas))), { medGrupp: true })}
         <div class="gd-grid">
             ${card('Nyckeltal', nyckeltal)}
             ${card('Ojusterad löneskillnad', gapInner)}

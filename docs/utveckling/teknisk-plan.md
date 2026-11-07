@@ -1231,8 +1231,11 @@ inget som lämnar verktyget bygger på färre personer än årets tröskel. Vakt
 Sedan 2026-11-07 är bokslutet **version 2**: fältet `bedomningar` bär handlingsplanens sakliga skäl per grupp
 (`{ nyckel, grupp, n, nMin, skillnadKr, skal: [{ kategori, belopp }] }`; nyckeln är handlingsplanens, kommentarerna
 sparas aldrig). Bara de förifyllda raderna följer med: en egen rad har inget antal att pröva mot k. En grupp med
-färre än k personer faller bort, och skillnaden nollas när den minsta gruppen bakom den (`nMin`) är under k; samma
-regel gäller med den högre av årens trösklar i `bokslutMedGrans`. Ett bokslut från version 1 läses som förut och får
+färre än k personer faller bort. När den minsta gruppen bakom skillnaden (`nMin`) är under k stryks skillnaden och
+beloppen, och posten bär bara kategorierna (`skal: [{ kategori }]`); jämförelsen visar dem med namn men räknar dem inte
+i summorna per kategori. Samma regel gäller med den högre av årens trösklar i `bokslutMedGrans`, och en nyckel som står
+två gånger läses en gång (den första gäller). I exporterna gäller samma sak (`_hpUtanBelopp`): för en rad där ett kön
+är under k står bara kategorin, med noten *belopp utelämnat: ett kön under minsta gruppstorlek*. Ett bokslut från version 1 läses som förut och får
 `bedomningar: null`. `jamforBedomningar` ger summan och andelen per kategori båda åren, skälen per grupp som hade skäl
 båda åren och de grupper som saknar bedömning i år; panelen visar tabellen *Sakliga skäl per kategori*. Vaktas av
 `tests/arsbokslut.test.js` och `tests/arsbokslut-skal.test.js`.

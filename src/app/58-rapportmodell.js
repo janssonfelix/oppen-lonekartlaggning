@@ -193,9 +193,11 @@ function rmArHelaDokumentationen(modell, alla) {
 function rmSakligaSkalDelar(skal, dampad) {
     if (!skal || !skal.grupper.length) return [];
     const tom = { text: '' };
+    // En grupp där ett kön är under minsta gruppstorlek: bara kategorin, med noten i kommentarens kolumn.
     const rader = skal.grupper.flatMap(g => g.sammanstallning.skal.map((s, i) => [
         i ? tom : g.grupp, i ? tom : (g.antal != null ? g.antal : tom), i ? tom : g.skillnadKr,
-        s.namn, s.belopp, s.andel != null ? s.andel * 100 : null, s.kommentar ? s.kommentar : tom]));
+        s.namn, g.utanBelopp ? tom : s.belopp, g.utanBelopp || s.andel == null ? null : s.andel * 100,
+        g.utanBelopp ? { text: HP_SKAL_UTAN_BELOPP } : s.kommentar ? s.kommentar : tom]));
     const pk = skal.perKategori;
     const kat = pk.kategorier.map(k => [k.namn, k.summa, k.andel != null ? k.andel * 100 : null, k.antalGrupper]);
     const over = skal.grupper.filter(g => g.sammanstallning.overstiger);

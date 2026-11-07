@@ -14,7 +14,7 @@
 // Samma dialogmönster som BAS-dossiern (81-basdossier.js).
 // ====================================================================
 
-/** @type {{nyckel: string, grupp: string, kalla: string, skillnadKr: number|null, iExport: boolean, rader: {kategori: string, belopp: string, kommentar: string}[]}|null} */
+/** @type {{nyckel: string, grupp: string, kalla: string, skillnadKr: number|null, iExport: boolean, konUnder: boolean, rader: {kategori: string, belopp: string, kommentar: string}[]}|null} */
 let _skal = null;
 const SKAL_JA = 'Ja, sakligt skäl finns';
 const _skalKr = v => `${svTal(Math.round(v), 0)} kr`;
@@ -47,6 +47,7 @@ function openSkalDialog(nyckel, opener) {
         grupp: (rad && rad[1]) || (egen ? 'Egen rad' : nyckel),
         skillnadKr: i >= 0 ? iExport.skillnader[i] : null,
         iExport: i >= 0 || egen,
+        konUnder: i >= 0 && !egen && _hpUtanBelopp(nyckel, iExport.minsta[i]),
         rader: (_hpVarden(nyckel).skal || []).map(s => ({ kategori: s.kategori, belopp: String(s.belopp), kommentar: s.kommentar || '' })),
     };
     _skalRender();
@@ -71,7 +72,9 @@ function _skalSkillnadHtml() {
     const s = /** @type {NonNullable<typeof _skal>} */ (_skal);
     if (s.kalla === 'egen') return '<p class="skal-skillnad">En egen rad har ingen medianskillnad att räkna andelar mot. Skälen redovisas med belopp. Skälen på en egen rad följer inte med i årsbokslutet.</p>';
     if (!s.iExport) return `<p class="skal-skillnad">Gruppen är för liten för att redovisas (färre än ${kInstalld()} personer). Raden och skälen följer därför inte med i exporterna, och inga andelar räknas.</p>`;
-    if (s.skillnadKr == null) return `<p class="skal-skillnad">Medianskillnaden redovisas inte: ett kön i gruppen har färre än ${kInstalld()} personer. Skälen redovisas med belopp.</p>`;
+    if (s.konUnder) return `<p class="skal-skillnad">Medianskillnaden redovisas inte: ett kön i gruppen har färre än ${kInstalld()} personer.</p>`
+        + `<p id="skal-kon-under" class="handlingsplan-varning" role="note">Belopp, andel och kommentar följer inte med i exporterna eller i årsbokslutet, eftersom ett kön i gruppen har färre än ${kInstalld()} personer. Där står bara kategorierna.</p>`;
+    if (s.skillnadKr == null) return '<p class="skal-skillnad">Gruppens medianskillnad redovisas inte. Skälen redovisas med belopp.</p>';
     const par = s.kalla === 'par';
     if (s.skillnadKr <= 0) return par
         ? `<p class="skal-skillnad">Det kvinnodominerade yrkets median är inte lägre än jämförelseyrkets (${svTal(s.skillnadKr, 0)} kr/mån). Andelar räknas inte.</p>`

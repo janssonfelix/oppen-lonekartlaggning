@@ -359,7 +359,10 @@ rubrikraden, också när det är hopfällt.
    - När skälen tillsammans är större än skillnaden varnar dialogen med beloppen, och inget förslag visas. Ett belopp
      kan vara för högt, eller så räknar två skäl samma sak. Rapporten har samma varning.
    - En grupp som är för liten för att redovisas (färre än minsta gruppstorlek) får inga andelar, och raden och
-     skälen följer inte med i exporterna. När ett kön i gruppen är under gränsen redovisas skälen bara med belopp.
+     skälen följer inte med i exporterna.
+   - När ett kön i gruppen är under gränsen visar dialogen beloppen för dig, men i rapporten, Excel och årsbokslutet
+     står bara kategorierna. Belopp, andel och kommentar utelämnas där med noten *belopp utelämnat: ett kön under
+     minsta gruppstorlek*, och dialogen varnar om det.
    - En egen rad har ingen medianskillnad: skälen redovisas med belopp, och de följer inte med i årsbokslutet och
      jämförs inte med förra året.
 

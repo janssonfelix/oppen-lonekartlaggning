@@ -382,10 +382,16 @@ export function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
             const andel = v => (v == null ? '–' : _pct(v * 100, 0));
             const pk = sk.perKategori;
             b.stycken.push('Tabellerna visar de sakliga skäl som organisationen har angett per grupp. Beloppet är den del av gruppens medianskillnad, i kronor per månad, som skälet förklarar. Kategorierna och beloppen är organisationens bedömning. Verktyget räknar bara om beloppen till andelar av skillnaden.');
+            // Skälen överstiger skillnaden: samma mening som rapportmodellen (58-rapportmodell.js).
+            const over = sk.grupper.filter(g => g.overstiger);
+            if (over.length) b.stycken.push(over.map(g => `${g.grupp}: skälen är tillsammans större än skillnaden (${_kr(g.summa)} mot ${_kr(g.skillnadKr)}).`).join(' ')
+                + ' Ett belopp kan vara för högt, eller så räknar två skäl samma sak. Kontrollera beloppen.');
+            const not = sk.notUtanBelopp || 'belopp utelämnat: ett kön under minsta gruppstorlek';
             b.tabeller = [
                 { rubrik: 'Sakliga skäl per grupp', rubriker: ['Grupp', 'Antal berörda', 'Medianskillnad (kr/mån)', 'Kategori', 'Belopp (kr/mån)', 'Andel av skillnaden', 'Kommentar'],
+                  // En grupp där ett kön är under minsta gruppstorlek: bara kategorin, med noten i kommentarens kolumn.
                   rader: sk.grupper.flatMap(g => g.skal.map((s, i) => [i ? '' : g.grupp, i || g.antal == null ? '' : formatTal(g.antal), i ? '' : _kr(g.skillnadKr),
-                      s.namn, _kr(s.belopp), andel(s.andel), s.kommentar || ''])) },
+                      s.namn, g.utanBelopp ? '' : _kr(s.belopp), g.utanBelopp ? '' : andel(s.andel), g.utanBelopp ? not : (s.kommentar || '')])) },
                 { rubrik: 'Sammanställning per kategori', rubriker: ['Kategori', 'Belopp (kr/mån)', 'Andel av skillnaden i grupper med skäl', 'Antal grupper'],
                   rader: [...pk.kategorier.map(k => [k.namn, _kr(k.summa), andel(k.andel), formatTal(k.antalGrupper)]), ['Totalt', _kr(pk.summa), andel(pk.andel), formatTal(pk.antalGrupper)]] },
             ];

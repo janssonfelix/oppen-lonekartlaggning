@@ -75,6 +75,8 @@ function _afterDataLoaded() {
     // hör till den påhittade organisationen och tas bort (ADR-36).
     if (state.isDemo) {
         state.profile = { ...DEFAULT_PROFILE };
+        // Demots sakliga skäl hör till demots grupper: en riktig fil kan ha samma AID och BAS.
+        if (typeof _hpRensaDemoSkal === 'function') _hpRensaDemoSkal();
         if (state.policyKalla === 'demo') {
             aterstallReferens();
             resetUploadCell('upload-cell-policy', 'upload-cell optional', 'Valfritt');

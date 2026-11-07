@@ -47,7 +47,9 @@ function byggArsbokslutNu() {
 function _abBedomningarNu() {
     if (typeof _hpSkalUnderlag !== 'function') return [];
     return _hpSkalUnderlag().grupper.filter(g => !_hpArEgen(g.nyckel))
-        .map(g => ({ nyckel: g.nyckel, grupp: g.grupp, n: g.antal, nMin: g.nMin, skillnadKr: g.skillnadKr, skal: g.sammanstallning.skal }));
+        .map(g => ({ nyckel: g.nyckel, grupp: g.grupp, n: g.antal, nMin: g.nMin, skillnadKr: g.skillnadKr,
+            // Ett kön under minsta gruppstorlek: bara kategorierna (lib-valideringen gör samma sak vid inläsning).
+            skal: g.utanBelopp ? g.sammanstallning.skal.map(s => ({ kategori: s.kategori })) : g.sammanstallning.skal }));
 }
 
 /**
@@ -160,7 +162,7 @@ function _abSkalVarde(v) {
 }
 /** Ett års skäl i en mening: "Marknad 50 %, Erfarenhet 20 %", med belopp där andelen saknas. */
 function _abSkalLista(skal) {
-    return skal.map(s => `${s.namn} ${typeof s.andel === 'number' ? svPct(s.andel * 100, 0) : _abKr(s.belopp)}`).join(', ');
+    return skal.map(s => (typeof s.andel === 'number' ? `${s.namn} ${svPct(s.andel * 100, 0)}` : s.belopp != null ? `${s.namn} ${_abKr(s.belopp)}` : s.namn)).join(', ');
 }
 /** Hur gruppens skillnad ändrades: " Skillnaden minskade från 1 800 till 1 200 kr/mån.", eller tomt när ett år saknar den. */
 function _abSkillnadText(f, n) {

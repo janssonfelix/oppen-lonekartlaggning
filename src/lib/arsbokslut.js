@@ -87,14 +87,23 @@ export function valideraArsbokslut(o) {
  */
 function _valideraBedomningar(lista, k) {
     if (!Array.isArray(lista)) return null;
+    const kategorier = new Set(skalKategorier().map(x => x.id));
+    const sedda = new Set();
     return lista.map(b => {
         if (!b || typeof b !== 'object' || typeof b.nyckel !== 'string' || !b.nyckel || b.nyckel.length > 300) return null;
+        if (sedda.has(b.nyckel)) return null;   // samma nyckel två gånger: den första gäller
         const n = _heltal(b.n, 0, 10_000_000), nMin = _heltal(b.nMin, 0, 10_000_000);
         if (n == null || n < k) return null;
-        const skal = valideraSkal(Array.isArray(b.skal) ? b.skal.map(s => (s && typeof s === 'object' ? { kategori: s.kategori, belopp: s.belopp } : s)) : b.skal).skal
-            .map(s => ({ kategori: s.kategori, belopp: s.belopp }));
+        const overK = nMin != null && nMin >= k;
+        // Under k i den minsta gruppen bakom skillnaden (ett kön under k) bär posten bara kategorierna: inga belopp.
+        const skal = overK
+            ? valideraSkal(Array.isArray(b.skal) ? b.skal.map(s => (s && typeof s === 'object' ? { kategori: s.kategori, belopp: s.belopp } : s)) : b.skal).skal
+                .map(s => ({ kategori: s.kategori, belopp: s.belopp }))
+            : [...new Set((Array.isArray(b.skal) ? b.skal : []).map(s => (s && typeof s === 'object' ? s.kategori : null)).filter(id => kategorier.has(id)))]
+                .slice(0, 8).map(kategori => ({ kategori }));
         if (!skal.length) return null;
-        return { nyckel: b.nyckel, grupp: _text(b.grupp), n, nMin: nMin ?? 0, skillnadKr: nMin != null && nMin >= k ? _tal(b.skillnadKr) : null, skal };
+        sedda.add(b.nyckel);
+        return { nyckel: b.nyckel, grupp: _text(b.grupp), n, nMin: nMin ?? 0, skillnadKr: overK ? _tal(b.skillnadKr) : null, skal };
     }).filter(Boolean);
 }
 
@@ -192,14 +201,18 @@ export function bokslutMedGrans(b, k) {
  */
 export function jamforBedomningar(forra, nu) {
     if (!Array.isArray(forra) || !Array.isArray(nu)) return null;
-    const pkF = skalPerKategori(forra), pkN = skalPerKategori(nu);
+    // En post med bara kategorier (ett kön under k) ger inga belopp och räknas inte i summorna per kategori.
+    const harBelopp = b => b.skal.every(s => typeof s.belopp === 'number');
+    const pkF = skalPerKategori(forra.filter(harBelopp)), pkN = skalPerKategori(nu.filter(harBelopp));
+    const namn = new Map(skalKategorier().map(x => [x.id, x.namn]));
     const fK = new Map(pkF.kategorier.map(k => [k.kategori, k])), nK = new Map(pkN.kategorier.map(k => [k.kategori, k]));
     const kategorier = skalKategorier().filter(k => fK.has(k.id) || nK.has(k.id)).map(k => {
         const f = fK.get(k.id), n = nK.get(k.id);
         return { kategori: k.id, namn: k.namn, forra: f ? { summa: f.summa, andel: f.andel } : null, nu: n ? { summa: n.summa, andel: n.andel } : null,
             diff: f && n ? n.summa - f.summa : null };
     });
-    const ar = (b) => { const s = skalSammanstallning(b.skal, b.skillnadKr);
+    const ar = (b) => { if (!harBelopp(b)) return { skillnadKr: null, skal: b.skal.map(x => ({ kategori: x.kategori, namn: namn.get(x.kategori) || x.kategori, belopp: null, andel: null })) };
+        const s = skalSammanstallning(b.skal, b.skillnadKr);
         return { skillnadKr: b.skillnadKr, skal: s.skal.map(x => ({ kategori: x.kategori, namn: x.namn, belopp: x.belopp, andel: x.andel })) }; };
     const nuMap = new Map(nu.map(b => [b.nyckel, b]));
     const grupper = forra.filter(b => nuMap.has(b.nyckel)).map(b => ({ nyckel: b.nyckel, grupp: nuMap.get(b.nyckel).grupp || b.grupp, forra: ar(b), nu: ar(nuMap.get(b.nyckel)) }));

@@ -74,7 +74,8 @@ function _rapportunderlagBlockExport() {
     const hpRader = _rapportHpRader(hpSeed.rows);
     // De sakliga skälen per grupp och per kategori (56-handlingsplan.js), ur samma förifyllning.
     const hpSkal = typeof _hpSkalUnderlag === 'function' ? _hpSkalUnderlag(hpSeed) : null;
-    const hpSkalBlock = hpSkal && hpSkal.grupper.length ? { grupper: hpSkal.grupper.map(g => ({ grupp: g.grupp, antal: g.antal, skillnadKr: g.skillnadKr, skal: g.sammanstallning.skal })), perKategori: hpSkal.perKategori } : null;
+    const hpSkalBlock = hpSkal && hpSkal.grupper.length ? { grupper: hpSkal.grupper.map(g => ({ grupp: g.grupp, antal: g.antal, skillnadKr: g.skillnadKr, skal: g.sammanstallning.skal,
+        utanBelopp: !!g.utanBelopp, summa: g.sammanstallning.summa, overstiger: !!g.sammanstallning.overstiger })), perKategori: hpSkal.perKategori, notUtanBelopp: HP_SKAL_UTAN_BELOPP } : null;
 
     /** @type {any[]} */
     const block = [
