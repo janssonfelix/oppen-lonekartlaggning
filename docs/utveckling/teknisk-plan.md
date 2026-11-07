@@ -237,7 +237,7 @@ adaptern verkligen delegerar vaktas av `tests/drift.test.js`:
   rätt grupp. Utskriftsfönstret för checklistorna (`printScaffoldView`) läser `:root` och allt från `.dold` till
   stilmallens slut ur den körande stilmallen och lägger in det som byggt stilark (`adoptedStyleSheets`): ett `<style>`-element
   som skriptet skapar blockeras av den ärvda CSP:n (`style-src-elem`), så fönstret var tidigare helt ostilat.
-- **Tester:** Vitest — 2746 tester i 85 filer: rena `src/lib/`-moduler, CSV-parsning, jsdom-röktest
+- **Tester:** Vitest — 2764 tester i 85 filer: rena `src/lib/`-moduler, CSV-parsning, jsdom-röktest
   av varje vy (ADR-7; `tests/smoke.test.js` med det delade fönstret och sju `tests/smoke-*.test.js` per
   område), k-tröskeln i åtta `tests/ktroskel*.test.js` med riggen i `tests/helpers/ktroskel-rigg.js`,
   gränssnittet i `tests/granssnitt*.test.js` (riggen `tests/helpers/granssnitt-rigg.js`) och diagramvyerna i
@@ -375,6 +375,7 @@ K7. Skydd som är juridiskt bindande (k-anonymitet, ingen lagring) ska vaktas av
     Invarianterna står i `tests/kanonymitet.test.js` och `tests/ktroskel-invarianter.test.js` (flikar och
     exporter; vad som inte prövas står i testfilerna och i `riskanalys.md` §6.5) och i
     lagringsspärrens test i `tests/sakerhet.test.js`.
+    Varje ny utdata som lämnar verktyget (text, tabell, bild, fil) läggs i k-invariantsviten (`tests/helpers/ktroskel-rigg.js`) och i riskanalysens tabell över utdata innan den checkas in.
 
 ---
 
@@ -416,7 +417,8 @@ appen i jsdom och ritar varje flik. Diagramkärnan ritar där med äkta D3, så 
 Lagret är brett och snabbt men prövar inte det jsdom saknar: CSP:n (som jsdom inte tillämpar), `file://`-bygget
 och bildexporten via canvas. Därför kör `tools/browser-smoke.mjs` den **byggda** artefakten i Chromium, Firefox
 och WebKit via Playwright. Lagren ersätter inte varandra — jsdom-testet är brett och snabbt, webbläsartestet
-smalt och verkligt. Båda körs i CI.
+smalt och verkligt. Båda körs i CI. Webbläsartestets kontroller ligger per område i `tools/browser-smoke/` med en
+gemensam rigg (`rigg.mjs`); `tools/browser-smoke.mjs` kör dem i en fast ordning och skriver sammanfattningen.
 
 Röktestet mot artefakten har en **färskhetsspärr**: är bygget äldre än källan avbryts det. Utan den blir allt
 grönt medan en gammal artefakt testas, vilket är lätt att gå på.
@@ -977,7 +979,10 @@ Excel-filen är underlaget, PDF-rapporten är en låst kopia av Word-utkastet oc
 och diagrammen som bilder) — användarens beslut, så att exporterna aldrig säger olika saker om samma underlag.
 Rapportens innehåll byggs som data i en rapportmodell (`58-rapportmodell.js`: avsnitt med stycken, typade
 tabeller, diagram och fält att fylla i), och både Word och PDF ritas ur den — de kan därför inte glida isär.
-Urvalet av avsnitt (hela dokumentationen, ledningsbrief, facklig dialog eller eget) gäller båda. Lönegapet
+Urvalet av avsnitt (hela dokumentationen, ledningsbrief, facklig dialog eller eget) gäller båda. Ett avsnitt kan
+vara förvalt av (`RM_FORVALT_AV`): *Bilaga: gruppdossierer* (`rmDossierAvsnitt`, en gruppdossier per yrkesgrupp där
+båda könen når k, i exportläget) står i listan men följer med först när det kryssas i, och hela dokumentationen
+räknas som hel utan det (`rmArHelaDokumentationen`). Lönegapet
 skrivs i exporterna som på skärmen: kvinnors lön i procent av mäns — utom i EU-lönerapporten och rapportens
 avsnitt om lönetransparens, som har direktivets tecken (§ 4, *EU-direktivets rapportmått*). Varje export har ett förhandsbesked om vad
 den innehåller och utelämnar (`59-exportbesked.js`). Exporterna läser aldrig en flik som är ritad med en annan
@@ -1185,8 +1190,10 @@ uppdelningen räknar på samma variabler som huvudtalet, också när ålder elle
 **ADR-54 — Jämförelse mellan år genom ett årsbokslut i konfigurationsfilen.** Beslut 2026-10-30. Konfigurationsfilen
 bär ett *årsbokslut* (`src/lib/arsbokslut.js`, `cfg.arsbokslut`): nyckeltal för hela organisationen (antal, medianer
 per kön, kvoten, det oförklarade gapet, antal flaggade yrkesgrupper och kandidatpar), en rad per yrkesgrupp i Lika
-arbete där båda könen når minsta gruppstorlek (antal per kön, medianer, gap, flaggad) och Att göra-punkternas id,
-titel och läge. Aldrig individer, aldrig lönedata; bokslutet byggs i exportläget (ADR-51) med den inställda tröskeln,
+arbete där båda könen når minsta gruppstorlek (antal per kön, medianer, gap, flaggad, lönespridningen) och Att göra-punkternas id,
+titel och läge. Lönespridningen är (P90 − P10) / median (`lonespridning`), räknad där gruppen har minst k löner; den
+står också på raderna per BAS-intervall, och `jamforArsbokslut` ger den förra året och i år. En äldre fil utan fältet
+ger null, som panelen och rapporten skriver som streck. Aldrig individer, aldrig lönedata; bokslutet byggs i exportläget (ADR-51) med den inställda tröskeln,
 och `valideraArsbokslut` stryker vid inläsning varje grupp där ett kön är under bokslutets k och nollar könsuppdelade
 nyckeltal när ett kön är det. Läses en fil med bokslut in ligger det i `state.forraArsbokslut`, och panelen
 *Jämförelse med förra året* i Spara och jämför år (`73-arsbokslut.js`, `jamforArsbokslut`) visar nyckeltal rad för
@@ -1352,6 +1359,20 @@ Kända brister och obesvarade frågor, så att de inte lever bara i en konversat
    med punktskattningarna tills dess, och en bild eller utskrift som görs innan intervallet är klart bär kortet
    utan det — som nyckeltalen utan bootstrap-KI strax efter en inläsning. Att `runOLSRegression` körs tre gånger
    per rendering (~250 ms) är ett beslut, inte en brist (ADR-17). ADR-1:s chunking behövs inte.
+
+   Navigeringen med `node tools/perf-smoke.mjs --rader=20000` (2026-11-07): uppladdning till klart gränssnitt ~1,1 s,
+   till klara bakgrundsanalyser ~2,7 s; sidindexets bygge under 3 ms på varje flik (Ålder & karriär 2,1 ms med sex
+   poster, Lönestruktur 1,3 ms med elva, Löneöversyn 1,4 ms, Likvärdigt arbete 0,9 ms, Lika arbete 0,7 ms, Exportera
+   0,8 ms), sökfältets första sökning 8 ms (andra 5 ms), BAS-dossiern öppnad och ritad på 20 ms och gruppdossiern på
+   ~0,1 s; hela svepet 8 s. Vid 55 000 rader samma dag: sidindexet under 3 ms, första sökningen 19 ms, BAS-dossiern
+   56 ms och gruppdossiern 0,27 s. Inget steg är i närheten av 2 s, så ritningen av hopfällda avsnitt skjuts inte upp.
+   Rapportmodellen med bilagan med gruppdossierer (samma dag, efter rättelsen): 0,48 s mot 0,46 s utan vid 20 000 rader,
+   1,4 s mot 1,3 s vid 55 000. Före rättelsen tog den 4,4 s vid 20 000 rader. Varje dossier räknade då kandidaterna,
+   prioriteringen och gapet per BAS-intervall på nytt, och dessutom ett bootstrap-intervall som textversionen aldrig
+   visar; nästan hela tiden låg i intervallet. Bilagan räknar nu de delade underlagen en gång och hoppar över
+   intervallet. Förhandsbeskedet i Exportera bygger inga dossiertexter (bara antalet och det utelämnade) och tar
+   samma tid med och utan bilagan: ~1,0 s vid 20 000 rader och ~2,9 s vid 55 000. Den tiden är resten av modellen
+   och Excel-bladens lista, inte bilagan.
 
 **Kod och bygge:**
 6. **Krasch i Node under testkörning** (V8:s skräpsamlare): orsaken är okänd; `npm test` kör om berörda filer.

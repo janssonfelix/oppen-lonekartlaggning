@@ -60,8 +60,10 @@ function sokFunktionsTraffar(text) {
 }
 
 function _sokHarData() { try { return getData().length > 0; } catch (_e) { return false; } }
-/** Avsnittet är dolt i sin flik (hidden, display: none eller .dold utan inline-stil), fram till panelen. */
+/** Avsnittet är dolt i sin flik (hidden, display: none eller .dold utan inline-stil), fram till panelen. Ett avsnitt
+ *  som fliken bygger när den ritas och som inte finns i sidan räknas som dolt, så att valet säger vad som saknas. */
 function _sokMalDolt(p) {
+    if (p.avsnitt && !document.getElementById(p.avsnitt)) return true;
     for (let n = p.avsnitt ? document.getElementById(p.avsnitt) : null; n && !n.classList.contains('view-panel'); n = n.parentElement) {
         if (n.hidden || n.style.display === 'none' || (n.classList.contains('dold') && !n.style.display)) return true;
     }

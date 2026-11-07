@@ -13,6 +13,10 @@
 //
 //   npm run bundle && npm run perf            (55 000 rader)
 //   node tools/perf-smoke.mjs --rader=120000  (annat n)
+//   node tools/perf-smoke.mjs --rader=20000   (talen för sidindexet, sökningen och dossiererna i teknisk-plan.md § 9)
+//
+// Efter flikarna mäts också navigeringen: sidindexets byggtid per flik, sökfältets första sökning (registret och
+// grupperna byggs då) och tiden att öppna BAS-dossiern och gruppdossiern. Ett steg över 2 s flaggas.
 //
 // VAKT: tiden tills gränssnittet är klart, med en snäv budget (5 s).
 //
@@ -150,6 +154,75 @@ const tKonDelar = await page.evaluate(() => {
     return ut;
 });
 for (const [namn, ms] of Object.entries(tKonDelar)) console.log(kolumn(namn, ms));
+
+// Navigeringen: sidindexet per flik (fliken ritas först, sedan mäts bara byggandet av listan), sökfältets första och
+// andra sökning, och dossiererna (öppna tills de är ritade, sedan stängs de).
+/* global sidindexBygg, openBasdossier, closeBasdossier, basdossierKandidater, openGruppdossier, closeGruppdossier, rapportUrval, RM_AVSNITT -- körs i sidan */
+const NAV_GRANS_MS = 2000;
+const navLangsam = [];
+const navRad = (t, ms) => { if (ms > NAV_GRANS_MS) navLangsam.push(t); console.log(kolumn(t, ms) + (ms > NAV_GRANS_MS ? `  ← över ${NAV_GRANS_MS} ms` : '')); };
+// Fliken öppnas genom menyn (som användaren gör: ritas och blir synlig), sedan mäts bygget av listan för sig, med en
+// decimal — det är under en millisekund på de flesta flikar. Antalet poster visar att listan faktiskt byggdes.
+const tSidindex = await page.evaluate(async flikar => {
+    const ut = {};
+    for (const f of flikar) {
+        const nav = /** @type {HTMLElement|null} */ (document.querySelector(`.nav-item[data-tab="${f}"]`));
+        if (!nav) continue;
+        nav.click();
+        await new Promise(r => requestAnimationFrame(() => r()));
+        const t0 = performance.now();
+        sidindexBygg(f);
+        ut[f] = { ms: Math.round((performance.now() - t0) * 10) / 10, poster: document.querySelectorAll('#sidindex a').length };
+    }
+    return ut;
+}, FLIKAR);
+console.log('\n  Sidindexet (byggtid per flik, antal poster):');
+for (const [f, { ms, poster }] of Object.entries(tSidindex)) navRad(`  ${f} (${poster})`, ms);
+const tSok = await page.evaluate(() => {
+    const falt = /** @type {HTMLInputElement} */ (document.getElementById('sok-grupp'));
+    const sok = text => { const t0 = performance.now(); falt.value = text; falt.dispatchEvent(new Event('input', { bubbles: true })); return Math.round(performance.now() - t0); };
+    const forsta = sok('bas'), andra = sok('lönespridning');
+    sok('');
+    return { forsta, andra };
+});
+navRad('Sök: första sökningen', tSok.forsta);
+navRad('Sök: andra sökningen', tSok.andra);
+const tDossier = await page.evaluate(async () => {
+    const ritad = () => new Promise(r => requestAnimationFrame(() => r()));
+    const bas = (basdossierKandidater()[0] || {}).bas;
+    let t0 = performance.now();
+    openBasdossier(bas, null);
+    await ritad();
+    const basMs = Math.round(performance.now() - t0);
+    closeBasdossier();
+    t0 = performance.now();
+    openGruppdossier(null);
+    await ritad();
+    const gruppMs = Math.round(performance.now() - t0);
+    closeGruppdossier();
+    return { bas: basMs, grupp: gruppMs };
+});
+navRad('Öppna BAS-dossiern', tDossier.bas);
+navRad('Öppna gruppdossiern', tDossier.grupp);
+// Rapportmodellen utan och med bilagan med gruppdossierer, och förhandsbeskedet i Exportera med bilagan vald (det ritas
+// om vid varje ändring av urvalet). Urvalet återställs efteråt.
+const tRapport = await page.evaluate(() => {
+    const mat = f => { const t0 = performance.now(); f(); return Math.round(performance.now() - t0); };
+    const fore = rapportUrval();
+    sattRapportUrval({ ordning: [...RM_AVSNITT], med: RM_AVSNITT.filter(id => id !== 'dossierer') });
+    const utan = mat(() => rapportModell());
+    const beskedUtan = mat(() => renderExportBesked());
+    sattRapportUrval({ ordning: [...RM_AVSNITT], med: [...RM_AVSNITT] });
+    const med = mat(() => rapportModell());
+    const besked = mat(() => renderExportBesked());
+    sattRapportUrval({ ordning: fore.ordning, med: fore.med });
+    return { utan, med, beskedUtan, besked };
+});
+navRad('Rapportmodellen utan bilaga', tRapport.utan);
+navRad('Rapportmodell med bilaga', tRapport.med);
+navRad('Förhandsbeskedet utan bilaga', tRapport.beskedUtan);
+navRad('Förhandsbeskedet med bilagan vald', tRapport.besked);
+if (navLangsam.length) console.log(`\n  ⚠ Över ${NAV_GRANS_MS} ms: ${navLangsam.map(s => s.trim()).join(', ')}`);
 console.log(`\n  ${'TOTALT'.padEnd(26)} ${String(summa).padStart(7)} ms`);
 if (sidfel.length) console.log(`\n  ✗ ${sidfel.length} sidfel: ${sidfel[0]}`);
 

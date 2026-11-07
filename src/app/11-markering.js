@@ -233,8 +233,10 @@ function _mkBorrRad() {
     el.appendChild(b);
 }
 
+// Escape tar bort markeringen och penslingen, utom när en dialog är öppen: då stänger Escape bara dialogen
+// (dialogerna har klassen glossary-modal, de äldre modal; båda visas med display: flex).
 document.addEventListener('keydown', e => {
-    if (e.key !== 'Escape' || document.querySelector('.modal[style*="flex"]')) return;
+    if (e.key !== 'Escape' || document.querySelector('.modal[style*="flex"], .glossary-modal[style*="flex"]')) return;
     if (typeof _rfPenselRensaAlla === 'function') _rfPenselRensaAlla();
     if (_markering.length) sattDiagramMarkering(null);
 });

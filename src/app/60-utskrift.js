@@ -48,7 +48,7 @@ async function _buildPrintReportExport() {
             const b = await rmDiagramBild(del, ritade);
             if (b) bilder.set(del.id, b);
         }
-        const helaDokumentationen = modell.avsnitt.length === bada.alla.avsnitt.length;
+        const helaDokumentationen = rmArHelaDokumentationen(modell, bada.alla);
         let bilagor = '';
         if (helaDokumentationen) {
             // Bilagor med flikarnas egna tabeller och diagram — underlaget bakom avsnitten. De följer bara med när hela

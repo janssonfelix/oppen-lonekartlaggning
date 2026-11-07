@@ -107,8 +107,30 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   fälten i Inställningar, med synonymer (*regression* hittar *Vad blir kvar av lönegapet?*), och syns utan lönefil.
   Träfflistan har grupperna först och funktionerna under rubriken *Funktioner*. En funktion i en låst flik säger
   *kräver lönefil* och leder till lönefilskortet i Filer och kvalitet.
+- **Småsaker ur granskningarna.** Tabellen *BAS-effekter* i regressionens tekniska specifikation och Word-utkastets
+  och PDF-rapportens *Sekventiell dekomponering* bär antalet i rubrikraden (*n = …; … kvinnor, … män*), som de andra
+  modelltabellerna. Årsjämförelsens kolumn heter *Kvinnor / män {år}*; en grupp som inte finns i år visar förra årets
+  antal med förra årets årtal. Sökrutan hittar avsnitten som flikarna bygger när de ritas (*Att göra: alla punkter*,
+  Likvärdigt arbetes fyra avsnitt och Lönelägets fyra mot ställningstagandet). Escape i gruppdossiern och BAS-dossiern
+  stänger bara dialogen; diagrammarkeringen står kvar. Årsjämförelsens not säger att en grupp som förra året hade ett
+  kön under den högre av årens gränser räknas som ny i år. Kom igång och lönefilskortet säger båda *litet demo* och
+  *stort demo (7 000 personer)*.
+
+- **Bilaga: gruppdossierer i Word-utkastet och PDF-rapporten.** Under *Rapportens innehåll* finns sist avsnittet
+  *Bilaga: gruppdossierer*, förvalt av: kryssat i får rapporten en gruppdossier per yrkesgrupp där både kvinnor och
+  män når minsta gruppstorlek, med samma text som dossierns kopia och byggd med minsta gruppstorlek. Grupper där ett
+  kön är under gränsen räknas i förhandsbeskedet men namnges inte. BAS-dossiererna står redan i avsnittet per
+  BAS-intervall och upprepas inte. Texten är vanlig svenska med å, ä och ö ("Gruppdossier: …", "män", "sakliga
+  skäl"), också i kopian till urklipp. Meningen om sänkt minsta gruppstorlek står en gång överst i bilagan.
+  Förhandsbeskedet bygger inga dossiertexter, och bilagan kostar ett par tiondels sekunder även på stora underlag.
 
 ### Analys
+
+- **Lönespridning i årsbokslutet.** Bokslutets rader per yrkesgrupp och per BAS-intervall bär lönespridningen,
+  (P90 − P10) / median, räknad där gruppen har minst k personer (bara totalt, inte per kön). Panelen *Jämförelse med
+  förra året* har kolumnen *Lönespridning* förra året och i år i tabellen per BAS-intervall och i de flaggade
+  yrkesgruppernas tabeller, och Word-utkastets och PDF-rapportens tabell per BAS-intervall har kolumnen. En fil från en
+  äldre version saknar måttet och visar streck.
 
 - **Spärr mot särskilda kategorier av personuppgifter.** Lönefilen avvisas när en kolumnrubrik antyder fackmedlemskap,
   hälsa, sjukfrånvaro, diagnos, etnicitet, religion, politisk tillhörighet, sexuell läggning, funktionsnedsättning,
@@ -130,6 +152,13 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ### Utveckling
 
+- **Webbläsarröktestet delat per område.** Kontrollerna ligger i `tools/browser-smoke/` (laddning, flikar och diagram,
+  diagramkärnan, exporter, layout, dialoger, säkerhet, demo) med en gemensam rigg; `tools/browser-smoke.mjs` kör dem i
+  samma ordning som förut. Samma kontroller och samma sammanfattning.
+- **Regel för ny utdata.** Varje ny utdata som lämnar verktyget läggs i k-invariantsviten och i riskanalysens tabell
+  över utdata innan den checkas in (teknisk-plan K7 och CONTRIBUTING).
+- **Prestandasvepet mäter navigeringen.** `npm run perf` mäter också sidindexet per flik, den första sökningen och
+  tiden att öppna BAS-dossiern och gruppdossiern.
 - **minimatch 11 under ESLint.** Dependabot larmade om minimatch under 11.0.1 (överbelastning via mönster) men kunde inte
   uppdatera, eftersom ESLint låser 10.x; `overrides` i package.json tvingar fram 11, som ESLint fungerar med. Bara ett
   utvecklingsberoende; verktyget bär inte minimatch.

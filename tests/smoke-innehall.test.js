@@ -207,9 +207,14 @@ describe('Lika arbete och filrutorna: ordning och kompakta rutor', () => {
         expect(d.getElementById('btn-try-demo')).toBeNull();
         expect(d.getElementById('btn-minimize-upload')).toBeNull();
         const text = d.getElementById('first-run-hint').textContent.replace(/\s+/g, ' ').trim();
-        expect(text).toMatch(/^Kom igång: läs in filerna \(organisationspaketet först om er organisation har ett, sedan lönefilen\) — eller prova med demodata, litet eller stort \(7 000 personer\)\.$/i);
+        expect(text).toMatch(/^Kom igång: läs in filerna \(organisationspaketet först om er organisation har ett, sedan lönefilen\) — eller prova med demodata, litet demo eller stort demo \(7 000 personer\)\.$/i);
         expect(text.match(/\beller\b/g)).toHaveLength(2);   // inte "eller … eller ett"
-        expect(d.getElementById('first-run-demo-link').textContent).toBe('litet');
+        expect(d.getElementById('first-run-demo-link').textContent).toBe('litet demo');
+        // Lönefilskortet i Filer och kvalitet har samma ord för samma val.
+        const kort = d.getElementById('upload-demo-val').textContent.replace(/\s+/g, ' ').trim();
+        expect(kort).toBe('Ingen fil till hands? Prova med demodata, litet demo eller stort demo (7 000 personer).');
+        expect(d.getElementById('upload-demo-litet').textContent).toBe(d.getElementById('first-run-demo-link').textContent);
+        expect(d.getElementById('upload-demo-stort').textContent).toBe(d.getElementById('first-run-stort-demo').textContent);
         d.getElementById('first-run-demo-link').click();
         expect(w.__state.data.length).toBeGreaterThan(0);
     });

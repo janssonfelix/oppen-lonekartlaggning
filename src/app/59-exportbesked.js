@@ -19,12 +19,13 @@ function renderExportBesked() {
     if (!har) { ['besked-word', 'besked-pdf', 'besked-excel', 'besked-zip'].forEach(id => satt(id, '')); _ebRitaUrval(); return; }
     /** @type {any} */ let b = null;
     /** @type {any} */ let alla = null;
-    try { const bada = rapportModellBada(); alla = bada.alla; b = rmBesked(bada.urval); } catch (e) { rapporteraFel('Förhandsbesked: Word-utkastet', e); }
+    /** @type {any} */ let bada = null;
+    try { bada = rapportModellBada({ besked: true }); alla = bada.alla; b = rmBesked(bada.urval); } catch (e) { rapporteraFel('Förhandsbesked: Word-utkastet', e); }
     if (b) {
         satt('besked-word', `<strong>Innehåller:</strong> ${esc(_ebText([b.urval, _ebAntal(b.avsnitt, 'avsnitt', 'avsnitt'), _ebAntal(b.tabeller, 'tabell', 'tabeller'), _ebAntal(b.diagram, 'diagram', 'diagram'), `${b.fyllIn} fält att fylla i`]))}`
             + (b.utelamnat.length ? `<br><strong>Utelämnar:</strong> ${esc(b.utelamnat.join(' · '))}` : '<br><strong>Utelämnar:</strong> ingenting'));
         // PDF-rapporten är samma modell; flikarnas tabeller följer med som bilagor när inget avsnitt är bortvalt.
-        const hela = !!alla && b.avsnitt === alla.avsnitt.length;
+        const hela = !!alla && rmArHelaDokumentationen(bada.urval, alla);
         satt('besked-pdf', `<strong>Innehåller:</strong> ${esc(_ebText([b.urval, _ebAntal(b.avsnitt, 'avsnitt', 'avsnitt'), _ebAntal(b.tabeller, 'tabell', 'tabeller'), _ebAntal(b.diagram, 'diagram', 'diagram'),
             hela ? 'bilagor med flikarnas tabeller och diagram' : 'inga bilagor (ett kortare urval är just avsnitten)']))}`
             + `<br><strong>Utelämnar:</strong> ${esc(b.utelamnat.length ? b.utelamnat.join(' · ') : 'ingenting')}`);

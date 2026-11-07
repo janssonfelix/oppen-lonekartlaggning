@@ -74,6 +74,37 @@ describe('Lönestruktur: antal i tabellerna', () => {
     });
 });
 
+describe('Metodtabellerna bär n i rubrikraden', () => {
+    it('regressionskortets tekniska specifikation: tabellen BAS-effekter', () => {
+        const w = demo();
+        w.__renderTabContent('struktur');
+        const d = w.__state.data.filter(r => r.lon > 0 && r.alder > 0 && (arKv(r) || arMa(r)));
+        const reg = w.eval('runOLSRegression()');
+        expect(reg.basEffekter).toBeTruthy();
+        const tabell = [...w.document.querySelectorAll('#regression-card table')].find(t => { const h = [...(t.rows[0]?.cells || [])].map(c => ren(c.textContent)); return h[0] === 'BAS' && /^Nivå mot/.test(h[1] || ''); });
+        expect(tabell).toBeTruthy();
+        expect(ren(tabell.querySelector('caption').textContent)).toBe(nText(d));
+    });
+
+    it('Word-utkastets sekventiella dekomponering: n i tabellens rubrikrad, i modellen, i HTML:en och i Word-blocken', () => {
+        const w = demo();
+        const d = w.__state.data.filter(r => r.lon > 0 && r.alder > 0 && (arKv(r) || arMa(r)));
+        const m = w.eval('rapportModell({ alla: true })');
+        const delar = m.avsnitt.find(a => a.id === 'regression').delar;
+        const i = delar.findIndex(p => p.typ === 'rubrik' && p.text === 'Sekventiell dekomponering');
+        expect(i).toBeGreaterThan(0);
+        expect(delar[i + 1].typ).toBe('tabell');
+        expect(delar[i + 1].caption).toBe(nText(d));
+        const html = w.eval('rmTillHtml')(m);
+        expect(ren(html)).toContain(`<table><caption>${nText(d)}</caption><thead><tr><th>Modell</th>`);
+        const block = w.eval('_utkastTillBlock')(html);
+        const j = block.findIndex(b => b.typ === 'rubrik' && b.delar.map(x => x.text).join('') === 'Sekventiell dekomponering');
+        expect(block[j + 1]).toMatchObject({ typ: 'stycke', stil: 'dampad' });
+        expect(block[j + 1].delar.map(x => x.text).join('')).toBe(nText(d));
+        expect(block[j + 2].typ).toBe('tabell');
+    });
+});
+
 describe('Ålder & karriär: modelljämförelsen', () => {
     it('bär n med kvinnor och män i rubrikraden', () => {
         const w = demo();
@@ -179,24 +210,40 @@ describe('Handlingsplan: Antal berörda', () => {
 });
 
 describe('Jämförelse med förra året: de flaggade yrkesgrupperna', () => {
-    it('panelens och rapportmodellens grupptabeller har kolumnen Kvinnor / män', () => {
+    it('panelens och rapportmodellens grupptabeller har kolumnen Kvinnor / män med årtalet', () => {
         const w = createAppWindow(); w.__loadDemoData();
         // Förra årets bokslut: samma som i år, så att de flaggade grupperna står som kvar.
         w.__state.forraArsbokslut = JSON.parse(JSON.stringify(w.eval('byggArsbokslutNu()')));
+        w.__state.forraArsbokslut.ar -= 1;
+        const nuAr = new Date().getFullYear();
         w.eval('renderArsjamforelse()');
         const panel = [...w.document.querySelectorAll('#arsjamforelse table')].filter(t => rubriker(t)[0] === 'Yrkesgrupp');
         expect(panel.length).toBeGreaterThan(0);
         for (const t of panel) {
-            expect(rubriker(t)[1]).toBe('Kvinnor / män');
+            expect(rubriker(t)[1]).toBe(`Kvinnor / män ${nuAr}`);
             for (const tr of t.querySelectorAll('tbody tr')) expect(ren(tr.cells[1].textContent)).toMatch(/^\d+ \/ \d+$/);
         }
         const avsnitt = w.eval('rapportModell({ alla: true })').avsnitt.find(a => a.id === 'arsjamforelse');
         const grupptabeller = avsnitt.delar.filter(p => p.typ === 'tabell' && p.kolumner[0].rubrik === 'Yrkesgrupp');
         expect(grupptabeller.length).toBeGreaterThan(0);
         for (const t of grupptabeller) {
-            const i = t.kolumner.findIndex(k => k.rubrik === 'Kvinnor / män');
+            const i = t.kolumner.findIndex(k => k.rubrik === `Kvinnor / män ${nuAr}`);
             expect(i).toBe(1);
             for (const rad of t.rader) expect(String(rad[i])).toMatch(/^\d+ \/ \d+$/);
         }
+    });
+
+    it('en grupp som inte finns i år visar förra årets antal, märkt med förra årets årtal', () => {
+        const w = createAppWindow(); w.__loadDemoData();
+        const forra = JSON.parse(JSON.stringify(w.eval('byggArsbokslutNu()')));
+        forra.ar -= 1;
+        forra.grupper.push({ yrke: 'Nedlagt yrke (BAS A)', nKv: 12, nMa: 11, medKv: 30000, medMa: 33000, gapPct: -9.1, flaggad: true });
+        w.__state.forraArsbokslut = forra;
+        w.eval('renderArsjamforelse()');
+        const rad = [...w.document.querySelectorAll('#arsjamforelse table tbody tr')].find(tr => ren(tr.cells[0].textContent) === 'Nedlagt yrke (BAS A)');
+        expect(ren(rad.cells[1].textContent)).toBe(`12 / 11 (${forra.ar})`);
+        const t = w.eval('rapportModell({ alla: true })').avsnitt.find(a => a.id === 'arsjamforelse').delar
+            .find(p => p.typ === 'tabell' && p.rader.some(r => r[0] === 'Nedlagt yrke (BAS A)'));
+        expect(t.rader.find(r => r[0] === 'Nedlagt yrke (BAS A)')[1]).toBe(`12 / 11 (${forra.ar})`);
     });
 });

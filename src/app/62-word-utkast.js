@@ -49,7 +49,12 @@ function _utkastTillBlock(html) {
             const tag = n.tagName.toLowerCase();
             const klass = n.classList;
             if (/^h[1-3]$/.test(tag)) block.push({ typ: 'rubrik', niva: +tag[1], delar: trimma(delarAv(n)) });
-            else if (tag === 'table') block.push(tabell(n));
+            else if (tag === 'table') {
+                // Rubrikraden (antalet bakom en modelltabell) står som ett dämpat stycke närmast före tabellen.
+                const cap = n.querySelector(':scope > caption');
+                if (cap) { const d = trimma(delarAv(cap)); if (d.length) block.push({ typ: 'stycke', stil: 'dampad', delar: d }); }
+                block.push(tabell(n));
+            }
             else if (tag === 'figure' && n.hasAttribute('data-rm-bild')) block.push({ typ: 'bild', id: n.getAttribute('data-rm-bild'), flik: n.getAttribute('data-rm-flik'), text: n.textContent.trim() });
             else if (tag === 'div' && klass.contains('fillin')) block.push({ typ: 'stycke', stil: 'fyllIn', delar: trimma(delarAv(n)) });
             else if (tag === 'div' && klass.contains('draftbox')) block.push({ typ: 'stycke', stil: 'utkastruta', delar: trimma(delarAv(n)) });

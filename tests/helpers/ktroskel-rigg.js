@@ -239,10 +239,17 @@ export async function samlaUtdata(w) {
     }
     // BAS-dossiern: textkopian byggs i exportläget (basdossierText), för varje intervall som når den inställda tröskeln.
     for (const { bas } of w.eval('medExportLage(() => basdossierKandidater())')) lagg(`basdossier ${bas}`, w.eval(`basdossierText(${JSON.stringify(bas)})`));
+    // Bilagan med gruppdossierer (förvald av): kryssas i här, och prövas i Word-utkastets HTML och i utskriften.
+    w.eval("sattRapportUrval({ ordning: rapportUrval().ordning, med: [...RM_URVAL.hela.med, 'dossierer'] })");
+    lagg('rapportmodell: dossierer', w.eval("(m => rmTillHtml({ ...m, avsnitt: m.avsnitt.filter(a => a.id === 'dossierer') }))(rapportModell())"));
+    lagg('utskrift: med gruppdossierer', (await w.eval('buildPrintReport()'), d.getElementById('print-report').innerHTML.replace(/src="data:[^"]*"/g, '')));
+    w.eval("sattRapportUrval('hela')");
     for (const mall of ['komplett', 'ledning', 'facklig']) lagg(`utskrift: ${mall}`, (await utskriftAv(w, mall)).innerHTML.replace(/src="data:[^"]*"/g, ''));
     // Förra årets bokslut (årets, ett år bakåt): rapportunderlagets block om förra året med tabellen Löneutveckling per
     // BAS-intervall, rapportens avsnitt och BAS-hantelns diagramdata. Sist, eftersom inläsningen ändrar tillståndet.
     const cfg = JSON.parse(JSON.stringify(w.__buildConfigSnapshot()));
+    // Konfigurationsfilens årsbokslut (nyckeltal, yrkesgrupper och BAS-intervall med lönespridningen) lämnar verktyget i filen.
+    lagg('konfigurationsfilen: årsbokslutet', JSON.stringify(cfg.arsbokslut));
     cfg.arsbokslut.ar -= 1; cfg.arsbokslut.skapat = `${cfg.arsbokslut.ar}-11-01`;
     w.__cfg = cfg; w.eval("applyConfigSnapshot(window.__cfg); sattRapportUrval('hela')");
     const ars = w.__rapportunderlagBlock().find(b => b.id === 'arsjamforelse');

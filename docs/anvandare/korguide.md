@@ -33,11 +33,11 @@ bedömningarna och besluten gör och äger arbetsgivaren.
 
 ## 1. (Valfritt men rekommenderat) Lär dig verktyget med demodata
 
-1. Välj ett demo i välkomstraden på Översikt, "prova med demodata, **litet** eller **stort**" (samma
-   två val finns i lönefilskortet i **Filer och kvalitet**, som **Prova med demodata** och **stort demo**):
-   - **litet**: 260 påhittade personer i fem BAS-intervall, snabbt att bläddra i.
+1. Välj ett demo i välkomstraden på Översikt, "prova med demodata, **litet demo** eller **stort demo**" (samma
+   två val, med samma ord, finns i lönefilskortet i **Filer och kvalitet**):
+   - **litet demo**: 260 påhittade personer i fem BAS-intervall, snabbt att bläddra i.
      Det är samma underlag som självdiagnostiken bygger på.
-   - **stort (7 000 personer)**: en påhittad organisation i storlek med en mindre kommun
+   - **stort demo (7 000 personer)**: en påhittad organisation i storlek med en mindre kommun
      eller en stor verksamhet, med BAS-intervall A–K och 30 yrkesgrupper. Här syns verktyget i verklig
      storlek: inlagda löneskillnader i några yrken, ett par för likvärdigt arbete, och små grupper
      som maskeras i exporterna. Inläsningen tar några sekunder.
@@ -402,7 +402,10 @@ ni ordna om och ta bort tabellerna.
    - **PDF-rapport** via "Generera PDF": en låst kopia av Word-utkastet, att verifiera mot. Fältet **Organisation**
      intill knappen är namnet på rapportens försättsblad; det hämtas från organisationspaketet när ett är inläst. Under
      *Rapportens innehåll* väljer du vilka avsnitt som följer med i båda (hela dokumentationen,
-     ledningsbrief, facklig dialog eller ett eget urval).
+     ledningsbrief, facklig dialog eller ett eget urval). Sist i listan står **Bilaga: gruppdossierer**, som är
+     förvald av eftersom den kan bli lång: kryssa i den så får rapporten en gruppdossier per yrkesgrupp där både
+     kvinnor och män når minsta gruppstorlek, med samma text som dossierns knapp *Kopiera*. BAS-intervallens
+     dossierer står redan i avsnittet *Lönekartläggning per BAS-intervall*.
    - **Protokollet för gemensam lönebedömning** som underlag för **facklig samverkan**
      (i Exportera, och som knapp i kortet *Samverkan & uppföljning* i Handlingsplan).
    - **Excel (alla flikar)** för bilagor och egen vidarebearbetning.
@@ -421,9 +424,14 @@ ni ordna om och ta bort tabellerna.
   och P90) och Att göra-punkternas läge. Läs in filen nästa år, så visar
   **Jämförelse med förra året** (samma flik) vad som ändrats: nyckeltalen sida vid sida, **löneutvecklingen per
   BAS-intervall** (P10, median och P90 förra året och i år, förändringen i kronor och procent, och medianen som en
-  hantel), vilka yrkesgrupper som
+  hantel), **lönespridningen** per BAS-intervall och per flaggad yrkesgrupp ((P90 − P10) / median, i procent av
+  medianen; streck när förra årets fil saknar måttet), vilka yrkesgrupper som
   är flaggade båda åren, nya och inte längre flaggade, och vilka av förra årets öppna punkter som är klara. En fil
   sparad med en äldre version saknar raderna per BAS-intervall; panelen säger det, och resten av jämförelsen fungerar.
+  Sparades förra årets fil med en lägre minsta gruppstorlek än årets läses båda åren med den högre gränsen. En
+  yrkesgrupp som var flaggad förra året men då hade ett kön under den högre gränsen räknas därför som **ny** i år (inte
+  som flaggad båda åren) om den är flaggad nu, och förra årets gap för den visas inte. Det är avsiktligt: ett mått
+  för en grupp under årets gräns lämnar aldrig verktyget. Panelen säger det i sin not.
   Samma jämförelse följer med som ett avsnitt i Word-utkastet och PDF-rapporten, som ett block i rapportunderlaget
   och som ett diagram där varje yrkesgrupp visas som ett streck (förra året) och en punkt (i år). Tabellen och hanteln
   per BAS-intervall följer med på samma sätt: tabellen i rapportens avsnitt och i rapportunderlagets block, hanteln

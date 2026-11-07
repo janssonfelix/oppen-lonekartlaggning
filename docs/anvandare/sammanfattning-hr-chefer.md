@@ -32,7 +32,7 @@ Lönekartläggningen är ett årligt lagkrav som kräver statistisk analys, doku
 ### Kom igång på fem minuter
 
 1. Öppna filen i webbläsaren på en dator — ingen installation, ingen IT-beställning.
-2. Klicka **"Prova med demodata"** och utforska hela verktyget med påhittad exempeldata — ingen verklig lönedata behövs för att utvärdera.
+2. Klicka **"litet demo"** (under *Prova med demodata*) och utforska hela verktyget med påhittad exempeldata — ingen verklig lönedata behövs för att utvärdera.
 3. När ni är redo: läs in er organisations **organisationspaket** (ställningstagande, jämförelsestatistik och benämningar i en fil, som er systemägare tar fram i verktyget) och därefter personalfilen ur lönesystemet (heltidsomräknade månadslöner, CSV eller Excel).
 
 ---

@@ -5,6 +5,9 @@
 // jämföras mot det. Bara aggregat: nyckeltal för hela organisationen, en rad per jämförbar yrkesgrupp (båda könen
 // minst k), en rad per BAS-intervall med minst k personer (basIntervall; könsmedianerna bara när båda könen når k)
 // och Att göra-punkternas läge. Aldrig individer, aldrig lönedata. Modulen är ren: ingen DOM, inget state.
+// Yrkesgruppernas och intervallens rader bär lönespridningen (P90 − P10) / median, räknad där n ≥ k (lonespridning).
+
+import { median, quantile } from './stat.js';
 
 export const ARSBOKSLUT_VERSION = 1;
 const MAX_TEXT = 200;
@@ -14,6 +17,21 @@ export const ARSBOKSLUT_K_MIN = 2;
 const _tal = v => (typeof v === 'number' && isFinite(v) ? v : null);
 const _heltal = (v, lo, hi) => (Number.isInteger(v) && v >= lo && v <= hi ? v : null);
 const _text = v => (typeof v === 'string' ? v.trim().slice(0, MAX_TEXT) : '');
+/** Lönespridningen i filen: ett ändligt tal ≥ 0, annars null (också när fältet saknas, som i en äldre fil). */
+const _spridning = v => (typeof v === 'number' && isFinite(v) && v >= 0 ? v : null);
+
+/**
+ * Lönespridningen för en grupp: (P90 − P10) / median, avrundad till fyra decimaler. null när gruppen har färre än k
+ * löner eller medianen inte är positiv. Kvantilerna som i resten av verktyget (linjär interpolation, typ 7).
+ * @param {number[]} lon
+ * @param {number} k
+ */
+export function lonespridning(lon, k) {
+    if (!Array.isArray(lon) || !lon.length || lon.length < k) return null;
+    const med = median(lon);
+    if (!(med > 0)) return null;
+    return Math.round((quantile(lon, 0.9) - quantile(lon, 0.1)) / med * 1e4) / 1e4;
+}
 
 /**
  * Årsbokslutet i giltig form, eller null när det inte går att läsa. Yrkesgrupper där ett kön har färre än k
@@ -43,7 +61,8 @@ export function valideraArsbokslut(o) {
         if (!g || typeof g !== 'object') return null;
         const yrke = _text(g.yrke); const gKv = _heltal(g.nKv, 0, 10_000_000), gMa = _heltal(g.nMa, 0, 10_000_000);
         if (!yrke || gKv == null || gMa == null || gKv < k || gMa < k) return null;
-        return { yrke, nKv: gKv, nMa: gMa, medKv: _tal(g.medKv), medMa: _tal(g.medMa), gapPct: _tal(g.gapPct), flaggad: g.flaggad === true };
+        return { yrke, nKv: gKv, nMa: gMa, medKv: _tal(g.medKv), medMa: _tal(g.medMa), gapPct: _tal(g.gapPct), flaggad: g.flaggad === true,
+            spridning: _spridning(g.spridning) };
     }).filter(Boolean);
     const punkter = (Array.isArray(o.punkter) ? o.punkter : []).map(p => {
         if (!p || typeof p !== 'object') return null;
@@ -72,7 +91,7 @@ function _valideraBasIntervall(lista, k) {
         if (!bas || n == null || n < k) return null;
         const konOk = nKv >= k && nMa >= k;
         return { bas, n, nKv, nMa, p10: _tal(r.p10), med: _tal(r.med), p90: _tal(r.p90),
-            medKv: konOk ? _tal(r.medKv) : null, medMa: konOk ? _tal(r.medMa) : null };
+            medKv: konOk ? _tal(r.medKv) : null, medMa: konOk ? _tal(r.medMa) : null, spridning: _spridning(r.spridning) };
     }).filter(Boolean);
 }
 
@@ -94,7 +113,8 @@ function _forandring(a, b) {
 
 /**
  * Löneutvecklingen per BAS-intervall: en rad per intervall som finns något av åren (årets ordning först, sedan de
- * som bara fanns förra året), med antal och varje mått förra året, i år och förändringen i kronor och procent.
+ * som bara fanns förra året), med antal och varje mått förra året, i år och förändringen i kronor och procent, och
+ * lönespridningen förra året och i år med skillnaden (spridning; null ett år som saknar värdet, t.ex. en äldre fil).
  * null när ett av boksluten saknar fältet.
  */
 export function jamforBasIntervall(forra, nu) {
@@ -105,6 +125,8 @@ export function jamforBasIntervall(forra, nu) {
         const f = fB.get(bas) || null, n = nB.get(bas) || null;
         const rad = { bas, finnsForra: !!f, finnsNu: !!n, n: _forandring(f && f.n, n && n.n), nKv: _forandring(f && f.nKv, n && n.nKv), nMa: _forandring(f && f.nMa, n && n.nMa) };
         for (const [m] of ARSBOKSLUT_BAS_MATT) rad[m] = _forandring(f && f[m], n && n[m]);
+        const { forra: sf, nu: sn, diff } = _forandring(f && f.spridning, n && n.spridning);
+        rad.spridning = { forra: sf, nu: sn, diff };
         return rad;
     });
 }
@@ -151,7 +173,9 @@ export function jamforArsbokslut(forra, nu) {
     });
     const perYrke = lista => new Map(lista.map(g => [g.yrke, g]));
     const fG = perYrke(forra.grupper), nG = perYrke(nu.grupper);
-    const rad = (yrke, f, n) => ({ yrke, gapForra: f ? f.gapPct : null, gapNu: n ? n.gapPct : null, nKv: n ? n.nKv : (f ? f.nKv : null), nMa: n ? n.nMa : (f ? f.nMa : null) });
+    // Antalet är årets när gruppen finns i år, annars förra årets; antalAr säger vilket år antalet gäller.
+    const rad = (yrke, f, n) => ({ yrke, gapForra: f ? f.gapPct : null, gapNu: n ? n.gapPct : null, nKv: n ? n.nKv : (f ? f.nKv : null), nMa: n ? n.nMa : (f ? f.nMa : null),
+        antalAr: n ? nu.ar : forra.ar, spridningForra: f ? f.spridning ?? null : null, spridningNu: n ? n.spridning ?? null : null });
     const kvar = [], nya = [], borta = [];
     for (const [yrke, n] of nG) { if (!n.flaggad) continue; const f = fG.get(yrke); (f && f.flaggad ? kvar : nya).push(rad(yrke, f, n)); }
     for (const [yrke, f] of fG) { if (!f.flaggad) continue; const n = nG.get(yrke); if (!n || !n.flaggad) borta.push(rad(yrke, f, n)); }

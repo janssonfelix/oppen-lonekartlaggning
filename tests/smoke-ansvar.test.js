@@ -342,7 +342,7 @@ describe('ansvarskod i dossiern, Personer att granska och demot', () => {
         expect(d.ansvar).toMatchObject({ ledning: { kv: nLed.filter(r => r.kon === 'kvinna').length, ma: nLed.filter(r => r.kon === 'man').length } });
         const html = w.eval(`_gdRenderBody(__buildGruppdossier(${JSON.stringify(kand.key)}))`);
         expect(html).toMatch(/Ledningsansvar \d+ kv \/ \d+ män/);
-        expect(w.__gruppdossierAsText(d)).toMatch(/Ansvar: Ledningsansvar \d+ kv \/ \d+ man/);
+        expect(w.__gruppdossierAsText(d)).toMatch(/Ansvar: ledningsansvar \d+ kvinnor \/ \d+ män · särskilt uppdrag \d+ kvinnor \/ \d+ män/);
     });
     it('dossiern utan ansvarskolumn har ingen ansvarsrad', () => {
         const w = createAppWindow();

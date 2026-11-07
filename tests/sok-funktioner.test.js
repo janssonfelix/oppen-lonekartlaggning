@@ -11,7 +11,50 @@ const skriv = (w, t) => { const f = w.document.getElementById('sok-grupp'); f.va
 const tangent = (w, key) => w.document.getElementById('sok-grupp').dispatchEvent(new w.KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }));
 const aktivFlik = w => w.document.querySelector('.nav-item.active').dataset.tab;
 
+// Avsnitten som flikarna bygger när de ritas (de finns inte i index.html): Att göra på Översikt, Likvärdigt arbete
+// och Löneläget mot ställningstagandet. Varje id här har en post i registret och finns i sidan när fliken är ritad med demodata.
+const DYNAMISKA = ['avsnitt-ov-punkter',
+    'avsnitt-lv-par', 'avsnitt-lv-underlag', 'avsnitt-lv-installningar', 'avsnitt-lv-analys',
+    'avsnitt-lp-tabell', 'avsnitt-lp-kon', 'avsnitt-lp-efterlevnad', 'avsnitt-lp-tackning'];
+
 describe('Funktionssök', () => {
+    it('de dynamiska avsnitten har en post var och finns i sin flik när den ritats med demodata', () => {
+        const w = createAppWindow(), d = w.document, reg = w.eval('SOK_FUNKTIONER');
+        for (const id of DYNAMISKA) expect(d.getElementById(id), `${id} finns inte i index.html`).toBeNull();
+        w.__loadDemoData();
+        for (const flik of ['dashboard', 'likvardighet', 'benchmark']) w.__renderTabContent(flik);
+        // Varje avsnitt som flikarna byggt (details.avsnitt med id) är antingen i index.html eller i listan ovan.
+        const html = new Set([...createAppWindow().document.querySelectorAll('details.avsnitt[id]')].map(x => x.id));
+        const byggda = [...d.querySelectorAll('details.avsnitt[id]')].map(x => x.id).filter(id => !html.has(id) && !/^avsnitt-[a-z]+-\d+$/.test(id));
+        expect(byggda.sort()).toEqual([...DYNAMISKA].sort());
+        for (const id of DYNAMISKA) {
+            const p = reg.find(x => x.avsnitt === id);
+            expect(p, id).toBeTruthy();
+            expect(p.synonymer.length, id).toBeGreaterThan(0);
+            expect(d.getElementById(id), id).toBeTruthy();
+            expect(w.eval('_egFlikFor')(d.getElementById(id)), id).toBe(p.flik);
+        }
+    });
+
+    it('ett dynamiskt avsnitt går att välja: utan lönefil kräver det lönefil, med lönefil fälls det ut i sin flik', () => {
+        const w = createAppWindow(), d = w.document;
+        skriv(w, 'alla punkter');
+        const li = d.querySelector('#sok-grupp-lista [data-sok-funktion]');
+        expect(li.querySelector('.sok-namn').textContent).toBe('Att göra: alla punkter');
+        expect(li.textContent).toContain('kräver lönefil');
+        w.__loadDemoData();
+        skriv(w, 'kvinnotröskel');
+        const lv = [...d.querySelectorAll('#sok-grupp-lista [data-sok-funktion]')].find(x => /Likvärdigt arbete/.test(x.querySelector('.sok-namn').textContent));
+        expect(lv.textContent).not.toContain('kräver lönefil');
+        lv.click();
+        expect(aktivFlik(w)).toBe('likvardighet');
+        expect(d.getElementById('avsnitt-lv-installningar').open).toBe(true);
+        skriv(w, 'täckningsgrad');
+        d.querySelector('#sok-grupp-lista [data-sok-funktion]').click();
+        expect(aktivFlik(w)).toBe('benchmark');
+        expect(d.getElementById('avsnitt-lp-tackning').open).toBe(true);
+    });
+
     it('registret täcker varje avsnitt i index.html, och varje post pekar på något som finns', () => {
         const w = createAppWindow(), d = w.document, reg = w.eval('SOK_FUNKTIONER');
         const avsnitt = [...d.querySelectorAll('details.avsnitt[id]')].map(x => x.id);
@@ -19,13 +62,13 @@ describe('Funktionssök', () => {
         for (const id of avsnitt) expect(reg.some(p => p.avsnitt === id), id).toBe(true);
         for (const p of reg) {
             expect(d.querySelector(`.nav-item[data-tab="${p.flik}"]`), p.namn).toBeTruthy();
-            if (p.avsnitt) expect(d.getElementById(p.avsnitt), p.namn).toBeTruthy();
+            if (p.avsnitt && !DYNAMISKA.includes(p.avsnitt)) expect(d.getElementById(p.avsnitt), p.namn).toBeTruthy();
             if (p.falt) expect(d.getElementById(p.falt), p.namn).toBeTruthy();
             if (p.dialog) expect(['installningar', 'ordlista', 'symboler', 'lagras', 'basdossier'], p.namn).toContain(p.dialog);
             expect(!!p.avsnitt !== !!p.dialog, `${p.namn}: antingen ett avsnitt eller en dialog`).toBe(true);
         }
         // Avsnittet står i den flik som visar det.
-        for (const p of reg.filter(x => x.avsnitt)) expect(w.eval('_egFlikFor')(d.getElementById(p.avsnitt)), p.namn).toBe(p.flik);
+        for (const p of reg.filter(x => x.avsnitt && !DYNAMISKA.includes(x.avsnitt))) expect(w.eval('_egFlikFor')(d.getElementById(p.avsnitt)), p.namn).toBe(p.flik);
         // Dialogerna och fälten i briefen finns med.
         for (const dlg of ['installningar', 'ordlista', 'symboler', 'lagras']) expect(reg.some(p => p.dialog === dlg && !p.falt), dlg).toBe(true);
         for (const f of ['k-troskel', 'org-typ', 'lonemanad', 'prio-cost-months', 'prio-po-pct', 'prio-cfg-atgard', 'lage-kompakt', 'btn-clear-all-data']) {

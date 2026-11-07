@@ -7,7 +7,8 @@
 // modellen i stället för att var och en räkna och formulera själv.
 //
 // Delar: { typ: 'stycke', text, stil? } (stil: dampad | not | fet) · { typ: 'fyllIn', text } · { typ: 'rubrik', niva, text } ·
-//        { typ: 'tabell', kolumner: [{ rubrik, typ }], rader: [[värde]], nyckel? } · { typ: 'diagram', id, flik, rubrik } ·
+//        { typ: 'tabell', kolumner: [{ rubrik, typ }], rader: [[värde]], nyckel?, caption? } · { typ: 'diagram', id, flik, rubrik } ·
+// En modelltabell, där alla rader bygger på samma urval, bär antalet i `caption` (antalText: "n = 260; …"), som skärmen.
 // Kolumntyper: text, antal, ar (ålder i år), kr, krAr, pct0, pct1, pct2, tecken2 (procent med tecken), andelAvMan, direktiv, fyllIn.
 // Ett värde kan också vara { text } (färdig text, t.ex. en förklaring i stället för ett tal) eller null (streck).
 //
@@ -83,9 +84,11 @@ const RM_DIAGRAM = [
 
 // ---- Urval: vilka avsnitt som följer med, och i vilken ordning ----
 // Urvalet ligger i minnet (state.rapportUrval) och följer med i konfigurationsfilen. null = hela dokumentationen.
-const RM_AVSNITT = ['sammanfattning', 'regler', 'lika', 'likvardigt', 'basintervall', 'struktur', 'referenser', 'perbas', 'atgarder', 'samverkan', 'beslut', 'regression', 'metod'];
+const RM_AVSNITT = ['sammanfattning', 'regler', 'lika', 'likvardigt', 'basintervall', 'struktur', 'referenser', 'perbas', 'atgarder', 'samverkan', 'beslut', 'regression', 'metod', 'dossierer'];
+/** Avsnitt som är förvalda av: de står i listan men följer med först när de kryssas i (bilagan med gruppdossierer kan bli lång). */
+const RM_FORVALT_AV = Object.freeze(['dossierer']);
 const RM_URVAL = Object.freeze({
-    hela: { namn: 'Hela dokumentationen', med: RM_AVSNITT },
+    hela: { namn: 'Hela dokumentationen', med: RM_AVSNITT.filter(id => !RM_FORVALT_AV.includes(id)) },
     ledning: { namn: 'Ledningsbrief', med: ['sammanfattning', 'lika', 'likvardigt', 'atgarder'] },
     facklig: { namn: 'Facklig dialog', med: ['sammanfattning', 'regler', 'lika', 'likvardigt', 'basintervall', 'struktur', 'referenser', 'perbas', 'samverkan', 'regression', 'metod'] },
 });
@@ -99,6 +102,11 @@ const RM_URVAL_TIDIGARE = Object.freeze([
       med: ['sammanfattning', 'regler', 'lika', 'likvardigt', 'struktur', 'referenser', 'perbas', 'atgarder', 'samverkan', 'beslut', 'regression', 'metod'] },
     { fast: 'facklig', ordning: ['sammanfattning', 'regler', 'lika', 'likvardigt', 'struktur', 'referenser', 'perbas', 'atgarder', 'samverkan', 'beslut', 'regression', 'metod'],
       med: ['sammanfattning', 'regler', 'lika', 'likvardigt', 'struktur', 'referenser', 'perbas', 'samverkan', 'regression', 'metod'] },
+    // Före bilagan med gruppdossierer (tretton avsnitt).
+    { fast: 'hela', ordning: ['sammanfattning', 'regler', 'lika', 'likvardigt', 'basintervall', 'struktur', 'referenser', 'perbas', 'atgarder', 'samverkan', 'beslut', 'regression', 'metod'],
+      med: ['sammanfattning', 'regler', 'lika', 'likvardigt', 'basintervall', 'struktur', 'referenser', 'perbas', 'atgarder', 'samverkan', 'beslut', 'regression', 'metod'] },
+    { fast: 'facklig', ordning: ['sammanfattning', 'regler', 'lika', 'likvardigt', 'basintervall', 'struktur', 'referenser', 'perbas', 'atgarder', 'samverkan', 'beslut', 'regression', 'metod'],
+      med: ['sammanfattning', 'regler', 'lika', 'likvardigt', 'basintervall', 'struktur', 'referenser', 'perbas', 'samverkan', 'regression', 'metod'] },
 ]);
 /**
  * Det gällande urvalet: `ordning` är alla avsnitt i vald ordning, `med` de som följer med, `namn` vad urvalet heter.
@@ -109,7 +117,7 @@ function rapportUrval() {
     const u = state.rapportUrval;
     if (u && u.fast && RM_URVAL[u.fast]) return { ordning: [...RM_AVSNITT], med: [...RM_URVAL[u.fast].med], namn: RM_URVAL[u.fast].namn };
     const ordning = u && Array.isArray(u.ordning) ? _rmMedNyaAvsnitt(u.ordning.filter(id => RM_AVSNITT.includes(id))) : [...RM_AVSNITT];
-    const med = u && Array.isArray(u.med) ? ordning.filter(id => u.med.includes(id)) : [...ordning];
+    const med = u && Array.isArray(u.med) ? ordning.filter(id => u.med.includes(id)) : ordning.filter(id => !RM_FORVALT_AV.includes(id));
     const lika = (a, b) => a.length === b.length && a.every((x, i) => x === b[i]);
     const fast = Object.values(RM_URVAL).find(f => lika(ordning, RM_AVSNITT) && lika(med, f.med));
     return { ordning, med, namn: fast ? fast.namn : `Eget urval (${med.length} av ${ordning.length} avsnitt)` };
@@ -144,6 +152,17 @@ function sattRapportUrval(u) {
     if (u && typeof u === 'object' && u.fast && RM_URVAL[u.fast]) u = u.fast;
     if (typeof u === 'string') u = u === 'hela' || !RM_URVAL[u] ? null : { ordning: [...RM_AVSNITT], med: [...RM_URVAL[u].med], fast: u };
     state.rapportUrval = u ? { ordning: u.ordning.filter(id => RM_AVSNITT.includes(id)), med: u.med.filter(id => RM_AVSNITT.includes(id)), ...(u.fast ? { fast: u.fast } : {}) } : null;
+}
+
+/**
+ * Är modellen hela dokumentationen? Varje avsnitt som finns är med, utom de förvalda av som inte kryssats i
+ * (RM_FORVALT_AV): PDF-rapportens bilagor med flikarnas tabeller följer med då.
+ * @param {any} modell
+ * @param {any} alla
+ */
+function rmArHelaDokumentationen(modell, alla) {
+    const med = new Set(modell.avsnitt.map(a => a.id));
+    return alla.avsnitt.every(a => med.has(a.id) || RM_FORVALT_AV.includes(a.id));
 }
 
 /**
@@ -275,8 +294,8 @@ function rmArsjamforelseAvsnitt(diagram) {
     const grupptabell = (rubrik, lista, tom) => {
         if (!lista.length) { delar.push(stycke(`${rubrik}: ${tom}`)); return; }
         delar.push(stycke(`${rubrik} (${lista.length}):`));
-        delar.push({ typ: 'tabell', kolumner: [{ rubrik: 'Yrkesgrupp', typ: 'text' }, { rubrik: 'Kvinnor / män', typ: 'text' }, { rubrik: `Gap ${forra.ar}`, typ: 'pct1' }, { rubrik: `Gap ${nu.ar}`, typ: 'pct1' }],
-            rader: lista.map(g => [g.yrke, g.nKv != null && g.nMa != null ? `${g.nKv} / ${g.nMa}` : null, g.gapForra, g.gapNu]) });
+        delar.push({ typ: 'tabell', kolumner: [{ rubrik: 'Yrkesgrupp', typ: 'text' }, { rubrik: `Kvinnor / män ${nu.ar}`, typ: 'text' }, { rubrik: `Gap ${forra.ar}`, typ: 'pct1' }, { rubrik: `Gap ${nu.ar}`, typ: 'pct1' }],
+            rader: lista.map(g => [g.yrke, _abGruppAntal(g, nu.ar), g.gapForra, g.gapNu]) });
     };
     delar.push(...rmBasUtvecklingDelar(j, forra.ar, nu.ar, diagram('arsjamforelse', 'bas')));
     delar.push({ typ: 'rubrik', niva: 3, text: 'Lika arbete' });
@@ -296,6 +315,39 @@ function rmArsjamforelseAvsnitt(diagram) {
 }
 
 /**
+ * Bilaga: gruppdossierer. En dossier per yrkesgrupp (AID inom BAS) där båda könen når k, i gruppdossierns ordning
+ * (störst först), med samma text som gruppdossierns kopia (gruppdossierAsText): första raden som rubrik, resten som
+ * stycken. Byggs i exportläget, som hela modellen. Yrkesgrupper där ett kön är under k räknas, de namnges inte. BAS-
+ * intervallens dossierer står redan i avsnittet Lönekartläggning per BAS-intervall och upprepas inte här.
+ * @param {number} k
+ * @param {{ stub?: boolean, besked?: boolean }} [val] stub: bara rubriken (listan över alla avsnitt behöver inte innehållet);
+ *   besked: rubriken och det utelämnade, utan texterna (förhandsbeskedet)
+ */
+function rmDossierAvsnitt(k, { stub = false, besked = false } = {}) {
+    const avsnitt = { id: 'dossierer', rubrik: 'Bilaga: gruppdossierer', utelamnat: /** @type {string[]} */ ([]), delar: /** @type {any[]} */ ([]) };
+    if (stub || typeof gruppdossierCandidates !== 'function') return avsnitt;
+    // Vilka grupper som kommer med avgörs av antalet kvinnor och män, som kandidatlistan redan har; dossiererna byggs
+    // bara för dem, och de delade underlagen (kandidaterna, gapet per BAS, prioriteringen) räknas en gång.
+    const delat = gruppdossierDelat({ text: true });
+    const medGrupper = delat.kandidater.filter(g => { const { kv, ma } = _gdKon(g.rows); return kv.length >= k && ma.length >= k; });
+    const utan = delat.kandidater.length - medGrupper.length;
+    if (utan) avsnitt.utelamnat.push(`gruppdossiern för ${utan} ${utan === 1 ? 'yrkesgrupp' : 'yrkesgrupper'} där ett kön har färre än ${k} personer`);
+    // Förhandsbeskedet behöver bara antalet och det utelämnade, inte texterna.
+    if (besked) return avsnitt;
+    const dossierer = /** @type {any[]} */ (medGrupper.map(g => buildGruppdossier(g.key, delat)).filter(Boolean));
+    avsnitt.delar.push({ typ: 'stycke', stil: 'dampad', text: `En dossier per yrkesgrupp (yrke inom BAS-intervall) där både kvinnor och män är minst ${k}, störst först — samma text som gruppdossierns kopia. BAS-intervallen står i avsnittet Lönekartläggning per BAS-intervall.` });
+    // Meningen om sänkt tröskel en gång för hela bilagan, inte en gång per dossier.
+    if (_kSanktNot()) avsnitt.delar.push({ typ: 'stycke', text: _kSanktNot() });
+    for (const d of dossierer) {
+        const rader = gruppdossierAsText(d, { stampel: false }).split('\n');
+        avsnitt.delar.push({ typ: 'rubrik', niva: 3, text: rader[0] });
+        for (const r of rader.slice(1)) if (r.trim()) avsnitt.delar.push({ typ: 'stycke', text: r.trim() });
+    }
+    if (!dossierer.length) avsnitt.delar.push({ typ: 'stycke', stil: 'dampad', text: `Ingen yrkesgrupp har minst ${k} kvinnor och ${k} män.` });
+    return avsnitt;
+}
+
+/**
  * Löneutvecklingen per BAS-intervall i avsnittet Jämförelse med förra året: en tabell med antal och P10, median och
  * P90 som "förra året till i år (förändring)", en kolumn per mått så att tabellen ryms på en stående sida. Bara när
  * båda åren har fältet; ett äldre bokslut utan det ger ingenting här (panelen säger att det saknas i filen).
@@ -305,11 +357,13 @@ function rmBasUtvecklingDelar(j, forraAr, nuAr, bilder = []) {
     if (!j || !Array.isArray(j.basIntervall) || !j.basIntervall.length) return [];
     const antal = f => (f.forra == null && f.nu == null ? null : `${f.forra == null ? '–' : svTal(f.forra, 0)} till ${f.nu == null ? '–' : svTal(f.nu, 0)}`);
     const matt = f => (f.forra == null && f.nu == null ? null : { text: `${_abKr(f.forra)} till ${_abKr(f.nu)}${f.diff == null ? '' : ` (${_abForandringText(f)})`}` });
+    // Lönespridningen förra året och i år; ett år utan värdet (en äldre fil) står som streck.
+    const spridning = f => (!f || (f.forra == null && f.nu == null) ? null : { text: `${_abSpridningText(f.forra)} till ${_abSpridningText(f.nu)}` });
     return [
         { typ: 'rubrik', niva: 3, text: 'Löneutveckling per BAS-intervall' },
-        { typ: 'stycke', stil: 'dampad', text: `Varje mått ${forraAr} till ${nuAr}, med förändringen i kronor och i procent av ${forraAr} års värde. Bara intervall med minst ${j.kGrans} personer båda åren; medianen rör sig också när sammansättningen ändras.` },
-        { typ: 'tabell', kolumner: [{ rubrik: 'BAS-intervall', typ: 'text' }, { rubrik: 'Antal', typ: 'text' }, { rubrik: 'P10', typ: 'text' }, { rubrik: 'Median', typ: 'text' }, { rubrik: 'P90', typ: 'text' }],
-          rader: j.basIntervall.map(r => [`BAS ${r.bas}`, antal(r.n), matt(r.p10), matt(r.med), matt(r.p90)]) },
+        { typ: 'stycke', stil: 'dampad', text: `Varje mått ${forraAr} till ${nuAr}, med förändringen i kronor och i procent av ${forraAr} års värde. Bara intervall med minst ${j.kGrans} personer båda åren; medianen rör sig också när sammansättningen ändras. ${AB_SPRIDNING_NOT}` },
+        { typ: 'tabell', kolumner: [{ rubrik: 'BAS-intervall', typ: 'text' }, { rubrik: 'Antal', typ: 'text' }, { rubrik: 'P10', typ: 'text' }, { rubrik: 'Median', typ: 'text' }, { rubrik: 'P90', typ: 'text' }, { rubrik: 'Lönespridning', typ: 'text' }],
+          rader: j.basIntervall.map(r => [`BAS ${r.bas}`, antal(r.n), matt(r.p10), matt(r.med), matt(r.p90), spridning(r.spridning)]) },
         ...bilder,   // hanteln för medianen (chart-arsjamforelse-bas)
     ];
 }
@@ -380,9 +434,12 @@ function rmEgnaAvsnitt(d, k) {
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
 function rapportModell(...a) { return medExportLage(() => _rapportModellExport.apply(null, /** @type {any} */ (a))); }
 /** Modellen i det gällande urvalet och med alla avsnitt ur ett enda bygge (det kostar sekunder på stora underlag). */
-function rapportModellBada() { return medExportLage(() => _rapportModellExport({ bada: true })); }
-/** @param {{alla?: boolean, bada?: boolean}} [val] */
-function _rapportModellExport({ alla = false, bada = false } = {}) {
+function rapportModellBada({ besked = false } = {}) { return medExportLage(() => _rapportModellExport({ bada: true, besked })); }
+/**
+ * @param {{alla?: boolean, bada?: boolean, besked?: boolean}} [val] besked: för förhandsbeskedet, som bara räknar —
+ *   bilagan med gruppdossierer får då antalet och det utelämnade men inga texter.
+ */
+function _rapportModellExport({ alla = false, bada = false, besked = false } = {}) {
     const d = getData();
     const year = new Date().getFullYear(), today = new Date().toLocaleDateString('sv-SE');
     const k = kTroskel();
@@ -577,7 +634,7 @@ function _rapportModellExport({ alla = false, bada = false } = {}) {
         for (const b of reg.bortvalt || []) regression.delar.push(stycke(_ruBortvaltNotering(b)));
         if (reg.fellBackFromFull && reg.diagnostics.length) regression.delar.push(stycke(`Notering: den valda modellen kunde inte skattas. Föll tillbaka till ${reg.modelDesc}. ${reg.diagnostics.map(utanTaggar).join(' ')}`));
         regression.delar.push({ typ: 'rubrik', niva: 3, text: 'Sekventiell dekomponering' },
-            { typ: 'tabell', kolumner: [{ rubrik: 'Modell', typ: 'text' }, { rubrik: 'Lönegap', typ: 'tecken2' }, { rubrik: 'R²', typ: 'pct1' }],
+            { typ: 'tabell', caption: antalText(reg.nKvAnalysed, reg.nMaAnalysed), kolumner: [{ rubrik: 'Modell', typ: 'text' }, { rubrik: 'Lönegap', typ: 'tecken2' }, { rubrik: 'R²', typ: 'pct1' }],
               rader: stegUt.steg.map(st => (st.status !== 'ok' ? [st.name, { text: st.status === 'singular' ? 'singulär' : 'för få obs' }, null] : [st.name, st.gapPct, st.R2 * 100])) });
         if (reg.yrkesSteg?.status === 'ok') regression.delar.push(stycke(`Steget + Yrkesgrupp: ${utanTaggar(_yrkesStegText(reg.yrkesSteg))}`));
         if (stegUt.utelamnat) { regression.delar.push(stycke(stegUt.not, 'not')); regression.utelamnat.push('första steget i dekomponeringen (ett kön under tröskeln)'); }
@@ -601,7 +658,11 @@ function _rapportModellExport({ alla = false, bada = false } = {}) {
         { typ: 'tabell', nyckel: true, kolumner: [{ rubrik: '', typ: 'text' }, { rubrik: '', typ: 'text' }], rader: (typeof _methodAppendixData === 'function' ? _methodAppendixData() : []).map(([n, v]) => [String(n), String(v)]) },
     ] };
 
-    const finns = /** @type {any[]} */ ([sammanfattning, regler, lika, likvardigt, basintervall, struktur, referenser, perbas, atgarder, samverkan, beslut, regressionAvsnitt, metod].filter(Boolean));
+    // Bilagan med gruppdossierer byggs bara när den följer med i urvalet. Listan över alla avsnitt (alla, bada) bär den
+    // annars med rubriken och utan innehåll: förhandsbeskedet och urvalslistan behöver bara rubriken, och en bilaga
+    // som inte är vald kostar då ingenting.
+    const dossierer = d.length ? rmDossierAvsnitt(k, { stub: !rapportUrval().med.includes('dossierer'), besked }) : null;
+    const finns = /** @type {any[]} */ ([sammanfattning, regler, lika, likvardigt, basintervall, struktur, referenser, perbas, atgarder, samverkan, beslut, regressionAvsnitt, metod, dossierer].filter(Boolean));
     /** @param {boolean} alla */
     const avsnitt = alla => {
         const urval = rapportUrval();
@@ -653,7 +714,7 @@ function rmTillHtml(m, { utskrift = false, bilder = null } = {}) {
         }
         if (p.typ === 'tabell') {
             if (p.nyckel) return `<table>${p.rader.map(r => `<tr><th>${esc(rmCell(r[0], 'text'))}</th><td>${cell(r[1], p.kolumner[1].typ)}</td></tr>`).join('')}</table>`;
-            return `<table><thead><tr>${p.kolumner.map(c => `<th>${esc(c.rubrik)}</th>`).join('')}</tr></thead><tbody>`
+            return `<table>${p.caption ? `<caption>${esc(p.caption)}</caption>` : ''}<thead><tr>${p.kolumner.map(c => `<th>${esc(c.rubrik)}</th>`).join('')}</tr></thead><tbody>`
                 + p.rader.map(r => `<tr>${r.map((v, i) => `<td>${cell(v, p.kolumner[i].typ)}</td>`).join('')}</tr>`).join('') + '</tbody></table>';
         }
         return '';
