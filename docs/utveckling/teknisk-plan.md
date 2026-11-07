@@ -237,7 +237,7 @@ adaptern verkligen delegerar vaktas av `tests/drift.test.js`:
   rätt grupp. Utskriftsfönstret för checklistorna (`printScaffoldView`) läser `:root` och allt från `.dold` till
   stilmallens slut ur den körande stilmallen och lägger in det som byggt stilark (`adoptedStyleSheets`): ett `<style>`-element
   som skriptet skapar blockeras av den ärvda CSP:n (`style-src-elem`), så fönstret var tidigare helt ostilat.
-- **Tester:** Vitest — 2764 tester i 85 filer: rena `src/lib/`-moduler, CSV-parsning, jsdom-röktest
+- **Tester:** Vitest — 2804 tester i 87 filer: rena `src/lib/`-moduler, CSV-parsning, jsdom-röktest
   av varje vy (ADR-7; `tests/smoke.test.js` med det delade fönstret och sju `tests/smoke-*.test.js` per
   område), k-tröskeln i åtta `tests/ktroskel*.test.js` med riggen i `tests/helpers/ktroskel-rigg.js`,
   gränssnittet i `tests/granssnitt*.test.js` (riggen `tests/helpers/granssnitt-rigg.js`) och diagramvyerna i
@@ -659,6 +659,13 @@ demoläge). Reserven för kvinnoandel är SKR:s personalstatistik (ADR-34).
 Vakten `vakt: inga spår av tidigare versioner eller namngivna organisationer` i `tests/dokumentation.test.js`
 kräver att ingen namngiven organisation står någonstans i repot. Logiken i `src/lib/organisationspaket.js`,
 gränssnittet i `src/app/29-organisationspaket.js`; systemägarens guide `docs/anvandare/organisationspaket.md`.
+
+Paketet har det valfria fältet `importprofiler` (2026-11-07): sparade kolumnmappningar som bara bär rubriknamn
+(`src/lib/importprofiler.js`; högst 80 tecken per text, inget som liknar personnummer eller e-post, högst 20
+rubriker per fält och högst 50 profiler). Profilerna prövas vid inläsning av lönefilen i ordningen
+organisationspaketet, konfigurationsfilen, de inbyggda och sist delsträngarna i `ALLOWED_FIELDS`. Verktyget har inga
+inbyggda profiler för namngivna lönesystem, bara för sina egna format (CSV-mallen, testdatan, demodatans fältnamn);
+profiler för lönesystemen kommer från organisationerna, via paketet eller som prövade bidrag.
 
 **ADR-29 — Ett steg är klart när dess punkter är hanterade.** Processöversikten markerar ett steg som klart när
 arbetet med det är gjort, inte när analysen har körts — annars står steget som klart precis när arbetet börjar.

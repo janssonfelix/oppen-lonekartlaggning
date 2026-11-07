@@ -8,6 +8,21 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ### Gränssnitt
 
+- **Importprofiler: kolumnmappningen görs en gång.** En gjord kolumnmappning kan sparas som en importprofil: när
+  filen lästs in med kolumnerna utpekade för hand har kolumnmappningen rutan *Spara mappningen* (namn, förslaget *Vår
+  personallista*). Profilen bär bara rubrikernas namn per fält och de rubriker som måste finnas (kännetecken), inga
+  värden ur filen; den följer med i konfigurationsfilen (fältet `importprofiler`, prövat vid inläsning). När en fil
+  läses in prövas organisationspaketets profiler först, sedan konfigurationsfilens, sedan de inbyggda och sist de
+  vanliga kolumnnamnen; den första profil vars kännetecken alla finns gäller, och roller den inte täcker känns igen
+  som förut. Rubrikraden hittas också efter försättsrader när bara en profil känner igen den. Lönefilens ruta och
+  kolumnmappningen säger *Känd uppsättning: … (källa)*. Med ett organisationspaket inläst laddar *Lägg till i
+  organisationspaketet* ner ett nytt paket med profilen; paketet har det valfria fältet `importprofiler` (äldre paket
+  utan det fungerar som förut). *Inställningar › Importprofiler* listar profilerna med namn, källa och rubriker per
+  fält, med *Ta bort* och *Exportera JSON*; sökrutan hittar avsnittet. De inbyggda profilerna gäller bara verktygets
+  egna format (CSV-mallen, testdatans fil och demodatans fältnamn) — inga profiler för namngivna lönesystem. *Rensa
+  all data* tar bort profilerna; en organisationsfils inbakade paket tar med sina tillbaka. En profil avvisas om en
+  text är längre än 80 tecken eller liknar ett personnummer eller en e-postadress, om ett fält har fler än 20
+  rubriker eller om de är fler än 50.
 - **Rapportutkastet per BAS-intervall.** Auto-rapportutkastet i Rapporttext har efter helheten delen *PER
   BAS-INTERVALL*: ett stycke per intervall med minst k personer, i samma text som BAS-dossierns kopia (antal och
   könsfördelning, läget mot ställningstagandet, yrkesgrupperna med Lika arbetes status, kandidatpar och *Lägre krav,
@@ -138,6 +153,10 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ### Dokumentation
 
+- **Importprofiler.** `docs/anvandare/datauttag.md` har avsnittet *Importprofiler: spara mappningen en gång* och en rad
+  per system om att ett uttag med sparad profil känns igen automatiskt; `organisationspaket.md` beskriver fältet
+  `importprofiler`; `CONTRIBUTING.md` säger hur en verifierad profil bidras (JSON och vilket system och version, utan
+  organisationens namn).
 - **Dokumentationen följer den nya menyn.** Körguiden, pilotchecklistan, sammanfattningen för HR-chefer,
   organisationspaketets guide, datauttaget, tillgänglighetsredogörelsen, dataskyddsbeskrivningen, riskanalysen, den tekniska
   planen, diagramkärnans referens, `src/app/README.md` och fliken Om verktyget (flikarna och arbetsgången) beskriver flikarna som de heter
@@ -152,6 +171,10 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ### Utveckling
 
+- **Importprofilerna i `src/lib/importprofiler.js`** (validering, matchning, profil ur en mappning, de inbyggda),
+  speglade i 09. Tester i `tests/importprofiler.test.js` och `tests/importprofiler-app.test.js`; profilexporten ligger
+  i k-invariantsviten som en utdata utan lönemått; webbläsarröktestet har delen `tools/browser-smoke/importprofiler.mjs`
+  (okänd fil, mappning, spara, samma fil igen utan mappning).
 - **Webbläsarröktestet delat per område.** Kontrollerna ligger i `tools/browser-smoke/` (laddning, flikar och diagram,
   diagramkärnan, exporter, layout, dialoger, säkerhet, demo) med en gemensam rigg; `tools/browser-smoke.mjs` kör dem i
   samma ordning som förut. Samma kontroller och samma sammanfattning.

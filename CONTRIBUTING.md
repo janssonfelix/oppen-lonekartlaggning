@@ -27,6 +27,22 @@ datorn** — det styr hur vi tar emot bidrag.
    Varje ny utdata som lämnar verktyget (text, tabell, bild, fil) läggs i k-invariantsviten (`tests/helpers/ktroskel-rigg.js`) och i riskanalysens tabell över utdata innan den checkas in.
 4. Beskriv ändringen och varför den behövs.
 
+## Bidra med en importprofil
+
+Verktyget har inga inbyggda importprofiler för namngivna lönesystem: en profil som inte prövats mot ett
+riktigt uttag skulle ge fel kolumner. Har er organisation en profil som fungerar mot ett lönesystems
+uttag kan den bidras:
+
+1. Exportera profilen (*Inställningar › Importprofiler › Exportera JSON*). Filen bär bara rubriknamn.
+2. Öppna ett ärende eller ett ändringsförslag med filen och **vilket system och vilken version** uttaget
+   kommer ur, och vilken rapport eller vilket uttag i systemet som ger filen. Skriv inte organisationens
+   namn, och ta inte med någon del av själva uttaget.
+3. Ge profilen ett namn efter uttaget, inte efter organisationen (t.ex. "Personallista ur lönesystemets
+   statistikuttag").
+
+En bidragen profil läggs in först när den är prövad mot ett uttag ur samma system och version, och märks med
+varifrån den kommer (system och version, inte organisation).
+
 ## Det här checkas aldrig in
 
 - **Verkliga löner eller personuppgifter** — inte heller "anonymiserade" utdrag. Använd
