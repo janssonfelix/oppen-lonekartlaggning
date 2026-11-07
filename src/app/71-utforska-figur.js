@@ -257,7 +257,7 @@ function _figFordelning(model, rows, allaPunkter) {
                                ['Kvartiler', `${_figTalformat(s.q1, 'kr', { enhet: false })}–${_figTalformat(s.q3, 'kr')}`], ['Antal', String(s.n)]]
                             : [[d.x], [kon === 'Alla' ? 'Lön' : kon, _figTalformat(d.y, 'kr')]])
     }));
-    return { beskrivning: allaPunkter === 'kvantiler' ? 'Kvantilpunkter: per vald grupp tjugo prickar, var och en en tjugondel av gruppen (i små grupper en större andel, aldrig färre än två personer), lagda vid den lönen. Inga enskilda löner visas. Samma grupper finns i tabellen nedan.'
+    return { beskrivning: allaPunkter === 'kvantiler' ? 'Kvantilpunkter: tjugo prickar per vald grupp. Varje prick står för en tjugondel av gruppen och ligger vid den lönen. I små grupper står en prick för en större andel, men aldrig för färre än två personer. Inga enskilda löner visas. Samma grupper finns i tabellen nedan.'
         : allaPunkter === 'regnmoln' ? 'Regnmoln: per vald grupp en täthetskurva över lönerna, median och kvartiler som streck, och varje persons lön som en punkt bredvid. Samma grupper finns i tabellen nedan.'
         : allaPunkter === 'svarm' ? 'Punktsvärm: varje persons lön som en punkt, lagda intill varandra så att fördelningens form syns, per vald grupp. Samma grupper finns i tabellen nedan.'
         : allaPunkter ? 'Varje persons lön som en punkt, per vald grupp. Samma grupper finns i tabellen nedan.'
