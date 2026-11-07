@@ -232,6 +232,8 @@ export async function samlaUtdata(w) {
     for (const g of w.__gruppdossierCandidates()) {
         lagg(`gruppdossier ${g.key}`, w.eval(`medExportLage(() => gruppdossierAsText(buildGruppdossier(${JSON.stringify(g.key)})))`));
     }
+    // BAS-dossiern: textkopian byggs i exportläget (basdossierText), för varje intervall som når den inställda tröskeln.
+    for (const { bas } of w.eval('medExportLage(() => basdossierKandidater())')) lagg(`basdossier ${bas}`, w.eval(`basdossierText(${JSON.stringify(bas)})`));
     for (const mall of ['komplett', 'ledning', 'facklig']) lagg(`utskrift: ${mall}`, (await utskriftAv(w, mall)).innerHTML.replace(/src="data:[^"]*"/g, ''));
     return ut;
 }

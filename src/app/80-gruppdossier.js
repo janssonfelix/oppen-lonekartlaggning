@@ -229,7 +229,7 @@ function _gdRenderBody(d) {
                 ? `<br><span title="${esc(skrForklaring())}">nationellt: ${svPct(d.skr.pct, 0)} kvinnor i ${_skrDelText(d.skr.del)}</span>` : ''}</small></div>
             <div class="gd-kpi"><span>${kr(d.median)}</span><small>median</small></div>
             <div class="gd-kpi"><span>${kr(d.p10)} – ${kr(d.p90)}</span><small>P10 – P90</small></div>
-        </div>${d.ansvar ? `
+        </div>${basdossierKandidater().some(x => x.bas === d.bas) ? `<p class="gd-note">${basdossierKnapp(d.bas, { text: `Hela BAS ${d.bas}` })} allt om intervallet på en sida</p>` : ''}${d.ansvar ? `
         <p class="gd-ansvar">Ansvar: Ledningsansvar ${d.ansvar.ledning.kv} kv / ${d.ansvar.ledning.ma} män ·
             Särskilt uppdrag ${d.ansvar.uppdrag.kv} kv / ${d.ansvar.uppdrag.ma} män</p>` : ''}`;
 

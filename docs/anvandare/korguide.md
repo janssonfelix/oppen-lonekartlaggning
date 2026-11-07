@@ -180,6 +180,26 @@ också när det är hopfällt.
   inte i listan, en flik med färre än tre avsnitt har ingen, och listan byggs om när fliken ritas om, till exempel
   efter att lönefilen lästs in.
 
+### Dossierer: en yrkesgrupp eller ett BAS-intervall på en sida
+
+- **Gruppdossiern** samlar allt verktyget vet om en yrkesgrupp i ett BAS-intervall. Den öppnas från tabellraderna,
+  från en grupp i Egna vyer och från raden om markeringen (*Öppna gruppdossier*).
+- **BAS-dossiern** samlar ett BAS-intervall i rapportens ordning, så att avsnittet om intervallet kan skrivas utan att
+  hämta det ur fem flikar: nyckeltalen (antal, kvinnor och män, median, P10–P90) och läget mot ställningstagandets
+  rad för intervallet; yrkesgrupperna i intervallet med antal, medianer per kön, kvinnors median i procent av mäns
+  och samma status som i Lika arbete (statusen gäller hela yrket; finns yrket också i andra intervall säger en not
+  det), med en knapp till varje grupps dossier; kandidatparen i Likvärdigt arbete där
+  det kvinnodominerade yrket ligger i intervallet, och paren *Lägre krav, högre lön*; medianlönen per åldersgrupp
+  (–34, 35–49, 50–) och kön, med en länk till Ålder & karriär med intervallet valt; och intervallets rad ur förra
+  årets bokslut när en konfigurationsfil från förra året är inläst. Den öppnas med knappen *BAS-dossier* i
+  Löneöversiktens BAS-rader (Tabeller och egna vyer), ikonen bredvid intervallets namn i Lönestrukturs tabell per
+  BAS-intervall, *Hela BAS …* i gruppdossiern, *Öppna BAS-dossiern* i raden om markeringen, och i sökrutan: en
+  BAS-träff har raden *Öppna BAS-dossiern för BAS …* under sig (pilarna och Retur når den), och sökordet
+  *BAS-dossier* (eller *intervall*, *per intervall*) öppnar dialogen för det första intervallet. Väljaren överst byter
+  intervall. **Kopiera som text** ger dossiern i rapportens form (rubriken *BAS-intervall …* och ett stycke per
+  punkt), byggd som exporterna: grupper under minsta gruppstorlek står bara med namn, utan lönemått.
+- Ingen av dossiererna dokumenterar sakliga skäl; de samlar underlaget för den bedömningen.
+
 1. **Regler & praxis** *(§ 8 — lagrummet står i flikens tooltip)* — gå igenom de sex granskningsområdena. Sätt
    **status** (Ingen risk / Möjlig risk — utreds / Åtgärd krävs / Ej tillämplig) och
    skriv en **anteckning** per område — *på gruppnivå: inga namn eller
@@ -390,9 +410,13 @@ ni ordna om och ta bort tabellerna.
 
 - **"Spara konfiguration"** (fliken **Spara och jämför år** under *Arbetet*, avsnittet *Spara/ladda konfiguration*)
   om du vill återuppta inställningarna senare (datafilen laddas om — själva lönedatan sparas aldrig). Filen bär också **årets bokslut**: nyckeltal, en rad per yrkesgrupp
-  där båda könen når minsta gruppstorlek, och Att göra-punkternas läge. Läs in filen nästa år, så visar
-  **Jämförelse med förra året** (samma flik) vad som ändrats: nyckeltalen sida vid sida, vilka yrkesgrupper som
-  är flaggade båda åren, nya och inte längre flaggade, och vilka av förra årets öppna punkter som är klara.
+  där båda könen når minsta gruppstorlek, en rad per BAS-intervall med minst så många personer (antal, P10, median
+  och P90) och Att göra-punkternas läge. Läs in filen nästa år, så visar
+  **Jämförelse med förra året** (samma flik) vad som ändrats: nyckeltalen sida vid sida, **löneutvecklingen per
+  BAS-intervall** (P10, median och P90 förra året och i år, förändringen i kronor och procent, och medianen som en
+  hantel), vilka yrkesgrupper som
+  är flaggade båda åren, nya och inte längre flaggade, och vilka av förra årets öppna punkter som är klara. En fil
+  sparad med en äldre version saknar raderna per BAS-intervall; panelen säger det, och resten av jämförelsen fungerar.
   Samma jämförelse följer med som ett avsnitt i Word-utkastet och PDF-rapporten, som ett block i rapportunderlaget
   och som ett diagram där varje yrkesgrupp visas som ett streck (förra året) och en punkt (i år).
 - **"Rensa all data"** (under **Inställningar**, rubriken *Rensa*) när du är klar — eller stäng bara fliken; inget ligger kvar.

@@ -188,11 +188,10 @@ function rmArsjamforelseAvsnitt(diagram) {
     const skriv = (v, typ) => (v == null ? '—' : typ === 'kr' ? `${svTal(Math.round(v), 0)} kr` : typ === 'pct' ? svPct(v, 1) : svTal(v, 0));
     const diff = (v, typ) => (v == null ? '—' : `${v > 0 ? '+' : v < 0 ? '−' : '±'}${skriv(Math.abs(v), typ)}${typ === 'pct' ? '-enheter' : ''}`);
     const text = s => ({ text: s });
-    const delar = [
+    /** @type {any[]} */ const delar = [
         stycke(`Jämfört med lönekartläggningen ${forra.ar} (bokslut sparat ${forra.skapat}, minsta gruppstorlek ${forra.k}). Lönemått bara för yrkesgrupper där båda könen når minsta gruppstorlek; gapet är kvinnors medianlön mot mäns, negativt när kvinnor ligger lägre.`, 'dampad'),
         { typ: 'tabell', kolumner: [{ rubrik: 'Mått', typ: 'text' }, { rubrik: String(forra.ar), typ: 'text' }, { rubrik: String(nu.ar), typ: 'text' }, { rubrik: 'Skillnad', typ: 'text' }],
           rader: j.nyckeltal.map(r => [r.etikett, text(skriv(r.forra, r.typ)), text(skriv(r.nu, r.typ)), text(diff(r.diff, r.typ))]) },
-        { typ: 'rubrik', niva: 3, text: 'Lika arbete' },
     ];
     const grupptabell = (rubrik, lista, tom) => {
         if (!lista.length) { delar.push(stycke(`${rubrik}: ${tom}`)); return; }
@@ -200,6 +199,8 @@ function rmArsjamforelseAvsnitt(diagram) {
         delar.push({ typ: 'tabell', kolumner: [{ rubrik: 'Yrkesgrupp', typ: 'text' }, { rubrik: 'Kvinnor / män', typ: 'text' }, { rubrik: `Gap ${forra.ar}`, typ: 'pct1' }, { rubrik: `Gap ${nu.ar}`, typ: 'pct1' }],
             rader: lista.map(g => [g.yrke, g.nKv != null && g.nMa != null ? `${g.nKv} / ${g.nMa}` : null, g.gapForra, g.gapNu]) });
     };
+    delar.push(...rmBasUtvecklingDelar(j, forra.ar, nu.ar));
+    delar.push({ typ: 'rubrik', niva: 3, text: 'Lika arbete' });
     grupptabell('Flaggade båda åren', j.grupper.kvar, 'ingen yrkesgrupp.');
     grupptabell('Nya flaggade', j.grupper.nya, 'inga.');
     grupptabell('Inte längre flaggade', j.grupper.borta, 'ingen.');
@@ -211,8 +212,26 @@ function rmArsjamforelseAvsnitt(diagram) {
         delar.push({ typ: 'tabell', kolumner: [{ rubrik: `Öppna punkter ${forra.ar}`, typ: 'text' }, { rubrik: 'Läge i år', typ: 'text' }],
             rader: p.kvarFranForra.map(q => [q.titel || q.id, q.klarNu ? 'klar' : q.finnsNu ? 'fortfarande öppen' : 'finns inte längre i listan']) });
     } else delar.push(stycke(`${forra.ar} hade inga öppna punkter.`));
-    const utelamnat = j.samma_k ? [] : [`bokslutet sparades med minsta gruppstorlek ${forra.k}, i år gäller ${nu.k}: yrkesgrupper jämförs bara där båda könen når respektive års gräns`];
+    const utelamnat = j.samma_k ? [] : [`bokslutet sparades med minsta gruppstorlek ${forra.k}, i år gäller ${nu.k}: yrkesgrupper och BAS-intervall jämförs bara där de, och för könsuppdelade mått båda könen, når den högre av årens gränser, ${j.kGrans} personer`];
     return { id: 'arsjamforelse', numrerad: true, rubrik: 'Jämförelse med förra året', utelamnat, delar };
+}
+
+/**
+ * Löneutvecklingen per BAS-intervall i avsnittet Jämförelse med förra året: en tabell med antal och P10, median och
+ * P90 som "förra året till i år (förändring)", en kolumn per mått så att tabellen ryms på en stående sida. Bara när
+ * båda åren har fältet; ett äldre bokslut utan det ger ingenting här (panelen säger att det saknas i filen).
+ * Tröskeln är redan tillämpad i bokslutet (src/lib/arsbokslut.js) och i årets bokslut, som byggs i exportläget.
+ */
+function rmBasUtvecklingDelar(j, forraAr, nuAr) {
+    if (!j || !Array.isArray(j.basIntervall) || !j.basIntervall.length) return [];
+    const antal = f => (f.forra == null && f.nu == null ? null : `${f.forra == null ? '–' : svTal(f.forra, 0)} till ${f.nu == null ? '–' : svTal(f.nu, 0)}`);
+    const matt = f => (f.forra == null && f.nu == null ? null : { text: `${_abKr(f.forra)} till ${_abKr(f.nu)}${f.diff == null ? '' : ` (${_abForandringText(f)})`}` });
+    return [
+        { typ: 'rubrik', niva: 3, text: 'Löneutveckling per BAS-intervall' },
+        { typ: 'stycke', stil: 'dampad', text: `Varje mått ${forraAr} till ${nuAr}, med förändringen i kronor och i procent av ${forraAr} års värde. Bara intervall med minst ${j.kGrans} personer båda åren; medianen rör sig också när sammansättningen ändras.` },
+        { typ: 'tabell', kolumner: [{ rubrik: 'BAS-intervall', typ: 'text' }, { rubrik: 'Antal', typ: 'text' }, { rubrik: 'P10', typ: 'text' }, { rubrik: 'Median', typ: 'text' }, { rubrik: 'P90', typ: 'text' }],
+          rader: j.basIntervall.map(r => [`BAS ${r.bas}`, antal(r.n), matt(r.p10), matt(r.med), matt(r.p90)]) },
+    ];
 }
 
 /**

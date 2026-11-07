@@ -17,7 +17,7 @@ function generateRapport() {
         const trH = document.createElement("tr");
         trH.className = "group-header";
         trH.dataset.bas = b;
-        trH.innerHTML = `<td colspan="8">BAS ${esc(b)}</td>`;
+        trH.innerHTML = `<td colspan="8">BAS ${esc(b)}${basdossierKandidater().some(x => x.bas === b) ? basdossierKnapp(b) : ''}</td>`;
         tbody.appendChild(trH);
         const basUtelamnade = [];
         if (pol) {

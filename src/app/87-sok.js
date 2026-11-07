@@ -15,7 +15,8 @@
  * träff säger inte om en mindre grupp finns. Söktexten sparas inte och lämnar inte sidan.
  */
 const SOK_MAX_TRAFFAR = 8, SOK_MAX_FUNKTIONER = 5;
-/** Träffarna i listan, grupperna först och funktionerna efter: { typ: 'grupp', nyckel, … } eller { typ: 'funktion', …post i SOK_FUNKTIONER }. */
+/** Träffarna i listan, grupperna först och funktionerna efter: { typ: 'grupp', nyckel, … }, { typ: 'basdossier', bas, namn }
+ *  (raden under en BAS-träff som öppnar BAS-dossiern, 81-basdossier.js) eller { typ: 'funktion', …post i SOK_FUNKTIONER }. */
 let _sokTraffar = [], _sokAktiv = -1;
 
 /** Jämförelseform: gemener utan accenter och prickar, så att "skoterska" hittar "sköterska" (också utan svenskt tangentbord). */
@@ -70,18 +71,18 @@ function _sokMalDolt(p) {
  *  flik, som exportraderna), 'referens' (lönefilen är inläst men fliken är ändå låst: Löneläget, som kräver en
  *  referens eller jämförelsestatistik, 38-referensfiler.js), annars ''. */
 function _sokKraver(p) {
-    if (p.dialog) return '';
+    if (p.dialog) return p.dialog === 'basdossier' && !_sokHarData() ? 'lonefil' : '';
     const nav = /** @type {HTMLInputElement|null} */ (document.querySelector(`.nav-item[data-tab="${p.flik}"]`));
     const har = _sokHarData();
     if (nav && nav.disabled) return har ? 'referens' : 'lonefil';
     return !har && _sokMalDolt(p) ? 'lonefil' : '';
 }
 const SOK_KRAVER_TEXT = { lonefil: 'kräver lönefil', referens: 'kräver referens eller jämförelsestatistik' };
-const SOK_DIALOGNAMN = { installningar: 'Inställningar', ordlista: 'Ordlista', symboler: 'Förklaring', lagras: 'Vad lagras?' };
+const SOK_DIALOGNAMN = { installningar: 'Inställningar', ordlista: 'Ordlista', symboler: 'Förklaring', lagras: 'Vad lagras?', basdossier: 'BAS-dossiern' };
 function _sokFlikNamn(flik) { return (document.querySelector(`.nav-item[data-tab="${flik}"]`)?.textContent || flik).trim(); }
 function _sokFunktionUnder(p) {
     if (p.falt) return 'Fält i Inställningar';
-    if (p.dialog) return `Öppnar ${SOK_DIALOGNAMN[p.dialog]}`;
+    if (p.dialog) { const kraver = _sokKraver(p); return kraver ? `Öppnar ${SOK_DIALOGNAMN[p.dialog]} · ${SOK_KRAVER_TEXT[kraver]}` : `Öppnar ${SOK_DIALOGNAMN[p.dialog]}`; }
     const kraver = _sokKraver(p);
     return `I fliken ${_sokFlikNamn(p.flik)}${kraver ? ' · ' + SOK_KRAVER_TEXT[kraver] : ''}`;
 }
@@ -90,7 +91,14 @@ function _sokRita() {
     const falt = document.getElementById('sok-grupp'), lista = document.getElementById('sok-grupp-lista');
     if (!falt || !lista) return;
     const text = /** @type {HTMLInputElement} */ (falt).value.trim();
-    const grupper = sokTraffar(text).map(t => ({ ...t, typ: 'grupp' })), funktioner = sokFunktionsTraffar(text).map(p => ({ ...p, typ: 'funktion' }));
+    // Under varje BAS-träff en rad som öppnar BAS-dossiern: ett eget alternativ, så att pilarna och Retur når det.
+    const kand = typeof basdossierKandidater === 'function' && _sokHarData() ? basdossierKandidater() : [];
+    const grupper = sokTraffar(text).flatMap(t => {
+        const bas = t.nyckel.startsWith('bas:') ? t.nyckel.slice(4) : null;
+        if (bas != null && !kand.some(x => x.bas === bas)) return [{ ...t, typ: 'grupp' }];   // raden öppnar bara ett intervall som går att öppna
+        return [{ ...t, typ: 'grupp' }, ...(bas != null ? [{ typ: 'basdossier', bas, namn: `Öppna BAS-dossiern för ${t.namn}` }] : [])];
+    });
+    const funktioner = sokFunktionsTraffar(text).map(p => ({ ...p, typ: 'funktion' }));
     _sokTraffar = [...grupper, ...funktioner];
     _sokAktiv = _sokTraffar.length ? 0 : -1;
     if (!text) { lista.hidden = true; lista.innerHTML = ''; falt.setAttribute('aria-expanded', 'false'); falt.removeAttribute('aria-activedescendant'); return; }
@@ -99,7 +107,9 @@ function _sokRita() {
     // Grupper behövs bara när båda finns; ensamma står grupperna direkt i listan.
     const grupp = (namn, id, innehall) => `<li role="group" aria-labelledby="${id}"><span role="presentation" class="sok-grupprubrik" id="${id}">${namn}</span>`
         + `<ul role="presentation" class="sok-grupplista">${innehall}</ul></li>`;
-    const alt = (t, i) => t.typ === 'grupp'
+    const alt = (t, i) => t.typ === 'basdossier'
+        ? `<li role="option" id="sok-traff-${i}" data-sok-index="${i}" data-sok-basdossier="${esc(t.bas)}" class="sok-underval" aria-selected="${i === _sokAktiv}"><span class="sok-namn">${esc(t.namn)}</span><span class="sok-under">Intervallet på en sida, i rapportens ordning</span></li>`
+        : t.typ === 'grupp'
         ? `<li role="option" id="sok-traff-${i}" data-sok-index="${i}" aria-selected="${i === _sokAktiv}"><span class="sok-namn">${esc(t.namn)}</span><span class="sok-under">${esc(t.under)} · ${svTal(t.n, 0)} personer</span></li>`
         : `<li role="option" id="sok-traff-${i}" data-sok-index="${i}" data-sok-funktion aria-selected="${i === _sokAktiv}"><span class="sok-namn">${esc(t.namn)}</span><span class="sok-under">${esc(_sokFunktionUnder(t))}</span></li>`;
     lista.innerHTML = _sokTraffar.length
@@ -129,6 +139,7 @@ function sokValj(i) {
     const t = _sokTraffar[i];
     if (!t) return;
     if (t.typ === 'funktion') { _sokValjFunktion(t); return; }
+    if (t.typ === 'basdossier') { _sokStang(); openBasdossier(t.bas, document.getElementById('sok-grupp')); return; }
     const nu = diagramMarkering();
     if (!(nu && nu.length === 1 && nu[0] === t.nyckel)) sattDiagramMarkering(t.nyckel);
     _sokStang();
@@ -145,6 +156,7 @@ function _sokValjFunktion(p) {
     if (p.dialog === 'installningar') oppnaInstallningar({ fokus: p.falt || null });
     else if (p.dialog === 'ordlista') openGlossary();
     else if (p.dialog === 'lagras') openDataResidency();
+    else if (p.dialog === 'basdossier') openBasdossier((basdossierKandidater()[0] || {}).bas || null, document.getElementById('sok-grupp'));
     else if (p.dialog === 'symboler') /** @type {HTMLElement|null} */ (document.getElementById('btn-open-symbols'))?.click();
     else {
         navigateTo(p.flik);

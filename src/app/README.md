@@ -96,6 +96,7 @@ direkt vid laddning (händelsekopplingar, `const`) körs i den här ordningen.
 | `73-arsbokslut.js` | Årsbokslutet och panelen *Jämförelse med förra året* i Spara och jämför år (`src/lib/arsbokslut.js`, ADR-54) |
 | `75-lonepolitik.js` | Löneläget, avsnittet mot ställningstagandet: analys mot referensen, bandkartan, könens läge i spannet (hantel) och fördelningen i spannets tredjedelar per kön, efterlevnaden |
 | `80-gruppdossier.js` | Gruppdossier — en yrkesgrupp på en sida (modal), med antal per ansvarsgrupp |
+| `81-basdossier.js` | BAS-dossier — ett BAS-intervall på en sida (modal) i rapportens ordning: nyckeltal och läget mot ställningstagandet, yrkesgrupperna med Lika arbetes status, likvärdigt arbete, ålder, förra året (årsbokslutet) och en textversion byggd i exportläget; ingångar i Löneöversikten, Lönestrukturs tabell per BAS-intervall, gruppdossiern, markeringsraden och sökrutan |
 | `85-robusthet-fardigcheck.js` | Robusthetspanel (kvinnotröskel, prioriteringsreferens) + färdigcheck, båda i Exportera |
 | `86-installningar.js` | Panelen Inställningar: det som gäller alla flikar (minsta gruppstorlek, organisationstyp, lönemånad, PO-påslag och beräkningsperiod), Prioriteringens trösklar och viktning, läget, och en förteckning över flikarnas egna inställningar |
 | `86-sok-register.js` | Sökregistret `SOK_FUNKTIONER`: varje avsnitt i flikarna, dialogerna och fälten i Inställningar, med synonymer, som sökfältet hittar |

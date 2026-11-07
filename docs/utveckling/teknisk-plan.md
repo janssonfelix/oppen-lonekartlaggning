@@ -237,7 +237,7 @@ adaptern verkligen delegerar vaktas av `tests/drift.test.js`:
   rätt grupp. Utskriftsfönstret för checklistorna (`printScaffoldView`) läser `:root` och allt från `.dold` till
   stilmallens slut ur den körande stilmallen och lägger in det som byggt stilark (`adoptedStyleSheets`): ett `<style>`-element
   som skriptet skapar blockeras av den ärvda CSP:n (`style-src-elem`), så fönstret var tidigare helt ostilat.
-- **Tester:** Vitest — 2698 tester i 83 filer: rena `src/lib/`-moduler, CSV-parsning, jsdom-röktest
+- **Tester:** Vitest — 2723 tester i 84 filer: rena `src/lib/`-moduler, CSV-parsning, jsdom-röktest
   av varje vy (ADR-7; `tests/smoke.test.js` med det delade fönstret och sju `tests/smoke-*.test.js` per
   område), k-tröskeln i åtta `tests/ktroskel*.test.js` med riggen i `tests/helpers/ktroskel-rigg.js`,
   gränssnittet i `tests/granssnitt*.test.js` (riggen `tests/helpers/granssnitt-rigg.js`) och diagramvyerna i
@@ -1200,8 +1200,18 @@ nyckeltalen sida vid sida, de flaggade yrkesgrupperna, hanteln och Att göra; bl
 i rapportunderlaget (`arsjamforelseBlock`); och hanteln (`hantelRader`, `foreEfterFigur`): kvinnors medianlön i
 procent av mäns per yrkesgrupp, förra året som streck och i år som punkt, grön när kvoten närmat sig lika lön,
 orange när den fjärmat sig, grå när den är oförändrad — en riktning, inte en bedömning. Diagramplanens pilspets
-på strecket är inte gjord: strecket och punkten säger redan vilket år som är vilket. Vaktas av
-`tests/arsbokslut.test.js` och `tests/smoke-arsbokslut.test.js`.
+på strecket är inte gjord: strecket och punkten säger redan vilket år som är vilket. Sedan 2026-11-06 bär bokslutet
+också `basIntervall`: en rad per BAS-intervall med minst k personer (`bas, n, nKv, nMa, p10, med, p90, medKv, medMa`),
+där kvinnors och mäns median bara står när båda könen når k; ett intervall under k har ingen rad. Fältet är valfritt:
+ett äldre bokslut får `basIntervall: null` (inte en tom lista, som betyder att inget intervall nådde k), och panelen
+säger då att löneutvecklingen per BAS-intervall saknas i filen. `jamforArsbokslut` ger per intervall varje mått
+förra året, i år och förändringen i kronor och procent; panelen visar tabellen *Löneutveckling per BAS-intervall*
+och en hantel för medianen (`basHantelRader`, en färg: en högre median är en förändring, ingen bedömning), och
+rapportmodellen samma tabell under *Jämförelse med förra året* (`rmBasUtvecklingDelar`, en kolumn per mått så att
+den ryms på en stående sida). Förra årets fil kan ha sparats med en lägre tröskel än årets: `valideraArsbokslut`
+höjer ett k under 2 till 2, och `jamforArsbokslut` läser båda åren med den högre av årens trösklar (`kGrans`,
+`bokslutMedGrans`): rader per BAS-intervall och yrkesgrupper under den faller bort och könsmedianer nollas, så att
+inget som lämnar verktyget bygger på färre personer än årets tröskel. Vaktas av `tests/arsbokslut.test.js` och `tests/smoke-arsbokslut.test.js`.
 
 **ADR-55 — Löneläget mot båda referenserna, Lönepolitik som avsnitt.** Beslut 2026-10-30. Fliken
 Löneläget (id `benchmark`) samlar organisationens löner mot det de jämförs med, i tre avsnitt: överblicken (`src/lib/referenser.js`,
@@ -1288,6 +1298,24 @@ Mansdominerat speglas; övriga könsblandade. *Brukar anses kvinnodominerad* byg
 personalstatistik, organisationstypen i Inställningar) med samma definition. *Lönemånaden* (`state.lonemanad`) anges i
 Inställningar, följer med i konfigurationsfilen och skrivs ut som *inte angiven* när den saknas: lönefilen bär ingen
 sådan uppgift och verktyget gissar inte. Vaktas av `tests/aidbas.test.js` och `tests/smoke-aidbas.test.js`.
+
+**ADR-58 — BAS-dossiern: ett BAS-intervall på en sida.** Beslut 2026-11-06. En skriven lönekartläggning disponeras
+ofta per BAS-intervall, och handläggaren behövde hämta varje intervall ur fem flikar. `81-basdossier.js`
+(`#basdossier-modal`) är en dialog som gruppdossiern, inte en flik: den nås från flera ställen (Löneöversiktens
+BAS-rader, Lönestrukturs tabell per BAS-intervall, gruppdossiern, markeringsraden och sökrutan, där en BAS-träff
+får ett eget alternativ under sig så att listboxens pilar och Retur når det) och har ingen post i menyn. Innehållet
+står i rapportens ordning: nyckeltal och läget mot ställningstagandets rad för intervallet (`policyFor(null, bas)`),
+yrkesgrupperna ur `likaArbeteGrupper` med antal och medianer räknade på intervallets rader och statusen ur Lika
+arbetes grupp för hela yrket (Lika arbete grupperar per yrke över alla BAS-intervall; ett yrke som också finns i
+andra intervall får noten *Status gäller hela yrket (N personer), som i Lika arbete; yrket finns också i BAS …*), paren ur
+`likvardighetResultat()` där det kvinnodominerade yrket ligger i intervallet (`_parForRedovisning`), medianlön per
+åldersgrupp (–34, 35–49, 50–, samma gränser som rapportens åldersgruppstabell) och kön, och intervallets rad ur
+förra årets bokslut (ADR-54, `jamforBasIntervall`). Ingen ny statistik. Skärmen följer läget som övriga flikar
+(ADR-51); könsuppdelade mått bara där båda könen når k, i åldersgrupperna per grupp. Textversionen
+(`basdossierText`) lämnar verktyget och byggs därför i exportläget: yrkesgrupper under k står bara med namn, och ett
+intervall under k ger ingen text. Förra årets rad läses med den högre av filens och den inställda tröskeln
+(`bokslutMedGrans`, se ADR-54). Vaktas av `tests/basdossier.test.js` och av k-invarianten i
+`tests/ktroskel-invarianter.test.js`, som prövar texten för varje valbart intervall vid 10 och 25.
 
 ## 9. Öppna punkter
 

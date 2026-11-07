@@ -1481,6 +1481,44 @@ console.log('\n── Sök och hoppa ──');
     await page.evaluate(() => sattDiagramMarkering(null));
 }
 
+console.log('\n── BAS-dossier (modal) ──');
+{
+    // Från Löneöversikten: knappen i BAS C:s rubrikrad öppnar dialogen utan att fälla raden; Escape stänger och
+    // fokus går tillbaka till knappen.
+    await page.evaluate(() => { document.querySelector('.nav-item[data-tab="utforska"]').click(); scrollTo(0, 0); });
+    await page.waitForTimeout(800);
+    const knapp = '#rapport-table tr.group-header [data-open-basdossier="C"]';
+    const fore = await page.evaluate(k => document.querySelector(k)?.closest('tr').classList.contains('collapsed'), knapp);
+    await page.click(knapp);
+    await page.waitForTimeout(400);
+    const bd = await page.evaluate(k => ({ oppen: document.getElementById('basdossier-modal').style.display === 'flex',
+        text: (document.getElementById('basdossier-body').textContent || '').replace(/\s+/g, ' '),
+        val: document.getElementById('basdossier-select').value, hopfalld: document.querySelector(k).closest('tr').classList.contains('collapsed'),
+        synlig: (() => { const r = document.querySelector('#basdossier-modal .glossary-panel').getBoundingClientRect(); return r.width > 300 && r.height > 200 && r.left >= 0 && r.right <= innerWidth; })() }), knapp);
+    ok(bd.oppen && bd.synlig && bd.val === 'C' && /BAS-intervall C/.test(bd.text) && /Yrkesgrupperna i intervallet/.test(bd.text) && /Förra året/.test(bd.text) && bd.hopfalld === fore,
+        'knappen i Löneöversiktens BAS-rad öppnar BAS-dossiern för intervallet, utan att fälla raden');
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(300);
+    ok(await page.evaluate(k => document.getElementById('basdossier-modal').style.display === 'none' && document.activeElement === document.querySelector(k), knapp),
+        'Escape stänger BAS-dossiern och fokus går tillbaka till knappen');
+    // Från sökrutan, med tangentbordet: raden under BAS-träffen öppnar dossiern.
+    await page.evaluate(() => document.activeElement && document.activeElement.blur());
+    await page.keyboard.press('/');
+    await page.keyboard.type('bas c');
+    await page.waitForTimeout(250);
+    const steg = await page.evaluate(() => [...document.querySelectorAll('#sok-grupp-lista [role="option"]')].findIndex(li => li.getAttribute('data-sok-basdossier') === 'C'));
+    ok(steg > 0, `en BAS-träff har raden Öppna BAS-dossiern under sig (alternativ ${steg + 1})`);
+    for (let i = 0; i < steg; i++) await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('Enter');
+    await page.waitForTimeout(400);
+    ok(await page.evaluate(() => document.getElementById('basdossier-modal').style.display === 'flex' && document.getElementById('basdossier-select').value === 'C'
+        && document.getElementById('sok-grupp-lista').hidden), 'pil ned och Retur på raden öppnar BAS-dossiern från sökrutan');
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(300);
+    ok(await page.evaluate(() => document.getElementById('basdossier-modal').style.display === 'none' && document.activeElement.id === 'sok-grupp'), 'Escape stänger, och fokus står kvar i sökfältet');
+    await page.evaluate(() => document.activeElement && document.activeElement.blur());
+}
+
 console.log('\n── Startsidan före inläsning, och de två lägena ──');
 {
     // En egen sida utan data: Översikt ska vara en uppladdningssida, utan lägesdelarna.
