@@ -234,6 +234,11 @@ export const MODULES = [
                   profilFranMappning: '_ipFranMappning', importprofilerTillJson: '_ipTillJson', inbyggdaProfiler: '_ipInbyggda' }
     },
     {
+        // Förhandskontrollen av lönefilen: tolkningen av de tio första raderna, sammandraget och varningarna.
+        file: 'forhandskontroll.js', ns: '__mirrorForhandskontroll',
+        expose: { byggForhandskontroll: '_fkBygg', forhandskontrollGranser: '_fkGranser' }
+    },
+    {
         // Organisationspaketet importerar tabellrecept.js, perbas.js och importprofiler.js (rapportens recept, ADR-52): efter dem.
         file: 'organisationspaket.js', ns: '__mirrorOrganisationspaket',
         expose: { byggPaket: '_opByggPaket', tolkaPaket: '_opTolkaPaket', liknarPersonuppgift: '_opLiknarPersonuppgift' }
