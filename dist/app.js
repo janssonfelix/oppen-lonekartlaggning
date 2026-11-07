@@ -29599,7 +29599,7 @@ const INFO_SECTIONS = {
             Verktyget är byggt för arbetsgivare som kodar sina befattningar med <strong>AID</strong> och <strong>BAS-intervall</strong> och kan jämföra sig med SKR:s personalstatistik, i praktiken kommuner och regioner. Varje organisation läser in sitt eget ställningstagande, sin statistik och sina benämningar i ett organisationspaket, så att ingenting om en viss organisation är inbyggt.
         </p>
         <p>
-            Verktyget stödjer också delar av <strong>EU:s lönetransparensdirektiv 2023/970</strong>: rapportmåtten i Lönestruktur, utredningsgränsen på fem procent och protokollet för gemensam lönebedömning. Direktivet skulle vara infört senast den 7 juni 2026 men är ännu inte infört i Sverige; vissa delar kan ha direkt verkan mot kommuner och regioner. Den anställdes rätt till information och arbetsgivarens rapportering till myndighet ligger utanför verktyget.
+            Verktyget stödjer också delar av <strong>EU:s lönetransparensdirektiv 2023/970</strong>: rapportmåtten i Lönestruktur, gränsen 5 procent i direktivets regler om gemensam lönebedömning och protokollet för gemensam lönebedömning. Direktivet skulle vara infört senast den 7 juni 2026 men är ännu inte infört i Sverige; vissa delar kan ha direkt verkan mot kommuner och regioner. Den anställdes rätt till information och den rapportering som direktivet kräver ligger utanför verktyget.
         </p>
         <p>
             Hela verktyget är <strong>en enda fil som körs i webbläsaren på din dator</strong>. Ingen data lämnar datorn: inga servrar, inga molntjänster, inga nätverksanrop. Det är inte bara ett löfte utan en spärr i filen själv, som hindrar webbläsaren från att skicka något ut.
@@ -29613,40 +29613,40 @@ const INFO_SECTIONS = {
             <li><strong>Dataskyddsombud</strong>, som bedömer hur uppgifterna behandlas</li>
         </ul>
 
-        <h3>Vad verktyget gör, och vad ni gör själva</h3>
+        <h3>Vad verktyget gör, och vad du gör själv</h3>
         <p><strong>Verktyget gör:</strong></p>
         <ul>
             <li>Räknar fram löneskillnaden mellan kvinnor och män i samma yrkesgrupp och mellan kvinnodominerade yrken och jämförelseyrken på samma nivå, och visar hur mycket som finns kvar när ålder och nivå räknats bort</li>
-            <li>Jämför löneläget mot ert lönepolitiska ställningstagande och mot jämförelsestatistiken</li>
-            <li>Ordnar yrkesgrupperna efter var en åtgärd gör störst nytta och räknar vad det kostar; låter er pröva hur en lönepott kan fördelas</li>
-            <li>Ger en checklista för att granska regler och praxis, där ni skriver in er bedömning och ert resonemang</li>
-            <li>Skriver ett redigerbart Word-utkast av dokumentationen med verktygets fynd ifyllda och era bedömningar markerade som fält att fylla i, samt Excel, PDF, protokoll för gemensam lönebedömning och underlag till handlingsplanen</li>
+            <li>Jämför löneläget mot organisationens lönepolitiska ställningstagande och mot jämförelsestatistiken</li>
+            <li>Ordnar yrkesgrupperna efter var en åtgärd gör störst nytta och räknar vad det kostar; låter dig pröva hur en lönepott kan fördelas</li>
+            <li>Ger en checklista för att granska regler och praxis, där du skriver in bedömningen och resonemanget</li>
+            <li>Skriver ett redigerbart Word-utkast av dokumentationen med verktygets fynd ifyllda och dina bedömningar markerade som fält att fylla i, samt Excel, PDF, protokoll för gemensam lönebedömning och underlag till handlingsplanen</li>
             <li>Skyddar små grupper: lönemått för grupper under minsta gruppstorlek lämnar aldrig verktyget</li>
         </ul>
-        <p><strong>Ni gör själva:</strong></p>
+        <p><strong>Du gör själv:</strong></p>
         <ul>
             <li>Bedömer om en skillnad har sakliga skäl. Verktyget visar var skillnaderna finns och hur stora de är, men en oförklarad skillnad är inte detsamma som en osaklig</li>
             <li>Färdigställer dokumentationen i Word-utkastet och beslutar om åtgärderna i handlingsplanen</li>
-            <li>Samverkar med facklig part och lämnar det som ska lämnas till myndigheter</li>
-            <li>Ansvarar för arbetsvärderingen: BAS-intervallen, eller era egna poäng, är verktygets mått på arbetets krav</li>
+            <li>Samverkar med facket och lämnar den information som lagen kräver</li>
+            <li>Ansvarar för arbetsvärderingen: BAS-intervallen, eller organisationens egna poäng, är verktygets mått på arbetets krav</li>
         </ul>
         <p>Verktyget använder ingen artificiell intelligens. All statistik är klassiska metoder med formler som går att följa, och varje tal går att spåra med knappen <em>Visa beräkningen</em>. Ingenting sparas mellan sessioner: stäng fliken och allt är borta.</p>
 
         <h3>Så går en kartläggning till</h3>
         <ol>
-            <li>Läs in <strong>organisationspaketet</strong> i <strong>Filer och kvalitet</strong>, om er organisation har ett, och sedan <strong>lönefilen</strong> (BAS-intervall, AID, lön, ålder och kön; ansvarskod och arbetsvärderingspoäng är valfria)</li>
-            <li>Titta på <strong>Underlagets kvalitet</strong> i samma flik och på <strong>Att göra</strong> på Översikt: går underlaget att lita på, och var ska ni börja?</li>
-            <li>Gå igenom <strong>Regler &amp; praxis</strong> och skriv in er bedömning per område</li>
+            <li>Läs in <strong>organisationspaketet</strong> i <strong>Filer och kvalitet</strong>, om organisationen har ett, och sedan <strong>lönefilen</strong> (BAS-intervall, AID, lön, ålder och kön; ansvarskod och arbetsvärderingspoäng är valfria)</li>
+            <li>Titta på <strong>Underlagets kvalitet</strong> i samma flik och på <strong>Att göra</strong> på Översikt: går underlaget att lita på, och var ska du börja?</li>
+            <li>Gå igenom <strong>Regler &amp; praxis</strong> och skriv in bedömningen per område</li>
             <li>Gå igenom <strong>Lika arbete</strong>, <strong>Likvärdigt arbete</strong> och <strong>Lönestruktur</strong> under Kartläggning: där står skillnaderna och vad som förklarar dem. <strong>Löneläget</strong> och <strong>Ålder &amp; karriär</strong> är fördjupning, inget lagkrav</li>
             <li>Bestäm i <strong>Prioritering</strong> och <strong>Handlingsplan</strong> vad som ska göras, av vem och när; pröva fördelningen av potten i <strong>Löneöversyn</strong></li>
-            <li>Ta texten till rapporten ur <strong>Rapporttext</strong>, kör färdigchecken i <strong>Exportera</strong>, hämta Word-utkastet och färdigställ dokumentationen. Spara konfigurationen i <strong>Spara och jämför år</strong>, så kan ni jämföra med förra året nästa gång</li>
+            <li>Ta texten till rapporten ur <strong>Rapporttext</strong>, kör färdigchecken i <strong>Exportera</strong>, hämta Word-utkastet och färdigställ dokumentationen. Spara konfigurationen i <strong>Spara och jämför år</strong>, så kan du jämföra med förra året nästa gång</li>
         </ol>
-        <p>Vill ni prova först finns två demon i <strong>Kom igång</strong> på Översikt och i lönefilskortet i Filer och kvalitet: <em>prova med demodata, litet</em> (260 påhittade personer) och <em>stort</em> (7 000 påhittade personer i BAS A–K, i storlek med en mindre kommun). Allt i demona är påhittat och märks som demodata.</p>
+        <p>Vill du prova först finns två demon i <strong>Kom igång</strong> på Översikt och i lönefilskortet i Filer och kvalitet: <em>prova med demodata, litet</em> (260 påhittade personer) och <em>stort</em> (7 000 påhittade personer i BAS A–K, i storlek med en mindre kommun). Allt i demona är påhittat och märks som demodata.</p>
         <p>Raden <em>Klar här? Nästa steg</em> sist i flikarna leder vidare i den här ordningen. Sökrutan i sidhuvudet hittar yrken, BAS-intervall och funktioner, och listan <em>På den här sidan</em> leder till flikens avsnitt. Körguiden som följer med verktyget beskriver varje steg närmare; den står under Källor.</p>
     `,
 
     gdpr: () => `
-        <h3>Inbyggt dataskydd (dataskyddsförordningen art. 25)</h3>
+        <h3>Inbyggt dataskydd enligt dataskyddsförordningen</h3>
         <p>Verktyget är utformat så att dataskydd är en arkitekturell egenskap, inte en process. Tre lager skyddar personuppgifter:</p>
 
         <h4>Lager 1 — Filen läses in en rad i taget</h4>
@@ -29673,9 +29673,9 @@ const INFO_SECTIONS = {
 
         <h3>Radering och insyn</h3>
         <ul>
-            <li><strong>Rensa all data:</strong> knappen under Inställningar tömmer minnet omedelbart utan att vänta på att fliken stängs — lagringsminimering (art. 5.1 e) och dataskydd som standard (art. 25.2). De registrerades rätt till radering utövas mot källsystemet, inte i verktyget.</li>
+            <li><strong>Rensa all data:</strong> knappen under Inställningar tömmer minnet omedelbart utan att vänta på att fliken stängs : lagringsminimering och dataskydd som standard. De registrerades rätt till radering utövas mot källsystemet, inte i verktyget.</li>
             <li><strong>Vad lagras?</strong> — panelen visar live schema, antal rader, ungefärlig minnesfootprint och en maskerad exempel-post.</li>
-            <li><strong>Lagringsminimering (art. 5.1 e):</strong> Datan försvinner automatiskt när webbläsarfliken stängs. Ingen retention-policy behövs.</li>
+            <li><strong>Lagringsminimering:</strong> Datan försvinner automatiskt när webbläsarfliken stängs. Ingen retention-policy behövs.</li>
         </ul>
 
         <h3>Kryptering av lagrade uppgifter: inte tillämpligt, inget lagras</h3>
@@ -29712,8 +29712,8 @@ const INFO_SECTIONS = {
         <p>Modell: <code>log(lön) ~ kön + ålder (centrerad) + BAS-intervall (indikatorvariabler)</code> — i linje med Medlingsinstitutets standardvägning. Går modellen inte att skatta faller verktyget tillbaka på kön + ålder.</p>
         <ul>
             <li><strong>OLS-estimering</strong> med <strong>HC3-robusta standardfel</strong> (Long & Ervin 2000) — rekommenderad default för små/medelstora urval</li>
-            <li><strong>Sekventiell dekomponering:</strong> tre steg (Endast kön, sedan +BAS, sedan +Ålder) som visar hur stor del av råa lönegapet som förklaras av strukturella variabler; därefter ett steg +Yrkesgrupp: könsgapet med fasta effekter för yrkesgrupp inom BAS (AID×BAS), skattat med inomtransformation (gruppmedelvärdet dras av från log-lön, kön och ålder, sedan OLS utan intercept) — löneskillnaden mellan kvinnor och män med samma yrkesgrupp, BAS och ålder. Steget visas i kortet och förklaringsbudgeten men ingår inte i huvudtalet; har lönefilen ansvarskod tillkommer ett steg +Ansvar</li>
-            <li><strong>Förklaringsmodellen kan väljas (ADR-56):</strong> panelen <em>Förklaringsmodell</em> i Lönestruktur låter er ta bort BAS-intervall eller ålder, eller lägga till yrkesgrupp inom BAS; fullmodellen är utgångsläge. Tabellen i panelen visar vad varje variabel tillför i förklaringsgrad (R²) när den läggs till sist i fullmodellen, och gapet utan och med den; under 0,5 procentenheter föreslår verktyget att variabeln lämnas utanför, som ett pedagogiskt råd, inte ett statistiskt test. Valet styr huvudtalet överallt, trappan, förklaringsbudgeten och Blinder-Oaxaca; en bortvald variabel redovisas som kontrollerad, med ett eventuellt skäl, i panelen och i rapporten. Valet följer med i konfigurationsfilen</li>
+            <li><strong>Sekventiell dekomponering:</strong> tre steg (Endast kön, sedan +BAS, sedan +Ålder) som visar hur stor del av den råa löneskillnaden som förklaras av strukturella variabler; därefter ett steg +Yrkesgrupp: löneskillnaden mellan könen med fasta effekter för yrkesgrupp inom BAS (AID×BAS), skattat med inomtransformation (gruppmedelvärdet dras av från log-lön, kön och ålder, sedan OLS utan intercept) — löneskillnaden mellan kvinnor och män med samma yrkesgrupp, BAS och ålder. Steget visas i kortet och förklaringsbudgeten men ingår inte i huvudtalet; har lönefilen ansvarskod tillkommer ett steg +Ansvar</li>
+            <li><strong>Förklaringsmodellen kan väljas (ADR-56):</strong> panelen <em>Förklaringsmodell</em> i Lönestruktur låter dig ta bort BAS-intervall eller ålder, eller lägga till yrkesgrupp inom BAS; fullmodellen är utgångsläge. Tabellen i panelen visar vad varje variabel tillför i förklaringsgrad (R²) när den läggs till sist i fullmodellen, och skillnaden utan och med den; under 0,5 procentenheter föreslår verktyget att variabeln lämnas utanför, som ett pedagogiskt råd, inte ett statistiskt test. Valet styr huvudtalet överallt, trappan, förklaringsbudgeten och Blinder-Oaxaca; en bortvald variabel redovisas som kontrollerad, med ett eventuellt skäl, i panelen och i rapporten. Valet följer med i konfigurationsfilen</li>
             <li><strong>BAS som indikatorvariabler:</strong> en indikator per BAS-intervall, det alfabetiskt första intervallet är referens; varje intervall får sin egen lönenivå utan antagandet att varje bokstavssteg är värt lika mycket. Bokstavsordningen (A lägst) är fast och kan inte ändras</li>
             <li>Konvertering till kr-procent: <code>gapPct = (exp(β) − 1) · 100</code></li>
             <li><strong>Konfidensintervall:</strong> 95 % KI = β ± t<sub>0,975; n−k</sub> × SE, med t-fördelningens kvantil vid färre än 100 frihetsgrader (1,96 först därefter); gäller huvudregressionen, per-BAS-regressionerna och livscykelmodellen</li>
@@ -29723,10 +29723,10 @@ const INFO_SECTIONS = {
         <p>Lön mot ålder i Ålder &amp; karriär och livscykelmodellens kurvor bygger på ett tvärsnitt av lönerna vid kartläggningens tidpunkt. De visar skillnader mellan åldersgrupper i dag, inte hur en persons lön utvecklas över karriären: åldersgrupperna skiljer sig också i utbildning, yrkesval och anställningstid (kohorteffekter), och en skillnad mellan 30- och 60-åringar är därför inte en förväntad löneutveckling. Hur lönen faktiskt utvecklas kräver flera års kartläggningar av samma personer.</p>
 
         <h3>Kvantilregression (glastak och klibbigt golv)</h3>
-        <p>IRLS-implementation (Iteratively Reweighted Least Squares) körs vid τ ∈ {0,10; 0,50; 0,90}. Visar hur lönegapet beter sig i olika delar av lönefördelningen — glasstak i höga decilier, klistergolv i låga. IRLS är en <em>approximation</em> av kvantillösningen: den minimerar inte check-förlusten exakt (som linjärprogrammering gör) utan närmar sig den med omviktade minsta kvadrater; i verktygets referenstest avviker könskoefficienten några tiondels procentenheter från den exakta lösningen. Könskoefficienten vid varje τ visas med ett 95 % percentil-bootstrap-konfidensintervall: raderna omsamplas 200 gånger, seedat ur datat så att intervallet blir detsamma varje gång. Vid fler än 2 000 personer räknas inget intervall (tiden), och det står i tabellen.</p>
+        <p>IRLS-implementation (Iteratively Reweighted Least Squares) körs vid τ ∈ {0,10; 0,50; 0,90}. Visar hur löneskillnaden ser ut i olika delar av lönefördelningen: glastak i höga decilier, klibbigt golv i låga. IRLS är en <em>approximation</em> av kvantillösningen: den minimerar inte check-förlusten exakt (som linjärprogrammering gör) utan närmar sig den med omviktade minsta kvadrater; i verktygets referenstest avviker könskoefficienten några tiondels procentenheter från den exakta lösningen. Könskoefficienten vid varje τ visas med ett 95 % percentil-bootstrap-konfidensintervall: raderna omsamplas 200 gånger, seedat ur datat så att intervallet blir detsamma varje gång. Vid fler än 2 000 personer räknas inget intervall (tiden), och det står i tabellen.</p>
 
         <h3>Bootstrap-konfidensintervall</h3>
-        <p>B = 2000 percentil-bootstrap på mediankvoten kvinnor/män. 95% KI visas inline på det "råa lönegapet" så användaren ser osäkerhetsintervallet, inte ett falskt-precist punktestimat. (Efron & Tibshirani 1993)</p>
+        <p>B = 2000 percentil-bootstrap på mediankvoten kvinnor/män. 95 % KI visas direkt vid den råa löneskillnaden, så att du ser osäkerheten och inte bara ett punktvärde. (Efron & Tibshirani 1993)</p>
 
         <h3>Statistisk styrka</h3>
         <p>Minsta detekterbara effekt (MDE) vid 80% statistisk styrka, α=0.05 tvåsidig:</p>
@@ -29738,8 +29738,8 @@ const INFO_SECTIONS = {
         <ul>
             <li><strong>Underlagets kvalitet:</strong> fem kriterier — jämförbarhet, statistisk styrka, fullständighet, rimlighet och modell — som var och ett får OK, Varning eller Kritisk. Underlaget får samma status som det svagaste kriteriet.</li>
             <li><strong>Extremvärden:</strong> Z-score per BAS-grupp på log-lön. |Z| ≥ 3 flaggas för manuell granskning och visas med lön och filens radnummer (bara i verktyget)</li>
-            <li><strong>Löneöversyn (prognos):</strong> budget-först — lägg in en pott (kr eller %), fördela generellt + riktat per BAS och AID (en rad kan begränsas till ett kön eller till löner under en gräns, och lyfta till en nivå), se nya löner, budgetutnyttjande och lönegap före/efter; förslag som riktar potten mot osakliga gap. Kostnaden räknas med PO-påslag och beräkningsperiod från Inställningar</li>
-            <li><strong>Gap per BAS-intervall:</strong> separat regression inom varje BAS-intervall — visar var i organisationen oförklarat gap ligger</li>
+            <li><strong>Löneöversyn (prognos):</strong> budget-först — lägg in en pott (kr eller %), fördela generellt + riktat per BAS och AID (en rad kan begränsas till ett kön eller till löner under en gräns, och lyfta till en nivå), se nya löner, budgetutnyttjande och löneskillnad före och efter; förslag som riktar potten mot skillnaderna i likvärdigt arbete. Kostnaden räknas med PO-påslag och beräkningsperiod från Inställningar</li>
+            <li><strong>Oförklarad skillnad per BAS-intervall:</strong> separat regression inom varje BAS-intervall, som visar var i organisationen den oförklarade skillnaden finns</li>
             <li><strong>Förslag på förklaringar att pröva:</strong> åtta fasta regler (ingen artificiell intelligens) som ger HR testbara hypoteser per prio-rad — åldersskillnad, glasstak-mönster, bristyrke, MDE-tröskel m.fl.</li>
         </ul>
 
@@ -29752,7 +29752,7 @@ const INFO_SECTIONS = {
         <p>AID:s <strong>ansvarskod</strong> är valfri. Finns den i lönefilen grupperas den i tre ansvarsgrupper:
         <strong>Ledningsansvar</strong> (A, B, C, L), <strong>Särskilt uppdrag</strong> (F, M, 1001, 1002) och
         <strong>Inget särskilt ansvar</strong>. Ansvaret redovisas bredvid huvudresultaten, aldrig inbakat i dem —
-        om det är ett sakligt skäl avgör ni.</p>
+        om det är ett sakligt skäl avgör du.</p>
         <p class="gd-note">Etikettlista: ${esc((() => { const i = _aidEtikettlistaInfo(); return `${i.kalla} (${i.antal} etiketter)`; })())}.</p>
         </section>
 
@@ -29775,12 +29775,12 @@ const INFO_SECTIONS = {
             <tr><td>2 · Kartläggning</td><td>Löneläget</td><td>Fördjupning, inget lagkrav. Löneläget och jämförelsestatistiken mot ställningstagandet per yrkesgrupp, avsnittet mot ställningstagandet (bandkarta, könsposition i bandet, täckningsgrad) och avsnittet mot statistiken. Går att öppna när en referens är inläst.</td></tr>
             <tr><td>2 · Kartläggning</td><td>Lika arbete</td><td>Kvinnor och män i samma yrkesgrupp med trattdiagrammet, personer att granska, Lika arbete AID x BAS och analys på individnivå</td></tr>
             <tr><td>2 · Kartläggning</td><td>Likvärdigt arbete</td><td>Kvinnodominerade yrken mot likvärdiga icke-kvinnodominerade yrken, bootstrap-KI per par</td></tr>
-            <tr><td>2 · Kartläggning</td><td>Lönestruktur</td><td>Organisationen som karta, representation per nivå, fördelningsgap, per sektor, Var uppstår löneskillnaden?, måtten enligt EU 2023/970 art. 9, lönegap och könsfördelning per BAS, och vad som blir kvar av lönegapet: förklaringsmodell, multivariat regression, vattenfallsdiagram och Blinder-Oaxaca</td></tr>
-            <tr><td>2 · Kartläggning</td><td>Ålder &amp; karriär</td><td>Fördjupning, inget lagkrav. Lön mot ålder per kön, demografi (åldersfördelning, successionsrisk) och livscykel: växer eller krymper gapet över karriären</td></tr>
+            <tr><td>2 · Kartläggning</td><td>Lönestruktur</td><td>Organisationen som karta, representation per BAS-intervall, skillnaden i lönefördelningen, per sektor, Var uppstår löneskillnaden?, direktivets mått, löneskillnad och könsfördelning per BAS-intervall, och vad som blir kvar av löneskillnaden: förklaringsmodell, multivariat regression, vattenfallsdiagram och Blinder-Oaxaca</td></tr>
+            <tr><td>2 · Kartläggning</td><td>Ålder &amp; karriär</td><td>Fördjupning, inget lagkrav. Lön mot ålder per kön, demografi (åldersfördelning, pensionsavgångar) och livscykel: växer eller krymper skillnaden över karriären</td></tr>
             <tr><td>3 · Åtgärder</td><td>Prioritering</td><td>Bubbeldiagram och sorterad lista med kostnad och förslag på möjliga förklaringar att pröva. Trösklarna och viktningen ställs in under Inställningar</td></tr>
-            <tr><td>3 · Åtgärder</td><td>Löneöversyn</td><td>Simulera hur en lönepott kan fördelas och vad det gör med lönegapet</td></tr>
+            <tr><td>3 · Åtgärder</td><td>Löneöversyn</td><td>Pröva hur en lönepott kan fördelas och vad det gör med löneskillnaden</td></tr>
             <tr><td>3 · Åtgärder</td><td>Handlingsplan</td><td>Mall för åtgärder, kostnad, ansvarig och tidsplan (senast inom tre år) samt dokumentationskrav, och samverkan och uppföljning med protokollet för gemensam lönebedömning. Utskrivbar; kräver ingen data.</td></tr>
-            <tr><td>4 · Rapport</td><td>Rapporttext</td><td>Auto-rapportutkastet i klarspråk, för hela organisationen och per BAS-intervall, och rapportunderlaget: färdiga avsnitt att kopiera in i er egen rapportmall</td></tr>
+            <tr><td>4 · Rapport</td><td>Rapporttext</td><td>Utkastet till rapporttext, för hela organisationen och per BAS-intervall, och rapportunderlaget: färdiga avsnitt att kopiera in i organisationens rapportmall</td></tr>
             <tr><td>4 · Rapport</td><td>Exportera</td><td>Färdigcheck och robusthet, rapportens innehåll och all export (Word-utkast som .docx, PDF, Excel, ZIP, protokoll för gemensam lönebedömning, handlingsplan). Länkar till flikarna med egna underlag (kandidatparen, EU-rapportmåtten, åtgärdslistan, prognosen)</td></tr>
             <tr><td>4 · Rapport</td><td>Tabeller och egna vyer</td><td>Två avsnitt: Löneöversikten (hela löneläget per BAS, kön och yrkesgrupp) och Egna vyer: rader och kolumner, mått, helhet eller per kön, urval med villkor, tolv diagramtyper (de vanliga först, resten under Fler diagramtyper), klick till gruppdossier</td></tr>
             <tr><td>Arbetet</td><td>Spara och jämför år</td><td>Spara och ladda konfigurationen, jämför med en ögonblicksbild eller med förra året, och kör självdiagnostiken. Kräver ingen data.</td></tr>
@@ -29789,7 +29789,7 @@ const INFO_SECTIONS = {
 
         <h3>Genvägar och funktioner</h3>
         <ul>
-            <li><strong>Spara/ladda konfiguration:</strong> JSON-export av prio-trösklar, vikter, kostnadsinställningar, bristyrkes-AID:n, löneöversynens inställningar och era § 8-anteckningar. Innehåller inga individrader, men hantera den som övriga exportfiler.</li>
+            <li><strong>Spara/ladda konfiguration:</strong> JSON-export av prio-trösklar, vikter, kostnadsinställningar, bristyrkes-AID:n, löneöversynens inställningar och dina anteckningar i Regler & praxis. Innehåller inga individrader, men hantera den som övriga exportfiler.</li>
             <li><strong>Jämför scenarier (A/B):</strong> jämför två analyser (t.ex. före/efter filtrering, eller scenario A mot B)</li>
             <li><strong>Excel med alla flikar:</strong> alla resultat-tabeller i en xlsx</li>
             <li><strong>ZIP-export:</strong> alla diagram (PNG) + Excel i en zip</li>
@@ -29895,7 +29895,7 @@ SHA-256:    Se <code>RELEASE.txt</code> i utvecklingsmappen för verifiering
         <ul>
             <li><code>korguide.md</code> — steg för steg från datauttag till färdig dokumentation</li>
             <li><code>datauttag.md</code> — hur lönefilen tas ut ur lönesystemet, med lönedefinitionen</li>
-            <li><code>riskanalys.md</code> — risk- och sårbarhetsanalys, underlag till er konsekvensbedömning (DPIA)</li>
+            <li><code>riskanalys.md</code> — risk- och sårbarhetsanalys, underlag till organisationens konsekvensbedömning (DPIA)</li>
             <li><code>dataskydd.md</code> — kort dataskyddsbeskrivning för dataskyddsombud och IT</li>
             <li><code>RELEASE.txt</code> — version och kontrollsumma (SHA-256) för att kontrollera att filen är oförändrad</li>
         </ul>
