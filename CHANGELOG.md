@@ -8,6 +8,27 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ### Gränssnitt
 
+- **Förhandskontroll av lönefilen.** Direkt efter inläsningen står avsnittet *Förhandskontroll av lönefilen* överst i
+  Filer och kvalitet, under filrutorna: tolkningen av de tio första raderna (BAS, yrke, lön, ålder, kön, och poäng och
+  ansvarskod när de finns) med filens värde och verktygets tolkning i samma cell när de skiljer sig (*1978 tolkat som
+  48 år*, *K tolkat som kvinna*), och en markerad cell när värdet inte gick att tolka; sammandraget (rader i filen,
+  rader som används, rader som faller bort och varför, ålder ur födelseår); värdefördelningen (BAS-värden och de som
+  inte är en bokstav A–N, kön-värdena och hur vart och ett tolkas, lönens lägsta, median och högsta, åldern och
+  BAS-intervallen under minsta gruppstorlek); kolumnerna som används och inte används, och vilken importprofil som
+  kände igen filen. Varningar ges när medianlönen ser ut som årslön (över 150 000 kr) eller timlön (under 5 000 kr),
+  när den högsta lönen är över tio gånger medianen, när åldern ligger utanför 16–75 år eller räknats ur födelseår,
+  och när BAS eller kön har okända värden eller rader faller bort. Avsnittet är utfällt när det finns något att
+  anmärka och hopfällt annars; nyckeltalet säger *inget att anmärka* eller antalet varningar. Varningarna står också
+  som punkter i Att göra (Underlagets kvalitet) tills filen läses om utan dem, och inläsningsrapporten länkar till
+  avsnittet. Inställningen *Stoppa och visa förhandskontrollen innan inläsning* (standard av, följer med i
+  konfigurationsfilen) låter filen vänta på *Läs in*; *Avbryt* släpper filen och lämnar det tidigare underlaget orört.
+  Under väntan visas inte förra filens kolumnmappning, och en väntande fil släpps av *Rensa all data* och av
+  rensningen vid inaktivitet. Avsnittet namnger filen det beskriver; en fil där ingen rad gick att använda får en
+  egen förhandskontroll med raden *Filen lästes inte in*, och det tidigare underlaget står kvar. Varje punkt i Att
+  göra har en egen titel, och en varning som redan står som punkt under Datakvalitet eller Fullständighet läggs
+  inte till igen.
+  Demodata och organisationspaket läses in som förut. Raderna finns bara på skärmen: de ingår inte i någon export
+  eller i konfigurationsfilen, vilket k-invariantsviten prövar. Ingen tolkning av värden har ändrats.
 - **Importprofiler: kolumnmappningen görs en gång.** En gjord kolumnmappning kan sparas som en importprofil: när
   filen lästs in med kolumnerna utpekade för hand har kolumnmappningen rutan *Spara mappningen* (namn, förslaget *Vår
   personallista*). Profilen bär bara rubrikernas namn per fält och de rubriker som måste finnas (kännetecken), inga

@@ -6,7 +6,7 @@
  */
 import { describe, it, expect, beforeAll, vi } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
-import { normalisera, oppnaFlik, iExport, KON_BAS, KON_KV, KON_MA, ENSAM, KON_GAP, KON_GAP_1, KON_DOLDA, fonsterKon, harNagon, laddaXlsx, fangaBocker, samlaUtdata, sammanhang, SENT_MELLAN, SENT_SMA, X_KV, X_MA, PAR_KV, PAR_MA } from './helpers/ktroskel-rigg.js';
+import { normalisera, oppnaFlik, iExport, KON_BAS, KON_KV, KON_MA, ENSAM, KON_GAP, KON_GAP_1, KON_DOLDA, fonsterKon, harNagon, laddaXlsx, fangaBocker, samlaUtdata, sammanhang, SENT_MELLAN, SENT_SMA, X_KV, X_MA, PAR_KV, PAR_MA, FK_RA } from './helpers/ktroskel-rigg.js';
 
 // Sviten ritar om hela verktyget i varje test. Under full last tar ett test 4–6 s, så standardgränsen 5 s
 // fäller olika tester från körning till körning.
@@ -184,6 +184,17 @@ describe.each([[10, []], [25, SENT_MELLAN]])('I4: invarianten över flikar och e
     it('ingen enskild lön, ingen lön för en grupp under tröskeln och ingen lön för ett kön under tröskeln i det som lämnar verktyget', () => {
         const lackor = [];
         for (const [namn, text] of exporter()) for (const v of harNagon(text, dolda)) lackor.push(`${namn}: ${v} — "${sammanhang(text, v)}"`);
+        expect(lackor).toEqual([]);
+    });
+    // Förhandskontrollen (de tio första raderna med filens råvärden) visas bara på skärmen: inte i någon export, inte i
+    // Att göra-punkterna och inte i konfigurationsfilen. Dess varningar står i Att göra, utan värden ur filen.
+    it('förhandskontrollens råvärden syns på skärmen men i inget som lämnar verktyget', () => {
+        const skarm = utdata.find(([n]) => n === 'skärm: alla flikar')[1];
+        for (const v of FK_RA) expect(skarm, v).toContain(v);
+        expect(utdata.map(([n]) => n)).toContain('konfigurationsfilen (hela)');
+        expect(utdata.find(([n]) => n === 'Att göra-punkter')[1]).toContain('fk-alder-fodelsear');
+        const lackor = [];
+        for (const [namn, text] of exporter()) for (const v of harNagon(text, FK_RA)) lackor.push(`${namn}: ${v} — "${sammanhang(text, v)}"`);
         expect(lackor).toEqual([]);
     });
     it('inget könsgap för en grupp där ett kön är under tröskeln i det som lämnar verktyget', () => {

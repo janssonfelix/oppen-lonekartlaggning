@@ -502,6 +502,11 @@
 
                     </div>
                     </div>
+                    <!-- Förhandskontroll av lönefilen (17-forhandskontroll.js): dold tills en lönefil är inläst. -->
+                    <details class="avsnitt" id="avsnitt-fi-forhandskontroll" hidden>
+                    <summary><span class="avsnitt-titel"><h2>Förhandskontroll av lönefilen</h2><span class="avsnitt-under">Hur verktyget tolkade filen, rad för rad och i sammandrag</span></span><span class="avsnitt-nyckel" id="nyckel-fi-forhandskontroll"></span></summary>
+                    <section id="forhandskontroll" class="card" aria-label="Förhandskontroll av lönefilen"></section>
+                    </details>
                     <details class="avsnitt" id="avsnitt-ov-kvalitet">
                     <summary><span class="avsnitt-titel"><h2>Underlagets kvalitet</h2><span class="avsnitt-under">Går underlaget att lita på, och vad saknas?</span></span><span class="avsnitt-nyckel" id="nyckel-ov-kvalitet"></span></summary>
                     <section id="underlagets-kvalitet" class="card uk-panel" aria-labelledby="underlagets-kvalitet-rubrik" hidden>
@@ -2407,6 +2412,14 @@
                             </div>
                             <p id="lonemanad-hjalp" class="k-troskel-hjalp">Står ovanför tabellerna per AID-kod och BAS-intervall. Tomt skrivs ut som ”inte angiven”.</p>
                         <p class="inst-paverkar">Påverkar: tabellerna per AID-kod och BAS-intervall i Lika arbete och Likvärdigt arbete, och deras blad i Excel-filen.</p>
+                    </div>
+                    <div class="inst-rad">
+                            <div class="paket-rad">
+                                <input type="checkbox" id="inst-fk-stopp" aria-describedby="inst-fk-stopp-hjalp">
+                                <label for="inst-fk-stopp">Stoppa och visa förhandskontrollen innan inläsning</label>
+                            </div>
+                            <p id="inst-fk-stopp-hjalp" class="k-troskel-hjalp">Standard av: lönefilen läses in direkt, och förhandskontrollen visas efteråt.</p>
+                        <p class="inst-paverkar">Påverkar: inläsningen av lönefilen. Med rutan ikryssad visas förhandskontrollen i Filer och kvalitet med knapparna Läs in och Avbryt innan filen läses in. Demodata och organisationspaket läses in som vanligt.</p>
                     </div>
                     <div class="inst-rad">
                             <div class="paket-rad">

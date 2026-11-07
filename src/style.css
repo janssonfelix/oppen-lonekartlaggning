@@ -1233,6 +1233,24 @@ body.meny-utan-glidning .sidebar { transition: none !important; }
 .consistency-banner ul { margin: 4px 0 0 20px; padding: 0; }
 .consistency-banner li { margin-bottom: 3px; line-height: 1.5; }
 
+/* ----- Förhandskontroll av lönefilen (17-forhandskontroll.js) ----- */
+.fk-vantar {
+    margin-bottom: 12px;
+    padding: 12px 16px;
+    background: var(--status-varning-yta);
+    border-left: 4px solid var(--status-varning);
+    border-radius: 6px;
+}
+.fk-vantar p { margin: 0 0 10px; line-height: 1.5; }
+.fk-varningar { margin: 8px 0 0; padding: 0; list-style: none; font-size: var(--fs-sm); line-height: 1.5; }
+.fk-varningar li { margin-bottom: 4px; }
+.fk-varningar .fk-fel { color: var(--status-kritisk); }
+.fk-varningar .fk-varning { color: var(--status-varning); }
+.fk-lista { margin: 0 0 0 20px; padding: 0; font-size: var(--fs-sm); line-height: 1.55; }
+#fk-tolkning td.fk-fel { background: var(--status-varning-yta); box-shadow: inset 3px 0 0 var(--status-varning); }
+#fk-tolkning .fk-skal { display: block; color: var(--text-muted); font-size: var(--fs-xs); }
+#fk-tolkning tr.fk-bort td { color: var(--text-muted); }
+
 /* ----- Pedagogiskt regressionskort ----- */
 .reg-intro { margin-bottom: 18px; }
 .reg-intro p {

@@ -8,7 +8,8 @@
  * knapp gör rensningen till en explicit, dokumenterad åtgärd. Rätten till radering utövas mot källsystemet.
  */
 function clearAllData() {
-    const hasAny = state.data.length || state.policy.length || state.statistik.length || state.snapshot || state.paket || (state.importprofiler || []).length;
+    const hasAny = state.data.length || state.policy.length || state.statistik.length || state.snapshot || state.paket || (state.importprofiler || []).length
+        || _fkVantar || state.forhandskontroll;   // en fil som väntar på Läs in, eller förhandskontrollens tio rader
     if (!hasAny) {
         announceToScreenReader('Ingen data finns i minnet att rensa.');
         return;
@@ -82,6 +83,7 @@ function _rensaAllData({ inbakat = true } = {}) {
     // organisationsfil kommer det inbakade paketets profiler tillbaka med paketet sist i rensningen.
     state.importprofiler = [];
     state.importprofil = null;
+    if (typeof _fkSlapp === 'function') _fkSlapp();   // förhandskontrollen och en fil som väntar på Läs in
     state.ansvarKolumn = null;
     state._dataHeaders = [];
     state.scenarios = [];

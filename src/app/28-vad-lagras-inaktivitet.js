@@ -49,6 +49,7 @@ function openDataResidency() {
                 <li>Strukturdata: <strong>${n.toLocaleString('sv-SE')}</strong> rader (~${approxKB} KB i minnet)</li>
                 <li>Referens: ${esc(referensNamn())}${esc(referensKalla())}: <strong>${policyN}</strong> rader</li>
                 <li>Jämförelsestatistik: <strong>${statN}</strong> rader</li>
+                ${_fkVantar ? '<li>En lönefil väntar på Läs in i förhandskontrollen: den hålls i minnet men är inte inläst, och Rensa all data eller rensningen vid inaktivitet släpper den.</li>' : ''}
                 <li>Lagring på disk: <strong>0 byte</strong> (inget skrivs till localStorage, IndexedDB eller cookies)</li>
                 <li>Nätverkstrafik: <strong>0 byte</strong> (CSP <code>connect-src 'none'</code> blockerar all utgående trafik)</li>
             </ul>
@@ -172,7 +173,7 @@ function _showInactivityWarning() {
 
 function _autoClearOnInactivity() {
     _hideInactivityWarning();
-    const hadData = state.data.length > 0;
+    const hadData = state.data.length > 0 || !!_fkVantar || !!state.forhandskontroll;
     // Samma rensning som knappen, utan bekräftelsefrågan (ingen finns vid datorn).
     _rensaAllData();
     if (hadData) {
@@ -191,7 +192,7 @@ function _resetInactivityTimer() {
         _inactivityIdleTimer = null;
     }
     if (state.inactivityTimeoutMin <= 0) return;
-    if (state.data.length === 0) return;
+    if (state.data.length === 0 && !_fkVantar && !state.forhandskontroll) return;   // en väntande fil och en förhandskontroll på skärmen rensas också
     // Visa varningen 60 s INNAN total timeout
     const warnAfterMs = Math.max(0, state.inactivityTimeoutMin * 60 * 1000 - 60 * 1000);
     _inactivityIdleTimer = setTimeout(_showInactivityWarning, warnAfterMs);

@@ -67,6 +67,8 @@ function buildActionChecklist({ endastGrupper = false } = {}) {
                     });
                 }
             }
+            // Förhandskontrollen av lönefilen (17-forhandskontroll.js): varningarna tills filen läses om utan dem.
+            if (typeof _fkAttGora === 'function') items.push(..._fkAttGora(new Set(items.map(i => i.id))));
         } catch (e) { rapporteraFel('Att göra: underlagets kvalitet', e); }
 
         // === Lika arbete: rått gap > 5 % i jämförbara BAS (samma regel som kompliansen) ===
@@ -218,11 +220,13 @@ function buildActionChecklist({ endastGrupper = false } = {}) {
 }
 
 // Länk till punktens flik. Datakvalitetspunkter hör till Översikt, där användaren
-// redan är — de leder till Underlagets kvalitet i stället. aria-label skiljer
+// redan är — de leder till Underlagets kvalitet i stället; en punkt med eget ankare
+// (förhandskontrollen) leder dit. aria-label skiljer
 // länkarna åt för skärmläsare (annars heter alla "Gå dit").
 function _attGoraLank(it, text, klass = '') {
     if (!it.tab) return '';
-    const ankare = it.tab === 'dashboard' ? ' data-go-to-anchor="underlagets-kvalitet"' : '';
+    const mal = it.ankare || (it.tab === 'dashboard' ? 'underlagets-kvalitet' : '');
+    const ankare = mal ? ` data-go-to-anchor="${esc(mal)}"` : '';
     // Namnet börjar med den synliga texten (WCAG 2.5.3), följd av punkten.
     return `<a href="#" data-go-to-tab="${esc(it.tab)}"${ankare} aria-label="${esc(text)}: ${esc(it.titel)}"${klass ? ` class="${klass}"` : ''}>${text}</a>`;
 }

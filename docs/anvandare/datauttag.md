@@ -191,6 +191,10 @@ Har ni sparat en importprofil känns uttaget igen automatiskt (avsnitt 2b).
       samma befattning.
 - [ ] BAS-intervall finns på alla rader som ska analyseras.
 - [ ] Filen sparas på en behörighetsstyrd yta, inte i Hämtade filer.
+- [ ] Efter inläsningen: läs **Förhandskontroll av lönefilen** överst i Filer och kvalitet. Den visar hur de tio
+      första raderna tolkades och varnar när lönen ser ut som årslön eller timlön, när åldern ligger utanför 16–75
+      år eller tolkats ur födelseår och när BAS eller kön har värden som verktyget inte känner igen. Vill du se
+      tolkningen innan filen används, kryssa i *Stoppa och visa förhandskontrollen innan inläsning* i Inställningar.
 
 ## 5. Vanliga fel & verktygets besked
 
@@ -199,7 +203,7 @@ Har ni sparat en importprofil känns uttaget igen automatiskt (avsnitt 2b).
 | å/ä/ö blir konstiga tecken | Ovanlig teckenkodning | Alla vanliga kodningar hanteras automatiskt — kontrollera inläsningsrapporten; kvarstår felet, spara om filen som UTF-8 CSV |
 | "0 rader inlästa" / tomt resultat | Rubrikraden eller kolumnnamnen känns inte igen | Öppna **kolumnmappnings-guiden** och peka ut rätt kolumn, eller döp om rubrikerna enligt avsnitt 1. Spara mappningen som importprofil (avsnitt 2b) så känns filen igen nästa gång |
 | Filen avvisas direkt | En kolumn med personnummer, namn eller e-post upptäcktes | Ta bort den identifierande kolumnen ur uttaget och läs in igen (avsnitt 3) |
-| Åldern ser fel ut | Kolumnen innehöll födelseår | Verktyget räknar om födelseår till ålder automatiskt — verifiera antalet i inläsnings-/audit-panelen |
+| Åldern ser fel ut | Kolumnen innehöll födelseår | Verktyget räknar om födelseår till ålder automatiskt — förhandskontrollen visar tolkningen rad för rad och antalet rader |
 | Många rader uteslutna | Saknad BAS, lön = 0, eller tomt/okänt värde i könskolumnen | Läs inläsningsrapporten under Underlagets kvalitet i Filer och kvalitet — den visar hur många rader som föll bort och varför; rätta i källfilen och läs om |
 
 Inläsningsrapporten visar alltid vilken **teckenkodning** och **avgränsare** som

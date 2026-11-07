@@ -27,6 +27,7 @@ import { gruppdossier, kTroskel, sokOchBasdossier } from './browser-smoke/dialog
 import { ingenLagring, ingenTrafik, felUnderKorningen } from './browser-smoke/sakerhet.mjs';
 import { stortDemo } from './browser-smoke/demo.mjs';
 import { importprofiler } from './browser-smoke/importprofiler.mjs';
+import { forhandskontroll } from './browser-smoke/forhandskontroll.mjs';
 
 await laddningOchDemo();
 await flikarOchDiagram();
@@ -45,6 +46,7 @@ await smalaSkarmar();
 await checklistor();
 await organisationsfilen();
 await importprofiler();
+await forhandskontroll();
 await ingenTrafik();
 await stortDemo();
 await felUnderKorningen();

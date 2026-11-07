@@ -47,6 +47,7 @@ direkt vid laddning (händelsekopplingar, `const`) körs i den här ordningen.
 | `13-oversikt.js` | Översikt: filraden, nyckeltalen, status mot lagkraven, bootstrap-KI, styrka, processkarta (stegens regler i `src/lib/attgora.js`); och Filer och kvalitet (`renderFilerDelar`): underlagets kvalitet (sammanfattad, med kontrollen av AID-kodningen i `src/lib/aidkontroll.js`), extremvärdena och inläsningsrapporten |
 | `15-extremvarden-basrang.js` | Extremvärden (enskilda löner) i Underlagets kvalitet; BAS-ordningen är fast (se §5 i `teknisk-plan.md`) |
 | `16-inlasningskontroll.js` | Rimlighetskontroll, inläsningsrapport, konsistens mellan filer |
+| `17-forhandskontroll.js` | Förhandskontroll av lönefilen överst i Filer och kvalitet (`renderForhandskontroll`): tolkningen av de tio första raderna, sammandraget, värdefördelningen, varningarna (logiken i `src/lib/forhandskontroll.js`), punkterna i Att göra (`_fkAttGora`), raden i inläsningsrapporten, och det blockerande läget med *Läs in* och *Avbryt* (`_fkPausa`; inställningen `state.forhandskontrollStopp`) |
 | `18-atgardslista.js` | Kortet Att göra på Översikt: åtgärdslistan, Börja här (ordningen i `src/lib/attgora.js`) och CSV-export |
 | `19-konfiguration.js` | Spara/ladda konfiguration, jämförelse med ögonblicksbild (fliken Spara och jämför år) |
 | `20-demodata-diagnostik.js` | Demodata (med riktiga AID-koder och ansvarskoder), testdata, självdiagnostik, demobanner; inläsningen som det lilla och det stora demot delar (`_lasInDemounderlag`) |
