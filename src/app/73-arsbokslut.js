@@ -33,8 +33,21 @@ function byggArsbokslutNu() {
                 spridning: _abSpridning(lonPerYrke.get(g.yrke) || [], k) })),
             punkter: punkter.map(p => ({ id: p.id, titel: p.titel, kategori: p.kategori, klar: klara.has(p.id) })),
             basIntervall: getBasIntervals().map(b => _abBasRad(d, b, k)).filter(Boolean),
+            bedomningar: _abBedomningarNu(),
         });
     });
+}
+
+/**
+ * Handlingsplanens sakliga skäl per grupp för bokslutet: de förifyllda raderna (prioriteringen och kandidatparen) med
+ * skäl, med antal, den minsta gruppen bakom skillnaden, skillnaden och skälen. Kommentarerna följer inte med (lib-
+ * valideringen tar bort dem). En egen rad följer inte med: den har inget antal att pröva mot minsta gruppstorlek.
+ * Anropas i exportläget, så en rad under tröskeln finns inte i förifyllningen.
+ */
+function _abBedomningarNu() {
+    if (typeof _hpSkalUnderlag !== 'function') return [];
+    return _hpSkalUnderlag().grupper.filter(g => !_hpArEgen(g.nyckel))
+        .map(g => ({ nyckel: g.nyckel, grupp: g.grupp, n: g.antal, nMin: g.nMin, skillnadKr: g.skillnadKr, skal: g.sammanstallning.skal }));
 }
 
 /**
@@ -140,6 +153,51 @@ function _abBasTabellHtml(j, forraAr, nuAr) {
         + `<p class="text-dampad-xs marg-4-0-0">Bara intervall med minst ${j.kGrans} personer båda åren (den högre av årens minsta gruppstorlek). Förändringen i kronor och i procent av förra årets värde. Medianen rör sig också när sammansättningen ändras: nyanställda och avgångar påverkar den lika mycket som löneökningar. ${AB_SPRIDNING_NOT}</p>`;
 }
 
+/** Ett skäls eller en kategoris värde: beloppet och andelen av skillnaden när den finns, "900 kr (50 %)". */
+function _abSkalVarde(v) {
+    if (!v) return '–';
+    return `${_abKr(v.summa ?? v.belopp)}${typeof v.andel === 'number' ? ` (${svPct(v.andel * 100, 0)})` : ''}`;
+}
+/** Ett års skäl i en mening: "Marknad 50 %, Erfarenhet 20 %", med belopp där andelen saknas. */
+function _abSkalLista(skal) {
+    return skal.map(s => `${s.namn} ${typeof s.andel === 'number' ? svPct(s.andel * 100, 0) : _abKr(s.belopp)}`).join(', ');
+}
+/** Hur gruppens skillnad ändrades: "skillnaden minskade från 1 800 till 1 200 kr", eller tomt när ett år saknar den. */
+function _abSkillnadText(f, n) {
+    if (typeof f !== 'number' || typeof n !== 'number') return '';
+    const tal = v => svTal(Math.round(v), 0);
+    if (f === n) return `; skillnaden är oförändrad, ${tal(n)} kr`;
+    return `; skillnaden ${n < f ? 'minskade' : 'ökade'} från ${tal(f)} till ${tal(n)} kr`;
+}
+
+/**
+ * Avsnittet Sakliga skäl i panelen: tabellen per kategori båda åren, en mening per grupp som hade skäl båda åren och
+ * de grupper som hade skäl förra året men inte i år. En rad om att skälen saknas när förra årets fil är från en äldre
+ * version av verktyget.
+ */
+function _abSkalHtml(j, forraAr, nuAr) {
+    const rubrik = '<h4 class="fs-sm marg-12-0-2">Sakliga skäl per kategori</h4>';
+    const b = j.bedomningar;
+    if (!b) return rubrik + '<p class="text-dampad-sm marg-0">De sakliga skälen saknas i förra årets fil: bokslutet sparades med en äldre version av verktyget. Årets bokslut har dem, så nästa års jämförelse får dem.</p>';
+    if (!b.kategorier.length && !b.saknasIAr.length) return rubrik + '<p class="text-dampad-sm marg-0">Ingen grupp har sakliga skäl i handlingsplanen något av åren.</p>';
+    const forandring = d => (d == null ? '–' : `${d > 0 ? '+' : d < 0 ? '−' : '±'}${_abKr(Math.abs(d))}`);
+    const totDiff = b.totalt.forra.antalGrupper && b.totalt.nu.antalGrupper ? b.totalt.nu.summa - b.totalt.forra.summa : null;
+    const rad = (namn, f, n, d, fet = false) => `<tr${fet ? ' class="halvfet"' : ''}><th scope="row">${esc(namn)}</th><td class="t-tal">${_abSkalVarde(f)}</td><td class="t-tal">${_abSkalVarde(n)}</td><td class="t-tal">${forandring(d)}</td></tr>`;
+    const tabell = `<div class="table-container"><table class="data-table st-088" id="arsjamforelse-skal"><thead><tr><th scope="col">Kategori</th>`
+        + `<th scope="col" class="t-hoger">Förra året (${forraAr})</th><th scope="col" class="t-hoger">I år (${nuAr})</th><th scope="col" class="t-hoger">Förändring</th></tr></thead><tbody>`
+        + b.kategorier.map(k => rad(k.namn, k.forra, k.nu, k.diff)).join('')
+        + rad('Totalt', b.totalt.forra.antalGrupper ? b.totalt.forra : null, b.totalt.nu.antalGrupper ? b.totalt.nu : null, totDiff, true)
+        + '</tbody></table></div>';
+    const grupper = b.grupper.length
+        ? `<ul class="fs-sm marg-6-0-4" id="arsjamforelse-skal-grupper">${b.grupper.map(g => `<li><strong>${esc(g.grupp)}</strong>: Förra årets skäl: ${esc(_abSkalLista(g.forra.skal))}, i år ${esc(_abSkalLista(g.nu.skal))}${_abSkillnadText(g.forra.skillnadKr, g.nu.skillnadKr)}.</li>`).join('')}</ul>`
+        : '';
+    const saknas = b.saknasIAr.length
+        ? `<p class="text-dampad-sm marg-6-0-2">Bedömning saknas i år (${b.saknasIAr.length}):</p><ul class="fs-sm marg-0-0-4">${b.saknasIAr.map(g => `<li>${esc(g.grupp || g.nyckel)}</li>`).join('')}</ul>`
+        : '';
+    return rubrik + tabell + grupper + saknas
+        + `<p class="text-dampad-xs marg-4-0-0">Beloppen är summan av skälen i kr/mån; andelen är av skillnaden i de grupper som hade skäl det året. Skälen är organisationens bedömning, inte verktygets beräkning. Bara grupper med minst ${j.kGrans} personer.</p>`;
+}
+
 /**
  * Antalet kvinnor och män i en flaggad yrkesgrupp i årsjämförelsen: årets antal, eller förra årets märkt med året när
  * gruppen inte finns i år (kolumnen heter "Kvinnor / män {år}"). null utan antal.
@@ -191,7 +249,7 @@ function renderArsjamforelse() {
     const punkter = `<p class="text-dampad-sm marg-8-0-4">Förra året var ${p.klaraForra} av ${p.totaltForra} punkter i Att göra avbockade; i år ${p.klaraNu} av ${p.totaltNu}.</p>`
         + (kvar.length ? `<p class="text-dampad-sm marg-0-0-4">Förra årets öppna punkter (${kvar.length}):</p><ul class="fs-sm marg-0-0-8">${kvar.map(q => `<li>${esc(q.titel || q.id)}${q.klarNu ? ' — <strong>klar i år</strong>' : q.finnsNu ? ' — fortfarande öppen' : ' — finns inte längre i listan'}</li>`).join('')}</ul>` : '<p class="text-dampad-sm marg-0">Förra året hade inga öppna punkter.</p>');
     host.innerHTML = huvud + (j.samma_k ? '' : `<p class="k-mask-note">Bokslutet sparades med minsta gruppstorlek ${forra.k}; i år gäller ${nu.k}. Yrkesgrupper och BAS-intervall jämförs bara där de, och för könsuppdelade mått båda könen, når den högre av årens gränser, ${j.kGrans} personer. En yrkesgrupp som var flaggad förra året men då hade ett kön under ${j.kGrans} personer räknas därför som ny i år om den är flaggad nu, och förra årets löneskillnad för den visas inte.</p>`)
-        + `<h4 class="fs-sm marg-6-0-4">Nyckeltal</h4>${nyckeltal}${_abBasTabellHtml(j, forra.ar, nu.ar)}<h4 class="fs-sm marg-12-0-2">Lika arbete</h4>${grupper}<h4 class="fs-sm marg-12-0-2">Att göra</h4>${punkter}`
+        + `<h4 class="fs-sm marg-6-0-4">Nyckeltal</h4>${nyckeltal}${_abBasTabellHtml(j, forra.ar, nu.ar)}<h4 class="fs-sm marg-12-0-2">Lika arbete</h4>${grupper}${_abSkalHtml(j, forra.ar, nu.ar)}<h4 class="fs-sm marg-12-0-2">Att göra</h4>${punkter}`
         + `<p class="text-dampad-xs marg-8-0-0">Lönemått bara för yrkesgrupper där båda könen når minsta gruppstorlek; skillnaden är kvinnors medianlön mot mäns, negativt när kvinnor ligger lägre. ${AB_SPRIDNING_NOT}</p>`;
     const el = document.getElementById('chart-arsjamforelse');
     if (el) { const fig = _abHantelFigur(j, forra.ar, nu.ar); if (fig) ritaFigur(el, fig); }

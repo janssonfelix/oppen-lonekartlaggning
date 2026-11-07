@@ -230,7 +230,8 @@ export const MODULES = [
     {
         file: 'arsbokslut.js', ns: '__mirrorArsbokslut',
         expose: { byggArsbokslut: '_abBygg', valideraArsbokslut: '_abValidera', jamforArsbokslut: '_abJamfor', hantelRader: '_abHantelRader',
-                  basHantelRader: '_abBasHantelRader', jamforBasIntervall: '_abJamforBas', bokslutMedGrans: '_abMedGrans', lonespridning: '_abSpridning' }
+                  basHantelRader: '_abBasHantelRader', jamforBasIntervall: '_abJamforBas', bokslutMedGrans: '_abMedGrans', lonespridning: '_abSpridning',
+                  jamforBedomningar: '_abJamforBedomningar' }
     },
     {
         // Importprofiler: kända kolumnuppsättningar (bara rubriknamn). Organisationspaketet importerar valideringen: före det.

@@ -8795,6 +8795,10 @@ const __mirrorArsbokslut = (() => {
     // importer ur tidigare speglade lib-moduler
     const median = __mirrorStat.median;
     const quantile = __mirrorStat.quantile;
+    const valideraSkal = __mirrorSakligaskal.valideraSkal;
+    const skalPerKategori = __mirrorSakligaskal.skalPerKategori;
+    const skalSammanstallning = __mirrorSakligaskal.skalSammanstallning;
+    const skalKategorier = __mirrorSakligaskal.skalKategorier;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -8804,9 +8808,12 @@ const __mirrorArsbokslut = (() => {
 // minst k), en rad per BAS-intervall med minst k personer (basIntervall; könsmedianerna bara när båda könen når k)
 // och Att göra-punkternas läge. Aldrig individer, aldrig lönedata. Modulen är ren: ingen DOM, inget state.
 // Yrkesgruppernas och intervallens rader bär lönespridningen (P90 − P10) / median, räknad där n ≥ k (lonespridning).
+// Version 2: handlingsplanens sakliga skäl per grupp (bedomningar: kategori och belopp, aldrig kommentarerna), så att
+// jämförelsen kan visa fördelningen per kategori båda åren. Ett bokslut från version 1 läses som förut, utan skäl.
 
 
-const ARSBOKSLUT_VERSION = 1;
+
+const ARSBOKSLUT_VERSION = 2;
 const MAX_TEXT = 200;
 /** Den lägsta tröskel ett bokslut kan bära (samma som verktygets K_MIN): ett lägre k i filen höjs hit. */
 const ARSBOKSLUT_K_MIN = 2;
@@ -8867,7 +8874,29 @@ function valideraArsbokslut(o) {
         return { id, titel: _text(p.titel), kategori: _text(p.kategori), klar: p.klar === true };
     }).filter(Boolean);
     return { version: ARSBOKSLUT_VERSION, ar, skapat, k, verktyg: _text(o.verktyg), nyckeltal, grupper, punkter,
-        basIntervall: _valideraBasIntervall(o.basIntervall, k) };
+        basIntervall: _valideraBasIntervall(o.basIntervall, k), bedomningar: _valideraBedomningar(o.bedomningar, k) };
+}
+
+/**
+ * Handlingsplanens sakliga skäl per grupp: nyckeln (samma som handlingsplanens rad), gruppen, antal berörda (n), den
+ * minsta gruppen bakom skillnaden (nMin), gruppens medianskillnad i kr/mån och skälen med kategori och belopp
+ * (kommentarerna sparas inte). En grupp med färre än k personer faller bort, skillnaden nollas när den minsta gruppen
+ * bakom den är under k, och en post utan giltiga skäl faller bort. Fältet är valfritt: ett bokslut från version 1 får
+ * null (inte en tom lista, som betyder att ingen grupp hade skäl).
+ * @param {any} lista
+ * @param {number} k
+ */
+function _valideraBedomningar(lista, k) {
+    if (!Array.isArray(lista)) return null;
+    return lista.map(b => {
+        if (!b || typeof b !== 'object' || typeof b.nyckel !== 'string' || !b.nyckel || b.nyckel.length > 300) return null;
+        const n = _heltal(b.n, 0, 10_000_000), nMin = _heltal(b.nMin, 0, 10_000_000);
+        if (n == null || n < k) return null;
+        const skal = valideraSkal(Array.isArray(b.skal) ? b.skal.map(s => (s && typeof s === 'object' ? { kategori: s.kategori, belopp: s.belopp } : s)) : b.skal).skal
+            .map(s => ({ kategori: s.kategori, belopp: s.belopp }));
+        if (!skal.length) return null;
+        return { nyckel: b.nyckel, grupp: _text(b.grupp), n, nMin: nMin ?? 0, skillnadKr: nMin != null && nMin >= k ? _tal(b.skillnadKr) : null, skal };
+    }).filter(Boolean);
 }
 
 /**
@@ -8893,8 +8922,8 @@ function _valideraBasIntervall(lista, k) {
 }
 
 /** Bygger ett årsbokslut ur delarna (samma form som valideraArsbokslut ger); null när delarna inte räcker. */
-function byggArsbokslut({ ar, skapat, k, verktyg, nyckeltal, grupper, punkter, basIntervall }) {
-    return valideraArsbokslut({ ar, skapat, k, verktyg, nyckeltal, grupper, punkter, basIntervall });
+function byggArsbokslut({ ar, skapat, k, verktyg, nyckeltal, grupper, punkter, basIntervall, bedomningar }) {
+    return valideraArsbokslut({ ar, skapat, k, verktyg, nyckeltal, grupper, punkter, basIntervall, bedomningar });
 }
 
 /** Måtten per BAS-intervall i jämförelsen: nyckel och etikett. Alla är kronor. */
@@ -8950,7 +8979,34 @@ function bokslutMedGrans(b, k) {
     return { ...b, k,
         nyckeltal: { ...n, medKv: konOk ? n.medKv : null, medMa: konOk ? n.medMa : null, kvotPct: konOk ? n.kvotPct : null },
         grupper: b.grupper.filter(g => g.nKv >= k && g.nMa >= k),
-        basIntervall: Array.isArray(b.basIntervall) ? _valideraBasIntervall(b.basIntervall, k) : b.basIntervall };
+        basIntervall: Array.isArray(b.basIntervall) ? _valideraBasIntervall(b.basIntervall, k) : b.basIntervall,
+        bedomningar: Array.isArray(b.bedomningar) ? _valideraBedomningar(b.bedomningar, k) : (b.bedomningar ?? null) };
+}
+
+/**
+ * Jämförelsen av de sakliga skälen: per kategori förra året och i år (belopp och andel av skillnaden i de grupper som
+ * hade skäl, null ett år utan skäl i kategorin) med förändringen i kronor när kategorin finns båda åren; per grupp som
+ * hade skäl båda åren skälen och skillnaden båda åren; och de grupper som hade skäl förra året men inte i år
+ * (saknasIAr). null när ett av boksluten saknar fältet (version 1).
+ * @param {any[]|null|undefined} forra
+ * @param {any[]|null|undefined} nu
+ */
+function jamforBedomningar(forra, nu) {
+    if (!Array.isArray(forra) || !Array.isArray(nu)) return null;
+    const pkF = skalPerKategori(forra), pkN = skalPerKategori(nu);
+    const fK = new Map(pkF.kategorier.map(k => [k.kategori, k])), nK = new Map(pkN.kategorier.map(k => [k.kategori, k]));
+    const kategorier = skalKategorier().filter(k => fK.has(k.id) || nK.has(k.id)).map(k => {
+        const f = fK.get(k.id), n = nK.get(k.id);
+        return { kategori: k.id, namn: k.namn, forra: f ? { summa: f.summa, andel: f.andel } : null, nu: n ? { summa: n.summa, andel: n.andel } : null,
+            diff: f && n ? n.summa - f.summa : null };
+    });
+    const ar = (b) => { const s = skalSammanstallning(b.skal, b.skillnadKr);
+        return { skillnadKr: b.skillnadKr, skal: s.skal.map(x => ({ kategori: x.kategori, namn: x.namn, belopp: x.belopp, andel: x.andel })) }; };
+    const nuMap = new Map(nu.map(b => [b.nyckel, b]));
+    const grupper = forra.filter(b => nuMap.has(b.nyckel)).map(b => ({ nyckel: b.nyckel, grupp: nuMap.get(b.nyckel).grupp || b.grupp, forra: ar(b), nu: ar(nuMap.get(b.nyckel)) }));
+    const saknasIAr = forra.filter(b => !nuMap.has(b.nyckel)).map(b => ({ nyckel: b.nyckel, grupp: b.grupp }));
+    const tot = pk => ({ summa: pk.summa, andel: pk.andel, antalGrupper: pk.antalGrupper });
+    return { kategorier, grupper, saknasIAr, totalt: { forra: tot(pkF), nu: tot(pkN) } };
 }
 
 /**
@@ -8987,6 +9043,7 @@ function jamforArsbokslut(forra, nu) {
         samma_k: sammaK,
         kGrans,
         basIntervall: jamforBasIntervall(forra.basIntervall, nu.basIntervall),
+        bedomningar: jamforBedomningar(forra.bedomningar, nu.bedomningar),
     };
 }
 
@@ -9026,7 +9083,7 @@ function basHantelRader(j) {
     return { rader, utelamnade: j.basIntervall.length - med.length };
 }
 
-    return { byggArsbokslut, valideraArsbokslut, jamforArsbokslut, hantelRader, basHantelRader, jamforBasIntervall, bokslutMedGrans, lonespridning };
+    return { byggArsbokslut, valideraArsbokslut, jamforArsbokslut, hantelRader, basHantelRader, jamforBasIntervall, bokslutMedGrans, lonespridning, jamforBedomningar };
 })();
 const _abBygg = __mirrorArsbokslut.byggArsbokslut;
 const _abValidera = __mirrorArsbokslut.valideraArsbokslut;
@@ -9036,6 +9093,7 @@ const _abBasHantelRader = __mirrorArsbokslut.basHantelRader;
 const _abJamforBas = __mirrorArsbokslut.jamforBasIntervall;
 const _abMedGrans = __mirrorArsbokslut.bokslutMedGrans;
 const _abSpridning = __mirrorArsbokslut.lonespridning;
+const _abJamforBedomningar = __mirrorArsbokslut.jamforBedomningar;
 
 // ---- speglar src/lib/importprofiler.js ----
 const __mirrorImportprofiler = (() => {
@@ -27934,16 +27992,19 @@ function _hpTaBortEgen(nyckel) {
 function _handlingsplanSeedRows({ baraEgna = false } = {}) {
     const months = (state.costSettings && state.costSettings.months) || 12;
     const poFactor = 1 + ((state.costSettings && state.costSettings.poPct) || 0) / 100;
-    const rows = [], nycklar = [], skillnader = [];
+    const rows = [], nycklar = [], skillnader = [], minsta = [];
     let prioCount = 0, lvCount = 0, parUtelamnade = 0;
     // En rad: [åtgärd, grupp, underlag, sakligt skäl, kostnad, ansvarig, tidsplan, status, antal berörda] — med det som
     // fyllts i på fliken. Antal berörda är gruppens antal (för ett kandidatpar det kvinnodominerade yrkets), null för en egen rad.
     // skillnader: gruppens medianskillnad i kr/mån per rad (de sakliga skälens andelar räknas mot den), null för en egen rad.
-    const lagg = (nyckel, atgard, grupp, underlag, kostnad, antal, skillnad) => {
+    // minsta: den minsta gruppen bakom skillnaden (för prioriteringen det mindre könet, för ett kandidatpar den mindre av
+    // yrkesgrupperna), som årsbokslutet prövar mot minsta gruppstorlek; null för en egen rad.
+    const lagg = (nyckel, atgard, grupp, underlag, kostnad, antal, skillnad, nMin) => {
         const v = _hpVarden(nyckel);
         rows.push([atgard, grupp, underlag, v.sakligt, kostnad, v.ansvarig, v.tidsplan, v.status, antal == null ? null : antal]);
         nycklar.push(nyckel);
         skillnader.push(skillnad == null ? null : skillnad);
+        minsta.push(Number.isFinite(nMin) ? nMin : null);
     };
     if (!baraEgna) try {
         const ref = (typeof _selectedPrioReference === 'function') ? _selectedPrioReference() : 'stallningstagande';
@@ -27951,7 +28012,7 @@ function _handlingsplanSeedRows({ baraEgna = false } = {}) {
         if (hasRef) {
             const thr = (state.prioConfig && state.prioConfig.atgardThreshold != null) ? state.prioConfig.atgardThreshold : -5;
             computePrioritization(ref).filter(i => i.diffPct < thr).forEach(i => {
-                lagg(_hpNyckel('prio', i.aid || i.yrke, i.bas), 'Granska löneläge och väg mot sakliga skäl', _hpGrupp(i.aid, i.yrke, i.bas), HP_UNDERLAG_PRIO, Math.round(i.annualGapTotal), i.n, _hpPrioSkillnad(i));
+                lagg(_hpNyckel('prio', i.aid || i.yrke, i.bas), 'Granska löneläge och väg mot sakliga skäl', _hpGrupp(i.aid, i.yrke, i.bas), HP_UNDERLAG_PRIO, Math.round(i.annualGapTotal), i.n, _hpPrioSkillnad(i), Math.min(i.kvN, i.maN));
                 prioCount++;
             });
         }
@@ -27964,7 +28025,7 @@ function _handlingsplanSeedRows({ baraEgna = false } = {}) {
             parUtelamnade = utelamnade;
             par.forEach(p => {
                 const arsKostnad = Math.round(Math.abs(p.gapKr) * (p.kvN || 1) * months * poFactor);
-                lagg(_hpNyckel('par', p.kvAid, p.kvBas, p.maAid, p.maBas), 'Granska likvärdigt arbete (kvinnodominerat yrke)', _hpGrupp(p.kvAid, p.kvLabel, p.kvBas), HP_UNDERLAG_PAR, arsKostnad, p.kvN, isFinite(p.gapKr) ? Math.round(p.gapKr) : null);
+                lagg(_hpNyckel('par', p.kvAid, p.kvBas, p.maAid, p.maBas), 'Granska likvärdigt arbete (kvinnodominerat yrke)', _hpGrupp(p.kvAid, p.kvLabel, p.kvBas), HP_UNDERLAG_PAR, arsKostnad, p.kvN, isFinite(p.gapKr) ? Math.round(p.gapKr) : null, Math.min(p.kvN, p.maN));
                 lvCount++;
             });
         }
@@ -27976,9 +28037,10 @@ function _handlingsplanSeedRows({ baraEgna = false } = {}) {
         rows.push([v.atgard || '', v.grupp || '', HP_UNDERLAG_EGEN, v.sakligt, null, v.ansvarig, v.tidsplan, v.status, null]);
         nycklar.push(nyckel);
         skillnader.push(null);
+        minsta.push(null);
         egenCount++;
     });
-    return { rows, nycklar, skillnader, prioCount, lvCount, egenCount, parUtelamnade, parNot: _parUtelamnadeNot(parUtelamnade) };
+    return { rows, nycklar, skillnader, minsta, prioCount, lvCount, egenCount, parUtelamnade, parNot: _parUtelamnadeNot(parUtelamnade) };
 }
 
 // Kolumnen Underlag: raderna bär redan sin källa. Äldre texter (sparade utdrag) översätts till samma ord.
@@ -28062,7 +28124,7 @@ function _hpGaTillRad(nyckel) {
 function _hpSkalUnderlag(seed) {
     const s = seed || _handlingsplanSeedRows();
     const grupper = s.nycklar.map((nyckel, i) => ({ nyckel, i, skal: _hpVarden(nyckel).skal || [] })).filter(g => g.skal.length)
-        .map(({ nyckel, i, skal }) => ({ nyckel, grupp: s.rows[i][1] || 'Egen rad', underlag: s.rows[i][2], antal: s.rows[i][8], skillnadKr: s.skillnader[i],
+        .map(({ nyckel, i, skal }) => ({ nyckel, grupp: s.rows[i][1] || 'Egen rad', underlag: s.rows[i][2], antal: s.rows[i][8], nMin: s.minsta[i], skillnadKr: s.skillnader[i],
             sammanstallning: _sakSammanstallning(skal, s.skillnader[i]) }));
     return { grupper, perKategori: _sakPerKategori(grupper.map(g => ({ skal: g.sammanstallning.skal, skillnadKr: g.skillnadKr }))) };
 }
@@ -32068,8 +32130,21 @@ function byggArsbokslutNu() {
                 spridning: _abSpridning(lonPerYrke.get(g.yrke) || [], k) })),
             punkter: punkter.map(p => ({ id: p.id, titel: p.titel, kategori: p.kategori, klar: klara.has(p.id) })),
             basIntervall: getBasIntervals().map(b => _abBasRad(d, b, k)).filter(Boolean),
+            bedomningar: _abBedomningarNu(),
         });
     });
+}
+
+/**
+ * Handlingsplanens sakliga skäl per grupp för bokslutet: de förifyllda raderna (prioriteringen och kandidatparen) med
+ * skäl, med antal, den minsta gruppen bakom skillnaden, skillnaden och skälen. Kommentarerna följer inte med (lib-
+ * valideringen tar bort dem). En egen rad följer inte med: den har inget antal att pröva mot minsta gruppstorlek.
+ * Anropas i exportläget, så en rad under tröskeln finns inte i förifyllningen.
+ */
+function _abBedomningarNu() {
+    if (typeof _hpSkalUnderlag !== 'function') return [];
+    return _hpSkalUnderlag().grupper.filter(g => !_hpArEgen(g.nyckel))
+        .map(g => ({ nyckel: g.nyckel, grupp: g.grupp, n: g.antal, nMin: g.nMin, skillnadKr: g.skillnadKr, skal: g.sammanstallning.skal }));
 }
 
 /**
@@ -32175,6 +32250,51 @@ function _abBasTabellHtml(j, forraAr, nuAr) {
         + `<p class="text-dampad-xs marg-4-0-0">Bara intervall med minst ${j.kGrans} personer båda åren (den högre av årens minsta gruppstorlek). Förändringen i kronor och i procent av förra årets värde. Medianen rör sig också när sammansättningen ändras: nyanställda och avgångar påverkar den lika mycket som löneökningar. ${AB_SPRIDNING_NOT}</p>`;
 }
 
+/** Ett skäls eller en kategoris värde: beloppet och andelen av skillnaden när den finns, "900 kr (50 %)". */
+function _abSkalVarde(v) {
+    if (!v) return '–';
+    return `${_abKr(v.summa ?? v.belopp)}${typeof v.andel === 'number' ? ` (${svPct(v.andel * 100, 0)})` : ''}`;
+}
+/** Ett års skäl i en mening: "Marknad 50 %, Erfarenhet 20 %", med belopp där andelen saknas. */
+function _abSkalLista(skal) {
+    return skal.map(s => `${s.namn} ${typeof s.andel === 'number' ? svPct(s.andel * 100, 0) : _abKr(s.belopp)}`).join(', ');
+}
+/** Hur gruppens skillnad ändrades: "skillnaden minskade från 1 800 till 1 200 kr", eller tomt när ett år saknar den. */
+function _abSkillnadText(f, n) {
+    if (typeof f !== 'number' || typeof n !== 'number') return '';
+    const tal = v => svTal(Math.round(v), 0);
+    if (f === n) return `; skillnaden är oförändrad, ${tal(n)} kr`;
+    return `; skillnaden ${n < f ? 'minskade' : 'ökade'} från ${tal(f)} till ${tal(n)} kr`;
+}
+
+/**
+ * Avsnittet Sakliga skäl i panelen: tabellen per kategori båda åren, en mening per grupp som hade skäl båda åren och
+ * de grupper som hade skäl förra året men inte i år. En rad om att skälen saknas när förra årets fil är från en äldre
+ * version av verktyget.
+ */
+function _abSkalHtml(j, forraAr, nuAr) {
+    const rubrik = '<h4 class="fs-sm marg-12-0-2">Sakliga skäl per kategori</h4>';
+    const b = j.bedomningar;
+    if (!b) return rubrik + '<p class="text-dampad-sm marg-0">De sakliga skälen saknas i förra årets fil: bokslutet sparades med en äldre version av verktyget. Årets bokslut har dem, så nästa års jämförelse får dem.</p>';
+    if (!b.kategorier.length && !b.saknasIAr.length) return rubrik + '<p class="text-dampad-sm marg-0">Ingen grupp har sakliga skäl i handlingsplanen något av åren.</p>';
+    const forandring = d => (d == null ? '–' : `${d > 0 ? '+' : d < 0 ? '−' : '±'}${_abKr(Math.abs(d))}`);
+    const totDiff = b.totalt.forra.antalGrupper && b.totalt.nu.antalGrupper ? b.totalt.nu.summa - b.totalt.forra.summa : null;
+    const rad = (namn, f, n, d, fet = false) => `<tr${fet ? ' class="halvfet"' : ''}><th scope="row">${esc(namn)}</th><td class="t-tal">${_abSkalVarde(f)}</td><td class="t-tal">${_abSkalVarde(n)}</td><td class="t-tal">${forandring(d)}</td></tr>`;
+    const tabell = `<div class="table-container"><table class="data-table st-088" id="arsjamforelse-skal"><thead><tr><th scope="col">Kategori</th>`
+        + `<th scope="col" class="t-hoger">Förra året (${forraAr})</th><th scope="col" class="t-hoger">I år (${nuAr})</th><th scope="col" class="t-hoger">Förändring</th></tr></thead><tbody>`
+        + b.kategorier.map(k => rad(k.namn, k.forra, k.nu, k.diff)).join('')
+        + rad('Totalt', b.totalt.forra.antalGrupper ? b.totalt.forra : null, b.totalt.nu.antalGrupper ? b.totalt.nu : null, totDiff, true)
+        + '</tbody></table></div>';
+    const grupper = b.grupper.length
+        ? `<ul class="fs-sm marg-6-0-4" id="arsjamforelse-skal-grupper">${b.grupper.map(g => `<li><strong>${esc(g.grupp)}</strong>: Förra årets skäl: ${esc(_abSkalLista(g.forra.skal))}, i år ${esc(_abSkalLista(g.nu.skal))}${_abSkillnadText(g.forra.skillnadKr, g.nu.skillnadKr)}.</li>`).join('')}</ul>`
+        : '';
+    const saknas = b.saknasIAr.length
+        ? `<p class="text-dampad-sm marg-6-0-2">Bedömning saknas i år (${b.saknasIAr.length}):</p><ul class="fs-sm marg-0-0-4">${b.saknasIAr.map(g => `<li>${esc(g.grupp || g.nyckel)}</li>`).join('')}</ul>`
+        : '';
+    return rubrik + tabell + grupper + saknas
+        + `<p class="text-dampad-xs marg-4-0-0">Beloppen är summan av skälen i kr/mån; andelen är av skillnaden i de grupper som hade skäl det året. Skälen är organisationens bedömning, inte verktygets beräkning. Bara grupper med minst ${j.kGrans} personer.</p>`;
+}
+
 /**
  * Antalet kvinnor och män i en flaggad yrkesgrupp i årsjämförelsen: årets antal, eller förra årets märkt med året när
  * gruppen inte finns i år (kolumnen heter "Kvinnor / män {år}"). null utan antal.
@@ -32226,7 +32346,7 @@ function renderArsjamforelse() {
     const punkter = `<p class="text-dampad-sm marg-8-0-4">Förra året var ${p.klaraForra} av ${p.totaltForra} punkter i Att göra avbockade; i år ${p.klaraNu} av ${p.totaltNu}.</p>`
         + (kvar.length ? `<p class="text-dampad-sm marg-0-0-4">Förra årets öppna punkter (${kvar.length}):</p><ul class="fs-sm marg-0-0-8">${kvar.map(q => `<li>${esc(q.titel || q.id)}${q.klarNu ? ' — <strong>klar i år</strong>' : q.finnsNu ? ' — fortfarande öppen' : ' — finns inte längre i listan'}</li>`).join('')}</ul>` : '<p class="text-dampad-sm marg-0">Förra året hade inga öppna punkter.</p>');
     host.innerHTML = huvud + (j.samma_k ? '' : `<p class="k-mask-note">Bokslutet sparades med minsta gruppstorlek ${forra.k}; i år gäller ${nu.k}. Yrkesgrupper och BAS-intervall jämförs bara där de, och för könsuppdelade mått båda könen, når den högre av årens gränser, ${j.kGrans} personer. En yrkesgrupp som var flaggad förra året men då hade ett kön under ${j.kGrans} personer räknas därför som ny i år om den är flaggad nu, och förra årets löneskillnad för den visas inte.</p>`)
-        + `<h4 class="fs-sm marg-6-0-4">Nyckeltal</h4>${nyckeltal}${_abBasTabellHtml(j, forra.ar, nu.ar)}<h4 class="fs-sm marg-12-0-2">Lika arbete</h4>${grupper}<h4 class="fs-sm marg-12-0-2">Att göra</h4>${punkter}`
+        + `<h4 class="fs-sm marg-6-0-4">Nyckeltal</h4>${nyckeltal}${_abBasTabellHtml(j, forra.ar, nu.ar)}<h4 class="fs-sm marg-12-0-2">Lika arbete</h4>${grupper}${_abSkalHtml(j, forra.ar, nu.ar)}<h4 class="fs-sm marg-12-0-2">Att göra</h4>${punkter}`
         + `<p class="text-dampad-xs marg-8-0-0">Lönemått bara för yrkesgrupper där båda könen når minsta gruppstorlek; skillnaden är kvinnors medianlön mot mäns, negativt när kvinnor ligger lägre. ${AB_SPRIDNING_NOT}</p>`;
     const el = document.getElementById('chart-arsjamforelse');
     if (el) { const fig = _abHantelFigur(j, forra.ar, nu.ar); if (fig) ritaFigur(el, fig); }

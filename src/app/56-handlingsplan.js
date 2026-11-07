@@ -104,16 +104,19 @@ function _hpTaBortEgen(nyckel) {
 function _handlingsplanSeedRows({ baraEgna = false } = {}) {
     const months = (state.costSettings && state.costSettings.months) || 12;
     const poFactor = 1 + ((state.costSettings && state.costSettings.poPct) || 0) / 100;
-    const rows = [], nycklar = [], skillnader = [];
+    const rows = [], nycklar = [], skillnader = [], minsta = [];
     let prioCount = 0, lvCount = 0, parUtelamnade = 0;
     // En rad: [åtgärd, grupp, underlag, sakligt skäl, kostnad, ansvarig, tidsplan, status, antal berörda] — med det som
     // fyllts i på fliken. Antal berörda är gruppens antal (för ett kandidatpar det kvinnodominerade yrkets), null för en egen rad.
     // skillnader: gruppens medianskillnad i kr/mån per rad (de sakliga skälens andelar räknas mot den), null för en egen rad.
-    const lagg = (nyckel, atgard, grupp, underlag, kostnad, antal, skillnad) => {
+    // minsta: den minsta gruppen bakom skillnaden (för prioriteringen det mindre könet, för ett kandidatpar den mindre av
+    // yrkesgrupperna), som årsbokslutet prövar mot minsta gruppstorlek; null för en egen rad.
+    const lagg = (nyckel, atgard, grupp, underlag, kostnad, antal, skillnad, nMin) => {
         const v = _hpVarden(nyckel);
         rows.push([atgard, grupp, underlag, v.sakligt, kostnad, v.ansvarig, v.tidsplan, v.status, antal == null ? null : antal]);
         nycklar.push(nyckel);
         skillnader.push(skillnad == null ? null : skillnad);
+        minsta.push(Number.isFinite(nMin) ? nMin : null);
     };
     if (!baraEgna) try {
         const ref = (typeof _selectedPrioReference === 'function') ? _selectedPrioReference() : 'stallningstagande';
@@ -121,7 +124,7 @@ function _handlingsplanSeedRows({ baraEgna = false } = {}) {
         if (hasRef) {
             const thr = (state.prioConfig && state.prioConfig.atgardThreshold != null) ? state.prioConfig.atgardThreshold : -5;
             computePrioritization(ref).filter(i => i.diffPct < thr).forEach(i => {
-                lagg(_hpNyckel('prio', i.aid || i.yrke, i.bas), 'Granska löneläge och väg mot sakliga skäl', _hpGrupp(i.aid, i.yrke, i.bas), HP_UNDERLAG_PRIO, Math.round(i.annualGapTotal), i.n, _hpPrioSkillnad(i));
+                lagg(_hpNyckel('prio', i.aid || i.yrke, i.bas), 'Granska löneläge och väg mot sakliga skäl', _hpGrupp(i.aid, i.yrke, i.bas), HP_UNDERLAG_PRIO, Math.round(i.annualGapTotal), i.n, _hpPrioSkillnad(i), Math.min(i.kvN, i.maN));
                 prioCount++;
             });
         }
@@ -134,7 +137,7 @@ function _handlingsplanSeedRows({ baraEgna = false } = {}) {
             parUtelamnade = utelamnade;
             par.forEach(p => {
                 const arsKostnad = Math.round(Math.abs(p.gapKr) * (p.kvN || 1) * months * poFactor);
-                lagg(_hpNyckel('par', p.kvAid, p.kvBas, p.maAid, p.maBas), 'Granska likvärdigt arbete (kvinnodominerat yrke)', _hpGrupp(p.kvAid, p.kvLabel, p.kvBas), HP_UNDERLAG_PAR, arsKostnad, p.kvN, isFinite(p.gapKr) ? Math.round(p.gapKr) : null);
+                lagg(_hpNyckel('par', p.kvAid, p.kvBas, p.maAid, p.maBas), 'Granska likvärdigt arbete (kvinnodominerat yrke)', _hpGrupp(p.kvAid, p.kvLabel, p.kvBas), HP_UNDERLAG_PAR, arsKostnad, p.kvN, isFinite(p.gapKr) ? Math.round(p.gapKr) : null, Math.min(p.kvN, p.maN));
                 lvCount++;
             });
         }
@@ -146,9 +149,10 @@ function _handlingsplanSeedRows({ baraEgna = false } = {}) {
         rows.push([v.atgard || '', v.grupp || '', HP_UNDERLAG_EGEN, v.sakligt, null, v.ansvarig, v.tidsplan, v.status, null]);
         nycklar.push(nyckel);
         skillnader.push(null);
+        minsta.push(null);
         egenCount++;
     });
-    return { rows, nycklar, skillnader, prioCount, lvCount, egenCount, parUtelamnade, parNot: _parUtelamnadeNot(parUtelamnade) };
+    return { rows, nycklar, skillnader, minsta, prioCount, lvCount, egenCount, parUtelamnade, parNot: _parUtelamnadeNot(parUtelamnade) };
 }
 
 // Kolumnen Underlag: raderna bär redan sin källa. Äldre texter (sparade utdrag) översätts till samma ord.
@@ -232,7 +236,7 @@ function _hpGaTillRad(nyckel) {
 function _hpSkalUnderlag(seed) {
     const s = seed || _handlingsplanSeedRows();
     const grupper = s.nycklar.map((nyckel, i) => ({ nyckel, i, skal: _hpVarden(nyckel).skal || [] })).filter(g => g.skal.length)
-        .map(({ nyckel, i, skal }) => ({ nyckel, grupp: s.rows[i][1] || 'Egen rad', underlag: s.rows[i][2], antal: s.rows[i][8], skillnadKr: s.skillnader[i],
+        .map(({ nyckel, i, skal }) => ({ nyckel, grupp: s.rows[i][1] || 'Egen rad', underlag: s.rows[i][2], antal: s.rows[i][8], nMin: s.minsta[i], skillnadKr: s.skillnader[i],
             sammanstallning: _sakSammanstallning(skal, s.skillnader[i]) }));
     return { grupper, perKategori: _sakPerKategori(grupper.map(g => ({ skal: g.sammanstallning.skal, skillnadKr: g.skillnadKr }))) };
 }

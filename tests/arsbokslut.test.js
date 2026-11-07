@@ -20,7 +20,7 @@ const bokslut = (ar, over = {}) => byggArsbokslut({
 describe('årsbokslut: validering och k-skydd', () => {
     it('ett giltigt bokslut kommer tillbaka normaliserat; ogiltiga faller', () => {
         const b = bokslut(2025);
-        expect(b).toMatchObject({ version: 1, ar: 2025, skapat: '2025-11-01', k: 10 });
+        expect(b).toMatchObject({ version: 2, ar: 2025, skapat: '2025-11-01', k: 10 });
         expect(b.grupper).toHaveLength(3);
         expect(b.punkter).toHaveLength(2);
         expect(valideraArsbokslut(null)).toBeNull();
@@ -238,5 +238,78 @@ describe('årsbokslut: lönespridningen (P90 − P10) / median', () => {
         expect(j.basIntervall[0].spridning.nu).toBe(0.22);
         expect(j.basIntervall[0].spridning.diff).toBeCloseTo(-0.03, 10);
         expect(j.basIntervall[1].spridning).toEqual({ forra: null, nu: 0.31, diff: null });   // äldre fil: inget värde förra året
+    });
+});
+
+describe('årsbokslut version 2: de sakliga skälen (bedomningar)', () => {
+    const bed = (nyckel, skillnadKr, skal, over = {}) => ({ nyckel, grupp: `Grupp ${nyckel}`, n: 20, nMin: 12, skillnadKr, skal, ...over });
+    const med = (ar, bedomningar) => bokslut(ar, { bedomningar });
+    it('version 2; skälen sparas utan kommentar, per grupp med nyckel, antal och skillnad', () => {
+        const b = med(2026, [bed('prio|5301|C', 1800, [{ kategori: 'marknad', belopp: 900, kommentar: 'Svårrekryterat 12345' }])]);
+        expect(b.version).toBe(2);
+        expect(b.bedomningar).toEqual([{ nyckel: 'prio|5301|C', grupp: 'Grupp prio|5301|C', n: 20, nMin: 12, skillnadKr: 1800, skal: [{ kategori: 'marknad', belopp: 900 }] }]);
+        expect(JSON.stringify(b)).not.toContain('12345');
+    });
+    it('ett bokslut från version 1 läses utan skäl: bedomningar är null (fältet saknades), inte en tom lista', () => {
+        const v1 = { ...bokslut(2025), version: 1 };
+        delete v1.bedomningar;
+        const b = valideraArsbokslut(v1);
+        expect(b).not.toBeNull();
+        expect(b.bedomningar).toBeNull();
+        expect(b.grupper).toHaveLength(3);
+        expect(med(2026, []).bedomningar).toEqual([]);
+    });
+    it('k: en grupp med färre än k personer faller bort; skillnaden nollas när den minsta gruppen bakom den är under k', () => {
+        const b = med(2026, [bed('a', 1500, [{ kategori: 'marknad', belopp: 500 }], { n: 9 }), bed('b', 2345, [{ kategori: 'marknad', belopp: 500 }], { nMin: 7 })]);
+        expect(b.bedomningar.map(x => [x.nyckel, x.skillnadKr])).toEqual([['b', null]]);
+        expect(JSON.stringify(b)).not.toContain('2345');
+    });
+    it('ogiltiga skäl och poster utan skäl faller bort; en nyckel som inte är text faller bort', () => {
+        const b = med(2026, [bed('a', 1000, [{ kategori: 'okand', belopp: 5 }]), bed('b', 1000, []), { ...bed('c', 1000, [{ kategori: 'annat', belopp: 5 }]), nyckel: 7 }, null,
+            bed('d', 1000, [{ kategori: 'annat', belopp: 5 }, { kategori: 'marknad', belopp: -1 }])]);
+        expect(b.bedomningar.map(x => [x.nyckel, x.skal])).toEqual([['d', [{ kategori: 'annat', belopp: 5 }]]]);
+    });
+    it('bokslutMedGrans: en högre gräns i år tar bort grupper och skillnader under den', () => {
+        const forra = med(2025, [bed('a', 1500, [{ kategori: 'marknad', belopp: 500 }], { n: 11, nMin: 11 }), bed('b', 1500, [{ kategori: 'marknad', belopp: 500 }], { n: 30, nMin: 11 })]);
+        const nu = bokslut(2026, { k: 12, bedomningar: [] });
+        const j = jamforArsbokslut(forra, nu);
+        expect(j.bedomningar.saknasIAr.map(g => g.nyckel)).toEqual(['b']);
+        expect(j.bedomningar.kategorier[0].forra).toEqual({ summa: 500, andel: null });
+    });
+});
+
+describe('årsbokslut: jämförelsen av de sakliga skälen', () => {
+    const bed = (nyckel, skillnadKr, skal) => ({ nyckel, grupp: `Grupp ${nyckel}`, n: 20, nMin: 12, skillnadKr, skal });
+    const forra = () => bokslut(2025, { bedomningar: [
+        bed('prio|1|C', 1800, [{ kategori: 'marknad', belopp: 900 }, { kategori: 'erfarenhet', belopp: 360 }]),
+        bed('par|2|C|3|C', 1000, [{ kategori: 'overgang', belopp: 500 }]),
+    ] });
+    const nu = () => bokslut(2026, { bedomningar: [
+        bed('prio|1|C', 1200, [{ kategori: 'marknad', belopp: 360 }]),
+        bed('prio|9|B', 2000, [{ kategori: 'utbildning', belopp: 1000 }]),
+    ] });
+    it('per kategori båda åren: belopp och andel av skillnaden i bedömda grupper, och förändringen i kronor', () => {
+        const j = jamforArsbokslut(forra(), nu()).bedomningar;
+        expect(j.kategorier).toEqual([
+            { kategori: 'marknad', namn: 'Marknad', forra: { summa: 900, andel: 900 / 2800 }, nu: { summa: 360, andel: 360 / 3200 }, diff: -540 },
+            { kategori: 'utbildning', namn: 'Utbildning', forra: null, nu: { summa: 1000, andel: 1000 / 3200 }, diff: null },
+            { kategori: 'erfarenhet', namn: 'Erfarenhet', forra: { summa: 360, andel: 360 / 2800 }, nu: null, diff: null },
+            { kategori: 'overgang', namn: 'Övergång', forra: { summa: 500, andel: 500 / 2800 }, nu: null, diff: null },
+        ]);
+        expect(j.totalt).toEqual({ forra: { summa: 1760, andel: 1760 / 2800, antalGrupper: 2 }, nu: { summa: 1360, andel: 1360 / 3200, antalGrupper: 2 } });
+    });
+    it('per grupp som bedömdes båda åren: skälen och skillnaden förra året och i år', () => {
+        const j = jamforArsbokslut(forra(), nu()).bedomningar;
+        expect(j.grupper).toEqual([{ nyckel: 'prio|1|C', grupp: 'Grupp prio|1|C',
+            forra: { skillnadKr: 1800, skal: [{ kategori: 'marknad', namn: 'Marknad', belopp: 900, andel: 0.5 }, { kategori: 'erfarenhet', namn: 'Erfarenhet', belopp: 360, andel: 0.2 }] },
+            nu: { skillnadKr: 1200, skal: [{ kategori: 'marknad', namn: 'Marknad', belopp: 360, andel: 0.3 }] } }]);
+    });
+    it('grupper som bedömdes förra året men saknar skäl i år: Bedömning saknas i år', () => {
+        const j = jamforArsbokslut(forra(), nu()).bedomningar;
+        expect(j.saknasIAr).toEqual([{ nyckel: 'par|2|C|3|C', grupp: 'Grupp par|2|C|3|C' }]);
+    });
+    it('null när ett av åren saknar fältet (ett bokslut från version 1)', () => {
+        const v1 = { ...forra(), version: 1 }; delete v1.bedomningar;
+        expect(jamforArsbokslut(valideraArsbokslut(v1), nu()).bedomningar).toBeNull();
     });
 });
