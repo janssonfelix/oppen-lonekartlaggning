@@ -12,6 +12,11 @@ describe('sakliga skäl: kategorierna', () => {
         expect(SKAL_KATEGORIER.map(k => k.id)).toEqual(['marknad', 'utbildning', 'erfarenhet', 'prestation', 'overgang', 'annat']);
         expect(SKAL_KATEGORIER.map(k => k.namn)).toEqual(['Marknad', 'Utbildning', 'Erfarenhet', 'Prestation och resultat', 'Övergång', 'Annat sakligt skäl']);
         for (const k of SKAL_KATEGORIER) expect(k.forklaring).toMatch(/^[A-ZÅÄÖ].*\.$/);
+        const f = Object.fromEntries(SKAL_KATEGORIER.map(k => [k.id, k.forklaring]));
+        expect(f.utbildning).toBe('Formell utbildning som har betydelse för arbetet, utöver den som krävs.');
+        expect(f.annat).toBe('Till exempel ansvar eller arbetsuppgifternas svårighet. Beskriv i kommentaren.');
+        expect(f.marknad).toMatch(/som organisationen kan visa\.$/);
+        expect(f.erfarenhet).toBe('Dokumenterad yrkeserfarenhet som har betydelse för arbetet, eller tid i arbetet.');
         expect(Object.isFrozen(SKAL_KATEGORIER)).toBe(true);
     });
     it('skalKategorier ger en kopia som inte kan ändra listan', () => {
@@ -124,6 +129,13 @@ describe('sakliga skäl: skalPerKategori över raderna', () => {
         ]);
         expect(r.kategorier[0]).toEqual({ kategori: 'marknad', namn: 'Marknad', summa: 800, andel: 0.3, antalGrupper: 2 });
         expect(r).toMatchObject({ antalGrupper: 2, skillnadKr: 1000, summa: 800, andel: 0.3 });
+    });
+    it('en kategori som bara finns i rader utan skillnad får ingen andel (inte 0 %)', () => {
+        const r = skalPerKategori([
+            { skal: [s('utbildning', 700)], skillnadKr: null },
+            { skal: [s('marknad', 300)], skillnadKr: 1000 },
+        ]);
+        expect(r.kategorier.map(k => [k.kategori, k.andel])).toEqual([['marknad', 0.3], ['utbildning', null]]);
     });
     it('bara rader utan skillnad: ingen andel', () => {
         const r = skalPerKategori([{ skal: [s('marknad', 500)], skillnadKr: null }]);

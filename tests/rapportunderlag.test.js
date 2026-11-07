@@ -556,15 +556,15 @@ describe('rapportunderlag: sakliga skäl i handlingsplanens block', () => {
         const b = avsnittBlock('handlingsplan', { rader: rad, summa: 1000, skal }, { k: 10 });
         expect(b.tabeller.map(t => t.rubrik)).toEqual(['Sakliga skäl per grupp', 'Sammanställning per kategori']);
         const [g, kat] = b.tabeller;
-        expect(g.rubriker).toEqual(['Grupp', 'Antal berörda', 'Skillnad kr/mån', 'Kategori', 'Belopp', 'Andel', 'Kommentar']);
+        expect(g.rubriker).toEqual(['Grupp', 'Antal berörda', 'Medianskillnad (kr/mån)', 'Kategori', 'Belopp (kr/mån)', 'Andel av skillnaden', 'Kommentar']);
         expect(g.rader).toEqual([
             ['G · BAS C', '20', '2 000 kr', 'Marknad', '800 kr', '40 %', 'Svårrekryterat'],
             ['', '', '', 'Erfarenhet', '200 kr', '10 %', ''],
             ['Egen rad', '', '–', 'Övergång', '300 kr', '–', ''],
         ].map(r => r.map(c => c.replace(/ (?=\d{3}\b)/g, ' '))));
-        expect(kat.rubriker).toEqual(['Kategori', 'Belopp kr/mån', 'Andel av skillnaden i bedömda grupper', 'Antal grupper']);
+        expect(kat.rubriker).toEqual(['Kategori', 'Belopp (kr/mån)', 'Andel av skillnaden i grupper med skäl', 'Antal grupper']);
         expect(kat.rader.at(-1)).toEqual(['Totalt', '1 300 kr', '50 %', '2']);
-        expect(b.stycken.join(' ')).toMatch(/organisationens bedömning, inte verktygets beräkning/);
+        expect(b.stycken.join(' ')).toMatch(/Tabellerna visar de sakliga skäl som organisationen har angett per grupp\. Beloppet är den del av gruppens medianskillnad, i kronor per månad, som skälet förklarar\. Kategorierna och beloppen är organisationens bedömning\. Verktyget räknar bara om beloppen till andelar av skillnaden\./);
         expect(tillText(b)).toContain('Sammanställning per kategori');
     });
     it('utan skäl: blocket som förut', () => {

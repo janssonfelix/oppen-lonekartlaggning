@@ -162,13 +162,15 @@ function _abSkalVarde(v) {
 function _abSkalLista(skal) {
     return skal.map(s => `${s.namn} ${typeof s.andel === 'number' ? svPct(s.andel * 100, 0) : _abKr(s.belopp)}`).join(', ');
 }
-/** Hur gruppens skillnad ändrades: "skillnaden minskade från 1 800 till 1 200 kr", eller tomt när ett år saknar den. */
+/** Hur gruppens skillnad ändrades: " Skillnaden minskade från 1 800 till 1 200 kr/mån.", eller tomt när ett år saknar den. */
 function _abSkillnadText(f, n) {
     if (typeof f !== 'number' || typeof n !== 'number') return '';
     const tal = v => svTal(Math.round(v), 0);
-    if (f === n) return `; skillnaden är oförändrad, ${tal(n)} kr`;
-    return `; skillnaden ${n < f ? 'minskade' : 'ökade'} från ${tal(f)} till ${tal(n)} kr`;
+    if (f === n) return ` Skillnaden är oförändrad, ${tal(n)} kr/mån.`;
+    return ` Skillnaden ${n < f ? 'minskade' : 'ökade'} från ${tal(f)} till ${tal(n)} kr/mån.`;
 }
+/** Gruppens namn i panelen; ett kandidatpar märks, så att det skiljs från prioriteringens rad för samma grupp. */
+function _abSkalGrupp(g) { return `${g.grupp || g.nyckel}${String(g.nyckel).startsWith('par|') ? ' (kandidatpar)' : ''}`; }
 
 /**
  * Avsnittet Sakliga skäl i panelen: tabellen per kategori båda åren, en mening per grupp som hade skäl båda åren och
@@ -189,13 +191,13 @@ function _abSkalHtml(j, forraAr, nuAr) {
         + rad('Totalt', b.totalt.forra.antalGrupper ? b.totalt.forra : null, b.totalt.nu.antalGrupper ? b.totalt.nu : null, totDiff, true)
         + '</tbody></table></div>';
     const grupper = b.grupper.length
-        ? `<ul class="fs-sm marg-6-0-4" id="arsjamforelse-skal-grupper">${b.grupper.map(g => `<li><strong>${esc(g.grupp)}</strong>: Förra årets skäl: ${esc(_abSkalLista(g.forra.skal))}, i år ${esc(_abSkalLista(g.nu.skal))}${_abSkillnadText(g.forra.skillnadKr, g.nu.skillnadKr)}.</li>`).join('')}</ul>`
+        ? `<ul class="fs-sm marg-6-0-4" id="arsjamforelse-skal-grupper">${b.grupper.map(g => `<li><strong>${esc(_abSkalGrupp(g))}</strong>: förra året ${esc(_abSkalLista(g.forra.skal))}, i år ${esc(_abSkalLista(g.nu.skal))}.${_abSkillnadText(g.forra.skillnadKr, g.nu.skillnadKr)}</li>`).join('')}</ul>`
         : '';
     const saknas = b.saknasIAr.length
-        ? `<p class="text-dampad-sm marg-6-0-2">Bedömning saknas i år (${b.saknasIAr.length}):</p><ul class="fs-sm marg-0-0-4">${b.saknasIAr.map(g => `<li>${esc(g.grupp || g.nyckel)}</li>`).join('')}</ul>`
+        ? `<p class="text-dampad-sm marg-6-0-2">Hade sakliga skäl förra året men inte i år (${b.saknasIAr.length}). Gruppen kan sakna skäl eller inte längre finnas i handlingsplanen:</p><ul class="fs-sm marg-0-0-4">${b.saknasIAr.map(g => `<li>${esc(_abSkalGrupp(g))}</li>`).join('')}</ul>`
         : '';
     return rubrik + tabell + grupper + saknas
-        + `<p class="text-dampad-xs marg-4-0-0">Beloppen är summan av skälen i kr/mån; andelen är av skillnaden i de grupper som hade skäl det året. Skälen är organisationens bedömning, inte verktygets beräkning. Bara grupper med minst ${j.kGrans} personer.</p>`;
+        + `<p class="text-dampad-xs marg-4-0-0">Beloppen är summan av skälen i kronor per månad; andelen är av skillnaden i de grupper som hade skäl det året. Kategorierna och beloppen är organisationens bedömning. Verktyget räknar bara om beloppen till andelar av skillnaden. Bara grupper med minst ${j.kGrans} personer.</p>`;
 }
 
 /**

@@ -177,17 +177,28 @@ function _hpUppdateraVarning() {
     varning.hidden = !traff;
 }
 
-/** Sammanfattningen på knappen Sakliga skäl: "—" utan skäl, annars "2 skäl · 65 %" (andelen bara mot en skillnad över 0). */
-function _hpSkalSammanfattning(nyckel, skillnadKr) {
+/** Radens skäl i korthet: antal och förklarad andel (andelen bara mot en skillnad över 0), eller null utan skäl. */
+function _hpSkalKort(nyckel, skillnadKr) {
     const sk = _hpVarden(nyckel).skal;
-    if (!sk || !sk.length) return '—';
+    if (!sk || !sk.length) return null;
     const s = _sakSammanstallning(sk, skillnadKr);
-    return `${s.antal} skäl${s.forklaradAndel != null ? ` · ${svPct(s.forklaradAndel * 100, 0)}` : ''}`;
+    return { antal: s.antal, andel: s.forklaradAndel != null ? svPct(s.forklaradAndel * 100, 0) : null };
+}
+/** Texten på knappen Sakliga skäl: "Sakliga skäl: inga", "Sakliga skäl (2)" eller "Sakliga skäl (2) · 65 % förklarat". */
+function _hpSkalSammanfattning(nyckel, skillnadKr) {
+    const k = _hpSkalKort(nyckel, skillnadKr);
+    if (!k) return 'Sakliga skäl: inga';
+    return `Sakliga skäl (${k.antal})${k.andel ? ` · ${k.andel} förklarat` : ''}`;
+}
+/** Knappens tillgängliga namn med gruppen och sammanfattningen: "Sakliga skäl, {grupp}: 2 skäl, 65 % förklarat". */
+function _hpSkalEtikett(nyckel, grupp, skillnadKr) {
+    const k = _hpSkalKort(nyckel, skillnadKr);
+    return `Sakliga skäl, ${grupp}: ${k ? `${k.antal} skäl${k.andel ? `, ${k.andel} förklarat` : ''}` : 'inga'}`;
 }
 /** Knappen som öppnar dialogen med radens sakliga skäl (57-sakliga-skal.js). Syns inte på utskriften. */
 function _hpSkalKnapp(nyckel, grupp, skillnadKr) {
-    return `<button type="button" class="btn-table-tool hp-skal" data-hp-skal="${esc(nyckel)}" data-hp-skillnad="${skillnadKr == null ? '' : esc(String(skillnadKr))}" data-noprint aria-label="${esc(`Sakliga skäl: ${grupp}`)}">`
-        + `Sakliga skäl <span class="hp-skal-sammanfattning">${esc(_hpSkalSammanfattning(nyckel, skillnadKr))}</span></button>`;
+    return `<button type="button" class="btn-table-tool hp-skal" data-hp-skal="${esc(nyckel)}" data-hp-grupp="${esc(grupp)}" data-hp-skillnad="${skillnadKr == null ? '' : esc(String(skillnadKr))}" data-noprint aria-label="${esc(_hpSkalEtikett(nyckel, grupp, skillnadKr))}">`
+        + `<span class="hp-skal-sammanfattning">${esc(_hpSkalSammanfattning(nyckel, skillnadKr))}</span></button>`;
 }
 
 /**
@@ -361,7 +372,7 @@ function exportHandlingsplan(...a) { return medExportLage(() => _exportHandlings
 function _exportHandlingsplanExport() {
     if (typeof XLSX === 'undefined') { alert('Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.'); return; }
     const header = ['Åtgärd', 'Grupp (yrke och BAS-intervall)', 'Antal berörda', 'Underlag', 'Sakliga skäl prövade?', 'Beräknad kostnad (kr/år, inkl. PO)', 'Ansvarig', 'Tidsplan (senast inom tre år)', 'Status',
-        'Sakliga skäl (kategori och belopp)', 'Förklarad andel (%)'];
+        'Sakliga skäl (kategori och belopp)', 'Förklarad andel av skillnaden (%)'];
     const seed = _handlingsplanSeedRows();
     const prioCount = seed.prioCount, lvCount = seed.lvCount;
     // Bladets kolumner i skärmens ordning: Antal berörda efter gruppen (tomt för en egen rad). Sist de sakliga skälen

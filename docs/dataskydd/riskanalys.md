@@ -662,7 +662,7 @@ Konfig-JSON:en (**version 2**) innehåller tre slags uppgifter.
   id för en rad som lagts till på fliken. Till nyckeln hör sakligt skäl, ansvarig, tidsplan och status. En egen rad
   bär också sin åtgärd och berörda grupp som fritext. Rullistornas okända värden läses som tomma, och fritexten
   kortas till 500 tecken. En rad kan också bära sina **sakliga skäl** (`skal`): högst 8 skäl med kategori ur en
-  fast lista, belopp i kr/mån och en kommentar på högst 200 tecken. Kommentaren är fritext. Den prövas som övriga
+  fast lista, belopp i kronor per månad och en kommentar på högst 200 tecken. Kommentaren är fritext. Den prövas som övriga
   fritexter mot personnummer och e-post (`_hpLiknarPersonuppgift`), och dialogen varnar om den liknar en
   personuppgift. Ogiltiga skäl hoppas över vid inläsning med en varning.
 - avbockningarna i Att göra (punkternas id, som innehåller AID-kod och BAS)
@@ -677,7 +677,7 @@ Konfig-JSON:en (**version 2**) innehåller tre slags uppgifter.
 - Att göra-punkternas id, titel och läge.
 - handlingsplanens sakliga skäl per grupp (version 2, `bedomningar`): nyckeln, gruppen, antalet, skillnaden och
   skälens kategori och belopp. Kommentarerna sparas inte i bokslutet. En grupp under minsta gruppstorlek faller
-  bort, och skillnaden nollas när den minsta gruppen bakom den är under gränsen.
+  bort, och skillnaden stryks när den minsta gruppen bakom den är under gränsen.
 
   Bokslutet byggs i exportläget med den inställda tröskeln. Vid inläsning stryks varje grupp där ett kön är under
   bokslutets k (`valideraArsbokslut`; vaktas av `tests/arsbokslut.test.js` och `tests/smoke-arsbokslut.test.js`).

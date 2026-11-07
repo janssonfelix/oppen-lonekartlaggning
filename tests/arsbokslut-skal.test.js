@@ -76,12 +76,20 @@ describe('panelen: Sakliga skäl per kategori', () => {
         expect(j.grupper.length).toBe(3);
         const lista = host.querySelector('#arsjamforelse-skal-grupper');
         expect(lista.querySelectorAll('li').length).toBe(3);
-        expect(siffror(lista.textContent)).toMatch(/Förra årets skäl: \S+ /);
-        expect(ren(lista.textContent)).toContain('i år');
+        expect(siffror(lista.textContent)).toMatch(/: förra året \S+ .*, i år \S+ .*\. Skillnaden (minskade|ökade|är oförändrad)/);
+    });
+    it('ett kandidatpar märks (kandidatpar), så att det skiljs från prioriteringens rad för samma grupp', () => {
+        const { w, host } = medForra();
+        const j = w.eval('arsjamforelse()').j.bedomningar;
+        const par = j.grupper.filter(g => g.nyckel.startsWith('par|'));
+        expect(par.length).toBeGreaterThan(0);
+        const li = [...host.querySelectorAll('#arsjamforelse-skal-grupper li')].map(x => ren(x.textContent));
+        for (const g of par) expect(li).toContainEqual(expect.stringMatching(new RegExp(`^${g.grupp.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')} \\(kandidatpar\\): `)));
     });
     it('en grupp med skäl förra året men inte i år: Bedömning saknas i år', () => {
         const { host } = medForra();
-        expect(ren(host.textContent)).toMatch(/Bedömning saknas i år[^]*Bortflyttad grupp/);
+        expect(ren(host.textContent)).toMatch(/Hade sakliga skäl förra året men inte i år \(1\)\. Gruppen kan sakna skäl eller inte längre finnas i handlingsplanen:[^]*Bortflyttad grupp/);
+        expect(ren(host.textContent)).toContain('Kategorierna och beloppen är organisationens bedömning. Verktyget räknar bara om beloppen till andelar av skillnaden.');
     });
     it('förra årets fil saknar fältet: en rad om att skälen saknas, ingen tabell', () => {
         const { host } = medForra(f => { const v1 = { ...f, version: 1 }; delete v1.bedomningar; return v1; });

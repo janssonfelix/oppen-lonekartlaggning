@@ -10,13 +10,14 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 - **Sakliga skäl som strukturerad post.** Varje rad i Handlingsplan har knappen *Sakliga skäl*. Dialogen tar emot
   högst 8 skäl per grupp med kategori (Marknad, Utbildning, Erfarenhet, Prestation och resultat, Övergång, Annat
-  sakligt skäl), belopp i kr/mån och en kort kommentar. Den räknar ihop förklarat och återstående belopp och andel av
-  gruppens löneskillnad, och kan markera raden som sakligt förklarad. Kommentaren prövas mot personuppgifter som
-  övriga fritexter. Gruppdossiern och BAS-dossiern visar bedömningen med en länk till raden, och Att göra har en punkt
-  för grupper utan skäl eller åtgärd. Rapporten (Rapporttext, Word och PDF) får tabellerna *Sakliga skäl per grupp*
-  och *Sammanställning per kategori*, Excel (alla flikar) bladet *Sakliga skal* och handlingsplansunderlaget två
-  kolumner. Demona har skäl på tre rader. Årsbokslutet är version 2 och bär skälen (utan kommentarer), och
-  *Jämförelse med förra året* visar *Sakliga skäl per kategori* båda åren och de grupper där bedömning saknas i år.
+  sakligt skäl), belopp i kronor per månad och en kort kommentar. Den räknar ihop förklarat och återstående belopp och
+  andel av gruppens löneskillnad. När beloppen täcker skillnaden föreslår den att du väljer *Ja, sakligt skäl finns*;
+  bedömningen är organisationens. Kommentaren prövas mot personuppgifter som övriga fritexter. Gruppdossiern och
+  BAS-dossiern visar bedömningen med en länk till raden, och Att göra har punkten *n grupper i handlingsplanen är inte
+  bedömda än*. Rapporten (Rapporttext, Word och PDF) får tabellerna *Sakliga skäl per grupp* och *Sammanställning per
+  kategori*, Excel (alla flikar) bladet *Sakliga skal* och handlingsplansunderlaget två kolumner. Det lilla och det
+  stora demot har skäl på tre rader. Årsbokslutet är version 2 och bär skälen (utan kommentarer), och *Jämförelse med
+  förra året* visar *Sakliga skäl per kategori* båda åren och de grupper som hade skäl förra året men inte i år.
   Skälen följer med i konfigurationsfilen; en äldre fil läses som förut.
 
 - **Klarspråksputs.** Långa meningar är delade i verktyget och i användar- och dataskyddsdokumenten.

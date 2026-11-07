@@ -6,7 +6,8 @@
 // En rad i handlingsplanen (56-handlingsplan.js) kan bära sakliga skäl: kategori, belopp i kronor per månad av
 // gruppens medianskillnad och en kort kommentar (src/lib/sakligaskal.js). Dialogen visar gruppens skillnad överst,
 // en rad per skäl och summan längst ned: hur mycket som är förklarat och vad som återstår. När skälen förklarar hela
-// skillnaden föreslår dialogen att raden markeras som sakligt förklarad; användaren bekräftar med en knapp.
+// skillnaden (och inte mer) föreslår dialogen att användaren väljer Ja, sakligt skäl finns; bedömningen är
+// organisationens, och användaren väljer med en knapp.
 //
 // Exportgrinden: gruppens skillnad räknas i exportläget (medExportLage, ADR-51), som i allt som lämnar verktyget. En
 // grupp som inte följer med i exporterna (färre än minsta gruppstorlek) får inga andelar, och dialogen säger det.
@@ -60,26 +61,35 @@ function closeSkalDialog() {
     _skal = null;
 }
 
+/** Varningen när skälen tillsammans är större än skillnaden, med beloppen. */
+function _skalOverstigerText(summa, skillnad) {
+    return `Skälen är tillsammans större än skillnaden (${_skalKr(summa)} mot ${_skalKr(skillnad)}). Ett belopp kan vara för högt, eller så räknar två skäl samma sak. Kontrollera beloppen.`;
+}
+
 /** Raden överst: gruppens medianskillnad, eller varför inga andelar räknas. */
 function _skalSkillnadHtml() {
     const s = /** @type {NonNullable<typeof _skal>} */ (_skal);
-    if (s.kalla === 'egen') return '<p class="skal-skillnad">En egen rad har ingen medianskillnad att räkna andelar mot. Skälen redovisas med belopp.</p>';
-    if (!s.iExport) return `<p class="skal-skillnad">Gruppen har färre än ${kInstalld()} personer i det som lämnar verktyget, så raden och skälen följer inte med i exporterna och inga andelar räknas.</p>`;
+    if (s.kalla === 'egen') return '<p class="skal-skillnad">En egen rad har ingen medianskillnad att räkna andelar mot. Skälen redovisas med belopp. Skälen på en egen rad följer inte med i årsbokslutet.</p>';
+    if (!s.iExport) return `<p class="skal-skillnad">Gruppen är för liten för att redovisas (färre än ${kInstalld()} personer). Raden och skälen följer därför inte med i exporterna, och inga andelar räknas.</p>`;
     if (s.skillnadKr == null) return `<p class="skal-skillnad">Medianskillnaden redovisas inte: ett kön i gruppen har färre än ${kInstalld()} personer. Skälen redovisas med belopp.</p>`;
-    const vad = s.kalla === 'par' ? 'jämförelseyrkets median minus det kvinnodominerade yrkets' : 'mäns median minus kvinnors i gruppen';
-    if (s.skillnadKr <= 0) return `<p class="skal-skillnad">Kvinnornas median är inte lägre än männens (${vad}: ${svTal(s.skillnadKr, 0)} kr/mån). Andelar räknas inte.</p>`;
-    return `<p class="skal-skillnad"><strong>Medianskillnad ${svTal(s.skillnadKr, 0)} kr/mån</strong> <span class="text-dampad-sm">(${vad})</span></p>`;
+    const par = s.kalla === 'par';
+    if (s.skillnadKr <= 0) return par
+        ? `<p class="skal-skillnad">Det kvinnodominerade yrkets median är inte lägre än jämförelseyrkets (${svTal(s.skillnadKr, 0)} kr/mån). Andelar räknas inte.</p>`
+        : `<p class="skal-skillnad">Kvinnors median är inte lägre än mäns (${svTal(s.skillnadKr, 0)} kr/mån). Andelar räknas inte.</p>`;
+    const vad = par ? 'jämförelseyrkets median minus det kvinnodominerade yrkets' : 'mäns median minus kvinnors i gruppen';
+    return `<p class="skal-skillnad"><strong>Medianskillnad ${svTal(s.skillnadKr, 0)} kr/mån</strong> <span class="text-dampad-sm">(${vad})</span></p>`
+        + (par ? '' : '<p class="text-dampad-sm marg-0">Skälen gäller skillnaden mellan kvinnor och män i gruppen, inte gruppens avstånd till referensen.</p>');
 }
 
 function _skalRadHtml(r, i) {
     const k = _sakKategorier();
     const vald = k.find(x => x.id === r.kategori) || k[0];
-    const ogiltig = _skalBelopp(r.belopp) == null;
+    const ogiltig = _skalBelopp(r.belopp) == null;   // också ett tomt belopp: raden om beloppet visas
     return `<tr class="skal-rad" data-skal-i="${i}">`
         + `<td><select class="form-select skal-kategori" data-skal-i="${i}" aria-label="Kategori, skäl ${i + 1}">`
         + k.map(x => `<option value="${esc(x.id)}" title="${esc(x.forklaring)}"${x.id === vald.id ? ' selected' : ''}>${esc(x.namn)}</option>`).join('')
         + `</select><div class="text-dampad-xs skal-forklaring">${esc(vald.forklaring)}</div></td>`
-        + `<td><input type="text" inputmode="numeric" class="skal-falt skal-belopp" data-skal-i="${i}" value="${esc(r.belopp)}" autocomplete="off" aria-label="Belopp i kr/mån, skäl ${i + 1}"${ogiltig && r.belopp !== '' ? ' aria-invalid="true"' : ''}></td>`
+        + `<td><input type="text" inputmode="numeric" class="skal-falt skal-belopp" data-skal-i="${i}" value="${esc(r.belopp)}" autocomplete="off" aria-label="Belopp i kr/mån, skäl ${i + 1}"${ogiltig && r.belopp !== '' ? ' aria-invalid="true"' : ''}${ogiltig ? ' aria-describedby="skal-belopp-fel"' : ''}></td>`
         + `<td class="t-tal skal-andel">${esc(_skalAndelText(r))}</td>`
         + `<td><input type="text" class="skal-falt skal-kommentar" data-skal-i="${i}" value="${esc(r.kommentar)}" maxlength="200" autocomplete="off" placeholder="Kort motivering, inga namn" aria-label="Kommentar, skäl ${i + 1}"></td>`
         + `<td><button type="button" class="btn-table-tool" data-skal-ta-bort="${i}" aria-label="Ta bort skäl ${i + 1}">Ta bort</button></td></tr>`;
@@ -100,6 +110,7 @@ function _skalRender() {
             : '<p class="text-dampad-sm">Inga skäl ännu. Lägg till ett skäl för varje kategori som förklarar en del av skillnaden.</p>')
         + `<div class="rad-bryt-mitt gap-8 marg-t-8"><button id="skal-lagg-till" class="btn btn-secondary btn-sm" type="button"${fullt ? ' disabled' : ''}>Lägg till skäl</button>`
         + '<span class="text-dampad-sm">Högst 8 skäl per grupp. Beloppet är den del av gruppens medianskillnad, i kronor per månad, som skälet förklarar.</span></div>'
+        + '<p id="skal-belopp-fel" class="handlingsplan-varning" role="status" hidden>Beloppet ska vara ett heltal mellan 0 och 200 000 kr. Skälet sparas när beloppet är giltigt.</p>'
         + '<p id="skal-varning" class="handlingsplan-varning" role="status" hidden>En kommentar liknar ett personnummer eller en e-postadress, och texten följer med i exporterna. Skriv på gruppnivå i stället.</p>'
         + '<div id="skal-status"></div>';
     _skalUppdatera();
@@ -123,14 +134,15 @@ function _skalUppdatera() {
     const status = document.getElementById('skal-status');
     if (status) {
         const summa = sum.forklaradAndel != null
-            ? `Förklarat ${_skalKr(sum.summa)} (${_skalPct(sum.forklaradAndel)}) · Återstår ${_skalKr(/** @type {number} */ (sum.aterstar))} (${_skalPct(/** @type {number} */ (sum.aterstarAndel))})`
-            : `Förklarat ${_skalKr(sum.summa)}`;
+            ? `Förklarat av skälen: ${_skalKr(sum.summa)} (${_skalPct(sum.forklaradAndel)}) · Återstår att förklara: ${_skalKr(/** @type {number} */ (sum.aterstar))} (${_skalPct(/** @type {number} */ (sum.aterstarAndel))})`
+            : `Förklarat av skälen: ${_skalKr(sum.summa)}`;
         const ja = _hpVarden(s.nyckel).sakligt === SKAL_JA;
+        // Förslaget visas bara när beloppen täcker skillnaden utan att överstiga den; bedömningen är organisationens.
         status.innerHTML = `<p id="skal-summa" class="skal-summa" aria-live="polite">${esc(summa)}</p>`
-            + (sum.overstiger ? '<p id="skal-overstiger" class="handlingsplan-varning" role="alert">Skälen överstiger skillnaden.</p>' : '')
-            + (sum.forklaradAndel != null && sum.forklaradAndel >= 1 && !ja
-                ? '<div class="skal-forslag"><p class="text-dampad-sm marg-0">Skälen förklarar hela skillnaden. Raden kan markeras med <strong>Ja, sakligt skäl finns</strong>.</p>'
-                  + '<button id="skal-markera" class="btn btn-primary btn-sm" type="button">Markera som sakligt förklarad</button></div>'
+            + (sum.overstiger ? `<p id="skal-overstiger" class="handlingsplan-varning" role="alert">${esc(_skalOverstigerText(sum.summa, /** @type {number} */ (sum.skillnadKr)))}</p>` : '')
+            + (sum.forklaradAndel != null && sum.forklaradAndel >= 1 && !sum.overstiger && !ja
+                ? '<div class="skal-forslag"><p class="text-dampad-sm marg-0">Beloppen du har angett täcker hela skillnaden. Bedömer organisationen att skälen är sakliga kan du välja <strong>Ja, sakligt skäl finns</strong>.</p>'
+                  + `<button id="skal-markera" class="btn btn-primary btn-sm" type="button">Välj ${SKAL_JA}</button></div>`
                 : '');
     }
     // Personuppgiftsvakten som i handlingsplanens fritexter.
@@ -141,13 +153,22 @@ function _skalUppdatera() {
     });
     const varning = document.getElementById('skal-varning');
     if (varning) varning.hidden = !traff;
+    // Ett tomt eller ogiltigt belopp sparas inte: raden säger det, och fältet pekar på raden.
+    let fel = 0;
+    document.querySelectorAll('#skal-body input.skal-belopp').forEach(el => {
+        if (_skalBelopp(/** @type {HTMLInputElement} */ (el).value) == null) { el.setAttribute('aria-describedby', 'skal-belopp-fel'); fel++; } else el.removeAttribute('aria-describedby');
+    });
+    const beloppFel = document.getElementById('skal-belopp-fel');
+    if (beloppFel) beloppFel.hidden = !fel;
     // Knappen i tabellen på fliken, utan att tabellen ritas om (fokus och öppnaren står kvar).
     document.querySelectorAll('#handlingsplan-tbody [data-hp-skal]').forEach(b => {
         const btn = /** @type {HTMLElement} */ (b);
         if (btn.dataset.hpSkal !== s.nyckel) return;
         const sp = btn.querySelector('.hp-skal-sammanfattning');
         const sk = btn.dataset.hpSkillnad;
-        if (sp) sp.textContent = _hpSkalSammanfattning(s.nyckel, sk === '' || sk == null ? null : Number(sk));
+        const skillnad = sk === '' || sk == null ? null : Number(sk);
+        if (sp) sp.textContent = _hpSkalSammanfattning(s.nyckel, skillnad);
+        btn.setAttribute('aria-label', _hpSkalEtikett(s.nyckel, btn.dataset.hpGrupp || '', skillnad));
     });
 }
 

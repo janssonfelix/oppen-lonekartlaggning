@@ -16,7 +16,7 @@ export async function sakligaSkal() {
     // En rad utan skäl (demot har fyllt i tre rader); finns ingen tas den första.
     const nyckel = await sida.evaluate(() => {
         const knappar = [...document.querySelectorAll('#handlingsplan-tbody [data-hp-skal]')];
-        const tom = knappar.find(k => k.querySelector('.hp-skal-sammanfattning')?.textContent.trim() === '—') || knappar[0];
+        const tom = knappar.find(k => k.querySelector('.hp-skal-sammanfattning')?.textContent.trim() === 'Sakliga skäl: inga') || knappar[0];
         return tom.getAttribute('data-hp-skal');
     });
     const knapp = `#handlingsplan-tbody [data-hp-skal="${nyckel}"]`;
@@ -32,13 +32,14 @@ export async function sakligaSkal() {
     await sida.fill(`${sista} input.skal-belopp`, '700');
     await sida.fill(`${sista} input.skal-kommentar`, 'Svårrekryterat i regionen');
     const summa = ((await sida.textContent('#skal-summa')) || '').replace(/\s+/g, ' ').trim();
-    ok(/Förklarat/.test(summa), `sammanfattningen räknas om («${summa}»)`);
+    ok(/^Förklarat av skälen: 700 kr/.test(summa), `sammanfattningen räknas om («${summa}»)`);
     const sparat = await sida.evaluate(n => state.handlingsplan[n]?.skal || [], nyckel);
     ok(sparat.length === forut + 1 && sparat.some(s => s.kategori === 'marknad' && s.belopp === 700), 'skälet sparas på raden');
     await sida.keyboard.press('Escape');
     await sida.waitForFunction(() => document.getElementById('skal-modal').style.display === 'none', { timeout: 5000 });
     const text = ((await sida.textContent(`${knapp} .hp-skal-sammanfattning`)) || '').trim();
-    ok(text.startsWith(`${forut + 1} skäl`), `radens knapp visar antalet («${text}»)`);
+    ok(text.startsWith(`Sakliga skäl (${forut + 1})`), `radens knapp visar antalet («${text}»)`);
+    ok(/: \d+ skäl/.test(await sida.getAttribute(knapp, 'aria-label') || ''), 'knappens tillgängliga namn har sammanfattningen');
     ok(await sida.evaluate(k => document.activeElement === document.querySelector(k), knapp), 'Escape stänger dialogen och fokus går tillbaka till knappen');
     await sida.click('.nav-item[data-tab="rapporttext"]');
     await sida.waitForFunction(() => /Sakliga skäl per grupp/.test(document.getElementById('view-rapporttext')?.textContent || ''), { timeout: 15000 }).catch(() => {});

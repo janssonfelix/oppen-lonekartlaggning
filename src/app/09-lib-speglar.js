@@ -4578,12 +4578,12 @@ function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
         if (sk && Array.isArray(sk.grupper) && sk.grupper.length && sk.perKategori) {
             const andel = v => (v == null ? '–' : _pct(v * 100, 0));
             const pk = sk.perKategori;
-            b.stycken.push('Sakliga skäl per grupp och kategori, med belopp i kronor per månad av gruppens medianskillnad. Kategorierna, beloppen och andelarna är organisationens bedömning, inte verktygets beräkning.');
+            b.stycken.push('Tabellerna visar de sakliga skäl som organisationen har angett per grupp. Beloppet är den del av gruppens medianskillnad, i kronor per månad, som skälet förklarar. Kategorierna och beloppen är organisationens bedömning. Verktyget räknar bara om beloppen till andelar av skillnaden.');
             b.tabeller = [
-                { rubrik: 'Sakliga skäl per grupp', rubriker: ['Grupp', 'Antal berörda', 'Skillnad kr/mån', 'Kategori', 'Belopp', 'Andel', 'Kommentar'],
+                { rubrik: 'Sakliga skäl per grupp', rubriker: ['Grupp', 'Antal berörda', 'Medianskillnad (kr/mån)', 'Kategori', 'Belopp (kr/mån)', 'Andel av skillnaden', 'Kommentar'],
                   rader: sk.grupper.flatMap(g => g.skal.map((s, i) => [i ? '' : g.grupp, i || g.antal == null ? '' : formatTal(g.antal), i ? '' : _kr(g.skillnadKr),
                       s.namn, _kr(s.belopp), andel(s.andel), s.kommentar || ''])) },
-                { rubrik: 'Sammanställning per kategori', rubriker: ['Kategori', 'Belopp kr/mån', 'Andel av skillnaden i bedömda grupper', 'Antal grupper'],
+                { rubrik: 'Sammanställning per kategori', rubriker: ['Kategori', 'Belopp (kr/mån)', 'Andel av skillnaden i grupper med skäl', 'Antal grupper'],
                   rader: [...pk.kategorier.map(k => [k.namn, _kr(k.summa), andel(k.andel), formatTal(k.antalGrupper)]), ['Totalt', _kr(pk.summa), andel(pk.andel), formatTal(pk.antalGrupper)]] },
             ];
         }
@@ -6316,12 +6316,12 @@ const __mirrorSakligaskal = (() => {
 
 /** Kategorierna i fast ordning (rullistan, tabellerna och årsjämförelsen följer den). */
 const SKAL_KATEGORIER = Object.freeze([
-    Object.freeze({ id: 'marknad', namn: 'Marknad', forklaring: 'Svårrekryterade yrken eller konkurrens från andra arbetsgivare.' }),
-    Object.freeze({ id: 'utbildning', namn: 'Utbildning', forklaring: 'Formell utbildning utöver vad arbetet kräver.' }),
-    Object.freeze({ id: 'erfarenhet', namn: 'Erfarenhet', forklaring: 'Dokumenterad yrkeserfarenhet eller tid i arbetet.' }),
+    Object.freeze({ id: 'marknad', namn: 'Marknad', forklaring: 'Svårrekryterade yrken eller konkurrens från andra arbetsgivare, som organisationen kan visa.' }),
+    Object.freeze({ id: 'utbildning', namn: 'Utbildning', forklaring: 'Formell utbildning som har betydelse för arbetet, utöver den som krävs.' }),
+    Object.freeze({ id: 'erfarenhet', namn: 'Erfarenhet', forklaring: 'Dokumenterad yrkeserfarenhet som har betydelse för arbetet, eller tid i arbetet.' }),
     Object.freeze({ id: 'prestation', namn: 'Prestation och resultat', forklaring: 'Bedömd prestation enligt organisationens lönekriterier.' }),
     Object.freeze({ id: 'overgang', namn: 'Övergång', forklaring: 'Lön som följt med vid byte av tjänst, omorganisation eller verksamhetsövergång.' }),
-    Object.freeze({ id: 'annat', namn: 'Annat sakligt skäl', forklaring: 'Beskriv i kommentaren.' }),
+    Object.freeze({ id: 'annat', namn: 'Annat sakligt skäl', forklaring: 'Till exempel ansvar eller arbetsuppgifternas svårighet. Beskriv i kommentaren.' }),
 ]);
 
 /** Gränserna för ett skäl: belopp i hela kronor per månad, kommentarens längd och antalet skäl per rad. */
@@ -6398,16 +6398,17 @@ function skalPerKategori(rader) {
         if (n) skillnad += n;
         const sett = new Set();
         for (const s of r.skal) {
-            if (!per.has(s.kategori)) per.set(s.kategori, { summa: 0, medSkillnad: 0, grupper: 0 });
+            if (!per.has(s.kategori)) per.set(s.kategori, { summa: 0, medSkillnad: 0, iMed: 0, grupper: 0 });
             const k = per.get(s.kategori);
             k.summa += s.belopp; summa += s.belopp;
-            if (n) { k.medSkillnad += s.belopp; summaMedSkillnad += s.belopp; }
+            if (n) { k.medSkillnad += s.belopp; k.iMed++; summaMedSkillnad += s.belopp; }
             if (!sett.has(s.kategori)) { sett.add(s.kategori); k.grupper++; }
         }
     }
     const kategorier = SKAL_KATEGORIER.filter(k => per.has(k.id)).map(k => {
         const p = per.get(k.id);
-        return { kategori: k.id, namn: k.namn, summa: p.summa, andel: skillnad > 0 ? p.medSkillnad / skillnad : null, antalGrupper: p.grupper };
+        // En kategori som bara finns i rader utan skillnad får ingen andel (inte 0 %).
+        return { kategori: k.id, namn: k.namn, summa: p.summa, andel: skillnad > 0 && p.iMed ? p.medSkillnad / skillnad : null, antalGrupper: p.grupper };
     });
     return { kategorier, antalGrupper: med.length, skillnadKr: skillnad, summa, andel: skillnad > 0 ? summaMedSkillnad / skillnad : null };
 }

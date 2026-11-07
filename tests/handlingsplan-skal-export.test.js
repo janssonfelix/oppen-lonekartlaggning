@@ -50,13 +50,13 @@ describe('rapportmodellen: handlingsplanens avsnitt', () => {
         const tabeller = a.delar.filter(p => p.typ === 'tabell');
         expect(tabeller.length).toBe(3);
         const [, perGrupp, perKat] = tabeller;
-        expect(perGrupp.kolumner.map(k => k.rubrik)).toEqual(['Grupp', 'Antal berörda', 'Skillnad kr/mån', 'Kategori', 'Belopp', 'Andel', 'Kommentar']);
-        expect(perKat.kolumner.map(k => k.rubrik)).toEqual(['Kategori', 'Belopp kr/mån', 'Andel av skillnaden i bedömda grupper', 'Antal grupper']);
+        expect(perGrupp.kolumner.map(k => k.rubrik)).toEqual(['Grupp', 'Antal berörda', 'Medianskillnad (kr/mån)', 'Kategori', 'Belopp (kr/mån)', 'Andel av skillnaden', 'Kommentar']);
+        expect(perKat.kolumner.map(k => k.rubrik)).toEqual(['Kategori', 'Belopp (kr/mån)', 'Andel av skillnaden i grupper med skäl', 'Antal grupper']);
         const rubriker = a.delar.filter(p => p.typ === 'rubrik').map(p => p.text);
         expect(rubriker).toEqual(expect.arrayContaining(['Sakliga skäl per grupp', 'Sammanställning per kategori']));
         const iTabell = a.delar.indexOf(tabeller[0]);
         expect(a.delar.indexOf(perGrupp)).toBeGreaterThan(iTabell);
-        expect(a.delar.some(p => p.typ === 'stycke' && p.stil === 'dampad' && /organisationens bedömning, inte verktygets beräkning/.test(p.text))).toBe(true);
+        expect(a.delar.some(p => p.typ === 'stycke' && p.stil === 'dampad' && /Kategorierna och beloppen är organisationens bedömning\. Verktyget räknar bara om beloppen till andelar av skillnaden\./.test(p.text))).toBe(true);
         // En rad per skäl; gruppen står på första raden.
         const antalSkal = medSkal(w).reduce((t, [, v]) => t + v.skal.length, 0);
         expect(perGrupp.rader).toHaveLength(antalSkal);
@@ -101,7 +101,7 @@ describe('Excel: bladet Sakliga skal och handlingsplanens kolumner', () => {
         await laddaXlsx(w);
         const bok = Object.values(fangaBocker(w, () => w.eval('exportHandlingsplan()')))[0];
         const [rubrik] = bok.split('\n').slice(1);
-        expect(rubrik).toMatch(/Sakliga skäl \(kategori och belopp\).*Förklarad andel \(%\)/);
+        expect(rubrik).toMatch(/Sakliga skäl \(kategori och belopp\).*Förklarad andel av skillnaden \(%\)/);
         const [n, v] = medSkal(w)[0];
         const namn = w.eval('_sakKategorier()').find(k => k.id === v.skal[0].kategori).namn;
         expect(ren(bok).replace(/(\d)\s(?=\d{3}\b)/g, '$1')).toContain(`${namn} ${v.skal[0].belopp} kr`);   // fångsten skriver tal utan tusentalsavgränsare

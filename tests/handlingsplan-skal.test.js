@@ -58,7 +58,7 @@ describe('Handlingsplan: gruppens skillnad per rad', () => {
 });
 
 describe('Handlingsplan: knappen Sakliga skäl och dialogen', () => {
-    it('varje förifylld rad har knappen i kolumnen Sakliga skäl prövade?, med "—" när inga skäl finns', () => {
+    it('varje förifylld rad har knappen i kolumnen Sakliga skäl prövade?, med "Sakliga skäl: inga" när inga skäl finns', () => {
         const w = fonster();
         const r = rader(w);
         expect(r.length).toBeGreaterThan(0);
@@ -66,8 +66,8 @@ describe('Handlingsplan: knappen Sakliga skäl och dialogen', () => {
             const b = knapp(tr);
             expect(b, 'knappen saknas').toBeTruthy();
             expect(tr.cells[4].contains(b)).toBe(true);
-            expect(ren(b.textContent)).toBe('Sakliga skäl —');
-            expect(b.getAttribute('aria-label')).toBe(`Sakliga skäl: ${tr.cells[1].textContent}`);
+            expect(ren(b.textContent)).toBe('Sakliga skäl: inga');
+            expect(b.getAttribute('aria-label')).toBe(`Sakliga skäl, ${tr.cells[1].textContent}: inga`);
             expect(b.hasAttribute('data-noprint')).toBe(true);
         }
     });
@@ -109,11 +109,14 @@ describe('Handlingsplan: knappen Sakliga skäl och dialogen', () => {
         const summa = ren(w.document.getElementById('skal-summa').textContent);
         const pct = v => w.eval(`svPct(${v}, 0)`).replace(/\s/g, ' ');
         const kr = v => w.eval(`svTal(${v}, 0)`).replace(/\s/g, ' ');
-        expect(summa).toBe(`Förklarat ${kr(belopp)} kr (${pct(belopp / skillnad * 100)}) · Återstår ${kr(skillnad - belopp)} kr (${pct((skillnad - belopp) / skillnad * 100)})`);
-        expect(ren(knapp(tr).textContent)).toBe(`Sakliga skäl 1 skäl · ${pct(belopp / skillnad * 100)}`);
+        expect(summa).toBe(`Förklarat av skälen: ${kr(belopp)} kr (${pct(belopp / skillnad * 100)}) · Återstår att förklara: ${kr(skillnad - belopp)} kr (${pct((skillnad - belopp) / skillnad * 100)})`);
+        expect(ren(knapp(tr).textContent)).toBe(`Sakliga skäl (1) · ${pct(belopp / skillnad * 100)} förklarat`);
+        // Sammanfattningen står också i knappens tillgängliga namn, och följer med när den räknas om.
+        expect(knapp(tr).getAttribute('aria-label')).toBe(`Sakliga skäl, ${tr.cells[1].textContent}: 1 skäl, ${pct(belopp / skillnad * 100)} förklarat`);
         // Står kvar efter flikbyte
         w.__renderTabContent('dashboard'); w.__renderTabContent('handlingsplan');
-        expect(ren(knapp(radMedSkillnad(w)).textContent)).toBe(`Sakliga skäl 1 skäl · ${pct(belopp / skillnad * 100)}`);
+        expect(ren(knapp(radMedSkillnad(w)).textContent)).toBe(`Sakliga skäl (1) · ${pct(belopp / skillnad * 100)} förklarat`);
+        expect(knapp(radMedSkillnad(w)).getAttribute('aria-label')).toMatch(/: 1 skäl, .* förklarat$/);
     });
     it('ett ogiltigt belopp lagras inte och fältet markeras; Ta bort tar bort skälet', () => {
         const w = fonster();
@@ -131,6 +134,24 @@ describe('Handlingsplan: knappen Sakliga skäl och dialogen', () => {
         expect(skalRader(w)).toHaveLength(0);
         expect(w.__state.handlingsplan[nyckel]).toBeUndefined();
     });
+    it('ett tomt eller ogiltigt belopp ger en synlig rad om att skälet sparas först när beloppet är giltigt', () => {
+        const w = fonster();
+        oppna(w, radMedSkillnad(w));
+        const fel = () => w.document.getElementById('skal-belopp-fel');
+        const text = 'Beloppet ska vara ett heltal mellan 0 och 200 000 kr. Skälet sparas när beloppet är giltigt.';
+        w.document.getElementById('skal-lagg-till').click();
+        const r = skalRader(w)[0];
+        expect(fel().hidden).toBe(false);
+        expect(ren(fel().textContent)).toBe(text);
+        expect(r.querySelector('input.skal-belopp').getAttribute('aria-describedby')).toBe('skal-belopp-fel');
+        fyll(w, r.querySelector('input.skal-belopp'), '300');
+        expect(fel().hidden).toBe(true);
+        expect(r.querySelector('input.skal-belopp').hasAttribute('aria-describedby')).toBe(false);
+        fyll(w, r.querySelector('input.skal-belopp'), '250000');
+        expect(fel().hidden).toBe(false);
+        fyll(w, r.querySelector('input.skal-belopp'), '');
+        expect(fel().hidden).toBe(false);
+    });
     it('högst 8 skäl: knappen Lägg till skäl blir inaktiv', () => {
         const w = fonster();
         oppna(w, radMedSkillnad(w));
@@ -146,16 +167,21 @@ describe('Handlingsplan: knappen Sakliga skäl och dialogen', () => {
         const skillnad = skillnader[nycklar.indexOf(nyckel)];
         oppna(w, tr);
         const markera = () => w.document.getElementById('skal-markera');
+        const kr = v => w.eval(`svTal(${v}, 0)`).replace(/\s/g, ' ');
         laggTill(w, 'marknad', skillnad - 1);
         expect(markera()).toBeNull();
         expect(w.document.getElementById('skal-overstiger')).toBeNull();
         fyll(w, skalRader(w)[0].querySelector('input.skal-belopp'), String(skillnad));
         expect(markera()).toBeTruthy();
-        expect(ren(markera().textContent)).toBe('Markera som sakligt förklarad');
+        expect(ren(markera().textContent)).toBe('Välj Ja, sakligt skäl finns');
+        expect(ren(w.document.querySelector('.skal-forslag').textContent)).toContain('Beloppen du har angett täcker hela skillnaden. Bedömer organisationen att skälen är sakliga kan du välja Ja, sakligt skäl finns.');
         expect(w.__state.handlingsplan[nyckel].sakligt).toBe('');   // inte automatiskt
+        // Överstiger skälen skillnaden visas varningen med beloppen, och inget förslag.
         laggTill(w, 'erfarenhet', 100);
-        expect(ren(w.document.getElementById('skal-overstiger').textContent)).toBe('Skälen överstiger skillnaden.');
-        expect(ren(w.document.getElementById('skal-summa').textContent)).toMatch(/Återstår 0 kr \(0 %\)$/);
+        expect(ren(w.document.getElementById('skal-overstiger').textContent)).toBe(`Skälen är tillsammans större än skillnaden (${kr(skillnad + 100)} kr mot ${kr(skillnad)} kr). Ett belopp kan vara för högt, eller så räknar två skäl samma sak. Kontrollera beloppen.`);
+        expect(ren(w.document.getElementById('skal-summa').textContent)).toMatch(/Återstår att förklara: 0 kr \(0 %\)$/);
+        expect(markera()).toBeNull();
+        skalRader(w)[1].querySelector('[data-skal-ta-bort]').click();
         markera().click();
         expect(w.__state.handlingsplan[nyckel].sakligt).toBe('Ja, sakligt skäl finns');
         expect(markera()).toBeNull();
@@ -167,8 +193,8 @@ describe('Handlingsplan: knappen Sakliga skäl och dialogen', () => {
         oppna(w, tr);
         expect(ren(modal(w).textContent)).toContain('Medianskillnaden redovisas inte: ett kön i gruppen har färre än 10 personer.');
         laggTill(w, 'marknad', 400);
-        expect(ren(w.document.getElementById('skal-summa').textContent)).toBe('Förklarat 400 kr');
-        expect(ren(knapp(tr).textContent)).toBe('Sakliga skäl 1 skäl');
+        expect(ren(w.document.getElementById('skal-summa').textContent)).toBe('Förklarat av skälen: 400 kr');
+        expect(ren(knapp(tr).textContent)).toBe('Sakliga skäl (1)');
     });
     it('ett kandidatpar räknar mot parets skillnad; en egen rad visar bara belopp', () => {
         const w = fonster();
@@ -180,10 +206,11 @@ describe('Handlingsplan: knappen Sakliga skäl och dialogen', () => {
         const egenRad = rader(w).find(r => knapp(r).dataset.hpSkal === egen);
         oppna(w, egenRad);
         expect(ren(modal(w).textContent)).toContain('En egen rad har ingen medianskillnad');
+        expect(ren(modal(w).textContent)).toContain('Skälen på en egen rad följer inte med i årsbokslutet.');
         laggTill(w, 'overgang', 700);
-        expect(ren(w.document.getElementById('skal-summa').textContent)).toBe('Förklarat 700 kr');
+        expect(ren(w.document.getElementById('skal-summa').textContent)).toBe('Förklarat av skälen: 700 kr');
         expect(w.document.getElementById('skal-markera')).toBeNull();
-        expect(ren(knapp(rader(w).find(r => knapp(r).dataset.hpSkal === egen)).textContent)).toBe('Sakliga skäl 1 skäl');
+        expect(ren(knapp(rader(w).find(r => knapp(r).dataset.hpSkal === egen)).textContent)).toBe('Sakliga skäl (1)');
     });
     it('en kommentar som liknar ett personnummer varnar men står kvar', () => {
         const w = fonster();
@@ -206,10 +233,11 @@ describe('Handlingsplan: Att göra-punkten för rader utan val', () => {
         const w = fonster();
         const punkt = () => w.eval('buildActionChecklist()').find(p => p.id === 'hp-sakliga-skal');
         const n = rader(w).length;
-        expect(punkt()).toMatchObject({ kategori: 'Handlingsplan', prioritet: 'medel', tab: 'handlingsplan', titel: `${n} ${n === 1 ? 'grupp saknar' : 'grupper saknar'} sakliga skäl eller åtgärd` });
+        const titel = m => `${m} ${m === 1 ? 'grupp i handlingsplanen är inte bedömd' : 'grupper i handlingsplanen är inte bedömda'} än`;
+        expect(punkt()).toMatchObject({ kategori: 'Handlingsplan', prioritet: 'medel', tab: 'handlingsplan', titel: titel(n) });
         const [forsta, ...ovriga] = rader(w);
         fyll(w, forsta.cells[4].querySelector('select'), 'Pågår');
-        if (ovriga.length) expect(punkt().titel).toBe(`${n - 1} ${n - 1 === 1 ? 'grupp saknar' : 'grupper saknar'} sakliga skäl eller åtgärd`);
+        if (ovriga.length) expect(punkt().titel).toBe(titel(n - 1));
         for (const tr of ovriga) fyll(w, tr.cells[4].querySelector('select'), 'Nej, åtgärd behövs');
         expect(punkt()).toBeUndefined();
         w.eval('_hpLaggTillEgen()');   // en egen rad utan val räknas inte: den är ingen grupp ur underlaget
@@ -266,12 +294,12 @@ describe('Dossiererna: läs-raden pekar på bedömningen i handlingsplanen', () 
         return { w, nyckel, aid, bas, grupp: tr.cells[1].textContent, pct: w.eval(`svPct(${Math.round(skillnad / 2) / skillnad * 100}, 0)`).replace(/\s/g, ' ') };
     };
     it('gruppdossiern: "Bedömning i handlingsplanen: 2 skäl, NN % av skillnaden förklarad", produktgränsen står kvar', () => {
-        const { w, aid, bas, pct } = medSkal();
+        const { w, aid, bas, pct, grupp } = medSkal();
         w.eval(`openGruppdossier(${JSON.stringify(`${aid}|${bas}`)})`);
         const d = w.document.getElementById('dossier-modal');
         const text = ren(d.textContent);
-        expect(text).toContain(`Bedömning i handlingsplanen: 2 skäl, ${pct} av skillnaden förklarad.`);
-        expect(text).toContain('Dossiern dokumenterar inte sakliga skäl.');
+        expect(text).toContain(`${grupp} (kandidatpar): Bedömning i handlingsplanen: 2 skäl, ${pct} av skillnaden förklarad.`);
+        expect(text).toContain('Dossiern dokumenterar inte sakliga skäl. Skälen dokumenterar du i Handlingsplan.');
         expect(d.querySelector('[data-hp-ga-till]')).toBeTruthy();
     });
     it('länken stänger dossiern och visar raden i Handlingsplan med fokus på knappen Sakliga skäl', () => {
@@ -288,7 +316,7 @@ describe('Dossiererna: läs-raden pekar på bedömningen i handlingsplanen', () 
         w.eval(`openBasdossier(${JSON.stringify(bas)})`);
         const text = ren(w.document.getElementById('basdossier-modal').textContent);
         expect(text).toContain(`${grupp} (kandidatpar): Bedömning i handlingsplanen: 2 skäl, ${pct} av skillnaden förklarad.`);
-        expect(text).toContain('Dossiern dokumenterar inte sakliga skäl.');
+        expect(text).toContain('Dossiern dokumenterar inte sakliga skäl. Skälen dokumenterar du i Handlingsplan.');
         // En grupp som inte finns i handlingsplanen: ingen läs-rad.
         const utan = w.eval(`gruppdossierCandidates().map(g => g.key).find(k => !_handlingsplanSeedRows().nycklar.some(n => n.split('|')[1] === k.split('|')[0] && n.split('|')[2] === k.split('|')[1]))`);
         w.eval(`closeBasdossier(); openGruppdossier(${JSON.stringify(utan)})`);
@@ -308,6 +336,7 @@ describe('ordlistan och Om verktyget', () => {
         const w = createAppWindow();
         const post = w.eval('GLOSSARY').find(g => g.term === 'Sakliga skäl');
         for (const k of w.eval('_sakKategorier()')) expect(post.long).toContain(k.namn);
+        expect(post.long).toContain('Lagen räknar inte upp några skäl. Kategorierna är verktygets indelning.');
         const om = w.eval('Object.values(INFO_SECTIONS).map(f => f()).join(" ")').replace(/\s+/g, ' ');
         expect(om).toMatch(/sakliga skäl per grupp/i);
     });

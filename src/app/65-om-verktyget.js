@@ -36,7 +36,7 @@ const INFO_SECTIONS = {
             <li>Jämför löneläget mot organisationens lönepolitiska ställningstagande och mot jämförelsestatistiken</li>
             <li>Ordnar yrkesgrupperna efter var en åtgärd gör störst nytta och räknar vad det kostar; låter dig pröva hur en lönepott kan fördelas</li>
             <li>Ger en checklista för att granska regler och praxis, där du skriver in bedömningen och resonemanget</li>
-            <li>Låter dig dokumentera sakliga skäl per grupp i Handlingsplan, med kategori och belopp, och räknar ihop hur stor del av löneskillnaden de förklarar. Skälen följer med i rapporten, i Excel och i årsbokslutet, så att du kan jämföra med förra året</li>
+            <li>Låter dig dokumentera sakliga skäl per grupp i Handlingsplan, med kategori och belopp, räknar ihop hur stor del av löneskillnaden de förklarar och tar med skälen i rapporten, i Excel och i årsbokslutet</li>
             <li>Skriver ett redigerbart Word-utkast av dokumentationen med verktygets fynd ifyllda och dina bedömningar markerade som fält att fylla i, samt Excel, PDF, protokoll för gemensam lönebedömning och underlag till handlingsplanen</li>
             <li>Skyddar små grupper: lönemått för grupper under minsta gruppstorlek lämnar aldrig verktyget</li>
         </ul>

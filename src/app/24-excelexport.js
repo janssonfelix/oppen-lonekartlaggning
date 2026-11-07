@@ -26,14 +26,14 @@ function _excelSkalRader() {
     if (!grupper.length) return null;
     const pct = v => (v == null ? '' : Math.round(v * 1000) / 10);
     /** @type {any[][]} */
-    const rows = [['Sakliga skäl per grupp', 'organisationens bedömning; beloppen i kr/mån av gruppens medianskillnad'],
-        ['Grupp', 'Underlag', 'Antal berörda', 'Skillnad (kr/mån)', 'Kategori', 'Belopp (kr/mån)', 'Andel av skillnaden (%)', 'Kommentar']];
+    const rows = [['Sakliga skäl per grupp', 'Tabellerna visar de sakliga skäl som organisationen har angett per grupp. Beloppet är den del av gruppens medianskillnad, i kronor per månad, som skälet förklarar.'],
+        ['Grupp', 'Underlag', 'Antal berörda', 'Medianskillnad (kr/mån)', 'Kategori', 'Belopp (kr/mån)', 'Andel av skillnaden (%)', 'Kommentar']];
     for (const g of grupper) for (const s of g.sammanstallning.skal)
         rows.push([g.grupp, g.underlag, g.antal == null ? '' : g.antal, g.skillnadKr == null ? '' : g.skillnadKr, s.namn, s.belopp, pct(s.andel), s.kommentar || '']);
-    rows.push([], ['Sammanställning per kategori'], ['Kategori', 'Belopp (kr/mån)', 'Andel av skillnaden i bedömda grupper (%)', 'Antal grupper']);
+    rows.push([], ['Sammanställning per kategori'], ['Kategori', 'Belopp (kr/mån)', 'Andel av skillnaden i grupper med skäl (%)', 'Antal grupper']);
     for (const k of pk.kategorier) rows.push([k.namn, k.summa, pct(k.andel), k.antalGrupper]);
     rows.push(['Totalt', pk.summa, pct(pk.andel), pk.antalGrupper], [],
-        ['Kategorierna, beloppen och andelarna är organisationens bedömning, inte verktygets beräkning. Andelen per kategori räknas mot den samlade medianskillnaden i de grupper som har skäl; en grupp utan redovisad skillnad räknas bara med belopp.']);
+        ['Kategorierna och beloppen är organisationens bedömning. Verktyget räknar bara om beloppen till andelar av skillnaden. Andelen per kategori räknas mot den samlade medianskillnaden i de grupper som har skäl; en grupp utan redovisad skillnad räknas bara med belopp.']);
     return rows;
 }
 

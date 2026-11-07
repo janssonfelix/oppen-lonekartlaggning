@@ -207,7 +207,7 @@ function buildActionChecklist({ endastGrupper = false } = {}) {
                 const utan = seed.rows.filter((r, i) => !_hpArEgen(seed.nycklar[i]) && !r[3]).length;
                 if (utan) items.push({
                     id: 'hp-sakliga-skal', kategori: 'Handlingsplan', prioritet: 'medel',
-                    titel: `${utan} ${utan === 1 ? 'grupp saknar' : 'grupper saknar'} sakliga skäl eller åtgärd`,
+                    titel: `${utan} ${utan === 1 ? 'grupp i handlingsplanen är inte bedömd' : 'grupper i handlingsplanen är inte bedömda'} än`,
                     detalj: 'Välj för varje rad i handlingsplanen om sakliga skäl finns eller om en åtgärd behövs. Skälen anger du med kategori och belopp under knappen Sakliga skäl på raden.',
                     tab: 'handlingsplan', källa: 'Handlingsplan'
                 });
