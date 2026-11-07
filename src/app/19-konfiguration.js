@@ -242,7 +242,9 @@ function applyConfigSnapshot(cfg) {
             return { n, status: a.status || '', note: a.note || '' };
         });
     }
-    if (cfg.handlingsplan != null) tmp.handlingsplan = _hpValideraKonfiguration(cfg.handlingsplan);
+    // Sakliga skäl som inte går att läsa faller bort med en varning (läggs till varningarna nedan).
+    tmp.hpVarningar = [];
+    if (cfg.handlingsplan != null) tmp.handlingsplan = _hpValideraKonfiguration(cfg.handlingsplan, tmp.hpVarningar);
     if (cfg.actionChecklistDone != null) {
         if (!Array.isArray(cfg.actionChecklistDone)) throw new Error('actionChecklistDone måste vara en array.');
         if (!cfg.actionChecklistDone.every(id => typeof id === 'string')) throw new Error('actionChecklistDone får endast innehålla strängar.');
@@ -276,7 +278,7 @@ function applyConfigSnapshot(cfg) {
     if (tmp.costSettings)      state.costSettings     = tmp.costSettings;
     // Frågar vid sänkning under standard; nekad bekräftelse behåller värdet och resten läses in.
     // Omritningen görs en gång, sist (se nedan), eftersom mer än tröskeln ändras här.
-    const varningar = [];
+    const varningar = [...tmp.hpVarningar];
     if (cfg.rapportTabeller != null) {
         if (!Array.isArray(cfg.rapportTabeller)) throw new Error('rapportTabeller måste vara en array.');
         const giltiga = cfg.rapportTabeller.map(t => _trValidera(t)).filter(Boolean);

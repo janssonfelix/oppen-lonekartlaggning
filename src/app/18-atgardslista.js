@@ -199,6 +199,21 @@ function buildActionChecklist({ endastGrupper = false } = {}) {
             }
         } catch (e) { rapporteraFel('Att göra: EU-direktivets mått', e); }
 
+        // === 5. Handlingsplan: förifyllda rader där rullistan Sakliga skäl prövade? är tom (56-handlingsplan.js) ===
+        // En egen rad räknas inte: den är ingen grupp ur underlaget. Punkten försvinner när varje rad har ett val.
+        try {
+            if (typeof _handlingsplanSeedRows === 'function') {
+                const seed = _handlingsplanSeedRows();
+                const utan = seed.rows.filter((r, i) => !_hpArEgen(seed.nycklar[i]) && !r[3]).length;
+                if (utan) items.push({
+                    id: 'hp-sakliga-skal', kategori: 'Handlingsplan', prioritet: 'medel',
+                    titel: `${utan} ${utan === 1 ? 'grupp saknar' : 'grupper saknar'} sakliga skäl eller åtgärd`,
+                    detalj: 'Välj för varje rad i handlingsplanen om sakliga skäl finns eller om en åtgärd behövs. Skälen anger du med kategori och belopp under knappen Sakliga skäl på raden.',
+                    tab: 'handlingsplan', källa: 'Handlingsplan'
+                });
+            }
+        } catch (e) { rapporteraFel('Att göra: handlingsplanen', e); }
+
         // === 6. Livscykelanalys — växande gap ===
         try {
             const life = (typeof runLifecycleRegression === 'function') ? runLifecycleRegression(_lifecycleFixBas) : null;

@@ -13430,7 +13430,7 @@ document.addEventListener('keydown', e => {
  *   dataAudit?: any, statistikHasP10?: boolean, statistikHasP90?: boolean, statistikHasKon?: boolean, _interntFel?: any[],
  *   _actionChecklistDone?: Set<string>, _lastStructureFile?: File|null, _lifecycleCache?: any
  *   flerKolumner: {[tabell: string]: boolean},
- *   handlingsplan: {[nyckel: string]: {sakligt: string, ansvarig: string, tidsplan: string, status: string, egen?: boolean, atgard?: string, grupp?: string}},
+ *   handlingsplan: {[nyckel: string]: {sakligt: string, ansvarig: string, tidsplan: string, status: string, egen?: boolean, atgard?: string, grupp?: string, skal?: {kategori: string, belopp: number, kommentar: string}[]}},
  * }} Fälten med `?` sätts först vid inläsning (32-filinlasning.js, 29-organisationspaket.js m.fl.) och nollas av 26-rensning.js.
  */
 const state = {
@@ -13515,7 +13515,7 @@ const state = {
     _dataHeaders: [],   // rubriker från senast inlästa strukturfil (för guiden)
     // Breda tabeller: true när användaren valt Fler kolumner (05-tabeller-och-lankar.js). Bara i minnet, grundvyn som standard.
     flerKolumner: {},
-    // Handlingsplanens ifyllda fält per förifylld rad (56-handlingsplan.js): { [nyckel]: { sakligt, ansvarig, tidsplan, status } }.
+    // Handlingsplanens ifyllda fält per förifylld rad (56-handlingsplan.js): { [nyckel]: { sakligt, ansvarig, tidsplan, status, skal? } }; skal: de sakliga skälen (57-sakliga-skal.js).
     // Bara i minnet; följer med i konfigurationsfilen och exporterna, nollas av Rensa all data.
     handlingsplan: {}
 };
@@ -15292,6 +15292,21 @@ function buildActionChecklist({ endastGrupper = false } = {}) {
             }
         } catch (e) { rapporteraFel('Att göra: EU-direktivets mått', e); }
 
+        // === 5. Handlingsplan: förifyllda rader där rullistan Sakliga skäl prövade? är tom (56-handlingsplan.js) ===
+        // En egen rad räknas inte: den är ingen grupp ur underlaget. Punkten försvinner när varje rad har ett val.
+        try {
+            if (typeof _handlingsplanSeedRows === 'function') {
+                const seed = _handlingsplanSeedRows();
+                const utan = seed.rows.filter((r, i) => !_hpArEgen(seed.nycklar[i]) && !r[3]).length;
+                if (utan) items.push({
+                    id: 'hp-sakliga-skal', kategori: 'Handlingsplan', prioritet: 'medel',
+                    titel: `${utan} ${utan === 1 ? 'grupp saknar' : 'grupper saknar'} sakliga skäl eller åtgärd`,
+                    detalj: 'Välj för varje rad i handlingsplanen om sakliga skäl finns eller om en åtgärd behövs. Skälen anger du med kategori och belopp under knappen Sakliga skäl på raden.',
+                    tab: 'handlingsplan', källa: 'Handlingsplan'
+                });
+            }
+        } catch (e) { rapporteraFel('Att göra: handlingsplanen', e); }
+
         // === 6. Livscykelanalys — växande gap ===
         try {
             const life = (typeof runLifecycleRegression === 'function') ? runLifecycleRegression(_lifecycleFixBas) : null;
@@ -15726,7 +15741,9 @@ function applyConfigSnapshot(cfg) {
             return { n, status: a.status || '', note: a.note || '' };
         });
     }
-    if (cfg.handlingsplan != null) tmp.handlingsplan = _hpValideraKonfiguration(cfg.handlingsplan);
+    // Sakliga skäl som inte går att läsa faller bort med en varning (läggs till varningarna nedan).
+    tmp.hpVarningar = [];
+    if (cfg.handlingsplan != null) tmp.handlingsplan = _hpValideraKonfiguration(cfg.handlingsplan, tmp.hpVarningar);
     if (cfg.actionChecklistDone != null) {
         if (!Array.isArray(cfg.actionChecklistDone)) throw new Error('actionChecklistDone måste vara en array.');
         if (!cfg.actionChecklistDone.every(id => typeof id === 'string')) throw new Error('actionChecklistDone får endast innehålla strängar.');
@@ -15760,7 +15777,7 @@ function applyConfigSnapshot(cfg) {
     if (tmp.costSettings)      state.costSettings     = tmp.costSettings;
     // Frågar vid sänkning under standard; nekad bekräftelse behåller värdet och resten läses in.
     // Omritningen görs en gång, sist (se nedan), eftersom mer än tröskeln ändras här.
-    const varningar = [];
+    const varningar = [...tmp.hpVarningar];
     if (cfg.rapportTabeller != null) {
         if (!Array.isArray(cfg.rapportTabeller)) throw new Error('rapportTabeller måste vara en array.');
         const giltiga = cfg.rapportTabeller.map(t => _trValidera(t)).filter(Boolean);
@@ -27806,21 +27823,51 @@ function _hpGrupp(aid, namn, bas) {
 function _hpNyckel(kalla, ...delar) { return [kalla, ...delar.map(d => d == null ? '' : String(d))].join('|'); }
 
 /** De ifyllda värdena för en rad (tomma strängar när inget är ifyllt). Raden kan ha försvunnit ur underlaget;
- *  värdena ligger då kvar i minnet tills Rensa all data. */
+ *  värdena ligger då kvar i minnet tills Rensa all data. De sakliga skälen (`skal`, src/lib/sakligaskal.js) står med
+ *  bara när raden har minst ett, som en kopia. */
 function _hpVarden(nyckel) {
     const v = (state.handlingsplan && state.handlingsplan[nyckel]) || {};
     return { sakligt: v.sakligt || '', ansvarig: v.ansvarig || '', tidsplan: v.tidsplan || '', status: v.status || '',
-             ...(_hpArEgen(nyckel) ? { egen: true, atgard: v.atgard || '', grupp: v.grupp || '' } : {}) };
+             ...(_hpArEgen(nyckel) ? { egen: true, atgard: v.atgard || '', grupp: v.grupp || '' } : {}),
+             ...(Array.isArray(v.skal) && v.skal.length ? { skal: v.skal.map(x => ({ ...x })) } : {}) };
 }
+/** Raden har något ifyllt: ett av fälten eller minst ett sakligt skäl. */
+const _hpHarIfyllt = rad => HP_FALT.some(f => rad[f]) || !!(rad.skal && rad.skal.length);
 
 function _hpSatt(nyckel, falt, varde) {
     const egen = _hpArEgen(nyckel);
     if (!nyckel || !(HP_FALT.includes(falt) || (egen && HP_EGEN_FALT.includes(falt)))) return;
     if (!state.handlingsplan) state.handlingsplan = {};
     const rad = { ..._hpVarden(nyckel), [falt]: String(varde ?? '').slice(0, HP_MAX_TEXT) };
-    // En förifylld rad glöms när alla fält är tomma; en egen rad finns tills den tas bort.
-    if (!egen && HP_FALT.every(f => !rad[f])) delete state.handlingsplan[nyckel];
+    // En förifylld rad glöms när alla fält är tomma och den saknar skäl; en egen rad finns tills den tas bort.
+    if (!egen && !_hpHarIfyllt(rad)) delete state.handlingsplan[nyckel];
     else state.handlingsplan[nyckel] = rad;
+}
+
+/**
+ * Sätter radens sakliga skäl. Listan prövas som i konfigurationsfilen (_sakValidera): ett ogiltigt skäl lagras inte.
+ * Svarar med antalet som inte lagrades.
+ * @param {string} nyckel
+ * @param {any[]} lista
+ */
+function _hpSattSkal(nyckel, lista) {
+    if (!nyckel) return 0;
+    const { skal, bort } = _sakValidera(lista);
+    if (!state.handlingsplan) state.handlingsplan = {};
+    const rad = _hpVarden(nyckel);
+    delete rad.skal;
+    if (skal.length) rad.skal = skal;
+    if (!_hpArEgen(nyckel) && !_hpHarIfyllt(rad)) delete state.handlingsplan[nyckel];
+    else state.handlingsplan[nyckel] = rad;
+    return bort;
+}
+
+/**
+ * Gruppens medianskillnad i kronor per månad för en rad ur Prioritering: mäns median minus kvinnors, ur samma
+ * underlag som raden. null när ett kön har färre än minsta gruppstorlek (medianerna redovisas inte då).
+ */
+function _hpPrioSkillnad(i) {
+    return i && i.medKv > 0 && i.medMa > 0 && i.kvN >= kInstalld() && i.maN >= kInstalld() ? Math.round(i.medMa - i.medKv) : null;
 }
 
 /** Lägger till en egen rad sist i tabellen och sätter fokus i dess första fält. */
@@ -27845,14 +27892,16 @@ function _hpTaBortEgen(nyckel) {
 function _handlingsplanSeedRows({ baraEgna = false } = {}) {
     const months = (state.costSettings && state.costSettings.months) || 12;
     const poFactor = 1 + ((state.costSettings && state.costSettings.poPct) || 0) / 100;
-    const rows = [], nycklar = [];
+    const rows = [], nycklar = [], skillnader = [];
     let prioCount = 0, lvCount = 0, parUtelamnade = 0;
     // En rad: [åtgärd, grupp, underlag, sakligt skäl, kostnad, ansvarig, tidsplan, status, antal berörda] — med det som
     // fyllts i på fliken. Antal berörda är gruppens antal (för ett kandidatpar det kvinnodominerade yrkets), null för en egen rad.
-    const lagg = (nyckel, atgard, grupp, underlag, kostnad, antal) => {
+    // skillnader: gruppens medianskillnad i kr/mån per rad (de sakliga skälens andelar räknas mot den), null för en egen rad.
+    const lagg = (nyckel, atgard, grupp, underlag, kostnad, antal, skillnad) => {
         const v = _hpVarden(nyckel);
         rows.push([atgard, grupp, underlag, v.sakligt, kostnad, v.ansvarig, v.tidsplan, v.status, antal == null ? null : antal]);
         nycklar.push(nyckel);
+        skillnader.push(skillnad == null ? null : skillnad);
     };
     if (!baraEgna) try {
         const ref = (typeof _selectedPrioReference === 'function') ? _selectedPrioReference() : 'stallningstagande';
@@ -27860,7 +27909,7 @@ function _handlingsplanSeedRows({ baraEgna = false } = {}) {
         if (hasRef) {
             const thr = (state.prioConfig && state.prioConfig.atgardThreshold != null) ? state.prioConfig.atgardThreshold : -5;
             computePrioritization(ref).filter(i => i.diffPct < thr).forEach(i => {
-                lagg(_hpNyckel('prio', i.aid || i.yrke, i.bas), 'Granska löneläge och väg mot sakliga skäl', _hpGrupp(i.aid, i.yrke, i.bas), HP_UNDERLAG_PRIO, Math.round(i.annualGapTotal), i.n);
+                lagg(_hpNyckel('prio', i.aid || i.yrke, i.bas), 'Granska löneläge och väg mot sakliga skäl', _hpGrupp(i.aid, i.yrke, i.bas), HP_UNDERLAG_PRIO, Math.round(i.annualGapTotal), i.n, _hpPrioSkillnad(i));
                 prioCount++;
             });
         }
@@ -27873,7 +27922,7 @@ function _handlingsplanSeedRows({ baraEgna = false } = {}) {
             parUtelamnade = utelamnade;
             par.forEach(p => {
                 const arsKostnad = Math.round(Math.abs(p.gapKr) * (p.kvN || 1) * months * poFactor);
-                lagg(_hpNyckel('par', p.kvAid, p.kvBas, p.maAid, p.maBas), 'Granska likvärdigt arbete (kvinnodominerat yrke)', _hpGrupp(p.kvAid, p.kvLabel, p.kvBas), HP_UNDERLAG_PAR, arsKostnad, p.kvN);
+                lagg(_hpNyckel('par', p.kvAid, p.kvBas, p.maAid, p.maBas), 'Granska likvärdigt arbete (kvinnodominerat yrke)', _hpGrupp(p.kvAid, p.kvLabel, p.kvBas), HP_UNDERLAG_PAR, arsKostnad, p.kvN, isFinite(p.gapKr) ? Math.round(p.gapKr) : null);
                 lvCount++;
             });
         }
@@ -27884,9 +27933,10 @@ function _handlingsplanSeedRows({ baraEgna = false } = {}) {
         const v = _hpVarden(nyckel);
         rows.push([v.atgard || '', v.grupp || '', HP_UNDERLAG_EGEN, v.sakligt, null, v.ansvarig, v.tidsplan, v.status, null]);
         nycklar.push(nyckel);
+        skillnader.push(null);
         egenCount++;
     });
-    return { rows, nycklar, prioCount, lvCount, egenCount, parUtelamnade, parNot: _parUtelamnadeNot(parUtelamnade) };
+    return { rows, nycklar, skillnader, prioCount, lvCount, egenCount, parUtelamnade, parNot: _parUtelamnadeNot(parUtelamnade) };
 }
 
 // Kolumnen Underlag: raderna bär redan sin källa. Äldre texter (sparade utdrag) översätts till samma ord.
@@ -27909,6 +27959,19 @@ function _hpUppdateraVarning() {
         if (liknar) { el.setAttribute('aria-describedby', 'handlingsplan-varning'); traff++; } else el.removeAttribute('aria-describedby');
     });
     varning.hidden = !traff;
+}
+
+/** Sammanfattningen på knappen Sakliga skäl: "—" utan skäl, annars "2 skäl · 65 %" (andelen bara mot en skillnad över 0). */
+function _hpSkalSammanfattning(nyckel, skillnadKr) {
+    const sk = _hpVarden(nyckel).skal;
+    if (!sk || !sk.length) return '—';
+    const s = _sakSammanstallning(sk, skillnadKr);
+    return `${s.antal} skäl${s.forklaradAndel != null ? ` · ${svPct(s.forklaradAndel * 100, 0)}` : ''}`;
+}
+/** Knappen som öppnar dialogen med radens sakliga skäl (57-sakliga-skal.js). Syns inte på utskriften. */
+function _hpSkalKnapp(nyckel, grupp, skillnadKr) {
+    return `<button type="button" class="btn-table-tool hp-skal" data-hp-skal="${esc(nyckel)}" data-hp-skillnad="${skillnadKr == null ? '' : esc(String(skillnadKr))}" data-noprint aria-label="${esc(`Sakliga skäl: ${grupp}`)}">`
+        + `Sakliga skäl <span class="hp-skal-sammanfattning">${esc(_hpSkalSammanfattning(nyckel, skillnadKr))}</span></button>`;
 }
 
 // #UX Renderar de förifyllda raderna direkt i skärm-mallen, med fält för sakligt skäl, ansvarig, tidsplan och status,
@@ -27935,7 +27998,7 @@ function renderHandlingsplanSeed() {
               + `<td>${esc(r[2])} <button type="button" class="btn-table-tool hp-ta-bort" data-hp-ta-bort="${esc(n)}" data-noprint aria-label="Ta bort den egna raden">Ta bort</button></td>`
             : `<td>${esc(r[0])}</td><td>${esc(g)}</td>${antal}<td>${esc(r[2])}</td>`;
         return `<tr class="handlingsplan-seeded${egen ? ' handlingsplan-egen' : ''}">${forsta}`
-            + `<td>${lista(`hp-${i}-sakligt`, n, 'sakligt', r[3], HP_SAKLIGT, `Sakliga skäl prövade?: ${g}`)}</td>`
+            + `<td>${lista(`hp-${i}-sakligt`, n, 'sakligt', r[3], HP_SAKLIGT, `Sakliga skäl prövade?: ${g}`)} ${_hpSkalKnapp(n, g, seed.skillnader[i])}</td>`
             + `<td class="t-hoger">${esc(fmtKr(r[4]))}</td>`
             + `<td>${text(`hp-${i}-ansvarig`, n, 'ansvarig', r[5], 'Roll, t.ex. HR-chef', `Ansvarig: ${g}`)}</td>`
             + `<td>${text(`hp-${i}-tidsplan`, n, 'tidsplan', r[6], 'T.ex. lönerevisionen nästa år', `Tidsplan: ${g}`)}</td>`
@@ -27970,26 +28033,36 @@ document.getElementById('handlingsplan-tbody')?.addEventListener('click', e => {
 });
 document.getElementById('btn-hp-lagg-till')?.addEventListener('click', () => _hpLaggTillEgen());
 
-/** Det ifyllda i konfigurationsfilen: en post per rad med något ifyllt. */
+/** Det ifyllda i konfigurationsfilen: en post per rad med något ifyllt (också bara sakliga skäl). */
 function _hpForKonfiguration() {
     return Object.keys(state.handlingsplan || {}).map(nyckel => ({ nyckel, ..._hpVarden(nyckel) }))
-        .filter(r => r.egen || HP_FALT.some(f => r[f]));
+        .filter(r => r.egen || _hpHarIfyllt(r));
 }
-/** Prövar konfigurationsfilens poster; kastar vid fel form. Okända val i rullistorna läses som tomma. */
-function _hpValideraKonfiguration(lista) {
+/**
+ * Prövar konfigurationsfilens poster; kastar vid fel form. Okända val i rullistorna läses som tomma. Sakliga skäl som
+ * inte går att läsa (_sakValidera) faller bort, och antalet läggs som en varning i `varningar` när listan ges.
+ * @param {any} lista
+ * @param {string[]} [varningar]
+ */
+function _hpValideraKonfiguration(lista, varningar) {
     if (!Array.isArray(lista)) throw new Error('handlingsplan måste vara en array.');
     /** @type {{[nyckel: string]: any}} */ const ut = {};
+    let skalBort = 0;
     lista.forEach((r, i) => {
         if (!r || typeof r !== 'object') throw new Error(`handlingsplan[${i}] är inte ett objekt.`);
         if (typeof r.nyckel !== 'string' || !r.nyckel || r.nyckel.length > 300) throw new Error(`handlingsplan[${i}].nyckel måste vara en sträng (högst 300 tecken).`);
         const egen = _hpArEgen(r.nyckel);
         [...HP_FALT, ...(egen ? HP_EGEN_FALT : [])].forEach(f => { if (r[f] != null && typeof r[f] !== 'string') throw new Error(`handlingsplan[${i}].${f} måste vara en sträng.`); });
         const giltig = (v, alt) => alt.some(([a]) => a === v) ? v : '';
-        const rad = { sakligt: giltig(r.sakligt || '', HP_SAKLIGT), ansvarig: String(r.ansvarig || '').slice(0, HP_MAX_TEXT),
+        /** @type {any} */ const rad = { sakligt: giltig(r.sakligt || '', HP_SAKLIGT), ansvarig: String(r.ansvarig || '').slice(0, HP_MAX_TEXT),
             tidsplan: String(r.tidsplan || '').slice(0, HP_MAX_TEXT), status: giltig(r.status || '', HP_STATUS),
             ...(egen ? { egen: true, atgard: String(r.atgard || '').slice(0, HP_MAX_TEXT), grupp: String(r.grupp || '').slice(0, HP_MAX_TEXT) } : {}) };
-        if (egen || HP_FALT.some(f => rad[f])) ut[r.nyckel] = rad;
+        const { skal, bort } = _sakValidera(r.skal);
+        skalBort += bort;
+        if (skal.length) rad.skal = skal;
+        if (egen || _hpHarIfyllt(rad)) ut[r.nyckel] = rad;
     });
+    if (skalBort && varningar) varningar.push(`${skalBort} ${skalBort === 1 ? 'sakligt skäl' : 'sakliga skäl'} i filens handlingsplan gick inte att läsa och hoppas över.`);
     return ut;
 }
 
@@ -28025,6 +28098,220 @@ function _exportHandlingsplanExport() {
     if (typeof announceToScreenReader === 'function') announceToScreenReader('Handlingsplansunderlag exporterat.');
 }
 document.getElementById('btn-export-handlingsplan')?.addEventListener('click', exportHandlingsplan);
+// SPDX-License-Identifier: MIT
+// Copyright 2026 Felix Jansson
+// ====================================================================
+// 57-sakliga-skal.js — dialogen Sakliga skäl i Handlingsplan
+//
+// En rad i handlingsplanen (56-handlingsplan.js) kan bära sakliga skäl: kategori, belopp i kronor per månad av
+// gruppens medianskillnad och en kort kommentar (src/lib/sakligaskal.js). Dialogen visar gruppens skillnad överst,
+// en rad per skäl och summan längst ned: hur mycket som är förklarat och vad som återstår. När skälen förklarar hela
+// skillnaden föreslår dialogen att raden markeras som sakligt förklarad; användaren bekräftar med en knapp.
+//
+// Exportgrinden: gruppens skillnad räknas i exportläget (medExportLage, ADR-51), som i allt som lämnar verktyget. En
+// grupp som inte följer med i exporterna (färre än minsta gruppstorlek) får inga andelar, och dialogen säger det.
+// Samma dialogmönster som BAS-dossiern (81-basdossier.js).
+// ====================================================================
+
+/** @type {{nyckel: string, grupp: string, kalla: string, skillnadKr: number|null, iExport: boolean, rader: {kategori: string, belopp: string, kommentar: string}[]}|null} */
+let _skal = null;
+const SKAL_JA = 'Ja, sakligt skäl finns';
+const _skalKr = v => `${svTal(Math.round(v), 0)} kr`;
+const _skalPct = v => svPct(v * 100, 0);
+
+/** Beloppet i fältet som heltal, eller null när det inte är ett giltigt belopp (0–200 000). */
+function _skalBelopp(t) {
+    const s = String(t ?? '').replace(/\s/g, '');
+    if (!/^\d+$/.test(s)) return null;
+    const v = Number(s);
+    return v <= 200000 ? v : null;
+}
+/** Skälen i utkastet som går att lagra.
+ * @returns {{kategori: string, belopp: number, kommentar: string}[]} */
+const _skalGiltiga = () => (_skal ? /** @type {any[]} */ (_skal.rader.map(r => ({ kategori: r.kategori, belopp: _skalBelopp(r.belopp), kommentar: r.kommentar }))
+    .filter(r => r.belopp != null)) : []);
+
+/** Öppnar dialogen för en rad i handlingsplanen, med fokus tillbaka till öppnaren när den stängs. */
+function openSkalDialog(nyckel, opener) {
+    const modal = document.getElementById('skal-modal');
+    if (!modal || !nyckel) return;
+    // Gruppens skillnad och om raden följer med i exporterna: ur förifyllningen i exportläget.
+    const iExport = medExportLage(() => _handlingsplanSeedRows());
+    const skarm = _handlingsplanSeedRows({ baraEgna: !getData().length });
+    const i = iExport.nycklar.indexOf(nyckel), j = skarm.nycklar.indexOf(nyckel);
+    const rad = i >= 0 ? iExport.rows[i] : j >= 0 ? skarm.rows[j] : null;
+    const egen = _hpArEgen(nyckel);
+    _skal = {
+        nyckel, kalla: nyckel.split('|')[0],
+        grupp: (rad && rad[1]) || (egen ? 'Egen rad' : nyckel),
+        skillnadKr: i >= 0 ? iExport.skillnader[i] : null,
+        iExport: i >= 0 || egen,
+        rader: (_hpVarden(nyckel).skal || []).map(s => ({ kategori: s.kategori, belopp: String(s.belopp), kommentar: s.kommentar || '' })),
+    };
+    _skalRender();
+    modal.style.display = 'flex';
+    if (typeof trapFocus === 'function') trapFocus(modal, opener || document.activeElement);
+}
+function closeSkalDialog() {
+    const modal = document.getElementById('skal-modal');
+    if (!modal || modal.style.display !== 'flex') return;
+    if (typeof releaseFocus === 'function') releaseFocus(modal);
+    modal.style.display = 'none';
+    _skal = null;
+}
+
+/** Raden överst: gruppens medianskillnad, eller varför inga andelar räknas. */
+function _skalSkillnadHtml() {
+    const s = /** @type {NonNullable<typeof _skal>} */ (_skal);
+    if (s.kalla === 'egen') return '<p class="skal-skillnad">En egen rad har ingen medianskillnad att räkna andelar mot. Skälen redovisas med belopp.</p>';
+    if (!s.iExport) return `<p class="skal-skillnad">Gruppen har färre än ${kInstalld()} personer i det som lämnar verktyget, så raden och skälen följer inte med i exporterna och inga andelar räknas.</p>`;
+    if (s.skillnadKr == null) return `<p class="skal-skillnad">Medianskillnaden redovisas inte: ett kön i gruppen har färre än ${kInstalld()} personer. Skälen redovisas med belopp.</p>`;
+    const vad = s.kalla === 'par' ? 'jämförelseyrkets median minus det kvinnodominerade yrkets' : 'mäns median minus kvinnors i gruppen';
+    if (s.skillnadKr <= 0) return `<p class="skal-skillnad">Kvinnornas median är inte lägre än männens (${vad}: ${svTal(s.skillnadKr, 0)} kr/mån). Andelar räknas inte.</p>`;
+    return `<p class="skal-skillnad"><strong>Medianskillnad ${svTal(s.skillnadKr, 0)} kr/mån</strong> <span class="text-dampad-sm">(${vad})</span></p>`;
+}
+
+function _skalRadHtml(r, i) {
+    const k = _sakKategorier();
+    const vald = k.find(x => x.id === r.kategori) || k[0];
+    const ogiltig = _skalBelopp(r.belopp) == null;
+    return `<tr class="skal-rad" data-skal-i="${i}">`
+        + `<td><select class="form-select skal-kategori" data-skal-i="${i}" aria-label="Kategori, skäl ${i + 1}">`
+        + k.map(x => `<option value="${esc(x.id)}" title="${esc(x.forklaring)}"${x.id === vald.id ? ' selected' : ''}>${esc(x.namn)}</option>`).join('')
+        + `</select><div class="text-dampad-xs skal-forklaring">${esc(vald.forklaring)}</div></td>`
+        + `<td><input type="text" inputmode="numeric" class="skal-falt skal-belopp" data-skal-i="${i}" value="${esc(r.belopp)}" autocomplete="off" aria-label="Belopp i kr/mån, skäl ${i + 1}"${ogiltig && r.belopp !== '' ? ' aria-invalid="true"' : ''}></td>`
+        + `<td class="t-tal skal-andel">${esc(_skalAndelText(r))}</td>`
+        + `<td><input type="text" class="skal-falt skal-kommentar" data-skal-i="${i}" value="${esc(r.kommentar)}" maxlength="200" autocomplete="off" placeholder="Kort motivering, inga namn" aria-label="Kommentar, skäl ${i + 1}"></td>`
+        + `<td><button type="button" class="btn-table-tool" data-skal-ta-bort="${i}" aria-label="Ta bort skäl ${i + 1}">Ta bort</button></td></tr>`;
+}
+function _skalAndelText(r) {
+    const b = _skalBelopp(r.belopp), n = _skal && _skal.skillnadKr;
+    return b != null && n && n > 0 ? _skalPct(b / n) : '–';
+}
+
+/** Ritar hela dialogens innehåll (vid öppning och när ett skäl läggs till eller tas bort). */
+function _skalRender() {
+    const body = document.getElementById('skal-body');
+    if (!body || !_skal) return;
+    const s = _skal, fullt = s.rader.length >= 8;
+    body.innerHTML = `<h3 class="fs-lg marg-0">${esc(s.grupp)}</h3>${_skalSkillnadHtml()}`
+        + (s.rader.length
+            ? `<div class="table-container"><table class="data-table st-088 skal-tabell"><thead><tr><th scope="col">Kategori</th><th scope="col" class="t-hoger">Belopp (kr/mån)</th><th scope="col" class="t-hoger">Andel av skillnaden</th><th scope="col">Kommentar</th><th scope="col"><span class="sr-only">Ta bort</span></th></tr></thead><tbody>${s.rader.map(_skalRadHtml).join('')}</tbody></table></div>`
+            : '<p class="text-dampad-sm">Inga skäl ännu. Lägg till ett skäl för varje kategori som förklarar en del av skillnaden.</p>')
+        + `<div class="rad-bryt-mitt gap-8 marg-t-8"><button id="skal-lagg-till" class="btn btn-secondary btn-sm" type="button"${fullt ? ' disabled' : ''}>Lägg till skäl</button>`
+        + '<span class="text-dampad-sm">Högst 8 skäl per grupp. Beloppet är den del av gruppens medianskillnad, i kronor per månad, som skälet förklarar.</span></div>'
+        + '<p id="skal-varning" class="handlingsplan-varning" role="status" hidden>En kommentar liknar ett personnummer eller en e-postadress, och texten följer med i exporterna. Skriv på gruppnivå i stället.</p>'
+        + '<div id="skal-status"></div>';
+    _skalUppdatera();
+    // Fokusfällan cachar de fokuserbara elementen: läggs om när innehållet byggs om medan dialogen är öppen.
+    const modal = document.getElementById('skal-modal');
+    if (modal && modal.style.display === 'flex' && typeof _focusTraps !== 'undefined') {
+        const trap = _focusTraps.get(modal), opener = trap ? trap.opener : null;
+        if (trap) { modal.removeEventListener('keydown', trap.handler); _focusTraps.delete(modal); }
+        const aktiv = document.activeElement;
+        trapFocus(modal, opener);
+        if (aktiv && aktiv !== document.body && modal.contains(aktiv)) setTimeout(() => /** @type {HTMLElement} */ (aktiv).focus(), 60);
+    }
+}
+
+/** Lagrar utkastet på raden och ritar om det som räknas: summan, varningarna, förslaget och knappen i tabellen. */
+function _skalUppdatera() {
+    if (!_skal) return;
+    const s = _skal;
+    _hpSattSkal(s.nyckel, _skalGiltiga());
+    const sum = _sakSammanstallning(_skalGiltiga(), s.iExport ? s.skillnadKr : null);
+    const status = document.getElementById('skal-status');
+    if (status) {
+        const summa = sum.forklaradAndel != null
+            ? `Förklarat ${_skalKr(sum.summa)} (${_skalPct(sum.forklaradAndel)}) · Återstår ${_skalKr(/** @type {number} */ (sum.aterstar))} (${_skalPct(/** @type {number} */ (sum.aterstarAndel))})`
+            : `Förklarat ${_skalKr(sum.summa)}`;
+        const ja = _hpVarden(s.nyckel).sakligt === SKAL_JA;
+        status.innerHTML = `<p id="skal-summa" class="skal-summa" aria-live="polite">${esc(summa)}</p>`
+            + (sum.overstiger ? '<p id="skal-overstiger" class="handlingsplan-varning" role="alert">Skälen överstiger skillnaden.</p>' : '')
+            + (sum.forklaradAndel != null && sum.forklaradAndel >= 1 && !ja
+                ? '<div class="skal-forslag"><p class="text-dampad-sm marg-0">Skälen förklarar hela skillnaden. Raden kan markeras med <strong>Ja, sakligt skäl finns</strong>.</p>'
+                  + '<button id="skal-markera" class="btn btn-primary btn-sm" type="button">Markera som sakligt förklarad</button></div>'
+                : '');
+    }
+    // Personuppgiftsvakten som i handlingsplanens fritexter.
+    let traff = 0;
+    document.querySelectorAll('#skal-body input.skal-kommentar').forEach(el => {
+        const liknar = _hpLiknarPersonuppgift(/** @type {HTMLInputElement} */ (el).value);
+        if (liknar) { el.setAttribute('aria-describedby', 'skal-varning'); traff++; } else el.removeAttribute('aria-describedby');
+    });
+    const varning = document.getElementById('skal-varning');
+    if (varning) varning.hidden = !traff;
+    // Knappen i tabellen på fliken, utan att tabellen ritas om (fokus och öppnaren står kvar).
+    document.querySelectorAll('#handlingsplan-tbody [data-hp-skal]').forEach(b => {
+        const btn = /** @type {HTMLElement} */ (b);
+        if (btn.dataset.hpSkal !== s.nyckel) return;
+        const sp = btn.querySelector('.hp-skal-sammanfattning');
+        const sk = btn.dataset.hpSkillnad;
+        if (sp) sp.textContent = _hpSkalSammanfattning(s.nyckel, sk === '' || sk == null ? null : Number(sk));
+    });
+}
+
+// ---- Wiring ----
+document.addEventListener('click', e => {
+    const t = /** @type {HTMLElement} */ (e.target);
+    if (!t || !t.closest) return;
+    const oppna = t.closest('[data-hp-skal]');
+    if (oppna) { openSkalDialog(oppna.getAttribute('data-hp-skal') || '', oppna); return; }
+    if (!t.closest('#skal-modal')) return;
+    if (t.closest('[data-skal-close]')) { closeSkalDialog(); return; }
+    if (!_skal) return;
+    if (t.closest('#skal-lagg-till')) {
+        if (_skal.rader.length >= 8) return;
+        const anvanda = new Set(_skal.rader.map(r => r.kategori));
+        const forsta = _sakKategorier().find(k => !anvanda.has(k.id)) || _sakKategorier()[0];
+        _skal.rader.push({ kategori: forsta.id, belopp: '', kommentar: '' });
+        _skalRender();
+        const sel = [...document.querySelectorAll('#skal-body select.skal-kategori')].at(-1);
+        if (sel) /** @type {HTMLElement} */ (sel).focus();
+        return;
+    }
+    const bort = t.closest('[data-skal-ta-bort]');
+    if (bort) {
+        _skal.rader.splice(Number(bort.getAttribute('data-skal-ta-bort')), 1);
+        _skalRender();
+        document.getElementById('skal-lagg-till')?.focus();
+        if (typeof announceToScreenReader === 'function') announceToScreenReader('Skälet är borttaget.');
+        return;
+    }
+    if (t.closest('#skal-markera')) {
+        const nyckel = _skal.nyckel;
+        _hpSatt(nyckel, 'sakligt', SKAL_JA);
+        document.querySelectorAll('#handlingsplan-tbody select.hp-falt').forEach(el => {
+            const sel = /** @type {HTMLSelectElement} */ (el);
+            if (sel.dataset.hpNyckel === nyckel && sel.dataset.hpFalt === 'sakligt') sel.value = SKAL_JA;
+        });
+        _skalUppdatera();
+        document.getElementById('skal-summa')?.setAttribute('tabindex', '-1');
+        document.getElementById('skal-summa')?.focus();
+        if (typeof announceToScreenReader === 'function') announceToScreenReader('Raden är markerad: sakligt skäl finns.');
+    }
+});
+['input', 'change'].forEach(typ => document.getElementById('skal-modal')?.addEventListener(typ, e => {
+    const el = /** @type {HTMLInputElement} */ (e.target);
+    if (!_skal || !el || !el.dataset || el.dataset.skalI == null) return;
+    const r = _skal.rader[Number(el.dataset.skalI)];
+    if (!r) return;
+    if (el.classList.contains('skal-kategori')) {
+        r.kategori = el.value;
+        const f = el.parentElement && el.parentElement.querySelector('.skal-forklaring');
+        const k = _sakKategorier().find(x => x.id === el.value);
+        if (f && k) f.textContent = k.forklaring;
+    } else if (el.classList.contains('skal-belopp')) {
+        r.belopp = el.value;
+        if (_skalBelopp(el.value) == null && el.value !== '') el.setAttribute('aria-invalid', 'true'); else el.removeAttribute('aria-invalid');
+        const andel = el.closest('tr')?.querySelector('.skal-andel');
+        if (andel) andel.textContent = _skalAndelText(r);
+    } else if (el.classList.contains('skal-kommentar')) r.kommentar = el.value.slice(0, 200);
+    _skalUppdatera();
+}));
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && document.getElementById('skal-modal')?.style.display === 'flex') closeSkalDialog();
+});
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 // ====================================================================
