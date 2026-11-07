@@ -27017,7 +27017,7 @@ function generateMotivationSuggestions(item) {
             const who = ageDiff > 0 ? 'Männen' : 'Kvinnorna';
             out.push({
                 type: 'info',
-                text: `${who} är i snitt <strong>${svTal(Math.abs(ageDiff), 1)} år äldre</strong> än motparten i denna grupp (${svTal(meanMaAge, 0)} mot ${svTal(meanKvAge, 0)}). Vi rekommenderas att ni stämmer av om åldersskillnaden kan förklara en del av lönegapet — erfarenhet och tid i yrket är ofta sakliga grunder för löneskillnader.`
+                text: `${who} är i snitt <strong>${svTal(Math.abs(ageDiff), 1)} år äldre</strong> än motparten i denna grupp (${svTal(meanMaAge, 0)} mot ${svTal(meanKvAge, 0)}). Vi rekommenderar att ni stämmer av om åldersskillnaden kan förklara en del av lönegapet — erfarenhet och tid i yrket är ofta sakliga grunder för löneskillnader.`
             });
         }
     }
