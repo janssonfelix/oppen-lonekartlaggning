@@ -168,6 +168,25 @@ describe('importprofiler: spara en gjord mappning och känna igen filen nästa g
         expect(w.__state.importprofil?.id).toBe(PID);
         expect(status(w)).toContain('1 försättsrad överhoppad');
     });
+
+    it('XLSX: rubrikraden efter en försättsrad hittas när bara profilen känner igen den', async () => {
+        const w = createAppWindow();
+        w.eval(readFileSync(join(rot, 'vendor', 'xlsx.mini.min.js'), 'utf8'));
+        w.__p = [PROFIL];
+        w.eval("state.importprofiler = _ipValideraLista(window.__p, { kalla: 'konfiguration' }).profiler");
+        const X = w.XLSX;
+        // Samma försättsrad som i CSV-testet ovan: två delsträngsträffar, lika många som rubrikraden.
+        const rader = [['Rapport uttagen', 'Lonelista', 'Kontor'], ['Avd', 'Befattning', 'Grundlon', 'Fodd', 'Sex'],
+            ...okandaRader().slice(1).map(r => r.split(';').map((v, i) => (i === 2 || i === 3 ? Number(v) : v)))];
+        const wb = X.utils.book_new(); X.utils.book_append_sheet(wb, X.utils.aoa_to_sheet(rader), 'Blad1');
+        const buf = X.write(wb, { type: 'array', bookType: 'xlsx' });
+        w.document.getElementById('data-status').textContent = '';
+        w.loadStructureFile(new w.File([buf], 'personallista.xlsx'));
+        await vanta(() => w.__state.data.length === 30);
+        expect(w.__state.data.length).toBe(30);
+        expect(w.__state.importprofil?.id).toBe(PID);
+        expect(w.__state.data.every(d => d.bas === 'X' && d.alder > 0)).toBe(true);
+    });
 });
 
 describe('importprofiler: organisationspaketet', () => {
