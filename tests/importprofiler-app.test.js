@@ -97,7 +97,8 @@ describe('importprofiler: spara en gjord mappning och känna igen filen nästa g
         // Samma rubriker som profilen ger i varje val: ingen ändring.
         w.document.getElementById('data-status').textContent = '';
         panel(w).querySelector('#colmap-apply').click();
-        await vanta(() => w.__state.data.length === 30 && status(w) && !/läser|Läser/.test(status(w)));
+        await vanta(() => w.__state.columnMap && w.__state.data.length === 30 && status(w) && !/läser|Läser/.test(status(w)));
+        await new Promise(r => setTimeout(r, 300));   // omläsningen ritar kortet efter att statusraden satts
         expect(kortet(w).textContent).toBe('Känd uppsättning: Lönesystemets personallista (konfigurationsfilen)');
         // Yrket ur en annan kolumn än profilens.
         panel(w).querySelector('[data-colmap-role="yrke"]').value = 'Avd';
@@ -112,6 +113,25 @@ describe('importprofiler: spara en gjord mappning och känna igen filen nästa g
         await vanta(() => w.__state.data.length === 30 && status(w) && !/läser|Läser/.test(status(w)) && !/ändrad/.test(kortet(w).textContent));
         expect(w.__state.columnMap).toBeNull();
         expect(kortet(w).textContent).toBe('Känd uppsättning: Lönesystemets personallista (konfigurationsfilen)');
+    });
+
+    it('Tillämpa utan ändring när filen har en roll profilen inte täcker (Poang): ingen ändring', async () => {
+        const w = createAppWindow();
+        await lasIn(w, mallRader(true));
+        expect(w.__state.importprofil).toMatchObject({ id: 'inbyggd-csv-mallen' });
+        // En profil som inte täcker poängen: rubrikigenkänningen fyller rullistan för Poang.
+        w.__p = [{ id: 'utan-poang', namn: 'Mallen utan poäng', rubriker: { bas: ['BAS-intervall'], yrke: ['AID'], lon: ['Manadslon'], alder: ['Alder'], kon: ['Kon'] } }];
+        w.eval("state.importprofiler = _ipValideraLista(window.__p, { kalla: 'konfiguration' }).profiler");
+        await lasIn(w, mallRader(true));
+        expect(w.__state.importprofil).toMatchObject({ namn: 'Mallen utan poäng' });
+        expect(kortet(w).textContent).toBe('Känd uppsättning: Mallen utan poäng (konfigurationsfilen)');
+        w.document.getElementById('data-status').textContent = '';
+        panel(w).querySelector('#colmap-apply').click();
+        await vanta(() => w.__state.columnMap && w.__state.data.length === 30 && status(w) && !/läser|Läser/.test(status(w)));
+        await new Promise(r => setTimeout(r, 300));   // omläsningen ritar kortet efter att statusraden satts
+        expect(w.__state.columnMap).toMatchObject({ poang: 'Poang' });
+        expect(kortet(w).textContent).toBe('Känd uppsättning: Mallen utan poäng (konfigurationsfilen)');
+        expect(panel(w).textContent).not.toContain('ändrad');
     });
 
     it('en äldre konfigurationsfil utan profiler tar inte bort sessionens sparade profil', async () => {

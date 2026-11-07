@@ -550,8 +550,8 @@ fel, 250 ms är det inte. Regressionen räknas därför alltid om. *Får inte im
 memoisering inuti modulen. Det som är tillåtet är att en funktion som kört regressionen skickar resultatet vidare
 som ett argument till det den själv anropar i samma varv (`bedomningUnderlag({ reg })`, Att göras lista): ett
 värde, ingen lagring, inget att invalidera. Förhandsbeskedets minne i `58-rapportmodell.js` är inte en sådan cache: det
-bär bara avsnittens rubriker, delarnas typ och det utelämnade (inga tal), används bara när ett kryss i urvalet ändras
-och ingen fil ritas ur det.
+bär bara avsnittens id, rubriker, delarnas typ och de utelämnade texterna (aggregerade antal; inga personrader och
+inga resultat), används bara när ett kryss i urvalet ändras och ingen fil ritas ur det.
 
 **ADR-19 — Underlagets kvalitet: svagaste länken avgör.** Underlaget bedöms med fem kriterier med status
 OK/Varning/Kritisk: jämförbarhet (andel av personalen i BAS-intervall där båda könen har minst k), statistisk

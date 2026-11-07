@@ -110,11 +110,15 @@ function _importprofilKalla(kalla) {
 }
 /**
  * "Känd uppsättning: Namn (källa)" för profilen, eller tom sträng. "Känd uppsättning, ändrad: …" när kolumnmappningen
- * (state.columnMap) pekar ut en annan rubrik än profilen för någon roll.
+ * (state.columnMap) för någon roll pekar ut en annan rubrik än den som känns igen utan val: profilen och, för roller
+ * den inte täcker, rubrikernas namn (_kolumnval i 32-filinlasning.js). Tillämpa sparar varje ifylld rullista, också
+ * de roller som bara rubriknamnen fyllde.
  */
 function importprofilText(p) {
     if (!p) return '';
-    const m = state.columnMap || {}, andrad = Object.keys(m).some(roll => m[roll] !== (p.mappning || {})[roll]);
+    const m = state.columnMap || {};
+    const kand = typeof _kolumnval === 'function' ? _kolumnval(state._dataHeaders || []).auto : (p.mappning || {});
+    const andrad = Object.keys(m).some(roll => (m[roll] || '') !== (kand[roll] || ''));
     return `Känd uppsättning${andrad ? ', ändrad' : ''}: ${p.namn} (${_importprofilKalla(p.kalla)})`;
 }
 

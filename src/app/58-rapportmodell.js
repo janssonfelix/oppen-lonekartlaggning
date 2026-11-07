@@ -455,7 +455,8 @@ function rapportModellBada({ besked = false, ateranvand = false } = {}) { return
 // Avsnitten beror inte på urvalet (utom bilagan med gruppdossierer, som byggs för sig). När bara urvalet ändras — ett
 // kryss, en flytt eller ett färdigt urval i listan under Exportera — räknas förhandsbeskedet ur det som byggdes senast,
 // i stället för att varje avsnitt räknas om (det kostar sekunder på stora underlag). Minnet bär bara det beskedet
-// räknar: avsnittens id, rubriker, delarnas typ och det utelämnade — inga tal, inga texter ur analysen och inga rader.
+// räknar: avsnittens id, rubriker, delarnas typ och de utelämnade texterna (aggregerade antal; inga personrader och
+// inga resultat), och k och underlagets kvalitet för undertiteln.
 // Ingen fil ritas ur det (bara `besked` får använda det), så regressionen räknas fortfarande om till varje export
 // (ADR-17). Minnet gäller bara så länge ingenting annat har hänt: varje annan inmatning i sidan (_rmHandelser), ett
 // nytt underlag, en ny tröskel, nya referenser eller bokslut och bakgrundsanalyser som blivit klara gör det ogiltigt.

@@ -54,6 +54,7 @@ function renderExportBesked({ baraUrval = false } = {}) {
  * @param {any} [alla] modellen med alla avsnitt, när anroparen redan byggt den
  */
 function _ebRitaUrval(alla) {
+    // Klassen urval-rad med data-urval-id och urval-fasta avgör vilka klick som inte gör förhandsbeskedets minne ogiltigt (_rmHandelser, 58-rapportmodell.js).
     const host = document.getElementById('rapport-urval');
     if (!host) return;
     if (!getData().length) { host.innerHTML = ''; _laNyckel('nyckel-ex-urval', ''); return; }
