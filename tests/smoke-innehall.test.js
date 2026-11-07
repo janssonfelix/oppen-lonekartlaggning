@@ -897,7 +897,7 @@ describe('huvudtalet följer modellen i nyckeltal, Att göra, Struktur och rappo
     it('rapportunderlaget bär frasen och det bortvalda', () => {
         const w = rita({ bas: false, alder: true, yrkesgrupp: false, skal: '' });
         const text = w.__rapportunderlagBlock().map(b => w.__ruTillText(b)).join('\n');
-        expect(text).toMatch(/Efter hänsyn till ålder är det oförklarade lönegapet/);
+        expect(text).toMatch(/Efter hänsyn till ålder är den oförklarade löneskillnaden/);
         expect(text).toMatch(/BAS-intervall har kontrollerats/);
     });
     it('standardläget: rapportmodellens rad och texter som förut', () => {

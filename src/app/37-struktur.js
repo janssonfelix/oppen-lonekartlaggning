@@ -410,7 +410,7 @@ function _buildNarrative(d, ctx) {
     if (ctx.q.some(x => x.konDolt)) lines.push(`  • ${_konUtelamnatNot()}`);
     else ctx.q.forEach(x => lines.push(`  • Q${x.q}: ${svPct(x.andelKv, 0)} kvinnor (n=${x.n}).`));
     lines.push('');
-    lines.push('Detta utkast är ett analysunderlag och ersätter inte den slutliga lönekartläggningsrapporten, som arbetsgivaren författar och som ska dokumentera sakliga skäl, åtgärder, kostnader och tidsplan.');
+    lines.push('Utkastet är ett underlag. Organisationen skriver själv dokumentationen, med sakliga skäl, åtgärder, kostnader och tidsplan.');
     // Delen per BAS-intervall står efter helheten (väljaren ovanför utkastet).
     if (ctx.perBas) { lines.push(''); lines.push(ctx.perBas); }
     // Texten kopieras och sprids för sig: under standardvärdet bär den meningen om sänkt tröskel.
