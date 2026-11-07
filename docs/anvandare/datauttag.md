@@ -5,8 +5,8 @@ En praktisk guide för att få ut rätt personalfil ur lönesystemet och läsa i
 teckenkodning, avgränsare och talformat hanteras automatiskt — men filen måste
 innehålla rätt **fält** och får **aldrig** innehålla identifierande personuppgifter.
 
-> Stegen per lönesystem (avsnitt 4) är **inte verifierade mot systemen**; er
-> systemförvaltare fyller i och bekräftar dem. Fält- och formatkraven är däremot verifierade
+> Stegen per lönesystem (avsnitt 4) är **inte verifierade mot systemen**; organisationens
+> systemägare fyller i och bekräftar dem. Fält- och formatkraven är däremot verifierade
 > mot verktygets kod och gäller som de står.
 
 ---
@@ -45,8 +45,8 @@ Exportera en personallista (en rad per anställd) med dessa kolumner:
 Alla ska ha samma lönebegrepp, annars jämför verktyget olika saker:
 
 - **Fast månadslön omräknad till heltid.** En deltidsanställd på 75 % med 24 000 kr
-  ska stå med 32 000 kr. Faktisk utbetald lön för deltidsanställda ger ett falskt
-  lönegap, eftersom deltid är ojämnt fördelad mellan kvinnor och män.
+  ska stå med 32 000 kr. Faktisk utbetald lön för deltidsanställda ger en falsk
+  löneskillnad, eftersom deltid är ojämnt fördelad mellan kvinnor och män.
 - **Inga rörliga delar.** Tillägg, OB, jour, bonus och förmåner analyseras inte av
   verktyget och ska inte läggas in i lönen. De prövas i genomgången av bestämmelser och
   praxis (fliken Regler & praxis).
@@ -130,12 +130,12 @@ Ta bort sådana kolumner redan i uttaget ur lönesystemet.
 > Detta är ett medvetet dataminimeringsskydd (Privacy by Design). Se
 > `riskanalys.md` för hela dataskyddsmodellen.
 
-## 4. Per system — så här tar ni fram de fem fälten
+## 4. Per system — så här tar du fram de fem fälten
 
 > **Inte verifierat mot systemen.** Stegen nedan bygger på hur lönesystemen i kommuner och
 > regioner brukar vara uppbyggda, inte på provkörningar. Rapportnamn, menyvägar och fältnamn
-> skiljer sig mellan installationer, versioner och hur systemet är inställt hos er. Er
-> systemförvaltare fyller i raderna markerade **[fylls i lokalt]**. Rättelser och steg för fler system
+> skiljer sig mellan installationer, versioner och hur systemet är inställt i organisationen. Organisationens
+> systemägare fyller i raderna markerade **[fylls i lokalt]**. Rättelser och steg för fler system
 > är välkomna som bidrag (`CONTRIBUTING.md`).
 
 ### Gemensamt för alla system
@@ -143,7 +143,7 @@ Ta bort sådana kolumner redan i uttaget ur lönesystemet.
 De flesta kommuner och regioner lämnar varje år en personal- och lönestatistik till SKR. Det
 uttaget har redan de flesta fält verktyget behöver — **AID-kod, heltidslön och ansvarskod** — per
 anställning, och är därför den bästa utgångspunkten. Utgå från samma urval (månadsavlönade,
-den mätmånad ni väljer) och gör så här:
+den mätmånad du väljer) och gör så här:
 
 | Fält i verktyget | Ta fram så här |
 |---|---|
@@ -163,7 +163,7 @@ anställningar: ta med huvudanställningen, så att varje person står på en ra
   rapportens namn och var den finns]**
 - Heltidslön: **[fylls i lokalt: fältets namn]**
 - Export: välj `.xlsx` eller `.csv`. **[fylls i lokalt: exportvalet]**
-- Har ni sparat en importprofil känns uttaget igen automatiskt (avsnitt 2b).
+- Har du sparat en importprofil känns uttaget igen automatiskt (avsnitt 2b).
 
 ### Personec P
 - Uttag: utgå från uttaget till SKR:s personalstatistik, eller en lista i systemets
@@ -171,20 +171,20 @@ anställningar: ta med huvudanställningen, så att varje person står på en ra
   den finns]**
 - Heltidslön: **[fylls i lokalt: fältets namn]**
 - Export: välj `.xlsx` eller `.csv`. **[fylls i lokalt: exportvalet]**
-- Har ni sparat en importprofil känns uttaget igen automatiskt (avsnitt 2b).
+- Har du sparat en importprofil känns uttaget igen automatiskt (avsnitt 2b).
 
 ### Visma
 - Uttag: en personallista ur löne- eller HR-delen med fälten ovan; i en mindre organisation
   kan statistikuttaget saknas, och då behövs heltidslönen räknas fram (tabellen ovan).
   **[fylls i lokalt: produkt, rapportens namn och var den finns]**
 - Export: välj `.xlsx` eller `.csv`. **[fylls i lokalt: exportvalet]**
-- Har ni sparat en importprofil känns uttaget igen automatiskt (avsnitt 2b).
+- Har du sparat en importprofil känns uttaget igen automatiskt (avsnitt 2b).
 
 ### Annat system
 Vilket lönesystem som helst fungerar: exportera valfri tabell/rapport som innehåller
 fälten i avsnitt 1, som `.csv` eller `.xlsx`. Vet du inte kolumnformatet — **ladda ner
-CSV-mallen i verktyget** (se avsnitt 6) och fyll den från er rapport.
-Har ni sparat en importprofil känns uttaget igen automatiskt (avsnitt 2b).
+CSV-mallen i verktyget** (se avsnitt 6) och fyll den från din rapport.
+Har du sparat en importprofil känns uttaget igen automatiskt (avsnitt 2b).
 
 ### Kontrollera uttaget innan det läses in
 - [ ] En rad per person, rubrikrad överst.
@@ -215,9 +215,9 @@ lästes som du förväntade dig.
 ## 6. CSV-mallen
 
 I verktyget, i fliken Filer och kvalitet i lönefilens ruta, finns knappen
-**"📥 Ladda ner CSV-mall"**. Den laddar ner `strukturdata_mall.csv` med rätt
+**"📥 Ladda ner CSV-mall"**. Den laddar ner `lonefil_mall.csv` med rätt
 kolumnrubriker (`BAS-intervall;AID;Manadslon;Alder;Kon;Poang`) och tre
-exempelrader. Öppna den i Excel, ersätt exempelraderna med er data och spara — så vet du
+exempelrader. Öppna den i Excel, ersätt exempelraderna med din data och spara — så vet du
 att kolumnformatet stämmer.
 
 ---

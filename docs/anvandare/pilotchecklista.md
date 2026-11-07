@@ -1,10 +1,10 @@
 # Checklista för skarp data — verifiering innan verktyget används på riktigt
 
-Innan verktyget används för er lönekartläggning: kör en **provkörning** med en verklig lönefil i er egen
+Innan verktyget används för organisationens lönekartläggning: kör en **provkörning** med en verklig lönefil i din egen
 webbläsarmiljö och bekräfta att verktyget fungerar hela vägen — inläsning, analys,
 utdata och dataskydd. Den automatiska testsviten (över två tusen tester, och ett röktest av det byggda verktyget i tre webbläsare)
 täcker logiken; den här
-checklistan täcker det bara en körning med **er data** på **er hårdvara** kan visa.
+checklistan täcker det bara en körning med **din data** på **din hårdvara** kan visa.
 
 > **Ansvarig:** ______________________  **Datum:** __________  **Bygge/SHA:**
 > ______________________ (jfr. `RELEASE.txt`)
@@ -17,16 +17,16 @@ checklistan täcker det bara en körning med **er data** på **er hårdvara** ka
       Edge loggar att direktivet `frame-ancestors` ignoreras i en meta-tagg.
 - [ ] **Signaturen är verifierad** med `cosign verify-blob` mot versionens `.sigstore.json`-paket
       (kommandot i `SECURITY.md`); svaret är `Verified OK`.
-- [ ] Filens **SHA-256 matchar `RELEASE.txt`** (kontrollerar att den kopia ni använder är den verifierade).
+- [ ] Filens **SHA-256 matchar `RELEASE.txt`** (kontrollerar att den kopia du använder är den verifierade).
       En organisationsfil har en egen kontrollsumma. *Visa paketet* anger kontrollsumman för den verktygsfil den
       byggdes av, och den ska matcha `RELEASE.txt`; uppgiften står i filen och styrker inte äktheten, så hämta
-      organisationsfilen bara från er behörighetsstyrda interna yta.
+      organisationsfilen bara från din behörighetsstyrda interna yta.
 - [ ] **Nätverksfliken** i utvecklarverktygen visar **noll utgående anrop** under hela
       sessionen (ladda upp, analysera, exportera).
 
 ## B. Inläsning med skarp data
-- [ ] **Organisationspaketet** (om ni har ett) läses in i Filer och kvalitet; organisation, datum och innehåll
-      stämmer, och Prioritering och Löneläget använder ert ställningstagande.
+- [ ] **Organisationspaketet** (om du har ett) läses in i Filer och kvalitet; organisation, datum och innehåll
+      stämmer, och Prioritering och Löneläget använder ditt ställningstagande.
 - [ ] **Organisationsfilen** (om systemägaren tagit fram en, `organisationspaket.md` avsnitt 3b) startar
       med paketet inläst: filrutan säger *Inbakat i den här filen*, *Visa paketet* visar rätt innehåll,
       och *Om verktyget* anger versionen filen bygger på.
@@ -34,7 +34,7 @@ checklistan täcker det bara en körning med **er data** på **er hårdvara** ka
       avvisar en minsta gruppstorlek under golvet, rullistan under *Vad lagras?* står på den låsta
       tiden och går inte att ändra, och rutan för små grupper i Tabeller och egna vyer är dold. *Rensa all data*
       tar bort låsningarna med paketet.
-- [ ] Strukturfilen läses in; **antal rader** stämmer med förväntat.
+- [ ] Lönefilen läses in; **antal rader** stämmer med förväntat.
 - [ ] Kolumnerna mappas rätt automatiskt — eller via **kolumnmappnings-guiden**.
 - [ ] **å/ä/ö** visas korrekt (testa gärna både en UTF-8- och en Windows-1252-fil).
 - [ ] **Underlagets kvalitet** och inläsningsrapporten (Filer och kvalitet) visar rimliga uteslutningar med
@@ -50,20 +50,20 @@ checklistan täcker det bara en körning med **er data** på **er hårdvara** ka
 *Punkterna om många yrkesgrupper, trattdiagrammet och bandkartan, och Word-utkastet i Word (avsnitt D),
 är det som bara verklig data kan visa (teknisk-plan §9 punkt 1–3): verktyget är prövat med demodata och ett
 påhittat underlag med 42 yrken, och Word-utkastet bara i LibreOffice.*
-- [ ] **§ 9-regressionen** (Lönestruktur, *Vad blir kvar av lönegapet?*) körs; ojusterat och **oförklarat** gap
+- [ ] **Regressionen** (Lönestruktur, *Vad blir kvar av löneskillnaden?*) körs; ojusterad och **oförklarad** skillnad
       samt per-BAS ser rimliga ut. (Vid tunt underlag visas "Tolka resultatet med försiktighet".)
 - [ ] **Kandidatpar i likvärdigt arbete** genereras i både **BAS-läge** och **poäng-läge** (om
-      strukturfilen har kolumnen Poäng).
+      lönefilen har kolumnen Poäng).
 - [ ] **Lönestruktur med EU-måtten, prioritering, löneöversyn och handlingsplan** renderar utan
       fel.
 - [ ] **Diagrammen** renderar. Vid mycket stort underlag (tiotusentals rader): notisen
       *"representativt urval … alla beräkningar använder fullständig data"* visas och
       **KPI:erna räknas på hela underlaget**.
-- [ ] **§ 8:** status + anteckning kan fyllas i för alla sex granskningsområden.
+- [ ] **Regler & praxis:** status och anteckning kan fyllas i för alla sex granskningsområden.
 - [ ] **Många yrkesgrupper:** yrkesgruppstabellen i Lika arbete ryms utan att rulla i sidled, yrkesnamnen går att
       läsa, och grafiken i raderna (punkten mot linjen för lika lön) stämmer med talet bredvid. *Verktyget är
-      utvecklat mot ett litet exempelunderlag och ett påhittat större — er fil är det första riktiga provet.*
-- [ ] **Trattdiagrammet** (Lika arbete) och **bandkartan** (Löneläget, avsnittet mot ställningstagandet) går att läsa med era grupper: punkterna
+      utvecklat mot ett litet exempelunderlag och ett påhittat större — din fil är det första riktiga provet.*
+- [ ] **Trattdiagrammet** (Lika arbete) och **bandkartan** (Löneläget, avsnittet mot ställningstagandet) går att läsa med dina grupper: punkterna
       ligger inte på varandra så att de inte går att skilja åt, och namnen krockar inte. Bandkartan är inte prövad
       med många yrken i samma BAS-intervall — notera i avsnitt G om grupper med nästan samma median täcker
       varandra.
@@ -94,13 +94,13 @@ påhittat underlag med 42 yrken, och Word-utkastet bara i LibreOffice.*
 - [ ] **Färgkontrast** (axe DevTools eller Lighthouse) — inga allvarliga fel.
 - [ ] **Tangentbord:** Tab når sidopanelens knappar, **fokusmarkering syns**, och
       pil-/Home/End-tangenter byter flik.
-- [ ] **Läsbarhet på er skärm:** nyckeltalen överst i flikarna, tabellernas text och diagrammens etiketter går att
+- [ ] **Läsbarhet på din skärm:** nyckeltalen överst i flikarna, tabellernas text och diagrammens etiketter går att
       läsa utan att zooma. Prova både **vägledande** och **kompakt läge** (Inställningar).
 
 ## F. Robusthet & återställning
 - [ ] *(Om relevant)* En **mycket stor fil** laddas inom rimlig tid; bakgrundsnotis
       ("förbereder analyser …") visas och försvinner.
-- [ ] **"Rensa all data"** tömmer allt (tabeller, diagram, § 8-anteckningar) — även i
+- [ ] **"Rensa all data"** tömmer allt (tabeller, diagram, anteckningarna i Regler & praxis) — även i
       Tabeller och egna vyer, Lönestruktur och Löneöversyn.
 - [ ] **"Spara konfiguration"** + **"Ladda konfiguration"** (Spara och jämför år) återställer inställningar
       (datafilen laddas om).

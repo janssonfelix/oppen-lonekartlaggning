@@ -1,7 +1,7 @@
 # Öppen lönekartläggning
 
-Ett fritt verktyg för den årliga **lönekartläggningen** enligt diskrimineringslagen och EU:s
-lönetransparensdirektiv (2023/970). Hela verktyget är **en enda HTML-fil** som körs i webbläsaren på din
+Ett fritt verktyg för den årliga **lönekartläggningen** enligt diskrimineringslagen, med stöd för
+delar av lönetransparensdirektivet. Hela verktyget är **en enda HTML-fil** som körs i webbläsaren på din
 dator: ingen server, inga nätverksanrop och ingen lagring. **Lönedata lämnar aldrig datorn.**
 
 **Omfång i dag:** verktyget är byggt för arbetsgivare som kodar sina befattningar med **AID** och
@@ -11,13 +11,13 @@ organisationspaket, så att ingenting om en viss organisation är inbyggt. Andra
 öppen punkt (teknisk plan §9).
 
 - **Hela lagkedjan:** genomgång av bestämmelser och praxis, lika arbete (med regression och
-  oförklarat gap), likvärdigt arbete, EU-direktivets rapportmått, prioritering med
+  oförklarad löneskillnad), likvärdigt arbete, direktivets rapportmått, prioritering med
   kostnadsberäkning och handlingsplan.
 - **Färdiga underlag:** ett redigerbart Word-utkast av dokumentationen (rapporten), en Excel-fil med
   underlaget, en PDF som låst kopia, en ZIP-fil med allt, protokoll för gemensam lönebedömning och
-  rapportunderlag att klistra in i er egen mall.
+  rapportunderlag att klistra in i din egen mall.
 - **Dataskydd inbyggt:** bara de fält analysen behöver läses in (fem obligatoriska, två
-  valfria), filer med personnummer, namn eller e-post avvisas, små grupper skyddas i det som lämnar verktyget, och en risk- och sårbarhetsanalys ingår som underlag till er konsekvensbedömning.
+  valfria), filer med personnummer, namn eller e-post avvisas, små grupper skyddas i det som lämnar verktyget, och en risk- och sårbarhetsanalys ingår som underlag till organisationens konsekvensbedömning.
 
 ## Prova
 
@@ -31,8 +31,8 @@ verkliga löner och utan installation.
    signaturen** innan verklig lönedata läses in — kommandot står i [`SECURITY.md`](SECURITY.md),
    avsnittet *Kontrollera att filen är äkta*. Öppna filen i webbläsaren (Chrome, Edge, Firefox
    eller Safari) på en dator.
-2. **Läs in er organisations paket** — ställningstagande, jämförelsestatistik och benämningar i
-   en fil som er systemägare tar fram i verktyget — eller öppna **organisationsfilen**, där
+2. **Läs in organisationens paket** — ställningstagande, jämförelsestatistik och benämningar i
+   en fil som organisationens systemägare tar fram i verktyget — eller öppna **organisationsfilen**, där
    systemägaren bakat in paketet så att en fil räcker:
    [`organisationspaket.md`](docs/anvandare/organisationspaket.md).
 3. **Läs in lönefilen** och följ körguiden:

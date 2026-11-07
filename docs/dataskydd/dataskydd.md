@@ -74,12 +74,12 @@ Med knappen *Som i exporten* i sidhuvudet kan användaren se flikarna i exportl�
 exporterna byter då inte läge.
 Är gruppen stor nog
 men ett av könen för litet visas gruppens samlade median utan könsjämförelse. Samma regel
-gäller de beskrivande könsuppdelade måtten — ett köns median eller percentil, det råa
-lönegapet, regressionens ojusterade steg ("Endast kön") med den förklarade andelen och en
-kostnad som räknats ur ett gap redovisas bara när varje kön har minst 10 personer, också när
+gäller de beskrivande könsuppdelade måtten — ett köns median eller percentil, den råa
+löneskillnaden, regressionens ojusterade steg ("Endast kön") med den förklarade andelen och en
+kostnad som räknats ur en löneskillnad redovisas bara när varje kön har minst 10 personer, också när
 måttet gäller hela organisationen. Den justerade löneskillnaden ur huvudregressionen (Lönestruktur,
 och talet i Lika arbetes nyckeltal) följer inte regeln: den visas från regressionens eget fasta golv, 5 personer av varje
-kön (ADR-38), också på skärmen. I Ålder & karriärs bilder och diagramdata följer lönegapen (ojusterat och
+kön (ADR-38), också på skärmen. I Ålder & karriärs bilder och diagramdata följer löneskillnaderna (ojusterad och
 åldersjusterat), lutningen per kön, trendlinjerna med konfidensband och lådorna per kön regeln: där ett
 kön är under tröskeln står ett streck, och en not under diagrammet säger vad som utelämnats. I
 spridningsdiagrammens bilder och diagramdata finns en persons punkt bara när personens grupp (yrke inom BAS)
@@ -157,11 +157,11 @@ Fyra medvetna undantag:
    (beslut 2026-10-16, ADR-48): bilderna bär inga namn eller identifierare, och filerna hanteras som
    personuppgifter (§4).
 
-**Vyerna per BAS-intervall, trattdiagrammet och fördelningarna per kön.** Översikten per BAS-intervall (*Lönegap per BAS-intervall* i Lönestruktur) har
+**Vyerna per BAS-intervall, trattdiagrammet och fördelningarna per kön.** Översikten per BAS-intervall (*Löneskillnad per BAS-intervall* i Lönestruktur) har
 i Word-utkastet, PDF-rapporten och flikens export bara rader för BAS-intervall där både kvinnor och män når tröskeln
 (på skärmen alla intervall). I det som exporteras visar trattdiagrammet en punkt per yrkesgrupp, och bara yrkesgrupper där båda könen når tröskeln; lådorna över
 lönespridning per BAS-intervall och kön ritas bara för ett kön som når tröskeln i intervallet, och utan enskilda
-avvikande löner. Lönegapet per åldersgrupp visar bara åldersgrupper där båda könen når tröskeln, och de övriga
+avvikande löner. Löneskillnaden per åldersgrupp visar bara åldersgrupper där båda könen når tröskeln, och de övriga
 namnges under diagrammet. Fördelningen i lönespannets tredjedelar per kön redovisas bara när båda könen når
 tröskeln; en andel som gäller färre än fem personer sägs i verktygstipset. Tabellen över avvikelse från
 förväntad lön per kön och BAS-intervall märker andelar som gäller färre än fem personer med en asterisk.
@@ -181,7 +181,7 @@ skärmen visar dem.
 
 **Riktade potter med kön och lönegräns följer regeln för egna rader.** En riktad rad i Löneöversyn kan
 begränsas till ett kön och till löner under en gräns (det som tidigare var Lönerevisionssimulatorn).
-Berör raden färre personer än minsta gruppstorlek är det er egen simulering: beloppet visas på raden
+Berör raden färre personer än minsta gruppstorlek är det din egen simulering: beloppet visas på raden
 med noten att det bygger på enskildas löner. Kvinnors medianlön i procent av mäns före och efter
 visas bara när varje kön når tröskeln.
 
