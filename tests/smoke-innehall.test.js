@@ -207,8 +207,8 @@ describe('Lika arbete och filrutorna: ordning och kompakta rutor', () => {
         expect(d.getElementById('btn-try-demo')).toBeNull();
         expect(d.getElementById('btn-minimize-upload')).toBeNull();
         const text = d.getElementById('first-run-hint').textContent.replace(/\s+/g, ' ').trim();
-        expect(text).toMatch(/^Kom igång: läs in filerna \(organisationspaketet först om er organisation har ett, sedan lönefilen\) — eller prova med demodata, litet demo eller stort demo \(7 000 personer\)\.$/i);
-        expect(text.match(/\beller\b/g)).toHaveLength(2);   // inte "eller … eller ett"
+        expect(text).toMatch(/^Kom igång: läs in filerna \(organisationspaketet först om er organisation har ett, sedan lönefilen\)\. Ingen fil till hands\? Prova med demodata, litet demo eller stort demo \(7 000 personer\)\.$/i);
+        expect(text.match(/\beller\b/g)).toHaveLength(1);   // inte "eller … eller": samma mening som lönefilskortet
         expect(d.getElementById('first-run-demo-link').textContent).toBe('litet demo');
         // Lönefilskortet i Filer och kvalitet har samma ord för samma val.
         const kort = d.getElementById('upload-demo-val').textContent.replace(/\s+/g, ' ').trim();
