@@ -114,6 +114,11 @@ function _ipTaBort(id) {
     const p = (state.importprofiler || []).find(x => x.id === id);
     if (!p) return;
     state.importprofiler = state.importprofiler.filter(x => x !== p);
+    // Gällde profilen för den inlästa filen nollas den, så att filrutan inte nämner en borttagen profil.
+    if (state.importprofil && state.importprofil.id === id) {
+        state.importprofil = null;
+        if (typeof renderFilrutor === 'function') renderFilrutor();
+    }
     _instRitaImportprofiler();
     if (typeof maybeShowColumnMapping === 'function' && (state._dataHeaders || []).length) maybeShowColumnMapping();
     /** @type {HTMLElement|null} */ (document.getElementById('inst-importprofiler-rubrik'))?.focus();

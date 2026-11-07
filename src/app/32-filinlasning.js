@@ -693,10 +693,15 @@ function sparaImportprofil(namn) {
     state.importprofiler = [...ovriga, p];
     return { ok: true, profil: p };
 }
-/** Bygger ett nytt organisationspaket (det inlästa och profilen) och laddar ner det. */
+/**
+ * Bygger ett nytt organisationspaket ur det inlästa paketets egna delar och profilen, och laddar ner det. Samma
+ * vakter som Spara paketet: ett ogiltigt värde i paketformuläret ger ingen nedladdning.
+ */
 function laggTillImportprofilIPaket(profil) {
     if (!state.paket) return { ok: false, fel: 'Inget organisationspaket är inläst.' };
-    const paket = skapaPaket({ importprofiler: [profil] });
+    const formFel = _paketFormularFel();
+    if (formFel) return { ok: false, fel: formFel };
+    const paket = skapaPaketMedImportprofil(profil);
     const kontroll = _opTolkaPaket(JSON.stringify(paket));
     if (!kontroll.ok) return { ok: false, fel: 'Paketet kan inte skapas: ' + kontroll.fel };
     const blob = new Blob([JSON.stringify(paket, null, 2)], { type: 'application/json' });

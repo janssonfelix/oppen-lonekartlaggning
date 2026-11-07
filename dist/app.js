@@ -13074,7 +13074,7 @@ const state = {
     // organisationspaket. policyKalla: null | 'fil' | 'paket' | 'demo'.
     policy: [], policyNamn: null, policyKortnamn: null, policyKalla: null,
     statistik: [], statistikNamn: null, statistikKalla: null,   // statistikKalla: null | 'fil' | 'paket'
-    paket: null,     // inläst organisationspaket: { organisation, utgivare, skapat, avserAr, kalla: 'fil'|'inbakat' } (ADR-28)
+    paket: null,     // inläst organisationspaket: { organisation, utgivare, skapat, avserAr, kalla: 'fil'|'inbakat', delar } (ADR-28); delar = paketets validerade delar
     paketInbakat: null,   // paketet som ligger inbakat i den här filen (organisationsfil); läses vid start och efter Rensa all data
     isDemo: false,   // #9: true när syntetisk demodata är inläst (aldrig verklig analys)
     demoStort: false,   // true i det stora demot (7 000 personer, 21-stort-demo.js); bara bannern och filraden läser det
@@ -14889,6 +14889,13 @@ function _exportActionChecklistCSVExport(items, done) {
 // Copyright 2026 Felix Jansson
 
 // ---- #17 Spara/ladda konfiguration som JSON ----
+/** Sessionens egna importprofiler för konfigurationsfilen; inget fält alls när de saknas. */
+function _konfigImportprofiler() {
+    const egna = (state.importprofiler || []).filter(p => p.kalla === 'konfiguration')
+        .map(p => ({ id: p.id, namn: p.namn, rubriker: p.rubriker, kannetecken: p.kannetecken }));
+    return egna.length ? { importprofiler: egna } : {};
+}
+
 /**
  * Bygger ett serialiserbart snapshot av användarens konfiguration: prio-trösklar,
  * vikter, kostnadsinställningar och bristyrkes-AID:n.
@@ -14927,8 +14934,8 @@ function buildConfigSnapshot() {
             years: state.forecast.years
         } : null,
         // Egna importprofiler (src/lib/importprofiler.js): bara rubriknamn. Organisationspaketets följer paketet och bärs inte.
-        importprofiler: (state.importprofiler || []).filter(p => p.kalla === 'konfiguration')
-            .map(p => ({ id: p.id, namn: p.namn, rubriker: p.rubriker, kannetecken: p.kannetecken })),
+        // En tom lista skrivs inte, så att filen inte tömmer en annan sessions profiler (applyConfigSnapshot).
+        ..._konfigImportprofiler(),
         // Organisationspaketet (ADR-28) bärs inte — bara vilket paket som användes, så att
         // den som läser in konfigurationen kan läsa in samma paket.
         organisationspaket: state.paket ? { organisation: state.paket.organisation, skapat: state.paket.skapat } : null,
@@ -15221,7 +15228,8 @@ function applyConfigSnapshot(cfg) {
     if (tmp.handlingsplan) { state.handlingsplan = tmp.handlingsplan; if (typeof renderHandlingsplanSeed === 'function') renderHandlingsplanSeed(); }
     if (tmp.actionChecklistDone) state._actionChecklistDone = new Set(tmp.actionChecklistDone);
     // Filens egna profiler ersätter sessionens egna; organisationspaketets står kvar.
-    if (tmp.importprofiler) state.importprofiler = [...(state.importprofiler || []).filter(p => p.kalla !== 'konfiguration'), ...tmp.importprofiler];
+    // Bara en fil med profiler ersätter sessionens egna: en äldre fil (eller en tom lista) tar inte bort dem tyst.
+    if (tmp.importprofiler && tmp.importprofiler.length) state.importprofiler = [...(state.importprofiler || []).filter(p => p.kalla !== 'konfiguration'), ...tmp.importprofiler];
     if (tmp.arsbokslut) { state.forraArsbokslut = tmp.arsbokslut; if (typeof renderArsjamforelse === 'function') medExportLage(() => renderArsjamforelse()); }
     // Bara namn som finns i filen sätts — en fil utan namn ska inte radera paketets namn.
     if (tmp.orgName) sattOrgNamn(tmp.orgName);
@@ -18081,7 +18089,9 @@ function lasInPaket(text, _filnamn, { inbakat = false } = {}) {
         kAndrad = sattKTroskel(nyttGolv, { fraga: false, rita: false }).andrad === true || kAndrad;
         varningar.push(`Minsta gruppstorlek höjs till ${nyttGolv}, paketets lägsta tillåtna.`);
     }
-    state.paket = { ...r.paket, kalla: inbakat ? 'inbakat' : 'fil' };
+    // Paketets egna, validerade delar sparas med det, så att ett nytt paket med en importprofil (32-filinlasning.js)
+    // byggs ur dem och inte ur sessionens värden.
+    state.paket = { ...r.paket, kalla: inbakat ? 'inbakat' : 'fil', delar: r.delar };
     // Importprofilerna följer paketet: ett nytt paket ersätter det förras, sessionens egna står kvar.
     state.importprofiler = [...(state.importprofiler || []).filter(p => p.kalla !== 'organisationspaket'), ...(importprofiler || [])];
     if (importprofiler && importprofiler.length) varningar.push(`Paketet ger ${importprofiler.length} ${importprofiler.length === 1 ? 'importprofil' : 'importprofiler'} för lönefilens kolumner.`);
@@ -18243,15 +18253,10 @@ function uppdateraPaketKnapp() {
 /** Samma felmeddelande som fältet i Inställningar (sattKTroskel). */
 function _paketKFel() { return `Ange ett heltal mellan ${K_MIN} och ${K_MAX}.`; }
 
-/**
- * Bygger paketet ur det inlästa och formuläret. Det inlästa paketets importprofiler följer med; `importprofiler`
- * läggs till (samma id ersätter).
- * @param {{importprofiler?: any[]}} [val]
- */
-function skapaPaket({ importprofiler = [] } = {}) {
+/** Bygger paketet ur det inlästa och formuläret. Det inlästa paketets importprofiler följer med. */
+function skapaPaket() {
     const jamfNamn = _paketText('paket-jamf-namn');
-    const nyaId = new Set(importprofiler.map(p => p.id));
-    const profiler = [...(state.importprofiler || []).filter(p => p.kalla === 'organisationspaket' && !nyaId.has(p.id)), ...importprofiler];
+    const profiler = (state.importprofiler || []).filter(p => p.kalla === 'organisationspaket');
     return _opByggPaket({
         organisation: _paketText('paket-org'),
         utgivare: _paketText('paket-utgivare'),
@@ -18281,14 +18286,40 @@ function _paketFilnamn(org) {
     return `${slug || 'organisation'}.lonepaket.json`;
 }
 
+/**
+ * Formulärets fel som hindrar att ett paket sparas (minsta gruppstorlek och låsningarna), som ett färdigt besked,
+ * eller null. Samma vakter för Spara paketet och för Lägg till i organisationspaketet.
+ * @returns {string|null}
+ */
+function _paketFormularFel() {
+    // Ett ogiltigt värde för minsta gruppstorlek får inte tyst falla bort ur paketet (tomt fält = paketet anger inget).
+    const kText = _paketText('paket-k');
+    if (kText !== '' && _kTolka(kText) == null) return 'Paketet sparades inte. Minsta gruppstorlek: ' + _paketKFel();
+    const lasFel = _paketLasFel();
+    return lasFel ? 'Paketet sparades inte. ' + lasFel : null;
+}
+
+/**
+ * Ett nytt paket ur det inlästa paketets egna delar och en importprofil (samma id ersätter). Sessionens värden
+ * (k, PO-påslag, ställningstagandet) och formuläret används inte: bara profilen läggs till, och datumet blir dagens.
+ * @param {any} profil
+ */
+function skapaPaketMedImportprofil(profil) {
+    const p = state.paket, d = p.delar || {};
+    // Paketets profiler som de står i sessionen (en som tagits bort i Inställningar följer inte med).
+    const ovriga = (state.importprofiler || []).filter(x => x.kalla === 'organisationspaket' && x.id !== profil.id);
+    return _opByggPaket({
+        organisation: p.organisation, utgivare: p.utgivare, skapat: new Date().toISOString().slice(0, 10), avserAr: p.avserAr,
+        profil: d.profil, installningar: d.installningar, referens: d.referens, statistik: d.statistik, rapport: d.rapport,
+        importprofiler: [...ovriga, profil],
+    });
+}
+
 document.getElementById('paket-skapa')?.addEventListener('input', uppdateraPaketKnapp);
 document.getElementById('paket-skapa')?.addEventListener('toggle', uppdateraPaketKnapp);
 document.getElementById('btn-paket-spara')?.addEventListener('click', () => {
-    // Ett ogiltigt värde för minsta gruppstorlek får inte tyst falla bort ur paketet (tomt fält = paketet anger inget).
-    const kText = _paketText('paket-k');
-    if (kText !== '' && _kTolka(kText) == null) { _paketStatus('Paketet sparades inte. Minsta gruppstorlek: ' + _paketKFel(), false); return; }
-    const lasFel = _paketLasFel();
-    if (lasFel) { _paketStatus('Paketet sparades inte. ' + lasFel, false); return; }
+    const formFel = _paketFormularFel();
+    if (formFel) { _paketStatus(formFel, false); return; }
     const paket = skapaPaket();
     // Samma kontroll som vid inläsning — ett paket som inte går att läsa in sparas inte.
     const kontroll = _opTolkaPaket(JSON.stringify(paket));
@@ -19485,10 +19516,15 @@ function sparaImportprofil(namn) {
     state.importprofiler = [...ovriga, p];
     return { ok: true, profil: p };
 }
-/** Bygger ett nytt organisationspaket (det inlästa och profilen) och laddar ner det. */
+/**
+ * Bygger ett nytt organisationspaket ur det inlästa paketets egna delar och profilen, och laddar ner det. Samma
+ * vakter som Spara paketet: ett ogiltigt värde i paketformuläret ger ingen nedladdning.
+ */
 function laggTillImportprofilIPaket(profil) {
     if (!state.paket) return { ok: false, fel: 'Inget organisationspaket är inläst.' };
-    const paket = skapaPaket({ importprofiler: [profil] });
+    const formFel = _paketFormularFel();
+    if (formFel) return { ok: false, fel: formFel };
+    const paket = skapaPaketMedImportprofil(profil);
     const kontroll = _opTolkaPaket(JSON.stringify(paket));
     if (!kontroll.ok) return { ok: false, fel: 'Paketet kan inte skapas: ' + kontroll.fel };
     const blob = new Blob([JSON.stringify(paket, null, 2)], { type: 'application/json' });
@@ -32802,6 +32838,11 @@ function _ipTaBort(id) {
     const p = (state.importprofiler || []).find(x => x.id === id);
     if (!p) return;
     state.importprofiler = state.importprofiler.filter(x => x !== p);
+    // Gällde profilen för den inlästa filen nollas den, så att filrutan inte nämner en borttagen profil.
+    if (state.importprofil && state.importprofil.id === id) {
+        state.importprofil = null;
+        if (typeof renderFilrutor === 'function') renderFilrutor();
+    }
     _instRitaImportprofiler();
     if (typeof maybeShowColumnMapping === 'function' && (state._dataHeaders || []).length) maybeShowColumnMapping();
     /** @type {HTMLElement|null} */ (document.getElementById('inst-importprofiler-rubrik'))?.focus();

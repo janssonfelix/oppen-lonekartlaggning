@@ -43,7 +43,7 @@ const state = {
     // organisationspaket. policyKalla: null | 'fil' | 'paket' | 'demo'.
     policy: [], policyNamn: null, policyKortnamn: null, policyKalla: null,
     statistik: [], statistikNamn: null, statistikKalla: null,   // statistikKalla: null | 'fil' | 'paket'
-    paket: null,     // inläst organisationspaket: { organisation, utgivare, skapat, avserAr, kalla: 'fil'|'inbakat' } (ADR-28)
+    paket: null,     // inläst organisationspaket: { organisation, utgivare, skapat, avserAr, kalla: 'fil'|'inbakat', delar } (ADR-28); delar = paketets validerade delar
     paketInbakat: null,   // paketet som ligger inbakat i den här filen (organisationsfil); läses vid start och efter Rensa all data
     isDemo: false,   // #9: true när syntetisk demodata är inläst (aldrig verklig analys)
     demoStort: false,   // true i det stora demot (7 000 personer, 21-stort-demo.js); bara bannern och filraden läser det

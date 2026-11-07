@@ -88,6 +88,24 @@ describe('importprofiler: spara en gjord mappning och känna igen filen nästa g
         expect(w2.__state.data.every(d => d.bas === 'X' && d.alder > 0)).toBe(true);
     });
 
+    it('en äldre konfigurationsfil utan profiler tar inte bort sessionens sparade profil', async () => {
+        const w = createAppWindow();
+        const aldre = JSON.parse(JSON.stringify(w.__buildConfigSnapshot()));
+        // En tom lista skrivs inte i konfigurationsfilen.
+        expect('importprofiler' in aldre).toBe(false);
+        await lasIn(w, okandaRader());
+        await mappa(w);
+        panel(w).querySelector('#colmap-profil-namn').value = 'Personallistan';
+        panel(w).querySelector('#colmap-spara-profil').click();
+        expect(w.__state.importprofiler.map(p => p.namn)).toEqual(['Personallistan']);
+        w.__cfg = aldre;
+        w.eval('applyConfigSnapshot(window.__cfg)');
+        expect(w.__state.importprofiler.map(p => p.namn)).toEqual(['Personallistan']);
+        w.__cfg = { ...aldre, importprofiler: [] };
+        w.eval('applyConfigSnapshot(window.__cfg)');
+        expect(w.__state.importprofiler.map(p => p.namn)).toEqual(['Personallistan']);
+    });
+
     it('en konfigurationsfil med en ogiltig profil läses in med en varning, utan profilen', () => {
         const w = createAppWindow();
         const cfg = JSON.parse(JSON.stringify(w.__buildConfigSnapshot()));
@@ -171,6 +189,61 @@ describe('importprofiler: organisationspaketet', () => {
     });
 });
 
+describe('importprofiler: "Lägg till i organisationspaketet" bygger på paketets egna delar', () => {
+    // Ett paket med egna värden som skiljer sig från sessionens.
+    const egetPaket = w => w.eval(`JSON.stringify(_opByggPaket({ organisation: 'Exempelregionen', utgivare: 'Lönegruppen', skapat: '2026-10-01',
+        avserAr: 2026, profil: { benchmarkLabel: 'Riksstatistiken', basSystem: 'BAS' },
+        installningar: { poPct: 40, kTroskel: 7, kTroskelLagst: 6 },
+        referens: { namn: 'Paketets ställningstagande', rader: [{ aid: null, bas: 'A', p10: 25000, med: 28000, p90: 31000 }] } }))`);
+    const fanga = w => {
+        const f = { blob: null };
+        w.URL.createObjectURL = b => { f.blob = b; return 'blob:x'; };
+        w.HTMLAnchorElement.prototype.click = () => {};
+        return f;
+    };
+    const tillPaket = async w => {
+        await lasIn(w, okandaRader());
+        await mappa(w);
+        panel(w).querySelector('#colmap-profil-namn').value = 'Personallistan ur lönesystemet';
+        panel(w).querySelector('#colmap-till-paket').click();
+    };
+
+    it('det nedladdade paketet behåller paketets k, PO-påslag, låsning och ställningstagande; bara profilen läggs till', async () => {
+        const w = createAppWindow(), d = w.document;
+        expect(w.lasInPaket(egetPaket(w)).ok).toBe(true);
+        // Sessionen och formuläret ändras efter inläsningen.
+        w.eval("state.costSettings.poPct = 12; state.policy = [{ aid: null, bas: 'Z', p10: 1, med: 2, p90: 3 }]");
+        d.getElementById('paket-po').value = '12';
+        d.getElementById('paket-k').value = '9';
+        d.getElementById('paket-ref-namn').value = 'Sessionens namn';
+        const f = fanga(w);
+        await tillPaket(w);
+        await vanta(() => f.blob);
+        const t = w.eval('_opTolkaPaket')(await f.blob.text());
+        expect(t.ok).toBe(true);
+        expect(t.paket).toMatchObject({ organisation: 'Exempelregionen', utgivare: 'Lönegruppen', avserAr: 2026 });
+        expect(t.delar.installningar).toMatchObject({ poPct: 40, kTroskel: 7, kTroskelLagst: 6 });
+        expect(t.delar.profil).toMatchObject({ benchmarkLabel: 'Riksstatistiken', basSystem: 'BAS' });
+        expect(t.delar.referens.namn).toBe('Paketets ställningstagande');
+        expect(t.delar.referens.rader.map(r => r.bas)).toEqual(['A']);
+        expect(t.delar.importprofiler.map(p => p.namn)).toEqual(['Personallistan ur lönesystemet']);
+    });
+
+    it('ett ogiltigt värde för minsta gruppstorlek i formuläret ger ingen nedladdning, med samma besked som Spara paketet', async () => {
+        const w = createAppWindow(), d = w.document;
+        expect(w.lasInPaket(egetPaket(w)).ok).toBe(true);
+        d.getElementById('paket-k').value = '1';
+        const f = fanga(w);
+        d.getElementById('btn-paket-spara').click();
+        const sparaBesked = d.getElementById('paket-status').textContent;
+        expect(sparaBesked).toMatch(/^Paketet sparades inte\. Minsta gruppstorlek: /);
+        await tillPaket(w);
+        await new Promise(r => setTimeout(r, 30));
+        expect(f.blob).toBeNull();
+        expect(panel(w).textContent).toContain(sparaBesked);
+    });
+});
+
 describe('importprofiler: Inställningar, rensning och demodata', () => {
     it('Inställningar listar profilerna med namn, källa och rubriker; Ta bort och Exportera JSON', () => {
         const w = createAppWindow(), d = w.document;
@@ -190,6 +263,19 @@ describe('importprofiler: Inställningar, rensning och demodata', () => {
         lista.querySelector(`[data-ip-ta-bort="${PID}"]`).click();
         expect(w.__state.importprofiler).toEqual([]);
         expect(d.getElementById('inst-importprofiler').textContent).toContain('Inga sparade importprofiler');
+    });
+
+    it('Ta bort på profilen som gällde för filen nollar den, så att filrutan inte nämner en borttagen profil', async () => {
+        const w = createAppWindow(), d = w.document;
+        w.__p = [PROFIL];
+        w.eval("state.importprofiler = _ipValideraLista(window.__p, { kalla: 'konfiguration' }).profiler");
+        await lasIn(w, okandaRader());
+        expect(w.__state.importprofil?.id).toBe(PID);
+        expect(kortet(w).hidden).toBe(false);
+        w.eval('oppnaInstallningar()');
+        d.getElementById('inst-importprofiler').querySelector(`[data-ip-ta-bort="${PID}"]`).click();
+        expect(w.__state.importprofil).toBeNull();
+        expect(kortet(w).hidden).toBe(true);
     });
 
     it('exporten är bara rubriknamn', () => {

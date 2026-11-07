@@ -138,7 +138,9 @@ function lasInPaket(text, _filnamn, { inbakat = false } = {}) {
         kAndrad = sattKTroskel(nyttGolv, { fraga: false, rita: false }).andrad === true || kAndrad;
         varningar.push(`Minsta gruppstorlek höjs till ${nyttGolv}, paketets lägsta tillåtna.`);
     }
-    state.paket = { ...r.paket, kalla: inbakat ? 'inbakat' : 'fil' };
+    // Paketets egna, validerade delar sparas med det, så att ett nytt paket med en importprofil (32-filinlasning.js)
+    // byggs ur dem och inte ur sessionens värden.
+    state.paket = { ...r.paket, kalla: inbakat ? 'inbakat' : 'fil', delar: r.delar };
     // Importprofilerna följer paketet: ett nytt paket ersätter det förras, sessionens egna står kvar.
     state.importprofiler = [...(state.importprofiler || []).filter(p => p.kalla !== 'organisationspaket'), ...(importprofiler || [])];
     if (importprofiler && importprofiler.length) varningar.push(`Paketet ger ${importprofiler.length} ${importprofiler.length === 1 ? 'importprofil' : 'importprofiler'} för lönefilens kolumner.`);
@@ -300,15 +302,10 @@ function uppdateraPaketKnapp() {
 /** Samma felmeddelande som fältet i Inställningar (sattKTroskel). */
 function _paketKFel() { return `Ange ett heltal mellan ${K_MIN} och ${K_MAX}.`; }
 
-/**
- * Bygger paketet ur det inlästa och formuläret. Det inlästa paketets importprofiler följer med; `importprofiler`
- * läggs till (samma id ersätter).
- * @param {{importprofiler?: any[]}} [val]
- */
-function skapaPaket({ importprofiler = [] } = {}) {
+/** Bygger paketet ur det inlästa och formuläret. Det inlästa paketets importprofiler följer med. */
+function skapaPaket() {
     const jamfNamn = _paketText('paket-jamf-namn');
-    const nyaId = new Set(importprofiler.map(p => p.id));
-    const profiler = [...(state.importprofiler || []).filter(p => p.kalla === 'organisationspaket' && !nyaId.has(p.id)), ...importprofiler];
+    const profiler = (state.importprofiler || []).filter(p => p.kalla === 'organisationspaket');
     return _opByggPaket({
         organisation: _paketText('paket-org'),
         utgivare: _paketText('paket-utgivare'),
@@ -338,14 +335,40 @@ function _paketFilnamn(org) {
     return `${slug || 'organisation'}.lonepaket.json`;
 }
 
+/**
+ * Formulärets fel som hindrar att ett paket sparas (minsta gruppstorlek och låsningarna), som ett färdigt besked,
+ * eller null. Samma vakter för Spara paketet och för Lägg till i organisationspaketet.
+ * @returns {string|null}
+ */
+function _paketFormularFel() {
+    // Ett ogiltigt värde för minsta gruppstorlek får inte tyst falla bort ur paketet (tomt fält = paketet anger inget).
+    const kText = _paketText('paket-k');
+    if (kText !== '' && _kTolka(kText) == null) return 'Paketet sparades inte. Minsta gruppstorlek: ' + _paketKFel();
+    const lasFel = _paketLasFel();
+    return lasFel ? 'Paketet sparades inte. ' + lasFel : null;
+}
+
+/**
+ * Ett nytt paket ur det inlästa paketets egna delar och en importprofil (samma id ersätter). Sessionens värden
+ * (k, PO-påslag, ställningstagandet) och formuläret används inte: bara profilen läggs till, och datumet blir dagens.
+ * @param {any} profil
+ */
+function skapaPaketMedImportprofil(profil) {
+    const p = state.paket, d = p.delar || {};
+    // Paketets profiler som de står i sessionen (en som tagits bort i Inställningar följer inte med).
+    const ovriga = (state.importprofiler || []).filter(x => x.kalla === 'organisationspaket' && x.id !== profil.id);
+    return _opByggPaket({
+        organisation: p.organisation, utgivare: p.utgivare, skapat: new Date().toISOString().slice(0, 10), avserAr: p.avserAr,
+        profil: d.profil, installningar: d.installningar, referens: d.referens, statistik: d.statistik, rapport: d.rapport,
+        importprofiler: [...ovriga, profil],
+    });
+}
+
 document.getElementById('paket-skapa')?.addEventListener('input', uppdateraPaketKnapp);
 document.getElementById('paket-skapa')?.addEventListener('toggle', uppdateraPaketKnapp);
 document.getElementById('btn-paket-spara')?.addEventListener('click', () => {
-    // Ett ogiltigt värde för minsta gruppstorlek får inte tyst falla bort ur paketet (tomt fält = paketet anger inget).
-    const kText = _paketText('paket-k');
-    if (kText !== '' && _kTolka(kText) == null) { _paketStatus('Paketet sparades inte. Minsta gruppstorlek: ' + _paketKFel(), false); return; }
-    const lasFel = _paketLasFel();
-    if (lasFel) { _paketStatus('Paketet sparades inte. ' + lasFel, false); return; }
+    const formFel = _paketFormularFel();
+    if (formFel) { _paketStatus(formFel, false); return; }
     const paket = skapaPaket();
     // Samma kontroll som vid inläsning — ett paket som inte går att läsa in sparas inte.
     const kontroll = _opTolkaPaket(JSON.stringify(paket));

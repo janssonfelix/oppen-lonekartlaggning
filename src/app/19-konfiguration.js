@@ -2,6 +2,13 @@
 // Copyright 2026 Felix Jansson
 
 // ---- #17 Spara/ladda konfiguration som JSON ----
+/** Sessionens egna importprofiler för konfigurationsfilen; inget fält alls när de saknas. */
+function _konfigImportprofiler() {
+    const egna = (state.importprofiler || []).filter(p => p.kalla === 'konfiguration')
+        .map(p => ({ id: p.id, namn: p.namn, rubriker: p.rubriker, kannetecken: p.kannetecken }));
+    return egna.length ? { importprofiler: egna } : {};
+}
+
 /**
  * Bygger ett serialiserbart snapshot av användarens konfiguration: prio-trösklar,
  * vikter, kostnadsinställningar och bristyrkes-AID:n.
@@ -40,8 +47,8 @@ function buildConfigSnapshot() {
             years: state.forecast.years
         } : null,
         // Egna importprofiler (src/lib/importprofiler.js): bara rubriknamn. Organisationspaketets följer paketet och bärs inte.
-        importprofiler: (state.importprofiler || []).filter(p => p.kalla === 'konfiguration')
-            .map(p => ({ id: p.id, namn: p.namn, rubriker: p.rubriker, kannetecken: p.kannetecken })),
+        // En tom lista skrivs inte, så att filen inte tömmer en annan sessions profiler (applyConfigSnapshot).
+        ..._konfigImportprofiler(),
         // Organisationspaketet (ADR-28) bärs inte — bara vilket paket som användes, så att
         // den som läser in konfigurationen kan läsa in samma paket.
         organisationspaket: state.paket ? { organisation: state.paket.organisation, skapat: state.paket.skapat } : null,
@@ -334,7 +341,8 @@ function applyConfigSnapshot(cfg) {
     if (tmp.handlingsplan) { state.handlingsplan = tmp.handlingsplan; if (typeof renderHandlingsplanSeed === 'function') renderHandlingsplanSeed(); }
     if (tmp.actionChecklistDone) state._actionChecklistDone = new Set(tmp.actionChecklistDone);
     // Filens egna profiler ersätter sessionens egna; organisationspaketets står kvar.
-    if (tmp.importprofiler) state.importprofiler = [...(state.importprofiler || []).filter(p => p.kalla !== 'konfiguration'), ...tmp.importprofiler];
+    // Bara en fil med profiler ersätter sessionens egna: en äldre fil (eller en tom lista) tar inte bort dem tyst.
+    if (tmp.importprofiler && tmp.importprofiler.length) state.importprofiler = [...(state.importprofiler || []).filter(p => p.kalla !== 'konfiguration'), ...tmp.importprofiler];
     if (tmp.arsbokslut) { state.forraArsbokslut = tmp.arsbokslut; if (typeof renderArsjamforelse === 'function') medExportLage(() => renderArsjamforelse()); }
     // Bara namn som finns i filen sätts — en fil utan namn ska inte radera paketets namn.
     if (tmp.orgName) sattOrgNamn(tmp.orgName);
