@@ -252,3 +252,53 @@ describe('Handlingsplan: skälen i konfigurationsfilen', () => {
         expect(b.__state.handlingsplan['prio|2|B']).toBeUndefined();
     });
 });
+
+describe('Dossiererna: läs-raden pekar på bedömningen i handlingsplanen', () => {
+    /** Ett kandidatpar med skillnad och ett skäl på halva skillnaden; gruppdossierns nyckel är det kvinnodominerade yrket. */
+    const medSkal = () => {
+        const w = fonster();
+        const tr = radMedSkillnad(w);
+        const nyckel = knapp(tr).dataset.hpSkal;
+        const { nycklar, skillnader } = seedExport(w);
+        const skillnad = skillnader[nycklar.indexOf(nyckel)];
+        w.eval(`_hpSattSkal(${JSON.stringify(nyckel)}, [{ kategori: 'marknad', belopp: ${Math.round(skillnad / 2)}, kommentar: '' }, { kategori: 'erfarenhet', belopp: 0, kommentar: '' }])`);
+        const [, aid, bas] = nyckel.split('|');
+        return { w, nyckel, aid, bas, grupp: tr.cells[1].textContent, pct: w.eval(`svPct(${Math.round(skillnad / 2) / skillnad * 100}, 0)`).replace(/\s/g, ' ') };
+    };
+    it('gruppdossiern: "Bedömning i handlingsplanen: 2 skäl, NN % av skillnaden förklarad", produktgränsen står kvar', () => {
+        const { w, aid, bas, pct } = medSkal();
+        w.eval(`openGruppdossier(${JSON.stringify(`${aid}|${bas}`)})`);
+        const d = w.document.getElementById('dossier-modal');
+        const text = ren(d.textContent);
+        expect(text).toContain(`Bedömning i handlingsplanen: 2 skäl, ${pct} av skillnaden förklarad.`);
+        expect(text).toContain('Dossiern dokumenterar inte sakliga skäl.');
+        expect(d.querySelector('[data-hp-ga-till]')).toBeTruthy();
+    });
+    it('länken stänger dossiern och visar raden i Handlingsplan med fokus på knappen Sakliga skäl', () => {
+        const { w, nyckel, aid, bas } = medSkal();
+        w.__renderTabContent('dashboard');
+        w.eval(`openGruppdossier(${JSON.stringify(`${aid}|${bas}`)})`);
+        [...w.document.querySelectorAll('#dossier-modal [data-hp-ga-till]')].find(a => a.dataset.hpGaTill === nyckel).click();
+        expect(w.document.getElementById('dossier-modal').style.display).not.toBe('flex');
+        expect(w.document.getElementById('view-handlingsplan').style.display).toBe('block');
+        expect(w.document.activeElement.dataset.hpSkal).toBe(nyckel);
+    });
+    it('BAS-dossiern listar bedömningarna i intervallet med gruppen först; en grupp utan rad får ingen läs-rad', () => {
+        const { w, bas, grupp, pct } = medSkal();
+        w.eval(`openBasdossier(${JSON.stringify(bas)})`);
+        const text = ren(w.document.getElementById('basdossier-modal').textContent);
+        expect(text).toContain(`${grupp} (kandidatpar): Bedömning i handlingsplanen: 2 skäl, ${pct} av skillnaden förklarad.`);
+        expect(text).toContain('Dossiern dokumenterar inte sakliga skäl.');
+        // En grupp som inte finns i handlingsplanen: ingen läs-rad.
+        const utan = w.eval(`gruppdossierCandidates().map(g => g.key).find(k => !_handlingsplanSeedRows().nycklar.some(n => n.split('|')[1] === k.split('|')[0] && n.split('|')[2] === k.split('|')[1]))`);
+        w.eval(`closeBasdossier(); openGruppdossier(${JSON.stringify(utan)})`);
+        expect(w.document.querySelector('#dossier-modal .hp-bedomningar')).toBeNull();
+    });
+    it('en rad utan skäl: läs-raden säger att inga skäl är angivna', () => {
+        const w = fonster();
+        const nyckel = knapp(radMedSkillnad(w)).dataset.hpSkal;
+        const [, aid, bas] = nyckel.split('|');
+        w.eval(`openGruppdossier(${JSON.stringify(`${aid}|${bas}`)})`);
+        expect(ren(w.document.getElementById('dossier-modal').textContent)).toContain('Bedömning i handlingsplanen: inga sakliga skäl angivna ännu.');
+    });
+});

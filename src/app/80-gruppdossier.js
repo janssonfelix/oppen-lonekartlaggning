@@ -318,6 +318,7 @@ function _gdRenderBody(d) {
         </div>
         <p class="reg-caveat-inline"><strong>Dossiern dokumenterar inte sakliga skäl.</strong> Den samlar underlaget —
         bedömningen och dokumentationen görs i er ordinarie process.</p>
+        ${_hpBedomningHtml(_hpBedomningar(([kalla, aid, bas]) => (kalla === 'prio' || kalla === 'par') && aid === String(d.aid) && bas === String(d.bas)))}
         <div class="gd-grid">
             ${card('Nyckeltal', nyckeltal)}
             ${card('Ojusterad löneskillnad', gapInner)}

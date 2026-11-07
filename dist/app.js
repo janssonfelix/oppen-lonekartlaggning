@@ -27974,6 +27974,43 @@ function _hpSkalKnapp(nyckel, grupp, skillnadKr) {
         + `Sakliga skäl <span class="hp-skal-sammanfattning">${esc(_hpSkalSammanfattning(nyckel, skillnadKr))}</span></button>`;
 }
 
+/**
+ * Bedömningarna i handlingsplanen för en grupp, för läs-raden i gruppdossiern och BAS-dossiern (80, 81): en post per
+ * förifylld rad som `passar` (nyckelns delar), med antal skäl och förklarad andel. Dossiererna dokumenterar inte skäl
+ * själva; raden pekar på bedömningen här.
+ * @param {(delar: string[]) => boolean} passar
+ */
+function _hpBedomningar(passar) {
+    const seed = _handlingsplanSeedRows({ baraEgna: !getData().length });
+    return seed.nycklar.map((nyckel, i) => ({ nyckel, i })).filter(({ nyckel }) => !_hpArEgen(nyckel) && passar(nyckel.split('|')))
+        .map(({ nyckel, i }) => {
+            const s = _sakSammanstallning(_hpVarden(nyckel).skal || [], seed.skillnader[i]);
+            return { nyckel, grupp: seed.rows[i][1], kalla: nyckel.split('|')[0], antal: s.antal, summa: s.summa, andel: s.forklaradAndel };
+        });
+}
+/** Läs-raden för en bedömning: "Bedömning i handlingsplanen: 3 skäl, 80 % av skillnaden förklarad". */
+function _hpBedomningText(b) {
+    const vad = !b.antal ? 'inga sakliga skäl angivna ännu'
+        : `${b.antal} skäl, ${b.andel != null ? `${svPct(b.andel * 100, 0)} av skillnaden förklarad` : `${svTal(b.summa, 0)} kr/mån`}`;
+    return `Bedömning i handlingsplanen: ${vad}`;
+}
+/** Läs-raderna som HTML med länk till raden i Handlingsplan, eller tom sträng utan rader. `medGrupp`: gruppen först. */
+function _hpBedomningHtml(lista, { medGrupp = false } = {}) {
+    if (!lista.length) return '';
+    return `<ul class="gd-list hp-bedomningar">${lista.map(b => `<li>${medGrupp ? `${esc(b.grupp)}${b.kalla === 'par' ? ' (kandidatpar)' : ''}: ` : ''}${esc(_hpBedomningText(b))}. `
+        + `<a href="#" data-hp-ga-till="${esc(b.nyckel)}" aria-label="${esc(`Gå till raden i Handlingsplan: ${b.grupp}`)}">Gå till raden</a></li>`).join('')}</ul>`;
+}
+/** Visar raden i Handlingsplan med fokus på dess knapp Sakliga skäl. */
+function _hpGaTillRad(nyckel) {
+    navigateTo('handlingsplan');
+    const fokus = () => {
+        const b = [...document.querySelectorAll('#handlingsplan-tbody [data-hp-skal]')].find(el => /** @type {HTMLElement} */ (el).dataset.hpSkal === nyckel);
+        if (b) { /** @type {HTMLElement} */ (b).focus(); b.scrollIntoView?.({ block: 'center' }); }
+    };
+    fokus();
+    setTimeout(fokus, 120);   // fliken kan sätta fokus själv efter bytet
+}
+
 // #UX Renderar de förifyllda raderna direkt i skärm-mallen, med fält för sakligt skäl, ansvarig, tidsplan och status,
 // ovanför tomrader som syns på utskriften — så HR ser underlaget och kan fylla i planen utan att först exportera.
 function renderHandlingsplanSeed() {
@@ -28255,6 +28292,15 @@ function _skalUppdatera() {
 document.addEventListener('click', e => {
     const t = /** @type {HTMLElement} */ (e.target);
     if (!t || !t.closest) return;
+    // Läs-raden i gruppdossiern och BAS-dossiern: dossiern stängs och raden i Handlingsplan får fokus.
+    const gaTill = t.closest('[data-hp-ga-till]');
+    if (gaTill) {
+        e.preventDefault();
+        if (typeof closeGruppdossier === 'function') closeGruppdossier();
+        if (typeof closeBasdossier === 'function') closeBasdossier();
+        _hpGaTillRad(gaTill.getAttribute('data-hp-ga-till') || '');
+        return;
+    }
     const oppna = t.closest('[data-hp-skal]');
     if (oppna) { openSkalDialog(oppna.getAttribute('data-hp-skal') || '', oppna); return; }
     if (!t.closest('#skal-modal')) return;
@@ -32947,6 +32993,7 @@ function _gdRenderBody(d) {
         </div>
         <p class="reg-caveat-inline"><strong>Dossiern dokumenterar inte sakliga skäl.</strong> Den samlar underlaget —
         bedömningen och dokumentationen görs i er ordinarie process.</p>
+        ${_hpBedomningHtml(_hpBedomningar(([kalla, aid, bas]) => (kalla === 'prio' || kalla === 'par') && aid === String(d.aid) && bas === String(d.bas)))}
         <div class="gd-grid">
             ${card('Nyckeltal', nyckeltal)}
             ${card('Ojusterad löneskillnad', gapInner)}
@@ -33249,6 +33296,8 @@ function _bdRenderBody(d) {
             <button type="button" class="btn-table-tool" id="btn-basdossier-copy" title="Kopiera dossiern som text, i rapportens form">${ikon('kopiera', 14)} Kopiera som text</button>
         </div>
         <div class="bd-stack">
+            ${(() => { const hp = _hpBedomningHtml(_hpBedomningar(([kalla, , bas]) => (kalla === 'prio' || kalla === 'par') && bas === String(d.bas)), { medGrupp: true });
+                return hp ? card('Bedömning i handlingsplanen', hp, 'Dossiern dokumenterar inte sakliga skäl. Raderna pekar på bedömningen i Handlingsplan.') : ''; })()}
             ${card('Nyckeltal', nyckeltal)}
             ${card('Yrkesgrupperna i intervallet', yrken, 'Samma gränser som i Lika arbete, räknade på intervallets personer. Könsuppdelade mått bara där båda könen når minsta gruppstorlek.')}
             ${card('Likvärdigt arbete i intervallet', likvardigt)}

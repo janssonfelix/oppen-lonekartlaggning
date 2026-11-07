@@ -155,6 +155,15 @@ function _skalUppdatera() {
 document.addEventListener('click', e => {
     const t = /** @type {HTMLElement} */ (e.target);
     if (!t || !t.closest) return;
+    // Läs-raden i gruppdossiern och BAS-dossiern: dossiern stängs och raden i Handlingsplan får fokus.
+    const gaTill = t.closest('[data-hp-ga-till]');
+    if (gaTill) {
+        e.preventDefault();
+        if (typeof closeGruppdossier === 'function') closeGruppdossier();
+        if (typeof closeBasdossier === 'function') closeBasdossier();
+        _hpGaTillRad(gaTill.getAttribute('data-hp-ga-till') || '');
+        return;
+    }
     const oppna = t.closest('[data-hp-skal]');
     if (oppna) { openSkalDialog(oppna.getAttribute('data-hp-skal') || '', oppna); return; }
     if (!t.closest('#skal-modal')) return;
