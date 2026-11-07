@@ -2,7 +2,7 @@
 // Copyright 2026 Felix Jansson
 // Årsbokslutet (ADR-54): validering, k-skydd och jämförelsen mellan två år — den rena modulen.
 import { describe, it, expect } from 'vitest';
-import { byggArsbokslut, valideraArsbokslut, jamforArsbokslut, hantelRader, basHantelRader, ARSBOKSLUT_NYCKELTAL } from '../src/lib/arsbokslut.js';
+import { byggArsbokslut, valideraArsbokslut, jamforArsbokslut, hantelRader, basHantelRader, lonespridning, ARSBOKSLUT_NYCKELTAL } from '../src/lib/arsbokslut.js';
 import { arsjamforelseBlock, tillWordHtml } from '../src/lib/rapportunderlag.js';
 
 const bokslut = (ar, over = {}) => byggArsbokslut({
@@ -75,8 +75,8 @@ describe('årsbokslut: jämförelsen mellan två år', () => {
         const nu = bokslut(2026, { grupper: [{ yrke: 'Bara nu (BAS A)', nKv: 20, nMa: 20, medKv: 1, medMa: 1, gapPct: -9, flaggad: true }] });
         const j = jamforArsbokslut(forra, nu);
         // Antalet är årets när gruppen finns i år, annars förra årets; antalAr säger vilket år det gäller.
-        expect(j.grupper.borta).toEqual([{ yrke: 'Bara förra (BAS A)', gapForra: -8, gapNu: null, nKv: 20, nMa: 20, antalAr: 2025 }]);
-        expect(j.grupper.nya).toEqual([{ yrke: 'Bara nu (BAS A)', gapForra: null, gapNu: -9, nKv: 20, nMa: 20, antalAr: 2026 }]);
+        expect(j.grupper.borta).toEqual([{ yrke: 'Bara förra (BAS A)', gapForra: -8, gapNu: null, nKv: 20, nMa: 20, antalAr: 2025, spridningForra: null, spridningNu: null }]);
+        expect(j.grupper.nya).toEqual([{ yrke: 'Bara nu (BAS A)', gapForra: null, gapNu: -9, nKv: 20, nMa: 20, antalAr: 2026, spridningForra: null, spridningNu: null }]);
         expect(j.samma_k).toBe(false);
     });
 });
@@ -119,7 +119,7 @@ describe('årsbokslut: löneutveckling per BAS-intervall (basIntervall)', () => 
     it('fältet följer med när det finns; ett intervall under k faller bort och könsmedianerna nollas när ett kön är under k', () => {
         const b = bokslut(2025, { basIntervall: bas });
         expect(b.basIntervall.map(r => r.bas)).toEqual(['A', 'C']);
-        expect(b.basIntervall[0]).toEqual({ bas: 'A', n: 40, nKv: 25, nMa: 15, p10: 24000, med: 26000, p90: 29000, medKv: 25800, medMa: 26400 });
+        expect(b.basIntervall[0]).toEqual({ bas: 'A', n: 40, nKv: 25, nMa: 15, p10: 24000, med: 26000, p90: 29000, medKv: 25800, medMa: 26400, spridning: null });
         expect(b.basIntervall[1]).toMatchObject({ bas: 'C', n: 30, nKv: 9, nMa: 21, med: 29000, medKv: null, medMa: null });
         const text = JSON.stringify(b);
         for (const s of [31417, 35291, 36107]) expect(text).not.toContain(String(s));
@@ -128,7 +128,7 @@ describe('årsbokslut: löneutveckling per BAS-intervall (basIntervall)', () => 
         expect(bokslut(2025).basIntervall).toBeNull();
         expect(valideraArsbokslut({ ar: 2025, skapat: '2025-01-01', k: 10 }).basIntervall).toBeNull();
         const b = bokslut(2025, { basIntervall: [null, { bas: '', n: 20 }, { bas: 'B', n: 'tjugo' }, { bas: 'D', n: 20, nKv: 10, nMa: 10, med: NaN }] });
-        expect(b.basIntervall).toEqual([{ bas: 'D', n: 20, nKv: 10, nMa: 10, p10: null, med: null, p90: null, medKv: null, medMa: null }]);
+        expect(b.basIntervall).toEqual([{ bas: 'D', n: 20, nKv: 10, nMa: 10, p10: null, med: null, p90: null, medKv: null, medMa: null, spridning: null }]);
         expect(bokslut(2025, { basIntervall: 'inte en lista' }).basIntervall).toBeNull();
     });
     it('jämförelsen ger förra året, i år och förändringen i kronor och procent per mått och intervall', () => {
@@ -195,11 +195,48 @@ describe('årsbokslut: förra årets fil kan ha sparats med en lägre tröskel',
         const j = jamforArsbokslut(forra, nu);
         expect(j.samma_k).toBe(false);
         expect(j.grupper.kvar).toEqual([]);
-        expect(j.grupper.nya).toEqual([{ yrke: 'Tekniker (BAS D)', gapForra: null, gapNu: -7.4, nKv: 12, nMa: 30, antalAr: 2026 }]);
+        expect(j.grupper.nya).toEqual([{ yrke: 'Tekniker (BAS D)', gapForra: null, gapNu: -7.4, nKv: 12, nMa: 30, antalAr: 2026, spridningForra: null, spridningNu: null }]);
         expect(JSON.stringify(j)).not.toContain('-8.5');
         // Med samma gräns båda åren är gruppen kvar.
         const sammaK = jamforArsbokslut(bokslut(2025, { grupper: [{ ...forra.grupper[0], nKv: 10 }] }), nu);
         expect(sammaK.grupper.kvar.map(g => g.yrke)).toEqual(['Tekniker (BAS D)']);
         expect(sammaK.grupper.nya).toEqual([]);
+    });
+});
+
+describe('årsbokslut: lönespridningen (P90 − P10) / median', () => {
+    it('räknas för en lönelista med minst k personer, avrundad till fyra decimaler; under k, tom eller median 0 ger null', () => {
+        const lon = [20000, 22000, 24000, 26000, 28000, 30000, 32000, 34000, 36000, 38000];
+        // P10 = 21 800, P90 = 36 200 (linjär interpolation), median 29 000.
+        expect(lonespridning(lon, 10)).toBe(Math.round((36200 - 21800) / 29000 * 1e4) / 1e4);
+        expect(lonespridning(lon, 11)).toBeNull();
+        expect(lonespridning([], 2)).toBeNull();
+        expect(lonespridning([0, 0, 0], 2)).toBeNull();
+        expect(lonespridning(Array(12).fill(31417), 10)).toBe(0);
+    });
+    it('följer med på yrkesgruppernas och BAS-intervallens rader; ett trasigt eller negativt värde och en äldre fil utan fältet ger null', () => {
+        const b = bokslut(2025, {
+            grupper: [{ yrke: 'Kock (BAS B)', nKv: 12, nMa: 15, medKv: 27000, medMa: 27500, gapPct: -1.8, flaggad: false, spridning: 0.3125 },
+                      { yrke: 'Bagare (BAS B)', nKv: 12, nMa: 15, medKv: 27000, medMa: 27500, gapPct: -1.8, flaggad: false, spridning: -1 },
+                      { yrke: 'Gammal (BAS B)', nKv: 12, nMa: 15, medKv: 27000, medMa: 27500, gapPct: -1.8, flaggad: false }],
+            basIntervall: [{ bas: 'A', n: 40, nKv: 25, nMa: 15, p10: 24000, med: 26000, p90: 29000, spridning: 0.1923 },
+                           { bas: 'B', n: 40, nKv: 25, nMa: 15, med: 26000, spridning: 'mycket' }],
+        });
+        expect(b.grupper.map(g => g.spridning)).toEqual([0.3125, null, null]);
+        expect(b.basIntervall.map(r => r.spridning)).toEqual([0.1923, null]);
+    });
+    it('jämförelsen har spridningen förra året och i år per yrkesgrupp och per BAS-intervall, med skillnaden', () => {
+        const g = (yrke, spridning, gapPct) => ({ yrke, nKv: 12, nMa: 15, medKv: 27000, medMa: 29000, gapPct, flaggad: true, ...(spridning === null ? {} : { spridning }) });
+        const forra = bokslut(2025, { grupper: [g('Kock (BAS B)', 0.30, -6.9), g('Gammal (BAS B)', null, -7)],
+            basIntervall: [{ bas: 'A', n: 40, nKv: 25, nMa: 15, med: 26000, spridning: 0.25 }, { bas: 'C', n: 30, nKv: 15, nMa: 15, med: 29000 }] });
+        const nu = bokslut(2026, { grupper: [g('Kock (BAS B)', 0.28, -6.0), g('Gammal (BAS B)', 0.4, -8)],
+            basIntervall: [{ bas: 'A', n: 42, nKv: 26, nMa: 16, med: 26780, spridning: 0.22 }, { bas: 'C', n: 31, nKv: 15, nMa: 16, med: 29500, spridning: 0.31 }] });
+        const j = jamforArsbokslut(forra, nu);
+        expect(j.grupper.kvar.find(r => r.yrke === 'Kock (BAS B)')).toMatchObject({ spridningForra: 0.30, spridningNu: 0.28 });
+        expect(j.grupper.kvar.find(r => r.yrke === 'Gammal (BAS B)')).toMatchObject({ spridningForra: null, spridningNu: 0.4 });
+        expect(j.basIntervall[0].spridning.forra).toBe(0.25);
+        expect(j.basIntervall[0].spridning.nu).toBe(0.22);
+        expect(j.basIntervall[0].spridning.diff).toBeCloseTo(-0.03, 10);
+        expect(j.basIntervall[1].spridning).toEqual({ forra: null, nu: 0.31, diff: null });   // äldre fil: inget värde förra året
     });
 });

@@ -118,6 +118,12 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ### Analys
 
+- **Lönespridning i årsbokslutet.** Bokslutets rader per yrkesgrupp och per BAS-intervall bär lönespridningen,
+  (P90 − P10) / median, räknad där gruppen har minst k personer (bara totalt, inte per kön). Panelen *Jämförelse med
+  förra året* har kolumnen *Lönespridning* förra året och i år i tabellen per BAS-intervall och i de flaggade
+  yrkesgruppernas tabeller, och Word-utkastets och PDF-rapportens tabell per BAS-intervall har kolumnen. En fil från en
+  äldre version saknar måttet och visar streck.
+
 - **Spärr mot särskilda kategorier av personuppgifter.** Lönefilen avvisas när en kolumnrubrik antyder fackmedlemskap,
   hälsa, sjukfrånvaro, diagnos, etnicitet, religion, politisk tillhörighet, sexuell läggning, funktionsnedsättning,
   genetik eller biometri — som identifierare avvisades redan. Bara rubriken prövas (lagrum.md, C23b).

@@ -421,7 +421,8 @@ ni ordna om och ta bort tabellerna.
   och P90) och Att göra-punkternas läge. Läs in filen nästa år, så visar
   **Jämförelse med förra året** (samma flik) vad som ändrats: nyckeltalen sida vid sida, **löneutvecklingen per
   BAS-intervall** (P10, median och P90 förra året och i år, förändringen i kronor och procent, och medianen som en
-  hantel), vilka yrkesgrupper som
+  hantel), **lönespridningen** per BAS-intervall och per flaggad yrkesgrupp ((P90 − P10) / median, i procent av
+  medianen; streck när förra årets fil saknar måttet), vilka yrkesgrupper som
   är flaggade båda åren, nya och inte längre flaggade, och vilka av förra årets öppna punkter som är klara. En fil
   sparad med en äldre version saknar raderna per BAS-intervall; panelen säger det, och resten av jämförelsen fungerar.
   Sparades förra årets fil med en lägre minsta gruppstorlek än årets läses båda åren med den högre gränsen. En

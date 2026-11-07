@@ -203,6 +203,66 @@ describe('löneutveckling per BAS-intervall i bokslutet, i Spara och jämför å
     });
 });
 
+describe('lönespridningen i bokslutet, i panelen och i rapportens tabell per BAS-intervall', () => {
+    const forraArs = (cfg, andra) => {
+        cfg.arsbokslut.ar -= 1; cfg.arsbokslut.skapat = `${cfg.arsbokslut.ar}-11-01`;
+        if (andra) andra(cfg.arsbokslut);
+        return cfg;
+    };
+    const lasIn = (w, cfg) => { w.__cfg = cfg; w.eval('applyConfigSnapshot(window.__cfg)'); };
+    const spridning = lon => { const s = [...lon].sort((a, b) => a - b), q = p => { const x = (s.length - 1) * p, lo = Math.floor(x), hi = Math.ceil(x); return s[lo] + (s[hi] - s[lo]) * (x - lo); };
+        return Math.round((q(0.9) - q(0.1)) / q(0.5) * 1e4) / 1e4; };
+
+    it('bokslutet har spridningen per BAS-intervall och per yrkesgrupp, räknad ur underlaget; grupper under k saknas', () => {
+        const w = createAppWindow(); w.__loadDemoData();
+        const b = w.eval('byggArsbokslutNu()');
+        const d = w.__state.data.filter(r => r.lon > 0);
+        for (const r of b.basIntervall) expect(r.spridning, r.bas).toBe(spridning(d.filter(x => x.bas === r.bas).map(x => x.lon)));
+        expect(b.grupper.length).toBeGreaterThan(0);
+        for (const g of b.grupper) expect(g.spridning, g.yrke).toBe(spridning(d.filter(x => x.yrke === g.yrke && (x.kon === 'kvinna' || x.kon === 'man')).map(x => x.lon)));
+        // Riggen: intervallen om 6 personer finns inte i bokslutet, och en grupp med en lön har spridningen 0.
+        const f = fonster(null), fb = f.eval('byggArsbokslutNu()');
+        expect(fb.basIntervall.find(r => r.bas === MELLAN[0]).spridning).toBe(0);
+        for (const s of SENT_SMA) expect(JSON.stringify(fb)).not.toContain(String(s));
+    });
+
+    it('panelen har kolumnen Lönespridning förra året och i år i tabellen per BAS-intervall och i de flaggade gruppernas tabeller', () => {
+        const a = createAppWindow(); a.__loadDemoData();
+        const cfg = forraArs(JSON.parse(JSON.stringify(a.__buildConfigSnapshot())), ab => ab.basIntervall.forEach(r => { r.spridning = 0.5; }));
+        const w = createAppWindow(); w.__loadDemoData();
+        lasIn(w, cfg);
+        w.__renderTabContent('arbetet');
+        const tab = w.document.getElementById('arsjamforelse-bas');
+        const forsta = [...tab.querySelectorAll('thead tr:first-child th')].map(th => th.textContent.trim());
+        expect(forsta.at(-1)).toBe('Lönespridning');
+        const rad = tab.querySelector('tbody tr');
+        const celler = [...rad.cells].map(c => c.textContent.trim().replace(/\s+/g, ' '));
+        expect(celler.at(-2)).toBe('50 %');
+        const nu = w.eval('byggArsbokslutNu()').basIntervall[0].spridning;
+        expect(celler.at(-1)).toBe(w.eval('svPct')(nu * 100, 0));
+        const grupp = [...w.document.querySelectorAll('#arsjamforelse table')].find(t => /^Yrkesgrupp/.test(t.querySelector('th').textContent));
+        expect(grupp).toBeTruthy();
+        expect([...grupp.querySelectorAll('thead th')].map(th => th.textContent.trim()).slice(-2)).toEqual([`Lönespridning ${cfg.arsbokslut.ar}`, `Lönespridning ${cfg.arsbokslut.ar + 1}`]);
+        expect(w.document.getElementById('arsjamforelse').textContent).toContain('Lönespridning: (P90 − P10) / median');
+    });
+
+    it('rapportens tabell per BAS-intervall har kolumnen Lönespridning; en äldre fil utan fältet visar streck för förra året', () => {
+        const a = fonster(null);
+        const cfg = forraArs(JSON.parse(JSON.stringify(a.__buildConfigSnapshot())), ab => ab.basIntervall.forEach(r => { delete r.spridning; }));
+        const w = fonster(null); lasIn(w, cfg);
+        const avsnitt = w.eval('rapportModell()').avsnitt.find(x => x.id === 'arsjamforelse');
+        const i = avsnitt.delar.findIndex(p => p.typ === 'rubrik' && p.text === 'Löneutveckling per BAS-intervall');
+        const tab = avsnitt.delar.slice(i).find(p => p.typ === 'tabell');
+        expect(tab.kolumner.map(c => c.rubrik)).toEqual(['BAS-intervall', 'Antal', 'P10', 'Median', 'P90', 'Lönespridning']);
+        const s1 = tab.rader.find(r => r[0] === `BAS ${STORA[0]}`);
+        expect(w.eval('rmCell')(s1[5], 'text')).toMatch(/^– till \d+ %$/);
+        // Panelen visar streck för förra året.
+        w.__renderTabContent('arbetet');
+        const rad = [...w.document.querySelectorAll('#arsjamforelse-bas tbody tr')].find(tr => tr.cells[0].textContent.trim() === `BAS ${STORA[0]}`);
+        expect(rad.cells[rad.cells.length - 2].textContent.trim()).toBe('–');
+    });
+});
+
 describe('ett bokslut sparat med lägre tröskel än årets', () => {
     // Förra årets fil med k = 1 eller 5; i år gäller 10. Intervall och kön under 10 får inte lämna verktyget.
     const SMALL = [77771, 77777, 77779, 66661, 66663];

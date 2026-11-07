@@ -1185,8 +1185,10 @@ uppdelningen räknar på samma variabler som huvudtalet, också när ålder elle
 **ADR-54 — Jämförelse mellan år genom ett årsbokslut i konfigurationsfilen.** Beslut 2026-10-30. Konfigurationsfilen
 bär ett *årsbokslut* (`src/lib/arsbokslut.js`, `cfg.arsbokslut`): nyckeltal för hela organisationen (antal, medianer
 per kön, kvoten, det oförklarade gapet, antal flaggade yrkesgrupper och kandidatpar), en rad per yrkesgrupp i Lika
-arbete där båda könen når minsta gruppstorlek (antal per kön, medianer, gap, flaggad) och Att göra-punkternas id,
-titel och läge. Aldrig individer, aldrig lönedata; bokslutet byggs i exportläget (ADR-51) med den inställda tröskeln,
+arbete där båda könen når minsta gruppstorlek (antal per kön, medianer, gap, flaggad, lönespridningen) och Att göra-punkternas id,
+titel och läge. Lönespridningen är (P90 − P10) / median (`lonespridning`), räknad där gruppen har minst k löner; den
+står också på raderna per BAS-intervall, och `jamforArsbokslut` ger den förra året och i år. En äldre fil utan fältet
+ger null, som panelen och rapporten skriver som streck. Aldrig individer, aldrig lönedata; bokslutet byggs i exportläget (ADR-51) med den inställda tröskeln,
 och `valideraArsbokslut` stryker vid inläsning varje grupp där ett kön är under bokslutets k och nollar könsuppdelade
 nyckeltal när ett kön är det. Läses en fil med bokslut in ligger det i `state.forraArsbokslut`, och panelen
 *Jämförelse med förra året* i Spara och jämför år (`73-arsbokslut.js`, `jamforArsbokslut`) visar nyckeltal rad för

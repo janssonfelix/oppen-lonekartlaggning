@@ -612,8 +612,9 @@ id för en rad som lagts till på fliken — och sakligt skäl, ansvarig, tidspl
 åtgärd och berörda grupp som fritext; rullistornas okända värden läses som tomma, fritexten kortas till 500 tecken),
 avbockningarna i Att göra (punkternas id, som innehåller AID-kod och BAS),
 organisationsnamnet och ett redigerat struktur-narrativ, samt **årsbokslutet** (ADR-54): nyckeltal för hela
-organisationen, en rad per yrkesgrupp där båda könen når minsta gruppstorlek (antal per kön, medianer, gap) och
-Att göra-punkternas id, titel och läge — byggt i exportläget med den inställda tröskeln, och vid inläsning stryks
+organisationen, en rad per yrkesgrupp där båda könen når minsta gruppstorlek (antal per kön, medianer, gap och
+lönespridningen (P90 − P10) / median), en rad per BAS-intervall med minst så många personer (antal, P10, median, P90,
+lönespridningen, och könsmedianerna bara när båda könen når gränsen) och Att göra-punkternas id, titel och läge — byggt i exportläget med den inställda tröskeln, och vid inläsning stryks
 varje grupp där ett kön är under bokslutets k (`valideraArsbokslut`; vaktas av `tests/arsbokslut.test.js` och
 `tests/smoke-arsbokslut.test.js`). `state.data` (individrader) ingår **aldrig** — verifierat mot
 `buildConfigSnapshot()` i koden (ingen `state.data`-referens). Organisationens namn och jämförelsestatistikens namn (användarens
