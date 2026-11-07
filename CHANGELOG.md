@@ -165,7 +165,8 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   för *Eget urval (14 av 14 avsnitt)*. Ett kryss i listan ritar om förhandsbeskedet utan att räkna om avsnitten: 0,27 s
   mot 3,0 s vid 55 000 rader (`npm run perf` vaktar med gränsen 1 s). Motiveringsförslaget om åldersskillnad i Prioritering säger *Vi
   rekommenderar att ni stämmer av*. *Lägg till i organisationspaketet* prövar inte längre formuläret *Skapa
-  paket*, som inte påverkar det paketet (*Spara paketet* gör det som förut).
+  paket*, som inte påverkar det paketet (*Spara paketet* gör det som förut). Pekar kolumnmappningen ut en annan kolumn än
+  importprofilen som kände igen filen säger lönefilens ruta *Känd uppsättning, ändrad: …*.
 
 ### Analys
 

@@ -88,6 +88,32 @@ describe('importprofiler: spara en gjord mappning och känna igen filen nästa g
         expect(w2.__state.data.every(d => d.bas === 'X' && d.alder > 0)).toBe(true);
     });
 
+    it('en mappning som ändrats för hand efter att profilen känt igen filen: filkortet säger Känd uppsättning, ändrad', async () => {
+        const w = createAppWindow();
+        w.__p = [PROFIL];
+        w.eval("state.importprofiler = _ipValideraLista(window.__p, { kalla: 'konfiguration' }).profiler");
+        await lasIn(w, okandaRader());
+        expect(kortet(w).textContent).toBe('Känd uppsättning: Lönesystemets personallista (konfigurationsfilen)');
+        // Samma rubriker som profilen ger i varje val: ingen ändring.
+        w.document.getElementById('data-status').textContent = '';
+        panel(w).querySelector('#colmap-apply').click();
+        await vanta(() => w.__state.data.length === 30 && status(w) && !/läser|Läser/.test(status(w)));
+        expect(kortet(w).textContent).toBe('Känd uppsättning: Lönesystemets personallista (konfigurationsfilen)');
+        // Yrket ur en annan kolumn än profilens.
+        panel(w).querySelector('[data-colmap-role="yrke"]').value = 'Avd';
+        w.document.getElementById('data-status').textContent = '';
+        panel(w).querySelector('#colmap-apply').click();
+        await vanta(() => w.__state.data.length === 30 && status(w) && !/läser|Läser/.test(status(w)) && /ändrad/.test(kortet(w).textContent));
+        expect(w.__state.importprofil).toMatchObject({ namn: 'Lönesystemets personallista' });
+        expect(kortet(w).textContent).toBe('Känd uppsättning, ändrad: Lönesystemets personallista (konfigurationsfilen)');
+        // Återställd mappning: profilen gäller som den är.
+        w.document.getElementById('data-status').textContent = '';
+        panel(w).querySelector('#colmap-reset').click();
+        await vanta(() => w.__state.data.length === 30 && status(w) && !/läser|Läser/.test(status(w)) && !/ändrad/.test(kortet(w).textContent));
+        expect(w.__state.columnMap).toBeNull();
+        expect(kortet(w).textContent).toBe('Känd uppsättning: Lönesystemets personallista (konfigurationsfilen)');
+    });
+
     it('en äldre konfigurationsfil utan profiler tar inte bort sessionens sparade profil', async () => {
         const w = createAppWindow();
         const aldre = JSON.parse(JSON.stringify(w.__buildConfigSnapshot()));

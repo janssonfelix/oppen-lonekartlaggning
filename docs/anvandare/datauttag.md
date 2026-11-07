@@ -88,7 +88,8 @@ slipper du göra om den nästa år:
    konfigurationsfilen.
 4. Nästa gång: läs in konfigurationsfilen och sedan uttaget. Kolumnerna känns igen utan
    mappning, och lönefilens ruta och kolumnmappningen säger *Känd uppsättning: Vår
-   personallista (konfigurationsfilen)*.
+   personallista (konfigurationsfilen)*. Pekar du sedan ut en annan kolumn än profilens för
+   hand står det *Känd uppsättning, ändrad: …*.
 
 En importprofil bär **bara rubrikernas namn** — vilken rubrik som är BAS-intervall, yrke,
 lön och så vidare, och vilka rubriker som måste finnas för att profilen ska gälla. Inga värden

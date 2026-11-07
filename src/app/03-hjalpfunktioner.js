@@ -108,9 +108,14 @@ function _importprofilFor(headers) {
 function _importprofilKalla(kalla) {
     return kalla === 'organisationspaket' ? 'organisationspaketet' : kalla === 'konfiguration' ? 'konfigurationsfilen' : 'inbyggd';
 }
-/** "Känd uppsättning: Namn (källa)" för profilen, eller tom sträng. */
+/**
+ * "Känd uppsättning: Namn (källa)" för profilen, eller tom sträng. "Känd uppsättning, ändrad: …" när kolumnmappningen
+ * (state.columnMap) pekar ut en annan rubrik än profilen för någon roll.
+ */
 function importprofilText(p) {
-    return p ? `Känd uppsättning: ${p.namn} (${_importprofilKalla(p.kalla)})` : '';
+    if (!p) return '';
+    const m = state.columnMap || {}, andrad = Object.keys(m).some(roll => m[roll] !== (p.mappning || {})[roll]);
+    return `Känd uppsättning${andrad ? ', ändrad' : ''}: ${p.namn} (${_importprofilKalla(p.kalla)})`;
 }
 
 // ---- Tal som text, svenskt format ----
