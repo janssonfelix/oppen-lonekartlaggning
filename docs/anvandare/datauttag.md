@@ -95,8 +95,13 @@ lön och så vidare, och vilka rubriker som måste finnas för att profilen ska 
 ur filen följer med. Verktyget avvisar en profil med en rubrik längre än 80 tecken eller med
 något som liknar ett personnummer eller en e-postadress.
 
+En sparad profil finns **bara i sessionen** tills du sparar konfigurationen: *Rensa all data* och
+rensningen vid inaktivitet tar bort den. En konfigurationsfil utan profiler tar inte bort de
+profiler du redan har sparat i sessionen.
+
 - **Dela inom organisationen:** är ett organisationspaket inläst finns också knappen **Lägg till
-  i organisationspaketet**. Den laddar ner ett nytt paket med profilen; sprid det i stället för
+  i organisationspaketet**. Den laddar ner ett nytt paket — det inlästa paketets egna delar
+  och profilen, inget ur sessionen — och sprid det i stället för
   det gamla, så känns uttaget igen hos alla handläggare (se `organisationspaket.md`).
 - **Ordningen:** organisationspaketets profiler prövas först, sedan konfigurationsfilens, sedan
   verktygets inbyggda (CSV-mallen, testdatans fil och demodatans fältnamn), och sist de vanliga

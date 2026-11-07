@@ -1,6 +1,6 @@
 # Risk- och sårbarhetsanalys (dataskydd och informationssäkerhet) — Öppen lönekartläggning
 
-**Bygge:** `2026.11.05` · **Artefakt-SHA-256:** `24c6c2369c43294c4509783e27742b68eb466d982501614843a1f7efb7f9861c` (se `dist/RELEASE.txt`).
+**Bygge:** `2026.11.05` · **Artefakt-SHA-256:** `b1c62905207f1021b8b2efdcc3e87ffc00e6703269051d0d75bc4c8f040186d6` (se `dist/RELEASE.txt`).
 **Granskningsdatum:** 2026-11-07.
 **Granskningsmetod:** kodläsning påstående för påstående + statisk sökning i källkod och bygge +
 körning av det byggda verktyget i jsdom och i Chromium (utan nätverk) med syntetiska testfiler.
@@ -616,7 +616,11 @@ organisationen, en rad per yrkesgrupp där båda könen når minsta gruppstorlek
 lönespridningen (P90 − P10) / median), en rad per BAS-intervall med minst så många personer (antal, P10, median, P90,
 lönespridningen, och könsmedianerna bara när båda könen når gränsen) och Att göra-punkternas id, titel och läge — byggt i exportläget med den inställda tröskeln, och vid inläsning stryks
 varje grupp där ett kön är under bokslutets k (`valideraArsbokslut`; vaktas av `tests/arsbokslut.test.js` och
-`tests/smoke-arsbokslut.test.js`). `state.data` (individrader) ingår **aldrig** — verifierat mot
+`tests/smoke-arsbokslut.test.js`), samt sessionens egna **importprofiler** (`importprofiler`, utelämnat när de saknas):
+profilens namn, rubriknamnen per fält och kännetecknen — bara rubriknamn, inga värden ur filen; id:t härleds ur namnet
+och kännetecknen och läses aldrig ur filen, och vid inläsning prövas varje text mot längden (80 tecken) och mot
+personnummer och e-post (`valideraImportprofil` i `src/lib/importprofiler.js`); en fil utan profiler tar inte bort
+sessionens. `state.data` (individrader) ingår **aldrig** — verifierat mot
 `buildConfigSnapshot()` i koden (ingen `state.data`-referens). Organisationens namn och jämförelsestatistikens namn (användarens
 egna namn; text som liknar personnummer eller e-post avvisas) ingår. Organisationstypen (kommun,
 region eller båda) ingår som inställning. Ansvarskoderna och

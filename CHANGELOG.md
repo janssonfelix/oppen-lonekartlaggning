@@ -16,7 +16,8 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   vanliga kolumnnamnen; den första profil vars kännetecken alla finns gäller, och roller den inte täcker känns igen
   som förut. Rubrikraden hittas också efter försättsrader när bara en profil känner igen den. Lönefilens ruta och
   kolumnmappningen säger *Känd uppsättning: … (källa)*. Med ett organisationspaket inläst laddar *Lägg till i
-  organisationspaketet* ner ett nytt paket med profilen; paketet har det valfria fältet `importprofiler` (äldre paket
+  organisationspaketet* ner ett nytt paket med profilen, byggt ur det inlästa paketets egna delar och med samma
+  vakter som *Spara paketet*; paketet har det valfria fältet `importprofiler` (äldre paket
   utan det fungerar som förut). *Inställningar › Importprofiler* listar profilerna med namn, källa och rubriker per
   fält, med *Ta bort* och *Exportera JSON*; sökrutan hittar avsnittet. De inbyggda profilerna gäller bara verktygets
   egna format (CSV-mallen, testdatans fil och demodatans fältnamn) — inga profiler för namngivna lönesystem. *Rensa
