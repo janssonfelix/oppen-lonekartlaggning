@@ -32,7 +32,7 @@ const INFO_SECTIONS = {
         <h3>Vad verktyget gör, och vad du gör själv</h3>
         <p><strong>Verktyget gör:</strong></p>
         <ul>
-            <li>Räknar fram löneskillnaden mellan kvinnor och män i samma yrkesgrupp och mellan kvinnodominerade yrken och jämförelseyrken på samma nivå, och visar hur mycket som finns kvar när ålder och nivå räknats bort</li>
+            <li>Räknar fram löneskillnaden mellan kvinnor och män i samma yrkesgrupp och mellan kvinnodominerade yrken och jämförelseyrken i samma BAS-intervall, och visar hur mycket som finns kvar när ålder och BAS-intervall räknats bort</li>
             <li>Jämför löneläget mot organisationens lönepolitiska ställningstagande och mot jämförelsestatistiken</li>
             <li>Ordnar yrkesgrupperna efter var en åtgärd gör störst nytta och räknar vad det kostar; låter dig pröva hur en lönepott kan fördelas</li>
             <li>Ger en checklista för att granska regler och praxis, där du skriver in bedömningen och resonemanget</li>

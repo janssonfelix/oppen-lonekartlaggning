@@ -299,8 +299,8 @@ också när det är hopfällt.
    och övriga analyser gäller alltid hela organisationen.
    **Var uppstår löneskillnaden?** delar skillnaden i medellön i
    tre delar som tillsammans blir hela skillnaden — diagrammet visar dem som en trappa som landar i hela skillnaden: **BAS-fördelning** (kvinnor och män i
-   olika BAS — en fråga om karriärvägar och rekrytering), **AID inom BAS** (olika yrken på
-   samma nivå — pröva likvärdigt arbete) och **inom AID och BAS** (olika lön i samma
+   olika BAS — en fråga om karriärvägar och rekrytering), **AID inom BAS** (olika yrken i
+   samma BAS-intervall — pröva likvärdigt arbete) och **inom AID och BAS** (olika lön i samma
    arbete — pröva lika arbete). Under varje del står de grupper som bidrar mest i kronor.
    Listan kan skilja sig från de flaggade yrkena i Lika arbete, som sorteras efter hur stor
    skillnaden är i gruppen.

@@ -23242,7 +23242,7 @@ function _konHistogramFigur(klasser, nKv, nMa, scope) {
 // ---- Lönegap per åldersgrupp ----
 // Kvinnors medianlön i procent av mäns i varje åldersgrupp, med samma bootstrap-intervall som BAS-översikten i Lönestruktur
 // (_laBootstrapGapCI). Visar VAR i karriären skillnaden finns — inte varför: det är den råa skillnaden mellan alla
-// kvinnor och män i åldersgruppen, oavsett yrke och nivå. En åldersgrupp där ett kön har färre än tröskeln visas inte.
+// kvinnor och män i åldersgruppen, oavsett yrke och BAS-intervall. En åldersgrupp där ett kön har färre än tröskeln visas inte.
 const KON_ALDERSGRUPPER = [[0, 29, 'Under 30 år'], [30, 39, '30–39 år'], [40, 49, '40–49 år'], [50, 59, '50–59 år'], [60, 200, '60 år och äldre']];
 function _konAlderGapRader(dataKv, dataMa, k = kTroskel()) {
     const visade = [], dolda = [];
@@ -23265,7 +23265,7 @@ function _konAlderGapFigur(rader, scope) {
         ['95 % KI', d.fel ? `${_figTalformat(d.fel.lag, 'pct', { enhet: false })}–${_figTalformat(d.fel.hog, 'pct')}` : '–'],
         ['Median kvinnor / män', `${kr(d.o.medKv)} / ${kr(d.o.medMa)}`], ['Antal kvinnor / män', `${d.o.nKv} / ${d.o.nMa}`]];
     const alla = rader.flatMap(o => [o.gap, ...(o.ci ? [o.ci.lo, o.ci.hi] : [])]);
-    return { beskrivning: `Kvinnors medianlön i procent av mäns per åldersgrupp i ${scope}, som en punkt med 95 % konfidensintervall mot linjen för lika lön (100 %). Skillnaden är rå: alla kvinnor mot alla män i åldersgruppen, oavsett yrke och nivå.`,
+    return { beskrivning: `Kvinnors medianlön i procent av mäns per åldersgrupp i ${scope}, som en punkt med 95 % konfidensintervall mot linjen för lika lön (100 %). Skillnaden är rå: alla kvinnor mot alla män i åldersgruppen, oavsett yrke och BAS-intervall.`,
         y: { skala: 'band', ordning: rader.map(o => o.namn) },
         x: { skala: 'linjar', titel: 'Kvinnors median i % av mäns — 100 = lika lön', doman: [Math.floor(Math.min(90, ...alla) - 2), Math.ceil(Math.max(105, ...alla) + 2)] },
         hojd: Math.max(180, 110 + rader.length * 34),
@@ -29625,7 +29625,7 @@ const INFO_SECTIONS = {
         <h3>Vad verktyget gör, och vad du gör själv</h3>
         <p><strong>Verktyget gör:</strong></p>
         <ul>
-            <li>Räknar fram löneskillnaden mellan kvinnor och män i samma yrkesgrupp och mellan kvinnodominerade yrken och jämförelseyrken på samma nivå, och visar hur mycket som finns kvar när ålder och nivå räknats bort</li>
+            <li>Räknar fram löneskillnaden mellan kvinnor och män i samma yrkesgrupp och mellan kvinnodominerade yrken och jämförelseyrken i samma BAS-intervall, och visar hur mycket som finns kvar när ålder och BAS-intervall räknats bort</li>
             <li>Jämför löneläget mot organisationens lönepolitiska ställningstagande och mot jämförelsestatistiken</li>
             <li>Ordnar yrkesgrupperna efter var en åtgärd gör störst nytta och räknar vad det kostar; låter dig pröva hur en lönepott kan fördelas</li>
             <li>Ger en checklista för att granska regler och praxis, där du skriver in bedömningen och resonemanget</li>
