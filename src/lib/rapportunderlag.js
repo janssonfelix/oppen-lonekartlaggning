@@ -374,8 +374,23 @@ export function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
         const st = [`${_st(rader.length, 'förifylld åtgärd', 'förifyllda åtgärder')}` + (u.summa ? ` med en uppskattad kostnad på ${_kr(u.summa)} per år.` : '.')];
         if (!rader.length) return blk('Handlingsplan', st, null);
         // Antal berörda: gruppens antal (för ett kandidatpar det kvinnodominerade yrkets); tomt för en egen rad.
-        return blk('Handlingsplan', st, { rubriker: ['Åtgärd', 'Grupp', 'Antal berörda', 'Underlag', 'Uppskattad kostnad per år'],
+        const b = blk('Handlingsplan', st, { rubriker: ['Åtgärd', 'Grupp', 'Antal berörda', 'Underlag', 'Uppskattad kostnad per år'],
             rader: rader.map(r => [r.atgard, r.grupp, r.antal == null ? '' : formatTal(r.antal), r.underlag, _kr(r.kostnad)]) });
+        // Sakliga skäl (u.skal, ur handlingsplanen): en rad per skäl med gruppen på första raden, och summan per kategori.
+        const sk = u.skal;
+        if (sk && Array.isArray(sk.grupper) && sk.grupper.length && sk.perKategori) {
+            const andel = v => (v == null ? '–' : _pct(v * 100, 0));
+            const pk = sk.perKategori;
+            b.stycken.push('Sakliga skäl per grupp och kategori, med belopp i kronor per månad av gruppens medianskillnad. Kategorierna, beloppen och andelarna är organisationens bedömning, inte verktygets beräkning.');
+            b.tabeller = [
+                { rubrik: 'Sakliga skäl per grupp', rubriker: ['Grupp', 'Antal berörda', 'Skillnad kr/mån', 'Kategori', 'Belopp', 'Andel', 'Kommentar'],
+                  rader: sk.grupper.flatMap(g => g.skal.map((s, i) => [i ? '' : g.grupp, i || g.antal == null ? '' : formatTal(g.antal), i ? '' : _kr(g.skillnadKr),
+                      s.namn, _kr(s.belopp), andel(s.andel), s.kommentar || ''])) },
+                { rubrik: 'Sammanställning per kategori', rubriker: ['Kategori', 'Belopp kr/mån', 'Andel av skillnaden i bedömda grupper', 'Antal grupper'],
+                  rader: [...pk.kategorier.map(k => [k.namn, _kr(k.summa), andel(k.andel), formatTal(k.antalGrupper)]), ['Totalt', _kr(pk.summa), andel(pk.andel), formatTal(pk.antalGrupper)]] },
+            ];
+        }
+        return b;
     }
     throw new Error(`Okänd avsnittstyp: ${typ}`);
 }

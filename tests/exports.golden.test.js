@@ -109,6 +109,7 @@ beforeAll(() => {
             renderPrioritering();
             generateBenchmark();
             renderStructure();
+            _hpDemoSkal();   // demots sakliga skäl på tre rader: tabellerna och bladet Sakliga skal låses också
             return rows.length;
         },
         __runExports: function() {

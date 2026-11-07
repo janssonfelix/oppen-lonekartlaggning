@@ -222,6 +222,8 @@ function _lasInDemounderlag(skapa, { stort = false } = {}) {
     /** @type {HTMLElement} */ (document.getElementById('data-status')).innerHTML = `<span class="farg-info">${ikon('sok')} ${status}</span>`;
     /** @type {HTMLElement} */ (document.getElementById('data-status')).className = 'status-msg';
     markUploadLoaded('upload-cell-data', 'Testdata');
+    // Exempel på sakliga skäl på tre rader i handlingsplanen, så att tabellerna i rapporten och Excel syns.
+    if (typeof _hpDemoSkal === 'function') try { _hpDemoSkal(); } catch (e) { rapporteraFel('Demot: sakliga skäl', e); }
     return true;
 }
 

@@ -2,7 +2,8 @@ import { describe, it, expect, vi } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
 import { laddaXlsx, fangaBocker } from './helpers/ktroskel-rigg.js';
 vi.setConfig({ testTimeout: 30000 });
-const fonster = () => { const w = createAppWindow(); w.__loadDemoData(); return w; };
+// Demot förifyller sakliga skäl på tre rader (56-handlingsplan.js, _hpDemoSkal); testerna här börjar från en tom plan.
+const fonster = () => { const w = createAppWindow(); w.__loadDemoData(); w.__state.handlingsplan = {}; return w; };
 const UNDERLAG = ['Prioritering (under referensen)', 'Likvärdigt arbete (kandidatpar)'];
 const rader = w => [...w.document.querySelectorAll('#handlingsplan-tbody tr.handlingsplan-seeded')];
 const fyll = (w, el, varde) => { el.value = varde; el.dispatchEvent(new w.Event(el.tagName === 'SELECT' ? 'change' : 'input', { bubbles: true })); };

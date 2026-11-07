@@ -543,3 +543,32 @@ describe('blocket Lönerna mot referenserna', () => {
         expect(b.stycken.join(' ')).toMatch(/löneläget mot ställningstagandet: \+21,6 %/);
     });
 });
+
+describe('rapportunderlag: sakliga skäl i handlingsplanens block', () => {
+    const skal = {
+        grupper: [{ grupp: 'G · BAS C', antal: 20, skillnadKr: 2000, skal: [{ namn: 'Marknad', belopp: 800, andel: 0.4, kommentar: 'Svårrekryterat' }, { namn: 'Erfarenhet', belopp: 200, andel: 0.1, kommentar: '' }] },
+            { grupp: 'Egen rad', antal: null, skillnadKr: null, skal: [{ namn: 'Övergång', belopp: 300, andel: null, kommentar: '' }] }],
+        perKategori: { kategorier: [{ namn: 'Marknad', summa: 800, andel: 0.4, antalGrupper: 1 }, { namn: 'Erfarenhet', summa: 200, andel: 0.1, antalGrupper: 1 }, { namn: 'Övergång', summa: 300, andel: null, antalGrupper: 1 }],
+            summa: 1300, andel: 0.5, antalGrupper: 2 },
+    };
+    const rad = [{ atgard: 'a', grupp: 'G · BAS C', underlag: 'u', kostnad: 1000 }];
+    it('två tabeller med egen rubrik och en mening om att andelarna är organisationens bedömning', () => {
+        const b = avsnittBlock('handlingsplan', { rader: rad, summa: 1000, skal }, { k: 10 });
+        expect(b.tabeller.map(t => t.rubrik)).toEqual(['Sakliga skäl per grupp', 'Sammanställning per kategori']);
+        const [g, kat] = b.tabeller;
+        expect(g.rubriker).toEqual(['Grupp', 'Antal berörda', 'Skillnad kr/mån', 'Kategori', 'Belopp', 'Andel', 'Kommentar']);
+        expect(g.rader).toEqual([
+            ['G · BAS C', '20', '2 000 kr', 'Marknad', '800 kr', '40 %', 'Svårrekryterat'],
+            ['', '', '', 'Erfarenhet', '200 kr', '10 %', ''],
+            ['Egen rad', '', '–', 'Övergång', '300 kr', '–', ''],
+        ].map(r => r.map(c => c.replace(/ (?=\d{3}\b)/g, ' '))));
+        expect(kat.rubriker).toEqual(['Kategori', 'Belopp kr/mån', 'Andel av skillnaden i bedömda grupper', 'Antal grupper']);
+        expect(kat.rader.at(-1)).toEqual(['Totalt', '1 300 kr', '50 %', '2']);
+        expect(b.stycken.join(' ')).toMatch(/organisationens bedömning, inte verktygets beräkning/);
+        expect(tillText(b)).toContain('Sammanställning per kategori');
+    });
+    it('utan skäl: blocket som förut', () => {
+        expect(avsnittBlock('handlingsplan', { rader: rad, summa: 1000 }, { k: 10 }).tabeller).toBeUndefined();
+        expect(avsnittBlock('handlingsplan', { rader: rad, summa: 1000, skal: { grupper: [], perKategori: null } }, { k: 10 }).tabeller).toBeUndefined();
+    });
+});

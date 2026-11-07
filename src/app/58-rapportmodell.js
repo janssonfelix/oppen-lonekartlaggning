@@ -185,6 +185,32 @@ function rmArHelaDokumentationen(modell, alla) {
  * @param {any[]} d
  * @param {number} k
  */
+/**
+ * Handlingsplanens sakliga skäl i rapporten: tabellen Sakliga skäl per grupp (en rad per skäl, gruppen på första
+ * raden) och Sammanställning per kategori, med en dämpad mening om att andelarna är organisationens bedömning. Inget
+ * när ingen rad har skäl. `skal` ur _hpSkalUnderlag (raderna är redan k-grindade av förifyllningen).
+ */
+function rmSakligaSkalDelar(skal, dampad) {
+    if (!skal || !skal.grupper.length) return [];
+    const tom = { text: '' };
+    const rader = skal.grupper.flatMap(g => g.sammanstallning.skal.map((s, i) => [
+        i ? tom : g.grupp, i ? tom : (g.antal != null ? g.antal : tom), i ? tom : g.skillnadKr,
+        s.namn, s.belopp, s.andel != null ? s.andel * 100 : null, s.kommentar ? s.kommentar : tom]));
+    const pk = skal.perKategori;
+    const kat = pk.kategorier.map(k => [k.namn, k.summa, k.andel != null ? k.andel * 100 : null, k.antalGrupper]);
+    const over = skal.grupper.filter(g => g.sammanstallning.overstiger).map(g => g.grupp);
+    return [
+        { typ: 'rubrik', niva: 3, text: 'Sakliga skäl per grupp' },
+        { typ: 'tabell', kolumner: [{ rubrik: 'Grupp', typ: 'text' }, { rubrik: 'Antal berörda', typ: 'antal' }, { rubrik: 'Skillnad kr/mån', typ: 'kr' }, { rubrik: 'Kategori', typ: 'text' },
+            { rubrik: 'Belopp', typ: 'kr' }, { rubrik: 'Andel', typ: 'pct0' }, { rubrik: 'Kommentar', typ: 'text' }], rader },
+        ...(over.length ? [dampad(`Skälen överstiger skillnaden i ${over.length === 1 ? 'gruppen' : 'grupperna'} ${over.join(', ')}.`)] : []),
+        { typ: 'rubrik', niva: 3, text: 'Sammanställning per kategori' },
+        { typ: 'tabell', kolumner: [{ rubrik: 'Kategori', typ: 'text' }, { rubrik: 'Belopp kr/mån', typ: 'kr' }, { rubrik: 'Andel av skillnaden i bedömda grupper', typ: 'pct0' }, { rubrik: 'Antal grupper', typ: 'antal' }],
+          rader: [...kat, [{ text: 'Totalt', fet: true }, pk.summa, pk.andel != null ? pk.andel * 100 : null, pk.antalGrupper]] },
+        dampad('Kategorierna, beloppen och andelarna är organisationens bedömning, inte verktygets beräkning. Skillnaden är gruppens medianskillnad i kronor per månad (för en grupp ur prioriteringen mäns median minus kvinnors, för ett kandidatpar jämförelseyrkets median minus det kvinnodominerade yrkets). Andelen per kategori räknas mot den samlade skillnaden i de grupper som har skäl; en grupp utan redovisad skillnad räknas bara med belopp.'),
+    ];
+}
+
 function rmPerBasUnderlag(d, k) {
     if (typeof _pbTabeller !== 'function' || !d.length) return null;
     return _pbTabeller(d, { k, referens: (aid, bas) => policyFor(aid, bas), statistik: state.statistik, recept: state.perBasRecept,
@@ -663,7 +689,9 @@ function _rmAvsnittenUtanUrval() {
     // ---- 6. Åtgärder och tidsplan ----
     // Tabellen är handlingsplanen från fliken (samma förifyllning, som redan utelämnar par under tröskeln), med det som
     // fyllts i där; ett tomt fält står kvar att fylla i.
-    const hp = typeof _handlingsplanSeedRows === 'function' ? _handlingsplanSeedRows().rows : [];
+    const hpSeed = typeof _handlingsplanSeedRows === 'function' ? _handlingsplanSeedRows() : null;
+    const hp = hpSeed ? hpSeed.rows : [];
+    const hpSkal = hpSeed && typeof _hpSkalUnderlag === 'function' ? _hpSkalUnderlag(hpSeed) : { grupper: [], perKategori: null };
     const hpFalt = v => v || { text: '[HR fyller i]', fyllIn: true };
     /** @type {{id: string, rubrik: string, utelamnat: string[], delar: any[], [k: string]: any}} */
     const atgarder = { id: 'atgarder', numrerad: true, rubrik: 'Åtgärder och tidsplan', utelamnat: [], delar: [
@@ -673,6 +701,7 @@ function _rmAvsnittenUtanUrval() {
                 // Antal berörda: gruppens antal (för ett kandidatpar det kvinnodominerade yrkets); tomt för en egen rad.
                 rader: hp.map(r => [r[1], r[8] != null ? r[8] : { text: '' }, r[2], r[4] ? Math.round(r[4]) : null, hpFalt(r[3]), hpFalt(r[5]), hpFalt(r[6]), hpFalt(r[7])]) }
             : dampad(state.policy.length || state.statistik.length ? 'Inga grupper under referensen och inga kandidatpar att föra in i handlingsplanen.' : 'Inga prioriterade åtgärdsgrupper (inget ställningstagande eller ingen jämförelsestatistik inläst).'),
+        ...rmSakligaSkalDelar(hpSkal, dampad),
         fyllIn('Besluta åtgärder, budget och tidsplan (lönejusteringar ska genomföras så snart som möjligt och senast inom tre år). Beskriv även förebyggande åtgärder.'),
     ] };
 

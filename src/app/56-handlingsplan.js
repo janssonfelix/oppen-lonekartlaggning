@@ -223,6 +223,43 @@ function _hpGaTillRad(nyckel) {
     setTimeout(fokus, 120);   // fliken kan sätta fokus själv efter bytet
 }
 
+/**
+ * De sakliga skälen för exporterna: en post per förifylld eller egen rad med minst ett skäl, i tabellens ordning, och
+ * summan per kategori (src/lib/sakligaskal.js). Bygger på förifyllningen, så en rad som inte finns i underlaget (i
+ * exportläget: en grupp under tröskeln) inte följer med. `seed` återanvänder en förifyllning som redan är räknad.
+ * @param {ReturnType<typeof _handlingsplanSeedRows>} [seed]
+ */
+function _hpSkalUnderlag(seed) {
+    const s = seed || _handlingsplanSeedRows();
+    const grupper = s.nycklar.map((nyckel, i) => ({ nyckel, i, skal: _hpVarden(nyckel).skal || [] })).filter(g => g.skal.length)
+        .map(({ nyckel, i, skal }) => ({ nyckel, grupp: s.rows[i][1] || 'Egen rad', underlag: s.rows[i][2], antal: s.rows[i][8], skillnadKr: s.skillnader[i],
+            sammanstallning: _sakSammanstallning(skal, s.skillnader[i]) }));
+    return { grupper, perKategori: _sakPerKategori(grupper.map(g => ({ skal: g.sammanstallning.skal, skillnadKr: g.skillnadKr }))) };
+}
+/** Radens skäl som text för exporterna: "Marknad 800 kr; Erfarenhet 400 kr". */
+function _hpSkalText(skal) {
+    return (skal || []).map(s => `${s.namn || s.kategori} ${svTal(s.belopp, 0)} kr`).join('; ');
+}
+
+// Demots exempel på sakliga skäl (andel av gruppens skillnad, eller belopp när gruppen saknar skillnad), så att
+// tabellerna i rapporten och Excel syns. Påhittade, utan siffror i kommentarerna.
+const HP_DEMO_SKAL = [
+    [['marknad', 0.4, 'Exempel i demot: svårrekryterat yrke i regionen'], ['erfarenhet', 0.25, 'Exempel i demot: längre yrkeserfarenhet']],
+    [['overgang', 0.5, 'Exempel i demot: lön som följde med vid en omorganisation']],
+    [['utbildning', 0.3, 'Exempel i demot: vidareutbildning utöver kraven'], ['prestation', 0.2, 'Exempel i demot: bedömning enligt lönekriterierna']],
+];
+/** Förifyller demots skäl på tre rader som följer med i exporterna: rader med en medianskillnad först. Rör inte rader som redan har skäl. */
+function _hpDemoSkal() {
+    const seed = medExportLage(() => _handlingsplanSeedRows());
+    const kand = seed.nycklar.map((nyckel, i) => ({ nyckel, s: seed.skillnader[i] })).filter(x => !_hpArEgen(x.nyckel));
+    const ordning = [...kand.filter(x => x.s > 0), ...kand.filter(x => !(x.s > 0))].slice(0, HP_DEMO_SKAL.length);
+    ordning.forEach(({ nyckel, s }, j) => {
+        if ((_hpVarden(nyckel).skal || []).length) return;
+        _hpSattSkal(nyckel, HP_DEMO_SKAL[j].map(([kategori, andel, kommentar]) => ({ kategori, kommentar,
+            belopp: s > 0 ? Math.round(s * Number(andel) / 100) * 100 : Math.round(Number(andel) * 2000 / 100) * 100 })));
+    });
+}
+
 // #UX Renderar de förifyllda raderna direkt i skärm-mallen, med fält för sakligt skäl, ansvarig, tidsplan och status,
 // ovanför tomrader som syns på utskriften — så HR ser underlaget och kan fylla i planen utan att först exportera.
 function renderHandlingsplanSeed() {
@@ -319,12 +356,18 @@ function _hpValideraKonfiguration(lista, varningar) {
 function exportHandlingsplan(...a) { return medExportLage(() => _exportHandlingsplanExport.apply(null, /** @type {any} */ (a))); }
 function _exportHandlingsplanExport() {
     if (typeof XLSX === 'undefined') { alert('Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.'); return; }
-    const header = ['Åtgärd', 'Grupp (yrke och BAS-intervall)', 'Antal berörda', 'Underlag', 'Sakliga skäl prövade?', 'Beräknad kostnad (kr/år, inkl. PO)', 'Ansvarig', 'Tidsplan (senast inom tre år)', 'Status'];
+    const header = ['Åtgärd', 'Grupp (yrke och BAS-intervall)', 'Antal berörda', 'Underlag', 'Sakliga skäl prövade?', 'Beräknad kostnad (kr/år, inkl. PO)', 'Ansvarig', 'Tidsplan (senast inom tre år)', 'Status',
+        'Sakliga skäl (kategori och belopp)', 'Förklarad andel (%)'];
     const seed = _handlingsplanSeedRows();
     const prioCount = seed.prioCount, lvCount = seed.lvCount;
-    // Bladets kolumner i skärmens ordning: Antal berörda efter gruppen (tomt för en egen rad).
-    const rows = seed.rows.map(r => [r[0], r[1], r[8] != null ? r[8] : '', ...r.slice(2, 8)]);
-    for (let i = 0; i < 5; i++) rows.push(['', '', '', '', '', '', '', '', '']);   // tomma rader för manuella tillägg
+    // Bladets kolumner i skärmens ordning: Antal berörda efter gruppen (tomt för en egen rad). Sist de sakliga skälen
+    // ("Marknad 800 kr; Erfarenhet 400 kr") och hur stor andel av gruppens medianskillnad de förklarar.
+    const rows = seed.rows.map((r, i) => {
+        const sk = _hpVarden(seed.nycklar[i]).skal || [];
+        const sum = _sakSammanstallning(sk, seed.skillnader[i]);
+        return [r[0], r[1], r[8] != null ? r[8] : '', ...r.slice(2, 8), _hpSkalText(sum.skal), sum.antal && sum.forklaradAndel != null ? Math.round(sum.forklaradAndel * 1000) / 10 : ''];
+    });
+    for (let i = 0; i < 5; i++) rows.push(['', '', '', '', '', '', '', '', '', '', '']);   // tomma rader för manuella tillägg
 
     const guide = [
         ['Handlingsplan för jämställda löner — vägledning', ''],

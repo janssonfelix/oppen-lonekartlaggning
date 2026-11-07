@@ -206,3 +206,29 @@ describe.each([[10, []], [25, SENT_MELLAN]])('I4: invarianten över flikar och e
         expect(lackor).toEqual([]);
     });
 });
+
+// Sakliga skäl (handlingsplanen): skälen hör till rader som redan är k-grindade. En rad som bara finns på skärmen (en
+// grupp under tröskeln) får inte föra ut sina skäl: varken kommentarens tal eller beloppet står i något som lämnar
+// verktyget. Konfigurationsfilen är användarens egen fil med det som skrivits in och undantas (riskanalysen § 6.8).
+describe('I5: sakliga skäl på en rad under tröskeln lämnar inte verktyget', () => {
+    let utdata;
+    beforeAll(async () => {
+        const w = fonsterKon(10);
+        // Gruppen 7002 i BAS X (fyra personer) hamnar under referensen: en rad i handlingsplanen bara på skärmen.
+        w.eval("state.policy.find(p => p.bas === 'X').med = 90000");
+        const skarm = w.eval('_handlingsplanSeedRows().nycklar');
+        const ut = w.eval('medExportLage(() => _handlingsplanSeedRows().nycklar)');
+        const under = skarm.find(n => !ut.includes(n)), over = ut.find(n => !n.startsWith('egen|'));
+        expect(under, 'fixturen har en rad under tröskeln').toBeTruthy();
+        expect(over, 'fixturen har en rad över tröskeln').toBeTruthy();
+        w.eval(`_hpSattSkal(${JSON.stringify(under)}, [{ kategori: 'marknad', belopp: 87654, kommentar: 'Dold kommentar 98765' }])`);
+        w.eval(`_hpSattSkal(${JSON.stringify(over)}, [{ kategori: 'erfarenhet', belopp: 13579, kommentar: 'Synlig kommentar 45678' }])`);
+        utdata = (await samlaUtdata(w)).filter(([n]) => n !== 'skärm: alla flikar' && !n.startsWith('konfigurationsfilen'));
+    }, 180000);
+    it('kommentarens tal och beloppet syns inte för raden under tröskeln, men för raden över', () => {
+        const lackor = [];
+        for (const [namn, text] of utdata) for (const v of ['98765', '87654', '87 654']) if (text.includes(v)) lackor.push(`${namn}: ${v} — "${sammanhang(text, v)}"`);
+        expect(lackor).toEqual([]);
+        expect(utdata.some(([, t]) => t.includes('45678')), 'raden över tröskeln följer med').toBe(true);
+    });
+});
