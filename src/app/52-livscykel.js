@@ -196,7 +196,7 @@ function renderLifecycleAnalysis() {
                             <th class="t-hoger">Kvinna 65 år</th>
                             <th class="t-hoger">Man 65 år</th>
                             <th class="t-hoger" title="Kvinnors modellön minus mäns vid 65 år; negativt när kvinnor ligger lägre">Skillnad 65 år (kr)</th>
-                            <th class="t-mitt">Bevis</th>
+                            <th class="t-mitt">Beräkning</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -210,7 +210,7 @@ function renderLifecycleAnalysis() {
                                 <td class="t-hoger">${Math.round(r.kv65).toLocaleString('sv-SE')} kr</td>
                                 <td class="t-hoger">${Math.round(r.ma65).toLocaleString('sv-SE')} kr</td>
                                 <td class="t-hoger halvfet${r.gap65Kr < -1000 ? ' fg-varning' : ''}">${Math.round(r.gap65Kr).toLocaleString('sv-SE')} kr</td>
-                                <td class="t-mitt"><button class="btn-evidence" type="button" data-livscykel-bas="${esc(r.bas)}" title="Visa beräkningen för BAS ${esc(r.bas)}" aria-label="Bevis för BAS ${esc(r.bas)}">${ikon('sok')}</button></td>
+                                <td class="t-mitt"><button class="btn-evidence" type="button" data-livscykel-bas="${esc(r.bas)}" title="Visa beräkningen för BAS ${esc(r.bas)}" aria-label="Visa beräkningen för BAS ${esc(r.bas)}">${ikon('sok')}</button></td>
                             </tr>`).join('')}
                     </tbody>
                 </table>
@@ -315,7 +315,7 @@ function _evidenceForLifecycleBas(row, result) {
     const fmtKr = v => v == null || !isFinite(v) ? '—' : Math.round(v).toLocaleString('sv-SE') + ' kr';
     const fmtPct = v => v == null || !isFinite(v) ? '—' : (v >= 0 ? '+' : '') + svPct(v, 1);
     return {
-        title: `Bevis — BAS ${row.bas} (livscykelanalys)`,
+        title: `Beräkningen — BAS ${row.bas} (ålder och karriär)`,
         intro: `Predikterade lönenivåer från livscykelmodellen för BAS <strong>${esc(row.bas)}</strong>. Modellen är global (en regression över alla BAS samtidigt); nivån per BAS kommer ur modellens egen BAS-koefficient.`,
         rows: [
             { label: 'BAS-intervall',                       value: row.bas },

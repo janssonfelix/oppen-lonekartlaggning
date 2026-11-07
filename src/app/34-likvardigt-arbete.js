@@ -415,7 +415,7 @@ function renderLikvardighet() {
             <td class="lv-ki-cell fs-xs ta-hoger">${ciCell(p)}</td>
             <td class="t-hoger">${justCell(p)}</td>
             <td class="t-hoger">${Math.round(p.allvarsindex).toLocaleString('sv-SE')}</td>
-            <td class="t-mitt"><button class="btn-evidence" data-lv-pair="${i}" type="button" title="Visa beräkningen" aria-label="Bevis för par ${i+1}">${ikon('sok')}</button></td>
+            <td class="t-mitt"><button class="btn-evidence" data-lv-pair="${i}" type="button" title="Visa beräkningen" aria-label="Visa beräkningen för par ${i+1}">${ikon('sok')}</button></td>
         </tr>`).join('');
     let parTblHtml;
     if (!jämförOK) {
@@ -457,7 +457,7 @@ function renderLikvardighet() {
                             <th data-kol="ki" title="95 % bootstrap-konfidensintervall på medianskillnaden. Ligger hela intervallet över 0 är skillnaden statistiskt säker.">95 % KI</th>
                             <th data-kol="justerad" title="Skillnaden när jämförelseyrkets lön räknats om till det kvinnodominerade yrkets åldersfördelning (log(lön) ~ ålder i jämförelseyrket). Den råa skillnaden är det lagen prövar; den här visar hur mycket som kan bero på åldersstruktur. Bara interna par." data-export-label="Justerad för ålder (%)">Justerad för ålder</th>
                             <th data-kol="paverkan" title="Gapet i kronor gånger antalet personer i det kvinnodominerade yrket, per månad">Summa för gruppen (kr/mån)</th>
-                            <th data-kol="bevis">Bevis</th>
+                            <th data-kol="bevis">Beräkning</th>
                         </tr>
                     </thead>
                     <tbody>${parRows}</tbody>

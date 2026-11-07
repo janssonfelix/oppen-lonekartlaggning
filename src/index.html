@@ -701,7 +701,7 @@
                                         <th scope="col" data-export-label="Kvinnors median i % av männens (100% = lika lön)">Kvinna % av Man</th>
                                         <th scope="col" data-export-label="Median Kvinna (kr/mån)">Median Kvinna</th>
                                         <th scope="col" data-export-label="Median Man (kr/mån)">Median Man</th>
-                                        <th scope="col" data-export-skip title="Öppnar bevis-popup med formel och ingångsdata för denna BAS-rad.">Bevis</th>
+                                        <th scope="col" data-export-skip title="Visar formeln och värdena bakom raden.">Beräkning</th>
                                     </tr>
                                 </thead>
                                 <tbody></tbody>
@@ -1150,8 +1150,8 @@
                 <!-- Lika arbete: yrkesgrupperna först -->
                 <div id="view-lika-yrken" class="view-panel dold">
                     <div class="flik-intro">
-                        <strong>Samma jobb, olika lön?</strong> <span class="info-tip" data-tooltip="Diskrimineringslagen kräver att varje löneskillnad mellan kvinnor och män i lika arbete analyseras. EU:s lönetransparensdirektiv använder 5 % som gräns för när en gemensam lönebedömning kan krävas."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
-                        Här jämförs kvinnors och mäns lön inom samma yrkesgrupp. Grupper med en skillnad över 5 % flaggas och märks som sköra eller stabila. Därefter kommer personer att granska och tabellerna per AID-kod och BAS-intervall. Lönegapet och könsfördelningen per BAS-intervall, och hur mycket som kvarstår när ålder och nivå räknats bort, står i Lönestruktur.
+                        <strong>Samma jobb, olika lön?</strong> <span class="info-tip" data-tooltip="Gränsen 5 procent kommer från lönetransparensdirektivets regler om gemensam lönebedömning. Verktyget använder den för att visa var du kan börja; lagen kräver att du analyserar varje skillnad."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
+                        Diskrimineringslagen kräver att du analyserar varje löneskillnad mellan kvinnor och män som gör lika arbete (3 kap.). Här jämförs kvinnors och mäns lön inom samma yrkesgrupp. Verktyget markerar grupper med en skillnad över 5 procent och visar om markeringen håller om en eller två personer tas bort. Därefter kommer personer att granska och tabellerna per AID-kod och BAS-intervall. Löneskillnaden och könsfördelningen per BAS-intervall, och hur mycket som kvarstår när ålder och BAS-intervall räknats bort, står i Lönestruktur.
                     </div>
                     <div id="la-topp">
                         <p id="la-urval" class="urvalsrad" role="status"></p>
@@ -1162,28 +1162,28 @@
                         <div class="card-header">
                         
                             <p class="text-dampad-sm lh-1_6 marg-t-4">
-                                Tabellen jämför medianlönen för kvinnor och män inom samma yrkesgrupp – så kallat <em>lika arbete</em> (samma AID-kod). Enligt EU:s lönetransparensdirektiv bör skillnader över 5% utredas: kan de förklaras med <strong>sakliga skäl</strong> (t.ex. dokumenterad erfarenhet, prestation, marknadslöneläge) eller är de <em>osakliga</em>? Vid osaklig skillnad bör en <em>gemensam lönebedömning</em> övervägas tillsammans med facklig part.
+                                Tabellen jämför medianlönen för kvinnor och män inom samma yrkesgrupp – så kallat <em>lika arbete</em> (samma AID-kod). Lagen kräver att du analyserar varje skillnad. Skillnader över 5 procent markeras för att du ska börja där. Pröva om skillnaden har <strong>sakliga skäl</strong>, till exempel dokumenterad erfarenhet eller ansvar. Kan den inte förklaras med sakliga skäl ska den åtgärdas.
                             </p>
                             <p class="text-dampad-sm lh-1_55 marg-t-8">
                                 <strong>Så läser du skalan:</strong> &nbsp;
                                 <span class="farg-ok fw-600"><svg class="ikon ikon-bock" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg> Balanserat (≤ 3 %)</span> – inget som sticker ut · &nbsp;
                                 <span class="farg-varning fw-600"><svg class="ikon ikon-oga" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg> Följ upp (3–5 %)</span> – värt att hålla uppsikt · &nbsp;
-                                <span class="farg-granska fw-600"><svg class="ikon ikon-sok" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg> Värt att granska (&gt; 5 %)</span> – här aktualiseras EU-direktivets utredningssteg; väg skillnaden mot sakliga skäl.
+                                <span class="farg-granska fw-600"><svg class="ikon ikon-sok" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg> Värt att granska (över 5 %)</span> – pröva om skillnaden har sakliga skäl.
                             </p>
                         
                         </div>
                         <div class="table-container">
-                            <table id="matrix-table" class="data-table" aria-label="EU-lönekartläggning: lika arbete-jämförelse mellan kvinnor och män per yrkesgrupp">
+                            <table id="matrix-table" class="data-table" aria-label="Lika arbete: kvinnor och män per yrkesgrupp">
                                 <thead>
                                     <tr>
                                         <th data-kol="yrke" data-export-label="Yrkesgrupp (AID + benämning)">Yrkesgrupp</th>
-                                        <th data-kol="status" class="text" data-export-label="Status (Lika lön / Avvikelse / Utred)">Status</th>
+                                        <th data-kol="status" class="text" data-export-label="Status (Balanserat / Följ upp / Värt att granska)">Status</th>
                                         <th data-kol="antal" data-export-label="Antal personer (kvinnor/män)">Antal (Kv/Mä)</th>
-                                        <th data-kol="dominans" data-export-label="Köns-dominans (Kvinno-/Mans-/Blandad)">Dominans</th>
-                                        <th data-kol="nationellt" data-export-label="Andel kvinnor i yrket nationellt (SKR:s personalstatistik)" title="Andel kvinnor i samma yrke (AID-kod) nationellt — i kommuner, regioner eller båda enligt valet under Inställningar — ur SKR:s personalstatistik (Sveriges Kommuner och Regioner; period i Om verktyget). Ett referensvärde att jämföra er egen könsfördelning mot.">Kvinnor nationellt</th>
-                                        <th data-kol="mediankv" data-export-label="Median Kvinnor (kr/mån)">Median Kvinnor</th>
-                                        <th data-kol="medianma" data-export-label="Median Män (kr/mån)">Median Män</th>
-                                        <th data-kol="kvot" data-export-label="Lönegap kvinnor/män (kvinnors median i % av männens)">Kvinnors median i % av mäns</th>
+                                        <th data-kol="dominans" data-export-label="Könsfördelning (kvinnodominerad / mansdominerad / blandad)">Dominans</th>
+                                        <th data-kol="nationellt" data-export-label="Andel kvinnor i yrket nationellt (SKR:s personalstatistik)" title="Andelen kvinnor i samma yrke (AID-kod) nationellt, ur SKR:s personalstatistik (period i Om verktyget). Vilken sektor som räknas väljer du i Inställningar. Ett referensvärde att jämföra organisationens könsfördelning med.">Kvinnor nationellt</th>
+                                        <th data-kol="mediankv" data-export-label="Median kvinnor (kr/mån)">Median kvinnor</th>
+                                        <th data-kol="medianma" data-export-label="Median män (kr/mån)">Median män</th>
+                                        <th data-kol="kvot" data-export-label="Kvinnors median i % av mäns">Kvinnors median i % av mäns</th>
                                         <th data-kol="detalj" class="t-mitt" data-no-sort data-export-skip>Detalj</th>
                                     </tr>
                                 </thead>
@@ -1192,7 +1192,7 @@
                         </div>
                         <div class="diagramkort" id="la-tratt-kort">
                             <h3 class="diagramkort-rubrik">Yrkesgrupperna mot slumpens gränser</h3>
-                            <p class="diagramkort-forklaring">Varje punkt är en yrkesgrupp: kvinnors medianlön i procent av mäns, mot gruppens storlek. Det skuggade fältet visar hur stor skillnad slumpen ensam kan ge i en grupp av den storleken — i små grupper mycket, i stora lite. En grupp utanför fältet har en skillnad som är svår att förklara med slumpen; en liten grupp innanför kan ha en stor skillnad utan att det säger något.</p>
+                            <p class="diagramkort-forklaring">Varje punkt är en yrkesgrupp: kvinnors medianlön i procent av mäns, mot gruppens storlek. Det skuggade fältet visar hur stor skillnad slumpen ensam kan ge i en grupp av den storleken — i små grupper mycket, i stora lite. En grupp utanför fältet har en skillnad som är svår att förklara med slumpen. En liten grupp innanför kan ha en stor skillnad utan att det säger något.</p>
                             <div id="chart-la-tratt"></div>
                             <p id="la-tratt-not" class="diagramkort-not"></p>
                         </div>
@@ -1218,19 +1218,19 @@
                     <!-- Lika arbete per AID-kod och BAS-intervall: tabellerna för rapporten (45-aid-bas-tabeller.js) -->
                     <details class="card avsnitt" id="avsnitt-la-aidbas">
                         <summary><span class="avsnitt-titel"><h2>Lika arbete AID x BAS</h2><span class="avsnitt-under">Kvinnors median i procent av mäns per yrkesgrupp och BAS-intervall, mot slumpens gränser</span></span><span class="avsnitt-nyckel" id="nyckel-la-aidbas"></span></summary>
-                        <p class="avsnitt-inledning">Lika arbete är samma yrkesgrupp på samma nivå: en rad per AID-kod och BAS-intervall. Kvoten bedöms mot de 95-procentiga gränserna för vad slumpen kan ge i en grupp av den storleken, med samma metod som trattdiagrammet. Där något kön är för litet för en jämförelse står <em>Analyseras på individnivå</em>; de grupperna står i arbetslistan nedan. Tabellen går att klistra in i rapporten som den är.</p>
+                        <p class="avsnitt-inledning">Lika arbete är samma yrkesgrupp i samma BAS-intervall: en rad per AID-kod och BAS-intervall. Verktyget jämför kvoten med hur stor skillnad slumpen kan ge i en lika stor grupp (95-procentiga gränser, samma metod som diagrammet Yrkesgrupperna mot slumpens gränser). Där något kön är för litet för en jämförelse står <em>Analyseras på individnivå</em>; de grupperna står i arbetslistan nedan. Tabellen går att klistra in i rapporten som den är.</p>
                         <div id="aidbas-lika"></div>
                     </details>
                     <details class="card avsnitt" id="avsnitt-la-individ">
                         <summary><span class="avsnitt-titel"><h2>Analys på individnivå</h2><span class="avsnitt-under">Arbetslista: grupperna där något kön är för litet för en könsuppdelad jämförelse</span></span><span class="avsnitt-nyckel" id="nyckel-la-individ"></span></summary>
-                        <p class="avsnitt-inledning">Lagen kräver att löneskillnader i lika arbete analyseras också när gruppen är liten. Här står grupperna utan löner, med två kolumner att fylla i när analysen är gjord. Fyll i kolumnerna i Excel-filen.</p>
+                        <p class="avsnitt-inledning">Lagen kräver att du analyserar skillnaderna också när gruppen är liten. Här står grupperna utan löner, med två kolumner att fylla i när analysen är gjord. Fyll i kolumnerna i Excel-filen.</p>
                         <div id="aidbas-individ"></div>
                     </details>
                     <details class="card avsnitt" id="avsnitt-la-metod">
                         <summary><span class="avsnitt-titel"><h2>Så räknas det</h2><span class="avsnitt-under">Metod, begrepp, urval och hur fliken används</span></span><span class="avsnitt-nyckel" id="nyckel-la-metod"></span></summary>
-                        <p id="la-aid-bakgrund" class="la-aid-not"><strong>Om AID-grupperna:</strong> AID är SKR:s och de fackliga organisationernas gemensamma indelning av arbetsuppgifter i ”rimligt homogena” grupper för lönestatistik. AID är inte ett arbetsvärderingssystem och är inte avsett att avgöra vilka arbeten som är lika eller likvärdiga. Verktygets AID-grupper är därför en utgångspunkt för lika arbete, som ni bekräftar; för likvärdigt arbete kompletterar BAS-intervallen eller en egen arbetsvärdering. Källa: SKR, Arbetsidentifikation (AID) — Handbok för kodning (2020).</p>
+                        <p id="la-aid-bakgrund" class="la-aid-not"><strong>Om AID-grupperna:</strong> AID är SKR:s och de fackliga organisationernas gemensamma indelning av arbetsuppgifter i ”rimligt homogena” grupper för lönestatistik. AID är inte ett arbetsvärderingssystem och är inte avsett att avgöra vilka arbeten som är lika eller likvärdiga. Verktygets AID-grupper är därför en utgångspunkt för lika arbete, som du bekräftar; för likvärdigt arbete kompletterar BAS-intervallen eller en egen arbetsvärdering. Källa: SKR, Arbetsidentifikation (AID) — Handbok för kodning (2020).</p>
                         <div class="notis-varning farg-varning fs-xs lh-1_5 marg-t-10 pad-10-14">
-                                <strong>OBS:</strong> Verktyget identifierar statistiska avvikelser i rådata. Bedömning av om en löneskillnad är <em>osaklig</em> behöver kompletterande granskning av sakliga skäl (t.ex. erfarenhet, prestation, marknadslön). Resultaten utgör underlag – inte juridiska slutsatser.
+                                <strong>Obs!</strong> Verktyget hittar skillnader i lönerna. Om en skillnad saknar sakliga skäl avgör du. Resultaten är ett underlag, inte en juridisk slutsats.
                             </div>
                         <details class="audit-panel" data-audit-id="matrix">
                             <summary>Beräkning &amp; urval för denna analys</summary>
@@ -1239,27 +1239,27 @@
                         <details class="flik-usage">
                         <summary>Så används fliken i arbetet</summary>
                         <div class="flik-usage-content">
-                            <h3>Lönekartläggning enligt diskrimineringslagen</h3>
+                            <h3>Lönekartläggningen</h3>
                             <ul>
-                                <li><em>Kvinnor och män i samma yrkesgrupp</em> är kartläggningens kärna: varje yrkesgrupp där båda könen finns, med status. Grupper märkta <em>Börja här</em> och <em>Värt att granska</em> är de som ska utredas och där sakliga skäl ska dokumenteras.</li>
-                                <li><em>Lönegap per BAS-intervall</em> säger var i organisationen skillnaden är störst; <em>Könsfördelning per BAS-intervall</em> var ett kön är under 40 % — där är jämförelserna mindre säkra.</li>
-                                <li><em>Vad blir kvar av lönegapet?</em> ger den oförklarade skillnaden när ålder och nivå räknats bort — det tal Medlingsinstitutet redovisar nationellt. Oförklarat betyder inte osakligt: det är det som ska granskas, inte ett bevis.</li>
+                                <li><em>Kvinnor och män i samma yrkesgrupp</em> är kartläggningens kärna: varje yrkesgrupp där båda könen finns, med status. Börja med grupperna märkta <em>Värt att granska</em>; lagen kräver att du prövar alla skillnader och dokumenterar bedömningen.</li>
+                                <li><em>Löneskillnad per BAS-intervall</em> säger var i organisationen skillnaden är störst; <em>Könsfördelning per BAS-intervall</em> var ett kön är under 40 % — där är jämförelserna mindre säkra.</li>
+                                <li><em>Vad blir kvar av löneskillnaden?</em> ger den oförklarade skillnaden när ålder och BAS-intervall räknats bort — samma slags tal som Medlingsinstitutet redovisar nationellt. Oförklarat betyder inte osakligt: det är det som ska granskas, inte ett bevis.</li>
                             </ul>
-                            <h3>Inför gemensam lönebedömning (EU 2023/970)</h3>
+                            <h3>Inför en gemensam lönebedömning</h3>
                             <ul>
-                                <li>Lista yrkesgrupperna märkta <em>Värt att granska</em>: där aktualiseras direktivets utredningssteg.</li>
+                                <li>Lista yrkesgrupperna märkta <em>Värt att granska</em>.</li>
                                 <li>Dokumentera sakliga skäl för varje grupp innan den gemensamma lönebedömningen; <em>Personer att granska</em> under tabellen pekar på enskilda löner som sticker ut.</li>
-                                <li>Välj urvalet <em>Facklig dialog</em> under <em>Rapportens innehåll</em> på Exportera för Word-utkast och PDF till arbetstagarnas företrädare.</li>
+                                <li>Till facket: välj urvalet <em>Facklig dialog</em> under <em>Rapportens innehåll</em> i Exportera.</li>
                             </ul>
                             <h3>Vid frågor från ledning eller arbetstagarnas företrädare</h3>
                             <ul>
                                 <li>"Är vi diskriminerande?" — det går inte att läsa ur statistiken; peka på den oförklarade skillnaden och på vilka grupper som ska granskas.</li>
-                                <li>"Varför är det råa gapet så stort?" — visa trappan <em>steg för steg</em>: vad åldersfördelningen och BAS-placeringen förklarar.</li>
-                                <li>"Var är problemet störst?" — tabellen under <em>Lönegap per BAS-intervall</em>.</li>
+                                <li>"Varför är den råa skillnaden så stor?" — visa trappan <em>steg för steg</em>: vad åldersfördelningen och BAS-placeringen förklarar.</li>
+                                <li>"Var är problemet störst?" — tabellen under <em>Löneskillnad per BAS-intervall</em>.</li>
                             </ul>
                             <h3>Tolkningstips</h3>
                             <ul>
-                                <li>Statistiskt säkerställd (p under 0,05) betyder att en så stor skillnad sällan uppstår av slumpen när ingen finns — inte att den är stor. Praktisk betydelse kräver också att den är över 5 %.</li>
+                                <li>Statistiskt säkerställd (p under 0,05) betyder att en så stor skillnad sällan uppstår av slumpen när ingen finns — inte att den är stor. Om den är stor nog att spela roll är en annan fråga; verktyget markerar skillnader över 5 procent.</li>
                                 <li><em>Lönefördelningen</em> i regressionskortet visar om skillnaden är störst bland de högst betalda (glastak) eller de lägst betalda (klistergolv).</li>
                                 <li>Kvoten 95 % (kvinnors lön av mäns) och skillnaden −5 % är samma tal; regressionskortet använder skillnaden så att den kan jämföras med modellens.</li>
                             </ul>
@@ -2636,12 +2636,12 @@
         <div class="glossary-backdrop" data-evidence-close></div>
         <div class="glossary-panel max-bredd-680">
             <header class="glossary-header">
-                <h2 id="evidence-modal-title">Hur räknades detta?</h2>
+                <h2 id="evidence-modal-title">Visa beräkningen</h2>
                 <button id="evidence-modal-close" class="btn btn-secondary btn-sm" aria-label="Stäng" type="button" data-evidence-close><svg class="ikon ikon-kryss" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 6l12 12"/><path d="M18 6 6 18"/></svg></button>
             </header>
             <div id="evidence-modal-content" class="glossary-content"></div>
             <footer class="glossary-footer">
-                <small>Bevis-popup. Visar exakt formel, ingångsvärden och mellansteg så ni kan förklara siffran i facklig samråd.</small>
+                <small>Visar formeln, värdena och mellanstegen, så att du kan förklara talet för facket.</small>
             </footer>
         </div>
     </div>

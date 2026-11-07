@@ -146,9 +146,9 @@ describe('Fler kolumner: de gömda talen finns i beviset', () => {
         const it0 = w.document.querySelector('#prio-table tbody tr')._prioItem;
         const b = w.eval('_evidenceForPrioItem')(it0, 'stallningstagande');
         const etiketter = b.rows.map(r => r.label);
-        for (const e of ['Antal medarbetare i gruppen', 'Median månadslön', 'Avvikelse', 'Kostnad per person', 'Bristyrke-multiplikator']) expect(etiketter).toContain(e);
+        for (const e of ['Antal anställda i gruppen', 'Median månadslön', 'Avvikelse', 'Kostnad per person', 'Bristyrke-multiplikator']) expect(etiketter).toContain(e);
         expect(etiketter.some(e => /^Referens/.test(e))).toBe(true);
-        expect(b.rows.find(r => r.label === 'Antal medarbetare i gruppen').note).toMatch(/kvinnor · \d+ män/);
+        expect(b.rows.find(r => r.label === 'Antal anställda i gruppen').note).toMatch(/kvinnor · \d+ män/);
     });
     it('Lika arbete: beviset har dominansen och andelen kvinnor nationellt, också för yrken med samlad median', () => {
         const w = rita('matrix');
