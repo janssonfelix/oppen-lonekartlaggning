@@ -43,7 +43,7 @@ konsekvensbedömning (DPIA). Lagrumshänvisningarna samlas i
   Spärren har inga undantag och fångar också direkt tilldelning. Det är ändå frånvaron av
   lagringskod som är skyddet — spärren fångar misstag (riskanalysen §6.2).
 - **Uppgiftsminimering vid inläsningen:** filen läses in i webbläsarens minne och gås
-  igenom rad för rad; bara de vitlistade fälten sparas, och filens övriga innehåll släpps
+  igenom rad för rad; bara de godkända fälten sparas, och filens övriga innehåll släpps
   när inläsningen är klar. Namn som hamnat i yrkesfältet maskeras.
 - **Skydd mot skadlig indata:** bara verktygets egna skript får köras (hash-baserad CSP),
   all text från filen kodas innan den visas, och formler i CSV och urklipp neutraliseras så

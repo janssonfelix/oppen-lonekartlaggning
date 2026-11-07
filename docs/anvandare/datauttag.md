@@ -119,7 +119,7 @@ profiler du redan har sparat i sessionen.
 ## 3. Ta ALDRIG med (uppgiftsminimering enligt dataskyddsförordningen)
 
 Ta **inte** med personnummer, namn eller e-post i uttaget. Verktyget läser bara in de
-vitlistade fälten ovan, och det **avvisar hela filen** om det upptäcker en identifierande
+fält som står ovan, och det **avvisar hela filen** om det upptäcker en identifierande
 kolumn — antingen på rubriken (t.ex. `Personnummer`, `PNR`, `Namn`, `Efternamn`,
 `E-post`) eller på innehållet (i filens första 50 rader: minst tre celler i personnummer-
 eller e-postformat, eller minst fem som ser ut som för- och efternamn).
@@ -127,7 +127,7 @@ Detsamma gäller kolumner vars rubrik antyder en särskild kategori av personupp
 (`Fackmedlemskap`, `Hälsa`, `Sjukfrånvaro`, `Diagnos`, `Etnicitet` och liknande); där prövas bara rubriken.
 Ta bort sådana kolumner redan i uttaget ur lönesystemet.
 
-> Detta är ett medvetet dataminimeringsskydd (Privacy by Design). Se
+> Det är ett medvetet skydd: verktyget tar bara in de uppgifter det behöver (inbyggt dataskydd). Se
 > `riskanalys.md` för hela dataskyddsmodellen.
 
 ## 4. Per system — så här tar du fram de fem fälten

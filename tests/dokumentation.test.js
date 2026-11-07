@@ -424,6 +424,16 @@ describe('vakt: avförda ord och lagrum i användartexten (språkgenomgången 20
         ['osakliga gap', /osakliga gap/],
         ['anmälningspliktig', /anmälningspliktig/],
         ['utredningsgräns', /utrednings(?:gräns|tröskel|steg)|obligatorisk utredning|[Ll]agstadgat tröskelvärde/],
+        // Klarspråksputsen (K-OR7): "Nära pension", och svenska ord i stället för de engelska och tekniska termerna.
+        // Ordlistan får ange den engelska termen gement som förklaring ("eng. privacy by design").
+        ['Successionszon', /[Ss]uccessions(?:zon|risk)/],
+        ['conditional gap', /[Cc]onditional gap/],
+        ['Privacy by Design', /Privacy by Design/],
+        ['datafunnel', /[Dd]atafunnel/],
+        ['lokal-only', /lokal-only/i],
+        ['leverage', /[Ll]everage/],
+        ['media-mått', /[Mm]edia-mått/],
+        ['rekryteringspipeline', /[Rr]ekryteringspipeline/],
     ];
     // I gränssnittet: inget paragraftecken och inget artikelnummer. "3 kap." är tillåtet.
     const LAGRUM_UI = [['§', /§/], ['artikel', /\b[Aa]rt\.\s*\d|[Aa]rtikel\s+\d/]];
@@ -457,10 +467,13 @@ describe('vakt: avförda ord och lagrum i användartexten (språkgenomgången 20
     it('mönstren fångar de avförda orden men inte identifierare och tillåtna former', () => {
         for (const t of ['Lönegapet', 'det råa lönegapet', 'Gapet visar', 'ett gap på', 'rågapet', 'Könsgapet',
             'BAS-nivån', 'Ladda upp strukturdata', 'strukturfilen', 'medarbetarna', 'likvärdiga arbeten',
-            'osakliga gap', 'anmälningspliktig', 'EU-direktivets utredningströskel', 'Lagstadgat tröskelvärde', 'Gap-analys'])
+            'osakliga gap', 'anmälningspliktig', 'EU-direktivets utredningströskel', 'Lagstadgat tröskelvärde', 'Gap-analys',
+            'i successionszon', 'Hög successionsrisk', 'Per-BAS conditional gap', 'Privacy by Design', 'Urval (datafunnel)',
+            'lokal-only-arkitektur', 'leverage', 'media-mått', 'rekryteringspipelinen'])
             expect(traffar(t, AVFORDA), t).not.toEqual([]);
         for (const t of ['gapPct', 'meanGap', '68-var-uppstar-gapet.js', 'chart-perbas-gap', 'BAS-nivå B',
-            'löneskillnad', 'anställda', 'BAS-intervall', 'likvärdigt arbete', 'lönefilen', '`gap`'])
+            'löneskillnad', 'anställda', 'BAS-intervall', 'likvärdigt arbete', 'lönefilen', '`gap`',
+            'Nära pension', 'Inbyggt dataskydd', '(eng. privacy by design)', 'bara godkända fält', 'inflytelserika punkter', 'rekryteringen'])
             expect(traffar(t, AVFORDA), t).toEqual([]);
         for (const t of ['(§ 8)', 'art. 9', 'Art. 9', 'artikel 10', '3 kap. 9 §']) expect(traffar(t, LAGRUM_UI), t).not.toEqual([]);
         for (const t of ['Diskrimineringslagen kräver att du analyserar varje skillnad (3 kap.).', 'lagen'])

@@ -971,7 +971,7 @@ function renderAuditHtml(a) {
 
     return `
         <div class="audit-section">
-            <div class="audit-section-header">Urval (datafunnel)</div>
+            <div class="audit-section-header">Urval</div>
             <table class="audit-table">
                 <tr><td>Total i datafilen:</td><td class="tabelltal fw-600 ta-hoger">${fmt(a.totalRaw)}</td></tr>
                 ${exclRows}
@@ -18269,7 +18269,7 @@ function openDataResidency() {
                 <li>Lagring på disk: <strong>0 byte</strong> (inget skrivs till localStorage, IndexedDB eller cookies)</li>
                 <li>Nätverkstrafik: <strong>0 byte</strong> (CSP <code>connect-src 'none'</code> blockerar all utgående trafik)</li>
             </ul>
-            <p><strong>Schema (vitlistade fält per rad)</strong></p>
+            <p><strong>Fälten som sparas per rad</strong></p>
             <p class="marg-0-0-6">Verktyget läser bara fem fält ur filen: BAS-intervall, yrke, lön, ålder och kön, plus valfri arbetsvärderingspoäng och valfri ansvarskod enligt AID. Det noterar också radens nummer i filen. Allt annat (personnummer, namn, e-post, anställningsnummer, fri text utöver yrkesbenämningen) tas bort vid inläsningen och sparas aldrig.</p>
             ${sampleRow}
             <p class="bak-ok-yta ram-v-3-ok rund-4 fs-sm marg-t-18 pad-10-14">
@@ -23511,8 +23511,8 @@ function renderDemografi(bas) {
     if (iqrEl) iqrEl.textContent = `${q25}–${q75} år`;
     // Risk text
     const risks = [];
-    if (pct60p > 25) risks.push(`<strong>Hög successionsrisk:</strong> ${svPct(pct60p, 1)} av ${scopeShort} är 60+ år. Aktiv planering för kompetensöverföring rekommenderas — riktålder 60–67 betyder att en betydande del kan avgå inom 0–7 år.`);
-    else if (pct60p > 15) risks.push(`<strong>Bevakas – 60+:</strong> ${svPct(pct60p, 1)} i successionszon.`);
+    if (pct60p > 25) risks.push(`<strong>Många nära pension:</strong> ${svPct(pct60p, 1)} av ${scopeShort} är 60 år eller äldre. Med riktåldern 60–67 kan en stor del gå i pension inom 0–7 år. Planera för att deras kunskap förs vidare.`);
+    else if (pct60p > 15) risks.push(`<strong>Håll uppsikt – nära pension:</strong> ${svPct(pct60p, 1)} är 60 år eller äldre.`);
     if (pctU40 < 15) risks.push(`<strong>Brist på återväxt:</strong> Endast ${svPct(pctU40, 1)} är under 40 år.`);
     if (!isAll) {
         if (ageDiff > 5) risks.push(`Medelåldern är ${svTal(ageDiff, 1)} år <em>högre</em> än organisationssnittet.`);
@@ -33548,7 +33548,7 @@ const SOK_FUNKTIONER = [
     { namn: 'Växer skillnaden med åldern?', synonymer: ['gapet', 'karriär', 'lönekurva', 'yrkesliv', 'livscykel'], flik: 'kon', avsnitt: 'avsnitt-ak-karriar' },
     { namn: 'Lönespridning över ålder', synonymer: ['percentilband', 'femårsgrupp', 'median'], flik: 'kon', avsnitt: 'avsnitt-ak-lon' },
     { namn: 'Lönefördelning för kvinnor och män', synonymer: ['låddiagram', 'histogram', 'spridning'], flik: 'kon', avsnitt: 'avsnitt-ak-fordelning' },
-    { namn: 'Åldersstruktur', synonymer: ['återväxt', 'pension', 'pensionsavgångar', 'demografi'], flik: 'kon', avsnitt: 'avsnitt-ak-struktur' },
+    { namn: 'Åldersstruktur', synonymer: ['återväxt', 'pension', 'nära pension', 'pensionsavgångar', 'successionszon', 'demografi'], flik: 'kon', avsnitt: 'avsnitt-ak-struktur' },
     { namn: 'Jämför alla BAS-intervall', synonymer: ['lön mot ålder', 'sida vid sida'], flik: 'kon', avsnitt: 'avsnitt-ak-alla' },
     { namn: 'Så räknas det', synonymer: ['metod', 'beräkning', 'urval', 'ålder'], flik: 'kon', avsnitt: 'avsnitt-ak-metod' },
     // Likvärdigt arbete
