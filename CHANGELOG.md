@@ -20,7 +20,12 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   ordlistan. Excelbladen *Lonegap* och *Lonegap per alder* heter *Loneskillnad* och *Loneskillnad per alder*;
   bladet *Distributionellt gap* heter *Skillnad i lönefördelningen*. CSV-mallen heter `lonefil_mall.csv`. Ordlistan
   har ett eget sökfält, så att de gamla orden fortfarande hittar rätt post, och fyra nya poster (kvinnodominerat
-  arbete, kandidatpar, klibbigt golv, glastak).
+  arbete, kandidatpar, klibbigt golv, glastak). Kvoten heter *Kvinnors lön i procent av mäns* och den råa
+  skillnaden *Rå (ojusterad) löneskillnad*; modellen säger *ålder och BAS-intervall*; kandidatparen beskrivs som
+  yrken med likvärdiga eller lägre krav; gemensam lönebedömning gäller arbetsgivare som rapporterar
+  löneskillnader (100 anställda eller fler); Utforskas gruppvillkor kallar måttet *kvinnors median i % av mäns*.
+  Bladet *Likvärdighet §3-10* heter *Likvärdigt arbete* och *3b. § 3-10 Likvärdighet* heter *3b. Likvärdigt
+  arbete (krav)*.
 
 - **Förhandskontroll av lönefilen.** Direkt efter inläsningen står avsnittet *Förhandskontroll av lönefilen* överst i
   Filer och kvalitet, under filrutorna: tolkningen av de tio första raderna (BAS, yrke, lön, ålder, kön, och poäng och
@@ -225,7 +230,8 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 - **Vakttest för ordvalen** i `tests/dokumentation.test.js`: index.html, strängarna i appen och användar- och
   dataskyddsdokumenten prövas mot de avförda orden, paragraftecken och artikelnummer, med undantag för kommentarer,
   identifierare, sökregistrets synonymer, ordlistans sökfält och Källor. p-värdevakten fångar fler felaktiga
-  formuleringar och också konfidensintervallets.
+  formuleringar och också konfidensintervallets. Vakten skannar hela `src/lib` och prövar etikettvärden och
+  användarlästa attribut också när de är ett ord.
 
 - **Importprofilerna i `src/lib/importprofiler.js`** (validering, matchning, profil ur en mappning, de inbyggda),
   speglade i 09. Tester i `tests/importprofiler.test.js` och `tests/importprofiler-app.test.js`; profilexporten ligger
