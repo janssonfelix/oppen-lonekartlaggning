@@ -33,7 +33,7 @@ hanteras med de organisatoriska åtgärderna i §8.
 
 | Fråga | Svar |
 |---|---|
-| **Ändamål** | Fullgöra arbetsgivarens lagstadgade skyldighet att kartlägga, analysera och åtgärda osakliga löneskillnader mellan kvinnor och män (diskrimineringslagens regler om lönekartläggning, lagrum.md) samt stödja EU 2023/970-relaterade moment. |
+| **Ändamål** | Fullgöra arbetsgivarens skyldighet att kartlägga, analysera och åtgärda osakliga löneskillnader mellan kvinnor och män (diskrimineringslagens regler om lönekartläggning, lagrum.md) samt stödja EU 2023/970-relaterade moment. |
 | **Art** | Statistisk analys av aggregerad och individuell lönedata i syfte att upptäcka könsrelaterade löneskillnader. Ingen profilering med rättsverkan för enskild; verktyget fattar inga beslut om enskilda. |
 | **Omfattning** | En arbetsgivares anställda — typiskt tiotals till tusentals individer per fil. En körning per år. |
 | **Kontext** | Körs lokalt på den personuppgiftsansvariges egen enhet. Ingen molntjänst, ingen extern part, ingen delning utanför enheten under själva bearbetningen. |

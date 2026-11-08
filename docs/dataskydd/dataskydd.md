@@ -15,7 +15,7 @@ konsekvensbedömning (DPIA). Lagrumshänvisningarna samlas i
 
 | Fråga | Svar |
 |---|---|
-| Ändamål | Arbetsgivarens lagstadgade lönekartläggning (diskrimineringslagen 3 kap.) och utvalda moment i EU:s lönetransparensdirektiv |
+| Ändamål | Arbetsgivarens lönekartläggning enligt diskrimineringslagen (3 kap.) och utvalda moment i EU:s lönetransparensdirektiv |
 | Personuppgiftsansvarig | Arbetsgivaren som genomför kartläggningen |
 | Personuppgiftsbiträde | Inget. Verktyget körs på arbetsgivarens egen dator; ingen uppgift når verktygets leverantör eller någon annan |
 | Rättslig grund | Rättslig förpliktelse (dataskyddsförordningen art. 6.1 c med 6.3): diskrimineringslagens regler om lönekartläggning och dokumentation, se lagrum.md |

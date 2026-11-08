@@ -10,6 +10,8 @@ det kommuner och regioner.
 Varje organisation tar in sitt eget ställningstagande, sin statistik och sina benämningar i ett
 organisationspaket, så att ingenting om en viss organisation är inbyggt. Andra arbetsvärderingssystem är en
 öppen punkt (teknisk plan §9).
+Verktyget är ännu inte prövat med verklig lönedata hos en arbetsgivare; checklistan för skarp data finns
+för den som gör det först. Word-utkastet är prövat i LibreOffice, ännu inte i Microsoft Word.
 
 - **Hela lagkedjan:** genomgång av bestämmelser och praxis, lika arbete (med regression och
   oförklarad löneskillnad), likvärdigt arbete, direktivets rapportmått, prioritering med
@@ -65,6 +67,9 @@ gäller om det slutar underhållas, står i [`GOVERNANCE.md`](GOVERNANCE.md).
 Verktyget tillhandahålls fritt — utan avgift, support eller drift — av en privatperson utanför
 kommersiell verksamhet. Det får följder som en IT-avdelning eller ett dataskyddsombud brukar fråga om:
 
+- **Användarens ansvar.** Verktyget är ett stöd för arbetsgivarens egen lönekartläggning. Användaren
+  ansvarar för hur verktyget används, för tolkningen av resultaten och för den juridiska bedömningen.
+  Verktyget är inte juridiskt granskat.
 - **Arbetsgivaren som använder verktyget är ensam personuppgiftsansvarig.** Ingen uppgift når
   upphovspersonen eller någon annan, och inget personuppgiftsbiträde finns
   ([`sakerhetsbeskrivning.md`](docs/anvandare/sakerhetsbeskrivning.md)).

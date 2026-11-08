@@ -52,6 +52,9 @@ function _methodAppendixData() {
 function _appendMethodSheet(wb, { undantag = '', extra = [] } = {}) {
     if (typeof XLSX === 'undefined' || !XLSX.utils || !wb) return;
     const rows = [['Metod & parametrar — reproducerbarhet och tolkning'], [''], ...(_methodAppendixData()), ...extra];
+    // Ansvarsförbehållet (beslut 8c) står under Rättslig ram i varje Excel-export.
+    const ram = rows.findIndex(rad => rad[0] === 'Rättslig ram');
+    rows.splice(ram < 0 ? rows.length : ram + 1, 0, ['Ansvar', ANSVARSFORBEHALL]);
     if (undantag) {
         const i = rows.findIndex(r => r[0] === 'Minsta gruppstorlek för redovisning');
         rows.splice(i + 1, 0, ['Undantag från minsta gruppstorlek', _kUndantagNot(undantag)]);

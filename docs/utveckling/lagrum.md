@@ -25,6 +25,7 @@ och sitt dataskyddsombud · *Avstämd* = granskad av jurist (ingen rad ännu). K
 
 | Moment i verktyget | Lagrum | Verktyget skriver | Status |
 |---|---|---|---|
+| Juristgranskning före lansering | — | övergripande om lagen och direktivet, med ett ansvarsförbehåll | Ingen — beslut 2026-11-08: ingen juristgranskning före lansering; tabellen är underhållarens egen läsning |
 | Årlig kartläggning: bestämmelser och praxis | 3 kap. 8 § 1 | *regler och praxis kring lön* | Förslag |
 | Årlig kartläggning: löneskillnader | 3 kap. 8 § 2 | *lönekartläggningen* | Förslag |
 | Analys av lika arbete | 3 kap. 9 § 1 | *lika arbete* | Förslag |

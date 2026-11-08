@@ -47,7 +47,7 @@ const GLOSSARY = [
     { cat:'Lönekartläggning', term:'Lönetransparensdirektivet 2023/970', short:'EU-direktiv om lönetransparens', long:'Kräver att större arbetsgivare rapporterar löneskillnaden mellan kvinnor och män, och kräver gemensam lönebedömning när en rapporterande arbetsgivare har en skillnad på 5 procent eller mer som inte är motiverad och inte rättad inom sex månader. Skulle vara infört i svensk rätt 7 juni 2026 (svensk lag och ikraftträdande dateras när de är kända); lönerapporteringen införs stegvis för arbetsgivare med minst 100 anställda, först för de största.' },
 
     // Struktur
-    { cat:'Struktur', term:'BAS-intervall', short:'Kravnivå enligt arbetsvärdering', long:'Bokstavskod som speglar arbetets svårighetsgrad och värdering enligt arbetsvärderingen. Varje bokstav motsvarar ett lika brett poängintervall: A är lägst (t.ex. 0–99 poäng), B nästa (100–199) osv. Verktyget analyserar de BAS-intervall som finns i lönefilen (vanligen A–K) och rangordnar efter bokstaven (A=1, B=2, …); ordningen är en del av BAS-systemet och kan inte ändras.' },
+    { cat:'Struktur', term:'BAS-intervall', short:'Kravnivå enligt arbetsvärdering', long:'Bokstavskod som speglar arbetets svårighetsgrad och värdering enligt arbetsvärderingen. Verktyget antar att varje bokstav motsvarar ett lika brett poängintervall: A är lägst (t.ex. 0–99 poäng), B nästa (100–199) osv. Verktyget analyserar de BAS-intervall som finns i lönefilen (vanligen A–K) och rangordnar efter bokstaven (A=1, B=2, …); ordningen är en del av BAS-systemet och kan inte ändras.' },
     { cat:'Struktur', term:'AID-kod', short:'Arbetsidentifikationskod (yrkeskod)', long:'Sifferkod som identifierar yrket enligt SKR:s lönestatistiksystem. Används för att matcha organisationens yrkesgrupper mot jämförelsestatistiken. Format: vanligen 6 siffror följda av yrkesbenämning, t.ex. "402010 Förskollärare".' },
     { cat:'Struktur', term:'SKR', short:'Sveriges Kommuner och Regioner', long:'Arbetsgivarorganisationen för kommuner och regioner. Verktyget använder tre saker från SKR: yrkesindelningen AID, personalstatistiken (nationell andel kvinnor per yrke, visad som "Kvinnor nationellt" och som reserv i Likvärdigt arbete) och PO-påslaget 39,15 % som standardvärde i kostnadsberäkningen. Perioden för statistiken står i Om verktyget.' },
     { cat:'Struktur', term:'Yrkesgrupp', short:'Personer med samma AID-kod', long:'Den minsta jämförelsegruppen inom "lika arbete". Yrken med samma AID-kod jämförs mellan könen i Lika arbete.' },
@@ -113,8 +113,8 @@ const STATISTIK_101 = `
 
         <h4 class="farg-accent-mork marg-14-0-4">Typiska siffror att jämföra mot</h4>
         <ul class="marg-6-0-0-18">
-            <li><strong>Ojusterad löneskillnad i hela landet:</strong> omkring 10 procent; kvinnors lön är ungefär 90 procent av mäns (Medlingsinstitutet, 2024)</li>
-            <li><strong>Oförklarad löneskillnad i hela landet:</strong> 4,6 procent efter standardvägning för yrke, sektor, utbildning, ålder och arbetstid (samma källa)</li>
+            <li><strong>Ojusterad löneskillnad i hela landet:</strong> 9,9 procent löneåret 2025; kvinnors lön är ungefär 90 procent av mäns (Medlingsinstitutet, <em>Löneskillnaden mellan kvinnor och män 2025</em>, rapport 2026)</li>
+            <li><strong>Oförklarad löneskillnad i hela landet:</strong> 4,4 procent löneåret 2025, efter standardvägning för yrke, sektor, utbildning, ålder och arbetstid (samma rapport)</li>
             <li><strong>R² i lönemodeller:</strong> 50–70 % är vanligt</li>
             <li><strong>Ålderseffekt:</strong> 0,5–1,5 % löneökning per år är typiskt</li>
             <li><strong>BAS-effekt per steg:</strong> 8–15 % per BAS-steg är vanligt</li>

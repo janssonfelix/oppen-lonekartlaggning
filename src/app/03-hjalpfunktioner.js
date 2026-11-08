@@ -34,6 +34,9 @@ document.addEventListener('click', e => {
     if (dismiss && dismiss.parentNode) /** @type {HTMLElement} */ (dismiss.parentNode).remove();
 });
 
+/** Ansvarsförbehållet (beslut 8c): samma lydelse i Om verktyget, Word/PDF, Excel och rapportunderlaget. tests/juridiksprak.test.js vaktar. */
+const ANSVARSFORBEHALL = 'Verktyget är ett stöd för arbetsgivarens egen lönekartläggning. Användaren ansvarar för hur verktyget används, för tolkningen av resultaten och för den juridiska bedömningen. Verktyget är inte juridiskt granskat.';
+
 function showLoading() { const el = document.getElementById("loading-overlay"); if (el) el.style.display = "flex"; }
 function hideLoading() { const el = document.getElementById("loading-overlay"); if (el) el.style.display = "none"; }
 

@@ -578,6 +578,7 @@ function _rmAvsnittenUtanUrval() {
             ['Referens för lönenivåer', `${referensNamn()}${referensKalla()}`],
             ['Jämförelsestatistik', statistikBeskrivning()],
             ['Rättslig ram', 'Diskrimineringslagen 3 kap. (lönekartläggning); direktiv (EU) 2023/970'],
+            ['Ansvar', ANSVARSFORBEHALL],
         ] },
         fyllIn('Sammanfattande slutsats av årets lönekartläggning (övergripande iakttagelser och viktigaste åtgärder).'),
     ] };

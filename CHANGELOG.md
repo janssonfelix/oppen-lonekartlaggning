@@ -237,6 +237,15 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ### Dokumentation
 
+- **Ansvarsförbehåll och övergripande juridikspråk (beslut 8c).** Samma förbehåll — verktyget är ett stöd för
+  arbetsgivarens egen lönekartläggning, användaren ansvarar för användning, tolkning och juridisk bedömning, och
+  verktyget är inte juridiskt granskat — står i Om verktyget, rapportunderlaget, Word/PDF:s sammanfattning (raden
+  *Ansvar* under *Rättslig ram*), metodbladet i varje Excel-export, README, HR-sammanfattningen och körguiden.
+  README och HR-sammanfattningen säger att verktyget inte prövats med verklig lönedata och att Word-utkastet bara
+  prövats i LibreOffice. De sista resterna av "lagstadgat" och "direktivet kräver" är omskrivna. Medlingsinstitutets
+  tal i ordlistan och Lika arbete har löneår och rapport (löneåret 2025: 9,9 och 4,4 procent), och BAS-posten säger
+  att verktyget *antar* lika breda poängintervall. Nytt vakttest `tests/juridiksprak.test.js`; `lagrum.md` säger att
+  ingen jurist granskar före lansering.
 - **Språklig genomgång av dokumenten.** Körguiden, pilotchecklistan, sammanfattningen för HR-chefer, datauttaget,
   README och guiden för att ta över verktyget säger *du*; orden följer gränssnittet; § 8 och § 9 som namn på flikar
   är borta; informationen till anställda hänvisar inte längre till direktivets artikel 13. `lagrum.md` har en rubrik

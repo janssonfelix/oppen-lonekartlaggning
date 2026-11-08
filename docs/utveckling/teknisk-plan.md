@@ -192,8 +192,8 @@ adaptern verkligen delegerar vaktas av `tests/drift.test.js`:
    paret (`_parForRedovisning`).
 4. **Lägre krav, högre lön (ADR-25, BAS-läget):** kvinnodominerade yrken med lägre
    medianlön än ett av organisationens egna yrken i *lägre* BAS, med antal BAS-steg.
-   BAS-ordningen är fast: bokstavsordning A–J. Den går inte att ändra i verktyget. Varje
-   bokstav motsvarar ett lika brett poängintervall i arbetsvärderingen, så rangen är bokstavens
+   BAS-ordningen är fast: bokstavsordning A–J. Den går inte att ändra i verktyget. Verktyget
+   antar att varje bokstav motsvarar ett lika brett poängintervall i arbetsvärderingen, så rangen är bokstavens
    plats (A=1, B=2 …) där BAS räknas som ett tal — Blinder-Oaxaca, kvantilregressionen och
    *Lägre krav* använder samma funktion (`basRangFn` i `src/lib/likvardighet.js`) — och B → D
    är två BAS-steg även när C saknas i underlaget. Huvudregressionen och den sekventiella
@@ -495,7 +495,7 @@ dem utan avskiljare, vilket ger `4 yrkesgruppervisas` i Excel-exporten. Skyddet 
 
 **ADR-13 — `VERSION` är enda källa för versionsstämpeln.** Versionsstämpeln (`APP_VERSION`, `APP_BUILD_DATE`)
 syns i rapportens sidfot och i Excel- och Word-metadata — det som gör ett resultat spårbart till en
-beräkningsversion i en lagstadgad process. `src/app/08-version.js` genereras ur `VERSION` av
+beräkningsversion i arbetsgivarens lönekartläggning. `src/app/08-version.js` genereras ur `VERSION` av
 `tools/gen-version.mjs`, som både `build-app.mjs` och `bundle.mjs` kör. Build-datumet **härleds ur versionen**
 (CalVer = byggdatum), inte ur systemklockan: ett `new Date()` skulle ge ny SHA-256 vid varje bygge och slå
 sönder artefaktgrinden i CI.

@@ -512,6 +512,9 @@ document.addEventListener('click', e => {
     if (dismiss && dismiss.parentNode) /** @type {HTMLElement} */ (dismiss.parentNode).remove();
 });
 
+/** Ansvarsförbehållet (beslut 8c): samma lydelse i Om verktyget, Word/PDF, Excel och rapportunderlaget. tests/juridiksprak.test.js vaktar. */
+const ANSVARSFORBEHALL = 'Verktyget är ett stöd för arbetsgivarens egen lönekartläggning. Användaren ansvarar för hur verktyget används, för tolkningen av resultaten och för den juridiska bedömningen. Verktyget är inte juridiskt granskat.';
+
 function showLoading() { const el = document.getElementById("loading-overlay"); if (el) el.style.display = "flex"; }
 function hideLoading() { const el = document.getElementById("loading-overlay"); if (el) el.style.display = "none"; }
 
@@ -781,7 +784,7 @@ const GLOSSARY = [
     { cat:'Lönekartläggning', term:'Lönetransparensdirektivet 2023/970', short:'EU-direktiv om lönetransparens', long:'Kräver att större arbetsgivare rapporterar löneskillnaden mellan kvinnor och män, och kräver gemensam lönebedömning när en rapporterande arbetsgivare har en skillnad på 5 procent eller mer som inte är motiverad och inte rättad inom sex månader. Skulle vara infört i svensk rätt 7 juni 2026 (svensk lag och ikraftträdande dateras när de är kända); lönerapporteringen införs stegvis för arbetsgivare med minst 100 anställda, först för de största.' },
 
     // Struktur
-    { cat:'Struktur', term:'BAS-intervall', short:'Kravnivå enligt arbetsvärdering', long:'Bokstavskod som speglar arbetets svårighetsgrad och värdering enligt arbetsvärderingen. Varje bokstav motsvarar ett lika brett poängintervall: A är lägst (t.ex. 0–99 poäng), B nästa (100–199) osv. Verktyget analyserar de BAS-intervall som finns i lönefilen (vanligen A–K) och rangordnar efter bokstaven (A=1, B=2, …); ordningen är en del av BAS-systemet och kan inte ändras.' },
+    { cat:'Struktur', term:'BAS-intervall', short:'Kravnivå enligt arbetsvärdering', long:'Bokstavskod som speglar arbetets svårighetsgrad och värdering enligt arbetsvärderingen. Verktyget antar att varje bokstav motsvarar ett lika brett poängintervall: A är lägst (t.ex. 0–99 poäng), B nästa (100–199) osv. Verktyget analyserar de BAS-intervall som finns i lönefilen (vanligen A–K) och rangordnar efter bokstaven (A=1, B=2, …); ordningen är en del av BAS-systemet och kan inte ändras.' },
     { cat:'Struktur', term:'AID-kod', short:'Arbetsidentifikationskod (yrkeskod)', long:'Sifferkod som identifierar yrket enligt SKR:s lönestatistiksystem. Används för att matcha organisationens yrkesgrupper mot jämförelsestatistiken. Format: vanligen 6 siffror följda av yrkesbenämning, t.ex. "402010 Förskollärare".' },
     { cat:'Struktur', term:'SKR', short:'Sveriges Kommuner och Regioner', long:'Arbetsgivarorganisationen för kommuner och regioner. Verktyget använder tre saker från SKR: yrkesindelningen AID, personalstatistiken (nationell andel kvinnor per yrke, visad som "Kvinnor nationellt" och som reserv i Likvärdigt arbete) och PO-påslaget 39,15 % som standardvärde i kostnadsberäkningen. Perioden för statistiken står i Om verktyget.' },
     { cat:'Struktur', term:'Yrkesgrupp', short:'Personer med samma AID-kod', long:'Den minsta jämförelsegruppen inom "lika arbete". Yrken med samma AID-kod jämförs mellan könen i Lika arbete.' },
@@ -847,8 +850,8 @@ const STATISTIK_101 = `
 
         <h4 class="farg-accent-mork marg-14-0-4">Typiska siffror att jämföra mot</h4>
         <ul class="marg-6-0-0-18">
-            <li><strong>Ojusterad löneskillnad i hela landet:</strong> omkring 10 procent; kvinnors lön är ungefär 90 procent av mäns (Medlingsinstitutet, 2024)</li>
-            <li><strong>Oförklarad löneskillnad i hela landet:</strong> 4,6 procent efter standardvägning för yrke, sektor, utbildning, ålder och arbetstid (samma källa)</li>
+            <li><strong>Ojusterad löneskillnad i hela landet:</strong> 9,9 procent löneåret 2025; kvinnors lön är ungefär 90 procent av mäns (Medlingsinstitutet, <em>Löneskillnaden mellan kvinnor och män 2025</em>, rapport 2026)</li>
+            <li><strong>Oförklarad löneskillnad i hela landet:</strong> 4,4 procent löneåret 2025, efter standardvägning för yrke, sektor, utbildning, ålder och arbetstid (samma rapport)</li>
             <li><strong>R² i lönemodeller:</strong> 50–70 % är vanligt</li>
             <li><strong>Ålderseffekt:</strong> 0,5–1,5 % löneökning per år är typiskt</li>
             <li><strong>BAS-effekt per steg:</strong> 8–15 % per BAS-steg är vanligt</li>
@@ -16987,6 +16990,9 @@ function _methodAppendixData() {
 function _appendMethodSheet(wb, { undantag = '', extra = [] } = {}) {
     if (typeof XLSX === 'undefined' || !XLSX.utils || !wb) return;
     const rows = [['Metod & parametrar — reproducerbarhet och tolkning'], [''], ...(_methodAppendixData()), ...extra];
+    // Ansvarsförbehållet (beslut 8c) står under Rättslig ram i varje Excel-export.
+    const ram = rows.findIndex(rad => rad[0] === 'Rättslig ram');
+    rows.splice(ram < 0 ? rows.length : ram + 1, 0, ['Ansvar', ANSVARSFORBEHALL]);
     if (undantag) {
         const i = rows.findIndex(r => r[0] === 'Minsta gruppstorlek för redovisning');
         rows.splice(i + 1, 0, ['Undantag från minsta gruppstorlek', _kUndantagNot(undantag)]);
@@ -22010,7 +22016,7 @@ function _exportLikvardighetExport() {
             ['Jämförelsekälla', 'I första hand organisationens egna yrken som inte är kvinnodominerade. Saknas ett sådant yrke i ett BAS-intervall används jämförelsestatistiken i stället.'],
             ['95 % KI', 'Bootstrap B=1000 på medianskillnaden. Intern: omdragning av bägge individurvalen. Extern: omdragning av org-löner mot jämförelsestatistikens median som konstant. Hela intervallet > 0 = säker skillnad.'],
             ['Justerad för ålder (%)', LV_JUSTERAD_METOD],
-            ['Summa för gruppen (kr/mån)', 'Skillnaden i kronor gånger antalet personer i det kvinnodominerade yrket, per månad. Används för att rangordna paren, inte ett lagstadgat mått.']
+            ['Summa för gruppen (kr/mån)', 'Skillnaden i kronor gånger antalet personer i det kvinnodominerade yrket, per månad. Används bara för att rangordna paren.']
         ];
         const metaSheet = XLSX.utils.aoa_to_sheet(meta);
         metaSheet['!cols'] = [{ wch: 42 }, { wch: 72 }];
@@ -29692,6 +29698,7 @@ function _rmAvsnittenUtanUrval() {
             ['Referens för lönenivåer', `${referensNamn()}${referensKalla()}`],
             ['Jämförelsestatistik', statistikBeskrivning()],
             ['Rättslig ram', 'Diskrimineringslagen 3 kap. (lönekartläggning); direktiv (EU) 2023/970'],
+            ['Ansvar', ANSVARSFORBEHALL],
         ] },
         fyllIn('Sammanfattande slutsats av årets lönekartläggning (övergripande iakttagelser och viktigaste åtgärder).'),
     ] };
@@ -30842,6 +30849,7 @@ document.getElementById('btn-export-benchmark')?.addEventListener('click', expor
 const INFO_SECTIONS = {
     overview: () => `
         <h3>Vad är detta verktyg?</h3>
+        <p class="om-ansvar"><strong>Ansvar.</strong> ${ANSVARSFORBEHALL}</p>
         <p>
             Öppen lönekartläggning är ett fritt verktyg för den årliga <strong>lönekartläggningen enligt diskrimineringslagen</strong> (3 kap., aktiva åtgärder om lönefrågor). Det tar emot en lönefil, räknar fram löneskillnaderna mellan kvinnor och män för lika och likvärdigt arbete, visar vad som bör prioriteras och vad det kostar, och skriver ett utkast till dokumentationen. Bedömningen av sakliga skäl och den slutliga dokumentationen gör arbetsgivaren i samverkan med facklig part.
         </p>
@@ -30849,7 +30857,7 @@ const INFO_SECTIONS = {
             Verktyget är byggt för arbetsgivare som kodar sina befattningar med <strong>AID</strong> och <strong>BAS-intervall</strong> och kan jämföra sig med SKR:s personalstatistik, i praktiken kommuner och regioner. Varje organisation läser in sitt eget ställningstagande, sin statistik och sina benämningar i ett organisationspaket, så att ingenting om en viss organisation är inbyggt.
         </p>
         <p>
-            Verktyget stödjer också delar av <strong>EU:s lönetransparensdirektiv 2023/970</strong>: rapportmåtten i Lönestruktur, gränsen 5 procent i direktivets regler om gemensam lönebedömning och protokollet för gemensam lönebedömning. Direktivet skulle vara infört senast den 7 juni 2026 men är ännu inte infört i Sverige; vissa delar kan ha direkt verkan mot kommuner och regioner. Den anställdes rätt till information och den rapportering som direktivet kräver ligger utanför verktyget.
+            Verktyget stödjer också delar av <strong>EU:s lönetransparensdirektiv 2023/970</strong>: rapportmåtten i Lönestruktur, gränsen 5 procent i direktivets regler om gemensam lönebedömning och protokollet för gemensam lönebedömning. Direktivet skulle vara infört senast den 7 juni 2026 men är ännu inte infört i Sverige; vissa delar kan ha direkt verkan mot kommuner och regioner. Den anställdes rätt till information och den rapportering som direktivet beskriver ligger utanför verktyget.
         </p>
         <p>
             Hela verktyget är <strong>en enda fil som körs i webbläsaren på din dator</strong>. Ingen data lämnar datorn: inga servrar, inga molntjänster, inga nätverksanrop. Det är inte bara ett löfte utan en spärr i filen själv, som hindrar webbläsaren från att skicka något ut.
@@ -31422,7 +31430,7 @@ function renderRapportunderlag() {
         + toc('Avsnitt', avsnitt) + toc('Per BAS-intervall', basBl) + toc('Yrkesgrupper', yrken) + toc('Kandidatpar', parBl) + toc('Egna tabeller', egna) + `</ul>`
         + `<div class="ru-atgard"><button type="button" class="btn btn-secondary btn-sm" id="btn-ru-kopiera-avsnitt">Kopiera alla avsnitt</button>`
         + `<span class="ru-kvitto" role="status"></span></div><div id="ru-alla-avsnitt" class="ru-alla-avsnitt" hidden></div></nav>`;
-    host.innerHTML = forteckning + grupp('Avsnitt', avsnitt) + grupp('Per BAS-intervall', basBl) + grupp('Yrkesgrupper i Lika arbete', yrken)
+    host.innerHTML = `<p class="ru-forbehall">${esc(ANSVARSFORBEHALL)}</p>` + forteckning + grupp('Avsnitt', avsnitt) + grupp('Per BAS-intervall', basBl) + grupp('Yrkesgrupper i Lika arbete', yrken)
         + grupp('Kandidatpar i Likvärdigt arbete', parBl) + grupp('Egna tabeller från Tabeller och egna vyer', egna)
         + `<h3 class="ru-grupprubrik">Diagram</h3>${diagram}`;
 }

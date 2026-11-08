@@ -12,6 +12,7 @@ besluten gör och äger arbetsgivaren.
 
 ## 0. Förutsättningar
 
+- **Ansvar:** Verktyget är ett stöd för arbetsgivarens egen lönekartläggning. Användaren ansvarar för hur verktyget används, för tolkningen av resultaten och för den juridiska bedömningen. Verktyget är inte juridiskt granskat.
 - En dator med en modern webbläsare: **Chrome/Edge, Firefox eller Safari 16.4+**.
   Verktyget är byggt för datorskärm; surfplatta och mobil stöds inte.
 - Filen `oppen-lonekartlaggning.html` — eller din **organisationsfil**, där systemägaren bakat in
