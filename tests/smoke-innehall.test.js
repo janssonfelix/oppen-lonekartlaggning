@@ -295,7 +295,7 @@ describe('Att göra', () => {
         return r;
     };
     const med = (data) => { const w = createAppWindow(); w.__state.data = data; w.eval('populateSelects(); unlockTabs();'); return w; };
-    it('punkten om oförklarat gap: hög vid signifikant gap över 5 %, ingen när gapet inte är signifikant', () => {
+    it('punkten om oförklarat gap: hög vid signifikant gap på minst 3 %, ingen när gapet inte är signifikant', () => {
         const hog = med(rader(30000, 33000)).eval('buildActionChecklist()').find(i => i.id === 'reg-oforklarat');
         expect(hog).toMatchObject({ kategori: 'Lika arbete', prioritet: 'hög', tab: 'struktur' });
         expect(hog.titel).toMatch(/Oförklarad löneskillnad i hela organisationen/);

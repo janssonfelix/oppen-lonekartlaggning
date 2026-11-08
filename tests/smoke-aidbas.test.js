@@ -50,10 +50,10 @@ describe('Lika arbete: avsnitten Lika arbete AID x BAS och Analys på individniv
         const w = fonster([...UNDERLAG, ...TVA_BAS]);
         w.__renderTabContent('matrix');
         const t = tabell(w, 'aidbas-lika-tabell');
-        expect(t.rubriker).toEqual(['BAS-intervall', 'AID-kod', 'Yrkesgrupp', 'Antal kvinnor', 'Antal män', 'Medianlön kvinnor', 'Medianlön män', 'Kvinnors median i % av mäns', 'Nedre gräns', 'Övre gräns', 'Bedömning']);
+        expect(t.rubriker).toEqual(['BAS-intervall', 'AID-kod', 'Yrkesgrupp', 'Antal kvinnor', 'Antal män', 'Medianlön kvinnor', 'Medianlön män', 'Kvinnors median i % av mäns', 'Nedre gräns', 'Övre gräns', 'Bedömning', 'Ojusterad löneskillnad ≥ 5 %']);
         expect(t.rader.map(r => `${r[0]} ${r[1]}`)).toEqual(['A 1001', 'B 3003', 'C 1001', 'D 7007', 'E 2002', 'F 7007']);   // skärmen: också 4 personer
         const e = t.rader.find(r => r[1] === '2002');
-        expect(e.slice(3)).toEqual(['30', '9', '–', '–', '–', '–', '–', 'Analyseras på individnivå']);
+        expect(e.slice(3)).toEqual(['30', '9', '–', '–', '–', '–', '–', 'Analyseras på individnivå', '–']);
         const d = t.rader.find(r => r[0] === 'D');
         expect(d[5]).toBe('30 825 kr'); expect(d[6]).toBe('31 825 kr');
         expect(d[7]).toMatch(/^9\d,\d %$/);
@@ -123,8 +123,8 @@ describe('Excel (alla flikar): de fyra bladen', () => {
         const lika = blad('Lika arbete AID x BAS');
         expect(lika[1]).toEqual(['Lönemånad: inte angiven']);
         const rubrik = lika.findIndex(r => r[0] === 'BAS-intervall');
-        expect(lika[rubrik]).toEqual(['BAS-intervall', 'AID-kod', 'Yrkesgrupp', 'Antal kvinnor', 'Antal män', 'Medianlön kvinnor', 'Medianlön män', 'Kvinnors median i % av mäns', 'Nedre gräns', 'Övre gräns', 'Bedömning']);
-        const rader = lika.slice(rubrik + 1).filter(r => r.length === 11);
+        expect(lika[rubrik]).toEqual(['BAS-intervall', 'AID-kod', 'Yrkesgrupp', 'Antal kvinnor', 'Antal män', 'Medianlön kvinnor', 'Medianlön män', 'Kvinnors median i % av mäns', 'Nedre gräns', 'Övre gräns', 'Bedömning', 'Ojusterad löneskillnad ≥ 5 %']);
+        const rader = lika.slice(rubrik + 1).filter(r => r.length === 12);
         expect(rader.map(r => `${r[0]} ${r[1]}`)).toEqual(['A 1001', 'B 3003', 'D 7007', 'E 2002', 'F 7007']);   // exporten: 1001 i C (4 personer) i noten
         const not = lika.find(r => /färre än 5 personer/.test(String(r[0])))[0];
         expect(not).toContain('1001 Yrke 1001 · BAS C (2 kvinnor, 2 män)');
@@ -132,7 +132,7 @@ describe('Excel (alla flikar): de fyra bladen', () => {
         expect(summa).toBe(UNDERLAG.length + TVA_BAS.length);
         // Inga medianer för ett kön under 10: raden för 2002 har tomma celler och bedömningen.
         const e = rader.find(r => r[1] === '2002');
-        expect(e.slice(5)).toEqual(['', '', '', '', '', 'Analyseras på individnivå']);
+        expect(e.slice(5)).toEqual(['', '', '', '', '', 'Analyseras på individnivå', '']);
         const d = rader.find(r => r[0] === 'D');
         expect(d[5]).toBe(30825); expect(d[6]).toBe(31825); expect(d[7]).toBeCloseTo(96.9, 1);
         expect(typeof d[8]).toBe('number'); expect(typeof d[9]).toBe('number');

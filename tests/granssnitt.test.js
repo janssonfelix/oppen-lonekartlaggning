@@ -490,7 +490,8 @@ describe('ett statusordförråd och ett mått i nyckeltalen', () => {
         const w = demo();
         w.__renderTabContent('matrix');
         const d = w.document;
-        const farg = { 'Balanserat': 'ok', 'Följ upp': 'varning', 'Värt att granska': 'granska' };
+        // Går ej att bedöma (ett kön under golvet, ADR-59) är grå: ingen allvarlighetsgrad.
+        const farg = { 'Balanserat': 'ok', 'Följ upp': 'varning', 'Värt att granska': 'granska', 'Går ej att bedöma': 'neutral' };
         const bas = [...d.querySelectorAll('#la-oversikt tbody .la-status')];
         expect(bas.length).toBeGreaterThan(0);
         for (const el of bas) expect(el.classList.contains('ar-' + farg[el.textContent.trim()]), el.textContent).toBe(true);
@@ -498,7 +499,7 @@ describe('ett statusordförråd och ett mått i nyckeltalen', () => {
         for (const el of yrke) {
             const namn = Object.keys(farg).find(k => el.textContent.includes(k));
             expect(namn, el.textContent).toBeTruthy();
-            expect(el.classList.contains('farg-' + farg[namn])).toBe(true);
+            expect(el.classList.contains('farg-' + (namn === 'Går ej att bedöma' ? 'dampad' : farg[namn]))).toBe(true);
         }
         const prio = w.eval('Object.values(PRIO_STATUS_INFO)');
         expect(prio.map(p => p.label)).toEqual(['Börja här', 'Värt att granska', 'Följ upp', 'Balanserat', 'Över referens']);

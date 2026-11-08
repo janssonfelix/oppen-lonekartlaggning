@@ -8,6 +8,10 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ### Gränssnitt
 
+- **Status på statistisk signal (ADR-59).** *Värt att granska* kräver en statistiskt säkerställd skillnad på minst 3 %;
+  *Följ upp*, *Balanserat* och *Går ej att bedöma* (för få av ett kön) ersätter gränsen 5 %. 5 % är en markering på den
+  ojusterade medianskillnaden (kolumnen *Ojusterad löneskillnad ≥ 5 %*), ingen bedömning, och står aldrig vid
+  regressionens justerade tal.
 - **Sakliga skäl som strukturerad post.** Varje rad i Handlingsplan har knappen *Sakliga skäl*. Dialogen tar emot
   högst 8 skäl per grupp med kategori (Marknad, Utbildning, Erfarenhet, Prestation och resultat, Övergång, Annat
   sakligt skäl), belopp i kronor per månad och en kort kommentar. Den räknar ihop förklarat och återstående belopp och

@@ -66,6 +66,13 @@ export const MODULES = [
         expose: { hashSeed: '_rngHashSeed', seedFromNumbers: '_rngSeedFrom', rngFor: '_rngFor' }
     },
     {
+        // Uppmärksamhetstrappan och direktivmarkeringen (ADR-59) — importerar stat.js och rng.js
+        file: 'status.js', ns: '__mirrorStatus',
+        expose: { statusNiva: '_stsNiva', direktivMarkering: '_stsDirektiv', kiUtesluterLika: '_stsKiUtesluter',
+                  omkastningsGranser: '_stsOmkastning', slumpensGranser: '_stsSlumpensGranser', bedomSkillnad: '_stsBedom',
+                  perBasSignal: '_stsPerBasSignal', statusKonstanter: '_stsKonstanter' }
+    },
+    {
         file: 'likvardighet.js', ns: '__mirrorLikvardighet',
         expose: { computeLikvardighetPairs: '_lvComputePairs', basRangFn: '_lvBasRangFn' }
     },

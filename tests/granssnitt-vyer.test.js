@@ -45,11 +45,12 @@ describe('yrkesgruppstabellen i Lika arbete', () => {
         const marken = [...w.document.querySelectorAll('#matrix-table .la-status')];
         expect(marken.length).toBeGreaterThan(3);
         for (const m of marken) {
-            expect(synlig(m)).toMatch(/^(Värt att granska|Följ upp|Balanserat|ett kön n < \d+)$/);
-            expect(m.title).toMatch(/Skillnaden är|Könsuppdelningen/);
+            expect(synlig(m)).toMatch(/^(Värt att granska|Följ upp|Balanserat|Går ej att bedöma|ett kön n < \d+)$/);
+            expect(m.title).toMatch(/Skillnaden är|Könsuppdelningen|Går ej att bedöma: ett kön har färre än/);
         }
         const granska = marken.find(m => synlig(m) === 'Värt att granska');
-        expect(granska.textContent.replace(/\s+/g, ' ').trim()).toBe('Värt att granska (> 5%)');
+        expect(granska.textContent.replace(/\s+/g, ' ').trim()).toBe('Värt att granska (säkerställd skillnad på minst 3 %)');
+        expect(granska.title).toMatch(/statistiskt säkerställd.*minst 3 %/);
     });
     it('raden om stabilitet är kort på skärmen, och hela meningen står i verktygstipset och i cellens text', () => {
         const w = rita();
@@ -60,9 +61,9 @@ describe('yrkesgruppstabellen i Lika arbete', () => {
             expect(r.textContent).toBe(r.title);
         }
         const f = t => { const el = w.document.createElement('span'); el.innerHTML = w.eval(`_laStabilitetRad(${JSON.stringify(t)})`); return [synlig(el), el.textContent]; };
-        expect(f('Stabil: över 5 % även utan 2 personer')).toEqual(['Stabil även utan 2 personer', 'Stabil: över 5 % även utan 2 personer']);
+        expect(f('Stabil: minst 3 % även utan 2 personer')).toEqual(['Stabil även utan 2 personer', 'Stabil: minst 3 % även utan 2 personer']);
         expect(f('Skör: kan bli 4,6 % om 1 person tas bort (prövat bara på män)')).toEqual(['Skör: 4,6 % om 1 person tas bort', 'Skör: kan bli 4,6 % om 1 person tas bort (prövat bara på män)']);
-        expect(f('Stabil: över 5 % även utan 1 person, fler kunde inte prövas')).toEqual(['Stabil även utan 1 person', 'Stabil: över 5 % även utan 1 person, fler kunde inte prövas']);
+        expect(f('Stabil: minst 3 % även utan 1 person, fler kunde inte prövas')).toEqual(['Stabil även utan 1 person', 'Stabil: minst 3 % även utan 1 person, fler kunde inte prövas']);
         expect(f('Kan inte prövas: båda könen har exakt 10 personer')).toEqual(['Kan inte prövas', 'Kan inte prövas: båda könen har exakt 10 personer']);
     });
     it('ansvarsraderna är hopfällda tills pilen på yrkesraden fäller ut dem; raden med ett tal står kvar', () => {

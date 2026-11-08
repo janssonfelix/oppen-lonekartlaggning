@@ -262,7 +262,8 @@ describe('golden: bladen ur HTML-tabellerna bär cellerna som vyn visar dem (typ
         expect(wb.Sheets['EU-Lonekartlaggning']['!merges']).toContainEqual({ s: { r: 1, c: 5 }, e: { r: 1, c: 6 } });
         expect(wb.Sheets['EU-Lonekartlaggning'].G2).toBeUndefined();
         expect(cell('EU-Lonekartlaggning', 'H2')).toMatchObject({ t: 's', v: '–' });   // data-sort-value="0" är ett sorteringsvärde, inte ett gap
-        expect(wb.Sheets['EU-Lonekartlaggning']['!ref']).toBe('A1:H6');            // detaljkolumnen följer inte med
+        expect(cell('EU-Lonekartlaggning', 'I1').v).toBe('Ojusterad löneskillnad ≥ 5 %');      // direktivmarkeringen som egen kolumn (ADR-59)
+        expect(wb.Sheets['EU-Lonekartlaggning']['!ref']).toBe('A1:I6');            // detaljkolumnen följer inte med
     });
     it('Prioritering: avvikelsen i procent, kronor i kronor, antal kvinnor/män som text, statusen som text', () => {
         const r0 = rad('Prioritering', 0);

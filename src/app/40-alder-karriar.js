@@ -58,9 +58,10 @@ function renderKon(bas) {
     /** @type {HTMLElement} */ (document.getElementById("kon-kpi-gap")).textContent = unadjGap;
     const ageGapEl = /** @type {HTMLElement} */ (document.getElementById("kon-kpi-agegap"));
     ageGapEl.textContent = ageAdjGap;
-    // Över 5 % skillnad sägs i ord under talet (inte med röd siffra utan förklaring).
-    { const u = document.getElementById("kon-kpi-agegap-under"), over = konOk && expMa > 0 && Math.abs((expKv/expMa)*100 - 100) > 5;
-      if (u) { u.textContent = over ? "skillnad över 5 %" : "kvinnors lön i % av mäns"; u.classList.toggle("ar-granska", over); } }   // statusens lila, inte rött
+    // Talet är justerat för ålder och prövas inte här: ingen status och ingen direktivmarkering (ADR-59). Statusen
+    // sätts i Lika arbete, där skillnaden prövas mot slumpen.
+    { const u = document.getElementById("kon-kpi-agegap-under");
+      if (u) { u.textContent = "kvinnors lön i % av mäns"; u.classList.remove("ar-granska"); } }
     const lutning = (ok, reg) => (ok ? `${reg.m >= 0 ? '+' : '−'}${svTal(Math.abs(Math.round(reg.m)), 0)}` : '–');
     /** @type {HTMLElement} */ (document.getElementById("kon-kpi-slope")).textContent = `${lutning(kvOk, regKv)} / ${lutning(maOk, regMa)} kr`;
     const insightEl = document.getElementById("p-value-insight");
@@ -216,7 +217,7 @@ function _konAlderGapRader(dataKv, dataMa, k = kTroskel()) {
     return { visade, dolda };
 }
 function _konAlderGapFigur(rader, scope) {
-    const status = o => _SKEVHET_STATUS.find(s => s.galler(Math.abs(100 - o.gap)));
+    const status = o => gapStatusKI(o);   // uppmärksamhetstrappan (ADR-59): KI:t mot 100 % och golvet statGolv()
     const pkt = o => ({ y: o.namn, x: +o.gap.toFixed(1), etikett: _figTalformat(o.gap, 'pct'), o, ...(o.ci ? { fel: { lag: o.ci.lo, hog: o.ci.hi } } : {}), ..._kronorFalt(o.medKv, o.medMa) });
     const kr = v => _figTalformat(Math.round(v), 'kr');
     const tips = d => [[d.y], ['Kvinnors median', `${_figTalformat(d.x, 'pct')} av männens`], ..._figKronorTipsRad(d.skillnadKr),
@@ -227,7 +228,7 @@ function _konAlderGapFigur(rader, scope) {
         y: { skala: 'band', ordning: rader.map(o => o.namn) },
         x: { skala: 'linjar', titel: 'Kvinnors median i % av mäns — 100 = lika lön', doman: [Math.floor(Math.min(90, ...alla) - 2), Math.ceil(Math.max(105, ...alla) + 2)] },
         hojd: Math.max(180, 110 + rader.length * 34),
-        referens: [{ typ: 'zon', x0: 95, x1: 105, farg: PALETTE.semantic.ok, opacitet: 0.08, etikett: '±5 %' }, { x: 100, farg: PALETTE.semantic.mork, tjocklek: 1.5 }],
+        referens: [{ typ: 'zon', x0: 97, x1: 103, farg: PALETTE.semantic.ok, opacitet: 0.08, etikett: '±3 %' }, { x: 100, farg: PALETTE.semantic.mork, tjocklek: 1.5 }],
         lager: _SKEVHET_STATUS.map(s => ({ marke: 'punkt', riktning: 'liggande', symbol: s.symbol, storlek: 6, serie: s.serie, farg: PALETTE.semantic[s.farg],
             data: rader.filter(o => status(o) === s).map(pkt), tips })).filter(l => l.data.length) };
 }

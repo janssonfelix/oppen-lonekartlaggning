@@ -243,17 +243,18 @@ describe('samma bild på Översikt', () => {
         const lista = w.document.getElementById('action-checklist-container').textContent;
         if (rod) expect(lista).not.toContain('inga öppna punkter');
     });
-    it('varje jämförbart BAS med gap över 5 % blir en punkt i åtgärdslistan', () => {
+    it('varje jämförbart BAS med statusen Värt att granska (säkerställd, minst 3 %) blir en punkt i åtgärdslistan, och inga andra', () => {
         const ids = w.eval('buildActionChecklist()').map(i => i.id);
-        const med = v => { const a = [...v].sort((x, y) => x - y), m = a.length >> 1; return a.length % 2 ? a[m] : (a[m - 1] + a[m]) / 2; };
         const d = w.__getData();
-        const flaggade = w.__dqJamforbaraBas(d, w.__K).jamforbara.filter(b => {
-            const kv = d.filter(r => r.bas === b && r.kon.includes('kvinna')).map(r => r.lon);
-            const ma = d.filter(r => r.bas === b && (r.kon === 'man' || r.kon === 'män')).map(r => r.lon);
-            return Math.abs(med(kv) / med(ma) * 100 - 100) > 5;
-        });
-        expect(flaggade.length, 'demodatan ska ha minst ett flaggat BAS').toBeGreaterThan(0);
+        const jb = new Set(w.__dqJamforbaraBas(d, w.__K).jamforbara);
+        const rader = w.eval('_laOversiktRader(getData())').filter(o => jb.has(o.bas));
+        const flaggade = rader.filter(o => w.eval(`_laOversiktStatus(${JSON.stringify(o)}).niva`) === 'granska').map(o => o.bas);
+        expect(flaggade.length, 'demodatan ska ha minst ett BAS att granska').toBeGreaterThan(0);
         flaggade.forEach(b => expect(ids).toContain('gap-bas-' + b));
+        expect(ids.filter(i => i.startsWith('gap-bas-')).sort()).toEqual(flaggade.map(b => 'gap-bas-' + b).sort());
+        // Rutan på Översikt räknar samma intervall.
+        w.eval('updateCompliance()');
+        expect(w.document.getElementById('comp-gap-val').textContent).toMatch(new RegExp(`^${flaggade.length} `));
     });
     it('nyckeltalet hänvisar inte till EU-gränsen för hela organisationen', () => {
         w.eval('updateDashboardStats()');

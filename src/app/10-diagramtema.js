@@ -54,23 +54,48 @@ const PALETTE = {
     // Prioriteringsmatrisens statusar (samma nyanser som statusbrickorna i fliken).
     // Prioriteringens statusar. «Börja här» och «Värt att granska» är lila — samma färg som statusen «Värt att granska»
     // i Lika arbetes yrkesgruppstabell (lila överallt, inte rött). Lila säger «titta
-    // här först» utan att påstå att något är fel; rött är förbehållet avvikelser över 5 %.
+    // här först» utan att påstå att något är fel; rött är förbehållet fel i underlaget.
     prio: { akut: FARG.granska, atgard: FARG.granskaLjus, bevaka: '#d97706', ok: FARG.ok, analysera: FARG.info }
 };
 
-// Statusordförrådet för en skillnad som bedöms mot 3- och 5-procentsgränserna — ETT ställe för alla flikar.
+// Uppmärksamhetstrappan (ADR-59): statusordförrådet för en skillnad mellan kvinnors och mäns lön — ETT ställe för alla
+// flikar. Statusen sätts på statistisk signal (src/lib/status.js): Värt att granska = säkerställd och minst 3 %
+// (verktygets storleksgräns); Följ upp = minst 3 % men inte säkerställd, eller säkerställd under 3 %; Balanserat =
+// under 3 % och inte säkerställd; Går ej att bedöma = ett kön under golvet. Direktivets 5 % är ingen status utan en
+// egen markering på den ojusterade löneskillnaden (_direktivBricka i 41-lika-arbete.js).
 // Varje ord har en färg (nyckel i PALETTE.semantic och klassen ar-<farg>), en linjeikon för tabellerna (03-ikoner.js)
 // och en symbol för diagrammen, så att statusen inte bärs av färgen ensam (WCAG 1.4.1). Samma ord står i Lika arbete,
-// Ålder & karriär, Utforska, Prioritering och Förklaringen. «Börja här» och «Över referens» hör bara till Prioritering
+// Ålder & karriär, Utforska och Förklaringen. «Börja här» och «Över referens» hör bara till Prioritering
 // (55-prioritering.js): det första är rangordningens översta nivå, det andra ett läge och ingen allvarlighetsgrad.
-// `galler` tar avståndet från lika lön i procent (|100 − kvinnors lön i % av mäns|); ordningen är den som prövas.
+// Trappans konstanter ur src/lib/status.js: storleksgränsen (3 %), direktivnivån (5 %), orden och markeringens texter.
+const { STORLEKSGRANS: _STS_STORLEK, STATUS_ORD: _STS_ORD, DIREKTIV_ETIKETT: _STS_DIR_ETIKETT, DIREKTIV_KOLUMN: _STS_DIR_KOLUMN,
+        DIREKTIV_TIPS: _STS_DIR_TIPS } = _stsKonstanter();
 const GAP_STATUS = Object.freeze([
-    { serie: 'Värt att granska', niva: 'granska', farg: 'granska', ikon: 'sok', symbol: 'romb', grans: 'över 5 %', galler: a => a > 5 },
-    { serie: 'Följ upp', niva: 'folj', farg: 'varning', ikon: 'oga', symbol: 'kvadrat', grans: '3–5 %', galler: a => a > 3 },
-    { serie: 'Balanserat', niva: 'balanserat', farg: 'ok', ikon: 'bock', symbol: 'cirkel', grans: 'högst 3 %', galler: () => true }
+    { ..._STS_ORD.granska, niva: 'granska', farg: 'granska', ikon: 'sok', symbol: 'romb' },
+    { ..._STS_ORD.folj, niva: 'folj', farg: 'varning', ikon: 'oga', symbol: 'kvadrat' },
+    { ..._STS_ORD.balanserat, niva: 'balanserat', farg: 'ok', ikon: 'bock', symbol: 'cirkel' }
 ]);
-/** Statusen för ett avstånd från lika lön i procent (|100 − kvoten|). */
-function gapStatus(avstand) { return GAP_STATUS.find(s => s.galler(avstand)) || GAP_STATUS[GAP_STATUS.length - 1]; }
+/** Statusen när skillnaden inte kan prövas (ett kön under golvet): grå, ingen allvarlighetsgrad. */
+const GAP_STATUS_EJ = Object.freeze({ ..._STS_ORD.ejbedomd, niva: 'ejbedomd', farg: 'neutral', ikon: 'streck', symbol: 'cirkel' });
+/** Alla fyra, i diagrammens ordning (förklaringen namnger bara de som förekommer). */
+const GAP_STATUS_ALLA = Object.freeze([...GAP_STATUS, GAP_STATUS_EJ]);
+/**
+ * Statusen för ett avstånd från lika lön i procent (|100 − kvoten|) och en prövning av skillnaden (true/false; null
+ * när den inte kunde göras, vilket ger Går ej att bedöma).
+ * @param {number} avstand
+ * @param {boolean|null|undefined} sakerstalld
+ */
+function gapStatus(avstand, sakerstalld) {
+    const niva = _stsNiva(avstand, sakerstalld);
+    return GAP_STATUS_ALLA.find(s => s.niva === niva) || GAP_STATUS_EJ;
+}
+/** Statusen för en nivå ('granska', 'folj', 'balanserat', 'ejbedomd'). */
+function gapStatusNiva(niva) { return GAP_STATUS_ALLA.find(s => s.niva === niva) || GAP_STATUS_EJ; }
+/** Statusen för en rad med kvot (i %), 95 % KI och antal per kön: KI:t mot 100 % prövar, golvet är statGolv(). */
+function gapStatusKI(o) {
+    if (!(o.nKv >= statGolv() && o.nMa >= statGolv())) return GAP_STATUS_EJ;
+    return gapStatus(Math.abs(100 - o.gap), _stsKiUtesluter(o.ci));
+}
 
 // Gemensamt teckensnitt/typografi för diagram (matchar appens sans-stack).
 const CHART_FONT = {

@@ -199,7 +199,7 @@ function _evidenceForEUMatrixRow(r) {
     const gapPct = gapSgn * 100;
     return {
         title: `Beräkningen — ${r.yrke}`,
-        intro: `Jämförelse av medianlöner mellan kvinnor och män inom samma yrkesgrupp (lika arbete). Inga statistiska kontroller görs här; det är en direkt jämförelse av medianerna.`,
+        intro: `Jämförelse av medianlöner mellan kvinnor och män inom samma yrkesgrupp (lika arbete). Inga kontroller för ålder eller nivå görs här; det är en direkt jämförelse av medianerna. Statusen prövar skillnaden mot slumpens gränser för gruppen (omkastning av könen, 1 000 gånger).`,
         rows: [
             { label: 'Yrkesgrupp',                value: r.yrke },
             { label: 'Antal anställda totalt',  value: r.tot.toLocaleString('sv-SE') },
@@ -210,7 +210,9 @@ function _evidenceForEUMatrixRow(r) {
             { label: 'Median kvinnor',            value: r.kMaskedKv ? `< ${kTroskel()} pers (maskerad)` : fmtKr(r.medKv) },
             { label: 'Median män',                value: r.kMaskedMa ? `< ${kTroskel()} pers (maskerad)` : fmtKr(r.medMa) },
             { label: '— Mediankvot',              value: r.anyMasked ? '—' : `${svTal(ratio, 4)} (Kv/Man)` },
-            { label: 'Löneskillnad',              value: r.anyMasked ? '—' : `${gapSgn >= 0 ? '+' : ''}${svPct(gapPct, 2)}` }
+            { label: 'Löneskillnad',              value: r.anyMasked ? '—' : `${gapSgn >= 0 ? '+' : ''}${svPct(gapPct, 2)}` },
+            { label: 'Status',                    value: (() => { const st = gapStatusNiva(r.niva); return `${esc(st.serie)} (${esc(st.grans)})`; })(), isHtml: true },
+            { label: 'Direktivmarkering',         value: r.direktiv ? _STS_DIR_ETIKETT : 'Nej', note: _STS_DIR_TIPS }
         ],
         formula: r.anyMasked ? '<em>Gruppen är k-maskerad — ingen jämförelse görs.</em>' :
             `<strong>Beräkning:</strong><br>
@@ -258,7 +260,7 @@ function _evidenceForPerBasRow(p, bhCtx) {
             { label: '95 % konfidensintervall', value: `[${fmtPct(p.ciLow)}, ${fmtPct(p.ciHigh)}]`, note: 'β ± t(0,975; n−k) × HC3-SE (1,96 vid n−k ≥ 100), transformerat tillbaka från log' },
             { label: 'p-värde',                value: p.pValue < 0.001 ? '< 0,001' : svTal(p.pValue, 4), note: isSig ? 'Statistiskt signifikant (p < 0,05)' : 'Ej signifikant' },
             { label: 'BH-FDR-korrektion',      value: bhCtx && bhCtx.q != null ? (bhCtx.q < 0.001 ? '< 0,001' : svTal(bhCtx.q, 4)) : '—', note: bhNote },
-            { label: 'Klassning',              value: sigAfterBH && Math.abs(p.gapPct) > 5 ? 'Värt att granska' : sigAfterBH ? 'Signifikant, under 5 %-tröskeln' : 'Inom statistisk osäkerhet', isHtml: true },
+            { label: 'Klassning',              value: { titta: 'Titta närmare', dokumentera: 'Dokumentera: signifikant, under verktygets storleksgräns på 3 %', osakert: 'Osäkert utslag: håller inte efter korrigering', inget: 'Inom statistisk osäkerhet' }[_stsPerBasSignal(p.gapPct, sigAfterBH, p.pValue < 0.05).niva], isHtml: true },
             { label: 'R² (modellanpassning)',  value: svPct((p.R2 * 100), 1) }
         ],
         formula: `<strong>Statistisk metod:</strong><br>
@@ -266,7 +268,7 @@ function _evidenceForPerBasRow(p, bhCtx) {
             Standardfel: HC3-robusta (Long & Ervin 2000)<br>
             p-värde: 2-sidigt; t-fördelning med df = n − k vid små underlag (df &lt; 100), annars normal<br>
             skillnad % = (exp(β_kön) − 1) × 100 = (exp(${svTal((Math.log(1 + p.gapPct / 100)), 4)}) − 1) × 100 = <strong>${svPct(p.gapPct, 2)}</strong>`,
-        footer: `BH-FDR-korrektionen ${bhCtx && bhCtx.q != null ? `justerar för att ${bhCtx.allM} parallella tester körs samtidigt — skyddar mot falska positiva. ` : ''}Markeringen "Värt att granska" kräver både p < 0,05 (efter BH) och att skillnaden är över 5 procent. Prövningen av sakliga skäl gör du själv, i dokumentationen.`
+        footer: `BH-FDR-korrektionen ${bhCtx && bhCtx.q != null ? `justerar för att ${bhCtx.allM} parallella tester körs samtidigt — skyddar mot falska positiva. ` : ''}Klassningen "Titta närmare" kräver både p < 0,05 (efter BH) och att skillnaden är minst 3 % (verktygets storleksgräns). Talet är justerat för ålder och bär därför ingen direktivmarkering. Prövningen av sakliga skäl gör du själv, i dokumentationen.`
     };
 }
 
@@ -356,7 +358,9 @@ function _evidenceForPaygapRow(p) {
     const ratio = medMa > 0 ? medKv / medMa : null;
     const gapPct = ratio != null ? (ratio * 100) : null;
     const diff100 = gapPct != null ? gapPct - 100 : null;
-    const isCrit = diff100 != null && Math.abs(diff100) > 5;
+    // Statusen prövas som i översiktstabellen: bootstrap-KI:t mot 100 % och golvet statGolv() (ADR-59).
+    const ci = gapPct != null ? _laBootstrapGapCI(p.kvLons, p.maLons) : null;
+    const status = gapPct != null ? gapStatusKI({ gap: gapPct, ci, nKv, nMa }) : GAP_STATUS_EJ;
     return {
         title: `Beräkningen — BAS ${p.bas}`,
         intro: `Kvoten räknas som <em>kvinnors median ÷ mäns median × 100 %</em>. 100 % = lika lön. Inget ålders- eller yrkesfilter — direkt median-jämförelse inom BAS-intervallet.`,
@@ -368,7 +372,9 @@ function _evidenceForPaygapRow(p) {
             { label: 'Median män',              value: fmtKr(medMa) },
             { label: '— Kvinnor i % av män',    value: svPct(gapPct, 2) },
             { label: 'Avvikelse från 100 %',    value: (diff100 != null && diff100 >= 0 ? '+' : '') + svTal(diff100, 2) + ' pp' },
-            { label: 'Klassning',               value: isCrit ? 'Värt att granska (över 5 %)' : Math.abs(diff100 ?? 0) > 3 ? 'Följ upp (3–5 %)' : 'Balanserat (högst 3 %)', isHtml: true }
+            { label: '95 % KI (bootstrap)',     value: ci ? `${svTal(ci.lo, 1)}–${svPct(ci.hi, 1)}` : '—', note: 'Säkerställd när intervallet inte når 100 %' },
+            { label: 'Status',                  value: `${esc(status.serie)} (${esc(status.grans)})`, isHtml: true },
+            { label: 'Direktivmarkering',       value: _stsDirektiv(gapPct) ? _STS_DIR_ETIKETT : 'Nej', note: _STS_DIR_TIPS }
         ],
         formula: `<strong>Beräkning:</strong><br>
             kvot = median(kvinnor) / median(män) = ${fmtKr(medKv)} / ${fmtKr(medMa)} = <strong>${svTal(ratio, 4)}</strong><br>

@@ -104,8 +104,9 @@ function _excelDiagramBlad() {
     const bas = _laOversiktRader(d);
     if (bas.length) ut.push(['Lika arbete per BAS', [
         ['Kvinnors och mäns lön per BAS-intervall (översiktstabellen i Lönestruktur)'], [],
-        ['BAS-intervall', 'Antal kvinnor', 'Antal män', 'Median kvinnor (kr)', 'Median män (kr)', 'Skillnad (kr)', 'Kvinnors median i % av mäns', 'Konfidensintervall 95 %, nedre', 'Konfidensintervall 95 %, övre', 'Status'],
-        ...bas.map(o => [o.bas, o.nKv, o.nMa, Math.round(o.medKv), Math.round(o.medMa), Math.round(o.medKv - o.medMa), r1(o.gap), o.ci ? r1(o.ci.lo) : '', o.ci ? r1(o.ci.hi) : '', _laOversiktStatus(o).serie])]]);
+        ['BAS-intervall', 'Antal kvinnor', 'Antal män', 'Median kvinnor (kr)', 'Median män (kr)', 'Skillnad (kr)', 'Kvinnors median i % av mäns', 'Konfidensintervall 95 %, nedre', 'Konfidensintervall 95 %, övre', 'Status', _STS_DIR_KOLUMN],
+        ...bas.map(o => [o.bas, o.nKv, o.nMa, Math.round(o.medKv), Math.round(o.medMa), Math.round(o.medKv - o.medMa), r1(o.gap), o.ci ? r1(o.ci.lo) : '', o.ci ? r1(o.ci.hi) : '', _laOversiktStatus(o).serie, _stsDirektiv(o.gap) ? _STS_DIR_ETIKETT : '']),
+        [], [`Status: Värt att granska = konfidensintervallet utesluter 100 % och skillnaden är minst 3 % (verktygets storleksgräns). ${_STS_DIR_KOLUMN}: ${_STS_DIR_TIPS}`]]]);
     const tratt = _laTrattUnderlag(d);
     if (tratt) ut.push(['Slumpens granser', [
         ['Yrkesgrupperna mot slumpens gränser (trattdiagrammet på Lika arbete)'],
@@ -282,7 +283,9 @@ function _jpaExkluderadeTexter() {
  * Genererar en samrådsprotokoll-Excel speciellt utformad för facklig samverkan.
  *
  * Strikt EU 2023/970 Art. 10-process:
- *   - Listar enbart grupper med oförklarat gap > 5% (utredningskrav)
+ *   - Listar yrkesgrupper med statusen Värt att granska (säkerställd skillnad på minst 3 %, ADR-59) med kolumnen
+ *     Ojusterad löneskillnad ≥ 5 % (direktivmarkeringen), och BAS-intervall där regressionens skillnad är
+ *     säkerställd (p < 0,05) och minst 3 %
  *   - K-anonymitet appliceras: grupper med färre än kTroskel() personer av något kön exkluderas helt
  *   - Tomma protokoll-fält för sakliga skäl, fackliga kommentar, åtgärder
  *   - Signaturblad för arbetsgivare + fackliga representanter
@@ -315,34 +318,19 @@ function _exportJPAProtocolExport() {
     const lvPairsCount = lvRedovisning.par.length;
 
     // ---- A) Identifiera JPA-grupper (lika arbete = yrkesgrupp) ----
-    // Median-jämförelse + k-anonymitet
-    const yrkeGroups = {};
-    d.forEach(r => {
-        if (!yrkeGroups[r.yrke]) yrkeGroups[r.yrke] = { kv: [], ma: [] };
-        if (r.kon.includes('kvinna'))               yrkeGroups[r.yrke].kv.push(r);
-        else if (r.kon === 'man' || r.kon === 'män') yrkeGroups[r.yrke].ma.push(r);
-    });
-    const jpaYrken = [];
-    let yrkenExkluderadeMaskerade = 0;
-    let yrkenExkluderadeOjamn = 0;
-    Object.entries(yrkeGroups).forEach(([yrke, g]) => {
-        if (g.kv.length === 0 && g.ma.length === 0) return;  // tom
-        if (g.kv.length < kTroskel() || g.ma.length < kTroskel()) {
-            yrkenExkluderadeMaskerade++;
-            return;
-        }
-        const medKv = Stat.median(g.kv.map(r => r.lon));
-        const medMa = Stat.median(g.ma.map(r => r.lon));
-        if (medMa <= 0) return;
-        const gapPct = (medKv / medMa - 1) * 100;  // negativ = kvinnor lägre
-        if (Math.abs(gapPct) <= 5) { yrkenExkluderadeOjamn++; return; }
-        jpaYrken.push({
-            yrke, nKv: g.kv.length, nMa: g.ma.length, tot: g.kv.length + g.ma.length,
-            medKv: Math.round(medKv), medMa: Math.round(medMa),
-            gapPct: +gapPct.toFixed(2),
-            diffKr: Math.round(medKv - medMa)
-        });
-    });
+    // Samma grupper och samma status som Lika arbete (laLikaGrupper, ADR-59): Värt att granska = skillnaden mellan
+    // medianerna är säkerställd mot slumpens gränser för gruppen och minst 3 %. k-anonymitet som i tabellen.
+    const lika = laLikaGrupper(d);
+    const jamforda = lika.grupper.filter(g => !g.samladMedian);
+    const jpaYrken = jamforda.filter(g => g.niva === 'granska').map(g => ({
+        yrke: g.yrke, nKv: g.nKv, nMa: g.nMa, tot: g.tot,
+        medKv: Math.round(g.medKv), medMa: Math.round(g.medMa),
+        gapPct: +((g.kvot - 1) * 100).toFixed(2),   // negativ = kvinnor lägre
+        diffKr: Math.round(g.medKv - g.medMa), direktiv: g.direktiv
+    }));
+    const yrkenExkluderadeMaskerade = lika.grupper.filter(g => g.samladMedian).length + lika.utelamnade.length + lika.ejJamforbara.length;
+    const yrkenEjBedomda = jamforda.filter(g => g.niva === 'ejbedomd').length;
+    const yrkenExkluderadeOjamn = jamforda.filter(g => g.niva === 'folj' || g.niva === 'balanserat').length;
     jpaYrken.sort((a, b) => a.gapPct - b.gapPct);  // mest negativa (mest kritiska) först
 
     // ---- B) Identifiera JPA-grupper (likvärdigt arbete = BAS-intervall) ----
@@ -356,7 +344,8 @@ function _exportJPAProtocolExport() {
     perBas.forEach(b => {
         if (b.status === 'too_few')    { basExkluderadeMaskerade++; return; }
         if (b.status === 'singular')   { basExkluderadeSingular++; return; }
-        if (Math.abs(b.gapPct) <= 5)   { basExkluderadeUnderTröskel++; return; }
+        // Regressionens tal är justerat: samma regel som statusen (säkerställd och minst 3 %), ingen direktivmarkering.
+        if (_stsPerBasSignal(b.gapPct, b.pValue < 0.05, b.pValue < 0.05).niva !== 'titta') { basExkluderadeUnderTröskel++; return; }
         jpaBas.push(b);
     });
     jpaBas.sort((a, b) => a.gapPct - b.gapPct);
@@ -377,8 +366,9 @@ function _exportJPAProtocolExport() {
         ['', ''],
         ['— OMFATTNING —', ''],
         ['Totalt antal personer i underlaget', d.length],
-        ['Antal yrkesgrupper där kvinnors och mäns median skiljer sig mer än 5 % (lika arbete)', jpaYrken.length],
-        ['Antal BAS-intervall med en oförklarad skillnad över 5 %', jpaBas.length],
+        ['Antal yrkesgrupper med statusen Värt att granska: säkerställd skillnad på minst 3 % (lika arbete)', jpaYrken.length],
+        ['  varav ojusterad löneskillnad ≥ 5 % (direktivmarkeringen)', jpaYrken.filter(j => j.direktiv).length],
+        ['Antal BAS-intervall med en säkerställd oförklarad skillnad på minst 3 %', jpaBas.length],
         [`Antal ${lvRedovisning.not ? 'redovisade ' : ''}kandidatpar i likvärdigt arbete (kvinnodominerat yrke mot icke-kvinnodominerat yrke med lika eller lägre krav)`, lvPairsCount],
         ...(lvRedovisning.not ? [['  Utelämnade kandidatpar', lvRedovisning.not]] : []),
         ['', ''],
@@ -415,10 +405,10 @@ function _exportJPAProtocolExport() {
     ];
     XLSX.utils.book_append_sheet(wb, coverSheet, '1. Försättssida');
 
-    // === Sheet 2: Yrkesgrupper med >5% gap (lika arbete) ===
+    // === Sheet 2: Yrkesgrupper med statusen Värt att granska (lika arbete) ===
     const yrkenHeaderRow = [
         'Nr', 'AID / Yrkesgrupp', 'N totalt', 'N kvinnor', 'N män',
-        'Median kvinnor (kr)', 'Median män (kr)', 'Differens (kr)', 'Kvinnors median i % av mäns',
+        'Median kvinnor (kr)', 'Median män (kr)', 'Differens (kr)', 'Kvinnors median i % av mäns', _STS_DIR_KOLUMN,
         // Tomma protokollfält
         'Sakliga skäl — arbetsgivarens analys',
         'Fackliga partens kommentar / motargument',
@@ -429,27 +419,28 @@ function _exportJPAProtocolExport() {
     ];
     const yrkenRows = [yrkenHeaderRow];
     if (jpaYrken.length === 0) {
-        yrkenRows.push(['—', 'Inga yrkesgrupper där kvinnors och mäns median skiljer sig mer än 5 %, bland grupperna som når minsta gruppstorlek', '', '', '', '', '', '', '', '', '', '', '', '', '']);
+        yrkenRows.push(['—', 'Inga yrkesgrupper med statusen Värt att granska, bland grupperna som når minsta gruppstorlek', '', '', '', '', '', '', '', '', '', '', '', '', '', '']);
     } else {
         jpaYrken.forEach((j, idx) => {
             yrkenRows.push([
                 idx + 1, j.yrke, j.tot, j.nKv, j.nMa,
-                j.medKv, j.medMa, j.diffKr, typeof j.gapPct === 'number' ? +(100 + j.gapPct).toFixed(1) : j.gapPct,
+                j.medKv, j.medMa, j.diffKr, typeof j.gapPct === 'number' ? +(100 + j.gapPct).toFixed(1) : j.gapPct, j.direktiv ? _STS_DIR_ETIKETT : '',
                 '', '', '', '', '', ''  // protokoll-celler tomma
             ]);
         });
     }
+    if (jpaYrken.length) yrkenRows.push([], ['', `${_STS_DIR_KOLUMN}: ${_STS_DIR_TIPS}`]);
     const yrkenSheet = XLSX.utils.aoa_to_sheet(yrkenRows);
     yrkenSheet['!cols'] = [
         { wch: 4 }, { wch: 42 }, { wch: 10 }, { wch: 10 }, { wch: 10 },
-        { wch: 16 }, { wch: 16 }, { wch: 14 }, { wch: 12 },
+        { wch: 16 }, { wch: 16 }, { wch: 14 }, { wch: 12 }, { wch: 12 },
         { wch: 50 }, { wch: 50 }, { wch: 32 }, { wch: 40 }, { wch: 18 }, { wch: 22 }
     ];
     yrkenSheet['!freeze'] = { xSplit: 2, ySplit: 1 };
     _applyColumnNumFormats(yrkenSheet, SV_NUM_FORMATS);
     XLSX.utils.book_append_sheet(wb, yrkenSheet, '2. Lika arbete (yrken)');
 
-    // === Sheet 3: BAS-intervall med >5% oförklarat gap (likvärdigt arbete) ===
+    // === Sheet 3: BAS-intervall med säkerställd oförklarad skillnad på minst 3 % (likvärdigt arbete) ===
     const basHeaderRow = [
         'Nr', 'BAS-intervall', 'N totalt', 'N kvinnor', 'N män',
         'Oförklarad skillnad (%)', '95 % KI lägre', '95 % KI övre',
@@ -464,7 +455,7 @@ function _exportJPAProtocolExport() {
     ];
     const basRows = [basHeaderRow];
     if (jpaBas.length === 0) {
-        basRows.push(['—', 'Inga BAS-intervall med en oförklarad skillnad över 5 %, bland intervallen som når minsta gruppstorlek', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '']);
+        basRows.push(['—', 'Inga BAS-intervall med en säkerställd oförklarad skillnad på minst 3 %, bland intervallen som når minsta gruppstorlek', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '']);
     } else {
         jpaBas.forEach((b, idx) => {
             basRows.push([
@@ -548,14 +539,16 @@ function _exportJPAProtocolExport() {
         ['', ''],
         ['Lika arbete (yrkesgrupper):', ''],
         [_jpaExkluderadeTexter().yrken, yrkenExkluderadeMaskerade],
-        ['  Under gränsen 5 % (rå skillnad)', yrkenExkluderadeOjamn],
+        ['  Går ej att bedöma (ett kön under ' + statGolv() + ' personer)', yrkenEjBedomda],
+        ['  Inte Värt att granska (Följ upp eller Balanserat)', yrkenExkluderadeOjamn],
         ['', ''],
         ['Likvärdigt arbete (BAS-intervall):', ''],
         [_jpaExkluderadeTexter().bas, basExkluderadeMaskerade],
         ['  Utelämnade: regressionen gick inte att skatta (multikollinearitet)', basExkluderadeSingular],
-        ['  Under gränsen 5 % (oförklarad skillnad)', basExkluderadeUnderTröskel],
+        ['  Inte säkerställd eller under 3 % (oförklarad skillnad)', basExkluderadeUnderTröskel],
         ['', ''],
-        ['Gränsen 5 % kommer från direktivets regler om gemensam lönebedömning. Lagen kräver ändå att varje skillnad analyseras.', ''],
+        ['Statusen bygger på statistisk signal: säkerställd skillnad och minst 3 % (verktygets storleksgräns). Lagen kräver ändå att varje skillnad analyseras.', ''],
+        [`${_STS_DIR_KOLUMN}: ${_STS_DIR_TIPS}`, ''],
         [`k-anonymitet (n<${kTroskel()}) skyddar enskilda anställdas integritet (uppgiftsminimering och inbyggt dataskydd enligt dataskyddsförordningen).`, ''],
         ['Grupper under k-tröskeln kan inte analyseras säkert utan risk för återidentifiering.', ''],
         ['Om dessa grupper behöver granskas separat bör det ske utan numeriska bilagor.', '']
@@ -643,7 +636,7 @@ function _exportJPAProtocolExport() {
     _appendMethodSheet(wb);
     XLSX.writeFile(wb, filename);
     _showExportSensitivityToast();
-    announceToScreenReader(`Protokoll för gemensam lönebedömning exporterat: ${jpaYrken.length} yrkesgrupp${jpaYrken.length === 1 ? '' : 'er'} och ${jpaBas.length} BAS-intervall över gränsen 5 %.`);
+    announceToScreenReader(`Protokoll för gemensam lönebedömning exporterat: ${jpaYrken.length} yrkesgrupp${jpaYrken.length === 1 ? '' : 'er'} och ${jpaBas.length} BAS-intervall med en säkerställd skillnad på minst 3 %.`);
 }
 
 // Multi-flik Excel-export

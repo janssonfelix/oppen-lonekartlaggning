@@ -4,8 +4,8 @@
 // ÅTGÄRDSLISTA — samlad checklist från alla flikar
 // ============================================================================
 // buildActionChecklist är UTTÖMMANDE — den samlar varje grupp/par/flagga
-//   som HR behöver agera på, grupperad efter kategori (AKUT, § 3:10, EU-utred,
-//   datakvalitet). HR kan klicka av punkterna när de hanterat dem.
+//   som HR behöver agera på, grupperad efter källa (U2): Lika arbete, Lika arbete, fördjupning, Likvärdigt
+//   arbete, Löneläge mot referens och underlagets kvalitet. HR kan klicka av punkterna när de hanterat dem.
 //   State sparas på state._actionChecklist (i minnet — försvinner vid reload).
 
 // Tal i punkternas texter: decimalkomma och belopp utan tecken — riktningen skrivs med ord.
@@ -71,27 +71,25 @@ function buildActionChecklist({ endastGrupper = false } = {}) {
             if (typeof _fkAttGora === 'function') items.push(..._fkAttGora(new Set(items.map(i => i.id))));
         } catch (e) { rapporteraFel('Att göra: underlagets kvalitet', e); }
 
-        // === Lika arbete: rått gap > 5 % i jämförbara BAS (samma regel som kompliansen) ===
+        // === Lika arbete: BAS-intervall med statusen Värt att granska (ADR-59): den råa medianskillnadens bootstrap-KI
+        // utesluter 100 % och skillnaden är minst 3 %, i jämförbara BAS (samma regel som översiktstabellen) ===
         try {
             const d = getData();
-            const jb = _dqJamforbaraBas(d, kInstalld());
+            const jb = new Set(_dqJamforbaraBas(d, kInstalld()).jamforbara);
             const perBas = (reg && !reg.error && reg.perBas) ? reg.perBas : [];
-            jb.jamforbara.forEach(b => {
-                const df = d.filter(r => r.bas === b);
-                const kv = df.filter(r => r.kon.includes('kvinna')).map(r => r.lon);
-                const ma = df.filter(r => r.kon === 'man' || r.kon === 'män').map(r => r.lon);
-                const gap = (Stat.median(kv) / Stat.median(ma)) * 100 - 100;
-                if (Math.abs(gap) <= 5) return;
+            _laOversiktRader(d).filter(o => jb.has(o.bas) && _laOversiktStatus(o).niva === 'granska').forEach(o => {
+                const b = o.bas, gap = o.gap - 100;
                 const pb = perBas.find(p => p.bas === b && p.status === 'ok');
                 const forklaring = pb
-                    ? (Math.abs(pb.gapPct) <= 5
-                        ? ` Efter hänsyn till ålder har kvinnor ${_agPct(pb.gapPct)} % ${_agRiktning(pb.gapPct)} lön — under 5 %.`
+                    ? (Math.abs(pb.gapPct) < _STS_STORLEK
+                        ? ` Efter hänsyn till ålder har kvinnor ${_agPct(pb.gapPct)} % ${_agRiktning(pb.gapPct)} lön — under 3 %.`
                         : ` Efter hänsyn till ålder har kvinnor ${_agPct(pb.gapPct)} % ${_agRiktning(pb.gapPct)} lön.`)
                     : '';
+                const direktiv = _stsDirektiv(o.gap) ? ' Den råa skillnaden når 5 % (direktivmarkeringen; den är inte en bedömning).' : '';
                 items.push({
                     id: 'gap-bas-' + b, kategori: 'Lika arbete', prioritet: 'medel',
                     titel: `BAS ${b}: kvinnors medianlön ${andelAvMan(gap)} av mäns`,   // rå skillnad: samma form som i Lika arbete
-                    detalj: `Rå skillnad över 5 % i ett jämförbart BAS-intervall.${forklaring} Pröva om skillnaden har sakliga skäl.`,
+                    detalj: `Rå skillnad som är statistiskt säkerställd och minst 3 % i ett jämförbart BAS-intervall.${direktiv}${forklaring} Pröva om skillnaden har sakliga skäl.`,
                     tab: 'matrix', källa: 'Lika arbete'
                 });
             });
@@ -102,7 +100,7 @@ function buildActionChecklist({ endastGrupper = false } = {}) {
             if (reg && !reg.error && reg.pValue < 0.05) {
                 items.push({
                     id: 'reg-oforklarat', kategori: 'Lika arbete',
-                    prioritet: Math.abs(reg.konPct) > 5 ? 'hög' : 'medel',
+                    prioritet: Math.abs(reg.konPct) >= _STS_STORLEK ? 'hög' : 'medel',
                     titel: `Oförklarad löneskillnad i hela organisationen: kvinnor har ${_agPct(reg.konPct)} % ${_agRiktning(reg.konPct)} lön än män (${reg.fras ? `efter ${reg.fras}` : 'inget räknat bort'})`,
                     detalj: 'En oförklarad skillnad är inte samma sak som en osaklig. Pröva skillnaden per yrkesgrupp i Lika arbete.',
                     tab: 'struktur', källa: 'Regressionen i Lönestruktur'
@@ -122,7 +120,7 @@ function buildActionChecklist({ endastGrupper = false } = {}) {
                 const fmt = new Intl.NumberFormat('sv-SE');
                 items.push({
                     id: `prio-akut-${i.aid || i.yrke}-${i.bas}`, aid: i.aid || null,
-                    kategori: 'Värt att börja med',
+                    kategori: 'Löneläge mot referens',
                     prioritet: 'hög',
                     titel: `${i.yrke} (BAS ${i.bas}) — ${_agPct(i.diffPct)} % under ${i.refSource}`,
                     detalj: `n=${i.n}, kostnad att lyfta till referens: ${fmt.format(Math.round(i.annualGapTotal))} kr/år. Väg skillnaden mot sakliga skäl och dokumentera din bedömning.`,
@@ -133,7 +131,7 @@ function buildActionChecklist({ endastGrupper = false } = {}) {
             prioItems.filter(i => i.status === 'atgard').slice(0, 10).forEach(i => {
                 items.push({
                     id: `prio-atgard-${i.aid || i.yrke}-${i.bas}`, aid: i.aid || null,
-                    kategori: 'Värt att granska',
+                    kategori: 'Löneläge mot referens',
                     prioritet: 'medel',
                     titel: `${i.yrke} (BAS ${i.bas}) — ${_agPct(i.diffPct)} % under ${i.refSource}`,
                     detalj: `n=${i.n}, påverkansindex ${svTal(i.priorityIndex, 0)}. Titta närmare på om det finns sakliga skäl för skillnaden.`,
@@ -167,7 +165,8 @@ function buildActionChecklist({ endastGrupper = false } = {}) {
     } catch (e) { rapporteraFel('Att göra: likvärdigt arbete', e); }
 
     if (!endastGrupper) {
-        // === 4. EU-Lönekartläggning — per-BAS gap > 5 % efter korrigering för många tester (Benjamini–Hochberg) ===
+        // === 4. Lika arbete, fördjupning — per-BAS-regressionens signal Titta närmare: säkerställt efter korrigering för
+        // många tester (Benjamini–Hochberg) och minst 3 % (ADR-59). Justerat tal: ingen direktivmarkering. ===
         try {
             if (reg && !reg.error && reg.perBas) {
                 // BH-justering
@@ -184,20 +183,20 @@ function buildActionChecklist({ endastGrupper = false } = {}) {
                     if (p.status !== 'ok') return;
                     const q = bhQ[p.bas];
                     const sig = p.pValue < 0.05 && (q == null || q < 0.05);
-                    if (sig && Math.abs(p.gapPct) > 5) {
+                    if (_stsPerBasSignal(p.gapPct, sig, p.pValue < 0.05).niva === 'titta') {
                         items.push({
                             id: `eu-bas-${p.bas}`,
-                            kategori: 'Lika arbete',
+                            kategori: 'Lika arbete, fördjupning',
                             prioritet: 'hög',
-                            titel: `BAS ${p.bas}: kvinnor ${_agPct(p.gapPct)} % ${_agRiktning(p.gapPct)} lön efter ålderskontroll, statistiskt säkerställd`,
-                            detalj: `Statistiskt säkerställt också efter korrigering för många samtidiga tester (p=${p.pValue < 0.001 ? '< 0,001' : _agTal(p.pValue, 3)}, q=${q != null && q < 0.001 ? '< 0,001' : (q != null ? _agTal(q, 3) : '—')}). Skillnaden är över 5 procent. Lagen kräver att den analyseras, och när lönetransparensdirektivet gäller kan den också leda till en gemensam lönebedömning hos en arbetsgivare som rapporterar löneskillnader (100 anställda eller fler).`,
+                            titel: `BAS ${p.bas}: kvinnor ${_agPct(p.gapPct)} % ${_agRiktning(p.gapPct)} lön efter ålderskontroll — titta närmare`,
+                            detalj: `Statistiskt säkerställt också efter korrigering för många samtidiga tester (p=${p.pValue < 0.001 ? '< 0,001' : _agTal(p.pValue, 3)}, q=${q != null && q < 0.001 ? '< 0,001' : (q != null ? _agTal(q, 3) : '—')}). Minst 3 % (verktygets storleksgräns) — pröva skillnaden mot sakliga skäl.`,
                             tab: 'matrix',
-                            källa: 'Lika arbete'
+                            källa: 'Regressionen per BAS-intervall i Lika arbete'
                         });
                     }
                 });
             }
-        } catch (e) { rapporteraFel('Att göra: EU-direktivets mått', e); }
+        } catch (e) { rapporteraFel('Att göra: per-BAS-regressionen', e); }
 
         // === 5. Handlingsplan: förifyllda rader där rullistan Sakliga skäl prövade? är tom (56-handlingsplan.js) ===
         // En egen rad räknas inte: den är ingen grupp ur underlaget. Punkten försvinner när varje rad har ett val.

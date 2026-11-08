@@ -1045,6 +1045,202 @@ const _rngHashSeed = __mirrorRng.hashSeed;
 const _rngSeedFrom = __mirrorRng.seedFromNumbers;
 const _rngFor = __mirrorRng.rngFor;
 
+// ---- speglar src/lib/status.js ----
+const __mirrorStatus = (() => {
+    // importer ur tidigare speglade lib-moduler
+    const median = __mirrorStat.median;
+    const rngFor = __mirrorRng.rngFor;
+
+// SPDX-License-Identifier: MIT
+// Copyright 2026 Felix Jansson
+/**
+ * Öppen lönekartläggning — uppmärksamhetstrappan och direktivmarkeringen (ADR-59).
+ *
+ * Statusen för en skillnad mellan kvinnors och mäns lön sätts på STATISTISK SIGNAL:
+ *
+ *   Värt att granska  — skillnaden är säkerställd (utanför slumpens gränser, eller ett KI som utesluter lika lön)
+ *                       och minst STORLEKSGRANS (3 %, verktygets egen storleksgräns).
+ *   Följ upp          — minst 3 % men inte säkerställd, eller säkerställd men under 3 %.
+ *   Balanserat        — under 3 % och inte säkerställd.
+ *   Går ej att bedöma — något kön är under golvet (statGolv i appen) eller skillnaden kunde inte prövas.
+ *
+ * Direktivmarkeringen (minst DIREKTIVNIVA, 5 %) är något annat: en märkt markering på den OJUSTERADE medianskillnaden,
+ * som visar var den nivå som direktivets regler om gemensam lönebedömning utgår från nås. Den är ingen bedömning och
+ * står aldrig på regressionens justerade tal.
+ *
+ * Slumpens gränser för en grupp är trattdiagrammets: omkastning av könen inom gruppen (1 000 gånger, seedad ur
+ * datat), och för en grupp över 300 personer en normalapproximation med gruppens egen spridning.
+ *
+ * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js. Inga DOM-/state-beroenden.
+ */
+
+
+/** Verktygets egen storleksgräns för statusen, i procent av mäns lön. */
+const STORLEKSGRANS = 3;
+/** Nivån för direktivmarkeringen på den ojusterade löneskillnaden, i procent. */
+const DIREKTIVNIVA = 5;
+/** Antalet omkastningar per grupp, och gruppstorleken över vilken normalapproximationen används. */
+const OMKASTNINGAR = 1000, STOR_GRUPP = 300;
+
+/** Statusens ord och gräns i klartext (färg, ikon och symbol hör till appen, 10-diagramtema.js). */
+const STATUS_ORD = Object.freeze({
+    granska: Object.freeze({ serie: 'Värt att granska', grans: 'säkerställd skillnad på minst 3 %' }),
+    folj: Object.freeze({ serie: 'Följ upp', grans: 'minst 3 % men inte säkerställd, eller säkerställd men under 3 %' }),
+    balanserat: Object.freeze({ serie: 'Balanserat', grans: 'under 3 % och inte säkerställd' }),
+    ejbedomd: Object.freeze({ serie: 'Går ej att bedöma', grans: 'för få av ett kön för att pröva skillnaden' })
+});
+
+/** Direktivmarkeringens etikett, kolumnrubrik och verktygstips. */
+const DIREKTIV_ETIKETT = '≥ 5 %';
+const DIREKTIV_KOLUMN = 'Ojusterad löneskillnad ≥ 5 %';
+const DIREKTIV_TIPS = 'Direktivets regler om gemensam lönebedömning utgår från en skillnad på minst 5 %; markeringen visar var den nivån nås. Den är inte en bedömning.';
+
+/**
+ * Konstanterna i ett objekt, för appen och andra lib-moduler (speglingen exponerar bara funktioner).
+ * @returns {{STORLEKSGRANS:number, DIREKTIVNIVA:number, STATUS_ORD:typeof STATUS_ORD, DIREKTIV_ETIKETT:string, DIREKTIV_KOLUMN:string, DIREKTIV_TIPS:string}}
+ */
+function statusKonstanter() {
+    return { STORLEKSGRANS, DIREKTIVNIVA, STATUS_ORD, DIREKTIV_ETIKETT, DIREKTIV_KOLUMN, DIREKTIV_TIPS };
+}
+
+/**
+ * Trappans nivå för ett avstånd från lika lön (|100 − kvinnors lön i % av mäns|) och en prövning.
+ * @param {number} avstand
+ * @param {boolean|null|undefined} sakerstalld  true/false från prövningen; null när den inte kunde göras
+ * @returns {'granska'|'folj'|'balanserat'|'ejbedomd'}
+ */
+function statusNiva(avstand, sakerstalld) {
+    if (typeof avstand !== 'number' || !isFinite(avstand) || typeof sakerstalld !== 'boolean') return 'ejbedomd';
+    const stor = Math.abs(avstand) >= STORLEKSGRANS;
+    if (sakerstalld && stor) return 'granska';
+    if (stor || sakerstalld) return 'folj';
+    return 'balanserat';
+}
+
+/**
+ * Direktivmarkeringen: den ojusterade löneskillnaden (kvinnors median i % av mäns) ligger minst 5 % från lika lön.
+ * @param {number|null|undefined} kvotPct
+ */
+function direktivMarkering(kvotPct) {
+    return typeof kvotPct === 'number' && isFinite(kvotPct) && Math.abs(100 - kvotPct) >= DIREKTIVNIVA - 1e-9;
+}
+
+/** Ett konfidensintervall för kvoten (i %) utesluter lika lön (100). null när intervallet saknas. */
+function kiUtesluterLika(ci) {
+    if (!ci || !isFinite(ci.lo) || !isFinite(ci.hi)) return null;
+    return ci.lo > 100 || ci.hi < 100;
+}
+
+// Median med quickselect (muterar bufferten). Samma räkning som appens _quickMedian, så att trattens gränser är
+// desamma som förut.
+function _snabbMedian(a) {
+    const n = a.length;
+    if (!n) return 0;
+    const select = k => {
+        let lo = 0, hi = n - 1;
+        while (hi > lo) {
+            const mid = (lo + hi) >> 1;
+            if (a[mid] < a[lo]) { const t = a[lo]; a[lo] = a[mid]; a[mid] = t; }
+            if (a[hi] < a[lo]) { const t = a[lo]; a[lo] = a[hi]; a[hi] = t; }
+            if (a[hi] < a[mid]) { const t = a[mid]; a[mid] = a[hi]; a[hi] = t; }
+            const pivot = a[mid];
+            let i = lo, j = hi;
+            while (i <= j) {
+                while (a[i] < pivot) i++;
+                while (a[j] > pivot) j--;
+                if (i <= j) { const t = a[i]; a[i] = a[j]; a[j] = t; i++; j--; }
+            }
+            if (k <= j) hi = j;
+            else if (k >= i) lo = i;
+            else return a[k];
+        }
+        return a[k];
+    };
+    const k = n >> 1;
+    const upper = select(k);
+    if (n & 1) return upper;
+    let m = a[0];
+    for (let i = 1; i < k; i++) if (a[i] > m) m = a[i];
+    return (m + upper) / 2;
+}
+
+/**
+ * Omkastning av könen inom gruppen: de mittersta 95 % av de kvoter (kvinnors median i % av mäns) slumpen ger.
+ * @param {number[]} kv
+ * @param {number[]} ma
+ * @param {number} [B]
+ * @returns {{lag:number, hog:number}}
+ */
+function omkastningsGranser(kv, ma, B = OMKASTNINGAR) {
+    const alla = kv.concat(ma), n = alla.length, nKv = kv.length, rnd = rngFor(kv, ma), kvoter = new Array(B);
+    for (let b = 0; b < B; b++) {
+        // Ofullständig Fisher–Yates: de första nKv platserna blir ett slumpvis urval utan återläggning.
+        for (let i = 0; i < nKv; i++) { const j = i + ((rnd() * (n - i)) | 0), t = alla[i]; alla[i] = alla[j]; alla[j] = t; }
+        const mKv = _snabbMedian(alla.slice(0, nKv)), mMa = _snabbMedian(alla.slice(nKv));
+        kvoter[b] = mMa > 0 ? mKv / mMa * 100 : 100;
+    }
+    kvoter.sort((x, y) => x - y);
+    return { lag: kvoter[Math.floor(B * 0.025)], hog: kvoter[Math.min(B - 1, Math.floor(B * 0.975))] };
+}
+
+/**
+ * Slumpens gränser för en grupp: omkastning, och för en grupp över STOR_GRUPP personer normalformeln med gruppens
+ * egen spridning (där är formeln rätt, och omkastningens kostnad växer med gruppen).
+ * @param {number[]} kv
+ * @param {number[]} ma
+ * @returns {{lag:number, hog:number}}
+ */
+function slumpensGranser(kv, ma) {
+    if (kv.length + ma.length <= STOR_GRUPP) return omkastningsGranser(kv, ma);
+    const medKv = median(kv), medMa = median(ma);
+    const r = [...kv.map(v => Math.abs(Math.log(v) - Math.log(medKv))), ...ma.map(v => Math.abs(Math.log(v) - Math.log(medMa)))];
+    const h = 100 * 1.96 * 1.2533 * 1.4826 * median(r) * Math.sqrt(1 / kv.length + 1 / ma.length);
+    return { lag: 100 - h, hog: 100 + h };
+}
+
+/**
+ * Hela bedömningen för en grupp: kvoten, avståndet, prövningen mot slumpens gränser, trappans nivå och
+ * direktivmarkeringen. Ett kön under `golv` ger nivån 'ejbedomd' och ingen prövning.
+ * @param {number[]} kv
+ * @param {number[]} ma
+ * @param {{golv?: number, granser?: {lag:number, hog:number}|null}} [val]  `granser` om de redan är räknade
+ */
+function bedomSkillnad(kv, ma, { golv = 10, granser } = {}) {
+    const medKv = median(kv), medMa = median(ma);
+    const kvot = medMa > 0 ? medKv / medMa * 100 : NaN, avstand = Math.abs(100 - kvot);
+    const direktiv = direktivMarkering(kvot);
+    if (kv.length < golv || ma.length < golv || kv.length < 2 || ma.length < 2 || !isFinite(kvot))
+        return { kvot, avstand, sakerstalld: null, niva: /** @type {'ejbedomd'} */ ('ejbedomd'), direktiv, granser: null };
+    const gr = granser || slumpensGranser(kv, ma);
+    const sakerstalld = isFinite(gr.lag) && isFinite(gr.hog) ? (kvot < gr.lag || kvot > gr.hog) : null;
+    return { kvot, avstand, sakerstalld, niva: statusNiva(avstand, sakerstalld), direktiv, granser: gr };
+}
+
+/**
+ * Per-BAS-signalen i regressionskortet (justerad skillnad): Titta närmare = säkerställd efter korrigering och minst 3 %;
+ * Dokumentera = säkerställd under 3 %; Osäkert utslag = bara det råa p-värdet; annars Inget utslag. Ingen
+ * direktivmarkering: regressionens tal är justerade.
+ * @param {number} skillnadPct
+ * @param {boolean} sakerEfterKorrigering
+ * @param {boolean} sakerRatt  rå p < 0,05
+ * @returns {{niva: 'titta'|'dokumentera'|'osakert'|'inget'}}
+ */
+function perBasSignal(skillnadPct, sakerEfterKorrigering, sakerRatt) {
+    if (sakerEfterKorrigering) return { niva: Math.abs(skillnadPct) >= STORLEKSGRANS ? 'titta' : 'dokumentera' };
+    return { niva: sakerRatt ? 'osakert' : 'inget' };
+}
+
+    return { statusNiva, direktivMarkering, kiUtesluterLika, omkastningsGranser, slumpensGranser, bedomSkillnad, perBasSignal, statusKonstanter };
+})();
+const _stsNiva = __mirrorStatus.statusNiva;
+const _stsDirektiv = __mirrorStatus.direktivMarkering;
+const _stsKiUtesluter = __mirrorStatus.kiUtesluterLika;
+const _stsOmkastning = __mirrorStatus.omkastningsGranser;
+const _stsSlumpensGranser = __mirrorStatus.slumpensGranser;
+const _stsBedom = __mirrorStatus.bedomSkillnad;
+const _stsPerBasSignal = __mirrorStatus.perBasSignal;
+const _stsKonstanter = __mirrorStatus.statusKonstanter;
+
 // ---- speglar src/lib/likvardighet.js ----
 const __mirrorLikvardighet = (() => {
     // importer ur tidigare speglade lib-moduler
@@ -4195,6 +4391,8 @@ const __mirrorRapportunderlag = (() => {
     const quantile = __mirrorStat.quantile;
     const fitOLS = __mirrorStat.fitOLS;
     const skrDelText = __mirrorSkrReferens.skrDelText;
+    const bedomSkillnad = __mirrorStatus.bedomSkillnad;
+    const statusKonstanter = __mirrorStatus.statusKonstanter;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -4211,15 +4409,12 @@ const __mirrorRapportunderlag = (() => {
  */
 
 
+
+const { STORLEKSGRANS, DIREKTIV_KOLUMN, DIREKTIV_ETIKETT, DIREKTIV_TIPS } = statusKonstanter();
+
 const _arKvinna = r => typeof r.kon === 'string' && r.kon.includes('kvinna');
 const _arMan = r => typeof r.kon === 'string' && !r.kon.includes('kvinna') && (r.kon.includes('man') || r.kon.includes('män'));
 
-/**
- * Yrkesgrupperna i Lika arbete (samma jämförelseenhet och k-regler som EU-tabellen).
- * @param {any[]} rader
- * @param {{k:number, troskel?:number}} opts
- * @returns {{grupper: any[], utelamnade: string[], ejJamforbara: string[]}}
- */
 /**
  * Noteringen om en variabel som valts bort ur förklaringsmodellen (ADR-56), som den står i rapporten och i panelen.
  * @param {{etikett:string, deltaR2pp?:number|null, skal?:string}} b
@@ -4230,7 +4425,16 @@ function bortvaltNotering(b) {
     return `${b.etikett} har kontrollerats och ${tal}; den ingår inte i siffrorna.${b.skal ? ` Skäl: ${b.skal}` : ''}`;
 }
 
-function likaArbeteGrupper(rader, { k, troskel = 5 }) {
+/**
+ * Yrkesgrupperna i Lika arbete (samma jämförelseenhet och k-regler som EU-tabellen) med uppmärksamhetstrappans
+ * status (ADR-59, src/lib/status.js): `niva` är 'granska', 'folj', 'balanserat' eller 'ejbedomd' (ett kön under
+ * `golv`); `flaggad` är detsamma som Värt att granska. `direktiv` är direktivmarkeringen på den ojusterade
+ * medianskillnaden (minst 5 %), oberoende av statusen. Stabiliteten prövas mot statusens storleksgräns (3 %).
+ * @param {any[]} rader
+ * @param {{k:number, golv?:number}} opts
+ * @returns {{grupper: any[], utelamnade: string[], ejJamforbara: string[]}}
+ */
+function likaArbeteGrupper(rader, { k, golv = 10 }) {
     const perYrke = new Map();
     for (const r of rader || []) {
         if (!perYrke.has(r.yrke)) perYrke.set(r.yrke, { kv: [], ma: [] });
@@ -4244,17 +4448,20 @@ function likaArbeteGrupper(rader, { k, troskel = 5 }) {
         const nagotLitet = kv.length < k || ma.length < k;
         if (nagotLitet && tot < k) { utelamnade.push(yrke); continue; }
         if (nagotLitet) {
-            grupper.push({ yrke, nKv: kv.length, nMa: ma.length, tot, samladMedian: true, flaggad: false,
+            grupper.push({ yrke, nKv: kv.length, nMa: ma.length, tot, samladMedian: true, flaggad: false, niva: 'ejbedomd', direktiv: false,
                 gapPct: 0, medTot: median(kv.concat(ma)) });
             continue;
         }
         const medKv = median(kv), medMa = median(ma);
         const kvot = medKv / medMa;
         const gapPct = Math.abs(kvot * 100 - 100);
+        const b = bedomSkillnad(kv, ma, { golv });
         const g = { yrke, nKv: kv.length, nMa: ma.length, tot, samladMedian: false,
-            medKv, medMa, kvot, gapPct, flaggad: gapPct > troskel,
+            medKv, medMa, kvot, gapPct, niva: b.niva, sakerstalld: b.sakerstalld, direktiv: b.direktiv, flaggad: b.niva === 'granska',
             p10Kv: quantile(kv, 0.1), p90Kv: quantile(kv, 0.9), p10Ma: quantile(ma, 0.1), p90Ma: quantile(ma, 0.9) };
-        if (g.flaggad) g.stabilitet = _stabilitet(kv, ma, { k, troskel });
+        // Stabiliteten gäller storleken: kan skillnaden hamna under 3 % om en eller två personer tas bort? Den räknas för
+        // varje grupp på minst 3 % och visas för grupperna Värt att granska.
+        if (gapPct >= STORLEKSGRANS) g.stabilitet = _stabilitet(kv, ma, { k, troskel: STORLEKSGRANS });
         grupper.push(g);
     }
     grupper.sort((a, b) => b.gapPct - a.gapPct);
@@ -4349,7 +4556,7 @@ function _stabilitet(kv, ma, { k, troskel }) {
     if (kanKv(1) && kanMa(1)) for (const i of cKv) for (const j of cMa) min2 = Math.min(min2, gap([i], [j]));
     const begransad = !kanKv(1) && !kanMa(1) ? 'bada' : !kanKv(1) ? 'kvinnor' : !kanMa(1) ? 'man' : null;
     if (begransad === 'bada') return { niva: 'stabil', lagstaGapPct: null, begransad, provadeMax: 0 };
-    const niva = min1 <= troskel ? 'skor1' : min2 <= troskel ? 'skor2' : 'stabil';
+    const niva = min1 < troskel ? 'skor1' : min2 < troskel ? 'skor2' : 'stabil';   // skör: kan hamna under statusens storleksgräns
     const lagstaGapPct = niva === 'skor1' ? min1 : (Number.isFinite(min2) ? min2 : min1);
     // provadeMax: flest borttagna som faktiskt kunde prövas (k-gränsen kan stoppa två).
     return { niva, lagstaGapPct, begransad, provadeMax: Number.isFinite(min2) ? 2 : 1 };
@@ -4363,16 +4570,16 @@ function stabilitetKort(st, k) {
     const t = _tillagg(st);
     if (st.niva === 'skor1') return `Skör: kan bli ${formatTal(st.lagstaGapPct, 1)} % om 1 person tas bort${t}`;
     if (st.niva === 'skor2') return `Skör: kan bli ${formatTal(st.lagstaGapPct, 1)} % om 2 personer tas bort${t}`;
-    if (st.provadeMax === 1) return `Stabil: över 5 % även utan 1 person, fler kunde inte prövas${t}`;
-    return `Stabil: över 5 % även utan 2 personer${t}`;
+    if (st.provadeMax === 1) return `Stabil: minst 3 % även utan 1 person, fler kunde inte prövas${t}`;
+    return `Stabil: minst 3 % även utan 2 personer${t}`;
 }
 function _kanslighet(st, k) {
     if (st.begransad === 'bada') return `Känslighet: kunde inte prövas eftersom båda könen har exakt ${k} personer.`;
     const t = _tillagg(st);
     if (st.niva === 'skor1') return `Känslighet: skillnaden kan sjunka till ${_pct(st.lagstaGapPct)} om en person tas bort${t}.`;
     if (st.niva === 'skor2') return `Känslighet: skillnaden kan sjunka till ${_pct(st.lagstaGapPct)} om två personer tas bort${t}.`;
-    if (st.provadeMax === 1) return `Känslighet: skillnaden ligger kvar över 5 % även om en person tas bort; fler kunde inte prövas${t}.`;
-    return `Känslighet: skillnaden ligger kvar över 5 % även om två personer tas bort${t}.`;
+    if (st.provadeMax === 1) return `Känslighet: skillnaden ligger kvar på minst 3 % även om en person tas bort; fler kunde inte prövas${t}.`;
+    return `Känslighet: skillnaden ligger kvar på minst 3 % även om två personer tas bort${t}.`;
 }
 
 /**
@@ -4383,7 +4590,9 @@ function _kanslighet(st, k) {
 function gruppBlock(g, { id, justerat, ki, urval, demo, k = 10, troskelNot, arsbelopp } = {}) {
     const { fore, efter } = _inled({ demo, urval, troskelNot });
     let fakta = `Inom ${g.yrke} (n = ${g.tot}, varav ${g.nKv} kvinnor och ${g.nMa} män) är kvinnornas medianlön `
-        + `${_pct(g.kvot * 100)} av männens` + (ki ? ` (95 % KI ${_ki(ki.lo, ki.hi)})` : '') + '.';
+        + `${_pct(g.kvot * 100)} av männens` + (ki ? ` (95 % KI ${_ki(ki.lo, ki.hi)})` : '') + '.'
+        + (g.niva === 'granska' ? ' Skillnaden är statistiskt säkerställd och minst 3 % (verktygets storleksgräns).' : '')
+        + (g.direktiv ? ' Den ojusterade löneskillnaden når 5 % (direktivmarkeringen; den är inte en bedömning).' : '');
     let provat;
     if (justerat && justerat.ejSkattbar) {
         provat = ['Ålder och BAS kunde inte prövas eftersom kön och BAS sammanfaller i yrket (kvinnor och män finns i olika BAS).'];
@@ -4502,11 +4711,12 @@ function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
         const g = u.grupper || [];
         const flagg = g.filter(x => x.flaggad), samlade = g.filter(x => x.samladMedian);
         const jamforda = g.length + (u.utelamnade || []).length;
-        const st = [`${_st(jamforda, 'yrkesgrupp', 'yrkesgrupper')} jämfördes. ${flagg.length} har en skillnad över 5 % mellan kvinnors och mäns medianlön. `
+        const st = [`${_st(jamforda, 'yrkesgrupp', 'yrkesgrupper')} jämfördes. ${flagg.length} är värda att granska: skillnaden mellan kvinnors och mäns medianlön är statistiskt säkerställd och minst 3 % (verktygets storleksgräns). `
             + `${samlade.length} redovisas med samlad median eftersom ett kön har färre än ${k} personer, och ${(u.utelamnade || []).length} utelämnas helt.`];
-        if (!flagg.length) return blk('Lika arbete', [...st, 'Ingen yrkesgrupp har en skillnad över 5 %.'], null);
-        return blk('Lika arbete', st, { rubriker: ['Yrkesgrupp', 'Kvinnor', 'Män', 'Median kvinnor', 'Median män', 'Kvinnors lön i % av mäns'],
-            rader: flagg.map(x => [x.yrke, String(x.nKv), String(x.nMa), _kr(x.medKv), _kr(x.medMa), _pct(x.kvot * 100)]) });
+        if (!flagg.length) return blk('Lika arbete', [...st, 'Ingen yrkesgrupp är värd att granska.'], null);
+        return blk('Lika arbete', [...st, `Kolumnen ${DIREKTIV_KOLUMN} visar var den ojusterade skillnaden når 5 %. ${DIREKTIV_TIPS}`],
+            { rubriker: ['Yrkesgrupp', 'Kvinnor', 'Män', 'Median kvinnor', 'Median män', 'Kvinnors lön i % av mäns', DIREKTIV_KOLUMN],
+            rader: flagg.map(x => [x.yrke, String(x.nKv), String(x.nMa), _kr(x.medKv), _kr(x.medMa), _pct(x.kvot * 100), x.direktiv ? DIREKTIV_ETIKETT : '']) });
     }
     if (typ === 'likvardigt') {
         const par = u.par || [];
@@ -5214,7 +5424,7 @@ const __mirrorAttgora = (() => {
  */
 
 /** Kategorier för fynd som gäller skillnader mellan kvinnor och män (lagkravet). */
-const KONSRELATERADE = ['Lika arbete', 'Likvärdigt arbete'];
+const KONSRELATERADE = ['Lika arbete', 'Lika arbete, fördjupning', 'Likvärdigt arbete'];
 
 const PRIORITET = { 'hög': 0, medel: 1, 'låg': 2 };
 

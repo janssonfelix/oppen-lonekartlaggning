@@ -12,16 +12,16 @@ describe('attgora: rang inom samma prioritet', () => {
         expect(attGoraRang(p('a', 'Underlagets kvalitet'))).toBe(0);
         expect(attGoraRang(p('b', 'Datakvalitet'))).toBe(0);
         expect(attGoraRang(p('c', 'Lika arbete'))).toBe(1);
-        expect(attGoraRang(p('d', 'Lika arbete'))).toBe(1);
+        expect(attGoraRang(p('d', 'Lika arbete, fördjupning'))).toBe(1);
         expect(attGoraRang(p('e', 'Likvärdigt arbete'))).toBe(1);
-        expect(attGoraRang(p('f', 'Värt att börja med'))).toBe(2);
+        expect(attGoraRang(p('f', 'Löneläge mot referens'))).toBe(2);
         expect(attGoraRang(p('g', 'Livscykel'))).toBe(2);
     });
 });
 
 describe('attgora: Börja här', () => {
     const punkter = [
-        p('pol', 'Värt att börja med'), p('eu', 'Lika arbete'), p('dq', 'Underlagets kvalitet', 'medel'),
+        p('pol', 'Löneläge mot referens'), p('eu', 'Lika arbete, fördjupning'), p('dq', 'Underlagets kvalitet', 'medel'),
         p('lv', 'Likvärdigt arbete'), p('liv', 'Livscykel', 'medel'), p('data', 'Datakvalitet'),
     ];
     it('prioritet först, därefter rang, därefter ursprunglig ordning; högst tre', () => {

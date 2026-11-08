@@ -348,6 +348,9 @@ details.avsnitt[open]:not(.card) { padding-bottom: 20px; }
 .la-status.ar-granska { background: var(--status-granska-bg); color: var(--status-granska); }
 .la-status.ar-varning { background: var(--status-varning-bg); color: var(--status-varning); }
 .la-status.ar-ok { background: var(--status-ok-bg); color: var(--status-ok); }
+.la-status.ar-neutral { background: transparent; color: var(--text-muted); font-weight: 400; }
+/* Direktivmarkeringen (ADR-59): en markering bredvid en ojusterad löneskillnad, ingen status — kontur, ingen fyllning. */
+.direktiv-bricka { display: inline-block; padding: 0 6px; border: 1px solid currentColor; border-radius: 4px; font-size: var(--fs-xs); font-weight: 600; line-height: 1.5; white-space: nowrap; color: var(--text-muted); }
 .la-status[class*="ar-"] > .ikon { margin-right: 4px; }   /* märket står utan mellanslag, så att cellens text är bara ordet */
 
 /* Linjeikoner (03-ikoner.js): i textens färg, på textens baslinje. Statusmärkena har egen färg och egen form. */

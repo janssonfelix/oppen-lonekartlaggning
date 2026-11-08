@@ -239,8 +239,14 @@ rubrikraden, också när det är hopfällt.
    Tabellen visar medianens kolumner, och P10 och P90 ligger bakom *Fler kolumner* (Kopiera, CSV, Excel och
    utskriften tar med alla).
 3. **Lika arbete** — fliken öppnar med **yrkesgrupperna**: kvinnors och mäns medianlön i samma yrkesgrupp.
-   Grupper med en skillnad över 5 procent markeras, så att du vet var du ska börja. Lagen kräver att du prövar
-   varje skillnad, också de mindre.
+   Varje grupp får en status som bygger på statistisk signal: **Värt att granska** när skillnaden är
+   statistiskt säkerställd (utanför slumpens gränser för gruppen) och minst 3 % (verktygets egen storleksgräns),
+   **Följ upp** när den är minst 3 % men inte säkerställd, eller säkerställd men under 3 %, **Balanserat** när den
+   är under 3 % och inte säkerställd, och **Går ej att bedöma** när ett kön har för få personer för att pröva
+   skillnaden. Börja med grupperna som är värda att granska. Lagen kräver att du prövar varje skillnad, också de
+   mindre. Kolumnen **≥ 5 %** är ingen status utan en markering på den ojusterade skillnaden: direktivets regler
+   om gemensam lönebedömning utgår från en skillnad på minst 5 %, och markeringen visar var den nivån nås. Den är
+   inte en bedömning och står aldrig vid regressionens justerade tal.
    Diagrammet **Yrkesgrupperna mot slumpens gränser** under tabellen visar varje yrkesgrupp mot gruppens storlek.
    En liten grupp kan ha en stor skillnad av ren slump, men en stor grupp kan det inte. Grupperna utanför det
    skuggade fältet är de där skillnaden är svår att förklara med slumpen. Nyckeltalen överst tar med hur stor
@@ -263,8 +269,8 @@ rubrikraden, också när det är hopfällt.
    skillnaden bland dem som inte leder. I regressionen (Lönestruktur) står på en egen rad hur mycket
    ansvaret förklarar. Huvudtalet räknar inte bort det: om ansvaret är ett sakligt skäl
    avgör du.
-   Grupper över 5 % märks **skör** om skillnaden kan hamna på 5 % eller under när en
-   eller två personer tas bort, annars **stabil**. Flaggan gäller i båda fallen, men i en
+   Grupper som är värda att granska märks **skör** om skillnaden kan hamna under 3 % när en
+   eller två personer tas bort, annars **stabil**. Statusen gäller i båda fallen, men i en
    skör grupp avgör enskilda löner — titta särskilt på dem.
    Under yrkesgrupperna finns **Personer att granska**. Det är personer som ligger minst 10 % under vad
    kollegor i samma AID och BAS i samma ålder tjänar, och du kan ändra gränsen. Listan är

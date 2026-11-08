@@ -54,7 +54,7 @@ function _rapportunderlagBlockExport() {
     };
 
     // Lika arbete — samma grupper som EU-tabellen
-    const lika = _ruLikaArbeteGrupper(d, { k, troskel: 5 });
+    const lika = laLikaGrupper(d, k);   // flaggad = Värt att granska (ADR-59)
 
     // Likvärdigt arbete — par med en grupp under k redovisas inte (fliken är undantagen från k, underlaget inte)
     /** @type {any} */ let lv = null;

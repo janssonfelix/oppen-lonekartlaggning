@@ -882,10 +882,11 @@ describe('stabilitet i Lika arbete', () => {
         const flaggade = [...tabell.querySelectorAll('tbody tr')].filter(tr => tr.textContent.includes('Värt att granska'));
         expect(flaggade.length).toBeGreaterThan(0);
         for (const tr of flaggade) expect(tr.querySelector('.la-stabilitet')?.textContent).toMatch(/^(Skör|Stabil|Kan inte prövas)/);
-        expect(tabell.textContent).toContain('Skör betyder att skillnaden kan hamna på 5 % eller under');
+        expect(tabell.textContent).toContain('Skör betyder att skillnaden kan hamna under 3 % (statusens storleksgräns)');
+        expect(tabell.textContent).toContain('Den är inte en bedömning.');
         // Exporten läser cellens text: status och märkning ska inte flyta ihop.
         for (const tr of flaggade) expect(w._tableCellText ? w._tableCellText(tr.cells[tr.cells.length - 1]) : tr.textContent).not.toMatch(/\)(Skör|Stabil|Kan)/);
-        expect(JSON.stringify(w.__tableToMatrix('matrix-table'))).not.toMatch(/5%\)(Skör|Stabil|Kan)/);
+        expect(JSON.stringify(w.__tableToMatrix('matrix-table'))).not.toMatch(/%\)(Skör|Stabil|Kan)/);
         expect(tabell.textContent).not.toMatch(/§|3 kap\./);
     });
 });

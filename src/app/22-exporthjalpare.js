@@ -133,6 +133,8 @@ function __cloneAndCleanTableForExportExport(tableId) {
         tr.querySelectorAll('td, th').forEach(td => {
             // Behåll text-noden men ta bort ikon-spans (cursor:help-badges etc.)
             td.querySelectorAll('span[title].hjalp-markor').forEach(s => s.remove());
+            // Direktivmarkeringen inne i en talcell (ADR-59): cellen ska förbli ett tal i arbetsboken.
+            td.querySelectorAll('.direktiv-inline').forEach(s => s.remove());
             // Normalisera whitespace inom cellen
             // Staplarnas mått ligger som style-attribut (satta via CSSOM); sätts markeringen om genom innerHTML blockerar CSP:n dem
             // (style-src-attr 'none'), och exporten behöver dem inte.

@@ -237,7 +237,7 @@ adaptern verkligen delegerar vaktas av `tests/drift.test.js`:
   rätt grupp. Utskriftsfönstret för checklistorna (`printScaffoldView`) läser `:root` och allt från `.dold` till
   stilmallens slut ur den körande stilmallen och lägger in det som byggt stilark (`adoptedStyleSheets`): ett `<style>`-element
   som skriptet skapar blockeras av den ärvda CSP:n (`style-src-elem`), så fönstret var tidigare helt ostilat.
-- **Tester:** Vitest — 2968 tester i 94 filer: rena `src/lib/`-moduler, CSV-parsning, jsdom-röktest
+- **Tester:** Vitest — 2986 tester i 95 filer: rena `src/lib/`-moduler, CSV-parsning, jsdom-röktest
   av varje vy (ADR-7; `tests/smoke.test.js` med det delade fönstret och sju `tests/smoke-*.test.js` per
   område), k-tröskeln i åtta `tests/ktroskel*.test.js` med riggen i `tests/helpers/ktroskel-rigg.js`,
   gränssnittet i `tests/granssnitt*.test.js` (riggen `tests/helpers/granssnitt-rigg.js`) och diagramvyerna i
@@ -1344,6 +1344,25 @@ intervall under k ger ingen text. Förra årets rad läses med den högre av fil
 (`bokslutMedGrans`, se ADR-54). Vaktas av `tests/basdossier.test.js` och av k-invarianten i
 `tests/ktroskel-invarianter.test.js`, som prövar texten för varje valbart intervall vid 10 och 25.
 
+**ADR-59 — Uppmärksamhetstrappan på statistisk signal, direktivmarkeringen åtskild.** Beslut 2026-11-08. Texterna
+sade redan att 5 % bara är villkoret för gemensam lönebedömning, men statusen för en skillnad mellan kvinnors och mäns
+lön sattes fortfarande på |skillnad| över 5 % ensam, så att en grupp med 18 kvinnor och 2 män kunde bli *Värt att
+granska* på storleken utan att skillnaden gick att skilja från slumpen. `src/lib/status.js` sätter nu statusen på
+statistisk signal och verktygets egen storleksgräns 3 %: *Värt att granska* när skillnaden är säkerställd (utanför
+slumpens gränser för gruppen — trattdiagrammets omkastning, över 300 personer normalapproximationen — eller ett
+konfidensintervall som utesluter lika lön) och minst 3 %; *Följ upp* när den är minst 3 % men inte säkerställd eller
+säkerställd men under 3 %; *Balanserat* under 3 % och inte säkerställd; *Går ej att bedöma* när ett kön är under
+`statGolv()`. 5 % är ingen status utan en **direktivmarkering** (kolumnen *Ojusterad löneskillnad ≥ 5 %*, brickan
+*≥ 5 %*) som bara står vid ojusterade medianskillnader, med verktygstipset att direktivets regler om gemensam
+lönebedömning utgår från en skillnad på minst 5 % och att markeringen inte är en bedömning. Regressionens justerade tal
+bär ingen markering; per-BAS-signalen heter *Titta närmare* (säkerställd efter BH-korrigering och minst 3 %) och
+*Dokumentera* (säkerställd under 3 %). Skör/stabil mäts mot 3 %. Yrkesgruppernas status räknas en gång per underlag
+(`laLikaGrupper`) och delas av fliken, rapportmodellen, rapportunderlaget, årsbokslutet, dossiererna och protokollet
+för gemensam lönebedömning. Att göra grupperar efter källa (*Lika arbete*, *Lika arbete, fördjupning*, *Likvärdigt
+arbete*, *Löneläge mot referens*, *Underlagets kvalitet*), Översiktens ruta heter *Säkerställd löneskillnad*, och
+protokollet för gemensam lönebedömning väljer yrkesgrupper som är värda att granska med markeringen som egen kolumn.
+Utforska prövar ingen skillnad och visar därför högst *Följ upp*. Vaktas av `tests/status-trappa.test.js`.
+
 ## 9. Öppna punkter
 
 Kända brister och obesvarade frågor, så att de inte lever bara i en konversationstråd.
@@ -1428,6 +1447,11 @@ Kända brister och obesvarade frågor, så att de inte lever bara i en konversat
 9d. **Dekomponeringen visas som en bild:** trappan med yrkesgruppssteget efter huvudtalet, förklaringsbudgeten
     under den, steglistan som skärmläsaralternativ. Livscykelns nivåer per BAS kommer ur modellens
     BAS-koefficienter (`basFaktor`). Blinder-Oaxaca kodar BAS som indikatorer sedan ADR-53.
+9e. **Kvar efter uppmärksamhetstrappan (ADR-59, till B1 och spår C):** livscykelns färger (`52-livscykel.js`) och
+    kvantilregressionens färger i regressionskortet följer fortfarande 5 %; kvantilen görs om i B1. Utforska visar
+    storlek utan prövning. Protokollets blad per BAS-intervall för gemensam lönebedömning väljer på rått p-värde
+    utan BH-korrigering. På skärmen (k = 1) står många små grupper som *Går ej att bedöma*, eftersom prövningen
+    kräver `statGolv()` per kön.
 
 **Export:**
 22. **En definition av kvinnodominerat i hela verktyget.** Tabellerna per AID-kod och BAS-intervall (ADR-57) följer

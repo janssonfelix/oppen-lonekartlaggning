@@ -92,10 +92,10 @@ const BES8_STOD = {
             : 'Likvärdigt arbete har inget par att titta närmare på: inget jämförelseyrke ligger högre.';
     },
     matrix(d) {
-        const rader = _ruLikaArbeteGrupper(d, { k: kTroskel(), troskel: 5 }).grupper.filter(g => !g.samladMedian);
+        const rader = laLikaGrupper(d).grupper.filter(g => !g.samladMedian);
         if (!rader.length) return null;
         const granska = rader.filter(g => g.flaggad).length;
-        return `Lika arbete har ${svTal(granska, 0)} av ${svTal(rader.length, 0)} yrkesgrupper att granska (skillnad över 5 %).`;
+        return `Lika arbete har ${svTal(granska, 0)} av ${svTal(rader.length, 0)} yrkesgrupper att granska (statistiskt säkerställd skillnad, minst 3 %).`;
     },
     struktur(d) {
         const q = _stQuartileDistribution(d, { k: kTroskel() }) || [];
