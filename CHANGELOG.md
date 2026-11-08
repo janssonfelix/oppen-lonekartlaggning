@@ -261,6 +261,12 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   rubrikerna inte kallas demo. Kom igång på Översikt säger *Ingen fil till hands? Prova med demodata, litet demo
   eller stort demo*, samma mening som lönefilskortet, i stället för *eller … eller*.
 
+### Exporter
+
+- **Word-utkastets tabeller inför Word-testet.** Två tabeller i följd skiljs av ett tomt stycke (Word slår annars
+  ihop dem till en tabell), tabellbredden står i samma enhet som kolumnerna och cellerna, och varje tabell har
+  `w:tblLook` som Word själv skriver. Utkastet är ännu inte prövat i Word.
+
 ### Analys
 
 - **Robusthet i små saker.** Den sekventiella dekomponeringen och *Vad varje variabel tillför* filtrerar själva bort
