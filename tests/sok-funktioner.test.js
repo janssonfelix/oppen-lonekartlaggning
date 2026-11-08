@@ -103,6 +103,14 @@ describe('Funktionssök', () => {
         expect(d.getElementById('sok-grupp-lista').hidden).toBe(true);
     });
 
+    it('"sakliga skäl" hittar handlingsplansunderlaget och jämförelsen med förra året', () => {
+        const w = createAppWindow(), d = w.document;
+        skriv(w, 'sakliga skäl');
+        const namn = [...d.querySelectorAll('#sok-grupp-lista [data-sok-funktion]')].map(x => x.textContent);
+        expect(namn.some(t => t.includes('Handlingsplansunderlag'))).toBe(true);
+        expect(namn.some(t => t.includes('Jämförelse med förra året'))).toBe(true);
+    });
+
     it('"PO-påslag" öppnar Inställningar med fokus i fältet', () => {
         const w = createAppWindow(), d = w.document;
         skriv(w, 'PO-påslag');

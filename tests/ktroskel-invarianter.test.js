@@ -199,10 +199,54 @@ describe.each([[10, []], [25, SENT_MELLAN]])('I4: invarianten över flikar och e
     });
     it('inget könsgap för en grupp där ett kön är under tröskeln i det som lämnar verktyget', () => {
         const lackor = [];
-        for (const [namn, text] of exporter()) {
+        // ISO-tidsstämplar (konfigurationsfilen, metadata) tas bort först: sekunder och millisekunder kan se ut som ett
+        // gap ("…:48.30Z"), och då föll testet bara när klockan råkade stå rätt.
+        const utanTid = t => t.replace(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:?\d{2})?/g, '');
+        for (const [namn, rå] of exporter()) {
+            const text = utanTid(rå);
             for (const v of harNagon(text, KON_GAP)) lackor.push(`${namn}: ${v} — "${sammanhang(text, v)}"`);
             for (const re of KON_GAP_1) { const m = text.match(re); if (m) lackor.push(`${namn}: ${m[0]} — "${sammanhang(text, m[0])}"`); }
         }
         expect(lackor).toEqual([]);
+    });
+});
+
+// Sakliga skäl (handlingsplanen): skälen hör till rader som redan är k-grindade. En rad som bara finns på skärmen (en
+// grupp under tröskeln) får inte föra ut sina skäl: varken kommentarens tal eller beloppet står i något som lämnar
+// verktyget. En rad där ett kön är under tröskeln (den minsta gruppen bakom skillnaden) följer med, men bara med
+// kategorin: belopp och kommentar utelämnas. Konfigurationsfilen är användarens egen fil med det som skrivits in och
+// undantas (riskanalysen § 6.8), men dess årsbokslut prövas.
+describe('I5: sakliga skäl på en rad under tröskeln lämnar inte verktyget', () => {
+    let utdata;
+    beforeAll(async () => {
+        const w = fonsterKon(10);
+        // Gruppen 7002 i BAS X (fyra personer) hamnar under referensen: en rad i handlingsplanen bara på skärmen.
+        w.eval("state.policy.find(p => p.bas === 'X').med = 90000");
+        const skarm = w.eval('_handlingsplanSeedRows().nycklar');
+        const { nycklar: ut, minsta } = w.eval('medExportLage(() => { const s = _handlingsplanSeedRows(); return { nycklar: s.nycklar, minsta: s.minsta }; })');
+        const under = skarm.find(n => !ut.includes(n));
+        const over = ut.find((n, i) => !n.startsWith('egen|') && minsta[i] >= 10);
+        const konUnder = ut.find((n, i) => !n.startsWith('egen|') && minsta[i] < 10);
+        expect(under, 'fixturen har en rad under tröskeln').toBeTruthy();
+        expect(over, 'fixturen har en rad över tröskeln').toBeTruthy();
+        expect(konUnder, 'fixturen har en rad där ett kön är under tröskeln').toBeTruthy();
+        w.eval(`_hpSattSkal(${JSON.stringify(under)}, [{ kategori: 'marknad', belopp: 87654, kommentar: 'Dold kommentar 98765' }])`);
+        w.eval(`_hpSattSkal(${JSON.stringify(over)}, [{ kategori: 'erfarenhet', belopp: 24681, kommentar: 'Synlig kommentar 45678' }])`);
+        w.eval(`_hpSattSkal(${JSON.stringify(konUnder)}, [{ kategori: 'utbildning', belopp: 13579, kommentar: 'Kommentar 86420' }])`);
+        // Bara hela konfigurationsfilen undantas: den bär handlingsplanen som den skrivits. Dess årsbokslut prövas.
+        utdata = (await samlaUtdata(w)).filter(([n]) => n !== 'skärm: alla flikar' && n !== 'konfigurationsfilen (hela)');
+    }, 120000);   // samma gräns som I4: samlaUtdata bygger alla exporter
+    it('kommentarens tal och beloppet syns inte för raden under tröskeln, men för raden över', () => {
+        const lackor = [];
+        for (const [namn, text] of utdata) for (const v of ['98765', '87654', '87 654']) if (text.includes(v)) lackor.push(`${namn}: ${v} — "${sammanhang(text, v)}"`);
+        expect(lackor).toEqual([]);
+        expect(utdata.some(([, t]) => t.includes('45678')), 'raden över tröskeln följer med').toBe(true);
+        expect(utdata.map(([n]) => n)).toContain('konfigurationsfilen: årsbokslutet');
+    });
+    it('ett kön under tröskeln: beloppet och kommentaren finns inte i någon export eller i bokslutet, kategorin gör det', () => {
+        const lackor = [];
+        for (const [namn, text] of utdata) for (const v of ['13579', '13 579', '86420']) if (text.includes(v)) lackor.push(`${namn}: ${v} — "${sammanhang(text, v)}"`);
+        expect(lackor).toEqual([]);
+        expect(utdata.find(([n]) => n === 'konfigurationsfilen: årsbokslutet')[1]).toContain('"utbildning"');
     });
 });

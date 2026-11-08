@@ -8,6 +8,21 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ### Gränssnitt
 
+- **Sakliga skäl som strukturerad post.** Varje rad i Handlingsplan har knappen *Sakliga skäl*. Dialogen tar emot
+  högst 8 skäl per grupp med kategori (Marknad, Utbildning, Erfarenhet, Prestation och resultat, Övergång, Annat
+  sakligt skäl), belopp i kronor per månad och en kort kommentar. Den räknar ihop förklarat och återstående belopp och
+  andel av gruppens löneskillnad. När beloppen täcker skillnaden föreslår den att du väljer *Ja, sakligt skäl finns*;
+  bedömningen är organisationens. Kommentaren prövas mot personuppgifter som övriga fritexter. Gruppdossiern och
+  BAS-dossiern visar bedömningen med en länk till raden, och Att göra har punkten *n grupper i handlingsplanen är inte
+  bedömda än*. Rapporten (Rapporttext, Word och PDF) får tabellerna *Sakliga skäl per grupp* och *Sammanställning per
+  kategori*, Excel (alla flikar) bladet *Sakliga skal* och handlingsplansunderlaget två kolumner. Det lilla och det
+  stora demot har skäl på tre rader. Årsbokslutet är version 2 och bär skälen (utan kommentarer), och *Jämförelse med
+  förra året* visar *Sakliga skäl per kategori* båda åren och de grupper som hade skäl förra året men inte i år.
+  Skälen följer med i konfigurationsfilen; en äldre fil läses som förut. För en grupp där ett kön är under minsta
+  gruppstorlek står i exporterna och i bokslutet bara kategorierna, utan belopp och kommentar. En not under
+  *Sammanställning per kategori* säger vad Totalt och andelen räknas av. Demots skäl tas bort när en riktig lönefil
+  läses in; skäl ur en konfigurationsfil rörs inte.
+
 - **Klarspråksputs.** Långa meningar är delade i verktyget och i användar- och dataskyddsdokumenten.
   Termer förklaras första gången de används, och engelska och tekniska ord är utbytta: *Successionszon*
   heter nu *Nära pension*. Diagramtyperna i Tabeller och egna vyer har förklarande hjälptext.

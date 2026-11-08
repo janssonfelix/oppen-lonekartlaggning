@@ -217,7 +217,8 @@ rubrikraden, också när det är hopfällt.
   Väljaren överst byter intervall. **Kopiera som text** ger dossiern i rapportens form: rubriken
   *BAS-intervall …* och ett stycke per punkt. Texten byggs som exporterna, så grupper under minsta
   gruppstorlek står bara med namn, utan lönemått.
-- Ingen av dossiererna dokumenterar sakliga skäl; de samlar underlaget för den bedömningen.
+- Ingen av dossiererna dokumenterar sakliga skäl; de samlar underlaget för den bedömningen. Skälen dokumenterar du i
+  Handlingsplan.
 
 1. **Regler & praxis** — gå igenom de sex granskningsområdena. Sätt
    **status** (Ingen risk / Möjlig risk — utreds / Åtgärd krävs / Ej tillämplig) och
@@ -347,6 +348,30 @@ rubrikraden, också när det är hopfällt.
    till med *Lägg till rad* och följer med i exporterna som de förifyllda. Kortet **Samverkan & uppföljning** i
    Handlingsplan har momenten att bocka av och knapparna för **protokollet för gemensam lönebedömning** och
    **handlingsplanen** som Excel.
+   Knappen **Sakliga skäl** på varje rad öppnar en dialog där du dokumenterar skälen till gruppens löneskillnad: en
+   kategori (Marknad, Utbildning, Erfarenhet, Prestation och resultat, Övergång eller Annat sakligt skäl), ett belopp
+   i kronor per månad och en kort kommentar per skäl, högst 8 skäl per grupp. Lagen räknar inte upp några skäl;
+   kategorierna är verktygets indelning. Dialogen räknar ihop hur stor del av skillnaden skälen förklarar och hur
+   mycket som återstår. Skriv inga namn eller personnummer i kommentaren. Ett skäl sparas först när beloppet är ett
+   heltal mellan 0 och 200 000 kr, och dialogen säger till när det inte är det.
+   - När beloppen täcker hela skillnaden föreslår dialogen att du väljer *Ja, sakligt skäl finns*. Organisationen
+     bedömer om skälen är sakliga; verktyget väljer aldrig själv.
+   - När skälen tillsammans är större än skillnaden varnar dialogen med beloppen, och inget förslag visas. Ett belopp
+     kan vara för högt, eller så räknar två skäl samma sak. Rapporten har samma varning.
+   - En grupp som är för liten för att redovisas (färre än minsta gruppstorlek) får inga andelar, och raden och
+     skälen följer inte med i exporterna.
+   - När ett kön i gruppen är under gränsen visar dialogen beloppen för dig, men i rapporten, Excel och årsbokslutet
+     står bara kategorierna. Belopp, andel och kommentar utelämnas där med noten *belopp och kommentar utelämnade: ett
+     kön har färre personer än minsta gruppstorlek*, och dialogen varnar om det.
+   - En egen rad har ingen medianskillnad: skälen redovisas med belopp, och de följer inte med i årsbokslutet och
+     jämförs inte med förra året.
+
+   Skälen sparas i konfigurationsfilen med kommentarerna. De följer med i Rapporttext, Word och PDF (tabellerna
+   *Sakliga skäl per grupp* och *Sammanställning per kategori*), i Excel (bladet *Sakliga skal* och två kolumner i
+   handlingsplansunderlaget) och i årsbokslutet. Bokslutet sparar kategori och belopp (för en grupp där ett kön är under gränsen bara
+   kategorin), men aldrig kommentarerna.
+   Gruppdossiern och BAS-dossiern visar bedömningen med en länk till raden. Kategorierna och beloppen är
+   organisationens bedömning. Verktyget räknar bara om beloppen till andelar av skillnaden.
    Skillnaden mellan könen i en grupp visas i Prioritering bara när både
    kvinnorna och männen i gruppen är tillräckligt många för att redovisas. Annars räknas
    gruppens prioritet utan skillnaden mellan könen. I **Löneöversyn** får du lägga en egen riktad rad på
@@ -465,10 +490,13 @@ du ordna om och ta bort tabellerna.
   - **lönespridningen** per BAS-intervall och per flaggad yrkesgrupp: (P90 − P10) / median, i procent av
     medianen. Ett streck står när förra årets fil saknar måttet.
   - vilka yrkesgrupper som är flaggade båda åren, nya och inte längre flaggade
-  - vilka av förra årets öppna punkter som är klara.
+  - vilka av förra årets öppna punkter som är klara
+  - **Sakliga skäl per kategori**: summan och andelen förra året och i år, och per grupp hur skälen och skillnaden
+    ändrats. Bokslutet sparar kategori och belopp (för en grupp där ett kön är under gränsen bara kategorin), inte
+    kommentarerna. Egna rader följer inte med.
 
-  En fil sparad med en äldre version saknar raderna per BAS-intervall. Panelen säger det, och resten av
-  jämförelsen fungerar.
+  En fil sparad med en äldre version saknar raderna per BAS-intervall och de sakliga skälen. Panelen säger det, och
+  resten av jämförelsen fungerar.
   Sparades förra årets fil med en lägre minsta gruppstorlek än årets läses båda åren med den högre gränsen.
   Ta en yrkesgrupp som var flaggad förra året men då hade ett kön under den högre gränsen. Om den är flaggad nu
   räknas den som **ny** i år, inte som flaggad båda åren, och förra årets löneskillnad för den visas inte.

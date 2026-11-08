@@ -70,7 +70,12 @@ function _rapportunderlagBlockExport() {
     _rapportParLage = { harPar: par.length > 0, exkluderade: parUtelamnade };
 
     // Handlingsplan — samma förifyllning som fliken (som redan utelämnar par under k)
-    const hpRader = _rapportHpRader(_handlingsplanSeedRows().rows);
+    const hpSeed = _handlingsplanSeedRows();
+    const hpRader = _rapportHpRader(hpSeed.rows);
+    // De sakliga skälen per grupp och per kategori (56-handlingsplan.js), ur samma förifyllning.
+    const hpSkal = typeof _hpSkalUnderlag === 'function' ? _hpSkalUnderlag(hpSeed) : null;
+    const hpSkalBlock = hpSkal && hpSkal.grupper.length ? { grupper: hpSkal.grupper.map(g => ({ grupp: g.grupp, antal: g.antal, skillnadKr: g.skillnadKr, skal: g.sammanstallning.skal,
+        utanBelopp: !!g.utanBelopp, summa: g.sammanstallning.summa, overstiger: !!g.sammanstallning.overstiger })), perKategori: hpSkal.perKategori, notUtanBelopp: HP_SKAL_UTAN_BELOPP, k: kInstalld() } : null;
 
     /** @type {any[]} */
     const block = [
@@ -85,7 +90,7 @@ function _rapportunderlagBlockExport() {
             kravProxy, topN }, opt),
         _ruAvsnittBlock('struktur', { representation, kvartiler, nKv: kvLon.length, nMa: maLon.length }, opt),
         _ruAvsnittBlock('sektorer', { sektorer: _skSektorsTabell(d, { k, skrDel: _skrDel() }), andel: _skSektorernasAndel(d, { k }) }, opt),
-        _ruAvsnittBlock('handlingsplan', { rader: hpRader, summa: hpRader.reduce((s, r) => s + (r.kostnad || 0), 0) }, opt),
+        _ruAvsnittBlock('handlingsplan', { rader: hpRader, summa: hpRader.reduce((s, r) => s + (r.kostnad || 0), 0), ...(hpSkalBlock ? { skal: hpSkalBlock } : {}) }, opt),
     ];
     const referenser = referensOverblick();
     if (referenser) block.push(_ruReferenserBlock(referenser, opt));

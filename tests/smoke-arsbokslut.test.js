@@ -12,7 +12,7 @@ describe('årsbokslutet i verktyget', () => {
     it('byggs med den inställda tröskeln: grupperna om 6 finns inte i det, och skärmen är kvar i skärmläget', () => {
         const w = fonster(null);
         const b = w.eval('byggArsbokslutNu()');
-        expect(b).toMatchObject({ version: 1, k: 10 });
+        expect(b).toMatchObject({ version: 2, k: 10 });
         expect(b.ar).toBe(new Date().getFullYear());
         const text = JSON.stringify(b);
         for (const s of SENT_SMA) expect(text).not.toContain(String(s));
@@ -24,7 +24,7 @@ describe('årsbokslutet i verktyget', () => {
     it('konfigurationsfilen bär bokslutet; inläst blir det förra årets, och panelen visar jämförelsen', () => {
         const a = fonster(null);
         const cfg = JSON.parse(JSON.stringify(a.__buildConfigSnapshot()));
-        expect(cfg.arsbokslut).toMatchObject({ version: 1, k: 10 });
+        expect(cfg.arsbokslut).toMatchObject({ version: 2, k: 10 });
         // Nästa år: samma underlag, ett bokslut från förra året i filen.
         cfg.arsbokslut.ar = cfg.arsbokslut.ar - 1;
         cfg.arsbokslut.skapat = `${cfg.arsbokslut.ar}-11-01`;

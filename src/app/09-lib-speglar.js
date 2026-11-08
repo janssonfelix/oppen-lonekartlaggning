@@ -4571,10 +4571,43 @@ function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
         const st = [`${_st(rader.length, 'förifylld åtgärd', 'förifyllda åtgärder')}` + (u.summa ? ` med en uppskattad kostnad på ${_kr(u.summa)} per år.` : '.')];
         if (!rader.length) return blk('Handlingsplan', st, null);
         // Antal berörda: gruppens antal (för ett kandidatpar det kvinnodominerade yrkets); tomt för en egen rad.
-        return blk('Handlingsplan', st, { rubriker: ['Åtgärd', 'Grupp', 'Antal berörda', 'Underlag', 'Uppskattad kostnad per år'],
+        const b = blk('Handlingsplan', st, { rubriker: ['Åtgärd', 'Grupp', 'Antal berörda', 'Underlag', 'Uppskattad kostnad per år'],
             rader: rader.map(r => [r.atgard, r.grupp, r.antal == null ? '' : formatTal(r.antal), r.underlag, _kr(r.kostnad)]) });
+        // Sakliga skäl (u.skal, ur handlingsplanen): en rad per skäl med gruppen på första raden, och summan per kategori.
+        const sk = u.skal;
+        if (sk && Array.isArray(sk.grupper) && sk.grupper.length && sk.perKategori) {
+            const andel = v => (v == null ? '–' : _pct(v * 100, 0));
+            const pk = sk.perKategori;
+            b.stycken.push('Tabellerna visar de sakliga skäl som organisationen har angett per grupp. Beloppet är den del av gruppens medianskillnad, i kronor per månad, som skälet förklarar. Kategorierna och beloppen är organisationens bedömning. Verktyget räknar bara om beloppen till andelar av skillnaden.');
+            // Skälen överstiger skillnaden: samma mening som rapportmodellen (58-rapportmodell.js).
+            const over = sk.grupper.filter(g => g.overstiger);
+            if (over.length) b.stycken.push(over.map(g => `${g.grupp}: skälen är tillsammans större än skillnaden (${_kr(g.summa)} mot ${_kr(g.skillnadKr)}).`).join(' ')
+                + ' Ett belopp kan vara för högt, eller så räknar två skäl samma sak. Kontrollera beloppen.');
+            const not = sk.notUtanBelopp || 'belopp och kommentar utelämnade: ett kön har färre personer än minsta gruppstorlek';
+            b.tabeller = [
+                { rubrik: 'Sakliga skäl per grupp', rubriker: ['Grupp', 'Antal berörda', 'Medianskillnad (kr/mån)', 'Kategori', 'Belopp (kr/mån)', 'Andel av skillnaden', 'Kommentar'],
+                  // En grupp där ett kön är under minsta gruppstorlek: bara kategorin, med noten i kommentarens kolumn.
+                  rader: sk.grupper.flatMap(g => g.skal.map((s, i) => [i ? '' : g.grupp, i || g.antal == null ? '' : formatTal(g.antal), i ? '' : _kr(g.skillnadKr),
+                      s.namn, g.utanBelopp ? '' : _kr(s.belopp), g.utanBelopp ? '' : andel(s.andel), g.utanBelopp ? not : (s.kommentar || '')])) },
+                { rubrik: 'Sammanställning per kategori', rubriker: ['Kategori', 'Belopp (kr/mån)', 'Andel av skillnaden i grupper med skäl', 'Antal grupper'],
+                  rader: [...pk.kategorier.map(k => [k.namn, _kr(k.summa), andel(k.andel), formatTal(k.antalGrupper)]), ['Totalt', _kr(pk.summa), andel(pk.andel), formatTal(pk.antalGrupper)]],
+                  not: skalSammanstallningNot(sk.k ?? k) },
+            ];
+        }
+        return b;
     }
     throw new Error(`Okänd avsnittstyp: ${typ}`);
+}
+
+/**
+ * Noten under Sammanställning per kategori: samma lydelse i Word och PDF (58-rapportmodell.js), Excel-bladet
+ * Sakliga skal (24-excelexport.js) och Rapporttext.
+ * @param {number} k minsta gruppstorlek
+ */
+function skalSammanstallningNot(k) {
+    return 'Totalt i kronor är summan av alla skäl i sammanställningen, också på egna rader, som saknar medianskillnad. '
+        + 'Andelen räknas bara mot den samlade medianskillnaden i de grupper som har en sådan. '
+        + `Grupper där ett kön har färre än ${k} personer ingår inte i sammanställningen; för dem står bara kategorierna i tabellen ovan.`;
 }
 
 const _esc = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -4587,7 +4620,7 @@ function tillWordHtml(b) {
         + t.rader.map(r => '<tr>' + r.map(c => `<td>${_esc(c)}</td>`).join('') + '</tr>').join('') + '</tbody></table>';
     if (b.tabell) h += tabell(b.tabell);
     // Fler tabeller med egen rubrik (blocket om förra året: Löneutveckling per BAS-intervall).
-    for (const t of b.tabeller || []) h += `<p><strong>${_esc(t.rubrik)}</strong></p>` + tabell(t);
+    for (const t of b.tabeller || []) h += `<p><strong>${_esc(t.rubrik)}</strong></p>` + tabell(t) + (t.not ? `<p>${_esc(t.not)}</p>` : '');
     if (b.provat) h += '<p><strong>Redan prövat</strong></p><ul>' + b.provat.map(p => `<li>${_esc(p)}</li>`).join('') + '</ul>';
     if (b.fragor) h += '<p><strong>Frågor till ansvarig chef</strong></p><ol>' + b.fragor.map(f => `<li>${_esc(f)}</li>`).join('') + '</ol>';
     return h;
@@ -4693,13 +4726,13 @@ function referenserBlock(overblick, { id = 'referenser', urval, demo, troskelNot
 function tillText(b) {
     const delar = [b.rubrik, ...b.stycken];
     if (b.tabell) delar.push([b.tabell.rubriker, ...b.tabell.rader].map(r => r.join('\t')).join('\n'));
-    for (const t of b.tabeller || []) delar.push(`${t.rubrik}\n` + [t.rubriker, ...t.rader].map(r => r.join('\t')).join('\n'));
+    for (const t of b.tabeller || []) delar.push(`${t.rubrik}\n` + [t.rubriker, ...t.rader].map(r => r.join('\t')).join('\n') + (t.not ? `\n\n${t.not}` : ''));
     if (b.provat) delar.push('Redan prövat:\n' + b.provat.map(p => `- ${p}`).join('\n'));
     if (b.fragor) delar.push('Frågor till ansvarig chef:\n' + b.fragor.map((f, i) => `${i + 1}. ${f}`).join('\n'));
     return delar.join('\n\n');
 }
 
-    return { likaArbeteGrupper, justeratGapInomYrke, bortvaltNotering, gruppBlock, parBlock, avsnittBlock, tillWordHtml, tillText, stabilitetKort, egenTabellBlock, arsjamforelseBlock, referenserBlock, basintervallBlock };
+    return { likaArbeteGrupper, justeratGapInomYrke, bortvaltNotering, gruppBlock, parBlock, avsnittBlock, tillWordHtml, tillText, stabilitetKort, egenTabellBlock, arsjamforelseBlock, referenserBlock, basintervallBlock, skalSammanstallningNot };
 })();
 const _ruLikaArbeteGrupper = __mirrorRapportunderlag.likaArbeteGrupper;
 const _ruJusteratGap = __mirrorRapportunderlag.justeratGapInomYrke;
@@ -4714,6 +4747,7 @@ const _ruEgenTabellBlock = __mirrorRapportunderlag.egenTabellBlock;
 const _ruArsjamforelseBlock = __mirrorRapportunderlag.arsjamforelseBlock;
 const _ruReferenserBlock = __mirrorRapportunderlag.referenserBlock;
 const _ruBasintervallBlock = __mirrorRapportunderlag.basintervallBlock;
+const _ruSkalNot = __mirrorRapportunderlag.skalSammanstallningNot;
 
 // ---- speglar src/lib/gapuppdelning.js ----
 const __mirrorGapuppdelning = (() => {
@@ -6284,11 +6318,136 @@ const _trValidera = __mirrorTabellrecept.valideraRecept;
 const _trBeskrivning = __mirrorTabellrecept.receptBeskrivning;
 const _trTabeller = __mirrorTabellrecept.receptTillTabeller;
 
+// ---- speglar src/lib/sakligaskal.js ----
+const __mirrorSakligaskal = (() => {
+// SPDX-License-Identifier: MIT
+// Copyright 2026 Felix Jansson
+/**
+ * Öppen lönekartläggning — sakliga skäl som strukturerad post.
+ *
+ * Handlingsplanen (56-handlingsplan.js) låter organisationen ange sakliga skäl per grupp: kategori, belopp i kronor
+ * per månad av gruppens medianskillnad och en kort kommentar. Modulen är ren: kategorierna, valideringen av en lista
+ * med skäl, sammanställningen för en rad (andel, summa, återstår) och summan per kategori över raderna. Andelarna är
+ * organisationens bedömning; verktyget räknar bara ihop dem. Ingen DOM, inget state.
+ *
+ * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
+ */
+
+/** Kategorierna i fast ordning (rullistan, tabellerna och årsjämförelsen följer den). */
+const SKAL_KATEGORIER = Object.freeze([
+    Object.freeze({ id: 'marknad', namn: 'Marknad', forklaring: 'Svårrekryterade yrken eller konkurrens från andra arbetsgivare, som organisationen kan visa.' }),
+    Object.freeze({ id: 'utbildning', namn: 'Utbildning', forklaring: 'Formell utbildning som har betydelse för arbetet, utöver den som krävs.' }),
+    Object.freeze({ id: 'erfarenhet', namn: 'Erfarenhet', forklaring: 'Dokumenterad yrkeserfarenhet som har betydelse för arbetet, eller tid i arbetet.' }),
+    Object.freeze({ id: 'prestation', namn: 'Prestation och resultat', forklaring: 'Bedömd prestation enligt organisationens lönekriterier.' }),
+    Object.freeze({ id: 'overgang', namn: 'Övergång', forklaring: 'Lön som följt med vid byte av tjänst, omorganisation eller verksamhetsövergång.' }),
+    Object.freeze({ id: 'annat', namn: 'Annat sakligt skäl', forklaring: 'Till exempel ansvar eller arbetsuppgifternas svårighet. Beskriv i kommentaren.' }),
+]);
+
+/** Gränserna för ett skäl: belopp i hela kronor per månad, kommentarens längd och antalet skäl per rad. */
+const SKAL_GRANSER = Object.freeze({ maxBelopp: 200000, maxKommentar: 200, maxAntal: 8 });
+
+/** @type {Map<string, string>} */
+const _namn = new Map(SKAL_KATEGORIER.map(k => [k.id, k.namn]));
+
+/** Kategorierna som en ny lista (appen bygger rullistan av den). */
+function skalKategorier() {
+    return SKAL_KATEGORIER.map(k => ({ ...k }));
+}
+
+/**
+ * Prövar en lista med skäl. Ett skäl med okänd kategori, ett belopp som inte är ett heltal 0–200 000 eller en
+ * kommentar som inte är text eller är längre än 200 tecken faller bort; av de giltiga står de åtta första kvar.
+ * `bort` är antalet som föll bort (en lista som inte är en lista räknas som ett). Saknas fältet (null) är listan tom.
+ * @param {any} lista
+ * @returns {{skal: {kategori: string, belopp: number, kommentar: string}[], bort: number}}
+ */
+function valideraSkal(lista) {
+    if (lista == null) return { skal: [], bort: 0 };
+    if (!Array.isArray(lista)) return { skal: [], bort: 1 };
+    const giltiga = [];
+    let bort = 0;
+    for (const s of lista) {
+        const ok = s && typeof s === 'object' && _namn.has(s.kategori)
+            && Number.isInteger(s.belopp) && s.belopp >= 0 && s.belopp <= SKAL_GRANSER.maxBelopp
+            && (s.kommentar == null || (typeof s.kommentar === 'string' && s.kommentar.length <= SKAL_GRANSER.maxKommentar));
+        if (ok) giltiga.push({ kategori: s.kategori, belopp: s.belopp, kommentar: s.kommentar || '' });
+        else bort++;
+    }
+    bort += Math.max(0, giltiga.length - SKAL_GRANSER.maxAntal);
+    return { skal: giltiga.slice(0, SKAL_GRANSER.maxAntal), bort };
+}
+
+/** En skillnad som andelar kan räknas mot: ett ändligt tal över 0, annars null. */
+const _namnare = v => (typeof v === 'number' && isFinite(v) && v > 0 ? v : null);
+
+/**
+ * Sammanställningen för en rad: varje skäl med kategorins namn och andel av skillnaden, summan, den förklarade
+ * andelen och det som återstår (aldrig under 0; `overstiger` när skälen är större än skillnaden). Utan en skillnad
+ * över 0 (en egen rad, eller kvinnornas median högre) räknas inga andelar; skillnaden står kvar som den kom in.
+ * @param {{kategori: string, belopp: number, kommentar?: string}[]|null|undefined} skal
+ * @param {number|null} skillnadKr gruppens medianskillnad i kronor per månad
+ */
+function skalSammanstallning(skal, skillnadKr) {
+    const lista = Array.isArray(skal) ? skal : [];
+    const n = _namnare(skillnadKr);
+    const rader = lista.map(s => ({ ...s, namn: _namn.get(s.kategori) || s.kategori, andel: n ? s.belopp / n : null }));
+    const summa = lista.reduce((t, s) => t + s.belopp, 0);
+    const aterstar = n ? Math.max(0, n - summa) : null;
+    return {
+        skal: rader, antal: rader.length, summa,
+        skillnadKr: typeof skillnadKr === 'number' && isFinite(skillnadKr) ? skillnadKr : null,
+        forklaradAndel: n ? summa / n : null,
+        aterstar, aterstarAndel: n ? /** @type {number} */ (aterstar) / n : null,
+        overstiger: n != null && summa > n,
+    };
+}
+
+/**
+ * Summan per kategori över raderna som har minst ett skäl. Andelen är kategorins belopp i rader med en skillnad över
+ * 0 delat med den totala skillnaden i de raderna; en rad utan skillnad bidrar bara till summan. Kategorierna i
+ * listans ordning, bara de som används. `antalGrupper` per kategori: rader med minst ett skäl i den.
+ * @param {{skal: {kategori: string, belopp: number}[], skillnadKr: number|null}[]|null|undefined} rader
+ */
+function skalPerKategori(rader) {
+    const med = (Array.isArray(rader) ? rader : []).filter(r => r && Array.isArray(r.skal) && r.skal.length);
+    const per = new Map();
+    let skillnad = 0, summa = 0, summaMedSkillnad = 0;
+    for (const r of med) {
+        const n = _namnare(r.skillnadKr);
+        if (n) skillnad += n;
+        const sett = new Set();
+        for (const s of r.skal) {
+            if (!per.has(s.kategori)) per.set(s.kategori, { summa: 0, medSkillnad: 0, iMed: 0, grupper: 0 });
+            const k = per.get(s.kategori);
+            k.summa += s.belopp; summa += s.belopp;
+            if (n) { k.medSkillnad += s.belopp; k.iMed++; summaMedSkillnad += s.belopp; }
+            if (!sett.has(s.kategori)) { sett.add(s.kategori); k.grupper++; }
+        }
+    }
+    const kategorier = SKAL_KATEGORIER.filter(k => per.has(k.id)).map(k => {
+        const p = per.get(k.id);
+        // En kategori som bara finns i rader utan skillnad får ingen andel (inte 0 %).
+        return { kategori: k.id, namn: k.namn, summa: p.summa, andel: skillnad > 0 && p.iMed ? p.medSkillnad / skillnad : null, antalGrupper: p.grupper };
+    });
+    return { kategorier, antalGrupper: med.length, skillnadKr: skillnad, summa, andel: skillnad > 0 ? summaMedSkillnad / skillnad : null };
+}
+
+    return { skalKategorier, valideraSkal, skalSammanstallning, skalPerKategori };
+})();
+const _sakKategorier = __mirrorSakligaskal.skalKategorier;
+const _sakValidera = __mirrorSakligaskal.valideraSkal;
+const _sakSammanstallning = __mirrorSakligaskal.skalSammanstallning;
+const _sakPerKategori = __mirrorSakligaskal.skalPerKategori;
+
 // ---- speglar src/lib/arsbokslut.js ----
 const __mirrorArsbokslut = (() => {
     // importer ur tidigare speglade lib-moduler
     const median = __mirrorStat.median;
     const quantile = __mirrorStat.quantile;
+    const valideraSkal = __mirrorSakligaskal.valideraSkal;
+    const skalPerKategori = __mirrorSakligaskal.skalPerKategori;
+    const skalSammanstallning = __mirrorSakligaskal.skalSammanstallning;
+    const skalKategorier = __mirrorSakligaskal.skalKategorier;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -6298,9 +6457,12 @@ const __mirrorArsbokslut = (() => {
 // minst k), en rad per BAS-intervall med minst k personer (basIntervall; könsmedianerna bara när båda könen når k)
 // och Att göra-punkternas läge. Aldrig individer, aldrig lönedata. Modulen är ren: ingen DOM, inget state.
 // Yrkesgruppernas och intervallens rader bär lönespridningen (P90 − P10) / median, räknad där n ≥ k (lonespridning).
+// Version 2: handlingsplanens sakliga skäl per grupp (bedomningar: kategori och belopp, aldrig kommentarerna), så att
+// jämförelsen kan visa fördelningen per kategori båda åren. Ett bokslut från version 1 läses som förut, utan skäl.
 
 
-const ARSBOKSLUT_VERSION = 1;
+
+const ARSBOKSLUT_VERSION = 2;
 const MAX_TEXT = 200;
 /** Den lägsta tröskel ett bokslut kan bära (samma som verktygets K_MIN): ett lägre k i filen höjs hit. */
 const ARSBOKSLUT_K_MIN = 2;
@@ -6361,7 +6523,38 @@ function valideraArsbokslut(o) {
         return { id, titel: _text(p.titel), kategori: _text(p.kategori), klar: p.klar === true };
     }).filter(Boolean);
     return { version: ARSBOKSLUT_VERSION, ar, skapat, k, verktyg: _text(o.verktyg), nyckeltal, grupper, punkter,
-        basIntervall: _valideraBasIntervall(o.basIntervall, k) };
+        basIntervall: _valideraBasIntervall(o.basIntervall, k), bedomningar: _valideraBedomningar(o.bedomningar, k) };
+}
+
+/**
+ * Handlingsplanens sakliga skäl per grupp: nyckeln (samma som handlingsplanens rad), gruppen, antal berörda (n), den
+ * minsta gruppen bakom skillnaden (nMin), gruppens medianskillnad i kr/mån och skälen med kategori och belopp
+ * (kommentarerna sparas inte). En grupp med färre än k personer faller bort, skillnaden nollas när den minsta gruppen
+ * bakom den är under k, och en post utan giltiga skäl faller bort. Fältet är valfritt: ett bokslut från version 1 får
+ * null (inte en tom lista, som betyder att ingen grupp hade skäl).
+ * @param {any} lista
+ * @param {number} k
+ */
+function _valideraBedomningar(lista, k) {
+    if (!Array.isArray(lista)) return null;
+    const kategorier = new Set(skalKategorier().map(x => x.id));
+    const sedda = new Set();
+    return lista.map(b => {
+        if (!b || typeof b !== 'object' || typeof b.nyckel !== 'string' || !b.nyckel || b.nyckel.length > 300) return null;
+        if (sedda.has(b.nyckel)) return null;   // samma nyckel två gånger: den första gäller
+        const n = _heltal(b.n, 0, 10_000_000), nMin = _heltal(b.nMin, 0, 10_000_000);
+        if (n == null || n < k) return null;
+        const overK = nMin != null && nMin >= k;
+        // Under k i den minsta gruppen bakom skillnaden (ett kön under k) bär posten bara kategorierna: inga belopp.
+        const skal = overK
+            ? valideraSkal(Array.isArray(b.skal) ? b.skal.map(s => (s && typeof s === 'object' ? { kategori: s.kategori, belopp: s.belopp } : s)) : b.skal).skal
+                .map(s => ({ kategori: s.kategori, belopp: s.belopp }))
+            : [...new Set((Array.isArray(b.skal) ? b.skal : []).map(s => (s && typeof s === 'object' ? s.kategori : null)).filter(id => kategorier.has(id)))]
+                .slice(0, 8).map(kategori => ({ kategori }));
+        if (!skal.length) return null;
+        sedda.add(b.nyckel);
+        return { nyckel: b.nyckel, grupp: _text(b.grupp), n, nMin: nMin ?? 0, skillnadKr: overK ? _tal(b.skillnadKr) : null, skal };
+    }).filter(Boolean);
 }
 
 /**
@@ -6387,8 +6580,8 @@ function _valideraBasIntervall(lista, k) {
 }
 
 /** Bygger ett årsbokslut ur delarna (samma form som valideraArsbokslut ger); null när delarna inte räcker. */
-function byggArsbokslut({ ar, skapat, k, verktyg, nyckeltal, grupper, punkter, basIntervall }) {
-    return valideraArsbokslut({ ar, skapat, k, verktyg, nyckeltal, grupper, punkter, basIntervall });
+function byggArsbokslut({ ar, skapat, k, verktyg, nyckeltal, grupper, punkter, basIntervall, bedomningar }) {
+    return valideraArsbokslut({ ar, skapat, k, verktyg, nyckeltal, grupper, punkter, basIntervall, bedomningar });
 }
 
 /** Måtten per BAS-intervall i jämförelsen: nyckel och etikett. Alla är kronor. */
@@ -6444,7 +6637,38 @@ function bokslutMedGrans(b, k) {
     return { ...b, k,
         nyckeltal: { ...n, medKv: konOk ? n.medKv : null, medMa: konOk ? n.medMa : null, kvotPct: konOk ? n.kvotPct : null },
         grupper: b.grupper.filter(g => g.nKv >= k && g.nMa >= k),
-        basIntervall: Array.isArray(b.basIntervall) ? _valideraBasIntervall(b.basIntervall, k) : b.basIntervall };
+        basIntervall: Array.isArray(b.basIntervall) ? _valideraBasIntervall(b.basIntervall, k) : b.basIntervall,
+        bedomningar: Array.isArray(b.bedomningar) ? _valideraBedomningar(b.bedomningar, k) : (b.bedomningar ?? null) };
+}
+
+/**
+ * Jämförelsen av de sakliga skälen: per kategori förra året och i år (belopp och andel av skillnaden i de grupper som
+ * hade skäl, null ett år utan skäl i kategorin) med förändringen i kronor när kategorin finns båda åren; per grupp som
+ * hade skäl båda åren skälen och skillnaden båda åren; och de grupper som hade skäl förra året men inte i år
+ * (saknasIAr). null när ett av boksluten saknar fältet (version 1).
+ * @param {any[]|null|undefined} forra
+ * @param {any[]|null|undefined} nu
+ */
+function jamforBedomningar(forra, nu) {
+    if (!Array.isArray(forra) || !Array.isArray(nu)) return null;
+    // En post med bara kategorier (ett kön under k) ger inga belopp och räknas inte i summorna per kategori.
+    const harBelopp = b => b.skal.every(s => typeof s.belopp === 'number');
+    const pkF = skalPerKategori(forra.filter(harBelopp)), pkN = skalPerKategori(nu.filter(harBelopp));
+    const namn = new Map(skalKategorier().map(x => [x.id, x.namn]));
+    const fK = new Map(pkF.kategorier.map(k => [k.kategori, k])), nK = new Map(pkN.kategorier.map(k => [k.kategori, k]));
+    const kategorier = skalKategorier().filter(k => fK.has(k.id) || nK.has(k.id)).map(k => {
+        const f = fK.get(k.id), n = nK.get(k.id);
+        return { kategori: k.id, namn: k.namn, forra: f ? { summa: f.summa, andel: f.andel } : null, nu: n ? { summa: n.summa, andel: n.andel } : null,
+            diff: f && n ? n.summa - f.summa : null };
+    });
+    const ar = (b) => { if (!harBelopp(b)) return { skillnadKr: null, skal: b.skal.map(x => ({ kategori: x.kategori, namn: namn.get(x.kategori) || x.kategori, belopp: null, andel: null })) };
+        const s = skalSammanstallning(b.skal, b.skillnadKr);
+        return { skillnadKr: b.skillnadKr, skal: s.skal.map(x => ({ kategori: x.kategori, namn: x.namn, belopp: x.belopp, andel: x.andel })) }; };
+    const nuMap = new Map(nu.map(b => [b.nyckel, b]));
+    const grupper = forra.filter(b => nuMap.has(b.nyckel)).map(b => ({ nyckel: b.nyckel, grupp: nuMap.get(b.nyckel).grupp || b.grupp, forra: ar(b), nu: ar(nuMap.get(b.nyckel)) }));
+    const saknasIAr = forra.filter(b => !nuMap.has(b.nyckel)).map(b => ({ nyckel: b.nyckel, grupp: b.grupp }));
+    const tot = pk => ({ summa: pk.summa, andel: pk.andel, antalGrupper: pk.antalGrupper });
+    return { kategorier, grupper, saknasIAr, totalt: { forra: tot(pkF), nu: tot(pkN) } };
 }
 
 /**
@@ -6481,6 +6705,7 @@ function jamforArsbokslut(forra, nu) {
         samma_k: sammaK,
         kGrans,
         basIntervall: jamforBasIntervall(forra.basIntervall, nu.basIntervall),
+        bedomningar: jamforBedomningar(forra.bedomningar, nu.bedomningar),
     };
 }
 
@@ -6520,7 +6745,7 @@ function basHantelRader(j) {
     return { rader, utelamnade: j.basIntervall.length - med.length };
 }
 
-    return { byggArsbokslut, valideraArsbokslut, jamforArsbokslut, hantelRader, basHantelRader, jamforBasIntervall, bokslutMedGrans, lonespridning };
+    return { byggArsbokslut, valideraArsbokslut, jamforArsbokslut, hantelRader, basHantelRader, jamforBasIntervall, bokslutMedGrans, lonespridning, jamforBedomningar };
 })();
 const _abBygg = __mirrorArsbokslut.byggArsbokslut;
 const _abValidera = __mirrorArsbokslut.valideraArsbokslut;
@@ -6530,6 +6755,7 @@ const _abBasHantelRader = __mirrorArsbokslut.basHantelRader;
 const _abJamforBas = __mirrorArsbokslut.jamforBasIntervall;
 const _abMedGrans = __mirrorArsbokslut.bokslutMedGrans;
 const _abSpridning = __mirrorArsbokslut.lonespridning;
+const _abJamforBedomningar = __mirrorArsbokslut.jamforBedomningar;
 
 // ---- speglar src/lib/importprofiler.js ----
 const __mirrorImportprofiler = (() => {

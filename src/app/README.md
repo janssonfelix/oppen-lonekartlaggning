@@ -80,6 +80,7 @@ direkt vid laddning (händelsekopplingar, `const`) körs i den här ordningen.
 | `52-livscykel.js` | Ålder & karriär: adaptern till livscykelmodellen (`src/lib/livscykel.js`, speglad), tolkningstexten, analysen och dess diagram |
 | `55-prioritering.js` | Prioriteringsanalys: adaptern till `src/lib/prioritering.js` (speglad), matrisen, kostnadsdiagrammet (sorterade staplar, högst 15 grupper), motiveringsmotor, trösklarna och viktningen (fälten står i Inställningar; fliken visar raden *Trösklar och viktning*) och export |
 | `56-handlingsplan.js` | Handlingsplan: mall, förifyllning och export |
+| `57-sakliga-skal.js` | Dialogen Sakliga skäl i Handlingsplan: kategori, belopp och kommentar per grupp |
 | `58-rapportmodell.js` | Rapportmodellen: rapportens avsnitt som data (stycken, typade tabeller, diagram, fält att fylla i) som Word-utkastet och PDF-kopian ritas ur; vilka diagram som följer med (`RM_DIAGRAM`) och urvalen (`RM_URVAL`) |
 | `59-exportbesked.js` | Förhandsbesked per export i Exportera, och urvalet av rapportens avsnitt (ordning och vilka som följer med) |
 | `60-utskrift.js` | PDF-rapporten: en låst kopia av Word-utkastet, ritad ur rapportmodellen; utskrift av handlingsplanens mall och checklistan |

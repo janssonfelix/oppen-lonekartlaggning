@@ -2366,6 +2366,16 @@ summary:focus-visible {
 #handlingsplan-tbody .hp-falt { width: 100%; min-width: 7.5em; font: inherit; font-size: var(--fs-sm); padding: 4px 6px; border: 1px solid var(--border); border-radius: 4px; background: var(--bg-card); color: inherit; }
 #handlingsplan-tbody .hp-falt.hp-falt-varning { border-color: var(--status-varning); }
 .handlingsplan-varning { margin: 8px 0 0; font-size: var(--fs-sm); color: var(--status-varning); }
+/* Dialogen Sakliga skäl (57-sakliga-skal.js) */
+.hp-skal { margin-top: 4px; white-space: nowrap; }
+.hp-skal-sammanfattning { color: var(--text-muted, inherit); margin-left: 4px; }
+.skal-skillnad { margin: 6px 0 12px; }
+.skal-tabell .skal-falt { width: 100%; min-width: 6em; font: inherit; font-size: var(--fs-sm); padding: 4px 6px; border: 1px solid var(--border); border-radius: 4px; background: var(--bg-card); color: inherit; }
+.skal-tabell .skal-belopp { max-width: 9em; text-align: right; }
+.skal-tabell .skal-falt[aria-invalid="true"] { border-color: var(--status-varning); }
+.skal-tabell .skal-falt[aria-describedby="skal-varning"] { border-color: var(--status-varning); }
+.skal-summa { margin: 12px 0 4px; font-weight: 600; }
+.skal-forslag { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 8px; }
 
 /* ----- Print-rapport (PDF via webbläsarens print-dialog) ----- */
 #print-report { display: none; }
@@ -3613,3 +3623,4 @@ tr.rad-folj { background: rgba(245, 158, 11, 0.1); }
 .underrubrik { margin: 0 0 8px !important; font-size: var(--fs-md) !important; }
 
 #forecast-optimize-pott:disabled { opacity: 0.55; cursor: not-allowed; }   /* aktiv först när en pott är angiven */
+

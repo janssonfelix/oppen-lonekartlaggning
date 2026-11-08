@@ -165,7 +165,8 @@ export const MODULES = [
             likaArbeteGrupper: '_ruLikaArbeteGrupper', justeratGapInomYrke: '_ruJusteratGap', bortvaltNotering: '_ruBortvaltNotering',
             gruppBlock: '_ruGruppBlock', parBlock: '_ruParBlock', avsnittBlock: '_ruAvsnittBlock',
             tillWordHtml: '_ruTillWordHtml', tillText: '_ruTillText', stabilitetKort: '_ruStabilitetKort',
-            egenTabellBlock: '_ruEgenTabellBlock', arsjamforelseBlock: '_ruArsjamforelseBlock', referenserBlock: '_ruReferenserBlock', basintervallBlock: '_ruBasintervallBlock'
+            egenTabellBlock: '_ruEgenTabellBlock', arsjamforelseBlock: '_ruArsjamforelseBlock', referenserBlock: '_ruReferenserBlock', basintervallBlock: '_ruBasintervallBlock',
+            skalSammanstallningNot: '_ruSkalNot'
         }
     },
     {
@@ -223,9 +224,15 @@ export const MODULES = [
         expose: { nyttRecept: '_trNytt', valideraRecept: '_trValidera', receptBeskrivning: '_trBeskrivning', receptTillTabeller: '_trTabeller' }
     },
     {
+        // Sakliga skäl som strukturerad post (handlingsplanen); årsbokslutet importerar sammanställningen: före det.
+        file: 'sakligaskal.js', ns: '__mirrorSakligaskal',
+        expose: { skalKategorier: '_sakKategorier', valideraSkal: '_sakValidera', skalSammanstallning: '_sakSammanstallning', skalPerKategori: '_sakPerKategori' }
+    },
+    {
         file: 'arsbokslut.js', ns: '__mirrorArsbokslut',
         expose: { byggArsbokslut: '_abBygg', valideraArsbokslut: '_abValidera', jamforArsbokslut: '_abJamfor', hantelRader: '_abHantelRader',
-                  basHantelRader: '_abBasHantelRader', jamforBasIntervall: '_abJamforBas', bokslutMedGrans: '_abMedGrans', lonespridning: '_abSpridning' }
+                  basHantelRader: '_abBasHantelRader', jamforBasIntervall: '_abJamforBas', bokslutMedGrans: '_abMedGrans', lonespridning: '_abSpridning',
+                  jamforBedomningar: '_abJamforBedomningar' }
     },
     {
         // Importprofiler: kända kolumnuppsättningar (bara rubriknamn). Organisationspaketet importerar valideringen: före det.

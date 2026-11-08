@@ -31,7 +31,7 @@ och sitt dataskyddsombud · *Avstämd* = granskad av jurist (ingen rad ännu). K
 | Kvinnodominerat arbete mot likvärdigt arbete | 3 kap. 9 § 2 | *likvärdigt arbete* | Förslag |
 | Kvinnodominerat arbete mot arbete med lägre krav och högre lön | 3 kap. 9 § 3 | *lägre krav, högre lön* | Förslag |
 | Vad som är likvärdigt arbete (kraven) | 3 kap. 10 § | *kraven i arbetet*, *arbetsvärdering* | Förslag |
-| Sakliga skäl | följer av 3 kap. 9 § (analys av samband med kön); lagen räknar inte upp några skäl — exemplen i verktyget (ansvar, erfarenhet, marknadsläge) är verktygets, inte lagens | *sakliga skäl*, utan paragraf | Förslag |
+| Sakliga skäl | följer av 3 kap. 9 § (analys av samband med kön); lagen räknar inte upp några skäl — kategorierna i verktyget (Marknad, Utbildning, Erfarenhet, Prestation och resultat, Övergång, Annat sakligt skäl) är verktygets indelning, inte lagens | *sakliga skäl*, utan paragraf | Förslag |
 | Gränsen för kvinnodominerat arbete | lagen anger ingen siffra ("är eller brukar anses vara"); 60 % är förarbetenas riktmärke | **mer än 60 % kvinnor** (`KVINNO_TROSKEL_DEFAULT`, >); icke-kvinnodominerat under 40 %. Inställningens etikett säger *riktmärket i lagens förarbeten*, inte "DO"; nyckeln `'do'` står kvar | Förslag — beslut 2026-10-19 |
 | Samverkan med arbetstagarna | 3 kap. 11 §; redogörelse 13 § 7; information till facket 12 § | *samverkan med arbetstagarna* | Förslag |
 | Åtgärder, kostnadsberäkning och tidsplan (senast inom tre år) | 3 kap. 13 § andra stycket 4–5 (10–24 anställda via 14 §); allmänt 3 kap. 2 § 3 och 3 § | *åtgärder och tidsplan* | Förslag |

@@ -1,6 +1,6 @@
 # Risk- och sårbarhetsanalys (dataskydd och informationssäkerhet) — Öppen lönekartläggning
 
-**Bygge:** `2026.11.05` · **Artefakt-SHA-256:** `18f5744a827cefb44fa1191731f965fda9a2b4d4a15a95db773b70b788d581e1` (se `dist/RELEASE.txt`).
+**Bygge:** `2026.11.05` · **Artefakt-SHA-256:** `276988195bf22b5a2cd820c754069c17112178eccb23d178e36f5807a467d3a5` (se `dist/RELEASE.txt`).
 **Granskningsdatum:** 2026-11-07.
 **Granskningsmetod:** kodläsning påstående för påstående + statisk sökning i källkod och bygge +
 körning av det byggda verktyget i jsdom och i Chromium (utan nätverk) med syntetiska testfiler.
@@ -661,7 +661,14 @@ Konfig-JSON:en (**version 2**) innehåller tre slags uppgifter.
 - handlingsplanens fält per rad (`handlingsplan`). Radens nyckel är källa, AID och BAS, eller `egen|` och ett slumpat
   id för en rad som lagts till på fliken. Till nyckeln hör sakligt skäl, ansvarig, tidsplan och status. En egen rad
   bär också sin åtgärd och berörda grupp som fritext. Rullistornas okända värden läses som tomma, och fritexten
-  kortas till 500 tecken.
+  kortas till 500 tecken. En rad kan också bära sina **sakliga skäl** (`skal`): högst 8 skäl med kategori ur en
+  fast lista, belopp i kronor per månad och en kommentar på högst 200 tecken. Kommentaren är fritext. Den prövas som övriga
+  fritexter mot personnummer och e-post (`_hpLiknarPersonuppgift`), och dialogen varnar om den liknar en
+  personuppgift. Ogiltiga skäl hoppas över vid inläsning med en varning. För en rad där ett kön är under minsta
+  gruppstorlek står i exporterna (rapporten, Rapporttext, Word, PDF och Excel) och i årsbokslutet bara kategorierna:
+  belopp, andel och kommentar utelämnas, med noten *belopp och kommentar utelämnade: ett kön har färre personer än minsta
+  gruppstorlek*. Annars skulle beloppen avslöja hur stor en skillnad är som verktyget inte redovisar. Demots skäl tas bort när en riktig
+  lönefil läses in.
 - avbockningarna i Att göra (punkternas id, som innehåller AID-kod och BAS)
 - organisationsnamnet och ett redigerat struktur-narrativ.
 
@@ -672,6 +679,10 @@ Konfig-JSON:en (**version 2**) innehåller tre slags uppgifter.
 - en rad per BAS-intervall med minst så många personer: antal, P10, median, P90 och lönespridningen.
   Könsmedianerna står bara med när båda könen når gränsen.
 - Att göra-punkternas id, titel och läge.
+- handlingsplanens sakliga skäl per grupp (version 2, `bedomningar`): nyckeln, gruppen, antalet, skillnaden och
+  skälens kategori och belopp. Kommentarerna sparas inte i bokslutet. En grupp under minsta gruppstorlek faller
+  bort. När den minsta gruppen bakom skillnaden är under gränsen stryks skillnaden och beloppen, och bara
+  kategorierna står kvar. En nyckel som står två gånger läses en gång.
 
   Bokslutet byggs i exportläget med den inställda tröskeln. Vid inläsning stryks varje grupp där ett kön är under
   bokslutets k (`valideraArsbokslut`; vaktas av `tests/arsbokslut.test.js` och `tests/smoke-arsbokslut.test.js`).
@@ -798,7 +809,7 @@ tar bort allt minne omedelbart. Verktyget gör inga utskick till de registrerade
 
 Varje påstående i detta dokument är prövat mot koden, med provkörning i jsdom och i Chromium.
 Skyddet bevakas av drift-, golden-, röktest-, k-anonymitets-, dokumentations-, statistik- och
-a11y-sviterna (90 testfiler). Det bevakas också av ett röktest av det byggda verktyget i en riktig webbläsare
+a11y-sviterna (94 testfiler). Det bevakas också av ett röktest av det byggda verktyget i en riktig webbläsare
 (`tools/browser-smoke.mjs`). Röktestet körs lokalt och i CI-arbetsflödet i
 Chromium, Firefox och WebKit. Verifieringen visar också var skyddet är svagare än det kan se ut:
 - lagringsspärren är en reserv med kända luckor (§6.2)
@@ -887,7 +898,7 @@ andra filerna. Den innehåller biblioteksversioner och kontrollsummor, inga uppg
 | k-anonymitet | `kTroskel()` + render-läsning vid 10, 25 och 5 (`tests/ktroskel.test.js` och `tests/ktroskel-hojning.test.js`) | ✔ standard 10, inställbart (ADR-38; undantag likvärdigt arbete dokumenterat) |
 | k-anonymitet i exporten från Tabeller och egna vyer (ADR-14) | Exporttester i `tests/kanonymitet.test.js` + genomsökning i Chromium av alla kombinationer rad × kolumn × diagramtyp × helhet/per kön × mått med rutan urkryssad | ✔ inga grupper eller kön under 10 i tabell- eller diagramexport |
 | Personer att granska och extremvärdeslistan stannar i verktyget (ADR-23) | Test i `tests/smoke-granssnitt.test.js` (en flaggad persons lön finns inte i rapportunderlag eller Word-utkast) + webbläsarröktestet (extremvärdeslistan med rader syns inte i utskrift) + kodläsning (inga exportverktyg; bilagorna hämtar bara namngivna tabeller) | ✔ lönen och radnumret finns inte i någon utdata; båda döljs vid utskrift |
-| k-invarianten över flikar och exporter | `tests/ktroskel-invarianter.test.js`: underlag med ett kön under tröskeln i en större grupp, en ensam person och ett 2-mot-2-BAS; flikar, Word, utskrift ×3, rapportunderlag (med blocken per BAS-intervall), Excel ×9, CSV, diagramdata, gruppdossier, BAS-dossierns text (`basdossierText`), Rapporttextens utkast med delen per BAS-intervall, rapportens avsnitt Lönekartläggning per BAS-intervall och, med förra årets bokslut inläst, blocket och avsnittet om förra året (tabellen per BAS-intervall) och BAS-hantelns diagramdata, årsbokslutet i konfigurationsfilen med lönespridningen, rapportens bilaga med gruppdossierer och utskriften med bilagan vald, och importprofilerna (JSON-exporten och konfigurationsfilen: inga lönemått) vid 10 och 25 | ✔ inget dolt värde i någon prövad utdata; undantagen och diagrambilder prövas inte; lönerevisionssimulatorn prövas med ett urval under och ett över tröskeln (simulatorn togs bort 2026-10-29, ADR-50; samma urval prövas nu som riktade rader i Löneöversyn, C3); Ålder & karriär per BAS och regressionens ojusterade steg prövas av egna tester i `tests/ktroskel-regression.test.js` (§6.5) |
+| k-invarianten över flikar och exporter | `tests/ktroskel-invarianter.test.js`: underlag med ett kön under tröskeln i en större grupp, en ensam person och ett 2-mot-2-BAS; flikar, Word, utskrift ×3, rapportunderlag (med blocken per BAS-intervall), Excel ×9, CSV, diagramdata, gruppdossier, BAS-dossierns text (`basdossierText`), Rapporttextens utkast med delen per BAS-intervall, rapportens avsnitt Lönekartläggning per BAS-intervall och, med förra årets bokslut inläst, blocket och avsnittet om förra året (tabellen per BAS-intervall) och BAS-hantelns diagramdata, årsbokslutet i konfigurationsfilen med lönespridningen, rapportens bilaga med gruppdossierer och utskriften med bilagan vald, och importprofilerna (JSON-exporten och konfigurationsfilen: inga lönemått) vid 10 och 25; handlingsplanens sakliga skäl vid 10 (I5: en rad under tröskeln för varken kommentarens tal eller beloppet ut i någon utdata utom skärmen och hela konfigurationsfilen, och en rad där ett kön är under tröskeln bara kategorin, också i konfigurationsfilens årsbokslut) | ✔ inget dolt värde i någon prövad utdata; undantagen och diagrambilder prövas inte; lönerevisionssimulatorn prövas med ett urval under och ett över tröskeln (simulatorn togs bort 2026-10-29, ADR-50; samma urval prövas nu som riktade rader i Löneöversyn, C3); Ålder & karriär per BAS och regressionens ojusterade steg prövas av egna tester i `tests/ktroskel-regression.test.js` (§6.5) |
 | Importprofiler bär bara rubriknamn | `valideraImportprofil` i `src/lib/importprofiler.js` (godkända fält; varje text högst 80 tecken och inget som liknar personnummer eller e-post; högst 20 rubriker per fält, högst 50 profiler) vid inläsning ur konfigurationsfil och organisationspaket; `profilFranMappning` tar bara rubriker som finns i filen; tester i `tests/importprofiler.test.js` och `tests/importprofiler-app.test.js`, k-invariantsviten och webbläsarröktestet | ✔ ingen ny utdata lämnar verktyget utöver profilens JSON (exporten och konfigurationsfilens och paketets fält), och den bär inga värden ur filen |
 | Kvartiler utan enskilda löner | Enhetstest, röktest, golden-facit + EU-exporten genomsökt i Chromium | ✔ varken lägsta eller högsta lön i fliken eller exporten |
 | Formelskydd i CSV/urklipp (ADR-15) | Regressionstest (`tests/smoke.test.js`) + kodläsning av alla CSV-skrivare | ✔ `= + - @`-celler neutraliseras; tal orörda; mallfilen innehåller ingen användardata |
@@ -897,7 +908,7 @@ andra filerna. Den innehåller biblioteksversioner och kontrollsummor, inga uppg
 | Konfigfilens innehåll | Kodläsning av `buildConfigSnapshot()` och importen | ✔ ingen `state.data`-referens; inställningar (med förklaringsmodellen, definitionen av kvinnodominerat och lönemånaden) + användartext + avbockningar i Att göra (§6.8) + egna importprofiler (bara rubriknamn, validerade vid inläsning); import läser version 2 och avvisar andra versioner |
 | Word-utkast lokalt | Kodläsning + live-test: Blob fångad, innehåll inspekterat; zip-filen läses tillbaka i röktesterna (ADR-37) | ✔ lokal `Blob` (`.docx`), DEMODATA-märkning fungerar |
 | Tillgänglighet (markup) | axe-core i automatiska sviten (`tests/a11y.test.js`) | ✔ 0 överträdelser |
-| Automatiska tester | `npm test` (Vitest, 90 testfiler; kör om en fil vars arbetare kraschat i Node) + `npm run test:browser` (bygget i Chromium; samma röktest finns för Firefox och WebKit) | ✔ alla gröna |
+| Automatiska tester | `npm test` (Vitest, 94 testfiler; kör om en fil vars arbetare kraschat i Node) + `npm run test:browser` (bygget i Chromium; samma röktest finns för Firefox och WebKit) | ✔ alla gröna |
 | Bundle-integritet | Reproducerbart bygge + SHA-256 i RELEASE.txt; byggskydd mot mojibake och `node --check` (kodläsning av `tools/bundle.mjs`) | ✔ |
 
 ## 12. Slutsats
