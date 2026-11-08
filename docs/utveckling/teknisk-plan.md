@@ -194,11 +194,15 @@ adaptern verkligen delegerar vaktas av `tests/drift.test.js`:
    medianlön än ett av organisationens egna yrken i *lägre* BAS, med antal BAS-steg.
    BAS-ordningen är fast: bokstavsordning A–J. Den går inte att ändra i verktyget. Verktyget
    antar att varje bokstav motsvarar ett lika brett poängintervall i arbetsvärderingen, så rangen är bokstavens
-   plats (A=1, B=2 …) där BAS räknas som ett tal — Blinder-Oaxaca, kvantilregressionen och
-   *Lägre krav* använder samma funktion (`basRangFn` i `src/lib/likvardighet.js`) — och B → D
-   är två BAS-steg även när C saknas i underlaget. Huvudregressionen och den sekventiella
-   dekomponeringen räknar inte BAS som ett tal utan som indikatorvariabler, en per intervall med
-   det alfabetiskt första som referens (ADR-44); bokstavsordningen avgör där bara referensen.
+   plats (A=1, B=2 …) där BAS räknas som ett tal — *Lägre krav* använder funktionen
+   (`basRangFn` i `src/lib/likvardighet.js`) — och B → D är två BAS-steg även när C saknas i
+   underlaget. Huvudregressionen, den sekventiella dekomponeringen, Blinder-Oaxaca (ADR-53) och
+   kvantilregressionen (ADR-63) räknar inte BAS som ett tal utan som indikatorvariabler, en per
+   intervall med det alfabetiskt första som referens (ADR-44); bokstavsordningen avgör där bara
+   referensen. Kvantilregressionen (`kvantilDesign` och `quantileRegressionAtAllTau` i
+   `src/lib/regression.js`) skattas vid P10, medianen och P90 på huvudmodellens variabler enligt
+   förklaringsmodellen, utan yrkesgrupp inom BAS, och tolkas som glastak eller klibbigt golv bara
+   när bootstrap-intervallet för skillnaden P90 − P10 utesluter noll.
 
 ---
 
@@ -243,7 +247,7 @@ adaptern verkligen delegerar vaktas av `tests/drift.test.js`:
   rätt grupp. Utskriftsfönstret för checklistorna (`printScaffoldView`) läser `:root` och allt från `.dold` till
   stilmallens slut ur den körande stilmallen och lägger in det som byggt stilark (`adoptedStyleSheets`): ett `<style>`-element
   som skriptet skapar blockeras av den ärvda CSP:n (`style-src-elem`), så fönstret var tidigare helt ostilat.
-- **Tester:** Vitest — 3043 tester i 96 filer: rena `src/lib/`-moduler, CSV-parsning, jsdom-röktest
+- **Tester:** Vitest — 3062 tester i 96 filer: rena `src/lib/`-moduler, CSV-parsning, jsdom-röktest
   av varje vy (ADR-7; `tests/smoke.test.js` med det delade fönstret och sju `tests/smoke-*.test.js` per
   område), k-tröskeln i åtta `tests/ktroskel*.test.js` med riggen i `tests/helpers/ktroskel-rigg.js`,
   gränssnittet i `tests/granssnitt*.test.js` (riggen `tests/helpers/granssnitt-rigg.js`) och diagramvyerna i
@@ -1199,7 +1203,7 @@ inte en skattning av vad intervallet "borde" betala det kön som saknas. Kompone
 konstant, ålder och BAS, där BAS är summan över indikatorerna (det som ADR-44 befarade skulle bli otydligt: ett
 dussin rader). Referensvärdena i `tests/fixtures/stat-referens-varden.json` är omräknade med statsmodels
 (`tests/fixtures/ref-stat-referens.py`); fixturen har ett intervall som bara finns hos männen, så regeln prövas.
-Kvantilregressionen behåller BAS-rangen (den är inte en uppdelning). Sedan 2026-11-05 styr valet (ADR-56) båda:
+Kvantilregressionen kodar BAS på samma sätt (ADR-63). Sedan 2026-11-05 styr valet (ADR-56) båda:
 uppdelningen räknar på samma variabler som huvudtalet, också när ålder eller BAS valts bort eller yrkesgrupp valts in.
 
 **ADR-54 — Jämförelse mellan år genom ett årsbokslut i konfigurationsfilen.** Beslut 2026-10-30. Konfigurationsfilen
@@ -1427,6 +1431,31 @@ Handlingsplanens vägledning, rapportens avsnitt Åtgärder och tidsplan och rap
 kostnaden som är kostnad att nå referensen. Vaktas av `tests/smoke.test.js`, `tests/granssnitt.test.js`,
 `tests/diagramvyer.test.js` och `tests/smoke-innehall.test.js`.
 
+**ADR-63 — Kvantilregressionen på huvudmodellens design, villkorad tolkning.** Beslut 2026-11-08 (beslut 6a inför
+lanseringen). Kvantilregressionen räknade BAS som ett tal (BAS-rangen, `basRangFn`) med ålder alltid med, medan
+huvudtalet räknar BAS som indikatorer och följer förklaringsmodellen (ADR-44, ADR-56); kortet sade ändå *samma
+modellspecifikation som huvudregressionen*. Tolkningen *väger tyngre än* sades när beloppen vid P10 och P90 skilde mer
+än en procentenhet, utan prövning. Nu bygger `kvantilDesign(rows, modell, { ageMean?, basList? })` i
+`src/lib/regression.js` designen med samma hjälpare som stegen i dekomponeringen (`_sekvensRigg`): intercept, kön,
+[ålder centrerad], [en indikator per BAS-intervall utom det första] enligt förklaringsmodellen, utan yrkesgrupp inom
+BAS; raderna filtreras där (ålder krävs bara när ålder är med). `quantileRegressionAtAllTau(rows, { modell, ageMean?,
+basList? })` tar ingen rangfunktion längre och returnerar `konPct` per τ och `diffP90P10` (procentenheter). I appen
+använder punktskattningen och bootstrappen (`_regKvantilBerakna`, `_regKvantilBootstrap` i
+`51-lika-arbete-regressionskort.js`) samma byggare; varje omsampling bygger designen på nytt ur de dragna raderna, så
+att ett intervall som inte kom med inte ger en nollkolumn. Bootstrappen sparar `konPct[τ]` och `diff = konPct[0,9] −
+konPct[0,1]` per omsampling och ger percentilintervall för båda. Tabellen har raden *P90 − P10*. *Glastaket väger
+tyngre än det klibbiga golvet* (diff-KI under noll) eller tvärtom (över noll) sägs bara när diff-KI:t utesluter noll,
+annars *Ingen säkerställd skillnad mellan delarna av lönefördelningen.*; utan intervall (över 2 000 personer) sägs att
+det inte går att avgöra. Skattningarna färgas inte längre efter 5 % och 2 % (ADR-59: storlek ensam är ingen status).
+Diagrammets punktlager saknade `riktning: 'liggande'`, så intervallets gränser lästes som kategorier på bandaxeln och
+skrevs ut som råa tal (U4); det är rättat, och ett test kräver att ingen text i någon ritad figur är ett tal med
+decimalpunkt. IRLS-kärnan hoppar över nollor i designen (samma summor, snabbare med indikatorer), och bootstrappen
+startar varje omsampling i hela urvalets lösning (`start` i `quantileRegression`; samma lösning inom toleransen, färre varv). Referensen är en ny
+exakt LP-lösning för indikatormodellen (`tests/fixtures/stat-referens-kvantil.json`, framtagen och kontrollerad som
+filhuvudet i `tests/stat-referens.test.js` beskriver). `basRangFn` finns kvar för *Lägre krav*. Vaktas av
+`tests/regression.test.js`, `tests/stat-referens.test.js`, `tests/diagramritare.test.js` och
+`tests/smoke-innehall.test.js`.
+
 ## 9. Öppna punkter
 
 Kända brister och obesvarade frågor, så att de inte lever bara i en konversationstråd.
@@ -1511,9 +1540,8 @@ Kända brister och obesvarade frågor, så att de inte lever bara i en konversat
 9d. **Dekomponeringen visas som en bild:** trappan med yrkesgruppssteget efter huvudtalet, förklaringsbudgeten
     under den, steglistan som skärmläsaralternativ. Livscykelns nivåer per BAS kommer ur modellens
     BAS-koefficienter (`basFaktor`). Blinder-Oaxaca kodar BAS som indikatorer sedan ADR-53.
-9e. **Kvar efter uppmärksamhetstrappan och Prioriteringens egna ord (ADR-59, ADR-62, till B1 och spår C):** livscykelns
-    färger (`52-livscykel.js`) och kvantilregressionens färger i regressionskortet följer fortfarande 5 %; kvantilen
-    görs om i B1. Utforska och kolumnen *Skillnad kön* i Prioriteringens åtgärdslista visar storlek utan prövning
+9e. **Kvar efter uppmärksamhetstrappan och Prioriteringens egna ord (ADR-59, ADR-62, till spår C):** livscykelns
+    färger (`52-livscykel.js`) följer fortfarande 5 %. Utforska och kolumnen *Skillnad kön* i Prioriteringens åtgärdslista visar storlek utan prövning
     (högst *Följ upp*). Protokollets blad per BAS-intervall för gemensam lönebedömning väljer på rått p-värde utan
     BH-korrigering. På skärmen (k = 1) står många små grupper som *Går ej att bedöma*, eftersom prövningen kräver
     `statGolv()` per kön. Handlingsplanens kostnadskolumn blandar kostnad att nå referensen (rader ur Prioritering) och

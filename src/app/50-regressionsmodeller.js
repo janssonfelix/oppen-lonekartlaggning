@@ -7,7 +7,7 @@
 // speglas in i 09-lib-speglar.js (ADR-8). Här finns bara de tunna adaptrarna som
 // läser appens tillstånd (getData(), statGolv()) och skickar det som parametrar.
 //
-// OLS-kärnan (_fitOLS m.fl.) och BAS-rangen (_lvBasRangFn) är också speglade.
+// OLS-kärnan (_fitOLS m.fl.) är också speglad.
 // runOLSRegression ligger kvar i 51-lika-arbete-regressionskort.js och flyttas inte (ADR-17).
 
 // Diagnostiserar varför modellen misslyckas
@@ -36,8 +36,8 @@ function _computeVariabelTillfor(rows, ageMean, basList) {
 }
 
 // Kvantilregression via IRLS; standardvärdena för maxIter och tol ligger i src/lib/regression.js.
-function _quantileRegression(X, y, tau, maxIter, tol) {
-    return _rgQuantileRegression(X, y, tau, maxIter, tol);
+function _quantileRegression(X, y, tau, maxIter, tol, start) {
+    return _rgQuantileRegression(X, y, tau, maxIter, tol, start);
 }
 
 // ---- Förklaringsmodellen (ADR-56) ----
@@ -72,7 +72,8 @@ function runBlinderOaxaca() {
     return _rgBlinderOaxaca(getData(), { golv: statGolv(), modell: forklaringsmodell() });
 }
 
-// Kvantilregression vid τ ∈ {.10, .50, .90} på appens data (getData()).
+// Kvantilregression vid τ ∈ {.10, .50, .90} på appens data (getData()), på huvudmodellens variabler enligt
+// förklaringsmodellen utan yrkesgrupp (ADR-63).
 function runQuantileRegressionAtAllTau() {
-    return _rgQuantileRegressionAtAllTau(getData(), { rang: _lvBasRangFn });
+    return _rgQuantileRegressionAtAllTau(getData(), { modell: forklaringsmodell() });
 }

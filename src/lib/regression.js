@@ -7,18 +7,17 @@
  * (betingade regressioner), sekventiell dekomponering med BAS-indikatorer och
  * yrkesgrupp inom BAS, kvantilregression (IRLS) samt Blinder-Oaxaca-
  * dekomposition. Modellerna tar allt de behöver som parametrar (rader, listor,
- * statGolv-värdet och BAS-rangfunktionen) och läser inget globalt tillstånd.
+ * statGolv-värdet och förklaringsmodellen) och läser inget globalt tillstånd.
  *
  * Appen får dem genom lib-speglarna (ADR-8); src/app/50-regressionsmodeller.js
  * är den tunna adaptern som läser getData() och statGolv(). OLS-kärnan
- * (fitOLS, invert, matMul, pValue2Sided, tQuantile) ligger i stat.js och
- * BAS-rangen (basRangFn) i likvardighet.js.
+ * (fitOLS, invert, matMul, pValue2Sided, tQuantile) ligger i stat.js. Ingen modell här
+ * räknar BAS som ett tal; BAS-rangen (basRangFn) finns kvar i likvardighet.js för Lägre krav.
  *
  * @see 50-regressionsmodeller.js (adaptern i appen)
  */
 
 import { fitOLS, invert, matMul, pValue2Sided, tQuantile } from './stat.js';
-import { basRangFn } from './likvardighet.js';
 
 // ---- Förklaringsmodellen som värde (ADR-56) ----
 // Vilka variabler huvudregressionen, trappan och Blinder-Oaxaca räknar bort utöver kön. Standard är ADR-44/46/53-modellen:
@@ -310,34 +309,49 @@ export function inomYrkesgrupp(rows, y, kol) {
  * @param {number} tau - Kvantil ∈ (0,1), t.ex. 0.5 för median, 0.9 för P90.
  * @param {number} [maxIter=60]
  * @param {number} [tol=1e-5]
+ * @param {number[]|null} [start] - startvärde för β (annars OLS-lösningen); påverkar bara hur snabbt det konvergerar.
  * @returns {null | {beta:number[]}} null om n < k+5 eller XtWX singulär.
  */
-export function quantileRegression(X, y, tau, maxIter = 60, tol = 1e-5) {
+export function quantileRegression(X, y, tau, maxIter = 60, tol = 1e-5, start = null) {
     const n = X.length, k = X[0].length;
     if (n < k + 5) return null;
-    // Starta från OLS för snabb konvergens
-    const olsFit = fitOLS(X, y);
-    if (!olsFit) return null;
-    let beta = olsFit.beta.slice();
+    // Starta från OLS för snabb konvergens, eller från ett givet startvärde (bootstrappen startar i punktskattningen)
+    let beta;
+    if (Array.isArray(start) && start.length === k && start.every(Number.isFinite)) beta = start.slice();
+    else {
+        const olsFit = fitOLS(X, y);
+        if (!olsFit) return null;
+        beta = olsFit.beta.slice();
+    }
     const eps = 1e-6;
+    // Bara radernas nollskilda kolumner räknas (BAS-indikatorerna är mest nollor, ADR-63), i platta typade fält; en
+    // nolla bidrar inte till någon summa och ordningen är densamma, så resultatet är detsamma som med hela raden.
+    const rs = new Int32Array(n + 1);
+    for (let i = 0; i < n; i++) { let c = 0; for (let j = 0; j < k; j++) if (X[i][j] !== 0) c++; rs[i + 1] = rs[i] + c; }
+    const kol = new Int32Array(rs[n]), val = new Float64Array(rs[n]);
+    for (let i = 0, p = 0; i < n; i++) for (let j = 0; j < k; j++) if (X[i][j] !== 0) { kol[p] = j; val[p] = X[i][j]; p++; }
+    const S = new Float64Array(k * k), w = new Float64Array(n);
     for (let iter = 0; iter < maxIter; iter++) {
-        const yhat = X.map(row => row.reduce((s, v, i) => s + v * beta[i], 0));
-        const w = new Array(n);
         for (let i = 0; i < n; i++) {
-            const r = y[i] - yhat[i];
+            let yhat = 0;
+            for (let p = rs[i]; p < rs[i + 1]; p++) yhat += val[p] * beta[kol[p]];
+            const r = y[i] - yhat;
             const wTau = r >= 0 ? tau : (1 - tau);
             w[i] = wTau / Math.max(Math.abs(r), eps);
         }
         // Lös WLS: β = (X' W X)^-1 X' W y
-        const XtWX = Array.from({ length: k }, () => new Array(k).fill(0));
+        S.fill(0);
         const XtWy = new Array(k).fill(0);
         for (let i = 0; i < n; i++) {
-            const wi = w[i], xi = X[i], yi = y[i];
-            for (let a = 0; a < k; a++) {
-                XtWy[a] += wi * xi[a] * yi;
-                for (let b = 0; b < k; b++) XtWX[a][b] += wi * xi[a] * xi[b];
+            const wi = w[i], yi = y[i], p0 = rs[i], p1 = rs[i + 1];
+            for (let p = p0; p < p1; p++) {
+                const a = kol[p], xa = val[p];
+                XtWy[a] += wi * xa * yi;
+                const rad = a * k;
+                for (let q = p0; q < p1; q++) S[rad + kol[q]] += wi * xa * val[q];
             }
         }
+        const XtWX = Array.from({ length: k }, (_, a) => Array.from(S.subarray(a * k, a * k + k)));
         const inv = invert(XtWX);
         if (!inv) return null;
         const newBeta = matMul(inv, XtWy.map(v => [v])).map(r => r[0]);
@@ -486,37 +500,51 @@ export function blinderOaxaca(rows, { golv, modell = FORKLARINGSMODELL_STANDARD 
 }
 
 /**
- * Kör kvantilregression vid τ ∈ {.10, .50, .90} på samma kontrollvariabler
- * (kön + ålder + BAS-rank) och returnerar löneskillnaden i kr-procent vid varje kvantil.
- * Används för glasstak-/klistergolvsanalys i UI:t.
- * @param {any[]} rows - råradernas poster; filtreras här på lön, ålder och kön.
- * @param {{rang?:(basList:string[]) => (bas:string) => number}} [opts] rang = BAS-rangfunktionen
- *   (standard basRangFn ur likvardighet.js).
- * @returns {null | {results:Array<{tau:number, konPct?:number, error?:true}>, n:number, nKv:number, nMa:number}}
- *   null om N<50 eller för få BAS-intervall.
+ * Kvantilregressionens design (ADR-63): samma variabler som huvudregressionen enligt förklaringsmodellen, utan
+ * yrkesgrupp inom BAS — intercept, kön, [ålder centrerad på radmedel], [en indikator per BAS-intervall utom det
+ * första, som är referens]. Matrisen byggs med samma hjälpare som stegen i den sekventiella dekomponeringen
+ * (_sekvensRigg). Raderna filtreras här (lön > 0, kvinna eller man, ålder > 0 bara när ålder är med i modellen),
+ * så att punktskattningen och bootstrappen i appen räknar på exakt samma matris.
+ * @param {any[]} rows - råradernas poster.
+ * @param {any} [modell] - förklaringsmodellen (normaliseras; yrkesgrupp ingår aldrig).
+ * @param {{ageMean?:number, basList?:string[]}} [opts] ageMean/basList ges utifrån eller räknas ur raderna
+ *   (basList sorterad, referens = första).
+ * @returns {{rader:any[], X:number[][], y:number[], kolumner:string[], ageMean:number, basList:string[],
+ *   modell:{bas:boolean, alder:boolean}}}
  */
-export function quantileRegressionAtAllTau(rows, { rang = basRangFn } = {}) {
-    const raw = rows.filter(d => d.lon > 0 && d.alder > 0 && (d.kon.includes('kvinna') || d.kon === 'man' || d.kon === 'män'));
-    if (raw.length < 50) return null; // för litet urval för stabil quantile regression
-    const basList = [...new Set(raw.map(d => d.bas))].sort();
-    if (basList.length < 1) return null;
-    const basRank = {};
-    // BAS-rang = bokstavens plats (A=1); ett steg är alltid ett BAS-intervall (se §5 i teknisk-plan.md).
-    const rangFn = rang(basList);
-    basList.forEach(b => { basRank[b] = rangFn(b); });
-    const ranks = basList.map(b => basRank[b]);
-    const basMean = ranks.reduce((s, r) => s + r, 0) / ranks.length;
-    const ageMean = raw.reduce((s, d) => s + d.alder, 0) / raw.length;
-    const X = raw.map(d => [1, d.kon.includes('kvinna') ? 1 : 0, d.alder - ageMean, basRank[d.bas] - basMean]);
-    const y = raw.map(d => Math.log(d.lon));
-    const taus = [0.1, 0.5, 0.9];
+export function kvantilDesign(rows, modell = FORKLARINGSMODELL_STANDARD, { ageMean, basList } = {}) {
+    const m = normaliseraForklaringsmodell(modell).modell;
+    const rader = rows.filter(d => d.lon > 0 && (!m.alder || d.alder > 0)
+        && typeof d.kon === 'string' && (d.kon.includes('kvinna') || d.kon === 'man' || d.kon === 'män'));
+    const bl = m.bas ? (basList || [...new Set(rader.map(d => d.bas))].sort()) : [];
+    const am = m.alder ? (ageMean != null ? ageMean : rader.reduce((s, d) => s + d.alder, 0) / (rader.length || 1)) : NaN;
+    const vars = ['alder', 'bas'].filter(v => m[v]);
+    const X = rader.length ? _sekvensRigg(rader, am, bl).bygg(vars) : [];
+    const kolumner = ['intercept', 'kvinna', ...vars.flatMap(v => (v === 'alder' ? ['alder'] : basIndikatorer(bl).map(b => `bas:${b}`)))];
+    return { rader, X, y: rader.map(d => Math.log(d.lon)), kolumner, ageMean: am, basList: bl, modell: { bas: m.bas, alder: m.alder } };
+}
+
+/**
+ * Kör kvantilregression vid τ ∈ {.10, .50, .90} på kvantilDesign (samma variabler som huvudregressionen, utan
+ * yrkesgrupp; ADR-63) och returnerar löneskillnaden i procent vid varje kvantil och skillnaden P90 − P10 i
+ * procentenheter (negativ: skillnaden till kvinnornas nackdel är större i toppen än i botten).
+ * Används för analysen av glastak och klibbigt golv i UI:t.
+ * @param {any[]} rows - råradernas poster; filtreras i kvantilDesign.
+ * @param {{modell?:any, ageMean?:number, basList?:string[]}} [opts] modell = förklaringsmodellen.
+ * @returns {null | {results:Array<{tau:number, konPct?:number, error?:true}>, diffP90P10:number|null,
+ *   kolumner:string[], n:number, nKv:number, nMa:number}} null om N < 50.
+ */
+export function quantileRegressionAtAllTau(rows, { modell = FORKLARINGSMODELL_STANDARD, ageMean, basList } = {}) {
+    const d = kvantilDesign(rows, modell, { ageMean, basList });
+    if (d.rader.length < 50) return null; // för litet urval för stabil kvantilregression
     const results = [];
-    for (const tau of taus) {
-        const fit = quantileRegression(X, y, tau);
+    for (const tau of [0.1, 0.5, 0.9]) {
+        const fit = quantileRegression(d.X, d.y, tau);
         if (!fit) { results.push({ tau, error: true }); continue; }
-        const betaKon = fit.beta[1];
-        const pct = (Math.exp(betaKon) - 1) * 100;
-        results.push({ tau, konPct: pct });
+        results.push({ tau, konPct: (Math.exp(fit.beta[1]) - 1) * 100 });
     }
-    return { results, n: raw.length, nKv: raw.filter(d => d.kon.includes('kvinna')).length, nMa: raw.filter(d => !d.kon.includes('kvinna')).length };
+    const p10 = results[0], p90 = results[2];
+    const diffP90P10 = p10.error || p90.error ? null : p90.konPct - p10.konPct;
+    const nKv = d.rader.filter(r => r.kon.includes('kvinna')).length;
+    return { results, diffP90P10, kolumner: d.kolumner, n: d.rader.length, nKv, nMa: d.rader.length - nKv };
 }

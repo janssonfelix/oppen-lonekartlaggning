@@ -558,6 +558,39 @@ describe('BAS-steg räknas i bokstäver överallt (se §5 i teknisk-plan.md)', (
         expect(r.kiUtelamnad).toMatch(/räknas inte vid fler än 2\u00a0000 personer/);
         expect(r.results.every(q => q.ki === null)).toBe(true);
     });
+    // Tolkningen (ADR-63): "väger tyngre än" bara när bootstrap-KI:t för skillnaden P90 − P10 utesluter noll.
+    const kvantilKort = lonFn => {
+        const w = createAppWindow();
+        const rader = [];
+        for (let i = 0; i < 240; i++) {
+            const kv = i % 2 === 0, u = ((i * 37) % 120) / 119;   // läget i lönefördelningen, samma spridning för båda könen
+            rader.push({ bas: 'AB'[i % 3 === 0 ? 1 : 0], kon: kv ? 'kvinna' : 'man', alder: 25 + ((i * 7) % 40),
+                lon: Math.round(lonFn(kv, u, i)), aid: '100', yrke: '100 Y', yrkeLabel: 'Y' });
+        }
+        w.__state.data = rader;
+        const r = w.eval('_regKvantilBerakna({ direkt: true })');
+        w.eval('renderRegressionCard()');
+        return { r, text: w.document.getElementById('regression-card').textContent };
+    };
+    it('kvantilregressionen: skillnaden P90 − P10 med KI, och "väger tyngre än" när KI:t utesluter noll', () => {
+        // Skillnaden växer från ingen i botten till omkring 15 % i toppen: glastak.
+        const { r, text } = kvantilKort((kv, u) => 30000 * Math.exp(0.5 * u - (kv ? 0.16 * u : 0)));
+        expect(r.diff.varde).toBeLessThan(-8);
+        expect(r.diff.ki.hog).toBeLessThan(0);
+        expect(r.diff.varde).toBeCloseTo(r.results[2].konPct - r.results[0].konPct, 10);
+        expect(text).toContain('Glastaket väger tyngre än det klibbiga golvet');
+        expect(text).not.toContain('Ingen säkerställd skillnad mellan delarna av lönefördelningen');
+        expect(text).toMatch(/P90 − P10/);
+    });
+    it('kvantilregressionen: när KI:t för skillnaden omsluter noll sägs ingen tolkning om golv eller tak', () => {
+        // Samma relativa skillnad (5 %) i hela fördelningen, med brus: skillnaden mellan delarna är inte säkerställd.
+        const brus = i => (((i * 7919) % 101) / 100 - 0.5) * 0.12;
+        const { r, text } = kvantilKort((kv, u, i) => 30000 * Math.exp(0.5 * u - (kv ? 0.05 : 0) + brus(i)));
+        expect(r.diff.ki.lag).toBeLessThan(0);
+        expect(r.diff.ki.hog).toBeGreaterThan(0);
+        expect(text).toContain('Ingen säkerställd skillnad mellan delarna av lönefördelningen.');
+        expect(text).not.toMatch(/väger tyngre än/);
+    });
     it('regressionskortet visar referensintervallet och en rad per BAS-indikator', () => {
         const w = med();
         w.eval('renderRegressionCard()');

@@ -13,12 +13,13 @@ import { dirname, join } from 'node:path';
 import { fitOLS as fitOLSRef } from '../src/lib/stat.js';
 import { computeSequentialGap, quantileRegression, FORKLARINGSMODELL_STANDARD, TILLFOR_GRANS_PP,
     normaliseraForklaringsmodell, forklaringsmodellArStandard, modellFras, modellBeskrivning, modellVariabler,
-    computeVariabelTillfor } from '../src/lib/regression.js';
+    computeVariabelTillfor, kvantilDesign, quantileRegressionAtAllTau } from '../src/lib/regression.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const las = f => JSON.parse(readFileSync(join(here, 'fixtures', f), 'utf8'));
 const fx = las('stat-referens.json');
 const ref = las('stat-referens-varden.json');
+const refKv = las('stat-referens-kvantil.json');
 
 const pct = b => (Math.exp(b) - 1) * 100;
 const X = fx.design.map(d => [1, d.kv, d.alderC, d.basC]);
@@ -184,5 +185,71 @@ describe('computeVariabelTillfor (ADR-56)', () => {
         const t = computeVariabelTillfor(rows, ageMean, basar, { golv: 10, harYrke: false });
         expect(t.forslag.tabort).toEqual(['alder']);
         expect(t.rader[0].tillforLite).toBe(false);
+    });
+});
+
+describe('kvantilDesign: kvantilregressionen på huvudmodellens design (ADR-63)', () => {
+    const rader = () => fx.rows.map(r => ({ ...r }));
+    const m = (bas, alder, yrkesgrupp = false) => ({ bas, alder, yrkesgrupp, skal: '' });
+    it('standardmodellen: intercept, kön, centrerad ålder och en indikator per BAS-intervall utom det första', () => {
+        const d = kvantilDesign(rader(), FORKLARINGSMODELL_STANDARD);
+        expect(d.kolumner).toEqual(refKv.standard.kolumner);
+        expect(d.basList).toEqual(['A', 'B', 'C', 'D', 'E', 'F']);
+        expect(d.ageMean).toBe(fx.ageMean);
+        expect(d.rader).toHaveLength(100);
+        d.X.forEach((x, i) => {
+            const r = fx.rows[i];
+            expect(x).toEqual([1, r.kon === 'kvinna' ? 1 : 0, r.alder - fx.ageMean, ...['B', 'C', 'D', 'E', 'F'].map(b => (r.bas === b ? 1 : 0))]);
+        });
+        expect(d.y).toEqual(fx.rows.map(r => Math.log(r.lon)));
+    });
+    it('indikatorer i stället för BAS-rang: BAS-kolumnerna är 0/1 och högst en etta per rad', () => {
+        const d = kvantilDesign(rader(), FORKLARINGSMODELL_STANDARD);
+        const bas = d.X.map(x => x.slice(3));
+        expect(bas.flat().every(v => v === 0 || v === 1)).toBe(true);
+        expect(bas.every(r => r.reduce((s, v) => s + v, 0) <= 1)).toBe(true);
+    });
+    it('följer förklaringsmodellen: utan ålder ingen ålderskolumn, bara ålder inga BAS-kolumner, yrkesgrupp ingår aldrig', () => {
+        const std = kvantilDesign(rader(), m(true, true));
+        const utanAlder = kvantilDesign(rader(), m(true, false));
+        expect(utanAlder.kolumner).toEqual(refKv.baraBas.kolumner);
+        expect(utanAlder.kolumner).not.toContain('alder');
+        expect(utanAlder.X[0]).toHaveLength(std.X[0].length - 1);
+        expect(kvantilDesign(rader(), m(false, true)).kolumner).toEqual(['intercept', 'kvinna', 'alder']);
+        expect(kvantilDesign(rader(), m(false, false)).kolumner).toEqual(['intercept', 'kvinna']);
+        // Yrkesgrupp inom BAS väljs bort här (fasta effekter per AID × BAS hör till huvudregressionen, inte kvantilerna).
+        expect(kvantilDesign(rader(), m(true, true, true)).kolumner).toEqual(std.kolumner);
+    });
+    it('utan ålder i modellen behövs ingen ålder i raderna (lönefil utan ålder)', () => {
+        const utan = fx.rows.map(({ alder: _a, ...r }) => r);
+        const d = kvantilDesign(utan, m(true, false));
+        expect(d.rader).toHaveLength(100);
+        expect(d.X.flat().every(Number.isFinite)).toBe(true);
+        const q = quantileRegressionAtAllTau(utan, { modell: m(true, false) });
+        expect(q.results.every(r => !r.error && Number.isFinite(r.konPct))).toBe(true);
+    });
+    it('basList och ageMean kan ges utifrån; referensen är det första intervallet i listan', () => {
+        const d = kvantilDesign(rader(), FORKLARINGSMODELL_STANDARD, { ageMean: 40, basList: ['B', 'A', 'C', 'D', 'E', 'F'] });
+        expect(d.kolumner.slice(3)).toEqual(['bas:A', 'bas:C', 'bas:D', 'bas:E', 'bas:F']);
+        expect(d.X[0][2]).toBe(fx.rows[0].alder - 40);
+    });
+});
+
+describe('quantileRegressionAtAllTau på indikatormodellen (ADR-63)', () => {
+    it('tar förklaringsmodellen, inte en rangfunktion, och ger könsprocenten per τ och skillnaden P90 − P10', () => {
+        const q = quantileRegressionAtAllTau(fx.rows.map(r => ({ ...r })));
+        expect(q.n).toBe(100);
+        expect(q.kolumner).toEqual(refKv.standard.kolumner);
+        expect(q.results.map(r => r.tau)).toEqual([0.1, 0.5, 0.9]);
+        for (const r of q.results) expect(Math.abs(r.konPct - pct(refKv.standard[String(r.tau)].beta[1]))).toBeLessThan(0.3);
+        expect(q.diffP90P10).toBeCloseTo(q.results[2].konPct - q.results[0].konPct, 12);
+        // En rang-parameter har ingen verkan längre.
+        const medRang = quantileRegressionAtAllTau(fx.rows.map(r => ({ ...r })), { rang: () => () => 1 });
+        expect(medRang.results).toEqual(q.results);
+    });
+    it('samma skattning som quantileRegression på kvantilDesign (appen och bootstrappen delar matrisen)', () => {
+        const d = kvantilDesign(fx.rows.map(r => ({ ...r })), FORKLARINGSMODELL_STANDARD);
+        const q = quantileRegressionAtAllTau(fx.rows.map(r => ({ ...r })));
+        for (const r of q.results) expect(r.konPct).toBe(pct(quantileRegression(d.X, d.y, r.tau).beta[1]));
     });
 });

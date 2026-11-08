@@ -236,6 +236,13 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ### Analys
 
+- **Kvantilregressionen på huvudmodellens variabler (ADR-63).** Löneskillnaden vid P10, medianen och P90 skattas med
+  samma variabler som huvudtalet enligt förklaringsmodellen (BAS-intervall som indikatorer, ålder när den är vald),
+  utan yrkesgrupp inom BAS, i stället för BAS som ett tal. Tabellen har raden *P90 − P10* med bootstrap-intervall, och
+  *glastaket* eller *det klibbiga golvet väger tyngre* sägs bara när intervallet för skillnaden utesluter noll — annars
+  *Ingen säkerställd skillnad mellan delarna av lönefördelningen*. Skattningarna färgas inte längre efter 5 %.
+  Diagrammet visar inte längre intervallets gränser som råa tal på kategoriaxeln.
+
 - **Lönespridning i årsbokslutet.** Bokslutets rader per yrkesgrupp och per BAS-intervall bär lönespridningen,
   (P90 − P10) / median, räknad där gruppen har minst k personer (bara totalt, inte per kön). Panelen *Jämförelse med
   förra året* har kolumnen *Lönespridning* förra året och i år i tabellen per BAS-intervall och i de flaggade

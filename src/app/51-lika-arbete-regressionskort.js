@@ -454,7 +454,7 @@ function _regTrappaFigur(seqOk, yrkesSteg = null, fras = 'ålder och BAS-interva
 // högst betalda (glastak), längst i botten bland de lägst betalda (klibbigt golv). Samma tal som tabellen under.
 /** @type {any[]|null} */
 let _regKvantilSenast = null;
-// Bootstrap-KI på könskoefficienten: B omsamplingar av raderna, percentilintervall, seedat ur datat (_rngFor) så
+// Bootstrap-KI på könskoefficienten och på skillnaden P90 − P10 (ADR-63): B omsamplingar av raderna, percentilintervall, seedat ur datat (_rngFor) så
 // att intervallet är detsamma varje gång. Över REG_KVANTIL_KI_MAX_N personer räknas inget intervall (tiden), och
 // tabellen säger det. IRLS-skattningen (_quantileRegression) är en approximation av kvantillösningen; intervallet
 // bootstrappar den approximationen, inte den exakta LP-lösningen.
@@ -473,24 +473,31 @@ let _regKvantilBakgrund = null;
 /** Löftet för den pågående bakgrundsberäkningen, eller ett uppfyllt när ingen pågår (tester väntar in det). */
 function _regKvantilKlar() { return _regKvantilBakgrund || Promise.resolve(); }
 /**
- * Kvantilregressionens tre skattningar (runQuantileRegressionAtAllTau) med ett percentil-bootstrap-KI per τ.
- * Designmatrisen byggs som i runQuantileRegressionAtAllTau (kön, centrerad ålder, centrerad BAS-rang); raderna
- * omsamplas parvis (X-rad, y), och könskoefficienten är oberoende av centreringen, så omsamplingen centreras inte om.
+ * Kvantilregressionens tre skattningar (runQuantileRegressionAtAllTau) med ett percentil-bootstrap-KI per τ och för
+ * skillnaden P90 − P10 (ADR-63). Designen är _rgKvantilDesign — samma byggare och samma radurval som punktskattningen
+ * (huvudmodellens variabler enligt förklaringsmodellen, utan yrkesgrupp). Varje omsampling drar rader med
+ * återläggning och bygger designen på nytt ur dem, så att referensintervallet är det första som finns i
+ * omsamplingen och ett intervall som inte kom med inte ger en nollkolumn; könskoefficienten beror inte på
+ * referensen eller centreringen.
  * @param {{direkt?: boolean}} [val]
- * @returns {null | {results: Array<{tau:number, konPct?:number, error?:boolean, ki?:{lag:number, hog:number}|null}>, n:number, nKv:number, nMa:number, kiB:number, kiUtelamnad:string, kiVantar?: boolean, nyckel?: string}}
+ * @returns {null | {results: Array<{tau:number, konPct?:number, error?:boolean, ki?:{lag:number, hog:number}|null}>,
+ *   diff: {varde:number|null, ki:{lag:number, hog:number}|null}, n:number, nKv:number, nMa:number, kiB:number,
+ *   kiUtelamnad:string, kiVantar?: boolean, nyckel?: string}}
  */
 function _regKvantilBerakna({ direkt = false } = {}) {
     const qr = runQuantileRegressionAtAllTau();
     if (!qr) return null;
     const results = qr.results.map(r => ({ ...r, ki: null }));
+    const diff = { varde: qr.diffP90P10, ki: null };
     if (qr.n > REG_KVANTIL_KI_MAX_N) {
-        return { results, n: qr.n, nKv: qr.nKv, nMa: qr.nMa, kiB: 0, kiUtelamnad: `Konfidensintervallet räknas inte vid fler än ${svTal(REG_KVANTIL_KI_MAX_N, 0)} personer (tiden för ${REG_KVANTIL_KI_B} omsamplingar).` };
+        return { results, diff, n: qr.n, nKv: qr.nKv, nMa: qr.nMa, kiB: 0, kiUtelamnad: `Konfidensintervallet räknas inte vid fler än ${svTal(REG_KVANTIL_KI_MAX_N, 0)} personer (tiden för ${REG_KVANTIL_KI_B} omsamplingar).` };
     }
+    const modell = forklaringsmodell();
+    const raw = _rgKvantilDesign(getData(), modell).rader;
     const arKv = d => d.kon.includes('kvinna');
-    const raw = getData().filter(d => d.lon > 0 && d.alder > 0 && (arKv(d) || d.kon === 'man' || d.kon === 'män'));
-    const nyckel = `${_rngSeedFrom(raw.filter(arKv).map(d => d.lon), raw.filter(d => !arKv(d)).map(d => d.lon), raw.map(d => d.alder))}|${raw.length}|${results.map(r => r.konPct).join(',')}`;
+    const nyckel = `${_rngSeedFrom(raw.filter(arKv).map(d => d.lon), raw.filter(d => !arKv(d)).map(d => d.lon), raw.map(d => d.alder || 0))}|${raw.length}|${qr.kolumner.join(',')}|${results.map(r => r.konPct).join(',')}`;
     if (_regKvantilMinne && _regKvantilMinne.nyckel === nyckel) return _regKvantilMinne.ut;
-    const rakna = () => { const ut = _regKvantilBootstrap(raw, results.map(r => ({ ...r })), arKv); _regKvantilMinne = { nyckel, ut: { ...ut, n: qr.n, nKv: qr.nKv, nMa: qr.nMa } }; return _regKvantilMinne.ut; };
+    const rakna = () => { const ut = _regKvantilBootstrap(raw, modell, results.map(r => ({ ...r })), arKv); _regKvantilMinne = { nyckel, ut: { ...ut, diff: { varde: diff.varde, ki: ut.diffKi }, n: qr.n, nKv: qr.nKv, nMa: qr.nMa } }; return _regKvantilMinne.ut; };
     if (direkt) return rakna();
     if (!_regKvantilBakgrund) {
         _regKvantilBakgrund = new Promise(resolve => setTimeout(() => {
@@ -503,34 +510,39 @@ function _regKvantilBerakna({ direkt = false } = {}) {
             finally { _regKvantilBakgrund = null; resolve(); }
         }, 0));
     }
-    return { results, n: qr.n, nKv: qr.nKv, nMa: qr.nMa, kiB: REG_KVANTIL_KI_B, kiUtelamnad: '', kiVantar: true, nyckel };
+    return { results, diff, n: qr.n, nKv: qr.nKv, nMa: qr.nMa, kiB: REG_KVANTIL_KI_B, kiUtelamnad: '', kiVantar: true, nyckel };
 }
-function _regKvantilBootstrap(raw, results, arKv) {
-    const basList = [...new Set(raw.map(d => d.bas))].sort();
-    const rang = _lvBasRangFn(basList), basRank = {};
-    basList.forEach(b => { basRank[b] = rang(b); });
-    const basMean = basList.reduce((s, b) => s + basRank[b], 0) / basList.length;
-    const ageMean = raw.reduce((s, d) => s + d.alder, 0) / raw.length;
-    const X = raw.map(d => [1, arKv(d) ? 1 : 0, d.alder - ageMean, basRank[d.bas] - basMean]);
-    const y = raw.map(d => Math.log(d.lon));
+function _regKvantilBootstrap(raw, modell, results, arKv) {
     const rnd = _rngFor(raw.filter(arKv).map(d => d.lon), raw.filter(d => !arKv(d)).map(d => d.lon));   // seedad ur datat → reproducerbart KI
     const n = raw.length, B = REG_KVANTIL_KI_B;
     const prov = results.map(() => []);
+    const diffProv = [];
+    const i10 = results.findIndex(r => r.tau === 0.1), i90 = results.findIndex(r => r.tau === 0.9);
+    // Ålder centreras på hela urvalets medel (könskoefficienten beror inte på centreringen).
+    const ageMean = modell.alder ? raw.reduce((s, d) => s + d.alder, 0) / n : undefined;
+    // Varje omsampling startar IRLS i hela urvalets lösning (samma kolumn efter namn), vilket bara gör det snabbare.
+    const hel = _rgKvantilDesign(raw, modell, { ageMean });
+    const helBeta = results.map(r => (r.error ? null : (_quantileRegression(hel.X, hel.y, r.tau) || {}).beta || null));
     for (let b = 0; b < B; b++) {
-        const Xb = new Array(n), yb = new Array(n);
-        for (let i = 0; i < n; i++) { const j = Math.floor(rnd() * n); Xb[i] = X[j]; yb[i] = y[j]; }
-        results.forEach((r, k) => {
-            if (r.error) return;
-            const fit = _quantileRegression(Xb, yb, r.tau);
-            if (fit) prov[k].push((Math.exp(fit.beta[1]) - 1) * 100);
+        const urval = new Array(n);
+        for (let i = 0; i < n; i++) urval[i] = raw[Math.floor(rnd() * n)];
+        const { X, y, kolumner } = _rgKvantilDesign(urval, modell, { ageMean });
+        const konPct = results.map((r, k) => {
+            if (r.error) return null;
+            const b0 = helBeta[k];
+            const start = b0 ? kolumner.map(c => { const j = hel.kolumner.indexOf(c); return j >= 0 ? b0[j] : 0; }) : null;
+            const fit = _quantileRegression(X, y, r.tau, undefined, undefined, start);
+            return fit ? (Math.exp(fit.beta[1]) - 1) * 100 : null;
         });
+        konPct.forEach((v, k) => { if (v != null) prov[k].push(v); });
+        if (i10 >= 0 && i90 >= 0 && konPct[i10] != null && konPct[i90] != null) diffProv.push(konPct[i90] - konPct[i10]);
     }
-    results.forEach((r, k) => {
-        const v = prov[k].sort((a, c) => a - c);
-        if (r.error || v.length < B / 2) return;
-        r.ki = { lag: v[Math.floor(v.length * 0.025)], hog: v[Math.min(v.length - 1, Math.floor(v.length * 0.975))] };
-    });
-    return { results, kiB: B, kiUtelamnad: '' };
+    const intervall = v => {
+        v.sort((a, c) => a - c);
+        return v.length < B / 2 ? null : { lag: v[Math.floor(v.length * 0.025)], hog: v[Math.min(v.length - 1, Math.floor(v.length * 0.975))] };
+    };
+    results.forEach((r, k) => { if (!r.error) r.ki = intervall(prov[k]); });
+    return { results, diffKi: intervall(diffProv), kiB: B, kiUtelamnad: '' };
 }
 // Tre skattningar är ingen trend: en rad per del av lönefördelningen, med gapet som ett streck från
 // nollinjen (inget gap) till värdet — axeln börjar i noll, så avstånden går att jämföra.
@@ -542,12 +554,15 @@ function _regKvantilFigur(resultat) {
     const kanter = data.flatMap(d => d.fel ? [d.x, d.fel.lag, d.fel.hog] : [d.x]);
     const lag = Math.min(0, ...kanter), hog = Math.max(0, ...kanter), luft = Math.max(0.5, (hog - lag) * 0.12);
     const medKi = data.some(d => d.fel);
-    return { beskrivning: 'Löneskillnaden i olika delar av lönefördelningen: vid P10, medianen och P90, efter kontroll för ålder och BAS-intervall, som avstånd från nollinjen. Negativ skillnad betyder att kvinnor har lägre lön.'
+    const fras = _rgModellFras({ ...forklaringsmodell(), yrkesgrupp: false });
+    return { beskrivning: `Löneskillnaden i olika delar av lönefördelningen: vid P10, medianen och P90${fras ? `, efter kontroll för ${fras}` : ''}, som avstånd från nollinjen. Negativ skillnad betyder att kvinnor har lägre lön.`
             + (medKi ? ' Strecket genom punkten är ett 95-procentigt bootstrap-konfidensintervall.' : ''),
         legend: false, y: { skala: 'band', ordning: data.map(d => d.y) }, x: { skala: 'linjar', titel: 'Löneskillnad (%), negativt = kvinnor lägre', nollinje: true, doman: [lag - luft, hog + luft] },
         hojd: 200,
         lager: [{ marke: 'intervall', riktning: 'liggande', serie: 'Avstånd från noll', farg: PALETTE.serie[0], opacitet: 0.5, tjocklek: 3, data: data.map(d => ({ y: d.y, lag: Math.min(0, d.x), hog: Math.max(0, d.x) })) },
-                { marke: 'punkt', serie: 'Löneskillnad', farg: PALETTE.serie[0], storlek: 6, etikettLage: 'vanster', data: data.map(d => ({ ...d, etikett: pct(d.x) })),
+                // Liggande: punktens intervall (`fel`) ligger längs värdeaxeln x. Utan riktning lästes gränserna som
+                // kategorier på bandaxeln och skrevs ut som råa tal (U4, ADR-63).
+                { marke: 'punkt', riktning: 'liggande', serie: 'Löneskillnad', farg: PALETTE.serie[0], storlek: 6, etikettLage: 'vanster', data: data.map(d => ({ ...d, etikett: pct(d.x) })),
                   tips: d => [[d.y], ['Löneskillnad', pct(d.x)], ...(d.fel ? [['95 % KI (bootstrap)', `${pct(d.fel.lag)} till ${pct(d.fel.hog)}`]] : [])] }] };
 }
 
@@ -1083,21 +1098,28 @@ function renderRegressionCard() {
                 const p50 = qr.results.find(x => x.tau === 0.5);
                 const p90 = qr.results.find(x => x.tau === 0.9);
                 const pctTecken = v => `${v >= 0 ? '+' : '−'}${svPct(Math.abs(v), 1)}`;
+                const peTecken = v => `${v >= 0 ? '+' : '−'}${svTal(Math.abs(v), 1)}`;
+                const kiCell = (ki, fmt) => (ki ? `${fmt(ki.lag)} till ${fmt(ki.hog)}` : qr.kiVantar ? '<span class="f-dampad">räknas i bakgrunden…</span>' : '<span class="f-dampad">–</span>');
+                // Ingen färg på skattningarna: utan prövning mot noll säger storleken ensam inget om status (ADR-59, ADR-63).
                 const fmtRow = (label, helper, x) => {
                     if (!x || x.error) return `<tr><td>${label}</td><td><em class="f-dampad">Kunde ej estimeras</em></td><td>–</td><td>${helper}</td></tr>`;
-                    const color = Math.abs(x.konPct) > 5 ? 'f-kritisk' : Math.abs(x.konPct) > 2 ? 'fg-varning' : '';
-                    const ki = x.ki ? `${pctTecken(x.ki.lag)} till ${pctTecken(x.ki.hog)}` : qr.kiVantar ? '<span class="f-dampad">räknas i bakgrunden…</span>' : '<span class="f-dampad">–</span>';
-                    return `<tr><td>${label}</td><td class="halvfet tabelltal ${color}">${pctTecken(x.konPct)}</td><td class="tabelltal">${ki}</td><td class="text-dampad-sm">${helper}</td></tr>`;
+                    return `<tr><td>${label}</td><td class="halvfet tabelltal">${pctTecken(x.konPct)}</td><td class="tabelltal">${kiCell(x.ki, pctTecken)}</td><td class="text-dampad-sm">${helper}</td></tr>`;
                 };
+                const diff = qr.diff || { varde: null, ki: null };
+                const diffRad = typeof diff.varde === 'number' && isFinite(diff.varde)
+                    ? `<tr><td><strong>P90 − P10</strong></td><td class="halvfet tabelltal">${peTecken(diff.varde)} procentenheter</td><td class="tabelltal">${kiCell(diff.ki, v => `${peTecken(v)}`)}</td><td class="text-dampad-sm">Skillnaden mellan toppen och botten. Negativ: löneskillnaden till kvinnornas nackdel är större bland de högst betalda</td></tr>`
+                    : '';
+                // Tolkningen (ADR-63) sägs bara när bootstrap-KI:t för skillnaden P90 − P10 utesluter noll.
                 let tolkning = '';
-                if (p10 && p50 && p90 && !p10.error && !p50.error && !p90.error) {
-                    const diff_10_90 = Math.abs(Number(p10.konPct)) - Math.abs(Number(p90.konPct));
-                    if (diff_10_90 > 1) {
-                        tolkning = `<strong>Det klibbiga golvet väger tyngre än glastaket</strong> — kvinnor i den lägre delen av löneskalan halkar efter mer än kvinnor i toppen.`;
-                    } else if (diff_10_90 < -1) {
-                        tolkning = `<strong>Glastaket väger tyngre än det klibbiga golvet</strong> — kvinnor i den högre delen av löneskalan halkar efter mer än kvinnor i botten.`;
-                    } else {
-                        tolkning = `Löneskillnaden är ungefär lika stor i alla delar av lönefördelningen.`;
+                if (diffRad) {
+                    if (diff.ki && diff.ki.hog < 0) {
+                        tolkning = `<strong>Glastaket väger tyngre än det klibbiga golvet</strong> — kvinnor i den högre delen av löneskalan halkar efter mer än kvinnor i botten. Konfidensintervallet för skillnaden mellan P90 och P10 utesluter noll.`;
+                    } else if (diff.ki && diff.ki.lag > 0) {
+                        tolkning = `<strong>Det klibbiga golvet väger tyngre än glastaket</strong> — kvinnor i den lägre delen av löneskalan halkar efter mer än kvinnor i toppen. Konfidensintervallet för skillnaden mellan P90 och P10 utesluter noll.`;
+                    } else if (diff.ki) {
+                        tolkning = `Ingen säkerställd skillnad mellan delarna av lönefördelningen.`;
+                    } else if (qr.kiUtelamnad) {
+                        tolkning = `Utan konfidensintervall går det inte att säga om löneskillnaden skiljer sig mellan delarna av lönefördelningen.`;
                     }
                 }
                 if (qr.kiVantar) wrap.dataset.kvantilNyckel = qr.nyckel; else delete wrap.dataset.kvantilNyckel;
@@ -1117,13 +1139,14 @@ function renderRegressionCard() {
                                 ${fmtRow('<strong>P10 — Klibbigt golv</strong>', 'Löneskillnaden bland de lägst betalda', p10)}
                                 ${fmtRow('<strong>P50 — Medianen</strong>',     'Löneskillnaden i mittersta delen av lönefördelningen', p50)}
                                 ${fmtRow('<strong>P90 — Glastak</strong>',   'Löneskillnaden bland de högst betalda', p90)}
+                                ${diffRad}
                             </tbody>
                         </table>
                     </div>
                     ${tolkning ? `<div class="bak-info-yta ram-v-3-info rund-4 fs-sm marg-t-10 pad-10-14">${tolkning}</div>` : ''}
                     <p class="text-dampad-xs lh-1_5 marg-t-8">
-                        <em>Metod: IRLS (Iteratively Reweighted Least Squares) på samma modellspecifikation som huvudregressionen — en approximation av kvantillösningen, inte den exakta minimeringen. Kräver minst 50 observationer för stabilt resultat.
-                        ${qr.kiUtelamnad ? esc(qr.kiUtelamnad) : `Konfidensintervallet är ett percentil-bootstrap med ${qr.kiB} omsamplingar av raderna, seedat ur datat så att det blir detsamma varje gång${qr.kiVantar ? '; det räknas i bakgrunden och visas strax' : ''}.`}</em>
+                        <em>Metod: IRLS (Iteratively Reweighted Least Squares) på samma variabler som huvudregressionen (utan yrkesgrupp inom BAS)${(() => { const f = _rgModellFras({ ...forklaringsmodell(), yrkesgrupp: false }); return f ? `: kön, ${f}` : ': bara kön'; })()} — en approximation av kvantillösningen, inte den exakta minimeringen. Kräver minst 50 observationer för stabilt resultat.
+                        ${qr.kiUtelamnad ? esc(qr.kiUtelamnad) : `Konfidensintervallet är ett percentil-bootstrap med ${qr.kiB} omsamplingar av raderna, seedat ur datat så att det blir detsamma varje gång${qr.kiVantar ? '; det räknas i bakgrunden och visas strax' : ''}. Tolkningen om golv och tak görs bara när intervallet för P90 − P10 utesluter noll.`}</em>
                     </p>
                 </details>`;
             })()}

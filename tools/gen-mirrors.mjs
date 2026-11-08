@@ -87,13 +87,14 @@ export const MODULES = [
                   dominans: '_aidbasDominans', ingaParText: '_aidbasIngaParText', klassNamn: '_aidbasKlassNamn' }
     },
     {
-        // Regressionsmodellerna (ADR-46-regressionen m.fl.) — importerar stat.js och likvardighet.js
+        // Regressionsmodellerna (ADR-46-regressionen m.fl.) — importerar stat.js
         file: 'regression.js', ns: '__mirrorRegression',
         expose: {
             diagnoseCollinearity: '_rgDiagnoseCollinearity', computePerBasGap: '_rgComputePerBasGap',
             basIndikatorer: '_rgBasIndikatorer', computeSequentialGap: '_rgComputeSequentialGap',
             quantileRegression: '_rgQuantileRegression',
             blinderOaxaca: '_rgBlinderOaxaca', quantileRegressionAtAllTau: '_rgQuantileRegressionAtAllTau',
+            kvantilDesign: '_rgKvantilDesign',   // kvantilregressionens design, delad av punktskattningen och bootstrappen (ADR-63)
             // Förklaringsmodellen (ADR-56)
             computeVariabelTillfor: '_rgComputeVariabelTillfor', normaliseraForklaringsmodell: '_rgNormaliseraForklaringsmodell',
             inomYrkesgrupp: '_rgInomYrkesgrupp',
