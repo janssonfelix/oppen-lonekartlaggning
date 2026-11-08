@@ -243,7 +243,7 @@ adaptern verkligen delegerar vaktas av `tests/drift.test.js`:
   rätt grupp. Utskriftsfönstret för checklistorna (`printScaffoldView`) läser `:root` och allt från `.dold` till
   stilmallens slut ur den körande stilmallen och lägger in det som byggt stilark (`adoptedStyleSheets`): ett `<style>`-element
   som skriptet skapar blockeras av den ärvda CSP:n (`style-src-elem`), så fönstret var tidigare helt ostilat.
-- **Tester:** Vitest — 3009 tester i 95 filer: rena `src/lib/`-moduler, CSV-parsning, jsdom-röktest
+- **Tester:** Vitest — 3043 tester i 96 filer: rena `src/lib/`-moduler, CSV-parsning, jsdom-röktest
   av varje vy (ADR-7; `tests/smoke.test.js` med det delade fönstret och sju `tests/smoke-*.test.js` per
   område), k-tröskeln i åtta `tests/ktroskel*.test.js` med riggen i `tests/helpers/ktroskel-rigg.js`,
   gränssnittet i `tests/granssnitt*.test.js` (riggen `tests/helpers/granssnitt-rigg.js`) och diagramvyerna i
@@ -1513,12 +1513,12 @@ Kända brister och obesvarade frågor, så att de inte lever bara i en konversat
     BAS-koefficienter (`basFaktor`). Blinder-Oaxaca kodar BAS som indikatorer sedan ADR-53.
 9e. **Kvar efter uppmärksamhetstrappan och Prioriteringens egna ord (ADR-59, ADR-62, till B1 och spår C):** livscykelns
     färger (`52-livscykel.js`) och kvantilregressionens färger i regressionskortet följer fortfarande 5 %; kvantilen
-    görs om i B1. Utforska visar storlek utan prövning. Protokollets blad per BAS-intervall för gemensam lönebedömning
-    väljer på rått p-värde utan BH-korrigering. På skärmen (k = 1) står många små grupper som *Går ej att bedöma*,
-    eftersom prövningen kräver `statGolv()` per kön. Kolumnen *Skillnad kön* i Prioriteringens åtgärdslista visar talet
-    utan Lika arbetes statusbricka. Handlingsplanens kostnadskolumn blandar kostnad att nå referensen (rader ur
-    Prioritering) och kostnaden att lyfta ett kvinnodominerat yrke till jämförelseyrket (kandidatpar);
-    vägledningsbladet, rapporten och rapportunderlaget säger vilken som är vilken.
+    görs om i B1. Utforska och kolumnen *Skillnad kön* i Prioriteringens åtgärdslista visar storlek utan prövning
+    (högst *Följ upp*). Protokollets blad per BAS-intervall för gemensam lönebedömning väljer på rått p-värde utan
+    BH-korrigering. På skärmen (k = 1) står många små grupper som *Går ej att bedöma*, eftersom prövningen kräver
+    `statGolv()` per kön. Handlingsplanens kostnadskolumn blandar kostnad att nå referensen (rader ur Prioritering) och
+    kostnaden att lyfta ett kvinnodominerat yrke till jämförelseyrket (kandidatpar); vägledningsbladet, rapporten och
+    rapportunderlaget säger vilken som är vilken.
 
 **Export:**
 22. *(Löst 2026-11-08: en definition av kvinnodominerat i hela verktyget, `arKvinnodominerad`/`konsklass` i

@@ -31,6 +31,9 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   standardvärde för kommuner. Förslagen säger hur nära referensen gruppen ligger i stället för "normal variation", och
   förslaget över referensen är kortare. Handlingsplansunderlaget, rapporten och rapportunderlaget säger hur stor del av
   kostnaden som är kostnad att nå referensen.
+- **Prioritering: Skillnad kön med uppmärksamhetstrappans bricka.** Kolumnen *Skillnad kön* i åtgärdslistan har
+  samma bricka som Lika arbete. Prioriteringen prövar inte skillnaden mot slumpen, så brickan sätts efter storleken
+  (högst *Följ upp*, som i Utforska), och *Går ej att bedöma* när ett kön är för litet. Exporten bär talet.
 - **Sakliga skäl som strukturerad post.** Varje rad i Handlingsplan har knappen *Sakliga skäl*. Dialogen tar emot
   högst 8 skäl per grupp med kategori (Marknad, Utbildning, Erfarenhet, Prestation och resultat, Övergång, Annat
   sakligt skäl), belopp i kronor per månad och en kort kommentar. Den räknar ihop förklarat och återstående belopp och

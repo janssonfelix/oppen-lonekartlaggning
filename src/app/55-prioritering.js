@@ -153,6 +153,22 @@ const PRIO_STATUS_INFO = {
     ok:        { label: 'Nära referens', icon: ikon('bock'),  color: FARG.ok, bg: FARG.okBg, klass: 'bricka-ok' },
     analysera: { label: 'Över referens', icon: ikon('info'), color: FARG.info, bg: FARG.infoBg, klass: 'bricka-info' }
 };
+/**
+ * Uppmärksamhetstrappans bricka för kolumnen Skillnad kön (ADR-59, 9e). Prioriteringen prövar inte skillnaden mot
+ * slumpen, så brickan sätts efter storleken som i Utforska (högst Följ upp); under statGolv() per kön, eller utan
+ * jämförelse per kön, står Går ej att bedöma. Brickan står bara på skärmen: exporten bär talet.
+ * @param {{gapPct:number|null, kvN:number, maN:number}} i
+ */
+function _prioKonStatus(i) {
+    const golv = statGolv();
+    const gap = i.gapPct;
+    const ej = typeof gap !== 'number' || !isFinite(gap) || !(i.kvN >= golv && i.maN >= golv);
+    const st = typeof gap !== 'number' || ej ? gapStatusNiva('ejbedomd') : gapStatus(Math.abs(gap), false);
+    const tips = ej ? `Går ej att bedöma: ett kön har färre än ${golv} personer, för få för att pröva skillnaden`
+        : st.niva === 'folj' ? 'Skillnaden är minst 3 % (verktygets storleksgräns). Prioriteringen prövar inte skillnaden mot slumpen; prövningen finns i Lika arbete.'
+        : 'Skillnaden är under 3 %. Prioriteringen prövar inte skillnaden mot slumpen; prövningen finns i Lika arbete.';
+    return `<span class="la-status ar-${st.farg} prio-konstatus" data-niva="${st.niva}" data-export-text="" title="${esc(tips)}">${ikon(st.ikon)}${esc(st.serie)}</span>`;
+}
 /** PO-raden under nyckeltalet: standardvärdet säger var det kommer ifrån, ett eget värde bara var det ändras. */
 function _prioPoText() {
     const po = state.costSettings.poPct;
@@ -398,7 +414,7 @@ function renderPrioritering() {
             <td class="farg-dampad ta-hoger" data-sort-value="${i.refMedian}">${fmt.format(Math.round(i.refMedian))}</td>
             <td class="t-hoger">${diffBar}</td>
             <td class="t-hoger${i.diffKr < 0 ? ' f-kritisk' : ''}" data-sort-value="${i.diffKr}">${sgnKr}${fmt.format(Math.round(i.diffKr))}</td>
-            <td class="t-hoger">${gapBar}</td>
+            <td class="t-hoger">${gapBar}${_prioKonStatus(i)}</td>
             <td class="t-hoger${i.costPerPerson > 0 ? ' f-kritisk' : ''}" data-sort-value="${i.costPerPerson}">${costPerPersonTxt}</td>
             <td class="fw-600 ta-hoger" data-sort-value="${costSort}">${costTxt}</td>
             <td class="t-mitt">
