@@ -323,6 +323,8 @@ rubrikraden, också när det är hopfällt.
    - **Var i lönefördelningen är skillnaden störst?** visar lönen vid olika percentiler för kvinnor och män. Då
      syns om skillnaden är störst bland de lägst eller högst betalda.
    - **Lönetransparensdirektivets mått** visar de mått som en större arbetsgivare ska rapportera när direktivet gäller.
+     Måtten är räknade på fast heltidsmånadslön. Direktivets lönebegrepp är vidare (total ersättning, inklusive
+     rörliga delar och förmåner); komplettera ur lönesystemet om ni rapporterar.
 
    Avsnittet **Per sektor** visar läget sektor för sektor i AID:s 13 huvudområden, t.ex. vård och omsorg, skola
    och teknik. Där står antal, andel kvinnor, medianer, kvinnors lön i procent av mäns (rå och justerad
@@ -389,7 +391,7 @@ rubrikraden, också när det är hopfällt.
      jämförs inte med förra året.
 
    Skälen sparas i konfigurationsfilen med kommentarerna. De följer med i Rapporttext, Word och PDF (tabellerna
-   *Sakliga skäl per grupp* och *Sammanställning per kategori*), i Excel (bladet *Sakliga skal* och två kolumner i
+   *Sakliga skäl per grupp* och *Sammanställning per kategori*), i Excel (bladet *Sakliga skäl* och två kolumner i
    handlingsplansunderlaget) och i årsbokslutet. Bokslutet sparar kategori och belopp (för en grupp där ett kön är under gränsen bara
    kategorin), men aldrig kommentarerna.
    Gruppdossiern och BAS-dossiern visar bedömningen med en länk till raden. Kategorierna och beloppen är

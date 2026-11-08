@@ -46,7 +46,7 @@ export const MODULES = [
         expose: {
             medianGapPct: '_stMedianGapPct', representationByBas: '_stRepresentationByBas',
             quartileDistribution: '_stQuartileDistribution', distributionalGap: '_stDistributionalGap',
-            tillDirektivtecken: '_stTillDirektivtecken'
+            tillDirektivtecken: '_stTillDirektivtecken', lonebegreppReservation: '_stLonebegreppReservation'
         }
     },
     {

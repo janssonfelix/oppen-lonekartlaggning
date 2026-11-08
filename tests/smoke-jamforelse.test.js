@@ -392,7 +392,7 @@ describe('Jämförelsestatistik, Översikt och namn: detaljer', () => {
         w.alert = () => {};
         w.eval('exportAllToExcel()');
         const wb = Object.values(fangat)[0];
-        const rader = w.XLSX.utils.sheet_to_json(wb.Sheets.Jamforelsestatistik, { header: 1 }).flat();
+        const rader = w.XLSX.utils.sheet_to_json(wb.Sheets['Jämförelsestatistik'], { header: 1 }).flat();
         expect(rader).toContain('Urval: BAS C');
         w.eval("jamforelseSattVal({ bas: '' })");
         expect(w.eval('jamforelseUrvalText()')).toBe('');

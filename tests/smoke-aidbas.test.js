@@ -188,7 +188,7 @@ describe('Slumpens gränser räknar per AID-kod och BAS-intervall', () => {
     it('en yrkesgrupp i två intervall får två rader med sitt eget intervall och sina egna antal', async () => {
         const w = fonster([...UNDERLAG, ...TVA_BAS]);
         const { blad } = await bok(w);
-        const s = blad('Slumpens granser');
+        const s = blad('Slumpens gränser');
         const rader = s.filter(r => r[0] === '7007 Yrke 7007');
         expect(rader.map(r => [r[1], r[2], r[3]])).toEqual([['D', 12, 12], ['F', 12, 12]]);
         expect(s.some(r => r[0] === '1001 Yrke 1001')).toBe(false);   // inget intervall har 10 av varje kön

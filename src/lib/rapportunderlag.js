@@ -14,6 +14,7 @@
 import { median, quantile, fitOLS } from './stat.js';
 import { skrDelText } from './skrreferens.js';
 import { bedomSkillnad, statusKonstanter } from './status.js';
+import { lonebegreppReservation } from './struktur.js';
 
 const { STORLEKSGRANS, DIREKTIV_KOLUMN, DIREKTIV_ETIKETT, DIREKTIV_TIPS } = statusKonstanter();
 
@@ -366,7 +367,7 @@ export function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
     }
     if (typ === 'struktur') {
         const kv = u.kvartiler || [];
-        const st = ['Könsfördelning och medianlön per BAS-intervall.'];
+        const st = ['Könsfördelning och medianlön per BAS-intervall.', lonebegreppReservation()];
         const kvartilOk = !(u.nKv < k || u.nMa < k);   // k: kvartilandelar röjer annars ett litet kön
         if (kv.length && kvartilOk) st.push('Andel kvinnor per lönekvartil: ' + kv.map(q => `kvartil ${q.q} ${_pct(q.andelKv, 0)}`).join(', ') + '.');
         const rep = u.representation || [];
@@ -432,7 +433,7 @@ export function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
 
 /**
  * Noten under Sammanställning per kategori: samma lydelse i Word och PDF (58-rapportmodell.js), Excel-bladet
- * Sakliga skal (24-excelexport.js) och Rapporttext.
+ * Sakliga skäl (24-excelexport.js) och Rapporttext.
  * @param {number} k minsta gruppstorlek
  */
 export function skalSammanstallningNot(k) {

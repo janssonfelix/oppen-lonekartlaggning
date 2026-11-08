@@ -1,6 +1,6 @@
 /**
  * Sakliga skäl i rapporten och exporterna: tabellerna "Sakliga skäl per grupp" och "Sammanställning per kategori" i
- * handlingsplanens avsnitt (rapportmodellen, så Rapporttext, Word och PDF), Excel-bladet Sakliga skal, handlingsplanens
+ * handlingsplanens avsnitt (rapportmodellen, så Rapporttext, Word och PDF), Excel-bladet Sakliga skäl, handlingsplanens
  * kolumner för skäl och förklarad andel, och demots förifyllda skäl på tre rader.
  */
 import { describe, it, expect, vi } from 'vitest';
@@ -86,19 +86,19 @@ describe('rapportmodellen: handlingsplanens avsnitt', () => {
     });
 });
 
-describe('Excel: bladet Sakliga skal och handlingsplanens kolumner', () => {
-    it('"Excel (alla flikar)" får bladet Sakliga skal när någon rad har skäl, och förhandsbeskedet säger det', async () => {
+describe('Excel: bladet Sakliga skäl och handlingsplanens kolumner', () => {
+    it('"Excel (alla flikar)" får bladet Sakliga skäl när någon rad har skäl, och förhandsbeskedet säger det', async () => {
         const w = demo();
         await laddaXlsx(w);
         const bok = Object.values(fangaBocker(w, () => w.eval('exportAllToExcel()')))[0];
-        expect(bok).toContain('[Sakliga skal]');
-        expect(w.eval('excelAlltBlad()')).toContain('Sakliga skal');
-        const blad = bok.slice(bok.indexOf('[Sakliga skal]'));
+        expect(bok).toContain('[Sakliga skäl]');
+        expect(w.eval('excelAlltBlad()')).toContain('Sakliga skäl');
+        const blad = bok.slice(bok.indexOf('[Sakliga skäl]'));
         expect(blad).toContain('Sammanställning per kategori');
         w.__state.handlingsplan = {};
-        expect(w.eval('excelAlltBlad()')).not.toContain('Sakliga skal');
+        expect(w.eval('excelAlltBlad()')).not.toContain('Sakliga skäl');
         const utan = Object.values(fangaBocker(w, () => w.eval('exportAllToExcel()')))[0];
-        expect(utan).not.toContain('[Sakliga skal]');
+        expect(utan).not.toContain('[Sakliga skäl]');
     });
     it('handlingsplansunderlaget får kolumnerna Sakliga skäl och Förklarad andel', async () => {
         const w = demo();

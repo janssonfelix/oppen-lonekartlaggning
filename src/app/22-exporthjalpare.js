@@ -6,6 +6,10 @@
 document.getElementById('btn-hub-jpa')?.addEventListener('click', () => exportJPAProtocol());
 document.getElementById('btn-hub-handlingsplan')?.addEventListener('click', () => exportHandlingsplan());
 
+// Reservationen om lönebegreppet vid EU-rapportmåtten (beslut 7a; src/lib/struktur.js): Lönestruktur, EU-lönerapporten,
+// bladet EU-lönekartläggning, rapportens avsnitt om lönetransparens och Om verktyget.
+const EU_LONEBEGREPP_RESERVATION = _stLonebegreppReservation();
+
 // ============================================================
 // #8 Reproducerbarhets-appendix — identiska metod- och parameteruppgifter i
 // ALLA exporter, så varje flaggat resultat går att återskapa och försvara i

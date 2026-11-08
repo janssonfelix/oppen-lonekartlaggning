@@ -53,6 +53,9 @@ Alla ska ha samma lönebegrepp, annars jämför verktyget olika saker:
 - Verktyget varnar vid inläsningen om många löner ligger under en rimlig heltidsnivå —
   det tyder oftast på att deltidslöner inte har räknats om.
 
+**EU-rapportmåtten.** Måtten är räknade på fast heltidsmånadslön. Direktivets lönebegrepp är vidare (total
+ersättning, inklusive rörliga delar och förmåner); komplettera ur lönesystemet om ni rapporterar.
+
 ## 2. Formatkrav (det verktyget faktiskt tål)
 
 Verktyget läser in **`.csv`** och **`.xlsx`** (första bladet). Följande hanteras

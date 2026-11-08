@@ -94,7 +94,8 @@ function renderStructure() {
     const kvGammal = document.getElementById('chart-struktur-kvartiler');
     if (kvGammal) rensaFigur(kvGammal);
     if (euEl) euEl.innerHTML = `
-        <p class="text-dampad-sm marg-0-0-10">Måtten i direktivet. Här står kvinnors lön i procent av mäns, som i resten av verktyget, med direktivets löneskillnad under: skillnaden i procent av mäns lön, positiv när kvinnor ligger lägre. Rörliga och kompletterande lönedelar redovisas inte, eftersom verktyget räknar med en lönedefinition.</p>
+        <p class="text-dampad-sm marg-0-0-10">Måtten i direktivet. Här står kvinnors lön i procent av mäns, som i resten av verktyget, med direktivets löneskillnad under: skillnaden i procent av mäns lön, positiv när kvinnor ligger lägre.</p>
+        <p class="text-dampad-sm marg-0-0-10"><strong>Lönebegrepp.</strong> ${EU_LONEBEGREPP_RESERVATION}</p>
         <div class="rutnat gap-12 kolumner-auto-180 marg-b-14">
             <div class="card m-0"><div class="text-dampad-xs">Kvinnors medellön i procent av mäns</div><div class="fs-lg fw-700">${andelAvMan(meanGap)}</div><div class="text-dampad-xs">Löneskillnad enligt direktivet: ${direktivGap(meanGap)}</div></div>
             <div class="card m-0"><div class="text-dampad-xs">Kvinnors medianlön i procent av mäns</div><div class="fs-lg fw-700">${andelAvMan(medGap)}</div><div class="text-dampad-xs">Löneskillnad enligt direktivet: ${direktivGap(medGap)}${medGap != null ? _direktivInline(100 + medGap) : ''}</div></div>
@@ -434,6 +435,7 @@ function _exportEuReportExport() {
     function direktivRound(v) { const t = _stTillDirektivtecken(v); return t == null ? '–' : +t.toFixed(1); }
     const meta = [
         ['Lönetransparensdirektivets mått', ''],
+        ['Lönebegrepp', EU_LONEBEGREPP_RESERVATION],
         ['Genererad', new Date().toLocaleString('sv-SE')],
         ['Verktyg', 'Öppen lönekartläggning v' + (typeof APP_VERSION !== 'undefined' ? APP_VERSION : '–')],
         ['Antal anställda', d.length],
@@ -442,7 +444,7 @@ function _exportEuReportExport() {
         ['Tecken', DIREKTIV_METOD],
         ...(konOk ? [] : [['Könsuppdelade mått', _konUtelamnatNot()]]),
         ['', ''],
-        ['OBS', 'Kompletterande/rörliga lönedelar ingår ej (en lönedefinition). Aggregat — inga individdata.']
+        ['OBS', 'Aggregat — inga individdata.']
     ];
     /** @type {any[][]} */
     const quart = [['Kvartil', 'Lönespann', 'n', 'Kvinnor', 'Män', 'Andel kvinnor (%)'],

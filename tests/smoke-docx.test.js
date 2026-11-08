@@ -486,3 +486,28 @@ describe('Bilaga: gruppdossierer i Word-utkastet och PDF-rapporten', () => {
         expect(med.ki).toBe(0);
     });
 });
+
+// Beslut 7a: EU-rapportmåtten är räknade på fast heltidsmånadslön och direktivets lönebegrepp är vidare. Reservationen
+// står vid måtten i fliken, i rapportens avsnitt om lönetransparens (Word, PDF), i rapportunderlaget och i Om verktyget.
+describe('reservationen om lönebegreppet vid EU-rapportmåtten', () => {
+    const MENING = 'Måtten är räknade på fast heltidsmånadslön. Direktivets lönebegrepp är vidare (total ersättning, inklusive rörliga delar och förmåner); komplettera ur lönesystemet om ni rapporterar.';
+    const ren = t => String(t).replace(/[  ]/g, ' ').replace(/\s+/g, ' ');
+    it('konstanten har meningen och inga artikelnummer', () => {
+        const w = createAppWindow();
+        expect(w.eval('EU_LONEBEGREPP_RESERVATION')).toBe(MENING);
+        expect(MENING).not.toMatch(/art(ikel|\.)\s*\d/i);
+    });
+    it('står i Lönestrukturs kort, i rapportmodellens avsnitt, i Word-utkastet, i utskriften, i rapportunderlaget och i Om verktyget', () => {
+        const w = createAppWindow();
+        w.__loadDemoData();
+        w.__renderTabContent('struktur');
+        expect(ren(w.document.getElementById('struktur-eu').textContent)).toContain(MENING);
+        const struktur = w.eval('rapportModell()').avsnitt.find(a => a.id === 'struktur');
+        expect(ren(JSON.stringify(struktur.delar))).toContain(MENING);
+        expect(ren(w.eval('rmTillHtml(rapportModell())'))).toContain(MENING);
+        expect(ren(w.__docDraftHtml())).toContain(MENING);
+        const block = w.eval('rapportunderlagBlock()');
+        expect(ren(JSON.stringify(block.find(b => b.rubrik === 'Struktur och lönetransparens')))).toContain(MENING);
+        expect(ren(w.eval('INFO_SECTIONS.overview()'))).toContain(MENING);
+    });
+});

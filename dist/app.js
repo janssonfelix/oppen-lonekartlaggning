@@ -2836,13 +2836,23 @@ function tillDirektivtecken(gapPct) {
     return gapPct === 0 ? 0 : -gapPct;
 }
 
-    return { medianGapPct, representationByBas, quartileDistribution, distributionalGap, tillDirektivtecken };
+/**
+ * Reservationen om lönebegreppet vid EU-rapportmåtten (beslut 7a): verktyget räknar på fast heltidsmånadslön, direktivets
+ * lönebegrepp omfattar mer. Står vid måtten i fliken Lönestruktur, i EU-lönerapportens Excel, i rapportens avsnitt om
+ * lönetransparens och i rapportunderlaget. Inga artikelnummer (ADR-16).
+ */
+const LONEBEGREPP_RESERVATION = 'Måtten är räknade på fast heltidsmånadslön. Direktivets lönebegrepp är vidare (total ersättning, inklusive rörliga delar och förmåner); komplettera ur lönesystemet om ni rapporterar.';
+/** @returns {string} reservationen om lönebegreppet vid EU-rapportmåtten */
+function lonebegreppReservation() { return LONEBEGREPP_RESERVATION; }
+
+    return { medianGapPct, representationByBas, quartileDistribution, distributionalGap, tillDirektivtecken, lonebegreppReservation };
 })();
 const _stMedianGapPct = __mirrorStructure.medianGapPct;
 const _stRepresentationByBas = __mirrorStructure.representationByBas;
 const _stQuartileDistribution = __mirrorStructure.quartileDistribution;
 const _stDistributionalGap = __mirrorStructure.distributionalGap;
 const _stTillDirektivtecken = __mirrorStructure.tillDirektivtecken;
+const _stLonebegreppReservation = __mirrorStructure.lonebegreppReservation;
 
 // ---- speglar src/lib/rng.js ----
 const __mirrorRng = (() => {
@@ -6922,6 +6932,7 @@ const __mirrorRapportunderlag = (() => {
     const skrDelText = __mirrorSkrReferens.skrDelText;
     const bedomSkillnad = __mirrorStatus.bedomSkillnad;
     const statusKonstanter = __mirrorStatus.statusKonstanter;
+    const lonebegreppReservation = __mirrorStructure.lonebegreppReservation;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -6936,6 +6947,7 @@ const __mirrorRapportunderlag = (() => {
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
+
 
 
 
@@ -7290,7 +7302,7 @@ function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
     }
     if (typ === 'struktur') {
         const kv = u.kvartiler || [];
-        const st = ['Könsfördelning och medianlön per BAS-intervall.'];
+        const st = ['Könsfördelning och medianlön per BAS-intervall.', lonebegreppReservation()];
         const kvartilOk = !(u.nKv < k || u.nMa < k);   // k: kvartilandelar röjer annars ett litet kön
         if (kv.length && kvartilOk) st.push('Andel kvinnor per lönekvartil: ' + kv.map(q => `kvartil ${q.q} ${_pct(q.andelKv, 0)}`).join(', ') + '.');
         const rep = u.representation || [];
@@ -7356,7 +7368,7 @@ function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
 
 /**
  * Noten under Sammanställning per kategori: samma lydelse i Word och PDF (58-rapportmodell.js), Excel-bladet
- * Sakliga skal (24-excelexport.js) och Rapporttext.
+ * Sakliga skäl (24-excelexport.js) och Rapporttext.
  * @param {number} k minsta gruppstorlek
  */
 function skalSammanstallningNot(k) {
@@ -17026,6 +17038,10 @@ function loadStortDemo() {
 document.getElementById('btn-hub-jpa')?.addEventListener('click', () => exportJPAProtocol());
 document.getElementById('btn-hub-handlingsplan')?.addEventListener('click', () => exportHandlingsplan());
 
+// Reservationen om lönebegreppet vid EU-rapportmåtten (beslut 7a; src/lib/struktur.js): Lönestruktur, EU-lönerapporten,
+// bladet EU-lönekartläggning, rapportens avsnitt om lönetransparens och Om verktyget.
+const EU_LONEBEGREPP_RESERVATION = _stLonebegreppReservation();
+
 // ============================================================
 // #8 Reproducerbarhets-appendix — identiska metod- och parameteruppgifter i
 // ALLA exporter, så varje flaggat resultat går att återskapa och försvara i
@@ -17698,12 +17714,12 @@ function _excelAlltBladExport() {
     // inte regressionen för att veta det.
     if (!state.data.length) return [];
     const harRef = state.policy.length > 0 || state.statistik.length > 0;
-    return ['Löneöversikt', 'Per BAS', ...((state.rapportTabeller || []).length ? ['Egna tabeller'] : []), 'EU-Lonekartlaggning', ...(harRef ? ['Prioritering'] : []), 'Loneskillnad', 'Konsskevhet', ..._excelDiagramBlad().map(b => b[0]), ...AIDBAS_BLADNAMN, 'Sektorer',
-        ...(state.statistik.length ? ['Jamforelsestatistik'] : []), ...(_excelSkalRader() ? ['Sakliga skal'] : []), ...(getData().length ? ['Underlagets kvalitet'] : []), 'Metodik', 'Metod & parametrar'];
+    return ['Löneöversikt', 'Per BAS', ...((state.rapportTabeller || []).length ? ['Egna tabeller'] : []), 'EU-lönekartläggning', ...(harRef ? ['Prioritering'] : []), 'Löneskillnad', 'Könsskevhet', ..._excelDiagramBlad().map(b => b[0]), ...AIDBAS_BLADNAMN, 'Sektorer',
+        ...(state.statistik.length ? ['Jämförelsestatistik'] : []), ...(_excelSkalRader() ? ['Sakliga skäl'] : []), ...(getData().length ? ['Underlagets kvalitet'] : []), 'Metodik', 'Metod & parametrar'];
 }
 
 /**
- * Raderna i bladet Sakliga skal (handlingsplanens skäl per grupp och sammanställningen per kategori), eller null när
+ * Raderna i bladet Sakliga skäl (handlingsplanens skäl per grupp och sammanställningen per kategori), eller null när
  * ingen rad har skäl. Förifyllningen räknas i exportläget, så en grupp under tröskeln följer inte med.
  */
 function _excelSkalRader() {
@@ -17797,14 +17813,14 @@ function _excelDiagramBlad() {
         ...bas.map(o => [o.bas, o.nKv, o.nMa, Math.round(o.medKv), Math.round(o.medMa), Math.round(o.medKv - o.medMa), r1(o.gap), o.ci ? r1(o.ci.lo) : '', o.ci ? r1(o.ci.hi) : '', _laOversiktStatus(o).serie, _stsDirektiv(o.gap) ? _STS_DIR_ETIKETT : '']),
         [], [`Status: Värt att granska = konfidensintervallet utesluter 100 % och skillnaden är minst 3 % (verktygets storleksgräns). ${_STS_DIR_KOLUMN}: ${_STS_DIR_TIPS}`]]]);
     const tratt = _laTrattUnderlag(d);
-    if (tratt) ut.push(['Slumpens granser', [
+    if (tratt) ut.push(['Slumpens gränser', [
         ['Yrkesgrupperna mot slumpens gränser (trattdiagrammet på Lika arbete)'],
         [`En rad per yrkesgrupp och BAS-intervall där både kvinnor och män är minst ${k}. Gränserna är de 95-procentiga för gruppens storlek.`], [],
         ['Yrkesgrupp', 'BAS-intervall', 'Antal kvinnor', 'Antal män', 'Kvinnors median i % av mäns', 'Gräns, nedre', 'Gräns, övre', 'Bedömning'],
         ...tratt.punkter.map(p => [p.yrke, p.bas, p.nKv, p.nMa, r1(p.kvot), r1(p.gransLag), r1(p.gransHog), p.utanfor ? 'Utanför gränserna' : 'Inom gränserna'])]]);
     const arKv = r => typeof r.kon === 'string' && r.kon.includes('kvinna'), arMa = r => r.kon === 'man' || r.kon === 'män';
     const alder = _konAlderGapRader(d.filter(arKv), d.filter(arMa), k);
-    if (alder.visade.length) ut.push(['Loneskillnad per alder', [
+    if (alder.visade.length) ut.push(['Löneskillnad per ålder', [
         ['Löneskillnad per åldersgrupp (Ålder & karriär)'],
         ...(alder.dolda.length ? [[`Visas inte, ett kön har färre än ${k} personer: ${alder.dolda.join(', ')}.`]] : []), [],
         ['Åldersgrupp', 'Antal kvinnor', 'Antal män', 'Median kvinnor (kr)', 'Median män (kr)', 'Kvinnors median i % av mäns', 'Konfidensintervall 95 %, nedre', 'Konfidensintervall 95 %, övre'],
@@ -17870,7 +17886,9 @@ function __excelAlltBokExport() {
 
     // Sheet: EU-Lönekartläggning
     const matrixSheet = tableToSheet('matrix-table');
-    if (matrixSheet) XLSX.utils.book_append_sheet(wb, matrixSheet, 'EU-Lonekartlaggning');
+    // Reservationen om lönebegreppet (beslut 7a) under tabellen: rubrikraden och kolumnerna står kvar där de stod.
+    if (matrixSheet) XLSX.utils.sheet_add_aoa(matrixSheet, [[], [EU_LONEBEGREPP_RESERVATION]], { origin: -1 });
+    if (matrixSheet) XLSX.utils.book_append_sheet(wb, matrixSheet, 'EU-lönekartläggning');
 
     // Sheet: Prioritering
     const prioSheet = tableToSheet('prio-table');
@@ -17878,9 +17896,9 @@ function __excelAlltBokExport() {
 
     // Sheet: Lönegap & Könsfördelning
     const paygapSheet = tableToSheet('paygap-table');
-    if (paygapSheet) XLSX.utils.book_append_sheet(wb, paygapSheet, 'Loneskillnad');
+    if (paygapSheet) XLSX.utils.book_append_sheet(wb, paygapSheet, 'Löneskillnad');
     const skevhetSheet = tableToSheet('skevhet-table');
-    if (skevhetSheet) XLSX.utils.book_append_sheet(wb, skevhetSheet, 'Konsskevhet');
+    if (skevhetSheet) XLSX.utils.book_append_sheet(wb, skevhetSheet, 'Könsskevhet');
     const diagramBlad = _excelDiagramBlad();
     for (const [namn, rader] of diagramBlad) XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rader), namn);
     // Tabellerna per AID-kod och BAS-intervall (45-aid-bas-tabeller.js): fyra blad, kalkylbladen färdiga med talformat.
@@ -17897,12 +17915,12 @@ function __excelAlltBokExport() {
     if (bmSheet) {
         // Tabellen följer flikens filter; säg det i bladet (ADR-35).
         if (jamforelseUrvalText()) XLSX.utils.sheet_add_aoa(bmSheet, [[], [jamforelseUrvalText()]], { origin: -1 });
-        XLSX.utils.book_append_sheet(wb, bmSheet, 'Jamforelsestatistik');
+        XLSX.utils.book_append_sheet(wb, bmSheet, 'Jämförelsestatistik');
     }
 
-    // Bladet Sakliga skal: handlingsplanens skäl per grupp och per kategori (bara när någon rad har skäl).
+    // Bladet Sakliga skäl: handlingsplanens skäl per grupp och per kategori (bara när någon rad har skäl).
     const skalRader = _excelSkalRader();
-    if (skalRader) XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(skalRader), 'Sakliga skal');
+    if (skalRader) XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(skalRader), 'Sakliga skäl');
 
     // Sheet: Underlagets kvalitet (ADR-19)
     const uk = bedomningUnderlag();
@@ -17951,7 +17969,7 @@ function __excelAlltBokExport() {
     // Två blad som liknar varandra: Per BAS är lönestrukturen som i en skriven lönekartläggning, Lonegap är Lika arbetes
     // kvot per intervall. Båda behålls; raden säger vad som skiljer dem.
     _appendMethodSheet(wb, { extra: [
-        ['Bladen Per BAS och Loneskillnad', 'Per BAS är lönestrukturen per BAS-intervall som i en skriven lönekartläggning: referensen, organisationen och varje yrkesgrupp med P10, median, P90 och antal, per kön. Loneskillnad är tabellen ur Lönestruktur: kvinnors medianlön i procent av mäns per BAS-intervall, med antal och medianer. Samma underlag, två frågor.'],
+        ['Bladen Per BAS och Löneskillnad', 'Per BAS är lönestrukturen per BAS-intervall som i en skriven lönekartläggning: referensen, organisationen och varje yrkesgrupp med P10, median, P90 och antal, per kön. Löneskillnad är tabellen ur Lönestruktur: kvinnors medianlön i procent av mäns per BAS-intervall, med antal och medianer. Samma underlag, två frågor.'],
         ..._excelLonepolitikMetod(diagramBlad), ..._aidbasMetodRader()] });
     return wb;
 }
@@ -23075,7 +23093,8 @@ function renderStructure() {
     const kvGammal = document.getElementById('chart-struktur-kvartiler');
     if (kvGammal) rensaFigur(kvGammal);
     if (euEl) euEl.innerHTML = `
-        <p class="text-dampad-sm marg-0-0-10">Måtten i direktivet. Här står kvinnors lön i procent av mäns, som i resten av verktyget, med direktivets löneskillnad under: skillnaden i procent av mäns lön, positiv när kvinnor ligger lägre. Rörliga och kompletterande lönedelar redovisas inte, eftersom verktyget räknar med en lönedefinition.</p>
+        <p class="text-dampad-sm marg-0-0-10">Måtten i direktivet. Här står kvinnors lön i procent av mäns, som i resten av verktyget, med direktivets löneskillnad under: skillnaden i procent av mäns lön, positiv när kvinnor ligger lägre.</p>
+        <p class="text-dampad-sm marg-0-0-10"><strong>Lönebegrepp.</strong> ${EU_LONEBEGREPP_RESERVATION}</p>
         <div class="rutnat gap-12 kolumner-auto-180 marg-b-14">
             <div class="card m-0"><div class="text-dampad-xs">Kvinnors medellön i procent av mäns</div><div class="fs-lg fw-700">${andelAvMan(meanGap)}</div><div class="text-dampad-xs">Löneskillnad enligt direktivet: ${direktivGap(meanGap)}</div></div>
             <div class="card m-0"><div class="text-dampad-xs">Kvinnors medianlön i procent av mäns</div><div class="fs-lg fw-700">${andelAvMan(medGap)}</div><div class="text-dampad-xs">Löneskillnad enligt direktivet: ${direktivGap(medGap)}${medGap != null ? _direktivInline(100 + medGap) : ''}</div></div>
@@ -23415,6 +23434,7 @@ function _exportEuReportExport() {
     function direktivRound(v) { const t = _stTillDirektivtecken(v); return t == null ? '–' : +t.toFixed(1); }
     const meta = [
         ['Lönetransparensdirektivets mått', ''],
+        ['Lönebegrepp', EU_LONEBEGREPP_RESERVATION],
         ['Genererad', new Date().toLocaleString('sv-SE')],
         ['Verktyg', 'Öppen lönekartläggning v' + (typeof APP_VERSION !== 'undefined' ? APP_VERSION : '–')],
         ['Antal anställda', d.length],
@@ -23423,7 +23443,7 @@ function _exportEuReportExport() {
         ['Tecken', DIREKTIV_METOD],
         ...(konOk ? [] : [['Könsuppdelade mått', _konUtelamnatNot()]]),
         ['', ''],
-        ['OBS', 'Kompletterande/rörliga lönedelar ingår ej (en lönedefinition). Aggregat — inga individdata.']
+        ['OBS', 'Aggregat — inga individdata.']
     ];
     /** @type {any[][]} */
     const quart = [['Kvartil', 'Lönespann', 'n', 'Kvinnor', 'Män', 'Andel kvinnor (%)'],
@@ -30010,6 +30030,7 @@ function _rmAvsnittenUtanUrval() {
         utelamnat: [...(repDolda.length ? [`BAS ${repDolda.join(', ')} (färre än ${k} personer)`] : []),
             ...(repVisade.some(g => g.konLitet) ? [`könsuppdelade lönemått för BAS ${repVisade.filter(g => g.konLitet).map(g => g.bas).join(', ')} (ett kön har färre än ${k} personer)`] : [])], delar: [
             dampad('Hur kvinnor och män fördelar sig mellan BAS-intervallen, och löneskillnaden i median i varje intervall, räknad som i direktivet: skillnaden i procent av mäns lön, positivt tal = kvinnor lägre. Verktygets flikar visar samma skillnad som kvinnors lön i procent av mäns.'),
+            dampad(EU_LONEBEGREPP_RESERVATION),
             ...(repVisade.length ? [{ typ: 'tabell', kolumner: [{ rubrik: 'BAS', typ: 'text' }, { rubrik: 'N', typ: 'antal' }, { rubrik: 'Andel kvinnor', typ: 'pct0' }, { rubrik: 'Median', typ: 'kr' }, { rubrik: RM_DIREKTIV_RUBRIK, typ: 'direktiv' }, { rubrik: _STS_DIR_KOLUMN, typ: 'text' }],
                 rader: repVisade.map(g => [g.bas, g.n, g.andelKv, g.median, g.gapPct == null ? null : g.gapPct, g.gapPct != null && _stsDirektiv(100 + g.gapPct) ? _STS_DIR_ETIKETT : '']) }] : []),
             ...repNot.map(t => stycke(t, 'not')),
@@ -31053,7 +31074,7 @@ function _exportBenchmarkExcelExport() {
 
     // Bygg workbook
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, sheet, 'Jamforelse_alla_percentiler');
+    XLSX.utils.book_append_sheet(wb, sheet, 'Jämförelse_alla_percentiler');
     XLSX.utils.book_append_sheet(wb, metaSheet, 'Metadata');
 
     const filename = `lonekartlaggning_jamforelse_${new Date().toISOString().slice(0,10)}.xlsx`;
@@ -31082,7 +31103,7 @@ const INFO_SECTIONS = {
             Verktyget är byggt för arbetsgivare som kodar sina befattningar med <strong>AID</strong> och <strong>BAS-intervall</strong> och kan jämföra sig med SKR:s personalstatistik, i praktiken kommuner och regioner. Varje organisation läser in sitt eget ställningstagande, sin statistik och sina benämningar i ett organisationspaket, så att ingenting om en viss organisation är inbyggt.
         </p>
         <p>
-            Verktyget stödjer också delar av <strong>EU:s lönetransparensdirektiv 2023/970</strong>: rapportmåtten i Lönestruktur, gränsen 5 procent i direktivets regler om gemensam lönebedömning och protokollet för gemensam lönebedömning. Direktivet skulle vara infört senast den 7 juni 2026 men är ännu inte infört i Sverige; vissa delar kan ha direkt verkan mot kommuner och regioner. Den anställdes rätt till information och den rapportering som direktivet beskriver ligger utanför verktyget.
+            Verktyget stödjer också delar av <strong>EU:s lönetransparensdirektiv 2023/970</strong>: rapportmåtten i Lönestruktur, gränsen 5 procent i direktivets regler om gemensam lönebedömning och protokollet för gemensam lönebedömning. ${EU_LONEBEGREPP_RESERVATION} Direktivet skulle vara infört senast den 7 juni 2026 men är ännu inte infört i Sverige; vissa delar kan ha direkt verkan mot kommuner och regioner. Den anställdes rätt till information och den rapportering som direktivet beskriver ligger utanför verktyget.
         </p>
         <p>
             Hela verktyget är <strong>en enda fil som körs i webbläsaren på din dator</strong>. Ingen data lämnar datorn: inga servrar, inga molntjänster, inga nätverksanrop. Det är inte bara ett löfte utan en spärr i filen själv, som hindrar webbläsaren från att skicka något ut.

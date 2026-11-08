@@ -674,6 +674,7 @@ function _rmAvsnittenUtanUrval() {
         utelamnat: [...(repDolda.length ? [`BAS ${repDolda.join(', ')} (färre än ${k} personer)`] : []),
             ...(repVisade.some(g => g.konLitet) ? [`könsuppdelade lönemått för BAS ${repVisade.filter(g => g.konLitet).map(g => g.bas).join(', ')} (ett kön har färre än ${k} personer)`] : [])], delar: [
             dampad('Hur kvinnor och män fördelar sig mellan BAS-intervallen, och löneskillnaden i median i varje intervall, räknad som i direktivet: skillnaden i procent av mäns lön, positivt tal = kvinnor lägre. Verktygets flikar visar samma skillnad som kvinnors lön i procent av mäns.'),
+            dampad(EU_LONEBEGREPP_RESERVATION),
             ...(repVisade.length ? [{ typ: 'tabell', kolumner: [{ rubrik: 'BAS', typ: 'text' }, { rubrik: 'N', typ: 'antal' }, { rubrik: 'Andel kvinnor', typ: 'pct0' }, { rubrik: 'Median', typ: 'kr' }, { rubrik: RM_DIREKTIV_RUBRIK, typ: 'direktiv' }, { rubrik: _STS_DIR_KOLUMN, typ: 'text' }],
                 rader: repVisade.map(g => [g.bas, g.n, g.andelKv, g.median, g.gapPct == null ? null : g.gapPct, g.gapPct != null && _stsDirektiv(100 + g.gapPct) ? _STS_DIR_ETIKETT : '']) }] : []),
             ...repNot.map(t => stycke(t, 'not')),

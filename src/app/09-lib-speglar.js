@@ -459,13 +459,23 @@ function tillDirektivtecken(gapPct) {
     return gapPct === 0 ? 0 : -gapPct;
 }
 
-    return { medianGapPct, representationByBas, quartileDistribution, distributionalGap, tillDirektivtecken };
+/**
+ * Reservationen om lönebegreppet vid EU-rapportmåtten (beslut 7a): verktyget räknar på fast heltidsmånadslön, direktivets
+ * lönebegrepp omfattar mer. Står vid måtten i fliken Lönestruktur, i EU-lönerapportens Excel, i rapportens avsnitt om
+ * lönetransparens och i rapportunderlaget. Inga artikelnummer (ADR-16).
+ */
+const LONEBEGREPP_RESERVATION = 'Måtten är räknade på fast heltidsmånadslön. Direktivets lönebegrepp är vidare (total ersättning, inklusive rörliga delar och förmåner); komplettera ur lönesystemet om ni rapporterar.';
+/** @returns {string} reservationen om lönebegreppet vid EU-rapportmåtten */
+function lonebegreppReservation() { return LONEBEGREPP_RESERVATION; }
+
+    return { medianGapPct, representationByBas, quartileDistribution, distributionalGap, tillDirektivtecken, lonebegreppReservation };
 })();
 const _stMedianGapPct = __mirrorStructure.medianGapPct;
 const _stRepresentationByBas = __mirrorStructure.representationByBas;
 const _stQuartileDistribution = __mirrorStructure.quartileDistribution;
 const _stDistributionalGap = __mirrorStructure.distributionalGap;
 const _stTillDirektivtecken = __mirrorStructure.tillDirektivtecken;
+const _stLonebegreppReservation = __mirrorStructure.lonebegreppReservation;
 
 // ---- speglar src/lib/rng.js ----
 const __mirrorRng = (() => {
@@ -4545,6 +4555,7 @@ const __mirrorRapportunderlag = (() => {
     const skrDelText = __mirrorSkrReferens.skrDelText;
     const bedomSkillnad = __mirrorStatus.bedomSkillnad;
     const statusKonstanter = __mirrorStatus.statusKonstanter;
+    const lonebegreppReservation = __mirrorStructure.lonebegreppReservation;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -4559,6 +4570,7 @@ const __mirrorRapportunderlag = (() => {
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
+
 
 
 
@@ -4913,7 +4925,7 @@ function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
     }
     if (typ === 'struktur') {
         const kv = u.kvartiler || [];
-        const st = ['Könsfördelning och medianlön per BAS-intervall.'];
+        const st = ['Könsfördelning och medianlön per BAS-intervall.', lonebegreppReservation()];
         const kvartilOk = !(u.nKv < k || u.nMa < k);   // k: kvartilandelar röjer annars ett litet kön
         if (kv.length && kvartilOk) st.push('Andel kvinnor per lönekvartil: ' + kv.map(q => `kvartil ${q.q} ${_pct(q.andelKv, 0)}`).join(', ') + '.');
         const rep = u.representation || [];
@@ -4979,7 +4991,7 @@ function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
 
 /**
  * Noten under Sammanställning per kategori: samma lydelse i Word och PDF (58-rapportmodell.js), Excel-bladet
- * Sakliga skal (24-excelexport.js) och Rapporttext.
+ * Sakliga skäl (24-excelexport.js) och Rapporttext.
  * @param {number} k minsta gruppstorlek
  */
 function skalSammanstallningNot(k) {

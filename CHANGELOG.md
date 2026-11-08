@@ -41,6 +41,13 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 - **Prioritering: Skillnad kön med uppmärksamhetstrappans bricka.** Kolumnen *Skillnad kön* i åtgärdslistan har
   samma bricka som Lika arbete. Prioriteringen prövar inte skillnaden mot slumpen, så brickan sätts efter storleken
   (högst *Följ upp*, som i Utforska), och *Går ej att bedöma* när ett kön är för litet. Exporten bär talet.
+- **EU-rapportmåtten: reservation om lönebegreppet.** Vid måtten i Lönestruktur, överst i EU-lönerapportens Excel, under
+  tabellen i bladet *EU-lönekartläggning*, i rapportens avsnitt *Struktur och lönetransparens* (Rapporttext, Word och
+  PDF), i rapportunderlaget, i Om verktyget, i körguiden och i datauttaget står: *Måtten är räknade på fast
+  heltidsmånadslön. Direktivets lönebegrepp är vidare (total ersättning, inklusive rörliga delar och förmåner);
+  komplettera ur lönesystemet om ni rapporterar.* Excelbladen har diakriter: *EU-lönekartläggning*, *Löneskillnad*,
+  *Löneskillnad per ålder*, *Könsskevhet*, *Slumpens gränser*, *Jämförelsestatistik*, *Sakliga skäl* och
+  *Jämförelse_alla_percentiler*.
 - **Sakliga skäl som strukturerad post.** Varje rad i Handlingsplan har knappen *Sakliga skäl*. Dialogen tar emot
   högst 8 skäl per grupp med kategori (Marknad, Utbildning, Erfarenhet, Prestation och resultat, Övergång, Annat
   sakligt skäl), belopp i kronor per månad och en kort kommentar. Den räknar ihop förklarat och återstående belopp och
@@ -48,7 +55,7 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   bedömningen är organisationens. Kommentaren prövas mot personuppgifter som övriga fritexter. Gruppdossiern och
   BAS-dossiern visar bedömningen med en länk till raden, och Att göra har punkten *n grupper i handlingsplanen är inte
   bedömda än*. Rapporten (Rapporttext, Word och PDF) får tabellerna *Sakliga skäl per grupp* och *Sammanställning per
-  kategori*, Excel (alla flikar) bladet *Sakliga skal* och handlingsplansunderlaget två kolumner. Det lilla och det
+  kategori*, Excel (alla flikar) bladet *Sakliga skäl* och handlingsplansunderlaget två kolumner. Det lilla och det
   stora demot har skäl på tre rader. Årsbokslutet är version 2 och bär skälen (utan kommentarer), och *Jämförelse med
   förra året* visar *Sakliga skäl per kategori* båda åren och de grupper som hade skäl förra året men inte i år.
   Skälen följer med i konfigurationsfilen; en äldre fil läses som förut. För en grupp där ett kön är under minsta
