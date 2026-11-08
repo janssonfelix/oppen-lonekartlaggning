@@ -478,8 +478,9 @@ describe('slutgranskningens fynd', () => {
     const lasIn = async (w, rader) => { papa(w); w.loadStructureFile(csvFil(w, rader)); await vanta(() => w.document.getElementById('data-status').textContent && !/läser|Läser/.test(w.document.getElementById('data-status').textContent)); };
     it('en fil som saknar en obligatorisk kolumn men har läsbara rader läses in, och kolumnmappningen säger vad som saknas', async () => {
         const w = createAppWindow();
-        const rader = ['BAS;Månadslön;Kön;AID'];
-        for (let i = 0; i < 30; i++) rader.push(`C;${30000 + i * 10};${i % 2 ? 'Man' : 'Kvinna'};207011`);
+        // Ålder är valfri (ADR-64); filen saknar i stället AID.
+        const rader = ['BAS;Månadslön;Kön;Ålder'];
+        for (let i = 0; i < 30; i++) rader.push(`C;${30000 + i * 10};${i % 2 ? 'Man' : 'Kvinna'};${30 + i}`);
         await lasIn(w, rader);
         await vanta(() => w.__state.data.length);
         expect(w.__state.data.length).toBe(30);
@@ -492,7 +493,7 @@ describe('slutgranskningens fynd', () => {
         await lasIn(w, okandaRader());
         const panel = w.document.getElementById('column-map-panel');
         expect(panel.textContent).toContain('Kolumnmappning behövs');
-        expect(panel.querySelectorAll('select.colmap-saknas').length).toBeGreaterThanOrEqual(3);   // två rubriker känns igen av sig själva
+        expect(panel.querySelectorAll('select.colmap-saknas').length).toBeGreaterThanOrEqual(2);   // två rubriker känns igen av sig själva; ålder är valfri (ADR-64)
         expect(w.document.querySelector('#upload-cell-data .upload-badge').textContent).toContain('Kolumnmappning');
     });
     it('en CSV med bara rubrikrad sägs sakna rader, inte kolumner', async () => {

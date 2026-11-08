@@ -68,7 +68,7 @@ beforeAll(() => {
         __docxDocumentXml: () => _docxDelar(_utkastTillBlock(_buildDocumentationDraftHtml()), { titel: 'T', sidfot: 'S', skapad: '2026-01-01T00:00:00Z' })['word/document.xml'],
         __buildPrintReport: buildPrintReport,
         __excelBlad: () => ({ besked: excelAlltBlad(), bok: _excelAlltBok().SheetNames }),
-        __loadFixture: function() {
+        __loadFixture: function(utanAlder) {
             window.__resetSeed();
             // FAST dataset: 2 BAS × 2 yrken — kvinnodominerat + icke-kvinnodominerat
             // i varje BAS (ger § 3:10-par i BAS-läge), formelbaserade löner (ingen
@@ -77,7 +77,7 @@ beforeAll(() => {
             const add = (n, bas, aid, label, kon, lon0, step) => {
                 for (let i = 0; i < n; i++) rows.push({
                     bas, yrke: aid + ' ' + label, aid, yrkeLabel: label,
-                    lon: lon0 + i * step, alder: 30 + (i % 30), kon,
+                    lon: lon0 + i * step, alder: utanAlder ? 0 : 30 + (i % 30), kon,
                     poang: null, enhet: '1234'
                 });
             };
@@ -500,5 +500,62 @@ describe('golden: PDF/print-rapporten (buildPrintReport) på fast dataset', () =
             .map(tr => parseFloat(tr.children[2].textContent));
         expect(andelCells.length).toBeGreaterThan(0);
         expect(andelCells.every(n => n >= 0 && n <= 100), `orimlig andel: ${andelCells.join(', ')}`).toBe(true);
+    });
+});
+
+/**
+ * Lönefil utan ålder (ADR-64): samma fasta dataset med åldern borttagen. Hela kedjan till Excel, Word och PDF
+ * ska gå utan fel, utan åldersavsnitt och med metodmeningen om att ålder är ett metodval.
+ */
+describe('golden: lönefil utan ålder (ADR-64)', () => {
+    const normalize = html => {
+        let s = html
+            .replace(/\d{4}-\d{2}-\d{2}/g, '<DATUM>')
+            .replace(/\d{2}:\d{2}:\d{2}/g, '<TID>')
+            .replace(/Lönekartläggning \d{4}/g, 'Lönekartläggning <ÅR>')
+            .replace(/data:image\/png;base64,[A-Za-z0-9+/=]+/g, '<PNG>');
+        if (appVersion) s = s.split(appVersion).join('<VERSION>');
+        return s;
+    };
+    let filenames;
+    beforeAll(() => {
+        expect(win.__loadFixture(true)).toBe(62);
+        filenames = win.__runExports();
+    });
+
+    it('alla sex exporter producerar arbetsböcker utan fel', () => {
+        expect(win.__exportErrors, 'exportfel: ' + JSON.stringify(win.__exportErrors)).toEqual([]);
+        expect(filenames.length).toBe(6);
+    });
+
+    it('"Excel (alla flikar)" matchar facit och saknar åldersbladet', () => {
+        const name = filenames.find(f => /lonekartlaggning_analys|alla|export/i.test(f)) ||
+                     filenames.find(f => !/jpa|protokoll|lonebedomning|handlingsplan|eu_lonerapport|likvardighet/i.test(f));
+        const bok = snapshotWorkbook(name);
+        expect(Object.keys(bok)).not.toContain('Loneskillnad per alder');
+        expect(bok).toMatchSnapshot();
+    });
+
+    it('Word-utkastet matchar facit och bär metodmeningen om ålder', () => {
+        win.__loadFixture(true);
+        const draft = normalize(win.__docDraftHtml());
+        expect(draft).toContain('Att ålder räknas bort är ett metodval');
+        expect(draft).toContain('lönefilen saknar ålder');
+        // Metodbladets fasta rader säger modellen utan ålder (ADR-64).
+        expect(draft).toContain('~ kön + BAS-intervall (indikatorer); lönefilen saknar ålder');
+        expect(draft).toContain('(AID×BAS), utan ålder');
+        expect(draft).not.toContain('~ kön + ålder + BAS-intervall');
+        expect(draft).not.toContain('(AID×BAS) utöver ålder');
+        expect(draft).toMatchSnapshot();
+    });
+
+    it('PDF-rapporten (komplett) byggs utan fel och matchar facit', async () => {
+        win.__loadFixture(true);
+        win.eval("sattRapportUrval('hela')");
+        await win.__buildPrintReport();
+        const html = normalize(win.document.getElementById('print-report').innerHTML);
+        expect(html.length).toBeGreaterThan(200);
+        expect(html).toContain('Att ålder räknas bort är ett metodval');
+        expect(html).toMatchSnapshot();
     });
 });

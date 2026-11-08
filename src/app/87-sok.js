@@ -76,10 +76,10 @@ function _sokKraver(p) {
     if (p.dialog) return p.dialog === 'basdossier' && !_sokHarData() ? 'lonefil' : '';
     const nav = /** @type {HTMLInputElement|null} */ (document.querySelector(`.nav-item[data-tab="${p.flik}"]`));
     const har = _sokHarData();
-    if (nav && nav.disabled) return har ? 'referens' : 'lonefil';
+    if (nav && nav.disabled) return !har ? 'lonefil' : nav.dataset.kraver === 'alder' ? 'alder' : 'referens';
     return !har && _sokMalDolt(p) ? 'lonefil' : '';
 }
-const SOK_KRAVER_TEXT = { lonefil: 'kräver lönefil', referens: 'kräver referens eller jämförelsestatistik' };
+const SOK_KRAVER_TEXT = { lonefil: 'kräver lönefil', referens: 'kräver referens eller jämförelsestatistik', alder: 'kräver ålder i lönefilen' };
 const SOK_DIALOGNAMN = { installningar: 'Inställningar', ordlista: 'Ordlista', symboler: 'Förklaring', lagras: 'Vad lagras?', basdossier: 'BAS-dossiern' };
 function _sokFlikNamn(flik) { return (document.querySelector(`.nav-item[data-tab="${flik}"]`)?.textContent || flik).trim(); }
 function _sokFunktionUnder(p) {
@@ -155,6 +155,7 @@ function _sokValjFunktion(p) {
     const kraver = _sokKraver(p);
     if (kraver === 'lonefil') { visaLonefilskortet(p.namn); return; }
     if (kraver === 'referens') { visaReferenskortet(p.namn); return; }
+    if (kraver === 'alder') { visaAlderskravet(p.namn); return; }
     if (p.dialog === 'installningar') oppnaInstallningar({ fokus: p.falt || null });
     else if (p.dialog === 'ordlista') openGlossary();
     else if (p.dialog === 'lagras') openDataResidency();

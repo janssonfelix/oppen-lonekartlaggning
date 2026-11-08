@@ -6,7 +6,8 @@
  * För varje person i en grupp med samma AID och BAS (minst minGrupp personer) räknas en
  * förväntad lön från KOLLEGORNA (utan personen själv): ln(lön) = a + b·ålder när
  * kollegornas åldersspridning är minst 5 år, annars kollegornas medianlön. Personen
- * flaggas när lönen ligger minst `grans` procent under den förväntade. Allt i O(n log n)
+ * flaggas när lönen ligger minst `grans` procent under den förväntade. Utan ålder i lönefilen
+ * (ADR-64) prövas alla mot kollegornas medianlön. Allt i O(n log n)
  * per grupp: summorna för regressionen och den sorterade lönelistan räknas en gång och
  * personen dras bort.
  *
@@ -57,8 +58,10 @@ function _grupp(g, grans) {
 
 export function flaggaIndivider(rader, { minGrupp = 10, grans = 10 } = {}) {
     const grupper = new Map();
+    // Utan ålder i lönefilen (ADR-64) prövas alla med kollegornas median: åldersspridningen är då noll.
+    const harAlder = (rader || []).some(r => r && r.alder > 0);
     for (const r of rader || []) {
-        if (!(r.lon > 0) || !(r.alder > 0)) continue;
+        if (!(r.lon > 0) || (harAlder && !(r.alder > 0))) continue;
         const kon = konOf(r);
         if (kon !== 'Kvinna' && kon !== 'Man') continue;
         const nyckel = `${groupKey(r, 'aid')}\u0000${r.bas}`;

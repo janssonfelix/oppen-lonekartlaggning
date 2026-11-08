@@ -78,9 +78,11 @@ export function likaArbeteGrupper(rader, { k, golv = 10 }) {
  * OLS på log(lön). Kräver båda könen ≥ k och n ≥ antal parametrar + 5.
  * @param {any[]} rader
  * @param {{k:number}} opts
- * @returns {{gapPct: number, n: number} | {forFa: true} | {ejSkattbar: true}}
+ * Utan ålder i lönefilen (ADR-64) justeras inget: { utanAlder: true }.
+ * @returns {{gapPct: number, n: number} | {forFa: true} | {ejSkattbar: true} | {utanAlder: true}}
  */
 export function justeratGapInomYrke(rader, { k }) {
+    if ((rader || []).length && !(rader || []).some(r => r && r.alder > 0)) return { utanAlder: true };
     const d = (rader || []).filter(r => r.lon > 0 && r.alder > 0 && (_arKvinna(r) || _arMan(r)));
     const nKv = d.filter(_arKvinna).length, nMa = d.length - nKv;
     if (nKv < k || nMa < k) return { forFa: true };
@@ -199,7 +201,9 @@ export function gruppBlock(g, { id, justerat, ki, urval, demo, k = 10, troskelNo
         + (g.niva === 'granska' ? ' Skillnaden är statistiskt säkerställd och minst 3 % (verktygets storleksgräns).' : '')
         + (g.direktiv ? ' Den ojusterade löneskillnaden når 5 % (direktivmarkeringen; den är inte en bedömning).' : '');
     let provat;
-    if (justerat && justerat.ejSkattbar) {
+    if (justerat && justerat.utanAlder) {
+        provat = ['Lönefilen saknar ålder, så skillnaden har inte justerats för ålder och BAS.'];
+    } else if (justerat && justerat.ejSkattbar) {
         provat = ['Ålder och BAS kunde inte prövas eftersom kön och BAS sammanfaller i yrket (kvinnor och män finns i olika BAS).'];
     } else if (justerat && !justerat.forFa) {
         fakta += ` Efter hänsyn till ålder och BAS inom yrket återstår en skillnad på ${_pct(justerat.gapPct)}.`;

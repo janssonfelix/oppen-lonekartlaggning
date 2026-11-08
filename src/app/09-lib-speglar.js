@@ -2172,20 +2172,40 @@ function tillforGransPp() { return TILLFOR_GRANS_PP; }
 const SKAL_MAX = 300;
 
 /**
+ * Har lönefilen ålder? Sant när minst en rad har en ålder över 0 (ADR-64). Ålderskolumnen är valfri: saknas den läser
+ * inläsningen ålder 0 på varje rad, och då räknas modellerna utan ålder i stället för att alla rader faller bort.
+ * @param {any[]} rows
+ */
+function harAlderIRader(rows) {
+    return (rows || []).some(d => d && d.alder > 0);
+}
+/** Raden har det som modellerna kräver: positiv lön, känt kön och, när lönefilen har ålder, en ålder över 0. */
+const _modellRad = (d, harAlder) => d && d.lon > 0 && (!harAlder || d.alder > 0) && typeof d.kon === 'string'
+    && (d.kon.includes('kvinna') || d.kon === 'man' || d.kon === 'män');
+
+/**
  * Normaliserar ett värde från konfigurationsfilen eller gränssnittet till en giltig modell.
  * @param {any} v
- * @param {{harYrke?: boolean}} [opts] harYrke = datat har AID eller yrke (annars kan yrkesgrupp inte väljas)
+ * @param {{harYrke?: boolean, harAlder?: boolean}} [opts] harYrke = datat har AID eller yrke (annars kan yrkesgrupp
+ *   inte väljas); harAlder = lönefilen har ålder (annars räknas ålder inte bort, ADR-64)
  * @returns {{modell: {bas:boolean, alder:boolean, yrkesgrupp:boolean, skal:string}, varningar: string[]}}
  */
-function normaliseraForklaringsmodell(v, { harYrke = true } = {}) {
+function normaliseraForklaringsmodell(v, { harYrke = true, harAlder = true } = {}) {
     const varningar = [];
-    if (v == null) return { modell: { ...FORKLARINGSMODELL_STANDARD }, varningar };
+    const utanAlder = m => {
+        if (m.alder && !harAlder) {
+            m.alder = false;
+            varningar.push('Ålder kan inte räknas bort: lönefilen saknar ålder.');
+        }
+        return m;
+    };
+    if (v == null) return { modell: utanAlder({ ...FORKLARINGSMODELL_STANDARD }), varningar };
     if (typeof v !== 'object' || Array.isArray(v)) {
         varningar.push('Förklaringsmodellen i filen gick inte att läsa; standardmodellen används.');
-        return { modell: { ...FORKLARINGSMODELL_STANDARD }, varningar };
+        return { modell: utanAlder({ ...FORKLARINGSMODELL_STANDARD }), varningar };
     }
-    const modell = { bas: v.bas === true, alder: v.alder === true, yrkesgrupp: v.yrkesgrupp === true,
-        skal: typeof v.skal === 'string' ? v.skal.slice(0, SKAL_MAX) : '' };
+    const modell = utanAlder({ bas: v.bas === true, alder: v.alder === true, yrkesgrupp: v.yrkesgrupp === true,
+        skal: typeof v.skal === 'string' ? v.skal.slice(0, SKAL_MAX) : '' });
     if (modell.yrkesgrupp && !harYrke) {
         modell.yrkesgrupp = false;
         varningar.push('Yrkesgrupp inom BAS kan inte väljas: lönefilen saknar AID och yrke.');
@@ -2247,16 +2267,16 @@ function diagnoseCollinearity(rows, basList) {
 }
 
 // Per-BAS conditional regressions: gap inom varje BAS efter ålderskontroll.
-// golv = statGolv(): minsta antal per kön i en BAS för att en regression ska köras.
+// golv = statGolv(): minsta antal per kön i en BAS för att en regression ska köras. Utan ålder i lönefilen (ADR-64)
+// skattas kön ensamt inom varje BAS.
 function computePerBasGap(rows, basList, { golv }) {
     // Modellen tar log(lön) och kodar kön binärt. Rader utan positiv lön ger
     // -Infinity, rader utan ålder skevar centreringen, och rader med okänt kön
     // skulle räknas som MÄN av `kon.includes('kvinna') ? 1 : 0`. Filtret hör
     // därför hemma här i stället för hos anroparen — av tre anropare skickade
     // två in ofiltrerad getData() (JPA-exporten och gruppdossiern).
-    const giltiga = (rows || []).filter(d => d && d.lon > 0 && d.alder > 0
-        && typeof d.kon === 'string'
-        && (d.kon.includes('kvinna') || d.kon === 'man' || d.kon === 'män'));
+    const harAlder = harAlderIRader(rows);
+    const giltiga = (rows || []).filter(d => _modellRad(d, harAlder));
     const out = [];
     basList.forEach(b => {
         const sub = giltiga.filter(d => d.bas === b);
@@ -2266,8 +2286,8 @@ function computePerBasGap(rows, basList, { golv }) {
             out.push({ bas: b, n: sub.length, kvN: kv.length, maN: ma.length, status: 'too_few' });
             return;
         }
-        const aMean = sub.reduce((s,d)=>s+d.alder,0)/sub.length;
-        const X = sub.map(d => [1, d.kon.includes('kvinna')?1:0, d.alder - aMean]);
+        const aMean = harAlder ? sub.reduce((s,d)=>s+d.alder,0)/sub.length : 0;
+        const X = sub.map(d => [1, d.kon.includes('kvinna')?1:0, ...(harAlder ? [d.alder - aMean] : [])]);
         const y = sub.map(d => Math.log(d.lon));
         const fit = fitOLS(X, y);
         if (!fit) { out.push({ bas: b, n: sub.length, kvN: kv.length, maN: ma.length, status: 'singular' }); return; }
@@ -2294,7 +2314,7 @@ function basIndikatorer(basList) {
 // BAS, ålder, yrkesgrupp, var och en ovanpå de föregående. Yrkesgruppssteget räknas alltid när BAS är med (det
 // visas efter huvudtalet när det inte är valt, ADR-46); "+ Ansvar" läggs sist ovanpå den valda modellen.
 function computeSequentialGap(rows, ageMean, basList, { golv, modell = FORKLARINGSMODELL_STANDARD }) {
-    const m = normaliseraForklaringsmodell(modell).modell;
+    const m = normaliseraForklaringsmodell(modell, { harAlder: harAlderIRader(rows) }).modell;
     const { y, isKv, ageC, bygg, skatta, steg } = _sekvensRigg(rows, ageMean, basList);
     const olsVar = modellVariabler(m).filter(v => v !== 'yrkesgrupp');
     const ut = steg(olsVar).map(skatta);
@@ -2316,7 +2336,8 @@ function computeSequentialGap(rows, ageMean, basList, { golv, modell = FORKLARIN
 /**
  * Vad varje variabel tillför (ADR-56): förklaringsgraden och könsgapet med och utan variabeln, räknat mot
  * fullmodellen kön + BAS + ålder oberoende av vad som är valt, så att tabellen i panelen står still när man
- * kryssar. Yrkesgrupp mäts ovanpå fullmodellen (den är en tilläggsvariabel, aldrig i förslaget).
+ * kryssar. Yrkesgrupp mäts ovanpå fullmodellen (den är en tilläggsvariabel, aldrig i förslaget). Utan ålder i
+ * lönefilen (ADR-64) är fullmodellen kön + BAS och ålder får ingen rad.
  * @param {any[]} rows @param {number} ageMean @param {string[]} basList
  * @param {{golv:number, harYrke?:boolean}} opts harYrke = datat har AID eller yrke
  * @returns {{full:{status:string, gapPct?:number, R2?:number, k?:number},
@@ -2326,7 +2347,8 @@ function computeSequentialGap(rows, ageMean, basList, { golv, modell = FORKLARIN
 function computeVariabelTillfor(rows, ageMean, basList, { golv: _golv, harYrke = false }) {
     const { y, isKv, ageC, bygg, skatta } = _sekvensRigg(rows, ageMean, basList);
     const fit = vars => skatta({ name: vars.join('+'), X: bygg(vars) });
-    const full = fit(['bas', 'alder']);
+    const harAlder = harAlderIRader(rows);
+    const full = fit(harAlder ? ['bas', 'alder'] : ['bas']);
     const rad = (variabel, utan, med) => {
         const status = utan.status === 'ok' && med.status === 'ok' ? 'ok' : utan.status !== 'ok' ? utan.status : med.status;
         const ok = status === 'ok';
@@ -2334,8 +2356,8 @@ function computeVariabelTillfor(rows, ageMean, basList, { golv: _golv, harYrke =
         return { variabel, status, deltaR2pp, gapUtan: ok ? utan.gapPct : NaN, gapMed: ok ? med.gapPct : NaN,
             tillforLite: ok && deltaR2pp < TILLFOR_GRANS_PP };
     };
-    const rader = [rad('bas', fit(['alder']), full), rad('alder', fit(['bas']), full)];
-    if (harYrke) rader.push(rad('yrkesgrupp', full, computeYrkesgruppGap(rows, y, isKv, ageC, { medAlder: true })));
+    const rader = harAlder ? [rad('bas', fit(['alder']), full), rad('alder', fit(['bas']), full)] : [rad('bas', fit([]), full)];
+    if (harYrke) rader.push(rad('yrkesgrupp', full, computeYrkesgruppGap(rows, y, isKv, ageC, { medAlder: harAlder })));
     const tabort = rader.filter(r => r.variabel !== 'yrkesgrupp' && r.tillforLite).map(r => r.variabel);
     return { full, rader, forslag: { tabort } };
 }
@@ -2546,10 +2568,10 @@ function quantileRegression(X, y, tau, maxIter = 60, tol = 1e-5, start = null) {
  * }}
  */
 function blinderOaxaca(rows, { golv, modell = FORKLARINGSMODELL_STANDARD }) {
-    const m = normaliseraForklaringsmodell(modell, { harYrke: rows.some(d => d.aid || d.yrke) }).modell;
+    const harAlder = harAlderIRader(rows);
+    const m = normaliseraForklaringsmodell(modell, { harYrke: rows.some(d => d.aid || d.yrke), harAlder }).modell;
     if (!m.bas && !m.alder) return null;   // endast kön: inget att dela upp
-    const raw = rows.filter(d => d.lon > 0 && d.alder > 0 &&
-        (d.kon.includes('kvinna') || d.kon === 'man' || d.kon === 'män'));
+    const raw = rows.filter(d => _modellRad(d, harAlder));
     if (raw.length < 50) return null;
     const kv = raw.filter(d => d.kon.includes('kvinna'));
     const ma = raw.filter(d => d.kon === 'man' || d.kon === 'män');
@@ -2655,7 +2677,8 @@ function blinderOaxaca(rows, { golv, modell = FORKLARINGSMODELL_STANDARD }) {
  *   modell:{bas:boolean, alder:boolean}}}
  */
 function kvantilDesign(rows, modell = FORKLARINGSMODELL_STANDARD, { ageMean, basList } = {}) {
-    const m = normaliseraForklaringsmodell(modell).modell;
+    // Utan ålder i lönefilen (ADR-64) räknas modellen utan ålder, som i huvudregressionen.
+    const m = normaliseraForklaringsmodell(modell, { harAlder: harAlderIRader(rows) }).modell;
     const rader = rows.filter(d => d.lon > 0 && (!m.alder || d.alder > 0)
         && typeof d.kon === 'string' && (d.kon.includes('kvinna') || d.kon === 'man' || d.kon === 'män'));
     const bl = m.bas ? (basList || [...new Set(rader.map(d => d.bas))].sort()) : [];
@@ -2691,7 +2714,7 @@ function quantileRegressionAtAllTau(rows, { modell = FORKLARINGSMODELL_STANDARD,
     return { results, diffP90P10, kolumner: d.kolumner, n: d.rader.length, nKv, nMa: d.rader.length - nKv };
 }
 
-    return { diagnoseCollinearity, computePerBasGap, basIndikatorer, computeSequentialGap, quantileRegression, blinderOaxaca, quantileRegressionAtAllTau, kvantilDesign, computeVariabelTillfor, normaliseraForklaringsmodell, inomYrkesgrupp, forklaringsmodellArStandard, modellVariabler, modellFras, modellBeskrivning, tillforGransPp };
+    return { diagnoseCollinearity, computePerBasGap, basIndikatorer, computeSequentialGap, quantileRegression, blinderOaxaca, quantileRegressionAtAllTau, kvantilDesign, computeVariabelTillfor, normaliseraForklaringsmodell, inomYrkesgrupp, forklaringsmodellArStandard, modellVariabler, modellFras, modellBeskrivning, tillforGransPp, harAlderIRader };
 })();
 const _rgDiagnoseCollinearity = __mirrorRegression.diagnoseCollinearity;
 const _rgComputePerBasGap = __mirrorRegression.computePerBasGap;
@@ -2709,6 +2732,7 @@ const _rgModellVariabler = __mirrorRegression.modellVariabler;
 const _rgModellFras = __mirrorRegression.modellFras;
 const _rgModellBeskrivning = __mirrorRegression.modellBeskrivning;
 const _rgTillforGransPp = __mirrorRegression.tillforGransPp;
+const _rgHarAlderIRader = __mirrorRegression.harAlderIRader;
 
 // ---- speglar src/lib/lonepolitik.js ----
 const __mirrorLonepolitik = (() => {
@@ -3121,9 +3145,12 @@ const __mirrorLivscykel = (() => {
  * @param {{fixBas?:string|null, golv:number}} opt
  *        fixBas: BAS-intervall att fixera vid i prediktionerna (default = mest folkrika).
  *        golv: minsta antal personer per kön (statGolv() i appen).
- * @returns {Object} { error, errorCode } eller resultat med koefficienter, prediktioner och gap per ålder.
+ * @returns {Object} { error, errorCode } (errorCode no_age när ingen rad har ålder, ADR-64) eller resultat med koefficienter, prediktioner och gap per ålder.
  */
 function livscykelRegression(rader, { fixBas, golv }) {
+    // Ålderskolumnen är valfri (ADR-64): utan ålder finns ingen livscykel att skatta.
+    if ((rader || []).length && !(rader || []).some(d => d && d.alder > 0))
+        return { error: 'Lönefilen saknar ålder, så löneskillnaden över karriären kan inte skattas.', errorCode: 'no_age' };
     const raw = (rader || []).filter(d => d.lon > 0 && d.alder > 0 && (d.kon.includes('kvinna') || d.kon === 'man' || d.kon === 'män'));
     if (raw.length < 50) return { error: 'För få observationer (n < 50) för meningsfull livscykelanalys.', errorCode: 'low_n' };
 
@@ -4479,20 +4506,22 @@ function bedomUnderlag(rader, { k, audit, mde, modell, modellFras } = {}) {
             : `${_pct(bort)} av filens rader föll bort eller saknar giltig ålder.`
     });
 
+    // Ålderskolumnen är valfri (ADR-64): utan ålder i lönefilen prövas bara lön och BAS.
+    const harAlder = d.some(r => r && r.alder > 0);
     const orimliga = d.filter(r => !(r.lon >= FTE_GOLV && r.lon <= 250000)
-        || !(r.alder >= 18 && r.alder <= 70) || !/^[A-ZÅÄÖ]$/i.test(r.bas || '')).length;
+        || (harAlder && !(r.alder >= 18 && r.alder <= 70)) || !/^[A-ZÅÄÖ]$/i.test(r.bas || '')).length;
     const orimPct = d.length ? orimliga / d.length * 100 : null;
     kriterier.push({
         id: 'rimlighet', namn: 'Rimlighet', status: _stat(orimPct, 1, 5, false), varde: orimPct,
         text: orimPct == null ? 'Inga rader att kontrollera.'
-            : `${orimliga} rader (${_pct(orimPct)}) har lön under ${FTE_GOLV.toLocaleString('sv-SE')} eller över 250 000 kr, ålder utanför 18–70 eller BAS som inte är en bokstav.`,
+            : `${orimliga} rader (${_pct(orimPct)}) har lön under ${FTE_GOLV.toLocaleString('sv-SE')} eller över 250 000 kr, ${harAlder ? 'ålder utanför 18–70 ' : ''}eller BAS som inte är en bokstav.`,
     });
 
     const mStatus = modell === 'full' ? 'ok' : modell === 'minimal' ? 'varning' : 'kritisk';
     kriterier.push({
         id: 'modell', namn: 'Modell', status: mStatus, varde: modell ?? null,
         // modellFras (ADR-56): frasen för en vald modell som inte är standard; standardtexten ändras inte.
-        text: modell === 'full' ? (modellFras != null ? `Regressionen tar hänsyn till ${modellFras || 'kön, utan att något räknats bort'}.` : 'Regressionen tar hänsyn till både ålder och BAS-intervall.')
+        text: modell === 'full' ? (modellFras != null ? `Regressionen tar hänsyn till ${modellFras || 'kön, utan att något räknats bort'}.` : harAlder ? 'Regressionen tar hänsyn till både ålder och BAS-intervall.' : 'Regressionen tar hänsyn till BAS-intervall.')
             : modell === 'minimal' ? 'Regressionen kunde bara ta hänsyn till ålder, inte BAS-intervall.'
             : 'Regressionen gick inte att skatta.',
     });
@@ -4596,9 +4625,11 @@ function likaArbeteGrupper(rader, { k, golv = 10 }) {
  * OLS på log(lön). Kräver båda könen ≥ k och n ≥ antal parametrar + 5.
  * @param {any[]} rader
  * @param {{k:number}} opts
- * @returns {{gapPct: number, n: number} | {forFa: true} | {ejSkattbar: true}}
+ * Utan ålder i lönefilen (ADR-64) justeras inget: { utanAlder: true }.
+ * @returns {{gapPct: number, n: number} | {forFa: true} | {ejSkattbar: true} | {utanAlder: true}}
  */
 function justeratGapInomYrke(rader, { k }) {
+    if ((rader || []).length && !(rader || []).some(r => r && r.alder > 0)) return { utanAlder: true };
     const d = (rader || []).filter(r => r.lon > 0 && r.alder > 0 && (_arKvinna(r) || _arMan(r)));
     const nKv = d.filter(_arKvinna).length, nMa = d.length - nKv;
     if (nKv < k || nMa < k) return { forFa: true };
@@ -4717,7 +4748,9 @@ function gruppBlock(g, { id, justerat, ki, urval, demo, k = 10, troskelNot, arsb
         + (g.niva === 'granska' ? ' Skillnaden är statistiskt säkerställd och minst 3 % (verktygets storleksgräns).' : '')
         + (g.direktiv ? ' Den ojusterade löneskillnaden når 5 % (direktivmarkeringen; den är inte en bedömning).' : '');
     let provat;
-    if (justerat && justerat.ejSkattbar) {
+    if (justerat && justerat.utanAlder) {
+        provat = ['Lönefilen saknar ålder, så skillnaden har inte justerats för ålder och BAS.'];
+    } else if (justerat && justerat.ejSkattbar) {
         provat = ['Ålder och BAS kunde inte prövas eftersom kön och BAS sammanfaller i yrket (kvinnor och män finns i olika BAS).'];
     } else if (justerat && !justerat.forFa) {
         fakta += ` Efter hänsyn till ålder och BAS inom yrket återstår en skillnad på ${_pct(justerat.gapPct)}.`;
@@ -5255,7 +5288,8 @@ const __mirrorIndivid = (() => {
  * För varje person i en grupp med samma AID och BAS (minst minGrupp personer) räknas en
  * förväntad lön från KOLLEGORNA (utan personen själv): ln(lön) = a + b·ålder när
  * kollegornas åldersspridning är minst 5 år, annars kollegornas medianlön. Personen
- * flaggas när lönen ligger minst `grans` procent under den förväntade. Allt i O(n log n)
+ * flaggas när lönen ligger minst `grans` procent under den förväntade. Utan ålder i lönefilen
+ * (ADR-64) prövas alla mot kollegornas medianlön. Allt i O(n log n)
  * per grupp: summorna för regressionen och den sorterade lönelistan räknas en gång och
  * personen dras bort.
  *
@@ -5305,8 +5339,10 @@ function _grupp(g, grans) {
 
 function flaggaIndivider(rader, { minGrupp = 10, grans = 10 } = {}) {
     const grupper = new Map();
+    // Utan ålder i lönefilen (ADR-64) prövas alla med kollegornas median: åldersspridningen är då noll.
+    const harAlder = (rader || []).some(r => r && r.alder > 0);
     for (const r of rader || []) {
-        if (!(r.lon > 0) || !(r.alder > 0)) continue;
+        if (!(r.lon > 0) || (harAlder && !(r.alder > 0))) continue;
         const kon = konOf(r);
         if (kon !== 'Kvinna' && kon !== 'Man') continue;
         const nyckel = `${groupKey(r, 'aid')}\u0000${r.bas}`;
@@ -6438,6 +6474,8 @@ function perBasTabeller(rader, opt = {}) {
     const statistikNamn = opt.statistikNamn || 'Jämförelsestatistik';
     const granser = (opt.aldersgranser && opt.aldersgranser.length ? opt.aldersgranser : recept.aldersgranser).slice().sort((a, b) => a - b);
     const d = (rader || []).filter(r => r && r.bas && dimAv(r));
+    // Ålderskolumnen är valfri (ADR-64): utan ålder utelämnas åldersgrupperna och medelåldern.
+    const harAlder = d.some(r => typeof r.alder === 'number' && r.alder > 0);
     const basar = [...new Set(d.map(dimAv))].sort((a, b) => a.localeCompare(b, 'sv'));
     const statFor = (aid, bas) => statistik.find(s => String(s.aid) === String(aid) && String(s.bas || '') === String(bas))
         || statistik.find(s => String(s.aid) === String(aid) && !s.bas) || null;
@@ -6486,7 +6524,8 @@ function perBasTabeller(rader, opt = {}) {
             bas: namn, n: rows.length, medel, medelMa, medelKv,
             kvot: konVisas && medelMa != null && medelMa > 0 && medelKv != null ? medelKv / medelMa * 100 : null,
             andelKv: rows.length ? kv.length / rows.length * 100 : null,
-            alder: _medel(_aldrar(rows)), alderMa: konVisas ? _medel(_aldrar(ma)) : null, alderKv: konVisas ? _medel(_aldrar(kv)) : null,
+            alder: harAlder ? _medel(_aldrar(rows)) : null, alderMa: harAlder && konVisas ? _medel(_aldrar(ma)) : null,
+            alderKv: harAlder && konVisas ? _medel(_aldrar(kv)) : null,
             konVisas
         };
     };
@@ -6503,8 +6542,8 @@ function perBasTabeller(rader, opt = {}) {
     };
     const aldersgrupper = { grupper, rader: [aldersRad('Alla', d), ...visadeBas.map(b => aldersRad(b, d.filter(r => dimAv(r) === b)))] };
 
-    return { k, recept, dim: recept.dim, dimEtikett: recept.dim === 'sektor' ? 'Sektor' : 'BAS-intervall', intervall, basUtelamnade,
-             konsgap: recept.konsgap ? konsgap : null, aldersgrupper: recept.aldersgrupper ? aldersgrupper : null };
+    return { k, recept, dim: recept.dim, dimEtikett: recept.dim === 'sektor' ? 'Sektor' : 'BAS-intervall', intervall, basUtelamnade, harAlder,
+             konsgap: recept.konsgap ? konsgap : null, aldersgrupper: recept.aldersgrupper && harAlder ? aldersgrupper : null };
 }
 
     return { perBasTabeller, aldersgruppNamn, yrkesnamn, perBasStandard, valideraPerBasRecept, perBasReceptArStandard };
@@ -7125,9 +7164,11 @@ const __mirrorImportprofiler = (() => {
 
 const IMPORTPROFIL_FORMAT = 'lonekartlaggning-importprofiler';
 const IMPORTPROFIL_VERSION = 1;
-/** Rollerna i kolumnmappningens ordning; de fem första är obligatoriska. */
+/** Rollerna i kolumnmappningens ordning. BAS, yrke, lön och kön är obligatoriska; ålder är valfri men rekommenderad (ADR-64). */
 const IMPORTPROFIL_ROLLER = ['bas', 'yrke', 'lon', 'alder', 'kon', 'poang', 'ansvar'];
-const OBLIGATORISKA_ROLLER = ['bas', 'yrke', 'lon', 'alder', 'kon'];
+const OBLIGATORISKA_ROLLER = ['bas', 'yrke', 'lon', 'kon'];
+/** Rollerna vars rubriker blir kännetecken när profilen inte anger egna: de obligatoriska och ålder, när den finns. */
+const KANNETECKEN_ROLLER = ['bas', 'yrke', 'lon', 'alder', 'kon'];
 /** Källorna i prioritetsordning: organisationspaketets profiler prövas först, de inbyggda sist. */
 const IMPORTPROFIL_KALLOR = ['organisationspaket', 'konfiguration', 'inbyggd'];
 const MAX_PROFILER = 50;
@@ -7206,7 +7247,7 @@ function valideraImportprofil(o, { kalla } = {}) {
     if (!Object.keys(rubriker).length) return null;
     let kannetecken;
     if (o.kannetecken == null) {
-        kannetecken = OBLIGATORISKA_ROLLER.filter(r => rubriker[r]).map(r => rubriker[r][0]);
+        kannetecken = KANNETECKEN_ROLLER.filter(r => rubriker[r]).map(r => rubriker[r][0]);
         if (!kannetecken.length) return null;
     } else {
         kannetecken = _rubrikLista(o.kannetecken, MAX_RUBRIKER_PER_ROLL);
@@ -7270,7 +7311,7 @@ function matchaImportprofil(rubriker, profiler) {
 
 /**
  * Bygger en profil ur en gjord kolumnmappning. Bara rubriker som finns i filen följer med, och alla obligatoriska
- * roller måste vara mappade; kännetecknen är de obligatoriska rollernas rubriker.
+ * roller måste vara mappade; kännetecknen är de obligatoriska rollernas rubriker och ålderns, när den är mappad.
  * @param {{namn:string, kalla:string, mappning:{[roll:string]: string|null|undefined}, rubriker:string[]}} u
  */
 function profilFranMappning({ namn, kalla, mappning, rubriker }) {
@@ -7372,7 +7413,8 @@ const FK_SMA_GRUPP = 10;
 const MAX_RA = 24;
 const VANLIG_BAS = /^[A-N]$/;
 const ROLLER = ['bas', 'yrke', 'lon', 'alder', 'kon', 'poang', 'ansvar'];
-const OBLIGATORISKA = ['bas', 'yrke', 'lon', 'alder', 'kon'];
+// Ålder är valfri (ADR-64): kolumnen visas bara när den lästes.
+const OBLIGATORISKA = ['bas', 'yrke', 'lon', 'kon'];
 const ANSVAR_TEXT = { ledning: 'ledningsansvar', uppdrag: 'särskilt uppdrag', inget: 'inget särskilt ansvar' };
 
 /** Gränsvärdena, för gränssnittets texter. */
@@ -7509,6 +7551,9 @@ function byggForhandskontroll({ rader = [], data = [], konVarden = [], parseStat
         varna('lon-timlon', 'fel', `Medianlönen är under ${_fkTal(FK_TIMLON_MEDIAN)} kr och ser ut som en timlön. Verktyget räknar med månadslön: kontrollera lönekolumnen.`);
     } else if (lon && lon.max > FK_SPRIDNING_GANGER * lon.median) {
         varna('lon-spridning', 'varning', `Den högsta lönen är mer än ${FK_SPRIDNING_GANGER} gånger medianlönen: kontrollera om några löner är årslöner eller har fel enhet.`);
+    }
+    if (data.length && !data.some(r => typeof r.alder === 'number' && r.alder > 0)) {
+        varna('alder-saknas', 'varning', 'Ålder saknas: analysen körs utan åldersjustering; Ålder & karriär visas inte.');
     }
     if (sammandrag.fodelsear > 0) {
         varna('alder-fodelsear', 'varning', `Åldern har räknats ut ur födelseår för ${_fkRader(sammandrag.fodelsear)}: kontrollera att ålderskolumnen verkligen är födelseår.`);

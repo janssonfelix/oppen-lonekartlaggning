@@ -175,3 +175,19 @@ describe('importprofilerTillJson', () => {
         expect(valideraImportprofiler(o.profiler, { kalla: 'konfiguration' }).profiler[0].id).toBe(p.id);
     });
 });
+
+describe('importprofiler: lönefil utan ålder (ADR-64)', () => {
+    const utan = FIL.filter(r => r !== 'Födelseår');
+    it('ålder är inte obligatorisk: en mappning utan ålder blir en profil med fyra kännetecken', () => {
+        const mappning = { bas: 'Lönenivå', yrke: 'Befattningskod', lon: 'Grundlön heltid', alder: '', kon: 'Juridiskt kön' };
+        const p = profilFranMappning({ namn: 'Utan ålder', kalla: 'konfiguration', mappning, rubriker: utan });
+        expect(p).not.toBeNull();
+        expect(p.rubriker.alder).toBeUndefined();
+        expect(p.kannetecken).toEqual(['Lönenivå', 'Befattningskod', 'Grundlön heltid', 'Juridiskt kön']);
+        expect(matchaImportprofil(utan, [p]).mappning).toEqual({ bas: 'Lönenivå', yrke: 'Befattningskod', lon: 'Grundlön heltid', kon: 'Juridiskt kön' });
+    });
+    it('en profil med ålder men utan ålderskännetecken gäller också en fil utan ålderskolumnen', () => {
+        const p = valideraImportprofil(profil({ kannetecken: ['Lönenivå', 'Befattningskod', 'Grundlön heltid', 'Juridiskt kön'] }));
+        expect(matchaImportprofil(utan, [p]).mappning).toEqual({ bas: 'Lönenivå', yrke: 'Befattningskod', lon: 'Grundlön heltid', kon: 'Juridiskt kön' });
+    });
+});

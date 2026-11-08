@@ -20,7 +20,7 @@ Exportera en personallista (en rad per anställd) med dessa kolumner:
 | BAS-intervall | Ja | `BAS`, `BAS-intervall` |
 | AID / yrke | Ja | `AID`, `Yrke`, `Yrkesgrupp`, `Befattning`, `AID-etikett` |
 | Månadslön | Ja | `Månadslön`, `Lön` — heltidsomräknad fast månadslön (se avsnitt 1b) |
-| Ålder *(eller födelseår)* | Ja | `Ålder`, `Alder` — innehåller cellerna födelseår räknas de om automatiskt |
+| Ålder *(eller födelseår)* | *Rekommenderad* | `Ålder`, `Alder` — innehåller cellerna födelseår räknas de om automatiskt. Utan ålder körs analysen utan åldersjustering och fliken Ålder & karriär visas inte |
 | Kön | Ja | `Kön`, `Kon` (K/M, Kvinna/Man m.fl. tolkas automatiskt) |
 | Poäng *(arbetsvärdering)* | Nej | `Poäng`, `Arbetsvärdering` — valfri krav-proxy för likvärdigt arbete |
 | Ansvarskod *(AID)* | Nej | `Ansvarskod`, `AID-ansvar`, `Ansvarsnivå` — A, B, C, L, F, M, 1001 eller 1002, med valfri lokal sista position (t.ex. `C1`); flera koder per person skiljs med mellanslag |

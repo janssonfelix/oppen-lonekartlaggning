@@ -89,7 +89,8 @@ function buildBasdossier(bas) {
     const namn = __mirrorPerBas.aldersgruppNamn(BD_ALDERSGRANSER);
     const iGrupp = (r, i) => { const lo = i === 0 ? -Infinity : BD_ALDERSGRANSER[i - 1], hi = i < BD_ALDERSGRANSER.length ? BD_ALDERSGRANSER[i] : Infinity; return r.alder >= lo && r.alder < hi; };
     const medAlder = df.filter(r => typeof r.alder === 'number' && r.alder > 0);
-    const alder = namn.map((n, i) => {
+    // Utan ålder i lönefilen (ADR-64) har dossiern inget avsnitt om ålder (null).
+    const alder = !harAlder() ? null : namn.map((n, i) => {
         const rader = medAlder.filter(r => iGrupp(r, i)), gKv = rader.filter(arKv), gMa = rader.filter(arMa);
         const ok = _konFarRedovisas(gKv.length, gMa.length);
         return { namn: n, n: rader.length, nKv: gKv.length, nMa: gMa.length,
@@ -213,8 +214,8 @@ function _bdRenderBody(d) {
           + (d.par.hierarkiska.length ? `<p><strong>Lägre krav, högre lön</strong> (jämförelseyrket ligger i ett lägre intervall)</p>${parLista(d.par.hierarkiska)}` : '') + parNot
         : (parNot || missing('Inget kvinnodominerat yrke i intervallet ingår i en jämförelse av likvärdigt arbete.'));
 
-    // 4. Ålder
-    const alder = `<table class="data-table st-088 bd-tabell"><thead><tr><th scope="col">Åldersgrupp</th><th scope="col" class="t-hoger">Antal (kv/mä)</th><th scope="col" class="t-hoger">Median</th><th scope="col" class="t-hoger">Median kvinnor</th><th scope="col" class="t-hoger">Median män</th></tr></thead><tbody>`
+    // 4. Ålder (inte när lönefilen saknar ålder, ADR-64)
+    const alder = !d.alder ? '' : `<table class="data-table st-088 bd-tabell"><thead><tr><th scope="col">Åldersgrupp</th><th scope="col" class="t-hoger">Antal (kv/mä)</th><th scope="col" class="t-hoger">Median</th><th scope="col" class="t-hoger">Median kvinnor</th><th scope="col" class="t-hoger">Median män</th></tr></thead><tbody>`
         + d.alder.map(a => `<tr><th scope="row">${esc(a.namn)}</th><td class="t-tal">${a.n} (${a.nKv}/${a.nMa})</td><td class="t-tal">${_bdKr(a.med)}</td><td class="t-tal">${_bdKr(a.medKv)}</td><td class="t-tal">${_bdKr(a.medMa)}</td></tr>`).join('')
         + `</tbody></table><p class="gd-note">Ett köns median står bara där båda könen i åldersgruppen har minst ${k} personer.</p>`
         + `<p><button type="button" class="btn-table-tool" data-bd-alder="${esc(d.bas)}">${ikon('pilUt', 14)} Ålder &amp; karriär för BAS ${esc(d.bas)}</button></p>`;
@@ -242,7 +243,7 @@ function _bdRenderBody(d) {
             ${card('Nyckeltal', nyckeltal)}
             ${card('Yrkesgrupperna i intervallet', yrken, 'Samma gränser som i Lika arbete, räknade på intervallets personer. Könsuppdelade mått bara där båda könen når minsta gruppstorlek.')}
             ${card('Likvärdigt arbete i intervallet', likvardigt)}
-            ${card('Ålder', alder)}
+            ${d.alder ? card('Ålder', alder) : ''}
             ${card('Förra året', forra)}
         </div>`;
 }
@@ -299,12 +300,14 @@ function basdossierStycken(d, { forraBaraMedBokslut = false } = {}) {
     if (d.par.utelamnade) likvardigt.push(_parUtelamnadeNot(d.par.utelamnade));
     ut.push({ rubrik: 'Likvärdigt arbete i intervallet', rader: likvardigt });
 
-    const alder = d.alder.map(a => {
-        const kon = a.medKv != null ? `, kvinnor ${kr(a.medKv)}, män ${kr(a.medMa)}` : '';
-        return `- ${a.namn}: ${a.n} personer (${a.nKv} kvinnor, ${a.nMa} män)${a.med != null ? `, median ${kr(a.med)}${kon}` : ''}.`;
-    });
-    alder.push(`Ett köns median står bara där båda könen i åldersgruppen har minst ${d.k} personer.`);
-    ut.push({ rubrik: 'Ålder', rader: alder });
+    if (d.alder) {
+        const alder = d.alder.map(a => {
+            const kon = a.medKv != null ? `, kvinnor ${kr(a.medKv)}, män ${kr(a.medMa)}` : '';
+            return `- ${a.namn}: ${a.n} personer (${a.nKv} kvinnor, ${a.nMa} män)${a.med != null ? `, median ${kr(a.med)}${kon}` : ''}.`;
+        });
+        alder.push(`Ett köns median står bara där båda könen i åldersgruppen har minst ${d.k} personer.`);
+        ut.push({ rubrik: 'Ålder', rader: alder });
+    }
 
     const f = d.forra;
     if (f.lage === 'ok') {

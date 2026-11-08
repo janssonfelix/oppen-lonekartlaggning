@@ -8,6 +8,13 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ### Gränssnitt
 
+- **Ålder är valfri i lönefilen (ADR-64).** Det räcker med BAS-intervall, AID, månadslön och kön. Utan ålder körs
+  analysen utan åldersjustering: inläsningskontrollen och förhandskontrollen säger det, fliken Ålder & karriär är låst
+  med tipset *Kräver ålder i lönefilen*, Översiktens medelålder visas som – och Word, PDF, Excel och dossiererna hoppar
+  över åldersavsnitten. Regressionen, kvantilregressionen och dekomponeringen körs med kön och BAS-intervall. Rapportens
+  metodtext, regressionskortet och nyckeltalets verktygstips i Lika arbete säger alltid att det är ett metodval att
+  räkna bort ålder, inte ett ställningstagande om att ålder är ett sakligt skäl.
+
 - **Status på statistisk signal (ADR-59).** *Värt att granska* kräver en statistiskt säkerställd skillnad på minst 3 %;
   *Följ upp*, *Balanserat* och *Går ej att bedöma* (för få av ett kön) ersätter gränsen 5 %. 5 % är en markering på den
   ojusterade medianskillnaden (kolumnen *Ojusterad löneskillnad ≥ 5 %*), ingen bedömning, och står aldrig vid

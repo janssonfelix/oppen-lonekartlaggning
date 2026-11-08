@@ -779,3 +779,41 @@ describe('demodata med kandidatpar', () => {
         expect([...new Set(d.map(r => r.bas))].sort()).toEqual(['A', 'B', 'C', 'D', 'E']);
     });
 });
+
+// Ålder är valfri i lönefilen (ADR-64): utan ålder är Ålder & karriär låst med ett eget skäl.
+describe('menyn låser Ålder & karriär utan ålder i lönefilen', () => {
+    const utanAlder = w => { w.__state.data = w.__state.data.map(r => ({ ...r, alder: 0 })); w.eval('unlockTabs()'); };
+    it('fliken är låst med tipset, klicket leder till lönefilskortet med skälet, och funktionssöket säger detsamma', async () => {
+        const w = createAppWindow();
+        w.__loadDemoData();
+        const kon = w.document.getElementById('tab-kon');
+        expect(kon.getAttribute('aria-disabled')).toBeNull();
+        utanAlder(w);
+        expect(w.eval('harAlder()')).toBe(false);
+        expect(kon.getAttribute('aria-disabled')).toBe('true');
+        expect(kon.getAttribute('title')).toBe('Kräver ålder i lönefilen');
+        // De andra flikarna är öppna.
+        for (const id of ['tab-matrix', 'tab-struktur', 'tab-prioritering']) expect(w.document.getElementById(id).getAttribute('aria-disabled'), id).toBeNull();
+        kon.click();
+        expect(w.document.getElementById('view-filer').style.display).toBe('block');
+        expect(w.document.getElementById('view-kon').style.display).not.toBe('block');
+        await new Promise(r => setTimeout(r, 80));
+        expect(w.document.getElementById('aria-live-announcer').textContent).toMatch(/kräver ålder i lönefilen/);
+        expect(w.eval("_sokKraver({ flik: 'kon' })")).toBe('alder');
+        // Översiktens medelålder är tom.
+        w.eval('updateDashboardStats()');
+        expect(w.document.getElementById('stat-age').textContent).toBe('–');
+    });
+    it('med ålder igen låses fliken upp och får sitt eget tips', () => {
+        const w = createAppWindow();
+        w.__loadDemoData();
+        const med = w.__state.data;
+        utanAlder(w);
+        w.__state.data = med;
+        w.eval('unlockTabs()');
+        const kon = w.document.getElementById('tab-kon');
+        expect(kon.getAttribute('aria-disabled')).toBeNull();
+        expect(kon.getAttribute('title')).toBe(kon.getAttribute('data-tip'));
+        expect(kon.dataset.kraver).toBeUndefined();
+    });
+});

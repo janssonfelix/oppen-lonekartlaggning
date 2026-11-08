@@ -102,9 +102,9 @@ function buildGruppdossier(key, delat = null) {
         }
     }
 
-    // Justerat (åldersrensat) gap för gruppens BAS
+    // Justerat (åldersrensat) gap för gruppens BAS. Utan ålder i lönefilen (ADR-64) visar dossiern inget sådant.
     let adjusted = null;
-    try {
+    if (harAlder()) try {
         const rakna = () => _computePerBasGap(getData(), [g.bas]);
         let perBas;
         if (!delat) perBas = rakna();
@@ -325,7 +325,7 @@ function _gdRenderBody(d) {
         <div class="gd-grid">
             ${card('Nyckeltal', nyckeltal)}
             ${card('Ojusterad löneskillnad', gapInner)}
-            ${card('Skillnad när åldern räknats bort', adjInner)}
+            ${harAlder() ? card('Skillnad när åldern räknats bort', adjInner) : ''}
             ${card('Mot organisationens lönepolitik', polInner)}
             ${card('Likvärdigt arbete', lvInner)}
             ${card('Extern jämförelse', benchInner)}

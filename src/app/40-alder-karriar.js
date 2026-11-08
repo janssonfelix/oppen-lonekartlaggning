@@ -26,7 +26,13 @@ function _akInsiktText(lutKv, lutMa, ra, vidSammaAlder) {
             : `Vid samma ålder är kvinnors lön ${svPct(vidSammaAlder, 1)} av mäns, mot ${svPct(ra, 1)} utan justering: skillnaden blir större när åldern räknas bort, eftersom kvinnorna i urvalet i genomsnitt är äldre.`;
     return `${lutning} ${justering} Vad BAS-intervall och yrkesgrupp förklarar står i Lönestruktur.`;
 }
+/** Utan ålder i lönefilen (ADR-64) ritas fliken inte, och det en tidigare fil ritade i den töms. */
+function _akTomUtanAlder() {
+    const andra = new Set([...document.querySelectorAll('.nav-item[data-tab]')].map(b => b.getAttribute('data-tab') || '').filter(t => t && t !== 'kon'));
+    if (typeof tomFlikarUtom === 'function') tomFlikarUtom(andra);
+}
 function renderKon(bas) {
+    if (!harAlder()) { _akTomUtanAlder(); return; }
     const isAll = bas === "__ALLA__";
     const df = getData().filter(d => (isAll || d.bas === bas) && d.alder && d.alder > 0 && d.kon);
     if (df.length < 2) return;
@@ -206,7 +212,7 @@ const KON_ALDERSGRUPPER = [[0, 29, 'Under 30 år'], [30, 39, '30–39 år'], [40
 function _konAlderGapRader(dataKv, dataMa, k = kTroskel()) {
     const visade = [], dolda = [];
     for (const [fran, till, namn] of KON_ALDERSGRUPPER) {
-        const i = r => r.alder >= fran && r.alder <= till && r.lon > 0;
+        const i = r => r.alder > 0 && r.alder >= fran && r.alder <= till && r.lon > 0;   // ålder 0 = saknas (ADR-64)
         const kv = dataKv.filter(i).map(r => r.lon), ma = dataMa.filter(i).map(r => r.lon);
         if (!kv.length && !ma.length) continue;
         if (kv.length < k || ma.length < k) { dolda.push(namn); continue; }
@@ -425,6 +431,7 @@ function _ageShareCurve(rows, lo, hi, win) {
     return { ages, share };
 }
 function renderDemografi(bas) {
+    if (!harAlder()) { _akTomUtanAlder(); return; }
     const isAll = bas === '__ALLA__' || !bas;
     const df = isAll
         ? getData().filter(d => d.alder > 0)

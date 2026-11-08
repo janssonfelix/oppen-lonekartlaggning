@@ -44,7 +44,11 @@ function renderRealityCheck() {
     const minAge = ages.length ? Math.min(...ages) : 0;
     const maxAge = ages.length ? Math.max(...ages) : 0;
     let alderStatus, alderMsg;
-    if (medAge >= 38 && medAge <= 55) {
+    if (!ages.length) {
+        // Ålderskolumnen är valfri (ADR-64).
+        alderStatus = 'warn';
+        alderMsg = 'Ålder saknas: analysen körs utan åldersjustering; Ålder & karriär visas inte.';
+    } else if (medAge >= 38 && medAge <= 55) {
         alderStatus = 'ok';
         alderMsg = `Medianålder: <strong>${svTal(medAge, 0)} år</strong> (spann ${minAge}–${maxAge}). Inom typiskt kommunalt intervall (38–55 år).`;
     } else if (medAge >= 30 && medAge <= 60) {
@@ -194,6 +198,7 @@ function renderDataValidationReport() {
                 ${excludedMissingKon > 0 ? `<div class="dvr-row warn"><span><span class="dvr-icon">−</span>Saknar/okänt kön:${missingKonExamples.length ? ' <span class="text-dampad-xs">ex: ' + missingKonExamples.map(e => '"' + esc(e) + '"').join(', ') + '</span>' : ''}</span><span class="dvr-value">${fmt(excludedMissingKon)}</span></div>` : ''}
                 ${invalidLon > 0 ? `<div class="dvr-row warn"><span><span class="dvr-icon">${ikon('statusVarning')}</span>Ogiltig lön (text):${invalidLonExamples.length ? ' <span class="text-dampad-xs">ex: ' + invalidLonExamples.map(e => '"' + esc(e) + '"').join(', ') + '</span>' : ''}</span><span class="dvr-value">${fmt(invalidLon)}</span></div>` : ''}
                 ${invalidAlder > 0 ? `<div class="dvr-row warn"><span><span class="dvr-icon">${ikon('statusVarning')}</span>Ogiltig ålder (text):${invalidAlderExamples.length ? ' <span class="text-dampad-xs">ex: ' + invalidAlderExamples.map(e => '"' + esc(e) + '"').join(', ') + '</span>' : ''}</span><span class="dvr-value">${fmt(invalidAlder)}</span></div>` : ''}
+                ${!harAlder() ? `<div class="dvr-row warn"><span><span class="dvr-icon">${ikon('statusVarning')}</span>Ålder saknas: analysen körs utan åldersjustering; Ålder &amp; karriär visas inte.</span><span class="dvr-value">–</span></div>` : ''}
                 <div class="dvr-row dvr-total ok"><span>= Inlästa:</span><span class="dvr-value">${fmt(used)}</span></div>
                 ${typeof _fkRapportrad === 'function' ? _fkRapportrad() : ''}
                 ${totalRaw > 0 ? `<div class="text-dampad-xs marg-t-4">Användbarhetsgrad: <strong>${svPct((used / Math.max(1, totalRaw) * 100), 1)}</strong> av filens rader.</div>` : ''}

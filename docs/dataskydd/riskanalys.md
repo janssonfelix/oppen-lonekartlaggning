@@ -1,6 +1,6 @@
 # Risk- och sårbarhetsanalys (dataskydd och informationssäkerhet) — Öppen lönekartläggning
 
-**Bygge:** `2026.11.05` · **Artefakt-SHA-256:** `1f467558a9765a37510212171cf5127552e2fab5ef96fba5eb5a737ffbfae31f` (se `dist/RELEASE.txt`).
+**Bygge:** `2026.11.05` · **Artefakt-SHA-256:** `d1584f7891a33e9c36e64e20946fa21f34909d35b66478023aaed3cd21bd0f15` (se `dist/RELEASE.txt`).
 **Granskningsdatum:** 2026-11-07.
 **Granskningsmetod:** kodläsning påstående för påstående + statisk sökning i källkod och bygge +
 körning av det byggda verktyget i jsdom och i Chromium (utan nätverk) med syntetiska testfiler.
@@ -40,8 +40,8 @@ hanteras med de organisatoriska åtgärderna i §8.
 
 ## 2. Personuppgifter som behandlas
 
-Verktyget minimerar indata till **fem obligatoriska fält per anställd** plus en
-**valfri arbetsvärderingspoäng** och en **valfri ansvarskod** (vitlista `ALLOWED_FIELDS`, verifierad i koden).
+Verktyget minimerar indata till **fyra obligatoriska fält per anställd** plus en
+**valfri ålder** (rekommenderad, ADR-64), en **valfri arbetsvärderingspoäng** och en **valfri ansvarskod** (vitlista `ALLOWED_FIELDS`, verifierad i koden).
 Poängen är en egenskap hos **befattningen** (arbetsvärderingens resultat), inte
 hos individen, och tillför därmed ingen ny integritetsrisk:
 
@@ -49,7 +49,7 @@ hos individen, och tillför därmed ingen ny integritetsrisk:
 |---|---|---|
 | Månadslön | Subjekt för analysen | Hög (lön är integritetskänsligt) |
 | Kön | Grunddimension (kvinna/man) | Diskrimineringsgrund — ingen särskild kategori av personuppgifter |
-| Ålder | Kontrollvariabel | Medel |
+| Ålder (valfri, rekommenderad) | Kontrollvariabel; utan ålder körs analysen utan åldersjustering och Ålder & karriär visas inte (ADR-64) | Medel |
 | AID / yrkesgrupp | Gruppering | Låg–medel |
 | BAS-intervall | Kravnivå-proxy | Låg |
 | Poäng (valfri) | Arbetsvärderingens krav-poäng per befattning (krav-proxy för likvärdigt arbete) | Ingen — befattningsattribut, ej individbundet |
@@ -252,8 +252,8 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
 - Vid fliksstängning försvinner allt minne (ingen persistens).
 
 ### 6.4 Uppgiftsminimering & avvisning av känsliga fält ✔
-- **Fältvitlista** (`ALLOWED_FIELDS`): endast BAS, AID/yrke, lön, ålder, kön,
-  samt valfri arbetsvärderingspoäng (befattningsattribut) och valfri ansvarskod enligt AID
+- **Fältvitlista** (`ALLOWED_FIELDS`): endast BAS, AID/yrke, lön och kön, samt valfri ålder
+  (ADR-64; saknas kolumnen blir åldern 0 på varje rad och betyder *saknas*), valfri arbetsvärderingspoäng (befattningsattribut) och valfri ansvarskod enligt AID
   (ADR-33) läses in. Kolumnen *Ansvar* (ofta kostnadsställe) läses inte in (se §2 i
   teknisk-plan.md).
   **Under inläsningen ligger hela filen i minnet** — som byte, som avkodad text och (för

@@ -19,7 +19,7 @@ konsekvensbedömning (DPIA). Lagrumshänvisningarna samlas i
 | Personuppgiftsansvarig | Arbetsgivaren som genomför kartläggningen |
 | Personuppgiftsbiträde | Inget. Verktyget körs på arbetsgivarens egen dator; ingen uppgift når verktygets leverantör eller någon annan |
 | Rättslig grund | Rättslig förpliktelse (dataskyddsförordningen art. 6.1 c med 6.3): diskrimineringslagens regler om lönekartläggning och dokumentation, se lagrum.md |
-| Uppgifter som läses in | Fem fält per anställd: månadslön, kön, ålder, yrkesgrupp (AID) och BAS-intervall — plus valfri arbetsvärderingspoäng per befattning, valfri ansvarskod enligt AID (grupperas i tre ansvarsgrupper; används för att pröva ansvar som sakligt skäl) och radens nummer i källfilen. Alla andra kolumner läses inte in |
+| Uppgifter som läses in | Fyra fält per anställd: månadslön, kön, yrkesgrupp (AID) och BAS-intervall — plus valfri ålder (rekommenderad, ADR-64), valfri arbetsvärderingspoäng per befattning, valfri ansvarskod enligt AID (grupperas i tre ansvarsgrupper; används för att pröva ansvar som sakligt skäl) och radens nummer i källfilen. Alla andra kolumner läses inte in |
 | Uppgifter som avvisas | Lönefilen avvisas helt om en kolumnrubrik anger personnummer, namn eller e-post, eller om någon kolumn i filens 50 första rader innehåller sådana värden (minst tre personnummer eller e-postadresser, eller minst fem för- och efternamn). Rubrikkontrollen bortser från stora/små bokstäver och svenska tecken, så *Förnamn* och *Fornamn* avvisas båda. Filen avvisas också om en rubrik antyder en särskild kategori av personuppgifter (fackmedlemskap, hälsa, etnicitet, religion med mera); där prövas bara rubriken |
 | Organisationens referensdata | Ställningstagande och jämförelsestatistik — som egna filer eller i ett organisationspaket (JSON). Bara aggregat; ett paket med något som liknar personnummer eller e-post avvisas. Ingen organisation eller referens är inbyggd |
 | Särskilda kategorier | Inga (bestämmelserna om särskilda kategorier är inte tillämpliga). Lön är däremot integritetskänslig, och i små grupper kan kombinationen kön, ålder, yrke och BAS peka ut enskilda |
@@ -36,6 +36,9 @@ konsekvensbedömning (DPIA). Lagrumshänvisningarna samlas i
 - **Ingen autofyll-historik:** alla fält har `autocomplete="off"`, också de som skapas medan du
   arbetar. Det gäller till exempel anteckningarna i Regler & praxis, handlingsplanens fält och Löneöversyns
   riktade rader. Då sparas inte organisationsnamn och anteckningar i webbläsarens autofyll-historik.
+- **Ålder är valfri (ADR-64):** lönefilen behöver bara BAS-intervall, AID, månadslön och kön. Utan ålder körs
+  analysen utan åldersjustering och fliken Ålder & karriär visas inte. Den som inte behöver åldersjusteringen
+  kan alltså lämna ålder utanför uttaget och behandla en uppgift mindre.
 - **Ingen lagring på disken:** varken verktyget eller de inbyggda biblioteken skriver till
   localStorage, sessionStorage, IndexedDB, cookies eller cache. Det kontrolleras vid varje
   granskning och i webbläsartestet. Som reserv finns en spärr i koden som avbryter med ett

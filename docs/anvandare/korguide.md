@@ -59,7 +59,7 @@ Exportera en lönefil (CSV eller XLSX) med dessa kolumner:
 | BAS-intervall | Ja | Kravnivå/svårighetsgrupp |
 | AID / yrkesgrupp | Ja | Yrkeskod/-namn |
 | Månadslön | Ja | **Heltidsomräknad** fast månadslön — se *Lönedefinition* nedan |
-| Ålder *(eller födelseår)* | Ja | Födelseår tolkas automatiskt till ålder |
+| Ålder *(eller födelseår)* | Nej, rekommenderad | Födelseår tolkas automatiskt till ålder. Utan ålder körs analysen utan åldersjustering och Ålder & karriär visas inte |
 | Kön | Ja | K/M, Kvinna/Man m.fl. tolkas automatiskt |
 | Poäng *(arbetsvärdering)* | Nej | Valfri kolumn för likvärdigt arbete över BAS-gränser |
 | Ansvarskod *(AID)* | Nej | Valfri kolumn: A, B, C, L (ledningsansvar), F, M, 1001, 1002 (särskilt uppdrag). Kolumnen *Ansvar* (ofta ett kostnadsställe) läses aldrig |

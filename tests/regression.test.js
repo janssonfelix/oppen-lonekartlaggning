@@ -13,7 +13,8 @@ import { dirname, join } from 'node:path';
 import { fitOLS as fitOLSRef } from '../src/lib/stat.js';
 import { computeSequentialGap, quantileRegression, FORKLARINGSMODELL_STANDARD, TILLFOR_GRANS_PP,
     normaliseraForklaringsmodell, forklaringsmodellArStandard, modellFras, modellBeskrivning, modellVariabler,
-    computeVariabelTillfor, kvantilDesign, quantileRegressionAtAllTau } from '../src/lib/regression.js';
+    computeVariabelTillfor, computePerBasGap, blinderOaxaca, kvantilDesign, quantileRegressionAtAllTau, harAlderIRader } from '../src/lib/regression.js';
+import { aldersjusteradSkillnad } from '../src/lib/likvardighet.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const las = f => JSON.parse(readFileSync(join(here, 'fixtures', f), 'utf8'));
@@ -251,5 +252,77 @@ describe('quantileRegressionAtAllTau på indikatormodellen (ADR-63)', () => {
         const d = kvantilDesign(fx.rows.map(r => ({ ...r })), FORKLARINGSMODELL_STANDARD);
         const q = quantileRegressionAtAllTau(fx.rows.map(r => ({ ...r })));
         for (const r of q.results) expect(r.konPct).toBe(pct(quantileRegression(d.X, d.y, r.tau).beta[1]));
+    });
+});
+
+// ---- Lönefil utan ålder (ADR-64): kön + BAS, inga ålderskolumner ----
+/** 3 BAS × 2 kön, deterministiska löner, ålder 0 (ålderskolumnen saknas: inläsningen ger 0). */
+function utanAlder(nPer = 30) {
+    const rader = [];
+    ['A', 'B', 'C'].forEach((bas, j) => {
+        for (let i = 0; i < nPer; i++) {
+            for (const kon of ['kvinna', 'man']) {
+                const lon = 28000 + j * 3000 + (kon === 'man' ? 1200 : 0) + ((i * 37) % 23) * 90;
+                rader.push({ bas, kon, lon, alder: 0, aid: '5301', yrke: '5301 Undersköterska' });
+            }
+        }
+    });
+    return rader;
+}
+
+describe('modellerna utan ålder i lönefilen (ADR-64)', () => {
+    it('harAlderIRader: någon rad med ålder > 0', () => {
+        expect(harAlderIRader(utanAlder())).toBe(false);
+        expect(harAlderIRader([{ alder: 0 }, { alder: 41 }])).toBe(true);
+        expect(harAlderIRader([])).toBe(false);
+    });
+    it('normaliseraForklaringsmodell tvingar bort ålder med en varning; standarden är oförändrad', () => {
+        const { modell, varningar } = normaliseraForklaringsmodell({ bas: true, alder: true }, { harAlder: false });
+        expect(modell.alder).toBe(false);
+        expect(modell.bas).toBe(true);
+        expect(varningar.join(' ')).toMatch(/ålder/i);
+        expect(normaliseraForklaringsmodell(null, { harAlder: false }).modell.alder).toBe(false);
+        expect(normaliseraForklaringsmodell(null).modell).toEqual({ ...FORKLARINGSMODELL_STANDARD });
+        expect(FORKLARINGSMODELL_STANDARD.alder).toBe(true);
+    });
+    it('computeSequentialGap räknar kön och BAS utan åldersteg', () => {
+        const steg = computeSequentialGap(utanAlder(), 0, ['A', 'B', 'C'], { golv: 10 });
+        expect(steg.map(s => s.name)).not.toContain('+ Ålder');
+        expect(steg[0].status).toBe('ok');
+        expect(steg.find(s => s.name === '+ BAS-intervall').status).toBe('ok');
+    });
+    it('computeVariabelTillfor utan ålder: fullmodellen är kön + BAS och ålder har ingen rad', () => {
+        const t = computeVariabelTillfor(utanAlder(), 0, ['A', 'B', 'C'], { golv: 10 });
+        expect(t.full.status).toBe('ok');
+        expect(t.rader.map(x => x.variabel)).not.toContain('alder');
+        expect(t.forslag.tabort).not.toContain('alder');
+    });
+    it('computePerBasGap kör kön utan ålderskolumn', () => {
+        const ut = computePerBasGap(utanAlder(), ['A', 'B', 'C'], { golv: 10 });
+        expect(ut).toHaveLength(3);
+        for (const b of ut) {
+            expect(b.status).toBe('ok');
+            expect(b.n).toBe(60);
+            expect(Number.isFinite(b.gapPct)).toBe(true);
+            expect(b.gapPct).toBeLessThan(0);
+        }
+    });
+    it('blinderOaxaca delar upp på BAS utan ålder', () => {
+        const bo = blinderOaxaca(utanAlder(), { golv: 10 });
+        expect(bo).not.toBeNull();
+        expect(bo.modell.alder).toBe(false);
+        expect(Object.keys(bo.components)).not.toContain('age');
+        expect(bo.n).toBe(180);
+        expect(bo._raw.q + bo._raw.u + bo._raw.i).toBeCloseTo(bo._raw.rawGapLog, 9);
+    });
+    it('quantileRegressionAtAllTau skattar utan ålderskolumn', () => {
+        const q = quantileRegressionAtAllTau(utanAlder());
+        expect(q).not.toBeNull();
+        expect(q.n).toBe(180);
+        for (const r of q.results) expect(Number.isFinite(r.konPct)).toBe(true);
+    });
+    it('aldersjusteradSkillnad ger null utan ålder', () => {
+        const r = utanAlder();
+        expect(aldersjusteradSkillnad(r.filter(d => d.kon === 'kvinna'), r.filter(d => d.kon === 'man'))).toBeNull();
     });
 });

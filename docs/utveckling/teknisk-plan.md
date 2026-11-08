@@ -247,9 +247,9 @@ adaptern verkligen delegerar vaktas av `tests/drift.test.js`:
   rätt grupp. Utskriftsfönstret för checklistorna (`printScaffoldView`) läser `:root` och allt från `.dold` till
   stilmallens slut ur den körande stilmallen och lägger in det som byggt stilark (`adoptedStyleSheets`): ett `<style>`-element
   som skriptet skapar blockeras av den ärvda CSP:n (`style-src-elem`), så fönstret var tidigare helt ostilat.
-- **Tester:** Vitest — 3062 tester i 96 filer: rena `src/lib/`-moduler, CSV-parsning, jsdom-röktest
+- **Tester:** Vitest — 3092 tester i 97 filer: rena `src/lib/`-moduler, CSV-parsning, jsdom-röktest
   av varje vy (ADR-7; `tests/smoke.test.js` med det delade fönstret och sju `tests/smoke-*.test.js` per
-  område), k-tröskeln i åtta `tests/ktroskel*.test.js` med riggen i `tests/helpers/ktroskel-rigg.js`,
+  område), k-tröskeln i nio `tests/ktroskel*.test.js` med riggen i `tests/helpers/ktroskel-rigg.js`,
   gränssnittet i `tests/granssnitt*.test.js` (riggen `tests/helpers/granssnitt-rigg.js`) och diagramvyerna i
   `tests/diagramvyer*.test.js` (riggen `tests/helpers/diagramvyer-rigg.js`),
   axe-a11y (ADR-10) samt vakterna `appsource`, `drift`, `exports.golden`,
@@ -1455,6 +1455,26 @@ exakt LP-lösning för indikatormodellen (`tests/fixtures/stat-referens-kvantil.
 filhuvudet i `tests/stat-referens.test.js` beskriver). `basRangFn` finns kvar för *Lägre krav*. Vaktas av
 `tests/regression.test.js`, `tests/stat-referens.test.js`, `tests/diagramritare.test.js` och
 `tests/smoke-innehall.test.js`.
+
+**ADR-64 — Ålder är valfri i lönefilen.** Beslut 2026-11-08. En lönekartläggning förutsätter ingen ålderskolumn, och
+uppgiftsminimeringen talar för att den som inte behöver åldersjusteringen ska kunna lämna
+åldern utanför uttaget. Kolumnmappningen har ålder som valfri (`required: false`); en saknad kolumn ger ålder 0 på
+varje rad, och 0 betyder *saknas*. Om lönefilen har ålder härleds ur datan (`harAlderIRader` i
+`src/lib/regression.js`, i appen `harAlder()` i `50-regressionsmodeller.js`), inget nytt fält i tillståndet. Utan
+ålder utesluts inga rader; inläsningskontrollen och förhandskontrollen säger *Ålder saknas: analysen körs utan
+åldersjustering; Ålder & karriär visas inte.* Modellerna tar bort ålderstermen: förklaringsmodellen tvingar
+`alder: false` med en varning, regressionen, per-BAS-regressionen, Oaxaca–Blinder och kvantilregressionen körs med
+kön och BAS (och yrkesgrupp när den är vald), livscykelmodellen svarar `no_age`, Personer att granska prövar alla mot
+kollegornas median, datakvaliteten hoppar över rimligheten för ålder och tabellerna per BAS-intervall utelämnar
+medelålder och åldersgrupper med en mening om varför. Fliken Ålder & karriär låses som övriga låsta flikar med tipset
+*Kräver ålder i lönefilen*; Översiktens medelålder visas som –; Word, PDF, Excel, rapportunderlaget och dossiererna
+hoppar över åldersavsnitten. Metodmeningen *Att ålder räknas bort är ett metodval …; det avgör ni.* står alltid, med
+eller utan ålder: i nyckeltalets verktygstips i Lika arbete, i regressionskortets *Så fungerar regressionen* och i
+rapportens metodtext. Bladet *Metod & parametrar* (`_methodAppendixData` i `22-exporthjalpare.js`) säger i raderna
+*Modell — oförklarad skillnad* och *Steg + Yrkesgrupp* modellen utan ålder (`modellBeskrivning(forklaringsmodell())`).
+Importprofilernas kännetecken räknas som förut, så att sparade profiler känns igen. Vaktas av
+`tests/regression.test.js`, `tests/ktroskel-utan-alder.test.js` och facit *lönefil utan ålder* i
+`tests/exports.golden.test.js`.
 
 ## 9. Öppna punkter
 

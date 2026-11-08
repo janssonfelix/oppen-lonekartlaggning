@@ -111,3 +111,14 @@ describe('perbas: receptet (ADR-52)', () => {
         expect(t.konsgap.rader[0].bas).toBe('Alla');
     });
 });
+
+describe('perbas: lönefil utan ålder (ADR-64)', () => {
+    const t = perBasTabeller(underlag().map(r => ({ ...r, alder: 0 })), { k: 10 });
+    it('åldersgrupperna utelämnas och medelåldern är tom', () => {
+        expect(t.harAlder).toBe(false);
+        expect(t.aldersgrupper).toBeNull();
+        for (const r of t.konsgap.rader) { expect(r.alder).toBeNull(); expect(r.alderMa).toBeNull(); expect(r.alderKv).toBeNull(); }
+        expect(t.konsgap.rader[0].medel).toBeGreaterThan(0);
+    });
+    it('med ålder är harAlder sant', () => expect(perBasTabeller(underlag(), { k: 10 }).harAlder).toBe(true));
+});

@@ -99,7 +99,9 @@ export const MODULES = [
             computeVariabelTillfor: '_rgComputeVariabelTillfor', normaliseraForklaringsmodell: '_rgNormaliseraForklaringsmodell',
             inomYrkesgrupp: '_rgInomYrkesgrupp',
             forklaringsmodellArStandard: '_rgForklaringsmodellArStandard', modellVariabler: '_rgModellVariabler',
-            modellFras: '_rgModellFras', modellBeskrivning: '_rgModellBeskrivning', tillforGransPp: '_rgTillforGransPp'
+            modellFras: '_rgModellFras', modellBeskrivning: '_rgModellBeskrivning', tillforGransPp: '_rgTillforGransPp',
+            // Ålder valfri (ADR-64)
+            harAlderIRader: '_rgHarAlderIRader'
         }
     },
     {

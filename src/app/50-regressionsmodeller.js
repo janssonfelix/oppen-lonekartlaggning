@@ -40,10 +40,27 @@ function _quantileRegression(X, y, tau, maxIter, tol, start) {
     return _rgQuantileRegression(X, y, tau, maxIter, tol, start);
 }
 
+// ---- Ålder i lönefilen (ADR-64) ----
+// Ålderskolumnen är valfri. Utan den läser inläsningen ålder 0 på varje rad: modellerna räknas då utan ålder,
+// fliken Ålder & karriär låses och exporterna hoppar åldersavsnitten. Svaret sparas per inläst underlag.
+let _harAlderFor = /** @type {{data: any[]|null, n: number, varde: boolean}} */ ({ data: null, n: -1, varde: false });
+/** Har den inlästa lönefilen ålder (minst en rad med ålder över 0)? */
+function harAlder() {
+    const d = getData();
+    if (_harAlderFor.data !== d || _harAlderFor.n !== d.length) _harAlderFor = { data: d, n: d.length, varde: _rgHarAlderIRader(d) };
+    return _harAlderFor.varde;
+}
+
+/** Metodreservationen om ålder (S7, ADR-64): vid nyckeltalet i Lika arbete, i regressionskortet och i rapportens metodtext. */
+const ALDER_METODVAL_TEXT = 'Att ålder räknas bort är ett metodval för att skilja ut strukturella skillnader, inte ett ställningstagande om att ålder är ett sakligt skäl; det avgör ni.';
+/** Meningen när lönefilen saknar ålder (ADR-64). */
+const ALDER_SAKNAS_TEXT = 'Lönefilen saknar ålder: analysen körs utan åldersjustering, och Ålder & karriär visas inte.';
+
 // ---- Förklaringsmodellen (ADR-56) ----
-/** Den gällande modellen, normaliserad mot datat (yrkesgrupp kan bara väljas när lönefilen har AID eller yrke). */
+/** Den gällande modellen, normaliserad mot datat (yrkesgrupp kan bara väljas när lönefilen har AID eller yrke, ålder
+ *  bara när lönefilen har ålder, ADR-64). */
 function forklaringsmodell() {
-    return _rgNormaliseraForklaringsmodell(state.forklaringsmodell, { harYrke: getData().some(d => d.aid || d.yrke) }).modell;
+    return _rgNormaliseraForklaringsmodell(state.forklaringsmodell, { harYrke: getData().some(d => d.aid || d.yrke), harAlder: harAlder() }).modell;
 }
 
 /**
@@ -55,8 +72,11 @@ function forklaringsmodell() {
  * @returns {{ok: true, modell: {bas:boolean, alder:boolean, yrkesgrupp:boolean, skal:string}, varningar: string[], andrad: boolean}}
  */
 function sattForklaringsmodell(v, { rita = true } = {}) {
-    const { modell, varningar } = _rgNormaliseraForklaringsmodell(v, { harYrke: getData().some(d => d.aid || d.yrke) });
-    const ny = _rgForklaringsmodellArStandard(modell) ? null : modell;
+    const harYrke = getData().some(d => d.aid || d.yrke);
+    const { modell, varningar } = _rgNormaliseraForklaringsmodell(v, { harYrke, harAlder: harAlder() });
+    // Det som lagras prövas inte mot åldern (ADR-64): en lönefil utan ålder ändrar inte valet för nästa fil.
+    const lagras = _rgNormaliseraForklaringsmodell(v, { harYrke }).modell;
+    const ny = _rgForklaringsmodellArStandard(lagras) ? null : lagras;
     const andrad = JSON.stringify(ny) !== JSON.stringify(state.forklaringsmodell);
     state.forklaringsmodell = ny;
     if (andrad && rita) {

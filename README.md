@@ -19,7 +19,7 @@ för den som gör det först. Word-utkastet är prövat i LibreOffice, ännu int
 - **Färdiga underlag:** ett redigerbart Word-utkast av dokumentationen (rapporten), en Excel-fil med
   underlaget och en PDF som låst kopia. Dessutom en ZIP-fil med allt, protokoll för gemensam
   lönebedömning och rapportunderlag att klistra in i din egen mall.
-- **Dataskydd inbyggt:** bara de fält analysen behöver läses in (fem obligatoriska, två
+- **Dataskydd inbyggt:** bara de fält analysen behöver läses in (fyra obligatoriska, tre
   valfria). Filer med personnummer, namn eller e-post avvisas, och små grupper skyddas i det som
   lämnar verktyget. En risk- och sårbarhetsanalys ingår som underlag till organisationens
   konsekvensbedömning.

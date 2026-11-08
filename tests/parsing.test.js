@@ -10,6 +10,8 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { arAnsvarskodRubrik, tolkaAnsvarskod, ansvarsgrupp, andelGiltiga } from '../src/lib/ansvar.js';
+import { createAppWindow } from './helpers/app-harness.js';
+import { papa, vanta, csvFil } from './helpers/granssnitt-rigg.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const appSrc = readFileSync(join(__dirname, '..', 'dist', 'app.js'), 'utf8');
@@ -401,5 +403,29 @@ describe('inläsning: AID:s ansvarskod', () => {
         expect(underkand.godkand).toBe(false);
         expect(underkand.giltiga).toBeCloseTo(0.85, 6);
         expect(P._bedomAnsvarKolumn('Ansvarskod', ['', '']).godkand).toBe(false);
+    });
+});
+
+// ---- Lönefil utan ålderskolumn (ADR-64): ålder är valfri ----
+describe('inläsning: lönefil utan ålderskolumn', () => {
+    it('extractMinimalRecord: utan kolumnen blir åldern 0, inget fel', () => {
+        P.state.ansvarKolumn = null;
+        const rec = P.extractMinimalRecord({ BAS: 'C', AID: '207011 Handläggare', 'Månadslön': '31000', 'Kön': 'Kvinna' });
+        expect(rec).toMatchObject({ bas: 'C', lon: 31000, kon: 'kvinna', alder: 0, _alderStatus: 'empty' });
+    });
+    it('filen med bara BAS, AID, lön och kön läses in med alla rader, utan kolumnmappning', async () => {
+        const w = createAppWindow();
+        papa(w);
+        const rader = ['BAS;AID;Månadslön;Kön'];
+        for (let i = 0; i < 40; i++) rader.push(`${i % 2 ? 'C' : 'D'};207011 Handläggare;${30000 + i * 10};${i % 4 < 2 ? 'Man' : 'Kvinna'}`);
+        w.loadStructureFile(csvFil(w, rader, 'utan-alder.csv'));
+        await vanta(() => w.__state.data.length > 0);
+        expect(w.__state.data).toHaveLength(40);
+        expect(w.__state.data.every(r => r.alder === 0)).toBe(true);
+        expect(w.eval('harAlder()')).toBe(false);
+        expect(w.eval('_kolumnerSomSaknas(state._dataHeaders)')).toEqual([]);
+        expect(w.document.getElementById('column-map-panel').textContent).not.toContain('Kolumnmappning behövs');
+        expect(w.__state.forhandskontroll.varningar.map(v => v.kod)).toContain('alder-saknas');
+        expect(w.document.getElementById('reality-check').textContent).toContain('Ålder saknas: analysen körs utan åldersjustering; Ålder & karriär visas inte.');
     });
 });

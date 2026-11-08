@@ -104,3 +104,20 @@ describe('fullständighet', () => {
         expect(bedomUnderlag(bra, { k: 10, audit: a, mde: 1, modell: 'full' }).kriterier.find(c => c.id === 'fullstandighet').varde).toBeCloseTo(2, 10);
     });
 });
+
+describe('bedomUnderlag utan ålder i lönefilen (ADR-64)', () => {
+    const ok = { k: 10, audit: audit(40), mde: 1.5, modell: 'full' };
+    it('rimligheten hoppar över åldern och säger inget om den', () => {
+        const r = [...grupp('A', 10, 10, { alder: 0 }), ...grupp('B', 10, 10, { alder: 0 })];
+        const res = bedomUnderlag(r, ok);
+        const rim = res.kriterier.find(c => c.id === 'rimlighet');
+        expect(rim.status).toBe('ok');
+        expect(rim.varde).toBe(0);
+        expect(rim.text).not.toMatch(/ålder/);
+        expect(res.kriterier.find(c => c.id === 'modell').text).not.toMatch(/ålder/);
+    });
+    it('med ålder räknas en orimlig ålder som förut', () => {
+        const r = [...grupp('A', 10, 10), ...grupp('B', 10, 9), rad('B', 'man', 35000, 90)];
+        expect(bedomUnderlag(r, ok).kriterier.find(c => c.id === 'rimlighet').varde).toBeCloseTo(2.5, 9);
+    });
+});
