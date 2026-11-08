@@ -48,6 +48,13 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   komplettera ur lönesystemet om ni rapporterar.* Excelbladen har diakriter: *EU-lönekartläggning*, *Löneskillnad*,
   *Löneskillnad per ålder*, *Könsskevhet*, *Slumpens gränser*, *Jämförelsestatistik*, *Sakliga skäl* och
   *Jämförelse_alla_percentiler*.
+- **Småfel i text och räknare.** Översikten säger *N intervall redovisas inte i exporten (ett kön under k)* i stället
+  för *N maskeras*, och *Under P10 i {referens}* i stället för genitiven efter kolon. Nyckeltalet för Lika arbete AID x
+  BAS och trattdiagrammets not räknar samma sak: *N av M bedömda grupper utanför gränserna*. Regressionskortets text om
+  korrigeringen för många samtidiga tester säger hur många tester som körs och, från fem tester, hur många falskt
+  positiva som väntas; under fem är den en mening. Förklaringsbudgeten säger att det som tillskrivs varje steg beror på
+  ordningen, och att kortet *Vad varje variabel tillför* mäter varje variabel ovanpå alla andra. Lika arbetes
+  nyckeltal efter ålder och BAS-intervall varnar i verktygstipset när ett kön har färre än 10 i modellen.
 - **Sakliga skäl som strukturerad post.** Varje rad i Handlingsplan har knappen *Sakliga skäl*. Dialogen tar emot
   högst 8 skäl per grupp med kategori (Marknad, Utbildning, Erfarenhet, Prestation och resultat, Övergång, Annat
   sakligt skäl), belopp i kronor per månad och en kort kommentar. Den räknar ihop förklarat och återstående belopp och

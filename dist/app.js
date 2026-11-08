@@ -14492,7 +14492,7 @@ function updateCompliance() {
     // bootstrap-KI:t för kvoten utesluter 100 % och skillnaden är minst 3 %.
     const jb = _dqJamforbaraBas(d, kInstalld());   // säger vad exporterna kan jämföra (ADR-51)
     const gapTotal = jb.jamforbara.length;
-    const maskText = jb.maskerade.length ? ` · ${jb.maskerade.length} maskeras` : '';
+    const maskText = jb.maskerade.length ? ` · ${jb.maskerade.length} intervall redovisas inte i exporten (ett kön under ${kInstalld()})` : '';
     let gapCrit = 0, skevCount = 0;
     const granskaBas = new Set(_laOversiktRader(d).filter(o => _laOversiktStatus(o).niva === 'granska').map(o => o.bas));
     jb.jamforbara.forEach(b => {
@@ -14513,7 +14513,7 @@ function updateCompliance() {
 
     // 3. Policy P10-underläge — referensen namnges; utan referens ett tomläge (ADR-28)
     const polLabel = document.getElementById('comp-pol-label');
-    if (polLabel) polLabel.textContent = harReferens() ? `Under ${referensKortnamn()}:s P10` : 'Under ställningstagandets P10';
+    if (polLabel) polLabel.textContent = harReferens() ? `Under P10 i ${referensKortnamn()}` : 'Under ställningstagandets P10';
     const polSub = document.getElementById('comp-pol-sub');
     if (polSub) polSub.textContent = referensNamn();
     if (!harReferens()) {
@@ -25113,7 +25113,7 @@ function _laRitaTratt(d) {
     ritaFigur(el, _laTrattFigur(u));
     _setDiagramMetodNot('chart-la-tratt', _laTrattGlesNot(u.punkter.length));
     const ute = u.punkter.filter(p => p.utanfor).length;
-    if (not) not.textContent = `${u.punkter.length} grupper (yrkesgrupp i ett BAS-intervall) där både kvinnor och män når minsta gruppstorlek; ${ute} ligger utanför gränserna. Punktens färg bygger på en omkastning av könen inom gruppen (1 000 gånger; för grupper över 300 personer en normalapproximation) och gäller gruppens egna löner och antal; det skuggade fältet är en jämn kurva för orientering, ritad för lika många kvinnor som män. Gränserna är ett stöd för bedömningen, inte ett test som friar eller fäller.`;
+    if (not) not.textContent = `${ute} av ${u.punkter.length} bedömda grupper utanför gränserna (yrkesgrupp i ett BAS-intervall där både kvinnor och män når minsta gruppstorlek). Punktens färg bygger på en omkastning av könen inom gruppen (1 000 gånger; för grupper över 300 personer en normalapproximation) och gäller gruppens egna löner och antal; det skuggade fältet är en jämn kurva för orientering, ritad för lika många kvinnor som män. Gränserna är ett stöd för bedömningen, inte ett test som friar eller fäller.`;
 }
 
 // Könsfördelningen per BAS-intervall som staplade staplar till 100 %, med gränserna för jämn könsfördelning
@@ -25163,6 +25163,11 @@ function _laRitaUrval() {
 function _laRegGranska(reg) {
     return _stsNiva(Math.abs(reg.konPct), isFinite(reg.konPctLow) && isFinite(reg.konPctHigh) ? (reg.konPctLow > 0 || reg.konPctHigh < 0) : null) === 'granska';
 }
+/** Varningen i nyckeltalets verktygstips när ett kön har färre än 10 i regressionsmodellen: talet är då osäkert. */
+function _laRegFaNot(reg) {
+    const fa = [reg.nKvAnalysed < 10 ? `kvinnor (${reg.nKvAnalysed} i modellen)` : '', reg.nMaAnalysed < 10 ? `män (${reg.nMaAnalysed} i modellen)` : ''].filter(Boolean);
+    return fa.length ? ` Bygger på få ${fa.join(' och ')}; talet är osäkert.` : '';
+}
 function renderLikaArbeteTopp() {
     const urval = document.getElementById('la-urval'), ut = document.getElementById('la-slutsatser');
     if (!urval || !ut) return;
@@ -25191,7 +25196,7 @@ function renderLikaArbeteTopp() {
                      : _laSlutsats('Yrkesgrupper att granska', '–', `ingen yrkesgrupp har minst ${kTroskel()} av varje kön`),
         storst ? _laSlutsats('Största skillnaden', svPct(storst.kvot, 1), storst.yrke, false, 'Kvinnors medianlön i procent av mäns i den yrkesgrupp där skillnaden är störst') : '',
         regOk ? _laSlutsats(reg.fras ? `Efter ${reg.fras}` : 'Utan kontroller', svPct(reg.konKvot, 1), `kvinnors lön i % av mäns ${reg.fras ? `när ${reg.fras} räknats bort` : 'utan att något räknats bort'}`, _laRegGranska(reg) ? 'granska' : false,
-            `Regressionen i regressionskortet i Lönestruktur: en oförklarad skillnad på ${reg.konPct >= 0 ? '+' : ''}${svPct(reg.konPct, 1)}, kvinnor mot män. Det är samma sak som att kvinnors lön är ${svPct(reg.konKvot, 1)} av mäns. ${ALDER_METODVAL_TEXT}${harAlder() ? '' : ' ' + ALDER_SAKNAS_TEXT}`) : '',
+            `Regressionen i regressionskortet i Lönestruktur: en oförklarad skillnad på ${reg.konPct >= 0 ? '+' : ''}${svPct(reg.konPct, 1)}, kvinnor mot män. Det är samma sak som att kvinnors lön är ${svPct(reg.konKvot, 1)} av mäns.${_laRegFaNot(reg)} ${ALDER_METODVAL_TEXT}${harAlder() ? '' : ' ' + ALDER_SAKNAS_TEXT}`) : '',
         personer != null ? _laSlutsats('Personer att granska', svTal(personer, 0), `minst ${grans} % under förväntad lön`) : ''
     ].join('');
     _laNyckel('nyckel-la-yrkesgrupper', rader.length ? `${granska.length} att granska${folj.length ? ` · ${folj.length} att följa upp` : ''}` : '', granska.length > 0 ? 'granska' : false);
@@ -25952,7 +25957,7 @@ function renderAidBasLika() {
         + `<p class="text-dampad-xs marg-8-0-0">Medianer, kvot och gränser bara när varje kön har minst ${t.k} personer; annars <em>Analyseras på individnivå</em>. Gränserna är de 95-procentiga för slumpen vid gruppens storlek och könsfördelning, räknade med omkastning av könen inom gruppen som i trattdiagrammet. Kolumnen ${esc(_STS_DIR_KOLUMN)}: ${esc(_STS_DIR_TIPS)}</p>`;
     _aidbasEfter('aidbas-lika-tabell');
     const ute = t.lika.rader.filter(r => r.bedomning === 'Utanför gränserna').length, bedomda = t.lika.rader.filter(r => r.bedomning !== 'Analyseras på individnivå').length;
-    _aidbasNyckel('nyckel-la-aidbas', t.lika.rader.length ? `${t.lika.rader.length} grupper · ${ute} av ${bedomda} utanför gränserna` : '');
+    _aidbasNyckel('nyckel-la-aidbas', t.lika.rader.length ? `${ute} av ${bedomda} bedömda grupper utanför gränserna` : '');
     individ.innerHTML = _aidbasTabellHtml('aidbas-individ-tabell', AIDBAS_KOL.individ, t.individ.rader, { not: _aidbasSmaNot(t.individ.sma, t.golv), tom: `Alla grupper har minst ${t.k} kvinnor och ${t.k} män.`, fil: 'analys_pa_individniva' });
     _aidbasEfter('aidbas-individ-tabell');
     _aidbasNyckel('nyckel-la-individ', t.individ.rader.length ? `${t.individ.rader.length} grupper` : '');
@@ -26468,6 +26473,27 @@ function _yrkesStegText(s) {
         + `(fasta effekter för yrkesgrupp inom BAS). Bygger på ${s.nPersoner} personer i ${s.nGrupperBada} yrkesgrupper där båda könen finns`
         + (s.nEnkonade ? `; ${s.nEnkonade} enkönade grupper bidrar inte` : '')
         + `. Huvudtalet ovan räknar inte bort yrkesgruppen.`;
+}
+
+/**
+ * Texten om korrigeringen för många samtidiga tester, räknad ur antalet tester (allM, ett per BAS-intervall med
+ * tillräcklig könsbalans). Under fem tester räcker en mening; utan tester ingen text.
+ * @param {number} n
+ */
+function _bhTextFor(n) {
+    if (!(n > 0)) return '';
+    if (n === 1) return 'Här körs ett enda test, så ingen justering för många samtidiga tester behövs.';
+    if (n < 5) return `Här körs ${n} tester samtidigt; varningstriangeln markerar grupper som är säkerställda i det råa p-värdet men inte efter justeringen enligt Benjamini–Hochberg.`;
+    return `Här körs ${n} tester samtidigt. Med enbart rå p < 0,05 väntas ungefär ${svTal(n * 0.05, 1)} falskt positiva resultat av ren slump. `
+        + 'Justeringen enligt Benjamini–Hochberg minskar den risken genom att kräva starkare bevis för grupper som prövas tillsammans. '
+        + 'Varningstriangeln markerar grupper som är säkerställda i det råa p-värdet men inte efter justeringen; de bör inte presenteras som säkerställda.';
+}
+
+/** Meningen om ordningsberoendet under förklaringsbudgeten (S5): stegens ordning avgör vad som tillskrivs varje steg. */
+function _budgetOrdningNot(budget) {
+    if (!budget || budget.parts.length < 2) return '';
+    const namn = { bas: 'BAS', alder: 'ålder', yrke: 'yrkesgrupp inom BAS' };
+    return `<p class="rb-note">Stegen läggs till i ordningen ${esc(budget.parts.map(p => namn[p.key] || p.key).join(', '))}; vad som tillskrivs varje steg beror på ordningen. Kortet Vad varje variabel tillför mäter varje variabel ovanpå alla andra.</p>`;
 }
 
 /**
@@ -27041,6 +27067,7 @@ function renderRegressionCard() {
                         <span class="f-dampad">(${svPct(budget.remainingShare, 0)} av skillnaden)</span></li>
                 </ul>
                 ${!r.modell.yrkesgrupp && budget.parts.some(p => p.key === 'yrke') ? `<p class="rb-note">Yrkesgrupp inom BAS räknas in i budgeten, inte i huvudtalet ovan: det som kvarstår här är skillnaden mellan kvinnor och män med samma yrkesgrupp, BAS-intervall och ålder.</p>` : ''}
+                ${_budgetOrdningNot(budget)}
                 ${budget.anyNegative ? `<p class="rb-note">${ikon('statusVarning')} En kontrollvariabel <em>ökade</em> skillnaden i stället för att förklara den.
                     Det betyder att den strukturella faktorn <strong>dolde</strong> en del av skillnaden — utan den kontrollen
                     såg läget bättre ut än det är.</p>` : ''}
@@ -27236,7 +27263,7 @@ function renderRegressionCard() {
                     </table>
                 </div>
                 <p class="text-dampad-xs lh-1_5 marg-t-8">
-                    <strong>Multipel jämförelse-korrigering:</strong> Vid många samtidiga tester (20+) förväntas 1 falskt positivt resultat per ren slump om enbart rå p&lt;0,05 används. Justeringen enligt Benjamini–Hochberg minskar den risken genom att kräva starkare bevis för grupper som testas tillsammans. Varningstriangeln markerar grupper som ser signifikanta ut i råa p men inte överlever korrektionen — dessa bör inte presenteras som "säkerställda" vid förhandling.
+                    <strong>Multipel jämförelse-korrigering:</strong> ${esc(_bhTextFor(allM))}
                 </p>
             </details>
 

@@ -23,7 +23,7 @@ function updateCompliance() {
     // bootstrap-KI:t för kvoten utesluter 100 % och skillnaden är minst 3 %.
     const jb = _dqJamforbaraBas(d, kInstalld());   // säger vad exporterna kan jämföra (ADR-51)
     const gapTotal = jb.jamforbara.length;
-    const maskText = jb.maskerade.length ? ` · ${jb.maskerade.length} maskeras` : '';
+    const maskText = jb.maskerade.length ? ` · ${jb.maskerade.length} intervall redovisas inte i exporten (ett kön under ${kInstalld()})` : '';
     let gapCrit = 0, skevCount = 0;
     const granskaBas = new Set(_laOversiktRader(d).filter(o => _laOversiktStatus(o).niva === 'granska').map(o => o.bas));
     jb.jamforbara.forEach(b => {
@@ -44,7 +44,7 @@ function updateCompliance() {
 
     // 3. Policy P10-underläge — referensen namnges; utan referens ett tomläge (ADR-28)
     const polLabel = document.getElementById('comp-pol-label');
-    if (polLabel) polLabel.textContent = harReferens() ? `Under ${referensKortnamn()}:s P10` : 'Under ställningstagandets P10';
+    if (polLabel) polLabel.textContent = harReferens() ? `Under P10 i ${referensKortnamn()}` : 'Under ställningstagandets P10';
     const polSub = document.getElementById('comp-pol-sub');
     if (polSub) polSub.textContent = referensNamn();
     if (!harReferens()) {

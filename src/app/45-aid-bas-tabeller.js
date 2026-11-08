@@ -164,7 +164,7 @@ function renderAidBasLika() {
         + `<p class="text-dampad-xs marg-8-0-0">Medianer, kvot och gränser bara när varje kön har minst ${t.k} personer; annars <em>Analyseras på individnivå</em>. Gränserna är de 95-procentiga för slumpen vid gruppens storlek och könsfördelning, räknade med omkastning av könen inom gruppen som i trattdiagrammet. Kolumnen ${esc(_STS_DIR_KOLUMN)}: ${esc(_STS_DIR_TIPS)}</p>`;
     _aidbasEfter('aidbas-lika-tabell');
     const ute = t.lika.rader.filter(r => r.bedomning === 'Utanför gränserna').length, bedomda = t.lika.rader.filter(r => r.bedomning !== 'Analyseras på individnivå').length;
-    _aidbasNyckel('nyckel-la-aidbas', t.lika.rader.length ? `${t.lika.rader.length} grupper · ${ute} av ${bedomda} utanför gränserna` : '');
+    _aidbasNyckel('nyckel-la-aidbas', t.lika.rader.length ? `${ute} av ${bedomda} bedömda grupper utanför gränserna` : '');
     individ.innerHTML = _aidbasTabellHtml('aidbas-individ-tabell', AIDBAS_KOL.individ, t.individ.rader, { not: _aidbasSmaNot(t.individ.sma, t.golv), tom: `Alla grupper har minst ${t.k} kvinnor och ${t.k} män.`, fil: 'analys_pa_individniva' });
     _aidbasEfter('aidbas-individ-tabell');
     _aidbasNyckel('nyckel-la-individ', t.individ.rader.length ? `${t.individ.rader.length} grupper` : '');

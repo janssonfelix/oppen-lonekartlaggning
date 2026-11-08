@@ -321,6 +321,27 @@ function _yrkesStegText(s) {
 }
 
 /**
+ * Texten om korrigeringen för många samtidiga tester, räknad ur antalet tester (allM, ett per BAS-intervall med
+ * tillräcklig könsbalans). Under fem tester räcker en mening; utan tester ingen text.
+ * @param {number} n
+ */
+function _bhTextFor(n) {
+    if (!(n > 0)) return '';
+    if (n === 1) return 'Här körs ett enda test, så ingen justering för många samtidiga tester behövs.';
+    if (n < 5) return `Här körs ${n} tester samtidigt; varningstriangeln markerar grupper som är säkerställda i det råa p-värdet men inte efter justeringen enligt Benjamini–Hochberg.`;
+    return `Här körs ${n} tester samtidigt. Med enbart rå p < 0,05 väntas ungefär ${svTal(n * 0.05, 1)} falskt positiva resultat av ren slump. `
+        + 'Justeringen enligt Benjamini–Hochberg minskar den risken genom att kräva starkare bevis för grupper som prövas tillsammans. '
+        + 'Varningstriangeln markerar grupper som är säkerställda i det råa p-värdet men inte efter justeringen; de bör inte presenteras som säkerställda.';
+}
+
+/** Meningen om ordningsberoendet under förklaringsbudgeten (S5): stegens ordning avgör vad som tillskrivs varje steg. */
+function _budgetOrdningNot(budget) {
+    if (!budget || budget.parts.length < 2) return '';
+    const namn = { bas: 'BAS', alder: 'ålder', yrke: 'yrkesgrupp inom BAS' };
+    return `<p class="rb-note">Stegen läggs till i ordningen ${esc(budget.parts.map(p => namn[p.key] || p.key).join(', '))}; vad som tillskrivs varje steg beror på ordningen. Kortet Vad varje variabel tillför mäter varje variabel ovanpå alla andra.</p>`;
+}
+
+/**
  * Bygger "förklaringsbudgeten": hur många procentenheter av det ursprungliga
  * gapet som varje kontrollvariabel åt upp, och hur mycket som blir kvar.
  *
@@ -891,6 +912,7 @@ function renderRegressionCard() {
                         <span class="f-dampad">(${svPct(budget.remainingShare, 0)} av skillnaden)</span></li>
                 </ul>
                 ${!r.modell.yrkesgrupp && budget.parts.some(p => p.key === 'yrke') ? `<p class="rb-note">Yrkesgrupp inom BAS räknas in i budgeten, inte i huvudtalet ovan: det som kvarstår här är skillnaden mellan kvinnor och män med samma yrkesgrupp, BAS-intervall och ålder.</p>` : ''}
+                ${_budgetOrdningNot(budget)}
                 ${budget.anyNegative ? `<p class="rb-note">${ikon('statusVarning')} En kontrollvariabel <em>ökade</em> skillnaden i stället för att förklara den.
                     Det betyder att den strukturella faktorn <strong>dolde</strong> en del av skillnaden — utan den kontrollen
                     såg läget bättre ut än det är.</p>` : ''}
@@ -1086,7 +1108,7 @@ function renderRegressionCard() {
                     </table>
                 </div>
                 <p class="text-dampad-xs lh-1_5 marg-t-8">
-                    <strong>Multipel jämförelse-korrigering:</strong> Vid många samtidiga tester (20+) förväntas 1 falskt positivt resultat per ren slump om enbart rå p&lt;0,05 används. Justeringen enligt Benjamini–Hochberg minskar den risken genom att kräva starkare bevis för grupper som testas tillsammans. Varningstriangeln markerar grupper som ser signifikanta ut i råa p men inte överlever korrektionen — dessa bör inte presenteras som "säkerställda" vid förhandling.
+                    <strong>Multipel jämförelse-korrigering:</strong> ${esc(_bhTextFor(allM))}
                 </p>
             </details>
 

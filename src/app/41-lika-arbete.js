@@ -640,7 +640,7 @@ function _laRitaTratt(d) {
     ritaFigur(el, _laTrattFigur(u));
     _setDiagramMetodNot('chart-la-tratt', _laTrattGlesNot(u.punkter.length));
     const ute = u.punkter.filter(p => p.utanfor).length;
-    if (not) not.textContent = `${u.punkter.length} grupper (yrkesgrupp i ett BAS-intervall) där både kvinnor och män når minsta gruppstorlek; ${ute} ligger utanför gränserna. Punktens färg bygger på en omkastning av könen inom gruppen (1 000 gånger; för grupper över 300 personer en normalapproximation) och gäller gruppens egna löner och antal; det skuggade fältet är en jämn kurva för orientering, ritad för lika många kvinnor som män. Gränserna är ett stöd för bedömningen, inte ett test som friar eller fäller.`;
+    if (not) not.textContent = `${ute} av ${u.punkter.length} bedömda grupper utanför gränserna (yrkesgrupp i ett BAS-intervall där både kvinnor och män når minsta gruppstorlek). Punktens färg bygger på en omkastning av könen inom gruppen (1 000 gånger; för grupper över 300 personer en normalapproximation) och gäller gruppens egna löner och antal; det skuggade fältet är en jämn kurva för orientering, ritad för lika många kvinnor som män. Gränserna är ett stöd för bedömningen, inte ett test som friar eller fäller.`;
 }
 
 // Könsfördelningen per BAS-intervall som staplade staplar till 100 %, med gränserna för jämn könsfördelning
@@ -690,6 +690,11 @@ function _laRitaUrval() {
 function _laRegGranska(reg) {
     return _stsNiva(Math.abs(reg.konPct), isFinite(reg.konPctLow) && isFinite(reg.konPctHigh) ? (reg.konPctLow > 0 || reg.konPctHigh < 0) : null) === 'granska';
 }
+/** Varningen i nyckeltalets verktygstips när ett kön har färre än 10 i regressionsmodellen: talet är då osäkert. */
+function _laRegFaNot(reg) {
+    const fa = [reg.nKvAnalysed < 10 ? `kvinnor (${reg.nKvAnalysed} i modellen)` : '', reg.nMaAnalysed < 10 ? `män (${reg.nMaAnalysed} i modellen)` : ''].filter(Boolean);
+    return fa.length ? ` Bygger på få ${fa.join(' och ')}; talet är osäkert.` : '';
+}
 function renderLikaArbeteTopp() {
     const urval = document.getElementById('la-urval'), ut = document.getElementById('la-slutsatser');
     if (!urval || !ut) return;
@@ -718,7 +723,7 @@ function renderLikaArbeteTopp() {
                      : _laSlutsats('Yrkesgrupper att granska', '–', `ingen yrkesgrupp har minst ${kTroskel()} av varje kön`),
         storst ? _laSlutsats('Största skillnaden', svPct(storst.kvot, 1), storst.yrke, false, 'Kvinnors medianlön i procent av mäns i den yrkesgrupp där skillnaden är störst') : '',
         regOk ? _laSlutsats(reg.fras ? `Efter ${reg.fras}` : 'Utan kontroller', svPct(reg.konKvot, 1), `kvinnors lön i % av mäns ${reg.fras ? `när ${reg.fras} räknats bort` : 'utan att något räknats bort'}`, _laRegGranska(reg) ? 'granska' : false,
-            `Regressionen i regressionskortet i Lönestruktur: en oförklarad skillnad på ${reg.konPct >= 0 ? '+' : ''}${svPct(reg.konPct, 1)}, kvinnor mot män. Det är samma sak som att kvinnors lön är ${svPct(reg.konKvot, 1)} av mäns. ${ALDER_METODVAL_TEXT}${harAlder() ? '' : ' ' + ALDER_SAKNAS_TEXT}`) : '',
+            `Regressionen i regressionskortet i Lönestruktur: en oförklarad skillnad på ${reg.konPct >= 0 ? '+' : ''}${svPct(reg.konPct, 1)}, kvinnor mot män. Det är samma sak som att kvinnors lön är ${svPct(reg.konKvot, 1)} av mäns.${_laRegFaNot(reg)} ${ALDER_METODVAL_TEXT}${harAlder() ? '' : ' ' + ALDER_SAKNAS_TEXT}`) : '',
         personer != null ? _laSlutsats('Personer att granska', svTal(personer, 0), `minst ${grans} % under förväntad lön`) : ''
     ].join('');
     _laNyckel('nyckel-la-yrkesgrupper', rader.length ? `${granska.length} att granska${folj.length ? ` · ${folj.length} att följa upp` : ''}` : '', granska.length > 0 ? 'granska' : false);

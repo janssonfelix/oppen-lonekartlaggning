@@ -229,11 +229,28 @@ describe('samma bild på Översikt', () => {
     let w;
     beforeAll(() => { w = createAppWindow(); w.__loadDemoData(); });
 
-    it('kompliansen räknar bara jämförbara BAS och säger hur många som maskeras', () => {
+    it('kompliansen räknar bara jämförbara BAS och säger hur många intervall exporten inte redovisar', () => {
         w.__updateCompliance();
         const t = w.document.getElementById('comp-gap').textContent;
         expect(t).toMatch(/av \d+ jämförbara BAS-intervall/);
-        expect(t).toMatch(/\d+ maskeras/);
+        expect(t).toMatch(/\d+ intervall redovisas inte i exporten \(ett kön under \d+\)/);
+        expect(t).not.toMatch(/maskeras/);
+    });
+    it('referensens P10 skrivs "P10 i {referens}", utan genitiv-s efter kolon', () => {
+        w.__updateCompliance();
+        const t = w.document.getElementById('comp-pol-label').textContent;
+        expect(t).not.toMatch(/:s\b/);
+        if (w.eval('harReferens()')) expect(t).toBe(`Under P10 i ${w.eval('referensKortnamn()')}`);
+    });
+    it('Lika arbete AID x BAS: nyckeltalet räknar som trattens not ("N av M bedömda grupper utanför gränserna")', () => {
+        w.__state.kLage = 'export';
+        w.__renderTabContent('matrix');
+        const nyckel = w.document.getElementById('nyckel-la-aidbas').textContent;
+        const not = w.document.getElementById('la-tratt-not').textContent;
+        const m = /^(\d+) av (\d+) bedömda grupper utanför gränserna$/.exec(nyckel);
+        expect(m, nyckel).not.toBeNull();
+        expect(not.startsWith(`${m[1]} av ${m[2]} bedömda grupper utanför gränserna`), not).toBe(true);
+        w.__state.kLage = 'skarm';
     });
     it('en röd gap-ruta står aldrig bredvid en tom åtgärdslista', () => {
         w.__updateCompliance();
