@@ -449,6 +449,7 @@ function _exportHandlingsplanExport() {
         ['Samverkan', 'Arbetet ska göras i samverkan med arbetstagarna (lagen).'],
         ['', ''],
         ['Detta underlag', `Förifyllt med ${prioCount} grupp(er) under referens (Prioritering) och ${lvCount} kandidatpar i likvärdigt arbete.${seed.parNot ? ' ' + seed.parNot : ''}${seed.egenCount ? ` ${seed.egenCount} egna rader från fliken står sist.` : ''} Det som fyllts i på fliken Handlingsplan står med; fyll i resten av sakligt skäl, ansvarig, tidsplan och status. Raderna bygger på gruppmått — inga individdata.`],
+        ['Kostnad att nå referensen', 'Kostnaden för raderna ur Prioritering: vad det kostar att lyfta gruppen till referensens median. Det är löneläget mot er referens, inte lönekartläggningens könsskillnader. För kandidatparen är det kostnaden att lyfta det kvinnodominerade yrket till jämförelseyrkets median.'],
         ['OBS', 'Det här är ett underlag. Du skriver dokumentationen i Word-utkastet.']
     ];
 

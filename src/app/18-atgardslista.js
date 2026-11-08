@@ -123,7 +123,7 @@ function buildActionChecklist({ endastGrupper = false } = {}) {
                     kategori: 'Löneläge mot referens',
                     prioritet: 'hög',
                     titel: `${i.yrke} (BAS ${i.bas}) — ${_agPct(i.diffPct)} % under ${i.refSource}`,
-                    detalj: `n=${i.n}, kostnad att lyfta till referens: ${fmt.format(Math.round(i.annualGapTotal))} kr/år. Väg skillnaden mot sakliga skäl och dokumentera din bedömning.`,
+                    detalj: `n=${i.n}, kostnad att nå referensen: ${fmt.format(Math.round(i.annualGapTotal))} kr/år. Väg skillnaden mot sakliga skäl och dokumentera din bedömning.`,
                     tab: 'prioritering',
                     källa: 'Prioriteringsanalys'
                 });

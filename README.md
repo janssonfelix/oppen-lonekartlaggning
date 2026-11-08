@@ -14,8 +14,8 @@ Verktyget är ännu inte prövat med verklig lönedata hos en arbetsgivare; chec
 för den som gör det först. Word-utkastet är prövat i LibreOffice, ännu inte i Microsoft Word.
 
 - **Hela lagkedjan:** genomgång av bestämmelser och praxis, lika arbete (med regression och
-  oförklarad löneskillnad), likvärdigt arbete, direktivets rapportmått, prioritering med
-  kostnadsberäkning och handlingsplan.
+  oförklarad löneskillnad), likvärdigt arbete, direktivets rapportmått, löneläget mot er
+  referens med kostnad att nå den, och handlingsplan.
 - **Färdiga underlag:** ett redigerbart Word-utkast av dokumentationen (rapporten), en Excel-fil med
   underlaget och en PDF som låst kopia. Dessutom en ZIP-fil med allt, protokoll för gemensam
   lönebedömning och rapportunderlag att klistra in i din egen mall.

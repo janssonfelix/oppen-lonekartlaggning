@@ -23,6 +23,14 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   utan att något ändrats; 5 % är ett valbart filter (*Visa bara par med minst … % skillnad*). Nyckeltalet säger hur
   många par det är och hur många som har en ojusterad löneskillnad på minst 5 %, och knappen *Visa alla* visar paren
   utöver de 20.
+- **Prioritering: egna ord och rätt rubrik (ADR-62).** Läget mot referensen heter *Börja här*, *Under referens*,
+  *Nära referens, under*, *Nära referens* och *Över referens* i fliken, matrisens zoner, Excel-bladet, inställningarna,
+  symbolförklaringen och ordlistan, så att orden inte delas med Lika arbetes *Värt att granska*, *Följ upp* och
+  *Balanserat*; Att göra kallar punkterna *Löneläge mot referens*. Nyckeltalet heter *Kostnad att nå referensen*, med
+  en rad om att det är löneläget mot referensen och inte könsskillnaderna, och PO-raden säger att 39,15 % är SKR:s
+  standardvärde för kommuner. Förslagen säger hur nära referensen gruppen ligger i stället för "normal variation", och
+  förslaget över referensen är kortare. Handlingsplansunderlaget, rapporten och rapportunderlaget säger hur stor del av
+  kostnaden som är kostnad att nå referensen.
 - **Sakliga skäl som strukturerad post.** Varje rad i Handlingsplan har knappen *Sakliga skäl*. Dialogen tar emot
   högst 8 skäl per grupp med kategori (Marknad, Utbildning, Erfarenhet, Prestation och resultat, Övergång, Annat
   sakligt skäl), belopp i kronor per månad och en kort kommentar. Den räknar ihop förklarat och återstående belopp och

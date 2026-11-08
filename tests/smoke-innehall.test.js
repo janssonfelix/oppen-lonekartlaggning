@@ -908,3 +908,18 @@ describe('huvudtalet följer modellen i nyckeltal, Att göra, Struktur och rappo
         expect(JSON.stringify(m.avsnitt.find(a => a.id === 'regression').delar)).toMatch(/Ålderseffekt/);
     });
 });
+
+// A5: Prioriteringens förslag avfärdar inte en skillnad ("normal variation") och talar inte om utredning.
+describe('förbjudna fraser i det byggda verktyget', () => {
+    it('"normal variation" och "kräver ytterligare utredning" står inte i appen eller sidan', async () => {
+        const { readFileSync } = await import('node:fs');
+        const { join, dirname } = await import('node:path');
+        const { fileURLToPath } = await import('node:url');
+        const rot = join(dirname(fileURLToPath(import.meta.url)), '..');
+        for (const fil of ['dist/app.js', 'src/index.html']) {
+            const text = readFileSync(join(rot, fil), 'utf8');
+            expect(text, fil).not.toMatch(/normal variation/i);
+            expect(text, fil).not.toMatch(/kräver ytterligare utredning/i);
+        }
+    });
+});

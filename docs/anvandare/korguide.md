@@ -350,9 +350,14 @@ rubrikraden, också när det är hopfällt.
    i karriären skillnaden finns. Där finns också lönespridning över ålder, lönefördelningen för kvinnor och män,
    åldersstruktur och livscykel.
 7. **Prioritering · Löneöversyn · Handlingsplan** — tre flikar med var sin fråga.
-   **Prioritering** svarar på *vad* som bör åtgärdas och vad det kostar. Matrisen visar varje grupps
+   **Prioritering** visar löneläget mot er referens med kostnad att nå den. Matrisen visar varje grupps
    avvikelse mot referensen och dess storlek, och åtgärdslistan rangordnar grupperna. Kostnadsdiagrammet
-   visar de grupper som kostar mest att lyfta, med den kumulativa andelen av totalkostnaden.
+   visar de grupper som kostar mest att lyfta, med den kumulativa andelen av totalkostnaden. Läget har egna
+   ord — *Börja här*, *Under referens*, *Nära referens* (under och över uppföljningsgränsen, i två färger) och
+   *Över referens* — eftersom det är något annat än skillnaden mellan kvinnor och män, som Lika arbete
+   bedömer med *Värt att granska*, *Följ upp* och *Balanserat*. Nyckeltalet *Kostnad att nå referensen* är vad
+   det kostar att lyfta grupperna under referensen till dess median, inte lönekartläggningens könsskillnader;
+   dem visar Lika arbete och Löneöversyn.
    **Löneöversyn** svarar på *hur* potten fördelas. Lägg in en budget, ett generellt påslag och riktade
    potter per grupp. Då ser du nya löner, vad som gått åt och löneskillnaden före och efter. En riktad rad kan
    begränsas till ett kön eller till löner under en gräns, och lyfta till en nivå ("höj till"). Det är det som

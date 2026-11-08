@@ -4883,7 +4883,9 @@ function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
     }
     if (typ === 'handlingsplan') {
         const rader = u.rader || [];
-        const st = [`${_st(rader.length, 'förifylld åtgärd', 'förifyllda åtgärder')}` + (u.summa ? ` med en uppskattad kostnad på ${_kr(u.summa)} per år.` : '.')];
+        const st = [`${_st(rader.length, 'förifylld åtgärd', 'förifyllda åtgärder')}` + (u.summa ? ` med en uppskattad kostnad på ${_kr(u.summa)} per år.` : '.')
+            // Prioriteringens del är kostnad att nå referensen: löneläget mot referensen, inte könsskillnaderna (ADR-62).
+            + (u.summaReferens ? ` Av den är ${_kr(u.summaReferens)} kostnad att nå referensen för grupperna under referensen (löneläget mot er referens, inte lönekartläggningens könsskillnader).` : '')];
         if (!rader.length) return blk('Handlingsplan', st, null);
         // Antal berörda: gruppens antal (för ett kandidatpar det kvinnodominerade yrkets); tomt för en egen rad.
         const b = blk('Handlingsplan', st, { rubriker: ['Åtgärd', 'Grupp', 'Antal berörda', 'Underlag', 'Uppskattad kostnad per år'],

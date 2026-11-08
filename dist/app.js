@@ -795,16 +795,18 @@ const GLOSSARY = [
     { cat:'Verktyget', term:'Prioriteringsindex', short:'Rangordningsmått 0-100 i Prioriteringen', long:'Kombinerar avvikelsens storlek (50%), gruppens volym (30%) och jämställdhetsläget (20%). Negativ avvikelse väger 2× tyngre än positiv, och bristyrken får en bonus på 1,2×. Används för att rangordna åtgärder i Prioriteringen.' },
     { cat:'Verktyget', term:'Nära pension', short:'Anställda som är 60 år eller äldre', long:'Personer i den här åldern kan gå i pension inom 0–7 år (riktåldersintervallet 60–67). Planera för att deras kunskap förs vidare. Verktyget markerar BAS-intervall där mer än 25 procent är 60 år eller äldre; över 15 procent: håll uppsikt.' },
     { cat:'Verktyget', term:'Brist på återväxt', short:'Låg andel anställda under 40 år', long:'När mindre än 15 % av gruppen är under 40 år. Det tyder på att få yngre anställs, alltså ett strukturellt problem i rekryteringen.' },
-    { cat:'Verktyget', term:'Uppmärksamhetstrappa', short:'Coachande skala — var börjar jag titta?', long:'Verktyget rangordnar yrkesgrupper efter hur mycket de är värda att titta på — det är ett stöd för din bedömning, inte en dom. En skillnad mellan kvinnors och mäns lön bedöms med samma ord, färger och märken i alla flikar, och statusen bygger på statistisk signal: Värt att granska (skillnaden är statistiskt säkerställd och minst 3 %), Följ upp (minst 3 % men inte säkerställd, eller säkerställd men under 3 %), Balanserat (under 3 % och inte säkerställd) och Går ej att bedöma (för få av ett kön). 3 % är verktygets egen storleksgräns. Direktivets 5 % är ingen status utan en egen markering på den ojusterade skillnaden (se Direktivmarkering). Prioritering lägger Börja här överst i rangordningen; Över referens är där ett läge, ingen allvarlighetsgrad. En grupp som lyfts kan mycket väl ha sakliga skäl bakom skillnaden — det är det du väger.' },
-    { cat:'Verktyget', term:'Börja här', short:'Tydlig avvikelse i en större grupp', long:'Gruppen ligger mer än [inställbart, standard 5 %] under referensen och har minst [standard 10] personer. Ett bra ställe att börja granskningen — många berörda och tydlig budgetpåverkan. Gränsen ändrar du under Inställningar.' },
-    { cat:'Verktyget', term:'Värt att granska', short:'Säkerställd skillnad på minst 3 %', long:'Skillnaden mellan kvinnors och mäns lön är statistiskt säkerställd — utanför slumpens gränser för gruppen, eller ett konfidensintervall som inte når 100 % — och minst 3 % (verktygets storleksgräns). Titta närmare och väg den mot sakliga skäl. I Prioritering: avvikelsen mot referensen överstiger granskningsgränsen men gruppen är mindre än för Börja här. Lämpar sig för en riktad titt på enskilda individer och deras sakliga skäl.' },
-    { cat:'Verktyget', term:'Följ upp', short:'Minst 3 % men inte säkerställd, eller säkerställd under 3 %', long:'Skillnaden är minst 3 % men inte statistiskt säkerställd, eller säkerställd men under 3 % (i Prioritering: mellan följ-upp- och granskningströskeln). Värt att hålla under uppsikt över tid för att se hur det utvecklas.' },
-    { cat:'Verktyget', term:'Balanserat', short:'Under 3 % och inte säkerställd', long:'Skillnaden mellan kvinnors och mäns lön är under 3 % och inte statistiskt säkerställd (i Prioritering: avvikelsen mot referensen är under följ-upp-tröskeln). Inget som sticker ut.' },
+    { cat:'Verktyget', term:'Uppmärksamhetstrappa', short:'Coachande skala — var börjar jag titta?', long:'Verktyget rangordnar yrkesgrupper efter hur mycket de är värda att titta på — det är ett stöd för din bedömning, inte en dom. En skillnad mellan kvinnors och mäns lön bedöms med samma ord, färger och märken i alla flikar, och statusen bygger på statistisk signal: Värt att granska (skillnaden är statistiskt säkerställd och minst 3 %), Följ upp (minst 3 % men inte säkerställd, eller säkerställd men under 3 %), Balanserat (under 3 % och inte säkerställd) och Går ej att bedöma (för få av ett kön). 3 % är verktygets egen storleksgräns. Direktivets 5 % är ingen status utan en egen markering på den ojusterade skillnaden (se Direktivmarkering). Prioritering mäter något annat, löneläget mot er referens, och har egna ord (Börja här, Under referens, Nära referens, Över referens). En grupp som lyfts kan mycket väl ha sakliga skäl bakom skillnaden — det är det du väger.' },
+    { cat:'Verktyget', term:'Börja här', short:'Tydlig avvikelse i en större grupp (Prioritering)', long:'I Prioritering: gruppens median ligger mer än granskningsgränsen (standard 5 %) under referensen, och gruppen har minst [standard 10] personer. Många berörda och en tydlig kostnad att nå referensen, så ett bra ställe att börja. Det är löneläget mot er referens, inte en skillnad mellan kvinnor och män. Gränserna ändrar du under Inställningar.' },
+    { cat:'Verktyget', term:'Under referens', short:'Gruppens median under referensen (Prioritering)', long:'I Prioritering: gruppens median ligger mer än granskningsgränsen (standard 5 %) under referensen, i en grupp som är mindre än för Börja här. Det är löneläget mot er referens, inte en skillnad mellan kvinnor och män.' },
+    { cat:'Verktyget', term:'Nära referens', short:'Gruppens median nära referensen (Prioritering)', long:'I Prioritering: gruppens median ligger nära referensen. Nära referens, under: mellan granskningsgränsen (standard −5 %) och uppföljningsgränsen (standard −2 %). Nära referens: från uppföljningsgränsen upp till gränsen för Över referens (standard +5 %). Två färger, samma ord. Det är löneläget mot er referens, inte en skillnad mellan kvinnor och män.' },
+    { cat:'Verktyget', term:'Värt att granska', short:'Säkerställd skillnad på minst 3 %', long:'Skillnaden mellan kvinnors och mäns lön är statistiskt säkerställd — utanför slumpens gränser för gruppen, eller ett konfidensintervall som inte når 100 % — och minst 3 % (verktygets storleksgräns). Titta närmare och väg den mot sakliga skäl. Lämpar sig för en riktad titt på enskilda individer och deras sakliga skäl.' },
+    { cat:'Verktyget', term:'Följ upp', short:'Minst 3 % men inte säkerställd, eller säkerställd under 3 %', long:'Skillnaden är minst 3 % men inte statistiskt säkerställd, eller säkerställd men under 3 %. Värt att hålla under uppsikt över tid för att se hur det utvecklas.' },
+    { cat:'Verktyget', term:'Balanserat', short:'Under 3 % och inte säkerställd', long:'Skillnaden mellan kvinnors och mäns lön är under 3 % och inte statistiskt säkerställd. Inget som sticker ut.' },
     { cat:'Verktyget', term:'Går ej att bedöma', short:'För få av ett kön för att pröva skillnaden', long:'Ett av könen i gruppen har färre än {golv} personer. Skillnaden kan visas men inte prövas mot slumpen, så gruppen får ingen status. Bedöm gruppen på individnivå.' },
     { cat:'Verktyget', term:'Direktivmarkering', short:'Markeringen ≥ 5 % på den ojusterade löneskillnaden', long:'Direktivets regler om gemensam lönebedömning utgår från en skillnad på minst 5 %; markeringen visar var den nivån nås. Den är inte en bedömning. Den står på den ojusterade medianskillnaden (kvinnors median i procent av mäns) i Lika arbete, tabellerna per AID-kod och BAS-intervall, Lönestruktur, Excel och rapporten, aldrig på regressionens justerade tal, och den påverkar inte statusen.' },
     { cat:'Verktyget', term:'Läge i spannet', short:'Var en median ligger mot referensens P10–P90', long:'0 är referensens P10 och 100 dess P90; under 0 ligger medianen nedanför spannet och över 100 ovanför. Visas i Löneläget per yrkesgrupp, med ord: nedanför, i nedre delen, mitt i, i övre delen eller ovanför.' },
     { cat:'Verktyget', term:'Mönster', short:'Löneläget och statistiken mot ställningstagandet, tillsammans', long:'Ställningstagandet är referenspunkten. Ligger både löneläget och statistiken över det har ställningstagandet halkat efter marknaden; ligger bara löneläget över har organisationen gått före både politik och marknad.' },
-    { cat:'Verktyget', term:'Över referens', short:'Gruppen ligger över referensvärdet', long:'Gruppen tjänar mer än referensvärdet. Kan vara väl motiverat (specialistkompetens, marknadsläge) — värt att förstå varför.' },
+    { cat:'Verktyget', term:'Över referens', short:'Gruppens median över referensen (Prioritering)', long:'I Prioritering: gruppens median ligger mer än gränsen för Över referens (standard 5 %) över referensen. Ett läge, ingen allvarlighetsgrad; dokumentera gärna varför. Det är löneläget mot er referens, inte en skillnad mellan kvinnor och män.' },
     { cat:'Verktyget', term:'Oförklarad skillnad per BAS-intervall', short:'Separata regressioner inom varje BAS-intervall', long:'För varje BAS-intervall med minst {golv} personer av varje kön körs en separat regression: log(lön) ~ kön + ålder. Visar var inom organisationen den oförklarade löneskillnaden är som störst.' },
 
     // GDPR
@@ -7258,7 +7260,9 @@ function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
     }
     if (typ === 'handlingsplan') {
         const rader = u.rader || [];
-        const st = [`${_st(rader.length, 'förifylld åtgärd', 'förifyllda åtgärder')}` + (u.summa ? ` med en uppskattad kostnad på ${_kr(u.summa)} per år.` : '.')];
+        const st = [`${_st(rader.length, 'förifylld åtgärd', 'förifyllda åtgärder')}` + (u.summa ? ` med en uppskattad kostnad på ${_kr(u.summa)} per år.` : '.')
+            // Prioriteringens del är kostnad att nå referensen: löneläget mot referensen, inte könsskillnaderna (ADR-62).
+            + (u.summaReferens ? ` Av den är ${_kr(u.summaReferens)} kostnad att nå referensen för grupperna under referensen (löneläget mot er referens, inte lönekartläggningens könsskillnader).` : '')];
         if (!rader.length) return blk('Handlingsplan', st, null);
         // Antal berörda: gruppens antal (för ett kandidatpar det kvinnodominerade yrkets); tomt för en egen rad.
         const b = blk('Handlingsplan', st, { rubriker: ['Åtgärd', 'Grupp', 'Antal berörda', 'Underlag', 'Uppskattad kostnad per år'],
@@ -15677,7 +15681,7 @@ function buildActionChecklist({ endastGrupper = false } = {}) {
                     kategori: 'Löneläge mot referens',
                     prioritet: 'hög',
                     titel: `${i.yrke} (BAS ${i.bas}) — ${_agPct(i.diffPct)} % under ${i.refSource}`,
-                    detalj: `n=${i.n}, kostnad att lyfta till referens: ${fmt.format(Math.round(i.annualGapTotal))} kr/år. Väg skillnaden mot sakliga skäl och dokumentera din bedömning.`,
+                    detalj: `n=${i.n}, kostnad att nå referensen: ${fmt.format(Math.round(i.annualGapTotal))} kr/år. Väg skillnaden mot sakliga skäl och dokumentera din bedömning.`,
                     tab: 'prioritering',
                     källa: 'Prioriteringsanalys'
                 });
@@ -18625,19 +18629,19 @@ function _evidenceForPrioItem(it, _reference) {
             { label: 'Avvikelse',                   value: `${sgn(it.diffPct)}${svPct(it.diffPct, 2)}  (${sgn(it.diffKr)}${fmtKr(it.diffKr)})` },
             { label: 'Kostnad per person',          value: it.costPerPerson > 0 ? `${fmtKr(it.costPerPerson)}/mån` : '— (gruppen är ej under referens)', note: 'Genomsnittlig höjning per person och månad för att lyfta gruppen till referensens median' },
             { label: 'Löneskillnad mellan kvinnor och män i gruppen',   value: it.gapPct == null ? '— ej beräkningsbart' : `${sgn(it.gapPct)}${svPct(it.gapPct, 2)}`, note: it.gapPct == null ? `Kräver minst ${kTroskel()} av varje kön` : `Median kv ${fmtKr(it.medKv)} mot median man ${fmtKr(it.medMa)}` },
-            { label: '— Prioritetsindex',           value: `<strong>${svTal(it.priorityIndex, 1)}</strong>`, isHtml: true, note: `Status: ${it.status.toUpperCase()}` },
+            { label: '— Prioritetsindex',           value: `<strong>${svTal(it.priorityIndex, 1)}</strong>`, isHtml: true, note: `Läge mot referensen: ${(PRIO_STATUS_INFO[it.status] || { label: it.status }).label}` },
             { label: 'Avvikelse-poäng (sev)',       value: svTal(sevScore, 1), note: `min(30, |${svPct(it.diffPct, 1)}|) / 30 × 100 · vikt ${w.avvikelse}/${wTotal}` },
             { label: 'Volym-poäng (vol)',           value: svTal(volScore, 1), note: `min(50, ${it.n}) / 50 × 100 · vikt ${w.volym}/${wTotal}` },
             { label: 'Poäng för löneskillnaden',   value: svTal(gapScore, 1), note: `min(15, |${it.gapPct == null ? 0 : svTal(it.gapPct, 1)} %|) / 15 × 100 · vikt ${w.jamstalldhet}/${wTotal}` },
             { label: 'Riktningsvikt',               value: svTal(directionWeight, 2), note: it.diffPct < 0 ? 'Gruppen ligger UNDER referens — full vikt 1,0' : 'Gruppen ligger ÖVER referens — halv vikt 0,5' },
             { label: 'Bristyrke-multiplikator',     value: svTal(bristMultiplier, 2), note: it.isBrist ? 'Markerat som bristyrke — bonus 1,2x' : 'Ej bristyrke' },
-            { label: '— Total kostnad',             value: it.annualGapTotal > 0 ? `<strong>${fmtKr(it.annualGapTotal)}</strong>` : '— (gruppen är ej under referens)', isHtml: true, note: `${months} mån × PO-påslag ${svPct(poPct, 2)} × ${it.n} pers` }
+            { label: '— Kostnad att nå referensen', value: it.annualGapTotal > 0 ? `<strong>${fmtKr(it.annualGapTotal)}</strong>` : '— (gruppen är ej under referens)', isHtml: true, note: `${months} mån × PO-påslag ${svPct(poPct, 2)} × ${it.n} pers` }
         ],
         formula: `<strong>Prioritetsindex-formel:</strong><br>
             index = bristMult × riktningMult × (sev × w_avv + vol × w_vol + skillnad × w_jäm) / Σw<br>
             = ${svTal(bristMultiplier, 2)} × ${svTal(directionWeight, 2)} × (${svTal(sevScore, 1)} × ${w.avvikelse}/${wTotal} + ${svTal(volScore, 1)} × ${w.volym}/${wTotal} + ${svTal(gapScore, 1)} × ${w.jamstalldhet}/${wTotal})<br>
             = <strong>${svTal(it.priorityIndex, 2)}</strong>
-            ${it.annualGapTotal > 0 ? `<br><br><strong>Kostnad att lyfta till referens:</strong><br>
+            ${it.annualGapTotal > 0 ? `<br><br><strong>Kostnad att nå referensen:</strong><br>
             |Δkr| × ${months} mån × PO-faktor × n = ${fmtKr(Math.abs(it.diffKr))} × ${months} × ${svTal(poFactor, 4)} × ${it.n} = <strong>${fmtKr(it.annualGapTotal)}</strong>` : ''}`,
         footer: `Vikterna (${w.avvikelse}/${w.volym}/${w.jamstalldhet}) ändrar du under Inställningar. Kostnaden inkluderar arbetsgivaravgifter (PO-påslag ${svPct(poPct, 2)}).`
     };
@@ -27725,7 +27729,7 @@ function runLifecycleRegression(fixBas) {
 // och rangordnar efter ett sammansatt prioriteringsindex.
 /**
  * Bygger prioriteringslistan: beräknar avvikelse mot referens, kostnad för utjämning
- * (inkl. PO-påslag och beräkningsperiod), klassning (Börja här/Följ upp/Balanserat/Över referens),
+ * (inkl. PO-påslag och beräkningsperiod), läget mot referensen (Börja här/Under referens/Nära referens/Över referens),
  * jämställdhetsindex, och en sammanvägd prio-poäng (avvikelse·volym·jämställdhet).
  * Driver "Prioritering"-tabben + EU-kartläggningens åtgärdslista.
  * @param {string} reference - Referens-mätsticka: 'stallningstagande'|'statistik'
@@ -27845,31 +27849,40 @@ function generateMotivationSuggestions(item) {
     if (item.diffPct > 5) {
         out.push({
             type: 'info',
-            text: `Ligger ${svPct(item.diffPct, 1)} <strong>över</strong> referens. Detta kan ofta förklaras av specialistkompetens, marknadsläge i området eller individuella prestationer — det är bra att dokumentera detta för att skapa ökad transparens i lönesättningen.`
+            text: `Ligger ${svPct(item.diffPct, 1)} över referensen. Dokumentera gärna varför.`
         });
     }
 
-    // 8. Statistisk obetydlighet
-    if (Math.abs(item.diffPct) < 1.5 && item.n >= 10) {
+    // 8. Nära referensen: inom uppföljningsgränsen åt båda hållen (A5). Ett läge mot referensen, ingen bedömning.
+    const nara = Math.abs(state.prioConfig.bevakaThreshold);
+    if (Math.abs(item.diffPct) < nara && item.n >= 10) {
         out.push({
             type: 'ok',
-            text: `Skillnaden är liten (${svPct(Math.abs(item.diffPct), 1)}). Inom normal variation — och är sannolikt inte något som kräver ytterligare utredning.`
+            text: `Gruppens median ligger inom ±${svTal(nara, nara % 1 ? 1 : 0)} % av referensen.`
         });
     }
 
     return out;
 }
 
-// Enhetlig "uppmärksamhetstrappa" — coachande, inte föreskrivande. Verktyget
-// föreslår var HR tittar; det dömer inte. Samma skala används i alla flikar.
-// (De interna nycklarna behålls oförändrade; bara etikett/ikon/färg är coachande.)
+// Prioriteringens egna ord för läget mot referensen (A5, ADR-62). De delar inte namn med uppmärksamhetstrappan för
+// skillnaden mellan kvinnor och män (Värt att granska, Följ upp, Balanserat): Prioriteringen mäter löneläget mot er
+// referens, inte lönekartläggningens könsskillnader. Statusvärdena i src/lib/prioritering.js är oförändrade; «Nära
+// referens» har två färger, under uppföljningsgränsen och däröver.
 const PRIO_STATUS_INFO = {
     akut:      { label: 'Börja här',     icon: ikon('nal'), color: FARG.granska, bg: FARG.granskaBg, klass: 'bricka-granska' },
-    atgard:    { label: 'Värt att granska', icon: ikon('sok'), color: FARG.granska, bg: FARG.granskaBg, klass: 'bricka-granska' },
-    bevaka:    { label: 'Följ upp',      icon: ikon('oga'), color: FARG.varning, bg: FARG.varningBg, klass: 'bricka-varning' },
-    ok:        { label: 'Balanserat',    icon: ikon('bock'),  color: FARG.ok, bg: FARG.okBg, klass: 'bricka-ok' },
+    atgard:    { label: 'Under referens', icon: ikon('sok'), color: FARG.granska, bg: FARG.granskaBg, klass: 'bricka-granska' },
+    bevaka:    { label: 'Nära referens, under', icon: ikon('oga'), color: FARG.varning, bg: FARG.varningBg, klass: 'bricka-varning' },
+    ok:        { label: 'Nära referens', icon: ikon('bock'),  color: FARG.ok, bg: FARG.okBg, klass: 'bricka-ok' },
     analysera: { label: 'Över referens', icon: ikon('info'), color: FARG.info, bg: FARG.infoBg, klass: 'bricka-info' }
 };
+/** PO-raden under nyckeltalet: standardvärdet säger var det kommer ifrån, ett eget värde bara var det ändras. */
+function _prioPoText() {
+    const po = state.costSettings.poPct;
+    return po === COST_DEFAULTS.poPct
+        ? `inkl. PO-påslag ${svPct(po, 2)} (SKR:s standardvärde för kommuner; ändras under Inställningar)`
+        : `inkl. PO-påslag ${svPct(po, 2)} (ändras under Inställningar)`;
+}
 
 function _selectedPrioReference() {
     const r = document.querySelector('input[name="prio-ref"]:checked');
@@ -27966,6 +27979,8 @@ function renderPrioritering() {
     }
     const costPerEl = document.getElementById('prio-stat-cost-period');
     if (costPerEl) costPerEl.textContent = `${state.costSettings.months} månader, inkl. PO-påslag ${svPct(state.costSettings.poPct, 2)}`;
+    const costPoEl = document.getElementById('prio-stat-cost-po');
+    if (costPoEl) costPoEl.textContent = `Räknat på ${state.costSettings.months} månader, ${_prioPoText()}.`;
 
     // Sätt rang per item (matchar tabellen)
     items.forEach((it, idx) => { it.rank = idx + 1; });
@@ -28049,14 +28064,14 @@ function renderPrioritering() {
         ],
         formler: [
             ['Avvikelse %', '<code>(organisationens median / referensens median) − 1</code> i %'],
-            ['Åtgärdskostnad', `<code>|avvikelse kr/mån| × ${state.costSettings.months} mån × (1 + ${svPct(state.costSettings.poPct, 2)}/100) × antal personer</code> (endast om under referens, inkl PO-påslag)`],
+            ['Kostnad att nå referensen', `<code>|avvikelse kr/mån| × ${state.costSettings.months} mån × (1 + ${svPct(state.costSettings.poPct, 2)}/100) × antal personer</code> (endast om under referens, inkl. PO-påslag)`],
             ['Prioriteringsindex', `<code>riktningsvikt × (avvikelse·${state.prioWeights.avvikelse}% + volym·${state.prioWeights.volym}% + jämställdhet·${state.prioWeights.jamstalldhet}%)</code>, skala 0-100`],
             ['Riktningsvikt', '1.0 om under referens, 0.5 om över (under-betalning vägs tyngre)'],
-            ['Status', `Statusen sätts efter avvikelsen mot referensen: <br>• Börja här: under ${state.prioConfig.atgardThreshold} % och minst ${state.prioConfig.akutMinN} personer <br>• Värt att granska: under ${state.prioConfig.atgardThreshold} % i en mindre grupp <br>• Följ upp: under ${state.prioConfig.bevakaThreshold} % <br>• Över referens: över +${state.prioConfig.analyseraThreshold} % <br>• Balanserat: däremellan`]
+            ['Läge mot referensen', `Läget sätts efter avvikelsen mot referensen: <br>• Börja här: under ${state.prioConfig.atgardThreshold} % och minst ${state.prioConfig.akutMinN} personer <br>• Under referens: under ${state.prioConfig.atgardThreshold} % i en mindre grupp <br>• Nära referens, under: under ${state.prioConfig.bevakaThreshold} % <br>• Över referens: över +${state.prioConfig.analyseraThreshold} % <br>• Nära referens: däremellan`]
         ],
         notes: [
             `Aktuell referens: <strong>${ref === 'stallningstagande' ? esc(referensNamn()) + ' (per BAS)' : 'jämförelsestatistiken (per AID)'}</strong>`,
-            ...(JSON.stringify(state.prioConfig) !== JSON.stringify(PRIO_CONFIG_DEFAULTS) ? [`<strong>${ikon('kugghjul')} Anpassad konfiguration aktiv</strong> – tröskelvärdena har justerats från standardvärdena (Börja här: −5 % och minst 10 personer, Följ upp: −2 %, Över referens: +5 %)`] : []),
+            ...(JSON.stringify(state.prioConfig) !== JSON.stringify(PRIO_CONFIG_DEFAULTS) ? [`<strong>${ikon('kugghjul')} Anpassad konfiguration aktiv</strong> – tröskelvärdena har justerats från standardvärdena (Börja här: −5 % och minst 10 personer, Nära referens, under: −2 %, Över referens: +5 %)`] : []),
             'Tabellen visar de 30 högst prioriterade grupperna',
             'Bubblornas storlek visar kostnaden för perioden, den vågräta axeln avvikelsen och den lodräta antalet personer (logaritmisk skala)'
         ]
@@ -28210,12 +28225,12 @@ document.getElementById('btn-prio-consequence')?.addEventListener('click', () =>
     });
     panel.innerHTML = `
         <div class="bak-white ram-1-kant rund-8 pad-14-16">
-            <h4 class="underrubrik">Stegvis konsekvensanalys: budgetpåverkan om N grupper utreds</h4>
+            <h4 class="underrubrik">Stegvis konsekvensanalys: budgetpåverkan om N grupper åtgärdas</h4>
             <p class="text-dampad-sm lh-1_55 marg-0-0-10">
                 Visar kumulativ kostnad och täckningsgrad om de prioriterade grupperna åtgärdas i ordning. Det gör det lättare att välja ambition, till exempel de fem första i år eller de tio första.
             </p>
             <table class="data-table st-088">
-                <thead><tr><th>Åtgärd</th><th class="t-hoger">Antal personer</th><th class="t-hoger">Total kostnad</th><th class="t-hoger">Andel av total</th></tr></thead>
+                <thead><tr><th>Åtgärd</th><th class="t-hoger">Antal personer</th><th class="t-hoger">Kostnad att nå referensen</th><th class="t-hoger">Andel av total</th></tr></thead>
                 <tbody>${rows}</tbody>
             </table>
         </div>
@@ -28380,7 +28395,7 @@ function _prioMatrisFigur(items, etikettlage, refLabel, cfg) {
     const tips = d => [[`#${d.rang} ${d.yrke}`], [`BAS ${d.bas}`, `n = ${d.y} (Kv: ${d.kvN}, Mä: ${d.maN})`], ['Median', kr(d.median)],
         [`Referens (${d.refKalla})`, kr(d.refMedian)], ['Avvikelse', `${pm(d.x, 2)} % (${pm(d.diffKr, 0).slice(0, 1)}${kr(Math.abs(d.diffKr))}/mån)`],
         ...(d.gapPct != null ? [['Skillnad kvinnor–män', `${pm(d.gapPct, 1)} %`]] : []),
-        ...(d.atgard > 0 ? [['Åtgärdskostnad/år', kr(d.atgard)]] : d.over > 0 ? [['Överlönekostnad/år', kr(d.over)]] : []),
+        ...(d.atgard > 0 ? [['Kostnad att nå referensen/år', kr(d.atgard)]] : d.over > 0 ? [['Överlönekostnad/år', kr(d.over)]] : []),
         ['Prioriteringsindex', `${svTal(d.index, 0)}/100`]];
     const lager = Object.keys(PRIO_STATUS_INFO).map(status => ({
         marke: 'punkt', serie: PRIO_STATUS_INFO[status].label, farg: PALETTE.prio[status], opacitet: 0.72, kant: FARG.vit, tips,
@@ -28860,6 +28875,7 @@ function _exportHandlingsplanExport() {
         ['Samverkan', 'Arbetet ska göras i samverkan med arbetstagarna (lagen).'],
         ['', ''],
         ['Detta underlag', `Förifyllt med ${prioCount} grupp(er) under referens (Prioritering) och ${lvCount} kandidatpar i likvärdigt arbete.${seed.parNot ? ' ' + seed.parNot : ''}${seed.egenCount ? ` ${seed.egenCount} egna rader från fliken står sist.` : ''} Det som fyllts i på fliken Handlingsplan står med; fyll i resten av sakligt skäl, ansvarig, tidsplan och status. Raderna bygger på gruppmått — inga individdata.`],
+        ['Kostnad att nå referensen', 'Kostnaden för raderna ur Prioritering: vad det kostar att lyfta gruppen till referensens median. Det är löneläget mot er referens, inte lönekartläggningens könsskillnader. För kandidatparen är det kostnaden att lyfta det kvinnodominerade yrket till jämförelseyrkets median.'],
         ['OBS', 'Det här är ett underlag. Du skriver dokumentationen i Word-utkastet.']
     ];
 
@@ -29821,7 +29837,7 @@ function _rmAvsnittenUtanUrval() {
     const hpFalt = v => v || { text: '[HR fyller i]', fyllIn: true };
     /** @type {{id: string, rubrik: string, utelamnat: string[], delar: any[], [k: string]: any}} */
     const atgarder = { id: 'atgarder', numrerad: true, rubrik: 'Åtgärder och tidsplan', utelamnat: [], delar: [
-        dampad('Planerade lönejusteringar och andra åtgärder, med beslut, ansvar och tidsplan. Tabellen visar åtgärderna. Den tar med de grupper som ligger under referensen enligt prioriteringen och kandidatparen i likvärdigt arbete, med uppskattad kostnad och det som fyllts i på fliken Handlingsplan.'),
+        dampad('Planerade lönejusteringar och andra åtgärder, med beslut, ansvar och tidsplan. Tabellen visar åtgärderna. Den tar med de grupper som ligger under referensen enligt prioriteringen och kandidatparen i likvärdigt arbete, med uppskattad kostnad och det som fyllts i på fliken Handlingsplan. För grupperna ur prioriteringen är kostnaden kostnad att nå referensen: löneläget mot er referens, inte lönekartläggningens könsskillnader.'),
         hp.length
             ? { typ: 'tabell', kolumner: [{ rubrik: 'Grupp', typ: 'text' }, { rubrik: 'Antal berörda', typ: 'antal' }, { rubrik: 'Underlag', typ: 'text' }, { rubrik: 'Uppskattad kostnad', typ: 'krAr' }, { rubrik: 'Sakliga skäl prövade?', typ: 'fyllIn' }, { rubrik: 'Ansvarig', typ: 'fyllIn' }, { rubrik: 'Tidsplan (senast inom tre år)', typ: 'fyllIn' }, { rubrik: 'Status', typ: 'fyllIn' }],
                 // Antal berörda: gruppens antal (för ett kandidatpar det kvinnodominerade yrkets); tomt för en egen rad.
@@ -31355,7 +31371,9 @@ function _rapportunderlagBlockExport() {
             kravProxy, topN }, opt),
         _ruAvsnittBlock('struktur', { representation, kvartiler, nKv: kvLon.length, nMa: maLon.length }, opt),
         _ruAvsnittBlock('sektorer', { sektorer: _skSektorsTabell(d, { k, skrDel: _skrDel() }), andel: _skSektorernasAndel(d, { k }) }, opt),
-        _ruAvsnittBlock('handlingsplan', { rader: hpRader, summa: hpRader.reduce((s, r) => s + (r.kostnad || 0), 0), ...(hpSkalBlock ? { skal: hpSkalBlock } : {}) }, opt),
+        _ruAvsnittBlock('handlingsplan', { rader: hpRader, summa: hpRader.reduce((s, r) => s + (r.kostnad || 0), 0),
+            summaReferens: hpRader.filter(r => r.underlag === HP_UNDERLAG_PRIO).reduce((s, r) => s + (r.kostnad || 0), 0),
+            ...(hpSkalBlock ? { skal: hpSkalBlock } : {}) }, opt),
     ];
     const referenser = referensOverblick();
     if (referenser) block.push(_ruReferenserBlock(referenser, opt));

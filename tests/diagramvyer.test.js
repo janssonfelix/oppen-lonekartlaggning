@@ -835,12 +835,12 @@ describe('Prioritering: chart-prio-pareto och chart-prio-matrix', () => {
         w.__v = [grupp(1, 'akut'), grupp(2, 'atgard'), grupp(12, 'ok', { diffPct: 0.5, annualGapTotal: 0 })];
         w.__cfg = { atgardThreshold: -5, bevakaThreshold: -2, analyseraThreshold: 5 };
         const f = w.eval("_prioMatrisFigur(window.__v, 'topp10', 'referensen', window.__cfg)");
-        expect(f.lager.map(l => l.serie)).toEqual(['Börja här', 'Värt att granska', 'Balanserat']);
+        expect(f.lager.map(l => l.serie)).toEqual(['Börja här', 'Under referens', 'Nära referens']);   // Prioriteringens egna ord (A5)
         expect(f.y.skala).toBe('linjar');                                        // grupperna skiljer sig mindre än en tiopotens
         w.__v2 = [grupp(1, 'akut'), { ...grupp(2, 'atgard'), n: 400 }];
         expect(w.eval("_prioMatrisFigur(window.__v2, 'topp10', 'referensen', window.__cfg)").y.skala).toBe('log');
         expect(f.lager.map(l => l.farg)).toEqual(['#4338ca', '#6366f1', '#0f766e']);     // lila för de två första, som i Lika arbetes tabell
-        expect(f.referens.map(z => z.etikett)).toEqual(['VÄRT ATT GRANSKA', 'FÖLJ UPP', 'BALANSERAT', 'ÖVER REFERENS']);   // samma ord som statusarna i tabellen
+        expect(f.referens.map(z => z.etikett)).toEqual(['UNDER REFERENS', 'NÄRA REFERENS, UNDER', 'NÄRA REFERENS', 'ÖVER REFERENS']);   // samma ord som statusarna i tabellen
         expect(f.lager[0].data[0]).toMatchObject({ x: -5.25, y: 13, etikett: expect.stringContaining('·C') });
         expect(f.lager[2].data[0].etikett).toBeUndefined();                    // rang 12 får ingen etikett i läget topp 10
         expect(f.lager[0].data[0].storlek).toBeGreaterThan(f.lager[1].data[0].storlek);   // större kostnad, större bubbla

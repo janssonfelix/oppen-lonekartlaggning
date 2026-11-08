@@ -155,19 +155,19 @@ function _evidenceForPrioItem(it, _reference) {
             { label: 'Avvikelse',                   value: `${sgn(it.diffPct)}${svPct(it.diffPct, 2)}  (${sgn(it.diffKr)}${fmtKr(it.diffKr)})` },
             { label: 'Kostnad per person',          value: it.costPerPerson > 0 ? `${fmtKr(it.costPerPerson)}/mån` : '— (gruppen är ej under referens)', note: 'Genomsnittlig höjning per person och månad för att lyfta gruppen till referensens median' },
             { label: 'Löneskillnad mellan kvinnor och män i gruppen',   value: it.gapPct == null ? '— ej beräkningsbart' : `${sgn(it.gapPct)}${svPct(it.gapPct, 2)}`, note: it.gapPct == null ? `Kräver minst ${kTroskel()} av varje kön` : `Median kv ${fmtKr(it.medKv)} mot median man ${fmtKr(it.medMa)}` },
-            { label: '— Prioritetsindex',           value: `<strong>${svTal(it.priorityIndex, 1)}</strong>`, isHtml: true, note: `Status: ${it.status.toUpperCase()}` },
+            { label: '— Prioritetsindex',           value: `<strong>${svTal(it.priorityIndex, 1)}</strong>`, isHtml: true, note: `Läge mot referensen: ${(PRIO_STATUS_INFO[it.status] || { label: it.status }).label}` },
             { label: 'Avvikelse-poäng (sev)',       value: svTal(sevScore, 1), note: `min(30, |${svPct(it.diffPct, 1)}|) / 30 × 100 · vikt ${w.avvikelse}/${wTotal}` },
             { label: 'Volym-poäng (vol)',           value: svTal(volScore, 1), note: `min(50, ${it.n}) / 50 × 100 · vikt ${w.volym}/${wTotal}` },
             { label: 'Poäng för löneskillnaden',   value: svTal(gapScore, 1), note: `min(15, |${it.gapPct == null ? 0 : svTal(it.gapPct, 1)} %|) / 15 × 100 · vikt ${w.jamstalldhet}/${wTotal}` },
             { label: 'Riktningsvikt',               value: svTal(directionWeight, 2), note: it.diffPct < 0 ? 'Gruppen ligger UNDER referens — full vikt 1,0' : 'Gruppen ligger ÖVER referens — halv vikt 0,5' },
             { label: 'Bristyrke-multiplikator',     value: svTal(bristMultiplier, 2), note: it.isBrist ? 'Markerat som bristyrke — bonus 1,2x' : 'Ej bristyrke' },
-            { label: '— Total kostnad',             value: it.annualGapTotal > 0 ? `<strong>${fmtKr(it.annualGapTotal)}</strong>` : '— (gruppen är ej under referens)', isHtml: true, note: `${months} mån × PO-påslag ${svPct(poPct, 2)} × ${it.n} pers` }
+            { label: '— Kostnad att nå referensen', value: it.annualGapTotal > 0 ? `<strong>${fmtKr(it.annualGapTotal)}</strong>` : '— (gruppen är ej under referens)', isHtml: true, note: `${months} mån × PO-påslag ${svPct(poPct, 2)} × ${it.n} pers` }
         ],
         formula: `<strong>Prioritetsindex-formel:</strong><br>
             index = bristMult × riktningMult × (sev × w_avv + vol × w_vol + skillnad × w_jäm) / Σw<br>
             = ${svTal(bristMultiplier, 2)} × ${svTal(directionWeight, 2)} × (${svTal(sevScore, 1)} × ${w.avvikelse}/${wTotal} + ${svTal(volScore, 1)} × ${w.volym}/${wTotal} + ${svTal(gapScore, 1)} × ${w.jamstalldhet}/${wTotal})<br>
             = <strong>${svTal(it.priorityIndex, 2)}</strong>
-            ${it.annualGapTotal > 0 ? `<br><br><strong>Kostnad att lyfta till referens:</strong><br>
+            ${it.annualGapTotal > 0 ? `<br><br><strong>Kostnad att nå referensen:</strong><br>
             |Δkr| × ${months} mån × PO-faktor × n = ${fmtKr(Math.abs(it.diffKr))} × ${months} × ${svTal(poFactor, 4)} × ${it.n} = <strong>${fmtKr(it.annualGapTotal)}</strong>` : ''}`,
         footer: `Vikterna (${w.avvikelse}/${w.volym}/${w.jamstalldhet}) ändrar du under Inställningar. Kostnaden inkluderar arbetsgivaravgifter (PO-påslag ${svPct(poPct, 2)}).`
     };

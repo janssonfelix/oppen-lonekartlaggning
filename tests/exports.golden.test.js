@@ -272,7 +272,7 @@ describe('golden: bladen ur HTML-tabellerna bär cellerna som vyn visar dem (typ
         expect(cell('Prioritering', 'F2')).toMatchObject({ t: 's', v: '14/3' });     // inte 14 mars
         expect(cell('Prioritering', 'I2')).toMatchObject({ t: 'n', v: -4, z: PCT2 }); // inte −0.04
         expect(cell('Prioritering', 'J2')).toMatchObject({ t: 'n', v: -1200, z: KR });
-        expect(cell('Prioritering', 'D2')).toMatchObject({ t: 's', v: 'Följ upp' });  // inte prioriteringsindexet
+        expect(cell('Prioritering', 'D2')).toMatchObject({ t: 's', v: 'Nära referens, under' });  // inte prioriteringsindexet; Prioriteringens egna ord (A5)
         expect(cell('Prioritering', 'A2').z).toBe('0');
         expect(cell('Prioritering', 'A2').v).toBeCloseTo(16.87, 2);                   // sorteringsvärdet förfinar "17"
     });

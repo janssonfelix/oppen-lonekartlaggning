@@ -121,7 +121,7 @@ Icke förhandlingsbara arkitektoniska garantier:
 | Lönegap & könsfördelning | lönekartläggningen (lagrum.md) | Lika arbete-fliken: yrkesgrupperna först; trattdiagrammet ställer varje yrkesgrupps kvot mot gruppens storlek och bedömer den med omkastning av könen inom gruppen. Lönestruktur-fliken: översikten per BAS-intervall (*Lönegap per BAS-intervall*) som tabell med grafik i raden (antal, medianer, skillnad i kronor, kvot med bootstrap-intervall, status), samma kvot som diagram bara i exporten, lönespridning per BAS och kön, könsfördelning (*Könsfördelning per BAS-intervall*), 5 %-tröskel (EU Art. 9-analogt) |
 | **Likvärdigt arbete** | **likvärdigt arbete (lagrum.md)** | **Likvärdigt arbete-fliken: organisationens kvinnodominerade AID×BAS mot yrken som inte är kvinnodominerade (ADR-60) med lika krav — i första hand organisationens egna i samma BAS, annars jämförelsestatistiken; med arbetsvärderingspoäng över BAS-gränserna. Därtill *Lägre krav, högre lön* (ADR-25)** |
 | Hierarkisk översikt | lönekartläggningen (lagrum.md) | Löneöversikten (i Tabeller och egna vyer): median/P10/P90/spridning per yrke+BAS, referenslinjer |
-| Prioritering | — | Prioritetsindex (avvikelse × volym × jämställdhet), kostnadssimulering. Könsgapet i gruppen visas och räknas in i indexet bara när båda könen har minst k personer (ADR-12; annars räknas jämställdhetsdelen som 0). Jämför mot organisationens lönepolitiska ställningstagande (ur ett organisationspaket eller en egen namngiven fil; ingen inbyggd referens, ADR-28) eller mot jämförelsestatistiken |
+| Prioritering | — | Löneläget mot er referens med kostnad att nå den (ADR-62): prioritetsindex (avvikelse × volym × jämställdhet), kostnadssimulering. Könsgapet i gruppen visas och räknas in i indexet bara när båda könen har minst k personer (ADR-12; annars räknas jämställdhetsdelen som 0). Jämför mot organisationens lönepolitiska ställningstagande (ur ett organisationspaket eller en egen namngiven fil; ingen inbyggd referens, ADR-28) eller mot jämförelsestatistiken |
 | Fördjupning | — | Två flikar i Kartläggning som inte är lagkrav och säger det i verktygstipset och inledningen: Ålder & karriär (lön mot ålder med trend, lönegap per åldersgrupp, percentilband över ålder, lönefördelning per kön, livscykel ålder×kön×BAS och åldersstruktur) och Löneläget (raden Löneläget nedan). Nästa steg hoppar över dem när de är låsta |
 | EU-direktivets rapportmått | EU 2023/970 art. 9 | Lönestruktur: kvartilfördelning, representation per BAS, distributionellt gap, medel- och mediangap, med EU-lönerapporten som Excel. **Tecknet:** verktyget räknar lönegapet som (kvinnor − män) / män och visar det i alla flikar och blad som kvinnors lön i procent av mäns (under 100 % = kvinnor lägre). EU-lönerapportens blad och rapportens avsnitt *Struktur och lönetransparens* (Word/PDF) redovisar i stället direktivets mått, (män − kvinnor) / män i procent, enligt art. 9: positivt tal = kvinnor lägre; kolumnrubriken och en metodrad säger det. Tecknet vänds på ett ställe, `tillDirektivtecken` i `src/lib/struktur.js`; beloppet är detsamma |
 | Löneläget | — | Fliken `benchmark`, först i Kartläggning: löneläget och statistiken mot ställningstagandet per yrkesgrupp (överblick, ADR-55), avsnittet mot jämförelsestatistiken (ADR-35) och avsnittet mot ställningstagandet: bandkarta, könens läge i spannet och fördelningen i spannets tredjedelar per kön, efterlevnad, täckningsgrad; tomläge utan ställningstagande. Talen följer med som bladet *Lönepolitik* i Excel (alla flikar) — yrkesgrupperna mot sitt spann, läget per kön och BAS-intervall, tredjedelarna och efterlevnaden, med flikens regler för minsta gruppstorlek (`_lpExcelBlad`) — bara när ett ställningstagande är inläst |
@@ -1409,6 +1409,23 @@ att titta närmare på* säger *N, varav M med ojusterad löneskillnad ≥ 5 %*,
 under den döljs. *Lägre krav, högre lön* använder samma `minGapPct`. Organisationspaketet bär inte värdet;
 konfigurationsfilen gör det som förut. Vaktas av `tests/likvardighet.test.js`, `tests/smoke-vyer.test.js` och
 `tests/granssnitt-vyer.test.js`.
+**ADR-62 — Prioriteringens egna ord för läget mot referensen.** Beslut 2026-11-08 (beslut 4a inför lanseringen).
+Prioriteringen mäter löneläget mot er referens (ställningstagandet eller jämförelsestatistiken), men dess statusar
+hette som uppmärksamhetstrappan för skillnaden mellan kvinnor och män, och nyckeltalet *Total åtgärdskostnad* kunde
+läsas som kostnaden för lönekartläggningens könsskillnader. Statusvärdena i `src/lib/prioritering.js`
+(`akut/atgard/bevaka/ok/analysera`) och gränserna är oförändrade; orden i `PRIO_STATUS_INFO` (`55-prioritering.js`)
+är *Börja här*, *Under referens*, *Nära referens, under*, *Nära referens* och *Över referens* — Nära referens har två
+färger, under och över uppföljningsgränsen. Samma ord står i matrisens zoner, åtgärdslistan och dess Excel-blad,
+beräkningsbeviset, inställningarnas förklaringar, symbolförklaringen och ordlistan; ordlistans poster för trappan
+nämner inte längre Prioritering. Att göra kallar punkterna ur Prioritering *Löneläge mot referens*. Nyckeltalet
+heter *Kostnad att nå referensen*, med raden att det är löneläget mot referensen och inte könsskillnaderna (dem visar
+Lika arbete och Löneöversyn), och PO-raden säger att 39,15 % är SKR:s standardvärde för kommuner (ett eget värde
+får bara *ändras under Inställningar*). Förslaget om en liten avvikelse säger *Gruppens median ligger inom ±N % av
+referensen* (N = uppföljningsgränsen; förslaget gäller nu inom den gränsen i stället för fasta 1,5 %) i stället för
+"normal variation", och förslaget över referensen *Ligger N % över referensen. Dokumentera gärna varför.*
+Handlingsplanens vägledning, rapportens avsnitt Åtgärder och tidsplan och rapportunderlaget säger hur stor del av
+kostnaden som är kostnad att nå referensen. Vaktas av `tests/smoke.test.js`, `tests/granssnitt.test.js`,
+`tests/diagramvyer.test.js` och `tests/smoke-innehall.test.js`.
 
 ## 9. Öppna punkter
 
@@ -1494,11 +1511,14 @@ Kända brister och obesvarade frågor, så att de inte lever bara i en konversat
 9d. **Dekomponeringen visas som en bild:** trappan med yrkesgruppssteget efter huvudtalet, förklaringsbudgeten
     under den, steglistan som skärmläsaralternativ. Livscykelns nivåer per BAS kommer ur modellens
     BAS-koefficienter (`basFaktor`). Blinder-Oaxaca kodar BAS som indikatorer sedan ADR-53.
-9e. **Kvar efter uppmärksamhetstrappan (ADR-59, till B1 och spår C):** livscykelns färger (`52-livscykel.js`) och
-    kvantilregressionens färger i regressionskortet följer fortfarande 5 %; kvantilen görs om i B1. Utforska visar
-    storlek utan prövning. Protokollets blad per BAS-intervall för gemensam lönebedömning väljer på rått p-värde
-    utan BH-korrigering. På skärmen (k = 1) står många små grupper som *Går ej att bedöma*, eftersom prövningen
-    kräver `statGolv()` per kön.
+9e. **Kvar efter uppmärksamhetstrappan och Prioriteringens egna ord (ADR-59, ADR-62, till B1 och spår C):** livscykelns
+    färger (`52-livscykel.js`) och kvantilregressionens färger i regressionskortet följer fortfarande 5 %; kvantilen
+    görs om i B1. Utforska visar storlek utan prövning. Protokollets blad per BAS-intervall för gemensam lönebedömning
+    väljer på rått p-värde utan BH-korrigering. På skärmen (k = 1) står många små grupper som *Går ej att bedöma*,
+    eftersom prövningen kräver `statGolv()` per kön. Kolumnen *Skillnad kön* i Prioriteringens åtgärdslista visar talet
+    utan Lika arbetes statusbricka. Handlingsplanens kostnadskolumn blandar kostnad att nå referensen (rader ur
+    Prioritering) och kostnaden att lyfta ett kvinnodominerat yrke till jämförelseyrket (kandidatpar);
+    vägledningsbladet, rapporten och rapportunderlaget säger vilken som är vilken.
 
 **Export:**
 22. *(Löst 2026-11-08: en definition av kvinnodominerat i hela verktyget, `arKvinnodominerad`/`konsklass` i
