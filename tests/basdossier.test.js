@@ -57,10 +57,10 @@ describe('BAS-dossiern: kandidater och modell', () => {
             const r = euRader.find(x => x.yrke === y.yrke);
             expect({ granska: 'granska', folj: 'folj', balanserat: 'balanserat', ejbedomd: 'ejbedomd' }[y.status]).toBe(r.niva);
         }
-        // 3. Kandidatparen där det kvinnodominerade yrket ligger i BAS C (demodatan har två, inga hierarkiska).
+        // 3. Kandidatparen där det kvinnodominerade yrket ligger i BAS C (demodatan har tre med minsta skillnaden 5 %, ADR-60; inga hierarkiska).
         const lv = w.eval('likvardighetResultat()');
         expect(d.par.kandidat.length).toBe(lv.pairs.filter(p => p.kvBas === 'C').length);
-        expect(d.par.kandidat.length).toBe(2);
+        expect(d.par.kandidat.length).toBe(3);
         expect(d.par.hierarkiska).toEqual([]);
         // 4. Åldersgrupperna –34, 35–49 och 50–, med alla i intervallet som har en ålder.
         expect(d.alder.map(a => a.namn)).toEqual(['–34', '35–49', '50–']);

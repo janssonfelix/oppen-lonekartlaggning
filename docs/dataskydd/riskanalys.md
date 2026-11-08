@@ -1,6 +1,6 @@
 # Risk- och sårbarhetsanalys (dataskydd och informationssäkerhet) — Öppen lönekartläggning
 
-**Bygge:** `2026.11.05` · **Artefakt-SHA-256:** `711417bce2d37c17e32bc2fdd1db54b6bd84fa7202cbd2530bbb5c9e719e8952` (se `dist/RELEASE.txt`).
+**Bygge:** `2026.11.05` · **Artefakt-SHA-256:** `8fe02a1b42a149007383bb915ae888337753a26a8949af4a8a39ad4f9d99b87f` (se `dist/RELEASE.txt`).
 **Granskningsdatum:** 2026-11-07.
 **Granskningsmetod:** kodläsning påstående för påstående + statisk sökning i källkod och bygge +
 körning av det byggda verktyget i jsdom och i Chromium (utan nätverk) med syntetiska testfiler.
@@ -652,6 +652,7 @@ Konfig-JSON:en (**version 2**) innehåller tre slags uppgifter.
 - förklaringsmodellen (`forklaringsmodell`): vilka variabler regressionen räknar bort och skälet som fritext, kortad
   till 300 tecken. Ett ogiltigt värde ger standard med varning, aldrig fel (ADR-56).
 - definitionen av kvinnodominerat (`likvardighet.kvDomDefinition`, DO eller SCB)
+- vilka yrken som jämförs i likvärdigt arbete (`likvardighet.jamforelse`, `alla` eller `mansdominerade`, ADR-60)
 - lönemånaden (`lonemanad`), fritext kortad till 40 tecken (ADR-57)
 - om inläsningen ska stoppa vid förhandskontrollen (`forhandskontrollStopp`, sant eller falskt). Förhandskontrollens
   rader ingår inte.

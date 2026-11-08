@@ -314,11 +314,8 @@ function generateEUDirectiveMatrix() {
     lika.grupper.forEach(g => {
         const { yrke, nKv, nMa, tot } = g;
         const pctKv = nKv / tot;
-        // Jämn könsfördelning = båda könen >= 40% (= ena könet inom [40%, 60%]).
-        // Strikt olikhet på 0.6 — exakt 60/40 räknas som jämnt.
-        let dominans = "Könsblandad";
-        if (pctKv > 0.6) dominans = "Kvinnodominerad";
-        else if (pctKv < 0.4) dominans = "Mansdominerad";
+        // Samma definition som Likvärdigt arbete (DO/SCB-valet och kvinnotröskeln; ADR-60).
+        const dominans = _aidbasDominans(pctKv * 100, aidbasDefinition(), aidbasGrans());
         // k-anonymitet: yrken där ett kön är under k redovisas med gruppens SAMLADE
         // median (den bygger på n >= kTroskel() och röjer ingen enskild); yrken som
         // helt ligger under k utelämnas och räknas upp i noten under tabellen.
@@ -435,7 +432,7 @@ function generateEUDirectiveMatrix() {
             ['Löneskillnad per yrke', '<code>(median kvinnor / median män − 1) × 100 %</code>'],
             ['Status', `Värt att granska = utanför slumpens gränser för gruppen (omkastning av könen, 1 000 gånger) och minst 3 % (verktygets storleksgräns) · Följ upp = minst 3 % men inte säkerställd, eller säkerställd under 3 % · Balanserat = under 3 % och inte säkerställd · Går ej att bedöma = ett kön under ${statGolv()}`],
             ['Direktivmarkering', `≥ 5 % på den ojusterade medianskillnaden. ${esc(_STS_DIR_TIPS)}`],
-            ['Dominans', 'Kvinnodominerad om >60% kvinnor, mansdominerad om >60% män (dvs. ett kön < 40%), annars könsblandad (jämn fördelning = båda könen ≥ 40%)'],
+            ['Dominans', `Kvinnodominerad enligt ${esc(aidbasDefinitionText())}; mansdominerad med samma gräns för män; annars könsblandad. Samma definition som i Likvärdigt arbete (valet görs i dess inställningar).`],
             ['OLS-regression', 'log(lön) ~ kön + ålder + BAS-intervall (indikatorvariabler, första BAS som referens). Standardfel: HC3 robust (Long &amp; Ervin 2000)'],
             ['BAS-rangordning', 'Fast enligt BAS-systemet: A lägst (t.ex. 0–99 poäng), B nästa intervall (100–199) osv.; rang = bokstavens plats (A=1, B=2 …); ett BAS-steg är alltid ett intervall, även när en bokstav saknas i underlaget; högre rang = högre värderat arbete'],
             ['Per-BAS regression', `Separat <code>log(lön) ~ kön + ålder</code> inom varje BAS med ≥${statGolv()} av varje kön`]

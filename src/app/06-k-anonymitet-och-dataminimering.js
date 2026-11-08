@@ -543,7 +543,7 @@ function _renderaOmAllaFlikarStegvis() {
 
 /**
  * Slår upp en AID-kod i SKR:s personalstatistik.
- * Klass: 'kvinnodominerat' (≥60%), 'icke-kvinnodominerat' (≤40%), 'blandat' (40–60%).
+ * Klass efter verktygets definition (konsklassNu, ADR-60): 'kvinnodominerat', 'icke-kvinnodominerat' (mansdominerat) eller 'blandat'.
  *
  * @param {string} aid - AID-kod (sexsiffrig, eller minst tre siffror för prefixet)
  * @returns {null | {kvAndel:number, klass:string, kalla:string, prefix:string, niva:string}}
@@ -577,10 +577,9 @@ function nationellAidKlass(aid) {
     const ref = /^\d{6}/.test(s) ? _skrKvinnoandel(s, { del }) : (/^\d{3}/.test(s) ? _skrKvinnoandelPrefix(s.slice(0, 3), { del }) : null);
     if (!ref) return null;
     const kvAndel = Math.round(ref.pct * 10) / 10;
-    let klass;
-    if (kvAndel >= 60) klass = 'kvinnodominerat';
-    else if (kvAndel <= 40) klass = 'icke-kvinnodominerat';
-    else klass = 'blandat';
+    // Samma definition som resten av verktyget (ADR-60); likvärdighetsanalysen läser bara kvAndel.
+    const kl = konsklassNu(kvAndel);
+    const klass = kl === 'kvinnodominerad' ? 'kvinnodominerat' : kl === 'mansdominerad' ? 'icke-kvinnodominerat' : 'blandat';
     return { kvAndel, klass, prefix: ref.prefix || s.slice(0, 3), niva: ref.niva, del: ref.del, kalla: _skrReferensInfo().kalla };
 }
 // Högst så många gruppnamn räknas upp i noten innan resten summeras.

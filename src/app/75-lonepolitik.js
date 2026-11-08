@@ -256,7 +256,7 @@ function _lpBandkartaFigur(bas) {
               tips: d => [[d.x], ['Organisationen', `P10 ${utanKr(d.lag)} · median ${utanKr(d.med)} · P90 ${kr(d.hog)}`], ['Antal', String(d.n)]] },
             // Yrkesgrupperna i tre klasser efter könsfördelning (som i Likvärdigt arbete) i stället för en färgskala:
             // tre färger går att läsa mot spannen, en glidande skala gör det inte.
-            .../** @type {Array<[string, string, (a: number) => boolean]>} */ ([['Kvinnodominerad yrkesgrupp', PALETTE.kon.kvinna, a => a >= 60], ['Mansdominerad yrkesgrupp', PALETTE.kon.man, a => a <= 40], ['Blandad yrkesgrupp', PALETTE.semantic.neutral, a => a > 40 && a < 60]])
+            .../** @type {Array<[string, string, (a: number) => boolean]>} */ ([['Kvinnodominerad yrkesgrupp', PALETTE.kon.kvinna, a => konsklassNu(a) === 'kvinnodominerad'], ['Mansdominerad yrkesgrupp', PALETTE.kon.man, a => konsklassNu(a) === 'mansdominerad'], ['Blandad yrkesgrupp', PALETTE.semantic.neutral, a => konsklassNu(a) === 'blandad']])
                 .map(([serie, farg, hor]) => ({ marke: 'punkt', serie, farg, kant: FARG.vit, data: pts.filter(p => hor(p.kvAndel)),
                     tips: d => [[d.yrke], [`BAS ${d.bas}`, `median ${kr(d.y)}`], ['Kvinnor', _figTalformat(d.kvAndel, 'antal') + ' %'], ['Referens', d.niva], ['Antal', String(d.n)]] }))
         ].filter(l => l.data.length) };

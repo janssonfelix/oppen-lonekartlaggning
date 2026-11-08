@@ -263,11 +263,18 @@ describe('rapportunderlag: struktur, likvärdighet och singular', () => {
         expect(b.stycken.join(' ')).toContain('1 BAS-intervall med färre än 10 personer redovisas inte');
     });
     it('likvärdighetstabellen har KI och texten nämner kvinnotröskeln', () => {
-        const par = [{ kvLabel: 'F', kvBas: 'C', kvMedian: 36400, maLabel: 'I', maBas: 'C', gapKr: 1600, gapPct: 4.4, gapCI: { lo: 400, hi: 2550 } }];
+        const par = [{ kvLabel: 'F', kvBas: 'C', kvMedian: 36400, maLabel: 'I', maBas: 'C', maKvAndel: 45, maKvinnoPct: 45, maKlass: 'blandad', gapKr: 1600, gapPct: 4.4, gapCI: { lo: 400, hi: 2550 } }];
         const b = avsnittBlock('likvardigt', { par, exkluderade: 0, kravProxy: 'bas', kvinnoTroskel: 60 }, { k: 10 });
         expect(b.tabell.rubriker).toContain('95 % KI');
         expect(norm(b.tabell.rader[0].join('|'))).toContain('1,1–7,0 %');
-        expect(b.stycken.join(' ')).toContain('minst 60 % kvinnor');
+        // DO är standard: mer än tröskeln; SCB: minst (ADR-60).
+        expect(b.stycken.join(' ')).toContain('mer än 60 % kvinnor');
+        expect(avsnittBlock('likvardigt', { par, kravProxy: 'bas', kvinnoTroskel: 60, kvDomDefinition: 'scb' }, { k: 10 }).stycken.join(' ')).toContain('minst 60 % kvinnor');
+        // Jämförelseyrket: alla som inte är kvinnodominerade, och könsandelen med klassen i tabellen.
+        expect(b.stycken.join(' ')).toContain('jämförs med yrken på samma nivå som inte är kvinnodominerade');
+        expect(b.tabell.rubriker).toContain('Könsandel i jämförelseyrket');
+        expect(norm(b.tabell.rader[0][3])).toBe('45 % (blandad)');
+        expect(avsnittBlock('likvardigt', { par, kravProxy: 'bas', jamforelse: 'mansdominerade' }, { k: 10 }).stycken.join(' ')).toContain('bara med mansdominerade yrken');
     });
     it('kön och BAS som sammanfaller inom yrket ger ett eget besked', () => {
         const r = [];
@@ -452,8 +459,8 @@ describe('avsnittBlock lagreKrav', () => {
         expect(b.rubrik).toBe('Lägre krav, högre lön');
         expect(b.stycken.join(' ')).toContain('1 par där ett kvinnodominerat yrke har lägre medianlön än ett av organisationens yrken i lägre BAS');
         expect(b.stycken.join(' ')).toContain('2 par med en grupp under 10 personer redovisas inte här.');
-        expect(b.tabell.rubriker).toEqual(['Kvinnodominerat yrke', 'Jämförelseyrke', 'Antal (kvinnodom. / jämf.)', 'BAS-steg', 'Skillnad (kr)', 'Skillnad (%)', '95 % KI']);
-        expect(b.tabell.rader[0].slice(0, 4)).toEqual(['Barnskötare (BAS E)', 'Drifttekniker (BAS C)', '46 / 30', '2']);
+        expect(b.tabell.rubriker).toEqual(['Kvinnodominerat yrke', 'Jämförelseyrke', 'Antal (kvinnodom. / jämf.)', 'Könsandel i jämförelseyrket', 'BAS-steg', 'Skillnad (kr)', 'Skillnad (%)', '95 % KI']);
+        expect(b.tabell.rader[0].slice(0, 5)).toEqual(['Barnskötare (BAS E)', 'Drifttekniker (BAS C)', '46 / 30', '–', '2']);
         expect(b.fragor).toEqual([...FRAGOR_PAR]);
         expect(b.stycken.join(' ')).not.toMatch(/§|3 kap\./);
     });

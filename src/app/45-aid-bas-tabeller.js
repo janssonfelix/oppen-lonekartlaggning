@@ -14,7 +14,11 @@
 //   - Gränserna för slumpen är trattdiagrammets (41-lika-arbete.js): omkastning av könen inom gruppen, räknad per
 //     AID-kod och BAS-intervall, så att tabellen och fliken Slumpens gränser säger samma sak.
 //   - Kvinnodominerat enligt DO (mer än tröskeln) eller SCB (tröskeln eller mer): valet i Likvärdigt arbetes
-//     inställningar, standard DO; tröskeln är kvinnotröskeln där (standard 60 %).
+//     inställningar, standard DO; tröskeln är kvinnotröskeln där (standard 60 %). Samma definition gäller i hela
+//     verktyget (ADR-60): kvDomNu() och konsklassNu() nedan, som anropar _arKvinnodominerad/_konsklass ur
+//     src/lib/likvardighet.js.
+//   - Jämförelseyrken är alla grupper som inte är kvinnodominerade, eller bara de mansdominerade med filtret
+//     state.likvardighet.jamforelse = 'mansdominerade' (ADR-60) — samma mängd som kandidatparen.
 //   - Lönemånaden står ovanför varje tabell; den anges i Inställningar, och tomt skrivs ut som "inte angiven".
 
 /** Antalet per kön (och per grupp för median och spridning) som krävs för ett lönemått. */
@@ -25,6 +29,29 @@ function aidbasGolv() { return kTroskel() > K_SKARM ? LITET_UNDERLAG : 1; }
 function aidbasDefinition() { return state.likvardighet && state.likvardighet.kvDomDefinition === 'scb' ? 'scb' : 'do'; }
 /** Gränsen i procent kvinnor: kvinnotröskeln i Likvärdigt arbete. */
 function aidbasGrans() { return (state.likvardighet && state.likvardighet.kvinnoTrosholdPct) || 60; }
+/** Jämförelsemängden: 'alla' som inte är kvinnodominerade (standard) eller bara 'mansdominerade' (ADR-60). */
+function lvJamforelse() { return state.likvardighet && state.likvardighet.jamforelse === 'mansdominerade' ? 'mansdominerade' : 'alla'; }
+/** Om en andel kvinnor (procent) är kvinnodominerad enligt verktygets valda definition — den enda i verktyget (ADR-60). */
+function kvDomNu(pct) { return _arKvinnodominerad(pct, aidbasDefinition(), aidbasGrans()); }
+/** Klassen för en andel kvinnor: 'kvinnodominerad', 'mansdominerad', 'blandad' eller '' (ADR-60). */
+function konsklassNu(pct) { return _konsklass(pct, aidbasDefinition(), aidbasGrans()); }
+/** Gränsen för kvinnodominerat i ord: "mer än 60 %" (DO) eller "minst 60 %" (SCB). */
+function kvDomGransText() { return `${aidbasDefinition() === 'scb' ? 'minst' : 'mer än'} ${svTal(aidbasGrans(), 0)} %`; }
+/** Jämförelsemängden i ord, med gränsen: "inte kvinnodominerade, ≤ 60 %" eller "mansdominerade, < 40 %". */
+function jamforelseGransText() {
+    const g = aidbasGrans(), scb = aidbasDefinition() === 'scb';
+    return lvJamforelse() === 'mansdominerade'
+        ? `mansdominerade, ${scb ? '≤' : '<'} ${svTal(100 - g, 0)} % kvinnor`
+        : `inte kvinnodominerade, ${scb ? '<' : '≤'} ${svTal(g, 0)} % kvinnor`;
+}
+/** Klassordet för ett jämförelseyrke i tabellerna. */
+function konsklassOrd(klass) { return klass === 'mansdominerad' ? 'mansdominerad' : klass === 'blandad' ? 'blandad' : klass === 'kvinnodominerad' ? 'kvinnodominerad' : '–'; }
+/** Meningen om vilka grupper som jämförs med de kvinnodominerade (ADR-60). */
+function jamforelseMening() {
+    return lvJamforelse() === 'mansdominerade'
+        ? 'Som jämförelse används bara de mansdominerade grupperna (valt i Likvärdigt arbetes inställningar).'
+        : 'Som jämförelse används alla grupper som inte är kvinnodominerade, både mansdominerade och könsblandade.';
+}
 /** Texten om definitionen, för tabellerna och metodbladet. */
 function aidbasDefinitionText() { return _aidbasDefinitionText(aidbasDefinition(), aidbasGrans()); }
 /** Raden om lönemånaden ovanför tabellerna. */
@@ -56,12 +83,12 @@ function _aidbasGranser(d) {
 }
 /** De fyra tabellerna ur underlaget, med verktygets regler. */
 function aidbasTabeller(d = getData()) {
-    const k = aidbasK(), golv = aidbasGolv(), definition = aidbasDefinition(), grans = aidbasGrans();
+    const k = aidbasK(), golv = aidbasGolv(), definition = aidbasDefinition(), grans = aidbasGrans(), jamforelse = lvJamforelse();
     return {
-        k, golv, definition, grans,
+        k, golv, definition, grans, jamforelse,
         lika: _aidbasLika(d, { k, golv, granser: _aidbasGranser(d) }),
-        likvardigt: _aidbasLikvardigt(d, { k, golv, definition, grans, nationell: _aidbasNationell }),
-        par: _aidbasPar(d, { k, definition, grans }),
+        likvardigt: _aidbasLikvardigt(d, { k, golv, definition, grans, jamforelse, nationell: _aidbasNationell }),
+        par: _aidbasPar(d, { k, definition, grans, jamforelse }),
         individ: _aidbasIndivid(d, { k, golv })
     };
 }
@@ -149,7 +176,7 @@ function renderAidBasLikvardigt() {
     const d = getData();
     if (!d.length) { lv.innerHTML = ''; hi.innerHTML = ''; _aidbasNyckel('nyckel-lv-aidbas', ''); _aidbasNyckel('nyckel-lv-hierarki', ''); return; }
     const t = aidbasTabeller(d);
-    const def = `Kvinnodominerad enligt ${aidbasDefinitionText()}; mansdominerad med samma gräns för män; övriga könsblandade. "Brukar anses kvinnodominerad" bygger på andelen kvinnor nationellt (${skrKallaKort()}) med samma definition.`;
+    const def = `Kvinnodominerad enligt ${aidbasDefinitionText()}; mansdominerad med samma gräns för män; övriga könsblandade. ${jamforelseMening()} "Brukar anses kvinnodominerad" bygger på andelen kvinnor nationellt (${skrKallaKort()}) med samma definition.`;
     lv.innerHTML = _aidbasTabellHtml('aidbas-likvardigt-tabell', AIDBAS_KOL.likvardigt, t.likvardigt.rader, { not: _aidbasSmaNot(t.likvardigt.sma, t.golv), fil: 'likvardigt_arbete' })
         + `<p class="text-dampad-xs marg-8-0-0">${esc(def)} Medianlön och lönespridning ((P90 − P10) / median) bara för grupper med minst ${t.k} personer.</p>`
         + (t.likvardigt.sammanfattning.length ? `<h3 class="fs-md marg-14-0-4">Sammanfattning per BAS-intervall</h3><ul class="text-dampad-sm">${t.likvardigt.sammanfattning.map(s => `<li>${esc(_aidbasSammanfattningText(s))}</li>`).join('')}</ul>`
@@ -203,7 +230,7 @@ function _aidbasExcelBlad() {
     const d = getData();
     if (!d.length) return [];
     const t = aidbasTabeller(d);
-    const def = `Kvinnodominerad enligt ${aidbasDefinitionText()}; mansdominerad med samma gräns för män; övriga könsblandade.`;
+    const def = `Kvinnodominerad enligt ${aidbasDefinitionText()}; mansdominerad med samma gräns för män; övriga könsblandade. ${jamforelseMening()}`;
     const lika = _aidbasBlad('Lika arbete: kvinnors medianlön i procent av mäns per AID-kod och BAS-intervall', AIDBAS_KOL.lika, t.lika.rader,
         { fore: [`Medianer, kvot och gränser bara när varje kön har minst ${t.k} personer; annars "Analyseras på individnivå". Gränserna är de 95-procentiga för slumpen vid gruppens storlek och könsfördelning (omkastning av könen inom gruppen, som trattdiagrammet).`, `${_STS_DIR_KOLUMN}: ${_STS_DIR_TIPS}`],
           efter: [_aidbasSmaNot(t.lika.sma, t.golv)], tom: 'Inga grupper att visa.' });
@@ -231,6 +258,6 @@ function _aidbasMetodRader() {
         ['Tabellerna per AID-kod och BAS-intervall', `Bladen ${AIDBAS_BLADNAMN.join(', ')} grupperar varje person på AID-kod och BAS-intervall ur personens egen rad: lika arbete är samma yrkesgrupp på samma nivå, och en yrkesgrupp i flera intervall får en rad per intervall. ${lonemanadText()}.`],
         ['Små grupper i tabellerna per AID och BAS', `Grupper med färre än ${golv} personer får ingen egen rad utan räknas upp i en not under tabellen med namn och antal. Ett köns median, kvoten och gränserna redovisas bara när varje kön har minst ${k} personer; gruppens median och lönespridning bara när gruppen har minst ${k} personer. Arbetslistan Analys på individnivå tar upp grupperna där något kön är mindre än ${k}, utan löner.`],
         ['Gränser för slumpen (Lika arbete AID x BAS, Slumpens gränser)', 'Kvinnors median i procent av mäns jämförs med de mittersta 95 procenten av de kvoter slumpen ger när könen kastas om slumpvis mellan gruppens löner 1 000 gånger (för grupper över 300 personer en normalapproximation med gruppens egen spridning). Gränserna gäller gruppens egna löner, antal och könsfördelning. En kvot utanför gränserna är svår att förklara med slumpen; gränserna är ett stöd för bedömningen, inte ett test som friar eller fäller.'],
-        ['Kvinnodominerat arbete (Likvärdigt arbete, Hierarkisk jämförelse)', `${aidbasDefinitionText()}. Mansdominerad med samma gräns för män; övriga könsblandade. "Brukar anses kvinnodominerad" bygger på andelen kvinnor nationellt i yrket (${skrKallaKort()}) med samma definition — lagen gäller arbete som är eller brukar anses vara kvinnodominerat. Lönespridning = (P90 − P10) / median. Den hierarkiska jämförelsen listar par där en grupp som inte är kvinnodominerad har lägre BAS-intervall och högre median än en kvinnodominerad grupp; BAS-ordningen är bokstavsordningen.`]
+        ['Kvinnodominerat arbete (Likvärdigt arbete, Hierarkisk jämförelse)', `${aidbasDefinitionText()}. Mansdominerad med samma gräns för män; övriga könsblandade. ${jamforelseMening()} Samma definition och samma jämförelsemängd gäller kandidatparen i Likvärdigt arbete och hela verktyget. "Brukar anses kvinnodominerad" bygger på andelen kvinnor nationellt i yrket (${skrKallaKort()}) med samma definition — lagen gäller arbete som är eller brukar anses vara kvinnodominerat. Lönespridning = (P90 − P10) / median. Den hierarkiska jämförelsen listar par där en grupp som inte är kvinnodominerad har lägre BAS-intervall och högre median än en kvinnodominerad grupp; BAS-ordningen är bokstavsordningen.`]
     ];
 }

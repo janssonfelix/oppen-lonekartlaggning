@@ -83,7 +83,7 @@ function _rapportunderlagBlockExport() {
         _ruAvsnittBlock('uppdelning', _guGapUppdelning(d, { k }), opt),
         _ruAvsnittBlock('lika', lika, opt),
         _ruAvsnittBlock('likvardigt', { par, exkluderade: parUtelamnade, kravProxy,
-            kvinnoTroskel: (state.likvardighet && state.likvardighet.kvinnoTrosholdPct) ?? 60, topN }, opt),
+            kvinnoTroskel: aidbasGrans(), kvDomDefinition: aidbasDefinition(), jamforelse: lvJamforelse(), topN }, opt),
         _ruAvsnittBlock('lagreKrav', {
             par: ((lv && lv.lagreKrav) || []).filter(_parOverTroskel),
             exkluderade: ((lv && lv.lagreKrav) || []).filter(p => !_parOverTroskel(p)).length,

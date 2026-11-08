@@ -181,6 +181,9 @@ const appLVSrc = (() => {
 const makeAppLV = new Function('state', 'nationellAidKlass', '_lvComputePairs', `
     const kTroskel = () => state.kTroskel ?? 10;
     const kInstalld = kTroskel;
+    // Definitionen och jämförelsemängden ur 45-aid-bas-tabeller.js (ADR-60), lästa ur state som i appen.
+    const aidbasDefinition = () => state.likvardighet && state.likvardighet.kvDomDefinition === 'scb' ? 'scb' : 'do';
+    const lvJamforelse = () => state.likvardighet && state.likvardighet.jamforelse === 'mansdominerade' ? 'mansdominerade' : 'alla';
     // Talformatshjälparna ur 03-hjalpfunktioner.js: adaptern skriver diagnostik med dem.
     const svTal = (v, dec = 0) => Number(v).toFixed(dec).replace('.', ',');
     const svPct = (v, dec = 1) => svTal(v, dec) + ' %';
@@ -215,7 +218,7 @@ describe('§ 3:10: app.js delegerar till lib-spegeln', () => {
             statistik: [{ aid: '2000', bas: 'B', median: 35000 }],
             statistikHasKon: true,
             arbetsvardering: null,
-            likvardighet: { kvinnoTrosholdPct: 55, minGapPct: 3, topN: 20 }
+            likvardighet: { kvinnoTrosholdPct: 55, kvDomDefinition: 'scb', jamforelse: 'mansdominerade', minGapPct: 3, topN: 20 }
         };
         state.kTroskel = 15;
         makeAppLV(state, () => null, spion)();
@@ -224,7 +227,8 @@ describe('§ 3:10: app.js delegerar till lib-spegeln', () => {
         expect(sedd.statistik).toBe(state.statistik);
         expect(typeof sedd.scbKlass).toBe('function');
         // BAS-ordningen är fast (se §5 i teknisk-plan.md): ingen basRang skickas.
-        expect(sedd.opts).toEqual({ kvinnoTrosholdPct: 55, minGapPct: 3, topN: 20, k: 15 });
+        // Definitionen av kvinnodominerat och jämförelsemängden följer med (ADR-60).
+        expect(sedd.opts).toEqual({ kvinnoTrosholdPct: 55, kvDomDefinition: 'scb', jamforelse: 'mansdominerade', minGapPct: 3, topN: 20, k: 15 });
     });
 
     it('skickar med arbetsvärderingen i poäng-läge (#5)', () => {

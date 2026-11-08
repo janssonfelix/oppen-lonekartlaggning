@@ -17,6 +17,7 @@ filer) finns ingen referens att jämföra mot.
 | Organisation | Organisationens namn, utgivare (t.ex. "Lönefunktionen, HR-avdelningen"), datum, vilket år paketet avser och organisationstypen (kommun, region eller båda) | Visas i verktyget och i exporter, så att det framgår vilket underlag som använts |
 | Benämningar | Vad jämförelsestatistiken heter (t.ex. "Kommunens lönestatistik") | Rubriker och texter i Löneläget, Prioritering och exporter |
 | Grundinställningar | PO-påslag och beräkningsperiod, och *Minsta gruppstorlek för redovisning* (valfritt; utan värde gäller 10 eller det handläggaren har satt) | Kostnadsberäkningarna i Prioritering och Löneöversyn, och vilka grupper som redovisas. Ett värde under 10 ger handläggaren en fråga om bekräftelse när paketet läses in |
+| Jämförelseyrken i likvärdigt arbete (valfritt) | `jamforelse`: `alla` (alla yrken som inte är kvinnodominerade, standard) eller `mansdominerade` (bara mansdominerade). Formuläret tar med valet i fliken Likvärdigt arbete när paketet skapas | Sätter rutan *Jämför bara med mansdominerade yrken* när paketet läses in; handläggaren kan ändra den efteråt (ingen låsning). Ett annat värde ger en varning och används inte |
 | Låsningar (valfritt) | *Lägsta tillåtna minsta gruppstorlek*, en låst tid för *rensning vid inaktivitet*, och om *små grupper får tas med i exporten från Tabeller och egna vyer* | Det handläggaren inte får ändra, se avsnitt 5 |
 | Rapportens recept (valfritt) | Egna tabeller byggda i Tabeller och egna vyer och ett eget recept för avsnittet per BAS-intervall — bara recepten (rader, kolumner, mått, urval), inga tal | Samma tabeller i Word, PDF, Excel och rapportunderlaget hos alla handläggare; ersätter de egna tabeller som finns när paketet läses in |
 | Importprofiler (valfritt) | Sparade kolumnmappningar för lönesystemets uttag: vilken rubrik som är BAS-intervall, yrke, lön, ålder och kön (och poäng och ansvarskod). Dessutom vilka rubriker som måste finnas. Bara rubrikernas namn, inga värden | Uttaget känns igen utan kolumnmappning hos alla handläggare; paketets profiler prövas före handläggarens egna och verktygets inbyggda |
@@ -25,7 +26,8 @@ filer) finns ingen referens att jämföra mot.
 
 Ställningstagandet och jämförelsestatistiken är var för sig valfria, men paketet måste
 innehålla minst det ena. Analysens trösklar (t.ex. 60 % för kvinnodominans och 5 % för
-flaggning) ingår inte — de är verktygets standard och kan ändras av handläggaren.
+flaggning) ingår inte — de är verktygets standard och kan ändras av handläggaren. Valet av
+jämförelseyrken i likvärdigt arbete (`jamforelse`) är det enda analysvalet paketet kan bära.
 
 **Paketet innehåller inga personuppgifter** — bara organisationens ställningstagande och
 aggregerad statistik. Verktyget avvisar ett paket som innehåller något som liknar
@@ -178,7 +180,8 @@ för att se vad formuläret i avsnitt 2 ger, inte som mall att redigera för han
     "kTroskelLagst": 10,
     "inaktivitetMin": 30,
     "inaktivitetLast": true,
-    "smaGrupperIExport": false
+    "smaGrupperIExport": false,
+    "jamforelse": "alla"
   },
   "referens": {
     "namn": "Lönepolitiskt ställningstagande 2026",

@@ -119,7 +119,7 @@ Icke förhandlingsbara arkitektoniska garantier:
 |---|---|---|
 | Kartläggning lika arbete | lika arbete (lagrum.md) | EU-Lönekartläggning: median-jämförelse kön inom yrkesgrupp + per-BAS-regression (oförklarat gap, ålderskontroll, HC3-SE, BH-FDR) |
 | Lönegap & könsfördelning | lönekartläggningen (lagrum.md) | Lika arbete-fliken: yrkesgrupperna först; trattdiagrammet ställer varje yrkesgrupps kvot mot gruppens storlek och bedömer den med omkastning av könen inom gruppen. Lönestruktur-fliken: översikten per BAS-intervall (*Lönegap per BAS-intervall*) som tabell med grafik i raden (antal, medianer, skillnad i kronor, kvot med bootstrap-intervall, status), samma kvot som diagram bara i exporten, lönespridning per BAS och kön, könsfördelning (*Könsfördelning per BAS-intervall*), 5 %-tröskel (EU Art. 9-analogt) |
-| **Likvärdigt arbete** | **likvärdigt arbete (lagrum.md)** | **Likvärdigt arbete-fliken: organisationens kvinnodominerade AID×BAS mot icke-kvinnodominerade yrken med lika krav — i första hand organisationens egna i samma BAS, annars jämförelsestatistiken; med arbetsvärderingspoäng över BAS-gränserna. Därtill *Lägre krav, högre lön* (ADR-25)** |
+| **Likvärdigt arbete** | **likvärdigt arbete (lagrum.md)** | **Likvärdigt arbete-fliken: organisationens kvinnodominerade AID×BAS mot yrken som inte är kvinnodominerade (ADR-60) med lika krav — i första hand organisationens egna i samma BAS, annars jämförelsestatistiken; med arbetsvärderingspoäng över BAS-gränserna. Därtill *Lägre krav, högre lön* (ADR-25)** |
 | Hierarkisk översikt | lönekartläggningen (lagrum.md) | Löneöversikten (i Tabeller och egna vyer): median/P10/P90/spridning per yrke+BAS, referenslinjer |
 | Prioritering | — | Prioritetsindex (avvikelse × volym × jämställdhet), kostnadssimulering. Könsgapet i gruppen visas och räknas in i indexet bara när båda könen har minst k personer (ADR-12; annars räknas jämställdhetsdelen som 0). Jämför mot organisationens lönepolitiska ställningstagande (ur ett organisationspaket eller en egen namngiven fil; ingen inbyggd referens, ADR-28) eller mot jämförelsestatistiken |
 | Fördjupning | — | Två flikar i Kartläggning som inte är lagkrav och säger det i verktygstipset och inledningen: Ålder & karriär (lön mot ålder med trend, lönegap per åldersgrupp, percentilband över ålder, lönefördelning per kön, livscykel ålder×kön×BAS och åldersstruktur) och Löneläget (raden Löneläget nedan). Nästa steg hoppar över dem när de är låsta |
@@ -161,8 +161,12 @@ adaptern verkligen delegerar vaktas av `tests/drift.test.js`:
    även små grupper prövas (rapportunderlaget redovisar bara par där båda grupperna har
    minst 10 personer).
 2. **Steg 2 — jämförelseyrken med lika krav:**
-   - **BAS-läget (standard):** i första hand organisationens **egna** icke-kvinnodominerade
-     yrken (under 100 − kvinnotröskel % kvinnor) i samma BAS-intervall. Saknas ett sådant i
+   - **Jämförelsemängden (ADR-60):** alla yrken som **inte är kvinnodominerade** enligt vald
+     definition (DO: högst kvinnotröskeln, SCB: under den) — mansdominerade och blandade, med
+     klassen och könsandelen synliga i paret (`maKlass`, `maKvinnoPct`). Filtret
+     `state.likvardighet.jamforelse = 'mansdominerade'` begränsar till de mansdominerade.
+   - **BAS-läget (standard):** i första hand organisationens **egna** jämförelseyrken i samma
+     BAS-intervall. Saknas ett sådant i
      BAS-intervallet används **jämförelsestatistiken** som reserv (dess egen
      könsfördelning i första hand, SKR:s personalstatistik när den saknas, ADR-34).
    - **Poängläget:** har lönefilen kolumnen Poäng jämförs med yrken som har lika eller
@@ -237,7 +241,7 @@ adaptern verkligen delegerar vaktas av `tests/drift.test.js`:
   rätt grupp. Utskriftsfönstret för checklistorna (`printScaffoldView`) läser `:root` och allt från `.dold` till
   stilmallens slut ur den körande stilmallen och lägger in det som byggt stilark (`adoptedStyleSheets`): ett `<style>`-element
   som skriptet skapar blockeras av den ärvda CSP:n (`style-src-elem`), så fönstret var tidigare helt ostilat.
-- **Tester:** Vitest — 2986 tester i 95 filer: rena `src/lib/`-moduler, CSV-parsning, jsdom-röktest
+- **Tester:** Vitest — 3006 tester i 95 filer: rena `src/lib/`-moduler, CSV-parsning, jsdom-röktest
   av varje vy (ADR-7; `tests/smoke.test.js` med det delade fönstret och sju `tests/smoke-*.test.js` per
   område), k-tröskeln i åtta `tests/ktroskel*.test.js` med riggen i `tests/helpers/ktroskel-rigg.js`,
   gränssnittet i `tests/granssnitt*.test.js` (riggen `tests/helpers/granssnitt-rigg.js`) och diagramvyerna i
@@ -635,7 +639,7 @@ robusthetspanelen i Exportera prövar inställningarna. Logiken i `likaArbeteGru
 **ADR-25 — Lägre krav, högre lön: jämförelse över BAS-gränserna.** Med BAS som krav-proxy bildas kandidatparen
 bara inom samma BAS, så lagens "likvärdiga **eller lägre** krav" fångas inte av dem. Likvärdigt arbete har
 därför en **egen lista**, *Lägre krav, högre lön*: kvinnodominerade yrken med lägre medianlön än ett av
-**organisationens egna** icke-kvinnodominerade yrken i strikt lägre BAS. Ingen reserv ur jämförelsestatistiken:
+**organisationens egna** yrken som inte är kvinnodominerade (ADR-60) i strikt lägre BAS. Ingen reserv ur jämförelsestatistiken:
 en jämförelse över BAS-gränsen mot extern statistik blir dubbelt osäker. Alla lägre BAS ingår, med antalet
 BAS-steg utskrivet; BAS-rangen är bokstavsordningen (§5). Samma `minGapPct` och bootstrap-KI som kandidatparen.
 Listan är egen för att kandidatparen och allt som bygger på dem — handlingsplan, JPA, exporten, värmekartan —
@@ -1363,6 +1367,35 @@ arbete*, *Löneläge mot referens*, *Underlagets kvalitet*), Översiktens ruta h
 protokollet för gemensam lönebedömning väljer yrkesgrupper som är värda att granska med markeringen som egen kolumn.
 Utforska prövar ingen skillnad och visar därför högst *Följ upp*. Vaktas av `tests/status-trappa.test.js`.
 
+**ADR-60 — Jämförelseyrkena i likvärdigt arbete är alla som inte är kvinnodominerade; en definition av
+kvinnodominerat.** Beslut 2026-11-08. Tidigare fick bara grupper med under 40 % kvinnor vara jämförelseyrken, så
+blandade yrken (40–60 %) föll bort ur både kandidatparen och jämförelsestatistiken — i demot jämfördes Barnskötare
+och Undersköterska inte med Systemutvecklare (23 kvinnor av 45) i samma BAS-intervall. Nu är jämförelseyrkena
+**alla grupper som inte är kvinnodominerade** enligt vald definition: `aggregeraOrgKvDom` lägger varje sådan grupp i
+`orgIckeKv` med klassen `'mansdominerad'` eller `'blandad'`, `klassificeraStatistik` gör rader som inte är
+kvinnodominerade till kandidater (`klass.blandat` räknas fortfarande för diagnostiken), och paren får `maKlass` och
+`maKvinnoPct` för både interna och externa jämförelseyrken. Filtret `jamforelse: 'alla' | 'mansdominerade'`
+(`state.likvardighet.jamforelse`, standard `'alla'`, rutan *Jämför bara med mansdominerade yrken* i
+Inställningar) begränsar mängden *innan* paren byggs, så att reserven till jämförelsestatistiken per BAS fungerar som
+förut; med filtret på återskapas det tidigare urvalet. Samma mängd används i kandidatparen, *Lägre krav, högre
+lön*, *Hierarkisk jämförelse* och sammanfattningen per BAS-intervall (`arJamforelseKlass` i `src/lib/aidbas.js`).
+Könsandelen och klassen står i partabellen (kolumnen *Könsandel*), Steg 2a/2b, CSV- och Excel-exporterna (*Jämf.
+klass*), rapportunderlaget och rapporten; metodtexten säger att yrkena jämförs med yrken på samma nivå som inte är
+kvinnodominerade och att könsandelen står i tabellen. Fältet följer med och valideras i konfigurationsfilen
+(`likvardighet.jamforelse`) och organisationspaketet (`installningar.jamforelse`).
+
+*En definition (§9 punkt 22):* `arKvinnodominerad(pct, definition, grans)` och `konsklass(pct, definition, grans)` i
+`src/lib/likvardighet.js` är den enda definitionen: DO (i gränssnittet *Förarbetena*) mer än gränsen, SCB gränsen eller mer, mansdominerat speglat
+för män, övriga blandade. Den används av `aggregeraOrgKvDom` och `klassificeraStatistik` (som nu också följer
+kvinnotröskeln i stället för fasta 60 %), `dominans` i `aidbas.js` (tabellerna per AID och BAS), `forecastOutcome` i
+`loneoversyn.js` (Löneöversynens *Varav till kvinnodominerade grupper*) och i appen via `kvDomNu`/`konsklassNu`
+(`45-aid-bas-tabeller.js`): Lika arbetes kolumn Dominans, diagrammet Krav mot lön, Löneöversynens massregel,
+Lönepolitikens diagram och SKR-uppslaget. Prioriteringen klassar inga grupper efter könsdominans (dess
+jämställdhetsmått bygger på gapet) och berörs inte. Texterna säger *mer än* (DO) eller *minst* (SCB) efter valet.
+Lönekartläggningens regler om kvinnodominerat arbete beskrivs i `lagrum.md`; tolkningen att jämförelsemängden är
+alla som inte är kvinnodominerade är ett förslag, inte prövat av jurist. Vaktas av `tests/likvardighet.test.js`,
+`tests/aidbas.test.js`, `tests/smoke-vyer.test.js` (demot i BAS C) och `tests/smoke-aidbas.test.js`.
+
 ## 9. Öppna punkter
 
 Kända brister och obesvarade frågor, så att de inte lever bara i en konversationstråd.
@@ -1454,10 +1487,8 @@ Kända brister och obesvarade frågor, så att de inte lever bara i en konversat
     kräver `statGolv()` per kön.
 
 **Export:**
-22. **En definition av kvinnodominerat i hela verktyget.** Tabellerna per AID-kod och BAS-intervall (ADR-57) följer
-    valet DO/SCB; kandidatparen i Likvärdigt arbete räknar fortfarande med *mer än* tröskeln i `aggregeraOrgKvDom`
-    medan flikens texter säger *minst*, och Lika arbetes kolumn Dominans och Prioritering har sina egna gränser. Alla
-    ska använda samma valda definition (beslut 2026-11-05); görs i ett eget steg eftersom det ändrar befintliga flikar.
+22. *(Löst 2026-11-08: en definition av kvinnodominerat i hela verktyget, `arKvinnodominerad`/`konsklass` i
+    `src/lib/likvardighet.js`, ADR-60.)*
 10. **Svenskt talformat:** jämförelseexporten (`64-jamforelse-export.js`) och CSV-exporternas tolkning (`_CSV_TALLIKT`) är inte
     prövade.
 

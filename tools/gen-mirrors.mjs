@@ -42,18 +42,6 @@ export const MODULES = [
         }
     },
     {
-        file: 'loneoversyn.js', ns: '__mirrorForecast',
-        expose: {
-            computePott: '_fcComputePott', allocate: '_fcAllocate', targetRows: '_fcTargetRows', suggestTargets: '_fcSuggestTargets', closureTargets: '_fcClosureTargets',
-            stagedPlan: '_fcStagedPlan', summarizeGroups: '_fcSummarizeGroups', detectLeapfrog: '_fcDetectLeapfrog',
-            forecastOutcome: '_fcForecastOutcome', bandStats: '_fcBandStats',
-            individualRemediation: '_fcIndividualRemediation', marketTargets: '_fcMarketTargets',
-            sensitivityCurve: '_fcSensitivityCurve',
-            // privata hjälpare som app.js anropar direkt:
-            _median: '_fcMedian'
-        }
-    },
-    {
         file: 'struktur.js', ns: '__mirrorStructure',
         expose: {
             medianGapPct: '_stMedianGapPct', representationByBas: '_stRepresentationByBas',
@@ -74,7 +62,22 @@ export const MODULES = [
     },
     {
         file: 'likvardighet.js', ns: '__mirrorLikvardighet',
-        expose: { computeLikvardighetPairs: '_lvComputePairs', basRangFn: '_lvBasRangFn' }
+        expose: { computeLikvardighetPairs: '_lvComputePairs', basRangFn: '_lvBasRangFn',
+                  // Den enda definitionen av kvinnodominerat (ADR-60); aidbas.js och loneoversyn.js importerar dem
+                  arKvinnodominerad: '_arKvinnodominerad', konsklass: '_konsklass' }
+    },
+    {
+        // Löneöversynen — importerar likvardighet.js (definitionen av kvinnodominerat, ADR-60)
+        file: 'loneoversyn.js', ns: '__mirrorForecast',
+        expose: {
+            computePott: '_fcComputePott', allocate: '_fcAllocate', targetRows: '_fcTargetRows', suggestTargets: '_fcSuggestTargets', closureTargets: '_fcClosureTargets',
+            stagedPlan: '_fcStagedPlan', summarizeGroups: '_fcSummarizeGroups', detectLeapfrog: '_fcDetectLeapfrog',
+            forecastOutcome: '_fcForecastOutcome', bandStats: '_fcBandStats',
+            individualRemediation: '_fcIndividualRemediation', marketTargets: '_fcMarketTargets',
+            sensitivityCurve: '_fcSensitivityCurve',
+            // privata hjälpare som app.js anropar direkt:
+            _median: '_fcMedian'
+        }
     },
     {
         // Tabellerna per AID-kod och BAS-intervall — importerar stat.js och likvardighet.js

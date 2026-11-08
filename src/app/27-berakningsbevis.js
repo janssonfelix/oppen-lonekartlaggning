@@ -77,9 +77,12 @@ function _evidenceForLikvardighetPair(p) {
         ? (p.gapCI.lo > 0 ? 'Säker skillnad — värt att granska' : 'Inom slumpfel')
         : '— Ej beräkningsbar';
     const ärIntern = p.jamforKalla === 'intern';
+    // ADR-60: jämförelseyrket är ett yrke som inte är kvinnodominerat — mansdominerat eller blandat.
+    const klassOrd = p.maKlass === 'mansdominerad' ? 'mansdominerat' : p.maKlass === 'blandad' ? 'blandat' : 'inte kvinnodominerat';
+    const klassMening = `${klassOrd}, alltså inte kvinnodominerat (kvinnodominerat är ${kvDomGransText()} kvinnor)`;
     const jämförKällaText = ärIntern
-        ? 'organisationens egna data (icke-kvinnodominerat yrke)'
-        : 'jämförelsestatistiken (icke-kvinnodominerat)';
+        ? `organisationens egna data (${klassOrd} yrke)`
+        : `jämförelsestatistiken (${klassOrd})`;
     // Bootstrap-metoden skiljer sig per källa: intern = bägge individurvalen,
     // extern = organisationens löner mot jämförelsestatistikens median som konstant.
     const ciNote = ärIntern
@@ -90,14 +93,14 @@ function _evidenceForLikvardighetPair(p) {
         intro: `Detta par flaggades i likvärdighetsanalysen: <strong>${esc(p.kvLabel || p.kvAid)}</strong> i organisationen (kvinnodominerat) har lägre medianlön än <strong>${esc(p.maLabel || p.maAid)}</strong> i ${jämförKällaText} inom <em>samma BAS-intervall</em> (= likvärdiga krav). ${ärIntern ? 'Det här är en <strong>jämförelse inom organisationen</strong>: båda yrkena finns i organisationen.' : 'Inget jämförelseyrke i organisationen fanns i det här BAS-intervallet, därför används jämförelsestatistiken.'} Tabellraden visar antal, medianer och skillnad — nedan visas <em>hur</em> klassning och säkerhet räknats fram.`,
         rows: [
             // Endast det som INTE redan står i tabellraden: varför jämförelseyrket räknas
-            // som icke-kvinnodominerat, hur säkerheten bedöms, och vad påverkansindex betyder.
+            // som inte kvinnodominerat, hur säkerheten bedöms, och vad påverkansindex betyder.
             { label: 'Varför jämförbart yrke?',
               value: ärIntern ? 'Organisationens eget yrke (intern)' : (p.maKlassKort === 'lokal' ? 'Faktisk könsfördelning (jämförelsestatistiken)' : `Nationell könsfördelning som reserv (${skrKallaKort()})`),
               note: ärIntern
-                ? `${svPct(p.maKvAndel, 0)} kvinnor i organisationen’s grupp${p.maN != null ? ` (n=${p.maN})` : ''}: icke-kvinnodominerat`
+                ? `${svPct(p.maKvAndel, 0)} kvinnor i organisationens grupp${p.maN != null ? ` (n=${p.maN})` : ''}: ${klassMening}`
                 : (p.maKlassKort === 'lokal'
-                    ? `${svPct(p.maKvAndel, 0)} kvinnor${p.maNKv != null && p.maNMa != null ? ` (${p.maNKv} kv / ${p.maNMa} mä)` : ''}: under 40 % = icke-kvinnodominerat`
-                    : `${svPct(p.maKvAndel, 0)} kvinnor på nationell nivå: under 40 % = icke-kvinnodominerat. Lokal könsdata saknades.`) },
+                    ? `${svPct(p.maKvAndel, 0)} kvinnor${p.maNKv != null && p.maNMa != null ? ` (${p.maNKv} kv / ${p.maNMa} mä)` : ''}: ${klassMening}`
+                    : `${svPct(p.maKvAndel, 0)} kvinnor på nationell nivå: ${klassMening}. Lokal könsdata saknades.`) },
             { label: '95 % säkerhetsintervall (skillnad)',      value: p.gapCI ? `[${fmtKr(p.gapCI.lo)}, ${fmtKr(p.gapCI.hi)}]` : '—', note: p.gapCI ? ciNote : 'För få observationer i organisationen för bootstrap' },
             { label: 'Säkerhetsbedömning',                 value: sigStatus, isHtml: true, note: p.gapCI ? (p.gapCI.lo > 0 ? 'Hela intervallet ligger över 0: skillnaden är svår att förklara med slumpen' : 'Intervallet når 0: skillnaden kan bero på slumpen') : '' },
             { label: 'Summa för gruppen (kr/mån)',         value: fmtN(Math.round(p.allvarsindex)), note: `|skillnad| × n (i organisationen) = ${fmtKr(Math.abs(p.gapKr))} × ${p.kvN} — skillnaden gånger antalet personer i det kvinnodominerade yrket; rangordnar paren och är verktygets eget mått` },
@@ -112,12 +115,12 @@ function _evidenceForLikvardighetPair(p) {
             = ${fmtKr(p.maMedian)} − ${fmtKr(p.kvMedian)} = <strong>${fmtKr(p.gapKr)}</strong><br>
             skillnad (%) = skillnad / median(organisation) × 100<br>
             = ${fmtKr(p.gapKr)} / ${fmtKr(p.kvMedian)} × 100 = <strong>${svPct(p.gapPct, 2)}</strong><br><br>
-            <strong>Klassificering av jämförelseyrket (icke-kvinnodominerat):</strong><br>
+            <strong>Klassificering av jämförelseyrket (${esc(klassOrd)}):</strong><br>
             ${ärIntern
-                ? `Källa: organisationens egna individdata (faktisk könsfördelning per AID×BAS)<br>${svPct(p.maKvAndel, 1)} kvinnor${p.maN != null ? ` (n=${p.maN})` : ''}: icke-kvinnodominerat`
+                ? `Källa: organisationens egna individdata (faktisk könsfördelning per AID×BAS)<br>${svPct(p.maKvAndel, 1)} kvinnor${p.maN != null ? ` (n=${p.maN})` : ''}: ${klassMening}`
                 : (p.maKlassKort === 'lokal'
-                    ? `Källa: jämförelsestatistiken (faktisk könsfördelning per AID×BAS)<br>${svPct(p.maKvAndel, 1)} kvinnor${p.maNKv != null && p.maNMa != null ? ` (${p.maNKv} kvinnor av ${p.maNKv + p.maNMa} totalt)` : ''}: under 40 % = icke-kvinnodominerat`
-                    : `Källa: ${esc(_skrReferensInfo().kalla)} (nationell reserv)<br>AID ${esc(p.maAid)}: ${p.maKvAndel.toFixed(1).replace('.', ',')} % kvinnor i ${_skrDelText(_skrDel())}: under 40 % = icke-kvinnodominerat`)}`,
+                    ? `Källa: jämförelsestatistiken (faktisk könsfördelning per AID×BAS)<br>${svPct(p.maKvAndel, 1)} kvinnor${p.maNKv != null && p.maNMa != null ? ` (${p.maNKv} kvinnor av ${p.maNKv + p.maNMa} totalt)` : ''}: ${klassMening}`
+                    : `Källa: ${esc(_skrReferensInfo().kalla)} (nationell reserv)<br>AID ${esc(p.maAid)}: ${p.maKvAndel.toFixed(1).replace('.', ',')} % kvinnor i ${_skrDelText(_skrDel())}: ${klassMening}`)}`,
         footer: `Verktyget identifierar statistiska kandidater. Den slutliga bedömningen — om kraven verkligen är likvärdiga och om det finns sakliga skäl — gör du själv, i dokumentationen.${p.maKlassKort === 'SCB' ? ' SKR:s kvinnoandel är nationell; jämförelsestatistikens faktiska könsfördelning per AID kan avvika och bör verifieras vid behov.' : ''}`
     };
 }

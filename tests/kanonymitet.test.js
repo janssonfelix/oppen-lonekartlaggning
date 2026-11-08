@@ -123,6 +123,9 @@ function rojandeElement(win) {
         // exporten. Det som VISAS där undantas; exporten vaktas i egen describe nedan.
         if (el.closest('#view-utforska')) continue;
         if (el.closest('#personer-att-granska')) continue;   // ADR-23: individlista, bara i verktyget
+        // Likvärdighetsanalysens par och yrkestabeller är undantagna från k (stämpeln "undantag: Likvärdigt arbete");
+        // sedan ADR-60 är datasetets små blandade grupper jämförelseyrken där. Resten av fliken prövas.
+        if (el.closest('#avsnitt-lv-par, #avsnitt-lv-underlag')) continue;
         if (el.children.length) continue;
         const attr = attributtext(el);
         const text = normalisera(`${el.textContent} ${attr}`);
@@ -465,7 +468,7 @@ describe('k-anonymitet: var uppstår löneskillnaden', () => {
 });
 
 describe('k-anonymitet: rapportunderlagets parblock med små kvinnodominerade grupper', () => {
-    // Datasetet ovan har jämnt könsfördelade små grupper och ger därför inga kandidatpar.
+    // Datasetet ovan har jämnt könsfördelade små grupper (sedan ADR-60 jämförelseyrken) men inga kvinnodominerade.
     // Här bildar små kvinnodominerade yrken (sentinellön) par både inom BAS och mot ett
     // yrke i lägre BAS — paren finns i fliken (undantagen från k) men inte i underlaget.
     let w2;

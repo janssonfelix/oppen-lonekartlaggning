@@ -12,6 +12,13 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   *Följ upp*, *Balanserat* och *Går ej att bedöma* (för få av ett kön) ersätter gränsen 5 %. 5 % är en markering på den
   ojusterade medianskillnaden (kolumnen *Ojusterad löneskillnad ≥ 5 %*), ingen bedömning, och står aldrig vid
   regressionens justerade tal.
+- **Likvärdigt arbete: jämförelseyrkena är alla som inte är kvinnodominerade (ADR-60).** Blandade yrken jämförs nu
+  också, i kandidatparen, *Lägre krav, högre lön*, *Hierarkisk jämförelse*, tabellerna per BAS-intervall och
+  jämförelsestatistiken, med könsandel och klass (mansdominerad eller blandad) i tabeller och exporter (kolumnen
+  *Könsandel i jämförelseyrket*, *Jämf. klass*). Rutan *Jämför bara med mansdominerade yrken* ger det tidigare urvalet
+  och följer med i konfigurationsfilen och organisationspaketet. En enda definition av kvinnodominerat (förarbetena
+  eller SCB) gäller i hela verktyget, också i Lika arbetes kolumn Dominans, Löneöversynen, Lönepolitiken och
+  SKR-uppslaget; texterna säger *mer än* eller *minst* efter valet.
 - **Sakliga skäl som strukturerad post.** Varje rad i Handlingsplan har knappen *Sakliga skäl*. Dialogen tar emot
   högst 8 skäl per grupp med kategori (Marknad, Utbildning, Erfarenhet, Prestation och resultat, Övergång, Annat
   sakligt skäl), belopp i kronor per månad och en kort kommentar. Den räknar ihop förklarat och återstående belopp och

@@ -18,6 +18,8 @@
  * per individ, så fördelningen är ordningsoberoende och transparent.
  */
 
+import { arKvinnodominerad } from './likvardighet.js';
+
 function _median(arr) {
     if (!arr || !arr.length) return 0;
     const s = arr.slice().sort((a, b) => a - b);
@@ -310,7 +312,8 @@ export function detectLeapfrog(perGroup) {
  * @param {{mode:string, value:number|null}} budget
  * @param {{mode:string, value:number|null}} generell
  * @param {Array} targets
- * @param {{months?:number, poPct?:number, roundStep?:number, kvThreshold?:number}} [costOpts]
+ * @param {{months?:number, poPct?:number, roundStep?:number, kvThreshold?:number, kvDefinition?:string}} [costOpts]
+ *   kvThreshold och kvDefinition: samma definition av kvinnodominerat som likvärdighetsanalysen (ADR-60).
  */
 export function forecastOutcome(rows, budget, generell, targets, costOpts) {
     const pott = computePott(rows, budget);
@@ -321,7 +324,8 @@ export function forecastOutcome(rows, budget, generell, targets, costOpts) {
     const kvThreshold = (costOpts && costOpts.kvThreshold) || 60;
     const lonsummaFore = totalLonSum(rows);
     // Hur mycket av påslaget går till kvinnodominerade grupper (jämställdhetsandel)
-    const equityCost = alloc.perGroup.reduce((s, g) => s + (g.andelKv >= kvThreshold ? g.kostnad : 0), 0);
+    const kvDefinition = (costOpts && costOpts.kvDefinition) || 'do';
+    const equityCost = alloc.perGroup.reduce((s, g) => s + (arKvinnodominerad(g.andelKv, kvDefinition, kvThreshold) ? g.kostnad : 0), 0);
     return {
         pott,
         använt: totalRaise,

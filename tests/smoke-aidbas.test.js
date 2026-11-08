@@ -81,6 +81,12 @@ describe('Lika arbete: avsnitten Lika arbete AID x BAS och Analys på individniv
         expect(w.__state.lonemanad).toBe('2025-11');
         expect(w.__state.likvardighet.kvDomDefinition).toBe('scb');
         expect(() => w.eval('applyConfigSnapshot(' + JSON.stringify({ ...cfg, likvardighet: { kvDomDefinition: 'annat' } }) + ')')).toThrow(/kvDomDefinition/);
+        // Jämförelseyrkena (ADR-60): standard alla som inte är kvinnodominerade; filtret följer med och valideras.
+        expect(cfg.likvardighet.jamforelse).toBe('alla');
+        w.eval('applyConfigSnapshot(' + JSON.stringify({ ...cfg, likvardighet: { ...cfg.likvardighet, jamforelse: 'mansdominerade' } }) + ')');
+        expect(w.__state.likvardighet.jamforelse).toBe('mansdominerade');
+        expect(w.eval('buildConfigSnapshot()').likvardighet.jamforelse).toBe('mansdominerade');
+        expect(() => w.eval('applyConfigSnapshot(' + JSON.stringify({ ...cfg, likvardighet: { jamforelse: 'blandade' } }) + ')')).toThrow(/jamforelse/);
     });
 });
 
@@ -100,6 +106,17 @@ describe('Likvärdigt arbete: avsnitten per BAS-intervall och den hierarkiska j�
         expect(b()[6]).toBe('Kvinnodominerad');
         expect(w.document.getElementById('aidbas-likvardigt').textContent).toContain('SCB: 60 % kvinnor eller mer');
         expect(w.document.getElementById('nyckel-lv-aidbas').textContent).toBe('4 grupper · 2 kvinnodominerade (enligt SCB)');   // skärmen visar också gruppen med 4 personer
+    });
+    it('rutan Jämför bara med mansdominerade yrken sätter filtret och ritar om (ADR-60)', () => {
+        const w = fonster();
+        w.__renderTabContent('likvardighet');
+        const ruta = w.document.getElementById('lv-bara-mansdominerade');
+        expect(ruta).not.toBeNull();
+        expect(ruta.checked).toBe(false);
+        ruta.checked = true; ruta.dispatchEvent(new w.Event('change'));
+        expect(w.__state.likvardighet.jamforelse).toBe('mansdominerade');
+        expect(w.document.getElementById('lv-bara-mansdominerade').checked).toBe(true);
+        expect(w.document.getElementById('aidbas-likvardigt').textContent).toContain('bara de mansdominerade');
     });
     it('den hierarkiska jämförelsen listar paret, och texten om inga par när det inte finns något', () => {
         const w = fonster();

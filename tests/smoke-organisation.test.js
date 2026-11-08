@@ -254,6 +254,16 @@ describe('organisationspaket: läs in och skapa', () => {
         expect(w.__docDraftHtml()).toContain('Lönestatistik 2025 (organisationspaket från Exempelregionen, 2026-10-01)');
         expect(w.__docDraftHtml()).toContain('Regionens lönepolicy 2026 (organisationspaket från Exempelregionen, 2026-10-01)');
     });
+    it('paketets val av jämförelseyrken i likvärdigt arbete sätts i fliken (ADR-60)', () => {
+        const w = createAppWindow();
+        expect(w.__state.likvardighet.jamforelse).toBe('alla');
+        const r = las(w, paket({ installningar: { poPct: 41.5, manader: 6, jamforelse: 'mansdominerade' } }));
+        expect(r.ok).toBe(true);
+        expect(w.__state.likvardighet.jamforelse).toBe('mansdominerade');
+        expect(w.eval('lvJamforelse()')).toBe('mansdominerade');
+        const ogiltigt = las(createAppWindow(), paket({ installningar: { jamforelse: 'blandade' } }));
+        expect(ogiltigt.ok).toBe(true);
+    });
     it('ett paket utan statistik skriver inte över en egen statistikfil', () => {
         const w = createAppWindow();
         w.__state.statistik = [{ aid: '999', aidFull: '999 Eget', bas: 'A', median: 1, p10: 0, p90: 0, nKv: null, nMa: null, andelKv: null }];

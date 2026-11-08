@@ -128,7 +128,8 @@ function updateForecast() {
         _renderForecastLutning(null, null);
         return;
     }
-    const cost = { months: (state.costSettings && state.costSettings.months) || 12, poPct: (state.costSettings && state.costSettings.poPct) || 0, roundStep: state.forecast.roundStep || 0 };
+    const cost = { months: (state.costSettings && state.costSettings.months) || 12, poPct: (state.costSettings && state.costSettings.poPct) || 0, roundStep: state.forecast.roundStep || 0,
+                   kvThreshold: aidbasGrans(), kvDefinition: aidbasDefinition() };   // samma definition av kvinnodominerat som Likvärdigt arbete (ADR-60)
     // #10 Indata-validering: fånga orimliga värden innan beräkning
     const valWarn = [];
     const bv = state.forecast.budget.value, gv = state.forecast.generell.value;
@@ -265,7 +266,7 @@ function updateForecast() {
             <strong class="block-mb6">Hur potten används</strong>
             <div class="fs-md lh-1_8">
                 Generellt påslag: <strong>${kr(out.generellCost)}</strong> &nbsp;·&nbsp; Riktade potter: <strong>${kr(out.riktadCost)}</strong><br>
-                Varav till kvinnodominerade grupper (≥60 %): <strong>${kr(out.equityCost)}</strong>${equityPctOfPott != null ? ` <span class="f-dampad">(${svPct(equityPctOfPott, 0)} av potten)</span>` : ''}
+                Varav till kvinnodominerade grupper (${esc(kvDomGransText())} kvinnor): <strong>${kr(out.equityCost)}</strong>${equityPctOfPott != null ? ` <span class="f-dampad">(${svPct(equityPctOfPott, 0)} av potten)</span>` : ''}
             </div>
             <p class="text-dampad-xs marg-8-0-0">Andelen till kvinnodominerade grupper visar ungefär hur mycket av översynen som riktas mot skillnaderna i likvärdigt arbete.</p>
         </div>` : '';
@@ -489,7 +490,7 @@ function _forecastAddByCriteria() {
     _fcBandStats(d).forEach(bb => { basP25[bb.bas] = bb.p25; });
     const match = g => {
         if (g.n < minN) return false;
-        if (matcher === 'kvdom') return g.andelKv >= 60;
+        if (matcher === 'kvdom') return kvDomNu(g.andelKv);
         if (matcher === 'underbas') return g.median < basMed[g.bas];
         if (matcher === 'underp25') return g.median < basP25[g.bas];   // grön-cirklade (under spann)
         return true; // 'all'
@@ -642,7 +643,8 @@ function _forecastSensitivity() {
     _forecastReadControls();
     const cand = _fcKandidater();
     if (!cand.length) { host.innerHTML = '<span class="text-dampad-sm">Verktyget hittade inga skillnader i likvärdigt arbete att räkna på.</span>'; return; }
-    const cost = { months: (state.costSettings && state.costSettings.months) || 12, poPct: (state.costSettings && state.costSettings.poPct) || 0, roundStep: state.forecast.roundStep || 0 };
+    const cost = { months: (state.costSettings && state.costSettings.months) || 12, poPct: (state.costSettings && state.costSettings.poPct) || 0, roundStep: state.forecast.roundStep || 0,
+                   kvThreshold: aidbasGrans(), kvDefinition: aidbasDefinition() };   // samma definition av kvinnodominerat som Likvärdigt arbete (ADR-60)
     const curve = _fcSensitivityCurve(d, cand, cost, 10);
     if (!_konFarRedovisasFor(d)) curve.forEach(c => { c.rawGap = null; });   // k: det råa gapet följer tröskeln
     const maxGap = Math.max(...curve.map(c => Math.abs(c.rawGap || 0)), 0.01);

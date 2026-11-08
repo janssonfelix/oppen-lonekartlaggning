@@ -2796,6 +2796,8 @@ summary:focus-visible {
 @media print { #rapport-table tbody tr { display: table-row !important; } }   /* utskriften visar också hopfällda BAS-grupper */
 /* Kandidatparens tabell: ett tal bryts aldrig från sin enhet, intervallet står på en rad och omdömet är ett märke. */
 #likvardighet-table td.t-hoger, #likvardighet-table .lv-ki, #likvardighet-table .lv-under { white-space: nowrap; }
+/* Könsandelen i jämförelseyrket med klassen under (ADR-60). */
+.lv-konsandel { white-space: nowrap; }
 .lv-ki-marke { display: inline-block; margin-top: 3px; padding: 1px 8px; border-radius: 999px; font-size: var(--fs-xs); font-weight: 600; white-space: nowrap; }
 /* Yrkesgruppstabellen: tätare rader, så att en rad med två textrader inte blir högre än 64 punkter. */
 #matrix-table tbody td { padding-top: 8px; padding-bottom: 8px; line-height: 1.35; }

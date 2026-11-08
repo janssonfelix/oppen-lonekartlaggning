@@ -305,495 +305,6 @@ const _pValue2Sided = __mirrorStat.pValue2Sided;
 const _fitOLS = __mirrorStat.fitOLS;
 const _libQuantile = __mirrorStat.quantile;
 
-// ---- speglar src/lib/loneoversyn.js ----
-const __mirrorForecast = (() => {
-// SPDX-License-Identifier: MIT
-// Copyright 2026 Felix Jansson
-/**
- * Öppen lönekartläggning — Pure löneöversyns-/prognosfunktioner
- *
- * Budget-först-modell: en pott (kr eller % av lönesumman) fördelas GENERELLT
- * (till alla) + RIKTAT (till valda BAS→AID-grupper), och utfallet (nya löner,
- * budgetutnyttjande, råa lönegapet före/efter) beräknas.
- *
- * Separat från app.js för att kunna testas via Vitest utan DOM/state.
- * app.js får en AUTO-GENERERAD spegel (`_fc*` i src/app/09-lib-speglar.js via
- * tools/gen-mirrors.mjs) — ändra här och kör `npm run build:app`, rör ej spegeln
- * (vaktas av tests/drift.test.js). Det oförklarade gapet (OLS) beräknas INTE
- * här — det körs i app.js mot simulerad data via data-swap, eftersom det kräver
- * regressionsmotorn. Här beräknas bara det rena (median-baserade) gapet.
- *
- * All matematik sker på ursprungslönerna: generellt och riktat summeras additivt
- * per individ, så fördelningen är ordningsoberoende och transparent.
- */
-
-function _median(arr) {
-    if (!arr || !arr.length) return 0;
-    const s = arr.slice().sort((a, b) => a - b);
-    const m = s.length >> 1;
-    return (s.length & 1) ? s[m] : (s[m - 1] + s[m]) / 2;
-}
-
-function _quantile(arr, q) {
-    if (!arr || !arr.length) return 0;
-    const s = arr.slice().sort((a, b) => a - b);
-    const pos = (s.length - 1) * q;
-    const lo = Math.floor(pos), hi = Math.ceil(pos);
-    return lo === hi ? s[lo] : s[lo] + (s[hi] - s[lo]) * (pos - lo);
-}
-
-/**
- * "Water-filling": höj de lägst betalda först. Hittar en gemensam nivå L (≤ cap)
- * och lyfter alla under L upp till L så långt potten räcker. Pengar som inte
- * får plats under cap lämnas oanvända (returneras implicit via summan av deltan).
- * @returns {number[]} delta per individ (samma ordning som lons)
- */
-function _waterLevelDeltas(lons, pott, cap) {
-    const n = lons.length;
-    if (!n || pott <= 0) return new Array(n).fill(0);
-    const c = (cap == null) ? Infinity : cap;
-    const sorted = lons.slice().sort((a, b) => a - b);
-    let L = sorted[0], used = 0;
-    if (c <= L) return new Array(n).fill(0);   // taket ligger under lägsta lönen
-    for (let i = 1; i <= n; i++) {
-        const nextBreak = i < n ? sorted[i] : Infinity;
-        const ceiling = Math.min(nextBreak, c);
-        const k = i;                            // antal individer på/under L
-        const seg = k * (ceiling - L);
-        if (used + seg >= pott) { L += (pott - used) / k; used = pott; break; }
-        used += seg; L = ceiling;
-        if (c !== Infinity && L >= c) { L = c; break; }
-    }
-    return lons.map(x => (x < L ? L - x : 0));
-}
-
-/** Total månadslönesumma. */
-function totalLonSum(rows) {
-    return (rows || []).reduce((s, r) => s + (r.lon > 0 ? r.lon : 0), 0);
-}
-
-/**
- * Potten i kr/månad utifrån budgeten.
- * @param {Array} rows
- * @param {{mode:string, value:number|null}} budget
- */
-function computePott(rows, budget) {
-    if (!budget || budget.value == null || !isFinite(budget.value)) return 0;
-    if (budget.mode === 'kr') return Math.max(0, budget.value);
-    return Math.max(0, totalLonSum(rows) * budget.value / 100);  // % av lönesumman
-}
-
-/**
- * Det råa (median-baserade) lönegapet kvinnor vs män, i procent.
- * @param {Array} rows
- * @param {(r:Object)=>number} getLon - väljer lönefältet (lon eller nyLon)
- * @returns {number|null}
- */
-function rawGenderGap(rows, getLon) {
-    const kv = [], ma = [];
-    (rows || []).forEach(r => {
-        const L = getLon(r);
-        if (!(L > 0)) return;
-        if (r.kon && r.kon.includes('kvinna')) kv.push(L);
-        else if (r.kon === 'man' || r.kon === 'män') ma.push(L);
-    });
-    if (!kv.length || !ma.length) return null;
-    return (_median(kv) / _median(ma) - 1) * 100;
-}
-
-/**
- * Raderna en riktad pott gäller: gruppen (BAS, eller BAS och AID), begränsad till ett kön (`kon`:
- * 'kvinna' | 'man', annars alla) och till löner under en gräns (`lonCap`, kr/mån, annars alla).
- * Samma urval som allocate() räknar på, så att gränssnittet kan visa hur många raden berör.
- * @param {Array} rows - individrader {bas, aid, kon, lon}
- * @param {{bas:string, aid:string, kon?:string, lonCap?:number|null}} t
- * @returns {number[]} index i rows
- */
-function targetRows(rows, t) {
-    const kon = t.kon === 'kvinna' || t.kon === 'man' ? t.kon : 'alla';
-    const cap = t.lonCap != null && isFinite(t.lonCap) && t.lonCap > 0 ? t.lonCap : null;
-    const konOk = r => kon === 'alla' || (kon === 'kvinna' ? String(r.kon || '').includes('kvinna') : (r.kon === 'man' || r.kon === 'män'));
-    const ut = [];
-    (rows || []).forEach((r, i) => {
-        if (r.bas !== t.bas) return;
-        if (t.aid !== '*' && r.aid !== t.aid) return;
-        if (!konOk(r) || (cap != null && !(r.lon < cap))) return;
-        ut.push(i);
-    });
-    return ut;
-}
-
-/**
- * Fördelar generellt + riktat påslag och returnerar nya löner per individ,
- * sammanställning per grupp och totaler.
- * @param {Array} rows - individrader {bas, aid, kon, lon}
- * @param {{mode:string, value:number|null}} generell - generellt påslag till alla (value null = 0)
- * @param {Array<{bas,aid,mode:'pct'|'kr'|'till',value,dist:'flat'|'lowest'|'target',targetLevel?:'median'|'p25',kon?:string,lonCap?:number|null}>} targets
- *   mode 'till' lyfter var och en i urvalet som ligger under beloppet upp till det (ingen pott att fördela).
- * @param {number} [roundStep=0] - avrunda nya löner till närmaste steg (kr), 0 = ingen avrundning
- */
-function allocate(rows, generell, targets, roundStep) {
-    const n = (rows || []).length;
-    const genDeltas = new Array(n).fill(0);
-    const g = generell || { mode: 'pct', value: 0 };
-    const gVal = g.value != null && isFinite(g.value) ? g.value : 0;
-    for (let i = 0; i < n; i++) {
-        if (rows[i].lon <= 0) continue;
-        genDeltas[i] = g.mode === 'kr' ? gVal : rows[i].lon * gVal / 100;
-    }
-
-    const tgtDeltas = new Array(n).fill(0);
-    (targets || []).forEach(t => {
-        // aid === '*' → hela BAS-intervallet (alla yrken i BAS:et); kön och lönegräns snävar in raden.
-        const idxs = targetRows(rows, t);
-        if (!idxs.length) return;
-        const lons = idxs.map(i => rows[i].lon);
-        if (t.mode === 'till') {
-            const mal = isFinite(t.value) ? t.value : 0;
-            idxs.forEach((i, j) => { if (lons[j] > 0 && lons[j] < mal) tgtDeltas[i] += mal - lons[j]; });
-            return;
-        }
-        const groupSum = lons.reduce((s, x) => s + (x > 0 ? x : 0), 0);
-        const pott = t.mode === 'kr' ? (isFinite(t.value) ? t.value : 0)
-                                     : groupSum * (isFinite(t.value) ? t.value : 0) / 100;
-        if (pott <= 0 || groupSum <= 0) return;
-        let gd;
-        if (t.dist === 'flat') {
-            const frac = pott / groupSum;
-            gd = lons.map(x => (x > 0 ? x * frac : 0));
-        } else {
-            const cap = t.dist === 'target'
-                ? (t.targetLevel === 'p25' ? _quantile(lons, 0.25) : _median(lons))
-                : Infinity;
-            gd = _waterLevelDeltas(lons, pott, cap);
-        }
-        idxs.forEach((i, j) => { tgtDeltas[i] += gd[j]; });
-    });
-
-    // Avrundning till lönetrappa: bara för individer som faktiskt får påslag
-    // (delta > 0), och aldrig under ursprungslönen.
-    const step = (roundStep && roundStep > 0) ? roundStep : 0;
-    const perPerson = rows.map((r, i) => {
-        let delta = genDeltas[i] + tgtDeltas[i];
-        if (step > 0 && delta > 0) {
-            const rounded = Math.round((r.lon + delta) / step) * step;
-            delta = Math.max(0, rounded - r.lon);
-        }
-        return { bas: r.bas, aid: r.aid, kon: r.kon, lon: r.lon, nyLon: r.lon + delta, delta };
-    });
-
-    // Sammanställning per grupp
-    const groups = new Map();
-    perPerson.forEach(p => {
-        const k = p.bas + '|' + p.aid;
-        let gr = groups.get(k);
-        if (!gr) { gr = { bas: p.bas, aid: p.aid, oldL: [], newL: [], kvN: 0, n: 0, cost: 0 }; groups.set(k, gr); }
-        gr.oldL.push(p.lon); gr.newL.push(p.nyLon);
-        gr.cost += p.delta; gr.n++;
-        if (p.kon && p.kon.includes('kvinna')) gr.kvN++;
-    });
-    const perGroup = [...groups.values()].map(gr => ({
-        bas: gr.bas, aid: gr.aid, n: gr.n, kvN: gr.kvN,
-        andelKv: gr.n ? 100 * gr.kvN / gr.n : 0,
-        gammalMedian: _median(gr.oldL), nyMedian: _median(gr.newL),
-        kostnad: gr.cost
-    }));
-
-    // generell/riktad-split speglar avsikten (oavrundat); totalRaise speglar
-    // det faktiska, ev. avrundade, utfallet (summan av perPerson-deltan).
-    const generellCost = genDeltas.reduce((s, x) => s + x, 0);
-    const riktadCost = tgtDeltas.reduce((s, x) => s + x, 0);
-    const totalRaise = perPerson.reduce((s, p) => s + p.delta, 0);
-    return { perPerson, perGroup, totals: { generellCost, riktadCost, totalRaise } };
-}
-
-/**
- * Föreslår en riktad fördelning som minskar de osakliga gapen först. Fördelar
- * riktadPott proportionellt mot påverkansindex (gapKr × n), kapat vid kostnaden
- * att helt stänga respektive grupps gap.
- * @param {Array<{bas,aid,gapKr:number,n:number}>} candidates - gapKr > 0 = under referens (kr/mån/person)
- * @param {number} riktadPott
- * @param {number} [minN=0] - rikta endast mot grupper med minst minN personer
- */
-function suggestTargets(candidates, riktadPott, minN = 0) {
-    const valid = (candidates || []).filter(c => c.gapKr > 0 && c.n > 0 && c.n >= (minN || 0));
-    if (!valid.length || riktadPott <= 0) return [];
-    const totalIndex = valid.reduce((s, c) => s + c.gapKr * c.n, 0);
-    if (totalIndex <= 0) return [];
-    return valid.map(c => {
-        const share = (c.gapKr * c.n) / totalIndex;
-        const want = c.gapKr * c.n;                  // kostnad att helt stänga (kr/mån)
-        const alloc = Math.min(want, riktadPott * share);
-        return { bas: c.bas, aid: c.aid, mode: 'kr', value: Math.round(alloc), dist: 'lowest' };
-    }).filter(t => t.value > 0);
-}
-
-/**
- * Mål-läge: bygg riktade rader som stänger en andel (fraction) av de osakliga
- * gapen. Kostnaden för att helt stänga en grupps gap är gapKr × n; för andelen
- * f blir det f × gapKr × n. Fördelas lägst-först inom gruppen.
- * @param {Array<{bas,aid,gapKr:number,n:number}>} candidates
- * @param {number} fraction - 0..1
- * @param {number} [minN=0]
- */
-function closureTargets(candidates, fraction, minN = 0) {
-    const f = Math.max(0, Math.min(1, fraction));
-    if (f <= 0) return [];
-    return (candidates || [])
-        .filter(c => c.gapKr > 0 && c.n > 0 && c.n >= (minN || 0))
-        .map(c => ({ bas: c.bas, aid: c.aid, mode: /** @type {'kr'} */ ('kr'), value: Math.round(f * c.gapKr * c.n), dist: /** @type {'lowest'} */ ('lowest') }))
-        .filter(t => t.value > 0);
-}
-
-/**
- * Stegvis plan: rampa fördelningen linjärt över N år (1/N per år) och beräkna
- * ackumulerad kostnad och råa lönegapet vid varje år. Stödjer DiskrL 3:11
- * ("senast inom tre år"). perPerson kommer från allocate (har delta + lon + kon).
- * @returns {Array<{year,andelPct,kumRaise,kumKostnad,rawGap}>}
- */
-function stagedPlan(rows, perPerson, years, costOpts) {
-    const N = Math.max(1, Math.min(5, Math.round(years) || 1));
-    const months = (costOpts && costOpts.months) || 12;
-    const poFactor = 1 + ((costOpts && costOpts.poPct) || 0) / 100;
-    const out = [];
-    for (let k = 1; k <= N; k++) {
-        const frac = k / N;
-        const simRows = perPerson.map((p, i) => ({ kon: rows[i].kon, lon: rows[i].lon + p.delta * frac }));
-        const kumRaise = perPerson.reduce((s, p) => s + p.delta * frac, 0);
-        out.push({
-            year: k, andelPct: 100 * frac, kumRaise,
-            kumKostnad: kumRaise * months * poFactor,
-            rawGap: rawGenderGap(simRows, r => r.lon)
-        });
-    }
-    return out;
-}
-
-/**
- * Sammanställning per BAS→AID-grupp (för kriteriebaserad riktning).
- * @returns {Array<{bas,aid,n,kvN,andelKv,median}>}
- */
-function summarizeGroups(rows) {
-    const m = new Map();
-    (rows || []).forEach(r => {
-        const k = r.bas + '|' + r.aid;
-        let g = m.get(k);
-        if (!g) { g = { bas: r.bas, aid: r.aid, lons: [], kvN: 0, n: 0 }; m.set(k, g); }
-        g.lons.push(r.lon); g.n++;
-        if (r.kon && r.kon.includes('kvinna')) g.kvN++;
-    });
-    return [...m.values()].map(g => ({
-        bas: g.bas, aid: g.aid, n: g.n, kvN: g.kvN,
-        andelKv: g.n ? 100 * g.kvN / g.n : 0, median: _median(g.lons)
-    }));
-}
-
-/**
- * Leapfrog-/spillover-detektering: hittar grupper som efter påslaget passerar
- * (går om) en grupp som tidigare hade högre median — vilket kan skapa ny
- * skevhet. Jämför på gruppmedianer (perGroup från allocate).
- * @returns {Array<{bas:string, aid:string, overBas:string, overAid:string, gammalA:number, nyA:number, gammalB:number, nyB:number}>}
- */
-function detectLeapfrog(perGroup) {
-    const g = (perGroup || []).filter(x => x.n > 0);
-    const out = [];
-    for (let i = 0; i < g.length; i++) {
-        for (let j = 0; j < g.length; j++) {
-            if (i === j) continue;
-            if (g[i].gammalMedian < g[j].gammalMedian - 1e-6 && g[i].nyMedian > g[j].nyMedian + 1e-6) {
-                out.push({
-                    bas: g[i].bas, aid: g[i].aid, overBas: g[j].bas, overAid: g[j].aid,
-                    gammalA: g[i].gammalMedian, nyA: g[i].nyMedian,
-                    gammalB: g[j].gammalMedian, nyB: g[j].nyMedian
-                });
-            }
-        }
-    }
-    return out;
-}
-
-/**
- * Hela prognosutfallet: pott, budgetutnyttjande, total kostnad (inkl. PO + period)
- * och råa lönegapet före/efter. Det OFÖRKLARADE gapet (OLS) beräknas i app.js.
- * @param {Array} rows
- * @param {{mode:string, value:number|null}} budget
- * @param {{mode:string, value:number|null}} generell
- * @param {Array} targets
- * @param {{months?:number, poPct?:number, roundStep?:number, kvThreshold?:number}} [costOpts]
- */
-function forecastOutcome(rows, budget, generell, targets, costOpts) {
-    const pott = computePott(rows, budget);
-    const alloc = allocate(rows, generell, targets, costOpts && costOpts.roundStep);
-    const totalRaise = alloc.totals.totalRaise;
-    const months = (costOpts && costOpts.months) || 12;
-    const poFactor = 1 + ((costOpts && costOpts.poPct) || 0) / 100;
-    const kvThreshold = (costOpts && costOpts.kvThreshold) || 60;
-    const lonsummaFore = totalLonSum(rows);
-    // Hur mycket av påslaget går till kvinnodominerade grupper (jämställdhetsandel)
-    const equityCost = alloc.perGroup.reduce((s, g) => s + (g.andelKv >= kvThreshold ? g.kostnad : 0), 0);
-    return {
-        pott,
-        använt: totalRaise,
-        kvar: pott - totalRaise,
-        overBudget: totalRaise > pott + 1e-6,
-        totalKostnad: totalRaise * months * poFactor,
-        lonsummaFore,
-        lonsummaEfter: lonsummaFore + totalRaise,
-        rawGapFore: rawGenderGap(rows, r => r.lon),
-        rawGapEfter: rawGenderGap(alloc.perPerson, p => p.nyLon),
-        generellCost: alloc.totals.generellCost,
-        riktadCost: alloc.totals.riktadCost,
-        equityCost,
-        leapfrog: detectLeapfrog(alloc.perGroup),
-        alloc
-    };
-}
-
-// ===================================================================
-// Lönespann/compa-ratio, individnivå-remediation,
-// marknadspositionering, budgetkänslighet.
-// ===================================================================
-
-/**
- * (A) Lönespann per BAS: P25 / median / P75. compa-ratio och range-penetration
- * beräknas mot detta i UI.
- * @returns {Array<{bas,n,p25,median,p75}>}
- */
-function bandStats(rows) {
-    const m = new Map();
-    (rows || []).forEach(r => {
-        if (!(r.lon > 0)) return;
-        if (!m.has(r.bas)) m.set(r.bas, []);
-        m.get(r.bas).push(r.lon);
-    });
-    return [...m.entries()].map(([bas, lons]) => ({
-        bas, n: lons.length,
-        p25: _quantile(lons, 0.25), median: _median(lons), p75: _quantile(lons, 0.75)
-    })).sort((a, b) => (a.bas < b.bas ? -1 : a.bas > b.bas ? 1 : 0));
-}
-
-/**
- * (B) Individnivå-remediation (DiskrL 3:9 — lika arbete): flaggar kvinnor som
- * är betalda mer än `gapPct` % under sitt likalöne-benchmark (mäns median i
- * samma BAS×AID, fallback mäns median i BAS) och beräknar kostnaden att lyfta
- * dem till benchmark. Endast aggregat returneras för visning; `flagged` används
- * internt för seeding och summeras per grupp.
- *
- * `minMen` är minsta antal män bakom ett benchmark. Appen skickar alltid gällande k-tröskel:
- * mot en enda mans lön vore "kostnaden att lyfta" en kvinna hans lön minus hennes.
- * Standardvärdet 1 finns för enhetstesterna.
- * @param {Array} rows
- * @param {{gapPct?:number, minMen?:number}} opts
- */
-function individualRemediation(rows, opts) {
-    const o = opts || {};
-    const trigger = (o.gapPct != null ? o.gapPct : 5) / 100;
-    const minMen = o.minMen || 1;
-    const menByGroup = new Map(), menByBas = new Map();
-    (rows || []).forEach(r => {
-        if (!(r.lon > 0)) return;
-        if (!(r.kon === 'man' || r.kon === 'män')) return;
-        const gk = r.bas + '|' + r.aid;
-        if (!menByGroup.has(gk)) menByGroup.set(gk, []);
-        menByGroup.get(gk).push(r.lon);
-        if (!menByBas.has(r.bas)) menByBas.set(r.bas, []);
-        menByBas.get(r.bas).push(r.lon);
-    });
-    const benchFor = (bas, aid) => {
-        const g = menByGroup.get(bas + '|' + aid);
-        if (g && g.length >= minMen) return { v: _median(g), kalla: 'yrke' };
-        const b = menByBas.get(bas);
-        if (b && b.length >= minMen) return { v: _median(b), kalla: 'bas' };
-        return null;
-    };
-    const flagged = [];
-    (rows || []).forEach(r => {
-        if (!(r.lon > 0)) return;
-        if (!(r.kon && r.kon.includes('kvinna'))) return;
-        const bench = benchFor(r.bas, r.aid);
-        if (!bench) return;
-        if (r.lon < bench.v * (1 - trigger)) {
-            flagged.push({ bas: r.bas, aid: r.aid, lon: r.lon, benchmark: bench.v, kalla: bench.kalla, shortfall: bench.v - r.lon });
-        }
-    });
-    const byGroup = new Map();
-    flagged.forEach(f => {
-        const k = f.bas + '|' + f.aid;
-        let g = byGroup.get(k);
-        if (!g) { g = { bas: f.bas, aid: f.aid, count: 0, cost: 0 }; byGroup.set(k, g); }
-        g.count++; g.cost += f.shortfall;
-    });
-    return {
-        flagged, count: flagged.length,
-        totalCost: flagged.reduce((s, f) => s + f.shortfall, 0),
-        perGroup: [...byGroup.values()].sort((a, b) => b.cost - a.cost)
-    };
-}
-
-/**
- * (E) Marknadspositionering: bygg riktade rader som lyfter grupper vars median
- * ligger under marknad × factor, mot den nivån.
- * @param {Array<{bas,aid,n,median}>} groups - från summarizeGroups
- * @param {Map<string,number>} marketByKey - nyckel "aid|bas" eller "aid" → marknadsmedian
- * @param {number} factor - andel av marknadsmedian att nå (t.ex. 0.95)
- * @param {number} [minN=0]
- */
-function marketTargets(groups, marketByKey, factor, minN) {
-    const f = factor > 0 ? factor : 1;
-    const out = [];
-    (groups || []).forEach(g => {
-        if (g.n < (minN || 0)) return;
-        let mk = marketByKey.get(g.aid + '|' + g.bas);
-        if (mk == null) mk = marketByKey.get(g.aid);
-        if (mk == null || !(mk > 0)) return;
-        const target = mk * f;
-        if (g.median < target) {
-            out.push({ bas: g.bas, aid: g.aid, mode: 'kr', value: Math.round((target - g.median) * g.n), dist: 'lowest', pool: 'marknad' });
-        }
-    });
-    return out;
-}
-
-/**
- * (F) Budgetkänslighet: svep §3:10-stängning 0→100 % och returnera kostnad +
- * råa lönegapet för varje steg (avtagande avkastning).
- * @returns {Array<{fraction,kostnad,rawGap}>}
- */
-function sensitivityCurve(rows, candidates, costOpts, steps) {
-    const S = steps || 10;
-    const months = (costOpts && costOpts.months) || 12;
-    const poFactor = 1 + ((costOpts && costOpts.poPct) || 0) / 100;
-    const out = [];
-    for (let i = 0; i <= S; i++) {
-        const frac = i / S;
-        const targets = closureTargets(candidates, frac, 0);
-        const alloc = allocate(rows, { mode: 'pct', value: 0 }, targets, costOpts && costOpts.roundStep);
-        out.push({
-            fraction: frac,
-            kostnad: alloc.totals.totalRaise * months * poFactor,
-            rawGap: rawGenderGap(alloc.perPerson, p => p.nyLon)
-        });
-    }
-    return out;
-}
-
-    return { computePott, allocate, targetRows, suggestTargets, closureTargets, stagedPlan, summarizeGroups, detectLeapfrog, forecastOutcome, bandStats, individualRemediation, marketTargets, sensitivityCurve, _median };
-})();
-const _fcComputePott = __mirrorForecast.computePott;
-const _fcAllocate = __mirrorForecast.allocate;
-const _fcTargetRows = __mirrorForecast.targetRows;
-const _fcSuggestTargets = __mirrorForecast.suggestTargets;
-const _fcClosureTargets = __mirrorForecast.closureTargets;
-const _fcStagedPlan = __mirrorForecast.stagedPlan;
-const _fcSummarizeGroups = __mirrorForecast.summarizeGroups;
-const _fcDetectLeapfrog = __mirrorForecast.detectLeapfrog;
-const _fcForecastOutcome = __mirrorForecast.forecastOutcome;
-const _fcBandStats = __mirrorForecast.bandStats;
-const _fcIndividualRemediation = __mirrorForecast.individualRemediation;
-const _fcMarketTargets = __mirrorForecast.marketTargets;
-const _fcSensitivityCurve = __mirrorForecast.sensitivityCurve;
-const _fcMedian = __mirrorForecast._median;
-
 // ---- speglar src/lib/struktur.js ----
 const __mirrorStructure = (() => {
 // SPDX-License-Identifier: MIT
@@ -1256,16 +767,21 @@ const __mirrorLikvardighet = (() => {
  * (ADR-8); computeLikvardighetPairs() i 34-likvardigt-arbete.js är adaptern
  * runt den. Vitest verifierar *algoritmen* deterministiskt.
  *
- * Modellen:
+ * Modellen (ADR-60: jämförelseyrkena är alla som inte är kvinnodominerade):
+ *   Klassning — EN definition i hela verktyget: arKvinnodominerad()/konsklass() nedan.
+ *            DO: mer än gränsen (standard 60 %); SCB: gränsen eller mer. Mansdominerat
+ *            speglas för män; övriga är blandade.
  *   Steg 1 — Organisationens AID×BAS-grupper delas i:
- *            • kvinnodominerade (kvinnoPct > kvinnoThr, mer än 60 %) — analysens subjekt
- *            • icke-kvinnodominerade (kvinnoPct < 100−kvinnoThr, mindre än 40 %) — interna
- *              jämförelsekandidater (PRIMÄR jämförelsekälla; § 3:10 är en
+ *            • kvinnodominerade — analysens subjekt
+ *            • alla övriga (mansdominerade och blandade) — interna jämförelsekandidater
+ *              med klassen synlig (PRIMÄR jämförelsekälla; § 3:10 är en
  *              inom-arbetsgivare-analys). K-anonymitet tillämpas EJ.
- *   Steg 2 — jämförelsestatistikens AID×BAS klassificeras som
- *            icke-kvinnodominerade (kvAndel ≤ 40 %). Lokal könsdata primär,
+ *   Steg 2 — jämförelsestatistikens AID×BAS som inte är kvinnodominerade blir
+ *            kandidater med klass. Lokal könsdata primär,
  *            SCB-prefix-fallback (injicerad `scbKlass`-funktion) annars.
  *            Används som EXTERN fallback per BAS.
+ *            Filtret `jamforelse: 'mansdominerade'` begränsar båda mängderna till de
+ *            mansdominerade (det tidigare urvalet).
  *   Steg 3 — Jämför INOM samma BAS-intervall (= likvärdiga krav). Per BAS
  *            väljs internt jämförelseyrke om sådant finns, annars jämförelsestatistiken.
  *            Flagga par där jämförelseyrkets median > organisationens median,
@@ -1283,9 +799,36 @@ const __mirrorLikvardighet = (() => {
 
 
 
-const KVINNO_TROSKEL_DEFAULT = 60;   // > → kvinnodominerat (mer än 60 % kvinnor; jurist 2026-10-19, A5)
-const ICKE_KV_TAK = 40;              // < → icke-kvinnodominerat (mindre än 40 % kvinnor; jämförelsestatistiken)
-const KV_DOM_STAT = 60;               // > → kvinnodominerat (jämförelsestatistiken, skippas)
+const KVINNO_TROSKEL_DEFAULT = 60;   // > → kvinnodominerat (DO: mer än 60 % kvinnor)
+const ICKE_KV_TAK = 40;              // < → mansdominerat med DO och standardgränsen (klassen, inte urvalet; ADR-60)
+const KV_DOM_STAT = 60;               // gränsen för jämförelsestatistiken — samma som KVINNO_TROSKEL_DEFAULT
+
+/**
+ * Den enda definitionen av kvinnodominerat arbete i verktyget (ADR-60, §9.22).
+ * DO: mer än gränsen. SCB: gränsen eller mer.
+ * @param {number|null|undefined} pct - procent kvinnor
+ * @param {'do'|'scb'|string} [definition='do']
+ * @param {number} [grans=60]
+ * @returns {boolean}
+ */
+function arKvinnodominerad(pct, definition = 'do', grans = KVINNO_TROSKEL_DEFAULT) {
+    if (typeof pct !== 'number' || !isFinite(pct)) return false;
+    return definition === 'scb' ? pct >= grans : pct > grans;
+}
+
+/**
+ * Könsklassen för en grupp efter andelen kvinnor, med samma definition för män (speglad).
+ * @param {number|null|undefined} pct - procent kvinnor
+ * @param {'do'|'scb'|string} [definition='do']
+ * @param {number} [grans=60]
+ * @returns {'kvinnodominerad'|'mansdominerad'|'blandad'|''} '' när andelen är okänd
+ */
+function konsklass(pct, definition = 'do', grans = KVINNO_TROSKEL_DEFAULT) {
+    if (typeof pct !== 'number' || !isFinite(pct)) return '';
+    if (arKvinnodominerad(pct, definition, grans)) return 'kvinnodominerad';
+    if (arKvinnodominerad(100 - pct, definition, grans)) return 'mansdominerad';
+    return 'blandad';
+}
 
 function _sortedMedian(arr) {
     if (!arr || !arr.length) return 0;
@@ -1413,16 +956,16 @@ function _aldersFalt(f, g, ärIntern, golv) {
 
 /**
  * Steg 1 — aggregera organisationens individdata per AID×BAS och dela upp i
- * kvinnodominerade grupper (analysens subjekt) och icke-kvinnodominerade
- * grupper (interna jämförelsekandidater).
+ * kvinnodominerade grupper (analysens subjekt) och alla övriga grupper
+ * (interna jämförelsekandidater, med klassen mansdominerad eller blandad).
  *
  * @param {Array<{aid:string, bas:string, lon:number, kon:string, yrkeLabel?:string, yrke?:string, alder?:number}>} data
- * @param {number} kvinnoThr - kvinnotröskel i procent (> → kvinnodominerat)
+ * @param {number} kvinnoThr - kvinnotröskel i procent
  * @param {number} [K=10]
+ * @param {'do'|'scb'} [definition='do'] - DO: mer än tröskeln; SCB: tröskeln eller mer
  * @returns {{orgKvDom:Array, orgIckeKv:Array, antalAidxBas:number, kvDomMedNLessThanK:number}}
  */
-function aggregeraOrgKvDom(data, kvinnoThr = KVINNO_TROSKEL_DEFAULT, K = 10) {
-    const ickeKvTak = 100 - kvinnoThr;
+function aggregeraOrgKvDom(data, kvinnoThr = KVINNO_TROSKEL_DEFAULT, K = 10, definition = 'do') {
     const map = new Map();   // nyckel: aid|bas
     for (const r of (data || [])) {
         const aid = String(r?.aid || '').trim();
@@ -1443,15 +986,16 @@ function aggregeraOrgKvDom(data, kvinnoThr = KVINNO_TROSKEL_DEFAULT, K = 10) {
     let kvDomMedNLessThanK = 0;
     for (const g of map.values()) {
         const kvinnoPct = (g.nKv / g.n) * 100;
+        const klass = konsklass(kvinnoPct, definition, kvinnoThr);
         const obj = {
             aid: g.aid, bas: g.bas, label: g.label,
-            n: g.n, nKv: g.nKv, kvinnoPct,
+            n: g.n, nKv: g.nKv, kvinnoPct, klass,
             median: _median(g.lons), lons: g.lons.slice(), aldrar: g.aldrar.slice()
         };
-        if (kvinnoPct > kvinnoThr) {
+        if (klass === 'kvinnodominerad') {
             orgKvDom.push(obj);
             if (g.n < K) kvDomMedNLessThanK++;
-        } else if (kvinnoPct < ickeKvTak) {
+        } else {
             orgIckeKv.push(obj);
         }
     }
@@ -1461,14 +1005,16 @@ function aggregeraOrgKvDom(data, kvinnoThr = KVINNO_TROSKEL_DEFAULT, K = 10) {
 }
 
 /**
- * Steg 2 — klassificera jämförelsestatistiken per AID×BAS. Returnerar de
- * icke-kvinnodominerade raderna grupperade per BAS.
+ * Steg 2 — klassificera jämförelsestatistiken per AID×BAS. Returnerar raderna
+ * som inte är kvinnodominerade (mansdominerade och blandade, med klass) grupperade per BAS.
+ * `klass.ickeKv` är alla kandidater; `klass.blandat` är hur många av dem som är blandade.
  *
  * @param {Array<{aid:string, bas:string, median:number, andelKv?:number, aidFull?:string, nKv?:number, nMa?:number}>} statistik
  * @param {((aid:string) => ({kvAndel:number}|null))|null} [scbKlass] - SCB-prefix-fallback
+ * @param {{definition?:'do'|'scb', grans?:number}} [val]
  * @returns {{statIckeKv:Array, statByBas:Map, klass:Object, klassKalla:Object}}
  */
-function klassificeraStatistik(statistik, scbKlass) {
+function klassificeraStatistik(statistik, scbKlass, { definition = 'do', grans = KV_DOM_STAT } = {}) {
     const statByBas = new Map();
     const statIckeKv = [];
     const klass = { kvDom: 0, blandat: 0, ickeKv: 0, oklassificerad: 0 };
@@ -1489,8 +1035,9 @@ function klassificeraStatistik(statistik, scbKlass) {
         if (kvAndel == null) { klass.oklassificerad++; continue; }
         if (källa === 'lokal') klassKalla.lokal++; else klassKalla.scb++;
 
-        if (kvAndel > KV_DOM_STAT) { klass.kvDom++; continue; }
-        if (kvAndel >= ICKE_KV_TAK) { klass.blandat++; continue; }
+        const ks = konsklass(kvAndel, definition, grans);
+        if (ks === 'kvinnodominerad') { klass.kvDom++; continue; }
+        if (ks === 'blandad') klass.blandat++;
         klass.ickeKv++;
 
         const rawLabel = s.aidFull || s.aid;
@@ -1500,7 +1047,7 @@ function klassificeraStatistik(statistik, scbKlass) {
             : rawLabel;
         const obj = {
             aid: s.aid, label: cleanLabel, bas: s.bas,
-            median: s.median, kvAndel, källa, nKv: s.nKv, nMa: s.nMa
+            median: s.median, kvAndel, klass: ks, källa, nKv: s.nKv, nMa: s.nMa
         };
         if (!statByBas.has(s.bas)) statByBas.set(s.bas, []);
         statByBas.get(s.bas).push(obj);
@@ -1598,6 +1145,8 @@ function byggPar(orgKvDom, internByBas, externByBas, opts = {}) {
                 maAid: g.aid, maLabel: g.label, maBas: f.bas,
                 maMedian: g.median,
                 maKvAndel: ärIntern ? g.kvinnoPct : g.kvAndel,
+                maKvinnoPct: ärIntern ? g.kvinnoPct : g.kvAndel,
+                maKlass: g.klass || '',
                 maN: ärIntern ? g.n : null,
                 maNKv: g.nKv, maNMa: g.nMa,
                 jamforKalla: källa,                       // 'intern' | 'extern'
@@ -1687,6 +1236,8 @@ function byggParPoäng(orgKvDom, internAll, externAll, poangByKey, opts = {}) {
                 maAid: g.aid, maLabel: g.label, maBas: g.bas,
                 maMedian: g.median,
                 maKvAndel: ärIntern ? g.kvinnoPct : g.kvAndel,
+                maKvinnoPct: ärIntern ? g.kvinnoPct : g.kvAndel,
+                maKlass: g.klass || '',
                 maN: ärIntern ? g.n : null,
                 maNKv: g.nKv, maNMa: g.nMa,
                 jamforKalla: källa,
@@ -1706,7 +1257,7 @@ function byggParPoäng(orgKvDom, internAll, externAll, poangByKey, opts = {}) {
 
 /**
  * Lägre krav, högre lön (ADR-25): par där ett kvinnodominerat
- * yrke har lägre medianlön än ett av ORGANISATIONENS icke-kvinnodominerade yrken i
+ * yrke har lägre medianlön än ett av ORGANISATIONENS icke-kvinnodominerade yrken (samma mängd som kandidatparen, ADR-60) i
  * strikt LÄGRE BAS. BAS som krav-proxy — används bara när poäng saknas.
  *
  * @param {Array} orgKvDom
@@ -1730,6 +1281,7 @@ function byggParLagreKrav(orgKvDom, orgIckeKv, opts = {}) {
             ut.push({ _f: f, _g: g,
                 kvAid: f.aid, kvLabel: f.label, kvBas: f.bas, kvN: f.n, kvNKv: f.nKv, kvMedian: f.median, kvKvinnoPct: f.kvinnoPct,
                 maAid: g.aid, maLabel: g.label, maBas: g.bas, maMedian: g.median, maKvAndel: g.kvinnoPct,
+                maKvinnoPct: g.kvinnoPct, maKlass: g.klass || '',
                 maN: g.n, maNKv: g.nKv, maNMa: g.n - g.nKv,
                 jamforKalla: 'intern', gapKr, gapPct, gapCI: null, basSteg: rf - rg,
             });
@@ -1764,11 +1316,15 @@ function basRangFn(allaBas) {
  * @param {Array} [input.data] - organisationens individdata
  * @param {Array} [input.statistik] - jämförelsestatistiken
  * @param {((aid:string)=>({kvAndel:number}|null))|null} [input.scbKlass]
- * @param {Object} [input.opts] - { kvinnoTrosholdPct, minGapPct, topN, B, rng, k, aldersGolv }
+ * @param {Object} [input.opts] - { kvinnoTrosholdPct, kvDomDefinition, jamforelse, minGapPct, topN, B, rng, k, aldersGolv }
+ *   kvDomDefinition: 'do' (mer än tröskeln, standard) | 'scb' (tröskeln eller mer).
+ *   jamforelse: 'alla' (alla som inte är kvinnodominerade, standard) | 'mansdominerade' (ADR-60).
  * @returns {{orgKvDom:Array, orgIckeKv:Array, statIckeKv:Array, pairs:Array, lagreKrav:Array, diagnostik:Object, opts:Object}}
  */
 function computeLikvardighetPairs({ data = [], statistik = [], scbKlass = null, opts = {} } = {}) {
     const kvinnoThr = opts.kvinnoTrosholdPct ?? KVINNO_TROSKEL_DEFAULT;
+    const definition = opts.kvDomDefinition === 'scb' ? 'scb' : 'do';
+    const jamforelse = opts.jamforelse === 'mansdominerade' ? 'mansdominerade' : 'alla';
     const minGap = opts.minGapPct ?? 0;
     const topN = opts.topN ?? 100;
     const B = opts.B ?? 1000;
@@ -1784,8 +1340,18 @@ function computeLikvardighetPairs({ data = [], statistik = [], scbKlass = null, 
     const golv = opts.aldersGolv ?? ALDERS_GOLV_DEFAULT;   // minsta jämförelseyrke för åldersjusteringen
 
     // k-tröskeln används bara för att RÄKNA små kvinnodominerade grupper i diagnostiken (de ingår ändå).
-    const s1 = aggregeraOrgKvDom(data, kvinnoThr, opts.k ?? 10);
-    const s2 = klassificeraStatistik(statistik, scbKlass);
+    const s1 = aggregeraOrgKvDom(data, kvinnoThr, opts.k ?? 10, definition);
+    const s2 = klassificeraStatistik(statistik, scbKlass, { definition, grans: kvinnoThr });
+    // Filtret 'mansdominerade' begränsar jämförelsemängden innan paren byggs, så att reserven
+    // till jämförelsestatistiken per BAS fungerar som förut när bara blandade egna yrken finns.
+    if (jamforelse === 'mansdominerade') {
+        s1.orgIckeKv = s1.orgIckeKv.filter(g => g.klass === 'mansdominerad');
+        s2.statIckeKv = s2.statIckeKv.filter(g => g.klass === 'mansdominerad');
+        for (const [bas, rader] of s2.statByBas) {
+            const kvar = rader.filter(g => g.klass === 'mansdominerad');
+            if (kvar.length) s2.statByBas.set(bas, kvar); else s2.statByBas.delete(bas);
+        }
+    }
     const internByBas = orgIckeKvByBas(s1.orgIckeKv);
     const s3 = (poangByKey && poangByKey.size)
         ? byggParPoäng(s1.orgKvDom, s1.orgIckeKv, s2.statIckeKv, poangByKey, { minGap, topN, B, rng, bandPct, golv })
@@ -1816,14 +1382,511 @@ function computeLikvardighetPairs({ data = [], statistik = [], scbKlass = null, 
             jämförelse: s3.jämförelse,
             fel: []
         },
-        opts: { kvinnoTrosholdPct: kvinnoThr, minGapPct: minGap, topN }
+        opts: { kvinnoTrosholdPct: kvinnoThr, kvDomDefinition: definition, jamforelse, minGapPct: minGap, topN }
     };
 }
 
-    return { computeLikvardighetPairs, basRangFn };
+    return { computeLikvardighetPairs, basRangFn, arKvinnodominerad, konsklass };
 })();
 const _lvComputePairs = __mirrorLikvardighet.computeLikvardighetPairs;
 const _lvBasRangFn = __mirrorLikvardighet.basRangFn;
+const _arKvinnodominerad = __mirrorLikvardighet.arKvinnodominerad;
+const _konsklass = __mirrorLikvardighet.konsklass;
+
+// ---- speglar src/lib/loneoversyn.js ----
+const __mirrorForecast = (() => {
+    // importer ur tidigare speglade lib-moduler
+    const arKvinnodominerad = __mirrorLikvardighet.arKvinnodominerad;
+
+// SPDX-License-Identifier: MIT
+// Copyright 2026 Felix Jansson
+/**
+ * Öppen lönekartläggning — Pure löneöversyns-/prognosfunktioner
+ *
+ * Budget-först-modell: en pott (kr eller % av lönesumman) fördelas GENERELLT
+ * (till alla) + RIKTAT (till valda BAS→AID-grupper), och utfallet (nya löner,
+ * budgetutnyttjande, råa lönegapet före/efter) beräknas.
+ *
+ * Separat från app.js för att kunna testas via Vitest utan DOM/state.
+ * app.js får en AUTO-GENERERAD spegel (`_fc*` i src/app/09-lib-speglar.js via
+ * tools/gen-mirrors.mjs) — ändra här och kör `npm run build:app`, rör ej spegeln
+ * (vaktas av tests/drift.test.js). Det oförklarade gapet (OLS) beräknas INTE
+ * här — det körs i app.js mot simulerad data via data-swap, eftersom det kräver
+ * regressionsmotorn. Här beräknas bara det rena (median-baserade) gapet.
+ *
+ * All matematik sker på ursprungslönerna: generellt och riktat summeras additivt
+ * per individ, så fördelningen är ordningsoberoende och transparent.
+ */
+
+
+function _median(arr) {
+    if (!arr || !arr.length) return 0;
+    const s = arr.slice().sort((a, b) => a - b);
+    const m = s.length >> 1;
+    return (s.length & 1) ? s[m] : (s[m - 1] + s[m]) / 2;
+}
+
+function _quantile(arr, q) {
+    if (!arr || !arr.length) return 0;
+    const s = arr.slice().sort((a, b) => a - b);
+    const pos = (s.length - 1) * q;
+    const lo = Math.floor(pos), hi = Math.ceil(pos);
+    return lo === hi ? s[lo] : s[lo] + (s[hi] - s[lo]) * (pos - lo);
+}
+
+/**
+ * "Water-filling": höj de lägst betalda först. Hittar en gemensam nivå L (≤ cap)
+ * och lyfter alla under L upp till L så långt potten räcker. Pengar som inte
+ * får plats under cap lämnas oanvända (returneras implicit via summan av deltan).
+ * @returns {number[]} delta per individ (samma ordning som lons)
+ */
+function _waterLevelDeltas(lons, pott, cap) {
+    const n = lons.length;
+    if (!n || pott <= 0) return new Array(n).fill(0);
+    const c = (cap == null) ? Infinity : cap;
+    const sorted = lons.slice().sort((a, b) => a - b);
+    let L = sorted[0], used = 0;
+    if (c <= L) return new Array(n).fill(0);   // taket ligger under lägsta lönen
+    for (let i = 1; i <= n; i++) {
+        const nextBreak = i < n ? sorted[i] : Infinity;
+        const ceiling = Math.min(nextBreak, c);
+        const k = i;                            // antal individer på/under L
+        const seg = k * (ceiling - L);
+        if (used + seg >= pott) { L += (pott - used) / k; used = pott; break; }
+        used += seg; L = ceiling;
+        if (c !== Infinity && L >= c) { L = c; break; }
+    }
+    return lons.map(x => (x < L ? L - x : 0));
+}
+
+/** Total månadslönesumma. */
+function totalLonSum(rows) {
+    return (rows || []).reduce((s, r) => s + (r.lon > 0 ? r.lon : 0), 0);
+}
+
+/**
+ * Potten i kr/månad utifrån budgeten.
+ * @param {Array} rows
+ * @param {{mode:string, value:number|null}} budget
+ */
+function computePott(rows, budget) {
+    if (!budget || budget.value == null || !isFinite(budget.value)) return 0;
+    if (budget.mode === 'kr') return Math.max(0, budget.value);
+    return Math.max(0, totalLonSum(rows) * budget.value / 100);  // % av lönesumman
+}
+
+/**
+ * Det råa (median-baserade) lönegapet kvinnor vs män, i procent.
+ * @param {Array} rows
+ * @param {(r:Object)=>number} getLon - väljer lönefältet (lon eller nyLon)
+ * @returns {number|null}
+ */
+function rawGenderGap(rows, getLon) {
+    const kv = [], ma = [];
+    (rows || []).forEach(r => {
+        const L = getLon(r);
+        if (!(L > 0)) return;
+        if (r.kon && r.kon.includes('kvinna')) kv.push(L);
+        else if (r.kon === 'man' || r.kon === 'män') ma.push(L);
+    });
+    if (!kv.length || !ma.length) return null;
+    return (_median(kv) / _median(ma) - 1) * 100;
+}
+
+/**
+ * Raderna en riktad pott gäller: gruppen (BAS, eller BAS och AID), begränsad till ett kön (`kon`:
+ * 'kvinna' | 'man', annars alla) och till löner under en gräns (`lonCap`, kr/mån, annars alla).
+ * Samma urval som allocate() räknar på, så att gränssnittet kan visa hur många raden berör.
+ * @param {Array} rows - individrader {bas, aid, kon, lon}
+ * @param {{bas:string, aid:string, kon?:string, lonCap?:number|null}} t
+ * @returns {number[]} index i rows
+ */
+function targetRows(rows, t) {
+    const kon = t.kon === 'kvinna' || t.kon === 'man' ? t.kon : 'alla';
+    const cap = t.lonCap != null && isFinite(t.lonCap) && t.lonCap > 0 ? t.lonCap : null;
+    const konOk = r => kon === 'alla' || (kon === 'kvinna' ? String(r.kon || '').includes('kvinna') : (r.kon === 'man' || r.kon === 'män'));
+    const ut = [];
+    (rows || []).forEach((r, i) => {
+        if (r.bas !== t.bas) return;
+        if (t.aid !== '*' && r.aid !== t.aid) return;
+        if (!konOk(r) || (cap != null && !(r.lon < cap))) return;
+        ut.push(i);
+    });
+    return ut;
+}
+
+/**
+ * Fördelar generellt + riktat påslag och returnerar nya löner per individ,
+ * sammanställning per grupp och totaler.
+ * @param {Array} rows - individrader {bas, aid, kon, lon}
+ * @param {{mode:string, value:number|null}} generell - generellt påslag till alla (value null = 0)
+ * @param {Array<{bas,aid,mode:'pct'|'kr'|'till',value,dist:'flat'|'lowest'|'target',targetLevel?:'median'|'p25',kon?:string,lonCap?:number|null}>} targets
+ *   mode 'till' lyfter var och en i urvalet som ligger under beloppet upp till det (ingen pott att fördela).
+ * @param {number} [roundStep=0] - avrunda nya löner till närmaste steg (kr), 0 = ingen avrundning
+ */
+function allocate(rows, generell, targets, roundStep) {
+    const n = (rows || []).length;
+    const genDeltas = new Array(n).fill(0);
+    const g = generell || { mode: 'pct', value: 0 };
+    const gVal = g.value != null && isFinite(g.value) ? g.value : 0;
+    for (let i = 0; i < n; i++) {
+        if (rows[i].lon <= 0) continue;
+        genDeltas[i] = g.mode === 'kr' ? gVal : rows[i].lon * gVal / 100;
+    }
+
+    const tgtDeltas = new Array(n).fill(0);
+    (targets || []).forEach(t => {
+        // aid === '*' → hela BAS-intervallet (alla yrken i BAS:et); kön och lönegräns snävar in raden.
+        const idxs = targetRows(rows, t);
+        if (!idxs.length) return;
+        const lons = idxs.map(i => rows[i].lon);
+        if (t.mode === 'till') {
+            const mal = isFinite(t.value) ? t.value : 0;
+            idxs.forEach((i, j) => { if (lons[j] > 0 && lons[j] < mal) tgtDeltas[i] += mal - lons[j]; });
+            return;
+        }
+        const groupSum = lons.reduce((s, x) => s + (x > 0 ? x : 0), 0);
+        const pott = t.mode === 'kr' ? (isFinite(t.value) ? t.value : 0)
+                                     : groupSum * (isFinite(t.value) ? t.value : 0) / 100;
+        if (pott <= 0 || groupSum <= 0) return;
+        let gd;
+        if (t.dist === 'flat') {
+            const frac = pott / groupSum;
+            gd = lons.map(x => (x > 0 ? x * frac : 0));
+        } else {
+            const cap = t.dist === 'target'
+                ? (t.targetLevel === 'p25' ? _quantile(lons, 0.25) : _median(lons))
+                : Infinity;
+            gd = _waterLevelDeltas(lons, pott, cap);
+        }
+        idxs.forEach((i, j) => { tgtDeltas[i] += gd[j]; });
+    });
+
+    // Avrundning till lönetrappa: bara för individer som faktiskt får påslag
+    // (delta > 0), och aldrig under ursprungslönen.
+    const step = (roundStep && roundStep > 0) ? roundStep : 0;
+    const perPerson = rows.map((r, i) => {
+        let delta = genDeltas[i] + tgtDeltas[i];
+        if (step > 0 && delta > 0) {
+            const rounded = Math.round((r.lon + delta) / step) * step;
+            delta = Math.max(0, rounded - r.lon);
+        }
+        return { bas: r.bas, aid: r.aid, kon: r.kon, lon: r.lon, nyLon: r.lon + delta, delta };
+    });
+
+    // Sammanställning per grupp
+    const groups = new Map();
+    perPerson.forEach(p => {
+        const k = p.bas + '|' + p.aid;
+        let gr = groups.get(k);
+        if (!gr) { gr = { bas: p.bas, aid: p.aid, oldL: [], newL: [], kvN: 0, n: 0, cost: 0 }; groups.set(k, gr); }
+        gr.oldL.push(p.lon); gr.newL.push(p.nyLon);
+        gr.cost += p.delta; gr.n++;
+        if (p.kon && p.kon.includes('kvinna')) gr.kvN++;
+    });
+    const perGroup = [...groups.values()].map(gr => ({
+        bas: gr.bas, aid: gr.aid, n: gr.n, kvN: gr.kvN,
+        andelKv: gr.n ? 100 * gr.kvN / gr.n : 0,
+        gammalMedian: _median(gr.oldL), nyMedian: _median(gr.newL),
+        kostnad: gr.cost
+    }));
+
+    // generell/riktad-split speglar avsikten (oavrundat); totalRaise speglar
+    // det faktiska, ev. avrundade, utfallet (summan av perPerson-deltan).
+    const generellCost = genDeltas.reduce((s, x) => s + x, 0);
+    const riktadCost = tgtDeltas.reduce((s, x) => s + x, 0);
+    const totalRaise = perPerson.reduce((s, p) => s + p.delta, 0);
+    return { perPerson, perGroup, totals: { generellCost, riktadCost, totalRaise } };
+}
+
+/**
+ * Föreslår en riktad fördelning som minskar de osakliga gapen först. Fördelar
+ * riktadPott proportionellt mot påverkansindex (gapKr × n), kapat vid kostnaden
+ * att helt stänga respektive grupps gap.
+ * @param {Array<{bas,aid,gapKr:number,n:number}>} candidates - gapKr > 0 = under referens (kr/mån/person)
+ * @param {number} riktadPott
+ * @param {number} [minN=0] - rikta endast mot grupper med minst minN personer
+ */
+function suggestTargets(candidates, riktadPott, minN = 0) {
+    const valid = (candidates || []).filter(c => c.gapKr > 0 && c.n > 0 && c.n >= (minN || 0));
+    if (!valid.length || riktadPott <= 0) return [];
+    const totalIndex = valid.reduce((s, c) => s + c.gapKr * c.n, 0);
+    if (totalIndex <= 0) return [];
+    return valid.map(c => {
+        const share = (c.gapKr * c.n) / totalIndex;
+        const want = c.gapKr * c.n;                  // kostnad att helt stänga (kr/mån)
+        const alloc = Math.min(want, riktadPott * share);
+        return { bas: c.bas, aid: c.aid, mode: 'kr', value: Math.round(alloc), dist: 'lowest' };
+    }).filter(t => t.value > 0);
+}
+
+/**
+ * Mål-läge: bygg riktade rader som stänger en andel (fraction) av de osakliga
+ * gapen. Kostnaden för att helt stänga en grupps gap är gapKr × n; för andelen
+ * f blir det f × gapKr × n. Fördelas lägst-först inom gruppen.
+ * @param {Array<{bas,aid,gapKr:number,n:number}>} candidates
+ * @param {number} fraction - 0..1
+ * @param {number} [minN=0]
+ */
+function closureTargets(candidates, fraction, minN = 0) {
+    const f = Math.max(0, Math.min(1, fraction));
+    if (f <= 0) return [];
+    return (candidates || [])
+        .filter(c => c.gapKr > 0 && c.n > 0 && c.n >= (minN || 0))
+        .map(c => ({ bas: c.bas, aid: c.aid, mode: /** @type {'kr'} */ ('kr'), value: Math.round(f * c.gapKr * c.n), dist: /** @type {'lowest'} */ ('lowest') }))
+        .filter(t => t.value > 0);
+}
+
+/**
+ * Stegvis plan: rampa fördelningen linjärt över N år (1/N per år) och beräkna
+ * ackumulerad kostnad och råa lönegapet vid varje år. Stödjer DiskrL 3:11
+ * ("senast inom tre år"). perPerson kommer från allocate (har delta + lon + kon).
+ * @returns {Array<{year,andelPct,kumRaise,kumKostnad,rawGap}>}
+ */
+function stagedPlan(rows, perPerson, years, costOpts) {
+    const N = Math.max(1, Math.min(5, Math.round(years) || 1));
+    const months = (costOpts && costOpts.months) || 12;
+    const poFactor = 1 + ((costOpts && costOpts.poPct) || 0) / 100;
+    const out = [];
+    for (let k = 1; k <= N; k++) {
+        const frac = k / N;
+        const simRows = perPerson.map((p, i) => ({ kon: rows[i].kon, lon: rows[i].lon + p.delta * frac }));
+        const kumRaise = perPerson.reduce((s, p) => s + p.delta * frac, 0);
+        out.push({
+            year: k, andelPct: 100 * frac, kumRaise,
+            kumKostnad: kumRaise * months * poFactor,
+            rawGap: rawGenderGap(simRows, r => r.lon)
+        });
+    }
+    return out;
+}
+
+/**
+ * Sammanställning per BAS→AID-grupp (för kriteriebaserad riktning).
+ * @returns {Array<{bas,aid,n,kvN,andelKv,median}>}
+ */
+function summarizeGroups(rows) {
+    const m = new Map();
+    (rows || []).forEach(r => {
+        const k = r.bas + '|' + r.aid;
+        let g = m.get(k);
+        if (!g) { g = { bas: r.bas, aid: r.aid, lons: [], kvN: 0, n: 0 }; m.set(k, g); }
+        g.lons.push(r.lon); g.n++;
+        if (r.kon && r.kon.includes('kvinna')) g.kvN++;
+    });
+    return [...m.values()].map(g => ({
+        bas: g.bas, aid: g.aid, n: g.n, kvN: g.kvN,
+        andelKv: g.n ? 100 * g.kvN / g.n : 0, median: _median(g.lons)
+    }));
+}
+
+/**
+ * Leapfrog-/spillover-detektering: hittar grupper som efter påslaget passerar
+ * (går om) en grupp som tidigare hade högre median — vilket kan skapa ny
+ * skevhet. Jämför på gruppmedianer (perGroup från allocate).
+ * @returns {Array<{bas:string, aid:string, overBas:string, overAid:string, gammalA:number, nyA:number, gammalB:number, nyB:number}>}
+ */
+function detectLeapfrog(perGroup) {
+    const g = (perGroup || []).filter(x => x.n > 0);
+    const out = [];
+    for (let i = 0; i < g.length; i++) {
+        for (let j = 0; j < g.length; j++) {
+            if (i === j) continue;
+            if (g[i].gammalMedian < g[j].gammalMedian - 1e-6 && g[i].nyMedian > g[j].nyMedian + 1e-6) {
+                out.push({
+                    bas: g[i].bas, aid: g[i].aid, overBas: g[j].bas, overAid: g[j].aid,
+                    gammalA: g[i].gammalMedian, nyA: g[i].nyMedian,
+                    gammalB: g[j].gammalMedian, nyB: g[j].nyMedian
+                });
+            }
+        }
+    }
+    return out;
+}
+
+/**
+ * Hela prognosutfallet: pott, budgetutnyttjande, total kostnad (inkl. PO + period)
+ * och råa lönegapet före/efter. Det OFÖRKLARADE gapet (OLS) beräknas i app.js.
+ * @param {Array} rows
+ * @param {{mode:string, value:number|null}} budget
+ * @param {{mode:string, value:number|null}} generell
+ * @param {Array} targets
+ * @param {{months?:number, poPct?:number, roundStep?:number, kvThreshold?:number, kvDefinition?:string}} [costOpts]
+ *   kvThreshold och kvDefinition: samma definition av kvinnodominerat som likvärdighetsanalysen (ADR-60).
+ */
+function forecastOutcome(rows, budget, generell, targets, costOpts) {
+    const pott = computePott(rows, budget);
+    const alloc = allocate(rows, generell, targets, costOpts && costOpts.roundStep);
+    const totalRaise = alloc.totals.totalRaise;
+    const months = (costOpts && costOpts.months) || 12;
+    const poFactor = 1 + ((costOpts && costOpts.poPct) || 0) / 100;
+    const kvThreshold = (costOpts && costOpts.kvThreshold) || 60;
+    const lonsummaFore = totalLonSum(rows);
+    // Hur mycket av påslaget går till kvinnodominerade grupper (jämställdhetsandel)
+    const kvDefinition = (costOpts && costOpts.kvDefinition) || 'do';
+    const equityCost = alloc.perGroup.reduce((s, g) => s + (arKvinnodominerad(g.andelKv, kvDefinition, kvThreshold) ? g.kostnad : 0), 0);
+    return {
+        pott,
+        använt: totalRaise,
+        kvar: pott - totalRaise,
+        overBudget: totalRaise > pott + 1e-6,
+        totalKostnad: totalRaise * months * poFactor,
+        lonsummaFore,
+        lonsummaEfter: lonsummaFore + totalRaise,
+        rawGapFore: rawGenderGap(rows, r => r.lon),
+        rawGapEfter: rawGenderGap(alloc.perPerson, p => p.nyLon),
+        generellCost: alloc.totals.generellCost,
+        riktadCost: alloc.totals.riktadCost,
+        equityCost,
+        leapfrog: detectLeapfrog(alloc.perGroup),
+        alloc
+    };
+}
+
+// ===================================================================
+// Lönespann/compa-ratio, individnivå-remediation,
+// marknadspositionering, budgetkänslighet.
+// ===================================================================
+
+/**
+ * (A) Lönespann per BAS: P25 / median / P75. compa-ratio och range-penetration
+ * beräknas mot detta i UI.
+ * @returns {Array<{bas,n,p25,median,p75}>}
+ */
+function bandStats(rows) {
+    const m = new Map();
+    (rows || []).forEach(r => {
+        if (!(r.lon > 0)) return;
+        if (!m.has(r.bas)) m.set(r.bas, []);
+        m.get(r.bas).push(r.lon);
+    });
+    return [...m.entries()].map(([bas, lons]) => ({
+        bas, n: lons.length,
+        p25: _quantile(lons, 0.25), median: _median(lons), p75: _quantile(lons, 0.75)
+    })).sort((a, b) => (a.bas < b.bas ? -1 : a.bas > b.bas ? 1 : 0));
+}
+
+/**
+ * (B) Individnivå-remediation (DiskrL 3:9 — lika arbete): flaggar kvinnor som
+ * är betalda mer än `gapPct` % under sitt likalöne-benchmark (mäns median i
+ * samma BAS×AID, fallback mäns median i BAS) och beräknar kostnaden att lyfta
+ * dem till benchmark. Endast aggregat returneras för visning; `flagged` används
+ * internt för seeding och summeras per grupp.
+ *
+ * `minMen` är minsta antal män bakom ett benchmark. Appen skickar alltid gällande k-tröskel:
+ * mot en enda mans lön vore "kostnaden att lyfta" en kvinna hans lön minus hennes.
+ * Standardvärdet 1 finns för enhetstesterna.
+ * @param {Array} rows
+ * @param {{gapPct?:number, minMen?:number}} opts
+ */
+function individualRemediation(rows, opts) {
+    const o = opts || {};
+    const trigger = (o.gapPct != null ? o.gapPct : 5) / 100;
+    const minMen = o.minMen || 1;
+    const menByGroup = new Map(), menByBas = new Map();
+    (rows || []).forEach(r => {
+        if (!(r.lon > 0)) return;
+        if (!(r.kon === 'man' || r.kon === 'män')) return;
+        const gk = r.bas + '|' + r.aid;
+        if (!menByGroup.has(gk)) menByGroup.set(gk, []);
+        menByGroup.get(gk).push(r.lon);
+        if (!menByBas.has(r.bas)) menByBas.set(r.bas, []);
+        menByBas.get(r.bas).push(r.lon);
+    });
+    const benchFor = (bas, aid) => {
+        const g = menByGroup.get(bas + '|' + aid);
+        if (g && g.length >= minMen) return { v: _median(g), kalla: 'yrke' };
+        const b = menByBas.get(bas);
+        if (b && b.length >= minMen) return { v: _median(b), kalla: 'bas' };
+        return null;
+    };
+    const flagged = [];
+    (rows || []).forEach(r => {
+        if (!(r.lon > 0)) return;
+        if (!(r.kon && r.kon.includes('kvinna'))) return;
+        const bench = benchFor(r.bas, r.aid);
+        if (!bench) return;
+        if (r.lon < bench.v * (1 - trigger)) {
+            flagged.push({ bas: r.bas, aid: r.aid, lon: r.lon, benchmark: bench.v, kalla: bench.kalla, shortfall: bench.v - r.lon });
+        }
+    });
+    const byGroup = new Map();
+    flagged.forEach(f => {
+        const k = f.bas + '|' + f.aid;
+        let g = byGroup.get(k);
+        if (!g) { g = { bas: f.bas, aid: f.aid, count: 0, cost: 0 }; byGroup.set(k, g); }
+        g.count++; g.cost += f.shortfall;
+    });
+    return {
+        flagged, count: flagged.length,
+        totalCost: flagged.reduce((s, f) => s + f.shortfall, 0),
+        perGroup: [...byGroup.values()].sort((a, b) => b.cost - a.cost)
+    };
+}
+
+/**
+ * (E) Marknadspositionering: bygg riktade rader som lyfter grupper vars median
+ * ligger under marknad × factor, mot den nivån.
+ * @param {Array<{bas,aid,n,median}>} groups - från summarizeGroups
+ * @param {Map<string,number>} marketByKey - nyckel "aid|bas" eller "aid" → marknadsmedian
+ * @param {number} factor - andel av marknadsmedian att nå (t.ex. 0.95)
+ * @param {number} [minN=0]
+ */
+function marketTargets(groups, marketByKey, factor, minN) {
+    const f = factor > 0 ? factor : 1;
+    const out = [];
+    (groups || []).forEach(g => {
+        if (g.n < (minN || 0)) return;
+        let mk = marketByKey.get(g.aid + '|' + g.bas);
+        if (mk == null) mk = marketByKey.get(g.aid);
+        if (mk == null || !(mk > 0)) return;
+        const target = mk * f;
+        if (g.median < target) {
+            out.push({ bas: g.bas, aid: g.aid, mode: 'kr', value: Math.round((target - g.median) * g.n), dist: 'lowest', pool: 'marknad' });
+        }
+    });
+    return out;
+}
+
+/**
+ * (F) Budgetkänslighet: svep §3:10-stängning 0→100 % och returnera kostnad +
+ * råa lönegapet för varje steg (avtagande avkastning).
+ * @returns {Array<{fraction,kostnad,rawGap}>}
+ */
+function sensitivityCurve(rows, candidates, costOpts, steps) {
+    const S = steps || 10;
+    const months = (costOpts && costOpts.months) || 12;
+    const poFactor = 1 + ((costOpts && costOpts.poPct) || 0) / 100;
+    const out = [];
+    for (let i = 0; i <= S; i++) {
+        const frac = i / S;
+        const targets = closureTargets(candidates, frac, 0);
+        const alloc = allocate(rows, { mode: 'pct', value: 0 }, targets, costOpts && costOpts.roundStep);
+        out.push({
+            fraction: frac,
+            kostnad: alloc.totals.totalRaise * months * poFactor,
+            rawGap: rawGenderGap(alloc.perPerson, p => p.nyLon)
+        });
+    }
+    return out;
+}
+
+    return { computePott, allocate, targetRows, suggestTargets, closureTargets, stagedPlan, summarizeGroups, detectLeapfrog, forecastOutcome, bandStats, individualRemediation, marketTargets, sensitivityCurve, _median };
+})();
+const _fcComputePott = __mirrorForecast.computePott;
+const _fcAllocate = __mirrorForecast.allocate;
+const _fcTargetRows = __mirrorForecast.targetRows;
+const _fcSuggestTargets = __mirrorForecast.suggestTargets;
+const _fcClosureTargets = __mirrorForecast.closureTargets;
+const _fcStagedPlan = __mirrorForecast.stagedPlan;
+const _fcSummarizeGroups = __mirrorForecast.summarizeGroups;
+const _fcDetectLeapfrog = __mirrorForecast.detectLeapfrog;
+const _fcForecastOutcome = __mirrorForecast.forecastOutcome;
+const _fcBandStats = __mirrorForecast.bandStats;
+const _fcIndividualRemediation = __mirrorForecast.individualRemediation;
+const _fcMarketTargets = __mirrorForecast.marketTargets;
+const _fcSensitivityCurve = __mirrorForecast.sensitivityCurve;
+const _fcMedian = __mirrorForecast._median;
 
 // ---- speglar src/lib/aidbas.js ----
 const __mirrorAidbas = (() => {
@@ -1831,6 +1894,7 @@ const __mirrorAidbas = (() => {
     const median = __mirrorStat.median;
     const quantile = __mirrorStat.quantile;
     const basRangFn = __mirrorLikvardighet.basRangFn;
+    const konsklass = __mirrorLikvardighet.konsklass;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -1887,10 +1951,20 @@ function kvDefinitionText(definition, grans = KV_GRANS_STANDARD) {
  * @returns {string} Kvinnodominerad, Mansdominerad, Könsblandad eller '' för okänd andel
  */
 function dominans(andelKv, definition = 'do', grans = KV_GRANS_STANDARD) {
-    if (typeof andelKv !== 'number' || !isFinite(andelKv)) return '';
-    const andelMa = 100 - andelKv;
-    if (definition === 'scb') return andelKv >= grans ? KLASS_KV : andelMa >= grans ? KLASS_MA : KLASS_BLANDAD;
-    return andelKv > grans ? KLASS_KV : andelMa > grans ? KLASS_MA : KLASS_BLANDAD;
+    // Samma definition som likvärdighetsanalysen (ADR-60): konsklass i likvardighet.js.
+    const k = konsklass(andelKv, definition, grans);
+    return k === 'kvinnodominerad' ? KLASS_KV : k === 'mansdominerad' ? KLASS_MA : k === 'blandad' ? KLASS_BLANDAD : '';
+}
+
+/**
+ * Om en grupp med klassen `klass` är ett jämförelseyrke (ADR-60): alla som inte är kvinnodominerade, eller bara de
+ * mansdominerade när filtret `jamforelse` är 'mansdominerade'. Samma mängd som kandidatparen i Likvärdigt arbete.
+ * @param {string} klass
+ * @param {'alla'|'mansdominerade'|string} [jamforelse]
+ */
+function arJamforelseKlass(klass, jamforelse = 'alla') {
+    if (!klass || klass === KLASS_KV) return false;
+    return jamforelse === 'mansdominerade' ? klass === KLASS_MA : true;
 }
 
 const arKv = r => typeof r.kon === 'string' && r.kon.includes('kvinna');
@@ -1963,10 +2037,11 @@ function likaArbeteTabell(rader, { k = 10, golv = 5, granser } = {}) {
  * Tabell 2 — Likvärdigt arbete: grupperna per BAS-intervall med könsfördelning och klassning, och sammanfattningen
  * per intervall där det finns både kvinnodominerade grupper och andra grupper med median.
  * @param {Array} rader
- * @param {{k?:number, golv?:number, definition?:'do'|'scb', grans?:number, nationell?: ((aid:string) => (number|null))|null}} val
+ * @param {{k?:number, golv?:number, definition?:'do'|'scb', grans?:number, jamforelse?:'alla'|'mansdominerade', nationell?: ((aid:string) => (number|null))|null}} val
  *   `nationell` ger andelen kvinnor nationellt för en AID-kod (procent), eller null när den saknas.
+ *   `jamforelse` avgör vilka grupper som räknas som övriga i sammanfattningen (ADR-60).
  */
-function likvardigtTabell(rader, { k = 10, golv = 5, definition = 'do', grans = KV_GRANS_STANDARD, nationell = null } = {}) {
+function likvardigtTabell(rader, { k = 10, golv = 5, definition = 'do', grans = KV_GRANS_STANDARD, jamforelse = 'alla', nationell = null } = {}) {
     const { rader: grupper, sma } = _delaPaGolv(grupperaAidBas(rader), golv);
     const ut = grupper.map(g => {
         const andelKv = g.nKv / g.n * 100;
@@ -1984,28 +2059,29 @@ function likvardigtTabell(rader, { k = 10, golv = 5, definition = 'do', grans = 
     const sammanfattning = [];
     for (const bas of [...new Set(ut.map(r => r.bas))]) {
         const medMedian = ut.filter(r => r.bas === bas && r.median != null);
-        const kvDom = medMedian.filter(r => r.klass === KLASS_KV).map(r => /** @type {number} */ (r.median)), ovriga = medMedian.filter(r => r.klass !== KLASS_KV).map(r => /** @type {number} */ (r.median));
+        const kvDom = medMedian.filter(r => r.klass === KLASS_KV).map(r => /** @type {number} */ (r.median)), ovriga = medMedian.filter(r => arJamforelseKlass(r.klass, jamforelse)).map(r => /** @type {number} */ (r.median));
         if (!kvDom.length || !ovriga.length) continue;
         const kvHogst = Math.max(...kvDom), ovHogst = Math.max(...ovriga);
         sammanfattning.push({ bas, antalKvDom: kvDom.length, antalOvriga: ovriga.length,
             kvDom: { hogst: kvHogst, lagst: Math.min(...kvDom) }, ovriga: { hogst: ovHogst, lagst: Math.min(...ovriga) },
             skillnadKr: ovHogst - kvHogst, skillnadPct: kvHogst > 0 ? (ovHogst / kvHogst - 1) * 100 : null });
     }
-    return { rader: ut, sma, sammanfattning, definition, grans };
+    return { rader: ut, sma, sammanfattning, definition, grans, jamforelse };
 }
 
 /**
  * Tabell 3 — Hierarkisk jämförelse: par (A, B) där A inte är kvinnodominerad, B är kvinnodominerad, A har lägre
  * BAS-intervall än B och A har högre median än B. Båda grupperna har minst k personer. Sorterat på skillnaden, störst först.
  * @param {Array} rader
- * @param {{k?:number, definition?:'do'|'scb', grans?:number}} val
+ * A är ett jämförelseyrke enligt `jamforelse` (ADR-60): standard alla som inte är kvinnodominerade.
+ * @param {{k?:number, definition?:'do'|'scb', grans?:number, jamforelse?:'alla'|'mansdominerade'}} val
  */
-function hierarkiskaPar(rader, { k = 10, definition = 'do', grans = KV_GRANS_STANDARD } = {}) {
+function hierarkiskaPar(rader, { k = 10, definition = 'do', grans = KV_GRANS_STANDARD, jamforelse = 'alla' } = {}) {
     const grupper = grupperaAidBas(rader).filter(g => g.n >= k)
         .map(g => ({ aid: g.aid, bas: g.bas, yrke: g.yrke, n: g.n, median: median(g.loner), klass: dominans(g.nKv / g.n * 100, definition, grans) }));
     const rang = basRangFn(grupper.map(g => g.bas));
     const par = [];
-    for (const a of grupper.filter(g => g.klass !== KLASS_KV)) {
+    for (const a of grupper.filter(g => arJamforelseKlass(g.klass, jamforelse))) {
         for (const b of grupper.filter(g => g.klass === KLASS_KV)) {
             if (rang(a.bas) < rang(b.bas) && a.median > b.median) {
                 par.push({ a, b, skillnadKr: a.median - b.median, skillnadPct: b.median > 0 ? (a.median / b.median - 1) * 100 : null });
@@ -4651,6 +4727,12 @@ function parBlock(p, { id, kravProxy, urval, demo, troskelNot } = {}) {
 
 /** Antalet i ett kandidatpar: det kvinnodominerade yrkets och jämförelseyrkets ("–" när statistiken inte anger antal). */
 const _parAntal = p => `${p.kvN == null ? '–' : p.kvN} / ${p.maN == null ? '–' : p.maN}`;
+/** Könsandelen i ett pars jämförelseyrke med klassen (ADR-60): "45 % (blandad)". */
+function _konsandel(p) {
+    const v = p.maKvinnoPct ?? p.maKvAndel;
+    if (typeof v !== 'number' || !isFinite(v)) return '–';
+    return _pct(v, 0) + (p.maKlass === 'mansdominerad' || p.maKlass === 'blandad' ? ` (${p.maKlass})` : '');
+}
 
 /** Avsnittsblock per lagsteg: 'sammanfattning' | 'uppdelning' | 'lika' | 'likvardigt' | 'lagreKrav' | 'struktur' | 'handlingsplan'. */
 /**
@@ -4723,13 +4805,17 @@ function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
         const proxy = u.kravProxy === 'poäng' ? 'arbetsvärderingspoäng' : 'BAS-intervall';
         const st = [(_kapad(u) ? `De ${u.topN} största kandidatparen` : `${par.length} kandidatpar`)
             + ` där ett kvinnodominerat yrke har lägre medianlön än ett yrke med lika eller lägre krav. Kraven mäts med ${proxy}.`
-            + (u.kvinnoTroskel != null ? ` Ett yrke räknas som kvinnodominerat vid minst ${formatTal(u.kvinnoTroskel)} % kvinnor.` : '')];
+            + (u.kvinnoTroskel != null ? ` Ett yrke räknas som kvinnodominerat vid ${u.kvDomDefinition === 'scb' ? 'minst' : 'mer än'} ${formatTal(u.kvinnoTroskel)} % kvinnor.` : '')
+            // ADR-60: jämförelsemängden är alla yrken som inte är kvinnodominerade, eller bara de mansdominerade.
+            + (u.jamforelse === 'mansdominerade'
+                ? ' Yrkena jämförs bara med mansdominerade yrken på samma nivå; könsandelen i jämförelseyrket står i tabellen.'
+                : ' Yrkena jämförs med yrken på samma nivå som inte är kvinnodominerade; könsandelen i jämförelseyrket står i tabellen.')];
         if (_kapad(u)) st.push(_kapadText(u));
         if (u.exkluderade) st.push(`${u.exkluderade} par med en grupp under ${k} personer redovisas inte här.`);
         if (!par.length) return blk('Likvärdigt arbete', [...st, 'Inga kandidatpar att redovisa.'], null);
         const kiText = p => (p.gapCI && p.kvMedian > 0) ? `${_ki(p.gapCI.lo / p.kvMedian * 100, p.gapCI.hi / p.kvMedian * 100)} %` : '–';
-        return blk('Likvärdigt arbete', st, { rubriker: ['Kvinnodominerat yrke', 'Jämförelseyrke', 'Antal (kvinnodom. / jämf.)', 'Skillnad (kr)', 'Skillnad (%)', '95 % KI'],
-            rader: par.map(p => [`${p.kvLabel} (BAS ${p.kvBas})`, `${p.maLabel} (BAS ${p.maBas})`, _parAntal(p), _kr(p.gapKr), _pct(p.gapPct), kiText(p)]) });
+        return blk('Likvärdigt arbete', st, { rubriker: ['Kvinnodominerat yrke', 'Jämförelseyrke', 'Antal (kvinnodom. / jämf.)', 'Könsandel i jämförelseyrket', 'Skillnad (kr)', 'Skillnad (%)', '95 % KI'],
+            rader: par.map(p => [`${p.kvLabel} (BAS ${p.kvBas})`, `${p.maLabel} (BAS ${p.maBas})`, _parAntal(p), _konsandel(p), _kr(p.gapKr), _pct(p.gapPct), kiText(p)]) });
     }
     if (typ === 'lagreKrav') {
         const R = 'Lägre krav, högre lön';
@@ -4741,8 +4827,8 @@ function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
         if (u.exkluderade) st.push(`${u.exkluderade} par med en grupp under ${k} personer redovisas inte här.`);
         if (!par.length) return blk(R, [...st, 'Inget kvinnodominerat yrke har lägre medianlön än ett yrke i lägre BAS.'], null);
         const kiText = p => (p.gapCI && p.kvMedian > 0) ? `${_ki(p.gapCI.lo / p.kvMedian * 100, p.gapCI.hi / p.kvMedian * 100)} %` : '–';
-        const b = blk(R, st, { rubriker: ['Kvinnodominerat yrke', 'Jämförelseyrke', 'Antal (kvinnodom. / jämf.)', 'BAS-steg', 'Skillnad (kr)', 'Skillnad (%)', '95 % KI'],
-            rader: par.map(p => [`${p.kvLabel} (BAS ${p.kvBas})`, `${p.maLabel} (BAS ${p.maBas})`, _parAntal(p), String(p.basSteg), _kr(p.gapKr), _pct(p.gapPct), kiText(p)]) });
+        const b = blk(R, st, { rubriker: ['Kvinnodominerat yrke', 'Jämförelseyrke', 'Antal (kvinnodom. / jämf.)', 'Könsandel i jämförelseyrket', 'BAS-steg', 'Skillnad (kr)', 'Skillnad (%)', '95 % KI'],
+            rader: par.map(p => [`${p.kvLabel} (BAS ${p.kvBas})`, `${p.maLabel} (BAS ${p.maBas})`, _parAntal(p), _konsandel(p), String(p.basSteg), _kr(p.gapKr), _pct(p.gapPct), kiText(p)]) });
         return { ...b, fragor: [...FRAGOR_PAR] };
     }
     if (typ === 'struktur') {
@@ -7510,6 +7596,10 @@ function _statistikRad(r) {
 function _orgTyp(v) {
     return v === 'kommun' || v === 'region' ? v : undefined;
 }
+/** Jämförelsemängden i likvärdigt arbete (ADR-60): 'alla' som inte är kvinnodominerade eller 'mansdominerade'. */
+function _jamforelse(v) {
+    return v === 'alla' || v === 'mansdominerade' ? v : undefined;
+}
 
 // ---- Bygga ----
 
@@ -7540,6 +7630,7 @@ function byggPaket(u) {
             inaktivitetMin: _inaktivitet(inst.inaktivitetMin),
             inaktivitetLast: inst.inaktivitetLast === true && _inaktivitet(inst.inaktivitetMin) > 0 ? true : undefined,
             smaGrupperIExport: inst.smaGrupperIExport === false ? false : undefined,
+            jamforelse: _jamforelse(inst.jamforelse),
         }),
     };
     // Rapportens recept (ADR-52): egna tabeller ur Utforska och receptet för avsnittet per BAS-intervall. Bara
@@ -7675,6 +7766,8 @@ function tolkaPaket(text) {
     const inst = o.installningar && typeof o.installningar === 'object' ? o.installningar : {};
     if (inst.kTroskel != null && _kTroskel(inst.kTroskel) === undefined) varningar.push('Paketets minsta gruppstorlek är ogiltig och används inte.');
     const las = _lasningar(inst, varningar);
+    if (inst.jamforelse != null && _jamforelse(inst.jamforelse) === undefined)
+        varningar.push('Paketets val av jämförelseyrken i likvärdigt arbete är ogiltigt ("alla" eller "mansdominerade") och används inte.');
     // Paketets egen tröskel får inte ligga under paketets golv: den höjs till golvet, med en varning.
     let kTroskel = _kTroskel(inst.kTroskel);
     if (kTroskel !== undefined && las.kTroskelLagst !== undefined && kTroskel < las.kTroskelLagst) {
@@ -7688,7 +7781,8 @@ function tolkaPaket(text) {
             profil: _utanTomma({ name: organisation, benchmarkLabel: _text(p.jamforelseNamn),
                 benchmarkLabelGenitive: _text(p.jamforelseGenitiv), benchmarkShort: _text(p.jamforelseKort),
                 basSystem: _text(p.basSystem), aidSystem: _text(p.aidSystem), orgTyp: _orgTyp(p.organisationstyp) }),
-            installningar: _utanTomma({ poPct: _tal(inst.poPct, 0, 100), poNot: _text(inst.poNot), months: _period(inst.manader), kTroskel, ...las }),
+            installningar: _utanTomma({ poPct: _tal(inst.poPct, 0, 100), poNot: _text(inst.poNot), months: _period(inst.manader), kTroskel, ...las,
+                jamforelse: _jamforelse(inst.jamforelse) }),
             referens: refRader ? { ..._utanTomma({ namn: _text(o.referens.namn), kortnamn: _text(o.referens.kortnamn) }), rader: refRader } : null,
             statistik: statRader ? { ..._utanTomma({ namn: _text(o.statistik.namn) }), rader: statRader } : null,
             rapport: _rapport(o.rapport, varningar),

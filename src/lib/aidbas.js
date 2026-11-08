@@ -21,7 +21,7 @@
  * Ren modul utan DOM eller state. Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
 import { median, quantile } from './stat.js';
-import { basRangFn } from './likvardighet.js';
+import { basRangFn, konsklass } from './likvardighet.js';
 
 /** Definitionerna av kvinnodominerat arbete: nyckel → namn och text för metodbladet. */
 export const KV_DEFINITIONER = Object.freeze({
@@ -54,10 +54,20 @@ export function kvDefinitionText(definition, grans = KV_GRANS_STANDARD) {
  * @returns {string} Kvinnodominerad, Mansdominerad, Könsblandad eller '' för okänd andel
  */
 export function dominans(andelKv, definition = 'do', grans = KV_GRANS_STANDARD) {
-    if (typeof andelKv !== 'number' || !isFinite(andelKv)) return '';
-    const andelMa = 100 - andelKv;
-    if (definition === 'scb') return andelKv >= grans ? KLASS_KV : andelMa >= grans ? KLASS_MA : KLASS_BLANDAD;
-    return andelKv > grans ? KLASS_KV : andelMa > grans ? KLASS_MA : KLASS_BLANDAD;
+    // Samma definition som likvärdighetsanalysen (ADR-60): konsklass i likvardighet.js.
+    const k = konsklass(andelKv, definition, grans);
+    return k === 'kvinnodominerad' ? KLASS_KV : k === 'mansdominerad' ? KLASS_MA : k === 'blandad' ? KLASS_BLANDAD : '';
+}
+
+/**
+ * Om en grupp med klassen `klass` är ett jämförelseyrke (ADR-60): alla som inte är kvinnodominerade, eller bara de
+ * mansdominerade när filtret `jamforelse` är 'mansdominerade'. Samma mängd som kandidatparen i Likvärdigt arbete.
+ * @param {string} klass
+ * @param {'alla'|'mansdominerade'|string} [jamforelse]
+ */
+export function arJamforelseKlass(klass, jamforelse = 'alla') {
+    if (!klass || klass === KLASS_KV) return false;
+    return jamforelse === 'mansdominerade' ? klass === KLASS_MA : true;
 }
 
 const arKv = r => typeof r.kon === 'string' && r.kon.includes('kvinna');
@@ -130,10 +140,11 @@ export function likaArbeteTabell(rader, { k = 10, golv = 5, granser } = {}) {
  * Tabell 2 — Likvärdigt arbete: grupperna per BAS-intervall med könsfördelning och klassning, och sammanfattningen
  * per intervall där det finns både kvinnodominerade grupper och andra grupper med median.
  * @param {Array} rader
- * @param {{k?:number, golv?:number, definition?:'do'|'scb', grans?:number, nationell?: ((aid:string) => (number|null))|null}} val
+ * @param {{k?:number, golv?:number, definition?:'do'|'scb', grans?:number, jamforelse?:'alla'|'mansdominerade', nationell?: ((aid:string) => (number|null))|null}} val
  *   `nationell` ger andelen kvinnor nationellt för en AID-kod (procent), eller null när den saknas.
+ *   `jamforelse` avgör vilka grupper som räknas som övriga i sammanfattningen (ADR-60).
  */
-export function likvardigtTabell(rader, { k = 10, golv = 5, definition = 'do', grans = KV_GRANS_STANDARD, nationell = null } = {}) {
+export function likvardigtTabell(rader, { k = 10, golv = 5, definition = 'do', grans = KV_GRANS_STANDARD, jamforelse = 'alla', nationell = null } = {}) {
     const { rader: grupper, sma } = _delaPaGolv(grupperaAidBas(rader), golv);
     const ut = grupper.map(g => {
         const andelKv = g.nKv / g.n * 100;
@@ -151,28 +162,29 @@ export function likvardigtTabell(rader, { k = 10, golv = 5, definition = 'do', g
     const sammanfattning = [];
     for (const bas of [...new Set(ut.map(r => r.bas))]) {
         const medMedian = ut.filter(r => r.bas === bas && r.median != null);
-        const kvDom = medMedian.filter(r => r.klass === KLASS_KV).map(r => /** @type {number} */ (r.median)), ovriga = medMedian.filter(r => r.klass !== KLASS_KV).map(r => /** @type {number} */ (r.median));
+        const kvDom = medMedian.filter(r => r.klass === KLASS_KV).map(r => /** @type {number} */ (r.median)), ovriga = medMedian.filter(r => arJamforelseKlass(r.klass, jamforelse)).map(r => /** @type {number} */ (r.median));
         if (!kvDom.length || !ovriga.length) continue;
         const kvHogst = Math.max(...kvDom), ovHogst = Math.max(...ovriga);
         sammanfattning.push({ bas, antalKvDom: kvDom.length, antalOvriga: ovriga.length,
             kvDom: { hogst: kvHogst, lagst: Math.min(...kvDom) }, ovriga: { hogst: ovHogst, lagst: Math.min(...ovriga) },
             skillnadKr: ovHogst - kvHogst, skillnadPct: kvHogst > 0 ? (ovHogst / kvHogst - 1) * 100 : null });
     }
-    return { rader: ut, sma, sammanfattning, definition, grans };
+    return { rader: ut, sma, sammanfattning, definition, grans, jamforelse };
 }
 
 /**
  * Tabell 3 — Hierarkisk jämförelse: par (A, B) där A inte är kvinnodominerad, B är kvinnodominerad, A har lägre
  * BAS-intervall än B och A har högre median än B. Båda grupperna har minst k personer. Sorterat på skillnaden, störst först.
  * @param {Array} rader
- * @param {{k?:number, definition?:'do'|'scb', grans?:number}} val
+ * A är ett jämförelseyrke enligt `jamforelse` (ADR-60): standard alla som inte är kvinnodominerade.
+ * @param {{k?:number, definition?:'do'|'scb', grans?:number, jamforelse?:'alla'|'mansdominerade'}} val
  */
-export function hierarkiskaPar(rader, { k = 10, definition = 'do', grans = KV_GRANS_STANDARD } = {}) {
+export function hierarkiskaPar(rader, { k = 10, definition = 'do', grans = KV_GRANS_STANDARD, jamforelse = 'alla' } = {}) {
     const grupper = grupperaAidBas(rader).filter(g => g.n >= k)
         .map(g => ({ aid: g.aid, bas: g.bas, yrke: g.yrke, n: g.n, median: median(g.loner), klass: dominans(g.nKv / g.n * 100, definition, grans) }));
     const rang = basRangFn(grupper.map(g => g.bas));
     const par = [];
-    for (const a of grupper.filter(g => g.klass !== KLASS_KV)) {
+    for (const a of grupper.filter(g => arJamforelseKlass(g.klass, jamforelse))) {
         for (const b of grupper.filter(g => g.klass === KLASS_KV)) {
             if (rang(a.bas) < rang(b.bas) && a.median > b.median) {
                 par.push({ a, b, skillnadKr: a.median - b.median, skillnadPct: b.median > 0 ? (a.median / b.median - 1) * 100 : null });

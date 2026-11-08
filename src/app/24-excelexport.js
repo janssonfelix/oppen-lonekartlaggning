@@ -369,7 +369,7 @@ function _exportJPAProtocolExport() {
         ['Antal yrkesgrupper med statusen Värt att granska: säkerställd skillnad på minst 3 % (lika arbete)', jpaYrken.length],
         ['  varav ojusterad löneskillnad ≥ 5 % (direktivmarkeringen)', jpaYrken.filter(j => j.direktiv).length],
         ['Antal BAS-intervall med en säkerställd oförklarad skillnad på minst 3 %', jpaBas.length],
-        [`Antal ${lvRedovisning.not ? 'redovisade ' : ''}kandidatpar i likvärdigt arbete (kvinnodominerat yrke mot icke-kvinnodominerat yrke med lika eller lägre krav)`, lvPairsCount],
+        [`Antal ${lvRedovisning.not ? 'redovisade ' : ''}kandidatpar i likvärdigt arbete (kvinnodominerat yrke mot ett yrke som inte är kvinnodominerat, med lika eller lägre krav)`, lvPairsCount],
         ...(lvRedovisning.not ? [['  Utelämnade kandidatpar', lvRedovisning.not]] : []),
         ['', ''],
         ['— DELTAGARE I SAMRÅDET —', '(fylls i av parterna)'],
@@ -478,7 +478,7 @@ function _exportJPAProtocolExport() {
     _applyColumnNumFormats(basSheet, SV_NUM_FORMATS);
     XLSX.utils.book_append_sheet(wb, basSheet, '3. Likvärdigt arbete (BAS)');
 
-    // === Sheet 3b: § 3:10 Likvärdighet (kv-dom yrken vs icke-kv-dom yrken) ===
+    // === Sheet 3b: § 3:10 Likvärdighet (kv-dom yrken vs yrken som inte är kv-dom, ADR-60) ===
     // Använder lvResult som beräknats högst upp i
     // funktionen — så försättssidans räknare och tabellen i flik 3b alltid
     // är från samma compute.
@@ -495,7 +495,7 @@ function _exportJPAProtocolExport() {
         const lvHeader = [
             'Nr',
             'Org. AID', 'Org. Yrke', 'BAS', 'Org. n', 'Org. % kvinnor', 'Median Org. (kr)',
-            'Jämf. AID', 'Jämf. Yrke', 'Jämf. % kvinnor', 'Jämf. n', 'Jämförelsekälla', 'Median Jämf. (kr)',
+            'Jämf. AID', 'Jämf. Yrke', 'Jämf. % kvinnor', 'Jämf. klass', 'Jämf. n', 'Jämförelsekälla', 'Median Jämf. (kr)',
             'Skillnad (kr)', 'Skillnad (%)', '95 % KI lägre (kr)', '95 % KI övre (kr)', 'Säkerhet', 'Summa för gruppen (kr/mån)',
             'Sakliga skäl — arbetsgivarens analys',
             'Fackliga partens kommentar',
@@ -508,7 +508,7 @@ function _exportJPAProtocolExport() {
         lvRedovisning.par.forEach((p, i) => lvRows.push([
             i + 1,
             p.kvAid, p.kvLabel, p.kvBas, p.kvN, +p.kvKvinnoPct.toFixed(1), Math.round(p.kvMedian),
-            p.maAid, p.maLabel, +p.maKvAndel.toFixed(1), p.maN != null ? p.maN : '—', lvKälla(p), Math.round(p.maMedian),
+            p.maAid, p.maLabel, +p.maKvAndel.toFixed(1), konsklassOrd(p.maKlass), p.maN != null ? p.maN : '—', lvKälla(p), Math.round(p.maMedian),
             Math.round(p.gapKr), +p.gapPct.toFixed(2),
             p.gapCI ? Math.round(p.gapCI.lo) : '—',
             p.gapCI ? Math.round(p.gapCI.hi) : '—',
@@ -520,7 +520,7 @@ function _exportJPAProtocolExport() {
         const lvSheet = XLSX.utils.aoa_to_sheet(lvRows);
         lvSheet['!cols'] = [
             { wch: 4 }, { wch: 8 }, { wch: 28 }, { wch: 6 }, { wch: 7 }, { wch: 12 }, { wch: 14 },
-            { wch: 8 }, { wch: 28 }, { wch: 12 }, { wch: 7 }, { wch: 20 }, { wch: 14 },
+            { wch: 8 }, { wch: 28 }, { wch: 12 }, { wch: 14 }, { wch: 7 }, { wch: 20 }, { wch: 14 },
             { wch: 11 }, { wch: 8 }, { wch: 13 }, { wch: 13 }, { wch: 24 }, { wch: 14 },
             { wch: 50 }, { wch: 50 }, { wch: 28 }, { wch: 40 }, { wch: 18 }, { wch: 22 }
         ];
@@ -566,7 +566,7 @@ function _exportJPAProtocolExport() {
         ['Lönetransparensdirektivet, gemensam lönebedömning', 'Bedömningen görs tillsammans med arbetstagarnas företrädare; åtgärder inom rimlig tid.'],
         ['Diskrimineringslagen, lönekartläggning', 'Lagen kräver att du prövar om en skillnad har samband med kön. En skillnad som har sakliga skäl, till exempel ansvar eller erfarenhet, är inte osaklig.'],
         ['Diskrimineringslagen, likvärdigt arbete', 'Likvärdigt arbete bedöms utifrån de krav arbetet ställer (kunskap och färdigheter, ansvar, ansträngning och arbetsförhållanden).'],
-        ['Diskrimineringslagen, kvinnodominerat arbete', 'Arbetsgivaren ska analysera om kvinnodominerade yrken har lägre lön än icke-kvinnodominerade yrken med likvärdiga eller lägre krav i arbetet. BAS-rank används i flik 3b som ordinal proxy för arbetskrav — slutgiltig kravvärdering kräver kvalitativ granskning.'],
+        ['Diskrimineringslagen, kvinnodominerat arbete', 'Arbetsgivaren ska analysera om kvinnodominerade yrken har lägre lön än yrken som inte är kvinnodominerade och har likvärdiga eller lägre krav i arbetet. Verktyget jämför med yrken på samma nivå som inte är kvinnodominerade; könsandelen i jämförelseyrket står i tabellen. BAS-rank används i flik 3b som ordinal proxy för arbetskrav — slutgiltig kravvärdering kräver kvalitativ granskning.'],
         ['Diskrimineringslagen, åtgärder', 'Löneskillnader som saknar sakliga skäl ska rättas så snart som möjligt och senast inom tre år.'],
         ['', ''],
         ['— Statistisk metodik —', ''],

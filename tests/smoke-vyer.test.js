@@ -714,6 +714,27 @@ describe('demodata med kandidatpar', () => {
         const godkanda = par.filter(p => p.kvN >= w.__K && (p.maN === null || p.maN === undefined || p.maN >= w.__K));
         expect(godkanda.length).toBeGreaterThan(0);
     });
+    it('jämförelseyrken är alla som inte är kvinnodominerade: Systemutvecklare (blandad) jämförs i BAS C (ADR-60)', () => {
+        const w = createAppWindow();
+        w.__loadDemoData();
+        // Systemutvecklare i BAS C (23 kvinnor av 45) är blandad och därmed jämförelseyrke.
+        const sysC = w.__computeLikvardighetPairs().orgIckeKv.find(g => g.bas === 'C' && /Systemutvecklare/.test(g.label));
+        expect(sysC).toMatchObject({ n: 45, nKv: 23, klass: 'blandad' });
+        // Utan minsta gap: fyra par i BAS C, de två kvinnodominerade yrkena mot Drifttekniker och Systemutvecklare.
+        w.__state.likvardighet.minGapPct = 0;
+        const lv = w.__computeLikvardighetPairs();
+        const iC = lv.pairs.filter(p => p.kvBas === 'C').map(p => `${p.kvLabel}–${p.maLabel}`).sort();
+        expect(iC).toEqual(['Barnskötare–Drifttekniker', 'Barnskötare–Systemutvecklare', 'Undersköterska–Drifttekniker', 'Undersköterska–Systemutvecklare']);
+        expect(lv.pairs.find(p => /Systemutvecklare/.test(p.maLabel)).maKlass).toBe('blandad');
+        // Med standardgapet 5 % faller Undersköterska–Systemutvecklare bort (skillnaden är under 5 %).
+        w.__state.likvardighet.minGapPct = 5;
+        expect(w.__computeLikvardighetPairs().pairs.filter(p => p.kvBas === 'C')).toHaveLength(3);
+        // Filtret återskapar det tidigare urvalet: bara mansdominerade jämförelseyrken.
+        w.__state.likvardighet.jamforelse = 'mansdominerade';
+        const ma = w.__computeLikvardighetPairs();
+        expect(ma.pairs.every(p => p.maKlass === 'mansdominerad')).toBe(true);
+        expect(ma.pairs.some(p => /Systemutvecklare/.test(p.maLabel))).toBe(false);
+    });
     it('rapportunderlaget får parblock och diagrammet över kandidatpar', () => {
         const w = createAppWindow();
         w.__loadDemoData();

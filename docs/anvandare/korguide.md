@@ -282,7 +282,11 @@ rubrikraden, också när det är hopfällt.
    närmare på. Granska sedan kandidatparen (kvinnodominerade yrken vs jämförelseyrken). Diagrammet
    **Kandidatparen i kronor** visar båda yrkenas medianlön per par. Kraven mäts med **BAS-intervall**, eller med
    **arbetsvärderingspoäng** om lönefilen har kolumnen Poäng — då väljs det
-   automatiskt och paren jämförs även över BAS-gränserna. Jämförelseyrkena hämtas i första hand
+   automatiskt och paren jämförs även över BAS-gränserna. Jämförelseyrkena är **alla yrken som inte är
+   kvinnodominerade**, både mansdominerade och könsblandade, och könsandelen i jämförelseyrket står i
+   partabellen (kolumnen *Könsandel*, med klassen mansdominerad eller blandad). Vill ni bara jämföra med
+   mansdominerade yrken kryssar ni i *Jämför bara med mansdominerade yrken* i flikens inställningar (av som
+   standard); valet följer med i konfigurationsfilen och organisationspaketet. Jämförelseyrkena hämtas i första hand
    ur den egna organisationen; jämförelsestatistiken används bara där ett eget
    jämförelseyrke saknas. Den slutliga kravvärderingen gör du utifrån befattningsbeskrivning.
    Fliken visar som standard högst 20 par med en skillnad på minst 5 %; båda gränserna kan
@@ -292,7 +296,10 @@ rubrikraden, också när det är hopfällt.
    intervall som kvinnodominerad, könsblandad eller mansdominerad, med en sammanfattning per intervall. De listar
    också par där ett arbete i lägre BAS som inte är kvinnodominerat har högre medianlön än ett kvinnodominerat
    arbete i högre BAS. Definitionen av kvinnodominerat väljs i flikens inställningar: **Förarbetena** (mer än tröskeln, standard)
-   eller **SCB** (tröskeln eller mer); valet står i Excel-bladen och i metodbladet.
+   eller **SCB** (tröskeln eller mer); mansdominerat är samma gräns för män och övriga är könsblandade. Samma
+   definition och samma jämförelseyrken gäller i hela verktyget: kandidatparen, *Lägre krav, högre lön*,
+   tabellerna per BAS-intervall, Lika arbetes kolumn Dominans, Löneöversynens *Varav till kvinnodominerade
+   grupper* och Lönepolitikens diagram. Valet står i Excel-bladen och i metodbladet.
    Bredvid skillnaden står kolumnen **Justerad för ålder**: jämförelseyrkets lön omräknad till
    det kvinnodominerade yrkets åldersfördelning. Den råa skillnaden är den lagen prövar:
    lönenivån som sådan. Den justerade visar hur mycket av skillnaden som kan bero på att

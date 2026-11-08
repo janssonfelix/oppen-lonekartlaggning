@@ -46,6 +46,8 @@ describe('demot: förifyllda skäl på tre rader', () => {
 describe('rapportmodellen: handlingsplanens avsnitt', () => {
     it('efter åtgärdstabellen: Sakliga skäl per grupp och Sammanställning per kategori, med en dämpad mening om bedömningen', () => {
         const w = demo();
+        // Sedan ADR-60 går demots tre skäl till kandidatpar; ett skäl på Barnskötare (en man, under tröskeln) ger en grupp utan belopp.
+        w.eval(`_hpSattSkal('prio|403010|C', [{ kategori: 'marknad', belopp: 500, kommentar: '' }])`);
         const a = atgarder(w);
         const tabeller = a.delar.filter(p => p.typ === 'tabell');
         expect(tabeller.length).toBe(3);
