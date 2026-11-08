@@ -174,8 +174,10 @@ adaptern verkligen delegerar vaktas av `tests/drift.test.js`:
      standardband 5 %) — även över BAS-gränserna.
 3. **Steg 3:** Flagga par där jämförelseyrkets median är högre än minsta skillnaden
    `minGapPct`, med bootstrap-KI på medianskillnaden, och visa högst `topN` par. I verktyget
-   är standardvärdena **5 %** och **20 par** (`state.likvardighet` i `12-tillstand.js`;
-   användaren kan ändra dem i fliken, 0–50 % och 10–500 par). Modulens egna standardvärden,
+   är standardvärdena **0 %** och **20 par** (`state.likvardighet` i `12-tillstand.js`;
+   användaren kan ändra dem i fliken, 0–50 % och 10–500 par). 0 % visar alla par där
+   jämförelseyrket har högre lön; 5 % är ett valbart filter, och knappen *Visa alla* visar
+   paren utöver de 20 (ADR-61). Modulens egna standardvärden,
    0 % och 100 par, gäller bara när den anropas utan inställningar, som i enhetstesterna.
    Den råa medianskillnaden är huvudmåttet — lagen prövar lönenivån som sådan. Interna par
    får därtill en **åldersjusterad skillnad** (`aldersjusteradSkillnad`): i jämförelseyrket
@@ -241,7 +243,7 @@ adaptern verkligen delegerar vaktas av `tests/drift.test.js`:
   rätt grupp. Utskriftsfönstret för checklistorna (`printScaffoldView`) läser `:root` och allt från `.dold` till
   stilmallens slut ur den körande stilmallen och lägger in det som byggt stilark (`adoptedStyleSheets`): ett `<style>`-element
   som skriptet skapar blockeras av den ärvda CSP:n (`style-src-elem`), så fönstret var tidigare helt ostilat.
-- **Tester:** Vitest — 3006 tester i 95 filer: rena `src/lib/`-moduler, CSV-parsning, jsdom-röktest
+- **Tester:** Vitest — 3009 tester i 95 filer: rena `src/lib/`-moduler, CSV-parsning, jsdom-röktest
   av varje vy (ADR-7; `tests/smoke.test.js` med det delade fönstret och sju `tests/smoke-*.test.js` per
   område), k-tröskeln i åtta `tests/ktroskel*.test.js` med riggen i `tests/helpers/ktroskel-rigg.js`,
   gränssnittet i `tests/granssnitt*.test.js` (riggen `tests/helpers/granssnitt-rigg.js`) och diagramvyerna i
@@ -1395,6 +1397,18 @@ jämställdhetsmått bygger på gapet) och berörs inte. Texterna säger *mer ä
 Lönekartläggningens regler om kvinnodominerat arbete beskrivs i `lagrum.md`; tolkningen att jämförelsemängden är
 alla som inte är kvinnodominerade är ett förslag, inte prövat av jurist. Vaktas av `tests/likvardighet.test.js`,
 `tests/aidbas.test.js`, `tests/smoke-vyer.test.js` (demot i BAS C) och `tests/smoke-aidbas.test.js`.
+
+**ADR-61 — Minsta skillnad 0 % som standard i likvärdigt arbete.** Beslut 2026-11-08. Kandidatparen visades tidigare
+bara när jämförelseyrket låg minst 5 % högre, så ett par med 2 % skillnad syntes aldrig utan att användaren ändrat
+fältet; i demot föll Undersköterska–Systemutvecklare i BAS C bort. Nu är `state.likvardighet.minGapPct` 0: alla par
+där jämförelseyrket har högre lön visas, och 5 % är ett valbart filter i fältet *Visa bara par med minst … % skillnad
+(0 = alla)*. Tabellen visar som förut de `topN` (20) största; finns fler står knappen *Visa alla*. `byggPar` och
+`byggParPoäng` räknar paren före urvalet (`parAntal`: totalt, hur många som har en ojusterad löneskillnad på minst
+5 % enligt `direktivMarkering` ur `src/lib/status.js`, och hur många som har en säker skillnad), och nyckeltalet *Par
+att titta närmare på* säger *N, varav M med ojusterad löneskillnad ≥ 5 %*, så att direktivnivån syns utan att paren
+under den döljs. *Lägre krav, högre lön* använder samma `minGapPct`. Organisationspaketet bär inte värdet;
+konfigurationsfilen gör det som förut. Vaktas av `tests/likvardighet.test.js`, `tests/smoke-vyer.test.js` och
+`tests/granssnitt-vyer.test.js`.
 
 ## 9. Öppna punkter
 

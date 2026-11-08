@@ -289,8 +289,11 @@ rubrikraden, också när det är hopfällt.
    standard); valet följer med i konfigurationsfilen och organisationspaketet. Jämförelseyrkena hämtas i första hand
    ur den egna organisationen; jämförelsestatistiken används bara där ett eget
    jämförelseyrke saknas. Den slutliga kravvärderingen gör du utifrån befattningsbeskrivning.
-   Fliken visar som standard högst 20 par med en skillnad på minst 5 %; båda gränserna kan
-   ändras i fliken (*Minsta skillnad* och antal par). Fliken och dess egen export visar par även
+   Fliken visar som standard alla par där jämförelseyrket har högre lön, de 20 största i tabellen (knappen
+   *Visa alla* visar resten). Nyckeltalet *Par att titta närmare på* säger hur många par det är och hur många av dem
+   som har en ojusterad löneskillnad på minst 5 %. Vill ni bara se par med minst en viss skillnad, till exempel 5 %,
+   anger ni den i fältet *Visa bara par med minst … % skillnad* (0 = alla); antalet par ändras också i fliken.
+   Fliken och dess egen export visar par även
    när en grupp är liten — hantera dem därefter.
    Avsnitten **Likvärdigt arbete** per BAS-intervall och **Hierarkisk jämförelse** klassar varje yrkesgrupp i varje
    intervall som kvinnodominerad, könsblandad eller mansdominerad, med en sammanfattning per intervall. De listar

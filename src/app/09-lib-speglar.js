@@ -757,6 +757,7 @@ const __mirrorLikvardighet = (() => {
     // importer ur tidigare speglade lib-moduler
     const _median = __mirrorStat.median;
     const rngFor = __mirrorRng.rngFor;
+    const direktivMarkering = __mirrorStatus.direktivMarkering;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -796,6 +797,7 @@ const __mirrorLikvardighet = (() => {
  *
  * @see 34-likvardigt-arbete.js computeLikvardighetPairs
  */
+
 
 
 
@@ -1072,6 +1074,22 @@ function orgIckeKvByBas(orgIckeKv) {
 }
 
 /**
+ * Antalet par som klarat minsta gapet, räknat FÖRE topN-urvalet (ADR-61): totalt, hur många som når direktivnivån 5 %
+ * på det ojusterade gapet (det kvinnodominerade yrkets median i % av jämförelseyrkets, direktivMarkering) och hur
+ * många som har en säker skillnad (hela KI:t över 0).
+ * @param {Array} candidates
+ * @returns {{totalt:number, overDirektiv:number, sakra:number}}
+ */
+function _parAntal(candidates) {
+    let overDirektiv = 0, sakra = 0;
+    for (const p of candidates) {
+        if (p.maMedian > 0 && direktivMarkering(p.kvMedian / p.maMedian * 100)) overDirektiv++;
+        if (p.gapCI && p.gapCI.lo != null && p.gapCI.lo > 0) sakra++;
+    }
+    return { totalt: candidates.length, overDirektiv, sakra };
+}
+
+/**
  * Steg 3 — bygg kandidatpar inom samma BAS. Per BAS väljs organisationens
  * egna icke-kv-dom yrken (intern, primärt); saknas sådant används jämförelsestatistiken
  * (extern fallback). Flagga par där jämförelseyrkets median > org-median.
@@ -1080,7 +1098,7 @@ function orgIckeKvByBas(orgIckeKv) {
  * @param {Map} internByBas - från orgIckeKvByBas()
  * @param {Map} externByBas - statByBas från klassificeraStatistik()
  * @param {Object} [opts] - { minGap, topN, B, rng, golv }
- * @returns {{pairs:Array, jämförelse:Object}}
+ * @returns {{pairs:Array, jämförelse:Object, antal:{totalt:number, overDirektiv:number, sakra:number}}}
  */
 function byggPar(orgKvDom, internByBas, externByBas, opts = {}) {
     const minGap = opts.minGap ?? 0;
@@ -1101,7 +1119,7 @@ function byggPar(orgKvDom, internByBas, externByBas, opts = {}) {
     const pairs = [];
     internByBas = internByBas || new Map();
     externByBas = externByBas || new Map();
-    if (!orgKvDom?.length || (!internByBas.size && !externByBas.size)) return { pairs, jämförelse };
+    if (!orgKvDom?.length || (!internByBas.size && !externByBas.size)) return { pairs, jämförelse, antal: _parAntal(pairs) };
 
     const orgBasSet = new Set(orgKvDom.map(f => f.bas));
     const jämförBasSet = new Set([...internByBas.keys(), ...externByBas.keys()]);
@@ -1160,7 +1178,7 @@ function byggPar(orgKvDom, internByBas, externByBas, opts = {}) {
         }
     }
     candidates.sort((a, b) => b.gapPct - a.gapPct);
-    return { pairs: candidates.slice(0, topN), jämförelse };
+    return { pairs: candidates.slice(0, topN), jämförelse, antal: _parAntal(candidates) };
 }
 
 /**
@@ -1175,7 +1193,7 @@ function byggPar(orgKvDom, internByBas, externByBas, opts = {}) {
  * @param {Array} externAll - jämförelsestatistikens icke-kv-dom yrken (flat)
  * @param {Map<string,number>} poangByKey - 'AID|BAS' eller 'AID' → poäng
  * @param {Object} [opts] - { minGap, topN, B, rng, bandPct, golv }
- * @returns {{pairs:Array, jämförelse:Object}}
+ * @returns {{pairs:Array, jämförelse:Object, antal:{totalt:number, overDirektiv:number, sakra:number}}}
  */
 function byggParPoäng(orgKvDom, internAll, externAll, poangByKey, opts = {}) {
     const minGap = opts.minGap ?? 0;
@@ -1199,7 +1217,7 @@ function byggParPoäng(orgKvDom, internAll, externAll, poangByKey, opts = {}) {
     internAll = internAll || [];
     externAll = externAll || [];
     poangByKey = poangByKey || new Map();
-    if (!orgKvDom.length || !poangByKey.size) return { pairs, jämförelse };
+    if (!orgKvDom.length || !poangByKey.size) return { pairs, jämförelse, antal: _parAntal(pairs) };
 
     const poangFor = g => poangByKey.get(g.aid + '|' + g.bas) ?? poangByKey.get(String(g.aid)) ?? null;
     const candidates = [];
@@ -1252,7 +1270,7 @@ function byggParPoäng(orgKvDom, internAll, externAll, poangByKey, opts = {}) {
         }
     }
     candidates.sort((a, b) => b.gapPct - a.gapPct);
-    return { pairs: candidates.slice(0, topN), jämförelse };
+    return { pairs: candidates.slice(0, topN), jämförelse, antal: _parAntal(candidates) };
 }
 
 /**
@@ -1319,7 +1337,7 @@ function basRangFn(allaBas) {
  * @param {Object} [input.opts] - { kvinnoTrosholdPct, kvDomDefinition, jamforelse, minGapPct, topN, B, rng, k, aldersGolv }
  *   kvDomDefinition: 'do' (mer än tröskeln, standard) | 'scb' (tröskeln eller mer).
  *   jamforelse: 'alla' (alla som inte är kvinnodominerade, standard) | 'mansdominerade' (ADR-60).
- * @returns {{orgKvDom:Array, orgIckeKv:Array, statIckeKv:Array, pairs:Array, lagreKrav:Array, diagnostik:Object, opts:Object}}
+ * @returns {{orgKvDom:Array, orgIckeKv:Array, statIckeKv:Array, pairs:Array, parAntal:{totalt:number, overDirektiv:number, sakra:number}, lagreKrav:Array, diagnostik:Object, opts:Object}}
  */
 function computeLikvardighetPairs({ data = [], statistik = [], scbKlass = null, opts = {} } = {}) {
     const kvinnoThr = opts.kvinnoTrosholdPct ?? KVINNO_TROSKEL_DEFAULT;
@@ -1365,6 +1383,7 @@ function computeLikvardighetPairs({ data = [], statistik = [], scbKlass = null, 
         orgIckeKv: s1.orgIckeKv,
         statIckeKv: s2.statIckeKv,
         pairs: s3.pairs,
+        parAntal: s3.antal,   // alla par före topN-urvalet (ADR-61)
         lagreKrav,
         diagnostik: {
             organisation: {

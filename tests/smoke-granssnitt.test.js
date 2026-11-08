@@ -908,7 +908,8 @@ describe('Lägre krav, högre lön', () => {
         const sek = w.document.getElementById('likvardighet-lagre-krav');
         expect(sek).not.toBeNull();
         expect(sek.textContent).toContain('Lägre krav, högre lön');
-        expect(w.document.querySelectorAll('#likvardighet-lagre-krav-table tbody tr')).toHaveLength(1);
+        // Med minsta gap 0 % som standard (ADR-61) står också det blandade yrket 300 (ca 3 % högre) med.
+        expect(w.document.querySelectorAll('#likvardighet-lagre-krav-table tbody tr')).toHaveLength(2);
         expect(sek.textContent).not.toMatch(/§|3 kap\./);
         const ids = w.__rapportunderlagBlock().map(b => b.id);
         expect(ids.indexOf('lagreKrav')).toBe(ids.indexOf('likvardigt') + 1);

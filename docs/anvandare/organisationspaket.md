@@ -25,8 +25,8 @@ filer) finns ingen referens att jämföra mot.
 | Jämförelsestatistik | Median (och gärna P10, P90 och könsfördelning) per yrke och BAS | Fliken Löneläget, prioritering mot statistiken och reserven i Likvärdigt arbete |
 
 Ställningstagandet och jämförelsestatistiken är var för sig valfria, men paketet måste
-innehålla minst det ena. Analysens trösklar (t.ex. 60 % för kvinnodominans och 5 % för
-flaggning) ingår inte — de är verktygets standard och kan ändras av handläggaren. Valet av
+innehålla minst det ena. Analysens trösklar (t.ex. 60 % för kvinnodominans och minsta skillnad för
+kandidatparen, standard 0 %) ingår inte — de är verktygets standard och kan ändras av handläggaren. Valet av
 jämförelseyrken i likvärdigt arbete (`jamforelse`) är det enda analysvalet paketet kan bära.
 
 **Paketet innehåller inga personuppgifter** — bara organisationens ställningstagande och

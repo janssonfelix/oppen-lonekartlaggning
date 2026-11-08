@@ -447,7 +447,7 @@ function renderLikvardighet() {
                     ${result.orgIckeKv.length} interna och ${result.statIckeKv.length} externa jämförelseyrken.
                     Inom de ${d.jämförelse.gemensammaBas} gemensamma BAS-intervallen har inget
                     jämförelseyrke högre lön än organisationens kvinnodominerade yrken.
-                    ${cfg.minGapPct > 0 ? `(Minsta skillnad är satt till ${cfg.minGapPct} %.)` : ''}
+                    ${cfg.minGapPct > 0 ? `(Bara par med minst ${cfg.minGapPct} % skillnad visas, efter valet i Inställningar.)` : ''}
                 </p>
             </div>`;
     } else {
@@ -522,9 +522,9 @@ function renderLikvardighet() {
                     <label for="lv-bara-mansdominerade" title="Av som standard: då jämförs med alla yrken som inte är kvinnodominerade, både mansdominerade och blandade.">Jämför bara med mansdominerade yrken</label>
                 </div>
                 <div class="mitt rad-inline gap-8">
-                    <label for="lv-min-gap">Minsta skillnad:</label>
+                    <label for="lv-min-gap">Visa bara par med minst</label>
                     <input type="number" id="lv-min-gap" min="0" max="50" step="1" value="${cfg.minGapPct}" class="form-select bredd-64">
-                    <span>%</span>
+                    <span>% skillnad (0 = alla)</span>
                 </div>
                 <div class="mitt rad-inline gap-8">
                     <label for="lv-top-n">Visa max:</label>
@@ -558,8 +558,13 @@ function renderLikvardighet() {
             <summary><span class="avsnitt-titel"><h2>${rubrik}</h2><span class="avsnitt-under">${under}</span></span><span class="avsnitt-nyckel" id="nyckel-lv-${namn}">${esc(nyckel)}</span></summary>
             ${innehall}</details>`;
     };
-    const std = { kvinnoTrosholdPct: 60, minGapPct: 5, topN: 20 };   // samma som utgångsläget i 12-tillstand.js
+    const std = { kvinnoTrosholdPct: 60, minGapPct: 0, topN: 20 };   // samma som utgångsläget i 12-tillstand.js
     const anpassat = cfg.kvinnoTrosholdPct !== std.kvinnoTrosholdPct || cfg.minGapPct !== std.minGapPct || cfg.topN !== std.topN || aidbasDefinition() !== 'do' || lvJamforelse() !== 'alla';
+    // Fliken visar de största paren (Visa max); finns fler står en knapp som visar alla (ADR-61).
+    const antal = lvParAntal(result);
+    const visaAllaHtml = (jämförOK && antal.totalt > result.pairs.length) ? `
+        <p class="text-dampad-xs marg-8-0">Tabellen visar de ${svTal(result.pairs.length, 0)} största skillnaderna av ${svTal(antal.totalt, 0)} par.
+            <button type="button" id="lv-visa-alla" class="btn btn-secondary btn-sm">Visa alla ${svTal(antal.totalt, 0)} par</button></p>` : '';
     _lvRitaTopp(result);
     wrap.innerHTML =
         felHtml +
@@ -570,7 +575,8 @@ function renderLikvardighet() {
             <p id="lv-krav-not" class="text-dampad-xs marg-8-0-0"></p>
         </div>` +
         `<p class="avsnitt-rubrikrad">Fördjupning</p>` +
-        avsnitt('par', 'Par att titta närmare på', 'Kvinnodominerade yrken mot jämförelseyrken med högre lön i samma BAS-intervall', `${result.pairs.length} par`,
+        avsnitt('par', 'Par att titta närmare på', 'Kvinnodominerade yrken mot jämförelseyrken med högre lön i samma BAS-intervall',
+            antal.totalt > result.pairs.length ? `${result.pairs.length} av ${antal.totalt} par` : `${result.pairs.length} par`,
         exportHtml +
         ((jämförOK && result.pairs.length) ? `
         <div class="card mb-14">
@@ -580,7 +586,7 @@ function renderLikvardighet() {
             </div>
             <div id="chart-likvardighet-heatmap"></div>
         </div>` : '') +
-        parTblHtml +
+        parTblHtml + visaAllaHtml +
         _lagreKravHtml(result)) +
         avsnitt('underlag', 'Yrkena bakom jämförelsen', 'Steg för steg: de kvinnodominerade yrkena och jämförelseyrkena',
             `${result.orgKvDom.length} kvinnodominerade, ${result.orgIckeKv.length + result.statIckeKv.length} att jämföra med`,
@@ -606,6 +612,10 @@ function renderLikvardighet() {
     onNumChange('lv-kvinno-thr', 'kvinnoTrosholdPct', 50, 70);
     onNumChange('lv-min-gap',    'minGapPct',         0, 50);
     onNumChange('lv-top-n',      'topN',              10, 500);
+    document.getElementById('lv-visa-alla')?.addEventListener('click', () => {
+        state.likvardighet.topN = Math.max(10, antal.totalt);
+        renderLikvardighet();
+    });
     document.getElementById('lv-kv-definition')?.addEventListener('change', e => {
         state.likvardighet.kvDomDefinition = /** @type {HTMLSelectElement} */ (e.target).value === 'scb' ? 'scb' : 'do';
         state.likvardighet.result = null;
@@ -648,20 +658,35 @@ function renderLikvardighet() {
 // äkta 2D-matris. Tabellen finns kvar som tillgänglighetsalternativ (role="img"
 // + aria pekar dit). Färgen är enkelriktad (PALETTE.sekventiell): rödare cell =
 // större gap = jämförelseyrket tjänar mer än det kvinnodominerade yrket.
+/**
+ * Antalet par före Visa max-urvalet (lib: parAntal). Ett resultat utan räkningen (felvägen) räknas ur de par som finns.
+ * @param {any} result
+ * @returns {{totalt:number, overDirektiv:number, sakra:number}}
+ */
+function lvParAntal(result) {
+    if (result && result.parAntal) return result.parAntal;
+    const par = (result && result.pairs) || [];
+    return { totalt: par.length,
+             overDirektiv: par.filter(p => p.maMedian > 0 && _stsDirektiv(p.kvMedian / p.maMedian * 100)).length,
+             sakra: par.filter(p => p.gapCI && p.gapCI.lo != null && p.gapCI.lo > 0).length };
+}
 /** Flikens topp: urvalsraden och slutsatserna. Talen är de som tabellerna i fliken visar (paren är redan prövade mot tröskeln). */
 function _lvRitaTopp(result) {
     const urval = document.getElementById('lv-urval'), host = document.getElementById('lv-slutsatser');
     if (!urval || !host) return;
     if (!result) { urval.textContent = ''; host.innerHTML = ''; return; }
     urval.innerHTML = `<span><strong>Hela urvalet</strong> · ${svTal(getData().length, 0)} personer</span>${kTroskelLank()}`;
-    const par = result.pairs, sakra = par.filter(p => p.gapCI && p.gapCI.lo != null && p.gapCI.lo > 0).length;
+    const par = result.pairs, antal = lvParAntal(result);
     const storst = par.reduce((a, p) => (!a || p.gapPct > a.gapPct ? p : a), null);
     host.innerHTML = _laSlutsats('Kvinnodominerade yrken', svTal(result.orgKvDom.length, 0), `${kvDomGransText()} kvinnor`)
         + _laSlutsats('Jämförelseyrken', svTal(result.orgIckeKv.length + result.statIckeKv.length, 0), `${result.orgIckeKv.length} egna, ${result.statIckeKv.length} ur statistiken`, false,
             lvJamforelse() === 'mansdominerade'
                 ? `Bara mansdominerade yrken (${jamforelseGransText()}), egna och ur jämförelsestatistiken`
                 : `Yrken som inte är kvinnodominerade (${jamforelseGransText()}): mansdominerade och blandade, egna och ur jämförelsestatistiken`)
-        + _laSlutsats('Par att titta närmare på', svTal(par.length, 0), par.length ? `${sakra} med säker skillnad` : 'Inget jämförelseyrke ligger högre')
+        // Alla par räknas, också de som Visa max inte visar; direktivnivån 5 % syns utan att dölja paren under den (ADR-61).
+        + _laSlutsats('Par att titta närmare på', svTal(antal.totalt, 0),
+            antal.totalt ? `varav ${svTal(antal.overDirektiv, 0)} med ${_STS_DIR_KOLUMN.toLowerCase()}, ${svTal(antal.sakra, 0)} med säker skillnad` : 'Inget jämförelseyrke ligger högre', false,
+            antal.totalt ? `${_STS_DIR_KOLUMN}: det kvinnodominerade yrkets medianlön är minst 5 % under jämförelseyrkets. ${_STS_DIR_TIPS}` : '')
         // Nyckeltalen visar kvinnors lön i % av mäns (här: det kvinnodominerade yrkets median i % av jämförelseyrkets);
         // partabellen behåller sin skillnad, hur mycket mer jämförelseyrket tjänar, och verktygstipset säger hur de hänger ihop.
         + (storst ? _laSlutsats('Största skillnaden', svPct(storst.kvMedian / storst.maMedian * 100, 1), `${storst.kvLabel || storst.kvAid} i % av ${storst.maLabel || storst.maAid}`, false,

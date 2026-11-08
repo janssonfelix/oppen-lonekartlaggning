@@ -87,8 +87,8 @@ const BES8_STOD = {
             if (state.likvardighet) state.likvardighet.result = lv;
         }
         if (!lv || !Array.isArray(lv.pairs) || !d.length) return null;
-        const par = lv.pairs, sakra = par.filter(p => p.gapCI && p.gapCI.lo != null && p.gapCI.lo > 0).length;
-        return par.length ? `Likvärdigt arbete har ${svTal(par.length, 0)} par att titta närmare på, ${svTal(sakra, 0)} med säker skillnad.`
+        const { totalt, sakra } = lvParAntal(lv);
+        return totalt ? `Likvärdigt arbete har ${svTal(totalt, 0)} par att titta närmare på, ${svTal(sakra, 0)} med säker skillnad.`
             : 'Likvärdigt arbete har inget par att titta närmare på: inget jämförelseyrke ligger högre.';
     },
     matrix(d) {

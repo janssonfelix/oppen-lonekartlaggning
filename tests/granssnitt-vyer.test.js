@@ -110,6 +110,18 @@ describe('kandidatparens tabell', () => {
         expect(under.title).toMatch(/nationellt \(SKR:s personalstatistik, [a-z]+ \d{4}\)/);
         expect(las('src/style.css')).toMatch(/#likvardighet-table td\.t-hoger[^{]*\{ white-space: nowrap; \}/);
     });
+    it('ett par under 5 % syns utan att något ändrats, och fältet säger att 0 betyder alla (ADR-61)', () => {
+        const w = createAppWindow();
+        w.__loadDemoData();
+        w.__renderTabContent('likvardighet');
+        const d = w.document;
+        expect(w.__state.likvardighet.minGapPct).toBe(0);
+        const lv = w.__state.likvardighet.result;
+        const smatt = lv.pairs.filter(p => p.gapPct > 0 && p.gapPct < 5);
+        expect(smatt.length).toBeGreaterThan(0);
+        expect(d.querySelectorAll('#likvardighet-table tbody tr')).toHaveLength(lv.pairs.length);
+        expect(d.getElementById('lv-min-gap').closest('div').textContent.replace(/\s+/g, ' ').trim()).toBe('Visa bara par med minst % skillnad (0 = alla)');
+    });
 });
 
 describe('Löneöversikten i Utforska', () => {

@@ -282,6 +282,20 @@ describe('byggPar — Steg 3 parbygge (v4 intern/extern)', () => {
         expect(pairs[1].maAid).toBe('2053');
     });
 
+    it('räknar alla par före topN-urvalet: totalt, varav över direktivnivån 5 % (ADR-61)', () => {
+        const ext = statMap([
+            { aid: '2051', bas: 'B', median: 30600, kvAndel: 25, källa: 'lokal' }, // 2 %: kvinnodominerade yrket 98 % av jämförelseyrket
+            { aid: '2052', bas: 'B', median: 39000, kvAndel: 25, källa: 'lokal' }, // 30 %
+            { aid: '2053', bas: 'B', median: 36000, kvAndel: 25, källa: 'lokal' }  // 20 %
+        ]);
+        const { pairs, antal } = byggPar(orgKvDom, tomMap(), ext, { minGap: 0, topN: 2, rng: makeRng() });
+        expect(pairs).toHaveLength(2);
+        expect(antal.totalt).toBe(3);
+        expect(antal.overDirektiv).toBe(2);
+        expect(antal.sakra).toBeGreaterThanOrEqual(0);
+        expect(byggPar([], tomMap(), ext, {}).antal).toEqual({ totalt: 0, overDirektiv: 0, sakra: 0 });
+    });
+
     it('sätter påverkansindex = |gap| × n_organisation', () => {
         const ext = statMap([{ aid: '2051', bas: 'B', median: 38000, kvAndel: 25, källa: 'lokal' }]);
         const { pairs } = byggPar(orgKvDom, tomMap(), ext, { minGap: 0, topN: 100, rng: makeRng() });

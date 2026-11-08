@@ -720,13 +720,16 @@ describe('demodata med kandidatpar', () => {
         // Systemutvecklare i BAS C (23 kvinnor av 45) är blandad och därmed jämförelseyrke.
         const sysC = w.__computeLikvardighetPairs().orgIckeKv.find(g => g.bas === 'C' && /Systemutvecklare/.test(g.label));
         expect(sysC).toMatchObject({ n: 45, nKv: 23, klass: 'blandad' });
-        // Utan minsta gap: fyra par i BAS C, de två kvinnodominerade yrkena mot Drifttekniker och Systemutvecklare.
-        w.__state.likvardighet.minGapPct = 0;
+        // Standardvärdet är 0 % (ADR-61): utan att användaren ändrat något står fyra par i BAS C, de två kvinnodominerade
+        // yrkena mot Drifttekniker och Systemutvecklare — också Undersköterska–Systemutvecklare med under 5 % skillnad.
+        expect(w.__state.likvardighet.minGapPct).toBe(0);
         const lv = w.__computeLikvardighetPairs();
         const iC = lv.pairs.filter(p => p.kvBas === 'C').map(p => `${p.kvLabel}–${p.maLabel}`).sort();
         expect(iC).toEqual(['Barnskötare–Drifttekniker', 'Barnskötare–Systemutvecklare', 'Undersköterska–Drifttekniker', 'Undersköterska–Systemutvecklare']);
         expect(lv.pairs.find(p => /Systemutvecklare/.test(p.maLabel)).maKlass).toBe('blandad');
-        // Med standardgapet 5 % faller Undersköterska–Systemutvecklare bort (skillnaden är under 5 %).
+        const liten = lv.pairs.find(p => p.kvLabel === 'Undersköterska' && p.maLabel === 'Systemutvecklare');
+        expect(liten.gapPct).toBeLessThan(5);
+        // Med 5 % som valt filter faller Undersköterska–Systemutvecklare bort.
         w.__state.likvardighet.minGapPct = 5;
         expect(w.__computeLikvardighetPairs().pairs.filter(p => p.kvBas === 'C')).toHaveLength(3);
         // Filtret återskapar det tidigare urvalet: bara mansdominerade jämförelseyrken.
@@ -734,6 +737,33 @@ describe('demodata med kandidatpar', () => {
         const ma = w.__computeLikvardighetPairs();
         expect(ma.pairs.every(p => p.maKlass === 'mansdominerad')).toBe(true);
         expect(ma.pairs.some(p => /Systemutvecklare/.test(p.maLabel))).toBe(false);
+    });
+    it('nyckeltalet räknar alla par, varav dem över 5 %, och Visa alla visar paren som Visa max döljer (ADR-61)', () => {
+        const w = createAppWindow();
+        w.__loadDemoData();
+        const d = w.document;
+        d.querySelector('.nav-item[data-tab="likvardighet"]').click();
+        const lv = w.__state.likvardighet.result;
+        const over = lv.pairs.filter(p => p.kvMedian / p.maMedian <= 0.95 + 1e-12).length;
+        expect(lv.parAntal).toMatchObject({ totalt: lv.pairs.length, overDirektiv: over });
+        expect(over).toBeLessThan(lv.pairs.length);   // demot har par under 5 %, och de visas
+        const ruta = [...d.querySelectorAll('#lv-slutsatser .slutsats')].find(r => r.textContent.includes('Par att titta närmare på'));
+        expect(ruta.querySelector('.slutsats-varde').textContent).toBe(String(lv.pairs.length));
+        expect(ruta.querySelector('.slutsats-under').textContent).toMatch(new RegExp(`^varav ${over} med ojusterad löneskillnad ≥ 5 %, \\d+ med säker skillnad$`));
+        expect(d.getElementById('lv-min-gap').closest('div').textContent).toContain('Visa bara par med minst');
+        expect(d.getElementById('lv-min-gap').closest('div').textContent).toContain('% skillnad (0 = alla)');
+        expect(d.getElementById('lv-visa-alla')).toBeNull();
+        // Visa max under antalet par: tabellen visar de största, knappen visar alla.
+        const totalt = lv.pairs.length;
+        w.__state.likvardighet.topN = 2;
+        w.__state.likvardighet.result = null;
+        w.__renderTabContent('likvardighet');
+        expect(d.querySelectorAll('#likvardighet-table tbody tr')).toHaveLength(2);
+        expect(d.getElementById('nyckel-lv-par').textContent).toBe(`2 av ${totalt} par`);
+        expect([...d.querySelectorAll('#lv-slutsatser .slutsats-varde')][2].textContent).toBe(String(totalt));
+        d.getElementById('lv-visa-alla').click();
+        expect(d.querySelectorAll('#likvardighet-table tbody tr')).toHaveLength(totalt);
+        expect(d.getElementById('lv-visa-alla')).toBeNull();
     });
     it('rapportunderlaget får parblock och diagrammet över kandidatpar', () => {
         const w = createAppWindow();

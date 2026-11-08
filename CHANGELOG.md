@@ -19,6 +19,10 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   och följer med i konfigurationsfilen och organisationspaketet. En enda definition av kvinnodominerat (förarbetena
   eller SCB) gäller i hela verktyget, också i Lika arbetes kolumn Dominans, Löneöversynen, Lönepolitiken och
   SKR-uppslaget; texterna säger *mer än* eller *minst* efter valet.
+- **Likvärdigt arbete: minsta skillnad 0 % som standard (ADR-61).** Alla par där jämförelseyrket har högre lön visas
+  utan att något ändrats; 5 % är ett valbart filter (*Visa bara par med minst … % skillnad*). Nyckeltalet säger hur
+  många par det är och hur många som har en ojusterad löneskillnad på minst 5 %, och knappen *Visa alla* visar paren
+  utöver de 20.
 - **Sakliga skäl som strukturerad post.** Varje rad i Handlingsplan har knappen *Sakliga skäl*. Dialogen tar emot
   högst 8 skäl per grupp med kategori (Marknad, Utbildning, Erfarenhet, Prestation och resultat, Övergång, Annat
   sakligt skäl), belopp i kronor per månad och en kort kommentar. Den räknar ihop förklarat och återstående belopp och
