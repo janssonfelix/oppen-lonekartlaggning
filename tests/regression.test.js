@@ -326,3 +326,28 @@ describe('modellerna utan ålder i lönefilen (ADR-64)', () => {
         expect(aldersjusteradSkillnad(r.filter(d => d.kon === 'kvinna'), r.filter(d => d.kon === 'man'))).toBeNull();
     });
 });
+
+describe('modellerna filtrerar själva bort rader de inte kan räkna (B4)', () => {
+    const rader = () => fx.rows.map(r => ({ ...r }));
+    const basList = [...new Set(fx.rows.map(r => r.bas))].sort();
+    // En rad med okänt kön skulle annars kodas som man (kvinna = 0) och flytta könsgapet.
+    const okand = () => ({ ...fx.rows[0], kon: 'okänt', lon: fx.rows[0].lon * 3 });
+    const utanLon = () => ({ ...fx.rows[1], lon: 0 });
+    const gap = steg => steg.map(s => [s.name, s.status, s.gapPct]);
+    it('computeSequentialGap: rad med okänt kön eller lön 0 räknas inte', () => {
+        const utan = computeSequentialGap(rader(), fx.ageMean, basList, { golv: 10 });
+        const med = computeSequentialGap([...rader(), okand(), utanLon()], fx.ageMean, basList, { golv: 10 });
+        expect(gap(med)).toEqual(gap(utan));
+    });
+    it('computeVariabelTillfor: rad med okänt kön eller lön 0 räknas inte', () => {
+        const utan = computeVariabelTillfor(rader(), fx.ageMean, basList, { golv: 10, harYrke: true });
+        const med = computeVariabelTillfor([...rader(), okand(), utanLon()], fx.ageMean, basList, { golv: 10, harYrke: true });
+        expect(med.full).toEqual(utan.full);
+        expect(med.rader).toEqual(utan.rader);
+    });
+    it('rad med ålder 0 räknas inte när lönefilen har ålder', () => {
+        const utan = computeSequentialGap(rader(), fx.ageMean, basList, { golv: 10 });
+        const med = computeSequentialGap([...rader(), { ...fx.rows[2], alder: 0 }], fx.ageMean, basList, { golv: 10 });
+        expect(gap(med)).toEqual(gap(utan));
+    });
+});

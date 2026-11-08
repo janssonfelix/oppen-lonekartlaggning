@@ -123,8 +123,9 @@ profiler du redan har sparat i sessionen.
 Ta **inte** med personnummer, namn eller e-post i uttaget. Verktyget läser bara in de
 fält som står ovan. Det **avvisar hela filen** om det upptäcker en identifierande kolumn,
 antingen på rubriken (t.ex. `Personnummer`, `PNR`, `Namn`, `Efternamn`, `E-post`) eller på
-innehållet. Innehållet prövas i filens första 50 rader: minst tre celler i personnummer-
-eller e-postformat, eller minst fem som ser ut som för- och efternamn.
+innehållet. Innehållet prövas i 50 rader spridda jämnt över filen: minst tre celler i personnummer-
+eller e-postformat, eller minst fem som ser ut som för- och efternamn (också med versaler eller
+efternamnet först, som *ANDERSSON, ANNA*).
 Detsamma gäller kolumner vars rubrik antyder en särskild kategori av personuppgifter
 (`Fackmedlemskap`, `Hälsa`, `Sjukfrånvaro`, `Diagnos`, `Etnicitet` och liknande); där prövas bara rubriken.
 Ta bort sådana kolumner redan i uttaget ur lönesystemet.

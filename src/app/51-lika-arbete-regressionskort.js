@@ -197,6 +197,7 @@ function runOLSRegression() {
         triedSteps,
         diagnostics,
         n: chosen.n, k: chosen.k, ageMean,
+        hHoga: chosen.hHoga ?? 0,             // observationer med hävstång > 0,99 (B4, teknisk specifikation)
         konPct: pct, konPctLow: pctLow, konPctHigh: pctHigh,
         // Samma skattning som kvinnors lön i % av mäns (log-modellen: exp(β) × 100 = 100 + konPct), måttet i
         // flikarnas nyckeltalsrader.
@@ -228,7 +229,8 @@ function runOLSRegression() {
  * (klassisk och HC3) skalas med (n − p) / (n − p − G) för gruppnivåernas frihetsgrader, och k räknas med dem, så att
  * t-kvantilen och p-värdet använder rätt df. Resultatet får samma form som fitOLS med intercept (index 0 är en
  * tom konstant), så att resten av runOLSRegression läser kön på index 1 och ålder på index 2.
- * @returns {null | {beta:number[], vcovHC3:number[][], vcovClassic:number[][], R2:number, adjR2:number, n:number, k:number, rss:number}}
+ * hHoga räknas på den inomtransformerade designen, den som HC3 här räknas på.
+ * @returns {null | {beta:number[], vcovHC3:number[][], vcovClassic:number[][], R2:number, adjR2:number, n:number, k:number, rss:number, hHoga:number}}
  */
 function _regInomYrkesgrupp(raw, y, isKv, ageC, medAlder) {
     const kol = raw.map((_, i) => (medAlder ? [isKv[i], ageC[i]] : [isKv[i]]));
@@ -242,7 +244,7 @@ function _regInomYrkesgrupp(raw, y, isKv, ageC, medAlder) {
     const vidga = V => { const ut = [[0, ...V[0].map(() => 0)]]; for (const rad of V) ut.push([0, ...rad.map(v => v * skala)]); return ut; };
     const R2 = inom.R2Total(fit.rss);
     return { beta: [0, ...fit.beta], vcovHC3: vidga(fit.vcovHC3), vcovClassic: vidga(fit.vcovClassic), R2,
-        adjR2: 1 - (1 - R2) * (n - 1) / (n - k), n, k, rss: fit.rss };
+        adjR2: 1 - (1 - R2) * (n - 1) / (n - k), n, k, rss: fit.rss, hHoga: fit.hHoga };
 }
 
 function _formatPValue(p) {
@@ -1209,6 +1211,7 @@ function renderRegressionCard() {
                         <tr><th>Modellnotation</th><td><code>log(lön) ~ ${esc(r.modelDesc)}</code></td></tr>
                         <tr><th>Estimationsmetod</th><td>OLS (Ordinary Least Squares)</td></tr>
                         <tr><th>Standardfel</th><td>HC3 robust (Long &amp; Ervin 2000)</td></tr>
+                        <tr><th>Observationer med hävstång &gt; 0,99 (bidrar inte till HC3)</th><td>${r.hHoga ?? 0}</td></tr>
                         <tr><th>Antal observationer (n)</th><td>${r.n} (Kvinnor: ${r.nKvAnalysed}, Män: ${r.nMaAnalysed})</td></tr>
                         <tr><th>Antal parametrar (k)</th><td>${r.k}</td></tr>
                         <tr><th>Förklaringsgrad (R²)</th><td>${svPct((r.R2*100), 1)}</td></tr>

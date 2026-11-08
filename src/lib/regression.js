@@ -171,9 +171,10 @@ export function basIndikatorer(basList) {
 // modell = förklaringsmodellen (ADR-56): stegen är "Endast kön" följt av ett steg per vald variabel i ordningen
 // BAS, ålder, yrkesgrupp, var och en ovanpå de föregående. Yrkesgruppssteget räknas alltid när BAS är med (det
 // visas efter huvudtalet när det inte är valt, ADR-46); "+ Ansvar" läggs sist ovanpå den valda modellen.
-export function computeSequentialGap(rows, ageMean, basList, { golv, modell = FORKLARINGSMODELL_STANDARD }) {
-    const m = normaliseraForklaringsmodell(modell, { harAlder: harAlderIRader(rows) }).modell;
-    const { y, isKv, ageC, bygg, skatta, steg } = _sekvensRigg(rows, ageMean, basList);
+export function computeSequentialGap(rows0, ageMean, basList, { golv, modell = FORKLARINGSMODELL_STANDARD }) {
+    const m = normaliseraForklaringsmodell(modell, { harAlder: harAlderIRader(rows0) }).modell;
+    // rows = de rader modellen kan räkna (B4): filtret ligger i _sekvensRigg, så att anroparen inte behöver det.
+    const { rader: rows, y, isKv, ageC, bygg, skatta, steg } = _sekvensRigg(rows0, ageMean, basList);
     const olsVar = modellVariabler(m).filter(v => v !== 'yrkesgrupp');
     const ut = steg(olsVar).map(skatta);
     const medAlder = m.alder;
@@ -183,6 +184,7 @@ export function computeSequentialGap(rows, ageMean, basList, { golv, modell = FO
     // mindre grupper räknas med "inget". Redovisas separat, inte i huvudtalet (ADR-33).
     const grupper = ['ledning', 'uppdrag'].filter(g => rows.filter(r => r.ansvarsgrupp === g).length >= golv);
     if (rows.some(r => r.ansvarsgrupp) && grupper.length) {
+        /** @type {any} */
         const ansvar = rows.map(d => grupper.map(g => (d.ansvarsgrupp === g ? 1 : 0)));
         ut.push(m.yrkesgrupp
             ? computeYrkesgruppGap(rows, y, isKv, ageC, { medAlder, extra: ansvar, name: '+ Ansvar' })
@@ -196,16 +198,17 @@ export function computeSequentialGap(rows, ageMean, basList, { golv, modell = FO
  * fullmodellen kön + BAS + ålder oberoende av vad som är valt, så att tabellen i panelen står still när man
  * kryssar. Yrkesgrupp mäts ovanpå fullmodellen (den är en tilläggsvariabel, aldrig i förslaget). Utan ålder i
  * lönefilen (ADR-64) är fullmodellen kön + BAS och ålder får ingen rad.
- * @param {any[]} rows @param {number} ageMean @param {string[]} basList
+ * @param {any[]} rows0 råraderna; filtreras i _sekvensRigg (B4) @param {number} ageMean @param {string[]} basList
  * @param {{golv:number, harYrke?:boolean}} opts harYrke = datat har AID eller yrke
  * @returns {{full:{status:string, gapPct?:number, R2?:number, k?:number},
  *   rader:Array<{variabel:'bas'|'alder'|'yrkesgrupp', deltaR2pp:number, gapUtan:number, gapMed:number, tillforLite:boolean, status:string}>,
  *   forslag:{tabort:string[]}}}
  */
-export function computeVariabelTillfor(rows, ageMean, basList, { golv: _golv, harYrke = false }) {
-    const { y, isKv, ageC, bygg, skatta } = _sekvensRigg(rows, ageMean, basList);
+export function computeVariabelTillfor(rows0, ageMean, basList, { golv: _golv, harYrke = false }) {
+    // Samma filter som i stegen (B4): lön > 0, kvinna eller man, ålder > 0 när lönefilen har ålder.
+    const harAlder = harAlderIRader(rows0);
+    const { rader: rows, y, isKv, ageC, bygg, skatta } = _sekvensRigg(rows0, ageMean, basList, { medAlder: harAlder });
     const fit = vars => skatta({ name: vars.join('+'), X: bygg(vars) });
-    const harAlder = harAlderIRader(rows);
     const full = fit(harAlder ? ['bas', 'alder'] : ['bas']);
     const rad = (variabel, utan, med) => {
         const status = utan.status === 'ok' && med.status === 'ok' ? 'ok' : utan.status !== 'ok' ? utan.status : med.status;
@@ -222,7 +225,12 @@ export function computeVariabelTillfor(rows, ageMean, basList, { golv: _golv, ha
 
 // Det gemensamma underlaget för stegen: logaritmerad lön, könsindikator, centrerad ålder, BAS-indikatorer och
 // hjälparna som bygger en designmatris av valda variabler och skattar ett steg.
-function _sekvensRigg(rows, ageMean, basList) {
+// Raderna filtreras här (B4), som i computePerBasGap: lön > 0 (annars log = -Infinity), kvinna eller man (annars
+// kodas okänt kön som man) och ålder > 0 när ålder ingår (medAlder; standard = lönefilen har ålder, ADR-64).
+// `rader` är de rader som matriserna byggs av; anroparen använder dem för steg som läser raderna direkt.
+/** @param {any[]} rows0 @param {number} ageMean @param {string[]} basList @param {{medAlder?: boolean}} [opts] */
+function _sekvensRigg(rows0, ageMean, basList, { medAlder = harAlderIRader(rows0) } = {}) {
+    const rows = (rows0 || []).filter(d => _modellRad(d, medAlder));
     const N = rows.length;
     const y    = rows.map(d => Math.log(d.lon));
     const isKv = rows.map(d => d.kon.includes('kvinna') ? 1 : 0);
@@ -237,12 +245,12 @@ function _sekvensRigg(rows, ageMean, basList) {
     const steg = vars => [{ name: 'Endast kön', X: bygg([]) }, ...vars.map((v, j) => ({ name: namn[v], X: bygg(vars.slice(0, j + 1)) }))];
     /** @param {{name:string, X:number[][]}} s @returns {{name:string, status:string, gapPct?:number, R2?:number, k?:number, nGrupper?:number, nGrupperBada?:number, nPersoner?:number, nEnkonade?:number}} */
     const skatta = s => {
-        if (N < s.X[0].length + 5) return { name: s.name, status: 'too_few' };
+        if (!N || N < s.X[0].length + 5) return { name: s.name, status: 'too_few' };
         const fit = fitOLS(s.X, y);
         if (!fit) return { name: s.name, status: 'singular' };
         return { name: s.name, status: 'ok', gapPct: (Math.exp(fit.beta[1]) - 1) * 100, R2: fit.R2, k: fit.k };
     };
-    return { y, isKv, ageC, bygg, skatta, steg };
+    return { rader: rows, y, isKv, ageC, bygg, skatta, steg };
 }
 
 /**
@@ -542,7 +550,7 @@ export function kvantilDesign(rows, modell = FORKLARINGSMODELL_STANDARD, { ageMe
     const bl = m.bas ? (basList || [...new Set(rader.map(d => d.bas))].sort()) : [];
     const am = m.alder ? (ageMean != null ? ageMean : rader.reduce((s, d) => s + d.alder, 0) / (rader.length || 1)) : NaN;
     const vars = ['alder', 'bas'].filter(v => m[v]);
-    const X = rader.length ? _sekvensRigg(rader, am, bl).bygg(vars) : [];
+    const X = rader.length ? _sekvensRigg(rader, am, bl, { medAlder: m.alder }).bygg(vars) : [];
     const kolumner = ['intercept', 'kvinna', ...vars.flatMap(v => (v === 'alder' ? ['alder'] : basIndikatorer(bl).map(b => `bas:${b}`)))];
     return { rader, X, y: rader.map(d => Math.log(d.lon)), kolumner, ageMean: am, basList: bl, modell: { bas: m.bas, alder: m.alder } };
 }

@@ -263,6 +263,12 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ### Analys
 
+- **Robusthet i små saker.** Den sekventiella dekomponeringen och *Vad varje variabel tillför* filtrerar själva bort
+  rader utan positiv lön, med okänt kön (räknades annars som män) eller utan ålder när lönefilen har ålder, som
+  regressionen per BAS-intervall redan gjorde. PII-kontrollen prövar värdena i 50 rader spridda jämnt över filen i
+  stället för de 50 första, i både CSV- och Excel-vägen, och känner igen namn med versaler, gemener och efternamnet
+  först med komma (*ANDERSSON, ANNA*). Regressionskortets tekniska specifikation visar antalet observationer med
+  hävstång > 0,99, som inte bidrar till de robusta standardfelen (HC3).
 - **Kvantilregressionen på huvudmodellens variabler (ADR-63).** Löneskillnaden vid P10, medianen och P90 skattas med
   samma variabler som huvudtalet enligt förklaringsmodellen (BAS-intervall som indikatorer, ålder när den är vald),
   utan yrkesgrupp inom BAS, i stället för BAS som ett tal. Tabellen har raden *P90 − P10* med bootstrap-intervall, och

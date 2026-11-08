@@ -31,7 +31,7 @@ snart som möjligt, och den som rapporterat nämns i versionsnyheterna om den vi
 - Att något skrivs till webbläsarens lagring. Spärren mot lagring har kända luckor
   (`docs/dataskydd/riskanalys.md` §6.2); de behöver inte rapporteras igen.
 - Att en fil med personnummer, namn eller e-post inte avvisas (kontrollen ser på
-  rubrikerna och de 50 första raderna), eller att en kolumnrubrik som antyder en särskild
+  rubrikerna och 50 rader spridda över filen), eller att en kolumnrubrik som antyder en särskild
   kategori av personuppgifter (fackmedlemskap, hälsa, etnicitet, religion, politisk åskådning,
   sexualliv, genetik, biometri) inte avvisas (kontrollen ser bara på rubriken).
 

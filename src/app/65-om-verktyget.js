@@ -68,11 +68,11 @@ const INFO_SECTIONS = {
         <p>Verktyget är utformat så att dataskydd är en arkitekturell egenskap, inte en process. Tre lager skyddar personuppgifter:</p>
 
         <h4>Lager 1 — Filen läses in en rad i taget</h4>
-        <p>Filen läses in i webbläsarens minne och avkodas. Under inläsningen finns alltså hela filens text där. Sedan läses en CSV-fil rad för rad (med biblioteket PapaParse, <code>step:</code>). De 50 första raderna hålls kvar för kontrollen mot personnummer, namn och e-post. Därefter minimeras varje rad direkt: bara fälten som analysen behöver behålls, och den råa raden släpps. Excel-filer (.xlsx) läses som ett helt blad och kontrolleras och minimeras på samma sätt. När inläsningen är klar finns bara de minimerade posterna kvar.</p>
+        <p>Filen läses in i webbläsarens minne och avkodas. Under inläsningen finns alltså hela filens text där. Sedan läses en CSV-fil rad för rad (med biblioteket PapaParse, <code>step:</code>). Varje rad minimeras direkt: bara fälten som analysen behöver behålls, och den råa raden släpps. Undantaget är 50 rader spridda jämnt över filen, som hålls kvar för kontrollen mot personnummer, namn och e-post; kontrollen görs när filen är läst, och fälls filen släpps allt. Excel-filer (.xlsx) läses som ett helt blad och kontrolleras och minimeras på samma sätt. När inläsningen är klar finns bara de minimerade posterna kvar.</p>
 
         <h4>Lager 2 — Bara det analysen behöver släpps in</h4>
         <ul>
-            <li><code>detectSensitiveColumns()</code> avvisar lönefiler med personnummer, namn eller e-post: kolumnrubrikerna prövas, och värdena i filens 50 första rader. Rubriker som antyder en särskild kategori av personuppgifter (fackmedlemskap, hälsa med mera) avvisas också. Från filerna med lönepolitik och jämförelsestatistik läses bara godkända kolumner med gruppvärden in.</li>
+            <li><code>detectSensitiveColumns()</code> avvisar lönefiler med personnummer, namn eller e-post: kolumnrubrikerna prövas, och värdena i 50 rader spridda jämnt över filen. Rubriker som antyder en särskild kategori av personuppgifter (fackmedlemskap, hälsa med mera) avvisas också. Från filerna med lönepolitik och jämförelsestatistik läses bara godkända kolumner med gruppvärden in.</li>
             <li><code>extractMinimalRecord()</code> accepterar <strong>endast 5 fält</strong>: BAS, yrke, lön, ålder, kön — plus valfri arbetsvärderingspoäng per befattning och valfri ansvarskod enligt AID. Radens nummer i filen sparas också.</li>
             <li><code>_cleanYrkeField()</code> trunkerar yrkesfält till AID-kod + 40-tecken etikett, maskerar namn-mönster</li>
         </ul>

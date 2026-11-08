@@ -2173,21 +2173,47 @@ function extractMinimalRecord(row) {
 }
 
 /**
+ * Steget mellan raderna som PII-kontrollen samplar i en fil med n rader: ⌈n/50⌉ (minst 1), så att högst 50 rader
+ * sprids jämnt över filen (B4). Delas av detectSensitiveColumns och den strömmande CSV-inläsningen.
+ * @param {number} n
+ */
+function _pnrSampelSteg(n) {
+    return Math.max(1, Math.ceil(n / 50));
+}
+
+/**
  * PNR-detektor: identifierar kolumner som innehåller personnummer, e-post eller namn.
  * Kombinerar headerbaserad upptäckt (rubrikens namn) med värdebaserad upptäckt
- * (samplar 50 rader och matchar mot regex). Trösklar är konservativa för att minimera
- * falska positiv på godtyckliga sifferserier (t.ex. anställningsnummer).
+ * (samplar 50 rader jämnt över filen, var ⌈n/50⌉:e rad, och matchar mot regex). Trösklar är konservativa för att
+ * minimera falska positiv på godtyckliga sifferserier (t.ex. anställningsnummer). Den strömmande CSV-inläsningen
+ * samlar själv var ⌈n/50⌉:e rad (_pnrSampelSteg) och lämnar högst 50 rader hit.
  * @param {Array<Object>} rows - Råa CSV-rader.
  * @returns {Array<{col:string, reason:string}>} Tom array om inga känsliga kolumner.
  */
 function detectSensitiveColumns(rows) {
     if (!rows || !rows.length) return [];
-    const sample = rows.slice(0, Math.min(50, rows.length));
+    // Jämnt över filen (B4): personnummer eller namn som bara finns längre ned ska också hittas.
+    const steg = _pnrSampelSteg(rows.length);
+    const sample = rows.filter((_, i) => i % steg === 0);
     const cols = Object.keys(rows[0] || {});
     // Strikt PNR-mönster: kräver giltig månad (01-12) och dag (01-31) för att undvika
     // falska träffar på godtyckliga sifferserier som anställningsnummer.
     const PNR  = /^(?:19|20)?\d{2}[-/]?[01]\d[-/]?[0-3]\d[-+]?\d{4}$/;
-    const NAME = /^[A-ZÅÄÖ][a-zåäö]+(?:[ -][A-ZÅÄÖ][a-zåäö]+){1,3}$/; // "Anna Andersson" / "Anna-Lisa Berg"
+    // Personnamn (B4): två till fyra ord, med eller utan efternamnet först följt av komma — "Anna Andersson",
+    // "Anna-Lisa Berg", "ANDERSSON, ANNA", "anna andersson". Alla ord har samma form (Versal-gemener, VERSALER eller
+    // gemener), så att befattningar som "Lärare grundskola" (stor bokstav bara först) inte räknas som namn.
+    const ORD = /^\p{L}{2,}(?:-\p{L}{2,})?$/u;
+    /** @param {string} w */
+    const form = w => (/^\p{Lu}\p{Ll}+(?:-\p{Lu}\p{Ll}+)?$/u.test(w) ? 'T' : w === w.toUpperCase() ? 'U' : w === w.toLowerCase() ? 'L' : '');
+    /** @param {string} v */
+    const liknarNamn = v => {
+        const delar = v.split(',');
+        if (delar.length > 2 || delar.some(d => !d.trim())) return false;
+        const ord = delar.flatMap(d => d.trim().split(/[ ]+/));
+        if (ord.length < 2 || ord.length > 4 || !ord.every(w => ORD.test(w))) return false;
+        const f = form(ord[0]);
+        return f !== '' && ord.every(w => form(w) === f);
+    };
 
     const issues = [];
     cols.forEach(col => {
@@ -2224,7 +2250,7 @@ function detectSensitiveColumns(rows) {
             if (!v) return;
             if (PNR.test(v)) pnrCount++;
             else if (v.includes('@') && /\.[a-z]{2,}$/i.test(v)) emailCount++;
-            else if (NAME.test(v)) nameCount++;
+            else if (liknarNamn(v)) nameCount++;
         });
         if (pnrCount >= 3)        issues.push({ col, reason: `Innehåller värden i personnummer-format (${pnrCount} av ${sample.length} sampelvärden matchar)` });
         else if (emailCount >= 3) issues.push({ col, reason: `Innehåller e-postadresser (${emailCount} av ${sample.length} sampelvärden)` });
@@ -2618,12 +2644,14 @@ function invert(A) {
  * OLS-estimat med klassisk + HC3-robusta vcov (Long & Ervin 2000).
  *
  * Returnerar identiskt fältnamn-gränssnitt som app.js _fitOLS:
- *   { beta, R2, n, k, vcovHC3, vcovClassic, rss, adjR2, sigma2, XtXinv }
+ *   { beta, R2, n, k, vcovHC3, vcovClassic, rss, adjR2, sigma2, XtXinv, hHoga }
+ * hHoga = antalet observationer med hävstång h_i > 0,99 (B4). De har (nästan) noll residual och bidrar inte till
+ * HC3-köttet; antalet visas i regressionskortets tekniska specifikation (en ensam person i en indikator ger h = 1).
  * Detta är "single source of truth" — app.js mirrar denna implementation.
  *
  * @param {number[][]} X - n×k designmatris.
  * @param {number[]} y    - n-vektor.
- * @returns {null | {beta:number[], R2:number, n:number, k:number, vcovHC3:number[][], vcovClassic:number[][], rss:number, adjR2:number, sigma2:number, XtXinv:number[][]}}
+ * @returns {null | {beta:number[], R2:number, n:number, k:number, vcovHC3:number[][], vcovClassic:number[][], rss:number, adjR2:number, sigma2:number, XtXinv:number[][], hHoga:number}}
  */
 function fitOLS(X, y) {
     const n = X.length, k = X[0].length;
@@ -2658,6 +2686,7 @@ function fitOLS(X, y) {
         }
         return s;
     });
+    const hHoga = h.filter(hi => hi > 0.99).length;
     const meat = Array.from({ length: k }, () => new Array(k).fill(0));
     for (let i = 0; i < n; i++) {
         const denom = (1 - h[i]) ** 2;
@@ -2672,7 +2701,7 @@ function fitOLS(X, y) {
     const vcovHC3 = matMul(breadMeat, XtXinv);
     const adjR2 = (n - k) > 0 ? 1 - (1 - R2) * (n - 1) / (n - k) : 0;
 
-    return { beta, R2, n, k, vcovHC3, vcovClassic, rss, adjR2, sigma2, XtXinv };
+    return { beta, R2, n, k, vcovHC3, vcovClassic, rss, adjR2, sigma2, XtXinv, hHoga };
 }
 
     return { tQuantile, pValue2Sided, fitOLS, quantile, matMul, invert, median };
@@ -4700,9 +4729,10 @@ function basIndikatorer(basList) {
 // modell = förklaringsmodellen (ADR-56): stegen är "Endast kön" följt av ett steg per vald variabel i ordningen
 // BAS, ålder, yrkesgrupp, var och en ovanpå de föregående. Yrkesgruppssteget räknas alltid när BAS är med (det
 // visas efter huvudtalet när det inte är valt, ADR-46); "+ Ansvar" läggs sist ovanpå den valda modellen.
-function computeSequentialGap(rows, ageMean, basList, { golv, modell = FORKLARINGSMODELL_STANDARD }) {
-    const m = normaliseraForklaringsmodell(modell, { harAlder: harAlderIRader(rows) }).modell;
-    const { y, isKv, ageC, bygg, skatta, steg } = _sekvensRigg(rows, ageMean, basList);
+function computeSequentialGap(rows0, ageMean, basList, { golv, modell = FORKLARINGSMODELL_STANDARD }) {
+    const m = normaliseraForklaringsmodell(modell, { harAlder: harAlderIRader(rows0) }).modell;
+    // rows = de rader modellen kan räkna (B4): filtret ligger i _sekvensRigg, så att anroparen inte behöver det.
+    const { rader: rows, y, isKv, ageC, bygg, skatta, steg } = _sekvensRigg(rows0, ageMean, basList);
     const olsVar = modellVariabler(m).filter(v => v !== 'yrkesgrupp');
     const ut = steg(olsVar).map(skatta);
     const medAlder = m.alder;
@@ -4712,6 +4742,7 @@ function computeSequentialGap(rows, ageMean, basList, { golv, modell = FORKLARIN
     // mindre grupper räknas med "inget". Redovisas separat, inte i huvudtalet (ADR-33).
     const grupper = ['ledning', 'uppdrag'].filter(g => rows.filter(r => r.ansvarsgrupp === g).length >= golv);
     if (rows.some(r => r.ansvarsgrupp) && grupper.length) {
+        /** @type {any} */
         const ansvar = rows.map(d => grupper.map(g => (d.ansvarsgrupp === g ? 1 : 0)));
         ut.push(m.yrkesgrupp
             ? computeYrkesgruppGap(rows, y, isKv, ageC, { medAlder, extra: ansvar, name: '+ Ansvar' })
@@ -4725,16 +4756,17 @@ function computeSequentialGap(rows, ageMean, basList, { golv, modell = FORKLARIN
  * fullmodellen kön + BAS + ålder oberoende av vad som är valt, så att tabellen i panelen står still när man
  * kryssar. Yrkesgrupp mäts ovanpå fullmodellen (den är en tilläggsvariabel, aldrig i förslaget). Utan ålder i
  * lönefilen (ADR-64) är fullmodellen kön + BAS och ålder får ingen rad.
- * @param {any[]} rows @param {number} ageMean @param {string[]} basList
+ * @param {any[]} rows0 råraderna; filtreras i _sekvensRigg (B4) @param {number} ageMean @param {string[]} basList
  * @param {{golv:number, harYrke?:boolean}} opts harYrke = datat har AID eller yrke
  * @returns {{full:{status:string, gapPct?:number, R2?:number, k?:number},
  *   rader:Array<{variabel:'bas'|'alder'|'yrkesgrupp', deltaR2pp:number, gapUtan:number, gapMed:number, tillforLite:boolean, status:string}>,
  *   forslag:{tabort:string[]}}}
  */
-function computeVariabelTillfor(rows, ageMean, basList, { golv: _golv, harYrke = false }) {
-    const { y, isKv, ageC, bygg, skatta } = _sekvensRigg(rows, ageMean, basList);
+function computeVariabelTillfor(rows0, ageMean, basList, { golv: _golv, harYrke = false }) {
+    // Samma filter som i stegen (B4): lön > 0, kvinna eller man, ålder > 0 när lönefilen har ålder.
+    const harAlder = harAlderIRader(rows0);
+    const { rader: rows, y, isKv, ageC, bygg, skatta } = _sekvensRigg(rows0, ageMean, basList, { medAlder: harAlder });
     const fit = vars => skatta({ name: vars.join('+'), X: bygg(vars) });
-    const harAlder = harAlderIRader(rows);
     const full = fit(harAlder ? ['bas', 'alder'] : ['bas']);
     const rad = (variabel, utan, med) => {
         const status = utan.status === 'ok' && med.status === 'ok' ? 'ok' : utan.status !== 'ok' ? utan.status : med.status;
@@ -4751,7 +4783,12 @@ function computeVariabelTillfor(rows, ageMean, basList, { golv: _golv, harYrke =
 
 // Det gemensamma underlaget för stegen: logaritmerad lön, könsindikator, centrerad ålder, BAS-indikatorer och
 // hjälparna som bygger en designmatris av valda variabler och skattar ett steg.
-function _sekvensRigg(rows, ageMean, basList) {
+// Raderna filtreras här (B4), som i computePerBasGap: lön > 0 (annars log = -Infinity), kvinna eller man (annars
+// kodas okänt kön som man) och ålder > 0 när ålder ingår (medAlder; standard = lönefilen har ålder, ADR-64).
+// `rader` är de rader som matriserna byggs av; anroparen använder dem för steg som läser raderna direkt.
+/** @param {any[]} rows0 @param {number} ageMean @param {string[]} basList @param {{medAlder?: boolean}} [opts] */
+function _sekvensRigg(rows0, ageMean, basList, { medAlder = harAlderIRader(rows0) } = {}) {
+    const rows = (rows0 || []).filter(d => _modellRad(d, medAlder));
     const N = rows.length;
     const y    = rows.map(d => Math.log(d.lon));
     const isKv = rows.map(d => d.kon.includes('kvinna') ? 1 : 0);
@@ -4766,12 +4803,12 @@ function _sekvensRigg(rows, ageMean, basList) {
     const steg = vars => [{ name: 'Endast kön', X: bygg([]) }, ...vars.map((v, j) => ({ name: namn[v], X: bygg(vars.slice(0, j + 1)) }))];
     /** @param {{name:string, X:number[][]}} s @returns {{name:string, status:string, gapPct?:number, R2?:number, k?:number, nGrupper?:number, nGrupperBada?:number, nPersoner?:number, nEnkonade?:number}} */
     const skatta = s => {
-        if (N < s.X[0].length + 5) return { name: s.name, status: 'too_few' };
+        if (!N || N < s.X[0].length + 5) return { name: s.name, status: 'too_few' };
         const fit = fitOLS(s.X, y);
         if (!fit) return { name: s.name, status: 'singular' };
         return { name: s.name, status: 'ok', gapPct: (Math.exp(fit.beta[1]) - 1) * 100, R2: fit.R2, k: fit.k };
     };
-    return { y, isKv, ageC, bygg, skatta, steg };
+    return { rader: rows, y, isKv, ageC, bygg, skatta, steg };
 }
 
 /**
@@ -5071,7 +5108,7 @@ function kvantilDesign(rows, modell = FORKLARINGSMODELL_STANDARD, { ageMean, bas
     const bl = m.bas ? (basList || [...new Set(rader.map(d => d.bas))].sort()) : [];
     const am = m.alder ? (ageMean != null ? ageMean : rader.reduce((s, d) => s + d.alder, 0) / (rader.length || 1)) : NaN;
     const vars = ['alder', 'bas'].filter(v => m[v]);
-    const X = rader.length ? _sekvensRigg(rader, am, bl).bygg(vars) : [];
+    const X = rader.length ? _sekvensRigg(rader, am, bl, { medAlder: m.alder }).bygg(vars) : [];
     const kolumner = ['intercept', 'kvinna', ...vars.flatMap(v => (v === 'alder' ? ['alder'] : basIndikatorer(bl).map(b => `bas:${b}`)))];
     return { rader, X, y: rader.map(d => Math.log(d.lon)), kolumner, ageMean: am, basList: bl, modell: { bas: m.bas, alder: m.alder } };
 }
@@ -20493,10 +20530,10 @@ function loadStructureFile(file) {
     let capturedHeaders = null;   // #11: rubriker för kolumnmappnings-guiden
 
     // GDPR Art. 25.2: minimal data resident i minnet under parsning.
-    // Streaming step-mode → en rad i taget. Vi sparar de första 50 raderna
-    // i en sample-buffer för att kunna köra detectSensitiveColumns (som behöver
-    // sample för värdebaserad upptäckt). Efter detektering nollas bufferten
-    // och rader processas direkt till `parsed[]` utan mellanlagring.
+    // Streaming step-mode → en rad i taget. Var ⌈n/50⌉:e rad (_pnrSampelSteg) sparas
+    // i en sample-buffer på högst 50 rader för detectSensitiveColumns (värdebaserad upptäckt
+    // över hela filen, B4). Varje rad processas direkt till `parsed[]`, som bara har de
+    // minimerade fälten; kontrollen körs när filen är läst, och fälls filen släpps allt.
     const SAMPLE_SIZE = 50;
     /** @type {any[]|null} */
     let sampleBuffer = [];
@@ -20522,7 +20559,6 @@ function loadStructureFile(file) {
         invalidAlderExamples: [], // upp till 3 exempel
         missingKonExamples: []    // upp till 3 exempel på okända kön-värden
     };
-    let detectionDone = false;
     let aborted = false;
     // Förhandskontrollen (17-forhandskontroll.js): de tio första raderna med filens råvärde och verktygets tolkning
     // (yrkets råvärde sparas inte), och kön-kolumnens värden med antal. Bara i minnet; släpps i finishLoad.
@@ -20728,7 +20764,7 @@ function loadStructureFile(file) {
           capturedHeaders = x.headers.filter(h => h);
           valjImportprofil(capturedHeaders);
           parseStats.totalRaw = x.rows.length;
-          const sensitive = detectSensitiveColumns(x.rows.slice(0, SAMPLE_SIZE));
+          const sensitive = detectSensitiveColumns(x.rows);   // samplar själv jämnt över bladet (B4)
           if (sensitive.length > 0) { rejectFile(sensitive); return; }
           x.rows.forEach(processRow);
           x.rows.length = 0;   // släpp raw rows (GDPR: minimera residens)
@@ -20749,44 +20785,32 @@ function loadStructureFile(file) {
       const radLista = [];
       for (let j = 1; j < linjer.length; j++) if (linjer[j] !== '') radLista.push(hdrInfo.line + j + 1);
       let radIdx = 0;
+      // Var ⌈n/50⌉:e datarad sparas för PII-kontrollen (B4); n = filens icke-tomma datarader.
+      const sampelSteg = _pnrSampelSteg(radLista.length);
       Papa.parse(csvText, {
         header: true, skipEmptyLines: true, delimiter: detectedDelim,
-        step: (results, parser) => {
+        step: (results) => {
             if (aborted) return;
             if (!capturedHeaders && results.meta && results.meta.fields) { capturedHeaders = results.meta.fields.slice(); valjImportprofil(capturedHeaders); }
             if (results.data) results.data[_RADNR] = radLista[radIdx++] ?? null;
             parseStats.totalRaw++;
-            if (!detectionDone && sampleBuffer) {
-                sampleBuffer.push(results.data);
-                if (sampleBuffer.length >= SAMPLE_SIZE) {
-                    const sensitive = detectSensitiveColumns(sampleBuffer);
-                    if (sensitive.length > 0) {
-                        parser.abort();
-                        rejectFile(sensitive);
-                        return;
-                    }
-                    detectionDone = true;
-                    sampleBuffer.forEach(processRow);
-                    sampleBuffer.length = 0; // släpp raw rows
-                }
-            } else {
-                processRow(results.data);
-            }
+            if (results.data && sampleBuffer && (radIdx - 1) % sampelSteg === 0 && sampleBuffer.length < SAMPLE_SIZE) sampleBuffer.push(results.data);
+            processRow(results.data);
             // Defensivt: nolla referensen i results-objektet så PapaParse
             // inte kan retain'a raden i sin interna struktur.
             results.data = null;
         },
         complete: () => {
             if (aborted) return;
-            // Edge-case: filen hade < SAMPLE_SIZE rader → kör detektion på det vi har
-            if (!detectionDone && sampleBuffer && sampleBuffer.length > 0) {
+            // PII-kontrollen på samplet från hela filen; fälls filen släpps de lästa raderna.
+            if (sampleBuffer && sampleBuffer.length > 0) {
                 const sensitive = detectSensitiveColumns(sampleBuffer);
                 if (sensitive.length > 0) {
+                    parsed.length = 0;
                     rejectFile(sensitive);
                     return;
                 }
-                sampleBuffer.forEach(processRow);
-                sampleBuffer.length = 0;
+                sampleBuffer.length = 0; // släpp raw rows
             }
             const preambleNote = hdrInfo.line > 0 ? ` · ${hdrInfo.line} försättsrad${hdrInfo.line > 1 ? 'er' : ''} överhoppad` : '';
             finishLoad(`${detectedEnc} · avgränsare "${detectedDelim === '\t' ? 'TAB' : detectedDelim}"${preambleNote}`);
@@ -26352,6 +26376,7 @@ function runOLSRegression() {
         triedSteps,
         diagnostics,
         n: chosen.n, k: chosen.k, ageMean,
+        hHoga: chosen.hHoga ?? 0,             // observationer med hävstång > 0,99 (B4, teknisk specifikation)
         konPct: pct, konPctLow: pctLow, konPctHigh: pctHigh,
         // Samma skattning som kvinnors lön i % av mäns (log-modellen: exp(β) × 100 = 100 + konPct), måttet i
         // flikarnas nyckeltalsrader.
@@ -26383,7 +26408,8 @@ function runOLSRegression() {
  * (klassisk och HC3) skalas med (n − p) / (n − p − G) för gruppnivåernas frihetsgrader, och k räknas med dem, så att
  * t-kvantilen och p-värdet använder rätt df. Resultatet får samma form som fitOLS med intercept (index 0 är en
  * tom konstant), så att resten av runOLSRegression läser kön på index 1 och ålder på index 2.
- * @returns {null | {beta:number[], vcovHC3:number[][], vcovClassic:number[][], R2:number, adjR2:number, n:number, k:number, rss:number}}
+ * hHoga räknas på den inomtransformerade designen, den som HC3 här räknas på.
+ * @returns {null | {beta:number[], vcovHC3:number[][], vcovClassic:number[][], R2:number, adjR2:number, n:number, k:number, rss:number, hHoga:number}}
  */
 function _regInomYrkesgrupp(raw, y, isKv, ageC, medAlder) {
     const kol = raw.map((_, i) => (medAlder ? [isKv[i], ageC[i]] : [isKv[i]]));
@@ -26397,7 +26423,7 @@ function _regInomYrkesgrupp(raw, y, isKv, ageC, medAlder) {
     const vidga = V => { const ut = [[0, ...V[0].map(() => 0)]]; for (const rad of V) ut.push([0, ...rad.map(v => v * skala)]); return ut; };
     const R2 = inom.R2Total(fit.rss);
     return { beta: [0, ...fit.beta], vcovHC3: vidga(fit.vcovHC3), vcovClassic: vidga(fit.vcovClassic), R2,
-        adjR2: 1 - (1 - R2) * (n - 1) / (n - k), n, k, rss: fit.rss };
+        adjR2: 1 - (1 - R2) * (n - 1) / (n - k), n, k, rss: fit.rss, hHoga: fit.hHoga };
 }
 
 function _formatPValue(p) {
@@ -27364,6 +27390,7 @@ function renderRegressionCard() {
                         <tr><th>Modellnotation</th><td><code>log(lön) ~ ${esc(r.modelDesc)}</code></td></tr>
                         <tr><th>Estimationsmetod</th><td>OLS (Ordinary Least Squares)</td></tr>
                         <tr><th>Standardfel</th><td>HC3 robust (Long &amp; Ervin 2000)</td></tr>
+                        <tr><th>Observationer med hävstång &gt; 0,99 (bidrar inte till HC3)</th><td>${r.hHoga ?? 0}</td></tr>
                         <tr><th>Antal observationer (n)</th><td>${r.n} (Kvinnor: ${r.nKvAnalysed}, Män: ${r.nMaAnalysed})</td></tr>
                         <tr><th>Antal parametrar (k)</th><td>${r.k}</td></tr>
                         <tr><th>Förklaringsgrad (R²)</th><td>${svPct((r.R2*100), 1)}</td></tr>
@@ -31182,11 +31209,11 @@ const INFO_SECTIONS = {
         <p>Verktyget är utformat så att dataskydd är en arkitekturell egenskap, inte en process. Tre lager skyddar personuppgifter:</p>
 
         <h4>Lager 1 — Filen läses in en rad i taget</h4>
-        <p>Filen läses in i webbläsarens minne och avkodas. Under inläsningen finns alltså hela filens text där. Sedan läses en CSV-fil rad för rad (med biblioteket PapaParse, <code>step:</code>). De 50 första raderna hålls kvar för kontrollen mot personnummer, namn och e-post. Därefter minimeras varje rad direkt: bara fälten som analysen behöver behålls, och den råa raden släpps. Excel-filer (.xlsx) läses som ett helt blad och kontrolleras och minimeras på samma sätt. När inläsningen är klar finns bara de minimerade posterna kvar.</p>
+        <p>Filen läses in i webbläsarens minne och avkodas. Under inläsningen finns alltså hela filens text där. Sedan läses en CSV-fil rad för rad (med biblioteket PapaParse, <code>step:</code>). Varje rad minimeras direkt: bara fälten som analysen behöver behålls, och den råa raden släpps. Undantaget är 50 rader spridda jämnt över filen, som hålls kvar för kontrollen mot personnummer, namn och e-post; kontrollen görs när filen är läst, och fälls filen släpps allt. Excel-filer (.xlsx) läses som ett helt blad och kontrolleras och minimeras på samma sätt. När inläsningen är klar finns bara de minimerade posterna kvar.</p>
 
         <h4>Lager 2 — Bara det analysen behöver släpps in</h4>
         <ul>
-            <li><code>detectSensitiveColumns()</code> avvisar lönefiler med personnummer, namn eller e-post: kolumnrubrikerna prövas, och värdena i filens 50 första rader. Rubriker som antyder en särskild kategori av personuppgifter (fackmedlemskap, hälsa med mera) avvisas också. Från filerna med lönepolitik och jämförelsestatistik läses bara godkända kolumner med gruppvärden in.</li>
+            <li><code>detectSensitiveColumns()</code> avvisar lönefiler med personnummer, namn eller e-post: kolumnrubrikerna prövas, och värdena i 50 rader spridda jämnt över filen. Rubriker som antyder en särskild kategori av personuppgifter (fackmedlemskap, hälsa med mera) avvisas också. Från filerna med lönepolitik och jämförelsestatistik läses bara godkända kolumner med gruppvärden in.</li>
             <li><code>extractMinimalRecord()</code> accepterar <strong>endast 5 fält</strong>: BAS, yrke, lön, ålder, kön — plus valfri arbetsvärderingspoäng per befattning och valfri ansvarskod enligt AID. Radens nummer i filen sparas också.</li>
             <li><code>_cleanYrkeField()</code> trunkerar yrkesfält till AID-kod + 40-tecken etikett, maskerar namn-mönster</li>
         </ul>

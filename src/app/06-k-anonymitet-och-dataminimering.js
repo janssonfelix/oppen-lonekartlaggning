@@ -908,21 +908,47 @@ function extractMinimalRecord(row) {
 }
 
 /**
+ * Steget mellan raderna som PII-kontrollen samplar i en fil med n rader: ⌈n/50⌉ (minst 1), så att högst 50 rader
+ * sprids jämnt över filen (B4). Delas av detectSensitiveColumns och den strömmande CSV-inläsningen.
+ * @param {number} n
+ */
+function _pnrSampelSteg(n) {
+    return Math.max(1, Math.ceil(n / 50));
+}
+
+/**
  * PNR-detektor: identifierar kolumner som innehåller personnummer, e-post eller namn.
  * Kombinerar headerbaserad upptäckt (rubrikens namn) med värdebaserad upptäckt
- * (samplar 50 rader och matchar mot regex). Trösklar är konservativa för att minimera
- * falska positiv på godtyckliga sifferserier (t.ex. anställningsnummer).
+ * (samplar 50 rader jämnt över filen, var ⌈n/50⌉:e rad, och matchar mot regex). Trösklar är konservativa för att
+ * minimera falska positiv på godtyckliga sifferserier (t.ex. anställningsnummer). Den strömmande CSV-inläsningen
+ * samlar själv var ⌈n/50⌉:e rad (_pnrSampelSteg) och lämnar högst 50 rader hit.
  * @param {Array<Object>} rows - Råa CSV-rader.
  * @returns {Array<{col:string, reason:string}>} Tom array om inga känsliga kolumner.
  */
 function detectSensitiveColumns(rows) {
     if (!rows || !rows.length) return [];
-    const sample = rows.slice(0, Math.min(50, rows.length));
+    // Jämnt över filen (B4): personnummer eller namn som bara finns längre ned ska också hittas.
+    const steg = _pnrSampelSteg(rows.length);
+    const sample = rows.filter((_, i) => i % steg === 0);
     const cols = Object.keys(rows[0] || {});
     // Strikt PNR-mönster: kräver giltig månad (01-12) och dag (01-31) för att undvika
     // falska träffar på godtyckliga sifferserier som anställningsnummer.
     const PNR  = /^(?:19|20)?\d{2}[-/]?[01]\d[-/]?[0-3]\d[-+]?\d{4}$/;
-    const NAME = /^[A-ZÅÄÖ][a-zåäö]+(?:[ -][A-ZÅÄÖ][a-zåäö]+){1,3}$/; // "Anna Andersson" / "Anna-Lisa Berg"
+    // Personnamn (B4): två till fyra ord, med eller utan efternamnet först följt av komma — "Anna Andersson",
+    // "Anna-Lisa Berg", "ANDERSSON, ANNA", "anna andersson". Alla ord har samma form (Versal-gemener, VERSALER eller
+    // gemener), så att befattningar som "Lärare grundskola" (stor bokstav bara först) inte räknas som namn.
+    const ORD = /^\p{L}{2,}(?:-\p{L}{2,})?$/u;
+    /** @param {string} w */
+    const form = w => (/^\p{Lu}\p{Ll}+(?:-\p{Lu}\p{Ll}+)?$/u.test(w) ? 'T' : w === w.toUpperCase() ? 'U' : w === w.toLowerCase() ? 'L' : '');
+    /** @param {string} v */
+    const liknarNamn = v => {
+        const delar = v.split(',');
+        if (delar.length > 2 || delar.some(d => !d.trim())) return false;
+        const ord = delar.flatMap(d => d.trim().split(/[ ]+/));
+        if (ord.length < 2 || ord.length > 4 || !ord.every(w => ORD.test(w))) return false;
+        const f = form(ord[0]);
+        return f !== '' && ord.every(w => form(w) === f);
+    };
 
     const issues = [];
     cols.forEach(col => {
@@ -959,7 +985,7 @@ function detectSensitiveColumns(rows) {
             if (!v) return;
             if (PNR.test(v)) pnrCount++;
             else if (v.includes('@') && /\.[a-z]{2,}$/i.test(v)) emailCount++;
-            else if (NAME.test(v)) nameCount++;
+            else if (liknarNamn(v)) nameCount++;
         });
         if (pnrCount >= 3)        issues.push({ col, reason: `Innehåller värden i personnummer-format (${pnrCount} av ${sample.length} sampelvärden matchar)` });
         else if (emailCount >= 3) issues.push({ col, reason: `Innehåller e-postadresser (${emailCount} av ${sample.length} sampelvärden)` });

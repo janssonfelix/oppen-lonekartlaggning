@@ -66,6 +66,7 @@ const P = new Function('_anArRubrik', '_anTolka', '_anGrupp', '_anAndelGiltiga',
     ${extractFn('extractMinimalRecord')}
     ${extractFn('_hittaAnsvarKolumn')}
     ${extractFn('_bedomAnsvarKolumn')}
+    ${extractFn('_pnrSampelSteg')}
     ${extractFn('detectSensitiveColumns')}
     return { state, detectSensitiveColumns, esc, getField, autoDetectColumnMap, _detectDelimiter, _decodeCsvBuffer, _cleanYrkeField,
              _normalizeNumberString, parseNumber, parseNumberStrict, _sniffTabularFormat,
@@ -350,6 +351,35 @@ describe('detectSensitiveColumns (PII-rubriker)', () => {
             expect(fel.map(f => f.col), kol).toEqual([kol]);
             expect(fel[0].reason, kol).toMatch(/särskild kategori/);
         }
+    });
+});
+
+describe('detectSensitiveColumns (värdena, B4)', () => {
+    // 300 rader; personnumren börjar på rad 200. De 50 första raderna är rena, så bara en sampling över hela filen
+    // (var ⌈n/50⌉:e rad) hittar dem.
+    const fil = (kol, varde) => Array.from({ length: 300 }, (_, i) => ({ BAS: 'C', Lön: String(30000 + i), [kol]: varde(i) }));
+    it('personnummer som börjar på rad 200 hittas', () => {
+        const fel = P.detectSensitiveColumns(fil('Id', i => (i >= 200 ? `19800101-${1000 + i}` : `A${i}`)));
+        expect(fel.map(f => f.col)).toEqual(['Id']);
+        expect(fel[0].reason).toMatch(/personnummer/);
+    });
+    it('samplingen täcker hela filen: e-post bara i slutet hittas', () => {
+        const fel = P.detectSensitiveColumns(fil('Kontakt', i => (i >= 250 ? `p${i}@exempel.se` : '')));
+        expect(fel.map(f => f.reason)).toEqual([expect.stringMatching(/e-post/)]);
+    });
+    const namn = ['Anna Andersson', 'Bo Berg', 'Cecilia Carlsson', 'David Dahl', 'Eva Ek', 'Fredrik Falk'];
+    const tio = (kol, f) => Array.from({ length: 12 }, (_, i) => ({ BAS: 'C', [kol]: f(namn[i % namn.length]) }));
+    it('namn med versaler, gemener och efternamn först med komma känns igen', () => {
+        const omvand = n => n.split(' ').reverse().join(', ');
+        for (const [etikett, f] of [['Versaler', n => n.toUpperCase()], ['Gemener', n => n.toLowerCase()],
+            ['Komma', omvand], ['Komma versaler', n => omvand(n).toUpperCase()], ['Komma utan mellanslag', n => omvand(n).replace(' ', '')]]) {
+            const fel = P.detectSensitiveColumns(tio('Person', f));
+            expect(fel.map(x => x.reason), etikett).toEqual([expect.stringMatching(/personnamn/)]);
+        }
+    });
+    it('befattningar med stor bokstav bara först räknas inte som namn', () => {
+        const titlar = ['Lärare grundskola', 'Undersköterska hemtjänst', 'Lärare fritidshem', 'Administratör ekonomi', 'Kock storkök'];
+        expect(P.detectSensitiveColumns(Array.from({ length: 50 }, (_, i) => ({ BAS: 'C', Befattning: titlar[i % 5] })))).toEqual([]);
     });
 });
 

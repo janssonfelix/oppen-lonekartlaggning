@@ -515,6 +515,51 @@ describe('ansvarskodskolumnen vid inläsning', () => {
     });
 });
 
+describe('PII-kontrollen vid inläsning samplar hela filen (B4)', () => {
+    const vendorPapa = async w => {
+        const { readFileSync } = await import('node:fs');
+        const { join, dirname } = await import('node:path');
+        const { fileURLToPath } = await import('node:url');
+        w.eval(readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'vendor', 'papaparse.min.js'), 'utf8'));
+    };
+    // 300 rader; kolumnen Id har personnummer från rad 200, annars ett löpnummer.
+    const rader = () => {
+        const r = [['BAS', 'Månadslön', 'Ålder', 'Kön', 'Id']];
+        for (let i = 0; i < 300; i++) r.push(['C', 30000 + i, 30 + (i % 30), i % 2 ? 'Man' : 'Kvinna', i >= 200 ? `19800101-${1000 + i}` : `L${i}`]);
+        return r;
+    };
+    it('CSV: personnummer som börjar på rad 200 fäller filen', async () => {
+        const w = createAppWindow();
+        await vendorPapa(w);
+        w.loadStructureFile(new w.File([rader().map(r => r.join(';')).join('\n')], 'p.csv', { type: 'text/csv' }));
+        for (let i = 0; i < 100 && !/avvisad/.test(w.document.getElementById('data-status').textContent); i++) await new Promise(r => setTimeout(r, 20));
+        expect(w.__state.data).toEqual([]);
+        expect(w.document.getElementById('data-status').textContent).toMatch(/Filen avvisad[\s\S]*Id/);
+    });
+    it('Excel: personnummer som börjar på rad 200 fäller filen', async () => {
+        const w = createAppWindow();
+        const { readFileSync } = await import('node:fs');
+        const { join, dirname } = await import('node:path');
+        const { fileURLToPath } = await import('node:url');
+        w.eval(readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'vendor', 'xlsx.mini.min.js'), 'utf8'));
+        const X = w.XLSX;
+        const wb = X.utils.book_new(); X.utils.book_append_sheet(wb, X.utils.aoa_to_sheet(rader()), 'Blad1');
+        const buf = X.write(wb, { type: 'array', bookType: 'xlsx' });
+        w.loadStructureFile(new w.File([buf], 'p.xlsx'));
+        for (let i = 0; i < 100 && !/avvisad/.test(w.document.getElementById('data-status').textContent); i++) await new Promise(r => setTimeout(r, 20));
+        expect(w.__state.data).toEqual([]);
+        expect(w.document.getElementById('data-status').textContent).toMatch(/Filen avvisad[\s\S]*Id/);
+    });
+    it('CSV utan personnummer läses in som förut', async () => {
+        const w = createAppWindow();
+        await vendorPapa(w);
+        const r = rader().map((x, i) => (i > 0 ? [...x.slice(0, 4), `L${i}`] : x));
+        w.loadStructureFile(new w.File([r.map(x => x.join(';')).join('\n')], 'p.csv', { type: 'text/csv' }));
+        for (let i = 0; i < 100 && !w.__state.data.length; i++) await new Promise(r2 => setTimeout(r2, 20));
+        expect(w.__state.data.length).toBe(300);
+    });
+});
+
 describe('ansvarsraden och ansvarskolumnen vid fel', () => {
     const vendorPapa = async w => {
         const { readFileSync } = await import('node:fs');
@@ -688,5 +733,17 @@ describe('samlad jämförelseexport: ställningstagandet per AID och BAS som i t
         const wb = Object.values(fangat)[0];
         const rad = w.XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, raw: true })[2];
         expect(rad[19]).toBe(32222);   // ställningstagandets median
+    });
+});
+
+describe('regressionskortets tekniska specifikation (B4)', () => {
+    it('visar antalet observationer med hävstång > 0,99, som fitOLS räknar', () => {
+        const w = createAppWindow();
+        w.__loadDemoData();
+        const r = w.eval('runOLSRegression()');
+        expect(Number.isInteger(r.hHoga)).toBe(true);
+        w.__renderTabContent('struktur');
+        const t = w.document.getElementById('regression-card').textContent.replace(/\s+/g, ' ');
+        expect(t).toMatch(new RegExp(`Observationer med hävstång > 0,99 \\(bidrar inte till HC3\\) ?${r.hHoga} Antal observationer`));
     });
 });
