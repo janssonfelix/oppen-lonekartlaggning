@@ -17,5 +17,5 @@ Sources (storlek post-minify):
   - src/licenser.txt              16.8 KB
 
 Verifiering:
-  PowerShell : (Get-FileHash -Algorithm SHA256 oppen-lonekartlaggning.html).Hash
+  PowerShell : Get-FileHash .\oppen-lonekartlaggning.html -Algorithm SHA256
   Linux/mac  : sha256sum oppen-lonekartlaggning.html

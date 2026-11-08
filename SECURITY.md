@@ -54,6 +54,20 @@ cosign verify-blob oppen-lonekartlaggning.html --bundle oppen-lonekartlaggning.h
 Samma kommando fungerar i PowerShell på Windows (`cosign.exe`). `Verified OK` betyder att filen är
 oförändrad sedan arbetsflödet signerade den. Gör samma kontroll av `RELEASE.txt` med dess paket.
 
+**Kan ni inte köra cosign: kontrollsumman i RELEASE.txt skyddar mot en skadad eller förväxlad fil.** Jämför
+filens SHA-256 med värdet i `RELEASE.txt`:
+
+```powershell
+Get-FileHash .\oppen-lonekartlaggning.html -Algorithm SHA256
+```
+
+```bash
+sha256sum oppen-lonekartlaggning.html
+```
+
+Det första kommandot är för Windows (PowerShell), det andra för Linux och Mac. Kontrollsumman visar inte att
+filen är äkta; det gör bara signaturen.
+
 **Kontrollsumman (SHA-256) i `RELEASE.txt` skyddar bara mot en skadad fil**, inte mot en utbytt: den
 som byter filen kan byta kontrollsumman också. Den är ett snabbt sätt att se att en kopia som delats
 internt är samma fil som den verifierade — kommandona står i `docs/anvandare/korguide.md` §0.

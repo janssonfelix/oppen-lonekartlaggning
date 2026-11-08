@@ -55,6 +55,12 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   positiva som väntas; under fem är den en mening. Förklaringsbudgeten säger att det som tillskrivs varje steg beror på
   ordningen, och att kortet *Vad varje variabel tillför* mäter varje variabel ovanpå alla andra. Lika arbetes
   nyckeltal efter ålder och BAS-intervall varnar i verktygstipset när ett kön har färre än 10 i modellen.
+- **Kontrollsumma i PowerShell och distributionsansvar.** `SECURITY.md` och körguiden §0 har efter cosign-kommandot
+  stycket *Kan ni inte köra cosign: kontrollsumman i RELEASE.txt skyddar mot en skadad eller förväxlad fil*, med
+  `Get-FileHash .\oppen-lonekartlaggning.html -Algorithm SHA256` (Windows) och `sha256sum
+  oppen-lonekartlaggning.html` (Linux/mac). `RELEASE.txt` skriver samma PowerShell-rad bredvid Linux/mac-raden, och
+  release-grinden kräver båda. Säkerhetsbeskrivningen säger att distributionen i organisationen är
+  organisationens att avgöra och tar emot beskrivningar av fungerande distributionsvägar som bidrag.
 - **Sakliga skäl som strukturerad post.** Varje rad i Handlingsplan har knappen *Sakliga skäl*. Dialogen tar emot
   högst 8 skäl per grupp med kategori (Marknad, Utbildning, Erfarenhet, Prestation och resultat, Övergång, Annat
   sakligt skäl), belopp i kronor per månad och en kort kommentar. Den räknar ihop förklarat och återstående belopp och

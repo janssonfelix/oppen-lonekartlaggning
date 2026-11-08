@@ -24,10 +24,11 @@ besluten gör och äger arbetsgivaren.
   versionens releasesida. Kommandot är detsamma i Windows (PowerShell, `cosign.exe`) och Linux/Mac:
   `cosign verify-blob oppen-lonekartlaggning.html --bundle oppen-lonekartlaggning.html.sigstore.json --certificate-identity-regexp "^https://github\.com/janssonfelix/oppen-lonekartlaggning/\.github/workflows/release\.yml@refs/tags/v" --certificate-oidc-issuer https://token.actions.githubusercontent.com`
   (se `SECURITY.md`). Svaret ska vara `Verified OK`.
-  Den som sedan får filen internt jämför dess **SHA-256** med värdet i `RELEASE.txt`. Windows
-  (PowerShell): `(Get-FileHash -Algorithm SHA256 oppen-lonekartlaggning.html).Hash` · Linux:
-  `sha256sum oppen-lonekartlaggning.html` · Mac (Terminal): `shasum -a 256 oppen-lonekartlaggning.html`.
-  Kontrollsumman visar bara att filen inte skadats; att den är äkta visar signaturen.
+  **Kan ni inte köra cosign: kontrollsumman i RELEASE.txt skyddar mot en skadad eller förväxlad fil.**
+  Den som får filen internt jämför också dess **SHA-256** med värdet i `RELEASE.txt`. Windows
+  (PowerShell): `Get-FileHash .\oppen-lonekartlaggning.html -Algorithm SHA256` · Linux/Mac:
+  `sha256sum oppen-lonekartlaggning.html` (på en Mac utan `sha256sum`: `shasum -a 256 oppen-lonekartlaggning.html`).
+  Kontrollsumman visar bara att filen inte skadats eller förväxlats; att den är äkta visar signaturen.
 - **Dataskydd:** all bearbetning sker i webbläsarens minne — inget skickas, inget
   sparas på disk. Det enda som lämnar verktyget är **de filer du själv exporterar**.
   Förvara dem på behörighetsstyrd disk och skicka dem aldrig via okrypterad e-post.

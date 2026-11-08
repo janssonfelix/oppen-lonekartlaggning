@@ -20,6 +20,7 @@ import { buildAppBuffer } from './build-app.mjs';
 import { writeMirrors } from './gen-mirrors.mjs';
 import { writeVersionModule } from './gen-version.mjs';
 import { minifyCss } from './lib/minify-css.mjs';
+import { VERIFIERING } from './release.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -256,8 +257,9 @@ const releaseLines = [
     ...sources.map(src => `  - ${src.name.padEnd(30)}${formatSize(src.bytes)}`),
     '',
     'Verifiering:',
-    '  PowerShell : (Get-FileHash -Algorithm SHA256 oppen-lonekartlaggning.html).Hash',
-    '  Linux/mac  : sha256sum oppen-lonekartlaggning.html'
+    // Samma kommandon som SECURITY.md och körguiden §0 (tools/release.mjs, VERIFIERING).
+    `  PowerShell : ${VERIFIERING.powershell}`,
+    `  Linux/mac  : ${VERIFIERING.linux}`
 ];
 writeFileSync(join(root, 'dist', 'RELEASE.txt'), releaseLines.join('\n') + '\n', 'utf8');
 
