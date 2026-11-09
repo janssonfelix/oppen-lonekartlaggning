@@ -1663,7 +1663,7 @@ describe('radpaneler i vyerna', () => {
 // BAS-urvalet (figur.urval) ges bara där varje märke hör till ett enda BAS-intervall: då döljer ett bortval hela
 // märken och inget räknas om (en låda eller stapel som samlar flera intervall skulle räknas om ur sina individer).
 describe('BAS-urval på diagrammen där BAS är en dimension', () => {
-    const URVAL = { falt: 'bas', namn: 'BAS-intervall', etikett: 'BAS {v}' };
+    const URVAL = { typ: 'kategori', falt: 'bas', namn: 'BAS-intervall', etikett: 'BAS {v}' };
     const MED_URVAL = ['chart-lp-bandmap', 'chart-lp-compliance', 'chart-lp-gender', 'chart-jmf-statlage', 'chart-jamforelse-spann', 'chart-jamforelse-avvikelse',
         'chart-ref-hantel', 'chart-skevhet-overview', 'chart-skevhet-lador', 'chart-skevhet-andel', 'chart-la-tratt', 'chart-perbas-gap',
         'chart-arsjamforelse-bas', 'chart-likvardighet-krav', 'chart-prio-pareto', 'chart-prio-matrix', 'chart-kon-multiplar'];

@@ -80,11 +80,24 @@ const GAP_STATUS_EJ = Object.freeze({ ..._STS_ORD.ejbedomd, niva: 'ejbedomd', fa
 /** Alla fyra, i diagrammens ordning (förklaringen namnger bara de som förekommer). */
 const GAP_STATUS_ALLA = Object.freeze([...GAP_STATUS, GAP_STATUS_EJ]);
 /**
- * Figurens urval (figur.urval) i diagrammen där BAS-intervallet är en dimension: knapparna ovanför diagrammet döljer
- * valda intervall. Bara där varje märke hör till ett enda intervall (punkten, stapeln, spannet eller lådan bär `bas`
- * med det nakna värdet, t.ex. 'A'), så att ett bortval döljer hela märken och inget räknas om.
+ * Dimensionerna i figurens urval (figur.urval, se docs/utveckling/diagramkarnan.md): filtren ovanför diagrammet
+ * döljer märken, inget räknas om. En dimension ges bara där varje märke hör till ett enda värde (punkten, stapeln,
+ * spannet eller lådan bär fältet), så att filtret döljer hela märken.
+ *   bas           kategori på `bas` med det nakna värdet (t.ex. 'A'); knapparna heter 'BAS A' …
+ *   antal         intervall på `n`: gruppens antal personer, samma tal som i tipset
+ *   konsdominans  kategori på `konsdom`: 'Kvinnodominerad', 'Mansdominerad' eller 'Blandad'
+ *   matchning     kategori på `matchning`: 'AID + BAS' eller 'Endast AID'
+ *   avvikelse     intervall på `x`: avvikelsen i procent
  */
-const BAS_URVAL = Object.freeze({ falt: 'bas', namn: 'BAS-intervall', etikett: 'BAS {v}' });
+const URVAL = Object.freeze({
+    bas: Object.freeze({ typ: 'kategori', falt: 'bas', namn: 'BAS-intervall', etikett: 'BAS {v}' }),
+    antal: Object.freeze({ typ: 'intervall', falt: 'n', namn: 'Antal personer i gruppen', format: 'antal', etikett: '{v} personer i gruppen' }),
+    konsdominans: Object.freeze({ typ: 'kategori', falt: 'konsdom', namn: 'Könsdominans', etikett: '{v}' }),
+    matchning: Object.freeze({ typ: 'kategori', falt: 'matchning', namn: 'Matchning', etikett: '{v}' }),
+    avvikelse: Object.freeze({ typ: 'intervall', falt: 'x', namn: 'Avvikelse (%)', format: 'pct', etikett: 'avvikelse {v}' }),
+});
+/** Det äldre namnet på BAS-dimensionen; vyerna byter till URVAL.bas. */
+const BAS_URVAL = URVAL.bas;
 /**
  * Statusen för ett avstånd från lika lön i procent (|100 − kvoten|) och en prövning av skillnaden (true/false; null
  * när den inte kunde göras, vilket ger Går ej att bedöma).

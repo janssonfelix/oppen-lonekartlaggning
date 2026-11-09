@@ -274,7 +274,8 @@ export const MODULES = [
                   figurTillTabell: '_figTillTabell', panelerMedLager: '_figPanelerMedLager',
                   kronorSkillnad: '_figKronorSkillnad', kronorTipsRad: '_figKronorTipsRad',
                   kvantilpunkter: '_figKvantilpunkter',
-                  urvalVarden: '_figUrvalVarden', urvalEtikett: '_figUrvalEtikett', arBortvald: '_figArBortvald' }
+                  urvalVarden: '_figUrvalVarden', urvalEtikett: '_figUrvalEtikett', arBortvald: '_figArBortvald',
+                  urvalLista: '_figUrvalLista', urvalSpann: '_figUrvalSpann', urvalBeskrivning: '_figUrvalBeskrivning' }
     }
 ];
 

@@ -2687,11 +2687,16 @@ summary:focus-visible {
 .chart-export-meny button:hover { background: var(--bg-hover, #f1f5f9); }
 .chart-export-fel { margin: 4px 10px; font-size: var(--fs-xs); color: var(--danger, #b91c1c); }
 @media print { .chart-export { display: none !important; } }
-/* Diagrammets urval (10-diagramritare.js): knappraden ovanför diagrammet. Intryckt = värdet visas. Den sista valda
-   kan inte väljas bort (aria-disabled). Utskriften visar inte raden. */
+/* Diagrammets urval (10-diagramritare.js): en rad per dimension ovanför diagrammet. En kategori har knappar
+   (intryckt = värdet visas; den sista valda kan inte väljas bort, aria-disabled), ett intervall fälten Minst och
+   Högst (aria-invalid: talet gick inte att läsa eller Minst är större än Högst). Utskriften visar inte raderna. */
 .diagram-urval { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0 0 8px; }
 .diagram-urval .btn-table-tool[aria-disabled="true"] { cursor: not-allowed; opacity: 0.7; }
 .diagram-urval .btn-table-tool[hidden] { display: none; }
+.diagram-urval-namn { font-size: var(--fs-sm); color: var(--text-muted); }
+.diagram-urval-grans { display: inline-flex; align-items: center; gap: 4px; font-size: var(--fs-sm); }
+.diagram-urval-grans .form-select { width: 7em; max-width: 100%; padding: 4px 8px; }
+.diagram-urval-grans .form-select[aria-invalid="true"] { border-color: var(--danger, #b91c1c); box-shadow: 0 0 0 1px var(--danger, #b91c1c); }
 @media print { .diagram-urval { display: none !important; } }
 
 /* Utforska 2.0 (70/71-explorer) */

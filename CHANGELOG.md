@@ -8,6 +8,16 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ### Gränssnitt
 
+- **Diagramfilter med flera dimensioner, och fälten Minst och Högst.** Ett diagram kan ha flera filter, ett per
+  dimension, i varsin rad ovanför diagrammet: knappar för en kategori (som BAS-intervallen i dag) och fälten *Minst*
+  och *Högst* för ett tal, till exempel antal personer i gruppen. Fälten läser tal som verktyget gör annars ("1,5",
+  "1 500"), verkställs när du lämnar fältet eller trycker Retur, och ett tomt fält är ingen gräns. Ett tal som inte
+  går att läsa, eller Minst större än Högst, markeras och ändrar inget. Döljer filtret allt står *Inga grupper i
+  urvalet* i diagrammet. *Visa alla* nollställer alla filter. Noten under diagrammet och fotraden i diagrammets egen
+  export räknar upp alla aktiva filter med samma text, till exempel "utan BAS A, BAS N; 10–50 personer i gruppen";
+  raden i diagramdatan heter nu *Urval i diagrammet*. Filtren döljer fortfarande bara märken och minns per diagram
+  och dimension under sessionen. Det här är kärnan; diagrammen får sina nya filter i nästa steg.
+
 - **Välj vilka BAS-intervall ett diagram visar.** Diagrammen där BAS-intervallet är en dimension har en knapp per
   intervall ovanför diagrammet, och *Visa alla*: bandkartan, statistikens spann, spannet och avvikelsen mot
   statistiken, efterlevnaden (båda vyerna), läget i spannet per kön och hanteln mot referenserna i Löneläget;

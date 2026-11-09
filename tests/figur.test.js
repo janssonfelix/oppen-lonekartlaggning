@@ -2,7 +2,7 @@
  * Figurformatet: ren logik utan DOM och utan D3.
  */
 import { describe, it, expect } from 'vitest';
-import { talformat, valideraFigur, utanSmaGrupper, axelVarden, skalDoman, ladstatistik, antalPunkter, figurTillTabell, panelerMedLager, MARKEN, kronorSkillnad, kronorTipsRad, kvantilpunkter, urvalVarden, urvalEtikett, arBortvald } from '../src/lib/figur.js';
+import { talformat, valideraFigur, utanSmaGrupper, axelVarden, skalDoman, ladstatistik, antalPunkter, figurTillTabell, panelerMedLager, MARKEN, kronorSkillnad, kronorTipsRad, kvantilpunkter, urvalVarden, urvalEtikett, arBortvald, urvalLista, urvalSpann, urvalBeskrivning, urvalIntervallText, TALFORMAT } from '../src/lib/figur.js';
 import { quantile } from '../src/lib/stat.js';
 
 const blank = s => s.replace(/\s/g, ' ').replace('−', '-');
@@ -598,7 +598,8 @@ describe('urval', () => {
     });
     it('urvalVarden följer bandaxelns ordning och tar inte med små grupper eller punkter utan fältet', () => {
         expect(urvalVarden(stapelfigur())).toEqual(['C', 'A', 'B']);
-        expect(urvalVarden(stapelfigur(), { visaSma: true })).toEqual(['C', 'A', 'B', 'D']);
+        expect(urvalVarden(stapelfigur(), null, { visaSma: true })).toEqual(['C', 'A', 'B', 'D']);
+        expect(urvalVarden(stapelfigur(), 'bas', { visaSma: true })).toEqual(['C', 'A', 'B', 'D']);
     });
     it('urvalVarden: värden som inte är kategorier på bandaxeln kommer efter de ordnade, i svensk sorteringsordning', () => {
         const f = stapelfigur();
@@ -621,8 +622,9 @@ describe('urval', () => {
         expect(urvalVarden(f)).toEqual(['10', '2']);
     });
     it('urvalEtikett sätter in värdet i mallen, eller visar värdet utan mall', () => {
-        expect(urvalEtikett(stapelfigur(), 'A')).toBe('BAS A');
-        expect(urvalEtikett(stapelfigur({ urval: { falt: 'bas', namn: 'BAS-intervall' } }), 'A')).toBe('A');
+        expect(urvalEtikett(stapelfigur(), null, 'A')).toBe('BAS A');
+        expect(urvalEtikett(stapelfigur(), 'bas', 'A')).toBe('BAS A');
+        expect(urvalEtikett(stapelfigur({ urval: { falt: 'bas', namn: 'BAS-intervall' } }), null, 'A')).toBe('A');
     });
     it('arBortvald: bara en punkt med fältet och ett bortvalt värde', () => {
         const f = stapelfigur();
@@ -633,4 +635,90 @@ describe('urval', () => {
         expect(arBortvald(f, undefined, { bas: 'A' })).toBe(false);
         expect(arBortvald(f, new Set(['A']), null)).toBe(false);
     });
+    // Diagramfilter v2: flera dimensioner, kategori och intervall.
+    const ANTAL = { typ: 'intervall', falt: 'n', namn: 'Antal personer i gruppen', format: 'antal', etikett: '{v} personer i gruppen' };
+    const tvaDim = (over = {}) => ({
+        beskrivning: 'Grupper', x: { skala: 'linjar' }, y: { skala: 'linjar' },
+        urval: [{ typ: 'kategori', ...URVAL }, ANTAL],
+        lager: [
+            { marke: 'punkt', serie: 'Grupper', data: [
+                { x: 1, y: 1, bas: 'A', n: 5 }, { x: 2, y: 2, bas: 'A', n: 10 }, { x: 3, y: 3, bas: 'B', n: 50 },
+                { x: 4, y: 4, bas: 'B', n: 51 }, { x: 5, y: 5, bas: 'C', n: 200, liten: true }, { x: 6, y: 6 }] },
+        ],
+        ...over,
+    });
+    const filter = (kat = {}, int = {}) => ({ kategori: new Map(Object.entries(kat).map(([k, v]) => [k, new Set(v)])), intervall: new Map(Object.entries(int)) });
+    it('urvalLista: ett ensamt objekt blir en lista med en kategori; en lista behåller ordningen; utan urval en tom lista', () => {
+        expect(urvalLista(stapelfigur())).toEqual([{ typ: 'kategori', ...URVAL }]);
+        expect(urvalLista(tvaDim()).map(u => [u.typ, u.falt])).toEqual([['kategori', 'bas'], ['intervall', 'n']]);
+        expect(urvalLista(stapelfigur({ urval: undefined }))).toEqual([]);
+        expect(urvalLista(null)).toEqual([]);
+    });
+    it('valideraFigur godtar en lista med kategori och intervall och avvisar fel typ, okänt format och samma fält två gånger', () => {
+        expect(() => valideraFigur(tvaDim(), 't')).not.toThrow();
+        expect(() => valideraFigur(tvaDim({ urval: [] }), 't')).not.toThrow();
+        expect(() => valideraFigur(tvaDim({ urval: [{ ...ANTAL, format: undefined }] }), 't')).not.toThrow();
+        expect(() => valideraFigur(tvaDim({ urval: [{ ...ANTAL, typ: 'spann' }] }), 't')).toThrow(/urval 0: typ/);
+        expect(() => valideraFigur(tvaDim({ urval: [{ ...ANTAL, format: 'procent' }] }), 't')).toThrow(/urval 0: format/);
+        expect(() => valideraFigur(tvaDim({ urval: [{ ...URVAL, format: 'antal' }] }), 't')).toThrow(/format gäller bara intervall/);
+        expect(() => valideraFigur(tvaDim({ urval: [URVAL, { ...ANTAL, falt: 'bas' }] }), 't')).toThrow(/urval 1: fältet "bas" förekommer två gånger/);
+        expect(() => valideraFigur(tvaDim({ urval: [URVAL, { typ: 'intervall', falt: 'n' }] }), 't')).toThrow(/urval 1: falt och namn/);
+        expect(() => valideraFigur(tvaDim({ urval: [URVAL, null] }), 't')).toThrow(/urval 1/);
+        for (const f of TALFORMAT) expect(() => valideraFigur(tvaDim({ urval: [{ ...ANTAL, format: f }] }), 't')).not.toThrow();
+    });
+    it('urvalSpann: minsta och största talet utan små grupper (om inte visaSma); null under två olika tal eller utan dimensionen', () => {
+        expect(urvalSpann(tvaDim(), 'n')).toEqual({ min: 5, max: 51 });
+        expect(urvalSpann(tvaDim(), ANTAL)).toEqual({ min: 5, max: 51 });
+        expect(urvalSpann(tvaDim(), null, { visaSma: true })).toEqual({ min: 5, max: 200 });
+        const lika = tvaDim();
+        lika.lager[0].data.forEach(d => { if ('n' in d) d.n = 7; });
+        expect(urvalSpann(lika, 'n')).toBeNull();
+        expect(urvalSpann(tvaDim(), 'bas')).toBeNull();                  // en kategori är inget intervall
+        expect(urvalSpann(stapelfigur(), null)).toBeNull();
+        expect(urvalVarden(tvaDim(), 'n')).toEqual([]);                  // och ett intervall har inga knappar
+    });
+    it('arBortvald med intervall: utanför döljs, gränserna ingår, en gräns som saknas gäller inte, en punkt utan fältet påverkas aldrig', () => {
+        const f = tvaDim();
+        const p = n => ({ x: 1, y: 1, bas: 'A', n });
+        const fi = filter({}, { n: { min: 10, max: 50 } });
+        expect([5, 9.99, 10, 30, 50, 50.01, 51].map(n => arBortvald(f, fi, p(n)))).toEqual([true, true, false, false, false, true, true]);
+        expect(arBortvald(f, filter({}, { n: { min: 10, max: null } }), p(1000))).toBe(false);
+        expect(arBortvald(f, filter({}, { n: { min: null, max: 50 } }), p(1))).toBe(false);
+        expect(arBortvald(f, filter({}, { n: { min: 10 } }), p(9))).toBe(true);
+        expect(arBortvald(f, fi, { x: 6, y: 6 })).toBe(false);           // utan fältet
+        expect(arBortvald(f, fi, { x: 6, y: 6, n: 'många' })).toBe(false);   // inte ett tal
+        // Ett filter på ett fält som inte är en dimension i figuren gäller inte.
+        expect(arBortvald(f, filter({}, { y: { min: 100 } }), p(30))).toBe(false);
+        expect(arBortvald(f, filter({ x: ['1'] }), p(30))).toBe(false);
+    });
+    it('arBortvald med två dimensioner: en punkt döljs om någon av dem döljer den', () => {
+        const f = tvaDim();
+        const fi = filter({ bas: ['B'] }, { n: { min: 10 } });
+        const synliga = f.lager[0].data.filter(d => !d.liten && !arBortvald(f, fi, d));
+        expect(synliga).toEqual([{ x: 2, y: 2, bas: 'A', n: 10 }, { x: 6, y: 6 }]);
+    });
+    it('arBortvald: en mängd (det äldre formatet) gäller den första kategoridimensionen', () => {
+        const f = tvaDim({ urval: [ANTAL, { typ: 'kategori', ...URVAL }, { typ: 'kategori', falt: 'kon', namn: 'Kön' }] });
+        expect(arBortvald(f, new Set(['A']), { bas: 'A', n: 1 })).toBe(true);
+        expect(arBortvald(f, new Set(['A']), { kon: 'A', n: 1 })).toBe(false);
+        expect(arBortvald(f, ['A'], { bas: 'A' })).toBe(false);          // en lista är ingen mängd och inget filter
+    });
+    it('urvalIntervallText och urvalBeskrivning: samma text i noten och exportens fotrad', () => {
+        expect(urvalIntervallText(ANTAL, { min: 10, max: 50 })).toBe('10–50');
+        expect(urvalIntervallText(ANTAL, { min: 10, max: null })).toBe('minst 10');
+        expect(urvalIntervallText(ANTAL, { max: 50 })).toBe('högst 50');
+        expect(urvalIntervallText(ANTAL, { min: 1.5 })).toBe('minst 1,5');
+        expect(urvalIntervallText({ format: 'pct' }, { min: -5, max: 2.5 })).toBe('−5,0–2,5 %');
+        expect(urvalIntervallText(ANTAL, {})).toBe('');
+        expect(urvalIntervallText(ANTAL, null)).toBe('');
+        const f = tvaDim();
+        expect(urvalBeskrivning(f, filter({ bas: ['B', 'A'] }, { n: { min: 10, max: 50 } }))).toEqual(['utan BAS A, BAS B', '10–50 personer i gruppen']);
+        expect(urvalBeskrivning(f, filter({ bas: [] }, {}))).toEqual([]);
+        expect(urvalBeskrivning(f, null)).toEqual([]);
+        // Utan mall: namnet och intervallet.
+        expect(urvalBeskrivning(tvaDim({ urval: [{ ...ANTAL, etikett: undefined }] }), filter({}, { n: { max: 50 } }))).toEqual(['Antal personer i gruppen högst 50']);
+        // Det äldre formatet (en mängd) beskrivs som den första kategorin.
+        expect(urvalBeskrivning(stapelfigur(), new Set(['A', 'C']))).toEqual(['utan BAS C, BAS A']);
+    });
+
 });

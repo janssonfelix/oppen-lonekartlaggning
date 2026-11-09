@@ -1,6 +1,6 @@
 # Risk- och sårbarhetsanalys (dataskydd och informationssäkerhet) — Öppen lönekartläggning
 
-**Bygge:** `2026.11.05` · **Artefakt-SHA-256:** `ebb57d6c78c84f0205cb4bead9c44b12e1b0ed52a386b1f6af37947e486196cd` (se `dist/RELEASE.txt`).
+**Bygge:** `2026.11.05` · **Artefakt-SHA-256:** `f1be05f761ebe1cf74eae29aef6ddae26db4d9f8f33b8097f8e06eae476372cf` (se `dist/RELEASE.txt`).
 **Granskningsdatum:** 2026-11-07.
 **Granskningsmetod:** kodläsning påstående för påstående + statisk sökning i källkod och bygge +
 körning av det byggda verktyget i jsdom och i Chromium (utan nätverk) med syntetiska testfiler.
@@ -615,10 +615,10 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   eller grupp; inga namn eller identifierare) och ska hanteras som personuppgifter." (beslut
   2026-10-16). Lådorna i Tabeller och egna vyer (individpunkter, punktsvärm, regnmoln) exporteras som
   statistik per grupp, aldrig som individer. Sådana filer ska hanteras som personuppgifter (§8, punkt 1).
-- **Diagrammens BAS-urval** (knapparna ovanför diagrammen där BAS-intervallet är en dimension) skapar ingen ny
-  utdata: det döljer bara märken på skärmen och räknar inte om något tal. Diagrammets egen exportmeny (PNG/SVG)
-  kan visa samma urval och säger det då i fotraden ("Dolt i diagrammet: BAS A"); diagramdatan har alla rader och
-  samma rad. Rapporten, Word, PDF, utskriften, ZIP-filen och rapportunderlaget är alltid fullständiga, och urvalet
+- **Diagrammens urval** (filterraderna ovanför diagrammen: knappar per BAS-intervall och andra kategorier, fälten
+  Minst och Högst för ett tal som antal personer i gruppen) skapar ingen ny utdata: det döljer bara märken på
+  skärmen och räknar inte om något tal. Diagrammets egen exportmeny (PNG/SVG) kan visa samma urval och säger det
+  då i fotraden ("Urval i diagrammet: utan BAS A"); diagramdatan har alla rader och samma rad. Rapporten, Word, PDF, utskriften, ZIP-filen och rapportunderlaget är alltid fullständiga, och urvalet
   sparas inte i konfigurationsfilen.
 - **Rapportunderlag via urklipp (ADR-20):** aggregerade faktastycken, tabeller och diagram kopieras
   för att klistras in i organisationens egen rapportmall. Blocken följer samma k-regel som Lika

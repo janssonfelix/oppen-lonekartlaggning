@@ -36,11 +36,14 @@ Tre regler bär ritaren:
 3. Ritaren får alltid **originalfiguren** och avgör själv vad som ritas. En förfiltrerad kopia ger andra
    index, andra palettfärger och en annan kategoriordning.
 
-En punkt vars `urval`-fält är bortvalt behandlas som en liten punkt utan visaSma. Ritaren tar emot de bortvalda
-värdena som `val.bortvalda` (en mängd strängar; `_rfByggSvg`, `figurTillSvg`, `figurTillBild`). Kategoriordningen,
-domänerna, förklaringen och delbilderna (`paneler: 'auto'`) räknas då ur de punkter som inte är bortvalda; `data-l`
-och `data-i` pekar på originalfiguren som vanligt, och referenserna ritas oavsett urval. Utan `bortvalda` (eller
-med en tom mängd) är SVG:n byte för byte densamma som för en figur utan `urval`.
+En punkt som filtret döljer (`arBortvald`: dess värde i en av figurens `urval`-dimensioner är bortvalt eller ligger
+utanför intervallet) behandlas som en liten punkt utan visaSma. Ritaren tar emot filtret som `val.filter`
+(`{ kategori: Map<falt, Set<värde>>, intervall: Map<falt, { min, max }> }`; `_rfByggSvg`, `figurTillSvg`,
+`figurTillBild`). Det äldre `val.bortvalda` (en mängd strängar: de bortvalda värdena i figurens första
+kategoridimension) gäller fortfarande när `filter` saknas. Kategoriordningen, domänerna, förklaringen och
+delbilderna (`paneler: 'auto'`) räknas då ur de punkter som inte är bortvalda; `data-l` och `data-i` pekar på
+originalfiguren som vanligt, och referenserna ritas oavsett urval. Utan filter (eller med ett tomt) är SVG:n byte
+för byte densamma som för en figur utan `urval`.
 
 ## 2. Figurformatet
 
@@ -61,7 +64,7 @@ Läge anges alltid i skärmens axlar: x är vågrät, y lodrät. En liggande sta
 | `legend` | `false` stänger av förklaringen. |
 | `hojd` | Pixlar; annars 320. `val.hojd` går före. |
 | `individer` | `true` när figuren har en punkt per person (spridningsdiagrammen lön mot ålder i Ålder & karriär). Diagramdatan (CSV, urklipp) får då raden om att filen innehåller en rad per person och ska hanteras som personuppgifter (`kIndividRad`, `11-diagramexport.js`). En `lada` behöver inte märket: den skrivs aldrig som individer. Prövas inte av `valideraFigur`. |
-| `urval` | `{ falt, namn, etikett? }`: en dimension användaren kan välja bort värden i, för presentation (t.ex. `{ falt: 'bas', namn: 'BAS-intervall', etikett: 'BAS {v}' }`). `falt` är datapunktens fält med värdet (punkter utan fältet, t.ex. referenser, berörs aldrig), `namn` dimensionens namn, `etikett` en mall där `{v}` byts mot värdet (utan mall visas värdet). Ett bortvalt värde döljer bara märken; inget tal räknas om. `valideraFigur` kräver `falt` och `namn` som icke-tomma strängar och `etikett` som sträng. Hjälparna `urvalVarden`, `urvalEtikett` och `arBortvald` (nedan). |
+| `urval` | En lista med dimensioner användaren kan filtrera diagrammet på, för presentation. Ett ensamt objekt är en lista med ett element, och ett objekt utan `typ` är en kategori (det äldre formatet). `{ typ: 'kategori', falt, namn, etikett? }`: en knapp per värde, `etikett` en mall där `{v}` byts mot värdet (t.ex. `'BAS {v}'`; utan mall visas värdet). `{ typ: 'intervall', falt, namn, format?, etikett? }`: fälten Minst och Högst; `format` är ett av `talformat`s format (`TALFORMAT`: `kr`, `pct`, `pctAbs`, `antal`, `tal2`, `ar`) och ger platshållarna och texten, `etikett` en mall där `{v}` byts mot intervallet (`'{v} personer i gruppen'` → "10–50 personer i gruppen"; utan mall namnet och intervallet). `falt` är datapunktens fält (punkter utan fältet, t.ex. referenser, berörs aldrig), `namn` dimensionens namn. Ett filter döljer bara märken; inget tal räknas om. `valideraFigur` kräver en känd `typ`, `falt` och `namn` som icke-tomma strängar, `etikett` som sträng, `format` bara på ett intervall och bland `TALFORMAT`, och att inget `falt` förekommer två gånger. Vyerna tar dimensionerna ur `URVAL` (`10-diagramtema.js`, nedan). Hjälparna `urvalLista`, `urvalVarden`, `urvalSpann`, `urvalEtikett`, `arBortvald` och `urvalBeskrivning` (nedan). |
 
 **Axel:** `{ skala: 'band' | 'linjar' | 'log', titel?, format?, doman?: [a, b], ordning?: string[],
 omvand?: boolean, nollinje?: boolean, etikettMax?: number, dold?: boolean }`.
@@ -144,7 +147,7 @@ Domänerna räknas aldrig ur referenserna.
 | `utanSmaGrupper(figur)` | Figuren utan små punkter, utan tömda lager och utan namn på borttagna kategorier och paneler. Originalet rörs inte. Det här är det som får lämnas vidare som **data**. |
 | `kronorSkillnad(medKv, medMa)`, `kronorTipsRad(belopp)` | Skillnaden mellan kvinnors och mäns median i kronor per månad, avrundad till hundratal och negativ när kvinnorna ligger lägre (`null` när en median saknas), och verktygstipsets rad `Skillnad: −3 200 kr/mån`. En vy som visar ett gap i procent och har båda medianerna lägger beloppet på datapunkten som `skillnadKr` (`_kronorFalt` i `03-hjalpfunktioner.js`), så att tipset och diagramdatan bär det. Vyn skickar bara medianer som får redovisas. |
 | `figurTillTabell(figur)` | Diagramdata som rader. Filtrerar inte själv. `ruta` blir en korstabell per lager; övriga `Serie \| x \| y`, med `Undre \| Övre` när figuren har band, intervall, felstaplar eller lådor. En låda skrivs aldrig som individer: en rad per kategori med median, första och tredje kvartilen. Ett lager på höger axel får tillägget ` (höger axel: <titel>)` i serienamnet, ett lager i en panel ` · <panel>`. Bär någon datapunkt `skillnadKr` får tabellen kolumnen `Skillnad (kr/mån)`. |
-| `urvalVarden(figur, { visaSma })`, `urvalEtikett(figur, v)`, `arBortvald(figur, bortvalda, d)` | Figurens `urval`. `urvalVarden`: de olika värdena (som strängar) bland punkter som har fältet och inte är små (om inte `visaSma`), i bandaxelns ordning när värdet med etiketten insatt är en kategori där, övriga efter i svensk sorteringsordning; utan `urval` en tom lista. `urvalEtikett`: mallen med värdet insatt. `arBortvald`: sant när punkten har fältet och dess värde finns i mängden `bortvalda`. |
+| `urvalLista(figur)`, `urvalVarden(figur, dim, { visaSma })`, `urvalSpann(figur, dim, { visaSma })`, `urvalEtikett(figur, dim, v)`, `arBortvald(figur, filter, d)`, `urvalBeskrivning(figur, filter)`, `urvalIntervallText(dim, { min, max })` | Figurens `urval`. `dim` är en dimension eller dess fält; utan `dim` gäller den första dimensionen av rätt typ. `urvalLista`: dimensionerna som en lista med `typ` utskriven. `urvalVarden` (kategori): de olika värdena (som strängar) bland punkter som har fältet och inte är små (om inte `visaSma`), i bandaxelns ordning när värdet med etiketten insatt är en kategori där, övriga efter i svensk sorteringsordning; utan dimensionen en tom lista. `urvalSpann` (intervall): `{ min, max }` bland punkter som har fältet som ändligt tal och inte är små (om inte `visaSma`), eller null under två olika tal. `urvalEtikett`: mallen med värdet insatt. `arBortvald`: sant när punkten har fältet för en av figurens dimensioner och värdet är bortvalt eller ligger utanför intervallet (gränserna ingår, en saknad gräns gäller inte); en punkt utan fältet påverkas aldrig, och ett filter på ett fält som inte är en dimension gäller inte. `filter` är `{ kategori: Map<falt, Set>, intervall: Map<falt, { min?, max? }> }` eller en mängd (det äldre formatet: första kategoridimensionen). `urvalBeskrivning`: det aktiva filtret som text, en del per dimension ("utan BAS A, BAS N", "10–50 personer i gruppen"); noten och exportens fotrad visar samma text. |
 | `skalDoman`, `axelVarden`, `panelerMedLager`, `antalPunkter`, `ladstatistik`, `talformat` | Hjälpare som ritaren och testerna delar. |
 
 ## 3. `ritaFigur(id, figur, val)`
@@ -205,21 +208,39 @@ eller visar serien; posten står kvar, nedtonad. Högst fyra rader, namn kortas 
 **Notisen om urval.** Har ritaren nedsamplat står antalen i en rad under diagrammet
 (`_setScatterSampleNote`). Antalen räknar inte dolda punkter.
 
-**Knappraden för figurens `urval`.** Har figuren `urval`, behållaren ett id och `urvalVarden` minst två värden
-lägger `ritaFigur` en rad `<div class="diagram-urval" role="group" aria-label="Visa <namn>">` direkt före behållaren:
-en knapp per värde (`aria-pressed="true"` när värdet visas) och sist "Visa alla" (dold när inget är bortvalt). Ett
-klick växlar värdet och ritar om; den sista valda knappen har `aria-disabled="true"` och gör inget. När något är
-bortvalt står en not under diagrammet (`k-mask-note`, `data-rf="urval"`): "Diagrammet visar ett urval: BAS A är
-dolt. Talen i texten och tabellerna gäller hela underlaget." Valet minns per diagram (id och urvalsfält) under
-sessionen, också över `rensaFigur`: varje `ritaFigur` tar minnet ∩ figurens värden, och vore alla bortvalda visas
-alla. `_rfUrvalGlom()` glömmer det; `_rfRensaAlla`, lönefilens inläsning och demots inläsning (`_lasInDemounderlag`,
-litet och stort demo) anropar den. Urvalet sparas inte i
-konfigurationsfilen. Exportmenyns PNG/SVG ritas med urvalet och fotraden får " · Dolt i diagrammet: BAS A, BAS N";
-diagramdatan har alla rader och raden "Dolt i diagrammet: …". `diagramTillBild` (rapport, utskrift, ZIP,
-rapportunderlag) ritar alltid allt.
+**Filterraderna för figurens `urval`.** Har figuren `urval` och behållaren ett id lägger `ritaFigur` en rad
+`<div class="diagram-urval" role="group" data-urval-falt="<falt>">` per dimension direkt före behållaren, i figurens
+ordning — för en kategori när `urvalVarden` har minst två värden, för ett intervall när `urvalSpann` inte är null.
+Utan rad gäller inget filter i den dimensionen. Sist i den sista raden står "Visa alla" (dold när inget filter är
+aktivt och inget fält är fel); den nollställer alla dimensioner, tömmer fälten och glömmer minnet.
+- Kategori (`aria-label="Visa <namn>"`): en knapp per värde (`data-urval`, `aria-pressed="true"` när värdet visas).
+  Ett klick växlar värdet och ritar om; den sista valda knappen har `aria-disabled="true"` och gör inget.
+- Intervall (`aria-label="<namn>"`): namnet och två fält, Minst och Högst (`<label>` med `<input type="text"
+  inputmode="decimal" data-urval-grans="min|max" aria-label="<namn>, minst|högst">`). Platshållarna är figurens minsta
+  och största tal i dimensionens format. Fälten verkställs vid `change` och läses med verktygets talinläsning
+  (`parseNumberStrict`: "1,5", "1 500", "−5"); ett textfält och inte `type="number"`, eftersom en webbläsare med annat
+  språk annars lämnar ett tomt värde för "1,5". Tomt fält är ingen gräns. Ett tal som inte går att läsa, eller Minst
+  större än Högst, markerar fältet (`aria-invalid="true"`), ändrar inget och står först i noten ("<namn>: Minst är
+  större än högst. Filtret är oförändrat."). Ett intervall får dölja allt: då står "Inga grupper i urvalet" i
+  behållaren (`data-rf="tom"`), och raderna och noten står kvar.
+- Fokus på en knapp eller ett fält följer med när raderna byggs om.
 
-Vyerna ger BAS-urvalet med konstanten `BAS_URVAL` (`10-diagramtema.js`: `{ falt: 'bas', namn: 'BAS-intervall',
-etikett: 'BAS {v}' }`), och varje punkt som hör till ett intervall bär `bas` med det nakna värdet. Regeln är att
+När ett filter är aktivt står en not under diagrammet (`k-mask-note`, `data-rf="urval"`): "Diagrammet visar ett
+urval: utan BAS A, BAS N; 10–50 personer i gruppen. Talen i texten och tabellerna gäller hela underlaget." (delarna ur
+`urvalBeskrivning`). Behållaren bär filtret i `_figurFilter`. Valet minns per diagram och dimension (`<id>|<falt>`)
+under sessionen, också över `rensaFigur`. En kategori minns sina bortvalda värden: varje `ritaFigur` tar minnet ∩
+figurens värden, och vore alla bortvalda visas alla. Ett intervall minns `{ min, max }` och gäller också när figurens
+tal ligger utanför; noten säger då vad som gäller. `_rfUrvalGlom()` glömmer det; `_rfRensaAlla`, lönefilens
+inläsning och demots inläsning (`_lasInDemounderlag`, litet och stort demo) anropar den. Urvalet sparas inte i
+konfigurationsfilen. Exportmenyns PNG/SVG ritas med urvalet och fotraden får " · Urval i diagrammet: utan BAS A,
+BAS N; 10–50 personer i gruppen" (samma text som noten); diagramdatan har alla rader och raden "Urval i diagrammet:
+…". `diagramTillBild` (rapport, utskrift, ZIP, rapportunderlag) ritar alltid allt.
+
+Vyerna tar dimensionerna ur `URVAL` (`10-diagramtema.js`): `URVAL.bas` (kategori på `bas`, etikett `'BAS {v}'`),
+`URVAL.antal` (intervall på `n`, gruppens antal personer, format `antal`), `URVAL.konsdominans` (kategori på
+`konsdom`: Kvinnodominerad, Mansdominerad, Blandad), `URVAL.matchning` (kategori på `matchning`: AID + BAS, Endast
+AID) och `URVAL.avvikelse` (intervall på `x`, format `pct`). `BAS_URVAL` är kvar som ett annat namn på `URVAL.bas`.
+Varje punkt som hör till ett BAS-intervall bär `bas` med det nakna värdet. Regeln är att
 inget räknas om: urvalet ges bara där varje märke (punkt, stapel, spann, låda, linjens hörnpunkt) hör till ett enda
 BAS-intervall, så att ett bortval döljer hela märken. Ett märke som samlar flera intervall (kandidatparet i
 Likvärdigt arbete, lägena per kön i Lönepolitik) skulle räknas om ur det som syns, och sådana figurer har inget
@@ -312,7 +333,7 @@ svg[role=group][aria-label=<beskrivning>][width][height][viewBox]   (+ data-neds
 - Det finns två slags inre `<svg>`: panelen (`data-del="panel"`) och ränderna i en liten yta
   (`data-marke="rander"`). Diagrammets egen svg är `:scope > svg` i behållaren.
 - Egenskaper på behållaren (inget skrivs som attribut): `_figur` (originalet, med små punkter),
-  `_figurVal`, `_figurDolda`, `_figurBredd`, `_rfKoppling`, `_exportBeskrivning`.
+  `_figurVal`, `_figurDolda`, `_figurFilter`, `_figurBredd`, `_rfKoppling`, `_exportBeskrivning`, `_rfUrvalFel`.
 
 ## 5. Det som inte ritas, utan fel
 
@@ -332,7 +353,8 @@ svg[role=group][aria-label=<beskrivning>][width][height][viewBox]   (+ data-neds
 ## 6. Export och rensning
 
 **`figurTillSvg(figur, bredd, hojd, val)`** ger figuren som fristående SVG-text. `val`: `visaSma`, `dolda`
-(mängden serier som dolts via förklaringen), `bortvalda` (urvalsvärden vars punkter inte ritas). Bilden ritas på nytt utanför sidan i en logisk bredd på 800 och
+(mängden serier som dolts via förklaringen), `filter` (urvalet vars punkter inte ritas; det äldre `bortvalda` gäller
+när `filter` saknas). Bilden ritas på nytt utanför sidan i en logisk bredd på 800 och
 skalas med `viewBox` till begärd storlek. Mått som inte är tal större än noll ger bredd 1600 respektive höjd
 bredd × 9/16. Bakgrunden är vit. Under standardvärdet för minsta gruppstorlek bär bilden meningen om sänkt
 tröskel (ADR-38); har ritaren nedsamplat står "Visar ett urval (a av b punkter)." före den. Kastar om figuren
@@ -369,7 +391,7 @@ fliken får "(undantag: valt i Tabeller och egna vyer)" bara när exporten fakti
 
 **Rensning.**
 - `rensaFigur(id)` kopplar loss lyssnare och storleksbevakning, döljer behållarens tips, tar bort figuren och
-  de andra egenskaperna, tar bort notisen om urval, knappraden och noten för figurens `urval` (minnet står kvar)
+  de andra egenskaperna, tar bort notisen om urval, filterraderna och noten för figurens `urval` (minnet står kvar)
   och tömmer behållaren. Exportmenyn står kvar. Idempotent.
 - `ritaFigur` för ett register över sina behållare. `_rfRensaAlla()` rensar dem alla — oavsett id, också i
   tomt läge och sedan de lämnat dokumentet — och nollställer verktygstipset. `_rensaAllData` anropar den

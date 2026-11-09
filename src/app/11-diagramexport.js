@@ -10,9 +10,10 @@
 //   markeraUtanExport(el, skal)     — behållaren (och allt i den) lämnar inte verktyget; skälet ur EXPORT_SKAL.
 //   exportBeskrivning (ritaFigur)   — blir rad 2 i diagramdatan och står i bildens fotrad (Utforskas urval).
 //   exportMedSma (ritaFigur)        — funktion som svarar om små grupper ska följa med (Utforskas kryssruta).
-//   figur.urval (ritaFigur)         — användarens urval i diagrammet (knappraden): exportmenyns PNG/SVG ritas med
-//                                     urvalet och fotraden säger vad som är dolt; diagramdatan har alla rader och en
-//                                     rad "Dolt i diagrammet: …". diagramTillBild ritar alltid allt.
+//   figur.urval (ritaFigur)         — användarens urval i diagrammet (filterraderna): exportmenyns PNG/SVG ritas med
+//                                     urvalet och fotraden säger vad som gäller, med samma text som noten under
+//                                     diagrammet; diagramdatan har alla rader och en rad "Urval i diagrammet: …".
+//                                     diagramTillBild ritar alltid allt.
 //   figur.individer                 — figuren har en punkt per person: diagramdatan får raden om att filen
 //                                     innehåller en rad per person och ska hanteras som personuppgifter (kIndividRad).
 //
@@ -121,9 +122,10 @@ function _chartExportUnderlagExport(gd) {
     return ut && !ut.tom ? ut : null;
 }
 
-/** Etiketterna för det användaren har dolt i diagrammet (urvalet, t.ex. ['BAS A', 'BAS N']); [] utan urval. */
+/** Urvalet i diagrammet som text, en del per aktiv dimension (t.ex. ['utan BAS A, BAS N', '10–50 personer i
+ *  gruppen']), samma text som noten under diagrammet; [] utan urval. */
 function _chartExportDolt(ut) {
-    return ut && ut.bortvalda && ut.bortvalda.size ? _rfUrvalEtiketter(ut.figur, ut.bortvalda) : [];
+    return ut && ut.filter ? _figUrvalBeskrivning(ut.figur, ut.filter) : [];
 }
 
 /** Diagramdata med en spårbarhetsrad överst (ADR-13). Diagram ritade med diagramkärnan (ADR-39) går genom
@@ -145,12 +147,12 @@ function chartExportRows(gd, underlag) {
     return [[`${chartExportTitle(gd)} — Lönekartläggning ${APP_VERSION}. ${kStampelFor(_kUndantagFor(gd, medSma))}`],
             ...(individer ? [[kIndividRad()]] : []),
             ...(beskrivning ? [[`Urval: ${beskrivning}`]] : []),
-            ...(dolt.length ? [[`Dolt i diagrammet: ${dolt.join(', ')}`]] : []), ...rader];
+            ...(dolt.length ? [[`Urval i diagrammet: ${dolt.join('; ')}`]] : []), ...rader];
 }
 
 /** Rubrik och fotrad till en exporterad bild av ett kärnritat diagram: bilden ska säga själv vad den visar när den
  *  klistras in i ett dokument. Foten: verktyget och dagens datum, och urvalet om vyn har angett ett.
- *  `dolt`: etiketterna som användaren dolt i diagrammet (bara exportmenyns bild, aldrig diagramTillBild).
+ *  `dolt`: urvalet i diagrammet som text (_chartExportDolt; bara exportmenyns bild, aldrig diagramTillBild).
  *  @param {any} gd @param {Date} [datum] @param {string[]} [dolt] */
 function _chartExportRubrikFot(gd, datum = new Date(), dolt = []) {
     const p = n => String(n).padStart(2, '0');
@@ -160,7 +162,7 @@ function _chartExportRubrikFot(gd, datum = new Date(), dolt = []) {
     // Vyns anteckning (val.exportAnteckning) står först i fotraden: en mening om det bilden visar, räknad av vyn
     // ur värden som får visas.
     const v = gd._figurVal && typeof gd._figurVal.exportAnteckning === 'string' ? gd._figurVal.exportAnteckning.trim() : '';
-    const doltText = dolt && dolt.length ? ` · Dolt i diagrammet: ${dolt.join(', ')}` : '';
+    const doltText = dolt && dolt.length ? ` · Urval i diagrammet: ${dolt.join('; ')}` : '';
     return { rubrik: chartExportTitle(gd), fot: `${v ? v + ' · ' : ''}Lönekartläggning ${dag}${urval}${doltText}${gd._rfZoom ? ' · Utsnitt av diagrammet' : ''}` };
 }
 
@@ -181,7 +183,7 @@ async function _diagramTillBildExport(el, val) {
     const ut = _chartExportUnderlag(el);
     el = _chartExportAktuell(el);
     if (!ut) throw new Error('Det finns inget att exportera i diagrammet.');
-    // Användarens urval i diagrammet (ut.bortvalda) följer INTE med: rapporten, utskriften, ZIP-filen och
+    // Användarens urval i diagrammet (ut.filter) följer INTE med: rapporten, utskriften, ZIP-filen och
     // rapportunderlaget visar alltid hela diagrammet.
     const url = await figurTillBild(ut.bild || ut.figur, 'png', bredd, hojd, { visaSma: ut.visaSma, dolda: ut.dolda, ...(utanRubrik ? {} : _chartExportRubrikFot(el)) });
     if (el._figur !== ut.figur) throw new Error('Diagrammet rensades innan exporten blev klar.');
@@ -199,7 +201,7 @@ async function __chartExportImageExport(gd, val, underlag) {
     gd = _chartExportAktuell(gd);
     if (!ut) throw new Error('Det finns inget att exportera i diagrammet.');
     // Exportmenyn ritar diagrammet som det visas: också med användarens urval, som fotraden då namnger.
-    const url = await figurTillBild(ut.bild || ut.figur, format, width, height, { visaSma: ut.visaSma, dolda: ut.dolda, bortvalda: ut.bortvalda, ..._chartExportRubrikFot(gd, new Date(), _chartExportDolt(ut)) });
+    const url = await figurTillBild(ut.bild || ut.figur, format, width, height, { visaSma: ut.visaSma, dolda: ut.dolda, filter: ut.filter, ..._chartExportRubrikFot(gd, new Date(), _chartExportDolt(ut)) });
     // Bilden görs asynkront. Har diagrammet under tiden rensats (Rensa all data) eller fått en annan figur
     // lämnar bilden av den gamla inte verktyget.
     if (gd._figur !== ut.figur) throw new Error('Diagrammet rensades innan exporten blev klar.');
