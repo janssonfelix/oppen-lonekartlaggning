@@ -96,8 +96,6 @@ const URVAL = Object.freeze({
     matchning: Object.freeze({ typ: 'kategori', falt: 'matchning', namn: 'Matchning', etikett: '{v}' }),
     avvikelse: Object.freeze({ typ: 'intervall', falt: 'x', namn: 'Avvikelse (%)', format: 'pct', etikett: 'avvikelse {v}' }),
 });
-/** Det äldre namnet på BAS-dimensionen; vyerna byter till URVAL.bas. */
-const BAS_URVAL = URVAL.bas;
 /**
  * Statusen för ett avstånd från lika lön i procent (|100 − kvoten|) och en prövning av skillnaden (true/false; null
  * när den inte kunde göras, vilket ger Går ej att bedöma).

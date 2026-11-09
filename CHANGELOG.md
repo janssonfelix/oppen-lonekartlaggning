@@ -18,6 +18,15 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   raden i diagramdatan heter nu *Urval i diagrammet*. Filtren döljer fortfarande bara märken och minns per diagram
   och dimension under sessionen. Det här är kärnan; diagrammen får sina nya filter i nästa steg.
 
+- **Fler filter i diagrammen där punkterna är yrkesgrupper.** *Antal personer i gruppen* (Minst och Högst) finns
+  i Prioriteringsmatrisen, Prioriteringens kostnadsdiagram, trattdiagrammet i Lika arbete, Krav mot lön i
+  Likvärdigt arbete, bandkartan, statistikens spann, spannet och skillnaden mot statistiken och överblickens bild i
+  Löneläget. Prioriteringsmatrisen har också *Avvikelse (%)* (Minst och Högst). Bandkartan och statistikens spann
+  har knappar för *Könsdominans* (Kvinnodominerad, Mansdominerad, Blandad), och statistikens spann och de två
+  diagrammen mot statistiken har knappar för *Matchning* (AID + BAS, Endast AID; en grupp utan statistik påverkas
+  inte). Filtren läser samma tal och ord som diagrammets verktygstips eller tabellen; inget nytt visas. Diagram vars
+  punkter är BAS-intervall, personer eller åldersklasser har bara BAS-knapparna.
+
 - **Välj vilka BAS-intervall ett diagram visar.** Diagrammen där BAS-intervallet är en dimension har en knapp per
   intervall ovanför diagrammet, och *Visa alla*: bandkartan, statistikens spann, spannet och avvikelsen mot
   statistiken, efterlevnaden (båda vyerna), läget i spannet per kön och hanteln mot referenserna i Löneläget;

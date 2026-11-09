@@ -207,7 +207,7 @@ export async function flikarOchDiagram() {
         const felFore = konsolfel.length + sidfel.length;
         const etiketter = () => page.evaluate(() => [...document.querySelectorAll('#chart-lp-bandmap > svg [data-axel="x"]')].map(t => t.textContent));
         const fore = await etiketter();
-        const forsta = page.locator('#chart-lp-bandmap').locator('xpath=preceding-sibling::div[contains(@class,"diagram-urval")][1]').locator('button[aria-pressed]').first();
+        const forsta = page.locator('#chart-lp-bandmap').locator('xpath=preceding-sibling::div[@data-urval-falt="bas"][1]').locator('button[aria-pressed]').first();
         const namn = await forsta.textContent();
         await forsta.click();
         await page.waitForTimeout(300);
@@ -387,6 +387,32 @@ export async function flikarOchDiagram() {
         await page.waitForTimeout(400);
         await page.keyboard.press('Escape');
         await page.waitForFunction(() => document.getElementById('installningar-modal').style.display === 'none', null, { timeout: 5000 });
+    }
+
+    console.log('\n── Diagramfilter: Minst på prioriteringsmatrisens antal ──');
+    /* global _figUrvalSpann -- körs i sidan, där den finns */
+    {
+        const punkter = () => page.evaluate(() => document.querySelectorAll('#chart-prio-matrix > svg [data-marke="punkt"]').length);
+        const fore = await punkter();
+        const felFore = konsolfel.length + sidfel.length;
+        const rader = await page.evaluate(() => { const ut = []; let r = document.getElementById('chart-prio-matrix').previousElementSibling;
+            while (r && r.classList.contains('diagram-urval')) { ut.unshift(r.getAttribute('data-urval-falt')); r = r.previousElementSibling; }
+            return ut; });
+        ok(['bas', 'n', 'x'].every(f => rader.includes(f)), `matrisen har filterraderna BAS, antal och avvikelse (${rader.join(', ')})`);
+        // Ett Minst mitt i spannet: grupperna under döljs.
+        const minst = await page.evaluate(() => { const sp = _figUrvalSpann(document.getElementById('chart-prio-matrix')._figur, 'n'); return Math.ceil((sp.min + sp.max) / 2); });
+        const falt = page.locator('#chart-prio-matrix').locator('xpath=preceding-sibling::div[@data-urval-falt="n"][1]').locator('input[data-urval-grans="min"]');
+        await falt.fill(String(minst));
+        await falt.press('Enter');
+        await page.waitForTimeout(400);
+        const efter = await punkter();
+        const not = await page.evaluate(() => { const n = document.getElementById('chart-prio-matrix').nextElementSibling; return n && n.getAttribute('data-rf') === 'urval' ? n.textContent : ''; });
+        ok(efter > 0 && efter < fore, `Minst ${minst} ritar färre punkter (${fore} → ${efter})`);
+        ok(not.includes(`minst ${minst} personer i gruppen`) && not.includes('Talen i texten och tabellerna gäller hela underlaget'), `noten nämner intervallet (${not})`);
+        ok(konsolfel.length + sidfel.length === felFore, 'inga konsolfel efter filtret');
+        await page.locator('#chart-prio-matrix').locator('xpath=preceding-sibling::div[contains(@class,"diagram-urval")][1]').locator('[data-urval-alla]').click();
+        await page.waitForTimeout(400);
+        ok(await punkter() === fore && await falt.inputValue() === '', 'Visa alla ritar alla punkter igen och tömmer fältet');
     }
 
     console.log('\n── Regler & praxis: pilen och Stöd i verktyget ──');

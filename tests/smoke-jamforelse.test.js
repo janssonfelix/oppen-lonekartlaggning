@@ -635,7 +635,8 @@ describe('Löneläget: överblicken med bandkartan och statistikens spann', () =
             const p = pts.find(q => q.aid === r.aid && q.bas === r.bas);
             expect(p.y).toBeCloseTo((r.org.median - r.statistik.p10) / (r.statistik.p90 - r.statistik.p10) * 100, 9);
             expect(p.x).toBe('BAS ' + r.bas);
-            expect(p.matchning).toBe(r.statistikMatchning);
+            expect(p.matchning).toBe(r.statistikMatchning === 'aid' ? 'Endast AID' : 'AID + BAS');   // filtrets värde, tabellens ord
+            expect(p.lager.serie.startsWith(p.konsdom + ' · ')).toBe(true);
             expect(!!p.lager.ofylld).toBe(r.statistikMatchning === 'aid');
             expect(p.lager.serie).toMatch(r.statistikMatchning === 'aid' ? / · Endast AID$/ : / · AID \+ BAS$/);
             expect(p.n).toBe(r.n);

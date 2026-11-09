@@ -110,7 +110,7 @@ function _abBasHantelFigur(j, forraAr, nuAr) {
     const fig = foreEfterFigur({ rader: rader.map(r => ({ namn: r.namn, bas: r.bas, fore: r.fore, efter: r.efter, farg: PALETTE.semantic.linje, markering: markeringFor(r.bas) })),
         kolumner: [String(forraAr), String(nuAr)], titel: 'Medianlön per BAS-intervall', format: 'kr',
         beskrivning: `Medianlönen per BAS-intervall, ${forraAr} (strecket) och ${nuAr} (punkten). Bara intervall med minst ${j.kGrans} ${personOrd(j.kGrans)} båda åren.` });
-    return { ..._abEtiketterBortFranStrecket(fig), urval: BAS_URVAL };
+    return { ..._abEtiketterBortFranStrecket(fig), urval: URVAL.bas };
 }
 
 /**

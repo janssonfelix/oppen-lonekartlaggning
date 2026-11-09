@@ -3,7 +3,7 @@
 // diagramvyer-marken.test.js (riggen i helpers/diagramvyer-rigg.js).
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { valideraFigur, figurTillTabell } from '../src/lib/figur.js';
+import { valideraFigur, figurTillTabell, urvalLista, urvalSpann, urvalVarden } from '../src/lib/figur.js';
 import { createAppWindow, delatFonster, utgangslage } from './helpers/app-harness.js';
 import { vanliga, figurMedLiten, person, skapaRigg } from './helpers/diagramvyer-rigg.js';
 
@@ -759,9 +759,14 @@ describe('Jämförelsestatistik: figurerna', () => {
         const f = w.eval("_jmfSpannFigur(window.__r, 'statistik', 'Statistiken', 'statistiken')");
         expect(f.lager.map(l => [l.marke, l.riktning, l.symbol, l.tjocklek])).toEqual(
             [['intervall', 'liggande', undefined, 14], ['intervall', 'liggande', undefined, 7], ['punkt', undefined, 'streck', undefined], ['punkt', undefined, undefined, undefined]]);
-        expect(f.lager[0].data).toEqual([{ y: '207011 Usk · BAS C', lag: 29000, hog: 36000, bas: 'C', markering: ['bas:C', 'grupp:207011|C'] }]);       // utan P10/P90 i referensen: inget spann
-        expect(f.lager[1].data[1]).toEqual({ y: '502010 Sys · BAS C', lag: 40000, hog: 52000, bas: 'C', markering: ['bas:C', 'grupp:502010|C'] });
+        expect(f.lager[0].data).toEqual([{ y: '207011 Usk · BAS C', lag: 29000, hog: 36000, bas: 'C', n: 20, markering: ['bas:C', 'grupp:207011|C'] }]);       // utan P10/P90 i referensen: inget spann
+        expect(f.lager[1].data[1]).toEqual({ y: '502010 Sys · BAS C', lag: 40000, hog: 52000, bas: 'C', n: 20, markering: ['bas:C', 'grupp:502010|C'] });
         expect(f.lager[2].data).toHaveLength(2);
+        // Matchningen med tabellens ord; en grupp utan statistik har ingen (filtret påverkar den inte).
+        w.__r[0].statistikMatchning = 'aid-bas'; w.__r[1].statistikMatchning = 'aid';
+        const m = w.eval("_jmfSpannFigur(window.__r, 'statistik', 'Statistiken', 'statistiken')");
+        expect(m.lager[1].data.map(d => d.matchning)).toEqual(['AID + BAS', 'Endast AID']);
+        expect(m.urval.map(u => u.falt)).toEqual(['bas', 'matchning', 'n']);
         expect(f.y.ordning).toEqual(['207011 Usk · BAS C', '502010 Sys · BAS C']);
         expect(() => valideraFigur(f, 't')).not.toThrow();
         expect(figurTillTabell(f)[0]).toEqual(expect.arrayContaining(['Undre', 'Övre']));
@@ -1685,10 +1690,15 @@ describe('BAS-urval på diagrammen där BAS är en dimension', () => {
     });
     const figur = id => { const el = fonster().document.getElementById(id); return el && el._figur; };
     const BAS_KAT = /(^|· )BAS (\S+)$/;
+    // Diagrammen där punkterna är yrkesgrupper har fler dimensioner (uppgiften Diagramfilter v2); fälten i ordning.
+    const FLER = { 'chart-prio-matrix': ['bas', 'n', 'x'], 'chart-prio-pareto': ['bas', 'n'], 'chart-lp-bandmap': ['bas', 'konsdom', 'n'],
+        'chart-jmf-statlage': ['bas', 'matchning', 'konsdom', 'n'], 'chart-jamforelse-spann': ['bas', 'matchning', 'n'],
+        'chart-jamforelse-avvikelse': ['bas', 'matchning', 'n'], 'chart-la-tratt': ['bas', 'n'], 'chart-likvardighet-krav': ['bas', 'n'], 'chart-ref-hantel': ['bas', 'n'] };
     it.each(MED_URVAL)('%s: urval på BAS-intervall, och varje märke i ett intervall bär sitt BAS', id => {
         const f = figur(id);
         expect(f, id).toBeTruthy();
-        expect(f.urval).toEqual(URVAL);
+        expect(urvalLista(f)[0]).toEqual(URVAL);
+        expect(urvalLista(f).map(u => u.falt), id).toEqual(FLER[id] || ['bas']);
         let medBas = 0;
         for (const l of f.lager) for (const d of l.data) {
             const kat = [d.x, d.y, l.panel].filter(v => typeof v === 'string').find(v => BAS_KAT.test(v));
@@ -1714,8 +1724,63 @@ describe('BAS-urval på diagrammen där BAS är en dimension', () => {
     });
     it('efterlevnadens andra vy (kring en mittlinje) har samma urval', () => {
         const f = fonster().eval(`_lpFigurKompliansMitt([{ bas: '5', n: 40, compliance: { under: 4, within: 30, over: 6, n: 40 } }, { bas: '7', n: 20, compliance: { under: 0, within: 18, over: 2, n: 20 } }])`);
-        expect(f.urval).toEqual(URVAL);
+        expect(f.urval).toBe(fonster().eval('URVAL.bas'));
         expect(f.lager.flatMap(l => l.data.map(d => d.bas))).toEqual(['5', '7', '5', '7']);
+    });
+    it.each(Object.keys(FLER))('%s: varje dimension har något att välja, och ett snävt intervall döljer märken', id => {
+        const w3 = fonster(), f = figur(id);
+        for (const u of urvalLista(f)) {
+            if (u.typ === 'kategori') expect(urvalVarden(f, u).length, `${id} ${u.falt}`).toBeGreaterThanOrEqual(u.falt === 'bas' ? 2 : 1);
+            else expect(urvalSpann(f, u), `${id} ${u.falt}`).not.toBeNull();
+        }
+        const u = urvalLista(f).find(x => x.typ === 'intervall'), sp = urvalSpann(f, u);
+        w3.__f = f;
+        w3.__filter = { kategori: new Map(), intervall: new Map([[u.falt, { min: (sp.min + sp.max) / 2 }]]) };
+        const marken = t => (t.match(/data-marke="(punkt|stapel|intervall|lada|linje)"/g) || []).length;
+        const hel = w3.eval('figurTillSvg(window.__f, 1400, 800, {})'), snav = w3.eval('figurTillSvg(window.__f, 1400, 800, { filter: window.__filter })');
+        expect(marken(snav), id).toBeLessThan(marken(hel));
+        expect(snav).not.toMatch(/NaN|undefined/);
+    });
+    // Punkterna bär filtrens fält med samma värden som tipset och serien (inget nytt röjs).
+    const punkter = f => f.lager.filter(l => l.marke === 'punkt' && l.data.some(d => d.markering && d.markering.some(m => m.startsWith('grupp:'))))
+        .flatMap(l => l.data.map(d => ({ l, d })));
+    it('prioriteringsmatrisen: punkterna bär BAS, antal (samma som tipsets n och y-axeln) och avvikelsen som x', () => {
+        const f = figur('chart-prio-matrix');
+        const p = punkter(f);
+        expect(p.length).toBeGreaterThan(2);
+        for (const { l, d } of p) {
+            expect(d.n, l.serie).toBe(d.y);
+            expect(Number.isInteger(d.n) && d.n > 0).toBe(true);
+            expect(typeof d.x).toBe('number');
+            expect(l.tips(d).flat().join(' ')).toContain(`n = ${d.n} `);
+        }
+        expect(urvalLista(f)[2]).toMatchObject({ typ: 'intervall', falt: 'x', format: 'pct' });
+    });
+    it('bandkartan: grupperna bär könsdominans (som serien) och antal; spannen per BAS bär inget antal', () => {
+        const f = figur('chart-lp-bandmap');
+        const p = punkter(f);
+        expect(p.length).toBeGreaterThan(2);
+        for (const { l, d } of p) {
+            expect(['Kvinnodominerad', 'Mansdominerad', 'Blandad']).toContain(d.konsdom);
+            expect(l.serie).toBe(`${d.konsdom} yrkesgrupp`);
+            expect(Number.isInteger(d.n) && d.n > 0).toBe(true);
+            expect(l.tips(d)).toContainEqual(['Antal', String(d.n)]);
+        }
+        for (const l of f.lager.filter(x => x.marke === 'intervall')) for (const d of l.data) expect(d.n, l.serie).toBeUndefined();
+        const org = f.lager.find(l => l.marke === 'intervall' && l.data.some(d => typeof d.antal === 'number'));
+        expect(org.tips(org.data[0])).toContainEqual(['Antal', String(org.data[0].antal)]);
+    });
+    it('statistikläget: punkterna bär matchning och könsdominans (som serien) och antal', () => {
+        const f = figur('chart-jmf-statlage');
+        const p = punkter(f);
+        expect(p.length).toBeGreaterThan(2);
+        for (const { l, d } of p) {
+            expect(['AID + BAS', 'Endast AID']).toContain(d.matchning);
+            expect(['Kvinnodominerad', 'Mansdominerad', 'Blandad']).toContain(d.konsdom);
+            expect(l.serie).toBe(`${d.konsdom} · ${d.matchning}`);
+            expect(l.tips(d)).toContainEqual(['Matchning', d.matchning]);
+            expect(l.tips(d)).toContainEqual(['Antal', String(d.n)]);
+        }
     });
     it('diagrammen utan BAS-dimension, eller där ett märke samlar flera BAS-intervall, har inget urval', () => {
         const ritade = UTAN_URVAL.filter(id => figur(id));

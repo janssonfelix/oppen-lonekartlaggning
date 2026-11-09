@@ -239,8 +239,15 @@ BAS N; 10–50 personer i gruppen" (samma text som noten); diagramdatan har alla
 Vyerna tar dimensionerna ur `URVAL` (`10-diagramtema.js`): `URVAL.bas` (kategori på `bas`, etikett `'BAS {v}'`),
 `URVAL.antal` (intervall på `n`, gruppens antal personer, format `antal`), `URVAL.konsdominans` (kategori på
 `konsdom`: Kvinnodominerad, Mansdominerad, Blandad), `URVAL.matchning` (kategori på `matchning`: AID + BAS, Endast
-AID) och `URVAL.avvikelse` (intervall på `x`, format `pct`). `BAS_URVAL` är kvar som ett annat namn på `URVAL.bas`.
-Varje punkt som hör till ett BAS-intervall bär `bas` med det nakna värdet. Regeln är att
+AID) och `URVAL.avvikelse` (intervall på `x`, format `pct`).
+Varje punkt som hör till ett BAS-intervall bär `bas` med det nakna värdet. Diagram vars punkter är yrkesgrupper har
+fler dimensioner, och punkterna bär fälten med samma värden som tipset eller tabellen för gruppen (inget nytt röjs):
+prioriteringsmatrisen (BAS, antal, avvikelse), prioriteringens kostnadsdiagram, trattdiagrammet i Lika arbete, krav
+mot lön i Likvärdigt arbete och överblickens bild i Löneläget (BAS, antal), bandkartan (BAS, könsdominans, antal),
+statistikläget (BAS, matchning, könsdominans, antal) och spannen och skillnaden mot statistiken (BAS, matchning,
+antal; en grupp utan statistik har ingen matchning). Ett märke som inte är en yrkesgrupp (bandkartans spann per BAS)
+bär inte `n`, så att antalsfiltret bara läser gruppernas antal. Diagram vars punkter är BAS-intervall, personer eller
+åldersklasser har bara BAS. Regeln är att
 inget räknas om: urvalet ges bara där varje märke (punkt, stapel, spann, låda, linjens hörnpunkt) hör till ett enda
 BAS-intervall, så att ett bortval döljer hela märken. Ett märke som samlar flera intervall (kandidatparet i
 Likvärdigt arbete, lägena per kön i Lönepolitik) skulle räknas om ur det som syns, och sådana figurer har inget
