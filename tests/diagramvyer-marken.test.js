@@ -1202,7 +1202,7 @@ describe('Lika arbete — urval, slutsatser och avsnittens nyckeltal', () => {
         expect(kort[3][1]).toBe(String(d.querySelectorAll('#pag-tabell tbody tr').length));
         expect(t(d.getElementById('la-urval').textContent)).toMatch(/Hela urvalet · 260 personer.*Minsta gruppstorlek 10/);
         expect(t(d.getElementById('nyckel-la-yrkesgrupper').textContent)).toMatch(new RegExp(`^${granska} att granska`));
-        expect(t(d.getElementById('nyckel-ls-bas').textContent)).toMatch(/^\d+ av \d+ över 5 %$/);
+        expect(t(d.getElementById('nyckel-ls-bas').textContent)).toMatch(/^\d+ av \d+ att granska$/);
         expect(t(d.getElementById('nyckel-ls-kon').textContent)).toMatch(/^\d+ av \d+ ojämna$/);
         expect(t(d.getElementById('nyckel-ls-regression').textContent)).toMatch(/% efter ålder och BAS-intervall$/);
         // Huvudvyn — översiktstabellen — ligger i toppen, i mallen för diagramkort.

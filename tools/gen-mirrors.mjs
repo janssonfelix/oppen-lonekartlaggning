@@ -42,6 +42,32 @@ export const MODULES = [
         }
     },
     {
+        file: 'struktur.js', ns: '__mirrorStructure',
+        expose: {
+            medianGapPct: '_stMedianGapPct', representationByBas: '_stRepresentationByBas',
+            quartileDistribution: '_stQuartileDistribution', distributionalGap: '_stDistributionalGap',
+            tillDirektivtecken: '_stTillDirektivtecken', lonebegreppReservation: '_stLonebegreppReservation'
+        }
+    },
+    {
+        file: 'rng.js', ns: '__mirrorRng',
+        expose: { hashSeed: '_rngHashSeed', seedFromNumbers: '_rngSeedFrom', rngFor: '_rngFor' }
+    },
+    {
+        // Uppmärksamhetstrappan och direktivmarkeringen (ADR-59) — importerar stat.js och rng.js
+        file: 'status.js', ns: '__mirrorStatus',
+        expose: { statusNiva: '_stsNiva', direktivMarkering: '_stsDirektiv', kiUtesluterLika: '_stsKiUtesluter',
+                  omkastningsGranser: '_stsOmkastning', slumpensGranser: '_stsSlumpensGranser', bedomSkillnad: '_stsBedom',
+                  perBasSignal: '_stsPerBasSignal', statusKonstanter: '_stsKonstanter' }
+    },
+    {
+        file: 'likvardighet.js', ns: '__mirrorLikvardighet',
+        expose: { computeLikvardighetPairs: '_lvComputePairs', basRangFn: '_lvBasRangFn',
+                  // Den enda definitionen av kvinnodominerat (ADR-60); aidbas.js och loneoversyn.js importerar dem
+                  arKvinnodominerad: '_arKvinnodominerad', konsklass: '_konsklass' }
+    },
+    {
+        // Löneöversynen — importerar likvardighet.js (definitionen av kvinnodominerat, ADR-60)
         file: 'loneoversyn.js', ns: '__mirrorForecast',
         expose: {
             computePott: '_fcComputePott', allocate: '_fcAllocate', targetRows: '_fcTargetRows', suggestTargets: '_fcSuggestTargets', closureTargets: '_fcClosureTargets',
@@ -54,22 +80,6 @@ export const MODULES = [
         }
     },
     {
-        file: 'struktur.js', ns: '__mirrorStructure',
-        expose: {
-            medianGapPct: '_stMedianGapPct', representationByBas: '_stRepresentationByBas',
-            quartileDistribution: '_stQuartileDistribution', distributionalGap: '_stDistributionalGap',
-            tillDirektivtecken: '_stTillDirektivtecken'
-        }
-    },
-    {
-        file: 'rng.js', ns: '__mirrorRng',
-        expose: { hashSeed: '_rngHashSeed', seedFromNumbers: '_rngSeedFrom', rngFor: '_rngFor' }
-    },
-    {
-        file: 'likvardighet.js', ns: '__mirrorLikvardighet',
-        expose: { computeLikvardighetPairs: '_lvComputePairs', basRangFn: '_lvBasRangFn' }
-    },
-    {
         // Tabellerna per AID-kod och BAS-intervall — importerar stat.js och likvardighet.js
         file: 'aidbas.js', ns: '__mirrorAidbas',
         expose: { likaArbeteTabell: '_aidbasLika', likvardigtTabell: '_aidbasLikvardigt', hierarkiskaPar: '_aidbasPar',
@@ -77,18 +87,21 @@ export const MODULES = [
                   dominans: '_aidbasDominans', ingaParText: '_aidbasIngaParText', klassNamn: '_aidbasKlassNamn' }
     },
     {
-        // Regressionsmodellerna (ADR-46-regressionen m.fl.) — importerar stat.js och likvardighet.js
+        // Regressionsmodellerna (ADR-46-regressionen m.fl.) — importerar stat.js
         file: 'regression.js', ns: '__mirrorRegression',
         expose: {
             diagnoseCollinearity: '_rgDiagnoseCollinearity', computePerBasGap: '_rgComputePerBasGap',
             basIndikatorer: '_rgBasIndikatorer', computeSequentialGap: '_rgComputeSequentialGap',
             quantileRegression: '_rgQuantileRegression',
             blinderOaxaca: '_rgBlinderOaxaca', quantileRegressionAtAllTau: '_rgQuantileRegressionAtAllTau',
+            kvantilDesign: '_rgKvantilDesign',   // kvantilregressionens design, delad av punktskattningen och bootstrappen (ADR-63)
             // Förklaringsmodellen (ADR-56)
             computeVariabelTillfor: '_rgComputeVariabelTillfor', normaliseraForklaringsmodell: '_rgNormaliseraForklaringsmodell',
             inomYrkesgrupp: '_rgInomYrkesgrupp',
             forklaringsmodellArStandard: '_rgForklaringsmodellArStandard', modellVariabler: '_rgModellVariabler',
-            modellFras: '_rgModellFras', modellBeskrivning: '_rgModellBeskrivning', tillforGransPp: '_rgTillforGransPp'
+            modellFras: '_rgModellFras', modellBeskrivning: '_rgModellBeskrivning', tillforGransPp: '_rgTillforGransPp',
+            // Ålder valfri (ADR-64)
+            harAlderIRader: '_rgHarAlderIRader'
         }
     },
     {

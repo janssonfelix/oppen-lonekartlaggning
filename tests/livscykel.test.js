@@ -159,3 +159,11 @@ describe('livscykelRegression: fixBas', () => {
         expect(c.gapAt25).toBeCloseTo(a.gapAt25, 10);
     });
 });
+
+describe('livscykelRegression: lönefil utan ålder (ADR-64)', () => {
+    it('ger felkod no_age när ingen rad har ålder', () => {
+        const res = livscykelRegression(fixtur(240).map(d => ({ ...d, alder: 0 })), { golv: 10 });
+        expect(res.errorCode).toBe('no_age');
+        expect(res.error).toMatch(/ålder/i);
+    });
+});

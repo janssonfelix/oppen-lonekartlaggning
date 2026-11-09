@@ -1,6 +1,6 @@
 /**
  * Sakliga skäl i rapporten och exporterna: tabellerna "Sakliga skäl per grupp" och "Sammanställning per kategori" i
- * handlingsplanens avsnitt (rapportmodellen, så Rapporttext, Word och PDF), Excel-bladet Sakliga skal, handlingsplanens
+ * handlingsplanens avsnitt (rapportmodellen, så Rapporttext, Word och PDF), Excel-bladet Sakliga skäl, handlingsplanens
  * kolumner för skäl och förklarad andel, och demots förifyllda skäl på tre rader.
  */
 import { describe, it, expect, vi } from 'vitest';
@@ -46,6 +46,8 @@ describe('demot: förifyllda skäl på tre rader', () => {
 describe('rapportmodellen: handlingsplanens avsnitt', () => {
     it('efter åtgärdstabellen: Sakliga skäl per grupp och Sammanställning per kategori, med en dämpad mening om bedömningen', () => {
         const w = demo();
+        // Sedan ADR-60 går demots tre skäl till kandidatpar; ett skäl på Barnskötare (en man, under tröskeln) ger en grupp utan belopp.
+        w.eval(`_hpSattSkal('prio|403010|C', [{ kategori: 'marknad', belopp: 500, kommentar: '' }])`);
         const a = atgarder(w);
         const tabeller = a.delar.filter(p => p.typ === 'tabell');
         expect(tabeller.length).toBe(3);
@@ -84,19 +86,19 @@ describe('rapportmodellen: handlingsplanens avsnitt', () => {
     });
 });
 
-describe('Excel: bladet Sakliga skal och handlingsplanens kolumner', () => {
-    it('"Excel (alla flikar)" får bladet Sakliga skal när någon rad har skäl, och förhandsbeskedet säger det', async () => {
+describe('Excel: bladet Sakliga skäl och handlingsplanens kolumner', () => {
+    it('"Excel (alla flikar)" får bladet Sakliga skäl när någon rad har skäl, och förhandsbeskedet säger det', async () => {
         const w = demo();
         await laddaXlsx(w);
         const bok = Object.values(fangaBocker(w, () => w.eval('exportAllToExcel()')))[0];
-        expect(bok).toContain('[Sakliga skal]');
-        expect(w.eval('excelAlltBlad()')).toContain('Sakliga skal');
-        const blad = bok.slice(bok.indexOf('[Sakliga skal]'));
+        expect(bok).toContain('[Sakliga skäl]');
+        expect(w.eval('excelAlltBlad()')).toContain('Sakliga skäl');
+        const blad = bok.slice(bok.indexOf('[Sakliga skäl]'));
         expect(blad).toContain('Sammanställning per kategori');
         w.__state.handlingsplan = {};
-        expect(w.eval('excelAlltBlad()')).not.toContain('Sakliga skal');
+        expect(w.eval('excelAlltBlad()')).not.toContain('Sakliga skäl');
         const utan = Object.values(fangaBocker(w, () => w.eval('exportAllToExcel()')))[0];
-        expect(utan).not.toContain('[Sakliga skal]');
+        expect(utan).not.toContain('[Sakliga skäl]');
     });
     it('handlingsplansunderlaget får kolumnerna Sakliga skäl och Förklarad andel', async () => {
         const w = demo();

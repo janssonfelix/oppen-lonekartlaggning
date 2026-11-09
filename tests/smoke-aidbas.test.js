@@ -50,10 +50,10 @@ describe('Lika arbete: avsnitten Lika arbete AID x BAS och Analys på individniv
         const w = fonster([...UNDERLAG, ...TVA_BAS]);
         w.__renderTabContent('matrix');
         const t = tabell(w, 'aidbas-lika-tabell');
-        expect(t.rubriker).toEqual(['BAS-intervall', 'AID-kod', 'Yrkesgrupp', 'Antal kvinnor', 'Antal män', 'Medianlön kvinnor', 'Medianlön män', 'Kvinnors median i % av mäns', 'Nedre gräns', 'Övre gräns', 'Bedömning']);
+        expect(t.rubriker).toEqual(['BAS-intervall', 'AID-kod', 'Yrkesgrupp', 'Antal kvinnor', 'Antal män', 'Medianlön kvinnor', 'Medianlön män', 'Kvinnors median i % av mäns', 'Nedre gräns', 'Övre gräns', 'Bedömning', 'Ojusterad löneskillnad ≥ 5 %']);
         expect(t.rader.map(r => `${r[0]} ${r[1]}`)).toEqual(['A 1001', 'B 3003', 'C 1001', 'D 7007', 'E 2002', 'F 7007']);   // skärmen: också 4 personer
         const e = t.rader.find(r => r[1] === '2002');
-        expect(e.slice(3)).toEqual(['30', '9', '–', '–', '–', '–', '–', 'Analyseras på individnivå']);
+        expect(e.slice(3)).toEqual(['30', '9', '–', '–', '–', '–', '–', 'Analyseras på individnivå', '–']);
         const d = t.rader.find(r => r[0] === 'D');
         expect(d[5]).toBe('30 825 kr'); expect(d[6]).toBe('31 825 kr');
         expect(d[7]).toMatch(/^9\d,\d %$/);
@@ -81,6 +81,12 @@ describe('Lika arbete: avsnitten Lika arbete AID x BAS och Analys på individniv
         expect(w.__state.lonemanad).toBe('2025-11');
         expect(w.__state.likvardighet.kvDomDefinition).toBe('scb');
         expect(() => w.eval('applyConfigSnapshot(' + JSON.stringify({ ...cfg, likvardighet: { kvDomDefinition: 'annat' } }) + ')')).toThrow(/kvDomDefinition/);
+        // Jämförelseyrkena (ADR-60): standard alla som inte är kvinnodominerade; filtret följer med och valideras.
+        expect(cfg.likvardighet.jamforelse).toBe('alla');
+        w.eval('applyConfigSnapshot(' + JSON.stringify({ ...cfg, likvardighet: { ...cfg.likvardighet, jamforelse: 'mansdominerade' } }) + ')');
+        expect(w.__state.likvardighet.jamforelse).toBe('mansdominerade');
+        expect(w.eval('buildConfigSnapshot()').likvardighet.jamforelse).toBe('mansdominerade');
+        expect(() => w.eval('applyConfigSnapshot(' + JSON.stringify({ ...cfg, likvardighet: { jamforelse: 'blandade' } }) + ')')).toThrow(/jamforelse/);
     });
 });
 
@@ -100,6 +106,17 @@ describe('Likvärdigt arbete: avsnitten per BAS-intervall och den hierarkiska j�
         expect(b()[6]).toBe('Kvinnodominerad');
         expect(w.document.getElementById('aidbas-likvardigt').textContent).toContain('SCB: 60 % kvinnor eller mer');
         expect(w.document.getElementById('nyckel-lv-aidbas').textContent).toBe('4 grupper · 2 kvinnodominerade (enligt SCB)');   // skärmen visar också gruppen med 4 personer
+    });
+    it('rutan Jämför bara med mansdominerade yrken sätter filtret och ritar om (ADR-60)', () => {
+        const w = fonster();
+        w.__renderTabContent('likvardighet');
+        const ruta = w.document.getElementById('lv-bara-mansdominerade');
+        expect(ruta).not.toBeNull();
+        expect(ruta.checked).toBe(false);
+        ruta.checked = true; ruta.dispatchEvent(new w.Event('change'));
+        expect(w.__state.likvardighet.jamforelse).toBe('mansdominerade');
+        expect(w.document.getElementById('lv-bara-mansdominerade').checked).toBe(true);
+        expect(w.document.getElementById('aidbas-likvardigt').textContent).toContain('bara de mansdominerade');
     });
     it('den hierarkiska jämförelsen listar paret, och texten om inga par när det inte finns något', () => {
         const w = fonster();
@@ -123,8 +140,8 @@ describe('Excel (alla flikar): de fyra bladen', () => {
         const lika = blad('Lika arbete AID x BAS');
         expect(lika[1]).toEqual(['Lönemånad: inte angiven']);
         const rubrik = lika.findIndex(r => r[0] === 'BAS-intervall');
-        expect(lika[rubrik]).toEqual(['BAS-intervall', 'AID-kod', 'Yrkesgrupp', 'Antal kvinnor', 'Antal män', 'Medianlön kvinnor', 'Medianlön män', 'Kvinnors median i % av mäns', 'Nedre gräns', 'Övre gräns', 'Bedömning']);
-        const rader = lika.slice(rubrik + 1).filter(r => r.length === 11);
+        expect(lika[rubrik]).toEqual(['BAS-intervall', 'AID-kod', 'Yrkesgrupp', 'Antal kvinnor', 'Antal män', 'Medianlön kvinnor', 'Medianlön män', 'Kvinnors median i % av mäns', 'Nedre gräns', 'Övre gräns', 'Bedömning', 'Ojusterad löneskillnad ≥ 5 %']);
+        const rader = lika.slice(rubrik + 1).filter(r => r.length === 12);
         expect(rader.map(r => `${r[0]} ${r[1]}`)).toEqual(['A 1001', 'B 3003', 'D 7007', 'E 2002', 'F 7007']);   // exporten: 1001 i C (4 personer) i noten
         const not = lika.find(r => /färre än 5 personer/.test(String(r[0])))[0];
         expect(not).toContain('1001 Yrke 1001 · BAS C (2 kvinnor, 2 män)');
@@ -132,7 +149,7 @@ describe('Excel (alla flikar): de fyra bladen', () => {
         expect(summa).toBe(UNDERLAG.length + TVA_BAS.length);
         // Inga medianer för ett kön under 10: raden för 2002 har tomma celler och bedömningen.
         const e = rader.find(r => r[1] === '2002');
-        expect(e.slice(5)).toEqual(['', '', '', '', '', 'Analyseras på individnivå']);
+        expect(e.slice(5)).toEqual(['', '', '', '', '', 'Analyseras på individnivå', '']);
         const d = rader.find(r => r[0] === 'D');
         expect(d[5]).toBe(30825); expect(d[6]).toBe(31825); expect(d[7]).toBeCloseTo(96.9, 1);
         expect(typeof d[8]).toBe('number'); expect(typeof d[9]).toBe('number');
@@ -171,7 +188,7 @@ describe('Slumpens gränser räknar per AID-kod och BAS-intervall', () => {
     it('en yrkesgrupp i två intervall får två rader med sitt eget intervall och sina egna antal', async () => {
         const w = fonster([...UNDERLAG, ...TVA_BAS]);
         const { blad } = await bok(w);
-        const s = blad('Slumpens granser');
+        const s = blad('Slumpens gränser');
         const rader = s.filter(r => r[0] === '7007 Yrke 7007');
         expect(rader.map(r => [r[1], r[2], r[3]])).toEqual([['D', 12, 12], ['F', 12, 12]]);
         expect(s.some(r => r[0] === '1001 Yrke 1001')).toBe(false);   // inget intervall har 10 av varje kön

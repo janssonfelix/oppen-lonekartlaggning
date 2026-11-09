@@ -21,9 +21,12 @@ import { fitOLS, pValue2Sided, tQuantile } from './stat.js';
  * @param {{fixBas?:string|null, golv:number}} opt
  *        fixBas: BAS-intervall att fixera vid i prediktionerna (default = mest folkrika).
  *        golv: minsta antal personer per kön (statGolv() i appen).
- * @returns {Object} { error, errorCode } eller resultat med koefficienter, prediktioner och gap per ålder.
+ * @returns {Object} { error, errorCode } (errorCode no_age när ingen rad har ålder, ADR-64) eller resultat med koefficienter, prediktioner och gap per ålder.
  */
 export function livscykelRegression(rader, { fixBas, golv }) {
+    // Ålderskolumnen är valfri (ADR-64): utan ålder finns ingen livscykel att skatta.
+    if ((rader || []).length && !(rader || []).some(d => d && d.alder > 0))
+        return { error: 'Lönefilen saknar ålder, så löneskillnaden över karriären kan inte skattas.', errorCode: 'no_age' };
     const raw = (rader || []).filter(d => d.lon > 0 && d.alder > 0 && (d.kon.includes('kvinna') || d.kon === 'man' || d.kon === 'män'));
     if (raw.length < 50) return { error: 'För få observationer (n < 50) för meningsfull livscykelanalys.', errorCode: 'low_n' };
 

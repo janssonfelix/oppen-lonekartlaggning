@@ -3341,3 +3341,38 @@ describe('radpaneler i exporten', () => {
         expect(delar.every(d => d.getAttribute('y') === '0')).toBe(true);
     });
 });
+
+// U4 (ADR-63): en ritad figur får aldrig visa ett råt tal med decimalpunkt ("-9.46") — alla tal i bilden går genom
+// talformatet (decimalkomma, typografiskt minus). Felet uppstod när ett punktlager med `fel` saknade riktning: felets
+// gränser hamnade som kategorier på bandaxeln. Prövas på varje figur i ritfigurer(), på kvantilfiguren med intervall
+// och på alla diagram som demot ritar i flikarna.
+describe('inga råa decimaltal i någon ritad figur (U4)', () => {
+    const RATT = /^-?\d+\.\d+$/;
+    const raa = rot => [...rot.querySelectorAll('svg text, svg tspan, svg title')].map(t => t.textContent.trim()).filter(t => RATT.test(t));
+    it('varje figur i ritfigurer(), med och utan små grupper', () => {
+        for (const [namn, figur, val] of ritfigurer()) {
+            for (const visaSma of [false, true]) expect(raa(rita(figur, 600, { ...val, visaSma })), namn).toEqual([]);
+        }
+    }, 30000);
+    it('kvantilfiguren med bootstrap-intervall: intervallets gränser blir inga etiketter på kategoriaxeln', () => {
+        w.__q = [{ tau: 0.1, konPct: -6.123, ki: { lag: -9.456, hog: -2.1 } }, { tau: 0.5, konPct: -4.5, ki: null }, { tau: 0.9, konPct: -2.25, ki: { lag: -4, hog: 1.234 } }];
+        const f = w.eval('_regKvantilFigur(window.__q)');
+        const svg = rita(f);
+        expect(raa(svg)).toEqual([]);
+        expect([...svg.querySelectorAll('text[data-axel="y"]')].map(t => t.textContent)).toEqual(['P10 (lägst betalda)', 'Median', 'P90 (högst betalda)']);
+        expect(svg.querySelectorAll('[data-marke="fel"]')).toHaveLength(2);   // strecket genom punkten ritas längs värdeaxeln
+    });
+    it('alla diagram som demot ritar i flikarna, också kvantilfiguren när intervallet är klart', async () => {
+        const w2 = createAppWindow();
+        w2.__loadDemoData();
+        const flikar = [...w2.document.querySelectorAll('.nav-item[data-tab]')].filter(b => !b.hidden).map(b => b.dataset.tab);
+        expect(flikar.length).toBeGreaterThan(5);
+        const hittat = [];
+        for (const t of flikar) { w2.__renderTabContent(t); hittat.push(...raa(w2.document).map(x => `${t}: ${x}`)); }
+        await w2.eval('_regKvantilKlar()');
+        w2.__renderTabContent('matrix');
+        expect(w2.document.getElementById('chart-reg-kvantil')._figur.lager[1].data.some(d => d.fel)).toBe(true);
+        hittat.push(...raa(w2.document).map(x => `matrix: ${x}`));
+        expect(hittat).toEqual([]);
+    }, 60000);
+});

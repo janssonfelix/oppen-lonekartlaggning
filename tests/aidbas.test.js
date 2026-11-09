@@ -3,7 +3,7 @@
 // Tabellerna per AID-kod och BAS-intervall (src/lib/aidbas.js): lika arbete, likvärdigt arbete, hierarkisk
 // jämförelse och arbetslistan för analys på individnivå. Underlaget är helt påhittat: 58 personer.
 import { describe, it, expect } from 'vitest';
-import { grupperaAidBas, dominans, likaArbeteTabell, likvardigtTabell, hierarkiskaPar, individnivaTabell, KV_DEFINITIONER, kvDefinitionText, kvDefinitionNamn, klassNamn, ingaParText } from '../src/lib/aidbas.js';
+import { grupperaAidBas, dominans, likaArbeteTabell, likvardigtTabell, hierarkiskaPar, individnivaTabell, arJamforelseKlass, KV_DEFINITIONER, kvDefinitionText, kvDefinitionNamn, klassNamn, ingaParText } from '../src/lib/aidbas.js';
 
 const rad = (bas, aid, kon, lon, yrkeLabel = `Yrke ${aid}`) => ({ bas, aid, yrke: `${aid} ${yrkeLabel}`, yrkeLabel, kon, lon, alder: 40 });
 const grupp = (bas, aid, kon, n, lon0, steg = 100) => Array.from({ length: n }, (_, i) => rad(bas, aid, kon, lon0 + i * steg));
@@ -133,6 +133,16 @@ describe('aidbas: Tabell 3 — Hierarkisk jämförelse', () => {
     it('BAS-ordningen är bokstavsordningen: J är lägre än M, och I är lägre än J', () => {
         const d = [...grupp('I', '1001', 'man', 12, 46000), ...grupp('J', '2002', 'kvinna', 12, 38000), ...grupp('M', '3003', 'kvinna', 12, 37000)];
         expect(hierarkiskaPar(d, { ...INST, definition: 'do' }).map(p => `${p.a.bas}→${p.b.bas}`)).toEqual(['I→M', 'I→J']);   // störst skillnad först
+    });
+    it('en blandad grupp är jämförelseyrke; filtret mansdominerade tar bort den (ADR-60)', () => {
+        const d = [...grupp('A', '1001', 'man', 6, 46000), ...grupp('A', '1001', 'kvinna', 6, 46000), ...grupp('E', '2002', 'kvinna', 12, 38000)];   // 50 %
+        expect(hierarkiskaPar(d, { ...INST, definition: 'do' })).toHaveLength(1);
+        expect(hierarkiskaPar(d, { ...INST, definition: 'do', jamforelse: 'mansdominerade' })).toEqual([]);
+        expect(likvardigtTabell([...d, ...grupp('E', '1001', 'man', 6, 46000), ...grupp('E', '1001', 'kvinna', 6, 46000)], { ...INST, jamforelse: 'mansdominerade' }).sammanfattning).toEqual([]);
+        expect(arJamforelseKlass('Könsblandad')).toBe(true);
+        expect(arJamforelseKlass('Könsblandad', 'mansdominerade')).toBe(false);
+        expect(arJamforelseKlass('Mansdominerad', 'mansdominerade')).toBe(true);
+        expect(arJamforelseKlass('Kvinnodominerad')).toBe(false);
     });
 });
 

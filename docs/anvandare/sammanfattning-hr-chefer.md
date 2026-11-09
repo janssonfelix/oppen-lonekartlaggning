@@ -22,7 +22,7 @@ Därtill finns **Spara och jämför år**, där arbetet sparas som fil och jämf
 
 ### Det här får du
 
-- **Hela lagkedjan i ett verktyg:** genomgång av bestämmelser och praxis, lika arbete, oförklarad löneskillnad med regression, likvärdigt arbete, direktivets rapportmått, prioritering med kostnadsberäkning och handlingsplan.
+- **Hela lagkedjan i ett verktyg:** genomgång av bestämmelser och praxis, lika arbete, oförklarad löneskillnad med regression, likvärdigt arbete, direktivets rapportmått, löneläget mot er referens med kostnad att nå den, och handlingsplan.
 - **Färdig dokumentation, inte bara siffror:** ett klick ger ett **redigerbart Word-utkast av dokumentationen**. Verktygets fynd är ifyllda, och dina bedömningar markeras som gula *[HR fyller i]*-fält. Därtill får du en Excel-fil med hela underlaget och en PDF som låst kopia av utkastet. PDF:en kan vara hela dokumentationen, en ledningsbrief, en facklig dialog eller ett eget urval av avsnitt. Du får också en ZIP-fil med allt, protokoll för **gemensam lönebedömning** i samverkan med facket, förifyllt underlag till handlingsplanen och en budgetprognos. Varje siffra går att återskapa med knappen *Visa beräkningen*.
 - **Byggt för HR, inte statistiker:** språket coachar ("Börja här", "Värt att granska") och larmar aldrig. Bakgrundspaneler förklarar till exempel skillnaden mellan *oförklarad* och *osaklig* löneskillnad. En lista *Att göra* visar var du ska börja.
 - **Resultatet först:** varje flik öppnar med sina viktigaste tal och sitt huvudresultat. Fördjupningen ligger i avsnitt som fälls ut vid behov. Diagrammen är valda efter vad de ska visa. Ett tal som jämförs mot lika lön ritas som en punkt med osäkerhet mot en linje, inte som en stapel. Där ett diagram skulle visa för lite står en tabell med grafiken i raden.
@@ -31,7 +31,7 @@ Därtill finns **Spara och jämför år**, där arbetet sparas som fil och jämf
 ### Tryggt ur dataskyddssynpunkt — inbyggt från början
 
 - **Ingen data lämnar datorn.** Allt bearbetas i webbläsarens minne. Nätverkstrafik är tekniskt spärrad, och verktyget sparar ingenting på datorn. Inget molnkonto, ingen server, inget biträdesavtal.
-- **Minimerat:** bara fem fält läses in: lön, kön, ålder, yrke och BAS. Två fält är valfria: arbetsvärderingspoäng per befattning och ansvarskod enligt AID. Filer med personnummer, namn eller e-post avvisas.
+- **Minimerat:** bara fyra fält krävs: lön, kön, yrke och BAS. Tre fält är valfria: ålder (rekommenderad, för åldersjusteringen och Ålder & karriär), arbetsvärderingspoäng per befattning och ansvarskod enligt AID. Filer med personnummer, namn eller e-post avvisas.
 - **Små grupper skyddas i det som lämnar verktyget:** på skärmen visas alla grupper. Men i Excel, Word, PDF, ZIP, CSV, urklipp, diagrambilder och rapportunderlaget redovisas inte lönemått för grupper med färre än 10 personer (k-anonymitet). Standardvärdet är 10, och du kan ändra det. Ett lägre värde kräver bekräftelse och visas som en varning. Värdet står i metodbilagan och i exporterad data, och under 10 även på diagrambilder, kopierade tabeller och rapporter.
 - **Två medvetna undantag:** **likvärdigt arbete** prövar även små kvinnodominerade yrken, eftersom lagen kräver det. Fliken och dess export visar dem, men Word-utkastet, PDF-rapporten och rapportunderlaget gör det inte. I fliken **Tabeller och egna vyer** följer små grupper bara med i exporten om du själv väljer det.
 - **Enskilda personer:** **Personer att granska** listar enskilda personer som ligger klart under sina kollegor. Listan finns bara i verktyget, aldrig i någon export eller utskrift. Diagram med en punkt per person (lön mot ålder) visar enskilda löner. Bilder av sådana diagram ingår i PDF-rapportens mall *Komplett rapport* och i ZIP-exporten.
@@ -47,6 +47,6 @@ Därtill finns **Spara och jämför år**, där arbetet sparas som fil och jämf
 
 ---
 
-**Viktigt att veta:** Verktyget pekar ut *kandidater* för granskning — det dömer inte. Bedömningen av sakliga skäl och den slutliga dokumentationen är din, i samverkan med facklig part. Verktyget levererar underlagen.
+**Viktigt att veta:** Verktyget pekar ut *kandidater* för granskning — det dömer inte. Bedömningen av sakliga skäl och den slutliga dokumentationen är din, i samverkan med facklig part. Verktyget levererar underlagen. Verktyget är ett stöd för arbetsgivarens egen lönekartläggning. Användaren ansvarar för hur verktyget används, för tolkningen av resultaten och för den juridiska bedömningen. Verktyget är inte juridiskt granskat. Verktyget är ännu inte prövat med verklig lönedata hos en arbetsgivare; checklistan för skarp data finns för den som gör det först.
 
 *Öppen lönekartläggning · versionen står i `RELEASE.txt` · körs lokalt, helt utan molntjänst · medföljande dokument: körguide, guide för datauttag, checklistan för skarp data och risk- och sårbarhetsanalys (`riskanalys.md`).*

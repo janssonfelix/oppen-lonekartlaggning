@@ -149,3 +149,12 @@ export function tillDirektivtecken(gapPct) {
     if (typeof gapPct !== 'number' || !isFinite(gapPct)) return null;
     return gapPct === 0 ? 0 : -gapPct;
 }
+
+/**
+ * Reservationen om lönebegreppet vid EU-rapportmåtten (beslut 7a): verktyget räknar på fast heltidsmånadslön, direktivets
+ * lönebegrepp omfattar mer. Står vid måtten i fliken Lönestruktur, i EU-lönerapportens Excel, i rapportens avsnitt om
+ * lönetransparens och i rapportunderlaget. Inga artikelnummer (ADR-16).
+ */
+const LONEBEGREPP_RESERVATION = 'Måtten är räknade på fast heltidsmånadslön. Direktivets lönebegrepp är vidare (total ersättning, inklusive rörliga delar och förmåner); komplettera ur lönesystemet om ni rapporterar.';
+/** @returns {string} reservationen om lönebegreppet vid EU-rapportmåtten */
+export function lonebegreppReservation() { return LONEBEGREPP_RESERVATION; }

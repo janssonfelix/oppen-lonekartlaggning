@@ -1719,3 +1719,99 @@ describe('Utforska: tomläge, exportmeny och talfält', () => {
 // "Rensa all data" (Art. 17-affordansen) ska tömma ALLT minne med individrader —
 // även Utforskas egna referenser (senaste modellen, urvalets värdelistor och
 // diagrammets exportfunktion), som annars höll kvar hela underlaget.
+
+// A5 (beslut 4a): Prioriteringen mäter löneläget mot er referens och har egna ord, så att de inte förväxlas med
+// uppmärksamhetstrappan för skillnaden mellan kvinnor och män (Värt att granska, Följ upp, Balanserat).
+describe('Prioritering: egna ord och rätt rubrik (A5)', () => {
+    const TRAPPAN = /Värt att granska|Följ upp|Balanserat/;
+    const oppna = () => { const w = createAppWindow(); w.__loadDemoData(); w.__renderTabContent('prioritering'); return w; };
+    it('fliken har Prioriteringens egna ord, och nyckeltalet heter Kostnad att nå referensen', () => {
+        const w = oppna();
+        const d = w.document;
+        // Kolumnen Skillnad kön bär uppmärksamhetstrappans bricka (9e); den gäller skillnaden mellan kvinnor och män
+        // och prövas för sig nedan.
+        const vy = d.getElementById('view-prioritering').cloneNode(true);
+        vy.querySelectorAll('.prio-konstatus').forEach(e => e.remove());
+        expect(d.querySelectorAll('#prio-table tbody tr').length).toBeGreaterThan(0);
+        expect(vy.textContent).not.toMatch(TRAPPAN);
+        expect([...vy.querySelectorAll('[data-tooltip], [data-k-tooltip], [data-export-label], [title]')]
+            .map(e => ['data-tooltip', 'data-k-tooltip', 'data-export-label', 'title'].map(a => e.getAttribute(a) || '').join(' '))
+            .filter(t => TRAPPAN.test(t))).toEqual([]);
+        expect(w.eval('Object.values(PRIO_STATUS_INFO).map(s => s.label)')).toEqual(['Börja här', 'Under referens', 'Nära referens, under', 'Nära referens', 'Över referens']);
+        const ruta = d.getElementById('prio-stat-cost').closest('.stat-box');
+        expect(ruta.querySelector('.stat-etikett').textContent.trim()).toBe('Kostnad att nå referensen');
+        // Förklaringen står under nyckeltalsraden (i rutan skulle den klippas).
+        const not = d.getElementById('prio-stat-cost-not').textContent.replace(/\s+/g, ' ');
+        expect(not).toContain('Vad det kostar att lyfta grupper under referensen till dess median. Detta är löneläget mot er referens, inte lönekartläggningens könsskillnader — dem visar Lika arbete och Löneöversyn.');
+        expect(not).toContain('inkl. PO-påslag 39,15 % (SKR:s standardvärde för kommuner; ändras under Inställningar)');
+        expect(d.getElementById('prio-stat-cost-period').textContent).toBe('12 månader, inkl. PO-påslag 39,15 %');
+        expect(vy.textContent).not.toMatch(/åtgärdskostnad/i);
+    });
+    it('kolumnen Skillnad kön bär uppmärksamhetstrappans bricka efter storleken, utan prövning (9e)', () => {
+        const w = oppna();
+        const rader = [...w.document.querySelectorAll('#prio-table tbody tr')];
+        expect(rader.length).toBeGreaterThan(0);
+        const golv = w.eval('statGolv()');
+        const nivaer = new Set();
+        rader.forEach(tr => {
+            const i = tr._prioItem;
+            const bricka = tr.querySelectorAll('.prio-konstatus');
+            expect(bricka.length).toBe(1);
+            const b = bricka[0];
+            // Brickan står i samma cell som talet för skillnaden mellan kvinnor och män.
+            expect(b.closest('td').querySelector('.cell-bar-wrap')).not.toBeNull();
+            const vantad = i.gapPct === null || !(i.kvN >= golv && i.maN >= golv) ? 'ejbedomd'
+                : Math.abs(i.gapPct) >= 3 ? 'folj' : 'balanserat';
+            expect(b.getAttribute('data-niva')).toBe(vantad);
+            expect(b.textContent).toBe({ ejbedomd: 'Går ej att bedöma', folj: 'Följ upp', balanserat: 'Balanserat' }[vantad]);
+            nivaer.add(vantad);
+        });
+        // Prioriteringen prövar inte skillnaden mot slumpen: aldrig Värt att granska.
+        expect(nivaer.has('granska')).toBe(false);
+        // Exporten bär talet, inte brickan.
+        const matris = w.__tableToMatrix('prio-table');
+        expect(matris.flat().join(' ')).not.toMatch(/Följ upp|Balanserat|Går ej att bedöma/);
+    });
+    it('inställningarnas förklaringar för Prioriteringens trösklar använder samma ord', () => {
+        const w = oppna();
+        const txt = ['prio-cfg-atgard', 'prio-cfg-akutN', 'prio-cfg-bevaka', 'prio-cfg-analysera']
+            .map(id => w.document.getElementById(id).closest('label').textContent).join(' ');
+        expect(txt).not.toMatch(TRAPPAN);
+        expect(txt).toMatch(/Under referens/);
+        expect(txt).toMatch(/Nära referens, under/);
+    });
+    it('förslagen säger hur nära referensen gruppen ligger, utan att avfärda skillnaden', () => {
+        const w = oppna();
+        w.__it = { diffPct: 0.8, n: 12, kvN: 12, maN: 12, _rows: [{ lon: 1, kon: 'kvinna', alder: 40 }] };
+        const nara = w.eval('generateMotivationSuggestions(window.__it)').map(f => f.text).join(' ');
+        expect(nara).toContain('Gruppens median ligger inom ±2 % av referensen.');
+        expect(nara).not.toMatch(/normal variation|kräver ytterligare utredning/);
+        w.__it = { ...w.__it, diffPct: 7.4 };
+        expect(w.eval('generateMotivationSuggestions(window.__it)').map(f => f.text)).toContain('Ligger 7,4 % över referensen. Dokumentera gärna varför.');
+    });
+    it('Excel-bladet Prioritering, handlingsplanen och rapporten har samma ord', async () => {
+        const { laddaXlsx, fangaBocker } = await import('./helpers/ktroskel-rigg.js');
+        const w = oppna();
+        await laddaXlsx(w);
+        const bok = Object.values(fangaBocker(w, () => w.eval('exportAllToExcel()')))[0];
+        const blad = bok.split(/\n(?=\[)/).find(b => b.startsWith('[Prioritering]'));
+        expect(blad).toBeTruthy();
+        expect(blad).not.toMatch(TRAPPAN);
+        expect(blad).toContain('Kostnad att nå referensen');
+        const hp = Object.values(fangaBocker(w, () => w.eval('exportHandlingsplan()')))[0];
+        expect(hp).toContain('Kostnad att nå referensen');
+        const atgarder = w.eval('rapportModell({ alla: true })').avsnitt.find(a => a.id === 'atgarder');
+        expect(JSON.stringify(atgarder)).not.toMatch(TRAPPAN);
+        expect(JSON.stringify(atgarder)).toContain('kostnad att nå referensen');
+        const block = w.__rapportunderlagBlock().find(b => b.id === 'handlingsplan');
+        expect(w.__ruTillText(block)).toContain('kostnad att nå referensen');
+        expect(w.__ruTillText(block)).not.toMatch(TRAPPAN);
+    });
+    it('Att göra kallar grupperna under referensen Löneläge mot referens, inte Värt att granska', () => {
+        const w = oppna();
+        const prio = w.eval('buildActionChecklist()').filter(i => i.källa === 'Prioriteringsanalys');
+        expect(prio.length).toBeGreaterThan(0);
+        expect([...new Set(prio.map(i => i.kategori))]).toEqual(['Löneläge mot referens']);
+        expect(prio.map(i => i.detalj).join(' ')).not.toMatch(/kostnad att lyfta till referens/);
+    });
+});

@@ -7,7 +7,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { kontrollera, KODVAGAR } from '../tools/release.mjs';
+import { kontrollera, KODVAGAR, VERIFIERING } from '../tools/release.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const SHA = 'a'.repeat(64);
@@ -17,7 +17,7 @@ const ok = (andra = {}) => ({
     version: '2026.11.02\n',
     pkgVersion: '2026.11.2',
     changelog: '# Changelog\n\n## 2026.11.02\n\n- Något.\n\n## 2026.10.13\n\n- Tidigare.\n',
-    release: `Version:    2026.11.02\nSHA-256:    ${SHA}\n`,
+    release: `Version:    2026.11.02\nSHA-256:    ${SHA}\n\nVerifiering:\n  PowerShell : Get-FileHash .\\oppen-lonekartlaggning.html -Algorithm SHA256\n  Linux/mac  : sha256sum oppen-lonekartlaggning.html\n`,
     artefaktSha: SHA,
     riskanalys: `# Riskanalys\n\n**Bygge:** \`2026.11.02\` · **Artefakt-SHA-256:** \`${SHA}\` (se \`dist/RELEASE.txt\`).\n**Granskningsdatum:** 2026-11-02.\n`,
     dataskydd: '# Dataskydd\n\n**Granskad mot koden:** 2026-11-01.\n',
@@ -89,5 +89,36 @@ describe('release-grinden', () => {
     it('package.json har skriptet release:kontroll', () => {
         const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
         expect(pkg.scripts['release:kontroll']).toBe('node tools/release.mjs');
+    });
+});
+
+// B5 (beslut 11b): kontrollsumman som alternativ till cosign, med PowerShell-raden bredvid Linux/mac-raden.
+describe('kontrollsumman i RELEASE.txt och dokumenten', () => {
+    const las = f => readFileSync(join(root, f), 'utf8');
+    it('kommandona är de som dokumenten anger', () => {
+        expect(VERIFIERING.powershell).toBe('Get-FileHash .\\oppen-lonekartlaggning.html -Algorithm SHA256');
+        expect(VERIFIERING.linux).toBe('sha256sum oppen-lonekartlaggning.html');
+    });
+    it('grinden kräver båda raderna i RELEASE.txt', () => {
+        expect(fel({ release: `Version:    2026.11.02\nSHA-256:    ${SHA}\n  Linux/mac  : sha256sum oppen-lonekartlaggning.html\n` }).join()).toMatch(/PowerShell/);
+        expect(fel({ release: `Version:    2026.11.02\nSHA-256:    ${SHA}\n  PowerShell : ${VERIFIERING.powershell}\n` }).join()).toMatch(/Linux\/mac/);
+    });
+    it('dist/RELEASE.txt skriver PowerShell-raden bredvid Linux/mac-raden', () => {
+        const rel = las('dist/RELEASE.txt');
+        expect(rel).toContain(`  PowerShell : ${VERIFIERING.powershell}\n  Linux/mac  : ${VERIFIERING.linux}`);
+    });
+    it('SECURITY.md och körguiden §0: stycket om kontrollsumman när cosign inte kan köras, med båda kommandona', () => {
+        const stycke = 'Kan ni inte köra cosign: kontrollsumman i RELEASE.txt skyddar mot en skadad eller förväxlad fil';
+        for (const f of ['SECURITY.md', 'docs/anvandare/korguide.md']) {
+            const t = las(f).replace(/\s+/g, ' ');
+            const i = t.indexOf(stycke);
+            expect(i, f).toBeGreaterThan(t.indexOf('cosign verify-blob'));
+            expect(t.slice(i), f).toContain(VERIFIERING.powershell);
+            expect(t.slice(i), f).toContain(VERIFIERING.linux);
+        }
+    });
+    it('säkerhetsbeskrivningen: distributionen är organisationens, och beskrivningar tas emot som bidrag', () => {
+        const t = las('docs/anvandare/sakerhetsbeskrivning.md').replace(/\s+/g, ' ');
+        expect(t).toContain('Hur filen distribueras i er organisation (intranät, filserver, organisationsfil) avgör ni; webbläsarpolicyer och e-postfilter kan påverka. Beskrivningar av fungerande distributionsvägar tas tacksamt emot som bidrag.');
     });
 });

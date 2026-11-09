@@ -25,14 +25,15 @@ och sitt dataskyddsombud · *Avstämd* = granskad av jurist (ingen rad ännu). K
 
 | Moment i verktyget | Lagrum | Verktyget skriver | Status |
 |---|---|---|---|
+| Juristgranskning före lansering | — | övergripande om lagen och direktivet, med ett ansvarsförbehåll | Ingen — beslut 2026-11-08: ingen juristgranskning före lansering; tabellen är underhållarens egen läsning |
 | Årlig kartläggning: bestämmelser och praxis | 3 kap. 8 § 1 | *regler och praxis kring lön* | Förslag |
 | Årlig kartläggning: löneskillnader | 3 kap. 8 § 2 | *lönekartläggningen* | Förslag |
 | Analys av lika arbete | 3 kap. 9 § 1 | *lika arbete* | Förslag |
-| Kvinnodominerat arbete mot likvärdigt arbete | 3 kap. 9 § 2 | *likvärdigt arbete* | Förslag |
+| Kvinnodominerat arbete mot likvärdigt arbete | 3 kap. 9 § 2 | *likvärdigt arbete*; jämförelsemängden är alla yrken som inte är kvinnodominerade (mansdominerade och blandade, könsandelen synlig; filtret *bara mansdominerade* finns), med en definition av kvinnodominerat (DO eller SCB) i hela verktyget (ADR-59) | Förslag |
 | Kvinnodominerat arbete mot arbete med lägre krav och högre lön | 3 kap. 9 § 3 | *lägre krav, högre lön* | Förslag |
 | Vad som är likvärdigt arbete (kraven) | 3 kap. 10 § | *kraven i arbetet*, *arbetsvärdering* | Förslag |
 | Sakliga skäl | följer av 3 kap. 9 § (analys av samband med kön); lagen räknar inte upp några skäl — kategorierna i verktyget (Marknad, Utbildning, Erfarenhet, Prestation och resultat, Övergång, Annat sakligt skäl) är verktygets indelning, inte lagens | *sakliga skäl*, utan paragraf | Förslag |
-| Gränsen för kvinnodominerat arbete | lagen anger ingen siffra ("är eller brukar anses vara"); 60 % är förarbetenas riktmärke | **mer än 60 % kvinnor** (`KVINNO_TROSKEL_DEFAULT`, >); icke-kvinnodominerat under 40 %. Inställningens etikett säger *riktmärket i lagens förarbeten*, inte "DO"; nyckeln `'do'` står kvar | Förslag — beslut 2026-10-19 |
+| Gränsen för kvinnodominerat arbete | lagen anger ingen siffra ("är eller brukar anses vara"); 60 % är förarbetenas riktmärke | **mer än 60 % kvinnor** (`KVINNO_TROSKEL_DEFAULT`, >) eller **60 % eller mer** (SCB), valt i Likvärdigt arbete och lika i hela verktyget (`arKvinnodominerad`, ADR-60); jämförelseyrken är alla som inte är kvinnodominerade, mansdominerat under 40 % är en klass, inte ett urval. Inställningens etikett säger *riktmärket i lagens förarbeten*, inte "DO"; nyckeln `'do'` står kvar | Förslag — beslut 2026-10-19, 2026-11-08 |
 | Samverkan med arbetstagarna | 3 kap. 11 §; redogörelse 13 § 7; information till facket 12 § | *samverkan med arbetstagarna* | Förslag |
 | Åtgärder, kostnadsberäkning och tidsplan (senast inom tre år) | 3 kap. 13 § andra stycket 4–5 (10–24 anställda via 14 §); allmänt 3 kap. 2 § 3 och 3 § | *åtgärder och tidsplan* | Förslag |
 | Ordet *handlingsplan* | inte lagens begrepp sedan 2017 (SFS 2016:828) | fliken heter fortfarande *Handlingsplan*; rapportens avsnitt heter *Åtgärder och tidsplan* | Förslag — flikens namn är ett produktbeslut |
@@ -53,7 +54,7 @@ arbeten som är lika eller likvärdiga är arbetsgivarens.
 | Löneskillnadens definition och rapportering | definition art. 3.1 c, rapportering art. 9.1 a; lön enligt art. 3.1 a–b (årslön och timlön brutto, inklusive tillägg) | *direktivets löneskillnad*; metodbilagan säger att verktyget räknar på månadslön | Förslag |
 | Kvartiler | art. 9.1 f | *lönekvartilerna* | Förslag |
 | Tidplan för rapportering | 250 eller fler: senast 7 juni 2027, därefter årligen (art. 9.2); 150–249: 7 juni 2027, vart tredje år (9.3); 100–149: 7 juni 2031, vart tredje år (9.4) | *stegvis för arbetsgivare med 100 anställda eller fler; svensk tidplan saknas* | Förslag |
-| Femprocentsgränsen | art. 10.1 a: 5 % eller mer; gäller bara som villkor för gemensam lönebedömning, aldrig som gräns för analys av lika eller likvärdigt arbete (3 kap. 9 § kräver analys av varje skillnad) | *gränsen 5 % i direktivets regler om gemensam lönebedömning* | Förslag — metodändring att pröva |
+| Femprocentsgränsen | art. 10.1 a: 5 % eller mer; gäller bara som villkor för gemensam lönebedömning, aldrig som gräns för analys av lika eller likvärdigt arbete (3 kap. 9 § kräver analys av varje skillnad) | *direktivets regler om gemensam lönebedömning utgår från en skillnad på minst 5 %; markeringen visar var den nivån nås. Den är inte en bedömning.* Markeringen står bara vid ojusterade medianskillnader; statusen sätts på statistisk signal och verktygets storleksgräns 3 % (ADR-59) | Genomförd (ADR-59, 2026-11-08) |
 | Gemensam lönebedömning | art. 10.1 a–c (tre villkor), innehåll 10.2 a–g, tillgänglighet 10.3, åtgärder inom rimlig tid 10.4 | *gemensam lönebedömning* | Förslag |
 | Rätt till information | art. 7 (7.3 årlig information, 7.4 svar inom två månader) | utanför verktygets omfång | Förslag |
 | Könsneutrala lönestrukturer och kriterier | art. 4 (kriterier 4.4) och 6; art. 5 gäller tiden före anställning | *könsneutrala lönestrukturer och lönekriterier (art. 4 och 6)* i Om verktyget | Förslag |

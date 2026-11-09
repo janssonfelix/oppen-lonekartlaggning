@@ -26,7 +26,13 @@ function _akInsiktText(lutKv, lutMa, ra, vidSammaAlder) {
             : `Vid samma ålder är kvinnors lön ${svPct(vidSammaAlder, 1)} av mäns, mot ${svPct(ra, 1)} utan justering: skillnaden blir större när åldern räknas bort, eftersom kvinnorna i urvalet i genomsnitt är äldre.`;
     return `${lutning} ${justering} Vad BAS-intervall och yrkesgrupp förklarar står i Lönestruktur.`;
 }
+/** Utan ålder i lönefilen (ADR-64) ritas fliken inte, och det en tidigare fil ritade i den töms. */
+function _akTomUtanAlder() {
+    const andra = new Set([...document.querySelectorAll('.nav-item[data-tab]')].map(b => b.getAttribute('data-tab') || '').filter(t => t && t !== 'kon'));
+    if (typeof tomFlikarUtom === 'function') tomFlikarUtom(andra);
+}
 function renderKon(bas) {
+    if (!harAlder()) { _akTomUtanAlder(); return; }
     const isAll = bas === "__ALLA__";
     const df = getData().filter(d => (isAll || d.bas === bas) && d.alder && d.alder > 0 && d.kon);
     if (df.length < 2) return;
@@ -58,9 +64,10 @@ function renderKon(bas) {
     /** @type {HTMLElement} */ (document.getElementById("kon-kpi-gap")).textContent = unadjGap;
     const ageGapEl = /** @type {HTMLElement} */ (document.getElementById("kon-kpi-agegap"));
     ageGapEl.textContent = ageAdjGap;
-    // Över 5 % skillnad sägs i ord under talet (inte med röd siffra utan förklaring).
-    { const u = document.getElementById("kon-kpi-agegap-under"), over = konOk && expMa > 0 && Math.abs((expKv/expMa)*100 - 100) > 5;
-      if (u) { u.textContent = over ? "skillnad över 5 %" : "kvinnors lön i % av mäns"; u.classList.toggle("ar-granska", over); } }   // statusens lila, inte rött
+    // Talet är justerat för ålder och prövas inte här: ingen status och ingen direktivmarkering (ADR-59). Statusen
+    // sätts i Lika arbete, där skillnaden prövas mot slumpen.
+    { const u = document.getElementById("kon-kpi-agegap-under");
+      if (u) { u.textContent = "kvinnors lön i % av mäns"; u.classList.remove("ar-granska"); } }
     const lutning = (ok, reg) => (ok ? `${reg.m >= 0 ? '+' : '−'}${svTal(Math.abs(Math.round(reg.m)), 0)}` : '–');
     /** @type {HTMLElement} */ (document.getElementById("kon-kpi-slope")).textContent = `${lutning(kvOk, regKv)} / ${lutning(maOk, regMa)} kr`;
     const insightEl = document.getElementById("p-value-insight");
@@ -205,7 +212,7 @@ const KON_ALDERSGRUPPER = [[0, 29, 'Under 30 år'], [30, 39, '30–39 år'], [40
 function _konAlderGapRader(dataKv, dataMa, k = kTroskel()) {
     const visade = [], dolda = [];
     for (const [fran, till, namn] of KON_ALDERSGRUPPER) {
-        const i = r => r.alder >= fran && r.alder <= till && r.lon > 0;
+        const i = r => r.alder > 0 && r.alder >= fran && r.alder <= till && r.lon > 0;   // ålder 0 = saknas (ADR-64)
         const kv = dataKv.filter(i).map(r => r.lon), ma = dataMa.filter(i).map(r => r.lon);
         if (!kv.length && !ma.length) continue;
         if (kv.length < k || ma.length < k) { dolda.push(namn); continue; }
@@ -216,7 +223,7 @@ function _konAlderGapRader(dataKv, dataMa, k = kTroskel()) {
     return { visade, dolda };
 }
 function _konAlderGapFigur(rader, scope) {
-    const status = o => _SKEVHET_STATUS.find(s => s.galler(Math.abs(100 - o.gap)));
+    const status = o => gapStatusKI(o);   // uppmärksamhetstrappan (ADR-59): KI:t mot 100 % och golvet statGolv()
     const pkt = o => ({ y: o.namn, x: +o.gap.toFixed(1), etikett: _figTalformat(o.gap, 'pct'), o, ...(o.ci ? { fel: { lag: o.ci.lo, hog: o.ci.hi } } : {}), ..._kronorFalt(o.medKv, o.medMa) });
     const kr = v => _figTalformat(Math.round(v), 'kr');
     const tips = d => [[d.y], ['Kvinnors median', `${_figTalformat(d.x, 'pct')} av männens`], ..._figKronorTipsRad(d.skillnadKr),
@@ -227,7 +234,7 @@ function _konAlderGapFigur(rader, scope) {
         y: { skala: 'band', ordning: rader.map(o => o.namn) },
         x: { skala: 'linjar', titel: 'Kvinnors median i % av mäns — 100 = lika lön', doman: [Math.floor(Math.min(90, ...alla) - 2), Math.ceil(Math.max(105, ...alla) + 2)] },
         hojd: Math.max(180, 110 + rader.length * 34),
-        referens: [{ typ: 'zon', x0: 95, x1: 105, farg: PALETTE.semantic.ok, opacitet: 0.08, etikett: '±5 %' }, { x: 100, farg: PALETTE.semantic.mork, tjocklek: 1.5 }],
+        referens: [{ typ: 'zon', x0: 97, x1: 103, farg: PALETTE.semantic.ok, opacitet: 0.08, etikett: '±3 %' }, { x: 100, farg: PALETTE.semantic.mork, tjocklek: 1.5 }],
         lager: _SKEVHET_STATUS.map(s => ({ marke: 'punkt', riktning: 'liggande', symbol: s.symbol, storlek: 6, serie: s.serie, farg: PALETTE.semantic[s.farg],
             data: rader.filter(o => status(o) === s).map(pkt), tips })).filter(l => l.data.length) };
 }
@@ -424,6 +431,7 @@ function _ageShareCurve(rows, lo, hi, win) {
     return { ages, share };
 }
 function renderDemografi(bas) {
+    if (!harAlder()) { _akTomUtanAlder(); return; }
     const isAll = bas === '__ALLA__' || !bas;
     const df = isAll
         ? getData().filter(d => d.alder > 0)

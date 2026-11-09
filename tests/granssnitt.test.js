@@ -417,7 +417,7 @@ describe('samma skillnad sägs på ett sätt', () => {
             expect(blad.filter(tvaDec).map(e => e.textContent.trim().slice(0, 50)), sel).toEqual([]);
         }
         const kort = [...d.querySelectorAll('#la-slutsatser .slutsats')].find(k => k.textContent.includes('Efter ålder och BAS-intervall'));
-        expect(kort.textContent).toContain('kvinnors lön i % av mäns när ålder och BAS-intervall räknats bort');
+        expect(kort.textContent).toContain('kvinnors lön i % av mäns när dessa räknats bort');
     }, 30000);
 });
 
@@ -480,7 +480,7 @@ describe('ett statusordförråd och ett mått i nyckeltalen', () => {
     it('Förklaringen nämner varje statusord en gång, med färgen bunden till ordet', () => {
         const d = demo().document;
         const ord = [...d.querySelectorAll('#symbols-modal strong')].map(e => [e.textContent.trim(), e.className]);
-        for (const [namn, klass] of [['Balanserat', 'farg-ok'], ['Följ upp', 'farg-varning'], ['Värt att granska', 'farg-granska'], ['Börja här', 'farg-granska'], ['Över referens', 'farg-info']]) {
+        for (const [namn, klass] of [['Balanserat', 'farg-ok'], ['Följ upp', 'farg-varning'], ['Värt att granska', 'farg-granska'], ['Börja här', 'farg-granska'], ['Under referens', 'farg-granska'], ['Nära referens, under', 'farg-varning'], ['Nära referens', 'farg-ok'], ['Över referens', 'farg-info']]) {
             expect(ord.filter(o => o[0] === namn), namn).toEqual([[namn, klass]]);
         }
         // Ingen separat färgtabell som upprepar orden.
@@ -490,7 +490,8 @@ describe('ett statusordförråd och ett mått i nyckeltalen', () => {
         const w = demo();
         w.__renderTabContent('matrix');
         const d = w.document;
-        const farg = { 'Balanserat': 'ok', 'Följ upp': 'varning', 'Värt att granska': 'granska' };
+        // Går ej att bedöma (ett kön under golvet, ADR-59) är grå: ingen allvarlighetsgrad.
+        const farg = { 'Balanserat': 'ok', 'Följ upp': 'varning', 'Värt att granska': 'granska', 'Går ej att bedöma': 'neutral' };
         const bas = [...d.querySelectorAll('#la-oversikt tbody .la-status')];
         expect(bas.length).toBeGreaterThan(0);
         for (const el of bas) expect(el.classList.contains('ar-' + farg[el.textContent.trim()]), el.textContent).toBe(true);
@@ -498,10 +499,12 @@ describe('ett statusordförråd och ett mått i nyckeltalen', () => {
         for (const el of yrke) {
             const namn = Object.keys(farg).find(k => el.textContent.includes(k));
             expect(namn, el.textContent).toBeTruthy();
-            expect(el.classList.contains('farg-' + farg[namn])).toBe(true);
+            expect(el.classList.contains('farg-' + (namn === 'Går ej att bedöma' ? 'dampad' : farg[namn]))).toBe(true);
         }
         const prio = w.eval('Object.values(PRIO_STATUS_INFO)');
-        expect(prio.map(p => p.label)).toEqual(['Börja här', 'Värt att granska', 'Följ upp', 'Balanserat', 'Över referens']);
+        // Prioriteringen har egna ord för läget mot referensen (A5, ADR-62); färgerna följer trappans.
+        expect(prio.map(p => p.label)).toEqual(['Börja här', 'Under referens', 'Nära referens, under', 'Nära referens', 'Över referens']);
+        expect(prio.map(p => p.klass)).toEqual(['bricka-granska', 'bricka-granska', 'bricka-varning', 'bricka-ok', 'bricka-info']);
     });
     it('livscykelns nyckeltal är kvinnors lön i % av mäns, och modellens skillnad står bredvid', () => {
         const w = demo();

@@ -42,7 +42,7 @@ function _renderSensitiveRejection(sensitive) {
         <strong class="f-kritisk">${ikon('stopp')} Filen avvisad – innehåller känsliga personuppgifter</strong><br>
         Följande kolumner verkar innehålla data som inte ska användas i lönekartläggning:
         <ul class="fs-sm marg-8-0-8-20">${list}</ul>
-        <span class="text-dampad-sm">Ta bort kolumnerna i filen och försök igen. Verktyget kräver endast: BAS-intervall, AID, månadslön, ålder och kön. Identifierare (personnummer, namn, e-post) och särskilda kategorier av personuppgifter (fackmedlemskap, hälsa med mera) ska inte ingå i uttaget.</span>
+        <span class="text-dampad-sm">Ta bort kolumnerna i filen och försök igen. Verktyget kräver endast: BAS-intervall, AID, månadslön och kön (ålder är valfri). Identifierare (personnummer, namn, e-post) och särskilda kategorier av personuppgifter (fackmedlemskap, hälsa med mera) ska inte ingå i uttaget.</span>
     </div>`;
     dataStatus.className = "status-msg";
 }
@@ -380,10 +380,10 @@ function loadStructureFile(file) {
     let capturedHeaders = null;   // #11: rubriker för kolumnmappnings-guiden
 
     // GDPR Art. 25.2: minimal data resident i minnet under parsning.
-    // Streaming step-mode → en rad i taget. Vi sparar de första 50 raderna
-    // i en sample-buffer för att kunna köra detectSensitiveColumns (som behöver
-    // sample för värdebaserad upptäckt). Efter detektering nollas bufferten
-    // och rader processas direkt till `parsed[]` utan mellanlagring.
+    // Streaming step-mode → en rad i taget. Var ⌈n/50⌉:e rad (_pnrSampelSteg) sparas
+    // i en sample-buffer på högst 50 rader för detectSensitiveColumns (värdebaserad upptäckt
+    // över hela filen, B4). Varje rad processas direkt till `parsed[]`, som bara har de
+    // minimerade fälten; kontrollen körs när filen är läst, och fälls filen släpps allt.
     const SAMPLE_SIZE = 50;
     /** @type {any[]|null} */
     let sampleBuffer = [];
@@ -409,7 +409,6 @@ function loadStructureFile(file) {
         invalidAlderExamples: [], // upp till 3 exempel
         missingKonExamples: []    // upp till 3 exempel på okända kön-värden
     };
-    let detectionDone = false;
     let aborted = false;
     // Förhandskontrollen (17-forhandskontroll.js): de tio första raderna med filens råvärde och verktygets tolkning
     // (yrkets råvärde sparas inte), och kön-kolumnens värden med antal. Bara i minnet; släpps i finishLoad.
@@ -615,7 +614,7 @@ function loadStructureFile(file) {
           capturedHeaders = x.headers.filter(h => h);
           valjImportprofil(capturedHeaders);
           parseStats.totalRaw = x.rows.length;
-          const sensitive = detectSensitiveColumns(x.rows.slice(0, SAMPLE_SIZE));
+          const sensitive = detectSensitiveColumns(x.rows);   // samplar själv jämnt över bladet (B4)
           if (sensitive.length > 0) { rejectFile(sensitive); return; }
           x.rows.forEach(processRow);
           x.rows.length = 0;   // släpp raw rows (GDPR: minimera residens)
@@ -636,44 +635,32 @@ function loadStructureFile(file) {
       const radLista = [];
       for (let j = 1; j < linjer.length; j++) if (linjer[j] !== '') radLista.push(hdrInfo.line + j + 1);
       let radIdx = 0;
+      // Var ⌈n/50⌉:e datarad sparas för PII-kontrollen (B4); n = filens icke-tomma datarader.
+      const sampelSteg = _pnrSampelSteg(radLista.length);
       Papa.parse(csvText, {
         header: true, skipEmptyLines: true, delimiter: detectedDelim,
-        step: (results, parser) => {
+        step: (results) => {
             if (aborted) return;
             if (!capturedHeaders && results.meta && results.meta.fields) { capturedHeaders = results.meta.fields.slice(); valjImportprofil(capturedHeaders); }
             if (results.data) results.data[_RADNR] = radLista[radIdx++] ?? null;
             parseStats.totalRaw++;
-            if (!detectionDone && sampleBuffer) {
-                sampleBuffer.push(results.data);
-                if (sampleBuffer.length >= SAMPLE_SIZE) {
-                    const sensitive = detectSensitiveColumns(sampleBuffer);
-                    if (sensitive.length > 0) {
-                        parser.abort();
-                        rejectFile(sensitive);
-                        return;
-                    }
-                    detectionDone = true;
-                    sampleBuffer.forEach(processRow);
-                    sampleBuffer.length = 0; // släpp raw rows
-                }
-            } else {
-                processRow(results.data);
-            }
+            if (results.data && sampleBuffer && (radIdx - 1) % sampelSteg === 0 && sampleBuffer.length < SAMPLE_SIZE) sampleBuffer.push(results.data);
+            processRow(results.data);
             // Defensivt: nolla referensen i results-objektet så PapaParse
             // inte kan retain'a raden i sin interna struktur.
             results.data = null;
         },
         complete: () => {
             if (aborted) return;
-            // Edge-case: filen hade < SAMPLE_SIZE rader → kör detektion på det vi har
-            if (!detectionDone && sampleBuffer && sampleBuffer.length > 0) {
+            // PII-kontrollen på samplet från hela filen; fälls filen släpps de lästa raderna.
+            if (sampleBuffer && sampleBuffer.length > 0) {
                 const sensitive = detectSensitiveColumns(sampleBuffer);
                 if (sensitive.length > 0) {
+                    parsed.length = 0;
                     rejectFile(sensitive);
                     return;
                 }
-                sampleBuffer.forEach(processRow);
-                sampleBuffer.length = 0;
+                sampleBuffer.length = 0; // släpp raw rows
             }
             const preambleNote = hdrInfo.line > 0 ? ` · ${hdrInfo.line} försättsrad${hdrInfo.line > 1 ? 'er' : ''} överhoppad` : '';
             finishLoad(`${detectedEnc} · avgränsare "${detectedDelim === '\t' ? 'TAB' : detectedDelim}"${preambleNote}`);
@@ -692,7 +679,7 @@ const COLMAP_ROLES = [
     { role: 'bas',    label: 'BAS-intervall', required: true },
     { role: 'yrke',   label: 'Yrke / AID', required: true },
     { role: 'lon',    label: 'Månadslön', required: true },
-    { role: 'alder',  label: 'Ålder', required: true },
+    { role: 'alder',  label: 'Ålder', required: false },   // valfri men rekommenderad (ADR-64)
     { role: 'kon',    label: 'Kön', required: true },
     { role: 'poang',  label: 'Arbetsvärdering (poäng)', required: false },
     { role: 'ansvar', label: 'Ansvarskod (AID)', required: false }

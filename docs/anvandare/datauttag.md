@@ -20,7 +20,7 @@ Exportera en personallista (en rad per anställd) med dessa kolumner:
 | BAS-intervall | Ja | `BAS`, `BAS-intervall` |
 | AID / yrke | Ja | `AID`, `Yrke`, `Yrkesgrupp`, `Befattning`, `AID-etikett` |
 | Månadslön | Ja | `Månadslön`, `Lön` — heltidsomräknad fast månadslön (se avsnitt 1b) |
-| Ålder *(eller födelseår)* | Ja | `Ålder`, `Alder` — innehåller cellerna födelseår räknas de om automatiskt |
+| Ålder *(eller födelseår)* | *Rekommenderad* | `Ålder`, `Alder` — innehåller cellerna födelseår räknas de om automatiskt. Utan ålder körs analysen utan åldersjustering och fliken Ålder & karriär visas inte |
 | Kön | Ja | `Kön`, `Kon` (K/M, Kvinna/Man m.fl. tolkas automatiskt) |
 | Poäng *(arbetsvärdering)* | Nej | `Poäng`, `Arbetsvärdering` — valfri krav-proxy för likvärdigt arbete |
 | Ansvarskod *(AID)* | Nej | `Ansvarskod`, `AID-ansvar`, `Ansvarsnivå` — A, B, C, L, F, M, 1001 eller 1002, med valfri lokal sista position (t.ex. `C1`); flera koder per person skiljs med mellanslag |
@@ -52,6 +52,9 @@ Alla ska ha samma lönebegrepp, annars jämför verktyget olika saker:
   praxis (fliken Regler & praxis).
 - Verktyget varnar vid inläsningen om många löner ligger under en rimlig heltidsnivå —
   det tyder oftast på att deltidslöner inte har räknats om.
+
+**EU-rapportmåtten.** Måtten är räknade på fast heltidsmånadslön. Direktivets lönebegrepp är vidare (total
+ersättning, inklusive rörliga delar och förmåner); komplettera ur lönesystemet om ni rapporterar.
 
 ## 2. Formatkrav (det verktyget faktiskt tål)
 
@@ -120,8 +123,9 @@ profiler du redan har sparat i sessionen.
 Ta **inte** med personnummer, namn eller e-post i uttaget. Verktyget läser bara in de
 fält som står ovan. Det **avvisar hela filen** om det upptäcker en identifierande kolumn,
 antingen på rubriken (t.ex. `Personnummer`, `PNR`, `Namn`, `Efternamn`, `E-post`) eller på
-innehållet. Innehållet prövas i filens första 50 rader: minst tre celler i personnummer-
-eller e-postformat, eller minst fem som ser ut som för- och efternamn.
+innehållet. Innehållet prövas i 50 rader spridda jämnt över filen: minst tre celler i personnummer-
+eller e-postformat, eller minst fem som ser ut som för- och efternamn (också med versaler eller
+efternamnet först, som *ANDERSSON, ANNA*).
 Detsamma gäller kolumner vars rubrik antyder en särskild kategori av personuppgifter
 (`Fackmedlemskap`, `Hälsa`, `Sjukfrånvaro`, `Diagnos`, `Etnicitet` och liknande); där prövas bara rubriken.
 Ta bort sådana kolumner redan i uttaget ur lönesystemet.

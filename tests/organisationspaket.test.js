@@ -178,6 +178,27 @@ describe('organisationspaket: minsta gruppstorlek', () => {
     });
 });
 
+describe('organisationspaket: jämförelseyrken i likvärdigt arbete (ADR-60)', () => {
+    const bas = { organisation: 'Exempelorganisationen', skapat: '2026-11-08',
+        referens: { rader: [{ bas: 'A', p10: 20000, med: 25000, p90: 30000 }] } };
+    it.each(['alla', 'mansdominerade'])('%p byggs och tolkas tur och retur', v => {
+        const p = byggPaket({ ...bas, installningar: { jamforelse: v } });
+        expect(p.installningar.jamforelse).toBe(v);
+        const r = tolkaPaket(JSON.stringify(p));
+        expect(r.delar.installningar.jamforelse).toBe(v);
+        expect(r.varningar.join(' ')).not.toMatch(/jämförelseyrken/);
+    });
+    it.each(['blandade', 1, true])('ogiltigt värde %p tas inte med och ger en varning vid tolkning', v => {
+        expect(byggPaket({ ...bas, installningar: { jamforelse: v } }).installningar.jamforelse).toBeUndefined();
+        const p = byggPaket(bas);
+        p.installningar = { jamforelse: v };
+        const r = tolkaPaket(JSON.stringify(p));
+        expect(r.ok).toBe(true);
+        expect(r.delar.installningar.jamforelse).toBeUndefined();
+        expect(r.varningar.join(' ')).toMatch(/jämförelseyrken i likvärdigt arbete/);
+    });
+});
+
 describe('organisationspaket: låsningar (ADR-47)', () => {
     const bas = { organisation: 'Exempelorganisationen', skapat: '2026-10-08',
         referens: { rader: [{ bas: 'A', p10: 20000, med: 25000, p90: 30000 }] } };

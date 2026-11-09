@@ -466,3 +466,49 @@ describe('k-tröskeln: lägsta tillåtna värde ur organisationspaketet (ADR-47)
         expect(w.document.getElementById('paket-status').textContent).toMatch(/sparades inte.*Lägsta tillåtna minsta gruppstorlek: Ange ett heltal mellan 2 och 1000/);
     });
 });
+
+// B3: småfel i regressionskortet och Lika arbetes nyckeltal (S29, S9, S5, S8).
+describe('regressionskortet: BH-texten räknar testerna, budgeten säger att ordningen spelar roll, nyckeltalet varnar för få', () => {
+    const bhText = w => {
+        const p = [...w.document.querySelectorAll('#regression-card p')].find(e => /Multipel jämförelse-korrigering/.test(e.textContent));
+        return p ? normalisera(p.textContent).replace(/\s+/g, ' ').trim() : null;
+    };
+    const meningar = t => t.replace(/^Multipel jämförelse-korrigering:\s*/, '').split(/(?<=[.;])\s+(?=[A-ZÅÄÖ])/).filter(Boolean);
+    const antalTester = w => (w.eval('runOLSRegression()').perBas || []).filter(p => p.status === 'ok' && isFinite(p.pValue)).length;
+    it('demodatan: texten säger hur många tester som körs, inte "20+"', () => {
+        const w = createAppWindow();
+        w.__loadDemoData();
+        w.__renderTabContent('struktur');
+        const t = bhText(w), n = antalTester(w);
+        expect(t).not.toMatch(/20\+/);
+        expect(t).toContain(`Här körs ${n} tester samtidigt`);
+        if (n < 5) expect(meningar(t).length, t).toBe(1);
+        else expect(meningar(t).length, t).toBeGreaterThan(1);
+    });
+    it('fem eller fler tester: texten räknar det väntade antalet falskt positiva', () => {
+        const w = createAppWindow();
+        w.__loadDemoData();
+        const r = w.eval('_bhTextFor')(8);
+        expect(r).toContain('Här körs 8 tester samtidigt');
+        expect(r).toMatch(/0,4 falskt positiva/);
+        expect(w.eval('_bhTextFor')(3).split(/(?<=\.)\s+(?=[A-ZÅÄÖ])/).length).toBe(1);
+        expect(w.eval('_bhTextFor')(0)).toBe('');
+    });
+    it('förklaringsbudgeten säger att det som tillskrivs varje steg beror på ordningen', () => {
+        const w = fonsterMan(5, SJU_MAN);
+        w.__renderTabContent('struktur');
+        const budget = w.document.querySelector('#regression-card .reg-budget');
+        expect(budget).not.toBeNull();
+        expect(normalisera(budget.textContent).replace(/\s+/g, ' ')).toMatch(/Stegen läggs till i ordningen BAS, ålder(, yrkesgrupp inom BAS)?; vad som tillskrivs varje steg beror på ordningen\. Kortet Vad varje variabel tillför mäter varje variabel ovanpå alla andra\./);
+    });
+    it('Lika arbetes nyckeltal efter ålder och BAS-intervall varnar i verktygstipset när ett kön har färre än 10 i modellen', () => {
+        const tips = w => { w.__renderTabContent('matrix');
+            const e = [...w.document.querySelectorAll('#la-slutsatser .slutsats')].find(s => /^Efter /.test(s.querySelector('.slutsats-etikett').textContent));
+            return e ? e.getAttribute('title') : null; };
+        const liten = tips(fonsterMan(5, SJU_MAN));
+        expect(liten).toMatch(/Bygger på få män \(7 i modellen\)/);
+        const w = createAppWindow();
+        w.__loadDemoData();
+        expect(tips(w)).not.toMatch(/Bygger på få/);
+    });
+});

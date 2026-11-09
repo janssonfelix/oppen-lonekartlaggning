@@ -295,7 +295,7 @@ describe('Att göra', () => {
         return r;
     };
     const med = (data) => { const w = createAppWindow(); w.__state.data = data; w.eval('populateSelects(); unlockTabs();'); return w; };
-    it('punkten om oförklarat gap: hög vid signifikant gap över 5 %, ingen när gapet inte är signifikant', () => {
+    it('punkten om oförklarat gap: hög vid signifikant gap på minst 3 %, ingen när gapet inte är signifikant', () => {
         const hog = med(rader(30000, 33000)).eval('buildActionChecklist()').find(i => i.id === 'reg-oforklarat');
         expect(hog).toMatchObject({ kategori: 'Lika arbete', prioritet: 'hög', tab: 'struktur' });
         expect(hog.titel).toMatch(/Oförklarad löneskillnad i hela organisationen/);
@@ -557,6 +557,39 @@ describe('BAS-steg räknas i bokstäver överallt (se §5 i teknisk-plan.md)', (
         expect(r.kiB).toBe(0);
         expect(r.kiUtelamnad).toMatch(/räknas inte vid fler än 2\u00a0000 personer/);
         expect(r.results.every(q => q.ki === null)).toBe(true);
+    });
+    // Tolkningen (ADR-63): "väger tyngre än" bara när bootstrap-KI:t för skillnaden P90 − P10 utesluter noll.
+    const kvantilKort = lonFn => {
+        const w = createAppWindow();
+        const rader = [];
+        for (let i = 0; i < 240; i++) {
+            const kv = i % 2 === 0, u = ((i * 37) % 120) / 119;   // läget i lönefördelningen, samma spridning för båda könen
+            rader.push({ bas: 'AB'[i % 3 === 0 ? 1 : 0], kon: kv ? 'kvinna' : 'man', alder: 25 + ((i * 7) % 40),
+                lon: Math.round(lonFn(kv, u, i)), aid: '100', yrke: '100 Y', yrkeLabel: 'Y' });
+        }
+        w.__state.data = rader;
+        const r = w.eval('_regKvantilBerakna({ direkt: true })');
+        w.eval('renderRegressionCard()');
+        return { r, text: w.document.getElementById('regression-card').textContent };
+    };
+    it('kvantilregressionen: skillnaden P90 − P10 med KI, och "väger tyngre än" när KI:t utesluter noll', () => {
+        // Skillnaden växer från ingen i botten till omkring 15 % i toppen: glastak.
+        const { r, text } = kvantilKort((kv, u) => 30000 * Math.exp(0.5 * u - (kv ? 0.16 * u : 0)));
+        expect(r.diff.varde).toBeLessThan(-8);
+        expect(r.diff.ki.hog).toBeLessThan(0);
+        expect(r.diff.varde).toBeCloseTo(r.results[2].konPct - r.results[0].konPct, 10);
+        expect(text).toContain('Glastaket väger tyngre än det klibbiga golvet');
+        expect(text).not.toContain('Ingen säkerställd skillnad mellan delarna av lönefördelningen');
+        expect(text).toMatch(/P90 − P10/);
+    });
+    it('kvantilregressionen: när KI:t för skillnaden omsluter noll sägs ingen tolkning om golv eller tak', () => {
+        // Samma relativa skillnad (5 %) i hela fördelningen, med brus: skillnaden mellan delarna är inte säkerställd.
+        const brus = i => (((i * 7919) % 101) / 100 - 0.5) * 0.12;
+        const { r, text } = kvantilKort((kv, u, i) => 30000 * Math.exp(0.5 * u - (kv ? 0.05 : 0) + brus(i)));
+        expect(r.diff.ki.lag).toBeLessThan(0);
+        expect(r.diff.ki.hog).toBeGreaterThan(0);
+        expect(text).toContain('Ingen säkerställd skillnad mellan delarna av lönefördelningen.');
+        expect(text).not.toMatch(/väger tyngre än/);
     });
     it('regressionskortet visar referensintervallet och en rad per BAS-indikator', () => {
         const w = med();
@@ -906,5 +939,20 @@ describe('huvudtalet följer modellen i nyckeltal, Att göra, Struktur och rappo
         const lika = m.avsnitt.find(a => a.id === 'lika');
         expect(lika.delar.find(d => d.typ === 'tabell').rader.map(r => r[0])).toContain('Löneskillnad som står kvar efter ålder och BAS-intervall');
         expect(JSON.stringify(m.avsnitt.find(a => a.id === 'regression').delar)).toMatch(/Ålderseffekt/);
+    });
+});
+
+// A5: Prioriteringens förslag avfärdar inte en skillnad ("normal variation") och talar inte om utredning.
+describe('förbjudna fraser i det byggda verktyget', () => {
+    it('"normal variation" och "kräver ytterligare utredning" står inte i appen eller sidan', async () => {
+        const { readFileSync } = await import('node:fs');
+        const { join, dirname } = await import('node:path');
+        const { fileURLToPath } = await import('node:url');
+        const rot = join(dirname(fileURLToPath(import.meta.url)), '..');
+        for (const fil of ['dist/app.js', 'src/index.html']) {
+            const text = readFileSync(join(rot, fil), 'utf8');
+            expect(text, fil).not.toMatch(/normal variation/i);
+            expect(text, fil).not.toMatch(/kräver ytterligare utredning/i);
+        }
     });
 });

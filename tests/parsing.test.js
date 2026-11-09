@@ -10,6 +10,8 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { arAnsvarskodRubrik, tolkaAnsvarskod, ansvarsgrupp, andelGiltiga } from '../src/lib/ansvar.js';
+import { createAppWindow } from './helpers/app-harness.js';
+import { papa, vanta, csvFil } from './helpers/granssnitt-rigg.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const appSrc = readFileSync(join(__dirname, '..', 'dist', 'app.js'), 'utf8');
@@ -64,6 +66,7 @@ const P = new Function('_anArRubrik', '_anTolka', '_anGrupp', '_anAndelGiltiga',
     ${extractFn('extractMinimalRecord')}
     ${extractFn('_hittaAnsvarKolumn')}
     ${extractFn('_bedomAnsvarKolumn')}
+    ${extractFn('_pnrSampelSteg')}
     ${extractFn('detectSensitiveColumns')}
     return { state, detectSensitiveColumns, esc, getField, autoDetectColumnMap, _detectDelimiter, _decodeCsvBuffer, _cleanYrkeField,
              _normalizeNumberString, parseNumber, parseNumberStrict, _sniffTabularFormat,
@@ -351,6 +354,35 @@ describe('detectSensitiveColumns (PII-rubriker)', () => {
     });
 });
 
+describe('detectSensitiveColumns (värdena, B4)', () => {
+    // 300 rader; personnumren börjar på rad 200. De 50 första raderna är rena, så bara en sampling över hela filen
+    // (var ⌈n/50⌉:e rad) hittar dem.
+    const fil = (kol, varde) => Array.from({ length: 300 }, (_, i) => ({ BAS: 'C', Lön: String(30000 + i), [kol]: varde(i) }));
+    it('personnummer som börjar på rad 200 hittas', () => {
+        const fel = P.detectSensitiveColumns(fil('Id', i => (i >= 200 ? `19800101-${1000 + i}` : `A${i}`)));
+        expect(fel.map(f => f.col)).toEqual(['Id']);
+        expect(fel[0].reason).toMatch(/personnummer/);
+    });
+    it('samplingen täcker hela filen: e-post bara i slutet hittas', () => {
+        const fel = P.detectSensitiveColumns(fil('Kontakt', i => (i >= 250 ? `p${i}@exempel.se` : '')));
+        expect(fel.map(f => f.reason)).toEqual([expect.stringMatching(/e-post/)]);
+    });
+    const namn = ['Anna Andersson', 'Bo Berg', 'Cecilia Carlsson', 'David Dahl', 'Eva Ek', 'Fredrik Falk'];
+    const tio = (kol, f) => Array.from({ length: 12 }, (_, i) => ({ BAS: 'C', [kol]: f(namn[i % namn.length]) }));
+    it('namn med versaler, gemener och efternamn först med komma känns igen', () => {
+        const omvand = n => n.split(' ').reverse().join(', ');
+        for (const [etikett, f] of [['Versaler', n => n.toUpperCase()], ['Gemener', n => n.toLowerCase()],
+            ['Komma', omvand], ['Komma versaler', n => omvand(n).toUpperCase()], ['Komma utan mellanslag', n => omvand(n).replace(' ', '')]]) {
+            const fel = P.detectSensitiveColumns(tio('Person', f));
+            expect(fel.map(x => x.reason), etikett).toEqual([expect.stringMatching(/personnamn/)]);
+        }
+    });
+    it('befattningar med stor bokstav bara först räknas inte som namn', () => {
+        const titlar = ['Lärare grundskola', 'Undersköterska hemtjänst', 'Lärare fritidshem', 'Administratör ekonomi', 'Kock storkök'];
+        expect(P.detectSensitiveColumns(Array.from({ length: 50 }, (_, i) => ({ BAS: 'C', Befattning: titlar[i % 5] })))).toEqual([]);
+    });
+});
+
 describe('_cleanYrkeField (GDPR-sanering)', () => {
     it('behåller AID + etikett', () => {
         expect(P._cleanYrkeField('203010 Förskollärare')).toBe('203010 Förskollärare');
@@ -401,5 +433,29 @@ describe('inläsning: AID:s ansvarskod', () => {
         expect(underkand.godkand).toBe(false);
         expect(underkand.giltiga).toBeCloseTo(0.85, 6);
         expect(P._bedomAnsvarKolumn('Ansvarskod', ['', '']).godkand).toBe(false);
+    });
+});
+
+// ---- Lönefil utan ålderskolumn (ADR-64): ålder är valfri ----
+describe('inläsning: lönefil utan ålderskolumn', () => {
+    it('extractMinimalRecord: utan kolumnen blir åldern 0, inget fel', () => {
+        P.state.ansvarKolumn = null;
+        const rec = P.extractMinimalRecord({ BAS: 'C', AID: '207011 Handläggare', 'Månadslön': '31000', 'Kön': 'Kvinna' });
+        expect(rec).toMatchObject({ bas: 'C', lon: 31000, kon: 'kvinna', alder: 0, _alderStatus: 'empty' });
+    });
+    it('filen med bara BAS, AID, lön och kön läses in med alla rader, utan kolumnmappning', async () => {
+        const w = createAppWindow();
+        papa(w);
+        const rader = ['BAS;AID;Månadslön;Kön'];
+        for (let i = 0; i < 40; i++) rader.push(`${i % 2 ? 'C' : 'D'};207011 Handläggare;${30000 + i * 10};${i % 4 < 2 ? 'Man' : 'Kvinna'}`);
+        w.loadStructureFile(csvFil(w, rader, 'utan-alder.csv'));
+        await vanta(() => w.__state.data.length > 0);
+        expect(w.__state.data).toHaveLength(40);
+        expect(w.__state.data.every(r => r.alder === 0)).toBe(true);
+        expect(w.eval('harAlder()')).toBe(false);
+        expect(w.eval('_kolumnerSomSaknas(state._dataHeaders)')).toEqual([]);
+        expect(w.document.getElementById('column-map-panel').textContent).not.toContain('Kolumnmappning behövs');
+        expect(w.__state.forhandskontroll.varningar.map(v => v.kod)).toContain('alder-saknas');
+        expect(w.document.getElementById('reality-check').textContent).toContain('Ålder saknas: analysen körs utan åldersjustering; Ålder & karriär visas inte.');
     });
 });

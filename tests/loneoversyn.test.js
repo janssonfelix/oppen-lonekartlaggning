@@ -204,6 +204,13 @@ describe('forecast: jämställdhetsandel (equityCost)', () => {
         // B/2000 = 1 kvinna / 2 = 50 % < 60 → ingen equity
         expect(out.equityCost).toBeCloseTo(0, 6);
     });
+    it('följer definitionen av kvinnodominerat (ADR-60): 50 % med gränsen 50 är kvinnodominerat bara enligt SCB', () => {
+        const mal = [{ bas: 'B', aid: '2000', mode: 'kr', value: 3000, dist: 'flat' }];
+        const scb = forecastOutcome(rows(), { mode: 'kr', value: 100000 }, { mode: 'pct', value: 0 }, mal, { months: 12, poPct: 0, kvThreshold: 50, kvDefinition: 'scb' });
+        expect(scb.equityCost).toBeCloseTo(3000, 6);
+        const dO = forecastOutcome(rows(), { mode: 'kr', value: 100000 }, { mode: 'pct', value: 0 }, mal, { months: 12, poPct: 0, kvThreshold: 50, kvDefinition: 'do' });
+        expect(dO.equityCost).toBeCloseTo(0, 6);
+    });
 });
 
 describe('forecast: avrundning till lönetrappa', () => {

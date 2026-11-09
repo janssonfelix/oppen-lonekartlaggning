@@ -31,8 +31,12 @@ verktygets kod och fyra låsta bibliotek (D3, SheetJS, PapaParse, JSZip).
 3. **Urklipp:** stäng av synkning av urklipp (Windows molnurklipp, Apples universella urklipp) på datorerna
    som används (§8 punkt 7).
 4. **Verifiera filen** före användning med verklig lönedata, och använd den nedladdade filen — inte en kopia
-   som visas från en webbplats.
-5. **Konsekvensbedömning:** verktyget är en lågriskkomponent; om lönekartläggningsprocessen som helhet kräver
+   som visas från en webbplats. Kan ni inte köra cosign skyddar kontrollsumman i `RELEASE.txt` mot en skadad
+   eller förväxlad fil (kommandona står i `SECURITY.md`).
+5. **Distribution:** Hur filen distribueras i er organisation (intranät, filserver, organisationsfil) avgör ni;
+   webbläsarpolicyer och e-postfilter kan påverka. Beskrivningar av fungerande distributionsvägar tas tacksamt
+   emot som bidrag.
+6. **Konsekvensbedömning:** verktyget är en lågriskkomponent; om lönekartläggningsprocessen som helhet kräver
    en DPIA avgör dataskyddsombudet (§9).
 
 ## Vanliga frågor

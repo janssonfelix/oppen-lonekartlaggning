@@ -19,9 +19,11 @@
 
 export const IMPORTPROFIL_FORMAT = 'lonekartlaggning-importprofiler';
 export const IMPORTPROFIL_VERSION = 1;
-/** Rollerna i kolumnmappningens ordning; de fem första är obligatoriska. */
+/** Rollerna i kolumnmappningens ordning. BAS, yrke, lön och kön är obligatoriska; ålder är valfri men rekommenderad (ADR-64). */
 export const IMPORTPROFIL_ROLLER = ['bas', 'yrke', 'lon', 'alder', 'kon', 'poang', 'ansvar'];
-export const OBLIGATORISKA_ROLLER = ['bas', 'yrke', 'lon', 'alder', 'kon'];
+export const OBLIGATORISKA_ROLLER = ['bas', 'yrke', 'lon', 'kon'];
+/** Rollerna vars rubriker blir kännetecken när profilen inte anger egna: de obligatoriska och ålder, när den finns. */
+const KANNETECKEN_ROLLER = ['bas', 'yrke', 'lon', 'alder', 'kon'];
 /** Källorna i prioritetsordning: organisationspaketets profiler prövas först, de inbyggda sist. */
 export const IMPORTPROFIL_KALLOR = ['organisationspaket', 'konfiguration', 'inbyggd'];
 export const MAX_PROFILER = 50;
@@ -100,7 +102,7 @@ export function valideraImportprofil(o, { kalla } = {}) {
     if (!Object.keys(rubriker).length) return null;
     let kannetecken;
     if (o.kannetecken == null) {
-        kannetecken = OBLIGATORISKA_ROLLER.filter(r => rubriker[r]).map(r => rubriker[r][0]);
+        kannetecken = KANNETECKEN_ROLLER.filter(r => rubriker[r]).map(r => rubriker[r][0]);
         if (!kannetecken.length) return null;
     } else {
         kannetecken = _rubrikLista(o.kannetecken, MAX_RUBRIKER_PER_ROLL);
@@ -164,7 +166,7 @@ export function matchaImportprofil(rubriker, profiler) {
 
 /**
  * Bygger en profil ur en gjord kolumnmappning. Bara rubriker som finns i filen följer med, och alla obligatoriska
- * roller måste vara mappade; kännetecknen är de obligatoriska rollernas rubriker.
+ * roller måste vara mappade; kännetecknen är de obligatoriska rollernas rubriker och ålderns, när den är mappad.
  * @param {{namn:string, kalla:string, mappning:{[roll:string]: string|null|undefined}, rubriker:string[]}} u
  */
 export function profilFranMappning({ namn, kalla, mappning, rubriker }) {

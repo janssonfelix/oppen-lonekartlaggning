@@ -29,6 +29,12 @@ const DATUM = /^\d{4}-\d{2}-\d{2}$/;
 // De sökvägar vars ändring kräver att riskanalysen granskas på nytt.
 export const KODVAGAR = ['src', 'tools/bundle.mjs', 'vendor'];
 const PUNKT = 'teknisk-plan.md §9 punkt 17b';
+// Kontrollsummans kommandon i dist/RELEASE.txt (tools/bundle.mjs skriver dem) och i SECURITY.md och körguiden §0:
+// alternativet när cosign inte kan köras (beslut 11b). Skyddar mot en skadad eller förväxlad fil, inte en utbytt.
+export const VERIFIERING = Object.freeze({
+    powershell: 'Get-FileHash .\\oppen-lonekartlaggning.html -Algorithm SHA256',
+    linux: 'sha256sum oppen-lonekartlaggning.html',
+});
 
 // 2026.10.04 -> 2026.10.4 (npm tillåter inte inledande nollor i package.json).
 const semverish = v => String(v).split('.').map(p => String(Number(p))).join('.');
@@ -76,6 +82,8 @@ export function kontrollera(u) {
         fel.push(`dist/RELEASE.txt anger version ${relVersion ?? '(ingen)'}, VERSION ${version}. Kör npm run build:app och npm run bundle.`);
     }
     if (!relSha) fel.push('dist/RELEASE.txt saknar SHA-256.');
+    if (!String(u.release).includes(`PowerShell : ${VERIFIERING.powershell}`)) fel.push('dist/RELEASE.txt saknar PowerShell-raden för kontrollsumman. Kör npm run bundle.');
+    if (!String(u.release).includes(`Linux/mac  : ${VERIFIERING.linux}`)) fel.push('dist/RELEASE.txt saknar Linux/mac-raden för kontrollsumman. Kör npm run bundle.');
     else if (relSha !== u.artefaktSha) {
         fel.push('dist/oppen-lonekartlaggning.html har inte den SHA-256 som dist/RELEASE.txt anger. Kör npm run bundle.');
     }

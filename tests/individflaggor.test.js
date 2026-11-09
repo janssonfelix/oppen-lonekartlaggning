@@ -84,3 +84,13 @@ describe('flaggaIndivider och ansvarskoden', () => {
         expect(flaggaIndivider(utan, {}).flaggade[0].ansvarsgrupp).toBeNull();
     });
 });
+
+describe('flaggaIndivider utan ålder i lönefilen (ADR-64)', () => {
+    it('raderna prövas med medianmetoden', () => {
+        const res = flaggaIndivider([...flera(9, 'kvinna', 30000, 0), p('man', 15000, 0)], {});
+        expect(res.provade.kv + res.provade.ma).toBe(10);
+        expect(res.flaggade).toHaveLength(1);
+        expect(res.flaggade[0].metod).toBe('median');
+        expect(res.flaggade[0].forvantad).toBe(30000);
+    });
+});

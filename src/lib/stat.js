@@ -227,12 +227,14 @@ export function invert(A) {
  * OLS-estimat med klassisk + HC3-robusta vcov (Long & Ervin 2000).
  *
  * Returnerar identiskt fältnamn-gränssnitt som app.js _fitOLS:
- *   { beta, R2, n, k, vcovHC3, vcovClassic, rss, adjR2, sigma2, XtXinv }
+ *   { beta, R2, n, k, vcovHC3, vcovClassic, rss, adjR2, sigma2, XtXinv, hHoga }
+ * hHoga = antalet observationer med hävstång h_i > 0,99 (B4). De har (nästan) noll residual och bidrar inte till
+ * HC3-köttet; antalet visas i regressionskortets tekniska specifikation (en ensam person i en indikator ger h = 1).
  * Detta är "single source of truth" — app.js mirrar denna implementation.
  *
  * @param {number[][]} X - n×k designmatris.
  * @param {number[]} y    - n-vektor.
- * @returns {null | {beta:number[], R2:number, n:number, k:number, vcovHC3:number[][], vcovClassic:number[][], rss:number, adjR2:number, sigma2:number, XtXinv:number[][]}}
+ * @returns {null | {beta:number[], R2:number, n:number, k:number, vcovHC3:number[][], vcovClassic:number[][], rss:number, adjR2:number, sigma2:number, XtXinv:number[][], hHoga:number}}
  */
 export function fitOLS(X, y) {
     const n = X.length, k = X[0].length;
@@ -267,6 +269,7 @@ export function fitOLS(X, y) {
         }
         return s;
     });
+    const hHoga = h.filter(hi => hi > 0.99).length;
     const meat = Array.from({ length: k }, () => new Array(k).fill(0));
     for (let i = 0; i < n; i++) {
         const denom = (1 - h[i]) ** 2;
@@ -281,5 +284,5 @@ export function fitOLS(X, y) {
     const vcovHC3 = matMul(breadMeat, XtXinv);
     const adjR2 = (n - k) > 0 ? 1 - (1 - R2) * (n - 1) / (n - k) : 0;
 
-    return { beta, R2, n, k, vcovHC3, vcovClassic, rss, adjR2, sigma2, XtXinv };
+    return { beta, R2, n, k, vcovHC3, vcovClassic, rss, adjR2, sigma2, XtXinv, hHoga };
 }

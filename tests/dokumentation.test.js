@@ -546,6 +546,15 @@ describe('dokumentation: kodbasen är redo att publiceras', () => {
         expect(läs('SECURITY.md')).toMatch(/oppen-lonekartlaggning@proton\.me/);
         expect(läs('SECURITY.md')).not.toMatch(/gmail/i);
     });
+    it('README och dokumenten räknar fälten som kolumnmappningen: fyra obligatoriska, tre valfria (ADR-64)', () => {
+        const app = läs('src/app/32-filinlasning.js');
+        const roller = [...app.matchAll(/\{ role: '(\w+)'[^}]*required: (true|false)/g)].map(m => [m[1], m[2] === 'true']);
+        expect(roller.find(([r]) => r === 'alder')).toEqual(['alder', false]);
+        expect(roller.filter(([, k]) => k).map(([r]) => r).sort()).toEqual(['bas', 'kon', 'lon', 'yrke']);
+        expect(läs('README.md').replace(/\s+/g, ' ')).toMatch(/fyra obligatoriska, tre valfria/);
+        expect(läs('README.md')).not.toMatch(/fem obligatoriska/);
+        expect(planMd).toMatch(/\*\*ADR-64 — Ålder är valfri i lönefilen/);
+    });
     it('.gitignore utesluter lokal data och arbetsmappar', () => {
         const g = läs('.gitignore');
         for (const m of ['*.csv', '*.xlsx', '.claude/']) expect(g).toContain(m);
