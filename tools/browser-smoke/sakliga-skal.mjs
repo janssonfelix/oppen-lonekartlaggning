@@ -52,6 +52,15 @@ export async function sakligaSkal() {
     await sida.waitForFunction(() => /Svårrekryterat i regionen/.test(document.getElementById('view-rapporttext')?.textContent || ''), null, { timeout: 15000 }).catch(() => {});
     const rt = await sida.evaluate(() => document.getElementById('view-rapporttext').textContent || '');
     ok(/Sakliga skäl per grupp/.test(rt) && /Sammanställning per kategori/.test(rt), 'Rapporttext har tabellerna Sakliga skäl per grupp och Sammanställning per kategori');
-    ok(/Svårrekryterat i regionen/.test(rt), 'kommentaren står i tabellen');
+    const harKommentar = /Svårrekryterat i regionen/.test(rt);
+    // Felsökning när kommentaren saknas: radens skäl i tillståndet och gruppen i exportlägets förifyllning.
+    const diag = harKommentar ? '' : await sida.evaluate(n => {
+        /* global medExportLage, _handlingsplanSeedRows, _hpSkalUnderlag, kInstalld, kTroskel */
+        const skal = state.handlingsplan[n]?.skal || [];
+        const ex = medExportLage(() => { const s = _handlingsplanSeedRows(); const u = _hpSkalUnderlag(s); const g = u.grupper.find(x => x.nyckel === n);
+            return { iSeed: s.nycklar.includes(n), kExport: kTroskel(), grupp: g ? { utanBelopp: g.utanBelopp, nMin: g.nMin, antal: g.skal.length } : null }; });
+        return JSON.stringify({ n, skal, kInstalld: kInstalld(), kSkarm: kTroskel(), ex });
+    }, nyckel);
+    ok(harKommentar, `kommentaren står i tabellen${diag ? ` (${diag})` : ''}`);
     await sida.close();
 }
