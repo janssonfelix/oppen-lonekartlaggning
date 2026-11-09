@@ -48,6 +48,8 @@ function _ritaOmEfterExport(ritade) {
         const ska = namn === 'gruppdossiern' || (_OVERSIKT_STEG.has(namn) ? ritade.has('dashboard') : ritade.has(namn));
         if (ska) _omritningForsok(namn, fn);
     }
+    // En kopia i Alla diagram som exporterades bär källans figur ur exportläget: samlingen ritas om på skärmen.
+    if (typeof utAllaDiagramEfterExport === 'function') _omritningForsok('Alla diagram', utAllaDiagramEfterExport);
 }
 /** Flikarna som är ritade i den generation som gäller nu (under en export: de som ritades i exportläget). */
 function _ritadeNu() { return new Set([..._ritadVid].filter(([, g]) => g === _ritGeneration).map(([f]) => f)); }
@@ -126,6 +128,8 @@ function _egFlikFor(el) {
  */
 function exportSakra(el) {
     if (!el) return false;
+    // En kopia i Alla diagram (74-alla-diagram.js) går till sin källa: källans flik säkras och kopian får dess figur.
+    if (typeof arDiagramKopia === 'function' && arDiagramKopia(el)) return _exportSakraKopia(el);
     const flik = _egFlikFor(el);
     if (!flik) return el.isConnected !== false;   // utanför flikarna (en dialog) — eller ett element som inte sitter kvar i sidan
     // En flik som aldrig ritats genom navigeringen (eller är inaktuell) ritas i det läge som gäller nu — i exportläget

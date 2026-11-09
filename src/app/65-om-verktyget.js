@@ -335,7 +335,7 @@ function renderInfoTab(section = 'overview') {
     const renderer = INFO_SECTIONS[section] || INFO_SECTIONS.overview;
     wrap.innerHTML = renderer();
     // Markera aktiv knapp
-    document.querySelectorAll('.info-section-btn').forEach(btn => {
+    document.querySelectorAll('#view-info .info-section-btn').forEach(btn => {
         const isActive = /** @type {HTMLElement} */ (btn).dataset.section === section;
         btn.classList.toggle('active', isActive);
         btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
@@ -351,7 +351,8 @@ function renderInfoTab(section = 'overview') {
     applyProfileLabels();
 }
 
-document.querySelectorAll('.info-section-btn').forEach(btn => {
+// Underflikarna i Tabeller och egna vyer har samma klasser (74-alla-diagram.js): väljarna gäller bara Om verktyget.
+document.querySelectorAll('#view-info .info-section-btn').forEach(btn => {
     btn.addEventListener('click', () => renderInfoTab(/** @type {HTMLElement} */ (btn).dataset.section));
 });
-_wireTablistKeys(/** @type {HTMLElement[]} */ ([...document.querySelectorAll('.info-section-btn')]));
+_wireTablistKeys(/** @type {HTMLElement[]} */ ([...document.querySelectorAll('#view-info .info-section-btn')]));

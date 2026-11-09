@@ -430,15 +430,40 @@ rubrikraden, också när det är hopfällt.
    AID-nivå** ("Övriga i AID 2070xx (2 yrken)"). Det går bara i Tabeller och egna vyer, aldrig i Lika arbete,
    där en hopslagen grupp inte längre är lika arbete.
 
+   Under Löneöversikten står två underflikar: **Egna vyer** och **Alla diagram**. Under Alla diagram finns diagrammen
+   från de andra flikarna samlade, en grupp per flik i menyns ordning. Öppna en grupp för att se flikens diagram;
+   fliken ritas då om det behövs, men du stannar där du är. Varje diagram har sin rubrik, en länk *Från fliken …* till
+   diagrammet i fliken, egna filter och en egen exportmeny. Filtren i samlingen och i fliken påverkar inte varandra,
+   och diagrammet i samlingen visar alltid det som diagrammet i fliken visar. Ett diagram som fliken inte visar med
+   ditt underlag (till exempel det mot jämförelsestatistiken utan statistik) står inte heller i samlingen. Samlingen
+   är ingen egen export: ZIP-filen och rapporten tar diagrammen från flikarna, en gång var.
+
 Varje diagram har en **Exportera**-knapp i övre högra hörnet: PNG i två storlekar,
 SVG (skarp i Word) och diagramdatan som tabell.
 
-**Välj vilka BAS-intervall ett diagram visar.** I diagrammen där BAS-intervallet är en dimension (bland annat
+**Välj vad ett diagram visar.** I diagrammen där BAS-intervallet är en dimension (bland annat
 bandkartan och statistikens spann i Löneläget, översikten, könsfördelningen, lådorna och trattdiagrammet i Lika
 arbete, Krav mot lön i Likvärdigt arbete, Prioriteringens två diagram och hanteln per BAS-intervall i Spara och
 jämför år) står en knapp per intervall ovanför diagrammet. Klicka på ett intervall för att dölja det, till exempel
-BAS A, B, C och N inför en presentation, och på **Visa alla** för att få tillbaka alla. Det sista synliga intervallet
-kan inte döljas. Under diagrammet står vilka intervall som är dolda. Urvalet döljer bara märken: inget tal räknas om,
+BAS A, B, C och N inför en presentation. Det sista synliga intervallet kan inte döljas.
+
+Diagram där varje punkt är en yrkesgrupp har fler filter, en rad per filter:
+
+- **Antal personer i gruppen** med fälten **Minst** och **Högst**: skriv till exempel 10 i Minst för att dölja de
+  minsta grupperna. Fälten gäller när du lämnar dem eller trycker Enter; ett tomt fält är ingen gräns, och gränserna
+  ingår. Platshållarna visar diagrammets minsta och största tal. Är Minst större än Högst markeras fältet, och
+  ingenting döljs förrän du rättat det. Prioriteringsmatrisen, Prioriteringens kostnadsdiagram, trattdiagrammet i
+  Lika arbete, Krav mot lön i Likvärdigt arbete, bandkartan, statistikens spann och de två diagrammen mot
+  jämförelsestatistiken i Löneläget har filtret.
+- **Avvikelse (%)** med Minst och Högst, i Prioriteringsmatrisen: till exempel Högst −5 för att bara se grupperna
+  som ligger minst fem procent under referensen. Decimaler skrivs med komma.
+- **Könsdominans** (Kvinnodominerad, Mansdominerad, Blandad) som knappar, i bandkartan och statistikens spann.
+- **Matchning** (AID + BAS, Endast AID) som knappar, i statistikens spann och de två diagrammen mot
+  jämförelsestatistiken. En grupp utan statistik påverkas inte av det filtret.
+
+Filtren verkar tillsammans. Döljer de alla punkter står "Inga grupper i urvalet" i diagrammet; ändra eller töm ett
+fält för att få tillbaka dem. **Visa alla** nollställer alla filter i diagrammet. Under diagrammet står vad som är
+dolt, till exempel "utan BAS A, BAS N; 10–50 personer i gruppen". Urvalet döljer bara märken: inget tal räknas om,
 och texten, tabellerna, rapporten, Word, PDF, utskriften och ZIP-filen visar alltid hela underlaget. Diagrammets egen
 export (PNG och SVG) visar urvalet och säger i fotraden vad som är dolt. Valet gäller diagrammet tills du läser in en
 ny lönefil, läser in demot eller rensar all data. Det sparas inte i konfigurationsfilen. Diagram där en punkt eller

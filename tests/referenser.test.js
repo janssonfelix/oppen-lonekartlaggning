@@ -86,7 +86,7 @@ describe('överblicken', () => {
     it('hantelns rader bär de tre spannen i listans ordning, null för en referens utan median', () => {
         const h = hantelRader(referensOverblick(tva(), alla).grupper);
         expect(h).toHaveLength(2);
-        expect(h[0]).toMatchObject({ namn: '1 Yrke · BAS C', org: { median: 38900 }, stallningstagande: { median: 32000 }, statistik: { median: 37800 } });
+        expect(h[0]).toMatchObject({ namn: '1 Yrke · BAS C', n: 42, org: { median: 38900 }, stallningstagande: { median: 32000 }, statistik: { median: 37800 } });
         expect(hantelRader(referensOverblick([rad({ statistik: { p10: null, median: null, p90: null } })], alla).grupper)[0].statistik).toBeNull();
     });
 });

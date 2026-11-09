@@ -8,6 +8,35 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ### Gränssnitt
 
+- **Diagramfilter med flera dimensioner, och fälten Minst och Högst.** Ett diagram kan ha flera filter, ett per
+  dimension, i varsin rad ovanför diagrammet: knappar för en kategori (som BAS-intervallen i dag) och fälten *Minst*
+  och *Högst* för ett tal, till exempel antal personer i gruppen. Fälten läser tal som verktyget gör annars ("1,5",
+  "1 500"), verkställs när du lämnar fältet eller trycker Retur, och ett tomt fält är ingen gräns. Ett tal som inte
+  går att läsa, eller Minst större än Högst, markeras och ändrar inget. Döljer filtret allt står *Inga grupper i
+  urvalet* i diagrammet. *Visa alla* nollställer alla filter. Noten under diagrammet och fotraden i diagrammets egen
+  export räknar upp alla aktiva filter med samma text, till exempel "utan BAS A, BAS N; 10–50 personer i gruppen";
+  raden i diagramdatan heter nu *Urval i diagrammet*. Filtren döljer fortfarande bara märken och minns per diagram
+  och dimension under sessionen. Det här är kärnan; diagrammen får sina nya filter i nästa steg.
+
+- **Fler filter i diagrammen där punkterna är yrkesgrupper.** *Antal personer i gruppen* (Minst och Högst) finns
+  i Prioriteringsmatrisen, Prioriteringens kostnadsdiagram, trattdiagrammet i Lika arbete, Krav mot lön i
+  Likvärdigt arbete, bandkartan, statistikens spann, spannet och skillnaden mot statistiken och överblickens bild i
+  Löneläget. Prioriteringsmatrisen har också *Avvikelse (%)* (Minst och Högst). Bandkartan och statistikens spann
+  har knappar för *Könsdominans* (Kvinnodominerad, Mansdominerad, Blandad), och statistikens spann och de två
+  diagrammen mot statistiken har knappar för *Matchning* (AID + BAS, Endast AID; en grupp utan statistik påverkas
+  inte). Filtren läser samma tal och ord som diagrammets verktygstips eller tabellen; inget nytt visas. Diagram vars
+  punkter är BAS-intervall, personer eller åldersklasser har bara BAS-knapparna.
+
+- **Alla diagram samlade i Tabeller och egna vyer.** Fliken har två underflikar överst: *Egna vyer* (som förut,
+  förvald) och *Alla diagram*. Pilarna flyttar mellan dem, och valet står kvar så länge sidan är öppen. *Alla diagram*
+  har en grupp per upplåst flik med diagram, i menyns ordning och stängd från början. När en grupp öppnas ritas
+  fliken om det behövs, utan att du flyttas dit, och varje diagram i den som visas där och får exporteras står i
+  gruppen: med sin rubrik, raden *Från fliken …* med en länk till diagrammet i fliken, egna filter och en egen
+  exportmeny. Filtren i samlingen och i fliken påverkar inte varandra. Diagrammet visar alltid det som diagrammet i
+  fliken visar och ritas om varje gång gruppen öppnas eller samlingen visas. Samlingen är ingen ny export: ZIP-filen,
+  rapporten, utskriften och rapportunderlaget tar diagrammen från flikarna som förut, en gång var, och en export ur
+  samlingens egen meny ger samma fil som en export ur fliken. Sökningen hittar *Alla diagram*.
+
 - **Välj vilka BAS-intervall ett diagram visar.** Diagrammen där BAS-intervallet är en dimension har en knapp per
   intervall ovanför diagrammet, och *Visa alla*: bandkartan, statistikens spann, spannet och avvikelsen mot
   statistiken, efterlevnaden (båda vyerna), läget i spannet per kön och hanteln mot referenserna i Löneläget;

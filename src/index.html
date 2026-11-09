@@ -122,7 +122,7 @@
                     <span class="nav-etikett">Exportera</span>
                     <svg class="ikon nav-las" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
                 </button>
-                <button class="nav-item" data-tip="Bygg egna vyer: välj vad du vill gruppera på och vilket mått du vill se." data-tab="utforska" id="tab-utforska" aria-disabled="true" title="Läs in lönefilen för att öppna fliken" aria-controls="view-rapport view-utforska">
+                <button class="nav-item" data-tip="Bygg egna vyer: välj vad du vill gruppera på och vilket mått du vill se. Under Alla diagram står diagrammen från alla flikar samlade." data-tab="utforska" id="tab-utforska" aria-disabled="true" title="Läs in lönefilen för att öppna fliken" aria-controls="view-rapport view-utforska">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><line x1="4" y1="20" x2="4" y2="10"></line><line x1="10" y1="20" x2="10" y2="4"></line><line x1="16" y1="20" x2="16" y2="14"></line><line x1="2" y1="20" x2="22" y2="20"></line></svg>
                     <span class="nav-etikett">Tabeller och egna vyer</span>
                     <svg class="ikon nav-las" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
@@ -763,7 +763,7 @@
                 <div id="view-rapport" class="view-panel dold">
                     <div class="flik-intro">
                         
-                        <strong>Hela löneläget, och egna vyer</strong> Löneöversikten visar lönenivåerna per BAS-intervall, uppdelat på kön och yrkesgrupp; längre ned bygger du egna tabeller och diagram. Börja här om du vill ha helhetsbilden innan du gräver i enskilda grupper.
+                        <strong>Hela löneläget, och egna vyer</strong> Löneöversikten visar lönenivåerna per BAS-intervall, uppdelat på kön och yrkesgrupp; längre ned bygger du egna tabeller och diagram, och under <em>Alla diagram</em> finns diagrammen från flikarna samlade. Börja här om du vill ha helhetsbilden innan du gräver i enskilda grupper.
                     </div>
                     <details class="card avsnitt" id="avsnitt-ut-oversikt" open>
                         <summary><span class="avsnitt-titel"><h2>Löneöversikt — alla BAS-intervall</h2><span class="avsnitt-under">Den fasta tabellen: lönenivåerna per BAS-intervall, uppdelat på kön och yrkesgrupp</span></span><span class="avsnitt-nyckel" id="nyckel-ut-oversikt"></span></summary>
@@ -2174,6 +2174,12 @@
                 <!-- Lönepolitik: fördjupad analys mot eget ställningstagande -->
                 <!-- Tabeller och egna vyer (4 · Rapport): egna vyer -->
                 <div id="view-utforska" class="view-panel dold">
+                    <!-- Underflikarna (74-alla-diagram.js): Egna vyer och Alla diagram, i samma mönster som Om verktygets sektioner -->
+                    <div class="info-tab-nav ut-underflikar" role="tablist" aria-label="Tabeller och egna vyer">
+                        <button type="button" class="info-section-btn active" id="ut-flik-egna" data-ut-underflik="egna" role="tab" aria-selected="true" aria-controls="ut-egna">Egna vyer</button>
+                        <button type="button" class="info-section-btn" id="ut-flik-alla" data-ut-underflik="alla" role="tab" aria-selected="false" aria-controls="ut-alla-diagram" tabindex="-1">Alla diagram</button>
+                    </div>
+                    <div id="ut-egna" role="tabpanel" aria-labelledby="ut-flik-egna" data-ut-underflik-panel="egna">
                     <details class="avsnitt" id="avsnitt-ut-egna" open>
                     <summary><span class="avsnitt-titel"><h2>Egna vyer</h2><span class="avsnitt-under">Tabeller och diagram du bygger själv: rader, kolumner, mått och urval</span></span><span class="avsnitt-nyckel" id="nyckel-ut-egna"></span></summary>
                     <div class="card mb-16">
@@ -2319,6 +2325,14 @@
                         </div>
                     </div>
                     </details>
+                    </div>
+                    <div id="ut-alla-diagram" role="tabpanel" aria-labelledby="ut-flik-alla" data-ut-underflik-panel="alla" hidden>
+                        <p class="farg-dampad fs-md lh-1_55 marg-0-0-14 max-bredd-70ch">
+                            Diagrammen från flikarna samlade, en grupp per flik. Öppna en grupp för att se flikens diagram. Varje diagram har egna filter och en egen exportmeny; filtren här ändrar inte diagrammet i fliken, och diagrammet i fliken ändrar inte filtren här. Länken under rubriken leder till diagrammet i dess flik. Samlingen är ingen ny export: ZIP-filen och rapporten tar diagrammen från flikarna, en gång var.
+                        </p>
+                        <p id="ut-alla-tom" class="farg-dampad fs-sm" hidden>Läs in lönefilen för att se diagrammen.</p>
+                        <div id="ut-alla-grupper"></div>
+                    </div>
                 </div>
                 <!-- Sidindex (89-sidindex.js): flikens synliga avsnitt, byggs när fliken ritas -->
                 <nav id="sidindex" class="sidindex" aria-label="På den här sidan" hidden></nav>

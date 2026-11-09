@@ -8,15 +8,15 @@
  * Ett diagram som inte får lämna verktyget (exportTillaten i 11-diagramexport.js, där skälen står) följer
  * aldrig med, och inte heller ett som inte har något kvar att exportera när små grupper är borta. Bilden ritas
  * av exportvägen (diagramTillBild), som alltid utelämnar små grupper om användaren inte valt annat i Utforska.
+ * Kopiorna i Alla diagram (ut-diagram-*) följer inte med: de är samma diagram en gång till.
  */
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
 function zipDiagram(...a) { return medExportLage(() => _zipDiagramExport.apply(null, /** @type {any} */ (a))); }
 function _zipDiagramExport() {
     exportSakraAlla();   // varje flik som har ritats ritas om om den inte är aktuell — före uppräkningen, som annars missar ersatta diagram
     const alla = typeof _rfBehallare !== 'undefined' ? [..._rfBehallare] : [];
-    return alla.filter(el => el && el.id && el.isConnected && exportTillaten(el) && diagramRitat(el))
-        .filter(el => { const u = typeof _rfExportFigur === 'function' ? _rfExportFigur(el) : null; return !u || !u.tom; })
-        .sort((a, b) => a.id.localeCompare(b.id));
+    // Samma urval som Alla diagram (diagramUrval i 74-alla-diagram.js): kopiorna där (ut-diagram-*) följer aldrig med.
+    return diagramUrval(alla, diagramRitat).sort((a, b) => a.id.localeCompare(b.id));
 }
 /**
  * ZIP-filen är "allt" (ADR-40): Word-utkastet, Excel-filen med alla flikar och diagrammen i ALLA

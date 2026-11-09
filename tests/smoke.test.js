@@ -955,9 +955,11 @@ describe('k-anonymitet, sortering, efterlevnad och dossiern', () => {
 
 describe('a11y: ARIA APG-tangentbord i den in-page-tablisten', () => {
     // Sidopanelen är navigation (ADR-10) och omfattas INTE — den har alla knappar
-    // i Tab-ordningen med flit. Det här gäller info-sektionerna, som är äkta tablists.
+    // i Tab-ordningen med flit. Det här gäller info-sektionerna och underflikarna i Tabeller och egna vyer (samma
+    // klasser, 74-alla-diagram.js), som är äkta tablists.
     const listor = [
-        ['info-sektionerna', '.info-section-btn', () => win]
+        ['info-sektionerna', '#view-info .info-section-btn', () => win],
+        ['underflikarna i Tabeller och egna vyer', '[data-ut-underflik]', () => win]
     ];
 
     for (const [namn, sel, fonster] of listor) {

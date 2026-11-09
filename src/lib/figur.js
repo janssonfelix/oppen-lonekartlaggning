@@ -231,38 +231,80 @@ export function ladstatistik(varden) {
     return { q1, median, q3, lag: inom[0], hog: inom[inom.length - 1], avvikare: v.filter(x => x < q1 - kant || x > q3 + kant) };
 }
 
-// Urvalsfältets värde i en datapunkt som sträng, eller null när punkten saknar fältet (eller figuren saknar urval).
-function _urvalVarde(figur, d) {
-    if (!figur || !figur.urval || !d || typeof d !== 'object') return null;
-    const v = d[figur.urval.falt];
+// ---- Urval: dimensioner användaren kan filtrera diagrammet på (figur.urval) ----
+// `figur.urval` är en lista med dimensioner, eller ett ensamt objekt (då en lista med ett element). En dimension är
+//   { typ: 'kategori', falt, namn, etikett? }  — en knapp per värde; utan typ är det en kategori (det äldre formatet)
+//   { typ: 'intervall', falt, namn, format?, etikett? } — fälten Minst och Högst
+// Ett filter döljer bara märken; inget tal räknas om.
+
+/** Talformaten som `talformat` känner (och som en intervalldimensions `format` får vara). */
+export const TALFORMAT = Object.freeze(['kr', 'pct', 'pctAbs', 'antal', 'tal2', 'ar']);
+const URVAL_TYPER = ['kategori', 'intervall'];
+
+// Dimensionens typ: utan `typ` är den en kategori (det äldre formatet { falt, namn, etikett }).
+function _urvalTyp(u) { return u && u.typ != null ? u.typ : 'kategori'; }
+// Figurens urval som en lista, utan att skapa nya objekt (används per datapunkt av arBortvald).
+function _urvalRa(figur) {
+    const u = figur && figur.urval;
+    if (u == null) return [];
+    return Array.isArray(u) ? u : [u];
+}
+
+/**
+ * Figurens urval som en lista med dimensioner, där varje dimension har sin `typ` utskriven. Ett ensamt objekt blir
+ * en lista med ett element; ett objekt utan typ är en kategori. Utan urval: en tom lista.
+ * @param {any} figur
+ * @returns {Array<{typ: 'kategori'|'intervall', falt: string, namn: string, etikett?: string, format?: string}>}
+ */
+export function urvalLista(figur) {
+    return _urvalRa(figur).filter(u => u && typeof u === 'object').map(u => (u.typ != null ? u : { ...u, typ: 'kategori' }));
+}
+
+// Dimensionen `dim` (en dimension eller ett fältnamn) i figurens urval, eller den första av typen `typ` när dim saknas.
+function _urvalDim(figur, dim, typ) {
+    const lista = urvalLista(figur);
+    if (dim == null) return lista.find(u => u.typ === typ) || null;
+    const falt = typeof dim === 'string' ? dim : dim && dim.falt;
+    const u = lista.find(x => x.falt === falt);
+    return u && u.typ === typ ? u : null;
+}
+
+// Fältets värde i en datapunkt som sträng, eller null när punkten saknar fältet.
+function _faltSomText(d, falt) {
+    if (!d || typeof d !== 'object') return null;
+    const v = d[falt];
     return v == null ? null : String(v);
 }
 
 /**
- * Knappens text för värdet v i figurens urval: mallen `urval.etikett` med `{v}` utbytt (t.ex. 'BAS {v}' → 'BAS A'),
- * eller värdet självt utan mall.
+ * Knappens text för värdet v i en kategoridimension: mallen `etikett` med `{v}` utbytt (t.ex. 'BAS {v}' → 'BAS A'),
+ * eller värdet självt utan mall. `dim` är dimensionen eller dess fält; utan dim: figurens första kategoridimension.
+ * @param {any} figur @param {any} dim @param {string} v
  */
-export function urvalEtikett(figur, v) {
-    const mall = figur && figur.urval ? figur.urval.etikett : null;
+export function urvalEtikett(figur, dim, v) {
+    const u = _urvalDim(figur, dim, 'kategori');
+    const mall = u ? u.etikett : null;
     return typeof mall === 'string' ? mall.split('{v}').join(String(v)) : String(v);
 }
 
 /**
- * De olika värdena i figurens urvalsfält (`urval.falt`) bland alla lagers punkter som har fältet, som strängar.
+ * De olika värdena i en kategoridimension bland alla lagers punkter som har fältet, som strängar.
  * En liten punkt räknas inte, om inte `visaSma` — en kategori som bara finns i små grupper blir aldrig en knapp.
  * Ordning: som figurens bandaxel (x, sedan y) när värdet med etiketten insatt är en kategori där; övriga värden
- * efter, i svensk sorteringsordning. Utan `urval`: en tom lista.
+ * efter, i svensk sorteringsordning. Utan en sådan dimension: en tom lista.
  * @param {any} figur
+ * @param {any} [dim]  dimensionen eller dess fält; utan dim: figurens första kategoridimension
  * @param {{visaSma?: boolean}} [val]
  * @returns {string[]}
  */
-export function urvalVarden(figur, { visaSma = false } = {}) {
-    if (!figur || !figur.urval) return [];
+export function urvalVarden(figur, dim, { visaSma = false } = {}) {
+    const u = _urvalDim(figur, dim, 'kategori');
+    if (!u) return [];
     const varden = new Set();
     for (const l of figur.lager || []) {
         for (const d of (l && Array.isArray(l.data) ? l.data : [])) {
             if (!visaSma && d && d.liten) continue;
-            const v = _urvalVarde(figur, d);
+            const v = _faltSomText(d, u.falt);
             if (v != null) varden.add(v);
         }
     }
@@ -273,24 +315,131 @@ export function urvalVarden(figur, { visaSma = false } = {}) {
         if (!figur[a] || figur[a].skala !== 'band') continue;
         for (const k of skalDoman(rent, a)) if (!rang.has(k)) rang.set(k, rang.size);
     }
+    const et = v => urvalEtikett(figur, u, v);
     const ordnade = [], ovriga = [];
-    for (const v of varden) (rang.has(urvalEtikett(figur, v)) ? ordnade : ovriga).push(v);
-    ordnade.sort((a, b) => rang.get(urvalEtikett(figur, a)) - rang.get(urvalEtikett(figur, b)));
+    for (const v of varden) (rang.has(et(v)) ? ordnade : ovriga).push(v);
+    ordnade.sort((a, b) => rang.get(et(a)) - rang.get(et(b)));
     ovriga.sort((a, b) => a.localeCompare(b, 'sv'));
     return [...ordnade, ...ovriga];
 }
 
 /**
- * Sant när figuren har ett urval, punkten d har urvalsfältet och dess värde finns bland `bortvalda`.
- * En punkt utan fältet (t.ex. en referens) är aldrig bortvald.
+ * Det minsta och största talet i en intervalldimension bland alla lagers punkter som har fältet som ett ändligt tal.
+ * En liten punkt räknas inte, om inte `visaSma`. null när det finns färre än två olika tal (då finns inget att välja).
  * @param {any} figur
- * @param {Set<string>|null|undefined} bortvalda
+ * @param {any} dim  dimensionen eller dess fält; utan dim: figurens första intervalldimension
+ * @param {{visaSma?: boolean}} [val]
+ * @returns {{min: number, max: number}|null}
+ */
+export function urvalSpann(figur, dim, { visaSma = false } = {}) {
+    const u = _urvalDim(figur, dim, 'intervall');
+    if (!u) return null;
+    let min = Infinity, max = -Infinity;
+    for (const l of figur.lager || []) {
+        for (const d of (l && Array.isArray(l.data) ? l.data : [])) {
+            if (!d || typeof d !== 'object' || (!visaSma && d.liten)) continue;
+            const v = d[u.falt];
+            if (typeof v !== 'number' || !isFinite(v)) continue;
+            if (v < min) min = v;
+            if (v > max) max = v;
+        }
+    }
+    return min < max ? { min, max } : null;
+}
+
+// Filtret som { kategori: Map, intervall: Map }. En mängd (det äldre formatet) är de bortvalda värdena i figurens
+// första kategoridimension. Annat än ett objekt: inget filter.
+function _filterNorm(figur, filter) {
+    if (!filter || typeof filter !== 'object') return null;
+    if (typeof filter.has === 'function') {
+        const k = _urvalRa(figur).find(u => u && _urvalTyp(u) === 'kategori');
+        return k ? { kategori: new Map([[k.falt, filter]]), intervall: null } : null;
+    }
+    const map = m => (m && typeof m.get === 'function' ? m : null);
+    return { kategori: map(filter.kategori), intervall: map(filter.intervall) };
+}
+
+/**
+ * Sant när punkten d döljs av filtret: den har fältet för en av figurens dimensioner och värdet är bortvalt
+ * (kategori) eller ligger utanför intervallet (gränserna ingår, en gräns som saknas gäller inte). En punkt utan
+ * fältet (t.ex. en referens) påverkas aldrig, och ett filter på ett fält som inte är en dimension i figuren gäller inte.
+ * @param {any} figur
+ * @param {{kategori?: Map<string, Set<string>>, intervall?: Map<string, {min?: number|null, max?: number|null}>}|Set<string>|null|undefined} filter
+ *   en mängd (det äldre formatet) är de bortvalda värdena i figurens första kategoridimension
  * @param {any} d
  */
-export function arBortvald(figur, bortvalda, d) {
-    if (!bortvalda || typeof bortvalda.has !== 'function') return false;
-    const v = _urvalVarde(figur, d);
-    return v != null && bortvalda.has(v);
+export function arBortvald(figur, filter, d) {
+    if (!d || typeof d !== 'object' || !filter || typeof filter !== 'object') return false;
+    // Anropas per datapunkt och ritning: inga nya objekt här.
+    const f = /** @type {any} */ (filter);
+    const mangd = typeof f.has === 'function';
+    const kat = mangd ? null : (f.kategori && typeof f.kategori.get === 'function' ? f.kategori : null);
+    const int = mangd ? null : (f.intervall && typeof f.intervall.get === 'function' ? f.intervall : null);
+    let forstaKategori = true;
+    for (const u of _urvalRa(figur)) {
+        if (!u || typeof u !== 'object') continue;
+        const intervall = _urvalTyp(u) === 'intervall';
+        const b = !intervall && mangd && forstaKategori ? f : null;
+        if (!intervall) forstaKategori = false;
+        const v = d[u.falt];
+        if (v == null) continue;
+        if (intervall) {
+            const g = int && int.get(u.falt);
+            if (!g || typeof v !== 'number' || !isFinite(v)) continue;
+            if (typeof g.min === 'number' && v < g.min) return true;
+            if (typeof g.max === 'number' && v > g.max) return true;
+        } else {
+            const m = b || (kat && kat.get(u.falt));
+            if (m && typeof m.has === 'function' && m.has(String(v))) return true;
+        }
+    }
+    return false;
+}
+
+// Ett tal i en gräns: dimensionens format, men ett antal med decimaler visas med en decimal.
+function _gransText(v, format, enhet) {
+    const f = format === 'antal' && !Number.isInteger(v) ? undefined : format;
+    return talformat(v, f, { enhet });
+}
+
+/**
+ * Intervallets text, t.ex. '10–50', 'minst 10', 'högst 50' (med dimensionens format), eller '' utan gränser.
+ * @param {{format?: string}} dim @param {{min?: number|null, max?: number|null}|null|undefined} g
+ */
+export function urvalIntervallText(dim, g) {
+    const fmt = dim && dim.format;
+    const min = g && typeof g.min === 'number' && isFinite(g.min) ? g.min : null;
+    const max = g && typeof g.max === 'number' && isFinite(g.max) ? g.max : null;
+    if (min != null && max != null) return `${_gransText(min, fmt, false)}–${_gransText(max, fmt, true)}`;
+    if (min != null) return `minst ${_gransText(min, fmt, true)}`;
+    if (max != null) return `högst ${_gransText(max, fmt, true)}`;
+    return '';
+}
+
+/**
+ * Det aktiva filtret som text, en del per dimension i figurens ordning: för en kategori 'utan BAS A, BAS N'
+ * (etiketterna i värdenas ordning), för ett intervall mallen `etikett` med `{v}` utbytt mot intervallet
+ * ('{v} personer i gruppen' → '10–50 personer i gruppen'), eller namnet och intervallet utan mall. Noten under
+ * diagrammet och exportens fotrad visar samma text. Utan något aktivt: en tom lista.
+ * @param {any} figur @param {any} filter (se arBortvald)
+ * @returns {string[]}
+ */
+export function urvalBeskrivning(figur, filter) {
+    const f = _filterNorm(figur, filter);
+    if (!f) return [];
+    const ut = [];
+    for (const u of urvalLista(figur)) {
+        if (u.typ === 'intervall') {
+            const t = urvalIntervallText(u, f.intervall && f.intervall.get(u.falt));
+            if (t) ut.push(typeof u.etikett === 'string' ? u.etikett.split('{v}').join(t) : `${u.namn} ${t}`);
+        } else {
+            const b = f.kategori && f.kategori.get(u.falt);
+            if (!b || typeof b.has !== 'function' || !b.size) continue;
+            const etiketter = urvalVarden(figur, u, { visaSma: true }).filter(v => b.has(v)).map(v => urvalEtikett(figur, u, v));
+            if (etiketter.length) ut.push(`utan ${etiketter.join(', ')}`);
+        }
+    }
+    return ut;
 }
 
 // Färgskalans domän: ett objekt med `doman` = två ändliga tal.
@@ -348,13 +497,22 @@ export function valideraFigur(figur, id = 'diagram') {
         if (!figur.y || figur.y.skala !== 'band') fel('paneler "auto" kräver bandskala på y');
         if (figur.lager.some(l => !(l.riktning === 'liggande' || l.marke === 'punkt') || l.panel != null)) fel('paneler "auto" kräver liggande lager (eller punkter) utan egen panel');
     }
-    // urval: en dimension användaren kan välja bort värden i (t.ex. BAS-intervall). Bara märken döljs; inget räknas om.
+    // urval: dimensioner användaren kan filtrera på (BAS-intervall, antal …). Bara märken döljs; inget räknas om.
     if (figur.urval != null) {
-        const u = figur.urval;
+        if (typeof figur.urval !== 'object') fel('urval måste vara en dimension eller en lista med dimensioner');
         const text = v => typeof v === 'string' && v.trim() !== '';
-        if (typeof u !== 'object' || !text(u.falt) || !text(u.namn) || (u.etikett != null && typeof u.etikett !== 'string')) {
-            fel('urval måste vara { falt: sträng, namn: sträng, etikett?: sträng }');
-        }
+        const sedda = new Set();
+        _urvalRa(figur).forEach((u, i) => {
+            const vem = `urval ${i}`;
+            if (!u || typeof u !== 'object') fel(`${vem}: måste vara { typ?, falt, namn, etikett?, format? }`);
+            const typ = _urvalTyp(u);
+            if (!URVAL_TYPER.includes(typ)) fel(`${vem}: typ måste vara "kategori" eller "intervall"`);
+            if (!text(u.falt) || !text(u.namn)) fel(`${vem}: falt och namn måste vara icke-tomma strängar`);
+            if (u.etikett != null && typeof u.etikett !== 'string') fel(`${vem}: etikett måste vara en sträng`);
+            if (u.format != null && (typ !== 'intervall' || !TALFORMAT.includes(u.format))) fel(`${vem}: format gäller bara intervall och måste vara ett av ${TALFORMAT.join(', ')}`);
+            if (sedda.has(u.falt)) fel(`${vem}: fältet "${u.falt}" förekommer två gånger`);
+            sedda.add(u.falt);
+        });
     }
     const paneler = Array.isArray(figur.paneler) ? figur.paneler : [];
     figur.lager.forEach((l, i) => {

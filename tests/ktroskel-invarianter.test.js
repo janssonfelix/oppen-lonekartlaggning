@@ -195,6 +195,20 @@ describe.each([[10, []], [25, SENT_MELLAN]])('I4: invarianten över flikar och e
         expect(d.split('\n').filter(r => / · AID \+ BAS \| BAS /.test(r))).toHaveLength(n);
         expect(d).not.toMatch(/Endast AID|Statistikens spann/);
     });
+    // Alla diagram (74-alla-diagram.js): kopian exporteras ur källans figur, så dess diagramdata är källans, rad för rad
+    // (samma rubrik, stämpel och punkter). Varje kopia har en källa bland diagrammen ovan.
+    it('kopiorna i Alla diagram ger samma diagramdata som källan', () => {
+        const kopior = utdata.filter(([n]) => n.startsWith('diagramdata (Alla diagram): '));
+        expect(kopior.length).toBeGreaterThanOrEqual(5);
+        let jamforda = 0;
+        for (const [namn, text] of kopior) {
+            const kalla = utdata.find(([n]) => n === `diagramdata: ${namn.slice('diagramdata (Alla diagram): ut-diagram-'.length)}`);
+            if (!kalla) continue;   // källan har inget id som börjar med chart- (den prövas ändå genom kopian)
+            jamforda++;
+            expect(text, namn).toBe(kalla[1]);
+        }
+        expect(jamforda).toBeGreaterThanOrEqual(5);
+    });
     // Skärmen maskerar inget (ADR-51): den vägen prövas positivt nedan och undantas i läckkontrollerna.
     const exporter = () => utdata.filter(([n]) => n !== 'skärm: alla flikar');
     it('skärmen visar grupperna och könen under tröskeln (ADR-51)', () => {

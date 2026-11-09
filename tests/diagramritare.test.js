@@ -1889,7 +1889,7 @@ describe('ritaFigur', () => {
         expect(el.parentElement.outerHTML).not.toMatch(/HEMLIG|77777|77 777/);
         expect([...el.attributes].map(a => a.name)).toEqual(['id']);
         // Egenskaperna på elementet: bara de dokumenterade.
-        expect(Object.keys(el).filter(k => k.startsWith('_')).sort()).toEqual(['_chartExportAttached', '_exportBeskrivning', '_figur', '_figurBortvalda', '_figurBredd', '_figurDolda', '_figurVal', '_rfKoppling', '_rfRitadFigur']);
+        expect(Object.keys(el).filter(k => k.startsWith('_')).sort()).toEqual(['_chartExportAttached', '_exportBeskrivning', '_figur', '_figurBredd', '_figurDolda', '_figurFilter', '_figurVal', '_rfKoppling', '_rfRitadFigur', '_rfUrvalFel']);
     });
     it('verktygstips: lagrets tips får datapunkten; raderna escapas; musen ut döljer', () => {
         const el = behallare();
@@ -3483,6 +3483,25 @@ describe('bortvalda', () => {
         expect(w.eval('figurTillSvg(window.__f, 1600, 900, { bortvalda: ["A"] })')).toBe(w.eval('figurTillSvg(window.__f, 1600, 900)'));   // inte en mängd: ignoreras
     });
 
+    it('val.filter med kategori och intervall: båda verkar, index är oförändrade; ett tomt filter ger samma SVG', () => {
+        const f = basFigur({ urval: [URVAL, { typ: 'intervall', falt: 'n', namn: 'Antal', format: 'antal' }] });
+        f.lager[0].data.forEach((d, i) => { d.n = (i + 1) * 10; });   // A 10, B 20, C 30, D 40
+        const filter = (kat, int) => ({ filter: { kategori: new w.Map(kat), intervall: new w.Map(int) } });
+        const ref = rita(f, 600).outerHTML;
+        expect(rita(f, 600, filter([], [])).outerHTML).toBe(ref);
+        expect(rita(f, 600, filter([['bas', new w.Set()]], [])).outerHTML).toBe(ref);
+        expect(rita(f, 600, filter([], [['n', { min: null, max: null }]])).outerHTML).toBe(ref);
+        const svg = rita(f, 600, filter([['bas', new w.Set(['B'])]], [['n', { min: 20, max: 40 }]]));
+        expect(xEt(svg)).toEqual(['BAS C', 'BAS D']);
+        expect(svg.querySelector('[data-l="0"][data-i="2"]')).not.toBeNull();
+        expect(svg.querySelector('[data-l="0"][data-i="1"]')).toBeNull();
+        // figurTillSvg tar emot filtret; filter går före det äldre bortvalda.
+        w.__f = f;
+        const t = w.eval('figurTillSvg(window.__f, 1600, 900, { filter: { kategori: new Map(), intervall: new Map([["n", { min: 35 }]]) }, bortvalda: new Set(["D"]) })');
+        expect(t).toMatch(/>BAS D</);
+        expect(t).not.toMatch(/>BAS C</);
+    });
+
     // Review Focus 3: paneler 'auto' delar ur de synliga kategorierna.
     const hantel = n => {
         const kat = Array.from({ length: n }, (_, i) => `Grupp ${i + 1}`);
@@ -3524,7 +3543,7 @@ describe('bortvalda', () => {
         const f = basFigur();
         f.lager[0].data.forEach(d => { d.markering = [`bas:${d.bas}`]; });
         ritaI(el, f, { vidKlick: (d, l) => sett.push([d, l.serie]) });
-        el._figurBortvalda = new w.Set(['A']);
+        el._figurFilter = { kategori: new w.Map([['bas', new w.Set(['A'])]]), intervall: new w.Map() };
         w.eval('_rfRitaOm(window.__el)');
         const staplarna = alla(el, 'rect[data-marke="stapel"]');
         expect(staplarna.map(r => r.getAttribute('data-i'))).toEqual(['1', '2', '3']);
@@ -3549,7 +3568,7 @@ describe('bortvalda', () => {
         const f = { beskrivning: 'Låda', urval: URVAL, x: { skala: 'band' }, y: { skala: 'linjar' },
             lager: [{ marke: 'lada', serie: 'Lön', data: ind, tips: (d, s) => { tips.push(s); return [['x']]; } }] };
         ritaI(el, f, {});
-        el._figurBortvalda = new w.Set(['A']);
+        el._figurFilter = { kategori: new w.Map([['bas', new w.Set(['A'])]]), intervall: new w.Map() };
         w.eval('_rfRitaOm(window.__el)');
         el.querySelector('rect[data-marke="lada"]').dispatchEvent(handelse('pointermove'));
         expect(tips.at(-1).n).toBe(3);

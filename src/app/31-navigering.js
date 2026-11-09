@@ -189,7 +189,7 @@ function _renderTabContent(target) {
     else if (target === "struktur"     && d.length) { renderStructure(); generateSkevhet(); renderBlinderOaxacaCard(renderRegressionCard()); renderGapUppdelning(); renderLonestrukturNycklar(); }
     else if (target === "loneoversyn"  && d.length) renderForecast();
     else if (target === "likvardighet" && (d.length || state.statistik.length)) { renderLikvardighet(); renderAidBasLikvardigt(); }
-    else if (target === "utforska"     && d.length) { generateRapport(); renderExplorer(); }
+    else if (target === "utforska"     && d.length) { generateRapport(); renderExplorer(); utAllaDiagramVidRitning(); }
     // Allt i de tre dokumentationsflikarna lämnar verktyget och ritas i exportläget (ADR-51).
     else if (target === "rapporttext") medExportLage(() => { renderStrukturUtkast(); renderRapportunderlag(); });
     else if (target === "dokumentera") medExportLage(() => { if (d.length) renderKvalitetssakring(); renderExportBesked(); });
@@ -286,6 +286,7 @@ document.addEventListener('click', e => {
 /** Fäller ut ett avsnitt som en länk leder till: elementet självt om det är ett hopfällt avsnitt, och varje hopfällt
  *  avsnitt det ligger i. Annars landar länken på en rubrik vars innehåll inte syns. */
 function oppnaHopfallda(el) {
+    if (typeof utVisaUnderflikFor === 'function') utVisaUnderflikFor(el);   // underfliken i Tabeller och egna vyer som avsnittet står i
     for (let n = el; n; n = n.parentElement) {
         if (n.tagName === 'DETAILS' && !(/** @type {HTMLDetailsElement} */ (n).open)) /** @type {HTMLDetailsElement} */ (n).open = true;
     }
