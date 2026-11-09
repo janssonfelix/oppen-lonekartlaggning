@@ -559,6 +559,8 @@ function loadStructureFile(file) {
             state.ansvarKolumn = nyAnsvarKolumn;
             state.importprofil = nyImportprofil;
             state.forhandskontroll = fk;
+            // En ny lönefil: urvalet i diagrammen (vilka BAS-intervall som visas) gällde den förra.
+            if (typeof _rfUrvalGlom === 'function') _rfUrvalGlom();
             state.data = parsed;
             state._lastStructureFile = file;
             state.filnamn = { ...(state.filnamn || {}), data: file ? file.name : null };

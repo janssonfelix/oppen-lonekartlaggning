@@ -205,6 +205,18 @@ eller visar serien; posten står kvar, nedtonad. Högst fyra rader, namn kortas 
 **Notisen om urval.** Har ritaren nedsamplat står antalen i en rad under diagrammet
 (`_setScatterSampleNote`). Antalen räknar inte dolda punkter.
 
+**Knappraden för figurens `urval`.** Har figuren `urval`, behållaren ett id och `urvalVarden` minst två värden
+lägger `ritaFigur` en rad `<div class="diagram-urval" role="group" aria-label="Visa <namn>">` direkt före behållaren:
+en knapp per värde (`aria-pressed="true"` när värdet visas) och sist "Visa alla" (dold när inget är bortvalt). Ett
+klick växlar värdet och ritar om; den sista valda knappen har `aria-disabled="true"` och gör inget. När något är
+bortvalt står en not under diagrammet (`k-mask-note`, `data-rf="urval"`): "Diagrammet visar ett urval: BAS A är
+dolt. Talen i texten och tabellerna gäller hela underlaget." Valet minns per diagram (id och urvalsfält) under
+sessionen, också över `rensaFigur`: varje `ritaFigur` tar minnet ∩ figurens värden, och vore alla bortvalda visas
+alla. `_rfUrvalGlom()` glömmer det; `_rfRensaAlla` och lönefilens inläsning anropar den. Urvalet sparas inte i
+konfigurationsfilen. Exportmenyns PNG/SVG ritas med urvalet och fotraden får " · Dolt i diagrammet: BAS A, BAS N";
+diagramdatan har alla rader och raden "Dolt i diagrammet: …". `diagramTillBild` (rapport, utskrift, ZIP,
+rapportunderlag) ritar alltid allt.
+
 **Rubrik och fotrad i exporten.** `figurTillSvg` och `figurTillBild` tar `rubrik` och `fot` (en rad var, avkortas).
 Exportmenyn och den gemensamma bildvägen sätter dem: rubriken är kortets rubrik, foten "Lönekartläggning <datum>"
 följt av urvalet om vyn har angett `exportBeskrivning`. Skärmens diagram har varken rubrik eller fot — kortet har
@@ -348,7 +360,8 @@ fliken får "(undantag: valt i Tabeller och egna vyer)" bara när exporten fakti
 
 **Rensning.**
 - `rensaFigur(id)` kopplar loss lyssnare och storleksbevakning, döljer behållarens tips, tar bort figuren och
-  de andra egenskaperna, tar bort notisen om urval och tömmer behållaren. Exportmenyn står kvar. Idempotent.
+  de andra egenskaperna, tar bort notisen om urval, knappraden och noten för figurens `urval` (minnet står kvar)
+  och tömmer behållaren. Exportmenyn står kvar. Idempotent.
 - `ritaFigur` för ett register över sina behållare. `_rfRensaAlla()` rensar dem alla — oavsett id, också i
   tomt läge och sedan de lämnat dokumentet — och nollställer verktygstipset. `_rensaAllData` anropar den
   ("Rensa all data" och inaktivitetsrensningen).

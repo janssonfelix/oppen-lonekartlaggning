@@ -12574,8 +12574,10 @@ function _rfByggRadpaneler(figurIn, delar, bredd, val) {
 //   el._figurVal    alternativen (visaSma, hojd, bredd, tomtext, vidKlick, exportMedSma, exportBeskrivning,
 //                   exportAnteckning)
 //   el._figurDolda  Set med serienamn som dolts via förklaringen (nollställs av en ny figur)
-//   el._figurBortvalda  Set med urvalsvärden (figur.urval) som inte ritas. _rfRitaOm och _rfTraff läser den; ingen
-//                   sätter den ännu (knappraden kommer i uppgift 3) — utan den ritas allt.
+//   el._figurBortvalda  Set med urvalsvärden (figur.urval) som inte ritas. Sätts av varje ritaFigur ur minnet
+//                   (_rfUrvalMinne) och av knappraden; _rfRitaOm, _rfTraff och _rfExportFigur läser den.
+//   el._rfUrvalVarden  urvalsvärdena som knappraden har en knapp för (saknas: ingen knapprad); knappraden och
+//                   noten bär _rfUrvalRadEl och _rfUrvalNotEl
 //   el._figurBredd  bredden diagrammet senast ritades för
 //   el._rfKoppling  lyssnarna och storleksbevakningen (sätts en gång, överlever omritningar)
 //   el._rfRitadFigur  figuren som bilden i DOM ritades ur (samma objekt som el._figur efter en ritning): övergångarna
@@ -12675,6 +12677,7 @@ function _rfStadaBehallare(utom) {
 function _rfRensaAlla() {
     for (const el of [..._rfBehallare]) rensaFigur(el);
     _rfBehallare.clear();
+    _rfUrvalGlom();   // urvalet i diagrammen hör till underlaget som rensas
     _rfNollstallTips();
 }
 
@@ -13184,11 +13187,13 @@ function ritaFigur(id, figur, val) {
         el._figur = figur;
         el._figurVal = val && typeof val === 'object' ? val : {};
         el._figurDolda = new Set();
+        _rfUrvalSatt(el);  // urvalet ur minnet, begränsat till figurens värden
         _rfZoomGlom(el);   // en ny figur har andra värden: ett tidigare utsnitt gäller inte
         el._exportBeskrivning = typeof el._figurVal.exportBeskrivning === 'string' ? el._figurVal.exportBeskrivning : '';
         _rfRitaOm(el);
         _rfKoppla(el);
         _attachChartExport(el);
+        _rfUrvalVisa(el);  // knappraden direkt före behållaren (efter exportmenyn) och noten under den
     } catch (e) {
         _rfVisaFel(el, e);
     }
@@ -13215,6 +13220,7 @@ function rensaFigur(id) {
     // Exportraden hör till figuren: den tas bara bort om behållaren hade en (en annan del av sidan kan ha lagt en egen).
     if ('_figur' in el) delete el._exportBeskrivning;
     delete el._figur; delete el._figurVal; delete el._figurDolda; delete el._figurBortvalda; delete el._figurBredd;
+    _rfUrvalTaBort(el);   // knappraden och noten; minnet (_rfUrvalMinne) står kvar
     _setScatterSampleNote(el, null);
     _rfPenselGlom(el);
     _rfZoomGlom(el);
@@ -13407,6 +13413,134 @@ function _rfZoomNot(el, visa) {
     }
 }
 function _rfZoomGlom(el) { delete el._rfZoom; _rfZoomNot(el, false); }
+
+// ---- Urval: vilka värden av figurens urvalsfält (figur.urval, t.ex. BAS-intervall) som ritas ----
+// En knapprad direkt före behållaren har en knapp per värde (aria-pressed: värdet visas) och sist Visa alla. Ett
+// bortvalt värde ritas inte (ritaren behandlar dess punkter som små punkter utan visaSma); inget tal räknas om, och
+// rapportens bildväg (diagramTillBild) ritar alltid allt. Den sista valda knappen kan inte väljas bort.
+// Minnet gäller per diagram (behållarens id och urvalsfältet) under sessionen: det överlever rensaFigur, så att en vy
+// som rensar före omritning behåller valet. Varje ritaFigur tar minnet ∩ figurens värden; ett bortvalt värde som
+// saknas ignoreras (och gäller igen när det finns), och vore alla värden bortvalda visas alla. Minnet sparas inte i
+// konfigurationsfilen och glöms vid Rensa all data (_rfRensaAlla) och när en ny lönefil läses in (_rfUrvalGlom).
+/** @type {Map<string, Set<string>>} */
+const _rfUrvalMinne = new Map();
+/** Glömmer urvalet i alla diagram (ny lönefil, Rensa all data). Diagram som redan är ritade behåller sitt tills de ritas igen. */
+function _rfUrvalGlom() { _rfUrvalMinne.clear(); }
+function _rfUrvalNyckel(el) {
+    const u = el && el._figur && el._figur.urval;
+    return u && el.id ? `${el.id}|${u.falt}` : null;
+}
+/** Etiketterna för de bortvalda värdena, i figurens ordning (t.ex. ['BAS A', 'BAS N']). */
+function _rfUrvalEtiketter(figur, bortvalda) {
+    if (!figur || !figur.urval || !bortvalda || !bortvalda.size) return [];
+    return _figUrvalVarden(figur, { visaSma: true }).filter(v => bortvalda.has(v)).map(v => _figUrvalEtikett(figur, v));
+}
+// Vid ritaFigur: knappradens värden och de bortvalda ur minnet. Under två värden: ingen knapprad och inget bortvalt.
+function _rfUrvalSatt(el) {
+    const nyckel = _rfUrvalNyckel(el);
+    const varden = nyckel ? _figUrvalVarden(el._figur, { visaSma: !!el._figurVal.visaSma }) : [];
+    const minne = nyckel ? _rfUrvalMinne.get(nyckel) : null;
+    const bort = minne && varden.length >= 2 ? varden.filter(v => minne.has(v)) : [];
+    if (varden.length >= 2) el._rfUrvalVarden = varden; else delete el._rfUrvalVarden;
+    el._figurBortvalda = new Set(bort.length < varden.length ? bort : []);
+}
+// Minnet efter ett klick: de bortvalda nu, och bortvalda värden som inte finns i den här figuren.
+function _rfUrvalMinnas(el) {
+    const nyckel = _rfUrvalNyckel(el);
+    if (!nyckel) return;
+    const varden = el._rfUrvalVarden || [];
+    const ny = new Set([...(_rfUrvalMinne.get(nyckel) || [])].filter(v => !varden.includes(v)));
+    for (const v of el._figurBortvalda) ny.add(v);
+    if (ny.size) _rfUrvalMinne.set(nyckel, ny); else _rfUrvalMinne.delete(nyckel);
+}
+// Bygger knappraden (eller tar bort den) och visar noten. Fokus på en knapp följer med till den nya raden.
+function _rfUrvalVisa(el) {
+    const forra = el._rfUrvalRadEl;
+    const aktiv = document.activeElement;
+    const fokus = forra && aktiv && forra.contains(aktiv) ? aktiv.getAttribute('data-urval') : null;
+    if (forra) forra.remove();
+    delete el._rfUrvalRadEl;
+    const varden = el._rfUrvalVarden;
+    if (varden && el.parentNode) {
+        const figur = el._figur;
+        const rad = document.createElement('div');
+        rad.className = 'diagram-urval';
+        rad.setAttribute('role', 'group');
+        rad.setAttribute('aria-label', `Visa ${figur.urval.namn}`);
+        for (const v of varden) {
+            const b = _rfNotKnapp(_figUrvalEtikett(figur, v), () => _rfUrvalVaxla(el, v));
+            b.setAttribute('data-urval', v);
+            rad.appendChild(b);
+        }
+        const alla = _rfNotKnapp('Visa alla', () => _rfUrvalVisaAlla(el));
+        alla.setAttribute('data-urval-alla', '');
+        rad.appendChild(alla);
+        el.insertAdjacentElement('beforebegin', rad);
+        el._rfUrvalRadEl = rad;
+        if (fokus != null) {
+            const b = [...rad.querySelectorAll('[data-urval]')].find(k => k.getAttribute('data-urval') === fokus);
+            if (b) /** @type {HTMLElement} */ (b).focus();
+        }
+    }
+    _rfUrvalUppdatera(el);
+}
+// Knapparnas lägen och noten efter det som är bortvalt nu.
+function _rfUrvalUppdatera(el) {
+    const bort = el._figurBortvalda || new Set();
+    const rad = el._rfUrvalRadEl;
+    if (rad) {
+        const synliga = (el._rfUrvalVarden || []).filter(v => !bort.has(v)).length;
+        for (const b of rad.querySelectorAll('[data-urval]')) {
+            const visas = !bort.has(b.getAttribute('data-urval'));
+            b.setAttribute('aria-pressed', String(visas));
+            if (visas && synliga <= 1) b.setAttribute('aria-disabled', 'true'); else b.removeAttribute('aria-disabled');
+        }
+        const alla = rad.querySelector('[data-urval-alla]');
+        if (alla) alla.hidden = bort.size === 0;
+    }
+    _rfUrvalNot(el, _rfUrvalEtiketter(el._figur, bort));
+}
+function _rfUrvalVaxla(el, v) {
+    const bort = el._figurBortvalda, varden = el._rfUrvalVarden;
+    if (!bort || !varden || !varden.includes(v)) return;
+    if (bort.has(v)) bort.delete(v);
+    else if (varden.length - bort.size <= 1) return;   // den sista valda (aria-disabled): inget händer
+    else bort.add(v);
+    _rfUrvalMinnas(el);
+    _rfUrvalUppdatera(el);
+    _rfRitaSakert(el);
+}
+function _rfUrvalVisaAlla(el) {
+    const bort = el._figurBortvalda;
+    if (!bort || !bort.size) return;
+    bort.clear();
+    const nyckel = _rfUrvalNyckel(el);
+    if (nyckel) _rfUrvalMinne.delete(nyckel);
+    _rfUrvalUppdatera(el);
+    _rfRitaSakert(el);
+}
+// Noten under diagrammet (samma stil och plats som zoomnoten) när något är bortvalt.
+function _rfUrvalNot(el, etiketter) {
+    let not = el._rfUrvalNotEl;
+    if (!etiketter || !etiketter.length) { if (not) not.remove(); delete el._rfUrvalNotEl; return; }
+    if (!not) {
+        not = document.createElement('p');
+        not.className = 'k-mask-note';
+        not.setAttribute('role', 'status');
+        not.setAttribute('data-rf', 'urval');
+        el.insertAdjacentElement('afterend', not);
+        el._rfUrvalNotEl = not;
+    }
+    const lista = etiketter.length === 1 ? `${etiketter[0]} är dolt` : `${etiketter.slice(0, -1).join(', ')} och ${etiketter[etiketter.length - 1]} är dolda`;
+    not.textContent = `Diagrammet visar ett urval: ${lista}. Talen i texten och tabellerna gäller hela underlaget.`;
+}
+// rensaFigur: knappraden och noten tas bort; minnet står kvar.
+function _rfUrvalTaBort(el) {
+    if (el._rfUrvalRadEl) el._rfUrvalRadEl.remove();
+    delete el._rfUrvalRadEl;
+    delete el._rfUrvalVarden;
+    _rfUrvalNot(el, null);
+}
 // Glömmer penseln utan att röra bilden (den ska ändå ritas om eller tas bort).
 function _rfPenselGlom(el) {
     if (el._rfKoppling) el._rfKoppling.drag = null;
@@ -13536,7 +13670,9 @@ function figurTillBild(figur, format, bredd, hojd, val = {}) {
  * ur den med visaSma och dolda (samma färger som på skärmen), och diagramdatan filtreras av anroparen —
  * _figTillTabell(visaSma ? figur : _figUtanSma(figur)), alla serier.
  * `tom` är sant när inget återstår att exportera (alla punkter hör till små grupper som inte får följa med).
- * @returns {{figur: any, bild: any, utsnitt: boolean, visaSma: boolean, dolda: Set<string>, tom: boolean} | null}
+ * `bortvalda` är urvalet i diagrammet (el._figurBortvalda): bara exportmenyns bild följer det; diagramTillBild
+ * (rapport, utskrift, ZIP, rapportunderlag) ritar alltid allt, och `tom` räknas utan urvalet.
+ * @returns {{figur: any, bild: any, utsnitt: boolean, visaSma: boolean, dolda: Set<string>, bortvalda: Set<string>, tom: boolean} | null}
  */
 function _rfExportFigur(gd) {
     if (!gd || !gd._figur) return null;
@@ -13547,7 +13683,7 @@ function _rfExportFigur(gd) {
     }
     const figur = gd._figur;
     // `bild` är figuren som bilden ritas ur: originalet, eller ett zoomat utsnitt av det (samma lager, andra domäner).
-    return { figur, bild: _rfZoomad(gd), utsnitt: !!gd._rfZoom, visaSma, dolda: new Set(gd._figurDolda || []), tom: _figAntalPunkter(visaSma ? figur : _figUtanSma(figur)) === 0 };
+    return { figur, bild: _rfZoomad(gd), utsnitt: !!gd._rfZoom, visaSma, dolda: new Set(gd._figurDolda || []), bortvalda: new Set(gd._figurBortvalda || []), tom: _figAntalPunkter(visaSma ? figur : _figUtanSma(figur)) === 0 };
 }
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -13667,6 +13803,9 @@ const CHART_FONT = {
 //   markeraUtanExport(el, skal)     — behållaren (och allt i den) lämnar inte verktyget; skälet ur EXPORT_SKAL.
 //   exportBeskrivning (ritaFigur)   — blir rad 2 i diagramdatan och står i bildens fotrad (Utforskas urval).
 //   exportMedSma (ritaFigur)        — funktion som svarar om små grupper ska följa med (Utforskas kryssruta).
+//   figur.urval (ritaFigur)         — användarens urval i diagrammet (knappraden): exportmenyns PNG/SVG ritas med
+//                                     urvalet och fotraden säger vad som är dolt; diagramdatan har alla rader och en
+//                                     rad "Dolt i diagrammet: …". diagramTillBild ritar alltid allt.
 //   figur.individer                 — figuren har en punkt per person: diagramdatan får raden om att filen
 //                                     innehåller en rad per person och ska hanteras som personuppgifter (kIndividRad).
 //
@@ -13775,6 +13914,11 @@ function _chartExportUnderlagExport(gd) {
     return ut && !ut.tom ? ut : null;
 }
 
+/** Etiketterna för det användaren har dolt i diagrammet (urvalet, t.ex. ['BAS A', 'BAS N']); [] utan urval. */
+function _chartExportDolt(ut) {
+    return ut && ut.bortvalda && ut.bortvalda.size ? _rfUrvalEtiketter(ut.figur, ut.bortvalda) : [];
+}
+
 /** Diagramdata med en spårbarhetsrad överst (ADR-13). Diagram ritade med diagramkärnan (ADR-39) går genom
  *  figurTillTabell — alla serier, också de som dolts via förklaringen; en låda blir statistik per kategori.
  *  Finns inget att exportera: inga rader alls.
@@ -13789,14 +13933,19 @@ function chartExportRows(gd, underlag) {
     const beskrivning = typeof gd._exportBeskrivning === 'string' ? gd._exportBeskrivning : '';
     // En figur med en punkt per person (figurens `individer`) ger en rad per person: filen säger det på rad 2.
     const individer = ut.figur && ut.figur.individer === true;
+    // Urvalet i diagrammet döljer bara märken i bilden: datan har alla rader, och raden säger vad bilden döljer.
+    const dolt = _chartExportDolt(ut);
     return [[`${chartExportTitle(gd)} — Lönekartläggning ${APP_VERSION}. ${kStampelFor(_kUndantagFor(gd, medSma))}`],
             ...(individer ? [[kIndividRad()]] : []),
-            ...(beskrivning ? [[`Urval: ${beskrivning}`]] : []), ...rader];
+            ...(beskrivning ? [[`Urval: ${beskrivning}`]] : []),
+            ...(dolt.length ? [[`Dolt i diagrammet: ${dolt.join(', ')}`]] : []), ...rader];
 }
 
 /** Rubrik och fotrad till en exporterad bild av ett kärnritat diagram: bilden ska säga själv vad den visar när den
- *  klistras in i ett dokument. Foten: verktyget och dagens datum, och urvalet om vyn har angett ett. */
-function _chartExportRubrikFot(gd, datum = new Date()) {
+ *  klistras in i ett dokument. Foten: verktyget och dagens datum, och urvalet om vyn har angett ett.
+ *  `dolt`: etiketterna som användaren dolt i diagrammet (bara exportmenyns bild, aldrig diagramTillBild).
+ *  @param {any} gd @param {Date} [datum] @param {string[]} [dolt] */
+function _chartExportRubrikFot(gd, datum = new Date(), dolt = []) {
     const p = n => String(n).padStart(2, '0');
     const dag = `${datum.getFullYear()}-${p(datum.getMonth() + 1)}-${p(datum.getDate())}`;
     const urval = typeof gd._exportBeskrivning === 'string' && gd._exportBeskrivning ? ` · Urval: ${gd._exportBeskrivning}` : '';
@@ -13804,7 +13953,8 @@ function _chartExportRubrikFot(gd, datum = new Date()) {
     // Vyns anteckning (val.exportAnteckning) står först i fotraden: en mening om det bilden visar, räknad av vyn
     // ur värden som får visas.
     const v = gd._figurVal && typeof gd._figurVal.exportAnteckning === 'string' ? gd._figurVal.exportAnteckning.trim() : '';
-    return { rubrik: chartExportTitle(gd), fot: `${v ? v + ' · ' : ''}Lönekartläggning ${dag}${urval}${gd._rfZoom ? ' · Utsnitt av diagrammet' : ''}` };
+    const doltText = dolt && dolt.length ? ` · Dolt i diagrammet: ${dolt.join(', ')}` : '';
+    return { rubrik: chartExportTitle(gd), fot: `${v ? v + ' · ' : ''}Lönekartläggning ${dag}${urval}${doltText}${gd._rfZoom ? ' · Utsnitt av diagrammet' : ''}` };
 }
 
 /** Bär elementet ett ritat diagram med något att visa? */
@@ -13824,6 +13974,8 @@ async function _diagramTillBildExport(el, val) {
     const ut = _chartExportUnderlag(el);
     el = _chartExportAktuell(el);
     if (!ut) throw new Error('Det finns inget att exportera i diagrammet.');
+    // Användarens urval i diagrammet (ut.bortvalda) följer INTE med: rapporten, utskriften, ZIP-filen och
+    // rapportunderlaget visar alltid hela diagrammet.
     const url = await figurTillBild(ut.bild || ut.figur, 'png', bredd, hojd, { visaSma: ut.visaSma, dolda: ut.dolda, ...(utanRubrik ? {} : _chartExportRubrikFot(el)) });
     if (el._figur !== ut.figur) throw new Error('Diagrammet rensades innan exporten blev klar.');
     return url;
@@ -13839,7 +13991,8 @@ async function __chartExportImageExport(gd, val, underlag) {
     const ut = underlag === undefined ? _chartExportUnderlag(gd) : underlag;
     gd = _chartExportAktuell(gd);
     if (!ut) throw new Error('Det finns inget att exportera i diagrammet.');
-    const url = await figurTillBild(ut.bild || ut.figur, format, width, height, { visaSma: ut.visaSma, dolda: ut.dolda, ..._chartExportRubrikFot(gd) });
+    // Exportmenyn ritar diagrammet som det visas: också med användarens urval, som fotraden då namnger.
+    const url = await figurTillBild(ut.bild || ut.figur, format, width, height, { visaSma: ut.visaSma, dolda: ut.dolda, bortvalda: ut.bortvalda, ..._chartExportRubrikFot(gd, new Date(), _chartExportDolt(ut)) });
     // Bilden görs asynkront. Har diagrammet under tiden rensats (Rensa all data) eller fått en annan figur
     // lämnar bilden av den gamla inte verktyget.
     if (gd._figur !== ut.figur) throw new Error('Diagrammet rensades innan exporten blev klar.');
@@ -20925,6 +21078,8 @@ function loadStructureFile(file) {
             state.ansvarKolumn = nyAnsvarKolumn;
             state.importprofil = nyImportprofil;
             state.forhandskontroll = fk;
+            // En ny lönefil: urvalet i diagrammen (vilka BAS-intervall som visas) gällde den förra.
+            if (typeof _rfUrvalGlom === 'function') _rfUrvalGlom();
             state.data = parsed;
             state._lastStructureFile = file;
             state.filnamn = { ...(state.filnamn || {}), data: file ? file.name : null };

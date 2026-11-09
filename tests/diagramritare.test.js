@@ -1889,7 +1889,7 @@ describe('ritaFigur', () => {
         expect(el.parentElement.outerHTML).not.toMatch(/HEMLIG|77777|77 777/);
         expect([...el.attributes].map(a => a.name)).toEqual(['id']);
         // Egenskaperna på elementet: bara de dokumenterade.
-        expect(Object.keys(el).filter(k => k.startsWith('_')).sort()).toEqual(['_chartExportAttached', '_exportBeskrivning', '_figur', '_figurBredd', '_figurDolda', '_figurVal', '_rfKoppling', '_rfRitadFigur']);
+        expect(Object.keys(el).filter(k => k.startsWith('_')).sort()).toEqual(['_chartExportAttached', '_exportBeskrivning', '_figur', '_figurBortvalda', '_figurBredd', '_figurDolda', '_figurVal', '_rfKoppling', '_rfRitadFigur']);
     });
     it('verktygstips: lagrets tips får datapunkten; raderna escapas; musen ut döljer', () => {
         const el = behallare();
