@@ -231,6 +231,68 @@ export function ladstatistik(varden) {
     return { q1, median, q3, lag: inom[0], hog: inom[inom.length - 1], avvikare: v.filter(x => x < q1 - kant || x > q3 + kant) };
 }
 
+// Urvalsfältets värde i en datapunkt som sträng, eller null när punkten saknar fältet (eller figuren saknar urval).
+function _urvalVarde(figur, d) {
+    if (!figur || !figur.urval || !d || typeof d !== 'object') return null;
+    const v = d[figur.urval.falt];
+    return v == null ? null : String(v);
+}
+
+/**
+ * Knappens text för värdet v i figurens urval: mallen `urval.etikett` med `{v}` utbytt (t.ex. 'BAS {v}' → 'BAS A'),
+ * eller värdet självt utan mall.
+ */
+export function urvalEtikett(figur, v) {
+    const mall = figur && figur.urval ? figur.urval.etikett : null;
+    return typeof mall === 'string' ? mall.split('{v}').join(String(v)) : String(v);
+}
+
+/**
+ * De olika värdena i figurens urvalsfält (`urval.falt`) bland alla lagers punkter som har fältet, som strängar.
+ * En liten punkt räknas inte, om inte `visaSma` — en kategori som bara finns i små grupper blir aldrig en knapp.
+ * Ordning: som figurens bandaxel (x, sedan y) när värdet med etiketten insatt är en kategori där; övriga värden
+ * efter, i svensk sorteringsordning. Utan `urval`: en tom lista.
+ * @param {any} figur
+ * @param {{visaSma?: boolean}} [val]
+ * @returns {string[]}
+ */
+export function urvalVarden(figur, { visaSma = false } = {}) {
+    if (!figur || !figur.urval) return [];
+    const varden = new Set();
+    for (const l of figur.lager || []) {
+        for (const d of (l && Array.isArray(l.data) ? l.data : [])) {
+            if (!visaSma && d && d.liten) continue;
+            const v = _urvalVarde(figur, d);
+            if (v != null) varden.add(v);
+        }
+    }
+    // Bandaxelns ordning räknas ur hela figuren (utan null-poster); den bestämmer bara rangen, inte vilka värden som finns.
+    const rent = { ...figur, lager: (figur.lager || []).map(l => ({ ...l, data: (l.data || []).filter(d => d && typeof d === 'object') })) };
+    const rang = new Map();
+    for (const a of ['x', 'y']) {
+        if (!figur[a] || figur[a].skala !== 'band') continue;
+        for (const k of skalDoman(rent, a)) if (!rang.has(k)) rang.set(k, rang.size);
+    }
+    const ordnade = [], ovriga = [];
+    for (const v of varden) (rang.has(urvalEtikett(figur, v)) ? ordnade : ovriga).push(v);
+    ordnade.sort((a, b) => rang.get(urvalEtikett(figur, a)) - rang.get(urvalEtikett(figur, b)));
+    ovriga.sort((a, b) => a.localeCompare(b, 'sv'));
+    return [...ordnade, ...ovriga];
+}
+
+/**
+ * Sant när figuren har ett urval, punkten d har urvalsfältet och dess värde finns bland `bortvalda`.
+ * En punkt utan fältet (t.ex. en referens) är aldrig bortvald.
+ * @param {any} figur
+ * @param {Set<string>|null|undefined} bortvalda
+ * @param {any} d
+ */
+export function arBortvald(figur, bortvalda, d) {
+    if (!bortvalda || typeof bortvalda.has !== 'function') return false;
+    const v = _urvalVarde(figur, d);
+    return v != null && bortvalda.has(v);
+}
+
 // Färgskalans domän: ett objekt med `doman` = två ändliga tal.
 function _fargdomanOk(fs) {
     return !!fs && typeof fs === 'object' && Array.isArray(fs.doman) && fs.doman.length === 2
@@ -285,6 +347,14 @@ export function valideraFigur(figur, id = 'diagram') {
     if (figur.paneler === 'auto') {
         if (!figur.y || figur.y.skala !== 'band') fel('paneler "auto" kräver bandskala på y');
         if (figur.lager.some(l => !(l.riktning === 'liggande' || l.marke === 'punkt') || l.panel != null)) fel('paneler "auto" kräver liggande lager (eller punkter) utan egen panel');
+    }
+    // urval: en dimension användaren kan välja bort värden i (t.ex. BAS-intervall). Bara märken döljs; inget räknas om.
+    if (figur.urval != null) {
+        const u = figur.urval;
+        const text = v => typeof v === 'string' && v.trim() !== '';
+        if (typeof u !== 'object' || !text(u.falt) || !text(u.namn) || (u.etikett != null && typeof u.etikett !== 'string')) {
+            fel('urval måste vara { falt: sträng, namn: sträng, etikett?: sträng }');
+        }
     }
     const paneler = Array.isArray(figur.paneler) ? figur.paneler : [];
     figur.lager.forEach((l, i) => {

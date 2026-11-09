@@ -36,6 +36,8 @@ Tre regler bär ritaren:
 3. Ritaren får alltid **originalfiguren** och avgör själv vad som ritas. En förfiltrerad kopia ger andra
    index, andra palettfärger och en annan kategoriordning.
 
+En punkt vars `urval`-fält är bortvalt behandlas som en liten punkt utan visaSma.
+
 ## 2. Figurformatet
 
 Läge anges alltid i skärmens axlar: x är vågrät, y lodrät. En liggande stapel har kategorin i `y` och värdet i
@@ -55,6 +57,7 @@ Läge anges alltid i skärmens axlar: x är vågrät, y lodrät. En liggande sta
 | `legend` | `false` stänger av förklaringen. |
 | `hojd` | Pixlar; annars 320. `val.hojd` går före. |
 | `individer` | `true` när figuren har en punkt per person (spridningsdiagrammen lön mot ålder i Ålder & karriär). Diagramdatan (CSV, urklipp) får då raden om att filen innehåller en rad per person och ska hanteras som personuppgifter (`kIndividRad`, `11-diagramexport.js`). En `lada` behöver inte märket: den skrivs aldrig som individer. Prövas inte av `valideraFigur`. |
+| `urval` | `{ falt, namn, etikett? }`: en dimension användaren kan välja bort värden i, för presentation (t.ex. `{ falt: 'bas', namn: 'BAS-intervall', etikett: 'BAS {v}' }`). `falt` är datapunktens fält med värdet (punkter utan fältet, t.ex. referenser, berörs aldrig), `namn` dimensionens namn, `etikett` en mall där `{v}` byts mot värdet (utan mall visas värdet). Ett bortvalt värde döljer bara märken; inget tal räknas om. `valideraFigur` kräver `falt` och `namn` som icke-tomma strängar och `etikett` som sträng. Hjälparna `urvalVarden`, `urvalEtikett` och `arBortvald` (nedan). |
 
 **Axel:** `{ skala: 'band' | 'linjar' | 'log', titel?, format?, doman?: [a, b], ordning?: string[],
 omvand?: boolean, nollinje?: boolean, etikettMax?: number, dold?: boolean }`.
@@ -137,6 +140,7 @@ Domänerna räknas aldrig ur referenserna.
 | `utanSmaGrupper(figur)` | Figuren utan små punkter, utan tömda lager och utan namn på borttagna kategorier och paneler. Originalet rörs inte. Det här är det som får lämnas vidare som **data**. |
 | `kronorSkillnad(medKv, medMa)`, `kronorTipsRad(belopp)` | Skillnaden mellan kvinnors och mäns median i kronor per månad, avrundad till hundratal och negativ när kvinnorna ligger lägre (`null` när en median saknas), och verktygstipsets rad `Skillnad: −3 200 kr/mån`. En vy som visar ett gap i procent och har båda medianerna lägger beloppet på datapunkten som `skillnadKr` (`_kronorFalt` i `03-hjalpfunktioner.js`), så att tipset och diagramdatan bär det. Vyn skickar bara medianer som får redovisas. |
 | `figurTillTabell(figur)` | Diagramdata som rader. Filtrerar inte själv. `ruta` blir en korstabell per lager; övriga `Serie \| x \| y`, med `Undre \| Övre` när figuren har band, intervall, felstaplar eller lådor. En låda skrivs aldrig som individer: en rad per kategori med median, första och tredje kvartilen. Ett lager på höger axel får tillägget ` (höger axel: <titel>)` i serienamnet, ett lager i en panel ` · <panel>`. Bär någon datapunkt `skillnadKr` får tabellen kolumnen `Skillnad (kr/mån)`. |
+| `urvalVarden(figur, { visaSma })`, `urvalEtikett(figur, v)`, `arBortvald(figur, bortvalda, d)` | Figurens `urval`. `urvalVarden`: de olika värdena (som strängar) bland punkter som har fältet och inte är små (om inte `visaSma`), i bandaxelns ordning när värdet med etiketten insatt är en kategori där, övriga efter i svensk sorteringsordning; utan `urval` en tom lista. `urvalEtikett`: mallen med värdet insatt. `arBortvald`: sant när punkten har fältet och dess värde finns i mängden `bortvalda`. |
 | `skalDoman`, `axelVarden`, `panelerMedLager`, `antalPunkter`, `ladstatistik`, `talformat` | Hjälpare som ritaren och testerna delar. |
 
 ## 3. `ritaFigur(id, figur, val)`

@@ -273,7 +273,8 @@ export const MODULES = [
                   skalDoman: '_figSkalDoman', ladstatistik: '_figLadstatistik', antalPunkter: '_figAntalPunkter',
                   figurTillTabell: '_figTillTabell', panelerMedLager: '_figPanelerMedLager',
                   kronorSkillnad: '_figKronorSkillnad', kronorTipsRad: '_figKronorTipsRad',
-                  kvantilpunkter: '_figKvantilpunkter' }
+                  kvantilpunkter: '_figKvantilpunkter',
+                  urvalVarden: '_figUrvalVarden', urvalEtikett: '_figUrvalEtikett', arBortvald: '_figArBortvald' }
     }
 ];
 

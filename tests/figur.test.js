@@ -2,7 +2,7 @@
  * Figurformatet: ren logik utan DOM och utan D3.
  */
 import { describe, it, expect } from 'vitest';
-import { talformat, valideraFigur, utanSmaGrupper, axelVarden, skalDoman, ladstatistik, antalPunkter, figurTillTabell, panelerMedLager, MARKEN, kronorSkillnad, kronorTipsRad, kvantilpunkter } from '../src/lib/figur.js';
+import { talformat, valideraFigur, utanSmaGrupper, axelVarden, skalDoman, ladstatistik, antalPunkter, figurTillTabell, panelerMedLager, MARKEN, kronorSkillnad, kronorTipsRad, kvantilpunkter, urvalVarden, urvalEtikett, arBortvald } from '../src/lib/figur.js';
 import { quantile } from '../src/lib/stat.js';
 
 const blank = s => s.replace(/\s/g, ' ').replace('−', '-');
@@ -572,3 +572,65 @@ describe('kvantilpunkter', () => {
     });
 });
 
+
+describe('urval', () => {
+    const URVAL = { falt: 'bas', namn: 'BAS-intervall', etikett: 'BAS {v}' };
+    const stapelfigur = (over = {}) => ({
+        beskrivning: 'Medianlön per BAS-intervall',
+        x: { skala: 'band', ordning: ['BAS C', 'BAS A', 'BAS B'] }, y: { skala: 'linjar' },
+        urval: URVAL,
+        lager: [
+            { marke: 'stapel', serie: 'Kvinna', data: [{ x: 'BAS A', y: 1, bas: 'A' }, { x: 'BAS B', y: 2, bas: 'B' }, { x: 'BAS C', y: 3, bas: 'C' }, { bas: 'D', liten: true }] },
+            { marke: 'punkt', serie: 'Referens', data: [{ x: 'BAS A', y: 5 }] },
+        ],
+        ...over,
+    });
+    it('valideraFigur godtar ett urval med falt, namn och etikett', () => {
+        expect(() => valideraFigur(stapelfigur(), 't')).not.toThrow();
+        expect(() => valideraFigur(stapelfigur({ urval: { falt: 'bas', namn: 'BAS-intervall' } }), 't')).not.toThrow();
+    });
+    it('valideraFigur avvisar ett urval utan falt, med falt som inte är en sträng eller med etikett som inte är en sträng', () => {
+        expect(() => valideraFigur(stapelfigur({ urval: { namn: 'x' } }), 't')).toThrow(/Ogiltig figur \(t\): urval/);
+        expect(() => valideraFigur(stapelfigur({ urval: { falt: 3, namn: 'x' } }), 't')).toThrow(/urval/);
+        expect(() => valideraFigur(stapelfigur({ urval: { falt: 'bas', namn: 'x', etikett: 5 } }), 't')).toThrow(/urval/);
+        expect(() => valideraFigur(stapelfigur({ urval: { falt: 'bas' } }), 't')).toThrow(/urval/);
+        expect(() => valideraFigur(stapelfigur({ urval: 'bas' }), 't')).toThrow(/urval/);
+    });
+    it('urvalVarden följer bandaxelns ordning och tar inte med små grupper eller punkter utan fältet', () => {
+        expect(urvalVarden(stapelfigur())).toEqual(['C', 'A', 'B']);
+        expect(urvalVarden(stapelfigur(), { visaSma: true })).toEqual(['C', 'A', 'B', 'D']);
+    });
+    it('urvalVarden: värden som inte är kategorier på bandaxeln kommer efter de ordnade, i svensk sorteringsordning', () => {
+        const f = stapelfigur();
+        f.lager[1].data.push({ x: 'BAS A', y: 6, bas: 'Ö' }, { x: 'BAS A', y: 7, bas: 'Ä' }, { x: 'BAS A', y: 8, bas: 'Z' });
+        expect(urvalVarden(f)).toEqual(['C', 'A', 'B', 'Z', 'Ä', 'Ö']);
+    });
+    it('urvalVarden utan bandaxel: sorterat med svensk ordning; tåler null-poster', () => {
+        const f = {
+            beskrivning: 'Lön mot ålder', x: { skala: 'linjar' }, y: { skala: 'linjar' }, urval: { falt: 'bas', namn: 'BAS-intervall' },
+            lager: [{ marke: 'punkt', data: ['N', 'A', 'Ö', 'B', 'A'].map((bas, i) => ({ x: i, y: i, bas })).concat([null]) }],
+        };
+        expect(urvalVarden(f)).toEqual(['A', 'B', 'N', 'Ö']);
+    });
+    it('urvalVarden utan urval ger en tom lista', () => {
+        expect(urvalVarden(stapelfigur({ urval: undefined }))).toEqual([]);
+    });
+    it('urvalVarden jämför värdena som strängar', () => {
+        const f = { beskrivning: 'b', x: { skala: 'linjar' }, y: { skala: 'linjar' }, urval: { falt: 'n', namn: 'N' },
+            lager: [{ marke: 'punkt', data: [{ x: 1, y: 1, n: 2 }, { x: 2, y: 2, n: '2' }, { x: 3, y: 3, n: 10 }] }] };
+        expect(urvalVarden(f)).toEqual(['10', '2']);
+    });
+    it('urvalEtikett sätter in värdet i mallen, eller visar värdet utan mall', () => {
+        expect(urvalEtikett(stapelfigur(), 'A')).toBe('BAS A');
+        expect(urvalEtikett(stapelfigur({ urval: { falt: 'bas', namn: 'BAS-intervall' } }), 'A')).toBe('A');
+    });
+    it('arBortvald: bara en punkt med fältet och ett bortvalt värde', () => {
+        const f = stapelfigur();
+        expect(arBortvald(f, new Set(['A']), { bas: 'A' })).toBe(true);
+        expect(arBortvald(f, new Set(['A']), { bas: 'B' })).toBe(false);
+        expect(arBortvald(f, new Set(['A']), { y: 3 })).toBe(false);
+        expect(arBortvald(stapelfigur({ urval: undefined }), new Set(['A']), { bas: 'A' })).toBe(false);
+        expect(arBortvald(f, undefined, { bas: 'A' })).toBe(false);
+        expect(arBortvald(f, new Set(['A']), null)).toBe(false);
+    });
+});
