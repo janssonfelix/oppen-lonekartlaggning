@@ -203,7 +203,9 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         expect(avsnitt().map(a => a.id.replace('avsnitt-lp-', ''))).toEqual(['tabell', 'kon', 'efterlevnad', 'tackning']);
         expect(avsnitt().filter(a => a.open).map(a => a.id)).toEqual(['avsnitt-lp-tabell']);
         const fore = (a, b) => !!(d.getElementById(a).compareDocumentPosition(d.getElementById(b)) & 4);
-        expect(fore('lp-slutsatser', 'chart-lp-bandmap') && fore('chart-lp-bandmap', 'avsnitt-lp-tabell')).toBe(true);
+        // Bandkartan står i Löneläget överst (avsnittet Överblick), före avsnittet mot ställningstagandet och dess slutsatser.
+        expect(d.getElementById('avsnitt-jmf-bandkartor').contains(d.getElementById('chart-lp-bandmap'))).toBe(true);
+        expect(fore('chart-lp-bandmap', 'lp-slutsatser') && fore('lp-slutsatser', 'avsnitt-lp-tabell')).toBe(true);
         // Positionen står i tabellens femte kolumn; bara rader med en position räknas.
         const pos = [...d.querySelectorAll('#lonepolitik-table tbody tr')].map(tr => tr.children[4]).filter(td => td && /^-?\d/.test(td.dataset.sortValue || '')).map(td => +td.dataset.sortValue);
         expect(pos.length).toBeGreaterThan(0);

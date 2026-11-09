@@ -21,6 +21,7 @@ const IND = (x, loner, sma = []) => loner.map((y, i) => (sma.includes(i) ? { x, 
 //   storlek                  → "punkter på talaxlar med storlek", "punkter, alla symboler" (HEM har storlek 40)
 //   forskjutning             → "punkter på band med förskjutning"
 //   symbol (alla fyra)       → "punkter, alla symboler"
+//   ofylld                   → "punkter ofyllda och fyllda på band" (liten punkt mitt i det ofyllda lagret)
 //   punkter, tips (linje)    → "linje med punkter och tips"
 //   kurva monoton, streck    → "linje monoton på talaxel"
 //   axel 'y2'                → "höger axel med lager", "höger axel där hela lagret är litet"
@@ -62,6 +63,7 @@ export function ritfigurer() {
         ['staplar tre serier, mittenserien liten', bas({ lager: [{ marke: 'stapel', serie: 'S0', data: [{ x: 'A', y: 3 }] }, { marke: 'stapel', serie: 'HEMLIG-S', data: [HEM('A')] }, { marke: 'stapel', serie: 'S2', data: [{ x: 'A', y: 4 }] }] })],
         ['punkter på band med förskjutning', bas({ lager: [{ marke: 'punkt', serie: 'P', tips: () => [['HEMLIG']], data: [{ x: 'A', y: 10 }, HEM('HEMLIG', { forskjutning: 0.3 }), { x: 'B', y: 12, forskjutning: 0.2 }] }] })],
         ['punkter på talaxlar med storlek', bas({ x: { skala: 'linjar' }, lager: [{ marke: 'punkt', serie: 'P', data: [{ x: 1, y: 10, storlek: 4 }, { x: 2, y: 11, liten: true, storlek: 40 }, { x: 3, y: 12, storlek: 5 }] }] })],
+        ['punkter ofyllda och fyllda på band', bas({ lager: [{ marke: 'punkt', serie: 'Fylld', farg: '#0f766e', data: [{ x: 'A', y: 10, forskjutning: 0.1 }, { x: 'B', y: 12 }] }, { marke: 'punkt', serie: 'Ofylld', ofylld: true, farg: '#0f766e', data: [{ x: 'A', y: 11 }, HEM('HEMLIG', { forskjutning: -0.2 }), { x: 'B', y: 9 }] }] })],
         ['punkter, alla symboler', bas({ x: { skala: 'linjar' }, y: { skala: 'band' }, lager: ['cirkel', 'streck', 'triangelVanster', 'triangelHoger'].map((symbol, i) => ({ marke: 'punkt', symbol, serie: symbol, storlek: 5, data: [{ y: 'A', x: 5 + i }, { y: 'HEMLIG', x: 98765, liten: true, storlek: 40 }, { y: 'B', x: 3 + i }] })) })],
         ['linje med punkter och tips', bas({ lager: [{ marke: 'linje', serie: 'L', punkter: true, tips: () => [['HEMLIG']], data: [{ x: 'A', y: 10 }, HEM('HEMLIG'), { x: 'B', y: 12 }] }] })],
         ['linje monoton på talaxel', bas({ x: { skala: 'linjar' }, lager: [{ marke: 'linje', serie: 'L', kurva: 'monoton', streck: 'streckad', data: [{ x: 1, y: 10 }, { x: 2, y: 98765, liten: true }, { x: 3, y: 12 }, { x: 4, y: 13 }] }] })],

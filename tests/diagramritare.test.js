@@ -1383,6 +1383,39 @@ describe('mönster på staplar och stapel på avkortad axel', () => {
         expect(alla(svg, 'svg[data-del="panel"] [data-marke="punkt"]').map(e => e.tagName.toLowerCase())).toEqual(['circle', 'path', 'rect']);
         expect(alla(svg, '[data-del="forklaring"] [data-prov="punkt"]').map(e => e.tagName.toLowerCase())).toEqual(['circle', 'path', 'rect']);
     });
+    it('ofylld punkt: en ring i lagrets färg utan fyllning, också i förklaringen; en fylld punkt i samma figur är oförändrad', () => {
+        const lager = (serie, ofylld, symbol) => ({ marke: 'punkt', serie, farg: '#0f766e', kant: '#ffffff', ofylld, symbol, storlek: 5, data: [{ x: 1, y: 1 }, { x: 2, y: 2 }] });
+        const f = { beskrivning: 'O', x: { skala: 'linjar' }, y: { skala: 'linjar' }, lager: [lager('Fylld', undefined), lager('Ofylld', true), lager('Ofylld romb', true, 'romb')] };
+        expect(() => valideraFigur(f, 't')).not.toThrow();
+        const svg = rita(f, 640);
+        const punkter = alla(svg, 'svg[data-del="panel"] [data-marke="punkt"]');
+        expect(punkter).toHaveLength(6);
+        const [fylld, , ofylld, , romb] = punkter;
+        expect(fylld.getAttribute('fill')).toBe('#0f766e');
+        expect(fylld.getAttribute('stroke')).toBe('#ffffff');
+        for (const m of [ofylld, romb]) {
+            expect(m.getAttribute('fill')).toBe('none');
+            expect(m.getAttribute('stroke')).toBe('#0f766e');             // kanten i lagrets färg, inte lagrets `kant`
+            expect(Number(m.getAttribute('stroke-width'))).toBeGreaterThan(1);
+            expect(m.getAttribute('pointer-events')).toBe('visible');      // ringens inre tar emot pekaren som en fylld punkt
+        }
+        expect(romb.tagName.toLowerCase()).toBe('path');
+        const prov = alla(svg, '[data-del="forklaring"] [data-prov="punkt"]');
+        expect(prov.map(e => e.getAttribute('fill'))).toEqual(['#0f766e', 'none', 'none']);
+        expect(prov[1].getAttribute('stroke')).toBe('#0f766e');
+        // Exporten bär ringen men inte pekarattributet.
+        const txt = svgText(f);
+        expect(txt).toContain('fill="none"');
+        expect(txt).not.toContain('pointer-events');
+    });
+    it('ofylld: bara för punkt med cirkel, romb eller kvadrat, och bara true eller false', () => {
+        const f = l => ({ beskrivning: 'O', x: { skala: 'linjar' }, y: { skala: 'linjar' }, lager: [{ marke: 'punkt', serie: 'S', data: [{ x: 1, y: 1 }], ...l }] });
+        expect(() => valideraFigur(f({ ofylld: true }), 't')).not.toThrow();
+        expect(() => valideraFigur(f({ ofylld: false, symbol: 'kvadrat' }), 't')).not.toThrow();
+        expect(() => valideraFigur(f({ ofylld: true, symbol: 'streck' }), 't')).toThrow(/ofylld/);
+        expect(() => valideraFigur(f({ ofylld: 'ja' }), 't')).toThrow(/ofylld/);
+        expect(() => valideraFigur(f({ marke: 'stapel', ofylld: true }), 't')).toThrow(/ofylld/);
+    });
     it('monster följer med i den exporterade bilden', () => {
         const txt = svgText({ beskrivning: 'M', x: { skala: 'band' }, y: { skala: 'linjar' },
             lager: [{ marke: 'stapel', serie: 'S', farg: '#dc2626', monster: 'linjer', data: [{ x: 'a', y: 5 }] }] });

@@ -5687,7 +5687,7 @@ function statistikensMedianFor(statistik, grupper) {
 }
 
 /**
- * @param {Array<{yrke:string, bas:string, lon:number}>} rader
+ * @param {Array<{yrke:string, bas:string, lon:number, kon?:string}>} rader
  * @param {{statistik:Array, policyFor:(aid:string, bas:string)=>({p10?:number, med?:number, p90?:number}|null), k:number}} opt
  */
 function jamforelseRader(rader, { statistik = [], policyFor = () => null, k }) {
@@ -5696,19 +5696,22 @@ function jamforelseRader(rader, { statistik = [], policyFor = () => null, k }) {
         const aid = aidAvYrke(r.yrke);
         if (!perAid.has(aid)) perAid.set(aid, new Map());
         const perBas = perAid.get(aid);
-        if (!perBas.has(r.bas)) perBas.set(r.bas, { yrke: r.yrke, lons: [] });
-        perBas.get(r.bas).lons.push(r.lon);
+        if (!perBas.has(r.bas)) perBas.set(r.bas, { yrke: r.yrke, lons: [], kvinnor: 0 });
+        const g = perBas.get(r.bas);
+        g.lons.push(r.lon);
+        if (typeof r.kon === 'string' && r.kon.includes('kvinna')) g.kvinnor++;
     }
     const ut = [], utelamnade = [];
     for (const [aid, perBas] of perAid) {
         for (const bas of [...perBas.keys()].sort()) {
-            const { yrke, lons } = perBas.get(bas);
+            const { yrke, lons, kvinnor } = perBas.get(bas);
             if (lons.length < k) { utelamnade.push(`${aid} (BAS ${bas})`); continue; }
             const org = _tre(quantile(lons, 0.1), median(lons), quantile(lons, 0.9));
             const traff = statistikFor(statistik, aid, bas), s = traff?.rad;
             const p = policyFor(aid, bas);
             const stat = _tre(s?.p10, s?.median, s?.p90), pol = _tre(p?.p10, p?.med, p?.p90);
-            ut.push({ aid, yrke, bas, sektor: sektorsnamn(aid), n: lons.length, org, statistik: stat, stallningstagande: pol,
+            // kvAndel: andelen kvinnor i procent, för könsdominansen i Löneläget (samma räkning som bandkartan).
+            ut.push({ aid, yrke, bas, sektor: sektorsnamn(aid), n: lons.length, kvAndel: kvinnor / lons.length * 100, org, statistik: stat, stallningstagande: pol,
                 statistikMatchning: traff ? traff.matchning : null,
                 diff: { statistik: _diffar(org, stat), stallningstagande: _diffar(org, pol) } });
         }
@@ -7891,6 +7894,8 @@ function valideraFigur(figur, id = 'diagram') {
         // tillåtna (ritaren vidgar domänen, som skalDoman gör för min === max); omvänd domän ger omvänd skala.
         if (behoverFarg && !_fargdomanOk(figur.fargskala)) fel('fargskala: doman måste vara två ändliga tal');
         // Lådor ritas bara stående (kategorin på x, värdet på y): en liggande låda skulle annars godkännas men aldrig ritas.
+        // Ofylld (en ring utan fyllning) finns bara för punktsymbolerna med en yta: cirkel, romb och kvadrat.
+        if (l.ofylld != null && !(typeof l.ofylld === 'boolean' && l.marke === 'punkt' && (!l.symbol || ['cirkel', 'romb', 'kvadrat'].includes(l.symbol)))) fel(`lager ${i}: ofylld måste vara true eller false och gäller bara punkt med symbolen cirkel, romb eller kvadrat`);
         if (l.monster != null && !(l.marke === 'stapel' && (l.monster === 'linjer' || l.monster === 'prickar'))) fel(`lager ${i}: monster måste vara "linjer" eller "prickar" och gäller bara stapel`);
         if (l.marke === 'lada' && l.riktning === 'liggande') fel(`lager ${i}: lada stöder bara stående riktning`);
         if (l.marke === 'lada' && l.form != null && !['fiol', 'regnmoln', 'kvantiler'].includes(l.form)) fel(`lager ${i}: form måste vara "fiol", "regnmoln" eller "kvantiler"`);

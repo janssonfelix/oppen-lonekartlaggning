@@ -144,6 +144,14 @@ describe('jamforelse: små grupper, yrken utan kod och sortering', () => {
         const r = jamforelseRader(grupp('Kock', 'B', tio('B')), { statistik: [], policyFor: () => null, k: 10 }).rader[0];
         expect(r).toMatchObject({ aid: 'Kock', sektor: 'Okänt huvudområde' });
     });
+    it('kvAndel: andelen kvinnor i gruppen i procent (könsdominansen i Löneläget), som bandkartan räknar den', () => {
+        const kon = (k, n) => Array.from({ length: n }, () => k);
+        const koner = [...kon('kvinna', 6), ...kon('man', 3), undefined];
+        const data = tio().map((lon, i) => ({ yrke: '207011 Usk', bas: 'C', lon, kon: koner[i] }));
+        expect(jamforelseRader(data, { statistik: [], policyFor: () => null, k: 10 }).rader[0].kvAndel).toBe(60);
+        // Utan kön i underlaget: 0 % kvinnor, som i bandkartan.
+        expect(jamforelseRader(grupp('207011 Usk', 'C', tio()), { statistik: [], policyFor: () => null, k: 10 }).rader[0].kvAndel).toBe(0);
+    });
     it('sorteras på BAS och sedan yrke', () => {
         const data = [...grupp('502010 Sysutv', 'D', tio()), ...grupp('403010 Barnskötare', 'B', tio()), ...grupp('207011 Usk', 'B', tio())];
         const { rader } = jamforelseRader(data, { statistik: [], policyFor: () => null, k: 10 });

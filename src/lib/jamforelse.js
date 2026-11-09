@@ -106,7 +106,7 @@ export function statistikensMedianFor(statistik, grupper) {
 }
 
 /**
- * @param {Array<{yrke:string, bas:string, lon:number}>} rader
+ * @param {Array<{yrke:string, bas:string, lon:number, kon?:string}>} rader
  * @param {{statistik:Array, policyFor:(aid:string, bas:string)=>({p10?:number, med?:number, p90?:number}|null), k:number}} opt
  */
 export function jamforelseRader(rader, { statistik = [], policyFor = () => null, k }) {
@@ -115,19 +115,22 @@ export function jamforelseRader(rader, { statistik = [], policyFor = () => null,
         const aid = aidAvYrke(r.yrke);
         if (!perAid.has(aid)) perAid.set(aid, new Map());
         const perBas = perAid.get(aid);
-        if (!perBas.has(r.bas)) perBas.set(r.bas, { yrke: r.yrke, lons: [] });
-        perBas.get(r.bas).lons.push(r.lon);
+        if (!perBas.has(r.bas)) perBas.set(r.bas, { yrke: r.yrke, lons: [], kvinnor: 0 });
+        const g = perBas.get(r.bas);
+        g.lons.push(r.lon);
+        if (typeof r.kon === 'string' && r.kon.includes('kvinna')) g.kvinnor++;
     }
     const ut = [], utelamnade = [];
     for (const [aid, perBas] of perAid) {
         for (const bas of [...perBas.keys()].sort()) {
-            const { yrke, lons } = perBas.get(bas);
+            const { yrke, lons, kvinnor } = perBas.get(bas);
             if (lons.length < k) { utelamnade.push(`${aid} (BAS ${bas})`); continue; }
             const org = _tre(quantile(lons, 0.1), median(lons), quantile(lons, 0.9));
             const traff = statistikFor(statistik, aid, bas), s = traff?.rad;
             const p = policyFor(aid, bas);
             const stat = _tre(s?.p10, s?.median, s?.p90), pol = _tre(p?.p10, p?.med, p?.p90);
-            ut.push({ aid, yrke, bas, sektor: sektorsnamn(aid), n: lons.length, org, statistik: stat, stallningstagande: pol,
+            // kvAndel: andelen kvinnor i procent, för könsdominansen i Löneläget (samma räkning som bandkartan).
+            ut.push({ aid, yrke, bas, sektor: sektorsnamn(aid), n: lons.length, kvAndel: kvinnor / lons.length * 100, org, statistik: stat, stallningstagande: pol,
                 statistikMatchning: traff ? traff.matchning : null,
                 diff: { statistik: _diffar(org, stat), stallningstagande: _diffar(org, pol) } });
         }

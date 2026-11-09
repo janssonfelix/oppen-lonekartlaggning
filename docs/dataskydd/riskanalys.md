@@ -1,6 +1,6 @@
 # Risk- och sårbarhetsanalys (dataskydd och informationssäkerhet) — Öppen lönekartläggning
 
-**Bygge:** `2026.11.05` · **Artefakt-SHA-256:** `b792a41832d61cdb887a8177a546bdf2efacd2492961d2a8a15f30822bf4dc2a` (se `dist/RELEASE.txt`).
+**Bygge:** `2026.11.05` · **Artefakt-SHA-256:** `f68fe4b38dee1b83b6771b34ba5aceb093c67af30d76de0f64d9a04241082699` (se `dist/RELEASE.txt`).
 **Granskningsdatum:** 2026-11-07.
 **Granskningsmetod:** kodläsning påstående för påstående + statisk sökning i källkod och bygge +
 körning av det byggda verktyget i jsdom och i Chromium (utan nätverk) med syntetiska testfiler.
@@ -379,6 +379,8 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   - importprofilerna (*Exportera JSON* och konfigurationsfilens fält, prövade som utdata utan lönemått)
   - statistikens matchning i Löneläget (sammanfattningen och *Beräkning & urval* i exportläget; kolumnen
     *Matchning* i tabellernas CSV, Excelfilerna och jämförelseexporten)
+  - diagrammet över statistikens spann i Löneläget (*Överblick*, `chart-jmf-statlage`): diagramdatan ska ha en rad per
+    grupp som når tröskeln, med matchningen i serienamnet
   - Att göra-punkterna.
 
   PDF-rapporten ritas ur samma rapportmodell som Word-utkastet. **Inte prövat av invarianten:**
@@ -471,6 +473,14 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   yrkesgrupper per matchningsnivå (också i *Beräkning & urval*). Utdatan säger bara hur statistiken matchades och hur
   många grupper som matchades; den bär inga lönemått. Den gäller samma rader som tabellen, så grupper under tröskeln
   syns inte och räknas inte. Vaktas av `tests/ktroskel-invarianter.test.js` och `tests/smoke-jamforelse.test.js`.
+- **Löneläget, överblickens diagram över statistikens spann** (`chart-jmf-statlage`): en punkt per yrkesgrupp
+  AID×BAS med läget för organisationens median i statistikens spann (0 = P10, 100 = P90), med tips (yrke, BAS,
+  läget, organisationens median, statistikens P10, median och P90, matchning, andel kvinnor, antal), bild och
+  diagramdata. Diagrammet läser samma rader som tabellen mot jämförelsestatistiken (`jamforelseUnderlag`), som
+  utesluter grupper under tröskeln, och visar inget som inte står i tabellen och bandkartan: läget räknas ur
+  tabellens median, P10 och P90, och andelen kvinnor visas på samma sätt i bandkartans tips. Filtren på BAS och
+  sektor gäller inte diagrammet. Vaktas av `tests/ktroskel-invarianter.test.js` (diagramdatan i exportläget vid 10
+  och 25) och `tests/smoke-jamforelse.test.js` (bara grupper som når tröskeln, fylld och ofylld punkt).
 - **Löneläget, avsnittet mot ställningstagandet:** i exportläget har avsnittet en mellannivå. För en yrkesgrupp
   med minst 5 men färre än tröskeln anges bara antal. Under 5 maskeras gruppen helt och namnges i en not.
   Lönemått och läget per kön kräver tröskeln. Bladet *Lönepolitik* i Excelfilen med alla flikar (och i ZIP-filens

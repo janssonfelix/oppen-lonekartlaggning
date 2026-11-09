@@ -62,13 +62,14 @@ const SOK_FUNKTIONER = [
     { namn: 'Analys på individnivå', synonymer: ['arbetslista', 'för litet', 'små grupper'], flik: 'matrix', avsnitt: 'avsnitt-la-individ' },
     { namn: 'Så räknas det', synonymer: ['metod', 'beräkning', 'begrepp', 'lika arbete'], flik: 'matrix', avsnitt: 'avsnitt-la-metod' },
     // Löneläget
-    { namn: 'Överblick — löneläget och statistiken mot ställningstagandet', synonymer: ['löneläge', 'överblick'], flik: 'benchmark', avsnitt: 'avsnitt-jmf-overblick' },
-    { namn: 'Mot ställningstagandet', synonymer: ['lönepolitik', 'bandkarta', 'spann', 'referens'], flik: 'benchmark', avsnitt: 'avsnitt-jmf-stallningstagande' },
+    { namn: 'Överblick — lönerna mot ställningstagandet och statistiken', synonymer: ['löneläge', 'överblick', 'bandkarta', 'statistikens spann', 'matchning', 'fylld', 'ofylld'], flik: 'benchmark', avsnitt: 'avsnitt-jmf-bandkartor' },
+    { namn: 'Mot ställningstagandet', synonymer: ['lönepolitik', 'spann', 'referens'], flik: 'benchmark', avsnitt: 'avsnitt-jmf-stallningstagande' },
     { namn: 'Yrkesgrupper mot sitt spann', synonymer: ['spann', 'lönespann', 'under spannet', 'ställningstagandet per yrkesgrupp'], flik: 'benchmark', avsnitt: 'avsnitt-lp-tabell' },
     { namn: 'Könsposition i bandet', synonymer: ['könsposition', 'band', 'spannets tredjedelar', 'läge i spannet'], flik: 'benchmark', avsnitt: 'avsnitt-lp-kon' },
     { namn: 'Efterlevnad', synonymer: ['efterlevnad', 'under spann', 'inom spann', 'över spann'], flik: 'benchmark', avsnitt: 'avsnitt-lp-efterlevnad' },
     { namn: 'Täckningsgrad', synonymer: ['täckning', 'täckningsgrad', 'policyreferens'], flik: 'benchmark', avsnitt: 'avsnitt-lp-tackning' },
     { namn: 'Mot jämförelsestatistiken', synonymer: ['statistik', 'marknad', 'p10', 'p90', 'benchmark'], flik: 'benchmark', avsnitt: 'avsnitt-jmf-statistik' },
+    { namn: 'Yrkesgrupp för yrkesgrupp — löneläget och statistiken mot ställningstagandet', synonymer: ['per yrkesgrupp', 'mönster', 'förslag på referens', 'hantel'], flik: 'benchmark', avsnitt: 'avsnitt-jmf-overblick' },
     // Prioritering
     { namn: 'Åtgärdslistan', synonymer: ['prioritering', 'prioritet', 'börja här'], flik: 'prioritering', avsnitt: 'avsnitt-pr-lista' },
     { namn: 'Vad kostar det att åtgärda?', synonymer: ['kostnad', 'lyfta grupper'], flik: 'prioritering', avsnitt: 'avsnitt-pr-kostnad' },

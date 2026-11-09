@@ -299,6 +299,8 @@ export function valideraFigur(figur, id = 'diagram') {
         // tillåtna (ritaren vidgar domänen, som skalDoman gör för min === max); omvänd domän ger omvänd skala.
         if (behoverFarg && !_fargdomanOk(figur.fargskala)) fel('fargskala: doman måste vara två ändliga tal');
         // Lådor ritas bara stående (kategorin på x, värdet på y): en liggande låda skulle annars godkännas men aldrig ritas.
+        // Ofylld (en ring utan fyllning) finns bara för punktsymbolerna med en yta: cirkel, romb och kvadrat.
+        if (l.ofylld != null && !(typeof l.ofylld === 'boolean' && l.marke === 'punkt' && (!l.symbol || ['cirkel', 'romb', 'kvadrat'].includes(l.symbol)))) fel(`lager ${i}: ofylld måste vara true eller false och gäller bara punkt med symbolen cirkel, romb eller kvadrat`);
         if (l.monster != null && !(l.marke === 'stapel' && (l.monster === 'linjer' || l.monster === 'prickar'))) fel(`lager ${i}: monster måste vara "linjer" eller "prickar" och gäller bara stapel`);
         if (l.marke === 'lada' && l.riktning === 'liggande') fel(`lager ${i}: lada stöder bara stående riktning`);
         if (l.marke === 'lada' && l.form != null && !['fiol', 'regnmoln', 'kvantiler'].includes(l.form)) fel(`lager ${i}: form måste vara "fiol", "regnmoln" eller "kvantiler"`);

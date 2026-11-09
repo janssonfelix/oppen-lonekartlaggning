@@ -239,7 +239,8 @@ export async function samlaUtdata(w) {
         tabeller++;
         lagg(`tabell-CSV: ${id}`, w.__tableToMatrix(id).map(r => r.join(' | ')).join('\n'));
     }
-    // Ritade av diagramkärnan (el._figur, ADR-39) — också de utan "chart-" i id:t. Ett diagram som inte får lämna
+    // Ritade av diagramkärnan (el._figur, ADR-39) — också de utan "chart-" i id:t. Löneläget ritas med statistiken i
+    // fixturen, så Överblickens diagram över statistikens spann (chart-jmf-statlage) är med; testet kräver det. Ett diagram som inte får lämna
     // verktyget (markeraUtanExport: Översiktens kopior, Personer att granska) ger ingen diagramdata alls och
     // räknas därför inte som en väg; att det förblir så prövar tests/smoke.test.js.
     for (const el of d.querySelectorAll('[id^="chart-"], #lifecycle-chart')) {

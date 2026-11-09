@@ -227,17 +227,25 @@ rubrikraden, också när det är hopfällt.
    och utskriften.
 2. **Löneläget** *(fördjupning, inget lagkrav)* — fliken går att öppna när lönefilen och minst en referens
    (ställningstagandet eller jämförelsestatistiken) är inlästa. Med en lönefil men utan referens döljs den i menyn.
-   Den har tre avsnitt.
-   *Överblick* visar per yrkesgrupp var löneläget och statistiken ligger mot ställningstagandet, som är
-   referenspunkten. Där står skillnaden percentil för percentil och läget i spannet (0 = referensens P10, 100 = dess
-   P90). Där står också mönstret i ord och ett förslag på vilken referens som säger något om gruppen. En bild visar
-   de tre spannen, och en tabell visar statistiken mot ställningstagandet. Ligger både löneläget och statistiken över
-   ställningstagandet har det halkat efter marknaden. Ligger bara löneläget över har organisationen gått före.
-   Förslaget är ett förslag, ingen regel. *Mot ställningstagandet* är bandkartan och könens läge i spannet. Där
-   står också hur stor andel av kvinnorna respektive männen som ligger i spannets nedre, mellersta och övre
-   tredjedel. *Mot jämförelsestatistiken* är tabellen och diagrammen mot statistiken, med filter på BAS och sektor.
+   Den har fyra avsnitt.
+   *Överblick* står överst och är öppen. Den visar alla yrkesgrupper i två diagram. Bandkartan visar var varje
+   yrkesgrupps medianlön ligger i ställningstagandets spann, och diagrammet *Var ligger yrkesgrupperna i statistikens
+   spann?* visar var den ligger i jämförelsestatistikens spann (0 = statistikens P10, 100 = dess P90). Punkten är
+   fylld när statistiken matchades på AID och BAS, och ofylld när den matchades på endast AID. Diagrammet visar hela
+   underlaget; filtren under *Mot jämförelsestatistiken* gäller inte där. Saknar statistiken P10 och P90 står ett
+   meddelande i stället för diagrammet. Utan ställningstagande visas bara statistikens diagram, och utan statistik
+   bara bandkartan.
+   *Mot ställningstagandet* är tabellen per yrkesgrupp och könens läge i spannet. Där står också hur stor andel av
+   kvinnorna respektive männen som ligger i spannets nedre, mellersta och övre tredjedel, efterlevnaden och
+   täckningen. *Mot jämförelsestatistiken* är tabellen och diagrammen mot statistiken, med filter på BAS och sektor.
    Tabellen visar medianens kolumner, och P10 och P90 ligger bakom *Fler kolumner* (Kopiera, CSV, Excel och
    utskriften tar med alla).
+   *Yrkesgrupp för yrkesgrupp* står sist och är stängd från början. Den visar per yrkesgrupp var löneläget och
+   statistiken ligger mot ställningstagandet, som är referenspunkten. Där står skillnaden percentil för percentil
+   och läget i spannet (0 = referensens P10, 100 = dess P90). Där står också mönstret i ord och ett förslag på
+   vilken referens som säger något om gruppen. En bild visar de tre spannen, och en tabell visar statistiken mot
+   ställningstagandet. Ligger både löneläget och statistiken över ställningstagandet har det halkat efter
+   marknaden. Ligger bara löneläget över har organisationen gått före. Förslaget är ett förslag, ingen regel.
 3. **Lika arbete** — fliken öppnar med **yrkesgrupperna**: kvinnors och mäns medianlön i samma yrkesgrupp.
    Grupper med en skillnad över 5 procent markeras, så att du vet var du ska börja. Lagen kräver att du prövar
    varje skillnad, också de mindre.

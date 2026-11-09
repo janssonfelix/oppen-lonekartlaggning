@@ -142,7 +142,7 @@ function _renderTabContent(target) {
         const s = document.getElementById("bas-select-kon"); if (s) renderKon(/** @type {HTMLInputElement} */ (s).value); renderLifecycleAnalysis();
         const s2 = document.getElementById("bas-select-demo"); if (s2) renderDemografi(/** @type {HTMLInputElement} */ (s2).value);
     }
-    else if (target === "benchmark"    && d.length) { renderReferensOverblick(); renderLonepolitik(); generateBenchmark(); }
+    else if (target === "benchmark"    && d.length) { renderReferensOverblick(); renderLonepolitik(); renderStatistikLage(); generateBenchmark(); }
     else if (target === "matrix"       && d.length) { generateEUDirectiveMatrix(); renderPersonerAttGranska(); renderAidBasLika(); renderLikaArbeteTopp(); }
     else if (target === "prioritering" && d.length) renderPrioritering();
     else if (target === "struktur"     && d.length) { renderStructure(); generateSkevhet(); renderBlinderOaxacaCard(renderRegressionCard()); renderGapUppdelning(); renderLonestrukturNycklar(); }

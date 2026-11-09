@@ -261,6 +261,55 @@ function _jmfAvvikelseFigur(visa, kalla, namn) {
         ].filter(l => l.data.length) };
 }
 
+// ---- Överblicken: var ligger yrkesgrupperna i statistikens spann? ----
+// Kortet står i avsnittet Överblick, under bandkartan (src/index.html, #jmf-statlage-kort). Samma rader som tabellen mot
+// statistiken (jamforelseUnderlag: grupper under tröskeln finns inte i raderna), men utan tabellens filter på BAS och
+// sektor: överblicken visar hela underlaget. En punkt per yrkesgrupp med P10 och P90 i statistiken.
+function renderStatistikLage() {
+    const kort = document.getElementById('jmf-statlage-kort'), el = document.getElementById('chart-jmf-statlage');
+    if (!kort || !el) return;
+    if (!state.statistik.length || !getData().length) { rensaFigur(el); kort.hidden = true; return; }
+    kort.hidden = false;
+    const rader = jamforelseUnderlag().rader.filter(r => _rrLage(r.org.median, r.statistik).pos != null);
+    if (!rader.length) {
+        _lpIngetDiagram(el, 'Jämförelsestatistiken har inte P10 och P90 för någon yrkesgrupp i underlaget, så läget i statistikens spann kan inte visas. Medianerna står under Mot jämförelsestatistiken.');
+        return;
+    }
+    ritaFigur(el, _jmfStatlageFigur(rader), { hojd: 460 });
+}
+
+// Statistikspannets figur (diagramkärnan, ADR-39), byggd som bandkartan: x är BAS-intervallet, y läget för yrkesgruppens
+// median i statistikens spann (0 = P10, 100 = P90, linjärt; utanför spannet under 0 och över 100). Statistikens spann
+// är ett grått band 0–100 per BAS. Punkterna har bandkartans färger för könsdominans och dess förskjutning; matchningen
+// syns i punkten: fylld = AID + BAS, ofylld = Endast AID (lagrets `ofylld`). Raderna når tröskeln (jamforelseUnderlag).
+function _jmfStatlageFigur(rader) {
+    const x = r => 'BAS ' + r.bas, kr = v => _figTalformat(v, 'kr'), utanKr = v => (v == null ? '–' : _figTalformat(v, 'kr', { enhet: false }));
+    const ordning = [...new Set(rader.map(x))];
+    const pts = rader.map(r => ({ x: x(r), y: _rrLage(r.org.median, r.statistik).pos, forskjutning: _lpForskjutning(r.aid, r.bas),
+        storlek: Math.max(3.5, Math.min(9, Math.sqrt(r.n) * 1.1)), aid: r.aid, bas: r.bas, yrke: r.yrke, n: r.n, kvAndel: r.kvAndel,
+        median: r.org.median, stat: r.statistik, matchning: r.statistikMatchning, markering: markeringFor(r.bas, r.aid) }));
+    const tips = d => [[d.yrke], ['BAS', d.bas], ['Läget i spannet', `${svTal(d.y, 0)} %`], ['Organisationens median', kr(d.median)],
+        ['Statistiken', `P10 ${utanKr(d.stat.p10)} · median ${utanKr(d.stat.median)} · P90 ${kr(d.stat.p90)}`],
+        ['Matchning', _jfMatchningEtikett(d.matchning)], ['Kvinnor', _figTalformat(d.kvAndel, 'antal') + ' %'], ['Antal', String(d.n)]];
+    // Sex lager: tre klasser för könsdominans, var och en fylld (AID + BAS) och ofylld (Endast AID). Serienamnet bär
+    // matchningen, så att förklaringen och diagramdatan säger den med samma ord som tabellen.
+    const punktlager = _lpKonsdominans().flatMap(([klass, farg, hor]) => /** @type {Array<['aid-bas'|'aid', boolean]>} */ ([['aid-bas', false], ['aid', true]])
+        .map(([matchning, ofylld]) => ({ marke: 'punkt', serie: `${klass} · ${_jfMatchningEtikett(matchning)}`, farg,
+            ...(ofylld ? { ofylld: true } : { kant: FARG.vit }), data: pts.filter(p => p.matchning === matchning && hor(p.kvAndel)), tips })));
+    const linje = (y, etikett) => ({ typ: 'linje', y, streck: 'streckad', farg: PALETTE.semantic.referens, tjocklek: 1, etikett, textfarg: PALETTE.semantic.referens });
+    return { beskrivning: 'Var varje yrkesgrupps medianlön ligger i jämförelsestatistikens spann per BAS-intervall: 0 är statistikens P10 och 100 dess P90. '
+            + 'Fylld punkt: statistiken matchad på AID och BAS. Ofylld punkt: endast AID. Hela underlaget, oberoende av filtren under Mot jämförelsestatistiken; '
+            + 'läget räknas ur P10, median och P90 i tabellen där.',
+        x: { skala: 'band', ordning }, y: { skala: 'linjar', titel: 'Läget i statistikens spann (%)' },
+        referens: [linje(0, 'P10'), linje(100, 'P90')],
+        lager: [
+            // Spannet bär inga värden (0 och 100 i varje BAS) och får därför inga rader i diagramdatan.
+            { marke: 'intervall', serie: 'Statistikens spann (P10–P90)', farg: PALETTE.semantic.spann, tjocklek: 14, legend: false, utanData: true,
+              data: ordning.map(b => ({ x: b, lag: 0, hog: 100 })) },
+            ...punktlager
+        ].filter(l => l.data.length) };
+}
+
 // ---- OLS Regression: oförklarad löneskillnad ----
 // Standardmetod (Medlingsinstitutet/EU 2023/970): log(lön) ~ kön + ålder + BAS-intervall (indikatorvariabler)
 /**

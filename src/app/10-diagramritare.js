@@ -113,7 +113,7 @@ function _rfRitaLegend(svg, L, syn, px, H, notRader) {
             .attr('opacity', dold_ ? 0.4 : 1);
         const f = p.l.farg || PALETTE.serie[p.li % PALETTE.serie.length];
         if (p.l.marke === 'linje') g.append('line').attr('x1', 0).attr('x2', 12).attr('y1', -4).attr('y2', -4).attr('stroke', f).attr('stroke-width', 2.5);
-        else if (p.l.marke === 'punkt' && (!p.l.symbol || p.l.symbol === 'cirkel' || p.l.symbol === 'romb' || p.l.symbol === 'kvadrat')) _rfSymbol(g, p.l.symbol, 6, -4, 5, f).attr('data-prov', 'punkt');
+        else if (p.l.marke === 'punkt' && (!p.l.symbol || p.l.symbol === 'cirkel' || p.l.symbol === 'romb' || p.l.symbol === 'kvadrat')) (p.l.ofylld ? _rfOfylld(_rfSymbol(g, p.l.symbol, 6, -4, 5, f), f) : _rfSymbol(g, p.l.symbol, 6, -4, 5, f)).attr('data-prov', 'punkt');
         else if (p.l.marke === 'punkt' && p.l.symbol === 'streck') g.append('line').attr('data-prov', 'punkt').attr('x1', 6).attr('x2', 6).attr('y1', -10).attr('y2', 2).attr('stroke', f).attr('stroke-width', 2.5);
         else {
             g.append('rect').attr('x', 0).attr('y', -10).attr('width', 12).attr('height', 12).attr('rx', 2).attr('fill', f);

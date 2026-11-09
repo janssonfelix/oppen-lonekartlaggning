@@ -187,6 +187,12 @@ describe.each([[10, []], [25, SENT_MELLAN]])('I4: invarianten över flikar och e
         const t = utdata.find(([namn]) => namn === 'Löneläget: statistikens matchning')[1];
         expect(t).toContain(`Statistiken: ${n} yrkesgrupper matchade på AID och BAS, 0 på endast AID, 0 utan statistik.`);
         expect(t).toContain(`I urvalet: ${n} yrkesgrupper på AID + BAS, 0 på endast AID, 0 utan statistik.`);
+        // Överblickens diagram över statistikens spann (Löneläget): en punkt per grupp som når tröskeln, med matchningen i
+        // serienamnet. Spannet 0–100 per BAS ger inga rader (utanData).
+        const d = utdata.find(([namn]) => namn === 'diagramdata: chart-jmf-statlage')?.[1];
+        expect(d, 'diagramdata: chart-jmf-statlage').toBeTruthy();
+        expect(d.split('\n').filter(r => / · AID \+ BAS \| BAS /.test(r))).toHaveLength(n);
+        expect(d).not.toMatch(/Endast AID|Statistikens spann/);
     });
     // Skärmen maskerar inget (ADR-51): den vägen prövas positivt nedan och undantas i läckkontrollerna.
     const exporter = () => utdata.filter(([n]) => n !== 'skärm: alla flikar');

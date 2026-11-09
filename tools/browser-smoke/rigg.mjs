@@ -98,7 +98,7 @@ export const FLIKAR = [
     ['loneoversyn', []],
     ['kon', ['#chart-kon-scatter', '#chart-kon-boxplot', '#chart-demo-hist']],
     ['utforska', ['#chart-explore']],
-    ['benchmark', ['#chart-jamforelse-spann', '#chart-jamforelse-avvikelse']],
+    ['benchmark', ['#chart-jamforelse-spann', '#chart-jamforelse-avvikelse', '#chart-jmf-statlage']],
     ['dokumentera', []],
     ['rapporttext', []],
     ['arbetet', []],

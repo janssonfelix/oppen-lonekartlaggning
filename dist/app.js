@@ -8058,7 +8058,7 @@ function statistikensMedianFor(statistik, grupper) {
 }
 
 /**
- * @param {Array<{yrke:string, bas:string, lon:number}>} rader
+ * @param {Array<{yrke:string, bas:string, lon:number, kon?:string}>} rader
  * @param {{statistik:Array, policyFor:(aid:string, bas:string)=>({p10?:number, med?:number, p90?:number}|null), k:number}} opt
  */
 function jamforelseRader(rader, { statistik = [], policyFor = () => null, k }) {
@@ -8067,19 +8067,22 @@ function jamforelseRader(rader, { statistik = [], policyFor = () => null, k }) {
         const aid = aidAvYrke(r.yrke);
         if (!perAid.has(aid)) perAid.set(aid, new Map());
         const perBas = perAid.get(aid);
-        if (!perBas.has(r.bas)) perBas.set(r.bas, { yrke: r.yrke, lons: [] });
-        perBas.get(r.bas).lons.push(r.lon);
+        if (!perBas.has(r.bas)) perBas.set(r.bas, { yrke: r.yrke, lons: [], kvinnor: 0 });
+        const g = perBas.get(r.bas);
+        g.lons.push(r.lon);
+        if (typeof r.kon === 'string' && r.kon.includes('kvinna')) g.kvinnor++;
     }
     const ut = [], utelamnade = [];
     for (const [aid, perBas] of perAid) {
         for (const bas of [...perBas.keys()].sort()) {
-            const { yrke, lons } = perBas.get(bas);
+            const { yrke, lons, kvinnor } = perBas.get(bas);
             if (lons.length < k) { utelamnade.push(`${aid} (BAS ${bas})`); continue; }
             const org = _tre(quantile(lons, 0.1), median(lons), quantile(lons, 0.9));
             const traff = statistikFor(statistik, aid, bas), s = traff?.rad;
             const p = policyFor(aid, bas);
             const stat = _tre(s?.p10, s?.median, s?.p90), pol = _tre(p?.p10, p?.med, p?.p90);
-            ut.push({ aid, yrke, bas, sektor: sektorsnamn(aid), n: lons.length, org, statistik: stat, stallningstagande: pol,
+            // kvAndel: andelen kvinnor i procent, för könsdominansen i Löneläget (samma räkning som bandkartan).
+            ut.push({ aid, yrke, bas, sektor: sektorsnamn(aid), n: lons.length, kvAndel: kvinnor / lons.length * 100, org, statistik: stat, stallningstagande: pol,
                 statistikMatchning: traff ? traff.matchning : null,
                 diff: { statistik: _diffar(org, stat), stallningstagande: _diffar(org, pol) } });
         }
@@ -10262,6 +10265,8 @@ function valideraFigur(figur, id = 'diagram') {
         // tillåtna (ritaren vidgar domänen, som skalDoman gör för min === max); omvänd domän ger omvänd skala.
         if (behoverFarg && !_fargdomanOk(figur.fargskala)) fel('fargskala: doman måste vara två ändliga tal');
         // Lådor ritas bara stående (kategorin på x, värdet på y): en liggande låda skulle annars godkännas men aldrig ritas.
+        // Ofylld (en ring utan fyllning) finns bara för punktsymbolerna med en yta: cirkel, romb och kvadrat.
+        if (l.ofylld != null && !(typeof l.ofylld === 'boolean' && l.marke === 'punkt' && (!l.symbol || ['cirkel', 'romb', 'kvadrat'].includes(l.symbol)))) fel(`lager ${i}: ofylld måste vara true eller false och gäller bara punkt med symbolen cirkel, romb eller kvadrat`);
         if (l.monster != null && !(l.marke === 'stapel' && (l.monster === 'linjer' || l.monster === 'prickar'))) fel(`lager ${i}: monster måste vara "linjer" eller "prickar" och gäller bara stapel`);
         if (l.marke === 'lada' && l.riktning === 'liggande') fel(`lager ${i}: lada stöder bara stående riktning`);
         if (l.marke === 'lada' && l.form != null && !['fiol', 'regnmoln', 'kvantiler'].includes(l.form)) fel(`lager ${i}: form måste vara "fiol", "regnmoln" eller "kvantiler"`);
@@ -11059,6 +11064,11 @@ function _rfSymbol(g, symbol, x, y, r, farg) {
         : g.append('circle').attr('cx', x).attr('cy', y).attr('r', r);
     return m.attr('fill', farg).attr('stroke', FARG.vit).attr('stroke-width', 1);
 }
+// En ofylld symbol (lagrets `ofylld`): en ring i seriens färg utan fyllning — en andra status i samma färg, som
+// fylld/ofylld för matchningsnivån. Ringens inre tar ändå emot pekaren (`visible`), som en fylld punkt.
+function _rfOfylld(m, farg) {
+    return m.attr('fill', 'none').attr('stroke', farg).attr('stroke-width', 1.75).attr('pointer-events', 'visible');
+}
 
 function _rfPunkt(g, l, li, c) {
     const ys = c.yFor(l);
@@ -11116,7 +11126,8 @@ function _rfPunkt(g, l, li, c) {
             if (c.punktetiketter) c.punktetiketter.push({ t, y: ty, hojd: fpx + 3, over: !sida && ty < y, x0: sida < 0 ? tx - tb : sida > 0 ? tx : tx - tb / 2, x1: sida < 0 ? tx : sida > 0 ? tx + tb : tx + tb / 2 });
         }
         if (l.opacitet != null) m.attr('fill-opacity', l.opacitet);
-        if (l.kant) m.attr('stroke', l.kant).attr('stroke-width', 1);
+        if (l.ofylld) _rfOfylld(m, farg);
+        else if (l.kant) m.attr('stroke', l.kant).attr('stroke-width', 1);
         if (d.liten) {
             // Mer än färg: streckad kant. Strecket har ingen yta, så det blir självt streckat och behåller färgen.
             if (l.symbol === 'streck') m.attr('stroke-dasharray', '3 2');
@@ -11861,7 +11872,7 @@ function _rfRitaLegend(svg, L, syn, px, H, notRader) {
             .attr('opacity', dold_ ? 0.4 : 1);
         const f = p.l.farg || PALETTE.serie[p.li % PALETTE.serie.length];
         if (p.l.marke === 'linje') g.append('line').attr('x1', 0).attr('x2', 12).attr('y1', -4).attr('y2', -4).attr('stroke', f).attr('stroke-width', 2.5);
-        else if (p.l.marke === 'punkt' && (!p.l.symbol || p.l.symbol === 'cirkel' || p.l.symbol === 'romb' || p.l.symbol === 'kvadrat')) _rfSymbol(g, p.l.symbol, 6, -4, 5, f).attr('data-prov', 'punkt');
+        else if (p.l.marke === 'punkt' && (!p.l.symbol || p.l.symbol === 'cirkel' || p.l.symbol === 'romb' || p.l.symbol === 'kvadrat')) (p.l.ofylld ? _rfOfylld(_rfSymbol(g, p.l.symbol, 6, -4, 5, f), f) : _rfSymbol(g, p.l.symbol, 6, -4, 5, f)).attr('data-prov', 'punkt');
         else if (p.l.marke === 'punkt' && p.l.symbol === 'streck') g.append('line').attr('data-prov', 'punkt').attr('x1', 6).attr('x2', 6).attr('y1', -10).attr('y2', 2).attr('stroke', f).attr('stroke-width', 2.5);
         else {
             g.append('rect').attr('x', 0).attr('y', -10).attr('width', 12).attr('height', 12).attr('rx', 2).attr('fill', f);
@@ -18167,6 +18178,9 @@ function _rensaAllData({ inbakat = true } = {}) {
     if (pagKort) pagKort.hidden = true;
     const agKort = document.getElementById('att-gora');
     if (agKort) agKort.hidden = true;
+    // Löneläget, Överblick: bandkartans och statistikspannets kort (diagrammen är redan rensade ovan).
+    for (const id of ['lp-bandkarta-kort', 'jmf-statlage-kort']) { const kort = document.getElementById(id); if (kort) kort.hidden = true; }
+    { const t = document.getElementById('lp-bandkarta-forklaring'); if (t) t.textContent = ''; }
     if (typeof ovRitaLage === 'function') ovRitaLage();   // Översikt blir åter en uppladdningssida
     ['underlagets-kvalitet-status','underlagets-kvalitet-rader'].forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = ''; });
 
@@ -19537,7 +19551,7 @@ function _renderTabContent(target) {
         const s = document.getElementById("bas-select-kon"); if (s) renderKon(/** @type {HTMLInputElement} */ (s).value); renderLifecycleAnalysis();
         const s2 = document.getElementById("bas-select-demo"); if (s2) renderDemografi(/** @type {HTMLInputElement} */ (s2).value);
     }
-    else if (target === "benchmark"    && d.length) { renderReferensOverblick(); renderLonepolitik(); generateBenchmark(); }
+    else if (target === "benchmark"    && d.length) { renderReferensOverblick(); renderLonepolitik(); renderStatistikLage(); generateBenchmark(); }
     else if (target === "matrix"       && d.length) { generateEUDirectiveMatrix(); renderPersonerAttGranska(); renderAidBasLika(); renderLikaArbeteTopp(); }
     else if (target === "prioritering" && d.length) renderPrioritering();
     else if (target === "struktur"     && d.length) { renderStructure(); generateSkevhet(); renderBlinderOaxacaCard(renderRegressionCard()); renderGapUppdelning(); renderLonestrukturNycklar(); }
@@ -24947,6 +24961,55 @@ function _jmfAvvikelseFigur(visa, kalla, namn) {
             streck('Skillnad i P10', FARG.blek, 'p10'), streck('Skillnad i P90', PALETTE.semantic.mork, 'p90'),
             { marke: 'punkt', serie: 'Skillnad i median', farg: PALETTE.serie[0], storlek: 6,
               data: visa.filter(r => diff(r, 'median') != null).map(r => ({ ...bas(r), x: diff(r, 'median'), r })), tips: d => tipsRad(d.r) }
+        ].filter(l => l.data.length) };
+}
+
+// ---- Överblicken: var ligger yrkesgrupperna i statistikens spann? ----
+// Kortet står i avsnittet Överblick, under bandkartan (src/index.html, #jmf-statlage-kort). Samma rader som tabellen mot
+// statistiken (jamforelseUnderlag: grupper under tröskeln finns inte i raderna), men utan tabellens filter på BAS och
+// sektor: överblicken visar hela underlaget. En punkt per yrkesgrupp med P10 och P90 i statistiken.
+function renderStatistikLage() {
+    const kort = document.getElementById('jmf-statlage-kort'), el = document.getElementById('chart-jmf-statlage');
+    if (!kort || !el) return;
+    if (!state.statistik.length || !getData().length) { rensaFigur(el); kort.hidden = true; return; }
+    kort.hidden = false;
+    const rader = jamforelseUnderlag().rader.filter(r => _rrLage(r.org.median, r.statistik).pos != null);
+    if (!rader.length) {
+        _lpIngetDiagram(el, 'Jämförelsestatistiken har inte P10 och P90 för någon yrkesgrupp i underlaget, så läget i statistikens spann kan inte visas. Medianerna står under Mot jämförelsestatistiken.');
+        return;
+    }
+    ritaFigur(el, _jmfStatlageFigur(rader), { hojd: 460 });
+}
+
+// Statistikspannets figur (diagramkärnan, ADR-39), byggd som bandkartan: x är BAS-intervallet, y läget för yrkesgruppens
+// median i statistikens spann (0 = P10, 100 = P90, linjärt; utanför spannet under 0 och över 100). Statistikens spann
+// är ett grått band 0–100 per BAS. Punkterna har bandkartans färger för könsdominans och dess förskjutning; matchningen
+// syns i punkten: fylld = AID + BAS, ofylld = Endast AID (lagrets `ofylld`). Raderna når tröskeln (jamforelseUnderlag).
+function _jmfStatlageFigur(rader) {
+    const x = r => 'BAS ' + r.bas, kr = v => _figTalformat(v, 'kr'), utanKr = v => (v == null ? '–' : _figTalformat(v, 'kr', { enhet: false }));
+    const ordning = [...new Set(rader.map(x))];
+    const pts = rader.map(r => ({ x: x(r), y: _rrLage(r.org.median, r.statistik).pos, forskjutning: _lpForskjutning(r.aid, r.bas),
+        storlek: Math.max(3.5, Math.min(9, Math.sqrt(r.n) * 1.1)), aid: r.aid, bas: r.bas, yrke: r.yrke, n: r.n, kvAndel: r.kvAndel,
+        median: r.org.median, stat: r.statistik, matchning: r.statistikMatchning, markering: markeringFor(r.bas, r.aid) }));
+    const tips = d => [[d.yrke], ['BAS', d.bas], ['Läget i spannet', `${svTal(d.y, 0)} %`], ['Organisationens median', kr(d.median)],
+        ['Statistiken', `P10 ${utanKr(d.stat.p10)} · median ${utanKr(d.stat.median)} · P90 ${kr(d.stat.p90)}`],
+        ['Matchning', _jfMatchningEtikett(d.matchning)], ['Kvinnor', _figTalformat(d.kvAndel, 'antal') + ' %'], ['Antal', String(d.n)]];
+    // Sex lager: tre klasser för könsdominans, var och en fylld (AID + BAS) och ofylld (Endast AID). Serienamnet bär
+    // matchningen, så att förklaringen och diagramdatan säger den med samma ord som tabellen.
+    const punktlager = _lpKonsdominans().flatMap(([klass, farg, hor]) => /** @type {Array<['aid-bas'|'aid', boolean]>} */ ([['aid-bas', false], ['aid', true]])
+        .map(([matchning, ofylld]) => ({ marke: 'punkt', serie: `${klass} · ${_jfMatchningEtikett(matchning)}`, farg,
+            ...(ofylld ? { ofylld: true } : { kant: FARG.vit }), data: pts.filter(p => p.matchning === matchning && hor(p.kvAndel)), tips })));
+    const linje = (y, etikett) => ({ typ: 'linje', y, streck: 'streckad', farg: PALETTE.semantic.referens, tjocklek: 1, etikett, textfarg: PALETTE.semantic.referens });
+    return { beskrivning: 'Var varje yrkesgrupps medianlön ligger i jämförelsestatistikens spann per BAS-intervall: 0 är statistikens P10 och 100 dess P90. '
+            + 'Fylld punkt: statistiken matchad på AID och BAS. Ofylld punkt: endast AID. Hela underlaget, oberoende av filtren under Mot jämförelsestatistiken; '
+            + 'läget räknas ur P10, median och P90 i tabellen där.',
+        x: { skala: 'band', ordning }, y: { skala: 'linjar', titel: 'Läget i statistikens spann (%)' },
+        referens: [linje(0, 'P10'), linje(100, 'P90')],
+        lager: [
+            // Spannet bär inga värden (0 och 100 i varje BAS) och får därför inga rader i diagramdatan.
+            { marke: 'intervall', serie: 'Statistikens spann (P10–P90)', farg: PALETTE.semantic.spann, tjocklek: 14, legend: false, utanData: true,
+              data: ordning.map(b => ({ x: b, lag: 0, hog: 100 })) },
+            ...punktlager
         ].filter(l => l.data.length) };
 }
 
@@ -32688,6 +32751,8 @@ function renderLonepolitik() {
     const rubrik = document.getElementById('lonepolitik-rubrik');
     if (rubrik) rubrik.textContent = `Lönerna mot ${referensNamn()}`;
     const model = buildLonepolitikModel();
+    // Bandkartan står i Löneläget överst, i avsnittet Överblick, och syns när ett ställningstagande finns.
+    _lpBandkartaKort(model);
 
     if (!model.hasPolicy || !model.byBas.length) {
         _lpRitaTopp(null);
@@ -32719,15 +32784,13 @@ function renderLonepolitik() {
             ${innehall}</details>`;
     };
     const lage = _lpRitaTopp(model);
-    const [bandkarta, konsposition, efterlevnad] = _lpChartShellsHtml();
-    wrap.innerHTML = bandkarta + `<p class="avsnitt-rubrikrad">Fördjupning</p>`
-        + avsnitt('tabell', 'Yrkesgrupper mot sitt spann', 'Var varje grupps median ligger i spannet, och hur många som ligger under',
+    const [konsposition, efterlevnad] = _lpChartShellsHtml();
+    wrap.innerHTML = avsnitt('tabell', 'Yrkesgrupper mot sitt spann', 'Var varje grupps median ligger i spannet, och hur många som ligger under',
             `${lage.provade} yrkesgrupper`, _lpTableHtml(model))
         + avsnitt('kon', 'Könsposition i bandet', 'Placeras kvinnor lägre i samma lönespann än män?', '', konsposition)
         + avsnitt('efterlevnad', 'Efterlevnad', 'Andel under, inom eller över eget spann per BAS-intervall', '', efterlevnad)
         + avsnitt('tackning', 'Täckningsgrad', 'Hur mycket av personalen har en policyreferens?', svPct(model.coverage.personsPct, 0), _lpCoverageHtml(model));
 
-    _lpRenderBandMap(model);
     _lpRenderGenderPosition(model);
     _lpRitaKonLagen(model);
     _lpRenderCompliance(model);
@@ -32754,15 +32817,21 @@ function _lpCoverageHtml(model) {
     </div>`;
 }
 
+// Bandkartans kort i avsnittet Överblick (src/index.html, #lp-bandkarta-kort): synligt när ett ställningstagande finns.
+// Matchar ställningstagandet inte underlaget står ett meddelande i kortet, så att överblicken aldrig blir en tom rubrik.
+function _lpBandkartaKort(model) {
+    const kort = document.getElementById('lp-bandkarta-kort'), el = document.getElementById('chart-lp-bandmap');
+    if (!kort || !el) return;
+    if (!model.hasPolicy) { rensaFigur(el); el.innerHTML = ''; kort.hidden = true; return; }
+    kort.hidden = false;
+    const forklaring = document.getElementById('lp-bandkarta-forklaring');
+    if (forklaring) forklaring.textContent = `Grå stapel = ${referensKortnamn()}:s P10–P90. Streck i den = referensens median. Blå stapel = organisationens faktiska P10–P90 (bara BAS med minst ${kTroskel()} personer). Punkt = yrkesgruppens median: kvinnodominerad, mansdominerad eller blandad.`;
+    if (!model.byBas.length) { _lpIngetDiagram(el, 'Ställningstagandet har inga rader för underlagets BAS-intervall eller yrken.'); return; }
+    _lpRenderBandMap(model);
+}
+
 function _lpChartShellsHtml() {
     return [`
-    <div class="card mb-16">
-        <div class="chart-header rad-bryt-mitt gap-12 mellan marg-b-8">
-            <h3 class="fs-lg marg-0">Bandkartan — var ligger varje yrkesgrupp i sitt spann?</h3>
-            <span class="text-dampad-xs">Grå stapel = ${esc(referensKortnamn())}:s P10–P90. Streck i den = referensens median. Blå stapel = organisationens faktiska P10–P90 (bara BAS med minst ${kTroskel()} personer). Punkt = yrkesgruppens median: kvinnodominerad, mansdominerad eller blandad.</span>
-        </div>
-        <div id="chart-lp-bandmap"></div>
-    </div>`, `
     <div class="card mb-16">
         <p class="reg-caveat-inline">Ett lägre läge i bandet är ett <strong>fynd att förklara</strong> — inte ett konstaterat fel.
         Nyanställning, tillfällig placering och erfarenhet kan alla ligga bakom.</p>
@@ -32820,6 +32889,15 @@ function _lpRenderBandMap(model) {
     ritaFigur(el, _lpBandkartaFigur(bas), { hojd: 460 });
 }
 
+// Yrkesgruppernas könsdominans efter andelen kvinnor i procent: namn, färg och villkor. Bandkartan och statistikens
+// spann i Löneläget (42-jamforelse.js) delar klasserna, så att samma färg betyder samma sak i båda.
+/** @returns {Array<[string, string, (a: number) => boolean]>} */
+function _lpKonsdominans() {
+    return [['Kvinnodominerad', PALETTE.kon.kvinna, a => a >= 60], ['Mansdominerad', PALETTE.kon.man, a => a <= 40], ['Blandad', PALETTE.semantic.neutral, a => a > 40 && a < 60]];
+}
+// Punktens förskjutning i sidled ur gruppens identitet, inte slump: punkterna ska ligga still mellan omritningar.
+function _lpForskjutning(aid, bas) { return ((_rngHashSeed(aid + '|' + bas) % 1000) / 1000 - 0.5) * 0.36; }
+
 // Bandkartans figur (diagramkärnan, ADR-39): referensens spann och organisationens faktiska spann per BAS som märket
 // `intervall`, med varje yrkesgrupps median som punkt.
 // Organisationens spann finns bara för BAS med minst k personer (`b.orgBand`), och punkterna bara för grupper på full
@@ -32833,8 +32911,7 @@ function _lpBandkartaFigur(bas) {
     bas.forEach(b => b.groups.forEach(g => {
         if (g.tier !== 'full' || !g.stats || !g.pol) return;
         const kvAndel = g.rows.filter(r => typeof r.kon === 'string' && r.kon.includes('kvinna')).length / g.n * 100;
-        // Förskjutningen härleds ur gruppens identitet, inte slump — punkterna ska ligga still mellan omritningar.
-        pts.push({ x: x(b), y: g.stats.median, forskjutning: ((_rngHashSeed(g.aid + '|' + g.bas) % 1000) / 1000 - 0.5) * 0.36,
+        pts.push({ x: x(b), y: g.stats.median, forskjutning: _lpForskjutning(g.aid, g.bas),
                    storlek: Math.max(3.5, Math.min(9, Math.sqrt(g.n) * 1.1)), kvAndel, n: g.n, yrke: g.yrke, bas: b.bas, niva: g.level || '—', markering: markeringFor(b.bas, g.aid) });
     }));
     return { beskrivning: 'Referensens lönespann och organisationens faktiska lönespann per BAS-intervall, med varje yrkesgrupps median inlagd som punkt. Samma värden finns i tabellen nedan.',
@@ -32849,8 +32926,7 @@ function _lpBandkartaFigur(bas) {
               tips: d => [[d.x], ['Organisationen', `P10 ${utanKr(d.lag)} · median ${utanKr(d.med)} · P90 ${kr(d.hog)}`], ['Antal', String(d.n)]] },
             // Yrkesgrupperna i tre klasser efter könsfördelning (som i Likvärdigt arbete) i stället för en färgskala:
             // tre färger går att läsa mot spannen, en glidande skala gör det inte.
-            .../** @type {Array<[string, string, (a: number) => boolean]>} */ ([['Kvinnodominerad yrkesgrupp', PALETTE.kon.kvinna, a => a >= 60], ['Mansdominerad yrkesgrupp', PALETTE.kon.man, a => a <= 40], ['Blandad yrkesgrupp', PALETTE.semantic.neutral, a => a > 40 && a < 60]])
-                .map(([serie, farg, hor]) => ({ marke: 'punkt', serie, farg, kant: FARG.vit, data: pts.filter(p => hor(p.kvAndel)),
+            ..._lpKonsdominans().map(([klass, farg, hor]) => ({ marke: 'punkt', serie: `${klass} yrkesgrupp`, farg, kant: FARG.vit, data: pts.filter(p => hor(p.kvAndel)),
                     tips: d => [[d.yrke], [`BAS ${d.bas}`, `median ${kr(d.y)}`], ['Kvinnor', _figTalformat(d.kvAndel, 'antal') + ' %'], ['Referens', d.niva], ['Antal', String(d.n)]] }))
         ].filter(l => l.data.length) };
 }
@@ -34498,13 +34574,14 @@ const SOK_FUNKTIONER = [
     { namn: 'Analys på individnivå', synonymer: ['arbetslista', 'för litet', 'små grupper'], flik: 'matrix', avsnitt: 'avsnitt-la-individ' },
     { namn: 'Så räknas det', synonymer: ['metod', 'beräkning', 'begrepp', 'lika arbete'], flik: 'matrix', avsnitt: 'avsnitt-la-metod' },
     // Löneläget
-    { namn: 'Överblick — löneläget och statistiken mot ställningstagandet', synonymer: ['löneläge', 'överblick'], flik: 'benchmark', avsnitt: 'avsnitt-jmf-overblick' },
-    { namn: 'Mot ställningstagandet', synonymer: ['lönepolitik', 'bandkarta', 'spann', 'referens'], flik: 'benchmark', avsnitt: 'avsnitt-jmf-stallningstagande' },
+    { namn: 'Överblick — lönerna mot ställningstagandet och statistiken', synonymer: ['löneläge', 'överblick', 'bandkarta', 'statistikens spann', 'matchning', 'fylld', 'ofylld'], flik: 'benchmark', avsnitt: 'avsnitt-jmf-bandkartor' },
+    { namn: 'Mot ställningstagandet', synonymer: ['lönepolitik', 'spann', 'referens'], flik: 'benchmark', avsnitt: 'avsnitt-jmf-stallningstagande' },
     { namn: 'Yrkesgrupper mot sitt spann', synonymer: ['spann', 'lönespann', 'under spannet', 'ställningstagandet per yrkesgrupp'], flik: 'benchmark', avsnitt: 'avsnitt-lp-tabell' },
     { namn: 'Könsposition i bandet', synonymer: ['könsposition', 'band', 'spannets tredjedelar', 'läge i spannet'], flik: 'benchmark', avsnitt: 'avsnitt-lp-kon' },
     { namn: 'Efterlevnad', synonymer: ['efterlevnad', 'under spann', 'inom spann', 'över spann'], flik: 'benchmark', avsnitt: 'avsnitt-lp-efterlevnad' },
     { namn: 'Täckningsgrad', synonymer: ['täckning', 'täckningsgrad', 'policyreferens'], flik: 'benchmark', avsnitt: 'avsnitt-lp-tackning' },
     { namn: 'Mot jämförelsestatistiken', synonymer: ['statistik', 'marknad', 'p10', 'p90', 'benchmark'], flik: 'benchmark', avsnitt: 'avsnitt-jmf-statistik' },
+    { namn: 'Yrkesgrupp för yrkesgrupp — löneläget och statistiken mot ställningstagandet', synonymer: ['per yrkesgrupp', 'mönster', 'förslag på referens', 'hantel'], flik: 'benchmark', avsnitt: 'avsnitt-jmf-overblick' },
     // Prioritering
     { namn: 'Åtgärdslistan', synonymer: ['prioritering', 'prioritet', 'börja här'], flik: 'prioritering', avsnitt: 'avsnitt-pr-lista' },
     { namn: 'Vad kostar det att åtgärda?', synonymer: ['kostnad', 'lyfta grupper'], flik: 'prioritering', avsnitt: 'avsnitt-pr-kostnad' },

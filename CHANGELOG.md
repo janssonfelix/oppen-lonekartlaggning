@@ -20,6 +20,16 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   oavsett BAS. Nu används aldrig en rad för ett annat BAS-intervall; Ålder & karriär slår upp varje AID×BAS-grupp
   och tar medianen av de matchade medianerna.
 
+- **Löneläget börjar med en överblick.** Fliken har nu fyra avsnitt i ordningen *Överblick*, *Mot
+  ställningstagandet*, *Mot jämförelsestatistiken* och *Yrkesgrupp för yrkesgrupp*. Överblicken är öppen och har
+  bandkartan (flyttad hit från avsnittet mot ställningstagandet) och ett nytt diagram, *Var ligger yrkesgrupperna i
+  statistikens spann?*: en punkt per yrkesgrupp med P10 och P90 i statistiken, läget i procent av statistikens
+  spann (0 = P10, 100 = P90) per BAS-intervall, med bandkartans färger för könsdominans. Fylld punkt betyder att
+  statistiken matchades på AID och BAS, ofylld att den matchades på endast AID. Diagrammet visar hela underlaget,
+  oberoende av filtren i avsnittet mot statistiken, och bara grupper som når minsta gruppstorlek. Utan P10 och P90
+  står ett meddelande i stället. Det förra avsnittet *Överblick* heter nu *Yrkesgrupp för yrkesgrupp* och är stängt
+  från början. Diagramkärnan har fått punkter utan fyllning (`ofylld` på ett punktlager).
+
 - **Sakliga skäl som strukturerad post.** Varje rad i Handlingsplan har knappen *Sakliga skäl*. Dialogen tar emot
   högst 8 skäl per grupp med kategori (Marknad, Utbildning, Erfarenhet, Prestation och resultat, Övergång, Annat
   sakligt skäl), belopp i kronor per månad och en kort kommentar. Den räknar ihop förklarat och återstående belopp och

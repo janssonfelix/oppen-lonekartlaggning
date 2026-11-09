@@ -95,6 +95,8 @@ function renderLonepolitik() {
     const rubrik = document.getElementById('lonepolitik-rubrik');
     if (rubrik) rubrik.textContent = `Lönerna mot ${referensNamn()}`;
     const model = buildLonepolitikModel();
+    // Bandkartan står i Löneläget överst, i avsnittet Överblick, och syns när ett ställningstagande finns.
+    _lpBandkartaKort(model);
 
     if (!model.hasPolicy || !model.byBas.length) {
         _lpRitaTopp(null);
@@ -126,15 +128,13 @@ function renderLonepolitik() {
             ${innehall}</details>`;
     };
     const lage = _lpRitaTopp(model);
-    const [bandkarta, konsposition, efterlevnad] = _lpChartShellsHtml();
-    wrap.innerHTML = bandkarta + `<p class="avsnitt-rubrikrad">Fördjupning</p>`
-        + avsnitt('tabell', 'Yrkesgrupper mot sitt spann', 'Var varje grupps median ligger i spannet, och hur många som ligger under',
+    const [konsposition, efterlevnad] = _lpChartShellsHtml();
+    wrap.innerHTML = avsnitt('tabell', 'Yrkesgrupper mot sitt spann', 'Var varje grupps median ligger i spannet, och hur många som ligger under',
             `${lage.provade} yrkesgrupper`, _lpTableHtml(model))
         + avsnitt('kon', 'Könsposition i bandet', 'Placeras kvinnor lägre i samma lönespann än män?', '', konsposition)
         + avsnitt('efterlevnad', 'Efterlevnad', 'Andel under, inom eller över eget spann per BAS-intervall', '', efterlevnad)
         + avsnitt('tackning', 'Täckningsgrad', 'Hur mycket av personalen har en policyreferens?', svPct(model.coverage.personsPct, 0), _lpCoverageHtml(model));
 
-    _lpRenderBandMap(model);
     _lpRenderGenderPosition(model);
     _lpRitaKonLagen(model);
     _lpRenderCompliance(model);
@@ -161,15 +161,21 @@ function _lpCoverageHtml(model) {
     </div>`;
 }
 
+// Bandkartans kort i avsnittet Överblick (src/index.html, #lp-bandkarta-kort): synligt när ett ställningstagande finns.
+// Matchar ställningstagandet inte underlaget står ett meddelande i kortet, så att överblicken aldrig blir en tom rubrik.
+function _lpBandkartaKort(model) {
+    const kort = document.getElementById('lp-bandkarta-kort'), el = document.getElementById('chart-lp-bandmap');
+    if (!kort || !el) return;
+    if (!model.hasPolicy) { rensaFigur(el); el.innerHTML = ''; kort.hidden = true; return; }
+    kort.hidden = false;
+    const forklaring = document.getElementById('lp-bandkarta-forklaring');
+    if (forklaring) forklaring.textContent = `Grå stapel = ${referensKortnamn()}:s P10–P90. Streck i den = referensens median. Blå stapel = organisationens faktiska P10–P90 (bara BAS med minst ${kTroskel()} personer). Punkt = yrkesgruppens median: kvinnodominerad, mansdominerad eller blandad.`;
+    if (!model.byBas.length) { _lpIngetDiagram(el, 'Ställningstagandet har inga rader för underlagets BAS-intervall eller yrken.'); return; }
+    _lpRenderBandMap(model);
+}
+
 function _lpChartShellsHtml() {
     return [`
-    <div class="card mb-16">
-        <div class="chart-header rad-bryt-mitt gap-12 mellan marg-b-8">
-            <h3 class="fs-lg marg-0">Bandkartan — var ligger varje yrkesgrupp i sitt spann?</h3>
-            <span class="text-dampad-xs">Grå stapel = ${esc(referensKortnamn())}:s P10–P90. Streck i den = referensens median. Blå stapel = organisationens faktiska P10–P90 (bara BAS med minst ${kTroskel()} personer). Punkt = yrkesgruppens median: kvinnodominerad, mansdominerad eller blandad.</span>
-        </div>
-        <div id="chart-lp-bandmap"></div>
-    </div>`, `
     <div class="card mb-16">
         <p class="reg-caveat-inline">Ett lägre läge i bandet är ett <strong>fynd att förklara</strong> — inte ett konstaterat fel.
         Nyanställning, tillfällig placering och erfarenhet kan alla ligga bakom.</p>
@@ -227,6 +233,15 @@ function _lpRenderBandMap(model) {
     ritaFigur(el, _lpBandkartaFigur(bas), { hojd: 460 });
 }
 
+// Yrkesgruppernas könsdominans efter andelen kvinnor i procent: namn, färg och villkor. Bandkartan och statistikens
+// spann i Löneläget (42-jamforelse.js) delar klasserna, så att samma färg betyder samma sak i båda.
+/** @returns {Array<[string, string, (a: number) => boolean]>} */
+function _lpKonsdominans() {
+    return [['Kvinnodominerad', PALETTE.kon.kvinna, a => a >= 60], ['Mansdominerad', PALETTE.kon.man, a => a <= 40], ['Blandad', PALETTE.semantic.neutral, a => a > 40 && a < 60]];
+}
+// Punktens förskjutning i sidled ur gruppens identitet, inte slump: punkterna ska ligga still mellan omritningar.
+function _lpForskjutning(aid, bas) { return ((_rngHashSeed(aid + '|' + bas) % 1000) / 1000 - 0.5) * 0.36; }
+
 // Bandkartans figur (diagramkärnan, ADR-39): referensens spann och organisationens faktiska spann per BAS som märket
 // `intervall`, med varje yrkesgrupps median som punkt.
 // Organisationens spann finns bara för BAS med minst k personer (`b.orgBand`), och punkterna bara för grupper på full
@@ -240,8 +255,7 @@ function _lpBandkartaFigur(bas) {
     bas.forEach(b => b.groups.forEach(g => {
         if (g.tier !== 'full' || !g.stats || !g.pol) return;
         const kvAndel = g.rows.filter(r => typeof r.kon === 'string' && r.kon.includes('kvinna')).length / g.n * 100;
-        // Förskjutningen härleds ur gruppens identitet, inte slump — punkterna ska ligga still mellan omritningar.
-        pts.push({ x: x(b), y: g.stats.median, forskjutning: ((_rngHashSeed(g.aid + '|' + g.bas) % 1000) / 1000 - 0.5) * 0.36,
+        pts.push({ x: x(b), y: g.stats.median, forskjutning: _lpForskjutning(g.aid, g.bas),
                    storlek: Math.max(3.5, Math.min(9, Math.sqrt(g.n) * 1.1)), kvAndel, n: g.n, yrke: g.yrke, bas: b.bas, niva: g.level || '—', markering: markeringFor(b.bas, g.aid) });
     }));
     return { beskrivning: 'Referensens lönespann och organisationens faktiska lönespann per BAS-intervall, med varje yrkesgrupps median inlagd som punkt. Samma värden finns i tabellen nedan.',
@@ -256,8 +270,7 @@ function _lpBandkartaFigur(bas) {
               tips: d => [[d.x], ['Organisationen', `P10 ${utanKr(d.lag)} · median ${utanKr(d.med)} · P90 ${kr(d.hog)}`], ['Antal', String(d.n)]] },
             // Yrkesgrupperna i tre klasser efter könsfördelning (som i Likvärdigt arbete) i stället för en färgskala:
             // tre färger går att läsa mot spannen, en glidande skala gör det inte.
-            .../** @type {Array<[string, string, (a: number) => boolean]>} */ ([['Kvinnodominerad yrkesgrupp', PALETTE.kon.kvinna, a => a >= 60], ['Mansdominerad yrkesgrupp', PALETTE.kon.man, a => a <= 40], ['Blandad yrkesgrupp', PALETTE.semantic.neutral, a => a > 40 && a < 60]])
-                .map(([serie, farg, hor]) => ({ marke: 'punkt', serie, farg, kant: FARG.vit, data: pts.filter(p => hor(p.kvAndel)),
+            ..._lpKonsdominans().map(([klass, farg, hor]) => ({ marke: 'punkt', serie: `${klass} yrkesgrupp`, farg, kant: FARG.vit, data: pts.filter(p => hor(p.kvAndel)),
                     tips: d => [[d.yrke], [`BAS ${d.bas}`, `median ${kr(d.y)}`], ['Kvinnor', _figTalformat(d.kvAndel, 'antal') + ' %'], ['Referens', d.niva], ['Antal', String(d.n)]] }))
         ].filter(l => l.data.length) };
 }
