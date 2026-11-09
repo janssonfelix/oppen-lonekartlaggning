@@ -1,6 +1,6 @@
 # Risk- och sårbarhetsanalys (dataskydd och informationssäkerhet) — Öppen lönekartläggning
 
-**Bygge:** `2026.11.05` · **Artefakt-SHA-256:** `ec49e5249505ed0341964b76bb0ad805f5f941b83f0e41a1eee209b6df7eec28` (se `dist/RELEASE.txt`).
+**Bygge:** `2026.11.05` · **Artefakt-SHA-256:** `8335147245ece732235c3068da84788f5cc9b3f00c62173f178b0898d7a88c6b` (se `dist/RELEASE.txt`).
 **Granskningsdatum:** 2026-11-07.
 **Granskningsmetod:** kodläsning påstående för påstående + statisk sökning i källkod och bygge +
 körning av det byggda verktyget i jsdom och i Chromium (utan nätverk) med syntetiska testfiler.
@@ -381,6 +381,11 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   - årsbokslutet i konfigurationsfilen (med lönespridningen per yrkesgrupp och BAS-intervall)
   - rapportens bilaga med gruppdossierer (Word-utkastet och utskriften med bilagan vald)
   - importprofilerna (*Exportera JSON* och konfigurationsfilens fält, prövade som utdata utan lönemått)
+  - statistikens matchning i Löneläget (sammanfattningen och *Beräkning & urval* i exportläget; kolumnen
+    *Matchning* i tabellernas CSV, Excelfilerna, jämförelseexporten och rapportunderlagets block *Lönerna mot
+    referenserna*)
+  - diagrammet över statistikens spann i Löneläget (*Överblick*, `chart-jmf-statlage`): diagramdatan ska ha en rad per
+    grupp som når tröskeln, med matchningen i serienamnet
   - Att göra-punkterna.
 
   PDF-rapporten ritas ur samma rapportmodell som Word-utkastet. **Inte prövat av invarianten:**
@@ -467,6 +472,21 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   referenserna* och blocket i rapportunderlaget bygger alltså bara på grupper som når den. Referensernas egna tal och tabellen
   statistiken mot ställningstagandet bär inga organisationsvärden och maskeras inte. Könsuppdelade mått förekommer
   inte. Vaktas av `tests/smoke-referenser.test.js`.
+- **Löneläget, statistikens matchning:** kolumnen *Matchning* (AID + BAS, Endast AID, –) i tabellen mot
+  jämförelsestatistiken, i detaljlistan, i Excelfilerna (alla flikar, bladet *Referenser* och den samlade
+  jämförelseexporten), i rapportens tabell, i rapportunderlagets block *Lönerna mot referenserna* och i utskriften,
+  och sammanfattningen ovanför tabellen med antalet yrkesgrupper per matchningsnivå (också i *Beräkning & urval*).
+  Utdatan säger bara hur statistiken matchades och hur många grupper som matchades; den bär inga lönemått. Den
+  gäller samma rader som tabellen, så grupper under tröskeln syns inte och räknas inte. Vaktas av
+  `tests/ktroskel-invarianter.test.js`, `tests/smoke-jamforelse.test.js` och `tests/smoke-referenser.test.js`.
+- **Löneläget, överblickens diagram över statistikens spann** (`chart-jmf-statlage`): en punkt per yrkesgrupp
+  AID×BAS med läget för organisationens median i statistikens spann (0 = P10, 100 = P90), med tips (yrke, BAS,
+  läget, organisationens median, statistikens P10, median och P90, matchning, andel kvinnor, antal), bild och
+  diagramdata. Diagrammet läser samma rader som tabellen mot jämförelsestatistiken (`jamforelseUnderlag`), som
+  utesluter grupper under tröskeln, och visar inget som inte står i tabellen och bandkartan: läget räknas ur
+  tabellens median, P10 och P90, och andelen kvinnor visas på samma sätt i bandkartans tips. Filtren på BAS och
+  sektor gäller inte diagrammet. Vaktas av `tests/ktroskel-invarianter.test.js` (diagramdatan i exportläget vid 10
+  och 25) och `tests/smoke-jamforelse.test.js` (bara grupper som når tröskeln, fylld och ofylld punkt).
 - **Löneläget, avsnittet mot ställningstagandet:** i exportläget har avsnittet en mellannivå. För en yrkesgrupp
   med minst 5 men färre än tröskeln anges bara antal. Under 5 maskeras gruppen helt och namnges i en not.
   Lönemått och läget per kön kräver tröskeln. Bladet *Lönepolitik* i Excelfilen med alla flikar (och i ZIP-filens
@@ -595,6 +615,11 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   eller grupp; inga namn eller identifierare) och ska hanteras som personuppgifter." (beslut
   2026-10-16). Lådorna i Tabeller och egna vyer (individpunkter, punktsvärm, regnmoln) exporteras som
   statistik per grupp, aldrig som individer. Sådana filer ska hanteras som personuppgifter (§8, punkt 1).
+- **Diagrammens BAS-urval** (knapparna ovanför diagrammen där BAS-intervallet är en dimension) skapar ingen ny
+  utdata: det döljer bara märken på skärmen och räknar inte om något tal. Diagrammets egen exportmeny (PNG/SVG)
+  kan visa samma urval och säger det då i fotraden ("Dolt i diagrammet: BAS A"); diagramdatan har alla rader och
+  samma rad. Rapporten, Word, PDF, utskriften, ZIP-filen och rapportunderlaget är alltid fullständiga, och urvalet
+  sparas inte i konfigurationsfilen.
 - **Rapportunderlag via urklipp (ADR-20):** aggregerade faktastycken, tabeller och diagram kopieras
   för att klistras in i organisationens egen rapportmall. Blocken följer samma k-regel som Lika
   arbete, och kandidatpar med en grupp under tröskeln redovisas inte. *Kopiera alla avsnitt*

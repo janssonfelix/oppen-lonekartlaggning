@@ -754,7 +754,7 @@ function _lvKravFigur({ medPoang, grupper }) {
         const perBas = new Map();
         for (const g of grupper) { if (!perBas.has(g.bas)) perBas.set(g.bas, []); perBas.get(g.bas).push(g.median); }
         niva = g => Stat.median(perBas.get(g.bas));
-        linje = basOrdning.map(b => ({ x: b, y: Stat.median(perBas.get(b.slice(4))) }));
+        linje = basOrdning.map(b => ({ x: b, y: Stat.median(perBas.get(b.slice(4))), bas: b.slice(4) }));   // en hörnpunkt per intervall: följer urvalet
     }
     // Utan poäng står alla grupper i ett BAS-intervall på samma plats i sidled, och grupper med nästan samma median
     // täcker varandra. De flyttas isär i sidled inom intervallets bredd: fil 0 i mitten, sedan omväxlande åt höger och
@@ -786,7 +786,7 @@ function _lvKravFigur({ medPoang, grupper }) {
     })).filter(l => l.data.length);
     if (linje.length >= 2) lager.unshift({ marke: 'linje', serie: medPoang ? 'Nivå efter kraven (trend)' : 'Nivå per BAS-intervall', farg: PALETTE.semantic.mork, streck: 'streckad', tjocklek: 1.5, data: linje });
     return { beskrivning: `En punkt per yrkesgrupp: arbetets krav (${medPoang ? 'arbetsvärderingspoäng' : 'BAS-intervall'}) mot gruppens medianlön, med form och färg efter könsdominans (kvinnodominerad vid ${kvDomGransText().replace('%', 'procent')} kvinnor). Den streckade linjen är nivån kraven brukar ge i organisationen.`,
-        x: medPoang ? { skala: 'linjar', titel: 'Arbetsvärderingspoäng' } : { skala: 'band', titel: 'BAS-intervall (stigande krav)', ordning: basOrdning },
+        urval: BAS_URVAL, x: medPoang ? { skala: 'linjar', titel: 'Arbetsvärderingspoäng' } : { skala: 'band', titel: 'BAS-intervall (stigande krav)', ordning: basOrdning },
         y: { skala: 'linjar', titel: 'Gruppens medianlön', format: 'kr' }, hojd: 420, lager };
 }
 function renderLikvardighetKrav() {

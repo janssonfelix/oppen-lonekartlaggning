@@ -417,14 +417,14 @@ function _perBasFigur(sorted, bhQByBas) {
         return _PERBAS_STATUS[{ titta: 0, dokumentera: 1 }[_stsPerBasSignal(p.gapPct, sig, p.pValue < 0.05).niva] ?? 2];
     };
     const pkt = p => ({ y: 'BAS ' + p.bas, x: +p.gapPct.toFixed(2), fel: { lag: Math.min(p.ciLow, p.gapPct), hog: Math.max(p.ciHigh, p.gapPct) },
-                        n: p.n, kvN: p.kvN, maN: p.maN, markering: markeringFor(p.bas) });
+                        n: p.n, kvN: p.kvN, maN: p.maN, bas: p.bas, markering: markeringFor(p.bas) });
     const tips = d => [[d.y], ['Oförklarad skillnad', `${_figTalformat(d.x, 'tal2')} %`],
         ['95 % KI', `${_figTalformat(d.fel.lag, 'pct', { enhet: false })} – ${_figTalformat(d.fel.hog, 'pct')}`],
         ['Antal', `${d.n} (${d.kvN} kv / ${d.maN} mä)`]];
     return { beskrivning: 'Oförklarad löneskillnad per BAS-intervall med 95 % konfidensintervall. Samma siffror finns i tabellen under diagrammet.',
         // Noll ska ligga INOM axeln med luft på båda sidor, så att nollinjen syns också när alla gap har samma tecken.
         x: { skala: 'linjar', titel: 'Oförklarad skillnad (%), negativt = kvinnor lägre', nollinje: true, doman: _perBasDoman(sorted) },
-        y: { skala: 'band', ordning: sorted.map(p => 'BAS ' + p.bas) },
+        urval: BAS_URVAL, y: { skala: 'band', ordning: sorted.map(p => 'BAS ' + p.bas) },
         hojd: Math.max(170, 104 + sorted.length * 30),
         lager: _PERBAS_STATUS.map(s => ({ marke: 'punkt', riktning: 'liggande', symbol: s.symbol, storlek: 6, serie: s.serie, farg: PALETTE.semantic[s.farg],
             data: sorted.filter(p => status(p) === s).map(pkt), tips }))

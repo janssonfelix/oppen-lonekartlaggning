@@ -732,7 +732,7 @@ describe('samlad jämförelseexport: ställningstagandet per AID och BAS som i t
         w.eval('exportBenchmarkExcel()');
         const wb = Object.values(fangat)[0];
         const rad = w.XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, raw: true })[2];
-        expect(rad[19]).toBe(32222);   // ställningstagandets median
+        expect(rad[20]).toBe(32222);   // ställningstagandets median (efter kolumnen Matchning)
     });
 });
 

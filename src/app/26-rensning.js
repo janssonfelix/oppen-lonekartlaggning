@@ -154,6 +154,9 @@ function _rensaAllData({ inbakat = true } = {}) {
     if (pagKort) pagKort.hidden = true;
     const agKort = document.getElementById('att-gora');
     if (agKort) agKort.hidden = true;
+    // Löneläget, Överblick: bandkartans och statistikspannets kort (diagrammen är redan rensade ovan).
+    for (const id of ['lp-bandkarta-kort', 'jmf-statlage-kort']) { const kort = document.getElementById(id); if (kort) kort.hidden = true; }
+    { const t = document.getElementById('lp-bandkarta-forklaring'); if (t) t.textContent = ''; }
     if (typeof ovRitaLage === 'function') ovRitaLage();   // Översikt blir åter en uppladdningssida
     ['underlagets-kvalitet-status','underlagets-kvalitet-rader'].forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = ''; });
 

@@ -71,10 +71,10 @@ describe('Lönepolitik: chart-lp-gender och chart-lp-compliance', () => {
     it('chart-lp-gender: kvinnor och män som två punkter på spannet (0 = P10, 100 = P90), samma tal som modellen', () => {
         const f = w.eval(`_lpFigurKonHantel([{ bas: '5', genderGap: { kvPos: 0.412, maPos: 0.503 } }, { bas: '7', genderGap: { kvPos: 0.6, maPos: 0.55 } }])`);
         expect(f.lager.map(l => [l.marke, l.serie, l.farg])).toEqual([['intervall', 'Policyns spann', '#d5dae3'], ['intervall', 'Skillnad', '#64748b'], ['punkt', 'Kvinnor', '#833a8f'], ['punkt', 'Män', '#5f7f16']]);
-        expect(f.lager[0].data).toEqual([{ y: 'BAS 5', lag: 0, hog: 100 }, { y: 'BAS 7', lag: 0, hog: 100 }]);    // banan är hela spannet
-        expect(f.lager[1].data).toEqual([{ y: 'BAS 5', lag: 41.2, hog: 50.3 }, { y: 'BAS 7', lag: 55, hog: 60 }]);
-        expect(f.lager[2].data).toEqual([{ y: 'BAS 5', x: 41.2, markering: ['bas:5'] }, { y: 'BAS 7', x: 60, markering: ['bas:7'] }]);
-        expect(f.lager[3].data).toEqual([{ y: 'BAS 5', x: 50.3, markering: ['bas:5'] }, { y: 'BAS 7', x: 55, markering: ['bas:7'] }]);
+        expect(f.lager[0].data).toEqual([{ y: 'BAS 5', lag: 0, hog: 100, bas: '5' }, { y: 'BAS 7', lag: 0, hog: 100, bas: '7' }]);    // banan är hela spannet
+        expect(f.lager[1].data).toEqual([{ y: 'BAS 5', lag: 41.2, hog: 50.3, bas: '5' }, { y: 'BAS 7', lag: 55, hog: 60, bas: '7' }]);
+        expect(f.lager[2].data).toEqual([{ y: 'BAS 5', x: 41.2, bas: '5', markering: ['bas:5'] }, { y: 'BAS 7', x: 60, bas: '7', markering: ['bas:7'] }]);
+        expect(f.lager[3].data).toEqual([{ y: 'BAS 5', x: 50.3, bas: '5', markering: ['bas:5'] }, { y: 'BAS 7', x: 55, bas: '7', markering: ['bas:7'] }]);
         expect(f.x.doman).toEqual([-4, 104]);                                    // hela spannet syns alltid
         expect(f.lager[2].tips(f.lager[2].data[0])).toEqual([['BAS 5'], ['Kvinnor', '41,2 % in i spannet']]);
         expect(() => valideraFigur(f, 't')).not.toThrow();
@@ -202,7 +202,7 @@ describe('Lika arbete: chart-skevhet-overview och chart-perbas-gap', () => {
             [['Värt att granska', '#4338ca', 'romb'], ['Följ upp', '#d97706', 'kvadrat'], ['Går ej att bedöma', '#64748b', 'cirkel']]);
         expect(f.lager[2].data.map(d => d.y)).toEqual(['BAS 7', 'BAS 8']);   // utan KI, eller ett kön under golvet
         expect(f.lager.every(l => l.marke === 'punkt' && l.riktning === 'liggande' && !l.monster)).toBe(true);   // ingen stapel från en avkortad axel
-        expect(f.lager[0].data).toEqual([{ y: 'BAS 3', x: 93.4, etikett: '93,4 %', n: 40, markering: ['bas:3'], fel: { lag: 90.1, hog: 96.9 } }]);
+        expect(f.lager[0].data).toEqual([{ y: 'BAS 3', x: 93.4, etikett: '93,4 %', n: 40, bas: '3', markering: ['bas:3'], fel: { lag: 90.1, hog: 96.9 } }]);
         expect(f.lager[2].data[0].fel).toBeUndefined();
         expect(f.y.ordning).toEqual(['BAS 3', 'BAS 5', 'BAS 7', 'BAS 8']);        // BAS-ordningen, inte statusordningen
         expect(f.referens).toEqual([expect.objectContaining({ typ: 'zon', x0: 97, x1: 103 }), expect.objectContaining({ x: 100 })]);
@@ -224,7 +224,7 @@ describe('Lika arbete: chart-skevhet-overview och chart-perbas-gap', () => {
         expect(f.x.doman).toEqual([-10, 3.5]);                                    // noll inom axeln, luft på båda sidor
         expect(f.lager.map(l => [l.serie, l.symbol, l.data.map(d => d.y)])).toEqual(
             [['Säkerställt, minst 3 %', 'romb', ['BAS 3']], ['Inte säkerställt', 'cirkel', ['BAS 4', 'BAS 5']]]);   // BAS 4: q ≥ 0,05 efter korrigering
-        expect(f.lager[0].data[0]).toEqual({ y: 'BAS 3', x: -6.21, fel: { lag: -9, hog: -3.4 }, n: 40, kvN: 22, maN: 18, markering: ['bas:3'] });
+        expect(f.lager[0].data[0]).toEqual({ y: 'BAS 3', x: -6.21, fel: { lag: -9, hog: -3.4 }, n: 40, kvN: 22, maN: 18, bas: '3', markering: ['bas:3'] });
         expect(f.lager[0].tips(f.lager[0].data[0])[3]).toEqual(['Antal', '40 (22 kv / 18 mä)']);
         expect(() => valideraFigur(f, 't')).not.toThrow();
     });
@@ -759,8 +759,8 @@ describe('Jämförelsestatistik: figurerna', () => {
         const f = w.eval("_jmfSpannFigur(window.__r, 'statistik', 'Statistiken', 'statistiken')");
         expect(f.lager.map(l => [l.marke, l.riktning, l.symbol, l.tjocklek])).toEqual(
             [['intervall', 'liggande', undefined, 14], ['intervall', 'liggande', undefined, 7], ['punkt', undefined, 'streck', undefined], ['punkt', undefined, undefined, undefined]]);
-        expect(f.lager[0].data).toEqual([{ y: '207011 Usk · BAS C', lag: 29000, hog: 36000, markering: ['bas:C', 'grupp:207011|C'] }]);       // utan P10/P90 i referensen: inget spann
-        expect(f.lager[1].data[1]).toEqual({ y: '502010 Sys · BAS C', lag: 40000, hog: 52000, markering: ['bas:C', 'grupp:502010|C'] });
+        expect(f.lager[0].data).toEqual([{ y: '207011 Usk · BAS C', lag: 29000, hog: 36000, bas: 'C', markering: ['bas:C', 'grupp:207011|C'] }]);       // utan P10/P90 i referensen: inget spann
+        expect(f.lager[1].data[1]).toEqual({ y: '502010 Sys · BAS C', lag: 40000, hog: 52000, bas: 'C', markering: ['bas:C', 'grupp:502010|C'] });
         expect(f.lager[2].data).toHaveLength(2);
         expect(f.y.ordning).toEqual(['207011 Usk · BAS C', '502010 Sys · BAS C']);
         expect(() => valideraFigur(f, 't')).not.toThrow();
@@ -1655,5 +1655,69 @@ describe('radpaneler i vyerna', () => {
         expect(svg.getAttribute('data-radpaneler')).toBe(n > 15 ? String(Math.ceil(n / 15)) : null);
         expect(w2.eval('_jmfSpannFigur([], "statistik", "S", "s")').paneler).toBe('auto');
         expect(w2.eval('_jmfAvvikelseFigur([], "statistik", "S")').paneler).toBe('auto');
+    });
+});
+
+// BAS-urvalet (figur.urval) ges bara där varje märke hör till ett enda BAS-intervall: då döljer ett bortval hela
+// märken och inget räknas om (en låda eller stapel som samlar flera intervall skulle räknas om ur sina individer).
+describe('BAS-urval på diagrammen där BAS är en dimension', () => {
+    const URVAL = { falt: 'bas', namn: 'BAS-intervall', etikett: 'BAS {v}' };
+    const MED_URVAL = ['chart-lp-bandmap', 'chart-lp-compliance', 'chart-lp-gender', 'chart-jmf-statlage', 'chart-jamforelse-spann', 'chart-jamforelse-avvikelse',
+        'chart-ref-hantel', 'chart-skevhet-overview', 'chart-skevhet-lador', 'chart-skevhet-andel', 'chart-la-tratt', 'chart-perbas-gap',
+        'chart-arsjamforelse-bas', 'chart-likvardighet-krav', 'chart-prio-pareto', 'chart-prio-matrix', 'chart-kon-multiplar'];
+    // Ingen BAS-dimension, eller ett märke som samlar flera BAS-intervall (paret i Likvärdigt arbete, lägena per kön).
+    const UTAN_URVAL = ['chart-likvardighet-heatmap', 'chart-lp-konlagen', 'chart-arsjamforelse', 'chart-demo-hist', 'chart-demo-pyramid', 'chart-demo-agecurve',
+        'chart-demo-spread', 'chart-kon-histogram', 'chart-kon-aldergap', 'chart-kon-scatter', 'chart-kon-boxplot', 'lifecycle-chart', 'chart-gap-uppdelning',
+        'chart-reg-trappa', 'chart-reg-kvantil', 'chart-sektorer', 'chart-struktur-tradkarta', 'chart-struktur-percentiler', 'chart-struktur-kvartiler'];
+    // Demot med jämförelsestatistik och förra årets bokslut (medianen 500 kr lägre), alla flikar ritade.
+    const fonster = delatFonster(w2 => {
+        const a = createAppWindow(); a.__loadDemoData();
+        const cfg = JSON.parse(JSON.stringify(a.__buildConfigSnapshot()));
+        cfg.arsbokslut.ar -= 1; cfg.arsbokslut.skapat = `${cfg.arsbokslut.ar}-11-01`;
+        cfg.arsbokslut.basIntervall.forEach(r => { if (typeof r.med === 'number') r.med -= 500; });
+        w2.__loadDemoData();
+        w2.__cfg = cfg; w2.eval('applyConfigSnapshot(window.__cfg)');
+        w2.__state.statistik = [...new Set(w2.__getData().map(r => `${r.aid}|${r.bas}`))].map(k => { const [aid, bas] = k.split('|'); return { aid, bas, median: 34000, p10: 30000, p90: 39000 }; });
+        w2.__state.statistikHasP10 = true; w2.__state.statistikHasP90 = true;
+        for (const t of ['dashboard', 'benchmark', 'matrix', 'likvardighet', 'struktur', 'kon', 'demografi', 'prioritering', 'loneoversyn', 'arbetet']) w2.__renderTabContent(t);
+    });
+    const figur = id => { const el = fonster().document.getElementById(id); return el && el._figur; };
+    const BAS_KAT = /(^|· )BAS (\S+)$/;
+    it.each(MED_URVAL)('%s: urval på BAS-intervall, och varje märke i ett intervall bär sitt BAS', id => {
+        const f = figur(id);
+        expect(f, id).toBeTruthy();
+        expect(f.urval).toEqual(URVAL);
+        let medBas = 0;
+        for (const l of f.lager) for (const d of l.data) {
+            const kat = [d.x, d.y, l.panel].filter(v => typeof v === 'string').find(v => BAS_KAT.test(v));
+            if (kat) expect(d.bas, `${id}: ${l.serie} ${kat}`).toBe(kat.match(BAS_KAT)[2]);
+            if (d.bas !== undefined && d.bas !== null) medBas++;
+        }
+        expect(medBas).toBeGreaterThan(0);
+        expect(() => valideraFigur(f, id)).not.toThrow();
+    });
+    it.each(MED_URVAL)('%s: ett bortvalt BAS-intervall ritas inte, och resten ritas utan fel', id => {
+        const w3 = fonster(), f = figur(id);
+        w3.__f = f;
+        const varden = w3.eval('_figUrvalVarden(window.__f)');
+        expect(varden.length, id).toBeGreaterThanOrEqual(2);
+        const hel = w3.eval('figurTillSvg(window.__f, 1400, 800, {})');
+        w3.__v = varden[0];
+        const urval = w3.eval('figurTillSvg(window.__f, 1400, 800, { bortvalda: new Set([window.__v]) })');
+        const marken = s => (s.match(/data-marke="(punkt|stapel|intervall|lada|linje)"/g) || []).length;
+        expect(marken(urval)).toBeLessThan(marken(hel));
+        expect(urval).not.toMatch(/NaN|undefined/);
+        expect(urval).not.toContain(`>BAS ${varden[0]}<`);                 // ingen axeletikett eller paneltitel för det bortvalda
+        expect(hel).not.toMatch(/NaN|undefined/);
+    });
+    it('efterlevnadens andra vy (kring en mittlinje) har samma urval', () => {
+        const f = fonster().eval(`_lpFigurKompliansMitt([{ bas: '5', n: 40, compliance: { under: 4, within: 30, over: 6, n: 40 } }, { bas: '7', n: 20, compliance: { under: 0, within: 18, over: 2, n: 20 } }])`);
+        expect(f.urval).toEqual(URVAL);
+        expect(f.lager.flatMap(l => l.data.map(d => d.bas))).toEqual(['5', '7', '5', '7']);
+    });
+    it('diagrammen utan BAS-dimension, eller där ett märke samlar flera BAS-intervall, har inget urval', () => {
+        const ritade = UTAN_URVAL.filter(id => figur(id));
+        expect(ritade.length).toBeGreaterThanOrEqual(10);
+        for (const id of ritade) expect(figur(id).urval, id).toBeUndefined();
     });
 });

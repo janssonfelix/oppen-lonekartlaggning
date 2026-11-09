@@ -5,7 +5,7 @@
 import { readFileSync, writeFileSync, mkdtempSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { FIL, NAMN, BILDER, ok, page, FLIKAR } from './rigg.mjs';
+import { FIL, NAMN, BILDER, ok, page, FLIKAR, konsolfel, sidfel } from './rigg.mjs';
 
 // Flikarna och deras diagram, länkade vyer och flikarnas form.
 export async function flikarOchDiagram() {
@@ -154,7 +154,7 @@ export async function flikarOchDiagram() {
                       ['kon', 'chart-kon-scatter'], ['kon', 'chart-kon-boxplot'],
                       ['kon', 'chart-demo-agecurve'], ['kon', 'chart-demo-spread'], ['matrix', 'lifecycle-chart'],
                       // de sammansatta diagrammen
-                      ['benchmark', 'chart-jamforelse-spann'], ['benchmark', 'chart-jamforelse-avvikelse'], ['benchmark', 'chart-lp-bandmap'], ['benchmark', 'chart-ref-hantel'],
+                      ['benchmark', 'chart-jamforelse-spann'], ['benchmark', 'chart-jamforelse-avvikelse'], ['benchmark', 'chart-lp-bandmap'], ['benchmark', 'chart-jmf-statlage'], ['benchmark', 'chart-ref-hantel'],
                       ['prioritering', 'chart-prio-pareto'], ['prioritering', 'chart-prio-matrix'], ['likvardighet', 'chart-likvardighet-heatmap'],
                       // Utforska
                       ['utforska', 'chart-explore']];
@@ -188,6 +188,28 @@ export async function flikarOchDiagram() {
             ok(riktig, `${id}: ${ext.toUpperCase()}-export gav ${nedladdning.suggestedFilename()} (${bytes.length} byte)`);
             if (BILDER && ext === 'png') writeFileSync(join(BILDER, `${NAMN}-${id}-export.png`), bytes);
         }
+    }
+
+    console.log('\n── Diagrammens BAS-urval: knapparna ovanför bandkartan ──');
+    {
+        await page.click('.nav-item[data-tab="benchmark"]');
+        await page.evaluate(() => document.querySelectorAll('details.avsnitt').forEach(d => { d.open = true; }));
+        await page.waitForTimeout(400);
+        const felFore = konsolfel.length + sidfel.length;
+        const etiketter = () => page.evaluate(() => [...document.querySelectorAll('#chart-lp-bandmap > svg [data-axel="x"]')].map(t => t.textContent));
+        const fore = await etiketter();
+        const forsta = page.locator('#chart-lp-bandmap').locator('xpath=preceding-sibling::div[contains(@class,"diagram-urval")][1]').locator('button[aria-pressed]').first();
+        const namn = await forsta.textContent();
+        await forsta.click();
+        await page.waitForTimeout(300);
+        const efter = await etiketter();
+        ok(efter.length === fore.length - 1 && !efter.includes(namn), `bandkartan: ett klick på ${namn} döljer intervallet (${fore.length} → ${efter.length} x-etiketter)`);
+        ok(await forsta.getAttribute('aria-pressed') === 'false', 'knappen är inte längre intryckt (aria-pressed="false")');
+        ok(konsolfel.length + sidfel.length === felFore, `inga konsolfel efter klicket${konsolfel.length + sidfel.length > felFore ? ': ' + [...konsolfel, ...sidfel].slice(felFore).join(' | ') : ''}`);
+        // Tillbaka till alla, så att kontrollerna efter den här ser hela bandkartan.
+        await page.locator('#chart-lp-bandmap').locator('xpath=preceding-sibling::div[contains(@class,"diagram-urval")][1]').locator('[data-urval-alla]').click();
+        await page.waitForTimeout(300);
+        ok((await etiketter()).length === fore.length, 'Visa alla ritar alla intervall igen');
     }
 
     console.log('\n── Länkade vyer: en markerad grupp framhävs i alla diagram ──');
@@ -476,10 +498,10 @@ export async function flikarOchDiagram() {
         await page.waitForTimeout(500);
 
         await ga('benchmark');
-        await page.evaluate(() => { for (const [id, oppen] of [['avsnitt-jmf-overblick', false], ['avsnitt-jmf-stallningstagande', true], ['avsnitt-jmf-statistik', false]]) document.getElementById(id).open = oppen; });
+        await page.evaluate(() => { for (const [id, oppen] of [['avsnitt-jmf-bandkartor', false], ['avsnitt-jmf-stallningstagande', true], ['avsnitt-jmf-statistik', false], ['avsnitt-jmf-overblick', false]]) document.getElementById(id).open = oppen; });
         await page.waitForTimeout(300);
         l = await lage('avsnitt-lp-');
-        ok(l.oppna === 'avsnitt-lp-tabell' && l.rutor === 6 && l.skarmar < 4, `Jämförelse, avsnittet mot ställningstagandet (utan statistik): flikens två och avsnittets fyra slutsatser, bandkartan och tabellen utfälld (${l.rutor} rutor, ${l.oppna}, ${l.skarmar.toFixed(1)} skärmar)`);
+        ok(l.oppna === 'avsnitt-lp-tabell' && l.rutor === 6 && l.skarmar < 4, `Jämförelse, avsnittet mot ställningstagandet (utan statistik): flikens två och avsnittets fyra slutsatser och tabellen utfälld (bandkartan står i Överblick) (${l.rutor} rutor, ${l.oppna}, ${l.skarmar.toFixed(1)} skärmar)`);
         await page.evaluate(() => { document.getElementById('avsnitt-jmf-overblick').open = true; });
         b = await fyller('avsnitt-lp-kon', 'chart-lp-gender');
         ok(b === 'ok' || b === 'inget diagram', `Lönepolitik: könspositionen fyller kortet när avsnittet fälls ut (${b})`);

@@ -192,6 +192,11 @@ export async function samlaUtdata(w) {
     w.eval("_renderRobusthetResult(document.getElementById('robusthet-body'))");
     lagg('robusthetspanelen', d.getElementById('robusthet-body').textContent);
     ut.push(['skärm: alla flikar', skarmtext(w)]);
+    // Statistikens matchning i Löneläget: sammanfattningen ovanför tabellen och Beräkning & urval, ritade i exportläget
+    // (där grupperna under tröskeln inte finns i raderna). Kolumnen Matchning följer med i tabellens CSV, Excel och
+    // utskriften och i jämförelseexporten, som prövas nedan.
+    lagg('Löneläget: statistikens matchning', w.eval(`medExportLage(() => { generateBenchmark(); return document.getElementById('benchmark-matchning-info').textContent
+        + '\\n' + document.querySelector('details.audit-panel[data-audit-id="benchmark"] .audit-content').textContent; })`));
 
     lagg('Word-utkastet', w.__docDraftHtml());
     // Rapporttextens utkast: textrutans värde (skärmtexten läser inte en textrutas värde), med delen per BAS-intervall,
@@ -239,7 +244,8 @@ export async function samlaUtdata(w) {
         tabeller++;
         lagg(`tabell-CSV: ${id}`, w.__tableToMatrix(id).map(r => r.join(' | ')).join('\n'));
     }
-    // Ritade av diagramkärnan (el._figur, ADR-39) — också de utan "chart-" i id:t. Ett diagram som inte får lämna
+    // Ritade av diagramkärnan (el._figur, ADR-39) — också de utan "chart-" i id:t. Löneläget ritas med statistiken i
+    // fixturen, så Överblickens diagram över statistikens spann (chart-jmf-statlage) är med; testet kräver det. Ett diagram som inte får lämna
     // verktyget (markeraUtanExport: Översiktens kopior, Personer att granska) ger ingen diagramdata alls och
     // räknas därför inte som en väg; att det förblir så prövar tests/smoke.test.js.
     for (const el of d.querySelectorAll('[id^="chart-"], #lifecycle-chart')) {

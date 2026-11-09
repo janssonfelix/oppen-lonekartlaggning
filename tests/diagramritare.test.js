@@ -1383,6 +1383,39 @@ describe('mönster på staplar och stapel på avkortad axel', () => {
         expect(alla(svg, 'svg[data-del="panel"] [data-marke="punkt"]').map(e => e.tagName.toLowerCase())).toEqual(['circle', 'path', 'rect']);
         expect(alla(svg, '[data-del="forklaring"] [data-prov="punkt"]').map(e => e.tagName.toLowerCase())).toEqual(['circle', 'path', 'rect']);
     });
+    it('ofylld punkt: en ring i lagrets färg utan fyllning, också i förklaringen; en fylld punkt i samma figur är oförändrad', () => {
+        const lager = (serie, ofylld, symbol) => ({ marke: 'punkt', serie, farg: '#0f766e', kant: '#ffffff', ofylld, symbol, storlek: 5, data: [{ x: 1, y: 1 }, { x: 2, y: 2 }] });
+        const f = { beskrivning: 'O', x: { skala: 'linjar' }, y: { skala: 'linjar' }, lager: [lager('Fylld', undefined), lager('Ofylld', true), lager('Ofylld romb', true, 'romb')] };
+        expect(() => valideraFigur(f, 't')).not.toThrow();
+        const svg = rita(f, 640);
+        const punkter = alla(svg, 'svg[data-del="panel"] [data-marke="punkt"]');
+        expect(punkter).toHaveLength(6);
+        const [fylld, , ofylld, , romb] = punkter;
+        expect(fylld.getAttribute('fill')).toBe('#0f766e');
+        expect(fylld.getAttribute('stroke')).toBe('#ffffff');
+        for (const m of [ofylld, romb]) {
+            expect(m.getAttribute('fill')).toBe('none');
+            expect(m.getAttribute('stroke')).toBe('#0f766e');             // kanten i lagrets färg, inte lagrets `kant`
+            expect(Number(m.getAttribute('stroke-width'))).toBeGreaterThan(1);
+            expect(m.getAttribute('pointer-events')).toBe('visible');      // ringens inre tar emot pekaren som en fylld punkt
+        }
+        expect(romb.tagName.toLowerCase()).toBe('path');
+        const prov = alla(svg, '[data-del="forklaring"] [data-prov="punkt"]');
+        expect(prov.map(e => e.getAttribute('fill'))).toEqual(['#0f766e', 'none', 'none']);
+        expect(prov[1].getAttribute('stroke')).toBe('#0f766e');
+        // Exporten bär ringen men inte pekarattributet.
+        const txt = svgText(f);
+        expect(txt).toContain('fill="none"');
+        expect(txt).not.toContain('pointer-events');
+    });
+    it('ofylld: bara för punkt med cirkel, romb eller kvadrat, och bara true eller false', () => {
+        const f = l => ({ beskrivning: 'O', x: { skala: 'linjar' }, y: { skala: 'linjar' }, lager: [{ marke: 'punkt', serie: 'S', data: [{ x: 1, y: 1 }], ...l }] });
+        expect(() => valideraFigur(f({ ofylld: true }), 't')).not.toThrow();
+        expect(() => valideraFigur(f({ ofylld: false, symbol: 'kvadrat' }), 't')).not.toThrow();
+        expect(() => valideraFigur(f({ ofylld: true, symbol: 'streck' }), 't')).toThrow(/ofylld/);
+        expect(() => valideraFigur(f({ ofylld: 'ja' }), 't')).toThrow(/ofylld/);
+        expect(() => valideraFigur(f({ marke: 'stapel', ofylld: true }), 't')).toThrow(/ofylld/);
+    });
     it('monster följer med i den exporterade bilden', () => {
         const txt = svgText({ beskrivning: 'M', x: { skala: 'band' }, y: { skala: 'linjar' },
             lager: [{ marke: 'stapel', serie: 'S', farg: '#dc2626', monster: 'linjer', data: [{ x: 'a', y: 5 }] }] });
@@ -1856,7 +1889,7 @@ describe('ritaFigur', () => {
         expect(el.parentElement.outerHTML).not.toMatch(/HEMLIG|77777|77 777/);
         expect([...el.attributes].map(a => a.name)).toEqual(['id']);
         // Egenskaperna på elementet: bara de dokumenterade.
-        expect(Object.keys(el).filter(k => k.startsWith('_')).sort()).toEqual(['_chartExportAttached', '_exportBeskrivning', '_figur', '_figurBredd', '_figurDolda', '_figurVal', '_rfKoppling', '_rfRitadFigur']);
+        expect(Object.keys(el).filter(k => k.startsWith('_')).sort()).toEqual(['_chartExportAttached', '_exportBeskrivning', '_figur', '_figurBortvalda', '_figurBredd', '_figurDolda', '_figurVal', '_rfKoppling', '_rfRitadFigur']);
     });
     it('verktygstips: lagrets tips får datapunkten; raderna escapas; musen ut döljer', () => {
         const el = behallare();
@@ -3375,4 +3408,152 @@ describe('inga råa decimaltal i någon ritad figur (U4)', () => {
         hittat.push(...raa(w2.document).map(x => `matrix: ${x}`));
         expect(hittat).toEqual([]);
     }, 60000);
+});
+
+// ---- Urval: bortvalda punkter (figurens `urval`, val.bortvalda) ritas inte ----
+// En bortvald punkt behandlas som en liten punkt utan visaSma: den ritas inte, index (data-l/data-i) pekar fortfarande
+// på originalfiguren, och domäner, kategoriordning, förklaring och delbilder räknas ur det synliga. Referenser rörs inte.
+describe('bortvalda', () => {
+    const URVAL = { falt: 'bas', namn: 'BAS-intervall', etikett: 'BAS {v}' };
+    const basFigur = (over = {}) => ({
+        beskrivning: 'Medianlön per BAS', urval: URVAL, x: { skala: 'band', titel: 'BAS' }, y: { skala: 'linjar', titel: 'Kr' },
+        lager: [{ marke: 'stapel', serie: 'Alla', farg: '#2563eb', data: ['A', 'B', 'C', 'D'].map((b, i) => ({ x: `BAS ${b}`, y: i + 1, bas: b })) }],
+        ...over,
+    });
+    const xEt = svg => alla(svg, '[data-axel="x"]').map(t => t.textContent);
+    const yTal = svg => alla(svg, '[data-axel="y"]').map(t => Number(t.textContent.replace(/[\s  ]/g, '').replace('−', '-').replace(',', '.')));
+    const bort = (...v) => ({ bortvalda: new w.Set(v) });
+
+    it('bortvalda kategorier försvinner från axeln; index är oförändrade', () => {
+        const svg = rita(basFigur(), 600, bort('A', 'D'));
+        expect(xEt(svg)).toEqual(['BAS B', 'BAS C']);
+        expect(svg.querySelector('[data-l="0"][data-i="0"]')).toBeNull();
+        expect(svg.querySelector('[data-i="3"]')).toBeNull();
+        expect(svg.querySelector('[data-l="0"][data-i="1"]')).not.toBeNull();
+        expect(svg.querySelector('[data-l="0"][data-i="2"]')).not.toBeNull();
+    });
+    it('uttrycklig ordning: kategoriordningen är originalets, begränsad till det synliga', () => {
+        const f = basFigur({ x: { skala: 'band', ordning: ['BAS D', 'BAS C', 'BAS B', 'BAS A'] } });
+        expect(xEt(rita(f, 600, bort('C')))).toEqual(['BAS D', 'BAS B', 'BAS A']);
+    });
+    it('y-domänen räknas ur de synliga punkterna', () => {
+        const f = basFigur();
+        f.lager[0].data[3].y = 1000;
+        expect(Math.max(...yTal(rita(f, 600)))).toBeGreaterThanOrEqual(1000);
+        expect(Math.max(...yTal(rita(f, 600, bort('D'))))).toBeLessThan(100);
+    });
+    it('förklaringen saknar en serie vars alla punkter är bortvalda', () => {
+        const f = basFigur();
+        f.lager.push({ marke: 'stapel', serie: 'Bara A', farg: '#e11d48', data: [{ x: 'BAS A', y: 2, bas: 'A' }] });
+        const serier = svg => alla(svg, '[data-del="forklaring"] [data-serie]').map(g => g.getAttribute('data-serie'));
+        expect(serier(rita(f, 600))).toEqual(['Alla', 'Bara A']);
+        expect(serier(rita(f, 600, bort('A')))).toEqual(['Alla']);
+        expect(rita(f, 600, bort('A')).querySelector('[data-l="1"]')).toBeNull();
+    });
+    it('en referenslinje ritas oavsett urval, och en punkt utan urvalsfältet ritas alltid', () => {
+        const f = basFigur({ referens: [{ typ: 'linje', y: 1.5, etikett: 'Mål' }] });   // inom de synligas domän (en referens utanför domänen ritas aldrig)
+        f.lager.push({ marke: 'linje', serie: 'Utan fält', farg: '#111111', data: [{ x: 'BAS A', y: 1 }, { x: 'BAS B', y: 2 }] });
+        const svg = rita(f, 600, bort('A', 'B', 'C', 'D'));
+        expect(alla(svg, '[data-marke="referenslinje"]')).toHaveLength(1);
+        expect(alla(svg, '[data-l="0"]')).toHaveLength(0);
+        expect(svg.querySelector('path[data-marke="linje"][data-l="1"]')).not.toBeNull();
+        expect(xEt(svg)).toEqual(['BAS A', 'BAS B']);      // kategorierna finns kvar genom punkterna utan fältet
+    });
+    it('utan bortvalda (eller med en tom eller okänd mängd) är SVG:n byte för byte densamma som för figuren utan urval', () => {
+        const f = basFigur({ referens: [{ typ: 'linje', y: 2.5 }] });
+        const utanUrval = { ...f, urval: undefined };
+        const ref = rita(utanUrval, 600).outerHTML;
+        expect(rita(f, 600).outerHTML).toBe(ref);
+        expect(rita(f, 600, { bortvalda: new w.Set() }).outerHTML).toBe(ref);
+        expect(rita(f, 600, bort('X')).outerHTML).toBe(ref);
+        // En figur utan urval bryr sig inte om bortvalda.
+        expect(rita(utanUrval, 600, bort('A')).outerHTML).toBe(ref);
+        w.__f = f; w.__g = utanUrval;
+        const svgText = w.eval('figurTillSvg(window.__g, 1600, 900)');
+        expect(w.eval('figurTillSvg(window.__f, 1600, 900, { bortvalda: new Set() })')).toBe(svgText);
+        expect(w.eval('figurTillSvg(window.__f, 1600, 900)')).toBe(svgText);
+    });
+    it('figurTillSvg och figurTillBild tar emot bortvalda', async () => {
+        w.__f = basFigur();
+        const svg = w.eval('figurTillSvg(window.__f, 1600, 900, { bortvalda: new Set(["A"]) })');
+        expect(svg).not.toMatch(/>BAS A</);
+        expect(svg).toMatch(/>BAS B</);
+        const url = await w.eval('figurTillBild(window.__f, "svg", 1600, 900, { bortvalda: new Set(["A"]) })');
+        expect(decodeURIComponent(url.slice(url.indexOf(',') + 1))).toBe(svg);
+        expect(w.eval('figurTillSvg(window.__f, 1600, 900, { bortvalda: ["A"] })')).toBe(w.eval('figurTillSvg(window.__f, 1600, 900)'));   // inte en mängd: ignoreras
+    });
+
+    // Review Focus 3: paneler 'auto' delar ur de synliga kategorierna.
+    const hantel = n => {
+        const kat = Array.from({ length: n }, (_, i) => `Grupp ${i + 1}`);
+        return { beskrivning: 'Hantel', paneler: 'auto', urval: { falt: 'bas', namn: 'Grupp' }, hojd: 110 + 26 * n,
+            x: { skala: 'linjar', titel: 'Kronor', format: 'kr' }, y: { skala: 'band', ordning: kat },
+            lager: [
+                { marke: 'intervall', riktning: 'liggande', serie: 'Skillnad', farg: '#888888', data: kat.map((y, i) => ({ y, lag: 30000 + i * 100, hog: 33000 + i * 100, bas: String(i + 1) })) },
+                { marke: 'punkt', serie: 'Kvinnor', farg: '#833a8f', data: kat.map((y, i) => ({ y, x: 30000 + i * 100, bas: String(i + 1) })) }] };
+    };
+    it("paneler 'auto': 20 kategorier med 6 bortvalda ger en enda bild utan delrubrik", () => {
+        const f = hantel(20);
+        expect(rita(f, 800).getAttribute('data-radpaneler')).toBe('2');
+        const svg = rita(f, 800, bort('1', '2', '3', '18', '19', '20'));
+        expect(svg.getAttribute('data-radpaneler')).toBeNull();
+        expect(alla(svg, '[data-del="radpanel"]')).toHaveLength(0);
+        expect(alla(svg, 'text').map(t => t.textContent).filter(t => /^\d+–\d+$/.test(t))).toEqual([]);
+        expect(alla(svg, '[data-axel="y"]').map(t => t.textContent)).toEqual(Array.from({ length: 14 }, (_, i) => `Grupp ${i + 4}`));
+        expect(svg.querySelector('[data-l="1"][data-i="3"]')).not.toBeNull();    // Grupp 4 behåller sitt index
+        expect(svg.querySelector('[data-l="1"][data-i="0"]')).toBeNull();
+    });
+    it("paneler 'auto': 40 kategorier med 8 bortvalda ger delar ur de 32 synliga, med originalets index", () => {
+        const f = hantel(40);
+        const svg = rita(f, 800, bort('1', '2', '3', '4', '5', '6', '7', '8'));
+        expect(svg.getAttribute('data-radpaneler')).toBe('3');
+        const delar = alla(svg, ':scope > svg[data-del="radpanel"]');
+        expect(delar.map(d => alla(d, 'text').map(t => t.textContent).find(t => /^\d+–\d+$/.test(t)))).toEqual(['1–15', '16–30', '31–32']);
+        const perDel = delar.map(d => alla(d, '[data-axel="y"]').map(t => t.textContent));
+        expect(perDel.map(p => p.length)).toEqual([15, 15, 2]);
+        expect(perDel[0][0]).toBe('Grupp 9');
+        expect(delar[0].querySelector('[data-l="1"][data-i="8"]')).not.toBeNull();    // Grupp 9 = index 8 i originalet
+        expect(delar[2].querySelector('[data-l="1"][data-i="39"]')).not.toBeNull();
+        expect(svg.querySelector('[data-l="1"][data-i="7"]')).toBeNull();
+    });
+
+    // Review Focus 2: klick och länkad markering efter urval.
+    it('klick efter urval: rätt datapunkt till vidKlick och rätt grupp markeras (index pekar på originalfiguren)', () => {
+        const el = behallare('chart-urval-klick');
+        const sett = [];
+        const f = basFigur();
+        f.lager[0].data.forEach(d => { d.markering = [`bas:${d.bas}`]; });
+        ritaI(el, f, { vidKlick: (d, l) => sett.push([d, l.serie]) });
+        el._figurBortvalda = new w.Set(['A']);
+        w.eval('_rfRitaOm(window.__el)');
+        const staplarna = alla(el, 'rect[data-marke="stapel"]');
+        expect(staplarna.map(r => r.getAttribute('data-i'))).toEqual(['1', '2', '3']);
+        staplarna[0].dispatchEvent(handelse('click'));
+        expect(sett).toHaveLength(1);
+        expect(sett[0][0]).toEqual({ x: 'BAS B', y: 2, bas: 'B', markering: ['bas:B'] });
+        expect(sett[0][1]).toBe('Alla');
+        expect(w.eval('diagramMarkering()')).toEqual(['bas:B']);
+        expect(alla(el, 'rect[data-marke="stapel"]').map(r => [r.getAttribute('data-i'), r.hasAttribute('data-markerad')]))
+            .toEqual([['1', true], ['2', false], ['3', false]]);
+        // Markeringen tillämpas också i en ny ritning med urvalet.
+        w.eval('_rfRitaOm(window.__el)');
+        expect(el.querySelector('rect[data-i="1"]').hasAttribute('data-markerad')).toBe(true);
+        expect(xEt(egenSvg(el))).toEqual(['BAS B', 'BAS C', 'BAS D']);
+        w.eval('sattDiagramMarkering(null)');
+        w.eval('rensaFigur(window.__el)');
+    });
+    it('en låda efter urval: sammanfattningen räknar bara med de individer som ritas', () => {
+        const el = behallare('chart-urval-lada');
+        const tips = [];
+        const ind = [10, 20, 30, 40, 50, 60].map((y, i) => ({ x: 'Alla', y, bas: i < 3 ? 'A' : 'B' }));
+        const f = { beskrivning: 'Låda', urval: URVAL, x: { skala: 'band' }, y: { skala: 'linjar' },
+            lager: [{ marke: 'lada', serie: 'Lön', data: ind, tips: (d, s) => { tips.push(s); return [['x']]; } }] };
+        ritaI(el, f, {});
+        el._figurBortvalda = new w.Set(['A']);
+        w.eval('_rfRitaOm(window.__el)');
+        el.querySelector('rect[data-marke="lada"]').dispatchEvent(handelse('pointermove'));
+        expect(tips.at(-1).n).toBe(3);
+        expect(tips.at(-1).median).toBe(50);
+        w.eval('rensaFigur(window.__el)');
+    });
 });

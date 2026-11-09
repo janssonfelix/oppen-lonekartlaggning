@@ -173,16 +173,6 @@ export const MODULES = [
         expose: { jamforbaraBas: '_dqJamforbaraBas', mdeFranSe: '_dqMdeFranSe', bedomUnderlag: '_dqBedomUnderlag' }
     },
     {
-        file: 'rapportunderlag.js', ns: '__mirrorRapportunderlag',
-        expose: {
-            likaArbeteGrupper: '_ruLikaArbeteGrupper', justeratGapInomYrke: '_ruJusteratGap', bortvaltNotering: '_ruBortvaltNotering',
-            gruppBlock: '_ruGruppBlock', parBlock: '_ruParBlock', avsnittBlock: '_ruAvsnittBlock',
-            tillWordHtml: '_ruTillWordHtml', tillText: '_ruTillText', stabilitetKort: '_ruStabilitetKort',
-            egenTabellBlock: '_ruEgenTabellBlock', arsjamforelseBlock: '_ruArsjamforelseBlock', referenserBlock: '_ruReferenserBlock', basintervallBlock: '_ruBasintervallBlock',
-            skalSammanstallningNot: '_ruSkalNot'
-        }
-    },
-    {
         file: 'gapuppdelning.js', ns: '__mirrorGapuppdelning',
         expose: { gapUppdelning: '_guGapUppdelning' }
     },
@@ -216,12 +206,26 @@ export const MODULES = [
     },
     {
         file: 'jamforelse.js', ns: '__mirrorJamforelse',
-        expose: { jamforelseRader: '_jfRader', avvikelseRangordning: '_jfRangordning' }
+        expose: { jamforelseRader: '_jfRader', avvikelseRangordning: '_jfRangordning', statistikFor: '_jfStatistikFor',
+                  matchningEtikett: '_jfMatchningEtikett', matchningAntal: '_jfMatchningAntal', matchningSammanfattning: '_jfMatchningSammanfattning',
+                  statistikMarknad: '_jfStatistikMarknad', statistikensMedianFor: '_jfStatistikensMedianFor' }
     },
     {
         // Löneläget och statistiken mot ställningstagandet (ADR-55); importerar lonepolitik.js
         file: 'referenser.js', ns: '__mirrorReferenser',
         expose: { lageISpann: '_rrLage', monster: '_rrMonster', forslag: '_rrForslag', referensOverblick: '_rrOverblick', hantelRader: '_rrHantelRader', lageOchForslag: '_rrLageOchForslag' }
+    },
+    {
+        // Rapportunderlagets block formaterar resultaten av jamforelse.js och referenser.js (matchningens etikett i
+        // blocket Lönerna mot referenserna): efter dem. Ingen lib-modul importerar rapportunderlag.js.
+        file: 'rapportunderlag.js', ns: '__mirrorRapportunderlag',
+        expose: {
+            likaArbeteGrupper: '_ruLikaArbeteGrupper', justeratGapInomYrke: '_ruJusteratGap', bortvaltNotering: '_ruBortvaltNotering',
+            gruppBlock: '_ruGruppBlock', parBlock: '_ruParBlock', avsnittBlock: '_ruAvsnittBlock',
+            tillWordHtml: '_ruTillWordHtml', tillText: '_ruTillText', stabilitetKort: '_ruStabilitetKort',
+            egenTabellBlock: '_ruEgenTabellBlock', arsjamforelseBlock: '_ruArsjamforelseBlock', referenserBlock: '_ruReferenserBlock', basintervallBlock: '_ruBasintervallBlock',
+            skalSammanstallningNot: '_ruSkalNot'
+        }
     },
     {
         file: 'docx.js', ns: '__mirrorDocx',
@@ -269,7 +273,8 @@ export const MODULES = [
                   skalDoman: '_figSkalDoman', ladstatistik: '_figLadstatistik', antalPunkter: '_figAntalPunkter',
                   figurTillTabell: '_figTillTabell', panelerMedLager: '_figPanelerMedLager',
                   kronorSkillnad: '_figKronorSkillnad', kronorTipsRad: '_figKronorTipsRad',
-                  kvantilpunkter: '_figKvantilpunkter' }
+                  kvantilpunkter: '_figKvantilpunkter',
+                  urvalVarden: '_figUrvalVarden', urvalEtikett: '_figUrvalEtikett', arBortvald: '_figArBortvald' }
     }
 ];
 

@@ -316,7 +316,7 @@ function updateForecast() {
 /** @param {{rader: any[], titel: string, beskrivning: string, format?: 'pct'|'kr', kolumner?: string[]}} val */
 function foreEfterFigur({ rader, titel, beskrivning, format = 'pct', kolumner = ['Före', 'Efter'] }) {
     const alla = rader.flatMap(r => [r.fore, r.efter]), p = v => _figTalformat(v, format), [a, b] = kolumner, kvot = format === 'pct';
-    const m = r => (r.markering ? { markering: r.markering } : {});
+    const m = r => ({ ...(r.markering ? { markering: r.markering } : {}), ...(r.bas != null ? { bas: r.bas } : {}) });   // bas: raden hör till ett BAS-intervall (figur.urval)
     const tips = d => [[d.y], [a, p(d.r.fore)], [b, p(d.r.efter)]];
     const lag = Math.min(...alla), hog = Math.max(...alla), luft = Math.max((hog - lag) * 0.12, Math.abs(hog) * 0.02);
     return { beskrivning, y: { skala: 'band', ordning: rader.map(r => r.namn), etikettMax: 36 },
@@ -618,14 +618,10 @@ function _forecastMarket() {
     if (!d.length) return;
     _forecastReadControls();
     const f = (parseFloat(/** @type {HTMLInputElement} */ (document.getElementById('forecast-market-factor'))?.value) || 95) / 100;
-    const market = new Map();
-    (state.statistik || []).forEach(s => {
-        if (!(s.median > 0)) return;
-        if (s.aid != null && s.bas != null) market.set(String(s.aid) + '|' + String(s.bas), s.median);
-        if (s.aid != null && !market.has(String(s.aid))) market.set(String(s.aid), s.median);
-    });
-    if (!market.size) { alert('Jämförelsestatistiken är inte inläst. Läs in den under Filer och kvalitet.'); return; }
+    if (!(state.statistik || []).some(s => s.median > 0)) { alert('Jämförelsestatistiken är inte inläst. Läs in den under Filer och kvalitet.'); return; }
     const groups = _fcSummarizeGroups(d);
+    // Statistikens gemensamma uppslag per grupp: samma AID och BAS, annars samma AID utan BAS, aldrig ett annat BAS.
+    const market = _jfStatistikMarknad(state.statistik, groups);
     const t = _fcMarketTargets(groups, market, f, state.forecast.minGroupN || 0);
     if (!t.length) { alert('Ingen grupp med minst ' + (state.forecast.minGroupN || 0) + ' personer ligger under ' + svTal(f * 100, 0) + ' procent av ' + jmfNamnGenitiv() + ' median.'); return; }
     let added = 0;

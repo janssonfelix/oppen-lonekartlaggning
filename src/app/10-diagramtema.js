@@ -80,6 +80,12 @@ const GAP_STATUS_EJ = Object.freeze({ ..._STS_ORD.ejbedomd, niva: 'ejbedomd', fa
 /** Alla fyra, i diagrammens ordning (förklaringen namnger bara de som förekommer). */
 const GAP_STATUS_ALLA = Object.freeze([...GAP_STATUS, GAP_STATUS_EJ]);
 /**
+ * Figurens urval (figur.urval) i diagrammen där BAS-intervallet är en dimension: knapparna ovanför diagrammet döljer
+ * valda intervall. Bara där varje märke hör till ett enda intervall (punkten, stapeln, spannet eller lådan bär `bas`
+ * med det nakna värdet, t.ex. 'A'), så att ett bortval döljer hela märken och inget räknas om.
+ */
+const BAS_URVAL = Object.freeze({ falt: 'bas', namn: 'BAS-intervall', etikett: 'BAS {v}' });
+/**
  * Statusen för ett avstånd från lika lön i procent (|100 − kvoten|) och en prövning av skillnaden (true/false; null
  * när den inte kunde göras, vilket ger Går ej att bedöma).
  * @param {number} avstand

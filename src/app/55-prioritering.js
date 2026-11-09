@@ -22,8 +22,7 @@ function computePrioritization(reference) {
                 return pol && pol.med ? { median: pol.med, kalla: referensKortnamn() } : null;
             }
             // 'statistik'
-            const sr = state.statistik.find(s => s.aid === aid && s.bas === bas)
-                   || state.statistik.find(s => s.aid === aid && !s.bas);
+            const sr = _jfStatistikFor(state.statistik, aid, bas)?.rad;
             return sr && sr.median > 0 ? { median: sr.median, kalla: 'jämförelsestatistiken' } : null;
         },
         kTroskel: kTroskel(),
@@ -342,8 +341,7 @@ function renderPrioritering() {
             const pol = policyFor(g.aid, g.bas);
             if (!pol || !pol.med) noRefCount++;
         } else {
-            const sr = state.statistik.find(s => s.aid === g.aid && s.bas === g.bas)
-                  || state.statistik.find(s => s.aid === g.aid && !s.bas);
+            const sr = _jfStatistikFor(state.statistik, g.aid, g.bas)?.rad;
             if (!sr) noRefCount++;
         }
     });
@@ -673,7 +671,7 @@ function _prioKostnadFigur(allaVisade, allCumPct) {
             etikett: `${mnkr(i.annualGapTotal)} · ${svTal(cumPct[n], 0)} %`, markering: markeringFor(i.bas, i.yrke) })),
         tips: d => [[`${d.yrke} · BAS ${d.bas}`], ['Kostnad', `${_figTalformat(d.x, 'kr')}/år`], ['Kumulativ andel', _figTalformat(d.kum, 'pct')]] });
     return { beskrivning: 'Årskostnad per grupp, störst först, med den kumulativa andelen av totalkostnaden som text. Siffrorna finns i prioriteringstabellen nedan.',
-        y: { skala: 'band', ordning: y, etikettMax: 40 }, x: { skala: 'linjar', titel: 'Årskostnad (kr) · procenttalet är kumulativ andel', format: 'kr' },
+        urval: BAS_URVAL, y: { skala: 'band', ordning: y, etikettMax: 40 }, x: { skala: 'linjar', titel: 'Årskostnad (kr) · procenttalet är kumulativ andel', format: 'kr' },
         hojd: Math.max(170, 90 + visade.length * 28),
         lager: [lager('Når tillsammans 80 % av kostnaden', PALETTE.serie[0], 1, inom), lager('Övriga', PALETTE.serie[0], 0.4, n => !inom(n))].filter(l => l.data.length) };
 }
@@ -709,7 +707,7 @@ function _prioMatrisFigur(items, etikettlage, refLabel, cfg) {
     const antal = items.map(i => i.n).filter(v => v > 0), stor = antal.length > 1 && Math.max(...antal) / Math.min(...antal) > 10;
     const zon = (x0, x1, farg, etikett, textfarg) => ({ typ: 'zon', x0, x1, farg, opacitet: 0.07, etikett, textfarg });
     return { beskrivning: 'Prioriteringsmatris: varje grupps avvikelse mot referensen mot gruppens storlek, med kostnaden som bubblans storlek. Samma grupper listas i tabellen nedan.',
-        x: { skala: 'linjar', titel: `Avvikelse mot ${refLabel} (%)`, doman: [xMin, xMax], nollinje: true },
+        urval: BAS_URVAL, x: { skala: 'linjar', titel: `Avvikelse mot ${refLabel} (%)`, doman: [xMin, xMax], nollinje: true },
         // Logskala bara när grupperna skiljer sig med mer än en tiopotens; annars är en vanlig axel lättare att läsa.
         y: stor ? { skala: 'log', titel: 'Antal personer i gruppen (log skala)' } : { skala: 'linjar', titel: 'Antal personer i gruppen' },
         // Zonerna heter som statusarna i tabellen och förklaringen under den («Börja här» är de största grupperna i den första zonen).

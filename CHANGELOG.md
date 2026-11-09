@@ -8,6 +8,47 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ### Gränssnitt
 
+- **Välj vilka BAS-intervall ett diagram visar.** Diagrammen där BAS-intervallet är en dimension har en knapp per
+  intervall ovanför diagrammet, och *Visa alla*: bandkartan, statistikens spann, spannet och avvikelsen mot
+  statistiken, efterlevnaden (båda vyerna), läget i spannet per kön och hanteln mot referenserna i Löneläget;
+  översikten, lönespridningen per BAS och kön, könsfördelningen, trattdiagrammet och den oförklarade skillnaden per
+  BAS-intervall i Lika arbete; Krav mot lön i Likvärdigt arbete; kostnaden och matrisen i Prioritering; lön mot ålder
+  per BAS-intervall i Ålder & karriär och hanteln per BAS-intervall i Spara och jämför år. Ett klick döljer
+  intervallet, till exempel BAS A, B, C och N inför en presentation. Det sista synliga intervallet kan inte döljas.
+  En not under diagrammet säger vad som är dolt. Urvalet döljer bara märken och räknar aldrig om något tal: texten,
+  tabellerna, rapporten, Word, PDF, utskriften, ZIP-filen och rapportunderlaget är alltid fullständiga. Diagrammets
+  egen export (PNG och SVG) visar urvalet och säger i fotraden vad som är dolt; diagramdatan har alla rader.
+  Valet gäller per diagram under sessionen och glöms när en lönefil eller demot läses in och vid Rensa all data.
+  Diagram där ett märke samlar flera BAS-intervall (kandidatparen i Likvärdigt arbete, lägena per kön) har inget
+  urval.
+
+- **Statistikens matchning syns per yrkesgrupp.** Tabellen *Mot jämförelsestatistiken* i Löneläget har kolumnen
+  *Matchning* efter BAS: *AID + BAS* när statistiken har en rad med samma AID och samma BAS, *Endast AID* när en rad
+  med samma AID utan BAS används, och – när statistik saknas. Rubrikens hjälptext förklarar regeln, och kolumnen
+  går att sortera. Samma kolumn finns i detaljlistan (när statistik finns), i Excel (alla flikar), bladet
+  *Referenser*, den samlade jämförelseexporten, rapportens tabell, rapportunderlagets block *Lönerna mot
+  referenserna* (när statistik finns) och utskriften. Ovanför tabellen står hur många
+  yrkesgrupper i urvalet som matchades på AID och BAS, på endast AID och utan statistik; antalen står också i
+  *Beräkning & urval*. Alla uppslag mot statistiken går nu genom ett gemensamt uppslag (`statistikFor` i
+  `src/lib/jamforelse.js`). Rättelser: Löneöversyns *marknadspositionering* kunde ge en grupp medianen för ett annat
+  BAS-intervall när AID saknade rad för gruppens BAS, och *Ålder & karriär* tog i hela urvalet första raden per AID
+  oavsett BAS. Nu används aldrig en rad för ett annat BAS-intervall; Ålder & karriär slår upp varje AID×BAS-grupp
+  och tar medianen av de matchade medianerna.
+
+- **Löneläget börjar med en överblick.** Fliken har nu fyra avsnitt i ordningen *Överblick*, *Mot
+  ställningstagandet*, *Mot jämförelsestatistiken* och *Yrkesgrupp för yrkesgrupp*. Överblicken är öppen och har
+  bandkartan (flyttad hit från avsnittet mot ställningstagandet) och ett nytt diagram, *Var ligger yrkesgrupperna i
+  statistikens spann?*: en punkt per yrkesgrupp med P10 och P90 i statistiken, läget i procent av statistikens
+  spann (0 = P10, 100 = P90) per BAS-intervall, med bandkartans färger för könsdominans. Fylld punkt betyder att
+  statistiken matchades på AID och BAS, ofylld att den matchades på endast AID. Diagrammet visar hela underlaget,
+  oberoende av filtren i avsnittet mot statistiken, och bara grupper som når minsta gruppstorlek. Utan P10 och P90
+  står ett meddelande i stället. Det förra avsnittet *Överblick* heter nu *Yrkesgrupp för yrkesgrupp* och är stängt
+  från början. Diagramkärnan har fått punkter utan fyllning (`ofylld` på ett punktlager).
+
+- **Lika arbete visar överblicksdiagrammet först.** I avsnittet *Kvinnor och män i samma yrkesgrupp* står diagrammet
+  *Yrkesgrupperna mot slumpens gränser* nu direkt efter förklaringstexten och före tabellen, så att avsnittet börjar
+  med bilden av alla yrkesgrupper. Innehållet och exporterna är oförändrade.
+
 - **Ålder är valfri i lönefilen (ADR-64).** Det räcker med BAS-intervall, AID, månadslön och kön. Utan ålder körs
   analysen utan åldersjustering: inläsningskontrollen och förhandskontrollen säger det, fliken Ålder & karriär är låst
   med tipset *Kräver ålder i lönefilen*, Översiktens medelålder visas som – och Word, PDF, Excel och dossiererna hoppar

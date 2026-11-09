@@ -13,6 +13,7 @@
  */
 import { median, quantile, fitOLS } from './stat.js';
 import { skrDelText } from './skrreferens.js';
+import { matchningEtikett } from './jamforelse.js';
 import { bedomSkillnad, statusKonstanter } from './status.js';
 import { lonebegreppReservation } from './struktur.js';
 
@@ -532,10 +533,12 @@ export function basintervallBlock(b, { id = `bas:${b.bas}`, urval, demo, troskel
 
 /**
  * Lönerna mot referenserna (ADR-55): överblickens tal i ord och listan. Ställningstagandet är referenspunkten: orden
- * säger var löneläget och statistiken ligger mot det, aldrig tvärtom.
+ * säger var löneläget och statistiken ligger mot det, aldrig tvärtom. Med statistik har listan kolumnen Matchning
+ * (samma ord som tabellen mot jämförelsestatistiken och detaljlistan).
  * @param {any} overblick resultatet av referensOverblick (grupper under minsta gruppstorlek är redan borta)
+ * @param {{id?:string, urval?:any, demo?:any, troskelNot?:any, harStatistik?:boolean}} opt
  */
-export function referenserBlock(overblick, { id = 'referenser', urval, demo, troskelNot }) {
+export function referenserBlock(overblick, { id = 'referenser', urval, demo, troskelNot, harStatistik = false }) {
     const { fore, efter } = _inled({ demo, urval, troskelNot });
     const { grupper, tal } = overblick, pm = tal.perMonster;
     const tecken = v => (v == null ? '–' : `${v >= 0 ? '+' : '−'}${_pct(Math.abs(v), 1)}`);
@@ -549,9 +552,10 @@ export function referenserBlock(overblick, { id = 'referenser', urval, demo, tro
             mening(pm.badaInom, 'löneläget och statistiken ligger inom ställningstagandet')] : []),
         `Vägd medianskillnad, löneläget mot ${[motPolicy && `ställningstagandet: ${tecken(tal.vagdMedianMotStallningstagandePct)}`, motStatistik && `statistiken: ${tecken(tal.vagdMedianMotStatistikPct)}`].filter(Boolean).join(', mot ')}.`];
     return { id, rubrik: 'Lönerna mot referenserna', stycken: [...fore, ...st, ...efter], provat: null, fragor: null,
-        tabell: { rubriker: ['Yrkesgrupp', 'n', 'Median (kr)', 'Mot ställningstagandet (%)', 'Mot statistiken (%)', 'Läge och förslag'],
+        tabell: { rubriker: ['Yrkesgrupp', ...(harStatistik ? ['Matchning'] : []), 'n', 'Median (kr)', 'Mot ställningstagandet (%)', 'Mot statistiken (%)', 'Läge och förslag'],
             // Samma text som skärmens kolumn och Excel-bladet (lageOchForslag i referenser.js)
-            rader: grupper.map(g => [`${g.yrke} · BAS ${g.bas}`, formatTal(g.n), formatTal(g.org.median, 0), skillnad(g, g.stallningstagande), skillnad(g, g.statistik), g.lageOchForslag ?? g.monster.text]) } };
+            rader: grupper.map(g => [`${g.yrke} · BAS ${g.bas}`, ...(harStatistik ? [matchningEtikett(g.statistikMatchning)] : []), formatTal(g.n), formatTal(g.org.median, 0),
+                skillnad(g, g.stallningstagande), skillnad(g, g.statistik), g.lageOchForslag ?? g.monster.text]) } };
 }
 
 /** Ren text för urklipp (reserv): tabbar mellan kolumner, numrerade frågor. */

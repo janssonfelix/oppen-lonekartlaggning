@@ -13,8 +13,11 @@
 //     inget undantag.
 //  3. Datapunkter märkta `liten` ritas bara med val.visaSma (Utforska, ADR-14).
 //
+// Urval: en punkt vars `urval`-fält (figur.urval.falt) finns i val.bortvalda behandlas som en liten punkt utan
+// visaSma — den ritas inte, och inget räknas ur den. Punkter utan fältet och referenserna ritas alltid.
+//
 // Index: data-l är lagrets index i figuren som skickades in, data-i datapunktens index i lagrets
-// data — alltid, med eller utan visaSma och dolda serier. Små punkter som inte ritas finns inte i
+// data — alltid, med eller utan visaSma, dolda serier och bortvalda punkter. Små punkter som inte ritas finns inte i
 // DOM, så ett uppslag på data-l/data-i kan aldrig ge en borttagen punkt. Allt som inte får lämna
 // spår (domäner, förklaring, stapelplatser, staplade summor, paneler) räknas ur de synliga punkterna.
 //
@@ -29,14 +32,17 @@
 // bara ur detta och de synliga punkterna — aldrig ur figurIn.lager[].data rakt av.
 function _rfSynligt(figurIn, val) {
     const visa = !!val.visaSma;
-    const dold = d => !visa && !!(d && d.liten);   // en liten punkt som inte får synas
+    const bortvalda = _rfBortvalda(val);
+    const bort = d => _figArBortvald(figurIn, bortvalda, d);
+    const dold = d => (!visa && !!(d && d.liten)) || bort(d);   // en liten punkt som inte får synas, eller en bortvald
     const dolda = val.dolda || new Set();
     const lagerAlla = figurIn.lager.map((l, li) => ({ l, li, vd: l.data.filter(d => d && !dold(d)) })).filter(o => o.vd.length);
     const synliga = lagerAlla.filter(({ l }) => !(l.serie && dolda.has(String(l.serie))));
     // Kategoriordningen är ALLTID originalets (uttrycklig `ordning` först, sedan första förekomst bland alla
     // lagrens punkter i den inskickade figuren), begränsad till det som ritas — oberoende av visaSma och dolda
-    // serier (S5, T4). skalDoman begränsar `ordning` till kategorier som finns i de synliga lagren.
-    const original = { ...figurIn, lager: figurIn.lager.map(l => ({ ...l, data: l.data.filter(d => d) })) };
+    // serier (S5, T4). skalDoman begränsar `ordning` till kategorier som finns i de synliga lagren. Bortvalda
+    // punkter räknas inte till originalet: deras första förekomst får inte flytta en synlig kategori.
+    const original = { ...figurIn, lager: figurIn.lager.map(l => ({ ...l, data: l.data.filter(d => d && !bort(d)) })) };
     const bandOrdning = a => (figurIn[a].skala === 'band' ? { ...figurIn[a], ordning: _figSkalDoman(original, a) } : figurIn[a]);
     const domFigur = { ...figurIn, x: bandOrdning('x'), y: bandOrdning('y'), lager: synliga.map(({ l, vd }) => ({ ...l, data: vd })) };
     const panelLista = Array.isArray(figurIn.paneler) && figurIn.paneler.length ? figurIn.paneler : null;
@@ -44,7 +50,15 @@ function _rfSynligt(figurIn, val) {
     // (_figPanelerMedLager, samma som utanSmaGrupper använder); ritaren avgör bara VILKA lager som syns.
     const paneler = panelLista ? _figPanelerMedLager(panelLista, lagerAlla.map(({ l }) => l)) : [null];
     const doms = { x: _figSkalDoman(domFigur, 'x'), y: _figSkalDoman(domFigur, 'y'), y2: figurIn.y2 ? _figSkalDoman(domFigur, 'y2') : null };
-    return { visa, dold, dolda, lagerAlla, synliga, paneler, antalP: Math.max(1, paneler.length), doms };
+    return { visa, dold, dolda, bortvalda, lagerAlla, synliga, paneler, antalP: Math.max(1, paneler.length), doms };
+}
+
+// val.bortvalda som en mängd (annat än en mängd räknas som tom): de urvalsvärden (String(d[figur.urval.falt]))
+// som inte ska ritas. Utan figur.urval har mängden ingen verkan (_figArBortvald).
+/** @param {any} val @returns {Set<string>} */
+function _rfBortvalda(val) {
+    const b = val && val.bortvalda;
+    return b && typeof b.has === 'function' ? b : new Set();
 }
 
 // En panel: stödlinjer, märken (i en nästlad <svg> som klipper), stapeletiketter, axellinje, x-markeringar, titel.
@@ -113,7 +127,7 @@ function _rfRitaLegend(svg, L, syn, px, H, notRader) {
             .attr('opacity', dold_ ? 0.4 : 1);
         const f = p.l.farg || PALETTE.serie[p.li % PALETTE.serie.length];
         if (p.l.marke === 'linje') g.append('line').attr('x1', 0).attr('x2', 12).attr('y1', -4).attr('y2', -4).attr('stroke', f).attr('stroke-width', 2.5);
-        else if (p.l.marke === 'punkt' && (!p.l.symbol || p.l.symbol === 'cirkel' || p.l.symbol === 'romb' || p.l.symbol === 'kvadrat')) _rfSymbol(g, p.l.symbol, 6, -4, 5, f).attr('data-prov', 'punkt');
+        else if (p.l.marke === 'punkt' && (!p.l.symbol || p.l.symbol === 'cirkel' || p.l.symbol === 'romb' || p.l.symbol === 'kvadrat')) (p.l.ofylld ? _rfOfylld(_rfSymbol(g, p.l.symbol, 6, -4, 5, f), f) : _rfSymbol(g, p.l.symbol, 6, -4, 5, f)).attr('data-prov', 'punkt');
         else if (p.l.marke === 'punkt' && p.l.symbol === 'streck') g.append('line').attr('data-prov', 'punkt').attr('x1', 6).attr('x2', 6).attr('y1', -10).attr('y2', 2).attr('stroke', f).attr('stroke-width', 2.5);
         else {
             g.append('rect').attr('x', 0).attr('y', -10).attr('width', 12).attr('height', 12).attr('rx', 2).attr('fill', f);
@@ -132,13 +146,14 @@ function _rfRitaLegend(svg, L, syn, px, H, notRader) {
  * Bygger SVG:n för en figur. Sätter inget i sidan och läser inget ur den.
  * @param {any} figurIn  figur enligt src/lib/figur.js (redan validerad); data-l/data-i pekar på den
  * @param {number} bredd    bildens bredd i pixlar
- * @param {{hojd?:number, visaSma?:boolean, dolda?:Set<string>, bakgrund?:string, not?:string, rubrik?:string, fot?:string, radpanelBredvid?:boolean}} [val]
+ * @param {{hojd?:number, visaSma?:boolean, dolda?:Set<string>, bortvalda?:Set<string>, bakgrund?:string, not?:string, rubrik?:string, fot?:string, radpanelBredvid?:boolean}} [val]
+ *   bortvalda: urvalsvärden (figur.urval) vars punkter inte ritas — som små punkter utan visaSma; index oförändrade.
  *   rubrik och fot (en rad var, avkortas) är till för exporten: en bild som klistras in i ett dokument säger själv vad den visar.
  * @returns {SVGSVGElement}
  */
 function _rfByggSvg(figurIn, bredd, val = {}) {
     if (figurIn.paneler === 'auto') {
-        const delar = _rfRadpanelDelar(figurIn);
+        const delar = _rfRadpanelDelar(figurIn, _rfBortvalda(val));
         if (delar) return _rfByggRadpaneler(figurIn, delar, bredd, val);
         figurIn = { ...figurIn, paneler: undefined };
     }
@@ -195,15 +210,19 @@ function _rfByggSvg(figurIn, bredd, val = {}) {
 
 // ---- Radpaneler: små multiplar för många kategorier ----
 // En liggande figur med `paneler: 'auto'` och fler än RF_RADPANEL_MAX kategorier på y ritas som flera delbilder om
-// högst så många kategorier, i figurens ordning, staplade under varandra med samma x-axel (samma domän) och en
+// högst så många kategorier, i figurens ordning (bara de som har en punkt som inte är bortvald), staplade under varandra med samma x-axel (samma domän) och en
 // rubrik per del ("1–15", "16–30" …). Varje delbild är figuren med punkterna utanför delen utbytta mot null: data-l
 // och data-i pekar därför på samma punkt som i hela figuren, och tips, klick och tangentbord fungerar som vanligt.
 // Förklaringen står bara under den sista delen, rubriken (export) över den första. Diagramdatan påverkas inte.
 const RF_RADPANEL_MAX = 15;
-/** Kategorierna i delar om högst RF_RADPANEL_MAX, eller null när figuren inte ska delas. @param {any} figurIn */
-function _rfRadpanelDelar(figurIn) {
+/**
+ * Kategorierna i delar om högst RF_RADPANEL_MAX, eller null när figuren inte ska delas. Bortvalda punkter räknas
+ * inte: en kategori som bara har bortvalda punkter får ingen plats, och delningen görs ur det som återstår.
+ * @param {any} figurIn @param {Set<string>} [bortvalda]
+ */
+function _rfRadpanelDelar(figurIn, bortvalda) {
     if (!figurIn.y || figurIn.y.skala !== 'band' || figurIn.x.skala === 'band' || !figurIn.lager.every(l => l.riktning === 'liggande' || l.marke === 'punkt')) return null;
-    const kat = _figSkalDoman({ ...figurIn, lager: figurIn.lager.map(l => ({ ...l, data: l.data.filter(d => d) })) }, 'y');
+    const kat = _figSkalDoman({ ...figurIn, lager: figurIn.lager.map(l => ({ ...l, data: l.data.filter(d => d && !_figArBortvald(figurIn, bortvalda, d)) })) }, 'y');
     if (kat.length <= RF_RADPANEL_MAX) return null;
     const delar = [];
     for (let i = 0; i < kat.length; i += RF_RADPANEL_MAX) delar.push(kat.slice(i, i + RF_RADPANEL_MAX));
@@ -259,6 +278,10 @@ function _rfByggRadpaneler(figurIn, delar, bredd, val) {
 //   el._figurVal    alternativen (visaSma, hojd, bredd, tomtext, vidKlick, exportMedSma, exportBeskrivning,
 //                   exportAnteckning)
 //   el._figurDolda  Set med serienamn som dolts via förklaringen (nollställs av en ny figur)
+//   el._figurBortvalda  Set med urvalsvärden (figur.urval) som inte ritas. Sätts av varje ritaFigur ur minnet
+//                   (_rfUrvalMinne) och av knappraden; _rfRitaOm, _rfTraff och _rfExportFigur läser den.
+//   el._rfUrvalVarden  urvalsvärdena som knappraden har en knapp för (saknas: ingen knapprad); knappraden och
+//                   noten bär _rfUrvalRadEl och _rfUrvalNotEl
 //   el._figurBredd  bredden diagrammet senast ritades för
 //   el._rfKoppling  lyssnarna och storleksbevakningen (sätts en gång, överlever omritningar)
 //   el._rfRitadFigur  figuren som bilden i DOM ritades ur (samma objekt som el._figur efter en ritning): övergångarna
@@ -358,6 +381,7 @@ function _rfStadaBehallare(utom) {
 function _rfRensaAlla() {
     for (const el of [..._rfBehallare]) rensaFigur(el);
     _rfBehallare.clear();
+    _rfUrvalGlom();   // urvalet i diagrammen hör till underlaget som rensas
     _rfNollstallTips();
 }
 
@@ -375,9 +399,9 @@ function _rfLagerBeskrivning(figur, lager, index) {
 // räknade lådan ur (_rfLadIndivider — samma funktion; lådor nedsamplas aldrig). Nyckeln följer bara med när
 // lådans ALLA individer har samma, definierade nyckel: en nyckel som hör till en person kan då aldrig komma ut
 // ur ett aggregat.
-function _rfLadTraff(figur, lager, d, visaSma, m) {
+function _rfLadTraff(figur, lager, d, dold, m) {
     const kategori = _rfLadKategori(d);
-    const individer = _rfLadIndivider(figur, lager, p => !visaSma && !!p.liten).filter(o => _rfLadKategori(o.d) === kategori);
+    const individer = _rfLadIndivider(figur, lager, dold).filter(o => _rfLadKategori(o.d) === kategori);
     const s = _figLadstatistik(individer.map(o => o.d.y));
     const punkt = { x: d.x };
     const nyckel = individer.length ? individer[0].d.nyckel : undefined;
@@ -405,14 +429,17 @@ function _rfTraff(el, mal) {
     const d = lager && Array.isArray(lager.data) ? lager.data[_rfIndex(m.getAttribute('data-i'))] : null;
     if (!d) return null;
     const visaSma = !!(el._figurVal && el._figurVal.visaSma);
-    if (d.liten && !visaSma) {
+    // Samma regel som ritaren (_rfSynligt): en liten punkt utan visaSma, eller en bortvald (el._figurBortvalda).
+    const bortvalda = el._figurBortvalda;
+    const dold = p => (!visaSma && !!p.liten) || _figArBortvald(figur, bortvalda, p);
+    if (dold(d)) {
         // Kan inte hända: ritaren ritar inga dolda punkter. Vakten finns för att en dold punkt aldrig ska nå en hanterare.
         rapporteraFel(_rfPlats('diagramträff', el), new Error('träff på en dold punkt'));
         return null;
     }
     // I ett lådlager är bara individpunkterna (punkter: 'alla') datapunkter; allt annat är lådan — ett aggregat.
     if (lager.marke === 'lada' && m.getAttribute('data-marke') !== 'individ') {
-        return { m, lager, index, ..._rfLadTraff(figur, lager, d, visaSma, m) };
+        return { m, lager, index, ..._rfLadTraff(figur, lager, d, dold, m) };
     }
     return { m, lager, index, d, sammanfattning: undefined };
 }
@@ -560,7 +587,7 @@ function _rfRitaOm(el, { overgang = true } = {}) {
     const aktiv = document.activeElement;
     const fokus = aktiv && el.contains(aktiv) && aktiv.getAttribute ? aktiv.getAttribute('data-serie') : null;
     // Ritaren får ORIGINALET (index och palett följer det) och avgör själv vad som ritas.
-    const svg = _rfByggSvg(_rfZoomad(el), Math.max(320, el._figurBredd), { hojd: val.hojd, visaSma: !!val.visaSma, dolda: el._figurDolda });
+    const svg = _rfByggSvg(_rfZoomad(el), Math.max(320, el._figurBredd), { hojd: val.hojd, visaSma: !!val.visaSma, dolda: el._figurDolda, bortvalda: el._figurBortvalda });
     el.textContent = '';
     el.appendChild(svg);
     el._rfRitadFigur = figur;
@@ -864,11 +891,13 @@ function ritaFigur(id, figur, val) {
         el._figur = figur;
         el._figurVal = val && typeof val === 'object' ? val : {};
         el._figurDolda = new Set();
+        _rfUrvalSatt(el);  // urvalet ur minnet, begränsat till figurens värden
         _rfZoomGlom(el);   // en ny figur har andra värden: ett tidigare utsnitt gäller inte
         el._exportBeskrivning = typeof el._figurVal.exportBeskrivning === 'string' ? el._figurVal.exportBeskrivning : '';
         _rfRitaOm(el);
         _rfKoppla(el);
         _attachChartExport(el);
+        _rfUrvalVisa(el);  // knappraden direkt före behållaren (efter exportmenyn) och noten under den
     } catch (e) {
         _rfVisaFel(el, e);
     }
@@ -894,7 +923,8 @@ function rensaFigur(id) {
     _rfDoljTips(el);
     // Exportraden hör till figuren: den tas bara bort om behållaren hade en (en annan del av sidan kan ha lagt en egen).
     if ('_figur' in el) delete el._exportBeskrivning;
-    delete el._figur; delete el._figurVal; delete el._figurDolda; delete el._figurBredd;
+    delete el._figur; delete el._figurVal; delete el._figurDolda; delete el._figurBortvalda; delete el._figurBredd;
+    _rfUrvalTaBort(el);   // knappraden och noten; minnet (_rfUrvalMinne) står kvar
     _setScatterSampleNote(el, null);
     _rfPenselGlom(el);
     _rfZoomGlom(el);
@@ -1087,6 +1117,134 @@ function _rfZoomNot(el, visa) {
     }
 }
 function _rfZoomGlom(el) { delete el._rfZoom; _rfZoomNot(el, false); }
+
+// ---- Urval: vilka värden av figurens urvalsfält (figur.urval, t.ex. BAS-intervall) som ritas ----
+// En knapprad direkt före behållaren har en knapp per värde (aria-pressed: värdet visas) och sist Visa alla. Ett
+// bortvalt värde ritas inte (ritaren behandlar dess punkter som små punkter utan visaSma); inget tal räknas om, och
+// rapportens bildväg (diagramTillBild) ritar alltid allt. Den sista valda knappen kan inte väljas bort.
+// Minnet gäller per diagram (behållarens id och urvalsfältet) under sessionen: det överlever rensaFigur, så att en vy
+// som rensar före omritning behåller valet. Varje ritaFigur tar minnet ∩ figurens värden; ett bortvalt värde som
+// saknas ignoreras (och gäller igen när det finns), och vore alla värden bortvalda visas alla. Minnet sparas inte i
+// konfigurationsfilen och glöms vid Rensa all data (_rfRensaAlla) och när en ny lönefil läses in (_rfUrvalGlom).
+/** @type {Map<string, Set<string>>} */
+const _rfUrvalMinne = new Map();
+/** Glömmer urvalet i alla diagram (ny lönefil, Rensa all data). Diagram som redan är ritade behåller sitt tills de ritas igen. */
+function _rfUrvalGlom() { _rfUrvalMinne.clear(); }
+function _rfUrvalNyckel(el) {
+    const u = el && el._figur && el._figur.urval;
+    return u && el.id ? `${el.id}|${u.falt}` : null;
+}
+/** Etiketterna för de bortvalda värdena, i figurens ordning (t.ex. ['BAS A', 'BAS N']). */
+function _rfUrvalEtiketter(figur, bortvalda) {
+    if (!figur || !figur.urval || !bortvalda || !bortvalda.size) return [];
+    return _figUrvalVarden(figur, { visaSma: true }).filter(v => bortvalda.has(v)).map(v => _figUrvalEtikett(figur, v));
+}
+// Vid ritaFigur: knappradens värden och de bortvalda ur minnet. Under två värden: ingen knapprad och inget bortvalt.
+function _rfUrvalSatt(el) {
+    const nyckel = _rfUrvalNyckel(el);
+    const varden = nyckel ? _figUrvalVarden(el._figur, { visaSma: !!el._figurVal.visaSma }) : [];
+    const minne = nyckel ? _rfUrvalMinne.get(nyckel) : null;
+    const bort = minne && varden.length >= 2 ? varden.filter(v => minne.has(v)) : [];
+    if (varden.length >= 2) el._rfUrvalVarden = varden; else delete el._rfUrvalVarden;
+    el._figurBortvalda = new Set(bort.length < varden.length ? bort : []);
+}
+// Minnet efter ett klick: de bortvalda nu, och bortvalda värden som inte finns i den här figuren.
+function _rfUrvalMinnas(el) {
+    const nyckel = _rfUrvalNyckel(el);
+    if (!nyckel) return;
+    const varden = el._rfUrvalVarden || [];
+    const ny = new Set([...(_rfUrvalMinne.get(nyckel) || [])].filter(v => !varden.includes(v)));
+    for (const v of el._figurBortvalda) ny.add(v);
+    if (ny.size) _rfUrvalMinne.set(nyckel, ny); else _rfUrvalMinne.delete(nyckel);
+}
+// Bygger knappraden (eller tar bort den) och visar noten. Fokus på en knapp följer med till den nya raden.
+function _rfUrvalVisa(el) {
+    const forra = el._rfUrvalRadEl;
+    const aktiv = document.activeElement;
+    const fokus = forra && aktiv && forra.contains(aktiv) ? aktiv.getAttribute('data-urval') : null;
+    if (forra) forra.remove();
+    delete el._rfUrvalRadEl;
+    const varden = el._rfUrvalVarden;
+    if (varden && el.parentNode) {
+        const figur = el._figur;
+        const rad = document.createElement('div');
+        rad.className = 'diagram-urval';
+        rad.setAttribute('role', 'group');
+        rad.setAttribute('aria-label', `Visa ${figur.urval.namn}`);
+        for (const v of varden) {
+            const b = _rfNotKnapp(_figUrvalEtikett(figur, v), () => _rfUrvalVaxla(el, v));
+            b.setAttribute('data-urval', v);
+            rad.appendChild(b);
+        }
+        const alla = _rfNotKnapp('Visa alla', () => _rfUrvalVisaAlla(el));
+        alla.setAttribute('data-urval-alla', '');
+        rad.appendChild(alla);
+        el.insertAdjacentElement('beforebegin', rad);
+        el._rfUrvalRadEl = rad;
+        if (fokus != null) {
+            const b = [...rad.querySelectorAll('[data-urval]')].find(k => k.getAttribute('data-urval') === fokus);
+            if (b) /** @type {HTMLElement} */ (b).focus();
+        }
+    }
+    _rfUrvalUppdatera(el);
+}
+// Knapparnas lägen och noten efter det som är bortvalt nu.
+function _rfUrvalUppdatera(el) {
+    const bort = el._figurBortvalda || new Set();
+    const rad = el._rfUrvalRadEl;
+    if (rad) {
+        const synliga = (el._rfUrvalVarden || []).filter(v => !bort.has(v)).length;
+        for (const b of rad.querySelectorAll('[data-urval]')) {
+            const visas = !bort.has(b.getAttribute('data-urval'));
+            b.setAttribute('aria-pressed', String(visas));
+            if (visas && synliga <= 1) b.setAttribute('aria-disabled', 'true'); else b.removeAttribute('aria-disabled');
+        }
+        const alla = rad.querySelector('[data-urval-alla]');
+        if (alla) alla.hidden = bort.size === 0;
+    }
+    _rfUrvalNot(el, _rfUrvalEtiketter(el._figur, bort));
+}
+function _rfUrvalVaxla(el, v) {
+    const bort = el._figurBortvalda, varden = el._rfUrvalVarden;
+    if (!bort || !varden || !varden.includes(v)) return;
+    if (bort.has(v)) bort.delete(v);
+    else if (varden.length - bort.size <= 1) return;   // den sista valda (aria-disabled): inget händer
+    else bort.add(v);
+    _rfUrvalMinnas(el);
+    _rfUrvalUppdatera(el);
+    _rfRitaSakert(el);
+}
+function _rfUrvalVisaAlla(el) {
+    const bort = el._figurBortvalda;
+    if (!bort || !bort.size) return;
+    bort.clear();
+    const nyckel = _rfUrvalNyckel(el);
+    if (nyckel) _rfUrvalMinne.delete(nyckel);
+    _rfUrvalUppdatera(el);
+    _rfRitaSakert(el);
+}
+// Noten under diagrammet (samma stil och plats som zoomnoten) när något är bortvalt.
+function _rfUrvalNot(el, etiketter) {
+    let not = el._rfUrvalNotEl;
+    if (!etiketter || !etiketter.length) { if (not) not.remove(); delete el._rfUrvalNotEl; return; }
+    if (!not) {
+        not = document.createElement('p');
+        not.className = 'k-mask-note';
+        not.setAttribute('role', 'status');
+        not.setAttribute('data-rf', 'urval');
+        el.insertAdjacentElement('afterend', not);
+        el._rfUrvalNotEl = not;
+    }
+    const lista = etiketter.length === 1 ? `${etiketter[0]} är dolt` : `${etiketter.slice(0, -1).join(', ')} och ${etiketter[etiketter.length - 1]} är dolda`;
+    not.textContent = `Diagrammet visar ett urval: ${lista}. Talen i texten och tabellerna gäller hela underlaget.`;
+}
+// rensaFigur: knappraden och noten tas bort; minnet står kvar.
+function _rfUrvalTaBort(el) {
+    if (el._rfUrvalRadEl) el._rfUrvalRadEl.remove();
+    delete el._rfUrvalRadEl;
+    delete el._rfUrvalVarden;
+    _rfUrvalNot(el, null);
+}
 // Glömmer penseln utan att röra bilden (den ska ändå ritas om eller tas bort).
 function _rfPenselGlom(el) {
     if (el._rfKoppling) el._rfKoppling.drag = null;
@@ -1145,7 +1303,8 @@ function _rfBildmatt(bredd, hojd) {
  * @param {any} figur  ORIGINALFIGUREN enligt src/lib/figur.js — aldrig en förfiltrerad kopia
  * @param {number} bredd  bildens bredd i pixlar (annat än ett tal > 0: 1600)
  * @param {number} hojd   bildens höjd i pixlar (annat än ett tal > 0: bredd × 9/16)
- * @param {{visaSma?:boolean, dolda?:Set<string>, rubrik?:string, fot?:string}} [val]  dolda = serier som dolts via förklaringen
+ * @param {{visaSma?:boolean, dolda?:Set<string>, bortvalda?:Set<string>, rubrik?:string, fot?:string}} [val]  dolda = serier som dolts via
+ *   förklaringen, bortvalda = urvalsvärden (figur.urval) vars punkter inte ritas
  * @returns {string}
  */
 function figurTillSvg(figur, bredd, hojd, val = {}) {
@@ -1153,7 +1312,8 @@ function figurTillSvg(figur, bredd, hojd, val = {}) {
     const logB = 800, logH = logB * H / B;
     const o = val && typeof val === 'object' ? val : {};
     _figValidera(figur, 'export');
-    const bas = { hojd: logH, radpanelBredvid: true, visaSma: !!o.visaSma, dolda: o.dolda && typeof o.dolda.has === 'function' ? o.dolda : undefined, bakgrund: FARG.vit,
+    const bas = { hojd: logH, radpanelBredvid: true, visaSma: !!o.visaSma, dolda: o.dolda && typeof o.dolda.has === 'function' ? o.dolda : undefined,
+                  ...(o.bortvalda && typeof o.bortvalda.has === 'function' ? { bortvalda: o.bortvalda } : {}), bakgrund: FARG.vit,
                   ...(typeof o.rubrik === 'string' && o.rubrik ? { rubrik: o.rubrik } : {}), ...(typeof o.fot === 'string' && o.fot ? { fot: o.fot } : {}) };
     const sankt = _kSanktNot();
     let svg = _rfByggSvg(figur, logB, { ...bas, not: sankt });
@@ -1214,7 +1374,9 @@ function figurTillBild(figur, format, bredd, hojd, val = {}) {
  * ur den med visaSma och dolda (samma färger som på skärmen), och diagramdatan filtreras av anroparen —
  * _figTillTabell(visaSma ? figur : _figUtanSma(figur)), alla serier.
  * `tom` är sant när inget återstår att exportera (alla punkter hör till små grupper som inte får följa med).
- * @returns {{figur: any, bild: any, utsnitt: boolean, visaSma: boolean, dolda: Set<string>, tom: boolean} | null}
+ * `bortvalda` är urvalet i diagrammet (el._figurBortvalda): bara exportmenyns bild följer det; diagramTillBild
+ * (rapport, utskrift, ZIP, rapportunderlag) ritar alltid allt, och `tom` räknas utan urvalet.
+ * @returns {{figur: any, bild: any, utsnitt: boolean, visaSma: boolean, dolda: Set<string>, bortvalda: Set<string>, tom: boolean} | null}
  */
 function _rfExportFigur(gd) {
     if (!gd || !gd._figur) return null;
@@ -1225,5 +1387,5 @@ function _rfExportFigur(gd) {
     }
     const figur = gd._figur;
     // `bild` är figuren som bilden ritas ur: originalet, eller ett zoomat utsnitt av det (samma lager, andra domäner).
-    return { figur, bild: _rfZoomad(gd), utsnitt: !!gd._rfZoom, visaSma, dolda: new Set(gd._figurDolda || []), tom: _figAntalPunkter(visaSma ? figur : _figUtanSma(figur)) === 0 };
+    return { figur, bild: _rfZoomad(gd), utsnitt: !!gd._rfZoom, visaSma, dolda: new Set(gd._figurDolda || []), bortvalda: new Set(gd._figurBortvalda || []), tom: _figAntalPunkter(visaSma ? figur : _figUtanSma(figur)) === 0 };
 }

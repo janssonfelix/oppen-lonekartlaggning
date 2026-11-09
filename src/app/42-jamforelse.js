@@ -56,11 +56,12 @@ function generateBenchmark() {
     if (!tbody) return;
     const d = getData();
     if (!state.statistik.length || !d.length) {
-        tbody.innerHTML = `<tr><td colspan="12" class="pad-0"><div class="flik-empty-state">
+        tbody.innerHTML = `<tr><td colspan="13" class="pad-0"><div class="flik-empty-state">
             <div class="empty-icon">${ikon('tomLada', 32)}</div><h2>Jämförelsestatistik saknas</h2>
             <p>Läs in jämförelsestatistik under Filer och kvalitet, så jämförs organisationens löner mot den här.</p>
             <button class="empty-action" data-goto-tab="filer">Gå till Filer och kvalitet</button></div></td></tr>`;
         if (infoEl) infoEl.textContent = '';
+        const matchEl = document.getElementById('benchmark-matchning-info'); if (matchEl) matchEl.textContent = '';
         rensaFigur('chart-jamforelse-spann'); rensaFigur('chart-jamforelse-avvikelse');
         const diag = document.getElementById('jmf-diagram'); if (diag) diag.innerHTML = '';
         return;
@@ -80,6 +81,8 @@ function generateBenchmark() {
         th.setAttribute('data-export-label', text);
         /** @type {HTMLElement} */ (th).title = text;
     });
+    // Matchningens kolumn namnger också källan i exporterna; rubriktexten (title) förklarar regeln.
+    document.querySelectorAll('#benchmark-thead th[data-kol="matchning"]').forEach(th => th.setAttribute('data-export-label', `Matchning mot ${kallaNamn}`));
     // Organisationens kolumner namnger organisationen när den har ett namn (ADR-36).
     document.querySelectorAll('#benchmark-thead th.jmf-block').forEach(th => {
         const p = /** @type {HTMLElement} */ (th).dataset.pctl || (/** @type {HTMLElement} */ (th).dataset.pctl = th.textContent.trim().split(' ')[0]);
@@ -92,6 +95,9 @@ function generateBenchmark() {
         infoEl.textContent = `Jmf = ${_jmfKallaNamn(kalla)}.` + (saknas.length ? ` ${saknas.join(' och ')} saknas i jämförelsestatistiken.` : '');
         infoEl.classList.toggle('warn', saknas.length > 0);
     }
+    // Statistikens matchning i samma urval som tabellen (BAS- och sektorsfiltren); grupper under k finns inte i raderna.
+    const matchEl = document.getElementById('benchmark-matchning-info');
+    if (matchEl) matchEl.textContent = _jfMatchningSammanfattning(rader);
 
     const fmt = new Intl.NumberFormat('sv-SE', { style: 'currency', currency: 'SEK', maximumFractionDigits: 0 });
     const kr = v => (v == null ? '–' : fmt.format(Math.round(v)));
@@ -101,13 +107,16 @@ function generateBenchmark() {
     const block = (r, p) => `<td class="num jmf-block" data-sort-value="${r.org[p] ?? ''}">${kr(r.org[p])}</td>`
         + `<td class="num muted" data-sort-value="${r[kalla][p] ?? ''}">${kr(r[kalla][p])}</td>${diffCell(r.diff[kalla][p])}`;
 
+    // Matchningen sorteras på nivån: AID + BAS, Endast AID, utan statistik.
+    const matchSort = { 'aid-bas': 1, aid: 2 };
     let html = '', curBas = null;
     for (const r of rader) {
-        if (r.bas !== curBas) { curBas = r.bas; html += `<tr class="group-header"><td colspan="12">BAS ${esc(r.bas)}</td></tr>`; }
-        html += `<tr data-rad="${esc(r.aid)}|${esc(r.bas)}"><td>${esc(r.yrke)}</td><td>${esc(r.bas)}</td><td class="num" data-sort-value="${r.n}">${r.n}</td>`
+        if (r.bas !== curBas) { curBas = r.bas; html += `<tr class="group-header"><td colspan="13">BAS ${esc(r.bas)}</td></tr>`; }
+        html += `<tr data-rad="${esc(r.aid)}|${esc(r.bas)}"><td>${esc(r.yrke)}</td><td>${esc(r.bas)}</td>`
+            + `<td data-sort-value="${matchSort[r.statistikMatchning] || 3}">${esc(_jfMatchningEtikett(r.statistikMatchning))}</td><td class="num" data-sort-value="${r.n}">${r.n}</td>`
             + `${block(r, 'p10')}${block(r, 'median')}${block(r, 'p90')}</tr>`;
     }
-    tbody.innerHTML = html || '<tr><td colspan="12" class="farg-dampad pad-24 ta-mitt">Inga yrken i urvalet.</td></tr>';
+    tbody.innerHTML = html || '<tr><td colspan="13" class="farg-dampad pad-24 ta-mitt">Inga yrken i urvalet.</td></tr>';
     if (typeof flerKolumner === 'function') flerKolumner('benchmark-table', JMF_DOLDA_KOLUMNER, 'jamforelse');
     try { ritaJamforelseDiagram(rader, kalla); } catch (e) { rapporteraFel('Löneläget: diagrammen', e); }
 
@@ -118,6 +127,8 @@ function generateBenchmark() {
         return !m || ((!_jmfVal.bas || m[2] === _jmfVal.bas) && (!_jmfVal.sektor || _aidSektorsnamn(m[1]) === _jmfVal.sektor));
     };
     const utelamnadeIUrval = utelamnade.filter(iUrval);
+    const antal = _jfMatchningAntal(rader);
+    const grupper = n => `${n} ${n === 1 ? 'yrkesgrupp' : 'yrkesgrupper'}`;
     const urval = jamforelseUrvalText();
     setAudit('benchmark', {
         title: 'Jämförelsestatistik',
@@ -132,7 +143,8 @@ function generateBenchmark() {
             ['AID-kod (matchningsnyckel)', 'Inledande sifferprefix av yrkesnamn (t.ex. "402010 Förskollärare" ger 402010)'],
             ['Percentiler', '<code>P10 = kvantil 0,1</code>, <code>median</code>, <code>P90 = kvantil 0,9</code> av organisationens löner i yrke och BAS'],
             ['Diff (%)', '<code>(organisationens värde / jämförelsens värde − 1) × 100</code>, per percentil'],
-            ['Matchning', 'Jämförelsestatistiken: först AID + BAS, annars AID utan BAS. Ställningstagandet: AID + BAS, annars AID, annars BAS']
+            ['Matchning', 'Jämförelsestatistiken: först AID + BAS, annars AID utan BAS; en rad för ett annat BAS-intervall används aldrig. Ställningstagandet: AID + BAS, annars AID, annars BAS. '
+                + `I urvalet: ${grupper(antal.aidBas)} på AID + BAS, ${antal.aid} på endast AID, ${antal.utan} utan statistik.`]
         ],
         notes: [
             'Negativ skillnad (röd) = organisationen ligger under jämförelsen',
@@ -192,19 +204,19 @@ function _jmfSpannFigur(visa, kalla, namn, namnLitet) {
     const kr = v => _figTalformat(v, 'kr');
     const refNamn = plotNamn(namn), org = plotNamn(orgNamn());
     return { beskrivning: `Organisationens lönespann från P10 till P90 per yrke, med medianen som prick, ovanpå spannet i ${namnLitet}. Samma värden står i tabellen nedan.`,
-        x: { skala: 'linjar', titel: 'Månadslön (kr)', format: 'kr' }, y: { skala: 'band', ordning: visa.map(etikett), etikettMax: 48 },
+        urval: BAS_URVAL, x: { skala: 'linjar', titel: 'Månadslön (kr)', format: 'kr' }, y: { skala: 'band', ordning: visa.map(etikett), etikettMax: 48 },
         hojd: 110 + 26 * visa.length, paneler: 'auto',   // fler än femton yrken: små multiplar
         lager: [
             { marke: 'intervall', riktning: 'liggande', serie: `${refNamn} P10–P90`, farg: PALETTE.semantic.spann, tjocklek: 14,
-              data: visa.filter(r => harBand(ref(r))).map(r => ({ y: etikett(r), lag: ref(r).p10, hog: ref(r).p90, markering: markeringFor(r.bas, r.aid) })),
+              data: visa.filter(r => harBand(ref(r))).map(r => ({ y: etikett(r), lag: ref(r).p10, hog: ref(r).p90, bas: r.bas, markering: markeringFor(r.bas, r.aid) })),
               tips: d => [[d.y], [`${refNamn} P10–P90`, `${_figTalformat(d.lag, 'kr', { enhet: false })}–${kr(d.hog)}`]] },
             { marke: 'intervall', riktning: 'liggande', serie: `${org} P10–P90`, farg: PALETTE.serie[0], tjocklek: 7,
-              data: visa.map(r => ({ y: etikett(r), lag: r.org.p10, hog: r.org.p90, markering: markeringFor(r.bas, r.aid) })),
+              data: visa.map(r => ({ y: etikett(r), lag: r.org.p10, hog: r.org.p90, bas: r.bas, markering: markeringFor(r.bas, r.aid) })),
               tips: d => [[d.y], ['Organisationen', `${_figTalformat(d.lag, 'kr', { enhet: false })}–${kr(d.hog)}`]] },
             { marke: 'punkt', symbol: 'streck', serie: `${refNamn} median`, farg: PALETTE.semantic.linje, storlek: 5,
-              data: visa.filter(r => ref(r).median != null).map(r => ({ y: etikett(r), x: ref(r).median })), tips: d => [[d.y], [`${refNamn} median`, kr(d.x)]] },
+              data: visa.filter(r => ref(r).median != null).map(r => ({ y: etikett(r), x: ref(r).median, bas: r.bas })), tips: d => [[d.y], [`${refNamn} median`, kr(d.x)]] },
             { marke: 'punkt', serie: `${org} median`, farg: PALETTE.semantic.trend, storlek: 4.5,
-              data: visa.map(r => ({ y: etikett(r), x: r.org.median, markering: markeringFor(r.bas, r.aid) })), tips: d => [[d.y], ['Organisationen median', kr(d.x)]] }
+              data: visa.map(r => ({ y: etikett(r), x: r.org.median, bas: r.bas, markering: markeringFor(r.bas, r.aid) })), tips: d => [[d.y], ['Organisationen median', kr(d.x)]] }
         ].filter(l => l.data.length) };
 }
 
@@ -234,7 +246,7 @@ function _jmfAvvikelseFigur(visa, kalla, namn) {
     const streck = (serie, farg, m) => ({ marke: 'punkt', symbol: 'streck', serie, farg, storlek: 5,
         data: visa.filter(r => diff(r, m) != null).map(r => ({ ...bas(r), x: diff(r, m), r })), tips: d => tipsRad(d.r) });
     return { beskrivning: `Skillnaden i lön mot ${namn} per yrke, rangordnad från mest negativ: medianen som punkt, och skillnaden i P10 och P90 som streck med ett spann emellan. Samma värden står i tabellen nedan.`,
-        x: { skala: 'linjar', titel: `Skillnad mot ${namn} (%)`, nollinje: true }, y: { skala: 'band', ordning: visa.map(_jmfEtikett), etikettMax: 48 },
+        urval: BAS_URVAL, x: { skala: 'linjar', titel: `Skillnad mot ${namn} (%)`, nollinje: true }, y: { skala: 'band', ordning: visa.map(_jmfEtikett), etikettMax: 48 },
         hojd: 110 + 28 * visa.length, paneler: 'auto',
         lager: [
             { marke: 'intervall', riktning: 'liggande', serie: 'Spann P10–P90', farg: PALETTE.semantic.spann, tjocklek: 4, legend: false,
@@ -242,10 +254,59 @@ function _jmfAvvikelseFigur(visa, kalla, namn) {
             // Etiketten bärs av en egen, genomskinlig punkt vid radens yttersta märke (lika stor som medianpunkten, så att
             // texten hamnar utanför den).
             { marke: 'punkt', serie: 'Medianens värde', farg: PALETTE.semantic.spann, storlek: 6, opacitet: 0, etikettLage: 'hoger', legend: false, utanData: true,
-              data: visa.filter(r => diff(r, 'median') != null).map(r => ({ y: _jmfEtikett(r), x: Math.max(...varden(r)), etikett: _jmfPct(diff(r, 'median')) })) },
+              data: visa.filter(r => diff(r, 'median') != null).map(r => ({ y: _jmfEtikett(r), x: Math.max(...varden(r)), bas: r.bas, etikett: _jmfPct(diff(r, 'median')) })) },
             streck('Skillnad i P10', FARG.blek, 'p10'), streck('Skillnad i P90', PALETTE.semantic.mork, 'p90'),
             { marke: 'punkt', serie: 'Skillnad i median', farg: PALETTE.serie[0], storlek: 6,
               data: visa.filter(r => diff(r, 'median') != null).map(r => ({ ...bas(r), x: diff(r, 'median'), r })), tips: d => tipsRad(d.r) }
+        ].filter(l => l.data.length) };
+}
+
+// ---- Överblicken: var ligger yrkesgrupperna i statistikens spann? ----
+// Kortet står i avsnittet Överblick, under bandkartan (src/index.html, #jmf-statlage-kort). Samma rader som tabellen mot
+// statistiken (jamforelseUnderlag: grupper under tröskeln finns inte i raderna), men utan tabellens filter på BAS och
+// sektor: överblicken visar hela underlaget. En punkt per yrkesgrupp med P10 och P90 i statistiken.
+function renderStatistikLage() {
+    const kort = document.getElementById('jmf-statlage-kort'), el = document.getElementById('chart-jmf-statlage');
+    if (!kort || !el) return;
+    if (!state.statistik.length || !getData().length) { rensaFigur(el); kort.hidden = true; return; }
+    kort.hidden = false;
+    const rader = jamforelseUnderlag().rader.filter(r => _rrLage(r.org.median, r.statistik).pos != null);
+    if (!rader.length) {
+        _lpIngetDiagram(el, 'Jämförelsestatistiken har inte P10 och P90 för någon yrkesgrupp i underlaget, så läget i statistikens spann kan inte visas. Medianerna står under Mot jämförelsestatistiken.');
+        return;
+    }
+    ritaFigur(el, _jmfStatlageFigur(rader), { hojd: 460 });
+}
+
+// Statistikspannets figur (diagramkärnan, ADR-39), byggd som bandkartan: x är BAS-intervallet, y läget för yrkesgruppens
+// median i statistikens spann (0 = P10, 100 = P90, linjärt; utanför spannet under 0 och över 100). Statistikens spann
+// är ett grått band 0–100 per BAS. Punkterna har bandkartans färger för könsdominans och dess förskjutning; matchningen
+// syns i punkten: fylld = AID + BAS, ofylld = Endast AID (lagrets `ofylld`). Raderna når tröskeln (jamforelseUnderlag).
+function _jmfStatlageFigur(rader) {
+    const x = r => 'BAS ' + r.bas, kr = v => _figTalformat(v, 'kr'), utanKr = v => (v == null ? '–' : _figTalformat(v, 'kr', { enhet: false }));
+    const ordning = [...new Set(rader.map(x))];
+    const pts = rader.map(r => ({ x: x(r), y: _rrLage(r.org.median, r.statistik).pos, forskjutning: _lpForskjutning(r.aid, r.bas),
+        storlek: Math.max(3.5, Math.min(9, Math.sqrt(r.n) * 1.1)), aid: r.aid, bas: r.bas, yrke: r.yrke, n: r.n, kvAndel: r.kvAndel,
+        median: r.org.median, stat: r.statistik, matchning: r.statistikMatchning, markering: markeringFor(r.bas, r.aid) }));
+    const tips = d => [[d.yrke], ['BAS', d.bas], ['Läget i spannet', `${svTal(d.y, 0)} %`], ['Organisationens median', kr(d.median)],
+        ['Statistiken', `P10 ${utanKr(d.stat.p10)} · median ${utanKr(d.stat.median)} · P90 ${kr(d.stat.p90)}`],
+        ['Matchning', _jfMatchningEtikett(d.matchning)], ['Kvinnor', _figTalformat(d.kvAndel, 'antal') + ' %'], ['Antal', String(d.n)]];
+    // Sex lager: tre klasser för könsdominans, var och en fylld (AID + BAS) och ofylld (Endast AID). Serienamnet bär
+    // matchningen, så att förklaringen och diagramdatan säger den med samma ord som tabellen.
+    const punktlager = _lpKonsdominans().flatMap(([klass, farg, hor]) => /** @type {Array<['aid-bas'|'aid', boolean]>} */ ([['aid-bas', false], ['aid', true]])
+        .map(([matchning, ofylld]) => ({ marke: 'punkt', serie: `${klass} · ${_jfMatchningEtikett(matchning)}`, farg,
+            ...(ofylld ? { ofylld: true } : { kant: FARG.vit }), data: pts.filter(p => p.matchning === matchning && hor(p.kvAndel)), tips })));
+    const linje = (y, etikett) => ({ typ: 'linje', y, streck: 'streckad', farg: PALETTE.semantic.referens, tjocklek: 1, etikett, textfarg: PALETTE.semantic.referens });
+    return { beskrivning: 'Var varje yrkesgrupps medianlön ligger i jämförelsestatistikens spann per BAS-intervall: 0 är statistikens P10 och 100 dess P90. '
+            + 'Fylld punkt: statistiken matchad på AID och BAS. Ofylld punkt: endast AID. Hela underlaget, oberoende av filtren under Mot jämförelsestatistiken; '
+            + 'läget räknas ur P10, median och P90 i tabellen där.',
+        urval: BAS_URVAL, x: { skala: 'band', ordning }, y: { skala: 'linjar', titel: 'Läget i statistikens spann (%)' },
+        referens: [linje(0, 'P10'), linje(100, 'P90')],
+        lager: [
+            // Spannet bär inga värden (0 och 100 i varje BAS) och får därför inga rader i diagramdatan.
+            { marke: 'intervall', serie: 'Statistikens spann (P10–P90)', farg: PALETTE.semantic.spann, tjocklek: 14, legend: false, utanData: true,
+              data: ordning.map(b => ({ x: b, lag: 0, hog: 100, bas: b.slice(4) })) },
+            ...punktlager
         ].filter(l => l.data.length) };
 }
 

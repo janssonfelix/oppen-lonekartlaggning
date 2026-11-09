@@ -192,6 +192,7 @@ function _lasInDemounderlag(skapa, { stort = false } = {}) {
     if ((state.data.length || state.paket) && !confirm('Lönefilen du har läst in ersätts. Vill du fortsätta?')) return false;
     // Demot blandas aldrig med verkliga delar (ett organisationspaket, egen referens eller statistik).
     if (state.paket || state.policyKalla === 'fil' || state.policyKalla === 'paket' || state.statistik.length) _rensaAllData({ inbakat: false });
+    if (typeof _rfUrvalGlom === 'function') _rfUrvalGlom();   // urvalet i diagrammen hör till det förra underlaget, som vid en ny lönefil
     state.data = skapa();
     state.importprofil = null;   // demodatan läses inte ur en fil: ingen känd uppsättning
     _fkSlapp();   // inte heller någon förhandskontroll, och en fil som väntade på Läs in släpps

@@ -95,6 +95,8 @@ function renderLonepolitik() {
     const rubrik = document.getElementById('lonepolitik-rubrik');
     if (rubrik) rubrik.textContent = `Lönerna mot ${referensNamn()}`;
     const model = buildLonepolitikModel();
+    // Bandkartan står i Löneläget överst, i avsnittet Överblick, och syns när ett ställningstagande finns.
+    _lpBandkartaKort(model);
 
     if (!model.hasPolicy || !model.byBas.length) {
         _lpRitaTopp(null);
@@ -126,15 +128,13 @@ function renderLonepolitik() {
             ${innehall}</details>`;
     };
     const lage = _lpRitaTopp(model);
-    const [bandkarta, konsposition, efterlevnad] = _lpChartShellsHtml();
-    wrap.innerHTML = bandkarta + `<p class="avsnitt-rubrikrad">Fördjupning</p>`
-        + avsnitt('tabell', 'Yrkesgrupper mot sitt spann', 'Var varje grupps median ligger i spannet, och hur många som ligger under',
+    const [konsposition, efterlevnad] = _lpChartShellsHtml();
+    wrap.innerHTML = avsnitt('tabell', 'Yrkesgrupper mot sitt spann', 'Var varje grupps median ligger i spannet, och hur många som ligger under',
             `${lage.provade} yrkesgrupper`, _lpTableHtml(model))
         + avsnitt('kon', 'Könsposition i bandet', 'Placeras kvinnor lägre i samma lönespann än män?', '', konsposition)
         + avsnitt('efterlevnad', 'Efterlevnad', 'Andel under, inom eller över eget spann per BAS-intervall', '', efterlevnad)
         + avsnitt('tackning', 'Täckningsgrad', 'Hur mycket av personalen har en policyreferens?', svPct(model.coverage.personsPct, 0), _lpCoverageHtml(model));
 
-    _lpRenderBandMap(model);
     _lpRenderGenderPosition(model);
     _lpRitaKonLagen(model);
     _lpRenderCompliance(model);
@@ -161,15 +161,21 @@ function _lpCoverageHtml(model) {
     </div>`;
 }
 
+// Bandkartans kort i avsnittet Överblick (src/index.html, #lp-bandkarta-kort): synligt när ett ställningstagande finns.
+// Matchar ställningstagandet inte underlaget står ett meddelande i kortet, så att överblicken aldrig blir en tom rubrik.
+function _lpBandkartaKort(model) {
+    const kort = document.getElementById('lp-bandkarta-kort'), el = document.getElementById('chart-lp-bandmap');
+    if (!kort || !el) return;
+    if (!model.hasPolicy) { rensaFigur(el); el.innerHTML = ''; kort.hidden = true; return; }
+    kort.hidden = false;
+    const forklaring = document.getElementById('lp-bandkarta-forklaring');
+    if (forklaring) forklaring.textContent = `Grå stapel = ${referensKortnamn()}:s P10–P90. Streck i den = referensens median. Blå stapel = organisationens faktiska P10–P90 (bara BAS med minst ${kTroskel()} personer). Punkt = yrkesgruppens median: kvinnodominerad, mansdominerad eller blandad.`;
+    if (!model.byBas.length) { _lpIngetDiagram(el, 'Ställningstagandet har inga rader för underlagets BAS-intervall eller yrken.'); return; }
+    _lpRenderBandMap(model);
+}
+
 function _lpChartShellsHtml() {
     return [`
-    <div class="card mb-16">
-        <div class="chart-header rad-bryt-mitt gap-12 mellan marg-b-8">
-            <h3 class="fs-lg marg-0">Bandkartan — var ligger varje yrkesgrupp i sitt spann?</h3>
-            <span class="text-dampad-xs">Grå stapel = ${esc(referensKortnamn())}:s P10–P90. Streck i den = referensens median. Blå stapel = organisationens faktiska P10–P90 (bara BAS med minst ${kTroskel()} personer). Punkt = yrkesgruppens median: kvinnodominerad, mansdominerad eller blandad.</span>
-        </div>
-        <div id="chart-lp-bandmap"></div>
-    </div>`, `
     <div class="card mb-16">
         <p class="reg-caveat-inline">Ett lägre läge i bandet är ett <strong>fynd att förklara</strong> — inte ett konstaterat fel.
         Nyanställning, tillfällig placering och erfarenhet kan alla ligga bakom.</p>
@@ -227,6 +233,15 @@ function _lpRenderBandMap(model) {
     ritaFigur(el, _lpBandkartaFigur(bas), { hojd: 460 });
 }
 
+// Yrkesgruppernas könsdominans efter andelen kvinnor i procent: namn, färg och villkor. Bandkartan och statistikens
+// spann i Löneläget (42-jamforelse.js) delar klasserna, så att samma färg betyder samma sak i båda.
+/** @returns {Array<[string, string, (a: number) => boolean]>} */
+function _lpKonsdominans() {
+    return [['Kvinnodominerad', PALETTE.kon.kvinna, a => konsklassNu(a) === 'kvinnodominerad'], ['Mansdominerad', PALETTE.kon.man, a => konsklassNu(a) === 'mansdominerad'], ['Blandad', PALETTE.semantic.neutral, a => konsklassNu(a) === 'blandad']];
+}
+// Punktens förskjutning i sidled ur gruppens identitet, inte slump: punkterna ska ligga still mellan omritningar.
+function _lpForskjutning(aid, bas) { return ((_rngHashSeed(aid + '|' + bas) % 1000) / 1000 - 0.5) * 0.36; }
+
 // Bandkartans figur (diagramkärnan, ADR-39): referensens spann och organisationens faktiska spann per BAS som märket
 // `intervall`, med varje yrkesgrupps median som punkt.
 // Organisationens spann finns bara för BAS med minst k personer (`b.orgBand`), och punkterna bara för grupper på full
@@ -240,24 +255,22 @@ function _lpBandkartaFigur(bas) {
     bas.forEach(b => b.groups.forEach(g => {
         if (g.tier !== 'full' || !g.stats || !g.pol) return;
         const kvAndel = g.rows.filter(r => typeof r.kon === 'string' && r.kon.includes('kvinna')).length / g.n * 100;
-        // Förskjutningen härleds ur gruppens identitet, inte slump — punkterna ska ligga still mellan omritningar.
-        pts.push({ x: x(b), y: g.stats.median, forskjutning: ((_rngHashSeed(g.aid + '|' + g.bas) % 1000) / 1000 - 0.5) * 0.36,
+        pts.push({ x: x(b), y: g.stats.median, forskjutning: _lpForskjutning(g.aid, g.bas),
                    storlek: Math.max(3.5, Math.min(9, Math.sqrt(g.n) * 1.1)), kvAndel, n: g.n, yrke: g.yrke, bas: b.bas, niva: g.level || '—', markering: markeringFor(b.bas, g.aid) });
     }));
     return { beskrivning: 'Referensens lönespann och organisationens faktiska lönespann per BAS-intervall, med varje yrkesgrupps median inlagd som punkt. Samma värden finns i tabellen nedan.',
-        x: { skala: 'band', ordning: bas.map(x) }, y: { skala: 'linjar', titel: 'Månadslön', format: 'kr' },
+        urval: BAS_URVAL, x: { skala: 'band', ordning: bas.map(x) }, y: { skala: 'linjar', titel: 'Månadslön', format: 'kr' },
         lager: [
             { marke: 'intervall', serie: `${refNamn} (P10–P90)`, farg: PALETTE.semantic.spann, tjocklek: 14,
-              data: bas.map(b => ({ x: x(b), lag: b.pol.p10, hog: b.pol.p90, markering: markeringFor(b.bas) })), tips: d => [[d.x], [refNamn, `P10 ${utanKr(d.lag)} · P90 ${kr(d.hog)}`]] },
+              data: bas.map(b => ({ x: x(b), lag: b.pol.p10, hog: b.pol.p90, bas: b.bas, markering: markeringFor(b.bas) })), tips: d => [[d.x], [refNamn, `P10 ${utanKr(d.lag)} · P90 ${kr(d.hog)}`]] },
             { marke: 'punkt', symbol: 'streck', serie: `${refNamn} median`, farg: PALETTE.semantic.referens, storlek: 4.5, legend: false,
-              data: bas.map(b => ({ x: x(b), y: refMed(b) })), tips: d => [[d.x], [`${refNamn} median`, kr(d.y)]] },
+              data: bas.map(b => ({ x: x(b), y: refMed(b), bas: b.bas })), tips: d => [[d.x], [`${refNamn} median`, kr(d.y)]] },
             { marke: 'intervall', serie: `${org} (P10–P90)`, farg: PALETTE.serie[0], opacitet: 0.55, tjocklek: 6,
-              data: medOrgBand.map(b => ({ x: x(b), lag: b.orgBand.p10, hog: b.orgBand.p90, med: b.orgBand.med, n: b.orgBand.n, markering: markeringFor(b.bas) })),
+              data: medOrgBand.map(b => ({ x: x(b), lag: b.orgBand.p10, hog: b.orgBand.p90, med: b.orgBand.med, n: b.orgBand.n, bas: b.bas, markering: markeringFor(b.bas) })),
               tips: d => [[d.x], ['Organisationen', `P10 ${utanKr(d.lag)} · median ${utanKr(d.med)} · P90 ${kr(d.hog)}`], ['Antal', String(d.n)]] },
             // Yrkesgrupperna i tre klasser efter könsfördelning (som i Likvärdigt arbete) i stället för en färgskala:
             // tre färger går att läsa mot spannen, en glidande skala gör det inte.
-            .../** @type {Array<[string, string, (a: number) => boolean]>} */ ([['Kvinnodominerad yrkesgrupp', PALETTE.kon.kvinna, a => konsklassNu(a) === 'kvinnodominerad'], ['Mansdominerad yrkesgrupp', PALETTE.kon.man, a => konsklassNu(a) === 'mansdominerad'], ['Blandad yrkesgrupp', PALETTE.semantic.neutral, a => konsklassNu(a) === 'blandad']])
-                .map(([serie, farg, hor]) => ({ marke: 'punkt', serie, farg, kant: FARG.vit, data: pts.filter(p => hor(p.kvAndel)),
+            ..._lpKonsdominans().map(([klass, farg, hor]) => ({ marke: 'punkt', serie: `${klass} yrkesgrupp`, farg, kant: FARG.vit, data: pts.filter(p => hor(p.kvAndel)),
                     tips: d => [[d.yrke], [`BAS ${d.bas}`, `median ${kr(d.y)}`], ['Kvinnor', _figTalformat(d.kvAndel, 'antal') + ' %'], ['Referens', d.niva], ['Antal', String(d.n)]] }))
         ].filter(l => l.data.length) };
 }
@@ -269,14 +282,14 @@ function _lpFigurKonHantel(rows) {
     const y = b => 'BAS ' + b.bas, pos = (b, f) => +(b.genderGap[f] * 100).toFixed(1);
     const alla = rows.flatMap(b => [pos(b, 'kvPos'), pos(b, 'maPos')]);
     const punkt = (namn, farg, falt) => ({ marke: 'punkt', serie: namn, farg, storlek: 6,
-        data: rows.map(b => ({ y: y(b), x: pos(b, falt), markering: markeringFor(b.bas) })), tips: d => [[d.y], [namn, `${_figTalformat(d.x, 'pct')} in i spannet`]] });
+        data: rows.map(b => ({ y: y(b), x: pos(b, falt), bas: b.bas, markering: markeringFor(b.bas) })), tips: d => [[d.y], [namn, `${_figTalformat(d.x, 'pct')} in i spannet`]] });
     return { beskrivning: 'Kvinnors respektive mäns genomsnittliga position i ställningstagandets lönespann per BAS-intervall, som två punkter på spannet: 0 procent är spannets nedre gräns (P10), 100 procent den övre (P90).',
-        y: { skala: 'band', ordning: rows.map(y) }, x: { skala: 'linjar', titel: 'Position i spannet (%) — 0 = P10, 100 = P90', doman: [Math.min(0, ...alla) - 4, Math.max(100, ...alla) + 4] },
+        urval: BAS_URVAL, y: { skala: 'band', ordning: rows.map(y) }, x: { skala: 'linjar', titel: 'Position i spannet (%) — 0 = P10, 100 = P90', doman: [Math.min(0, ...alla) - 4, Math.max(100, ...alla) + 4] },
         hojd: Math.max(170, 100 + rows.length * 34),
         referens: [{ x: 50, streck: 'prickad', farg: PALETTE.semantic.neutral, tjocklek: 1, etikett: 'Mitten' }],
-        lager: [{ marke: 'intervall', riktning: 'liggande', serie: 'Policyns spann', farg: PALETTE.semantic.spann, tjocklek: 12, data: rows.map(b => ({ y: y(b), lag: 0, hog: 100 })), tips: d => [[d.y], ['Spann', 'P10–P90']] },
+        lager: [{ marke: 'intervall', riktning: 'liggande', serie: 'Policyns spann', farg: PALETTE.semantic.spann, tjocklek: 12, data: rows.map(b => ({ y: y(b), lag: 0, hog: 100, bas: b.bas })), tips: d => [[d.y], ['Spann', 'P10–P90']] },
                 { marke: 'intervall', riktning: 'liggande', serie: 'Skillnad', farg: PALETTE.semantic.neutral, tjocklek: 2, legend: false,
-                  data: rows.map(b => ({ y: y(b), lag: Math.min(pos(b, 'kvPos'), pos(b, 'maPos')), hog: Math.max(pos(b, 'kvPos'), pos(b, 'maPos')) })) },
+                  data: rows.map(b => ({ y: y(b), lag: Math.min(pos(b, 'kvPos'), pos(b, 'maPos')), hog: Math.max(pos(b, 'kvPos'), pos(b, 'maPos')), bas: b.bas })) },
                 punkt('Kvinnor', PALETTE.kon.kvinna, 'kvPos'), punkt('Män', PALETTE.kon.man, 'maPos')] };
 }
 
@@ -326,11 +339,11 @@ function _lpFigurKomplians(rows) {
     const pct = (v, n) => +((v / n) * 100).toFixed(1);
     const serie = (namn, farg, falt) => ({
         marke: 'stapel', lage: 'staplad', serie: namn, farg,
-        data: rows.map(b => ({ x: 'BAS ' + b.bas, y: pct(b.compliance[falt], b.compliance.n), markering: markeringFor(b.bas) })),
+        data: rows.map(b => ({ x: 'BAS ' + b.bas, y: pct(b.compliance[falt], b.compliance.n), bas: b.bas, markering: markeringFor(b.bas) })),
         tips: d => [[d.x], [namn, _figTalformat(d.y, 'pct')]]
     });
     return { beskrivning: 'Andel anställda under, inom och över ställningstagandets lönespann per BAS-intervall',
-        x: { skala: 'band' }, y: { skala: 'linjar', titel: 'Andel av de anställda (%)', doman: [0, 100] },
+        urval: BAS_URVAL, x: { skala: 'band' }, y: { skala: 'linjar', titel: 'Andel av de anställda (%)', doman: [0, 100] },
         hojd: Math.max(260, 60 + rows.length * 38),
         // Två nyanser kring en neutral mitt (under — inom — över), inte rött och grönt: läget i spannet är en riktning.
         lager: [serie('Under P10', _LP_LAGE.under, 'under'), serie('Inom spann', _LP_LAGE.inom, 'within'),
@@ -348,7 +361,7 @@ function _lpFigurKompliansMitt(rows) {
         marke: 'stapel', lage: 'staplad', riktning: 'liggande', serie: namn, farg, ...(tecken < 0 ? { absolut: true } : {}),
         data: sorterade.map(b => {
             const andel = pct(b.compliance[falt], b.compliance.n);
-            return { y: 'BAS ' + b.bas, x: tecken * andel || 0, andel, inom: pct(b.compliance.within, b.compliance.n), markering: markeringFor(b.bas),
+            return { y: 'BAS ' + b.bas, x: tecken * andel || 0, andel, inom: pct(b.compliance.within, b.compliance.n), bas: b.bas, markering: markeringFor(b.bas),
                      ...(andel > 0 ? { etikett: _figTalformat(andel, 'pct') } : {}) };
         }),
         tips: d => [[d.y], [namn, _figTalformat(d.andel, 'pct')], ['Inom spann', _figTalformat(d.inom, 'pct')]]
@@ -356,7 +369,7 @@ function _lpFigurKompliansMitt(rows) {
     const storst = Math.max(10, ...sorterade.map(b => Math.max(pct(b.compliance.under, b.compliance.n), pct(b.compliance.over, b.compliance.n))));
     const grans = Math.min(100, Math.ceil(storst * 1.15 / 10) * 10);
     return { beskrivning: 'Andel anställda under respektive över ställningstagandets lönespann per BAS-intervall, ställda kring en mittlinje: under åt vänster, över åt höger. Störst andel utanför spannet överst. Resten ligger inom spannet.',
-        y: { skala: 'band', ordning: sorterade.map(b => 'BAS ' + b.bas) },
+        urval: BAS_URVAL, y: { skala: 'band', ordning: sorterade.map(b => 'BAS ' + b.bas) },
         x: { skala: 'linjar', titel: 'Under P10 åt vänster · andel av de anställda (%) · över P90 åt höger', format: 'pctAbs', doman: [-grans, grans], nollinje: true },
         hojd: Math.max(260, 70 + sorterade.length * 38),
         lager: [serie('Under P10', _LP_LAGE.under, 'under', -1), serie('Över P90', _LP_LAGE.over, 'over', 1)] };

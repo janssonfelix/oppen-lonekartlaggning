@@ -229,17 +229,25 @@ rubrikraden, också när det är hopfällt.
    och utskriften.
 2. **Löneläget** *(fördjupning, inget lagkrav)* — fliken går att öppna när lönefilen och minst en referens
    (ställningstagandet eller jämförelsestatistiken) är inlästa. Med en lönefil men utan referens döljs den i menyn.
-   Den har tre avsnitt.
-   *Överblick* visar per yrkesgrupp var löneläget och statistiken ligger mot ställningstagandet, som är
-   referenspunkten. Där står skillnaden percentil för percentil och läget i spannet (0 = referensens P10, 100 = dess
-   P90). Där står också mönstret i ord och ett förslag på vilken referens som säger något om gruppen. En bild visar
-   de tre spannen, och en tabell visar statistiken mot ställningstagandet. Ligger både löneläget och statistiken över
-   ställningstagandet har det halkat efter marknaden. Ligger bara löneläget över har organisationen gått före.
-   Förslaget är ett förslag, ingen regel. *Mot ställningstagandet* är bandkartan och könens läge i spannet. Där
-   står också hur stor andel av kvinnorna respektive männen som ligger i spannets nedre, mellersta och övre
-   tredjedel. *Mot jämförelsestatistiken* är tabellen och diagrammen mot statistiken, med filter på BAS och sektor.
+   Den har fyra avsnitt.
+   *Överblick* står överst och är öppen. Den visar alla yrkesgrupper i två diagram. Bandkartan visar var varje
+   yrkesgrupps medianlön ligger i ställningstagandets spann, och diagrammet *Var ligger yrkesgrupperna i statistikens
+   spann?* visar var den ligger i jämförelsestatistikens spann (0 = statistikens P10, 100 = dess P90). Punkten är
+   fylld när statistiken matchades på AID och BAS, och ofylld när den matchades på endast AID. Diagrammet visar hela
+   underlaget; filtren under *Mot jämförelsestatistiken* gäller inte där. Saknar statistiken P10 och P90 står ett
+   meddelande i stället för diagrammet. Utan ställningstagande visas bara statistikens diagram, och utan statistik
+   bara bandkartan.
+   *Mot ställningstagandet* är tabellen per yrkesgrupp och könens läge i spannet. Där står också hur stor andel av
+   kvinnorna respektive männen som ligger i spannets nedre, mellersta och övre tredjedel, efterlevnaden och
+   täckningen. *Mot jämförelsestatistiken* är tabellen och diagrammen mot statistiken, med filter på BAS och sektor.
    Tabellen visar medianens kolumner, och P10 och P90 ligger bakom *Fler kolumner* (Kopiera, CSV, Excel och
    utskriften tar med alla).
+   *Yrkesgrupp för yrkesgrupp* står sist och är stängd från början. Den visar per yrkesgrupp var löneläget och
+   statistiken ligger mot ställningstagandet, som är referenspunkten. Där står skillnaden percentil för percentil
+   och läget i spannet (0 = referensens P10, 100 = dess P90). Där står också mönstret i ord och ett förslag på
+   vilken referens som säger något om gruppen. En bild visar de tre spannen, och en tabell visar statistiken mot
+   ställningstagandet. Ligger både löneläget och statistiken över ställningstagandet har det halkat efter
+   marknaden. Ligger bara löneläget över har organisationen gått före. Förslaget är ett förslag, ingen regel.
 3. **Lika arbete** — fliken öppnar med **yrkesgrupperna**: kvinnors och mäns medianlön i samma yrkesgrupp.
    Varje grupp får en status som bygger på statistisk signal: **Värt att granska** när skillnaden är
    statistiskt säkerställd (utanför slumpens gränser för gruppen) och minst 3 % (verktygets egen storleksgräns),
@@ -249,7 +257,7 @@ rubrikraden, också när det är hopfällt.
    mindre. Kolumnen **≥ 5 %** är ingen status utan en markering på den ojusterade skillnaden: direktivets regler
    om gemensam lönebedömning utgår från en skillnad på minst 5 %, och markeringen visar var den nivån nås. Den är
    inte en bedömning och står aldrig vid regressionens justerade tal.
-   Diagrammet **Yrkesgrupperna mot slumpens gränser** under tabellen visar varje yrkesgrupp mot gruppens storlek.
+   Diagrammet **Yrkesgrupperna mot slumpens gränser** ovanför tabellen visar varje yrkesgrupp mot gruppens storlek.
    En liten grupp kan ha en stor skillnad av ren slump, men en stor grupp kan det inte. Grupperna utanför det
    skuggade fältet är de där skillnaden är svår att förklara med slumpen. Nyckeltalen överst tar med hur stor
    skillnaden är när ålder och BAS-intervall räknats bort (regressionen, som står i Lönestruktur).
@@ -424,6 +432,17 @@ rubrikraden, också när det är hopfällt.
 
 Varje diagram har en **Exportera**-knapp i övre högra hörnet: PNG i två storlekar,
 SVG (skarp i Word) och diagramdatan som tabell.
+
+**Välj vilka BAS-intervall ett diagram visar.** I diagrammen där BAS-intervallet är en dimension (bland annat
+bandkartan och statistikens spann i Löneläget, översikten, könsfördelningen, lådorna och trattdiagrammet i Lika
+arbete, Krav mot lön i Likvärdigt arbete, Prioriteringens två diagram och hanteln per BAS-intervall i Spara och
+jämför år) står en knapp per intervall ovanför diagrammet. Klicka på ett intervall för att dölja det, till exempel
+BAS A, B, C och N inför en presentation, och på **Visa alla** för att få tillbaka alla. Det sista synliga intervallet
+kan inte döljas. Under diagrammet står vilka intervall som är dolda. Urvalet döljer bara märken: inget tal räknas om,
+och texten, tabellerna, rapporten, Word, PDF, utskriften och ZIP-filen visar alltid hela underlaget. Diagrammets egen
+export (PNG och SVG) visar urvalet och säger i fotraden vad som är dolt. Valet gäller diagrammet tills du läser in en
+ny lönefil, läser in demot eller rensar all data. Det sparas inte i konfigurationsfilen. Diagram där en punkt eller
+stapel samlar flera BAS-intervall, till exempel kandidatparen i Likvärdigt arbete, har inga sådana knappar.
 
 **Egna tabeller i rapporten.** Ovanför tabellen i Tabeller och egna vyer finns **Lägg till i rapporten**. Ge vyn
 ett namn och lägg till den. Då står den som en egen tabell i avsnittet *Egna tabeller* i

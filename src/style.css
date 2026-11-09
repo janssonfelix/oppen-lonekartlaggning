@@ -2687,6 +2687,12 @@ summary:focus-visible {
 .chart-export-meny button:hover { background: var(--bg-hover, #f1f5f9); }
 .chart-export-fel { margin: 4px 10px; font-size: var(--fs-xs); color: var(--danger, #b91c1c); }
 @media print { .chart-export { display: none !important; } }
+/* Diagrammets urval (10-diagramritare.js): knappraden ovanför diagrammet. Intryckt = värdet visas. Den sista valda
+   kan inte väljas bort (aria-disabled). Utskriften visar inte raden. */
+.diagram-urval { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0 0 8px; }
+.diagram-urval .btn-table-tool[aria-disabled="true"] { cursor: not-allowed; opacity: 0.7; }
+.diagram-urval .btn-table-tool[hidden] { display: none; }
+@media print { .diagram-urval { display: none !important; } }
 
 /* Utforska 2.0 (70/71-explorer) */
 .explore-controls { display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-end; }

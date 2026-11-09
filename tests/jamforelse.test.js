@@ -2,7 +2,9 @@
  * Jämförelsestatistik: organisationens P10/median/P90 mot jämförelsestatistiken och ställningstagandet.
  */
 import { describe, it, expect } from 'vitest';
-import { jamforelseRader, avvikelseRangordning, aidAvYrke } from '../src/lib/jamforelse.js';
+import { jamforelseRader, avvikelseRangordning, aidAvYrke, statistikFor, matchningEtikett, matchningAntal, matchningSammanfattning,
+    statistikMarknad, statistikensMedianFor } from '../src/lib/jamforelse.js';
+import { marketTargets } from '../src/lib/loneoversyn.js';
 
 const grupp = (yrke, bas, loner) => loner.map(lon => ({ yrke, bas, lon }));
 const tio = (_bas = 'C', start = 30000) => Array.from({ length: 10 }, (_, i) => start + i * 1000);   // 30 000 … 39 000
@@ -46,6 +48,86 @@ describe('jamforelse: matchning mot jämförelsestatistiken', () => {
         expect(rader[0].diff.statistik.p10).toBeNull();
         expect(rader[1].statistik).toEqual({ p10: null, median: null, p90: null });
     });
+    it('varje rad bär matchningsnivån: aid-bas, aid eller null', () => {
+        const statistik = [{ aid: '207011', bas: '', median: 33000 }, { aid: '207011', bas: 'C', median: 36000 }];
+        const { rader } = jamforelseRader(data, { statistik, policyFor: () => null, k: 10 });
+        expect(rader.map(r => [r.bas, r.statistikMatchning])).toEqual([['B', 'aid'], ['C', 'aid-bas']]);
+        const utan = jamforelseRader(data, { statistik: [], policyFor: () => null, k: 10 }).rader;
+        expect(utan.map(r => r.statistikMatchning)).toEqual([null, null]);
+    });
+    it('en rad för ett annat BAS-intervall används aldrig', () => {
+        const { rader } = jamforelseRader(data, { statistik: [{ aid: '207011', bas: 'C', median: 36000 }], policyFor: () => null, k: 10 });
+        expect(rader.map(r => [r.bas, r.statistik.median, r.statistikMatchning])).toEqual([['B', null, null], ['C', 36000, 'aid-bas']]);
+    });
+});
+
+describe('jamforelse: statistikFor, det gemensamma uppslaget', () => {
+    const utanBas = { aid: '207011', bas: '', median: 33000 }, medC = { aid: '207011', bas: 'C', median: 36000 };
+    it('samma AID och BAS först', () => {
+        expect(statistikFor([utanBas, medC], '207011', 'C')).toEqual({ rad: medC, matchning: 'aid-bas' });
+    });
+    it('annars en rad för samma AID utan BAS', () => {
+        expect(statistikFor([medC, utanBas], '207011', 'B')).toEqual({ rad: utanBas, matchning: 'aid' });
+        expect(statistikFor([{ aid: '207011', median: 1 }], '207011', 'B')).toMatchObject({ matchning: 'aid' });   // fältet saknas helt
+    });
+    it('aldrig en rad med ett annat BAS, och null utan träff', () => {
+        expect(statistikFor([medC], '207011', 'B')).toBeNull();
+        expect(statistikFor([medC], '999999', 'C')).toBeNull();
+        expect(statistikFor([], '207011', 'C')).toBeNull();
+        expect(statistikFor(undefined, '207011', 'C')).toBeNull();
+        expect(statistikFor([medC], '', 'C')).toBeNull();
+    });
+    it('jämför AID och BAS som text', () => {
+        expect(statistikFor([{ aid: 207011, bas: 'C', median: 1 }], '207011', 'C')).toMatchObject({ matchning: 'aid-bas' });
+        expect(statistikFor([{ aid: '6000', bas: '3', median: 1 }], 6000, 3)).toMatchObject({ matchning: 'aid-bas' });
+    });
+});
+
+describe('jamforelse: märkningen och antalen per matchningsnivå', () => {
+    it('samma ord som ställningstagandets nivåer, "–" utan statistik', () => {
+        expect(matchningEtikett('aid-bas')).toBe('AID + BAS');
+        expect(matchningEtikett('aid')).toBe('Endast AID');
+        expect(matchningEtikett(null)).toBe('–');
+        expect(matchningEtikett(undefined)).toBe('–');
+    });
+    it('räknar raderna per nivå och säger det i en mening', () => {
+        const rader = [{ statistikMatchning: 'aid-bas' }, { statistikMatchning: 'aid-bas' }, { statistikMatchning: 'aid' }, { statistikMatchning: null }];
+        expect(matchningAntal(rader)).toEqual({ aidBas: 2, aid: 1, utan: 1 });
+        expect(matchningSammanfattning(rader)).toBe('Statistiken: 2 yrkesgrupper matchade på AID och BAS, 1 på endast AID, 1 utan statistik.');
+        expect(matchningSammanfattning([{ statistikMatchning: 'aid-bas' }])).toBe('Statistiken: 1 yrkesgrupp matchad på AID och BAS, 0 på endast AID, 0 utan statistik.');
+        expect(matchningSammanfattning([])).toBe('');
+    });
+});
+
+// Rättelse (Löneöversyn, marknadspositionering): fallbacken på AID kom från första raden för AID oavsett BAS.
+describe('jamforelse: statistikMarknad (Löneöversyns marknadspositionering)', () => {
+    it('en grupp får bara sitt eget BAS eller en rad utan BAS, aldrig ett annat BAS', () => {
+        const statistik = [{ aid: '1', bas: '5', median: 50000 }, { aid: '2', bas: '', median: 35000 }, { aid: '2', bas: '4', median: 41000 }];
+        const grupper = [{ aid: '1', bas: '3', n: 5, median: 30000 }, { aid: '2', bas: '3', n: 5, median: 30000 }, { aid: '2', bas: '4', n: 5, median: 30000 }];
+        const marknad = statistikMarknad(statistik, grupper);
+        expect([...marknad.entries()]).toEqual([['2|3', 35000], ['2|4', 41000]]);
+        // AID 1 har bara en rad för BAS 5: gruppen i BAS 3 får ingen marknadsnivå och inget lyft.
+        const t = marketTargets(grupper, marknad, 1, 0);
+        expect(t.map(x => [x.aid, x.bas, x.value])).toEqual([['2', '3', 25000], ['2', '4', 55000]]);
+    });
+    it('rader utan positiv median räknas inte', () => {
+        expect(statistikMarknad([{ aid: '1', bas: '3', median: 0 }], [{ aid: '1', bas: '3' }]).size).toBe(0);
+    });
+});
+
+// Rättelse (Ålder & karriär, hela urvalet): tog första raden per AID oavsett BAS.
+describe('jamforelse: statistikensMedianFor (Ålder & karriär)', () => {
+    it('slår upp varje AID×BAS-grupp för sig och tar medianen av de matchade medianerna', () => {
+        const statistik = [{ aid: '1', bas: '5', median: 50000 }, { aid: '2', bas: '', median: 30000 }, { aid: '3', bas: '3', median: 40000 }];
+        // AID 1 har bara en rad för BAS 5: gruppen i BAS 3 får ingen statistik. AID 2 har en rad utan BAS: används.
+        expect(statistikensMedianFor(statistik, [{ aid: '1', bas: '3' }, { aid: '2', bas: '3' }, { aid: '3', bas: '3' }])).toBe(35000);
+        expect(statistikensMedianFor(statistik, [{ aid: '1', bas: '3' }])).toBeNull();
+        expect(statistikensMedianFor(statistik, [{ aid: '1', bas: '5' }, { aid: '1', bas: '3' }])).toBe(50000);
+    });
+    it('samma grupp räknas en gång', () => {
+        const statistik = [{ aid: '1', bas: '3', median: 30000 }, { aid: '2', bas: '3', median: 40000 }];
+        expect(statistikensMedianFor(statistik, [{ aid: '1', bas: '3' }, { aid: '1', bas: '3' }, { aid: '1', bas: '3' }, { aid: '2', bas: '3' }])).toBe(35000);
+    });
 });
 
 describe('jamforelse: små grupper, yrken utan kod och sortering', () => {
@@ -61,6 +143,14 @@ describe('jamforelse: små grupper, yrken utan kod och sortering', () => {
         expect(aidAvYrke('5301 Undersköterska')).toBe('5301');
         const r = jamforelseRader(grupp('Kock', 'B', tio('B')), { statistik: [], policyFor: () => null, k: 10 }).rader[0];
         expect(r).toMatchObject({ aid: 'Kock', sektor: 'Okänt huvudområde' });
+    });
+    it('kvAndel: andelen kvinnor i gruppen i procent (könsdominansen i Löneläget), som bandkartan räknar den', () => {
+        const kon = (k, n) => Array.from({ length: n }, () => k);
+        const koner = [...kon('kvinna', 6), ...kon('man', 3), undefined];
+        const data = tio().map((lon, i) => ({ yrke: '207011 Usk', bas: 'C', lon, kon: koner[i] }));
+        expect(jamforelseRader(data, { statistik: [], policyFor: () => null, k: 10 }).rader[0].kvAndel).toBe(60);
+        // Utan kön i underlaget: 0 % kvinnor, som i bandkartan.
+        expect(jamforelseRader(grupp('207011 Usk', 'C', tio()), { statistik: [], policyFor: () => null, k: 10 }).rader[0].kvAndel).toBe(0);
     });
     it('sorteras på BAS och sedan yrke', () => {
         const data = [...grupp('502010 Sysutv', 'D', tio()), ...grupp('403010 Barnskötare', 'B', tio()), ...grupp('207011 Usk', 'B', tio())];

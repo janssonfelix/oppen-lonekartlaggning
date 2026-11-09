@@ -62,7 +62,7 @@ och bandkartan. Verktyget är prövat med demodata och ett påhittat underlag me
 - [ ] **Många yrkesgrupper:** yrkesgruppstabellen i Lika arbete ryms utan att rulla i sidled, och yrkesnamnen går att
       läsa. Grafiken i raderna (punkten mot linjen för lika lön) stämmer med talet bredvid. *Verktyget är
       utvecklat mot ett litet exempelunderlag och ett påhittat större — din fil är det första riktiga provet.*
-- [ ] **Trattdiagrammet** (Lika arbete) och **bandkartan** (Löneläget, avsnittet mot ställningstagandet) går att läsa med dina grupper.
+- [ ] **Trattdiagrammet** (Lika arbete) och **bandkartan** och diagrammet över **statistikens spann** (Löneläget, avsnittet Överblick) går att läsa med dina grupper.
       Punkterna går att skilja åt, och namnen krockar inte. Bandkartan är inte prövad
       med många yrken i samma BAS-intervall — notera i avsnitt G om grupper med nästan samma median täcker
       varandra.

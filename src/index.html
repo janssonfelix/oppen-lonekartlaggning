@@ -1173,6 +1173,12 @@
                             </p>
                         
                         </div>
+                        <div class="diagramkort" id="la-tratt-kort">
+                            <h3 class="diagramkort-rubrik">Yrkesgrupperna mot slumpens gränser</h3>
+                            <p class="diagramkort-forklaring">Varje punkt är en yrkesgrupp: kvinnors medianlön i procent av mäns, mot gruppens storlek. Det skuggade fältet visar hur stor skillnad slumpen ensam kan ge i en grupp av den storleken — i små grupper mycket, i stora lite. En grupp utanför fältet har en skillnad som är svår att förklara med slumpen. En liten grupp innanför kan ha en stor skillnad utan att det säger något.</p>
+                            <div id="chart-la-tratt"></div>
+                            <p id="la-tratt-not" class="diagramkort-not"></p>
+                        </div>
                         <div class="table-container">
                             <table id="matrix-table" class="data-table" aria-label="Lika arbete: kvinnor och män per yrkesgrupp">
                                 <thead>
@@ -1191,12 +1197,6 @@
                                 </thead>
                                 <tbody></tbody>
                             </table>
-                        </div>
-                        <div class="diagramkort" id="la-tratt-kort">
-                            <h3 class="diagramkort-rubrik">Yrkesgrupperna mot slumpens gränser</h3>
-                            <p class="diagramkort-forklaring">Varje punkt är en yrkesgrupp: kvinnors medianlön i procent av mäns, mot gruppens storlek. Det skuggade fältet visar hur stor skillnad slumpen ensam kan ge i en grupp av den storleken — i små grupper mycket, i stora lite. En grupp utanför fältet har en skillnad som är svår att förklara med slumpen. En liten grupp innanför kan ha en stor skillnad utan att det säger något.</p>
-                            <div id="chart-la-tratt"></div>
-                            <p id="la-tratt-not" class="diagramkort-not"></p>
                         </div>
                     </details>
                     <p class="avsnitt-rubrikrad">Fördjupning</p>
@@ -1276,12 +1276,25 @@
                 <div id="view-benchmark" class="view-panel dold">
                     <div class="flik-intro"><strong>Hur ligger lönerna till mot det organisationen jämför sig med?</strong> Här jämför du lönerna per yrkesgrupp med organisationens lönepolitiska ställningstagande och med jämförelsestatistiken. Du ser var medianen ligger i spannet, var kvinnor och män ligger, och vilka grupper som hamnar utanför. Att ligga utanför är ett fynd att förklara, inte ett konstaterat fel. Fliken är en fördjupning och inget lagkrav.</div>
                     <div id="jmf-slutsatser" class="slutsatser"></div>
-                    <details class="avsnitt" id="avsnitt-jmf-overblick" open>
-                    <summary><span class="avsnitt-titel"><h2>Överblick — löneläget och statistiken mot ställningstagandet</h2><span class="avsnitt-under">Per yrkesgrupp: var lönerna ligger mot ställningstagandet, och var statistiken ligger mot det</span></span></summary>
-                    <div id="ref-overblick"></div>
+                    <details class="avsnitt" id="avsnitt-jmf-bandkartor" open>
+                    <summary><span class="avsnitt-titel"><h2>Överblick — lönerna mot ställningstagandet och statistiken</h2><span class="avsnitt-under">Var yrkesgruppernas medianlön ligger i ställningstagandets och statistikens spann, per BAS-intervall</span></span></summary>
+                    <div id="lp-bandkarta-kort" class="card mb-16" hidden>
+                        <div class="chart-header rad-bryt-mitt gap-12 mellan marg-b-8">
+                            <h3 class="fs-lg marg-0">Bandkartan — var ligger varje yrkesgrupp i sitt spann?</h3>
+                            <span id="lp-bandkarta-forklaring" class="text-dampad-xs"></span>
+                        </div>
+                        <div id="chart-lp-bandmap"></div>
+                    </div>
+                    <div id="jmf-statlage-kort" class="card mb-16" hidden>
+                        <div class="chart-header rad-bryt-mitt gap-12 mellan marg-b-8">
+                            <h3 class="fs-lg marg-0">Var ligger yrkesgrupperna i statistikens spann?</h3>
+                            <span class="text-dampad-xs">Grått band = statistikens spann: 0 är statistikens P10 och 100 dess P90. Punkt = yrkesgruppens medianlön i spannet: kvinnodominerad, mansdominerad eller blandad. Fylld punkt = statistiken matchad på AID + BAS. Ofylld punkt = Endast AID (en rad utan BAS). Bara yrkesgrupper med P10 och P90 i statistiken. Diagrammet visar hela underlaget; filtren under Mot jämförelsestatistiken gäller bara tabellen och diagrammen där.</span>
+                        </div>
+                        <div id="chart-jmf-statlage"></div>
+                    </div>
                     </details>
                     <details class="avsnitt" id="avsnitt-jmf-stallningstagande">
-                    <summary><span class="avsnitt-titel"><h2>Mot ställningstagandet</h2><span class="avsnitt-under">Täckning, bandkartan, könens läge i spannet och tabellen per yrkesgrupp</span></span></summary>
+                    <summary><span class="avsnitt-titel"><h2>Mot ställningstagandet</h2><span class="avsnitt-under">Tabellen per yrkesgrupp, könens läge i spannet, efterlevnaden och täckningen</span></span></summary>
                     <div class="flik-intro">
                         <strong id="lonepolitik-rubrik">Lönerna mot organisationens lönepolitiska ställningstagande</strong>
                         Jämför organisationens faktiska löneläge med ställningstagandet, ner på yrkesgrupp (AID). Ställningstagandet kan ange lönerna per BAS-intervall, per yrke eller båda. Den mest detaljerade raden gäller, och varje rad i tabellen visar var referensen kom ifrån. Detta är ett <strong>analysunderlag</strong>: att ligga utanför spannet är ett fynd att förklara, inte ett konstaterat fel.
@@ -1308,6 +1321,7 @@
                             <button id="btn-export-benchmark" type="button" class="btn btn-secondary btn-sm marg-v-auto" aria-label="Exportera samlad jämförelsetabell till Excel" title="Exportera alla percentiler (P10, median, P90 och bredd) för organisationen, jämförelsestatistiken och ställningstagandet i en samlad Excel-fil, för alla yrken oavsett filter.">Exportera samlad Excel</button>
                         </div>
                         <p id="benchmark-metric-info" class="benchmark-metric-info" aria-live="polite"></p>
+                        <p id="benchmark-matchning-info" class="benchmark-metric-info" aria-live="polite"></p>
                         <div id="jmf-diagram"></div>
 
                         <div class="table-container">
@@ -1316,6 +1330,7 @@
                                     <tr>
                                         <th scope="col" data-export-label="AID / Yrkesgrupp">Yrke</th>
                                         <th scope="col">BAS</th>
+                                        <th scope="col" data-kol="matchning" data-export-label="Matchning mot jämförelsestatistiken" title="Hur yrkesgruppen matchades mot jämförelsestatistiken. AID + BAS: en rad med samma AID och samma BAS. Endast AID: det finns ingen sådan rad, så en rad med samma AID som saknar BAS används. En rad för ett annat BAS-intervall används aldrig. – betyder att statistik saknas för gruppen.">Matchning</th>
                                         <th scope="col" data-export-label="Antal personer (organisationen)">N</th>
                                         <th scope="col" class="jmf-block" data-kol="p10org" data-export-label="P10 organisationen (kr/mån)">P10 org</th>
                                         <th scope="col" data-jmf="P10" data-jmf-typ="varde" data-kol="p10jmf" data-export-label="P10 jämförelse (kr/mån)">P10 statistik</th>
@@ -1340,10 +1355,11 @@
                         <div class="flik-usage-content">
                             <h3>Så används fliken</h3>
                             <ul>
-                                <li><strong>Överblicken</strong> visar för varje yrkesgrupp var löneläget och statistiken ligger mot ställningstagandet, som är referenspunkten</li>
-                                <li>Kolumnen <em>Mönster</em> är utgångspunkten för samtalet: ligger både löneläget och statistiken över ställningstagandet har det halkat efter marknaden; ligger bara löneläget över har organisationen gått före</li>
-                                <li>Kolumnen <em>Förslag på referens</em> säger vilket mått som säger något om gruppen. Det är ett förslag, ingen regel</li>
+                                <li><strong>Överblicken</strong> visar alla yrkesgrupper på en gång: bandkartan var medianlönen ligger i ställningstagandets spann, och diagrammet under den var den ligger i statistikens spann. Fylld punkt betyder att statistiken matchades på AID och BAS, ofylld att den matchades på endast AID</li>
                                 <li><strong>Mot ställningstagandet</strong> och <strong>Mot jämförelsestatistiken</strong> fördjupar var sin referens</li>
+                                <li><strong>Yrkesgrupp för yrkesgrupp</strong> visar för varje grupp var löneläget och statistiken ligger mot ställningstagandet, som är referenspunkten</li>
+                                <li>Kolumnen <em>Mönster</em> där är utgångspunkten för samtalet: ligger både löneläget och statistiken över ställningstagandet har det halkat efter marknaden; ligger bara löneläget över har organisationen gått före</li>
+                                <li>Kolumnen <em>Förslag på referens</em> säger vilket mått som säger något om gruppen. Det är ett förslag, ingen regel</li>
                             </ul>
                             <h3>Marknadslöneanalys</h3>
                             <ul>
@@ -1364,6 +1380,10 @@
                             </ul>
                         </div>
                     </details>
+                    </details>
+                    <details class="avsnitt" id="avsnitt-jmf-overblick">
+                    <summary><span class="avsnitt-titel"><h2>Yrkesgrupp för yrkesgrupp — löneläget och statistiken mot ställningstagandet</h2><span class="avsnitt-under">Per yrkesgrupp: var lönerna ligger mot ställningstagandet, och var statistiken ligger mot det</span></span></summary>
+                    <div id="ref-overblick"></div>
                     </details>
                 </div>
 

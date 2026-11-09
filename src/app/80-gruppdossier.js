@@ -131,8 +131,7 @@ function buildGruppdossier(key, delat = null) {
     } catch (e) { rapporteraFel('Gruppdossier: likvärdigt arbete', e); }
 
     // Extern jämförelsestatistik
-    const bench = (state.statistik || []).find(s => s.aid === g.aid && s.bas === g.bas)
-               || (state.statistik || []).find(s => s.aid === g.aid && !s.bas) || null;
+    const bench = _jfStatistikFor(state.statistik, g.aid, g.bas)?.rad || null;
 
     // Prioritering + hypoteser
     let prio = null, suggestions = [];

@@ -179,6 +179,11 @@ function _rfSymbol(g, symbol, x, y, r, farg) {
         : g.append('circle').attr('cx', x).attr('cy', y).attr('r', r);
     return m.attr('fill', farg).attr('stroke', FARG.vit).attr('stroke-width', 1);
 }
+// En ofylld symbol (lagrets `ofylld`): en ring i seriens färg utan fyllning — en andra status i samma färg, som
+// fylld/ofylld för matchningsnivån. Ringens inre tar ändå emot pekaren (`visible`), som en fylld punkt.
+function _rfOfylld(m, farg) {
+    return m.attr('fill', 'none').attr('stroke', farg).attr('stroke-width', 1.75).attr('pointer-events', 'visible');
+}
 
 function _rfPunkt(g, l, li, c) {
     const ys = c.yFor(l);
@@ -236,7 +241,8 @@ function _rfPunkt(g, l, li, c) {
             if (c.punktetiketter) c.punktetiketter.push({ t, y: ty, hojd: fpx + 3, over: !sida && ty < y, x0: sida < 0 ? tx - tb : sida > 0 ? tx : tx - tb / 2, x1: sida < 0 ? tx : sida > 0 ? tx + tb : tx + tb / 2 });
         }
         if (l.opacitet != null) m.attr('fill-opacity', l.opacitet);
-        if (l.kant) m.attr('stroke', l.kant).attr('stroke-width', 1);
+        if (l.ofylld) _rfOfylld(m, farg);
+        else if (l.kant) m.attr('stroke', l.kant).attr('stroke-width', 1);
         if (d.liten) {
             // Mer än färg: streckad kant. Strecket har ingen yta, så det blir självt streckat och behåller färgen.
             if (l.symbol === 'streck') m.attr('stroke-dasharray', '3 2');
