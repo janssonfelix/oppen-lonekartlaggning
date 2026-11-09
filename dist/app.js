@@ -24800,6 +24800,9 @@ function _skrReferensCell(yrke) {
 // Medianerna står kvar: tabellen ryms ändå vid 1280 px, och ansvarsraderna och raderna med gruppens samlade median
 // bär sina tal där. Dominansen och den nationella andelen står i beviset (förstoringsglaset).
 const LA_DOLDA_KOLUMNER = ['dominans', 'nationellt'];
+// BAS-tabellen i Lönestruktur gömmer markeringen ≥ 5 % bakom Fler kolumner: med den kolumnen blev tabellen bredare än
+// sitt kort vid 1400 punkter med bredare teckensnitt (DejaVu Sans). Kopiera, CSV och exporterna tar med den.
+const LA_OVERSIKT_DOLDA_KOLUMNER = ['direktiv'];
 function generateEUDirectiveMatrix() {
     const tbody = document.querySelector("#matrix-table tbody");
     if (!tbody) return;
@@ -25025,6 +25028,7 @@ function _laOversiktTabell(bars, d = getData()) {
     if (skala) skala.innerHTML = '';
     if (!bars.length) {
         tb.innerHTML = '<tr><td colspan="9" class="la-oversikt-tom">För få BAS-intervall där både kvinnor och män når minsta gruppstorlek.</td></tr>';
+        flerKolumner('la-oversikt', LA_OVERSIKT_DOLDA_KOLUMNER, 'laOversikt');
         return;
     }
     const dom = _laOversiktDoman(bars), { b } = _LA_OV;
@@ -25052,7 +25056,7 @@ function _laOversiktTabell(bars, d = getData()) {
         const df = d.filter(r => r.bas === o.bas);
         const payload = { bas: o.bas, kvLons: df.filter(r => r.kon.includes('kvinna')).map(r => r.lon), maLons: df.filter(r => r.kon === 'man' || r.kon === 'män').map(r => r.lon), masked: false };
         tr.querySelector('[data-la-bevis]')?.addEventListener('click', e => { e.stopPropagation(); _openEvidenceModal(_evidenceForPaygapRow(payload)); });
-    }
+    }    flerKolumner('la-oversikt', LA_OVERSIKT_DOLDA_KOLUMNER, 'laOversikt');
 }
 
 // ---- Trattdiagram: yrkesgrupperna mot slumpens gränser ----
@@ -25225,7 +25229,7 @@ function renderLikaArbeteTopp() {
             'Värt att granska: skillnaden är statistiskt säkerställd (utanför slumpens gränser för gruppen) och minst 3 % (verktygets storleksgräns)')
                      : _laSlutsats('Yrkesgrupper att granska', '–', `ingen yrkesgrupp har minst ${kTroskel()} av varje kön`),
         storst ? _laSlutsats('Största skillnaden', svPct(storst.kvot, 1), storst.yrke, false, 'Kvinnors medianlön i procent av mäns i den yrkesgrupp där skillnaden är störst') : '',
-        regOk ? _laSlutsats(reg.fras ? `Efter ${reg.fras}` : 'Utan kontroller', svPct(reg.konKvot, 1), `kvinnors lön i % av mäns ${reg.fras ? `när ${reg.fras} räknats bort` : 'utan att något räknats bort'}`, _laRegGranska(reg) ? 'granska' : false,
+        regOk ? _laSlutsats(reg.fras ? `Efter ${reg.fras}` : 'Utan kontroller', svPct(reg.konKvot, 1), `kvinnors lön i % av mäns ${reg.fras ? 'när dessa räknats bort' : 'utan att något räknats bort'}`, _laRegGranska(reg) ? 'granska' : false,
             `Regressionen i regressionskortet i Lönestruktur: en oförklarad skillnad på ${reg.konPct >= 0 ? '+' : ''}${svPct(reg.konPct, 1)}, kvinnor mot män. Det är samma sak som att kvinnors lön är ${svPct(reg.konKvot, 1)} av mäns.${_laRegFaNot(reg)} ${ALDER_METODVAL_TEXT}${harAlder() ? '' : ' ' + ALDER_SAKNAS_TEXT}`) : '',
         personer != null ? _laSlutsats('Personer att granska', svTal(personer, 0), `minst ${grans} % under förväntad lön`) : ''
     ].join('');

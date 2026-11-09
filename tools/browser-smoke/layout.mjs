@@ -93,6 +93,38 @@ export async function utseende() {
         await page.setViewportSize({ width: 1400, height: 1000 });
     }
 
+    console.log('\n── Samma mått med ett bredare teckensnitt ──');
+    {
+        // CI:s Ubuntu ritar med DejaVu Sans, som är bredare än Fedoras standardteckensnitt: BAS-tabellen och en förklaring
+        // under nyckeltalen klipptes bara där. Här mäts de med DejaVu Sans påtvingat (egen kontext utan CSP för stilen).
+        const ctx = await browser.newContext({ bypassCSP: true, viewport: { width: 1400, height: 1000 } });
+        const s = await ctx.newPage();
+        await s.goto('file://' + FIL + '?demo=1');
+        await s.waitForFunction(() => document.getElementById('demo-mode-banner')?.style.display === 'flex', { timeout: 15000 });
+        const finns = await s.evaluate(() => { const c = document.createElement('canvas').getContext('2d'), t = 'Kvinnors lön i % av mäns';
+            return ['monospace', 'serif'].some(f => { c.font = `16px ${f}`; const a = c.measureText(t).width; c.font = `16px 'DejaVu Sans', ${f}`; return c.measureText(t).width !== a; }); });
+        if (!finns) console.log('  – DejaVu Sans finns inte på maskinen; kontrollen hoppas över');
+        else {
+            await s.addStyleTag({ content: "* { font-family: 'DejaVu Sans', sans-serif !important; }" });
+            await s.waitForTimeout(1000);
+            await s.click('.nav-item[data-tab="struktur"]');
+            await s.evaluate(() => { document.getElementById('avsnitt-ls-bas').open = true; });
+            await s.waitForTimeout(700);
+            const bas = await s.evaluate(() => { const c = document.querySelector('#la-huvuddiagram .table-container'); return { sw: c.scrollWidth, cw: c.clientWidth }; });
+            ok(bas.sw <= bas.cw + 1, `DejaVu Sans, 1400 punkter: BAS-tabellen ryms i sitt kort (${bas.sw} av ${bas.cw} punkter)`);
+            await s.setViewportSize({ width: 1440, height: 900 });
+            const klippta = [];
+            for (const flik of ['dashboard', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn', 'dokumentera', 'kon', 'benchmark']) {
+                await s.click(`.nav-item[data-tab="${flik}"]`);
+                await s.waitForTimeout(250);
+                klippta.push(...await s.evaluate(f => [...document.querySelectorAll('.slutsats-under, .stat-under, .stat-tip')].filter(e => e.getBoundingClientRect().height > 0)
+                    .filter(e => e.scrollWidth > e.clientWidth + 1 || e.scrollHeight > e.clientHeight + 1).map(e => `${f}: ${e.textContent.trim().slice(0, 50)}`), flik));
+            }
+            ok(!klippta.length, `DejaVu Sans, 1440 punkter: ingen förklaring under nyckeltalen klipps${klippta.length ? ' — ' + klippta.slice(0, 4).join(' | ') : ''}`);
+        }
+        await ctx.close();
+    }
+
     console.log('\n── Kontrast, modalens läge och nyckeltalsraden på surfplatta ──');
     {
         await page.setViewportSize({ width: 1440, height: 900 });

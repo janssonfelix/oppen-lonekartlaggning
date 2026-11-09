@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
-// Växeln "Fler kolumner" (05-tabeller-och-lankar.js) i de tre breda tabellerna: grundvyn gömmer de sekundära
+// Växeln "Fler kolumner" (05-tabeller-och-lankar.js) i de breda tabellerna: grundvyn gömmer de sekundära
 // kolumnerna med hidden på rubrik och celler, full vy visar alla, statusen står nära namnet, exporterna tar alltid
 // med alla kolumner, och sorteringen och underradernas colspan fungerar i båda vyerna.
 import { describe, it, expect, vi } from 'vitest';
@@ -14,7 +14,8 @@ const TABELLER = [
         forst: ['prio', 'yrke', 'bas', 'status'] },
     { flik: 'matrix', id: 'matrix-table', nyckel: 'likaYrke', dolda: ['dominans', 'nationellt'], forst: ['yrke', 'status'] },
     { flik: 'likvardighet', id: 'likvardighet-table', nyckel: 'likvardighet', dolda: ['median', 'medianjamf', 'gapkr', 'justerad', 'paverkan'],
-        forst: ['nr', 'yrke'] }
+        forst: ['nr', 'yrke'] },
+    { flik: 'struktur', id: 'la-oversikt', nyckel: 'laOversikt', dolda: ['direktiv'], forst: [] }
 ];
 const rita = (flik) => { const w = createAppWindow(); w.__loadDemoData(); w.__renderTabContent(flik); return w; };
 const rubriker = (w, id) => [...w.document.querySelectorAll(`#${id} thead th`)];

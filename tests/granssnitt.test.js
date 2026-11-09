@@ -417,7 +417,7 @@ describe('samma skillnad sägs på ett sätt', () => {
             expect(blad.filter(tvaDec).map(e => e.textContent.trim().slice(0, 50)), sel).toEqual([]);
         }
         const kort = [...d.querySelectorAll('#la-slutsatser .slutsats')].find(k => k.textContent.includes('Efter ålder och BAS-intervall'));
-        expect(kort.textContent).toContain('kvinnors lön i % av mäns när ålder och BAS-intervall räknats bort');
+        expect(kort.textContent).toContain('kvinnors lön i % av mäns när dessa räknats bort');
     }, 30000);
 });
 
