@@ -212,10 +212,19 @@ klick växlar värdet och ritar om; den sista valda knappen har `aria-disabled="
 bortvalt står en not under diagrammet (`k-mask-note`, `data-rf="urval"`): "Diagrammet visar ett urval: BAS A är
 dolt. Talen i texten och tabellerna gäller hela underlaget." Valet minns per diagram (id och urvalsfält) under
 sessionen, också över `rensaFigur`: varje `ritaFigur` tar minnet ∩ figurens värden, och vore alla bortvalda visas
-alla. `_rfUrvalGlom()` glömmer det; `_rfRensaAlla` och lönefilens inläsning anropar den. Urvalet sparas inte i
+alla. `_rfUrvalGlom()` glömmer det; `_rfRensaAlla`, lönefilens inläsning och demots inläsning (`_lasInDemounderlag`,
+litet och stort demo) anropar den. Urvalet sparas inte i
 konfigurationsfilen. Exportmenyns PNG/SVG ritas med urvalet och fotraden får " · Dolt i diagrammet: BAS A, BAS N";
 diagramdatan har alla rader och raden "Dolt i diagrammet: …". `diagramTillBild` (rapport, utskrift, ZIP,
 rapportunderlag) ritar alltid allt.
+
+Vyerna ger BAS-urvalet med konstanten `BAS_URVAL` (`10-diagramtema.js`: `{ falt: 'bas', namn: 'BAS-intervall',
+etikett: 'BAS {v}' }`), och varje punkt som hör till ett intervall bär `bas` med det nakna värdet. Regeln är att
+inget räknas om: urvalet ges bara där varje märke (punkt, stapel, spann, låda, linjens hörnpunkt) hör till ett enda
+BAS-intervall, så att ett bortval döljer hela märken. Ett märke som samlar flera intervall (kandidatparet i
+Likvärdigt arbete, lägena per kön i Lönepolitik) skulle räknas om ur det som syns, och sådana figurer har inget
+urval. En trend- eller referenslinje utan `bas` ritas oavsett urval. Testet i `tests/diagramvyer.test.js` (*BAS-urval
+på diagrammen där BAS är en dimension*) listar vilka diagram som har urvalet och vilka som inte har det.
 
 **Rubrik och fotrad i exporten.** `figurTillSvg` och `figurTillBild` tar `rubrik` och `fot` (en rad var, avkortas).
 Exportmenyn och den gemensamma bildvägen sätter dem: rubriken är kortets rubrik, foten "Lönekartläggning <datum>"

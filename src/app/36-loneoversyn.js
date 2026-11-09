@@ -316,7 +316,7 @@ function updateForecast() {
 /** @param {{rader: any[], titel: string, beskrivning: string, format?: 'pct'|'kr', kolumner?: string[]}} val */
 function foreEfterFigur({ rader, titel, beskrivning, format = 'pct', kolumner = ['Före', 'Efter'] }) {
     const alla = rader.flatMap(r => [r.fore, r.efter]), p = v => _figTalformat(v, format), [a, b] = kolumner, kvot = format === 'pct';
-    const m = r => (r.markering ? { markering: r.markering } : {});
+    const m = r => ({ ...(r.markering ? { markering: r.markering } : {}), ...(r.bas != null ? { bas: r.bas } : {}) });   // bas: raden hör till ett BAS-intervall (figur.urval)
     const tips = d => [[d.y], [a, p(d.r.fore)], [b, p(d.r.efter)]];
     const lag = Math.min(...alla), hog = Math.max(...alla), luft = Math.max((hog - lag) * 0.12, Math.abs(hog) * 0.02);
     return { beskrivning, y: { skala: 'band', ordning: rader.map(r => r.namn), etikettMax: 36 },

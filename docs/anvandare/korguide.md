@@ -433,6 +433,17 @@ rubrikraden, också när det är hopfällt.
 Varje diagram har en **Exportera**-knapp i övre högra hörnet: PNG i två storlekar,
 SVG (skarp i Word) och diagramdatan som tabell.
 
+**Välj vilka BAS-intervall ett diagram visar.** I diagrammen där BAS-intervallet är en dimension (bland annat
+bandkartan och statistikens spann i Löneläget, översikten, könsfördelningen, lådorna och trattdiagrammet i Lika
+arbete, Krav mot lön i Likvärdigt arbete, Prioriteringens två diagram och hanteln per BAS-intervall i Spara och
+jämför år) står en knapp per intervall ovanför diagrammet. Klicka på ett intervall för att dölja det, till exempel
+BAS A, B, C och N inför en presentation, och på **Visa alla** för att få tillbaka alla. Det sista synliga intervallet
+kan inte döljas. Under diagrammet står vilka intervall som är dolda. Urvalet döljer bara märken: inget tal räknas om,
+och texten, tabellerna, rapporten, Word, PDF, utskriften och ZIP-filen visar alltid hela underlaget. Diagrammets egen
+export (PNG och SVG) visar urvalet och säger i fotraden vad som är dolt. Valet gäller diagrammet tills du läser in en
+ny lönefil, läser in demot eller rensar all data. Det sparas inte i konfigurationsfilen. Diagram där en punkt eller
+stapel samlar flera BAS-intervall, till exempel kandidatparen i Likvärdigt arbete, har inga sådana knappar.
+
 **Egna tabeller i rapporten.** Ovanför tabellen i Tabeller och egna vyer finns **Lägg till i rapporten**. Ge vyn
 ett namn och lägg till den. Då står den som en egen tabell i avsnittet *Egna tabeller* i
 Word-utkastet och PDF-rapporten och i bladet *Egna tabeller* i Excel-filen. Den står också som block under

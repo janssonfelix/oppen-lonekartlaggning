@@ -8117,10 +8117,10 @@ function referensOverblick(rader, { harStatistik = true, harStallningstagande = 
         statistikMotStallningstagande };
 }
 
-/** Bildens rader i listans ordning: de tre spannen per yrkesgrupp, null för en referens utan median. */
+/** Bildens rader i listans ordning: de tre spannen per yrkesgrupp, null för en referens utan median, och gruppens BAS-intervall (bildens urval). */
 function hantelRader(grupper) {
     const ref = v => (v?.median != null ? { p10: v.p10, median: v.median, p90: v.p90 } : null);
-    return (grupper || []).map(g => ({ namn: `${g.yrke} · BAS ${g.bas}`, stallningstagande: ref(g.stallningstagande), statistik: ref(g.statistik), org: g.org }));
+    return (grupper || []).map(g => ({ namn: `${g.yrke} · BAS ${g.bas}`, bas: g.bas, stallningstagande: ref(g.stallningstagande), statistik: ref(g.statistik), org: g.org }));
 }
 
     return { lageISpann, monster, forslag, referensOverblick, hantelRader, lageOchForslag };
@@ -13767,6 +13767,12 @@ const GAP_STATUS_EJ = Object.freeze({ ..._STS_ORD.ejbedomd, niva: 'ejbedomd', fa
 /** Alla fyra, i diagrammens ordning (förklaringen namnger bara de som förekommer). */
 const GAP_STATUS_ALLA = Object.freeze([...GAP_STATUS, GAP_STATUS_EJ]);
 /**
+ * Figurens urval (figur.urval) i diagrammen där BAS-intervallet är en dimension: knapparna ovanför diagrammet döljer
+ * valda intervall. Bara där varje märke hör till ett enda intervall (punkten, stapeln, spannet eller lådan bär `bas`
+ * med det nakna värdet, t.ex. 'A'), så att ett bortval döljer hela märken och inget räknas om.
+ */
+const BAS_URVAL = Object.freeze({ falt: 'bas', namn: 'BAS-intervall', etikett: 'BAS {v}' });
+/**
  * Statusen för ett avstånd från lika lön i procent (|100 − kvoten|) och en prövning av skillnaden (true/false; null
  * när den inte kunde göras, vilket ger Går ej att bedöma).
  * @param {number} avstand
@@ -17222,6 +17228,7 @@ function _lasInDemounderlag(skapa, { stort = false } = {}) {
     if ((state.data.length || state.paket) && !confirm('Lönefilen du har läst in ersätts. Vill du fortsätta?')) return false;
     // Demot blandas aldrig med verkliga delar (ett organisationspaket, egen referens eller statistik).
     if (state.paket || state.policyKalla === 'fil' || state.policyKalla === 'paket' || state.statistik.length) _rensaAllData({ inbakat: false });
+    if (typeof _rfUrvalGlom === 'function') _rfUrvalGlom();   // urvalet i diagrammen hör till det förra underlaget, som vid en ny lönefil
     state.data = skapa();
     state.importprofil = null;   // demodatan läses inte ur en fil: ingen känd uppsättning
     _fkSlapp();   // inte heller någon förhandskontroll, och en fil som väntade på Läs in släpps
@@ -22277,7 +22284,7 @@ function _lvKravFigur({ medPoang, grupper }) {
         const perBas = new Map();
         for (const g of grupper) { if (!perBas.has(g.bas)) perBas.set(g.bas, []); perBas.get(g.bas).push(g.median); }
         niva = g => Stat.median(perBas.get(g.bas));
-        linje = basOrdning.map(b => ({ x: b, y: Stat.median(perBas.get(b.slice(4))) }));
+        linje = basOrdning.map(b => ({ x: b, y: Stat.median(perBas.get(b.slice(4))), bas: b.slice(4) }));   // en hörnpunkt per intervall: följer urvalet
     }
     // Utan poäng står alla grupper i ett BAS-intervall på samma plats i sidled, och grupper med nästan samma median
     // täcker varandra. De flyttas isär i sidled inom intervallets bredd: fil 0 i mitten, sedan omväxlande åt höger och
@@ -22309,7 +22316,7 @@ function _lvKravFigur({ medPoang, grupper }) {
     })).filter(l => l.data.length);
     if (linje.length >= 2) lager.unshift({ marke: 'linje', serie: medPoang ? 'Nivå efter kraven (trend)' : 'Nivå per BAS-intervall', farg: PALETTE.semantic.mork, streck: 'streckad', tjocklek: 1.5, data: linje });
     return { beskrivning: `En punkt per yrkesgrupp: arbetets krav (${medPoang ? 'arbetsvärderingspoäng' : 'BAS-intervall'}) mot gruppens medianlön, med form och färg efter könsdominans (kvinnodominerad vid ${kvDomGransText().replace('%', 'procent')} kvinnor). Den streckade linjen är nivån kraven brukar ge i organisationen.`,
-        x: medPoang ? { skala: 'linjar', titel: 'Arbetsvärderingspoäng' } : { skala: 'band', titel: 'BAS-intervall (stigande krav)', ordning: basOrdning },
+        urval: BAS_URVAL, x: medPoang ? { skala: 'linjar', titel: 'Arbetsvärderingspoäng' } : { skala: 'band', titel: 'BAS-intervall (stigande krav)', ordning: basOrdning },
         y: { skala: 'linjar', titel: 'Gruppens medianlön', format: 'kr' }, hojd: 420, lager };
 }
 function renderLikvardighetKrav() {
@@ -22915,7 +22922,7 @@ function updateForecast() {
 /** @param {{rader: any[], titel: string, beskrivning: string, format?: 'pct'|'kr', kolumner?: string[]}} val */
 function foreEfterFigur({ rader, titel, beskrivning, format = 'pct', kolumner = ['Före', 'Efter'] }) {
     const alla = rader.flatMap(r => [r.fore, r.efter]), p = v => _figTalformat(v, format), [a, b] = kolumner, kvot = format === 'pct';
-    const m = r => (r.markering ? { markering: r.markering } : {});
+    const m = r => ({ ...(r.markering ? { markering: r.markering } : {}), ...(r.bas != null ? { bas: r.bas } : {}) });   // bas: raden hör till ett BAS-intervall (figur.urval)
     const tips = d => [[d.y], [a, p(d.r.fore)], [b, p(d.r.efter)]];
     const lag = Math.min(...alla), hog = Math.max(...alla), luft = Math.max((hog - lag) * 0.12, Math.abs(hog) * 0.02);
     return { beskrivning, y: { skala: 'band', ordning: rader.map(r => r.namn), etikettMax: 36 },
@@ -24427,7 +24434,7 @@ function _konTathetFigur(rader, perKon, k = kTroskel(), form = 'fiol') {
     const serier = perKon ? [['Kvinna', PALETTE.kon.kvinna], ['Man', PALETTE.kon.man]] : [['Alla', PALETTE.serie[0]]];
     const lager = serier.map(([namn, farg]) => ({
         marke: 'lada', ...(form === 'fiol' ? { form: 'fiol' } : form === 'kvantiler' ? { form: 'kvantiler', antal: 20 } : { avvikare: false }), serie: namn, farg,
-        data: giltiga.filter(r => !perKon || kon(r) === namn).map(r => ({ x: 'BAS ' + r.bas, y: r.lon, markering: markeringFor(r.bas), ...(antal.get(cell(r)) < k ? { liten: true } : {}) })),
+        data: giltiga.filter(r => !perKon || kon(r) === namn).map(r => ({ x: 'BAS ' + r.bas, y: r.lon, bas: r.bas, markering: markeringFor(r.bas), ...(antal.get(cell(r)) < k ? { liten: true } : {}) })),
         tips: (d, s) => (s ? [[d.x], ..._kvantilTipsRader(s), [perKon ? `${namn}, median` : 'Median', _figTalformat(s.median, 'kr')],
                                ['Kvartiler', `${_figTalformat(s.q1, 'kr', { enhet: false })}–${_figTalformat(s.q3, 'kr')}`], ['Antal', String(s.n)]] : [[d.x]])
     })).filter(l => l.data.length);
@@ -24435,11 +24442,11 @@ function _konTathetFigur(rader, perKon, k = kTroskel(), form = 'fiol') {
         .sort((a, b) => a.localeCompare(b, 'sv', { numeric: true }));
     const ordning = [...new Set(giltiga.map(r => r.bas))].sort().map(b => 'BAS ' + b);
     if (form === 'kvantiler') return { utelamnade, figur: { beskrivning: `Lönefördelningen per BAS-intervall${perKon ? ' och kön' : ''} som kvantilpunkter: varje prick är en tjugondel av gruppen (i små grupper en större andel, aldrig färre än två personer), lagd vid den lönen. Räkna prickarna under en lön för att se hur stor andel som tjänar mindre. Inga enskilda löner visas.`,
-        legend: perKon ? undefined : false, x: { skala: 'band', ordning }, y: { skala: 'linjar', titel: 'Månadslön', format: 'kr' }, hojd: 420, lager } };
+        legend: perKon ? undefined : false, urval: BAS_URVAL, x: { skala: 'band', ordning }, y: { skala: 'linjar', titel: 'Månadslön', format: 'kr' }, hojd: 420, lager } };
     if (form !== 'fiol') return { utelamnade, figur: { beskrivning: `Lönespridningen per BAS-intervall och kön som lådagram: lådan är mittersta hälften av lönerna (första till tredje kvartilen), strecket i lådan medianen. Enstaka löner utanför morrhåren visas inte. Överlappar kvinnors och mäns lådor i ett intervall ligger könen på samma nivå där. BAS-intervall där ett kön har färre än ${k} personer visas inte för det könet.`,
-        x: { skala: 'band', ordning }, y: { skala: 'linjar', titel: 'Månadslön', format: 'kr' }, hojd: 380, lager } };
+        urval: BAS_URVAL, x: { skala: 'band', ordning }, y: { skala: 'linjar', titel: 'Månadslön', format: 'kr' }, hojd: 380, lager } };
     return { utelamnade, figur: { beskrivning: `Lönefördelningen per BAS-intervall${perKon ? ' och kön' : ''} som täthetskurvor: kurvan är bredast där flest löner ligger. Strecken är median och kvartiler. Kurvan slutar vid morrhårens ändar; enstaka löner långt utanför visas inte.`,
-        legend: perKon ? undefined : false, x: { skala: 'band', ordning }, y: { skala: 'linjar', titel: 'Månadslön', format: 'kr' }, hojd: 420, lager } };
+        legend: perKon ? undefined : false, urval: BAS_URVAL, x: { skala: 'band', ordning }, y: { skala: 'linjar', titel: 'Månadslön', format: 'kr' }, hojd: 420, lager } };
 }
 document.getElementById('kon-trend-alla')?.addEventListener('change', () => { const s = /** @type {HTMLInputElement|null} */ (document.getElementById('bas-select-kon')); if (s) renderKon(s.value); });
 
@@ -24582,10 +24589,10 @@ function _konMultiplarFigur(rader, liten, k = kTroskel()) {
             if (data.length) lager.push({ marke: 'punkt', serie: namn, farg, storlek: 2.5, opacitet: 0.6, panel, data, tips: _punktTips });
         }
         const reg = Stat.linearRegression(g.map(r => [r.alder, r.lon])), aldrar = g.map(r => r.alder), a0 = Math.min(...aldrar), a1 = Math.max(...aldrar);
-        if (a1 > a0) lager.push({ marke: 'linje', serie: 'Trend (alla i intervallet)', farg: PALETTE.semantic.mork, tjocklek: 1.5, panel, data: [{ x: a0, y: reg.m * a0 + reg.b }, { x: a1, y: reg.m * a1 + reg.b }] });
+        if (a1 > a0) lager.push({ marke: 'linje', serie: 'Trend (alla i intervallet)', farg: PALETTE.semantic.mork, tjocklek: 1.5, panel, data: [{ x: a0, y: reg.m * a0 + reg.b, bas: b }, { x: a1, y: reg.m * a1 + reg.b, bas: b }] });
     }
     return { utanfor, nedsamplade, figur: { beskrivning: `Lön mot ålder i ${valda.length} BAS-intervall, ett litet diagram per intervall med gemensamma axlar. Trendlinjen i varje panel räknas ur alla i intervallet.`,
-        individer: true, paneler: valda.map(b => 'BAS ' + b), x: { skala: 'linjar', titel: 'Ålder' }, y: { skala: 'linjar', titel: 'Månadslön', format: 'kr' }, hojd: 340, lager } };
+        individer: true, urval: BAS_URVAL, paneler: valda.map(b => 'BAS ' + b), x: { skala: 'linjar', titel: 'Ålder' }, y: { skala: 'linjar', titel: 'Månadslön', format: 'kr' }, hojd: 340, lager } };
 }
 function renderKonMultiplar() {
     const el = document.getElementById('chart-kon-multiplar');
@@ -25324,12 +25331,12 @@ document.getElementById("search-skevhet")?.addEventListener("input", e => {
 const _SKEVHET_STATUS = GAP_STATUS_ALLA;
 function _skevhetFigur(bars) {
     const status = o => gapStatusKI(o);
-    const pkt = o => ({ y: 'BAS ' + o.bas, x: +o.gap.toFixed(1), etikett: _figTalformat(o.gap, 'pct'), n: o.n, markering: markeringFor(o.bas),
+    const pkt = o => ({ y: 'BAS ' + o.bas, x: +o.gap.toFixed(1), etikett: _figTalformat(o.gap, 'pct'), n: o.n, bas: o.bas, markering: markeringFor(o.bas),
                         ...(o.ci ? { fel: { lag: o.ci.lo, hog: o.ci.hi } } : {}), ..._kronorFalt(o.medKv, o.medMa) });
     const tips = d => [[d.y], ['Kvinnors median', `${_figTalformat(d.x, 'pct')} av männens`], ..._figKronorTipsRad(d.skillnadKr),
         ['95 % KI', d.fel ? `${_figTalformat(d.fel.lag, 'pct', { enhet: false })}–${_figTalformat(d.fel.hog, 'pct')}` : '–'], ['Antal', String(d.n)]];
     return { beskrivning: 'Kvinnors medianlön i procent av männens per BAS-intervall, som en punkt med 95 % konfidensintervall mot linjen för lika lön (100 %). Detaljerade siffror finns i tabellerna nedan.',
-        y: { skala: 'band', ordning: bars.map(o => 'BAS ' + o.bas) },
+        urval: BAS_URVAL, y: { skala: 'band', ordning: bars.map(o => 'BAS ' + o.bas) },
         x: { skala: 'linjar', titel: 'Kvinnors median i % av männens — 100 = lika lön',
              doman: [Math.floor(Math.min(90, ...bars.map(o => (o.ci ? o.ci.lo : o.gap))) - 2), Math.ceil(Math.max(110, ...bars.map(o => (o.ci ? o.ci.hi : o.gap))) + 2)] },
         hojd: Math.max(180, 110 + bars.length * 34),
@@ -25485,10 +25492,10 @@ function _laTrattFigur(u, k = kTroskel()) {
     // Alla grupper har sitt namn i verktygstipset och i tabellen under.
     const namngivna = new Set(u.punkter.filter(p => p.utanfor).sort((a, b) => Math.abs(b.kvot - 100) - Math.abs(a.kvot - 100)).slice(0, 6));
     const lager = (serie, farg, symbol, valj) => ({ marke: 'punkt', serie, farg, symbol, storlek: 6, etikettLage: 'auto',
-        data: u.punkter.filter(valj).map(p => ({ x: p.n, y: +p.kvot.toFixed(1), p, markering: markeringFor(p.bas, p.aid), ..._kronorFalt(p.medKv, p.medMa), ...(namngivna.has(p) ? { etikett: _rfKorta(String(p.yrke), 24) } : {}) })), tips });
+        data: u.punkter.filter(valj).map(p => ({ x: p.n, y: +p.kvot.toFixed(1), p, bas: p.bas, markering: markeringFor(p.bas, p.aid), ..._kronorFalt(p.medKv, p.medMa), ...(namngivna.has(p) ? { etikett: _rfKorta(String(p.yrke), 24) } : {}) })), tips });
     const ys = [...falt.flatMap(f => [f.lag, f.hog]), ...u.punkter.map(p => p.kvot)];
     return { beskrivning: 'Trattdiagram: kvinnors medianlön i procent av mäns per yrkesgrupp och BAS-intervall mot gruppens storlek. Det skuggade fältet är de 95-procentiga gränserna för vad slumpen kan ge vid den gruppstorleken, och smalnar när gruppen blir större. Samma grupper finns i tabellen nedan.',
-        x: { skala: 'linjar', titel: 'Antal personer i gruppen', doman: [x0, x1] },
+        urval: BAS_URVAL, x: { skala: 'linjar', titel: 'Antal personer i gruppen', doman: [x0, x1] },
         y: { skala: 'linjar', titel: 'Kvinnors median i % av mäns', doman: [Math.floor(Math.min(...ys) - 1), Math.ceil(Math.max(...ys) + 1)] },
         hojd: 340,
         referens: [{ y: 100, farg: PALETTE.semantic.mork, tjocklek: 1.5, etikett: 'Lika lön' }],
@@ -25512,10 +25519,10 @@ function _laRitaTratt(d) {
 // (40 och 60 %) som linjer. Samma BAS-intervall och samma andelar som tabellen under diagrammet.
 function _skevhetAndelFigur(rader) {
     const serie = (namn, farg, falt) => ({ marke: 'stapel', lage: 'staplad', riktning: 'liggande', serie: namn, farg,
-        data: rader.map(o => ({ y: 'BAS ' + o.bas, x: o[falt], n: o.tot, markering: markeringFor(o.bas), ...(o[falt] >= 8 ? { etikett: _figTalformat(o[falt], 'pct') } : {}) })),
+        data: rader.map(o => ({ y: 'BAS ' + o.bas, x: o[falt], n: o.tot, bas: o.bas, markering: markeringFor(o.bas), ...(o[falt] >= 8 ? { etikett: _figTalformat(o[falt], 'pct') } : {}) })),
         tips: d => [[d.y], [namn, _figTalformat(d.x, 'pct')], ['Antal i intervallet', String(d.n)]] });
     return { beskrivning: 'Andel kvinnor och män per BAS-intervall, staplat till 100 procent. Linjerna vid 40 och 60 procent är gränserna för jämn könsfördelning. Samma siffror finns i tabellen nedan.',
-        y: { skala: 'band', ordning: rader.map(o => 'BAS ' + o.bas) },
+        urval: BAS_URVAL, y: { skala: 'band', ordning: rader.map(o => 'BAS ' + o.bas) },
         x: { skala: 'linjar', titel: 'Andel av intervallet (%)', doman: [0, 100] },
         hojd: Math.max(160, 70 + rader.length * 32),
         // Linjerna har ingen etikett: den skulle skriva över staplarnas siffror, och axeln visar 40 och 60.
@@ -25819,19 +25826,19 @@ function _jmfSpannFigur(visa, kalla, namn, namnLitet) {
     const kr = v => _figTalformat(v, 'kr');
     const refNamn = plotNamn(namn), org = plotNamn(orgNamn());
     return { beskrivning: `Organisationens lönespann från P10 till P90 per yrke, med medianen som prick, ovanpå spannet i ${namnLitet}. Samma värden står i tabellen nedan.`,
-        x: { skala: 'linjar', titel: 'Månadslön (kr)', format: 'kr' }, y: { skala: 'band', ordning: visa.map(etikett), etikettMax: 48 },
+        urval: BAS_URVAL, x: { skala: 'linjar', titel: 'Månadslön (kr)', format: 'kr' }, y: { skala: 'band', ordning: visa.map(etikett), etikettMax: 48 },
         hojd: 110 + 26 * visa.length, paneler: 'auto',   // fler än femton yrken: små multiplar
         lager: [
             { marke: 'intervall', riktning: 'liggande', serie: `${refNamn} P10–P90`, farg: PALETTE.semantic.spann, tjocklek: 14,
-              data: visa.filter(r => harBand(ref(r))).map(r => ({ y: etikett(r), lag: ref(r).p10, hog: ref(r).p90, markering: markeringFor(r.bas, r.aid) })),
+              data: visa.filter(r => harBand(ref(r))).map(r => ({ y: etikett(r), lag: ref(r).p10, hog: ref(r).p90, bas: r.bas, markering: markeringFor(r.bas, r.aid) })),
               tips: d => [[d.y], [`${refNamn} P10–P90`, `${_figTalformat(d.lag, 'kr', { enhet: false })}–${kr(d.hog)}`]] },
             { marke: 'intervall', riktning: 'liggande', serie: `${org} P10–P90`, farg: PALETTE.serie[0], tjocklek: 7,
-              data: visa.map(r => ({ y: etikett(r), lag: r.org.p10, hog: r.org.p90, markering: markeringFor(r.bas, r.aid) })),
+              data: visa.map(r => ({ y: etikett(r), lag: r.org.p10, hog: r.org.p90, bas: r.bas, markering: markeringFor(r.bas, r.aid) })),
               tips: d => [[d.y], ['Organisationen', `${_figTalformat(d.lag, 'kr', { enhet: false })}–${kr(d.hog)}`]] },
             { marke: 'punkt', symbol: 'streck', serie: `${refNamn} median`, farg: PALETTE.semantic.linje, storlek: 5,
-              data: visa.filter(r => ref(r).median != null).map(r => ({ y: etikett(r), x: ref(r).median })), tips: d => [[d.y], [`${refNamn} median`, kr(d.x)]] },
+              data: visa.filter(r => ref(r).median != null).map(r => ({ y: etikett(r), x: ref(r).median, bas: r.bas })), tips: d => [[d.y], [`${refNamn} median`, kr(d.x)]] },
             { marke: 'punkt', serie: `${org} median`, farg: PALETTE.semantic.trend, storlek: 4.5,
-              data: visa.map(r => ({ y: etikett(r), x: r.org.median, markering: markeringFor(r.bas, r.aid) })), tips: d => [[d.y], ['Organisationen median', kr(d.x)]] }
+              data: visa.map(r => ({ y: etikett(r), x: r.org.median, bas: r.bas, markering: markeringFor(r.bas, r.aid) })), tips: d => [[d.y], ['Organisationen median', kr(d.x)]] }
         ].filter(l => l.data.length) };
 }
 
@@ -25861,7 +25868,7 @@ function _jmfAvvikelseFigur(visa, kalla, namn) {
     const streck = (serie, farg, m) => ({ marke: 'punkt', symbol: 'streck', serie, farg, storlek: 5,
         data: visa.filter(r => diff(r, m) != null).map(r => ({ ...bas(r), x: diff(r, m), r })), tips: d => tipsRad(d.r) });
     return { beskrivning: `Skillnaden i lön mot ${namn} per yrke, rangordnad från mest negativ: medianen som punkt, och skillnaden i P10 och P90 som streck med ett spann emellan. Samma värden står i tabellen nedan.`,
-        x: { skala: 'linjar', titel: `Skillnad mot ${namn} (%)`, nollinje: true }, y: { skala: 'band', ordning: visa.map(_jmfEtikett), etikettMax: 48 },
+        urval: BAS_URVAL, x: { skala: 'linjar', titel: `Skillnad mot ${namn} (%)`, nollinje: true }, y: { skala: 'band', ordning: visa.map(_jmfEtikett), etikettMax: 48 },
         hojd: 110 + 28 * visa.length, paneler: 'auto',
         lager: [
             { marke: 'intervall', riktning: 'liggande', serie: 'Spann P10–P90', farg: PALETTE.semantic.spann, tjocklek: 4, legend: false,
@@ -25869,7 +25876,7 @@ function _jmfAvvikelseFigur(visa, kalla, namn) {
             // Etiketten bärs av en egen, genomskinlig punkt vid radens yttersta märke (lika stor som medianpunkten, så att
             // texten hamnar utanför den).
             { marke: 'punkt', serie: 'Medianens värde', farg: PALETTE.semantic.spann, storlek: 6, opacitet: 0, etikettLage: 'hoger', legend: false, utanData: true,
-              data: visa.filter(r => diff(r, 'median') != null).map(r => ({ y: _jmfEtikett(r), x: Math.max(...varden(r)), etikett: _jmfPct(diff(r, 'median')) })) },
+              data: visa.filter(r => diff(r, 'median') != null).map(r => ({ y: _jmfEtikett(r), x: Math.max(...varden(r)), bas: r.bas, etikett: _jmfPct(diff(r, 'median')) })) },
             streck('Skillnad i P10', FARG.blek, 'p10'), streck('Skillnad i P90', PALETTE.semantic.mork, 'p90'),
             { marke: 'punkt', serie: 'Skillnad i median', farg: PALETTE.serie[0], storlek: 6,
               data: visa.filter(r => diff(r, 'median') != null).map(r => ({ ...bas(r), x: diff(r, 'median'), r })), tips: d => tipsRad(d.r) }
@@ -25915,12 +25922,12 @@ function _jmfStatlageFigur(rader) {
     return { beskrivning: 'Var varje yrkesgrupps medianlön ligger i jämförelsestatistikens spann per BAS-intervall: 0 är statistikens P10 och 100 dess P90. '
             + 'Fylld punkt: statistiken matchad på AID och BAS. Ofylld punkt: endast AID. Hela underlaget, oberoende av filtren under Mot jämförelsestatistiken; '
             + 'läget räknas ur P10, median och P90 i tabellen där.',
-        x: { skala: 'band', ordning }, y: { skala: 'linjar', titel: 'Läget i statistikens spann (%)' },
+        urval: BAS_URVAL, x: { skala: 'band', ordning }, y: { skala: 'linjar', titel: 'Läget i statistikens spann (%)' },
         referens: [linje(0, 'P10'), linje(100, 'P90')],
         lager: [
             // Spannet bär inga värden (0 och 100 i varje BAS) och får därför inga rader i diagramdatan.
             { marke: 'intervall', serie: 'Statistikens spann (P10–P90)', farg: PALETTE.semantic.spann, tjocklek: 14, legend: false, utanData: true,
-              data: ordning.map(b => ({ x: b, lag: 0, hog: 100 })) },
+              data: ordning.map(b => ({ x: b, lag: 0, hog: 100, bas: b.slice(4) })) },
             ...punktlager
         ].filter(l => l.data.length) };
 }
@@ -26162,17 +26169,17 @@ function _rrHantelFigur(rader, { harStatistik }) {
     const kr = v => _figTalformat(v, 'kr');
     const lager = serier.flatMap((s, i) => {
         const forskjutning = (i - (serier.length - 1) / 2) * steg;
-        const med = rader.map(r => ({ y: r.namn, v: r[s.nyckel] })).filter(d => d.v && d.v.median != null);
+        const med = rader.map(r => ({ y: r.namn, bas: r.bas, v: r[s.nyckel] })).filter(d => d.v && d.v.median != null);
         return [
             { marke: 'intervall', riktning: 'liggande', serie: s.namn, farg: s.farg, tjocklek: 8, opacitet: 0.45,
-              data: med.filter(d => d.v.p10 != null && d.v.p90 != null).map(d => ({ y: d.y, lag: d.v.p10, hog: d.v.p90, forskjutning })),
+              data: med.filter(d => d.v.p10 != null && d.v.p90 != null).map(d => ({ y: d.y, lag: d.v.p10, hog: d.v.p90, forskjutning, ...(d.bas != null ? { bas: d.bas } : {}) })),
               tips: d => [[d.y], [s.namn], ['P10–P90', `${_figTalformat(d.lag, 'kr', { enhet: false })}–${kr(d.hog)}`]] },
             { marke: 'punkt', symbol: 'streck', serie: s.namn, farg: s.farg, storlek: 5,
-              data: med.map(d => ({ y: d.y, x: d.v.median, forskjutning })), tips: d => [[d.y], [s.namn], ['Median', kr(d.x)]] }
+              data: med.map(d => ({ y: d.y, x: d.v.median, forskjutning, ...(d.bas != null ? { bas: d.bas } : {}) })), tips: d => [[d.y], [s.namn], ['Median', kr(d.x)]] }
         ];
     });
     return { beskrivning: `Månadslönen per yrkesgrupp, med ${serier.map(s => s.namn.toLowerCase()).join(', ').replace(/, ([^,]*)$/, ' och $1')} bredvid varandra i raden; ställningstagandet är referenspunkten. Bandet är P10–P90 och strecket medianen. Samma värden står i tabellen ovanför.`,
-        x: { skala: 'linjar', format: 'kr', titel: 'Månadslön (kr)' }, y: { skala: 'band', ordning: rader.map(r => r.namn), etikettMax: 40 },
+        urval: BAS_URVAL, x: { skala: 'linjar', format: 'kr', titel: 'Månadslön (kr)' }, y: { skala: 'band', ordning: rader.map(r => r.namn), etikettMax: 40 },
         hojd: 80 + serier.length * 18 * rader.length,
         lager };
 }
@@ -27029,14 +27036,14 @@ function _perBasFigur(sorted, bhQByBas) {
         return _PERBAS_STATUS[{ titta: 0, dokumentera: 1 }[_stsPerBasSignal(p.gapPct, sig, p.pValue < 0.05).niva] ?? 2];
     };
     const pkt = p => ({ y: 'BAS ' + p.bas, x: +p.gapPct.toFixed(2), fel: { lag: Math.min(p.ciLow, p.gapPct), hog: Math.max(p.ciHigh, p.gapPct) },
-                        n: p.n, kvN: p.kvN, maN: p.maN, markering: markeringFor(p.bas) });
+                        n: p.n, kvN: p.kvN, maN: p.maN, bas: p.bas, markering: markeringFor(p.bas) });
     const tips = d => [[d.y], ['Oförklarad skillnad', `${_figTalformat(d.x, 'tal2')} %`],
         ['95 % KI', `${_figTalformat(d.fel.lag, 'pct', { enhet: false })} – ${_figTalformat(d.fel.hog, 'pct')}`],
         ['Antal', `${d.n} (${d.kvN} kv / ${d.maN} mä)`]];
     return { beskrivning: 'Oförklarad löneskillnad per BAS-intervall med 95 % konfidensintervall. Samma siffror finns i tabellen under diagrammet.',
         // Noll ska ligga INOM axeln med luft på båda sidor, så att nollinjen syns också när alla gap har samma tecken.
         x: { skala: 'linjar', titel: 'Oförklarad skillnad (%), negativt = kvinnor lägre', nollinje: true, doman: _perBasDoman(sorted) },
-        y: { skala: 'band', ordning: sorted.map(p => 'BAS ' + p.bas) },
+        urval: BAS_URVAL, y: { skala: 'band', ordning: sorted.map(p => 'BAS ' + p.bas) },
         hojd: Math.max(170, 104 + sorted.length * 30),
         lager: _PERBAS_STATUS.map(s => ({ marke: 'punkt', riktning: 'liggande', symbol: s.symbol, storlek: 6, serie: s.serie, farg: PALETTE.semantic[s.farg],
             data: sorted.filter(p => status(p) === s).map(pkt), tips }))
@@ -29085,7 +29092,7 @@ function _prioKostnadFigur(allaVisade, allCumPct) {
             etikett: `${mnkr(i.annualGapTotal)} · ${svTal(cumPct[n], 0)} %`, markering: markeringFor(i.bas, i.yrke) })),
         tips: d => [[`${d.yrke} · BAS ${d.bas}`], ['Kostnad', `${_figTalformat(d.x, 'kr')}/år`], ['Kumulativ andel', _figTalformat(d.kum, 'pct')]] });
     return { beskrivning: 'Årskostnad per grupp, störst först, med den kumulativa andelen av totalkostnaden som text. Siffrorna finns i prioriteringstabellen nedan.',
-        y: { skala: 'band', ordning: y, etikettMax: 40 }, x: { skala: 'linjar', titel: 'Årskostnad (kr) · procenttalet är kumulativ andel', format: 'kr' },
+        urval: BAS_URVAL, y: { skala: 'band', ordning: y, etikettMax: 40 }, x: { skala: 'linjar', titel: 'Årskostnad (kr) · procenttalet är kumulativ andel', format: 'kr' },
         hojd: Math.max(170, 90 + visade.length * 28),
         lager: [lager('Når tillsammans 80 % av kostnaden', PALETTE.serie[0], 1, inom), lager('Övriga', PALETTE.serie[0], 0.4, n => !inom(n))].filter(l => l.data.length) };
 }
@@ -29121,7 +29128,7 @@ function _prioMatrisFigur(items, etikettlage, refLabel, cfg) {
     const antal = items.map(i => i.n).filter(v => v > 0), stor = antal.length > 1 && Math.max(...antal) / Math.min(...antal) > 10;
     const zon = (x0, x1, farg, etikett, textfarg) => ({ typ: 'zon', x0, x1, farg, opacitet: 0.07, etikett, textfarg });
     return { beskrivning: 'Prioriteringsmatris: varje grupps avvikelse mot referensen mot gruppens storlek, med kostnaden som bubblans storlek. Samma grupper listas i tabellen nedan.',
-        x: { skala: 'linjar', titel: `Avvikelse mot ${refLabel} (%)`, doman: [xMin, xMax], nollinje: true },
+        urval: BAS_URVAL, x: { skala: 'linjar', titel: `Avvikelse mot ${refLabel} (%)`, doman: [xMin, xMax], nollinje: true },
         // Logskala bara när grupperna skiljer sig med mer än en tiopotens; annars är en vanlig axel lättare att läsa.
         y: stor ? { skala: 'log', titel: 'Antal personer i gruppen (log skala)' } : { skala: 'linjar', titel: 'Antal personer i gruppen' },
         // Zonerna heter som statusarna i tabellen och förklaringen under den («Börja här» är de största grupperna i den första zonen).
@@ -33563,10 +33570,10 @@ function _abEtiketterBortFranStrecket(fig) {
 function _abBasHantelFigur(j, forraAr, nuAr) {
     const { rader } = _abBasHantelRader(j);
     if (!rader.length) return null;
-    const fig = foreEfterFigur({ rader: rader.map(r => ({ namn: r.namn, fore: r.fore, efter: r.efter, farg: PALETTE.semantic.linje, markering: markeringFor(r.bas) })),
+    const fig = foreEfterFigur({ rader: rader.map(r => ({ namn: r.namn, bas: r.bas, fore: r.fore, efter: r.efter, farg: PALETTE.semantic.linje, markering: markeringFor(r.bas) })),
         kolumner: [String(forraAr), String(nuAr)], titel: 'Medianlön per BAS-intervall', format: 'kr',
         beskrivning: `Medianlönen per BAS-intervall, ${forraAr} (strecket) och ${nuAr} (punkten). Bara intervall med minst ${j.kGrans} personer båda åren.` });
-    return _abEtiketterBortFranStrecket(fig);
+    return { ..._abEtiketterBortFranStrecket(fig), urval: BAS_URVAL };
 }
 
 /**
@@ -33977,14 +33984,14 @@ function _lpBandkartaFigur(bas) {
                    storlek: Math.max(3.5, Math.min(9, Math.sqrt(g.n) * 1.1)), kvAndel, n: g.n, yrke: g.yrke, bas: b.bas, niva: g.level || '—', markering: markeringFor(b.bas, g.aid) });
     }));
     return { beskrivning: 'Referensens lönespann och organisationens faktiska lönespann per BAS-intervall, med varje yrkesgrupps median inlagd som punkt. Samma värden finns i tabellen nedan.',
-        x: { skala: 'band', ordning: bas.map(x) }, y: { skala: 'linjar', titel: 'Månadslön', format: 'kr' },
+        urval: BAS_URVAL, x: { skala: 'band', ordning: bas.map(x) }, y: { skala: 'linjar', titel: 'Månadslön', format: 'kr' },
         lager: [
             { marke: 'intervall', serie: `${refNamn} (P10–P90)`, farg: PALETTE.semantic.spann, tjocklek: 14,
-              data: bas.map(b => ({ x: x(b), lag: b.pol.p10, hog: b.pol.p90, markering: markeringFor(b.bas) })), tips: d => [[d.x], [refNamn, `P10 ${utanKr(d.lag)} · P90 ${kr(d.hog)}`]] },
+              data: bas.map(b => ({ x: x(b), lag: b.pol.p10, hog: b.pol.p90, bas: b.bas, markering: markeringFor(b.bas) })), tips: d => [[d.x], [refNamn, `P10 ${utanKr(d.lag)} · P90 ${kr(d.hog)}`]] },
             { marke: 'punkt', symbol: 'streck', serie: `${refNamn} median`, farg: PALETTE.semantic.referens, storlek: 4.5, legend: false,
-              data: bas.map(b => ({ x: x(b), y: refMed(b) })), tips: d => [[d.x], [`${refNamn} median`, kr(d.y)]] },
+              data: bas.map(b => ({ x: x(b), y: refMed(b), bas: b.bas })), tips: d => [[d.x], [`${refNamn} median`, kr(d.y)]] },
             { marke: 'intervall', serie: `${org} (P10–P90)`, farg: PALETTE.serie[0], opacitet: 0.55, tjocklek: 6,
-              data: medOrgBand.map(b => ({ x: x(b), lag: b.orgBand.p10, hog: b.orgBand.p90, med: b.orgBand.med, n: b.orgBand.n, markering: markeringFor(b.bas) })),
+              data: medOrgBand.map(b => ({ x: x(b), lag: b.orgBand.p10, hog: b.orgBand.p90, med: b.orgBand.med, n: b.orgBand.n, bas: b.bas, markering: markeringFor(b.bas) })),
               tips: d => [[d.x], ['Organisationen', `P10 ${utanKr(d.lag)} · median ${utanKr(d.med)} · P90 ${kr(d.hog)}`], ['Antal', String(d.n)]] },
             // Yrkesgrupperna i tre klasser efter könsfördelning (som i Likvärdigt arbete) i stället för en färgskala:
             // tre färger går att läsa mot spannen, en glidande skala gör det inte.
@@ -34000,14 +34007,14 @@ function _lpFigurKonHantel(rows) {
     const y = b => 'BAS ' + b.bas, pos = (b, f) => +(b.genderGap[f] * 100).toFixed(1);
     const alla = rows.flatMap(b => [pos(b, 'kvPos'), pos(b, 'maPos')]);
     const punkt = (namn, farg, falt) => ({ marke: 'punkt', serie: namn, farg, storlek: 6,
-        data: rows.map(b => ({ y: y(b), x: pos(b, falt), markering: markeringFor(b.bas) })), tips: d => [[d.y], [namn, `${_figTalformat(d.x, 'pct')} in i spannet`]] });
+        data: rows.map(b => ({ y: y(b), x: pos(b, falt), bas: b.bas, markering: markeringFor(b.bas) })), tips: d => [[d.y], [namn, `${_figTalformat(d.x, 'pct')} in i spannet`]] });
     return { beskrivning: 'Kvinnors respektive mäns genomsnittliga position i ställningstagandets lönespann per BAS-intervall, som två punkter på spannet: 0 procent är spannets nedre gräns (P10), 100 procent den övre (P90).',
-        y: { skala: 'band', ordning: rows.map(y) }, x: { skala: 'linjar', titel: 'Position i spannet (%) — 0 = P10, 100 = P90', doman: [Math.min(0, ...alla) - 4, Math.max(100, ...alla) + 4] },
+        urval: BAS_URVAL, y: { skala: 'band', ordning: rows.map(y) }, x: { skala: 'linjar', titel: 'Position i spannet (%) — 0 = P10, 100 = P90', doman: [Math.min(0, ...alla) - 4, Math.max(100, ...alla) + 4] },
         hojd: Math.max(170, 100 + rows.length * 34),
         referens: [{ x: 50, streck: 'prickad', farg: PALETTE.semantic.neutral, tjocklek: 1, etikett: 'Mitten' }],
-        lager: [{ marke: 'intervall', riktning: 'liggande', serie: 'Policyns spann', farg: PALETTE.semantic.spann, tjocklek: 12, data: rows.map(b => ({ y: y(b), lag: 0, hog: 100 })), tips: d => [[d.y], ['Spann', 'P10–P90']] },
+        lager: [{ marke: 'intervall', riktning: 'liggande', serie: 'Policyns spann', farg: PALETTE.semantic.spann, tjocklek: 12, data: rows.map(b => ({ y: y(b), lag: 0, hog: 100, bas: b.bas })), tips: d => [[d.y], ['Spann', 'P10–P90']] },
                 { marke: 'intervall', riktning: 'liggande', serie: 'Skillnad', farg: PALETTE.semantic.neutral, tjocklek: 2, legend: false,
-                  data: rows.map(b => ({ y: y(b), lag: Math.min(pos(b, 'kvPos'), pos(b, 'maPos')), hog: Math.max(pos(b, 'kvPos'), pos(b, 'maPos')) })) },
+                  data: rows.map(b => ({ y: y(b), lag: Math.min(pos(b, 'kvPos'), pos(b, 'maPos')), hog: Math.max(pos(b, 'kvPos'), pos(b, 'maPos')), bas: b.bas })) },
                 punkt('Kvinnor', PALETTE.kon.kvinna, 'kvPos'), punkt('Män', PALETTE.kon.man, 'maPos')] };
 }
 
@@ -34057,11 +34064,11 @@ function _lpFigurKomplians(rows) {
     const pct = (v, n) => +((v / n) * 100).toFixed(1);
     const serie = (namn, farg, falt) => ({
         marke: 'stapel', lage: 'staplad', serie: namn, farg,
-        data: rows.map(b => ({ x: 'BAS ' + b.bas, y: pct(b.compliance[falt], b.compliance.n), markering: markeringFor(b.bas) })),
+        data: rows.map(b => ({ x: 'BAS ' + b.bas, y: pct(b.compliance[falt], b.compliance.n), bas: b.bas, markering: markeringFor(b.bas) })),
         tips: d => [[d.x], [namn, _figTalformat(d.y, 'pct')]]
     });
     return { beskrivning: 'Andel anställda under, inom och över ställningstagandets lönespann per BAS-intervall',
-        x: { skala: 'band' }, y: { skala: 'linjar', titel: 'Andel av de anställda (%)', doman: [0, 100] },
+        urval: BAS_URVAL, x: { skala: 'band' }, y: { skala: 'linjar', titel: 'Andel av de anställda (%)', doman: [0, 100] },
         hojd: Math.max(260, 60 + rows.length * 38),
         // Två nyanser kring en neutral mitt (under — inom — över), inte rött och grönt: läget i spannet är en riktning.
         lager: [serie('Under P10', _LP_LAGE.under, 'under'), serie('Inom spann', _LP_LAGE.inom, 'within'),
@@ -34079,7 +34086,7 @@ function _lpFigurKompliansMitt(rows) {
         marke: 'stapel', lage: 'staplad', riktning: 'liggande', serie: namn, farg, ...(tecken < 0 ? { absolut: true } : {}),
         data: sorterade.map(b => {
             const andel = pct(b.compliance[falt], b.compliance.n);
-            return { y: 'BAS ' + b.bas, x: tecken * andel || 0, andel, inom: pct(b.compliance.within, b.compliance.n), markering: markeringFor(b.bas),
+            return { y: 'BAS ' + b.bas, x: tecken * andel || 0, andel, inom: pct(b.compliance.within, b.compliance.n), bas: b.bas, markering: markeringFor(b.bas),
                      ...(andel > 0 ? { etikett: _figTalformat(andel, 'pct') } : {}) };
         }),
         tips: d => [[d.y], [namn, _figTalformat(d.andel, 'pct')], ['Inom spann', _figTalformat(d.inom, 'pct')]]
@@ -34087,7 +34094,7 @@ function _lpFigurKompliansMitt(rows) {
     const storst = Math.max(10, ...sorterade.map(b => Math.max(pct(b.compliance.under, b.compliance.n), pct(b.compliance.over, b.compliance.n))));
     const grans = Math.min(100, Math.ceil(storst * 1.15 / 10) * 10);
     return { beskrivning: 'Andel anställda under respektive över ställningstagandets lönespann per BAS-intervall, ställda kring en mittlinje: under åt vänster, över åt höger. Störst andel utanför spannet överst. Resten ligger inom spannet.',
-        y: { skala: 'band', ordning: sorterade.map(b => 'BAS ' + b.bas) },
+        urval: BAS_URVAL, y: { skala: 'band', ordning: sorterade.map(b => 'BAS ' + b.bas) },
         x: { skala: 'linjar', titel: 'Under P10 åt vänster · andel av de anställda (%) · över P90 åt höger', format: 'pctAbs', doman: [-grans, grans], nollinje: true },
         hojd: Math.max(260, 70 + sorterade.length * 38),
         lager: [serie('Under P10', _LP_LAGE.under, 'under', -1), serie('Över P90', _LP_LAGE.over, 'over', 1)] };

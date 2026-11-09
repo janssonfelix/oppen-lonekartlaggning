@@ -1,6 +1,6 @@
 # Risk- och sårbarhetsanalys (dataskydd och informationssäkerhet) — Öppen lönekartläggning
 
-**Bygge:** `2026.11.05` · **Artefakt-SHA-256:** `ba60f16a6be1a987988ae96215728e5ffb04024d6ee9bb853de5eb5e5100347a` (se `dist/RELEASE.txt`).
+**Bygge:** `2026.11.05` · **Artefakt-SHA-256:** `8335147245ece732235c3068da84788f5cc9b3f00c62173f178b0898d7a88c6b` (se `dist/RELEASE.txt`).
 **Granskningsdatum:** 2026-11-07.
 **Granskningsmetod:** kodläsning påstående för påstående + statisk sökning i källkod och bygge +
 körning av det byggda verktyget i jsdom och i Chromium (utan nätverk) med syntetiska testfiler.
@@ -615,6 +615,11 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   eller grupp; inga namn eller identifierare) och ska hanteras som personuppgifter." (beslut
   2026-10-16). Lådorna i Tabeller och egna vyer (individpunkter, punktsvärm, regnmoln) exporteras som
   statistik per grupp, aldrig som individer. Sådana filer ska hanteras som personuppgifter (§8, punkt 1).
+- **Diagrammens BAS-urval** (knapparna ovanför diagrammen där BAS-intervallet är en dimension) skapar ingen ny
+  utdata: det döljer bara märken på skärmen och räknar inte om något tal. Diagrammets egen exportmeny (PNG/SVG)
+  kan visa samma urval och säger det då i fotraden ("Dolt i diagrammet: BAS A"); diagramdatan har alla rader och
+  samma rad. Rapporten, Word, PDF, utskriften, ZIP-filen och rapportunderlaget är alltid fullständiga, och urvalet
+  sparas inte i konfigurationsfilen.
 - **Rapportunderlag via urklipp (ADR-20):** aggregerade faktastycken, tabeller och diagram kopieras
   för att klistras in i organisationens egen rapportmall. Blocken följer samma k-regel som Lika
   arbete, och kandidatpar med en grupp under tröskeln redovisas inte. *Kopiera alla avsnitt*

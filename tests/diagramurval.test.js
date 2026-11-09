@@ -237,6 +237,24 @@ describe('minnet', () => {
         const lasIn = kalla.slice(kalla.indexOf('const lasIn = () => {'), kalla.indexOf('_afterDataLoaded();', kalla.indexOf('const lasIn = () => {')));
         expect(lasIn).toContain('_rfUrvalGlom()');
     });
+    it('demot (litet och stort) glömmer urvalet: den gemensamma inläsningen anropar _rfUrvalGlom', () => {
+        const w2 = createAppWindow();
+        const el = w2.document.createElement('div'); el.id = 't-urval-demo';
+        Object.defineProperty(el, 'clientWidth', { value: 600, configurable: true });
+        w2.document.body.appendChild(el);
+        w2.__el = el; w2.__f = basFigur();
+        w2.eval('ritaFigur(window.__el, window.__f, {})');
+        el.previousElementSibling.querySelector('[data-urval="A"]').dispatchEvent(new w2.MouseEvent('click', { bubbles: true }));
+        expect(el._figurBortvalda.has('A')).toBe(true);
+        w2.__loadDemoData();
+        w2.eval('ritaFigur(window.__el, window.__f, {})');
+        expect(el._figurBortvalda.size).toBe(0);
+        // Det stora demot går samma väg (_lasInDemounderlag), före underlaget byts.
+        const kalla = w2.eval('_lasInDemounderlag.toString()');
+        expect(kalla.indexOf('_rfUrvalGlom()')).toBeGreaterThan(-1);
+        expect(kalla.indexOf('_rfUrvalGlom()')).toBeLessThan(kalla.indexOf('state.data = skapa()'));
+        expect(w2.eval('loadStortDemo.toString()')).toContain('_lasInDemounderlag(');
+    });
 });
 
 describe('exporten', () => {

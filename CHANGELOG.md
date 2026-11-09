@@ -8,6 +8,20 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ### Gränssnitt
 
+- **Välj vilka BAS-intervall ett diagram visar.** Diagrammen där BAS-intervallet är en dimension har en knapp per
+  intervall ovanför diagrammet, och *Visa alla*: bandkartan, statistikens spann, spannet och avvikelsen mot
+  statistiken, efterlevnaden (båda vyerna), läget i spannet per kön och hanteln mot referenserna i Löneläget;
+  översikten, lönespridningen per BAS och kön, könsfördelningen, trattdiagrammet och den oförklarade skillnaden per
+  BAS-intervall i Lika arbete; Krav mot lön i Likvärdigt arbete; kostnaden och matrisen i Prioritering; lön mot ålder
+  per BAS-intervall i Ålder & karriär och hanteln per BAS-intervall i Spara och jämför år. Ett klick döljer
+  intervallet, till exempel BAS A, B, C och N inför en presentation. Det sista synliga intervallet kan inte döljas.
+  En not under diagrammet säger vad som är dolt. Urvalet döljer bara märken och räknar aldrig om något tal: texten,
+  tabellerna, rapporten, Word, PDF, utskriften, ZIP-filen och rapportunderlaget är alltid fullständiga. Diagrammets
+  egen export (PNG och SVG) visar urvalet och säger i fotraden vad som är dolt; diagramdatan har alla rader.
+  Valet gäller per diagram under sessionen och glöms när en lönefil eller demot läses in och vid Rensa all data.
+  Diagram där ett märke samlar flera BAS-intervall (kandidatparen i Likvärdigt arbete, lägena per kön) har inget
+  urval.
+
 - **Statistikens matchning syns per yrkesgrupp.** Tabellen *Mot jämförelsestatistiken* i Löneläget har kolumnen
   *Matchning* efter BAS: *AID + BAS* när statistiken har en rad med samma AID och samma BAS, *Endast AID* när en rad
   med samma AID utan BAS används, och – när statistik saknas. Rubrikens hjälptext förklarar regeln, och kolumnen

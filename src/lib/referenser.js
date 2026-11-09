@@ -160,8 +160,8 @@ export function referensOverblick(rader, { harStatistik = true, harStallningstag
         statistikMotStallningstagande };
 }
 
-/** Bildens rader i listans ordning: de tre spannen per yrkesgrupp, null för en referens utan median. */
+/** Bildens rader i listans ordning: de tre spannen per yrkesgrupp, null för en referens utan median, och gruppens BAS-intervall (bildens urval). */
 export function hantelRader(grupper) {
     const ref = v => (v?.median != null ? { p10: v.p10, median: v.median, p90: v.p90 } : null);
-    return (grupper || []).map(g => ({ namn: `${g.yrke} · BAS ${g.bas}`, stallningstagande: ref(g.stallningstagande), statistik: ref(g.statistik), org: g.org }));
+    return (grupper || []).map(g => ({ namn: `${g.yrke} · BAS ${g.bas}`, bas: g.bas, stallningstagande: ref(g.stallningstagande), statistik: ref(g.statistik), org: g.org }));
 }
