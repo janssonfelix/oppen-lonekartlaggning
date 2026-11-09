@@ -43,7 +43,9 @@ export async function sakligaSkal() {
     ok(/: \d+ skäl/.test(await sida.getAttribute(knapp, 'aria-label') || ''), 'knappens tillgängliga namn har sammanfattningen');
     ok(await sida.evaluate(k => document.activeElement === document.querySelector(k), knapp), 'Escape stänger dialogen och fokus går tillbaka till knappen');
     await sida.click('.nav-item[data-tab="rapporttext"]');
-    await sida.waitForFunction(() => /Sakliga skäl per grupp/.test(document.getElementById('view-rapporttext')?.textContent || ''), { timeout: 15000 }).catch(() => {});
+    // Demot har redan skäl på tre rader, så rubriken kan stå kvar från en tidigare ritning innan Rapporttext har ritats
+    // om med det nya skälet: vänta på kommentaren, inte bara på rubriken (Firefox hann ibland läsa den gamla texten).
+    await sida.waitForFunction(() => /Svårrekryterat i regionen/.test(document.getElementById('view-rapporttext')?.textContent || ''), null, { timeout: 15000 }).catch(() => {});
     const rt = await sida.evaluate(() => document.getElementById('view-rapporttext').textContent || '');
     ok(/Sakliga skäl per grupp/.test(rt) && /Sammanställning per kategori/.test(rt), 'Rapporttext har tabellerna Sakliga skäl per grupp och Sammanställning per kategori');
     ok(/Svårrekryterat i regionen/.test(rt), 'kommentaren står i tabellen');
