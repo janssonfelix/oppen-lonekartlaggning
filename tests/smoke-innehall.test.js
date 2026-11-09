@@ -97,11 +97,11 @@ describe('Lika arbete och filrutorna: ordning och kompakta rutor', () => {
         w.__loadDemoData();
         w.document.querySelector('.nav-item[data-tab="matrix"]').click();
         const d = w.document;
-        // Slutsatserna och yrkesgrupperna (tabellen och sedan trattdiagrammet) står överst; personer att granska och metoden sist.
-        const [slut, yrken, tratt, pag, metod] = ['la-slutsatser', 'matrix-table', 'chart-la-tratt', 'personer-att-granska', 'avsnitt-la-metod'].map(id => d.getElementById(id));
-        expect(efter(slut, yrken)).toBe(true);
-        expect(efter(yrken, tratt)).toBe(true);
-        expect(efter(tratt, pag)).toBe(true);
+        // Slutsatserna och yrkesgrupperna (trattdiagrammet och sedan tabellen) står överst; personer att granska och metoden sist.
+        const [slut, tratt, yrken, pag, metod] = ['la-slutsatser', 'chart-la-tratt', 'matrix-table', 'personer-att-granska', 'avsnitt-la-metod'].map(id => d.getElementById(id));
+        expect(efter(slut, tratt)).toBe(true);
+        expect(efter(tratt, yrken)).toBe(true);
+        expect(efter(yrken, pag)).toBe(true);
         expect(efter(pag, metod)).toBe(true);
         expect(d.getElementById('la-topp').nextElementSibling.id).toBe('avsnitt-la-yrkesgrupper');   // huvudbilden direkt under nyckeltalen
         for (const el of [yrken, metod]) expect(el.closest('.view-panel').style.display).toBe('block');
@@ -117,6 +117,22 @@ describe('Lika arbete och filrutorna: ordning och kompakta rutor', () => {
         expect(d.getElementById('la-bas-exportkopia').contains(d.getElementById('paygap-table'))).toBe(true);
         w.document.querySelector('.nav-item[data-tab="matrix"]').click();
         expect(d.querySelector('.view-panel[style*="block"] .flik-intro').textContent).toContain('Samma jobb, olika lön');
+    });
+    it('Lika arbete, yrkesgrupperna: förklaringen, sedan överblicksdiagrammet och sist tabellen', () => {
+        const w = createAppWindow();
+        w.__loadDemoData();
+        w.document.querySelector('.nav-item[data-tab="matrix"]').click();
+        const d = w.document, avsnitt = d.getElementById('avsnitt-la-yrkesgrupper');
+        const kort = d.getElementById('la-tratt-kort'), tabell = d.getElementById('matrix-table');
+        // Diagramkortet står direkt efter förklaringstexten och direkt före tabellens verktygsrad och behållare, i samma avsnitt.
+        expect(avsnitt.contains(kort) && avsnitt.contains(tabell)).toBe(true);
+        expect(kort.previousElementSibling.classList.contains('card-header')).toBe(true);
+        expect(kort.nextElementSibling).toBe(tabell._verktygsrad);
+        expect(tabell._verktygsrad.nextElementSibling).toBe(tabell.closest('.table-container'));
+        // Diagrammet och tabellen är ritade: ordningen påverkar inte vad som visas.
+        expect(kort.hidden).toBe(false);
+        expect(d.getElementById('chart-la-tratt')._figur).toBeTruthy();
+        expect(tabell.querySelectorAll('tbody tr').length).toBeGreaterThan(0);
     });
     it('efter inläsning syns alla tre filrutorna, lönefilens kompakt, och bara ett dataskyddsbesked', () => {
         const w = createAppWindow();

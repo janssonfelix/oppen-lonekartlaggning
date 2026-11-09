@@ -249,7 +249,7 @@ rubrikraden, också när det är hopfällt.
 3. **Lika arbete** — fliken öppnar med **yrkesgrupperna**: kvinnors och mäns medianlön i samma yrkesgrupp.
    Grupper med en skillnad över 5 procent markeras, så att du vet var du ska börja. Lagen kräver att du prövar
    varje skillnad, också de mindre.
-   Diagrammet **Yrkesgrupperna mot slumpens gränser** under tabellen visar varje yrkesgrupp mot gruppens storlek.
+   Diagrammet **Yrkesgrupperna mot slumpens gränser** ovanför tabellen visar varje yrkesgrupp mot gruppens storlek.
    En liten grupp kan ha en stor skillnad av ren slump, men en stor grupp kan det inte. Grupperna utanför det
    skuggade fältet är de där skillnaden är svår att förklara med slumpen. Nyckeltalen överst tar med hur stor
    skillnaden är när ålder och BAS-intervall räknats bort (regressionen, som står i Lönestruktur).

@@ -30,6 +30,10 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   står ett meddelande i stället. Det förra avsnittet *Överblick* heter nu *Yrkesgrupp för yrkesgrupp* och är stängt
   från början. Diagramkärnan har fått punkter utan fyllning (`ofylld` på ett punktlager).
 
+- **Lika arbete visar överblicksdiagrammet först.** I avsnittet *Kvinnor och män i samma yrkesgrupp* står diagrammet
+  *Yrkesgrupperna mot slumpens gränser* nu direkt efter förklaringstexten och före tabellen, så att avsnittet börjar
+  med bilden av alla yrkesgrupper. Innehållet och exporterna är oförändrade.
+
 - **Sakliga skäl som strukturerad post.** Varje rad i Handlingsplan har knappen *Sakliga skäl*. Dialogen tar emot
   högst 8 skäl per grupp med kategori (Marknad, Utbildning, Erfarenhet, Prestation och resultat, Övergång, Annat
   sakligt skäl), belopp i kronor per månad och en kort kommentar. Den räknar ihop förklarat och återstående belopp och
