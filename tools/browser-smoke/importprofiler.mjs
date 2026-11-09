@@ -15,13 +15,13 @@ export async function importprofiler() {
     for (let i = 0; i < 30; i++) rader.push(`X;Handläggare;${30000 + i};${1970 + i};${i % 2 ? 'M' : 'K'}`);
     const fil = namn => ({ name: namn, mimeType: 'text/csv', buffer: Buffer.from(rader.join('\n'), 'utf8') });
     await sida.setInputFiles('#file-input-data', fil('personallista.csv'));
-    await sida.waitForFunction(() => /Kolumnmappning behövs/.test(document.getElementById('column-map-panel')?.textContent || ''), { timeout: 15000 });
+    await sida.waitForFunction(() => /Kolumnmappning behövs/.test(document.getElementById('column-map-panel')?.textContent || ''), null, { timeout: 15000 });
     ok(await sida.evaluate(() => !document.getElementById('colmap-spara-profil')), 'ingen sparknapp innan filen lästs in med mappningen');
     for (const [roll, rubrik] of [['bas', 'Avd'], ['alder', 'Fodd'], ['kon', 'Sex']]) {
         await sida.selectOption(`#column-map-panel select[data-colmap-role="${roll}"]`, rubrik);
     }
     await sida.click('#colmap-apply');
-    await sida.waitForFunction(() => state.data.length === 30 && !!document.getElementById('colmap-spara-profil'), { timeout: 15000 });
+    await sida.waitForFunction(() => state.data.length === 30 && !!document.getElementById('colmap-spara-profil'), null, { timeout: 15000 });
     ok(await sida.inputValue('#colmap-profil-namn') === 'Vår personallista', 'kolumnmappningen erbjuder "Spara som importprofil" med namnet Vår personallista');
     await sida.click('#colmap-spara-profil');
     const profiler = await sida.evaluate(() => state.importprofiler.map(p => ({ namn: p.namn, kalla: p.kalla, rubriker: p.rubriker, falt: Object.keys(p).sort().join(',') })));
@@ -33,11 +33,11 @@ export async function importprofiler() {
 
     // Den handgjorda mappningen tas bort: filen läses om och känns igen på profilen.
     await sida.click('#colmap-reset');
-    await sida.waitForFunction(() => state.columnMap === null && state.importprofil?.namn === 'Vår personallista' && state.data.length === 30, { timeout: 15000 });
+    await sida.waitForFunction(() => state.columnMap === null && state.importprofil?.namn === 'Vår personallista' && state.data.length === 30, null, { timeout: 15000 });
     ok(true, 'med mappningen återställd känns filen igen på profilen');
     // En andra uppladdning av samma fil: ingen mappning behövs.
     await sida.setInputFiles('#file-input-data', fil('personallista-igen.csv'));
-    await sida.waitForFunction(() => state.filnamn.data === 'personallista-igen.csv' && state.data.length === 30, { timeout: 15000 });
+    await sida.waitForFunction(() => state.filnamn.data === 'personallista-igen.csv' && state.data.length === 30, null, { timeout: 15000 });
     const l = await sida.evaluate(() => ({
         behovs: /Kolumnmappning behövs/.test(document.getElementById('column-map-panel')?.textContent || ''),
         kort: document.querySelector('#upload-cell-data .upload-importprofil')?.textContent || '',

@@ -100,7 +100,7 @@ export async function utseende() {
         const ctx = await browser.newContext({ bypassCSP: true, viewport: { width: 1400, height: 1000 } });
         const s = await ctx.newPage();
         await s.goto('file://' + FIL + '?demo=1');
-        await s.waitForFunction(() => document.getElementById('demo-mode-banner')?.style.display === 'flex', { timeout: 15000 });
+        await s.waitForFunction(() => document.getElementById('demo-mode-banner')?.style.display === 'flex', null, { timeout: 15000 });
         const finns = await s.evaluate(() => { const c = document.createElement('canvas').getContext('2d'), t = 'Kvinnors lön i % av mäns';
             return ['monospace', 'serif'].some(f => { c.font = `16px ${f}`; const a = c.measureText(t).width; c.font = `16px 'DejaVu Sans', ${f}`; return c.measureText(t).width !== a; }); });
         if (!finns) console.log('  – DejaVu Sans finns inte på maskinen; kontrollen hoppas över');
@@ -270,7 +270,7 @@ export async function smalaSkarmar() {
         const FLIKAR = ['dashboard', 'bestammelser', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn', 'handlingsplan', 'dokumentera', 'rapporttext', 'arbetet', 'kon', 'benchmark', 'utforska', 'info'];
         const oppna = async (bredd, hojd) => { const s = await browser.newPage({ viewport: { width: bredd, height: hojd } });
             await s.goto('file://' + FIL + '?demo=1');
-            await s.waitForFunction(() => document.getElementById('demo-mode-banner')?.style.display === 'flex', { timeout: 30000 });
+            await s.waitForFunction(() => document.getElementById('demo-mode-banner')?.style.display === 'flex', null, { timeout: 30000 });
             await s.waitForTimeout(1500); return s; };
         // Ingen flik får bli bredare än fönstret, med alla avsnitt utfällda: det som inte ryms rullar inom sitt eget kort.
         const forBred = async s => { const ut = [];
