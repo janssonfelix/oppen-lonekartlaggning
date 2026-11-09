@@ -77,7 +77,16 @@ export async function flikarOchDiagram() {
         await page.locator('#chart-skevhet-andel [data-marke="stapel"]').first().click();
         await page.waitForTimeout(200);
         await page.evaluate(() => document.getElementById('avsnitt-st-eu').scrollIntoView({ block: 'start' }));
-        await page.waitForTimeout(600);
+        // Avsnitten ovanför kan växa en stund efter att de öppnats (diagram ritas), så att avsnittet glider ner ur
+        // fönstret (WebKit i CI). Rulla fram det igen tills det står kvar överst och sidindexet har hunnit följa med.
+        await page.waitForFunction(() => {
+            const el = document.getElementById('avsnitt-st-eu'), topp = el.getBoundingClientRect().top;
+            if (topp < -4 || topp > 0.4 * innerHeight) { el.scrollIntoView({ block: 'start' }); return false; }
+            const aktiv = document.querySelector('#sidindex a.ar-aktiv')?.dataset.sidindex;
+            const t = aktiv ? document.querySelector(`#${aktiv} > summary`)?.getBoundingClientRect().top : null;
+            return t != null && t <= 0.4 * innerHeight;
+        }, null, { timeout: 8000, polling: 300 }).catch(() => {});
+        await page.waitForTimeout(300);
         const rad = await page.evaluate(() => {
             const nav = document.getElementById('sidindex').getBoundingClientRect(), mk = document.getElementById('markering-rad')?.getBoundingClientRect();
             return { topp: Math.round(nav.top), botten: Math.round(nav.bottom), rullat: Math.round(scrollY),

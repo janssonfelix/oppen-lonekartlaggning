@@ -13,11 +13,15 @@ export async function sakligaSkal() {
     await sida.waitForFunction(() => document.getElementById('demo-mode-banner')?.style.display === 'flex', null, { timeout: 15000 });
     await sida.click('.nav-item[data-tab="handlingsplan"]');
     await sida.waitForSelector('#handlingsplan-tbody [data-hp-skal]', { timeout: 15000 });
-    // En rad med en medianskillnad (båda könen når minsta gruppstorlek), så att kommentaren följer med i rapporten.
-    // För en rad där ett kön är under gränsen står bara kategorin i exporterna. Finns ingen tas den första.
+    // En rad med en medianskillnad där båda könen når minsta gruppstorlek, så att kommentaren följer med i rapporten.
+    // För en rad där ett kön är under gränsen står bara kategorin i exporterna. Knappens data-hp-skillnad säger inte
+    // det (den har skillnaden också då), så valet görs på förifyllningens minsta könsantal. Finns ingen tas den första.
     const nyckel = await sida.evaluate(() => {
         const knappar = [...document.querySelectorAll('#handlingsplan-tbody [data-hp-skal]')];
-        const med = knappar.find(k => Number(k.getAttribute('data-hp-skillnad')) > 0) || knappar[0];
+        /* global _handlingsplanSeedRows, _hpUtanBelopp -- globala i sidan */
+        const s = _handlingsplanSeedRows();
+        const fulla = new Set(s.nycklar.filter((n, i) => s.skillnader[i] > 0 && !_hpUtanBelopp(n, s.minsta[i])));
+        const med = knappar.find(k => fulla.has(k.getAttribute('data-hp-skal'))) || knappar[0];
         return med.getAttribute('data-hp-skal');
     });
     const knapp = `#handlingsplan-tbody [data-hp-skal="${nyckel}"]`;
