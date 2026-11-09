@@ -36,7 +36,11 @@ Tre regler bär ritaren:
 3. Ritaren får alltid **originalfiguren** och avgör själv vad som ritas. En förfiltrerad kopia ger andra
    index, andra palettfärger och en annan kategoriordning.
 
-En punkt vars `urval`-fält är bortvalt behandlas som en liten punkt utan visaSma.
+En punkt vars `urval`-fält är bortvalt behandlas som en liten punkt utan visaSma. Ritaren tar emot de bortvalda
+värdena som `val.bortvalda` (en mängd strängar; `_rfByggSvg`, `figurTillSvg`, `figurTillBild`). Kategoriordningen,
+domänerna, förklaringen och delbilderna (`paneler: 'auto'`) räknas då ur de punkter som inte är bortvalda; `data-l`
+och `data-i` pekar på originalfiguren som vanligt, och referenserna ritas oavsett urval. Utan `bortvalda` (eller
+med en tom mängd) är SVG:n byte för byte densamma som för en figur utan `urval`.
 
 ## 2. Figurformatet
 
@@ -249,7 +253,7 @@ datapunkter en `nyckel` om de ska följas mellan figurer och inte ligger på en 
 **Tangentbord.** Ritytan är ett fokuserbart område (`tabindex="0"`). Piltangenterna går mellan de ritade märkena
 (höger/ned till nästa, vänster/upp till föregående; serie för serie), Home och End till första och sista, Enter eller mellanslag gör
 det ett klick gör, Escape lämnar. Märket med fokus får `data-fokus` och en synlig ring, och dess tips visas och
-läses upp. Märken som inte ritas — små grupper, dolda serier — finns inte i ordningen.
+läses upp. Märken som inte ritas — små grupper, dolda serier, bortvalda punkter — finns inte i ordningen.
 
 ## 4. SVG:n
 
@@ -280,7 +284,7 @@ svg[role=group][aria-label=<beskrivning>][width][height][viewBox]   (+ data-neds
   `lada`, `median`, `morrhar`, `avvikare`, `individ`, `ruta`, `rutatext`, `etikett`, `fel`, `rander`,
   `fargstapel`, `zon`, `zonetikett`, `referenslinje`, `nollinje`.
 - `data-l` är lagrets index i figuren som skickades in och `data-i` punktens index i lagrets data — alltid,
-  med eller utan små grupper och dolda serier. De bärs av märken som går att träffa: `stapel`, `punkt`,
+  med eller utan små grupper, dolda serier och bortvalda punkter. De bärs av märken som går att träffa: `stapel`, `punkt`,
   `linjepunkt`, `litenpunkt`, `intervall`, `individ`, `ruta` och `lada` (lådans `data-i` är den första ritade
   individen i kategorin). Banorna `linje` och `band` har bara `data-l`.
 - Ett `<text>` har ett `<title>` bara när den visade texten har kortats.
@@ -307,7 +311,7 @@ svg[role=group][aria-label=<beskrivning>][width][height][viewBox]   (+ data-neds
 ## 6. Export och rensning
 
 **`figurTillSvg(figur, bredd, hojd, val)`** ger figuren som fristående SVG-text. `val`: `visaSma`, `dolda`
-(mängden serier som dolts via förklaringen). Bilden ritas på nytt utanför sidan i en logisk bredd på 800 och
+(mängden serier som dolts via förklaringen), `bortvalda` (urvalsvärden vars punkter inte ritas). Bilden ritas på nytt utanför sidan i en logisk bredd på 800 och
 skalas med `viewBox` till begärd storlek. Mått som inte är tal större än noll ger bredd 1600 respektive höjd
 bredd × 9/16. Bakgrunden är vit. Under standardvärdet för minsta gruppstorlek bär bilden meningen om sänkt
 tröskel (ADR-38); har ritaren nedsamplat står "Visar ett urval (a av b punkter)." före den. Kastar om figuren
