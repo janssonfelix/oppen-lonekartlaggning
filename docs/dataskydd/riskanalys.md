@@ -1,6 +1,6 @@
 # Risk- och sårbarhetsanalys (dataskydd och informationssäkerhet) — Öppen lönekartläggning
 
-**Bygge:** `2026.11.05` · **Artefakt-SHA-256:** `60a049ecd3706c9ffb31a801a195167aebdd9975306c266ce80788bc17e09d8c` (se `dist/RELEASE.txt`).
+**Bygge:** `2026.11.05` · **Artefakt-SHA-256:** `86c4cdb6761a89f06996d07f6972f55e7d31473cce82c5fd3d609adf250c5730` (se `dist/RELEASE.txt`).
 **Granskningsdatum:** 2026-11-07.
 **Granskningsmetod:** kodläsning påstående för påstående + statisk sökning i källkod och bygge +
 körning av det byggda verktyget i jsdom och i Chromium (utan nätverk) med syntetiska testfiler.
@@ -33,15 +33,15 @@ hanteras med de organisatoriska åtgärderna i §8.
 
 | Fråga | Svar |
 |---|---|
-| **Ändamål** | Fullgöra arbetsgivarens lagstadgade skyldighet att kartlägga, analysera och åtgärda osakliga löneskillnader mellan kvinnor och män (diskrimineringslagens regler om lönekartläggning, lagrum.md) samt stödja EU 2023/970-relaterade moment. |
+| **Ändamål** | Fullgöra arbetsgivarens skyldighet att kartlägga, analysera och åtgärda osakliga löneskillnader mellan kvinnor och män (diskrimineringslagens regler om lönekartläggning, lagrum.md) samt stödja EU 2023/970-relaterade moment. |
 | **Art** | Statistisk analys av aggregerad och individuell lönedata i syfte att upptäcka könsrelaterade löneskillnader. Ingen profilering med rättsverkan för enskild; verktyget fattar inga beslut om enskilda. |
 | **Omfattning** | En arbetsgivares anställda — typiskt tiotals till tusentals individer per fil. En körning per år. |
 | **Kontext** | Körs lokalt på den personuppgiftsansvariges egen enhet. Ingen molntjänst, ingen extern part, ingen delning utanför enheten under själva bearbetningen. |
 
 ## 2. Personuppgifter som behandlas
 
-Verktyget minimerar indata till **fem obligatoriska fält per anställd** plus en
-**valfri arbetsvärderingspoäng** och en **valfri ansvarskod** (vitlista `ALLOWED_FIELDS`, verifierad i koden).
+Verktyget minimerar indata till **fyra obligatoriska fält per anställd** plus en
+**valfri ålder** (rekommenderad, ADR-64), en **valfri arbetsvärderingspoäng** och en **valfri ansvarskod** (vitlista `ALLOWED_FIELDS`, verifierad i koden).
 Poängen är en egenskap hos **befattningen** (arbetsvärderingens resultat), inte
 hos individen, och tillför därmed ingen ny integritetsrisk:
 
@@ -49,7 +49,7 @@ hos individen, och tillför därmed ingen ny integritetsrisk:
 |---|---|---|
 | Månadslön | Subjekt för analysen | Hög (lön är integritetskänsligt) |
 | Kön | Grunddimension (kvinna/man) | Diskrimineringsgrund — ingen särskild kategori av personuppgifter |
-| Ålder | Kontrollvariabel | Medel |
+| Ålder (valfri, rekommenderad) | Kontrollvariabel; utan ålder körs analysen utan åldersjustering och Ålder & karriär visas inte (ADR-64) | Medel |
 | AID / yrkesgrupp | Gruppering | Låg–medel |
 | BAS-intervall | Kravnivå-proxy | Låg |
 | Poäng (valfri) | Arbetsvärderingens krav-poäng per befattning (krav-proxy för likvärdigt arbete) | Ingen — befattningsattribut, ej individbundet |
@@ -252,14 +252,14 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
 - Vid fliksstängning försvinner allt minne (ingen persistens).
 
 ### 6.4 Uppgiftsminimering & avvisning av känsliga fält ✔
-- **Fältvitlista** (`ALLOWED_FIELDS`): endast BAS, AID/yrke, lön, ålder, kön,
-  samt valfri arbetsvärderingspoäng (befattningsattribut) och valfri ansvarskod enligt AID
+- **Fältvitlista** (`ALLOWED_FIELDS`): endast BAS, AID/yrke, lön och kön, samt valfri ålder
+  (ADR-64; saknas kolumnen blir åldern 0 på varje rad och betyder *saknas*), valfri arbetsvärderingspoäng (befattningsattribut) och valfri ansvarskod enligt AID
   (ADR-33) läses in. Kolumnen *Ansvar* (ofta kostnadsställe) läses inte in (se §2 i
   teknisk-plan.md).
   **Under inläsningen ligger hela filen i minnet** — som byte, som avkodad text och (för
   CSV) uppdelad i rader; Excel-filer som ett helt blad. Fälten plockas ut rad för rad, och
   filens övriga innehåll släpps när inläsningen är klar. (Gränsen på högst 50 råa
-  rader i minnet gäller de tolkade radobjekten, inte filens text.)
+  rader i minnet gäller de tolkade radobjekten — samplet för PII-kontrollen — inte filens text.)
   Övriga kolumner i filen ignoreras. Därtill sparas radens nummer i källfilen
   (`radnr`), som hålls som en `Symbol` på råraden och därför varken syns för
   PII-detektorn eller läses som kolumn (ADR-23). Verifierat: fälten i
@@ -269,13 +269,17 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   och analyseras. Små intervall skyddas som alla andra grupper av minsta gruppstorlek vid export.
 - **PII-detektor** (`detectSensitiveColumns`): känner igen och **avvisar** lönefiler vars kolumner
   innehåller personnummer-, e-post- eller namnmönster, i både CSV- och Excel-vägen. Lönefilen är den enda
-  filen med en rad per person. Kontrollen ser på kolumnrubrikerna och på värdena i filens **50 första
-  rader**. En kolumn avvisas på minst tre värden i personnummer- eller e-postformat, eller minst fem som ser
-  ut som för- och efternamn. Identifierande värden som först förekommer längre ned upptäcks inte
-  av värdekontrollen. Men kolumnen läses då ändå inte in, eftersom bara godkända
-  kolumner läses. Rubrikkontrollen normaliserar rubriken (gemener, å/ä/ö → a/a/o). Därför känns
+  filen med en rad per person. Kontrollen ser på kolumnrubrikerna och på värdena i **50 rader spridda jämnt
+  över filen** (var ⌈n/50⌉:e rad, `_pnrSampelSteg`; den strömmande CSV-vägen samlar raderna under läsningen
+  och kontrollerar när filen är läst). En kolumn avvisas på minst tre värden i personnummer- eller
+  e-postformat, eller minst fem som ser ut som för- och efternamn. Namnmönstret tar två till fyra ord med
+  samma skrivsätt (*Anna Andersson*, *ANNA ANDERSSON*, *anna andersson*) och efternamnet först med komma
+  (*ANDERSSON, ANNA*); befattningar med stor bokstav bara först (*Lärare grundskola*) räknas inte. Identifierande
+  värden i bara några få rader kan ändå gå förbi samplet. Kolumnen läses då ändå inte in, eftersom bara
+  godkända kolumner läses. Rubrikkontrollen normaliserar rubriken (gemener, å/ä/ö → a/a/o). Därför känns
   *Förnamn*, *Fornamn*, *Namn*, *Efternamn*, *Personnummer*, *PNR* och *E-post* igen
-  (rubrikprov i `tests/parsing.test.js`, filprov i `tests/smoke-ansvar.test.js`).
+  (rubrik- och värdeprov i `tests/parsing.test.js`, filprov i `tests/smoke-ansvar.test.js`, bland dem en fil
+  med personnummer först från rad 200 i CSV och Excel).
   Rubrikkontrollen avvisar också kolumner vars rubrik antyder en **särskild kategori av personuppgifter**:
   fackmedlemskap, hälsa, sjukfrånvaro, diagnos, etnicitet, religion, politisk tillhörighet, sexuell läggning,
   funktionsnedsättning, genetik, biometri. Värdena i sådana kolumner har inget igenkännbart format, så bara
@@ -672,6 +676,7 @@ Konfig-JSON:en (**version 2**) innehåller tre slags uppgifter.
 - förklaringsmodellen (`forklaringsmodell`): vilka variabler regressionen räknar bort och skälet som fritext, kortad
   till 300 tecken. Ett ogiltigt värde ger standard med varning, aldrig fel (ADR-56).
 - definitionen av kvinnodominerat (`likvardighet.kvDomDefinition`, DO eller SCB)
+- vilka yrken som jämförs i likvärdigt arbete (`likvardighet.jamforelse`, `alla` eller `mansdominerade`, ADR-60)
 - lönemånaden (`lonemanad`), fritext kortad till 40 tecken (ADR-57)
 - om inläsningen ska stoppa vid förhandskontrollen (`forhandskontrollStopp`, sant eller falskt). Förhandskontrollens
   rader ingår inte.
@@ -833,7 +838,7 @@ a11y-sviterna (94 testfiler). Det bevakas också av ett röktest av det byggda v
 (`tools/browser-smoke.mjs`). Röktestet körs lokalt och i CI-arbetsflödet i
 Chromium, Firefox och WebKit. Verifieringen visar också var skyddet är svagare än det kan se ut:
 - lagringsspärren är en reserv med kända luckor (§6.2)
-- PII-kontrollens värdekontroll läser filens 50 första rader (§6.4)
+- PII-kontrollens värdekontroll läser ett sampel om 50 rader, spridda över filen (§6.4)
 - hela filen ligger i minnet under inläsningen (§6.4)
 - invarianterna prövar inte undantagen och diagrambilderna (§6.5).
 

@@ -884,10 +884,11 @@ describe('stabilitet i Lika arbete', () => {
         const flaggade = [...tabell.querySelectorAll('tbody tr')].filter(tr => tr.textContent.includes('Värt att granska'));
         expect(flaggade.length).toBeGreaterThan(0);
         for (const tr of flaggade) expect(tr.querySelector('.la-stabilitet')?.textContent).toMatch(/^(Skör|Stabil|Kan inte prövas)/);
-        expect(tabell.textContent).toContain('Skör betyder att skillnaden kan hamna på 5 % eller under');
+        expect(tabell.textContent).toContain('Skör betyder att skillnaden kan hamna under 3 % (statusens storleksgräns)');
+        expect(tabell.textContent).toContain('Den är inte en bedömning.');
         // Exporten läser cellens text: status och märkning ska inte flyta ihop.
         for (const tr of flaggade) expect(w._tableCellText ? w._tableCellText(tr.cells[tr.cells.length - 1]) : tr.textContent).not.toMatch(/\)(Skör|Stabil|Kan)/);
-        expect(JSON.stringify(w.__tableToMatrix('matrix-table'))).not.toMatch(/5%\)(Skör|Stabil|Kan)/);
+        expect(JSON.stringify(w.__tableToMatrix('matrix-table'))).not.toMatch(/%\)(Skör|Stabil|Kan)/);
         expect(tabell.textContent).not.toMatch(/§|3 kap\./);
     });
 });
@@ -909,7 +910,8 @@ describe('Lägre krav, högre lön', () => {
         const sek = w.document.getElementById('likvardighet-lagre-krav');
         expect(sek).not.toBeNull();
         expect(sek.textContent).toContain('Lägre krav, högre lön');
-        expect(w.document.querySelectorAll('#likvardighet-lagre-krav-table tbody tr')).toHaveLength(1);
+        // Med minsta gap 0 % som standard (ADR-61) står också det blandade yrket 300 (ca 3 % högre) med.
+        expect(w.document.querySelectorAll('#likvardighet-lagre-krav-table tbody tr')).toHaveLength(2);
         expect(sek.textContent).not.toMatch(/§|3 kap\./);
         const ids = w.__rapportunderlagBlock().map(b => b.id);
         expect(ids.indexOf('lagreKrav')).toBe(ids.indexOf('likvardigt') + 1);

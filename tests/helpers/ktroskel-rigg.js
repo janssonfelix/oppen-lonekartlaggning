@@ -28,11 +28,16 @@ export function byggDataset() {
 }
 export const normalisera = t => t.replace(/(\d)[\s  ](?=\d)/g, '$1');
 
-// Sentinelvärden som syns utanför de vyer som är undantagna (Utforska, ADR-14; Personer att granska, ADR-23).
+// Likvärdighetsanalysens par och yrkestabeller i fliken Likvärdigt arbete är undantagna från k (fliken prövar alla
+// grupper, också små; exporten stämplas "undantag: Likvärdigt arbete"). Sedan ADR-60 är också små blandade grupper
+// jämförelseyrken där. Diagrammet Krav mot lön och tabellerna per AID och BAS i samma flik prövas fortfarande.
+export const LV_UNDANTAG = '#avsnitt-lv-par, #avsnitt-lv-underlag';
+// Sentinelvärden som syns utanför de vyer som är undantagna (Utforska, ADR-14; Personer att granska, ADR-23;
+// likvärdighetsanalysen, LV_UNDANTAG).
 export function synliga(win, varden) {
     const ut = new Set();
     for (const el of win.document.body.querySelectorAll('*')) {
-        if (el.closest('#view-utforska') || el.closest('#personer-att-granska') || el.children.length) continue;
+        if (el.closest('#view-utforska') || el.closest('#personer-att-granska') || el.closest(LV_UNDANTAG) || el.children.length) continue;
         const text = normalisera(`${el.textContent} ${attributtext(el)}`);
         for (const v of varden) if (text.includes(String(v))) ut.add(v);
     }

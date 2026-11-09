@@ -48,13 +48,14 @@ describe('Word-utkastet som .docx', () => {
         const struktur = w.eval('rapportModell()').avsnitt.find(a => a.id === 'struktur');
         const ri = struktur.delar.findIndex(d => d.typ === 'rubrik' && d.text === 'Kvinnors och mäns lön per BAS-intervall');
         const tabell = struktur.delar[ri + 1];
-        expect(tabell.kolumner.map(k => k.rubrik)).toEqual(['BAS', 'Kvinnor / män', 'Median kvinnor', 'Median män', 'Skillnad', 'Kvinnors lön i % av mäns', '95 % konfidensintervall', 'Status']);
+        expect(tabell.kolumner.map(k => k.rubrik)).toEqual(['BAS', 'Kvinnor / män', 'Median kvinnor', 'Median män', 'Skillnad', 'Kvinnors lön i % av mäns', '95 % konfidensintervall', 'Status', 'Ojusterad löneskillnad ≥ 5 %']);
         const celler = tabell.rader.map(r => r.map((v, i) => ren(w.rmCell ? w.rmCell(v, tabell.kolumner[i].typ) : w.eval('rmCell')(v, tabell.kolumner[i].typ))));
         expect(celler.map(c => 'BAS ' + c[0])).toEqual(skarm.map(c => c[0]));                       // samma BAS-intervall, samma ordning
         celler.forEach((c, n) => {
             expect([c[1], c[2], c[3], c[4]]).toEqual([skarm[n][1], skarm[n][2], skarm[n][3], skarm[n][4]]);   // antal, medianer, skillnad
             expect(skarm[n][6]).toBe(c[5] + c[6]);                                                    // kvoten följd av intervallet, som i skärmens cell
             expect(c[7]).toBe(skarm[n][7]);                                                           // status i ord
+            expect(c[8]).toBe(skarm[n][8]);                                                           // direktivmarkeringen (ADR-59)
         });
         // Tabellen står före bilden av samma kvot, och finns i både Word-utkastet och utskriften.
         expect(struktur.delar.findIndex(d => d.typ === 'diagram' && d.id === 'chart-skevhet-overview')).toBeGreaterThan(ri);
@@ -76,14 +77,14 @@ describe('Word-utkastet som .docx', () => {
         // Tal står som tal i modellen; formen sätts av den som ritar. Modellen bär verktygets gap, (kvinnor − män) / män;
         // kolumntypen `direktiv` låter ritaren vända tecknet (EU 2023/970 art. 9).
         const struktur = tabeller('struktur')[0];
-        expect(struktur.kolumner.map(c => c.typ)).toEqual(['text', 'antal', 'pct0', 'kr', 'direktiv']);
+        expect(struktur.kolumner.map(c => c.typ)).toEqual(['text', 'antal', 'pct0', 'kr', 'direktiv', 'text']);
         for (const r of struktur.rader) { expect(typeof r[1]).toBe('number'); expect(typeof r[3]).toBe('number'); expect(r[4] === null || typeof r[4] === 'number').toBe(true); }
         expect(struktur.rader.every(r => r[1] >= 10)).toBe(true);                // bara BAS-intervall som når tröskeln
         const html = w.eval('rmTillHtml(rapportModell())');
         const dok = new w.DOMParser().parseFromString(`<div>${html}</div>`, 'text/html');
         // Avsnittet om lönetransparens: direktivets tecken, utskrivet, positivt när kvinnor ligger lägre.
         const direktiv = [...dok.querySelectorAll('table')].find(t => /Andel kvinnor/.test(t.textContent) && /Löneskillnad enligt direktivet/.test(t.textContent));
-        const dVarden = [...direktiv.querySelectorAll('tbody tr')].map(tr => tr.lastElementChild.textContent);
+        const dVarden = [...direktiv.querySelectorAll('tbody tr')].map(tr => tr.children[4].textContent);   // sist står direktivmarkeringen
         expect(dVarden.length).toBeGreaterThan(0);
         for (const v of dVarden) expect(v).toMatch(/^([+−]\d{1,2},\d %|0,0 %|—)$/);
         const gapB = struktur.rader.find(r => r[4] !== null);
@@ -94,7 +95,7 @@ describe('Word-utkastet som .docx', () => {
         expect(varden.length).toBeGreaterThan(0);
         for (const v of varden) expect(v).toMatch(/^(\d{2,3},\d %|—)$/);
         expect(html).toMatch(/<th>Kvinnors medianlön i procent av mäns<\/th><td>\d{2,3},\d %<\/td>/);
-        expect(html).not.toMatch(/Ojusterat lönegap|Ojusterad löneskillnad|Gap \(Kv vs Mä\)/);
+        expect(html).not.toMatch(/Ojusterat lönegap|Ojusterad löneskillnad(?! ≥ 5 %)|Gap \(Kv vs Mä\)/);
         // Regressionens gap behåller sin form, och det sägs i klartext.
         expect(html).toMatch(/Löneskillnad som står kvar efter ålder och BAS-intervall<\/th><td><strong>[+−]\d+,\d\d %/);
         expect(html).toContain('negativ när kvinnor ligger lägre');
@@ -483,5 +484,30 @@ describe('Bilaga: gruppdossierer i Word-utkastet och PDF-rapporten', () => {
         expect(med.prio - utan.prio).toBeLessThanOrEqual(1);
         // Textversionen visar inte bootstrap-intervallet, så bilagan räknar det inte (det var nästan hela kostnaden).
         expect(med.ki).toBe(0);
+    });
+});
+
+// Beslut 7a: EU-rapportmåtten är räknade på fast heltidsmånadslön och direktivets lönebegrepp är vidare. Reservationen
+// står vid måtten i fliken, i rapportens avsnitt om lönetransparens (Word, PDF), i rapportunderlaget och i Om verktyget.
+describe('reservationen om lönebegreppet vid EU-rapportmåtten', () => {
+    const MENING = 'Måtten är räknade på fast heltidsmånadslön. Direktivets lönebegrepp är vidare (total ersättning, inklusive rörliga delar och förmåner); komplettera ur lönesystemet om ni rapporterar.';
+    const ren = t => String(t).replace(/[  ]/g, ' ').replace(/\s+/g, ' ');
+    it('konstanten har meningen och inga artikelnummer', () => {
+        const w = createAppWindow();
+        expect(w.eval('EU_LONEBEGREPP_RESERVATION')).toBe(MENING);
+        expect(MENING).not.toMatch(/art(ikel|\.)\s*\d/i);
+    });
+    it('står i Lönestrukturs kort, i rapportmodellens avsnitt, i Word-utkastet, i utskriften, i rapportunderlaget och i Om verktyget', () => {
+        const w = createAppWindow();
+        w.__loadDemoData();
+        w.__renderTabContent('struktur');
+        expect(ren(w.document.getElementById('struktur-eu').textContent)).toContain(MENING);
+        const struktur = w.eval('rapportModell()').avsnitt.find(a => a.id === 'struktur');
+        expect(ren(JSON.stringify(struktur.delar))).toContain(MENING);
+        expect(ren(w.eval('rmTillHtml(rapportModell())'))).toContain(MENING);
+        expect(ren(w.__docDraftHtml())).toContain(MENING);
+        const block = w.eval('rapportunderlagBlock()');
+        expect(ren(JSON.stringify(block.find(b => b.rubrik === 'Struktur och lönetransparens')))).toContain(MENING);
+        expect(ren(w.eval('INFO_SECTIONS.overview()'))).toContain(MENING);
     });
 });

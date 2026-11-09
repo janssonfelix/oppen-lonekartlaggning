@@ -6,6 +6,10 @@
 document.getElementById('btn-hub-jpa')?.addEventListener('click', () => exportJPAProtocol());
 document.getElementById('btn-hub-handlingsplan')?.addEventListener('click', () => exportHandlingsplan());
 
+// Reservationen om lönebegreppet vid EU-rapportmåtten (beslut 7a; src/lib/struktur.js): Lönestruktur, EU-lönerapporten,
+// bladet EU-lönekartläggning, rapportens avsnitt om lönetransparens och Om verktyget.
+const EU_LONEBEGREPP_RESERVATION = _stLonebegreppReservation();
+
 // ============================================================
 // #8 Reproducerbarhets-appendix — identiska metod- och parameteruppgifter i
 // ALLA exporter, så varje flaggat resultat går att återskapa och försvara i
@@ -15,6 +19,7 @@ function _methodAppendixData() {
     const total = (state.data && state.data.length) || 0;
     const used  = (typeof getData === 'function' ? getData().length : total);
     const ver   = (typeof APP_VERSION !== 'undefined' ? APP_VERSION : '–');
+    const medAlder = harAlder();
     return [
         ['Verktyg', `Öppen lönekartläggning (v${ver})`],
         ['Exporttidpunkt', new Date().toLocaleString('sv-SE')],
@@ -25,8 +30,13 @@ function _methodAppendixData() {
         ['Antal personer (inläst)', String(total)],
         ['Antal personer (i denna analys)', String(used)],
         ['Nationell referens för andel kvinnor', skrForklaring()],
-        ['Modell — oförklarad skillnad', 'OLS på log(månadslön) ~ kön + ålder + BAS-intervall (indikatorvariabler, första BAS som referens); HC3-robusta standardfel (Long & Ervin 2000)'],
-        ['Steg + Yrkesgrupp (dekomponeringen)', 'Löneskillnad mellan könen med fasta effekter för yrkesgrupp inom BAS (AID×BAS) utöver ålder, skattat med inomtransformation; visas som sista steg, ingår inte i huvudtalet'],
+        // Utan ålder i lönefilen (ADR-64) säger raderna modellen utan ålder, som rapportens metodtext.
+        ['Modell — oförklarad skillnad', medAlder
+            ? 'OLS på log(månadslön) ~ kön + ålder + BAS-intervall (indikatorvariabler, första BAS som referens); HC3-robusta standardfel (Long & Ervin 2000)'
+            : `OLS på log(månadslön) ~ ${_rgModellBeskrivning(forklaringsmodell())}; lönefilen saknar ålder, så analysen körs utan åldersjustering; HC3-robusta standardfel (Long & Ervin 2000)`],
+        ['Steg + Yrkesgrupp (dekomponeringen)', medAlder
+            ? 'Löneskillnad mellan könen med fasta effekter för yrkesgrupp inom BAS (AID×BAS) utöver ålder, skattat med inomtransformation; visas som sista steg, ingår inte i huvudtalet'
+            : 'Löneskillnad mellan könen med fasta effekter för yrkesgrupp inom BAS (AID×BAS), utan ålder (lönefilen saknar ålder), skattat med inomtransformation; visas som sista steg, ingår inte i huvudtalet'],
         ['Ålder & karriär (tvärsnitt)', 'Lön mot ålder och livscykelmodellen bygger på ett tvärsnitt: de visar skillnader mellan åldersgrupper i dag, inte hur en persons lön utvecklas över karriären (kohorteffekter)'],
         ['Trattdiagrammet', 'Med färre än tio yrkesgrupper säger trattens form lite; varje grupp bedöms då för sig i tabellen. Punktens bedömning bygger på en omkastning av könen inom gruppen'],
         ['p-värden', 't-fördelning vid df < 100, annars normalfördelning; Benjamini-Hochberg (FDR) vid multipla grupptest'],
@@ -52,6 +62,9 @@ function _methodAppendixData() {
 function _appendMethodSheet(wb, { undantag = '', extra = [] } = {}) {
     if (typeof XLSX === 'undefined' || !XLSX.utils || !wb) return;
     const rows = [['Metod & parametrar — reproducerbarhet och tolkning'], [''], ...(_methodAppendixData()), ...extra];
+    // Ansvarsförbehållet (beslut 8c) står under Rättslig ram i varje Excel-export.
+    const ram = rows.findIndex(rad => rad[0] === 'Rättslig ram');
+    rows.splice(ram < 0 ? rows.length : ram + 1, 0, ['Ansvar', ANSVARSFORBEHALL]);
     if (undantag) {
         const i = rows.findIndex(r => r[0] === 'Minsta gruppstorlek för redovisning');
         rows.splice(i + 1, 0, ['Undantag från minsta gruppstorlek', _kUndantagNot(undantag)]);
@@ -133,6 +146,8 @@ function __cloneAndCleanTableForExportExport(tableId) {
         tr.querySelectorAll('td, th').forEach(td => {
             // Behåll text-noden men ta bort ikon-spans (cursor:help-badges etc.)
             td.querySelectorAll('span[title].hjalp-markor').forEach(s => s.remove());
+            // Direktivmarkeringen inne i en talcell (ADR-59): cellen ska förbli ett tal i arbetsboken.
+            td.querySelectorAll('.direktiv-inline').forEach(s => s.remove());
             // Normalisera whitespace inom cellen
             // Staplarnas mått ligger som style-attribut (satta via CSSOM); sätts markeringen om genom innerHTML blockerar CSP:n dem
             // (style-src-attr 'none'), och exporten behöver dem inte.

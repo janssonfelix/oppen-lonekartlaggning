@@ -45,11 +45,12 @@ describe('yrkesgruppstabellen i Lika arbete', () => {
         const marken = [...w.document.querySelectorAll('#matrix-table .la-status')];
         expect(marken.length).toBeGreaterThan(3);
         for (const m of marken) {
-            expect(synlig(m)).toMatch(/^(Värt att granska|Följ upp|Balanserat|ett kön n < \d+)$/);
-            expect(m.title).toMatch(/Skillnaden är|Könsuppdelningen/);
+            expect(synlig(m)).toMatch(/^(Värt att granska|Följ upp|Balanserat|Går ej att bedöma|ett kön n < \d+)$/);
+            expect(m.title).toMatch(/Skillnaden är|Könsuppdelningen|Går ej att bedöma: ett kön har färre än/);
         }
         const granska = marken.find(m => synlig(m) === 'Värt att granska');
-        expect(granska.textContent.replace(/\s+/g, ' ').trim()).toBe('Värt att granska (> 5%)');
+        expect(granska.textContent.replace(/\s+/g, ' ').trim()).toBe('Värt att granska (säkerställd skillnad på minst 3 %)');
+        expect(granska.title).toMatch(/statistiskt säkerställd.*minst 3 %/);
     });
     it('raden om stabilitet är kort på skärmen, och hela meningen står i verktygstipset och i cellens text', () => {
         const w = rita();
@@ -60,9 +61,9 @@ describe('yrkesgruppstabellen i Lika arbete', () => {
             expect(r.textContent).toBe(r.title);
         }
         const f = t => { const el = w.document.createElement('span'); el.innerHTML = w.eval(`_laStabilitetRad(${JSON.stringify(t)})`); return [synlig(el), el.textContent]; };
-        expect(f('Stabil: över 5 % även utan 2 personer')).toEqual(['Stabil även utan 2 personer', 'Stabil: över 5 % även utan 2 personer']);
+        expect(f('Stabil: minst 3 % även utan 2 personer')).toEqual(['Stabil även utan 2 personer', 'Stabil: minst 3 % även utan 2 personer']);
         expect(f('Skör: kan bli 4,6 % om 1 person tas bort (prövat bara på män)')).toEqual(['Skör: 4,6 % om 1 person tas bort', 'Skör: kan bli 4,6 % om 1 person tas bort (prövat bara på män)']);
-        expect(f('Stabil: över 5 % även utan 1 person, fler kunde inte prövas')).toEqual(['Stabil även utan 1 person', 'Stabil: över 5 % även utan 1 person, fler kunde inte prövas']);
+        expect(f('Stabil: minst 3 % även utan 1 person, fler kunde inte prövas')).toEqual(['Stabil även utan 1 person', 'Stabil: minst 3 % även utan 1 person, fler kunde inte prövas']);
         expect(f('Kan inte prövas: båda könen har exakt 10 personer')).toEqual(['Kan inte prövas', 'Kan inte prövas: båda könen har exakt 10 personer']);
     });
     it('ansvarsraderna är hopfällda tills pilen på yrkesraden fäller ut dem; raden med ett tal står kvar', () => {
@@ -108,6 +109,18 @@ describe('kandidatparens tabell', () => {
         expect(synlig.textContent).not.toContain('nationellt');
         expect(under.title).toMatch(/nationellt \(SKR:s personalstatistik, [a-z]+ \d{4}\)/);
         expect(las('src/style.css')).toMatch(/#likvardighet-table td\.t-hoger[^{]*\{ white-space: nowrap; \}/);
+    });
+    it('ett par under 5 % syns utan att något ändrats, och fältet säger att 0 betyder alla (ADR-61)', () => {
+        const w = createAppWindow();
+        w.__loadDemoData();
+        w.__renderTabContent('likvardighet');
+        const d = w.document;
+        expect(w.__state.likvardighet.minGapPct).toBe(0);
+        const lv = w.__state.likvardighet.result;
+        const smatt = lv.pairs.filter(p => p.gapPct > 0 && p.gapPct < 5);
+        expect(smatt.length).toBeGreaterThan(0);
+        expect(d.querySelectorAll('#likvardighet-table tbody tr')).toHaveLength(lv.pairs.length);
+        expect(d.getElementById('lv-min-gap').closest('div').textContent.replace(/\s+/g, ' ').trim()).toBe('Visa bara par med minst % skillnad (0 = alla)');
     });
 });
 
@@ -465,8 +478,9 @@ describe('slutgranskningens fynd', () => {
     const lasIn = async (w, rader) => { papa(w); w.loadStructureFile(csvFil(w, rader)); await vanta(() => w.document.getElementById('data-status').textContent && !/läser|Läser/.test(w.document.getElementById('data-status').textContent)); };
     it('en fil som saknar en obligatorisk kolumn men har läsbara rader läses in, och kolumnmappningen säger vad som saknas', async () => {
         const w = createAppWindow();
-        const rader = ['BAS;Månadslön;Kön;AID'];
-        for (let i = 0; i < 30; i++) rader.push(`C;${30000 + i * 10};${i % 2 ? 'Man' : 'Kvinna'};207011`);
+        // Ålder är valfri (ADR-64); filen saknar i stället AID.
+        const rader = ['BAS;Månadslön;Kön;Ålder'];
+        for (let i = 0; i < 30; i++) rader.push(`C;${30000 + i * 10};${i % 2 ? 'Man' : 'Kvinna'};${30 + i}`);
         await lasIn(w, rader);
         await vanta(() => w.__state.data.length);
         expect(w.__state.data.length).toBe(30);
@@ -479,7 +493,7 @@ describe('slutgranskningens fynd', () => {
         await lasIn(w, okandaRader());
         const panel = w.document.getElementById('column-map-panel');
         expect(panel.textContent).toContain('Kolumnmappning behövs');
-        expect(panel.querySelectorAll('select.colmap-saknas').length).toBeGreaterThanOrEqual(3);   // två rubriker känns igen av sig själva
+        expect(panel.querySelectorAll('select.colmap-saknas').length).toBeGreaterThanOrEqual(2);   // två rubriker känns igen av sig själva; ålder är valfri (ADR-64)
         expect(w.document.querySelector('#upload-cell-data .upload-badge').textContent).toContain('Kolumnmappning');
     });
     it('en CSV med bara rubrikrad sägs sakna rader, inte kolumner', async () => {

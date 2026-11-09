@@ -33,6 +33,7 @@ function buildConfigSnapshot() {
             source: state.likvardighet.source,
             kvinnoTrosholdPct: state.likvardighet.kvinnoTrosholdPct,
             kvDomDefinition: state.likvardighet.kvDomDefinition || 'do',
+            jamforelse: state.likvardighet.jamforelse === 'mansdominerade' ? 'mansdominerade' : 'alla',
             minGapPct: state.likvardighet.minGapPct,
             topN: state.likvardighet.topN
         } : null,
@@ -167,6 +168,11 @@ function applyConfigSnapshot(cfg) {
             if (cfg.likvardighet.kvDomDefinition !== 'do' && cfg.likvardighet.kvDomDefinition !== 'scb')
                 throw new Error('likvardighet.kvDomDefinition måste vara "do" eller "scb".');
             lv.kvDomDefinition = cfg.likvardighet.kvDomDefinition;
+        }
+        if (cfg.likvardighet.jamforelse != null) {
+            if (cfg.likvardighet.jamforelse !== 'alla' && cfg.likvardighet.jamforelse !== 'mansdominerade')
+                throw new Error('likvardighet.jamforelse måste vara "alla" eller "mansdominerade".');
+            lv.jamforelse = cfg.likvardighet.jamforelse;
         }
         tmp.likvardighet = lv;
     }

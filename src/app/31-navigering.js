@@ -36,9 +36,35 @@ function visaReferenskortet(namn) {
     _visaFilkortet(policy ? 'upload-cell-policy' : 'upload-cell-stat', policy ? 'file-input-policy' : 'file-input-stat',
         `${namn ? namn + ' kräver en referens eller jämförelsestatistik. ' : ''}Läs in ett lönepolitiskt ställningstagande eller jämförelsestatistik här under Filer och kvalitet, så visas fliken Löneläget.`);
 }
+/** Ålder & karriär är låst för att lönefilen saknar ålder (ADR-64): visa lönefilskortet och säg varför. */
+function visaAlderskravet(flikNamn) {
+    _visaFilkortet('upload-cell-data', 'file-input-data',
+        `${flikNamn || 'Ålder & karriär'} kräver ålder i lönefilen. Lägg till en kolumn med ålder och läs in filen igen.`);
+}
+/** Fliken Ålder & karriär kräver ålder i lönefilen (ADR-64). Med en lönefil utan ålder är den låst som de andra
+ *  låsta flikarna, med tipset "Kräver ålder i lönefilen"; klicket leder till lönefilskortet med det skälet. */
+function synkaAlderFlik() {
+    const el = /** @type {HTMLElement|null} */ (document.getElementById('tab-kon'));
+    if (!el || !state.data.length) return;
+    const las = !harAlder();
+    /** @type {HTMLInputElement} */ (/** @type {unknown} */ (el)).disabled = las;
+    if (las) {
+        el.dataset.kraver = 'alder';
+        el.setAttribute('title', 'Kräver ålder i lönefilen');
+        if (el.classList.contains('active')) /** @type {HTMLElement|null} */ (document.querySelector('.nav-item[data-tab="dashboard"]'))?.click();
+    } else if (el.dataset.kraver) {
+        delete el.dataset.kraver;
+        const tip = el.getAttribute('data-tip');
+        if (tip) el.setAttribute('title', tip); else el.removeAttribute('title');
+    }
+}
 document.querySelectorAll(".nav-item").forEach(btn => {
     btn.addEventListener("click", () => {
-        if (/** @type {HTMLInputElement} */ (btn).disabled) { visaLonefilskortet(btn.textContent.trim()); return; }
+        if (/** @type {HTMLInputElement} */ (btn).disabled) {
+            if (/** @type {HTMLElement} */ (btn).dataset.kraver === 'alder' && state.data.length) visaAlderskravet(btn.textContent.trim());
+            else visaLonefilskortet(btn.textContent.trim());
+            return;
+        }
         const target = btn.getAttribute("data-tab");
         document.querySelectorAll(".view-panel").forEach(v => /** @type {HTMLElement} */ (v).style.display = "none");
         // Visa alla paneler i flikens grupp (sammanslagna flikar), annars panelen själv.
@@ -95,6 +121,7 @@ function unlockTabs() {
         if (tip) el.setAttribute('title', tip); else el.removeAttribute('title');
     });
     synkaJamforelseFlik();
+    synkaAlderFlik();
 }
 
 // Enda källan för "rendera innehållet i flik X". Anropas både av nav-klick och
@@ -134,10 +161,24 @@ function _ritaIngetUnderlag(target, tomt) {
     rad.innerHTML = 'Inget underlag inläst — <a href="#" data-go-to-tab="filer">läs in lönefilen under Filer och kvalitet</a>.';
     vy.insertBefore(rad, vy.firstChild);
 }
+/** Ålder & karriär med en lönefil utan ålder (ADR-64), t.ex. via en direktlänk: en rad överst säger varför fliken är tom. */
+function _ritaUtanAlder(target, utan) {
+    const vy = document.getElementById('view-' + ((PANEL_GROUPS[target] || [target])[0]));
+    if (!vy) return;
+    let rad = vy.querySelector(':scope > .utan-alder');
+    if (!utan) { rad?.remove(); return; }
+    if (rad) return;
+    rad = document.createElement('p');
+    rad.className = 'k-mask-note utan-alder';   // inte urvalsrad: den töms av tomFlikarUtom
+    rad.setAttribute('role', 'status');
+    rad.textContent = 'Lönefilen saknar ålder: Ålder & karriär kräver ålder i lönefilen. Analysen i de andra flikarna körs utan åldersjustering.';
+    vy.insertBefore(rad, vy.firstChild);
+}
 function _renderTabContent(target) {
     target = tabMal(target);
     const d = getData();
     _ritaIngetUnderlag(target, !d.length);
+    if (target === "kon") _ritaUtanAlder(target, d.length > 0 && !harAlder());
     if (target === "kon" && d.length) {
         const s = document.getElementById("bas-select-kon"); if (s) renderKon(/** @type {HTMLInputElement} */ (s).value); renderLifecycleAnalysis();
         const s2 = document.getElementById("bas-select-demo"); if (s2) renderDemografi(/** @type {HTMLInputElement} */ (s2).value);

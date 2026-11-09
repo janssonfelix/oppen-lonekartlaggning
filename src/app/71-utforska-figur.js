@@ -73,7 +73,9 @@ function explorerFigure(model, typ, rows) {
 // Könsgapets status: en serie per status med egen symbol — färgen bär den inte ensam (WCAG 1.4.1), och
 // förklaringen namnger den. Samma gränser och samma form (punkt, inte stapel) som i Lika arbete: kvoten läses som
 // avstånd till 100 %, och en stapels längd från en avkortad axel säger ingenting.
-// Statusarna är verktygets gemensamma (GAP_STATUS i 10-diagramtema.js).
+// Statusarna är verktygets gemensamma (GAP_STATUS i 10-diagramtema.js). Utforskas celler prövas inte mot slumpen
+// (cellerna är fria urval, inga KI), så en cell kan aldrig bli Värt att granska: minst 3 % är Följ upp, under 3 %
+// Balanserat (ADR-59). Prövningen görs i Lika arbete.
 const _EXPLORE_GAPSTATUS = GAP_STATUS;
 
 function _figStaplar(model, liggande) {
@@ -87,7 +89,7 @@ function _figStaplar(model, liggande) {
     const riktning = liggande ? { riktning: 'liggande' } : {};
     let lager;
     if (!delaKon && matt === 'gap') {
-        const vy = vyer[0], status = c => _EXPLORE_GAPSTATUS.find(s => s.galler(Math.abs(100 - vy.v(c))));
+        const vy = vyer[0], status = c => gapStatus(Math.abs(100 - vy.v(c)), false);
         lager = _EXPLORE_GAPSTATUS.map(s => ({ marke: 'punkt', symbol: s.symbol, storlek: 6, serie: s.serie, farg: PALETTE.semantic[s.farg], ...riktning,
             data: celler.filter(c => _exploreHar(vy.v(c)) && status(c) === s).map(c => punkt(vy, c)), tips: tips(EXPLORE_MATT_LABEL[matt]) }));
     } else {

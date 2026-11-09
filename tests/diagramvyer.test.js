@@ -195,21 +195,23 @@ describe('Rapporttext: auto-utkastets mening om vertikal könssegregering', () =
 
 describe('Lika arbete: chart-skevhet-overview och chart-perbas-gap', () => {
     it('chart-skevhet-overview: punkt med intervall mot 100 %; status är serie med egen symbol; tal, etikett och KI oförändrade', () => {
-        const f = w.eval(`_skevhetFigur([{ bas: '3', gap: 93.44, n: 40, ci: { lo: 90.1, hi: 96.9 } }, { bas: '5', gap: 96.2, n: 55, ci: { lo: 94, hi: 98.5 } },
-                                         { bas: '7', gap: 99.1, n: 61, ci: null }])`);
+        // Statusen följer uppmärksamhetstrappan (ADR-59): KI:t mot 100 % prövar, 3 % är storleksgränsen, golvet 10 per kön.
+        const f = w.eval(`_skevhetFigur([{ bas: '3', gap: 93.44, n: 40, nKv: 20, nMa: 20, ci: { lo: 90.1, hi: 96.9 } }, { bas: '5', gap: 96.2, n: 55, nKv: 25, nMa: 30, ci: { lo: 94, hi: 100.5 } },
+                                         { bas: '7', gap: 99.1, n: 61, nKv: 30, nMa: 31, ci: null }, { bas: '8', gap: 92, n: 12, nKv: 4, nMa: 8, ci: { lo: 85, hi: 97 } }])`);
         expect(f.lager.map(l => [l.serie, l.farg, l.symbol])).toEqual(
-            [['Värt att granska', '#4338ca', 'romb'], ['Följ upp', '#d97706', 'kvadrat'], ['Balanserat', '#0f766e', 'cirkel']]);
+            [['Värt att granska', '#4338ca', 'romb'], ['Följ upp', '#d97706', 'kvadrat'], ['Går ej att bedöma', '#64748b', 'cirkel']]);
+        expect(f.lager[2].data.map(d => d.y)).toEqual(['BAS 7', 'BAS 8']);   // utan KI, eller ett kön under golvet
         expect(f.lager.every(l => l.marke === 'punkt' && l.riktning === 'liggande' && !l.monster)).toBe(true);   // ingen stapel från en avkortad axel
         expect(f.lager[0].data).toEqual([{ y: 'BAS 3', x: 93.4, etikett: '93,4 %', n: 40, markering: ['bas:3'], fel: { lag: 90.1, hog: 96.9 } }]);
         expect(f.lager[2].data[0].fel).toBeUndefined();
-        expect(f.y.ordning).toEqual(['BAS 3', 'BAS 5', 'BAS 7']);                 // BAS-ordningen, inte statusordningen
-        expect(f.referens).toEqual([expect.objectContaining({ typ: 'zon', x0: 95, x1: 105 }), expect.objectContaining({ x: 100 })]);
-        expect(f.x.doman).toEqual([88, 112]);                                     // 100 inom axeln, med intervallens ändar
+        expect(f.y.ordning).toEqual(['BAS 3', 'BAS 5', 'BAS 7', 'BAS 8']);        // BAS-ordningen, inte statusordningen
+        expect(f.referens).toEqual([expect.objectContaining({ typ: 'zon', x0: 97, x1: 103 }), expect.objectContaining({ x: 100 })]);
+        expect(f.x.doman).toEqual([83, 112]);                                     // 100 inom axeln, med intervallens ändar
         expect(f.lager[0].tips(f.lager[0].data[0])).toEqual([['BAS 3'], ['Kvinnors median', '93,4 % av männens'], ['95 % KI', '90,1–96,9 %'], ['Antal', '40']]);
         expect(() => valideraFigur(f, 't')).not.toThrow();
     });
     it('chart-skevhet-overview: en status utan punkter får inget lager (ingen tom post i förklaringen)', () => {
-        const f = w.eval(`_skevhetFigur([{ bas: '7', gap: 99.1, n: 61, ci: null }])`);
+        const f = w.eval(`_skevhetFigur([{ bas: '7', gap: 99.1, n: 61, nKv: 30, nMa: 31, ci: { lo: 97, hi: 101.2 } }])`);
         expect(f.lager.map(l => l.serie)).toEqual(['Balanserat']);
     });
     it('chart-perbas-gap: punkt med intervall, liggande, i given ordning, KI som fel, nollinje, status som serie med symbol', () => {
@@ -221,7 +223,7 @@ describe('Lika arbete: chart-skevhet-overview och chart-perbas-gap', () => {
         expect(f.x.nollinje).toBe(true);
         expect(f.x.doman).toEqual([-10, 3.5]);                                    // noll inom axeln, luft på båda sidor
         expect(f.lager.map(l => [l.serie, l.symbol, l.data.map(d => d.y)])).toEqual(
-            [['Säkerställt, över 5 %', 'romb', ['BAS 3']], ['Inte säkerställt', 'cirkel', ['BAS 4', 'BAS 5']]]);   // BAS 4: q ≥ 0,05 efter korrigering
+            [['Säkerställt, minst 3 %', 'romb', ['BAS 3']], ['Inte säkerställt', 'cirkel', ['BAS 4', 'BAS 5']]]);   // BAS 4: q ≥ 0,05 efter korrigering
         expect(f.lager[0].data[0]).toEqual({ y: 'BAS 3', x: -6.21, fel: { lag: -9, hog: -3.4 }, n: 40, kvN: 22, maN: 18, markering: ['bas:3'] });
         expect(f.lager[0].tips(f.lager[0].data[0])[3]).toEqual(['Antal', '40 (22 kv / 18 mä)']);
         expect(() => valideraFigur(f, 't')).not.toThrow();
@@ -395,7 +397,7 @@ describe('gap per åldersgrupp, trattdiagram och läget i spannet per kön', () 
         expect(f.y.ordning).toEqual(['30–39 år', '40–49 år']);
         expect(f.lager.every(l => l.marke === 'punkt' && l.riktning === 'liggande')).toBe(true);
         expect(f.lager.flatMap(l => l.data).every(d => d.fel && d.fel.lag <= d.x && d.fel.hog >= d.x)).toBe(true);
-        expect(f.referens).toEqual([expect.objectContaining({ typ: 'zon', x0: 95, x1: 105 }), expect.objectContaining({ x: 100 })]);
+        expect(f.referens).toEqual([expect.objectContaining({ typ: 'zon', x0: 97, x1: 103 }), expect.objectContaining({ x: 100 })]);
         expect(JSON.stringify(f)).not.toMatch(/7111\d|60 år/);
         expect(() => valideraFigur(f, 't')).not.toThrow();
     });
@@ -514,7 +516,7 @@ describe('gap per åldersgrupp, trattdiagram och läget i spannet per kön', () 
         expect(d.getElementById('chart-kon-aldergap')._figur.y.ordning.length).toBeGreaterThan(0);
         expect(d.getElementById('la-tratt-kort').hidden).toBe(false);
         expect(d.getElementById('chart-la-tratt')._figur.lager[0].marke).toBe('band');
-        expect(d.getElementById('la-tratt-not').textContent).toMatch(/^\d+ grupper \(yrkesgrupp i ett BAS-intervall\) där både kvinnor och män når minsta gruppstorlek; \d+ ligger utanför gränserna/);
+        expect(d.getElementById('la-tratt-not').textContent).toMatch(/^\d+ av \d+ bedömda grupper utanför gränserna \(yrkesgrupp i ett BAS-intervall där både kvinnor och män når minsta gruppstorlek\)/);
         w2.eval('sattKTroskel(200, { fraga: false })');
         for (const t of ['matrix', 'kon']) w2.__renderTabContent(t);
         expect(d.getElementById('la-tratt-kort').hidden).toBe(true);
@@ -833,12 +835,12 @@ describe('Prioritering: chart-prio-pareto och chart-prio-matrix', () => {
         w.__v = [grupp(1, 'akut'), grupp(2, 'atgard'), grupp(12, 'ok', { diffPct: 0.5, annualGapTotal: 0 })];
         w.__cfg = { atgardThreshold: -5, bevakaThreshold: -2, analyseraThreshold: 5 };
         const f = w.eval("_prioMatrisFigur(window.__v, 'topp10', 'referensen', window.__cfg)");
-        expect(f.lager.map(l => l.serie)).toEqual(['Börja här', 'Värt att granska', 'Balanserat']);
+        expect(f.lager.map(l => l.serie)).toEqual(['Börja här', 'Under referens', 'Nära referens']);   // Prioriteringens egna ord (A5)
         expect(f.y.skala).toBe('linjar');                                        // grupperna skiljer sig mindre än en tiopotens
         w.__v2 = [grupp(1, 'akut'), { ...grupp(2, 'atgard'), n: 400 }];
         expect(w.eval("_prioMatrisFigur(window.__v2, 'topp10', 'referensen', window.__cfg)").y.skala).toBe('log');
         expect(f.lager.map(l => l.farg)).toEqual(['#4338ca', '#6366f1', '#0f766e']);     // lila för de två första, som i Lika arbetes tabell
-        expect(f.referens.map(z => z.etikett)).toEqual(['VÄRT ATT GRANSKA', 'FÖLJ UPP', 'BALANSERAT', 'ÖVER REFERENS']);   // samma ord som statusarna i tabellen
+        expect(f.referens.map(z => z.etikett)).toEqual(['UNDER REFERENS', 'NÄRA REFERENS, UNDER', 'NÄRA REFERENS', 'ÖVER REFERENS']);   // samma ord som statusarna i tabellen
         expect(f.lager[0].data[0]).toMatchObject({ x: -5.25, y: 13, etikett: expect.stringContaining('·C') });
         expect(f.lager[2].data[0].etikett).toBeUndefined();                    // rang 12 får ingen etikett i läget topp 10
         expect(f.lager[0].data[0].storlek).toBeGreaterThan(f.lager[1].data[0].storlek);   // större kostnad, större bubbla
@@ -1018,8 +1020,9 @@ describe('tydligare diagram: Utforska', () => {
     it('könsgapet: status är en serie med egen symbol, ritad som punkt, och står i förklaringen; linjen vid 100 heter Lika lön', () => {
         w.__m = { spec: { matt: 'gap', delaKon: false }, celler: [cell('A', 93), cell('B', 96.5), cell('C', 99.5)] };
         const f = w.eval('_figStaplar(window.__m, false)');
+        // Utforskas celler prövas inte mot slumpen: aldrig Värt att granska, minst 3 % är Följ upp (ADR-59).
         expect(f.lager.map(l => [l.marke, l.serie, l.symbol, l.data.map(d => d.rad)])).toEqual(
-            [['punkt', 'Värt att granska', 'romb', ['A']], ['punkt', 'Följ upp', 'kvadrat', ['B']], ['punkt', 'Balanserat', 'cirkel', ['C']]]);
+            [['punkt', 'Följ upp', 'kvadrat', ['A', 'B']], ['punkt', 'Balanserat', 'cirkel', ['C']]]);
         expect(f.legend).toBeUndefined();
         expect(f.referens[0]).toMatchObject({ y: 100, etikett: 'Lika lön' });
         expect(f.x.ordning).toEqual(['A', 'B', 'C']);

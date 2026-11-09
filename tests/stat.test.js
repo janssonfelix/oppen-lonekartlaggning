@@ -242,6 +242,16 @@ describe('fitOLS', () => {
         expect(fit.vcovHC3[0][0]).toBeGreaterThan(0);
         expect(fit.vcovHC3[1][1]).toBeGreaterThan(0);
     });
+    // B4: en observation som ensam bär en indikator har hävstång h = 1 och bidrar inte till HC3; antalet med h > 0,99
+    // redovisas i regressionskortets tekniska specifikation.
+    it('hHoga räknar observationer med hävstång > 0,99 (en singelindikator ger minst en)', () => {
+        const X = [], y = [];
+        for (let i = 0; i < 40; i++) { X.push([1, i % 7, i === 13 ? 1 : 0]); y.push(1 + 0.1 * (i % 7) + ((i * 37) % 11) / 100); }
+        const fit = fitOLS(X, y);
+        expect(fit.hHoga).toBeGreaterThanOrEqual(1);
+        const utan = fitOLS(X.map(r => r.slice(0, 2)), y);
+        expect(utan.hHoga).toBe(0);
+    });
 });
 
 describe('tDistCdf', () => {

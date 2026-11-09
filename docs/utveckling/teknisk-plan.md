@@ -119,9 +119,9 @@ Icke förhandlingsbara arkitektoniska garantier:
 |---|---|---|
 | Kartläggning lika arbete | lika arbete (lagrum.md) | EU-Lönekartläggning: median-jämförelse kön inom yrkesgrupp + per-BAS-regression (oförklarat gap, ålderskontroll, HC3-SE, BH-FDR) |
 | Lönegap & könsfördelning | lönekartläggningen (lagrum.md) | Lika arbete-fliken: yrkesgrupperna först; trattdiagrammet ställer varje yrkesgrupps kvot mot gruppens storlek och bedömer den med omkastning av könen inom gruppen. Lönestruktur-fliken: översikten per BAS-intervall (*Lönegap per BAS-intervall*) som tabell med grafik i raden (antal, medianer, skillnad i kronor, kvot med bootstrap-intervall, status), samma kvot som diagram bara i exporten, lönespridning per BAS och kön, könsfördelning (*Könsfördelning per BAS-intervall*), 5 %-tröskel (EU Art. 9-analogt) |
-| **Likvärdigt arbete** | **likvärdigt arbete (lagrum.md)** | **Likvärdigt arbete-fliken: organisationens kvinnodominerade AID×BAS mot icke-kvinnodominerade yrken med lika krav — i första hand organisationens egna i samma BAS, annars jämförelsestatistiken; med arbetsvärderingspoäng över BAS-gränserna. Därtill *Lägre krav, högre lön* (ADR-25)** |
+| **Likvärdigt arbete** | **likvärdigt arbete (lagrum.md)** | **Likvärdigt arbete-fliken: organisationens kvinnodominerade AID×BAS mot yrken som inte är kvinnodominerade (ADR-60) med lika krav — i första hand organisationens egna i samma BAS, annars jämförelsestatistiken; med arbetsvärderingspoäng över BAS-gränserna. Därtill *Lägre krav, högre lön* (ADR-25)** |
 | Hierarkisk översikt | lönekartläggningen (lagrum.md) | Löneöversikten (i Tabeller och egna vyer): median/P10/P90/spridning per yrke+BAS, referenslinjer |
-| Prioritering | — | Prioritetsindex (avvikelse × volym × jämställdhet), kostnadssimulering. Könsgapet i gruppen visas och räknas in i indexet bara när båda könen har minst k personer (ADR-12; annars räknas jämställdhetsdelen som 0). Jämför mot organisationens lönepolitiska ställningstagande (ur ett organisationspaket eller en egen namngiven fil; ingen inbyggd referens, ADR-28) eller mot jämförelsestatistiken |
+| Prioritering | — | Löneläget mot er referens med kostnad att nå den (ADR-62): prioritetsindex (avvikelse × volym × jämställdhet), kostnadssimulering. Könsgapet i gruppen visas och räknas in i indexet bara när båda könen har minst k personer (ADR-12; annars räknas jämställdhetsdelen som 0). Jämför mot organisationens lönepolitiska ställningstagande (ur ett organisationspaket eller en egen namngiven fil; ingen inbyggd referens, ADR-28) eller mot jämförelsestatistiken |
 | Fördjupning | — | Två flikar i Kartläggning som inte är lagkrav och säger det i verktygstipset och inledningen: Ålder & karriär (lön mot ålder med trend, lönegap per åldersgrupp, percentilband över ålder, lönefördelning per kön, livscykel ålder×kön×BAS och åldersstruktur) och Löneläget (raden Löneläget nedan). Nästa steg hoppar över dem när de är låsta |
 | EU-direktivets rapportmått | EU 2023/970 art. 9 | Lönestruktur: kvartilfördelning, representation per BAS, distributionellt gap, medel- och mediangap, med EU-lönerapporten som Excel. **Tecknet:** verktyget räknar lönegapet som (kvinnor − män) / män och visar det i alla flikar och blad som kvinnors lön i procent av mäns (under 100 % = kvinnor lägre). EU-lönerapportens blad och rapportens avsnitt *Struktur och lönetransparens* (Word/PDF) redovisar i stället direktivets mått, (män − kvinnor) / män i procent, enligt art. 9: positivt tal = kvinnor lägre; kolumnrubriken och en metodrad säger det. Tecknet vänds på ett ställe, `tillDirektivtecken` i `src/lib/struktur.js`; beloppet är detsamma |
 | Löneläget | — | Fliken `benchmark`, först i Kartläggning. Avsnitten i ordning: Överblick (`avsnitt-jmf-bandkartor`: bandkartan mot ställningstagandet och läget i statistikens spann, fylld punkt för AID + BAS och ofylld för endast AID), avsnittet mot ställningstagandet, avsnittet mot jämförelsestatistiken (ADR-35) och Yrkesgrupp för yrkesgrupp (`avsnitt-jmf-overblick`: löneläget och statistiken mot ställningstagandet per yrkesgrupp, ADR-55). Avsnittet mot ställningstagandet: könens läge i spannet och fördelningen i spannets tredjedelar per kön, efterlevnad, täckningsgrad; tomläge utan ställningstagande. Talen följer med som bladet *Lönepolitik* i Excel (alla flikar) — yrkesgrupperna mot sitt spann, läget per kön och BAS-intervall, tredjedelarna och efterlevnaden, med flikens regler för minsta gruppstorlek (`_lpExcelBlad`) — bara när ett ställningstagande är inläst |
@@ -161,8 +161,12 @@ adaptern verkligen delegerar vaktas av `tests/drift.test.js`:
    även små grupper prövas (rapportunderlaget redovisar bara par där båda grupperna har
    minst 10 personer).
 2. **Steg 2 — jämförelseyrken med lika krav:**
-   - **BAS-läget (standard):** i första hand organisationens **egna** icke-kvinnodominerade
-     yrken (under 100 − kvinnotröskel % kvinnor) i samma BAS-intervall. Saknas ett sådant i
+   - **Jämförelsemängden (ADR-60):** alla yrken som **inte är kvinnodominerade** enligt vald
+     definition (DO: högst kvinnotröskeln, SCB: under den) — mansdominerade och blandade, med
+     klassen och könsandelen synliga i paret (`maKlass`, `maKvinnoPct`). Filtret
+     `state.likvardighet.jamforelse = 'mansdominerade'` begränsar till de mansdominerade.
+   - **BAS-läget (standard):** i första hand organisationens **egna** jämförelseyrken i samma
+     BAS-intervall. Saknas ett sådant i
      BAS-intervallet används **jämförelsestatistiken** som reserv (dess egen
      könsfördelning i första hand, SKR:s personalstatistik när den saknas, ADR-34).
    - **Poängläget:** har lönefilen kolumnen Poäng jämförs med yrken som har lika eller
@@ -170,8 +174,10 @@ adaptern verkligen delegerar vaktas av `tests/drift.test.js`:
      standardband 5 %) — även över BAS-gränserna.
 3. **Steg 3:** Flagga par där jämförelseyrkets median är högre än minsta skillnaden
    `minGapPct`, med bootstrap-KI på medianskillnaden, och visa högst `topN` par. I verktyget
-   är standardvärdena **5 %** och **20 par** (`state.likvardighet` i `12-tillstand.js`;
-   användaren kan ändra dem i fliken, 0–50 % och 10–500 par). Modulens egna standardvärden,
+   är standardvärdena **0 %** och **20 par** (`state.likvardighet` i `12-tillstand.js`;
+   användaren kan ändra dem i fliken, 0–50 % och 10–500 par). 0 % visar alla par där
+   jämförelseyrket har högre lön; 5 % är ett valbart filter, och knappen *Visa alla* visar
+   paren utöver de 20 (ADR-61). Modulens egna standardvärden,
    0 % och 100 par, gäller bara när den anropas utan inställningar, som i enhetstesterna.
    Den råa medianskillnaden är huvudmåttet — lagen prövar lönenivån som sådan. Interna par
    får därtill en **åldersjusterad skillnad** (`aldersjusteradSkillnad`): i jämförelseyrket
@@ -186,13 +192,17 @@ adaptern verkligen delegerar vaktas av `tests/drift.test.js`:
    paret (`_parForRedovisning`).
 4. **Lägre krav, högre lön (ADR-25, BAS-läget):** kvinnodominerade yrken med lägre
    medianlön än ett av organisationens egna yrken i *lägre* BAS, med antal BAS-steg.
-   BAS-ordningen är fast: bokstavsordning A–J. Den går inte att ändra i verktyget. Varje
-   bokstav motsvarar ett lika brett poängintervall i arbetsvärderingen, så rangen är bokstavens
-   plats (A=1, B=2 …) där BAS räknas som ett tal — Blinder-Oaxaca, kvantilregressionen och
-   *Lägre krav* använder samma funktion (`basRangFn` i `src/lib/likvardighet.js`) — och B → D
-   är två BAS-steg även när C saknas i underlaget. Huvudregressionen och den sekventiella
-   dekomponeringen räknar inte BAS som ett tal utan som indikatorvariabler, en per intervall med
-   det alfabetiskt första som referens (ADR-44); bokstavsordningen avgör där bara referensen.
+   BAS-ordningen är fast: bokstavsordning A–J. Den går inte att ändra i verktyget. Verktyget
+   antar att varje bokstav motsvarar ett lika brett poängintervall i arbetsvärderingen, så rangen är bokstavens
+   plats (A=1, B=2 …) där BAS räknas som ett tal — *Lägre krav* använder funktionen
+   (`basRangFn` i `src/lib/likvardighet.js`) — och B → D är två BAS-steg även när C saknas i
+   underlaget. Huvudregressionen, den sekventiella dekomponeringen, Blinder-Oaxaca (ADR-53) och
+   kvantilregressionen (ADR-63) räknar inte BAS som ett tal utan som indikatorvariabler, en per
+   intervall med det alfabetiskt första som referens (ADR-44); bokstavsordningen avgör där bara
+   referensen. Kvantilregressionen (`kvantilDesign` och `quantileRegressionAtAllTau` i
+   `src/lib/regression.js`) skattas vid P10, medianen och P90 på huvudmodellens variabler enligt
+   förklaringsmodellen, utan yrkesgrupp inom BAS, och tolkas som glastak eller klibbigt golv bara
+   när bootstrap-intervallet för skillnaden P90 − P10 utesluter noll.
 
 ---
 
@@ -237,9 +247,9 @@ adaptern verkligen delegerar vaktas av `tests/drift.test.js`:
   rätt grupp. Utskriftsfönstret för checklistorna (`printScaffoldView`) läser `:root` och allt från `.dold` till
   stilmallens slut ur den körande stilmallen och lägger in det som byggt stilark (`adoptedStyleSheets`): ett `<style>`-element
   som skriptet skapar blockeras av den ärvda CSP:n (`style-src-elem`), så fönstret var tidigare helt ostilat.
-- **Tester:** Vitest — 3009 tester i 94 filer: rena `src/lib/`-moduler, CSV-parsning, jsdom-röktest
+- **Tester:** Vitest — 3165 tester i 97 filer: rena `src/lib/`-moduler, CSV-parsning, jsdom-röktest
   av varje vy (ADR-7; `tests/smoke.test.js` med det delade fönstret och sju `tests/smoke-*.test.js` per
-  område), k-tröskeln i åtta `tests/ktroskel*.test.js` med riggen i `tests/helpers/ktroskel-rigg.js`,
+  område), k-tröskeln i nio `tests/ktroskel*.test.js` med riggen i `tests/helpers/ktroskel-rigg.js`,
   gränssnittet i `tests/granssnitt*.test.js` (riggen `tests/helpers/granssnitt-rigg.js`) och diagramvyerna i
   `tests/diagramvyer*.test.js` (riggen `tests/helpers/diagramvyer-rigg.js`),
   axe-a11y (ADR-10) samt vakterna `appsource`, `drift`, `exports.golden`,
@@ -489,7 +499,7 @@ dem utan avskiljare, vilket ger `4 yrkesgruppervisas` i Excel-exporten. Skyddet 
 
 **ADR-13 — `VERSION` är enda källa för versionsstämpeln.** Versionsstämpeln (`APP_VERSION`, `APP_BUILD_DATE`)
 syns i rapportens sidfot och i Excel- och Word-metadata — det som gör ett resultat spårbart till en
-beräkningsversion i en lagstadgad process. `src/app/08-version.js` genereras ur `VERSION` av
+beräkningsversion i arbetsgivarens lönekartläggning. `src/app/08-version.js` genereras ur `VERSION` av
 `tools/gen-version.mjs`, som både `build-app.mjs` och `bundle.mjs` kör. Build-datumet **härleds ur versionen**
 (CalVer = byggdatum), inte ur systemklockan: ett `new Date()` skulle ge ny SHA-256 vid varje bygge och slå
 sönder artefaktgrinden i CI.
@@ -635,7 +645,7 @@ robusthetspanelen i Exportera prövar inställningarna. Logiken i `likaArbeteGru
 **ADR-25 — Lägre krav, högre lön: jämförelse över BAS-gränserna.** Med BAS som krav-proxy bildas kandidatparen
 bara inom samma BAS, så lagens "likvärdiga **eller lägre** krav" fångas inte av dem. Likvärdigt arbete har
 därför en **egen lista**, *Lägre krav, högre lön*: kvinnodominerade yrken med lägre medianlön än ett av
-**organisationens egna** icke-kvinnodominerade yrken i strikt lägre BAS. Ingen reserv ur jämförelsestatistiken:
+**organisationens egna** yrken som inte är kvinnodominerade (ADR-60) i strikt lägre BAS. Ingen reserv ur jämförelsestatistiken:
 en jämförelse över BAS-gränsen mot extern statistik blir dubbelt osäker. Alla lägre BAS ingår, med antalet
 BAS-steg utskrivet; BAS-rangen är bokstavsordningen (§5). Samma `minGapPct` och bootstrap-KI som kandidatparen.
 Listan är egen för att kandidatparen och allt som bygger på dem — handlingsplan, JPA, exporten, värmekartan —
@@ -1193,7 +1203,7 @@ inte en skattning av vad intervallet "borde" betala det kön som saknas. Kompone
 konstant, ålder och BAS, där BAS är summan över indikatorerna (det som ADR-44 befarade skulle bli otydligt: ett
 dussin rader). Referensvärdena i `tests/fixtures/stat-referens-varden.json` är omräknade med statsmodels
 (`tests/fixtures/ref-stat-referens.py`); fixturen har ett intervall som bara finns hos männen, så regeln prövas.
-Kvantilregressionen behåller BAS-rangen (den är inte en uppdelning). Sedan 2026-11-05 styr valet (ADR-56) båda:
+Kvantilregressionen kodar BAS på samma sätt (ADR-63). Sedan 2026-11-05 styr valet (ADR-56) båda:
 uppdelningen räknar på samma variabler som huvudtalet, också när ålder eller BAS valts bort eller yrkesgrupp valts in.
 
 **ADR-54 — Jämförelse mellan år genom ett årsbokslut i konfigurationsfilen.** Beslut 2026-10-30. Konfigurationsfilen
@@ -1344,6 +1354,128 @@ intervall under k ger ingen text. Förra årets rad läses med den högre av fil
 (`bokslutMedGrans`, se ADR-54). Vaktas av `tests/basdossier.test.js` och av k-invarianten i
 `tests/ktroskel-invarianter.test.js`, som prövar texten för varje valbart intervall vid 10 och 25.
 
+**ADR-59 — Uppmärksamhetstrappan på statistisk signal, direktivmarkeringen åtskild.** Beslut 2026-11-08. Texterna
+sade redan att 5 % bara är villkoret för gemensam lönebedömning, men statusen för en skillnad mellan kvinnors och mäns
+lön sattes fortfarande på |skillnad| över 5 % ensam, så att en grupp med 18 kvinnor och 2 män kunde bli *Värt att
+granska* på storleken utan att skillnaden gick att skilja från slumpen. `src/lib/status.js` sätter nu statusen på
+statistisk signal och verktygets egen storleksgräns 3 %: *Värt att granska* när skillnaden är säkerställd (utanför
+slumpens gränser för gruppen — trattdiagrammets omkastning, över 300 personer normalapproximationen — eller ett
+konfidensintervall som utesluter lika lön) och minst 3 %; *Följ upp* när den är minst 3 % men inte säkerställd eller
+säkerställd men under 3 %; *Balanserat* under 3 % och inte säkerställd; *Går ej att bedöma* när ett kön är under
+`statGolv()`. 5 % är ingen status utan en **direktivmarkering** (kolumnen *Ojusterad löneskillnad ≥ 5 %*, brickan
+*≥ 5 %*) som bara står vid ojusterade medianskillnader, med verktygstipset att direktivets regler om gemensam
+lönebedömning utgår från en skillnad på minst 5 % och att markeringen inte är en bedömning. Regressionens justerade tal
+bär ingen markering; per-BAS-signalen heter *Titta närmare* (säkerställd efter BH-korrigering och minst 3 %) och
+*Dokumentera* (säkerställd under 3 %). Skör/stabil mäts mot 3 %. Yrkesgruppernas status räknas en gång per underlag
+(`laLikaGrupper`) och delas av fliken, rapportmodellen, rapportunderlaget, årsbokslutet, dossiererna och protokollet
+för gemensam lönebedömning. Att göra grupperar efter källa (*Lika arbete*, *Lika arbete, fördjupning*, *Likvärdigt
+arbete*, *Löneläge mot referens*, *Underlagets kvalitet*), Översiktens ruta heter *Säkerställd löneskillnad*, och
+protokollet för gemensam lönebedömning väljer yrkesgrupper som är värda att granska med markeringen som egen kolumn.
+Utforska prövar ingen skillnad och visar därför högst *Följ upp*. Vaktas av `tests/status-trappa.test.js`.
+
+**ADR-60 — Jämförelseyrkena i likvärdigt arbete är alla som inte är kvinnodominerade; en definition av
+kvinnodominerat.** Beslut 2026-11-08. Tidigare fick bara grupper med under 40 % kvinnor vara jämförelseyrken, så
+blandade yrken (40–60 %) föll bort ur både kandidatparen och jämförelsestatistiken — i demot jämfördes Barnskötare
+och Undersköterska inte med Systemutvecklare (23 kvinnor av 45) i samma BAS-intervall. Nu är jämförelseyrkena
+**alla grupper som inte är kvinnodominerade** enligt vald definition: `aggregeraOrgKvDom` lägger varje sådan grupp i
+`orgIckeKv` med klassen `'mansdominerad'` eller `'blandad'`, `klassificeraStatistik` gör rader som inte är
+kvinnodominerade till kandidater (`klass.blandat` räknas fortfarande för diagnostiken), och paren får `maKlass` och
+`maKvinnoPct` för både interna och externa jämförelseyrken. Filtret `jamforelse: 'alla' | 'mansdominerade'`
+(`state.likvardighet.jamforelse`, standard `'alla'`, rutan *Jämför bara med mansdominerade yrken* i
+Inställningar) begränsar mängden *innan* paren byggs, så att reserven till jämförelsestatistiken per BAS fungerar som
+förut; med filtret på återskapas det tidigare urvalet. Samma mängd används i kandidatparen, *Lägre krav, högre
+lön*, *Hierarkisk jämförelse* och sammanfattningen per BAS-intervall (`arJamforelseKlass` i `src/lib/aidbas.js`).
+Könsandelen och klassen står i partabellen (kolumnen *Könsandel*), Steg 2a/2b, CSV- och Excel-exporterna (*Jämf.
+klass*), rapportunderlaget och rapporten; metodtexten säger att yrkena jämförs med yrken på samma nivå som inte är
+kvinnodominerade och att könsandelen står i tabellen. Fältet följer med och valideras i konfigurationsfilen
+(`likvardighet.jamforelse`) och organisationspaketet (`installningar.jamforelse`).
+
+*En definition (§9 punkt 22):* `arKvinnodominerad(pct, definition, grans)` och `konsklass(pct, definition, grans)` i
+`src/lib/likvardighet.js` är den enda definitionen: DO (i gränssnittet *Förarbetena*) mer än gränsen, SCB gränsen eller mer, mansdominerat speglat
+för män, övriga blandade. Den används av `aggregeraOrgKvDom` och `klassificeraStatistik` (som nu också följer
+kvinnotröskeln i stället för fasta 60 %), `dominans` i `aidbas.js` (tabellerna per AID och BAS), `forecastOutcome` i
+`loneoversyn.js` (Löneöversynens *Varav till kvinnodominerade grupper*) och i appen via `kvDomNu`/`konsklassNu`
+(`45-aid-bas-tabeller.js`): Lika arbetes kolumn Dominans, diagrammet Krav mot lön, Löneöversynens massregel,
+Lönepolitikens diagram och SKR-uppslaget. Prioriteringen klassar inga grupper efter könsdominans (dess
+jämställdhetsmått bygger på gapet) och berörs inte. Texterna säger *mer än* (DO) eller *minst* (SCB) efter valet.
+Lönekartläggningens regler om kvinnodominerat arbete beskrivs i `lagrum.md`; tolkningen att jämförelsemängden är
+alla som inte är kvinnodominerade är ett förslag, inte prövat av jurist. Vaktas av `tests/likvardighet.test.js`,
+`tests/aidbas.test.js`, `tests/smoke-vyer.test.js` (demot i BAS C) och `tests/smoke-aidbas.test.js`.
+
+**ADR-61 — Minsta skillnad 0 % som standard i likvärdigt arbete.** Beslut 2026-11-08. Kandidatparen visades tidigare
+bara när jämförelseyrket låg minst 5 % högre, så ett par med 2 % skillnad syntes aldrig utan att användaren ändrat
+fältet; i demot föll Undersköterska–Systemutvecklare i BAS C bort. Nu är `state.likvardighet.minGapPct` 0: alla par
+där jämförelseyrket har högre lön visas, och 5 % är ett valbart filter i fältet *Visa bara par med minst … % skillnad
+(0 = alla)*. Tabellen visar som förut de `topN` (20) största; finns fler står knappen *Visa alla*. `byggPar` och
+`byggParPoäng` räknar paren före urvalet (`parAntal`: totalt, hur många som har en ojusterad löneskillnad på minst
+5 % enligt `direktivMarkering` ur `src/lib/status.js`, och hur många som har en säker skillnad), och nyckeltalet *Par
+att titta närmare på* säger *N, varav M med ojusterad löneskillnad ≥ 5 %*, så att direktivnivån syns utan att paren
+under den döljs. *Lägre krav, högre lön* använder samma `minGapPct`. Organisationspaketet bär inte värdet;
+konfigurationsfilen gör det som förut. Vaktas av `tests/likvardighet.test.js`, `tests/smoke-vyer.test.js` och
+`tests/granssnitt-vyer.test.js`.
+**ADR-62 — Prioriteringens egna ord för läget mot referensen.** Beslut 2026-11-08 (beslut 4a inför lanseringen).
+Prioriteringen mäter löneläget mot er referens (ställningstagandet eller jämförelsestatistiken), men dess statusar
+hette som uppmärksamhetstrappan för skillnaden mellan kvinnor och män, och nyckeltalet *Total åtgärdskostnad* kunde
+läsas som kostnaden för lönekartläggningens könsskillnader. Statusvärdena i `src/lib/prioritering.js`
+(`akut/atgard/bevaka/ok/analysera`) och gränserna är oförändrade; orden i `PRIO_STATUS_INFO` (`55-prioritering.js`)
+är *Börja här*, *Under referens*, *Nära referens, under*, *Nära referens* och *Över referens* — Nära referens har två
+färger, under och över uppföljningsgränsen. Samma ord står i matrisens zoner, åtgärdslistan och dess Excel-blad,
+beräkningsbeviset, inställningarnas förklaringar, symbolförklaringen och ordlistan; ordlistans poster för trappan
+nämner inte längre Prioritering. Att göra kallar punkterna ur Prioritering *Löneläge mot referens*. Nyckeltalet
+heter *Kostnad att nå referensen*, med raden att det är löneläget mot referensen och inte könsskillnaderna (dem visar
+Lika arbete och Löneöversyn), och PO-raden säger att 39,15 % är SKR:s standardvärde för kommuner (ett eget värde
+får bara *ändras under Inställningar*). Förslaget om en liten avvikelse säger *Gruppens median ligger inom ±N % av
+referensen* (N = uppföljningsgränsen; förslaget gäller nu inom den gränsen i stället för fasta 1,5 %) i stället för
+"normal variation", och förslaget över referensen *Ligger N % över referensen. Dokumentera gärna varför.*
+Handlingsplanens vägledning, rapportens avsnitt Åtgärder och tidsplan och rapportunderlaget säger hur stor del av
+kostnaden som är kostnad att nå referensen. Vaktas av `tests/smoke.test.js`, `tests/granssnitt.test.js`,
+`tests/diagramvyer.test.js` och `tests/smoke-innehall.test.js`.
+
+**ADR-63 — Kvantilregressionen på huvudmodellens design, villkorad tolkning.** Beslut 2026-11-08 (beslut 6a inför
+lanseringen). Kvantilregressionen räknade BAS som ett tal (BAS-rangen, `basRangFn`) med ålder alltid med, medan
+huvudtalet räknar BAS som indikatorer och följer förklaringsmodellen (ADR-44, ADR-56); kortet sade ändå *samma
+modellspecifikation som huvudregressionen*. Tolkningen *väger tyngre än* sades när beloppen vid P10 och P90 skilde mer
+än en procentenhet, utan prövning. Nu bygger `kvantilDesign(rows, modell, { ageMean?, basList? })` i
+`src/lib/regression.js` designen med samma hjälpare som stegen i dekomponeringen (`_sekvensRigg`): intercept, kön,
+[ålder centrerad], [en indikator per BAS-intervall utom det första] enligt förklaringsmodellen, utan yrkesgrupp inom
+BAS; raderna filtreras där (ålder krävs bara när ålder är med). `quantileRegressionAtAllTau(rows, { modell, ageMean?,
+basList? })` tar ingen rangfunktion längre och returnerar `konPct` per τ och `diffP90P10` (procentenheter). I appen
+använder punktskattningen och bootstrappen (`_regKvantilBerakna`, `_regKvantilBootstrap` i
+`51-lika-arbete-regressionskort.js`) samma byggare; varje omsampling bygger designen på nytt ur de dragna raderna, så
+att ett intervall som inte kom med inte ger en nollkolumn. Bootstrappen sparar `konPct[τ]` och `diff = konPct[0,9] −
+konPct[0,1]` per omsampling och ger percentilintervall för båda. Tabellen har raden *P90 − P10*. *Glastaket väger
+tyngre än det klibbiga golvet* (diff-KI under noll) eller tvärtom (över noll) sägs bara när diff-KI:t utesluter noll,
+annars *Ingen säkerställd skillnad mellan delarna av lönefördelningen.*; utan intervall (över 2 000 personer) sägs att
+det inte går att avgöra. Skattningarna färgas inte längre efter 5 % och 2 % (ADR-59: storlek ensam är ingen status).
+Diagrammets punktlager saknade `riktning: 'liggande'`, så intervallets gränser lästes som kategorier på bandaxeln och
+skrevs ut som råa tal (U4); det är rättat, och ett test kräver att ingen text i någon ritad figur är ett tal med
+decimalpunkt. IRLS-kärnan hoppar över nollor i designen (samma summor, snabbare med indikatorer), och bootstrappen
+startar varje omsampling i hela urvalets lösning (`start` i `quantileRegression`; samma lösning inom toleransen, färre varv). Referensen är en ny
+exakt LP-lösning för indikatormodellen (`tests/fixtures/stat-referens-kvantil.json`, framtagen och kontrollerad som
+filhuvudet i `tests/stat-referens.test.js` beskriver). `basRangFn` finns kvar för *Lägre krav*. Vaktas av
+`tests/regression.test.js`, `tests/stat-referens.test.js`, `tests/diagramritare.test.js` och
+`tests/smoke-innehall.test.js`.
+
+**ADR-64 — Ålder är valfri i lönefilen.** Beslut 2026-11-08. En lönekartläggning förutsätter ingen ålderskolumn, och
+uppgiftsminimeringen talar för att den som inte behöver åldersjusteringen ska kunna lämna
+åldern utanför uttaget. Kolumnmappningen har ålder som valfri (`required: false`); en saknad kolumn ger ålder 0 på
+varje rad, och 0 betyder *saknas*. Om lönefilen har ålder härleds ur datan (`harAlderIRader` i
+`src/lib/regression.js`, i appen `harAlder()` i `50-regressionsmodeller.js`), inget nytt fält i tillståndet. Utan
+ålder utesluts inga rader; inläsningskontrollen och förhandskontrollen säger *Ålder saknas: analysen körs utan
+åldersjustering; Ålder & karriär visas inte.* Modellerna tar bort ålderstermen: förklaringsmodellen tvingar
+`alder: false` med en varning, regressionen, per-BAS-regressionen, Oaxaca–Blinder och kvantilregressionen körs med
+kön och BAS (och yrkesgrupp när den är vald), livscykelmodellen svarar `no_age`, Personer att granska prövar alla mot
+kollegornas median, datakvaliteten hoppar över rimligheten för ålder och tabellerna per BAS-intervall utelämnar
+medelålder och åldersgrupper med en mening om varför. Fliken Ålder & karriär låses som övriga låsta flikar med tipset
+*Kräver ålder i lönefilen*; Översiktens medelålder visas som –; Word, PDF, Excel, rapportunderlaget och dossiererna
+hoppar över åldersavsnitten. Metodmeningen *Att ålder räknas bort är ett metodval …; det avgör ni.* står alltid, med
+eller utan ålder: i nyckeltalets verktygstips i Lika arbete, i regressionskortets *Så fungerar regressionen* och i
+rapportens metodtext. Bladet *Metod & parametrar* (`_methodAppendixData` i `22-exporthjalpare.js`) säger i raderna
+*Modell — oförklarad skillnad* och *Steg + Yrkesgrupp* modellen utan ålder (`modellBeskrivning(forklaringsmodell())`).
+Importprofilernas kännetecken räknas som förut, så att sparade profiler känns igen. Vaktas av
+`tests/regression.test.js`, `tests/ktroskel-utan-alder.test.js` och facit *lönefil utan ålder* i
+`tests/exports.golden.test.js`.
+
 ## 9. Öppna punkter
 
 Kända brister och obesvarade frågor, så att de inte lever bara i en konversationstråd.
@@ -1352,7 +1484,7 @@ Kända brister och obesvarade frågor, så att de inte lever bara i en konversat
 1. **Ingen användare har provat gränssnittet och diagrammen med verklig data**; de är sedda med demodatan och ett
    påhittat större underlag (42 yrken). Checklistan för skarp data (`pilotchecklista.md`) har punkter för det
    som inte går att pröva utan verklig data.
-2. **Word-utkastet är inte öppnat i Word**, bara i LibreOffice.
+2. *(Löst 2026-11-09: utkastet öppnat i Microsoft Word 365 och 2019 med litet och stort demo; tabellbredd i dxa, `w:tblLook` och skiljestycke mellan tabeller infördes inför testet, ADR-37.)*
 3. **Punkter som täcker varandra i bandkartan** när många yrkesgrupper i samma BAS-intervall har nästan samma
    median. *Krav mot lön* flyttar isär sådana grupper i sidled, och prioriteringsmatrisens etiketter flyttas isär
    uppåt; bandkartan är inte prövad med många yrken. Bör bedömas med verklig data.
@@ -1428,12 +1560,17 @@ Kända brister och obesvarade frågor, så att de inte lever bara i en konversat
 9d. **Dekomponeringen visas som en bild:** trappan med yrkesgruppssteget efter huvudtalet, förklaringsbudgeten
     under den, steglistan som skärmläsaralternativ. Livscykelns nivåer per BAS kommer ur modellens
     BAS-koefficienter (`basFaktor`). Blinder-Oaxaca kodar BAS som indikatorer sedan ADR-53.
+9e. **Kvar efter uppmärksamhetstrappan och Prioriteringens egna ord (ADR-59, ADR-62, till spår C):** livscykelns
+    färger (`52-livscykel.js`) följer fortfarande 5 %. Utforska och kolumnen *Skillnad kön* i Prioriteringens åtgärdslista visar storlek utan prövning
+    (högst *Följ upp*). Protokollets blad per BAS-intervall för gemensam lönebedömning väljer på rått p-värde utan
+    BH-korrigering. På skärmen (k = 1) står många små grupper som *Går ej att bedöma*, eftersom prövningen kräver
+    `statGolv()` per kön. Handlingsplanens kostnadskolumn blandar kostnad att nå referensen (rader ur Prioritering) och
+    kostnaden att lyfta ett kvinnodominerat yrke till jämförelseyrket (kandidatpar); vägledningsbladet, rapporten och
+    rapportunderlaget säger vilken som är vilken.
 
 **Export:**
-22. **En definition av kvinnodominerat i hela verktyget.** Tabellerna per AID-kod och BAS-intervall (ADR-57) följer
-    valet DO/SCB; kandidatparen i Likvärdigt arbete räknar fortfarande med *mer än* tröskeln i `aggregeraOrgKvDom`
-    medan flikens texter säger *minst*, och Lika arbetes kolumn Dominans och Prioritering har sina egna gränser. Alla
-    ska använda samma valda definition (beslut 2026-11-05); görs i ett eget steg eftersom det ändrar befintliga flikar.
+22. *(Löst 2026-11-08: en definition av kvinnodominerat i hela verktyget, `arKvinnodominerad`/`konsklass` i
+    `src/lib/likvardighet.js`, ADR-60.)*
 10. **Svenskt talformat:** jämförelseexporten (`64-jamforelse-export.js`) och CSV-exporternas tolkning (`_CSV_TALLIKT`) är inte
     prövade.
 

@@ -35,6 +35,59 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   *Yrkesgrupperna mot slumpens gränser* nu direkt efter förklaringstexten och före tabellen, så att avsnittet börjar
   med bilden av alla yrkesgrupper. Innehållet och exporterna är oförändrade.
 
+- **Ålder är valfri i lönefilen (ADR-64).** Det räcker med BAS-intervall, AID, månadslön och kön. Utan ålder körs
+  analysen utan åldersjustering: inläsningskontrollen och förhandskontrollen säger det, fliken Ålder & karriär är låst
+  med tipset *Kräver ålder i lönefilen*, Översiktens medelålder visas som – och Word, PDF, Excel och dossiererna hoppar
+  över åldersavsnitten. Regressionen, kvantilregressionen och dekomponeringen körs med kön och BAS-intervall. Rapportens
+  metodtext, regressionskortet och nyckeltalets verktygstips i Lika arbete säger alltid att det är ett metodval att
+  räkna bort ålder, inte ett ställningstagande om att ålder är ett sakligt skäl.
+
+- **Status på statistisk signal (ADR-59).** *Värt att granska* kräver en statistiskt säkerställd skillnad på minst 3 %;
+  *Följ upp*, *Balanserat* och *Går ej att bedöma* (för få av ett kön) ersätter gränsen 5 %. 5 % är en markering på den
+  ojusterade medianskillnaden (kolumnen *Ojusterad löneskillnad ≥ 5 %*), ingen bedömning, och står aldrig vid
+  regressionens justerade tal.
+- **Likvärdigt arbete: jämförelseyrkena är alla som inte är kvinnodominerade (ADR-60).** Blandade yrken jämförs nu
+  också, i kandidatparen, *Lägre krav, högre lön*, *Hierarkisk jämförelse*, tabellerna per BAS-intervall och
+  jämförelsestatistiken, med könsandel och klass (mansdominerad eller blandad) i tabeller och exporter (kolumnen
+  *Könsandel i jämförelseyrket*, *Jämf. klass*). Rutan *Jämför bara med mansdominerade yrken* ger det tidigare urvalet
+  och följer med i konfigurationsfilen och organisationspaketet. En enda definition av kvinnodominerat (förarbetena
+  eller SCB) gäller i hela verktyget, också i Lika arbetes kolumn Dominans, Löneöversynen, Lönepolitiken och
+  SKR-uppslaget; texterna säger *mer än* eller *minst* efter valet.
+- **Likvärdigt arbete: minsta skillnad 0 % som standard (ADR-61).** Alla par där jämförelseyrket har högre lön visas
+  utan att något ändrats; 5 % är ett valbart filter (*Visa bara par med minst … % skillnad*). Nyckeltalet säger hur
+  många par det är och hur många som har en ojusterad löneskillnad på minst 5 %, och knappen *Visa alla* visar paren
+  utöver de 20.
+- **Prioritering: egna ord och rätt rubrik (ADR-62).** Läget mot referensen heter *Börja här*, *Under referens*,
+  *Nära referens, under*, *Nära referens* och *Över referens* i fliken, matrisens zoner, Excel-bladet, inställningarna,
+  symbolförklaringen och ordlistan, så att orden inte delas med Lika arbetes *Värt att granska*, *Följ upp* och
+  *Balanserat*; Att göra kallar punkterna *Löneläge mot referens*. Nyckeltalet heter *Kostnad att nå referensen*, med
+  en rad om att det är löneläget mot referensen och inte könsskillnaderna, och PO-raden säger att 39,15 % är SKR:s
+  standardvärde för kommuner. Förslagen säger hur nära referensen gruppen ligger i stället för "normal variation", och
+  förslaget över referensen är kortare. Handlingsplansunderlaget, rapporten och rapportunderlaget säger hur stor del av
+  kostnaden som är kostnad att nå referensen.
+- **Prioritering: Skillnad kön med uppmärksamhetstrappans bricka.** Kolumnen *Skillnad kön* i åtgärdslistan har
+  samma bricka som Lika arbete. Prioriteringen prövar inte skillnaden mot slumpen, så brickan sätts efter storleken
+  (högst *Följ upp*, som i Utforska), och *Går ej att bedöma* när ett kön är för litet. Exporten bär talet.
+- **EU-rapportmåtten: reservation om lönebegreppet.** Vid måtten i Lönestruktur, överst i EU-lönerapportens Excel, under
+  tabellen i bladet *EU-lönekartläggning*, i rapportens avsnitt *Struktur och lönetransparens* (Rapporttext, Word och
+  PDF), i rapportunderlaget, i Om verktyget, i körguiden och i datauttaget står: *Måtten är räknade på fast
+  heltidsmånadslön. Direktivets lönebegrepp är vidare (total ersättning, inklusive rörliga delar och förmåner);
+  komplettera ur lönesystemet om ni rapporterar.* Excelbladen har diakriter: *EU-lönekartläggning*, *Löneskillnad*,
+  *Löneskillnad per ålder*, *Könsskevhet*, *Slumpens gränser*, *Jämförelsestatistik*, *Sakliga skäl* och
+  *Jämförelse_alla_percentiler*.
+- **Småfel i text och räknare.** Översikten säger *N intervall redovisas inte i exporten (ett kön under k)* i stället
+  för *N maskeras*, och *Under P10 i {referens}* i stället för genitiven efter kolon. Nyckeltalet för Lika arbete AID x
+  BAS och trattdiagrammets not räknar samma sak: *N av M bedömda grupper utanför gränserna*. Regressionskortets text om
+  korrigeringen för många samtidiga tester säger hur många tester som körs och, från fem tester, hur många falskt
+  positiva som väntas; under fem är den en mening. Förklaringsbudgeten säger att det som tillskrivs varje steg beror på
+  ordningen, och att kortet *Vad varje variabel tillför* mäter varje variabel ovanpå alla andra. Lika arbetes
+  nyckeltal efter ålder och BAS-intervall varnar i verktygstipset när ett kön har färre än 10 i modellen.
+- **Kontrollsumma i PowerShell och distributionsansvar.** `SECURITY.md` och körguiden §0 har efter cosign-kommandot
+  stycket *Kan ni inte köra cosign: kontrollsumman i RELEASE.txt skyddar mot en skadad eller förväxlad fil*, med
+  `Get-FileHash .\oppen-lonekartlaggning.html -Algorithm SHA256` (Windows) och `sha256sum
+  oppen-lonekartlaggning.html` (Linux/mac). `RELEASE.txt` skriver samma PowerShell-rad bredvid Linux/mac-raden, och
+  release-grinden kräver båda. Säkerhetsbeskrivningen säger att distributionen i organisationen är
+  organisationens att avgöra och tar emot beskrivningar av fungerande distributionsvägar som bidrag.
 - **Sakliga skäl som strukturerad post.** Varje rad i Handlingsplan har knappen *Sakliga skäl*. Dialogen tar emot
   högst 8 skäl per grupp med kategori (Marknad, Utbildning, Erfarenhet, Prestation och resultat, Övergång, Annat
   sakligt skäl), belopp i kronor per månad och en kort kommentar. Den räknar ihop förklarat och återstående belopp och
@@ -42,7 +95,7 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   bedömningen är organisationens. Kommentaren prövas mot personuppgifter som övriga fritexter. Gruppdossiern och
   BAS-dossiern visar bedömningen med en länk till raden, och Att göra har punkten *n grupper i handlingsplanen är inte
   bedömda än*. Rapporten (Rapporttext, Word och PDF) får tabellerna *Sakliga skäl per grupp* och *Sammanställning per
-  kategori*, Excel (alla flikar) bladet *Sakliga skal* och handlingsplansunderlaget två kolumner. Det lilla och det
+  kategori*, Excel (alla flikar) bladet *Sakliga skäl* och handlingsplansunderlaget två kolumner. Det lilla och det
   stora demot har skäl på tre rader. Årsbokslutet är version 2 och bär skälen (utan kommentarer), och *Jämförelse med
   förra året* visar *Sakliga skäl per kategori* båda åren och de grupper som hade skäl förra året men inte i år.
   Skälen följer med i konfigurationsfilen; en äldre fil läses som förut. För en grupp där ett kön är under minsta
@@ -235,7 +288,28 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   rubrikerna inte kallas demo. Kom igång på Översikt säger *Ingen fil till hands? Prova med demodata, litet demo
   eller stort demo*, samma mening som lönefilskortet, i stället för *eller … eller*.
 
+### Exporter
+
+- **Word-utkastets tabeller inför Word-testet.** Två tabeller i följd skiljs av ett tomt stycke (Word slår annars
+  ihop dem till en tabell), tabellbredden står i samma enhet som kolumnerna och cellerna, och varje tabell har
+  `w:tblLook` som Word själv skriver.
+- **Word-utkastet är prövat i Microsoft Word.** Utkastet är öppnat i Word 365 och 2019 med litet och stort demo, och
+  förbehållet om att det bara är prövat i LibreOffice är struket ur README och sammanfattningen för HR-chefer.
+
 ### Analys
+
+- **Robusthet i små saker.** Den sekventiella dekomponeringen och *Vad varje variabel tillför* filtrerar själva bort
+  rader utan positiv lön, med okänt kön (räknades annars som män) eller utan ålder när lönefilen har ålder, som
+  regressionen per BAS-intervall redan gjorde. PII-kontrollen prövar värdena i 50 rader spridda jämnt över filen i
+  stället för de 50 första, i både CSV- och Excel-vägen, och känner igen namn med versaler, gemener och efternamnet
+  först med komma (*ANDERSSON, ANNA*). Regressionskortets tekniska specifikation visar antalet observationer med
+  hävstång > 0,99, som inte bidrar till de robusta standardfelen (HC3).
+- **Kvantilregressionen på huvudmodellens variabler (ADR-63).** Löneskillnaden vid P10, medianen och P90 skattas med
+  samma variabler som huvudtalet enligt förklaringsmodellen (BAS-intervall som indikatorer, ålder när den är vald),
+  utan yrkesgrupp inom BAS, i stället för BAS som ett tal. Tabellen har raden *P90 − P10* med bootstrap-intervall, och
+  *glastaket* eller *det klibbiga golvet väger tyngre* sägs bara när intervallet för skillnaden utesluter noll — annars
+  *Ingen säkerställd skillnad mellan delarna av lönefördelningen*. Skattningarna färgas inte längre efter 5 %.
+  Diagrammet visar inte längre intervallets gränser som råa tal på kategoriaxeln.
 
 - **Lönespridning i årsbokslutet.** Bokslutets rader per yrkesgrupp och per BAS-intervall bär lönespridningen,
   (P90 − P10) / median, räknad där gruppen har minst k personer (bara totalt, inte per kön). Panelen *Jämförelse med
@@ -249,6 +323,15 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ### Dokumentation
 
+- **Ansvarsförbehåll och övergripande juridikspråk (beslut 8c).** Samma förbehåll — verktyget är ett stöd för
+  arbetsgivarens egen lönekartläggning, användaren ansvarar för användning, tolkning och juridisk bedömning, och
+  verktyget är inte juridiskt granskat — står i Om verktyget, rapportunderlaget, Word/PDF:s sammanfattning (raden
+  *Ansvar* under *Rättslig ram*), metodbladet i varje Excel-export, README, HR-sammanfattningen och körguiden.
+  README och HR-sammanfattningen säger att verktyget inte prövats med verklig lönedata och att Word-utkastet bara
+  prövats i LibreOffice. De sista resterna av "lagstadgat" och "direktivet kräver" är omskrivna. Medlingsinstitutets
+  tal i ordlistan och Lika arbete har löneår och rapport (löneåret 2025: 9,9 och 4,4 procent), och BAS-posten säger
+  att verktyget *antar* lika breda poängintervall. Nytt vakttest `tests/juridiksprak.test.js`; `lagrum.md` säger att
+  ingen jurist granskar före lansering.
 - **Språklig genomgång av dokumenten.** Körguiden, pilotchecklistan, sammanfattningen för HR-chefer, datauttaget,
   README och guiden för att ta över verktyget säger *du*; orden följer gränssnittet; § 8 och § 9 som namn på flikar
   är borta; informationen till anställda hänvisar inte längre till direktivets artikel 13. `lagrum.md` har en rubrik

@@ -244,11 +244,11 @@
                             <div class="compliance-card na" id="comp-gap">
                                 <div class="comp-icon" id="comp-gap-icon">—</div>
                                 <div class="comp-body">
-                                    <div class="comp-label">Löneskillnad över 5 %
-                                        <span class="info-tip" data-tooltip="Antal BAS-intervall där kvinnors medianlön skiljer sig mer än 5 procent från mäns. Lagen kräver att du analyserar varje skillnad, också de mindre. När direktivet gäller ska en arbetsgivare som rapporterar löneskillnader (100 anställda eller fler) göra en gemensam lönebedömning om en skillnad på 5 procent eller mer saknar sakliga skäl och inte har rättats inom sex månader."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
+                                    <div class="comp-label">Säkerställd löneskillnad
+                                        <span class="info-tip" data-tooltip="Antal BAS-intervall där skillnaden mellan kvinnors och mäns medianlön är statistiskt säkerställd (95 % konfidensintervall som inte når lika lön) och minst 3 % (verktygets storleksgräns) — statusen Värt att granska. Lagen kräver att du analyserar varje skillnad, också de mindre. Markeringen ≥ 5 % i tabellen per BAS-intervall visar var den ojusterade skillnaden når 5 %: Direktivets regler om gemensam lönebedömning utgår från en skillnad på minst 5 %; markeringen visar var den nivån nås. Den är inte en bedömning."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
                                     </div>
                                     <div class="comp-value" id="comp-gap-val">Räknar …</div>
-                                    <div class="comp-sub">Gränsen i direktivets regler om gemensam lönebedömning</div>
+                                    <div class="comp-sub">Säkerställd och minst 3 %</div>
                                     <a href="#" class="comp-lank" data-go-to-tab="struktur" data-go-to-anchor="avsnitt-ls-bas" aria-label="Visa löneskillnad per BAS-intervall i Lönestruktur">Visa</a>
                                 </div>
                             </div>
@@ -433,7 +433,7 @@
                                         <li><strong>BAS-intervall</strong> — en bokstav per rad; alla intervall ingår, även chefernas</li>
                                         <li><strong>AID / Yrkesgrupp</strong> — yrkeskod + benämning</li>
                                         <li><strong>Månadslön</strong> — heltidsekvivalent</li>
-                                        <li><strong>Ålder</strong></li>
+                                        <li><strong>Ålder</strong> <em>(valfri, rekommenderad)</em> — utan ålder körs analysen utan åldersjustering och Ålder &amp; karriär visas inte</li>
                                         <li><strong>Kön</strong> — Kvinna / Man</li>
                                         <li><strong>Poäng</strong> <em>(valfri)</em> — arbetsvärderingspoäng per befattning; används i stället för BAS-intervallet som mått på kraven i Likvärdigt arbete</li>
                                     </ul>
@@ -573,7 +573,7 @@
                 <!-- Struktur & EU-rapport Tab -->
                 <div id="view-struktur" class="view-panel dold">
                     <div class="flik-intro">
-                         <span class="info-tip" data-tooltip="Lönetransparensdirektivet kräver att arbetsgivare med 100 anställda eller fler stegvis rapporterar de här måtten. Sverige har ännu inte infört direktivet, och någon svensk tidplan finns inte."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
+                         <span class="info-tip" data-tooltip="Lönetransparensdirektivet har regler om att arbetsgivare med 100 anställda eller fler stegvis rapporterar de här måtten. Sverige har ännu inte infört direktivet, och någon svensk tidplan finns inte."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
                         <strong>Varför finns skillnaden där den finns?</strong> Här ser du om kvinnor och män är ojämnt fördelade mellan BAS-intervallen, var i löneskalan skillnaden är störst och hur könen fördelar sig över lönekvartilerna. Det är också de mått som större arbetsgivare ska rapportera när direktivet gäller.
                     </div>
                     <div id="st-urval" class="urvalsrad"></div>
@@ -632,7 +632,7 @@
                         <summary>Bakgrund: löneskillnaden i samhället och i organisationen</summary>
                         <div class="bakgrund-content">
                             <p><strong>Löneskillnaden i samhället</strong> är skillnaden mellan kvinnors och mäns genomsnittslöner på hela arbetsmarknaden. Den är inte samma sak som löneskillnaderna i organisationen. En stor del av den förklaras av att arbetsmarknaden är <strong>könsuppdelad</strong>: kvinnor och män arbetar ofta i olika yrken och sektorer med olika lönenivåer.</p>
-                            <p>Enligt Medlingsinstitutet var kvinnors lön 2024 ungefär 90 procent av mäns, alltså en skillnad på omkring 10 procent. Efter standardvägning för yrke, sektor, utbildning, ålder och arbetstid återstod en <em>oförklarad</em> skillnad på <strong>4,6 procent</strong>. Medlingsinstitutet betonar att den är oförklarad <em>i statistisk mening</em> och <strong>inte ett mått på diskriminering</strong>. Den säger heller <strong>inget</strong> om kvinnor och män som gör lika eller likvärdigt arbete i <em>din</em> organisation har olika lön. Det är det lönekartläggningen handlar om.</p>
+                            <p>Enligt Medlingsinstitutets rapport <em>Löneskillnaden mellan kvinnor och män 2025</em> (2026) var kvinnors lön löneåret 2025 ungefär 90 procent av mäns, en skillnad på 9,9 procent. Efter standardvägning för yrke, sektor, utbildning, ålder och arbetstid återstod en <em>oförklarad</em> skillnad på <strong>4,4 procent</strong>. Medlingsinstitutet betonar att den är oförklarad <em>i statistisk mening</em> och <strong>inte ett mått på diskriminering</strong>. Den säger heller <strong>inget</strong> om kvinnor och män som gör lika eller likvärdigt arbete i <em>din</em> organisation har olika lön. Det är det lönekartläggningen handlar om.</p>
                             <p>Diagrammen i fliken visar organisationens struktur: hur könsfördelningen ser ut mellan BAS-intervallen och var i lönefördelningen skillnaderna finns. Det hjälper dig förstå <strong>varför</strong> en skillnad uppstår. Ofta är orsaken strukturell (segregering) och inte en osaklig löneskillnad inom lika arbete.</p>
                             <h3>Oförklarad skillnad är inte samma sak som osaklig skillnad</h3>
                             <p>Regressionen räknar bort ålder och BAS-intervall. Det som blir kvar är den <strong>oförklarade</strong> löneskillnaden. Att en skillnad är oförklarad betyder bara att den <strong>inte fångas av de variablerna</strong>, inte att den beror på kön eller är diskriminering.</p>
@@ -653,7 +653,7 @@
                         <p class="avsnitt-inledning">En rad per BAS-intervall: kvinnors och mäns medianlön, skillnaden och kvoten. Använd den för att se var i organisationen du bör titta närmare — stora skillnader i små grupper kan vara slump, små skillnader i stora grupper sällan.</p>
                         <div class="diagramkort" id="la-huvuddiagram">
                             <h3 class="diagramkort-rubrik">Kvinnors och mäns lön per BAS-intervall</h3>
-                            <p class="diagramkort-forklaring">En rad per BAS-intervall där båda könen når minsta gruppstorlek. Punkten visar kvinnors medianlön i procent av mäns, och strecket det 95-procentiga konfidensintervallet. Linjen är lika lön (100 %) och det skuggade fältet 95–105 % (gränsen 5 procent). Når strecket fram till linjen kan skillnaden bero på slumpen.</p>
+                            <p class="diagramkort-forklaring">En rad per BAS-intervall där båda könen når minsta gruppstorlek. Punkten visar kvinnors medianlön i procent av mäns, och strecket det 95-procentiga konfidensintervallet. Linjen är lika lön (100 %) och det skuggade fältet 97–103 % (statusens storleksgräns 3 %). Når strecket fram till linjen kan skillnaden bero på slumpen. Statusen Värt att granska kräver att strecket inte når linjen och att skillnaden är minst 3 %; markeringen ≥ 5 % visar var den ojusterade skillnaden når 5 %.</p>
                             <div class="table-container">
                                 <table id="la-oversikt" class="data-table la-oversikt">
                                     <thead>
@@ -666,6 +666,7 @@
                                             <th scope="col" class="la-oversikt-skala" data-export-skip data-export-utelamna data-no-sort id="la-oversikt-skala"></th>
                                             <th scope="col" class="tal" data-export-label="Kvinnors median i % av männens (100 % = lika lön)">Kvinnors lön i % av mäns</th>
                                             <th scope="col" data-export-label="Status">Status</th>
+                                            <th scope="col" data-kol="direktiv" class="t-mitt" data-export-label="Ojusterad löneskillnad ≥ 5 %" title="Direktivets regler om gemensam lönebedömning utgår från en skillnad på minst 5 %; markeringen visar var den nivån nås. Den är inte en bedömning.">≥ 5 %</th>
                                         </tr>
                                     </thead>
                                     <tbody></tbody>
@@ -690,7 +691,7 @@
                         </div>
                         <div class="card-header">
                         
-                            <p class="text-dampad-sm lh-1_55 marg-t-4">Tabellen visar BAS-intervall där medianlönen för kvinnor och män skiljer sig mer än 5 procent. Procentvärdet är kvinnors lön som andel av mäns (100 % = lika lön, 95 % = kvinnor tjänar 5 procent mindre). När direktivet gäller kan en skillnad på 5 procent eller mer leda till en <em>gemensam lönebedömning</em> hos en arbetsgivare som rapporterar löneskillnader (100 anställda eller fler), om den inte har sakliga skäl och inte rättas inom sex månader. Lagen kräver ändå att du analyserar varje skillnad, också de mindre.</p>
+                            <p class="text-dampad-sm lh-1_55 marg-t-4">Tabellen visar kvinnors och mäns medianlön per BAS-intervall. Procentvärdet är kvinnors lön som andel av mäns (100 % = lika lön, 95 % = kvinnor tjänar 5 procent mindre). Markeringen <span class="direktiv-bricka" title="Direktivets regler om gemensam lönebedömning utgår från en skillnad på minst 5 %; markeringen visar var den nivån nås. Den är inte en bedömning.">≥ 5 %</span> bredvid talet är ingen status: Direktivets regler om gemensam lönebedömning utgår från en skillnad på minst 5 %; markeringen visar var den nivån nås. Den är inte en bedömning. Lagen kräver att du analyserar varje skillnad, också de mindre.</p>
                         </div>
                         <div class="table-container">
                             <table id="paygap-table" class="data-table">
@@ -1150,8 +1151,8 @@
                 <!-- Lika arbete: yrkesgrupperna först -->
                 <div id="view-lika-yrken" class="view-panel dold">
                     <div class="flik-intro">
-                        <strong>Samma jobb, olika lön?</strong> <span class="info-tip" data-tooltip="Gränsen 5 procent kommer från lönetransparensdirektivets regler om gemensam lönebedömning. Verktyget använder den för att visa var du kan börja; lagen kräver att du analyserar varje skillnad."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
-                        Diskrimineringslagen kräver att du analyserar varje löneskillnad mellan kvinnor och män som gör lika arbete (3 kap.). Här jämförs kvinnors och mäns lön inom samma yrkesgrupp. Verktyget markerar grupper med en skillnad över 5 procent och visar om markeringen håller om en eller två personer tas bort. Därefter kommer personer att granska och tabellerna per AID-kod och BAS-intervall. Löneskillnaden och könsfördelningen per BAS-intervall, och hur mycket som kvarstår när ålder och BAS-intervall räknats bort, står i Lönestruktur.
+                        <strong>Samma jobb, olika lön?</strong> <span class="info-tip" data-tooltip="Statusen Värt att granska betyder att skillnaden är statistiskt säkerställd och minst 3 % (verktygets storleksgräns). Markeringen ≥ 5 % visar var den ojusterade skillnaden når 5 %: Direktivets regler om gemensam lönebedömning utgår från en skillnad på minst 5 %; markeringen visar var den nivån nås. Den är inte en bedömning. Lagen kräver att du analyserar varje skillnad."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
+                        Diskrimineringslagen kräver att du analyserar varje löneskillnad mellan kvinnor och män som gör lika arbete (3 kap.). Här jämförs kvinnors och mäns lön inom samma yrkesgrupp. Grupper med en statistiskt säkerställd skillnad på minst 3 % är värda att granska, och verktyget visar om statusen håller om en eller två personer tas bort. Markeringen ≥ 5 % visar var den ojusterade skillnaden når 5 %. Därefter kommer personer att granska och tabellerna per AID-kod och BAS-intervall. Löneskillnaden och könsfördelningen per BAS-intervall, och hur mycket som kvarstår när ålder och BAS-intervall räknats bort, står i Lönestruktur.
                     </div>
                     <div id="la-topp">
                         <p id="la-urval" class="urvalsrad" role="status"></p>
@@ -1162,13 +1163,13 @@
                         <div class="card-header">
                         
                             <p class="text-dampad-sm lh-1_6 marg-t-4">
-                                Tabellen jämför medianlönen för kvinnor och män inom samma yrkesgrupp – så kallat <em>lika arbete</em> (samma AID-kod). Lagen kräver att du analyserar varje skillnad. Skillnader över 5 procent markeras för att du ska börja där. Pröva om skillnaden har <strong>sakliga skäl</strong>, till exempel dokumenterad erfarenhet eller ansvar. Kan den inte förklaras med sakliga skäl ska den åtgärdas.
+                                Tabellen jämför medianlönen för kvinnor och män inom samma yrkesgrupp – så kallat <em>lika arbete</em> (samma AID-kod). Lagen kräver att du analyserar varje skillnad. Skillnader som är statistiskt säkerställda (utanför slumpens gränser för gruppen) och minst 3 % (verktygets storleksgräns) är värda att granska, och där börjar du. Pröva om skillnaden har <strong>sakliga skäl</strong>, till exempel dokumenterad erfarenhet eller ansvar. Kan den inte förklaras med sakliga skäl ska den åtgärdas.
                             </p>
                             <p class="text-dampad-sm lh-1_55 marg-t-8">
                                 <strong>Så läser du skalan:</strong> &nbsp;
-                                <span class="farg-ok fw-600"><svg class="ikon ikon-bock" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg> Balanserat (≤ 3 %)</span> – inget som sticker ut · &nbsp;
-                                <span class="farg-varning fw-600"><svg class="ikon ikon-oga" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg> Följ upp (3–5 %)</span> – värt att hålla uppsikt · &nbsp;
-                                <span class="farg-granska fw-600"><svg class="ikon ikon-sok" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg> Värt att granska (över 5 %)</span> – pröva om skillnaden har sakliga skäl.
+                                <span class="farg-ok fw-600"><svg class="ikon ikon-bock" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg> Balanserat</span> – under 3 % och inte säkerställd · &nbsp;
+                                <span class="farg-varning fw-600"><svg class="ikon ikon-oga" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg> Följ upp</span> – minst 3 % men inte säkerställd, eller säkerställd under 3 %; håll uppsikt · &nbsp;
+                                <span class="farg-granska fw-600"><svg class="ikon ikon-sok" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg> Värt att granska</span> – säkerställd och minst 3 %; pröva om skillnaden har sakliga skäl. Markeringen <span class="direktiv-bricka" title="Direktivets regler om gemensam lönebedömning utgår från en skillnad på minst 5 %; markeringen visar var den nivån nås. Den är inte en bedömning.">≥ 5 %</span> i egen kolumn är ingen status: den visar var den ojusterade skillnaden når 5 %.
                             </p>
                         
                         </div>
@@ -1183,13 +1184,14 @@
                                 <thead>
                                     <tr>
                                         <th data-kol="yrke" data-export-label="Yrkesgrupp (AID + benämning)">Yrkesgrupp</th>
-                                        <th data-kol="status" class="text" data-export-label="Status (Balanserat / Följ upp / Värt att granska)">Status</th>
+                                        <th data-kol="status" class="text" data-export-label="Status (Värt att granska / Följ upp / Balanserat / Går ej att bedöma)">Status</th>
                                         <th data-kol="antal" data-export-label="Antal personer (kvinnor/män)">Antal (Kv/Mä)</th>
                                         <th data-kol="dominans" data-export-label="Könsfördelning (kvinnodominerad / mansdominerad / blandad)">Dominans</th>
                                         <th data-kol="nationellt" data-export-label="Andel kvinnor i yrket nationellt (SKR:s personalstatistik)" title="Andelen kvinnor i samma yrke (AID-kod) nationellt, ur SKR:s personalstatistik (period i Om verktyget). Vilken sektor som räknas väljer du i Inställningar. Ett referensvärde att jämföra organisationens könsfördelning med.">Kvinnor nationellt</th>
                                         <th data-kol="mediankv" data-export-label="Median kvinnor (kr/mån)">Median kvinnor</th>
                                         <th data-kol="medianma" data-export-label="Median män (kr/mån)">Median män</th>
                                         <th data-kol="kvot" data-export-label="Kvinnors median i % av mäns">Kvinnors median i % av mäns</th>
+                                        <th data-kol="direktiv" class="t-mitt" data-export-label="Ojusterad löneskillnad ≥ 5 %" title="Direktivets regler om gemensam lönebedömning utgår från en skillnad på minst 5 %; markeringen visar var den nivån nås. Den är inte en bedömning.">≥ 5 %</th>
                                         <th data-kol="detalj" class="t-mitt" data-no-sort data-export-skip>Detalj</th>
                                     </tr>
                                 </thead>
@@ -1247,7 +1249,7 @@
                             </ul>
                             <h3>Inför en gemensam lönebedömning</h3>
                             <ul>
-                                <li>Lista yrkesgrupperna märkta <em>Värt att granska</em>.</li>
+                                <li>Lista yrkesgrupperna märkta <em>Värt att granska</em>: skillnaden är statistiskt säkerställd och minst 3 % (verktygets storleksgräns). Markeringen ≥ 5 % visar var den ojusterade skillnaden når 5 %.</li>
                                 <li>Dokumentera sakliga skäl för varje grupp innan den gemensamma lönebedömningen; <em>Personer att granska</em> under tabellen pekar på enskilda löner som sticker ut.</li>
                                 <li>Till facket: välj urvalet <em>Facklig dialog</em> under <em>Rapportens innehåll</em> i Exportera.</li>
                             </ul>
@@ -1259,7 +1261,7 @@
                             </ul>
                             <h3>Tolkningstips</h3>
                             <ul>
-                                <li>Statistiskt säkerställd (p under 0,05) betyder att en så stor skillnad sällan uppstår av slumpen när ingen finns — inte att den är stor. Om den är stor nog att spela roll är en annan fråga; verktyget markerar skillnader över 5 procent.</li>
+                                <li>Statistiskt säkerställd (p under 0,05) betyder att en så stor skillnad sällan uppstår av slumpen när ingen finns — inte att den är stor. Om den är stor nog att spela roll är en annan fråga; statusen Värt att granska kräver därför också att skillnaden är minst 3 % (verktygets storleksgräns), och den praktiska betydelsen är din bedömning.</li>
                                 <li><em>Lönefördelningen</em> i regressionskortet visar om skillnaden är störst bland de högst betalda (glastak) eller de lägst betalda (klibbigt golv).</li>
                                 <li>Kvoten 95 % (kvinnors lön av mäns) och skillnaden −5 % är samma tal; regressionskortet använder skillnaden så att den kan jämföras med modellens.</li>
                             </ul>
@@ -1427,12 +1429,13 @@
                                     <div class="stat-val" id="prio-stat-over">0</div>
                                 </div>
                                 <div class="stat-box" data-tooltip="Summa av kostnaden för att lyfta alla grupper under referensen, beräknat som: avvikelse (kr/månad) × antal månader × (1 + PO-påslag) × antal personer. Ändra period och PO-påslag under Inställningar.">
-                                    <div class="stat-etikett">Total åtgärdskostnad
+                                    <div class="stat-etikett">Kostnad att nå referensen
                                     </div>
                                     <div class="stat-val" id="prio-stat-cost">–</div>
                                     <div class="stat-under" id="prio-stat-cost-period"></div>
                                 </div>
                             </div>
+                            <p class="text-dampad-xs lh-1_5 marg-b-12" id="prio-stat-cost-not"><strong>Kostnad att nå referensen:</strong> Vad det kostar att lyfta grupper under referensen till dess median. Detta är löneläget mot er referens, inte lönekartläggningens könsskillnader — dem visar Lika arbete och Löneöversyn. <span id="prio-stat-cost-po"></span></p>
                             <div class="card marg-b-24">
                                 <div class="chart-header rad-bryt topp gap-16 mellan marg-b-12">
                                     <div class="flex-1 min-bredd-280">
@@ -1504,7 +1507,7 @@
                                                 </th>
                                                 <th data-kol="yrke" class="sticky-col-2" scope="col" data-export-label="Yrkesgrupp (AID + benämning)">Yrkesgrupp</th>
                                                 <th data-kol="bas" scope="col" data-export-label="BAS-intervall">BAS</th>
-                                                <th data-kol="status" class="t-mitt" scope="col" data-export-label="Prioriteringsstatus (Börja här / Följ upp / Balanserat / Över referens)">Status</th>
+                                                <th data-kol="status" class="t-mitt" scope="col" data-export-label="Läge mot referensen (Börja här / Under referens / Nära referens, under / Nära referens / Över referens)">Status</th>
                                                 <th data-kol="antal" class="t-hoger" scope="col" data-export-label="Antal personer i gruppen">Antal</th>
                                                 <th data-kol="kvma" class="t-mitt" scope="col" data-export-label="Antal kvinnor/män">Kv/Mä</th>
                                                 <th data-kol="median" class="t-hoger" scope="col" data-export-label="Median organisationen (kr/mån)">Median</th>
@@ -1517,7 +1520,7 @@
                                                 <th data-kol="kostnadpers" class="t-hoger" scope="col" data-export-label="Justeringskostnad per person (kr/mån)">Kostnad/pers (kr/mån)
                                                     <span class="info-tip" data-tooltip="Genomsnittlig lönehöjning per person/månad om gruppen lyfts till referensens median. Underlättar val mellan stora/billiga och små/dyra grupper."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
                                                 </th>
-                                                <th data-kol="atgardskostnad" class="t-hoger" scope="col" data-export-label="Total åtgärdskostnad (kr för perioden, inkl PO-påslag)">Åtgärds<wbr>kostnad
+                                                <th data-kol="atgardskostnad" class="t-hoger" scope="col" data-export-label="Kostnad att nå referensen (kr för perioden, inkl. PO-påslag)">Kostnad att nå<wbr> referensen
                                                     <span class="info-tip" data-tooltip="Total kostnad för att lyfta hela gruppen till referensens medianlön (avvikelse kr/månad × antal månader × (1 + PO-påslag) × antal personer). Period och PO-påslag ändrar du under Inställningar."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
                                                 </th>
                                                 <th data-kol="brist" class="t-mitt" scope="col" data-no-sort data-export-label="Bristyrke (Ja/Nej)">Brist
@@ -1538,8 +1541,8 @@
                             <div class="card marg-b-24">
                                 <div class="chart-header rad-bryt topp gap-12 mellan marg-b-12">
                                     <div class="flex-1 min-bredd-280">
-                                        <h3 class="fs-lg marg-0">Så växer åtgärdskostnaden
-                                            <span class="info-tip" data-tooltip="Visar hur stor del av den totala åtgärdskostnaden som ligger i de högst prioriterade grupperna. Ofta står en femtedel av grupperna för det mesta av kostnaden; börjar du med dem räcker pengarna längst."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
+                                        <h3 class="fs-lg marg-0">Så växer kostnaden att nå referensen
+                                            <span class="info-tip" data-tooltip="Visar hur stor del av den totala kostnaden att nå referensen som ligger i de högst prioriterade grupperna. Ofta står en femtedel av grupperna för det mesta av kostnaden; börjar du med dem räcker pengarna längst."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
                                         </h3>
                                         <p class="text-dampad-xs lh-1_5 marg-4-0-0">
                                             Staplarna visar kostnaden för perioden per yrkesgrupp, sorterade efter prioriteringsindex. Linjen visar hur stor del av den totala kostnaden de första grupperna står för.
@@ -1581,7 +1584,7 @@
                                     </ul>
                                     <h3>Tolkningstips</h3>
                                     <ul>
-                                        <li>Storlek på bubbla = total åtgärdskostnad (inte antal personer)</li>
+                                        <li>Storlek på bubbla = kostnaden att nå referensen (inte antal personer)</li>
                                         <li>Med många grupper är lodräta axeln logaritmisk — små grupper syns ändå tydligt</li>
                                         <li>Justera vikterna under <em>Viktning av prioriteringsindex</em> i Inställningar (knappen Ändra ovan) om ledningen har andra prioriteringar</li>
                                     </ul>
@@ -1672,7 +1675,7 @@
                             <div class="falt">
                                 <label class="falt-etikett" for="forecast-rule-match">Vilka grupper</label>
                                 <select id="forecast-rule-match" class="form-select">
-                                    <option value="kvdom">Kvinnodominerade (mer än 60 %)</option>
+                                    <option value="kvdom">Kvinnodominerade (definitionen i Likvärdigt arbete)</option>
                                     <option value="underbas">Under medianen i sitt BAS-intervall</option>
                                     <option value="underp25">Under BAS-spannets nedre fjärdedel (P25)</option>
                                     <option value="all">Alla grupper</option>
@@ -2357,16 +2360,22 @@
             </header>
             <div class="glossary-content pad-18-22">
                 <h3 class="fs-md marg-0-0-8">Statusord</h3>
-                <p class="text-dampad-sm marg-0-0-8">En skillnad mellan kvinnors och mäns lön bedöms mot gränserna 3 och 5 %. Varje ord har samma färg i alla flikar, med samma märke i tabellerna (första kolumnen) och samma symbol i diagrammen (andra kolumnen).</p>
+                <p class="text-dampad-sm marg-0-0-8">En skillnad mellan kvinnors och mäns lön får sin status av statistisk signal: är den säkerställd, och är den minst 3 % (verktygets storleksgräns)? Varje ord har samma färg i alla flikar, med samma märke i tabellerna (första kolumnen) och samma symbol i diagrammen (andra kolumnen).</p>
                 <table class="tabell-samman fs-md marg-b-18 bredd-100p">
-                    <tr><td class="fk-cell fk-ikon"><span class="farg-ok"><svg class="ikon ikon-bock" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg></span></td><td class="fk-cell"><span class="farg-ok"><svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true" focusable="false"><circle cx="7" cy="7" r="5.5"/></svg></span></td><td><strong class="farg-ok">Balanserat</strong> — skillnaden är högst 3 %; inget som sticker ut</td></tr>
-                    <tr><td class="fk-cell fk-ikon"><span class="farg-varning"><svg class="ikon ikon-oga" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></span></td><td class="fk-cell"><span class="farg-varning"><svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true" focusable="false"><rect x="2" y="2" width="10" height="10" rx="1"/></svg></span></td><td><strong class="farg-varning">Följ upp</strong> — skillnaden är 3–5 %; håll uppsikt</td></tr>
-                    <tr><td class="fk-cell fk-ikon"><span class="farg-granska"><svg class="ikon ikon-sok" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></span></td><td class="fk-cell"><span class="farg-granska"><svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true" focusable="false"><path d="M7 1 13 7 7 13 1 7z"/></svg></span></td><td><strong class="farg-granska">Värt att granska</strong> — skillnaden är över 5 %; titta närmare och väg den mot sakliga skäl. Lila säger inte att något är fel</td></tr>
+                    <tr><td class="fk-cell fk-ikon"><span class="farg-ok"><svg class="ikon ikon-bock" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg></span></td><td class="fk-cell"><span class="farg-ok"><svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true" focusable="false"><circle cx="7" cy="7" r="5.5"/></svg></span></td><td><strong class="farg-ok">Balanserat</strong> — skillnaden är under 3 % och inte säkerställd; inget som sticker ut</td></tr>
+                    <tr><td class="fk-cell fk-ikon"><span class="farg-varning"><svg class="ikon ikon-oga" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></span></td><td class="fk-cell"><span class="farg-varning"><svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true" focusable="false"><rect x="2" y="2" width="10" height="10" rx="1"/></svg></span></td><td><strong class="farg-varning">Följ upp</strong> — skillnaden är minst 3 % men inte säkerställd, eller säkerställd men under 3 %; håll uppsikt</td></tr>
+                    <tr><td class="fk-cell fk-ikon"><span class="farg-granska"><svg class="ikon ikon-sok" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></span></td><td class="fk-cell"><span class="farg-granska"><svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true" focusable="false"><path d="M7 1 13 7 7 13 1 7z"/></svg></span></td><td><strong class="farg-granska">Värt att granska</strong> — skillnaden är statistiskt säkerställd och minst 3 %; titta närmare och väg den mot sakliga skäl. Lila säger inte att något är fel</td></tr>
+                    <tr><td class="fk-cell fk-ikon"><span class="farg-dampad">–</span></td><td><strong>Går ej att bedöma</strong> — ett kön har för få personer för att pröva skillnaden</td></tr>
+                    <tr><td class="fk-cell fk-ikon"><span class="direktiv-bricka" title="Direktivets regler om gemensam lönebedömning utgår från en skillnad på minst 5 %; markeringen visar var den nivån nås. Den är inte en bedömning.">≥ 5 %</span></td><td><strong>Direktivmarkering</strong> — ingen status. Direktivets regler om gemensam lönebedömning utgår från en skillnad på minst 5 %; markeringen visar var den nivån nås. Den är inte en bedömning. Den står bara vid ojusterade löneskillnader.</td></tr>
                 </table>
 
                 <h3 class="fs-md marg-18-0-8">Bara i Prioritering</h3>
+                <p class="text-dampad-sm marg-0-0-8">Prioriteringen visar löneläget mot er referens, inte skillnaden mellan kvinnor och män, och har därför egna ord.</p>
                 <table class="tabell-samman fs-md marg-b-18 bredd-100p">
                     <tr><td class="fk-cell fk-ikon"><span class="farg-granska"><svg class="ikon ikon-nal" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 22s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/></svg></span></td><td><strong class="farg-granska">Börja här</strong> — översta nivån i rangordningen: tydlig avvikelse i en större grupp, ett bra ställe att börja</td></tr>
+                    <tr><td class="fk-cell fk-ikon"><span class="farg-granska"><svg class="ikon ikon-sok" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></span></td><td><strong class="farg-granska">Under referens</strong> — gruppens median ligger mer än granskningsgränsen under referensen, i en mindre grupp än för Börja här</td></tr>
+                    <tr><td class="fk-cell fk-ikon"><span class="farg-varning"><svg class="ikon ikon-oga" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></span></td><td><strong class="farg-varning">Nära referens, under</strong> — gruppens median ligger mellan granskningsgränsen och uppföljningsgränsen under referensen</td></tr>
+                    <tr><td class="fk-cell fk-ikon"><span class="farg-ok"><svg class="ikon ikon-bock" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg></span></td><td><strong class="farg-ok">Nära referens</strong> — gruppens median ligger nära referensen</td></tr>
                     <tr><td class="fk-cell fk-ikon"><span class="farg-info"><svg class="ikon ikon-info" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span></td><td><strong class="farg-info">Över referens</strong> — gruppen ligger över referensen; ett läge, ingen allvarlighetsgrad</td></tr>
                 </table>
 
@@ -2375,7 +2384,7 @@
                     <tr><td class="fk-cell fk-ikon"><span class="farg-dampad"><svg class="ikon ikon-las" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></td><td><strong>Utelämnat (minsta gruppstorlek)</strong> — gruppen har färre än <span data-k-troskel>10</span> personer och redovisas inte per grupp; den räknas i stället upp i noten under tabellen</td></tr>
                     <tr><td class="fk-cell fk-ikon"><span><svg class="ikon ikon-kugghjul" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/></svg></span></td><td><strong>Anpassad konfiguration aktiv</strong> — tröskelvärden eller viktningar har justerats</td></tr>
                     <tr><td class="fk-cell fk-ikon"><span><svg class="ikon ikon-kolv" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 3h6"/><path d="M10 3v6l-5 9a2 2 0 0 0 1.8 3h10.4a2 2 0 0 0 1.8-3l-5-9V3"/><path d="M7.5 15h9"/></svg></span></td><td><strong>Testdata</strong> — syntetisk data för att pröva verktyget</td></tr>
-                    <tr><td class="fk-cell"><span class="provruta bak-kritisk"></span></td><td><strong>Rött</strong> — fel i underlaget, och tal som går över en gräns, till exempel en oförklarad skillnad över 5 % i regressionen</td></tr>
+                    <tr><td class="fk-cell"><span class="provruta bak-kritisk"></span></td><td><strong>Rött</strong> — fel i underlaget, och tal som går över en gräns, till exempel en stor skillnad i livscykelanalysen</td></tr>
                 </table>
 
                 <h3 class="fs-md marg-18-0-8">Pilar och numreringar</h3>
@@ -2476,17 +2485,17 @@
                             <label>
                                 <span>Granskningsgräns (under referens)</span>
                                 <input type="number" id="prio-cfg-atgard" value="-5" step="0.5" min="-50" max="0">
-                                <small>Värt att granska när lönen ligger mer än så här många procent <strong>under</strong> referensen.</small>
+                                <small>Under referens när lönen ligger mer än så här många procent <strong>under</strong> referensen.</small>
                             </label>
                             <label>
                                 <span>"Börja här"-tröskel (antal personer)</span>
                                 <input type="number" id="prio-cfg-akutN" value="10" step="1" min="1" max="500">
-                                <small>Värt att granska blir Börja här när gruppen har fler personer än så här.</small>
+                                <small>Under referens blir Börja här när gruppen har fler personer än så här.</small>
                             </label>
                             <label>
                                 <span>Uppföljningsgräns</span>
                                 <input type="number" id="prio-cfg-bevaka" value="-2" step="0.5" min="-50" max="0">
-                                <small>Följ upp när lönen ligger mer än så här många procent under referensen.</small>
+                                <small>Nära referens, under när lönen ligger mer än så här många procent under referensen.</small>
                             </label>
                             <label>
                                 <span>Över referens-gräns</span>

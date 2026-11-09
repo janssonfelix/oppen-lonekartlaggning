@@ -17,6 +17,15 @@
  *       Blinder-Oaxaca .................................... två statsmodels-OLS (BAS som indikatorer, ADR-53) + komponentformeln
  *     Varken statsmodels eller R var installerat på maskinen; statsmodels/scipy installerades i en
  *     tillfällig venv enbart för att räkna fram fixturen. CI behöver inte Python.
+ *   - Kvantilregressionen på huvudmodellens design (ADR-63, 2026-11-08): tests/fixtures/stat-referens-kvantil.json
+ *     har den exakta LP-lösningen för indikatormodellen [1, kvinna, ålder − medel, en indikator per BAS B–F]
+ *     (nyckeln standard) och för bara BAS [1, kvinna, BAS B–F] (baraBas), vid τ = 0,1 / 0,5 / 0,9. Python med
+ *     scipy fanns inte på maskinen, så LP:n (samma formulering som rq() i ref-stat-referens.py: min Σ τu + (1−τ)v,
+ *     Xβ⁺ − Xβ⁻ + u − v = y) löstes med en tabellsimplex med Blands regel i ett engångsskript i Node, som inte är
+ *     incheckat. Lösningen som simplexen stannar i interpolerar k observationer; β löstes om ur dem i dubbel
+ *     precision. Kontroller i skriptet: alla reducerade kostnader ≥ 0 (optimalitetsvillkoret), ingen störning
+ *     ±1e-6/±1e-4 av någon koordinat sänker förlusten, och samma skript gav på den gamla rangdesignen ovan
+ *     scipy/HiGHS-lösningen inom 2e-15 i varje β och i förlusten.
  *
  * Uppmätt avvikelse i verktyget (toleranserna nedan speglar den):
  *   - fitOLS: β, vcovClassic, vcovHC3, R², σ² inom relativt 1e-12 av statsmodels.
@@ -27,6 +36,11 @@
  *     lösningen vid τ = 0,5 men under 0,002 procentenheter vid τ = 0,1 och 0,9. Under den
  *     rapporteringsgräns på 0,5 procentenheter uppdraget satte; algoritmen är oförändrad.
  *   - Blinder-Oaxaca: komponenterna inom 1e-12.
+ *   - quantileRegressionAtAllTau på indikatormodellen: könskoefficienten inom 0,001 procentenheter av LP-lösningen
+ *     (bara BAS: 0,012 vid τ = 0,1), förlusten inom relativt 4e-5. Vid τ = 0,5 är LP-optimum inte unikt (medianen i
+ *     ett intervall med jämnt antal personer är ett spann), så IRLS landar på en annan punkt på samma optimala yta:
+ *     intercept och BAS-koefficienter avviker upp till 0,012 men förlusten bara relativt 2e-7. Där jämförs därför
+ *     könskoefficienten och förlusten, inte varje β.
  */
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
@@ -40,6 +54,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const las = f => JSON.parse(readFileSync(join(here, 'fixtures', f), 'utf8'));
 const fx = las('stat-referens.json');
 const ref = las('stat-referens-varden.json');
+const refKv = las('stat-referens-kvantil.json');
 
 const X = fx.design.map(d => [1, d.kv, d.alderC, d.basC]);
 const y = fx.design.map(d => d.y);
@@ -140,15 +155,52 @@ describe('kvantilregression (IRLS i app-scope) mot exakt LP-lösning (≡ quantr
             expect(forlust / ref.quantreg[tau].loss - 1).toBeLessThan(1e-3);
         });
     }
-    it('runQuantileRegressionAtAllTau på råraderna ger samma könsprocent som LP-referensen', () => {
+    it('runQuantileRegressionAtAllTau på råraderna ger samma könsprocent som LP-referensen för indikatormodellen (ADR-63)', () => {
         const w = createAppWindow();
         w.__state.data = fx.rows.map(r => ({ ...r }));
         const ut = w.eval('runQuantileRegressionAtAllTau()');
         expect(ut.n).toBe(100);
         for (const r of ut.results) {
             expect(r.error).toBeUndefined();
-            expect(Math.abs(r.konPct - pct(ref.quantreg[String(r.tau)].beta[1]))).toBeLessThan(tolKonPp);
+            expect(Math.abs(r.konPct - pct(refKv.standard[String(r.tau)].beta[1]))).toBeLessThan(tolKonPp);
         }
+        const lp = t => pct(refKv.standard[t].beta[1]);
+        expect(Math.abs(ut.diffP90P10 - (lp('0.9') - lp('0.1')))).toBeLessThan(2 * tolKonPp);
+    });
+});
+
+describe('kvantilregressionen på indikatormodellen mot exakt LP-lösning (ADR-63)', () => {
+    // Samma toleranser som ovan. Vid τ = 0,5 är LP-optimum inte unikt (se filhuvudet): där prövas könskoefficienten och förlusten.
+    const tolBeta = 3e-3, tolKonPp = 0.3;
+    const y0 = fx.rows.map(r => Math.log(r.lon));
+    const design = medAlder => fx.rows.map(r => [1, r.kon === 'kvinna' ? 1 : 0, ...(medAlder ? [r.alder - refKv.ageMean] : []),
+        ...refKv.basList.slice(1).map(b => (r.bas === b ? 1 : 0))]);
+    for (const [namn, medAlder] of [['standard', true], ['baraBas', false]]) {
+        for (const tau of ['0.1', '0.5', '0.9']) {
+            it(`${namn}, τ = ${tau}: könskoefficienten inom ${tolKonPp} procentenheter, förlusten vid optimum${tau === '0.5' ? '' : `, alla β inom ${tolBeta}`}`, () => {
+                const Xd = design(medAlder);
+                const w = createAppWindow();
+                w.__X = Xd; w.__y = y0;
+                const fit = w.eval(`_quantileRegression(window.__X, window.__y, ${tau})`);
+                const rb = refKv[namn][tau].beta;
+                expect(rb).toHaveLength(refKv[namn].kolumner.length);
+                if (tau !== '0.5') rb.forEach((b, i) => expect(Math.abs(fit.beta[i] - b)).toBeLessThan(tolBeta));
+                expect(Math.abs(pct(fit.beta[1]) - pct(rb[1]))).toBeLessThan(tolKonPp);
+                const forlust = y0.reduce((s, yi, i) => {
+                    const r = yi - Xd[i].reduce((a, v, j) => a + v * fit.beta[j], 0);
+                    return s + (r >= 0 ? +tau * r : (+tau - 1) * r);
+                }, 0);
+                expect(forlust).toBeGreaterThanOrEqual(refKv[namn][tau].loss - 1e-9);
+                expect(forlust / refKv[namn][tau].loss - 1).toBeLessThan(1e-3);
+            });
+        }
+    }
+    it('appens design är indikatormodellen: kvantilDesign ger fixturens kolumner', () => {
+        const w = createAppWindow();
+        w.__rows = fx.rows.map(r => ({ ...r }));
+        const d = w.eval('_rgKvantilDesign(window.__rows, { bas: true, alder: true, yrkesgrupp: false, skal: "" })');
+        expect(d.kolumner).toEqual(refKv.standard.kolumner);
+        expect(d.X).toEqual(design(true));
     });
 });
 

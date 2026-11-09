@@ -237,7 +237,7 @@ function _lpRenderBandMap(model) {
 // spann i Löneläget (42-jamforelse.js) delar klasserna, så att samma färg betyder samma sak i båda.
 /** @returns {Array<[string, string, (a: number) => boolean]>} */
 function _lpKonsdominans() {
-    return [['Kvinnodominerad', PALETTE.kon.kvinna, a => a >= 60], ['Mansdominerad', PALETTE.kon.man, a => a <= 40], ['Blandad', PALETTE.semantic.neutral, a => a > 40 && a < 60]];
+    return [['Kvinnodominerad', PALETTE.kon.kvinna, a => konsklassNu(a) === 'kvinnodominerad'], ['Mansdominerad', PALETTE.kon.man, a => konsklassNu(a) === 'mansdominerad'], ['Blandad', PALETTE.semantic.neutral, a => konsklassNu(a) === 'blandad']];
 }
 // Punktens förskjutning i sidled ur gruppens identitet, inte slump: punkterna ska ligga still mellan omritningar.
 function _lpForskjutning(aid, bas) { return ((_rngHashSeed(aid + '|' + bas) % 1000) / 1000 - 0.5) * 0.36; }

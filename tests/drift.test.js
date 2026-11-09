@@ -40,6 +40,7 @@ import * as libOp from '../src/lib/organisationspaket.js';
 import * as libIp from '../src/lib/importprofiler.js';
 import * as libFk from '../src/lib/forhandskontroll.js';
 import * as libAg from '../src/lib/attgora.js';
+import * as libSts from '../src/lib/status.js';
 import * as libAidEt from '../src/lib/aid-etiketter.js';
 import * as libAid from '../src/lib/aid.js';
 import * as libSk from '../src/lib/sektor.js';
@@ -92,7 +93,7 @@ const allEntries = MODULES.flatMap(m => Object.keys(m.expose));
 const M = new Function(`${mirrorsSrc}\n;return { ${[...allAliases, ...MODULES.map(m => m.ns)].join(', ')} };`)();
 const libByFile = { 'stat.js': libStat, 'loneoversyn.js': libFc, 'struktur.js': libSt,
     'lonepolitik.js': libLp, 'rng.js': libRng, 'likvardighet.js': libLv, 'falt.js': libFalt, 'urval.js': libUrval, 'referens.js': libRef, 'datakvalitet.js': libDq, 'rapportunderlag.js': libRu, 'gapuppdelning.js': libGu, 'individflaggor.js': libIf, 'utforska.js': libUt, 'organisationspaket.js': libOp, 'attgora.js': libAg, 'aid-etiketter.js': libAidEt, 'aid.js': libAid, 'sektor.js': libSk, 'ansvar.js': libAn, 'aidkontroll.js': libAk, 'skr-personal.js': libSkrP, 'skrreferens.js': libSkrR, 'jamforelse.js': libJf, 'referenser.js': libRf, 'namn.js': libNamn, 'docx.js': libDocx, 'figur.js': libFigur, 'regression.js': libReg,
-    'prioritering.js': libPr, 'livscykel.js': libLc, 'organisationsfil.js': libOf, 'perbas.js': libPb, 'tabellrecept.js': libTr, 'arsbokslut.js': libAb, 'sakligaskal.js': libSak, 'aidbas.js': libAidbas, 'importprofiler.js': libIp, 'forhandskontroll.js': libFk };
+    'prioritering.js': libPr, 'livscykel.js': libLc, 'organisationsfil.js': libOf, 'perbas.js': libPb, 'tabellrecept.js': libTr, 'arsbokslut.js': libAb, 'sakligaskal.js': libSak, 'aidbas.js': libAidbas, 'importprofiler.js': libIp, 'forhandskontroll.js': libFk, 'status.js': libSts };
 
 describe('lib-speglar: 09-lib-speglar.js genereras ur src/lib/', () => {
     it('STALENESS: incheckad 09-lib-speglar.js är i synk med src/lib/ (kör gen-mirrors)', () => {
@@ -180,6 +181,9 @@ const appLVSrc = (() => {
 const makeAppLV = new Function('state', 'nationellAidKlass', '_lvComputePairs', `
     const kTroskel = () => state.kTroskel ?? 10;
     const kInstalld = kTroskel;
+    // Definitionen och jämförelsemängden ur 45-aid-bas-tabeller.js (ADR-60), lästa ur state som i appen.
+    const aidbasDefinition = () => state.likvardighet && state.likvardighet.kvDomDefinition === 'scb' ? 'scb' : 'do';
+    const lvJamforelse = () => state.likvardighet && state.likvardighet.jamforelse === 'mansdominerade' ? 'mansdominerade' : 'alla';
     // Talformatshjälparna ur 03-hjalpfunktioner.js: adaptern skriver diagnostik med dem.
     const svTal = (v, dec = 0) => Number(v).toFixed(dec).replace('.', ',');
     const svPct = (v, dec = 1) => svTal(v, dec) + ' %';
@@ -214,7 +218,7 @@ describe('§ 3:10: app.js delegerar till lib-spegeln', () => {
             statistik: [{ aid: '2000', bas: 'B', median: 35000 }],
             statistikHasKon: true,
             arbetsvardering: null,
-            likvardighet: { kvinnoTrosholdPct: 55, minGapPct: 3, topN: 20 }
+            likvardighet: { kvinnoTrosholdPct: 55, kvDomDefinition: 'scb', jamforelse: 'mansdominerade', minGapPct: 3, topN: 20 }
         };
         state.kTroskel = 15;
         makeAppLV(state, () => null, spion)();
@@ -223,7 +227,8 @@ describe('§ 3:10: app.js delegerar till lib-spegeln', () => {
         expect(sedd.statistik).toBe(state.statistik);
         expect(typeof sedd.scbKlass).toBe('function');
         // BAS-ordningen är fast (se §5 i teknisk-plan.md): ingen basRang skickas.
-        expect(sedd.opts).toEqual({ kvinnoTrosholdPct: 55, minGapPct: 3, topN: 20, k: 15 });
+        // Definitionen av kvinnodominerat och jämförelsemängden följer med (ADR-60).
+        expect(sedd.opts).toEqual({ kvinnoTrosholdPct: 55, kvDomDefinition: 'scb', jamforelse: 'mansdominerade', minGapPct: 3, topN: 20, k: 15 });
     });
 
     it('skickar med arbetsvärderingen i poäng-läge (#5)', () => {

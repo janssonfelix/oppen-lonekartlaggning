@@ -68,7 +68,7 @@ beforeAll(() => {
         __docxDocumentXml: () => _docxDelar(_utkastTillBlock(_buildDocumentationDraftHtml()), { titel: 'T', sidfot: 'S', skapad: '2026-01-01T00:00:00Z' })['word/document.xml'],
         __buildPrintReport: buildPrintReport,
         __excelBlad: () => ({ besked: excelAlltBlad(), bok: _excelAlltBok().SheetNames }),
-        __loadFixture: function() {
+        __loadFixture: function(utanAlder) {
             window.__resetSeed();
             // FAST dataset: 2 BAS × 2 yrken — kvinnodominerat + icke-kvinnodominerat
             // i varje BAS (ger § 3:10-par i BAS-läge), formelbaserade löner (ingen
@@ -77,7 +77,7 @@ beforeAll(() => {
             const add = (n, bas, aid, label, kon, lon0, step) => {
                 for (let i = 0; i < n; i++) rows.push({
                     bas, yrke: aid + ' ' + label, aid, yrkeLabel: label,
-                    lon: lon0 + i * step, alder: 30 + (i % 30), kon,
+                    lon: lon0 + i * step, alder: utanAlder ? 0 : 30 + (i % 30), kon,
                     poang: null, enhet: '1234'
                 });
             };
@@ -109,7 +109,7 @@ beforeAll(() => {
             renderPrioritering();
             generateBenchmark();
             renderStructure();
-            _hpDemoSkal();   // demots sakliga skäl på tre rader: tabellerna och bladet Sakliga skal låses också
+            _hpDemoSkal();   // demots sakliga skäl på tre rader: tabellerna och bladet Sakliga skäl låses också
             return rows.length;
         },
         __runExports: function() {
@@ -219,7 +219,7 @@ describe('golden: Excel-exporterna på fast dataset', () => {
 /**
  * Bladen som byggs ur flikarnas HTML-tabeller, cell för cell med typ och talformat. Tabellstädningen bestämde
  * tidigare inte celltypen själv utan lät kalkylbladsläsaren gissa, och skrev data-sort-value rakt över texten:
- *   - "86 %" tolkades som andelen 0.86 under en rubrik som säger procent (Loneskillnad, Konsskevhet, Prioritering);
+ *   - "86 %" tolkades som andelen 0.86 under en rubrik som säger procent (Löneskillnad, Könsskevhet, Prioritering);
  *   - "17/17", "14/3" och "15/8" i antalskolumnerna tolkades som datum (15 aug 2001 = 37117.9);
  *   - data-sort-value togs i stället för celltexten: gapet (6,4) under rubriken "kvinnors median i % av männens",
  *     andelen −0,0445 under "Avvikelse mot referens (%)", prioriteringsindexet under "Prioriteringsstatus",
@@ -239,30 +239,31 @@ describe('golden: bladen ur HTML-tabellerna bär cellerna som vyn visar dem (typ
         wb = win.__captured[filenames.find(f => /lonekartlaggning_komplett/.test(f))];
         expect(wb).toBeTruthy();
     });
-    it('Loneskillnad: kvoten som procenttal med procentformat, antalen som text, medianerna i kronor', () => {
-        expect(rad('Loneskillnad', 0)).toEqual(['BAS-intervall', 'Antal personer (kvinnor/män)', 'Kvinnors median i % av männens (100 % = lika lön)', 'Median kvinnor (kr/mån)', 'Median män (kr/mån)']);
-        expect(cell('Loneskillnad', 'B2')).toMatchObject({ t: 's', v: '17/17' });      // inte datumet 17 (ogiltigt) eller ett tal
-        expect(cell('Loneskillnad', 'C2')).toMatchObject({ t: 'n', v: 86, z: PCT1 });  // inte 0.86
-        expect(cell('Loneskillnad', 'C3')).toMatchObject({ t: 'n', v: 87.2, z: PCT1 });
-        expect(cell('Loneskillnad', 'D2')).toMatchObject({ t: 'n', v: 28800, z: KR });
-        expect(cell('Loneskillnad', 'E2')).toMatchObject({ t: 'n', v: 33500, z: KR });
-        expect(wb.Sheets.Loneskillnad['!ref']).toBe('A1:E3');                           // bevis-kolumnen följer inte med
+    it('Löneskillnad: kvoten som procenttal med procentformat, antalen som text, medianerna i kronor', () => {
+        expect(rad('Löneskillnad', 0)).toEqual(['BAS-intervall', 'Antal personer (kvinnor/män)', 'Kvinnors median i % av männens (100 % = lika lön)', 'Median kvinnor (kr/mån)', 'Median män (kr/mån)']);
+        expect(cell('Löneskillnad', 'B2')).toMatchObject({ t: 's', v: '17/17' });      // inte datumet 17 (ogiltigt) eller ett tal
+        expect(cell('Löneskillnad', 'C2')).toMatchObject({ t: 'n', v: 86, z: PCT1 });  // inte 0.86
+        expect(cell('Löneskillnad', 'C3')).toMatchObject({ t: 'n', v: 87.2, z: PCT1 });
+        expect(cell('Löneskillnad', 'D2')).toMatchObject({ t: 'n', v: 28800, z: KR });
+        expect(cell('Löneskillnad', 'E2')).toMatchObject({ t: 'n', v: 33500, z: KR });
+        expect(wb.Sheets.Löneskillnad['!ref']).toBe('A1:E3');                           // bevis-kolumnen följer inte med
     });
-    it('Konsskevhet: andelarna i procent, inte som andel av 1', () => {
-        expect(cell('Konsskevhet', 'E2')).toMatchObject({ t: 'n', v: 50, z: PCT1 });   // efter BAS, Totalt N, Antal kvinnor och Antal män
-        expect(cell('Konsskevhet', 'F2')).toMatchObject({ t: 'n', v: 50, z: PCT1 });
-        expect(cell('Konsskevhet', 'B2')).toMatchObject({ t: 'n', v: 34 });
+    it('Könsskevhet: andelarna i procent, inte som andel av 1', () => {
+        expect(cell('Könsskevhet', 'E2')).toMatchObject({ t: 'n', v: 50, z: PCT1 });   // efter BAS, Totalt N, Antal kvinnor och Antal män
+        expect(cell('Könsskevhet', 'F2')).toMatchObject({ t: 'n', v: 50, z: PCT1 });
+        expect(cell('Könsskevhet', 'B2')).toMatchObject({ t: 'n', v: 34 });
     });
-    it('EU-Lonekartlaggning: antalet med könsuppdelningen som text, den samlade medianen som text över båda mediankolumnerna, "–" i stället för 0', () => {
+    it('EU-lönekartläggning: antalet med könsuppdelningen som text, den samlade medianen som text över båda mediankolumnerna, "–" i stället för 0', () => {
         // Statusen står efter yrkesgruppen, som på skärmen (steg C); alla kolumner följer med oavsett Fler kolumner.
-        expect(rad('EU-Lonekartlaggning', 0)[7]).toBe('Kvinnors median i % av mäns');
-        expect(cell('EU-Lonekartlaggning', 'B2').v).toMatch(/^Könsuppdelningen är för liten/);
-        expect(cell('EU-Lonekartlaggning', 'C2')).toMatchObject({ t: 's', v: '17 (14/3)' });
-        expect(cell('EU-Lonekartlaggning', 'F2')).toMatchObject({ t: 's', v: 'Gruppens median 28 800 kr' });
-        expect(wb.Sheets['EU-Lonekartlaggning']['!merges']).toContainEqual({ s: { r: 1, c: 5 }, e: { r: 1, c: 6 } });
-        expect(wb.Sheets['EU-Lonekartlaggning'].G2).toBeUndefined();
-        expect(cell('EU-Lonekartlaggning', 'H2')).toMatchObject({ t: 's', v: '–' });   // data-sort-value="0" är ett sorteringsvärde, inte ett gap
-        expect(wb.Sheets['EU-Lonekartlaggning']['!ref']).toBe('A1:H6');            // detaljkolumnen följer inte med
+        expect(rad('EU-lönekartläggning', 0)[7]).toBe('Kvinnors median i % av mäns');
+        expect(cell('EU-lönekartläggning', 'B2').v).toMatch(/^Könsuppdelningen är för liten/);
+        expect(cell('EU-lönekartläggning', 'C2')).toMatchObject({ t: 's', v: '17 (14/3)' });
+        expect(cell('EU-lönekartläggning', 'F2')).toMatchObject({ t: 's', v: 'Gruppens median 28 800 kr' });
+        expect(wb.Sheets['EU-lönekartläggning']['!merges']).toContainEqual({ s: { r: 1, c: 5 }, e: { r: 1, c: 6 } });
+        expect(wb.Sheets['EU-lönekartläggning'].G2).toBeUndefined();
+        expect(cell('EU-lönekartläggning', 'H2')).toMatchObject({ t: 's', v: '–' });   // data-sort-value="0" är ett sorteringsvärde, inte ett gap
+        expect(cell('EU-lönekartläggning', 'I1').v).toBe('Ojusterad löneskillnad ≥ 5 %');      // direktivmarkeringen som egen kolumn (ADR-59)
+        expect(wb.Sheets['EU-lönekartläggning']['!ref']).toBe('A1:I8');            // detaljkolumnen följer inte med; reservationen under tabellen
     });
     it('Prioritering: avvikelsen i procent, kronor i kronor, antal kvinnor/män som text, statusen som text', () => {
         const r0 = rad('Prioritering', 0);
@@ -271,16 +272,16 @@ describe('golden: bladen ur HTML-tabellerna bär cellerna som vyn visar dem (typ
         expect(cell('Prioritering', 'F2')).toMatchObject({ t: 's', v: '14/3' });     // inte 14 mars
         expect(cell('Prioritering', 'I2')).toMatchObject({ t: 'n', v: -4, z: PCT2 }); // inte −0.04
         expect(cell('Prioritering', 'J2')).toMatchObject({ t: 'n', v: -1200, z: KR });
-        expect(cell('Prioritering', 'D2')).toMatchObject({ t: 's', v: 'Följ upp' });  // inte prioriteringsindexet
+        expect(cell('Prioritering', 'D2')).toMatchObject({ t: 's', v: 'Nära referens, under' });  // inte prioriteringsindexet; Prioriteringens egna ord (A5)
         expect(cell('Prioritering', 'A2').z).toBe('0');
         expect(cell('Prioritering', 'A2').v).toBeCloseTo(16.87, 2);                   // sorteringsvärdet förfinar "17"
     });
-    it('Löneöversikt och Jamforelsestatistik: kvoten som kvot och skillnaden i procent, inte i kronor', () => {
+    it('Löneöversikt och Jämförelsestatistik: kvoten som kvot och skillnaden i procent, inte i kronor', () => {
         expect(rad('Löneöversikt', 1)[5]).toBe('Lönespridning P90/P10 (kvot)');
         expect(cell('Löneöversikt', 'F4')).toMatchObject({ t: 'n', v: 1.2, z: '0.00' });
         expect(cell('Löneöversikt', 'B4')).toMatchObject({ t: 'n', v: 28330, z: KR });
-        expect(rad('Jamforelsestatistik', 1)[9]).toBe('Median skillnad mot jämförelsestatistiken (%)');   // efter kolumnen Matchning
-        expect(cell('Jamforelsestatistik', 'J3')).toMatchObject({ t: 'n', v: -0.89, z: PCT1 });
+        expect(rad('Jämförelsestatistik', 1)[9]).toBe('Median skillnad mot jämförelsestatistiken (%)');   // efter kolumnen Matchning
+        expect(cell('Jämförelsestatistik', 'J3')).toMatchObject({ t: 'n', v: -0.89, z: PCT1 });
     });
     it('cellvärdet: talet i texten, sorteringsvärdet bara när det är samma storhet med fler decimaler', () => {
         const v = (html) => win.eval(`(function(){ const tr = document.createElement('tr'); tr.innerHTML = ${JSON.stringify(html)}; return _exportCellVarde(tr.firstElementChild); })()`);
@@ -336,14 +337,26 @@ describe('tecknet i EU-lönerapporten (EU 2023/970 art. 9)', () => {
         expect(metod).toMatch(/Löneskillnadens tecken \| Verktyget räknar/);
         expect(text(eu)).not.toMatch(/\| -8(\.\d+)? \||\| 92(\.\d+)? \|/);
     });
+    it('reservationen om lönebegreppet står överst i EU-lönerapporten och under tabellen i bladet EU-lönekartläggning (beslut 7a)', () => {
+        const mening = 'Måtten är räknade på fast heltidsmånadslön. Direktivets lönebegrepp är vidare (total ersättning, inklusive rörliga delar och förmåner); komplettera ur lönesystemet om ni rapporterar.';
+        expect(blad(eu, 'Sammanfattning')[1]).toEqual(['Lönebegrepp', mening]);
+        const matris = blad(alla, 'EU-lönekartläggning');
+        expect(matris[matris.length - 1][0]).toBe(mening);
+    });
+    it('bladnamnen har diakriter och håller Excels regler (högst 31 tecken, inga []:*?/\\)', () => {
+        const namn = [...alla.SheetNames, ...eu.SheetNames];
+        for (const n of namn) { expect(n.length, n).toBeLessThanOrEqual(31); expect(n, n).not.toMatch(/[[\]:*?/\\]/); }
+        for (const n of ['EU-lönekartläggning', 'Löneskillnad', 'Könsskevhet']) expect(alla.SheetNames).toContain(n);
+        expect(namn.join('|')).not.toMatch(/Lonesk|Konssk|Lonekart|Jamfor|Sakliga skal\b|granser\b|per alder/);
+    });
     it('övriga blad är oförändrade: kvinnors lön i procent av mäns (92), ingen direktivkolumn', () => {
         const t = text(alla);
         expect(t).not.toMatch(/art\. 9 \(%\)/);
         expect(blad(alla, 'Lika arbete per BAS')[2]).toContain('Kvinnors median i % av mäns');
         expect(blad(alla, 'Lika arbete per BAS').find(r => r[0] === 'B')[6]).toBe(92);
-        // EU-Lonekartlaggning byggs ur fliktabellen: rubrik och värde hör ihop (kvoten 92, inte gapet 8 ur data-sort-value).
-        expect(blad(alla, 'EU-Lonekartlaggning')[0][7]).toBe('Kvinnors median i % av mäns');
-        expect(blad(alla, 'EU-Lonekartlaggning')[1][7]).toBe(92);
+        // EU-lönekartläggning byggs ur fliktabellen: rubrik och värde hör ihop (kvoten 92, inte gapet 8 ur data-sort-value).
+        expect(blad(alla, 'EU-lönekartläggning')[0][7]).toBe('Kvinnors median i % av mäns');
+        expect(blad(alla, 'EU-lönekartläggning')[1][7]).toBe(92);
         expect(t).not.toMatch(/positivt tal = kvinnor lägre \|/);   // ingen kolumn med direktivets tecken
     });
 });
@@ -426,8 +439,8 @@ describe('golden: Word-utkastet (§§ 8–14) på fast dataset', () => {
         win.__loadFixture();
         const { bok } = win.__excelBlad();
         // Testunderlaget har inget yrke med båda könen över tröskeln, så trattdiagrammets blad saknas — som i vyn.
-        for (const blad of ['Lika arbete per BAS', 'Loneskillnad per alder', 'Lönepolitik']) expect(bok, blad).toContain(blad);
-        expect(bok).not.toContain('Slumpens granser');
+        for (const blad of ['Lika arbete per BAS', 'Löneskillnad per ålder', 'Lönepolitik']) expect(bok, blad).toContain(blad);
+        expect(bok).not.toContain('Slumpens gränser');
     });
     it('bladet Lönepolitik finns bara med ett ställningstagande, och metodbladet säger då vad det bär', () => {
         win.__loadFixture();
@@ -499,5 +512,62 @@ describe('golden: PDF/print-rapporten (buildPrintReport) på fast dataset', () =
             .map(tr => parseFloat(tr.children[2].textContent));
         expect(andelCells.length).toBeGreaterThan(0);
         expect(andelCells.every(n => n >= 0 && n <= 100), `orimlig andel: ${andelCells.join(', ')}`).toBe(true);
+    });
+});
+
+/**
+ * Lönefil utan ålder (ADR-64): samma fasta dataset med åldern borttagen. Hela kedjan till Excel, Word och PDF
+ * ska gå utan fel, utan åldersavsnitt och med metodmeningen om att ålder är ett metodval.
+ */
+describe('golden: lönefil utan ålder (ADR-64)', () => {
+    const normalize = html => {
+        let s = html
+            .replace(/\d{4}-\d{2}-\d{2}/g, '<DATUM>')
+            .replace(/\d{2}:\d{2}:\d{2}/g, '<TID>')
+            .replace(/Lönekartläggning \d{4}/g, 'Lönekartläggning <ÅR>')
+            .replace(/data:image\/png;base64,[A-Za-z0-9+/=]+/g, '<PNG>');
+        if (appVersion) s = s.split(appVersion).join('<VERSION>');
+        return s;
+    };
+    let filenames;
+    beforeAll(() => {
+        expect(win.__loadFixture(true)).toBe(62);
+        filenames = win.__runExports();
+    });
+
+    it('alla sex exporter producerar arbetsböcker utan fel', () => {
+        expect(win.__exportErrors, 'exportfel: ' + JSON.stringify(win.__exportErrors)).toEqual([]);
+        expect(filenames.length).toBe(6);
+    });
+
+    it('"Excel (alla flikar)" matchar facit och saknar åldersbladet', () => {
+        const name = filenames.find(f => /lonekartlaggning_analys|alla|export/i.test(f)) ||
+                     filenames.find(f => !/jpa|protokoll|lonebedomning|handlingsplan|eu_lonerapport|likvardighet/i.test(f));
+        const bok = snapshotWorkbook(name);
+        expect(Object.keys(bok)).not.toContain('Loneskillnad per alder');
+        expect(bok).toMatchSnapshot();
+    });
+
+    it('Word-utkastet matchar facit och bär metodmeningen om ålder', () => {
+        win.__loadFixture(true);
+        const draft = normalize(win.__docDraftHtml());
+        expect(draft).toContain('Att ålder räknas bort är ett metodval');
+        expect(draft).toContain('lönefilen saknar ålder');
+        // Metodbladets fasta rader säger modellen utan ålder (ADR-64).
+        expect(draft).toContain('~ kön + BAS-intervall (indikatorer); lönefilen saknar ålder');
+        expect(draft).toContain('(AID×BAS), utan ålder');
+        expect(draft).not.toContain('~ kön + ålder + BAS-intervall');
+        expect(draft).not.toContain('(AID×BAS) utöver ålder');
+        expect(draft).toMatchSnapshot();
+    });
+
+    it('PDF-rapporten (komplett) byggs utan fel och matchar facit', async () => {
+        win.__loadFixture(true);
+        win.eval("sattRapportUrval('hela')");
+        await win.__buildPrintReport();
+        const html = normalize(win.document.getElementById('print-report').innerHTML);
+        expect(html.length).toBeGreaterThan(200);
+        expect(html).toContain('Att ålder räknas bort är ett metodval');
+        expect(html).toMatchSnapshot();
     });
 });

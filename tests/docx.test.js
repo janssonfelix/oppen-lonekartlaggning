@@ -147,3 +147,29 @@ describe('docx: bilder', () => {
         expect(u['word/document.xml']).not.toContain('<w:drawing>');
     });
 });
+
+// Förberedelse för Word-testet (A9, förskott på B6): sådant som Word kan läsa annorlunda än LibreOffice.
+describe('docx: tabellerna som Word läser dem (A9)', () => {
+    const c = s => ({ delar: [t(s)] });
+    const tva = { typ: 'tabell', rader: [[c('Yrkesgrupper'), c('8')]] };
+    const fem = { typ: 'tabell', rubrikrad: [c('Yrke'), c('n'), c('Median'), c('Mot'), c('Läge')], rader: [[c('A'), c('12'), c('30 000'), c('−3 %'), c('Lägre')]] };
+    const kropp = block => [...tolka(docxDelar(block, OPT)['word/document.xml']).getElementsByTagName('w:body')[0].childNodes]
+        .filter(n => n.nodeType === 1);
+    it('två tabeller i följd skiljs av ett stycke (Word slår annars ihop dem till en tabell)', () => {
+        const barn = kropp([tva, fem]).map(n => n.nodeName);
+        expect(barn).toEqual(['w:tbl', 'w:p', 'w:tbl', 'w:p', 'w:sectPr']);
+    });
+    it('tabellens bredd står i samma enhet som kolumnerna och cellerna, och tblLook finns i schemats ordning', () => {
+        for (const tbl of kropp([tva, fem]).filter(n => n.nodeName === 'w:tbl')) {
+            const pr = tbl.getElementsByTagName('w:tblPr')[0];
+            const tblW = pr.getElementsByTagName('w:tblW')[0];
+            const grid = [...tbl.getElementsByTagName('w:gridCol')].map(g => Number(g.getAttribute('w:w')));
+            expect(tblW.getAttribute('w:type')).toBe('dxa');
+            expect(Number(tblW.getAttribute('w:w'))).toBe(grid.reduce((s, v) => s + v, 0));
+            expect([...tbl.getElementsByTagName('w:tcW')].every(w => w.getAttribute('w:type') === 'dxa')).toBe(true);
+            expect([...pr.childNodes].map(n => n.nodeName)).toEqual(['w:tblStyle', 'w:tblW', 'w:tblLook']);
+            const harRubrik = tbl.getElementsByTagName('w:tblHeader').length > 0;
+            expect(pr.getElementsByTagName('w:tblLook')[0].getAttribute('w:firstRow')).toBe(harRubrik ? '1' : '0');
+        }
+    });
+});

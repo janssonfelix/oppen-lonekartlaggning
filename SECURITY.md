@@ -31,7 +31,7 @@ snart som möjligt, och den som rapporterat nämns i versionsnyheterna om den vi
 - Att något skrivs till webbläsarens lagring. Spärren mot lagring har kända luckor
   (`docs/dataskydd/riskanalys.md` §6.2); de behöver inte rapporteras igen.
 - Att en fil med personnummer, namn eller e-post inte avvisas (kontrollen ser på
-  rubrikerna och de 50 första raderna), eller att en kolumnrubrik som antyder en särskild
+  rubrikerna och 50 rader spridda över filen), eller att en kolumnrubrik som antyder en särskild
   kategori av personuppgifter (fackmedlemskap, hälsa, etnicitet, religion, politisk åskådning,
   sexualliv, genetik, biometri) inte avvisas (kontrollen ser bara på rubriken).
 
@@ -53,6 +53,20 @@ cosign verify-blob oppen-lonekartlaggning.html --bundle oppen-lonekartlaggning.h
 
 Samma kommando fungerar i PowerShell på Windows (`cosign.exe`). `Verified OK` betyder att filen är
 oförändrad sedan arbetsflödet signerade den. Gör samma kontroll av `RELEASE.txt` med dess paket.
+
+**Kan ni inte köra cosign: kontrollsumman i RELEASE.txt skyddar mot en skadad eller förväxlad fil.** Jämför
+filens SHA-256 med värdet i `RELEASE.txt`:
+
+```powershell
+Get-FileHash .\oppen-lonekartlaggning.html -Algorithm SHA256
+```
+
+```bash
+sha256sum oppen-lonekartlaggning.html
+```
+
+Det första kommandot är för Windows (PowerShell), det andra för Linux och Mac. Kontrollsumman visar inte att
+filen är äkta; det gör bara signaturen.
 
 **Kontrollsumman (SHA-256) i `RELEASE.txt` skyddar bara mot en skadad fil**, inte mot en utbytt: den
 som byter filen kan byta kontrollsumman också. Den är ett snabbt sätt att se att en kopia som delats

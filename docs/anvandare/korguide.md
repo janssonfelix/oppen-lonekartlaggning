@@ -12,6 +12,7 @@ besluten gör och äger arbetsgivaren.
 
 ## 0. Förutsättningar
 
+- **Ansvar:** Verktyget är ett stöd för arbetsgivarens egen lönekartläggning. Användaren ansvarar för hur verktyget används, för tolkningen av resultaten och för den juridiska bedömningen. Verktyget är inte juridiskt granskat.
 - En dator med en modern webbläsare: **Chrome/Edge, Firefox eller Safari 16.4+**.
   Verktyget är byggt för datorskärm; surfplatta och mobil stöds inte.
 - Filen `oppen-lonekartlaggning.html` — eller din **organisationsfil**, där systemägaren bakat in
@@ -23,10 +24,11 @@ besluten gör och äger arbetsgivaren.
   versionens releasesida. Kommandot är detsamma i Windows (PowerShell, `cosign.exe`) och Linux/Mac:
   `cosign verify-blob oppen-lonekartlaggning.html --bundle oppen-lonekartlaggning.html.sigstore.json --certificate-identity-regexp "^https://github\.com/janssonfelix/oppen-lonekartlaggning/\.github/workflows/release\.yml@refs/tags/v" --certificate-oidc-issuer https://token.actions.githubusercontent.com`
   (se `SECURITY.md`). Svaret ska vara `Verified OK`.
-  Den som sedan får filen internt jämför dess **SHA-256** med värdet i `RELEASE.txt`. Windows
-  (PowerShell): `(Get-FileHash -Algorithm SHA256 oppen-lonekartlaggning.html).Hash` · Linux:
-  `sha256sum oppen-lonekartlaggning.html` · Mac (Terminal): `shasum -a 256 oppen-lonekartlaggning.html`.
-  Kontrollsumman visar bara att filen inte skadats; att den är äkta visar signaturen.
+  **Kan ni inte köra cosign: kontrollsumman i RELEASE.txt skyddar mot en skadad eller förväxlad fil.**
+  Den som får filen internt jämför också dess **SHA-256** med värdet i `RELEASE.txt`. Windows
+  (PowerShell): `Get-FileHash .\oppen-lonekartlaggning.html -Algorithm SHA256` · Linux/Mac:
+  `sha256sum oppen-lonekartlaggning.html` (på en Mac utan `sha256sum`: `shasum -a 256 oppen-lonekartlaggning.html`).
+  Kontrollsumman visar bara att filen inte skadats eller förväxlats; att den är äkta visar signaturen.
 - **Dataskydd:** all bearbetning sker i webbläsarens minne — inget skickas, inget
   sparas på disk. Det enda som lämnar verktyget är **de filer du själv exporterar**.
   Förvara dem på behörighetsstyrd disk och skicka dem aldrig via okrypterad e-post.
@@ -58,7 +60,7 @@ Exportera en lönefil (CSV eller XLSX) med dessa kolumner:
 | BAS-intervall | Ja | Kravnivå/svårighetsgrupp |
 | AID / yrkesgrupp | Ja | Yrkeskod/-namn |
 | Månadslön | Ja | **Heltidsomräknad** fast månadslön — se *Lönedefinition* nedan |
-| Ålder *(eller födelseår)* | Ja | Födelseår tolkas automatiskt till ålder |
+| Ålder *(eller födelseår)* | Nej, rekommenderad | Födelseår tolkas automatiskt till ålder. Utan ålder körs analysen utan åldersjustering och Ålder & karriär visas inte |
 | Kön | Ja | K/M, Kvinna/Man m.fl. tolkas automatiskt |
 | Poäng *(arbetsvärdering)* | Nej | Valfri kolumn för likvärdigt arbete över BAS-gränser |
 | Ansvarskod *(AID)* | Nej | Valfri kolumn: A, B, C, L (ledningsansvar), F, M, 1001, 1002 (särskilt uppdrag). Kolumnen *Ansvar* (ofta ett kostnadsställe) läses aldrig |
@@ -247,8 +249,14 @@ rubrikraden, också när det är hopfällt.
    ställningstagandet. Ligger både löneläget och statistiken över ställningstagandet har det halkat efter
    marknaden. Ligger bara löneläget över har organisationen gått före. Förslaget är ett förslag, ingen regel.
 3. **Lika arbete** — fliken öppnar med **yrkesgrupperna**: kvinnors och mäns medianlön i samma yrkesgrupp.
-   Grupper med en skillnad över 5 procent markeras, så att du vet var du ska börja. Lagen kräver att du prövar
-   varje skillnad, också de mindre.
+   Varje grupp får en status som bygger på statistisk signal: **Värt att granska** när skillnaden är
+   statistiskt säkerställd (utanför slumpens gränser för gruppen) och minst 3 % (verktygets egen storleksgräns),
+   **Följ upp** när den är minst 3 % men inte säkerställd, eller säkerställd men under 3 %, **Balanserat** när den
+   är under 3 % och inte säkerställd, och **Går ej att bedöma** när ett kön har för få personer för att pröva
+   skillnaden. Börja med grupperna som är värda att granska. Lagen kräver att du prövar varje skillnad, också de
+   mindre. Kolumnen **≥ 5 %** är ingen status utan en markering på den ojusterade skillnaden: direktivets regler
+   om gemensam lönebedömning utgår från en skillnad på minst 5 %, och markeringen visar var den nivån nås. Den är
+   inte en bedömning och står aldrig vid regressionens justerade tal.
    Diagrammet **Yrkesgrupperna mot slumpens gränser** ovanför tabellen visar varje yrkesgrupp mot gruppens storlek.
    En liten grupp kan ha en stor skillnad av ren slump, men en stor grupp kan det inte. Grupperna utanför det
    skuggade fältet är de där skillnaden är svår att förklara med slumpen. Nyckeltalen överst tar med hur stor
@@ -271,8 +279,8 @@ rubrikraden, också när det är hopfällt.
    skillnaden bland dem som inte leder. I regressionen (Lönestruktur) står på en egen rad hur mycket
    ansvaret förklarar. Huvudtalet räknar inte bort det: om ansvaret är ett sakligt skäl
    avgör du.
-   Grupper över 5 % märks **skör** om skillnaden kan hamna på 5 % eller under när en
-   eller två personer tas bort, annars **stabil**. Flaggan gäller i båda fallen, men i en
+   Grupper som är värda att granska märks **skör** om skillnaden kan hamna under 3 % när en
+   eller två personer tas bort, annars **stabil**. Statusen gäller i båda fallen, men i en
    skör grupp avgör enskilda löner — titta särskilt på dem.
    Under yrkesgrupperna finns **Personer att granska**. Det är personer som ligger minst 10 % under vad
    kollegor i samma AID och BAS i samma ålder tjänar, och du kan ändra gränsen. Listan är
@@ -284,17 +292,27 @@ rubrikraden, också när det är hopfällt.
    närmare på. Granska sedan kandidatparen (kvinnodominerade yrken vs jämförelseyrken). Diagrammet
    **Kandidatparen i kronor** visar båda yrkenas medianlön per par. Kraven mäts med **BAS-intervall**, eller med
    **arbetsvärderingspoäng** om lönefilen har kolumnen Poäng — då väljs det
-   automatiskt och paren jämförs även över BAS-gränserna. Jämförelseyrkena hämtas i första hand
+   automatiskt och paren jämförs även över BAS-gränserna. Jämförelseyrkena är **alla yrken som inte är
+   kvinnodominerade**, både mansdominerade och könsblandade, och könsandelen i jämförelseyrket står i
+   partabellen (kolumnen *Könsandel*, med klassen mansdominerad eller blandad). Vill ni bara jämföra med
+   mansdominerade yrken kryssar ni i *Jämför bara med mansdominerade yrken* i flikens inställningar (av som
+   standard); valet följer med i konfigurationsfilen och organisationspaketet. Jämförelseyrkena hämtas i första hand
    ur den egna organisationen; jämförelsestatistiken används bara där ett eget
    jämförelseyrke saknas. Den slutliga kravvärderingen gör du utifrån befattningsbeskrivning.
-   Fliken visar som standard högst 20 par med en skillnad på minst 5 %; båda gränserna kan
-   ändras i fliken (*Minsta skillnad* och antal par). Fliken och dess egen export visar par även
+   Fliken visar som standard alla par där jämförelseyrket har högre lön, de 20 största i tabellen (knappen
+   *Visa alla* visar resten). Nyckeltalet *Par att titta närmare på* säger hur många par det är och hur många av dem
+   som har en ojusterad löneskillnad på minst 5 %. Vill ni bara se par med minst en viss skillnad, till exempel 5 %,
+   anger ni den i fältet *Visa bara par med minst … % skillnad* (0 = alla); antalet par ändras också i fliken.
+   Fliken och dess egen export visar par även
    när en grupp är liten — hantera dem därefter.
    Avsnitten **Likvärdigt arbete** per BAS-intervall och **Hierarkisk jämförelse** klassar varje yrkesgrupp i varje
    intervall som kvinnodominerad, könsblandad eller mansdominerad, med en sammanfattning per intervall. De listar
    också par där ett arbete i lägre BAS som inte är kvinnodominerat har högre medianlön än ett kvinnodominerat
    arbete i högre BAS. Definitionen av kvinnodominerat väljs i flikens inställningar: **Förarbetena** (mer än tröskeln, standard)
-   eller **SCB** (tröskeln eller mer); valet står i Excel-bladen och i metodbladet.
+   eller **SCB** (tröskeln eller mer); mansdominerat är samma gräns för män och övriga är könsblandade. Samma
+   definition och samma jämförelseyrken gäller i hela verktyget: kandidatparen, *Lägre krav, högre lön*,
+   tabellerna per BAS-intervall, Lika arbetes kolumn Dominans, Löneöversynens *Varav till kvinnodominerade
+   grupper* och Lönepolitikens diagram. Valet står i Excel-bladen och i metodbladet.
    Bredvid skillnaden står kolumnen **Justerad för ålder**: jämförelseyrkets lön omräknad till
    det kvinnodominerade yrkets åldersfördelning. Den råa skillnaden är den lagen prövar:
    lönenivån som sådan. Den justerade visar hur mycket av skillnaden som kan bero på att
@@ -314,6 +332,8 @@ rubrikraden, också när det är hopfällt.
    - **Var i lönefördelningen är skillnaden störst?** visar lönen vid olika percentiler för kvinnor och män. Då
      syns om skillnaden är störst bland de lägst eller högst betalda.
    - **Lönetransparensdirektivets mått** visar de mått som en större arbetsgivare ska rapportera när direktivet gäller.
+     Måtten är räknade på fast heltidsmånadslön. Direktivets lönebegrepp är vidare (total ersättning, inklusive
+     rörliga delar och förmåner); komplettera ur lönesystemet om ni rapporterar.
 
    Avsnittet **Per sektor** visar läget sektor för sektor i AID:s 13 huvudområden, t.ex. vård och omsorg, skola
    och teknik. Där står antal, andel kvinnor, medianer, kvinnors lön i procent av mäns (rå och justerad
@@ -341,9 +361,14 @@ rubrikraden, också när det är hopfällt.
    i karriären skillnaden finns. Där finns också lönespridning över ålder, lönefördelningen för kvinnor och män,
    åldersstruktur och livscykel.
 7. **Prioritering · Löneöversyn · Handlingsplan** — tre flikar med var sin fråga.
-   **Prioritering** svarar på *vad* som bör åtgärdas och vad det kostar. Matrisen visar varje grupps
+   **Prioritering** visar löneläget mot er referens med kostnad att nå den. Matrisen visar varje grupps
    avvikelse mot referensen och dess storlek, och åtgärdslistan rangordnar grupperna. Kostnadsdiagrammet
-   visar de grupper som kostar mest att lyfta, med den kumulativa andelen av totalkostnaden.
+   visar de grupper som kostar mest att lyfta, med den kumulativa andelen av totalkostnaden. Läget har egna
+   ord — *Börja här*, *Under referens*, *Nära referens* (under och över uppföljningsgränsen, i två färger) och
+   *Över referens* — eftersom det är något annat än skillnaden mellan kvinnor och män, som Lika arbete
+   bedömer med *Värt att granska*, *Följ upp* och *Balanserat*. Nyckeltalet *Kostnad att nå referensen* är vad
+   det kostar att lyfta grupperna under referensen till dess median, inte lönekartläggningens könsskillnader;
+   dem visar Lika arbete och Löneöversyn.
    **Löneöversyn** svarar på *hur* potten fördelas. Lägg in en budget, ett generellt påslag och riktade
    potter per grupp. Då ser du nya löner, vad som gått åt och löneskillnaden före och efter. En riktad rad kan
    begränsas till ett kön eller till löner under en gräns, och lyfta till en nivå ("höj till"). Det är det som
@@ -375,7 +400,7 @@ rubrikraden, också när det är hopfällt.
      jämförs inte med förra året.
 
    Skälen sparas i konfigurationsfilen med kommentarerna. De följer med i Rapporttext, Word och PDF (tabellerna
-   *Sakliga skäl per grupp* och *Sammanställning per kategori*), i Excel (bladet *Sakliga skal* och två kolumner i
+   *Sakliga skäl per grupp* och *Sammanställning per kategori*), i Excel (bladet *Sakliga skäl* och två kolumner i
    handlingsplansunderlaget) och i årsbokslutet. Bokslutet sparar kategori och belopp (för en grupp där ett kön är under gränsen bara
    kategorin), men aldrig kommentarerna.
    Gruppdossiern och BAS-dossiern visar bedömningen med en länk till raden. Kategorierna och beloppen är

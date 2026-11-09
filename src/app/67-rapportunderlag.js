@@ -54,7 +54,7 @@ function _rapportunderlagBlockExport() {
     };
 
     // Lika arbete — samma grupper som EU-tabellen
-    const lika = _ruLikaArbeteGrupper(d, { k, troskel: 5 });
+    const lika = laLikaGrupper(d, k);   // flaggad = Värt att granska (ADR-59)
 
     // Likvärdigt arbete — par med en grupp under k redovisas inte (fliken är undantagen från k, underlaget inte)
     /** @type {any} */ let lv = null;
@@ -83,14 +83,16 @@ function _rapportunderlagBlockExport() {
         _ruAvsnittBlock('uppdelning', _guGapUppdelning(d, { k }), opt),
         _ruAvsnittBlock('lika', lika, opt),
         _ruAvsnittBlock('likvardigt', { par, exkluderade: parUtelamnade, kravProxy,
-            kvinnoTroskel: (state.likvardighet && state.likvardighet.kvinnoTrosholdPct) ?? 60, topN }, opt),
+            kvinnoTroskel: aidbasGrans(), kvDomDefinition: aidbasDefinition(), jamforelse: lvJamforelse(), topN }, opt),
         _ruAvsnittBlock('lagreKrav', {
             par: ((lv && lv.lagreKrav) || []).filter(_parOverTroskel),
             exkluderade: ((lv && lv.lagreKrav) || []).filter(p => !_parOverTroskel(p)).length,
             kravProxy, topN }, opt),
         _ruAvsnittBlock('struktur', { representation, kvartiler, nKv: kvLon.length, nMa: maLon.length }, opt),
         _ruAvsnittBlock('sektorer', { sektorer: _skSektorsTabell(d, { k, skrDel: _skrDel() }), andel: _skSektorernasAndel(d, { k }) }, opt),
-        _ruAvsnittBlock('handlingsplan', { rader: hpRader, summa: hpRader.reduce((s, r) => s + (r.kostnad || 0), 0), ...(hpSkalBlock ? { skal: hpSkalBlock } : {}) }, opt),
+        _ruAvsnittBlock('handlingsplan', { rader: hpRader, summa: hpRader.reduce((s, r) => s + (r.kostnad || 0), 0),
+            summaReferens: hpRader.filter(r => r.underlag === HP_UNDERLAG_PRIO).reduce((s, r) => s + (r.kostnad || 0), 0),
+            ...(hpSkalBlock ? { skal: hpSkalBlock } : {}) }, opt),
     ];
     const referenser = referensOverblick();
     // Kolumnen Matchning bara när statistik finns, som i detaljlistan.
@@ -166,7 +168,7 @@ function renderRapportunderlag() {
         + toc('Avsnitt', avsnitt) + toc('Per BAS-intervall', basBl) + toc('Yrkesgrupper', yrken) + toc('Kandidatpar', parBl) + toc('Egna tabeller', egna) + `</ul>`
         + `<div class="ru-atgard"><button type="button" class="btn btn-secondary btn-sm" id="btn-ru-kopiera-avsnitt">Kopiera alla avsnitt</button>`
         + `<span class="ru-kvitto" role="status"></span></div><div id="ru-alla-avsnitt" class="ru-alla-avsnitt" hidden></div></nav>`;
-    host.innerHTML = forteckning + grupp('Avsnitt', avsnitt) + grupp('Per BAS-intervall', basBl) + grupp('Yrkesgrupper i Lika arbete', yrken)
+    host.innerHTML = `<p class="ru-forbehall">${esc(ANSVARSFORBEHALL)}</p>` + forteckning + grupp('Avsnitt', avsnitt) + grupp('Per BAS-intervall', basBl) + grupp('Yrkesgrupper i Lika arbete', yrken)
         + grupp('Kandidatpar i Likvärdigt arbete', parBl) + grupp('Egna tabeller från Tabeller och egna vyer', egna)
         + `<h3 class="ru-grupprubrik">Diagram</h3>${diagram}`;
 }

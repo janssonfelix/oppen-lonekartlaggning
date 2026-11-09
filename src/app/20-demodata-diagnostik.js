@@ -117,7 +117,8 @@ function runDiagnostics() {
 
 // Demodata ("Prova med demodata"): självdiagnostikens 200 personer med AID och
 // yrkesnamn, plus tre yrken i BAS C som ger kandidatpar i likvärdigt arbete — två
-// kvinnodominerade yrken med lägre lön än ett mansdominerat på samma nivå.
+// kvinnodominerade yrken med lägre lön än ett mansdominerat på samma nivå. Systemutvecklare i BAS C (23 kvinnor av
+// 45) är blandad och därmed också jämförelseyrke (ADR-60).
 // generateTestData() lämnas orörd: självdiagnostiken bygger på dess kända egenskaper.
 function generateDemoData() {
     const data = generateTestData().map(r => ({

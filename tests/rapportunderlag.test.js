@@ -12,14 +12,20 @@ const grupp = (yrke, nKv, lonKv, nMa, lonMa) => [
 ];
 
 describe('likaArbeteGrupper', () => {
-    it('flaggar skillnad över 5 %, inte exakt 5 %', () => {
-        const r = [...grupp('A', 10, 95000, 10, 100000), ...grupp('B', 10, 94990, 10, 100000)];
+    it('flaggar säkerställd skillnad på minst 3 % (Värt att granska), inte en säkerställd under 3 %', () => {
+        const spridda = (yrke, n, mitt) => Array.from({ length: n }, (_, i) => mitt * (1 + 0.01 * (2 * i / (n - 1) - 1)));
+        const r = [...spridda('A', 20, 97000).map(l => person('A', 'kvinna', l)), ...spridda('A', 20, 100000).map(l => person('A', 'man', l)),
+                   ...spridda('B', 20, 98000).map(l => person('B', 'kvinna', l)), ...spridda('B', 20, 100000).map(l => person('B', 'man', l))];
         const { grupper } = likaArbeteGrupper(r, { k: K });
         const a = grupper.find(g => g.yrke === 'A'), b = grupper.find(g => g.yrke === 'B');
-        expect(a.gapPct).toBeCloseTo(5, 10);
-        expect(a.flaggad).toBe(false);
-        expect(b.flaggad).toBe(true);
-        expect(b.kvot).toBeCloseTo(0.9499, 10);
+        expect(a.gapPct).toBeCloseTo(3, 9);
+        expect(a.sakerstalld).toBe(true);
+        expect(a.niva).toBe('granska');
+        expect(a.flaggad).toBe(true);
+        expect(b.sakerstalld).toBe(true);
+        expect(b.niva).toBe('folj');
+        expect(b.flaggad).toBe(false);
+        expect(a.kvot).toBeCloseTo(0.97, 9);
     });
     it('samlad median när ett kön har färre än k — inga könsvärden', () => {
         const { grupper } = likaArbeteGrupper(grupp('C', 10, 30000, 9, 40000), { k: K });
@@ -155,15 +161,17 @@ describe('avsnittBlock', () => {
         const b = avsnittBlock('lika', { grupper, utelamnade: ['Tandläkare'] }, { k: 10 });
         const t = norm(b.stycken.join(' '));
         expect(t).toContain('4 yrkesgrupper');
-        expect(t).toContain('1 har en skillnad över 5 %');
+        expect(t).toContain('1 är värda att granska');
         expect(t).toContain('1 redovisas med samlad median');
         expect(t).toContain('1 utelämnas');
         expect(b.tabell.rader.length).toBe(1);
         expect(b.tabell.rader[0][0]).toBe('Undersköterska');
+        expect(b.tabell.rubriker.at(-1)).toBe('Ojusterad löneskillnad ≥ 5 %');
+        expect(b.tabell.rader[0].at(-1)).toBe('');   // 3,9 %: under direktivnivån
     });
     it('lika arbete utan flaggade yrken', () => {
         const b = avsnittBlock('lika', { grupper: [], utelamnade: [] }, { k: 10 });
-        expect(b.stycken.join(' ')).toContain('Ingen yrkesgrupp har en skillnad över 5 %');
+        expect(b.stycken.join(' ')).toContain('Ingen yrkesgrupp är värd att granska');
         expect(b.tabell).toBeNull();
     });
     it('struktur utelämnar BAS under k och maskerar gap när ett kön är under k', () => {
@@ -255,11 +263,18 @@ describe('rapportunderlag: struktur, likvärdighet och singular', () => {
         expect(b.stycken.join(' ')).toContain('1 BAS-intervall med färre än 10 personer redovisas inte');
     });
     it('likvärdighetstabellen har KI och texten nämner kvinnotröskeln', () => {
-        const par = [{ kvLabel: 'F', kvBas: 'C', kvMedian: 36400, maLabel: 'I', maBas: 'C', gapKr: 1600, gapPct: 4.4, gapCI: { lo: 400, hi: 2550 } }];
+        const par = [{ kvLabel: 'F', kvBas: 'C', kvMedian: 36400, maLabel: 'I', maBas: 'C', maKvAndel: 45, maKvinnoPct: 45, maKlass: 'blandad', gapKr: 1600, gapPct: 4.4, gapCI: { lo: 400, hi: 2550 } }];
         const b = avsnittBlock('likvardigt', { par, exkluderade: 0, kravProxy: 'bas', kvinnoTroskel: 60 }, { k: 10 });
         expect(b.tabell.rubriker).toContain('95 % KI');
         expect(norm(b.tabell.rader[0].join('|'))).toContain('1,1–7,0 %');
-        expect(b.stycken.join(' ')).toContain('minst 60 % kvinnor');
+        // DO är standard: mer än tröskeln; SCB: minst (ADR-60).
+        expect(b.stycken.join(' ')).toContain('mer än 60 % kvinnor');
+        expect(avsnittBlock('likvardigt', { par, kravProxy: 'bas', kvinnoTroskel: 60, kvDomDefinition: 'scb' }, { k: 10 }).stycken.join(' ')).toContain('minst 60 % kvinnor');
+        // Jämförelseyrket: alla som inte är kvinnodominerade, och könsandelen med klassen i tabellen.
+        expect(b.stycken.join(' ')).toContain('jämförs med yrken på samma nivå som inte är kvinnodominerade');
+        expect(b.tabell.rubriker).toContain('Könsandel i jämförelseyrket');
+        expect(norm(b.tabell.rader[0][3])).toBe('45 % (blandad)');
+        expect(avsnittBlock('likvardigt', { par, kravProxy: 'bas', jamforelse: 'mansdominerade' }, { k: 10 }).stycken.join(' ')).toContain('bara med mansdominerade yrken');
     });
     it('kön och BAS som sammanfaller inom yrket ger ett eget besked', () => {
         const r = [];
@@ -348,15 +363,15 @@ describe('stabilitet för flaggor', () => {
     };
 
     it('skör med 1 person när bara borttagning av medianvärdet räcker (ytterfallen skjuter över)', () => {
-        const s = st(yrke([...rep(5, 90000), 94900, ...rep(5, 118000)], rep(12, 100000)));
+        const s = st(yrke([...rep(5, 90000), 96500, ...rep(5, 112000)], rep(12, 100000)));
         expect(s.niva).toBe('skor1');
-        expect(s.lagstaGapPct).toBeCloseTo(4, 9);
+        expect(s.lagstaGapPct).toBeCloseTo(1, 9);
         expect(s.begransad).toBeNull();
     });
     it('skör med 2 personer', () => {
         const s = st(yrke([...rep(5, 80000), 94000, 94500, ...rep(5, 100000)], rep(12, 100000)));
         expect(s.niva).toBe('skor2');
-        expect(s.lagstaGapPct).toBeLessThanOrEqual(5);
+        expect(s.lagstaGapPct).toBeLessThan(3);
     });
     it('stabil', () => {
         const s = st(yrke(rep(12, 90000), rep(12, 100000)));
@@ -373,11 +388,11 @@ describe('stabilitet för flaggor', () => {
     it('k och k+1: bara en borttagning kunde prövas — texten påstår inte två', () => {
         const s = st(yrke(rep(11, 90000), rep(10, 100000)));
         expect(s).toMatchObject({ niva: 'stabil', begransad: 'man', provadeMax: 1 });
-        expect(stabilitetKort(s, K)).toBe('Stabil: över 5 % även utan 1 person, fler kunde inte prövas (prövat bara på kvinnor)');
+        expect(stabilitetKort(s, K)).toBe('Stabil: minst 3 % även utan 1 person, fler kunde inte prövas (prövat bara på kvinnor)');
         const g = likaArbeteGrupper(yrke(rep(11, 90000), rep(10, 100000)), { k: K }).grupper[0];
-        expect(gruppBlock(g, { id: 'yrke:0', k: K }).provat.at(-1)).toBe('Känslighet: skillnaden ligger kvar över 5 % även om en person tas bort; fler kunde inte prövas (prövat bara på kvinnor).');
+        expect(gruppBlock(g, { id: 'yrke:0', k: K }).provat.at(-1)).toBe('Känslighet: skillnaden ligger kvar på minst 3 % även om en person tas bort; fler kunde inte prövas (prövat bara på kvinnor).');
     });
-    it('ej flaggade grupper saknar stabilitet', () => {
+    it('grupper under 3 % saknar stabilitet', () => {
         expect(likaArbeteGrupper(yrke(rep(12, 98000), rep(12, 100000)), { k: K }).grupper[0].stabilitet).toBeUndefined();
     });
     it('exakt: samma nivå och lägsta skillnad som uttömmande prövning (200 slumpade grupper)', () => {
@@ -388,10 +403,11 @@ describe('stabilitet för flaggor', () => {
             const kv = Array.from({ length: nKv }, () => 26000 + Math.round(rnd() * 12) * 1000);
             const ma = Array.from({ length: nMa }, () => 28000 + Math.round(rnd() * 12) * 1000);
             const g = likaArbeteGrupper(yrke(kv, ma), { k: K }).grupper[0];
-            if (!g.flaggad) continue;
+            if (!g.stabilitet) continue;
+            if (g.stabilitet.begransad === 'bada') { expect(g.stabilitet.niva).toBe('stabil'); continue; }   // exakt k per kön: inget att pröva
             provade++;
             const b = brute(kv, ma);
-            const vantadNiva = b.min1 <= 5 ? 'skor1' : b.min2 <= 5 ? 'skor2' : 'stabil';
+            const vantadNiva = b.min1 < 3 ? 'skor1' : b.min2 < 3 ? 'skor2' : 'stabil';
             expect(g.stabilitet.niva, `grupp ${t}`).toBe(vantadNiva);
             const vantadLagst = vantadNiva === 'skor1' ? b.min1 : (Number.isFinite(b.min2) ? b.min2 : b.min1);
             expect(g.stabilitet.lagstaGapPct, `grupp ${t}`).toBeCloseTo(vantadLagst, 9);
@@ -408,10 +424,11 @@ describe('stabilitet för flaggor', () => {
             const kv = Array.from({ length: nKv }, () => lon(26000));
             const ma = Array.from({ length: nMa }, () => lon(28000));
             const g = likaArbeteGrupper(yrke(kv, ma), { k: K }).grupper[0];
-            if (!g.flaggad) continue;
+            if (!g.stabilitet) continue;
+            if (g.stabilitet.begransad === 'bada') { expect(g.stabilitet.niva).toBe('stabil'); continue; }   // exakt k per kön: inget att pröva
             provade++;
             const b = brute(kv, ma);
-            const vantadNiva = b.min1 <= 5 ? 'skor1' : b.min2 <= 5 ? 'skor2' : 'stabil';
+            const vantadNiva = b.min1 < 3 ? 'skor1' : b.min2 < 3 ? 'skor2' : 'stabil';
             expect(g.stabilitet.niva, `grupp ${t}`).toBe(vantadNiva);
             const vantadLagst = vantadNiva === 'skor1' ? b.min1 : (Number.isFinite(b.min2) ? b.min2 : b.min1);
             expect(g.stabilitet.lagstaGapPct, `grupp ${t}`).toBeCloseTo(vantadLagst, 9);
@@ -421,15 +438,15 @@ describe('stabilitet för flaggor', () => {
     it('stabilitetKort', () => {
         expect(stabilitetKort({ niva: 'skor1', lagstaGapPct: 4.61, begransad: null }, K)).toBe('Skör: kan bli 4,6 % om 1 person tas bort');
         expect(stabilitetKort({ niva: 'skor2', lagstaGapPct: 3, begransad: 'kvinnor' }, K)).toBe('Skör: kan bli 3,0 % om 2 personer tas bort (prövat bara på män)');
-        expect(stabilitetKort({ niva: 'stabil', lagstaGapPct: 8, begransad: 'man' }, K)).toBe('Stabil: över 5 % även utan 2 personer (prövat bara på kvinnor)');
+        expect(stabilitetKort({ niva: 'stabil', lagstaGapPct: 8, begransad: 'man' }, K)).toBe('Stabil: minst 3 % även utan 2 personer (prövat bara på kvinnor)');
         expect(stabilitetKort({ niva: 'stabil', lagstaGapPct: null, begransad: 'bada' }, K)).toBe('Kan inte prövas: båda könen har exakt 10 personer');
     });
     it('gruppBlock: känslighetsraden sist i provat', () => {
         const g = likaArbeteGrupper(yrke(rep(12, 90000), rep(12, 100000)), { k: K }).grupper[0];
         const b = gruppBlock(g, { id: 'yrke:0', k: K });
-        expect(b.provat.at(-1)).toBe('Känslighet: skillnaden ligger kvar över 5 % även om två personer tas bort.');
-        const g1 = likaArbeteGrupper(yrke([...rep(5, 90000), 94900, ...rep(5, 118000)], rep(12, 100000)), { k: K }).grupper[0];
-        expect(gruppBlock(g1, { id: 'yrke:0', k: K }).provat.at(-1)).toBe('Känslighet: skillnaden kan sjunka till 4,0 % om en person tas bort.');
+        expect(b.provat.at(-1)).toBe('Känslighet: skillnaden ligger kvar på minst 3 % även om två personer tas bort.');
+        const g1 = likaArbeteGrupper(yrke([...rep(5, 90000), 96500, ...rep(5, 112000)], rep(12, 100000)), { k: K }).grupper[0];
+        expect(gruppBlock(g1, { id: 'yrke:0', k: K }).provat.at(-1)).toBe('Känslighet: skillnaden kan sjunka till 1,0 % om en person tas bort.');
     });
 });
 
@@ -442,8 +459,8 @@ describe('avsnittBlock lagreKrav', () => {
         expect(b.rubrik).toBe('Lägre krav, högre lön');
         expect(b.stycken.join(' ')).toContain('1 par där ett kvinnodominerat yrke har lägre medianlön än ett av organisationens yrken i lägre BAS');
         expect(b.stycken.join(' ')).toContain('2 par med en grupp under 10 personer redovisas inte här.');
-        expect(b.tabell.rubriker).toEqual(['Kvinnodominerat yrke', 'Jämförelseyrke', 'Antal (kvinnodom. / jämf.)', 'BAS-steg', 'Skillnad (kr)', 'Skillnad (%)', '95 % KI']);
-        expect(b.tabell.rader[0].slice(0, 4)).toEqual(['Barnskötare (BAS E)', 'Drifttekniker (BAS C)', '46 / 30', '2']);
+        expect(b.tabell.rubriker).toEqual(['Kvinnodominerat yrke', 'Jämförelseyrke', 'Antal (kvinnodom. / jämf.)', 'Könsandel i jämförelseyrket', 'BAS-steg', 'Skillnad (kr)', 'Skillnad (%)', '95 % KI']);
+        expect(b.tabell.rader[0].slice(0, 5)).toEqual(['Barnskötare (BAS E)', 'Drifttekniker (BAS C)', '46 / 30', '–', '2']);
         expect(b.fragor).toEqual([...FRAGOR_PAR]);
         expect(b.stycken.join(' ')).not.toMatch(/§|3 kap\./);
     });

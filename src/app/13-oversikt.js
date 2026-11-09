@@ -18,17 +18,19 @@ function updateCompliance() {
     const d   = getData();
     const bas = getBasIntervals();
 
-    // 1–2. Lönegap > 5 % och könsskevhet — bara i jämförbara BAS (båda könen ≥ k),
-    // samma regel som Lika arbete och Underlagets kvalitet använder.
+    // 1–2. Säkerställd skillnad och könsskevhet — bara i jämförbara BAS (båda könen ≥ k), samma regel som Lika arbete
+    // och Underlagets kvalitet använder. Säkerställd = statusen Värt att granska i översiktstabellen per BAS (ADR-59):
+    // bootstrap-KI:t för kvoten utesluter 100 % och skillnaden är minst 3 %.
     const jb = _dqJamforbaraBas(d, kInstalld());   // säger vad exporterna kan jämföra (ADR-51)
     const gapTotal = jb.jamforbara.length;
-    const maskText = jb.maskerade.length ? ` · ${jb.maskerade.length} maskeras` : '';
+    const maskText = jb.maskerade.length ? ` · ${jb.maskerade.length} intervall redovisas inte i exporten (ett kön under ${kInstalld()})` : '';
     let gapCrit = 0, skevCount = 0;
+    const granskaBas = new Set(_laOversiktRader(d).filter(o => _laOversiktStatus(o).niva === 'granska').map(o => o.bas));
     jb.jamforbara.forEach(b => {
         const df = d.filter(r => r.bas === b);
         const kv = df.filter(r => r.kon.includes('kvinna')).map(r => r.lon);
         const ma = df.filter(r => r.kon === 'man' || r.kon === 'män').map(r => r.lon);
-        if (Math.abs((Stat.median(kv) / Stat.median(ma)) * 100 - 100) > 5) gapCrit++;
+        if (granskaBas.has(b)) gapCrit++;
         const tot = kv.length + ma.length;
         if (kv.length / tot < 0.4 || ma.length / tot < 0.4) skevCount++;
     });
@@ -42,7 +44,7 @@ function updateCompliance() {
 
     // 3. Policy P10-underläge — referensen namnges; utan referens ett tomläge (ADR-28)
     const polLabel = document.getElementById('comp-pol-label');
-    if (polLabel) polLabel.textContent = harReferens() ? `Under ${referensKortnamn()}:s P10` : 'Under ställningstagandets P10';
+    if (polLabel) polLabel.textContent = harReferens() ? `Under P10 i ${referensKortnamn()}` : 'Under ställningstagandets P10';
     const polSub = document.getElementById('comp-pol-sub');
     if (polSub) polSub.textContent = referensNamn();
     if (!harReferens()) {
@@ -334,7 +336,7 @@ function renderProcessTracker({ punkter: givna } = {}) {
         if (!hasData) return { n: 3, tab: 'matrix', title: '3. Lika arbete — samma yrke', status: 'ej', detail: 'Kräver inläst underlag.' };
         const reg = (typeof runOLSRegression === 'function') ? runOLSRegression() : null;
         const ok = !!(reg && !reg.error);
-        const { t, d } = hanterade(['Lika arbete']);
+        const { t, d } = hanterade(['Lika arbete', 'Lika arbete, fördjupning']);
         return { n: 3, tab: 'matrix', title: '3. Lika arbete — samma yrke', ..._agStegLikaArbete({ regressionOk: ok, t, d }) };
     }, { n: 3, tab: 'matrix', title: '3. Lika arbete — samma yrke', status: 'ej', detail: 'Kräver inläst underlag.' }));
 
@@ -513,8 +515,8 @@ function updateDashboardStats() {
             // k-anonymitet (ADR-12): kvoten pekar ut de få i det mindre könet.
             pgEl.innerHTML = `–<div class="stat-tip">Visas inte: ett kön har färre än ${kTroskel()} personer.</div>`;
         } else {
-            // Rå kvot för hela organisationen: EU-direktivets 5 %-gräns gäller per
-            // kategori av arbetstagare, inte här — därför ingen hänvisning till den, och neutral färg: rågapet
+            // Rå kvot för hela organisationen: direktivmarkeringen (≥ 5 %) står per grupp,
+            // inte här — därför ingen hänvisning till den, och neutral färg: rågapet
             // är en utgångspunkt, inget fynd. Bedömningen görs per grupp i Lika arbete.
             const tipText = 'Rå skillnad för hela organisationen, före hänsyn till yrke, BAS-intervall och ålder. Se Lika arbete för skillnaden per grupp.';
             // Förklaringen står i verktygstipset; under talet står bara vad det är för tal (nyckeltalsraden är en rad hög).

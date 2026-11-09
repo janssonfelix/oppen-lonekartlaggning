@@ -7,18 +7,17 @@
  * (betingade regressioner), sekventiell dekomponering med BAS-indikatorer och
  * yrkesgrupp inom BAS, kvantilregression (IRLS) samt Blinder-Oaxaca-
  * dekomposition. Modellerna tar allt de behöver som parametrar (rader, listor,
- * statGolv-värdet och BAS-rangfunktionen) och läser inget globalt tillstånd.
+ * statGolv-värdet och förklaringsmodellen) och läser inget globalt tillstånd.
  *
  * Appen får dem genom lib-speglarna (ADR-8); src/app/50-regressionsmodeller.js
  * är den tunna adaptern som läser getData() och statGolv(). OLS-kärnan
- * (fitOLS, invert, matMul, pValue2Sided, tQuantile) ligger i stat.js och
- * BAS-rangen (basRangFn) i likvardighet.js.
+ * (fitOLS, invert, matMul, pValue2Sided, tQuantile) ligger i stat.js. Ingen modell här
+ * räknar BAS som ett tal; BAS-rangen (basRangFn) finns kvar i likvardighet.js för Lägre krav.
  *
  * @see 50-regressionsmodeller.js (adaptern i appen)
  */
 
 import { fitOLS, invert, matMul, pValue2Sided, tQuantile } from './stat.js';
-import { basRangFn } from './likvardighet.js';
 
 // ---- Förklaringsmodellen som värde (ADR-56) ----
 // Vilka variabler huvudregressionen, trappan och Blinder-Oaxaca räknar bort utöver kön. Standard är ADR-44/46/53-modellen:
@@ -31,20 +30,40 @@ export function tillforGransPp() { return TILLFOR_GRANS_PP; }
 const SKAL_MAX = 300;
 
 /**
+ * Har lönefilen ålder? Sant när minst en rad har en ålder över 0 (ADR-64). Ålderskolumnen är valfri: saknas den läser
+ * inläsningen ålder 0 på varje rad, och då räknas modellerna utan ålder i stället för att alla rader faller bort.
+ * @param {any[]} rows
+ */
+export function harAlderIRader(rows) {
+    return (rows || []).some(d => d && d.alder > 0);
+}
+/** Raden har det som modellerna kräver: positiv lön, känt kön och, när lönefilen har ålder, en ålder över 0. */
+const _modellRad = (d, harAlder) => d && d.lon > 0 && (!harAlder || d.alder > 0) && typeof d.kon === 'string'
+    && (d.kon.includes('kvinna') || d.kon === 'man' || d.kon === 'män');
+
+/**
  * Normaliserar ett värde från konfigurationsfilen eller gränssnittet till en giltig modell.
  * @param {any} v
- * @param {{harYrke?: boolean}} [opts] harYrke = datat har AID eller yrke (annars kan yrkesgrupp inte väljas)
+ * @param {{harYrke?: boolean, harAlder?: boolean}} [opts] harYrke = datat har AID eller yrke (annars kan yrkesgrupp
+ *   inte väljas); harAlder = lönefilen har ålder (annars räknas ålder inte bort, ADR-64)
  * @returns {{modell: {bas:boolean, alder:boolean, yrkesgrupp:boolean, skal:string}, varningar: string[]}}
  */
-export function normaliseraForklaringsmodell(v, { harYrke = true } = {}) {
+export function normaliseraForklaringsmodell(v, { harYrke = true, harAlder = true } = {}) {
     const varningar = [];
-    if (v == null) return { modell: { ...FORKLARINGSMODELL_STANDARD }, varningar };
+    const utanAlder = m => {
+        if (m.alder && !harAlder) {
+            m.alder = false;
+            varningar.push('Ålder kan inte räknas bort: lönefilen saknar ålder.');
+        }
+        return m;
+    };
+    if (v == null) return { modell: utanAlder({ ...FORKLARINGSMODELL_STANDARD }), varningar };
     if (typeof v !== 'object' || Array.isArray(v)) {
         varningar.push('Förklaringsmodellen i filen gick inte att läsa; standardmodellen används.');
-        return { modell: { ...FORKLARINGSMODELL_STANDARD }, varningar };
+        return { modell: utanAlder({ ...FORKLARINGSMODELL_STANDARD }), varningar };
     }
-    const modell = { bas: v.bas === true, alder: v.alder === true, yrkesgrupp: v.yrkesgrupp === true,
-        skal: typeof v.skal === 'string' ? v.skal.slice(0, SKAL_MAX) : '' };
+    const modell = utanAlder({ bas: v.bas === true, alder: v.alder === true, yrkesgrupp: v.yrkesgrupp === true,
+        skal: typeof v.skal === 'string' ? v.skal.slice(0, SKAL_MAX) : '' });
     if (modell.yrkesgrupp && !harYrke) {
         modell.yrkesgrupp = false;
         varningar.push('Yrkesgrupp inom BAS kan inte väljas: lönefilen saknar AID och yrke.');
@@ -106,16 +125,16 @@ export function diagnoseCollinearity(rows, basList) {
 }
 
 // Per-BAS conditional regressions: gap inom varje BAS efter ålderskontroll.
-// golv = statGolv(): minsta antal per kön i en BAS för att en regression ska köras.
+// golv = statGolv(): minsta antal per kön i en BAS för att en regression ska köras. Utan ålder i lönefilen (ADR-64)
+// skattas kön ensamt inom varje BAS.
 export function computePerBasGap(rows, basList, { golv }) {
     // Modellen tar log(lön) och kodar kön binärt. Rader utan positiv lön ger
     // -Infinity, rader utan ålder skevar centreringen, och rader med okänt kön
     // skulle räknas som MÄN av `kon.includes('kvinna') ? 1 : 0`. Filtret hör
     // därför hemma här i stället för hos anroparen — av tre anropare skickade
     // två in ofiltrerad getData() (JPA-exporten och gruppdossiern).
-    const giltiga = (rows || []).filter(d => d && d.lon > 0 && d.alder > 0
-        && typeof d.kon === 'string'
-        && (d.kon.includes('kvinna') || d.kon === 'man' || d.kon === 'män'));
+    const harAlder = harAlderIRader(rows);
+    const giltiga = (rows || []).filter(d => _modellRad(d, harAlder));
     const out = [];
     basList.forEach(b => {
         const sub = giltiga.filter(d => d.bas === b);
@@ -125,8 +144,8 @@ export function computePerBasGap(rows, basList, { golv }) {
             out.push({ bas: b, n: sub.length, kvN: kv.length, maN: ma.length, status: 'too_few' });
             return;
         }
-        const aMean = sub.reduce((s,d)=>s+d.alder,0)/sub.length;
-        const X = sub.map(d => [1, d.kon.includes('kvinna')?1:0, d.alder - aMean]);
+        const aMean = harAlder ? sub.reduce((s,d)=>s+d.alder,0)/sub.length : 0;
+        const X = sub.map(d => [1, d.kon.includes('kvinna')?1:0, ...(harAlder ? [d.alder - aMean] : [])]);
         const y = sub.map(d => Math.log(d.lon));
         const fit = fitOLS(X, y);
         if (!fit) { out.push({ bas: b, n: sub.length, kvN: kv.length, maN: ma.length, status: 'singular' }); return; }
@@ -152,9 +171,10 @@ export function basIndikatorer(basList) {
 // modell = förklaringsmodellen (ADR-56): stegen är "Endast kön" följt av ett steg per vald variabel i ordningen
 // BAS, ålder, yrkesgrupp, var och en ovanpå de föregående. Yrkesgruppssteget räknas alltid när BAS är med (det
 // visas efter huvudtalet när det inte är valt, ADR-46); "+ Ansvar" läggs sist ovanpå den valda modellen.
-export function computeSequentialGap(rows, ageMean, basList, { golv, modell = FORKLARINGSMODELL_STANDARD }) {
-    const m = normaliseraForklaringsmodell(modell).modell;
-    const { y, isKv, ageC, bygg, skatta, steg } = _sekvensRigg(rows, ageMean, basList);
+export function computeSequentialGap(rows0, ageMean, basList, { golv, modell = FORKLARINGSMODELL_STANDARD }) {
+    const m = normaliseraForklaringsmodell(modell, { harAlder: harAlderIRader(rows0) }).modell;
+    // rows = de rader modellen kan räkna (B4): filtret ligger i _sekvensRigg, så att anroparen inte behöver det.
+    const { rader: rows, y, isKv, ageC, bygg, skatta, steg } = _sekvensRigg(rows0, ageMean, basList);
     const olsVar = modellVariabler(m).filter(v => v !== 'yrkesgrupp');
     const ut = steg(olsVar).map(skatta);
     const medAlder = m.alder;
@@ -164,6 +184,7 @@ export function computeSequentialGap(rows, ageMean, basList, { golv, modell = FO
     // mindre grupper räknas med "inget". Redovisas separat, inte i huvudtalet (ADR-33).
     const grupper = ['ledning', 'uppdrag'].filter(g => rows.filter(r => r.ansvarsgrupp === g).length >= golv);
     if (rows.some(r => r.ansvarsgrupp) && grupper.length) {
+        /** @type {any} */
         const ansvar = rows.map(d => grupper.map(g => (d.ansvarsgrupp === g ? 1 : 0)));
         ut.push(m.yrkesgrupp
             ? computeYrkesgruppGap(rows, y, isKv, ageC, { medAlder, extra: ansvar, name: '+ Ansvar' })
@@ -175,17 +196,20 @@ export function computeSequentialGap(rows, ageMean, basList, { golv, modell = FO
 /**
  * Vad varje variabel tillför (ADR-56): förklaringsgraden och könsgapet med och utan variabeln, räknat mot
  * fullmodellen kön + BAS + ålder oberoende av vad som är valt, så att tabellen i panelen står still när man
- * kryssar. Yrkesgrupp mäts ovanpå fullmodellen (den är en tilläggsvariabel, aldrig i förslaget).
- * @param {any[]} rows @param {number} ageMean @param {string[]} basList
+ * kryssar. Yrkesgrupp mäts ovanpå fullmodellen (den är en tilläggsvariabel, aldrig i förslaget). Utan ålder i
+ * lönefilen (ADR-64) är fullmodellen kön + BAS och ålder får ingen rad.
+ * @param {any[]} rows0 råraderna; filtreras i _sekvensRigg (B4) @param {number} ageMean @param {string[]} basList
  * @param {{golv:number, harYrke?:boolean}} opts harYrke = datat har AID eller yrke
  * @returns {{full:{status:string, gapPct?:number, R2?:number, k?:number},
  *   rader:Array<{variabel:'bas'|'alder'|'yrkesgrupp', deltaR2pp:number, gapUtan:number, gapMed:number, tillforLite:boolean, status:string}>,
  *   forslag:{tabort:string[]}}}
  */
-export function computeVariabelTillfor(rows, ageMean, basList, { golv: _golv, harYrke = false }) {
-    const { y, isKv, ageC, bygg, skatta } = _sekvensRigg(rows, ageMean, basList);
+export function computeVariabelTillfor(rows0, ageMean, basList, { golv: _golv, harYrke = false }) {
+    // Samma filter som i stegen (B4): lön > 0, kvinna eller man, ålder > 0 när lönefilen har ålder.
+    const harAlder = harAlderIRader(rows0);
+    const { rader: rows, y, isKv, ageC, bygg, skatta } = _sekvensRigg(rows0, ageMean, basList, { medAlder: harAlder });
     const fit = vars => skatta({ name: vars.join('+'), X: bygg(vars) });
-    const full = fit(['bas', 'alder']);
+    const full = fit(harAlder ? ['bas', 'alder'] : ['bas']);
     const rad = (variabel, utan, med) => {
         const status = utan.status === 'ok' && med.status === 'ok' ? 'ok' : utan.status !== 'ok' ? utan.status : med.status;
         const ok = status === 'ok';
@@ -193,15 +217,20 @@ export function computeVariabelTillfor(rows, ageMean, basList, { golv: _golv, ha
         return { variabel, status, deltaR2pp, gapUtan: ok ? utan.gapPct : NaN, gapMed: ok ? med.gapPct : NaN,
             tillforLite: ok && deltaR2pp < TILLFOR_GRANS_PP };
     };
-    const rader = [rad('bas', fit(['alder']), full), rad('alder', fit(['bas']), full)];
-    if (harYrke) rader.push(rad('yrkesgrupp', full, computeYrkesgruppGap(rows, y, isKv, ageC, { medAlder: true })));
+    const rader = harAlder ? [rad('bas', fit(['alder']), full), rad('alder', fit(['bas']), full)] : [rad('bas', fit([]), full)];
+    if (harYrke) rader.push(rad('yrkesgrupp', full, computeYrkesgruppGap(rows, y, isKv, ageC, { medAlder: harAlder })));
     const tabort = rader.filter(r => r.variabel !== 'yrkesgrupp' && r.tillforLite).map(r => r.variabel);
     return { full, rader, forslag: { tabort } };
 }
 
 // Det gemensamma underlaget för stegen: logaritmerad lön, könsindikator, centrerad ålder, BAS-indikatorer och
 // hjälparna som bygger en designmatris av valda variabler och skattar ett steg.
-function _sekvensRigg(rows, ageMean, basList) {
+// Raderna filtreras här (B4), som i computePerBasGap: lön > 0 (annars log = -Infinity), kvinna eller man (annars
+// kodas okänt kön som man) och ålder > 0 när ålder ingår (medAlder; standard = lönefilen har ålder, ADR-64).
+// `rader` är de rader som matriserna byggs av; anroparen använder dem för steg som läser raderna direkt.
+/** @param {any[]} rows0 @param {number} ageMean @param {string[]} basList @param {{medAlder?: boolean}} [opts] */
+function _sekvensRigg(rows0, ageMean, basList, { medAlder = harAlderIRader(rows0) } = {}) {
+    const rows = (rows0 || []).filter(d => _modellRad(d, medAlder));
     const N = rows.length;
     const y    = rows.map(d => Math.log(d.lon));
     const isKv = rows.map(d => d.kon.includes('kvinna') ? 1 : 0);
@@ -216,12 +245,12 @@ function _sekvensRigg(rows, ageMean, basList) {
     const steg = vars => [{ name: 'Endast kön', X: bygg([]) }, ...vars.map((v, j) => ({ name: namn[v], X: bygg(vars.slice(0, j + 1)) }))];
     /** @param {{name:string, X:number[][]}} s @returns {{name:string, status:string, gapPct?:number, R2?:number, k?:number, nGrupper?:number, nGrupperBada?:number, nPersoner?:number, nEnkonade?:number}} */
     const skatta = s => {
-        if (N < s.X[0].length + 5) return { name: s.name, status: 'too_few' };
+        if (!N || N < s.X[0].length + 5) return { name: s.name, status: 'too_few' };
         const fit = fitOLS(s.X, y);
         if (!fit) return { name: s.name, status: 'singular' };
         return { name: s.name, status: 'ok', gapPct: (Math.exp(fit.beta[1]) - 1) * 100, R2: fit.R2, k: fit.k };
     };
-    return { y, isKv, ageC, bygg, skatta, steg };
+    return { rader: rows, y, isKv, ageC, bygg, skatta, steg };
 }
 
 /**
@@ -310,34 +339,49 @@ export function inomYrkesgrupp(rows, y, kol) {
  * @param {number} tau - Kvantil ∈ (0,1), t.ex. 0.5 för median, 0.9 för P90.
  * @param {number} [maxIter=60]
  * @param {number} [tol=1e-5]
+ * @param {number[]|null} [start] - startvärde för β (annars OLS-lösningen); påverkar bara hur snabbt det konvergerar.
  * @returns {null | {beta:number[]}} null om n < k+5 eller XtWX singulär.
  */
-export function quantileRegression(X, y, tau, maxIter = 60, tol = 1e-5) {
+export function quantileRegression(X, y, tau, maxIter = 60, tol = 1e-5, start = null) {
     const n = X.length, k = X[0].length;
     if (n < k + 5) return null;
-    // Starta från OLS för snabb konvergens
-    const olsFit = fitOLS(X, y);
-    if (!olsFit) return null;
-    let beta = olsFit.beta.slice();
+    // Starta från OLS för snabb konvergens, eller från ett givet startvärde (bootstrappen startar i punktskattningen)
+    let beta;
+    if (Array.isArray(start) && start.length === k && start.every(Number.isFinite)) beta = start.slice();
+    else {
+        const olsFit = fitOLS(X, y);
+        if (!olsFit) return null;
+        beta = olsFit.beta.slice();
+    }
     const eps = 1e-6;
+    // Bara radernas nollskilda kolumner räknas (BAS-indikatorerna är mest nollor, ADR-63), i platta typade fält; en
+    // nolla bidrar inte till någon summa och ordningen är densamma, så resultatet är detsamma som med hela raden.
+    const rs = new Int32Array(n + 1);
+    for (let i = 0; i < n; i++) { let c = 0; for (let j = 0; j < k; j++) if (X[i][j] !== 0) c++; rs[i + 1] = rs[i] + c; }
+    const kol = new Int32Array(rs[n]), val = new Float64Array(rs[n]);
+    for (let i = 0, p = 0; i < n; i++) for (let j = 0; j < k; j++) if (X[i][j] !== 0) { kol[p] = j; val[p] = X[i][j]; p++; }
+    const S = new Float64Array(k * k), w = new Float64Array(n);
     for (let iter = 0; iter < maxIter; iter++) {
-        const yhat = X.map(row => row.reduce((s, v, i) => s + v * beta[i], 0));
-        const w = new Array(n);
         for (let i = 0; i < n; i++) {
-            const r = y[i] - yhat[i];
+            let yhat = 0;
+            for (let p = rs[i]; p < rs[i + 1]; p++) yhat += val[p] * beta[kol[p]];
+            const r = y[i] - yhat;
             const wTau = r >= 0 ? tau : (1 - tau);
             w[i] = wTau / Math.max(Math.abs(r), eps);
         }
         // Lös WLS: β = (X' W X)^-1 X' W y
-        const XtWX = Array.from({ length: k }, () => new Array(k).fill(0));
+        S.fill(0);
         const XtWy = new Array(k).fill(0);
         for (let i = 0; i < n; i++) {
-            const wi = w[i], xi = X[i], yi = y[i];
-            for (let a = 0; a < k; a++) {
-                XtWy[a] += wi * xi[a] * yi;
-                for (let b = 0; b < k; b++) XtWX[a][b] += wi * xi[a] * xi[b];
+            const wi = w[i], yi = y[i], p0 = rs[i], p1 = rs[i + 1];
+            for (let p = p0; p < p1; p++) {
+                const a = kol[p], xa = val[p];
+                XtWy[a] += wi * xa * yi;
+                const rad = a * k;
+                for (let q = p0; q < p1; q++) S[rad + kol[q]] += wi * xa * val[q];
             }
         }
+        const XtWX = Array.from({ length: k }, (_, a) => Array.from(S.subarray(a * k, a * k + k)));
         const inv = invert(XtWX);
         if (!inv) return null;
         const newBeta = matMul(inv, XtWy.map(v => [v])).map(r => r[0]);
@@ -390,10 +434,10 @@ export function quantileRegression(X, y, tau, maxIter = 60, tol = 1e-5) {
  * }}
  */
 export function blinderOaxaca(rows, { golv, modell = FORKLARINGSMODELL_STANDARD }) {
-    const m = normaliseraForklaringsmodell(modell, { harYrke: rows.some(d => d.aid || d.yrke) }).modell;
+    const harAlder = harAlderIRader(rows);
+    const m = normaliseraForklaringsmodell(modell, { harYrke: rows.some(d => d.aid || d.yrke), harAlder }).modell;
     if (!m.bas && !m.alder) return null;   // endast kön: inget att dela upp
-    const raw = rows.filter(d => d.lon > 0 && d.alder > 0 &&
-        (d.kon.includes('kvinna') || d.kon === 'man' || d.kon === 'män'));
+    const raw = rows.filter(d => _modellRad(d, harAlder));
     if (raw.length < 50) return null;
     const kv = raw.filter(d => d.kon.includes('kvinna'));
     const ma = raw.filter(d => d.kon === 'man' || d.kon === 'män');
@@ -486,37 +530,52 @@ export function blinderOaxaca(rows, { golv, modell = FORKLARINGSMODELL_STANDARD 
 }
 
 /**
- * Kör kvantilregression vid τ ∈ {.10, .50, .90} på samma kontrollvariabler
- * (kön + ålder + BAS-rank) och returnerar löneskillnaden i kr-procent vid varje kvantil.
- * Används för glasstak-/klistergolvsanalys i UI:t.
- * @param {any[]} rows - råradernas poster; filtreras här på lön, ålder och kön.
- * @param {{rang?:(basList:string[]) => (bas:string) => number}} [opts] rang = BAS-rangfunktionen
- *   (standard basRangFn ur likvardighet.js).
- * @returns {null | {results:Array<{tau:number, konPct?:number, error?:true}>, n:number, nKv:number, nMa:number}}
- *   null om N<50 eller för få BAS-intervall.
+ * Kvantilregressionens design (ADR-63): samma variabler som huvudregressionen enligt förklaringsmodellen, utan
+ * yrkesgrupp inom BAS — intercept, kön, [ålder centrerad på radmedel], [en indikator per BAS-intervall utom det
+ * första, som är referens]. Matrisen byggs med samma hjälpare som stegen i den sekventiella dekomponeringen
+ * (_sekvensRigg). Raderna filtreras här (lön > 0, kvinna eller man, ålder > 0 bara när ålder är med i modellen),
+ * så att punktskattningen och bootstrappen i appen räknar på exakt samma matris.
+ * @param {any[]} rows - råradernas poster.
+ * @param {any} [modell] - förklaringsmodellen (normaliseras; yrkesgrupp ingår aldrig).
+ * @param {{ageMean?:number, basList?:string[]}} [opts] ageMean/basList ges utifrån eller räknas ur raderna
+ *   (basList sorterad, referens = första).
+ * @returns {{rader:any[], X:number[][], y:number[], kolumner:string[], ageMean:number, basList:string[],
+ *   modell:{bas:boolean, alder:boolean}}}
  */
-export function quantileRegressionAtAllTau(rows, { rang = basRangFn } = {}) {
-    const raw = rows.filter(d => d.lon > 0 && d.alder > 0 && (d.kon.includes('kvinna') || d.kon === 'man' || d.kon === 'män'));
-    if (raw.length < 50) return null; // för litet urval för stabil quantile regression
-    const basList = [...new Set(raw.map(d => d.bas))].sort();
-    if (basList.length < 1) return null;
-    const basRank = {};
-    // BAS-rang = bokstavens plats (A=1); ett steg är alltid ett BAS-intervall (se §5 i teknisk-plan.md).
-    const rangFn = rang(basList);
-    basList.forEach(b => { basRank[b] = rangFn(b); });
-    const ranks = basList.map(b => basRank[b]);
-    const basMean = ranks.reduce((s, r) => s + r, 0) / ranks.length;
-    const ageMean = raw.reduce((s, d) => s + d.alder, 0) / raw.length;
-    const X = raw.map(d => [1, d.kon.includes('kvinna') ? 1 : 0, d.alder - ageMean, basRank[d.bas] - basMean]);
-    const y = raw.map(d => Math.log(d.lon));
-    const taus = [0.1, 0.5, 0.9];
+export function kvantilDesign(rows, modell = FORKLARINGSMODELL_STANDARD, { ageMean, basList } = {}) {
+    // Utan ålder i lönefilen (ADR-64) räknas modellen utan ålder, som i huvudregressionen.
+    const m = normaliseraForklaringsmodell(modell, { harAlder: harAlderIRader(rows) }).modell;
+    const rader = rows.filter(d => d.lon > 0 && (!m.alder || d.alder > 0)
+        && typeof d.kon === 'string' && (d.kon.includes('kvinna') || d.kon === 'man' || d.kon === 'män'));
+    const bl = m.bas ? (basList || [...new Set(rader.map(d => d.bas))].sort()) : [];
+    const am = m.alder ? (ageMean != null ? ageMean : rader.reduce((s, d) => s + d.alder, 0) / (rader.length || 1)) : NaN;
+    const vars = ['alder', 'bas'].filter(v => m[v]);
+    const X = rader.length ? _sekvensRigg(rader, am, bl, { medAlder: m.alder }).bygg(vars) : [];
+    const kolumner = ['intercept', 'kvinna', ...vars.flatMap(v => (v === 'alder' ? ['alder'] : basIndikatorer(bl).map(b => `bas:${b}`)))];
+    return { rader, X, y: rader.map(d => Math.log(d.lon)), kolumner, ageMean: am, basList: bl, modell: { bas: m.bas, alder: m.alder } };
+}
+
+/**
+ * Kör kvantilregression vid τ ∈ {.10, .50, .90} på kvantilDesign (samma variabler som huvudregressionen, utan
+ * yrkesgrupp; ADR-63) och returnerar löneskillnaden i procent vid varje kvantil och skillnaden P90 − P10 i
+ * procentenheter (negativ: skillnaden till kvinnornas nackdel är större i toppen än i botten).
+ * Används för analysen av glastak och klibbigt golv i UI:t.
+ * @param {any[]} rows - råradernas poster; filtreras i kvantilDesign.
+ * @param {{modell?:any, ageMean?:number, basList?:string[]}} [opts] modell = förklaringsmodellen.
+ * @returns {null | {results:Array<{tau:number, konPct?:number, error?:true}>, diffP90P10:number|null,
+ *   kolumner:string[], n:number, nKv:number, nMa:number}} null om N < 50.
+ */
+export function quantileRegressionAtAllTau(rows, { modell = FORKLARINGSMODELL_STANDARD, ageMean, basList } = {}) {
+    const d = kvantilDesign(rows, modell, { ageMean, basList });
+    if (d.rader.length < 50) return null; // för litet urval för stabil kvantilregression
     const results = [];
-    for (const tau of taus) {
-        const fit = quantileRegression(X, y, tau);
+    for (const tau of [0.1, 0.5, 0.9]) {
+        const fit = quantileRegression(d.X, d.y, tau);
         if (!fit) { results.push({ tau, error: true }); continue; }
-        const betaKon = fit.beta[1];
-        const pct = (Math.exp(betaKon) - 1) * 100;
-        results.push({ tau, konPct: pct });
+        results.push({ tau, konPct: (Math.exp(fit.beta[1]) - 1) * 100 });
     }
-    return { results, n: raw.length, nKv: raw.filter(d => d.kon.includes('kvinna')).length, nMa: raw.filter(d => !d.kon.includes('kvinna')).length };
+    const p10 = results[0], p90 = results[2];
+    const diffP90P10 = p10.error || p90.error ? null : p90.konPct - p10.konPct;
+    const nKv = d.rader.filter(r => r.kon.includes('kvinna')).length;
+    return { results, diffP90P10, kolumner: d.kolumner, n: d.rader.length, nKv, nMa: d.rader.length - nKv };
 }

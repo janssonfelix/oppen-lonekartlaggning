@@ -229,11 +229,28 @@ describe('samma bild på Översikt', () => {
     let w;
     beforeAll(() => { w = createAppWindow(); w.__loadDemoData(); });
 
-    it('kompliansen räknar bara jämförbara BAS och säger hur många som maskeras', () => {
+    it('kompliansen räknar bara jämförbara BAS och säger hur många intervall exporten inte redovisar', () => {
         w.__updateCompliance();
         const t = w.document.getElementById('comp-gap').textContent;
         expect(t).toMatch(/av \d+ jämförbara BAS-intervall/);
-        expect(t).toMatch(/\d+ maskeras/);
+        expect(t).toMatch(/\d+ intervall redovisas inte i exporten \(ett kön under \d+\)/);
+        expect(t).not.toMatch(/maskeras/);
+    });
+    it('referensens P10 skrivs "P10 i {referens}", utan genitiv-s efter kolon', () => {
+        w.__updateCompliance();
+        const t = w.document.getElementById('comp-pol-label').textContent;
+        expect(t).not.toMatch(/:s\b/);
+        if (w.eval('harReferens()')) expect(t).toBe(`Under P10 i ${w.eval('referensKortnamn()')}`);
+    });
+    it('Lika arbete AID x BAS: nyckeltalet räknar som trattens not ("N av M bedömda grupper utanför gränserna")', () => {
+        w.__state.kLage = 'export';
+        w.__renderTabContent('matrix');
+        const nyckel = w.document.getElementById('nyckel-la-aidbas').textContent;
+        const not = w.document.getElementById('la-tratt-not').textContent;
+        const m = /^(\d+) av (\d+) bedömda grupper utanför gränserna$/.exec(nyckel);
+        expect(m, nyckel).not.toBeNull();
+        expect(not.startsWith(`${m[1]} av ${m[2]} bedömda grupper utanför gränserna`), not).toBe(true);
+        w.__state.kLage = 'skarm';
     });
     it('en röd gap-ruta står aldrig bredvid en tom åtgärdslista', () => {
         w.__updateCompliance();
@@ -243,17 +260,18 @@ describe('samma bild på Översikt', () => {
         const lista = w.document.getElementById('action-checklist-container').textContent;
         if (rod) expect(lista).not.toContain('inga öppna punkter');
     });
-    it('varje jämförbart BAS med gap över 5 % blir en punkt i åtgärdslistan', () => {
+    it('varje jämförbart BAS med statusen Värt att granska (säkerställd, minst 3 %) blir en punkt i åtgärdslistan, och inga andra', () => {
         const ids = w.eval('buildActionChecklist()').map(i => i.id);
-        const med = v => { const a = [...v].sort((x, y) => x - y), m = a.length >> 1; return a.length % 2 ? a[m] : (a[m - 1] + a[m]) / 2; };
         const d = w.__getData();
-        const flaggade = w.__dqJamforbaraBas(d, w.__K).jamforbara.filter(b => {
-            const kv = d.filter(r => r.bas === b && r.kon.includes('kvinna')).map(r => r.lon);
-            const ma = d.filter(r => r.bas === b && (r.kon === 'man' || r.kon === 'män')).map(r => r.lon);
-            return Math.abs(med(kv) / med(ma) * 100 - 100) > 5;
-        });
-        expect(flaggade.length, 'demodatan ska ha minst ett flaggat BAS').toBeGreaterThan(0);
+        const jb = new Set(w.__dqJamforbaraBas(d, w.__K).jamforbara);
+        const rader = w.eval('_laOversiktRader(getData())').filter(o => jb.has(o.bas));
+        const flaggade = rader.filter(o => w.eval(`_laOversiktStatus(${JSON.stringify(o)}).niva`) === 'granska').map(o => o.bas);
+        expect(flaggade.length, 'demodatan ska ha minst ett BAS att granska').toBeGreaterThan(0);
         flaggade.forEach(b => expect(ids).toContain('gap-bas-' + b));
+        expect(ids.filter(i => i.startsWith('gap-bas-')).sort()).toEqual(flaggade.map(b => 'gap-bas-' + b).sort());
+        // Rutan på Översikt räknar samma intervall.
+        w.eval('updateCompliance()');
+        expect(w.document.getElementById('comp-gap-val').textContent).toMatch(new RegExp(`^${flaggade.length} `));
     });
     it('nyckeltalet hänvisar inte till EU-gränsen för hela organisationen', () => {
         w.eval('updateDashboardStats()');
@@ -713,6 +731,57 @@ describe('demodata med kandidatpar', () => {
         const godkanda = par.filter(p => p.kvN >= w.__K && (p.maN === null || p.maN === undefined || p.maN >= w.__K));
         expect(godkanda.length).toBeGreaterThan(0);
     });
+    it('jämförelseyrken är alla som inte är kvinnodominerade: Systemutvecklare (blandad) jämförs i BAS C (ADR-60)', () => {
+        const w = createAppWindow();
+        w.__loadDemoData();
+        // Systemutvecklare i BAS C (23 kvinnor av 45) är blandad och därmed jämförelseyrke.
+        const sysC = w.__computeLikvardighetPairs().orgIckeKv.find(g => g.bas === 'C' && /Systemutvecklare/.test(g.label));
+        expect(sysC).toMatchObject({ n: 45, nKv: 23, klass: 'blandad' });
+        // Standardvärdet är 0 % (ADR-61): utan att användaren ändrat något står fyra par i BAS C, de två kvinnodominerade
+        // yrkena mot Drifttekniker och Systemutvecklare — också Undersköterska–Systemutvecklare med under 5 % skillnad.
+        expect(w.__state.likvardighet.minGapPct).toBe(0);
+        const lv = w.__computeLikvardighetPairs();
+        const iC = lv.pairs.filter(p => p.kvBas === 'C').map(p => `${p.kvLabel}–${p.maLabel}`).sort();
+        expect(iC).toEqual(['Barnskötare–Drifttekniker', 'Barnskötare–Systemutvecklare', 'Undersköterska–Drifttekniker', 'Undersköterska–Systemutvecklare']);
+        expect(lv.pairs.find(p => /Systemutvecklare/.test(p.maLabel)).maKlass).toBe('blandad');
+        const liten = lv.pairs.find(p => p.kvLabel === 'Undersköterska' && p.maLabel === 'Systemutvecklare');
+        expect(liten.gapPct).toBeLessThan(5);
+        // Med 5 % som valt filter faller Undersköterska–Systemutvecklare bort.
+        w.__state.likvardighet.minGapPct = 5;
+        expect(w.__computeLikvardighetPairs().pairs.filter(p => p.kvBas === 'C')).toHaveLength(3);
+        // Filtret återskapar det tidigare urvalet: bara mansdominerade jämförelseyrken.
+        w.__state.likvardighet.jamforelse = 'mansdominerade';
+        const ma = w.__computeLikvardighetPairs();
+        expect(ma.pairs.every(p => p.maKlass === 'mansdominerad')).toBe(true);
+        expect(ma.pairs.some(p => /Systemutvecklare/.test(p.maLabel))).toBe(false);
+    });
+    it('nyckeltalet räknar alla par, varav dem över 5 %, och Visa alla visar paren som Visa max döljer (ADR-61)', () => {
+        const w = createAppWindow();
+        w.__loadDemoData();
+        const d = w.document;
+        d.querySelector('.nav-item[data-tab="likvardighet"]').click();
+        const lv = w.__state.likvardighet.result;
+        const over = lv.pairs.filter(p => p.kvMedian / p.maMedian <= 0.95 + 1e-12).length;
+        expect(lv.parAntal).toMatchObject({ totalt: lv.pairs.length, overDirektiv: over });
+        expect(over).toBeLessThan(lv.pairs.length);   // demot har par under 5 %, och de visas
+        const ruta = [...d.querySelectorAll('#lv-slutsatser .slutsats')].find(r => r.textContent.includes('Par att titta närmare på'));
+        expect(ruta.querySelector('.slutsats-varde').textContent).toBe(String(lv.pairs.length));
+        expect(ruta.querySelector('.slutsats-under').textContent).toMatch(new RegExp(`^varav ${over} med ojusterad löneskillnad ≥ 5 %, \\d+ med säker skillnad$`));
+        expect(d.getElementById('lv-min-gap').closest('div').textContent).toContain('Visa bara par med minst');
+        expect(d.getElementById('lv-min-gap').closest('div').textContent).toContain('% skillnad (0 = alla)');
+        expect(d.getElementById('lv-visa-alla')).toBeNull();
+        // Visa max under antalet par: tabellen visar de största, knappen visar alla.
+        const totalt = lv.pairs.length;
+        w.__state.likvardighet.topN = 2;
+        w.__state.likvardighet.result = null;
+        w.__renderTabContent('likvardighet');
+        expect(d.querySelectorAll('#likvardighet-table tbody tr')).toHaveLength(2);
+        expect(d.getElementById('nyckel-lv-par').textContent).toBe(`2 av ${totalt} par`);
+        expect([...d.querySelectorAll('#lv-slutsatser .slutsats-varde')][2].textContent).toBe(String(totalt));
+        d.getElementById('lv-visa-alla').click();
+        expect(d.querySelectorAll('#likvardighet-table tbody tr')).toHaveLength(totalt);
+        expect(d.getElementById('lv-visa-alla')).toBeNull();
+    });
     it('rapportunderlaget får parblock och diagrammet över kandidatpar', () => {
         const w = createAppWindow();
         w.__loadDemoData();
@@ -725,5 +794,43 @@ describe('demodata med kandidatpar', () => {
         const d = w.eval('generateTestData()');
         expect(d.length).toBe(200);
         expect([...new Set(d.map(r => r.bas))].sort()).toEqual(['A', 'B', 'C', 'D', 'E']);
+    });
+});
+
+// Ålder är valfri i lönefilen (ADR-64): utan ålder är Ålder & karriär låst med ett eget skäl.
+describe('menyn låser Ålder & karriär utan ålder i lönefilen', () => {
+    const utanAlder = w => { w.__state.data = w.__state.data.map(r => ({ ...r, alder: 0 })); w.eval('unlockTabs()'); };
+    it('fliken är låst med tipset, klicket leder till lönefilskortet med skälet, och funktionssöket säger detsamma', async () => {
+        const w = createAppWindow();
+        w.__loadDemoData();
+        const kon = w.document.getElementById('tab-kon');
+        expect(kon.getAttribute('aria-disabled')).toBeNull();
+        utanAlder(w);
+        expect(w.eval('harAlder()')).toBe(false);
+        expect(kon.getAttribute('aria-disabled')).toBe('true');
+        expect(kon.getAttribute('title')).toBe('Kräver ålder i lönefilen');
+        // De andra flikarna är öppna.
+        for (const id of ['tab-matrix', 'tab-struktur', 'tab-prioritering']) expect(w.document.getElementById(id).getAttribute('aria-disabled'), id).toBeNull();
+        kon.click();
+        expect(w.document.getElementById('view-filer').style.display).toBe('block');
+        expect(w.document.getElementById('view-kon').style.display).not.toBe('block');
+        await new Promise(r => setTimeout(r, 80));
+        expect(w.document.getElementById('aria-live-announcer').textContent).toMatch(/kräver ålder i lönefilen/);
+        expect(w.eval("_sokKraver({ flik: 'kon' })")).toBe('alder');
+        // Översiktens medelålder är tom.
+        w.eval('updateDashboardStats()');
+        expect(w.document.getElementById('stat-age').textContent).toBe('–');
+    });
+    it('med ålder igen låses fliken upp och får sitt eget tips', () => {
+        const w = createAppWindow();
+        w.__loadDemoData();
+        const med = w.__state.data;
+        utanAlder(w);
+        w.__state.data = med;
+        w.eval('unlockTabs()');
+        const kon = w.document.getElementById('tab-kon');
+        expect(kon.getAttribute('aria-disabled')).toBeNull();
+        expect(kon.getAttribute('title')).toBe(kon.getAttribute('data-tip'));
+        expect(kon.dataset.kraver).toBeUndefined();
     });
 });

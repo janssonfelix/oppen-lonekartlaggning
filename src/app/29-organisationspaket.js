@@ -120,6 +120,8 @@ function lasInPaket(text, _filnamn, { inbakat = false } = {}) {
     state.profile = { ...DEFAULT_PROFILE, ...profil };
     if (installningar.poPct != null) state.costSettings.poPct = installningar.poPct;
     if (installningar.months != null) state.costSettings.months = installningar.months;
+    // Jämförelseyrkena i likvärdigt arbete (ADR-60): alla som inte är kvinnodominerade, eller bara de mansdominerade.
+    if (installningar.jamforelse != null && state.likvardighet) { state.likvardighet.jamforelse = installningar.jamforelse; state.likvardighet.result = null; }
     // Låsningarna (ADR-47) sätts före tröskeln, så att sattKTroskel() prövar paketets eget värde mot golvet.
     state.paketLas = { kTroskelLagst: nyttGolv, inaktivitetMin: installningar.inaktivitetLast ? installningar.inaktivitetMin : null,
                        smaGrupperIExport: installningar.smaGrupperIExport !== false };
@@ -319,7 +321,8 @@ function skapaPaket() {
             orgTyp: state.profile.orgTyp,
         },
         installningar: { poPct: _paketTal('paket-po'), poNot: state.profile.poPctNote, months: _paketTal('paket-manader'),
-                         kTroskel: _kTolka(_paketText('paket-k')) ?? undefined, ..._paketLasUrFormular() },
+                         kTroskel: _kTolka(_paketText('paket-k')) ?? undefined, ..._paketLasUrFormular(),
+                         jamforelse: lvJamforelse() },   // jämförelseyrkena i likvärdigt arbete, som i fliken (ADR-60)
         referens: harReferens() ? { namn: _paketText('paket-ref-namn') || state.policyNamn || undefined,
                                     kortnamn: _paketText('paket-ref-kortnamn') || _paketText('paket-ref-namn') || state.policyKortnamn || undefined,
                                     rader: state.policy } : null,
@@ -478,7 +481,8 @@ function visaInbakatPaket() {
     content.innerHTML = `<dl>${rad('Organisation', obj?.organisation?.namn)}${rad('Utgivare', obj?.utgivare)}${rad('Skapat', obj?.skapat)}${rad('Avser år', obj?.avserAr)}`
         + `${rad('Inbakat', inb.skapad)}${rad('Verktygets version', inb.verktygsversion)}${rad('Verktygsfilens kontrollsumma (SHA-256)', inb.verktygssha)}`
         + `${rad('Benämning på jämförelsestatistiken', obj?.profil?.jamforelseNamn)}${rad('Minsta gruppstorlek', inst.kTroskel)}${rad('Lägsta tillåtna minsta gruppstorlek', inst.kTroskelLagst)}`
-        + `${rad('Rensning vid inaktivitet (min)', inst.inaktivitetMin)}${rad('Rensningstiden låst', inst.inaktivitetLast ? 'ja' : null)}${rad('Små grupper i exporten från Tabeller och egna vyer', inst.smaGrupperIExport === false ? 'inte tillåtet' : null)}</dl>`
+        + `${rad('Rensning vid inaktivitet (min)', inst.inaktivitetMin)}${rad('Rensningstiden låst', inst.inaktivitetLast ? 'ja' : null)}${rad('Små grupper i exporten från Tabeller och egna vyer', inst.smaGrupperIExport === false ? 'inte tillåtet' : null)}`
+        + `${rad('Jämförelseyrken i likvärdigt arbete', inst.jamforelse === 'mansdominerade' ? 'bara mansdominerade' : inst.jamforelse === 'alla' ? 'alla som inte är kvinnodominerade' : null)}</dl>`
         + `${rad('Egna tabeller i rapporten', obj?.rapport?.tabeller?.length)}${rad('Receptet per BAS-intervall', obj?.rapport?.perBasRecept ? 'eget' : null)}`
         + tabell(obj?.referens?.namn || 'Ställningstagandet', obj?.referens?.rader, ['aid', 'bas', 'p10', 'med', 'p90'])
         + tabell(obj?.statistik?.namn || 'Jämförelsestatistiken', obj?.statistik?.rader, ['aid', 'bas', 'median', 'p10', 'p90', 'andelKv'])

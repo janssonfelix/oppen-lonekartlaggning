@@ -10,14 +10,16 @@ det kommuner och regioner.
 Varje organisation tar in sitt eget ställningstagande, sin statistik och sina benämningar i ett
 organisationspaket, så att ingenting om en viss organisation är inbyggt. Andra arbetsvärderingssystem är en
 öppen punkt (teknisk plan §9).
+Verktyget är ännu inte prövat med verklig lönedata hos en arbetsgivare; checklistan för skarp data finns
+för den som gör det först.
 
 - **Hela lagkedjan:** genomgång av bestämmelser och praxis, lika arbete (med regression och
-  oförklarad löneskillnad), likvärdigt arbete, direktivets rapportmått, prioritering med
-  kostnadsberäkning och handlingsplan.
+  oförklarad löneskillnad), likvärdigt arbete, direktivets rapportmått, löneläget mot er
+  referens med kostnad att nå den, och handlingsplan.
 - **Färdiga underlag:** ett redigerbart Word-utkast av dokumentationen (rapporten), en Excel-fil med
   underlaget och en PDF som låst kopia. Dessutom en ZIP-fil med allt, protokoll för gemensam
   lönebedömning och rapportunderlag att klistra in i din egen mall.
-- **Dataskydd inbyggt:** bara de fält analysen behöver läses in (fem obligatoriska, två
+- **Dataskydd inbyggt:** bara de fält analysen behöver läses in (fyra obligatoriska, tre
   valfria). Filer med personnummer, namn eller e-post avvisas, och små grupper skyddas i det som
   lämnar verktyget. En risk- och sårbarhetsanalys ingår som underlag till organisationens
   konsekvensbedömning.
@@ -65,6 +67,9 @@ gäller om det slutar underhållas, står i [`GOVERNANCE.md`](GOVERNANCE.md).
 Verktyget tillhandahålls fritt — utan avgift, support eller drift — av en privatperson utanför
 kommersiell verksamhet. Det får följder som en IT-avdelning eller ett dataskyddsombud brukar fråga om:
 
+- **Användarens ansvar.** Verktyget är ett stöd för arbetsgivarens egen lönekartläggning. Användaren
+  ansvarar för hur verktyget används, för tolkningen av resultaten och för den juridiska bedömningen.
+  Verktyget är inte juridiskt granskat.
 - **Arbetsgivaren som använder verktyget är ensam personuppgiftsansvarig.** Ingen uppgift når
   upphovspersonen eller någon annan, och inget personuppgiftsbiträde finns
   ([`sakerhetsbeskrivning.md`](docs/anvandare/sakerhetsbeskrivning.md)).

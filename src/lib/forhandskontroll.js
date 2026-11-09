@@ -32,7 +32,8 @@ export const FK_SMA_GRUPP = 10;
 const MAX_RA = 24;
 const VANLIG_BAS = /^[A-N]$/;
 const ROLLER = ['bas', 'yrke', 'lon', 'alder', 'kon', 'poang', 'ansvar'];
-const OBLIGATORISKA = ['bas', 'yrke', 'lon', 'alder', 'kon'];
+// Ålder är valfri (ADR-64): kolumnen visas bara när den lästes.
+const OBLIGATORISKA = ['bas', 'yrke', 'lon', 'kon'];
 const ANSVAR_TEXT = { ledning: 'ledningsansvar', uppdrag: 'särskilt uppdrag', inget: 'inget särskilt ansvar' };
 
 /** Gränsvärdena, för gränssnittets texter. */
@@ -169,6 +170,9 @@ export function byggForhandskontroll({ rader = [], data = [], konVarden = [], pa
         varna('lon-timlon', 'fel', `Medianlönen är under ${_fkTal(FK_TIMLON_MEDIAN)} kr och ser ut som en timlön. Verktyget räknar med månadslön: kontrollera lönekolumnen.`);
     } else if (lon && lon.max > FK_SPRIDNING_GANGER * lon.median) {
         varna('lon-spridning', 'varning', `Den högsta lönen är mer än ${FK_SPRIDNING_GANGER} gånger medianlönen: kontrollera om några löner är årslöner eller har fel enhet.`);
+    }
+    if (data.length && !data.some(r => typeof r.alder === 'number' && r.alder > 0)) {
+        varna('alder-saknas', 'varning', 'Ålder saknas: analysen körs utan åldersjustering; Ålder & karriär visas inte.');
     }
     if (sammandrag.fodelsear > 0) {
         varna('alder-fodelsear', 'varning', `Åldern har räknats ut ur födelseår för ${_fkRader(sammandrag.fodelsear)}: kontrollera att ålderskolumnen verkligen är födelseår.`);

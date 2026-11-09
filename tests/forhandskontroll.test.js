@@ -192,3 +192,20 @@ describe('byggForhandskontroll: kolumner', () => {
         expect(fk.tolkning[0].celler.kon['rå']).toBe('x'.repeat(24) + '…');
     });
 });
+
+describe('byggForhandskontroll: lönefil utan ålder (ADR-64)', () => {
+    const utanAlder = r => ({ ...r, ra: { ...r.ra, alder: undefined }, tolkat: { ...r.tolkat, alder: 0 }, status: { ...r.status, alder: 'empty' } });
+    const { alder: _a, ...mappning } = MAPPNING;
+    const fk = bygg(trettio(utanAlder), { mappning, headers: HEADERS.filter(h => h !== 'Ålder') });
+    it('tolkningen har ingen ålderskolumn', () => {
+        expect(Object.keys(fk.tolkning[0].celler)).toEqual(['bas', 'yrke', 'lon', 'kon']);
+        expect(fk.fordelning.alder).toBeNull();
+    });
+    it('en varning säger att analysen körs utan åldersjustering', () => {
+        const v = fk.varningar.find(x => x.kod === 'alder-saknas');
+        expect(v).toBeTruthy();
+        expect(v.text).toBe('Ålder saknas: analysen körs utan åldersjustering; Ålder & karriär visas inte.');
+        expect(koder(fk)).toEqual(['alder-saknas']);
+    });
+    it('med ålder ingen sådan varning', () => expect(koder(bygg(trettio()))).not.toContain('alder-saknas'));
+});

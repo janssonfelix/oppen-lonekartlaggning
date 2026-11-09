@@ -7,16 +7,21 @@
  * (ADR-8); computeLikvardighetPairs() i 34-likvardigt-arbete.js är adaptern
  * runt den. Vitest verifierar *algoritmen* deterministiskt.
  *
- * Modellen:
+ * Modellen (ADR-60: jämförelseyrkena är alla som inte är kvinnodominerade):
+ *   Klassning — EN definition i hela verktyget: arKvinnodominerad()/konsklass() nedan.
+ *            DO: mer än gränsen (standard 60 %); SCB: gränsen eller mer. Mansdominerat
+ *            speglas för män; övriga är blandade.
  *   Steg 1 — Organisationens AID×BAS-grupper delas i:
- *            • kvinnodominerade (kvinnoPct > kvinnoThr, mer än 60 %) — analysens subjekt
- *            • icke-kvinnodominerade (kvinnoPct < 100−kvinnoThr, mindre än 40 %) — interna
- *              jämförelsekandidater (PRIMÄR jämförelsekälla; § 3:10 är en
+ *            • kvinnodominerade — analysens subjekt
+ *            • alla övriga (mansdominerade och blandade) — interna jämförelsekandidater
+ *              med klassen synlig (PRIMÄR jämförelsekälla; § 3:10 är en
  *              inom-arbetsgivare-analys). K-anonymitet tillämpas EJ.
- *   Steg 2 — jämförelsestatistikens AID×BAS klassificeras som
- *            icke-kvinnodominerade (kvAndel ≤ 40 %). Lokal könsdata primär,
+ *   Steg 2 — jämförelsestatistikens AID×BAS som inte är kvinnodominerade blir
+ *            kandidater med klass. Lokal könsdata primär,
  *            SCB-prefix-fallback (injicerad `scbKlass`-funktion) annars.
  *            Används som EXTERN fallback per BAS.
+ *            Filtret `jamforelse: 'mansdominerade'` begränsar båda mängderna till de
+ *            mansdominerade (det tidigare urvalet).
  *   Steg 3 — Jämför INOM samma BAS-intervall (= likvärdiga krav). Per BAS
  *            väljs internt jämförelseyrke om sådant finns, annars jämförelsestatistiken.
  *            Flagga par där jämförelseyrkets median > organisationens median,
@@ -34,10 +39,38 @@
 
 import { median as _median } from './stat.js';
 import { rngFor } from './rng.js';
+import { direktivMarkering } from './status.js';
 
-export const KVINNO_TROSKEL_DEFAULT = 60;   // > → kvinnodominerat (mer än 60 % kvinnor; jurist 2026-10-19, A5)
-export const ICKE_KV_TAK = 40;              // < → icke-kvinnodominerat (mindre än 40 % kvinnor; jämförelsestatistiken)
-export const KV_DOM_STAT = 60;               // > → kvinnodominerat (jämförelsestatistiken, skippas)
+export const KVINNO_TROSKEL_DEFAULT = 60;   // > → kvinnodominerat (DO: mer än 60 % kvinnor)
+export const ICKE_KV_TAK = 40;              // < → mansdominerat med DO och standardgränsen (klassen, inte urvalet; ADR-60)
+export const KV_DOM_STAT = 60;               // gränsen för jämförelsestatistiken — samma som KVINNO_TROSKEL_DEFAULT
+
+/**
+ * Den enda definitionen av kvinnodominerat arbete i verktyget (ADR-60, §9.22).
+ * DO: mer än gränsen. SCB: gränsen eller mer.
+ * @param {number|null|undefined} pct - procent kvinnor
+ * @param {'do'|'scb'|string} [definition='do']
+ * @param {number} [grans=60]
+ * @returns {boolean}
+ */
+export function arKvinnodominerad(pct, definition = 'do', grans = KVINNO_TROSKEL_DEFAULT) {
+    if (typeof pct !== 'number' || !isFinite(pct)) return false;
+    return definition === 'scb' ? pct >= grans : pct > grans;
+}
+
+/**
+ * Könsklassen för en grupp efter andelen kvinnor, med samma definition för män (speglad).
+ * @param {number|null|undefined} pct - procent kvinnor
+ * @param {'do'|'scb'|string} [definition='do']
+ * @param {number} [grans=60]
+ * @returns {'kvinnodominerad'|'mansdominerad'|'blandad'|''} '' när andelen är okänd
+ */
+export function konsklass(pct, definition = 'do', grans = KVINNO_TROSKEL_DEFAULT) {
+    if (typeof pct !== 'number' || !isFinite(pct)) return '';
+    if (arKvinnodominerad(pct, definition, grans)) return 'kvinnodominerad';
+    if (arKvinnodominerad(100 - pct, definition, grans)) return 'mansdominerad';
+    return 'blandad';
+}
 
 function _sortedMedian(arr) {
     if (!arr || !arr.length) return 0;
@@ -165,16 +198,16 @@ function _aldersFalt(f, g, ärIntern, golv) {
 
 /**
  * Steg 1 — aggregera organisationens individdata per AID×BAS och dela upp i
- * kvinnodominerade grupper (analysens subjekt) och icke-kvinnodominerade
- * grupper (interna jämförelsekandidater).
+ * kvinnodominerade grupper (analysens subjekt) och alla övriga grupper
+ * (interna jämförelsekandidater, med klassen mansdominerad eller blandad).
  *
  * @param {Array<{aid:string, bas:string, lon:number, kon:string, yrkeLabel?:string, yrke?:string, alder?:number}>} data
- * @param {number} kvinnoThr - kvinnotröskel i procent (> → kvinnodominerat)
+ * @param {number} kvinnoThr - kvinnotröskel i procent
  * @param {number} [K=10]
+ * @param {'do'|'scb'} [definition='do'] - DO: mer än tröskeln; SCB: tröskeln eller mer
  * @returns {{orgKvDom:Array, orgIckeKv:Array, antalAidxBas:number, kvDomMedNLessThanK:number}}
  */
-export function aggregeraOrgKvDom(data, kvinnoThr = KVINNO_TROSKEL_DEFAULT, K = 10) {
-    const ickeKvTak = 100 - kvinnoThr;
+export function aggregeraOrgKvDom(data, kvinnoThr = KVINNO_TROSKEL_DEFAULT, K = 10, definition = 'do') {
     const map = new Map();   // nyckel: aid|bas
     for (const r of (data || [])) {
         const aid = String(r?.aid || '').trim();
@@ -195,15 +228,16 @@ export function aggregeraOrgKvDom(data, kvinnoThr = KVINNO_TROSKEL_DEFAULT, K = 
     let kvDomMedNLessThanK = 0;
     for (const g of map.values()) {
         const kvinnoPct = (g.nKv / g.n) * 100;
+        const klass = konsklass(kvinnoPct, definition, kvinnoThr);
         const obj = {
             aid: g.aid, bas: g.bas, label: g.label,
-            n: g.n, nKv: g.nKv, kvinnoPct,
+            n: g.n, nKv: g.nKv, kvinnoPct, klass,
             median: _median(g.lons), lons: g.lons.slice(), aldrar: g.aldrar.slice()
         };
-        if (kvinnoPct > kvinnoThr) {
+        if (klass === 'kvinnodominerad') {
             orgKvDom.push(obj);
             if (g.n < K) kvDomMedNLessThanK++;
-        } else if (kvinnoPct < ickeKvTak) {
+        } else {
             orgIckeKv.push(obj);
         }
     }
@@ -213,14 +247,16 @@ export function aggregeraOrgKvDom(data, kvinnoThr = KVINNO_TROSKEL_DEFAULT, K = 
 }
 
 /**
- * Steg 2 — klassificera jämförelsestatistiken per AID×BAS. Returnerar de
- * icke-kvinnodominerade raderna grupperade per BAS.
+ * Steg 2 — klassificera jämförelsestatistiken per AID×BAS. Returnerar raderna
+ * som inte är kvinnodominerade (mansdominerade och blandade, med klass) grupperade per BAS.
+ * `klass.ickeKv` är alla kandidater; `klass.blandat` är hur många av dem som är blandade.
  *
  * @param {Array<{aid:string, bas:string, median:number, andelKv?:number, aidFull?:string, nKv?:number, nMa?:number}>} statistik
  * @param {((aid:string) => ({kvAndel:number}|null))|null} [scbKlass] - SCB-prefix-fallback
+ * @param {{definition?:'do'|'scb', grans?:number}} [val]
  * @returns {{statIckeKv:Array, statByBas:Map, klass:Object, klassKalla:Object}}
  */
-export function klassificeraStatistik(statistik, scbKlass) {
+export function klassificeraStatistik(statistik, scbKlass, { definition = 'do', grans = KV_DOM_STAT } = {}) {
     const statByBas = new Map();
     const statIckeKv = [];
     const klass = { kvDom: 0, blandat: 0, ickeKv: 0, oklassificerad: 0 };
@@ -241,8 +277,9 @@ export function klassificeraStatistik(statistik, scbKlass) {
         if (kvAndel == null) { klass.oklassificerad++; continue; }
         if (källa === 'lokal') klassKalla.lokal++; else klassKalla.scb++;
 
-        if (kvAndel > KV_DOM_STAT) { klass.kvDom++; continue; }
-        if (kvAndel >= ICKE_KV_TAK) { klass.blandat++; continue; }
+        const ks = konsklass(kvAndel, definition, grans);
+        if (ks === 'kvinnodominerad') { klass.kvDom++; continue; }
+        if (ks === 'blandad') klass.blandat++;
         klass.ickeKv++;
 
         const rawLabel = s.aidFull || s.aid;
@@ -252,7 +289,7 @@ export function klassificeraStatistik(statistik, scbKlass) {
             : rawLabel;
         const obj = {
             aid: s.aid, label: cleanLabel, bas: s.bas,
-            median: s.median, kvAndel, källa, nKv: s.nKv, nMa: s.nMa
+            median: s.median, kvAndel, klass: ks, källa, nKv: s.nKv, nMa: s.nMa
         };
         if (!statByBas.has(s.bas)) statByBas.set(s.bas, []);
         statByBas.get(s.bas).push(obj);
@@ -277,6 +314,22 @@ export function orgIckeKvByBas(orgIckeKv) {
 }
 
 /**
+ * Antalet par som klarat minsta gapet, räknat FÖRE topN-urvalet (ADR-61): totalt, hur många som når direktivnivån 5 %
+ * på det ojusterade gapet (det kvinnodominerade yrkets median i % av jämförelseyrkets, direktivMarkering) och hur
+ * många som har en säker skillnad (hela KI:t över 0).
+ * @param {Array} candidates
+ * @returns {{totalt:number, overDirektiv:number, sakra:number}}
+ */
+function _parAntal(candidates) {
+    let overDirektiv = 0, sakra = 0;
+    for (const p of candidates) {
+        if (p.maMedian > 0 && direktivMarkering(p.kvMedian / p.maMedian * 100)) overDirektiv++;
+        if (p.gapCI && p.gapCI.lo != null && p.gapCI.lo > 0) sakra++;
+    }
+    return { totalt: candidates.length, overDirektiv, sakra };
+}
+
+/**
  * Steg 3 — bygg kandidatpar inom samma BAS. Per BAS väljs organisationens
  * egna icke-kv-dom yrken (intern, primärt); saknas sådant används jämförelsestatistiken
  * (extern fallback). Flagga par där jämförelseyrkets median > org-median.
@@ -285,7 +338,7 @@ export function orgIckeKvByBas(orgIckeKv) {
  * @param {Map} internByBas - från orgIckeKvByBas()
  * @param {Map} externByBas - statByBas från klassificeraStatistik()
  * @param {Object} [opts] - { minGap, topN, B, rng, golv }
- * @returns {{pairs:Array, jämförelse:Object}}
+ * @returns {{pairs:Array, jämförelse:Object, antal:{totalt:number, overDirektiv:number, sakra:number}}}
  */
 export function byggPar(orgKvDom, internByBas, externByBas, opts = {}) {
     const minGap = opts.minGap ?? 0;
@@ -306,7 +359,7 @@ export function byggPar(orgKvDom, internByBas, externByBas, opts = {}) {
     const pairs = [];
     internByBas = internByBas || new Map();
     externByBas = externByBas || new Map();
-    if (!orgKvDom?.length || (!internByBas.size && !externByBas.size)) return { pairs, jämförelse };
+    if (!orgKvDom?.length || (!internByBas.size && !externByBas.size)) return { pairs, jämförelse, antal: _parAntal(pairs) };
 
     const orgBasSet = new Set(orgKvDom.map(f => f.bas));
     const jämförBasSet = new Set([...internByBas.keys(), ...externByBas.keys()]);
@@ -350,6 +403,8 @@ export function byggPar(orgKvDom, internByBas, externByBas, opts = {}) {
                 maAid: g.aid, maLabel: g.label, maBas: f.bas,
                 maMedian: g.median,
                 maKvAndel: ärIntern ? g.kvinnoPct : g.kvAndel,
+                maKvinnoPct: ärIntern ? g.kvinnoPct : g.kvAndel,
+                maKlass: g.klass || '',
                 maN: ärIntern ? g.n : null,
                 maNKv: g.nKv, maNMa: g.nMa,
                 jamforKalla: källa,                       // 'intern' | 'extern'
@@ -363,7 +418,7 @@ export function byggPar(orgKvDom, internByBas, externByBas, opts = {}) {
         }
     }
     candidates.sort((a, b) => b.gapPct - a.gapPct);
-    return { pairs: candidates.slice(0, topN), jämförelse };
+    return { pairs: candidates.slice(0, topN), jämförelse, antal: _parAntal(candidates) };
 }
 
 /**
@@ -378,7 +433,7 @@ export function byggPar(orgKvDom, internByBas, externByBas, opts = {}) {
  * @param {Array} externAll - jämförelsestatistikens icke-kv-dom yrken (flat)
  * @param {Map<string,number>} poangByKey - 'AID|BAS' eller 'AID' → poäng
  * @param {Object} [opts] - { minGap, topN, B, rng, bandPct, golv }
- * @returns {{pairs:Array, jämförelse:Object}}
+ * @returns {{pairs:Array, jämförelse:Object, antal:{totalt:number, overDirektiv:number, sakra:number}}}
  */
 export function byggParPoäng(orgKvDom, internAll, externAll, poangByKey, opts = {}) {
     const minGap = opts.minGap ?? 0;
@@ -402,7 +457,7 @@ export function byggParPoäng(orgKvDom, internAll, externAll, poangByKey, opts =
     internAll = internAll || [];
     externAll = externAll || [];
     poangByKey = poangByKey || new Map();
-    if (!orgKvDom.length || !poangByKey.size) return { pairs, jämförelse };
+    if (!orgKvDom.length || !poangByKey.size) return { pairs, jämförelse, antal: _parAntal(pairs) };
 
     const poangFor = g => poangByKey.get(g.aid + '|' + g.bas) ?? poangByKey.get(String(g.aid)) ?? null;
     const candidates = [];
@@ -439,6 +494,8 @@ export function byggParPoäng(orgKvDom, internAll, externAll, poangByKey, opts =
                 maAid: g.aid, maLabel: g.label, maBas: g.bas,
                 maMedian: g.median,
                 maKvAndel: ärIntern ? g.kvinnoPct : g.kvAndel,
+                maKvinnoPct: ärIntern ? g.kvinnoPct : g.kvAndel,
+                maKlass: g.klass || '',
                 maN: ärIntern ? g.n : null,
                 maNKv: g.nKv, maNMa: g.nMa,
                 jamforKalla: källa,
@@ -453,12 +510,12 @@ export function byggParPoäng(orgKvDom, internAll, externAll, poangByKey, opts =
         }
     }
     candidates.sort((a, b) => b.gapPct - a.gapPct);
-    return { pairs: candidates.slice(0, topN), jämförelse };
+    return { pairs: candidates.slice(0, topN), jämförelse, antal: _parAntal(candidates) };
 }
 
 /**
  * Lägre krav, högre lön (ADR-25): par där ett kvinnodominerat
- * yrke har lägre medianlön än ett av ORGANISATIONENS icke-kvinnodominerade yrken i
+ * yrke har lägre medianlön än ett av ORGANISATIONENS icke-kvinnodominerade yrken (samma mängd som kandidatparen, ADR-60) i
  * strikt LÄGRE BAS. BAS som krav-proxy — används bara när poäng saknas.
  *
  * @param {Array} orgKvDom
@@ -482,6 +539,7 @@ export function byggParLagreKrav(orgKvDom, orgIckeKv, opts = {}) {
             ut.push({ _f: f, _g: g,
                 kvAid: f.aid, kvLabel: f.label, kvBas: f.bas, kvN: f.n, kvNKv: f.nKv, kvMedian: f.median, kvKvinnoPct: f.kvinnoPct,
                 maAid: g.aid, maLabel: g.label, maBas: g.bas, maMedian: g.median, maKvAndel: g.kvinnoPct,
+                maKvinnoPct: g.kvinnoPct, maKlass: g.klass || '',
                 maN: g.n, maNKv: g.nKv, maNMa: g.n - g.nKv,
                 jamforKalla: 'intern', gapKr, gapPct, gapCI: null, basSteg: rf - rg,
             });
@@ -516,11 +574,15 @@ export function basRangFn(allaBas) {
  * @param {Array} [input.data] - organisationens individdata
  * @param {Array} [input.statistik] - jämförelsestatistiken
  * @param {((aid:string)=>({kvAndel:number}|null))|null} [input.scbKlass]
- * @param {Object} [input.opts] - { kvinnoTrosholdPct, minGapPct, topN, B, rng, k, aldersGolv }
- * @returns {{orgKvDom:Array, orgIckeKv:Array, statIckeKv:Array, pairs:Array, lagreKrav:Array, diagnostik:Object, opts:Object}}
+ * @param {Object} [input.opts] - { kvinnoTrosholdPct, kvDomDefinition, jamforelse, minGapPct, topN, B, rng, k, aldersGolv }
+ *   kvDomDefinition: 'do' (mer än tröskeln, standard) | 'scb' (tröskeln eller mer).
+ *   jamforelse: 'alla' (alla som inte är kvinnodominerade, standard) | 'mansdominerade' (ADR-60).
+ * @returns {{orgKvDom:Array, orgIckeKv:Array, statIckeKv:Array, pairs:Array, parAntal:{totalt:number, overDirektiv:number, sakra:number}, lagreKrav:Array, diagnostik:Object, opts:Object}}
  */
 export function computeLikvardighetPairs({ data = [], statistik = [], scbKlass = null, opts = {} } = {}) {
     const kvinnoThr = opts.kvinnoTrosholdPct ?? KVINNO_TROSKEL_DEFAULT;
+    const definition = opts.kvDomDefinition === 'scb' ? 'scb' : 'do';
+    const jamforelse = opts.jamforelse === 'mansdominerade' ? 'mansdominerade' : 'alla';
     const minGap = opts.minGapPct ?? 0;
     const topN = opts.topN ?? 100;
     const B = opts.B ?? 1000;
@@ -536,8 +598,18 @@ export function computeLikvardighetPairs({ data = [], statistik = [], scbKlass =
     const golv = opts.aldersGolv ?? ALDERS_GOLV_DEFAULT;   // minsta jämförelseyrke för åldersjusteringen
 
     // k-tröskeln används bara för att RÄKNA små kvinnodominerade grupper i diagnostiken (de ingår ändå).
-    const s1 = aggregeraOrgKvDom(data, kvinnoThr, opts.k ?? 10);
-    const s2 = klassificeraStatistik(statistik, scbKlass);
+    const s1 = aggregeraOrgKvDom(data, kvinnoThr, opts.k ?? 10, definition);
+    const s2 = klassificeraStatistik(statistik, scbKlass, { definition, grans: kvinnoThr });
+    // Filtret 'mansdominerade' begränsar jämförelsemängden innan paren byggs, så att reserven
+    // till jämförelsestatistiken per BAS fungerar som förut när bara blandade egna yrken finns.
+    if (jamforelse === 'mansdominerade') {
+        s1.orgIckeKv = s1.orgIckeKv.filter(g => g.klass === 'mansdominerad');
+        s2.statIckeKv = s2.statIckeKv.filter(g => g.klass === 'mansdominerad');
+        for (const [bas, rader] of s2.statByBas) {
+            const kvar = rader.filter(g => g.klass === 'mansdominerad');
+            if (kvar.length) s2.statByBas.set(bas, kvar); else s2.statByBas.delete(bas);
+        }
+    }
     const internByBas = orgIckeKvByBas(s1.orgIckeKv);
     const s3 = (poangByKey && poangByKey.size)
         ? byggParPoäng(s1.orgKvDom, s1.orgIckeKv, s2.statIckeKv, poangByKey, { minGap, topN, B, rng, bandPct, golv })
@@ -551,6 +623,7 @@ export function computeLikvardighetPairs({ data = [], statistik = [], scbKlass =
         orgIckeKv: s1.orgIckeKv,
         statIckeKv: s2.statIckeKv,
         pairs: s3.pairs,
+        parAntal: s3.antal,   // alla par före topN-urvalet (ADR-61)
         lagreKrav,
         diagnostik: {
             organisation: {
@@ -568,6 +641,6 @@ export function computeLikvardighetPairs({ data = [], statistik = [], scbKlass =
             jämförelse: s3.jämförelse,
             fel: []
         },
-        opts: { kvinnoTrosholdPct: kvinnoThr, minGapPct: minGap, topN }
+        opts: { kvinnoTrosholdPct: kvinnoThr, kvDomDefinition: definition, jamforelse, minGapPct: minGap, topN }
     };
 }

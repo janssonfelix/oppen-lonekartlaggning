@@ -46,9 +46,9 @@ checklistan täcker det som bara en körning med **din data** på **din hårdvar
 
 ## C. Analys
 
-*Några punkter kan bara verklig data visa (teknisk-plan §9 punkt 1–3): många yrkesgrupper, trattdiagrammet
-och bandkartan, och Word-utkastet i Word (avsnitt D). Verktyget är prövat med demodata och ett påhittat
-underlag med 42 yrken, och Word-utkastet bara i LibreOffice.*
+*Några punkter kan bara verklig data visa (teknisk-plan §9 punkt 1 och 3): många yrkesgrupper, trattdiagrammet
+och bandkartan. Verktyget är prövat med demodata och ett påhittat underlag med 42 yrken, och Word-utkastet
+är öppnat i Microsoft Word 365 och 2019 med demodatan (avsnitt D).*
 - [ ] **Regressionen** (Lönestruktur, *Vad blir kvar av löneskillnaden?*) körs; ojusterad och **oförklarad** skillnad
       samt per-BAS ser rimliga ut. (Vid tunt underlag visas "Tolka resultatet med försiktighet".)
 - [ ] **Kandidatpar i likvärdigt arbete** genereras i både **BAS-läge** och **poäng-läge** (om
@@ -73,7 +73,7 @@ underlag med 42 yrken, och Word-utkastet bara i LibreOffice.*
 ## D. Utdata
 - [ ] **Word-utkastet** laddas ner och **öppnas i Word**. Bedömningarna av regler och praxis och
       verktygets fynd är med. De gula `[HR fyller i]`-fälten syns och går att
-      redigera. *Utkastet är under utvecklingen bara prövat i LibreOffice. Kontrollera särskilt i Word att*
+      redigera. *Utkastet är prövat i Word 365 och 2019 med demodatan. Kontrollera ändå i din Word-version att*
       *tabellerna ryms på sidan, bland dem översikten per BAS-intervall med åtta kolumner. Kontrollera också*
       *att diagrambilderna syns och har sina bildtexter.*
 - [ ] **ZIP-filen** innehåller Word-utkastet, Excel-filen och diagrammen som bilder, och bilderna går att öppna.
