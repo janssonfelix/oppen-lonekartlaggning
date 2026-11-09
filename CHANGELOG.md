@@ -306,6 +306,9 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   *färre än … personer*) böjs efter talet, på skärmen och i exporterna. Stora demot sätter tröskeln till 1, och då
   stod det till exempel *bara BAS med minst 1 personer* under bandkartan.
 
+- **Kostnadsdiagrammet i Prioritering skriver *BAS C*.** Gruppens etikett slutade på *· C*; nu står *· BAS C*, som på
+  knappen för BAS-intervallet ovanför diagrammet.
+
 ### Exporter
 
 - **Word-utkastets tabeller inför Word-testet.** Två tabeller i följd skiljs av ett tomt stycke (Word slår annars

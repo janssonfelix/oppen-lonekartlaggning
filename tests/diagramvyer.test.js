@@ -815,7 +815,9 @@ describe('Prioritering: chart-prio-pareto och chart-prio-matrix', () => {
         const f = w.eval('_prioKostnadFigur(window.__v, [54.5, 81.8, 100])');
         expect(f.y2).toBeUndefined();
         expect(f.lager.map(l => [l.marke, l.riktning, l.serie, l.opacitet, l.data.length])).toEqual([['stapel', 'liggande', 'Når tillsammans 80 % av kostnaden', 1, 2], ['stapel', 'liggande', 'Övriga', 0.4, 1]]);
-        expect(f.y.ordning[0]).toBe('#1 207011 Ett ganska långt y… · C');
+        // BAS-delen läses som filterknappen ovanför diagrammet (BAS C), inte bara bokstaven.
+        expect(f.y.ordning[0]).toBe('#1 207011 Ett ganska långt y… · BAS C');
+        expect(f.lager[0].data[0].y).toBe(f.y.ordning[0]);
         expect(vanliga([f.lager[0].data.map(d => d.etikett)])[0]).toEqual(['400 000 kr · 55 %', '200 000 kr · 82 %']);
         expect(vanliga(f.lager[0].tips(f.lager[0].data[0]))).toEqual([['207011 Ett ganska långt yrkesnamn · BAS C'], ['Kostnad', '400 000 kr/år'], ['Kumulativ andel', '54,5 %']]);
         expect(f.lager[0].data[0].markering).toEqual(w.eval("markeringFor('C', '207011 Ett ganska långt yrkesnamn')"));
