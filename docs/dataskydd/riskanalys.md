@@ -1,6 +1,6 @@
 # Risk- och sårbarhetsanalys (dataskydd och informationssäkerhet) — Öppen lönekartläggning
 
-**Bygge:** `2026.11.05` · **Artefakt-SHA-256:** `3f028ff91ae2227cc2f80427b7bb88c21256e198c397a2e8f2429314c8280667` (se `dist/RELEASE.txt`).
+**Bygge:** `2026.11.05` · **Artefakt-SHA-256:** `60a049ecd3706c9ffb31a801a195167aebdd9975306c266ce80788bc17e09d8c` (se `dist/RELEASE.txt`).
 **Granskningsdatum:** 2026-11-07.
 **Granskningsmetod:** kodläsning påstående för påstående + statisk sökning i källkod och bygge +
 körning av det byggda verktyget i jsdom och i Chromium (utan nätverk) med syntetiska testfiler.
@@ -378,7 +378,8 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   - rapportens bilaga med gruppdossierer (Word-utkastet och utskriften med bilagan vald)
   - importprofilerna (*Exportera JSON* och konfigurationsfilens fält, prövade som utdata utan lönemått)
   - statistikens matchning i Löneläget (sammanfattningen och *Beräkning & urval* i exportläget; kolumnen
-    *Matchning* i tabellernas CSV, Excelfilerna och jämförelseexporten)
+    *Matchning* i tabellernas CSV, Excelfilerna, jämförelseexporten och rapportunderlagets block *Lönerna mot
+    referenserna*)
   - diagrammet över statistikens spann i Löneläget (*Överblick*, `chart-jmf-statlage`): diagramdatan ska ha en rad per
     grupp som når tröskeln, med matchningen i serienamnet
   - Att göra-punkterna.
@@ -469,10 +470,11 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   inte. Vaktas av `tests/smoke-referenser.test.js`.
 - **Löneläget, statistikens matchning:** kolumnen *Matchning* (AID + BAS, Endast AID, –) i tabellen mot
   jämförelsestatistiken, i detaljlistan, i Excelfilerna (alla flikar, bladet *Referenser* och den samlade
-  jämförelseexporten), i rapportens tabell och i utskriften, och sammanfattningen ovanför tabellen med antalet
-  yrkesgrupper per matchningsnivå (också i *Beräkning & urval*). Utdatan säger bara hur statistiken matchades och hur
-  många grupper som matchades; den bär inga lönemått. Den gäller samma rader som tabellen, så grupper under tröskeln
-  syns inte och räknas inte. Vaktas av `tests/ktroskel-invarianter.test.js` och `tests/smoke-jamforelse.test.js`.
+  jämförelseexporten), i rapportens tabell, i rapportunderlagets block *Lönerna mot referenserna* och i utskriften,
+  och sammanfattningen ovanför tabellen med antalet yrkesgrupper per matchningsnivå (också i *Beräkning & urval*).
+  Utdatan säger bara hur statistiken matchades och hur många grupper som matchades; den bär inga lönemått. Den
+  gäller samma rader som tabellen, så grupper under tröskeln syns inte och räknas inte. Vaktas av
+  `tests/ktroskel-invarianter.test.js`, `tests/smoke-jamforelse.test.js` och `tests/smoke-referenser.test.js`.
 - **Löneläget, överblickens diagram över statistikens spann** (`chart-jmf-statlage`): en punkt per yrkesgrupp
   AID×BAS med läget för organisationens median i statistikens spann (0 = P10, 100 = P90), med tips (yrke, BAS,
   läget, organisationens median, statistikens P10, median och P90, matchning, andel kvinnor, antal), bild och

@@ -12,7 +12,8 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   *Matchning* efter BAS: *AID + BAS* när statistiken har en rad med samma AID och samma BAS, *Endast AID* när en rad
   med samma AID utan BAS används, och – när statistik saknas. Rubrikens hjälptext förklarar regeln, och kolumnen
   går att sortera. Samma kolumn finns i detaljlistan (när statistik finns), i Excel (alla flikar), bladet
-  *Referenser*, den samlade jämförelseexporten, rapportens tabell och utskriften. Ovanför tabellen står hur många
+  *Referenser*, den samlade jämförelseexporten, rapportens tabell, rapportunderlagets block *Lönerna mot
+  referenserna* (när statistik finns) och utskriften. Ovanför tabellen står hur många
   yrkesgrupper i urvalet som matchades på AID och BAS, på endast AID och utan statistik; antalen står också i
   *Beräkning & urval*. Alla uppslag mot statistiken går nu genom ett gemensamt uppslag (`statistikFor` i
   `src/lib/jamforelse.js`). Rättelser: Löneöversyns *marknadspositionering* kunde ge en grupp medianen för ett annat

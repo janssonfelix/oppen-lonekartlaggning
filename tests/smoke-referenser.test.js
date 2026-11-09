@@ -169,6 +169,22 @@ describe('överblicken i exporterna', () => {
         expect(b.tabell.rubriker[0]).toBe('Yrkesgrupp');
         expect(b.stycken.join(' ')).toMatch(/löneläget/);
     });
+    it('rapportunderlagets lista har kolumnen Matchning bara när statistik finns, med detaljlistans ord', () => {
+        const w = fonster();
+        w.__state.statistik = []; w.__state.statistikHasP10 = false; w.__state.statistikHasP90 = false;
+        expect(w.eval('rapportunderlagBlock()').find(x => x.id === 'referenser').tabell.rubriker).not.toContain('Matchning');
+        medStatistik(w);
+        // En AID får bara en rad utan BAS: dess grupper matchas på endast AID.
+        const aid = w.__state.statistik[0].aid;
+        w.__state.statistik = [...w.__state.statistik.filter(r => r.aid !== aid), { aid, bas: '', median: 34000, p10: 30000, p90: 39000 }];
+        const b = w.eval('rapportunderlagBlock()').find(x => x.id === 'referenser');
+        expect(b.tabell.rubriker.slice(0, 3)).toEqual(['Yrkesgrupp', 'Matchning', 'n']);
+        const grupper = w.eval('medExportLage(() => referensOverblick())').grupper;
+        expect(b.tabell.rader.map(r => r[1])).toEqual(grupper.map(g => w.eval('_jfMatchningEtikett')(g.statistikMatchning)));
+        expect(new Set(b.tabell.rader.map(r => r[1]))).toEqual(new Set(['AID + BAS', 'Endast AID']));
+        for (const r of b.tabell.rader) expect(r).toHaveLength(b.tabell.rubriker.length);
+        expect(w.eval('_ruTillWordHtml')(b)).toContain('<th>Matchning</th>');
+    });
     it('utskriften tar med listan ur överblicken före avsnittet mot statistiken', () => {
         const w = fonster(); medStatistik(w);
         w.__renderTabContent('benchmark');

@@ -179,6 +179,7 @@ describe.each([[10, []], [25, SENT_MELLAN]])('I4: invarianten över flikar och e
         expect(utdata.find(([n]) => n === 'tabell-CSV: ref-tabell')?.[1]).toMatch(/Matchning[^]*AID \+ BAS/);
         expect(utdata.find(([n]) => n.startsWith('jämförelseexporten'))[1]).toMatch(/BAS \| Matchning \| N \(organisationen\)[^]*AID \+ BAS/);
         expect(utdata.find(([n]) => n.startsWith('Excel alla flikar'))[1]).toMatch(/\[Jamforelsestatistik\][^]*Matchning mot jämförelsestatistiken/);
+        expect(utdata.find(([n]) => n === 'rapportunderlag: referenser')?.[1]).toMatch(/<th>Yrkesgrupp<\/th><th>Matchning<\/th>[^]*AID \+ BAS/);
     });
     // Sammanfattningen räknar bara yrkesgrupper som når tröskeln: 14 vid 10 (de sex säkra, toppyrket, de fyra mellan och
     // de tre med ett litet kön), 10 vid 25 (utan de fyra mellan). Fixturen har en statistikrad per AID×BAS.

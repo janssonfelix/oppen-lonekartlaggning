@@ -93,7 +93,8 @@ function _rapportunderlagBlockExport() {
         _ruAvsnittBlock('handlingsplan', { rader: hpRader, summa: hpRader.reduce((s, r) => s + (r.kostnad || 0), 0), ...(hpSkalBlock ? { skal: hpSkalBlock } : {}) }, opt),
     ];
     const referenser = referensOverblick();
-    if (referenser) block.push(_ruReferenserBlock(referenser, opt));
+    // Kolumnen Matchning bara när statistik finns, som i detaljlistan.
+    if (referenser) block.push(_ruReferenserBlock(referenser, { ...opt, harStatistik: state.statistik.length > 0 }));
     lika.grupper.filter(g => g.flaggad).forEach((g, i) => {
         const rader = d.filter(r => r.yrke === g.yrke);
         const ki = _gdBootstrapGapCI(rader.filter(arKv).map(r => r.lon), rader.filter(arMa).map(r => r.lon));

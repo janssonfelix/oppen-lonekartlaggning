@@ -537,6 +537,15 @@ describe('blocket Lönerna mot referenserna', () => {
         expect(b.stycken.join(' ')).toMatch(/\+21,6 %/);
         expect(b.stycken.join(' ')).not.toMatch(/ställningstagandet ligger/);
     });
+    it('med statistik har listan kolumnen Matchning efter Yrkesgrupp, med tabellens ord', () => {
+        const grupper = [{ ...grupp, statistikMatchning: 'aid-bas' }, { ...grupp, yrke: '2 Yrke', statistikMatchning: 'aid' }, { ...grupp, yrke: '3 Yrke', statistikMatchning: null }];
+        const b = referenserBlock({ ...overblick, grupper }, { urval: 'Hela organisationen', demo: false, harStatistik: true });
+        expect(b.tabell.rubriker).toEqual(['Yrkesgrupp', 'Matchning', 'n', 'Median (kr)', 'Mot ställningstagandet (%)', 'Mot statistiken (%)', 'Läge och förslag']);
+        expect(b.tabell.rader.map(r => r[1])).toEqual(['AID + BAS', 'Endast AID', '–']);
+        expect(b.tabell.rader[0][6]).toBe(grupp.monster.text);
+        // Utan statistik (förvalet) finns kolumnen inte.
+        expect(referenserBlock({ ...overblick, grupper }, { urval: 'Hela organisationen', demo: false }).tabell.rubriker).not.toContain('Matchning');
+    });
     it('med bara ställningstagandet nämns inga mönster som kräver statistiken', () => {
         const b = referenserBlock({ ...overblick, tal: { ...overblick.tal, vagdMedianMotStatistikPct: null } }, { urval: 'Hela organisationen', demo: false });
         expect(b.stycken.join(' ')).not.toMatch(/statistiken ligger över|mot statistiken:/);
