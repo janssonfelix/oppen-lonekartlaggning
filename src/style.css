@@ -1904,6 +1904,13 @@ td > .k-mask-note { position: sticky; left: 0; max-width: calc(100cqw - 24px); w
     outline: 2px solid var(--primary);
     outline-offset: 2px;
 }
+/* Tabeller och egna vyer: underflikarna Egna vyer och Alla diagram (samma knappar), och kopiorna i Alla diagram */
+.ut-underflikar { margin-bottom: 14px; }
+.ut-alla-innehall { padding-bottom: 8px; }
+.ut-kopia { border-top: 1px solid var(--border); padding: 14px 0 6px; min-width: 0; }
+.ut-kopia:first-child { border-top: 0; padding-top: 0; }
+.ut-kopia-rubrik { margin: 0 0 2px; font-size: var(--fs-md); }
+.ut-kopia-fran { margin: 0 0 8px; font-size: var(--fs-sm); color: var(--text-muted); }
 .info-tab-content {
     line-height: 1.65;
     font-size: var(--fs-md);

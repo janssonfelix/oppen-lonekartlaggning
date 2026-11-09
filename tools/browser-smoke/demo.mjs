@@ -3,7 +3,7 @@
 // Webbläsar-röktestet, del: Stort demo.
 // Körs av tools/browser-smoke.mjs i samma ordning som kontrollerna alltid har körts.
 import { FIL, ok, browser } from './rigg.mjs';
-/* global state -- används i page.evaluate, där de finns i sidan */
+/* global state, _ritadVid, flikInaktuell -- används i page.evaluate, där de finns i sidan */
 
 // Stort demo (7 000 personer): tider.
 export async function stortDemo() {
@@ -47,6 +47,24 @@ export async function stortDemo() {
                 return Math.round(performance.now() - t0);
             }, flik));
         }
+        // Alla diagram (74-alla-diagram.js): varje grupp öppnas för sig, tills dess kopior är ritade. Budget 2 s per grupp,
+        // också för en flik som ritas först när gruppen öppnas.
+        await s.evaluate(() => document.getElementById('ut-flik-alla').click());
+        const grupper = await s.evaluate(() => [...document.querySelectorAll('#ut-alla-grupper > details')].map(g => g.dataset.utFlik));
+        const gruppTider = [];
+        for (const flik of grupper) {
+            const [t, antal, forut] = await s.evaluate(async f => {
+                const g = document.getElementById(`ut-alla-${f}`), forut = _ritadVid.has(f) && !flikInaktuell(f);
+                const t0 = performance.now();
+                g.querySelector('summary').click();
+                while (!/diagram/.test(g.querySelector('.avsnitt-under').textContent) || !g.open || /ritas när/.test(g.querySelector('.avsnitt-under').textContent)) { if (performance.now() - t0 > 30000) return [99999, 0, forut]; await new Promise(r => setTimeout(r, 10)); }
+                await new Promise(r => requestAnimationFrame(() => r()));
+                return [Math.round(performance.now() - t0), g.querySelectorAll('[id^="ut-diagram-"]').length, forut];
+            }, flik);
+            gruppTider.push(`${flik} ${t} ms (${antal} diagram${forut ? '' : ', fliken ritades'})`);
+            ok(t <= 2000, `stort demo: Alla diagram, gruppen ${flik} öppnad på ${t} ms (budget 2000 ms)`);
+        }
+        console.log(`  Alla diagram: ${gruppTider.join(' · ')}`);
         await mat('sökningen visar träffar', () => s.evaluate(async () => {
             const f = document.getElementById('sok-grupp'), t0 = performance.now();
             f.value = 'Undersköterska';

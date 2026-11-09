@@ -430,6 +430,14 @@ rubrikraden, också när det är hopfällt.
    AID-nivå** ("Övriga i AID 2070xx (2 yrken)"). Det går bara i Tabeller och egna vyer, aldrig i Lika arbete,
    där en hopslagen grupp inte längre är lika arbete.
 
+   Under Löneöversikten står två underflikar: **Egna vyer** och **Alla diagram**. Under Alla diagram finns diagrammen
+   från de andra flikarna samlade, en grupp per flik i menyns ordning. Öppna en grupp för att se flikens diagram;
+   fliken ritas då om det behövs, men du stannar där du är. Varje diagram har sin rubrik, en länk *Från fliken …* till
+   diagrammet i fliken, egna filter och en egen exportmeny. Filtren i samlingen och i fliken påverkar inte varandra,
+   och diagrammet i samlingen visar alltid det som diagrammet i fliken visar. Ett diagram som fliken inte visar med
+   ditt underlag (till exempel det mot jämförelsestatistiken utan statistik) står inte heller i samlingen. Samlingen
+   är ingen egen export: ZIP-filen och rapporten tar diagrammen från flikarna, en gång var.
+
 Varje diagram har en **Exportera**-knapp i övre högra hörnet: PNG i två storlekar,
 SVG (skarp i Word) och diagramdatan som tabell.
 

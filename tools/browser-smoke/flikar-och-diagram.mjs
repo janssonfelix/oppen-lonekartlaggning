@@ -415,6 +415,55 @@ export async function flikarOchDiagram() {
         ok(await punkter() === fore && await falt.inputValue() === '', 'Visa alla ritar alla punkter igen och tömmer fältet');
     }
 
+    console.log('\n── Alla diagram: kopiorna i Tabeller och egna vyer ──');
+    {
+        const felFore = konsolfel.length + sidfel.length;
+        await page.click('.nav-item[data-tab="utforska"]');
+        await page.waitForTimeout(300);
+        await page.click('#ut-flik-alla');
+        await page.waitForTimeout(200);
+        ok(await page.evaluate(() => document.getElementById('ut-flik-alla').getAttribute('aria-selected') === 'true'
+            && !document.getElementById('ut-alla-diagram').hidden && document.getElementById('ut-egna').hidden), 'underfliken Alla diagram är vald och visas');
+        // Gruppen Prioritering öppnas med ett klick; tiden mäts i sidan tills kopian av matrisen är ritad.
+        const tid = await page.evaluate(async () => {
+            const t0 = performance.now();
+            document.querySelector('#ut-alla-prioritering > summary').click();
+            while (!document.querySelector('#ut-diagram-chart-prio-matrix > svg')) { if (performance.now() - t0 > 30000) return 99999; await new Promise(r => setTimeout(r, 10)); }
+            await new Promise(r => requestAnimationFrame(() => r()));
+            return Math.round(performance.now() - t0);
+        });
+        const info = await page.evaluate(() => {
+            const k = document.getElementById('ut-diagram-chart-prio-matrix'), kort = k.closest('.ut-kopia');
+            return { flik: document.querySelector('.nav-item.active').dataset.tab, rader: [...kort.querySelectorAll('.diagram-urval')].map(r => r.getAttribute('data-urval-falt')),
+                meny: !!kort.querySelector('.chart-export-btn'), punkter: k.querySelectorAll('svg [data-marke="punkt"]').length,
+                kalla: document.getElementById('chart-prio-matrix').querySelectorAll('svg [data-marke="punkt"]').length, hojd: k.getBoundingClientRect().height };
+        });
+        console.log(`  Gruppen Prioritering öppnad på ${tid} ms`);
+        ok(info.flik === 'utforska', 'att öppna gruppen flyttar inte användaren från fliken');
+        ok(['bas', 'n', 'x'].every(f => info.rader.includes(f)) && info.meny, `kopian av prioriteringsmatrisen har filterraderna (${info.rader.join(', ')}) och en egen exportmeny`);
+        ok(info.punkter > 0 && info.punkter === info.kalla && info.hojd > 50, `kopian ritar samma punkter som källan (${info.punkter} och ${info.kalla})`);
+        // Kopians filter: ett Minst i kopian döljer punkter där, men inte i källan.
+        const falt = page.locator('#ut-diagram-chart-prio-matrix').locator('xpath=preceding-sibling::div[@data-urval-falt="n"][1]').locator('input[data-urval-grans="min"]');
+        const minst = await page.evaluate(() => { const sp = _figUrvalSpann(document.getElementById('ut-diagram-chart-prio-matrix')._figur, 'n'); return Math.ceil((sp.min + sp.max) / 2); });
+        await falt.fill(String(minst));
+        await falt.press('Enter');
+        await page.waitForTimeout(300);
+        const efter = await page.evaluate(() => [document.querySelectorAll('#ut-diagram-chart-prio-matrix svg [data-marke="punkt"]').length,
+            document.querySelectorAll('#chart-prio-matrix svg [data-marke="punkt"]').length]);
+        ok(efter[0] < info.punkter && efter[1] === info.kalla, `kopians filter döljer punkter i kopian (${info.punkter} → ${efter[0]}) men inte i källan (${efter[1]})`);
+        await page.locator('#ut-diagram-chart-prio-matrix').locator('xpath=preceding-sibling::div[contains(@class,"diagram-urval")][1]').locator('[data-urval-alla]').click();
+        // Mobilbredd: kopiorna och deras filterrader ger ingen vågrät rullning.
+        await page.setViewportSize({ width: 375, height: 800 });
+        await page.waitForTimeout(400);
+        const bred = await page.evaluate(() => [document.documentElement.scrollWidth, window.innerWidth]);
+        ok(bred[0] <= bred[1], `Alla diagram vid 375 punkter: ingen vågrät rullning (${bred[0]} / ${bred[1]})`);
+        await page.setViewportSize({ width: 1440, height: 900 });
+        await page.waitForTimeout(200);
+        ok(konsolfel.length + sidfel.length === felFore, 'inga konsolfel i Alla diagram');
+        await page.click('#ut-flik-egna');
+        await page.waitForTimeout(200);
+    }
+
     console.log('\n── Regler & praxis: pilen och Stöd i verktyget ──');
     {
         await page.evaluate(() => document.querySelector('.nav-item[data-tab="bestammelser"]').click());

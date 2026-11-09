@@ -68,17 +68,20 @@ function _chartExportSlug(s) {
     return String(s || '').normalize('NFC').replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-+|-+$/g, '').slice(0, 60);
 }
 
-/** Diagrammets rubrik: närmaste h2/h3 i samma kort, annars elementets id. */
+/** Diagrammets rubrik: närmaste h2/h3 i samma kort, annars elementets id. En kopia i Alla diagram har källans rubrik. */
 function chartExportTitle(gd) {
+    const egen = gd.closest ? gd.closest('.ut-kopia')?.querySelector(':scope > .ut-kopia-rubrik') : null;
+    if (egen && egen.textContent.trim()) return egen.textContent.replace(/\s+/g, ' ').trim();
     const kort = gd.closest ? gd.closest('.card') : null;
     const h = kort ? kort.querySelector('h2, h3') : null;
     const t = h ? h.textContent.replace(/\s+/g, ' ').trim() : '';
     return t || gd.id || 'Diagram';
 }
 
-/** <DEMO_>Flik_Rubrik_ÅÅÅÅ-MM-DD.ext */
+/** <DEMO_>Flik_Rubrik_ÅÅÅÅ-MM-DD.ext (en kopia i Alla diagram: källans flik) */
 function chartExportFilename(gd, ext, datum = new Date()) {
-    const panel = gd.closest ? gd.closest('.view-panel') : null;
+    const kalla = typeof diagramKopiaKalla === 'function' ? diagramKopiaKalla(gd) : null;
+    const panel = (kalla || gd).closest ? (kalla || gd).closest('.view-panel') : null;
     const flik = panel && panel.id ? panel.id.replace(/^view-/, '') : 'diagram';
     const Flik = flik.charAt(0).toUpperCase() + flik.slice(1);
     const pad = n => String(n).padStart(2, '0');

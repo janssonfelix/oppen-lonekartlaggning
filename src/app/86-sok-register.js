@@ -107,6 +107,7 @@ const SOK_FUNKTIONER = [
     // Tabeller och egna vyer
     { namn: 'Löneöversikt — alla BAS-intervall', synonymer: ['tabell', 'lönenivåer', 'fast tabell'], flik: 'utforska', avsnitt: 'avsnitt-ut-oversikt' },
     { namn: 'Egna vyer', synonymer: ['pivot', 'egen tabell', 'eget diagram', 'utforska'], flik: 'utforska', avsnitt: 'avsnitt-ut-egna' },
+    { namn: 'Alla diagram', synonymer: ['alla diagram', 'diagramsamling', 'samlade diagram', 'diagram från alla flikar', 'samtliga diagram', 'diagramöversikt'], flik: 'utforska', avsnitt: 'ut-alla-diagram' },
     // Dialogerna
     { namn: 'Inställningar', synonymer: ['inställning', 'konfigurera'], flik: 'dashboard', dialog: 'installningar' },
     { namn: 'Ordlista', synonymer: ['begrepp', 'termer', 'ord', 'förklaring av ord'], flik: 'info', dialog: 'ordlista' },

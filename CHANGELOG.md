@@ -27,6 +27,16 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   inte). Filtren läser samma tal och ord som diagrammets verktygstips eller tabellen; inget nytt visas. Diagram vars
   punkter är BAS-intervall, personer eller åldersklasser har bara BAS-knapparna.
 
+- **Alla diagram samlade i Tabeller och egna vyer.** Fliken har två underflikar överst: *Egna vyer* (som förut,
+  förvald) och *Alla diagram*. Pilarna flyttar mellan dem, och valet står kvar så länge sidan är öppen. *Alla diagram*
+  har en grupp per upplåst flik med diagram, i menyns ordning och stängd från början. När en grupp öppnas ritas
+  fliken om det behövs, utan att du flyttas dit, och varje diagram i den som visas där och får exporteras står i
+  gruppen: med sin rubrik, raden *Från fliken …* med en länk till diagrammet i fliken, egna filter och en egen
+  exportmeny. Filtren i samlingen och i fliken påverkar inte varandra. Diagrammet visar alltid det som diagrammet i
+  fliken visar och ritas om varje gång gruppen öppnas eller samlingen visas. Samlingen är ingen ny export: ZIP-filen,
+  rapporten, utskriften och rapportunderlaget tar diagrammen från flikarna som förut, en gång var, och en export ur
+  samlingens egen meny ger samma fil som en export ur fliken. Sökningen hittar *Alla diagram*.
+
 - **Välj vilka BAS-intervall ett diagram visar.** Diagrammen där BAS-intervallet är en dimension har en knapp per
   intervall ovanför diagrammet, och *Visa alla*: bandkartan, statistikens spann, spannet och avvikelsen mot
   statistiken, efterlevnaden (båda vyerna), läget i spannet per kön och hanteln mot referenserna i Löneläget;

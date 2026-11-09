@@ -164,6 +164,8 @@ function _sokValjFunktion(p) {
     else {
         navigateTo(p.flik);
         if (!p.avsnitt) return;
+        // Ett avsnitt i en underflik som inte visas (Tabeller och egna vyer: Egna vyer eller Alla diagram) visar den först.
+        if (typeof utVisaUnderflikFor === 'function') utVisaUnderflikFor(document.getElementById(p.avsnitt));
         if (!_sokMalDolt(p)) { sidindexGaTill(p.avsnitt); return; }
         window.scrollTo(0, 0);
         /** @type {HTMLElement|null} */ (document.getElementById('main-content'))?.focus({ preventScroll: true });

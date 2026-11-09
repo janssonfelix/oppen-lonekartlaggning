@@ -248,7 +248,9 @@ function kStampelFor(undantag) {
  */
 function _kUndantagFor(el, medSma) {
     if (!el || typeof el.closest !== 'function') return '';
-    if (el.closest('#view-likvardighet')) return 'Likvärdigt arbete';
+    // En kopia i Alla diagram (74-alla-diagram.js) bär samma figur som källan, och stämpeln följer källans flik.
+    const kalla = typeof diagramKopiaKalla === 'function' ? diagramKopiaKalla(el) : null;
+    if (el.closest('#view-likvardighet') || (kalla && kalla.closest('#view-likvardighet'))) return 'Likvärdigt arbete';
     // Ett diagram ritat med diagramkärnan exporteras annars utan små grupper om inte vyn uttryckligen begär
     // dem (exportMedSma): undantaget gäller bara när exporten faktiskt bär dem.
     if (el._figur) {

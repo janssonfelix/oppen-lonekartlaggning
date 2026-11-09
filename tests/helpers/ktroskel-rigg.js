@@ -211,6 +211,28 @@ export async function samlaUtdata(w) {
     lagg('Att göra-CSV', (w.__csv || []).map(r => r.join(' | ')).join('\n'));
     w.eval('_downloadCSV = window.__csvOrig');
 
+    // Alla diagram (74-alla-diagram.js): ingen ny utdata, men en ny väg till den. Varje grupp öppnas och varje kopias
+    // diagramdata prövas som en egen väg; testet "kopiorna i Alla diagram" kräver att den är källans, rad för rad.
+    // Kopior av de undantagna diagrammen hoppas över, som källorna nedan. Före ZIP-filen, som annars kan pågå (exportläget).
+    const forra = d.querySelector('.nav-item.active[data-tab]')?.getAttribute('data-tab');
+    oppnaFlik(w, 'utforska');
+    d.getElementById('ut-flik-alla').click();
+    for (const g of d.querySelectorAll('#ut-alla-grupper > details')) { g.open = true; g.dispatchEvent(new w.Event('toggle')); }
+    // Alla kopior läses i ett och samma exportläge (som ZIP-filen gör): varje källflik ritas då en gång i exportläget.
+    let kopior = 0;
+    w.eval('medExportLage')(() => {
+        for (const el of d.querySelectorAll('#ut-alla-grupper [id^="ut-diagram-"]')) {
+            const kalla = d.getElementById(el.id.slice('ut-diagram-'.length));
+            if (!el._figur || !kalla || kalla.closest('#view-likvardighet, #personer-att-granska, #outliers-container') || INDIVIDDIAGRAM.has(kalla.id) || !w.__exportTillaten(kalla)) continue;
+            kopior++;
+            const rader = w.__chartExportRows(el);
+            lagg(`diagramdata (Alla diagram): ${el.id}`, rader.length ? rader.map(r => r.join(' | ')).join('\n') : 'inget att exportera: diagrammet ritas inte i exportläget (ADR-51)');
+        }
+    });
+    if (kopior < 5) throw new Error(`för få kopior i Alla diagram (${kopior}) prövades`);
+    d.getElementById('ut-flik-egna').click();
+    if (forra) oppnaFlik(w, forra);
+
     for (const [namn, kor] of [
         ['Excel alla flikar', () => w.eval('exportAllToExcel()')], ['protokollet', () => w.eval('exportJPAProtocol()')],
         ['EU-lönerapporten', () => w.eval('exportEuReport()')], ['handlingsplanen', () => w.eval('exportHandlingsplan()')],
@@ -257,6 +279,7 @@ export async function samlaUtdata(w) {
         lagg(`diagramdata: ${el.id}`, rader.length ? rader.map(r => r.join(' | ')).join('\n') : 'inget att exportera: diagrammet ritas inte i exportläget (ADR-51)');
     }
     if (tabeller < 5 || diagram < 5) throw new Error(`för få tabeller (${tabeller}) eller diagram (${diagram}) prövades`);
+
 
     // Gruppdossiern: textkopian lämnar verktyget (exportläget); det som visas på skärmen maskeras inte (ADR-51).
     for (const g of w.__gruppdossierCandidates()) {
