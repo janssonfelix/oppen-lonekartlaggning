@@ -146,7 +146,7 @@ function renderBasdossier(bas) {
     if (!kand.length) {
         sel.innerHTML = '';
         body.innerHTML = `<div class="flik-empty-state"><div class="empty-icon">${ikon('tomLada')}</div>
-            <h3>Inga BAS-intervall att visa</h3><p>Inget BAS-intervall når ${kTroskel()} personer, eller ingen lönefil är inläst.</p></div>`;
+            <h3>Inga BAS-intervall att visa</h3><p>Inget BAS-intervall når ${kTroskel()} ${personOrd(kTroskel())}, eller ingen lönefil är inläst.</p></div>`;
         return;
     }
     const onskat = bas || sel.value || _bdVald || kand[0].bas;
@@ -154,7 +154,7 @@ function renderBasdossier(bas) {
     sel.value = kand.some(x => x.bas === onskat) ? onskat : kand[0].bas;
     _bdVald = sel.value;
     // Ett begärt intervall som inte (längre) når tröskeln öppnas inte i tysthet som ett annat: det sägs.
-    if (bas && bas !== sel.value) announceToScreenReader(`BAS ${bas} visas inte i dossiern: intervallet finns inte i underlaget eller har färre än ${kTroskel()} personer. Visar BAS ${sel.value}.`);
+    if (bas && bas !== sel.value) announceToScreenReader(`BAS ${bas} visas inte i dossiern: intervallet finns inte i underlaget eller har färre än ${kTroskel()} ${personOrd(kTroskel())}. Visar BAS ${sel.value}.`);
     const d = buildBasdossier(sel.value);
     body.innerHTML = d ? _bdRenderBody(d) : '<p class="f-dampad">BAS-intervallet kunde inte läsas.</p>';
     // Fokusfällan cachar de fokuserbara elementen; när innehållet byggs om medan dialogen är öppen läggs den om,
@@ -217,7 +217,7 @@ function _bdRenderBody(d) {
     // 4. Ålder (inte när lönefilen saknar ålder, ADR-64)
     const alder = !d.alder ? '' : `<table class="data-table st-088 bd-tabell"><thead><tr><th scope="col">Åldersgrupp</th><th scope="col" class="t-hoger">Antal (kv/mä)</th><th scope="col" class="t-hoger">Median</th><th scope="col" class="t-hoger">Median kvinnor</th><th scope="col" class="t-hoger">Median män</th></tr></thead><tbody>`
         + d.alder.map(a => `<tr><th scope="row">${esc(a.namn)}</th><td class="t-tal">${a.n} (${a.nKv}/${a.nMa})</td><td class="t-tal">${_bdKr(a.med)}</td><td class="t-tal">${_bdKr(a.medKv)}</td><td class="t-tal">${_bdKr(a.medMa)}</td></tr>`).join('')
-        + `</tbody></table><p class="gd-note">Ett köns median står bara där båda könen i åldersgruppen har minst ${k} personer.</p>`
+        + `</tbody></table><p class="gd-note">Ett köns median står bara där båda könen i åldersgruppen har minst ${k} ${personOrd(k)}.</p>`
         + `<p><button type="button" class="btn-table-tool" data-bd-alder="${esc(d.bas)}">${ikon('pilUt', 14)} Ålder &amp; karriär för BAS ${esc(d.bas)}</button></p>`;
 
     // 5. Förra året
@@ -288,7 +288,7 @@ function basdossierStycken(d, { forraBaraMedBokslut = false } = {}) {
             : `- ${y.yrke}: ${antal}. Kvinnor ${kr(y.medKv)}, män ${kr(y.medMa)}; kvinnors median ${svPct(y.kvotPct, 1)} av mäns${_stsDirektiv(y.kvotPct) ? ` (${_STS_DIR_ETIKETT}, direktivmarkering)` : ''}. ${BD_STATUS_TEXT[y.status]}.`)
             + (y.ocksaI.length ? ` ${_bdHelaYrketNot(y)}.` : ''));
     }
-    if (d.yrkenUtelamnade.length) yrken.push(`Redovisas inte (färre än ${d.k} personer): ${d.yrkenUtelamnade.join(', ')}.`);
+    if (d.yrkenUtelamnade.length) yrken.push(`Redovisas inte (färre än ${d.k} ${personOrd(d.k)}): ${d.yrkenUtelamnade.join(', ')}.`);
     if (d.ejJamforbara.length) yrken.push(`Inte jämförbara (ett kön har färre än två personer): ${d.ejJamforbara.join(', ')}.`);
     ut.push({ rubrik: 'Yrkesgrupperna i intervallet', rader: yrken });
 
@@ -305,7 +305,7 @@ function basdossierStycken(d, { forraBaraMedBokslut = false } = {}) {
             const kon = a.medKv != null ? `, kvinnor ${kr(a.medKv)}, män ${kr(a.medMa)}` : '';
             return `- ${a.namn}: ${a.n} personer (${a.nKv} kvinnor, ${a.nMa} män)${a.med != null ? `, median ${kr(a.med)}${kon}` : ''}.`;
         });
-        alder.push(`Ett köns median står bara där båda könen i åldersgruppen har minst ${d.k} personer.`);
+        alder.push(`Ett köns median står bara där båda könen i åldersgruppen har minst ${d.k} ${personOrd(d.k)}.`);
         ut.push({ rubrik: 'Ålder', rader: alder });
     }
 
@@ -406,7 +406,7 @@ document.addEventListener('click', e => {
     if (t.closest('#btn-basdossier-copy')) {
         const sel = /** @type {HTMLSelectElement|null} */ (document.getElementById('basdossier-select'));
         const txt = sel ? basdossierText(sel.value) : null;   // texten lämnar verktyget (ADR-51)
-        if (!txt) { announceToScreenReader(`BAS-intervallet har färre än ${kInstalld()} personer och kopieras inte.`); return; }
+        if (!txt) { announceToScreenReader(`BAS-intervallet har färre än ${kInstalld()} ${personOrd(kInstalld())} och kopieras inte.`); return; }
         const klart = () => announceToScreenReader('BAS-dossiern kopierad.');
         if (navigator.clipboard?.writeText) navigator.clipboard.writeText(txt).then(klart).catch(() => {});
         else klart();

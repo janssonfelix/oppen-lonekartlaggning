@@ -35,9 +35,9 @@ function renderPersonerAttGranska(visaAlla = false) {
     const g = new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 1 }).format(grans);
     const demo = state.isDemo ? '<p class="pag-demo"><strong>DEMODATA — inte verkliga löner.</strong></p>' : '';
     const ejProvade = r.ejProvade
-        ? `<p class="pag-not">${tal(r.ejProvade)} ${r.ejProvade === 1 ? 'person' : 'personer'} i grupper med färre än ${statGolv()} personer prövades inte.</p>` : '';
+        ? `<p class="pag-not">${tal(r.ejProvade)} ${r.ejProvade === 1 ? 'person' : 'personer'} i grupper med färre än ${statGolv()} ${personOrd(statGolv())} prövades inte.</p>` : '';
     if (!(r.provade.kv + r.provade.ma)) {
-        body.innerHTML = demo + `<p>Inga grupper med minst ${statGolv()} personer i samma AID och BAS.</p>` + ejProvade;
+        body.innerHTML = demo + `<p>Inga grupper med minst ${statGolv()} ${personOrd(statGolv())} i samma AID och BAS.</p>` + ejProvade;
         return;
     }
     if (!r.flaggade.length) {

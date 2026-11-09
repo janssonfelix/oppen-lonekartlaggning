@@ -88,7 +88,7 @@ function _laSamladNot(namn) {
     const lista = (namn || []).filter(Boolean);
     if (!lista.length) return '';
     return `<p class="k-mask-note">${lista.length} BAS-intervall står inte i tabellen: ${_kNoteNamn(lista)}. `
-        + `${lista.length === 1 ? 'Intervallet är stort' : 'Intervallen är stora'} nog att redovisa, men ett av könen har färre än ${kTroskel()} personer, så en könsjämförelse skulle peka ut enskilda.</p>`;
+        + `${lista.length === 1 ? 'Intervallet är stort' : 'Intervallen är stora'} nog att redovisa, men ett av könen har färre än ${kTroskel()} ${personOrd(kTroskel())}, så en könsjämförelse skulle peka ut enskilda.</p>`;
 }
 /**
  * Radens status i ord (uppmärksamhetstrappan, GAP_STATUS i 10-diagramtema.js): bootstrap-KI:t mot 100 % prövar
@@ -114,9 +114,9 @@ function generateSkevhet() {
         const ladEl = document.getElementById('chart-skevhet-lador');
         if (ladEl) {
             const { figur, utelamnade } = _konTathetFigur(d, true, kTroskel(), 'lada');
-            if (figur.lager.length) ritaFigur(ladEl, figur, { tomtext: `Inget BAS-intervall har minst ${kTroskel()} personer av ett kön.` }); else rensaFigur(ladEl);
+            if (figur.lager.length) ritaFigur(ladEl, figur, { tomtext: `Inget BAS-intervall har minst ${kTroskel()} ${personOrd(kTroskel())} av ett kön.` }); else rensaFigur(ladEl);
             const not = document.getElementById('skevhet-lador-not');
-            if (not) { not.hidden = !utelamnade.length; not.textContent = utelamnade.length ? `Visas inte, färre än ${kTroskel()} personer: ${utelamnade.join(', ')}.` : ''; }
+            if (not) { not.hidden = !utelamnade.length; not.textContent = utelamnade.length ? `Visas inte, färre än ${kTroskel()} ${personOrd(kTroskel())}: ${utelamnade.join(', ')}.` : ''; }
         }
     }
 
@@ -223,7 +223,7 @@ function generateSkevhet() {
             ['Översiktsdiagram', 'Punkt per BAS; färg och symbol = status (Balanserat, grön cirkel · Följ upp, bärnstensgul kvadrat · Värt att granska, lila romb · Går ej att bedöma, grå cirkel)']
         ],
         notes: [
-            `Kräver minst ${kTroskel()} personer av <em>varje kön</em> för att medianer ska visas (k-anonymitet)`,
+            `Kräver minst ${kTroskel()} ${personOrd(kTroskel())} av <em>varje kön</em> för att medianer ska visas (k-anonymitet)`,
             'Könsfördelning räknas så länge totalen ≥ 5 (även om ena könet har &lt; 5 individer)'
         ]
     });
@@ -263,7 +263,7 @@ function _ansvarsUnderraderFor(yrkesRader, fmt) {
         const tr = document.createElement('tr');
         tr.className = 'la-underrad';
         let celler;
-        if (u.liten) celler = `<td class="t-mitt f-dampad" colspan="3">Färre än ${kTroskel()} personer — inga lönemått</td>`;
+        if (u.liten) celler = `<td class="t-mitt f-dampad" colspan="3">Färre än ${kTroskel()} ${personOrd(kTroskel())} — inga lönemått</td>`;
         else if (u.samladMedian) celler = `<td class="t-mitt" colspan="2">Gruppens median ${fmt.format(u.medTot)}</td><td>–</td>`;
         else celler = `<td>${fmt.format(u.medKv)}</td><td>${fmt.format(u.medMa)}</td><td>${svPct(u.kvot, 1)}</td>`;
         tr.innerHTML = `<td class="la-underrad-namn">${esc(u.namn)}</td><td></td><td>${u.n} (${u.nKv}/${u.nMa})</td><td></td><td></td>${celler}<td></td><td></td>`;
@@ -326,7 +326,7 @@ function generateEUDirectiveMatrix() {
             samladMedianYrken.push(yrke);
             rows.push({ yrke, nKv, nMa, tot, dominans,
                 medTot: g.medTot, gap: 0, samladMedian: true,
-                statusKlass: '', status: `<span class="f-dampad la-status la-status-liten" title="Könsuppdelningen är för liten: ett kön har färre än ${kTroskel()} personer"><span class="bara-export">Könsuppdelningen är för liten (</span>ett kön n &lt; ${kTroskel()}<span class="bara-export">)</span></span>` });
+                statusKlass: '', status: `<span class="f-dampad la-status la-status-liten" title="Könsuppdelningen är för liten: ett kön har färre än ${kTroskel()} ${personOrd(kTroskel())}"><span class="bara-export">Könsuppdelningen är för liten (</span>ett kön n &lt; ${kTroskel()}<span class="bara-export">)</span></span>` });
             return;
         }
         const { medKv, medMa, kvot: ratio, gapPct: gap } = g;
@@ -334,7 +334,7 @@ function generateEUDirectiveMatrix() {
         // om stabiliteten) står kvar i cellen som .bara-export: dolt på skärmen, med i cellens text.
         const bara = t => `<span class="bara-export">${t}</span>`;
         const st = gapStatusNiva(g.niva);
-        const tips = g.niva === 'ejbedomd' ? `Går ej att bedöma: ett kön har färre än ${statGolv()} personer, för få för att pröva skillnaden`
+        const tips = g.niva === 'ejbedomd' ? `Går ej att bedöma: ett kön har färre än ${statGolv()} ${personOrd(statGolv())}, för få för att pröva skillnaden`
             : g.niva === 'granska' ? 'Skillnaden är statistiskt säkerställd (utanför slumpens gränser för gruppen) och minst 3 % (verktygets storleksgräns)'
             : g.niva === 'folj' ? (g.sakerstalld ? 'Skillnaden är statistiskt säkerställd men under 3 % (verktygets storleksgräns)' : 'Skillnaden är minst 3 % men inte statistiskt säkerställd (inom slumpens gränser för gruppen)')
             : 'Skillnaden är under 3 % och inte statistiskt säkerställd';

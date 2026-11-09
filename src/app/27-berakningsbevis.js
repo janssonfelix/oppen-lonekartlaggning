@@ -186,7 +186,7 @@ function _evidenceForEUMatrixRow(r) {
     if (r.samladMedian) {
         return {
             title: `Beräkningen — ${r.yrke}`,
-            intro: `Ett av könen har färre än ${kTroskel()} personer i yrkesgruppen. Då redovisas bara gruppens samlade median, så att ingen enskild lön kan räknas fram, och ingen jämförelse mellan kvinnor och män görs.`,
+            intro: `Ett av könen har färre än ${kTroskel()} ${personOrd(kTroskel())} i yrkesgruppen. Då redovisas bara gruppens samlade median, så att ingen enskild lön kan räknas fram, och ingen jämförelse mellan kvinnor och män görs.`,
             rows: [
                 { label: 'Yrkesgrupp',               value: r.yrke },
                 { label: 'Antal anställda totalt', value: r.tot.toLocaleString('sv-SE'), note: `${r.nKv} kvinnor · ${r.nMa} män` },
@@ -348,7 +348,7 @@ function _evidenceForPaygapRow(p) {
     if (p.masked) {
         return {
             title: `Beräkningen — BAS ${p.bas}`,
-            intro: `Löneskillnaden i det här BAS-intervallet visas inte, eftersom något kön har färre än ${kTroskel()} personer.`,
+            intro: `Löneskillnaden i det här BAS-intervallet visas inte, eftersom något kön har färre än ${kTroskel()} ${personOrd(kTroskel())}.`,
             rows: [
                 { label: 'BAS-intervall',     value: p.bas },
                 { label: 'Antal kvinnor',     value: nKv.toLocaleString('sv-SE'), note: nKv < kTroskel() ? `< k=${kTroskel()}` : '' },

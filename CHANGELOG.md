@@ -302,6 +302,10 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   rubrikerna inte kallas demo. Kom igång på Översikt säger *Ingen fil till hands? Prova med demodata, litet demo
   eller stort demo*, samma mening som lönefilskortet, i stället för *eller … eller*.
 
+- **"1 person", inte "1 personer".** Texter där minsta gruppstorlek står före *personer* (*minst … personer*,
+  *färre än … personer*) böjs efter talet, på skärmen och i exporterna. Stora demot sätter tröskeln till 1, och då
+  stod det till exempel *bara BAS med minst 1 personer* under bandkartan.
+
 ### Exporter
 
 - **Word-utkastets tabeller inför Word-testet.** Två tabeller i följd skiljs av ett tomt stycke (Word slår annars

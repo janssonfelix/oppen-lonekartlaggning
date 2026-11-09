@@ -9,6 +9,7 @@
  * kvalitetskriterium — den är ett fynd (könsskevhet).
  */
 import { konOf } from './falt.js';
+import { personOrd } from './namn.js';
 
 const RANG = { ok: 0, varning: 1, kritisk: 2 };
 const FTE_GOLV = 20000;
@@ -62,7 +63,7 @@ export function bedomUnderlag(rader, { k, audit, mde, modell, modellFras } = {})
         id: 'jamforbarhet', namn: 'Jämförbarhet', status: _stat(jPct, 80, 50, true), varde: jPct,
         text: jPct == null
             ? 'Inga personer med känt kön att jämföra.'
-            : `${_pct(jPct)} av personalen finns i BAS-intervall där båda könen har minst ${k} personer`
+            : `${_pct(jPct)} av personalen finns i BAS-intervall där båda könen har minst ${k} ${personOrd(k)}`
               + (j.maskerade.length ? ` (${j.maskerade.length} BAS-intervall maskeras: ${j.maskerade.join(', ')}).` : '.'),
     });
 

@@ -121,7 +121,7 @@ function _exportBenchmarkExcelExport() {
         ['Diff-kolumner: positiva värden (grön) = organisationen ligger över referens.', ''],
         ['Negativa värden (röd) = organisationen ligger under referens.', ''],
         ['Tomma celler = referensvärde saknas i uppladdad fil eller ej tillämpligt.', ''],
-        [`k-anonymitet (n<${kTroskel()}) = grupper med färre än ${kTroskel()} personer exkluderas helt.`, '']
+        [`k-anonymitet (n<${kTroskel()}) = grupper med färre än ${kTroskel()} ${personOrd(kTroskel())} exkluderas helt.`, '']
     ];
     const metaSheet = XLSX.utils.aoa_to_sheet(meta);
     metaSheet['!cols'] = [{ wch: 48 }, { wch: 32 }];

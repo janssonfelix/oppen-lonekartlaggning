@@ -141,7 +141,7 @@ export const MODULES = [
     },
     {
         file: 'namn.js', ns: '__mirrorNamn',
-        expose: { namnGenitiv: '_namnGenitiv', normaliseraNamn: '_namnNormalisera' }
+        expose: { namnGenitiv: '_namnGenitiv', normaliseraNamn: '_namnNormalisera', personOrd: 'personOrd' }
     },
     {
         file: 'skr-personal.js', ns: '__mirrorSkrPersonal',

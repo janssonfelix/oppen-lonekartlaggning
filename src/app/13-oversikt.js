@@ -513,7 +513,7 @@ function updateDashboardStats() {
             pgEl.textContent = "-";
         } else if (!_konFarRedovisas(nKv, nMa)) {
             // k-anonymitet (ADR-12): kvoten pekar ut de få i det mindre könet.
-            pgEl.innerHTML = `–<div class="stat-tip">Visas inte: ett kön har färre än ${kTroskel()} personer.</div>`;
+            pgEl.innerHTML = `–<div class="stat-tip">Visas inte: ett kön har färre än ${kTroskel()} ${personOrd(kTroskel())}.</div>`;
         } else {
             // Rå kvot för hela organisationen: direktivmarkeringen (≥ 5 %) står per grupp,
             // inte här — därför ingen hänvisning till den, och neutral färg: rågapet
