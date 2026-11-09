@@ -96,12 +96,13 @@ describe('juridikspråk: ansvarsförbehållet står på alla åtta ställen', ()
     });
 });
 
-describe('juridikspråk: förbehållet om verklig data och Word', () => {
+describe('juridikspråk: förbehållet om verklig data står kvar, Word-förbehållet är struket', () => {
+    // Word-utkastet är prövat i Microsoft Word 365 och 2019 (B6); förbehållet får inte komma tillbaka.
     for (const fil of ['README.md', 'docs/anvandare/sammanfattning-hr-chefer.md']) {
         it(fil, () => {
             const text = enRad(läs(fil));
             expect(text).toContain(VERKLIG_DATA);
-            expect(text).toContain(WORD);
+            expect(text).not.toContain(WORD);
         });
     }
 });

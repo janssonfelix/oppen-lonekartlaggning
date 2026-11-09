@@ -47,6 +47,6 @@ Därtill finns **Spara och jämför år**, där arbetet sparas som fil och jämf
 
 ---
 
-**Viktigt att veta:** Verktyget pekar ut *kandidater* för granskning — det dömer inte. Bedömningen av sakliga skäl och den slutliga dokumentationen är din, i samverkan med facklig part. Verktyget levererar underlagen. Verktyget är ett stöd för arbetsgivarens egen lönekartläggning. Användaren ansvarar för hur verktyget används, för tolkningen av resultaten och för den juridiska bedömningen. Verktyget är inte juridiskt granskat. Verktyget är ännu inte prövat med verklig lönedata hos en arbetsgivare; checklistan för skarp data finns för den som gör det först. Word-utkastet är prövat i LibreOffice, ännu inte i Microsoft Word.
+**Viktigt att veta:** Verktyget pekar ut *kandidater* för granskning — det dömer inte. Bedömningen av sakliga skäl och den slutliga dokumentationen är din, i samverkan med facklig part. Verktyget levererar underlagen. Verktyget är ett stöd för arbetsgivarens egen lönekartläggning. Användaren ansvarar för hur verktyget används, för tolkningen av resultaten och för den juridiska bedömningen. Verktyget är inte juridiskt granskat. Verktyget är ännu inte prövat med verklig lönedata hos en arbetsgivare; checklistan för skarp data finns för den som gör det först.
 
 *Öppen lönekartläggning · versionen står i `RELEASE.txt` · körs lokalt, helt utan molntjänst · medföljande dokument: körguide, guide för datauttag, checklistan för skarp data och risk- och sårbarhetsanalys (`riskanalys.md`).*

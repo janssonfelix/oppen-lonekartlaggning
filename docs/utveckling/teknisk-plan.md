@@ -1484,7 +1484,7 @@ Kända brister och obesvarade frågor, så att de inte lever bara i en konversat
 1. **Ingen användare har provat gränssnittet och diagrammen med verklig data**; de är sedda med demodatan och ett
    påhittat större underlag (42 yrken). Checklistan för skarp data (`pilotchecklista.md`) har punkter för det
    som inte går att pröva utan verklig data.
-2. **Word-utkastet är inte öppnat i Word**, bara i LibreOffice.
+2. *(Löst 2026-11-09: utkastet öppnat i Microsoft Word 365 och 2019 med litet och stort demo; tabellbredd i dxa, `w:tblLook` och skiljestycke mellan tabeller infördes inför testet, ADR-37.)*
 3. **Punkter som täcker varandra i bandkartan** när många yrkesgrupper i samma BAS-intervall har nästan samma
    median. *Krav mot lön* flyttar isär sådana grupper i sidled, och prioriteringsmatrisens etiketter flyttas isär
    uppåt; bandkartan är inte prövad med många yrken. Bör bedömas med verklig data.

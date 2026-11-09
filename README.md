@@ -11,7 +11,7 @@ Varje organisation tar in sitt eget ställningstagande, sin statistik och sina b
 organisationspaket, så att ingenting om en viss organisation är inbyggt. Andra arbetsvärderingssystem är en
 öppen punkt (teknisk plan §9).
 Verktyget är ännu inte prövat med verklig lönedata hos en arbetsgivare; checklistan för skarp data finns
-för den som gör det först. Word-utkastet är prövat i LibreOffice, ännu inte i Microsoft Word.
+för den som gör det först.
 
 - **Hela lagkedjan:** genomgång av bestämmelser och praxis, lika arbete (med regression och
   oförklarad löneskillnad), likvärdigt arbete, direktivets rapportmått, löneläget mot er

@@ -265,7 +265,9 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 - **Word-utkastets tabeller inför Word-testet.** Två tabeller i följd skiljs av ett tomt stycke (Word slår annars
   ihop dem till en tabell), tabellbredden står i samma enhet som kolumnerna och cellerna, och varje tabell har
-  `w:tblLook` som Word själv skriver. Utkastet är ännu inte prövat i Word.
+  `w:tblLook` som Word själv skriver.
+- **Word-utkastet är prövat i Microsoft Word.** Utkastet är öppnat i Word 365 och 2019 med litet och stort demo, och
+  förbehållet om att det bara är prövat i LibreOffice är struket ur README och sammanfattningen för HR-chefer.
 
 ### Analys
 
