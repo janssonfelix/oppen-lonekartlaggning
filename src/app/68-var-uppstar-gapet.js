@@ -36,7 +36,7 @@ function renderGapUppdelning() {
     /** @type {any} */
     const u = _guGapUppdelning(d, { k: kTroskel() });
     if (!u) {
-        body.innerHTML = demo + `<p>För få personer för att dela upp skillnaden: ett kön har färre än ${kTroskel()} personer i urvalet.</p>`;
+        body.innerHTML = demo + `<p>För få personer för att dela upp skillnaden: ett kön har färre än ${kTroskel()} ${personOrd(kTroskel())} i urvalet.</p>`;
         return;
     }
     const inledning = u.gap <= 0
@@ -47,7 +47,7 @@ function renderGapUppdelning() {
     const medianText = medMa > 0 ? ` Kvinnors medianlön är ${_guPct(medKv / medMa * 100)} av mäns.` : '';
     if (!u.skyddad) {
         body.innerHTML = demo + `<p class="gu-inledning">${inledning}${medianText}</p>`
-            + `<p class="gu-not">Skillnaden delas inte upp här: en grupp med färre än ${kTroskel()} personer står för så stor del av `
+            + `<p class="gu-not">Skillnaden delas inte upp här: en grupp med färre än ${kTroskel()} ${personOrd(kTroskel())} står för så stor del av `
             + 'en av delarna att dess bidrag annars skulle kunna räknas fram.</p>';
         return;
     }
@@ -58,7 +58,7 @@ function renderGapUppdelning() {
         const andel = u.litetGap ? '' : `<span class="gu-andel">${_guPct(v / u.gap * 100, 0)} av skillnaden</span>`;
         const topp = u.topp[del.id].map(p => `<li>${esc(p.namn)}: ${_guKr(p.kr)}</li>`).join('')
             // Dolda grupper redovisas bara med antal — deras summa kunde röja en enskild grupp.
-            + (u.ovrigaAntal[del.id] ? `<li class="gu-ovriga">${u.ovrigaAntal[del.id]} ${u.ovrigaAntal[del.id] === 1 ? 'grupp' : 'grupper'} med färre än ${kTroskel()} personer ingår i summan</li>` : '');
+            + (u.ovrigaAntal[del.id] ? `<li class="gu-ovriga">${u.ovrigaAntal[del.id]} ${u.ovrigaAntal[del.id] === 1 ? 'grupp' : 'grupper'} med färre än ${kTroskel()} ${personOrd(kTroskel())} ingår i summan</li>` : '');
         return `<div class="gu-rad" data-gu-del="${del.id}">
             <div class="gu-rubrik"><strong>${del.id}. ${del.namn}</strong><span class="gu-belopp">${_guKr(v)}</span>${andel}</div>
             <div class="gu-stapel" aria-hidden="true"><span class="gu-fyll ${v < 0 ? 'gu-neg' : 'gu-pos'}" data-stil-mvanster="${(v < 0 ? 50 - bredd : 50).toFixed(1)}%" data-stil-bredd="${bredd.toFixed(1)}%"></span></div>
@@ -72,7 +72,7 @@ function renderGapUppdelning() {
         + '<div id="chart-gap-uppdelning" class="marg-6-0-14"></div>'
         + rader
         + '<p class="gu-not">Grupperna rangordnas efter bidrag till hela organisationens skillnad och kan därför skilja sig från de flaggade yrkena i Lika arbete, som sorteras efter skillnadens storlek. Grupper där ett kön har färre än '
-        + `${kTroskel()} personer namnges inte.</p>`; tillampaDataStil(body);
+        + `${kTroskel()} ${personOrd(kTroskel())} namnges inte.</p>`; tillampaDataStil(body);
     { const el = document.getElementById('chart-gap-uppdelning'); if (el) ritaFigur(el, _guTrappaFigur(u)); }
 }
 

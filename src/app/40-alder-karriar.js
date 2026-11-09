@@ -97,7 +97,7 @@ function renderKon(bas) {
     const scope2 = isAll ? 'hela urvalet' : `BAS-intervall ${bas}`;
     // Noter under diagrammen om det som utelämnats, och samma sak i diagrammens beskrivningar.
     const utan = [kvOk ? null : 'kvinnor', maOk ? null : 'män'].filter(Boolean).join(' och ');
-    const skal = `färre än ${kTroskel()} personer av ${kvOk || maOk ? 'könet' : 'vartdera könet'} finns i urvalet`;
+    const skal = `färre än ${kTroskel()} ${personOrd(kTroskel())} av ${kvOk || maOk ? 'könet' : 'vartdera könet'} finns i urvalet`;
     // En punkt per person: punkten för en person i en grupp under tröskeln ritas och exporteras inte.
     const liten = individLitenFor(getData());
     const dolda = df.filter(liten).length;
@@ -147,7 +147,7 @@ function _konTathetFigur(rader, perKon, k = kTroskel(), form = 'fiol') {
     const ordning = [...new Set(giltiga.map(r => r.bas))].sort().map(b => 'BAS ' + b);
     if (form === 'kvantiler') return { utelamnade, figur: { beskrivning: `Lönefördelningen per BAS-intervall${perKon ? ' och kön' : ''} som kvantilpunkter: varje prick är en tjugondel av gruppen (i små grupper en större andel, aldrig färre än två personer), lagd vid den lönen. Räkna prickarna under en lön för att se hur stor andel som tjänar mindre. Inga enskilda löner visas.`,
         legend: perKon ? undefined : false, urval: BAS_URVAL, x: { skala: 'band', ordning }, y: { skala: 'linjar', titel: 'Månadslön', format: 'kr' }, hojd: 420, lager } };
-    if (form !== 'fiol') return { utelamnade, figur: { beskrivning: `Lönespridningen per BAS-intervall och kön som lådagram: lådan är mittersta hälften av lönerna (första till tredje kvartilen), strecket i lådan medianen. Enstaka löner utanför morrhåren visas inte. Överlappar kvinnors och mäns lådor i ett intervall ligger könen på samma nivå där. BAS-intervall där ett kön har färre än ${k} personer visas inte för det könet.`,
+    if (form !== 'fiol') return { utelamnade, figur: { beskrivning: `Lönespridningen per BAS-intervall och kön som lådagram: lådan är mittersta hälften av lönerna (första till tredje kvartilen), strecket i lådan medianen. Enstaka löner utanför morrhåren visas inte. Överlappar kvinnors och mäns lådor i ett intervall ligger könen på samma nivå där. BAS-intervall där ett kön har färre än ${k} ${personOrd(k)} visas inte för det könet.`,
         urval: BAS_URVAL, x: { skala: 'band', ordning }, y: { skala: 'linjar', titel: 'Månadslön', format: 'kr' }, hojd: 380, lager } };
     return { utelamnade, figur: { beskrivning: `Lönefördelningen per BAS-intervall${perKon ? ' och kön' : ''} som täthetskurvor: kurvan är bredast där flest löner ligger. Strecken är median och kvartiler. Kurvan slutar vid morrhårens ändar; enstaka löner långt utanför visas inte.`,
         legend: perKon ? undefined : false, urval: BAS_URVAL, x: { skala: 'band', ordning }, y: { skala: 'linjar', titel: 'Månadslön', format: 'kr' }, hojd: 420, lager } };
@@ -197,7 +197,7 @@ function _konHistogramFigur(klasser, nKv, nMa, scope) {
     const serie = (s, farg, falt, tot) => ({ marke: 'stapel', lage: 'overlagrad', serie: s, farg, opacitet: 0.55,
         data: klasser.map(c => ({ x: namn(c), y: +(100 * c[falt] / tot).toFixed(1), n: c.nKv + c.nMa, ...(c[falt] > 0 && c[falt] < litetUnderlag() ? { fa: true } : {}) })),
         tips: d => [[`${d.x} tkr`], [s, _figTalformat(d.y, 'pct')], ['Personer i klassen', String(d.n)], ...(d.fa ? [['Litet underlag', `färre än ${litetUnderlag()} ${s.toLowerCase()}`]] : [])] });
-    return { beskrivning: `Lönefördelningen för kvinnor och män i ${scope}: andel av respektive kön per löneklass. Varje klass rymmer minst ${kTroskel()} personer; klasserna i ändarna är hopslagna.`,
+    return { beskrivning: `Lönefördelningen för kvinnor och män i ${scope}: andel av respektive kön per löneklass. Varje klass rymmer minst ${kTroskel()} ${personOrd(kTroskel())}; klasserna i ändarna är hopslagna.`,
         x: { skala: 'band', titel: 'Månadslön (tusen kronor)', ordning: klasser.map(namn) }, y: { skala: 'linjar', titel: 'Andel av könet (%)' }, hojd: 340,
         lager: [serie('Kvinnor', PALETTE.kon.kvinna, 'nKv', nKv), serie('Män', PALETTE.kon.man, 'nMa', nMa)] };
 }
@@ -239,7 +239,7 @@ function renderKonAlderGap(dataKv, dataMa, scope) {
     const el = document.getElementById('chart-kon-aldergap');
     if (!el) return;
     const { visade, dolda } = _konAlderGapRader(dataKv, dataMa), not = document.getElementById('kon-aldergap-not'), k = kTroskel();
-    if (not) { not.hidden = !dolda.length; not.textContent = dolda.length ? `Visas inte, ett kön har färre än ${k} personer: ${dolda.join(', ')}.` : ''; }
+    if (not) { not.hidden = !dolda.length; not.textContent = dolda.length ? `Visas inte, ett kön har färre än ${k} ${personOrd(k)}: ${dolda.join(', ')}.` : ''; }
     if (!visade.length) {
         rensaFigur(el);
         el.innerHTML = `<p class="text-dampad-sm marg-8-0">Ingen åldersgrupp har minst ${k} kvinnor och ${k} män.</p>`;
@@ -255,7 +255,7 @@ function renderKonHistogram(dataKv, dataMa, scope) {
     const klasser = _konHistogramKlasser(kv, ma, k);
     if (!klasser) {
         rensaFigur(el);
-        el.innerHTML = `<p class="text-dampad-sm marg-8-0">${kv.length < k || ma.length < k ? esc(_konUtelamnatNot()) : `Lönerna går inte att dela in i klasser med minst ${k} personer i varje.`}</p>`;
+        el.innerHTML = `<p class="text-dampad-sm marg-8-0">${kv.length < k || ma.length < k ? esc(_konUtelamnatNot()) : `Lönerna går inte att dela in i klasser med minst ${k} ${personOrd(k)} i varje.`}</p>`;
         const n0 = document.getElementById('kon-histogram-not'); if (n0) { n0.hidden = true; n0.textContent = ''; }
         return;
     }
@@ -305,7 +305,7 @@ function renderKonMultiplar() {
     const { figur, utanfor, nedsamplade } = _konMultiplarFigur(d, individLitenFor(d));
     if (figur.paneler.length) ritaFigur(el, figur); else rensaFigur(el);
     const not = document.getElementById('kon-multiplar-not');
-    const delar = [utanfor.length ? `Visas inte här (färre än ${kTroskel()} personer, eller fler intervall än ${KON_MULTIPLAR_MAX}): ${utanfor.join(', ')}.` : '',
+    const delar = [utanfor.length ? `Visas inte här (färre än ${kTroskel()} ${personOrd(kTroskel())}, eller fler intervall än ${KON_MULTIPLAR_MAX}): ${utanfor.join(', ')}.` : '',
                    nedsamplade.length ? `I ${nedsamplade.join(', ')} visas ett urval av punkterna (högst ${KON_MULTIPLAR_PUNKTER} per intervall); trendlinjen räknas ur alla.` : ''].filter(Boolean);
     if (not) { not.hidden = !delar.length; not.textContent = delar.join(' '); }
 }
@@ -313,7 +313,7 @@ function renderKonMultiplar() {
 // ---- Figurer för diagramkärnan (ADR-39, steg 2) ----
 // Noten under ett spridningsdiagram om de punkter som inte visas.
 // `medTrend` är falskt när diagrammet saknar trendlinje (urvalet under tröskeln): då sägs inget om den.
-const _individNot = (n, medTrend = true) => (n ? `${n} ${n === 1 ? 'person visas' : 'personer visas'} inte som punkt: gruppen (yrke inom BAS), eller personens kön i gruppen, har färre än ${kTroskel()} personer.${medTrend ? ' Trendlinjen bygger på alla.' : ''}` : '');
+const _individNot = (n, medTrend = true) => (n ? `${n} ${n === 1 ? 'person visas' : 'personer visas'} inte som punkt: gruppen (yrke inom BAS), eller personens kön i gruppen, har färre än ${kTroskel()} ${personOrd(kTroskel())}.${medTrend ? ' Trendlinjen bygger på alla.' : ''}` : '');
 const _punktTips = d => [[d.yrke], ...(d.bas != null ? [['BAS', String(d.bas)]] : []), ...(d.kon ? [['Kön', d.kon]] : []),
                          ['Ålder', `${d.x} år`], ['Lön', _figTalformat(d.y, 'kr')]];
 // En vågrät linje över hela åldersspannet (referensens P10, median, P90; jämförelsestatistikens median).
@@ -561,7 +561,7 @@ function _demoBandFigur(df, k, pol, aLo, aHi) {
     const kr = v => `${_figTalformat(v, 'kr')}/mån`;
     const tips = d => [[d.namn], ['P90', kr(d.r.p90)], ['P75', kr(d.r.p75)], ['Median', kr(d.r.p50)], ['P25', kr(d.r.p25)], ['P10', kr(d.r.p10)], ['Antal', String(d.r.n)]];
     const band = (serie, lag, hog, opacitet) => ({ marke: 'band', serie, farg: PALETTE.serie[0], opacitet, data: rader.map(r => ({ x: r.x, lag: r[lag], hog: r[hog], namn: r.namn, r })), tips });
-    return { beskrivning: `Lönespridning över ålder: medianlön per femårsgrupp, med band för mittersta hälften (P25–P75) och för P10–P90. Åldersgrupper med färre än ${k} personer visas inte.`,
+    return { beskrivning: `Lönespridning över ålder: medianlön per femårsgrupp, med band för mittersta hälften (P25–P75) och för P10–P90. Åldersgrupper med färre än ${k} ${personOrd(k)} visas inte.`,
         x: { skala: 'linjar', titel: 'Ålder (femårsgrupper)' }, y: { skala: 'linjar', titel: 'Kronor/månad', format: 'kr' },
         lager: [band('P10–P90', 'p10', 'p90', 0.16), band('Mittersta hälften (P25–P75)', 'p25', 'p75', 0.3),
                 { marke: 'linje', serie: 'Median', farg: PALETTE.serie[0], tjocklek: 2.5, punkter: true, data: rader.map(r => ({ x: r.x, y: r.p50, namn: r.namn, r })), tips },

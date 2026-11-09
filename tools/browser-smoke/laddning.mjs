@@ -27,7 +27,7 @@ export async function laddningOchDemo() {
     {
         const demoSida = await browser.newPage();
         await demoSida.goto('file://' + FIL + '?demo=1');
-        await demoSida.waitForFunction(() => document.getElementById('demo-mode-banner')?.style.display === 'flex', { timeout: 15000 });
+        await demoSida.waitForFunction(() => document.getElementById('demo-mode-banner')?.style.display === 'flex', null, { timeout: 15000 });
         ok(await demoSida.evaluate(() => document.getElementById('dashboard-summary').style.display === 'grid'),
             'adressen ?demo=1 startar demoläget direkt');
         await demoSida.close();
@@ -40,7 +40,7 @@ export async function laddningOchDemo() {
         const rader = ['Avd;Befattning;Grundlon;Fodd;Sex'];
         for (let i = 0; i < 30; i++) rader.push(`X;Handläggare;${30000 + i};${1970 + i};${i % 2 ? 'M' : 'K'}`);
         await sida.setInputFiles('#file-input-data', { name: 'okand.csv', mimeType: 'text/csv', buffer: Buffer.from(rader.join('\n'), 'utf8') });
-        await sida.waitForFunction(() => /Kolumnmappning behövs/.test(document.getElementById('column-map-panel')?.textContent || ''), { timeout: 15000 });
+        await sida.waitForFunction(() => /Kolumnmappning behövs/.test(document.getElementById('column-map-panel')?.textContent || ''), null, { timeout: 15000 });
         await sida.waitForTimeout(300);
         const l = await sida.evaluate(() => {
             const r = document.getElementById('column-map-panel').getBoundingClientRect();
@@ -60,7 +60,7 @@ export async function laddningOchDemo() {
     await page.waitForFunction(() => {
         const b = document.getElementById('demo-mode-banner');
         return b && b.style.display === 'flex';
-    }, { timeout: 15000 });
+    }, null, { timeout: 15000 });
     ok(true, 'demodata inläst, banner synlig');
     ok(!(await osynlig('.nav-item[data-tab="benchmark"]')), 'Löneläget syns med ställningstagandet, utan jämförelsestatistik');
     ok(await osynlig('#referens-namn-rad'), 'namnfältet för egen referens är dolt i demoläget');
@@ -93,7 +93,7 @@ export async function laddningOchDemo() {
     await page.waitForFunction(() => {
         const el = document.getElementById('policy-status');
         return el && /inlästa|inläst/i.test(el.textContent || '');
-    }, { timeout: 15000 });
+    }, null, { timeout: 15000 });
     ok(true, 'policyfilen lästes in via uppladdningsytan');
     ok(await page.evaluate(() => document.getElementById('referens-namn').value === 'stallningstagande'),
         'den egna referensen namngavs efter filen');

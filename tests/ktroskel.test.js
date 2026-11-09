@@ -43,6 +43,23 @@ describe('k-tröskeln: standardvärde och validering', () => {
     });
 });
 
+describe('k-tröskeln i texterna: "1 person", inte "1 personer"', () => {
+    // Stora demot sätter tröskeln till 1 direkt i tillståndet (inställningen tar 2 och uppåt).
+    it('böjs efter tröskeln', () => {
+        const w = createAppWindow();
+        w.__state.kLage = 'export';
+        const texter = () => [w.eval("kMaskNote(['Yrke A'], undefined)"), w.eval('_individNot(3, false)')];
+        w.__state.kTroskel = 1;
+        const [mask1, individ1] = texter();
+        expect(mask1).toContain('färre än 1 person,');
+        expect(individ1).toContain('färre än 1 person.');
+        w.__state.kTroskel = 5;
+        const [mask5, individ5] = texter();
+        expect(mask5).toContain('färre än 5 personer,');
+        expect(individ5).toContain('färre än 5 personer.');
+    });
+});
+
 describe('k-tröskeln: bekräftelse vid sänkning under 10', () => {
     it('nekad bekräftelse behåller värdet', () => {
         const w = createAppWindow();

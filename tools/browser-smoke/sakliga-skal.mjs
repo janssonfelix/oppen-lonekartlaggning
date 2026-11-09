@@ -10,20 +10,24 @@ export async function sakligaSkal() {
     console.log('\n── Sakliga skäl: dialogen i Handlingsplan och tabellerna i Rapporttext ──');
     const sida = await browser.newPage({ viewport: { width: 1440, height: 900 } });
     await sida.goto('file://' + FIL + '?demo=1');
-    await sida.waitForFunction(() => document.getElementById('demo-mode-banner')?.style.display === 'flex', { timeout: 15000 });
+    await sida.waitForFunction(() => document.getElementById('demo-mode-banner')?.style.display === 'flex', null, { timeout: 15000 });
     await sida.click('.nav-item[data-tab="handlingsplan"]');
     await sida.waitForSelector('#handlingsplan-tbody [data-hp-skal]', { timeout: 15000 });
-    // En rad med en medianskillnad (båda könen når minsta gruppstorlek), så att kommentaren följer med i rapporten.
-    // För en rad där ett kön är under gränsen står bara kategorin i exporterna. Finns ingen tas den första.
+    // En rad med en medianskillnad där båda könen når minsta gruppstorlek, så att kommentaren följer med i rapporten.
+    // För en rad där ett kön är under gränsen står bara kategorin i exporterna. Knappens data-hp-skillnad säger inte
+    // det (den har skillnaden också då), så valet görs på förifyllningens minsta könsantal. Finns ingen tas den första.
     const nyckel = await sida.evaluate(() => {
         const knappar = [...document.querySelectorAll('#handlingsplan-tbody [data-hp-skal]')];
-        const med = knappar.find(k => Number(k.getAttribute('data-hp-skillnad')) > 0) || knappar[0];
+        /* global _handlingsplanSeedRows, _hpUtanBelopp -- globala i sidan */
+        const s = _handlingsplanSeedRows();
+        const fulla = new Set(s.nycklar.filter((n, i) => s.skillnader[i] > 0 && !_hpUtanBelopp(n, s.minsta[i])));
+        const med = knappar.find(k => fulla.has(k.getAttribute('data-hp-skal'))) || knappar[0];
         return med.getAttribute('data-hp-skal');
     });
     const knapp = `#handlingsplan-tbody [data-hp-skal="${nyckel}"]`;
     const forut = await sida.evaluate(n => (state.handlingsplan[n]?.skal || []).length, nyckel);
     await sida.click(knapp);
-    await sida.waitForFunction(() => document.getElementById('skal-modal').style.display === 'flex', { timeout: 5000 });
+    await sida.waitForFunction(() => document.getElementById('skal-modal').style.display === 'flex', null, { timeout: 5000 });
     ok(true, 'knappen Sakliga skäl öppnar dialogen');
     // Fokusfällan sätter fokus efter en kort stund (trapFocus), som i de övriga dialogerna.
     ok(await sida.waitForFunction(() => document.getElementById('skal-modal').contains(document.activeElement), null, { timeout: 2000 }).then(() => true, () => false), 'fokus står i dialogen');
@@ -37,7 +41,7 @@ export async function sakligaSkal() {
     const sparat = await sida.evaluate(n => state.handlingsplan[n]?.skal || [], nyckel);
     ok(sparat.length === forut + 1 && sparat.some(s => s.kategori === 'marknad' && s.belopp === 700), 'skälet sparas på raden');
     await sida.keyboard.press('Escape');
-    await sida.waitForFunction(() => document.getElementById('skal-modal').style.display === 'none', { timeout: 5000 });
+    await sida.waitForFunction(() => document.getElementById('skal-modal').style.display === 'none', null, { timeout: 5000 });
     const text = ((await sida.textContent(`${knapp} .hp-skal-sammanfattning`)) || '').trim();
     ok(text.startsWith(`Sakliga skäl (${forut + 1})`), `radens knapp visar antalet («${text}»)`);
     ok(/: \d+ skäl/.test(await sida.getAttribute(knapp, 'aria-label') || ''), 'knappens tillgängliga namn har sammanfattningen');
@@ -48,6 +52,15 @@ export async function sakligaSkal() {
     await sida.waitForFunction(() => /Svårrekryterat i regionen/.test(document.getElementById('view-rapporttext')?.textContent || ''), null, { timeout: 15000 }).catch(() => {});
     const rt = await sida.evaluate(() => document.getElementById('view-rapporttext').textContent || '');
     ok(/Sakliga skäl per grupp/.test(rt) && /Sammanställning per kategori/.test(rt), 'Rapporttext har tabellerna Sakliga skäl per grupp och Sammanställning per kategori');
-    ok(/Svårrekryterat i regionen/.test(rt), 'kommentaren står i tabellen');
+    const harKommentar = /Svårrekryterat i regionen/.test(rt);
+    // Felsökning när kommentaren saknas: radens skäl i tillståndet och gruppen i exportlägets förifyllning.
+    const diag = harKommentar ? '' : await sida.evaluate(n => {
+        /* global medExportLage, _handlingsplanSeedRows, _hpSkalUnderlag, kInstalld, kTroskel */
+        const skal = state.handlingsplan[n]?.skal || [];
+        const ex = medExportLage(() => { const s = _handlingsplanSeedRows(); const u = _hpSkalUnderlag(s); const g = u.grupper.find(x => x.nyckel === n);
+            return { iSeed: s.nycklar.includes(n), kExport: kTroskel(), grupp: g ? { utanBelopp: g.utanBelopp, nMin: g.nMin, antal: g.skal.length } : null }; });
+        return JSON.stringify({ n, skal, kInstalld: kInstalld(), kSkarm: kTroskel(), ex });
+    }, nyckel);
+    ok(harKommentar, `kommentaren står i tabellen${diag ? ` (${diag})` : ''}`);
     await sida.close();
 }

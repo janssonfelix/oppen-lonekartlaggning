@@ -149,9 +149,9 @@ function _stUtkastPerBas(k) {
     if (typeof basdossierKandidater !== 'function') return null;
     const kand = basdossierKandidater();
     if (!kand.length) return null;
-    const lines = ['PER BAS-INTERVALL', `Ett stycke per BAS-intervall med minst ${k} personer: antal och könsfördelning, ${state.policy.length ? 'läget mot ställningstagandet, ' : ''}yrkesgrupperna, likvärdigt arbete, ålder och förra året när ett bokslut är inläst. Yrkesgrupper med färre än ${k} personer står bara med namn.`];
+    const lines = ['PER BAS-INTERVALL', `Ett stycke per BAS-intervall med minst ${k} ${personOrd(k)}: antal och könsfördelning, ${state.policy.length ? 'läget mot ställningstagandet, ' : ''}yrkesgrupperna, likvärdigt arbete, ålder och förra året när ett bokslut är inläst. Yrkesgrupper med färre än ${k} ${personOrd(k)} står bara med namn.`];
     const under = basdossierUtelamnade();
-    if (under.length) lines.push(`BAS ${under.join(', ')} redovisas inte (färre än ${k} personer).`);
+    if (under.length) lines.push(`BAS ${under.join(', ')} redovisas inte (färre än ${k} ${personOrd(k)}).`);
     for (const { bas } of kand) {
         const d = buildBasdossier(bas);
         if (d) lines.push('', basintervallUtkastText(d));
@@ -241,7 +241,7 @@ function _strukturTradkartaFigur(rader, k = kTroskel()) {
     const grupper = rot.leaves().map(n => { const o = n.data; return { ...yta(n), namn: `${o.namn} · BAS ${o.bas}`, varde: o.n, etikett: o.namn, undertext: `${o.n} personer`,
         bas: o.bas, n: o.n, ...(o.ovriga ? { farg: FARG.kantStark, ovriga: true } : { fargvarde: +(100 * o.nKv / o.n).toFixed(1), andelKv: 100 * o.nKv / o.n, markering: markeringFor(o.bas, o.aid) }) }; });
     return { legend: false, hojd: 460,
-        beskrivning: `Organisationen som karta: varje yta är en yrkesgrupp, storleken är antalet personer och färgen andelen kvinnor, samlade per BAS-intervall. Yrkesgrupper med färre än ${k} personer är hopslagna till en grå yta per intervall.`,
+        beskrivning: `Organisationen som karta: varje yta är en yrkesgrupp, storleken är antalet personer och färgen andelen kvinnor, samlade per BAS-intervall. Yrkesgrupper med färre än ${k} ${personOrd(k)} är hopslagna till en grå yta per intervall.`,
         x: { skala: 'linjar', doman: [0, TRADKARTA_FORM], dold: true }, y: { skala: 'linjar', doman: [0, 1], dold: true },
         fargskala: { typ: 'divergerande', doman: [0, 100], mitt: 50, titel: 'Andel kvinnor (%)', farger: [[0, PALETTE.kon.man], [0.5, FARG.ytaStark], [1, PALETTE.kon.kvinna]] },
         lager: [{ marke: 'yta', serie: 'BAS-intervall', farg: FARG.kant, opacitet: 0.5, etikettLage: 'topp', data: basYtor,
@@ -305,7 +305,7 @@ function renderSektorer(d) {
     const harLedning = tabell.some(r => r.ledningKv != null || r.ledningMa != null);
     const rader = tabell.map(r => {
         const loner = r.maskerad
-            ? `<td colspan="3" class="muted">Färre än ${kTroskel()} personer — lönemått redovisas inte</td>`
+            ? `<td colspan="3" class="muted">Färre än ${kTroskel()} ${personOrd(kTroskel())} — lönemått redovisas inte</td>`
             : r.samladMedian
                 ? `<td colspan="2">Samlad median ${kr(r.medTot)}</td><td class="muted">Ett kön under ${kTroskel()}</td>`
                 : `<td class="num" data-sort-value="${Math.round(r.medKv)}">${kr(r.medKv)}</td><td class="num" data-sort-value="${Math.round(r.medMa)}">${kr(r.medMa)}</td>`
@@ -463,7 +463,7 @@ function _exportEuReportExport() {
     const repKonLitet = rep.filter(g => !isKMasked(g.n) && g.konLitet).map(g => g.bas);
     if (repKonLitet.length) {
         repArr.push([]);
-        repArr.push([`Löneskillnaden utelämnad (ett kön har färre än ${kTroskel()} personer): ${repKonLitet.join(', ')}`]);
+        repArr.push([`Löneskillnaden utelämnad (ett kön har färre än ${kTroskel()} ${personOrd(kTroskel())}): ${repKonLitet.join(', ')}`]);
     }
     /** @type {any[][]} */
     // Antalet kvinnor och män bakom percentilerna (samma för alla rader; på skärmen står det i tabellens rubrikrad).

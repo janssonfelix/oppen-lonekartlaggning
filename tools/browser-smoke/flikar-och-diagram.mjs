@@ -77,7 +77,16 @@ export async function flikarOchDiagram() {
         await page.locator('#chart-skevhet-andel [data-marke="stapel"]').first().click();
         await page.waitForTimeout(200);
         await page.evaluate(() => document.getElementById('avsnitt-st-eu').scrollIntoView({ block: 'start' }));
-        await page.waitForTimeout(600);
+        // Avsnitten ovanför kan växa en stund efter att de öppnats (diagram ritas), så att avsnittet glider ner ur
+        // fönstret (WebKit i CI). Rulla fram det igen tills det står kvar överst och sidindexet har hunnit följa med.
+        await page.waitForFunction(() => {
+            const el = document.getElementById('avsnitt-st-eu'), topp = el.getBoundingClientRect().top;
+            if (topp < -4 || topp > 0.4 * innerHeight) { el.scrollIntoView({ block: 'start' }); return false; }
+            const aktiv = document.querySelector('#sidindex a.ar-aktiv')?.dataset.sidindex;
+            const t = aktiv ? document.querySelector(`#${aktiv} > summary`)?.getBoundingClientRect().top : null;
+            return t != null && t <= 0.4 * innerHeight;
+        }, null, { timeout: 8000, polling: 300 }).catch(() => {});
+        await page.waitForTimeout(300);
         const rad = await page.evaluate(() => {
             const nav = document.getElementById('sidindex').getBoundingClientRect(), mk = document.getElementById('markering-rad')?.getBoundingClientRect();
             return { topp: Math.round(nav.top), botten: Math.round(nav.bottom), rullat: Math.round(scrollY),
@@ -305,7 +314,7 @@ export async function flikarOchDiagram() {
     {
         await page.reload();
         await page.goto('file://' + FIL + '?demo=1');
-        await page.waitForFunction(() => document.getElementById('demo-mode-banner')?.style.display === 'flex', { timeout: 15000 });
+        await page.waitForFunction(() => document.getElementById('demo-mode-banner')?.style.display === 'flex', null, { timeout: 15000 });
         await page.waitForTimeout(1500);
         await page.evaluate(() => document.querySelector('.nav-item[data-tab="matrix"]').click());
         await page.waitForTimeout(1200);
@@ -377,7 +386,7 @@ export async function flikarOchDiagram() {
         await page.click('#prio-cfg-reset');
         await page.waitForTimeout(400);
         await page.keyboard.press('Escape');
-        await page.waitForFunction(() => document.getElementById('installningar-modal').style.display === 'none', { timeout: 5000 });
+        await page.waitForFunction(() => document.getElementById('installningar-modal').style.display === 'none', null, { timeout: 5000 });
     }
 
     console.log('\n── Regler & praxis: pilen och Stöd i verktyget ──');
@@ -417,7 +426,7 @@ export async function flikarOchDiagram() {
         ok(dk.ordning && dk.rutor === 2 && dk.rader === 6 && dk.fler === 'likvardighet,struktur,prioritering,loneoversyn' && dk.lank === 0, `slutsatser, checklista, robustheten, sex exportrader och en rad med länkar till flikarna (${dk.rader} rader; ${dk.fler})`);
         ok(dk.oppna === 'avsnitt-dk-robusthet' && dk.skarmar < 4, `bara robustheten är utfälld och sidan är ${dk.skarmar.toFixed(1)} skärmar`);
         await page.click('#btn-run-robusthet');
-        await page.waitForFunction(() => document.querySelector('#robusthet-body .gd-grid'), { timeout: 60000 });
+        await page.waitForFunction(() => document.querySelector('#robusthet-body .gd-grid'), null, { timeout: 60000 });
         ok(await page.evaluate(() => !/Inte körd/.test(document.querySelectorAll('#dk-slutsatser .slutsats')[1].textContent) && document.getElementById('nyckel-dk-robusthet').textContent.length > 3), 'robusthetens utfall står i slutsatserna och i avsnittets rubrik');
         await page.evaluate(() => document.querySelector('.nav-item[data-tab="rapporttext"]').click());
         await page.waitForTimeout(1200);

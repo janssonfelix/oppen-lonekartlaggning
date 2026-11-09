@@ -75,7 +75,7 @@ function renderForecastTargets() {
             <select data-f="pool" aria-label="Pott-typ" title="Ring-fenced pott (visas i kostnad-per-pott)">${[['equity', 'Likalön'], ['marknad', 'Marknad'], ['befordran', 'Befordran'], ['övrigt', 'Övrigt']].map(([v, l]) => `<option value="${v}"${(tg.pool || 'övrigt') === v ? ' selected' : ''}>${l}</option>`).join('')}</select>
             <span class="text-dampad-xs ingen-radbrytning" title="Vad raden förbrukar av potten">≈ ${Math.round(rowCost).toLocaleString('sv-SE')} kr</span>
             <button type="button" data-f="remove" class="btn btn-secondary btn-sm" aria-label="Ta bort rad">${ikon('kryss', 14)}</button>
-        </div>${gruppN(tg) > 0 && gruppN(tg) < kInstalld() ? `<p class="k-mask-note">Raden berör ${gruppN(tg)} ${gruppN(tg) === 1 ? 'person' : 'personer'}, färre än ${kInstalld()} personer — beloppet bygger på enskildas löner och ingår i summorna, även i Excel-exporten.</p>` : (gruppN(tg) === 0 ? '<p class="k-mask-note">Ingen i gruppen matchar kön och lönegräns.</p>' : '')}`;
+        </div>${gruppN(tg) > 0 && gruppN(tg) < kInstalld() ? `<p class="k-mask-note">Raden berör ${gruppN(tg)} ${gruppN(tg) === 1 ? 'person' : 'personer'}, färre än ${kInstalld()} ${personOrd(kInstalld())} — beloppet bygger på enskildas löner och ingår i summorna, även i Excel-exporten.</p>` : (gruppN(tg) === 0 ? '<p class="k-mask-note">Ingen i gruppen matchar kön och lönegräns.</p>' : '')}`;
     }).join('');
     host.querySelectorAll('.forecast-target-row').forEach(rowEl => {
         const i = parseInt(rowEl.getAttribute('data-idx') || '', 10);
@@ -212,7 +212,7 @@ function updateForecast() {
     // procent personens lön gånger procentsatsen. Summorna ovan omfattar alla grupper.
     const antalMaskerade = rows.filter(g => g.n < K).length;
     const maskNot = antalMaskerade
-        ? `<p class="k-mask-note">${antalMaskerade} ${antalMaskerade === 1 ? 'grupp' : 'grupper'} med färre än ${K} personer ingår i summorna, men ${antalMaskerade === 1 ? 'dess' : 'deras'} medianer och kostnad redovisas inte per grupp.</p>`
+        ? `<p class="k-mask-note">${antalMaskerade} ${antalMaskerade === 1 ? 'grupp' : 'grupper'} med färre än ${K} ${personOrd(K)} ingår i summorna, men ${antalMaskerade === 1 ? 'dess' : 'deras'} medianer och kostnad redovisas inte per grupp.</p>`
         : '';
     // Könsuppdelade mått för hela urvalet kräver tröskeln för varje kön (ADR-12).
     const konOk = _konFarRedovisasFor(d);
@@ -565,7 +565,7 @@ function _renderScenarioCompare() {
         <tbody>
             <tr><td><strong>A</strong> ${sc.A ? `<span class="f-dampad">(${esc(sc.A.budgetTxt)}, ${sc.A.targetsCount} riktade)</span>` : ''}</td>${col(sc.A)}</tr>
             <tr><td><strong>B</strong> ${sc.B ? `<span class="f-dampad">(${esc(sc.B.budgetTxt)}, ${sc.B.targetsCount} riktade)</span>` : ''}</td>${col(sc.B)}</tr>
-        </tbody></table>${maskerat ? `<p class="k-mask-note">Kvinnors median i procent av mäns visas inte: ett kön har färre än ${kTroskel()} personer i urvalet.</p>` : ''}`;
+        </tbody></table>${maskerat ? `<p class="k-mask-note">Kvinnors median i procent av mäns visas inte: ett kön har färre än ${kTroskel()} ${personOrd(kTroskel())} i urvalet.</p>` : ''}`;
 }
 // Kör OLS på en given radmängd via data-swap. Returnerar {konPct, pValue}.
 function _forecastOlsOn(rows) {
@@ -671,7 +671,7 @@ function _forecastRemediation() {
     // Summan är ett lönemått över de berörda: den visas först när de är minst K.
     const summa = rem.count >= K
         ? `Kostnad att lyfta alla till jämförelsevärdet: <strong>${kr(rem.totalCost)}/mån</strong> (≈ ${kr(rem.totalCost * months * poFactor)} inkl. PO/period).`
-        : `Kostnaden visas inte, eftersom färre än ${K} personer berörs.`;
+        : `Kostnaden visas inte, eftersom färre än ${K} ${personOrd(K)} berörs.`;
     const doldaNot = dolda
         ? `<p class="k-mask-note">${dolda} ${dolda === 1 ? 'grupp' : 'grupper'} där färre än ${K} kvinnor berörs ${rem.count >= K ? 'ingår i summan men ' : ''}redovisas inte per grupp och blir inga riktade rader.</p>`
         : '';
@@ -734,7 +734,7 @@ function _exportForecastExport() {
         ['Kvinnors medianlön i % av mäns, före', !konOk || out.rawGapFore == null ? '–' : +(100 + out.rawGapFore).toFixed(1)],
         ['Kvinnors medianlön i % av mäns, efter', !konOk || out.rawGapEfter == null ? '–' : +(100 + out.rawGapEfter).toFixed(1)],
         ...(konOk ? [] : [['Könsuppdelade mått', _konUtelamnatNot()]]),
-        ...(antalMaskerade ? [['Grupper under tröskeln', `${antalMaskerade} ${antalMaskerade === 1 ? 'grupp' : 'grupper'} med färre än ${K} personer ingår i summorna, men ${antalMaskerade === 1 ? 'dess' : 'deras'} medianer och kostnad redovisas inte per grupp.`]] : []),
+        ...(antalMaskerade ? [['Grupper under tröskeln', `${antalMaskerade} ${antalMaskerade === 1 ? 'grupp' : 'grupper'} med färre än ${K} ${personOrd(K)} ingår i summorna, men ${antalMaskerade === 1 ? 'dess' : 'deras'} medianer och kostnad redovisas inte per grupp.`]] : []),
         ['', ''],
         ['OBS', 'Bara summor. Enskildas löner ingår inte (inbyggt dataskydd). Den slutliga löneöversynen dokumenteras i Word-utkastet och Handlingsplan.']
     ];

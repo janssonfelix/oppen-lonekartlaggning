@@ -16,7 +16,7 @@ export async function forhandskontroll() {
     for (let i = 0; i < 30; i++) rader.push(`${i === 0 ? 'C (chef)' : 'C'};207011 Handläggare;${30000 + i * 10};${1970 + (i % 20)};${i === 1 ? '9' : i % 2 ? 'M' : 'K'}`);
     const fil = namn => ({ name: namn, mimeType: 'text/csv', buffer: Buffer.from(rader.join('\n'), 'utf8') });
     await sida.setInputFiles('#file-input-data', fil('okanda-varden.csv'));
-    await sida.waitForFunction(() => state.data.length === 29 && !!document.querySelector('#fk-tolkning'), { timeout: 15000 });
+    await sida.waitForFunction(() => state.data.length === 29 && !!document.querySelector('#fk-tolkning'), null, { timeout: 15000 });
     const l = await sida.evaluate(() => {
         const av = document.getElementById('avsnitt-fi-forhandskontroll');
         const cell = document.querySelector('#fk-tolkning td.fk-fel');
@@ -45,7 +45,7 @@ export async function forhandskontroll() {
     await sida.waitForSelector('#fk-las-in', { state: 'visible', timeout: 15000 });
     ok(await sida.evaluate(() => state.filnamn.data === 'okanda-varden.csv' && state.forhandskontroll.vantar === true), 'med inställningen på väntar filen på Läs in, och det tidigare underlaget står kvar');
     await sida.click('#fk-las-in');
-    await sida.waitForFunction(() => state.filnamn.data === 'okanda-varden-igen.csv' && !document.getElementById('fk-las-in'), { timeout: 15000 });
+    await sida.waitForFunction(() => state.filnamn.data === 'okanda-varden-igen.csv' && !document.getElementById('fk-las-in'), null, { timeout: 15000 });
     ok(true, 'Läs in läser in filen');
     await sida.close();
 }

@@ -298,7 +298,7 @@ function _renderExplorerTable(model, typ, inkl) {
     const num = (v, m, attr = '') =>
         `<td class="tabelltal ta-hoger" data-sort-value="${v == null ? '' : v}"${attr}>${_exploreFmt(v, m)}</td>`;
     const nTd = c => `<td class="t-hoger" data-sort-value="${c.n}">${c.n.toLocaleString('sv-SE')} (${c.nKv}/${c.nMa})</td>`;
-    const trAttr = c => (c.liten ? ` class="explore-liten" title="Färre än ${k} personer"` : '')
+    const trAttr = c => (c.liten ? ` class="explore-liten" title="Färre än ${k} ${personOrd(k)}"` : '')
         + (c.liten && !inkl ? ' data-export-utelamna' : '');
     const dimLbl = esc(EXPLORE_DIM_LABEL[spec.rad]);
     let head, body;
@@ -326,7 +326,7 @@ function _renderExplorerTable(model, typ, inkl) {
             if (!c) return `<td class="t-hoger" data-sort-value=""${inkl ? '' : ' data-export-tom'}${ute(d)}>–</td>`;
             const v = d.v(c), sm = liten(c, d);
             const bara_kon_liten = !c.liten && spec.matt === 'n';   // antal per kön i en stor grupp följer med
-            const attr = (sm ? ` class="explore-liten" title="Färre än ${k} personer"` : '')
+            const attr = (sm ? ` class="explore-liten" title="Färre än ${k} ${personOrd(k)}"` : '')
                 + (!inkl && ((sm && !bara_kon_liten) || (spec.matt === 'gap' && c.konLiten)) ? ' data-export-tom' : '') + ute(d);
             const cell = _exploreFmt(v, spec.matt) + (sm ? ` (n = ${d.n(c)})` : '');
             return `<td class="tabelltal ta-hoger" data-sort-value="${v == null ? '' : v}"${attr}>${esc(cell)}</td>`;
@@ -376,13 +376,13 @@ function _renderExplorerNote(model, extra) {
     const antal = model.celler.filter(c => c.liten).length;
     const k = kTroskel();
     const sma = antal
-        ? `${antal} ${antal === 1 ? 'grupp har' : 'grupper har'} under ${k} personer. `
+        ? `${antal} ${antal === 1 ? 'grupp har' : 'grupper har'} under ${k} ${personOrd(k)}. `
           + 'De följer inte med i exporten om du inte kryssar i rutan ovanför diagrammet.'
         : '';
     const konsma = model.spec.delaKon && model.spec.matt !== 'n'
         ? model.celler.filter(c => !c.liten).reduce((s, c) => s + (c.nKv < k ? 1 : 0) + (c.nMa < k ? 1 : 0), 0) : 0;
     const kon = konsma
-        ? `${konsma} ${konsma === 1 ? 'könsvärde bygger' : 'könsvärden bygger'} på färre än ${k} personer; `
+        ? `${konsma} ${konsma === 1 ? 'könsvärde bygger' : 'könsvärden bygger'} på färre än ${k} ${personOrd(k)}; `
           + 'de följer inte med i exporten om du inte kryssar i rutan.'
         : '';
     const dolda = model.dolda
@@ -447,7 +447,7 @@ function explorerHandleClick(d) {
     }
     if (mal.saknas) {
         _renderExplorerNote(_explorerState.model,
-            `Gruppen har ingen gruppdossier, eftersom dossiern bara finns för grupper med minst ${kTroskel()} personer.`);
+            `Gruppen har ingen gruppdossier, eftersom dossiern bara finns för grupper med minst ${kTroskel()} ${personOrd(kTroskel())}.`);
         return;
     }
     openGruppdossier(mal.key);

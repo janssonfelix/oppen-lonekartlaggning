@@ -40,7 +40,7 @@ function renderExportBesked({ baraUrval = false } = {}) {
     try {
         blad = excelAlltBlad();
         satt('besked-excel', `<strong>Innehåller:</strong> ${esc(_ebAntal(blad.length, 'blad', 'blad'))} — ${esc(blad.join(', '))}<br>`
-            + `<strong>Utelämnar:</strong> ${esc(`grupper med färre än ${kInstalld()} personer (minsta gruppstorlek; på skärmen visas de)`)}`);
+            + `<strong>Utelämnar:</strong> ${esc(`grupper med färre än ${kInstalld()} ${personOrd(kInstalld())} (minsta gruppstorlek; på skärmen visas de)`)}`);
     } catch (e) { rapporteraFel('Förhandsbesked: Excel', e); }
     try {
         satt('besked-zip', `<strong>Innehåller:</strong> ${esc(`Word-utkastet, Excel-filen (${_ebAntal(blad.length, 'blad', 'blad')}) och diagrammen i alla flikar som bilder`)}<br>`

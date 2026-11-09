@@ -60,7 +60,7 @@ export async function rapportunderlag() {
         ok(textTyper.includes('text/html') && textTyper.includes('text/plain'), `Kopiera lägger HTML och text på urklipp (${textTyper.join(', ')})`);
     } else console.log(`  – urklippets innehåll läses bara i Chromium (${NAMN}: knappen klickades)`);
     await page.click('[data-rapport-diagram="chart-skevhet-overview"]');
-    await page.waitForFunction(() => /Kopierat som bild|laddades ner/.test(document.querySelector('[data-rapport-diagram="chart-skevhet-overview"]')?.parentElement?.textContent || ''), { timeout: 15000 });
+    await page.waitForFunction(() => /Kopierat som bild|laddades ner/.test(document.querySelector('[data-rapport-diagram="chart-skevhet-overview"]')?.parentElement?.textContent || ''), null, { timeout: 15000 });
     if (KAN_LASA_URKLIPP) {
         const bildTyper = await page.evaluate(async () => { try { const it = await navigator.clipboard.read(); return it.flatMap(i => i.types); } catch (e) { return ['fel: ' + e.message]; } });
         ok(bildTyper.includes('image/png'), `Kopiera diagram lägger en PNG på urklipp (${bildTyper.join(', ')})`);

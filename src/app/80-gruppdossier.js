@@ -203,7 +203,7 @@ function renderGruppdossier(preselectKey) {
         sel.innerHTML = '';
         body.innerHTML = `<div class="flik-empty-state"><div class="empty-icon">${ikon('tomLada')}</div>
             <h3>Inga grupper att visa</h3>
-            <p>Ingen yrkesgrupp når tröskeln på ${kTroskel()} personer. Läs in en större lönefil, eller analysera per BAS-intervall i stället.</p></div>`;
+            <p>Ingen yrkesgrupp når tröskeln på ${kTroskel()} ${personOrd(kTroskel())}. Läs in en större lönefil, eller analysera per BAS-intervall i stället.</p></div>`;
         return;
     }
     // Fyll väljaren (bevara valet om det fortfarande finns)

@@ -46,9 +46,9 @@ export async function kTroskel() {
     ok(/sänkt till 6 \(standard 10\)/.test(await page.textContent('#k-troskel-varning-text') || ''), 'varningen anger det sänkta värdet');
     ok(!(await osynlig('#k-troskel-varning')), 'varningen syns efter sänkning');
     // Medan flikarna räknas om efter en ändrad tröskel är inmatning spärrad (med avsikt): vänta in omräkningen.
-    await page.waitForFunction(() => !document.getElementById('omritning-ruta'), { timeout: 60000 });
+    await page.waitForFunction(() => !document.getElementById('omritning-ruta'), null, { timeout: 60000 });
     await page.keyboard.press('Escape');
-    const stangd = await page.waitForFunction(() => document.getElementById('installningar-modal').style.display === 'none', { timeout: 5000 }).then(() => true, () => false);
+    const stangd = await page.waitForFunction(() => document.getElementById('installningar-modal').style.display === 'none', null, { timeout: 5000 }).then(() => true, () => false);
     ok(stangd, 'Escape stänger inställningarna');
     await page.click('.nav-item[data-tab="prioritering"]');
     await page.evaluate(() => document.querySelectorAll('details.avsnitt').forEach(d => { d.open = true; }));

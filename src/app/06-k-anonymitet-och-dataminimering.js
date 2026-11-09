@@ -87,7 +87,7 @@ function _konFarRedovisasFor(rader) {
 /** Meningen där ett könsuppdelat mått för hela urvalet utelämnats (samma ordalydelse som Rapportunderlaget). */
 function _konUtelamnatNot() {
     return kTroskel() <= 1 ? 'Könsuppdelade lönemått redovisas inte eftersom ett av könen saknas i urvalet.'
-        : `Könsuppdelade lönemått redovisas inte eftersom ett kön har färre än ${kTroskel()} personer i urvalet.`;
+        : `Könsuppdelade lönemått redovisas inte eftersom ett kön har färre än ${kTroskel()} ${personOrd(kTroskel())} i urvalet.`;
 }
 
 /**
@@ -99,7 +99,7 @@ function _konUtelamnatNot() {
  */
 function _raGapText(reg, fmt) {
     if (!reg || reg.rawGapPct == null) return '–';
-    return _konFarRedovisas(reg.nKvAnalysed, reg.nMaAnalysed) ? fmt(reg.rawGapPct) : (kTroskel() <= 1 ? '– (ett av könen saknas)' : `– (ett kön har färre än ${kTroskel()} personer)`);
+    return _konFarRedovisas(reg.nKvAnalysed, reg.nMaAnalysed) ? fmt(reg.rawGapPct) : (kTroskel() <= 1 ? '– (ett av könen saknas)' : `– (ett kön har färre än ${kTroskel()} ${personOrd(kTroskel())})`);
 }
 
 /**
@@ -120,7 +120,7 @@ function _regStegForRedovisning(reg) {
         steg: alla.filter(s => s.name !== 'Endast kön'),
         explainedShare: null,
         utelamnat: true,
-        not: `Det ojusterade steget (endast kön) och den förklarade andelen visas inte eftersom ett kön har färre än ${kTroskel()} personer i modellen.`
+        not: `Det ojusterade steget (endast kön) och den förklarade andelen visas inte eftersom ett kön har färre än ${kTroskel()} ${personOrd(kTroskel())} i modellen.`
     };
 }
 
@@ -187,7 +187,7 @@ function _parOverTroskel(p) {
 
 /** Mening om par som utelämnats ur underlaget (samma ordalydelse som Rapportunderlaget). */
 function _parUtelamnadeNot(antal) {
-    return antal ? `${antal} par med en grupp under ${kTroskel()} personer redovisas inte här.` : '';
+    return antal ? `${antal} par med en grupp under ${kTroskel()} ${personOrd(kTroskel())} redovisas inte här.` : '';
 }
 
 /**
@@ -385,7 +385,7 @@ function sattKTroskel(v, { fraga = true, rita = true, stegvis = false } = {}) {
     if (lagst != null && n < lagst) { _synkaKTroskel(); return { ok: false, fel: `Lägst ${lagst} enligt organisationspaketet.` }; }
     if (n === state.kTroskel) { _kVisaFel(''); _synkaKTroskel(); return { ok: true, varde: n, andrad: false }; }
     if (fraga && n < K_STANDARD && n < state.kTroskel
-        && !confirm(`Sänka minsta gruppstorlek till ${n}?\n\nLönemått kommer att redovisas för grupper med ned till ${n} personer. `
+        && !confirm(`Sänka minsta gruppstorlek till ${n}?\n\nLönemått kommer att redovisas för grupper med ned till ${n} ${personOrd(n)}. `
             + `I så små grupper kan enskildas löner räknas fram. Värdet står i metodbilagan och i exporterad data, och meningen om sänkt tröskel på det som kan spridas för sig.`)) {
         _synkaKTroskel();
         return { ok: false, nekad: true };
@@ -623,7 +623,7 @@ function kMaskNote(namn, sammanhang, trosk) {
     const den = n === 1 ? 'Den har' : 'De har';
     const dess = n === 1 ? 'dess' : 'deras';
     return `<p class="k-mask-note">${n} ${esc(_kNoteForm(sammanhang, n))} visas inte här: `
-        + `${_kNoteNamn(lista)}. ${den} färre än ${t} personer, och ${dess} lönemått skulle kunna `
+        + `${_kNoteNamn(lista)}. ${den} färre än ${t} ${personOrd(t)}, och ${dess} lönemått skulle kunna `
         + `peka ut enskilda. Personerna ingår fortfarande i underlaget och i totalsummorna — det är `
         + `redovisningen per grupp som utgår.</p>`;
 }
@@ -644,7 +644,7 @@ function kSamladNote(namn, sammanhang) {
     const stora = n === 1 ? 'Gruppen är stor nog' : 'Grupperna är stora nog';
     return `<p class="k-mask-note">${n} ${esc(_kNoteForm(sammanhang, n))} visas med `
         + `gruppens samlade median i stället för könsuppdelade medianer: ${_kNoteNamn(lista)}. `
-        + `${stora} att redovisa, men ett av könen har färre än ${kTroskel()} personer, `
+        + `${stora} att redovisa, men ett av könen har färre än ${kTroskel()} ${personOrd(kTroskel())}, `
         + `så en könsjämförelse skulle peka ut enskilda.</p>`;
 }
 

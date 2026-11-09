@@ -169,7 +169,7 @@ function _lpBandkartaKort(model) {
     if (!model.hasPolicy) { rensaFigur(el); el.innerHTML = ''; kort.hidden = true; return; }
     kort.hidden = false;
     const forklaring = document.getElementById('lp-bandkarta-forklaring');
-    if (forklaring) forklaring.textContent = `Grå stapel = ${referensKortnamn()}:s P10–P90. Streck i den = referensens median. Blå stapel = organisationens faktiska P10–P90 (bara BAS med minst ${kTroskel()} personer). Punkt = yrkesgruppens median: kvinnodominerad, mansdominerad eller blandad.`;
+    if (forklaring) forklaring.textContent = `Grå stapel = ${referensKortnamn()}:s P10–P90. Streck i den = referensens median. Blå stapel = organisationens faktiska P10–P90 (bara BAS med minst ${kTroskel()} ${personOrd(kTroskel())}). Punkt = yrkesgruppens median: kvinnodominerad, mansdominerad eller blandad.`;
     if (!model.byBas.length) { _lpIngetDiagram(el, 'Ställningstagandet har inga rader för underlagets BAS-intervall eller yrken.'); return; }
     _lpRenderBandMap(model);
 }
@@ -415,7 +415,7 @@ function _lpRenderCompliance(model) {
     if (gammal) gammal.remove();
     if (!rows.length) {
         _lpIngetDiagram(el, alla.length
-            ? `Samtliga BAS-intervall med policyspann har färre än ${kTroskel()} personer och kan därför inte redovisas.`
+            ? `Samtliga BAS-intervall med policyspann har färre än ${kTroskel()} ${personOrd(kTroskel())} och kan därför inte redovisas.`
             : 'Ingen BAS har användbara bandgränser i policyn.');
         return;
     }
@@ -475,7 +475,7 @@ function _lpTableHtml(model) {
         <p class="text-dampad-sm lh-1_55 marg-0-0-10">
             <strong>Position</strong> är var gruppens median ligger i spannet: 0 % = på P10, 100 % = på P90.
             Under 0 % eller över 100 % betyder att medianen ligger utanför spannet.
-            Grupper med färre än ${kTroskel()} personer visas utan percentiler, och under ${Math.min(LP_COUNT_TIER_MIN, kTroskel())} maskeras de helt —
+            Grupper med färre än ${kTroskel()} ${personOrd(kTroskel())} visas utan percentiler, och under ${Math.min(LP_COUNT_TIER_MIN, kTroskel())} maskeras de helt —
             men de räknas alltid in i BAS-totalen.
         </p>
         <div class="table-container">
@@ -516,8 +516,8 @@ function _lpExcelBlad() {
     const ut = [
         [`Lönerna mot ${referensNamn()} (fliken Löneläget)`],
         [`Position är var medianen ligger i referensens spann: 0 % = på P10, 100 % = på P90; under 0 eller över 100 betyder utanför spannet. `
-            + `Yrkesgrupper med färre än ${k} personer står med antal men utan lönemått, och med färre än ${Math.min(LP_COUNT_TIER_MIN, k)} utelämnas de; de räknas alltid in i BAS-intervallets rader. `
-            + `Könsuppdelade mått redovisas bara där varje kön har minst ${k} personer.`],
+            + `Yrkesgrupper med färre än ${k} ${personOrd(k)} står med antal men utan lönemått, och med färre än ${Math.min(LP_COUNT_TIER_MIN, k)} utelämnas de; de räknas alltid in i BAS-intervallets rader. `
+            + `Könsuppdelade mått redovisas bara där varje kön har minst ${k} ${personOrd(k)}.`],
         [],
         ['Yrkesgrupper mot sitt spann'],
         ['BAS-intervall', 'AID', 'Yrkesgrupp', 'Antal', 'Median (kr)', 'Referensens P10 (kr)', 'Referensens P90 (kr)', 'Position (%)', 'Under P10 (antal)', 'Referensnivå']
@@ -534,7 +534,7 @@ function _lpExcelBlad() {
                 s && s.position != null ? r1(s.position * 100) : '', c ? c.under : '', g.level || '']);
         }
     }
-    if (utelamnade.length) ut.push([`Visas inte (färre än ${Math.min(LP_COUNT_TIER_MIN, k)} personer): ${utelamnade.join(', ')}.`]);
+    if (utelamnade.length) ut.push([`Visas inte (färre än ${Math.min(LP_COUNT_TIER_MIN, k)} ${personOrd(Math.min(LP_COUNT_TIER_MIN, k))}): ${utelamnade.join(', ')}.`]);
 
     // Läget i spannet per kön: bara BAS-intervall där varje kön når tröskeln (samma villkor som hanteldiagrammet).
     ut.push([], ['Läget i spannet per kön, per BAS-intervall (genomsnittlig position: 0 % = P10, 100 % = P90)'],
@@ -546,7 +546,7 @@ function _lpExcelBlad() {
         if (!gg || !_konFarRedovisas(gg.nKv, gg.nMa)) { konDolda.push(b.bas); continue; }
         ut.push([b.bas, gg.nKv, gg.nMa, r1(gg.kvPos * 100), r1(gg.maPos * 100), r1(gg.diff * 100)]);
     }
-    if (konDolda.length) ut.push([`Visas inte (ett kön har färre än ${k} personer, eller spannet är inte användbart): ${konDolda.join(', ')}.`]);
+    if (konDolda.length) ut.push([`Visas inte (ett kön har färre än ${k} ${personOrd(k)}, eller spannet är inte användbart): ${konDolda.join(', ')}.`]);
 
     // Tredjedelarna: hela urvalet, som kortet i fliken — bara när båda könen når tröskeln.
     const sum = _lpKonLagenSumma(model);
@@ -566,6 +566,6 @@ function _lpExcelBlad() {
         if (isKMasked(b.n)) { efterDolda.push(b.bas); continue; }
         ut.push([b.bas, c.n, c.under, c.within, c.over, pct(c.under, c.n), pct(c.within, c.n), pct(c.over, c.n)]);
     }
-    if (efterDolda.length) ut.push([`Visas inte (färre än ${k} personer): ${efterDolda.join(', ')}.`]);
+    if (efterDolda.length) ut.push([`Visas inte (färre än ${k} ${personOrd(k)}): ${efterDolda.join(', ')}.`]);
     return ut;
 }

@@ -1352,7 +1352,7 @@ function _konFarRedovisasFor(rader) {
 /** Meningen där ett könsuppdelat mått för hela urvalet utelämnats (samma ordalydelse som Rapportunderlaget). */
 function _konUtelamnatNot() {
     return kTroskel() <= 1 ? 'Könsuppdelade lönemått redovisas inte eftersom ett av könen saknas i urvalet.'
-        : `Könsuppdelade lönemått redovisas inte eftersom ett kön har färre än ${kTroskel()} personer i urvalet.`;
+        : `Könsuppdelade lönemått redovisas inte eftersom ett kön har färre än ${kTroskel()} ${personOrd(kTroskel())} i urvalet.`;
 }
 
 /**
@@ -1364,7 +1364,7 @@ function _konUtelamnatNot() {
  */
 function _raGapText(reg, fmt) {
     if (!reg || reg.rawGapPct == null) return '–';
-    return _konFarRedovisas(reg.nKvAnalysed, reg.nMaAnalysed) ? fmt(reg.rawGapPct) : (kTroskel() <= 1 ? '– (ett av könen saknas)' : `– (ett kön har färre än ${kTroskel()} personer)`);
+    return _konFarRedovisas(reg.nKvAnalysed, reg.nMaAnalysed) ? fmt(reg.rawGapPct) : (kTroskel() <= 1 ? '– (ett av könen saknas)' : `– (ett kön har färre än ${kTroskel()} ${personOrd(kTroskel())})`);
 }
 
 /**
@@ -1385,7 +1385,7 @@ function _regStegForRedovisning(reg) {
         steg: alla.filter(s => s.name !== 'Endast kön'),
         explainedShare: null,
         utelamnat: true,
-        not: `Det ojusterade steget (endast kön) och den förklarade andelen visas inte eftersom ett kön har färre än ${kTroskel()} personer i modellen.`
+        not: `Det ojusterade steget (endast kön) och den förklarade andelen visas inte eftersom ett kön har färre än ${kTroskel()} ${personOrd(kTroskel())} i modellen.`
     };
 }
 
@@ -1452,7 +1452,7 @@ function _parOverTroskel(p) {
 
 /** Mening om par som utelämnats ur underlaget (samma ordalydelse som Rapportunderlaget). */
 function _parUtelamnadeNot(antal) {
-    return antal ? `${antal} par med en grupp under ${kTroskel()} personer redovisas inte här.` : '';
+    return antal ? `${antal} par med en grupp under ${kTroskel()} ${personOrd(kTroskel())} redovisas inte här.` : '';
 }
 
 /**
@@ -1650,7 +1650,7 @@ function sattKTroskel(v, { fraga = true, rita = true, stegvis = false } = {}) {
     if (lagst != null && n < lagst) { _synkaKTroskel(); return { ok: false, fel: `Lägst ${lagst} enligt organisationspaketet.` }; }
     if (n === state.kTroskel) { _kVisaFel(''); _synkaKTroskel(); return { ok: true, varde: n, andrad: false }; }
     if (fraga && n < K_STANDARD && n < state.kTroskel
-        && !confirm(`Sänka minsta gruppstorlek till ${n}?\n\nLönemått kommer att redovisas för grupper med ned till ${n} personer. `
+        && !confirm(`Sänka minsta gruppstorlek till ${n}?\n\nLönemått kommer att redovisas för grupper med ned till ${n} ${personOrd(n)}. `
             + `I så små grupper kan enskildas löner räknas fram. Värdet står i metodbilagan och i exporterad data, och meningen om sänkt tröskel på det som kan spridas för sig.`)) {
         _synkaKTroskel();
         return { ok: false, nekad: true };
@@ -1888,7 +1888,7 @@ function kMaskNote(namn, sammanhang, trosk) {
     const den = n === 1 ? 'Den har' : 'De har';
     const dess = n === 1 ? 'dess' : 'deras';
     return `<p class="k-mask-note">${n} ${esc(_kNoteForm(sammanhang, n))} visas inte här: `
-        + `${_kNoteNamn(lista)}. ${den} färre än ${t} personer, och ${dess} lönemått skulle kunna `
+        + `${_kNoteNamn(lista)}. ${den} färre än ${t} ${personOrd(t)}, och ${dess} lönemått skulle kunna `
         + `peka ut enskilda. Personerna ingår fortfarande i underlaget och i totalsummorna — det är `
         + `redovisningen per grupp som utgår.</p>`;
 }
@@ -1909,7 +1909,7 @@ function kSamladNote(namn, sammanhang) {
     const stora = n === 1 ? 'Gruppen är stor nog' : 'Grupperna är stora nog';
     return `<p class="k-mask-note">${n} ${esc(_kNoteForm(sammanhang, n))} visas med `
         + `gruppens samlade median i stället för könsuppdelade medianer: ${_kNoteNamn(lista)}. `
-        + `${stora} att redovisa, men ett av könen har färre än ${kTroskel()} personer, `
+        + `${stora} att redovisa, men ett av könen har färre än ${kTroskel()} ${personOrd(kTroskel())}, `
         + `så en könsjämförelse skulle peka ut enskilda.</p>`;
 }
 
@@ -6223,7 +6223,7 @@ const __mirrorNamn = (() => {
 // Copyright 2026 Felix Jansson
 /**
  * Öppen lönekartläggning — namnformer för organisationen och jämförelsestatistiken
- * (ADR-36).
+ * (ADR-36), och ordformen för ett antal personer.
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
@@ -6241,10 +6241,16 @@ function normaliseraNamn(text) {
     return String(text ?? '').replace(/\s+/g, ' ').trim().slice(0, MAX);
 }
 
-    return { namnGenitiv, normaliseraNamn };
+/** "person" när antalet är 1, annars "personer": `${k} ${personOrd(k)}` ger "minst 1 person". */
+function personOrd(n) {
+    return Number(n) === 1 ? 'person' : 'personer';
+}
+
+    return { namnGenitiv, normaliseraNamn, personOrd };
 })();
 const _namnGenitiv = __mirrorNamn.namnGenitiv;
 const _namnNormalisera = __mirrorNamn.normaliseraNamn;
+const personOrd = __mirrorNamn.personOrd;
 
 // ---- speglar src/lib/skr-personal.js ----
 const __mirrorSkrPersonal = (() => {
@@ -6843,6 +6849,7 @@ const _refNamnFranFil = __mirrorReferens.namnFranFil;
 const __mirrorDatakvalitet = (() => {
     // importer ur tidigare speglade lib-moduler
     const konOf = __mirrorFalt.konOf;
+    const personOrd = __mirrorNamn.personOrd;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -6854,6 +6861,7 @@ const __mirrorDatakvalitet = (() => {
  * kan inte spädas ut av andra delar. Könsfördelningen i organisationen är inget
  * kvalitetskriterium — den är ett fynd (könsskevhet).
  */
+
 
 const RANG = { ok: 0, varning: 1, kritisk: 2 };
 const FTE_GOLV = 20000;
@@ -6907,7 +6915,7 @@ function bedomUnderlag(rader, { k, audit, mde, modell, modellFras } = {}) {
         id: 'jamforbarhet', namn: 'Jämförbarhet', status: _stat(jPct, 80, 50, true), varde: jPct,
         text: jPct == null
             ? 'Inga personer med känt kön att jämföra.'
-            : `${_pct(jPct)} av personalen finns i BAS-intervall där båda könen har minst ${k} personer`
+            : `${_pct(jPct)} av personalen finns i BAS-intervall där båda könen har minst ${k} ${personOrd(k)}`
               + (j.maskerade.length ? ` (${j.maskerade.length} BAS-intervall maskeras: ${j.maskerade.join(', ')}).` : '.'),
     });
 
@@ -7415,6 +7423,9 @@ const _utComputePivot = __mirrorUtforska.computePivot;
 
 // ---- speglar src/lib/attgora.js ----
 const __mirrorAttgora = (() => {
+    // importer ur tidigare speglade lib-moduler
+    const personOrd = __mirrorNamn.personOrd;
+
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 /**
@@ -7478,7 +7489,7 @@ function stegLikaArbete({ regressionOk, t, d }) {
 function stegLikvardigt({ analys, antalPar, utelamnade = 0, k, t, d }) {
     if (!analys) return { status: 'ej', detail: 'Gå igenom kandidatparen i Likvärdigt arbete.' };
     if (antalPar === 0 && utelamnade > 0) {
-        return { status: 'inget', detail: `Inget att hantera i Att göra: ${utelamnade} par har en grupp under ${k != null ? `${k} personer` : 'minsta gruppstorlek'} och redovisas bara i fliken Likvärdigt arbete — gå till steget för att granska dem.` };
+        return { status: 'inget', detail: `Inget att hantera i Att göra: ${utelamnade} par har en grupp under ${k != null ? `${k} ${personOrd(k)}` : 'minsta gruppstorlek'} och redovisas bara i fliken Likvärdigt arbete — gå till steget för att granska dem.` };
     }
     if (antalPar === 0) return { status: 'klar', detail: 'Analysen körd — inga kandidatpar utifrån nuvarande trösklar.' };
     return {
@@ -8143,6 +8154,7 @@ const __mirrorRapportunderlag = (() => {
     const bedomSkillnad = __mirrorStatus.bedomSkillnad;
     const statusKonstanter = __mirrorStatus.statusKonstanter;
     const lonebegreppReservation = __mirrorStructure.lonebegreppReservation;
+    const personOrd = __mirrorNamn.personOrd;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -8157,6 +8169,7 @@ const __mirrorRapportunderlag = (() => {
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
+
 
 
 
@@ -8320,7 +8333,7 @@ const _tillagg = st => st.begransad === 'kvinnor' ? ' (prövat bara på män)' :
 /** Kort märkning för tabellen i Lika arbete. */
 function stabilitetKort(st, k) {
     if (!st) return '';
-    if (st.begransad === 'bada') return `Kan inte prövas: båda könen har exakt ${k} personer`;
+    if (st.begransad === 'bada') return `Kan inte prövas: båda könen har exakt ${k} ${personOrd(k)}`;
     const t = _tillagg(st);
     if (st.niva === 'skor1') return `Skör: kan bli ${formatTal(st.lagstaGapPct, 1)} % om 1 person tas bort${t}`;
     if (st.niva === 'skor2') return `Skör: kan bli ${formatTal(st.lagstaGapPct, 1)} % om 2 personer tas bort${t}`;
@@ -8328,7 +8341,7 @@ function stabilitetKort(st, k) {
     return `Stabil: minst 3 % även utan 2 personer${t}`;
 }
 function _kanslighet(st, k) {
-    if (st.begransad === 'bada') return `Känslighet: kunde inte prövas eftersom båda könen har exakt ${k} personer.`;
+    if (st.begransad === 'bada') return `Känslighet: kunde inte prövas eftersom båda könen har exakt ${k} ${personOrd(k)}.`;
     const t = _tillagg(st);
     if (st.niva === 'skor1') return `Känslighet: skillnaden kan sjunka till ${_pct(st.lagstaGapPct)} om en person tas bort${t}.`;
     if (st.niva === 'skor2') return `Känslighet: skillnaden kan sjunka till ${_pct(st.lagstaGapPct)} om två personer tas bort${t}.`;
@@ -8428,7 +8441,7 @@ function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
         const litet = u.nKv < k || u.nMa < k;
         const kvot = !litet && u.medMa > 0 ? u.medKv / u.medMa * 100 : null;
         const st = [`Underlaget omfattar ${formatTal(u.n)} anställda, varav ${formatTal(u.nKv)} kvinnor och ${formatTal(u.nMa)} män.`
-            + (litet ? ` Könsuppdelade lönemått redovisas inte eftersom ett kön har färre än ${k} personer i urvalet.`
+            + (litet ? ` Könsuppdelade lönemått redovisas inte eftersom ett kön har färre än ${k} ${personOrd(k)} i urvalet.`
                      : ` Kvinnornas medianlön är ${_kr(u.medKv)} och männens ${_kr(u.medMa)}, vilket motsvarar ${_pct(kvot)} av männens.`)];
         if (u.oforklarat && !litet) {
             // Frasen följer förklaringsmodellen (ADR-56); tom fras = endast kön. Det bortvalda får en mening var.
@@ -8451,9 +8464,9 @@ function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
     }
     if (typ === 'uppdelning') {
         const R = 'Var uppstår löneskillnaden?';
-        if (!u) return blk(R, [`För få personer för att dela upp skillnaden: ett kön har färre än ${k} personer i urvalet.`], null);
+        if (!u) return blk(R, [`För få personer för att dela upp skillnaden: ett kön har färre än ${k} ${personOrd(k)} i urvalet.`], null);
         const inledning = `Kvinnornas medellön är ${_kr(u.medel.kv)} och männens ${_kr(u.medel.ma)}, en skillnad på ${_kr(u.gap)} (${_pct(u.gapPct)} av männens).`;
-        if (u.skyddad === false) return blk(R, [inledning, `Skillnaden delas inte upp här: en grupp med färre än ${k} personer står för så stor del av en av delarna att dess bidrag annars skulle kunna räknas fram.`], null);
+        if (u.skyddad === false) return blk(R, [inledning, `Skillnaden delas inte upp här: en grupp med färre än ${k} ${personOrd(k)} står för så stor del av en av delarna att dess bidrag annars skulle kunna räknas fram.`], null);
         const { A, B, C } = u.delar;
         const st = [`${inledning} Beloppen är kvinnor mot män: negativa belopp betyder att kvinnornas medellön är lägre.`,
             `Av skillnaden beror ${_kr(A)} på att kvinnor och män är olika fördelade över BAS, ${_kr(B)} på olika AID inom samma BAS och ${_kr(C)} på löneskillnader inom samma AID och BAS.`];
@@ -8474,7 +8487,7 @@ function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
         const flagg = g.filter(x => x.flaggad), samlade = g.filter(x => x.samladMedian);
         const jamforda = g.length + (u.utelamnade || []).length;
         const st = [`${_st(jamforda, 'yrkesgrupp', 'yrkesgrupper')} jämfördes. ${flagg.length} är värda att granska: skillnaden mellan kvinnors och mäns medianlön är statistiskt säkerställd och minst 3 % (verktygets storleksgräns). `
-            + `${samlade.length} redovisas med samlad median eftersom ett kön har färre än ${k} personer, och ${(u.utelamnade || []).length} utelämnas helt.`];
+            + `${samlade.length} redovisas med samlad median eftersom ett kön har färre än ${k} ${personOrd(k)}, och ${(u.utelamnade || []).length} utelämnas helt.`];
         if (!flagg.length) return blk('Lika arbete', [...st, 'Ingen yrkesgrupp är värd att granska.'], null);
         return blk('Lika arbete', [...st, `Kolumnen ${DIREKTIV_KOLUMN} visar var den ojusterade skillnaden når 5 %. ${DIREKTIV_TIPS}`],
             { rubriker: ['Yrkesgrupp', 'Kvinnor', 'Män', 'Median kvinnor', 'Median män', 'Kvinnors lön i % av mäns', DIREKTIV_KOLUMN],
@@ -8491,7 +8504,7 @@ function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
                 ? ' Yrkena jämförs bara med mansdominerade yrken på samma nivå; könsandelen i jämförelseyrket står i tabellen.'
                 : ' Yrkena jämförs med yrken på samma nivå som inte är kvinnodominerade; könsandelen i jämförelseyrket står i tabellen.')];
         if (_kapad(u)) st.push(_kapadText(u));
-        if (u.exkluderade) st.push(`${u.exkluderade} par med en grupp under ${k} personer redovisas inte här.`);
+        if (u.exkluderade) st.push(`${u.exkluderade} par med en grupp under ${k} ${personOrd(k)} redovisas inte här.`);
         if (!par.length) return blk('Likvärdigt arbete', [...st, 'Inga kandidatpar att redovisa.'], null);
         const kiText = p => (p.gapCI && p.kvMedian > 0) ? `${_ki(p.gapCI.lo / p.kvMedian * 100, p.gapCI.hi / p.kvMedian * 100)} %` : '–';
         return blk('Likvärdigt arbete', st, { rubriker: ['Kvinnodominerat yrke', 'Jämförelseyrke', 'Antal (kvinnodom. / jämf.)', 'Könsandel i jämförelseyrket', 'Skillnad (kr)', 'Skillnad (%)', '95 % KI'],
@@ -8504,7 +8517,7 @@ function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
         const st = [(_kapad(u) ? `De ${u.topN} största paren` : `${par.length} par`)
             + ' där ett kvinnodominerat yrke har lägre medianlön än ett av organisationens yrken i lägre BAS. Kraven mäts med BAS-intervall, ett grovt mått som bör prövas mot befattningsbeskrivningarna.'];
         if (_kapad(u)) st.push(_kapadText(u));
-        if (u.exkluderade) st.push(`${u.exkluderade} par med en grupp under ${k} personer redovisas inte här.`);
+        if (u.exkluderade) st.push(`${u.exkluderade} par med en grupp under ${k} ${personOrd(k)} redovisas inte här.`);
         if (!par.length) return blk(R, [...st, 'Inget kvinnodominerat yrke har lägre medianlön än ett yrke i lägre BAS.'], null);
         const kiText = p => (p.gapCI && p.kvMedian > 0) ? `${_ki(p.gapCI.lo / p.kvMedian * 100, p.gapCI.hi / p.kvMedian * 100)} %` : '–';
         const b = blk(R, st, { rubriker: ['Kvinnodominerat yrke', 'Jämförelseyrke', 'Antal (kvinnodom. / jämf.)', 'Könsandel i jämförelseyrket', 'BAS-steg', 'Skillnad (kr)', 'Skillnad (%)', '95 % KI'],
@@ -8518,7 +8531,7 @@ function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
         if (kv.length && kvartilOk) st.push('Andel kvinnor per lönekvartil: ' + kv.map(q => `kvartil ${q.q} ${_pct(q.andelKv, 0)}`).join(', ') + '.');
         const rep = u.representation || [];
         const utelamnade = rep.filter(r => r.n < k).length;
-        if (utelamnade) st.push(`${_st(utelamnade, 'BAS-intervall', 'BAS-intervall')} med färre än ${k} personer redovisas inte.`);
+        if (utelamnade) st.push(`${_st(utelamnade, 'BAS-intervall', 'BAS-intervall')} med färre än ${k} ${personOrd(k)} redovisas inte.`);
         return blk('Struktur och lönetransparens', st, { rubriker: ['BAS', 'Antal', 'Andel kvinnor', 'Median', 'Kvinnors lön jämfört med mäns'],
             rader: rep.filter(r => r.n >= k).map(r => [r.bas, String(r.n), _pct(r.andelKv),
                 _kr(r.median),
@@ -8534,7 +8547,7 @@ function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
             ? `Skillnaden i medellön för hela organisationen (${_kr(a.gapKr)} per månad) beror nästan inte alls på att kvinnor och män arbetar i olika sektorer (under 1 %).`
             : `Av skillnaden i medellön för hela organisationen (${_kr(a.gapKr)} per månad) beror ${_kr(a.sektorKr)} (${_pct(a.andel * 100)}) på att kvinnor och män arbetar i olika sektorer.`);
         const dolda = alla.length - visas.length;
-        if (dolda) st.push(`${_st(dolda, 'sektor', 'sektorer')} med färre än ${k} personer redovisas inte.`);
+        if (dolda) st.push(`${_st(dolda, 'sektor', 'sektorer')} med färre än ${k} ${personOrd(k)} redovisas inte.`);
         const skr = visas.find(r => r.skrAndelKv != null);
         if (skr) st.push(`Andel kvinnor i samma sektor i ${skrDelText(skr.skrDel)} enligt SKR:s personalstatistik står som referens.`);
         return blk('Per sektor (AID-huvudområde)', st, { rubriker: ['Sektor', 'Antal', 'Andel kvinnor', 'Andel kvinnor, SKR', 'Kvinnors lön i % av mäns', 'Justerad (ålder, BAS)'],
@@ -8585,7 +8598,7 @@ function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
 function skalSammanstallningNot(k) {
     return 'Totalt i kronor är summan av alla skäl i sammanställningen, också på egna rader, som saknar medianskillnad. '
         + 'Andelen räknas bara mot den samlade medianskillnaden i de grupper som har en sådan. '
-        + `Grupper där ett kön har färre än ${k} personer ingår inte i sammanställningen; för dem står bara kategorierna i tabellen ovan.`;
+        + `Grupper där ett kön har färre än ${k} ${personOrd(k)} ingår inte i sammanställningen; för dem står bara kategorierna i tabellen ovan.`;
 }
 
 const _esc = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -9089,6 +9102,7 @@ const _pbReceptArStandard = __mirrorPerBas.perBasReceptArStandard;
 const __mirrorTabellrecept = (() => {
     // importer ur tidigare speglade lib-moduler
     const computePivot = __mirrorUtforska.computePivot;
+    const personOrd = __mirrorNamn.personOrd;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -9102,6 +9116,7 @@ const __mirrorTabellrecept = (() => {
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
+
 
 // Samma listor som i src/lib/utforska.js (DIMENSIONER, MATT); tests/tabellrecept.test.js vaktar att de är lika.
 const DIMENSIONER = ['bas', 'aid', 'alder', 'kon', 'alla', 'aidbas', 'lonespann', 'sektor', 'aidniva'];
@@ -9222,7 +9237,7 @@ function _tabell(model, spec, k, rubrik) {
         rader = synliga.map(c => [c.rad, spec.matt === 'gap' && c.konLiten ? null : c.value, _nText(c)]);
     }
     const noter = [];
-    if (utelamnade) noter.push(`${utelamnade} ${utelamnade === 1 ? 'grupp' : 'grupper'} med färre än ${k} personer redovisas inte.`);
+    if (utelamnade) noter.push(`${utelamnade} ${utelamnade === 1 ? 'grupp' : 'grupper'} med färre än ${k} ${personOrd(k)} redovisas inte.`);
     if (model.dolda) noter.push(`${model.dolda} ${model.dolda === 1 ? 'grupp' : 'grupper'} döljs av gruppvillkoren.`);
     return { rubrik, kolumner, rader, utelamnade, not: noter.join(' ') };
 }
@@ -14336,7 +14351,7 @@ function _mkBorrRad() {
     el.hidden = !_mkTillbaka;
     if (!_mkTillbaka) return;
     el.appendChild(document.createTextNode(`Du kom hit från BAS ${_mkTillbaka.bas}: urvalet är satt till det BAS-intervallet och raderna till yrkesgrupp inom BAS. `
-        + `Grupper med färre än ${kInstalld()} personer följer inte med i en export om du inte kryssar i rutan. `));
+        + `Grupper med färre än ${kInstalld()} ${personOrd(kInstalld())} följer inte med i en export om du inte kryssar i rutan. `));
     const b = _mkKnapp('tillbaka', 'Tillbaka till föregående urval');
     b.addEventListener('click', nedborrningTillbaka);
     el.appendChild(b);
@@ -15391,7 +15406,7 @@ function updateDashboardStats() {
             pgEl.textContent = "-";
         } else if (!_konFarRedovisas(nKv, nMa)) {
             // k-anonymitet (ADR-12): kvoten pekar ut de få i det mindre könet.
-            pgEl.innerHTML = `–<div class="stat-tip">Visas inte: ett kön har färre än ${kTroskel()} personer.</div>`;
+            pgEl.innerHTML = `–<div class="stat-tip">Visas inte: ett kön har färre än ${kTroskel()} ${personOrd(kTroskel())}.</div>`;
         } else {
             // Rå kvot för hela organisationen: direktivmarkeringen (≥ 5 %) står per grupp,
             // inte här — därför ingen hänvisning till den, och neutral färg: rågapet
@@ -16030,7 +16045,7 @@ function renderForhandskontroll() {
         `Kön-värden: ${kon || '–'}`,
         `Lön: lägst ${_fkKr(f.lon?.min)}, median ${_fkKr(f.lon?.median)}, högst ${_fkKr(f.lon?.max)} (en median över ${esc(svTal(g.arslonMedian, 0))} kr ser ut som årslön, under ${esc(svTal(g.timlonMedian, 0))} kr som timlön)`,
         `Ålder: ${f.alder ? `lägst ${esc(svTal(f.alder.min, 0))}, högst ${esc(svTal(f.alder.max, 0))} år; utanför ${g.alderMin}–${g.alderMax} år: ${esc(svTal(f.alder.utanfor, 0))}` : 'saknas i filen (valfri)'}`,
-        `BAS-intervall med färre än ${esc(svTal(f.smaBas.k, 0))} personer: ${f.smaBas.bas.length ? `${f.smaBas.bas.map(esc).join(', ')} (${esc(svPct(f.smaBas.andel * 100, 1))} av raderna)` : 'inga'}`,
+        `BAS-intervall med färre än ${esc(svTal(f.smaBas.k, 0))} ${personOrd(f.smaBas.k)}: ${f.smaBas.bas.length ? `${f.smaBas.bas.map(esc).join(', ')} (${esc(svPct(f.smaBas.andel * 100, 1))} av raderna)` : 'inga'}`,
     ]);
 
     const kol = fk.kolumner;
@@ -17484,7 +17499,7 @@ function _methodAppendixData() {
         ['p-värden', 't-fördelning vid df < 100, annars normalfördelning; Benjamini-Hochberg (FDR) vid multipla grupptest'],
         ['Konfidensintervall', 'Bootstrap-percentil (B ≥ 1000 sampel) på mediankvot kvinna/man'],
         ['Signifikansnivå', 'α = 0,05'],
-        ['Minsta gruppstorlek för redovisning', `${kInstalld()} personer. Grupper med färre redovisas inte i det som lämnar verktyget (gäller inte likvärdighetsanalysen); på skärmen visas alla grupper.`
+        ['Minsta gruppstorlek för redovisning', `${kInstalld()} ${personOrd(kInstalld())}. Grupper med färre redovisas inte i det som lämnar verktyget (gäller inte likvärdighetsanalysen); på skärmen visas alla grupper.`
             + (kInstalld() < K_STANDARD ? ` Tröskeln är sänkt från standardvärdet ${K_STANDARD}.` : '')],
         ['Referens för lönenivåer', referensNamn() + referensKalla()],
         ['Jämförelsestatistik', statistikBeskrivning()],
@@ -18184,11 +18199,11 @@ function _excelPerBasRader() {
         rows.push([`${kort} ${i.bas}`, `${i.n} anställda, ${i.nKv} kvinnor och ${i.nMa} män, ${i.antalYrken} yrkesgrupper`]);
         rows.push(['Grupp', 'Antal', ...matt.map(m => MATT[m])]);
         i.rader.forEach(r => rows.push([r.namn, r.n == null ? '' : r.n, ...matt.map(m => tal(r[m]))]));
-        if (i.utelamnade.length) rows.push([`Redovisas inte (färre än ${pb.k} personer): ${i.utelamnade.join(', ')}`]);
-        if (!i.konVisas) rows.push([`Kvinnor och män redovisas inte var för sig: ett kön har färre än ${pb.k} personer`]);
+        if (i.utelamnade.length) rows.push([`Redovisas inte (färre än ${pb.k} ${personOrd(pb.k)}): ${i.utelamnade.join(', ')}`]);
+        if (!i.konVisas) rows.push([`Kvinnor och män redovisas inte var för sig: ett kön har färre än ${pb.k} ${personOrd(pb.k)}`]);
         rows.push([]);
     }
-    if (pb.basUtelamnade.length) rows.push([`${pb.dimEtikett} som inte redovisas (färre än ${pb.k} personer): ${pb.basUtelamnade.join(', ')}`], []);
+    if (pb.basUtelamnade.length) rows.push([`${pb.dimEtikett} som inte redovisas (färre än ${pb.k} ${personOrd(pb.k)}): ${pb.basUtelamnade.join(', ')}`], []);
     if (pb.konsgap) {
     // Utan ålder i lönefilen (ADR-64) står medelåldern inte med.
     const medAlder = pb.harAlder !== false;
@@ -18232,7 +18247,7 @@ function _excelDiagramBlad() {
     const alder = _konAlderGapRader(d.filter(arKv), d.filter(arMa), k);
     if (alder.visade.length) ut.push(['Löneskillnad per ålder', [
         ['Löneskillnad per åldersgrupp (Ålder & karriär)'],
-        ...(alder.dolda.length ? [[`Visas inte, ett kön har färre än ${k} personer: ${alder.dolda.join(', ')}.`]] : []), [],
+        ...(alder.dolda.length ? [[`Visas inte, ett kön har färre än ${k} ${personOrd(k)}: ${alder.dolda.join(', ')}.`]] : []), [],
         ['Åldersgrupp', 'Antal kvinnor', 'Antal män', 'Median kvinnor (kr)', 'Median män (kr)', 'Kvinnors median i % av mäns', 'Konfidensintervall 95 %, nedre', 'Konfidensintervall 95 %, övre'],
         ...alder.visade.map(a => [a.namn, a.nKv, a.nMa, Math.round(a.medKv), Math.round(a.medMa), r1(a.gap), a.ci ? r1(a.ci.lo) : '', a.ci ? r1(a.ci.hi) : ''])]]);
     // Lönepolitik: bara när ett ställningstagande är inläst och matchar underlaget (75-lonepolitik.js).
@@ -18246,7 +18261,7 @@ function _excelDiagramBlad() {
 /** Metodraden för bladet Lönepolitik, när det finns i arbetsboken. */
 function _excelLonepolitikMetod(blad) {
     if (!blad.some(b => b[0] === 'Lönepolitik')) return [];
-    return [['Bladet Lönepolitik', `Läget i referensens lönespann (0 % = P10, 100 % = P90) per yrkesgrupp, per kön och BAS-intervall samt fördelningen i spannets tredjedelar per kön och efterlevnaden per BAS-intervall — samma mått och samma regler för minsta gruppstorlek som avsnittet Mot ställningstagandet i fliken Löneläget: yrkesgrupper under ${kTroskel()} personer utan lönemått, könsuppdelade mått bara där varje kön har minst ${kTroskel()} personer.`]];
+    return [['Bladet Lönepolitik', `Läget i referensens lönespann (0 % = P10, 100 % = P90) per yrkesgrupp, per kön och BAS-intervall samt fördelningen i spannets tredjedelar per kön och efterlevnaden per BAS-intervall — samma mått och samma regler för minsta gruppstorlek som avsnittet Mot ställningstagandet i fliken Löneläget: yrkesgrupper under ${kTroskel()} ${personOrd(kTroskel())} utan lönemått, könsuppdelade mått bara där varje kön har minst ${kTroskel()} ${personOrd(kTroskel())}.`]];
 }
 
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
@@ -18656,7 +18671,7 @@ function _exportJPAProtocolExport() {
         ['', ''],
         ['Lika arbete (yrkesgrupper):', ''],
         [_jpaExkluderadeTexter().yrken, yrkenExkluderadeMaskerade],
-        ['  Går ej att bedöma (ett kön under ' + statGolv() + ' personer)', yrkenEjBedomda],
+        ['  Går ej att bedöma (ett kön under ' + statGolv() + ' ' + personOrd(statGolv()) + ')', yrkenEjBedomda],
         ['  Inte Värt att granska (Följ upp eller Balanserat)', yrkenExkluderadeOjamn],
         ['', ''],
         ['Likvärdigt arbete (BAS-intervall):', ''],
@@ -19178,7 +19193,7 @@ function _evidenceForEUMatrixRow(r) {
     if (r.samladMedian) {
         return {
             title: `Beräkningen — ${r.yrke}`,
-            intro: `Ett av könen har färre än ${kTroskel()} personer i yrkesgruppen. Då redovisas bara gruppens samlade median, så att ingen enskild lön kan räknas fram, och ingen jämförelse mellan kvinnor och män görs.`,
+            intro: `Ett av könen har färre än ${kTroskel()} ${personOrd(kTroskel())} i yrkesgruppen. Då redovisas bara gruppens samlade median, så att ingen enskild lön kan räknas fram, och ingen jämförelse mellan kvinnor och män görs.`,
             rows: [
                 { label: 'Yrkesgrupp',               value: r.yrke },
                 { label: 'Antal anställda totalt', value: r.tot.toLocaleString('sv-SE'), note: `${r.nKv} kvinnor · ${r.nMa} män` },
@@ -19340,7 +19355,7 @@ function _evidenceForPaygapRow(p) {
     if (p.masked) {
         return {
             title: `Beräkningen — BAS ${p.bas}`,
-            intro: `Löneskillnaden i det här BAS-intervallet visas inte, eftersom något kön har färre än ${kTroskel()} personer.`,
+            intro: `Löneskillnaden i det här BAS-intervallet visas inte, eftersom något kön har färre än ${kTroskel()} ${personOrd(kTroskel())}.`,
             rows: [
                 { label: 'BAS-intervall',     value: p.bas },
                 { label: 'Antal kvinnor',     value: nKv.toLocaleString('sv-SE'), note: nKv < kTroskel() ? `< k=${kTroskel()}` : '' },
@@ -22681,7 +22696,7 @@ function renderForecastTargets() {
             <select data-f="pool" aria-label="Pott-typ" title="Ring-fenced pott (visas i kostnad-per-pott)">${[['equity', 'Likalön'], ['marknad', 'Marknad'], ['befordran', 'Befordran'], ['övrigt', 'Övrigt']].map(([v, l]) => `<option value="${v}"${(tg.pool || 'övrigt') === v ? ' selected' : ''}>${l}</option>`).join('')}</select>
             <span class="text-dampad-xs ingen-radbrytning" title="Vad raden förbrukar av potten">≈ ${Math.round(rowCost).toLocaleString('sv-SE')} kr</span>
             <button type="button" data-f="remove" class="btn btn-secondary btn-sm" aria-label="Ta bort rad">${ikon('kryss', 14)}</button>
-        </div>${gruppN(tg) > 0 && gruppN(tg) < kInstalld() ? `<p class="k-mask-note">Raden berör ${gruppN(tg)} ${gruppN(tg) === 1 ? 'person' : 'personer'}, färre än ${kInstalld()} personer — beloppet bygger på enskildas löner och ingår i summorna, även i Excel-exporten.</p>` : (gruppN(tg) === 0 ? '<p class="k-mask-note">Ingen i gruppen matchar kön och lönegräns.</p>' : '')}`;
+        </div>${gruppN(tg) > 0 && gruppN(tg) < kInstalld() ? `<p class="k-mask-note">Raden berör ${gruppN(tg)} ${gruppN(tg) === 1 ? 'person' : 'personer'}, färre än ${kInstalld()} ${personOrd(kInstalld())} — beloppet bygger på enskildas löner och ingår i summorna, även i Excel-exporten.</p>` : (gruppN(tg) === 0 ? '<p class="k-mask-note">Ingen i gruppen matchar kön och lönegräns.</p>' : '')}`;
     }).join('');
     host.querySelectorAll('.forecast-target-row').forEach(rowEl => {
         const i = parseInt(rowEl.getAttribute('data-idx') || '', 10);
@@ -22818,7 +22833,7 @@ function updateForecast() {
     // procent personens lön gånger procentsatsen. Summorna ovan omfattar alla grupper.
     const antalMaskerade = rows.filter(g => g.n < K).length;
     const maskNot = antalMaskerade
-        ? `<p class="k-mask-note">${antalMaskerade} ${antalMaskerade === 1 ? 'grupp' : 'grupper'} med färre än ${K} personer ingår i summorna, men ${antalMaskerade === 1 ? 'dess' : 'deras'} medianer och kostnad redovisas inte per grupp.</p>`
+        ? `<p class="k-mask-note">${antalMaskerade} ${antalMaskerade === 1 ? 'grupp' : 'grupper'} med färre än ${K} ${personOrd(K)} ingår i summorna, men ${antalMaskerade === 1 ? 'dess' : 'deras'} medianer och kostnad redovisas inte per grupp.</p>`
         : '';
     // Könsuppdelade mått för hela urvalet kräver tröskeln för varje kön (ADR-12).
     const konOk = _konFarRedovisasFor(d);
@@ -23171,7 +23186,7 @@ function _renderScenarioCompare() {
         <tbody>
             <tr><td><strong>A</strong> ${sc.A ? `<span class="f-dampad">(${esc(sc.A.budgetTxt)}, ${sc.A.targetsCount} riktade)</span>` : ''}</td>${col(sc.A)}</tr>
             <tr><td><strong>B</strong> ${sc.B ? `<span class="f-dampad">(${esc(sc.B.budgetTxt)}, ${sc.B.targetsCount} riktade)</span>` : ''}</td>${col(sc.B)}</tr>
-        </tbody></table>${maskerat ? `<p class="k-mask-note">Kvinnors median i procent av mäns visas inte: ett kön har färre än ${kTroskel()} personer i urvalet.</p>` : ''}`;
+        </tbody></table>${maskerat ? `<p class="k-mask-note">Kvinnors median i procent av mäns visas inte: ett kön har färre än ${kTroskel()} ${personOrd(kTroskel())} i urvalet.</p>` : ''}`;
 }
 // Kör OLS på en given radmängd via data-swap. Returnerar {konPct, pValue}.
 function _forecastOlsOn(rows) {
@@ -23277,7 +23292,7 @@ function _forecastRemediation() {
     // Summan är ett lönemått över de berörda: den visas först när de är minst K.
     const summa = rem.count >= K
         ? `Kostnad att lyfta alla till jämförelsevärdet: <strong>${kr(rem.totalCost)}/mån</strong> (≈ ${kr(rem.totalCost * months * poFactor)} inkl. PO/period).`
-        : `Kostnaden visas inte, eftersom färre än ${K} personer berörs.`;
+        : `Kostnaden visas inte, eftersom färre än ${K} ${personOrd(K)} berörs.`;
     const doldaNot = dolda
         ? `<p class="k-mask-note">${dolda} ${dolda === 1 ? 'grupp' : 'grupper'} där färre än ${K} kvinnor berörs ${rem.count >= K ? 'ingår i summan men ' : ''}redovisas inte per grupp och blir inga riktade rader.</p>`
         : '';
@@ -23340,7 +23355,7 @@ function _exportForecastExport() {
         ['Kvinnors medianlön i % av mäns, före', !konOk || out.rawGapFore == null ? '–' : +(100 + out.rawGapFore).toFixed(1)],
         ['Kvinnors medianlön i % av mäns, efter', !konOk || out.rawGapEfter == null ? '–' : +(100 + out.rawGapEfter).toFixed(1)],
         ...(konOk ? [] : [['Könsuppdelade mått', _konUtelamnatNot()]]),
-        ...(antalMaskerade ? [['Grupper under tröskeln', `${antalMaskerade} ${antalMaskerade === 1 ? 'grupp' : 'grupper'} med färre än ${K} personer ingår i summorna, men ${antalMaskerade === 1 ? 'dess' : 'deras'} medianer och kostnad redovisas inte per grupp.`]] : []),
+        ...(antalMaskerade ? [['Grupper under tröskeln', `${antalMaskerade} ${antalMaskerade === 1 ? 'grupp' : 'grupper'} med färre än ${K} ${personOrd(K)} ingår i summorna, men ${antalMaskerade === 1 ? 'dess' : 'deras'} medianer och kostnad redovisas inte per grupp.`]] : []),
         ['', ''],
         ['OBS', 'Bara summor. Enskildas löner ingår inte (inbyggt dataskydd). Den slutliga löneöversynen dokumenteras i Word-utkastet och Handlingsplan.']
     ];
@@ -23546,9 +23561,9 @@ function _stUtkastPerBas(k) {
     if (typeof basdossierKandidater !== 'function') return null;
     const kand = basdossierKandidater();
     if (!kand.length) return null;
-    const lines = ['PER BAS-INTERVALL', `Ett stycke per BAS-intervall med minst ${k} personer: antal och könsfördelning, ${state.policy.length ? 'läget mot ställningstagandet, ' : ''}yrkesgrupperna, likvärdigt arbete, ålder och förra året när ett bokslut är inläst. Yrkesgrupper med färre än ${k} personer står bara med namn.`];
+    const lines = ['PER BAS-INTERVALL', `Ett stycke per BAS-intervall med minst ${k} ${personOrd(k)}: antal och könsfördelning, ${state.policy.length ? 'läget mot ställningstagandet, ' : ''}yrkesgrupperna, likvärdigt arbete, ålder och förra året när ett bokslut är inläst. Yrkesgrupper med färre än ${k} ${personOrd(k)} står bara med namn.`];
     const under = basdossierUtelamnade();
-    if (under.length) lines.push(`BAS ${under.join(', ')} redovisas inte (färre än ${k} personer).`);
+    if (under.length) lines.push(`BAS ${under.join(', ')} redovisas inte (färre än ${k} ${personOrd(k)}).`);
     for (const { bas } of kand) {
         const d = buildBasdossier(bas);
         if (d) lines.push('', basintervallUtkastText(d));
@@ -23638,7 +23653,7 @@ function _strukturTradkartaFigur(rader, k = kTroskel()) {
     const grupper = rot.leaves().map(n => { const o = n.data; return { ...yta(n), namn: `${o.namn} · BAS ${o.bas}`, varde: o.n, etikett: o.namn, undertext: `${o.n} personer`,
         bas: o.bas, n: o.n, ...(o.ovriga ? { farg: FARG.kantStark, ovriga: true } : { fargvarde: +(100 * o.nKv / o.n).toFixed(1), andelKv: 100 * o.nKv / o.n, markering: markeringFor(o.bas, o.aid) }) }; });
     return { legend: false, hojd: 460,
-        beskrivning: `Organisationen som karta: varje yta är en yrkesgrupp, storleken är antalet personer och färgen andelen kvinnor, samlade per BAS-intervall. Yrkesgrupper med färre än ${k} personer är hopslagna till en grå yta per intervall.`,
+        beskrivning: `Organisationen som karta: varje yta är en yrkesgrupp, storleken är antalet personer och färgen andelen kvinnor, samlade per BAS-intervall. Yrkesgrupper med färre än ${k} ${personOrd(k)} är hopslagna till en grå yta per intervall.`,
         x: { skala: 'linjar', doman: [0, TRADKARTA_FORM], dold: true }, y: { skala: 'linjar', doman: [0, 1], dold: true },
         fargskala: { typ: 'divergerande', doman: [0, 100], mitt: 50, titel: 'Andel kvinnor (%)', farger: [[0, PALETTE.kon.man], [0.5, FARG.ytaStark], [1, PALETTE.kon.kvinna]] },
         lager: [{ marke: 'yta', serie: 'BAS-intervall', farg: FARG.kant, opacitet: 0.5, etikettLage: 'topp', data: basYtor,
@@ -23702,7 +23717,7 @@ function renderSektorer(d) {
     const harLedning = tabell.some(r => r.ledningKv != null || r.ledningMa != null);
     const rader = tabell.map(r => {
         const loner = r.maskerad
-            ? `<td colspan="3" class="muted">Färre än ${kTroskel()} personer — lönemått redovisas inte</td>`
+            ? `<td colspan="3" class="muted">Färre än ${kTroskel()} ${personOrd(kTroskel())} — lönemått redovisas inte</td>`
             : r.samladMedian
                 ? `<td colspan="2">Samlad median ${kr(r.medTot)}</td><td class="muted">Ett kön under ${kTroskel()}</td>`
                 : `<td class="num" data-sort-value="${Math.round(r.medKv)}">${kr(r.medKv)}</td><td class="num" data-sort-value="${Math.round(r.medMa)}">${kr(r.medMa)}</td>`
@@ -23860,7 +23875,7 @@ function _exportEuReportExport() {
     const repKonLitet = rep.filter(g => !isKMasked(g.n) && g.konLitet).map(g => g.bas);
     if (repKonLitet.length) {
         repArr.push([]);
-        repArr.push([`Löneskillnaden utelämnad (ett kön har färre än ${kTroskel()} personer): ${repKonLitet.join(', ')}`]);
+        repArr.push([`Löneskillnaden utelämnad (ett kön har färre än ${kTroskel()} ${personOrd(kTroskel())}): ${repKonLitet.join(', ')}`]);
     }
     /** @type {any[][]} */
     // Antalet kvinnor och män bakom percentilerna (samma för alla rader; på skärmen står det i tabellens rubrikrad).
@@ -24393,7 +24408,7 @@ function renderKon(bas) {
     const scope2 = isAll ? 'hela urvalet' : `BAS-intervall ${bas}`;
     // Noter under diagrammen om det som utelämnats, och samma sak i diagrammens beskrivningar.
     const utan = [kvOk ? null : 'kvinnor', maOk ? null : 'män'].filter(Boolean).join(' och ');
-    const skal = `färre än ${kTroskel()} personer av ${kvOk || maOk ? 'könet' : 'vartdera könet'} finns i urvalet`;
+    const skal = `färre än ${kTroskel()} ${personOrd(kTroskel())} av ${kvOk || maOk ? 'könet' : 'vartdera könet'} finns i urvalet`;
     // En punkt per person: punkten för en person i en grupp under tröskeln ritas och exporteras inte.
     const liten = individLitenFor(getData());
     const dolda = df.filter(liten).length;
@@ -24443,7 +24458,7 @@ function _konTathetFigur(rader, perKon, k = kTroskel(), form = 'fiol') {
     const ordning = [...new Set(giltiga.map(r => r.bas))].sort().map(b => 'BAS ' + b);
     if (form === 'kvantiler') return { utelamnade, figur: { beskrivning: `Lönefördelningen per BAS-intervall${perKon ? ' och kön' : ''} som kvantilpunkter: varje prick är en tjugondel av gruppen (i små grupper en större andel, aldrig färre än två personer), lagd vid den lönen. Räkna prickarna under en lön för att se hur stor andel som tjänar mindre. Inga enskilda löner visas.`,
         legend: perKon ? undefined : false, urval: BAS_URVAL, x: { skala: 'band', ordning }, y: { skala: 'linjar', titel: 'Månadslön', format: 'kr' }, hojd: 420, lager } };
-    if (form !== 'fiol') return { utelamnade, figur: { beskrivning: `Lönespridningen per BAS-intervall och kön som lådagram: lådan är mittersta hälften av lönerna (första till tredje kvartilen), strecket i lådan medianen. Enstaka löner utanför morrhåren visas inte. Överlappar kvinnors och mäns lådor i ett intervall ligger könen på samma nivå där. BAS-intervall där ett kön har färre än ${k} personer visas inte för det könet.`,
+    if (form !== 'fiol') return { utelamnade, figur: { beskrivning: `Lönespridningen per BAS-intervall och kön som lådagram: lådan är mittersta hälften av lönerna (första till tredje kvartilen), strecket i lådan medianen. Enstaka löner utanför morrhåren visas inte. Överlappar kvinnors och mäns lådor i ett intervall ligger könen på samma nivå där. BAS-intervall där ett kön har färre än ${k} ${personOrd(k)} visas inte för det könet.`,
         urval: BAS_URVAL, x: { skala: 'band', ordning }, y: { skala: 'linjar', titel: 'Månadslön', format: 'kr' }, hojd: 380, lager } };
     return { utelamnade, figur: { beskrivning: `Lönefördelningen per BAS-intervall${perKon ? ' och kön' : ''} som täthetskurvor: kurvan är bredast där flest löner ligger. Strecken är median och kvartiler. Kurvan slutar vid morrhårens ändar; enstaka löner långt utanför visas inte.`,
         legend: perKon ? undefined : false, urval: BAS_URVAL, x: { skala: 'band', ordning }, y: { skala: 'linjar', titel: 'Månadslön', format: 'kr' }, hojd: 420, lager } };
@@ -24493,7 +24508,7 @@ function _konHistogramFigur(klasser, nKv, nMa, scope) {
     const serie = (s, farg, falt, tot) => ({ marke: 'stapel', lage: 'overlagrad', serie: s, farg, opacitet: 0.55,
         data: klasser.map(c => ({ x: namn(c), y: +(100 * c[falt] / tot).toFixed(1), n: c.nKv + c.nMa, ...(c[falt] > 0 && c[falt] < litetUnderlag() ? { fa: true } : {}) })),
         tips: d => [[`${d.x} tkr`], [s, _figTalformat(d.y, 'pct')], ['Personer i klassen', String(d.n)], ...(d.fa ? [['Litet underlag', `färre än ${litetUnderlag()} ${s.toLowerCase()}`]] : [])] });
-    return { beskrivning: `Lönefördelningen för kvinnor och män i ${scope}: andel av respektive kön per löneklass. Varje klass rymmer minst ${kTroskel()} personer; klasserna i ändarna är hopslagna.`,
+    return { beskrivning: `Lönefördelningen för kvinnor och män i ${scope}: andel av respektive kön per löneklass. Varje klass rymmer minst ${kTroskel()} ${personOrd(kTroskel())}; klasserna i ändarna är hopslagna.`,
         x: { skala: 'band', titel: 'Månadslön (tusen kronor)', ordning: klasser.map(namn) }, y: { skala: 'linjar', titel: 'Andel av könet (%)' }, hojd: 340,
         lager: [serie('Kvinnor', PALETTE.kon.kvinna, 'nKv', nKv), serie('Män', PALETTE.kon.man, 'nMa', nMa)] };
 }
@@ -24535,7 +24550,7 @@ function renderKonAlderGap(dataKv, dataMa, scope) {
     const el = document.getElementById('chart-kon-aldergap');
     if (!el) return;
     const { visade, dolda } = _konAlderGapRader(dataKv, dataMa), not = document.getElementById('kon-aldergap-not'), k = kTroskel();
-    if (not) { not.hidden = !dolda.length; not.textContent = dolda.length ? `Visas inte, ett kön har färre än ${k} personer: ${dolda.join(', ')}.` : ''; }
+    if (not) { not.hidden = !dolda.length; not.textContent = dolda.length ? `Visas inte, ett kön har färre än ${k} ${personOrd(k)}: ${dolda.join(', ')}.` : ''; }
     if (!visade.length) {
         rensaFigur(el);
         el.innerHTML = `<p class="text-dampad-sm marg-8-0">Ingen åldersgrupp har minst ${k} kvinnor och ${k} män.</p>`;
@@ -24551,7 +24566,7 @@ function renderKonHistogram(dataKv, dataMa, scope) {
     const klasser = _konHistogramKlasser(kv, ma, k);
     if (!klasser) {
         rensaFigur(el);
-        el.innerHTML = `<p class="text-dampad-sm marg-8-0">${kv.length < k || ma.length < k ? esc(_konUtelamnatNot()) : `Lönerna går inte att dela in i klasser med minst ${k} personer i varje.`}</p>`;
+        el.innerHTML = `<p class="text-dampad-sm marg-8-0">${kv.length < k || ma.length < k ? esc(_konUtelamnatNot()) : `Lönerna går inte att dela in i klasser med minst ${k} ${personOrd(k)} i varje.`}</p>`;
         const n0 = document.getElementById('kon-histogram-not'); if (n0) { n0.hidden = true; n0.textContent = ''; }
         return;
     }
@@ -24601,7 +24616,7 @@ function renderKonMultiplar() {
     const { figur, utanfor, nedsamplade } = _konMultiplarFigur(d, individLitenFor(d));
     if (figur.paneler.length) ritaFigur(el, figur); else rensaFigur(el);
     const not = document.getElementById('kon-multiplar-not');
-    const delar = [utanfor.length ? `Visas inte här (färre än ${kTroskel()} personer, eller fler intervall än ${KON_MULTIPLAR_MAX}): ${utanfor.join(', ')}.` : '',
+    const delar = [utanfor.length ? `Visas inte här (färre än ${kTroskel()} ${personOrd(kTroskel())}, eller fler intervall än ${KON_MULTIPLAR_MAX}): ${utanfor.join(', ')}.` : '',
                    nedsamplade.length ? `I ${nedsamplade.join(', ')} visas ett urval av punkterna (högst ${KON_MULTIPLAR_PUNKTER} per intervall); trendlinjen räknas ur alla.` : ''].filter(Boolean);
     if (not) { not.hidden = !delar.length; not.textContent = delar.join(' '); }
 }
@@ -24609,7 +24624,7 @@ function renderKonMultiplar() {
 // ---- Figurer för diagramkärnan (ADR-39, steg 2) ----
 // Noten under ett spridningsdiagram om de punkter som inte visas.
 // `medTrend` är falskt när diagrammet saknar trendlinje (urvalet under tröskeln): då sägs inget om den.
-const _individNot = (n, medTrend = true) => (n ? `${n} ${n === 1 ? 'person visas' : 'personer visas'} inte som punkt: gruppen (yrke inom BAS), eller personens kön i gruppen, har färre än ${kTroskel()} personer.${medTrend ? ' Trendlinjen bygger på alla.' : ''}` : '');
+const _individNot = (n, medTrend = true) => (n ? `${n} ${n === 1 ? 'person visas' : 'personer visas'} inte som punkt: gruppen (yrke inom BAS), eller personens kön i gruppen, har färre än ${kTroskel()} ${personOrd(kTroskel())}.${medTrend ? ' Trendlinjen bygger på alla.' : ''}` : '');
 const _punktTips = d => [[d.yrke], ...(d.bas != null ? [['BAS', String(d.bas)]] : []), ...(d.kon ? [['Kön', d.kon]] : []),
                          ['Ålder', `${d.x} år`], ['Lön', _figTalformat(d.y, 'kr')]];
 // En vågrät linje över hela åldersspannet (referensens P10, median, P90; jämförelsestatistikens median).
@@ -24857,7 +24872,7 @@ function _demoBandFigur(df, k, pol, aLo, aHi) {
     const kr = v => `${_figTalformat(v, 'kr')}/mån`;
     const tips = d => [[d.namn], ['P90', kr(d.r.p90)], ['P75', kr(d.r.p75)], ['Median', kr(d.r.p50)], ['P25', kr(d.r.p25)], ['P10', kr(d.r.p10)], ['Antal', String(d.r.n)]];
     const band = (serie, lag, hog, opacitet) => ({ marke: 'band', serie, farg: PALETTE.serie[0], opacitet, data: rader.map(r => ({ x: r.x, lag: r[lag], hog: r[hog], namn: r.namn, r })), tips });
-    return { beskrivning: `Lönespridning över ålder: medianlön per femårsgrupp, med band för mittersta hälften (P25–P75) och för P10–P90. Åldersgrupper med färre än ${k} personer visas inte.`,
+    return { beskrivning: `Lönespridning över ålder: medianlön per femårsgrupp, med band för mittersta hälften (P25–P75) och för P10–P90. Åldersgrupper med färre än ${k} ${personOrd(k)} visas inte.`,
         x: { skala: 'linjar', titel: 'Ålder (femårsgrupper)' }, y: { skala: 'linjar', titel: 'Kronor/månad', format: 'kr' },
         lager: [band('P10–P90', 'p10', 'p90', 0.16), band('Mittersta hälften (P25–P75)', 'p25', 'p75', 0.3),
                 { marke: 'linje', serie: 'Median', farg: PALETTE.serie[0], tjocklek: 2.5, punkter: true, data: rader.map(r => ({ x: r.x, y: r.p50, namn: r.namn, r })), tips },
@@ -24956,7 +24971,7 @@ function _laSamladNot(namn) {
     const lista = (namn || []).filter(Boolean);
     if (!lista.length) return '';
     return `<p class="k-mask-note">${lista.length} BAS-intervall står inte i tabellen: ${_kNoteNamn(lista)}. `
-        + `${lista.length === 1 ? 'Intervallet är stort' : 'Intervallen är stora'} nog att redovisa, men ett av könen har färre än ${kTroskel()} personer, så en könsjämförelse skulle peka ut enskilda.</p>`;
+        + `${lista.length === 1 ? 'Intervallet är stort' : 'Intervallen är stora'} nog att redovisa, men ett av könen har färre än ${kTroskel()} ${personOrd(kTroskel())}, så en könsjämförelse skulle peka ut enskilda.</p>`;
 }
 /**
  * Radens status i ord (uppmärksamhetstrappan, GAP_STATUS i 10-diagramtema.js): bootstrap-KI:t mot 100 % prövar
@@ -24982,9 +24997,9 @@ function generateSkevhet() {
         const ladEl = document.getElementById('chart-skevhet-lador');
         if (ladEl) {
             const { figur, utelamnade } = _konTathetFigur(d, true, kTroskel(), 'lada');
-            if (figur.lager.length) ritaFigur(ladEl, figur, { tomtext: `Inget BAS-intervall har minst ${kTroskel()} personer av ett kön.` }); else rensaFigur(ladEl);
+            if (figur.lager.length) ritaFigur(ladEl, figur, { tomtext: `Inget BAS-intervall har minst ${kTroskel()} ${personOrd(kTroskel())} av ett kön.` }); else rensaFigur(ladEl);
             const not = document.getElementById('skevhet-lador-not');
-            if (not) { not.hidden = !utelamnade.length; not.textContent = utelamnade.length ? `Visas inte, färre än ${kTroskel()} personer: ${utelamnade.join(', ')}.` : ''; }
+            if (not) { not.hidden = !utelamnade.length; not.textContent = utelamnade.length ? `Visas inte, färre än ${kTroskel()} ${personOrd(kTroskel())}: ${utelamnade.join(', ')}.` : ''; }
         }
     }
 
@@ -25091,7 +25106,7 @@ function generateSkevhet() {
             ['Översiktsdiagram', 'Punkt per BAS; färg och symbol = status (Balanserat, grön cirkel · Följ upp, bärnstensgul kvadrat · Värt att granska, lila romb · Går ej att bedöma, grå cirkel)']
         ],
         notes: [
-            `Kräver minst ${kTroskel()} personer av <em>varje kön</em> för att medianer ska visas (k-anonymitet)`,
+            `Kräver minst ${kTroskel()} ${personOrd(kTroskel())} av <em>varje kön</em> för att medianer ska visas (k-anonymitet)`,
             'Könsfördelning räknas så länge totalen ≥ 5 (även om ena könet har &lt; 5 individer)'
         ]
     });
@@ -25131,7 +25146,7 @@ function _ansvarsUnderraderFor(yrkesRader, fmt) {
         const tr = document.createElement('tr');
         tr.className = 'la-underrad';
         let celler;
-        if (u.liten) celler = `<td class="t-mitt f-dampad" colspan="3">Färre än ${kTroskel()} personer — inga lönemått</td>`;
+        if (u.liten) celler = `<td class="t-mitt f-dampad" colspan="3">Färre än ${kTroskel()} ${personOrd(kTroskel())} — inga lönemått</td>`;
         else if (u.samladMedian) celler = `<td class="t-mitt" colspan="2">Gruppens median ${fmt.format(u.medTot)}</td><td>–</td>`;
         else celler = `<td>${fmt.format(u.medKv)}</td><td>${fmt.format(u.medMa)}</td><td>${svPct(u.kvot, 1)}</td>`;
         tr.innerHTML = `<td class="la-underrad-namn">${esc(u.namn)}</td><td></td><td>${u.n} (${u.nKv}/${u.nMa})</td><td></td><td></td>${celler}<td></td><td></td>`;
@@ -25194,7 +25209,7 @@ function generateEUDirectiveMatrix() {
             samladMedianYrken.push(yrke);
             rows.push({ yrke, nKv, nMa, tot, dominans,
                 medTot: g.medTot, gap: 0, samladMedian: true,
-                statusKlass: '', status: `<span class="f-dampad la-status la-status-liten" title="Könsuppdelningen är för liten: ett kön har färre än ${kTroskel()} personer"><span class="bara-export">Könsuppdelningen är för liten (</span>ett kön n &lt; ${kTroskel()}<span class="bara-export">)</span></span>` });
+                statusKlass: '', status: `<span class="f-dampad la-status la-status-liten" title="Könsuppdelningen är för liten: ett kön har färre än ${kTroskel()} ${personOrd(kTroskel())}"><span class="bara-export">Könsuppdelningen är för liten (</span>ett kön n &lt; ${kTroskel()}<span class="bara-export">)</span></span>` });
             return;
         }
         const { medKv, medMa, kvot: ratio, gapPct: gap } = g;
@@ -25202,7 +25217,7 @@ function generateEUDirectiveMatrix() {
         // om stabiliteten) står kvar i cellen som .bara-export: dolt på skärmen, med i cellens text.
         const bara = t => `<span class="bara-export">${t}</span>`;
         const st = gapStatusNiva(g.niva);
-        const tips = g.niva === 'ejbedomd' ? `Går ej att bedöma: ett kön har färre än ${statGolv()} personer, för få för att pröva skillnaden`
+        const tips = g.niva === 'ejbedomd' ? `Går ej att bedöma: ett kön har färre än ${statGolv()} ${personOrd(statGolv())}, för få för att pröva skillnaden`
             : g.niva === 'granska' ? 'Skillnaden är statistiskt säkerställd (utanför slumpens gränser för gruppen) och minst 3 % (verktygets storleksgräns)'
             : g.niva === 'folj' ? (g.sakerstalld ? 'Skillnaden är statistiskt säkerställd men under 3 % (verktygets storleksgräns)' : 'Skillnaden är minst 3 % men inte statistiskt säkerställd (inom slumpens gränser för gruppen)')
             : 'Skillnaden är under 3 % och inte statistiskt säkerställd';
@@ -25976,9 +25991,9 @@ function renderPersonerAttGranska(visaAlla = false) {
     const g = new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 1 }).format(grans);
     const demo = state.isDemo ? '<p class="pag-demo"><strong>DEMODATA — inte verkliga löner.</strong></p>' : '';
     const ejProvade = r.ejProvade
-        ? `<p class="pag-not">${tal(r.ejProvade)} ${r.ejProvade === 1 ? 'person' : 'personer'} i grupper med färre än ${statGolv()} personer prövades inte.</p>` : '';
+        ? `<p class="pag-not">${tal(r.ejProvade)} ${r.ejProvade === 1 ? 'person' : 'personer'} i grupper med färre än ${statGolv()} ${personOrd(statGolv())} prövades inte.</p>` : '';
     if (!(r.provade.kv + r.provade.ma)) {
-        body.innerHTML = demo + `<p>Inga grupper med minst ${statGolv()} personer i samma AID och BAS.</p>` + ejProvade;
+        body.innerHTML = demo + `<p>Inga grupper med minst ${statGolv()} ${personOrd(statGolv())} i samma AID och BAS.</p>` + ejProvade;
         return;
     }
     if (!r.flaggade.length) {
@@ -26373,7 +26388,7 @@ const AIDBAS_KOL = {
 /** Noten om grupperna under golvet: namn och antal, inga löner. '' när alla grupper har en rad. */
 function _aidbasSmaNot(sma, golv) {
     if (!sma.length) return '';
-    return `Grupper med färre än ${golv} personer redovisas inte som egen rad (${sma.length}): ${sma.map(s => `${s.aid} ${s.yrke} · BAS ${s.bas} (${s.nKv} kvinnor, ${s.nMa} män)`).join('; ')}.`;
+    return `Grupper med färre än ${golv} ${personOrd(golv)} redovisas inte som egen rad (${sma.length}): ${sma.map(s => `${s.aid} ${s.yrke} · BAS ${s.bas} (${s.nKv} kvinnor, ${s.nMa} män)`).join('; ')}.`;
 }
 /** Sammanfattningen per BAS-intervall som en mening per intervall, för skärmen. */
 function _aidbasSammanfattningText(s) {
@@ -26418,7 +26433,7 @@ function renderAidBasLika() {
     if (!d.length) { lika.innerHTML = ''; individ.innerHTML = ''; _aidbasNyckel('nyckel-la-aidbas', ''); _aidbasNyckel('nyckel-la-individ', ''); return; }
     const t = aidbasTabeller(d);
     lika.innerHTML = _aidbasTabellHtml('aidbas-lika-tabell', AIDBAS_KOL.lika, t.lika.rader, { not: _aidbasSmaNot(t.lika.sma, t.golv), fil: 'lika_arbete_aid_bas' })
-        + `<p class="text-dampad-xs marg-8-0-0">Medianer, kvot och gränser bara när varje kön har minst ${t.k} personer; annars <em>Analyseras på individnivå</em>. Gränserna är de 95-procentiga för slumpen vid gruppens storlek och könsfördelning, räknade med omkastning av könen inom gruppen som i trattdiagrammet. Kolumnen ${esc(_STS_DIR_KOLUMN)}: ${esc(_STS_DIR_TIPS)}</p>`;
+        + `<p class="text-dampad-xs marg-8-0-0">Medianer, kvot och gränser bara när varje kön har minst ${t.k} ${personOrd(t.k)}; annars <em>Analyseras på individnivå</em>. Gränserna är de 95-procentiga för slumpen vid gruppens storlek och könsfördelning, räknade med omkastning av könen inom gruppen som i trattdiagrammet. Kolumnen ${esc(_STS_DIR_KOLUMN)}: ${esc(_STS_DIR_TIPS)}</p>`;
     _aidbasEfter('aidbas-lika-tabell');
     const ute = t.lika.rader.filter(r => r.bedomning === 'Utanför gränserna').length, bedomda = t.lika.rader.filter(r => r.bedomning !== 'Analyseras på individnivå').length;
     _aidbasNyckel('nyckel-la-aidbas', t.lika.rader.length ? `${ute} av ${bedomda} bedömda grupper utanför gränserna` : '');
@@ -26435,14 +26450,14 @@ function renderAidBasLikvardigt() {
     const t = aidbasTabeller(d);
     const def = `Kvinnodominerad enligt ${aidbasDefinitionText()}; mansdominerad med samma gräns för män; övriga könsblandade. ${jamforelseMening()} "Brukar anses kvinnodominerad" bygger på andelen kvinnor nationellt (${skrKallaKort()}) med samma definition.`;
     lv.innerHTML = _aidbasTabellHtml('aidbas-likvardigt-tabell', AIDBAS_KOL.likvardigt, t.likvardigt.rader, { not: _aidbasSmaNot(t.likvardigt.sma, t.golv), fil: 'likvardigt_arbete' })
-        + `<p class="text-dampad-xs marg-8-0-0">${esc(def)} Medianlön och lönespridning ((P90 − P10) / median) bara för grupper med minst ${t.k} personer.</p>`
+        + `<p class="text-dampad-xs marg-8-0-0">${esc(def)} Medianlön och lönespridning ((P90 − P10) / median) bara för grupper med minst ${t.k} ${personOrd(t.k)}.</p>`
         + (t.likvardigt.sammanfattning.length ? `<h3 class="fs-md marg-14-0-4">Sammanfattning per BAS-intervall</h3><ul class="text-dampad-sm">${t.likvardigt.sammanfattning.map(s => `<li>${esc(_aidbasSammanfattningText(s))}</li>`).join('')}</ul>`
-                                               : `<p class="text-dampad-xs marg-8-0-0">Inget BAS-intervall har både kvinnodominerade grupper och andra grupper med minst ${t.k} personer, så det finns ingen sammanfattning.</p>`);
+                                               : `<p class="text-dampad-xs marg-8-0-0">Inget BAS-intervall har både kvinnodominerade grupper och andra grupper med minst ${t.k} ${personOrd(t.k)}, så det finns ingen sammanfattning.</p>`);
     _aidbasEfter('aidbas-likvardigt-tabell');
     const kvDom = t.likvardigt.rader.filter(r => r.klass === _aidbasKlassNamn().kv).length;
     _aidbasNyckel('nyckel-lv-aidbas', t.likvardigt.rader.length ? `${t.likvardigt.rader.length} grupper · ${kvDom} kvinnodominerade (enligt ${_aidbasDefinitionNamn(t.definition) === 'SCB' ? 'SCB' : 'förarbetenas riktmärke'})` : '');
     hi.innerHTML = _aidbasTabellHtml('aidbas-hierarki-tabell', AIDBAS_KOL.par, t.par, { tom: _aidbasIngaParText(), fil: 'hierarkisk_jamforelse' })
-        + `<p class="text-dampad-xs marg-8-0-0">Kvinnodominerad enligt ${esc(aidbasDefinitionText())}. Båda grupperna har minst ${t.k} personer. BAS-ordningen är bokstavsordningen.</p>`;
+        + `<p class="text-dampad-xs marg-8-0-0">Kvinnodominerad enligt ${esc(aidbasDefinitionText())}. Båda grupperna har minst ${t.k} ${personOrd(t.k)}. BAS-ordningen är bokstavsordningen.</p>`;
     _aidbasEfter('aidbas-hierarki-tabell');
     _aidbasNyckel('nyckel-lv-hierarki', t.par.length ? `${t.par.length} par` : 'inga par');
 }
@@ -26489,22 +26504,22 @@ function _aidbasExcelBlad() {
     const t = aidbasTabeller(d);
     const def = `Kvinnodominerad enligt ${aidbasDefinitionText()}; mansdominerad med samma gräns för män; övriga könsblandade. ${jamforelseMening()}`;
     const lika = _aidbasBlad('Lika arbete: kvinnors medianlön i procent av mäns per AID-kod och BAS-intervall', AIDBAS_KOL.lika, t.lika.rader,
-        { fore: [`Medianer, kvot och gränser bara när varje kön har minst ${t.k} personer; annars "Analyseras på individnivå". Gränserna är de 95-procentiga för slumpen vid gruppens storlek och könsfördelning (omkastning av könen inom gruppen, som trattdiagrammet).`, `${_STS_DIR_KOLUMN}: ${_STS_DIR_TIPS}`],
+        { fore: [`Medianer, kvot och gränser bara när varje kön har minst ${t.k} ${personOrd(t.k)}; annars "Analyseras på individnivå". Gränserna är de 95-procentiga för slumpen vid gruppens storlek och könsfördelning (omkastning av könen inom gruppen, som trattdiagrammet).`, `${_STS_DIR_KOLUMN}: ${_STS_DIR_TIPS}`],
           efter: [_aidbasSmaNot(t.lika.sma, t.golv)], tom: 'Inga grupper att visa.' });
     const lv = _aidbasBlad('Likvärdigt arbete: grupperna per BAS-intervall', AIDBAS_KOL.likvardigt, t.likvardigt.rader,
-        { fore: [def, `"Brukar anses kvinnodominerad" bygger på andelen kvinnor nationellt (${skrKallaKort()}) med samma definition. Medianlön och lönespridning ((P90 − P10) / median) bara för grupper med minst ${t.k} personer.`],
+        { fore: [def, `"Brukar anses kvinnodominerad" bygger på andelen kvinnor nationellt (${skrKallaKort()}) med samma definition. Medianlön och lönespridning ((P90 − P10) / median) bara för grupper med minst ${t.k} ${personOrd(t.k)}.`],
           efter: [_aidbasSmaNot(t.likvardigt.sma, t.golv)], tom: 'Inga grupper att visa.' });
     // Sammanfattningen per BAS-intervall under tabellen i samma blad.
     const s = t.likvardigt.sammanfattning;
     const rad0 = XLSX.utils.decode_range(lv['!ref']).e.r + 3;
     XLSX.utils.sheet_add_aoa(lv, [['Sammanfattning per BAS-intervall: högsta och lägsta medianlön bland kvinnodominerade grupper och bland övriga; skillnaden är högsta median övriga mot högsta kvinnodominerad.'],
         ...(s.length ? [AIDBAS_KOL.sammanfattning.map(([namn]) => namn), ...s.map(x => AIDBAS_KOL.sammanfattning.map(([, typ, f]) => _aidbasVarde(f(x), typ)))]
-                     : [[`Inget BAS-intervall har både kvinnodominerade grupper och andra grupper med minst ${t.k} personer.`]])], { origin: rad0 });
+                     : [[`Inget BAS-intervall har både kvinnodominerade grupper och andra grupper med minst ${t.k} ${personOrd(t.k)}.`]])], { origin: rad0 });
     if (s.length) AIDBAS_KOL.sammanfattning.forEach(([, typ], c) => { const z = AIDBAS_TALFORMAT[typ]; if (!z) return;
         for (let r = 0; r < s.length; r++) { const cell = lv[XLSX.utils.encode_cell({ c, r: rad0 + 2 + r })]; if (cell && typeof cell.v === 'number') cell.z = z; } });
     const par = _aidbasBlad('Hierarkisk jämförelse: arbete med lägre krav, som inte är kvinnodominerat, med högre lön än kvinnodominerat arbete med högre krav', AIDBAS_KOL.par, t.par,
-        { fore: [`${def} Båda grupperna har minst ${t.k} personer. BAS-ordningen är bokstavsordningen.`], tom: _aidbasIngaParText() });
-    const individ = _aidbasBlad('Analys på individnivå: grupper där något kön har färre än ' + t.k + ' personer', AIDBAS_KOL.individ, t.individ.rader,
+        { fore: [`${def} Båda grupperna har minst ${t.k} ${personOrd(t.k)}. BAS-ordningen är bokstavsordningen.`], tom: _aidbasIngaParText() });
+    const individ = _aidbasBlad('Analys på individnivå: grupper där något kön har färre än ' + t.k + ' ' + personOrd(t.k), AIDBAS_KOL.individ, t.individ.rader,
         { fore: ['Arbetslista utan löner. Fyll i kolumnerna Analys genomförd och Resultat.'], efter: [_aidbasSmaNot(t.individ.sma, t.golv)], tom: `Alla grupper har minst ${t.k} kvinnor och ${t.k} män.` });
     return [[AIDBAS_BLADNAMN[0], lika], [AIDBAS_BLADNAMN[1], lv], [AIDBAS_BLADNAMN[2], par], [AIDBAS_BLADNAMN[3], individ]];
 }
@@ -26513,7 +26528,7 @@ function _aidbasMetodRader() {
     const k = aidbasK(), golv = kTroskel() > K_SKARM ? LITET_UNDERLAG : 1;
     return [
         ['Tabellerna per AID-kod och BAS-intervall', `Bladen ${AIDBAS_BLADNAMN.join(', ')} grupperar varje person på AID-kod och BAS-intervall ur personens egen rad: lika arbete är samma yrkesgrupp på samma nivå, och en yrkesgrupp i flera intervall får en rad per intervall. ${lonemanadText()}.`],
-        ['Små grupper i tabellerna per AID och BAS', `Grupper med färre än ${golv} personer får ingen egen rad utan räknas upp i en not under tabellen med namn och antal. Ett köns median, kvoten och gränserna redovisas bara när varje kön har minst ${k} personer; gruppens median och lönespridning bara när gruppen har minst ${k} personer. Arbetslistan Analys på individnivå tar upp grupperna där något kön är mindre än ${k}, utan löner.`],
+        ['Små grupper i tabellerna per AID och BAS', `Grupper med färre än ${golv} ${personOrd(golv)} får ingen egen rad utan räknas upp i en not under tabellen med namn och antal. Ett köns median, kvoten och gränserna redovisas bara när varje kön har minst ${k} ${personOrd(k)}; gruppens median och lönespridning bara när gruppen har minst ${k} ${personOrd(k)}. Arbetslistan Analys på individnivå tar upp grupperna där något kön är mindre än ${k}, utan löner.`],
         ['Gränser för slumpen (Lika arbete AID x BAS, Slumpens gränser)', 'Kvinnors median i procent av mäns jämförs med de mittersta 95 procenten av de kvoter slumpen ger när könen kastas om slumpvis mellan gruppens löner 1 000 gånger (för grupper över 300 personer en normalapproximation med gruppens egen spridning). Gränserna gäller gruppens egna löner, antal och könsfördelning. En kvot utanför gränserna är svår att förklara med slumpen; gränserna är ett stöd för bedömningen, inte ett test som friar eller fäller.'],
         ['Kvinnodominerat arbete (Likvärdigt arbete, Hierarkisk jämförelse)', `${aidbasDefinitionText()}. Mansdominerad med samma gräns för män; övriga könsblandade. ${jamforelseMening()} Samma definition och samma jämförelsemängd gäller kandidatparen i Likvärdigt arbete och hela verktyget. "Brukar anses kvinnodominerad" bygger på andelen kvinnor nationellt i yrket (${skrKallaKort()}) med samma definition — lagen gäller arbete som är eller brukar anses vara kvinnodominerat. Lönespridning = (P90 − P10) / median. Den hierarkiska jämförelsen listar par där en grupp som inte är kvinnodominerad har lägre BAS-intervall och högre median än en kvinnodominerad grupp; BAS-ordningen är bokstavsordningen.`]
     ];
@@ -26667,7 +26682,7 @@ function runOLSRegression() {
     /** @type {string|null} */ let modellVarning = null;
     if (!modell.bas && !modell.alder && !(kvN >= kInstalld() && maN >= kInstalld())) {
         modell = { ...modell, bas: true, alder: medAlder };
-        modellVarning = `Endast kön kan inte väljas: ett kön har färre än ${kInstalld()} personer i modellen (minsta gruppstorlek), så den ojusterade skillnaden får inte vara huvudtalet. Modellen är kön + BAS-intervall${medAlder ? ' + ålder' : ''}.`;
+        modellVarning = `Endast kön kan inte väljas: ett kön har färre än ${kInstalld()} ${personOrd(kInstalld())} i modellen (minsta gruppstorlek), så den ojusterade skillnaden får inte vara huvudtalet. Modellen är kön + BAS-intervall${medAlder ? ' + ålder' : ''}.`;
     }
 
     // Kolumnordningen är fast: [1, kön, (ålder), (BAS-indikatorer)], så att index 2 är ålder när den är vald.
@@ -27480,7 +27495,7 @@ function renderRegressionCard() {
             </div>
         </details>`;
 
-    const kronorHtml = !konOk ? `<p class="k-mask-note">Skillnaden räknas inte om till kronor: exemplet utgår från männens medianlön, och ett av könen har färre än ${kTroskel()} personer i modellen.</p>` : kr ? `
+    const kronorHtml = !konOk ? `<p class="k-mask-note">Skillnaden räknas inte om till kronor: exemplet utgår från männens medianlön, och ett av könen har färre än ${kTroskel()} ${personOrd(kTroskel())} i modellen.</p>` : kr ? `
         <div class="reg-kronor" role="region" aria-label="Löneskillnaden uttryckt i kronor">
             <div class="reg-kronor-head">Vad betyder ${svPct(Math.abs(r.konPct), 1)} i kronor?
                 ${isSig && kr.krMonth < 0 ? '<span class="farg-dampad fw-400">(här ligger kvinnorna över männen)</span>' : ''}</div>
@@ -28584,7 +28599,7 @@ function _prioKonStatus(i) {
     const gap = i.gapPct;
     const ej = typeof gap !== 'number' || !isFinite(gap) || !(i.kvN >= golv && i.maN >= golv);
     const st = typeof gap !== 'number' || ej ? gapStatusNiva('ejbedomd') : gapStatus(Math.abs(gap), false);
-    const tips = ej ? `Går ej att bedöma: ett kön har färre än ${golv} personer, för få för att pröva skillnaden`
+    const tips = ej ? `Går ej att bedöma: ett kön har färre än ${golv} ${personOrd(golv)}, för få för att pröva skillnaden`
         : st.niva === 'folj' ? 'Skillnaden är minst 3 % (verktygets storleksgräns). Prioriteringen prövar inte skillnaden mot slumpen; prövningen finns i Lika arbete.'
         : 'Skillnaden är under 3 %. Prioriteringen prövar inte skillnaden mot slumpen; prövningen finns i Lika arbete.';
     return `<span class="la-status ar-${st.farg} prio-konstatus" data-niva="${st.niva}" data-export-text="" title="${esc(tips)}">${ikon(st.ikon)}${esc(st.serie)}</span>`;
@@ -29083,7 +29098,7 @@ function _prioKostnadFigur(allaVisade, allCumPct) {
     // sammanlagd stapel för dem blir längst av alla och gör de övriga svåra att läsa. Med fyrtio grupper blev
     // diagrammet annars över tusen punkter högt.
     const visade = allaVisade.slice(0, PRIO_KOSTNAD_MAX), cumPct = allCumPct.slice(0, PRIO_KOSTNAD_MAX);
-    const namn = (i, n) => `#${n + 1} ${_rfKorta(String(i.yrke), 26)} · ${i.bas}`;
+    const namn = (i, n) => `#${n + 1} ${_rfKorta(String(i.yrke), 26)} · BAS ${i.bas}`;
     const y = visade.map(namn), n80 = cumPct.findIndex(p => p >= 80);
     const inom = n => n80 < 0 || n <= n80;
     const mnkr = v => (v >= 1e6 ? `${svTal(v / 1e6, 2)} mnkr` : _figTalformat(Math.round(v), 'kr'));
@@ -29672,8 +29687,8 @@ function _skalOverstigerText(summa, skillnad) {
 function _skalSkillnadHtml() {
     const s = /** @type {NonNullable<typeof _skal>} */ (_skal);
     if (s.kalla === 'egen') return '<p class="skal-skillnad">En egen rad har ingen medianskillnad att räkna andelar mot. Skälen redovisas med belopp. Skälen på en egen rad följer inte med i årsbokslutet.</p>';
-    if (!s.iExport) return `<p class="skal-skillnad">Gruppen är för liten för att redovisas (färre än ${kInstalld()} personer). Raden och skälen följer därför inte med i exporterna, och inga andelar räknas.</p>`;
-    if (s.konUnder) return `<p id="skal-kon-under" class="handlingsplan-varning" role="note">Medianskillnaden redovisas inte, eftersom ett kön i gruppen har färre än ${kInstalld()} personer. `
+    if (!s.iExport) return `<p class="skal-skillnad">Gruppen är för liten för att redovisas (färre än ${kInstalld()} ${personOrd(kInstalld())}). Raden och skälen följer därför inte med i exporterna, och inga andelar räknas.</p>`;
+    if (s.konUnder) return `<p id="skal-kon-under" class="handlingsplan-varning" role="note">Medianskillnaden redovisas inte, eftersom ett kön i gruppen har färre än ${kInstalld()} ${personOrd(kInstalld())}. `
         + 'Belopp, andel och kommentar följer därför inte med i exporterna eller i årsbokslutet; där står bara kategorierna.</p>';
     if (s.skillnadKr == null) return '<p class="skal-skillnad">Gruppens medianskillnad redovisas inte. Skälen redovisas med belopp.</p>';
     const par = s.kalla === 'par';
@@ -30087,11 +30102,11 @@ function rmPerBasAvsnitt(d, k) {
     const kol = [{ rubrik: 'Grupp', typ: 'text' }, { rubrik: 'Antal', typ: 'antal' }, ...matt.map(m => ({ rubrik: MATT[m], typ: 'kr' }))];
     const dimEtikett = pb.dimEtikett, kort = pb.dim === 'sektor' ? 'sektor' : 'BAS', per = pb.dim === 'sektor' ? 'sektor' : 'BAS-intervall';
     const utelamnat = [];
-    if (pb.basUtelamnade.length) utelamnat.push(`BAS ${pb.basUtelamnade.join(', ')} (färre än ${k} personer)`);
+    if (pb.basUtelamnade.length) utelamnat.push(`BAS ${pb.basUtelamnade.join(', ')} (färre än ${k} ${personOrd(k)})`);
     const smaYrken = pb.intervall.reduce((s, i) => s + i.utelamnade.length, 0);
-    if (smaYrken) utelamnat.push(`${smaYrken} ${smaYrken === 1 ? 'yrkesgrupp' : 'yrkesgrupper'} med färre än ${k} personer`);
+    if (smaYrken) utelamnat.push(`${smaYrken} ${smaYrken === 1 ? 'yrkesgrupp' : 'yrkesgrupper'} med färre än ${k} ${personOrd(k)}`);
     const konDolda = pb.intervall.filter(i => !i.konVisas).map(i => i.bas);
-    if (konDolda.length) utelamnat.push(`könsuppdelade lönemått för BAS ${konDolda.join(', ')} (ett kön har färre än ${k} personer)`);
+    if (konDolda.length) utelamnat.push(`könsuppdelade lönemått för BAS ${konDolda.join(', ')} (ett kön har färre än ${k} ${personOrd(k)})`);
     /** @type {any[]} */
     const delar = [
         stycke(pb.dim === 'sektor'
@@ -30103,8 +30118,8 @@ function rmPerBasAvsnitt(d, k) {
         delar.push(stycke(`${i.n} ${i.n === 1 ? 'anställd' : 'anställda'} i ${i.antalYrken} ${i.antalYrken === 1 ? 'yrkesgrupp' : 'yrkesgrupper'}, varav ${i.nKv} kvinnor och ${i.nMa} män.`));
         delar.push({ typ: 'tabell', kolumner: kol, rader: i.rader.map(r => [r.namn, r.n, ...matt.map(m => r[m] ?? null)]) });
         const noter = [];
-        if (i.utelamnade.length) noter.push(`${i.utelamnade.length} ${i.utelamnade.length === 1 ? 'yrkesgrupp' : 'yrkesgrupper'} med färre än ${k} personer redovisas inte: ${i.utelamnade.join(', ')}.`);
-        if (!i.konVisas) noter.push(`Kvinnor och män redovisas inte var för sig eftersom ett kön har färre än ${k} personer i intervallet.`);
+        if (i.utelamnade.length) noter.push(`${i.utelamnade.length} ${i.utelamnade.length === 1 ? 'yrkesgrupp' : 'yrkesgrupper'} med färre än ${k} ${personOrd(k)} redovisas inte: ${i.utelamnade.join(', ')}.`);
+        if (!i.konVisas) noter.push(`Kvinnor och män redovisas inte var för sig eftersom ett kön har färre än ${k} ${personOrd(k)} i intervallet.`);
         if (noter.length) delar.push(stycke(noter.join(' '), 'not'));
         delar.push({ typ: 'fyllIn', text: `Bedömning av ${kort} ${i.bas}: löneläget mot referensen och jämförelsestatistiken, de största yrkesgrupperna, och om skillnaderna mellan kvinnor och män har sakliga skäl.` });
     }
@@ -30124,7 +30139,7 @@ function rmPerBasAvsnitt(d, k) {
     }
     if (pb.aldersgrupper) {
     delar.push({ typ: 'rubrik', niva: 3, text: `Löneskillnader i åldersgrupper, per ${per}` });
-    delar.push(stycke(`Medellön i åldersgrupperna ${pb.aldersgrupper.grupper.join(', ')} år. En åldersgrupp med färre än ${k} personer i intervallet får ingen medellön.`, 'dampad'));
+    delar.push(stycke(`Medellön i åldersgrupperna ${pb.aldersgrupper.grupper.join(', ')} år. En åldersgrupp med färre än ${k} ${personOrd(k)} i intervallet får ingen medellön.`, 'dampad'));
     delar.push({ typ: 'tabell', kolumner: [{ rubrik: 'BAS', typ: 'text' }, { rubrik: 'Antal', typ: 'antal' }, { rubrik: 'Medelålder', typ: 'ar' }, { rubrik: 'Medellön alla', typ: 'kr' },
         ...pb.aldersgrupper.grupper.map(g => ({ rubrik: `Medellön ${g} år`, typ: 'kr' }))],
         rader: pb.aldersgrupper.rader.map(r => [r.bas, r.n, r.alder, r.medel, ...r.perGrupp]) });
@@ -30146,9 +30161,9 @@ function rmBasintervallAvsnitt(k) {
     if (!kand.length) return null;
     const stycke = (text, stil) => ({ typ: 'stycke', text, ...(stil ? { stil } : {}) });
     const under = basdossierUtelamnade();
-    const utelamnat = under.length ? [`BAS ${under.join(', ')} (färre än ${k} personer)`] : [];
+    const utelamnat = under.length ? [`BAS ${under.join(', ')} (färre än ${k} ${personOrd(k)})`] : [];
     /** @type {any[]} */
-    const delar = [stycke(`Ett avsnitt per BAS-intervall med minst ${k} personer, i samma ordning som rapporten i övrigt: antal och könsfördelning, ${state.policy.length ? 'läget mot ställningstagandet, ' : ''}yrkesgrupperna med status enligt Lika arbete, likvärdigt arbete${harAlder() ? ', ålder' : ''} och förra året när ett bokslut är inläst. Tabellen har yrkesgrupperna där både kvinnor och män når minsta gruppstorlek.`, 'dampad')];
+    const delar = [stycke(`Ett avsnitt per BAS-intervall med minst ${k} ${personOrd(k)}, i samma ordning som rapporten i övrigt: antal och könsfördelning, ${state.policy.length ? 'läget mot ställningstagandet, ' : ''}yrkesgrupperna med status enligt Lika arbete, likvärdigt arbete${harAlder() ? ', ålder' : ''} och förra året när ett bokslut är inläst. Tabellen har yrkesgrupperna där både kvinnor och män når minsta gruppstorlek.`, 'dampad')];
     let smaYrken = 0;
     for (const { bas } of kand) {
         const d = buildBasdossier(bas);
@@ -30161,7 +30176,7 @@ function rmBasintervallAvsnitt(k) {
             rader: rader.map(r => [r.aid, r.yrke, `${r.nKv} / ${r.nMa}`, r.medKv, r.medMa, r.kvotPct, r.status]) });
         delar.push({ typ: 'fyllIn', text: BD_BEDOMNING });
     }
-    if (smaYrken) utelamnat.push(`lönemått för ${smaYrken} ${smaYrken === 1 ? 'yrkesgrupp' : 'yrkesgrupper'} i intervallen med färre än ${k} personer`);
+    if (smaYrken) utelamnat.push(`lönemått för ${smaYrken} ${smaYrken === 1 ? 'yrkesgrupp' : 'yrkesgrupper'} i intervallen med färre än ${k} ${personOrd(k)}`);
     return { id: 'basintervall', numrerad: true, rubrik: 'Lönekartläggning per BAS-intervall', utelamnat, delar };
 }
 
@@ -30210,7 +30225,7 @@ function rmArsjamforelseAvsnitt(diagram) {
         delar.push({ typ: 'tabell', kolumner: [{ rubrik: `Öppna punkter ${forra.ar}`, typ: 'text' }, { rubrik: 'Läge i år', typ: 'text' }],
             rader: p.kvarFranForra.map(q => [q.titel || q.id, q.klarNu ? 'klar' : q.finnsNu ? 'fortfarande öppen' : 'finns inte längre i listan']) });
     } else delar.push(stycke(`${forra.ar} hade inga öppna punkter.`));
-    const utelamnat = j.samma_k ? [] : [`bokslutet sparades med minsta gruppstorlek ${forra.k}, i år gäller ${nu.k}: yrkesgrupper och BAS-intervall jämförs bara där de, och för könsuppdelade mått båda könen, når den högre av årens gränser, ${j.kGrans} personer`];
+    const utelamnat = j.samma_k ? [] : [`bokslutet sparades med minsta gruppstorlek ${forra.k}, i år gäller ${nu.k}: yrkesgrupper och BAS-intervall jämförs bara där de, och för könsuppdelade mått båda könen, når den högre av årens gränser, ${j.kGrans} ${personOrd(j.kGrans)}`];
     return { id: 'arsjamforelse', numrerad: true, rubrik: 'Jämförelse med förra året', utelamnat, delar };
 }
 
@@ -30231,7 +30246,7 @@ function rmDossierAvsnitt(k, { stub = false, besked = false } = {}) {
     const delat = gruppdossierDelat({ text: true });
     const medGrupper = delat.kandidater.filter(g => { const { kv, ma } = _gdKon(g.rows); return kv.length >= k && ma.length >= k; });
     const utan = delat.kandidater.length - medGrupper.length;
-    if (utan) avsnitt.utelamnat.push(`gruppdossiern för ${utan} ${utan === 1 ? 'yrkesgrupp' : 'yrkesgrupper'} där ett kön har färre än ${k} personer`);
+    if (utan) avsnitt.utelamnat.push(`gruppdossiern för ${utan} ${utan === 1 ? 'yrkesgrupp' : 'yrkesgrupper'} där ett kön har färre än ${k} ${personOrd(k)}`);
     // Förhandsbeskedet behöver bara antalet och det utelämnade, inte texterna.
     if (besked) return avsnitt;
     const dossierer = /** @type {any[]} */ (medGrupper.map(g => buildGruppdossier(g.key, delat)).filter(Boolean));
@@ -30261,7 +30276,7 @@ function rmBasUtvecklingDelar(j, forraAr, nuAr, bilder = []) {
     const spridning = f => (!f || (f.forra == null && f.nu == null) ? null : { text: `${_abSpridningText(f.forra)} till ${_abSpridningText(f.nu)}` });
     return [
         { typ: 'rubrik', niva: 3, text: 'Löneutveckling per BAS-intervall' },
-        { typ: 'stycke', stil: 'dampad', text: `Varje mått ${forraAr} till ${nuAr}, med förändringen i kronor och i procent av ${forraAr} års värde. Bara intervall med minst ${j.kGrans} personer båda åren; medianen rör sig också när sammansättningen ändras. ${AB_SPRIDNING_NOT}` },
+        { typ: 'stycke', stil: 'dampad', text: `Varje mått ${forraAr} till ${nuAr}, med förändringen i kronor och i procent av ${forraAr} års värde. Bara intervall med minst ${j.kGrans} ${personOrd(j.kGrans)} båda åren; medianen rör sig också när sammansättningen ändras. ${AB_SPRIDNING_NOT}` },
         { typ: 'tabell', kolumner: [{ rubrik: 'BAS-intervall', typ: 'text' }, { rubrik: 'Antal', typ: 'text' }, { rubrik: 'P10', typ: 'text' }, { rubrik: 'Median', typ: 'text' }, { rubrik: 'P90', typ: 'text' }, { rubrik: 'Lönespridning', typ: 'text' }],
           rader: j.basIntervall.map(r => [`BAS ${r.bas}`, antal(r.n), matt(r.p10), matt(r.med), matt(r.p90), spridning(r.spridning)]) },
         ...bilder,   // hanteln för medianen (chart-arsjamforelse-bas)
@@ -30318,7 +30333,7 @@ function rmEgnaAvsnitt(d, k) {
             delar.push({ typ: 'rubrik', niva: 3, text: t.rubrik });
             delar.push({ typ: 'tabell', kolumner: t.kolumner, rader: t.rader });
             if (t.not) delar.push(stycke(t.not, 'not'));
-            if (t.utelamnade) utelamnat.push(`${t.utelamnade} ${t.utelamnade === 1 ? 'grupp' : 'grupper'} i "${t.rubrik}" (färre än ${k} personer)`);
+            if (t.utelamnade) utelamnat.push(`${t.utelamnade} ${t.utelamnade === 1 ? 'grupp' : 'grupper'} i "${t.rubrik}" (färre än ${k} ${personOrd(k)})`);
         }
     }
     if (!antal) return null;
@@ -30489,7 +30504,7 @@ function _rmAvsnittenUtanUrval() {
         lika.delar.push(dampad('Ingen yrkesgrupp har statusen Värt att granska: ingen skillnad mellan kvinnors och mäns medianlön är både statistiskt säkerställd och minst 3 %.'));
     }
     const likaSma = likaGr.utelamnade.length + likaGr.grupper.filter(g => g.samladMedian).length;
-    if (likaSma) lika.utelamnat.push(`könsjämförelsen för ${likaSma} ${likaSma === 1 ? 'yrkesgrupp' : 'yrkesgrupper'} där ett kön har färre än ${k} personer`);
+    if (likaSma) lika.utelamnat.push(`könsjämförelsen för ${likaSma} ${likaSma === 1 ? 'yrkesgrupp' : 'yrkesgrupper'} där ett kön har färre än ${k} ${personOrd(k)}`);
     lika.delar.push(fyllIn('Bedöm för varje grupp om löneskillnaden har samband med kön. Ange sakligt skäl (t.ex. dokumenterad erfarenhet, prestation, marknadsläge, tjänstetillägg) eller besluta åtgärd.'));
 
     // ---- 4. Likvärdigt arbete ----
@@ -30508,7 +30523,7 @@ function _rmAvsnittenUtanUrval() {
     } else if (!parNot) {
         likvardigt.delar.push(dampad('Inga jämförelsepar hittades. Antingen är grupperna för små för att redovisas, eller så ligger inget kvinnodominerat yrke lägre än sin jämförelse.'));
     }
-    if (parNot) { likvardigt.delar.push(dampad(parNot)); likvardigt.utelamnat.push(`${parUtelamnade} kandidatpar med en grupp under ${k} personer`); }
+    if (parNot) { likvardigt.delar.push(dampad(parNot)); likvardigt.utelamnat.push(`${parUtelamnade} kandidatpar med en grupp under ${k} ${personOrd(k)}`); }
     likvardigt.delar.push(...diagram('likvardigt'));
     likvardigt.delar.push(fyllIn('Avgör, utifrån befattningsbeskrivning eller arbetsvärdering, om jämförelseyrkets krav verkligen är likvärdiga eller lägre. Ange sakligt skäl eller åtgärd för varje par som står kvar.'));
 
@@ -30519,8 +30534,8 @@ function _rmAvsnittenUtanUrval() {
     const repNot = [_rmNotText(kMaskNote(repDolda, 'BAS-intervall|BAS-intervall')), _rmNotText(kSamladNote(repVisade.filter(g => g.konLitet).map(g => g.bas), 'BAS-intervall|BAS-intervall'))].filter(Boolean);
     const oversikt = typeof _laOversiktRader === 'function' ? _laOversiktRader(d, undefined, k) : [];
     const struktur = (repVisade.length || repNot.length) ? { id: 'struktur', numrerad: true, rubrik: 'Struktur och lönetransparens',
-        utelamnat: [...(repDolda.length ? [`BAS ${repDolda.join(', ')} (färre än ${k} personer)`] : []),
-            ...(repVisade.some(g => g.konLitet) ? [`könsuppdelade lönemått för BAS ${repVisade.filter(g => g.konLitet).map(g => g.bas).join(', ')} (ett kön har färre än ${k} personer)`] : [])], delar: [
+        utelamnat: [...(repDolda.length ? [`BAS ${repDolda.join(', ')} (färre än ${k} ${personOrd(k)})`] : []),
+            ...(repVisade.some(g => g.konLitet) ? [`könsuppdelade lönemått för BAS ${repVisade.filter(g => g.konLitet).map(g => g.bas).join(', ')} (ett kön har färre än ${k} ${personOrd(k)})`] : [])], delar: [
             dampad('Hur kvinnor och män fördelar sig mellan BAS-intervallen, och löneskillnaden i median i varje intervall, räknad som i direktivet: skillnaden i procent av mäns lön, positivt tal = kvinnor lägre. Verktygets flikar visar samma skillnad som kvinnors lön i procent av mäns.'),
             dampad(EU_LONEBEGREPP_RESERVATION),
             ...(repVisade.length ? [{ typ: 'tabell', kolumner: [{ rubrik: 'BAS', typ: 'text' }, { rubrik: 'N', typ: 'antal' }, { rubrik: 'Andel kvinnor', typ: 'pct0' }, { rubrik: 'Median', typ: 'kr' }, { rubrik: RM_DIREKTIV_RUBRIK, typ: 'direktiv' }, { rubrik: _STS_DIR_KOLUMN, typ: 'text' }],
@@ -30738,7 +30753,7 @@ function renderExportBesked({ baraUrval = false } = {}) {
     try {
         blad = excelAlltBlad();
         satt('besked-excel', `<strong>Innehåller:</strong> ${esc(_ebAntal(blad.length, 'blad', 'blad'))} — ${esc(blad.join(', '))}<br>`
-            + `<strong>Utelämnar:</strong> ${esc(`grupper med färre än ${kInstalld()} personer (minsta gruppstorlek; på skärmen visas de)`)}`);
+            + `<strong>Utelämnar:</strong> ${esc(`grupper med färre än ${kInstalld()} ${personOrd(kInstalld())} (minsta gruppstorlek; på skärmen visas de)`)}`);
     } catch (e) { rapporteraFel('Förhandsbesked: Excel', e); }
     try {
         satt('besked-zip', `<strong>Innehåller:</strong> ${esc(`Word-utkastet, Excel-filen (${_ebAntal(blad.length, 'blad', 'blad')}) och diagrammen i alla flikar som bilder`)}<br>`
@@ -31556,7 +31571,7 @@ function _exportBenchmarkExcelExport() {
         ['Diff-kolumner: positiva värden (grön) = organisationen ligger över referens.', ''],
         ['Negativa värden (röd) = organisationen ligger under referens.', ''],
         ['Tomma celler = referensvärde saknas i uppladdad fil eller ej tillämpligt.', ''],
-        [`k-anonymitet (n<${kTroskel()}) = grupper med färre än ${kTroskel()} personer exkluderas helt.`, '']
+        [`k-anonymitet (n<${kTroskel()}) = grupper med färre än ${kTroskel()} ${personOrd(kTroskel())} exkluderas helt.`, '']
     ];
     const metaSheet = XLSX.utils.aoa_to_sheet(meta);
     metaSheet['!cols'] = [{ wch: 48 }, { wch: 32 }];
@@ -31689,12 +31704,12 @@ const INFO_SECTIONS = {
             <li>CSV, urklipp och diagrambilder</li>
             <li>rapportunderlaget och allt i Rapporttext, Exportera och Spara och jämför år</li>
         </ul>
-        <p>Där redovisas inte grupper med färre än ${kInstalld()} personer. De räknas i stället upp med namn i en not, så att det syns vad som saknas. Personerna ingår ändå i underlaget och i totalsummorna. Gällande värde är ${kInstalld()} och standardvärdet är ${K_STANDARD}. Du ändrar det under Inställningar i sidhuvudet (&quot;Minsta gruppstorlek för redovisning&quot;).</p>
+        <p>Där redovisas inte grupper med färre än ${kInstalld()} ${personOrd(kInstalld())}. De räknas i stället upp med namn i en not, så att det syns vad som saknas. Personerna ingår ändå i underlaget och i totalsummorna. Gällande värde är ${kInstalld()} och standardvärdet är ${K_STANDARD}. Du ändrar det under Inställningar i sidhuvudet (&quot;Minsta gruppstorlek för redovisning&quot;).</p>
         <p>Ibland är bara <em>könsuppdelningen</em> för liten, medan gruppen som helhet når tröskeln. Då redovisar exporterna gruppens <strong>samlade median</strong> i stället, utan könsjämförelse. Samma regel gäller könsuppdelade mått för hela organisationen: varje kön ska nå tröskeln.</p>
         <p><strong>Undantag och särskilda fall:</strong></p>
         <ul>
-            <li><strong>Löneöversyn.</strong> Du får lägga en egen riktad rad på en grupp under ${kInstalld()} personer. Beloppet visas på raden och ingår i summorna, även i Excel-exporten. Raden bygger då på enskildas löner, och det står på raden.</li>
-            <li><strong>Tabeller och egna vyer.</strong> Exporten av tabellen och diagrammen utelämnar grupper under ${kInstalld()} personer. Vill du ta med dem kryssar du i rutan <em>Ta med grupper under ${kInstalld()} i exporten</em>. Organisationspaketet kan stänga av rutan.</li>
+            <li><strong>Löneöversyn.</strong> Du får lägga en egen riktad rad på en grupp under ${kInstalld()} ${personOrd(kInstalld())}. Beloppet visas på raden och ingår i summorna, även i Excel-exporten. Raden bygger då på enskildas löner, och det står på raden.</li>
+            <li><strong>Tabeller och egna vyer.</strong> Exporten av tabellen och diagrammen utelämnar grupper under ${kInstalld()} ${personOrd(kInstalld())}. Vill du ta med dem kryssar du i rutan <em>Ta med grupper under ${kInstalld()} i exporten</em>. Organisationspaketet kan stänga av rutan.</li>
             <li><strong>Likvärdigt arbete.</strong> Lagen kräver att även små kvinnodominerade yrken prövas. Fliken och dess egen export visar därför kandidatpar även när en grupp är under tröskeln, och exporten anger det i filen. Alla andra utdata tar bara med par där båda grupperna når tröskeln, och anger hur många par som utelämnats. Det gäller Rapportunderlaget, Word-utkastet, PDF-rapporten, protokollet för gemensam lönebedömning, Att göra och dess CSV, handlingsplanens förifyllda rader och gruppdossiern.</li>
             <li><strong>Enskilda personer i verktyget.</strong> Personer att granska (Lika arbete) och extremvärdena i Underlagets kvalitet visar enskilda löner med filens radnummer. Personer att granska kan inte exporteras eller skrivas ut.</li>
             <li><strong>Diagramdata.</strong> Alla diagram kan exporteras som bild eller som diagramdata (CSV eller urklipp). Vissa diagram visar enskilda personer, till exempel lön mot ålder och individpunkter. Då har diagramdatan en rad per person, utan namn eller identifierare. Hantera sådana filer som personuppgifter. PDF-rapportens mall <em>Komplett rapport</em> och ZIP-exporten innehåller bilder av sådana diagram. I CSV och urklipp får celler som börjar med = + - @ ett inledande apostrof-tecken, så att Excel inte kör dem som formler.</li>
@@ -32351,7 +32366,7 @@ function renderGapUppdelning() {
     /** @type {any} */
     const u = _guGapUppdelning(d, { k: kTroskel() });
     if (!u) {
-        body.innerHTML = demo + `<p>För få personer för att dela upp skillnaden: ett kön har färre än ${kTroskel()} personer i urvalet.</p>`;
+        body.innerHTML = demo + `<p>För få personer för att dela upp skillnaden: ett kön har färre än ${kTroskel()} ${personOrd(kTroskel())} i urvalet.</p>`;
         return;
     }
     const inledning = u.gap <= 0
@@ -32362,7 +32377,7 @@ function renderGapUppdelning() {
     const medianText = medMa > 0 ? ` Kvinnors medianlön är ${_guPct(medKv / medMa * 100)} av mäns.` : '';
     if (!u.skyddad) {
         body.innerHTML = demo + `<p class="gu-inledning">${inledning}${medianText}</p>`
-            + `<p class="gu-not">Skillnaden delas inte upp här: en grupp med färre än ${kTroskel()} personer står för så stor del av `
+            + `<p class="gu-not">Skillnaden delas inte upp här: en grupp med färre än ${kTroskel()} ${personOrd(kTroskel())} står för så stor del av `
             + 'en av delarna att dess bidrag annars skulle kunna räknas fram.</p>';
         return;
     }
@@ -32373,7 +32388,7 @@ function renderGapUppdelning() {
         const andel = u.litetGap ? '' : `<span class="gu-andel">${_guPct(v / u.gap * 100, 0)} av skillnaden</span>`;
         const topp = u.topp[del.id].map(p => `<li>${esc(p.namn)}: ${_guKr(p.kr)}</li>`).join('')
             // Dolda grupper redovisas bara med antal — deras summa kunde röja en enskild grupp.
-            + (u.ovrigaAntal[del.id] ? `<li class="gu-ovriga">${u.ovrigaAntal[del.id]} ${u.ovrigaAntal[del.id] === 1 ? 'grupp' : 'grupper'} med färre än ${kTroskel()} personer ingår i summan</li>` : '');
+            + (u.ovrigaAntal[del.id] ? `<li class="gu-ovriga">${u.ovrigaAntal[del.id]} ${u.ovrigaAntal[del.id] === 1 ? 'grupp' : 'grupper'} med färre än ${kTroskel()} ${personOrd(kTroskel())} ingår i summan</li>` : '');
         return `<div class="gu-rad" data-gu-del="${del.id}">
             <div class="gu-rubrik"><strong>${del.id}. ${del.namn}</strong><span class="gu-belopp">${_guKr(v)}</span>${andel}</div>
             <div class="gu-stapel" aria-hidden="true"><span class="gu-fyll ${v < 0 ? 'gu-neg' : 'gu-pos'}" data-stil-mvanster="${(v < 0 ? 50 - bredd : 50).toFixed(1)}%" data-stil-bredd="${bredd.toFixed(1)}%"></span></div>
@@ -32387,7 +32402,7 @@ function renderGapUppdelning() {
         + '<div id="chart-gap-uppdelning" class="marg-6-0-14"></div>'
         + rader
         + '<p class="gu-not">Grupperna rangordnas efter bidrag till hela organisationens skillnad och kan därför skilja sig från de flaggade yrkena i Lika arbete, som sorteras efter skillnadens storlek. Grupper där ett kön har färre än '
-        + `${kTroskel()} personer namnges inte.</p>`; tillampaDataStil(body);
+        + `${kTroskel()} ${personOrd(kTroskel())} namnges inte.</p>`; tillampaDataStil(body);
     { const el = document.getElementById('chart-gap-uppdelning'); if (el) ritaFigur(el, _guTrappaFigur(u)); }
 }
 
@@ -32707,7 +32722,7 @@ function _renderExplorerTable(model, typ, inkl) {
     const num = (v, m, attr = '') =>
         `<td class="tabelltal ta-hoger" data-sort-value="${v == null ? '' : v}"${attr}>${_exploreFmt(v, m)}</td>`;
     const nTd = c => `<td class="t-hoger" data-sort-value="${c.n}">${c.n.toLocaleString('sv-SE')} (${c.nKv}/${c.nMa})</td>`;
-    const trAttr = c => (c.liten ? ` class="explore-liten" title="Färre än ${k} personer"` : '')
+    const trAttr = c => (c.liten ? ` class="explore-liten" title="Färre än ${k} ${personOrd(k)}"` : '')
         + (c.liten && !inkl ? ' data-export-utelamna' : '');
     const dimLbl = esc(EXPLORE_DIM_LABEL[spec.rad]);
     let head, body;
@@ -32735,7 +32750,7 @@ function _renderExplorerTable(model, typ, inkl) {
             if (!c) return `<td class="t-hoger" data-sort-value=""${inkl ? '' : ' data-export-tom'}${ute(d)}>–</td>`;
             const v = d.v(c), sm = liten(c, d);
             const bara_kon_liten = !c.liten && spec.matt === 'n';   // antal per kön i en stor grupp följer med
-            const attr = (sm ? ` class="explore-liten" title="Färre än ${k} personer"` : '')
+            const attr = (sm ? ` class="explore-liten" title="Färre än ${k} ${personOrd(k)}"` : '')
                 + (!inkl && ((sm && !bara_kon_liten) || (spec.matt === 'gap' && c.konLiten)) ? ' data-export-tom' : '') + ute(d);
             const cell = _exploreFmt(v, spec.matt) + (sm ? ` (n = ${d.n(c)})` : '');
             return `<td class="tabelltal ta-hoger" data-sort-value="${v == null ? '' : v}"${attr}>${esc(cell)}</td>`;
@@ -32785,13 +32800,13 @@ function _renderExplorerNote(model, extra) {
     const antal = model.celler.filter(c => c.liten).length;
     const k = kTroskel();
     const sma = antal
-        ? `${antal} ${antal === 1 ? 'grupp har' : 'grupper har'} under ${k} personer. `
+        ? `${antal} ${antal === 1 ? 'grupp har' : 'grupper har'} under ${k} ${personOrd(k)}. `
           + 'De följer inte med i exporten om du inte kryssar i rutan ovanför diagrammet.'
         : '';
     const konsma = model.spec.delaKon && model.spec.matt !== 'n'
         ? model.celler.filter(c => !c.liten).reduce((s, c) => s + (c.nKv < k ? 1 : 0) + (c.nMa < k ? 1 : 0), 0) : 0;
     const kon = konsma
-        ? `${konsma} ${konsma === 1 ? 'könsvärde bygger' : 'könsvärden bygger'} på färre än ${k} personer; `
+        ? `${konsma} ${konsma === 1 ? 'könsvärde bygger' : 'könsvärden bygger'} på färre än ${k} ${personOrd(k)}; `
           + 'de följer inte med i exporten om du inte kryssar i rutan.'
         : '';
     const dolda = model.dolda
@@ -32856,7 +32871,7 @@ function explorerHandleClick(d) {
     }
     if (mal.saknas) {
         _renderExplorerNote(_explorerState.model,
-            `Gruppen har ingen gruppdossier, eftersom dossiern bara finns för grupper med minst ${kTroskel()} personer.`);
+            `Gruppen har ingen gruppdossier, eftersom dossiern bara finns för grupper med minst ${kTroskel()} ${personOrd(kTroskel())}.`);
         return;
     }
     openGruppdossier(mal.key);
@@ -33572,7 +33587,7 @@ function _abBasHantelFigur(j, forraAr, nuAr) {
     if (!rader.length) return null;
     const fig = foreEfterFigur({ rader: rader.map(r => ({ namn: r.namn, bas: r.bas, fore: r.fore, efter: r.efter, farg: PALETTE.semantic.linje, markering: markeringFor(r.bas) })),
         kolumner: [String(forraAr), String(nuAr)], titel: 'Medianlön per BAS-intervall', format: 'kr',
-        beskrivning: `Medianlönen per BAS-intervall, ${forraAr} (strecket) och ${nuAr} (punkten). Bara intervall med minst ${j.kGrans} personer båda åren.` });
+        beskrivning: `Medianlönen per BAS-intervall, ${forraAr} (strecket) och ${nuAr} (punkten). Bara intervall med minst ${j.kGrans} ${personOrd(j.kGrans)} båda åren.` });
     return { ..._abEtiketterBortFranStrecket(fig), urval: BAS_URVAL };
 }
 
@@ -33598,7 +33613,7 @@ function _abBasTabellHtml(j, forraAr, nuAr) {
     if (!Array.isArray(j.basIntervall)) {
         return rubrik + '<p class="text-dampad-sm marg-0">Löneutvecklingen per BAS-intervall saknas i förra årets fil: bokslutet sparades med en äldre version av verktyget. Årets bokslut har den, så nästa års jämförelse får den.</p>';
     }
-    if (!j.basIntervall.length) return rubrik + `<p class="text-dampad-sm marg-0">Inget BAS-intervall har minst ${j.kGrans} personer.</p>`;
+    if (!j.basIntervall.length) return rubrik + `<p class="text-dampad-sm marg-0">Inget BAS-intervall har minst ${j.kGrans} ${personOrd(j.kGrans)}.</p>`;
     const matt = [['p10', 'P10'], ['med', 'Median'], ['p90', 'P90']];
     const huvud = `<thead><tr><th scope="col" rowspan="2">BAS-intervall</th><th scope="colgroup" colspan="2" class="t-mitt">Antal</th>`
         + matt.map(([, e]) => `<th scope="colgroup" colspan="3" class="t-mitt">${e}</th>`).join('')
@@ -33615,7 +33630,7 @@ function _abBasTabellHtml(j, forraAr, nuAr) {
     return rubrik + `<div class="table-container"><table class="data-table st-088" id="arsjamforelse-bas">${huvud}<tbody>${j.basIntervall.map(rad).join('')}</tbody></table></div>`
         + (h.rader.length ? `<h4 class="fs-sm marg-10-0-4">Medianlön per BAS-intervall, ${forraAr} och ${nuAr}</h4><div class="chart-container"><div id="chart-arsjamforelse-bas"></div></div>` : '')
         + (h.utelamnade ? `<p class="k-mask-note">${h.utelamnade} BAS-intervall har median bara ett av åren (färre än minsta gruppstorlek, eller fanns inte) och visas inte i diagrammet.</p>` : '')
-        + `<p class="text-dampad-xs marg-4-0-0">Bara intervall med minst ${j.kGrans} personer båda åren (den högre av årens minsta gruppstorlek). Förändringen i kronor och i procent av förra årets värde. Medianen rör sig också när sammansättningen ändras: nyanställda och avgångar påverkar den lika mycket som löneökningar. ${AB_SPRIDNING_NOT}</p>`;
+        + `<p class="text-dampad-xs marg-4-0-0">Bara intervall med minst ${j.kGrans} ${personOrd(j.kGrans)} båda åren (den högre av årens minsta gruppstorlek). Förändringen i kronor och i procent av förra årets värde. Medianen rör sig också när sammansättningen ändras: nyanställda och avgångar påverkar den lika mycket som löneökningar. ${AB_SPRIDNING_NOT}</p>`;
 }
 
 /** Ett skäls eller en kategoris värde: beloppet och andelen av skillnaden när den finns, "900 kr (50 %)". */
@@ -33662,7 +33677,7 @@ function _abSkalHtml(j, forraAr, nuAr) {
         ? `<p class="text-dampad-sm marg-6-0-2">Hade sakliga skäl förra året men inte i år (${b.saknasIAr.length}). Gruppen kan sakna skäl eller inte längre finnas i handlingsplanen:</p><ul class="fs-sm marg-0-0-4">${b.saknasIAr.map(g => `<li>${esc(_abSkalGrupp(g))}</li>`).join('')}</ul>`
         : '';
     return rubrik + tabell + grupper + saknas
-        + `<p class="text-dampad-xs marg-4-0-0">Beloppen är summan av skälen i kronor per månad; andelen är av skillnaden i de grupper som hade skäl det året. Kategorierna och beloppen är organisationens bedömning. Verktyget räknar bara om beloppen till andelar av skillnaden. Bara grupper med minst ${j.kGrans} personer. En grupp där ett kön hade färre personer än minsta gruppstorlek har bara kategorierna i bokslutet och räknas inte med i beloppen.</p>`;
+        + `<p class="text-dampad-xs marg-4-0-0">Beloppen är summan av skälen i kronor per månad; andelen är av skillnaden i de grupper som hade skäl det året. Kategorierna och beloppen är organisationens bedömning. Verktyget räknar bara om beloppen till andelar av skillnaden. Bara grupper med minst ${j.kGrans} ${personOrd(j.kGrans)}. En grupp där ett kön hade färre personer än minsta gruppstorlek har bara kategorierna i bokslutet och räknas inte med i beloppen.</p>`;
 }
 
 /**
@@ -33715,7 +33730,7 @@ function renderArsjamforelse() {
     const kvar = p.kvarFranForra;
     const punkter = `<p class="text-dampad-sm marg-8-0-4">Förra året var ${p.klaraForra} av ${p.totaltForra} punkter i Att göra avbockade; i år ${p.klaraNu} av ${p.totaltNu}.</p>`
         + (kvar.length ? `<p class="text-dampad-sm marg-0-0-4">Förra årets öppna punkter (${kvar.length}):</p><ul class="fs-sm marg-0-0-8">${kvar.map(q => `<li>${esc(q.titel || q.id)}${q.klarNu ? ' — <strong>klar i år</strong>' : q.finnsNu ? ' — fortfarande öppen' : ' — finns inte längre i listan'}</li>`).join('')}</ul>` : '<p class="text-dampad-sm marg-0">Förra året hade inga öppna punkter.</p>');
-    host.innerHTML = huvud + (j.samma_k ? '' : `<p class="k-mask-note">Bokslutet sparades med minsta gruppstorlek ${forra.k}; i år gäller ${nu.k}. Yrkesgrupper och BAS-intervall jämförs bara där de, och för könsuppdelade mått båda könen, når den högre av årens gränser, ${j.kGrans} personer. En yrkesgrupp som var flaggad förra året men då hade ett kön under ${j.kGrans} personer räknas därför som ny i år om den är flaggad nu, och förra årets löneskillnad för den visas inte.</p>`)
+    host.innerHTML = huvud + (j.samma_k ? '' : `<p class="k-mask-note">Bokslutet sparades med minsta gruppstorlek ${forra.k}; i år gäller ${nu.k}. Yrkesgrupper och BAS-intervall jämförs bara där de, och för könsuppdelade mått båda könen, når den högre av årens gränser, ${j.kGrans} ${personOrd(j.kGrans)}. En yrkesgrupp som var flaggad förra året men då hade ett kön under ${j.kGrans} ${personOrd(j.kGrans)} räknas därför som ny i år om den är flaggad nu, och förra årets löneskillnad för den visas inte.</p>`)
         + `<h4 class="fs-sm marg-6-0-4">Nyckeltal</h4>${nyckeltal}${_abBasTabellHtml(j, forra.ar, nu.ar)}<h4 class="fs-sm marg-12-0-2">Lika arbete</h4>${grupper}${_abSkalHtml(j, forra.ar, nu.ar)}<h4 class="fs-sm marg-12-0-2">Att göra</h4>${punkter}`
         + `<p class="text-dampad-xs marg-8-0-0">Lönemått bara för yrkesgrupper där båda könen når minsta gruppstorlek; skillnaden är kvinnors medianlön mot mäns, negativt när kvinnor ligger lägre. ${AB_SPRIDNING_NOT}</p>`;
     const el = document.getElementById('chart-arsjamforelse');
@@ -33894,7 +33909,7 @@ function _lpBandkartaKort(model) {
     if (!model.hasPolicy) { rensaFigur(el); el.innerHTML = ''; kort.hidden = true; return; }
     kort.hidden = false;
     const forklaring = document.getElementById('lp-bandkarta-forklaring');
-    if (forklaring) forklaring.textContent = `Grå stapel = ${referensKortnamn()}:s P10–P90. Streck i den = referensens median. Blå stapel = organisationens faktiska P10–P90 (bara BAS med minst ${kTroskel()} personer). Punkt = yrkesgruppens median: kvinnodominerad, mansdominerad eller blandad.`;
+    if (forklaring) forklaring.textContent = `Grå stapel = ${referensKortnamn()}:s P10–P90. Streck i den = referensens median. Blå stapel = organisationens faktiska P10–P90 (bara BAS med minst ${kTroskel()} ${personOrd(kTroskel())}). Punkt = yrkesgruppens median: kvinnodominerad, mansdominerad eller blandad.`;
     if (!model.byBas.length) { _lpIngetDiagram(el, 'Ställningstagandet har inga rader för underlagets BAS-intervall eller yrken.'); return; }
     _lpRenderBandMap(model);
 }
@@ -34140,7 +34155,7 @@ function _lpRenderCompliance(model) {
     if (gammal) gammal.remove();
     if (!rows.length) {
         _lpIngetDiagram(el, alla.length
-            ? `Samtliga BAS-intervall med policyspann har färre än ${kTroskel()} personer och kan därför inte redovisas.`
+            ? `Samtliga BAS-intervall med policyspann har färre än ${kTroskel()} ${personOrd(kTroskel())} och kan därför inte redovisas.`
             : 'Ingen BAS har användbara bandgränser i policyn.');
         return;
     }
@@ -34200,7 +34215,7 @@ function _lpTableHtml(model) {
         <p class="text-dampad-sm lh-1_55 marg-0-0-10">
             <strong>Position</strong> är var gruppens median ligger i spannet: 0 % = på P10, 100 % = på P90.
             Under 0 % eller över 100 % betyder att medianen ligger utanför spannet.
-            Grupper med färre än ${kTroskel()} personer visas utan percentiler, och under ${Math.min(LP_COUNT_TIER_MIN, kTroskel())} maskeras de helt —
+            Grupper med färre än ${kTroskel()} ${personOrd(kTroskel())} visas utan percentiler, och under ${Math.min(LP_COUNT_TIER_MIN, kTroskel())} maskeras de helt —
             men de räknas alltid in i BAS-totalen.
         </p>
         <div class="table-container">
@@ -34241,8 +34256,8 @@ function _lpExcelBlad() {
     const ut = [
         [`Lönerna mot ${referensNamn()} (fliken Löneläget)`],
         [`Position är var medianen ligger i referensens spann: 0 % = på P10, 100 % = på P90; under 0 eller över 100 betyder utanför spannet. `
-            + `Yrkesgrupper med färre än ${k} personer står med antal men utan lönemått, och med färre än ${Math.min(LP_COUNT_TIER_MIN, k)} utelämnas de; de räknas alltid in i BAS-intervallets rader. `
-            + `Könsuppdelade mått redovisas bara där varje kön har minst ${k} personer.`],
+            + `Yrkesgrupper med färre än ${k} ${personOrd(k)} står med antal men utan lönemått, och med färre än ${Math.min(LP_COUNT_TIER_MIN, k)} utelämnas de; de räknas alltid in i BAS-intervallets rader. `
+            + `Könsuppdelade mått redovisas bara där varje kön har minst ${k} ${personOrd(k)}.`],
         [],
         ['Yrkesgrupper mot sitt spann'],
         ['BAS-intervall', 'AID', 'Yrkesgrupp', 'Antal', 'Median (kr)', 'Referensens P10 (kr)', 'Referensens P90 (kr)', 'Position (%)', 'Under P10 (antal)', 'Referensnivå']
@@ -34259,7 +34274,7 @@ function _lpExcelBlad() {
                 s && s.position != null ? r1(s.position * 100) : '', c ? c.under : '', g.level || '']);
         }
     }
-    if (utelamnade.length) ut.push([`Visas inte (färre än ${Math.min(LP_COUNT_TIER_MIN, k)} personer): ${utelamnade.join(', ')}.`]);
+    if (utelamnade.length) ut.push([`Visas inte (färre än ${Math.min(LP_COUNT_TIER_MIN, k)} ${personOrd(Math.min(LP_COUNT_TIER_MIN, k))}): ${utelamnade.join(', ')}.`]);
 
     // Läget i spannet per kön: bara BAS-intervall där varje kön når tröskeln (samma villkor som hanteldiagrammet).
     ut.push([], ['Läget i spannet per kön, per BAS-intervall (genomsnittlig position: 0 % = P10, 100 % = P90)'],
@@ -34271,7 +34286,7 @@ function _lpExcelBlad() {
         if (!gg || !_konFarRedovisas(gg.nKv, gg.nMa)) { konDolda.push(b.bas); continue; }
         ut.push([b.bas, gg.nKv, gg.nMa, r1(gg.kvPos * 100), r1(gg.maPos * 100), r1(gg.diff * 100)]);
     }
-    if (konDolda.length) ut.push([`Visas inte (ett kön har färre än ${k} personer, eller spannet är inte användbart): ${konDolda.join(', ')}.`]);
+    if (konDolda.length) ut.push([`Visas inte (ett kön har färre än ${k} ${personOrd(k)}, eller spannet är inte användbart): ${konDolda.join(', ')}.`]);
 
     // Tredjedelarna: hela urvalet, som kortet i fliken — bara när båda könen når tröskeln.
     const sum = _lpKonLagenSumma(model);
@@ -34291,7 +34306,7 @@ function _lpExcelBlad() {
         if (isKMasked(b.n)) { efterDolda.push(b.bas); continue; }
         ut.push([b.bas, c.n, c.under, c.within, c.over, pct(c.under, c.n), pct(c.within, c.n), pct(c.over, c.n)]);
     }
-    if (efterDolda.length) ut.push([`Visas inte (färre än ${k} personer): ${efterDolda.join(', ')}.`]);
+    if (efterDolda.length) ut.push([`Visas inte (färre än ${k} ${personOrd(k)}): ${efterDolda.join(', ')}.`]);
     return ut;
 }
 // SPDX-License-Identifier: MIT
@@ -34499,7 +34514,7 @@ function renderGruppdossier(preselectKey) {
         sel.innerHTML = '';
         body.innerHTML = `<div class="flik-empty-state"><div class="empty-icon">${ikon('tomLada')}</div>
             <h3>Inga grupper att visa</h3>
-            <p>Ingen yrkesgrupp når tröskeln på ${kTroskel()} personer. Läs in en större lönefil, eller analysera per BAS-intervall i stället.</p></div>`;
+            <p>Ingen yrkesgrupp når tröskeln på ${kTroskel()} ${personOrd(kTroskel())}. Läs in en större lönefil, eller analysera per BAS-intervall i stället.</p></div>`;
         return;
     }
     // Fyll väljaren (bevara valet om det fortfarande finns)
@@ -34831,7 +34846,7 @@ function renderBasdossier(bas) {
     if (!kand.length) {
         sel.innerHTML = '';
         body.innerHTML = `<div class="flik-empty-state"><div class="empty-icon">${ikon('tomLada')}</div>
-            <h3>Inga BAS-intervall att visa</h3><p>Inget BAS-intervall når ${kTroskel()} personer, eller ingen lönefil är inläst.</p></div>`;
+            <h3>Inga BAS-intervall att visa</h3><p>Inget BAS-intervall når ${kTroskel()} ${personOrd(kTroskel())}, eller ingen lönefil är inläst.</p></div>`;
         return;
     }
     const onskat = bas || sel.value || _bdVald || kand[0].bas;
@@ -34839,7 +34854,7 @@ function renderBasdossier(bas) {
     sel.value = kand.some(x => x.bas === onskat) ? onskat : kand[0].bas;
     _bdVald = sel.value;
     // Ett begärt intervall som inte (längre) når tröskeln öppnas inte i tysthet som ett annat: det sägs.
-    if (bas && bas !== sel.value) announceToScreenReader(`BAS ${bas} visas inte i dossiern: intervallet finns inte i underlaget eller har färre än ${kTroskel()} personer. Visar BAS ${sel.value}.`);
+    if (bas && bas !== sel.value) announceToScreenReader(`BAS ${bas} visas inte i dossiern: intervallet finns inte i underlaget eller har färre än ${kTroskel()} ${personOrd(kTroskel())}. Visar BAS ${sel.value}.`);
     const d = buildBasdossier(sel.value);
     body.innerHTML = d ? _bdRenderBody(d) : '<p class="f-dampad">BAS-intervallet kunde inte läsas.</p>';
     // Fokusfällan cachar de fokuserbara elementen; när innehållet byggs om medan dialogen är öppen läggs den om,
@@ -34902,7 +34917,7 @@ function _bdRenderBody(d) {
     // 4. Ålder (inte när lönefilen saknar ålder, ADR-64)
     const alder = !d.alder ? '' : `<table class="data-table st-088 bd-tabell"><thead><tr><th scope="col">Åldersgrupp</th><th scope="col" class="t-hoger">Antal (kv/mä)</th><th scope="col" class="t-hoger">Median</th><th scope="col" class="t-hoger">Median kvinnor</th><th scope="col" class="t-hoger">Median män</th></tr></thead><tbody>`
         + d.alder.map(a => `<tr><th scope="row">${esc(a.namn)}</th><td class="t-tal">${a.n} (${a.nKv}/${a.nMa})</td><td class="t-tal">${_bdKr(a.med)}</td><td class="t-tal">${_bdKr(a.medKv)}</td><td class="t-tal">${_bdKr(a.medMa)}</td></tr>`).join('')
-        + `</tbody></table><p class="gd-note">Ett köns median står bara där båda könen i åldersgruppen har minst ${k} personer.</p>`
+        + `</tbody></table><p class="gd-note">Ett köns median står bara där båda könen i åldersgruppen har minst ${k} ${personOrd(k)}.</p>`
         + `<p><button type="button" class="btn-table-tool" data-bd-alder="${esc(d.bas)}">${ikon('pilUt', 14)} Ålder &amp; karriär för BAS ${esc(d.bas)}</button></p>`;
 
     // 5. Förra året
@@ -34973,7 +34988,7 @@ function basdossierStycken(d, { forraBaraMedBokslut = false } = {}) {
             : `- ${y.yrke}: ${antal}. Kvinnor ${kr(y.medKv)}, män ${kr(y.medMa)}; kvinnors median ${svPct(y.kvotPct, 1)} av mäns${_stsDirektiv(y.kvotPct) ? ` (${_STS_DIR_ETIKETT}, direktivmarkering)` : ''}. ${BD_STATUS_TEXT[y.status]}.`)
             + (y.ocksaI.length ? ` ${_bdHelaYrketNot(y)}.` : ''));
     }
-    if (d.yrkenUtelamnade.length) yrken.push(`Redovisas inte (färre än ${d.k} personer): ${d.yrkenUtelamnade.join(', ')}.`);
+    if (d.yrkenUtelamnade.length) yrken.push(`Redovisas inte (färre än ${d.k} ${personOrd(d.k)}): ${d.yrkenUtelamnade.join(', ')}.`);
     if (d.ejJamforbara.length) yrken.push(`Inte jämförbara (ett kön har färre än två personer): ${d.ejJamforbara.join(', ')}.`);
     ut.push({ rubrik: 'Yrkesgrupperna i intervallet', rader: yrken });
 
@@ -34990,7 +35005,7 @@ function basdossierStycken(d, { forraBaraMedBokslut = false } = {}) {
             const kon = a.medKv != null ? `, kvinnor ${kr(a.medKv)}, män ${kr(a.medMa)}` : '';
             return `- ${a.namn}: ${a.n} personer (${a.nKv} kvinnor, ${a.nMa} män)${a.med != null ? `, median ${kr(a.med)}${kon}` : ''}.`;
         });
-        alder.push(`Ett köns median står bara där båda könen i åldersgruppen har minst ${d.k} personer.`);
+        alder.push(`Ett köns median står bara där båda könen i åldersgruppen har minst ${d.k} ${personOrd(d.k)}.`);
         ut.push({ rubrik: 'Ålder', rader: alder });
     }
 
@@ -35091,7 +35106,7 @@ document.addEventListener('click', e => {
     if (t.closest('#btn-basdossier-copy')) {
         const sel = /** @type {HTMLSelectElement|null} */ (document.getElementById('basdossier-select'));
         const txt = sel ? basdossierText(sel.value) : null;   // texten lämnar verktyget (ADR-51)
-        if (!txt) { announceToScreenReader(`BAS-intervallet har färre än ${kInstalld()} personer och kopieras inte.`); return; }
+        if (!txt) { announceToScreenReader(`BAS-intervallet har färre än ${kInstalld()} ${personOrd(kInstalld())} och kopieras inte.`); return; }
         const klart = () => announceToScreenReader('BAS-dossiern kopierad.');
         if (navigator.clipboard?.writeText) navigator.clipboard.writeText(txt).then(klart).catch(() => {});
         else klart();

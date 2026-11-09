@@ -2,7 +2,7 @@
 // Copyright 2026 Felix Jansson
 /**
  * Öppen lönekartläggning — namnformer för organisationen och jämförelsestatistiken
- * (ADR-36).
+ * (ADR-36), och ordformen för ett antal personer.
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
@@ -18,4 +18,9 @@ export function namnGenitiv(namn) {
 /** Trimmar, slår ihop blanksteg och kortar till högst 100 tecken. */
 export function normaliseraNamn(text) {
     return String(text ?? '').replace(/\s+/g, ' ').trim().slice(0, MAX);
+}
+
+/** "person" när antalet är 1, annars "personer": `${k} ${personOrd(k)}` ger "minst 1 person". */
+export function personOrd(n) {
+    return Number(n) === 1 ? 'person' : 'personer';
 }

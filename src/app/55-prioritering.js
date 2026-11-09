@@ -163,7 +163,7 @@ function _prioKonStatus(i) {
     const gap = i.gapPct;
     const ej = typeof gap !== 'number' || !isFinite(gap) || !(i.kvN >= golv && i.maN >= golv);
     const st = typeof gap !== 'number' || ej ? gapStatusNiva('ejbedomd') : gapStatus(Math.abs(gap), false);
-    const tips = ej ? `Går ej att bedöma: ett kön har färre än ${golv} personer, för få för att pröva skillnaden`
+    const tips = ej ? `Går ej att bedöma: ett kön har färre än ${golv} ${personOrd(golv)}, för få för att pröva skillnaden`
         : st.niva === 'folj' ? 'Skillnaden är minst 3 % (verktygets storleksgräns). Prioriteringen prövar inte skillnaden mot slumpen; prövningen finns i Lika arbete.'
         : 'Skillnaden är under 3 %. Prioriteringen prövar inte skillnaden mot slumpen; prövningen finns i Lika arbete.';
     return `<span class="la-status ar-${st.farg} prio-konstatus" data-niva="${st.niva}" data-export-text="" title="${esc(tips)}">${ikon(st.ikon)}${esc(st.serie)}</span>`;
@@ -662,7 +662,7 @@ function _prioKostnadFigur(allaVisade, allCumPct) {
     // sammanlagd stapel för dem blir längst av alla och gör de övriga svåra att läsa. Med fyrtio grupper blev
     // diagrammet annars över tusen punkter högt.
     const visade = allaVisade.slice(0, PRIO_KOSTNAD_MAX), cumPct = allCumPct.slice(0, PRIO_KOSTNAD_MAX);
-    const namn = (i, n) => `#${n + 1} ${_rfKorta(String(i.yrke), 26)} · ${i.bas}`;
+    const namn = (i, n) => `#${n + 1} ${_rfKorta(String(i.yrke), 26)} · BAS ${i.bas}`;
     const y = visade.map(namn), n80 = cumPct.findIndex(p => p >= 80);
     const inom = n => n80 < 0 || n <= n80;
     const mnkr = v => (v >= 1e6 ? `${svTal(v / 1e6, 2)} mnkr` : _figTalformat(Math.round(v), 'kr'));
