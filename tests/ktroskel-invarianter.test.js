@@ -174,6 +174,19 @@ describe.each([[10, []], [25, SENT_MELLAN]])('I4: invarianten över flikar och e
         // Stora grupper syns, så att tystnad inte beror på tomma utdata.
         expect(utdata.find(([n]) => n === 'Word-utkastet')[1]).toContain('S1');
         expect(utdata.find(([n]) => n === 'skärm: alla flikar')[1]).toContain('Säkeryrke 0');
+        // Statistikens matchning: kolumnen i tabellens CSV, detaljlistan, Excel och jämförelseexporten.
+        expect(utdata.find(([n]) => n === 'tabell-CSV: benchmark-table')?.[1]).toMatch(/BAS \| Matchning \| N[^]*AID \+ BAS/);
+        expect(utdata.find(([n]) => n === 'tabell-CSV: ref-tabell')?.[1]).toMatch(/Matchning[^]*AID \+ BAS/);
+        expect(utdata.find(([n]) => n.startsWith('jämförelseexporten'))[1]).toMatch(/BAS \| Matchning \| N \(organisationen\)[^]*AID \+ BAS/);
+        expect(utdata.find(([n]) => n.startsWith('Excel alla flikar'))[1]).toMatch(/\[Jamforelsestatistik\][^]*Matchning mot jämförelsestatistiken/);
+    });
+    // Sammanfattningen räknar bara yrkesgrupper som når tröskeln: 14 vid 10 (de sex säkra, toppyrket, de fyra mellan och
+    // de tre med ett litet kön), 10 vid 25 (utan de fyra mellan). Fixturen har en statistikrad per AID×BAS.
+    it('statistikens matchning räknar bara grupper som når tröskeln', () => {
+        const n = k === 10 ? 14 : 10;
+        const t = utdata.find(([namn]) => namn === 'Löneläget: statistikens matchning')[1];
+        expect(t).toContain(`Statistiken: ${n} yrkesgrupper matchade på AID och BAS, 0 på endast AID, 0 utan statistik.`);
+        expect(t).toContain(`I urvalet: ${n} yrkesgrupper på AID + BAS, 0 på endast AID, 0 utan statistik.`);
     });
     // Skärmen maskerar inget (ADR-51): den vägen prövas positivt nedan och undantas i läckkontrollerna.
     const exporter = () => utdata.filter(([n]) => n !== 'skärm: alla flikar');

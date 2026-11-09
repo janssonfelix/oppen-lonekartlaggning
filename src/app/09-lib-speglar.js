@@ -5589,6 +5589,9 @@ const __mirrorJamforelse = (() => {
  * jämförelsestatistikens och ställningstagandets värden och skillnaderna. Grupper med färre än k personer
  * tas inte med. Tabellen, diagrammen och den samlade Excelexporten läser samma rader.
  *
+ * Statistikens matchning (`statistikFor`) är det enda uppslaget i verktyget: samma AID och samma BAS, annars en rad
+ * för samma AID som saknar BAS. En rad för ett annat BAS-intervall används aldrig.
+ *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
 
@@ -5602,6 +5605,85 @@ const _diffar = (org, ref) => ({ p10: _diff(org.p10, ref.p10), median: _diff(org
 function aidAvYrke(yrke) {
     const m = String(yrke ?? '').match(/^(\d+)/);
     return m ? m[1] : String(yrke ?? '');
+}
+
+/**
+ * Statistikens rad för en organisationsgrupp AID×BAS: en rad med samma AID och samma BAS ('aid-bas'), annars en
+ * rad med samma AID som saknar BAS ('aid'). En rad för ett annat BAS-intervall används aldrig. AID och BAS
+ * jämförs som text.
+ * @param {Array<{aid?:any, bas?:any}>|null|undefined} statistik
+ * @param {any} aid
+ * @param {any} bas
+ * @returns {{rad: any, matchning: 'aid-bas'|'aid'}|null}
+ */
+function statistikFor(statistik, aid, bas) {
+    const a = String(aid ?? ''), b = String(bas ?? '');
+    if (!a || !Array.isArray(statistik)) return null;
+    const sammaAid = x => x != null && String(x.aid ?? '') === a;
+    const exakt = b ? statistik.find(x => sammaAid(x) && String(x.bas ?? '') === b) : null;
+    if (exakt) return { rad: exakt, matchning: 'aid-bas' };
+    const utanBas = statistik.find(x => sammaAid(x) && !x.bas);
+    return utanBas ? { rad: utanBas, matchning: 'aid' } : null;
+}
+
+/** Matchningsnivån i ord, samma ord som ställningstagandets nivåer; "–" utan statistik. */
+const MATCHNING_ETIKETT = { 'aid-bas': 'AID + BAS', aid: 'Endast AID' };
+/** @param {string|null|undefined} matchning */
+function matchningEtikett(matchning) {
+    return (matchning && MATCHNING_ETIKETT[matchning]) || '–';
+}
+
+/** Antalet rader (yrkesgrupper) per matchningsnivå. @param {Array<{statistikMatchning?:string|null}>} rader */
+function matchningAntal(rader) {
+    const ut = { aidBas: 0, aid: 0, utan: 0 };
+    for (const r of rader || []) {
+        if (r.statistikMatchning === 'aid-bas') ut.aidBas++;
+        else if (r.statistikMatchning === 'aid') ut.aid++;
+        else ut.utan++;
+    }
+    return ut;
+}
+
+/** Sammanfattningen ovanför tabellen; tom sträng utan rader. @param {Array<{statistikMatchning?:string|null}>} rader */
+function matchningSammanfattning(rader) {
+    if (!rader || !rader.length) return '';
+    const { aidBas, aid, utan } = matchningAntal(rader);
+    return `Statistiken: ${aidBas} ${aidBas === 1 ? 'yrkesgrupp matchad' : 'yrkesgrupper matchade'} på AID och BAS, `
+        + `${aid} på endast AID, ${utan} utan statistik.`;
+}
+
+/**
+ * Statistikens median per organisationsgrupp, som Löneöversyns marknadspositionering läser den: nyckeln `aid|bas`,
+ * bara för grupper med en matchad rad med positiv median.
+ * @param {Array<any>} statistik
+ * @param {Array<{aid:any, bas:any}>} grupper
+ * @returns {Map<string, number>}
+ */
+function statistikMarknad(statistik, grupper) {
+    const ut = new Map();
+    for (const g of grupper || []) {
+        const m = statistikFor(statistik, g.aid, g.bas);
+        if (m && m.rad.median > 0) ut.set(String(g.aid) + '|' + String(g.bas), m.rad.median);
+    }
+    return ut;
+}
+
+/**
+ * Medianen av statistikens matchade medianer för grupperna AID×BAS (varje grupp en gång); null utan någon träff.
+ * @param {Array<any>} statistik
+ * @param {Array<{aid:any, bas:any}>} grupper
+ * @returns {number|null}
+ */
+function statistikensMedianFor(statistik, grupper) {
+    const sedda = new Set(), medianer = [];
+    for (const g of grupper || []) {
+        const nyckel = String(g.aid) + '|' + String(g.bas);
+        if (sedda.has(nyckel)) continue;
+        sedda.add(nyckel);
+        const m = statistikFor(statistik, g.aid, g.bas);
+        if (m && m.rad.median > 0) medianer.push(m.rad.median);
+    }
+    return medianer.length ? median(medianer) : null;
 }
 
 /**
@@ -5623,10 +5705,11 @@ function jamforelseRader(rader, { statistik = [], policyFor = () => null, k }) {
             const { yrke, lons } = perBas.get(bas);
             if (lons.length < k) { utelamnade.push(`${aid} (BAS ${bas})`); continue; }
             const org = _tre(quantile(lons, 0.1), median(lons), quantile(lons, 0.9));
-            const s = statistik.find(x => x.aid === aid && x.bas === bas) || statistik.find(x => x.aid === aid && !x.bas);
+            const traff = statistikFor(statistik, aid, bas), s = traff?.rad;
             const p = policyFor(aid, bas);
             const stat = _tre(s?.p10, s?.median, s?.p90), pol = _tre(p?.p10, p?.med, p?.p90);
             ut.push({ aid, yrke, bas, sektor: sektorsnamn(aid), n: lons.length, org, statistik: stat, stallningstagande: pol,
+                statistikMatchning: traff ? traff.matchning : null,
                 diff: { statistik: _diffar(org, stat), stallningstagande: _diffar(org, pol) } });
         }
     }
@@ -5640,10 +5723,16 @@ function avvikelseRangordning(rader, kalla) {
         .sort((a, b) => a.diff[kalla].median.pct - b.diff[kalla].median.pct);
 }
 
-    return { jamforelseRader, avvikelseRangordning };
+    return { jamforelseRader, avvikelseRangordning, statistikFor, matchningEtikett, matchningAntal, matchningSammanfattning, statistikMarknad, statistikensMedianFor };
 })();
 const _jfRader = __mirrorJamforelse.jamforelseRader;
 const _jfRangordning = __mirrorJamforelse.avvikelseRangordning;
+const _jfStatistikFor = __mirrorJamforelse.statistikFor;
+const _jfMatchningEtikett = __mirrorJamforelse.matchningEtikett;
+const _jfMatchningAntal = __mirrorJamforelse.matchningAntal;
+const _jfMatchningSammanfattning = __mirrorJamforelse.matchningSammanfattning;
+const _jfStatistikMarknad = __mirrorJamforelse.statistikMarknad;
+const _jfStatistikensMedianFor = __mirrorJamforelse.statistikensMedianFor;
 
 // ---- speglar src/lib/referenser.js ----
 const __mirrorReferenser = (() => {
@@ -5774,7 +5863,8 @@ const _utanforMitten = g => {
 function referensOverblick(rader, { harStatistik = true, harStallningstagande = true, statistikHarSpann = true } = {}) {
     const tom = { p10: null, median: null, p90: null };
     const grupper = (rader || []).map(r => {
-        const rad = { ...r, statistik: harStatistik ? r.statistik : tom, stallningstagande: harStallningstagande ? r.stallningstagande : tom };
+        const rad = { ...r, statistik: harStatistik ? r.statistik : tom, statistikMatchning: harStatistik ? r.statistikMatchning ?? null : null,
+            stallningstagande: harStallningstagande ? r.stallningstagande : tom };
         const spann = statistikHarSpann ? rad.statistik : { ...rad.statistik, p10: null, p90: null };
         const bedomd = { ...rad, statistik: spann };
         const g = { ...rad, lage: { stallningstagande: lageISpann(rad.org?.median, rad.stallningstagande), statistik: lageISpann(rad.org?.median, spann) },
@@ -5998,6 +6088,7 @@ const __mirrorPerBas = (() => {
     const median = __mirrorStat.median;
     const quantile = __mirrorStat.quantile;
     const sektorsnamn = __mirrorAid.sektorsnamn;
+    const statistikFor = __mirrorJamforelse.statistikFor;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -6017,6 +6108,7 @@ const __mirrorPerBas = (() => {
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
+
 
 
 // ---- Receptet (ADR-52): vad avsnittet ska innehålla. Standardvärdet är tabellerna som de står i arbetsgivarnas utkast. ----
@@ -6094,8 +6186,8 @@ function perBasTabeller(rader, opt = {}) {
     const granser = (opt.aldersgranser && opt.aldersgranser.length ? opt.aldersgranser : recept.aldersgranser).slice().sort((a, b) => a - b);
     const d = (rader || []).filter(r => r && r.bas && dimAv(r));
     const basar = [...new Set(d.map(dimAv))].sort((a, b) => a.localeCompare(b, 'sv'));
-    const statFor = (aid, bas) => statistik.find(s => String(s.aid) === String(aid) && String(s.bas || '') === String(bas))
-        || statistik.find(s => String(s.aid) === String(aid) && !s.bas) || null;
+    // Statistikens gemensamma uppslag (jamforelse.js): samma AID och BAS, annars samma AID utan BAS.
+    const statFor = (aid, bas) => statistikFor(statistik, aid, bas)?.rad || null;
 
     const intervall = [];
     const basUtelamnade = [];

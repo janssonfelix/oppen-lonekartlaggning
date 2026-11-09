@@ -22,8 +22,7 @@ function computePrioritization(reference) {
                 return pol && pol.med ? { median: pol.med, kalla: referensKortnamn() } : null;
             }
             // 'statistik'
-            const sr = state.statistik.find(s => s.aid === aid && s.bas === bas)
-                   || state.statistik.find(s => s.aid === aid && !s.bas);
+            const sr = _jfStatistikFor(state.statistik, aid, bas)?.rad;
             return sr && sr.median > 0 ? { median: sr.median, kalla: 'jämförelsestatistiken' } : null;
         },
         kTroskel: kTroskel(),
@@ -315,8 +314,7 @@ function renderPrioritering() {
             const pol = policyFor(g.aid, g.bas);
             if (!pol || !pol.med) noRefCount++;
         } else {
-            const sr = state.statistik.find(s => s.aid === g.aid && s.bas === g.bas)
-                  || state.statistik.find(s => s.aid === g.aid && !s.bas);
+            const sr = _jfStatistikFor(state.statistik, g.aid, g.bas)?.rad;
             if (!sr) noRefCount++;
         }
     });

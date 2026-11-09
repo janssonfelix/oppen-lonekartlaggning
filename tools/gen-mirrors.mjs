@@ -203,7 +203,9 @@ export const MODULES = [
     },
     {
         file: 'jamforelse.js', ns: '__mirrorJamforelse',
-        expose: { jamforelseRader: '_jfRader', avvikelseRangordning: '_jfRangordning' }
+        expose: { jamforelseRader: '_jfRader', avvikelseRangordning: '_jfRangordning', statistikFor: '_jfStatistikFor',
+                  matchningEtikett: '_jfMatchningEtikett', matchningAntal: '_jfMatchningAntal', matchningSammanfattning: '_jfMatchningSammanfattning',
+                  statistikMarknad: '_jfStatistikMarknad', statistikensMedianFor: '_jfStatistikensMedianFor' }
     },
     {
         // Löneläget och statistiken mot ställningstagandet (ADR-55); importerar lonepolitik.js

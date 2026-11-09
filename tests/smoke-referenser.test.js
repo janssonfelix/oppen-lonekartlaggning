@@ -15,7 +15,7 @@ describe('överblicken: löneläget och statistiken mot ställningstagandet', ()
         expect(host.textContent).toMatch(/löneläget (ovanför|nedanför|inom) ställningstagandet/i);
         expect(host.textContent).not.toMatch(/ställningstagandet ligger/);
         expect(d.querySelectorAll('#ref-tabell tbody tr').length).toBeGreaterThan(0);
-        expect(d.querySelectorAll('#ref-tabell thead th').length).toBe(13);
+        expect(d.querySelectorAll('#ref-tabell thead th').length).toBe(14);   // med kolumnen Matchning
         // En kolumn för mönstret och förslaget; läget i spannet förklarar talet i rubriken och verktygstipset
         const rubriker = [...d.querySelectorAll('#ref-tabell thead th')];
         expect(rubriker.map(th => th.textContent)).toContain('Läge och förslag');

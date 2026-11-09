@@ -1306,6 +1306,7 @@
                             <button id="btn-export-benchmark" type="button" class="btn btn-secondary btn-sm marg-v-auto" aria-label="Exportera samlad jämförelsetabell till Excel" title="Exportera alla percentiler (P10, median, P90 och bredd) för organisationen, jämförelsestatistiken och ställningstagandet i en samlad Excel-fil, för alla yrken oavsett filter.">Exportera samlad Excel</button>
                         </div>
                         <p id="benchmark-metric-info" class="benchmark-metric-info" aria-live="polite"></p>
+                        <p id="benchmark-matchning-info" class="benchmark-metric-info" aria-live="polite"></p>
                         <div id="jmf-diagram"></div>
 
                         <div class="table-container">
@@ -1314,6 +1315,7 @@
                                     <tr>
                                         <th scope="col" data-export-label="AID / Yrkesgrupp">Yrke</th>
                                         <th scope="col">BAS</th>
+                                        <th scope="col" data-kol="matchning" data-export-label="Matchning mot jämförelsestatistiken" title="Hur yrkesgruppen matchades mot jämförelsestatistiken. AID + BAS: en rad med samma AID och samma BAS. Endast AID: det finns ingen sådan rad, så en rad med samma AID som saknar BAS används. En rad för ett annat BAS-intervall används aldrig. – betyder att statistik saknas för gruppen.">Matchning</th>
                                         <th scope="col" data-export-label="Antal personer (organisationen)">N</th>
                                         <th scope="col" class="jmf-block" data-kol="p10org" data-export-label="P10 organisationen (kr/mån)">P10 org</th>
                                         <th scope="col" data-jmf="P10" data-jmf-typ="varde" data-kol="p10jmf" data-export-label="P10 jämförelse (kr/mån)">P10 statistik</th>

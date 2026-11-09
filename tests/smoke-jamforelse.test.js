@@ -22,7 +22,7 @@ describe('Jämförelsestatistik: tre block och filter', () => {
     it('rubrikerna har P10, median och P90 med Org, Jmf och Diff', () => {
         const w = oppna();
         const org = w.eval("orgNamn('org')");   // demot heter Exempelkommunen (ADR-36)
-        expect(rubriker(w)).toEqual(['Yrke', 'BAS', 'N', `P10 ${org}`, 'P10 statistik', 'P10 skillnad', `Median ${org}`, 'Median statistik', 'Median skillnad',
+        expect(rubriker(w)).toEqual(['Yrke', 'BAS', 'Matchning', 'N', `P10 ${org}`, 'P10 statistik', 'P10 skillnad', `Median ${org}`, 'Median statistik', 'Median skillnad',
             `P90 ${org}`, 'P90 statistik', 'P90 skillnad']);
         expect(w.document.querySelectorAll('.benchmark-metric-btn[data-metric]').length).toBe(0);
     });
@@ -31,8 +31,8 @@ describe('Jämförelsestatistik: tre block och filter', () => {
         const u = w.eval('jamforelseUnderlag()').rader[0];
         const tr = rad(w, u.aid, u.bas);
         const kr = v => new Intl.NumberFormat('sv-SE', { style: 'currency', currency: 'SEK', maximumFractionDigits: 0 }).format(Math.round(v));
-        expect(tr.children[6].textContent.trim()).toBe(kr(u.org.median));
-        expect(rad(w, u.aid, u.bas).children[7].textContent.trim()).toBe(kr(u.statistik.median));
+        expect(tr.children[7].textContent.trim()).toBe(kr(u.org.median));
+        expect(rad(w, u.aid, u.bas).children[8].textContent.trim()).toBe(kr(u.statistik.median));
         expect(w.document.getElementById('benchmark-metric-info').textContent).toMatch(/Jmf = /);
     });
     it('filtren avgränsar tabellen; okänt val faller tillbaka till Alla', () => {
@@ -466,5 +466,117 @@ describe('Jämförelsestatistik, Översikt och namn: detaljer', () => {
         w.loadStructureFile(new w.File([new Uint8Array([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1])], 'arbetsbok.xls'));
         await new Promise(r => setTimeout(r, 100));
         expect(w.__state._lastStructureFile.name).toBe('bra.csv');
+    });
+});
+
+// ---- Statistikens matchning (ett uppslag i src/lib/jamforelse.js) ----
+// Demot har åtta yrkesgrupper, en per AID. Statistiken här: 402010 på sitt eget BAS (AID + BAS), 207024 utan BAS
+// (Endast AID), 207011 bara för ett annat BAS-intervall (ingen match, aldrig BAS E:s median för BAS C).
+describe('Statistikens matchning: märkning per rad, sammanfattning och rättelser', () => {
+    const STATISTIK = [{ aid: '402010', bas: 'A', median: 34000, p10: 30000, p90: 39000 },
+        { aid: '207024', bas: '', median: 33000, p10: 29000, p90: 38000 },
+        { aid: '207011', bas: 'E', median: 99999, p10: 90000, p90: 120000 }];
+    const medMatchning = () => {
+        const w = createAppWindow(); w.__loadDemoData();
+        w.__state.statistik = STATISTIK.map(s => ({ ...s }));
+        w.__state.statistikHasP10 = true; w.__state.statistikHasP90 = true;
+        w.__renderTabContent('benchmark');
+        return w;
+    };
+    const cellPa = (w, tabell, rubrik, radTest) => {
+        const th = [...w.document.querySelectorAll(`#${tabell} thead th`)];
+        const i = th.findIndex(t => t.textContent.trim() === rubrik);
+        const tr = [...w.document.querySelectorAll(`#${tabell} tbody tr`)].find(radTest);
+        return tr?.children[i]?.textContent.trim();
+    };
+    it('tabellen mot statistiken har kolumnen Matchning efter BAS, med regeln i rubriken', () => {
+        const w = medMatchning();
+        const th = [...w.document.querySelectorAll('#benchmark-table thead th')];
+        expect(th.map(t => t.textContent.trim()).slice(0, 4)).toEqual(['Yrke', 'BAS', 'Matchning', 'N']);
+        expect(th[2].getAttribute('data-export-label')).toBe('Matchning mot jämförelsestatistiken');
+        expect(th[2].title).toMatch(/samma AID och samma BAS.*samma AID som saknar BAS.*annat BAS-intervall används aldrig/);
+        const rad = (aid, bas) => w.document.querySelector(`#benchmark-table tbody tr[data-rad="${aid}|${bas}"]`).children[2];
+        expect(rad('402010', 'A').textContent).toBe('AID + BAS');
+        expect(rad('207024', 'B').textContent).toBe('Endast AID');
+        expect(rad('207011', 'C').textContent).toBe('–');
+        // Sorterbar: nivån som sorteringsvärde (AID + BAS före Endast AID före ingen).
+        expect([rad('402010', 'A'), rad('207024', 'B'), rad('207011', 'C')].map(td => td.getAttribute('data-sort-value'))).toEqual(['1', '2', '3']);
+        // Ingen grupp fick statistik från ett annat BAS-intervall.
+        expect(w.eval('jamforelseUnderlag()').rader.find(r => r.aid === '207011').statistik.median).toBeNull();
+    });
+    it('sammanfattningen ovanför tabellen räknar samma urval som tabellen', () => {
+        const w = medMatchning();
+        const info = () => w.document.getElementById('benchmark-matchning-info').textContent;
+        expect(info()).toBe('Statistiken: 1 yrkesgrupp matchad på AID och BAS, 1 på endast AID, 6 utan statistik.');
+        w.eval("jamforelseSattVal({ bas: 'C' }); generateBenchmark();");
+        expect(info()).toBe('Statistiken: 0 yrkesgrupper matchade på AID och BAS, 0 på endast AID, 4 utan statistik.');
+        w.eval("jamforelseSattVal({ bas: 'B' }); generateBenchmark();");
+        expect(info()).toBe('Statistiken: 0 yrkesgrupper matchade på AID och BAS, 1 på endast AID, 0 utan statistik.');
+    });
+    it('Beräkning & urval anger antalet per matchningsnivå', () => {
+        const w = medMatchning();
+        const panel = w.document.querySelector('details.audit-panel[data-audit-id="benchmark"] .audit-content').textContent;
+        expect(panel).toMatch(/I urvalet: 1 yrkesgrupp på AID \+ BAS, 1 på endast AID, 6 utan statistik/);
+    });
+    it('utan statistik: ingen sammanfattning', () => {
+        const w = createAppWindow(); w.__loadDemoData();
+        w.__renderTabContent('benchmark');
+        expect(w.document.getElementById('benchmark-matchning-info').textContent).toBe('');
+    });
+    it('detaljlistan (ref-tabell) har samma kolumn med samma ord', () => {
+        const w = medMatchning();
+        const yrke = aid => tr => tr.children[0].textContent.startsWith(aid);
+        expect(cellPa(w, 'ref-tabell', 'Matchning', yrke('402010'))).toBe('AID + BAS');
+        expect(cellPa(w, 'ref-tabell', 'Matchning', yrke('207024'))).toBe('Endast AID');
+        expect(cellPa(w, 'ref-tabell', 'Matchning', yrke('207011'))).toBe('–');
+        const th = [...w.document.querySelectorAll('#ref-tabell thead th')].map(t => t.textContent.trim());
+        expect(th.indexOf('Matchning')).toBe(1);
+    });
+    it('detaljlistan utan statistik har ingen kolumn Matchning', () => {
+        const w = createAppWindow(); w.__loadDemoData();
+        w.__renderTabContent('benchmark');
+        expect([...w.document.querySelectorAll('#ref-tabell thead th')].map(t => t.textContent.trim())).not.toContain('Matchning');
+    });
+    it('rapportens tabell och den samlade jämförelseexporten bär samma märkning', async () => {
+        const w = medMatchning();
+        const avsnitt = w.eval('rapportModell()').avsnitt.find(a => a.id === 'referenser');
+        const tabell = avsnitt.delar.find(d => d.typ === 'tabell' && d.kolumner.some(k => k.rubrik === 'Yrkesgrupp'));
+        const i = tabell.kolumner.findIndex(k => k.rubrik === 'Matchning');
+        expect(i).toBe(1);
+        const per = Object.fromEntries(tabell.rader.map(r => [String(r[0]).split(' ')[0], r[i]]));
+        expect(per).toMatchObject({ 402010: 'AID + BAS', 207024: 'Endast AID', 207011: '–' });
+        const { laddaXlsx, fangaBocker } = await import('./helpers/ktroskel-rigg.js');
+        await laddaXlsx(w);
+        const bok = Object.values(fangaBocker(w, () => w.eval('exportBenchmarkExcel()')))[0];
+        // fangaBocker slår ihop siffror över radbrytningar (tusentalsavgränsaren): sök i hela texten.
+        expect(bok).toMatch(/AID \/ Yrkesgrupp \| BAS \| Matchning \| N \(organisationen\) \| /);
+        expect(bok).toMatch(/402010 Förskollärare \| A \| AID \+ BAS \| 33 \| /);
+        expect(bok).toMatch(/207024 Vårdbiträde \| B \| Endast AID \| 46 \| /);
+        expect(bok).toMatch(/207011 Undersköterska \| C \| – \| 20 \| /);
+    });
+    it('Excel (alla flikar) och utskriften följer tabellen', () => {
+        const w = medMatchning();
+        const klon = w.eval("_cloneAndCleanTableForExport('benchmark-table')");
+        expect([...klon.querySelectorAll('thead th')].map(t => t.textContent.trim())[2]).toBe('Matchning mot jämförelsestatistiken');
+        expect(klon.querySelector('tbody tr[data-rad="207024|B"]').children[2].textContent).toBe('Endast AID');
+    });
+    it('rättelse, Löneöversyn: marknadspositioneringen tar aldrig ett annat BAS-intervalls median', () => {
+        const w = medMatchning();
+        // Medianerna ligger över varje grupps median, så att varje matchad grupp får ett lyft.
+        w.__state.statistik = [{ aid: '207024', bas: '', median: 99999 }, { aid: '207011', bas: 'E', median: 99999 }];
+        w.__renderTabContent('loneoversyn');
+        w.__state.forecast.targets = [];
+        w.document.getElementById('forecast-market-factor').value = '100';
+        w.eval('_forecastMarket()');
+        const mal = w.__state.forecast.targets.map(t => `${t.aid}|${t.bas}`);
+        expect(mal).not.toContain('207011|C');   // bara en rad för BAS E: ingen marknadsnivå
+        expect(mal).toEqual(['207024|B']);       // en rad utan BAS: används
+    });
+    it('rättelse, Ålder & karriär i hela urvalet: ett uppslag per AID×BAS och medianen av de matchade', () => {
+        const w = medMatchning();
+        w.__state.statistik = [{ aid: '402010', bas: 'Z', median: 99999 }, { aid: '207024', bas: '', median: 40000 }, { aid: '502010', bas: 'C', median: 50000 }];
+        w.eval("populateSelects(); renderKon('__ALLA__')");
+        const linje = w.document.getElementById('chart-kon-scatter')._figur.lager.find(l => /^Median i /.test(l.serie));
+        expect(linje.data.map(p => p.y)).toEqual([45000, 45000]);   // inte 50000 (med BAS Z:s 99999)
     });
 });

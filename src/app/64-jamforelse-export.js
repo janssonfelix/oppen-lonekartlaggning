@@ -38,13 +38,13 @@ function _exportBenchmarkExcelExport() {
 
     // Header-rad: 30+ kolumner. Multi-line-grupperade headers via två rader.
     const headerRow1 = [
-        '', '', '',
+        '', '', '', '',
         orgNamn(), '', '', '',
         `Jämförelse: ${profileLabel}`, '', '', '', '', '', '', '',
         referensNamn(), '', '', '', '', '', '', ''
     ];
     const headerRow2 = [
-        'AID / Yrkesgrupp', 'BAS', 'N (organisationen)',
+        'AID / Yrkesgrupp', 'BAS', 'Matchning', 'N (organisationen)',
         'P10', 'Median', 'P90', 'Bredd P90/P10',
         'P10', 'Diff P10 (kr)', 'Diff P10 (%)',
         'Median', 'Diff Median (kr)', 'Diff Median (%)',
@@ -59,7 +59,7 @@ function _exportBenchmarkExcelExport() {
     const dataRows = rader.map(r => {
         const s = r.statistik, p = r.stallningstagande, o = r.org;
         return [
-            r.yrke, r.bas, r.n,
+            r.yrke, r.bas, _jfMatchningEtikett(r.statistikMatchning), r.n,
             rOrNull(o.p10), rOrNull(o.median), rOrNull(o.p90), breddOrNull(o.p10, o.p90),
             rOrNull(s.p10),    diffOrNull(o.p10, s.p10),       pctOrNull(o.p10, s.p10),
             rOrNull(s.median), diffOrNull(o.median, s.median), pctOrNull(o.median, s.median),
@@ -78,13 +78,13 @@ function _exportBenchmarkExcelExport() {
 
     // Slå ihop celler för grupp-headers (rad 1)
     if (!sheet['!merges']) sheet['!merges'] = [];
-    sheet['!merges'].push({ s: { r: 0, c: 3 },  e: { r: 0, c: 6 } });   // Organisationen (4 kolumner)
-    sheet['!merges'].push({ s: { r: 0, c: 7 },  e: { r: 0, c: 15 } });  // Jämförelse (9 kolumner)
-    sheet['!merges'].push({ s: { r: 0, c: 16 }, e: { r: 0, c: 24 } });  // Ställningstagande (9 kolumner)
+    sheet['!merges'].push({ s: { r: 0, c: 4 },  e: { r: 0, c: 7 } });   // Organisationen (4 kolumner)
+    sheet['!merges'].push({ s: { r: 0, c: 8 },  e: { r: 0, c: 16 } });  // Jämförelse (9 kolumner)
+    sheet['!merges'].push({ s: { r: 0, c: 17 }, e: { r: 0, c: 25 } });  // Ställningstagande (9 kolumner)
 
     // Kolumnbredd
     sheet['!cols'] = [
-        { wch: 42 }, { wch: 6 }, { wch: 6 },
+        { wch: 42 }, { wch: 6 }, { wch: 12 }, { wch: 6 },
         { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 },
         { wch: 10 }, { wch: 12 }, { wch: 12 },
         { wch: 10 }, { wch: 12 }, { wch: 12 },
@@ -115,6 +115,7 @@ function _exportBenchmarkExcelExport() {
         ['Jämförelsestatistik laddat', hasStat ? 'Ja' : 'Nej'],
         ['  - innehåller P10', state.statistikHasP10 ? 'Ja' : 'Nej (saknas i uppladdad fil)'],
         ['  - innehåller P90', state.statistikHasP90 ? 'Ja' : 'Nej (saknas i uppladdad fil)'],
+        ['Matchning', 'AID + BAS: samma AID och samma BAS. Endast AID: en rad med samma AID som saknar BAS. En rad för ett annat BAS-intervall används aldrig. – = statistik saknas.'],
         ['Referens', referensNamn() + referensKalla()],
         ['', ''],
         ['Diff-kolumner: positiva värden (grön) = organisationen ligger över referens.', ''],

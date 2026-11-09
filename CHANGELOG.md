@@ -8,6 +8,18 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ### Gränssnitt
 
+- **Statistikens matchning syns per yrkesgrupp.** Tabellen *Mot jämförelsestatistiken* i Löneläget har kolumnen
+  *Matchning* efter BAS: *AID + BAS* när statistiken har en rad med samma AID och samma BAS, *Endast AID* när en rad
+  med samma AID utan BAS används, och – när statistik saknas. Rubrikens hjälptext förklarar regeln, och kolumnen
+  går att sortera. Samma kolumn finns i detaljlistan (när statistik finns), i Excel (alla flikar), bladet
+  *Referenser*, den samlade jämförelseexporten, rapportens tabell och utskriften. Ovanför tabellen står hur många
+  yrkesgrupper i urvalet som matchades på AID och BAS, på endast AID och utan statistik; antalen står också i
+  *Beräkning & urval*. Alla uppslag mot statistiken går nu genom ett gemensamt uppslag (`statistikFor` i
+  `src/lib/jamforelse.js`). Rättelser: Löneöversyns *marknadspositionering* kunde ge en grupp medianen för ett annat
+  BAS-intervall när AID saknade rad för gruppens BAS, och *Ålder & karriär* tog i hela urvalet första raden per AID
+  oavsett BAS. Nu används aldrig en rad för ett annat BAS-intervall; Ålder & karriär slår upp varje AID×BAS-grupp
+  och tar medianen av de matchade medianerna.
+
 - **Sakliga skäl som strukturerad post.** Varje rad i Handlingsplan har knappen *Sakliga skäl*. Dialogen tar emot
   högst 8 skäl per grupp med kategori (Marknad, Utbildning, Erfarenhet, Prestation och resultat, Övergång, Annat
   sakligt skäl), belopp i kronor per månad och en kort kommentar. Den räknar ihop förklarat och återstående belopp och

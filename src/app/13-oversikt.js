@@ -76,7 +76,7 @@ function updateCompliance() {
             const key = `${aid}|${r.bas}`;
             if (seen.has(key)) return;
             seen.add(key);
-            const statRow = state.statistik.find(s => s.aid === aid && s.bas === r.bas) || state.statistik.find(s => s.aid === aid && !s.bas);
+            const statRow = _jfStatistikFor(state.statistik, aid, r.bas)?.rad;
             if (!statRow) return;
             bmTotal++;
             const orgMed = Stat.median(d.filter(x => { const mm = x.yrke.match(/^(\d+)/); return (mm ? mm[1] : x.yrke) === aid && x.bas === r.bas; }).map(x => x.lon));

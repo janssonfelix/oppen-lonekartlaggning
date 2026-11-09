@@ -7960,6 +7960,9 @@ const __mirrorJamforelse = (() => {
  * jämförelsestatistikens och ställningstagandets värden och skillnaderna. Grupper med färre än k personer
  * tas inte med. Tabellen, diagrammen och den samlade Excelexporten läser samma rader.
  *
+ * Statistikens matchning (`statistikFor`) är det enda uppslaget i verktyget: samma AID och samma BAS, annars en rad
+ * för samma AID som saknar BAS. En rad för ett annat BAS-intervall används aldrig.
+ *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
 
@@ -7973,6 +7976,85 @@ const _diffar = (org, ref) => ({ p10: _diff(org.p10, ref.p10), median: _diff(org
 function aidAvYrke(yrke) {
     const m = String(yrke ?? '').match(/^(\d+)/);
     return m ? m[1] : String(yrke ?? '');
+}
+
+/**
+ * Statistikens rad för en organisationsgrupp AID×BAS: en rad med samma AID och samma BAS ('aid-bas'), annars en
+ * rad med samma AID som saknar BAS ('aid'). En rad för ett annat BAS-intervall används aldrig. AID och BAS
+ * jämförs som text.
+ * @param {Array<{aid?:any, bas?:any}>|null|undefined} statistik
+ * @param {any} aid
+ * @param {any} bas
+ * @returns {{rad: any, matchning: 'aid-bas'|'aid'}|null}
+ */
+function statistikFor(statistik, aid, bas) {
+    const a = String(aid ?? ''), b = String(bas ?? '');
+    if (!a || !Array.isArray(statistik)) return null;
+    const sammaAid = x => x != null && String(x.aid ?? '') === a;
+    const exakt = b ? statistik.find(x => sammaAid(x) && String(x.bas ?? '') === b) : null;
+    if (exakt) return { rad: exakt, matchning: 'aid-bas' };
+    const utanBas = statistik.find(x => sammaAid(x) && !x.bas);
+    return utanBas ? { rad: utanBas, matchning: 'aid' } : null;
+}
+
+/** Matchningsnivån i ord, samma ord som ställningstagandets nivåer; "–" utan statistik. */
+const MATCHNING_ETIKETT = { 'aid-bas': 'AID + BAS', aid: 'Endast AID' };
+/** @param {string|null|undefined} matchning */
+function matchningEtikett(matchning) {
+    return (matchning && MATCHNING_ETIKETT[matchning]) || '–';
+}
+
+/** Antalet rader (yrkesgrupper) per matchningsnivå. @param {Array<{statistikMatchning?:string|null}>} rader */
+function matchningAntal(rader) {
+    const ut = { aidBas: 0, aid: 0, utan: 0 };
+    for (const r of rader || []) {
+        if (r.statistikMatchning === 'aid-bas') ut.aidBas++;
+        else if (r.statistikMatchning === 'aid') ut.aid++;
+        else ut.utan++;
+    }
+    return ut;
+}
+
+/** Sammanfattningen ovanför tabellen; tom sträng utan rader. @param {Array<{statistikMatchning?:string|null}>} rader */
+function matchningSammanfattning(rader) {
+    if (!rader || !rader.length) return '';
+    const { aidBas, aid, utan } = matchningAntal(rader);
+    return `Statistiken: ${aidBas} ${aidBas === 1 ? 'yrkesgrupp matchad' : 'yrkesgrupper matchade'} på AID och BAS, `
+        + `${aid} på endast AID, ${utan} utan statistik.`;
+}
+
+/**
+ * Statistikens median per organisationsgrupp, som Löneöversyns marknadspositionering läser den: nyckeln `aid|bas`,
+ * bara för grupper med en matchad rad med positiv median.
+ * @param {Array<any>} statistik
+ * @param {Array<{aid:any, bas:any}>} grupper
+ * @returns {Map<string, number>}
+ */
+function statistikMarknad(statistik, grupper) {
+    const ut = new Map();
+    for (const g of grupper || []) {
+        const m = statistikFor(statistik, g.aid, g.bas);
+        if (m && m.rad.median > 0) ut.set(String(g.aid) + '|' + String(g.bas), m.rad.median);
+    }
+    return ut;
+}
+
+/**
+ * Medianen av statistikens matchade medianer för grupperna AID×BAS (varje grupp en gång); null utan någon träff.
+ * @param {Array<any>} statistik
+ * @param {Array<{aid:any, bas:any}>} grupper
+ * @returns {number|null}
+ */
+function statistikensMedianFor(statistik, grupper) {
+    const sedda = new Set(), medianer = [];
+    for (const g of grupper || []) {
+        const nyckel = String(g.aid) + '|' + String(g.bas);
+        if (sedda.has(nyckel)) continue;
+        sedda.add(nyckel);
+        const m = statistikFor(statistik, g.aid, g.bas);
+        if (m && m.rad.median > 0) medianer.push(m.rad.median);
+    }
+    return medianer.length ? median(medianer) : null;
 }
 
 /**
@@ -7994,10 +8076,11 @@ function jamforelseRader(rader, { statistik = [], policyFor = () => null, k }) {
             const { yrke, lons } = perBas.get(bas);
             if (lons.length < k) { utelamnade.push(`${aid} (BAS ${bas})`); continue; }
             const org = _tre(quantile(lons, 0.1), median(lons), quantile(lons, 0.9));
-            const s = statistik.find(x => x.aid === aid && x.bas === bas) || statistik.find(x => x.aid === aid && !x.bas);
+            const traff = statistikFor(statistik, aid, bas), s = traff?.rad;
             const p = policyFor(aid, bas);
             const stat = _tre(s?.p10, s?.median, s?.p90), pol = _tre(p?.p10, p?.med, p?.p90);
             ut.push({ aid, yrke, bas, sektor: sektorsnamn(aid), n: lons.length, org, statistik: stat, stallningstagande: pol,
+                statistikMatchning: traff ? traff.matchning : null,
                 diff: { statistik: _diffar(org, stat), stallningstagande: _diffar(org, pol) } });
         }
     }
@@ -8011,10 +8094,16 @@ function avvikelseRangordning(rader, kalla) {
         .sort((a, b) => a.diff[kalla].median.pct - b.diff[kalla].median.pct);
 }
 
-    return { jamforelseRader, avvikelseRangordning };
+    return { jamforelseRader, avvikelseRangordning, statistikFor, matchningEtikett, matchningAntal, matchningSammanfattning, statistikMarknad, statistikensMedianFor };
 })();
 const _jfRader = __mirrorJamforelse.jamforelseRader;
 const _jfRangordning = __mirrorJamforelse.avvikelseRangordning;
+const _jfStatistikFor = __mirrorJamforelse.statistikFor;
+const _jfMatchningEtikett = __mirrorJamforelse.matchningEtikett;
+const _jfMatchningAntal = __mirrorJamforelse.matchningAntal;
+const _jfMatchningSammanfattning = __mirrorJamforelse.matchningSammanfattning;
+const _jfStatistikMarknad = __mirrorJamforelse.statistikMarknad;
+const _jfStatistikensMedianFor = __mirrorJamforelse.statistikensMedianFor;
 
 // ---- speglar src/lib/referenser.js ----
 const __mirrorReferenser = (() => {
@@ -8145,7 +8234,8 @@ const _utanforMitten = g => {
 function referensOverblick(rader, { harStatistik = true, harStallningstagande = true, statistikHarSpann = true } = {}) {
     const tom = { p10: null, median: null, p90: null };
     const grupper = (rader || []).map(r => {
-        const rad = { ...r, statistik: harStatistik ? r.statistik : tom, stallningstagande: harStallningstagande ? r.stallningstagande : tom };
+        const rad = { ...r, statistik: harStatistik ? r.statistik : tom, statistikMatchning: harStatistik ? r.statistikMatchning ?? null : null,
+            stallningstagande: harStallningstagande ? r.stallningstagande : tom };
         const spann = statistikHarSpann ? rad.statistik : { ...rad.statistik, p10: null, p90: null };
         const bedomd = { ...rad, statistik: spann };
         const g = { ...rad, lage: { stallningstagande: lageISpann(rad.org?.median, rad.stallningstagande), statistik: lageISpann(rad.org?.median, spann) },
@@ -8369,6 +8459,7 @@ const __mirrorPerBas = (() => {
     const median = __mirrorStat.median;
     const quantile = __mirrorStat.quantile;
     const sektorsnamn = __mirrorAid.sektorsnamn;
+    const statistikFor = __mirrorJamforelse.statistikFor;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -8388,6 +8479,7 @@ const __mirrorPerBas = (() => {
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
+
 
 
 // ---- Receptet (ADR-52): vad avsnittet ska innehålla. Standardvärdet är tabellerna som de står i arbetsgivarnas utkast. ----
@@ -8465,8 +8557,8 @@ function perBasTabeller(rader, opt = {}) {
     const granser = (opt.aldersgranser && opt.aldersgranser.length ? opt.aldersgranser : recept.aldersgranser).slice().sort((a, b) => a - b);
     const d = (rader || []).filter(r => r && r.bas && dimAv(r));
     const basar = [...new Set(d.map(dimAv))].sort((a, b) => a.localeCompare(b, 'sv'));
-    const statFor = (aid, bas) => statistik.find(s => String(s.aid) === String(aid) && String(s.bas || '') === String(bas))
-        || statistik.find(s => String(s.aid) === String(aid) && !s.bas) || null;
+    // Statistikens gemensamma uppslag (jamforelse.js): samma AID och BAS, annars samma AID utan BAS.
+    const statFor = (aid, bas) => statistikFor(statistik, aid, bas)?.rad || null;
 
     const intervall = [];
     const basUtelamnade = [];
@@ -14103,7 +14195,7 @@ function updateCompliance() {
             const key = `${aid}|${r.bas}`;
             if (seen.has(key)) return;
             seen.add(key);
-            const statRow = state.statistik.find(s => s.aid === aid && s.bas === r.bas) || state.statistik.find(s => s.aid === aid && !s.bas);
+            const statRow = _jfStatistikFor(state.statistik, aid, r.bas)?.rad;
             if (!statRow) return;
             bmTotal++;
             const orgMed = Stat.median(d.filter(x => { const mm = x.yrke.match(/^(\d+)/); return (mm ? mm[1] : x.yrke) === aid && x.bas === r.bas; }).map(x => x.lon));
@@ -22243,14 +22335,10 @@ function _forecastMarket() {
     if (!d.length) return;
     _forecastReadControls();
     const f = (parseFloat(/** @type {HTMLInputElement} */ (document.getElementById('forecast-market-factor'))?.value) || 95) / 100;
-    const market = new Map();
-    (state.statistik || []).forEach(s => {
-        if (!(s.median > 0)) return;
-        if (s.aid != null && s.bas != null) market.set(String(s.aid) + '|' + String(s.bas), s.median);
-        if (s.aid != null && !market.has(String(s.aid))) market.set(String(s.aid), s.median);
-    });
-    if (!market.size) { alert('Jämförelsestatistiken är inte inläst. Läs in den under Filer och kvalitet.'); return; }
+    if (!(state.statistik || []).some(s => s.median > 0)) { alert('Jämförelsestatistiken är inte inläst. Läs in den under Filer och kvalitet.'); return; }
     const groups = _fcSummarizeGroups(d);
+    // Statistikens gemensamma uppslag per grupp: samma AID och BAS, annars samma AID utan BAS, aldrig ett annat BAS.
+    const market = _jfStatistikMarknad(state.statistik, groups);
     const t = _fcMarketTargets(groups, market, f, state.forecast.minGroupN || 0);
     if (!t.length) { alert('Ingen grupp med minst ' + (state.forecast.minGroupN || 0) + ' personer ligger under ' + svTal(f * 100, 0) + ' procent av ' + jmfNamnGenitiv() + ' median.'); return; }
     let added = 0;
@@ -23196,7 +23284,7 @@ function generateRapport() {
             if (state.statistik.length > 0) {
                 const aidM = kategori.match(/^(\d+)/);
                 const aidCode = aidM ? aidM[1] : kategori;
-                const sr = state.statistik.find(s => s.aid === aidCode && s.bas === b) || state.statistik.find(s => s.aid === aidCode && !s.bas);
+                const sr = _jfStatistikFor(state.statistik, aidCode, b)?.rad;
                 if (sr && sr.median > 0) {
                     statMed = fmt.format(sr.median);
                     statRefMedian = sr.median;
@@ -23399,13 +23487,10 @@ function renderKon(bas) {
     const ciMa = maOk ? linearRegressionCI(dataMa.map(d => [d.alder, d.lon]), minAlder, maxAlder, 25) : null;
     /** @type {number|null} */ let statMedian = null;
     if (state.statistik.length > 0) {
-        const localAIDs = [...new Set(df.map(d => { const m = d.yrke.match(/^(\d+)/); return m?m[1]:d.yrke; }))];
-        const subStats = [];
-        localAIDs.forEach(aid => {
-            const sr = isAll ? state.statistik.find(s=>s.aid===aid) : (state.statistik.find(s=>s.aid===aid&&s.bas===bas)||state.statistik.find(s=>s.aid===aid&&!s.bas));
-            if (sr && sr.median > 0) subStats.push(sr.median);
-        });
-        if (subStats.length) statMedian = Stat.median(subStats);
+        // En uppslagning per AID×BAS-grupp i urvalet (samma regel som överallt: aldrig ett annat BAS), och medianen
+        // av de matchade medianerna. I ett valt BAS är det en grupp per AID.
+        const m = d => d.yrke.match(/^(\d+)/);
+        statMedian = _jfStatistikensMedianFor(state.statistik, df.map(d => ({ aid: m(d) ? m(d)[1] : d.yrke, bas: d.bas })));
     }
     const scope2 = isAll ? 'hela urvalet' : `BAS-intervall ${bas}`;
     // Noter under diagrammen om det som utelämnats, och samma sak i diagrammens beskrivningar.
@@ -24660,11 +24745,12 @@ function generateBenchmark() {
     if (!tbody) return;
     const d = getData();
     if (!state.statistik.length || !d.length) {
-        tbody.innerHTML = `<tr><td colspan="12" class="pad-0"><div class="flik-empty-state">
+        tbody.innerHTML = `<tr><td colspan="13" class="pad-0"><div class="flik-empty-state">
             <div class="empty-icon">${ikon('tomLada', 32)}</div><h2>Jämförelsestatistik saknas</h2>
             <p>Läs in jämförelsestatistik under Filer och kvalitet, så jämförs organisationens löner mot den här.</p>
             <button class="empty-action" data-goto-tab="filer">Gå till Filer och kvalitet</button></div></td></tr>`;
         if (infoEl) infoEl.textContent = '';
+        const matchEl = document.getElementById('benchmark-matchning-info'); if (matchEl) matchEl.textContent = '';
         rensaFigur('chart-jamforelse-spann'); rensaFigur('chart-jamforelse-avvikelse');
         const diag = document.getElementById('jmf-diagram'); if (diag) diag.innerHTML = '';
         return;
@@ -24684,6 +24770,8 @@ function generateBenchmark() {
         th.setAttribute('data-export-label', text);
         /** @type {HTMLElement} */ (th).title = text;
     });
+    // Matchningens kolumn namnger också källan i exporterna; rubriktexten (title) förklarar regeln.
+    document.querySelectorAll('#benchmark-thead th[data-kol="matchning"]').forEach(th => th.setAttribute('data-export-label', `Matchning mot ${kallaNamn}`));
     // Organisationens kolumner namnger organisationen när den har ett namn (ADR-36).
     document.querySelectorAll('#benchmark-thead th.jmf-block').forEach(th => {
         const p = /** @type {HTMLElement} */ (th).dataset.pctl || (/** @type {HTMLElement} */ (th).dataset.pctl = th.textContent.trim().split(' ')[0]);
@@ -24696,6 +24784,9 @@ function generateBenchmark() {
         infoEl.textContent = `Jmf = ${_jmfKallaNamn(kalla)}.` + (saknas.length ? ` ${saknas.join(' och ')} saknas i jämförelsestatistiken.` : '');
         infoEl.classList.toggle('warn', saknas.length > 0);
     }
+    // Statistikens matchning i samma urval som tabellen (BAS- och sektorsfiltren); grupper under k finns inte i raderna.
+    const matchEl = document.getElementById('benchmark-matchning-info');
+    if (matchEl) matchEl.textContent = _jfMatchningSammanfattning(rader);
 
     const fmt = new Intl.NumberFormat('sv-SE', { style: 'currency', currency: 'SEK', maximumFractionDigits: 0 });
     const kr = v => (v == null ? '–' : fmt.format(Math.round(v)));
@@ -24705,13 +24796,16 @@ function generateBenchmark() {
     const block = (r, p) => `<td class="num jmf-block" data-sort-value="${r.org[p] ?? ''}">${kr(r.org[p])}</td>`
         + `<td class="num muted" data-sort-value="${r[kalla][p] ?? ''}">${kr(r[kalla][p])}</td>${diffCell(r.diff[kalla][p])}`;
 
+    // Matchningen sorteras på nivån: AID + BAS, Endast AID, utan statistik.
+    const matchSort = { 'aid-bas': 1, aid: 2 };
     let html = '', curBas = null;
     for (const r of rader) {
-        if (r.bas !== curBas) { curBas = r.bas; html += `<tr class="group-header"><td colspan="12">BAS ${esc(r.bas)}</td></tr>`; }
-        html += `<tr data-rad="${esc(r.aid)}|${esc(r.bas)}"><td>${esc(r.yrke)}</td><td>${esc(r.bas)}</td><td class="num" data-sort-value="${r.n}">${r.n}</td>`
+        if (r.bas !== curBas) { curBas = r.bas; html += `<tr class="group-header"><td colspan="13">BAS ${esc(r.bas)}</td></tr>`; }
+        html += `<tr data-rad="${esc(r.aid)}|${esc(r.bas)}"><td>${esc(r.yrke)}</td><td>${esc(r.bas)}</td>`
+            + `<td data-sort-value="${matchSort[r.statistikMatchning] || 3}">${esc(_jfMatchningEtikett(r.statistikMatchning))}</td><td class="num" data-sort-value="${r.n}">${r.n}</td>`
             + `${block(r, 'p10')}${block(r, 'median')}${block(r, 'p90')}</tr>`;
     }
-    tbody.innerHTML = html || '<tr><td colspan="12" class="farg-dampad pad-24 ta-mitt">Inga yrken i urvalet.</td></tr>';
+    tbody.innerHTML = html || '<tr><td colspan="13" class="farg-dampad pad-24 ta-mitt">Inga yrken i urvalet.</td></tr>';
     if (typeof flerKolumner === 'function') flerKolumner('benchmark-table', JMF_DOLDA_KOLUMNER, 'jamforelse');
     try { ritaJamforelseDiagram(rader, kalla); } catch (e) { rapporteraFel('Löneläget: diagrammen', e); }
 
@@ -24722,6 +24816,8 @@ function generateBenchmark() {
         return !m || ((!_jmfVal.bas || m[2] === _jmfVal.bas) && (!_jmfVal.sektor || _aidSektorsnamn(m[1]) === _jmfVal.sektor));
     };
     const utelamnadeIUrval = utelamnade.filter(iUrval);
+    const antal = _jfMatchningAntal(rader);
+    const grupper = n => `${n} ${n === 1 ? 'yrkesgrupp' : 'yrkesgrupper'}`;
     const urval = jamforelseUrvalText();
     setAudit('benchmark', {
         title: 'Jämförelsestatistik',
@@ -24736,7 +24832,8 @@ function generateBenchmark() {
             ['AID-kod (matchningsnyckel)', 'Inledande sifferprefix av yrkesnamn (t.ex. "402010 Förskollärare" ger 402010)'],
             ['Percentiler', '<code>P10 = kvantil 0,1</code>, <code>median</code>, <code>P90 = kvantil 0,9</code> av organisationens löner i yrke och BAS'],
             ['Diff (%)', '<code>(organisationens värde / jämförelsens värde − 1) × 100</code>, per percentil'],
-            ['Matchning', 'Jämförelsestatistiken: först AID + BAS, annars AID utan BAS. Ställningstagandet: AID + BAS, annars AID, annars BAS']
+            ['Matchning', 'Jämförelsestatistiken: först AID + BAS, annars AID utan BAS; en rad för ett annat BAS-intervall används aldrig. Ställningstagandet: AID + BAS, annars AID, annars BAS. '
+                + `I urvalet: ${grupper(antal.aidBas)} på AID + BAS, ${antal.aid} på endast AID, ${antal.utan} utan statistik.`]
         ],
         notes: [
             'Negativ skillnad (röd) = organisationen ligger under jämförelsen',
@@ -25023,6 +25120,7 @@ function referensOverblick() {
 }
 // Läget i spannet är ett index: rubriken säger skalan, verktygstipset vad talet betyder.
 const _RR_LAGE_TIPS = 'Var gruppens medianlön ligger i referensens spann: 0 är referensens P10 och 100 dess P90. Under 0 ligger medianen nedanför spannet, över 100 ovanför. Orden före talet säger samma sak.';
+const _RR_MATCHNING_TIPS = 'Hur yrkesgruppen matchades mot jämförelsestatistiken. AID + BAS: en rad med samma AID och samma BAS. Endast AID: det finns ingen sådan rad, så en rad med samma AID som saknar BAS används. En rad för ett annat BAS-intervall används aldrig. – betyder att statistik saknas för gruppen.';
 const _rrPct = v => (v == null ? '–' : `${v >= 0 ? '+' : '−'}${svTal(Math.abs(v), 1)} %`);
 const _rrSkillnad = (org, ref) => (org != null && ref != null ? (org / ref - 1) * 100 : null);
 const _rrLageText = l => (l.pos == null ? '–' : `${l.ord} (${svTal(l.pos, 0)})`);
@@ -25034,6 +25132,9 @@ function _rrKolumner({ harStatistik, harStallningstagande }) {
     const lage = g => [harStallningstagande && _rrLageText(g.lage.stallningstagande), harStatistik && _rrLageText(g.lage.statistik)].filter(Boolean).join(' · ');
     return [
         { rubrik: 'Yrkesgrupp', typ: 'text', varde: g => `${g.yrke} · BAS ${g.bas}` },
+        // Statistikens matchning (samma ord som tabellen mot jämförelsestatistiken), bara när statistik finns.
+        ...(harStatistik ? [{ rubrik: 'Matchning', tips: _RR_MATCHNING_TIPS, typ: 'text', varde: g => _jfMatchningEtikett(g.statistikMatchning),
+            sortering: g => ({ 'aid-bas': 1, aid: 2 })[g.statistikMatchning] || 3 }] : []),
         { rubrik: 'n', typ: 'antal', varde: g => g.n },
         ...per.map(([t, p]) => ({ rubrik: `${t} (kr/mån)`, typ: 'kr', varde: g => g.org[p] })),
         ...(harStallningstagande ? skillnad('ställn.', 'stallningstagande') : []),
@@ -27256,8 +27357,7 @@ function computePrioritization(reference) {
                 return pol && pol.med ? { median: pol.med, kalla: referensKortnamn() } : null;
             }
             // 'statistik'
-            const sr = state.statistik.find(s => s.aid === aid && s.bas === bas)
-                   || state.statistik.find(s => s.aid === aid && !s.bas);
+            const sr = _jfStatistikFor(state.statistik, aid, bas)?.rad;
             return sr && sr.median > 0 ? { median: sr.median, kalla: 'jämförelsestatistiken' } : null;
         },
         kTroskel: kTroskel(),
@@ -27549,8 +27649,7 @@ function renderPrioritering() {
             const pol = policyFor(g.aid, g.bas);
             if (!pol || !pol.med) noRefCount++;
         } else {
-            const sr = state.statistik.find(s => s.aid === g.aid && s.bas === g.bas)
-                  || state.statistik.find(s => s.aid === g.aid && !s.bas);
+            const sr = _jfStatistikFor(state.statistik, g.aid, g.bas)?.rad;
             if (!sr) noRefCount++;
         }
     });
@@ -29068,9 +29167,9 @@ function rmReferenserAvsnitt(diagram) {
     const delar = [
         { typ: 'stycke', text: 'Ställningstagandet är referenspunkten: löneläget och statistiken mäts mot det. Läget säger var gruppen ligger, inte om en lön är rätt eller fel. Yrkesgrupper under minsta gruppstorlek redovisas inte.', stil: 'dampad' },
         { typ: 'tabell', nyckel: true, kolumner: [{ rubrik: '', typ: 'text' }, { rubrik: '', typ: 'text' }], rader: tal },
-        { typ: 'tabell', kolumner: [{ rubrik: 'Yrkesgrupp', typ: 'text' }, { rubrik: 'n', typ: 'antal' }, { rubrik: 'Median', typ: 'kr' },
+        { typ: 'tabell', kolumner: [{ rubrik: 'Yrkesgrupp', typ: 'text' }, ...(harStatistik ? [{ rubrik: 'Matchning', typ: 'text' }] : []), { rubrik: 'n', typ: 'antal' }, { rubrik: 'Median', typ: 'kr' },
             ...(harStallningstagande ? [{ rubrik: 'Mot ställningstagandet', typ: 'pct1' }] : []), ...(harStatistik ? [{ rubrik: 'Mot statistiken', typ: 'pct1' }] : []), { rubrik: 'Läge och förslag', typ: 'text' }],
-          rader: o.grupper.map(g => [`${g.yrke} · BAS ${g.bas}`, g.n, g.org.median,
+          rader: o.grupper.map(g => [`${g.yrke} · BAS ${g.bas}`, ...(harStatistik ? [_jfMatchningEtikett(g.statistikMatchning)] : []), g.n, g.org.median,
             ...(harStallningstagande ? [pct(g.org.median, g.stallningstagande.median)] : []), ...(harStatistik ? [pct(g.org.median, g.statistik.median)] : []), g.lageOchForslag]) },
         ...diagram('referenser'),
     ];
@@ -30248,13 +30347,13 @@ function _exportBenchmarkExcelExport() {
 
     // Header-rad: 30+ kolumner. Multi-line-grupperade headers via två rader.
     const headerRow1 = [
-        '', '', '',
+        '', '', '', '',
         orgNamn(), '', '', '',
         `Jämförelse: ${profileLabel}`, '', '', '', '', '', '', '',
         referensNamn(), '', '', '', '', '', '', ''
     ];
     const headerRow2 = [
-        'AID / Yrkesgrupp', 'BAS', 'N (organisationen)',
+        'AID / Yrkesgrupp', 'BAS', 'Matchning', 'N (organisationen)',
         'P10', 'Median', 'P90', 'Bredd P90/P10',
         'P10', 'Diff P10 (kr)', 'Diff P10 (%)',
         'Median', 'Diff Median (kr)', 'Diff Median (%)',
@@ -30269,7 +30368,7 @@ function _exportBenchmarkExcelExport() {
     const dataRows = rader.map(r => {
         const s = r.statistik, p = r.stallningstagande, o = r.org;
         return [
-            r.yrke, r.bas, r.n,
+            r.yrke, r.bas, _jfMatchningEtikett(r.statistikMatchning), r.n,
             rOrNull(o.p10), rOrNull(o.median), rOrNull(o.p90), breddOrNull(o.p10, o.p90),
             rOrNull(s.p10),    diffOrNull(o.p10, s.p10),       pctOrNull(o.p10, s.p10),
             rOrNull(s.median), diffOrNull(o.median, s.median), pctOrNull(o.median, s.median),
@@ -30288,13 +30387,13 @@ function _exportBenchmarkExcelExport() {
 
     // Slå ihop celler för grupp-headers (rad 1)
     if (!sheet['!merges']) sheet['!merges'] = [];
-    sheet['!merges'].push({ s: { r: 0, c: 3 },  e: { r: 0, c: 6 } });   // Organisationen (4 kolumner)
-    sheet['!merges'].push({ s: { r: 0, c: 7 },  e: { r: 0, c: 15 } });  // Jämförelse (9 kolumner)
-    sheet['!merges'].push({ s: { r: 0, c: 16 }, e: { r: 0, c: 24 } });  // Ställningstagande (9 kolumner)
+    sheet['!merges'].push({ s: { r: 0, c: 4 },  e: { r: 0, c: 7 } });   // Organisationen (4 kolumner)
+    sheet['!merges'].push({ s: { r: 0, c: 8 },  e: { r: 0, c: 16 } });  // Jämförelse (9 kolumner)
+    sheet['!merges'].push({ s: { r: 0, c: 17 }, e: { r: 0, c: 25 } });  // Ställningstagande (9 kolumner)
 
     // Kolumnbredd
     sheet['!cols'] = [
-        { wch: 42 }, { wch: 6 }, { wch: 6 },
+        { wch: 42 }, { wch: 6 }, { wch: 12 }, { wch: 6 },
         { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 },
         { wch: 10 }, { wch: 12 }, { wch: 12 },
         { wch: 10 }, { wch: 12 }, { wch: 12 },
@@ -30325,6 +30424,7 @@ function _exportBenchmarkExcelExport() {
         ['Jämförelsestatistik laddat', hasStat ? 'Ja' : 'Nej'],
         ['  - innehåller P10', state.statistikHasP10 ? 'Ja' : 'Nej (saknas i uppladdad fil)'],
         ['  - innehåller P90', state.statistikHasP90 ? 'Ja' : 'Nej (saknas i uppladdad fil)'],
+        ['Matchning', 'AID + BAS: samma AID och samma BAS. Endast AID: en rad med samma AID som saknar BAS. En rad för ett annat BAS-intervall används aldrig. – = statistik saknas.'],
         ['Referens', referensNamn() + referensKalla()],
         ['', ''],
         ['Diff-kolumner: positiva värden (grön) = organisationen ligger över referens.', ''],
@@ -33182,8 +33282,7 @@ function buildGruppdossier(key, delat = null) {
     } catch (e) { rapporteraFel('Gruppdossier: likvärdigt arbete', e); }
 
     // Extern jämförelsestatistik
-    const bench = (state.statistik || []).find(s => s.aid === g.aid && s.bas === g.bas)
-               || (state.statistik || []).find(s => s.aid === g.aid && !s.bas) || null;
+    const bench = _jfStatistikFor(state.statistik, g.aid, g.bas)?.rad || null;
 
     // Prioritering + hypoteser
     let prio = null, suggestions = [];

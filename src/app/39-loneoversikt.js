@@ -44,7 +44,7 @@ function generateRapport() {
             if (state.statistik.length > 0) {
                 const aidM = kategori.match(/^(\d+)/);
                 const aidCode = aidM ? aidM[1] : kategori;
-                const sr = state.statistik.find(s => s.aid === aidCode && s.bas === b) || state.statistik.find(s => s.aid === aidCode && !s.bas);
+                const sr = _jfStatistikFor(state.statistik, aidCode, b)?.rad;
                 if (sr && sr.median > 0) {
                     statMed = fmt.format(sr.median);
                     statRefMedian = sr.median;

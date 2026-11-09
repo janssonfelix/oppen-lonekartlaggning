@@ -123,7 +123,8 @@ const _utanforMitten = g => {
 export function referensOverblick(rader, { harStatistik = true, harStallningstagande = true, statistikHarSpann = true } = {}) {
     const tom = { p10: null, median: null, p90: null };
     const grupper = (rader || []).map(r => {
-        const rad = { ...r, statistik: harStatistik ? r.statistik : tom, stallningstagande: harStallningstagande ? r.stallningstagande : tom };
+        const rad = { ...r, statistik: harStatistik ? r.statistik : tom, statistikMatchning: harStatistik ? r.statistikMatchning ?? null : null,
+            stallningstagande: harStallningstagande ? r.stallningstagande : tom };
         const spann = statistikHarSpann ? rad.statistik : { ...rad.statistik, p10: null, p90: null };
         const bedomd = { ...rad, statistik: spann };
         const g = { ...rad, lage: { stallningstagande: lageISpann(rad.org?.median, rad.stallningstagande), statistik: lageISpann(rad.org?.median, spann) },

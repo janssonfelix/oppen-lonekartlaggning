@@ -279,8 +279,8 @@ describe('golden: bladen ur HTML-tabellerna bär cellerna som vyn visar dem (typ
         expect(rad('Löneöversikt', 1)[5]).toBe('Lönespridning P90/P10 (kvot)');
         expect(cell('Löneöversikt', 'F4')).toMatchObject({ t: 'n', v: 1.2, z: '0.00' });
         expect(cell('Löneöversikt', 'B4')).toMatchObject({ t: 'n', v: 28330, z: KR });
-        expect(rad('Jamforelsestatistik', 1)[8]).toBe('Median skillnad mot jämförelsestatistiken (%)');
-        expect(cell('Jamforelsestatistik', 'I3')).toMatchObject({ t: 'n', v: -0.89, z: PCT1 });
+        expect(rad('Jamforelsestatistik', 1)[9]).toBe('Median skillnad mot jämförelsestatistiken (%)');   // efter kolumnen Matchning
+        expect(cell('Jamforelsestatistik', 'J3')).toMatchObject({ t: 'n', v: -0.89, z: PCT1 });
     });
     it('cellvärdet: talet i texten, sorteringsvärdet bara när det är samma storhet med fler decimaler', () => {
         const v = (html) => win.eval(`(function(){ const tr = document.createElement('tr'); tr.innerHTML = ${JSON.stringify(html)}; return _exportCellVarde(tr.firstElementChild); })()`);

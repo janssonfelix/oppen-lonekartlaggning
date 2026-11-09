@@ -82,13 +82,10 @@ function renderKon(bas) {
     const ciMa = maOk ? linearRegressionCI(dataMa.map(d => [d.alder, d.lon]), minAlder, maxAlder, 25) : null;
     /** @type {number|null} */ let statMedian = null;
     if (state.statistik.length > 0) {
-        const localAIDs = [...new Set(df.map(d => { const m = d.yrke.match(/^(\d+)/); return m?m[1]:d.yrke; }))];
-        const subStats = [];
-        localAIDs.forEach(aid => {
-            const sr = isAll ? state.statistik.find(s=>s.aid===aid) : (state.statistik.find(s=>s.aid===aid&&s.bas===bas)||state.statistik.find(s=>s.aid===aid&&!s.bas));
-            if (sr && sr.median > 0) subStats.push(sr.median);
-        });
-        if (subStats.length) statMedian = Stat.median(subStats);
+        // En uppslagning per AID×BAS-grupp i urvalet (samma regel som överallt: aldrig ett annat BAS), och medianen
+        // av de matchade medianerna. I ett valt BAS är det en grupp per AID.
+        const m = d => d.yrke.match(/^(\d+)/);
+        statMedian = _jfStatistikensMedianFor(state.statistik, df.map(d => ({ aid: m(d) ? m(d)[1] : d.yrke, bas: d.bas })));
     }
     const scope2 = isAll ? 'hela urvalet' : `BAS-intervall ${bas}`;
     // Noter under diagrammen om det som utelämnats, och samma sak i diagrammens beskrivningar.

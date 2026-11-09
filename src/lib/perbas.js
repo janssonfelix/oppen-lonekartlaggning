@@ -18,6 +18,7 @@
  */
 import { median, quantile } from './stat.js';
 import { sektorsnamn } from './aid.js';
+import { statistikFor } from './jamforelse.js';
 
 // ---- Receptet (ADR-52): vad avsnittet ska innehålla. Standardvärdet är tabellerna som de står i arbetsgivarnas utkast. ----
 export const PERBAS_DIMENSIONER = ['bas', 'sektor'];
@@ -94,8 +95,8 @@ export function perBasTabeller(rader, opt = {}) {
     const granser = (opt.aldersgranser && opt.aldersgranser.length ? opt.aldersgranser : recept.aldersgranser).slice().sort((a, b) => a - b);
     const d = (rader || []).filter(r => r && r.bas && dimAv(r));
     const basar = [...new Set(d.map(dimAv))].sort((a, b) => a.localeCompare(b, 'sv'));
-    const statFor = (aid, bas) => statistik.find(s => String(s.aid) === String(aid) && String(s.bas || '') === String(bas))
-        || statistik.find(s => String(s.aid) === String(aid) && !s.bas) || null;
+    // Statistikens gemensamma uppslag (jamforelse.js): samma AID och BAS, annars samma AID utan BAS.
+    const statFor = (aid, bas) => statistikFor(statistik, aid, bas)?.rad || null;
 
     const intervall = [];
     const basUtelamnade = [];

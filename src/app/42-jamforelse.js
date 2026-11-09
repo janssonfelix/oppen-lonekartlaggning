@@ -56,11 +56,12 @@ function generateBenchmark() {
     if (!tbody) return;
     const d = getData();
     if (!state.statistik.length || !d.length) {
-        tbody.innerHTML = `<tr><td colspan="12" class="pad-0"><div class="flik-empty-state">
+        tbody.innerHTML = `<tr><td colspan="13" class="pad-0"><div class="flik-empty-state">
             <div class="empty-icon">${ikon('tomLada', 32)}</div><h2>Jämförelsestatistik saknas</h2>
             <p>Läs in jämförelsestatistik under Filer och kvalitet, så jämförs organisationens löner mot den här.</p>
             <button class="empty-action" data-goto-tab="filer">Gå till Filer och kvalitet</button></div></td></tr>`;
         if (infoEl) infoEl.textContent = '';
+        const matchEl = document.getElementById('benchmark-matchning-info'); if (matchEl) matchEl.textContent = '';
         rensaFigur('chart-jamforelse-spann'); rensaFigur('chart-jamforelse-avvikelse');
         const diag = document.getElementById('jmf-diagram'); if (diag) diag.innerHTML = '';
         return;
@@ -80,6 +81,8 @@ function generateBenchmark() {
         th.setAttribute('data-export-label', text);
         /** @type {HTMLElement} */ (th).title = text;
     });
+    // Matchningens kolumn namnger också källan i exporterna; rubriktexten (title) förklarar regeln.
+    document.querySelectorAll('#benchmark-thead th[data-kol="matchning"]').forEach(th => th.setAttribute('data-export-label', `Matchning mot ${kallaNamn}`));
     // Organisationens kolumner namnger organisationen när den har ett namn (ADR-36).
     document.querySelectorAll('#benchmark-thead th.jmf-block').forEach(th => {
         const p = /** @type {HTMLElement} */ (th).dataset.pctl || (/** @type {HTMLElement} */ (th).dataset.pctl = th.textContent.trim().split(' ')[0]);
@@ -92,6 +95,9 @@ function generateBenchmark() {
         infoEl.textContent = `Jmf = ${_jmfKallaNamn(kalla)}.` + (saknas.length ? ` ${saknas.join(' och ')} saknas i jämförelsestatistiken.` : '');
         infoEl.classList.toggle('warn', saknas.length > 0);
     }
+    // Statistikens matchning i samma urval som tabellen (BAS- och sektorsfiltren); grupper under k finns inte i raderna.
+    const matchEl = document.getElementById('benchmark-matchning-info');
+    if (matchEl) matchEl.textContent = _jfMatchningSammanfattning(rader);
 
     const fmt = new Intl.NumberFormat('sv-SE', { style: 'currency', currency: 'SEK', maximumFractionDigits: 0 });
     const kr = v => (v == null ? '–' : fmt.format(Math.round(v)));
@@ -101,13 +107,16 @@ function generateBenchmark() {
     const block = (r, p) => `<td class="num jmf-block" data-sort-value="${r.org[p] ?? ''}">${kr(r.org[p])}</td>`
         + `<td class="num muted" data-sort-value="${r[kalla][p] ?? ''}">${kr(r[kalla][p])}</td>${diffCell(r.diff[kalla][p])}`;
 
+    // Matchningen sorteras på nivån: AID + BAS, Endast AID, utan statistik.
+    const matchSort = { 'aid-bas': 1, aid: 2 };
     let html = '', curBas = null;
     for (const r of rader) {
-        if (r.bas !== curBas) { curBas = r.bas; html += `<tr class="group-header"><td colspan="12">BAS ${esc(r.bas)}</td></tr>`; }
-        html += `<tr data-rad="${esc(r.aid)}|${esc(r.bas)}"><td>${esc(r.yrke)}</td><td>${esc(r.bas)}</td><td class="num" data-sort-value="${r.n}">${r.n}</td>`
+        if (r.bas !== curBas) { curBas = r.bas; html += `<tr class="group-header"><td colspan="13">BAS ${esc(r.bas)}</td></tr>`; }
+        html += `<tr data-rad="${esc(r.aid)}|${esc(r.bas)}"><td>${esc(r.yrke)}</td><td>${esc(r.bas)}</td>`
+            + `<td data-sort-value="${matchSort[r.statistikMatchning] || 3}">${esc(_jfMatchningEtikett(r.statistikMatchning))}</td><td class="num" data-sort-value="${r.n}">${r.n}</td>`
             + `${block(r, 'p10')}${block(r, 'median')}${block(r, 'p90')}</tr>`;
     }
-    tbody.innerHTML = html || '<tr><td colspan="12" class="farg-dampad pad-24 ta-mitt">Inga yrken i urvalet.</td></tr>';
+    tbody.innerHTML = html || '<tr><td colspan="13" class="farg-dampad pad-24 ta-mitt">Inga yrken i urvalet.</td></tr>';
     if (typeof flerKolumner === 'function') flerKolumner('benchmark-table', JMF_DOLDA_KOLUMNER, 'jamforelse');
     try { ritaJamforelseDiagram(rader, kalla); } catch (e) { rapporteraFel('Löneläget: diagrammen', e); }
 
@@ -118,6 +127,8 @@ function generateBenchmark() {
         return !m || ((!_jmfVal.bas || m[2] === _jmfVal.bas) && (!_jmfVal.sektor || _aidSektorsnamn(m[1]) === _jmfVal.sektor));
     };
     const utelamnadeIUrval = utelamnade.filter(iUrval);
+    const antal = _jfMatchningAntal(rader);
+    const grupper = n => `${n} ${n === 1 ? 'yrkesgrupp' : 'yrkesgrupper'}`;
     const urval = jamforelseUrvalText();
     setAudit('benchmark', {
         title: 'Jämförelsestatistik',
@@ -132,7 +143,8 @@ function generateBenchmark() {
             ['AID-kod (matchningsnyckel)', 'Inledande sifferprefix av yrkesnamn (t.ex. "402010 Förskollärare" ger 402010)'],
             ['Percentiler', '<code>P10 = kvantil 0,1</code>, <code>median</code>, <code>P90 = kvantil 0,9</code> av organisationens löner i yrke och BAS'],
             ['Diff (%)', '<code>(organisationens värde / jämförelsens värde − 1) × 100</code>, per percentil'],
-            ['Matchning', 'Jämförelsestatistiken: först AID + BAS, annars AID utan BAS. Ställningstagandet: AID + BAS, annars AID, annars BAS']
+            ['Matchning', 'Jämförelsestatistiken: först AID + BAS, annars AID utan BAS; en rad för ett annat BAS-intervall används aldrig. Ställningstagandet: AID + BAS, annars AID, annars BAS. '
+                + `I urvalet: ${grupper(antal.aidBas)} på AID + BAS, ${antal.aid} på endast AID, ${antal.utan} utan statistik.`]
         ],
         notes: [
             'Negativ skillnad (röd) = organisationen ligger under jämförelsen',

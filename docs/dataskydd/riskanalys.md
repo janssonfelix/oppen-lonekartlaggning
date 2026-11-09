@@ -1,6 +1,6 @@
 # Risk- och sårbarhetsanalys (dataskydd och informationssäkerhet) — Öppen lönekartläggning
 
-**Bygge:** `2026.11.05` · **Artefakt-SHA-256:** `276988195bf22b5a2cd820c754069c17112178eccb23d178e36f5807a467d3a5` (se `dist/RELEASE.txt`).
+**Bygge:** `2026.11.05` · **Artefakt-SHA-256:** `b792a41832d61cdb887a8177a546bdf2efacd2492961d2a8a15f30822bf4dc2a` (se `dist/RELEASE.txt`).
 **Granskningsdatum:** 2026-11-07.
 **Granskningsmetod:** kodläsning påstående för påstående + statisk sökning i källkod och bygge +
 körning av det byggda verktyget i jsdom och i Chromium (utan nätverk) med syntetiska testfiler.
@@ -377,6 +377,8 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   - årsbokslutet i konfigurationsfilen (med lönespridningen per yrkesgrupp och BAS-intervall)
   - rapportens bilaga med gruppdossierer (Word-utkastet och utskriften med bilagan vald)
   - importprofilerna (*Exportera JSON* och konfigurationsfilens fält, prövade som utdata utan lönemått)
+  - statistikens matchning i Löneläget (sammanfattningen och *Beräkning & urval* i exportläget; kolumnen
+    *Matchning* i tabellernas CSV, Excelfilerna och jämförelseexporten)
   - Att göra-punkterna.
 
   PDF-rapporten ritas ur samma rapportmodell som Word-utkastet. **Inte prövat av invarianten:**
@@ -463,6 +465,12 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   referenserna* och blocket i rapportunderlaget bygger alltså bara på grupper som når den. Referensernas egna tal och tabellen
   statistiken mot ställningstagandet bär inga organisationsvärden och maskeras inte. Könsuppdelade mått förekommer
   inte. Vaktas av `tests/smoke-referenser.test.js`.
+- **Löneläget, statistikens matchning:** kolumnen *Matchning* (AID + BAS, Endast AID, –) i tabellen mot
+  jämförelsestatistiken, i detaljlistan, i Excelfilerna (alla flikar, bladet *Referenser* och den samlade
+  jämförelseexporten), i rapportens tabell och i utskriften, och sammanfattningen ovanför tabellen med antalet
+  yrkesgrupper per matchningsnivå (också i *Beräkning & urval*). Utdatan säger bara hur statistiken matchades och hur
+  många grupper som matchades; den bär inga lönemått. Den gäller samma rader som tabellen, så grupper under tröskeln
+  syns inte och räknas inte. Vaktas av `tests/ktroskel-invarianter.test.js` och `tests/smoke-jamforelse.test.js`.
 - **Löneläget, avsnittet mot ställningstagandet:** i exportläget har avsnittet en mellannivå. För en yrkesgrupp
   med minst 5 men färre än tröskeln anges bara antal. Under 5 maskeras gruppen helt och namnges i en not.
   Lönemått och läget per kön kräver tröskeln. Bladet *Lönepolitik* i Excelfilen med alla flikar (och i ZIP-filens
