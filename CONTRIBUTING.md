@@ -29,6 +29,11 @@ datorn** — det styr hur vi tar emot bidrag.
    Varje ny utdata som lämnar verktyget (text, tabell, bild, fil) läggs i k-invariantsviten (`tests/helpers/ktroskel-rigg.js`) och i riskanalysens tabell över utdata innan den checkas in.
 4. Beskriv ändringen och varför den behövs.
 
+Verktyget är **neutralt**: det är skrivet för alla arbetsgivare och är inte kopplat till någon särskild
+organisation. Skriv inga namn på organisationer, arbetsgivare eller lönesystem i kod, tester, exempel eller
+dokument; skriv "organisationen" eller "arbetsgivaren", och använd påhittade, uppenbart syntetiska data. Det som är
+organisationsspecifikt (benämningar, referenser, statistik) kommer från användarens egna filer, aldrig från repot.
+
 ## Bidra med en importprofil
 
 Verktyget har inga inbyggda importprofiler för namngivna lönesystem: en profil som inte prövats mot ett

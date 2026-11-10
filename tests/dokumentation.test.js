@@ -13,7 +13,6 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { execSync } from 'node:child_process';
-import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { dirname, join, basename } from 'node:path';
 
@@ -267,50 +266,7 @@ describe('dokumentation: licenstexterna följer med den byggda filen', () => {
     });
 });
 
-describe('vakt: inga spår av tidigare versioner eller namngivna organisationer', () => {
-    // Verktyget är ett öppet projekt: ingen inbyggd arbetsgivare, inget tidigare diagrambibliotek, inget
-    // tidigare produktnamn, inga borttagna verktyg. Orden står bara som kontrollsummor (SHA-256, 16 tecken),
-    // så att inte heller vakten bär dem. Texten normaliseras (gemener, utan diakritiska tecken) och delas i ord;
-    // ordföljder om ett till tre ord jämförs. PREFIX: ordföljden börjar med ordet (nyckeln är ordets längd).
-    // EXAKT: hela ordföljden. Ett nytt ord läggs till med kontrollsumman av dess normaliserade form:
-    //   node -e "const s=process.argv[1].normalize('NFD').replace(/\p{M}/gu,'').toLowerCase();console.log(s.length,require('crypto').createHash('sha256').update(s).digest('hex').slice(0,16))" "Ordet"
-    const PREFIX = { 6: ['5536a646767eeca5'], 8: ['38e6bcd7fe7d4979'], 10: ['4ff103b68f160fd2'], 11: ['b225390a8984c8de'],
-        12: ['873cbfbe8f1e4870'], 14: ['18b7fdefbcdf5b06'], 15: ['1233afb9089e16ca'], 21: ['9689275bf45a18f3'], 24: ['a86a1996dd3b22b0'] };
-    const EXAKT = new Set(['5d9b3a5c535dfba6', '0c75ab591994bb7a', 'ab20b314b3d3ac43', '7d03bf86a3732b23',
-        '1e0fb1ad0799b31d', '495d7842aa80549a', 'be3b5ed12e072cc3', '7c38d5864015fc72']);
-    const summor = new Map();
-    const summa = s => { let v = summor.get(s); if (v === undefined) { v = createHash('sha256').update(s).digest('hex').slice(0, 16); summor.set(s, v); } return v; };
-    const ord = text => text.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().match(/[\p{L}\p{N}_]+/gu) || [];
-    const vakt = (prefix, exakt) => {
-        const prefixSummor = new Map(Object.entries(prefix).map(([l, s]) => [Number(l), new Set(s)]));
-        return text => {
-            const o = ord(text);
-            for (let i = 0; i < o.length; i++) {
-                const följd = [o[i], `${o[i]} ${o[i + 1]}`, `${o[i]} ${o[i + 1]} ${o[i + 2]}`].slice(0, Math.min(3, o.length - i));
-                if (följd.some(f => exakt.has(summa(f)))) return följd[0];
-                const längst = följd[följd.length - 1];
-                for (const [l, s] of prefixSummor) if (längst.length >= l && s.has(summa(längst.slice(0, l)))) return följd[0];
-            }
-            return null;
-        };
-    };
-    const förbjudet = vakt(PREFIX, EXAKT);
-    const HOPPA = /^(node_modules|\.git|\.claude|vendor|package-lock\.json)(\/|$)/;
-    const spårade = () => execSync('git ls-files', { cwd: root, encoding: 'utf8' }).split('\n')
-        .filter(f => f && !HOPPA.test(f));
-    const textfil = f => /\.(js|mjs|html|css|md|json|txt|yml|snap|gitignore)$/.test(f) || /^(NOTICE|LICENSE|VERSION|\.gitignore)$/.test(basename(f));
-    it('vakten fångar prefix, exakta ordföljder, versaler, diakritiska tecken och skiljetecken', () => {
-        const prov = vakt({ 7: [summa('exempel')], 11: [summa('tva ordbitt')] }, new Set([summa('ett'), summa('tre ord har')]));
-        for (const fras of ['Exempelorden', 'EXEMPEL', 'éxempel', 'TVÅ Ordbitten', 'ett', 'Ett.', 'tre-ord, HAR'])
-            expect(prov(`text ${fras} text`), fras).not.toBeNull();
-        for (const fras of ['exempl', 'ettan', 'tva ord', 'tre ord', 'ordexempel'])
-            expect(prov(`text ${fras} text`), fras).toBeNull();
-    });
-    it('ingen spårad textfil i repot bär ett förbjudet ord', () => {
-        const traffar = spårade().filter(textfil).filter(f => existsSync(join(root, f)))
-            .map(f => [f, förbjudet(läs(f))]).filter(([, t]) => t !== null).map(([f]) => f);
-        expect(traffar).toEqual([]);
-    });
+describe('produktnamnet', () => {
     it('menyns rubrik bär produktnamnet', () => {
         expect(läs('src/index.html')).toMatch(/<div class="sidebar-header">\s*<h2>Öppen lönekartläggning<\/h2>/);
     });

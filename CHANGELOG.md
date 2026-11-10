@@ -434,6 +434,10 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   (`npm run test:app` kör bara jsdom-filerna). Testantalet i `teknisk-plan.md` jämförs inte längre med sviten, så ett
   nytt test kräver ingen dokumentändring. K-tröskelns invariant över flikar och exporter körs i två filer, en per
   tröskel, så att de två förberedelserna går parallellt, och förberedelsens tidsgräns är höjd från 120 till 300 s.
+- **Neutralitetsregeln i stället för ordvakten.** Vakttestet som sökte igenom hela repot efter en lista med
+  kontrollsummor (namngivna organisationer och spår av tidigare versioner) är borttaget; regeln att verktyget är
+  neutralt och inte kopplat till någon organisation står i `CONTRIBUTING.md` och `CLAUDE.md`. Testerna för
+  produktnamnet och för ordet "förvaltning" står kvar.
 
 ## 2026.11.05
 

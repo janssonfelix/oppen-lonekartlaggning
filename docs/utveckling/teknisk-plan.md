@@ -675,8 +675,8 @@ som liknar personnummer eller e-post; det innehåller bara aggregat och lagras a
 anger referensens och statistikens källa (egen fil, organisationspaket med organisation och datum, eller
 demoläge). Reserven för kvinnoandel är SKR:s personalstatistik (ADR-34).
 
-Vakten `vakt: inga spår av tidigare versioner eller namngivna organisationer` i `tests/dokumentation.test.js`
-kräver att ingen namngiven organisation står någonstans i repot. Logiken i `src/lib/organisationspaket.js`,
+Verktyget är neutralt: ingen namngiven organisation eller arbetsgivare står i repot (`CONTRIBUTING.md`,
+`CLAUDE.md`); allt organisationsspecifikt kommer från användarens egna filer. Logiken i `src/lib/organisationspaket.js`,
 gränssnittet i `src/app/29-organisationspaket.js`; systemägarens guide `docs/anvandare/organisationspaket.md`.
 
 Paketet har det valfria fältet `importprofiler` (2026-11-07): sparade kolumnmappningar som bara bär rubriknamn
