@@ -399,6 +399,12 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ### Exporter
 
+- **Svenskt talformat prövat i jämförelseexporten och CSV-exporterna.** Jämförelseexportens kolumner P10 och P90 är
+  nu formaterade i kronor som medianen (de stod utan tusentalsavgränsare och kr). Talinläsningen läser minustecknet
+  `−` (U+2212), som verktygets egna tabeller och exporter skriver, som minus; förut blev `−1 250` till 1 250. Testerna
+  i `tests/talformat.test.js` prövar decimalkomma, tusentalsavgränsare (vanligt, hårt och smalt hårt mellanslag),
+  båda minustecknen, procent, koder som ska förbli text, tomma celler och en rundtur för talen och för
+  jämförelseexportens arbetsbok.
 - **HTML-text som vanlig text, på ett ställe (`src/lib/htmltext.js`).** Metodbladet i Excel visade `&lt;`, `&gt;` och
   `&amp;` i reglerna och formlerna (t.ex. "n &lt; 10"); de står nu som `<`, `>` och `&`. Taggarna tas bort tills inga
   finns kvar, i Excel, utskriftens metodlistor (som nu escapas), rapportmodellens bilaga och gruppdossierns textkopia.

@@ -186,6 +186,12 @@ describe('_normalizeNumberString + parseNumber (tusentals-/decimalheuristik)', (
         expect(P.parseNumber('32 500 kr')).toBe(32500);   // NBSP som tusental
         expect(P.parseNumber('32500:-')).toBe(32500);
     });
+    it('minustecknet U+2212 (verktygets egna exporter, Intl) läses som minus, inte som ett positivt tal', () => {
+        expect(P.parseNumber('\u221232 500')).toBe(-32500);
+        expect(P.parseNumber('\u22121\u00A0250,50 kr')).toBe(-1250.5);
+        expect(P.parseNumberStrict('\u22123,25 %')).toMatchObject({ status: 'ok', value: -3.25 });
+        expect(P.parseNumberStrict('\u2212').status).toBe('invalid');
+    });
     it('heltalsdel "0" tvingar decimaltolkning', () => {
         expect(P.parseNumber('0,500')).toBe(0.5);
     });
