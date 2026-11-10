@@ -113,7 +113,9 @@ Kräver Node 22.12 eller senare.
 ```bash
 npm ci                 # installera utvecklingsberoenden
 npm run build:app      # slå ihop src/app/ till dist/app.js (och spegla src/lib/)
-npm test               # hela Vitest-sviten (tools/test.mjs kör om en fil vars arbetare kraschat i Node)
+npm test               # snabb körning: moduler och vakter, utan jsdom (sekunder)
+npm run test:full      # hela Vitest-sviten med jsdom-testerna (minuter); före en pull request, körs i CI
+                       # (tools/test.mjs kör om en fil vars arbetare kraschat i Node)
 npm run lint           # eslint
 npm run typecheck      # JSDoc-typkontroll med tsc (checkJs): typecheck:lib för src/lib och tools, typecheck:app för src/app
 npm run bundle         # bygg dist/oppen-lonekartlaggning.html och dist/RELEASE.txt

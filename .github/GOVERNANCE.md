@@ -20,8 +20,8 @@ beroende av projektet.
 ## Hur en ändring kommer in
 
 1. Ärende eller förslag enligt mallarna, aldrig med verklig lönedata.
-2. Ändring i `src/` med test; `npm run build:app`, `npm test`, `npm run lint`, `npm run bundle` och
-   `npm run test:browser` gröna.
+2. Ändring i `src/` med test; `npm run build:app`, `npm run test:full` (hela testsviten; `npm test` är
+   den snabba körningen utan jsdom-testerna), `npm run lint`, `npm run bundle` och `npm run test:browser` gröna.
 3. Granskning av underhållaren. Grenen `main` är skyddad: grön CI krävs, inga direkta pushar.
 4. Raden i `CHANGELOG.md` under *Oförlöst*.
 

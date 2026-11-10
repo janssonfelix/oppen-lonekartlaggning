@@ -173,8 +173,8 @@ olika saker. I EU-matrisen har grupperna ofta 14–17 personer men bara 2–3 av
 tömma hela tabellen.
 
 Noterna innehåller avsiktligt **ingen inline-markup**: SheetJS trimmar varje elements text för sig och slår ihop
-dem utan avskiljare, vilket ger `4 yrkesgruppervisas` i Excel-exporten. Skyddet vaktas av invarianten i
-`tests/kanonymitet.test.js`.
+dem utan avskiljare, vilket ger `4 yrkesgruppervisas` i Excel-exporten. Skyddet vaktas av invarianten I4
+(`tests/helpers/ktroskel-invariant.js`).
 
 **ADR-13 — `VERSION` är enda källa för versionsstämpeln.** Versionsstämpeln (`APP_VERSION`, `APP_BUILD_DATE`)
 syns i rapportens sidfot och i Excel- och Word-metadata — det som gör ett resultat spårbart till en
@@ -347,8 +347,8 @@ som liknar personnummer eller e-post; det innehåller bara aggregat och lagras a
 anger referensens och statistikens källa (egen fil, organisationspaket med organisation och datum, eller
 demoläge). Reserven för kvinnoandel är SKR:s personalstatistik (ADR-34).
 
-Vakten `vakt: inga spår av tidigare versioner eller namngivna organisationer` i `tests/dokumentation.test.js`
-kräver att ingen namngiven organisation står någonstans i repot. Logiken i `src/lib/organisationspaket.js`,
+Verktyget är neutralt: ingen namngiven organisation eller arbetsgivare står i repot (`.github/CONTRIBUTING.md`,
+`CLAUDE.md`); allt organisationsspecifikt kommer från användarens egna filer. Logiken i `src/lib/organisationspaket.js`,
 gränssnittet i `src/app/29-organisationspaket.js`; systemägarens guide `docs/anvandare/organisationspaket.md`.
 
 Paketet har det valfria fältet `importprofiler` (2026-11-07): sparade kolumnmappningar som bara bär rubriknamn
@@ -569,13 +569,13 @@ antalet sådana par; beslut). Fyra regler till:
   varje kön i urvalet når tröskeln (`_konFarRedovisasFor`), annars ett streck med `_konUtelamnatNot()`.
   Vaktas av `tests/troskelbeslut.test.js`.
 
-**Vakter:** `tests/ktroskel*.test.js` (fem filer med gemensam rigg i `tests/helpers/ktroskel-rigg.js`) kör alla flikar vid 10, 25 och 5 med grupper om 20 och 6 personer vars
+**Vakter:** `tests/ktroskel*.test.js` (flera filer med gemensam rigg i `tests/helpers/ktroskel-rigg.js`) kör alla flikar vid 10, 25 och 5 med grupper om 20 och 6 personer vars
 löner är sentinelvärden, prövar tur och retur 10 → 25 → 10 mot kvarlevande cacher, kontrollerar flikar och Excel
 efter en höjning, gränssnittet, utdata genom de verkliga vägarna, varje exportväg mot exportgrinden samt
 konfigurationsfil och organisationspaket, och har en invariant vid 10 och 25 över flikar och exporter mot ett
 underlag där ett kön är under tröskeln inuti en större grupp (vad den prövar och inte prövar står i
-`riskanalys.md` §6.5 och i testfilens kommentar). Både den och `tests/kanonymitet.test.js` kräver att listan över
-prövade flikar är menyns flikar; `tests/dokumentation.test.js` vaktar att dokumenten nämner ADR-38.
+`riskanalys.md` §6.5 och i testfilens kommentar). Den ritar menyns flikar i exportläget, och `tests/ktroskel-exporter.test.js`
+kräver att riggens lista över flikar är menyns; `tests/dokumentation.test.js` vaktar att dokumenten nämner ADR-38.
 
 **ADR-39 — Diagramkärna på D3 med eget figurformat.** Alla diagram ritas av en egen kärna: vyerna bygger en
 *figur* (ren data: axlar, lager av märken, referenser — `src/lib/figur.js`), och `ritaFigur` gör SVG av den med

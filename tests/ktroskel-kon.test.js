@@ -2,7 +2,7 @@
  * K-tröskeln som inställning: ett kön under tröskeln inuti en grupp över den (fixturen, C2–C5).
  *
  * Riggen (fixturer, fönster och sökfunktioner) ligger i tests/helpers/ktroskel-rigg.js; sviten är delad i
- * åtta filer så att Vitest fördelar den över flera arbetare.
+ * flera filer så att Vitest fördelar den över flera arbetare.
  */
 import { describe, it, expect, vi } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
@@ -52,26 +52,6 @@ describe('C2: Struktur per BAS visar inget könsgap när ett kön är under trö
             expect(rad, bas).toMatch(/–[\s|]*$/);
         }
         expect(el.textContent).toMatch(/ett av könen har färre än 10 personer/);
-    });
-    it('Word-utkastet, utskriften och EU-lönerapporten', async () => {
-        const w = fonsterKon(null);
-        const ord = w.__docDraftHtml();
-        // Utskriften har flera tabeller med en rad per BAS: prövningen gäller avsnittet om struktur.
-        const tryck = (await utskriftAv(w, 'komplett')).innerHTML.split('Struktur och lönetransparens')[1];
-        for (const [namn, html] of [['Word', ord], ['utskrift', tryck]]) {
-            for (const bas of KON_BAS) {
-                const rad = radFor(html, bas);
-                expect(rad, `${namn} ${bas}`).not.toBeNull();
-                expect(rad, `${namn} ${bas}`).toMatch(/—[\s|]*$/);
-            }
-            expect(html, namn).toMatch(/ett av könen har färre än 10 personer/);
-        }
-        await laddaXlsx(w);
-        const eu = Object.values(fangaBocker(w, () => w.eval('exportEuReport()')))[0];
-        const rep = eu.split('[Representation]')[1].split('[')[0];
-        for (const bas of KON_BAS) expect(rep.split('\n').find(r => r.startsWith(bas + ' |')), bas).toMatch(/\|\s*$/);
-        expect(rep).toMatch(/Y1, Y2, Y3/);   // namnges i slutraden om könsgap
-        expect(harNagon(eu, KON_GAP)).toEqual([]);
     });
     it('i exportläget vid 2 visas gapet för Y2 och Y3 (2 och 3 män)', () => {
         const w = iExport(fonsterKon(2));

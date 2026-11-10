@@ -2,10 +2,11 @@
  * K-tröskeln som inställning: bilder av diagram bär meningen under 10.
  *
  * Riggen (fixturer, fönster och sökfunktioner) ligger i tests/helpers/ktroskel-rigg.js; sviten är delad i
- * åtta filer så att Vitest fördelar den över flera arbetare.
+ * flera filer så att Vitest fördelar den över flera arbetare. Testerna prövar meningen, inte vilka grupper som syns,
+ * och kör därför på den lilla fixturen (fonsterLitet).
  */
 import { describe, it, expect, vi } from 'vitest';
-import { fonster } from './helpers/ktroskel-rigg.js';
+import { fonsterLitet } from './helpers/ktroskel-rigg.js';
 
 // Sviten ritar om hela verktyget i varje test. Under full last tar ett test 4–6 s, så standardgränsen 5 s
 // fäller olika tester från körning till körning.
@@ -31,7 +32,7 @@ describe('k-tröskeln: bilder av diagram bär meningen under 10', () => {
     const kontrollera = (text, k) => (k === 6 ? expect(text).toContain(MENING) : expect(text).not.toContain('Tröskeln är sänkt'));
 
     it.each([[6], [10]])('exportmenyns bild vid %i', async k => {
-        const w = fonster(k);
+        const w = fonsterLitet(k);
         const bilder = samla(w);
         const el = ritad(w, 'chart-kon-scatter');
         w.HTMLAnchorElement.prototype.click = () => {};
@@ -43,7 +44,7 @@ describe('k-tröskeln: bilder av diagram bär meningen under 10', () => {
     });
     it.each([[6], [10]])('ZIP-exportens bilder vid %i', async k => {
         const { readFileSync } = await import('node:fs');
-        const w = fonster(k);
+        const w = fonsterLitet(k);
         w.eval(readFileSync(new URL('../vendor/xlsx.mini.min.js', import.meta.url), 'utf8'));   // ZIP-filen bär också Excel-filen
         // ZIP-filens egna diagrambilder görs i 1920 punkters bredd; Word-utkastets bilder i filen är smalare och står
         // i ett dokument som bär meningen i sidfoten.
@@ -57,7 +58,7 @@ describe('k-tröskeln: bilder av diagram bär meningen under 10', () => {
         for (const bild of zipBilder) kontrollera(bild, k);
     });
     it.each([[6], [10]])('rapportunderlagets diagramkopia vid %i', async k => {
-        const w = fonster(k);
+        const w = fonsterLitet(k);
         // Diagrammet ritas av diagramkärnan (ADR-39): bilden görs ur figuren, och meningen läggs i SVG:n.
         const svg = [];
         w.figurTillBild = (figur, format, b, h, val) => { svg.push(w.figurTillSvg(figur, b, h, val)); return Promise.resolve('data:image/png;base64,AAAA'); };
@@ -70,7 +71,7 @@ describe('k-tröskeln: bilder av diagram bär meningen under 10', () => {
         else expect(text).not.toContain('Tröskeln är sänkt');
     });
     it.each([[6], [10]])('prioriteringsmatrisens nedladdning vid %i', async k => {
-        const w = fonster(k);
+        const w = fonsterLitet(k);
         // Matrisen ritas av diagramkärnan (ADR-39): bilden görs ur figuren, och meningen läggs i exportens SVG.
         const svg = [];
         w.figurTillBild = (figur, format, b, h, val) => { svg.push(w.figurTillSvg(figur, b, h, val)); return Promise.resolve('data:image/png;base64,AAAA'); };
