@@ -20,12 +20,19 @@ datorn** — det styr hur vi tar emot bidrag.
    arkitekturbesluten (ADR) — flera av dem är medvetna begränsningar som inte ska ändras
    utan ett nytt beslut.
 2. Gör ändringen i `src/` (aldrig direkt i `dist/`), med test.
-3. Kör `npm run build:app`, `npm test`, `npm run lint`, `npm run bundle` och
-   `npm run test:browser`. Allt ska vara grönt. En testkörning räknas som grön först när alla testfiler har
-   rapporterat (`npm test` kör själv om en fil vars arbetare kraschat). Rör ändringen utseendet eller ett diagram:
+3. Kör `npm run build:app`, `npm run test:full`, `npm run lint`, `npm run bundle` och
+   `npm run test:browser`. Allt ska vara grönt. Under arbetet räcker `npm test`, den snabba körningen (moduler och
+   vakter, sekunder); `npm run test:full` är hela sviten med jsdom-testerna (minuter) och den som körs i CI. En
+   testkörning räknas som grön först när alla testfiler har rapporterat (båda kör själva om en fil vars arbetare
+   kraschat). Rör ändringen utseendet eller ett diagram:
    titta på resultatet i webbläsaren, också med ett underlag med många yrkesgrupper — demodatan har bara åtta.
    Varje ny utdata som lämnar verktyget (text, tabell, bild, fil) läggs i k-invariantsviten (`tests/helpers/ktroskel-rigg.js`) och i riskanalysens tabell över utdata innan den checkas in.
 4. Beskriv ändringen och varför den behövs.
+
+Verktyget är **neutralt**: det är skrivet för alla arbetsgivare och är inte kopplat till någon särskild
+organisation. Skriv inga namn på organisationer, arbetsgivare eller lönesystem i kod, tester, exempel eller
+dokument; skriv "organisationen" eller "arbetsgivaren", och använd påhittade, uppenbart syntetiska data. Det som är
+organisationsspecifikt (benämningar, referenser, statistik) kommer från användarens egna filer, aldrig från repot.
 
 ## Bidra med en importprofil
 

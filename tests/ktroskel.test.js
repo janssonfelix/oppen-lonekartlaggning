@@ -2,7 +2,7 @@
  * K-tröskeln som inställning: standardvärdet, bekräftelsen vid sänkning och att tröskeln styr varje flik (läsning vid 10 och 25).
  *
  * Riggen (fixturer, fönster och sökfunktioner) ligger i tests/helpers/ktroskel-rigg.js; sviten är delad i
- * åtta filer så att Vitest fördelar den över flera arbetare.
+ * flera filer så att Vitest fördelar den över flera arbetare.
  */
 import { describe, it, expect, beforeAll, vi } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
