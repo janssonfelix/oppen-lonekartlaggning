@@ -253,7 +253,7 @@ describe('dokumentation: användarnära texter', () => {
 });
 
 describe('dokumentation: licenstexterna följer med den byggda filen', () => {
-    // MIT och Apache 2.0 kräver att licenstexten följer med varje kopia. LICENSES.md
+    // MIT och Apache 2.0 kräver att licenstexten följer med varje kopia. TREDJEPARTSLICENSER.md
     // distribueras inte med HTML-filen, så texterna byggs in i den (src/licenser.txt).
     const bygge = läs('dist/oppen-lonekartlaggning.html');
     it('fullständiga MIT-texter för PapaParse, JSZip och pako, och ISC-texten för D3', () => {
@@ -310,7 +310,7 @@ describe('vakt: inga spår av tidigare versioner eller namngivna organisationer'
     const HOPPA = /^(node_modules|\.git|\.claude|vendor|package-lock\.json)(\/|$)/;
     const spårade = () => execSync('git ls-files', { cwd: root, encoding: 'utf8' }).split('\n')
         .filter(f => f && !HOPPA.test(f));
-    const textfil = f => /\.(js|mjs|html|css|md|json|txt|yml|snap|gitignore)$/.test(f) || /^(NOTICE|LICENSE|VERSION|\.gitignore)$/.test(basename(f));
+    const textfil = f => /\.(js|mjs|html|css|md|json|txt|yml|snap|gitignore)$/.test(f) || /^(LICENSE|VERSION|\.gitignore)$/.test(basename(f));
     it('vakten fångar prefix, exakta ordföljder, versaler, diakritiska tecken och skiljetecken', () => {
         const prov = vakt({ 7: [summa('exempel')], 11: [summa('tva ordbitt')] }, new Set([summa('ett'), summa('tre ord har')]));
         for (const fras of ['Exempelorden', 'EXEMPEL', 'éxempel', 'TVÅ Ordbitten', 'ett', 'Ett.', 'tre-ord, HAR'])
@@ -582,12 +582,12 @@ describe('dokumentation: kodbasen är redo att publiceras', () => {
 describe('dokumentation: licens MIT', () => {
     const gå = dir => readdirSync(join(root, dir), { withFileTypes: true }).flatMap(e =>
         e.isDirectory() ? gå(`${dir}/${e.name}`) : [`${dir}/${e.name}`]);
-    it('LICENSE är MIT-texten med upphovspersonen och NOTICE anger licensen', () => {
+    it('LICENSE är MIT-texten med upphovspersonen och TREDJEPARTSLICENSER.md hänvisar till den', () => {
         const l = läs('LICENSE');
         expect(l).toMatch(/^MIT License\n\nCopyright \(c\) 2026 Felix Jansson/);
         expect(l).toContain('Permission is hereby granted, free of charge');
-        expect(läs('NOTICE')).toMatch(/Copyright 2026 Felix Jansson/);
-        expect(läs('NOTICE')).toMatch(/SPDX: MIT/);
+        expect(existsSync(join(root, 'NOTICE'))).toBe(false);
+        expect(läs('TREDJEPARTSLICENSER.md')).toMatch(/MIT-licensen; se\s+\[`LICENSE`\]\(LICENSE\)/);
     });
     it('varje källfil bär licensraden (SPDX)', () => {
         const filer = [...gå('src/app'), ...gå('src/lib'), ...gå('tools'), 'src/index.html', 'src/style.css']

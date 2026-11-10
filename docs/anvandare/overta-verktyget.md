@@ -65,7 +65,7 @@ Vill du ändra något — en text, en tröskel, ett diagram, ett nytt arbetsvär
 3. Ge din version ett eget versionsnamn i `VERSION` (till exempel `2026.11.03-kommunen`) och en rad i
    `CHANGELOG.md`. Då syns det i *Om verktyget* och i `RELEASE.txt` vilken fil som är din.
 4. Byt det som pekar på projektet: säkerhetskontakten i [`SECURITY.md`](../../SECURITY.md) och
-   verifieringskommandots identitet (steg 5). Licens- och upphovsnotiserna (`LICENSE`, `NOTICE`,
+   verifieringskommandots identitet (steg 5). Licens- och upphovsnotiserna (`LICENSE`,
    SPDX-raderna och licenstexterna i `src/licenser.txt`) ska följa med enligt MIT-licensen; lägg din
    egen upphovsrad till, ta inte bort den befintliga.
 5. Kör `npm run release:kontroll` före varje egen release. Grinden kräver att versionen står lika
@@ -110,7 +110,7 @@ I båda fallen: signera `RELEASE.txt` också. Skriv sedan kontrollsumman från d
   Jämför `CHANGELOG.md`, bygg om, kör testerna, baka in organisationspaketet på nytt (avsnitt 4 i
   [`organisationspaket.md`](organisationspaket.md)) och signera.
 - **Biblioteken** (D3, SheetJS, PapaParse, JSZip) är låsta med kontrollsummor i `vendor/SHA256SUMS` och
-  uppgraderas medvetet, i en egen ändring, med uppdaterad kontrollsumma och `LICENSES.md`. Dependabot
+  uppgraderas medvetet, i en egen ändring, med uppdaterad kontrollsumma och `TREDJEPARTSLICENSER.md`. Dependabot
   i din fork föreslår uppdateringar av utvecklingsverktygen och arbetsflödenas steg; inget av dem ingår
   i den byggda filen.
 - **Sårbarheter** som du hittar i verktyget: rapportera dem till projektet enligt `SECURITY.md`, så att

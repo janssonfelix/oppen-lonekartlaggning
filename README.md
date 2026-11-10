@@ -55,7 +55,7 @@ slutliga dokumentationen görs av arbetsgivaren i samverkan med facklig part.
 ## Licens och bidrag
 
 Öppen lönekartläggning är öppen källkod under **MIT-licensen** (se `LICENSE`). Upphovsperson:
-Felix Jansson. Tredjepartsbibliotekens licenser står i [`LICENSES.md`](LICENSES.md) och
+Felix Jansson. Tredjepartsbibliotekens licenser står i [`TREDJEPARTSLICENSER.md`](TREDJEPARTSLICENSER.md) och
 följer med i den byggda filen.
 
 Vill du bidra, läs [`CONTRIBUTING.md`](CONTRIBUTING.md) och [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md).
@@ -92,7 +92,7 @@ säkerhetsregler*.
 | Mapp | Innehåll |
 |---|---|
 | `src/` | Källan: `index.html`, `style.css`, `app/` (appens moduler i byggordning) och `lib/` (rena, testade moduler som speglas in i appen) |
-| `vendor/` | Tredjepartsbibliotek: D3, SheetJS, PapaParse, JSZip (licenser i [`LICENSES.md`](LICENSES.md); de fullständiga texterna i `src/licenser.txt` byggs in i HTML-filen) |
+| `vendor/` | Tredjepartsbibliotek: D3, SheetJS, PapaParse, JSZip (licenser i [`TREDJEPARTSLICENSER.md`](TREDJEPARTSLICENSER.md); de fullständiga texterna i `src/licenser.txt` byggs in i HTML-filen) |
 | `dist/` | Genererat och incheckat: `app.js`, `oppen-lonekartlaggning.html`, `RELEASE.txt`. Redigeras aldrig för hand |
 | `docs/anvandare/` | Dokument som följer med verktyget |
 | `docs/dataskydd/` | Dataskyddsbeskrivning och risk- och sårbarhetsanalys |

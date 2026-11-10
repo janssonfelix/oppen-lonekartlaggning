@@ -109,7 +109,7 @@ describe('säkerhet: CI-stegen är låsta på commit', () => {
 
 describe('säkerhet: bibliotekens versioner stämmer i dokumentationen', () => {
     // Versionen läses ur själva biblioteksfilen, så att en uppgradering inte kan lämna
-    // gamla versionsnummer i licenstexterna, Om verktyget eller LICENSES.md.
+    // gamla versionsnummer i licenstexterna, Om verktyget eller TREDJEPARTSLICENSER.md.
     const version = (fil, re) => { const m = läs(`vendor/${fil}`).slice(0, 3000).match(re); if (!m) throw new Error(`ingen version i ${fil}`); return m[1]; };
     const BIBLIOTEK = [
         ['PapaParse', version('papaparse.min.js', /Papa Parse\s+v(\d+\.\d+\.\d+)/)],
@@ -117,12 +117,12 @@ describe('säkerhet: bibliotekens versioner stämmer i dokumentationen', () => {
         ['SheetJS', version('xlsx.mini.min.js', /version="(\d+\.\d+\.\d+)"/)],
         ['D3', version('d3.min.js', /d3js\.org v(\d+\.\d+\.\d+)/)],
     ];
-    it('licenstexten, Om verktyget och LICENSES.md anger bibliotekens faktiska versioner', () => {
-        const licenser = läs('src/licenser.txt'), om = läs('src/app/65-om-verktyget.js'), md = läs('LICENSES.md');
+    it('licenstexten, Om verktyget och TREDJEPARTSLICENSER.md anger bibliotekens faktiska versioner', () => {
+        const licenser = läs('src/licenser.txt'), om = läs('src/app/65-om-verktyget.js'), md = läs('TREDJEPARTSLICENSER.md');
         for (const [namn, v] of BIBLIOTEK) {
             expect(licenser, `licenser.txt: ${namn} ${v}`).toMatch(new RegExp(`${namn}[^\\n]*\\b${v.replace(/\./g, '\\.')}\\b`));
             expect(om, `Om verktyget: ${namn} ${v}`).toMatch(new RegExp(`${namn}[^<]*</td><td>${v.replace(/\./g, '\\.')}</td>`));
-            expect(md, `LICENSES.md: ${namn} ${v}`).toMatch(new RegExp(`## ${namn}[\\s\\S]*?Version:\\*\\* ${v.replace(/\./g, '\\.')}\\b`));
+            expect(md, `TREDJEPARTSLICENSER.md: ${namn} ${v}`).toMatch(new RegExp(`^\\| ${namn}[^|\\n]* \\| ${v.replace(/\./g, '\\.')}\\b`, 'm'));
         }
     });
 });

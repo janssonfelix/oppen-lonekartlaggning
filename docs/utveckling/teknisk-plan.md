@@ -216,7 +216,7 @@ adaptern verkligen delegerar vaktas av `tests/drift.test.js`:
     namngivna efter flik eller funktion; tabellen står i `src/app/README.md`)
     och `src/lib/*.js` (rena moduler som testas direkt och speglas in i appen).
   - `vendor/` — tredjepartsbiblioteken (`vendor/d3.min.js` (diagram, ADR-39),
-    `vendor/xlsx.mini.min.js`, `vendor/papaparse.min.js`, `vendor/jszip.min.js`), se `LICENSES.md`.
+    `vendor/xlsx.mini.min.js`, `vendor/papaparse.min.js`, `vendor/jszip.min.js`), se `TREDJEPARTSLICENSER.md`.
   - `dist/` — genererat och incheckat: `dist/app.js`, `dist/oppen-lonekartlaggning.html`
     och `dist/RELEASE.txt`.
   - `docs/` — `docs/anvandare/` (medföljer verktyget), `docs/dataskydd/`,
