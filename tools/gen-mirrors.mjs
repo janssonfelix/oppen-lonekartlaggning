@@ -140,6 +140,10 @@ export const MODULES = [
         }
     },
     {
+        file: 'htmltext.js', ns: '__mirrorHtmlText',
+        expose: { utanTaggar: '_utanTaggar', htmlTillText: '_htmlTillText' }
+    },
+    {
         file: 'namn.js', ns: '__mirrorNamn',
         expose: { namnGenitiv: '_namnGenitiv', normaliseraNamn: '_namnNormalisera', personOrd: 'personOrd' }
     },
@@ -174,7 +178,9 @@ export const MODULES = [
     },
     {
         file: 'gapuppdelning.js', ns: '__mirrorGapuppdelning',
-        expose: { gapUppdelning: '_guGapUppdelning' }
+        expose: { gapUppdelning: '_guGapUppdelning', normaliseraGapVariabler: '_guNormaliseraVariabler', gapVariablerArStandard: '_guVariablerArStandard',
+                  gapDelar: '_guDelar', gapDelarIText: '_guDelarIText', gapVariabelEtikett: '_guVariabelEtikett', gapVariablerIText: '_guVariablerIText', gapAllaVariabler: '_guAllaVariabler',
+                  gapStandardVariabler: '_guStandardVariabler' }
     },
     {
         file: 'individflaggor.js', ns: '__mirrorIndivid',
@@ -275,7 +281,12 @@ export const MODULES = [
                   kronorSkillnad: '_figKronorSkillnad', kronorTipsRad: '_figKronorTipsRad',
                   kvantilpunkter: '_figKvantilpunkter',
                   urvalVarden: '_figUrvalVarden', urvalEtikett: '_figUrvalEtikett', arBortvald: '_figArBortvald',
-                  urvalLista: '_figUrvalLista', urvalSpann: '_figUrvalSpann', urvalBeskrivning: '_figUrvalBeskrivning' }
+                  urvalLista: '_figUrvalLista', urvalSpann: '_figUrvalSpann', urvalBeskrivning: '_figUrvalBeskrivning',
+                  urvalSomLista: '_figUrvalSomLista', urvalAktivt: '_figUrvalAktivt', harleddaLager: '_figHarleddaLager',
+                  harlettNot: '_figHarlettNot',
+                  underlagKonAntal: '_figUnderlagKonAntal', underlagSkyddat: '_figUnderlagSkyddat', underlagVarde: '_figUnderlagVarde',
+                  underlagDimension: '_figUnderlagDimension', underlagVarden: '_figUnderlagVarden', underlagValet: '_figUnderlagValet',
+                  underlagProva: '_figUnderlagProva', underlagBeskrivning: '_figUnderlagBeskrivning', namnIMening: '_figNamnIMening' }
     }
 ];
 

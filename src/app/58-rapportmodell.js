@@ -506,7 +506,7 @@ let _rmHandelser = 0;
 let _rmMinne = null;
 function _rmMinnesNyckel() {
     return [_rmHandelser, state.data.length, getData().length, kTroskel(), state.policy, state.statistik, state.forraArsbokslut, state.rapportTabeller,
-        state.perBasRecept, state.forklaringsmodell, state.bootstrapCI, state.powerAnalysis, state.likvardighet && state.likvardighet.result, state.isDemo];
+        state.perBasRecept, state.forklaringsmodell, state.gapUppdelning, state.bootstrapCI, state.powerAnalysis, state.likvardighet && state.likvardighet.result, state.isDemo];
 }
 /** Ett avsnitt som förhandsbeskedet ser det: id, rubrik, delarnas typ och det utelämnade. */
 function _rmLattAvsnitt(a) {
@@ -730,7 +730,7 @@ function _rmAvsnittenUtanUrval() {
     // Regressionens gap anges som skillnad i procent, negativ när kvinnor ligger lägre. Första steget ("Endast kön")
     // och den förklarade andelen följer tröskeln (_regStegForRedovisning, ADR-12).
     const nyckel = rader => ({ typ: 'tabell', nyckel: true, kolumner: [{ rubrik: '', typ: 'text' }, { rubrik: '', typ: 'text' }], rader });
-    const utanTaggar = t => String(t).replace(/<[^>]+>/g, '');
+    const utanTaggar = t => _utanTaggar(t);
     /** @type {{id: string, rubrik: string, utelamnat: string[], delar: any[], [k: string]: any}} */
     const regression = { id: 'regression', rubrik: 'Bilaga: Justerad löneskillnad i detalj', utelamnat: [], delar: [] };
     if (reg && !reg.error) {

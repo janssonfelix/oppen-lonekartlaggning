@@ -453,8 +453,9 @@ describe('menystruktur', () => {
 });
 
 describe('utfällt som standard', () => {
-    // Hjälppaneler förblir infällda; explore-urval-val är Utforskas rullgardin för värdeval (en kontroll, inte en gruppering).
-    const HJALP = ['flik-usage', 'audit-panel', 'bakgrund-panel', 'explore-urval-val'];
+    // Hjälppaneler förblir infällda; explore-urval-val är Utforskas rullgardin för värdeval och diagram-urval-lista
+    // diagramkärnans lista med kryssrutor ("Räkna för sektor", "Yrkesgrupp") — kontroller, inte grupperingar.
+    const HJALP = ['flik-usage', 'audit-panel', 'bakgrund-panel', 'explore-urval-val', 'diagram-urval-lista'];
     // ADR-36: organisationspaketets rad är ihopfälld på Översikt, och Underlagets kvalitet är
     // ihopfälld när allt är OK (utfälld vid varning).
     const UNDANTAG_ID = ['organisationspaket', 'uk-fallbar'];

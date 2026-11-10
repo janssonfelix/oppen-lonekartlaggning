@@ -335,6 +335,30 @@ describe('avsnittBlock uppdelning', () => {
         const b = avsnittBlock('uppdelning', u, { k: 10 });
         expect(b.tabell.rader[0][3].split('; ').length).toBe(u.topp.A.length || 1);
     });
+    // ADR-65: standardvalet ger texten från före ordagrant; ett annat val nämner variablerna och får en rad per del.
+    it('standardvalet: samma mening som före ADR-65, ordagrant', () => {
+        const u = gapUppdelning(data, { k: 10 });
+        const b = avsnittBlock('uppdelning', u, { k: 10 });
+        const { A, B, C } = u.delar;
+        const kr = v => `${formatTal(v, 0)} kr`;
+        expect(b.stycken).toContain(`Av skillnaden beror ${kr(A)} på att kvinnor och män är olika fördelade över BAS, ${kr(B)} på olika AID inom samma BAS och ${kr(C)} på löneskillnader inom samma AID och BAS.`);
+        expect(b.stycken.join(' ')).not.toContain('Uppdelningen förklarar med');
+        // Ett resultat utan variabler (äldre form) läses som standard.
+        const { variabler: _v, ...utan } = u;
+        expect(avsnittBlock('uppdelning', utan, { k: 10 })).toEqual(b);
+    });
+    it('ett annat val: variablerna nämns, och tabellen har en rad per del', () => {
+        const rik = data.map((r, i) => ({ ...r, alder: 25 + (i % 40) }));
+        const u = gapUppdelning(rik, { k: 10, variabler: ['bas', 'alder', 'aid'] });
+        const b = avsnittBlock('uppdelning', u, { k: 10 });
+        const text = b.stycken.join(' ');
+        expect(text).toContain('Uppdelningen förklarar med variablerna BAS, åldersgrupp och AID, i den ordningen. Ordningen påverkar delarna');
+        expect(text).toMatch(/på olika ålder inom samma BAS, .* på olika AID inom samma åldersgrupp och BAS och .* på löneskillnader inom samma AID, åldersgrupp och BAS\./);
+        expect(b.tabell.rader.map(r => r[0])).toEqual(['BAS-fördelning', 'Åldersgrupp inom BAS', 'AID inom åldersgrupp och BAS', 'Inom AID, åldersgrupp och BAS', 'Totalt']);
+        const en = avsnittBlock('uppdelning', gapUppdelning(rik, { k: 10, variabler: ['alder'] }), { k: 10 });
+        expect(en.stycken.join(' ')).toContain('Uppdelningen förklarar med variabeln åldersgrupp; resten är skillnaden inom samma grupp.');
+        expect(en.tabell.rader.map(r => r[0])).toEqual(['Åldersfördelning', 'Inom åldersgrupp', 'Totalt']);
+    });
     it('null: "för få personer" utan tabell', () => {
         const b = avsnittBlock('uppdelning', null, { k: 10, demo: true });
         expect(b.stycken[0]).toBe('DEMODATA — inte verkliga löner.');

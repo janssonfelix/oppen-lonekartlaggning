@@ -3435,7 +3435,7 @@ function bakaIn(html, paketJson, meta = {}) {
 
 /** Skriptblocken i en HTML-text, för tester som hävdar att inbakningen inte rör något skript. */
 function skriptBlock(html) {
-    return [...String(html ?? '').matchAll(/<script\b[^>]*>[\s\S]*?<\/script>/g)].map(m => m[0]);
+    return [...String(html ?? '').matchAll(/<script\b[^>]*>[\s\S]*?<\/script[^>]*>/gi)].map(m => m[0]);
 }
 
     return { bakaIn, filnamnForslag, normaliseraFilnamn };
@@ -3813,6 +3813,38 @@ function etikettlistaInfo() {
 const _aidSektorsnamn = __mirrorAid.sektorsnamn;
 const _aidJamforSektor = __mirrorAid.jamforSektor;
 const _aidEtikettlistaInfo = __mirrorAid.etikettlistaInfo;
+
+// ---- speglar src/lib/htmltext.js ----
+const __mirrorHtmlText = (() => {
+// SPDX-License-Identifier: MIT
+// Copyright 2026 Felix Jansson
+/**
+ * Öppen lönekartläggning — HTML-text som vanlig text: taggarna bort och tecknen avkodade.
+ *
+ * Verktygets egna texter (metodbilagans regler, förslagen i gruppdossiern) är skrivna som HTML. I Excel, utskriftens
+ * listor och textkopior ska de stå som vanlig text. Taggarna tas bort tills inga finns kvar (en ersättning i ett svep
+ * lämnar `<scr<b>ipt>` som `<script>`), och ett ensamt `<` som blir kvar tas bort. Avkodningen tar &amp; sist, så att
+ * `&amp;lt;` blir `&lt;` och inte `<`.
+ *
+ * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
+ */
+
+/** Texten utan HTML-taggar (entiteterna står kvar). */
+function utanTaggar(text) {
+    let s = String(text ?? ''), forra;
+    do { forra = s; s = s.replace(/<[^<>]*>/g, ''); } while (s !== forra);
+    return s.replace(/</g, '');
+}
+
+/** Texten utan HTML-taggar och med &lt; &gt; &quot; &#39; &amp; avkodade: vanlig text, ska escapas igen i HTML. */
+function htmlTillText(text) {
+    return utanTaggar(text).replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&');
+}
+
+    return { utanTaggar, htmlTillText };
+})();
+const _utanTaggar = __mirrorHtmlText.utanTaggar;
+const _htmlTillText = __mirrorHtmlText.htmlTillText;
 
 // ---- speglar src/lib/namn.js ----
 const __mirrorNamn = (() => {
@@ -4574,20 +4606,128 @@ const __mirrorGapuppdelning = (() => {
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 /**
- * Öppen lönekartläggning — Var uppstår löneskillnaden? (ADR-22)
+ * Öppen lönekartläggning — Var uppstår löneskillnaden? (ADR-22, valbara variabler ADR-65)
  *
- * Delar gapet i medellön (kvinnor − män, kr/mån; negativt när kvinnor ligger lägre) i tre delar som summerar exakt:
+ * Delar gapet i medellön (kvinnor − män, kr/mån; negativt när kvinnor ligger lägre) i delar som summerar exakt.
+ * Standardvalet är variablerna BAS och AID, i den ordningen, och ger tre delar:
  *   A  BAS-fördelning       Σ_b Δs_b · (W̄_b − W̄)
  *   B  AID inom BAS         Σ_b s̄_b · Σ_a Δs_a|b · (W̄_ab − W̄_b)
  *   C  inom AID och BAS     Σ_b s̄_b · Σ_a s̄_a|b · ΔW_ab
+ * Allmänt, med variablerna v_1 … v_n (1 ≤ n ≤ 4) nästlade i den ordningen: varje cell c på nivå i−1 har vikten
+ * ω_c = produkten av s̄ längs vägen från roten (roten: ω = 1, hela urvalet). Då är
+ *   del i (1 ≤ i ≤ n)   Σ_c ω_c · Σ_{barn b av c} Δs_b|c · (W̄_b − W̄_c)
+ *   del n+1 (inom)      Σ_{löv l} ω_l · ΔW_l,  där ω_l = ω_förälder · s̄_l
+ * Summan är exakt ΔW för roten, eftersom ΔW_c = Σ_b Δs_b|c · W̄_b + Σ_b s̄_b|c · ΔW_b (symmetriskt, ΔX·Ȳ + X̄·ΔY).
  * Δx = x_kvinnor − x_män, x̄ = (x_män + x_kvinnor) / 2 (symmetriskt, inget referenskön).
- * Saknas ett kön i en grupp sätts dess medellön lika med det andra könets; gruppen
- * bidrar då bara till fördelningsdelen. Centreringen (− W̄, − W̄_b) ändrar inga summor
+ * Saknas ett kön i en cell sätts dess medellön lika med det andra könets; cellen bidrar då bara till sin
+ * fördelningsdel, och inget under den räknas (ΔW = 0). Centreringen (− W̄_c) ändrar inga summor
  * eftersom Σ Δs = 0, men gör varje grupps post tolkbar.
+ * AID-nivåerna (sektor, aidniva, aid) ordnas alltid grovt till fint på sina platser: en finare nivå före en grövre
+ * ger annars en tom del. Ålder (åldersgrupp, ageBucket) kan bara väljas när lönefilen har ålder (ADR-64).
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
 
+
+/** Variablerna i den ordning gränssnittet visar dem. */
+const GAP_VARIABLER = ['bas', 'sektor', 'aidniva', 'aid', 'alder'];
+const GAP_VARIABLER_STANDARD = ['bas', 'aid'];
+/** Alla variabler, i gränssnittets ordning (en kopia). */
+function gapAllaVariabler() { return [...GAP_VARIABLER]; }
+/** Standardvalet BAS, AID (en kopia). */
+function gapStandardVariabler() { return [...GAP_VARIABLER_STANDARD]; }
+const GAP_MAX = 4;
+// AID-hierarkin, grov till fin (ADR-33).
+const AID_NIVAER = ['sektor', 'aidniva', 'aid'];
+
+// Ord per variabel: etikett (kryssrutan), liten (i löptext: "inom samma …"), fordelning (del 1), over ("fördelade över …"
+// i kortet), overKort (samma i rapportunderlaget), olika ("har olika … inom samma"), post (en grupps namn).
+const ORD = {
+    bas: { etikett: 'BAS', liten: 'BAS', fordelning: 'BAS-fördelning', over: 'BAS-intervallen', overKort: 'BAS', olika: 'BAS', post: n => `BAS ${n}` },
+    sektor: { etikett: 'Sektor', liten: 'sektor', fordelning: 'Sektorsfördelning', over: 'sektorerna', overKort: 'sektorer', olika: 'sektor', post: n => n },
+    aidniva: { etikett: 'AID-mellannivå', liten: 'AID-mellannivå', fordelning: 'Fördelning över AID-mellannivåer', over: 'AID-mellannivåerna', overKort: 'AID-mellannivåer', olika: 'AID-mellannivå', post: n => n },
+    aid: { etikett: 'AID', liten: 'AID', fordelning: 'AID-fördelning', over: 'AID-koderna', overKort: 'AID', olika: 'AID', post: n => n },
+    alder: { etikett: 'Åldersgrupp', liten: 'åldersgrupp', fordelning: 'Åldersfördelning', over: 'åldersgrupperna', overKort: 'åldersgrupper', olika: 'ålder', post: n => n === '—' ? 'ålder saknas' : `${n} år` },
+};
+
+/** Etiketten för en variabel (kryssrutan, rapportunderlaget). @param {string} v */
+function gapVariabelEtikett(v) { return ORD[v] ? ORD[v].etikett : String(v); }
+
+const _versal = t => t.charAt(0).toUpperCase() + t.slice(1);
+// Gemen i löptext, utom förkortningar (BAS, AID).
+const _gemen = t => (t.length > 1 && t[1] === t[1].toUpperCase() && t[1] !== t[1].toLowerCase()) ? t : t.charAt(0).toLowerCase() + t.slice(1);
+const _och = a => a.length <= 1 ? (a[0] || '') : `${a.slice(0, -1).join(', ')} och ${a[a.length - 1]}`;
+
+/**
+ * Normaliserar ett val från konfigurationsfilen eller gränssnittet: bara kända variabler, inga dubbletter, högst fyra,
+ * AID-nivåerna grovt till fint och åldersgrupp bara när lönefilen har ålder. Ett tomt eller ogiltigt val ger
+ * standard med en varning; null ger standard utan varning.
+ * @param {any} v
+ * @param {{harAlder?: boolean}} [opts]
+ * @returns {{variabler: string[], varningar: string[]}}
+ */
+function normaliseraGapVariabler(v, { harAlder = true } = {}) {
+    const varningar = [];
+    if (v == null) return { variabler: [...GAP_VARIABLER_STANDARD], varningar };
+    if (!Array.isArray(v)) {
+        varningar.push('Uppdelningens variabler gick inte att läsa; standardvalet BAS och AID används.');
+        return { variabler: [...GAP_VARIABLER_STANDARD], varningar };
+    }
+    let val = [...new Set(v.filter(x => typeof x === 'string' && GAP_VARIABLER.includes(x)))];
+    if (val.length > GAP_MAX) {
+        val = val.slice(0, GAP_MAX);
+        varningar.push('Högst fyra variabler kan väljas; de första fyra används.');
+    }
+    if (!harAlder && val.includes('alder')) {
+        val = val.filter(x => x !== 'alder');
+        varningar.push('Åldersgrupp kan inte väljas: lönefilen saknar ålder.');
+    }
+    if (!val.length) {
+        if (!varningar.length) varningar.push('Uppdelningen behöver minst en variabel; standardvalet BAS och AID används.');
+        return { variabler: [...GAP_VARIABLER_STANDARD], varningar };
+    }
+    // AID-nivåerna på sina platser, grovt till fint.
+    const platser = val.map((x, i) => AID_NIVAER.includes(x) ? i : -1).filter(i => i >= 0);
+    const nivaer = platser.map(i => val[i]).sort((a, b) => AID_NIVAER.indexOf(a) - AID_NIVAER.indexOf(b));
+    platser.forEach((p, j) => { val[p] = nivaer[j]; });
+    return { variabler: val, varningar };
+}
+
+/** Sant när valet (efter normalisering) är standardvalet BAS, AID. @param {any} v */
+function gapVariablerArStandard(v) {
+    const n = normaliseraGapVariabler(v).variabler;
+    return n.length === GAP_VARIABLER_STANDARD.length && n.every((x, i) => x === GAP_VARIABLER_STANDARD[i]);
+}
+
+/**
+ * Delarna för ett val: id (A, B, …), namn, variabel (null för den sista, "inom"), texten i kortet (betyder) och
+ * frasen i rapportunderlaget (orsak: "på …"). Standardvalet ger texterna från före ADR-65.
+ * @param {string[]} variabler normaliserade
+ * @returns {{id: string, namn: string, variabel: string|null, betyder: string, orsak: string}[]}
+ */
+function gapDelar(variabler) {
+    const v = variabler && variabler.length ? variabler : GAP_VARIABLER_STANDARD;
+    const inom = i => _och(v.slice(0, i).reverse().map(x => ORD[x].liten));   // finast först: "AID och BAS"
+    /** @type {{id: string, namn: string, variabel: string|null, betyder: string, orsak: string}[]} */
+    const delar = v.map((x, i) => i === 0
+        ? { id: 'ABCDE'[i], namn: ORD[x].fordelning, variabel: x, betyder: `Kvinnor och män är olika fördelade över ${ORD[x].over}.`,
+            orsak: `på att kvinnor och män är olika fördelade över ${ORD[x].overKort}` }
+        : { id: 'ABCDE'[i], namn: `${_versal(ORD[x].liten)} inom ${inom(i)}`, variabel: x,
+            betyder: `Kvinnor och män har olika ${ORD[x].olika} inom samma ${inom(i)}.`, orsak: `på olika ${ORD[x].olika} inom samma ${inom(i)}` });
+    delar.push({ id: 'ABCDE'[v.length], namn: `Inom ${inom(v.length)}`, variabel: null,
+        betyder: `Kvinnor och män har olika lön i samma ${inom(v.length)}.`, orsak: `på löneskillnader inom samma ${inom(v.length)}` });
+    return delar;
+}
+
+/** Variablerna i löptext, i valets ordning: "BAS, åldersgrupp och AID". @param {string[]} variabler */
+function gapVariablerIText(variabler) { return _och((variabler || []).map(x => ORD[x] ? ORD[x].liten : String(x))); }
+
+/** Delarna i en mening: "BAS-fördelning, AID inom BAS och lön inom samma AID och BAS". @param {string[]} variabler */
+function gapDelarIText(variabler) {
+    const v = variabler && variabler.length ? variabler : GAP_VARIABLER_STANDARD;
+    const d = gapDelar(v);
+    return _och([...d.slice(0, -1).map(x => _gemen(x.namn)), `lön inom samma ${_och(v.slice().reverse().map(x => ORD[x].liten))}`]);
+}
 
 const _medel = rader => rader.reduce((s, r) => s + r.lon, 0) / rader.length;
 
@@ -4617,9 +4757,11 @@ function _cell(g, totKv, totMa, k) {
 
 /** @typedef {{namn:string, kr:number, synlig:boolean}} Post */
 
-// Alla poster per del, med synlig = båda könen i gruppen (och för B/C även BAS:en) har 0 eller
-// minst k personer. null när ett kön har färre än k i hela urvalet.
-function _beraknaPoster(rader, k) {
+// Alla poster per del (A, B, …), med synlig = båda könen i cellen och i alla dess överceller har 0 eller minst k
+// personer. null när ett kön har färre än k i hela urvalet. Posterna läggs i samma ordning och räknas med samma
+// operationer som före ADR-65 (djupet först, vikten ω multipliceras från vänster), så att standardvalet ger
+// bitlika tal.
+function _beraknaPoster(rader, k, variabler) {
     const kv = [], ma = [];
     for (const r of rader || []) {
         if (!(r.lon > 0)) continue;
@@ -4631,35 +4773,48 @@ function _beraknaPoster(rader, k) {
 
     const medel = { kv: _medel(kv), ma: _medel(ma) };
     const wTot = (medel.ma + medel.kv) / 2;
-    /** @type {{A: Post[], B: Post[], C: Post[]}} */
-    const poster = { A: [], B: [], C: [] };
+    const n = variabler.length;
+    /** @type {Record<string, Post[]>} */
+    const poster = {};
+    for (let i = 0; i <= n; i++) poster['ABCDE'[i]] = [];
+    const nyckel = v => r => groupKey(r, v) ?? '—';   // åldersgrupp saknas (ålder 0) blir en egen grupp
 
-    for (const [bas, gb] of _grupper(kv, ma, r => r.bas || '—')) {
-        const b = _cell(gb, kv.length, ma.length, k);
-        poster.A.push({ namn: `BAS ${bas}`, kr: (b.sKv - b.sMa) * (b.w - wTot), synlig: b.synlig });
-        if (!b.bada) continue;   // ΔW_b = 0 — BAS:en bidrar varken till B eller C
-        const sb = (b.sKv + b.sMa) / 2;
-        for (const [aid, ga] of _grupper(gb.kv, gb.ma, r => groupKey(r, 'aid'))) {
-            const a = _cell(ga, gb.kv.length, gb.ma.length, k);
-            const namn = `${aid}, BAS ${bas}`;
-            // BAS-medellönen (båda könens) ingår i B-posten, så även BAS:en måste klara k.
-            const synlig = a.synlig && b.synlig;
-            poster.B.push({ namn, kr: sb * (a.sKv - a.sMa) * (a.w - b.w), synlig });
-            poster.C.push({ namn, kr: sb * ((a.sKv + a.sMa) / 2) * (a.wKv - a.wMa), synlig });
+    // Cellen på nivå `niva` (0 = roten) med vikten ω (null i roten), medellönen w, namnen uppåt och om alla
+    // överceller är synliga.
+    const ner = (gkv, gma, niva, omega, w, namn, synligUppat) => {
+        const v = variabler[niva];
+        for (const [key, g] of _grupper(gkv, gma, nyckel(v))) {
+            const c = _cell(g, gkv.length, gma.length, k);
+            const cNamn = [ORD[v].post(key), ...namn];
+            const synlig = c.synlig && synligUppat;
+            const delta = c.sKv - c.sMa;
+            poster['ABCDE'[niva]].push({ namn: cNamn.join(', '), kr: omega === null ? delta * (c.w - w) : omega * delta * (c.w - w), synlig });
+            if (niva + 1 < n) {
+                if (!c.bada) continue;   // ΔW_c = 0 — cellen bidrar inte längre ner
+                const sc = (c.sKv + c.sMa) / 2;
+                ner(g.kv, g.ma, niva + 1, omega === null ? sc : omega * sc, c.w, cNamn, synlig);
+            } else {
+                const sc = (c.sKv + c.sMa) / 2;
+                poster['ABCDE'[n]].push({ namn: cNamn.join(', '), kr: omega === null ? sc * (c.wKv - c.wMa) : omega * sc * (c.wKv - c.wMa), synlig });
+            }
         }
-    }
+    };
+    ner(kv, ma, 0, null, wTot, [], true);
     return { kv, ma, medel, poster };
 }
 
 /** Samtliga poster, även dolda — bara för tester av skyddsregeln; redovisas aldrig. */
 /**
  * @param {any[]} rader
- * @param {{k?:number}} [opts]
+ * @param {{k?:number, variabler?:any}} [opts]
  */
-function gapPoster(rader, { k } = {}) {
-    const r = _beraknaPoster(rader, k);
+function gapPoster(rader, { k, variabler } = {}) {
+    const r = _beraknaPoster(rader, k, _variablerFor(rader, variabler));
     return r ? r.poster : null;
 }
+
+// Valet normaliserat mot underlaget: åldersgrupp bara när lönefilen har ålder (ålder 0 = saknas, ADR-64).
+const _variablerFor = (rader, variabler) => normaliseraGapVariabler(variabler, { harAlder: (rader || []).some(r => r && r.alder > 0) }).variabler;
 
 // Skyddsregel för topplistan. Det som inte visas i en del är delens summa minus de visade
 // posterna. Den som läser vet inte beloppen eller tecknen på de enskilda posterna i resten,
@@ -4668,8 +4823,8 @@ function gapPoster(rader, { k } = {}) {
 // |h| ≥ 0,5 kr. Håller det inte tas den minsta visade posten bort ur listan (den går in i
 // resten) tills regeln håller. De dolda gruppernas summa redovisas aldrig.
 // Håller regeln inte ens med tom lista består delen i praktiken av den dolda gruppen; då
-// redovisas inga delar alls (skyddad: false) — A + B + C = hela skillnaden, så en enskild del
-// kan inte döljas medan de andra visas.
+// redovisas inga delar alls (skyddad: false) — delarna summerar till hela skillnaden, så en enskild del
+// kan inte döljas medan de andra visas. Regeln gäller per del, för varje val av variabler (ADR-65).
 const SKYDD = 0.5;
 function _skyddad(poster, visade) {
     const vis = new Set(visade);
@@ -4681,17 +4836,18 @@ function _skyddad(poster, visade) {
 
 /**
  * @param {any[]} rader
- * @param {{k?:number}} [opts]
+ * @param {{k?:number, variabler?:any}} [opts] variabler: förklaringsvariablerna i ordning (null = standard, BAS och AID)
  */
-function gapUppdelning(rader, { k } = {}) {
-    const r = _beraknaPoster(rader, k);
+function gapUppdelning(rader, { k, variabler } = {}) {
+    const val = _variablerFor(rader, variabler);
+    const r = _beraknaPoster(rader, k, val);
     if (!r) return null;
     const { kv, ma, medel, poster } = r;
     const gap = medel.kv - medel.ma;   // kvinnor mot män, som i resten av verktyget
 
     const delar = {}, topp = {}, ovrigaAntal = {};
     let skyddad = true;
-    for (const d of ['A', 'B', 'C']) {
+    for (const d of Object.keys(poster)) {
         delar[d] = poster[d].reduce((s, p) => s + p.kr, 0);
         ovrigaAntal[d] = poster[d].filter(p => !p.synlig).length;
         // Poster som avrundas till 0 kr säger inget och visas inte (de ingår i delen).
@@ -4704,13 +4860,21 @@ function gapUppdelning(rader, { k } = {}) {
     }
     const gapPct = gap / medel.ma * 100;
     const bas = { n: { kv: kv.length, ma: ma.length }, medel, gap, gapPct, litetGap: Math.abs(gapPct) < 1 };
-    if (!skyddad) return { ...bas, skyddad: false, delar: null, topp: null, ovrigaAntal: null };
-    return { ...bas, skyddad: true, delar, topp, ovrigaAntal };
+    if (!skyddad) return { ...bas, skyddad: false, delar: null, topp: null, ovrigaAntal: null, variabler: val };
+    return { ...bas, skyddad: true, delar, topp, ovrigaAntal, variabler: val };
 }
 
-    return { gapUppdelning };
+    return { gapUppdelning, normaliseraGapVariabler, gapVariablerArStandard, gapDelar, gapDelarIText, gapVariabelEtikett, gapVariablerIText, gapAllaVariabler, gapStandardVariabler };
 })();
 const _guGapUppdelning = __mirrorGapuppdelning.gapUppdelning;
+const _guNormaliseraVariabler = __mirrorGapuppdelning.normaliseraGapVariabler;
+const _guVariablerArStandard = __mirrorGapuppdelning.gapVariablerArStandard;
+const _guDelar = __mirrorGapuppdelning.gapDelar;
+const _guDelarIText = __mirrorGapuppdelning.gapDelarIText;
+const _guVariabelEtikett = __mirrorGapuppdelning.gapVariabelEtikett;
+const _guVariablerIText = __mirrorGapuppdelning.gapVariablerIText;
+const _guAllaVariabler = __mirrorGapuppdelning.gapAllaVariabler;
+const _guStandardVariabler = __mirrorGapuppdelning.gapStandardVariabler;
 
 // ---- speglar src/lib/individflaggor.js ----
 const __mirrorIndivid = (() => {
@@ -5725,10 +5889,10 @@ function referensOverblick(rader, { harStatistik = true, harStallningstagande = 
         statistikMotStallningstagande };
 }
 
-/** Bildens rader i listans ordning: de tre spannen per yrkesgrupp, null för en referens utan median, och gruppens BAS-intervall och antal (bildens urval; antalet står i listans kolumn n). */
+/** Bildens rader i listans ordning: de tre spannen per yrkesgrupp, null för en referens utan median, och gruppens yrke, AID, BAS-intervall och antal (bildens urval; antalet står i listans kolumn n). */
 function hantelRader(grupper) {
     const ref = v => (v?.median != null ? { p10: v.p10, median: v.median, p90: v.p90 } : null);
-    return (grupper || []).map(g => ({ namn: `${g.yrke} · BAS ${g.bas}`, bas: g.bas, n: g.n, stallningstagande: ref(g.stallningstagande), statistik: ref(g.statistik), org: g.org }));
+    return (grupper || []).map(g => ({ namn: `${g.yrke} · BAS ${g.bas}`, yrke: g.yrke, aid: g.aid, bas: g.bas, n: g.n, stallningstagande: ref(g.stallningstagande), statistik: ref(g.statistik), org: g.org }));
 }
 
     return { lageISpann, monster, forslag, referensOverblick, hantelRader, lageOchForslag };
@@ -5752,6 +5916,10 @@ const __mirrorRapportunderlag = (() => {
     const statusKonstanter = __mirrorStatus.statusKonstanter;
     const lonebegreppReservation = __mirrorStructure.lonebegreppReservation;
     const personOrd = __mirrorNamn.personOrd;
+    const gapDelar = __mirrorGapuppdelning.gapDelar;
+    const gapVariablerIText = __mirrorGapuppdelning.gapVariablerIText;
+    const gapVariablerArStandard = __mirrorGapuppdelning.gapVariablerArStandard;
+    const gapStandardVariabler = __mirrorGapuppdelning.gapStandardVariabler;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -5766,6 +5934,7 @@ const __mirrorRapportunderlag = (() => {
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
+
 
 
 
@@ -6064,18 +6233,24 @@ function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
         if (!u) return blk(R, [`För få personer för att dela upp skillnaden: ett kön har färre än ${k} ${personOrd(k)} i urvalet.`], null);
         const inledning = `Kvinnornas medellön är ${_kr(u.medel.kv)} och männens ${_kr(u.medel.ma)}, en skillnad på ${_kr(u.gap)} (${_pct(u.gapPct)} av männens).`;
         if (u.skyddad === false) return blk(R, [inledning, `Skillnaden delas inte upp här: en grupp med färre än ${k} ${personOrd(k)} står för så stor del av en av delarna att dess bidrag annars skulle kunna räknas fram.`], null);
-        const { A, B, C } = u.delar;
+        // Delarna och deras namn följer de valda variablerna (ADR-65); standardvalet BAS, AID ger texten från före.
+        const variabler = u.variabler || gapStandardVariabler();
+        const delar = gapDelar(variabler);
+        const orsaker = delar.map(d => `${_kr(u.delar[d.id])} ${d.orsak}`);
         const st = [`${inledning} Beloppen är kvinnor mot män: negativa belopp betyder att kvinnornas medellön är lägre.`,
-            `Av skillnaden beror ${_kr(A)} på att kvinnor och män är olika fördelade över BAS, ${_kr(B)} på olika AID inom samma BAS och ${_kr(C)} på löneskillnader inom samma AID och BAS.`];
+            `Av skillnaden beror ${orsaker.slice(0, -1).join(', ')} och ${orsaker[orsaker.length - 1]}.`];
+        if (!gapVariablerArStandard(variabler)) {
+            st.push(variabler.length === 1
+                ? `Uppdelningen förklarar med variabeln ${gapVariablerIText(variabler)}; resten är skillnaden inom samma grupp.`
+                : `Uppdelningen förklarar med variablerna ${gapVariablerIText(variabler)}, i den ordningen. Ordningen påverkar delarna: den första variabeln får det den förklarar ensam, nästa det den förklarar utöver den första, och så vidare.`);
+        }
         if (u.litetGap) st.push('Skillnaden är mindre än 1 % av männens medellön. Delarna kan då peka åt olika håll och vara större än själva skillnaden.');
         const andel = v => u.litetGap ? '—' : _pct(v / u.gap * 100, 0);
         // Samma poster som kortet: listan är redan kortad efter skyddsregeln, och en kortare
         // lista här kunde bryta den (gapuppdelning.js).
         const storst = d => u.topp[d].map(p => `${p.namn} (${_kr(p.kr)})`).join('; ') || '—';
         return blk(R, st, { rubriker: ['Del', 'Bidrag (kr)', 'Andel av skillnaden', 'Störst bidrag'], rader: [
-            ['BAS-fördelning', _kr(A), andel(A), storst('A')],
-            ['AID inom BAS', _kr(B), andel(B), storst('B')],
-            ['Inom AID och BAS', _kr(C), andel(C), storst('C')],
+            ...delar.map(d => [d.namn, _kr(u.delar[d.id]), andel(u.delar[d.id]), storst(d.id)]),
             ['Totalt', _kr(u.gap), u.litetGap ? '—' : '100 %', ''],
         ] });
     }
@@ -8275,13 +8450,25 @@ function ladstatistik(varden) {
 
 // ---- Urval: dimensioner användaren kan filtrera diagrammet på (figur.urval) ----
 // `figur.urval` är en lista med dimensioner, eller ett ensamt objekt (då en lista med ett element). En dimension är
-//   { typ: 'kategori', falt, namn, etikett? }  — en knapp per värde; utan typ är det en kategori (det äldre formatet)
+//   { typ: 'kategori', falt, namn, etikett?, visning? } — en knapp per värde, eller en hopfälld lista med
+//       kryssrutor (visning: 'lista', eller fler än URVAL_LISTA_MAX värden); utan typ är det en kategori (det äldre formatet)
 //   { typ: 'intervall', falt, namn, format?, etikett? } — fälten Minst och Högst
-// Ett filter döljer bara märken; inget tal räknas om.
+// Ett filter döljer bara märken; inget tal räknas om — utom i ett härlett lager (harleddAv, se harleddaLager).
 
 /** Talformaten som `talformat` känner (och som en intervalldimensions `format` får vara). */
 const TALFORMAT = Object.freeze(['kr', 'pct', 'pctAbs', 'antal', 'tal2', 'ar']);
 const URVAL_TYPER = ['kategori', 'intervall'];
+/** En kategori med fler värden än så visas som en lista med kryssrutor i stället för en knapp per värde. */
+const URVAL_LISTA_MAX = 12;
+
+/**
+ * Sant när kategoridimensionen `dim` med `antal` värden visas som en lista (kryssrutor, sökfält, Markera alla):
+ * dimensionen har `visning: 'lista'`, eller fler än URVAL_LISTA_MAX värden.
+ * @param {any} dim @param {number} antal
+ */
+function urvalSomLista(dim, antal) {
+    return !!dim && (dim.visning === 'lista' || antal > URVAL_LISTA_MAX);
+}
 
 // Dimensionens typ: utan `typ` är den en kategori (det äldre formatet { falt, namn, etikett }).
 function _urvalTyp(u) { return u && u.typ != null ? u.typ : 'kategori'; }
@@ -8463,10 +8650,12 @@ function urvalIntervallText(dim, g) {
  * (etiketterna i värdenas ordning), för ett intervall mallen `etikett` med `{v}` utbytt mot intervallet
  * ('{v} personer i gruppen' → '10–50 personer i gruppen'), eller namnet och intervallet utan mall. Noten under
  * diagrammet och exportens fotrad visar samma text. Utan något aktivt: en tom lista.
- * @param {any} figur @param {any} filter (se arBortvald)
+ * En kategori som visas som lista (urvalSomLista) med fler än tre bortvalda säger i stället 'bara X, Y' (högst tre
+ * valda) eller namnet och antalet ('Yrkesgrupp 12 av 40'); antalet räknas bland värdena som får visas (`visaSma`).
+ * @param {any} figur @param {any} filter (se arBortvald) @param {{visaSma?: boolean}} [val]
  * @returns {string[]}
  */
-function urvalBeskrivning(figur, filter) {
+function urvalBeskrivning(figur, filter, { visaSma = false } = {}) {
     const f = _filterNorm(figur, filter);
     if (!f) return [];
     const ut = [];
@@ -8478,10 +8667,265 @@ function urvalBeskrivning(figur, filter) {
             const b = f.kategori && f.kategori.get(u.falt);
             if (!b || typeof b.has !== 'function' || !b.size) continue;
             const etiketter = urvalVarden(figur, u, { visaSma: true }).filter(v => b.has(v)).map(v => urvalEtikett(figur, u, v));
-            if (etiketter.length) ut.push(`utan ${etiketter.join(', ')}`);
+            if (!etiketter.length) continue;
+            const varden = urvalVarden(figur, u, { visaSma });
+            if (etiketter.length > 3 && urvalSomLista(u, varden.length)) {
+                const valda = varden.filter(v => !b.has(v));
+                ut.push(valda.length && valda.length <= 3 ? `bara ${valda.map(v => urvalEtikett(figur, u, v)).join(', ')}` : `${u.namn} ${valda.length} av ${varden.length}`);
+            } else ut.push(`utan ${etiketter.join(', ')}`);
         }
     }
     return ut;
+}
+
+/**
+ * Sant när filtret döljer något: ett bortvalt värde i en kategori eller en gräns i ett intervall (en mängd, det
+ * äldre formatet: minst ett bortvalt värde). Annat än ett filter: falskt.
+ * @param {any} filter
+ */
+function urvalAktivt(filter) {
+    if (!filter || typeof filter !== 'object') return false;
+    if (typeof filter.has === 'function') return filter.size > 0;
+    const kat = filter.kategori && typeof filter.kategori.values === 'function' ? [...filter.kategori.values()] : [];
+    if (kat.some(s => s && s.size > 0)) return true;
+    const int = filter.intervall && typeof filter.intervall.values === 'function' ? [...filter.intervall.values()] : [];
+    return int.some(g => g && ((typeof g.min === 'number' && isFinite(g.min)) || (typeof g.max === 'number' && isFinite(g.max))));
+}
+
+/**
+ * Figuren med sina härledda lager räknade för filtret. Ett lager med `harleddAv: { lager, berakna, minN?, namn?,
+ * villkor? }` (t.ex. en trendlinje) räknas ur punkterna i källagren — lagren vars `serie` står i `lager`. Utan ett
+ * aktivt filter (urvalAktivt) är svaret figuren själv, samma objekt: talen är då vyns egna. Med ett aktivt filter får
+ * lagret `berakna(punkter)` som data, där punkterna är källagrens SYNLIGA punkter (inte bortvalda, och inte små
+ * om inte `visaSma`) — omräkningen bygger bara på det som redan syns — och, med `villkor`, bara de för vilka
+ * `villkor(punkt)` är sant (t.ex. ett köns punkter ur lager per BAS-intervall). Källorna läses alltid ur källagrens
+ * egna data, aldrig ur ett omräknat lager: ett lager får nämna sin egen serie (det läggs då om ur sina egna synliga
+ * punkter, t.ex. trädkartans ytor) och ett sådant lager får vara källa till andra. Har källorna färre än `minN`
+ * (minst 1) punkter blir lagret tomt (ritas inte) och står i `utelamnade`. `berakna` ger en lista, eller
+ * `{ data, serie? }` när lagrets namn i förklaringen bär ett tal som också räknas om (R² i en trendlinje). Lagrets
+ * index och övriga fält är oförändrade. Den nya figuren prövas med valideraFigur (kastar om `berakna` gav ogiltig data).
+ * @param {any} figur  en giltig figur
+ * @param {any} filter  se arBortvald
+ * @param {{visaSma?: boolean}} [val]
+ * @returns {{figur: any, omraknade: Array<{index: number, namn: string}>, utelamnade: Array<{index: number, namn: string, minN: number, antal: number}>}}
+ */
+function harleddaLager(figur, filter, { visaSma = false } = {}) {
+    /** @type {{figur: any, omraknade: Array<{index: number, namn: string}>, utelamnade: Array<{index: number, namn: string, minN: number, antal: number}>}} */
+    const ut = { figur, omraknade: [], utelamnade: [] };
+    const lager = figur && Array.isArray(figur.lager) ? figur.lager : [];
+    if (!lager.some(l => l && l.harleddAv) || !urvalAktivt(filter)) return ut;
+    const synlig = d => !!d && typeof d === 'object' && (visaSma || !d.liten) && !arBortvald(figur, filter, d);
+    const nya = lager.map((l, index) => {
+        const h = l && l.harleddAv;
+        if (!h) return l;
+        const kallor = new Set(h.lager.map(String));
+        const villkor = typeof h.villkor === 'function' ? h.villkor : () => true;
+        const punkter = [];
+        lager.forEach((k, ki) => {
+            if (!k || k.serie == null || !kallor.has(String(k.serie)) || (ki !== index && !_kanVaraKalla(k))) return;
+            for (const d of k.data) if (synlig(d) && villkor(d)) punkter.push(d);
+        });
+        const minN = Math.max(1, typeof h.minN === 'number' && isFinite(h.minN) ? h.minN : 1);
+        const namn = harlettNamn(l);
+        if (punkter.length < minN) {
+            ut.utelamnade.push({ index, namn, minN, antal: punkter.length });
+            return { ...l, data: [] };
+        }
+        const svar = h.berakna(punkter);
+        const data = Array.isArray(svar) ? svar : svar && typeof svar === 'object' && Array.isArray(svar.data) ? svar.data : null;
+        if (!data) throw new Error(`Ogiltig figur (härlett lager ${index}): berakna måste ge en lista`);
+        ut.omraknade.push({ index, namn });
+        const serie = !Array.isArray(svar) && typeof svar.serie === 'string' && svar.serie.trim() ? { serie: svar.serie } : {};
+        return { ...l, ...serie, data };
+    });
+    ut.figur = { ...figur, lager: nya };
+    valideraFigur(ut.figur, 'härlett lager');
+    return ut;
+}
+
+// Ett lager som får vara källa till ett annat: ett vanligt lager, eller ett som bara läggs om ur sina egna punkter
+// (harleddAv.lager är just dess egen serie). Källan läses ur lagrets egna data, så ingen kedja räknas.
+function _kanVaraKalla(k) {
+    const h = k && k.harleddAv;
+    return !h || (Array.isArray(h.lager) && h.lager.length > 0 && h.lager.every(s => String(s) === String(k.serie)));
+}
+
+/** Det härledda lagrets namn i noterna: `harleddAv.namn`, annars 'Serien <serie>' eller 'Lagret'. @param {any} l */
+function harlettNamn(l) {
+    const h = l && l.harleddAv;
+    if (h && typeof h.namn === 'string' && h.namn.trim()) return h.namn.trim();
+    return l && l.serie != null ? `Serien ${l.serie}` : 'Lagret';
+}
+
+/**
+ * Noterna om härledda lager efter harleddaLager: '<namn> gäller urvalet.' för ett omräknat lager och
+ * '<namn> visas inte: färre än <minN> synliga punkter.' för ett som inte ritas.
+ * @param {{omraknade?: Array<{namn: string}>, utelamnade?: Array<{namn: string, minN: number}>}|null|undefined} h
+ * @returns {{omraknade: string[], utelamnade: string[]}}
+ */
+function harlettNot(h) {
+    const stor = s => s.charAt(0).toUpperCase() + s.slice(1);
+    // Två lager med samma namn (en trendlinje och dess konfidensband, trädkartans två lager) ger en mening.
+    const unika = a => [...new Set(a)];
+    return {
+        omraknade: unika(((h && h.omraknade) || []).map(o => `${stor(o.namn)} gäller urvalet.`)),
+        utelamnade: unika(((h && h.utelamnade) || []).map(o => `${stor(o.namn)} visas inte: färre än ${talformat(o.minN, 'antal')} synliga punkter.`)),
+    };
+}
+
+// ---- Underlag: diagrammet räknat för en del av personerna (figur.underlag) ----
+// `figur.underlag = { dimensioner, rader, rita, k, kon? }`. `rader` är personerna i hela det underlag vyn redan ritar,
+// `dimensioner` kategorier att räkna för ({ falt, namn, varde?, etikett?, visning?, ordning? }; `varde(rad)` ger radens
+// värde, annars `rad[falt]`), `rita(valda, { beskrivning })` vyns egen beräkning för de valda raderna (en figur, eller
+// en text när den inte går att rita), `k` tröskeln och `kon(rad)` 'kv', 'ma' eller null (annars fältet `kon` som i
+// resten av verktyget).
+//
+// Skyddsregeln mot differensröjande: ett val godtas bara när både urvalet och resten (underlaget utom urvalet) har noll
+// eller minst k personer av vartdera könet. Två till: ett värde vars egen grupp inte klarar regeln går inte att välja
+// (det ingår bara i hela underlaget), och underlaget räknas för en dimension i taget. Då är skillnaden mellan två val
+// alltid en förening av valbara värden — själva skyddade — och "alla" minus ett val är resten, som regeln prövar.
+
+// Radens kön som 'kv' eller 'ma' (samma regel som konOf i falt.js), eller null.
+function _underlagKon(underlag, r) {
+    if (underlag && typeof underlag.kon === 'function') { const k = underlag.kon(r); return k === 'kv' || k === 'ma' ? k : null; }
+    const k = r && r.kon;
+    if (typeof k === 'string' && k.includes('kvinna')) return 'kv';
+    return k === 'man' || k === 'män' ? 'ma' : null;
+}
+
+/**
+ * Antalet kvinnor och män bland raderna.
+ * @param {any} underlag @param {any[]} rader @returns {{kv: number, ma: number}}
+ */
+function underlagKonAntal(underlag, rader) {
+    const ut = { kv: 0, ma: 0 };
+    for (const r of rader || []) { const k = _underlagKon(underlag, r); if (k) ut[k]++; }
+    return ut;
+}
+
+/** Sant när vartdera könet har noll eller minst k personer. @param {{kv: number, ma: number}} antal @param {number} k */
+function underlagSkyddat(antal, k) {
+    return [antal.kv, antal.ma].every(n => n === 0 || n >= k);
+}
+
+/**
+ * Radens värde i dimensionen som sträng (`dim.varde(rad)`, annars `rad[dim.falt]`), eller null när det saknas.
+ * @param {any} dim @param {any} rad @returns {string|null}
+ */
+function underlagVarde(dim, rad) {
+    const v = dim && typeof dim.varde === 'function' ? dim.varde(rad) : rad && dim ? rad[dim.falt] : null;
+    return v == null || v === '' ? null : String(v);
+}
+
+/**
+ * Dimensionen `falt` i figurens underlag, eller null.
+ * @param {any} underlag @param {string} falt
+ */
+function underlagDimension(underlag, falt) {
+    const dims = underlag && Array.isArray(underlag.dimensioner) ? underlag.dimensioner : [];
+    return dims.find(u => u && u.falt === falt) || null;
+}
+
+/**
+ * Värdena som går att välja i dimensionen: de vars grupp (raderna med värdet) klarar skyddsregeln, i dimensionens
+ * `ordning` (en jämförelsefunktion) eller svensk sorteringsordning. `utelamnade` är antalet värden som inte går att
+ * välja; de ingår bara i hela underlaget.
+ * @param {any} underlag @param {any} dim
+ * @returns {{varden: string[], utelamnade: number}}
+ */
+function underlagVarden(underlag, dim) {
+    const grupper = new Map();
+    for (const r of (underlag && underlag.rader) || []) {
+        const v = underlagVarde(dim, r);
+        if (v == null) continue;
+        if (!grupper.has(v)) grupper.set(v, { kv: 0, ma: 0 });
+        const k = _underlagKon(underlag, r);
+        if (k) grupper.get(v)[k]++;
+    }
+    const varden = [];
+    let utelamnade = 0;
+    for (const [v, antal] of grupper) {
+        if (antal.kv + antal.ma > 0 && underlagSkyddat(antal, underlag.k)) varden.push(v); else utelamnade++;
+    }
+    varden.sort(typeof dim.ordning === 'function' ? dim.ordning : (a, b) => a.localeCompare(b, 'sv', { numeric: true }));
+    return { varden, utelamnade };
+}
+
+/**
+ * Valet som gäller i ett filter (Map<falt, Set<bortvalda värden>>): den första dimensionen med ett bortvalt värde
+ * som går att välja, som { dim, varden, valda } (valda: de valbara värden som inte är bortvalda), eller null när
+ * underlaget är helt.
+ * @param {any} underlag @param {Map<string, Set<string>>|null|undefined} filter
+ */
+function underlagValet(underlag, filter) {
+    if (!filter || typeof filter.get !== 'function') return null;
+    for (const dim of (underlag && underlag.dimensioner) || []) {
+        const bort = filter.get(dim.falt);
+        if (!bort || !bort.size) continue;
+        const { varden } = underlagVarden(underlag, dim);
+        if (!varden.some(v => bort.has(v))) continue;
+        return { dim, varden, valda: varden.filter(v => !bort.has(v)) };
+    }
+    return null;
+}
+
+/**
+ * Prövar ett val mot skyddsregeln. `valda` är raderna i urvalet (de med ett valt värde i den valda dimensionen; hela
+ * underlaget när inget är valt), `antal` könen i urvalet och resten, `ok` om båda klarar regeln.
+ * @param {any} underlag @param {Map<string, Set<string>>|null|undefined} filter
+ * @returns {{ok: boolean, valet: any, valda: any[], antal: {urval: {kv: number, ma: number}, rest: {kv: number, ma: number}}}}
+ */
+function underlagProva(underlag, filter) {
+    const rader = (underlag && underlag.rader) || [];
+    const valet = underlagValet(underlag, filter);
+    const valbara = valet ? new Set(valet.valda) : null;
+    const valda = valet && valbara ? rader.filter(r => { const v = underlagVarde(valet.dim, r); return v != null && valbara.has(v); }) : rader;
+    const alla = underlagKonAntal(underlag, rader), urval = underlagKonAntal(underlag, valda);
+    const rest = { kv: alla.kv - urval.kv, ma: alla.ma - urval.ma };
+    return { ok: !valet || (underlagSkyddat(urval, underlag.k) && underlagSkyddat(rest, underlag.k)), valet, valda, antal: { urval, rest } };
+}
+
+/** Dimensionens namn mitt i en mening: liten första bokstav, utom när namnet börjar med en förkortning ('BAS-intervall'). @param {string} namn */
+function namnIMening(namn) {
+    const s = String(namn || '');
+    return s.length > 1 && s[1] === s[1].toLocaleLowerCase('sv') ? s[0].toLocaleLowerCase('sv') + s.slice(1) : s;
+}
+
+/**
+ * Valet som text, t.ex. 'sektor Vård och omsorg' eller 'yrkesgrupp 5 av 40' (fler än tre valda), eller '' när
+ * underlaget är helt.
+ * @param {any} underlag @param {Map<string, Set<string>>|null|undefined} filter
+ */
+function underlagBeskrivning(underlag, filter) {
+    const valet = underlagValet(underlag, filter);
+    if (!valet) return '';
+    const namn = namnIMening(valet.dim.namn);
+    if (!valet.valda.length) return `${namn}: inga`;
+    return valet.valda.length <= 3 ? `${namn} ${valet.valda.join(', ')}` : `${namn} ${valet.valda.length} av ${valet.varden.length}`;
+}
+
+// Prövar figur.underlag (valideraFigur).
+function _provaUnderlag(figur, fel) {
+    const u = figur.underlag, vem = 'underlag';
+    if (!u || typeof u !== 'object') fel(`${vem} måste vara { dimensioner, rader, rita, k, kon? }`);
+    if (!Array.isArray(u.dimensioner) || !u.dimensioner.length) fel(`${vem}.dimensioner måste vara en lista med minst en dimension`);
+    if (!Array.isArray(u.rader)) fel(`${vem}.rader måste vara en lista`);
+    if (typeof u.rita !== 'function') fel(`${vem}.rita måste vara en funktion`);
+    if (!(typeof u.k === 'number' && Number.isInteger(u.k) && u.k >= 1)) fel(`${vem}.k måste vara ett heltal ≥ 1`);
+    if (u.kon != null && typeof u.kon !== 'function') fel(`${vem}.kon måste vara en funktion`);
+    const text = v => typeof v === 'string' && v.trim() !== '';
+    const sedda = new Set();
+    u.dimensioner.forEach((d, i) => {
+        const v = `${vem}.dimensioner ${i}`;
+        if (!d || typeof d !== 'object') fel(`${v}: måste vara { falt, namn, varde?, etikett?, visning?, ordning? }`);
+        if (d.typ != null && d.typ !== 'kategori') fel(`${v}: bara kategorier går att räkna för`);
+        if (!text(d.falt) || !text(d.namn)) fel(`${v}: falt och namn måste vara icke-tomma strängar`);
+        for (const f of ['varde', 'ordning']) if (d[f] != null && typeof d[f] !== 'function') fel(`${v}: ${f} måste vara en funktion`);
+        if (d.etikett != null && typeof d.etikett !== 'string') fel(`${v}: etikett måste vara en sträng`);
+        if (d.visning != null && d.visning !== 'lista') fel(`${v}: visning måste vara "lista"`);
+        if (sedda.has(d.falt)) fel(`${v}: fältet "${d.falt}" förekommer två gånger`);
+        sedda.add(d.falt);
+    });
 }
 
 // Färgskalans domän: ett objekt med `doman` = två ändliga tal.
@@ -8509,6 +8953,21 @@ function _provaData(l, i, figur, fel) {
             if (!ok(v)) fel(`lager ${i}: datapunkt ${n}: fältet "${f}" måste vara ett ändligt tal (fick ${typeof v === 'string' ? `"${v}"` : String(v)})`);
         }
     }
+}
+
+// Ett härlett lager: { lager: [serie, …], berakna: punkter => data, minN?, namn?, villkor? }. Källorna är lagret
+// självt (det läggs om ur sina egna punkter) eller andra lager som inte själva är härledda ur något annat; varje namn
+// måste vara serien i minst ett sådant lager.
+function _provaHarlett(figur, l, i, fel) {
+    const h = l.harleddAv, vem = `lager ${i}: harleddAv`;
+    if (!h || typeof h !== 'object') fel(`${vem} måste vara { lager, berakna, minN?, namn?, villkor? }`);
+    if (!Array.isArray(h.lager) || !h.lager.length || !h.lager.every(s => typeof s === 'string' && s.trim() !== '')) fel(`${vem}.lager måste vara en lista med serienamn`);
+    if (typeof h.berakna !== 'function') fel(`${vem}.berakna måste vara en funktion`);
+    if (h.minN != null && !(typeof h.minN === 'number' && Number.isInteger(h.minN) && h.minN >= 0)) fel(`${vem}.minN måste vara ett heltal ≥ 0`);
+    if (h.namn != null && typeof h.namn !== 'string') fel(`${vem}.namn måste vara en sträng`);
+    if (h.villkor != null && typeof h.villkor !== 'function') fel(`${vem}.villkor måste vara en funktion`);
+    const serier = new Set(figur.lager.filter((k, ki) => k && k.serie != null && (ki === i || _kanVaraKalla(k))).map(k => String(k.serie)));
+    for (const s of h.lager) if (!serier.has(s)) fel(`${vem}: källagret "${s}" finns inte (eller är självt härlett)`);
 }
 
 /**
@@ -8546,16 +9005,19 @@ function valideraFigur(figur, id = 'diagram') {
         const sedda = new Set();
         _urvalRa(figur).forEach((u, i) => {
             const vem = `urval ${i}`;
-            if (!u || typeof u !== 'object') fel(`${vem}: måste vara { typ?, falt, namn, etikett?, format? }`);
+            if (!u || typeof u !== 'object') fel(`${vem}: måste vara { typ?, falt, namn, etikett?, format?, visning? }`);
             const typ = _urvalTyp(u);
             if (!URVAL_TYPER.includes(typ)) fel(`${vem}: typ måste vara "kategori" eller "intervall"`);
             if (!text(u.falt) || !text(u.namn)) fel(`${vem}: falt och namn måste vara icke-tomma strängar`);
             if (u.etikett != null && typeof u.etikett !== 'string') fel(`${vem}: etikett måste vara en sträng`);
             if (u.format != null && (typ !== 'intervall' || !TALFORMAT.includes(u.format))) fel(`${vem}: format gäller bara intervall och måste vara ett av ${TALFORMAT.join(', ')}`);
+            if (u.visning != null && (typ !== 'kategori' || u.visning !== 'lista')) fel(`${vem}: visning gäller bara kategori och måste vara "lista"`);
             if (sedda.has(u.falt)) fel(`${vem}: fältet "${u.falt}" förekommer två gånger`);
             sedda.add(u.falt);
         });
     }
+    // underlag: diagrammet kan räknas om för en del av personerna (underlagProva m.fl. ovan).
+    if (figur.underlag != null) _provaUnderlag(figur, fel);
     const paneler = Array.isArray(figur.paneler) ? figur.paneler : [];
     figur.lager.forEach((l, i) => {
         if (!l || !MARKEN.includes(l.marke)) fel(`lager ${i}: okänt märke "${l && l.marke}"`);
@@ -8563,6 +9025,7 @@ function valideraFigur(figur, id = 'diagram') {
         if (l.axel === 'y2' && !figur.y2) fel(`lager ${i}: axeln y2 finns inte i figuren`);
         if (l.panel != null && !paneler.includes(l.panel)) fel(`lager ${i}: panelen "${l.panel}" finns inte`);
         if (l.tips != null && typeof l.tips !== 'function') fel(`lager ${i}: tips måste vara en funktion`);
+        if (l.harleddAv != null) _provaHarlett(figur, l, i, fel);
         const behoverFarg = l.marke === 'ruta' || (l.marke === 'punkt' && l.data.some(d => d && d.fargvarde != null));
         if (behoverFarg && !figur.fargskala) fel(`lager ${i}: ${l.marke} med färgvärde kräver fargskala`);
         // Utan användbar domän kan ritaren inte färga något, och diagrammet skulle bli tomt utan fel. Lika tal är
@@ -8685,7 +9148,7 @@ function figurTillTabell(figur) {
     return ut;
 }
 
-    return { talformat, valideraFigur, utanSmaGrupper, skalDoman, ladstatistik, antalPunkter, figurTillTabell, panelerMedLager, kronorSkillnad, kronorTipsRad, kvantilpunkter, urvalVarden, urvalEtikett, arBortvald, urvalLista, urvalSpann, urvalBeskrivning };
+    return { talformat, valideraFigur, utanSmaGrupper, skalDoman, ladstatistik, antalPunkter, figurTillTabell, panelerMedLager, kronorSkillnad, kronorTipsRad, kvantilpunkter, urvalVarden, urvalEtikett, arBortvald, urvalLista, urvalSpann, urvalBeskrivning, urvalSomLista, urvalAktivt, harleddaLager, harlettNot, underlagKonAntal, underlagSkyddat, underlagVarde, underlagDimension, underlagVarden, underlagValet, underlagProva, underlagBeskrivning, namnIMening };
 })();
 const _figTalformat = __mirrorFigur.talformat;
 const _figValidera = __mirrorFigur.valideraFigur;
@@ -8704,4 +9167,17 @@ const _figArBortvald = __mirrorFigur.arBortvald;
 const _figUrvalLista = __mirrorFigur.urvalLista;
 const _figUrvalSpann = __mirrorFigur.urvalSpann;
 const _figUrvalBeskrivning = __mirrorFigur.urvalBeskrivning;
+const _figUrvalSomLista = __mirrorFigur.urvalSomLista;
+const _figUrvalAktivt = __mirrorFigur.urvalAktivt;
+const _figHarleddaLager = __mirrorFigur.harleddaLager;
+const _figHarlettNot = __mirrorFigur.harlettNot;
+const _figUnderlagKonAntal = __mirrorFigur.underlagKonAntal;
+const _figUnderlagSkyddat = __mirrorFigur.underlagSkyddat;
+const _figUnderlagVarde = __mirrorFigur.underlagVarde;
+const _figUnderlagDimension = __mirrorFigur.underlagDimension;
+const _figUnderlagVarden = __mirrorFigur.underlagVarden;
+const _figUnderlagValet = __mirrorFigur.underlagValet;
+const _figUnderlagProva = __mirrorFigur.underlagProva;
+const _figUnderlagBeskrivning = __mirrorFigur.underlagBeskrivning;
+const _figNamnIMening = __mirrorFigur.namnIMening;
 /* eslint-enable */

@@ -98,5 +98,5 @@ export function bakaIn(html, paketJson, meta = {}) {
 
 /** Skriptblocken i en HTML-text, för tester som hävdar att inbakningen inte rör något skript. */
 export function skriptBlock(html) {
-    return [...String(html ?? '').matchAll(/<script\b[^>]*>[\s\S]*?<\/script>/g)].map(m => m[0]);
+    return [...String(html ?? '').matchAll(/<script\b[^>]*>[\s\S]*?<\/script[^>]*>/gi)].map(m => m[0]);
 }

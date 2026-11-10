@@ -2,7 +2,9 @@
  * Figurformatet: ren logik utan DOM och utan D3.
  */
 import { describe, it, expect } from 'vitest';
-import { talformat, valideraFigur, utanSmaGrupper, axelVarden, skalDoman, ladstatistik, antalPunkter, figurTillTabell, panelerMedLager, MARKEN, kronorSkillnad, kronorTipsRad, kvantilpunkter, urvalVarden, urvalEtikett, arBortvald, urvalLista, urvalSpann, urvalBeskrivning, urvalIntervallText, TALFORMAT } from '../src/lib/figur.js';
+import { talformat, valideraFigur, utanSmaGrupper, axelVarden, skalDoman, ladstatistik, antalPunkter, figurTillTabell, panelerMedLager, MARKEN, kronorSkillnad, kronorTipsRad, kvantilpunkter, urvalVarden, urvalEtikett, arBortvald, urvalLista, urvalSpann, urvalBeskrivning, urvalIntervallText, TALFORMAT,
+    URVAL_LISTA_MAX, urvalSomLista, urvalAktivt, harleddaLager, harlettNamn, harlettNot,
+    underlagKonAntal, underlagSkyddat, underlagVarde, underlagDimension, underlagVarden, underlagValet, underlagProva, underlagBeskrivning, namnIMening } from '../src/lib/figur.js';
 import { quantile } from '../src/lib/stat.js';
 
 const blank = s => s.replace(/\s/g, ' ').replace('−', '-');
@@ -721,4 +723,264 @@ describe('urval', () => {
         expect(urvalBeskrivning(stapelfigur(), new Set(['A', 'C']))).toEqual(['utan BAS C, BAS A']);
     });
 
+    // ---- Diagramfilter v3: listor och härledda lager ----
+    const YRKE = { typ: 'kategori', falt: 'yrke', namn: 'Yrkesgrupp', etikett: '{v}', visning: 'lista' };
+    const yrken = n => Array.from({ length: n }, (_, i) => `Yrke ${String(i + 1).padStart(2, '0')}`);
+    const yrkesFigur = (n, urval = [YRKE]) => ({ beskrivning: 'Yrken', x: { skala: 'linjar' }, y: { skala: 'linjar' }, urval,
+        lager: [{ marke: 'punkt', serie: 'Grupper', data: yrken(n).map((yrke, i) => ({ x: i, y: i, yrke })).concat([{ x: 99, y: 99, yrke: 'Liten', liten: true }]) }] });
+    it('urvalSomLista: visning lista, eller fler än URVAL_LISTA_MAX värden', () => {
+        expect(URVAL_LISTA_MAX).toBe(12);
+        expect(urvalSomLista(YRKE, 2)).toBe(true);
+        expect(urvalSomLista(URVAL, 12)).toBe(false);
+        expect(urvalSomLista(URVAL, 13)).toBe(true);
+        expect(urvalSomLista(null, 40)).toBe(false);
+    });
+    it('valideraFigur: visning gäller bara kategori och måste vara lista', () => {
+        expect(() => valideraFigur(yrkesFigur(3), 't')).not.toThrow();
+        expect(() => valideraFigur(yrkesFigur(3, [{ ...YRKE, visning: 'knappar' }]), 't')).toThrow(/urval 0: visning gäller bara kategori/);
+        expect(() => valideraFigur(tvaDim({ urval: [{ ...ANTAL, visning: 'lista' }] }), 't')).toThrow(/urval 0: visning gäller bara kategori/);
+    });
+    it('urvalBeskrivning för en lista: utan (högst tre bortvalda), bara (högst tre valda), annars namnet och antalet', () => {
+        const f = yrkesFigur(40);
+        const bort = n => filter({ yrke: yrken(40).slice(0, n) });
+        expect(urvalBeskrivning(f, bort(3))).toEqual(['utan Yrke 01, Yrke 02, Yrke 03']);
+        expect(urvalBeskrivning(f, bort(28))).toEqual(['Yrkesgrupp 12 av 40']);
+        expect(urvalBeskrivning(f, bort(37))).toEqual(['bara Yrke 38, Yrke 39, Yrke 40']);
+        expect(urvalBeskrivning(f, bort(40))).toEqual(['Yrkesgrupp 0 av 40']);
+        // Den lilla gruppens värde räknas bara med visaSma.
+        expect(urvalBeskrivning(f, bort(28), { visaSma: true })).toEqual(['Yrkesgrupp 13 av 41']);
+        // En kategori som inte är en lista säger alltid utan.
+        const knappar = yrkesFigur(5, [{ ...YRKE, visning: undefined }]);
+        expect(urvalBeskrivning(knappar, filter({ yrke: yrken(5).slice(0, 4) }))).toEqual(['utan Yrke 01, Yrke 02, Yrke 03, Yrke 04']);
+    });
+    it('urvalAktivt: ett bortvalt värde eller en gräns', () => {
+        expect(urvalAktivt(null)).toBe(false);
+        expect(urvalAktivt(filter({ bas: [] }, {}))).toBe(false);
+        expect(urvalAktivt(filter({ bas: ['A'] }))).toBe(true);
+        expect(urvalAktivt(filter({}, { n: { min: null, max: null } }))).toBe(false);
+        expect(urvalAktivt(filter({}, { n: { min: 3 } }))).toBe(true);
+        expect(urvalAktivt(new Set())).toBe(false);
+        expect(urvalAktivt(new Set(['A']))).toBe(true);
+    });
+
+    // Två punktlager (Kvinna, Man) och en trend per kön som räknas ur punkterna: medelvärdet av y på två x.
+    const medel = p => p.reduce((s, d) => s + d.y, 0) / p.length;
+    const trend = (serie, minN, namn) => ({ marke: 'linje', serie: `${serie} (trend)`, data: [{ x: 0, y: 1 }, { x: 10, y: 1 }],
+        harleddAv: { lager: [serie], berakna: p => [{ x: 0, y: medel(p) }, { x: 10, y: medel(p) }], ...(minN !== undefined ? { minN } : {}), ...(namn ? { namn } : {}) } });
+    const trendFigur = () => ({ beskrivning: 'Lön mot ålder', x: { skala: 'linjar' }, y: { skala: 'linjar' }, urval: [URVAL],
+        lager: [
+            { marke: 'punkt', serie: 'Kvinna', data: [{ x: 1, y: 10, bas: 'A' }, { x: 2, y: 20, bas: 'B' }, { x: 3, y: 30, bas: 'B' }, { x: 4, y: 1000, bas: 'A', liten: true }] },
+            { marke: 'punkt', serie: 'Man', data: [{ x: 1, y: 40, bas: 'A' }, { x: 2, y: 60, bas: 'B' }] },
+            trend('Kvinna', 2, 'trendlinjen för kvinnor'), trend('Man', 2),
+        ] });
+    it('harleddaLager utan aktivt filter: samma figur, inget räknas om', () => {
+        const f = trendFigur();
+        for (const fi of [null, undefined, filter({ bas: [] }), new Set()]) {
+            const h = harleddaLager(f, fi);
+            expect(h.figur).toBe(f);
+            expect(h.omraknade).toEqual([]);
+            expect(h.utelamnade).toEqual([]);
+        }
+        const utan = { ...f, lager: f.lager.slice(0, 2) };
+        expect(harleddaLager(utan, filter({ bas: ['A'] })).figur).toBe(utan);
+    });
+    it('harleddaLager räknar om ur källagrens synliga punkter (inte bortvalda, inte små utan visaSma) och rör inget annat', () => {
+        const f = trendFigur();
+        const sedda = [];
+        f.lager[2].harleddAv.berakna = p => { sedda.push(p.map(d => d.y)); return [{ x: 0, y: medel(p) }]; };
+        const h = harleddaLager(f, filter({ bas: ['A'] }));
+        expect(sedda).toEqual([[20, 30]]);
+        expect(h.figur).not.toBe(f);
+        expect(h.figur.lager[2].data).toEqual([{ x: 0, y: 25 }]);
+        expect(h.figur.lager[2].harleddAv).toBe(f.lager[2].harleddAv);
+        expect(h.figur.lager[2].serie).toBe('Kvinna (trend)');
+        expect(h.figur.lager[0]).toBe(f.lager[0]);                       // källagren är desamma
+        expect(h.figur.lager[1]).toBe(f.lager[1]);
+        // Männen har bara en synlig punkt kvar (B 60): under minN = 2.
+        expect(h.figur.lager[3].data).toEqual([]);
+        expect(h.omraknade).toEqual([{ index: 2, namn: 'trendlinjen för kvinnor' }]);
+        expect(h.utelamnade).toEqual([{ index: 3, namn: 'Serien Man (trend)', minN: 2, antal: 1 }]);
+        // Originalet är oförändrat.
+        expect(f.lager[2].data).toEqual([{ x: 0, y: 1 }, { x: 10, y: 1 }]);
+        // Med visaSma räknas den lilla punkten.
+        sedda.length = 0;
+        harleddaLager(f, filter({ bas: ['B'] }), { visaSma: true });
+        expect(sedda).toEqual([[10, 1000]]);
+        // Ett aktivt filter som inte döljer något räknar ändå om, ur de synliga punkterna (den lilla räknas inte).
+        sedda.length = 0;
+        harleddaLager(f, filter({}, { x: { min: 0 } }));
+        expect(sedda).toEqual([[10, 20, 30]]);
+    });
+    it('harleddaLager: gränsen minN (lika många räcker), minst en punkt, och noterna', () => {
+        const f = trendFigur();
+        f.lager[3].harleddAv.minN = 1;
+        const h = harleddaLager(f, filter({ bas: ['A'] }));
+        expect(h.figur.lager[3].data).toEqual([{ x: 0, y: 60 }, { x: 10, y: 60 }]);
+        f.lager[3].harleddAv.minN = 0;                                    // minst en punkt ändå
+        const ingen = trendFigur();
+        ingen.lager[1].data.forEach(d => { d.bas = 'A'; });
+        ingen.lager[3].harleddAv.minN = 0;
+        const h0 = harleddaLager(ingen, filter({ bas: ['A'] }));
+        expect(h0.utelamnade).toEqual([{ index: 3, namn: 'Serien Man (trend)', minN: 1, antal: 0 }]);
+        expect(harlettNot(harleddaLager(trendFigur(), filter({ bas: ['A'] })))).toEqual({
+            omraknade: ['Trendlinjen för kvinnor gäller urvalet.'],
+            utelamnade: ['Serien Man (trend) visas inte: färre än 2 synliga punkter.'],
+        });
+        expect(harlettNot(null)).toEqual({ omraknade: [], utelamnade: [] });
+        expect(harlettNamn({ serie: 'S' })).toBe('Serien S');
+        expect(harlettNamn({})).toBe('Lagret');
+    });
+    it('harleddaLager: berakna som inte ger en lista, eller ger ogiltig data, kastar', () => {
+        const f = trendFigur();
+        f.lager[2].harleddAv.berakna = () => null;
+        expect(() => harleddaLager(f, filter({ bas: ['A'] }))).toThrow(/berakna måste ge en lista/);
+        f.lager[2].harleddAv.berakna = () => [{ x: 'a', y: 1 }];
+        expect(() => harleddaLager(f, filter({ bas: ['A'] }))).toThrow(/Ogiltig figur \(härlett lager\)/);
+    });
+    it('valideraFigur: harleddAv kräver källager som finns (och inte själva är härledda), en funktion och ett heltal minN', () => {
+        expect(() => valideraFigur(trendFigur(), 't')).not.toThrow();
+        const med = ändra => { const f = trendFigur(); ändra(f.lager[2].harleddAv, f); return () => valideraFigur(f, 't'); };
+        expect(med(h => { h.lager = ['Okänd']; })).toThrow(/källagret "Okänd" finns inte/);
+        expect(med(h => { h.lager = ['Man (trend)']; })).toThrow(/källagret "Man \(trend\)" finns inte/);
+        expect(med(h => { h.lager = []; })).toThrow(/harleddAv.lager/);
+        expect(med(h => { h.berakna = 'x'; })).toThrow(/harleddAv.berakna/);
+        expect(med(h => { h.minN = 1.5; })).toThrow(/harleddAv.minN/);
+        expect(med(h => { h.namn = 3; })).toThrow(/harleddAv.namn/);
+        expect(med((h, f) => { f.lager[2].harleddAv = 'ja'; })).toThrow(/harleddAv måste vara/);
+        expect(med(h => { h.villkor = 'kvinna'; })).toThrow(/harleddAv.villkor måste vara en funktion/);
+    });
+    it('harleddaLager: villkor väljer bland källagrens synliga punkter, och minN räknar bara dem', () => {
+        // Ett lager per BAS-intervall med punktens kön; trenden för kvinnor ur alla lager.
+        const f = { beskrivning: 'Per BAS', x: { skala: 'linjar' }, y: { skala: 'linjar' }, urval: [URVAL],
+            lager: [{ marke: 'punkt', serie: 'BAS A', data: [{ x: 1, y: 10, bas: 'A', kon: 'K' }, { x: 2, y: 99, bas: 'A', kon: 'M' }] },
+                { marke: 'punkt', serie: 'BAS B', data: [{ x: 3, y: 30, bas: 'B', kon: 'K' }, { x: 4, y: 50, bas: 'B', kon: 'K' }, { x: 5, y: 77, bas: 'B', kon: 'M' }] },
+                { ...trend('BAS A', 2, 'trendlinjen för kvinnor'), harleddAv: { lager: ['BAS A', 'BAS B'], villkor: d => d.kon === 'K', minN: 2, namn: 'trendlinjen för kvinnor',
+                    berakna: p => [{ x: 0, y: medel(p) }] } }] };
+        expect(() => valideraFigur(f, 'v')).not.toThrow();
+        expect(harleddaLager(f, filter({ bas: ['A'] })).figur.lager[2].data).toEqual([{ x: 0, y: 40 }]);   // kvinnorna i B: 30 och 50
+        const h = harleddaLager(f, filter({ bas: ['B'] }));                                              // en kvinna kvar i A
+        expect(h.utelamnade).toEqual([{ index: 2, namn: 'trendlinjen för kvinnor', minN: 2, antal: 1 }]);
+    });
+    it('harleddaLager: ett lager som nämner sin egen serie läggs om ur sina synliga punkter och får vara källa till ett annat', () => {
+        const summa = p => p.reduce((s, d) => s + d.y, 0);
+        const f = { beskrivning: 'Omlagd', x: { skala: 'linjar' }, y: { skala: 'linjar' }, urval: [URVAL],
+            lager: [{ marke: 'punkt', serie: 'Ram', data: [{ x: 0, y: 6 }], harleddAv: { lager: ['Grupper'], berakna: p => [{ x: 0, y: summa(p) }] } },
+                { marke: 'punkt', serie: 'Grupper', data: [{ x: 1, y: 1, bas: 'A' }, { x: 2, y: 2, bas: 'B' }, { x: 3, y: 3, bas: 'B' }],
+                  harleddAv: { lager: ['Grupper'], berakna: p => p.map((d, i) => ({ ...d, x: i })) } }] };
+        expect(() => valideraFigur(f, 'o')).not.toThrow();
+        const h = harleddaLager(f, filter({ bas: ['A'] }));
+        expect(h.figur.lager[1].data).toEqual([{ x: 0, y: 2, bas: 'B' }, { x: 1, y: 3, bas: 'B' }]);    // nya lägen, samma punkter
+        expect(h.figur.lager[0].data).toEqual([{ x: 0, y: 5 }]);                                          // källan är lagrets egna data
+        // Ett lager som är härlett ur ett annat får fortfarande inte vara källa.
+        const kedja = { ...f, lager: [{ ...f.lager[0], harleddAv: { lager: ['Trend'], berakna: () => [] } }, { ...f.lager[1], harleddAv: undefined },
+            { marke: 'linje', serie: 'Trend', data: [], harleddAv: { lager: ['Grupper'], berakna: () => [] } }] };
+        expect(() => valideraFigur(kedja, 'k')).toThrow(/lager 0: harleddAv: källagret "Trend" finns inte/);
+    });
+    it('harleddaLager: berakna kan ge { data, serie } när lagrets namn bär ett omräknat tal; noterna har en mening per namn', () => {
+        const f = trendFigur();
+        f.lager[2].harleddAv.berakna = p => ({ data: [{ x: 0, y: medel(p) }], serie: `Kvinna (trend, medel ${medel(p)})` });
+        f.lager[3].harleddAv.namn = 'trendlinjen för kvinnor';
+        f.lager[3].harleddAv.minN = 1;
+        const h = harleddaLager(f, filter({ bas: ['A'] }));
+        expect(h.figur.lager[2]).toMatchObject({ serie: 'Kvinna (trend, medel 25)', data: [{ x: 0, y: 25 }] });
+        expect(f.lager[2].serie).toBe('Kvinna (trend)');
+        expect(harlettNot(h).omraknade).toEqual(['Trendlinjen för kvinnor gäller urvalet.']);       // två lager med samma namn: en mening
+        f.lager[2].harleddAv.berakna = () => ({ serie: 'utan data' });
+        expect(() => harleddaLager(f, filter({ bas: ['A'] }))).toThrow(/berakna måste ge en lista/);
+    });
+
 });
+
+// ---- Underlag: omräkning för en del av personerna (figur.underlag) ----
+describe('underlag: skyddsregeln, valbara värden och valet', () => {
+    // Sektorerna: Stor (20 kv, 20 ma), Mellan (6 kv, 6 ma), Bara kv (8 kv, 0 ma), Liten (2 kv, 7 ma).
+    const personer = (sektor, kv, ma) => [...Array.from({ length: kv }, (_, i) => ({ sektor, kon: 'kvinna', lon: 30000 + i })),
+                                          ...Array.from({ length: ma }, (_, i) => ({ sektor, kon: 'man', lon: 31000 + i }))];
+    const rader = [...personer('Stor', 20, 20), ...personer('Mellan', 6, 6), ...personer('Bara kv', 8, 0), ...personer('Liten', 2, 7)];
+    const SEKTOR = { falt: 'sektor', namn: 'Sektor' };
+    const und = (over = {}) => ({ dimensioner: [SEKTOR], rader, k: 5, rita: () => null, ...over });
+    const bort = (falt, ...v) => new Map([[falt, new Set(v)]]);
+    it('underlagKonAntal och underlagSkyddat: vartdera könet har noll eller minst k', () => {
+        expect(underlagKonAntal(und(), rader)).toEqual({ kv: 36, ma: 33 });
+        expect(underlagKonAntal({ kon: r => (r.lon > 30010 ? 'kv' : 'x') }, rader).kv).toBeGreaterThan(0);
+        expect(underlagSkyddat({ kv: 5, ma: 5 }, 5)).toBe(true);
+        expect(underlagSkyddat({ kv: 8, ma: 0 }, 5)).toBe(true);
+        expect(underlagSkyddat({ kv: 0, ma: 0 }, 5)).toBe(true);
+        expect(underlagSkyddat({ kv: 4, ma: 9 }, 5)).toBe(false);
+        expect(underlagSkyddat({ kv: 9, ma: 1 }, 5)).toBe(false);
+    });
+    it('underlagVarde: varde(rad) före fältet; tomt och null är inget värde', () => {
+        expect(underlagVarde(SEKTOR, { sektor: 'Stor' })).toBe('Stor');
+        expect(underlagVarde({ falt: 'x', varde: r => r.lon > 1 ? 7 : null }, { lon: 2 })).toBe('7');
+        expect(underlagVarde(SEKTOR, { sektor: '' })).toBeNull();
+        expect(underlagVarde(SEKTOR, {})).toBeNull();
+        expect(underlagDimension(und(), 'sektor')).toBe(SEKTOR);
+        expect(underlagDimension(und(), 'bas')).toBeNull();
+    });
+    it('underlagVarden: bara värden vars grupp klarar regeln går att välja, i ordning; de andra räknas', () => {
+        expect(underlagVarden(und(), SEKTOR)).toEqual({ varden: ['Bara kv', 'Mellan', 'Stor'], utelamnade: 1 });
+        expect(underlagVarden(und(), { ...SEKTOR, ordning: (a, b) => b.localeCompare(a) }).varden).toEqual(['Stor', 'Mellan', 'Bara kv']);
+        expect(underlagVarden(und({ k: 7 }), SEKTOR).varden).toEqual(['Bara kv', 'Stor']);
+    });
+    it('underlagProva: urvalet och resten prövas båda, för vartdera könet', () => {
+        // Hela underlaget: inget val.
+        expect(underlagProva(und(), new Map()).ok).toBe(true);
+        expect(underlagProva(und(), new Map()).valda).toBe(rader);
+        // Bara Stor: urvalet 20/20, resten 16/13 — godtas.
+        const stor = underlagProva(und(), bort('sektor', 'Mellan', 'Bara kv'));
+        expect(stor.ok).toBe(true);
+        expect(stor.valda.every(r => r.sektor === 'Stor')).toBe(true);
+        expect(stor.antal).toEqual({ urval: { kv: 20, ma: 20 }, rest: { kv: 16, ma: 13 } });
+        // Liten går inte att välja: den ingår aldrig i ett val, bara i hela underlaget.
+        expect(underlagProva(und(), bort('sektor', 'Stor')).valda.some(r => r.sektor === 'Liten')).toBe(false);
+        // Resten precis under och precis på regeln. Urvalet är bara Stor; resten är Bara kv (6 kvinnor, 0 män) och Liten,
+        // som inte går att välja och därför alltid hamnar i resten. Med 4 män i Liten har resten 4 män: under k = 5.
+        const resten = man => und({ rader: [...personer('Stor', 20, 20), ...personer('Bara kv', 6, 0), ...personer('Liten', 2, man)] });
+        const baraStor = bort('sektor', 'Bara kv');
+        expect(underlagProva(resten(4), baraStor).antal.rest).toEqual({ kv: 8, ma: 4 });
+        expect(underlagProva(resten(4), baraStor).ok).toBe(false);
+        expect(underlagProva(resten(5), baraStor).ok).toBe(true);
+        // Urvalet är en förening av valbara värden, som var för sig klarar regeln: det kan bara bli för litet med en annan
+        // indelning, och regeln prövar det ändå (underlagSkyddat ovan).
+        // Ett tomt val har noll personer, och resten är hela underlaget: godtas.
+        const tomt = underlagProva(und(), bort('sektor', 'Stor', 'Mellan', 'Bara kv'));
+        expect(tomt.valda).toEqual([]);
+        expect(tomt.ok).toBe(true);
+    });
+    it('underlagValet: den första dimensionen med ett bortvalt valbart värde; ett bortvalt värde som inte går att välja räknas inte', () => {
+        const ALDER = { falt: 'alder', namn: 'Åldersgrupp', varde: r => (r.lon % 2 ? 'Udda' : 'Jämn') };
+        const u = und({ dimensioner: [SEKTOR, ALDER] });
+        expect(underlagValet(u, bort('sektor', 'Liten'))).toBeNull();
+        const v = underlagValet(u, new Map([['sektor', new Set()], ['alder', new Set(['Udda'])]]));
+        expect(v.dim).toBe(ALDER);
+        expect(v.valda).toEqual(['Jämn']);
+        expect(underlagValet(u, null)).toBeNull();
+    });
+    it('underlagBeskrivning och namnIMening', () => {
+        expect(underlagBeskrivning(und(), new Map())).toBe('');
+        expect(underlagBeskrivning(und(), bort('sektor', 'Mellan', 'Bara kv'))).toBe('sektor Stor');
+        expect(underlagBeskrivning(und(), bort('sektor', 'Stor'))).toBe('sektor Bara kv, Mellan');
+        expect(underlagBeskrivning(und(), bort('sektor', 'Stor', 'Mellan', 'Bara kv'))).toBe('sektor: inga');
+        const många = Array.from({ length: 6 }, (_, i) => personer(`S${i}`, 5, 5)).flat();
+        expect(underlagBeskrivning(und({ rader: många }), bort('sektor', 'S0', 'S1'))).toBe('sektor 4 av 6');
+        expect(namnIMening('Åldersgrupp')).toBe('åldersgrupp');
+        expect(namnIMening('BAS-intervall')).toBe('BAS-intervall');
+        expect(namnIMening('AID')).toBe('AID');
+    });
+    it('valideraFigur: underlaget kräver dimensioner, rader, rita och k', () => {
+        const f = (u) => () => valideraFigur({ ...bas(), underlag: u }, 'u');
+        expect(f(und())).not.toThrow();
+        expect(f('ja')).toThrow(/underlag måste vara/);
+        expect(f(und({ dimensioner: [] }))).toThrow(/dimensioner måste vara en lista/);
+        expect(f(und({ rader: null }))).toThrow(/rader måste vara en lista/);
+        expect(f(und({ rita: 1 }))).toThrow(/rita måste vara en funktion/);
+        expect(f(und({ k: 0 }))).toThrow(/k måste vara ett heltal/);
+        expect(f(und({ kon: 'x' }))).toThrow(/kon måste vara en funktion/);
+        expect(f(und({ dimensioner: [{ typ: 'intervall', falt: 'n', namn: 'N' }] }))).toThrow(/bara kategorier/);
+        expect(f(und({ dimensioner: [{ falt: '', namn: 'N' }] }))).toThrow(/falt och namn/);
+        expect(f(und({ dimensioner: [{ ...SEKTOR, varde: 'x' }] }))).toThrow(/varde måste vara en funktion/);
+        expect(f(und({ dimensioner: [SEKTOR, SEKTOR] }))).toThrow(/förekommer två gånger/);
+        expect(f(und({ dimensioner: [{ ...SEKTOR, visning: 'knappar' }] }))).toThrow(/visning/);
+    });
+});
+

@@ -27,6 +27,7 @@ function buildConfigSnapshot() {
         rapportTabeller: (state.rapportTabeller || []).map(t => JSON.parse(JSON.stringify(t))),   // egna tabeller: recept, inga tal (ADR-52)
         perBasRecept: state.perBasRecept ? JSON.parse(JSON.stringify(state.perBasRecept)) : null,   // vilka avsnitt som följer med i rapporten
         forklaringsmodell: state.forklaringsmodell ? { ...state.forklaringsmodell } : null,   // regressionens variabler och skälet (ADR-56); null = standard
+        gapUppdelning: state.gapUppdelning ? { variabler: [...state.gapUppdelning.variabler] } : null,   // uppdelningens variabler i ordning (ADR-65); null = standard
         // Bug-fix: Set-objekt serialiseras inte korrekt med spread/JSON
         bristAids: Array.from(state.bristAids || []),
         likvardighet: state.likvardighet ? {
@@ -315,6 +316,11 @@ function applyConfigSnapshot(cfg) {
     const rader = getData();
     const fm = _rgNormaliseraForklaringsmodell(cfg.forklaringsmodell, { harYrke: !rader.length || rader.some(d => d.aid || d.yrke) });
     varningar.push(...fm.varningar);
+    // Uppdelningens variabler (ADR-65): samma mönster. En äldre fil utan fältet ger standard (BAS, AID); ett ogiltigt
+    // värde ger standard med varning, aldrig fel. Åldersgrupp prövas inte mot datat här (det görs av gapVariabler()).
+    const guRa = cfg.gapUppdelning;
+    const gu = _guNormaliseraVariabler(guRa == null ? null : (typeof guRa === 'object' && !Array.isArray(guRa) ? (guRa.variabler ?? null) : guRa));
+    varningar.push(...gu.varningar);
     let kAndrad = false;
     if (tmp.kTroskel != null) {
         const kr = sattKTroskel(tmp.kTroskel, { rita: false });
@@ -327,6 +333,7 @@ function applyConfigSnapshot(cfg) {
     if (tmp.rapportTabeller) state.rapportTabeller = tmp.rapportTabeller;
     if (tmp.perBasRecept) state.perBasRecept = _pbReceptArStandard(tmp.perBasRecept) ? null : tmp.perBasRecept;
     state.forklaringsmodell = _rgForklaringsmodellArStandard(fm.modell) ? null : fm.modell;
+    state.gapUppdelning = _guVariablerArStandard(gu.variabler) ? null : { variabler: gu.variabler };
     if (tmp.lonemanad != null && typeof sattLonemanad === 'function') sattLonemanad(tmp.lonemanad);
     if (tmp.forhandskontrollStopp != null) state.forhandskontrollStopp = tmp.forhandskontrollStopp;
     if (tmp.likvardighet) {

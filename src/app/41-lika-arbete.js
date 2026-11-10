@@ -624,10 +624,10 @@ function _laTrattFigur(u, k = kTroskel()) {
     // Alla grupper har sitt namn i verktygstipset och i tabellen under.
     const namngivna = new Set(u.punkter.filter(p => p.utanfor).sort((a, b) => Math.abs(b.kvot - 100) - Math.abs(a.kvot - 100)).slice(0, 6));
     const lager = (serie, farg, symbol, valj) => ({ marke: 'punkt', serie, farg, symbol, storlek: 6, etikettLage: 'auto',
-        data: u.punkter.filter(valj).map(p => ({ x: p.n, y: +p.kvot.toFixed(1), p, bas: p.bas, n: p.n, markering: markeringFor(p.bas, p.aid), ..._kronorFalt(p.medKv, p.medMa), ...(namngivna.has(p) ? { etikett: _rfKorta(String(p.yrke), 24) } : {}) })), tips });
+        data: u.punkter.filter(valj).map(p => ({ x: p.n, y: +p.kvot.toFixed(1), p, bas: p.bas, yrke: p.yrke, sektor: _aidSektorsnamn(p.aid), n: p.n, markering: markeringFor(p.bas, p.aid), ..._kronorFalt(p.medKv, p.medMa), ...(namngivna.has(p) ? { etikett: _rfKorta(String(p.yrke), 24) } : {}) })), tips });
     const ys = [...falt.flatMap(f => [f.lag, f.hog]), ...u.punkter.map(p => p.kvot)];
     return { beskrivning: 'Trattdiagram: kvinnors medianlön i procent av mäns per yrkesgrupp och BAS-intervall mot gruppens storlek. Det skuggade fältet är de 95-procentiga gränserna för vad slumpen kan ge vid den gruppstorleken, och smalnar när gruppen blir större. Samma grupper finns i tabellen nedan.',
-        urval: [URVAL.bas, URVAL.antal], x: { skala: 'linjar', titel: 'Antal personer i gruppen', doman: [x0, x1] },
+        urval: [URVAL.bas, URVAL.yrkesgrupp, URVAL.sektor, URVAL.antal], x: { skala: 'linjar', titel: 'Antal personer i gruppen', doman: [x0, x1] },
         y: { skala: 'linjar', titel: 'Kvinnors median i % av mäns', doman: [Math.floor(Math.min(...ys) - 1), Math.ceil(Math.max(...ys) + 1)] },
         hojd: 340,
         referens: [{ y: 100, farg: PALETTE.semantic.mork, tjocklek: 1.5, etikett: 'Lika lön' }],

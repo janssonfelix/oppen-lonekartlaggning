@@ -308,7 +308,8 @@ function updateForecast() {
     if (tomt && outEl) outEl.innerHTML = '<p class="tomt-lage">Ange en pott ovan så visas utfallet här.</p>';
 }
 // ---- Före och efter (diagramkärnan, ADR-39) ----
-// `rader`: [{ namn, fore, efter, farg, markering? }] — anroparen ger bara rader som får visas.
+// `rader`: [{ namn, fore, efter, farg, markering?, bas?, yrke?, n? }] — anroparen ger bara rader som får visas. `bas`,
+// `yrke` och `n` följer med till märkena, för figurens urval (URVAL.bas, .yrkesgrupp, .antal), som anroparen sätter.
 // Ett värde före och efter, per grupp: en rad per grupp med värdet före som ett streck, värdet efter som en punkt och
 // förflyttningen som ett streck emellan — inte lutande linjer på en avkortad axel, där små ändringar ser dramatiska
 // ut. För en kvot (format 'pct') når axeln alltid 100 %, lika lön, som är utsatt som linje; för belopp ('kr') följer
@@ -316,7 +317,8 @@ function updateForecast() {
 /** @param {{rader: any[], titel: string, beskrivning: string, format?: 'pct'|'kr', kolumner?: string[]}} val */
 function foreEfterFigur({ rader, titel, beskrivning, format = 'pct', kolumner = ['Före', 'Efter'] }) {
     const alla = rader.flatMap(r => [r.fore, r.efter]), p = v => _figTalformat(v, format), [a, b] = kolumner, kvot = format === 'pct';
-    const m = r => ({ ...(r.markering ? { markering: r.markering } : {}), ...(r.bas != null ? { bas: r.bas } : {}) });   // bas: raden hör till ett BAS-intervall (figur.urval)
+    // bas, yrke, n: radens BAS-intervall, yrkesgrupp och antal (figur.urval)
+    const m = r => ({ ...(r.markering ? { markering: r.markering } : {}), ...(r.bas != null ? { bas: r.bas } : {}), ...(r.yrke != null ? { yrke: r.yrke } : {}), ...(r.n != null ? { n: r.n } : {}) });
     const tips = d => [[d.y], [a, p(d.r.fore)], [b, p(d.r.efter)]];
     const lag = Math.min(...alla), hog = Math.max(...alla), luft = Math.max((hog - lag) * 0.12, Math.abs(hog) * 0.02);
     return { beskrivning, y: { skala: 'band', ordning: rader.map(r => r.namn), etikettMax: 36 },
@@ -343,6 +345,8 @@ function _forecastLutningRader(d, sim, niva) {
         let g = grupper.get(nyckel);
         if (!g) {
             g = { namn: niva === 'bas' ? `BAS ${r.bas}` : `${r.yrkeLabel || r.yrke || r.aid} · ${r.bas}`,
+                  // Filtrens fält: BAS-intervallet på den nivån, yrkesgruppen (som i namnet) på gruppnivån.
+                  ...(niva === 'bas' ? { bas: String(r.bas) } : { yrke: String(r.yrkeLabel || r.yrke || r.aid) }),
                   markering: markeringFor(r.bas, niva === 'bas' ? null : r.aid), kv: [[], []], ma: [[], []] };
             grupper.set(nyckel, g);
         }
@@ -353,7 +357,8 @@ function _forecastLutningRader(d, sim, niva) {
     const fran100 = v => Math.abs(v - 100);
     const farg = (fore, efter) => (fran100(efter) < fran100(fore) - 0.05 ? PALETTE.semantic.ok : fran100(efter) > fran100(fore) + 0.05 ? PALETTE.semantic.kritisk : PALETTE.semantic.neutral);
     return [...grupper.values()].filter(g => g.kv[0].length >= k && g.ma[0].length >= k)
-        .map(g => ({ namn: g.namn, markering: g.markering, nKv: g.kv[0].length, nMa: g.ma[0].length, fore: gap(g.kv[0], g.ma[0]), efter: gap(g.kv[1], g.ma[1]) }))
+        .map(g => ({ namn: g.namn, markering: g.markering, ...(g.bas != null ? { bas: g.bas } : { yrke: g.yrke }), nKv: g.kv[0].length, nMa: g.ma[0].length,
+                     n: g.kv[0].length + g.ma[0].length, fore: gap(g.kv[0], g.ma[0]), efter: gap(g.kv[1], g.ma[1]) }))
         .filter(g => g.fore != null && g.efter != null)
         .map(g => ({ ...g, farg: farg(g.fore, g.efter) }));
 }
@@ -392,8 +397,10 @@ function _renderForecastLutning(d, sim) {
         el.innerHTML = text ? `<p class="text-dampad-sm marg-8-0">${esc(text)}</p>` : '';
         return;
     }
-    ritaFigur(el, foreEfterFigur({ rader, titel: 'Kvinnors median i % av mäns',
-        beskrivning: `Kvinnors medianlön i procent av mäns per ${niva === 'bas' ? 'BAS-intervall' : 'yrkesgrupp'} före och efter påslagen i prognosen: strecket är värdet före, punkten värdet efter. Linjen vid 100 procent är lika lön. Samma tal står i tabellen under.` }));
+    // Filtren efter nivån: BAS-intervall eller yrkesgrupp, och antalet (kvinnor och män i tabellen).
+    ritaFigur(el, { ...foreEfterFigur({ rader, titel: 'Kvinnors median i % av mäns',
+        beskrivning: `Kvinnors medianlön i procent av mäns per ${niva === 'bas' ? 'BAS-intervall' : 'yrkesgrupp'} före och efter påslagen i prognosen: strecket är värdet före, punkten värdet efter. Linjen vid 100 procent är lika lön. Samma tal står i tabellen under.` }),
+        urval: [niva === 'bas' ? URVAL.bas : URVAL.yrkesgrupp, URVAL.antal] });
 }
 document.getElementById('forecast-lutning-niva')?.addEventListener('change', () => updateForecast());
 

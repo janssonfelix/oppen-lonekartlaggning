@@ -777,7 +777,7 @@ function _lvKravFigur({ medPoang, grupper }) {
     const storlek = n => Math.max(4, Math.min(12, 2 + Math.sqrt(n)));
     /** @type {any[]} */
     const lager = _LV_KRAV_SERIER.map(s => ({ marke: 'punkt', serie: s.serie, farg: s.farg(), symbol: s.symbol, opacitet: 0.8, etikettLage: 'hoger',
-        data: grupper.filter(g => g.dominans === s.dominans).map(g => ({ x: x(g), y: Math.round(g.median), ...(sidled.has(g) ? { forskjutning: sidled.get(g) } : {}), storlek: storlek(g.n), namn: g.namn, bas: g.bas, n: g.n, andelKv: g.andelKv,
+        data: grupper.filter(g => g.dominans === s.dominans).map(g => ({ x: x(g), y: Math.round(g.median), ...(sidled.has(g) ? { forskjutning: sidled.get(g) } : {}), storlek: storlek(g.n), namn: g.namn, bas: g.bas, sektor: _aidSektorsnamn(g.aid), n: g.n, andelKv: g.andelKv,
             avstand: Math.round(g.median - niva(g)), uppskattad: !!g.uppskattad, krav: g.krav, markering: markeringFor(g.bas, g.aid),
             ...(under.includes(g) ? { etikett: g.namn } : {}) })),
         tips: d => [[`${d.namn} · BAS ${d.bas}`], ['Medianlön', kr(d.y)], [d.avstand < 0 ? 'Under nivån' : 'Över nivån', kr(Math.abs(d.avstand))],
@@ -785,8 +785,8 @@ function _lvKravFigur({ medPoang, grupper }) {
                     ...(medPoang ? [[d.uppskattad ? 'Poäng (efter BAS-intervallet)' : 'Arbetsvärderingspoäng', _figTalformat(d.krav, 'antal')]] : [])]
     })).filter(l => l.data.length);
     if (linje.length >= 2) lager.unshift({ marke: 'linje', serie: medPoang ? 'Nivå efter kraven (trend)' : 'Nivå per BAS-intervall', farg: PALETTE.semantic.mork, streck: 'streckad', tjocklek: 1.5, data: linje });
-    return { beskrivning: `En punkt per yrkesgrupp: arbetets krav (${medPoang ? 'arbetsvärderingspoäng' : 'BAS-intervall'}) mot gruppens medianlön, med form och färg efter könsdominans (kvinnodominerad vid ${kvDomGransText().replace('%', 'procent')} kvinnor). Den streckade linjen är nivån kraven brukar ge i organisationen.`,
-        urval: [URVAL.bas, URVAL.antal], x: medPoang ? { skala: 'linjar', titel: 'Arbetsvärderingspoäng' } : { skala: 'band', titel: 'BAS-intervall (stigande krav)', ordning: basOrdning },
+    return { beskrivning: `En punkt per yrkesgrupp: arbetets krav (${medPoang ? 'arbetsvärderingspoäng' : 'BAS-intervall'}) mot gruppens medianlön, med form och färg efter könsdominans (kvinnodominerad vid ${kvDomGransText().replaceAll('%', 'procent')} kvinnor). Den streckade linjen är nivån kraven brukar ge i organisationen.`,
+        urval: [URVAL.bas, URVAL.sektor, URVAL.antal], x: medPoang ? { skala: 'linjar', titel: 'Arbetsvärderingspoäng' } : { skala: 'band', titel: 'BAS-intervall (stigande krav)', ordning: basOrdning },
         y: { skala: 'linjar', titel: 'Gruppens medianlön', format: 'kr' }, hojd: 420, lager };
 }
 function renderLikvardighetKrav() {
@@ -819,20 +819,25 @@ function renderLikvardighetHeatmap(pairs) {
 // Kandidatparen som bild (behållaren heter chart-likvardighet-heatmap): ett kandidatpar per rad, det kvinnodominerade yrkets och jämförelseyrkets medianlön som
 // två punkter på samma kronaxel. Avståndet är gapet; procenttalet står vid jämförelseyrket. De allvarligaste
 // paren först (allvarsindex), högst `max` rader. Fliken redovisar grupper under tröskeln (ADR-14).
+// Filtren döljer hela par: det kvinnodominerade yrkets BAS-intervall, löneskillnaden (tipsets Skillnad) och antalet i det
+// kvinnodominerade yrket (n i tabellen). Ett par samlar två yrken, men varje fält har ett enda värde per par.
+const LV_PAR_ANTAL = Object.freeze({ typ: 'intervall', falt: 'n', namn: 'Antal i det kvinnodominerade yrket', format: 'antal', etikett: '{v} i det kvinnodominerade yrket' });
 function _lvParFigur(pairs, max = 14) {
     const top = pairs.slice().sort((a, b) => (b.allvarsindex || 0) - (a.allvarsindex || 0)).slice(0, max);
     const namn = p => `${_rfKorta(String(p.kvLabel), 22)} mot ${_rfKorta(String(p.maLabel), 22)}`;
     const rader = [], sedda = new Set();
     for (const p of top) { const y = namn(p); if (!sedda.has(y) && isFinite(p.kvMedian) && isFinite(p.maMedian)) { sedda.add(y); rader.push({ p, y }); } }
     const kr = v => _figTalformat(Math.round(v), 'kr');
+    const parFalt = p => ({ ...(p.kvBas != null && p.kvBas !== '' ? { bas: String(p.kvBas) } : {}), ...(isFinite(p.gapPct) ? { gap: +p.gapPct.toFixed(1) } : {}), ...(p.kvN > 0 ? { n: p.kvN } : {}) });
     const tips = ({ p }) => [[`${p.kvLabel} (BAS ${p.kvBas})`], ['Median', kr(p.kvMedian)], [`${p.maLabel} (BAS ${p.maBas})`], ['Median', kr(p.maMedian)], ['Skillnad', `${svPct(p.gapPct, 1)} (${kr(p.gapKr)})`]];
     const punkt = (serie, farg, falt, extra = {}) => ({ marke: 'punkt', serie, farg, storlek: 6, ...extra,
-        data: rader.map(r => ({ y: r.y, x: Math.round(r.p[falt]), p: r.p, ...(extra.etikettLage ? { etikett: svPct(r.p.gapPct, 1) } : {}) })), tips: d => tips(d) });
+        data: rader.map(r => ({ y: r.y, x: Math.round(r.p[falt]), p: r.p, ...parFalt(r.p), ...(extra.etikettLage ? { etikett: svPct(r.p.gapPct, 1) } : {}) })), tips: d => tips(d) });
     return { beskrivning: 'Kandidatpar i likvärdigt arbete: det kvinnodominerade yrkets och jämförelseyrkets medianlön per par, med skillnaden i procent. Samma par finns i kandidatpar-tabellen nedan.',
+        urval: [{ ...URVAL.bas, namn: 'BAS-intervall (kvinnodominerat yrke)' }, URVAL.lonegap, LV_PAR_ANTAL],
         x: { skala: 'linjar', titel: 'Medianlön (kr/månad)', format: 'kr' }, y: { skala: 'band', ordning: rader.map(r => r.y), etikettMax: 48 },
         hojd: Math.max(160, 96 + rader.length * 32),
         lager: [{ marke: 'intervall', riktning: 'liggande', serie: 'Skillnad', farg: PALETTE.semantic.neutral, tjocklek: 2, legend: false,
-                  data: rader.map(r => ({ y: r.y, lag: Math.round(Math.min(r.p.kvMedian, r.p.maMedian)), hog: Math.round(Math.max(r.p.kvMedian, r.p.maMedian)), p: r.p })), tips: d => tips(d) },
+                  data: rader.map(r => ({ y: r.y, lag: Math.round(Math.min(r.p.kvMedian, r.p.maMedian)), hog: Math.round(Math.max(r.p.kvMedian, r.p.maMedian)), p: r.p, ...parFalt(r.p) })), tips: d => tips(d) },
                 punkt('Kvinnodominerat yrke', PALETTE.kon.kvinna, 'kvMedian'), punkt('Jämförelseyrke', PALETTE.kon.man, 'maMedian', { etikettLage: 'hoger' })] };
 }
 

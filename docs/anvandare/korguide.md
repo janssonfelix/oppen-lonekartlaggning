@@ -341,11 +341,18 @@ rubrikraden, också när det är hopfällt.
    skillnaden i hela organisationen som beror på att kvinnor och män arbetar i olika
    sektorer. Pilen vid en sektor öppnar dess yrken i Tabeller och egna vyer. Lika arbete, likvärdigt arbete
    och övriga analyser gäller alltid hela organisationen.
-   **Var uppstår löneskillnaden?** delar skillnaden i medellön i tre delar som tillsammans blir hela
-   skillnaden. Diagrammet visar dem som en trappa som landar i hela skillnaden:
+   **Var uppstår löneskillnaden?** delar skillnaden i medellön i delar som tillsammans blir hela
+   skillnaden. Diagrammet visar dem som en trappa som landar i hela skillnaden. Standard är tre delar:
    - **BAS-fördelning:** kvinnor och män i olika BAS. Det är en fråga om karriärvägar och rekrytering.
    - **AID inom BAS:** olika yrken i samma BAS-intervall. Pröva likvärdigt arbete.
    - **inom AID och BAS:** olika lön i samma arbete. Pröva lika arbete.
+
+   Under raden **Förklara med:** väljer du andra variabler: BAS, sektor, AID-mellannivå, AID och åldersgrupp
+   (åldersgrupp bara när lönefilen har ålder). Välj en till fyra och ordna dem med pilknapparna. Ordningen spelar
+   roll: den första variabeln får det den förklarar ensam, nästa det den förklarar utöver den första, och så vidare.
+   AID-nivåerna står alltid från grov till fin. Med BAS och åldersgrupp blir delarna *BAS-fördelning*, *Åldersgrupp
+   inom BAS* och *Inom åldersgrupp och BAS*. Varje vald variabel ger en del, och den sista delen är skillnaden inom
+   samma grupp. Valet sparas i konfigurationsfilen och följer med i rapportunderlaget.
 
    Under varje del står de grupper som bidrar mest i kronor.
    Listan kan skilja sig från de flaggade yrkena i Lika arbete, som sorteras efter hur stor
@@ -460,14 +467,55 @@ Diagram där varje punkt är en yrkesgrupp har fler filter, en rad per filter:
 - **Könsdominans** (Kvinnodominerad, Mansdominerad, Blandad) som knappar, i bandkartan och statistikens spann.
 - **Matchning** (AID + BAS, Endast AID) som knappar, i statistikens spann och de två diagrammen mot
   jämförelsestatistiken. En grupp utan statistik påverkas inte av det filtret.
+- **Yrkesgrupp** och **Sektor** som hopfällda listor med kryssrutor och ett sökfält, i Prioriteringens två diagram,
+  trattdiagrammet i Lika arbete, statistikens spann, de två diagrammen mot jämförelsestatistiken och överblickens bild i
+  Löneläget. Bandkartan har Yrkesgrupp och Krav mot lön i Likvärdigt arbete Sektor. Klicka på summeringen
+  (till exempel "Yrkesgrupp: alla 40") för att öppna listan. **Avmarkera alla** och sedan en kryssruta visar bara den gruppen.
+
+Fler diagram har filter:
+
+- **Lön mot ålder** i Ålder & karriär: BAS-intervall (när hela urvalet visas), yrkesgrupp, ålder och lön (Minst och
+  Högst). Med ett filter räknas trendlinjerna per kön, deras konfidensband och trenden för hela urvalet om ur de
+  punkter som syns, och noten säger det. Har ett kön färre synliga punkter än minsta gruppstorlek ritas inte dess
+  trendlinje, och noten säger varför. *Lön mot ålder per BAS-intervall* har samma filter; där döljer filtren punkter,
+  och trendlinjen i varje panel gäller fortfarande alla i intervallet.
+- **Löneskillnaden per åldersgrupp**: åldersgrupp (knappar) och antalet av det minst företrädda könet i åldersgruppen.
+- **Åldersfördelningen som kurva** och **lönespridningen över ålder**: ålder (Minst och Högst). En femårsgrupp visas
+  när dess första år ligger inom gränserna.
+- **Trädkartan** i Lönestruktur: BAS-intervall, sektor och antal personer i gruppen. Kartan läggs om så att de grupper
+  som syns fyller den; bara ytornas läge och storlek ändras, inga tal. BAS-intervallets antal är hela intervallets.
+  Ytan för små grupper samlar flera yrken och påverkas inte av sektorsfiltret.
+- **Sektorerna** i Lönestruktur: sektor och antal personer i sektorn.
+- **Kandidatparen** i Likvärdigt arbete: det kvinnodominerade yrkets BAS-intervall, löneskillnaden och antalet i det
+  kvinnodominerade yrket. Ett filter döljer hela par.
+- **Före och efter** i Löneöversyn: BAS-intervall eller yrkesgrupp, efter vald nivå, och antal.
+- **Förändringen per yrkesgrupp** i Spara och jämför år: BAS-intervall, yrkesgrupp och antal. En yrkesgrupp som finns i
+  flera BAS-intervall i årets lönefil påverkas inte av BAS-filtret.
 
 Filtren verkar tillsammans. Döljer de alla punkter står "Inga grupper i urvalet" i diagrammet; ändra eller töm ett
 fält för att få tillbaka dem. **Visa alla** nollställer alla filter i diagrammet. Under diagrammet står vad som är
-dolt, till exempel "utan BAS A, BAS N; 10–50 personer i gruppen". Urvalet döljer bara märken: inget tal räknas om,
+dolt, till exempel "utan BAS A, BAS N; 10–50 personer i gruppen". Urvalet döljer bara märken: inget tal räknas om
+(utom trendlinjerna i Lön mot ålder och trädkartans ytor, se ovan),
 och texten, tabellerna, rapporten, Word, PDF, utskriften och ZIP-filen visar alltid hela underlaget. Diagrammets egen
 export (PNG och SVG) visar urvalet och säger i fotraden vad som är dolt. Valet gäller diagrammet tills du läser in en
 ny lönefil, läser in demot eller rensar all data. Det sparas inte i konfigurationsfilen. Diagram där en punkt eller
-stapel samlar flera BAS-intervall, till exempel kandidatparen i Likvärdigt arbete, har inga sådana knappar.
+stapel samlar flera BAS-intervall, till exempel lägena per kön i Lönepolitik, har inga sådana knappar.
+
+**Räkna ett diagram för en del av underlaget.** Några diagram som sammanfattar många personer kan räknas om för en
+del av dem: lådorna och histogrammet för kvinnors och mäns lön i Ålder & karriär (för en sektor eller en åldersgrupp),
+löneskillnaden per åldersgrupp (för en sektor eller en yrkesgrupp) och percentilerna och kvartilerna i Lönestruktur
+(för en sektor eller ett BAS-intervall). Raden **Räkna för** står ovanför diagrammet. Välj till exempel en sektor, så
+räknas diagrammet om för personerna där, och under diagrammet står "Diagrammet är räknat för: sektor Vård (60
+personer)". **Räkna för alla** går tillbaka till hela underlaget. Diagrammet räknas för en sak i taget: väljer du en
+åldersgrupp tas valet av sektor bort.
+
+Det finns en skyddsregel. Både det du väljer och resten av underlaget måste ha antingen inga eller minst så många
+kvinnor och män som minsta gruppstorlek. Annars skulle två bilder, en för alla och en för valet, kunna avslöja en liten
+grupp. En sektor eller åldersgrupp som själv är för liten går inte att välja; raden säger hur många sådana det finns.
+Ett val som bryter regeln görs inte, och under diagrammet står varför. Vid exporten gäller den inställda minsta
+gruppstorleken, så ett val som går att göra på skärmen kan släppas där. Diagrammets egen export (PNG, SVG och
+diagramdata) visar valet och säger det i fotraden. Texten, tabellerna, rapporten, utskriften, ZIP-filen och
+rapportunderlaget visar alltid hela underlaget.
 
 **Egna tabeller i rapporten.** Ovanför tabellen i Tabeller och egna vyer finns **Lägg till i rapporten**. Ge vyn
 ett namn och lägg till den. Då står den som en egen tabell i avsnittet *Egna tabeller* i

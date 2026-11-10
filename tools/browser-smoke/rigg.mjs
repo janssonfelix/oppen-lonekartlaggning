@@ -19,7 +19,7 @@ const TILLATNA_KONSOLFEL = [/frame-ancestors/i];
 // Firefox har inte felet och prövar allt; tests/sakerhet.test.js förbjuder stilattribut i markeringen.
 // Ett eget <style> utan kontrollsumma fångas ändå: tests/sakerhet.test.js kräver hash för varje stilblock, och
 // Chromium och Firefox rapporterar det som en style-src-elem-händelse.
-const WEBKIT_SELECT_STILMALL = /^Refused to apply a stylesheet because its hash, its nonce, or 'unsafe-inline' does not appear in the style-src directive/;
+export const WEBKIT_SELECT_STILMALL = /^Refused to apply a stylesheet because its hash, its nonce, or 'unsafe-inline' does not appear in the style-src directive/;
 
 const WEBBLASARE = { chromium, firefox, webkit };
 export const NAMN = (process.argv.find(a => a.startsWith('--browser=')) || '--browser=chromium').split('=')[1];

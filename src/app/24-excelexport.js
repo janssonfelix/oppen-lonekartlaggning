@@ -242,19 +242,19 @@ function __excelAlltBokExport() {
         metRows.push([a.title || id]);
         metRows.push(['Total i datafilen', a.totalRaw]);
         [...(a.parseExcl||[]), ...(a.analysisExclusions||[])].forEach(([r,c]) => {
-            metRows.push(['− ' + r.replace(/<[^>]+>/g, ''), c]);
+            metRows.push(['− ' + _htmlTillText(r), c]);
         });
         const used = a.usedInAnalysis !== undefined ? a.usedInAnalysis : a.afterFilter;
         metRows.push(['= Använda i analysen', used]);
         metRows.push([]);
         if (a.formler && a.formler.length) {
             metRows.push(['Formler & definitioner']);
-            a.formler.forEach(([n, dsc]) => metRows.push(['  ' + n, dsc.replace(/<[^>]+>/g, '')]));
+            a.formler.forEach(([n, dsc]) => metRows.push(['  ' + n, _htmlTillText(dsc)]));
             metRows.push([]);
         }
         if (a.notes && a.notes.length) {
             metRows.push(['Speciella regler']);
-            a.notes.forEach(n => metRows.push(['  ' + n.replace(/<[^>]+>/g, '')]));
+            a.notes.forEach(n => metRows.push(['  ' + _htmlTillText(n)]));
             metRows.push([]);
         }
     });

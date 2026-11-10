@@ -119,10 +119,10 @@ describe('Alla diagram: grupperna och kopiorna', () => {
         const lank = kort.querySelector('.ut-kopia-fran a');
         expect(kort.querySelector('.ut-kopia-fran').textContent).toBe('Från fliken Prioritering');
         expect([lank.dataset.goToTab, lank.dataset.goToAnchor]).toEqual(['prioritering', 'chart-prio-matrix']);
-        // Egen exportmeny med eget id, och filterrader (prioriteringsmatrisen har BAS, antal och avvikelse).
+        // Egen exportmeny med eget id, och filterrader (prioriteringsmatrisen har BAS, yrkesgrupp, sektor, antal och avvikelse).
         const menyer = [kort, kalla.parentElement].map(x => x.querySelector('.chart-export-meny').id);
         expect(menyer[0]).not.toBe(menyer[1]);
-        expect([...kort.querySelectorAll('.diagram-urval')].map(r => r.dataset.urvalFalt)).toEqual(['bas', 'n', 'x']);
+        expect([...kort.querySelectorAll('.diagram-urval')].map(r => r.dataset.urvalFalt)).toEqual(['bas', 'yrke', 'sektor', 'n', 'x']);
         expect(w.eval('chartExportTitle')(kopia)).toBe(w.eval('chartExportTitle')(kalla));
         expect(w.eval("chartExportFilename")(kopia, 'png').startsWith('DEMO_Prioritering_')).toBe(true);
         // Inga id:n i dokumentet förekommer två gånger.

@@ -17,6 +17,7 @@ import { matchningEtikett } from './jamforelse.js';
 import { bedomSkillnad, statusKonstanter } from './status.js';
 import { lonebegreppReservation } from './struktur.js';
 import { personOrd } from './namn.js';
+import { gapDelar, gapVariablerIText, gapVariablerArStandard, gapStandardVariabler } from './gapuppdelning.js';
 
 const { STORLEKSGRANS, DIREKTIV_KOLUMN, DIREKTIV_ETIKETT, DIREKTIV_TIPS } = statusKonstanter();
 
@@ -310,18 +311,24 @@ export function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
         if (!u) return blk(R, [`För få personer för att dela upp skillnaden: ett kön har färre än ${k} ${personOrd(k)} i urvalet.`], null);
         const inledning = `Kvinnornas medellön är ${_kr(u.medel.kv)} och männens ${_kr(u.medel.ma)}, en skillnad på ${_kr(u.gap)} (${_pct(u.gapPct)} av männens).`;
         if (u.skyddad === false) return blk(R, [inledning, `Skillnaden delas inte upp här: en grupp med färre än ${k} ${personOrd(k)} står för så stor del av en av delarna att dess bidrag annars skulle kunna räknas fram.`], null);
-        const { A, B, C } = u.delar;
+        // Delarna och deras namn följer de valda variablerna (ADR-65); standardvalet BAS, AID ger texten från före.
+        const variabler = u.variabler || gapStandardVariabler();
+        const delar = gapDelar(variabler);
+        const orsaker = delar.map(d => `${_kr(u.delar[d.id])} ${d.orsak}`);
         const st = [`${inledning} Beloppen är kvinnor mot män: negativa belopp betyder att kvinnornas medellön är lägre.`,
-            `Av skillnaden beror ${_kr(A)} på att kvinnor och män är olika fördelade över BAS, ${_kr(B)} på olika AID inom samma BAS och ${_kr(C)} på löneskillnader inom samma AID och BAS.`];
+            `Av skillnaden beror ${orsaker.slice(0, -1).join(', ')} och ${orsaker[orsaker.length - 1]}.`];
+        if (!gapVariablerArStandard(variabler)) {
+            st.push(variabler.length === 1
+                ? `Uppdelningen förklarar med variabeln ${gapVariablerIText(variabler)}; resten är skillnaden inom samma grupp.`
+                : `Uppdelningen förklarar med variablerna ${gapVariablerIText(variabler)}, i den ordningen. Ordningen påverkar delarna: den första variabeln får det den förklarar ensam, nästa det den förklarar utöver den första, och så vidare.`);
+        }
         if (u.litetGap) st.push('Skillnaden är mindre än 1 % av männens medellön. Delarna kan då peka åt olika håll och vara större än själva skillnaden.');
         const andel = v => u.litetGap ? '—' : _pct(v / u.gap * 100, 0);
         // Samma poster som kortet: listan är redan kortad efter skyddsregeln, och en kortare
         // lista här kunde bryta den (gapuppdelning.js).
         const storst = d => u.topp[d].map(p => `${p.namn} (${_kr(p.kr)})`).join('; ') || '—';
         return blk(R, st, { rubriker: ['Del', 'Bidrag (kr)', 'Andel av skillnaden', 'Störst bidrag'], rader: [
-            ['BAS-fördelning', _kr(A), andel(A), storst('A')],
-            ['AID inom BAS', _kr(B), andel(B), storst('B')],
-            ['Inom AID och BAS', _kr(C), andel(C), storst('C')],
+            ...delar.map(d => [d.namn, _kr(u.delar[d.id]), andel(u.delar[d.id]), storst(d.id)]),
             ['Totalt', _kr(u.gap), u.litetGap ? '—' : '100 %', ''],
         ] });
     }

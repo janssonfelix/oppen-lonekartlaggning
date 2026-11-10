@@ -8,7 +8,7 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
-import { normalisera, oppnaFlik, iExport, byggKonDataset, KON_KOSTNAD, KON_BAS, KON_KV, KON_MA, ENSAM, fonsterKon, laddaXlsx, fangaBocker, X_KV, X_MA, PAR_KV, PAR_MA } from './helpers/ktroskel-rigg.js';
+import { normalisera, oppnaFlik, iExport, byggKonDataset, KON_KOSTNAD, MELLAN, SMA, KON_BAS, KON_KV, KON_MA, ENSAM, KON_GAP, KON_GAP_1, KON_DOLDA, fonsterKon, harNagon, laddaXlsx, fangaBocker, sammanhang, SENT_MELLAN, SENT_SMA, X_KV, X_MA, PAR_KV, PAR_MA } from './helpers/ktroskel-rigg.js';
 import { invariantSvit } from './helpers/ktroskel-invariant.js';
 
 // Sviten ritar om hela verktyget i varje test. Under full last tar ett test 4–6 s, så standardgränsen 5 s
@@ -174,3 +174,160 @@ describe('I1b: Löneöversyns knappresultat följer läget och tröskeln', () =>
 });
 
 invariantSvit(10, []);
+
+
+// ===================================================================================
+// I6: underlaget (figur.underlag, "Räkna för") i exportläget, precis under och precis över skyddsregeln.
+//
+// Varje diagram som kan räknas för en del av personerna prövas med samma val: bara sektorn Vård (30 kvinnor och 30
+// män). Resten är Handläggare (12 kvinnor, inga män) och Ledning, som har 3 kvinnor och därför inte går att välja för
+// sig. Ledningens män avgör: med 9 (en under tröskeln 10) har resten 9 män och valet görs inte; med 10 görs det.
+// Utan regeln kunde hela underlaget minus urvalet röja de få männen i Ledning.
+// ===================================================================================
+describe('I6: underlaget i exportläget, precis under och precis över skyddsregeln', () => {
+    const DIAGRAM = ['chart-kon-boxplot', 'chart-kon-histogram', 'chart-kon-aldergap', 'chart-struktur-percentiler', 'chart-struktur-kvartiler'];
+    const VARD = 'Vård- och omsorgsarbete med mera', HANDL = 'Handläggar- och administratörsarbete';
+    const LEDNING_MAN = 41913;   // Ledningens män har en lön som inte finns någon annanstans (i Vård högst 41 700)
+    const fonsterUnderlag = (man, export_ = true) => {
+        const w = createAppWindow();
+        w.eval('sattKTroskel(10, { fraga: false })');
+        const rad = (aid, kon, lon, alder, bas = 'S1') => ({ bas, kon, lon, alder, yrke: `${aid} Yrke ${aid}`, aid, yrkeLabel: `Yrke ${aid}`, enhet: '' });
+        const r = [];
+        for (let i = 0; i < 30; i++) r.push(rad('201010', 'kvinna', 24000 + i * 600, 40 + (i % 10)), rad('201010', 'man', 24300 + i * 600, 40 + (i % 10)));
+        for (let i = 0; i < 12; i++) r.push(rad('151010', 'kvinna', 30000 + i * 400, 30 + i, 'S2'));
+        for (let i = 0; i < 3; i++) r.push(rad('101010', 'kvinna', 41000 + i * 100, 55, 'S3'));
+        for (let i = 0; i < man; i++) r.push(rad('101010', 'man', LEDNING_MAN, 56, 'S3'));
+        w.__state.data = r;
+        w.eval('populateSelects(); unlockTabs();');
+        if (export_) iExport(w);
+        w.__renderTabContent('kon');
+        w.__renderTabContent('struktur');
+        return w;
+    };
+    // Kryssar ur alla sektorer utom Vård. I exportläget går Ledning inte att välja (3 kvinnor); på skärmen (tröskeln 1) gör den det.
+    const valjBaraVard = (w, id, valbara = [HANDL, VARD]) => {
+        const el = w.document.getElementById(id);
+        const rad = el.parentElement.querySelector('.diagram-urval[data-underlag="sektor"]');
+        expect(rad, id).not.toBeNull();
+        expect([...rad.querySelectorAll('input[data-urval]')].map(x => x.getAttribute('data-urval')), id).toEqual(valbara);
+        let ruta = null;
+        for (const v of valbara.filter(x => x !== VARD)) {
+            ruta = w.document.getElementById(id).parentElement.querySelector(`.diagram-urval[data-underlag="sektor"] input[data-urval="${v}"]`);
+            ruta.checked = false;
+            ruta.dispatchEvent(new w.Event('change', { bubbles: true }));
+        }
+        return { el, ruta };
+    };
+    it.each(DIAGRAM)('%s: precis under regeln (resten har 9 män) görs valet inte, och exporten är hela underlagets', id => {
+        const w = fonsterUnderlag(9);
+        const el = w.document.getElementById(id);
+        expect(el._figur.underlag.k, id).toBe(10);
+        const fore = w.__chartExportRows(el);
+        const { ruta } = valjBaraVard(w, id);
+        expect(el._rfUnderlagText, id).toBeUndefined();
+        expect(el._rfUnderlagFigur, id).toBeUndefined();
+        expect(ruta.checked, id).toBe(true);
+        expect(ruta.getAttribute('aria-invalid'), id).toBe('true');
+        expect(el.parentElement.querySelector('[data-rf="urval"]').textContent, id).toContain('Urvalet eller resten har färre än 10 kvinnor eller män.');
+        const efter = w.__chartExportRows(el);
+        expect(efter.slice(1), id).toEqual(fore.slice(1));
+        expect(efter.map(r => r.join(' | ')).join('\n'), id).not.toMatch(/Räknat för/);
+    });
+    it.each(DIAGRAM)('%s: precis över regeln (resten har 10 män) räknas diagrammet för Vård, och exporten säger det', id => {
+        const w = fonsterUnderlag(10);
+        const { el, ruta } = valjBaraVard(w, id);
+        expect(ruta.hasAttribute('aria-invalid'), id).toBe(false);
+        expect(el._rfUnderlagText, id).toBe(`sektor ${VARD} (60 personer)`);
+        expect(el._rfUnderlagFigur, id).toBeTruthy();
+        expect(el._rfUnderlagFigur.beskrivning, id).toContain(VARD);
+        const rader = w.__chartExportRows(el);
+        expect(rader.some(r => r[0] === `Räknat för: sektor ${VARD} (60 personer)`), id).toBe(true);
+        expect(normalisera(rader.join('\n')), id).not.toContain(String(LEDNING_MAN));
+    });
+    // Skärmen maskerar inget (ADR-51, tröskeln 1): där görs valet. Exporten ritar diagrammet i exportläget med den
+    // inställda tröskeln och prövar valet ur minnet igen: under regeln exporteras hela underlaget, över den valet.
+    it.each(DIAGRAM)('%s: valt på skärmen; exporten prövar valet med den inställda tröskeln', id => {
+        for (const [man, raknat] of [[9, false], [10, true]]) {
+            const w = fonsterUnderlag(man, false);
+            oppnaFlik(w, id.startsWith('chart-kon') ? 'kon' : 'struktur');   // den öppna fliken ritas om på skärmen efter en export
+            const el0 = w.document.getElementById(id);
+            expect(el0._figur.underlag.k, id).toBe(1);
+            const hel = w.eval('medExportLage')(() => w.__chartExportRows(w.document.getElementById(id)));
+            valjBaraVard(w, id, [HANDL, 'Ledningsarbete', VARD]);
+            expect(w.document.getElementById(id)._rfUnderlagText, id).toBe(`sektor ${VARD} (60 personer)`);
+            const rader = w.eval('medExportLage')(() => w.__chartExportRows(w.document.getElementById(id)));
+            const text = rader.map(r => r.join(' | ')).join('\n');
+            if (raknat) {
+                expect(text, `${id}, ${man} män`).toContain(`Räknat för: sektor ${VARD} (60 personer)`);
+                expect(normalisera(text), id).not.toContain(String(LEDNING_MAN));
+            } else {
+                expect(text, `${id}, ${man} män`).not.toContain('Räknat för');
+                expect(rader.slice(1), id).toEqual(hel.slice(1));
+            }
+            // Tillbaka på skärmen gäller valet igen.
+            expect(w.document.getElementById(id)._rfUnderlagText, id).toBe(`sektor ${VARD} (60 personer)`);
+        }
+    });
+});
+
+// ===================================================================================
+// I7: Var uppstår löneskillnaden med andra val av förklaringsvariabler (ADR-65), vid 10 och 25.
+//
+// Skyddsregeln gäller per del: en grupp namnges bara när den själv och alla dess överceller har 0 eller minst k av
+// varje kön, och kan en del inte redovisas visas ingen del. Y1–Y3 och X har ett kön under tröskeln i BAS:en, så
+// inget under dem får namnges; vid 25 gäller det också MELLAN (10 kvinnor och 10 män).
+//  - BAS, åldersgrupp, AID (tre nivåer): den ensamma personen i Ensamyrke (BAS S1) står för nästan hela delen
+//    "AID inom åldersgrupp och BAS", så reserven slår till: ingen del och inget gruppnamn redovisas, bara hela skillnaden.
+//  - Åldersgrupp, BAS: delarna redovisas, och inga grupper under en övercell som inte klarar tröskeln namnges.
+// Rapportunderlagets block, kortet i exportläget och metodbilagan (Excel, Word) prövas mot de dolda värdena som i I4.
+// ===================================================================================
+describe.each([[10, []], [25, SENT_MELLAN]])('I7: uppdelningen med andra val av variabler vid %i', (k, extra) => {
+    const dolda = [...KON_DOLDA, ...SENT_SMA, ...extra];
+    const smaBas = k === 10 ? [...KON_BAS, 'X', ...SMA] : [...KON_BAS, 'X', ...SMA, ...MELLAN];
+    const utdataFor = val => {
+        const w = iExport(fonsterKon(k === 10 ? null : k));
+        w.eval(`sattGapVariabler(${JSON.stringify(val)}, { rita: false })`);
+        w.__renderTabContent('struktur');
+        const u = w.eval('_guGapUppdelning(getData(), { k: kTroskel(), variabler: gapVariabler() })');
+        const block = w.__rapportunderlagBlock().find(b => b.id === 'uppdelning');
+        return { u, utdata: [
+            ['rapportunderlag: uppdelning', normalisera(w.__ruTillWordHtml(block) + '\n' + w.__ruTillText(block))],
+            ['kortet (exportläget)', normalisera(w.document.getElementById('gap-uppdelning').textContent)],
+            ['metodbilagan', normalisera(w.__methodAppendixData().map(r => r.join(' | ')).join('\n'))],
+        ] };
+    };
+    const ingaLackor = utdata => {
+        const lackor = [];
+        for (const [namn, text] of utdata) {
+            for (const v of harNagon(text, dolda)) lackor.push(`${namn}: ${v} — "${sammanhang(text, v)}"`);
+            for (const v of harNagon(text, KON_GAP)) lackor.push(`${namn}: ${v}`);
+            for (const re of KON_GAP_1) { const m = text.match(re); if (m) lackor.push(`${namn}: ${m[0]}`); }
+            for (const b of smaBas) if (new RegExp(`BAS ${b}(?![\\p{L}\\d])`, 'u').test(text)) lackor.push(`${namn}: BAS ${b}`);
+        }
+        expect(lackor).toEqual([]);
+    };
+    it('BAS, åldersgrupp, AID: reserven — ingen del och inget gruppnamn, och variablerna nämns', () => {
+        const { u, utdata } = utdataFor(['bas', 'alder', 'aid']);
+        expect(u.variabler).toEqual(['bas', 'alder', 'aid']);
+        expect(u.skyddad).toBe(false);
+        expect(u.delar).toBeNull();
+        expect(u.topp).toBeNull();
+        expect(utdata[0][1]).toMatch(/delas inte upp/);
+        expect(utdata[1][1]).toMatch(/delas inte upp/);
+        expect(utdata[1][1]).not.toMatch(/A\. BAS-fördelning/);
+        expect(utdata[2][1]).toContain('delas med BAS, åldersgrupp och AID');
+        ingaLackor(utdata);
+    });
+    it('åldersgrupp, BAS: delarna summerar till hela skillnaden, och inget under en för liten övercell namnges', () => {
+        const { u, utdata } = utdataFor(['alder', 'bas']);
+        expect(u.variabler).toEqual(['alder', 'bas']);
+        expect(u.skyddad).toBe(true);
+        expect(Math.abs(Object.values(u.delar).reduce((s, v) => s + v, 0) - u.gap)).toBeLessThan(1e-6);
+        const namn = Object.values(u.topp).flat().map(p => p.namn);
+        expect(namn.length).toBeGreaterThan(0);
+        for (const n of namn) expect(smaBas.some(b => n.endsWith(`BAS ${b}`)), n).toBe(false);
+        expect(utdata[0][1]).toContain('Uppdelningen förklarar med variablerna åldersgrupp och BAS, i den ordningen.');
+        expect(utdata[1][1]).toContain('B. BAS inom åldersgrupp');
+        ingaLackor(utdata);
+    });
+});

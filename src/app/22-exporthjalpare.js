@@ -37,6 +37,11 @@ function _methodAppendixData() {
         ['Steg + Yrkesgrupp (dekomponeringen)', medAlder
             ? 'Löneskillnad mellan könen med fasta effekter för yrkesgrupp inom BAS (AID×BAS) utöver ålder, skattat med inomtransformation; visas som sista steg, ingår inte i huvudtalet'
             : 'Löneskillnad mellan könen med fasta effekter för yrkesgrupp inom BAS (AID×BAS), utan ålder (lönefilen saknar ålder), skattat med inomtransformation; visas som sista steg, ingår inte i huvudtalet'],
+        // Var uppstår löneskillnaden (ADR-65): raden finns bara när variablerna inte är standardvalet BAS och AID.
+        ...(typeof gapVariabler === 'function' && !_guVariablerArStandard(gapVariabler())
+            ? [['Var uppstår löneskillnaden (variabler)', gapVariabler().length > 1
+                ? `Skillnaden i medellön delas med ${_guVariablerIText(gapVariabler())}, i den ordningen (standard: BAS och AID). Ordningen påverkar delarna.`
+                : `Skillnaden i medellön delas med ${_guVariablerIText(gapVariabler())} (standard: BAS och AID).`]] : []),
         ['Ålder & karriär (tvärsnitt)', 'Lön mot ålder och livscykelmodellen bygger på ett tvärsnitt: de visar skillnader mellan åldersgrupper i dag, inte hur en persons lön utvecklas över karriären (kohorteffekter)'],
         ['Trattdiagrammet', 'Med färre än tio yrkesgrupper säger trattens form lite; varje grupp bedöms då för sig i tabellen. Punktens bedömning bygger på en omkastning av könen inom gruppen'],
         ['p-värden', 't-fördelning vid df < 100, annars normalfördelning; Benjamini-Hochberg (FDR) vid multipla grupptest'],

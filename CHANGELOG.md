@@ -8,6 +8,52 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ### Gränssnitt
 
+- **Var uppstår löneskillnaden: välj förklaringsvariablerna.** Kortet i Lönestruktur har raden *Förklara med:* med en
+  kryssruta per variabel (BAS, sektor, AID-mellannivå, AID och åldersgrupp; åldersgrupp bara när lönefilen har ålder)
+  och knappar för att flytta de valda upp och ned. En till fyra variabler kan väljas, och ordningen påverkar delarna:
+  den första variabeln får det den förklarar ensam, nästa det den förklarar utöver den första, och så vidare.
+  AID-nivåerna ordnas alltid från grov till fin. Delarna får namn ur variablerna, till exempel *Åldersgrupp inom BAS*,
+  och den sista heter *Inom …* de valda. Delarna summerar fortfarande exakt till hela skillnaden, och skyddsregeln
+  gäller per del: en grupp namnges bara när den och alla grupper den ligger i når minsta gruppstorlek, och kan en del
+  inte redovisas visas ingen del. Standardvalet BAS och AID ger samma tal och texter som förut. Valet följer med i
+  konfigurationsfilen (`gapUppdelning`; en äldre fil utan fältet ger standard), nollställs av *Rensa all data* och
+  styr rapportunderlagets block, som då nämner variablerna; metodbilagan i Word, PDF och Excel får en rad om valet
+  när det inte är standard (ADR-65).
+
+- **Filter i fler diagram, och trendlinjer som räknas om för urvalet.** Diagrammen med yrkesgrupper har nu också
+  filtren *Yrkesgrupp* och *Sektor* som hopfällda listor (Prioriteringens två diagram, trattdiagrammet i Lika arbete,
+  statistikens spann, diagrammen mot jämförelsestatistiken och överblickens bild i Löneläget; bandkartan har
+  Yrkesgrupp och Krav mot lön Sektor). *Lön mot ålder* i Ålder & karriär har BAS-intervall (när hela urvalet visas),
+  yrkesgrupp, ålder och lön; med ett filter räknas trendlinjerna per kön, konfidensbanden och trenden för hela urvalet
+  om ur de punkter som syns, och ett kön med färre synliga punkter än minsta gruppstorlek får ingen trendlinje — noten
+  säger vilket. Utan filter är diagrammet som förut. *Lön mot ålder per BAS-intervall* har samma filter (trendlinjen i
+  varje panel gäller alla i intervallet). Trädkartan i Lönestruktur har BAS-intervall, sektor och antal och läggs om så
+  att de synliga grupperna fyller kartan, utan att något tal ändras. Dessutom: åldersgrupp och antalet av det minsta
+  könet i löneskillnaden per åldersgrupp, ålder i åldersfördelningens kurva och lönespridningen över ålder, sektor och
+  antal i sektordiagrammet, BAS-intervall, löneskillnad och antal i kandidatparen i Likvärdigt arbete, BAS-intervall eller
+  yrkesgrupp och antal i Löneöversynens före och efter, och BAS-intervall, yrkesgrupp och antal i förändringen per
+  yrkesgrupp i Spara och jämför år. Filtren döljer bara märken; rapporten, utskriften, ZIP-filen och rapportunderlaget
+  visar alltid hela underlaget.
+
+- **Räkna för: diagram som räknas om för en del av underlaget (kärnan och fem diagram).** Lådorna och histogrammet
+  för kvinnors och mäns lön i Ålder & karriär, löneskillnaden per åldersgrupp och percentilerna och kvartilerna i
+  Lönestruktur har raden *Räkna för* ovanför diagrammet: diagrammet räknas om för en sektor, en åldersgrupp, en
+  yrkesgrupp eller ett BAS-intervall, en sak i taget. En skyddsregel gäller: både urvalet och resten av underlaget ska
+  ha inga eller minst minsta gruppstorlek kvinnor och män, och en grupp som själv är för liten går inte att välja. Ett
+  val som bryter regeln görs inte, och noten säger varför. Noten säger vad diagrammet är räknat för och hur många
+  personer det gäller. Diagrammets egen export visar valet och säger det i fotraden och diagramdatan; rapporten,
+  utskriften, ZIP-filen och rapportunderlaget visar alltid hela underlaget. Valet minns per diagram under sessionen.
+
+- **Långa filterlistor och lager som räknas om för urvalet (kärnan).** Ett filter med många värden, till exempel
+  yrkesgrupper eller sektorer, visas som en hopfälld lista med kryssrutor i stället för en knapp per värde.
+  Summeringen säger hur många som visas ("Yrkesgrupp: 12 av 40"), sökfältet visar bara värdena som innehåller texten,
+  och *Markera alla* och *Avmarkera alla* gäller de värden som syns. I en lista får alla väljas bort. Noten säger
+  "bara …" eller "Yrkesgrupp 12 av 40" när många är bortvalda. Ett diagram kan också ha ett lager som räknas ur
+  punkterna, till exempel en trendlinje. När ett filter är aktivt räknas lagret om ur de punkter som syns, och noten
+  säger det; har punkterna blivit för få visas lagret inte, och noten och exportens fotrad säger varför. Utan filter,
+  och i rapporten, utskriften, ZIP-filen och rapportunderlaget, är diagrammen som förut. Det här är kärnan;
+  diagrammen får listorna och de omräknade lagren i nästa steg.
+
 - **Diagramfilter med flera dimensioner, och fälten Minst och Högst.** Ett diagram kan ha flera filter, ett per
   dimension, i varsin rad ovanför diagrammet: knappar för en kategori (som BAS-intervallen i dag) och fälten *Minst*
   och *Högst* för ett tal, till exempel antal personer i gruppen. Fälten läser tal som verktyget gör annars ("1,5",
@@ -348,6 +394,11 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ### Exporter
 
+- **HTML-text som vanlig text, på ett ställe (`src/lib/htmltext.js`).** Metodbladet i Excel visade `&lt;`, `&gt;` och
+  `&amp;` i reglerna och formlerna (t.ex. "n &lt; 10"); de står nu som `<`, `>` och `&`. Taggarna tas bort tills inga
+  finns kvar, i Excel, utskriftens metodlistor (som nu escapas), rapportmodellens bilaga och gruppdossierns textkopia.
+  Rubriken i Ålder & karriär escapar det valda BAS-intervallet, och mallens skriptblock hittas också med versaler.
+  Rättar CodeQL:s varningar om ofullständig tvättning.
 - **Word-utkastets tabeller inför Word-testet.** Två tabeller i följd skiljs av ett tomt stycke (Word slår annars
   ihop dem till en tabell), tabellbredden står i samma enhet som kolumnerna och cellerna, och varje tabell har
   `w:tblLook` som Word själv skriver.

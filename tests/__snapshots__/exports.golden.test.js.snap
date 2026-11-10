@@ -1534,7 +1534,7 @@ exports[`golden: Excel-exporterna på fast dataset > "Excel (alla flikar)" match
     ],
     [
       "  Lönespridning",
-      "P90 / P10 (1.0 = ingen spridning, &gt;1.5 = bred spridning)",
+      "P90 / P10 (1.0 = ingen spridning, >1.5 = bred spridning)",
     ],
     [
       "  Diff mot jämförelsestatistiken",
@@ -1549,7 +1549,7 @@ exports[`golden: Excel-exporterna på fast dataset > "Excel (alla flikar)" match
       null,
     ],
     [
-      "  K-anonymitet: 0 grupper utelämnades (n &lt; 10); de räknas upp under respektive BAS",
+      "  K-anonymitet: 0 grupper utelämnades (n < 10); de räknas upp under respektive BAS",
       null,
     ],
     [
@@ -1613,7 +1613,7 @@ exports[`golden: Excel-exporterna på fast dataset > "Excel (alla flikar)" match
       null,
     ],
     [
-      "  Könsfördelning räknas så länge totalen ≥ 5 (även om ena könet har &lt; 5 individer)",
+      "  Könsfördelning räknas så länge totalen ≥ 5 (även om ena könet har < 5 individer)",
       null,
     ],
     [
@@ -1722,7 +1722,7 @@ exports[`golden: Excel-exporterna på fast dataset > "Excel (alla flikar)" match
     ],
     [
       "  OLS-regression",
-      "log(lön) ~ kön + ålder + BAS-intervall (indikatorvariabler, första BAS som referens). Standardfel: HC3 robust (Long &amp; Ervin 2000)",
+      "log(lön) ~ kön + ålder + BAS-intervall (indikatorvariabler, första BAS som referens). Standardfel: HC3 robust (Long & Ervin 2000)",
     ],
     [
       "  BAS-rangordning",
@@ -6474,7 +6474,7 @@ exports[`golden: lönefil utan ålder (ADR-64) > "Excel (alla flikar)" matchar f
     ],
     [
       "  Lönespridning",
-      "P90 / P10 (1.0 = ingen spridning, &gt;1.5 = bred spridning)",
+      "P90 / P10 (1.0 = ingen spridning, >1.5 = bred spridning)",
     ],
     [
       "  Diff mot jämförelsestatistiken",
@@ -6489,7 +6489,7 @@ exports[`golden: lönefil utan ålder (ADR-64) > "Excel (alla flikar)" matchar f
       null,
     ],
     [
-      "  K-anonymitet: 0 grupper utelämnades (n &lt; 10); de räknas upp under respektive BAS",
+      "  K-anonymitet: 0 grupper utelämnades (n < 10); de räknas upp under respektive BAS",
       null,
     ],
     [
@@ -6553,7 +6553,7 @@ exports[`golden: lönefil utan ålder (ADR-64) > "Excel (alla flikar)" matchar f
       null,
     ],
     [
-      "  Könsfördelning räknas så länge totalen ≥ 5 (även om ena könet har &lt; 5 individer)",
+      "  Könsfördelning räknas så länge totalen ≥ 5 (även om ena könet har < 5 individer)",
       null,
     ],
     [
@@ -6662,7 +6662,7 @@ exports[`golden: lönefil utan ålder (ADR-64) > "Excel (alla flikar)" matchar f
     ],
     [
       "  OLS-regression",
-      "log(lön) ~ kön + BAS-intervall (indikatorvariabler, första BAS som referens). Standardfel: HC3 robust (Long &amp; Ervin 2000)",
+      "log(lön) ~ kön + BAS-intervall (indikatorvariabler, första BAS som referens). Standardfel: HC3 robust (Long & Ervin 2000)",
     ],
     [
       "  BAS-rangordning",

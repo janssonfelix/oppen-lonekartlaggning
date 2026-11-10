@@ -98,6 +98,7 @@ function _rensaAllData({ inbakat = true } = {}) {
     state.rapportTabeller = [];
     state.perBasRecept = null;
     state.forklaringsmodell = null;
+    state.gapUppdelning = null;
     // Rensa även historiska snapshots och anteckningar
     state.forecast = { budget: { mode: 'pct', value: null }, generell: { mode: 'pct', value: null }, targets: [], minGroupN: 10, roundStep: 0, years: 1, scenarios: { A: null, B: null }, result: null };
     if (typeof _fcGlomKnappresultat === 'function') _fcGlomKnappresultat();   // knappresultaten räknas inte om på nästa underlag

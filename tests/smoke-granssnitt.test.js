@@ -947,3 +947,155 @@ describe('kvartiler utan enskilda löner', () => {
         expect(t).not.toContain('99999');
     });
 });
+
+// ===================================================================================
+// ADR-65: Var uppstår löneskillnaden med valbara förklaringsvariabler. Valet, tangentbordet och ARIA, texterna,
+// konfigurationsfilen, Rensa all data, rapportunderlaget och metodbilagan.
+// ===================================================================================
+describe('Var uppstår löneskillnaden: valbara förklaringsvariabler (ADR-65)', () => {
+    const demo = () => { const w = createAppWindow(); w.__loadDemoData(); w.__renderTabContent('struktur'); return w; };
+    const kort = w => w.document.getElementById('gap-uppdelning');
+    const rutor = w => [...kort(w).querySelectorAll('.gu-val input[data-gu-var]')];
+    const valda = w => rutor(w).filter(r => r.checked).map(r => r.getAttribute('data-gu-var'));
+    const kryssa = (w, v) => { const r = kort(w).querySelector(`input[data-gu-var="${v}"]`); r.checked = !r.checked; r.dispatchEvent(new w.Event('change', { bubbles: true })); };
+    const delnamn = w => [...kort(w).querySelectorAll('[data-gu-del] .gu-rubrik strong')].map(e => e.textContent);
+    const u = w => w.eval('_guGapUppdelning(getData(), { k: kTroskel(), variabler: gapVariabler() })');
+    const bevaka = w => { w.eval(`window.__fel = []; { const rf = rapporteraFel; rapporteraFel = function (plats, e) { window.__fel.push(plats + ': ' + (e && e.message)); return rf(plats, e); }; }
+        { const ce = console.error; console.error = function (...a) { window.__fel.push(a.join(' ')); return ce.apply(console, a); }; }`); return w; };
+
+    it('standardvalet: BAS och AID i den ordningen, dagens delar och texter, ingen återställning', () => {
+        const w = demo();
+        expect(kort(w).querySelector('.gu-val legend').textContent).toBe('Förklara med:');
+        expect(valda(w)).toEqual(['bas', 'aid']);
+        expect(rutor(w).map(r => r.getAttribute('data-gu-var'))).toEqual(['bas', 'aid', 'sektor', 'aidniva', 'alder']);
+        expect(delnamn(w)).toEqual(['A. BAS-fördelning', 'B. AID inom BAS', 'C. Inom AID och BAS']);
+        const text = [...kort(w).querySelectorAll('.gu-text')].map(p => p.textContent);
+        expect(text[0]).toContain('Kvinnor och män är olika fördelade över BAS-intervallen. Hör till karriärvägar och rekrytering');
+        expect(text[1]).toContain('Kvinnor och män har olika AID inom samma BAS. Kan kräva en lönesatsning på yrket');
+        expect(text[2]).toContain('Kvinnor och män har olika lön i samma AID och BAS. Pröva lika arbete');
+        expect(kort(w).querySelector('[data-gu-standard]')).toBeNull();
+        expect(kort(w).textContent).toContain('Ordningen påverkar delarna: den första variabeln får det den förklarar ensam');
+        expect(w.__state.gapUppdelning).toBeNull();
+    });
+    it('röktest: AID bort och åldersgrupp till; delarna summerar till hela skillnaden, inga fel', () => {
+        const w = bevaka(demo());
+        kryssa(w, 'aid');
+        expect(valda(w)).toEqual(['bas']);
+        expect(delnamn(w)).toEqual(['A. BAS-fördelning', 'B. Inom BAS']);
+        kryssa(w, 'alder');
+        expect(valda(w)).toEqual(['bas', 'alder']);
+        expect(JSON.parse(JSON.stringify(w.__state.gapUppdelning))).toEqual({ variabler: ['bas', 'alder'] });
+        expect(delnamn(w)).toEqual(['A. BAS-fördelning', 'B. Åldersgrupp inom BAS', 'C. Inom åldersgrupp och BAS']);
+        const r = u(w);
+        expect(r.skyddad).toBe(true);
+        expect(Math.abs(r.delar.A + r.delar.B + r.delar.C - r.gap)).toBeLessThan(1e-6);
+        // Trappan har lika många staplar som delar, och fokus står kvar på rutan.
+        const f = w.document.getElementById('chart-gap-uppdelning')._figur;
+        expect(f.x.ordning).toEqual(['A. BAS-fördelning', 'B. Åldersgrupp inom BAS', 'C. Inom åldersgrupp och BAS', 'Hela skillnaden']);
+        expect(f.beskrivning).toContain('delad i tre delar som läggs på varandra: BAS-fördelning, åldersgrupp inom BAS och lön inom samma åldersgrupp och BAS.');
+        expect(w.document.activeElement.getAttribute('data-gu-var')).toBe('alder');
+        // Länken för åldersgruppens del går till Ålder & karriär.
+        expect(kort(w).querySelector('[data-gu-del="B"] [data-go-to-tab="kon"]')).not.toBeNull();
+        expect(w.eval('window.__fel')).toEqual([]);
+    });
+    it('upp och ner: knapparna har namn, är avstängda i ändarna och behåller fokus', () => {
+        const w = demo();
+        kryssa(w, 'alder');
+        expect(valda(w)).toEqual(['bas', 'aid', 'alder']);
+        const knapp = (v, s) => kort(w).querySelector(`[data-gu-rad="${v}"] [data-gu-flytta="${s}"]`);
+        expect(knapp('bas', -1).disabled).toBe(true);
+        expect(knapp('alder', 1).disabled).toBe(true);
+        expect(knapp('alder', -1).getAttribute('aria-label')).toBe('Flytta upp: Åldersgrupp');
+        expect(knapp('aid', 1).getAttribute('aria-label')).toBe('Flytta ned: AID');
+        knapp('alder', -1).click();
+        expect(valda(w)).toEqual(['bas', 'alder', 'aid']);
+        expect(w.document.activeElement).toBe(knapp('alder', -1));
+        knapp('alder', -1).click();
+        expect(valda(w)).toEqual(['alder', 'bas', 'aid']);
+        // Knappen är nu avstängd: fokus går till rutan för samma variabel.
+        expect(w.document.activeElement.getAttribute('data-gu-var')).toBe('alder');
+        expect(delnamn(w)).toEqual(['A. Åldersfördelning', 'B. BAS inom åldersgrupp', 'C. AID inom BAS och åldersgrupp', 'D. Inom AID, BAS och åldersgrupp']);
+        expect(kort(w).querySelector('.gu-val-lista').getAttribute('aria-describedby')).toBe('gu-val-hjalp');
+        // Återställ standard.
+        kort(w).querySelector('[data-gu-standard]').click();
+        expect(valda(w)).toEqual(['bas', 'aid']);
+        expect(w.__state.gapUppdelning).toBeNull();
+    });
+    it('1–4 variabler: den sista valda kan inte kryssas ur, och vid fyra kan ingen fler kryssas i', () => {
+        const w = demo();
+        kryssa(w, 'aid');
+        expect(kort(w).querySelector('input[data-gu-var="bas"]').disabled).toBe(true);
+        kryssa(w, 'sektor'); kryssa(w, 'aidniva'); kryssa(w, 'alder');
+        expect(valda(w)).toEqual(['bas', 'sektor', 'aidniva', 'alder']);
+        expect(kort(w).querySelector('input[data-gu-var="aid"]').disabled).toBe(true);
+        expect(kort(w).querySelectorAll('[data-gu-del]')).toHaveLength(5);
+    });
+    it('AID-nivåerna: en flytt som skulle ställa en finare nivå före en grövre är avstängd', () => {
+        const w = demo();
+        kryssa(w, 'sektor');
+        expect(valda(w)).toEqual(['bas', 'sektor', 'aid']);
+        expect(kort(w).querySelector('[data-gu-rad="aid"] [data-gu-flytta="-1"]').disabled).toBe(true);
+        expect(kort(w).querySelector('[data-gu-rad="sektor"] [data-gu-flytta="1"]').disabled).toBe(true);
+        expect(kort(w).querySelector('[data-gu-rad="sektor"] [data-gu-flytta="-1"]').disabled).toBe(false);
+    });
+    it('utan ålder i lönefilen erbjuds inte åldersgrupp, och ett sparat val med åldersgrupp räknas utan den', () => {
+        const w = createAppWindow();
+        w.__loadDemoData();
+        w.__state.data = w.__state.data.map(r => ({ ...r, alder: 0 }));
+        w.__state.gapUppdelning = { variabler: ['bas', 'alder', 'aid'] };
+        w.eval('invalidateStatCaches(); renderGapUppdelning()');
+        expect(rutor(w).map(r => r.getAttribute('data-gu-var'))).not.toContain('alder');
+        expect(valda(w)).toEqual(['bas', 'aid']);
+        expect(delnamn(w)).toEqual(['A. BAS-fördelning', 'B. AID inom BAS', 'C. Inom AID och BAS']);
+    });
+    it('konfigurationsfilen fram och tillbaka; en äldre fil utan fältet ger standard; ogiltigt ger varning', () => {
+        const w = demo();
+        kryssa(w, 'alder');
+        const cfg = JSON.parse(JSON.stringify(w.__buildConfigSnapshot()));
+        expect(cfg.gapUppdelning).toEqual({ variabler: ['bas', 'aid', 'alder'] });
+        const w2 = createAppWindow(); w2.__loadDemoData();
+        w2.__cfg = cfg; w2.eval('window.__svar = applyConfigSnapshot(window.__cfg)');
+        expect(JSON.parse(JSON.stringify(w2.__state.gapUppdelning))).toEqual({ variabler: ['bas', 'aid', 'alder'] });
+        // Standardvalet sparas som null.
+        expect(JSON.parse(JSON.stringify(demo().__buildConfigSnapshot())).gapUppdelning).toBeNull();
+        // En fil från v2 (utan fältet) ger standard, också när ett val var gjort.
+        const aldre = { ...cfg }; delete aldre.gapUppdelning;
+        w2.__cfg = aldre; w2.eval('window.__svar = applyConfigSnapshot(window.__cfg)');
+        expect(w2.__state.gapUppdelning).toBeNull();
+        expect(w2.eval('window.__svar.varningar').join(' ')).not.toMatch(/Uppdelningen/);
+        w2.__cfg = { ...cfg, gapUppdelning: { variabler: 'fel' } }; w2.eval('window.__svar = applyConfigSnapshot(window.__cfg)');
+        expect(w2.__state.gapUppdelning).toBeNull();
+        expect(w2.eval('window.__svar.varningar').join(' ')).toContain('Uppdelningens variabler gick inte att läsa');
+    });
+    it('Rensa all data nollställer valet', () => {
+        const w = demo();
+        kryssa(w, 'alder');
+        expect(w.__state.gapUppdelning).not.toBeNull();
+        w.__clearAllData();
+        expect(w.__state.gapUppdelning).toBeNull();
+    });
+    it('rapportunderlaget och metodbilagan följer valet och nämner variablerna; standardvalet ger dagens text', () => {
+        const w = demo();
+        const block = () => w.__rapportunderlagBlock().find(b => b.id === 'uppdelning');
+        const metod = () => w.__methodAppendixData().map(r => r.join(': ')).join('\n');
+        const std = block();
+        expect(std.stycken.join(' ')).toMatch(/på att kvinnor och män är olika fördelade över BAS, .* på olika AID inom samma BAS och .* på löneskillnader inom samma AID och BAS\./);
+        expect(std.stycken.join(' ')).not.toContain('Uppdelningen förklarar med');
+        expect(metod()).not.toContain('Var uppstår löneskillnaden');
+        kryssa(w, 'aid'); kryssa(w, 'alder');
+        const b = block();
+        expect(b.stycken.join(' ')).toContain('Uppdelningen förklarar med variablerna BAS och åldersgrupp, i den ordningen.');
+        expect(b.stycken.join(' ')).toMatch(/på att kvinnor och män är olika fördelade över BAS, .* på olika ålder inom samma BAS och .* på löneskillnader inom samma åldersgrupp och BAS\./);
+        expect(b.tabell.rader.map(r => r[0])).toEqual(['BAS-fördelning', 'Åldersgrupp inom BAS', 'Inom åldersgrupp och BAS', 'Totalt']);
+        expect(metod()).toContain('Var uppstår löneskillnaden (variabler): Skillnaden i medellön delas med BAS och åldersgrupp, i den ordningen');
+        // Word-utkastet (rapportmodellen) bär metodbilagan.
+        expect(w.__docDraftHtml()).toContain('Skillnaden i medellön delas med BAS och åldersgrupp');
+    });
+    it('fungerar vid 375 punkter: listan bryter rader och har inga fasta bredder', async () => {
+        // jsdom ritar ingen layout; här prövas att reglerna finns (det riktiga måttet tas i webbläsarröktestet).
+        const { readFileSync } = await import('node:fs');
+        const css = readFileSync(new URL('../src/style.css', import.meta.url), 'utf8');
+        expect(css).toMatch(/\.gu-val-lista \.urval-rad\s*\{[^}]*flex-wrap:\s*wrap/);
+        expect(css).toMatch(/\.gu-val\s*\{[^}]*min-width:\s*0/);
+    });
+});

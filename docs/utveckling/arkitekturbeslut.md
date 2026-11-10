@@ -31,7 +31,7 @@
 | ADR-19 | Underlagets kvalitet: svagaste länken avgör | Gällande | – |
 | ADR-20 | Rapportunderlag via urklipp; bedömningen skrivs utanför verktyget | Gällande | – |
 | ADR-21 | Alla BAS-intervall ingår (upphävd begränsning) | Gällande | – |
-| ADR-22 | Var uppstår löneskillnaden? Uppdelning på medellön | Gällande | – |
+| ADR-22 | Var uppstår löneskillnaden? Uppdelning på medellön | Ändrad av ADR-65 | – |
 | ADR-23 | Personer att granska: individlista i verktyget, aldrig i utdata | Gällande | – |
 | ADR-24 | Stabilitet för flaggor i Lika arbete: märkning, inte nedgradering | Ändrad av ADR-59 | – |
 | ADR-25 | Lägre krav, högre lön: jämförelse över BAS-gränserna | Gällande | – |
@@ -71,6 +71,7 @@
 | ADR-62 | Prioriteringens egna ord för läget mot referensen | Gällande | 2026-11-08 |
 | ADR-63 | Kvantilregressionen på huvudmodellens design, villkorad tolkning | Gällande | 2026-11-08 |
 | ADR-64 | Ålder är valfri i lönefilen | Gällande | 2026-11-08 |
+| ADR-65 | Var uppstår löneskillnaden: valbara förklaringsvariabler | Gällande | 2026-11-10 |
 
 ## Besluten
 
@@ -1154,3 +1155,25 @@ rapportens metodtext. Bladet *Metod & parametrar* (`_methodAppendixData` i `22-e
 Importprofilernas kännetecken räknas som förut, så att sparade profiler känns igen. Vaktas av
 `tests/regression.test.js`, `tests/ktroskel-utan-alder.test.js` och facit *lönefil utan ålder* i
 `tests/exports.golden.test.js`.
+
+**ADR-65 — Var uppstår löneskillnaden: valbara förklaringsvariabler.** Beslut 2026-11-10. ADR-22 delar skillnaden i
+medellön på BAS och AID i den ordningen. Kortet *Förklara med:* låter handläggaren välja en till fyra variabler bland
+BAS, sektor, AID-mellannivå, AID och åldersgrupp (`ageBucket`, bara när lönefilen har ålder, ADR-64), och ordna dem.
+Uppdelningen nästlas i den ordningen: varje cell c på nivå i−1 har vikten ω_c, produkten av s̄ längs vägen från hela
+urvalet. Del i är Σ_c ω_c · Σ_barn Δs_barn|c · (W̄_barn − W̄_c), och den sista delen (*Inom …*) är Σ_löv ω_löv · ΔW_löv.
+Delarna summerar exakt till hela skillnaden, eftersom ΔW_c = Σ Δs · W̄ + Σ s̄ · ΔW på varje nivå. En cell där ett kön
+saknas bidrar bara till sin fördelningsdel, som förut. **Ordningen spelar roll**, och kortet säger det: den första
+variabeln får det den förklarar ensam. AID-nivåerna (sektor, mellannivå, AID) ordnas alltid grovt till fint på sina
+platser, eftersom en finare nivå före en grövre ger en tom del; en flytt som skulle bryta det är avstängd.
+**Skyddet** är ADR-22:s, per del: en cell är synlig bara om den själv och alla dess överceller har 0 eller minst k av
+varje kön, topplistan kortas efter samma regel, och kan en del inte redovisas visas ingen del. **Standardvalet** BAS,
+AID ger bitlika tal (posterna läggs i samma ordning och räknas med samma operationer) och samma texter; det prövas mot
+en frusen kopia av den tidigare implementationen på demot, det stora demot och testfallen
+(`tests/helpers/gapuppdelning-fore-adr65.js`). Delarnas namn, kortets texter, trappans beskrivning och
+rapportunderlagets meningar byggs ur variablerna (`gapDelar`, `gapDelarIText` i `src/lib/gapuppdelning.js`); ett
+annat val än standard nämns i rapportunderlaget och som en rad i metodbilagan (`_methodAppendixData`). Valet lagras som
+`state.gapUppdelning = { variabler }` (null = standard), sparas i konfigurationsfilen (`gapUppdelning`; ogiltigt ger
+standard med varning, en fil utan fältet ger standard), nollställs av *Rensa all data* och prövas inte mot åldern när
+det lagras (som förklaringsmodellen, ADR-56). Organisationspaketet bär det inte. Vaktas av
+`tests/gapuppdelning.test.js`, `tests/rapportunderlag.test.js`, `tests/smoke-granssnitt.test.js`, I7 i
+`tests/ktroskel-invarianter.test.js` och webbläsarröktestet (`tools/browser-smoke/gapuppdelning.mjs`).

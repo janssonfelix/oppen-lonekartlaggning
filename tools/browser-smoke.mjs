@@ -29,6 +29,7 @@ import { stortDemo } from './browser-smoke/demo.mjs';
 import { importprofiler } from './browser-smoke/importprofiler.mjs';
 import { forhandskontroll } from './browser-smoke/forhandskontroll.mjs';
 import { sakligaSkal } from './browser-smoke/sakliga-skal.mjs';
+import { uppdelningensVariabler } from './browser-smoke/gapuppdelning.mjs';
 
 await laddningOchDemo();
 await flikarOchDiagram();
@@ -49,6 +50,7 @@ await organisationsfilen();
 await importprofiler();
 await forhandskontroll();
 await sakligaSkal();
+await uppdelningensVariabler();
 await ingenTrafik();
 await stortDemo();
 await felUnderKorningen();

@@ -105,7 +105,7 @@ document.addEventListener('click', e => {
  * orört — det har inget att säga om gruppen. Märken utan grupp (linjer, band, referenser) rörs aldrig.
  */
 function _mkTillampa(el) {
-    const figur = el && el._figur;
+    const figur = el && el._figur ? _rfVisad(el) : null;   // figuren bilden är ritad ur (härledda lager omräknade)
     if (!figur || !el.querySelector) return;
     const vald = _markering.length ? _markering : null;
     if (el._rfPensel) return;   // ett penslat område bestämmer just nu vilka punkter som framhävs i det här diagrammet

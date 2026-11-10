@@ -86,7 +86,10 @@ function renderStructure() {
         }
     }
 
-    { const pEl = document.getElementById('chart-struktur-percentiler'); if (pEl && dist.length && dist.every(x => x.gapPct != null)) ritaFigur(pEl, _strukturPercentilFigur(dist)); }
+    // Percentilerna och kvartilerna kan räknas för en sektor eller ett BAS-intervall (figur.underlag): samma mått och
+    // samma tröskel per kön, för de valda personerna. Resten är de övriga i lönefilen.
+    const underlag = rita => ({ dimensioner: [UNDERLAG.sektor, UNDERLAG.bas], rader: d, k, rita });
+    { const pEl = document.getElementById('chart-struktur-percentiler'); if (pEl && dist.length && dist.every(x => x.gapPct != null)) ritaFigur(pEl, { ..._strukturPercentilFigur(dist), underlag: underlag(_strukturPercentilFor) }); }
 
     // (2) EU 2023/970-rapportpaket
     const antal = n => (n == null ? '–' : n);
@@ -108,7 +111,7 @@ function renderStructure() {
 
     const kvEl = document.getElementById('chart-struktur-kvartiler');
     // Samma villkor som tabellen: utan könsuppdelning (ett kön under tröskeln) ritas inget diagram.
-    if (kvEl && q.length && q.every(x => x.nKv != null && x.nMa != null && x.n > 0)) ritaFigur(kvEl, _strukturKvartilFigur(q, totAndel),
+    if (kvEl && q.length && q.every(x => x.nKv != null && x.nMa != null && x.n > 0)) ritaFigur(kvEl, { ..._strukturKvartilFigur(q, totAndel), underlag: underlag(_strukturKvartilFor) },
         { exportAnteckning: `Andel kvinnor: ${_figTalformat(q[0].andelKv, 'pct')} i lägsta kvartilen, ${_figTalformat(q[q.length - 1].andelKv, 'pct')} i högsta` });
 
     renderSektorer(d);
@@ -216,7 +219,22 @@ function _sektorPunkter() {
 // yta per BAS-intervall ("Övriga små grupper") med sitt sammanlagda antal och utan könsfördelning; är också den
 // under tröskeln visas den ändå som antal, eftersom BAS-intervallets storlek redan står i tabellerna ovanför.
 // Lägena räknas här med d3.treemap; kärnan ritar ytorna (märket `yta`, dolda axlar).
+// Filtren (BAS-intervall, sektor och antal) döljer yrkesgrupper. Kartan läggs då om ur de grupper som syns: båda
+// lagren är härledda ur yrkesgruppernas synliga ytor (harleddAv, ADR-39), och omräkningen ändrar bara ytornas läge och
+// storlek — inget tal. BAS-ytans antal är hela intervallets, som utan filter. Ytan "Övriga små grupper" samlar flera
+// yrken och sektorer; den bär BAS och antal men ingen sektor och påverkas därför inte av sektorsfiltret.
 const TRADKARTA_FORM = 2.4;   // kartans bredd i förhållande till höjden
+// Lägena för yrkesgruppernas ytor (i kartans ordning: BAS-intervall, inom dem störst först och de små sist), samlade
+// per BAS-intervall. Ger BAS-ytorna och yrkesgrupperna med sina nya lägen; inga andra fält ändras.
+function _tradkartaLagen(blad) {
+    const perBas = new Map();
+    for (const b of blad) { if (!perBas.has(b.bas)) perBas.set(b.bas, []); perBas.get(b.bas).push(b); }
+    const rot = d3.hierarchy({ children: [...perBas].map(([bas, children]) => ({ bas, children })) }).sum(o => (o.children ? 0 : o.n));
+    d3.treemap().size([TRADKARTA_FORM, 1]).paddingOuter(0.006).paddingTop(0.05).paddingInner(0.003).round(false)(rot);
+    const yta = n => ({ x0: n.x0, x1: n.x1, y0: 1 - n.y1, y1: 1 - n.y0 });   // y uppåt i diagrammet, nedåt i layouten
+    return { basYtor: (rot.children || []).map(n => ({ ...yta(n), namn: `BAS ${n.data.bas}`, varde: n.value, etikett: `BAS ${n.data.bas}`, markering: markeringFor(n.data.bas) })),
+        grupper: rot.leaves().filter(n => n.depth === 2).map(n => ({ ...n.data, ...yta(n) })) };
+}
 function _strukturTradkartaFigur(rader, k = kTroskel()) {
     const perBas = new Map();
     for (const r of rader) {
@@ -231,23 +249,28 @@ function _strukturTradkartaFigur(rader, k = kTroskel()) {
         const stora = [...g.values()].filter(o => o.n >= k).sort((a, b) => b.n - a.n);
         const sma = [...g.values()].filter(o => o.n < k);
         const ovriga = sma.length ? [{ aid: null, bas, namn: `Övriga små grupper (${sma.length})`, n: sma.reduce((s, o) => s + o.n, 0), nKv: null, ovriga: true }] : [];
-        return { bas, children: [...stora, ...ovriga] };
-    }).filter(b => b.children.length);
+        return [...stora, ...ovriga];
+    }).filter(b => b.length);
     if (!barn.length) return null;
-    const rot = d3.hierarchy({ children: barn }).sum(o => (o.children ? 0 : o.n));
-    d3.treemap().size([TRADKARTA_FORM, 1]).paddingOuter(0.006).paddingTop(0.05).paddingInner(0.003).round(false)(rot);
-    const yta = n => ({ x0: n.x0, x1: n.x1, y0: 1 - n.y1, y1: 1 - n.y0 });   // y uppåt i diagrammet, nedåt i layouten
-    const basYtor = rot.children.map(n => ({ ...yta(n), namn: `BAS ${n.data.bas}`, varde: n.value, etikett: `BAS ${n.data.bas}`, markering: markeringFor(n.data.bas) }));
-    const grupper = rot.leaves().map(n => { const o = n.data; return { ...yta(n), namn: `${o.namn} · BAS ${o.bas}`, varde: o.n, etikett: o.namn, undertext: `${o.n} personer`,
-        bas: o.bas, n: o.n, ...(o.ovriga ? { farg: FARG.kantStark, ovriga: true } : { fargvarde: +(100 * o.nKv / o.n).toFixed(1), andelKv: 100 * o.nKv / o.n, markering: markeringFor(o.bas, o.aid) }) }; });
+    // Yrkesgruppernas ytor utan läge; lägena sätts av _tradkartaLagen, för alla grupper eller för dem som syns.
+    const blad = barn.flat().map(o => ({ namn: `${o.namn} · BAS ${o.bas}`, varde: o.n, etikett: o.namn, undertext: `${o.n} personer`, bas: o.bas, n: o.n,
+        ...(o.ovriga ? { farg: FARG.kantStark, ovriga: true }
+            : { sektor: _aidSektorsnamn(o.aid), fargvarde: +(100 * o.nKv / o.n).toFixed(1), andelKv: 100 * o.nKv / o.n, markering: markeringFor(o.bas, o.aid) }) }));
+    const { basYtor, grupper } = _tradkartaLagen(blad);
+    // BAS-ytans antal är alltid hela intervallets (inget räknas om); bara läget följer de synliga grupperna.
+    const basAntal = new Map(basYtor.map(b => [b.namn, b.varde]));
+    const namn = 'ytornas läge och storlek';
     return { legend: false, hojd: 460,
         beskrivning: `Organisationen som karta: varje yta är en yrkesgrupp, storleken är antalet personer och färgen andelen kvinnor, samlade per BAS-intervall. Yrkesgrupper med färre än ${k} ${personOrd(k)} är hopslagna till en grå yta per intervall.`,
+        urval: [URVAL.bas, URVAL.sektor, URVAL.antal],
         x: { skala: 'linjar', doman: [0, TRADKARTA_FORM], dold: true }, y: { skala: 'linjar', doman: [0, 1], dold: true },
         fargskala: { typ: 'divergerande', doman: [0, 100], mitt: 50, titel: 'Andel kvinnor (%)', farger: [[0, PALETTE.kon.man], [0.5, FARG.ytaStark], [1, PALETTE.kon.kvinna]] },
         lager: [{ marke: 'yta', serie: 'BAS-intervall', farg: FARG.kant, opacitet: 0.5, etikettLage: 'topp', data: basYtor,
-                  tips: d => [[d.namn], ['Antal', String(d.varde)]] },
+                  tips: d => [[d.namn], ['Antal', String(d.varde)]],
+                  harleddAv: { lager: ['Yrkesgrupper'], namn, berakna: p => _tradkartaLagen(p).basYtor.map(b => ({ ...b, varde: basAntal.get(b.namn) })) } },
                 { marke: 'yta', serie: 'Yrkesgrupper', data: grupper,
-                  tips: d => [[d.namn], ['Antal', String(d.n)], ...(d.ovriga ? [['Könsfördelning', 'visas inte för små grupper']] : [['Andel kvinnor', _figTalformat(d.andelKv, 'pct')]])] }] };
+                  tips: d => [[d.namn], ['Antal', String(d.n)], ...(d.ovriga ? [['Könsfördelning', 'visas inte för små grupper']] : [['Andel kvinnor', _figTalformat(d.andelKv, 'pct')]])],
+                  harleddAv: { lager: ['Yrkesgrupper'], namn, berakna: p => _tradkartaLagen(p).grupper } }] };
 }
 function renderStrukturTradkarta(d, id = 'chart-struktur-tradkarta') {
     const el = document.getElementById(id);
@@ -265,13 +288,26 @@ function renderStrukturTradkarta(d, id = 'chart-struktur-tradkarta') {
 // Var i lönefördelningen skillnaden sitter: kvinnors och mäns lön vid samma percentil som två punkter på en
 // kronaxel, lägst betalda överst. Glider punkterna isär nedåt i bilden är gapet störst i toppen (glastak), uppåt
 // i botten (klibbigt golv). Samma tal som tabellen under; `dist` finns bara när båda könen når tröskeln.
-function _strukturPercentilFigur(dist) {
+// Percentilerna för ett underlag (figur.underlag.rita): samma mått som fliken, eller en text när ett kön är under tröskeln.
+function _strukturPercentilFor(rader, { beskrivning }) {
+    const dist = _stDistributionalGap(rader, undefined, { k: kTroskel() });
+    return dist.length && dist.every(x => x.gapPct != null) ? _strukturPercentilFigur(dist, beskrivning) : _konUtelamnatNot();
+}
+// Kvartilerna för ett underlag (figur.underlag.rita), med andelen kvinnor i urvalet som linje.
+function _strukturKvartilFor(rader, { beskrivning }) {
+    const q = _stQuartileDistribution(rader, { k: kTroskel() });
+    if (!(q.length && q.every(x => x.nKv != null && x.nMa != null && x.n > 0))) return _konUtelamnatNot();
+    const nKv = rader.filter(r => r.kon && r.kon.includes('kvinna')).length;
+    return _strukturKvartilFigur(q, rader.length ? 100 * nKv / rader.length : 0, beskrivning);
+}
+// `omfang` (ett underlag, t.ex. 'sektor Skola'): beskrivningen säger att figuren är räknad för det.
+function _strukturPercentilFigur(dist, omfang) {
     const namn = x => `P${x.p}${x.p === 10 ? ' (lägst betalda)' : x.p === 50 ? ' (median)' : x.p === 90 ? ' (högst betalda)' : ''}`, kr = v => _figTalformat(Math.round(v), 'kr');
     const tips = d => [[d.y], ['Kvinnor', kr(d.r.kv)], ['Män', kr(d.r.ma)], ['Kvinnors lön i % av mäns', _figTalformat(100 + d.r.gapPct, 'pct')], ..._figKronorTipsRad(_figKronorSkillnad(d.r.kv, d.r.ma))];
     const punkt = (serie, farg, falt, extra = {}) => ({ marke: 'punkt', serie, farg, storlek: 6, ...extra,
         data: dist.map(x => ({ y: namn(x), x: Math.round(x[falt]), r: x, ...(extra.etikettLage ? { etikett: _figTalformat(100 + x.gapPct, 'pct') } : {}) })), tips });
     const hogst = x => (x.ma >= x.kv ? 'ma' : 'kv');
-    return { beskrivning: 'Kvinnors och mäns lön vid samma percentil i respektive köns lönefördelning (P10 till P90), som två punkter per percentil. Procenttalet är kvinnors lön i procent av mäns. Samma tal står i tabellen under.',
+    return { beskrivning: `Kvinnors och mäns lön vid samma percentil i respektive köns lönefördelning (P10 till P90), som två punkter per percentil. Procenttalet är kvinnors lön i procent av mäns. ${omfang ? `Räknat för ${omfang}; tabellen under gäller hela underlaget.` : 'Samma tal står i tabellen under.'}`,
         x: { skala: 'linjar', titel: 'Månadslön (kr)', format: 'kr' }, y: { skala: 'band', ordning: dist.map(namn) }, hojd: Math.max(220, 100 + dist.length * 34),
         lager: [{ marke: 'intervall', riktning: 'liggande', serie: 'Skillnad', farg: PALETTE.semantic.neutral, tjocklek: 2, legend: false,
                   data: dist.map(x => ({ y: namn(x), lag: Math.round(Math.min(x.kv, x.ma)), hog: Math.round(Math.max(x.kv, x.ma)), r: x, ..._kronorFalt(x.kv, x.ma) })), tips },
@@ -279,12 +315,14 @@ function _strukturPercentilFigur(dist) {
                 punkt('Män', PALETTE.kon.man, 'ma', dist.every(x => hogst(x) === 'kv') ? {} : { etikettLage: 'hoger' })] };
 }
 
-function _strukturKvartilFigur(q, totAndel) {
+function _strukturKvartilFigur(q, totAndel, omfang) {
     const namn = x => `Q${x.q}${x.q === 1 ? ' (lägst lön)' : x.q === 4 ? ' (högst lön)' : ''}`;
     const serie = (s, farg, andel, antal) => ({ marke: 'stapel', lage: 'staplad', riktning: 'liggande', serie: s, farg,
         data: q.map(x => { const a = +andel(x).toFixed(1); return { y: namn(x), x: a, n: antal(x), tot: x.n, ...(a >= 8 ? { etikett: _figTalformat(a, 'pct') } : {}) }; }),
         tips: d => [[d.y], [s, _figTalformat(d.x, 'pct')], ['Antal', `${d.n} av ${d.tot}`]] });
-    return { beskrivning: `Andel kvinnor och män i varje lönekvartil, staplat till 100 procent. Den streckade linjen är andelen kvinnor i hela organisationen (${_figTalformat(totAndel, 'pct')}). Samma siffror finns i tabellen nedan.`,
+    return { beskrivning: omfang
+            ? `Andel kvinnor och män i varje lönekvartil, räknat för ${omfang} och staplat till 100 procent. Den streckade linjen är andelen kvinnor i urvalet (${_figTalformat(totAndel, 'pct')}). Tabellen nedan gäller hela underlaget.`
+            : `Andel kvinnor och män i varje lönekvartil, staplat till 100 procent. Den streckade linjen är andelen kvinnor i hela organisationen (${_figTalformat(totAndel, 'pct')}). Samma siffror finns i tabellen nedan.`,
         y: { skala: 'band', ordning: q.slice().reverse().map(namn) },
         x: { skala: 'linjar', titel: 'Andel av kvartilen (%)', doman: [0, 100] },
         hojd: 240,
@@ -345,23 +383,25 @@ function renderSektorer(d) {
 // Sektordiagrammets figur (diagramkärnan, ADR-39): rå och justerad kvot som punkter mot linjen 100 % — inte staplar
 // på en avkortad axel, där stapelns längd säger något annat än värdet.
 // `visa` är de sektorer vars kvot redovisas i tabellen; inga andra når figuren, och axeln räknas bara ur dem.
+// Filtren: sektor (lista) och antal personer i sektorn, samma namn och antal som tabellens kolumner Sektor och Antal.
 function _sektorFigur(visa) {
+    const falt = r => ({ sektor: r.namn, n: r.n });
     const just = r => (r.justerat ? +(100 + r.justerat.pct).toFixed(1) : null);
     const varden = visa.flatMap(r => [r.kvot, just(r)]).filter(v => v != null);
     const xMin = Math.max(0, Math.floor(Math.min(...varden) / 5) * 5 - 5), xMax = Math.max(100, Math.ceil(Math.max(...varden))) + 2;
     const lager = (serie, farg, varde, forskjutning) => ({
         marke: 'punkt', serie, farg, storlek: 6, kant: FARG.vit,
-        data: visa.filter(r => varde(r) != null).map(r => ({ y: r.namn, x: +varde(r).toFixed(1), forskjutning })),
+        data: visa.filter(r => varde(r) != null).map(r => ({ y: r.namn, x: +varde(r).toFixed(1), forskjutning, ...falt(r) })),
         tips: d => [[d.y], [serie, _figTalformat(d.x, 'pct')]]
     });
     return { beskrivning: 'Kvinnors lön i procent av mäns per sektor, rå och justerad för ålder och BAS-intervall. Samma värden finns i tabellen.',
-        x: { skala: 'linjar', titel: 'Kvinnors lön i % av mäns', doman: [xMin, xMax] },
+        urval: [URVAL.sektor, URVAL.antal], x: { skala: 'linjar', titel: 'Kvinnors lön i % av mäns', doman: [xMin, xMax] },
         y: { skala: 'band', ordning: visa.map(r => r.namn), etikettMax: 64 },   // sektornamnen är långa och ska gå att läsa
         hojd: Math.max(170, 90 + visa.length * 36),
         referens: [{ x: 100, streck: 'prickad', farg: PALETTE.semantic.referens, etikett: 'Lika lön' }],
         // Strecket från rå till justerad visar hur mycket ålder och nivå förklarar: långt streck = mycket.
         lager: [{ marke: 'intervall', riktning: 'liggande', serie: 'Förklaras av ålder och BAS', farg: PALETTE.semantic.neutral, tjocklek: 2, legend: false,
-                  data: visa.filter(r => just(r) != null).map(r => ({ y: r.namn, lag: +Math.min(r.kvot ?? 0, just(r) ?? 0).toFixed(1), hog: +Math.max(r.kvot ?? 0, just(r) ?? 0).toFixed(1), ra: r.kvot, ju: just(r) })),
+                  data: visa.filter(r => just(r) != null).map(r => ({ y: r.namn, lag: +Math.min(r.kvot ?? 0, just(r) ?? 0).toFixed(1), hog: +Math.max(r.kvot ?? 0, just(r) ?? 0).toFixed(1), ra: r.kvot, ju: just(r), ...falt(r) })),
                   tips: d => [[d.y], ['Rå', _figTalformat(d.ra, 'pct')], ['Justerad', _figTalformat(d.ju, 'pct')]] },
                 lager('Rå', PALETTE.semantic.neutral, r => r.kvot, 0), lager('Justerad (ålder, BAS)', PALETTE.serie[0], just, 0)] };
 }

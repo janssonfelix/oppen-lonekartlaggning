@@ -13,7 +13,11 @@
 //   figur.urval (ritaFigur)         — användarens urval i diagrammet (filterraderna): exportmenyns PNG/SVG ritas med
 //                                     urvalet och fotraden säger vad som gäller, med samma text som noten under
 //                                     diagrammet; diagramdatan har alla rader och en rad "Urval i diagrammet: …".
-//                                     diagramTillBild ritar alltid allt.
+//                                     diagramTillBild ritar alltid allt. Härledda lager (harleddAv) räknas om för
+//                                     urvalet i exportmenyns bild, och fotraden nämner ett lager som då inte ritas.
+//   figur.underlag (ritaFigur)      — diagrammet kan räknas för en del av personerna (raderna "Räkna för"): exportmenyns
+//                                     bild och diagramdata är figuren för valet, fotraden och raden "Räknat för: …"
+//                                     säger valet. diagramTillBild ritar alltid hela underlaget (originalet).
 //   figur.individer                 — figuren har en punkt per person: diagramdatan får raden om att filen
 //                                     innehåller en rad per person och ska hanteras som personuppgifter (kIndividRad).
 //
@@ -128,7 +132,14 @@ function _chartExportUnderlagExport(gd) {
 /** Urvalet i diagrammet som text, en del per aktiv dimension (t.ex. ['utan BAS A, BAS N', '10–50 personer i
  *  gruppen']), samma text som noten under diagrammet; [] utan urval. */
 function _chartExportDolt(ut) {
-    return ut && ut.filter ? _figUrvalBeskrivning(ut.figur, ut.filter) : [];
+    return ut && ut.filter ? _figUrvalBeskrivning(ut.figur, ut.filter, { visaSma: !!ut.visaSma }) : [];
+}
+
+/** Meningarna om härledda lager (harleddAv) som inte ritas i exportmenyns bild: med urvalet har källagren färre än
+ *  minN synliga punkter. Samma text som noten under diagrammet; [] utan urval eller utan sådana lager. */
+function _chartExportHarlett(ut) {
+    if (!ut || !ut.filter) return [];
+    return _figHarlettNot(_figHarleddaLager(ut.bild || ut.figur, ut.filter, { visaSma: !!ut.visaSma })).utelamnade;
 }
 
 /** Diagramdata med en spårbarhetsrad överst (ADR-13). Diagram ritade med diagramkärnan (ADR-39) går genom
@@ -138,10 +149,12 @@ function _chartExportDolt(ut) {
  *  det här. Stämpeln får samma svar om små grupper som innehållet. */
 function chartExportRows(gd, underlag) {
     const ut = underlag === undefined ? _chartExportUnderlag(gd) : underlag;
-    if (!ut) return [];
+    if (!ut || (ut.underlag && ut.underlag.tom)) return [];
     gd = _chartExportAktuell(gd);
     const medSma = ut.visaSma;
-    const rader = _figTillTabell(medSma ? ut.figur : _figUtanSma(ut.figur)).map(r => r.map(_chartExportCell));
+    // Med ett underlag är diagramdatan figuren för valet (det som visas), och raden "Räknat för" säger vilket.
+    const kalla = ut.underlag && ut.underlag.figur ? ut.underlag.figur : ut.figur;
+    const rader = _figTillTabell(medSma ? kalla : _figUtanSma(kalla)).map(r => r.map(_chartExportCell));
     const beskrivning = typeof gd._exportBeskrivning === 'string' ? gd._exportBeskrivning : '';
     // En figur med en punkt per person (figurens `individer`) ger en rad per person: filen säger det på rad 2.
     const individer = ut.figur && ut.figur.individer === true;
@@ -150,23 +163,29 @@ function chartExportRows(gd, underlag) {
     return [[`${chartExportTitle(gd)} — Lönekartläggning ${APP_VERSION}. ${kStampelFor(_kUndantagFor(gd, medSma))}`],
             ...(individer ? [[kIndividRad()]] : []),
             ...(beskrivning ? [[`Urval: ${beskrivning}`]] : []),
+            ...(ut.underlag ? [[`Räknat för: ${ut.underlag.text}`]] : []),
             ...(dolt.length ? [[`Urval i diagrammet: ${dolt.join('; ')}`]] : []), ...rader];
 }
 
 /** Rubrik och fotrad till en exporterad bild av ett kärnritat diagram: bilden ska säga själv vad den visar när den
  *  klistras in i ett dokument. Foten: verktyget och dagens datum, och urvalet om vyn har angett ett.
  *  `dolt`: urvalet i diagrammet som text (_chartExportDolt; bara exportmenyns bild, aldrig diagramTillBild).
- *  @param {any} gd @param {Date} [datum] @param {string[]} [dolt] */
-function _chartExportRubrikFot(gd, datum = new Date(), dolt = []) {
+ *  `harlett`: härledda lager som inte ritas med urvalet (_chartExportHarlett).
+ *  `underlag`: valet när diagrammet är räknat för en del av personerna (bara exportmenyns bild). Vyns anteckning
+ *  (exportAnteckning) gäller hela underlaget och står då inte med.
+ *  @param {any} gd @param {Date} [datum] @param {string[]} [dolt] @param {string[]} [harlett] @param {string} [underlag] */
+function _chartExportRubrikFot(gd, datum = new Date(), dolt = [], harlett = [], underlag = '') {
     const p = n => String(n).padStart(2, '0');
     const dag = `${datum.getFullYear()}-${p(datum.getMonth() + 1)}-${p(datum.getDate())}`;
     const urval = typeof gd._exportBeskrivning === 'string' && gd._exportBeskrivning ? ` · Urval: ${gd._exportBeskrivning}` : '';
     // Ett zoomat diagram exporteras som det visas: fotraden säger att bilden är ett utsnitt.
     // Vyns anteckning (val.exportAnteckning) står först i fotraden: en mening om det bilden visar, räknad av vyn
     // ur värden som får visas.
-    const v = gd._figurVal && typeof gd._figurVal.exportAnteckning === 'string' ? gd._figurVal.exportAnteckning.trim() : '';
+    const v = !underlag && gd._figurVal && typeof gd._figurVal.exportAnteckning === 'string' ? gd._figurVal.exportAnteckning.trim() : '';
+    const underlagText = underlag ? ` · Räknat för: ${underlag}` : '';
     const doltText = dolt && dolt.length ? ` · Urval i diagrammet: ${dolt.join('; ')}` : '';
-    return { rubrik: chartExportTitle(gd), fot: `${v ? v + ' · ' : ''}Lönekartläggning ${dag}${urval}${doltText}${gd._rfZoom ? ' · Utsnitt av diagrammet' : ''}` };
+    const harlettText = (harlett || []).map(t => ` · ${String(t).replace(/\.$/, '')}`).join('');
+    return { rubrik: chartExportTitle(gd), fot: `${v ? v + ' · ' : ''}Lönekartläggning ${dag}${urval}${underlagText}${doltText}${harlettText}${gd._rfZoom ? ' · Utsnitt av diagrammet' : ''}` };
 }
 
 /** Bär elementet ett ritat diagram med något att visa? */
@@ -186,9 +205,9 @@ async function _diagramTillBildExport(el, val) {
     const ut = _chartExportUnderlag(el);
     el = _chartExportAktuell(el);
     if (!ut) throw new Error('Det finns inget att exportera i diagrammet.');
-    // Användarens urval i diagrammet (ut.filter) följer INTE med: rapporten, utskriften, ZIP-filen och
-    // rapportunderlaget visar alltid hela diagrammet.
-    const url = await figurTillBild(ut.bild || ut.figur, 'png', bredd, hojd, { visaSma: ut.visaSma, dolda: ut.dolda, ...(utanRubrik ? {} : _chartExportRubrikFot(el)) });
+    // Användarens urval i diagrammet (ut.filter) och underlaget (ut.underlag) följer INTE med: rapporten, utskriften,
+    // ZIP-filen och rapportunderlaget visar alltid hela diagrammet, räknat för hela underlaget.
+    const url = await figurTillBild(ut.hel || ut.figur, 'png', bredd, hojd, { visaSma: ut.visaSma, dolda: ut.dolda, ...(utanRubrik ? {} : _chartExportRubrikFot(el)) });
     if (el._figur !== ut.figur) throw new Error('Diagrammet rensades innan exporten blev klar.');
     return url;
 }
@@ -202,9 +221,10 @@ async function __chartExportImageExport(gd, val, underlag) {
     // utan små grupper. Meningen om sänkt tröskel lägger figurTillSvg dit.
     const ut = underlag === undefined ? _chartExportUnderlag(gd) : underlag;
     gd = _chartExportAktuell(gd);
-    if (!ut) throw new Error('Det finns inget att exportera i diagrammet.');
-    // Exportmenyn ritar diagrammet som det visas: också med användarens urval, som fotraden då namnger.
-    const url = await figurTillBild(ut.bild || ut.figur, format, width, height, { visaSma: ut.visaSma, dolda: ut.dolda, filter: ut.filter, ..._chartExportRubrikFot(gd, new Date(), _chartExportDolt(ut)) });
+    if (!ut || (ut.underlag && ut.underlag.tom)) throw new Error('Det finns inget att exportera i diagrammet.');
+    // Exportmenyn ritar diagrammet som det visas: också med användarens urval och underlag, som fotraden då namnger.
+    const url = await figurTillBild(ut.bild || ut.figur, format, width, height, { visaSma: ut.visaSma, dolda: ut.dolda, filter: ut.filter,
+        ..._chartExportRubrikFot(gd, new Date(), _chartExportDolt(ut), _chartExportHarlett(ut), ut.underlag ? ut.underlag.text : '') });
     // Bilden görs asynkront. Har diagrammet under tiden rensats (Rensa all data) eller fått en annan figur
     // lämnar bilden av den gamla inte verktyget.
     if (gd._figur !== ut.figur) throw new Error('Diagrammet rensades innan exporten blev klar.');
@@ -226,6 +246,8 @@ function _chartExportRunExport(gd, val) {
     gd = _chartExportAktuell(gd);
     // Ett diagram från diagramkärnan utan något att exportera: ingen fil, ingenting på urklipp.
     if (underlag === null) return Promise.reject(new Error('Det finns inget att exportera i diagrammet.'));
+    // Räknat för ett underlag som inte går att rita (inga personer, eller vyns beräkning gav ingen figur): inget att exportera.
+    if (underlag && underlag.underlag && underlag.underlag.tom) return Promise.reject(new Error('Det finns inget att exportera i diagrammet.'));
     if (val === 'data-kopiera') return Promise.resolve(_copyMatrixToClipboard(chartExportRows(gd, underlag)));
     if (val === 'data-csv') {
         return Promise.resolve(_downloadCSV(chartExportRows(gd, underlag), chartExportFilename(gd, 'csv').replace(/\.csv$/, '')));

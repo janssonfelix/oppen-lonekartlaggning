@@ -88,6 +88,13 @@ const GAP_STATUS_ALLA = Object.freeze([...GAP_STATUS, GAP_STATUS_EJ]);
  *   konsdominans  kategori på `konsdom`: 'Kvinnodominerad', 'Mansdominerad' eller 'Blandad'
  *   matchning     kategori på `matchning`: 'AID + BAS' eller 'Endast AID'
  *   avvikelse     intervall på `x`: avvikelsen i procent
+ *   yrkesgrupp    kategori på `yrke` (yrkesgruppens namn som i tipset), visad som lista med sökfält
+ *   sektor        kategori på `sektor` (sektorns namn som i sektorsöversikten), visad som lista med sökfält
+ *   alder         intervall på `alder`: personens ålder, eller femårsgruppens första år (format ar)
+ *   lon           intervall på `lon`: personens månadslön (format kr)
+ *   aldersgrupp   kategori på `aldersgrupp`: åldersgruppens namn som i tipset ('30–39 år')
+ *   minstaKon     intervall på `nMin`: antalet av det minst företrädda könet i gruppen (det mindre av antalen i tipset)
+ *   lonegap       intervall på `gap`: löneskillnaden i procent, samma tal som i tipset
  */
 const URVAL = Object.freeze({
     bas: Object.freeze({ typ: 'kategori', falt: 'bas', namn: 'BAS-intervall', etikett: 'BAS {v}' }),
@@ -95,6 +102,22 @@ const URVAL = Object.freeze({
     konsdominans: Object.freeze({ typ: 'kategori', falt: 'konsdom', namn: 'Könsdominans', etikett: '{v}' }),
     matchning: Object.freeze({ typ: 'kategori', falt: 'matchning', namn: 'Matchning', etikett: '{v}' }),
     avvikelse: Object.freeze({ typ: 'intervall', falt: 'x', namn: 'Avvikelse (%)', format: 'pct', etikett: 'avvikelse {v}' }),
+    yrkesgrupp: Object.freeze({ typ: 'kategori', falt: 'yrke', namn: 'Yrkesgrupp', etikett: '{v}', visning: 'lista' }),
+    sektor: Object.freeze({ typ: 'kategori', falt: 'sektor', namn: 'Sektor', etikett: '{v}', visning: 'lista' }),
+    alder: Object.freeze({ typ: 'intervall', falt: 'alder', namn: 'Ålder', format: 'ar', etikett: 'ålder {v} år' }),
+    lon: Object.freeze({ typ: 'intervall', falt: 'lon', namn: 'Månadslön (kr)', format: 'kr', etikett: 'lön {v}' }),
+    aldersgrupp: Object.freeze({ typ: 'kategori', falt: 'aldersgrupp', namn: 'Åldersgrupp', etikett: '{v}' }),
+    minstaKon: Object.freeze({ typ: 'intervall', falt: 'nMin', namn: 'Antal av det minsta könet', format: 'antal', etikett: '{v} av det minsta könet' }),
+    lonegap: Object.freeze({ typ: 'intervall', falt: 'gap', namn: 'Löneskillnad (%)', format: 'pct', etikett: 'löneskillnad {v}' }),
+});
+// Dimensionerna i ett underlag (figur.underlag.dimensioner): vad ett sammanfattande diagram kan räknas om för. Värdet
+// läses ur personraden med samma gruppnycklar som Tabeller och egna vyer (groupKey i src/lib/falt.js); personerna har
+// inget färdigt sektorsfält.
+const UNDERLAG = Object.freeze({
+    sektor: Object.freeze({ typ: 'kategori', falt: 'sektor', namn: 'Sektor', visning: 'lista', varde: r => _utGroupKey(r, 'sektor') }),
+    aldersgrupp: Object.freeze({ typ: 'kategori', falt: 'aldersgrupp', namn: 'Åldersgrupp', visning: 'lista', varde: r => _utGroupKey(r, 'alder'), ordning: (a, b) => _faltJamforAlder(a, b) }),
+    yrkesgrupp: Object.freeze({ typ: 'kategori', falt: 'yrke', namn: 'Yrkesgrupp', visning: 'lista', varde: r => r.yrke }),
+    bas: Object.freeze({ typ: 'kategori', falt: 'bas', namn: 'BAS-intervall', etikett: 'BAS {v}', varde: r => r.bas }),
 });
 /**
  * Statusen för ett avstånd från lika lön i procent (|100 − kvoten|) och en prövning av skillnaden (true/false; null

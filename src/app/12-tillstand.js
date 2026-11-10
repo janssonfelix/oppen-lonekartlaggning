@@ -13,6 +13,7 @@
  *   utkastPerBas: boolean,
  *   rapportUrval: {ordning: string[], med: string[], fast?: string}|null, rapportTabeller: any[], perBasRecept: any, forraArsbokslut: any,
  *   forklaringsmodell: null|{bas:boolean, alder:boolean, yrkesgrupp:boolean, skal:string},
+ *   gapUppdelning: null|{variabler: string[]},
  *   bristAids: Set<string>, scenarios: any[], snapshot: any, profile: {[k: string]: any},
  *   filnamn: {data: string|null, policy: string|null, statistik: string|null}, kTroskel: number,
  *   paketLas: {kTroskelLagst: number|null, inaktivitetMin: number|null, smaGrupperIExport: boolean},
@@ -57,6 +58,7 @@ const state = {
     rapportTabeller: [],       // egna tabeller i rapporten: recept ur Utforska (src/lib/tabellrecept.js, ADR-52)
     perBasRecept: null,        // receptet för avsnittet per BAS-intervall: null = standard (src/lib/perbas.js, ADR-52)
     forklaringsmodell: null,   // vilka variabler regressionen räknar bort: null = standard (kön + BAS + ålder), ADR-56
+    gapUppdelning: null,       // Var uppstår löneskillnaden: { variabler } i ordning; null = standard (BAS, AID), ADR-65
     bristAids: new Set(),         // E: AID-koder markerade som bristyrke
     scenarios: [],                // I: sparade scenarion (max 5)
     snapshot: null,         // för A/B-jämförelse
