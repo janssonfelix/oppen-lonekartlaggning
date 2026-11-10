@@ -8,12 +8,12 @@
  * tests/ktroskel-invarianter-25.test.js (25), som då körs parallellt.
  */
 import { describe, it, expect, beforeAll } from 'vitest';
-import { KON_MA, KON_GAP, KON_GAP_1, KON_DOLDA, harNagon, samlaUtdata, sammanhang, fonsterKon, SENT_SMA, FK_RA } from './ktroskel-rigg.js';
+import { KON_MA, KON_GAP, KON_GAP_1, KON_GAP_CELL, KON_DOLDA, harNagon, samlaUtdata, sammanhang, fonsterKon, SENT_MELLAN, SENT_SMA, FK_RA } from './ktroskel-rigg.js';
 
 // ===================================================================================
 // I4: invarianten över flikar OCH exporter, vid 10 och 25.
 //
-// Vad som prövas: varje flik i menyn, Översiktens delar (Att göra, processöversikten,
+// Vad som prövas: varje flik i menyn, ritad i exportläget (det som "Som i exporten" visar), Översiktens delar (Att göra, processöversikten,
 // inläsningsrapporten), Word-utkastet, utskriften i de tre urvalen,
 // rapportunderlagets block (HTML och text), Excel (alla flikar, protokollet, EU-lönerapporten,
 // handlingsplanen, jämförelseexporten, Löneöversyn, Löneöversikten, prioriteringslistan, ZIP-filens
@@ -49,7 +49,7 @@ export function invariantSvit(k, extra) {
         beforeAll(async () => { utdata = await samlaUtdata(fonsterKon(k === 10 ? null : k)); }, 300000);
         it('utdata finns för varje väg (annars prövar testet inget)', () => {
             const namn = utdata.map(([n]) => n);
-            for (const krav of ['skärm: alla flikar', 'Word-utkastet', 'Att göra-CSV', 'ZIP Excel-filen', 'utskrift: komplett', 'utskrift: ledning', 'utskrift: facklig',
+            for (const krav of ['skärm: alla flikar', 'skärm i exportläget: alla flikar', 'Word-utkastet', 'Att göra-CSV', 'ZIP Excel-filen', 'utskrift: komplett', 'utskrift: ledning', 'utskrift: facklig',
                 'tabell-CSV: explore-table', 'diagramdata: chart-explore', 'rapportunderlag: sammanfattning',
                 'robusthetspanelen'])
                 expect(namn, krav).toContain(krav);
@@ -86,6 +86,14 @@ export function invariantSvit(k, extra) {
             // Stora grupper syns, så att tystnad inte beror på tomma utdata.
             expect(utdata.find(([n]) => n === 'Word-utkastet')[1]).toContain('S1');
             expect(utdata.find(([n]) => n === 'skärm: alla flikar')[1]).toContain('Säkeryrke 0');
+            // Flikarna i exportläget visar de stora grupperna, och vid 10 mellangrupperna (20 personer).
+            const exportlage = utdata.find(([n]) => n === 'skärm i exportläget: alla flikar')[1];
+            expect(exportlage).toContain('Säkeryrke 0');
+            if (k === 10) expect(harNagon(exportlage, SENT_MELLAN).length, 'mellangrupperna i exportläget vid 10').toBeGreaterThan(0);
+            // Y1–Y3 (ett kön under tröskeln) står kvar med samlad median, och noten säger varför gapet saknas; EU-lönerapporten
+            // namnger dem. Sökningen efter gapet nedan prövar alltså rader som finns.
+            for (const namn of ['Word-utkastet', 'utskrift: komplett']) expect(utdata.find(([n]) => n === namn)[1], namn).toMatch(/ett av könen har färre än \d+ personer/);
+            expect(utdata.find(([n]) => n.startsWith('EU-lönerapporten'))[1]).toMatch(/^Y1 \| 31 \|[^]*Y1, Y2, Y3/m);
             // Statistikens matchning: kolumnen i tabellens CSV, detaljlistan, Excel och jämförelseexporten.
             expect(utdata.find(([n]) => n === 'tabell-CSV: benchmark-table')?.[1]).toMatch(/BAS \| Matchning \| N[^]*AID \+ BAS/);
             expect(utdata.find(([n]) => n === 'tabell-CSV: ref-tabell')?.[1]).toMatch(/Matchning[^]*AID \+ BAS/);
@@ -140,14 +148,15 @@ export function invariantSvit(k, extra) {
             expect(utdata.map(([n]) => n)).toContain('konfigurationsfilen (hela)');
             expect(utdata.find(([n]) => n === 'Att göra-punkter')[1]).toContain('fk-alder-fodelsear');
             const lackor = [];
-            for (const [namn, text] of exporter()) for (const v of harNagon(text, FK_RA)) lackor.push(`${namn}: ${v} — "${sammanhang(text, v)}"`);
+            // Flikarna i exportläget är också skärmen: förhandskontrollen står där, men följer inte med i någon export.
+            for (const [namn, text] of exporter().filter(([n]) => n !== 'skärm i exportläget: alla flikar')) for (const v of harNagon(text, FK_RA)) lackor.push(`${namn}: ${v} — "${sammanhang(text, v)}"`);
             expect(lackor).toEqual([]);
         });
         it('inget könsgap för en grupp där ett kön är under tröskeln i det som lämnar verktyget', () => {
             const lackor = [];
             for (const [namn, text] of exporter()) {   // tidsstämplarna är redan borttagna (utanTid i samlaUtdata)
                 for (const v of harNagon(text, KON_GAP)) lackor.push(`${namn}: ${v} — "${sammanhang(text, v)}"`);
-                for (const re of KON_GAP_1) { const m = text.match(re); if (m) lackor.push(`${namn}: ${m[0]} — "${sammanhang(text, m[0])}"`); }
+                for (const re of [...KON_GAP_1, ...KON_GAP_CELL]) { const m = text.match(re); if (m) lackor.push(`${namn}: ${m[0]} — "${sammanhang(text, m[0])}"`); }
             }
             expect(lackor).toEqual([]);
         });
