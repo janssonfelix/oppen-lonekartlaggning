@@ -6,7 +6,7 @@
  */
 import { describe, it, expect, beforeAll, vi } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
-import { normalisera, oppnaFlik, iExport, KON_BAS, KON_KV, KON_MA, ENSAM, KON_GAP, KON_GAP_1, KON_DOLDA, fonsterKon, harNagon, laddaXlsx, fangaBocker, samlaUtdata, sammanhang, SENT_MELLAN, SENT_SMA, X_KV, X_MA, PAR_KV, PAR_MA, FK_RA } from './helpers/ktroskel-rigg.js';
+import { normalisera, oppnaFlik, iExport, byggKonDataset, KON_KOSTNAD, KON_BAS, KON_KV, KON_MA, ENSAM, KON_GAP, KON_GAP_1, KON_DOLDA, fonsterKon, harNagon, laddaXlsx, fangaBocker, samlaUtdata, sammanhang, SENT_MELLAN, SENT_SMA, X_KV, X_MA, PAR_KV, PAR_MA, FK_RA } from './helpers/ktroskel-rigg.js';
 
 // Sviten ritar om hela verktyget i varje test. Under full last tar ett test 4–6 s, så standardgränsen 5 s
 // fäller olika tester från körning till körning.
@@ -98,6 +98,74 @@ describe('I1: Löneöversyn visar ingen kostnad för grupper under tröskeln', (
         expect(w.document.getElementById('forecast-par-not').textContent).toBe('');
         // Raden på den lilla gruppen säger att beloppet bygger på enskildas löner (R2).
         expect(w.document.getElementById('forecast-targets').textContent).toMatch(/Raden berör 6 personer, färre än 10 personer/);
+    });
+});
+
+// Resultaten som räknas på knapptryck i Löneöversyn (kostnaden på individnivå, känslighetskurvan, målet för skillnaden)
+// ritades förr bara när knappen trycktes: skärmens omaskade tal stod kvar i förhandsvisningen "Som i exporten" och
+// efter en ändrad tröskel. Ett resultat som visas räknas nu om när fliken ritas om; en tom ruta förblir tom (ADR-51).
+describe('I1b: Löneöversyns knappresultat följer läget och tröskeln', () => {
+    const text = (w, id) => normalisera(w.document.getElementById(id).textContent);
+    const kostnader = w => KON_KOSTNAD.filter(v => text(w, 'forecast-rem-result').includes(String(v)));
+    const KNAPPRUTOR = ['forecast-rem-result', 'forecast-sensitivity', 'forecast-threshold-result'];
+    const fyllt = () => {
+        const w = fonsterKon(null);
+        Object.assign(w.__state.forecast, { generell: { mode: 'pct', value: 100 }, years: 3 });
+        oppnaFlik(w, 'loneoversyn');
+        w.eval('_forecastRemediation(); _forecastSensitivity();');
+        expect(kostnader(w).length).toBeGreaterThan(0);                 // skärmen jämför också mot 1–3 män
+        return w;
+    };
+    it('förhandsvisningen räknar om det som visas, en höjd tröskel också, och av igen visar skärmens resultat', () => {
+        const w = fyllt();
+        w.eval('sattForhandsvisning(true)');
+        expect(kostnader(w)).toEqual([]);
+        expect(text(w, 'forecast-rem-result')).toMatch(/Inga kvinnor ligger mer än tröskeln/);   // räknad i exportläget, inte tömd
+        expect(text(w, 'forecast-sensitivity')).not.toBe('');
+        // Vid 25 blir texten densamma: en markering visar att rutorna räknas om och inte bara står kvar.
+        for (const id of ['forecast-rem-result', 'forecast-sensitivity']) w.document.getElementById(id).textContent = 'gammalt';
+        w.eval('sattKTroskel(25, { fraga: false })');
+        expect(kostnader(w)).toEqual([]);
+        expect(text(w, 'forecast-rem-result')).toMatch(/Inga kvinnor ligger mer än tröskeln/);
+        expect(text(w, 'forecast-sensitivity')).not.toMatch(/^gammalt$|^$/);
+        w.eval('sattForhandsvisning(false)');
+        expect(text(w, 'forecast-rem-result')).toMatch(/minst 1 män/);
+        expect(kostnader(w).length).toBeGreaterThan(0);
+        expect(text(w, 'forecast-sensitivity')).not.toBe('');
+    });
+    it('en flik som inte syns töms, och resultatet räknas i det läge som gäller när fliken öppnas', () => {
+        const w = fyllt();
+        oppnaFlik(w, 'matrix');
+        w.eval('sattForhandsvisning(true)');
+        expect(text(w, 'forecast-rem-result')).toBe('');
+        expect(text(w, 'forecast-sensitivity')).toBe('');
+        oppnaFlik(w, 'loneoversyn');
+        expect(kostnader(w)).toEqual([]);
+        expect(text(w, 'forecast-rem-result')).toMatch(/Inga kvinnor ligger mer än tröskeln/);
+        expect(text(w, 'forecast-sensitivity')).not.toBe('');
+    });
+    it('en tom ruta förblir tom när fliken ritas om: ingen beräkning utan knapptryck', () => {
+        const w = fonsterKon(null);
+        oppnaFlik(w, 'loneoversyn');
+        w.eval('sattForhandsvisning(true)');
+        w.eval('sattKTroskel(25, { fraga: false })');
+        w.eval('sattForhandsvisning(false)');
+        for (const id of KNAPPRUTOR) expect(text(w, id), id).toBe('');
+        expect(w.__state.forecast._remediation).toBeUndefined();
+    });
+    it('Rensa all data och en ny lönefil glömmer resultaten: de räknas inte om på nästa underlag', () => {
+        const w = fyllt();
+        w.eval('_rensaAllData()');
+        for (const id of KNAPPRUTOR) expect(text(w, id), id).toBe('');
+        w.__state.data = byggKonDataset();
+        w.eval('populateSelects(); unlockTabs();');
+        oppnaFlik(w, 'loneoversyn');
+        for (const id of KNAPPRUTOR) expect(text(w, id), id).toBe('');
+        const v = fyllt();
+        v.eval('_afterDataLoaded()');
+        oppnaFlik(v, 'loneoversyn');
+        for (const id of KNAPPRUTOR) expect(text(v, id), id).toBe('');
+        expect(v.__state.forecast._remediation).toBeUndefined();
     });
 });
 

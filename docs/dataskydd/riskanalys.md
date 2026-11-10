@@ -1,6 +1,6 @@
 # Risk- och sårbarhetsanalys (dataskydd och informationssäkerhet) — Öppen lönekartläggning
 
-**Bygge:** `2026.11.05` · **Artefakt-SHA-256:** `fb5cfb275648e00047e47f7674a6b22a979d61552d8c1e6aa69c5df04c708f8f` (se `dist/RELEASE.txt`).
+**Bygge:** `2026.11.05` · **Artefakt-SHA-256:** `95a8918a216bd9ef37aec25b3613cc7aff8cb1e29713ad02b268fac65c18ffaf` (se `dist/RELEASE.txt`).
 **Granskningsdatum:** 2026-11-07.
 **Granskningsmetod:** kodläsning påstående för påstående + statisk sökning i källkod och bygge +
 körning av det byggda verktyget i jsdom och i Chromium (utan nätverk) med syntetiska testfiler.
@@ -322,7 +322,8 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   exporten ritade i exportläget (`_ritaOmEfterExport`). Lika arbetes minne har ett rum per tröskel, så att ett
   lägesbyte inte räknar om något. Knappen *Som i exporten* (`sattForhandsvisning`) sätter skärmen i exportläget
   tills den stängs av. En export medan den är på lämnar läget som det är, och ett lägesbyte medan en export
-  pågår avvisas (`tests/forhandsvisning.test.js`).
+  pågår avvisas (`tests/forhandsvisning.test.js`). Löneöversyns resultat som räknas på knapptryck räknas om i
+  det läge som gäller när fliken ritas om, och töms när fliken inte syns (`tests/ktroskel-invarianter.test.js`, I1b).
 - Standardvärdet är 10 (`K_STANDARD`); användaren kan ändra det (ADR-38). Vid 10 redovisas i det som
   lämnar verktyget inga gruppvärden när en grupp har färre än 10 personer. Gruppen utelämnas och namnges i en not vid tabellen.
   Är bara könsuppdelningen för liten (gruppen som helhet n ≥ 10) visas gruppens

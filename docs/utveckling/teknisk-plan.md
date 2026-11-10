@@ -1174,7 +1174,8 @@ Rapporttext, Exportera och Spara och jämför år ritas alltid i det. Inställni
 inställda tröskeln; det statistiska golvet `statGolv()` är oförändrat. Testerna prövar vyerna i exportläget
 (`iExport` i riggen) och skärmen positivt. Knappen *Som i exporten* i sidhuvudet (`sattForhandsvisning`) sätter skärmen i
 exportläget — banner, streckad ram och omritning av det som syns — tills den stängs av; exporterna byter då inte
-läge, och ett byte medan en export pågår avvisas. Efter en export ritas bara det tillbaka som exporten ritade
+läge, och ett byte medan en export pågår avvisas. Det som räknas på knapptryck i Löneöversyn räknas om när fliken
+ritas om, om det visas (`_fcRitaOmKnappresultat`). Efter en export ritas bara det tillbaka som exporten ritade
 (`_ritaOmEfterExport`), Lika arbetes minne har ett rum per tröskel, och ett tröskelbyte räknar om skattningarna
 (`invalidateStatCaches`) bara när `statGolv()` ändras; Att göras lista byggs en gång för Att göra och
 processöversikten (`renderProcessTracker({ punkter })`) — ingen cache, bara ett värde som skickas vidare.
