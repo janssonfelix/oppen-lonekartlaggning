@@ -397,13 +397,14 @@ dokumenten pekar på.
 
 ## 9. Öppna punkter
 
-Kända brister och obesvarade frågor, så att de inte lever bara i en konversationstråd.
+Kända brister och obesvarade frågor, så att de inte lever bara i en konversationstråd. Numren byts inte, eftersom
+kod, tester och dokument pekar på dem; ett nummer som saknas är en avslutad punkt. En avslutad punkt som något
+pekar på står kvar med en rad om hur den avslutades.
 
 **Användning och prövning:**
 1. **Ingen användare har provat gränssnittet och diagrammen med verklig data**; de är sedda med demodatan och ett
    påhittat större underlag (42 yrken). Checklistan för skarp data (`pilotchecklista.md`) har punkter för det
    som inte går att pröva utan verklig data.
-2. *(Löst 2026-11-09: utkastet öppnat i Microsoft Word 365 och 2019 med litet och stort demo; tabellbredd i dxa, `w:tblLook` och skiljestycke mellan tabeller infördes inför testet, ADR-37.)*
 3. **Punkter som täcker varandra i bandkartan** när många yrkesgrupper i samma BAS-intervall har nästan samma
    median. *Krav mot lön* flyttar isär sådana grupper i sidled, och prioriteringsmatrisens etiketter flyttas isär
    uppåt; bandkartan är inte prövad med många yrken. Bör bedömas med verklig data.
@@ -417,56 +418,20 @@ Kända brister och obesvarade frågor, så att de inte lever bara i en konversat
    och skickad vidare) och den öppna fliken räknas om. Det som återstår är regressionen i processöversikten och
    underlagets kvalitet, som inte får cachas (ADR-17). Översikt
    ritas inte två gånger — när Översikt är den öppna fliken är den redan ritad av stegen (`_omritningssteg`).
+   Kvantilregressionens bootstrap-intervall räknas i bakgrunden efter att kortet ritats, också i exportläget
+   (`_regKvantilBerakna`): en bild eller utskrift som görs innan intervallet är klart bär kortet utan det.
 
-   Mätvärden med `npm run perf` på 55 000 syntetiska rader (2026-10-29, efter ADR-51): uppladdning till klart
-   gränssnitt ~2,8 s, till klara bakgrundsanalyser ~7,7 s; Likvärdigt arbete 2,6 s, Lika arbete 2,0 s, Ålder &
-   karriär 1,8 s, Dokumentera & exportera (då fliken Dokumentera & exportera; nu Exportera, Rapporttext och Spara och jämför år) 3,7 s, övriga flikar under 0,6 s styck; hela svepet 19 s. Dokumentera
-   & exportera ritas i exportläget och tog 12 s innan förhandsbeskedet byggde rapportmodellen en gång i stället
-   för tre (`rapportModellBada`), Excel-bladlistan en gång i stället för två, Lika arbetes minne fick ett rum per
-   tröskel och omritningen efteråt begränsades till det exporten ritade (`_ritaOmEfterExport`). Det som kostar i
-   Lika arbete är statistik — bootstrap-KI, kvantilregression över alla τ och OLS — utan någon enskild patologisk
-   punkt. Kvantilregressionens bootstrap-intervall (200 omsamplingar × tre τ, ~2 s vid 1 000 personer) räknas i
-   bakgrunden efter att kortet ritats, också i exportläget (`_regKvantilBerakna`, minne per underlag): kortet står
-   med punktskattningarna tills dess, och en bild eller utskrift som görs innan intervallet är klart bär kortet
-   utan det — som nyckeltalen utan bootstrap-KI strax efter en inläsning. Att `runOLSRegression` körs tre gånger
-   per rendering (~250 ms) är ett beslut, inte en brist (ADR-17). ADR-1:s chunking behövs inte.
-
-   Navigeringen med `node tools/perf-smoke.mjs --rader=20000` (2026-11-07): uppladdning till klart gränssnitt ~1,1 s,
-   till klara bakgrundsanalyser ~2,7 s; sidindexets bygge under 3 ms på varje flik (Ålder & karriär 2,1 ms med sex
-   poster, Lönestruktur 1,3 ms med elva, Löneöversyn 1,4 ms, Likvärdigt arbete 0,9 ms, Lika arbete 0,7 ms, Exportera
-   0,8 ms), sökfältets första sökning 8 ms (andra 5 ms), BAS-dossiern öppnad och ritad på 20 ms och gruppdossiern på
-   ~0,1 s; hela svepet 8 s. Vid 55 000 rader samma dag: sidindexet under 3 ms, första sökningen 19 ms, BAS-dossiern
-   56 ms och gruppdossiern 0,27 s. Inget steg är i närheten av 2 s, så ritningen av hopfällda avsnitt skjuts inte upp.
-   Rapportmodellen med bilagan med gruppdossierer (samma dag, efter rättelsen): 0,48 s mot 0,46 s utan vid 20 000 rader,
-   1,4 s mot 1,3 s vid 55 000. Före rättelsen tog den 4,4 s vid 20 000 rader. Varje dossier räknade då kandidaterna,
-   prioriteringen och gapet per BAS-intervall på nytt, och dessutom ett bootstrap-intervall som textversionen aldrig
-   visar; nästan hela tiden låg i intervallet. Bilagan räknar nu de delade underlagen en gång och hoppar över
-   intervallet. Förhandsbeskedet i Exportera bygger inga dossiertexter (bara antalet och det utelämnade) och tar
-   samma tid med och utan bilagan: ~1,0 s vid 20 000 rader och ~2,9 s vid 55 000. Den tiden är resten av modellen
-   och Excel-bladens lista, inte bilagan.
-   Ett ändrat kryss under *Rapportens innehåll* (2026-11-07) ritade hela förhandsbeskedet: 3,0 s vid 55 000 rader och
-   0,33 s på det stora demot (7 000 personer). Beskedet räknas nu ur förhandsbeskedets minne när bara urvalet ändras,
-   och Excel-bladens lista kör inte regressionen för att veta att bladet *Underlagets kvalitet* följer med: ett kryss
-   tar 0,27 s vid 55 000 rader (gräns 1 s i `npm run perf`; det mesta är omritningen efter exportläget, inte beskedet)
-   och under 5 ms på det stora demot, och hela beskedet 2,5 s mot 3,0 s.
+   Mätvärden (Chromium, syntetiska rader): `npm run perf` på 55 000 rader (2026-10-29) ger uppladdning till klart
+   gränssnitt ~2,8 s och till klara bakgrundsanalyser ~7,7 s; Likvärdigt arbete 2,6 s, Lika arbete 2,0 s, Ålder &
+   karriär 1,8 s, övriga flikar under 0,6 s utom de som ritas i exportläget; hela svepet 19 s. Navigeringen
+   (2026-11-07, 20 000 / 55 000 rader): sidindexet under 3 ms per flik, första sökningen 8 / 19 ms, BAS-dossiern
+   20 / 56 ms, gruppdossiern 0,1 / 0,27 s, rapportmodellen med bilagan med gruppdossierer 0,48 / 1,4 s,
+   förhandsbeskedet i Exportera ~1,0 / ~2,5 s och ett ändrat kryss under *Rapportens innehåll* 0,27 s vid 55 000 rader
+   (gräns 1 s i `npm run perf`). Inget steg är nära 2 s, och ADR-1:s chunking behövs inte.
 
 **Kod och bygge:**
 6. **Krasch i Node under testkörning** (V8:s skräpsamlare): orsaken är okänd; `npm test` kör om berörda filer.
-7. **Stilen var spridd — åtgärdad.** De omkring 780 stilattributen i `index.html` och flikarnas mallar är flyttade till
-   klasser, så att `style-src-attr` är stängt (`'none'`, ADR-30), och de genererade hashklasserna (428 `u-…`) är ersatta av
-   ett namngivet bibliotek av hjälpklasser i stilmallen (§6, «Stilmallen»); inga hashnamn återstår och `tests/farger.test.js`
-   faller om ett nytt skulle dyka upp. Mobilreglerna som tidigare träffade `[style*="flex"]` osv. väljer biblioteksklasserna
-   efter innehåll (flex, grid-template-columns, min-width). Teckenstorlekarna följer en skala i sex steg (`--fs-xs` …
-   `--fs-nyckeltal`) i stilmallen; värden inom 0,05 rem från ett steg har tagit steget vid flytten. Utanför skalan står de
-   minsta versala etiketterna (0,65–0,72 rem), de stora talen (1,2 rem och uppåt) och utskriftens punktstorlekar;
-   `tests/granssnitt-vyer.test.js` håller taket. Svansen gicks igenom 2026-10-30: 26 klasser utan användning togs bort
-   (rester efter borttagna vyer: datakvalitetens delkomponenter, exportnavet, källväxeln i Jämförelse) och fem
-   komponentklasser med samma deklaration som en hjälpklass byttes mot den; beräknade stilar för alla element på alla
-   flikar med demodata jämfördes före och efter i Chromium utan en enda skillnad. Kvar är omkring 220 klasser som
-   används en eller två gånger men vars deklarationer är unika — de kan bara krympa med en visuell ändring, när en
-   flik ändå ändras och en rad får samma avstånd som sina grannar.
 8. **Ett gemensamt globalt scope** på omkring 20 000 rader. Logik flyttas till `src/lib/` när en del ändå ändras.
-9. *(Löst: `.github/dependabot.yml` uppdaterar npm och arbetsflödenas steg, §6.)*
 
 **Gränssnitt och analys (översynen 2026-10-29):**
 9b. **Ett tecken i hela verktyget:** löneskillnader anges kvinnor mot män, negativt när kvinnor ligger lägre
@@ -504,7 +469,6 @@ Kända brister och obesvarade frågor, så att de inte lever bara i en konversat
     och bekräftar för sin installation.
 19. **README i roten har ingen bild:** skärmbilder checkas inte in, så en bild där kräver ett
     beslut om att lägga en bildfil i källkoden.
-20. *(Löst: källkoden ligger publikt på GitHub sedan 2026-10-23, med demosidan på GitHub Pages; se §6.)*
 21. **Inför användning hos fler arbetsgivare:** licens- eller användaravtal, prismodell och support; en beskriven
     väg in för andra arbetsvärderingssystem än BAS; för offentlig sektor offentlighetsprincipen och
     arkivering av utdata, mall för konsekvensbedömning; en jurist-granskad metodbeskrivning och en handledning
