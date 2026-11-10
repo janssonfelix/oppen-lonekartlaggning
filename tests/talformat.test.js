@@ -4,8 +4,9 @@
  * Tre vägar prövas:
  *   1. CSV- och urklippsexporten (`_toCsv`, `_tillTsv`, `_CSV_TALLIKT` i src/app/22-exporthjalpare.js): ett tal i
  *      svenskt format — decimalkomma, tusentalsavgränsare som vanligt, hårt (U+00A0) eller smalt hårt (U+202F)
- *      mellanslag, minus som '-' eller '−' (U+2212), procent och kr — skrivs som det står, utan formelskyddets
- *      apostrof (ADR-15). Text som ser ut som tal (BAS, AID med inledande nolla, årtal, personnummerlika strängar)
+ *      mellanslag, procent och kr — skrivs som det står, utan formelskyddets apostrof (ADR-15). Ett tal med
+ *      minustecken (U+2212, som tabellerna skriver) får ett vanligt '-', så att Excel läser det som tal; text med
+ *      '−' som inte är ett tal står kvar. Text som ser ut som tal (BAS, AID med inledande nolla, årtal, personnummerlika strängar)
  *      skrivs också som den står: CSV-skrivaren gör aldrig om text till tal eller tal till text.
  *   2. Jämförelseexporten (`exportBenchmarkExcel`, src/app/64-jamforelse-export.js): kronor och procent är talceller
  *      med svenskt talformat, koder är textceller, och en tom cell är tom. Arbetsboken skrivs och läses tillbaka
@@ -37,9 +38,24 @@ describe('CSV-exporten: svenska tal lämnas orörda', () => {
             }
         }
     });
-    it('negativa tal med både bindestreck och minustecken (U+2212)', () => {
-        // '−' är inget formeltecken i Excel och behöver inget skydd; '-' före ett tal är ett tal och får inget heller.
-        for (const v of ['-7', `${MINUS}7`, '-1 250 kr', `${MINUS}1 250 kr`, `${MINUS}3,25 %`, `${MINUS}31${NBSP}417`]) expect(cell(v), v).toBe(v);
+    it('negativa tal med bindestreck skrivs som de står', () => {
+        // '-' före ett tal är ett tal och får inget formelskydd.
+        for (const v of ['-7', '-1 250 kr', '-3,25 %', `-31${NBSP}417`]) expect(cell(v), v).toBe(v);
+    });
+    it('negativa tal med minustecken (U+2212) skrivs med bindestreck, så att Excel läser dem som tal', () => {
+        for (const [v, ut] of [[`${MINUS}7`, '-7'], [`${MINUS}1 250 kr`, '-1 250 kr'], [`${MINUS}3,25 %`, '-3,25 %'],
+            [`${MINUS}31${NBSP}417`, `-31${NBSP}417`], [`${MINUS}0,05`, '-0,05'], [`${MINUS}2 år`, '-2 år']]) {
+            expect(cell(v), v).toBe(ut);
+            expect(w.__tillTsv([[v]]), v).toBe(ut);
+        }
+    });
+    it('text med minustecken (U+2212) som inte är ett tal står kvar, utan apostrof', () => {
+        // Intervall och uttryck som tabellerna kan visa; '−' är inget formeltecken i Excel.
+        for (const v of [`${MINUS}3 – 5`, `${MINUS}3,2–5,1`, `${MINUS}3,2 till 5,1`, `5 ${MINUS} 3`, `${MINUS}A1`, MINUS,
+            `${MINUS}${MINUS}5`, `${MINUS}-5`, `${MINUS}+5`, `${MINUS}2 dagar`, `30 000 ${MINUS} 28 000 = 2 000`]) {
+            expect(cell(v), v).toBe(v);
+            expect(w.__tillTsv([[v]]), v).toBe(v);
+        }
     });
     it('procent, kr, st och år efter talet', () => {
         for (const v of ['-3,2 %', '+3,25 %', '-3,2%', `-0,50${NBSP}%`, '-1 250 kr', '+12 st', '-2 år']) expect(cell(v), v).toBe(v);
@@ -68,12 +84,18 @@ describe('CSV-exporten: svenska tal lämnas orörda', () => {
     });
     it('urklippet behandlar talen likadant', () => {
         expect(w.__tillTsv([[`${MINUS}3,25 %`, '-31 417 kr', `-1${NNBSP}250`, '012345', '-A1', null]]))
-            .toBe(`${MINUS}3,25 %\t-31 417 kr\t-1${NNBSP}250\t012345\t'-A1\t`);
+            .toBe(`-3,25 %\t-31 417 kr\t-1${NNBSP}250\t012345\t'-A1\t`);
+    });
+    it('formelskyddet gäller som förut i både CSV och urklipp', () => {
+        for (const v of ['-A1', '=1+2', '+46 70 x', '@SUMMA(A1)', '-2 dagar', '-']) {
+            expect(cell(v), v).toBe("'" + v);
+            expect(w.__tillTsv([[v]]), v).toBe("'" + v);
+        }
     });
 });
 
 describe('CSV-exporten av en tabell: talen som de står på skärmen', () => {
-    it('tusentalsavgränsaren blir ett vanligt mellanslag, minustecknet och decimalkommat står kvar', () => {
+    it('tusentalsavgränsaren blir ett vanligt mellanslag, minustecknet blir bindestreck och decimalkommat står kvar', () => {
         const w = createAppWindow();
         const t = w.document.createElement('table');
         t.id = 'talformat-prov';
@@ -84,7 +106,8 @@ describe('CSV-exporten av en tabell: talen som de står på skärmen', () => {
         w.document.body.appendChild(t);
         const rader = w.__tableToMatrix('talformat-prov');
         expect(rader[1]).toEqual(['012345 Påhittat yrke', 'A', `${MINUS}31 417`, '1 250,50', `${MINUS}3,25 %`, '12,5 %', '']);
-        expect(w.__toCsv(rader.slice(1))).toBe(`012345 Påhittat yrke;A;${MINUS}31 417;1 250,50;${MINUS}3,25 %;12,5 %;`);
+        expect(w.__toCsv(rader.slice(1))).toBe('012345 Påhittat yrke;A;-31 417;1 250,50;-3,25 %;12,5 %;');
+        expect(w.__tillTsv(rader.slice(1))).toBe('012345 Påhittat yrke\tA\t-31 417\t1 250,50\t-3,25 %\t12,5 %\t');
     });
 });
 
@@ -106,6 +129,18 @@ describe('Rundtur: verktygets svenska tal läses tillbaka till samma värde', ()
             expect(las(`-31${sep}417 kr`).value).toBe(-31417);
             expect(las(`${MINUS}31${sep}417 kr`).value).toBe(-31417);
             expect(las(`${MINUS}1${sep}250,50`).value).toBe(-1250.5);
+        }
+    });
+    it('tal med minustecken (U+2212) ger samma värde efter CSV-exporten och urklippet', () => {
+        for (const [v, dec] of [[-31417, 0], [-1250.5, 2], [-3.25, 2], [-0.05, 2], [-7, 0]]) {
+            for (const text of [w.eval(`svTal(${v}, ${dec})`), w.eval(`svPct(${v}, ${dec})`)]) {
+                expect(text.startsWith(MINUS), JSON.stringify(text)).toBe(true);
+                const csv = w.__toCsv([[text]]), tsv = w.__tillTsv([[text]]);
+                expect(csv.startsWith('-'), JSON.stringify(csv)).toBe(true);
+                expect(tsv).toBe(csv);
+                expect(las(csv).value, JSON.stringify(csv)).toBe(v);
+                expect(las(csv).value).toBe(las(text).value);
+            }
         }
     });
     it('ett minustecken (U+2212) byter tecken på talet precis som ett bindestreck', () => {
