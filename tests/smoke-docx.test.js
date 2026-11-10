@@ -416,7 +416,7 @@ describe('Bilaga: gruppdossierer i Word-utkastet och PDF-rapporten', () => {
         const rubriker = a.delar.filter(p => p.typ === 'rubrik');
         expect(rubriker).toHaveLength(nycklar.length);
         // Varje dossier: rubriken är textens första rad och styckena resten, rad för rad.
-        const forsta = w.eval(`medExportLage(() => gruppdossierAsText(buildGruppdossier(${JSON.stringify(nycklar[0])})))`).split('\n');
+        const forsta = w.medExportLage(() => w.gruppdossierAsText(w.buildGruppdossier(nycklar[0]))).split('\n');
         const i = a.delar.findIndex(p => p.typ === 'rubrik' && p.text === forsta[0]);
         expect(i).toBeGreaterThan(-1);
         const resten = forsta.slice(1).map(t => t.trim()).filter(Boolean);
@@ -434,7 +434,7 @@ describe('Bilaga: gruppdossierer i Word-utkastet och PDF-rapporten', () => {
         const med = alla.filter(d => d.nKv >= 25 && d.nMa >= 25);
         expect(alla.length).toBeGreaterThan(med.length);
         // Exakt grupperna där båda könen når 25, i kandidaternas ordning.
-        const forvantat = med.map(d => w.eval(`medExportLage(() => gruppdossierAsText(buildGruppdossier(${JSON.stringify(d.key)})))`).split('\n')[0]);
+        const forvantat = med.map(d => w.medExportLage(() => w.gruppdossierAsText(w.buildGruppdossier(d.key))).split('\n')[0]);
         expect(a.delar.filter(p => p.typ === 'rubrik').map(p => p.text)).toEqual(forvantat);
         expect(a.utelamnat.join(' ')).toMatch(/yrkesgrupp(er)? där ett kön har färre än 25 personer/);
     });
@@ -457,7 +457,7 @@ describe('Bilaga: gruppdossierer i Word-utkastet och PDF-rapporten', () => {
         expect(iStampel).toBeLessThan(iRubrik);
         // Kopian ur gruppdossiern bär fortfarande stämpeln, eftersom den kan spridas för sig.
         const key = w.eval('gruppdossierCandidates()[0].key');
-        expect(w.eval(`medExportLage(() => gruppdossierAsText(buildGruppdossier(${JSON.stringify(key)})))`)).toContain(stampel);
+        expect(w.medExportLage(() => w.gruppdossierAsText(w.buildGruppdossier(key)))).toContain(stampel);
     });
     it('förhandsbeskedet bygger inga dossierer men räknar utelämnat som exporten, och bilagan räknar kandidaterna en gång', () => {
         const w = createAppWindow(); w.__loadDemoData();

@@ -284,7 +284,7 @@ describe('golden: bladen ur HTML-tabellerna bär cellerna som vyn visar dem (typ
         expect(cell('Jämförelsestatistik', 'J3')).toMatchObject({ t: 'n', v: -0.89, z: PCT1 });
     });
     it('cellvärdet: talet i texten, sorteringsvärdet bara när det är samma storhet med fler decimaler', () => {
-        const v = (html) => win.eval(`(function(){ const tr = document.createElement('tr'); tr.innerHTML = ${JSON.stringify(html)}; return _exportCellVarde(tr.firstElementChild); })()`);
+        const v = (html) => { const tr = win.document.createElement('tr'); tr.innerHTML = html; return win._exportCellVarde(tr.firstElementChild); };
         expect(v('<td data-sort-value="33931.5">33 932 kr</td>')).toEqual({ t: 'n', v: 33931.5, z: KR });
         expect(v('<td data-sort-value="6.4">93,6 %</td>')).toEqual({ t: 'n', v: 93.6, z: PCT1 });       // gapet bakom kvoten
         expect(v('<td data-sort-value="-0.0445">−4,45 %</td>')).toEqual({ t: 'n', v: -4.45, z: PCT2 });  // andelen bakom procenten

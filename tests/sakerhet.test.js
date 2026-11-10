@@ -7,6 +7,8 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { join } from 'node:path';
 import { createAppWindow } from './helpers/app-harness.js';
+import { regexEscape } from './helpers/regex.js';
+import { utanHtmlKommentarer, utanSkript } from './helpers/htmlrens.js';
 
 const ROOT = join(import.meta.dirname, '..');
 const läs = f => readFileSync(join(ROOT, f), 'utf8');
@@ -26,8 +28,8 @@ describe('säkerhet: CSP för stilar i bygget', () => {
     });
     it('varje <style>-block i bygget har sin kontrollsumma i CSP:n — och en tom stilmall har ingen', () => {
         // Bara riktiga element: text inuti skripten (mallsträngar) räknas inte.
-        const utanSkript = html.replace(/<script>[\s\S]*?<\/script>/g, '');
-        const block = [...utanSkript.matchAll(/<style>([\s\S]*?)<\/style>/g)].map(m => m[1]);
+        const skriptfri = utanSkript(html);
+        const block = [...skriptfri.matchAll(/<style>([\s\S]*?)<\/style>/g)].map(m => m[1]);
         expect(block.length).toBeGreaterThanOrEqual(1);
         for (const css of block) expect(direktiv['style-src-elem']).toContain(`'sha256-${sha256b64(css)}'`);
         // En tom stilmall har ingen kontrollsumma: ett bibliotek som skapar en egen <style> blockeras.
@@ -120,9 +122,9 @@ describe('säkerhet: bibliotekens versioner stämmer i dokumentationen', () => {
     it('licenstexten, Om verktyget och TREDJEPARTSLICENSER.md anger bibliotekens faktiska versioner', () => {
         const licenser = läs('src/licenser.txt'), om = läs('src/app/65-om-verktyget.js'), md = läs('TREDJEPARTSLICENSER.md');
         for (const [namn, v] of BIBLIOTEK) {
-            expect(licenser, `licenser.txt: ${namn} ${v}`).toMatch(new RegExp(`${namn}[^\\n]*\\b${v.replace(/\./g, '\\.')}\\b`));
-            expect(om, `Om verktyget: ${namn} ${v}`).toMatch(new RegExp(`${namn}[^<]*</td><td>${v.replace(/\./g, '\\.')}</td>`));
-            expect(md, `TREDJEPARTSLICENSER.md: ${namn} ${v}`).toMatch(new RegExp(`^\\| ${namn}[^|\\n]* \\| ${v.replace(/\./g, '\\.')}\\b`, 'm'));
+            expect(licenser, `licenser.txt: ${namn} ${v}`).toMatch(new RegExp(`${regexEscape(namn)}[^\\n]*\\b${regexEscape(v)}\\b`));
+            expect(om, `Om verktyget: ${namn} ${v}`).toMatch(new RegExp(`${regexEscape(namn)}[^<]*</td><td>${regexEscape(v)}</td>`));
+            expect(md, `TREDJEPARTSLICENSER.md: ${namn} ${v}`).toMatch(new RegExp(`^\\| ${regexEscape(namn)}[^|\\n]* \\| ${regexEscape(v)}\\b`, 'm'));
         }
     });
 });
@@ -239,12 +241,12 @@ describe('säkerhet: inga style-attribut i markeringen (ADR-30, ADR-43)', () => 
             const n = stilAttribut(utanKommentarer(läs(`src/app/${f}`)));
             if (n !== (EXPORTMALLAR[f] || 0)) fynd[f] = n;
         }
-        const sida = stilAttribut(läs('src/index.html').replace(/<!--[\s\S]*?-->/g, ''));
+        const sida = stilAttribut(utanHtmlKommentarer(läs('src/index.html')));
         if (sida) fynd['src/index.html'] = sida;
         expect(fynd).toEqual({});
     });
     it('det byggda skalet (utanför skripten) har inga style-attribut', () => {
-        const skal = läs('dist/oppen-lonekartlaggning.html').replace(/<script>[\s\S]*?<\/script>/g, '').replace(/<style>[\s\S]*?<\/style>/g, '');
+        const skal = utanSkript(läs('dist/oppen-lonekartlaggning.html')).replace(/<style>[\s\S]*?<\/style>/g, '');
         expect(skal.match(/\sstyle\s*=/g) || []).toEqual([]);
     });
     it('filer som skriver data-stil-* anropar tillampaDataStil, och hjälparen sätter bara bredd och läge', () => {

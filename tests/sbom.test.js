@@ -10,6 +10,7 @@ import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { byggSbom, BIBLIOTEK } from '../tools/sbom.mjs';
+import { regexEscape } from './helpers/regex.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const läs = f => readFileSync(join(root, f), 'utf8');
@@ -32,7 +33,7 @@ describe('sbom: innehållet speglar vendor/', () => {
     it('versionerna är de som TREDJEPARTSLICENSER.md anger, och licenserna är SPDX-id', () => {
         const md = läs('TREDJEPARTSLICENSER.md');
         for (const c of sbom.components) {
-            expect(md, c.name).toMatch(new RegExp(`^\\| [^|\\n]+ \\| ${c.version.replace(/\./g, '\\.')}\\b`, 'm'));
+            expect(md, c.name).toMatch(new RegExp(`^\\| [^|\\n]+ \\| ${regexEscape(c.version)}\\b`, 'm'));
             expect(c.licenses[0].license.id).toMatch(/^(MIT|ISC|Apache-2\.0)$/);
             expect(c.purl).toBe(`pkg:npm/${c.purl.split('/')[1].split('@')[0]}@${c.version}`);
         }
