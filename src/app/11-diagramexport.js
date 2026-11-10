@@ -13,7 +13,8 @@
 //   figur.urval (ritaFigur)         — användarens urval i diagrammet (filterraderna): exportmenyns PNG/SVG ritas med
 //                                     urvalet och fotraden säger vad som gäller, med samma text som noten under
 //                                     diagrammet; diagramdatan har alla rader och en rad "Urval i diagrammet: …".
-//                                     diagramTillBild ritar alltid allt.
+//                                     diagramTillBild ritar alltid allt. Härledda lager (harleddAv) räknas om för
+//                                     urvalet i exportmenyns bild, och fotraden nämner ett lager som då inte ritas.
 //   figur.individer                 — figuren har en punkt per person: diagramdatan får raden om att filen
 //                                     innehåller en rad per person och ska hanteras som personuppgifter (kIndividRad).
 //
@@ -128,7 +129,14 @@ function _chartExportUnderlagExport(gd) {
 /** Urvalet i diagrammet som text, en del per aktiv dimension (t.ex. ['utan BAS A, BAS N', '10–50 personer i
  *  gruppen']), samma text som noten under diagrammet; [] utan urval. */
 function _chartExportDolt(ut) {
-    return ut && ut.filter ? _figUrvalBeskrivning(ut.figur, ut.filter) : [];
+    return ut && ut.filter ? _figUrvalBeskrivning(ut.figur, ut.filter, { visaSma: !!ut.visaSma }) : [];
+}
+
+/** Meningarna om härledda lager (harleddAv) som inte ritas i exportmenyns bild: med urvalet har källagren färre än
+ *  minN synliga punkter. Samma text som noten under diagrammet; [] utan urval eller utan sådana lager. */
+function _chartExportHarlett(ut) {
+    if (!ut || !ut.filter) return [];
+    return _figHarlettNot(_figHarleddaLager(ut.bild || ut.figur, ut.filter, { visaSma: !!ut.visaSma })).utelamnade;
 }
 
 /** Diagramdata med en spårbarhetsrad överst (ADR-13). Diagram ritade med diagramkärnan (ADR-39) går genom
@@ -156,8 +164,9 @@ function chartExportRows(gd, underlag) {
 /** Rubrik och fotrad till en exporterad bild av ett kärnritat diagram: bilden ska säga själv vad den visar när den
  *  klistras in i ett dokument. Foten: verktyget och dagens datum, och urvalet om vyn har angett ett.
  *  `dolt`: urvalet i diagrammet som text (_chartExportDolt; bara exportmenyns bild, aldrig diagramTillBild).
- *  @param {any} gd @param {Date} [datum] @param {string[]} [dolt] */
-function _chartExportRubrikFot(gd, datum = new Date(), dolt = []) {
+ *  `harlett`: härledda lager som inte ritas med urvalet (_chartExportHarlett).
+ *  @param {any} gd @param {Date} [datum] @param {string[]} [dolt] @param {string[]} [harlett] */
+function _chartExportRubrikFot(gd, datum = new Date(), dolt = [], harlett = []) {
     const p = n => String(n).padStart(2, '0');
     const dag = `${datum.getFullYear()}-${p(datum.getMonth() + 1)}-${p(datum.getDate())}`;
     const urval = typeof gd._exportBeskrivning === 'string' && gd._exportBeskrivning ? ` · Urval: ${gd._exportBeskrivning}` : '';
@@ -166,7 +175,8 @@ function _chartExportRubrikFot(gd, datum = new Date(), dolt = []) {
     // ur värden som får visas.
     const v = gd._figurVal && typeof gd._figurVal.exportAnteckning === 'string' ? gd._figurVal.exportAnteckning.trim() : '';
     const doltText = dolt && dolt.length ? ` · Urval i diagrammet: ${dolt.join('; ')}` : '';
-    return { rubrik: chartExportTitle(gd), fot: `${v ? v + ' · ' : ''}Lönekartläggning ${dag}${urval}${doltText}${gd._rfZoom ? ' · Utsnitt av diagrammet' : ''}` };
+    const harlettText = (harlett || []).map(t => ` · ${String(t).replace(/\.$/, '')}`).join('');
+    return { rubrik: chartExportTitle(gd), fot: `${v ? v + ' · ' : ''}Lönekartläggning ${dag}${urval}${doltText}${harlettText}${gd._rfZoom ? ' · Utsnitt av diagrammet' : ''}` };
 }
 
 /** Bär elementet ett ritat diagram med något att visa? */
@@ -204,7 +214,7 @@ async function __chartExportImageExport(gd, val, underlag) {
     gd = _chartExportAktuell(gd);
     if (!ut) throw new Error('Det finns inget att exportera i diagrammet.');
     // Exportmenyn ritar diagrammet som det visas: också med användarens urval, som fotraden då namnger.
-    const url = await figurTillBild(ut.bild || ut.figur, format, width, height, { visaSma: ut.visaSma, dolda: ut.dolda, filter: ut.filter, ..._chartExportRubrikFot(gd, new Date(), _chartExportDolt(ut)) });
+    const url = await figurTillBild(ut.bild || ut.figur, format, width, height, { visaSma: ut.visaSma, dolda: ut.dolda, filter: ut.filter, ..._chartExportRubrikFot(gd, new Date(), _chartExportDolt(ut), _chartExportHarlett(ut)) });
     // Bilden görs asynkront. Har diagrammet under tiden rensats (Rensa all data) eller fått en annan figur
     // lämnar bilden av den gamla inte verktyget.
     if (gd._figur !== ut.figur) throw new Error('Diagrammet rensades innan exporten blev klar.');

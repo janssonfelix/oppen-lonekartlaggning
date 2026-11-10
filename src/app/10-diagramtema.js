@@ -88,6 +88,8 @@ const GAP_STATUS_ALLA = Object.freeze([...GAP_STATUS, GAP_STATUS_EJ]);
  *   konsdominans  kategori på `konsdom`: 'Kvinnodominerad', 'Mansdominerad' eller 'Blandad'
  *   matchning     kategori på `matchning`: 'AID + BAS' eller 'Endast AID'
  *   avvikelse     intervall på `x`: avvikelsen i procent
+ *   yrkesgrupp    kategori på `yrke` (yrkesgruppens namn som i tipset), visad som lista med sökfält
+ *   sektor        kategori på `sektor` (sektorns namn som i sektorsöversikten), visad som lista med sökfält
  */
 const URVAL = Object.freeze({
     bas: Object.freeze({ typ: 'kategori', falt: 'bas', namn: 'BAS-intervall', etikett: 'BAS {v}' }),
@@ -95,6 +97,8 @@ const URVAL = Object.freeze({
     konsdominans: Object.freeze({ typ: 'kategori', falt: 'konsdom', namn: 'Könsdominans', etikett: '{v}' }),
     matchning: Object.freeze({ typ: 'kategori', falt: 'matchning', namn: 'Matchning', etikett: '{v}' }),
     avvikelse: Object.freeze({ typ: 'intervall', falt: 'x', namn: 'Avvikelse (%)', format: 'pct', etikett: 'avvikelse {v}' }),
+    yrkesgrupp: Object.freeze({ typ: 'kategori', falt: 'yrke', namn: 'Yrkesgrupp', etikett: '{v}', visning: 'lista' }),
+    sektor: Object.freeze({ typ: 'kategori', falt: 'sektor', namn: 'Sektor', etikett: '{v}', visning: 'lista' }),
 });
 /**
  * Statusen för ett avstånd från lika lön i procent (|100 − kvoten|) och en prövning av skillnaden (true/false; null

@@ -8,6 +8,16 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ### Gränssnitt
 
+- **Långa filterlistor och lager som räknas om för urvalet (kärnan).** Ett filter med många värden, till exempel
+  yrkesgrupper eller sektorer, visas som en hopfälld lista med kryssrutor i stället för en knapp per värde.
+  Summeringen säger hur många som visas ("Yrkesgrupp: 12 av 40"), sökfältet visar bara värdena som innehåller texten,
+  och *Markera alla* och *Avmarkera alla* gäller de värden som syns. I en lista får alla väljas bort. Noten säger
+  "bara …" eller "Yrkesgrupp 12 av 40" när många är bortvalda. Ett diagram kan också ha ett lager som räknas ur
+  punkterna, till exempel en trendlinje. När ett filter är aktivt räknas lagret om ur de punkter som syns, och noten
+  säger det; har punkterna blivit för få visas lagret inte, och noten och exportens fotrad säger varför. Utan filter,
+  och i rapporten, utskriften, ZIP-filen och rapportunderlaget, är diagrammen som förut. Det här är kärnan;
+  diagrammen får listorna och de omräknade lagren i nästa steg.
+
 - **Diagramfilter med flera dimensioner, och fälten Minst och Högst.** Ett diagram kan ha flera filter, ett per
   dimension, i varsin rad ovanför diagrammet: knappar för en kategori (som BAS-intervallen i dag) och fälten *Minst*
   och *Högst* för ett tal, till exempel antal personer i gruppen. Fälten läser tal som verktyget gör annars ("1,5",

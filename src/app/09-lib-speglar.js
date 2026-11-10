@@ -8275,13 +8275,25 @@ function ladstatistik(varden) {
 
 // ---- Urval: dimensioner användaren kan filtrera diagrammet på (figur.urval) ----
 // `figur.urval` är en lista med dimensioner, eller ett ensamt objekt (då en lista med ett element). En dimension är
-//   { typ: 'kategori', falt, namn, etikett? }  — en knapp per värde; utan typ är det en kategori (det äldre formatet)
+//   { typ: 'kategori', falt, namn, etikett?, visning? } — en knapp per värde, eller en hopfälld lista med
+//       kryssrutor (visning: 'lista', eller fler än URVAL_LISTA_MAX värden); utan typ är det en kategori (det äldre formatet)
 //   { typ: 'intervall', falt, namn, format?, etikett? } — fälten Minst och Högst
-// Ett filter döljer bara märken; inget tal räknas om.
+// Ett filter döljer bara märken; inget tal räknas om — utom i ett härlett lager (harleddAv, se harleddaLager).
 
 /** Talformaten som `talformat` känner (och som en intervalldimensions `format` får vara). */
 const TALFORMAT = Object.freeze(['kr', 'pct', 'pctAbs', 'antal', 'tal2', 'ar']);
 const URVAL_TYPER = ['kategori', 'intervall'];
+/** En kategori med fler värden än så visas som en lista med kryssrutor i stället för en knapp per värde. */
+const URVAL_LISTA_MAX = 12;
+
+/**
+ * Sant när kategoridimensionen `dim` med `antal` värden visas som en lista (kryssrutor, sökfält, Markera alla):
+ * dimensionen har `visning: 'lista'`, eller fler än URVAL_LISTA_MAX värden.
+ * @param {any} dim @param {number} antal
+ */
+function urvalSomLista(dim, antal) {
+    return !!dim && (dim.visning === 'lista' || antal > URVAL_LISTA_MAX);
+}
 
 // Dimensionens typ: utan `typ` är den en kategori (det äldre formatet { falt, namn, etikett }).
 function _urvalTyp(u) { return u && u.typ != null ? u.typ : 'kategori'; }
@@ -8463,10 +8475,12 @@ function urvalIntervallText(dim, g) {
  * (etiketterna i värdenas ordning), för ett intervall mallen `etikett` med `{v}` utbytt mot intervallet
  * ('{v} personer i gruppen' → '10–50 personer i gruppen'), eller namnet och intervallet utan mall. Noten under
  * diagrammet och exportens fotrad visar samma text. Utan något aktivt: en tom lista.
- * @param {any} figur @param {any} filter (se arBortvald)
+ * En kategori som visas som lista (urvalSomLista) med fler än tre bortvalda säger i stället 'bara X, Y' (högst tre
+ * valda) eller namnet och antalet ('Yrkesgrupp 12 av 40'); antalet räknas bland värdena som får visas (`visaSma`).
+ * @param {any} figur @param {any} filter (se arBortvald) @param {{visaSma?: boolean}} [val]
  * @returns {string[]}
  */
-function urvalBeskrivning(figur, filter) {
+function urvalBeskrivning(figur, filter, { visaSma = false } = {}) {
     const f = _filterNorm(figur, filter);
     if (!f) return [];
     const ut = [];
@@ -8478,10 +8492,94 @@ function urvalBeskrivning(figur, filter) {
             const b = f.kategori && f.kategori.get(u.falt);
             if (!b || typeof b.has !== 'function' || !b.size) continue;
             const etiketter = urvalVarden(figur, u, { visaSma: true }).filter(v => b.has(v)).map(v => urvalEtikett(figur, u, v));
-            if (etiketter.length) ut.push(`utan ${etiketter.join(', ')}`);
+            if (!etiketter.length) continue;
+            const varden = urvalVarden(figur, u, { visaSma });
+            if (etiketter.length > 3 && urvalSomLista(u, varden.length)) {
+                const valda = varden.filter(v => !b.has(v));
+                ut.push(valda.length && valda.length <= 3 ? `bara ${valda.map(v => urvalEtikett(figur, u, v)).join(', ')}` : `${u.namn} ${valda.length} av ${varden.length}`);
+            } else ut.push(`utan ${etiketter.join(', ')}`);
         }
     }
     return ut;
+}
+
+/**
+ * Sant när filtret döljer något: ett bortvalt värde i en kategori eller en gräns i ett intervall (en mängd, det
+ * äldre formatet: minst ett bortvalt värde). Annat än ett filter: falskt.
+ * @param {any} filter
+ */
+function urvalAktivt(filter) {
+    if (!filter || typeof filter !== 'object') return false;
+    if (typeof filter.has === 'function') return filter.size > 0;
+    const kat = filter.kategori && typeof filter.kategori.values === 'function' ? [...filter.kategori.values()] : [];
+    if (kat.some(s => s && s.size > 0)) return true;
+    const int = filter.intervall && typeof filter.intervall.values === 'function' ? [...filter.intervall.values()] : [];
+    return int.some(g => g && ((typeof g.min === 'number' && isFinite(g.min)) || (typeof g.max === 'number' && isFinite(g.max))));
+}
+
+/**
+ * Figuren med sina härledda lager räknade för filtret. Ett lager med `harleddAv: { lager, berakna, minN?, namn? }`
+ * (t.ex. en trendlinje) räknas ur punkterna i källagren — lagren vars `serie` står i `lager`. Utan ett aktivt
+ * filter (urvalAktivt) är svaret figuren själv, samma objekt: talen är då vyns egna. Med ett aktivt filter får
+ * lagret `berakna(punkter)` som data, där punkterna är källagrens SYNLIGA punkter (inte bortvalda, och inte små
+ * om inte `visaSma`) — omräkningen bygger bara på det som redan syns. Har källagren färre än `minN` (minst 1) synliga
+ * punkter blir lagret tomt (ritas inte) och står i `utelamnade`. Lagrets index och övriga fält är oförändrade.
+ * Den nya figuren prövas med valideraFigur (kastar om `berakna` gav ogiltig data).
+ * @param {any} figur  en giltig figur
+ * @param {any} filter  se arBortvald
+ * @param {{visaSma?: boolean}} [val]
+ * @returns {{figur: any, omraknade: Array<{index: number, namn: string}>, utelamnade: Array<{index: number, namn: string, minN: number, antal: number}>}}
+ */
+function harleddaLager(figur, filter, { visaSma = false } = {}) {
+    /** @type {{figur: any, omraknade: Array<{index: number, namn: string}>, utelamnade: Array<{index: number, namn: string, minN: number, antal: number}>}} */
+    const ut = { figur, omraknade: [], utelamnade: [] };
+    const lager = figur && Array.isArray(figur.lager) ? figur.lager : [];
+    if (!lager.some(l => l && l.harleddAv) || !urvalAktivt(filter)) return ut;
+    const synlig = d => !!d && typeof d === 'object' && (visaSma || !d.liten) && !arBortvald(figur, filter, d);
+    const nya = lager.map((l, index) => {
+        const h = l && l.harleddAv;
+        if (!h) return l;
+        const kallor = new Set(h.lager.map(String));
+        const punkter = [];
+        lager.forEach((k, ki) => {
+            if (ki === index || !k || k.harleddAv || k.serie == null || !kallor.has(String(k.serie))) return;
+            for (const d of k.data) if (synlig(d)) punkter.push(d);
+        });
+        const minN = Math.max(1, typeof h.minN === 'number' && isFinite(h.minN) ? h.minN : 1);
+        const namn = harlettNamn(l);
+        if (punkter.length < minN) {
+            ut.utelamnade.push({ index, namn, minN, antal: punkter.length });
+            return { ...l, data: [] };
+        }
+        const data = h.berakna(punkter);
+        if (!Array.isArray(data)) throw new Error(`Ogiltig figur (härlett lager ${index}): berakna måste ge en lista`);
+        ut.omraknade.push({ index, namn });
+        return { ...l, data };
+    });
+    ut.figur = { ...figur, lager: nya };
+    valideraFigur(ut.figur, 'härlett lager');
+    return ut;
+}
+
+/** Det härledda lagrets namn i noterna: `harleddAv.namn`, annars 'Serien <serie>' eller 'Lagret'. @param {any} l */
+function harlettNamn(l) {
+    const h = l && l.harleddAv;
+    if (h && typeof h.namn === 'string' && h.namn.trim()) return h.namn.trim();
+    return l && l.serie != null ? `Serien ${l.serie}` : 'Lagret';
+}
+
+/**
+ * Noterna om härledda lager efter harleddaLager: '<namn> gäller urvalet.' för ett omräknat lager och
+ * '<namn> visas inte: färre än <minN> synliga punkter.' för ett som inte ritas.
+ * @param {{omraknade?: Array<{namn: string}>, utelamnade?: Array<{namn: string, minN: number}>}|null|undefined} h
+ * @returns {{omraknade: string[], utelamnade: string[]}}
+ */
+function harlettNot(h) {
+    const stor = s => s.charAt(0).toUpperCase() + s.slice(1);
+    return {
+        omraknade: ((h && h.omraknade) || []).map(o => `${stor(o.namn)} gäller urvalet.`),
+        utelamnade: ((h && h.utelamnade) || []).map(o => `${stor(o.namn)} visas inte: färre än ${talformat(o.minN, 'antal')} synliga punkter.`),
+    };
 }
 
 // Färgskalans domän: ett objekt med `doman` = två ändliga tal.
@@ -8509,6 +8607,19 @@ function _provaData(l, i, figur, fel) {
             if (!ok(v)) fel(`lager ${i}: datapunkt ${n}: fältet "${f}" måste vara ett ändligt tal (fick ${typeof v === 'string' ? `"${v}"` : String(v)})`);
         }
     }
+}
+
+// Ett härlett lager: { lager: [serie, …], berakna: punkter => data, minN?, namn? }. Källorna är andra lager som inte
+// själva är härledda; varje namn måste vara serien i minst ett sådant lager.
+function _provaHarlett(figur, l, i, fel) {
+    const h = l.harleddAv, vem = `lager ${i}: harleddAv`;
+    if (!h || typeof h !== 'object') fel(`${vem} måste vara { lager, berakna, minN?, namn? }`);
+    if (!Array.isArray(h.lager) || !h.lager.length || !h.lager.every(s => typeof s === 'string' && s.trim() !== '')) fel(`${vem}.lager måste vara en lista med serienamn`);
+    if (typeof h.berakna !== 'function') fel(`${vem}.berakna måste vara en funktion`);
+    if (h.minN != null && !(typeof h.minN === 'number' && Number.isInteger(h.minN) && h.minN >= 0)) fel(`${vem}.minN måste vara ett heltal ≥ 0`);
+    if (h.namn != null && typeof h.namn !== 'string') fel(`${vem}.namn måste vara en sträng`);
+    const serier = new Set(figur.lager.filter((k, ki) => ki !== i && k && !k.harleddAv && k.serie != null).map(k => String(k.serie)));
+    for (const s of h.lager) if (!serier.has(s)) fel(`${vem}: källagret "${s}" finns inte (eller är självt härlett)`);
 }
 
 /**
@@ -8546,12 +8657,13 @@ function valideraFigur(figur, id = 'diagram') {
         const sedda = new Set();
         _urvalRa(figur).forEach((u, i) => {
             const vem = `urval ${i}`;
-            if (!u || typeof u !== 'object') fel(`${vem}: måste vara { typ?, falt, namn, etikett?, format? }`);
+            if (!u || typeof u !== 'object') fel(`${vem}: måste vara { typ?, falt, namn, etikett?, format?, visning? }`);
             const typ = _urvalTyp(u);
             if (!URVAL_TYPER.includes(typ)) fel(`${vem}: typ måste vara "kategori" eller "intervall"`);
             if (!text(u.falt) || !text(u.namn)) fel(`${vem}: falt och namn måste vara icke-tomma strängar`);
             if (u.etikett != null && typeof u.etikett !== 'string') fel(`${vem}: etikett måste vara en sträng`);
             if (u.format != null && (typ !== 'intervall' || !TALFORMAT.includes(u.format))) fel(`${vem}: format gäller bara intervall och måste vara ett av ${TALFORMAT.join(', ')}`);
+            if (u.visning != null && (typ !== 'kategori' || u.visning !== 'lista')) fel(`${vem}: visning gäller bara kategori och måste vara "lista"`);
             if (sedda.has(u.falt)) fel(`${vem}: fältet "${u.falt}" förekommer två gånger`);
             sedda.add(u.falt);
         });
@@ -8563,6 +8675,7 @@ function valideraFigur(figur, id = 'diagram') {
         if (l.axel === 'y2' && !figur.y2) fel(`lager ${i}: axeln y2 finns inte i figuren`);
         if (l.panel != null && !paneler.includes(l.panel)) fel(`lager ${i}: panelen "${l.panel}" finns inte`);
         if (l.tips != null && typeof l.tips !== 'function') fel(`lager ${i}: tips måste vara en funktion`);
+        if (l.harleddAv != null) _provaHarlett(figur, l, i, fel);
         const behoverFarg = l.marke === 'ruta' || (l.marke === 'punkt' && l.data.some(d => d && d.fargvarde != null));
         if (behoverFarg && !figur.fargskala) fel(`lager ${i}: ${l.marke} med färgvärde kräver fargskala`);
         // Utan användbar domän kan ritaren inte färga något, och diagrammet skulle bli tomt utan fel. Lika tal är
@@ -8685,7 +8798,7 @@ function figurTillTabell(figur) {
     return ut;
 }
 
-    return { talformat, valideraFigur, utanSmaGrupper, skalDoman, ladstatistik, antalPunkter, figurTillTabell, panelerMedLager, kronorSkillnad, kronorTipsRad, kvantilpunkter, urvalVarden, urvalEtikett, arBortvald, urvalLista, urvalSpann, urvalBeskrivning };
+    return { talformat, valideraFigur, utanSmaGrupper, skalDoman, ladstatistik, antalPunkter, figurTillTabell, panelerMedLager, kronorSkillnad, kronorTipsRad, kvantilpunkter, urvalVarden, urvalEtikett, arBortvald, urvalLista, urvalSpann, urvalBeskrivning, urvalSomLista, urvalAktivt, harleddaLager, harlettNot };
 })();
 const _figTalformat = __mirrorFigur.talformat;
 const _figValidera = __mirrorFigur.valideraFigur;
@@ -8704,4 +8817,8 @@ const _figArBortvald = __mirrorFigur.arBortvald;
 const _figUrvalLista = __mirrorFigur.urvalLista;
 const _figUrvalSpann = __mirrorFigur.urvalSpann;
 const _figUrvalBeskrivning = __mirrorFigur.urvalBeskrivning;
+const _figUrvalSomLista = __mirrorFigur.urvalSomLista;
+const _figUrvalAktivt = __mirrorFigur.urvalAktivt;
+const _figHarleddaLager = __mirrorFigur.harleddaLager;
+const _figHarlettNot = __mirrorFigur.harlettNot;
 /* eslint-enable */

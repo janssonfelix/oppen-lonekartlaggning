@@ -575,3 +575,346 @@ describe('intervall och flera dimensioner', () => {
         rensa(el);
     });
 });
+
+// ---- Diagramfilter v3: kategori som lista (många värden) ----
+describe('kategori som lista', () => {
+    const yrken = n => Array.from({ length: n }, (_, i) => `Yrke ${String(i + 1).padStart(2, '0')}`);
+    const yrkesFigur = (n = 40, urval) => ({
+        beskrivning: 'Yrkesgrupper', urval: urval || [w.eval('URVAL.yrkesgrupp')], x: { skala: 'linjar', titel: 'Antal' }, y: { skala: 'linjar', titel: 'Kr' },
+        lager: [{ marke: 'punkt', serie: 'Grupper', farg: '#2563eb', data: yrken(n).map((yrke, i) => ({ x: i + 1, y: 30000 + i * 10, yrke })) }],
+    });
+    const lrad = el => el.parentElement.querySelector('.diagram-urval');
+    const det = el => lrad(el).querySelector('details[data-urval-lista]');
+    const summering = el => lrad(el).querySelector('summary[data-urval-summering]');
+    const sokf = el => lrad(el).querySelector('input[data-urval-sok]');
+    const rutor = el => [...lrad(el).querySelectorAll('input[type="checkbox"][data-urval]')];
+    const ruta = (el, v) => rutor(el).find(r => r.getAttribute('data-urval') === v);
+    const markera = (el, vad) => lrad(el).querySelector(`[data-urval-markera="${vad}"]`);
+    const synligaPoster = el => [...lrad(el).querySelectorAll('.diagram-urval-poster > li')].filter(li => !li.hidden).map(li => li.textContent);
+    const punkter = el => el.querySelectorAll(':scope > svg circle[data-marke="punkt"]').length;
+    const vaxla = r => { r.checked = !r.checked; r.dispatchEvent(new w.Event('change', { bubbles: true })); };
+    const sok = (el, text) => { const s = sokf(el); s.value = text; s.dispatchEvent(new w.Event('input', { bubbles: true })); };
+
+    it('URVAL.yrkesgrupp och URVAL.sektor läser yrke och sektor och visas som lista', () => {
+        expect(w.eval('JSON.stringify(URVAL.yrkesgrupp)')).toBe(JSON.stringify({ typ: 'kategori', falt: 'yrke', namn: 'Yrkesgrupp', etikett: '{v}', visning: 'lista' }));
+        expect(w.eval('JSON.stringify(URVAL.sektor)')).toBe(JSON.stringify({ typ: 'kategori', falt: 'sektor', namn: 'Sektor', etikett: '{v}', visning: 'lista' }));
+        expect(w.eval('Object.isFrozen(URVAL.yrkesgrupp) && Object.isFrozen(URVAL.sektor)')).toBe(true);
+    });
+    it('en hopfälld lista med summering, sökfält, Markera alla och Avmarkera alla och en ikryssad ruta per värde (ARIA)', () => {
+        w.eval('_rfUrvalGlom()');
+        const el = behallare();
+        ritaI(el, yrkesFigur());
+        const r = lrad(el);
+        expect(el.previousElementSibling).toBe(r);
+        expect(r.getAttribute('role')).toBe('group');
+        expect(r.getAttribute('aria-label')).toBe('Visa Yrkesgrupp');
+        expect(r.getAttribute('data-urval-falt')).toBe('yrke');
+        expect(det(el).open).toBe(false);
+        expect(summering(el).textContent).toBe('Yrkesgrupp: alla 40');
+        expect(sokf(el).type).toBe('search');
+        expect(sokf(el).getAttribute('aria-label')).toBe('Sök yrkesgrupp');
+        expect(markera(el, 'alla').textContent).toBe('Markera alla');
+        expect(markera(el, 'inga').textContent).toBe('Avmarkera alla');
+        expect([markera(el, 'alla').type, markera(el, 'inga').type]).toEqual(['button', 'button']);
+        expect(rutor(el)).toHaveLength(40);
+        expect(rutor(el).every(x => x.checked && x.closest('label') && x.closest('li'))).toBe(true);
+        expect(ruta(el, 'Yrke 07').closest('label').textContent).toBe('Yrke 07');
+        expect(r.querySelectorAll('[aria-pressed]')).toHaveLength(0);   // inga knappar per värde
+        expect(visaAlla(el).hidden).toBe(true);
+        expect([...r.children].at(-1)).toBe(visaAlla(el));
+        rensa(el);
+    });
+    it('fler än tolv värden ger en lista också utan visning; tolv ger knappar', () => {
+        w.eval('_rfUrvalGlom()');
+        const el = behallare();
+        const dim = { typ: 'kategori', falt: 'yrke', namn: 'Yrkesgrupp' };
+        ritaI(el, yrkesFigur(13, [dim]));
+        expect(det(el)).not.toBeNull();
+        expect(rutor(el)).toHaveLength(13);
+        ritaI(el, yrkesFigur(12, [dim]));
+        expect(det(el)).toBeNull();
+        expect(knappar(el)).toHaveLength(12);
+        rensa(el);
+    });
+    it('en kryssruta döljer sitt värde; summeringen och noten följer; alla får väljas bort', () => {
+        w.eval('_rfUrvalGlom()');
+        const el = behallare();
+        ritaI(el, yrkesFigur());
+        vaxla(ruta(el, 'Yrke 01'));
+        expect(punkter(el)).toBe(39);
+        expect(ruta(el, 'Yrke 01').checked).toBe(false);
+        expect(summering(el).textContent).toBe('Yrkesgrupp: 39 av 40');
+        expect(not(el).textContent).toBe('Diagrammet visar ett urval: utan Yrke 01. Talen i texten och tabellerna gäller hela underlaget.');
+        expect(visaAlla(el).hidden).toBe(false);
+        vaxla(ruta(el, 'Yrke 01'));
+        expect(punkter(el)).toBe(40);
+        expect(not(el)).toBeNull();
+        markera(el, 'inga').click();
+        expect(rutor(el).some(x => x.checked)).toBe(false);
+        expect(summering(el).textContent).toBe('Yrkesgrupp: 0 av 40');
+        expect(el.textContent).toBe('Inga grupper i urvalet');
+        expect(not(el).textContent).toContain('Diagrammet visar ett urval: Yrkesgrupp 0 av 40.');
+        vaxla(ruta(el, 'Yrke 05'));
+        expect(punkter(el)).toBe(1);
+        expect(not(el).textContent).toContain('urval: bara Yrke 05.');
+        markera(el, 'alla').click();
+        expect(punkter(el)).toBe(40);
+        expect(summering(el).textContent).toBe('Yrkesgrupp: alla 40');
+        expect(not(el)).toBeNull();
+        rensa(el);
+    });
+    it('sökningen döljer poster som inte matchar, och knapparna gäller då träffarna', () => {
+        w.eval('_rfUrvalGlom()');
+        const el = behallare();
+        ritaI(el, yrkesFigur());
+        const traffar = () => lrad(el).querySelector('.diagram-urval-traffar');
+        expect(traffar().getAttribute('aria-live')).toBe('polite');
+        expect(traffar().textContent).toBe('');
+        sok(el, '  YRKE   1');
+        expect(synligaPoster(el)).toEqual(yrken(40).filter(y => y.startsWith('Yrke 1')));
+        expect(traffar().textContent).toBe('10 av 40 träffar');
+        expect(markera(el, 'alla').textContent).toBe('Markera träffarna');
+        expect(markera(el, 'inga').textContent).toBe('Avmarkera träffarna');
+        markera(el, 'inga').click();
+        expect(punkter(el)).toBe(30);
+        expect(summering(el).textContent).toBe('Yrkesgrupp: 30 av 40');
+        expect(not(el).textContent).toContain('urval: Yrkesgrupp 30 av 40.');
+        sok(el, 'finns inte');
+        expect(synligaPoster(el)).toEqual([]);
+        expect(traffar().textContent).toBe('0 av 40 träffar');
+        expect(markera(el, 'alla').disabled).toBe(true);
+        sok(el, '');
+        expect(synligaPoster(el)).toHaveLength(40);
+        expect(markera(el, 'alla').textContent).toBe('Markera alla');
+        expect(markera(el, 'alla').disabled).toBe(false);
+        // Visa alla nollställer valet (sökningen står kvar som den är).
+        klicka(visaAlla(el));
+        expect(punkter(el)).toBe(40);
+        expect(rutor(el).every(x => x.checked)).toBe(true);
+        rensa(el);
+    });
+    it('minnet: valet överlever rensaFigur och en ny figur; Rensa all data glömmer det', () => {
+        w.eval('_rfUrvalGlom()');
+        const el = behallare();
+        ritaI(el, yrkesFigur());
+        sok(el, 'yrke 2');
+        markera(el, 'inga').click();
+        rensa(el);
+        ritaI(el, yrkesFigur());
+        expect(summering(el).textContent).toBe('Yrkesgrupp: 30 av 40');
+        expect(punkter(el)).toBe(30);
+        expect(ruta(el, 'Yrke 21').checked).toBe(false);
+        // En figur där alla bortvalda saknas: allt visas, och valet gäller igen när de finns.
+        ritaI(el, yrkesFigur(19));
+        expect(summering(el).textContent).toBe('Yrkesgrupp: alla 19');
+        ritaI(el, yrkesFigur());
+        expect(summering(el).textContent).toBe('Yrkesgrupp: 30 av 40');
+        w.eval('_rfRensaAlla()');
+        ritaI(el, yrkesFigur());
+        expect(summering(el).textContent).toBe('Yrkesgrupp: alla 40');
+        rensa(el);
+    });
+    it('öppet läge, sökningen och fokus (sökfält, kryssruta, knapp, summering) följer med när raderna byggs om', () => {
+        w.eval('_rfUrvalGlom()');
+        const el = behallare();
+        ritaI(el, yrkesFigur());
+        det(el).open = true;
+        sok(el, 'yrke 3');
+        sokf(el).focus();
+        ritaI(el, yrkesFigur());
+        expect(det(el).open).toBe(true);
+        expect(sokf(el).value).toBe('yrke 3');
+        expect(synligaPoster(el)).toHaveLength(10);
+        expect(markera(el, 'inga').textContent).toBe('Avmarkera träffarna');
+        expect(w.document.activeElement).toBe(sokf(el));
+        ruta(el, 'Yrke 33').focus();
+        ritaI(el, yrkesFigur());
+        expect(w.document.activeElement).toBe(ruta(el, 'Yrke 33'));
+        markera(el, 'inga').focus();
+        ritaI(el, yrkesFigur());
+        expect(w.document.activeElement).toBe(markera(el, 'inga'));
+        summering(el).focus();
+        ritaI(el, yrkesFigur());
+        expect(w.document.activeElement).toBe(summering(el));
+        // En kryssruta behåller fokus när den växlas (raderna byggs inte om).
+        const r = ruta(el, 'Yrke 31');
+        r.focus();
+        vaxla(r);
+        expect(w.document.activeElement).toBe(r);
+        expect(r.checked).toBe(false);
+        rensa(el);
+    });
+    it('kopian i Alla diagram har en egen lista: valet där ändrar inte källan, och tvärtom', () => {
+        w.eval('_rfUrvalGlom()');
+        const kalla = behallare('t-lista'), kopia = behallare('ut-diagram-t-lista');
+        ritaI(kalla, yrkesFigur());
+        w.__k = kalla; w.__kop = kopia;
+        w.eval('ritaFigur(window.__kop, window.__k._figur, { ...window.__k._figurVal })');
+        vaxla(ruta(kopia, 'Yrke 02'));
+        expect(punkter(kopia)).toBe(39);
+        expect(punkter(kalla)).toBe(40);
+        expect(summering(kalla).textContent).toBe('Yrkesgrupp: alla 40');
+        markera(kalla, 'inga').click();
+        expect(kalla.textContent).toBe('Inga grupper i urvalet');
+        expect(summering(kopia).textContent).toBe('Yrkesgrupp: 39 av 40');
+        rensa(kalla); rensa(kopia);
+        kalla.parentElement.remove(); kopia.parentElement.remove();
+    });
+    it('exporten: fotraden och diagramdatan säger urvalet; diagramTillBild ritar allt', async () => {
+        w.eval('_rfUrvalGlom()');
+        const el = behallare();
+        ritaI(el, yrkesFigur());
+        sok(el, 'yrke 1');
+        markera(el, 'inga').click();
+        w.__el = el;
+        expect(w.eval('chartExportRows(window.__el)')[1]).toEqual(['Urval i diagrammet: Yrkesgrupp 30 av 40']);
+        const org = w.figurTillBild, sedda = [];
+        w.figurTillBild = (figur, format, b, h, val) => { sedda.push({ figur, val }); return Promise.resolve('data:image/png;base64,AAAA'); };
+        try {
+            await w.eval('chartExportRun(window.__el, "svg")');
+            await w.eval('diagramTillBild(window.__el, { bredd: 1600, hojd: 900 })');
+        } finally { w.figurTillBild = org; }
+        expect(sedda[0].val.fot).toMatch(/ · Urval i diagrammet: Yrkesgrupp 30 av 40$/);
+        expect('filter' in sedda[1].val).toBe(false);
+        expect((w.figurTillSvg(sedda[1].figur, 1600, 900, sedda[1].val).match(/data-marke="punkt"/g) || []).length).toBe(40);
+        rensa(el);
+    });
+});
+
+// ---- Diagramfilter v3: härledda lager (harleddAv) ----
+describe('härledda lager', () => {
+    const medel = p => Math.round(p.reduce((s, d) => s + d.y, 0) / p.length);
+    // Punkter per kön med BAS, och en "trend" per kön (medelvärdet som vågrät linje) räknad ur punkterna.
+    const trend = (serie, namn) => ({ marke: 'linje', serie: `${serie} (trend)`, farg: '#111111', tips: d => [['Trend', String(d.y)]],
+        data: [{ x: 20, y: 1 }, { x: 60, y: 1 }],
+        harleddAv: { lager: [serie], minN: 2, ...(namn ? { namn } : {}), berakna: p => [{ x: 20, y: medel(p) }, { x: 60, y: medel(p) }] } });
+    const trendFigur = (harledd = true) => {
+        const f = {
+            beskrivning: 'Lön mot ålder', urval: URVAL, x: { skala: 'linjar', titel: 'Ålder' }, y: { skala: 'linjar', titel: 'Lön' },
+            lager: [
+                { marke: 'punkt', serie: 'Kvinna', farg: '#aa0000', data: [{ x: 25, y: 30000, bas: 'A' }, { x: 35, y: 34000, bas: 'B' }, { x: 45, y: 38000, bas: 'B' }, { x: 50, y: 90000, bas: 'B', liten: true }] },
+                { marke: 'punkt', serie: 'Man', farg: '#0000aa', data: [{ x: 30, y: 33000, bas: 'A' }, { x: 40, y: 36000, bas: 'B' }, { x: 55, y: 41000, bas: 'C' }] },
+                trend('Kvinna', 'trendlinjen för kvinnor'), trend('Man', 'trendlinjen för män'),
+            ],
+        };
+        if (!harledd) f.lager.forEach(l => { delete l.harleddAv; });
+        return f;
+    };
+    const svg = el => el.querySelector(':scope > svg').outerHTML;
+    const trendY = (el, li) => [...el.querySelectorAll(`:scope > svg circle[data-marke="linjepunkt"][data-l="${li}"]`)]
+        .map(c => { w.__el = el; w.__c = c; return w.eval('_rfTraff(window.__el, window.__c)').d.y; });
+    const linjeRitad = (el, li) => !!el.querySelector(`:scope > svg [data-l="${li}"]`);
+
+    it('utan filter: bilden är byte för byte densamma som utan harleddAv, och lagrets egna data ritas', () => {
+        w.eval('_rfUrvalGlom()');
+        const a = behallare('t-harlett-a'), b = behallare('t-harlett-b');
+        ritaI(a, trendFigur());
+        ritaI(b, trendFigur(false));
+        expect(svg(a)).toBe(svg(b));
+        expect(trendY(a, 2)).toEqual([1, 1]);
+        expect('_rfVisadFigur' in a || '_rfHarlett' in a).toBe(false);
+        expect(w.figurTillSvg(trendFigur(), 1600, 900, {})).toBe(w.figurTillSvg(trendFigur(false), 1600, 900, {}));
+        // Ett tomt filter räknas inte om.
+        const tomt = { kategori: new Map([['bas', new Set()]]), intervall: new Map() };
+        expect(w.figurTillSvg(trendFigur(), 1600, 900, { filter: tomt })).toBe(w.figurTillSvg(trendFigur(false), 1600, 900, {}));
+        rensa(a); rensa(b);
+        a.parentElement.remove(); b.parentElement.remove();
+    });
+    it('ett filter räknar om lagret ur de synliga punkterna (inte de små); uppslag och tips går mot den omräknade datan', () => {
+        w.eval('_rfUrvalGlom()');
+        const el = behallare();
+        const f = trendFigur();
+        ritaI(el, f);
+        const fore = svg(el);
+        klicka(knapp(el, 'BAS A'));
+        expect(trendY(el, 2)).toEqual([36000, 36000]);                  // (34 000 + 38 000) / 2; den lilla punkten räknas inte
+        expect(trendY(el, 3)).toEqual([38500, 38500]);
+        expect(el._figur).toBe(f);                                       // originalet är orört
+        expect(f.lager[2].data).toEqual([{ x: 20, y: 1 }, { x: 60, y: 1 }]);
+        expect(not(el).textContent).toBe('Diagrammet visar ett urval: utan BAS A. Talen i texten och tabellerna gäller hela underlaget. '
+            + 'Trendlinjen för kvinnor gäller urvalet. Trendlinjen för män gäller urvalet.');
+        // Med visaSma räknas den lilla punkten.
+        ritaI(el, f, { visaSma: true });
+        expect(trendY(el, 2)).toEqual([54000, 54000]);
+        ritaI(el, f);
+        // Visa alla: lagrets egna data igen, samma bild som före filtret.
+        klicka(visaAlla(el));
+        expect(svg(el)).toBe(fore);
+        expect(not(el)).toBeNull();
+        rensa(el);
+    });
+    it('färre än minN synliga punkter: lagret ritas inte och noten säger det', () => {
+        w.eval('_rfUrvalGlom()');
+        const el = behallare();
+        ritaI(el, trendFigur());
+        klicka(knapp(el, 'BAS B'));
+        // Kvinnor: bara A 30 000 synlig (den lilla räknas inte) — under minN 2. Män: A och C.
+        expect(linjeRitad(el, 2)).toBe(false);
+        expect(trendY(el, 3)).toEqual([37000, 37000]);
+        expect(not(el).textContent).toBe('Diagrammet visar ett urval: utan BAS B. Talen i texten och tabellerna gäller hela underlaget. '
+            + 'Trendlinjen för män gäller urvalet. Trendlinjen för kvinnor visas inte: färre än 2 synliga punkter.');
+        // Förklaringen namnger inte ett lager som inte ritas.
+        expect(el.querySelector(':scope > svg [data-serie="Kvinna (trend)"]')).toBeNull();
+        klicka(knapp(el, 'BAS B'));
+        expect(linjeRitad(el, 2)).toBe(true);
+        rensa(el);
+    });
+    it('exportmenyns bild räknas om och fotraden nämner lagret som inte ritas; diagramTillBild använder originalet', async () => {
+        w.eval('_rfUrvalGlom()');
+        const el = behallare();
+        const f = trendFigur();
+        ritaI(el, f);
+        klicka(knapp(el, 'BAS B'));
+        w.__el = el;
+        const org = w.figurTillBild, sedda = [];
+        w.figurTillBild = (figur, format, b, h, val) => { sedda.push({ figur, val }); return Promise.resolve('data:image/png;base64,AAAA'); };
+        try {
+            await w.eval('chartExportRun(window.__el, "svg")');
+            await w.eval('diagramTillBild(window.__el, { bredd: 1600, hojd: 900 })');
+        } finally { w.figurTillBild = org; }
+        const [meny, rapport] = sedda;
+        expect(meny.figur).toBe(f);                                      // exporten får originalet och räknar själv
+        expect(meny.val.fot).toMatch(/ · Urval i diagrammet: utan BAS B · Trendlinjen för kvinnor visas inte: färre än 2 synliga punkter$/);
+        const menySvg = w.figurTillSvg(meny.figur, 1600, 900, meny.val);
+        expect(menySvg).not.toContain('Kvinna (trend)');
+        expect(rapport.figur).toBe(f);
+        expect('filter' in rapport.val).toBe(false);
+        expect(String(rapport.val.fot)).not.toContain('visas inte');
+        // Rapportens bild är byte för byte bilden av en figur utan härledda lager.
+        expect(w.figurTillSvg(rapport.figur, 1600, 900, rapport.val)).toBe(w.figurTillSvg(trendFigur(false), 1600, 900, rapport.val));
+        // Diagramdatan har originalets rader.
+        const rader = w.eval('chartExportRows(window.__el)');
+        expect(rader.filter(r => r[0] === 'Kvinna (trend)').map(r => r[2])).toEqual([1, 1]);
+        rensa(el);
+    });
+    it('kopian i Alla diagram (samma figur i en annan behållare) räknar om för sitt eget filter, och källan rörs inte', () => {
+        w.eval('_rfUrvalGlom()');
+        const kalla = behallare('t-harlett'), kopia = behallare('ut-diagram-t-harlett');
+        const f = trendFigur();
+        ritaI(kalla, f);
+        const fore = svg(kalla);
+        w.__k = kalla; w.__kop = kopia;
+        w.eval('ritaFigur(window.__kop, window.__k._figur, { ...window.__k._figurVal })');
+        klicka(knapp(kopia, 'BAS A'));
+        expect(trendY(kopia, 2)).toEqual([36000, 36000]);
+        expect(svg(kalla)).toBe(fore);
+        expect(trendY(kalla, 2)).toEqual([1, 1]);
+        expect(not(kalla)).toBeNull();
+        // Och tvärtom: källans filter ändrar inte kopian.
+        klicka(knapp(kalla, 'BAS C'));
+        expect(trendY(kalla, 3)).toEqual([34500, 34500]);
+        expect(trendY(kopia, 3)).toEqual([38500, 38500]);
+        expect(f.lager[3].data).toEqual([{ x: 20, y: 1 }, { x: 60, y: 1 }]);
+        rensa(kalla); rensa(kopia);
+        kalla.parentElement.remove(); kopia.parentElement.remove();
+    });
+    it('rensaFigur tar bort de härledda egenskaperna', () => {
+        w.eval('_rfUrvalGlom()');
+        const el = behallare();
+        ritaI(el, trendFigur());
+        klicka(knapp(el, 'BAS A'));
+        expect('_rfVisadFigur' in el && '_rfHarlett' in el && '_rfRitadVisad' in el).toBe(true);
+        rensa(el);
+        expect(['_rfVisadFigur', '_rfHarlett', '_rfRitadVisad'].some(k => k in el)).toBe(false);
+    });
+});

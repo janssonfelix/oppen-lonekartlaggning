@@ -346,4 +346,64 @@ export async function diagramkarnan() {
         await page.evaluate(() => { document.getElementById('roktest-kort').remove(); delete window.__rokFigur; });
         rmSync(tmp, { recursive: true, force: true });
     }
+
+    console.log('\n── Filter som lista och härlett lager (testfigurer) ──');
+    /* global URVAL, _rfUrvalGlom */
+    {
+        // 40 yrkesgrupper med långa namn och en trend per kön som räknas om för urvalet.
+        await page.setViewportSize({ width: 375, height: 800 });
+        await page.waitForTimeout(300);
+        await page.evaluate(() => {
+            _rfUrvalGlom();
+            const kort = document.createElement('div');
+            kort.className = 'card';
+            kort.id = 'rok-lista-kort';
+            kort.innerHTML = '<h3>Testlista</h3><div id="chart-rok-lista"></div>';
+            document.body.prepend(kort);
+            const yrken = Array.from({ length: 40 }, (_, i) => `Yrkesgrupp ${i + 1} med ett mycket långt namn som måste brytas på smal skärm`);
+            const medel = p => Math.round(p.reduce((s, d) => s + d.y, 0) / p.length);
+            const trend = serie => ({ marke: 'linje', serie: `${serie} (trend)`, tips: d => [['Trend', String(d.y)]], data: [{ x: 0, y: 1 }, { x: 40, y: 1 }],
+                harleddAv: { lager: [serie], minN: 2, namn: `trendlinjen för ${serie === 'Kvinna' ? 'kvinnor' : 'män'}`, berakna: p => [{ x: 0, y: medel(p) }, { x: 40, y: medel(p) }] } });
+            const punkt = (yrke, i, kon) => ({ x: i, y: 30000 + i * 100 + (kon ? 500 : 0), yrke });
+            window.__rokLista = { beskrivning: 'Testlista', urval: [URVAL.yrkesgrupp], x: { skala: 'linjar', titel: 'x' }, y: { skala: 'linjar', titel: 'y' },
+                lager: [{ marke: 'punkt', serie: 'Kvinna', data: yrken.map((y, i) => punkt(y, i, 0)) }, { marke: 'punkt', serie: 'Man', data: yrken.map((y, i) => punkt(y, i, 1)) },
+                    trend('Kvinna'), trend('Man')] };
+            ritaFigur('chart-rok-lista', window.__rokLista);
+        });
+        const rad = page.locator('#rok-lista-kort .diagram-urval');
+        await rad.locator('summary').click();
+        await page.waitForTimeout(200);
+        const matt = await page.evaluate(() => {
+            const r = document.querySelector('#rok-lista-kort .diagram-urval'), ul = r.querySelector('.diagram-urval-poster');
+            return { sida: [document.documentElement.scrollWidth, window.innerWidth], rad: [r.scrollWidth, r.clientWidth], lista: [ul.scrollWidth, ul.clientWidth, ul.scrollHeight > ul.clientHeight],
+                oppen: r.querySelector('details').open, summering: r.querySelector('summary').textContent };
+        });
+        ok(matt.oppen && matt.summering === 'Yrkesgrupp: alla 40', `listan öppnas med summeringen (${matt.summering})`);
+        ok(matt.sida[0] <= matt.sida[1] && matt.rad[0] <= matt.rad[1] && matt.lista[0] <= matt.lista[1],
+            `listan med 40 långa namn vid 375 punkter: ingen vågrät rullning (sidan ${matt.sida.join(' / ')}, raden ${matt.rad.join(' / ')}, listan ${matt.lista[0]} / ${matt.lista[1]})`);
+        ok(matt.lista[2], 'listan rullar lodrätt');
+        if (BILDER) await page.locator('#rok-lista-kort').screenshot({ path: `${BILDER}/urvalslista-375-${NAMN}.png` });
+        // Sökning med tangentbordet, Avmarkera träffarna, och en kryssruta med musen.
+        await rad.locator('input[data-urval-sok]').fill('Yrkesgrupp 1 med');
+        const traffar = await rad.locator('.diagram-urval-traffar').textContent();
+        ok(traffar === '1 av 40 träffar', `sökningen filtrerar listan (${traffar})`);
+        await rad.locator('input[data-urval-sok]').fill('');
+        await rad.locator('[data-urval-markera="inga"]').click();
+        await rad.locator('input[type="checkbox"]').nth(0).check();
+        await rad.locator('input[type="checkbox"]').nth(1).check();
+        await page.waitForTimeout(200);
+        const efter = await page.evaluate(() => ({ punkter: document.querySelectorAll('#chart-rok-lista svg circle[data-marke="punkt"]').length,
+            summering: document.querySelector('#rok-lista-kort summary').textContent,
+            not: (document.querySelector('#rok-lista-kort [data-rf="urval"]') || {}).textContent || '' }));
+        ok(efter.punkter === 4 && efter.summering === 'Yrkesgrupp: 2 av 40', `två valda yrkesgrupper ritar fyra punkter (${efter.punkter}, ${efter.summering})`);
+        ok(/Trendlinjen för kvinnor gäller urvalet\. Trendlinjen för män gäller urvalet\./.test(efter.not), 'noten säger att trendlinjerna gäller urvalet');
+        await rad.locator('input[type="checkbox"]').nth(1).uncheck();
+        await page.waitForTimeout(200);
+        const ett = await page.evaluate(() => ({ trend: document.querySelectorAll('#chart-rok-lista svg [data-l="2"], #chart-rok-lista svg [data-l="3"]').length,
+            not: (document.querySelector('#rok-lista-kort [data-rf="urval"]') || {}).textContent || '' }));
+        ok(ett.trend === 0 && /Trendlinjen för kvinnor visas inte: färre än 2 synliga punkter\./.test(ett.not), 'under minN ritas trendlinjerna inte, och noten säger varför');
+        await page.evaluate(() => { rensaFigur('chart-rok-lista'); document.getElementById('rok-lista-kort').remove(); delete window.__rokLista; _rfUrvalGlom(); });
+        await page.setViewportSize({ width: 1440, height: 900 });
+        await page.waitForTimeout(200);
+    }
 }

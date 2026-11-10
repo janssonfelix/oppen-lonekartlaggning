@@ -275,7 +275,9 @@ export const MODULES = [
                   kronorSkillnad: '_figKronorSkillnad', kronorTipsRad: '_figKronorTipsRad',
                   kvantilpunkter: '_figKvantilpunkter',
                   urvalVarden: '_figUrvalVarden', urvalEtikett: '_figUrvalEtikett', arBortvald: '_figArBortvald',
-                  urvalLista: '_figUrvalLista', urvalSpann: '_figUrvalSpann', urvalBeskrivning: '_figUrvalBeskrivning' }
+                  urvalLista: '_figUrvalLista', urvalSpann: '_figUrvalSpann', urvalBeskrivning: '_figUrvalBeskrivning',
+                  urvalSomLista: '_figUrvalSomLista', urvalAktivt: '_figUrvalAktivt', harleddaLager: '_figHarleddaLager',
+                  harlettNot: '_figHarlettNot' }
     }
 ];
 
