@@ -88,6 +88,8 @@ function _afterDataLoaded() {
     }
     state.isDemo = false;   // #9: verklig uppladdning lämnar demoläge
     state.demoStort = false;
+    // Löneöversyns knappresultat (målet för skillnaden, känslighetskurvan, individnivån) gällde det förra underlaget.
+    if (typeof _fcGlomKnappresultat === 'function') _fcGlomKnappresultat();
     if (typeof _renderDemoBanner === 'function') _renderDemoBanner();
     /** @type {HTMLElement} */ (document.getElementById("dashboard-summary")).style.display = "grid";
     const poangCount = _deriveArbetsvarderingFromData();

@@ -338,6 +338,14 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 - **Kostnadsdiagrammet i Prioritering skriver *BAS C*.** Gruppens etikett slutade på *· C*; nu står *· BAS C*, som på
   knappen för BAS-intervallet ovanför diagrammet.
 
+- **Löneöversyns knappresultat följer förhandsvisningen och tröskeln.** *Individuell analys — lika arbete*,
+  budgetkänslighetskurvan och *Mål: oförklarad skillnad högst* räknades bara när knappen trycktes. Därför stod
+  skärmens omaskade tal kvar i förhandsvisningen *Som i exporten* och efter en ändrad tröskel, till exempel kostnaden
+  att lyfta kvinnor mot en enda mans lön (ADR-51). Nu räknas ett resultat som visas om när fliken ritas om, i det läge
+  och med den tröskel som gäller. En ruta som är tom förblir tom: inget räknas utan knapptryck. När fliken inte syns
+  töms rutorna, som flikens övriga innehåll, och resultatet räknas när fliken öppnas. Rensa all data, en ny lönefil,
+  demot och *Nollställ* tömmer rutorna och glömmer resultaten. Förut stod de kvar efter Rensa all data.
+
 ### Exporter
 
 - **Word-utkastets tabeller inför Word-testet.** Två tabeller i följd skiljs av ett tomt stycke (Word slår annars
