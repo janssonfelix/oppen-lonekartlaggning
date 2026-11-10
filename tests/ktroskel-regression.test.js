@@ -2,11 +2,11 @@
  * K-tröskeln som inställning: ett litet kön i regressionen, Löneöversyn, egna riktade rader och Ålder & karriär (R1–R4), omritningen från gränssnittet och ADR-47.
  *
  * Riggen (fixturer, fönster och sökfunktioner) ligger i tests/helpers/ktroskel-rigg.js; sviten är delad i
- * åtta filer så att Vitest fördelar den över flera arbetare.
+ * flera filer så att Vitest fördelar den över flera arbetare.
  */
 import { describe, it, expect, vi } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
-import { FLIKAR, normalisera, synliga, fonster, ritaAlla, oppnaFlik, KON_MA, ENSAM, KON_GAP, fonsterKon, harNagon, laddaXlsx, fangaBocker, utskriftAv, samlaUtdata, sammanhang, SJU_MAN, fonsterMan, tvaDec, somTal, andelText, SENT_MELLAN, SENT_SMA, iExport } from './helpers/ktroskel-rigg.js';
+import { normalisera, synliga, fonster, ritaAlla, oppnaFlik, KON_MA, ENSAM, KON_GAP, fonsterKon, harNagon, laddaXlsx, fangaBocker, utskriftAv, samlaUtdata, sammanhang, SJU_MAN, fonsterMan, tvaDec, somTal, andelText, SENT_MELLAN, SENT_SMA, iExport } from './helpers/ktroskel-rigg.js';
 
 // Sviten ritar om hela verktyget i varje test. Under full last tar ett test 4–6 s, så standardgränsen 5 s
 // fäller olika tester från körning till körning.
@@ -48,58 +48,32 @@ describe('R1: regressionens ojusterade steg ("Endast kön") kräver tröskeln f�
         expect(bredder.length).toBeGreaterThan(0);
         expect(Math.max(...bredder)).toBe(100);
     });
-    it('vid 10: Word-utkastet (med bilagan om det justerade lönegapet) och rapportunderlaget', () => {
-        const w = fonsterMan(null, SJU_MAN);
-        const { forsta, justerat } = tal(w);
-        const ord = normalisera(w.__docDraftHtml());
-        expect(ord).not.toMatch(/Endast kön\s+[+-−]?\s*\d/);
-        expect(ord).not.toMatch(/Strukturellt förklarad andel/);
-        expect(ord).toMatch(/Sekventiell dekomponering/);
-        expect(ord).toMatch(NOT);
-        expect(harNagon(ord, tvaDec(forsta))).toEqual([]);
-        expect(ord).toMatch(somTal(justerat.toFixed(2)));
-        const ru = normalisera(w.__rapportunderlagBlock().map(b => w.__ruTillWordHtml(b) + '\n' + w.__ruTillText(b)).join('\n'));
-        expect(harNagon(ru, tvaDec(forsta))).toEqual([]);
-    });
-    it.each(['komplett', 'ledning', 'facklig'])('vid 10: utskriften (%s)', async mall => {
-        const w = fonsterMan(null, SJU_MAN);
-        const { forsta, justerat } = tal(w);
-        const el = await utskriftAv(w, mall);
-        const t = normalisera(el.innerHTML.replace(/src="data:[^"]*"/g, ''));
-        expect(harNagon(t, tvaDec(forsta))).toEqual([]);
-        expect(t).not.toMatch(/Strukturellt förklarad andel/);
-        if (/Sekventiell dekomponering/.test(t)) {
-            expect(el.textContent).toMatch(NOT);
-            expect(t).toMatch(somTal(justerat.toFixed(2)));
-        }
-    });
-    it('vid 10: utskriftens mallar komplett och facklig har avsnittet (annars prövar testet ovan inget)', async () => {
-        for (const mall of ['komplett', 'facklig']) expect((await utskriftAv(fonsterMan(null, SJU_MAN), mall)).innerHTML, mall).toMatch(/Sekventiell dekomponering/);
-    });
-    it('vid 10: Excel-exporterna', async () => {
-        const w = fonsterMan(null, SJU_MAN);
-        const { forsta } = tal(w);
-        for (const f of FLIKAR) w.__renderTabContent(f);
-        await laddaXlsx(w);
-        let antal = 0;
-        for (const kor of [() => w.eval('exportAllToExcel()'), () => w.eval('exportEuReport()'), () => w.eval('exportJPAProtocol()'), () => w.eval('exportForecast()')]) {
-            for (const [fil, text] of Object.entries(fangaBocker(w, kor))) { antal++; expect(harNagon(text, tvaDec(forsta)), fil).toEqual([]); }
-        }
-        expect(antal).toBeGreaterThanOrEqual(4);
-    });
     it('vid 10: samma utdatavägar som invarianten (I4), utom skärmen — varken första steget eller männens median i någon av dem', async () => {
         const w = fonsterMan(null, SJU_MAN);
         // Referens och jämförelsestatistik, så att varje export har något att skriva (som fonsterKon).
         w.__state.policy = ['S1', 'S2'].map(bas => ({ bas, p10: 22000, med: 30000, p90: 52000 }));
         w.__state.statistik = ['S1', 'S2'].map(bas => ({ aid: '6000', bas, median: 60000, p10: 55000, p90: 71000 }));
         w.eval('populateSelects(); unlockTabs();');
-        const { forsta } = tal(w);
+        const { forsta, justerat } = tal(w);
         const utdata = await samlaUtdata(w);
         expect(utdata.length).toBeGreaterThan(20);
         const dolda = [...tvaDec(forsta), SJU_MAN[3]];   // männens median är den fjärde av sju löner
         const lackor = [];
-        for (const [namn, text] of utdata.filter(([n]) => n !== 'skärm: alla flikar')) for (const v of harNagon(text, dolda)) lackor.push(`${namn}: ${v} — "${sammanhang(text, v)}"`);
+        for (const [namn, text] of utdata.filter(([n]) => n !== 'skärm: alla flikar')) {
+            for (const v of harNagon(text, dolda)) lackor.push(`${namn}: ${v} — "${sammanhang(text, v)}"`);
+            // Den förklarade andelen (räknad ur första steget) står inte heller, varken i rapporten eller i kortet.
+            const m = text.match(/Strukturellt förklarad andel|av den råa löneskillnaden/);
+            if (m) lackor.push(`${namn}: ${m[0]} — "${sammanhang(text, m[0])}"`);
+        }
         expect(lackor).toEqual([]);
+        // Word-utkastet och utskriften (komplett, facklig) har bilagan med stegen: det justerade gapet och noten om
+        // det utelämnade steget står där (annars prövar sökningen ovan inget i dem).
+        for (const namn of ['Word-utkastet', 'utskrift: komplett', 'utskrift: facklig']) {
+            const t = utdata.find(([n]) => n === namn)[1];
+            expect(t, namn).toMatch(/Sekventiell dekomponering/);
+            expect(t.replace(/<[^>]+>/g, ''), namn).toMatch(NOT);
+            expect(t, namn).toMatch(somTal(justerat.toFixed(2)));
+        }
     }, 120000);
     it('Blinder-Oaxaca (som delar upp det råa medelgapet) körs aldrig med ett kön under tröskeln: golvet är max(tröskeln, 10)', () => {
         for (const k of [null, 5, 7]) expect(fonsterMan(k, SJU_MAN).eval('runBlinderOaxaca()'), String(k)).toBeNull();

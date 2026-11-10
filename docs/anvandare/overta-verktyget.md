@@ -25,7 +25,7 @@ Kräver Node 22.12 eller senare. Allt körs utan nätverk efter `npm ci`.
 npm ci
 npm run build:app
 npm run bundle
-npm test
+npm run test:full
 ```
 
 Bygget är **deterministiskt**: `dist/oppen-lonekartlaggning.html` ska bli byte för byte samma fil som
@@ -59,8 +59,10 @@ Vill du ändra något — en text, en tröskel, ett diagram, ett nytt arbetsvär
    dataskyddet — inga nätverksanrop, ingen lagring, k-anonymitet i det som lämnar verktyget — är det som
    gör att dokumenten i `docs/dataskydd/` fortsätter att gälla. Behåll dem, så gäller risk- och
    sårbarhetsanalysen fortfarande för din version, med en anteckning om vad du ändrat.
-2. Ändra i `src/`, aldrig i `dist/`. Lägg till test. Kör `npm run build:app`, `npm test`,
-   `npm run lint`, `npm run bundle` och `npm run test:browser`. Testsviten innehåller invarianter som
+2. Ändra i `src/`, aldrig i `dist/`. Lägg till test. Kör `npm run build:app`, `npm run test:full`,
+   `npm run lint`, `npm run bundle` och `npm run test:browser`. (`npm test` är en snabb körning utan
+   jsdom-testerna, sekunder i stället för minuter; `test:full` är hela sviten och ska vara grön innan du lämnar
+   ifrån dig en ändring.) Testsviten innehåller invarianter som
    vaktar dataskyddet (ingen utgående trafik, ingen lagring, små grupper i exporter) — låt dem stå.
 3. Ge din version ett eget versionsnamn i `VERSION` (till exempel `2026.11.03-kommunen`) och en rad i
    `CHANGELOG.md`. Då syns det i *Om verktyget* och i `RELEASE.txt` vilken fil som är din.

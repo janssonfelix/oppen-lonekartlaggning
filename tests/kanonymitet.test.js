@@ -26,6 +26,9 @@
  * befolkningen är stor nog att percentilerna upp till P90 stannar i den.
  * Syns ett sentinelvärde i utdatan har alltså en vy röjt en grupp under
  * tröskeln — det finns ingen annan väg dit.
+ *
+ * Samma form bär nu invarianten I4 (tests/helpers/ktroskel-invariant.js), som söker igenom varje flik i exportläget
+ * och varje export vid 10 och 25. Här står de riktade fallen, flera med egna fixturer.
  */
 import { describe, it, expect, beforeAll } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
@@ -105,10 +108,6 @@ function byggPolicy() {
     return [...SAKRA_BAS, TOPP_BAS, ...SMA_BAS].map(b => ({ bas: b, p10: 22000, med: 30000, p90: 52000 }));
 }
 
-const FLIKAR = ['dashboard', 'filer', 'bestammelser', 'benchmark', 'matrix', 'likvardighet', 'struktur',
-                'kon', 'demografi', 'prioritering', 'loneoversyn', 'handlingsplan', 'rapporttext',
-                'kvalitet', 'utforska', 'rapport', 'arbetet', 'info'];
-
 // Tar bort mellanrum inuti tal ("31 111" / "31 111" -> "31111") så att
 // formaterade belopp går att söka i.
 const normalisera = t => t.replace(/(\d)[\s  ](?=\d)/g, '$1');
@@ -134,14 +133,8 @@ function rojandeElement(win) {
     return ut;
 }
 
-// Element med ett diagram ritat av diagramkärnan (utom Utforska, vars export vaktas för sig), och det som kan lämna
-// verktyget ur ett sådant: den exporterade bildens SVG och diagramdatans rader.
-function karnansDiagram(w) {
-    // Individdiagrammen (en punkt per person; lådagrammets avvikare) undantas som i tests/ktroskel.test.js: deras export
-    // bär enskilda löner i dag, också för personer i små grupper — öppen fråga i teknisk-plan § 9 (ADR-14), inte ny här.
-    const INDIVIDDIAGRAM = new Set(['chart-kon-boxplot']);
-    return [...w.document.body.querySelectorAll('*')].filter(el => el._figur && !el.closest('#view-utforska') && !INDIVIDDIAGRAM.has(el.id));
-}
+// Det som kan lämna verktyget ur ett diagram ritat av diagramkärnan: elementets SVG, den exporterade bildens SVG och
+// diagramdatans rader.
 function karnansUtdata(w, el) {
     w.__kel = el;
     // Lägesattributen (pixlar med många decimaler) tas bort: de bär ingen lön men kan av en slump likna ett belopp.
@@ -150,25 +143,16 @@ function karnansUtdata(w, el) {
         JSON.stringify(w.eval('chartExportRows(window.__kel)'))];
 }
 
-// Vilken flikpanel ett element ligger i — för ett begripligt felmeddelande.
-function panelFor(el) {
-    let a = el;
-    while (a && !(a.classList && a.classList.contains('view-panel'))) a = a.parentElement;
-    return a && a.id ? a.id : '(utanför flikpanel)';
-}
-
 let win;
-let sedda;   // element som redan rapporterats, så en läcka inte smittar alla efterföljande flikar
 
 beforeAll(() => {
     win = createAppWindow();
     win.__state.data = byggDataset();
     win.__state.policy = byggPolicy();
     win.eval('populateSelects(); unlockTabs();');
-    // Vyerna ritas här i exportläget (ADR-51): så läser exporterna dem. Skärmläget prövas positivt nedan.
+    // Vyerna ritas här i exportläget (ADR-51): så läser exporterna dem. Skärmläget prövas positivt nedan. Att varje flik
+    // i exportläget utelämnar grupperna under tröskeln prövar invarianten I4 (tests/helpers/ktroskel-invariant.js).
     win.__state.kLage = 'export';
-    sedda = new WeakSet();
-    for (const el of rojandeElement(win)) sedda.add(el);
 });
 
 describe('k-anonymitet: skärmen maskerar inget (ADR-51)', () => {
@@ -186,7 +170,7 @@ describe('k-anonymitet: skärmen maskerar inget (ADR-51)', () => {
     });
 });
 
-describe('k-anonymitet: invariant över samtliga flikar (i exportläget)', () => {
+describe('k-anonymitet: fixturen', () => {
     it('de små grupperna ligger under tröskeln och de säkra över', () => {
         const perBas = new Map();
         for (const r of win.__state.data) perBas.set(r.bas, (perBas.get(r.bas) || 0) + 1);
@@ -215,32 +199,6 @@ describe('k-anonymitet: invariant över samtliga flikar (i exportläget)', () =>
         expect(Math.max(...alla)).toBeGreaterThan(SENTINEL[SENTINEL.length - 1]);
     });
 
-    it('FLIKAR täcker varje flik i menyn (annars går en ny flik oprövad)', () => {
-        const meny = [...win.document.querySelectorAll('.nav-item[data-tab]')].map(e => e.getAttribute('data-tab'));
-        const tackta = new Set(FLIKAR.map(f => win.eval(`tabMal(${JSON.stringify(f)})`)));
-        expect(meny.filter(f => !tackta.has(f))).toEqual([]);
-        expect([...tackta].filter(f => !meny.includes(f))).toEqual([]);
-        expect(FLIKAR.filter((f, i) => FLIKAR.indexOf(f) !== i), 'en flik står två gånger').toEqual([]);
-    });
-
-    for (const flik of FLIKAR) {
-        it(`fliken "${flik}" röjer ingen grupp under tröskeln`, () => {
-            win.__renderTabContent(flik);
-            const nya = rojandeElement(win).filter(el => !sedda.has(el));
-            for (const el of nya) sedda.add(el);
-            const beskrivning = nya.slice(0, 3).map(el =>
-                `${panelFor(el)}: "${normalisera(el.textContent).trim().slice(0, 60)}"`);
-            // Diagram ritade med diagramkärnan (ADR-39): också det som EXPORTERAS ur dem granskas — bilden och diagramdatan.
-            for (const el of karnansDiagram(win)) {
-                const ut = normalisera(karnansUtdata(win, el).join(' '));
-                expect(SENTINEL.filter(v => ut.includes(String(v))), `export ur ${el.id} i fliken "${flik}"`).toEqual([]);
-            }
-            expect(
-                beskrivning,
-                `Fliken "${flik}" redovisade mått för grupper med n < 10 i ${nya.length} element.`
-            ).toEqual([]);
-        });
-    }
 });
 
 // När bara KÖNSUPPDELNINGEN är för liten, men gruppen som helhet ligger över
@@ -445,15 +403,6 @@ describe('k-anonymitet: utskriften ur rapportmodellen mot referensen', () => {
     }, 30000);
 });
 
-describe('k-anonymitet: rapportunderlaget', () => {
-    it('inget sentinelvärde i något block, varken som HTML eller text', () => {
-        const block = win.__rapportunderlagBlock();
-        const innehall = normalisera(block.map(b => win.__ruTillWordHtml(b) + '\n' + win.__ruTillText(b)).join('\n'));
-        const lackor = SENTINEL.filter(s => innehall.includes(String(s)));
-        expect(lackor).toEqual([]);
-    });
-});
-
 describe('k-anonymitet: var uppstår löneskillnaden', () => {
     it('inget sentinelvärde i kortet', () => {
         win.eval('renderGapUppdelning()');
@@ -493,40 +442,6 @@ describe('k-anonymitet: rapportunderlagets parblock med små kvinnodominerade gr
         const block = w2.__rapportunderlagBlock();
         const innehall = normalisera(block.map(b => w2.__ruTillWordHtml(b) + '\n' + w2.__ruTillText(b)).join('\n'));
         expect(SENTINEL.filter(s => innehall.includes(String(s)))).toEqual([]);
-    });
-});
-
-describe('k-anonymitet: Excel-exporterna (JPA, alla flikar, EU-lönerapport, handlingsplan)', () => {
-    // Exporterna fångas i stället för att skrivas (som i exports.golden). Likvärdighetsexporten
-    // (§ 3:10) är undantagen från k-masken och prövas därför inte här.
-    it('inget sentinelvärde i någon cell', async () => {
-        const { readFileSync } = await import('node:fs');
-        const { join, dirname } = await import('node:path');
-        const { fileURLToPath } = await import('node:url');
-        const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-        const w = createAppWindow();
-        w.eval(readFileSync(join(root, 'vendor', 'xlsx.mini.min.js'), 'utf8'));
-        w.__state.data = byggDataset();
-        w.__state.policy = byggPolicy();
-        w.eval('populateSelects(); unlockTabs();');
-        w.alert = () => {};
-        const fångat = {};
-        w.XLSX.writeFile = (wb, namn) => { fångat[namn] = wb; };
-        for (const fn of ['exportJPAProtocol', 'exportAllToExcel', 'exportEuReport', 'exportHandlingsplan']) {
-            try { w.eval(`${fn}()`); } catch (e) { throw new Error(`${fn}: ${e.message}`); }
-        }
-        expect(Object.keys(fångat).length).toBeGreaterThanOrEqual(3);
-        const lackor = [];
-        for (const [namn, wb] of Object.entries(fångat)) {
-            for (const blad of wb.SheetNames) {
-                const rader = w.XLSX.utils.sheet_to_json(wb.Sheets[blad], { header: 1, raw: true });
-                for (const rad of rader) for (const c of rad) {
-                    const t = normalisera(String(c ?? ''));
-                    for (const s of SENTINEL) if (t.includes(String(s))) lackor.push(`${namn} / ${blad}: ${t.slice(0, 80)}`);
-                }
-            }
-        }
-        expect(lackor).toEqual([]);
     });
 });
 

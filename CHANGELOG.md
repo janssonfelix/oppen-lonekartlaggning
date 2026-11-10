@@ -436,6 +436,29 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 - **Programvaruförteckning (SBOM) på releasen.** `npm run sbom` (`tools/sbom.mjs`) skriver `dist/sbom.cdx.json` i
   CycloneDX med de fyra inbyggda biblioteken (version, licens, kontrollsumma) och artefaktens kontrollsumma;
   release-arbetsflödet signerar den som de andra filerna. Deterministisk, utan beroenden.
+- **Snabb och full testkörning.** Sviten är delad i två Vitest-projekt: `enhet` (moduler, vakter och källtext) och
+  `app` (filerna som ritar verktyget i jsdom), klassade automatiskt efter testfilens källa. `npm test` kör bara
+  `enhet` och tar sekunder; `npm run test:full` kör hela sviten, ska köras före en pull request och körs i CI
+  (`npm run test:app` kör bara jsdom-filerna). Testantalet i `teknisk-plan.md` jämförs inte längre med sviten, så ett
+  nytt test kräver ingen dokumentändring. K-tröskelns invariant över flikar och exporter körs i två filer, en per
+  tröskel, så att de två förberedelserna går parallellt, och förberedelsens tidsgräns är höjd från 120 till 300 s.
+- **Neutralitetsregeln i stället för ordvakten.** Vakttestet som sökte igenom hela repot efter en lista med
+  kontrollsummor (namngivna organisationer och spår av tidigare versioner) är borttaget; regeln att verktyget är
+  neutralt och inte kopplat till någon organisation står i `CONTRIBUTING.md` och `CLAUDE.md`. Testerna för
+  produktnamnet och för ordet "förvaltning" står kvar.
+- **Webbläsartestet i CI:** en vanlig push till en gren kör bara Chromium; pull requests, main och manuella
+  körningar kör Chromium, Firefox och WebKit.
+- **K-tröskeltesterna slagna samman med invarianten I4.** I4 söker nu också igenom varje flik ritad i exportläget
+  (det som *Som i exporten* visar och exporterna läser) och EU-lönerapportens rader, där könsgapet står med en decimal
+  utan tecken. Tester som prövade samma vägar för sig är borttagna, vart och ett efter ett mutationsprov: en läcka
+  infördes i koden som testet vaktade, och både testet och I4 (eller R1:s helkörning) föll. Borttagna: flikarna i
+  exportläget, rapportunderlaget och Excel-exporterna i `kanonymitet.test.js`; Word-utkastet, utskriften och Excel
+  vid 10 i R1; C2:s Word-utkast, utskrift och EU-lönerapport; exportlägestesterna i `ktroskel.test.js`. R1:s
+  helkörning prövar också den förklarade andelen och att bilagan med stegen finns. 31 tester färre i k-tröskelfilerna
+  och `kanonymitet.test.js` (277 till 246); filerna tar omkring en tredjedel kortare tid.
+  Tester som bara prövar en stämpel eller mening om tröskeln (utskriften, Word-utkastets sidfot, ZIP-filens bilder
+  och Excel-fil, rapportens not om utelämnade BAS-intervall) kör på en liten fixtur, `fonsterLitet` i riggen (116
+  rader i stället för ~1 150), och fäller fortfarande när stämpeln tas bort eller hamnar där den inte ska vara.
 
 ## 2026.11.05
 

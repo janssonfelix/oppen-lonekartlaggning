@@ -2,11 +2,11 @@
  * K-tröskeln som inställning: Lönepolitik, Prioritering, § 3:10-paren, texterna, gränssnittet, utdata, utskriften, konfigurationsfilen och organisationspaketet.
  *
  * Riggen (fixturer, fönster och sökfunktioner) ligger i tests/helpers/ktroskel-rigg.js; sviten är delad i
- * åtta filer så att Vitest fördelar den över flera arbetare.
+ * flera filer så att Vitest fördelar den över flera arbetare.
  */
 import { describe, it, expect, vi } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
-import { normalisera, fonster, tvaDec, iExport } from './helpers/ktroskel-rigg.js';
+import { normalisera, fonster, fonsterLitet, tvaDec, iExport } from './helpers/ktroskel-rigg.js';
 
 // Sviten ritar om hela verktyget i varje test. Under full last tar ett test 4–6 s, så standardgränsen 5 s
 // fäller olika tester från körning till körning.
@@ -460,10 +460,11 @@ describe('k-tröskeln i utdata', () => {
     });
 });
 
+// Stämpeltesterna i utskriften och Word-utkastets sidfot kör på den lilla fixturen (fonsterLitet): de prövar meningen, inte vilka grupper som syns.
 describe('k-tröskeln i utskriften', () => {
     const MENING = 'Tröskeln är sänkt från standardvärdet 10.';
     const utskrift = async k => {
-        const w = fonster(k);
+        const w = fonsterLitet(k);
         w.eval("sattRapportUrval('hela')");   // hela dokumentationen, med bilagorna
         await w.eval('buildPrintReport()');
         return w.document.getElementById('print-report').innerHTML;
@@ -478,7 +479,7 @@ describe('k-tröskeln i utskriften', () => {
     });
     it('handlingsplanens mallutskrift bär meningen vid 6, checklistan och standardvärdet inte', () => {
         const skriv = (k, vy) => {
-            const w = fonster(k);
+            const w = fonsterLitet(k);
             let html = '';
             w.open = () => ({ document: { write: h => { html += h; }, close() {}, createElement: t => w.document.createElement(t), head: w.document.head }, focus() {}, print() {} });
             w.eval(`printScaffoldView('${vy}', 'X')`);
@@ -545,7 +546,7 @@ describe('k-tröskeln i utdata: de verkliga vägarna', () => {
         else expect(kopierat).not.toContain('Minsta gruppstorlek');
     });
     it.each([[6, 'UTKAST · minsta gruppstorlek 6 (standard 10)'], [10, null]])('Word-utkastets sidfot vid %i', async (k, suffix) => {
-        const w = fonster(k);
+        const w = fonsterLitet(k);
         const delar = {};
         // JSZip byts mot en uppsamlare: sidfotens XML-del läses utan att .docx-filen byggs
         w.JSZip = class { file(sokvag, xml) { delar[sokvag] = xml; } generateAsync() { return Promise.resolve(new w.Blob(['x'])); } };

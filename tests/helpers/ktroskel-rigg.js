@@ -32,12 +32,14 @@ export const normalisera = t => t.replace(/(\d)[\s  ](?=\d)/g, '$1');
 // grupper, också små; exporten stämplas "undantag: Likvärdigt arbete"). Sedan ADR-60 är också små blandade grupper
 // jämförelseyrken där. Diagrammet Krav mot lön och tabellerna per AID och BAS i samma flik prövas fortfarande.
 export const LV_UNDANTAG = '#avsnitt-lv-par, #avsnitt-lv-underlag';
-// Sentinelvärden som syns utanför de vyer som är undantagna (Utforska, ADR-14; Personer att granska, ADR-23;
-// likvärdighetsanalysen, LV_UNDANTAG).
+// Vyerna som är undantagna från k också i exportläget: Utforska (ADR-14), Personer att granska (ADR-23) och
+// likvärdighetsanalysens par och underlag (LV_UNDANTAG).
+export const EXPORTLAGE_UNDANTAG = `#view-utforska, #personer-att-granska, ${LV_UNDANTAG}`;
+// Sentinelvärden som syns utanför de undantagna vyerna.
 export function synliga(win, varden) {
     const ut = new Set();
     for (const el of win.document.body.querySelectorAll('*')) {
-        if (el.closest('#view-utforska') || el.closest('#personer-att-granska') || el.closest(LV_UNDANTAG) || el.children.length) continue;
+        if (el.closest(EXPORTLAGE_UNDANTAG) || el.children.length) continue;
         const text = normalisera(`${el.textContent} ${attributtext(el)}`);
         for (const v of varden) if (text.includes(String(v))) ut.add(v);
     }
@@ -50,6 +52,29 @@ export function fonster(k) {
     if (k !== null) win.eval(`sattKTroskel(${k}, { fraga: false })`);
     win.__state.data = byggDataset();
     win.__state.policy = [...STORA, TOPP, ...MELLAN, ...SMA].map(b => ({ bas: b, p10: 22000, med: 30000, p90: 52000 }));
+    win.eval('populateSelects(); unlockTabs();');
+    return win;
+}
+// En liten fixtur för tester som bara prövar en stämpel eller en mening om tröskeln (utskriften, Word-utkastets
+// sidfot, ZIP-filens bilder och Excel-fil), inte vilka grupper som syns: att bygga utdata på de ~1 150 raderna i
+// fonster() tar flera sekunder per test. Samma radform och samma referens per BAS, men 116 rader: S1–S3 med 30
+// personer var (båda könen; når tröskeln också vid 25), A med 20 (MELLAN: syns vid 10, saknas vid 25) och E med 6
+// (SMA: under 10). Lönerna i A och E är deras sentinelvärden, som i byggDataset().
+export const LITEN_BAS = [...STORA.slice(0, 3), MELLAN[0], SMA[0]];
+export function byggLitetDataset() {
+    const rader = [];
+    const rad = (bas, i, lon, aid, namn) => ({ bas, kon: i % 2 === 0 ? 'kvinna' : 'man', lon,
+        alder: 25 + ((i * 7) % 40), yrke: `${aid} ${namn}`, aid: String(aid), yrkeLabel: namn, enhet: '' });
+    STORA.slice(0, 3).forEach((bas, b) => { for (let i = 0; i < 30; i++) rader.push(rad(bas, i, 24000 + b * 800 + ((i * 37) % 900), 6000 + b, `Säkeryrke ${b}`)); });
+    for (let i = 0; i < 20; i++) rader.push(rad(MELLAN[0], i, SENT_MELLAN[0], 5300, 'Mellanyrke 0'));
+    for (let i = 0; i < 6; i++) rader.push(rad(SMA[0], i, SENT_SMA[0], 5400, 'Småyrke 0'));
+    return rader;
+}
+export function fonsterLitet(k) {
+    const win = createAppWindow();
+    if (k !== null) win.eval(`sattKTroskel(${k}, { fraga: false })`);
+    win.__state.data = byggLitetDataset();
+    win.__state.policy = LITEN_BAS.map(b => ({ bas: b, p10: 22000, med: 30000, p90: 52000 }));
     win.eval('populateSelects(); unlockTabs();');
     return win;
 }
@@ -87,6 +112,11 @@ export const KON_GAP = KON_BAS.flatMap((_, i) => {
 // är för kort för en textsökning. Plustecknet är direktivets form (EU-lönerapporten, rapportens avsnitt om
 // lönetransparens), där kvinnor lägre är ett positivt tal.
 export const KON_GAP_1 = KON_BAS.map((_, i) => new RegExp('[-−+]' + ((1 - KON_KV[i] / KON_MA[i]) * 100).toFixed(1).replace('.', '[.,]') + '(?!\\d)'));
+// En Excel-rad för Y1–Y3 med gapet eller kvoten med en decimal och utan tecken i en egen cell (EU-lönerapportens tal
+// enligt direktivet, "Y1 | 31 | 22157 | 97 | 50.2"). Bara på gruppens egen rad: ensamt är talet för kort, och samma tal
+// förekommer lagligt i andra celler (kvartilernas andel kvinnor). Cellerna är åtskilda med " | ".
+export const KON_GAP_CELL = KON_BAS.flatMap((bas, i) => [(1 - KON_KV[i] / KON_MA[i]) * 100, KON_KV[i] / KON_MA[i] * 100]
+    .map(v => new RegExp(`(?:^|\\| )${bas} \\|[^\\n]*\\| [-−+]?${v.toFixed(1).replace('.', '[.,]')}(?= \\||$)`, 'm')));
 // Kostnaden att lyfta de 30 kvinnorna i Y1–Y3 till männens median: 30 × (männens lön − kvinnornas).
 export const KON_KOSTNAD = KON_BAS.map((_, i) => 30 * (KON_MA[i] - KON_KV[i]));
 // Får aldrig synas utanför undantagen vid 10 eller högre: enskildas och små gruppers löner, männens i Y1–Y3
@@ -120,6 +150,10 @@ export function fonsterKon(k) {
     return win;
 }
 export const harNagon = (text, varden) => varden.filter(v => text.includes(String(v)));
+// ISO-tidsstämplar (konfigurationsfilen, exporternas metadata) tas bort innan utdata söks igenom: sekunder och
+// millisekunder kan se ut som ett dolt värde ("…:48.30Z", "…:57.785Z" mot 57.7), och då föll testet bara när klockan
+// råkade stå rätt.
+export const utanTid = t => t.replace(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:?\d{2})?/g, '');
 export async function laddaXlsx(w) {
     const { readFileSync } = await import('node:fs');
     w.eval(readFileSync(new URL('../../vendor/xlsx.mini.min.js', import.meta.url), 'utf8'));
@@ -164,7 +198,8 @@ export const FK_RA = ['FKBAS', 'FKLON', 'FKALDER', 'FKKON', 'FKKOLUMN'];
 export async function samlaUtdata(w) {
     const d = w.document;
     const ut = [];
-    const lagg = (namn, text) => ut.push([namn, String(text ?? '').split('\n').map(normalisera).join('\n')]);
+    // Tidsstämplarna tas bort här, så att varje sökning i utdata slipper dem (utanTid).
+    const lagg = (namn, text) => ut.push([namn, utanTid(String(text ?? '')).split('\n').map(normalisera).join('\n')]);
     await laddaXlsx(w);
     w.URL.createObjectURL = () => 'blob:x';
     // Förhandskontrollen som efter en inläsning: tio rader med märkorden som råvärden, en oanvänd kolumn och en varning
@@ -192,6 +227,20 @@ export async function samlaUtdata(w) {
     w.eval("_renderRobusthetResult(document.getElementById('robusthet-body'))");
     lagg('robusthetspanelen', d.getElementById('robusthet-body').textContent);
     ut.push(['skärm: alla flikar', skarmtext(w)]);
+    // Alla flikar ritade i exportläget: det som läget "Som i exporten" visar och det exporterna läser (ADR-51), med
+    // Löneöversyns prognos som ovan. Samma undantag som i synliga(), och extremvärdeslistan (enskilda rader, som
+    // Personer att granska; se I4); vägen prövas som en export. Läget återställs av medExportLage, och flikarna som
+    // ritades i exportläget är inaktuella tills de öppnas eller en export behöver dem (23-exportgrind.js), som efter en export.
+    lagg('skärm i exportläget: alla flikar', w.eval('medExportLage')(() => {
+        for (const f of flikar) w.__renderTabContent(f);
+        w.eval('_forecastRemediation(); _forecastSensitivity();');
+        const rader = [];
+        for (const el of d.body.querySelectorAll('*')) {
+            if (el.closest(EXPORTLAGE_UNDANTAG) || el.closest('#outliers-container, #print-report') || el.children.length) continue;
+            rader.push(normalisera(`${el.textContent} ${attributtext(el)}`));
+        }
+        return rader.join('\n');
+    }));
     // Statistikens matchning i Löneläget: sammanfattningen ovanför tabellen och Beräkning & urval, ritade i exportläget
     // (där grupperna under tröskeln inte finns i raderna). Kolumnen Matchning följer med i tabellens CSV, Excel och
     // utskriften och i jämförelseexporten, som prövas nedan.

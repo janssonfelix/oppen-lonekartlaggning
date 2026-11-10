@@ -2,11 +2,11 @@
  * K-tröskeln som inställning: flikarna i menyn (I4), exporter som hör till ett undantag (I2), ZIP-filens Excel-fil och utskriftens urval (I3), paketformuläret och omritningen efter konfigurationsfil och paket (I5).
  *
  * Riggen (fixturer, fönster och sökfunktioner) ligger i tests/helpers/ktroskel-rigg.js; sviten är delad i
- * åtta filer så att Vitest fördelar den över flera arbetare.
+ * flera filer så att Vitest fördelar den över flera arbetare.
  */
 import { describe, it, expect, vi } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
-import { STORA, MELLAN, SMA, FLIKAR, synliga, fonster, ritaAlla, fonsterKon, laddaXlsx, fangaBocker, utskriftAv, TOPP, SENT_MELLAN, SENT_SMA, iExport } from './helpers/ktroskel-rigg.js';
+import { STORA, MELLAN, SMA, FLIKAR, synliga, fonster, ritaAlla, fonsterKon, fonsterLitet, laddaXlsx, fangaBocker, utskriftAv, TOPP, SENT_MELLAN, SENT_SMA, iExport } from './helpers/ktroskel-rigg.js';
 
 // Sviten ritar om hela verktyget i varje test. Under full last tar ett test 4–6 s, så standardgränsen 5 s
 // fäller olika tester från körning till körning.
@@ -96,9 +96,10 @@ describe('I2: exporter som hör till ett undantag säger det, och notisen utlova
     });
 });
 
+// Prövar raden och stämpeln, inte vilka grupper som syns: den lilla fixturen (fonsterLitet) räcker.
 describe('I3: tröskeln står i ZIP-filens Excel-fil och i utskriftens korta urval', () => {
     it('ZIP-filens Excel-fil har bladet Metod & parametrar med raden om minsta gruppstorlek', async () => {
-        const w = fonsterKon(null);
+        const w = fonsterLitet(null);
         await laddaXlsx(w);
         w.__renderTabContent('utforska');
         const bocker = [];
@@ -115,16 +116,16 @@ describe('I3: tröskeln står i ZIP-filens Excel-fil och i utskriftens korta urv
         expect(rader.find(r => r[0] === 'Minsta gruppstorlek för redovisning')[1]).toMatch(/^10 personer\./);
     });
     it('utskriften med ett urval som har metodbilagan (facklig dialog) bär tröskeln där', async () => {
-        const el = await utskriftAv(fonsterKon(null), 'facklig');
+        const el = await utskriftAv(fonsterLitet(null), 'facklig');
         expect(el.querySelector('.k-stampel')).toBeNull();
         const metod = el.querySelector('section[data-rm-avsnitt="metod"]');
         expect(metod.textContent).toMatch(/Minsta gruppstorlek för redovisning\s*10 personer/);
     });
     it.each(['ledning'])('urvalet %s (utan metodbilaga) slutar med stämpeln, också vid standardvärdet', async mall => {
-        const el = await utskriftAv(fonsterKon(null), mall);
+        const el = await utskriftAv(fonsterLitet(null), mall);
         expect(el.querySelector('.k-stampel').textContent).toBe('Minsta gruppstorlek för redovisning: 10.');
         expect(el.lastElementChild.classList.contains('k-stampel')).toBe(true);
-        const sankt = await utskriftAv(fonsterKon(6), mall);
+        const sankt = await utskriftAv(fonsterLitet(6), mall);
         expect(sankt.querySelector('.k-stampel').textContent).toBe('Minsta gruppstorlek för redovisning: 6. Tröskeln är sänkt från standardvärdet 10.');
     });
 });
