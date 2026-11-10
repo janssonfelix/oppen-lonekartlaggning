@@ -277,7 +277,10 @@ export const MODULES = [
                   urvalVarden: '_figUrvalVarden', urvalEtikett: '_figUrvalEtikett', arBortvald: '_figArBortvald',
                   urvalLista: '_figUrvalLista', urvalSpann: '_figUrvalSpann', urvalBeskrivning: '_figUrvalBeskrivning',
                   urvalSomLista: '_figUrvalSomLista', urvalAktivt: '_figUrvalAktivt', harleddaLager: '_figHarleddaLager',
-                  harlettNot: '_figHarlettNot' }
+                  harlettNot: '_figHarlettNot',
+                  underlagKonAntal: '_figUnderlagKonAntal', underlagSkyddat: '_figUnderlagSkyddat', underlagVarde: '_figUnderlagVarde',
+                  underlagDimension: '_figUnderlagDimension', underlagVarden: '_figUnderlagVarden', underlagValet: '_figUnderlagValet',
+                  underlagProva: '_figUnderlagProva', underlagBeskrivning: '_figUnderlagBeskrivning', namnIMening: '_figNamnIMening' }
     }
 ];
 

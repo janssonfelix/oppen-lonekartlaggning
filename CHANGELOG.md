@@ -8,6 +8,15 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ### Gränssnitt
 
+- **Räkna för: diagram som räknas om för en del av underlaget (kärnan och fem diagram).** Lådorna och histogrammet
+  för kvinnors och mäns lön i Ålder & karriär, löneskillnaden per åldersgrupp och percentilerna och kvartilerna i
+  Lönestruktur har raden *Räkna för* ovanför diagrammet: diagrammet räknas om för en sektor, en åldersgrupp, en
+  yrkesgrupp eller ett BAS-intervall, en sak i taget. En skyddsregel gäller: både urvalet och resten av underlaget ska
+  ha inga eller minst minsta gruppstorlek kvinnor och män, och en grupp som själv är för liten går inte att välja. Ett
+  val som bryter regeln görs inte, och noten säger varför. Noten säger vad diagrammet är räknat för och hur många
+  personer det gäller. Diagrammets egen export visar valet och säger det i fotraden och diagramdatan; rapporten,
+  utskriften, ZIP-filen och rapportunderlaget visar alltid hela underlaget. Valet minns per diagram under sessionen.
+
 - **Långa filterlistor och lager som räknas om för urvalet (kärnan).** Ett filter med många värden, till exempel
   yrkesgrupper eller sektorer, visas som en hopfälld lista med kryssrutor i stället för en knapp per värde.
   Summeringen säger hur många som visas ("Yrkesgrupp: 12 av 40"), sökfältet visar bara värdena som innehåller texten,

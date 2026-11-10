@@ -70,6 +70,7 @@ Läge anges alltid i skärmens axlar: x är vågrät, y lodrät. En liggande sta
 | `hojd` | Pixlar; annars 320. `val.hojd` går före. |
 | `individer` | `true` när figuren har en punkt per person (spridningsdiagrammen lön mot ålder i Ålder & karriär). Diagramdatan (CSV, urklipp) får då raden om att filen innehåller en rad per person och ska hanteras som personuppgifter (`kIndividRad`, `11-diagramexport.js`). En `lada` behöver inte märket: den skrivs aldrig som individer. Prövas inte av `valideraFigur`. |
 | `urval` | En lista med dimensioner användaren kan filtrera diagrammet på, för presentation. Ett ensamt objekt är en lista med ett element, och ett objekt utan `typ` är en kategori (det äldre formatet). `{ typ: 'kategori', falt, namn, etikett?, visning? }`: en knapp per värde, `etikett` en mall där `{v}` byts mot värdet (t.ex. `'BAS {v}'`; utan mall visas värdet); med `visning: 'lista'`, eller fler än `URVAL_LISTA_MAX` (12) värden, en hopfälld lista med kryssrutor (avsnitt 3). `{ typ: 'intervall', falt, namn, format?, etikett? }`: fälten Minst och Högst; `format` är ett av `talformat`s format (`TALFORMAT`: `kr`, `pct`, `pctAbs`, `antal`, `tal2`, `ar`) och ger platshållarna och texten, `etikett` en mall där `{v}` byts mot intervallet (`'{v} personer i gruppen'` → "10–50 personer i gruppen"; utan mall namnet och intervallet). `falt` är datapunktens fält (punkter utan fältet, t.ex. referenser, berörs aldrig), `namn` dimensionens namn. Ett filter döljer bara märken; inget tal räknas om. `valideraFigur` kräver en känd `typ`, `falt` och `namn` som icke-tomma strängar, `etikett` som sträng, `format` bara på ett intervall och bland `TALFORMAT`, `visning` bara på en kategori och då `'lista'`, och att inget `falt` förekommer två gånger. Vyerna tar dimensionerna ur `URVAL` (`10-diagramtema.js`, nedan). Hjälparna `urvalLista`, `urvalVarden`, `urvalSpann`, `urvalEtikett`, `arBortvald` och `urvalBeskrivning` (nedan). |
+| `underlag` | `{ dimensioner, rader, k, rita, kon? }`: vad ett sammanfattande diagram kan **räknas om** för (avsnitt 3, *Underlaget*). `dimensioner` är kategorier `{ typ: 'kategori', falt, namn, varde?, ordning?, etikett?, visning? }`; `varde(rad)` läser värdet ur personraden (annars `rad[falt]`), `ordning(a, b)` sorterar värdena. `rader` är personerna i hela det underlag vyn ritar, `k` tröskeln, `rita(valdaRader, { beskrivning })` ger figuren för urvalet (utan `underlag`) eller en text som visas som tomt läge. `kon(rad)` ger 'kvinna' eller 'man' (annars `rad.kon`). `valideraFigur` kräver en icke-tom lista med kategorier med `falt` och `namn`, inga dubbletter, `varde` och `ordning` som funktioner, `rader` som lista, `rita` som funktion och `k` som heltal ≥ 1. Vyerna tar dimensionerna ur `UNDERLAG` (`10-diagramtema.js`). |
 
 **Axel:** `{ skala: 'band' | 'linjar' | 'log', titel?, format?, doman?: [a, b], ordning?: string[],
 omvand?: boolean, nollinje?: boolean, etikettMax?: number, dold?: boolean }`.
@@ -163,6 +164,7 @@ Domänerna räknas aldrig ur referenserna.
 | `figurTillTabell(figur)` | Diagramdata som rader. Filtrerar inte själv. `ruta` blir en korstabell per lager; övriga `Serie \| x \| y`, med `Undre \| Övre` när figuren har band, intervall, felstaplar eller lådor. En låda skrivs aldrig som individer: en rad per kategori med median, första och tredje kvartilen. Ett lager på höger axel får tillägget ` (höger axel: <titel>)` i serienamnet, ett lager i en panel ` · <panel>`. Bär någon datapunkt `skillnadKr` får tabellen kolumnen `Skillnad (kr/mån)`. |
 | `urvalLista(figur)`, `urvalVarden(figur, dim, { visaSma })`, `urvalSpann(figur, dim, { visaSma })`, `urvalEtikett(figur, dim, v)`, `arBortvald(figur, filter, d)`, `urvalBeskrivning(figur, filter, { visaSma })`, `urvalIntervallText(dim, { min, max })`, `urvalSomLista(dim, antal)`, `urvalAktivt(filter)` | Figurens `urval`. `dim` är en dimension eller dess fält; utan `dim` gäller den första dimensionen av rätt typ. `urvalLista`: dimensionerna som en lista med `typ` utskriven. `urvalVarden` (kategori): de olika värdena (som strängar) bland punkter som har fältet och inte är små (om inte `visaSma`), i bandaxelns ordning när värdet med etiketten insatt är en kategori där, övriga efter i svensk sorteringsordning; utan dimensionen en tom lista. `urvalSpann` (intervall): `{ min, max }` bland punkter som har fältet som ändligt tal och inte är små (om inte `visaSma`), eller null under två olika tal. `urvalEtikett`: mallen med värdet insatt. `arBortvald`: sant när punkten har fältet för en av figurens dimensioner och värdet är bortvalt eller ligger utanför intervallet (gränserna ingår, en saknad gräns gäller inte); en punkt utan fältet påverkas aldrig, och ett filter på ett fält som inte är en dimension gäller inte. `filter` är `{ kategori: Map<falt, Set>, intervall: Map<falt, { min?, max? }> }` eller en mängd (det äldre formatet: första kategoridimensionen). `urvalBeskrivning`: det aktiva filtret som text, en del per dimension ("utan BAS A, BAS N", "10–50 personer i gruppen"); en lista med fler än tre bortvalda säger "bara X, Y" (högst tre valda) eller namnet och antalet ("Yrkesgrupp 12 av 40", räknat bland värdena som får visas); noten och exportens fotrad visar samma text. `urvalSomLista`: sant för `visning: 'lista'` eller fler än `URVAL_LISTA_MAX` värden. `urvalAktivt`: sant när filtret har ett bortvalt värde eller en gräns. |
 | `harleddaLager(figur, filter, { visaSma })`, `harlettNamn(lager)`, `harlettNot(resultat)` | Härledda lager (`harleddAv`). `harleddaLager` ger `{ figur, omraknade, utelamnade }`: utan aktivt filter (eller utan härledda lager) är `figur` samma objekt; annars en ny figur där varje härlett lager har `berakna(synliga punkter)` som data, eller tom data när källagren har färre än `minN` synliga punkter (`utelamnade: [{ index, namn, minN, antal }]`). Den nya figuren prövas med `valideraFigur`. `harlettNot` ger meningarna "Trendlinjen för kvinnor gäller urvalet." och "Trendlinjen för kvinnor visas inte: färre än 5 synliga punkter." |
+| `underlagKonAntal(underlag, rader)`, `underlagSkyddat(antal, k)`, `underlagVarde(dim, rad)`, `underlagDimension(underlag, falt)`, `underlagVarden(underlag, dim)`, `underlagValet(underlag, filter)`, `underlagProva(underlag, filter)`, `underlagBeskrivning(underlag, filter)`, `namnIMening(namn)` | Figurens `underlag`. `underlagKonAntal`: `{ kv, ma }`. `underlagSkyddat`: sant när vartdera talet är 0 eller minst `k`. `underlagVarden`: `{ varden, utelamnade }`, där `varden` är de värden vars egen grupp klarar regeln (i `ordning`, annars svensk sorteringsordning med tal) och `utelamnade` antalet andra. `underlagValet`: den första dimensionen med ett bortvalt valbart värde, `{ dim, varden, valda }`, eller null. `underlagProva`: `{ ok, valet, valda, antal: { urval, rest } }`, där `ok` är att både urvalet och resten klarar regeln. `underlagBeskrivning`: "sektor Vård", "sektor Vård, Skola", "sektor 4 av 6" eller "sektor: inga". `filter` är `Map<falt, Set>` med de bortvalda värdena. |
 | `skalDoman`, `axelVarden`, `panelerMedLager`, `antalPunkter`, `ladstatistik`, `talformat` | Hjälpare som ritaren och testerna delar. |
 
 ## 3. `ritaFigur(id, figur, val)`
@@ -288,6 +290,45 @@ Likvärdigt arbete, lägena per kön i Lönepolitik) skulle räknas om ur det so
 urval. En trend- eller referenslinje utan `bas` ritas oavsett urval. Testet i `tests/diagramvyer.test.js` (*BAS-urval
 på diagrammen där BAS är en dimension*) listar vilka diagram som har urvalet och vilka som inte har det.
 
+**Underlaget: raden "Räkna för".** Ett filter (`urval`) döljer märken; ett underlag (`underlag`) räknar om hela
+diagrammet för en del av personerna. Det ges till sammanfattande diagram vars märken samlar många personer, där ett
+dolt märke inte vore något urval: lådor och histogram per kön, löneskillnaden per åldersgrupp, percentilerna och
+kvartilerna. `ritaFigur` lägger då en rad per dimension före filterraderna, `<div class="diagram-urval" role="group"
+data-underlag data-urval-falt="underlag:<falt>" aria-label="Räkna för <namn>">`, med texten "Räkna för sektor" först
+och knappar eller (med `visning: 'lista'`) en lista med kryssrutor som filterraderna (avsnittet ovan). Efter den sista
+raden står knappen "Räkna för alla" (`data-underlag-alla`), dold när hela underlaget visas. Bara värden vars egen grupp
+klarar regeln går att välja; finns andra står "N till går inte att välja för sig: färre än k kvinnor eller män"
+(`data-underlag-utelamnade`). Har en dimension färre än två valbara värden visas den inte.
+
+*Skyddsregeln.* Ett val görs bara om både urvalet och **resten** har 0 eller minst `k` kvinnor och 0 eller minst `k`
+män. Resten är personerna i `underlag.rader` (hela det underlag vyn ritar: i Ålder & karriär fliken valda BAS-intervall
+eller hela urvalet, i Lönestruktur hela urvalet) som inte är med i valet. Utan regeln för resten kunde två exporter —
+hela underlaget och urvalet — ge en liten grupp genom subtraktion. Eftersom bara valbara värden kan väljas och bara en
+dimension åt gången (ett val i en annan dimension tar bort det förra, och noten säger "Valet för sektor togs bort:
+diagrammet räknas för en sak i taget."), är skillnaden mellan två godkända val alltid en förening av grupper som själva
+klarar regeln. Ett val som bryter regeln görs inte: kontrollen får `aria-invalid="true"` och noten börjar "Urvalet eller
+resten har färre än k kvinnor eller män. Valet är inte gjort, och diagrammet är oförändrat." På skärmen är `k` =
+`K_SKARM` (1, ADR-51), så regeln avvisar nästan inget där; i exportläget (`medExportLage`) ritar vyn om med den inställda
+tröskeln, och ett minne som då bryter regeln släpps: "… Det tidigare valet för sektor gäller inte, och diagrammet visar
+hela underlaget."
+
+*Noten och ritningen.* Med ett val ritar `_rfRitaOm` figuren från `rita(valdaRader, { beskrivning })`, buren i
+`_rfUnderlagFigur`; ger `rita` en text, eller är urvalet tomt ("Inga personer i urvalet"), visas den som tomt läge.
+Noten (`data-rf="urval"`) säger "Diagrammet är räknat för: sektor Vård (60 personer). Talen i texten och tabellerna
+gäller hela underlaget." Valet minns per diagram och dimension (`<id>|underlag:<falt>`) som filtren, och kopiorna i Alla
+diagram har sitt eget.
+
+*Export.* Exportmenyns bild och diagramdata följer valet: bilden ritas ur underlagsfiguren, fotraden får " · Räknat för:
+sektor Vård" (vyns `exportBeskrivning` lämnas då bort, eftersom den beskriver hela underlaget), och diagramdatan får
+raden "Räknat för: sektor Vård". Ger valet tomt läge exporteras inget. `diagramTillBild` (rapport, utskrift, ZIP,
+rapportunderlag) ritar alltid hela underlaget.
+
+`UNDERLAG` (`10-diagramtema.js`) har `sektor` (`groupKey(r, 'sektor')`, lista), `aldersgrupp` (`groupKey(r, 'alder')`,
+lista, i åldersordning), `yrkesgrupp` (`r.yrke`, lista) och `bas` (`r.bas`, etikett `'BAS {v}'`). Lådorna och histogrammet
+i Ålder & karriär har sektor och åldersgrupp, löneskillnaden per åldersgrupp sektor och yrkesgrupp, percentilerna och
+kvartilerna i Lönestruktur sektor och BAS. Testerna står i `tests/figur.test.js`, `tests/diagramurval.test.js`
+(*underlag: Räkna för*) och `tests/ktroskel-invarianter.test.js` (I6: precis under och precis över regeln i exportläget).
+
 **Rubrik och fotrad i exporten.** `figurTillSvg` och `figurTillBild` tar `rubrik` och `fot` (en rad var, avkortas).
 Exportmenyn och den gemensamma bildvägen sätter dem: rubriken är kortets rubrik, foten "Lönekartläggning <datum>"
 följt av urvalet om vyn har angett `exportBeskrivning`. Skärmens diagram har varken rubrik eller fot — kortet har
@@ -376,6 +417,7 @@ svg[role=group][aria-label=<beskrivning>][width][height][viewBox]   (+ data-neds
 - Egenskaper på behållaren (inget skrivs som attribut): `_figur` (originalet, med små punkter),
   `_figurVal`, `_figurDolda`, `_figurFilter`, `_figurBredd`, `_rfKoppling`, `_exportBeskrivning`, `_rfUrvalFel`, och
   bara med ett aktivt filter som har räknat om härledda lager `_rfVisadFigur`, `_rfRitadVisad` och `_rfHarlett`.
+  Med ett underlag `_rfUnderlagFilter`, och med ett val `_rfUnderlagFigur`, `_rfUnderlagText` och `_rfUnderlagTom`.
 
 ## 5. Det som inte ritas, utan fel
 
@@ -433,7 +475,7 @@ fliken får "(undantag: valt i Tabeller och egna vyer)" bara när exporten fakti
 
 **Rensning.**
 - `rensaFigur(id)` kopplar loss lyssnare och storleksbevakning, döljer behållarens tips, tar bort figuren och
-  de andra egenskaperna, tar bort notisen om urval, filterraderna och noten för figurens `urval` (minnet står kvar)
+  de andra egenskaperna, tar bort notisen om urval, filterraderna, underlagsraderna och noten för figurens `urval` (minnet står kvar)
   och tömmer behållaren. Exportmenyn står kvar. Idempotent.
 - `ritaFigur` för ett register över sina behållare. `_rfRensaAlla()` rensar dem alla — oavsett id, också i
   tomt läge och sedan de lämnat dokumentet — och nollställer verktygstipset. `_rensaAllData` anropar den

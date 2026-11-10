@@ -3,7 +3,7 @@
   Version: 2026.11.05
   Lokalt korbar. All bearbetning sker i webblasaren. Ingen data lamnar enheten.
 -->
-<!DOCTYPE html><html lang="sv"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-TV0tbjKCtmqvql5t6Mo64G+NNEARGumcajD2wAz6wz4=' 'sha256-DLNT+DDXKIOFSSyD0newWN3qxmTKUc8Tk6of0+K3CTk=' 'sha256-8glLv2FBs1lyLE/kVOtsSw8OQswQzHr5IfwVj864ZTk=' 'sha256-f4ObLUaIuEXBBev10vmAMHX5HqD+cr2qwXbDoE3T0sE=' 'sha256-/3KEsrqcXD+Yu5nE4vDRF1UlLlpqDw1ea1KbsRBaoDs='; style-src 'unsafe-inline'; style-src-elem 'sha256-LK6lVE0z/dh+ir1uYupI0zEFnFHWaya/4Zo3Mqyi6qk=' 'sha256-Q1kq5W+sPajNmQb4c8QABATbhFvl/LVr5AOcAlCpVoY='; style-src-attr 'none'; img-src data: blob:; font-src data:; connect-src 'none'; frame-ancestors 'none'; form-action 'none'; base-uri 'none';"><meta name="referrer" content="no-referrer"><title>Öppen lönekartläggning</title>
+<!DOCTYPE html><html lang="sv"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-TV0tbjKCtmqvql5t6Mo64G+NNEARGumcajD2wAz6wz4=' 'sha256-DLNT+DDXKIOFSSyD0newWN3qxmTKUc8Tk6of0+K3CTk=' 'sha256-8glLv2FBs1lyLE/kVOtsSw8OQswQzHr5IfwVj864ZTk=' 'sha256-f4ObLUaIuEXBBev10vmAMHX5HqD+cr2qwXbDoE3T0sE=' 'sha256-LyIofU7hYPIsyBirB/NVtv08zlaOsPtAMHNvVs/SlJw='; style-src 'unsafe-inline'; style-src-elem 'sha256-LK6lVE0z/dh+ir1uYupI0zEFnFHWaya/4Zo3Mqyi6qk=' 'sha256-Q1kq5W+sPajNmQb4c8QABATbhFvl/LVr5AOcAlCpVoY='; style-src-attr 'none'; img-src data: blob:; font-src data:; connect-src 'none'; frame-ancestors 'none'; form-action 'none'; base-uri 'none';"><meta name="referrer" content="no-referrer"><title>Öppen lönekartläggning</title>
 <style>[hidden]{display:none !important}.btn-evidence{background:transparent;border:1px solid var(--border,#e2e8f0);border-radius:4px;padding:2px 8px;cursor:pointer;font-size:var(--fs-md);line-height:1;transition:background 0.15s,border-color 0.15s}.btn-evidence:hover{background:var(--secondary,#e8ecfa);border-color:var(--primary,#1d4ed8)}.btn-evidence:focus-visible{outline:2px solid var(--primary,#1d4ed8);outline-offset:2px}#reality-check{margin:16px 0;padding:16px 18px;border-radius:var(--radius,12px);background:var(--bg-card,#fff);box-shadow:var(--shadow-sm,0 1px 2px rgba(0,0,0,0.05));border:1px solid var(--border,#e2e8f0)}#reality-check.all-ok{border-left:4px solid var(--status-ok)}#reality-check.has-warn{border-left:4px solid var(--status-varning)}#reality-check.has-err{border-left:4px solid var(--status-kritisk);background:var(--status-kritisk-yta)}#reality-check h3{font-size:var(--fs-lg);color:var(--text-main,#1e293b)}:root{--fs-xs:0.78rem;--fs-sm:0.86rem;--fs-md:0.95rem;--fs-lg:1.1rem;--fs-xl:1.4rem;--fs-nyckeltal:1.6rem;--bg-main:#f2f4f7;--bg-card:#ffffff;--text-main:#161a22;--text-muted:#475569;--primary:#2743a6;--primary-hover:#1d3384;--secondary:#e8ecfa;--status-kritisk:#b91c1c;--status-varning:#b45309;--status-ok:#0f766e;--status-kritisk-bg:#fee2e2;--status-varning-bg:#fef3c7;--status-ok-bg:#ecfdf5;--status-granska:#4338ca;--status-granska-ljus:#6366f1;--status-granska-bg:#eef2ff;--status-info:#0284c7;--status-kritisk-yta:#fef2f2;--status-varning-yta:#fffbeb;--status-ok-yta:#f0fdf4;--status-info-mork:#0369a1;--status-info-bg:#e0f2fe;--status-info-yta:#f0f9ff;--status-kritisk-kant:#fecaca;--status-varning-kant:#fde68a;--status-ok-kant:#a7f3d0;--status-granska-kant:#c7d2fe;--vit:#ffffff;--text-svag:#64748b;--text-blek:#94a3b8;--border-stark:#cbd5e1;--yta:#f8fafc;--yta-stark:#f1f5f9;--accent:#2563eb;--accent-mork:#1e3a8a;--accent-yta:#eff6ff;--accent-kant:#bfdbfe;--danger:#b91c1c;--warning-bg:#fef2f2;--border:#e1e5ec;--shadow-sm:0 1px 2px 0 rgba(16,24,40,0.04);--shadow:0 1px 2px 0 rgba(16,24,40,0.05);--shadow-lg:0 10px 15px -3px rgba(0,0,0,0.1),0 4px 6px -2px rgba(0,0,0,0.05);--radius:10px;--meny-bg:#141a2e;--meny-text:#c9d0e0;--meny-dampad:#7d879e;--transition:all 0.3s cubic-bezier(0.4,0,0.2,1)}*{margin:0;padding:0;box-sizing:border-box}*:focus-visible{outline:3px solid var(--primary);outline-offset:2px}.skip-link{position:absolute;top:-60px;left:20px;background-color:var(--primary);color:white;padding:12px 20px;z-index:10000;text-decoration:none;font-weight:600;border-radius:var(--radius);transition:top 0.3s ease}.skip-link:focus{top:20px}body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;background-color:var(--bg-main);color:var(--text-main);line-height:1.55;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}.app-container{display:flex;min-height:100vh;background:var(--bg-main)}.sidebar{width:280px;flex:none;background-color:var(--meny-bg);color:var(--meny-text);display:flex;flex-direction:column;position:sticky;top:0;align-self:flex-start;height:100vh;overflow-y:auto}.sidebar-header{padding:16px 22px 14px;border-bottom:1px solid rgba(255,255,255,0.08)}.sidebar-header h2{color:var(--vit);font-weight:700;font-size:var(--fs-lg);letter-spacing:-0.01em;line-height:1.3}.sidebar-header p{color:var(--meny-dampad);font-size:var(--fs-xs);margin-top:2px}.nav-menu{padding:8px 0;display:flex;flex-direction:column;gap:1px}.nav-group{padding:8px 24px 2px;font-size:0.66rem;font-weight:700;text-transform:uppercase;letter-spacing:0.09em;color:var(--meny-dampad);-webkit-user-select:none;user-select:none}.nav-group:first-child{padding-top:4px}.nav-item{display:flex;align-items:center;gap:12px;padding:6px 12px;margin:0 10px;background:none;border:none;border-radius:8px;width:calc(100% - 20px);text-align:left;font-size:var(--fs-md);color:var(--meny-text);cursor:pointer;transition:background-color 0.15s,color 0.15s;font-weight:500}.nav-item:hover:not([aria-disabled="true"]){background-color:rgba(255,255,255,0.07);color:var(--vit)}.nav-item.active,.nav-item.active:hover:not([aria-disabled="true"]){background-color:#3350c4;color:white;font-weight:600;box-shadow:inset 3px 0 0 var(--status-granska-kant)}.nav-item[aria-disabled="true"]{opacity:0.5;cursor:not-allowed}.main-content{flex:1;display:flex;flex-direction:column;overflow-x:clip}.top-header{background-color:var(--bg-card);padding:20px 40px;border-bottom:1px solid var(--border)}.urvalsrad{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;margin:0 0 14px;padding:8px 14px;font-size:var(--fs-sm);color:var(--text-muted,#475569);background:var(--bg-card,#fff);border:1px solid var(--border,#e2e8f0);border-radius:8px}.urvalsrad:empty,.slutsatser:empty{display:none}.urvalsrad strong{color:var(--text-main,#0f172a);font-weight:600}.slutsatser{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin:0 0 16px}.slutsats{background:var(--bg-card,#fff);border:1px solid var(--border,#e2e8f0);border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow-sm)}.slutsats-etikett{font-size:0.72rem;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted,#475569)}.slutsats-varde{font-size:1.7rem;font-weight:700;line-height:1.2;letter-spacing:-0.02em;margin:4px 0 2px}.slutsats-under{font-size:var(--fs-xs);color:var(--text-muted,#475569)}.slutsats-under.ar-kritisk{color:var(--status-kritisk,#b91c1c);font-weight:600}.slutsats-under.ar-granska,.avsnitt-nyckel.ar-granska{color:var(--status-granska);font-weight:600}.avsnitt-rubrikrad{margin:22px 0 8px 2px;font-size:var(--fs-xs);font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:var(--text-muted,#475569)}details.avsnitt{margin:0 0 10px}details.avsnitt:not(.card){background:var(--bg-card,#fff);border:1px solid var(--border,#e2e8f0);border-radius:var(--radius);padding:0 24px;box-shadow:var(--shadow-sm)}details.avsnitt>summary{display:flex;align-items:center;gap:12px;cursor:pointer;list-style:none;padding:4px 0}details.avsnitt:not(.card)>summary{padding:16px 0}details.avsnitt>summary::-webkit-details-marker{display:none}details.avsnitt>summary::before{content:'';flex:none;width:8px;height:8px;margin:0 4px 0 2px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(-45deg);transition:transform 0.15s}details.avsnitt[open]>summary::before{transform:rotate(45deg)}details.avsnitt>summary:focus-visible{outline:2px solid var(--primary,#1d4ed8);outline-offset:4px;border-radius:4px}details.avsnitt[open]>summary{margin-bottom:14px}.avsnitt-titel{flex:1 1 auto;min-width:0}details.avsnitt .avsnitt-titel h2{display:inline;margin:0;font-size:var(--fs-lg)}details.avsnitt .avsnitt-titel h3{display:inline;margin:0;font-size:var(--fs-md)}.card>details.avsnitt.bes8-omrade{box-shadow:none;padding:0 16px}.card>details.avsnitt.bes8-omrade>summary{padding:12px 0}.avsnitt-nyckel .ikon{vertical-align:-3px}.avsnitt-nyckel.ar-bedomd{color:var(--text-main);font-weight:600}.avsnitt-nyckel.ar-bedomd.ar-kritisk{color:var(--status-kritisk)}.avsnitt-under{display:block;font-size:var(--fs-sm);color:var(--text-muted,#475569);font-weight:400}.avsnitt-nyckel{flex:none;font-size:var(--fs-sm);color:var(--text-muted,#475569);text-align:right}.avsnitt-nyckel.ar-kritisk{color:var(--status-kritisk,#b91c1c);font-weight:600}.falt{display:flex;flex-direction:column;gap:4px;min-width:0}.falt-etikett{font-size:var(--fs-xs);font-weight:600;color:var(--text-muted)}.falt-rad{display:inline-flex;align-items:stretch;border:1px solid var(--border-stark);border-radius:6px;background:var(--bg-card);overflow:hidden;width:fit-content;max-width:100%}.falt-rad:focus-within{border-color:var(--primary);box-shadow:0 0 0 2px var(--accent-kant)}.falt-rad>input.form-input{width:6.5em;border:0;border-radius:0;background:none;padding:8px 10px;font:inherit;font-size:var(--fs-md);text-align:right;font-variant-numeric:tabular-nums;outline:none}.falt-rad>select.form-select{width:auto;border:0;border-left:1px solid var(--border);border-radius:0;background-color:var(--yta);padding-top:8px;padding-bottom:8px;font-size:var(--fs-sm);outline:none}.falt-enhet{display:flex;align-items:center;padding:0 10px;border-left:1px solid var(--border);background:var(--yta);color:var(--text-muted);font-size:var(--fs-sm);white-space:nowrap}.falt>select.form-select{width:auto}.falt-rad-yttre,fieldset.falt-grupp{display:flex;flex-wrap:wrap;gap:12px 16px;align-items:flex-end}.falt-rad-yttre>[id$="-result"]{flex:1 1 100%}fieldset.falt-grupp{margin:0 0 12px;padding:12px 14px 14px;background:var(--yta);border:1px solid var(--border);border-radius:6px;min-width:0}fieldset.falt-grupp>legend{padding:0 6px;font-size:var(--fs-sm);font-weight:600}.falt-kryss{display:flex;align-items:center;gap:6px;font-size:var(--fs-sm);padding-bottom:8px}.varning-pa-yta{color:var(--status-varning);background:var(--status-varning-yta);padding:0 4px;border-radius:3px}.upload-cell.visas-nu{outline:3px solid var(--primary);outline-offset:3px;transition:outline-color 0.3s}.tomt-lage{margin:0;padding:14px 16px;color:var(--text-muted);background:var(--yta);border:1px dashed var(--border-stark);border-radius:var(--radius);font-size:var(--fs-md)}.lo-tomt .lo-med-utfall{display:none}.lo-scenario{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:0 16px}.avsnitt-verktyg-rubrik{font-weight:600;font-size:var(--fs-md)}.avsnitt-inledning{font-size:var(--fs-sm);color:var(--text-muted,#475569);line-height:1.6;margin:0 0 12px}details.avsnitt[open]:not(.card){padding-bottom:20px}@media (prefers-reduced-motion:reduce){details.avsnitt>summary::before{transition:none}}@media print{details.avsnitt>summary::before{display:none}}.diagramkort{margin:0 0 16px}.diagramkort-rubrik{margin:0 0 4px;font-size:var(--fs-lg);font-weight:600}.diagramkort-forklaring{margin:0 0 10px;font-size:var(--fs-sm);color:var(--text-muted,#475569);line-height:1.5}.diagramkort-not{margin:8px 0 0;font-size:var(--fs-xs);color:var(--text-muted,#475569)}.metod-not{margin:6px 0 0;font-size:var(--fs-xs);line-height:1.5;color:var(--text-muted);font-style:italic}.la-oversikt.la-oversikt th,.la-oversikt.la-oversikt td{padding-left:10px;padding-right:10px}.la-oversikt th.tal,.la-oversikt td.tal{text-align:right;font-variant-numeric:tabular-nums}.la-oversikt td.tal{white-space:nowrap}.la-oversikt td:last-child,.la-oversikt th:last-child{text-align:left}.la-oversikt tbody th{position:static;background:none;border-bottom:1px solid var(--border);font-size:1em;font-weight:600;text-transform:none;letter-spacing:0;color:var(--text-main);text-align:left;white-space:nowrap}.la-oversikt tbody td,.la-oversikt tbody th{padding-top:12px;padding-bottom:12px;vertical-align:middle}.la-oversikt.la-oversikt .la-oversikt-cell,.la-oversikt.la-oversikt .la-oversikt-skala{width:168px;padding-left:12px;padding-right:12px}.la-oversikt .la-oversikt-skala{color:var(--text-muted);vertical-align:bottom}.la-oversikt svg{display:block;overflow:visible}.la-oversikt-kvot{font-weight:600}.la-oversikt-ki{display:block;font-weight:400;font-size:var(--fs-xs);color:var(--text-muted)}.la-oversikt-tom{color:var(--text-muted);text-align:center;padding:20px}.la-oversikt .la-oversikt-bevis{margin-left:6px;vertical-align:middle}.la-oversikt .la-oversikt-verktyg{display:block;margin-top:2px;white-space:nowrap}.la-oversikt .la-oversikt-verktyg .la-oversikt-bevis{margin-left:0;margin-right:6px}.la-status{display:inline-block;padding:2px 10px;border-radius:999px;font-size:var(--fs-xs);font-weight:600;white-space:nowrap}.la-status.ar-granska{background:var(--status-granska-bg);color:var(--status-granska)}.la-status.ar-varning{background:var(--status-varning-bg);color:var(--status-varning)}.la-status.ar-ok{background:var(--status-ok-bg);color:var(--status-ok)}.la-status.ar-neutral{background:transparent;color:var(--text-muted);font-weight:400}.direktiv-bricka{display:inline-block;padding:0 6px;border:1px solid currentColor;border-radius:4px;font-size:var(--fs-xs);font-weight:600;line-height:1.5;white-space:nowrap;color:var(--text-muted)}.la-status[class*="ar-"]>.ikon{margin-right:4px}.ikon{display:inline-block;vertical-align:-0.16em;flex:none}.ikon-statusKritisk{color:var(--status-kritisk,#b91c1c)}.ikon-statusVarning{color:var(--status-varning,#b45309)}.ikon-statusOsaker{color:var(--status-varning,#b45309)}.ikon-statusIngen{color:var(--text-muted,#64748b)}.header-knappar{display:flex;gap:8px;flex-wrap:nowrap;margin-left:auto}.top-header .header-title{flex:1 1 320px;min-width:0}.header-title h1{font-size:1.5rem;font-weight:700;letter-spacing:-0.02em}.content-body{padding:24px 40px 40px;max-width:1400px;margin:0 auto;width:100%}.btn.meny-knapp{display:none;align-items:center;gap:6px}.meny-skugga{position:fixed;inset:0;z-index:900;background:rgba(15,23,42,0.45)}.main-content{min-width:0}@media (max-width:1100px){.top-header{padding:16px 20px}.content-body{padding:16px 20px 32px}}@media (min-width:641px) and (max-width:1100px){.sidebar{width:60px;overflow:visible;z-index:50}.sidebar-header{padding:14px 4px;text-align:center}.sidebar-header p{display:none}.sidebar-header h2{font-size:0}.sidebar-header h2::before{content:'ÖL';font-size:var(--fs-md);letter-spacing:0.02em}.nav-group{font-size:0;padding:0;height:1px;margin:5px 12px;background:rgba(255,255,255,0.12)}.nav-group:first-child{display:none}.nav-item{position:relative;justify-content:center;padding:10px 0;gap:0;margin:0 8px;width:calc(100% - 16px)}.sidebar .nav-item[aria-disabled="true"] .nav-las{display:none}.nav-etikett{position:absolute;left:100%;top:50%;transform:translateY(-50%);margin-left:14px;padding:5px 10px;border-radius:6px;background:var(--text-main);color:#fff;font-size:var(--fs-xs);font-weight:500;white-space:nowrap;pointer-events:none;opacity:0}.nav-item:hover .nav-etikett,.nav-item:focus-visible .nav-etikett{opacity:1}}@media (max-width:640px){.btn.meny-knapp{display:inline-flex}.sidebar{position:fixed;left:0;top:0;bottom:0;z-index:1000;width:min(86vw,300px);height:auto;transform:translateX(-100%);visibility:hidden;transition:transform 0.18s ease,visibility 0s linear 0.18s;box-shadow:0 0 24px rgba(15,23,42,0.25)}body.meny-oppen .sidebar{transform:none;visibility:visible;transition:transform 0.18s ease}.top-header{padding:12px 14px;gap:10px !important}.content-body{padding:12px 12px 28px}.header-title h1{font-size:1.2rem}.content-body .card{padding:16px}details.avsnitt:not(.card){padding:0 14px}.avsnitt-nyckel{display:none}}@media (max-width:900px){.header-knappar{gap:6px;align-items:center}.header-knappar>.btn{padding:7px 9px;gap:0}.header-knappar>.btn .knapp-text{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);clip-path:inset(50%);white-space:nowrap;border:0}.header-knappar>.btn svg{width:18px;height:18px}.top-header .header-knappar .sok-ruta{flex:1 1 120px;min-width:0}}@media (min-width:641px){.meny-skugga{display:none}}@media (max-width:640px) and (prefers-reduced-motion:reduce){.sidebar,body.meny-oppen .sidebar{transition:none}}.content-body.har-sidindex{display:flex;flex-direction:column}.sidindex{order:-1;font-size:var(--fs-sm)}@media (max-width:1919px){.sidindex{position:sticky;top:0;z-index:25;background:var(--bg-main);padding:8px 0;margin:-8px 0 6px}.content-body.har-sidindex :is(details.avsnitt,.card){scroll-margin-top:calc(var(--sidindex-hojd,58px) + 8px)}.sidindex-ram[open] .sidindex-lista{max-height:50vh;overflow-y:auto}}.sidindex-nu{font-weight:500;color:var(--primary)}.sidindex-ram[open] .sidindex-kolon,.sidindex-ram[open] .sidindex-nu{display:none}.sidindex-etikett{display:none}.sidindex-lista{list-style:none;margin:0;padding:0}.sidindex-lista a{display:block;padding:4px 10px;border-left:2px solid var(--border);color:var(--text-muted);text-decoration:none;line-height:1.35}.sidindex-lista a:hover{color:var(--text-main);border-left-color:var(--border-stark)}.sidindex-lista a.ar-aktiv{color:var(--primary);border-left-color:var(--primary);font-weight:600}.sidindex-ram{margin:0;padding:0 14px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius)}.sidindex-ram>summary{padding:10px 0;cursor:pointer;font-weight:600;color:var(--text-main)}.sidindex-ram[open]>summary{margin-bottom:4px}.sidindex-ram[open]{padding-bottom:10px}@media (min-width:1920px){.content-body.har-sidindex{max-width:calc(1400px + 224px)}.content-body.har-sidindex>:not(.sidindex){margin-right:224px}.sidindex{position:sticky;top:12px;z-index:20;align-self:flex-end;width:200px;height:0;overflow:visible}.sidindex-etikett{display:block;margin:0 0 6px 12px;font-size:var(--fs-xs);font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:var(--text-muted)}.sidindex-ram{margin:0;padding:0;background:none;border:0;border-radius:0;max-height:calc(100vh - 48px);overflow-y:auto}.sidindex-ram>summary{display:none}.sidindex-ram[open]{padding-bottom:0}}@media print{.sidindex{display:none !important}.content-body.har-sidindex{display:block}.content-body.har-sidindex>*{margin-right:0}}body.meny-utan-glidning .sidebar{transition:none !important}@media print{.btn.meny-knapp,.meny-skugga{display:none !important}}.card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;box-shadow:var(--shadow-sm);margin-bottom:20px}.card-header{display:flex;flex-wrap:wrap;gap:8px 16px;justify-content:space-between;align-items:center;margin-bottom:20px}.card h2{font-size:1.25rem;margin-bottom:8px}.card p{color:var(--text-muted);margin-bottom:16px}.file-drop-area{border:2px dashed var(--border);border-radius:var(--radius);padding:40px;text-align:center;background-color:var(--bg-main);cursor:pointer;transition:var(--transition);position:relative}.file-drop-area:hover,.file-drop-area.drag-over{border-color:var(--primary);background-color:var(--secondary)}.file-drop-area input[type="file"]{position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;cursor:pointer}.file-drop-area p{margin:0;color:var(--primary);font-weight:500}.status-msg{margin-top:12px;font-size:var(--fs-sm);font-weight:500}.status-msg.success{color:var(--status-ok)}.status-msg.error{color:var(--danger)}.status-msg.warning{color:var(--status-varning)}.summary-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-top:20px}.stat-box{background:var(--bg-card);padding:16px 18px;border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-sm)}.stat-box h3,.stat-box .stat-etikett{font-size:0.72rem;font-weight:600;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.06em}.stat-box .stat-val{font-size:2rem;font-weight:700;color:var(--text-main)}.table-container{overflow-x:auto}.data-table{width:100%;border-collapse:collapse}.data-table th,.data-table td{padding:12px 16px;text-align:left;border-bottom:1px solid var(--border)}.data-table td:nth-child(n+2),.data-table th:nth-child(n+2){text-align:right}.data-table tbody tr:not(.group-header):hover{background-color:var(--bg-main)}.data-table th{background-color:var(--yta);font-weight:600;font-size:0.78em;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-muted);border-bottom:1px solid var(--border-stark);position:sticky;top:0;z-index:10}.data-table tr.group-header td{background-color:var(--yta-stark);font-weight:600;text-align:left;color:var(--text-main)}.warning-cell{color:var(--danger);font-weight:700}.data-table td.warning-cell{color:var(--danger);font-weight:600;background-color:var(--warning-bg)}.data-table th.sticky-col-1,.data-table td.sticky-col-1{position:sticky;left:0;background-color:var(--bg-card);z-index:5}.data-table th.sticky-col-2,.data-table td.sticky-col-2{position:sticky;left:60px;background-color:var(--bg-card);z-index:5;box-shadow:2px 0 5px rgba(0,0,0,0.05)}.data-table th.sticky-col-1{z-index:15;background-color:var(--bg-main)}.data-table th.sticky-col-2{z-index:15;background-color:var(--bg-main);box-shadow:2px 0 5px rgba(0,0,0,0.05)}.data-table tbody tr:hover td.sticky-col-1,.data-table tbody tr:hover td.sticky-col-2{background-color:var(--bg-main)}.controls-row{display:flex;align-items:center;gap:16px;margin-bottom:24px;background:var(--bg-card);padding:16px 24px;border-radius:var(--radius);box-shadow:var(--shadow)}.form-select{padding:8px 16px;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:var(--fs-md);min-width:200px;color:var(--text-main)}.btn{display:inline-flex;align-items:center;padding:8px 16px;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-family:inherit;transition:background-color 0.15s,border-color 0.15s,color 0.15s}.btn-primary{background-color:var(--primary);color:white}.btn-primary:hover{background-color:var(--primary-hover)}.btn-secondary{background-color:white;color:var(--text-main);border:1px solid var(--border-stark)}.btn-secondary:hover{background-color:var(--bg-main)}.btn-sm{padding:5px 10px;font-size:var(--fs-sm)}.chart-container{background:var(--bg-card);position:relative;width:100%}.chart-container.large{height:500px}.chart-container h3{font-size:var(--fs-lg);margin-bottom:16px;text-align:center}.insight-box{margin-top:16px;padding:16px;border-radius:4px;background-color:var(--secondary);border-left:4px solid var(--primary);font-size:var(--fs-md)}.insight-box.warning{background-color:var(--warning-bg);border-left-color:var(--danger)}.info-tip{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;border-radius:50%;background:var(--secondary);color:var(--primary);font-size:0.65rem;font-weight:700;cursor:help;margin-left:5px;vertical-align:middle;flex-shrink:0;position:relative;font-style:normal}.tip-portal{position:fixed;background:var(--text-main);color:var(--yta);padding:10px 14px;border-radius:8px;font-size:var(--fs-xs);line-height:1.5;font-weight:400;max-width:320px;width:max-content;text-align:left;white-space:normal;z-index:99999;pointer-events:none;opacity:0;visibility:hidden;transition:opacity 0.12s ease;box-shadow:0 4px 14px rgba(0,0,0,0.28);left:0;top:0}.tip-portal.visible{opacity:1;visibility:visible}@media (prefers-reduced-motion:reduce){.tip-portal{transition:none}}.stat-box h3,.stat-box .stat-etikett{display:flex;align-items:center}.compliance-section{margin-top:32px}.compliance-section h2{font-size:var(--fs-lg);font-weight:600;color:var(--text-main);margin-bottom:16px;display:flex;align-items:center}.compliance-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}.compliance-card{background:var(--bg-card);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow);display:flex;align-items:center;gap:16px;border-left:4px solid var(--border);transition:var(--transition)}.compliance-card.ok{border-left-color:var(--status-ok)}.compliance-card.warn{border-left-color:var(--status-varning)}.compliance-card.crit{border-left-color:var(--danger)}.compliance-card.na{border-left-color:var(--border);background:var(--yta)}.compliance-card.na .comp-value{color:var(--text-muted)}.comp-icon{font-size:var(--fs-nyckeltal);width:32px;text-align:center;flex-shrink:0}.compliance-card.ok .comp-icon{color:var(--status-ok)}.compliance-card.warn .comp-icon{color:var(--status-varning)}.compliance-card.crit .comp-icon{color:var(--danger)}.compliance-card.na .comp-icon{color:var(--text-muted)}.comp-body{flex:1;min-width:0}.comp-label{font-size:var(--fs-xs);font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em}.comp-value{font-size:var(--fs-md);font-weight:700;color:var(--text-main);margin-top:3px}.comp-sub{font-size:0.72rem;color:var(--text-muted);margin-top:4px;line-height:1.4}.upload-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:14px;margin-bottom:20px}@media (max-width:640px){.upload-row{grid-template-columns:1fr}}.paket-forst{margin:0 0 14px;border-top:3px solid var(--primary)}.steg-nr{display:inline-block;margin-right:6px;padding:1px 7px;border-radius:10px;background:var(--primary);color:#fff;font-size:var(--fs-xs);font-weight:700;letter-spacing:0.02em;vertical-align:middle}.paket-innehall{padding:12px 4px;line-height:1.6;font-size:var(--fs-sm)}.paket-rad{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:10px}.paket-info{margin-top:10px;padding:10px 12px;border:1px solid var(--border);border-radius:6px;background:var(--bg-card)}.paket-info dl{display:grid;grid-template-columns:max-content 1fr;gap:2px 12px;margin:0}.paket-info dt{color:var(--text-muted)}.paket-info dd{margin:0}.paket-formular{display:grid;grid-template-columns:max-content minmax(0,360px);gap:8px 12px;align-items:center;margin:10px 0}.paket-sammanfattning{font-size:var(--fs-sm);color:var(--text-muted)}.upload-cell{padding:14px 16px;background:var(--bg-card);border-radius:var(--radius);box-shadow:var(--shadow-sm);border-top:3px solid var(--border);display:flex;flex-direction:column;gap:10px;transition:var(--transition)}.upload-cell.required{border-top-color:var(--danger)}.upload-cell.optional{border-top-color:var(--text-blek)}.upload-cell.loaded{border-top-color:var(--status-ok);box-shadow:0 4px 6px -1px rgba(16,185,129,0.1),var(--shadow-sm)}.upload-cell-header{display:flex;align-items:center;justify-content:space-between;gap:8px}.upload-cell h3{margin:0;font-size:var(--fs-md);font-weight:600;display:flex;align-items:center;gap:6px}.upload-badge{font-size:0.65rem;padding:3px 8px;border-radius:12px;text-transform:uppercase;font-weight:700;letter-spacing:0.04em;white-space:nowrap}.upload-badge.required{background:var(--status-kritisk-bg);color:var(--status-kritisk)}.upload-badge.optional{background:var(--yta-stark);color:var(--text-muted)}.upload-badge.loaded{background:var(--status-ok-bg);color:var(--status-ok)}.upload-badge.varning{background:var(--status-varning-bg);color:var(--status-varning)}.upload-unlocks{margin:4px 0 8px;font-size:var(--fs-xs);line-height:1.4;color:var(--text-muted)}.upload-unlocks strong{color:var(--text-main);font-weight:600}.upload-demo{margin:6px 0 4px;font-size:var(--fs-xs);line-height:1.4;color:var(--text-muted)}.upload-cell .file-drop-area{padding:22px 14px;font-size:var(--fs-sm);margin:0}.upload-cell .file-drop-area p{font-size:var(--fs-sm)}.upload-help{border-top:1px dashed var(--border);padding-top:10px}.upload-help summary{cursor:pointer;font-size:var(--fs-xs);color:var(--primary);-webkit-user-select:none;user-select:none;list-style:none;font-weight:600}.upload-help summary::-webkit-details-marker{display:none}.upload-help summary::before{content:"";color:var(--primary);transition:transform 0.15s;display:inline-block}.upload-help[open] summary::before{content:""}.upload-help summary:hover{color:var(--primary-hover)}.upload-help-content{padding:8px 0 0;font-size:var(--fs-xs);color:var(--text-muted);line-height:1.55}.upload-help-content ul{margin:4px 0 0 18px;padding:0}.upload-help-content code{background:var(--bg-main);padding:1px 4px;border-radius:3px;font-size:0.92em}.gdpr-info-compact{display:flex;align-items:center;gap:12px;padding:10px 14px;background:linear-gradient(135deg,var(--status-ok-bg) 0%,var(--status-ok-yta) 100%);border-left:3px solid var(--status-ok);border-radius:6px;font-size:var(--fs-sm);color:var(--status-ok);margin-bottom:18px;line-height:1.5}.gdpr-info-compact .gdpr-icon{font-size:1.2rem;flex-shrink:0}.gdpr-info-compact strong{color:var(--status-ok)}.gdpr-info-compact a{color:var(--status-ok);text-decoration:underline;cursor:pointer;margin-left:auto;font-weight:600;font-size:var(--fs-sm);white-space:nowrap}.flik-intro{padding:0;margin:0 0 18px;max-width:92ch;font-size:var(--fs-md);line-height:1.6;color:var(--text-muted)}.flik-intro strong{color:var(--text-main)}.flik-intro>strong:first-child{font-size:var(--fs-lg);letter-spacing:-0.01em}.bakgrund-panel{margin:0 0 18px;background:var(--status-granska-bg);border:1px solid var(--status-granska-kant);border-left:4px solid var(--status-granska-ljus);border-radius:8px}.bakgrund-panel summary{cursor:pointer;padding:10px 16px;font-weight:600;font-size:var(--fs-sm);color:var(--status-granska);list-style:none}.bakgrund-panel summary::-webkit-details-marker{display:none}.bakgrund-panel summary::before{content:"";display:inline-block;transition:transform 0.15s}.bakgrund-panel[open] summary::before{transform:rotate(90deg)}.bakgrund-content{padding:4px 18px 14px;font-size:var(--fs-sm);line-height:1.6;color:var(--text-muted)}.bakgrund-content p{margin:0 0 10px}.bakgrund-content p:last-child{margin-bottom:0}.flik-usage{margin-top:18px;padding:0;background:var(--vit);border:1px solid var(--border);border-radius:8px}.flik-usage summary{cursor:pointer;padding:12px 18px;font-size:var(--fs-sm);font-weight:600;color:var(--primary);-webkit-user-select:none;user-select:none;list-style:none;border-radius:8px}.flik-usage summary::-webkit-details-marker{display:none}.flik-usage summary::before{content:"";transition:transform 0.15s;display:inline-block}.flik-usage[open] summary::before{content:""}.flik-usage summary:hover{background:var(--yta)}.flik-usage[open] summary{border-bottom:1px solid var(--border)}.flik-usage-content{padding:14px 18px;font-size:var(--fs-sm);line-height:1.6}.flik-usage-content h3,.flik-usage-content h4{margin:12px 0 4px;font-size:var(--fs-md);color:var(--text-main)}.flik-usage-content h3:first-child,.flik-usage-content h4:first-child{margin-top:0}.flik-usage-content ul{margin:4px 0 0 18px;padding:0}.flik-usage-content li{margin-bottom:4px}.stat-tip{font-size:var(--fs-xs);color:var(--status-varning);margin-top:6px;font-style:italic;line-height:1.4;padding-top:6px;border-top:1px dashed rgba(146,64,14,0.2)}.stat-tip.crit{color:var(--status-kritisk);border-top-color:rgba(153,27,27,0.2)}.stat-tip.ok{color:var(--status-ok);border-top-color:rgba(6,95,70,0.2)}.flik-empty-state{padding:40px 32px;text-align:center;background:white;border:2px dashed var(--border);border-radius:var(--radius);margin:20px 0}.flik-empty-state .empty-icon{font-size:2.5rem;margin-bottom:12px}.flik-empty-state h2,.flik-empty-state h3{margin:0 0 8px;font-size:var(--fs-lg);color:var(--text-main)}.flik-empty-state p{color:var(--text-muted);line-height:1.6;max-width:520px;margin:0 auto 14px}.flik-empty-state .empty-action{display:inline-block;margin-top:4px;padding:8px 16px;background:var(--primary);color:white;border-radius:6px;text-decoration:none;font-weight:600;font-size:var(--fs-sm);border:none;cursor:pointer}.flik-empty-state .empty-action:hover{background:var(--primary-hover)}.yrke-modal{position:fixed;inset:0;z-index:9998;display:flex;align-items:center;justify-content:center;isolation:isolate}.yrke-backdrop{position:absolute;inset:0;background:rgba(15,23,42,0.55);z-index:1}.yrke-panel{position:relative;z-index:10;width:min(960px,95vw);max-height:90vh;min-height:0;background:var(--bg-card);border-radius:12px;box-shadow:0 20px 50px rgba(0,0,0,0.3);display:flex;flex-direction:column;overflow:hidden}.yrke-modal-content{min-height:0}.yrke-modal-header{display:flex;align-items:center;justify-content:space-between;padding:16px 22px;border-bottom:1px solid var(--border);background:var(--bg-main);flex-shrink:0}.yrke-modal-header h2{margin:0;font-size:var(--fs-lg)}.yrke-modal-header .yrke-sub{font-size:var(--fs-sm);color:var(--text-muted);margin-top:4px}.yrke-modal-content{flex:1;overflow-y:auto;padding:18px 22px}@media (max-width:720px){}.insight-feed{margin-top:24px;padding:18px 20px;background:linear-gradient(135deg,var(--accent-yta) 0%,var(--status-info-yta) 100%);border-radius:10px;border:1px solid var(--accent-kant)}.insight-feed-header{display:flex;align-items:center;gap:10px;margin-bottom:12px}.insight-feed-header h2{margin:0;font-size:var(--fs-lg);color:var(--accent-mork)}.insight-empty{padding:16px;text-align:center;color:var(--text-muted);font-style:italic}.data-validation-report{margin-top:18px;padding:16px 20px;background:linear-gradient(135deg,var(--status-ok-bg) 0%,var(--status-ok-yta) 100%);border:1px solid var(--status-ok-kant);border-radius:10px}.data-validation-report.has-warnings{background:linear-gradient(135deg,var(--status-varning-yta) 0%,var(--status-varning-bg) 100%);border-color:var(--status-varning-kant)}.data-validation-report h3{margin:0 0 12px;font-size:var(--fs-md);color:var(--status-ok);display:flex;align-items:center;gap:8px}.data-validation-report.has-warnings h3{color:var(--status-varning)}.dvr-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px}.dvr-section{padding:12px 14px;background:white;border-radius:6px;border:1px solid var(--border)}.dvr-section h4{margin:0 0 8px;font-size:var(--fs-xs);text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted)}.dvr-row{display:flex;justify-content:space-between;padding:3px 0;font-size:var(--fs-sm);line-height:1.5}.dvr-row.dvr-total{border-top:1px solid var(--border);margin-top:4px;padding-top:6px;font-weight:600}.dvr-row .dvr-icon{margin-right:4px}.dvr-row.ok{color:var(--text-main)}.dvr-row.warn{color:var(--status-varning)}.dvr-row.crit{color:var(--danger)}.dvr-row .dvr-value{font-variant-numeric:tabular-nums;font-weight:600}.consistency-banner{margin-top:14px;padding:12px 16px;background:var(--status-varning-yta);border-left:4px solid var(--status-varning);border-radius:6px;font-size:var(--fs-sm)}.consistency-banner.ok{background:var(--status-ok-bg);border-left-color:var(--status-ok)}.consistency-banner strong{display:block;margin-bottom:6px}.consistency-banner ul{margin:4px 0 0 20px;padding:0}.consistency-banner li{margin-bottom:3px;line-height:1.5}.fk-vantar{margin-bottom:12px;padding:12px 16px;background:var(--status-varning-yta);border-left:4px solid var(--status-varning);border-radius:6px}.fk-vantar p{margin:0 0 10px;line-height:1.5}.fk-varningar{margin:8px 0 0;padding:0;list-style:none;font-size:var(--fs-sm);line-height:1.5}.fk-varningar li{margin-bottom:4px}.fk-varningar .fk-fel{color:var(--status-kritisk)}.fk-varningar .fk-varning{color:var(--status-varning)}.fk-lista{margin:0 0 0 20px;padding:0;font-size:var(--fs-sm);line-height:1.55}#fk-tolkning td.fk-fel{background:var(--status-varning-yta);box-shadow:inset 3px 0 0 var(--status-varning)}#fk-tolkning .fk-skal{display:block;color:var(--text-muted);font-size:var(--fs-xs)}#fk-tolkning tr.fk-bort td{color:var(--text-muted)}.reg-intro{margin-bottom:18px}.reg-intro p{margin:6px 0 0;color:var(--text-muted);font-size:var(--fs-md);line-height:1.6}.reg-hero{display:grid;grid-template-columns:1fr auto;gap:24px;align-items:center;padding:18px 22px;background:var(--bg-main);border-radius:8px;margin-bottom:16px}@media (max-width:720px){.reg-hero{grid-template-columns:1fr}}.reg-hero .hero-label{font-size:var(--fs-xs);color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;font-weight:600}.reg-hero .hero-number{font-size:2.8rem;font-weight:700;line-height:1;margin:4px 0 6px;font-variant-numeric:tabular-nums;white-space:nowrap}.reg-hero .hero-meta{font-size:var(--fs-sm);color:var(--text-muted);line-height:1.5}.reg-verdict{display:flex;align-items:center;gap:14px;padding:14px 18px;border-radius:8px;border-left:4px solid;min-width:230px}.reg-verdict.ok{background:var(--status-ok-bg);border-left-color:var(--status-ok)}.reg-verdict.warn{background:var(--status-varning-yta);border-left-color:var(--status-varning)}.reg-verdict.crit{background:var(--status-kritisk-yta);border-left-color:var(--status-kritisk)}.verdict-icon{font-size:2rem;line-height:1;flex-shrink:0}.verdict-title{font-size:var(--fs-lg);font-weight:700;color:var(--text-main)}.verdict-sub{font-size:var(--fs-sm);color:var(--text-main);margin-top:2px;line-height:1.4}.reg-waterfall{display:flex;flex-direction:column;gap:6px;padding:16px 18px;background:var(--yta);border-radius:8px;margin:12px 0}.reg-waterfall-step{padding:10px 14px;background:white;border-radius:6px;border-left:3px solid var(--text-blek)}.reg-waterfall-step.step-final.ok{background:var(--status-ok-bg);border-left-color:var(--status-ok)}.reg-waterfall-step.step-final.warn{background:var(--status-varning-yta);border-left-color:var(--status-varning)}.reg-waterfall-step.step-final.crit{background:var(--status-kritisk-yta);border-left-color:var(--status-kritisk)}.reg-waterfall-step.step-yrke{border-left-style:dashed}.reg-waterfall-step .step-note{margin:8px 0 0;font-size:var(--fs-xs);color:var(--text-muted);line-height:1.5}.reg-waterfall-step .step-name{font-size:var(--fs-sm);color:var(--text-main);margin-bottom:6px}.reg-waterfall-step .step-bar-row{display:flex;align-items:center;gap:12px}.reg-waterfall-step .step-bar-bg{flex:1;height:14px;background:var(--border);border-radius:4px;overflow:hidden}.reg-waterfall-step .step-bar-fill{height:100%;background:linear-gradient(90deg,var(--border-stark),var(--text-blek));transition:width 0.4s ease}.reg-waterfall-step.step-final.ok .step-bar-fill{background:linear-gradient(90deg,var(--status-ok-kant),var(--status-ok))}.reg-waterfall-step.step-final.warn .step-bar-fill{background:linear-gradient(90deg,var(--status-varning-kant),var(--status-varning))}.reg-waterfall-step.step-final.crit .step-bar-fill{background:linear-gradient(90deg,var(--status-kritisk-kant),var(--status-kritisk))}.reg-waterfall-step .step-value{min-width:70px;text-align:right;font-weight:700;font-variant-numeric:tabular-nums}.reg-waterfall-arrow{font-size:var(--fs-xs);color:var(--text-muted);padding-left:16px;font-style:italic}.reg-tech-table{width:100%;border-collapse:collapse;font-size:var(--fs-sm);margin:8px 0 14px}.reg-tech-table th{text-align:left;padding:5px 12px 5px 0;font-weight:600;color:var(--text-muted);width:38%;vertical-align:top}.reg-tech-table td{padding:5px 0;vertical-align:top;font-variant-numeric:tabular-nums}.reg-tech h4{margin:14px 0 6px;font-size:var(--fs-md);color:var(--text-main)}.reg-tech p{font-size:var(--fs-sm);color:var(--text-muted);line-height:1.55}.prio-config-panel{margin-bottom:20px;border:1px solid var(--border);border-radius:8px;background:var(--yta)}.prio-config-panel summary{cursor:pointer;padding:12px 18px;font-size:var(--fs-md);font-weight:600;color:var(--text-main);-webkit-user-select:none;user-select:none;list-style:none;border-radius:8px}.prio-config-panel summary::-webkit-details-marker{display:none}.prio-config-panel summary::before{content:"";color:var(--primary);margin-right:8px;transition:transform 0.15s;display:inline-block}.prio-config-panel[open] summary::before{transform:rotate(90deg)}.prio-config-panel summary:hover{background:var(--yta-stark)}.prio-config-panel[open] summary{border-bottom:1px solid var(--border)}.prio-config-content{padding:18px 22px}.prio-config-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}.prio-config-grid label{display:flex;flex-direction:column;gap:6px;font-size:var(--fs-sm);font-weight:600;color:var(--text-main)}.prio-config-grid input{padding:7px 10px;border:1px solid var(--border);border-radius:4px;font-size:var(--fs-md);font-family:inherit;font-variant-numeric:tabular-nums}.prio-config-grid small{font-size:var(--fs-xs);font-weight:400;color:var(--text-muted);line-height:1.4}.glossary-modal{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;isolation:isolate}.glossary-backdrop{position:absolute;inset:0;background:rgba(15,23,42,0.55);z-index:1}.glossary-panel{position:relative;z-index:10;width:min(820px,92vw);max-height:86vh;min-height:0;background:var(--bg-card);border-radius:12px;box-shadow:0 20px 50px rgba(0,0,0,0.3);display:flex;flex-direction:column;overflow:hidden}.glossary-content{min-height:0}.glossary-header{display:flex;align-items:center;justify-content:space-between;padding:16px 22px;border-bottom:1px solid var(--border);background:var(--bg-main)}.glossary-header h2{margin:0;font-size:var(--fs-lg)}.glossary-search-row{padding:14px 22px;border-bottom:1px solid var(--border)}.glossary-search-row input{width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:6px;font-size:var(--fs-md);font-family:inherit}.glossary-content{flex:1;overflow-y:auto;padding:8px 22px 16px}.glossary-cat-header{font-size:var(--fs-xs);font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin:18px 0 8px;padding-bottom:4px;border-bottom:1px solid var(--border)}.glossary-cat-header:first-child{margin-top:8px}.glossary-entry{padding:10px 0;border-bottom:1px dashed var(--border)}.glossary-entry:last-child{border-bottom:none}.glossary-term{font-weight:700;font-size:var(--fs-md);color:var(--text-main);margin-bottom:2px}.glossary-short{font-style:italic;color:var(--text-muted);font-size:var(--fs-sm);margin-bottom:4px}.glossary-long{font-size:var(--fs-sm);color:var(--text-main);line-height:1.55}.glossary-footer{padding:12px 22px;border-top:1px solid var(--border);background:var(--bg-main);color:var(--text-muted)}.glossary-empty{text-align:center;padding:32px;color:var(--text-muted);font-style:italic}.audit-panel{margin-top:20px;border:1px solid var(--border);border-radius:8px;background:var(--yta)}.audit-panel summary{cursor:pointer;padding:12px 18px;font-size:var(--fs-sm);font-weight:600;color:var(--text-muted);-webkit-user-select:none;user-select:none;list-style:none;display:flex;align-items:center;gap:10px;border-radius:8px}.audit-panel summary::-webkit-details-marker{display:none}.audit-panel summary::before{content:"";color:var(--primary);font-size:0.85em;transition:transform 0.15s;display:inline-block}.audit-panel[open] summary::before{transform:rotate(90deg)}.audit-panel summary:hover{color:var(--primary);background:var(--yta-stark)}.audit-panel[open] summary{border-bottom:1px solid var(--border)}.audit-content{padding:16px 22px 20px;font-size:var(--fs-sm);line-height:1.6}.audit-content .audit-section{margin-bottom:18px}.audit-content .audit-section:last-child{margin-bottom:0}.audit-content .audit-section-header{font-size:0.72rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid var(--border)}.audit-content .audit-table{width:100%;max-width:480px;border-collapse:collapse}.audit-content .audit-table td{padding:3px 8px}.audit-content .audit-table tr.audit-total td{border-top:1px solid var(--border);padding-top:6px;margin-top:4px}.audit-content ul{margin:4px 0 0 22px;padding:0}.audit-content ul li{margin-bottom:5px}.audit-content code{background:var(--border);padding:1px 5px;border-radius:3px;font-size:0.9em}.data-table thead th.sortable{cursor:pointer;-webkit-user-select:none;user-select:none;position:relative;padding-right:22px}.data-table thead th.sortable:hover{background-color:var(--border)}.data-table thead th.sortable::before,.data-table thead th.sortable::after{content:"";position:absolute;right:10px;top:50%;width:5px;height:5px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;opacity:0.35}.data-table thead th.sortable::before{margin-top:-6px;transform:rotate(-135deg)}.data-table thead th.sortable::after{margin-top:0;transform:rotate(45deg)}.data-table thead th.sortable[data-sort-dir="asc"]::before{margin-top:-2px;opacity:1;border-color:var(--primary)}.data-table thead th.sortable[data-sort-dir="desc"]::after{margin-top:-5px;opacity:1;border-color:var(--primary)}.data-table thead th.sortable[data-sort-dir="asc"]::after,.data-table thead th.sortable[data-sort-dir="desc"]::before{content:none}.cell-bar-wrap{display:flex;align-items:center;gap:8px;justify-content:flex-end}.cell-bar-bg{flex:1;max-width:80px;height:6px;background:var(--border);border-radius:3px;overflow:visible;position:relative}.cell-bar-bg.bidirectional::before{content:"";position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:var(--text-blek)}.cell-bar-fill{position:absolute;top:0;bottom:0;border-radius:3px}.cell-bar-value{min-width:56px;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}.row-cross-link{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:4px;background:var(--secondary);color:var(--primary);border:1px solid transparent;cursor:pointer;font-size:var(--fs-md);transition:var(--transition);text-decoration:none}.row-cross-link:hover{background:var(--primary);color:white;transform:scale(1.05)}@keyframes rowHighlight{0%{background-color:var(--status-varning-kant)}100%{background-color:transparent}}tr.row-highlighted td{animation:rowHighlight 3s ease-out}.data-table tr.group-header{cursor:pointer;-webkit-user-select:none;user-select:none}.data-table tr.group-header td::before{content:"";color:var(--primary);font-size:0.85em;margin-right:4px;display:inline-block;transition:transform 0.15s}.data-table tr.group-header.collapsed td::before{content:""}.http-warning{display:flex;align-items:flex-start;gap:14px;padding:14px 18px;background:var(--status-varning-bg);color:var(--status-varning);border-bottom:2px solid var(--status-varning);font-size:var(--fs-sm);line-height:1.5}.http-warning svg{color:var(--status-varning);flex-shrink:0;margin-top:2px}.http-warning code{background:rgba(0,0,0,0.06);padding:1px 5px;border-radius:3px;font-size:0.85em}.http-warning button{align-self:flex-start;padding:0 10px;height:28px;font-size:var(--fs-lg);line-height:1}.k-mask-note{margin:8px 0 0;padding:8px 12px;font-size:var(--fs-xs);line-height:1.5;color:var(--text-muted);background:rgba(148,163,184,0.08);border-left:3px solid var(--text-blek);border-radius:0 4px 4px 0}.k-mask-note{position:relative;padding-left:32px}.k-mask-note::before,.k-mask-note::after{content:"";position:absolute;box-sizing:border-box;opacity:0.7;border:2px solid currentColor}.k-mask-note::before{left:15px;top:10px;width:8px;height:7px;border-bottom:0;border-radius:4px 4px 0 0}.k-mask-note::after{left:12px;top:16px;width:14px;height:8px;border-radius:2px}.table-container:has(td>.k-mask-note){container-type:inline-size}td>.k-mask-note{position:sticky;left:0;max-width:calc(100cqw - 24px);white-space:normal}.gdpr-banner{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;background:var(--status-ok-bg);color:var(--status-ok);border:1px solid var(--status-ok-kant);border-radius:999px;font-size:var(--fs-xs);font-weight:500;line-height:1.3;white-space:nowrap}.gdpr-banner svg{color:var(--status-ok);flex-shrink:0}.gdpr-banner strong{font-weight:700}.demo-mode-banner{display:flex;align-items:center;gap:12px;margin:0 0 16px;padding:10px 16px;background:var(--status-varning-yta);color:var(--status-varning);border:1px solid var(--status-varning-kant);border-left:5px solid #f97316;border-radius:8px;font-size:var(--fs-sm);line-height:1.45}.demo-mode-banner .demo-mode-icon{font-size:1.2rem;flex-shrink:0}.demo-mode-banner .demo-mode-text{flex:1}.demo-mode-banner strong{font-weight:700}.demo-mode-exit{flex-shrink:0;background:var(--status-varning);border:none;color:var(--vit);border-radius:6px;padding:6px 12px;font-size:var(--fs-xs);font-weight:600;cursor:pointer;font-family:inherit}.demo-mode-exit:hover{filter:brightness(0.9)}@media print{.demo-mode-banner{display:none !important}}.gdpr-banner-link{background:transparent;border:1px solid var(--status-ok-kant);color:var(--status-ok);font:inherit;font-size:var(--fs-xs);padding:2px 8px;border-radius:999px;cursor:pointer;margin-left:4px;transition:background-color 120ms}.gdpr-banner-link:hover{background:var(--status-ok-bg)}.gdpr-banner-link:focus-visible{outline:2px solid var(--status-ok);outline-offset:1px}.btn.btn-fara{color:var(--status-kritisk);border-color:var(--status-kritisk-kant)}.btn.btn-fara:hover{background:var(--status-kritisk-bg)}.btn.btn-fara:focus-visible{outline-color:var(--status-kritisk)}.ci-bracket{font-size:0.78em;color:var(--text-muted);font-weight:400;margin-left:4px;cursor:help;border-bottom:1px dotted var(--text-muted)}.motivation-suggestions{background:var(--yta);border-left:3px solid var(--text-blek);padding:10px 14px;margin-top:6px;border-radius:4px;font-size:var(--fs-sm);line-height:1.55}.motivation-suggestions ul{margin:4px 0 0 18px;padding:0}.motivation-suggestions li{margin-bottom:4px}.motivation-suggestions li.ms-warn{color:var(--status-varning)}.motivation-suggestions li.ms-info{color:var(--accent-mork)}.motivation-suggestions li.ms-ok{color:var(--status-ok)}.motivation-suggestions li.ms-flag{color:var(--status-kritisk)}.motivation-suggestions code{background:var(--yta-stark);padding:1px 5px;border-radius:3px;font-size:0.85em}.info-tab-nav{display:flex;flex-wrap:wrap;gap:6px;border-bottom:1px solid var(--border);padding:0 0 12px 0;margin-bottom:18px}.info-section-btn{background:transparent;border:1px solid var(--border);padding:8px 14px;border-radius:6px;font-size:var(--fs-sm);cursor:pointer;color:var(--text-main);transition:all 120ms}.info-section-btn:hover{background:var(--bg-main)}.info-section-btn.active{background:var(--primary);color:white;border-color:var(--primary)}.info-section-btn:focus-visible{outline:2px solid var(--primary);outline-offset:2px}.ut-underflikar{margin-bottom:14px}.ut-alla-innehall{padding-bottom:8px}.ut-kopia{border-top:1px solid var(--border);padding:14px 0 6px;min-width:0}.ut-kopia:first-child{border-top:0;padding-top:0}.ut-kopia-rubrik{margin:0 0 2px;font-size:var(--fs-md)}.ut-kopia-fran{margin:0 0 8px;font-size:var(--fs-sm);color:var(--text-muted)}.info-tab-content{line-height:1.65;font-size:var(--fs-md);max-width:920px}.info-tab-content h3{margin:24px 0 8px 0;font-size:var(--fs-lg);color:var(--text-main);border-bottom:1px solid var(--border);padding-bottom:6px}.info-tab-content h3:first-child{margin-top:0}.info-tab-content h4{margin:18px 0 6px 0;font-size:var(--fs-md);font-weight:600}.info-tab-content p{margin:8px 0}.info-tab-content ul,.info-tab-content ol{margin:8px 0 8px 24px;padding:0}.info-tab-content li{margin-bottom:4px}.info-tab-content table{width:100%;border-collapse:collapse;margin:12px 0;font-size:var(--fs-sm)}.info-tab-content table th,.info-tab-content table td{text-align:left;padding:6px 10px;border-bottom:1px solid var(--border);vertical-align:top}.info-tab-content table th{background:var(--bg-main);font-weight:600}.info-tab-content code{background:var(--yta-stark);padding:1px 5px;border-radius:3px;font-size:0.88em}.info-tab-content blockquote{border-left:3px solid var(--primary);background:var(--yta);padding:10px 14px;margin:12px 0;border-radius:0 6px 6px 0}.info-build-card{background:var(--status-ok-yta);border-left:4px solid var(--status-ok);padding:12px 16px;border-radius:0 6px 6px 0;margin:12px 0;font-family:'SF Mono',Consolas,monospace;font-size:var(--fs-sm);line-height:1.7}.benchmark-metric-bar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:8px 0 14px 0;padding:8px 0;border-bottom:1px solid var(--border)}.benchmark-metric-info{margin-left:auto;font-size:var(--fs-xs);color:var(--text-muted);font-style:italic}.benchmark-metric-info.warn{color:var(--status-varning);font-style:normal}.ptrack{margin-top:16px}.ptrack h3{margin:0 0 4px;font-size:var(--fs-lg);color:var(--accent-mork)}.ptrack-intro{font-size:var(--fs-sm);color:var(--text-muted);line-height:1.55;margin:0 0 10px}.ptrack-row{display:flex;gap:12px;align-items:flex-start;padding:9px 2px;border-top:1px solid var(--border)}.ptrack-row:first-of-type{border-top:none}.ptrack-status{font-size:var(--fs-lg);line-height:1.35;flex-shrink:0}.ptrack-body{flex:1;min-width:0}.ptrack-detail{font-size:var(--fs-sm);color:var(--text-muted);margin-top:2px;line-height:1.5}.ptrack-goto{margin-top:5px;background:transparent;border:1px solid var(--border);color:var(--primary);padding:2px 10px;border-radius:4px;cursor:pointer;font-size:var(--fs-xs)}.ptrack-goto:hover{background:var(--primary);color:#fff}.forecast-target-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:8px;margin-bottom:8px;background:var(--yta);border:1px solid var(--border);border-radius:6px}.forecast-target-row select,.forecast-target-row input{font-size:var(--fs-sm);padding:4px 6px;border:1px solid var(--border);border-radius:4px}.forecast-target-row .ft-cap{font-size:var(--fs-sm);color:var(--text-muted);white-space:nowrap}.forecast-target-row .ft-cap input{width:96px}@media print{#view-trend{display:block !important;page-break-before:always}}.inactivity-warn-overlay{position:fixed;inset:0;background:rgba(15,23,42,0.65);z-index:99998;display:flex;align-items:center;justify-content:center;-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)}.inactivity-warn-panel{background:white;border-radius:10px;padding:22px 28px;max-width:460px;width:calc(100% - 32px);box-shadow:0 10px 32px rgba(0,0,0,0.4)}.inactivity-warn-panel h2{color:var(--status-varning)}#inactivity-countdown{color:var(--status-kritisk);font-weight:700}@media (prefers-reduced-motion:reduce){.inactivity-warn-overlay{backdrop-filter:none}}.omritning-ruta{position:fixed;inset:0;z-index:99990;display:flex;align-items:center;justify-content:center;background:rgba(248,250,252,0.82);cursor:progress}.omritning-ruta p{margin:0;padding:16px 22px;font-size:var(--fs-md);color:var(--text-main,#0f172a);background:var(--bg-card,#fff);border:1px solid var(--border,#e2e8f0);border-radius:10px;box-shadow:0 8px 24px rgba(15,23,42,0.18)}svg [data-del="rityta"]:focus{outline:none}svg [data-del="rityta"]:focus-visible{outline:2px solid var(--primary,#1d4ed8);outline-offset:2px}svg [data-fokus]{stroke:var(--text-main);stroke-width:2.5px;stroke-opacity:1}svg [data-nara]{stroke:var(--text-main);stroke-width:2px;stroke-opacity:1}.markering-rad{position:sticky;top:8px;z-index:30;display:flex;align-items:center;gap:6px 10px;flex-wrap:wrap;margin:0 0 14px;padding:6px 14px;font-size:var(--fs-sm);color:var(--status-granska);background:var(--status-granska-bg);border:1px solid var(--status-granska-kant);border-radius:var(--radius)}@media (max-width:1919px){.content-body.har-sidindex>.markering-rad{top:calc(var(--sidindex-hojd,58px) + 2px)}}.markering-rad>span{font-weight:600;margin-right:auto}@media print{.markering-rad{display:none !important}}tr.rad-markerad td{background:var(--accent-yta);box-shadow:inset 0 1px 0 var(--accent-kant),inset 0 -1px 0 var(--accent-kant)}tr.rad-markerad td:first-child{box-shadow:inset 3px 0 0 var(--primary,#1d4ed8),inset 0 1px 0 var(--accent-kant),inset 0 -1px 0 var(--accent-kant)}@media print{tr.rad-markerad td,tr.rad-markerad td:first-child{background:none;box-shadow:none}}svg rect[data-del="pensel"]{pointer-events:none}svg rect[data-markerad],svg circle[data-markerad]{stroke:var(--text-main);stroke-width:1.5px}.explore-klickbar svg [data-l][data-i],svg [data-l][data-i][data-markerad]{cursor:pointer}.chart-tip-portal{position:fixed;left:0;top:0;background:var(--text-main);color:var(--yta);padding:10px 14px;border-radius:8px;border:1px solid var(--text-muted);font-size:var(--fs-sm);line-height:1.55;font-weight:400;max-width:360px;width:max-content;text-align:left;z-index:99999;pointer-events:none;opacity:0;visibility:hidden;transition:opacity 0.1s ease;box-shadow:0 4px 14px rgba(0,0,0,0.32);white-space:normal}.chart-tip-portal.visible{opacity:1;visibility:visible}.chart-tip-portal strong{font-weight:700;color:#fff}@media (prefers-reduced-motion:reduce){.chart-tip-portal{transition:none}}.prio-size-legend{display:flex;align-items:center;gap:18px;padding:10px 14px;margin-top:10px;background:var(--bg-main);border-radius:6px;font-size:var(--fs-xs);color:var(--text-muted);flex-wrap:wrap}.prio-size-legend strong{color:var(--text-main);font-weight:600}.prio-size-legend .legend-item{display:inline-flex;align-items:center;gap:6px}.prio-size-legend .legend-bubble{display:inline-block;border-radius:50%;background:rgba(100,116,139,0.4);border:1px solid rgba(100,116,139,0.7);flex-shrink:0}.prio-size-legend .legend-label{font-variant-numeric:tabular-nums}@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:0.01ms !important;animation-iteration-count:1 !important;transition-duration:0.01ms !important;scroll-behavior:auto !important}}.info-tip{min-width:22px;min-height:22px;width:22px;height:22px;font-size:var(--fs-xs)}.info-tip>.ikon{width:14px;height:14px}.stat-box[data-tooltip]{cursor:help}.btn-sm{min-height:32px;padding:6px 12px}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}.data-table caption{text-align:left;padding:8px 0;font-weight:600;color:var(--text-main);caption-side:top}button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,[role="button"]:focus-visible,[role="tab"]:focus-visible,summary:focus-visible{outline:3px solid var(--accent);outline-offset:2px;box-shadow:0 0 0 5px rgba(37,99,235,0.2)}@media (forced-colors:active){.stat-box,.compliance-card,.card{border:1px solid CanvasText}.info-tip{forced-color-adjust:none}}.skip-link{position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;z-index:100000}.skip-link:focus{left:16px;top:16px;width:auto;height:auto;padding:12px 20px;background:var(--primary);color:#fff;font-weight:600;border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.25);text-decoration:none}*:focus{outline:none}*:focus-visible{outline:3px solid var(--accent);outline-offset:2px;border-radius:3px}.nav-item:focus-visible{outline:3px solid var(--status-varning-kant);outline-offset:-3px}.nav-item[aria-disabled="true"]{opacity:0.55;cursor:not-allowed}.nav-item .nav-las{display:none}.nav-item[aria-disabled="true"] .nav-las{display:block;margin-left:auto;flex:none;opacity:0.7}.first-run-hint{display:flex;align-items:flex-start;gap:10px;margin:4px 0 14px;padding:12px 16px;background:var(--accent-yta);border:1px solid var(--accent-kant);border-left:4px solid var(--accent);border-radius:8px;font-size:var(--fs-sm);line-height:1.5;color:var(--accent-mork)}.first-run-hint-icon{font-size:var(--fs-lg);flex-shrink:0}.first-run-demo-link{background:none;border:none;color:var(--accent-mork);font-weight:600;text-decoration:underline;cursor:pointer;font-family:inherit;font-size:inherit;padding:0}.first-run-demo-link:hover{color:var(--accent-mork)}.flow-next-bar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:28px 0 8px;padding:14px 18px;background:var(--yta);border:1px solid var(--border);border-radius:10px;font-size:var(--fs-md);color:var(--text-muted)}.flow-next-bar .flow-next-label{font-weight:600;color:var(--text-main)}.flow-next-btn{margin-left:auto;background:var(--primary);color:#fff;border:none;border-radius:8px;padding:9px 18px;font-size:var(--fs-md);font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap}.flow-next-btn:hover{background:var(--primary-dark,#1e40af)}@media print{.flow-next-bar,.first-run-hint{display:none !important}}.export-hub-row{display:flex;align-items:center;gap:14px;padding:10px 14px;border:1px solid var(--border);border-radius:8px;background:#fff}.export-hub-row>div{flex:1;min-width:0}.export-hub-row strong{display:block;font-size:var(--fs-sm);margin-bottom:2px}.export-hub-row span{font-size:var(--fs-xs);color:var(--text-muted);line-height:1.45;display:block}.export-hub-row .btn{flex-shrink:0;white-space:nowrap}.export-lista{display:grid;gap:8px}.export-lista .export-hub-row .btn{min-width:150px;justify-content:center}.export-rad-primar{border-color:var(--primary,#1d4ed8);background:var(--yta)}.export-hub-row>.export-org{flex:0 1 auto;display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;max-width:360px}.export-org label{white-space:nowrap}.export-org input{width:230px;max-width:100%}.export-org .upload-namn-fel{flex-basis:100%;margin:0}.export-hub-row .export-org-forklaring{margin-top:4px}.export-fler{margin:12px 2px 0;font-size:var(--fs-sm);color:var(--text-muted);line-height:1.5}.export-fler a{color:var(--primary,#1d4ed8);font-weight:500;text-decoration:underline;text-underline-offset:2px;text-decoration-color:var(--border)}.export-fler a:hover{text-decoration-color:currentColor}@media print{#export-hub{display:none !important}}#handlingsplan-tbody .handlingsplan-seeded>td{background:var(--accent-yta)}#handlingsplan-tbody .handlingsplan-seeded>td:first-child{border-left:3px solid var(--accent);font-weight:500}#handlingsplan-tbody .handlingsplan-egen>td:first-child{border-left-color:var(--text-muted);font-weight:400}#handlingsplan-tbody .hp-ta-bort{margin-left:6px}#handlingsplan-tbody .handlingsplan-empty{display:none}#handlingsplan-tbody .handlingsplan-empty>td{height:40px}@media print{#handlingsplan-tbody .handlingsplan-empty{display:table-row}}.handlingsplan-not{margin:8px 0 0;font-size:var(--fs-sm);color:var(--text-muted)}#handlingsplan-tbody .hp-falt{width:100%;min-width:7.5em;font:inherit;font-size:var(--fs-sm);padding:4px 6px;border:1px solid var(--border);border-radius:4px;background:var(--bg-card);color:inherit}#handlingsplan-tbody .hp-falt.hp-falt-varning{border-color:var(--status-varning)}.handlingsplan-varning{margin:8px 0 0;font-size:var(--fs-sm);color:var(--status-varning)}.hp-skal{margin-top:4px;white-space:nowrap}.hp-skal-sammanfattning{color:var(--text-muted,inherit);margin-left:4px}.skal-skillnad{margin:6px 0 12px}.skal-tabell .skal-falt{width:100%;min-width:6em;font:inherit;font-size:var(--fs-sm);padding:4px 6px;border:1px solid var(--border);border-radius:4px;background:var(--bg-card);color:inherit}.skal-tabell .skal-belopp{max-width:9em;text-align:right}.skal-tabell .skal-falt[aria-invalid="true"]{border-color:var(--status-varning)}.skal-tabell .skal-falt[aria-describedby="skal-varning"]{border-color:var(--status-varning)}.skal-summa{margin:12px 0 4px;font-weight:600}.skal-forslag{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:8px}#print-report{display:none}@media print{body.print-mode *{visibility:hidden}body.print-mode #print-report,body.print-mode #print-report *{visibility:visible}body.print-mode #print-report{display:block;position:absolute;left:0;top:0;width:100%;background:#fff;color:#000;font-family:'Inter',sans-serif;font-size:10pt;line-height:1.45}@page{size:A4;margin:15mm}#print-report h1{font-size:26pt;margin:0 0 6pt;color:var(--text-main)}#print-report .org{font-size:14pt;color:var(--text-muted);margin:0 0 16pt}#print-report h2{font-size:14pt;margin:18pt 0 8pt;padding-bottom:4pt;border-bottom:1pt solid var(--text-blek);color:var(--text-main);page-break-after:avoid}#print-report .meta th,#print-report .kpi th{text-align:left;font-weight:600;color:var(--text-muted);padding:4pt 12pt 4pt 0;white-space:nowrap;vertical-align:top}#print-report .meta td,#print-report .kpi td{padding:4pt 0}#print-report table{width:100%;border-collapse:collapse;font-size:9pt;margin-top:6pt}#print-report .meta,#print-report .kpi{width:auto}#print-report table:not(.meta):not(.kpi) th{background:var(--yta-stark) !important;text-align:left;padding:5pt 6pt;border-bottom:1pt solid var(--text-muted);font-weight:600;-webkit-print-color-adjust:exact;print-color-adjust:exact}#print-report table:not(.meta):not(.kpi) td{padding:4pt 6pt;border-bottom:0.5pt solid var(--border-stark);vertical-align:top}#print-report tr.group-header td{background:var(--border) !important;font-weight:700;-webkit-print-color-adjust:exact;print-color-adjust:exact}#print-report .page-break{page-break-before:always}#print-report pre{font-family:'Consolas','Courier New',monospace;font-size:8.5pt;white-space:pre-wrap;word-break:break-word;background:var(--yta);padding:10pt;border:0.5pt solid var(--border-stark);page-break-inside:avoid}#print-report img{max-width:100%;height:auto;page-break-inside:avoid;display:block;margin:10pt auto}#print-report code{background:var(--yta-stark);padding:1pt 3pt;border-radius:2pt;font-size:8.5pt}}@media print{body:not(.print-mode) .sidebar,body:not(.print-mode) .top-header .header-knappar,body:not(.print-mode) .gdpr-banner,body:not(.print-mode) .inget-underlag{display:none !important}body:not(.print-mode) .app-container{display:block;min-height:0;background:var(--vit)}body:not(.print-mode) .main-content{display:block;overflow:visible;width:100%}body:not(.print-mode) .top-header{padding:0 0 8pt;border-bottom:1pt solid var(--border-stark)}body:not(.print-mode) .content-body{padding:8pt 0 0}body:not(.print-mode) .table-container{overflow:visible}body:not(.print-mode) .card,body:not(.print-mode) .diagramkort{break-inside:avoid;box-shadow:none}}.spinner{width:40px;height:40px;border:4px solid var(--secondary);border-top-color:var(--primary);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto}@keyframes spin{to{transform:rotate(360deg)}}.table-tools{display:flex;justify-content:flex-end;gap:8px;margin:0 0 8px}.btn-table-tool{font:inherit;font-size:var(--fs-xs);line-height:1;padding:5px 10px;cursor:pointer;color:var(--text-muted,#475569);background:var(--bg-card,#fff);border:1px solid var(--border,#e2e8f0);border-radius:6px;transition:border-color 0.15s,color 0.15s}.btn-table-tool:hover{color:var(--primary,#1d4ed8);border-color:var(--primary,#1d4ed8)}.btn-table-tool:focus-visible{outline:2px solid var(--primary,#1d4ed8);outline-offset:2px}.btn-table-tool[aria-pressed="true"]{color:var(--primary,#1d4ed8);border-color:var(--primary,#1d4ed8);background:var(--accent-yta)}@media print{.table-tools{display:none}}.reg-caveat-inline{margin:10px 0;padding:9px 13px;font-size:var(--fs-sm);line-height:1.55;color:var(--text-muted);background:var(--yta);border-left:3px solid var(--text-blek);border-radius:4px}.reg-kronor{margin-top:14px;padding:14px 16px;background:var(--status-ok-yta);border:1px solid var(--status-ok-kant);border-radius:6px}.reg-kronor-head{font-weight:600;margin-bottom:10px}.reg-kronor-grid{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:10px}.rk-tile{flex:1 1 150px;padding:10px 12px;background:#fff;border:1px solid var(--border,#e2e8f0);border-radius:6px}.rk-val{font-size:var(--fs-xl);font-weight:700;font-variant-numeric:tabular-nums}.rk-lbl{font-size:var(--fs-xs);color:var(--text-muted,#475569);margin-top:2px;line-height:1.4}.rk-example{margin:8px 0 0;font-size:var(--fs-md);line-height:1.6}.rk-caveat{margin:8px 0 0;font-size:var(--fs-xs);color:var(--text-muted,#475569);line-height:1.5}.reg-budget{margin:10px 0 14px}.reg-budget-title{font-size:var(--fs-sm);margin-bottom:8px}.reg-budget-bar{display:flex;height:26px;width:100%;border-radius:5px;overflow:hidden;background:var(--border)}.rb-seg{height:100%}.rb-bas{background:var(--status-info)}.rb-alder{background:#38bdf8}.rb-yrke{background:var(--status-granska)}.rb-kvar{background:var(--status-kritisk)}.reg-budget-legend{list-style:none;padding:0;margin:10px 0 0;font-size:var(--fs-sm);line-height:1.8}.reg-budget-legend li{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.rb-key{display:inline-block;width:12px;height:12px;border-radius:3px;flex:none}.rb-note{margin:8px 0 0;padding:8px 12px;font-size:var(--fs-sm);line-height:1.5;background:var(--status-varning-yta);border-left:3px solid var(--status-varning);border-radius:4px}.perbas-stats-toggle{display:inline-flex;align-items:center;gap:7px;margin:10px 0 0;font-size:var(--fs-sm);color:var(--text-muted,#475569);cursor:pointer}#perbas-table.hide-stats .col-stat{display:none}.gd-head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:6px}.gd-head h2{margin:0;font-size:1.3rem}.gd-sub{color:var(--text-muted,#475569);font-size:var(--fs-sm)}.gd-head .btn-table-tool{margin-left:auto}.gd-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:14px}.gd-card{background:var(--bg-card,#fff);border:1px solid var(--border,#e2e8f0);border-radius:8px;padding:14px 16px}.gd-card h3{margin:0 0 8px;font-size:var(--fs-md)}.gd-card p{margin:6px 0;font-size:var(--fs-sm);line-height:1.55}.gd-note{color:var(--text-muted,#475569);font-size:var(--fs-xs) !important}.gd-missing{color:var(--text-muted,#475569);font-style:italic;font-size:var(--fs-sm) !important}.gd-big{font-size:1.7rem;font-weight:700;font-variant-numeric:tabular-nums;margin:4px 0}.gd-kpis{display:flex;flex-wrap:wrap;gap:12px}.gd-kpi{flex:1 1 120px}.bd-stack{display:flex;flex-direction:column;gap:14px}.bd-tabell{margin:6px 0}.bd-tabell th,.bd-tabell td{padding:6px 10px}.bd-oppna{margin-left:8px;font-weight:400}.gd-kpi span{display:block;font-size:var(--fs-lg);font-weight:700;font-variant-numeric:tabular-nums}.gd-kpi small{color:var(--text-muted,#475569);font-size:var(--fs-xs)}.gd-list{margin:6px 0 0 18px;padding:0;font-size:var(--fs-sm);line-height:1.65}.gd-hyp{margin-bottom:6px}.gd-hyp-warn{color:var(--status-varning)}.rb-stable{color:var(--status-ok);font-weight:600}.rb-flip{color:var(--status-varning);font-weight:600}.fc-clear{padding:14px 16px;background:var(--status-ok-yta);border:1px solid var(--status-ok-kant);border-radius:8px;font-size:var(--fs-md);line-height:1.6}.fc-list{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:10px}.fc-item{padding:12px 14px;border-radius:6px;border-left:4px solid var(--border,#e2e8f0);background:var(--bg-main,#f0f4f8)}.fc-item.fc-warn{border-left-color:var(--status-varning)}.fc-item.fc-info{border-left-color:var(--text-blek)}.fc-title{font-weight:600;font-size:var(--fs-md)}.fc-detail{color:var(--text-muted,#475569);font-size:var(--fs-sm);line-height:1.55;margin-top:4px}.fc-item .btn-table-tool{margin-top:8px}.chart-export-host{position:relative}.chart-export{position:absolute;top:4px;right:4px;z-index:5}.chart-export-host:has(>div>svg[role="group"]){padding-top:30px}.chart-container:has(>div>svg[role="group"]){height:auto}.tabell-export-rad{display:flex;justify-content:flex-end;margin-bottom:10px}.chart-export.tabell-export{position:relative;top:auto;right:auto}.chart-export:has(.chart-export-meny:not([hidden])){z-index:30}.chart-export-btn{font:inherit;font-size:var(--fs-xs);line-height:1;padding:5px 10px;cursor:pointer;color:var(--text-muted,#475569);background:var(--bg-card,#fff);border:1px solid var(--border,#e2e8f0);border-radius:6px}.chart-export-btn:hover,.chart-export-btn[aria-expanded="true"]{color:var(--primary,#1d4ed8);border-color:var(--primary,#1d4ed8)}.chart-export-btn:focus-visible,.chart-export-meny button:focus-visible{outline:2px solid var(--primary,#1d4ed8);outline-offset:2px}.chart-export-meny{position:absolute;top:calc(100% + 4px);right:0;min-width:16rem;display:flex;flex-direction:column;padding:4px;background:var(--bg-card,#fff);border:1px solid var(--border,#e2e8f0);border-radius:8px;box-shadow:0 8px 24px rgba(15,23,42,0.12)}.chart-export-meny[hidden]{display:none}.chart-export-meny button{font:inherit;font-size:var(--fs-sm);text-align:left;padding:8px 10px;cursor:pointer;background:none;border:0;border-radius:4px;color:var(--text-main,#0f172a)}.chart-export-meny button:hover{background:var(--bg-hover,#f1f5f9)}.chart-export-fel{margin:4px 10px;font-size:var(--fs-xs);color:var(--danger,#b91c1c)}@media print{.chart-export{display:none !important}}.diagram-urval{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0 0 8px}.diagram-urval .btn-table-tool[aria-disabled="true"]{cursor:not-allowed;opacity:0.7}.diagram-urval .btn-table-tool[hidden]{display:none}.diagram-urval-namn{font-size:var(--fs-sm);color:var(--text-muted)}.diagram-urval-grans{display:inline-flex;align-items:center;gap:4px;font-size:var(--fs-sm)}.diagram-urval-grans .form-select{width:7em;max-width:100%;padding:4px 8px}.diagram-urval-grans .form-select[aria-invalid="true"]{border-color:var(--danger,#b91c1c);box-shadow:0 0 0 1px var(--danger,#b91c1c)}.diagram-urval-lista{flex:1 1 100%;min-width:0}.diagram-urval-lista>summary{cursor:pointer;font-size:var(--fs-sm);padding:4px 0;overflow-wrap:anywhere}.diagram-urval-lista>summary:focus-visible{outline:2px solid var(--primary,#1d4ed8);outline-offset:2px;border-radius:4px}.diagram-urval-listverktyg{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:6px 0}.diagram-urval-sok{flex:1 1 12em;min-width:0;max-width:24em;padding:4px 8px}.diagram-urval-traffar{font-size:var(--fs-sm);color:var(--text-muted)}.diagram-urval-poster{list-style:none;margin:0;padding:0;max-height:16em;overflow-y:auto;overflow-x:hidden;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(16em,100%),1fr));gap:2px 12px}.diagram-urval-poster>li[hidden]{display:none}.diagram-urval-poster label{display:flex;align-items:flex-start;gap:6px;font-size:var(--fs-sm);min-width:0;overflow-wrap:anywhere;padding:2px 0}.diagram-urval-poster input[type="checkbox"]{flex:none;margin-top:2px}@media print{.diagram-urval{display:none !important}}.explore-controls{display:flex;flex-wrap:wrap;gap:18px;align-items:flex-end}.explore-ctl{display:flex;flex-direction:column;gap:4px}.explore-ctl-check{display:inline-flex;align-items:center;gap:8px}.explore-ctl-check label{margin:0}.explore-filter-vals{display:flex;flex-direction:column;gap:2px;max-height:12rem;overflow-y:auto}.explore-filter-val{display:flex;gap:6px;align-items:center;font-size:var(--fs-sm)}.explore-filter-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}.explore-filter-chips:empty{display:none}.explore-note{margin:8px 0 0;font-size:var(--fs-xs);color:var(--text-muted)}.explore-note:empty{display:none}.explore-tom{color:var(--text-muted);padding:24px;text-align:center}#explore-table tr.explore-liten td,#explore-table td.explore-liten{font-style:italic;color:var(--text-muted)}.explore-klickbar .point{cursor:pointer !important}.explore-urval-del{display:flex;flex-direction:column;gap:8px;margin-top:12px;align-items:flex-start}.explore-urval-rubrik{margin:0;display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:var(--fs-sm)}.explore-urval-rader{display:flex;flex-direction:column;gap:6px}.explore-urval-rader:empty{display:none}.explore-urval-rad{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.explore-urval-tal{width:8rem}.explore-urval-val{position:relative}.explore-urval-val summary{cursor:pointer;font-size:var(--fs-sm);padding:6px 10px;border:1px solid var(--border,#e2e8f0);border-radius:6px}.explore-urval-val[open]>.form-select,.explore-urval-val[open]>.explore-filter-vals{margin-top:6px}.explore-urval-ofullst{font-size:var(--fs-xs);color:var(--warning,#b45309);font-style:italic}.explore-urval-bort{font:inherit;background:none;border:0;cursor:pointer;color:var(--text-muted);padding:4px 8px}.explore-urval-bort:hover{color:var(--danger,#b91c1c)}.explore-urval-text{font-size:var(--fs-sm)}.explore-filter-val[hidden]{display:none}.explore-visa-not{flex-basis:100%;margin:0;font-size:var(--fs-xs);color:var(--text-muted)}.explore-visa-not:empty{display:none}.explore-urval{margin-top:16px;padding-top:12px;border-top:1px solid var(--border,#e2e8f0)}.explore-urval-titel{margin:0;font-size:var(--fs-md)}.ref-status{margin:6px 0 8px;font-size:var(--fs-sm);line-height:1.5}.ref-namn-rad{display:flex;flex-direction:column;gap:4px;margin:8px 0;font-size:var(--fs-sm)}.uk-panel{margin-top:24px}.uk-helhet{margin:4px 0 6px;font-size:var(--fs-md)}.uk-intro{font-size:var(--fs-sm);color:var(--text-muted);margin:0 0 8px}.uk-rad{display:grid;grid-template-columns:5.5rem 1fr;gap:12px;padding:10px 0;border-top:1px solid var(--border)}.uk-marke{align-self:start;display:inline-block;font-weight:600;font-size:var(--fs-xs);padding:2px 8px;border-radius:10px;text-align:center}.uk-ok{background:var(--status-ok-bg);color:var(--status-ok)}.uk-varning{background:var(--status-varning-bg);color:var(--status-varning)}.uk-kritisk{background:var(--status-kritisk-bg);color:var(--status-kritisk)}.uk-text{font-size:var(--fs-sm);color:var(--text-muted);margin-top:2px}.uk-detaljer{margin-top:12px}.uk-detaljer h4{font-size:var(--fs-sm);margin:0 0 6px}.ptrack-fas{font-size:var(--fs-xs);font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);margin:14px 0 4px}.dok-knappar{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}.ru-grupprubrik{margin:20px 0 8px;font-size:var(--fs-md)}.ru-block{border:1px solid var(--border);border-radius:6px;padding:12px 14px;margin:0 0 10px}.ru-innehall h3{font-size:var(--fs-md);margin:0 0 6px}.ru-innehall table{border-collapse:collapse;margin:6px 0;font-size:var(--fs-sm)}.ru-innehall th,.ru-innehall td{border:1px solid var(--border);padding:3px 8px;text-align:left}.ru-innehall p,.ru-innehall li{font-size:var(--fs-sm);line-height:1.5}.ru-atgard{display:flex;gap:10px;align-items:center;margin-top:8px}.ru-kvitto{font-size:var(--fs-xs);color:var(--text-muted)}.ru-diagram h4{margin:0;font-size:var(--fs-md)}.gu-kort{margin-top:24px}.gu-inledning{margin:0 0 12px}.gu-rad{padding:10px 0;border-top:1px solid var(--border,#e2e8f0)}.gu-rubrik{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:baseline}.gu-belopp{font-variant-numeric:tabular-nums;font-weight:600}.gu-andel,.gu-not,.gu-ovriga{color:var(--text-muted);font-size:var(--fs-sm)}.gu-stapel{position:relative;height:10px;margin:6px 0;background:linear-gradient(to right,transparent calc(50% - 1px),var(--border,#e2e8f0) calc(50% - 1px),var(--border,#e2e8f0) calc(50% + 1px),transparent calc(50% + 1px))}.gu-fyll{display:block;height:100%;border-radius:2px}.gu-pos{background:var(--primary)}.gu-neg{background:var(--text-muted)}.gu-text{margin:4px 0;font-size:var(--fs-sm)}.gu-topp{margin:4px 0 0;padding-left:20px;font-size:var(--fs-sm);font-variant-numeric:tabular-nums}.pag-kort{margin-top:24px}.pag-inledning,.pag-not{color:var(--text-muted);font-size:var(--fs-sm)}.pag-grans{display:inline-flex;align-items:center;gap:6px;margin:6px 0 12px;font-size:var(--fs-sm)}.pag-grans input{width:4.5em}.pag-tabell-wrap{overflow-x:auto}.pag-tabell-wrap:focus-visible{outline:2px solid var(--primary);outline-offset:2px}.pag-ansvar{white-space:nowrap}.pag-median{color:var(--status-varning);font-weight:600;margin-left:2px}#pag-tabell th,#pag-tabell td{text-align:left}#pag-tabell .num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}@media print{#personer-att-granska{display:none !important}}@media print{#outliers-container{display:none !important}}#rapport-table th.jmf-kolumn{background:var(--accent-yta);color:var(--accent-mork)}#rapport-table.utan-jamforelse :is(th,td):nth-child(n+7){display:none}@media print{#rapport-table tbody tr{display:table-row !important}}#likvardighet-table td.t-hoger,#likvardighet-table .lv-ki,#likvardighet-table .lv-under{white-space:nowrap}.lv-konsandel{white-space:nowrap}.lv-ki-marke{display:inline-block;margin-top:3px;padding:1px 8px;border-radius:999px;font-size:var(--fs-xs);font-weight:600;white-space:nowrap}#matrix-table tbody td{padding-top:8px;padding-bottom:8px;line-height:1.35}.bara-export{display:none}.la-status{font-weight:700;white-space:nowrap}.la-status-liten{display:inline-block;font-weight:400}.la-status-liten::first-letter{text-transform:uppercase}.la-stabilitet{font-size:var(--fs-xs);font-weight:normal;color:var(--text-muted);white-space:nowrap}.la-falla{width:22px;height:22px;margin:0 4px 0 -4px;padding:0;border:0;background:none;cursor:pointer;color:var(--text-muted);vertical-align:middle;border-radius:4px}.la-falla::before{content:'';display:inline-block;width:7px;height:7px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(-45deg);transition:transform 0.15s}.la-falla[aria-expanded="true"]::before{transform:rotate(45deg)}.la-falla:hover{color:var(--text-main);background:var(--yta-stark)}.la-falla:focus-visible{outline:2px solid var(--primary);outline-offset:1px}@media print{.la-falla{display:none}.la-underrad-ansvar[hidden]{display:table-row !important}}.la-underrad td{font-size:var(--fs-sm);color:var(--text-muted);border-top:none}.la-underrad .la-underrad-namn{padding-left:1.6rem}.reg-ansvar{font-size:var(--fs-sm);margin:0.6rem 0 0}.la-aid-not{font-size:var(--fs-sm);color:var(--text-muted);margin-top:8px;line-height:1.55}.att-gora{margin-top:24px}.att-gora-status{margin:8px 0 16px}.att-gora-status .compliance-grid{gap:8px}.att-gora-status .compliance-card{padding:8px 10px}.att-gora-status .comp-sub{display:none}.att-gora-status .comp-value{font-size:var(--fs-sm)}.att-gora-status .comp-lank{font-size:var(--fs-xs)}.att-gora-borja-rubrik{font-size:var(--fs-md);margin:6px 0}.att-gora-borja-lista{margin:0 0 12px;padding-left:20px}.att-gora-kat{color:var(--text-muted);font-size:var(--fs-xs)}.ru-toc{margin:0 0 16px;padding:10px 14px;font-size:var(--fs-sm);background:var(--bg-main,#f8fafc);border-radius:6px}.ru-toc ul{margin:0 0 8px;padding-left:18px;line-height:1.7}.ru-alla-avsnitt{margin-top:10px;padding:10px;border:1px dashed var(--border,#e2e8f0);background:#fff}@media print{.ru-toc{display:none !important}}.internt-fel-banner{margin:0 0 12px;padding:10px 14px;border-radius:8px;border-left:4px solid var(--status-kritisk);background:var(--status-kritisk-yta);color:var(--status-kritisk);font-size:var(--fs-sm)}.sektor-intro,.sektor-andel{font-size:var(--fs-sm);color:var(--text-muted);margin:0 0 10px}.sektor-andel{margin-top:10px}.jmf-block{border-left:2px solid var(--border,#cbd5e1)}.jmf-neg{color:var(--danger)}.jmf-pos{color:var(--status-ok)}.jmf-filter{display:inline-flex;gap:6px;align-items:center;font-size:var(--fs-sm)}.jmf-diagram-rubrik{font-size:var(--fs-md);margin:16px 0 4px}#ref-tabell td.num{white-space:nowrap}#ref-tabell td:not(.num){min-width:170px;text-align:left}#benchmark-table td.num{white-space:nowrap}.upload-cell.loaded .file-drop-area,.upload-cell.loaded .upload-help,.upload-cell.loaded .upload-unlocks{display:none}.upload-inlast{margin-top:6px}.upload-filnamn{margin:0 0 6px;font-weight:600;color:var(--status-ok);font-size:var(--fs-sm)}.upload-importprofil{margin:0 0 6px;font-size:var(--fs-sm);color:var(--text-muted)}.upload-namn{display:flex;gap:6px;align-items:center;font-size:var(--fs-sm);margin:6px 0}.upload-namn input{flex:1;min-width:0}.upload-namn-fel{color:var(--danger);font-size:var(--fs-xs);margin:0 0 6px}.upload-knappar{display:flex;gap:6px;flex-wrap:wrap}.uk-fallbar>summary{cursor:pointer;font-weight:600;margin:4px 0 8px}.k-troskel-varning{display:flex;align-items:center;gap:10px;margin:0 0 16px;padding:10px 16px;background:var(--status-kritisk-yta);border:1px solid var(--status-kritisk-kant);border-left:4px solid var(--status-kritisk);border-radius:8px;color:var(--status-kritisk);font-size:var(--fs-md)}.k-troskel-varning[hidden]{display:none}.k-troskel-varning a{color:var(--status-kritisk);font-weight:600;margin-left:auto}.k-troskel-hjalp{margin:2px 0 0;font-size:var(--fs-xs);color:var(--text-muted)}.forhandsvisning-banner{display:flex;align-items:center;gap:10px;margin:0 0 16px;padding:10px 16px;background:var(--status-varning-yta);border:1px solid var(--status-varning-kant);border-left:4px solid var(--status-varning);border-radius:6px;color:var(--status-varning);font-size:var(--fs-sm)}.forhandsvisning-banner[hidden]{display:none}.forhandsvisning-av{margin-left:auto;background:none;border:1px solid var(--status-varning);color:var(--status-varning);border-radius:6px;padding:4px 10px;font:inherit;font-weight:600;cursor:pointer;white-space:nowrap}body.forhandsvisning .content-body{outline:3px dashed var(--status-varning);outline-offset:-3px}#btn-forhandsvisa[aria-pressed="true"]{background:var(--status-varning-bg);border-color:var(--status-varning);color:var(--status-varning)}@media (max-width:1100px){:is(div,details,section,article,td,nav):has(>table){overflow-x:auto}.data-table th:first-child,.data-table td:first-child{position:sticky;left:0;z-index:1;background:var(--bg-card)}.data-table thead th:first-child{z-index:11;background:var(--bg-main)}.data-table tr.group-header td:first-child{background:var(--yta-stark)}.data-table th,.data-table td{padding:10px 12px}.header-knappar{flex-wrap:wrap}.slutsatser{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}.gdpr-banner-lokalt{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap}}@media (max-width:640px){.paket-formular{grid-template-columns:minmax(0,1fr)}.export-hub-row{flex-direction:column;align-items:stretch}.export-lista .export-hub-row .btn{min-width:0}.slutsatser{grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px}.slutsats-varde{font-size:1.25rem}.demo-mode-banner{flex-direction:column;align-items:flex-start}.data-table th,.data-table td{padding:8px 10px}}.table-responsive,#struktur-sektorer{overflow-x:auto}.export-lista{grid-template-columns:minmax(0,1fr)}@media (max-width:640px){.export-hub-row>.export-org{max-width:none}.view-panel [style*="flex"],.controls-row{flex-wrap:wrap !important}.view-panel [style*="grid-template-columns"]{grid-template-columns:minmax(0,1fr) !important}.view-panel [style*="min-width"]{min-width:0 !important;flex-basis:100% !important}}@media (max-width:640px){.view-panel [style*="flex"]{max-width:100%;min-width:0}.view-panel select,.view-panel input:not([type="checkbox"]):not([type="radio"]),.view-panel textarea{max-width:100%}}@media (max-width:640px){.view-panel [style*="flex"]>*{min-width:0;max-width:100%}}@media (max-width:640px){.card-header{flex-wrap:wrap;gap:8px}.card-header>*{min-width:0;max-width:100%}}@media (max-width:640px){.sidebar .nav-item{transition:none}}@media (max-width:640px){.view-panel select{min-width:0;width:100%;overflow:hidden;text-overflow:ellipsis}}#view-dashboard:not(.har-data) .flik-intro-rad,#view-dashboard:not(.har-data) #ov-intro,#view-dashboard:not(.har-data) #ov-filrad,#view-dashboard:not(.har-data) #ov-fordjupning{display:none}.ov-filrad .btn{margin-left:auto}.ov-filrad-lank{background:none;border:0;padding:0;font:inherit;color:var(--primary,#1d4ed8);text-decoration:underline;cursor:pointer}.ov-filrad-lank:focus-visible{outline:2px solid var(--primary,#1d4ed8);outline-offset:2px;border-radius:2px}details.avsnitt .ptrack>h3{display:none}details.avsnitt>section.card,details.avsnitt>div>.card.ptrack{box-shadow:none;padding:0;margin-bottom:0}details.avsnitt .insight-feed-header h3{display:none}#action-checklist-container{margin-top:14px}.installningar-panel{max-width:720px}.installningar-innehall{padding:4px 24px 24px;overflow-y:auto}.installningar-innehall section{padding:16px 0;border-top:1px solid var(--border)}.installningar-innehall section:first-child{border-top:0}.installningar-innehall h3{margin:0 0 10px;font-size:var(--fs-md)}.inst-rad{margin:0 0 14px}.inst-rad .paket-rad{margin-top:0}.inst-paverkar{margin:6px 0 0;font-size:var(--fs-sm);color:var(--text-muted);line-height:1.5}.inst-lista{display:grid;grid-template-columns:max-content 1fr;gap:4px 14px;margin:10px 0 12px;font-size:var(--fs-sm)}.inst-lista dt{color:var(--text-muted)}.inst-lista dd{margin:0}.inst-flikar{list-style:none;margin:10px 0 0;padding:0}.inst-ip-lista{list-style:none;margin:10px 0 0;padding:0}.inst-ip{padding:10px 0;border-top:1px solid var(--border)}.inst-flik{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;padding:8px 0;border-top:1px solid var(--border);font-size:var(--fs-sm)}.inst-flik:first-child{border-top:0}.inst-flik-namn{flex:1 1 260px;min-width:0}.inst-flik-lage{color:var(--text-muted)}.inst-flik.ar-andrad .inst-flik-lage{color:var(--text-main);font-weight:600}.sok-ruta{position:relative;flex:0 1 260px;min-width:180px}.sok-ruta[hidden]{display:none}.sok-ruta input{width:100%;padding:6px 10px;font-size:var(--fs-sm)}.sok-lista{position:absolute;z-index:1200;top:calc(100% + 4px);right:0;width:max(100%,340px);max-width:92vw;margin:0;padding:4px;list-style:none;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;box-shadow:0 8px 24px rgba(15,23,42,0.16)}.sok-lista [role="option"]{display:flex;flex-direction:column;gap:1px;padding:7px 10px;border-radius:6px;cursor:pointer}.sok-lista [role="option"][aria-selected="true"],.sok-lista [role="option"]:hover{background:var(--secondary,#eff6ff)}.sok-namn{font-size:var(--fs-sm);font-weight:600}.sok-under{font-size:var(--fs-xs);color:var(--text-muted)}.sok-underval{padding-left:22px !important}.sok-grupplista{margin:0;padding:0;list-style:none}.sok-grupprubrik{display:block;padding:8px 10px 2px;font-size:var(--fs-xs);font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.04em}.sok-ingen{padding:8px 10px;font-size:var(--fs-sm);color:var(--text-muted);line-height:1.5}@media (max-width:640px){.sok-ruta{flex:1 1 100%}.sok-lista{left:0;right:auto;width:100%}}@media print{.sok-ruta{display:none !important}}.export-besked{margin:6px 0 0;font-size:var(--fs-xs);line-height:1.5;color:var(--text-main)}.export-besked:empty{display:none}.export-hub-row .export-besked strong{display:inline;font-size:inherit;margin:0}#avsnitt-ex-urval{margin-bottom:12px}.urval-fasta{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 10px}.urval-fasta .btn[aria-pressed="true"]{border-color:var(--primary,#1d4ed8);color:var(--primary,#1d4ed8);font-weight:600}.urval-lista{list-style:none;margin:0;padding:0}.urval-rad{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:6px 0;border-top:1px solid var(--border);font-size:var(--fs-sm)}.urval-rad:first-child{border-top:0}.urval-rad label{display:flex;align-items:center;gap:8px;cursor:pointer}.urval-flytta{display:inline-flex;gap:4px;flex:none}@media print{#print-report .rm-avsnitt{break-inside:auto}#print-report .rm-bild{margin:10pt 0;break-inside:avoid;text-align:center}#print-report .rm-bild img{max-width:100%;height:auto}#print-report .rm-bild figcaption{font-size:8.5pt;color:var(--text-muted);margin-top:3pt}#print-report .muted{color:var(--text-muted);font-size:9pt}#print-report .draftbox{border:1.5pt solid var(--status-varning);background:var(--status-varning-yta);padding:6pt 9pt;margin:6pt 0 12pt;font-size:9pt}#print-report .fillin{border:1pt dashed var(--status-varning);background:var(--status-varning-bg);padding:5pt 8pt;margin:6pt 0;font-size:9pt}#print-report .rm-avsnitt th,#print-report .rm-avsnitt td{border:0.5pt solid var(--text-blek);padding:3pt 5pt;text-align:left;vertical-align:top}#print-report .rm-avsnitt thead th{background:var(--yta-stark)}}.lage-val{display:inline-flex}.lage-val .btn{border-radius:0;margin:0}.lage-val .btn:first-child{border-radius:6px 0 0 6px}.lage-val .btn:last-child{border-radius:0 6px 6px 0;border-left:0}.lage-val .btn[aria-pressed="true"]{background:var(--primary,#1d4ed8);border-color:var(--primary,#1d4ed8);color:#fff}body.lage-kompakt .flik-intro{font-size:0;padding:0;margin-bottom:10px;line-height:1.3;max-width:none}body.lage-kompakt .flik-intro>strong:first-child{font-size:var(--fs-md)}body.lage-kompakt .flik-intro>.info-tip{font-size:var(--fs-xs)}body.lage-kompakt .first-run-hint,body.lage-kompakt .avsnitt-under,body.lage-kompakt .avsnitt-inledning,body.lage-kompakt .flow-next-bar,body.lage-kompakt .sektor-intro,body.lage-kompakt .ptrack-intro,body.lage-kompakt .export-hub>p{display:none}body.lage-kompakt .content-body .card{padding:16px;margin-bottom:14px}body.lage-kompakt .slutsatser{gap:8px;margin-bottom:10px}body.lage-kompakt .slutsats{padding:8px 12px}body.lage-kompakt .slutsats-varde{font-size:1.3rem}body.lage-kompakt details.avsnitt:not(.card)>summary{padding:10px 0}body.lage-kompakt details.avsnitt{margin-bottom:8px}body.lage-kompakt .urvalsrad{margin-bottom:10px}@media print{.lage-val{display:none !important}}.la-kvotcell{display:inline-flex;align-items:center;gap:10px;justify-content:flex-end}.pag-litet{color:var(--text-muted);margin-left:2px;cursor:help}.slutsatser,.summary-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:0;margin:0 0 16px;overflow:hidden;background:var(--bg-card,#fff);border:1px solid var(--border,#e2e8f0);border-radius:var(--radius);box-shadow:var(--shadow-sm)}.slutsats,.summary-stats>.stat-box{background:none;border:0;border-radius:0;padding:10px 16px 11px;box-shadow:-1px 0 0 var(--border,#e2e8f0),0 -1px 0 var(--border,#e2e8f0);min-width:0}.slutsats-etikett,.summary-stats>.stat-box h3,.summary-stats>.stat-box .stat-etikett{font-size:0.68rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted,#475569);margin:0;line-height:1.35}.slutsats-varde,.summary-stats>.stat-box .stat-val{font-size:var(--fs-xl) !important;font-weight:700;line-height:1.25;letter-spacing:-0.01em;margin:1px 0 0;color:var(--text-main)}.slutsats-under,.summary-stats>.stat-box .stat-under,.summary-stats>.stat-box .stat-tip{font-size:var(--fs-xs);font-style:normal;color:var(--text-muted,#475569);line-height:1.35;margin:0;padding:0;border:0;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden}.summary-stats>.stat-box .stat-under.ar-kritisk,.summary-stats>.stat-box .stat-tip.crit{color:var(--status-kritisk,#b91c1c);font-weight:600}body.lage-kompakt .slutsatser,body.lage-kompakt .summary-stats{margin-bottom:10px}body.lage-kompakt .slutsats,body.lage-kompakt .summary-stats>.stat-box{padding:6px 12px 7px}body.lage-kompakt .slutsats-varde,body.lage-kompakt .summary-stats>.stat-box .stat-val{font-size:var(--fs-lg) !important}.demo-mode-banner{padding:5px 12px;margin:0 0 12px;font-size:var(--fs-xs);border-left-width:3px;border-radius:6px}.demo-mode-banner .demo-mode-icon{font-size:var(--fs-md)}.demo-mode-mer,.gdpr-banner-mer{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap}.demo-mode-exit{padding:3px 10px;font-size:var(--fs-xs)}.flik-intro-rad{display:flex;align-items:baseline;gap:12px;margin:0 0 14px}.flik-intro-rad>.flik-intro{margin:0;flex:1 1 auto;min-width:0}.flik-intro-rad:not(.ar-utfalld)>.flik-intro{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.flik-intro-mer{flex:0 0 auto;background:none;border:0;padding:0;font:inherit;font-size:var(--fs-sm);font-weight:600;color:var(--primary);cursor:pointer;white-space:nowrap}.flik-intro-mer:hover{text-decoration:underline}.flik-intro-mer:focus-visible{outline:2px solid var(--primary);outline-offset:2px;border-radius:3px}body.lage-kompakt .flik-intro-mer{display:none}body.lage-kompakt .flik-intro-rad{margin-bottom:10px}.valrad{display:flex;flex-wrap:wrap;gap:6px 20px;align-items:center;margin:0 0 14px;padding:8px 14px;font-size:var(--fs-sm);background:var(--bg-card,#fff);border:1px solid var(--border,#e2e8f0);border-radius:var(--radius)}.valrad label{display:inline-flex;align-items:center;gap:7px;cursor:pointer}.data-table tbody th{position:static;background:none;text-transform:none;letter-spacing:0;font-size:1em;color:var(--text-main);border-bottom:1px solid var(--border)}.data-table td.text,.data-table th.text,.data-table.mest-text td,.data-table.mest-text th{text-align:left}.data-table.mest-text td.tal,.data-table.mest-text th.tal{text-align:right;white-space:nowrap}.compliance-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0;overflow:hidden;border:1px solid var(--border);border-radius:var(--radius)}.compliance-card{border:0;border-radius:0;box-shadow:-1px 0 0 var(--border),0 -1px 0 var(--border);padding:8px 14px;align-items:center;gap:10px}.comp-icon{font-size:var(--fs-lg);width:22px}.comp-label{font-size:0.68rem}.comp-value{font-size:var(--fs-md);margin-top:1px}.gdpr-banner{padding:3px 6px 3px 8px;gap:4px;font-size:0.72rem}.gdpr-banner-link{padding:1px 7px;font-size:0.72rem}.top-header .header-title{flex:1 1 0;min-width:0;display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 10px;align-items:center;justify-items:start}.header-title .gdpr-banner{grid-column:1 / -1}.header-title h1{white-space:nowrap}.header-knappar{flex:0 0 auto}.header-knappar .sok-ruta{flex:0 1 150px;min-width:130px}@media (max-width:900px){.top-header{flex-wrap:wrap}.header-knappar{flex:1 1 100%}}.header-knappar .sok-ruta input{width:100%;min-width:0;max-width:100%;box-sizing:border-box}.la-kvotcell>span{white-space:nowrap}.la-kvotcell{gap:8px}.pag-tabell-wrap{overflow-x:auto;max-width:100%}#matrix-table th,#matrix-table td{padding-left:8px;padding-right:8px}#prio-table td{padding-left:8px;padding-right:8px}#prio-table th{padding-left:8px}#prio-table th:not(.sortable){padding-right:8px}#prio-table thead th.sortable{padding-right:14px}#prio-table thead th.sortable::after{right:2px;width:9px;height:9px;margin-top:-4px}#prio-table td[data-sort-value],#prio-table td .rund-12{white-space:nowrap}.prio-detalj-knappar{display:grid;grid-template-columns:repeat(2,auto);gap:4px;justify-content:center}.ag-grupp{margin-bottom:10px;border:1px solid var(--border);border-radius:6px}.ag-grupp>summary{cursor:pointer;padding:10px 14px;background:var(--yta);font-weight:600;border-radius:6px;list-style:none}.ag-grupp>summary::-webkit-details-marker{display:none}.ag-prio{display:inline-flex;align-items:center;gap:4px;font-size:var(--fs-xs);font-weight:700;white-space:nowrap}.upload-help summary::before,.bakgrund-panel summary::before,.flik-usage summary::before,.prio-config-panel summary::before,.audit-panel summary::before,.ag-grupp>summary::before,.data-table tr.group-header td::before{content:"";display:inline-block;width:7px;height:7px;margin:0 10px 2px 2px;vertical-align:middle;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(-45deg);transition:transform 0.15s}.upload-help[open] summary::before,.bakgrund-panel[open] summary::before,.flik-usage[open] summary::before,.prio-config-panel[open] summary::before,.audit-panel[open] summary::before,.ag-grupp[open]>summary::before,.data-table tr.group-header:not(.collapsed) td::before{transform:rotate(45deg)}@media (prefers-reduced-motion:reduce){.upload-help summary::before,.bakgrund-panel summary::before,.flik-usage summary::before,.prio-config-panel summary::before,.audit-panel summary::before,.data-table tr.group-header td::before{transition:none}}@media (max-width:900px) and (min-width:641px){.slutsatser,.summary-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}.dold.dold.dold{display:none}.rad-bryt-mitt.rad-bryt-mitt.rad-bryt-mitt{display:flex;flex-wrap:wrap;align-items:center}.rad-bryt.rad-bryt.rad-bryt{display:flex;flex-wrap:wrap}.rad-mitt.rad-mitt.rad-mitt{display:flex;align-items:center}.rad-mellan.rad-mellan.rad-mellan{display:flex;justify-content:space-between}.text-dampad-sm.text-dampad-sm.text-dampad-sm{font-size:var(--fs-sm);color:var(--text-muted)}.text-dampad-xs.text-dampad-xs.text-dampad-xs{font-size:var(--fs-xs);color:var(--text-muted)}.versal.versal.versal{text-transform:uppercase;letter-spacing:0.05em}.notis-varning.notis-varning.notis-varning{background:var(--status-varning-yta);border-left:3px solid var(--status-varning);border-radius:4px}.provruta.provruta.provruta{display:inline-block;height:14px;width:32px;border-radius:3px}.baslinje.baslinje.baslinje{align-items:baseline}.botten.botten.botten{align-items:flex-end}.mitt.mitt.mitt{align-items:center}.topp.topp.topp{align-items:flex-start}.sjalv-mitt.sjalv-mitt.sjalv-mitt{align-self:center}.block.block.block{display:block}.inline-block.inline-block.inline-block{display:inline-block}.rad.rad.rad{display:flex}.rad-inline.rad-inline.rad-inline{display:inline-flex}.rutnat.rutnat.rutnat{display:grid}.flex-1.flex-1.flex-1{flex:1}.kol.kol.kol{flex-direction:column}.bryt.bryt.bryt{flex-wrap:wrap}.gap-10.gap-10.gap-10{gap:10px}.gap-12.gap-12.gap-12{gap:12px}.gap-14.gap-14.gap-14{gap:14px}.gap-16.gap-16.gap-16{gap:16px}.gap-18.gap-18.gap-18{gap:18px}.gap-24.gap-24.gap-24{gap:24px}.gap-6.gap-6.gap-6{gap:6px}.gap-8.gap-8.gap-8{gap:8px}.kolumner-2-lika.kolumner-2-lika.kolumner-2-lika{grid-template-columns:1fr 1fr}.kolumner-3-lika.kolumner-3-lika.kolumner-3-lika{grid-template-columns:1fr 1fr 1fr}.kolumner-auto-160.kolumner-auto-160.kolumner-auto-160{grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}.kolumner-auto-180.kolumner-auto-180.kolumner-auto-180{grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}.kolumner-auto-200.kolumner-auto-200.kolumner-auto-200{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}.centrerad.centrerad.centrerad{justify-content:center}.mellan.mellan.mellan{justify-content:space-between}.slutjusterad.slutjusterad.slutjusterad{justify-content:flex-end}.sjalv-start.sjalv-start.sjalv-start{justify-self:start}.farg-accent-mork.farg-accent-mork.farg-accent-mork{color:var(--accent-mork)}.farg-dampad.farg-dampad.farg-dampad{color:var(--text-muted)}.farg-danger.farg-danger.farg-danger{color:var(--danger)}.farg-granska.farg-granska.farg-granska{color:var(--status-granska)}.farg-info.farg-info.farg-info{color:var(--status-info)}.farg-kritisk.farg-kritisk.farg-kritisk{color:var(--status-kritisk)}.farg-ok.farg-ok.farg-ok{color:var(--status-ok)}.farg-primary.farg-primary.farg-primary{color:var(--primary)}.farg-svag.farg-svag.farg-svag{color:var(--text-svag)}.farg-text.farg-text.farg-text{color:var(--text-main)}.farg-varning.farg-varning.farg-varning{color:var(--status-varning)}.farg-white.farg-white.farg-white{color:white}.farg-yta.farg-yta.farg-yta{color:var(--yta)}.typsnitt-arv.typsnitt-arv.typsnitt-arv{font-family:inherit}.typsnitt-mono.typsnitt-mono.typsnitt-mono{font-family:monospace}.typsnitt-mono-ui.typsnitt-mono-ui.typsnitt-mono-ui{font-family:ui-monospace,'SF Mono',Consolas,monospace}.typsnitt-system.typsnitt-system.typsnitt-system{font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif}.fs-0_72rem.fs-0_72rem.fs-0_72rem{font-size:0.72rem}.fs-0_92em.fs-0_92em.fs-0_92em{font-size:0.92em}.fs-1_25rem.fs-1_25rem.fs-1_25rem{font-size:1.25rem}.fs-1_2rem.fs-1_2rem.fs-1_2rem{font-size:1.2rem}.fs-1_5rem.fs-1_5rem.fs-1_5rem{font-size:1.5rem}.fs-2rem.fs-2rem.fs-2rem{font-size:2rem}.fs-lg.fs-lg.fs-lg{font-size:var(--fs-lg)}.fs-md.fs-md.fs-md{font-size:var(--fs-md)}.fs-nyckeltal.fs-nyckeltal.fs-nyckeltal{font-size:var(--fs-nyckeltal)}.fs-sm.fs-sm.fs-sm{font-size:var(--fs-sm)}.fs-xl.fs-xl.fs-xl{font-size:var(--fs-xl)}.fs-xs.fs-xs.fs-xs{font-size:var(--fs-xs)}.kursiv.kursiv.kursiv{font-style:italic}.tabelltal.tabelltal.tabelltal{font-variant-numeric:tabular-nums}.fw-400.fw-400.fw-400{font-weight:400}.fw-500.fw-500.fw-500{font-weight:500}.fw-600.fw-600.fw-600{font-weight:600}.fw-700.fw-700.fw-700{font-weight:700}.fw-normal.fw-normal.fw-normal{font-weight:normal}.lh-1_4.lh-1_4.lh-1_4{line-height:1.4}.lh-1_5.lh-1_5.lh-1_5{line-height:1.5}.lh-1_55.lh-1_55.lh-1_55{line-height:1.55}.lh-1_6.lh-1_6.lh-1_6{line-height:1.6}.lh-1_7.lh-1_7.lh-1_7{line-height:1.7}.lh-1_8.lh-1_8.lh-1_8{line-height:1.8}.utan-punkter.utan-punkter.utan-punkter{list-style:none}.ta-hoger.ta-hoger.ta-hoger{text-align:right}.ta-mitt.ta-mitt.ta-mitt{text-align:center}.ta-vanster.ta-vanster.ta-vanster{text-align:left}.genomstruken.genomstruken.genomstruken{text-decoration:line-through}.understruken.understruken.understruken{text-decoration:underline}.utan-understrykning.utan-understrykning.utan-understrykning{text-decoration:none}.lodrat-mitt.lodrat-mitt.lodrat-mitt{vertical-align:middle}.lodrat-topp.lodrat-topp.lodrat-topp{vertical-align:top}.bevara-radbrytning.bevara-radbrytning.bevara-radbrytning{white-space:pre-wrap}.ingen-radbrytning.ingen-radbrytning.ingen-radbrytning{white-space:nowrap}.marg-0.marg-0.marg-0{margin:0}.marg-0-0-10.marg-0-0-10.marg-0-0-10{margin:0 0 10px}.marg-0-0-10-22.marg-0-0-10-22.marg-0-0-10-22{margin:0 0 10px 22px}.marg-0-0-12.marg-0-0-12.marg-0-0-12{margin:0 0 12px}.marg-0-0-14.marg-0-0-14.marg-0-0-14{margin:0 0 14px}.marg-0-0-14-20.marg-0-0-14-20.marg-0-0-14-20{margin:0 0 14px 20px}.marg-0-0-4.marg-0-0-4.marg-0-0-4{margin:0 0 4px}.marg-0-0-6.marg-0-0-6.marg-0-0-6{margin:0 0 6px}.marg-0-0-8.marg-0-0-8.marg-0-0-8{margin:0 0 8px}.marg-10-0.marg-10-0.marg-10-0{margin:10px 0}.marg-10-0-0.marg-10-0-0.marg-10-0-0{margin:10px 0 0}.marg-10-0-4.marg-10-0-4.marg-10-0-4{margin:10px 0 4px}.marg-10-0-6.marg-10-0-6.marg-10-0-6{margin:10px 0 6px}.marg-14-0.marg-14-0.marg-14-0{margin:14px 0}.marg-14-0-0.marg-14-0-0.marg-14-0-0{margin:14px 0 0}.marg-14-0-4.marg-14-0-4.marg-14-0-4{margin:14px 0 4px}.marg-14-0-8.marg-14-0-8.marg-14-0-8{margin:14px 0 8px}.marg-16-0-0.marg-16-0-0.marg-16-0-0{margin:16px 0 0}.marg-18-0.marg-18-0.marg-18-0{margin:18px 0}.marg-18-0-4.marg-18-0-4.marg-18-0-4{margin:18px 0 4px}.marg-18-0-8.marg-18-0-8.marg-18-0-8{margin:18px 0 8px}.marg-4-0.marg-4-0.marg-4-0{margin:4px 0}.marg-4-0-0.marg-4-0-0.marg-4-0-0{margin:4px 0 0}.marg-4-0-0-18.marg-4-0-0-18.marg-4-0-0-18{margin:4px 0 0 18px}.marg-6-0.marg-6-0.marg-6-0{margin:6px 0}.marg-6-0-0.marg-6-0-0.marg-6-0-0{margin:6px 0 0}.marg-6-0-0-18.marg-6-0-0-18.marg-6-0-0-18{margin:6px 0 0 18px}.marg-6-0-14.marg-6-0-14.marg-6-0-14{margin:6px 0 14px}.marg-6-0-8.marg-6-0-8.marg-6-0-8{margin:6px 0 8px}.marg-8-0.marg-8-0.marg-8-0{margin:8px 0}.marg-8-0-0.marg-8-0-0.marg-8-0-0{margin:8px 0 0}.marg-8-0-14.marg-8-0-14.marg-8-0-14{margin:8px 0 14px}.marg-8-0-6.marg-8-0-6.marg-8-0-6{margin:8px 0 6px}.marg-8-0-8-20.marg-8-0-8-20.marg-8-0-8-20{margin:8px 0 8px 20px}.marg-b-0.marg-b-0.marg-b-0{margin-bottom:0}.marg-b-10.marg-b-10.marg-b-10{margin-bottom:10px}.marg-b-12.marg-b-12.marg-b-12{margin-bottom:12px}.marg-b-14.marg-b-14.marg-b-14{margin-bottom:14px}.marg-b-16.marg-b-16.marg-b-16{margin-bottom:16px}.marg-b-18.marg-b-18.marg-b-18{margin-bottom:18px}.marg-b-24.marg-b-24.marg-b-24{margin-bottom:24px}.marg-b-3.marg-b-3.marg-b-3{margin-bottom:3px}.marg-b-4.marg-b-4.marg-b-4{margin-bottom:4px}.marg-b-6.marg-b-6.marg-b-6{margin-bottom:6px}.marg-b-8.marg-b-8.marg-b-8{margin-bottom:8px}.marg-v-4.marg-v-4.marg-v-4{margin-left:4px}.marg-v-8.marg-v-8.marg-v-8{margin-left:8px}.marg-v-auto.marg-v-auto.marg-v-auto{margin-left:auto}.marg-h-6.marg-h-6.marg-h-6{margin-right:6px}.marg-h-8.marg-h-8.marg-h-8{margin-right:8px}.marg-t-0.marg-t-0.marg-t-0{margin-top:0}.marg-t-10.marg-t-10.marg-t-10{margin-top:10px}.marg-t-12.marg-t-12.marg-t-12{margin-top:12px}.marg-t-14.marg-t-14.marg-t-14{margin-top:14px}.marg-t-16.marg-t-16.marg-t-16{margin-top:16px}.marg-t-18.marg-t-18.marg-t-18{margin-top:18px}.marg-t-2.marg-t-2.marg-t-2{margin-top:2px}.marg-t-24.marg-t-24.marg-t-24{margin-top:24px}.marg-t-3.marg-t-3.marg-t-3{margin-top:3px}.marg-t-4.marg-t-4.marg-t-4{margin-top:4px}.marg-t-6.marg-t-6.marg-t-6{margin-top:6px}.marg-t-8.marg-t-8.marg-t-8{margin-top:8px}.pad-0.pad-0.pad-0{padding:0}.pad-0-4.pad-0-4.pad-0-4{padding:0 4px}.pad-1-6.pad-1-6.pad-1-6{padding:1px 6px}.pad-10.pad-10.pad-10{padding:10px}.pad-10-0.pad-10-0.pad-10-0{padding:10px 0}.pad-10-12.pad-10-12.pad-10-12{padding:10px 12px}.pad-10-14.pad-10-14.pad-10-14{padding:10px 14px}.pad-12.pad-12.pad-12{padding:12px}.pad-12-14.pad-12-14.pad-12-14{padding:12px 14px}.pad-12-16.pad-12-16.pad-12-16{padding:12px 16px}.pad-14.pad-14.pad-14{padding:14px}.pad-14-16.pad-14-16.pad-14-16{padding:14px 16px}.pad-16-18.pad-16-18.pad-16-18{padding:16px 18px}.pad-18.pad-18.pad-18{padding:18px}.pad-18-22.pad-18-22.pad-18-22{padding:18px 22px}.pad-2-10.pad-2-10.pad-2-10{padding:2px 10px}.pad-2-6.pad-2-6.pad-2-6{padding:2px 6px}.pad-2-8.pad-2-8.pad-2-8{padding:2px 8px}.pad-20.pad-20.pad-20{padding:20px}.pad-24.pad-24.pad-24{padding:24px}.pad-3-10.pad-3-10.pad-3-10{padding:3px 10px}.pad-3-12-3-0.pad-3-12-3-0.pad-3-12-3-0{padding:3px 12px 3px 0}.pad-3-6.pad-3-6.pad-3-6{padding:3px 6px}.pad-3-8.pad-3-8.pad-3-8{padding:3px 8px}.pad-32.pad-32.pad-32{padding:32px}.pad-32-48.pad-32-48.pad-32-48{padding:32px 48px}.pad-4-0.pad-4-0.pad-4-0{padding:4px 0}.pad-4-10.pad-4-10.pad-4-10{padding:4px 10px}.pad-4-8.pad-4-8.pad-4-8{padding:4px 8px}.pad-5-8.pad-5-8.pad-5-8{padding:5px 8px}.pad-6-0.pad-6-0.pad-6-0{padding:6px 0}.pad-6-10.pad-6-10.pad-6-10{padding:6px 10px}.pad-6-12.pad-6-12.pad-6-12{padding:6px 12px}.pad-6-12-6-0.pad-6-12-6-0.pad-6-12-6-0{padding:6px 12px 6px 0}.pad-6-8.pad-6-8.pad-6-8{padding:6px 8px}.pad-8.pad-8.pad-8{padding:8px}.pad-8-0.pad-8-0.pad-8-0{padding:8px 0}.pad-8-10.pad-8-10.pad-8-10{padding:8px 10px}.pad-8-12.pad-8-12.pad-8-12{padding:8px 12px}.pad-8-14.pad-8-14.pad-8-14{padding:8px 14px}.pad-8-16.pad-8-16.pad-8-16{padding:8px 16px}.pad-v-18.pad-v-18.pad-v-18{padding-left:18px}.pad-v-22.pad-v-22.pad-v-22{padding-left:22px}.pad-t-10.pad-t-10.pad-t-10{padding-top:10px}.pad-t-12.pad-t-12.pad-t-12{padding-top:12px}.bak-accent-yta.bak-accent-yta.bak-accent-yta{background:var(--accent-yta)}.bak-blek.bak-blek.bak-blek{background:var(--text-blek)}.bak-botten.bak-botten.bak-botten{background:var(--bg-main)}.bak-granska.bak-granska.bak-granska{background:var(--status-granska)}.bak-info.bak-info.bak-info{background:var(--status-info)}.bak-info-bg.bak-info-bg.bak-info-bg{background:var(--status-info-bg)}.bak-info-yta.bak-info-yta.bak-info-yta{background:var(--status-info-yta)}.bak-kant.bak-kant.bak-kant{background:var(--border)}.bak-kritisk.bak-kritisk.bak-kritisk{background:var(--status-kritisk)}.bak-kritisk-yta.bak-kritisk-yta.bak-kritisk-yta{background:var(--status-kritisk-yta)}.bak-none.bak-none.bak-none{background:none}.bak-ok.bak-ok.bak-ok{background:var(--status-ok)}.bak-ok-bg.bak-ok-bg.bak-ok-bg{background:var(--status-ok-bg)}.bak-ok-yta.bak-ok-yta.bak-ok-yta{background:var(--status-ok-yta)}.bak-rgba0-0-0-0_45.bak-rgba0-0-0-0_45.bak-rgba0-0-0-0_45{background:rgba(0,0,0,0.45)}.bak-transparent.bak-transparent.bak-transparent{background:transparent}.bak-upphojd.bak-upphojd.bak-upphojd{background:var(--surface-elev,var(--yta))}.bak-varning.bak-varning.bak-varning{background:var(--status-varning)}.bak-varning-bg.bak-varning-bg.bak-varning-bg{background:var(--status-varning-bg)}.bak-varning-bg-gammal.bak-varning-bg-gammal.bak-varning-bg-gammal{background:var(--warning-bg)}.bak-varning-yta.bak-varning-yta.bak-varning-yta{background:var(--status-varning-yta)}.bak-white.bak-white.bak-white{background:white}.bak-yta.bak-yta.bak-yta{background:var(--yta)}.bak-yta-stark.bak-yta-stark.bak-yta-stark{background:var(--yta-stark)}.ram-1-accent-kant.ram-1-accent-kant.ram-1-accent-kant{border:1px solid var(--accent-kant)}.ram-1-blek.ram-1-blek.ram-1-blek{border:1px solid var(--text-blek)}.ram-1-kant.ram-1-kant.ram-1-kant{border:1px solid var(--border)}.ram-1-white.ram-1-white.ram-1-white{border:1px solid white}.ram-4-kant-stark.ram-4-kant-stark.ram-4-kant-stark{border:4px solid var(--border-stark)}.ram-ingen.ram-ingen.ram-ingen{border:none}.ram-b-1-kant.ram-b-1-kant.ram-b-1-kant{border-bottom:1px solid var(--border)}.ram-b-1-prickad-dampad.ram-b-1-prickad-dampad.ram-b-1-prickad-dampad{border-bottom:1px dotted var(--text-muted)}.tabell-samman.tabell-samman.tabell-samman{border-collapse:collapse}.ram-v-3-accent.ram-v-3-accent.ram-v-3-accent{border-left:3px solid var(--accent)}.ram-v-3-danger.ram-v-3-danger.ram-v-3-danger{border-left:3px solid var(--danger)}.ram-v-3-granska-ljus.ram-v-3-granska-ljus.ram-v-3-granska-ljus{border-left:3px solid var(--status-granska-ljus)}.ram-v-3-info.ram-v-3-info.ram-v-3-info{border-left:3px solid var(--status-info)}.ram-v-3-ok.ram-v-3-ok.ram-v-3-ok{border-left:3px solid var(--status-ok)}.ram-v-3-varning.ram-v-3-varning.ram-v-3-varning{border-left:3px solid var(--status-varning)}.ram-v-4-7c3aed.ram-v-4-7c3aed.ram-v-4-7c3aed{border-left:4px solid #7c3aed}.ram-v-4-accent.ram-v-4-accent.ram-v-4-accent{border-left:4px solid var(--accent)}.ram-v-4-dampad.ram-v-4-dampad.ram-v-4-dampad{border-left:4px solid var(--text-muted,var(--text-muted))}.ram-v-4-danger.ram-v-4-danger.ram-v-4-danger{border-left:4px solid var(--danger)}.ram-v-4-granska-ljus.ram-v-4-granska-ljus.ram-v-4-granska-ljus{border-left:4px solid var(--status-granska-ljus)}.ram-v-4-info.ram-v-4-info.ram-v-4-info{border-left:4px solid var(--status-info)}.ram-v-4-ok.ram-v-4-ok.ram-v-4-ok{border-left:4px solid var(--status-ok)}.ram-v-4-varning.ram-v-4-varning.ram-v-4-varning{border-left:4px solid var(--status-varning)}.ram-v-farg-info.ram-v-farg-info.ram-v-farg-info{border-left-color:var(--status-info)}.ram-v-farg-kritisk.ram-v-farg-kritisk.ram-v-farg-kritisk{border-left-color:var(--status-kritisk)}.ram-v-farg-ok.ram-v-farg-ok.ram-v-farg-ok{border-left-color:var(--status-ok)}.ram-v-farg-primary.ram-v-farg-primary.ram-v-farg-primary{border-left-color:var(--primary)}.rund-0-4-4-0.rund-0-4-4-0.rund-0-4-4-0{border-radius:0 4px 4px 0}.rund-12.rund-12.rund-12{border-radius:12px}.rund-4.rund-4.rund-4{border-radius:4px}.rund-5.rund-5.rund-5{border-radius:5px}.rund-50p.rund-50p.rund-50p{border-radius:50%}.rund-6.rund-6.rund-6{border-radius:6px}.rund-7.rund-7.rund-7{border-radius:7px}.rund-8.rund-8.rund-8{border-radius:8px}.ram-t-1-kant.ram-t-1-kant.ram-t-1-kant{border-top:1px solid var(--border)}.ram-t-farg-accent.ram-t-farg-accent.ram-t-farg-accent{border-top-color:var(--accent)}.skugga-meny.skugga-meny.skugga-meny{box-shadow:0 10px 25px rgba(0,0,0,0.2)}.anim-snurra.anim-snurra.anim-snurra{animation:bootSpin 0.8s linear infinite}.pos-botten-2.pos-botten-2.pos-botten-2{bottom:-2px}.ruta-border.ruta-border.ruta-border{box-sizing:border-box}.hjalpmarke.hjalpmarke.hjalpmarke{cursor:help}.pekare.pekare.pekare{cursor:pointer}.hojd-10.hojd-10.hojd-10{height:10px}.hojd-100p.hojd-100p.hojd-100p{height:100%}.hojd-12.hojd-12.hojd-12{height:12px}.hojd-14.hojd-14.hojd-14{height:14px}.hojd-20.hojd-20.hojd-20{height:20px}.hojd-34.hojd-34.hojd-34{height:34px}.hojd-48.hojd-48.hojd-48{height:48px}.hojd-9.hojd-9.hojd-9{height:9px}.hojd-vy-150.hojd-vy-150.hojd-vy-150{height:calc(100vh - 150px)}.fyll-yta.fyll-yta.fyll-yta{inset:0}.max-hojd-420.max-hojd-420.max-hojd-420{max-height:420px}.max-bredd-1000.max-bredd-1000.max-bredd-1000{max-width:1000px}.max-bredd-100p.max-bredd-100p.max-bredd-100p{max-width:100%}.max-bredd-360.max-bredd-360.max-bredd-360{max-width:360px}.max-bredd-380.max-bredd-380.max-bredd-380{max-width:380px}.max-bredd-680.max-bredd-680.max-bredd-680{max-width:680px}.max-bredd-70ch.max-bredd-70ch.max-bredd-70ch{max-width:70ch}.min-bredd-140.min-bredd-140.min-bredd-140{min-width:140px}.min-bredd-2.min-bredd-2.min-bredd-2{min-width:2px}.min-bredd-200.min-bredd-200.min-bredd-200{min-width:200px}.min-bredd-280.min-bredd-280.min-bredd-280{min-width:280px}.min-bredd-36.min-bredd-36.min-bredd-36{min-width:36px}.klipp.klipp.klipp{overflow:hidden}.rulla.rulla.rulla{overflow:auto}.rulla-x.rulla-x.rulla-x{overflow-x:auto}.pos-absolut.pos-absolut.pos-absolut{position:absolute}.pos-fast.pos-fast.pos-fast{position:fixed}.pos-relativ.pos-relativ.pos-relativ{position:relative}.storlek-lodrat.storlek-lodrat.storlek-lodrat{resize:vertical}.pos-topp-2.pos-topp-2.pos-topp-2{top:-2px}.ej-markerbar.ej-markerbar.ej-markerbar{user-select:none}.bredd-10.bredd-10.bredd-10{width:10px}.bredd-100p.bredd-100p.bredd-100p{width:100%}.bredd-2.bredd-2.bredd-2{width:2px}.bredd-20.bredd-20.bredd-20{width:20px}.bredd-200.bredd-200.bredd-200{width:200px}.bredd-250.bredd-250.bredd-250{width:250px}.bredd-32p.bredd-32p.bredd-32p{width:32%}.bredd-34.bredd-34.bredd-34{width:34px}.bredd-34p.bredd-34p.bredd-34p{width:34%}.bredd-42.bredd-42.bredd-42{width:42px}.bredd-48.bredd-48.bredd-48{width:48px}.bredd-55p.bredd-55p.bredd-55p{width:55%}.bredd-56.bredd-56.bredd-56{width:56px}.bredd-64.bredd-64.bredd-64{width:64px}.bredd-6em.bredd-6em.bredd-6em{width:6em}.bredd-72.bredd-72.bredd-72{width:72px}.bredd-80.bredd-80.bredd-80{width:80px}.bredd-90.bredd-90.bredd-90{width:90px}.bredd-auto.bredd-auto.bredd-auto{width:auto}.bredd-min720-92vw.bredd-min720-92vw.bredd-min720-92vw{width:min(720px,92vw)}.z-99999.z-99999.z-99999{z-index:99999}@media (max-width:640px){.view-panel :is(.rad-bryt-mitt,.rad-bryt,.rad-mitt,.rad-mellan,.rad,.kol,.topp,.rad-inline,.slutjusterad,.flex-1,.botten,.bryt){flex-wrap:wrap !important;max-width:100%;min-width:0}.view-panel :is(.rad-bryt-mitt,.rad-bryt,.rad-mitt,.rad-mellan,.rad,.kol,.topp,.rad-inline,.slutjusterad,.flex-1,.botten,.bryt)>*{min-width:0;max-width:100%}.view-panel :is(.kolumner-auto-160,.kolumner-auto-200,.kolumner-2-lika,.kolumner-3-lika,.kolumner-auto-180){grid-template-columns:minmax(0,1fr) !important}.view-panel :is(.min-bredd-2,.min-bredd-280,.min-bredd-200,.min-bredd-36,.min-bredd-140){min-width:0 !important;flex-basis:100% !important}}.fg-ok{color:var(--status-ok) !important}.fg-varning{color:var(--status-varning) !important}.fg-kritisk{color:var(--status-kritisk) !important}.fg-info{color:var(--status-info) !important}.fg-info-mork{color:var(--status-info-mork) !important}.fg-accent{color:var(--accent) !important}.fg-granska{color:var(--status-granska) !important}.fg-rosa{color:#e11d48 !important}.bg-ok{background:var(--status-ok) !important}.bg-varning{background:var(--status-varning) !important}.bg-kritisk{background:var(--status-kritisk) !important}.bg-info{background:var(--status-info) !important}.bg-accent{background:var(--accent) !important}.bg-rosa{background:#e11d48 !important}.bg-blek{background:var(--text-blek) !important}.bg-dampad{background:var(--text-muted) !important}.bg-ok-yta{background:var(--status-ok-yta) !important}.bg-info-yta{background:var(--status-info-yta) !important}.bl4-ok{border-left:4px solid var(--status-ok) !important}.bl4-varning{border-left:4px solid var(--status-varning) !important}.bl4-kritisk{border-left:4px solid var(--status-kritisk) !important}.bl4-accent{border-left:4px solid var(--accent) !important}.fet{font-weight:700 !important}.halvfet{font-weight:600 !important}.bricka-ok{color:var(--status-ok) !important;background:var(--status-ok-bg) !important}.bricka-varning{color:var(--status-varning) !important;background:var(--status-varning-bg) !important}.bricka-kritisk{color:var(--status-kritisk) !important;background:var(--status-kritisk-bg) !important}.bricka-granska{color:var(--status-granska) !important;background:var(--status-granska-bg) !important}.bricka-info{color:var(--status-info) !important;background:var(--status-info-bg) !important}.bricka-neutral{color:var(--text-muted) !important;background:var(--yta-stark) !important}.ruta-ok{background:var(--status-ok-bg) !important;border-left:4px solid var(--status-ok) !important}.ruta-varning{background:var(--status-varning-bg) !important;border-left:4px solid var(--status-varning) !important}.reality-list .rc-ok.rc-ok.rc-ok{border-left:4px solid var(--status-ok);background:var(--status-ok-bg)}.reality-list .rc-warn.rc-warn.rc-warn{border-left:4px solid var(--status-varning);background:var(--status-varning-bg)}.reality-list .rc-err.rc-err.rc-err{border-left:4px solid var(--status-kritisk);background:var(--status-kritisk-bg)}tr.rad-granska{background:rgba(67,56,202,0.08)}tr.rad-folj{background:rgba(245,158,11,0.1)}.hjalp-markor{cursor:help}.form-select.colmap-saknas{border:2px solid var(--status-kritisk)}@media print{#print-report h2.pr-ned{margin-top:18pt}#print-report h3.pr-ned-14{margin-top:14pt}#print-report h1.pr-liten-rubrik{font-size:16pt}#print-report p.pr-tat{margin-bottom:4pt}#print-report table.pr-under{margin-bottom:8pt}#print-report .pr-dampad{font-size:0.92em;color:var(--text-muted)}#print-report .k-stampel.pr-stampel{font-size:0.78em;color:var(--text-muted);margin-top:14pt}#print-report .draftbox.draftbox-demo{border-color:#f97316;background:var(--status-varning-yta);color:var(--status-varning)}}.t-hoger{text-align:right !important}.t-mitt{text-align:center !important}.t-tal{text-align:right !important;font-variant-numeric:tabular-nums !important}.f-dampad{color:var(--text-muted) !important}.f-kritisk{color:var(--danger) !important}.st-088{font-size:var(--fs-sm) !important}.st-085{font-size:var(--fs-sm) !important}.st-09{font-size:var(--fs-sm) !important}.mb-14{margin-bottom:14px !important}.mb-10{margin-bottom:10px !important}.mb-16{margin-bottom:16px !important}.mt-8{margin-top:8px !important}.mt-14{margin-top:14px !important}.m-0{margin:0 !important}.mr-6{margin-right:6px !important}.faltkolumn{display:flex !important;flex-direction:column !important;gap:3px !important;font-size:var(--fs-sm) !important}.finstilt{font-size:var(--fs-xs) !important;color:var(--text-muted) !important;margin-top:4px !important}.etikett-versal{font-size:var(--fs-xs) !important;color:var(--text-muted) !important;text-transform:uppercase !important;letter-spacing:0.05em !important}.fk-cell{padding:6px 12px 6px 0 !important}.fk-ikon{font-size:var(--fs-xl) !important}.block-mb6{display:block !important;margin-bottom:6px !important}.underrubrik{margin:0 0 8px !important;font-size:var(--fs-md) !important}#forecast-optimize-pott:disabled{opacity:0.55;cursor:not-allowed}</style>
 </head><body><div id="boot-splash" class="rad-mitt bak-yta farg-text kol typsnitt-system fyll-yta centrerad pos-fast z-99999"><div class="anim-snurra ram-4-kant-stark rund-50p ram-t-farg-accent hojd-48 bredd-48"></div><div class="fs-md fw-600 marg-t-16">Öppen lönekartläggning</div><div class="farg-svag fs-xs marg-t-4">Initierar verktyget…</div><noscript class="bak-kritisk-yta rund-6 farg-kritisk fs-sm lh-1_5 marg-t-18 max-bredd-380 pad-12-16 ta-mitt"><strong>JavaScript krävs.</strong> Verktyget körs helt lokalt i din webbläsare och behöver JavaScript för att fungera. Inga data lämnar din enhet.
 </noscript>
@@ -11154,6 +11154,161 @@ function harlettNot(h) {
     };
 }
 
+// ---- Underlag: diagrammet räknat för en del av personerna (figur.underlag) ----
+// `figur.underlag = { dimensioner, rader, rita, k, kon? }`. `rader` är personerna i hela det underlag vyn redan ritar,
+// `dimensioner` kategorier att räkna för ({ falt, namn, varde?, etikett?, visning?, ordning? }; `varde(rad)` ger radens
+// värde, annars `rad[falt]`), `rita(valda, { beskrivning })` vyns egen beräkning för de valda raderna (en figur, eller
+// en text när den inte går att rita), `k` tröskeln och `kon(rad)` 'kv', 'ma' eller null (annars fältet `kon` som i
+// resten av verktyget).
+//
+// Skyddsregeln mot differensröjande: ett val godtas bara när både urvalet och resten (underlaget utom urvalet) har noll
+// eller minst k personer av vartdera könet. Två till: ett värde vars egen grupp inte klarar regeln går inte att välja
+// (det ingår bara i hela underlaget), och underlaget räknas för en dimension i taget. Då är skillnaden mellan två val
+// alltid en förening av valbara värden — själva skyddade — och "alla" minus ett val är resten, som regeln prövar.
+
+// Radens kön som 'kv' eller 'ma' (samma regel som konOf i falt.js), eller null.
+function _underlagKon(underlag, r) {
+    if (underlag && typeof underlag.kon === 'function') { const k = underlag.kon(r); return k === 'kv' || k === 'ma' ? k : null; }
+    const k = r && r.kon;
+    if (typeof k === 'string' && k.includes('kvinna')) return 'kv';
+    return k === 'man' || k === 'män' ? 'ma' : null;
+}
+
+/**
+ * Antalet kvinnor och män bland raderna.
+ * @param {any} underlag @param {any[]} rader @returns {{kv: number, ma: number}}
+ */
+function underlagKonAntal(underlag, rader) {
+    const ut = { kv: 0, ma: 0 };
+    for (const r of rader || []) { const k = _underlagKon(underlag, r); if (k) ut[k]++; }
+    return ut;
+}
+
+/** Sant när vartdera könet har noll eller minst k personer. @param {{kv: number, ma: number}} antal @param {number} k */
+function underlagSkyddat(antal, k) {
+    return [antal.kv, antal.ma].every(n => n === 0 || n >= k);
+}
+
+/**
+ * Radens värde i dimensionen som sträng (`dim.varde(rad)`, annars `rad[dim.falt]`), eller null när det saknas.
+ * @param {any} dim @param {any} rad @returns {string|null}
+ */
+function underlagVarde(dim, rad) {
+    const v = dim && typeof dim.varde === 'function' ? dim.varde(rad) : rad && dim ? rad[dim.falt] : null;
+    return v == null || v === '' ? null : String(v);
+}
+
+/**
+ * Dimensionen `falt` i figurens underlag, eller null.
+ * @param {any} underlag @param {string} falt
+ */
+function underlagDimension(underlag, falt) {
+    const dims = underlag && Array.isArray(underlag.dimensioner) ? underlag.dimensioner : [];
+    return dims.find(u => u && u.falt === falt) || null;
+}
+
+/**
+ * Värdena som går att välja i dimensionen: de vars grupp (raderna med värdet) klarar skyddsregeln, i dimensionens
+ * `ordning` (en jämförelsefunktion) eller svensk sorteringsordning. `utelamnade` är antalet värden som inte går att
+ * välja; de ingår bara i hela underlaget.
+ * @param {any} underlag @param {any} dim
+ * @returns {{varden: string[], utelamnade: number}}
+ */
+function underlagVarden(underlag, dim) {
+    const grupper = new Map();
+    for (const r of (underlag && underlag.rader) || []) {
+        const v = underlagVarde(dim, r);
+        if (v == null) continue;
+        if (!grupper.has(v)) grupper.set(v, { kv: 0, ma: 0 });
+        const k = _underlagKon(underlag, r);
+        if (k) grupper.get(v)[k]++;
+    }
+    const varden = [];
+    let utelamnade = 0;
+    for (const [v, antal] of grupper) {
+        if (antal.kv + antal.ma > 0 && underlagSkyddat(antal, underlag.k)) varden.push(v); else utelamnade++;
+    }
+    varden.sort(typeof dim.ordning === 'function' ? dim.ordning : (a, b) => a.localeCompare(b, 'sv', { numeric: true }));
+    return { varden, utelamnade };
+}
+
+/**
+ * Valet som gäller i ett filter (Map<falt, Set<bortvalda värden>>): den första dimensionen med ett bortvalt värde
+ * som går att välja, som { dim, varden, valda } (valda: de valbara värden som inte är bortvalda), eller null när
+ * underlaget är helt.
+ * @param {any} underlag @param {Map<string, Set<string>>|null|undefined} filter
+ */
+function underlagValet(underlag, filter) {
+    if (!filter || typeof filter.get !== 'function') return null;
+    for (const dim of (underlag && underlag.dimensioner) || []) {
+        const bort = filter.get(dim.falt);
+        if (!bort || !bort.size) continue;
+        const { varden } = underlagVarden(underlag, dim);
+        if (!varden.some(v => bort.has(v))) continue;
+        return { dim, varden, valda: varden.filter(v => !bort.has(v)) };
+    }
+    return null;
+}
+
+/**
+ * Prövar ett val mot skyddsregeln. `valda` är raderna i urvalet (de med ett valt värde i den valda dimensionen; hela
+ * underlaget när inget är valt), `antal` könen i urvalet och resten, `ok` om båda klarar regeln.
+ * @param {any} underlag @param {Map<string, Set<string>>|null|undefined} filter
+ * @returns {{ok: boolean, valet: any, valda: any[], antal: {urval: {kv: number, ma: number}, rest: {kv: number, ma: number}}}}
+ */
+function underlagProva(underlag, filter) {
+    const rader = (underlag && underlag.rader) || [];
+    const valet = underlagValet(underlag, filter);
+    const valbara = valet ? new Set(valet.valda) : null;
+    const valda = valet && valbara ? rader.filter(r => { const v = underlagVarde(valet.dim, r); return v != null && valbara.has(v); }) : rader;
+    const alla = underlagKonAntal(underlag, rader), urval = underlagKonAntal(underlag, valda);
+    const rest = { kv: alla.kv - urval.kv, ma: alla.ma - urval.ma };
+    return { ok: !valet || (underlagSkyddat(urval, underlag.k) && underlagSkyddat(rest, underlag.k)), valet, valda, antal: { urval, rest } };
+}
+
+/** Dimensionens namn mitt i en mening: liten första bokstav, utom när namnet börjar med en förkortning ('BAS-intervall'). @param {string} namn */
+function namnIMening(namn) {
+    const s = String(namn || '');
+    return s.length > 1 && s[1] === s[1].toLocaleLowerCase('sv') ? s[0].toLocaleLowerCase('sv') + s.slice(1) : s;
+}
+
+/**
+ * Valet som text, t.ex. 'sektor Vård och omsorg' eller 'yrkesgrupp 5 av 40' (fler än tre valda), eller '' när
+ * underlaget är helt.
+ * @param {any} underlag @param {Map<string, Set<string>>|null|undefined} filter
+ */
+function underlagBeskrivning(underlag, filter) {
+    const valet = underlagValet(underlag, filter);
+    if (!valet) return '';
+    const namn = namnIMening(valet.dim.namn);
+    if (!valet.valda.length) return `${namn}: inga`;
+    return valet.valda.length <= 3 ? `${namn} ${valet.valda.join(', ')}` : `${namn} ${valet.valda.length} av ${valet.varden.length}`;
+}
+
+// Prövar figur.underlag (valideraFigur).
+function _provaUnderlag(figur, fel) {
+    const u = figur.underlag, vem = 'underlag';
+    if (!u || typeof u !== 'object') fel(`${vem} måste vara { dimensioner, rader, rita, k, kon? }`);
+    if (!Array.isArray(u.dimensioner) || !u.dimensioner.length) fel(`${vem}.dimensioner måste vara en lista med minst en dimension`);
+    if (!Array.isArray(u.rader)) fel(`${vem}.rader måste vara en lista`);
+    if (typeof u.rita !== 'function') fel(`${vem}.rita måste vara en funktion`);
+    if (!(typeof u.k === 'number' && Number.isInteger(u.k) && u.k >= 1)) fel(`${vem}.k måste vara ett heltal ≥ 1`);
+    if (u.kon != null && typeof u.kon !== 'function') fel(`${vem}.kon måste vara en funktion`);
+    const text = v => typeof v === 'string' && v.trim() !== '';
+    const sedda = new Set();
+    u.dimensioner.forEach((d, i) => {
+        const v = `${vem}.dimensioner ${i}`;
+        if (!d || typeof d !== 'object') fel(`${v}: måste vara { falt, namn, varde?, etikett?, visning?, ordning? }`);
+        if (d.typ != null && d.typ !== 'kategori') fel(`${v}: bara kategorier går att räkna för`);
+        if (!text(d.falt) || !text(d.namn)) fel(`${v}: falt och namn måste vara icke-tomma strängar`);
+        for (const f of ['varde', 'ordning']) if (d[f] != null && typeof d[f] !== 'function') fel(`${v}: ${f} måste vara en funktion`);
+        if (d.etikett != null && typeof d.etikett !== 'string') fel(`${v}: etikett måste vara en sträng`);
+        if (d.visning != null && d.visning !== 'lista') fel(`${v}: visning måste vara "lista"`);
+        if (sedda.has(d.falt)) fel(`${v}: fältet "${d.falt}" förekommer två gånger`);
+        sedda.add(d.falt);
+    });
+}
+
 // Färgskalans domän: ett objekt med `doman` = två ändliga tal.
 function _fargdomanOk(fs) {
     return !!fs && typeof fs === 'object' && Array.isArray(fs.doman) && fs.doman.length === 2
@@ -11240,6 +11395,8 @@ function valideraFigur(figur, id = 'diagram') {
             sedda.add(u.falt);
         });
     }
+    // underlag: diagrammet kan räknas om för en del av personerna (underlagProva m.fl. ovan).
+    if (figur.underlag != null) _provaUnderlag(figur, fel);
     const paneler = Array.isArray(figur.paneler) ? figur.paneler : [];
     figur.lager.forEach((l, i) => {
         if (!l || !MARKEN.includes(l.marke)) fel(`lager ${i}: okänt märke "${l && l.marke}"`);
@@ -11370,7 +11527,7 @@ function figurTillTabell(figur) {
     return ut;
 }
 
-    return { talformat, valideraFigur, utanSmaGrupper, skalDoman, ladstatistik, antalPunkter, figurTillTabell, panelerMedLager, kronorSkillnad, kronorTipsRad, kvantilpunkter, urvalVarden, urvalEtikett, arBortvald, urvalLista, urvalSpann, urvalBeskrivning, urvalSomLista, urvalAktivt, harleddaLager, harlettNot };
+    return { talformat, valideraFigur, utanSmaGrupper, skalDoman, ladstatistik, antalPunkter, figurTillTabell, panelerMedLager, kronorSkillnad, kronorTipsRad, kvantilpunkter, urvalVarden, urvalEtikett, arBortvald, urvalLista, urvalSpann, urvalBeskrivning, urvalSomLista, urvalAktivt, harleddaLager, harlettNot, underlagKonAntal, underlagSkyddat, underlagVarde, underlagDimension, underlagVarden, underlagValet, underlagProva, underlagBeskrivning, namnIMening };
 })();
 const _figTalformat = __mirrorFigur.talformat;
 const _figValidera = __mirrorFigur.valideraFigur;
@@ -11393,6 +11550,15 @@ const _figUrvalSomLista = __mirrorFigur.urvalSomLista;
 const _figUrvalAktivt = __mirrorFigur.urvalAktivt;
 const _figHarleddaLager = __mirrorFigur.harleddaLager;
 const _figHarlettNot = __mirrorFigur.harlettNot;
+const _figUnderlagKonAntal = __mirrorFigur.underlagKonAntal;
+const _figUnderlagSkyddat = __mirrorFigur.underlagSkyddat;
+const _figUnderlagVarde = __mirrorFigur.underlagVarde;
+const _figUnderlagDimension = __mirrorFigur.underlagDimension;
+const _figUnderlagVarden = __mirrorFigur.underlagVarden;
+const _figUnderlagValet = __mirrorFigur.underlagValet;
+const _figUnderlagProva = __mirrorFigur.underlagProva;
+const _figUnderlagBeskrivning = __mirrorFigur.underlagBeskrivning;
+const _figNamnIMening = __mirrorFigur.namnIMening;
 /* eslint-enable */
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -13156,7 +13322,10 @@ function _rfRensaAlla() {
 function _rfIndex(s) { return typeof s === 'string' && /^\d+$/.test(s) ? Number(s) : -1; }
 // Figuren som bilden i behållaren är ritad ur: originalet, eller (med ett aktivt filter) originalet med de härledda
 // lagren omräknade (_figHarleddaLager). Samma lager och index; data-l/data-i slås upp här, aldrig i el._figur rakt av.
-function _rfVisad(el) { return (el && (el._rfVisadFigur || el._figur)) || null; }
+function _rfVisad(el) { return (el && (el._rfVisadFigur || el._rfUnderlagFigur || el._figur)) || null; }
+// Figuren som gäller för behållarens underlag: vyns figur räknad för det valda underlaget (figur.underlag, se
+// _rfUnderlagRakna), annars originalet. Härledda lager och filtret läggs på den.
+function _rfGrundfigur(el) { return (el && (el._rfUnderlagFigur || el._figur)) || null; }
 
 // Lagrets beskrivning till vidKlick: ett NYTT fryst objekt utan data, tips eller någon väg till lagret.
 // `panel` är lagrets plats i figurens paneler (undefined för ett lager utan panel), `index` lagrets plats i figuren.
@@ -13336,7 +13505,7 @@ function _rfOvergangAvsluta(el) { _rfOvergangSatt(el, 1); }
 // Ritar behållarens figur på nytt (ny figur, växlad serie, ny bredd). Kastar om ritaren kastar.
 // `overgang: false` (storleksändring) byter bilden utan att märkena flyttar sig.
 function _rfRitaOm(el, { overgang = true } = {}) {
-    const val = el._figurVal || {}, figur = el._figur;
+    const val = el._figurVal || {}, figur = _rfGrundfigur(el);
     // Övergång: den gamla bildens lägen läses av (som de står just nu), sedan avslutas en pågående flytt.
     const forra = el._rfRitadFigur, samma = forra === figur;
     const fore = overgang && forra && _rfOvergangPa() && el.querySelector(':scope > svg') ? _rfOvergangLagen(el, el._rfRitadVisad || forra, samma) : null;
@@ -13349,6 +13518,13 @@ function _rfRitaOm(el, { overgang = true } = {}) {
     el._figurBredd = _rfMattBredd(el);
     delete el._rfVisadFigur;
     delete el._rfHarlett;
+    // Underlaget går inte att rita (inga personer i urvalet, eller vyns beräkning gav ingen figur): vyns text, och
+    // raderna och noten står kvar så att valet går att ändra.
+    if (el._rfUnderlagTom) {
+        _rfMeddelande(el, 'tom', el._rfUnderlagTom);
+        _rfNotis(el, null);
+        return;
+    }
     // Tomt läge: ingen datapunkt återstår när de små är borta. Då visas bara texten — inga axlar, ingen
     // förklaring (den kunde namnge en serie som bara finns i små grupper) och ingen notis.
     if (_figAntalPunkter(val.visaSma ? figur : _figUtanSma(figur)) === 0) {
@@ -13611,7 +13787,7 @@ function _rfAktivera(el, m, e) {
     }
     const fn = el._figurVal && el._figurVal.vidKlick;
     if (typeof fn !== 'function') return;
-    try { fn(t.d, _rfLagerBeskrivning(el._figur, t.lager, t.index)); } catch (fel) { rapporteraFel(_rfPlats('diagramklick', el), fel); }
+    try { fn(t.d, _rfLagerBeskrivning(_rfVisad(el), t.lager, t.index)); } catch (fel) { rapporteraFel(_rfPlats('diagramklick', el), fel); }
 }
 
 // Storleksbevakningens svar. En behållare som går från dold (bredd 0) till synlig ritas om genast — annars
@@ -13677,6 +13853,7 @@ function ritaFigur(id, figur, val) {
         el._figurVal = val && typeof val === 'object' ? val : {};
         el._figurDolda = new Set();
         _rfUrvalSatt(el);  // urvalet ur minnet, begränsat till figurens värden
+        _rfUnderlagSatt(el);   // underlaget ur minnet (figur.underlag), prövat mot skyddsregeln, och figuren räknad för det
         _rfZoomGlom(el);   // en ny figur har andra värden: ett tidigare utsnitt gäller inte
         el._exportBeskrivning = typeof el._figurVal.exportBeskrivning === 'string' ? el._figurVal.exportBeskrivning : '';
         _rfRitaOm(el);
@@ -13718,6 +13895,7 @@ function rensaFigur(id) {
     delete el._rfRitadVisad;
     delete el._rfVisadFigur;
     delete el._rfHarlett;
+    _rfUnderlagGlomEl(el);
     el.textContent = '';
 }
 
@@ -13732,7 +13910,7 @@ function rensaFigur(id) {
 // ====================================================================
 function _rfPenselPaneler(el) { return [...el.querySelectorAll(':scope > svg svg[data-del="panel"]')]; }
 function _rfPenselGar(el) {
-    const f = el._figur;
+    const f = _rfGrundfigur(el);
     return !!f && f.x.skala !== 'band' && f.y.skala !== 'band' && !!el.querySelector(':scope > svg circle[data-marke="punkt"]');
 }
 // Pekarens läge i panelens egna koordinater, och vilken panel den är i (null utanför alla).
@@ -13845,7 +14023,7 @@ function _rfPenselNot(el, ut) {
         el.insertAdjacentElement('afterend', not);
         el._rfPenselNotEl = not;
     }
-    const format = el._figur.y.format;
+    const format = _rfGrundfigur(el).y.format;
     const delar = ut.serier.map(s => `${s.serie} ${s.antal}${s.antal && typeof s.median === 'number' ? ` (median ${_figTalformat(s.median, format)})` : ''}`);
     not.textContent = ut.antal
         ? `Penslat område: ${ut.antal} ${ut.antal === 1 ? 'punkt' : 'punkter'} — ${delar.join(' · ')}. Klicka i diagrammet eller tryck Escape för att ta bort området.`
@@ -13869,7 +14047,7 @@ function _rfNotKnapp(text, fn) {
 // och markering fungerar som vanligt; det som hamnar utanför klipps av panelen. En ny figur från vyn tar bort
 // utsnittet. Exporten ritar bilden som den visas och säger i fotraden att den är ett utsnitt.
 function _rfZoomad(el, figur) {
-    const z = el && el._rfZoom, f = figur || (el && el._figur);
+    const z = el && el._rfZoom, f = figur || _rfGrundfigur(el);
     return z && f ? { ...f, x: { ...f.x, doman: z.x }, y: { ...f.y, doman: z.y } } : f;
 }
 function _rfZooma(el) {
@@ -13880,7 +14058,8 @@ function _rfZooma(el) {
         const d = (b - a) * 0.04 || Math.abs(a) * 0.05 || 1;
         return [a - d, b + d];
     };
-    el._rfZoom = { x: luft(o.x, el._figur.x.skala === 'log'), y: luft(o.y, el._figur.y.skala === 'log') };
+    const bas = _rfGrundfigur(el);
+    el._rfZoom = { x: luft(o.x, bas.x.skala === 'log'), y: luft(o.y, bas.y.skala === 'log') };
     try { _rfRitaOm(el); } catch (e) { delete el._rfZoom; _rfVisaFel(el, e); return; }
     _rfZoomNot(el, true);
 }
@@ -14014,7 +14193,7 @@ function _rfUrvalFokus(rader) {
     const rad = a && rader.find(r => r.contains(a));
     if (!rad) return null;
     const attr = _RF_URVAL_FOKUS.find(n => a.hasAttribute(n));
-    return { falt: rad.getAttribute('data-urval-falt'), alla: a.hasAttribute('data-urval-alla'), attr, varde: attr ? a.getAttribute(attr) : null };
+    return { falt: rad.getAttribute('data-urval-falt'), alla: a.hasAttribute('data-urval-alla'), underlagAlla: a.hasAttribute('data-underlag-alla'), attr, varde: attr ? a.getAttribute(attr) : null };
 }
 // Listornas läge (öppen, sökningen) per fält, så att det följer med när raderna byggs om.
 function _rfUrvalListLage(rader) {
@@ -14027,26 +14206,48 @@ function _rfUrvalListLage(rader) {
 }
 // Texten jämförs utan skiftläge och med blanksteg hopslagna.
 function _rfUrvalSokNorm(t) { return String(t == null ? '' : t).toLocaleLowerCase('sv').replace(/\s+/g, ' ').trim(); }
-function _rfUrvalKategoriRad(el, o) {
-    const figur = el._figur, rad = document.createElement('div');
+// Raden för en dimension: role="group" med namnet, och fältet (eller för underlaget "underlag:<falt>") i data-urval-falt.
+// En rad för underlaget har data-underlag och den synliga rubriken "Räkna för".
+function _rfUrvalRadBas(o) {
+    const rad = document.createElement('div');
     rad.className = 'diagram-urval';
     rad.setAttribute('role', 'group');
-    rad.setAttribute('aria-label', `Visa ${o.u.namn}`);
-    rad.setAttribute('data-urval-falt', o.u.falt);
+    rad.setAttribute('aria-label', o.underlag ? `Räkna för ${_figNamnIMening(o.u.namn)}` : `Visa ${o.u.namn}`);
+    rad.setAttribute('data-urval-falt', _rfUrvalRadNyckel(o));
+    if (o.underlag) rad.setAttribute('data-underlag', o.u.falt);
+    return rad;
+}
+function _rfUrvalRadNyckel(o) { return o.underlag ? `underlag:${o.u.falt}` : o.u.falt; }
+// Knappens eller kryssrutans text för värdet: figurens urval (_figUrvalEtikett), eller underlagets dimensions mall.
+function _rfUrvalEtikett(el, o, v) {
+    if (!o.underlag) return _figUrvalEtikett(el._figur, o.u, v);
+    return typeof o.u.etikett === 'string' ? o.u.etikett.split('{v}').join(String(v)) : String(v);
+}
+// De bortvalda värdena i dimensionen: filtret (el._figurFilter) eller underlagets val (el._rfUnderlagFilter).
+function _rfUrvalBort(el, o) {
+    const m = o.underlag ? el._rfUnderlagFilter : el._figurFilter && el._figurFilter.kategori;
+    return (m && m.get(o.u.falt)) || new Set();
+}
+function _rfUrvalKategoriRad(el, o) {
+    const rad = _rfUrvalRadBas(o);
+    if (o.underlag) {
+        const rubrik = document.createElement('span');
+        rubrik.className = 'diagram-urval-namn';
+        rubrik.setAttribute('aria-hidden', 'true');   // gruppens namn läses redan upp
+        rubrik.textContent = `Räkna för ${_figNamnIMening(o.u.namn)}`;
+        rad.appendChild(rubrik);
+    }
     for (const v of o.varden) {
-        const b = _rfNotKnapp(_figUrvalEtikett(figur, o.u, v), () => _rfUrvalVaxla(el, o, v));
+        const b = _rfNotKnapp(_rfUrvalEtikett(el, o, v), () => _rfUrvalVaxla(el, o, v));
         b.setAttribute('data-urval', v);
         rad.appendChild(b);
     }
+    _rfUnderlagUtelamnade(rad, o);
     return rad;
 }
 // En kategori som lista: <details> med summering, sökfält, Markera alla / Avmarkera alla och en kryssruta per värde.
 function _rfUrvalListaRad(el, o, lage) {
-    const figur = el._figur, rad = document.createElement('div');
-    rad.className = 'diagram-urval';
-    rad.setAttribute('role', 'group');
-    rad.setAttribute('aria-label', `Visa ${o.u.namn}`);
-    rad.setAttribute('data-urval-falt', o.u.falt);
+    const rad = _rfUrvalRadBas(o);
     const det = document.createElement('details');
     det.className = 'diagram-urval-lista';
     det.setAttribute('data-urval-lista', '');
@@ -14084,13 +14285,14 @@ function _rfUrvalListaRad(el, o, lage) {
         ruta.setAttribute('data-urval', v);
         ruta.addEventListener('change', () => _rfUrvalVaxla(el, o, v));
         const text = document.createElement('span');
-        text.textContent = _figUrvalEtikett(figur, o.u, v);
+        text.textContent = _rfUrvalEtikett(el, o, v);
         etikett.append(ruta, text);
         li.appendChild(etikett);
         poster.appendChild(li);
     }
     det.appendChild(poster);
     rad.appendChild(det);
+    _rfUnderlagUtelamnade(rad, o);
     sok.addEventListener('input', () => _rfUrvalSok(rad));
     _rfUrvalSok(rad);
     return rad;
@@ -14116,6 +14318,12 @@ function _rfUrvalSok(rad) {
 }
 // Markera alla / Avmarkera alla: gäller posterna som syns efter sökningen.
 function _rfUrvalMarkera(el, o, rad, visa) {
+    if (o.underlag) {
+        const synliga = [...rad.querySelectorAll('.diagram-urval-poster > li')].filter(li => !(/** @type {HTMLElement} */ (li).hidden))
+            .map(li => li.querySelector('input[data-urval]')?.getAttribute('data-urval')).filter(v => v != null);
+        _rfUnderlagAndra(el, o, bort => { for (const v of synliga) { if (visa) bort.delete(v); else bort.add(v); } }, { markera: visa ? 'alla' : 'inga' });
+        return;
+    }
     const f = el._figurFilter;
     if (!f) return;
     const bort = f.kategori.get(o.u.falt) || new Set();
@@ -14174,18 +14382,32 @@ function _rfUrvalVisa(el) {
     const listor = _rfUrvalListLage(forra);
     for (const r of forra) r.remove();
     delete el._rfUrvalRader;
-    const dims = el._rfUrvalDim;
-    if (dims && el.parentNode) {
-        const rader = dims.map(o => (o.u.typ === 'intervall' ? _rfUrvalIntervallRad(el, o)
-            : o.lista ? _rfUrvalListaRad(el, o, listor.get(o.u.falt)) : _rfUrvalKategoriRad(el, o)));
-        const alla = _rfNotKnapp('Visa alla', () => _rfUrvalVisaAlla(el));
-        alla.setAttribute('data-urval-alla', '');
-        rader[rader.length - 1].appendChild(alla);
+    const und = el._rfUnderlagDim || [], dims = el._rfUrvalDim || [];
+    if ((und.length || dims.length) && el.parentNode) {
+        const bygg = o => (o.u.typ === 'intervall' ? _rfUrvalIntervallRad(el, o)
+            : o.lista ? _rfUrvalListaRad(el, o, listor.get(_rfUrvalRadNyckel(o))) : _rfUrvalKategoriRad(el, o));
+        // Underlagets rader först (de bestämmer vad som räknas), sedan filtren (de döljer märken i det som ritas).
+        const underlagRader = und.map(bygg), filterRader = dims.map(bygg);
+        /** @type {HTMLButtonElement|null} */ let alla = null;
+        /** @type {HTMLButtonElement|null} */ let underlagAlla = null;
+        if (underlagRader.length) {
+            const k = _rfNotKnapp('Räkna för alla', () => _rfUnderlagAlla(el));
+            k.setAttribute('data-underlag-alla', '');
+            underlagRader[underlagRader.length - 1].appendChild(k);
+            underlagAlla = k;
+        }
+        if (filterRader.length) {
+            const k = _rfNotKnapp('Visa alla', () => _rfUrvalVisaAlla(el));
+            k.setAttribute('data-urval-alla', '');
+            filterRader[filterRader.length - 1].appendChild(k);
+            alla = k;
+        }
+        const rader = [...underlagRader, ...filterRader];
         for (const r of rader) el.insertAdjacentElement('beforebegin', r);
         el._rfUrvalRader = rader;
         if (fokus) {
             const rad = rader.find(r => r.getAttribute('data-urval-falt') === fokus.falt);
-            const mal = fokus.alla ? alla
+            const mal = fokus.alla ? alla : fokus.underlagAlla ? underlagAlla
                 : rad && fokus.attr ? [...rad.querySelectorAll(`[${fokus.attr}]`)].find(k => k.getAttribute(fokus.attr) === fokus.varde) : null;
             if (mal && !(/** @type {HTMLElement} */ (mal)).hidden) /** @type {HTMLElement} */ (mal).focus();
         }
@@ -14195,16 +14417,25 @@ function _rfUrvalVisa(el) {
 // Knapparnas lägen, Visa alla och noten efter filtret nu.
 function _rfUrvalUppdatera(el) {
     const f = el._figurFilter || _rfUrvalTomtFilter();
-    for (const o of el._rfUrvalDim || []) {
+    const avvisad = el._rfUnderlagAvvisad || null;
+    for (const o of [...(el._rfUnderlagDim || []), ...(el._rfUrvalDim || [])]) {
         if (o.u.typ === 'intervall') continue;
-        const rad = (el._rfUrvalRader || []).find(r => r.getAttribute('data-urval-falt') === o.u.falt);
+        const rad = (el._rfUrvalRader || []).find(r => r.getAttribute('data-urval-falt') === _rfUrvalRadNyckel(o));
         if (!rad) continue;
-        const bort = f.kategori.get(o.u.falt) || new Set();
+        const bort = _rfUrvalBort(el, o);
         const synliga = o.varden.filter(v => !bort.has(v)).length;
+        // Ett val som skyddsregeln avvisade markeras (aria-invalid) tills nästa ändring.
+        for (const k of rad.querySelectorAll('[aria-invalid]')) k.removeAttribute('aria-invalid');
+        if (avvisad && avvisad.falt === o.u.falt) {
+            const mal = avvisad.markera ? rad.querySelector(`[data-urval-markera="${avvisad.markera}"]`)
+                : [...rad.querySelectorAll('[data-urval]')].find(k => k.getAttribute('data-urval') === avvisad.varde);
+            if (mal) mal.setAttribute('aria-invalid', 'true');
+        }
         if (o.lista) {
             for (const ruta of rad.querySelectorAll('input[data-urval]')) /** @type {HTMLInputElement} */ (ruta).checked = !bort.has(ruta.getAttribute('data-urval'));
             const sum = rad.querySelector('[data-urval-summering]');
-            if (sum) sum.textContent = `${o.u.namn}: ${synliga === o.varden.length ? `alla ${_figTalformat(synliga, 'antal')}` : `${_figTalformat(synliga, 'antal')} av ${_figTalformat(o.varden.length, 'antal')}`}`;
+            const namn = o.underlag ? `Räkna för ${_figNamnIMening(o.u.namn)}` : o.u.namn;
+            if (sum) sum.textContent = `${namn}: ${synliga === o.varden.length ? `alla ${_figTalformat(synliga, 'antal')}` : `${_figTalformat(synliga, 'antal')} av ${_figTalformat(o.varden.length, 'antal')}`}`;
             continue;
         }
         for (const b of rad.querySelectorAll('[data-urval]')) {
@@ -14217,10 +14448,19 @@ function _rfUrvalUppdatera(el) {
     const rader = el._rfUrvalRader || [];
     const alla = rader.length ? rader[rader.length - 1].querySelector('[data-urval-alla]') : null;
     if (alla) /** @type {HTMLElement} */ (alla).hidden = !_rfUrvalAktivt(f) && !fel.size;
+    const underlagAlla = rader.map(r => r.querySelector('[data-underlag-alla]')).find(Boolean);
+    if (underlagAlla) /** @type {HTMLElement} */ (underlagAlla).hidden = !el._rfUnderlagText;
     const harlett = _figHarlettNot(el._rfHarlett);
-    _rfUrvalNot(el, el._figur ? _figUrvalBeskrivning(el._figur, f, { visaSma: !!(el._figurVal && el._figurVal.visaSma) }) : [], [...fel.values()], [...harlett.omraknade, ...harlett.utelamnade]);
+    _rfUrvalNot(el, el._figur ? _figUrvalBeskrivning(el._figur, f, { visaSma: !!(el._figurVal && el._figurVal.visaSma) }) : [], [...fel.values()], [...harlett.omraknade, ...harlett.utelamnade], _rfUnderlagNot(el));
 }
 function _rfUrvalVaxla(el, o, v) {
+    if (o.underlag) {
+        _rfUnderlagAndra(el, o, bort => {
+            if (bort.has(v)) bort.delete(v);
+            else if (o.lista || o.varden.length - bort.size > 1) bort.add(v);   // den sista valda knappen: inget händer
+        }, { varde: v });
+        return;
+    }
     const f = el._figurFilter;
     if (!f) return;
     const bort = f.kategori.get(o.u.falt) || new Set();
@@ -14284,9 +14524,11 @@ function _rfUrvalVisaAlla(el) {
 // Noten under diagrammet (samma stil och plats som zoomnoten) när ett filter är aktivt eller ett fält är fel.
 // `delar` är filtret som text (_figUrvalBeskrivning), samma text som exportens fotrad; `harlett` meningarna om de
 // härledda lagren (_figHarlettNot), sist.
-function _rfUrvalNot(el, delar, fel = [], harlett = []) {
+// `underlag` är meningarna om underlaget (_rfUnderlagNot): ett avvisat val först, sedan vad diagrammet är räknat för.
+function _rfUrvalNot(el, delar, fel = [], harlett = [], underlag = { fel: '', rakna: '', info: '' }) {
     let not = el._rfUrvalNotEl;
-    if ((!delar || !delar.length) && !fel.length && !harlett.length) { if (not) not.remove(); delete el._rfUrvalNotEl; return; }
+    const u = underlag || { fel: '', rakna: '', info: '' };
+    if ((!delar || !delar.length) && !fel.length && !harlett.length && !u.fel && !u.rakna && !u.info) { if (not) not.remove(); delete el._rfUrvalNotEl; return; }
     if (!not) {
         not = document.createElement('p');
         not.className = 'k-mask-note';
@@ -14295,8 +14537,9 @@ function _rfUrvalNot(el, delar, fel = [], harlett = []) {
         el.insertAdjacentElement('afterend', not);
         el._rfUrvalNotEl = not;
     }
-    const urval = delar && delar.length ? `Diagrammet visar ett urval: ${delar.join('; ')}. Talen i texten och tabellerna gäller hela underlaget.` : '';
-    not.textContent = [...fel, urval, ...harlett].filter(Boolean).join(' ');
+    const urval = delar && delar.length ? `Diagrammet visar ett urval: ${delar.join('; ')}.` : '';
+    const hela = urval || u.rakna ? 'Talen i texten och tabellerna gäller hela underlaget.' : '';
+    not.textContent = [u.fel, ...fel, u.rakna, urval, hela, u.info, ...harlett].filter(Boolean).join(' ');
 }
 // rensaFigur: raderna och noten tas bort; minnet står kvar.
 function _rfUrvalTaBort(el) {
@@ -14306,6 +14549,155 @@ function _rfUrvalTaBort(el) {
     delete el._rfUrvalFel;
     _rfUrvalNot(el, null);
 }
+// ---- Underlag: diagrammet räknat för en del av personerna (figur.underlag) ----
+// Ett diagram som sammanfattar personer (lådor, fördelningar, percentiler) kan ha `figur.underlag = { dimensioner,
+// rader, rita, k, kon? }` (se src/lib/figur.js). Raderna "Räkna för" står först bland filterraderna, med samma
+// kontroller som en kategori (knappar, eller en lista med kryssrutor). Ett val räknar om diagrammet: rita(valda
+// rader, { beskrivning }) är vyns egen beräkning med dess k-regler, och dess figur ritas i stället för originalet
+// (el._rfUnderlagFigur; _rfGrundfigur). Ger rita en text i stället för en figur står texten i diagrammet.
+//
+// Skyddsregeln (_figUnderlagProva): både urvalet och resten — de övriga personerna i det underlag vyn ritar — ska ha
+// noll eller minst k personer av vartdera könet. Ett val som bryter mot den görs inte: valet markeras (aria-invalid)
+// och noten säger varför. Ett värde vars egen grupp inte klarar regeln står inte bland valen, och underlaget räknas
+// för en dimension i taget (ett val i en annan dimension tar bort det förra, och noten säger det): skillnaden mellan
+// två val är då alltid en förening av valbara, skyddade grupper.
+//
+// Noten: "Diagrammet är räknat för: sektor Vård och omsorg (120 personer)." Exportmenyns bild och diagramdata följer
+// underlaget (fotraden och raden "Räknat för: …"); diagramTillBild (rapport, utskrift, ZIP, rapportunderlag) ritar
+// alltid hela underlaget. Valet minns per diagram och dimension (`<id>|underlag:<falt>`) i samma minne som filtren och
+// glöms med dem (_rfUrvalGlom). En kopia i Alla diagram har sitt eget val (sitt eget id).
+function _rfUnderlagNyckel(el, u) { return `${el.id}|underlag:${u.falt}`; }
+// Meningen när skyddsregeln stoppar ett val.
+function _rfUnderlagRegelText(k) { return `Urvalet eller resten har färre än ${_figTalformat(k, 'antal')} kvinnor eller män.`; }
+
+// Vid ritaFigur: underlagets dimensioner (de med minst två valbara värden), valet ur minnet och figuren för valet.
+function _rfUnderlagSatt(el) {
+    _rfUnderlagGlomEl(el);
+    const u = el._figur && el._figur.underlag;
+    if (!u || !el.id) return;
+    const dims = [];
+    const filter = new Map();
+    /** @type {any} */ let vald = null;
+    for (const dim of u.dimensioner) {
+        const { varden, utelamnade } = _figUnderlagVarden(u, dim);
+        if (varden.length < 2) continue;
+        dims.push({ u: dim, varden, utelamnade, k: u.k, lista: _figUrvalSomLista(dim, varden.length), underlag: true });
+        const minne = _rfUrvalMinne.get(_rfUnderlagNyckel(el, dim));
+        const bort = minne instanceof Set ? varden.filter(v => minne.has(v)) : [];
+        // En dimension i taget: den första med ett minne gäller. Alla bortvalda i en knapprad: hela underlaget.
+        const giltig = bort.length && !vald && (bort.length < varden.length || _figUrvalSomLista(dim, varden.length));
+        filter.set(dim.falt, new Set(giltig ? bort : []));
+        if (giltig) vald = dim;
+    }
+    if (!dims.length) return;
+    el._rfUnderlagDim = dims;
+    el._rfUnderlagFilter = filter;
+    // Ett val ur minnet som inte klarar regeln nu (en ny fil, en annan tröskel, ett annat BAS) gäller inte.
+    if (vald && !_figUnderlagProva(u, filter).ok) {
+        filter.set(vald.falt, new Set());
+        el._rfUnderlagFel = `${_rfUnderlagRegelText(u.k)} Det tidigare valet för ${_figNamnIMening(vald.namn)} gäller inte, och diagrammet visar hela underlaget.`;
+    }
+    _rfUnderlagRakna(el);
+}
+
+// Figuren för valet: rita(valda rader). Utan val: ingen (originalet ritas). Kastar om vyns rita kastar eller ger en
+// ogiltig figur.
+function _rfUnderlagRakna(el) {
+    delete el._rfUnderlagFigur; delete el._rfUnderlagTom; delete el._rfUnderlagText; delete el._rfUnderlagAntal;
+    const u = el._figur && el._figur.underlag;
+    if (!u || !el._rfUnderlagFilter) return;
+    const prov = _figUnderlagProva(u, el._rfUnderlagFilter);
+    if (!prov.valet) return;
+    const beskrivning = _figUnderlagBeskrivning(u, el._rfUnderlagFilter);
+    el._rfUnderlagAntal = prov.valda.length;
+    el._rfUnderlagText = `${beskrivning} (${_figTalformat(prov.valda.length, 'antal')} ${prov.valda.length === 1 ? 'person' : 'personer'})`;
+    if (!prov.valda.length) { el._rfUnderlagTom = 'Inga personer i urvalet'; return; }
+    const ny = u.rita(prov.valda, { beskrivning });
+    if (typeof ny === 'string' || ny == null) { el._rfUnderlagTom = ny || 'Inget att visa för urvalet'; return; }
+    const { underlag: _bort, ...figur } = ny;   // underlaget hör till originalet
+    _figValidera(figur, `${el.id || 'diagram'}, underlag`);
+    el._rfUnderlagFigur = figur;
+}
+
+// En ändring i en dimension: `andra(bort)` ändrar en kopia av dimensionens bortvalda värden. Klarar valet regeln
+// räknas och ritas diagrammet om; annars ändras inget och valet markeras. `kalla` säger vilken kontroll som ändrades.
+function _rfUnderlagAndra(el, o, andra, kalla) {
+    const u = el._figur && el._figur.underlag, forra = el._rfUnderlagFilter;
+    if (!u || !forra) return;
+    const ny = new Map([...forra].map(([f, v]) => [f, new Set(v)]));
+    const bort = ny.get(o.u.falt) || new Set();
+    const fore = [...bort].sort().join('\u0000');
+    andra(bort);
+    ny.set(o.u.falt, bort);
+    if ([...bort].sort().join('\u0000') === fore) return;
+    // En dimension i taget: ett val här tar bort valet i de andra.
+    const borttagna = [];
+    if (bort.size) for (const d of el._rfUnderlagDim || []) {
+        if (d.u.falt === o.u.falt) continue;
+        const s = ny.get(d.u.falt);
+        if (s && s.size) { borttagna.push(d.u); ny.set(d.u.falt, new Set()); }
+    }
+    if (!_figUnderlagProva(u, ny).ok) {
+        el._rfUnderlagAvvisad = { falt: o.u.falt, ...kalla };
+        el._rfUnderlagFel = `${_rfUnderlagRegelText(u.k)} Valet är inte gjort, och diagrammet är oförändrat.`;
+        _rfUrvalUppdatera(el);
+        return;
+    }
+    delete el._rfUnderlagAvvisad; delete el._rfUnderlagFel;
+    el._rfUnderlagInfo = borttagna.length
+        ? `Valet för ${borttagna.map(d => _figNamnIMening(d.namn)).join(' och ')} togs bort: diagrammet räknas för en sak i taget.` : '';
+    el._rfUnderlagFilter = ny;
+    _rfUnderlagMinnas(el);
+    _rfZoomGlom(el);
+    try { _rfUnderlagRakna(el); _rfRitaOm(el); } catch (e) { _rfVisaFel(el, e); return; }
+    _rfUrvalUppdatera(el);
+}
+// Minnet efter en ändring: dimensionen med ett val minns sina bortvalda värden, de andra glöms.
+function _rfUnderlagMinnas(el) {
+    if (!el.id) return;
+    for (const d of el._rfUnderlagDim || []) {
+        const nyckel = _rfUnderlagNyckel(el, d.u), b = el._rfUnderlagFilter.get(d.u.falt);
+        if (b && b.size) _rfUrvalMinne.set(nyckel, new Set(b)); else _rfUrvalMinne.delete(nyckel);
+    }
+}
+// "Räkna för alla": hela underlaget igen, och minnet glöms.
+function _rfUnderlagAlla(el) {
+    if (!el._rfUnderlagFilter) return;
+    const hade = !!el._rfUnderlagText;
+    for (const k of el._rfUnderlagFilter.keys()) el._rfUnderlagFilter.set(k, new Set());
+    delete el._rfUnderlagAvvisad; delete el._rfUnderlagFel; delete el._rfUnderlagInfo;
+    _rfUnderlagMinnas(el);
+    if (hade) {
+        _rfZoomGlom(el);
+        try { _rfUnderlagRakna(el); _rfRitaOm(el); } catch (e) { _rfVisaFel(el, e); return; }
+    }
+    // Knappen döljs när den har gjort sitt: fokus till den första radens första knapp eller summering.
+    const a = document.activeElement;
+    if (a && a.hasAttribute && a.hasAttribute('data-underlag-alla')) {
+        const forsta = (el._rfUrvalRader || [])[0]?.querySelector('[data-urval], [data-urval-summering]');
+        if (forsta) /** @type {HTMLElement} */ (forsta).focus();
+    }
+    _rfUrvalUppdatera(el);
+}
+// Meningarna om underlaget i noten: ett avvisat val, vad diagrammet är räknat för, och ett val som togs bort.
+function _rfUnderlagNot(el) {
+    return { fel: el._rfUnderlagFel || '', rakna: el._rfUnderlagText ? `Diagrammet är räknat för: ${el._rfUnderlagText}.` : '', info: el._rfUnderlagInfo || '' };
+}
+// Värden som inte går att välja (för få kvinnor eller män i gruppen): en kort text sist i raden, utan namn.
+function _rfUnderlagUtelamnade(rad, o) {
+    if (!o.underlag || !o.utelamnade) return;
+    const t = document.createElement('span');
+    t.className = 'diagram-urval-traffar';
+    t.setAttribute('data-underlag-utelamnade', '');
+    t.textContent = `${_figTalformat(o.utelamnade, 'antal')} till går inte att välja för sig: färre än ${_figTalformat(o.k, 'antal')} kvinnor eller män`;
+    rad.appendChild(t);
+}
+// Tar bort allt om underlaget från behållaren (rensaFigur, ny figur). Minnet står kvar.
+function _rfUnderlagGlomEl(el) {
+    for (const k of ['_rfUnderlagDim', '_rfUnderlagFilter', '_rfUnderlagFigur', '_rfUnderlagTom', '_rfUnderlagText', '_rfUnderlagAntal',
+        '_rfUnderlagFel', '_rfUnderlagAvvisad', '_rfUnderlagInfo']) delete el[k];
+}
+
 // Glömmer penseln utan att röra bilden (den ska ändå ritas om eller tas bort).
 function _rfPenselGlom(el) {
     if (el._rfKoppling) el._rfKoppling.drag = null;
@@ -14442,7 +14834,11 @@ function figurTillBild(figur, format, bredd, hojd, val = {}) {
  * `tom` är sant när inget återstår att exportera (alla punkter hör till små grupper som inte får följa med).
  * `filter` är urvalet i diagrammet (en kopia av el._figurFilter): bara exportmenyns bild följer det; diagramTillBild
  * (rapport, utskrift, ZIP, rapportunderlag) ritar alltid allt, och `tom` räknas utan urvalet.
- * @returns {{figur: any, bild: any, utsnitt: boolean, visaSma: boolean, dolda: Set<string>, filter: any, tom: boolean} | null}
+ * `underlag` finns när diagrammet är räknat för en del av personerna (figur.underlag): { figur, text, tom } — figuren
+ * för valet (null när den inte går att rita, `tom`) och valet som text. Exportmenyn ritar och skriver den (`bild` är
+ * då den); `hel` är alltid originalet (zoomat som på skärmen), som diagramTillBild ritar.
+ * @returns {{figur: any, bild: any, hel: any, utsnitt: boolean, visaSma: boolean, dolda: Set<string>, filter: any, tom: boolean,
+ *            underlag: {figur: any, text: string, tom: boolean}|null} | null}
  */
 function _rfExportFigur(gd) {
     if (!gd || !gd._figur) return null;
@@ -14452,8 +14848,13 @@ function _rfExportFigur(gd) {
         try { visaSma = fn() === true; } catch (e) { rapporteraFel(_rfPlats('diagramexport', gd), e); }
     }
     const figur = gd._figur;
-    // `bild` är figuren som bilden ritas ur: originalet, eller ett zoomat utsnitt av det (samma lager, andra domäner).
-    return { figur, bild: _rfZoomad(gd), utsnitt: !!gd._rfZoom, visaSma, dolda: new Set(gd._figurDolda || []), filter: _rfUrvalKopia(gd._figurFilter), tom: _figAntalPunkter(visaSma ? figur : _figUtanSma(figur)) === 0 };
+    // `bild` är figuren som bilden ritas ur: originalet (eller figuren för underlaget), eller ett zoomat utsnitt av den
+    // (samma lager, andra domäner). `hel` är originalet, oavsett underlag.
+    const und = gd._rfUnderlagText ? gd._rfUnderlagFigur || null : null;
+    const underlag = gd._rfUnderlagText
+        ? { figur: und, text: gd._rfUnderlagText, tom: !und || _figAntalPunkter(visaSma ? und : _figUtanSma(und)) === 0 } : null;
+    return { figur, bild: underlag ? (und ? _rfZoomad(gd, und) : null) : _rfZoomad(gd, figur), hel: _rfZoomad(gd, figur), utsnitt: !!gd._rfZoom, visaSma,
+             dolda: new Set(gd._figurDolda || []), filter: _rfUrvalKopia(gd._figurFilter), tom: _figAntalPunkter(visaSma ? figur : _figUtanSma(figur)) === 0, underlag };
 }
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -14557,6 +14958,15 @@ const URVAL = Object.freeze({
     yrkesgrupp: Object.freeze({ typ: 'kategori', falt: 'yrke', namn: 'Yrkesgrupp', etikett: '{v}', visning: 'lista' }),
     sektor: Object.freeze({ typ: 'kategori', falt: 'sektor', namn: 'Sektor', etikett: '{v}', visning: 'lista' }),
 });
+// Dimensionerna i ett underlag (figur.underlag.dimensioner): vad ett sammanfattande diagram kan räknas om för. Värdet
+// läses ur personraden med samma gruppnycklar som Tabeller och egna vyer (groupKey i src/lib/falt.js); personerna har
+// inget färdigt sektorsfält.
+const UNDERLAG = Object.freeze({
+    sektor: Object.freeze({ typ: 'kategori', falt: 'sektor', namn: 'Sektor', visning: 'lista', varde: r => _utGroupKey(r, 'sektor') }),
+    aldersgrupp: Object.freeze({ typ: 'kategori', falt: 'aldersgrupp', namn: 'Åldersgrupp', visning: 'lista', varde: r => _utGroupKey(r, 'alder'), ordning: (a, b) => _faltJamforAlder(a, b) }),
+    yrkesgrupp: Object.freeze({ typ: 'kategori', falt: 'yrke', namn: 'Yrkesgrupp', visning: 'lista', varde: r => r.yrke }),
+    bas: Object.freeze({ typ: 'kategori', falt: 'bas', namn: 'BAS-intervall', etikett: 'BAS {v}', varde: r => r.bas }),
+});
 /**
  * Statusen för ett avstånd från lika lön i procent (|100 − kvoten|) och en prövning av skillnaden (true/false; null
  * när den inte kunde göras, vilket ger Går ej att bedöma).
@@ -14599,6 +15009,9 @@ const CHART_FONT = {
 //                                     diagrammet; diagramdatan har alla rader och en rad "Urval i diagrammet: …".
 //                                     diagramTillBild ritar alltid allt. Härledda lager (harleddAv) räknas om för
 //                                     urvalet i exportmenyns bild, och fotraden nämner ett lager som då inte ritas.
+//   figur.underlag (ritaFigur)      — diagrammet kan räknas för en del av personerna (raderna "Räkna för"): exportmenyns
+//                                     bild och diagramdata är figuren för valet, fotraden och raden "Räknat för: …"
+//                                     säger valet. diagramTillBild ritar alltid hela underlaget (originalet).
 //   figur.individer                 — figuren har en punkt per person: diagramdatan får raden om att filen
 //                                     innehåller en rad per person och ska hanteras som personuppgifter (kIndividRad).
 //
@@ -14730,10 +15143,12 @@ function _chartExportHarlett(ut) {
  *  det här. Stämpeln får samma svar om små grupper som innehållet. */
 function chartExportRows(gd, underlag) {
     const ut = underlag === undefined ? _chartExportUnderlag(gd) : underlag;
-    if (!ut) return [];
+    if (!ut || (ut.underlag && ut.underlag.tom)) return [];
     gd = _chartExportAktuell(gd);
     const medSma = ut.visaSma;
-    const rader = _figTillTabell(medSma ? ut.figur : _figUtanSma(ut.figur)).map(r => r.map(_chartExportCell));
+    // Med ett underlag är diagramdatan figuren för valet (det som visas), och raden "Räknat för" säger vilket.
+    const kalla = ut.underlag && ut.underlag.figur ? ut.underlag.figur : ut.figur;
+    const rader = _figTillTabell(medSma ? kalla : _figUtanSma(kalla)).map(r => r.map(_chartExportCell));
     const beskrivning = typeof gd._exportBeskrivning === 'string' ? gd._exportBeskrivning : '';
     // En figur med en punkt per person (figurens `individer`) ger en rad per person: filen säger det på rad 2.
     const individer = ut.figur && ut.figur.individer === true;
@@ -14742,6 +15157,7 @@ function chartExportRows(gd, underlag) {
     return [[`${chartExportTitle(gd)} — Lönekartläggning ${APP_VERSION}. ${kStampelFor(_kUndantagFor(gd, medSma))}`],
             ...(individer ? [[kIndividRad()]] : []),
             ...(beskrivning ? [[`Urval: ${beskrivning}`]] : []),
+            ...(ut.underlag ? [[`Räknat för: ${ut.underlag.text}`]] : []),
             ...(dolt.length ? [[`Urval i diagrammet: ${dolt.join('; ')}`]] : []), ...rader];
 }
 
@@ -14749,18 +15165,21 @@ function chartExportRows(gd, underlag) {
  *  klistras in i ett dokument. Foten: verktyget och dagens datum, och urvalet om vyn har angett ett.
  *  `dolt`: urvalet i diagrammet som text (_chartExportDolt; bara exportmenyns bild, aldrig diagramTillBild).
  *  `harlett`: härledda lager som inte ritas med urvalet (_chartExportHarlett).
- *  @param {any} gd @param {Date} [datum] @param {string[]} [dolt] @param {string[]} [harlett] */
-function _chartExportRubrikFot(gd, datum = new Date(), dolt = [], harlett = []) {
+ *  `underlag`: valet när diagrammet är räknat för en del av personerna (bara exportmenyns bild). Vyns anteckning
+ *  (exportAnteckning) gäller hela underlaget och står då inte med.
+ *  @param {any} gd @param {Date} [datum] @param {string[]} [dolt] @param {string[]} [harlett] @param {string} [underlag] */
+function _chartExportRubrikFot(gd, datum = new Date(), dolt = [], harlett = [], underlag = '') {
     const p = n => String(n).padStart(2, '0');
     const dag = `${datum.getFullYear()}-${p(datum.getMonth() + 1)}-${p(datum.getDate())}`;
     const urval = typeof gd._exportBeskrivning === 'string' && gd._exportBeskrivning ? ` · Urval: ${gd._exportBeskrivning}` : '';
     // Ett zoomat diagram exporteras som det visas: fotraden säger att bilden är ett utsnitt.
     // Vyns anteckning (val.exportAnteckning) står först i fotraden: en mening om det bilden visar, räknad av vyn
     // ur värden som får visas.
-    const v = gd._figurVal && typeof gd._figurVal.exportAnteckning === 'string' ? gd._figurVal.exportAnteckning.trim() : '';
+    const v = !underlag && gd._figurVal && typeof gd._figurVal.exportAnteckning === 'string' ? gd._figurVal.exportAnteckning.trim() : '';
+    const underlagText = underlag ? ` · Räknat för: ${underlag}` : '';
     const doltText = dolt && dolt.length ? ` · Urval i diagrammet: ${dolt.join('; ')}` : '';
     const harlettText = (harlett || []).map(t => ` · ${String(t).replace(/\.$/, '')}`).join('');
-    return { rubrik: chartExportTitle(gd), fot: `${v ? v + ' · ' : ''}Lönekartläggning ${dag}${urval}${doltText}${harlettText}${gd._rfZoom ? ' · Utsnitt av diagrammet' : ''}` };
+    return { rubrik: chartExportTitle(gd), fot: `${v ? v + ' · ' : ''}Lönekartläggning ${dag}${urval}${underlagText}${doltText}${harlettText}${gd._rfZoom ? ' · Utsnitt av diagrammet' : ''}` };
 }
 
 /** Bär elementet ett ritat diagram med något att visa? */
@@ -14780,9 +15199,9 @@ async function _diagramTillBildExport(el, val) {
     const ut = _chartExportUnderlag(el);
     el = _chartExportAktuell(el);
     if (!ut) throw new Error('Det finns inget att exportera i diagrammet.');
-    // Användarens urval i diagrammet (ut.filter) följer INTE med: rapporten, utskriften, ZIP-filen och
-    // rapportunderlaget visar alltid hela diagrammet.
-    const url = await figurTillBild(ut.bild || ut.figur, 'png', bredd, hojd, { visaSma: ut.visaSma, dolda: ut.dolda, ...(utanRubrik ? {} : _chartExportRubrikFot(el)) });
+    // Användarens urval i diagrammet (ut.filter) och underlaget (ut.underlag) följer INTE med: rapporten, utskriften,
+    // ZIP-filen och rapportunderlaget visar alltid hela diagrammet, räknat för hela underlaget.
+    const url = await figurTillBild(ut.hel || ut.figur, 'png', bredd, hojd, { visaSma: ut.visaSma, dolda: ut.dolda, ...(utanRubrik ? {} : _chartExportRubrikFot(el)) });
     if (el._figur !== ut.figur) throw new Error('Diagrammet rensades innan exporten blev klar.');
     return url;
 }
@@ -14796,9 +15215,10 @@ async function __chartExportImageExport(gd, val, underlag) {
     // utan små grupper. Meningen om sänkt tröskel lägger figurTillSvg dit.
     const ut = underlag === undefined ? _chartExportUnderlag(gd) : underlag;
     gd = _chartExportAktuell(gd);
-    if (!ut) throw new Error('Det finns inget att exportera i diagrammet.');
-    // Exportmenyn ritar diagrammet som det visas: också med användarens urval, som fotraden då namnger.
-    const url = await figurTillBild(ut.bild || ut.figur, format, width, height, { visaSma: ut.visaSma, dolda: ut.dolda, filter: ut.filter, ..._chartExportRubrikFot(gd, new Date(), _chartExportDolt(ut), _chartExportHarlett(ut)) });
+    if (!ut || (ut.underlag && ut.underlag.tom)) throw new Error('Det finns inget att exportera i diagrammet.');
+    // Exportmenyn ritar diagrammet som det visas: också med användarens urval och underlag, som fotraden då namnger.
+    const url = await figurTillBild(ut.bild || ut.figur, format, width, height, { visaSma: ut.visaSma, dolda: ut.dolda, filter: ut.filter,
+        ..._chartExportRubrikFot(gd, new Date(), _chartExportDolt(ut), _chartExportHarlett(ut), ut.underlag ? ut.underlag.text : '') });
     // Bilden görs asynkront. Har diagrammet under tiden rensats (Rensa all data) eller fått en annan figur
     // lämnar bilden av den gamla inte verktyget.
     if (gd._figur !== ut.figur) throw new Error('Diagrammet rensades innan exporten blev klar.');
@@ -14820,6 +15240,8 @@ function _chartExportRunExport(gd, val) {
     gd = _chartExportAktuell(gd);
     // Ett diagram från diagramkärnan utan något att exportera: ingen fil, ingenting på urklipp.
     if (underlag === null) return Promise.reject(new Error('Det finns inget att exportera i diagrammet.'));
+    // Räknat för ett underlag som inte går att rita (inga personer, eller vyns beräkning gav ingen figur): inget att exportera.
+    if (underlag && underlag.underlag && underlag.underlag.tom) return Promise.reject(new Error('Det finns inget att exportera i diagrammet.'));
     if (val === 'data-kopiera') return Promise.resolve(_copyMatrixToClipboard(chartExportRows(gd, underlag)));
     if (val === 'data-csv') {
         return Promise.resolve(_downloadCSV(chartExportRows(gd, underlag), chartExportFilename(gd, 'csv').replace(/\.csv$/, '')));
@@ -24288,7 +24710,10 @@ function renderStructure() {
         }
     }
 
-    { const pEl = document.getElementById('chart-struktur-percentiler'); if (pEl && dist.length && dist.every(x => x.gapPct != null)) ritaFigur(pEl, _strukturPercentilFigur(dist)); }
+    // Percentilerna och kvartilerna kan räknas för en sektor eller ett BAS-intervall (figur.underlag): samma mått och
+    // samma tröskel per kön, för de valda personerna. Resten är de övriga i lönefilen.
+    const underlag = rita => ({ dimensioner: [UNDERLAG.sektor, UNDERLAG.bas], rader: d, k, rita });
+    { const pEl = document.getElementById('chart-struktur-percentiler'); if (pEl && dist.length && dist.every(x => x.gapPct != null)) ritaFigur(pEl, { ..._strukturPercentilFigur(dist), underlag: underlag(_strukturPercentilFor) }); }
 
     // (2) EU 2023/970-rapportpaket
     const antal = n => (n == null ? '–' : n);
@@ -24310,7 +24735,7 @@ function renderStructure() {
 
     const kvEl = document.getElementById('chart-struktur-kvartiler');
     // Samma villkor som tabellen: utan könsuppdelning (ett kön under tröskeln) ritas inget diagram.
-    if (kvEl && q.length && q.every(x => x.nKv != null && x.nMa != null && x.n > 0)) ritaFigur(kvEl, _strukturKvartilFigur(q, totAndel),
+    if (kvEl && q.length && q.every(x => x.nKv != null && x.nMa != null && x.n > 0)) ritaFigur(kvEl, { ..._strukturKvartilFigur(q, totAndel), underlag: underlag(_strukturKvartilFor) },
         { exportAnteckning: `Andel kvinnor: ${_figTalformat(q[0].andelKv, 'pct')} i lägsta kvartilen, ${_figTalformat(q[q.length - 1].andelKv, 'pct')} i högsta` });
 
     renderSektorer(d);
@@ -24467,13 +24892,26 @@ function renderStrukturTradkarta(d, id = 'chart-struktur-tradkarta') {
 // Var i lönefördelningen skillnaden sitter: kvinnors och mäns lön vid samma percentil som två punkter på en
 // kronaxel, lägst betalda överst. Glider punkterna isär nedåt i bilden är gapet störst i toppen (glastak), uppåt
 // i botten (klibbigt golv). Samma tal som tabellen under; `dist` finns bara när båda könen når tröskeln.
-function _strukturPercentilFigur(dist) {
+// Percentilerna för ett underlag (figur.underlag.rita): samma mått som fliken, eller en text när ett kön är under tröskeln.
+function _strukturPercentilFor(rader, { beskrivning }) {
+    const dist = _stDistributionalGap(rader, undefined, { k: kTroskel() });
+    return dist.length && dist.every(x => x.gapPct != null) ? _strukturPercentilFigur(dist, beskrivning) : _konUtelamnatNot();
+}
+// Kvartilerna för ett underlag (figur.underlag.rita), med andelen kvinnor i urvalet som linje.
+function _strukturKvartilFor(rader, { beskrivning }) {
+    const q = _stQuartileDistribution(rader, { k: kTroskel() });
+    if (!(q.length && q.every(x => x.nKv != null && x.nMa != null && x.n > 0))) return _konUtelamnatNot();
+    const nKv = rader.filter(r => r.kon && r.kon.includes('kvinna')).length;
+    return _strukturKvartilFigur(q, rader.length ? 100 * nKv / rader.length : 0, beskrivning);
+}
+// `omfang` (ett underlag, t.ex. 'sektor Skola'): beskrivningen säger att figuren är räknad för det.
+function _strukturPercentilFigur(dist, omfang) {
     const namn = x => `P${x.p}${x.p === 10 ? ' (lägst betalda)' : x.p === 50 ? ' (median)' : x.p === 90 ? ' (högst betalda)' : ''}`, kr = v => _figTalformat(Math.round(v), 'kr');
     const tips = d => [[d.y], ['Kvinnor', kr(d.r.kv)], ['Män', kr(d.r.ma)], ['Kvinnors lön i % av mäns', _figTalformat(100 + d.r.gapPct, 'pct')], ..._figKronorTipsRad(_figKronorSkillnad(d.r.kv, d.r.ma))];
     const punkt = (serie, farg, falt, extra = {}) => ({ marke: 'punkt', serie, farg, storlek: 6, ...extra,
         data: dist.map(x => ({ y: namn(x), x: Math.round(x[falt]), r: x, ...(extra.etikettLage ? { etikett: _figTalformat(100 + x.gapPct, 'pct') } : {}) })), tips });
     const hogst = x => (x.ma >= x.kv ? 'ma' : 'kv');
-    return { beskrivning: 'Kvinnors och mäns lön vid samma percentil i respektive köns lönefördelning (P10 till P90), som två punkter per percentil. Procenttalet är kvinnors lön i procent av mäns. Samma tal står i tabellen under.',
+    return { beskrivning: `Kvinnors och mäns lön vid samma percentil i respektive köns lönefördelning (P10 till P90), som två punkter per percentil. Procenttalet är kvinnors lön i procent av mäns. ${omfang ? `Räknat för ${omfang}; tabellen under gäller hela underlaget.` : 'Samma tal står i tabellen under.'}`,
         x: { skala: 'linjar', titel: 'Månadslön (kr)', format: 'kr' }, y: { skala: 'band', ordning: dist.map(namn) }, hojd: Math.max(220, 100 + dist.length * 34),
         lager: [{ marke: 'intervall', riktning: 'liggande', serie: 'Skillnad', farg: PALETTE.semantic.neutral, tjocklek: 2, legend: false,
                   data: dist.map(x => ({ y: namn(x), lag: Math.round(Math.min(x.kv, x.ma)), hog: Math.round(Math.max(x.kv, x.ma)), r: x, ..._kronorFalt(x.kv, x.ma) })), tips },
@@ -24481,12 +24919,14 @@ function _strukturPercentilFigur(dist) {
                 punkt('Män', PALETTE.kon.man, 'ma', dist.every(x => hogst(x) === 'kv') ? {} : { etikettLage: 'hoger' })] };
 }
 
-function _strukturKvartilFigur(q, totAndel) {
+function _strukturKvartilFigur(q, totAndel, omfang) {
     const namn = x => `Q${x.q}${x.q === 1 ? ' (lägst lön)' : x.q === 4 ? ' (högst lön)' : ''}`;
     const serie = (s, farg, andel, antal) => ({ marke: 'stapel', lage: 'staplad', riktning: 'liggande', serie: s, farg,
         data: q.map(x => { const a = +andel(x).toFixed(1); return { y: namn(x), x: a, n: antal(x), tot: x.n, ...(a >= 8 ? { etikett: _figTalformat(a, 'pct') } : {}) }; }),
         tips: d => [[d.y], [s, _figTalformat(d.x, 'pct')], ['Antal', `${d.n} av ${d.tot}`]] });
-    return { beskrivning: `Andel kvinnor och män i varje lönekvartil, staplat till 100 procent. Den streckade linjen är andelen kvinnor i hela organisationen (${_figTalformat(totAndel, 'pct')}). Samma siffror finns i tabellen nedan.`,
+    return { beskrivning: omfang
+            ? `Andel kvinnor och män i varje lönekvartil, räknat för ${omfang} och staplat till 100 procent. Den streckade linjen är andelen kvinnor i urvalet (${_figTalformat(totAndel, 'pct')}). Tabellen nedan gäller hela underlaget.`
+            : `Andel kvinnor och män i varje lönekvartil, staplat till 100 procent. Den streckade linjen är andelen kvinnor i hela organisationen (${_figTalformat(totAndel, 'pct')}). Samma siffror finns i tabellen nedan.`,
         y: { skala: 'band', ordning: q.slice().reverse().map(namn) },
         x: { skala: 'linjar', titel: 'Andel av kvartilen (%)', doman: [0, 100] },
         hojd: 240,
@@ -25210,12 +25650,13 @@ function renderKon(bas) {
                    : `${kvOk ? `Kvinnors trend ökar med ${Math.round(regKv.m)} kr per år. ` : ''}${maOk ? `Mäns trend ökar med ${Math.round(regMa.m)} kr per år. ` : ''}Trendlinje visas inte för ${utan}: ${skal}. `) +
             `Ojusterad löneskillnad: ${unadjGap}. Vid samma ålder: ${ageAdjGap}.` +
             (trendAlla ? ` Trend för hela urvalet: ${trendAlla.m >= 0 ? '+' : '−'}${svTal(Math.abs(Math.round(trendAlla.m)), 0)} kr per år.` : '') }), { hojd: 420 });
-    // En låda är könets kvartiler: den ritas bara för ett kön som når tröskeln.
+    // En låda är könets kvartiler: den ritas bara för ett kön som når tröskeln. Lådorna kan räknas för en sektor eller
+    // en åldersgrupp (figur.underlag): resten är de övriga i fliken urval, det valda BAS-intervallet eller hela urvalet.
     const boxEl = document.getElementById('chart-kon-boxplot');
-    if (kvOk || maOk) {
-        ritaFigur(boxEl, _konLadFigur({ lonKv: kvOk ? rawLonKv : null, lonMa: maOk ? rawLonMa : null,
-            beskrivning: `Lådagram av lönefördelning per kön för ${scope2}. ${rawLonKv.length} kvinnor, ${rawLonMa.length} män.`
-                + (utan ? ` Lådan visas inte för ${utan}: ${skal}.` : '') }), { hojd: 420 });
+    const lada = _konLadFigurFor([...dataKv, ...dataMa], scope2);
+    if (typeof lada !== 'string') {
+        ritaFigur(boxEl, { ...lada, underlag: { dimensioner: [UNDERLAG.sektor, UNDERLAG.aldersgrupp], rader: [...dataKv, ...dataMa], k: kTroskel(),
+            rita: (rader, { beskrivning }) => _konLadFigurFor(rader, `${scope2}, ${beskrivning}`) } }, { hojd: 420 });
     } else if (boxEl) rensaFigur(boxEl);
     _setDiagramKNot('chart-kon-scatter', [utan ? `Trendlinje och konfidensband visas inte för ${utan}: ${skal}.` : '',
         trendAllaVald && !trendAllaOk ? _demoTrendNot(df.length) : '', _individNot(dolda)].filter(Boolean).join(' '));
@@ -25346,7 +25787,13 @@ function renderKonAlderGap(dataKv, dataMa, scope) {
         el.innerHTML = `<p class="text-dampad-sm marg-8-0">Ingen åldersgrupp har minst ${k} kvinnor och ${k} män.</p>`;
         return;
     }
-    ritaFigur(el, _konAlderGapFigur(visade, scope));
+    // Kan räknas för en sektor eller en yrkesgrupp (figur.underlag): samma beräkning och samma tröskel per åldersgrupp.
+    // Resten är de övriga kvinnorna och männen i fliken urval.
+    const rita = (rader, { beskrivning }) => {
+        const r = _konAlderGapRader(rader.filter(d => d.kon && d.kon.includes('kvinna')), rader.filter(d => d.kon === 'man' || d.kon === 'män'));
+        return r.visade.length ? _konAlderGapFigur(r.visade, `${scope}, ${beskrivning}`) : `Ingen åldersgrupp har minst ${k} kvinnor och ${k} män i urvalet.`;
+    };
+    ritaFigur(el, { ..._konAlderGapFigur(visade, scope), underlag: { dimensioner: [UNDERLAG.sektor, UNDERLAG.yrkesgrupp], rader: [...dataKv, ...dataMa], k, rita } });
 }
 
 function renderKonHistogram(dataKv, dataMa, scope) {
@@ -25361,7 +25808,15 @@ function renderKonHistogram(dataKv, dataMa, scope) {
         return;
     }
     const figur = _konHistogramFigur(klasser, kv.length, ma.length, scope);
-    ritaFigur(el, figur);
+    // Kan räknas för en sektor eller en åldersgrupp (figur.underlag): samma klassindelning och samma tröskel per klass.
+    const rita = (rader, { beskrivning }) => {
+        const lon = ar => rader.filter(ar).map(d => d.lon).filter(v => v > 0);
+        const kv2 = lon(d => d.kon && d.kon.includes('kvinna')), ma2 = lon(d => d.kon === 'man' || d.kon === 'män');
+        const kl = _konHistogramKlasser(kv2, ma2, k);
+        if (kl) return _konHistogramFigur(kl, kv2.length, ma2.length, `${scope}, ${beskrivning}`);
+        return kv2.length < k || ma2.length < k ? _konUtelamnatNot() : `Lönerna i urvalet går inte att dela in i klasser med minst ${k} ${personOrd(k)} i varje.`;
+    };
+    ritaFigur(el, { ...figur, underlag: { dimensioner: [UNDERLAG.sektor, UNDERLAG.aldersgrupp], rader: [...dataKv, ...dataMa], k, rita } });
     const not = document.getElementById('kon-histogram-not');
     const fa = figur.lager.some(l => l.data.some(d => d.fa));
     if (not) { not.hidden = !fa; not.textContent = fa ? `Några staplar gäller färre än ${litetUnderlag()} personer av könet i klassen (se verktygstipset på stapeln). Det är ett litet underlag — läs dem som enstaka personer, inte som ett mönster.` : ''; }
@@ -25459,6 +25914,19 @@ function _konScatterFigur({ df, dataKv, dataMa, isAll, colorBy, minAlder, maxAld
                          { y: pol.med, streck: 'streckad', farg: PALETTE.semantic.neutral, tjocklek: 2 }] : [] };
 }
 
+// Lådagrammet per kön för raderna (fliken urval, eller ett underlag i det): en låda för varje kön som når tröskeln,
+// eller texten om att inget kön gör det.
+function _konLadFigurFor(rader, scope) {
+    const lonKv = rader.filter(d => d.kon && d.kon.includes('kvinna')).map(d => d.lon);
+    const lonMa = rader.filter(d => d.kon === 'man' || d.kon === 'män').map(d => d.lon);
+    const kvOk = !isKMasked(lonKv.length), maOk = !isKMasked(lonMa.length);
+    if (!kvOk && !maOk) return _konUtelamnatNot();
+    const utan = [kvOk ? null : 'kvinnor', maOk ? null : 'män'].filter(Boolean).join(' och ');
+    const skal = `färre än ${kTroskel()} ${personOrd(kTroskel())} av ${kvOk || maOk ? 'könet' : 'vartdera könet'} finns i urvalet`;
+    return _konLadFigur({ lonKv: kvOk ? lonKv : null, lonMa: maOk ? lonMa : null,
+        beskrivning: `Lådagram av lönefördelning per kön för ${scope}. ${lonKv.length} kvinnor, ${lonMa.length} män.`
+            + (utan ? ` Lådan visas inte för ${utan}: ${skal}.` : '') });
+}
 // Lådagrammet per kön: ett lager, en kategori per kön som når tröskeln (null = könet redovisas inte).
 function _konLadFigur({ lonKv, lonMa, beskrivning }) {
     const data = [...(lonKv || []).map(y => ({ x: 'Kvinna', y, farg: PALETTE.kon.kvinna })), ...(lonMa || []).map(y => ({ x: 'Man', y, farg: PALETTE.kon.man }))];

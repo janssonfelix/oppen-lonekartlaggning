@@ -284,3 +284,97 @@ describe('I5: sakliga skäl på en rad under tröskeln lämnar inte verktyget', 
         expect(utdata.find(([n]) => n === 'konfigurationsfilen: årsbokslutet')[1]).toContain('"utbildning"');
     });
 });
+
+// ===================================================================================
+// I6: underlaget (figur.underlag, "Räkna för") i exportläget, precis under och precis över skyddsregeln.
+//
+// Varje diagram som kan räknas för en del av personerna prövas med samma val: bara sektorn Vård (30 kvinnor och 30
+// män). Resten är Handläggare (12 kvinnor, inga män) och Ledning, som har 3 kvinnor och därför inte går att välja för
+// sig. Ledningens män avgör: med 9 (en under tröskeln 10) har resten 9 män och valet görs inte; med 10 görs det.
+// Utan regeln kunde hela underlaget minus urvalet röja de få männen i Ledning.
+// ===================================================================================
+describe('I6: underlaget i exportläget, precis under och precis över skyddsregeln', () => {
+    const DIAGRAM = ['chart-kon-boxplot', 'chart-kon-histogram', 'chart-kon-aldergap', 'chart-struktur-percentiler', 'chart-struktur-kvartiler'];
+    const VARD = 'Vård- och omsorgsarbete med mera', HANDL = 'Handläggar- och administratörsarbete';
+    const LEDNING_MAN = 41913;   // Ledningens män har en lön som inte finns någon annanstans (i Vård högst 41 700)
+    const fonsterUnderlag = (man, export_ = true) => {
+        const w = createAppWindow();
+        w.eval('sattKTroskel(10, { fraga: false })');
+        const rad = (aid, kon, lon, alder, bas = 'S1') => ({ bas, kon, lon, alder, yrke: `${aid} Yrke ${aid}`, aid, yrkeLabel: `Yrke ${aid}`, enhet: '' });
+        const r = [];
+        for (let i = 0; i < 30; i++) r.push(rad('201010', 'kvinna', 24000 + i * 600, 40 + (i % 10)), rad('201010', 'man', 24300 + i * 600, 40 + (i % 10)));
+        for (let i = 0; i < 12; i++) r.push(rad('151010', 'kvinna', 30000 + i * 400, 30 + i, 'S2'));
+        for (let i = 0; i < 3; i++) r.push(rad('101010', 'kvinna', 41000 + i * 100, 55, 'S3'));
+        for (let i = 0; i < man; i++) r.push(rad('101010', 'man', LEDNING_MAN, 56, 'S3'));
+        w.__state.data = r;
+        w.eval('populateSelects(); unlockTabs();');
+        if (export_) iExport(w);
+        w.__renderTabContent('kon');
+        w.__renderTabContent('struktur');
+        return w;
+    };
+    // Kryssar ur alla sektorer utom Vård. I exportläget går Ledning inte att välja (3 kvinnor); på skärmen (tröskeln 1) gör den det.
+    const valjBaraVard = (w, id, valbara = [HANDL, VARD]) => {
+        const el = w.document.getElementById(id);
+        const rad = el.parentElement.querySelector('.diagram-urval[data-underlag="sektor"]');
+        expect(rad, id).not.toBeNull();
+        expect([...rad.querySelectorAll('input[data-urval]')].map(x => x.getAttribute('data-urval')), id).toEqual(valbara);
+        let ruta = null;
+        for (const v of valbara.filter(x => x !== VARD)) {
+            ruta = w.document.getElementById(id).parentElement.querySelector(`.diagram-urval[data-underlag="sektor"] input[data-urval="${v}"]`);
+            ruta.checked = false;
+            ruta.dispatchEvent(new w.Event('change', { bubbles: true }));
+        }
+        return { el, ruta };
+    };
+    it.each(DIAGRAM)('%s: precis under regeln (resten har 9 män) görs valet inte, och exporten är hela underlagets', id => {
+        const w = fonsterUnderlag(9);
+        const el = w.document.getElementById(id);
+        expect(el._figur.underlag.k, id).toBe(10);
+        const fore = w.__chartExportRows(el);
+        const { ruta } = valjBaraVard(w, id);
+        expect(el._rfUnderlagText, id).toBeUndefined();
+        expect(el._rfUnderlagFigur, id).toBeUndefined();
+        expect(ruta.checked, id).toBe(true);
+        expect(ruta.getAttribute('aria-invalid'), id).toBe('true');
+        expect(el.parentElement.querySelector('[data-rf="urval"]').textContent, id).toContain('Urvalet eller resten har färre än 10 kvinnor eller män.');
+        const efter = w.__chartExportRows(el);
+        expect(efter.slice(1), id).toEqual(fore.slice(1));
+        expect(efter.map(r => r.join(' | ')).join('\n'), id).not.toMatch(/Räknat för/);
+    });
+    it.each(DIAGRAM)('%s: precis över regeln (resten har 10 män) räknas diagrammet för Vård, och exporten säger det', id => {
+        const w = fonsterUnderlag(10);
+        const { el, ruta } = valjBaraVard(w, id);
+        expect(ruta.hasAttribute('aria-invalid'), id).toBe(false);
+        expect(el._rfUnderlagText, id).toBe(`sektor ${VARD} (60 personer)`);
+        expect(el._rfUnderlagFigur, id).toBeTruthy();
+        expect(el._rfUnderlagFigur.beskrivning, id).toContain(VARD);
+        const rader = w.__chartExportRows(el);
+        expect(rader.some(r => r[0] === `Räknat för: sektor ${VARD} (60 personer)`), id).toBe(true);
+        expect(normalisera(rader.join('\n')), id).not.toContain(String(LEDNING_MAN));
+    });
+    // Skärmen maskerar inget (ADR-51, tröskeln 1): där görs valet. Exporten ritar diagrammet i exportläget med den
+    // inställda tröskeln och prövar valet ur minnet igen: under regeln exporteras hela underlaget, över den valet.
+    it.each(DIAGRAM)('%s: valt på skärmen; exporten prövar valet med den inställda tröskeln', id => {
+        for (const [man, raknat] of [[9, false], [10, true]]) {
+            const w = fonsterUnderlag(man, false);
+            oppnaFlik(w, id.startsWith('chart-kon') ? 'kon' : 'struktur');   // den öppna fliken ritas om på skärmen efter en export
+            const el0 = w.document.getElementById(id);
+            expect(el0._figur.underlag.k, id).toBe(1);
+            const hel = w.eval('medExportLage')(() => w.__chartExportRows(w.document.getElementById(id)));
+            valjBaraVard(w, id, [HANDL, 'Ledningsarbete', VARD]);
+            expect(w.document.getElementById(id)._rfUnderlagText, id).toBe(`sektor ${VARD} (60 personer)`);
+            const rader = w.eval('medExportLage')(() => w.__chartExportRows(w.document.getElementById(id)));
+            const text = rader.map(r => r.join(' | ')).join('\n');
+            if (raknat) {
+                expect(text, `${id}, ${man} män`).toContain(`Räknat för: sektor ${VARD} (60 personer)`);
+                expect(normalisera(text), id).not.toContain(String(LEDNING_MAN));
+            } else {
+                expect(text, `${id}, ${man} män`).not.toContain('Räknat för');
+                expect(rader.slice(1), id).toEqual(hel.slice(1));
+            }
+            // Tillbaka på skärmen gäller valet igen.
+            expect(w.document.getElementById(id)._rfUnderlagText, id).toBe(`sektor ${VARD} (60 personer)`);
+        }
+    });
+});

@@ -10987,6 +10987,161 @@ function harlettNot(h) {
     };
 }
 
+// ---- Underlag: diagrammet räknat för en del av personerna (figur.underlag) ----
+// `figur.underlag = { dimensioner, rader, rita, k, kon? }`. `rader` är personerna i hela det underlag vyn redan ritar,
+// `dimensioner` kategorier att räkna för ({ falt, namn, varde?, etikett?, visning?, ordning? }; `varde(rad)` ger radens
+// värde, annars `rad[falt]`), `rita(valda, { beskrivning })` vyns egen beräkning för de valda raderna (en figur, eller
+// en text när den inte går att rita), `k` tröskeln och `kon(rad)` 'kv', 'ma' eller null (annars fältet `kon` som i
+// resten av verktyget).
+//
+// Skyddsregeln mot differensröjande: ett val godtas bara när både urvalet och resten (underlaget utom urvalet) har noll
+// eller minst k personer av vartdera könet. Två till: ett värde vars egen grupp inte klarar regeln går inte att välja
+// (det ingår bara i hela underlaget), och underlaget räknas för en dimension i taget. Då är skillnaden mellan två val
+// alltid en förening av valbara värden — själva skyddade — och "alla" minus ett val är resten, som regeln prövar.
+
+// Radens kön som 'kv' eller 'ma' (samma regel som konOf i falt.js), eller null.
+function _underlagKon(underlag, r) {
+    if (underlag && typeof underlag.kon === 'function') { const k = underlag.kon(r); return k === 'kv' || k === 'ma' ? k : null; }
+    const k = r && r.kon;
+    if (typeof k === 'string' && k.includes('kvinna')) return 'kv';
+    return k === 'man' || k === 'män' ? 'ma' : null;
+}
+
+/**
+ * Antalet kvinnor och män bland raderna.
+ * @param {any} underlag @param {any[]} rader @returns {{kv: number, ma: number}}
+ */
+function underlagKonAntal(underlag, rader) {
+    const ut = { kv: 0, ma: 0 };
+    for (const r of rader || []) { const k = _underlagKon(underlag, r); if (k) ut[k]++; }
+    return ut;
+}
+
+/** Sant när vartdera könet har noll eller minst k personer. @param {{kv: number, ma: number}} antal @param {number} k */
+function underlagSkyddat(antal, k) {
+    return [antal.kv, antal.ma].every(n => n === 0 || n >= k);
+}
+
+/**
+ * Radens värde i dimensionen som sträng (`dim.varde(rad)`, annars `rad[dim.falt]`), eller null när det saknas.
+ * @param {any} dim @param {any} rad @returns {string|null}
+ */
+function underlagVarde(dim, rad) {
+    const v = dim && typeof dim.varde === 'function' ? dim.varde(rad) : rad && dim ? rad[dim.falt] : null;
+    return v == null || v === '' ? null : String(v);
+}
+
+/**
+ * Dimensionen `falt` i figurens underlag, eller null.
+ * @param {any} underlag @param {string} falt
+ */
+function underlagDimension(underlag, falt) {
+    const dims = underlag && Array.isArray(underlag.dimensioner) ? underlag.dimensioner : [];
+    return dims.find(u => u && u.falt === falt) || null;
+}
+
+/**
+ * Värdena som går att välja i dimensionen: de vars grupp (raderna med värdet) klarar skyddsregeln, i dimensionens
+ * `ordning` (en jämförelsefunktion) eller svensk sorteringsordning. `utelamnade` är antalet värden som inte går att
+ * välja; de ingår bara i hela underlaget.
+ * @param {any} underlag @param {any} dim
+ * @returns {{varden: string[], utelamnade: number}}
+ */
+function underlagVarden(underlag, dim) {
+    const grupper = new Map();
+    for (const r of (underlag && underlag.rader) || []) {
+        const v = underlagVarde(dim, r);
+        if (v == null) continue;
+        if (!grupper.has(v)) grupper.set(v, { kv: 0, ma: 0 });
+        const k = _underlagKon(underlag, r);
+        if (k) grupper.get(v)[k]++;
+    }
+    const varden = [];
+    let utelamnade = 0;
+    for (const [v, antal] of grupper) {
+        if (antal.kv + antal.ma > 0 && underlagSkyddat(antal, underlag.k)) varden.push(v); else utelamnade++;
+    }
+    varden.sort(typeof dim.ordning === 'function' ? dim.ordning : (a, b) => a.localeCompare(b, 'sv', { numeric: true }));
+    return { varden, utelamnade };
+}
+
+/**
+ * Valet som gäller i ett filter (Map<falt, Set<bortvalda värden>>): den första dimensionen med ett bortvalt värde
+ * som går att välja, som { dim, varden, valda } (valda: de valbara värden som inte är bortvalda), eller null när
+ * underlaget är helt.
+ * @param {any} underlag @param {Map<string, Set<string>>|null|undefined} filter
+ */
+function underlagValet(underlag, filter) {
+    if (!filter || typeof filter.get !== 'function') return null;
+    for (const dim of (underlag && underlag.dimensioner) || []) {
+        const bort = filter.get(dim.falt);
+        if (!bort || !bort.size) continue;
+        const { varden } = underlagVarden(underlag, dim);
+        if (!varden.some(v => bort.has(v))) continue;
+        return { dim, varden, valda: varden.filter(v => !bort.has(v)) };
+    }
+    return null;
+}
+
+/**
+ * Prövar ett val mot skyddsregeln. `valda` är raderna i urvalet (de med ett valt värde i den valda dimensionen; hela
+ * underlaget när inget är valt), `antal` könen i urvalet och resten, `ok` om båda klarar regeln.
+ * @param {any} underlag @param {Map<string, Set<string>>|null|undefined} filter
+ * @returns {{ok: boolean, valet: any, valda: any[], antal: {urval: {kv: number, ma: number}, rest: {kv: number, ma: number}}}}
+ */
+function underlagProva(underlag, filter) {
+    const rader = (underlag && underlag.rader) || [];
+    const valet = underlagValet(underlag, filter);
+    const valbara = valet ? new Set(valet.valda) : null;
+    const valda = valet && valbara ? rader.filter(r => { const v = underlagVarde(valet.dim, r); return v != null && valbara.has(v); }) : rader;
+    const alla = underlagKonAntal(underlag, rader), urval = underlagKonAntal(underlag, valda);
+    const rest = { kv: alla.kv - urval.kv, ma: alla.ma - urval.ma };
+    return { ok: !valet || (underlagSkyddat(urval, underlag.k) && underlagSkyddat(rest, underlag.k)), valet, valda, antal: { urval, rest } };
+}
+
+/** Dimensionens namn mitt i en mening: liten första bokstav, utom när namnet börjar med en förkortning ('BAS-intervall'). @param {string} namn */
+function namnIMening(namn) {
+    const s = String(namn || '');
+    return s.length > 1 && s[1] === s[1].toLocaleLowerCase('sv') ? s[0].toLocaleLowerCase('sv') + s.slice(1) : s;
+}
+
+/**
+ * Valet som text, t.ex. 'sektor Vård och omsorg' eller 'yrkesgrupp 5 av 40' (fler än tre valda), eller '' när
+ * underlaget är helt.
+ * @param {any} underlag @param {Map<string, Set<string>>|null|undefined} filter
+ */
+function underlagBeskrivning(underlag, filter) {
+    const valet = underlagValet(underlag, filter);
+    if (!valet) return '';
+    const namn = namnIMening(valet.dim.namn);
+    if (!valet.valda.length) return `${namn}: inga`;
+    return valet.valda.length <= 3 ? `${namn} ${valet.valda.join(', ')}` : `${namn} ${valet.valda.length} av ${valet.varden.length}`;
+}
+
+// Prövar figur.underlag (valideraFigur).
+function _provaUnderlag(figur, fel) {
+    const u = figur.underlag, vem = 'underlag';
+    if (!u || typeof u !== 'object') fel(`${vem} måste vara { dimensioner, rader, rita, k, kon? }`);
+    if (!Array.isArray(u.dimensioner) || !u.dimensioner.length) fel(`${vem}.dimensioner måste vara en lista med minst en dimension`);
+    if (!Array.isArray(u.rader)) fel(`${vem}.rader måste vara en lista`);
+    if (typeof u.rita !== 'function') fel(`${vem}.rita måste vara en funktion`);
+    if (!(typeof u.k === 'number' && Number.isInteger(u.k) && u.k >= 1)) fel(`${vem}.k måste vara ett heltal ≥ 1`);
+    if (u.kon != null && typeof u.kon !== 'function') fel(`${vem}.kon måste vara en funktion`);
+    const text = v => typeof v === 'string' && v.trim() !== '';
+    const sedda = new Set();
+    u.dimensioner.forEach((d, i) => {
+        const v = `${vem}.dimensioner ${i}`;
+        if (!d || typeof d !== 'object') fel(`${v}: måste vara { falt, namn, varde?, etikett?, visning?, ordning? }`);
+        if (d.typ != null && d.typ !== 'kategori') fel(`${v}: bara kategorier går att räkna för`);
+        if (!text(d.falt) || !text(d.namn)) fel(`${v}: falt och namn måste vara icke-tomma strängar`);
+        for (const f of ['varde', 'ordning']) if (d[f] != null && typeof d[f] !== 'function') fel(`${v}: ${f} måste vara en funktion`);
+        if (d.etikett != null && typeof d.etikett !== 'string') fel(`${v}: etikett måste vara en sträng`);
+        if (d.visning != null && d.visning !== 'lista') fel(`${v}: visning måste vara "lista"`);
+        if (sedda.has(d.falt)) fel(`${v}: fältet "${d.falt}" förekommer två gånger`);
+        sedda.add(d.falt);
+    });
+}
+
 // Färgskalans domän: ett objekt med `doman` = två ändliga tal.
 function _fargdomanOk(fs) {
     return !!fs && typeof fs === 'object' && Array.isArray(fs.doman) && fs.doman.length === 2
@@ -11073,6 +11228,8 @@ function valideraFigur(figur, id = 'diagram') {
             sedda.add(u.falt);
         });
     }
+    // underlag: diagrammet kan räknas om för en del av personerna (underlagProva m.fl. ovan).
+    if (figur.underlag != null) _provaUnderlag(figur, fel);
     const paneler = Array.isArray(figur.paneler) ? figur.paneler : [];
     figur.lager.forEach((l, i) => {
         if (!l || !MARKEN.includes(l.marke)) fel(`lager ${i}: okänt märke "${l && l.marke}"`);
@@ -11203,7 +11360,7 @@ function figurTillTabell(figur) {
     return ut;
 }
 
-    return { talformat, valideraFigur, utanSmaGrupper, skalDoman, ladstatistik, antalPunkter, figurTillTabell, panelerMedLager, kronorSkillnad, kronorTipsRad, kvantilpunkter, urvalVarden, urvalEtikett, arBortvald, urvalLista, urvalSpann, urvalBeskrivning, urvalSomLista, urvalAktivt, harleddaLager, harlettNot };
+    return { talformat, valideraFigur, utanSmaGrupper, skalDoman, ladstatistik, antalPunkter, figurTillTabell, panelerMedLager, kronorSkillnad, kronorTipsRad, kvantilpunkter, urvalVarden, urvalEtikett, arBortvald, urvalLista, urvalSpann, urvalBeskrivning, urvalSomLista, urvalAktivt, harleddaLager, harlettNot, underlagKonAntal, underlagSkyddat, underlagVarde, underlagDimension, underlagVarden, underlagValet, underlagProva, underlagBeskrivning, namnIMening };
 })();
 const _figTalformat = __mirrorFigur.talformat;
 const _figValidera = __mirrorFigur.valideraFigur;
@@ -11226,6 +11383,15 @@ const _figUrvalSomLista = __mirrorFigur.urvalSomLista;
 const _figUrvalAktivt = __mirrorFigur.urvalAktivt;
 const _figHarleddaLager = __mirrorFigur.harleddaLager;
 const _figHarlettNot = __mirrorFigur.harlettNot;
+const _figUnderlagKonAntal = __mirrorFigur.underlagKonAntal;
+const _figUnderlagSkyddat = __mirrorFigur.underlagSkyddat;
+const _figUnderlagVarde = __mirrorFigur.underlagVarde;
+const _figUnderlagDimension = __mirrorFigur.underlagDimension;
+const _figUnderlagVarden = __mirrorFigur.underlagVarden;
+const _figUnderlagValet = __mirrorFigur.underlagValet;
+const _figUnderlagProva = __mirrorFigur.underlagProva;
+const _figUnderlagBeskrivning = __mirrorFigur.underlagBeskrivning;
+const _figNamnIMening = __mirrorFigur.namnIMening;
 /* eslint-enable */
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -12989,7 +13155,10 @@ function _rfRensaAlla() {
 function _rfIndex(s) { return typeof s === 'string' && /^\d+$/.test(s) ? Number(s) : -1; }
 // Figuren som bilden i behållaren är ritad ur: originalet, eller (med ett aktivt filter) originalet med de härledda
 // lagren omräknade (_figHarleddaLager). Samma lager och index; data-l/data-i slås upp här, aldrig i el._figur rakt av.
-function _rfVisad(el) { return (el && (el._rfVisadFigur || el._figur)) || null; }
+function _rfVisad(el) { return (el && (el._rfVisadFigur || el._rfUnderlagFigur || el._figur)) || null; }
+// Figuren som gäller för behållarens underlag: vyns figur räknad för det valda underlaget (figur.underlag, se
+// _rfUnderlagRakna), annars originalet. Härledda lager och filtret läggs på den.
+function _rfGrundfigur(el) { return (el && (el._rfUnderlagFigur || el._figur)) || null; }
 
 // Lagrets beskrivning till vidKlick: ett NYTT fryst objekt utan data, tips eller någon väg till lagret.
 // `panel` är lagrets plats i figurens paneler (undefined för ett lager utan panel), `index` lagrets plats i figuren.
@@ -13169,7 +13338,7 @@ function _rfOvergangAvsluta(el) { _rfOvergangSatt(el, 1); }
 // Ritar behållarens figur på nytt (ny figur, växlad serie, ny bredd). Kastar om ritaren kastar.
 // `overgang: false` (storleksändring) byter bilden utan att märkena flyttar sig.
 function _rfRitaOm(el, { overgang = true } = {}) {
-    const val = el._figurVal || {}, figur = el._figur;
+    const val = el._figurVal || {}, figur = _rfGrundfigur(el);
     // Övergång: den gamla bildens lägen läses av (som de står just nu), sedan avslutas en pågående flytt.
     const forra = el._rfRitadFigur, samma = forra === figur;
     const fore = overgang && forra && _rfOvergangPa() && el.querySelector(':scope > svg') ? _rfOvergangLagen(el, el._rfRitadVisad || forra, samma) : null;
@@ -13182,6 +13351,13 @@ function _rfRitaOm(el, { overgang = true } = {}) {
     el._figurBredd = _rfMattBredd(el);
     delete el._rfVisadFigur;
     delete el._rfHarlett;
+    // Underlaget går inte att rita (inga personer i urvalet, eller vyns beräkning gav ingen figur): vyns text, och
+    // raderna och noten står kvar så att valet går att ändra.
+    if (el._rfUnderlagTom) {
+        _rfMeddelande(el, 'tom', el._rfUnderlagTom);
+        _rfNotis(el, null);
+        return;
+    }
     // Tomt läge: ingen datapunkt återstår när de små är borta. Då visas bara texten — inga axlar, ingen
     // förklaring (den kunde namnge en serie som bara finns i små grupper) och ingen notis.
     if (_figAntalPunkter(val.visaSma ? figur : _figUtanSma(figur)) === 0) {
@@ -13444,7 +13620,7 @@ function _rfAktivera(el, m, e) {
     }
     const fn = el._figurVal && el._figurVal.vidKlick;
     if (typeof fn !== 'function') return;
-    try { fn(t.d, _rfLagerBeskrivning(el._figur, t.lager, t.index)); } catch (fel) { rapporteraFel(_rfPlats('diagramklick', el), fel); }
+    try { fn(t.d, _rfLagerBeskrivning(_rfVisad(el), t.lager, t.index)); } catch (fel) { rapporteraFel(_rfPlats('diagramklick', el), fel); }
 }
 
 // Storleksbevakningens svar. En behållare som går från dold (bredd 0) till synlig ritas om genast — annars
@@ -13510,6 +13686,7 @@ function ritaFigur(id, figur, val) {
         el._figurVal = val && typeof val === 'object' ? val : {};
         el._figurDolda = new Set();
         _rfUrvalSatt(el);  // urvalet ur minnet, begränsat till figurens värden
+        _rfUnderlagSatt(el);   // underlaget ur minnet (figur.underlag), prövat mot skyddsregeln, och figuren räknad för det
         _rfZoomGlom(el);   // en ny figur har andra värden: ett tidigare utsnitt gäller inte
         el._exportBeskrivning = typeof el._figurVal.exportBeskrivning === 'string' ? el._figurVal.exportBeskrivning : '';
         _rfRitaOm(el);
@@ -13551,6 +13728,7 @@ function rensaFigur(id) {
     delete el._rfRitadVisad;
     delete el._rfVisadFigur;
     delete el._rfHarlett;
+    _rfUnderlagGlomEl(el);
     el.textContent = '';
 }
 
@@ -13565,7 +13743,7 @@ function rensaFigur(id) {
 // ====================================================================
 function _rfPenselPaneler(el) { return [...el.querySelectorAll(':scope > svg svg[data-del="panel"]')]; }
 function _rfPenselGar(el) {
-    const f = el._figur;
+    const f = _rfGrundfigur(el);
     return !!f && f.x.skala !== 'band' && f.y.skala !== 'band' && !!el.querySelector(':scope > svg circle[data-marke="punkt"]');
 }
 // Pekarens läge i panelens egna koordinater, och vilken panel den är i (null utanför alla).
@@ -13678,7 +13856,7 @@ function _rfPenselNot(el, ut) {
         el.insertAdjacentElement('afterend', not);
         el._rfPenselNotEl = not;
     }
-    const format = el._figur.y.format;
+    const format = _rfGrundfigur(el).y.format;
     const delar = ut.serier.map(s => `${s.serie} ${s.antal}${s.antal && typeof s.median === 'number' ? ` (median ${_figTalformat(s.median, format)})` : ''}`);
     not.textContent = ut.antal
         ? `Penslat område: ${ut.antal} ${ut.antal === 1 ? 'punkt' : 'punkter'} — ${delar.join(' · ')}. Klicka i diagrammet eller tryck Escape för att ta bort området.`
@@ -13702,7 +13880,7 @@ function _rfNotKnapp(text, fn) {
 // och markering fungerar som vanligt; det som hamnar utanför klipps av panelen. En ny figur från vyn tar bort
 // utsnittet. Exporten ritar bilden som den visas och säger i fotraden att den är ett utsnitt.
 function _rfZoomad(el, figur) {
-    const z = el && el._rfZoom, f = figur || (el && el._figur);
+    const z = el && el._rfZoom, f = figur || _rfGrundfigur(el);
     return z && f ? { ...f, x: { ...f.x, doman: z.x }, y: { ...f.y, doman: z.y } } : f;
 }
 function _rfZooma(el) {
@@ -13713,7 +13891,8 @@ function _rfZooma(el) {
         const d = (b - a) * 0.04 || Math.abs(a) * 0.05 || 1;
         return [a - d, b + d];
     };
-    el._rfZoom = { x: luft(o.x, el._figur.x.skala === 'log'), y: luft(o.y, el._figur.y.skala === 'log') };
+    const bas = _rfGrundfigur(el);
+    el._rfZoom = { x: luft(o.x, bas.x.skala === 'log'), y: luft(o.y, bas.y.skala === 'log') };
     try { _rfRitaOm(el); } catch (e) { delete el._rfZoom; _rfVisaFel(el, e); return; }
     _rfZoomNot(el, true);
 }
@@ -13847,7 +14026,7 @@ function _rfUrvalFokus(rader) {
     const rad = a && rader.find(r => r.contains(a));
     if (!rad) return null;
     const attr = _RF_URVAL_FOKUS.find(n => a.hasAttribute(n));
-    return { falt: rad.getAttribute('data-urval-falt'), alla: a.hasAttribute('data-urval-alla'), attr, varde: attr ? a.getAttribute(attr) : null };
+    return { falt: rad.getAttribute('data-urval-falt'), alla: a.hasAttribute('data-urval-alla'), underlagAlla: a.hasAttribute('data-underlag-alla'), attr, varde: attr ? a.getAttribute(attr) : null };
 }
 // Listornas läge (öppen, sökningen) per fält, så att det följer med när raderna byggs om.
 function _rfUrvalListLage(rader) {
@@ -13860,26 +14039,48 @@ function _rfUrvalListLage(rader) {
 }
 // Texten jämförs utan skiftläge och med blanksteg hopslagna.
 function _rfUrvalSokNorm(t) { return String(t == null ? '' : t).toLocaleLowerCase('sv').replace(/\s+/g, ' ').trim(); }
-function _rfUrvalKategoriRad(el, o) {
-    const figur = el._figur, rad = document.createElement('div');
+// Raden för en dimension: role="group" med namnet, och fältet (eller för underlaget "underlag:<falt>") i data-urval-falt.
+// En rad för underlaget har data-underlag och den synliga rubriken "Räkna för".
+function _rfUrvalRadBas(o) {
+    const rad = document.createElement('div');
     rad.className = 'diagram-urval';
     rad.setAttribute('role', 'group');
-    rad.setAttribute('aria-label', `Visa ${o.u.namn}`);
-    rad.setAttribute('data-urval-falt', o.u.falt);
+    rad.setAttribute('aria-label', o.underlag ? `Räkna för ${_figNamnIMening(o.u.namn)}` : `Visa ${o.u.namn}`);
+    rad.setAttribute('data-urval-falt', _rfUrvalRadNyckel(o));
+    if (o.underlag) rad.setAttribute('data-underlag', o.u.falt);
+    return rad;
+}
+function _rfUrvalRadNyckel(o) { return o.underlag ? `underlag:${o.u.falt}` : o.u.falt; }
+// Knappens eller kryssrutans text för värdet: figurens urval (_figUrvalEtikett), eller underlagets dimensions mall.
+function _rfUrvalEtikett(el, o, v) {
+    if (!o.underlag) return _figUrvalEtikett(el._figur, o.u, v);
+    return typeof o.u.etikett === 'string' ? o.u.etikett.split('{v}').join(String(v)) : String(v);
+}
+// De bortvalda värdena i dimensionen: filtret (el._figurFilter) eller underlagets val (el._rfUnderlagFilter).
+function _rfUrvalBort(el, o) {
+    const m = o.underlag ? el._rfUnderlagFilter : el._figurFilter && el._figurFilter.kategori;
+    return (m && m.get(o.u.falt)) || new Set();
+}
+function _rfUrvalKategoriRad(el, o) {
+    const rad = _rfUrvalRadBas(o);
+    if (o.underlag) {
+        const rubrik = document.createElement('span');
+        rubrik.className = 'diagram-urval-namn';
+        rubrik.setAttribute('aria-hidden', 'true');   // gruppens namn läses redan upp
+        rubrik.textContent = `Räkna för ${_figNamnIMening(o.u.namn)}`;
+        rad.appendChild(rubrik);
+    }
     for (const v of o.varden) {
-        const b = _rfNotKnapp(_figUrvalEtikett(figur, o.u, v), () => _rfUrvalVaxla(el, o, v));
+        const b = _rfNotKnapp(_rfUrvalEtikett(el, o, v), () => _rfUrvalVaxla(el, o, v));
         b.setAttribute('data-urval', v);
         rad.appendChild(b);
     }
+    _rfUnderlagUtelamnade(rad, o);
     return rad;
 }
 // En kategori som lista: <details> med summering, sökfält, Markera alla / Avmarkera alla och en kryssruta per värde.
 function _rfUrvalListaRad(el, o, lage) {
-    const figur = el._figur, rad = document.createElement('div');
-    rad.className = 'diagram-urval';
-    rad.setAttribute('role', 'group');
-    rad.setAttribute('aria-label', `Visa ${o.u.namn}`);
-    rad.setAttribute('data-urval-falt', o.u.falt);
+    const rad = _rfUrvalRadBas(o);
     const det = document.createElement('details');
     det.className = 'diagram-urval-lista';
     det.setAttribute('data-urval-lista', '');
@@ -13917,13 +14118,14 @@ function _rfUrvalListaRad(el, o, lage) {
         ruta.setAttribute('data-urval', v);
         ruta.addEventListener('change', () => _rfUrvalVaxla(el, o, v));
         const text = document.createElement('span');
-        text.textContent = _figUrvalEtikett(figur, o.u, v);
+        text.textContent = _rfUrvalEtikett(el, o, v);
         etikett.append(ruta, text);
         li.appendChild(etikett);
         poster.appendChild(li);
     }
     det.appendChild(poster);
     rad.appendChild(det);
+    _rfUnderlagUtelamnade(rad, o);
     sok.addEventListener('input', () => _rfUrvalSok(rad));
     _rfUrvalSok(rad);
     return rad;
@@ -13949,6 +14151,12 @@ function _rfUrvalSok(rad) {
 }
 // Markera alla / Avmarkera alla: gäller posterna som syns efter sökningen.
 function _rfUrvalMarkera(el, o, rad, visa) {
+    if (o.underlag) {
+        const synliga = [...rad.querySelectorAll('.diagram-urval-poster > li')].filter(li => !(/** @type {HTMLElement} */ (li).hidden))
+            .map(li => li.querySelector('input[data-urval]')?.getAttribute('data-urval')).filter(v => v != null);
+        _rfUnderlagAndra(el, o, bort => { for (const v of synliga) { if (visa) bort.delete(v); else bort.add(v); } }, { markera: visa ? 'alla' : 'inga' });
+        return;
+    }
     const f = el._figurFilter;
     if (!f) return;
     const bort = f.kategori.get(o.u.falt) || new Set();
@@ -14007,18 +14215,32 @@ function _rfUrvalVisa(el) {
     const listor = _rfUrvalListLage(forra);
     for (const r of forra) r.remove();
     delete el._rfUrvalRader;
-    const dims = el._rfUrvalDim;
-    if (dims && el.parentNode) {
-        const rader = dims.map(o => (o.u.typ === 'intervall' ? _rfUrvalIntervallRad(el, o)
-            : o.lista ? _rfUrvalListaRad(el, o, listor.get(o.u.falt)) : _rfUrvalKategoriRad(el, o)));
-        const alla = _rfNotKnapp('Visa alla', () => _rfUrvalVisaAlla(el));
-        alla.setAttribute('data-urval-alla', '');
-        rader[rader.length - 1].appendChild(alla);
+    const und = el._rfUnderlagDim || [], dims = el._rfUrvalDim || [];
+    if ((und.length || dims.length) && el.parentNode) {
+        const bygg = o => (o.u.typ === 'intervall' ? _rfUrvalIntervallRad(el, o)
+            : o.lista ? _rfUrvalListaRad(el, o, listor.get(_rfUrvalRadNyckel(o))) : _rfUrvalKategoriRad(el, o));
+        // Underlagets rader först (de bestämmer vad som räknas), sedan filtren (de döljer märken i det som ritas).
+        const underlagRader = und.map(bygg), filterRader = dims.map(bygg);
+        /** @type {HTMLButtonElement|null} */ let alla = null;
+        /** @type {HTMLButtonElement|null} */ let underlagAlla = null;
+        if (underlagRader.length) {
+            const k = _rfNotKnapp('Räkna för alla', () => _rfUnderlagAlla(el));
+            k.setAttribute('data-underlag-alla', '');
+            underlagRader[underlagRader.length - 1].appendChild(k);
+            underlagAlla = k;
+        }
+        if (filterRader.length) {
+            const k = _rfNotKnapp('Visa alla', () => _rfUrvalVisaAlla(el));
+            k.setAttribute('data-urval-alla', '');
+            filterRader[filterRader.length - 1].appendChild(k);
+            alla = k;
+        }
+        const rader = [...underlagRader, ...filterRader];
         for (const r of rader) el.insertAdjacentElement('beforebegin', r);
         el._rfUrvalRader = rader;
         if (fokus) {
             const rad = rader.find(r => r.getAttribute('data-urval-falt') === fokus.falt);
-            const mal = fokus.alla ? alla
+            const mal = fokus.alla ? alla : fokus.underlagAlla ? underlagAlla
                 : rad && fokus.attr ? [...rad.querySelectorAll(`[${fokus.attr}]`)].find(k => k.getAttribute(fokus.attr) === fokus.varde) : null;
             if (mal && !(/** @type {HTMLElement} */ (mal)).hidden) /** @type {HTMLElement} */ (mal).focus();
         }
@@ -14028,16 +14250,25 @@ function _rfUrvalVisa(el) {
 // Knapparnas lägen, Visa alla och noten efter filtret nu.
 function _rfUrvalUppdatera(el) {
     const f = el._figurFilter || _rfUrvalTomtFilter();
-    for (const o of el._rfUrvalDim || []) {
+    const avvisad = el._rfUnderlagAvvisad || null;
+    for (const o of [...(el._rfUnderlagDim || []), ...(el._rfUrvalDim || [])]) {
         if (o.u.typ === 'intervall') continue;
-        const rad = (el._rfUrvalRader || []).find(r => r.getAttribute('data-urval-falt') === o.u.falt);
+        const rad = (el._rfUrvalRader || []).find(r => r.getAttribute('data-urval-falt') === _rfUrvalRadNyckel(o));
         if (!rad) continue;
-        const bort = f.kategori.get(o.u.falt) || new Set();
+        const bort = _rfUrvalBort(el, o);
         const synliga = o.varden.filter(v => !bort.has(v)).length;
+        // Ett val som skyddsregeln avvisade markeras (aria-invalid) tills nästa ändring.
+        for (const k of rad.querySelectorAll('[aria-invalid]')) k.removeAttribute('aria-invalid');
+        if (avvisad && avvisad.falt === o.u.falt) {
+            const mal = avvisad.markera ? rad.querySelector(`[data-urval-markera="${avvisad.markera}"]`)
+                : [...rad.querySelectorAll('[data-urval]')].find(k => k.getAttribute('data-urval') === avvisad.varde);
+            if (mal) mal.setAttribute('aria-invalid', 'true');
+        }
         if (o.lista) {
             for (const ruta of rad.querySelectorAll('input[data-urval]')) /** @type {HTMLInputElement} */ (ruta).checked = !bort.has(ruta.getAttribute('data-urval'));
             const sum = rad.querySelector('[data-urval-summering]');
-            if (sum) sum.textContent = `${o.u.namn}: ${synliga === o.varden.length ? `alla ${_figTalformat(synliga, 'antal')}` : `${_figTalformat(synliga, 'antal')} av ${_figTalformat(o.varden.length, 'antal')}`}`;
+            const namn = o.underlag ? `Räkna för ${_figNamnIMening(o.u.namn)}` : o.u.namn;
+            if (sum) sum.textContent = `${namn}: ${synliga === o.varden.length ? `alla ${_figTalformat(synliga, 'antal')}` : `${_figTalformat(synliga, 'antal')} av ${_figTalformat(o.varden.length, 'antal')}`}`;
             continue;
         }
         for (const b of rad.querySelectorAll('[data-urval]')) {
@@ -14050,10 +14281,19 @@ function _rfUrvalUppdatera(el) {
     const rader = el._rfUrvalRader || [];
     const alla = rader.length ? rader[rader.length - 1].querySelector('[data-urval-alla]') : null;
     if (alla) /** @type {HTMLElement} */ (alla).hidden = !_rfUrvalAktivt(f) && !fel.size;
+    const underlagAlla = rader.map(r => r.querySelector('[data-underlag-alla]')).find(Boolean);
+    if (underlagAlla) /** @type {HTMLElement} */ (underlagAlla).hidden = !el._rfUnderlagText;
     const harlett = _figHarlettNot(el._rfHarlett);
-    _rfUrvalNot(el, el._figur ? _figUrvalBeskrivning(el._figur, f, { visaSma: !!(el._figurVal && el._figurVal.visaSma) }) : [], [...fel.values()], [...harlett.omraknade, ...harlett.utelamnade]);
+    _rfUrvalNot(el, el._figur ? _figUrvalBeskrivning(el._figur, f, { visaSma: !!(el._figurVal && el._figurVal.visaSma) }) : [], [...fel.values()], [...harlett.omraknade, ...harlett.utelamnade], _rfUnderlagNot(el));
 }
 function _rfUrvalVaxla(el, o, v) {
+    if (o.underlag) {
+        _rfUnderlagAndra(el, o, bort => {
+            if (bort.has(v)) bort.delete(v);
+            else if (o.lista || o.varden.length - bort.size > 1) bort.add(v);   // den sista valda knappen: inget händer
+        }, { varde: v });
+        return;
+    }
     const f = el._figurFilter;
     if (!f) return;
     const bort = f.kategori.get(o.u.falt) || new Set();
@@ -14117,9 +14357,11 @@ function _rfUrvalVisaAlla(el) {
 // Noten under diagrammet (samma stil och plats som zoomnoten) när ett filter är aktivt eller ett fält är fel.
 // `delar` är filtret som text (_figUrvalBeskrivning), samma text som exportens fotrad; `harlett` meningarna om de
 // härledda lagren (_figHarlettNot), sist.
-function _rfUrvalNot(el, delar, fel = [], harlett = []) {
+// `underlag` är meningarna om underlaget (_rfUnderlagNot): ett avvisat val först, sedan vad diagrammet är räknat för.
+function _rfUrvalNot(el, delar, fel = [], harlett = [], underlag = { fel: '', rakna: '', info: '' }) {
     let not = el._rfUrvalNotEl;
-    if ((!delar || !delar.length) && !fel.length && !harlett.length) { if (not) not.remove(); delete el._rfUrvalNotEl; return; }
+    const u = underlag || { fel: '', rakna: '', info: '' };
+    if ((!delar || !delar.length) && !fel.length && !harlett.length && !u.fel && !u.rakna && !u.info) { if (not) not.remove(); delete el._rfUrvalNotEl; return; }
     if (!not) {
         not = document.createElement('p');
         not.className = 'k-mask-note';
@@ -14128,8 +14370,9 @@ function _rfUrvalNot(el, delar, fel = [], harlett = []) {
         el.insertAdjacentElement('afterend', not);
         el._rfUrvalNotEl = not;
     }
-    const urval = delar && delar.length ? `Diagrammet visar ett urval: ${delar.join('; ')}. Talen i texten och tabellerna gäller hela underlaget.` : '';
-    not.textContent = [...fel, urval, ...harlett].filter(Boolean).join(' ');
+    const urval = delar && delar.length ? `Diagrammet visar ett urval: ${delar.join('; ')}.` : '';
+    const hela = urval || u.rakna ? 'Talen i texten och tabellerna gäller hela underlaget.' : '';
+    not.textContent = [u.fel, ...fel, u.rakna, urval, hela, u.info, ...harlett].filter(Boolean).join(' ');
 }
 // rensaFigur: raderna och noten tas bort; minnet står kvar.
 function _rfUrvalTaBort(el) {
@@ -14139,6 +14382,155 @@ function _rfUrvalTaBort(el) {
     delete el._rfUrvalFel;
     _rfUrvalNot(el, null);
 }
+// ---- Underlag: diagrammet räknat för en del av personerna (figur.underlag) ----
+// Ett diagram som sammanfattar personer (lådor, fördelningar, percentiler) kan ha `figur.underlag = { dimensioner,
+// rader, rita, k, kon? }` (se src/lib/figur.js). Raderna "Räkna för" står först bland filterraderna, med samma
+// kontroller som en kategori (knappar, eller en lista med kryssrutor). Ett val räknar om diagrammet: rita(valda
+// rader, { beskrivning }) är vyns egen beräkning med dess k-regler, och dess figur ritas i stället för originalet
+// (el._rfUnderlagFigur; _rfGrundfigur). Ger rita en text i stället för en figur står texten i diagrammet.
+//
+// Skyddsregeln (_figUnderlagProva): både urvalet och resten — de övriga personerna i det underlag vyn ritar — ska ha
+// noll eller minst k personer av vartdera könet. Ett val som bryter mot den görs inte: valet markeras (aria-invalid)
+// och noten säger varför. Ett värde vars egen grupp inte klarar regeln står inte bland valen, och underlaget räknas
+// för en dimension i taget (ett val i en annan dimension tar bort det förra, och noten säger det): skillnaden mellan
+// två val är då alltid en förening av valbara, skyddade grupper.
+//
+// Noten: "Diagrammet är räknat för: sektor Vård och omsorg (120 personer)." Exportmenyns bild och diagramdata följer
+// underlaget (fotraden och raden "Räknat för: …"); diagramTillBild (rapport, utskrift, ZIP, rapportunderlag) ritar
+// alltid hela underlaget. Valet minns per diagram och dimension (`<id>|underlag:<falt>`) i samma minne som filtren och
+// glöms med dem (_rfUrvalGlom). En kopia i Alla diagram har sitt eget val (sitt eget id).
+function _rfUnderlagNyckel(el, u) { return `${el.id}|underlag:${u.falt}`; }
+// Meningen när skyddsregeln stoppar ett val.
+function _rfUnderlagRegelText(k) { return `Urvalet eller resten har färre än ${_figTalformat(k, 'antal')} kvinnor eller män.`; }
+
+// Vid ritaFigur: underlagets dimensioner (de med minst två valbara värden), valet ur minnet och figuren för valet.
+function _rfUnderlagSatt(el) {
+    _rfUnderlagGlomEl(el);
+    const u = el._figur && el._figur.underlag;
+    if (!u || !el.id) return;
+    const dims = [];
+    const filter = new Map();
+    /** @type {any} */ let vald = null;
+    for (const dim of u.dimensioner) {
+        const { varden, utelamnade } = _figUnderlagVarden(u, dim);
+        if (varden.length < 2) continue;
+        dims.push({ u: dim, varden, utelamnade, k: u.k, lista: _figUrvalSomLista(dim, varden.length), underlag: true });
+        const minne = _rfUrvalMinne.get(_rfUnderlagNyckel(el, dim));
+        const bort = minne instanceof Set ? varden.filter(v => minne.has(v)) : [];
+        // En dimension i taget: den första med ett minne gäller. Alla bortvalda i en knapprad: hela underlaget.
+        const giltig = bort.length && !vald && (bort.length < varden.length || _figUrvalSomLista(dim, varden.length));
+        filter.set(dim.falt, new Set(giltig ? bort : []));
+        if (giltig) vald = dim;
+    }
+    if (!dims.length) return;
+    el._rfUnderlagDim = dims;
+    el._rfUnderlagFilter = filter;
+    // Ett val ur minnet som inte klarar regeln nu (en ny fil, en annan tröskel, ett annat BAS) gäller inte.
+    if (vald && !_figUnderlagProva(u, filter).ok) {
+        filter.set(vald.falt, new Set());
+        el._rfUnderlagFel = `${_rfUnderlagRegelText(u.k)} Det tidigare valet för ${_figNamnIMening(vald.namn)} gäller inte, och diagrammet visar hela underlaget.`;
+    }
+    _rfUnderlagRakna(el);
+}
+
+// Figuren för valet: rita(valda rader). Utan val: ingen (originalet ritas). Kastar om vyns rita kastar eller ger en
+// ogiltig figur.
+function _rfUnderlagRakna(el) {
+    delete el._rfUnderlagFigur; delete el._rfUnderlagTom; delete el._rfUnderlagText; delete el._rfUnderlagAntal;
+    const u = el._figur && el._figur.underlag;
+    if (!u || !el._rfUnderlagFilter) return;
+    const prov = _figUnderlagProva(u, el._rfUnderlagFilter);
+    if (!prov.valet) return;
+    const beskrivning = _figUnderlagBeskrivning(u, el._rfUnderlagFilter);
+    el._rfUnderlagAntal = prov.valda.length;
+    el._rfUnderlagText = `${beskrivning} (${_figTalformat(prov.valda.length, 'antal')} ${prov.valda.length === 1 ? 'person' : 'personer'})`;
+    if (!prov.valda.length) { el._rfUnderlagTom = 'Inga personer i urvalet'; return; }
+    const ny = u.rita(prov.valda, { beskrivning });
+    if (typeof ny === 'string' || ny == null) { el._rfUnderlagTom = ny || 'Inget att visa för urvalet'; return; }
+    const { underlag: _bort, ...figur } = ny;   // underlaget hör till originalet
+    _figValidera(figur, `${el.id || 'diagram'}, underlag`);
+    el._rfUnderlagFigur = figur;
+}
+
+// En ändring i en dimension: `andra(bort)` ändrar en kopia av dimensionens bortvalda värden. Klarar valet regeln
+// räknas och ritas diagrammet om; annars ändras inget och valet markeras. `kalla` säger vilken kontroll som ändrades.
+function _rfUnderlagAndra(el, o, andra, kalla) {
+    const u = el._figur && el._figur.underlag, forra = el._rfUnderlagFilter;
+    if (!u || !forra) return;
+    const ny = new Map([...forra].map(([f, v]) => [f, new Set(v)]));
+    const bort = ny.get(o.u.falt) || new Set();
+    const fore = [...bort].sort().join('\u0000');
+    andra(bort);
+    ny.set(o.u.falt, bort);
+    if ([...bort].sort().join('\u0000') === fore) return;
+    // En dimension i taget: ett val här tar bort valet i de andra.
+    const borttagna = [];
+    if (bort.size) for (const d of el._rfUnderlagDim || []) {
+        if (d.u.falt === o.u.falt) continue;
+        const s = ny.get(d.u.falt);
+        if (s && s.size) { borttagna.push(d.u); ny.set(d.u.falt, new Set()); }
+    }
+    if (!_figUnderlagProva(u, ny).ok) {
+        el._rfUnderlagAvvisad = { falt: o.u.falt, ...kalla };
+        el._rfUnderlagFel = `${_rfUnderlagRegelText(u.k)} Valet är inte gjort, och diagrammet är oförändrat.`;
+        _rfUrvalUppdatera(el);
+        return;
+    }
+    delete el._rfUnderlagAvvisad; delete el._rfUnderlagFel;
+    el._rfUnderlagInfo = borttagna.length
+        ? `Valet för ${borttagna.map(d => _figNamnIMening(d.namn)).join(' och ')} togs bort: diagrammet räknas för en sak i taget.` : '';
+    el._rfUnderlagFilter = ny;
+    _rfUnderlagMinnas(el);
+    _rfZoomGlom(el);
+    try { _rfUnderlagRakna(el); _rfRitaOm(el); } catch (e) { _rfVisaFel(el, e); return; }
+    _rfUrvalUppdatera(el);
+}
+// Minnet efter en ändring: dimensionen med ett val minns sina bortvalda värden, de andra glöms.
+function _rfUnderlagMinnas(el) {
+    if (!el.id) return;
+    for (const d of el._rfUnderlagDim || []) {
+        const nyckel = _rfUnderlagNyckel(el, d.u), b = el._rfUnderlagFilter.get(d.u.falt);
+        if (b && b.size) _rfUrvalMinne.set(nyckel, new Set(b)); else _rfUrvalMinne.delete(nyckel);
+    }
+}
+// "Räkna för alla": hela underlaget igen, och minnet glöms.
+function _rfUnderlagAlla(el) {
+    if (!el._rfUnderlagFilter) return;
+    const hade = !!el._rfUnderlagText;
+    for (const k of el._rfUnderlagFilter.keys()) el._rfUnderlagFilter.set(k, new Set());
+    delete el._rfUnderlagAvvisad; delete el._rfUnderlagFel; delete el._rfUnderlagInfo;
+    _rfUnderlagMinnas(el);
+    if (hade) {
+        _rfZoomGlom(el);
+        try { _rfUnderlagRakna(el); _rfRitaOm(el); } catch (e) { _rfVisaFel(el, e); return; }
+    }
+    // Knappen döljs när den har gjort sitt: fokus till den första radens första knapp eller summering.
+    const a = document.activeElement;
+    if (a && a.hasAttribute && a.hasAttribute('data-underlag-alla')) {
+        const forsta = (el._rfUrvalRader || [])[0]?.querySelector('[data-urval], [data-urval-summering]');
+        if (forsta) /** @type {HTMLElement} */ (forsta).focus();
+    }
+    _rfUrvalUppdatera(el);
+}
+// Meningarna om underlaget i noten: ett avvisat val, vad diagrammet är räknat för, och ett val som togs bort.
+function _rfUnderlagNot(el) {
+    return { fel: el._rfUnderlagFel || '', rakna: el._rfUnderlagText ? `Diagrammet är räknat för: ${el._rfUnderlagText}.` : '', info: el._rfUnderlagInfo || '' };
+}
+// Värden som inte går att välja (för få kvinnor eller män i gruppen): en kort text sist i raden, utan namn.
+function _rfUnderlagUtelamnade(rad, o) {
+    if (!o.underlag || !o.utelamnade) return;
+    const t = document.createElement('span');
+    t.className = 'diagram-urval-traffar';
+    t.setAttribute('data-underlag-utelamnade', '');
+    t.textContent = `${_figTalformat(o.utelamnade, 'antal')} till går inte att välja för sig: färre än ${_figTalformat(o.k, 'antal')} kvinnor eller män`;
+    rad.appendChild(t);
+}
+// Tar bort allt om underlaget från behållaren (rensaFigur, ny figur). Minnet står kvar.
+function _rfUnderlagGlomEl(el) {
+    for (const k of ['_rfUnderlagDim', '_rfUnderlagFilter', '_rfUnderlagFigur', '_rfUnderlagTom', '_rfUnderlagText', '_rfUnderlagAntal',
+        '_rfUnderlagFel', '_rfUnderlagAvvisad', '_rfUnderlagInfo']) delete el[k];
+}
+
 // Glömmer penseln utan att röra bilden (den ska ändå ritas om eller tas bort).
 function _rfPenselGlom(el) {
     if (el._rfKoppling) el._rfKoppling.drag = null;
@@ -14275,7 +14667,11 @@ function figurTillBild(figur, format, bredd, hojd, val = {}) {
  * `tom` är sant när inget återstår att exportera (alla punkter hör till små grupper som inte får följa med).
  * `filter` är urvalet i diagrammet (en kopia av el._figurFilter): bara exportmenyns bild följer det; diagramTillBild
  * (rapport, utskrift, ZIP, rapportunderlag) ritar alltid allt, och `tom` räknas utan urvalet.
- * @returns {{figur: any, bild: any, utsnitt: boolean, visaSma: boolean, dolda: Set<string>, filter: any, tom: boolean} | null}
+ * `underlag` finns när diagrammet är räknat för en del av personerna (figur.underlag): { figur, text, tom } — figuren
+ * för valet (null när den inte går att rita, `tom`) och valet som text. Exportmenyn ritar och skriver den (`bild` är
+ * då den); `hel` är alltid originalet (zoomat som på skärmen), som diagramTillBild ritar.
+ * @returns {{figur: any, bild: any, hel: any, utsnitt: boolean, visaSma: boolean, dolda: Set<string>, filter: any, tom: boolean,
+ *            underlag: {figur: any, text: string, tom: boolean}|null} | null}
  */
 function _rfExportFigur(gd) {
     if (!gd || !gd._figur) return null;
@@ -14285,8 +14681,13 @@ function _rfExportFigur(gd) {
         try { visaSma = fn() === true; } catch (e) { rapporteraFel(_rfPlats('diagramexport', gd), e); }
     }
     const figur = gd._figur;
-    // `bild` är figuren som bilden ritas ur: originalet, eller ett zoomat utsnitt av det (samma lager, andra domäner).
-    return { figur, bild: _rfZoomad(gd), utsnitt: !!gd._rfZoom, visaSma, dolda: new Set(gd._figurDolda || []), filter: _rfUrvalKopia(gd._figurFilter), tom: _figAntalPunkter(visaSma ? figur : _figUtanSma(figur)) === 0 };
+    // `bild` är figuren som bilden ritas ur: originalet (eller figuren för underlaget), eller ett zoomat utsnitt av den
+    // (samma lager, andra domäner). `hel` är originalet, oavsett underlag.
+    const und = gd._rfUnderlagText ? gd._rfUnderlagFigur || null : null;
+    const underlag = gd._rfUnderlagText
+        ? { figur: und, text: gd._rfUnderlagText, tom: !und || _figAntalPunkter(visaSma ? und : _figUtanSma(und)) === 0 } : null;
+    return { figur, bild: underlag ? (und ? _rfZoomad(gd, und) : null) : _rfZoomad(gd, figur), hel: _rfZoomad(gd, figur), utsnitt: !!gd._rfZoom, visaSma,
+             dolda: new Set(gd._figurDolda || []), filter: _rfUrvalKopia(gd._figurFilter), tom: _figAntalPunkter(visaSma ? figur : _figUtanSma(figur)) === 0, underlag };
 }
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -14390,6 +14791,15 @@ const URVAL = Object.freeze({
     yrkesgrupp: Object.freeze({ typ: 'kategori', falt: 'yrke', namn: 'Yrkesgrupp', etikett: '{v}', visning: 'lista' }),
     sektor: Object.freeze({ typ: 'kategori', falt: 'sektor', namn: 'Sektor', etikett: '{v}', visning: 'lista' }),
 });
+// Dimensionerna i ett underlag (figur.underlag.dimensioner): vad ett sammanfattande diagram kan räknas om för. Värdet
+// läses ur personraden med samma gruppnycklar som Tabeller och egna vyer (groupKey i src/lib/falt.js); personerna har
+// inget färdigt sektorsfält.
+const UNDERLAG = Object.freeze({
+    sektor: Object.freeze({ typ: 'kategori', falt: 'sektor', namn: 'Sektor', visning: 'lista', varde: r => _utGroupKey(r, 'sektor') }),
+    aldersgrupp: Object.freeze({ typ: 'kategori', falt: 'aldersgrupp', namn: 'Åldersgrupp', visning: 'lista', varde: r => _utGroupKey(r, 'alder'), ordning: (a, b) => _faltJamforAlder(a, b) }),
+    yrkesgrupp: Object.freeze({ typ: 'kategori', falt: 'yrke', namn: 'Yrkesgrupp', visning: 'lista', varde: r => r.yrke }),
+    bas: Object.freeze({ typ: 'kategori', falt: 'bas', namn: 'BAS-intervall', etikett: 'BAS {v}', varde: r => r.bas }),
+});
 /**
  * Statusen för ett avstånd från lika lön i procent (|100 − kvoten|) och en prövning av skillnaden (true/false; null
  * när den inte kunde göras, vilket ger Går ej att bedöma).
@@ -14432,6 +14842,9 @@ const CHART_FONT = {
 //                                     diagrammet; diagramdatan har alla rader och en rad "Urval i diagrammet: …".
 //                                     diagramTillBild ritar alltid allt. Härledda lager (harleddAv) räknas om för
 //                                     urvalet i exportmenyns bild, och fotraden nämner ett lager som då inte ritas.
+//   figur.underlag (ritaFigur)      — diagrammet kan räknas för en del av personerna (raderna "Räkna för"): exportmenyns
+//                                     bild och diagramdata är figuren för valet, fotraden och raden "Räknat för: …"
+//                                     säger valet. diagramTillBild ritar alltid hela underlaget (originalet).
 //   figur.individer                 — figuren har en punkt per person: diagramdatan får raden om att filen
 //                                     innehåller en rad per person och ska hanteras som personuppgifter (kIndividRad).
 //
@@ -14563,10 +14976,12 @@ function _chartExportHarlett(ut) {
  *  det här. Stämpeln får samma svar om små grupper som innehållet. */
 function chartExportRows(gd, underlag) {
     const ut = underlag === undefined ? _chartExportUnderlag(gd) : underlag;
-    if (!ut) return [];
+    if (!ut || (ut.underlag && ut.underlag.tom)) return [];
     gd = _chartExportAktuell(gd);
     const medSma = ut.visaSma;
-    const rader = _figTillTabell(medSma ? ut.figur : _figUtanSma(ut.figur)).map(r => r.map(_chartExportCell));
+    // Med ett underlag är diagramdatan figuren för valet (det som visas), och raden "Räknat för" säger vilket.
+    const kalla = ut.underlag && ut.underlag.figur ? ut.underlag.figur : ut.figur;
+    const rader = _figTillTabell(medSma ? kalla : _figUtanSma(kalla)).map(r => r.map(_chartExportCell));
     const beskrivning = typeof gd._exportBeskrivning === 'string' ? gd._exportBeskrivning : '';
     // En figur med en punkt per person (figurens `individer`) ger en rad per person: filen säger det på rad 2.
     const individer = ut.figur && ut.figur.individer === true;
@@ -14575,6 +14990,7 @@ function chartExportRows(gd, underlag) {
     return [[`${chartExportTitle(gd)} — Lönekartläggning ${APP_VERSION}. ${kStampelFor(_kUndantagFor(gd, medSma))}`],
             ...(individer ? [[kIndividRad()]] : []),
             ...(beskrivning ? [[`Urval: ${beskrivning}`]] : []),
+            ...(ut.underlag ? [[`Räknat för: ${ut.underlag.text}`]] : []),
             ...(dolt.length ? [[`Urval i diagrammet: ${dolt.join('; ')}`]] : []), ...rader];
 }
 
@@ -14582,18 +14998,21 @@ function chartExportRows(gd, underlag) {
  *  klistras in i ett dokument. Foten: verktyget och dagens datum, och urvalet om vyn har angett ett.
  *  `dolt`: urvalet i diagrammet som text (_chartExportDolt; bara exportmenyns bild, aldrig diagramTillBild).
  *  `harlett`: härledda lager som inte ritas med urvalet (_chartExportHarlett).
- *  @param {any} gd @param {Date} [datum] @param {string[]} [dolt] @param {string[]} [harlett] */
-function _chartExportRubrikFot(gd, datum = new Date(), dolt = [], harlett = []) {
+ *  `underlag`: valet när diagrammet är räknat för en del av personerna (bara exportmenyns bild). Vyns anteckning
+ *  (exportAnteckning) gäller hela underlaget och står då inte med.
+ *  @param {any} gd @param {Date} [datum] @param {string[]} [dolt] @param {string[]} [harlett] @param {string} [underlag] */
+function _chartExportRubrikFot(gd, datum = new Date(), dolt = [], harlett = [], underlag = '') {
     const p = n => String(n).padStart(2, '0');
     const dag = `${datum.getFullYear()}-${p(datum.getMonth() + 1)}-${p(datum.getDate())}`;
     const urval = typeof gd._exportBeskrivning === 'string' && gd._exportBeskrivning ? ` · Urval: ${gd._exportBeskrivning}` : '';
     // Ett zoomat diagram exporteras som det visas: fotraden säger att bilden är ett utsnitt.
     // Vyns anteckning (val.exportAnteckning) står först i fotraden: en mening om det bilden visar, räknad av vyn
     // ur värden som får visas.
-    const v = gd._figurVal && typeof gd._figurVal.exportAnteckning === 'string' ? gd._figurVal.exportAnteckning.trim() : '';
+    const v = !underlag && gd._figurVal && typeof gd._figurVal.exportAnteckning === 'string' ? gd._figurVal.exportAnteckning.trim() : '';
+    const underlagText = underlag ? ` · Räknat för: ${underlag}` : '';
     const doltText = dolt && dolt.length ? ` · Urval i diagrammet: ${dolt.join('; ')}` : '';
     const harlettText = (harlett || []).map(t => ` · ${String(t).replace(/\.$/, '')}`).join('');
-    return { rubrik: chartExportTitle(gd), fot: `${v ? v + ' · ' : ''}Lönekartläggning ${dag}${urval}${doltText}${harlettText}${gd._rfZoom ? ' · Utsnitt av diagrammet' : ''}` };
+    return { rubrik: chartExportTitle(gd), fot: `${v ? v + ' · ' : ''}Lönekartläggning ${dag}${urval}${underlagText}${doltText}${harlettText}${gd._rfZoom ? ' · Utsnitt av diagrammet' : ''}` };
 }
 
 /** Bär elementet ett ritat diagram med något att visa? */
@@ -14613,9 +15032,9 @@ async function _diagramTillBildExport(el, val) {
     const ut = _chartExportUnderlag(el);
     el = _chartExportAktuell(el);
     if (!ut) throw new Error('Det finns inget att exportera i diagrammet.');
-    // Användarens urval i diagrammet (ut.filter) följer INTE med: rapporten, utskriften, ZIP-filen och
-    // rapportunderlaget visar alltid hela diagrammet.
-    const url = await figurTillBild(ut.bild || ut.figur, 'png', bredd, hojd, { visaSma: ut.visaSma, dolda: ut.dolda, ...(utanRubrik ? {} : _chartExportRubrikFot(el)) });
+    // Användarens urval i diagrammet (ut.filter) och underlaget (ut.underlag) följer INTE med: rapporten, utskriften,
+    // ZIP-filen och rapportunderlaget visar alltid hela diagrammet, räknat för hela underlaget.
+    const url = await figurTillBild(ut.hel || ut.figur, 'png', bredd, hojd, { visaSma: ut.visaSma, dolda: ut.dolda, ...(utanRubrik ? {} : _chartExportRubrikFot(el)) });
     if (el._figur !== ut.figur) throw new Error('Diagrammet rensades innan exporten blev klar.');
     return url;
 }
@@ -14629,9 +15048,10 @@ async function __chartExportImageExport(gd, val, underlag) {
     // utan små grupper. Meningen om sänkt tröskel lägger figurTillSvg dit.
     const ut = underlag === undefined ? _chartExportUnderlag(gd) : underlag;
     gd = _chartExportAktuell(gd);
-    if (!ut) throw new Error('Det finns inget att exportera i diagrammet.');
-    // Exportmenyn ritar diagrammet som det visas: också med användarens urval, som fotraden då namnger.
-    const url = await figurTillBild(ut.bild || ut.figur, format, width, height, { visaSma: ut.visaSma, dolda: ut.dolda, filter: ut.filter, ..._chartExportRubrikFot(gd, new Date(), _chartExportDolt(ut), _chartExportHarlett(ut)) });
+    if (!ut || (ut.underlag && ut.underlag.tom)) throw new Error('Det finns inget att exportera i diagrammet.');
+    // Exportmenyn ritar diagrammet som det visas: också med användarens urval och underlag, som fotraden då namnger.
+    const url = await figurTillBild(ut.bild || ut.figur, format, width, height, { visaSma: ut.visaSma, dolda: ut.dolda, filter: ut.filter,
+        ..._chartExportRubrikFot(gd, new Date(), _chartExportDolt(ut), _chartExportHarlett(ut), ut.underlag ? ut.underlag.text : '') });
     // Bilden görs asynkront. Har diagrammet under tiden rensats (Rensa all data) eller fått en annan figur
     // lämnar bilden av den gamla inte verktyget.
     if (gd._figur !== ut.figur) throw new Error('Diagrammet rensades innan exporten blev klar.');
@@ -14653,6 +15073,8 @@ function _chartExportRunExport(gd, val) {
     gd = _chartExportAktuell(gd);
     // Ett diagram från diagramkärnan utan något att exportera: ingen fil, ingenting på urklipp.
     if (underlag === null) return Promise.reject(new Error('Det finns inget att exportera i diagrammet.'));
+    // Räknat för ett underlag som inte går att rita (inga personer, eller vyns beräkning gav ingen figur): inget att exportera.
+    if (underlag && underlag.underlag && underlag.underlag.tom) return Promise.reject(new Error('Det finns inget att exportera i diagrammet.'));
     if (val === 'data-kopiera') return Promise.resolve(_copyMatrixToClipboard(chartExportRows(gd, underlag)));
     if (val === 'data-csv') {
         return Promise.resolve(_downloadCSV(chartExportRows(gd, underlag), chartExportFilename(gd, 'csv').replace(/\.csv$/, '')));
@@ -24121,7 +24543,10 @@ function renderStructure() {
         }
     }
 
-    { const pEl = document.getElementById('chart-struktur-percentiler'); if (pEl && dist.length && dist.every(x => x.gapPct != null)) ritaFigur(pEl, _strukturPercentilFigur(dist)); }
+    // Percentilerna och kvartilerna kan räknas för en sektor eller ett BAS-intervall (figur.underlag): samma mått och
+    // samma tröskel per kön, för de valda personerna. Resten är de övriga i lönefilen.
+    const underlag = rita => ({ dimensioner: [UNDERLAG.sektor, UNDERLAG.bas], rader: d, k, rita });
+    { const pEl = document.getElementById('chart-struktur-percentiler'); if (pEl && dist.length && dist.every(x => x.gapPct != null)) ritaFigur(pEl, { ..._strukturPercentilFigur(dist), underlag: underlag(_strukturPercentilFor) }); }
 
     // (2) EU 2023/970-rapportpaket
     const antal = n => (n == null ? '–' : n);
@@ -24143,7 +24568,7 @@ function renderStructure() {
 
     const kvEl = document.getElementById('chart-struktur-kvartiler');
     // Samma villkor som tabellen: utan könsuppdelning (ett kön under tröskeln) ritas inget diagram.
-    if (kvEl && q.length && q.every(x => x.nKv != null && x.nMa != null && x.n > 0)) ritaFigur(kvEl, _strukturKvartilFigur(q, totAndel),
+    if (kvEl && q.length && q.every(x => x.nKv != null && x.nMa != null && x.n > 0)) ritaFigur(kvEl, { ..._strukturKvartilFigur(q, totAndel), underlag: underlag(_strukturKvartilFor) },
         { exportAnteckning: `Andel kvinnor: ${_figTalformat(q[0].andelKv, 'pct')} i lägsta kvartilen, ${_figTalformat(q[q.length - 1].andelKv, 'pct')} i högsta` });
 
     renderSektorer(d);
@@ -24300,13 +24725,26 @@ function renderStrukturTradkarta(d, id = 'chart-struktur-tradkarta') {
 // Var i lönefördelningen skillnaden sitter: kvinnors och mäns lön vid samma percentil som två punkter på en
 // kronaxel, lägst betalda överst. Glider punkterna isär nedåt i bilden är gapet störst i toppen (glastak), uppåt
 // i botten (klibbigt golv). Samma tal som tabellen under; `dist` finns bara när båda könen når tröskeln.
-function _strukturPercentilFigur(dist) {
+// Percentilerna för ett underlag (figur.underlag.rita): samma mått som fliken, eller en text när ett kön är under tröskeln.
+function _strukturPercentilFor(rader, { beskrivning }) {
+    const dist = _stDistributionalGap(rader, undefined, { k: kTroskel() });
+    return dist.length && dist.every(x => x.gapPct != null) ? _strukturPercentilFigur(dist, beskrivning) : _konUtelamnatNot();
+}
+// Kvartilerna för ett underlag (figur.underlag.rita), med andelen kvinnor i urvalet som linje.
+function _strukturKvartilFor(rader, { beskrivning }) {
+    const q = _stQuartileDistribution(rader, { k: kTroskel() });
+    if (!(q.length && q.every(x => x.nKv != null && x.nMa != null && x.n > 0))) return _konUtelamnatNot();
+    const nKv = rader.filter(r => r.kon && r.kon.includes('kvinna')).length;
+    return _strukturKvartilFigur(q, rader.length ? 100 * nKv / rader.length : 0, beskrivning);
+}
+// `omfang` (ett underlag, t.ex. 'sektor Skola'): beskrivningen säger att figuren är räknad för det.
+function _strukturPercentilFigur(dist, omfang) {
     const namn = x => `P${x.p}${x.p === 10 ? ' (lägst betalda)' : x.p === 50 ? ' (median)' : x.p === 90 ? ' (högst betalda)' : ''}`, kr = v => _figTalformat(Math.round(v), 'kr');
     const tips = d => [[d.y], ['Kvinnor', kr(d.r.kv)], ['Män', kr(d.r.ma)], ['Kvinnors lön i % av mäns', _figTalformat(100 + d.r.gapPct, 'pct')], ..._figKronorTipsRad(_figKronorSkillnad(d.r.kv, d.r.ma))];
     const punkt = (serie, farg, falt, extra = {}) => ({ marke: 'punkt', serie, farg, storlek: 6, ...extra,
         data: dist.map(x => ({ y: namn(x), x: Math.round(x[falt]), r: x, ...(extra.etikettLage ? { etikett: _figTalformat(100 + x.gapPct, 'pct') } : {}) })), tips });
     const hogst = x => (x.ma >= x.kv ? 'ma' : 'kv');
-    return { beskrivning: 'Kvinnors och mäns lön vid samma percentil i respektive köns lönefördelning (P10 till P90), som två punkter per percentil. Procenttalet är kvinnors lön i procent av mäns. Samma tal står i tabellen under.',
+    return { beskrivning: `Kvinnors och mäns lön vid samma percentil i respektive köns lönefördelning (P10 till P90), som två punkter per percentil. Procenttalet är kvinnors lön i procent av mäns. ${omfang ? `Räknat för ${omfang}; tabellen under gäller hela underlaget.` : 'Samma tal står i tabellen under.'}`,
         x: { skala: 'linjar', titel: 'Månadslön (kr)', format: 'kr' }, y: { skala: 'band', ordning: dist.map(namn) }, hojd: Math.max(220, 100 + dist.length * 34),
         lager: [{ marke: 'intervall', riktning: 'liggande', serie: 'Skillnad', farg: PALETTE.semantic.neutral, tjocklek: 2, legend: false,
                   data: dist.map(x => ({ y: namn(x), lag: Math.round(Math.min(x.kv, x.ma)), hog: Math.round(Math.max(x.kv, x.ma)), r: x, ..._kronorFalt(x.kv, x.ma) })), tips },
@@ -24314,12 +24752,14 @@ function _strukturPercentilFigur(dist) {
                 punkt('Män', PALETTE.kon.man, 'ma', dist.every(x => hogst(x) === 'kv') ? {} : { etikettLage: 'hoger' })] };
 }
 
-function _strukturKvartilFigur(q, totAndel) {
+function _strukturKvartilFigur(q, totAndel, omfang) {
     const namn = x => `Q${x.q}${x.q === 1 ? ' (lägst lön)' : x.q === 4 ? ' (högst lön)' : ''}`;
     const serie = (s, farg, andel, antal) => ({ marke: 'stapel', lage: 'staplad', riktning: 'liggande', serie: s, farg,
         data: q.map(x => { const a = +andel(x).toFixed(1); return { y: namn(x), x: a, n: antal(x), tot: x.n, ...(a >= 8 ? { etikett: _figTalformat(a, 'pct') } : {}) }; }),
         tips: d => [[d.y], [s, _figTalformat(d.x, 'pct')], ['Antal', `${d.n} av ${d.tot}`]] });
-    return { beskrivning: `Andel kvinnor och män i varje lönekvartil, staplat till 100 procent. Den streckade linjen är andelen kvinnor i hela organisationen (${_figTalformat(totAndel, 'pct')}). Samma siffror finns i tabellen nedan.`,
+    return { beskrivning: omfang
+            ? `Andel kvinnor och män i varje lönekvartil, räknat för ${omfang} och staplat till 100 procent. Den streckade linjen är andelen kvinnor i urvalet (${_figTalformat(totAndel, 'pct')}). Tabellen nedan gäller hela underlaget.`
+            : `Andel kvinnor och män i varje lönekvartil, staplat till 100 procent. Den streckade linjen är andelen kvinnor i hela organisationen (${_figTalformat(totAndel, 'pct')}). Samma siffror finns i tabellen nedan.`,
         y: { skala: 'band', ordning: q.slice().reverse().map(namn) },
         x: { skala: 'linjar', titel: 'Andel av kvartilen (%)', doman: [0, 100] },
         hojd: 240,
@@ -25043,12 +25483,13 @@ function renderKon(bas) {
                    : `${kvOk ? `Kvinnors trend ökar med ${Math.round(regKv.m)} kr per år. ` : ''}${maOk ? `Mäns trend ökar med ${Math.round(regMa.m)} kr per år. ` : ''}Trendlinje visas inte för ${utan}: ${skal}. `) +
             `Ojusterad löneskillnad: ${unadjGap}. Vid samma ålder: ${ageAdjGap}.` +
             (trendAlla ? ` Trend för hela urvalet: ${trendAlla.m >= 0 ? '+' : '−'}${svTal(Math.abs(Math.round(trendAlla.m)), 0)} kr per år.` : '') }), { hojd: 420 });
-    // En låda är könets kvartiler: den ritas bara för ett kön som når tröskeln.
+    // En låda är könets kvartiler: den ritas bara för ett kön som når tröskeln. Lådorna kan räknas för en sektor eller
+    // en åldersgrupp (figur.underlag): resten är de övriga i fliken urval, det valda BAS-intervallet eller hela urvalet.
     const boxEl = document.getElementById('chart-kon-boxplot');
-    if (kvOk || maOk) {
-        ritaFigur(boxEl, _konLadFigur({ lonKv: kvOk ? rawLonKv : null, lonMa: maOk ? rawLonMa : null,
-            beskrivning: `Lådagram av lönefördelning per kön för ${scope2}. ${rawLonKv.length} kvinnor, ${rawLonMa.length} män.`
-                + (utan ? ` Lådan visas inte för ${utan}: ${skal}.` : '') }), { hojd: 420 });
+    const lada = _konLadFigurFor([...dataKv, ...dataMa], scope2);
+    if (typeof lada !== 'string') {
+        ritaFigur(boxEl, { ...lada, underlag: { dimensioner: [UNDERLAG.sektor, UNDERLAG.aldersgrupp], rader: [...dataKv, ...dataMa], k: kTroskel(),
+            rita: (rader, { beskrivning }) => _konLadFigurFor(rader, `${scope2}, ${beskrivning}`) } }, { hojd: 420 });
     } else if (boxEl) rensaFigur(boxEl);
     _setDiagramKNot('chart-kon-scatter', [utan ? `Trendlinje och konfidensband visas inte för ${utan}: ${skal}.` : '',
         trendAllaVald && !trendAllaOk ? _demoTrendNot(df.length) : '', _individNot(dolda)].filter(Boolean).join(' '));
@@ -25179,7 +25620,13 @@ function renderKonAlderGap(dataKv, dataMa, scope) {
         el.innerHTML = `<p class="text-dampad-sm marg-8-0">Ingen åldersgrupp har minst ${k} kvinnor och ${k} män.</p>`;
         return;
     }
-    ritaFigur(el, _konAlderGapFigur(visade, scope));
+    // Kan räknas för en sektor eller en yrkesgrupp (figur.underlag): samma beräkning och samma tröskel per åldersgrupp.
+    // Resten är de övriga kvinnorna och männen i fliken urval.
+    const rita = (rader, { beskrivning }) => {
+        const r = _konAlderGapRader(rader.filter(d => d.kon && d.kon.includes('kvinna')), rader.filter(d => d.kon === 'man' || d.kon === 'män'));
+        return r.visade.length ? _konAlderGapFigur(r.visade, `${scope}, ${beskrivning}`) : `Ingen åldersgrupp har minst ${k} kvinnor och ${k} män i urvalet.`;
+    };
+    ritaFigur(el, { ..._konAlderGapFigur(visade, scope), underlag: { dimensioner: [UNDERLAG.sektor, UNDERLAG.yrkesgrupp], rader: [...dataKv, ...dataMa], k, rita } });
 }
 
 function renderKonHistogram(dataKv, dataMa, scope) {
@@ -25194,7 +25641,15 @@ function renderKonHistogram(dataKv, dataMa, scope) {
         return;
     }
     const figur = _konHistogramFigur(klasser, kv.length, ma.length, scope);
-    ritaFigur(el, figur);
+    // Kan räknas för en sektor eller en åldersgrupp (figur.underlag): samma klassindelning och samma tröskel per klass.
+    const rita = (rader, { beskrivning }) => {
+        const lon = ar => rader.filter(ar).map(d => d.lon).filter(v => v > 0);
+        const kv2 = lon(d => d.kon && d.kon.includes('kvinna')), ma2 = lon(d => d.kon === 'man' || d.kon === 'män');
+        const kl = _konHistogramKlasser(kv2, ma2, k);
+        if (kl) return _konHistogramFigur(kl, kv2.length, ma2.length, `${scope}, ${beskrivning}`);
+        return kv2.length < k || ma2.length < k ? _konUtelamnatNot() : `Lönerna i urvalet går inte att dela in i klasser med minst ${k} ${personOrd(k)} i varje.`;
+    };
+    ritaFigur(el, { ...figur, underlag: { dimensioner: [UNDERLAG.sektor, UNDERLAG.aldersgrupp], rader: [...dataKv, ...dataMa], k, rita } });
     const not = document.getElementById('kon-histogram-not');
     const fa = figur.lager.some(l => l.data.some(d => d.fa));
     if (not) { not.hidden = !fa; not.textContent = fa ? `Några staplar gäller färre än ${litetUnderlag()} personer av könet i klassen (se verktygstipset på stapeln). Det är ett litet underlag — läs dem som enstaka personer, inte som ett mönster.` : ''; }
@@ -25292,6 +25747,19 @@ function _konScatterFigur({ df, dataKv, dataMa, isAll, colorBy, minAlder, maxAld
                          { y: pol.med, streck: 'streckad', farg: PALETTE.semantic.neutral, tjocklek: 2 }] : [] };
 }
 
+// Lådagrammet per kön för raderna (fliken urval, eller ett underlag i det): en låda för varje kön som når tröskeln,
+// eller texten om att inget kön gör det.
+function _konLadFigurFor(rader, scope) {
+    const lonKv = rader.filter(d => d.kon && d.kon.includes('kvinna')).map(d => d.lon);
+    const lonMa = rader.filter(d => d.kon === 'man' || d.kon === 'män').map(d => d.lon);
+    const kvOk = !isKMasked(lonKv.length), maOk = !isKMasked(lonMa.length);
+    if (!kvOk && !maOk) return _konUtelamnatNot();
+    const utan = [kvOk ? null : 'kvinnor', maOk ? null : 'män'].filter(Boolean).join(' och ');
+    const skal = `färre än ${kTroskel()} ${personOrd(kTroskel())} av ${kvOk || maOk ? 'könet' : 'vartdera könet'} finns i urvalet`;
+    return _konLadFigur({ lonKv: kvOk ? lonKv : null, lonMa: maOk ? lonMa : null,
+        beskrivning: `Lådagram av lönefördelning per kön för ${scope}. ${lonKv.length} kvinnor, ${lonMa.length} män.`
+            + (utan ? ` Lådan visas inte för ${utan}: ${skal}.` : '') });
+}
 // Lådagrammet per kön: ett lager, en kategori per kön som når tröskeln (null = könet redovisas inte).
 function _konLadFigur({ lonKv, lonMa, beskrivning }) {
     const data = [...(lonKv || []).map(y => ({ x: 'Kvinna', y, farg: PALETTE.kon.kvinna })), ...(lonMa || []).map(y => ({ x: 'Man', y, farg: PALETTE.kon.man }))];

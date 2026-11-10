@@ -3,7 +3,8 @@
  */
 import { describe, it, expect } from 'vitest';
 import { talformat, valideraFigur, utanSmaGrupper, axelVarden, skalDoman, ladstatistik, antalPunkter, figurTillTabell, panelerMedLager, MARKEN, kronorSkillnad, kronorTipsRad, kvantilpunkter, urvalVarden, urvalEtikett, arBortvald, urvalLista, urvalSpann, urvalBeskrivning, urvalIntervallText, TALFORMAT,
-    URVAL_LISTA_MAX, urvalSomLista, urvalAktivt, harleddaLager, harlettNamn, harlettNot } from '../src/lib/figur.js';
+    URVAL_LISTA_MAX, urvalSomLista, urvalAktivt, harleddaLager, harlettNamn, harlettNot,
+    underlagKonAntal, underlagSkyddat, underlagVarde, underlagDimension, underlagVarden, underlagValet, underlagProva, underlagBeskrivning, namnIMening } from '../src/lib/figur.js';
 import { quantile } from '../src/lib/stat.js';
 
 const blank = s => s.replace(/\s/g, ' ').replace('−', '-');
@@ -849,3 +850,97 @@ describe('urval', () => {
     });
 
 });
+
+// ---- Underlag: omräkning för en del av personerna (figur.underlag) ----
+describe('underlag: skyddsregeln, valbara värden och valet', () => {
+    // Sektorerna: Stor (20 kv, 20 ma), Mellan (6 kv, 6 ma), Bara kv (8 kv, 0 ma), Liten (2 kv, 7 ma).
+    const personer = (sektor, kv, ma) => [...Array.from({ length: kv }, (_, i) => ({ sektor, kon: 'kvinna', lon: 30000 + i })),
+                                          ...Array.from({ length: ma }, (_, i) => ({ sektor, kon: 'man', lon: 31000 + i }))];
+    const rader = [...personer('Stor', 20, 20), ...personer('Mellan', 6, 6), ...personer('Bara kv', 8, 0), ...personer('Liten', 2, 7)];
+    const SEKTOR = { falt: 'sektor', namn: 'Sektor' };
+    const und = (over = {}) => ({ dimensioner: [SEKTOR], rader, k: 5, rita: () => null, ...over });
+    const bort = (falt, ...v) => new Map([[falt, new Set(v)]]);
+    it('underlagKonAntal och underlagSkyddat: vartdera könet har noll eller minst k', () => {
+        expect(underlagKonAntal(und(), rader)).toEqual({ kv: 36, ma: 33 });
+        expect(underlagKonAntal({ kon: r => (r.lon > 30010 ? 'kv' : 'x') }, rader).kv).toBeGreaterThan(0);
+        expect(underlagSkyddat({ kv: 5, ma: 5 }, 5)).toBe(true);
+        expect(underlagSkyddat({ kv: 8, ma: 0 }, 5)).toBe(true);
+        expect(underlagSkyddat({ kv: 0, ma: 0 }, 5)).toBe(true);
+        expect(underlagSkyddat({ kv: 4, ma: 9 }, 5)).toBe(false);
+        expect(underlagSkyddat({ kv: 9, ma: 1 }, 5)).toBe(false);
+    });
+    it('underlagVarde: varde(rad) före fältet; tomt och null är inget värde', () => {
+        expect(underlagVarde(SEKTOR, { sektor: 'Stor' })).toBe('Stor');
+        expect(underlagVarde({ falt: 'x', varde: r => r.lon > 1 ? 7 : null }, { lon: 2 })).toBe('7');
+        expect(underlagVarde(SEKTOR, { sektor: '' })).toBeNull();
+        expect(underlagVarde(SEKTOR, {})).toBeNull();
+        expect(underlagDimension(und(), 'sektor')).toBe(SEKTOR);
+        expect(underlagDimension(und(), 'bas')).toBeNull();
+    });
+    it('underlagVarden: bara värden vars grupp klarar regeln går att välja, i ordning; de andra räknas', () => {
+        expect(underlagVarden(und(), SEKTOR)).toEqual({ varden: ['Bara kv', 'Mellan', 'Stor'], utelamnade: 1 });
+        expect(underlagVarden(und(), { ...SEKTOR, ordning: (a, b) => b.localeCompare(a) }).varden).toEqual(['Stor', 'Mellan', 'Bara kv']);
+        expect(underlagVarden(und({ k: 7 }), SEKTOR).varden).toEqual(['Bara kv', 'Stor']);
+    });
+    it('underlagProva: urvalet och resten prövas båda, för vartdera könet', () => {
+        // Hela underlaget: inget val.
+        expect(underlagProva(und(), new Map()).ok).toBe(true);
+        expect(underlagProva(und(), new Map()).valda).toBe(rader);
+        // Bara Stor: urvalet 20/20, resten 16/13 — godtas.
+        const stor = underlagProva(und(), bort('sektor', 'Mellan', 'Bara kv'));
+        expect(stor.ok).toBe(true);
+        expect(stor.valda.every(r => r.sektor === 'Stor')).toBe(true);
+        expect(stor.antal).toEqual({ urval: { kv: 20, ma: 20 }, rest: { kv: 16, ma: 13 } });
+        // Liten går inte att välja: den ingår aldrig i ett val, bara i hela underlaget.
+        expect(underlagProva(und(), bort('sektor', 'Stor')).valda.some(r => r.sektor === 'Liten')).toBe(false);
+        // Resten precis under och precis på regeln. Urvalet är bara Stor; resten är Bara kv (6 kvinnor, 0 män) och Liten,
+        // som inte går att välja och därför alltid hamnar i resten. Med 4 män i Liten har resten 4 män: under k = 5.
+        const resten = man => und({ rader: [...personer('Stor', 20, 20), ...personer('Bara kv', 6, 0), ...personer('Liten', 2, man)] });
+        const baraStor = bort('sektor', 'Bara kv');
+        expect(underlagProva(resten(4), baraStor).antal.rest).toEqual({ kv: 8, ma: 4 });
+        expect(underlagProva(resten(4), baraStor).ok).toBe(false);
+        expect(underlagProva(resten(5), baraStor).ok).toBe(true);
+        // Urvalet är en förening av valbara värden, som var för sig klarar regeln: det kan bara bli för litet med en annan
+        // indelning, och regeln prövar det ändå (underlagSkyddat ovan).
+        // Ett tomt val har noll personer, och resten är hela underlaget: godtas.
+        const tomt = underlagProva(und(), bort('sektor', 'Stor', 'Mellan', 'Bara kv'));
+        expect(tomt.valda).toEqual([]);
+        expect(tomt.ok).toBe(true);
+    });
+    it('underlagValet: den första dimensionen med ett bortvalt valbart värde; ett bortvalt värde som inte går att välja räknas inte', () => {
+        const ALDER = { falt: 'alder', namn: 'Åldersgrupp', varde: r => (r.lon % 2 ? 'Udda' : 'Jämn') };
+        const u = und({ dimensioner: [SEKTOR, ALDER] });
+        expect(underlagValet(u, bort('sektor', 'Liten'))).toBeNull();
+        const v = underlagValet(u, new Map([['sektor', new Set()], ['alder', new Set(['Udda'])]]));
+        expect(v.dim).toBe(ALDER);
+        expect(v.valda).toEqual(['Jämn']);
+        expect(underlagValet(u, null)).toBeNull();
+    });
+    it('underlagBeskrivning och namnIMening', () => {
+        expect(underlagBeskrivning(und(), new Map())).toBe('');
+        expect(underlagBeskrivning(und(), bort('sektor', 'Mellan', 'Bara kv'))).toBe('sektor Stor');
+        expect(underlagBeskrivning(und(), bort('sektor', 'Stor'))).toBe('sektor Bara kv, Mellan');
+        expect(underlagBeskrivning(und(), bort('sektor', 'Stor', 'Mellan', 'Bara kv'))).toBe('sektor: inga');
+        const många = Array.from({ length: 6 }, (_, i) => personer(`S${i}`, 5, 5)).flat();
+        expect(underlagBeskrivning(und({ rader: många }), bort('sektor', 'S0', 'S1'))).toBe('sektor 4 av 6');
+        expect(namnIMening('Åldersgrupp')).toBe('åldersgrupp');
+        expect(namnIMening('BAS-intervall')).toBe('BAS-intervall');
+        expect(namnIMening('AID')).toBe('AID');
+    });
+    it('valideraFigur: underlaget kräver dimensioner, rader, rita och k', () => {
+        const f = (u) => () => valideraFigur({ ...bas(), underlag: u }, 'u');
+        expect(f(und())).not.toThrow();
+        expect(f('ja')).toThrow(/underlag måste vara/);
+        expect(f(und({ dimensioner: [] }))).toThrow(/dimensioner måste vara en lista/);
+        expect(f(und({ rader: null }))).toThrow(/rader måste vara en lista/);
+        expect(f(und({ rita: 1 }))).toThrow(/rita måste vara en funktion/);
+        expect(f(und({ k: 0 }))).toThrow(/k måste vara ett heltal/);
+        expect(f(und({ kon: 'x' }))).toThrow(/kon måste vara en funktion/);
+        expect(f(und({ dimensioner: [{ typ: 'intervall', falt: 'n', namn: 'N' }] }))).toThrow(/bara kategorier/);
+        expect(f(und({ dimensioner: [{ falt: '', namn: 'N' }] }))).toThrow(/falt och namn/);
+        expect(f(und({ dimensioner: [{ ...SEKTOR, varde: 'x' }] }))).toThrow(/varde måste vara en funktion/);
+        expect(f(und({ dimensioner: [SEKTOR, SEKTOR] }))).toThrow(/förekommer två gånger/);
+        expect(f(und({ dimensioner: [{ ...SEKTOR, visning: 'knappar' }] }))).toThrow(/visning/);
+    });
+});
+

@@ -918,3 +918,228 @@ describe('härledda lager', () => {
         expect(['_rfVisadFigur', '_rfHarlett', '_rfRitadVisad'].some(k => k in el)).toBe(false);
     });
 });
+
+// ---- Diagramfilter v3: underlaget (figur.underlag) — diagrammet räknat för en del av personerna ----
+describe('underlag: Räkna för', () => {
+    // Personer i fyra sektorer. Stor, Mellan och Bara kv går att välja vid k = 5; Liten (2 kvinnor, 5 män) gör det
+    // inte och hamnar därför alltid i resten. Åldersgruppen är Udda eller Jämn efter lönen.
+    const personer = (sektor, kv, ma, lon) => [...Array.from({ length: kv }, (_, i) => ({ sektor, kon: 'kvinna', lon: lon + i })),
+                                               ...Array.from({ length: ma }, (_, i) => ({ sektor, kon: 'man', lon: lon + 500 + i }))];
+    const RADER = [...personer('Stor', 20, 20, 30000), ...personer('Mellan', 6, 6, 40000), ...personer('Bara kv', 6, 0, 50000), ...personer('Liten', 2, 5, 60000)];
+    const SEKTOR = { typ: 'kategori', falt: 'sektor', namn: 'Sektor' };
+    const ALDER = { typ: 'kategori', falt: 'aldersgrupp', namn: 'Åldersgrupp', varde: r => (r.lon % 2 ? 'Udda' : 'Jämn') };
+    // Figuren: antalet kvinnor och män som staplar, räknad ur raderna (vyns "beräkning"). rita räknar anropen.
+    let anrop = [];
+    const figurFor = (rader, text = 'hela') => ({ beskrivning: `Antal per kön, ${text}`, x: { skala: 'band', ordning: ['Kvinna', 'Man'] }, y: { skala: 'linjar', titel: 'Antal' },
+        lager: [{ marke: 'stapel', serie: 'Antal', farg: '#2563eb', data: [['Kvinna', 'kvinna'], ['Man', 'man']]
+            .map(([x, k]) => ({ x, y: rader.filter(r => r.kon === k).length })).filter(d => d.y > 0) }] });
+    const underlagFigur = (over = {}) => ({ ...figurFor(RADER), underlag: { dimensioner: [SEKTOR, ALDER], rader: RADER, k: 5,
+        rita: (rader, { beskrivning }) => { anrop.push({ n: rader.length, beskrivning }); return figurFor(rader, beskrivning); }, ...over } });
+    const urad = (el, falt = 'sektor') => el.parentElement.querySelector(`.diagram-urval[data-underlag="${falt}"]`);
+    const uknapp = (el, v, falt = 'sektor') => [...urad(el, falt).querySelectorAll('[data-urval]')].find(b => b.getAttribute('data-urval') === v);
+    const staplar = el => [...el.querySelectorAll(':scope > svg rect[data-marke="stapel"]')].length;
+    const etiketter = el => xEt(el);
+    const raknaAlla = el => el.parentElement.querySelector('[data-underlag-alla]');
+
+    it('raden Räkna för står först, med en knapp per valbart värde; ett värde med för få kvinnor eller män går inte att välja', () => {
+        w.eval('_rfUrvalGlom()');
+        anrop = [];
+        const el = behallare();
+        ritaI(el, underlagFigur());
+        const r = urad(el);
+        expect(r).not.toBeNull();
+        expect(r.getAttribute('role')).toBe('group');
+        expect(r.getAttribute('aria-label')).toBe('Räkna för sektor');
+        expect(r.getAttribute('data-urval-falt')).toBe('underlag:sektor');
+        expect(r.querySelector('.diagram-urval-namn').textContent).toBe('Räkna för sektor');
+        expect([...r.querySelectorAll('[data-urval]')].map(b => b.textContent)).toEqual(['Bara kv', 'Mellan', 'Stor']);
+        expect([...r.querySelectorAll('[data-urval]')].every(b => b.getAttribute('aria-pressed') === 'true')).toBe(true);
+        expect(r.querySelector('[data-underlag-utelamnade]').textContent).toBe('1 till går inte att välja för sig: färre än 5 kvinnor eller män');
+        expect(r.textContent).not.toContain('Liten');
+        // Raderna i ordning: sektorn, åldersgruppen, sedan behållaren; Räkna för alla sist i den sista underlagsraden, dold.
+        expect(el.previousElementSibling).toBe(urad(el, 'aldersgrupp'));
+        expect(urad(el, 'aldersgrupp').previousElementSibling).toBe(r);
+        expect(raknaAlla(el).hidden).toBe(true);
+        expect(urad(el, 'aldersgrupp').lastElementChild).toBe(raknaAlla(el));
+        expect(anrop).toEqual([]);   // utan val ritas vyns egen figur
+        expect(not(el)).toBeNull();
+        rensa(el);
+        expect(urad(el)).toBeNull();
+    });
+    it('ett val räknar om diagrammet med vyns rita för de valda personerna, och noten säger vad det är räknat för', () => {
+        w.eval('_rfUrvalGlom()');
+        anrop = [];
+        const el = behallare();
+        ritaI(el, underlagFigur());
+        klicka(uknapp(el, 'Bara kv'));
+        klicka(uknapp(el, 'Mellan'));   // bara Stor: urvalet 20/20, resten 14 kvinnor och 11 män
+        expect(anrop.at(-1)).toEqual({ n: 40, beskrivning: 'sektor Stor' });
+        expect(el._rfUnderlagFigur.beskrivning).toBe('Antal per kön, sektor Stor');
+        expect(el.querySelector(':scope > svg').getAttribute('aria-label')).toBe('Antal per kön, sektor Stor');
+        expect(not(el).textContent).toBe('Diagrammet är räknat för: sektor Stor (40 personer). Talen i texten och tabellerna gäller hela underlaget.');
+        expect(raknaAlla(el).hidden).toBe(false);
+        expect(uknapp(el, 'Stor').getAttribute('aria-pressed')).toBe('true');
+        expect(uknapp(el, 'Stor').getAttribute('aria-disabled')).toBe('true');   // den sista valda knappen
+        // Originalet är orört; uppslagen går mot den ritade figuren.
+        expect(el._figur.lager[0].data.map(d => d.y)).toEqual([34, 31]);
+        w.__el = el;
+        expect(w.eval('_rfVisad(window.__el).lager[0].data.map(d => d.y)')).toEqual([20, 20]);
+        // Räkna för alla: hela underlaget igen, noten borta och minnet glömt.
+        klicka(raknaAlla(el));
+        expect(el._rfUnderlagFigur).toBeUndefined();
+        expect(not(el)).toBeNull();
+        expect(raknaAlla(el).hidden).toBe(true);
+        ritaI(el, underlagFigur());
+        expect(el._rfUnderlagText).toBeUndefined();
+        rensa(el);
+    });
+    it('skyddsregeln: ett val där resten får för få kvinnor eller män görs inte, valet markeras och noten säger varför', () => {
+        w.eval('_rfUrvalGlom()');
+        anrop = [];
+        const el = behallare();
+        // Liten har 2 kvinnor och 3 män; med Bara kv (6 kvinnor, inga män) i resten blir resten 8 kvinnor och 3 män.
+        const rader = [...personer('Stor', 20, 20, 30000), ...personer('Bara kv', 6, 0, 50000), ...personer('Liten', 2, 3, 60000)];
+        ritaI(el, underlagFigur({ rader }));
+        const fore = el.innerHTML;
+        klicka(uknapp(el, 'Bara kv'));
+        expect(anrop).toEqual([]);
+        expect(el.innerHTML).toBe(fore);
+        expect(el._rfUnderlagText).toBeUndefined();
+        expect(uknapp(el, 'Bara kv').getAttribute('aria-pressed')).toBe('true');
+        expect(uknapp(el, 'Bara kv').getAttribute('aria-invalid')).toBe('true');
+        expect(not(el).textContent).toBe('Urvalet eller resten har färre än 5 kvinnor eller män. Valet är inte gjort, och diagrammet är oförändrat.');
+        // Precis över regeln: med 5 män i Liten godtas samma val.
+        const over = [...personer('Stor', 20, 20, 30000), ...personer('Bara kv', 6, 0, 50000), ...personer('Liten', 2, 5, 60000)];
+        ritaI(el, underlagFigur({ rader: over }));
+        klicka(uknapp(el, 'Bara kv'));
+        expect(anrop.at(-1)).toEqual({ n: 40, beskrivning: 'sektor Stor' });
+        expect(uknapp(el, 'Bara kv').hasAttribute('aria-invalid')).toBe(false);
+        expect(not(el).textContent).toMatch(/^Diagrammet är räknat för: sektor Stor \(40 personer\)\./);
+        rensa(el);
+    });
+    it('en dimension i taget: ett val i åldersgruppen tar bort valet i sektorn, och noten säger det', () => {
+        w.eval('_rfUrvalGlom()');
+        anrop = [];
+        const el = behallare();
+        ritaI(el, underlagFigur());
+        klicka(uknapp(el, 'Bara kv'));
+        expect(el._rfUnderlagText).toMatch(/^sektor Mellan, Stor/);
+        klicka(uknapp(el, 'Udda', 'aldersgrupp'));
+        expect(el._rfUnderlagText).toMatch(/^åldersgrupp Jämn \(\d+ personer\)$/);
+        expect(uknapp(el, 'Bara kv').getAttribute('aria-pressed')).toBe('true');
+        expect(not(el).textContent).toContain('Valet för sektor togs bort: diagrammet räknas för en sak i taget.');
+        // Minnet har bara åldersgruppen.
+        ritaI(el, underlagFigur());
+        expect(el._rfUnderlagText).toMatch(/^åldersgrupp Jämn/);
+        expect(not(el).textContent).not.toContain('togs bort');
+        rensa(el);
+    });
+    it('minnet: valet överlever rensaFigur och en ny figur; ett minne som inte klarar regeln längre gäller inte; _rfUrvalGlom glömmer', () => {
+        w.eval('_rfUrvalGlom()');
+        const el = behallare();
+        ritaI(el, underlagFigur());
+        klicka(uknapp(el, 'Bara kv'));
+        rensa(el);
+        ritaI(el, underlagFigur());
+        expect(el._rfUnderlagText).toBe('sektor Mellan, Stor (52 personer)');
+        expect(uknapp(el, 'Bara kv').getAttribute('aria-pressed')).toBe('false');
+        // Ny fil: Liten har nu 3 män och Bara kv har inga — samma val ger en rest med för få män.
+        const rader = [...personer('Stor', 20, 20, 30000), ...personer('Mellan', 6, 6, 40000), ...personer('Bara kv', 6, 0, 50000), ...personer('Liten', 0, 3, 60000)];
+        ritaI(el, underlagFigur({ rader }));
+        expect(el._rfUnderlagText).toBeUndefined();
+        expect(not(el).textContent).toBe('Urvalet eller resten har färre än 5 kvinnor eller män. Det tidigare valet för sektor gäller inte, och diagrammet visar hela underlaget.');
+        ritaI(el, underlagFigur());
+        expect(el._rfUnderlagText).toBe('sektor Mellan, Stor (52 personer)');   // minnet står kvar för när valet går igen
+        w.eval('_rfUrvalGlom()');
+        ritaI(el, underlagFigur());
+        expect(el._rfUnderlagText).toBeUndefined();
+        rensa(el);
+    });
+    it('rita som ger en text: texten står i diagrammet, raderna och noten står kvar, och exportmenyn har inget att exportera', async () => {
+        w.eval('_rfUrvalGlom()');
+        const el = behallare();
+        ritaI(el, underlagFigur({ rita: () => 'Ett kön har färre än 5 personer i urvalet.' }));
+        klicka(uknapp(el, 'Stor'));
+        expect(el.textContent).toBe('Ett kön har färre än 5 personer i urvalet.');
+        expect(el.querySelector('[data-rf="tom"]')).not.toBeNull();
+        expect(urad(el)).not.toBeNull();
+        expect(not(el).textContent).toMatch(/^Diagrammet är räknat för: sektor Bara kv, Mellan \(18 personer\)/);
+        w.__el = el;
+        await expect(w.eval('chartExportRun(window.__el, "svg")')).rejects.toThrow(/inget att exportera/);
+        expect(w.eval('chartExportRows(window.__el)')).toEqual([]);
+        // Rapportens bild (hela underlaget) går fortfarande.
+        expect(w.eval('diagramRitat(window.__el)')).toBe(true);
+        rensa(el);
+    });
+    it('exporten: exportmenyns bild och diagramdata följer underlaget och säger det; diagramTillBild ritar hela underlaget', async () => {
+        w.eval('_rfUrvalGlom()');
+        const el = behallare();
+        const f = underlagFigur();
+        ritaI(el, f, { exportAnteckning: 'Andel kvinnor 52 %' });
+        w.__el = el;
+        const hel = w.eval('chartExportRows(window.__el)');
+        klicka(uknapp(el, 'Bara kv'));
+        klicka(uknapp(el, 'Mellan'));
+        const rader = w.eval('chartExportRows(window.__el)');
+        expect(rader[1]).toEqual(['Räknat för: sektor Stor (40 personer)']);
+        expect(rader.slice(2).filter(r => r[0] === 'Antal').map(r => r[2])).toEqual([20, 20]);
+        expect(hel.slice(1).filter(r => r[0] === 'Antal').map(r => r[2])).toEqual([34, 31]);
+        const org = w.figurTillBild, sedda = [];
+        w.figurTillBild = (figur, format, b, h, val) => { sedda.push({ figur, val }); return Promise.resolve('data:image/png;base64,AAAA'); };
+        try {
+            await w.eval('chartExportRun(window.__el, "svg")');
+            await w.eval('diagramTillBild(window.__el, { bredd: 1600, hojd: 900 })');
+        } finally { w.figurTillBild = org; }
+        const [meny, rapport] = sedda;
+        expect(meny.figur).toBe(el._rfUnderlagFigur);
+        expect(meny.val.fot).toMatch(/^Lönekartläggning \d{4}-\d{2}-\d{2} · Räknat för: sektor Stor \(40 personer\)$/);   // utan vyns anteckning
+        expect(rapport.figur).toBe(f);
+        expect(rapport.val.fot).toMatch(/^Andel kvinnor 52 % · Lönekartläggning \d{4}-\d{2}-\d{2}$/);
+        expect(w.figurTillSvg(rapport.figur, 1600, 900, rapport.val)).toBe(w.figurTillSvg(figurFor(RADER), 1600, 900, rapport.val));
+        rensa(el);
+    });
+    it('kopian i Alla diagram har sitt eget underlag: valet där ändrar inte källan, och tvärtom', () => {
+        w.eval('_rfUrvalGlom()');
+        const kalla = behallare('t-underlag'), kopia = behallare('ut-diagram-t-underlag');
+        ritaI(kalla, underlagFigur());
+        w.__k = kalla; w.__kop = kopia;
+        w.eval('ritaFigur(window.__kop, window.__k._figur, { ...window.__k._figurVal })');
+        klicka(uknapp(kopia, 'Bara kv'));
+        expect(kopia._rfUnderlagText).toBe('sektor Mellan, Stor (52 personer)');
+        expect(kalla._rfUnderlagText).toBeUndefined();
+        expect(etiketter(kalla)).toEqual(['Kvinna', 'Man']);
+        klicka(uknapp(kalla, 'Stor'));
+        expect(kalla._rfUnderlagText).toBe('sektor Bara kv, Mellan (18 personer)');
+        expect(kopia._rfUnderlagText).toBe('sektor Mellan, Stor (52 personer)');
+        rensa(kalla); rensa(kopia);
+        kalla.parentElement.remove(); kopia.parentElement.remove();
+    });
+    it('en lista: kryssrutorna, Avmarkera alla (inga personer) och summeringen', () => {
+        w.eval('_rfUrvalGlom()');
+        const el = behallare();
+        ritaI(el, underlagFigur({ dimensioner: [{ ...SEKTOR, visning: 'lista' }] }));
+        const r = urad(el);
+        expect(r.querySelector('[data-urval-summering]').textContent).toBe('Räkna för sektor: alla 3');
+        const ruta = r.querySelector('input[data-urval="Mellan"]');
+        ruta.checked = false; ruta.dispatchEvent(new w.Event('change', { bubbles: true }));
+        expect(r.querySelector('[data-urval-summering]').textContent).toBe('Räkna för sektor: 2 av 3');
+        expect(el._rfUnderlagText).toBe('sektor Bara kv, Stor (46 personer)');
+        r.querySelector('[data-urval-markera="inga"]').click();
+        expect(el.textContent).toBe('Inga personer i urvalet');
+        expect(not(el).textContent).toMatch(/^Diagrammet är räknat för: sektor: inga \(0 personer\)/);
+        expect(staplar(el)).toBe(0);
+        rensa(el);
+    });
+    it('rensaFigur tar bort underlagets egenskaper; minnet står kvar', () => {
+        w.eval('_rfUrvalGlom()');
+        const el = behallare();
+        ritaI(el, underlagFigur());
+        klicka(uknapp(el, 'Bara kv'));
+        expect(['_rfUnderlagFigur', '_rfUnderlagText', '_rfUnderlagFilter', '_rfUnderlagDim'].every(k => k in el)).toBe(true);
+        rensa(el);
+        expect(Object.keys(el).some(k => k.startsWith('_rfUnderlag'))).toBe(false);
+        ritaI(el, underlagFigur());
+        expect(el._rfUnderlagText).toBe('sektor Mellan, Stor (52 personer)');
+        rensa(el);
+    });
+});

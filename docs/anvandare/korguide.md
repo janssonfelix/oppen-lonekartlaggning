@@ -469,6 +469,22 @@ export (PNG och SVG) visar urvalet och säger i fotraden vad som är dolt. Valet
 ny lönefil, läser in demot eller rensar all data. Det sparas inte i konfigurationsfilen. Diagram där en punkt eller
 stapel samlar flera BAS-intervall, till exempel kandidatparen i Likvärdigt arbete, har inga sådana knappar.
 
+**Räkna ett diagram för en del av underlaget.** Några diagram som sammanfattar många personer kan räknas om för en
+del av dem: lådorna och histogrammet för kvinnors och mäns lön i Ålder & karriär (för en sektor eller en åldersgrupp),
+löneskillnaden per åldersgrupp (för en sektor eller en yrkesgrupp) och percentilerna och kvartilerna i Lönestruktur
+(för en sektor eller ett BAS-intervall). Raden **Räkna för** står ovanför diagrammet. Välj till exempel en sektor, så
+räknas diagrammet om för personerna där, och under diagrammet står "Diagrammet är räknat för: sektor Vård (60
+personer)". **Räkna för alla** går tillbaka till hela underlaget. Diagrammet räknas för en sak i taget: väljer du en
+åldersgrupp tas valet av sektor bort.
+
+Det finns en skyddsregel. Både det du väljer och resten av underlaget måste ha antingen inga eller minst så många
+kvinnor och män som minsta gruppstorlek. Annars skulle två bilder, en för alla och en för valet, kunna avslöja en liten
+grupp. En sektor eller åldersgrupp som själv är för liten går inte att välja; raden säger hur många sådana det finns.
+Ett val som bryter regeln görs inte, och under diagrammet står varför. Vid exporten gäller den inställda minsta
+gruppstorleken, så ett val som går att göra på skärmen kan släppas där. Diagrammets egen export (PNG, SVG och
+diagramdata) visar valet och säger det i fotraden. Texten, tabellerna, rapporten, utskriften, ZIP-filen och
+rapportunderlaget visar alltid hela underlaget.
+
 **Egna tabeller i rapporten.** Ovanför tabellen i Tabeller och egna vyer finns **Lägg till i rapporten**. Ge vyn
 ett namn och lägg till den. Då står den som en egen tabell i avsnittet *Egna tabeller* i
 Word-utkastet och PDF-rapporten och i bladet *Egna tabeller* i Excel-filen. Den står också som block under

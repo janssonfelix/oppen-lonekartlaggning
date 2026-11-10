@@ -540,6 +540,161 @@ export function harlettNot(h) {
     };
 }
 
+// ---- Underlag: diagrammet räknat för en del av personerna (figur.underlag) ----
+// `figur.underlag = { dimensioner, rader, rita, k, kon? }`. `rader` är personerna i hela det underlag vyn redan ritar,
+// `dimensioner` kategorier att räkna för ({ falt, namn, varde?, etikett?, visning?, ordning? }; `varde(rad)` ger radens
+// värde, annars `rad[falt]`), `rita(valda, { beskrivning })` vyns egen beräkning för de valda raderna (en figur, eller
+// en text när den inte går att rita), `k` tröskeln och `kon(rad)` 'kv', 'ma' eller null (annars fältet `kon` som i
+// resten av verktyget).
+//
+// Skyddsregeln mot differensröjande: ett val godtas bara när både urvalet och resten (underlaget utom urvalet) har noll
+// eller minst k personer av vartdera könet. Två till: ett värde vars egen grupp inte klarar regeln går inte att välja
+// (det ingår bara i hela underlaget), och underlaget räknas för en dimension i taget. Då är skillnaden mellan två val
+// alltid en förening av valbara värden — själva skyddade — och "alla" minus ett val är resten, som regeln prövar.
+
+// Radens kön som 'kv' eller 'ma' (samma regel som konOf i falt.js), eller null.
+function _underlagKon(underlag, r) {
+    if (underlag && typeof underlag.kon === 'function') { const k = underlag.kon(r); return k === 'kv' || k === 'ma' ? k : null; }
+    const k = r && r.kon;
+    if (typeof k === 'string' && k.includes('kvinna')) return 'kv';
+    return k === 'man' || k === 'män' ? 'ma' : null;
+}
+
+/**
+ * Antalet kvinnor och män bland raderna.
+ * @param {any} underlag @param {any[]} rader @returns {{kv: number, ma: number}}
+ */
+export function underlagKonAntal(underlag, rader) {
+    const ut = { kv: 0, ma: 0 };
+    for (const r of rader || []) { const k = _underlagKon(underlag, r); if (k) ut[k]++; }
+    return ut;
+}
+
+/** Sant när vartdera könet har noll eller minst k personer. @param {{kv: number, ma: number}} antal @param {number} k */
+export function underlagSkyddat(antal, k) {
+    return [antal.kv, antal.ma].every(n => n === 0 || n >= k);
+}
+
+/**
+ * Radens värde i dimensionen som sträng (`dim.varde(rad)`, annars `rad[dim.falt]`), eller null när det saknas.
+ * @param {any} dim @param {any} rad @returns {string|null}
+ */
+export function underlagVarde(dim, rad) {
+    const v = dim && typeof dim.varde === 'function' ? dim.varde(rad) : rad && dim ? rad[dim.falt] : null;
+    return v == null || v === '' ? null : String(v);
+}
+
+/**
+ * Dimensionen `falt` i figurens underlag, eller null.
+ * @param {any} underlag @param {string} falt
+ */
+export function underlagDimension(underlag, falt) {
+    const dims = underlag && Array.isArray(underlag.dimensioner) ? underlag.dimensioner : [];
+    return dims.find(u => u && u.falt === falt) || null;
+}
+
+/**
+ * Värdena som går att välja i dimensionen: de vars grupp (raderna med värdet) klarar skyddsregeln, i dimensionens
+ * `ordning` (en jämförelsefunktion) eller svensk sorteringsordning. `utelamnade` är antalet värden som inte går att
+ * välja; de ingår bara i hela underlaget.
+ * @param {any} underlag @param {any} dim
+ * @returns {{varden: string[], utelamnade: number}}
+ */
+export function underlagVarden(underlag, dim) {
+    const grupper = new Map();
+    for (const r of (underlag && underlag.rader) || []) {
+        const v = underlagVarde(dim, r);
+        if (v == null) continue;
+        if (!grupper.has(v)) grupper.set(v, { kv: 0, ma: 0 });
+        const k = _underlagKon(underlag, r);
+        if (k) grupper.get(v)[k]++;
+    }
+    const varden = [];
+    let utelamnade = 0;
+    for (const [v, antal] of grupper) {
+        if (antal.kv + antal.ma > 0 && underlagSkyddat(antal, underlag.k)) varden.push(v); else utelamnade++;
+    }
+    varden.sort(typeof dim.ordning === 'function' ? dim.ordning : (a, b) => a.localeCompare(b, 'sv', { numeric: true }));
+    return { varden, utelamnade };
+}
+
+/**
+ * Valet som gäller i ett filter (Map<falt, Set<bortvalda värden>>): den första dimensionen med ett bortvalt värde
+ * som går att välja, som { dim, varden, valda } (valda: de valbara värden som inte är bortvalda), eller null när
+ * underlaget är helt.
+ * @param {any} underlag @param {Map<string, Set<string>>|null|undefined} filter
+ */
+export function underlagValet(underlag, filter) {
+    if (!filter || typeof filter.get !== 'function') return null;
+    for (const dim of (underlag && underlag.dimensioner) || []) {
+        const bort = filter.get(dim.falt);
+        if (!bort || !bort.size) continue;
+        const { varden } = underlagVarden(underlag, dim);
+        if (!varden.some(v => bort.has(v))) continue;
+        return { dim, varden, valda: varden.filter(v => !bort.has(v)) };
+    }
+    return null;
+}
+
+/**
+ * Prövar ett val mot skyddsregeln. `valda` är raderna i urvalet (de med ett valt värde i den valda dimensionen; hela
+ * underlaget när inget är valt), `antal` könen i urvalet och resten, `ok` om båda klarar regeln.
+ * @param {any} underlag @param {Map<string, Set<string>>|null|undefined} filter
+ * @returns {{ok: boolean, valet: any, valda: any[], antal: {urval: {kv: number, ma: number}, rest: {kv: number, ma: number}}}}
+ */
+export function underlagProva(underlag, filter) {
+    const rader = (underlag && underlag.rader) || [];
+    const valet = underlagValet(underlag, filter);
+    const valbara = valet ? new Set(valet.valda) : null;
+    const valda = valet && valbara ? rader.filter(r => { const v = underlagVarde(valet.dim, r); return v != null && valbara.has(v); }) : rader;
+    const alla = underlagKonAntal(underlag, rader), urval = underlagKonAntal(underlag, valda);
+    const rest = { kv: alla.kv - urval.kv, ma: alla.ma - urval.ma };
+    return { ok: !valet || (underlagSkyddat(urval, underlag.k) && underlagSkyddat(rest, underlag.k)), valet, valda, antal: { urval, rest } };
+}
+
+/** Dimensionens namn mitt i en mening: liten första bokstav, utom när namnet börjar med en förkortning ('BAS-intervall'). @param {string} namn */
+export function namnIMening(namn) {
+    const s = String(namn || '');
+    return s.length > 1 && s[1] === s[1].toLocaleLowerCase('sv') ? s[0].toLocaleLowerCase('sv') + s.slice(1) : s;
+}
+
+/**
+ * Valet som text, t.ex. 'sektor Vård och omsorg' eller 'yrkesgrupp 5 av 40' (fler än tre valda), eller '' när
+ * underlaget är helt.
+ * @param {any} underlag @param {Map<string, Set<string>>|null|undefined} filter
+ */
+export function underlagBeskrivning(underlag, filter) {
+    const valet = underlagValet(underlag, filter);
+    if (!valet) return '';
+    const namn = namnIMening(valet.dim.namn);
+    if (!valet.valda.length) return `${namn}: inga`;
+    return valet.valda.length <= 3 ? `${namn} ${valet.valda.join(', ')}` : `${namn} ${valet.valda.length} av ${valet.varden.length}`;
+}
+
+// Prövar figur.underlag (valideraFigur).
+function _provaUnderlag(figur, fel) {
+    const u = figur.underlag, vem = 'underlag';
+    if (!u || typeof u !== 'object') fel(`${vem} måste vara { dimensioner, rader, rita, k, kon? }`);
+    if (!Array.isArray(u.dimensioner) || !u.dimensioner.length) fel(`${vem}.dimensioner måste vara en lista med minst en dimension`);
+    if (!Array.isArray(u.rader)) fel(`${vem}.rader måste vara en lista`);
+    if (typeof u.rita !== 'function') fel(`${vem}.rita måste vara en funktion`);
+    if (!(typeof u.k === 'number' && Number.isInteger(u.k) && u.k >= 1)) fel(`${vem}.k måste vara ett heltal ≥ 1`);
+    if (u.kon != null && typeof u.kon !== 'function') fel(`${vem}.kon måste vara en funktion`);
+    const text = v => typeof v === 'string' && v.trim() !== '';
+    const sedda = new Set();
+    u.dimensioner.forEach((d, i) => {
+        const v = `${vem}.dimensioner ${i}`;
+        if (!d || typeof d !== 'object') fel(`${v}: måste vara { falt, namn, varde?, etikett?, visning?, ordning? }`);
+        if (d.typ != null && d.typ !== 'kategori') fel(`${v}: bara kategorier går att räkna för`);
+        if (!text(d.falt) || !text(d.namn)) fel(`${v}: falt och namn måste vara icke-tomma strängar`);
+        for (const f of ['varde', 'ordning']) if (d[f] != null && typeof d[f] !== 'function') fel(`${v}: ${f} måste vara en funktion`);
+        if (d.etikett != null && typeof d.etikett !== 'string') fel(`${v}: etikett måste vara en sträng`);
+        if (d.visning != null && d.visning !== 'lista') fel(`${v}: visning måste vara "lista"`);
+        if (sedda.has(d.falt)) fel(`${v}: fältet "${d.falt}" förekommer två gånger`);
+        sedda.add(d.falt);
+    });
+}
+
 // Färgskalans domän: ett objekt med `doman` = två ändliga tal.
 function _fargdomanOk(fs) {
     return !!fs && typeof fs === 'object' && Array.isArray(fs.doman) && fs.doman.length === 2
@@ -626,6 +781,8 @@ export function valideraFigur(figur, id = 'diagram') {
             sedda.add(u.falt);
         });
     }
+    // underlag: diagrammet kan räknas om för en del av personerna (underlagProva m.fl. ovan).
+    if (figur.underlag != null) _provaUnderlag(figur, fel);
     const paneler = Array.isArray(figur.paneler) ? figur.paneler : [];
     figur.lager.forEach((l, i) => {
         if (!l || !MARKEN.includes(l.marke)) fel(`lager ${i}: okänt märke "${l && l.marke}"`);
