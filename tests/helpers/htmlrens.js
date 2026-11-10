@@ -9,11 +9,11 @@ export function utanHtmlKommentarer(html) {
 }
 
 /**
- * HTML utan skriptblock (taggnamnet i valfri skiftläge, sluttaggen med eller utan blanksteg). Utan `medAttribut`
+ * HTML utan skriptblock (taggnamnet i valfri skiftläge, sluttaggen med eller utan blanksteg och attribut). Utan `medAttribut`
  * tas bara <script> utan attribut bort: ett skriptelement med attribut står kvar, så att vakten ser attributen.
  */
 export function utanSkript(html, { medAttribut = false } = {}) {
-    const block = medAttribut ? /<script\b[^>]*>[\s\S]*?<\/script\s*>/gi : /<script>[\s\S]*?<\/script\s*>/gi;
+    const block = medAttribut ? /<script\b[^>]*>[\s\S]*?<\/script\b[^>]*>/gi : /<script>[\s\S]*?<\/script\b[^>]*>/gi;
     let s = String(html), forra;
     do { forra = s; s = s.replace(block, ''); } while (s !== forra);
     return s;
