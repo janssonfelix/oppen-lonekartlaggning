@@ -138,6 +138,34 @@ describe('Handlingsplan: knappen Sakliga skäl och dialogen', () => {
         expect(ren(knapp(radMedSkillnad(w)).textContent)).toBe(`Sakliga skäl (1) · ${pct(belopp / skillnad * 100)} förklarat`);
         expect(knapp(radMedSkillnad(w)).getAttribute('aria-label')).toMatch(/: 1 skäl, .* förklarat$/);
     });
+    it('Lägg till skäl och Ta bort flyttar inte fokus i efterhand: en kommentar som skrivs direkt hamnar i fältet och sparas', async () => {
+        // Fokusfällan läggs om när dialogens innehåll byggs om. Den satte tidigare fokus på stängknappen en kort stund
+        // senare, så att text som skrevs strax efter Lägg till skäl gick förlorad (röktestet i Firefox under last).
+        const w = fonster();
+        const tr = radMedSkillnad(w);
+        const nyckel = knapp(tr).dataset.hpSkal;
+        const vanta = ms => new Promise(r => w.setTimeout(r, ms));
+        oppna(w, tr);
+        await vanta(120);   // fokusfällans första fokus när dialogen öppnas
+        w.document.getElementById('skal-lagg-till').click();
+        const r = skalRader(w).at(-1);
+        expect(w.document.activeElement).toBe(r.querySelector('select.skal-kategori'));
+        fyll(w, r.querySelector('input.skal-belopp'), '700');
+        const kommentar = r.querySelector('input.skal-kommentar');
+        kommentar.focus();
+        await vanta(120);
+        expect(w.document.activeElement).toBe(kommentar);
+        fyll(w, kommentar, 'Svårrekryterat i regionen');
+        modal(w).dispatchEvent(new w.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+        expect(w.__state.handlingsplan[nyckel].skal).toEqual([{ kategori: 'marknad', belopp: 700, kommentar: 'Svårrekryterat i regionen' }]);
+        // Ta bort: fokus står kvar på Lägg till skäl.
+        oppna(w, radMedSkillnad(w));
+        await vanta(120);
+        skalRader(w)[0].querySelector('[data-skal-ta-bort]').click();
+        expect(w.document.activeElement).toBe(w.document.getElementById('skal-lagg-till'));
+        await vanta(120);
+        expect(w.document.activeElement).toBe(w.document.getElementById('skal-lagg-till'));
+    });
     it('ett ogiltigt belopp lagras inte och fältet markeras; Ta bort tar bort skälet', () => {
         const w = fonster();
         const tr = radMedSkillnad(w);

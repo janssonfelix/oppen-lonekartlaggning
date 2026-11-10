@@ -164,8 +164,11 @@ const _focusTraps = new Map();
  * återställas vid stängning. WCAG 2.1 AA / 2.4.3 Focus Order.
  * @param {HTMLElement} modalEl - Modalens rotelement.
  * @param {Element|null} [openerEl] - Element att fokusera vid stängning (default: aktivt element).
+ * @param {{flyttaFokus?: boolean}} [val] - flyttaFokus: false när fällan läggs om i en dialog som redan är öppen.
+ *   Fokus står då kvar där det är; annars flyttas det till det första elementet en kort stund senare, och text som
+ *   användaren hunnit börja skriva i ett annat fält hamnar där i stället.
  */
-function trapFocus(modalEl, openerEl) {
+function trapFocus(modalEl, openerEl, { flyttaFokus = true } = {}) {
     if (!modalEl) return;
     const focusables = modalEl.querySelectorAll(
         'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"]), summary'
@@ -184,7 +187,7 @@ function trapFocus(modalEl, openerEl) {
     };
     modalEl.addEventListener('keydown', handler);
     _focusTraps.set(modalEl, { handler, opener: openerEl || document.activeElement });
-    setTimeout(() => /** @type {HTMLInputElement} */ (first).focus(), 50);
+    if (flyttaFokus) setTimeout(() => /** @type {HTMLInputElement} */ (first).focus(), 50);
 }
 /**
  * Lossar focus trap från modal och återställer fokus till opener-elementet.
@@ -31156,14 +31159,14 @@ function _skalRender() {
         + '<p id="skal-varning" class="handlingsplan-varning" role="status" hidden>En kommentar liknar ett personnummer eller en e-postadress, och texten följer med i exporterna. Skriv på gruppnivå i stället.</p>'
         + '<div id="skal-status"></div>';
     _skalUppdatera();
-    // Fokusfällan cachar de fokuserbara elementen: läggs om när innehållet byggs om medan dialogen är öppen.
+    // Fokusfällan cachar de fokuserbara elementen: läggs om när innehållet byggs om medan dialogen är öppen, utan att
+    // flytta fokus. Anroparen sätter fokus (det nya skälets kategori, Lägg till skäl); en fördröjd flytt till
+    // stängknappen tog annars text som användaren hunnit börja skriva i ett fält, och kommentaren sparades inte.
     const modal = document.getElementById('skal-modal');
     if (modal && modal.style.display === 'flex' && typeof _focusTraps !== 'undefined') {
         const trap = _focusTraps.get(modal), opener = trap ? trap.opener : null;
         if (trap) { modal.removeEventListener('keydown', trap.handler); _focusTraps.delete(modal); }
-        const aktiv = document.activeElement;
-        trapFocus(modal, opener);
-        if (aktiv && aktiv !== document.body && modal.contains(aktiv)) setTimeout(() => /** @type {HTMLElement} */ (aktiv).focus(), 60);
+        trapFocus(modal, opener, { flyttaFokus: false });
     }
 }
 
@@ -36680,13 +36683,13 @@ function renderBasdossier(bas) {
     const d = buildBasdossier(sel.value);
     body.innerHTML = d ? _bdRenderBody(d) : '<p class="f-dampad">BAS-intervallet kunde inte läsas.</p>';
     // Fokusfällan cachar de fokuserbara elementen; när innehållet byggs om medan dialogen är öppen läggs den om,
-    // med samma öppnare. Fokus står kvar där det var (väljaren), i stället för att hoppa till stängknappen.
+    // med samma öppnare och utan att flytta fokus. Fokus står kvar där det var (väljaren), i stället för att hoppa
+    // till stängknappen.
     const modal = document.getElementById('basdossier-modal');
     if (modal && modal.style.display === 'flex') {
-        const trap = _focusTraps.get(modal), opener = trap ? trap.opener : null, aktiv = document.activeElement;
+        const trap = _focusTraps.get(modal), opener = trap ? trap.opener : null;
         if (trap) { modal.removeEventListener('keydown', trap.handler); _focusTraps.delete(modal); }
-        trapFocus(modal, opener);
-        if (aktiv && aktiv !== document.body && modal.contains(aktiv)) setTimeout(() => /** @type {HTMLElement} */ (aktiv).focus(), 60);
+        trapFocus(modal, opener, { flyttaFokus: false });
     }
 }
 

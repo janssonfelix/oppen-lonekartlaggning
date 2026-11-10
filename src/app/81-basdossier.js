@@ -158,13 +158,13 @@ function renderBasdossier(bas) {
     const d = buildBasdossier(sel.value);
     body.innerHTML = d ? _bdRenderBody(d) : '<p class="f-dampad">BAS-intervallet kunde inte läsas.</p>';
     // Fokusfällan cachar de fokuserbara elementen; när innehållet byggs om medan dialogen är öppen läggs den om,
-    // med samma öppnare. Fokus står kvar där det var (väljaren), i stället för att hoppa till stängknappen.
+    // med samma öppnare och utan att flytta fokus. Fokus står kvar där det var (väljaren), i stället för att hoppa
+    // till stängknappen.
     const modal = document.getElementById('basdossier-modal');
     if (modal && modal.style.display === 'flex') {
-        const trap = _focusTraps.get(modal), opener = trap ? trap.opener : null, aktiv = document.activeElement;
+        const trap = _focusTraps.get(modal), opener = trap ? trap.opener : null;
         if (trap) { modal.removeEventListener('keydown', trap.handler); _focusTraps.delete(modal); }
-        trapFocus(modal, opener);
-        if (aktiv && aktiv !== document.body && modal.contains(aktiv)) setTimeout(() => /** @type {HTMLElement} */ (aktiv).focus(), 60);
+        trapFocus(modal, opener, { flyttaFokus: false });
     }
 }
 

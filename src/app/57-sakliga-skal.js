@@ -117,14 +117,14 @@ function _skalRender() {
         + '<p id="skal-varning" class="handlingsplan-varning" role="status" hidden>En kommentar liknar ett personnummer eller en e-postadress, och texten följer med i exporterna. Skriv på gruppnivå i stället.</p>'
         + '<div id="skal-status"></div>';
     _skalUppdatera();
-    // Fokusfällan cachar de fokuserbara elementen: läggs om när innehållet byggs om medan dialogen är öppen.
+    // Fokusfällan cachar de fokuserbara elementen: läggs om när innehållet byggs om medan dialogen är öppen, utan att
+    // flytta fokus. Anroparen sätter fokus (det nya skälets kategori, Lägg till skäl); en fördröjd flytt till
+    // stängknappen tog annars text som användaren hunnit börja skriva i ett fält, och kommentaren sparades inte.
     const modal = document.getElementById('skal-modal');
     if (modal && modal.style.display === 'flex' && typeof _focusTraps !== 'undefined') {
         const trap = _focusTraps.get(modal), opener = trap ? trap.opener : null;
         if (trap) { modal.removeEventListener('keydown', trap.handler); _focusTraps.delete(modal); }
-        const aktiv = document.activeElement;
-        trapFocus(modal, opener);
-        if (aktiv && aktiv !== document.body && modal.contains(aktiv)) setTimeout(() => /** @type {HTMLElement} */ (aktiv).focus(), 60);
+        trapFocus(modal, opener, { flyttaFokus: false });
     }
 }
 
