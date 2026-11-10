@@ -58,7 +58,7 @@ export async function sakligaSkal() {
         /* global medExportLage, _handlingsplanSeedRows, _hpSkalUnderlag, kInstalld, kTroskel */
         const skal = state.handlingsplan[n]?.skal || [];
         const ex = medExportLage(() => { const s = _handlingsplanSeedRows(); const u = _hpSkalUnderlag(s); const g = u.grupper.find(x => x.nyckel === n);
-            return { iSeed: s.nycklar.includes(n), kExport: kTroskel(), grupp: g ? { utanBelopp: g.utanBelopp, nMin: g.nMin, antal: g.skal.length } : null }; });
+            return { iSeed: s.nycklar.includes(n), kExport: kTroskel(), grupp: g ? { utanBelopp: g.utanBelopp, nMin: g.nMin, skal: g.sammanstallning?.skal } : null }; });
         return JSON.stringify({ n, skal, kInstalld: kInstalld(), kSkarm: kTroskel(), ex });
     }, nyckel);
     ok(harKommentar, `kommentaren står i tabellen${diag ? ` (${diag})` : ''}`);
