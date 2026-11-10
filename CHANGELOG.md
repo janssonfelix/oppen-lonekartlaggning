@@ -8,6 +8,11 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ### Gränssnitt
 
+- **Sakliga skäl och BAS-dossiern: fokus står kvar där du skriver.** När dialogen ritades om (*Lägg till skäl*,
+  *Ta bort*, ett nytt BAS-intervall i dossiern) flyttades fokus en kort stund senare till stängknappen, och tecken
+  som hann skrivas i det nya fältet hamnade där; en kommentar kunde då sparas tom. Fokusfällan läggs nu om utan
+  att flytta fokus, så att det står kvar på det nya skälet, på *Lägg till skäl* eller på väljaren.
+
 - **Var uppstår löneskillnaden: välj förklaringsvariablerna.** Kortet i Lönestruktur har raden *Förklara med:* med en
   kryssruta per variabel (BAS, sektor, AID-mellannivå, AID och åldersgrupp; åldersgrupp bara när lönefilen har ålder)
   och knappar för att flytta de valda upp och ned. En till fyra variabler kan väljas, och ordningen påverkar delarna:

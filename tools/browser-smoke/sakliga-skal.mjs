@@ -39,7 +39,7 @@ export async function sakligaSkal() {
     const summa = ((await sida.textContent('#skal-summa')) || '').replace(/\s+/g, ' ').trim();
     ok(/^Förklarat av skälen: /.test(summa), `sammanfattningen räknas om («${summa}»)`);
     const sparat = await sida.evaluate(n => state.handlingsplan[n]?.skal || [], nyckel);
-    ok(sparat.length === forut + 1 && sparat.some(s => s.kategori === 'marknad' && s.belopp === 700), 'skälet sparas på raden');
+    ok(sparat.length === forut + 1 && sparat.some(s => s.kategori === 'marknad' && s.belopp === 700 && s.kommentar === 'Svårrekryterat i regionen'), 'skälet sparas på raden, med kommentaren');
     await sida.keyboard.press('Escape');
     await sida.waitForFunction(() => document.getElementById('skal-modal').style.display === 'none', null, { timeout: 5000 });
     const text = ((await sida.textContent(`${knapp} .hp-skal-sammanfattning`)) || '').trim();

@@ -51,8 +51,11 @@ const _focusTraps = new Map();
  * återställas vid stängning. WCAG 2.1 AA / 2.4.3 Focus Order.
  * @param {HTMLElement} modalEl - Modalens rotelement.
  * @param {Element|null} [openerEl] - Element att fokusera vid stängning (default: aktivt element).
+ * @param {{flyttaFokus?: boolean}} [val] - flyttaFokus: false när fällan läggs om i en dialog som redan är öppen.
+ *   Fokus står då kvar där det är; annars flyttas det till det första elementet en kort stund senare, och text som
+ *   användaren hunnit börja skriva i ett annat fält hamnar där i stället.
  */
-function trapFocus(modalEl, openerEl) {
+function trapFocus(modalEl, openerEl, { flyttaFokus = true } = {}) {
     if (!modalEl) return;
     const focusables = modalEl.querySelectorAll(
         'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"]), summary'
@@ -71,7 +74,7 @@ function trapFocus(modalEl, openerEl) {
     };
     modalEl.addEventListener('keydown', handler);
     _focusTraps.set(modalEl, { handler, opener: openerEl || document.activeElement });
-    setTimeout(() => /** @type {HTMLInputElement} */ (first).focus(), 50);
+    if (flyttaFokus) setTimeout(() => /** @type {HTMLInputElement} */ (first).focus(), 50);
 }
 /**
  * Lossar focus trap från modal och återställer fokus till opener-elementet.
