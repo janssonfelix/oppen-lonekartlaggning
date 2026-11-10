@@ -262,7 +262,8 @@ adaptern verkligen delegerar vaktas av `tests/drift.test.js`:
   varje diagram har ritats av diagramkärnan, och ritar därtill ett eget diagram och exporterar det genom
   exportmenyn (PNG i båda storlekarna, SVG som öppnas som eget dokument, diagramdata) — PNG via canvas finns inte i jsdom. Den prövar också adressen `?demo=1`, räknar CSP-överträdelser
   och interna fel (ADR-31), och körs i Chromium, Firefox och WebKit (`--browser=…`,
-  `npm run test:browser:firefox`/`:webkit`; i CI alla tre).
+  `npm run test:browser:firefox`/`:webkit`; i CI alla tre vid pull requests och på main, bara Chromium vid en
+  vanlig push till en gren).
   *Testmiljön:* `tests/helpers/app-harness.js` kompilerar d3 och app.js en gång per arbetare och stänger och
   tömmer fönster som inte behövs, så att varje arbetares minne håller sig under Nodes tak (den tyngsta filen
   under 1,2 GB). Ett fönster kostar omkring 0,15 s efter det första (som bär kompileringen); det dyra är
@@ -342,8 +343,8 @@ adaptern verkligen delegerar vaktas av `tests/drift.test.js`:
   - `quality` — lint, typkontroll, hela testsviten, mojibake-grind och en **artefaktgrind**: bygget är
     byte-reproducerbart, så CI bygger om och kräver oförändrad SHA-256. `appsource`-testet
     vaktar `dist/app.js` mot `src/app/`; artefaktgrinden vaktar den skeppade HTML-filen.
-  - `browser` — en matris över Chromium, Firefox och WebKit: installerar motorn, bygger artefakten och kör
-    röktestet mot den.
+  - `browser` — en matris över Chromium, Firefox och WebKit (vid en vanlig push till en gren bara Chromium):
+    installerar motorn, bygger artefakten och kör röktestet mot den.
   Båda kör Node 22. Jobbet bygger *inuti* körningen eftersom `git checkout` ger alla filer
   samma mtime, vilket annars skulle utlösa röktestets färskhetsspärr.
 - **Release** (`.github/workflows/release.yml`, på tagg `v*`): `npm ci`, kontroll att taggen är `v<VERSION>`,

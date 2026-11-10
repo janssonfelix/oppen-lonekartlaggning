@@ -438,6 +438,8 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   kontrollsummor (namngivna organisationer och spår av tidigare versioner) är borttaget; regeln att verktyget är
   neutralt och inte kopplat till någon organisation står i `CONTRIBUTING.md` och `CLAUDE.md`. Testerna för
   produktnamnet och för ordet "förvaltning" står kvar.
+- **Webbläsartestet i CI:** en vanlig push till en gren kör bara Chromium; pull requests, main och manuella
+  körningar kör Chromium, Firefox och WebKit.
 
 ## 2026.11.05
 

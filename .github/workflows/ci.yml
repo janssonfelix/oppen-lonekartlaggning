@@ -66,12 +66,14 @@ jobs:
 
   # Samma röktest i de tre webbläsarmotorer som verktyget stöder (Chrome/Edge, Firefox,
   # Safari). WebKit kräver systembibliotek som bara finns färdiga på Ubuntu, så det körs här.
+  # En vanlig push till en gren kör bara Chromium; pull requests, main och manuella körningar
+  # kör alla tre (en gren med öppen pull request får alltså alla tre via pull_request).
   browser:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        browser: [chromium, firefox, webkit]
+        browser: ${{ fromJSON((github.event_name == 'push' && github.ref != 'refs/heads/main') && '["chromium"]' || '["chromium","firefox","webkit"]') }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
