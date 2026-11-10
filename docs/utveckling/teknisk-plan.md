@@ -249,7 +249,7 @@ adaptern verkligen delegerar vaktas av `tests/drift.test.js`:
   som skriptet skapar blockeras av den ärvda CSP:n (`style-src-elem`), så fönstret var tidigare helt ostilat.
 - **Tester:** Vitest — omkring 3300 tester i omkring 100 filer: rena `src/lib/`-moduler, CSV-parsning, jsdom-röktest
   av varje vy (ADR-7; `tests/smoke.test.js` med det delade fönstret och sju `tests/smoke-*.test.js` per
-  område), k-tröskeln i nio `tests/ktroskel*.test.js` med riggen i `tests/helpers/ktroskel-rigg.js`,
+  område), k-tröskeln i tio `tests/ktroskel*.test.js` med riggen i `tests/helpers/ktroskel-rigg.js`,
   gränssnittet i `tests/granssnitt*.test.js` (riggen `tests/helpers/granssnitt-rigg.js`) och diagramvyerna i
   `tests/diagramvyer*.test.js` (riggen `tests/helpers/diagramvyer-rigg.js`),
   axe-a11y (ADR-10) samt vakterna `appsource`, `drift`, `exports.golden`,
@@ -270,7 +270,9 @@ adaptern verkligen delegerar vaktas av `tests/drift.test.js`:
   Vitest kör en fil per arbetare, så den längsta filen sätter golvet för hela körningen: därför är röktestet,
   k-tröskeltestet, gränssnittstestet och diagramvyerna delade i filer per område (`tests/smoke*.test.js`,
   `tests/ktroskel*.test.js`, `tests/granssnitt*.test.js`, `tests/diagramvyer*.test.js`) med gemensamma riggar i
-  `tests/helpers/`; ingen fil tar mer än omkring 90 s ens under full last. `vitest.config.js` sätter en
+  `tests/helpers/`; de tyngsta filerna tar ett par minuter under full last, och den längsta förberedelsen,
+  invarianten över flikar och exporter (I4), är därför delad per tröskel (`tests/ktroskel-invarianter.test.js` och
+  `tests/ktroskel-invarianter-25.test.js`, sviten i `tests/helpers/ktroskel-invariant.js`). `vitest.config.js` sätter en
   gemensam tidsgräns och antalet arbetare: tre fjärdedelar av antalet trådar (på åtta kärnor med SMT mättes
   åtta arbetare till 168 s, femton till 150–168 s och tolv till 130 s: de tunga filerna är processorbundna, så
   med en arbetare per tråd trängs de om kärnorna, och med en per kärna köar de), begränsat av maskinens totala
@@ -284,7 +286,7 @@ adaptern verkligen delegerar vaktas av `tests/drift.test.js`:
   Node (SIGSEGV i V8:s skräpsamlare, sällsynt; orsaken ligger i Node, §9). Ett test som faller körs aldrig om, och
   utgångskoden är 0 först när alla filer har rapporterat. Hela sviten tar omkring 130 s på 8 kärnor/16 trådar
   (var tidigare 250–275 s, då `smoke.test.js` och `ktroskel.test.js` var för sig tog hela tiden); under full
-  last tar varje fil omkring dubbelt så lång tid som ensam, och den längsta omkring 90 s.
+  last tar varje fil omkring dubbelt så lång tid som ensam, och de tyngsta ett par minuter.
   *Byggets förminskning av stilmallen* ligger i `tools/lib/minify-css.mjs` med tester i `tests/byggminify.test.js`: strängar och `url()` rörs inte, blanksteg runt `+` och `-` i värden står kvar, och blanksteget före en pseudoklass i en väljare står kvar.
 - **Delade fönster i testerna:** ett fönster och en inläsning av demodatan kostar omkring 0,6 s, så läsande tester kan
   dela fönster med `delatFonster(forbered, skapa)` i `tests/helpers/app-harness.js`. Gruppen börjar med vakten
@@ -895,7 +897,7 @@ antalet sådana par; beslut). Fyra regler till:
   varje kön i urvalet når tröskeln (`_konFarRedovisasFor`), annars ett streck med `_konUtelamnatNot()`.
   Vaktas av `tests/troskelbeslut.test.js`.
 
-**Vakter:** `tests/ktroskel*.test.js` (fem filer med gemensam rigg i `tests/helpers/ktroskel-rigg.js`) kör alla flikar vid 10, 25 och 5 med grupper om 20 och 6 personer vars
+**Vakter:** `tests/ktroskel*.test.js` (flera filer med gemensam rigg i `tests/helpers/ktroskel-rigg.js`) kör alla flikar vid 10, 25 och 5 med grupper om 20 och 6 personer vars
 löner är sentinelvärden, prövar tur och retur 10 → 25 → 10 mot kvarlevande cacher, kontrollerar flikar och Excel
 efter en höjning, gränssnittet, utdata genom de verkliga vägarna, varje exportväg mot exportgrinden samt
 konfigurationsfil och organisationspaket, och har en invariant vid 10 och 25 över flikar och exporter mot ett

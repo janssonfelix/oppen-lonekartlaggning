@@ -432,7 +432,8 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   `app` (filerna som ritar verktyget i jsdom), klassade automatiskt efter testfilens källa. `npm test` kör bara
   `enhet` och tar sekunder; `npm run test:full` kör hela sviten, ska köras före en pull request och körs i CI
   (`npm run test:app` kör bara jsdom-filerna). Testantalet i `teknisk-plan.md` jämförs inte längre med sviten, så ett
-  nytt test kräver ingen dokumentändring.
+  nytt test kräver ingen dokumentändring. K-tröskelns invariant över flikar och exporter körs i två filer, en per
+  tröskel, så att de två förberedelserna går parallellt, och förberedelsens tidsgräns är höjd från 120 till 300 s.
 
 ## 2026.11.05
 

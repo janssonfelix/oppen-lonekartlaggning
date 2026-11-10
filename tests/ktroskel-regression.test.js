@@ -2,7 +2,7 @@
  * K-tröskeln som inställning: ett litet kön i regressionen, Löneöversyn, egna riktade rader och Ålder & karriär (R1–R4), omritningen från gränssnittet och ADR-47.
  *
  * Riggen (fixturer, fönster och sökfunktioner) ligger i tests/helpers/ktroskel-rigg.js; sviten är delad i
- * åtta filer så att Vitest fördelar den över flera arbetare.
+ * flera filer så att Vitest fördelar den över flera arbetare.
  */
 import { describe, it, expect, vi } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';

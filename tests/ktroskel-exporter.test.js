@@ -2,7 +2,7 @@
  * K-tröskeln som inställning: flikarna i menyn (I4), exporter som hör till ett undantag (I2), ZIP-filens Excel-fil och utskriftens urval (I3), paketformuläret och omritningen efter konfigurationsfil och paket (I5).
  *
  * Riggen (fixturer, fönster och sökfunktioner) ligger i tests/helpers/ktroskel-rigg.js; sviten är delad i
- * åtta filer så att Vitest fördelar den över flera arbetare.
+ * flera filer så att Vitest fördelar den över flera arbetare.
  */
 import { describe, it, expect, vi } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';

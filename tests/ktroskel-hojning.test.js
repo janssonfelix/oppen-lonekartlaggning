@@ -2,7 +2,7 @@
  * K-tröskeln som inställning: tröskeln styr varje flik — höjning 10 → 25 utan omritning, läsning vid 5, tur och retur 10 → 25 → 10 och Rensa all data.
  *
  * Riggen (fixturer, fönster och sökfunktioner) ligger i tests/helpers/ktroskel-rigg.js; sviten är delad i
- * åtta filer så att Vitest fördelar den över flera arbetare.
+ * flera filer så att Vitest fördelar den över flera arbetare.
  */
 import { describe, it, expect, vi } from 'vitest';
 import { FLIKAR, normalisera, synliga, fonster, ritaAlla, SENT_MELLAN, SENT_SMA, iExport } from './helpers/ktroskel-rigg.js';

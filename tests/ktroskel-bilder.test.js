@@ -2,7 +2,7 @@
  * K-tröskeln som inställning: bilder av diagram bär meningen under 10.
  *
  * Riggen (fixturer, fönster och sökfunktioner) ligger i tests/helpers/ktroskel-rigg.js; sviten är delad i
- * åtta filer så att Vitest fördelar den över flera arbetare.
+ * flera filer så att Vitest fördelar den över flera arbetare.
  */
 import { describe, it, expect, vi } from 'vitest';
 import { fonster } from './helpers/ktroskel-rigg.js';
