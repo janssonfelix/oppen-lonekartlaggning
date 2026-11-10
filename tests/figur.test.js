@@ -847,6 +847,46 @@ describe('urval', () => {
         expect(med(h => { h.minN = 1.5; })).toThrow(/harleddAv.minN/);
         expect(med(h => { h.namn = 3; })).toThrow(/harleddAv.namn/);
         expect(med((h, f) => { f.lager[2].harleddAv = 'ja'; })).toThrow(/harleddAv måste vara/);
+        expect(med(h => { h.villkor = 'kvinna'; })).toThrow(/harleddAv.villkor måste vara en funktion/);
+    });
+    it('harleddaLager: villkor väljer bland källagrens synliga punkter, och minN räknar bara dem', () => {
+        // Ett lager per BAS-intervall med punktens kön; trenden för kvinnor ur alla lager.
+        const f = { beskrivning: 'Per BAS', x: { skala: 'linjar' }, y: { skala: 'linjar' }, urval: [URVAL],
+            lager: [{ marke: 'punkt', serie: 'BAS A', data: [{ x: 1, y: 10, bas: 'A', kon: 'K' }, { x: 2, y: 99, bas: 'A', kon: 'M' }] },
+                { marke: 'punkt', serie: 'BAS B', data: [{ x: 3, y: 30, bas: 'B', kon: 'K' }, { x: 4, y: 50, bas: 'B', kon: 'K' }, { x: 5, y: 77, bas: 'B', kon: 'M' }] },
+                { ...trend('BAS A', 2, 'trendlinjen för kvinnor'), harleddAv: { lager: ['BAS A', 'BAS B'], villkor: d => d.kon === 'K', minN: 2, namn: 'trendlinjen för kvinnor',
+                    berakna: p => [{ x: 0, y: medel(p) }] } }] };
+        expect(() => valideraFigur(f, 'v')).not.toThrow();
+        expect(harleddaLager(f, filter({ bas: ['A'] })).figur.lager[2].data).toEqual([{ x: 0, y: 40 }]);   // kvinnorna i B: 30 och 50
+        const h = harleddaLager(f, filter({ bas: ['B'] }));                                              // en kvinna kvar i A
+        expect(h.utelamnade).toEqual([{ index: 2, namn: 'trendlinjen för kvinnor', minN: 2, antal: 1 }]);
+    });
+    it('harleddaLager: ett lager som nämner sin egen serie läggs om ur sina synliga punkter och får vara källa till ett annat', () => {
+        const summa = p => p.reduce((s, d) => s + d.y, 0);
+        const f = { beskrivning: 'Omlagd', x: { skala: 'linjar' }, y: { skala: 'linjar' }, urval: [URVAL],
+            lager: [{ marke: 'punkt', serie: 'Ram', data: [{ x: 0, y: 6 }], harleddAv: { lager: ['Grupper'], berakna: p => [{ x: 0, y: summa(p) }] } },
+                { marke: 'punkt', serie: 'Grupper', data: [{ x: 1, y: 1, bas: 'A' }, { x: 2, y: 2, bas: 'B' }, { x: 3, y: 3, bas: 'B' }],
+                  harleddAv: { lager: ['Grupper'], berakna: p => p.map((d, i) => ({ ...d, x: i })) } }] };
+        expect(() => valideraFigur(f, 'o')).not.toThrow();
+        const h = harleddaLager(f, filter({ bas: ['A'] }));
+        expect(h.figur.lager[1].data).toEqual([{ x: 0, y: 2, bas: 'B' }, { x: 1, y: 3, bas: 'B' }]);    // nya lägen, samma punkter
+        expect(h.figur.lager[0].data).toEqual([{ x: 0, y: 5 }]);                                          // källan är lagrets egna data
+        // Ett lager som är härlett ur ett annat får fortfarande inte vara källa.
+        const kedja = { ...f, lager: [{ ...f.lager[0], harleddAv: { lager: ['Trend'], berakna: () => [] } }, { ...f.lager[1], harleddAv: undefined },
+            { marke: 'linje', serie: 'Trend', data: [], harleddAv: { lager: ['Grupper'], berakna: () => [] } }] };
+        expect(() => valideraFigur(kedja, 'k')).toThrow(/lager 0: harleddAv: källagret "Trend" finns inte/);
+    });
+    it('harleddaLager: berakna kan ge { data, serie } när lagrets namn bär ett omräknat tal; noterna har en mening per namn', () => {
+        const f = trendFigur();
+        f.lager[2].harleddAv.berakna = p => ({ data: [{ x: 0, y: medel(p) }], serie: `Kvinna (trend, medel ${medel(p)})` });
+        f.lager[3].harleddAv.namn = 'trendlinjen för kvinnor';
+        f.lager[3].harleddAv.minN = 1;
+        const h = harleddaLager(f, filter({ bas: ['A'] }));
+        expect(h.figur.lager[2]).toMatchObject({ serie: 'Kvinna (trend, medel 25)', data: [{ x: 0, y: 25 }] });
+        expect(f.lager[2].serie).toBe('Kvinna (trend)');
+        expect(harlettNot(h).omraknade).toEqual(['Trendlinjen för kvinnor gäller urvalet.']);       // två lager med samma namn: en mening
+        f.lager[2].harleddAv.berakna = () => ({ serie: 'utan data' });
+        expect(() => harleddaLager(f, filter({ bas: ['A'] }))).toThrow(/berakna måste ge en lista/);
     });
 
 });

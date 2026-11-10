@@ -82,14 +82,29 @@ function arsjamforelse() {
  * efter om kvoten närmat sig lika lön (ok-nyansen) eller fjärmat sig (varningsnyansen) — en riktning, inte en
  * bedömning. Diagramdatan bär båda årens värden.
  */
-function _abHantelFigur(j, forraAr, nuAr) {
+// Filtren: BAS-intervall, yrkesgrupp och antal (kvinnor och män i tabellens kolumn). Bokslutet sparar inte gruppens BAS:
+// det läses ur årets lönefil och sätts bara när yrket finns i ett enda BAS-intervall (`basFor`); en rad utan BAS påverkas
+// inte av det filtret.
+function _abHantelFigur(j, forraAr, nuAr, basFor = _abYrketsBas()) {
     const { rader } = _abHantelRader(j);
     if (!rader.length) return null;
     const farg = { mot: PALETTE.semantic.ok, fran: PALETTE.semantic.varning, lika: PALETTE.semantic.neutral };
-    const fig = foreEfterFigur({ rader: rader.map(r => ({ namn: r.namn, fore: +r.fore.toFixed(1), efter: +r.efter.toFixed(1), farg: farg[r.riktning] })),
+    const antal = new Map([...j.grupper.kvar, ...j.grupper.nya, ...j.grupper.borta].map(g => [g.yrke, g.nKv != null && g.nMa != null ? g.nKv + g.nMa : null]));
+    const fig = foreEfterFigur({ rader: rader.map(r => ({ namn: r.namn, yrke: r.namn, ...(basFor(r.namn) != null ? { bas: basFor(r.namn) } : {}),
+            ...(antal.get(r.namn) != null ? { n: antal.get(r.namn) } : {}), fore: +r.fore.toFixed(1), efter: +r.efter.toFixed(1), farg: farg[r.riktning] })),
         kolumner: [String(forraAr), String(nuAr)], titel: 'Kvinnors medianlön i procent av mäns', format: 'pct',
         beskrivning: `Kvinnors medianlön i procent av mäns per yrkesgrupp, ${forraAr} (strecket) och ${nuAr} (punkten), sorterade efter förändringens storlek. Grön när kvoten närmat sig lika lön, orange när den fjärmat sig; linjen vid 100 % är lika lön.` });
-    return _abEtiketterBortFranStrecket(fig);
+    return { ..._abEtiketterBortFranStrecket(fig), urval: [URVAL.bas, URVAL.yrkesgrupp, URVAL.antal] };
+}
+/** Yrkets BAS-intervall i årets lönefil, eller null när yrket saknas eller finns i flera intervall. */
+function _abYrketsBas(d = state.data || []) {
+    const perYrke = new Map();
+    for (const r of d) {
+        if (r.yrke == null || r.bas == null || r.bas === '') continue;
+        if (!perYrke.has(r.yrke)) perYrke.set(r.yrke, new Set());
+        perYrke.get(r.yrke).add(String(r.bas));
+    }
+    return yrke => { const s = perYrke.get(yrke); return s && s.size === 1 ? [...s][0] : null; };
 }
 
 /** Årets värde skrivs på den sida av punkten där strecket inte är: till höger när värdet stigit, till vänster när det sjunkit. */

@@ -5725,10 +5725,10 @@ function referensOverblick(rader, { harStatistik = true, harStallningstagande = 
         statistikMotStallningstagande };
 }
 
-/** Bildens rader i listans ordning: de tre spannen per yrkesgrupp, null för en referens utan median, och gruppens BAS-intervall och antal (bildens urval; antalet står i listans kolumn n). */
+/** Bildens rader i listans ordning: de tre spannen per yrkesgrupp, null för en referens utan median, och gruppens yrke, AID, BAS-intervall och antal (bildens urval; antalet står i listans kolumn n). */
 function hantelRader(grupper) {
     const ref = v => (v?.median != null ? { p10: v.p10, median: v.median, p90: v.p90 } : null);
-    return (grupper || []).map(g => ({ namn: `${g.yrke} · BAS ${g.bas}`, bas: g.bas, n: g.n, stallningstagande: ref(g.stallningstagande), statistik: ref(g.statistik), org: g.org }));
+    return (grupper || []).map(g => ({ namn: `${g.yrke} · BAS ${g.bas}`, yrke: g.yrke, aid: g.aid, bas: g.bas, n: g.n, stallningstagande: ref(g.stallningstagande), statistik: ref(g.statistik), org: g.org }));
 }
 
     return { lageISpann, monster, forslag, referensOverblick, hantelRader, lageOchForslag };
@@ -8518,13 +8518,17 @@ function urvalAktivt(filter) {
 }
 
 /**
- * Figuren med sina härledda lager räknade för filtret. Ett lager med `harleddAv: { lager, berakna, minN?, namn? }`
- * (t.ex. en trendlinje) räknas ur punkterna i källagren — lagren vars `serie` står i `lager`. Utan ett aktivt
- * filter (urvalAktivt) är svaret figuren själv, samma objekt: talen är då vyns egna. Med ett aktivt filter får
+ * Figuren med sina härledda lager räknade för filtret. Ett lager med `harleddAv: { lager, berakna, minN?, namn?,
+ * villkor? }` (t.ex. en trendlinje) räknas ur punkterna i källagren — lagren vars `serie` står i `lager`. Utan ett
+ * aktivt filter (urvalAktivt) är svaret figuren själv, samma objekt: talen är då vyns egna. Med ett aktivt filter får
  * lagret `berakna(punkter)` som data, där punkterna är källagrens SYNLIGA punkter (inte bortvalda, och inte små
- * om inte `visaSma`) — omräkningen bygger bara på det som redan syns. Har källagren färre än `minN` (minst 1) synliga
- * punkter blir lagret tomt (ritas inte) och står i `utelamnade`. Lagrets index och övriga fält är oförändrade.
- * Den nya figuren prövas med valideraFigur (kastar om `berakna` gav ogiltig data).
+ * om inte `visaSma`) — omräkningen bygger bara på det som redan syns — och, med `villkor`, bara de för vilka
+ * `villkor(punkt)` är sant (t.ex. ett köns punkter ur lager per BAS-intervall). Källorna läses alltid ur källagrens
+ * egna data, aldrig ur ett omräknat lager: ett lager får nämna sin egen serie (det läggs då om ur sina egna synliga
+ * punkter, t.ex. trädkartans ytor) och ett sådant lager får vara källa till andra. Har källorna färre än `minN`
+ * (minst 1) punkter blir lagret tomt (ritas inte) och står i `utelamnade`. `berakna` ger en lista, eller
+ * `{ data, serie? }` när lagrets namn i förklaringen bär ett tal som också räknas om (R² i en trendlinje). Lagrets
+ * index och övriga fält är oförändrade. Den nya figuren prövas med valideraFigur (kastar om `berakna` gav ogiltig data).
  * @param {any} figur  en giltig figur
  * @param {any} filter  se arBortvald
  * @param {{visaSma?: boolean}} [val]
@@ -8540,10 +8544,11 @@ function harleddaLager(figur, filter, { visaSma = false } = {}) {
         const h = l && l.harleddAv;
         if (!h) return l;
         const kallor = new Set(h.lager.map(String));
+        const villkor = typeof h.villkor === 'function' ? h.villkor : () => true;
         const punkter = [];
         lager.forEach((k, ki) => {
-            if (ki === index || !k || k.harleddAv || k.serie == null || !kallor.has(String(k.serie))) return;
-            for (const d of k.data) if (synlig(d)) punkter.push(d);
+            if (!k || k.serie == null || !kallor.has(String(k.serie)) || (ki !== index && !_kanVaraKalla(k))) return;
+            for (const d of k.data) if (synlig(d) && villkor(d)) punkter.push(d);
         });
         const minN = Math.max(1, typeof h.minN === 'number' && isFinite(h.minN) ? h.minN : 1);
         const namn = harlettNamn(l);
@@ -8551,14 +8556,23 @@ function harleddaLager(figur, filter, { visaSma = false } = {}) {
             ut.utelamnade.push({ index, namn, minN, antal: punkter.length });
             return { ...l, data: [] };
         }
-        const data = h.berakna(punkter);
-        if (!Array.isArray(data)) throw new Error(`Ogiltig figur (härlett lager ${index}): berakna måste ge en lista`);
+        const svar = h.berakna(punkter);
+        const data = Array.isArray(svar) ? svar : svar && typeof svar === 'object' && Array.isArray(svar.data) ? svar.data : null;
+        if (!data) throw new Error(`Ogiltig figur (härlett lager ${index}): berakna måste ge en lista`);
         ut.omraknade.push({ index, namn });
-        return { ...l, data };
+        const serie = !Array.isArray(svar) && typeof svar.serie === 'string' && svar.serie.trim() ? { serie: svar.serie } : {};
+        return { ...l, ...serie, data };
     });
     ut.figur = { ...figur, lager: nya };
     valideraFigur(ut.figur, 'härlett lager');
     return ut;
+}
+
+// Ett lager som får vara källa till ett annat: ett vanligt lager, eller ett som bara läggs om ur sina egna punkter
+// (harleddAv.lager är just dess egen serie). Källan läses ur lagrets egna data, så ingen kedja räknas.
+function _kanVaraKalla(k) {
+    const h = k && k.harleddAv;
+    return !h || (Array.isArray(h.lager) && h.lager.length > 0 && h.lager.every(s => String(s) === String(k.serie)));
 }
 
 /** Det härledda lagrets namn i noterna: `harleddAv.namn`, annars 'Serien <serie>' eller 'Lagret'. @param {any} l */
@@ -8576,9 +8590,11 @@ function harlettNamn(l) {
  */
 function harlettNot(h) {
     const stor = s => s.charAt(0).toUpperCase() + s.slice(1);
+    // Två lager med samma namn (en trendlinje och dess konfidensband, trädkartans två lager) ger en mening.
+    const unika = a => [...new Set(a)];
     return {
-        omraknade: ((h && h.omraknade) || []).map(o => `${stor(o.namn)} gäller urvalet.`),
-        utelamnade: ((h && h.utelamnade) || []).map(o => `${stor(o.namn)} visas inte: färre än ${talformat(o.minN, 'antal')} synliga punkter.`),
+        omraknade: unika(((h && h.omraknade) || []).map(o => `${stor(o.namn)} gäller urvalet.`)),
+        utelamnade: unika(((h && h.utelamnade) || []).map(o => `${stor(o.namn)} visas inte: färre än ${talformat(o.minN, 'antal')} synliga punkter.`)),
     };
 }
 
@@ -8764,16 +8780,18 @@ function _provaData(l, i, figur, fel) {
     }
 }
 
-// Ett härlett lager: { lager: [serie, …], berakna: punkter => data, minN?, namn? }. Källorna är andra lager som inte
-// själva är härledda; varje namn måste vara serien i minst ett sådant lager.
+// Ett härlett lager: { lager: [serie, …], berakna: punkter => data, minN?, namn?, villkor? }. Källorna är lagret
+// självt (det läggs om ur sina egna punkter) eller andra lager som inte själva är härledda ur något annat; varje namn
+// måste vara serien i minst ett sådant lager.
 function _provaHarlett(figur, l, i, fel) {
     const h = l.harleddAv, vem = `lager ${i}: harleddAv`;
-    if (!h || typeof h !== 'object') fel(`${vem} måste vara { lager, berakna, minN?, namn? }`);
+    if (!h || typeof h !== 'object') fel(`${vem} måste vara { lager, berakna, minN?, namn?, villkor? }`);
     if (!Array.isArray(h.lager) || !h.lager.length || !h.lager.every(s => typeof s === 'string' && s.trim() !== '')) fel(`${vem}.lager måste vara en lista med serienamn`);
     if (typeof h.berakna !== 'function') fel(`${vem}.berakna måste vara en funktion`);
     if (h.minN != null && !(typeof h.minN === 'number' && Number.isInteger(h.minN) && h.minN >= 0)) fel(`${vem}.minN måste vara ett heltal ≥ 0`);
     if (h.namn != null && typeof h.namn !== 'string') fel(`${vem}.namn måste vara en sträng`);
-    const serier = new Set(figur.lager.filter((k, ki) => ki !== i && k && !k.harleddAv && k.serie != null).map(k => String(k.serie)));
+    if (h.villkor != null && typeof h.villkor !== 'function') fel(`${vem}.villkor måste vara en funktion`);
+    const serier = new Set(figur.lager.filter((k, ki) => k && k.serie != null && (ki === i || _kanVaraKalla(k))).map(k => String(k.serie)));
     for (const s of h.lager) if (!serier.has(s)) fel(`${vem}: källagret "${s}" finns inte (eller är självt härlett)`);
 }
 

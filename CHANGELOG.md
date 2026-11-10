@@ -8,6 +8,21 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ### Gränssnitt
 
+- **Filter i fler diagram, och trendlinjer som räknas om för urvalet.** Diagrammen med yrkesgrupper har nu också
+  filtren *Yrkesgrupp* och *Sektor* som hopfällda listor (Prioriteringens två diagram, trattdiagrammet i Lika arbete,
+  statistikens spann, diagrammen mot jämförelsestatistiken och överblickens bild i Löneläget; bandkartan har
+  Yrkesgrupp och Krav mot lön Sektor). *Lön mot ålder* i Ålder & karriär har BAS-intervall (när hela urvalet visas),
+  yrkesgrupp, ålder och lön; med ett filter räknas trendlinjerna per kön, konfidensbanden och trenden för hela urvalet
+  om ur de punkter som syns, och ett kön med färre synliga punkter än minsta gruppstorlek får ingen trendlinje — noten
+  säger vilket. Utan filter är diagrammet som förut. *Lön mot ålder per BAS-intervall* har samma filter (trendlinjen i
+  varje panel gäller alla i intervallet). Trädkartan i Lönestruktur har BAS-intervall, sektor och antal och läggs om så
+  att de synliga grupperna fyller kartan, utan att något tal ändras. Dessutom: åldersgrupp och antalet av det minsta
+  könet i löneskillnaden per åldersgrupp, ålder i åldersfördelningens kurva och lönespridningen över ålder, sektor och
+  antal i sektordiagrammet, BAS-intervall, löneskillnad och antal i kandidatparen i Likvärdigt arbete, BAS-intervall eller
+  yrkesgrupp och antal i Löneöversynens före och efter, och BAS-intervall, yrkesgrupp och antal i förändringen per
+  yrkesgrupp i Spara och jämför år. Filtren döljer bara märken; rapporten, utskriften, ZIP-filen och rapportunderlaget
+  visar alltid hela underlaget.
+
 - **Räkna för: diagram som räknas om för en del av underlaget (kärnan och fem diagram).** Lådorna och histogrammet
   för kvinnors och mäns lön i Ålder & karriär, löneskillnaden per åldersgrupp och percentilerna och kvartilerna i
   Lönestruktur har raden *Räkna för* ovanför diagrammet: diagrammet räknas om för en sektor, en åldersgrupp, en

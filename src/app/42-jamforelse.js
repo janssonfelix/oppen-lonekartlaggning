@@ -160,9 +160,9 @@ document.getElementById('jmf-sektor')?.addEventListener('change', e => { jamfore
 const _JMF_MAX = 25;
 const _jmfEtikett = r => `${r.yrke} · BAS ${r.bas}`;
 const _jmfPct = v => `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(1).replace('.', ',')} %`;
-// Fälten som diagrammens filter läser (URVAL.bas, .matchning, .antal), samma värden som tabellens kolumner BAS, Matchning
-// och Antal. En grupp utan statistik får ingen matchning (tabellens "–") och påverkas inte av det filtret.
-const _jmfUrvalFalt = r => ({ bas: r.bas, n: r.n, ...(r.statistikMatchning ? { matchning: _jfMatchningEtikett(r.statistikMatchning) } : {}) });
+// Fälten som diagrammens filter läser (URVAL.bas, .yrkesgrupp, .sektor, .matchning, .antal), samma värden som tabellens
+// kolumner och dess sektorsfilter. En grupp utan statistik får ingen matchning (tabellens "–") och påverkas inte av det filtret.
+const _jmfUrvalFalt = r => ({ bas: r.bas, yrke: r.yrke, ...(r.sektor != null ? { sektor: r.sektor } : {}), n: r.n, ...(r.statistikMatchning ? { matchning: _jfMatchningEtikett(r.statistikMatchning) } : {}) });
 
 function ritaJamforelseDiagram(rader, kalla) {
     const host = document.getElementById('jmf-diagram');
@@ -207,7 +207,7 @@ function _jmfSpannFigur(visa, kalla, namn, namnLitet) {
     const kr = v => _figTalformat(v, 'kr');
     const refNamn = plotNamn(namn), org = plotNamn(orgNamn());
     return { beskrivning: `Organisationens lönespann från P10 till P90 per yrke, med medianen som prick, ovanpå spannet i ${namnLitet}. Samma värden står i tabellen nedan.`,
-        urval: [URVAL.bas, URVAL.matchning, URVAL.antal], x: { skala: 'linjar', titel: 'Månadslön (kr)', format: 'kr' }, y: { skala: 'band', ordning: visa.map(etikett), etikettMax: 48 },
+        urval: [URVAL.bas, URVAL.yrkesgrupp, URVAL.sektor, URVAL.matchning, URVAL.antal], x: { skala: 'linjar', titel: 'Månadslön (kr)', format: 'kr' }, y: { skala: 'band', ordning: visa.map(etikett), etikettMax: 48 },
         hojd: 110 + 26 * visa.length, paneler: 'auto',   // fler än femton yrken: små multiplar
         lager: [
             { marke: 'intervall', riktning: 'liggande', serie: `${refNamn} P10–P90`, farg: PALETTE.semantic.spann, tjocklek: 14,
@@ -249,7 +249,7 @@ function _jmfAvvikelseFigur(visa, kalla, namn) {
     const streck = (serie, farg, m) => ({ marke: 'punkt', symbol: 'streck', serie, farg, storlek: 5,
         data: visa.filter(r => diff(r, m) != null).map(r => ({ ...bas(r), x: diff(r, m), r })), tips: d => tipsRad(d.r) });
     return { beskrivning: `Skillnaden i lön mot ${namn} per yrke, rangordnad från mest negativ: medianen som punkt, och skillnaden i P10 och P90 som streck med ett spann emellan. Samma värden står i tabellen nedan.`,
-        urval: [URVAL.bas, URVAL.matchning, URVAL.antal], x: { skala: 'linjar', titel: `Skillnad mot ${namn} (%)`, nollinje: true }, y: { skala: 'band', ordning: visa.map(_jmfEtikett), etikettMax: 48 },
+        urval: [URVAL.bas, URVAL.yrkesgrupp, URVAL.sektor, URVAL.matchning, URVAL.antal], x: { skala: 'linjar', titel: `Skillnad mot ${namn} (%)`, nollinje: true }, y: { skala: 'band', ordning: visa.map(_jmfEtikett), etikettMax: 48 },
         hojd: 110 + 28 * visa.length, paneler: 'auto',
         lager: [
             { marke: 'intervall', riktning: 'liggande', serie: 'Spann P10–P90', farg: PALETTE.semantic.spann, tjocklek: 4, legend: false,
@@ -289,7 +289,7 @@ function _jmfStatlageFigur(rader) {
     const x = r => 'BAS ' + r.bas, kr = v => _figTalformat(v, 'kr'), utanKr = v => (v == null ? '–' : _figTalformat(v, 'kr', { enhet: false }));
     const ordning = [...new Set(rader.map(x))];
     const pts = rader.map(r => ({ x: x(r), y: _rrLage(r.org.median, r.statistik).pos, forskjutning: _lpForskjutning(r.aid, r.bas),
-        storlek: Math.max(3.5, Math.min(9, Math.sqrt(r.n) * 1.1)), aid: r.aid, bas: r.bas, yrke: r.yrke, n: r.n, kvAndel: r.kvAndel,
+        storlek: Math.max(3.5, Math.min(9, Math.sqrt(r.n) * 1.1)), aid: r.aid, bas: r.bas, yrke: r.yrke, sektor: r.sektor, n: r.n, kvAndel: r.kvAndel,
         median: r.org.median, stat: r.statistik, matchning: _jfMatchningEtikett(r.statistikMatchning), markering: markeringFor(r.bas, r.aid) }));
     const tips = d => [[d.yrke], ['BAS', d.bas], ['Läget i spannet', `${svTal(d.y, 0)} %`], ['Organisationens median', kr(d.median)],
         ['Statistiken', `P10 ${utanKr(d.stat.p10)} · median ${utanKr(d.stat.median)} · P90 ${kr(d.stat.p90)}`],
@@ -303,7 +303,7 @@ function _jmfStatlageFigur(rader) {
     return { beskrivning: 'Var varje yrkesgrupps medianlön ligger i jämförelsestatistikens spann per BAS-intervall: 0 är statistikens P10 och 100 dess P90. '
             + 'Fylld punkt: statistiken matchad på AID och BAS. Ofylld punkt: endast AID. Hela underlaget, oberoende av filtren under Mot jämförelsestatistiken; '
             + 'läget räknas ur P10, median och P90 i tabellen där.',
-        urval: [URVAL.bas, URVAL.matchning, URVAL.konsdominans, URVAL.antal], x: { skala: 'band', ordning }, y: { skala: 'linjar', titel: 'Läget i statistikens spann (%)' },
+        urval: [URVAL.bas, URVAL.yrkesgrupp, URVAL.sektor, URVAL.matchning, URVAL.konsdominans, URVAL.antal], x: { skala: 'band', ordning }, y: { skala: 'linjar', titel: 'Läget i statistikens spann (%)' },
         referens: [linje(0, 'P10'), linje(100, 'P90')],
         lager: [
             // Spannet bär inga värden (0 och 100 i varje BAS) och får därför inga rader i diagramdatan.

@@ -406,4 +406,46 @@ export async function diagramkarnan() {
         await page.setViewportSize({ width: 1440, height: 900 });
         await page.waitForTimeout(200);
     }
+
+    console.log('\n── Filter i riktiga diagram: lön mot ålder och yrkesgrupper i trattdiagrammet ──');
+    /* global renderTabContent */
+    {
+        await page.evaluate(() => _rfUrvalGlom());
+        await page.click('.nav-item[data-tab="kon"]');
+        await page.evaluate(() => document.querySelectorAll('details.avsnitt').forEach(d => { d.open = true; }));
+        await page.waitForTimeout(400);
+        const scatter = () => page.evaluate(() => {
+            const el = document.getElementById('chart-kon-scatter');
+            const linjer = [...el.querySelectorAll('svg path[data-marke="linje"]')].map(p => p.getAttribute('d'));
+            return { linjer, not: (el.parentElement.querySelector('[data-rf="urval"]') || {}).textContent || '' };
+        });
+        const fore = await scatter();
+        const bas = page.locator('#chart-kon-scatter').locator('xpath=..').locator('.diagram-urval[data-urval-falt="bas"] [data-urval]').first();
+        await bas.click();
+        await page.waitForTimeout(400);
+        const efter = await scatter();
+        ok(efter.linjer.length === fore.linjer.length && efter.linjer.some((d, i) => d !== fore.linjer[i]), 'lön mot ålder: ett BAS-intervall bort ritar andra trendlinjer');
+        ok(/Diagrammet visar ett urval: utan BAS .*Trendlinjen och konfidensbandet för kvinnor gäller urvalet\./.test(efter.not), `noten säger att trendlinjen gäller urvalet (${efter.not.slice(0, 120)}…)`);
+        await page.locator('#chart-kon-scatter').locator('xpath=..').locator('[data-urval-alla]').click();
+        await page.waitForTimeout(400);
+        ok((await scatter()).linjer.join('|') === fore.linjer.join('|'), 'Visa alla ger tillbaka samma trendlinjer');
+
+        await page.click('.nav-item[data-tab="matrix"]');
+        await page.evaluate(() => document.querySelectorAll('details.avsnitt').forEach(d => { d.open = true; }));
+        await page.waitForTimeout(400);
+        const rad = page.locator('#chart-la-tratt').locator('xpath=..').locator('.diagram-urval[data-urval-falt="yrke"]');
+        await rad.locator('summary').click();
+        await rad.locator('[data-urval-markera="inga"]').click();
+        await rad.locator('input[type="checkbox"]').first().check();
+        await page.waitForTimeout(400);
+        const tratt = await page.evaluate(() => {
+            const el = document.getElementById('chart-la-tratt'), forsta = el.parentElement.querySelector('.diagram-urval[data-urval-falt="yrke"] input[type="checkbox"]').getAttribute('data-urval');
+            const vantat = el._figur.lager.filter(l => l.marke === 'punkt').flatMap(l => l.data).filter(d => d.yrke === forsta).length;
+            return { ritade: el.querySelectorAll('svg circle[data-marke="punkt"], svg path[data-marke="punkt"]').length, vantat,
+                summering: el.parentElement.querySelector('.diagram-urval[data-urval-falt="yrke"] summary').textContent };
+        });
+        ok(tratt.ritade === tratt.vantat && /^Yrkesgrupp: 1 av \d+$/.test(tratt.summering), `trattdiagrammet: en yrkesgrupp i listan ritar dess ${tratt.vantat} punkter (${tratt.ritade}, ${tratt.summering})`);
+        await page.evaluate(() => { _rfUrvalGlom(); renderTabContent('matrix'); });
+        await page.waitForTimeout(200);
+    }
 }

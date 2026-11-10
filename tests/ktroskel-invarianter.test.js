@@ -131,10 +131,14 @@ describe('I1: Löneöversyn visar ingen kostnad för grupper under tröskeln', (
 //    urvalet och i ett valt BAS, prövas av R4 längre ned; regressionens
 //    ojusterade steg prövas av R1, som också kör samlaUtdata mot ett underlag med 7 män.
 // ===================================================================================
+const I4_GRANS = 300000;   // gränsen för beforeAll i I4 och I5, se kommentaren i I4
 describe.each([[10, []], [25, SENT_MELLAN]])('I4: invarianten över flikar och exporter vid %i', (k, extra) => {
     let utdata;
     const dolda = [...KON_DOLDA, ...SENT_SMA, ...extra];
-    beforeAll(async () => { utdata = await samlaUtdata(fonsterKon(k === 10 ? null : k)); }, 120000);
+    // samlaUtdata bygger alla flikar och alla exporter. I en hel `npm test`, där testfilerna körs parallellt,
+    // mättes 134 s (k = 10) och 119 s (k = 25) 2026-11-10, så den tidigare gränsen 120 s räckte inte.
+    // 300 s ger marginal utan att ett test som verkligen hänger får vänta för länge.
+    beforeAll(async () => { utdata = await samlaUtdata(fonsterKon(k === 10 ? null : k)); }, I4_GRANS);
     it('utdata finns för varje väg (annars prövar testet inget)', () => {
         const namn = utdata.map(([n]) => n);
         for (const krav of ['skärm: alla flikar', 'Word-utkastet', 'Att göra-CSV', 'ZIP Excel-filen', 'utskrift: komplett', 'utskrift: ledning', 'utskrift: facklig',
@@ -269,7 +273,7 @@ describe('I5: sakliga skäl på en rad under tröskeln lämnar inte verktyget', 
         w.eval(`_hpSattSkal(${JSON.stringify(konUnder)}, [{ kategori: 'utbildning', belopp: 13579, kommentar: 'Kommentar 86420' }])`);
         // Bara hela konfigurationsfilen undantas: den bär handlingsplanen som den skrivits. Dess årsbokslut prövas.
         utdata = (await samlaUtdata(w)).filter(([n]) => n !== 'skärm: alla flikar' && n !== 'konfigurationsfilen (hela)');
-    }, 120000);   // samma gräns som I4: samlaUtdata bygger alla exporter
+    }, I4_GRANS);   // samma gräns som I4: samlaUtdata bygger alla exporter
     it('kommentarens tal och beloppet syns inte för raden under tröskeln, men för raden över', () => {
         const lackor = [];
         for (const [namn, text] of utdata) for (const v of ['98765', '87654', '87 654']) if (text.includes(v)) lackor.push(`${namn}: ${v} — "${sammanhang(text, v)}"`);
