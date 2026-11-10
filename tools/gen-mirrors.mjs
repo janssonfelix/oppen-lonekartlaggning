@@ -174,7 +174,9 @@ export const MODULES = [
     },
     {
         file: 'gapuppdelning.js', ns: '__mirrorGapuppdelning',
-        expose: { gapUppdelning: '_guGapUppdelning' }
+        expose: { gapUppdelning: '_guGapUppdelning', normaliseraGapVariabler: '_guNormaliseraVariabler', gapVariablerArStandard: '_guVariablerArStandard',
+                  gapDelar: '_guDelar', gapDelarIText: '_guDelarIText', gapVariabelEtikett: '_guVariabelEtikett', gapVariablerIText: '_guVariablerIText', gapAllaVariabler: '_guAllaVariabler',
+                  gapStandardVariabler: '_guStandardVariabler' }
     },
     {
         file: 'individflaggor.js', ns: '__mirrorIndivid',

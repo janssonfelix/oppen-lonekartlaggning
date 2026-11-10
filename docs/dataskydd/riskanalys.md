@@ -1,6 +1,6 @@
 # Risk- och sårbarhetsanalys (dataskydd och informationssäkerhet) — Öppen lönekartläggning
 
-**Bygge:** `2026.11.05` · **Artefakt-SHA-256:** `8fe5f640e6023ed67f0eb761ea358e19537e9ef5ab3b80276f21474a62efc5c0` (se `dist/RELEASE.txt`).
+**Bygge:** `2026.11.05` · **Artefakt-SHA-256:** `b34358cd36be7266cff404da01415e711cd82607fe6f952a01caa6fa5095299f` (se `dist/RELEASE.txt`).
 **Granskningsdatum:** 2026-11-07.
 **Granskningsmetod:** kodläsning påstående för påstående + statisk sökning i källkod och bygge +
 körning av det byggda verktyget i jsdom och i Chromium (utan nätverk) med syntetiska testfiler.
@@ -566,7 +566,10 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   namnger en grupp bara när varje kön i gruppen och dess BAS når tröskeln. Dolda grupper redovisas
   bara med antal. Topplistan kortas tills summan av |belopp| för de andra poster som inte visas
   är minst hälften av varje dold posts belopp. Då kan en dold grupps bidrag inte räknas fram ur
-  summorna. Går det inte redovisas inga delar, bara hela skillnaden. Kortet och rapportunderlaget
+  summorna. Går det inte redovisas inga delar, bara hela skillnaden. Med valbara förklaringsvariabler (ADR-65,
+  1–4 av BAS, sektor, AID-mellannivå, AID och åldersgrupp) gäller samma regler per del: en grupp namnges bara när
+  den själv och alla grupper den ligger i når tröskeln, och kan en del inte redovisas visas ingen. Vaktas av
+  `tests/gapuppdelning.test.js` och I7 i `tests/ktroskel-invarianter.test.js`. Kortet och rapportunderlaget
   visar samma poster. Stabilitetsmärkningen av flaggor bygger bara på grupper där båda könen når
   tröskeln. *Lägre krav, högre lön* tar i rapportunderlaget bara med par där båda grupperna når
   den. Analyserna har inga egna fält och inga egna exportvägar.
@@ -688,6 +691,8 @@ Konfig-JSON:en (**version 2**) innehåller tre slags uppgifter.
 - löneöversynens inställningar, där en riktad rad bär uppgiften om den föreslogs ur kandidatpar i likvärdigt arbete
 - förklaringsmodellen (`forklaringsmodell`): vilka variabler regressionen räknar bort och skälet som fritext, kortad
   till 300 tecken. Ett ogiltigt värde ger standard med varning, aldrig fel (ADR-56).
+- uppdelningens variabler (`gapUppdelning`): vilka variabler *Var uppstår löneskillnaden?* delar med, i ordning, utan
+  fritext. Ett ogiltigt värde ger standard med varning, aldrig fel; en fil utan fältet ger standard (ADR-65).
 - definitionen av kvinnodominerat (`likvardighet.kvDomDefinition`, DO eller SCB)
 - vilka yrken som jämförs i likvärdigt arbete (`likvardighet.jamforelse`, `alla` eller `mansdominerade`, ADR-60)
 - lönemånaden (`lonemanad`), fritext kortad till 40 tecken (ADR-57)

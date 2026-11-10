@@ -134,7 +134,7 @@ Icke förhandlingsbara arkitektoniska garantier:
 | Gränssnittets form | — | Menyn har 16 flikar i grupperna 1 · Underlag (Översikt, Filer och kvalitet, Regler & praxis), 2 · Kartläggning (Löneläget, Lika arbete, Likvärdigt arbete, Lönestruktur, Ålder & karriär), 3 · Åtgärder (Prioritering, Löneöversyn, Handlingsplan), 4 · Rapport (Rapporttext, Exportera, Tabeller och egna vyer), Arbetet (Spara och jämför år) och Hjälp (Om verktyget); flikgrupperna och aliasen står i `PANEL_GROUPS` och `TAB_ALIAS` i `31-navigering.js`, och en låst flik leder till lönefilskortet i Filer och kvalitet. Alla flikar följer en mall: en rad om vad fliken svarar på (*Visa mer*), urval, nyckeltal i en rad, huvudresultat, och fördjupning i hopfällbara avsnitt som säger sitt nyckeltal i rubrikraden. Sidindexet *På den här sidan* (`89-sidindex.js`) listar flikens synliga avsnitt och följer med när sidan rullas. Sök i sidhuvudet markerar en grupp i alla diagram och tabeller (länkade vyer) och hittar flikarnas avsnitt, dialogerna och fälten i Inställningar (`SOK_FUNKTIONER` i `86-sok-register.js`), också utan lönefil. Panelen Inställningar samlar det som gäller alla flikar, med Prioriteringens trösklar och viktning. Två lägen: vägledande och kompakt. Byggt för datorskärm; surfplatta och delat fönster fungerar, telefon är inte ett användningsfall (ADR-41) |
 | Diagram | — | Ritas av diagramkärnan (D3, ADR-39) ur ett figurformat; formen väljs efter uppgiften och färgen efter vad den ska säga — reglerna står i `diagramkarnan.md` §10. Där ett diagram skulle visa för lite står en tabell med grafik i raden |
 | Underlagets kvalitet | — | I fliken Filer och kvalitet, med extremvärdena och inläsningsrapporten: fem kriterier med OK/Varning/Kritisk; svagaste kriteriet avgör (ADR-19) |
-| Var uppstår löneskillnaden? | — | Lönestrukturs avsnitt och rapportunderlagets block: skillnaden i medellön delad på BAS-fördelning, AID inom BAS och inom AID och BAS, visad som en trappa och med de grupper som bidrar mest (ADR-22) |
+| Var uppstår löneskillnaden? | — | Lönestrukturs avsnitt och rapportunderlagets block: skillnaden i medellön delad på BAS-fördelning, AID inom BAS och inom AID och BAS (eller de förklaringsvariabler som valts, ADR-65), visad som en trappa och med de grupper som bidrar mest (ADR-22) |
 | Personer att granska | — | Lika arbete: personer minst X % (standard 10) under förväntad lön bland kollegor i samma AID och BAS, med filens radnummer; lämnar aldrig verktyget (ADR-23) |
 | Stabilitet för flaggor | — | Lika arbete och rapportunderlaget: varje yrkesgrupp över 5 % märks skör (≤ 5 % om 1 eller 2 personer tas bort) eller stabil; flaggan ligger kvar (ADR-24) |
 | Lägre krav, högre lön | — | Likvärdigt arbete och rapportunderlaget: kvinnodominerade yrken med lägre medianlön än ett av organisationens yrken i lägre BAS, med antal BAS-steg (ADR-25) |
@@ -247,7 +247,7 @@ adaptern verkligen delegerar vaktas av `tests/drift.test.js`:
   rätt grupp. Utskriftsfönstret för checklistorna (`printScaffoldView`) läser `:root` och allt från `.dold` till
   stilmallens slut ur den körande stilmallen och lägger in det som byggt stilark (`adoptedStyleSheets`): ett `<style>`-element
   som skriptet skapar blockeras av den ärvda CSP:n (`style-src-elem`), så fönstret var tidigare helt ostilat.
-- **Tester:** Vitest — 3375 tester i 99 filer: rena `src/lib/`-moduler, CSV-parsning, jsdom-röktest
+- **Tester:** Vitest — 3407 tester i 99 filer: rena `src/lib/`-moduler, CSV-parsning, jsdom-röktest
   av varje vy (ADR-7; `tests/smoke.test.js` med det delade fönstret och sju `tests/smoke-*.test.js` per
   område), k-tröskeln i nio `tests/ktroskel*.test.js` med riggen i `tests/helpers/ktroskel-rigg.js`,
   gränssnittet i `tests/granssnitt*.test.js` (riggen `tests/helpers/granssnitt-rigg.js`) och diagramvyerna i
@@ -609,7 +609,7 @@ och poster som avrundas till 0 kr visas inte. Topplistan kortas efter en skyddsr
 bidrag går att räkna fram som delens summa minus de visade posterna: för varje dold post ska summan av |belopp|
 för de andra posterna som inte visas vara minst hälften av postens belopp. Går det inte ens med tom lista
 redovisas inga delar, bara hela skillnaden. Avsnittet och rapportunderlaget visar samma poster. Logiken i
-`src/lib/gapuppdelning.js`.
+`src/lib/gapuppdelning.js`. Sedan ADR-65 kan variablerna väljas; BAS och AID är standard.
 
 **ADR-23 — Personer att granska: individlista i verktyget, aldrig i utdata.** Den tredje delen i ADR-22
 (lön inom samma AID och BAS) säger hur mycket av gapet som ligger inom samma AID och BAS, men inte hos vilka. Panelen Personer att granska i Lika arbete listar personer vars
@@ -1475,6 +1475,28 @@ rapportens metodtext. Bladet *Metod & parametrar* (`_methodAppendixData` i `22-e
 Importprofilernas kännetecken räknas som förut, så att sparade profiler känns igen. Vaktas av
 `tests/regression.test.js`, `tests/ktroskel-utan-alder.test.js` och facit *lönefil utan ålder* i
 `tests/exports.golden.test.js`.
+
+**ADR-65 — Var uppstår löneskillnaden: valbara förklaringsvariabler.** Beslut 2026-11-10. ADR-22 delar skillnaden i
+medellön på BAS och AID i den ordningen. Kortet *Förklara med:* låter handläggaren välja en till fyra variabler bland
+BAS, sektor, AID-mellannivå, AID och åldersgrupp (`ageBucket`, bara när lönefilen har ålder, ADR-64), och ordna dem.
+Uppdelningen nästlas i den ordningen: varje cell c på nivå i−1 har vikten ω_c, produkten av s̄ längs vägen från hela
+urvalet. Del i är Σ_c ω_c · Σ_barn Δs_barn|c · (W̄_barn − W̄_c), och den sista delen (*Inom …*) är Σ_löv ω_löv · ΔW_löv.
+Delarna summerar exakt till hela skillnaden, eftersom ΔW_c = Σ Δs · W̄ + Σ s̄ · ΔW på varje nivå. En cell där ett kön
+saknas bidrar bara till sin fördelningsdel, som förut. **Ordningen spelar roll**, och kortet säger det: den första
+variabeln får det den förklarar ensam. AID-nivåerna (sektor, mellannivå, AID) ordnas alltid grovt till fint på sina
+platser, eftersom en finare nivå före en grövre ger en tom del; en flytt som skulle bryta det är avstängd.
+**Skyddet** är ADR-22:s, per del: en cell är synlig bara om den själv och alla dess överceller har 0 eller minst k av
+varje kön, topplistan kortas efter samma regel, och kan en del inte redovisas visas ingen del. **Standardvalet** BAS,
+AID ger bitlika tal (posterna läggs i samma ordning och räknas med samma operationer) och samma texter; det prövas mot
+en frusen kopia av den tidigare implementationen på demot, det stora demot och testfallen
+(`tests/helpers/gapuppdelning-fore-adr65.js`). Delarnas namn, kortets texter, trappans beskrivning och
+rapportunderlagets meningar byggs ur variablerna (`gapDelar`, `gapDelarIText` i `src/lib/gapuppdelning.js`); ett
+annat val än standard nämns i rapportunderlaget och som en rad i metodbilagan (`_methodAppendixData`). Valet lagras som
+`state.gapUppdelning = { variabler }` (null = standard), sparas i konfigurationsfilen (`gapUppdelning`; ogiltigt ger
+standard med varning, en fil utan fältet ger standard), nollställs av *Rensa all data* och prövas inte mot åldern när
+det lagras (som förklaringsmodellen, ADR-56). Organisationspaketet bär det inte. Vaktas av
+`tests/gapuppdelning.test.js`, `tests/rapportunderlag.test.js`, `tests/smoke-granssnitt.test.js`, I7 i
+`tests/ktroskel-invarianter.test.js` och webbläsarröktestet (`tools/browser-smoke/gapuppdelning.mjs`).
 
 ## 9. Öppna punkter
 

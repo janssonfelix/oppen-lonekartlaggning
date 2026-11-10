@@ -756,7 +756,7 @@ const GLOSSARY = [
     { cat:'Statistik', term:'Konfidensintervall (95% KI)', short:'Felmarginal: spannet som det sanna värdet rimligen ligger inom. Smalare = säkrare.', long:'Om man upprepade undersökningen många gånger skulle 95 % av de beräknade intervallen innehålla det sanna värdet. Bredare KI = osäkrare skattning. Verktyget redovisar både HC3-robust och klassiskt KI för transparens.' },
     { cat:'Statistik', term:'R² (förklaringsgrad)', short:'Andel av variationen som förklaras av modellen', long:'R² = 0,6 betyder att 60 % av lönevariationen kan förklaras av variablerna i modellen. Resterande 40 % förklaras inte av modellen. Justerad R² straffar för fler parametrar och är ofta mer rättvist att rapportera.' },
     { cat:'Statistik', term:'Sekventiell dekomponering', short:'Visar hur löneskillnaden krymper när kontroller läggs till', long:'Modellen körs i flera steg — endast kön, sedan + BAS-intervall, sedan + Ålder (huvudtalet), därefter + Yrkesgrupp inom BAS och, när lönefilen har ansvarskod, + Ansvar — för att visa hur stor del av den råa löneskillnaden som förklaras av varje faktor och vad som kvarstår oförklarat. Visas som trappa och steg för steg i Lönestruktur.' },
-    { cat:'Statistik', term:'Uppdelning av löneskillnaden', short:'Skillnaden i medellön delad i BAS-fördelning, AID inom BAS och lön inom samma AID och BAS', long:'Kortet "Var uppstår löneskillnaden?" i Lönestruktur delar skillnaden mellan mäns och kvinnors medellön i tre delar som tillsammans blir hela skillnaden. Varje del mäts symmetriskt, utan att något kön är referens. Grupperna rangordnas efter bidrag i kronor till hela skillnaden, inte efter skillnadens storlek i gruppen.' },
+    { cat:'Statistik', term:'Uppdelning av löneskillnaden', short:'Skillnaden i medellön delad i BAS-fördelning, AID inom BAS och lön inom samma AID och BAS', long:'Kortet "Var uppstår löneskillnaden?" i Lönestruktur delar skillnaden mellan mäns och kvinnors medellön i tre delar som tillsammans blir hela skillnaden. Varje del mäts symmetriskt, utan att något kön är referens. Variablerna går att välja (BAS, sektor, AID-mellannivå, AID och åldersgrupp, en till fyra) och ordningen påverkar delarna; standard är BAS och AID. Grupperna rangordnas efter bidrag i kronor till hela skillnaden, inte efter skillnadens storlek i gruppen.' },
     { cat:'Verktyget', term:'Personer att granska', short:'Personer vars lön ligger minst X % under vad kollegor i samma AID och BAS i samma ålder tjänar', long:'Panelen sist i Lika arbete räknar för varje person en förväntad lön från kollegorna i samma AID och BAS — personen själv räknas inte med — justerad för ålder när kollegornas åldrar skiljer sig minst 5 år, annars deras medianlön. Bara grupper med minst {golv} personer prövas. Personen visas med filens radnummer. Listan kan inte exporteras eller skrivas ut.' },
     { cat:'Verktyget', term:'Skör flagga', short:'En yrkesgrupp värd att granska där skillnaden kan hamna under 3 % om en eller två personer tas bort', long:'Lika arbete prövar varje yrkesgrupp med statusen Värt att granska: kan skillnaden hamna under 3 % (statusens storleksgräns) om en eller två personer tas bort ur gruppen? I så fall märks gruppen som skör, annars som stabil. Statusen ligger kvar i båda fallen — märkningen visar var enskilda löner avgör utfallet. Borttagningar som skulle lämna ett kön med färre än {golv} personer prövas inte.' },
     { cat:'Verktyget', term:'Lägre krav, högre lön', short:'Kvinnodominerat yrke med lägre medianlön än ett av organisationens yrken i lägre BAS', long:'Avsnittet i Likvärdigt arbete jämför kvinnodominerade yrken med organisationens icke-kvinnodominerade yrken i lägre BAS-intervall. Har ett yrke med lägre krav ändå högre medianlön är det en tydlig signal om att det kvinnodominerade yrket kan vara undervärderat. BAS är ett grovt mått på krav och bör prövas mot befattningsbeskrivningarna. Med arbetsvärderingspoäng görs jämförelsen redan i kandidatparen.' },
@@ -6979,20 +6979,128 @@ const __mirrorGapuppdelning = (() => {
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 /**
- * Öppen lönekartläggning — Var uppstår löneskillnaden? (ADR-22)
+ * Öppen lönekartläggning — Var uppstår löneskillnaden? (ADR-22, valbara variabler ADR-65)
  *
- * Delar gapet i medellön (kvinnor − män, kr/mån; negativt när kvinnor ligger lägre) i tre delar som summerar exakt:
+ * Delar gapet i medellön (kvinnor − män, kr/mån; negativt när kvinnor ligger lägre) i delar som summerar exakt.
+ * Standardvalet är variablerna BAS och AID, i den ordningen, och ger tre delar:
  *   A  BAS-fördelning       Σ_b Δs_b · (W̄_b − W̄)
  *   B  AID inom BAS         Σ_b s̄_b · Σ_a Δs_a|b · (W̄_ab − W̄_b)
  *   C  inom AID och BAS     Σ_b s̄_b · Σ_a s̄_a|b · ΔW_ab
+ * Allmänt, med variablerna v_1 … v_n (1 ≤ n ≤ 4) nästlade i den ordningen: varje cell c på nivå i−1 har vikten
+ * ω_c = produkten av s̄ längs vägen från roten (roten: ω = 1, hela urvalet). Då är
+ *   del i (1 ≤ i ≤ n)   Σ_c ω_c · Σ_{barn b av c} Δs_b|c · (W̄_b − W̄_c)
+ *   del n+1 (inom)      Σ_{löv l} ω_l · ΔW_l,  där ω_l = ω_förälder · s̄_l
+ * Summan är exakt ΔW för roten, eftersom ΔW_c = Σ_b Δs_b|c · W̄_b + Σ_b s̄_b|c · ΔW_b (symmetriskt, ΔX·Ȳ + X̄·ΔY).
  * Δx = x_kvinnor − x_män, x̄ = (x_män + x_kvinnor) / 2 (symmetriskt, inget referenskön).
- * Saknas ett kön i en grupp sätts dess medellön lika med det andra könets; gruppen
- * bidrar då bara till fördelningsdelen. Centreringen (− W̄, − W̄_b) ändrar inga summor
+ * Saknas ett kön i en cell sätts dess medellön lika med det andra könets; cellen bidrar då bara till sin
+ * fördelningsdel, och inget under den räknas (ΔW = 0). Centreringen (− W̄_c) ändrar inga summor
  * eftersom Σ Δs = 0, men gör varje grupps post tolkbar.
+ * AID-nivåerna (sektor, aidniva, aid) ordnas alltid grovt till fint på sina platser: en finare nivå före en grövre
+ * ger annars en tom del. Ålder (åldersgrupp, ageBucket) kan bara väljas när lönefilen har ålder (ADR-64).
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
 
+
+/** Variablerna i den ordning gränssnittet visar dem. */
+const GAP_VARIABLER = ['bas', 'sektor', 'aidniva', 'aid', 'alder'];
+const GAP_VARIABLER_STANDARD = ['bas', 'aid'];
+/** Alla variabler, i gränssnittets ordning (en kopia). */
+function gapAllaVariabler() { return [...GAP_VARIABLER]; }
+/** Standardvalet BAS, AID (en kopia). */
+function gapStandardVariabler() { return [...GAP_VARIABLER_STANDARD]; }
+const GAP_MAX = 4;
+// AID-hierarkin, grov till fin (ADR-33).
+const AID_NIVAER = ['sektor', 'aidniva', 'aid'];
+
+// Ord per variabel: etikett (kryssrutan), liten (i löptext: "inom samma …"), fordelning (del 1), over ("fördelade över …"
+// i kortet), overKort (samma i rapportunderlaget), olika ("har olika … inom samma"), post (en grupps namn).
+const ORD = {
+    bas: { etikett: 'BAS', liten: 'BAS', fordelning: 'BAS-fördelning', over: 'BAS-intervallen', overKort: 'BAS', olika: 'BAS', post: n => `BAS ${n}` },
+    sektor: { etikett: 'Sektor', liten: 'sektor', fordelning: 'Sektorsfördelning', over: 'sektorerna', overKort: 'sektorer', olika: 'sektor', post: n => n },
+    aidniva: { etikett: 'AID-mellannivå', liten: 'AID-mellannivå', fordelning: 'Fördelning över AID-mellannivåer', over: 'AID-mellannivåerna', overKort: 'AID-mellannivåer', olika: 'AID-mellannivå', post: n => n },
+    aid: { etikett: 'AID', liten: 'AID', fordelning: 'AID-fördelning', over: 'AID-koderna', overKort: 'AID', olika: 'AID', post: n => n },
+    alder: { etikett: 'Åldersgrupp', liten: 'åldersgrupp', fordelning: 'Åldersfördelning', over: 'åldersgrupperna', overKort: 'åldersgrupper', olika: 'ålder', post: n => n === '—' ? 'ålder saknas' : `${n} år` },
+};
+
+/** Etiketten för en variabel (kryssrutan, rapportunderlaget). @param {string} v */
+function gapVariabelEtikett(v) { return ORD[v] ? ORD[v].etikett : String(v); }
+
+const _versal = t => t.charAt(0).toUpperCase() + t.slice(1);
+// Gemen i löptext, utom förkortningar (BAS, AID).
+const _gemen = t => (t.length > 1 && t[1] === t[1].toUpperCase() && t[1] !== t[1].toLowerCase()) ? t : t.charAt(0).toLowerCase() + t.slice(1);
+const _och = a => a.length <= 1 ? (a[0] || '') : `${a.slice(0, -1).join(', ')} och ${a[a.length - 1]}`;
+
+/**
+ * Normaliserar ett val från konfigurationsfilen eller gränssnittet: bara kända variabler, inga dubbletter, högst fyra,
+ * AID-nivåerna grovt till fint och åldersgrupp bara när lönefilen har ålder. Ett tomt eller ogiltigt val ger
+ * standard med en varning; null ger standard utan varning.
+ * @param {any} v
+ * @param {{harAlder?: boolean}} [opts]
+ * @returns {{variabler: string[], varningar: string[]}}
+ */
+function normaliseraGapVariabler(v, { harAlder = true } = {}) {
+    const varningar = [];
+    if (v == null) return { variabler: [...GAP_VARIABLER_STANDARD], varningar };
+    if (!Array.isArray(v)) {
+        varningar.push('Uppdelningens variabler gick inte att läsa; standardvalet BAS och AID används.');
+        return { variabler: [...GAP_VARIABLER_STANDARD], varningar };
+    }
+    let val = [...new Set(v.filter(x => typeof x === 'string' && GAP_VARIABLER.includes(x)))];
+    if (val.length > GAP_MAX) {
+        val = val.slice(0, GAP_MAX);
+        varningar.push('Högst fyra variabler kan väljas; de första fyra används.');
+    }
+    if (!harAlder && val.includes('alder')) {
+        val = val.filter(x => x !== 'alder');
+        varningar.push('Åldersgrupp kan inte väljas: lönefilen saknar ålder.');
+    }
+    if (!val.length) {
+        if (!varningar.length) varningar.push('Uppdelningen behöver minst en variabel; standardvalet BAS och AID används.');
+        return { variabler: [...GAP_VARIABLER_STANDARD], varningar };
+    }
+    // AID-nivåerna på sina platser, grovt till fint.
+    const platser = val.map((x, i) => AID_NIVAER.includes(x) ? i : -1).filter(i => i >= 0);
+    const nivaer = platser.map(i => val[i]).sort((a, b) => AID_NIVAER.indexOf(a) - AID_NIVAER.indexOf(b));
+    platser.forEach((p, j) => { val[p] = nivaer[j]; });
+    return { variabler: val, varningar };
+}
+
+/** Sant när valet (efter normalisering) är standardvalet BAS, AID. @param {any} v */
+function gapVariablerArStandard(v) {
+    const n = normaliseraGapVariabler(v).variabler;
+    return n.length === GAP_VARIABLER_STANDARD.length && n.every((x, i) => x === GAP_VARIABLER_STANDARD[i]);
+}
+
+/**
+ * Delarna för ett val: id (A, B, …), namn, variabel (null för den sista, "inom"), texten i kortet (betyder) och
+ * frasen i rapportunderlaget (orsak: "på …"). Standardvalet ger texterna från före ADR-65.
+ * @param {string[]} variabler normaliserade
+ * @returns {{id: string, namn: string, variabel: string|null, betyder: string, orsak: string}[]}
+ */
+function gapDelar(variabler) {
+    const v = variabler && variabler.length ? variabler : GAP_VARIABLER_STANDARD;
+    const inom = i => _och(v.slice(0, i).reverse().map(x => ORD[x].liten));   // finast först: "AID och BAS"
+    /** @type {{id: string, namn: string, variabel: string|null, betyder: string, orsak: string}[]} */
+    const delar = v.map((x, i) => i === 0
+        ? { id: 'ABCDE'[i], namn: ORD[x].fordelning, variabel: x, betyder: `Kvinnor och män är olika fördelade över ${ORD[x].over}.`,
+            orsak: `på att kvinnor och män är olika fördelade över ${ORD[x].overKort}` }
+        : { id: 'ABCDE'[i], namn: `${_versal(ORD[x].liten)} inom ${inom(i)}`, variabel: x,
+            betyder: `Kvinnor och män har olika ${ORD[x].olika} inom samma ${inom(i)}.`, orsak: `på olika ${ORD[x].olika} inom samma ${inom(i)}` });
+    delar.push({ id: 'ABCDE'[v.length], namn: `Inom ${inom(v.length)}`, variabel: null,
+        betyder: `Kvinnor och män har olika lön i samma ${inom(v.length)}.`, orsak: `på löneskillnader inom samma ${inom(v.length)}` });
+    return delar;
+}
+
+/** Variablerna i löptext, i valets ordning: "BAS, åldersgrupp och AID". @param {string[]} variabler */
+function gapVariablerIText(variabler) { return _och((variabler || []).map(x => ORD[x] ? ORD[x].liten : String(x))); }
+
+/** Delarna i en mening: "BAS-fördelning, AID inom BAS och lön inom samma AID och BAS". @param {string[]} variabler */
+function gapDelarIText(variabler) {
+    const v = variabler && variabler.length ? variabler : GAP_VARIABLER_STANDARD;
+    const d = gapDelar(v);
+    return _och([...d.slice(0, -1).map(x => _gemen(x.namn)), `lön inom samma ${_och(v.slice().reverse().map(x => ORD[x].liten))}`]);
+}
 
 const _medel = rader => rader.reduce((s, r) => s + r.lon, 0) / rader.length;
 
@@ -7022,9 +7130,11 @@ function _cell(g, totKv, totMa, k) {
 
 /** @typedef {{namn:string, kr:number, synlig:boolean}} Post */
 
-// Alla poster per del, med synlig = båda könen i gruppen (och för B/C även BAS:en) har 0 eller
-// minst k personer. null när ett kön har färre än k i hela urvalet.
-function _beraknaPoster(rader, k) {
+// Alla poster per del (A, B, …), med synlig = båda könen i cellen och i alla dess överceller har 0 eller minst k
+// personer. null när ett kön har färre än k i hela urvalet. Posterna läggs i samma ordning och räknas med samma
+// operationer som före ADR-65 (djupet först, vikten ω multipliceras från vänster), så att standardvalet ger
+// bitlika tal.
+function _beraknaPoster(rader, k, variabler) {
     const kv = [], ma = [];
     for (const r of rader || []) {
         if (!(r.lon > 0)) continue;
@@ -7036,35 +7146,48 @@ function _beraknaPoster(rader, k) {
 
     const medel = { kv: _medel(kv), ma: _medel(ma) };
     const wTot = (medel.ma + medel.kv) / 2;
-    /** @type {{A: Post[], B: Post[], C: Post[]}} */
-    const poster = { A: [], B: [], C: [] };
+    const n = variabler.length;
+    /** @type {Record<string, Post[]>} */
+    const poster = {};
+    for (let i = 0; i <= n; i++) poster['ABCDE'[i]] = [];
+    const nyckel = v => r => groupKey(r, v) ?? '—';   // åldersgrupp saknas (ålder 0) blir en egen grupp
 
-    for (const [bas, gb] of _grupper(kv, ma, r => r.bas || '—')) {
-        const b = _cell(gb, kv.length, ma.length, k);
-        poster.A.push({ namn: `BAS ${bas}`, kr: (b.sKv - b.sMa) * (b.w - wTot), synlig: b.synlig });
-        if (!b.bada) continue;   // ΔW_b = 0 — BAS:en bidrar varken till B eller C
-        const sb = (b.sKv + b.sMa) / 2;
-        for (const [aid, ga] of _grupper(gb.kv, gb.ma, r => groupKey(r, 'aid'))) {
-            const a = _cell(ga, gb.kv.length, gb.ma.length, k);
-            const namn = `${aid}, BAS ${bas}`;
-            // BAS-medellönen (båda könens) ingår i B-posten, så även BAS:en måste klara k.
-            const synlig = a.synlig && b.synlig;
-            poster.B.push({ namn, kr: sb * (a.sKv - a.sMa) * (a.w - b.w), synlig });
-            poster.C.push({ namn, kr: sb * ((a.sKv + a.sMa) / 2) * (a.wKv - a.wMa), synlig });
+    // Cellen på nivå `niva` (0 = roten) med vikten ω (null i roten), medellönen w, namnen uppåt och om alla
+    // överceller är synliga.
+    const ner = (gkv, gma, niva, omega, w, namn, synligUppat) => {
+        const v = variabler[niva];
+        for (const [key, g] of _grupper(gkv, gma, nyckel(v))) {
+            const c = _cell(g, gkv.length, gma.length, k);
+            const cNamn = [ORD[v].post(key), ...namn];
+            const synlig = c.synlig && synligUppat;
+            const delta = c.sKv - c.sMa;
+            poster['ABCDE'[niva]].push({ namn: cNamn.join(', '), kr: omega === null ? delta * (c.w - w) : omega * delta * (c.w - w), synlig });
+            if (niva + 1 < n) {
+                if (!c.bada) continue;   // ΔW_c = 0 — cellen bidrar inte längre ner
+                const sc = (c.sKv + c.sMa) / 2;
+                ner(g.kv, g.ma, niva + 1, omega === null ? sc : omega * sc, c.w, cNamn, synlig);
+            } else {
+                const sc = (c.sKv + c.sMa) / 2;
+                poster['ABCDE'[n]].push({ namn: cNamn.join(', '), kr: omega === null ? sc * (c.wKv - c.wMa) : omega * sc * (c.wKv - c.wMa), synlig });
+            }
         }
-    }
+    };
+    ner(kv, ma, 0, null, wTot, [], true);
     return { kv, ma, medel, poster };
 }
 
 /** Samtliga poster, även dolda — bara för tester av skyddsregeln; redovisas aldrig. */
 /**
  * @param {any[]} rader
- * @param {{k?:number}} [opts]
+ * @param {{k?:number, variabler?:any}} [opts]
  */
-function gapPoster(rader, { k } = {}) {
-    const r = _beraknaPoster(rader, k);
+function gapPoster(rader, { k, variabler } = {}) {
+    const r = _beraknaPoster(rader, k, _variablerFor(rader, variabler));
     return r ? r.poster : null;
 }
+
+// Valet normaliserat mot underlaget: åldersgrupp bara när lönefilen har ålder (ålder 0 = saknas, ADR-64).
+const _variablerFor = (rader, variabler) => normaliseraGapVariabler(variabler, { harAlder: (rader || []).some(r => r && r.alder > 0) }).variabler;
 
 // Skyddsregel för topplistan. Det som inte visas i en del är delens summa minus de visade
 // posterna. Den som läser vet inte beloppen eller tecknen på de enskilda posterna i resten,
@@ -7073,8 +7196,8 @@ function gapPoster(rader, { k } = {}) {
 // |h| ≥ 0,5 kr. Håller det inte tas den minsta visade posten bort ur listan (den går in i
 // resten) tills regeln håller. De dolda gruppernas summa redovisas aldrig.
 // Håller regeln inte ens med tom lista består delen i praktiken av den dolda gruppen; då
-// redovisas inga delar alls (skyddad: false) — A + B + C = hela skillnaden, så en enskild del
-// kan inte döljas medan de andra visas.
+// redovisas inga delar alls (skyddad: false) — delarna summerar till hela skillnaden, så en enskild del
+// kan inte döljas medan de andra visas. Regeln gäller per del, för varje val av variabler (ADR-65).
 const SKYDD = 0.5;
 function _skyddad(poster, visade) {
     const vis = new Set(visade);
@@ -7086,17 +7209,18 @@ function _skyddad(poster, visade) {
 
 /**
  * @param {any[]} rader
- * @param {{k?:number}} [opts]
+ * @param {{k?:number, variabler?:any}} [opts] variabler: förklaringsvariablerna i ordning (null = standard, BAS och AID)
  */
-function gapUppdelning(rader, { k } = {}) {
-    const r = _beraknaPoster(rader, k);
+function gapUppdelning(rader, { k, variabler } = {}) {
+    const val = _variablerFor(rader, variabler);
+    const r = _beraknaPoster(rader, k, val);
     if (!r) return null;
     const { kv, ma, medel, poster } = r;
     const gap = medel.kv - medel.ma;   // kvinnor mot män, som i resten av verktyget
 
     const delar = {}, topp = {}, ovrigaAntal = {};
     let skyddad = true;
-    for (const d of ['A', 'B', 'C']) {
+    for (const d of Object.keys(poster)) {
         delar[d] = poster[d].reduce((s, p) => s + p.kr, 0);
         ovrigaAntal[d] = poster[d].filter(p => !p.synlig).length;
         // Poster som avrundas till 0 kr säger inget och visas inte (de ingår i delen).
@@ -7109,13 +7233,21 @@ function gapUppdelning(rader, { k } = {}) {
     }
     const gapPct = gap / medel.ma * 100;
     const bas = { n: { kv: kv.length, ma: ma.length }, medel, gap, gapPct, litetGap: Math.abs(gapPct) < 1 };
-    if (!skyddad) return { ...bas, skyddad: false, delar: null, topp: null, ovrigaAntal: null };
-    return { ...bas, skyddad: true, delar, topp, ovrigaAntal };
+    if (!skyddad) return { ...bas, skyddad: false, delar: null, topp: null, ovrigaAntal: null, variabler: val };
+    return { ...bas, skyddad: true, delar, topp, ovrigaAntal, variabler: val };
 }
 
-    return { gapUppdelning };
+    return { gapUppdelning, normaliseraGapVariabler, gapVariablerArStandard, gapDelar, gapDelarIText, gapVariabelEtikett, gapVariablerIText, gapAllaVariabler, gapStandardVariabler };
 })();
 const _guGapUppdelning = __mirrorGapuppdelning.gapUppdelning;
+const _guNormaliseraVariabler = __mirrorGapuppdelning.normaliseraGapVariabler;
+const _guVariablerArStandard = __mirrorGapuppdelning.gapVariablerArStandard;
+const _guDelar = __mirrorGapuppdelning.gapDelar;
+const _guDelarIText = __mirrorGapuppdelning.gapDelarIText;
+const _guVariabelEtikett = __mirrorGapuppdelning.gapVariabelEtikett;
+const _guVariablerIText = __mirrorGapuppdelning.gapVariablerIText;
+const _guAllaVariabler = __mirrorGapuppdelning.gapAllaVariabler;
+const _guStandardVariabler = __mirrorGapuppdelning.gapStandardVariabler;
 
 // ---- speglar src/lib/individflaggor.js ----
 const __mirrorIndivid = (() => {
@@ -8157,6 +8289,10 @@ const __mirrorRapportunderlag = (() => {
     const statusKonstanter = __mirrorStatus.statusKonstanter;
     const lonebegreppReservation = __mirrorStructure.lonebegreppReservation;
     const personOrd = __mirrorNamn.personOrd;
+    const gapDelar = __mirrorGapuppdelning.gapDelar;
+    const gapVariablerIText = __mirrorGapuppdelning.gapVariablerIText;
+    const gapVariablerArStandard = __mirrorGapuppdelning.gapVariablerArStandard;
+    const gapStandardVariabler = __mirrorGapuppdelning.gapStandardVariabler;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -8171,6 +8307,7 @@ const __mirrorRapportunderlag = (() => {
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
+
 
 
 
@@ -8469,18 +8606,24 @@ function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
         if (!u) return blk(R, [`För få personer för att dela upp skillnaden: ett kön har färre än ${k} ${personOrd(k)} i urvalet.`], null);
         const inledning = `Kvinnornas medellön är ${_kr(u.medel.kv)} och männens ${_kr(u.medel.ma)}, en skillnad på ${_kr(u.gap)} (${_pct(u.gapPct)} av männens).`;
         if (u.skyddad === false) return blk(R, [inledning, `Skillnaden delas inte upp här: en grupp med färre än ${k} ${personOrd(k)} står för så stor del av en av delarna att dess bidrag annars skulle kunna räknas fram.`], null);
-        const { A, B, C } = u.delar;
+        // Delarna och deras namn följer de valda variablerna (ADR-65); standardvalet BAS, AID ger texten från före.
+        const variabler = u.variabler || gapStandardVariabler();
+        const delar = gapDelar(variabler);
+        const orsaker = delar.map(d => `${_kr(u.delar[d.id])} ${d.orsak}`);
         const st = [`${inledning} Beloppen är kvinnor mot män: negativa belopp betyder att kvinnornas medellön är lägre.`,
-            `Av skillnaden beror ${_kr(A)} på att kvinnor och män är olika fördelade över BAS, ${_kr(B)} på olika AID inom samma BAS och ${_kr(C)} på löneskillnader inom samma AID och BAS.`];
+            `Av skillnaden beror ${orsaker.slice(0, -1).join(', ')} och ${orsaker[orsaker.length - 1]}.`];
+        if (!gapVariablerArStandard(variabler)) {
+            st.push(variabler.length === 1
+                ? `Uppdelningen förklarar med variabeln ${gapVariablerIText(variabler)}; resten är skillnaden inom samma grupp.`
+                : `Uppdelningen förklarar med variablerna ${gapVariablerIText(variabler)}, i den ordningen. Ordningen påverkar delarna: den första variabeln får det den förklarar ensam, nästa det den förklarar utöver den första, och så vidare.`);
+        }
         if (u.litetGap) st.push('Skillnaden är mindre än 1 % av männens medellön. Delarna kan då peka åt olika håll och vara större än själva skillnaden.');
         const andel = v => u.litetGap ? '—' : _pct(v / u.gap * 100, 0);
         // Samma poster som kortet: listan är redan kortad efter skyddsregeln, och en kortare
         // lista här kunde bryta den (gapuppdelning.js).
         const storst = d => u.topp[d].map(p => `${p.namn} (${_kr(p.kr)})`).join('; ') || '—';
         return blk(R, st, { rubriker: ['Del', 'Bidrag (kr)', 'Andel av skillnaden', 'Störst bidrag'], rader: [
-            ['BAS-fördelning', _kr(A), andel(A), storst('A')],
-            ['AID inom BAS', _kr(B), andel(B), storst('B')],
-            ['Inom AID och BAS', _kr(C), andel(C), storst('C')],
+            ...delar.map(d => [d.namn, _kr(u.delar[d.id]), andel(u.delar[d.id]), storst(d.id)]),
             ['Totalt', _kr(u.gap), u.litetGap ? '—' : '100 %', ''],
         ] });
     }
@@ -15447,6 +15590,7 @@ document.addEventListener('keydown', e => {
  *   utkastPerBas: boolean,
  *   rapportUrval: {ordning: string[], med: string[], fast?: string}|null, rapportTabeller: any[], perBasRecept: any, forraArsbokslut: any,
  *   forklaringsmodell: null|{bas:boolean, alder:boolean, yrkesgrupp:boolean, skal:string},
+ *   gapUppdelning: null|{variabler: string[]},
  *   bristAids: Set<string>, scenarios: any[], snapshot: any, profile: {[k: string]: any},
  *   filnamn: {data: string|null, policy: string|null, statistik: string|null}, kTroskel: number,
  *   paketLas: {kTroskelLagst: number|null, inaktivitetMin: number|null, smaGrupperIExport: boolean},
@@ -15491,6 +15635,7 @@ const state = {
     rapportTabeller: [],       // egna tabeller i rapporten: recept ur Utforska (src/lib/tabellrecept.js, ADR-52)
     perBasRecept: null,        // receptet för avsnittet per BAS-intervall: null = standard (src/lib/perbas.js, ADR-52)
     forklaringsmodell: null,   // vilka variabler regressionen räknar bort: null = standard (kön + BAS + ålder), ADR-56
+    gapUppdelning: null,       // Var uppstår löneskillnaden: { variabler } i ordning; null = standard (BAS, AID), ADR-65
     bristAids: new Set(),         // E: AID-koder markerade som bristyrke
     scenarios: [],                // I: sparade scenarion (max 5)
     snapshot: null,         // för A/B-jämförelse
@@ -17573,6 +17718,7 @@ function buildConfigSnapshot() {
         rapportTabeller: (state.rapportTabeller || []).map(t => JSON.parse(JSON.stringify(t))),   // egna tabeller: recept, inga tal (ADR-52)
         perBasRecept: state.perBasRecept ? JSON.parse(JSON.stringify(state.perBasRecept)) : null,   // vilka avsnitt som följer med i rapporten
         forklaringsmodell: state.forklaringsmodell ? { ...state.forklaringsmodell } : null,   // regressionens variabler och skälet (ADR-56); null = standard
+        gapUppdelning: state.gapUppdelning ? { variabler: [...state.gapUppdelning.variabler] } : null,   // uppdelningens variabler i ordning (ADR-65); null = standard
         // Bug-fix: Set-objekt serialiseras inte korrekt med spread/JSON
         bristAids: Array.from(state.bristAids || []),
         likvardighet: state.likvardighet ? {
@@ -17861,6 +18007,11 @@ function applyConfigSnapshot(cfg) {
     const rader = getData();
     const fm = _rgNormaliseraForklaringsmodell(cfg.forklaringsmodell, { harYrke: !rader.length || rader.some(d => d.aid || d.yrke) });
     varningar.push(...fm.varningar);
+    // Uppdelningens variabler (ADR-65): samma mönster. En äldre fil utan fältet ger standard (BAS, AID); ett ogiltigt
+    // värde ger standard med varning, aldrig fel. Åldersgrupp prövas inte mot datat här (det görs av gapVariabler()).
+    const guRa = cfg.gapUppdelning;
+    const gu = _guNormaliseraVariabler(guRa == null ? null : (typeof guRa === 'object' && !Array.isArray(guRa) ? (guRa.variabler ?? null) : guRa));
+    varningar.push(...gu.varningar);
     let kAndrad = false;
     if (tmp.kTroskel != null) {
         const kr = sattKTroskel(tmp.kTroskel, { rita: false });
@@ -17873,6 +18024,7 @@ function applyConfigSnapshot(cfg) {
     if (tmp.rapportTabeller) state.rapportTabeller = tmp.rapportTabeller;
     if (tmp.perBasRecept) state.perBasRecept = _pbReceptArStandard(tmp.perBasRecept) ? null : tmp.perBasRecept;
     state.forklaringsmodell = _rgForklaringsmodellArStandard(fm.modell) ? null : fm.modell;
+    state.gapUppdelning = _guVariablerArStandard(gu.variabler) ? null : { variabler: gu.variabler };
     if (tmp.lonemanad != null && typeof sattLonemanad === 'function') sattLonemanad(tmp.lonemanad);
     if (tmp.forhandskontrollStopp != null) state.forhandskontrollStopp = tmp.forhandskontrollStopp;
     if (tmp.likvardighet) {
@@ -18562,6 +18714,11 @@ function _methodAppendixData() {
         ['Steg + Yrkesgrupp (dekomponeringen)', medAlder
             ? 'Löneskillnad mellan könen med fasta effekter för yrkesgrupp inom BAS (AID×BAS) utöver ålder, skattat med inomtransformation; visas som sista steg, ingår inte i huvudtalet'
             : 'Löneskillnad mellan könen med fasta effekter för yrkesgrupp inom BAS (AID×BAS), utan ålder (lönefilen saknar ålder), skattat med inomtransformation; visas som sista steg, ingår inte i huvudtalet'],
+        // Var uppstår löneskillnaden (ADR-65): raden finns bara när variablerna inte är standardvalet BAS och AID.
+        ...(typeof gapVariabler === 'function' && !_guVariablerArStandard(gapVariabler())
+            ? [['Var uppstår löneskillnaden (variabler)', gapVariabler().length > 1
+                ? `Skillnaden i medellön delas med ${_guVariablerIText(gapVariabler())}, i den ordningen (standard: BAS och AID). Ordningen påverkar delarna.`
+                : `Skillnaden i medellön delas med ${_guVariablerIText(gapVariabler())} (standard: BAS och AID).`]] : []),
         ['Ålder & karriär (tvärsnitt)', 'Lön mot ålder och livscykelmodellen bygger på ett tvärsnitt: de visar skillnader mellan åldersgrupper i dag, inte hur en persons lön utvecklas över karriären (kohorteffekter)'],
         ['Trattdiagrammet', 'Med färre än tio yrkesgrupper säger trattens form lite; varje grupp bedöms då för sig i tabellen. Punktens bedömning bygger på en omkastning av könen inom gruppen'],
         ['p-värden', 't-fördelning vid df < 100, annars normalfördelning; Benjamini-Hochberg (FDR) vid multipla grupptest'],
@@ -19984,6 +20141,7 @@ function _rensaAllData({ inbakat = true } = {}) {
     state.rapportTabeller = [];
     state.perBasRecept = null;
     state.forklaringsmodell = null;
+    state.gapUppdelning = null;
     // Rensa även historiska snapshots och anteckningar
     state.forecast = { budget: { mode: 'pct', value: null }, generell: { mode: 'pct', value: null }, targets: [], minGroupN: 10, roundStep: 0, years: 1, scenarios: { A: null, B: null }, result: null };
     // Rensa även beräkningscacher som kan innehålla
@@ -31577,7 +31735,7 @@ let _rmHandelser = 0;
 let _rmMinne = null;
 function _rmMinnesNyckel() {
     return [_rmHandelser, state.data.length, getData().length, kTroskel(), state.policy, state.statistik, state.forraArsbokslut, state.rapportTabeller,
-        state.perBasRecept, state.forklaringsmodell, state.bootstrapCI, state.powerAnalysis, state.likvardighet && state.likvardighet.result, state.isDemo];
+        state.perBasRecept, state.forklaringsmodell, state.gapUppdelning, state.bootstrapCI, state.powerAnalysis, state.likvardighet && state.likvardighet.result, state.isDemo];
 }
 /** Ett avsnitt som förhandsbeskedet ser det: id, rubrik, delarnas typ och det utelämnade. */
 function _rmLattAvsnitt(a) {
@@ -33308,7 +33466,7 @@ function _rapportunderlagBlockExport() {
     /** @type {any[]} */
     const block = [
         _ruAvsnittBlock('sammanfattning', sammanfattning, { ...opt, troskelNot: kStampel() }),
-        _ruAvsnittBlock('uppdelning', _guGapUppdelning(d, { k }), opt),
+        _ruAvsnittBlock('uppdelning', _guGapUppdelning(d, { k, variabler: gapVariabler() }), opt),   // valda variabler (ADR-65)
         _ruAvsnittBlock('lika', lika, opt),
         _ruAvsnittBlock('likvardigt', { par, exkluderade: parUtelamnade, kravProxy,
             kvinnoTroskel: aidbasGrans(), kvDomDefinition: aidbasDefinition(), jamforelse: lvJamforelse(), topN }, opt),
@@ -33541,19 +33699,99 @@ document.addEventListener('click', async e => {
 // Copyright 2026 Felix Jansson
 // ---- Var uppstår löneskillnaden? (ADR-22) ----
 /**
- * Kort i Översikt: gapet i medellön delat i BAS-fördelning (A), AID inom BAS (B) och
- * lön inom samma AID och BAS (C), med de grupper som bidrar mest. Beräkningen bor i
- * src/lib/gapuppdelning.js (_guGapUppdelning). Anropas först i updateCompliance().
+ * Kort i Lönestruktur: gapet i medellön delat efter de valda förklaringsvariablerna (ADR-65; standard BAS och AID ger
+ * BAS-fördelning (A), AID inom BAS (B) och lön inom samma AID och BAS (C)), med de grupper som bidrar mest.
+ * Beräkningen och delarnas namn bor i src/lib/gapuppdelning.js (_guGapUppdelning, _guDelar). Anropas av Lönestruktur.
  */
-const _GU_DELAR = [
-    { id: 'A', namn: 'BAS-fördelning', betyder: 'Kvinnor och män är olika fördelade över BAS-intervallen.',
-      atgard: 'Hör till karriärvägar och rekrytering — inte till lönesättningen.', flik: 'struktur', flikNamn: 'Lönestruktur' },
-    { id: 'B', namn: 'AID inom BAS', betyder: 'Kvinnor och män har olika AID inom samma BAS.',
-      atgard: 'Kan kräva en lönesatsning på yrket; pröva likvärdigt arbete.', flik: 'likvardighet', flikNamn: 'Likvärdigt arbete' },
-    { id: 'C', namn: 'Inom AID och BAS', betyder: 'Kvinnor och män har olika lön i samma AID och BAS.',
-      atgard: 'Pröva lika arbete och se över lönerna individuellt.', flik: 'matrix', flikNamn: 'Lika arbete',
-      ankare: 'personer-att-granska', ankareNamn: 'Personer att granska' },
-];
+// Åtgärd och länk per variabel som delen förklarar; den sista delen ("inom") har nyckeln null.
+const _GU_ATGARD = {
+    bas: { atgard: 'Hör till karriärvägar och rekrytering — inte till lönesättningen.', flik: 'struktur', flikNamn: 'Lönestruktur' },
+    sektor: { atgard: 'Hör till hur verksamheten är organiserad och till rekryteringen.', flik: 'struktur', flikNamn: 'Lönestruktur' },
+    aidniva: { atgard: 'Kan kräva en lönesatsning på yrkesområdet; pröva likvärdigt arbete.', flik: 'likvardighet', flikNamn: 'Likvärdigt arbete' },
+    aid: { atgard: 'Kan kräva en lönesatsning på yrket; pröva likvärdigt arbete.', flik: 'likvardighet', flikNamn: 'Likvärdigt arbete' },
+    alder: { atgard: 'Hör till åldersstrukturen. Pröva om skillnaden finns kvar vid samma ålder.', flik: 'kon', flikNamn: 'Ålder & karriär' },
+    inom: { atgard: 'Pröva lika arbete och se över lönerna individuellt.', flik: 'matrix', flikNamn: 'Lika arbete',
+        ankare: 'personer-att-granska', ankareNamn: 'Personer att granska' },
+};
+/** Delarna för ett val, med åtgärd och länk. @param {string[]} variabler */
+function _guDelarMedAtgard(variabler) {
+    return _guDelar(variabler).map(d => ({ ...d, ..._GU_ATGARD[d.variabel || 'inom'] }));
+}
+
+// ---- Valet av förklaringsvariabler (ADR-65) ----
+/** De gällande variablerna, normaliserade mot datat: åldersgrupp bara när lönefilen har ålder (ADR-64). */
+function gapVariabler() {
+    return _guNormaliseraVariabler(state.gapUppdelning && state.gapUppdelning.variabler, { harAlder: harAlder() }).variabler;
+}
+/**
+ * Sätter variablerna. Standardvalet lagras som null. Det som lagras prövas inte mot åldern, som förklaringsmodellen
+ * (ADR-56): en lönefil utan ålder ändrar inte valet för nästa fil.
+ * @param {any} v
+ * @param {{rita?: boolean}} [opts]
+ */
+function sattGapVariabler(v, { rita = true } = {}) {
+    const { variabler, varningar } = _guNormaliseraVariabler(v);
+    state.gapUppdelning = _guVariablerArStandard(variabler) ? null : { variabler };
+    if (rita) renderGapUppdelning();
+    return { variabler: gapVariabler(), varningar };
+}
+// Variablerna som kan väljas i det här underlaget: åldersgrupp kräver ålder, sektor och mellannivå AID-koder.
+function _guValbara() {
+    const harAid = getData().some(r => r.aid);
+    return _guAllaVariabler().filter(v => (v !== 'alder' || harAlder()) && (!['sektor', 'aidniva'].includes(v) || harAid));
+}
+const _GU_MAX = 4;
+function _guValHtml() {
+    const val = gapVariabler();
+    const ovriga = _guValbara().filter(v => !val.includes(v));
+    // Flytten prövas genom normaliseringen: AID-nivåerna står alltid grovt till fint, så en flytt förbi en annan
+    // AID-nivå går inte och knappen är då avstängd.
+    const kanFlytta = (i, steg) => { const j = i + steg; if (j < 0 || j >= val.length) return false;
+        const ny = [...val]; [ny[i], ny[j]] = [ny[j], ny[i]]; return _guNormaliseraVariabler(ny).variabler.join() !== val.join(); };
+    const rad = (v, i) => {
+        const namn = esc(_guVariabelEtikett(v));
+        return `<li class="urval-rad" data-gu-rad="${v}"><label><input type="checkbox" data-gu-var="${v}" checked${val.length === 1 ? ' disabled title="Minst en variabel"' : ''}> <span class="gu-plats">${i + 1}.</span> ${namn}</label>
+            <span class="urval-flytta"><button type="button" class="btn-table-tool" data-gu-flytta="-1" aria-label="Flytta upp: ${namn}"${kanFlytta(i, -1) ? '' : ' disabled'}>${ikon('pilUpp', 14)}</button>
+            <button type="button" class="btn-table-tool" data-gu-flytta="1" aria-label="Flytta ned: ${namn}"${kanFlytta(i, 1) ? '' : ' disabled'}>${ikon('pilNed', 14)}</button></span></li>`;
+    };
+    const fler = val.length >= _GU_MAX;
+    return `<fieldset class="gu-val"><legend>Förklara med:</legend>
+        <p class="gu-not" id="gu-val-hjalp">Ordningen påverkar delarna: den första variabeln får det den förklarar ensam, nästa det den förklarar utöver den första, och så vidare. Välj en till fyra; AID-nivåerna ordnas alltid från grov till fin.</p>
+        <ol class="urval-lista gu-val-lista" aria-describedby="gu-val-hjalp">${val.map(rad).join('')}${ovriga.map(v => `<li class="urval-rad" data-gu-rad="${v}"><label><input type="checkbox" data-gu-var="${v}"${fler ? ' disabled title="Högst fyra variabler"' : ''}> ${esc(_guVariabelEtikett(v))}</label></li>`).join('')}</ol>
+        ${_guVariablerArStandard(val) ? '' : '<button type="button" class="btn btn-secondary btn-sm" data-gu-standard>Återställ standard (BAS, AID)</button>'}
+    </fieldset>`;
+}
+// Ritar om kortet och lägger tillbaka fokus på samma kontroll (eller rutan för samma variabel, om knappen nu är avstängd).
+function _guAndra(ny, fokus, meddelande) {
+    sattGapVariabler(ny);
+    const host = document.getElementById('gap-uppdelning');
+    const el = /** @type {HTMLElement|null} */ (fokus && host ? host.querySelector(fokus) : null);
+    if (el && !(/** @type {any} */ (el).disabled)) el.focus();
+    else if (host) { const v = fokus && /data-gu-rad="(\w+)"/.exec(fokus); const r = /** @type {HTMLElement|null} */ (v ? host.querySelector(`[data-gu-var="${v[1]}"]`) : null); if (r) r.focus(); }
+    if (meddelande) announceToScreenReader(meddelande);
+}
+document.addEventListener('change', e => {
+    const el = /** @type {HTMLInputElement} */ (e.target);
+    if (!el || !el.closest || !el.closest('#gap-uppdelning .gu-val') || !el.hasAttribute('data-gu-var')) return;
+    const v = /** @type {string} */ (el.getAttribute('data-gu-var'));
+    const val = gapVariabler();
+    const ny = el.checked ? [...val, v].slice(0, _GU_MAX) : val.filter(x => x !== v);
+    if (!ny.length) { el.checked = true; return; }
+    _guAndra(ny, `[data-gu-var="${v}"]`, `Uppdelningen förklarar nu med ${_guVariablerIText(_guNormaliseraVariabler(ny).variabler)}.`);
+});
+document.addEventListener('click', e => {
+    const t = /** @type {HTMLElement} */ (e.target);
+    if (!t || !t.closest || !t.closest('#gap-uppdelning .gu-val')) return;
+    if (t.closest('[data-gu-standard]')) { _guAndra(null, '[data-gu-var="bas"]', 'Uppdelningen förklarar nu med BAS och AID (standard).'); return; }
+    const knapp = t.closest('[data-gu-flytta]');
+    if (!knapp) return;
+    const v = knapp.closest('[data-gu-rad]')?.getAttribute('data-gu-rad');
+    const steg = Number(knapp.getAttribute('data-gu-flytta'));
+    const val = gapVariabler(), i = val.indexOf(/** @type {string} */ (v)), j = i + steg;
+    if (i < 0 || j < 0 || j >= val.length) return;
+    const ny = [...val]; [ny[i], ny[j]] = [ny[j], ny[i]];
+    _guAndra(ny, `[data-gu-rad="${v}"] [data-gu-flytta="${steg}"]`, `${_guVariabelEtikett(/** @type {string} */ (v))} flyttad ${steg < 0 ? 'upp' : 'ned'}. Ordningen är nu ${_guVariablerIText(_guNormaliseraVariabler(ny).variabler)}.`);
+});
 
 function _guKr(v, tecken = true) {
     const r = Math.round(v);
@@ -33572,8 +33810,9 @@ function renderGapUppdelning() {
     if (!d.length) { host.hidden = true; body.innerHTML = ''; return; }
     host.hidden = false;
     const demo = state.isDemo ? '<p class="gu-demo"><strong>DEMODATA — inte verkliga löner.</strong></p>' : '';
+    const variabler = gapVariabler();
     /** @type {any} */
-    const u = _guGapUppdelning(d, { k: kTroskel() });
+    const u = _guGapUppdelning(d, { k: kTroskel(), variabler });
     if (!u) {
         body.innerHTML = demo + `<p>För få personer för att dela upp skillnaden: ett kön har färre än ${kTroskel()} ${personOrd(kTroskel())} i urvalet.</p>`;
         return;
@@ -33585,13 +33824,14 @@ function renderGapUppdelning() {
     const medMa = Stat.median(d.filter(r => (r.kon === 'man' || r.kon === 'män') && r.lon > 0).map(r => r.lon));
     const medianText = medMa > 0 ? ` Kvinnors medianlön är ${_guPct(medKv / medMa * 100)} av mäns.` : '';
     if (!u.skyddad) {
-        body.innerHTML = demo + `<p class="gu-inledning">${inledning}${medianText}</p>`
+        body.innerHTML = demo + `<p class="gu-inledning">${inledning}${medianText}</p>` + _guValHtml()
             + `<p class="gu-not">Skillnaden delas inte upp här: en grupp med färre än ${kTroskel()} ${personOrd(kTroskel())} står för så stor del av `
             + 'en av delarna att dess bidrag annars skulle kunna räknas fram.</p>';
         return;
     }
-    const max = Math.max(1, ...['A', 'B', 'C'].map(x => Math.abs(u.delar[x])));
-    const rader = _GU_DELAR.map(del => {
+    const delar = _guDelarMedAtgard(u.variabler || variabler);
+    const max = Math.max(1, ...delar.map(x => Math.abs(u.delar[x.id])));
+    const rader = delar.map(del => {
         const v = u.delar[del.id];
         const bredd = Math.abs(v) / max * 50;
         const andel = u.litetGap ? '' : `<span class="gu-andel">${_guPct(v / u.gap * 100, 0)} av skillnaden</span>`;
@@ -33599,15 +33839,16 @@ function renderGapUppdelning() {
             // Dolda grupper redovisas bara med antal — deras summa kunde röja en enskild grupp.
             + (u.ovrigaAntal[del.id] ? `<li class="gu-ovriga">${u.ovrigaAntal[del.id]} ${u.ovrigaAntal[del.id] === 1 ? 'grupp' : 'grupper'} med färre än ${kTroskel()} ${personOrd(kTroskel())} ingår i summan</li>` : '');
         return `<div class="gu-rad" data-gu-del="${del.id}">
-            <div class="gu-rubrik"><strong>${del.id}. ${del.namn}</strong><span class="gu-belopp">${_guKr(v)}</span>${andel}</div>
+            <div class="gu-rubrik"><strong>${del.id}. ${esc(del.namn)}</strong><span class="gu-belopp">${_guKr(v)}</span>${andel}</div>
             <div class="gu-stapel" aria-hidden="true"><span class="gu-fyll ${v < 0 ? 'gu-neg' : 'gu-pos'}" data-stil-mvanster="${(v < 0 ? 50 - bredd : 50).toFixed(1)}%" data-stil-bredd="${bredd.toFixed(1)}%"></span></div>
-            <p class="gu-text">${del.betyder} ${del.atgard} <a href="#" data-go-to-tab="${del.flik}">Till ${del.flikNamn}</a>${del.ankare ? ` <a href="#" data-go-to-tab="${del.flik}" data-go-to-anchor="${del.ankare}">${del.ankareNamn}</a>` : ''}</p>
+            <p class="gu-text">${esc(del.betyder)} ${del.atgard} <a href="#" data-go-to-tab="${del.flik}">Till ${del.flikNamn}</a>${del.ankare ? ` <a href="#" data-go-to-tab="${del.flik}" data-go-to-anchor="${del.ankare}">${del.ankareNamn}</a>` : ''}</p>
             ${topp ? `<ul class="gu-topp">${topp}</ul>` : ''}
         </div>`;
     }).join('');
     body.innerHTML = demo
         + `<p class="gu-inledning">${inledning}${medianText} Uppdelningen räknar med medellön, eftersom delarna då summerar exakt. Beloppen är kvinnor mot män: negativa belopp betyder att kvinnornas medellön är lägre.</p>`
         + (u.litetGap ? '<p class="gu-not">Skillnaden är mindre än 1 % av männens medellön. Delarna kan då peka åt olika håll och vara större än själva skillnaden.</p>' : '')
+        + _guValHtml()
         + '<div id="chart-gap-uppdelning" class="marg-6-0-14"></div>'
         + rader
         + '<p class="gu-not">Grupperna rangordnas efter bidrag till hela organisationens skillnad och kan därför skilja sig från de flaggade yrkena i Lika arbete, som sorteras efter skillnadens storlek. Grupper där ett kön har färre än '
@@ -33615,17 +33856,20 @@ function renderGapUppdelning() {
     { const el = document.getElementById('chart-gap-uppdelning'); if (el) ritaFigur(el, _guTrappaFigur(u)); }
 }
 
-// Uppdelningen som trappa: från noll läggs de tre delarna (A, B, C) på varandra och landar i hela skillnaden i
-// medellön. Bara de tre delsummorna och totalen ritas — samma tal som raderna under, och aldrig en enskild grupps
-// bidrag (det skyddas av uppdelningens egen regel för små grupper; figuren ritas bara när `u.skyddad`).
+// Uppdelningen som trappa: från noll läggs delarna (A, B, … en per vald variabel och sist "inom") på varandra och
+// landar i hela skillnaden i medellön. Bara delsummorna och totalen ritas — samma tal som raderna under, och aldrig en
+// enskild grupps bidrag (det skyddas av uppdelningens egen regel för små grupper; figuren ritas bara när `u.skyddad`).
 function _guTrappaFigur(u) {
-    const kategorier = [..._GU_DELAR.map(d => `${d.id}. ${d.namn}`), 'Hela skillnaden'];
+    const variabler = u.variabler || _guStandardVariabler();
+    const delar = _guDelar(variabler);
+    const kategorier = [...delar.map(d => `${d.id}. ${d.namn}`), 'Hela skillnaden'];
     let niva = 0;
-    const steg = _GU_DELAR.map((d, i) => { const fore = niva; niva += u.delar[d.id];
+    const steg = delar.map((d, i) => { const fore = niva; niva += u.delar[d.id];
         return { x: kategorier[i], lag: Math.round(Math.min(fore, niva)), hog: Math.round(Math.max(fore, niva)), del: u.delar[d.id], efter: niva,
                  farg: u.delar[d.id] >= 0 ? PALETTE.serie[0] : PALETTE.serie[1] }; });
     const streck = [...steg.map(s => ({ x: s.x, y: Math.round(s.efter), etikett: _guKr(s.del) })), { x: 'Hela skillnaden', y: Math.round(u.gap), etikett: _guKr(u.gap) }];
-    return { beskrivning: 'Skillnaden i medellön, kvinnor mot män, delad i tre delar som läggs på varandra: BAS-fördelning, AID inom BAS och lön inom samma AID och BAS. Negativa belopp betyder att kvinnornas medellön är lägre. Samma belopp står i raderna under.',
+    const antal = ['', 'en', 'två', 'tre', 'fyra', 'fem'][delar.length];
+    return { beskrivning: `Skillnaden i medellön, kvinnor mot män, delad i ${antal} delar som läggs på varandra: ${_guDelarIText(variabler)}. Negativa belopp betyder att kvinnornas medellön är lägre. Samma belopp står i raderna under.`,
         legend: false, hojd: 280, x: { skala: 'band', ordning: kategorier }, y: { skala: 'linjar', titel: 'Skillnad i medellön (kr/månad)', format: 'kr', nollinje: true },
         lager: [{ marke: 'stapel', lage: 'overlagrad', serie: 'Hela skillnaden', farg: PALETTE.semantic.neutral, opacitet: 0.4, data: [{ x: 'Hela skillnaden', y: Math.round(u.gap) }], tips: d => [[d.x], ['Skillnad i medellön', _guKr(d.y)]] },
                 { marke: 'intervall', serie: 'Delens bidrag', tjocklek: 44, data: steg, tips: d => [[d.x], ['Bidrag', _guKr(d.del)], ['Summa hit', _guKr(d.efter)]] },

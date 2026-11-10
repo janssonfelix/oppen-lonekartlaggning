@@ -2803,6 +2803,12 @@ summary:focus-visible {
 .gu-pos { background: var(--primary); }
 .gu-neg { background: var(--text-muted); }
 .gu-text { margin: 4px 0; font-size: var(--fs-sm); }
+.gu-val { margin: 0 0 12px; padding: 10px 14px 12px; border: 1px solid var(--border); border-radius: 6px; background: var(--yta); min-width: 0; }
+.gu-val > legend { padding: 0 6px; font-size: var(--fs-sm); font-weight: 600; }
+.gu-val > .gu-not { margin: 0 0 6px; }
+.gu-val-lista { margin-bottom: 8px; }
+.gu-val-lista .urval-rad { flex-wrap: wrap; }
+.gu-plats { font-variant-numeric: tabular-nums; color: var(--text-muted); }
 .gu-topp { margin: 4px 0 0; padding-left: 20px; font-size: var(--fs-sm); font-variant-numeric: tabular-nums; }
 
 /* Personer att granska (ADR-23) */

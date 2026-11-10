@@ -341,11 +341,18 @@ rubrikraden, också när det är hopfällt.
    skillnaden i hela organisationen som beror på att kvinnor och män arbetar i olika
    sektorer. Pilen vid en sektor öppnar dess yrken i Tabeller och egna vyer. Lika arbete, likvärdigt arbete
    och övriga analyser gäller alltid hela organisationen.
-   **Var uppstår löneskillnaden?** delar skillnaden i medellön i tre delar som tillsammans blir hela
-   skillnaden. Diagrammet visar dem som en trappa som landar i hela skillnaden:
+   **Var uppstår löneskillnaden?** delar skillnaden i medellön i delar som tillsammans blir hela
+   skillnaden. Diagrammet visar dem som en trappa som landar i hela skillnaden. Standard är tre delar:
    - **BAS-fördelning:** kvinnor och män i olika BAS. Det är en fråga om karriärvägar och rekrytering.
    - **AID inom BAS:** olika yrken i samma BAS-intervall. Pröva likvärdigt arbete.
    - **inom AID och BAS:** olika lön i samma arbete. Pröva lika arbete.
+
+   Under raden **Förklara med:** väljer du andra variabler: BAS, sektor, AID-mellannivå, AID och åldersgrupp
+   (åldersgrupp bara när lönefilen har ålder). Välj en till fyra och ordna dem med pilknapparna. Ordningen spelar
+   roll: den första variabeln får det den förklarar ensam, nästa det den förklarar utöver den första, och så vidare.
+   AID-nivåerna står alltid från grov till fin. Med BAS och åldersgrupp blir delarna *BAS-fördelning*, *Åldersgrupp
+   inom BAS* och *Inom åldersgrupp och BAS*. Varje vald variabel ger en del, och den sista delen är skillnaden inom
+   samma grupp. Valet sparas i konfigurationsfilen och följer med i rapportunderlaget.
 
    Under varje del står de grupper som bidrar mest i kronor.
    Listan kan skilja sig från de flaggade yrkena i Lika arbete, som sorteras efter hur stor

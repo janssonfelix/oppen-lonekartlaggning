@@ -6,7 +6,7 @@
  */
 import { describe, it, expect, beforeAll, vi } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
-import { normalisera, oppnaFlik, iExport, KON_BAS, KON_KV, KON_MA, ENSAM, KON_GAP, KON_GAP_1, KON_DOLDA, fonsterKon, harNagon, laddaXlsx, fangaBocker, samlaUtdata, sammanhang, SENT_MELLAN, SENT_SMA, X_KV, X_MA, PAR_KV, PAR_MA, FK_RA } from './helpers/ktroskel-rigg.js';
+import { normalisera, oppnaFlik, iExport, MELLAN, SMA, KON_BAS, KON_KV, KON_MA, ENSAM, KON_GAP, KON_GAP_1, KON_DOLDA, fonsterKon, harNagon, laddaXlsx, fangaBocker, samlaUtdata, sammanhang, SENT_MELLAN, SENT_SMA, X_KV, X_MA, PAR_KV, PAR_MA, FK_RA } from './helpers/ktroskel-rigg.js';
 
 // Sviten ritar om hela verktyget i varje test. Under full last tar ett test 4–6 s, så standardgränsen 5 s
 // fäller olika tester från körning till körning.
@@ -380,5 +380,67 @@ describe('I6: underlaget i exportläget, precis under och precis över skyddsreg
             // Tillbaka på skärmen gäller valet igen.
             expect(w.document.getElementById(id)._rfUnderlagText, id).toBe(`sektor ${VARD} (60 personer)`);
         }
+    });
+});
+
+// ===================================================================================
+// I7: Var uppstår löneskillnaden med andra val av förklaringsvariabler (ADR-65), vid 10 och 25.
+//
+// Skyddsregeln gäller per del: en grupp namnges bara när den själv och alla dess överceller har 0 eller minst k av
+// varje kön, och kan en del inte redovisas visas ingen del. Y1–Y3 och X har ett kön under tröskeln i BAS:en, så
+// inget under dem får namnges; vid 25 gäller det också MELLAN (10 kvinnor och 10 män).
+//  - BAS, åldersgrupp, AID (tre nivåer): den ensamma personen i Ensamyrke (BAS S1) står för nästan hela delen
+//    "AID inom åldersgrupp och BAS", så reserven slår till: ingen del och inget gruppnamn redovisas, bara hela skillnaden.
+//  - Åldersgrupp, BAS: delarna redovisas, och inga grupper under en övercell som inte klarar tröskeln namnges.
+// Rapportunderlagets block, kortet i exportläget och metodbilagan (Excel, Word) prövas mot de dolda värdena som i I4.
+// ===================================================================================
+describe.each([[10, []], [25, SENT_MELLAN]])('I7: uppdelningen med andra val av variabler vid %i', (k, extra) => {
+    const dolda = [...KON_DOLDA, ...SENT_SMA, ...extra];
+    const smaBas = k === 10 ? [...KON_BAS, 'X', ...SMA] : [...KON_BAS, 'X', ...SMA, ...MELLAN];
+    const utdataFor = val => {
+        const w = iExport(fonsterKon(k === 10 ? null : k));
+        w.eval(`sattGapVariabler(${JSON.stringify(val)}, { rita: false })`);
+        w.__renderTabContent('struktur');
+        const u = w.eval('_guGapUppdelning(getData(), { k: kTroskel(), variabler: gapVariabler() })');
+        const block = w.__rapportunderlagBlock().find(b => b.id === 'uppdelning');
+        return { u, utdata: [
+            ['rapportunderlag: uppdelning', normalisera(w.__ruTillWordHtml(block) + '\n' + w.__ruTillText(block))],
+            ['kortet (exportläget)', normalisera(w.document.getElementById('gap-uppdelning').textContent)],
+            ['metodbilagan', normalisera(w.__methodAppendixData().map(r => r.join(' | ')).join('\n'))],
+        ] };
+    };
+    const ingaLackor = utdata => {
+        const lackor = [];
+        for (const [namn, text] of utdata) {
+            for (const v of harNagon(text, dolda)) lackor.push(`${namn}: ${v} — "${sammanhang(text, v)}"`);
+            for (const v of harNagon(text, KON_GAP)) lackor.push(`${namn}: ${v}`);
+            for (const re of KON_GAP_1) { const m = text.match(re); if (m) lackor.push(`${namn}: ${m[0]}`); }
+            for (const b of smaBas) if (new RegExp(`BAS ${b}(?![\\p{L}\\d])`, 'u').test(text)) lackor.push(`${namn}: BAS ${b}`);
+        }
+        expect(lackor).toEqual([]);
+    };
+    it('BAS, åldersgrupp, AID: reserven — ingen del och inget gruppnamn, och variablerna nämns', () => {
+        const { u, utdata } = utdataFor(['bas', 'alder', 'aid']);
+        expect(u.variabler).toEqual(['bas', 'alder', 'aid']);
+        expect(u.skyddad).toBe(false);
+        expect(u.delar).toBeNull();
+        expect(u.topp).toBeNull();
+        expect(utdata[0][1]).toMatch(/delas inte upp/);
+        expect(utdata[1][1]).toMatch(/delas inte upp/);
+        expect(utdata[1][1]).not.toMatch(/A\. BAS-fördelning/);
+        expect(utdata[2][1]).toContain('delas med BAS, åldersgrupp och AID');
+        ingaLackor(utdata);
+    });
+    it('åldersgrupp, BAS: delarna summerar till hela skillnaden, och inget under en för liten övercell namnges', () => {
+        const { u, utdata } = utdataFor(['alder', 'bas']);
+        expect(u.variabler).toEqual(['alder', 'bas']);
+        expect(u.skyddad).toBe(true);
+        expect(Math.abs(Object.values(u.delar).reduce((s, v) => s + v, 0) - u.gap)).toBeLessThan(1e-6);
+        const namn = Object.values(u.topp).flat().map(p => p.namn);
+        expect(namn.length).toBeGreaterThan(0);
+        for (const n of namn) expect(smaBas.some(b => n.endsWith(`BAS ${b}`)), n).toBe(false);
+        expect(utdata[0][1]).toContain('Uppdelningen förklarar med variablerna åldersgrupp och BAS, i den ordningen.');
+        expect(utdata[1][1]).toContain('B. BAS inom åldersgrupp');
+        ingaLackor(utdata);
     });
 });

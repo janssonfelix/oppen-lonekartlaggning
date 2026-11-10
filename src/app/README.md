@@ -91,7 +91,7 @@ direkt vid laddning (händelsekopplingar, `const`) körs i den här ordningen.
 | `65-om-verktyget.js` | Fliken Om verktyget (`INFO_SECTIONS`) |
 | `66-zip-export.js` | ZIP-exporten: Word-utkastet, Excel-filen med alla flikar och diagrammen från alla flikar som bilder |
 | `67-rapportunderlag.js` | Rapportunderlag i Rapporttext: kopierbara avsnitt, yrkesgrupper, kandidatpar och diagram (logiken i `src/lib/rapportunderlag.js`) |
-| `68-var-uppstar-gapet.js` | Avsnittet "Var uppstår löneskillnaden?" i Lönestruktur: gapet i medellön delat på BAS-fördelning, AID inom BAS och inom AID och BAS, med trappan som visar delarna (logiken i `src/lib/gapuppdelning.js`) |
+| `68-var-uppstar-gapet.js` | Avsnittet "Var uppstår löneskillnaden?" i Lönestruktur: gapet i medellön delat efter de valda förklaringsvariablerna (standard BAS-fördelning, AID inom BAS och inom AID och BAS), valet *Förklara med:* (`gapVariabler`, `sattGapVariabler`, ADR-65) och trappan som visar delarna (logiken i `src/lib/gapuppdelning.js`) |
 | `70-utforska.js` | Tabeller och egna vyer (fliken `utforska`), Egna vyer: kontroller, tabell, små grupper, klick till gruppdossier |
 | `71-utforska-figur.js` | Egna vyer: figur per diagramtyp ur pivotmodellen (`src/lib/utforska.js`) |
 | `72-utforska-urval.js` | Egna vyer: villkorsbyggaren för urval och gruppvillkor (`src/lib/urval.js`) |

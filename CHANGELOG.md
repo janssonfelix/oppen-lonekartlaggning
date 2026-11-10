@@ -8,6 +8,18 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ### Gränssnitt
 
+- **Var uppstår löneskillnaden: välj förklaringsvariablerna.** Kortet i Lönestruktur har raden *Förklara med:* med en
+  kryssruta per variabel (BAS, sektor, AID-mellannivå, AID och åldersgrupp; åldersgrupp bara när lönefilen har ålder)
+  och knappar för att flytta de valda upp och ned. En till fyra variabler kan väljas, och ordningen påverkar delarna:
+  den första variabeln får det den förklarar ensam, nästa det den förklarar utöver den första, och så vidare.
+  AID-nivåerna ordnas alltid från grov till fin. Delarna får namn ur variablerna, till exempel *Åldersgrupp inom BAS*,
+  och den sista heter *Inom …* de valda. Delarna summerar fortfarande exakt till hela skillnaden, och skyddsregeln
+  gäller per del: en grupp namnges bara när den och alla grupper den ligger i når minsta gruppstorlek, och kan en del
+  inte redovisas visas ingen del. Standardvalet BAS och AID ger samma tal och texter som förut. Valet följer med i
+  konfigurationsfilen (`gapUppdelning`; en äldre fil utan fältet ger standard), nollställs av *Rensa all data* och
+  styr rapportunderlagets block, som då nämner variablerna; metodbilagan i Word, PDF och Excel får en rad om valet
+  när det inte är standard (ADR-65).
+
 - **Filter i fler diagram, och trendlinjer som räknas om för urvalet.** Diagrammen med yrkesgrupper har nu också
   filtren *Yrkesgrupp* och *Sektor* som hopfällda listor (Prioriteringens två diagram, trattdiagrammet i Lika arbete,
   statistikens spann, diagrammen mot jämförelsestatistiken och överblickens bild i Löneläget; bandkartan har

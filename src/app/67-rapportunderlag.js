@@ -80,7 +80,7 @@ function _rapportunderlagBlockExport() {
     /** @type {any[]} */
     const block = [
         _ruAvsnittBlock('sammanfattning', sammanfattning, { ...opt, troskelNot: kStampel() }),
-        _ruAvsnittBlock('uppdelning', _guGapUppdelning(d, { k }), opt),
+        _ruAvsnittBlock('uppdelning', _guGapUppdelning(d, { k, variabler: gapVariabler() }), opt),   // valda variabler (ADR-65)
         _ruAvsnittBlock('lika', lika, opt),
         _ruAvsnittBlock('likvardigt', { par, exkluderade: parUtelamnade, kravProxy,
             kvinnoTroskel: aidbasGrans(), kvDomDefinition: aidbasDefinition(), jamforelse: lvJamforelse(), topN }, opt),
