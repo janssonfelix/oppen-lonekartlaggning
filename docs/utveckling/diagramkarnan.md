@@ -1,6 +1,6 @@
 # Diagramkärnan — referens
 
-Diagramkärnan ritar diagram som SVG med D3 ur ett eget figurformat (ADR-39 i `teknisk-plan.md`). Det här
+Diagramkärnan ritar diagram som SVG med D3 ur ett eget figurformat (ADR-39 i `arkitekturbeslut.md`). Det här
 dokumentet beskriver kärnan **som den är byggd**: formatet, vad `ritaFigur` gör, exporten och rensningen — och
 vad en vy måste göra själv för att skyddet av små grupper ska hålla. Koden är sanningen; där dokumentet och
 koden skiljer sig är det dokumentet som ska rättas.

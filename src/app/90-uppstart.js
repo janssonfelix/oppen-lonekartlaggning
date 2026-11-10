@@ -22,7 +22,7 @@ try {
     const demo = demoVal === '1' || demoVal === 'stor';
     if (demo && !state.data.length) (demoVal === 'stor' ? loadStortDemo : loadDemoData)();
     // Organisationsfil: paketet som ligger inbakat i den här filen läses in vid start — utom i demoläget,
-    // som går före (organisationsfil-design.md §3).
+    // som går före (organisationsfil.md §3).
     // Blocket ligger sist i filen, efter skriptet: när skriptet körs medan sidan ännu laddas finns det inte i
     // DOM:en förrän dokumentet är klart (i jsdom-riggen körs skriptet efter hela dokumentet).
     const inbakat = () => {

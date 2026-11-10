@@ -3339,7 +3339,7 @@ const __mirrorOrganisationsfil = (() => {
 // Copyright 2026 Felix Jansson
 /**
  * Öppen lönekartläggning — Organisationsfil: verktyget med organisationspaketet inbakat
- * (docs/utveckling/organisationsfil-design.md).
+ * (docs/utveckling/organisationsfil.md).
  *
  * Paketet läggs som en inaktiv datablock sist i HTML-filen, efter sista skriptet:
  *   <template id="(mallens id, MALL_ID)" data-skapad="…" data-organisation="…"

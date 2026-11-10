@@ -96,7 +96,7 @@ säkerhetsregler*.
 | `dist/` | Genererat och incheckat: `app.js`, `oppen-lonekartlaggning.html`, `RELEASE.txt`. Redigeras aldrig för hand |
 | `docs/anvandare/` | Dokument som följer med verktyget |
 | `docs/dataskydd/` | Dataskyddsbeskrivning och risk- och sårbarhetsanalys |
-| `docs/utveckling/` | [`teknisk-plan.md`](docs/utveckling/teknisk-plan.md): syfte, avgränsning, arkitekturbeslut (ADR) och öppna punkter; [`lagrum.md`](docs/utveckling/lagrum.md): lagrumshänvisningarna; [`diagramkarnan.md`](docs/utveckling/diagramkarnan.md): diagramkärnan; [`organisationsfil-design.md`](docs/utveckling/organisationsfil-design.md): organisationsfilen |
+| `docs/utveckling/` | [`teknisk-plan.md`](docs/utveckling/teknisk-plan.md): syfte, avgränsning och öppna punkter; [`arkitekturbeslut.md`](docs/utveckling/arkitekturbeslut.md): arkitekturbesluten (ADR); [`lagrum.md`](docs/utveckling/lagrum.md): lagrumshänvisningarna; [`diagramkarnan.md`](docs/utveckling/diagramkarnan.md): diagramkärnan; [`organisationsfil.md`](docs/utveckling/organisationsfil.md): organisationsfilens format |
 | `tests/` | Vitest-sviten (enhetstester, röktester i jsdom, golden-facit, k-anonymitet, tillgänglighet) |
 | `tools/` | Bygge, speglingsgenerator, röktest i webbläsare, prestandamätning och testdatageneratorer. `tools/data/` håller lokala indata och är inte incheckad |
 

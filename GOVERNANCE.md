@@ -8,8 +8,8 @@ beroende av projektet.
 
 - **Upphovspersonen** (Felix Jansson) är underhållare och fattar besluten om innehåll, releaser och
   riktning. Projektet har en underhållare; det står här så att ingen behöver gissa.
-- **Arkitekturbesluten** i [`docs/utveckling/teknisk-plan.md`](docs/utveckling/teknisk-plan.md) §8
-  (ADR) är bindande. Flera av dem är medvetna begränsningar — inga nätverksanrop, ingen lagring, ingen
+- **Arkitekturbesluten** (ADR) i [`docs/utveckling/arkitekturbeslut.md`](docs/utveckling/arkitekturbeslut.md)
+  är bindande. Flera av dem är medvetna begränsningar — inga nätverksanrop, ingen lagring, ingen
   inbyggd organisation, en enda fil. De ändras bara genom ett nytt, daterat ADR i samma dokument, aldrig
   i förbigående i en ändring.
 - **Lagrumshänvisningar** ändras bara i [`docs/utveckling/lagrum.md`](docs/utveckling/lagrum.md)

@@ -23,6 +23,8 @@ const läs = f => readFileSync(join(root, f), 'utf8');
 
 const PLAN = 'docs/utveckling/teknisk-plan.md';
 const planMd = läs(PLAN);
+const ADR = 'docs/utveckling/arkitekturbeslut.md';
+const adrMd = läs(ADR);
 const appReadme = läs('src/app/README.md');
 const pkg = JSON.parse(läs('package.json'));
 const appDelar = readdirSync(join(root, 'src', 'app')).filter(f => /^\d\d-.*\.js$/.test(f)).sort();
@@ -58,15 +60,15 @@ describe('dokumentation: teknisk-plan.md stämmer med projektet', () => {
     });
 
     it('alla npm-skript som nämns finns i package.json', () => {
-        const nämnda = [...planMd.matchAll(/`npm run ([\w:]+)`/g)].map(m => m[1]);
+        const nämnda = [...(planMd + adrMd).matchAll(/`npm run ([\w:]+)`/g)].map(m => m[1]);
         expect(nämnda.length).toBeGreaterThan(0);
         const okända = [...new Set(nämnda)].filter(n => !pkg.scripts[n]);
         expect(okända, `npm-skript som inte finns: ${okända.join(', ')}`).toEqual([]);
     });
 
-    // Hela planen beskriver nuläget, så varje fil den pekar ut ska finnas.
-    it('filerna som den tekniska planen pekar ut finns på disk', () => {
-        const kandidater = [...planMd.matchAll(/`([\w.-]+\/[\w./-]+\.(?:js|mjs|json|md|html|css|txt|yml))`/g)]
+    // Hela planen och arkitekturbesluten beskriver nuläget, så varje fil de pekar ut ska finnas.
+    it('filerna som den tekniska planen och arkitekturbesluten pekar ut finns på disk', () => {
+        const kandidater = [...(planMd + adrMd).matchAll(/`([\w.-]+\/[\w./-]+\.(?:js|mjs|json|md|html|css|txt|yml))`/g)]
             .map(m => m[1])
             .filter(f => !f.includes('*'));
         expect(kandidater.length).toBeGreaterThan(0);
@@ -97,7 +99,7 @@ describe('dokumentation: k-tröskeln beskrivs med rätt tal överallt', () => {
     // standardvärdet K_STANDARD.
     const K = Number(/const K_STANDARD = (\d+);/.exec(läs('src/app/06-k-anonymitet-och-dataminimering.js'))[1]);
     const filer = ['docs/dataskydd/dataskydd.md', 'docs/dataskydd/riskanalys.md',
-                   'docs/anvandare/sammanfattning-hr-chefer.md', 'docs/anvandare/korguide.md', PLAN];
+                   'docs/anvandare/sammanfattning-hr-chefer.md', 'docs/anvandare/korguide.md', PLAN, ADR];
 
     for (const fil of filer) {
         it(`${fil}: "färre än/minst N personer" har N = ${K}`, () => {
@@ -110,11 +112,11 @@ describe('dokumentation: k-tröskeln beskrivs med rätt tal överallt', () => {
 });
 
 describe('dokumentation: valbar förklaringsmodell (ADR-56)', () => {
-    it('teknisk plan har ADR-56 med gränsen 0,5 procentenheter och tilläggen i ADR-46 och ADR-53', () => {
-        expect(planMd).toMatch(/\*\*ADR-56 — Valbar förklaringsmodell/);
-        expect(planMd).toMatch(/0,5 procentenheter/);
-        expect(planMd).toMatch(/ADR-46[^]*?ADR-56/);
-        expect(planMd).toMatch(/ADR-53[^]*?valet \(ADR-56\)/);
+    it('arkitekturbesluten har ADR-56 med gränsen 0,5 procentenheter och tilläggen i ADR-46 och ADR-53', () => {
+        expect(adrMd).toMatch(/\*\*ADR-56 — Valbar förklaringsmodell/);
+        expect(adrMd).toMatch(/0,5 procentenheter/);
+        expect(adrMd).toMatch(/ADR-46[^]*?ADR-56/);
+        expect(adrMd).toMatch(/ADR-53[^]*?valet \(ADR-56\)/);
     });
     it('Om verktyget, körguiden och ändringsloggen beskriver valet', () => {
         expect(läs('src/app/65-om-verktyget.js')).toMatch(/[Ff]örklaringsmodell/);
@@ -125,10 +127,10 @@ describe('dokumentation: valbar förklaringsmodell (ADR-56)', () => {
 });
 
 describe('dokumentation: k-tröskeln är en inställning (ADR-38)', () => {
-    it('teknisk plan har ADR-38 och nämner kTroskel() och statGolv()', () => {
-        expect(planMd).toMatch(/\*\*ADR-38 — /);
-        expect(planMd).toContain('kTroskel()');
-        expect(planMd).toContain('statGolv()');
+    it('arkitekturbesluten har ADR-38 och nämner kTroskel() och statGolv()', () => {
+        expect(adrMd).toMatch(/\*\*ADR-38 — /);
+        expect(adrMd).toContain('kTroskel()');
+        expect(adrMd).toContain('statGolv()');
     });
     for (const fil of ['docs/dataskydd/dataskydd.md', 'docs/dataskydd/riskanalys.md']) {
         it(`${fil} säger att värdet kan ändras och att det skrivs ut i utdata`, () => {
@@ -158,7 +160,7 @@ describe('dokumentation: k-tröskeln är en inställning (ADR-38)', () => {
         });
     }
     it('dokumenten säger inte att en konfigurationsfil utan fältet ger 10, eller att ett paket alltid bär tröskeln', () => {
-        for (const fil of ['docs/dataskydd/dataskydd.md', 'docs/dataskydd/riskanalys.md', PLAN, 'CHANGELOG.md',
+        for (const fil of ['docs/dataskydd/dataskydd.md', 'docs/dataskydd/riskanalys.md', PLAN, ADR, 'CHANGELOG.md',
                            'docs/anvandare/korguide.md', 'docs/anvandare/organisationspaket.md']) {
             const t = läs(fil);
             expect(t, fil).not.toMatch(/fil\s+utan fältet ger 10/);
@@ -331,15 +333,15 @@ describe('vakt: inga spår av tidigare versioner eller namngivna organisationer'
     });
 });
 
-describe('den tekniska planen beskriver nuläget', () => {
-    const plan = läs('docs/utveckling/teknisk-plan.md');
+describe('den tekniska planen och arkitekturbesluten beskriver nuläget', () => {
+    const plan = adrMd;
     it('ADR-loggen bär inga datum i rubrikerna och inga beslut om tidigare lägen', () => {
         const rubriker = [...plan.matchAll(/^\*\*ADR-(\d+) — ([^*]+)\*\*/gm)];
         expect(rubriker.length).toBeGreaterThan(20);
         for (const [hel] of rubriker) expect(hel, hel).not.toMatch(/\(\d{4}-\d{2}(-\d{2})?[^)]*\)/);
         expect(plan).not.toMatch(/ersätter ADR-|ersatt av ADR-|Delvis ersatt/);
     });
-    it('varje ADR som koden, testerna och dokumenten pekar på finns i planen', () => {
+    it('varje ADR som koden, testerna och dokumenten pekar på finns i arkitekturbesluten', () => {
         const finns = new Set([...plan.matchAll(/^\*\*ADR-(\d+) —/gm)].map(m => Number(m[1])));
         const gå = dir => readdirSync(join(root, dir), { withFileTypes: true }).flatMap(e =>
             e.isDirectory() ? gå(`${dir}/${e.name}`) : [`${dir}/${e.name}`]);
@@ -349,7 +351,23 @@ describe('den tekniska planen beskriver nuläget', () => {
         expect([...new Set(saknas)]).toEqual([]);
     });
     it('inga länkar till arbetsverktyg och inga väntande platshållare för lönesystem', () => {
-        expect(plan).not.toMatch(/väntar på systemförvaltarna|är platshållare/);
+        expect(planMd + adrMd).not.toMatch(/väntar på systemförvaltarna|är platshållare/);
+    });
+    it('indextabellen och besluten har samma nummer, i samma ordning, och varje rad har en status', () => {
+        const beslut = [...adrMd.matchAll(/^\*\*ADR-(\d+) —/gm)].map(m => Number(m[1]));
+        const rader = [...adrMd.matchAll(/^\| ADR-(\d+) \| [^|\n]+? \| ([^|\n]+) \| [^|\n]+ \|$/gm)];
+        expect(beslut.length).toBeGreaterThan(20);
+        expect(rader.map(m => Number(m[1]))).toEqual(beslut);
+        for (const [rad, , status] of rader) expect(status, rad).toMatch(/^(Gällande|Ändrad av ADR-\d+|Upphävd)/);
+        // En status som pekar på ett annat beslut pekar på ett som finns.
+        const pekar = rader.flatMap(m => [...m[2].matchAll(/ADR-(\d+)/g)].map(p => Number(p[1])));
+        expect(pekar.filter(n => !beslut.includes(n))).toEqual([]);
+    });
+    it('den tekniska planen har kvar avsnittsnumreringen och hänvisar till arkitekturbesluten', () => {
+        const avsnitt = [...planMd.matchAll(/^## (\d+)\. /gm)].map(m => Number(m[1]));
+        expect(avsnitt).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+        expect(planMd).toContain('[`arkitekturbeslut.md`](arkitekturbeslut.md)');
+        expect(planMd).not.toMatch(/^\*\*ADR-\d+ —/m);
     });
 });
 
@@ -553,7 +571,7 @@ describe('dokumentation: kodbasen är redo att publiceras', () => {
         expect(roller.filter(([, k]) => k).map(([r]) => r).sort()).toEqual(['bas', 'kon', 'lon', 'yrke']);
         expect(läs('README.md').replace(/\s+/g, ' ')).toMatch(/fyra obligatoriska, tre valfria/);
         expect(läs('README.md')).not.toMatch(/fem obligatoriska/);
-        expect(planMd).toMatch(/\*\*ADR-64 — Ålder är valfri i lönefilen/);
+        expect(adrMd).toMatch(/\*\*ADR-64 — Ålder är valfri i lönefilen/);
     });
     it('.gitignore utesluter lokal data och arbetsmappar', () => {
         const g = läs('.gitignore');
@@ -585,25 +603,25 @@ describe('dokumentation: licens MIT', () => {
 });
 
 describe('dokumentation: AID och ansvarskoden', () => {
-    it('dataskyddet nämner ansvarskoden, datauttaget att Ansvar inte läses, planen ADR-33', () => {
+    it('dataskyddet nämner ansvarskoden, datauttaget att Ansvar inte läses, arkitekturbesluten ADR-33', () => {
         expect(läs('docs/dataskydd/dataskydd.md')).toMatch(/ansvarskod/i);
         expect(läs('docs/dataskydd/riskanalys.md')).toMatch(/ansvarskod/i);
         expect(läs('docs/anvandare/datauttag.md')).toMatch(/Ansvar.{0,80}läses\s+(aldrig|inte)/s);
-        expect(planMd).toMatch(/\*\*ADR-33 —/);
+        expect(adrMd).toMatch(/\*\*ADR-33 —/);
     });
 });
 
 describe('dokumentation: Jämförelsestatistik', () => {
     it('ADR-35 finns och beskriver k-gränsen för P10/P90', () => {
-        const i = planMd.indexOf('**ADR-35 —');
+        const i = adrMd.indexOf('**ADR-35 —');
         expect(i).toBeGreaterThan(-1);
-        expect(planMd.slice(i, planMd.indexOf('\n**ADR-', i + 1))).toMatch(/P10.*10 personer/s);
+        expect(adrMd.slice(i, adrMd.indexOf('\n**ADR-', i + 1))).toMatch(/P10.*10 personer/s);
     });
 });
 
 describe('dokumentation: Översikt och namn', () => {
     it('ADR-36 finns; dataskyddet nämner namnen i konfigurationsfilen', () => {
-        expect(planMd).toMatch(/\*\*ADR-36 —/);
+        expect(adrMd).toMatch(/\*\*ADR-36 —/);
         expect(läs('docs/dataskydd/riskanalys.md')).toMatch(/jämförelsestatistikens namn/);
         expect(läs('docs/dataskydd/dataskydd.md')).toMatch(/organisationens namn/i);
     });
@@ -611,7 +629,7 @@ describe('dokumentation: Översikt och namn', () => {
 
 describe('dokumentation: Word-utkastet som .docx', () => {
     it('ADR-37 finns; körguiden säger .docx', () => {
-        expect(planMd).toMatch(/\*\*ADR-37 —/);
+        expect(adrMd).toMatch(/\*\*ADR-37 —/);
         expect(läs('docs/anvandare/korguide.md')).toMatch(/Word-utkast[^\n]*\.docx/);
     });
 });

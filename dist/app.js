@@ -5744,7 +5744,7 @@ const __mirrorOrganisationsfil = (() => {
 // Copyright 2026 Felix Jansson
 /**
  * Öppen lönekartläggning — Organisationsfil: verktyget med organisationspaketet inbakat
- * (docs/utveckling/organisationsfil-design.md).
+ * (docs/utveckling/organisationsfil.md).
  *
  * Paketet läggs som en inaktiv datablock sist i HTML-filen, efter sista skriptet:
  *   <template id="(mallens id, MALL_ID)" data-skapad="…" data-organisation="…"
@@ -20031,7 +20031,7 @@ function renderPaketInfo() {
         (n => (n ? `${n} ${n === 1 ? 'importprofil' : 'importprofiler'}` : null))((state.importprofiler || []).filter(x => x.kalla === 'organisationspaket').length),
     ].filter(Boolean).join(', ') || 'bara benämningar och inställningar';
     const rad = (dt, dd) => (dd == null || dd === '' ? '' : `<dt>${esc(dt)}</dt><dd>${esc(String(dd))}</dd>`);
-    // Organisationsfil: paketet är inbakat i den här filen, eller ersatt av en inläst fil (organisationsfil-design.md §3).
+    // Organisationsfil: paketet är inbakat i den här filen, eller ersatt av en inläst fil (organisationsfil.md §3).
     const inb = state.paketInbakat;
     const kalla = p.kalla === 'inbakat' ? `Inbakat i den här filen (skapad ${inb?.skapad || '–'})`
         : inb ? 'Inläst fil — ersätter det inbakade paketet för den här sessionen' : null;
@@ -20350,7 +20350,7 @@ document.getElementById('btn-paket-spara')?.addEventListener('click', () => {
     announceToScreenReader(`Organisationspaket sparat: ${a.download}`);
 });
 
-// ---- Organisationsfil: verktyget med paketet inbakat (organisationsfil-design.md) ----
+// ---- Organisationsfil: verktyget med paketet inbakat (organisationsfil.md) ----
 const INBAKAT_PAKET_ID = 'inbakat-organisationspaket';   // = MALL_ID i src/lib/organisationsfil.js
 /** @type {File|null} */
 let _verktygsfil = null;   // den fil systemägaren pekat ut
@@ -36845,7 +36845,7 @@ try {
     const demo = demoVal === '1' || demoVal === 'stor';
     if (demo && !state.data.length) (demoVal === 'stor' ? loadStortDemo : loadDemoData)();
     // Organisationsfil: paketet som ligger inbakat i den här filen läses in vid start — utom i demoläget,
-    // som går före (organisationsfil-design.md §3).
+    // som går före (organisationsfil.md §3).
     // Blocket ligger sist i filen, efter skriptet: när skriptet körs medan sidan ännu laddas finns det inte i
     // DOM:en förrän dokumentet är klart (i jsdom-riggen körs skriptet efter hela dokumentet).
     const inbakat = () => {

@@ -159,7 +159,7 @@ export async function startsidan() {
 
 // Organisationsfilen.
 export async function organisationsfilen() {
-    // Organisationsfilen (docs/utveckling/organisationsfil-design.md): ett paket inbakat i bygget som en inaktiv
+    // Organisationsfilen (docs/utveckling/organisationsfil.md): ett paket inbakat i bygget som en inaktiv
     // datablock. Filen ska starta under CSP:n från file:// med paketet inläst och utan överträdelser.
     console.log('\n── Organisationsfilen ──');
     {

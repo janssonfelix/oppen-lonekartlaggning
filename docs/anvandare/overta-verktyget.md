@@ -55,7 +55,7 @@ innehåller inga personuppgifter och kan spridas internt som vilken fil som hels
 Vill du ändra något — en text, en tröskel, ett diagram, ett nytt arbetsvärderingssystem — gör det i en
 **fork** av repot, inte i den byggda filen.
 
-1. Läs [`teknisk-plan.md`](../utveckling/teknisk-plan.md) §8 (arkitekturbesluten). Besluten om
+1. Läs [`arkitekturbeslut.md`](../utveckling/arkitekturbeslut.md). Besluten om
    dataskyddet — inga nätverksanrop, ingen lagring, k-anonymitet i det som lämnar verktyget — är det som
    gör att dokumenten i `docs/dataskydd/` fortsätter att gälla. Behåll dem, så gäller risk- och
    sårbarhetsanalysen fortfarande för din version, med en anteckning om vad du ändrat.

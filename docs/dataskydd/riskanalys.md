@@ -1,6 +1,6 @@
 # Risk- och sårbarhetsanalys (dataskydd och informationssäkerhet) — Öppen lönekartläggning
 
-**Bygge:** `2026.11.05` · **Artefakt-SHA-256:** `fb5cfb275648e00047e47f7674a6b22a979d61552d8c1e6aa69c5df04c708f8f` (se `dist/RELEASE.txt`).
+**Bygge:** `2026.11.05` · **Artefakt-SHA-256:** `33291a551f92dba389a7f278b76bf58cee1236a2fc5b22af4e915e02a3005a4b` (se `dist/RELEASE.txt`).
 **Granskningsdatum:** 2026-11-07.
 **Granskningsmetod:** kodläsning påstående för påstående + statisk sökning i källkod och bygge +
 körning av det byggda verktyget i jsdom och i Chromium (utan nätverk) med syntetiska testfiler.
@@ -749,7 +749,7 @@ före någon mutation).
 
 ### 6.9 Organisationsfilen — verktyget med paketet inbakat
 Systemägaren kan baka in organisationspaketet i verktygsfilen och sprida **en** fil
-(`docs/utveckling/organisationsfil-design.md`). Paketet ligger som en inaktiv datablock
+(`docs/utveckling/organisationsfil.md`). Paketet ligger som en inaktiv datablock
 (`<template id="inbakat-organisationspaket">`) sist i filen, efter sista skriptet. Blocket tolkas inte och
 exekveras inte. Inget skript ändras, och CSP:ns per-script-hashar är oförändrade (vaktas av
 `tests/organisationsfil.test.js`: varje skriptblock är byte-identiskt före och efter). Vid start läses
