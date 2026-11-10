@@ -7,7 +7,9 @@
   },
   "description": "Single-file lonekartlaggningsverktyg (DiskrL kap. 3 + EU 2023/970). Applikationen byggs av tools/bundle.mjs (npm run bundle); ovrig dev-tooling for tester och linting.",
   "scripts": {
-    "test": "node tools/test.mjs",
+    "test": "node tools/test.mjs --project=enhet",
+    "test:full": "node tools/test.mjs",
+    "test:app": "node tools/test.mjs --project=app",
     "test:watch": "vitest",
     "lint": "eslint dist/app.js src/lib tests tools",
     "lint:fix": "eslint --fix dist/app.js src/lib tests tools",

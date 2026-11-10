@@ -1,6 +1,6 @@
 # Risk- och sårbarhetsanalys (dataskydd och informationssäkerhet) — Öppen lönekartläggning
 
-**Bygge:** `2026.11.05` · **Artefakt-SHA-256:** `b654c93309bb0b716f6783a2485441a045fbbe978c536a720e71bd4c8c358be3` (se `dist/RELEASE.txt`).
+**Bygge:** `2026.11.05` · **Artefakt-SHA-256:** `d1d2d48dc57c8d15fd3ec0f0561930e8770b2cf195e2d326017eed2d932af6e8` (se `dist/RELEASE.txt`).
 **Granskningsdatum:** 2026-11-07.
 **Granskningsmetod:** kodläsning påstående för påstående + statisk sökning i källkod och bygge +
 körning av det byggda verktyget i jsdom och i Chromium (utan nätverk) med syntetiska testfiler.
@@ -356,10 +356,10 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   Annars utelämnas de, nyckeltalet visar ett streck och noten under diagrammet säger det
   (beslut 2026-10-16). Livscykelanalysen har sitt eget golv
   (`statGolv()`).
-- Skyddet vaktas av två invarianter. `tests/kanonymitet.test.js` ritar samtliga flikar i exportläget vid
-  10 mot ett dataset där varje liten grupps mått är ett unikt sentinelvärde. Testet kräver att
-  inget av dem syns. `tests/ktroskel.test.js`, `tests/ktroskel-hojning.test.js` och `tests/ktroskel-invarianter.test.js`
-  prövar flikarna vid 10, 25 och 5 med grupper om 20 och 6 personer. Vid **10 och 25** prövar de både flikarna
+- Skyddet vaktas av en invariant (I4, `tests/helpers/ktroskel-invariant.js`, körd från
+  `tests/ktroskel-invarianter.test.js`) mot ett dataset där varje liten grupps mått är ett unikt sentinelvärde.
+  Testet kräver att inget av dem syns. `tests/ktroskel.test.js` och `tests/ktroskel-hojning.test.js` prövar
+  flikarna vid 10, 25 och 5 med grupper om 20 och 6 personer. Vid **10 och 25** prövar invarianten både flikarna
   och utdata mot ett särskilt underlag. I underlaget:
   - har en grupp över tröskeln 1–3 män med en egen lön
   - har ett BAS två av varje kön
@@ -367,6 +367,7 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   - har varje yrke en rad i jämförelsestatistiken.
 
   Utdata som prövas:
+  - varje flik ritad i exportläget (det som *Som i exporten* visar och exporterna läser)
   - Översiktens delar, Word-utkastet och utskriften i sina tre urval (hela dokumentationen, ledningsbrief,
     facklig dialog)
   - rapportunderlagets block
@@ -852,7 +853,7 @@ tar bort allt minne omedelbart. Verktyget gör inga utskick till de registrerade
 
 Varje påstående i detta dokument är prövat mot koden, med provkörning i jsdom och i Chromium.
 Skyddet bevakas av drift-, golden-, röktest-, k-anonymitets-, dokumentations-, statistik- och
-a11y-sviterna (94 testfiler). Det bevakas också av ett röktest av det byggda verktyget i en riktig webbläsare
+a11y-sviterna. Det bevakas också av ett röktest av det byggda verktyget i en riktig webbläsare
 (`tools/browser-smoke.mjs`). Röktestet körs lokalt och i CI-arbetsflödet i
 Chromium, Firefox och WebKit. Verifieringen visar också var skyddet är svagare än det kan se ut:
 - lagringsspärren är en reserv med kända luckor (§6.2)
@@ -951,7 +952,7 @@ andra filerna. Den innehåller biblioteksversioner och kontrollsummor, inga uppg
 | Konfigfilens innehåll | Kodläsning av `buildConfigSnapshot()` och importen | ✔ ingen `state.data`-referens; inställningar (med förklaringsmodellen, definitionen av kvinnodominerat och lönemånaden) + användartext + avbockningar i Att göra (§6.8) + egna importprofiler (bara rubriknamn, validerade vid inläsning); import läser version 2 och avvisar andra versioner |
 | Word-utkast lokalt | Kodläsning + live-test: Blob fångad, innehåll inspekterat; zip-filen läses tillbaka i röktesterna (ADR-37) | ✔ lokal `Blob` (`.docx`), DEMODATA-märkning fungerar |
 | Tillgänglighet (markup) | axe-core i automatiska sviten (`tests/a11y.test.js`) | ✔ 0 överträdelser |
-| Automatiska tester | `npm test` (Vitest, 94 testfiler; kör om en fil vars arbetare kraschat i Node) + `npm run test:browser` (bygget i Chromium; samma röktest finns för Firefox och WebKit) | ✔ alla gröna |
+| Automatiska tester | `npm run test:full` (hela Vitest-sviten; kör om en fil vars arbetare kraschat i Node) + `npm run test:browser` (bygget i Chromium; samma röktest finns för Firefox och WebKit) | ✔ alla gröna |
 | Bundle-integritet | Reproducerbart bygge + SHA-256 i RELEASE.txt; byggskydd mot mojibake och `node --check` (kodläsning av `tools/bundle.mjs`) | ✔ |
 
 ## 12. Slutsats
