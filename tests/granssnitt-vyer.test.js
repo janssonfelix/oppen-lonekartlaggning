@@ -6,8 +6,22 @@
 import { describe, it, expect } from 'vitest';
 import { readdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { createAppWindow } from './helpers/app-harness.js';
+import { createAppWindow, delatFonster } from './helpers/app-harness.js';
 import { rot, las, papa, vanta, csvFil, okandaRader } from './helpers/granssnitt-rigg.js';
+
+// Testerna som söker igenom alla flikar läser två delade fönster med demodatan, där flikarna har ritats en gång: att
+// rita dem är det dyra, inte att läsa. Ordningen spelar ingen roll (prövat: samma dokument, bortsett från
+// exportmenyernas löpnummer). Vakten i delatFonster fäller det test som ändrar tillståndet.
+const ALLA_FLIKAR = ['dashboard', 'bestammelser', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn', 'handlingsplan', 'dokumentera', 'kon', 'benchmark', 'utforska', 'info'];
+const allaFlikar = delatFonster(w => { w.__loadDemoData(); for (const f of ALLA_FLIKAR) w.__renderTabContent(f); });
+// Med en pott och ett generellt påslag, så att Löneöversyn ritar prognosen. Procenttestet läser också Exportera, som det
+// förut inte ritade.
+const medPott = delatFonster(w => {
+    w.__loadDemoData();
+    w.__state.forecast.budget = { mode: 'pct', value: 2 };
+    w.__state.forecast.generell = { mode: 'pct', value: 1 };
+    for (const f of ['dashboard', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn', 'kon', 'benchmark', 'utforska', 'dokumentera']) w.__renderTabContent(f);
+});
 
 describe('tomma lägen som inte låter som fel', () => {
     it('Löneöversyn utan pott visar en rad om vad som behövs, inte en tom mätare och tabeller där före är lika med efter', () => {
@@ -244,11 +258,8 @@ describe('formulären i Löneöversyn', () => {
 });
 
 describe('informationsikonen har ett utförande', () => {
-    const FLIKAR = ['dashboard', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn', 'kon', 'benchmark', 'utforska', 'dokumentera', 'info'];
     it('varje .info-tip bär linjeikonen «info» och ingen text, också de som ritas av flikarna', () => {
-        const w = createAppWindow();
-        w.__loadDemoData();
-        for (const f of FLIKAR) w.__renderTabContent(f);
+        const w = allaFlikar();
         const tips = [...w.document.querySelectorAll('.info-tip')];
         expect(tips.length).toBeGreaterThan(40);
         const fel = tips.filter(t => t.querySelectorAll('svg.ikon-info').length !== 1 || t.textContent.trim() !== '');
@@ -256,10 +267,7 @@ describe('informationsikonen har ett utförande', () => {
         expect(w.document.body.innerHTML).not.toContain('ⓘ');
     });
     it('nyckeltalens etiketter har ingen ikon: förklaringen står på hela rutan', () => {
-        const w = createAppWindow();
-        w.__loadDemoData();
-        for (const f of FLIKAR) w.__renderTabContent(f);
-        const d = w.document;
+        const d = allaFlikar().document;
         expect([...d.querySelectorAll('.stat-box h3 .info-tip, .slutsats-etikett .info-tip')].length).toBe(0);
         const medTips = [...d.querySelectorAll('.stat-box[data-tooltip]')];
         expect(medTips.length).toBeGreaterThanOrEqual(11);
@@ -292,9 +300,7 @@ describe('ett bildspråk: linjeikoner, inga bildtecken', () => {
         expect(fynd).toEqual([]);
     });
     it('det ritade gränssnittet har inga bildtecken', () => {
-        const w = createAppWindow();
-        w.__loadDemoData();
-        for (const f of ['dashboard', 'bestammelser', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn', 'handlingsplan', 'dokumentera', 'kon', 'benchmark', 'utforska', 'info']) w.__renderTabContent(f);
+        const w = allaFlikar();
         const fynd = new Set();
         // Varje textnod prövas, också text som står bredvid ett element (en ikon framför en fetstilt mening).
         const gang = w.document.createTreeWalker(w.document.body, w.NodeFilter.SHOW_TEXT);
@@ -302,8 +308,12 @@ describe('ett bildspråk: linjeikoner, inga bildtecken', () => {
             if (n.parentElement.closest('script, style, template, .bara-export')) continue;
             if (BILDTECKEN.test(n.nodeValue) || /[\u2190-\u21FF]/.test(n.nodeValue)) fynd.add(n.nodeValue.trim().slice(0, 50));
         }
-        w.eval('_autoClearOnInactivity()');
-        expect(BILDTECKEN.test(w.document.body.textContent.replace(/\s+/g, ' ').slice(-4000))).toBe(false);
+        // Rensningen ändrar tillståndet och görs i ett eget fönster; notisen den lämnar är densamma med eller utan ritade
+        // flikar (prövat).
+        const rensat = createAppWindow();
+        rensat.__loadDemoData();
+        rensat.eval('_autoClearOnInactivity()');
+        expect(BILDTECKEN.test(rensat.document.body.textContent.replace(/\s+/g, ' ').slice(-4000))).toBe(false);
         expect([...fynd]).toEqual([]);
     }, 30000);
     it('filkortets märke och filnamnsraden bär bocken som linjeikon', () => {
@@ -320,11 +330,7 @@ describe('ett bildspråk: linjeikoner, inga bildtecken', () => {
 
 describe('svenska ord i vyerna', () => {
     it('rubriker, etiketter, knappar, tabellhuvuden och nyckeltal säger inte «vs», «OLS», «sd» eller «Compa-ratio»', () => {
-        const w = createAppWindow();
-        w.__loadDemoData();
-        w.__state.forecast.budget = { mode: 'pct', value: 2 };
-        w.__state.forecast.generell = { mode: 'pct', value: 1 };
-        for (const f of ['dashboard', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn', 'kon', 'benchmark', 'utforska', 'dokumentera']) w.__renderTabContent(f);
+        const w = medPott();
         const synligt = [...w.document.querySelectorAll('h1, h2, h3, h4, option, summary, label, button, th, .slutsats, .stat-box, .insight-box, .dvr-row')].map(el => el.textContent.replace(/\s+/g, ' ').trim());
         const rester = synligt.filter(t => /(^|[\s(])vs\.?([\s)]|$)|\bOLS\b|[\s(]sd[\s):]|Compa-ratio|grön-cirkl|Z ≥/i.test(t));
         expect(rester.map(t => t.slice(0, 80))).toEqual([]);
@@ -337,11 +343,8 @@ describe('svenska ord i vyerna', () => {
 });
 
 describe('rubriknivåerna hoppar inte', () => {
-    const FLIKAR = ['dashboard', 'bestammelser', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn', 'handlingsplan', 'dokumentera', 'kon', 'utforska', 'benchmark', 'info'];
     it('i varje vy följer rubrikerna på varandra utan att hoppa över en nivå (h1 är sidans rubrik)', () => {
-        const w = createAppWindow();
-        w.__loadDemoData();
-        for (const f of FLIKAR) w.__renderTabContent(f);
+        const w = allaFlikar();
         const hopp = [];
         for (const vy of w.document.querySelectorAll('.view-panel')) {
             let forra = 1;
@@ -354,10 +357,7 @@ describe('rubriknivåerna hoppar inte', () => {
         expect(hopp).toEqual([]);
     }, 30000);
     it('nyckeltalens etiketter är inga rubriker, och ett avsnitts rubrik står inte en gång till i avsnittet', () => {
-        const w = createAppWindow();
-        w.__loadDemoData();
-        for (const f of FLIKAR) w.__renderTabContent(f);
-        const d = w.document;
+        const d = allaFlikar().document;
         expect(d.querySelectorAll('.stat-box h1, .stat-box h2, .stat-box h3, .stat-box h4').length).toBe(0);
         expect(d.querySelectorAll('.stat-box .stat-etikett').length).toBeGreaterThanOrEqual(16);
         const dubbla = [];
@@ -526,11 +526,7 @@ describe('slutgranskningens fynd', () => {
 
 describe('procenttal i flikarna har en decimal', () => {
     it('ingen flik ritar ett procenttal med två decimaler (PO-påslaget och självdiagnostiken undantagna)', () => {
-        const w = createAppWindow();
-        w.__loadDemoData();
-        w.__state.forecast.budget = { mode: 'pct', value: 2 };
-        w.__state.forecast.generell = { mode: 'pct', value: 1 };
-        for (const f of ['dashboard', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn', 'kon', 'benchmark', 'utforska']) w.__renderTabContent(f);
+        const w = medPott();
         const fynd = new Set();
         for (const el of w.document.querySelectorAll('[id^="view-"] *')) {
             if (el.children.length || el.closest('script, style, svg, code, pre, .info-tip, .bara-export, [data-export-text], #diagnostic-results')) continue;

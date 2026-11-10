@@ -5,8 +5,26 @@
  * skapar sina egna fönster via createAppWindow (tests/helpers/app-harness.js).
  */
 import { describe, it, expect } from 'vitest';
-import { createAppWindow } from './helpers/app-harness.js';
+import { createAppWindow, delatFonster } from './helpers/app-harness.js';
 import { borjaHar } from '../src/lib/attgora.js';
+
+// Testerna som söker igenom flikarna ritar dem inte var för sig: ett delat fönster med demodatan klickar fram varje flik
+// en gång och sparar en kopia av det som då syns (flikens paneler och sidhuvudet), och testerna läser kopiorna.
+// Vakten i delatFonster fäller det test som ändrar fönstret.
+const FLIKAR = ['dashboard', 'bestammelser', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn',
+                'handlingsplan', 'dokumentera', 'rapporttext', 'arbetet', 'kon', 'benchmark', 'utforska'];
+/** @type {Map<string, {paneler: any[], titel: string}>} flik → kopior av panelerna som syns (eller är aktiva) och sidhuvudet */
+const ritade = new Map();
+const flikfonster = delatFonster(w => {
+    w.__loadDemoData();
+    for (const flik of FLIKAR) {
+        w.document.querySelector(`.nav-item[data-tab="${flik}"]`).click();
+        ritade.set(flik, {
+            paneler: [...w.document.querySelectorAll('.view-panel')].filter(p => p.style.display === 'block' || p.classList.contains('active')).map(p => p.cloneNode(true)),
+            titel: w.document.getElementById('page-title').textContent,
+        });
+    }
+});
 
 describe('ingen organisatorisk enhet i data eller utdata (se §2 i teknisk-plan.md)', () => {
     it('ordlistan, Vad lagras? och riskanalysen beskriver fem fält, utan enhet', async () => {
@@ -239,11 +257,8 @@ describe('Lika arbete och filrutorna: ordning och kompakta rutor', () => {
 // Klarspråk, samma namn överallt, rubriker utan emoji och ett hjälpblock av varje slag
 // per flik. Fackuttrycken får stå i hjälptexten.
 describe('gränssnittets språk, rubriker och hjälpblock', () => {
-    const FLIKAR = ['dashboard', 'bestammelser', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn',
-                    'handlingsplan', 'dokumentera', 'rapporttext', 'arbetet', 'kon', 'benchmark', 'utforska'];
     const HJALP = '#view-info, .flik-usage, .bakgrund-panel, .lv-hjalp, .audit-panel, #gdpr-info-modal, #glossary-modal, '
         + '#symbols-modal, #data-residency-modal, #evidence-modal, script, style, noscript, [data-hjalptext]';
-    const oppna = () => { const w = createAppWindow(); w.__loadDemoData(); return w; };
     const synligText = (w, rot) => {
         const ut = [];
         const walker = w.document.createTreeWalker(rot, 4);
@@ -254,25 +269,23 @@ describe('gränssnittets språk, rubriker och hjälpblock', () => {
         return ut;
     };
     it('inga fackuttryck, engelska eller motsägelser i gränssnittet utanför hjälptexten', () => {
-        const w = oppna();
+        const w = flikfonster();
         const traffar = [];
         const FORBJUDET = /Outlier|Pareto|[Qq]uantile|Boxplot|[Ss]napshot|Kompliansöversikt|Blinder-Oaxaca|[Mm]ultivariat|\bMetric\b|Z-score|Struktur-data|Datauppladdning|A–K\b/;
         for (const flik of FLIKAR) {
-            w.document.querySelector(`.nav-item[data-tab="${flik}"]`).click();
-            const paneler = [...w.document.querySelectorAll('.view-panel')].filter(v => v.style.display === 'block');
+            const { paneler: ritat, titel } = ritade.get(flik);
+            const paneler = ritat.filter(v => v.style.display === 'block');
             for (const rad of paneler.flatMap(v => synligText(w, v))) {
                 if (FORBJUDET.test(rad.text)) traffar.push(`${flik} › ${rad.id}: ${rad.text}`);
             }
-            traffar.push(...(FORBJUDET.test(w.document.getElementById('page-title').textContent) ? [`${flik} › rubrik`] : []));
+            traffar.push(...(FORBJUDET.test(titel) ? [`${flik} › rubrik`] : []));
         }
         expect([...new Set(traffar)]).toEqual([]);
     });
     it('inga rubriker börjar med emoji', () => {
-        const w = oppna();
         const traffar = [];
         for (const flik of FLIKAR) {
-            w.document.querySelector(`.nav-item[data-tab="${flik}"]`).click();
-            for (const h of w.document.querySelectorAll('.view-panel h1, .view-panel h2, .view-panel h3, .view-panel h4, .view-panel summary')) {
+            for (const h of ritade.get(flik).paneler.flatMap(p => [...p.querySelectorAll('.view-panel h1, .view-panel h2, .view-panel h3, .view-panel h4, .view-panel summary')])) {
                 if (h.closest('.view-panel').style.display !== 'block') continue;
                 const t = h.textContent.trim();
                 if (/^\p{Extended_Pictographic}/u.test(t)) traffar.push(`${flik} › ${t.slice(0, 50)}`);
@@ -281,11 +294,9 @@ describe('gränssnittets språk, rubriker och hjälpblock', () => {
         expect([...new Set(traffar)]).toEqual([]);
     });
     it('högst ett hjälpblock av varje slag per flik', () => {
-        const w = oppna();
         const traffar = [];
         for (const flik of FLIKAR) {
-            w.document.querySelector(`.nav-item[data-tab="${flik}"]`).click();
-            const synliga = sel => [...w.document.querySelectorAll(sel)].filter(el => el.closest('.view-panel')?.style.display === 'block');
+            const synliga = sel => ritade.get(flik).paneler.flatMap(p => [...p.querySelectorAll(sel)]).filter(el => el.closest('.view-panel')?.style.display === 'block');
             // "Beräkning & urval" hör till varje enskild analys och får finnas en per analys.
             for (const [namn, sel] of [['Hur används', '.flik-usage'], ['Bakgrund', '.bakgrund-panel']]) {
                 const n = synliga(sel).filter(el => namn !== 'Hur används' || /Hur används/.test(el.querySelector('summary')?.textContent || '')).length;
@@ -358,11 +369,10 @@ describe('Att göra', () => {
 describe('innehåll på sidan och i rapportunderlaget', () => {
     const oppna = (w, flik) => w.document.querySelector(`.nav-item[data-tab="${flik}"]`).click();
     it('de långa flikarna har avsnitt, och deras rubriker är innehållsförteckningen', () => {
-        const w = createAppWindow();
-        w.__loadDemoData();
+        // Flikarna klickas fram i samma ordning som här, med fler flikar emellan (prövat: samma paneler).
+        const w = flikfonster();
         for (const [flik, minst] of [['dashboard', 2], ['matrix', 4], ['likvardighet', 4], ['struktur', 5], ['prioritering', 4], ['loneoversyn', 4], ['dokumentera', 2], ['rapporttext', 2], ['arbetet', 4], ['kon', 5], ['benchmark', 4]]) {
-            oppna(w, flik);
-            const synliga = [...w.document.querySelectorAll('.view-panel')].filter(p => p.style.display === 'block' || p.classList.contains('active'));
+            const synliga = ritade.get(flik).paneler;
             const rubriker = synliga.flatMap(p => [...p.querySelectorAll('details.avsnitt > summary h2')]);
             expect(rubriker.length, flik).toBeGreaterThanOrEqual(minst);
             for (const h of rubriker) expect(h.textContent.trim().length, flik).toBeGreaterThan(3);

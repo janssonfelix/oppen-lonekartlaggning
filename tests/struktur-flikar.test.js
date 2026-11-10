@@ -243,14 +243,21 @@ describe('Uppgift 5: menyn i rapportens ordning', () => {
         const rubrik = [...d.querySelectorAll('#installningar-modal h3, #installningar-modal h4')].find(h => /Viktning av prioriteringsindex/.test(h.textContent));
         expect(rubrik.tagName).toBe('H4');
     });
-    it('menyn står i rapportens ordning', () => {
-        const d = createAppWindow().document;
-        expect([...d.querySelectorAll('.nav-menu .nav-item')].map(b => b.dataset.tab)).toEqual(
-            ['dashboard', 'filer', 'bestammelser', 'benchmark', 'matrix', 'likvardighet', 'struktur', 'kon',
-             'prioritering', 'loneoversyn', 'handlingsplan', 'rapporttext', 'dokumentera', 'utforska', 'arbetet', 'info']);
+    // Menyns enda ordningstest (granssnitt.test.js och smoke-vyer.test.js hade var sitt, som det här täcker).
+    it('menyn står i rapportens ordning; med ställningstagandet syns varje flik, också Löneläget', () => {
+        const w = createAppWindow(), d = w.document;
+        const MENYN = ['dashboard', 'filer', 'bestammelser', 'benchmark', 'matrix', 'likvardighet', 'struktur', 'kon',
+             'prioritering', 'loneoversyn', 'handlingsplan', 'rapporttext', 'dokumentera', 'utforska', 'arbetet', 'info'];
+        expect([...d.querySelectorAll('.nav-menu .nav-item')].map(b => b.dataset.tab)).toEqual(MENYN);
         expect([...d.querySelectorAll('.nav-group')].map(g => g.textContent.trim())).toEqual(
             ['1 · Underlag', '2 · Kartläggning', '3 · Åtgärder', '4 · Rapport', 'Arbetet', 'Hjälp']);
         expect(d.querySelector('[data-tab="benchmark"] .nav-etikett').textContent.trim()).toBe('Löneläget');
+        // Demot har ett ställningstagande.
+        w.__loadDemoData();
+        expect([...d.querySelectorAll('.nav-item[data-tab]')].filter(b => !b.hidden).map(b => b.dataset.tab)).toEqual(MENYN);
+        expect(d.querySelector('.nav-item[data-tab="benchmark"]').hidden).toBe(false);
+        expect(d.querySelector('.nav-menu').textContent).toContain('4 · Rapport');
+        expect(d.querySelector('.nav-menu').textContent).not.toContain('Fördjupa');
     });
     it('Ålder & karriär och Löneläget säger i inledningen att de inte är lagkrav', () => {
         const d = createAppWindow().document;

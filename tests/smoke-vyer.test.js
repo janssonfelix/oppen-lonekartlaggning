@@ -5,8 +5,16 @@
  * skapar sina egna fönster via createAppWindow (tests/helpers/app-harness.js).
  */
 import { describe, it, expect, beforeAll } from 'vitest';
-import { createAppWindow } from './helpers/app-harness.js';
+import { createAppWindow, delatFonster } from './helpers/app-harness.js';
 import { attributtext } from './helpers/attributtext.js';
+
+// Ett delat fönster med demodatan där varje flik i menyn har klickats fram en gång (det dyra är att rita flikarna), för
+// testerna som söker igenom alla flikar. Vakten i delatFonster fäller det test som ändrar fönstret.
+const allaFlikar = delatFonster(async w => {
+    w.__loadDemoData();
+    [...w.document.querySelectorAll('.nav-item[data-tab]')].forEach(b => { if (!b.disabled && !b.hidden) b.click(); });
+    await new Promise(r => setTimeout(r, 0));
+});
 
 describe('Rensa all data tömmer även Utforska', () => {
     it('inga individrader finns kvar i Utforskas minne efter rensning', () => {
@@ -115,14 +123,9 @@ describe('Rensa all data: ingen lönedata kvar i dokumentet (invariant)', () => 
 // rutor och hjälpmodaler — inte till menyer, rubriker och löptext i gränssnittet.
 // Exporterna (Excel/Word/PDF/JPA) omfattas inte.
 describe('gränssnittet har inga paragrafhänvisningar utanför hjälptexten', () => {
-    it('ingen synlig text i flikarna hänvisar till paragrafer eller artiklar', async () => {
-        const w = createAppWindow();
-        w.__loadDemoData();
-        for (const flik of ['dashboard', 'bestammelser', 'matrix', 'likvardighet', 'rapport', 'struktur', 'prioritering',
-                            'loneoversyn', 'handlingsplan', 'kon', 'demografi', 'benchmark', 'kvalitet', 'utforska']) {
-            try { w.__renderTabContent(flik); } catch (_e) { /* en flik utan underlag får kasta */ }
-        }
-        await new Promise(r => setTimeout(r, 0));
+    it('ingen synlig text i flikarna hänvisar till paragrafer eller artiklar', () => {
+        // Alla flikar i menyn är ritade, också Filer och kvalitet, Rapporttext och Spara och jämför år.
+        const w = allaFlikar();
         const hjalp = '#view-info, .flik-usage, .bakgrund-panel, .lv-hjalp, #gdpr-info-modal, #glossary-modal, #symbols-modal, '
             + '#data-residency-modal, #evidence-modal, script, style, noscript';
         const traffar = [];
@@ -359,13 +362,7 @@ describe('menystruktur', () => {
     const klicka = tab => w.document.querySelector(`.nav-item[data-tab="${tab}"]`).click();
     const synlig = id => w.document.getElementById(id).style.display === 'block';
 
-    it('menyn har exakt flikarna i ordning; Löneläget syns med ställningstagandet', () => {
-        expect(flikar()).toEqual(['dashboard', 'filer', 'bestammelser', 'benchmark', 'matrix', 'likvardighet', 'struktur', 'kon',
-            'prioritering', 'loneoversyn', 'handlingsplan', 'rapporttext', 'dokumentera', 'utforska', 'arbetet', 'info']);
-        expect(w.document.querySelector('.nav-item[data-tab="benchmark"]').hidden).toBe(false);
-        expect(w.document.querySelector('.nav-menu').textContent).toContain('4 · Rapport');
-        expect(w.document.querySelector('.nav-menu').textContent).not.toContain('Fördjupa');
-    });
+    // Menyns ordning: struktur-flikar.test.js.
     it('Ålder & karriär: kohortförbehållet står under livscykelkurvorna, i Om verktygets metodtext och i metodbilagan', () => {
         klicka('kon');
         expect(w.document.getElementById('lifecycle-chart')).not.toBeNull();
@@ -460,9 +457,7 @@ describe('utfällt som standard', () => {
     // ihopfälld när allt är OK (utfälld vid varning).
     const UNDANTAG_ID = ['organisationspaket', 'uk-fallbar'];
     it('varje <details> är utfälld utom hjälppanelerna — i markup och efter rendering av alla flikar', () => {
-        const w = createAppWindow();
-        w.__loadDemoData();
-        [...w.document.querySelectorAll('.nav-item[data-tab]')].forEach(b => { if (!b.disabled && !b.hidden) b.click(); });
+        const w = allaFlikar();
         const infallda = [...w.document.querySelectorAll('details:not([open])')]
             // Flikens avsnitt (details.avsnitt): slutsatserna och det FÖRSTA avsnittet är öppna, resten fälls
             // ut av användaren.
