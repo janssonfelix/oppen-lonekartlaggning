@@ -16,8 +16,9 @@ tools/data/*
 *.swp
 *~
 
-# Arbetskatalog för utvecklingsverktyg, inte en del av projektet.
+# Arbetskataloger för utvecklingsverktyg, inte en del av projektet.
 .claude/
+.super*/
 
 # Lokalt material som inte hör till den publika källkoden, och dess utfiler.
 privat/

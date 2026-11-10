@@ -380,7 +380,7 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   `organisationsfil-design.md` heter `organisationsfil.md`. `CONTRIBUTING.md`, `GOVERNANCE.md` och
   `CODE_OF_CONDUCT.md` ligger i `.github/`. `NOTICE` är borttagen och `LICENSES.md` heter
   `TREDJEPARTSLICENSER.md`, kortad till en tabell över biblioteken; de fullständiga licenstexterna står som förut i
-  `src/licenser.txt` och i den byggda filen.
+  `src/licenser.txt` och i den byggda filen. CI-arbetsflödet har bara läsbehörighet.
 
 - **Ansvarsförbehåll och övergripande juridikspråk (beslut 8c).** Samma förbehåll — verktyget är ett stöd för
   arbetsgivarens egen lönekartläggning, användaren ansvarar för användning, tolkning och juridisk bedömning, och
