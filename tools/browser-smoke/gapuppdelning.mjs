@@ -3,13 +3,14 @@
 // Webbläsar-röktestet, del: Var uppstår löneskillnaden med valbara förklaringsvariabler (ADR-65), vid 375 punkter.
 // Körs av tools/browser-smoke.mjs. Egen sida, så att valet inte följer med in i de andra kontrollerna.
 /* global _guGapUppdelning, getData, kTroskel, gapVariabler -- används i page.evaluate, där de finns i sidan */
-import { FIL, ok, browser } from './rigg.mjs';
+import { FIL, NAMN, ok, browser, WEBKIT_SELECT_STILMALL } from './rigg.mjs';
 
 export async function uppdelningensVariabler() {
     console.log('\n── Var uppstår löneskillnaden: förklaringsvariablerna (375 punkter) ──');
     const s = await browser.newPage({ viewport: { width: 375, height: 800 } });
     const fel = [];
-    s.on('console', m => { if (m.type() === 'error' && !/frame-ancestors/i.test(m.text())) fel.push(m.text()); if (m.type() === 'warning' && /Internt fel i/.test(m.text())) fel.push(m.text()); });
+    // Samma undantag som sidan i rigg.mjs: WebKits egna stilar för <select> ger ett konsolfel om stilmallen.
+    s.on('console', m => { if (m.type() === 'error' && !/frame-ancestors/i.test(m.text()) && !(NAMN === 'webkit' && WEBKIT_SELECT_STILMALL.test(m.text()))) fel.push(m.text()); if (m.type() === 'warning' && /Internt fel i/.test(m.text())) fel.push(m.text()); });
     s.on('pageerror', e => fel.push(String(e && e.message || e)));
     await s.goto('file://' + FIL + '?demo=1');
     await s.waitForFunction(() => document.getElementById('demo-mode-banner')?.style.display === 'flex', null, { timeout: 30000 });

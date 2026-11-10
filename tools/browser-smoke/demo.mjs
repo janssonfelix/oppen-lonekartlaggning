@@ -11,7 +11,7 @@ export async function stortDemo() {
     // Från klick på "stort demo" i Kom igång tills Översikt är ritad, och sedan varje tung flik tills den är ritad och
     // sidindexet byggt, och sökningen tills träfflistan visas. Budget 5 s per steg (maskinberoende, som perf-smoke.mjs).
     {
-        const BUDGET = 5000;
+        const BUDGET = 5000, GRUPP_BUDGET = 4000;
         const s = await browser.newPage({ viewport: { width: 1440, height: 900 } });
         const sFel = [], sInterna = [];
         s.on('pageerror', e => sFel.push(String(e && e.message || e)));
@@ -62,7 +62,9 @@ export async function stortDemo() {
                 return [Math.round(performance.now() - t0), g.querySelectorAll('[id^="ut-diagram-"]').length, forut];
             }, flik);
             gruppTider.push(`${flik} ${t} ms (${antal} diagram${forut ? '' : ', fliken ritades'})`);
-            ok(t <= 2000, `stort demo: Alla diagram, gruppen ${flik} öppnad på ${t} ms (budget 2000 ms)`);
+            // 2 s räckte i Chromium och Firefox lokalt; WebKit i CI behövde 2,8 s för Ålder & karriär (fliken ritas
+            // med nio diagram och deras filterrader). Gränsen fångar en verklig försämring, inte maskinens tempo.
+            ok(t <= GRUPP_BUDGET, `stort demo: Alla diagram, gruppen ${flik} öppnad på ${t} ms (budget ${GRUPP_BUDGET} ms)`);
         }
         console.log(`  Alla diagram: ${gruppTider.join(' · ')}`);
         await mat('sökningen visar träffar', () => s.evaluate(async () => {
