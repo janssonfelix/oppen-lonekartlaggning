@@ -25,7 +25,7 @@
     "test:browser": "node tools/browser-smoke.mjs",
     "test:browser:firefox": "node tools/browser-smoke.mjs --browser=firefox",
     "test:browser:webkit": "node tools/browser-smoke.mjs --browser=webkit",
-    "test:browser:webkit:behallare": "podman run --rm --security-opt label=disable --network=none -v \"$PWD\":/work:ro -w /work mcr.microsoft.com/playwright:v1.64.1-noble node tools/browser-smoke.mjs --browser=webkit",
+    "test:browser:webkit:behallare": "podman run --rm --security-opt label=disable --network=none -v \"$PWD\":/work:ro -w /work mcr.microsoft.com/playwright:v1.65.0-noble node tools/browser-smoke.mjs --browser=webkit",
     "perf": "node tools/perf-smoke.mjs",
     "site": "node tools/site.mjs",
     "release:kontroll": "node tools/release.mjs"
@@ -33,11 +33,11 @@
   "devDependencies": {
     "@types/node": "^26.6.6",
     "axe-core": "^4.14.0",
-    "d3": "7.9.0",
+    "d3": "7.9.2",
     "eslint": "^10.14.0",
     "globals": "^17.14.0",
     "jsdom": "30.1.1",
-    "playwright": "^1.64.1",
+    "playwright": "^1.65.0",
     "typescript": "7.0.2",
     "vitest": "^5.1.0"
   },

@@ -580,7 +580,7 @@ kräver att riggens lista över flikar är menyns; `tests/dokumentation.test.js`
 
 **ADR-39 — Diagramkärna på D3 med eget figurformat.** Alla diagram ritas av en egen kärna: vyerna bygger en
 *figur* (ren data: axlar, lager av märken, referenser — `src/lib/figur.js`), och `ritaFigur` gör SVG av den med
-D3 7.9.0. Kärnan består av tre moduler — mått och layout i `src/app/10-diagramlayout.js`, märkena, färgskalan
+D3 7.9.2. Kärnan består av tre moduler — mått och layout i `src/app/10-diagramlayout.js`, märkena, färgskalan
 och referenserna i `src/app/10-diagrammarken.js`, och ritaren med sidans API, registret och exporten i
 `src/app/10-diagramritare.js` — med palett och typografi i `src/app/10-diagramtema.js` och exportmenyn i
 `src/app/11-diagramexport.js`. Det egna formatet valdes framför D3 direkt i varje vy eftersom varje datapunkt då

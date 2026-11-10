@@ -12,17 +12,17 @@ import { utanSmaGrupper, ladstatistik, talformat, figurTillTabell, valideraFigur
 const sha = fil => createHash('sha256').update(readFileSync(fil)).digest('hex');
 
 describe('D3 i bygget', () => {
-    it('testriggen har äkta D3 7.9.0', () => {
+    it('testriggen har äkta D3 7.9.2', () => {
         const w = createAppWindow();
         expect(w.__bootErr).toBeUndefined();
-        expect(w.d3.version).toBe('7.9.0');
+        expect(w.d3.version).toBe('7.9.2');
         expect(typeof w.d3.scaleBand).toBe('function');
         expect(w.d3.create('svg').node().namespaceURI).toBe('http://www.w3.org/2000/svg');
     });
     it('vendor/d3.min.js är byte för byte npm-paketets fil och står i SHA256SUMS', () => {
         expect(sha('vendor/d3.min.js')).toBe(sha('node_modules/d3/dist/d3.min.js'));
         expect(readFileSync('vendor/SHA256SUMS', 'utf8')).toContain(`${sha('vendor/d3.min.js')}  d3.min.js`);
-        expect(JSON.parse(readFileSync('package.json', 'utf8')).devDependencies.d3).toBe('7.9.0');
+        expect(JSON.parse(readFileSync('package.json', 'utf8')).devDependencies.d3).toBe('7.9.2');
     });
     it('index.html laddar D3 före app.js, och bundlern inlinar den', () => {
         const html = readFileSync('src/index.html', 'utf8');

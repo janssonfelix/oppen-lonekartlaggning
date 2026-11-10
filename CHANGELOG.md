@@ -484,6 +484,16 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ### Utveckling
 
+- **D3 7.9.2 (från 7.9.0).** Samma API; biblioteket är byggt om på de senaste versionerna av D3:s delpaket. Det
+  rättar bland annat avrundningen när en skala rundar av sina ändpunkter (`nice`, så att det avrundade intervallet
+  alltid täcker de ursprungliga ändpunkterna), `d3.format` för noll, NaN och mycket små tal, hela cirkelbågar som försvann när start och slut sammanföll
+  efter avrundning, och Delaunay-trianguleringen när alla punkter ligger på en linje. `vendor/d3.min.js` är fortfarande
+  npm-paketets `dist/d3.min.js` byte för byte, med ny rad i `vendor/SHA256SUMS`; skripthashen i CSP:n och byggets
+  kontrollsumma är nya. Licensen är densamma (ISC), med upphovsrättsåren 2010–2026. Diagrammen ritas som förut; det
+  prövas av hela testsviten och webbläsarröktestet.
+- **Playwright 1.65.0** (från 1.64.1) för webbläsarröktestet, och behållaravbilden för WebKit
+  (`test:browser:webkit:behallare`) är `v1.65.0-noble`. Bara ett utvecklingsberoende.
+
 - **Vakttest för ordvalen** i `tests/dokumentation.test.js`: index.html, strängarna i appen och användar- och
   dataskyddsdokumenten prövas mot de avförda orden, paragraftecken och artikelnummer, med undantag för kommentarer,
   identifierare, sökregistrets synonymer, ordlistans sökfält och Källor. p-värdevakten fångar fler felaktiga
