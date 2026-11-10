@@ -12,6 +12,10 @@ on:
   pull_request:
   workflow_dispatch:
 
+# Bara läsbehörighet: jobben checkar ut och testar, men skriver ingenting till repot.
+permissions:
+  contents: read
+
 # Stegen är låsta på commit-SHA (versionen står som kommentar), så att en flyttad tagg hos
 # tredjepartsåtgärden inte kan ändra vad som körs. Uppdatera SHA och kommentar tillsammans.
 jobs:

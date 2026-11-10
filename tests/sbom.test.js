@@ -29,10 +29,10 @@ describe('sbom: innehållet speglar vendor/', () => {
             expect(c.hashes[0].content, fil).toBe(sha);
         }
     });
-    it('versionerna är de som LICENSES.md anger, och licenserna är SPDX-id', () => {
-        const md = läs('LICENSES.md');
+    it('versionerna är de som TREDJEPARTSLICENSER.md anger, och licenserna är SPDX-id', () => {
+        const md = läs('TREDJEPARTSLICENSER.md');
         for (const c of sbom.components) {
-            expect(md, c.name).toMatch(new RegExp(`Version:\\*\\* ${c.version.replace(/\./g, '\\.')}\\b`));
+            expect(md, c.name).toMatch(new RegExp(`^\\| [^|\\n]+ \\| ${c.version.replace(/\./g, '\\.')}\\b`, 'm'));
             expect(c.licenses[0].license.id).toMatch(/^(MIT|ISC|Apache-2\.0)$/);
             expect(c.purl).toBe(`pkg:npm/${c.purl.split('/')[1].split('@')[0]}@${c.version}`);
         }

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 /**
- * Organisationsfilen (docs/utveckling/organisationsfil-design.md): den rena kärnan som bakar in
+ * Organisationsfilen (docs/utveckling/organisationsfil.md): den rena kärnan som bakar in
  * organisationspaketet i verktygsfilen och läser ut det igen.
  */
 import { describe, it, expect } from 'vitest';

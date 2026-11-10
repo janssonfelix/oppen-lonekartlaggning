@@ -55,12 +55,12 @@ slutliga dokumentationen görs av arbetsgivaren i samverkan med facklig part.
 ## Licens och bidrag
 
 Öppen lönekartläggning är öppen källkod under **MIT-licensen** (se `LICENSE`). Upphovsperson:
-Felix Jansson. Tredjepartsbibliotekens licenser står i [`LICENSES.md`](LICENSES.md) och
+Felix Jansson. Tredjepartsbibliotekens licenser står i [`TREDJEPARTSLICENSER.md`](TREDJEPARTSLICENSER.md) och
 följer med i den byggda filen.
 
-Vill du bidra, läs [`CONTRIBUTING.md`](CONTRIBUTING.md) och [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md).
+Vill du bidra, läs [`CONTRIBUTING.md`](.github/CONTRIBUTING.md) och [`CODE_OF_CONDUCT.md`](.github/CODE_OF_CONDUCT.md).
 Säkerhetsbrister rapporteras enligt [`SECURITY.md`](SECURITY.md). Hur projektet styrs, och vad som
-gäller om det slutar underhållas, står i [`GOVERNANCE.md`](GOVERNANCE.md).
+gäller om det slutar underhållas, står i [`GOVERNANCE.md`](.github/GOVERNANCE.md).
 
 ## Ansvar och roller
 
@@ -89,16 +89,20 @@ säkerhetsregler*.
 
 ## Mappstruktur
 
-| Mapp | Innehåll |
+| Mapp eller fil | Innehåll |
 |---|---|
-| `src/` | Källan: `index.html`, `style.css`, `app/` (appens moduler i byggordning) och `lib/` (rena, testade moduler som speglas in i appen) |
-| `vendor/` | Tredjepartsbibliotek: D3, SheetJS, PapaParse, JSZip (licenser i [`LICENSES.md`](LICENSES.md); de fullständiga texterna i `src/licenser.txt` byggs in i HTML-filen) |
+| `src/` | Källan: `index.html`, `style.css`, `app/` (appens moduler i byggordning), `lib/` (rena, testade moduler som speglas in i appen) och `licenser.txt` (licenstexterna som byggs in i HTML-filen) |
+| `vendor/` | Tredjepartsbibliotek: D3, SheetJS, PapaParse, JSZip, låsta med `SHA256SUMS` (licenser i [`TREDJEPARTSLICENSER.md`](TREDJEPARTSLICENSER.md)) |
 | `dist/` | Genererat och incheckat: `app.js`, `oppen-lonekartlaggning.html`, `RELEASE.txt`. Redigeras aldrig för hand |
-| `docs/anvandare/` | Dokument som följer med verktyget |
+| `docs/` | Dokumentationen; [`docs/README.md`](docs/README.md) listar dokumenten efter läsare |
+| `docs/anvandare/` | Dokument som följer med verktyget: körguide, datauttag, organisationspaket, införande |
 | `docs/dataskydd/` | Dataskyddsbeskrivning och risk- och sårbarhetsanalys |
-| `docs/utveckling/` | [`teknisk-plan.md`](docs/utveckling/teknisk-plan.md): syfte, avgränsning, arkitekturbeslut (ADR) och öppna punkter; [`lagrum.md`](docs/utveckling/lagrum.md): lagrumshänvisningarna; [`diagramkarnan.md`](docs/utveckling/diagramkarnan.md): diagramkärnan; [`organisationsfil-design.md`](docs/utveckling/organisationsfil-design.md): organisationsfilen |
+| `docs/utveckling/` | [`teknisk-plan.md`](docs/utveckling/teknisk-plan.md) (syfte, avgränsning och öppna punkter), [`arkitekturbeslut.md`](docs/utveckling/arkitekturbeslut.md) (ADR), [`diagramkarnan.md`](docs/utveckling/diagramkarnan.md), [`organisationsfil.md`](docs/utveckling/organisationsfil.md) och [`lagrum.md`](docs/utveckling/lagrum.md) |
 | `tests/` | Vitest-sviten (enhetstester, röktester i jsdom, golden-facit, k-anonymitet, tillgänglighet) |
 | `tools/` | Bygge, speglingsgenerator, röktest i webbläsare, prestandamätning och testdatageneratorer. `tools/data/` håller lokala indata och är inte incheckad |
+| `site/` | Demosidan på GitHub Pages (`npm run site`) |
+| `.github/` | Arbetsflödena för CI, release och demosidan, ärendemallar, [`CONTRIBUTING.md`](.github/CONTRIBUTING.md), [`GOVERNANCE.md`](.github/GOVERNANCE.md) och [`CODE_OF_CONDUCT.md`](.github/CODE_OF_CONDUCT.md) |
+| Roten | `README.md`, [`CHANGELOG.md`](CHANGELOG.md), [`SECURITY.md`](SECURITY.md), `LICENSE` (MIT), [`TREDJEPARTSLICENSER.md`](TREDJEPARTSLICENSER.md) och `VERSION` |
 
 Källmodulerna i `src/app/` beskrivs i [`src/app/README.md`](src/app/README.md).
 
