@@ -463,8 +463,9 @@ pekar på står kvar med en rad om hur den avslutades.
 **Export:**
 22. *(Löst 2026-11-08: en definition av kvinnodominerat i hela verktyget, `arKvinnodominerad`/`konsklass` i
     `src/lib/likvardighet.js`, ADR-60.)*
-10. **Svenskt talformat:** jämförelseexporten (`64-jamforelse-export.js`) och CSV-exporternas tolkning (`_CSV_TALLIKT`) är inte
-    prövade.
+10. *(Löst 2026-11-10: jämförelseexporten och CSV-exporternas tolkning (`_CSV_TALLIKT`) prövas i
+    `tests/talformat.test.js`; P10 och P90 i jämförelseexporten fick kronformat, och talinläsningen läser `−` som
+    minus.)*
 
 **Dokumentation och lansering:**
 17b. **Före varje release: riskanalysen granskas mot koden.** `riskanalys.md` och `dataskydd.md` läses påstående

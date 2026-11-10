@@ -15923,7 +15923,8 @@ const Stat = {
 function _normalizeNumberString(raw) {
     let s = raw.toString().trim()
         .replace(/[\s  ']/g, '')       // mellanslag, NBSP, smal NBSP, apostrof-tusental
-        .replace(/(kr|sek|:-)\.?$/i, '');         // valutasuffix
+        .replace(/(kr|sek|:-)\.?$/i, '')          // valutasuffix
+        .replace(/\u2212/g, '-');                  // minustecknet som verktyget och Intl skriver (annars tappas tecknet)
     s = s.replace(/[^\d.,\-]/g, '');
     const lastDot = s.lastIndexOf('.'), lastComma = s.lastIndexOf(',');
     if (lastDot !== -1 && lastComma !== -1) {
@@ -33005,6 +33006,15 @@ function _exportBenchmarkExcelExport() {
     // Applicera svenska nummerformat på data-kolumnerna.
     // Jämförelse-arket har två header-rader (group + sub) — applicera mot sub-header (rad 1).
     _applyColumnNumFormats(sheet, SV_NUM_FORMATS, 1);
+    // P10 och P90 är kronor som medianen, men rubrikerna har inget nyckelord i SV_NUM_FORMATS (och "Bredd P90/P10"
+    // är en kvot): de får medianens format här.
+    headerRow2.forEach((rubrik, c) => {
+        if (rubrik !== 'P10' && rubrik !== 'P90') return;
+        for (let r = 2; r < aoa.length; r++) {
+            const cell = sheet[XLSX.utils.encode_cell({ c, r })];
+            if (cell && cell.t === 'n') cell.z = SV_NUM_FORMATS.median;
+        }
+    });
 
     // Bygg workbook
     const wb = XLSX.utils.book_new();
