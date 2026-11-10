@@ -120,6 +120,10 @@ export function fonsterKon(k) {
     return win;
 }
 export const harNagon = (text, varden) => varden.filter(v => text.includes(String(v)));
+// ISO-tidsstämplar (konfigurationsfilen, exporternas metadata) tas bort innan utdata söks igenom: sekunder och
+// millisekunder kan se ut som ett dolt värde ("…:48.30Z", "…:57.785Z" mot 57.7), och då föll testet bara när klockan
+// råkade stå rätt.
+export const utanTid = t => t.replace(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:?\d{2})?/g, '');
 export async function laddaXlsx(w) {
     const { readFileSync } = await import('node:fs');
     w.eval(readFileSync(new URL('../../vendor/xlsx.mini.min.js', import.meta.url), 'utf8'));
@@ -164,7 +168,8 @@ export const FK_RA = ['FKBAS', 'FKLON', 'FKALDER', 'FKKON', 'FKKOLUMN'];
 export async function samlaUtdata(w) {
     const d = w.document;
     const ut = [];
-    const lagg = (namn, text) => ut.push([namn, String(text ?? '').split('\n').map(normalisera).join('\n')]);
+    // Tidsstämplarna tas bort här, så att varje sökning i utdata slipper dem (utanTid).
+    const lagg = (namn, text) => ut.push([namn, utanTid(String(text ?? '')).split('\n').map(normalisera).join('\n')]);
     await laddaXlsx(w);
     w.URL.createObjectURL = () => 'blob:x';
     // Förhandskontrollen som efter en inläsning: tio rader med märkorden som råvärden, en oanvänd kolumn och en varning
