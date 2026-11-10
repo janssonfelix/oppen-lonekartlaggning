@@ -30,7 +30,8 @@ function clearAllData() {
 const RENSA_BEHALLARE = ['struktur-representation', 'struktur-distribution', 'struktur-eu', 'struktur-sektorer', 'forecast-outcome', 'explore-table',
     'outliers-table-wrap', 'print-report'];
 const RENSA_TABELLER = ['rapport-table', 'matrix-table', 'la-oversikt', 'pag-avvikelse-tabell', 'paygap-table', 'skevhet-table', 'benchmark-table', 'prio-table'];
-const RENSA_OVRIGT = ['action-checklist-container', 'outlier-list', 'data-validation-report', 'reality-check', 'snapshot-comparison', 'consistency-banner', 'process-tracker', 'likvardighet-content', 'forklaringsmodell-panel', 'blinder-oaxaca-card', 'livscykel-content', 'lonepolitik-content', 'ref-overblick', 'jmf-slutsatser', 'robusthet-body', 'fardigcheck-body', 'rapportunderlag-innehall', 'gap-uppdelning-innehall', 'pag-innehall', 'att-gora-borja', 'aidbas-lika', 'aidbas-individ', 'aidbas-likvardigt', 'aidbas-hierarki', 'ut-alla-grupper'];
+const RENSA_OVRIGT = ['action-checklist-container', 'outlier-list', 'data-validation-report', 'reality-check', 'snapshot-comparison', 'consistency-banner', 'process-tracker', 'likvardighet-content', 'forklaringsmodell-panel', 'blinder-oaxaca-card', 'livscykel-content', 'lonepolitik-content', 'ref-overblick', 'jmf-slutsatser', 'robusthet-body', 'fardigcheck-body', 'rapportunderlag-innehall', 'gap-uppdelning-innehall', 'pag-innehall', 'att-gora-borja', 'aidbas-lika', 'aidbas-individ', 'aidbas-likvardigt', 'aidbas-hierarki', 'ut-alla-grupper',
+    'forecast-threshold-result', 'forecast-sensitivity', 'forecast-rem-result'];   // Löneöversyns knappresultat
 
 function _rensaAllData({ inbakat = true } = {}) {
     if (typeof laMinneSlapp === 'function') laMinneSlapp();   // minnet håller en referens till dataraderna
@@ -100,6 +101,7 @@ function _rensaAllData({ inbakat = true } = {}) {
     state.gapUppdelning = null;
     // Rensa även historiska snapshots och anteckningar
     state.forecast = { budget: { mode: 'pct', value: null }, generell: { mode: 'pct', value: null }, targets: [], minGroupN: 10, roundStep: 0, years: 1, scenarios: { A: null, B: null }, result: null };
+    if (typeof _fcGlomKnappresultat === 'function') _fcGlomKnappresultat();   // knappresultaten räknas inte om på nästa underlag
     // Rensa även beräkningscacher som kan innehålla
     // spår av lönefördelningar (CI-värden, MDE-mått från power-analysen).
     state.bootstrapCI = null;

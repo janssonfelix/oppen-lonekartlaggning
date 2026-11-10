@@ -18497,6 +18497,7 @@ function _lasInDemounderlag(skapa, { stort = false } = {}) {
     if (state.paket || state.policyKalla === 'fil' || state.policyKalla === 'paket' || state.statistik.length) _rensaAllData({ inbakat: false });
     if (typeof _rfUrvalGlom === 'function') _rfUrvalGlom();   // urvalet i diagrammen hör till det förra underlaget, som vid en ny lönefil
     state.data = skapa();
+    if (typeof _fcGlomKnappresultat === 'function') _fcGlomKnappresultat();   // Löneöversyns knappresultat gällde det förra underlaget
     state.importprofil = null;   // demodatan läses inte ur en fil: ingen känd uppsättning
     _fkSlapp();   // inte heller någon förhandskontroll, och en fil som väntade på Läs in släpps
     state.data.forEach((r, i) => { r.radnr = i + 2; });   // som en fil med rubrik på rad 1
@@ -20106,7 +20107,8 @@ function clearAllData() {
 const RENSA_BEHALLARE = ['struktur-representation', 'struktur-distribution', 'struktur-eu', 'struktur-sektorer', 'forecast-outcome', 'explore-table',
     'outliers-table-wrap', 'print-report'];
 const RENSA_TABELLER = ['rapport-table', 'matrix-table', 'la-oversikt', 'pag-avvikelse-tabell', 'paygap-table', 'skevhet-table', 'benchmark-table', 'prio-table'];
-const RENSA_OVRIGT = ['action-checklist-container', 'outlier-list', 'data-validation-report', 'reality-check', 'snapshot-comparison', 'consistency-banner', 'process-tracker', 'likvardighet-content', 'forklaringsmodell-panel', 'blinder-oaxaca-card', 'livscykel-content', 'lonepolitik-content', 'ref-overblick', 'jmf-slutsatser', 'robusthet-body', 'fardigcheck-body', 'rapportunderlag-innehall', 'gap-uppdelning-innehall', 'pag-innehall', 'att-gora-borja', 'aidbas-lika', 'aidbas-individ', 'aidbas-likvardigt', 'aidbas-hierarki', 'ut-alla-grupper'];
+const RENSA_OVRIGT = ['action-checklist-container', 'outlier-list', 'data-validation-report', 'reality-check', 'snapshot-comparison', 'consistency-banner', 'process-tracker', 'likvardighet-content', 'forklaringsmodell-panel', 'blinder-oaxaca-card', 'livscykel-content', 'lonepolitik-content', 'ref-overblick', 'jmf-slutsatser', 'robusthet-body', 'fardigcheck-body', 'rapportunderlag-innehall', 'gap-uppdelning-innehall', 'pag-innehall', 'att-gora-borja', 'aidbas-lika', 'aidbas-individ', 'aidbas-likvardigt', 'aidbas-hierarki', 'ut-alla-grupper',
+    'forecast-threshold-result', 'forecast-sensitivity', 'forecast-rem-result'];   // Löneöversyns knappresultat
 
 function _rensaAllData({ inbakat = true } = {}) {
     if (typeof laMinneSlapp === 'function') laMinneSlapp();   // minnet håller en referens till dataraderna
@@ -20176,6 +20178,7 @@ function _rensaAllData({ inbakat = true } = {}) {
     state.gapUppdelning = null;
     // Rensa även historiska snapshots och anteckningar
     state.forecast = { budget: { mode: 'pct', value: null }, generell: { mode: 'pct', value: null }, targets: [], minGroupN: 10, roundStep: 0, years: 1, scenarios: { A: null, B: null }, result: null };
+    if (typeof _fcGlomKnappresultat === 'function') _fcGlomKnappresultat();   // knappresultaten räknas inte om på nästa underlag
     // Rensa även beräkningscacher som kan innehålla
     // spår av lönefördelningar (CI-värden, MDE-mått från power-analysen).
     state.bootstrapCI = null;
@@ -21892,6 +21895,8 @@ function _afterDataLoaded() {
     }
     state.isDemo = false;   // #9: verklig uppladdning lämnar demoläge
     state.demoStort = false;
+    // Löneöversyns knappresultat (målet för skillnaden, känslighetskurvan, individnivån) gällde det förra underlaget.
+    if (typeof _fcGlomKnappresultat === 'function') _fcGlomKnappresultat();
     if (typeof _renderDemoBanner === 'function') _renderDemoBanner();
     /** @type {HTMLElement} */ (document.getElementById("dashboard-summary")).style.display = "grid";
     const poangCount = _deriveArbetsvarderingFromData();
@@ -24306,6 +24311,22 @@ function renderForecast() {
     renderForecastTargets();
     updateForecast();
     _renderScenarioCompare();
+    _fcRitaOmKnappresultat();
+}
+// Resultaten som räknas på knapptryck: målet för skillnaden, känslighetskurvan och kostnaden på individnivå. Ett resultat
+// som visas räknas om när fliken ritas om, i det läge och med den tröskel som gäller nu — förhandsvisningen "Som i
+// exporten", en ändrad tröskel eller fliken som öppnas efter att ha tömts (ADR-51). En ruta som är tom förblir tom: inget
+// räknas utan knapptryck. Rensa all data, en ny lönefil och Nollställ glömmer resultaten (_fcGlomKnappresultat).
+const _fcKnappresultat = new Set();   // id:n för rutorna som visar ett resultat
+function _fcRitaOmKnappresultat() {
+    if (_fcKnappresultat.has('forecast-threshold-result')) _forecastThreshold();
+    if (_fcKnappresultat.has('forecast-sensitivity')) _forecastSensitivity();
+    if (_fcKnappresultat.has('forecast-rem-result')) _forecastRemediation();
+}
+function _fcGlomKnappresultat() {
+    for (const id of _fcKnappresultat) { const el = document.getElementById(id); if (el) el.innerHTML = ''; }
+    _fcKnappresultat.clear();
+    if (state.forecast) delete state.forecast._remediation;
 }
 // Kandidater ur § 3:10-paren för förslag, mål-läge och känslighetskurva. Par med en grupp under
 // tröskeln tas inte med (undantaget gäller bara fliken Likvärdigt arbete); minsta gruppstorlek för
@@ -24479,6 +24500,7 @@ function _forecastThreshold() {
     const host = document.getElementById('forecast-threshold-result');
     const d = getData();
     if (!host) return;
+    _fcKnappresultat.add('forecast-threshold-result');
     if (!d.length) { host.innerHTML = ''; return; }
     // Lyftet i procent och dess kostnad är kvinnornas lönesumma gånger procentsatsen — ett könsuppdelat
     // lönemått. Det visas bara när varje kön når tröskeln (regressionen jämför mot män); annars ett streck
@@ -24531,6 +24553,7 @@ function _forecastSensitivity() {
     const host = document.getElementById('forecast-sensitivity');
     const d = getData();
     if (!host) return;
+    _fcKnappresultat.add('forecast-sensitivity');
     if (!d.length) { host.innerHTML = ''; return; }
     _forecastReadControls();
     const cand = _fcKandidater();
@@ -24550,6 +24573,7 @@ function _forecastRemediation() {
     const host = document.getElementById('forecast-rem-result');
     const d = getData();
     if (!host) return;
+    _fcKnappresultat.add('forecast-rem-result');
     if (!d.length) { host.innerHTML = ''; return; }
     const gp = parseFloat(/** @type {HTMLInputElement} */ (document.getElementById('forecast-rem-pct'))?.value);
     // k-anonymitet: jämförelsen kräver tröskeln i antal män (mot en enda mans lön vore kostnaden
@@ -24682,6 +24706,7 @@ function _exportForecastExport() {
         const mn = document.getElementById('forecast-min-n'); if (mn) /** @type {HTMLInputElement} */ (mn).value = '10';
         const rs = document.getElementById('forecast-round'); if (rs) /** @type {HTMLInputElement} */ (rs).value = '0';
         const yr = document.getElementById('forecast-years'); if (yr) /** @type {HTMLInputElement} */ (yr).value = '1';
+        _fcGlomKnappresultat();
         renderForecast();
     });
 })();

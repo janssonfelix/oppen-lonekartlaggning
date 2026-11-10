@@ -417,6 +417,22 @@ function renderForecast() {
     renderForecastTargets();
     updateForecast();
     _renderScenarioCompare();
+    _fcRitaOmKnappresultat();
+}
+// Resultaten som räknas på knapptryck: målet för skillnaden, känslighetskurvan och kostnaden på individnivå. Ett resultat
+// som visas räknas om när fliken ritas om, i det läge och med den tröskel som gäller nu — förhandsvisningen "Som i
+// exporten", en ändrad tröskel eller fliken som öppnas efter att ha tömts (ADR-51). En ruta som är tom förblir tom: inget
+// räknas utan knapptryck. Rensa all data, en ny lönefil och Nollställ glömmer resultaten (_fcGlomKnappresultat).
+const _fcKnappresultat = new Set();   // id:n för rutorna som visar ett resultat
+function _fcRitaOmKnappresultat() {
+    if (_fcKnappresultat.has('forecast-threshold-result')) _forecastThreshold();
+    if (_fcKnappresultat.has('forecast-sensitivity')) _forecastSensitivity();
+    if (_fcKnappresultat.has('forecast-rem-result')) _forecastRemediation();
+}
+function _fcGlomKnappresultat() {
+    for (const id of _fcKnappresultat) { const el = document.getElementById(id); if (el) el.innerHTML = ''; }
+    _fcKnappresultat.clear();
+    if (state.forecast) delete state.forecast._remediation;
 }
 // Kandidater ur § 3:10-paren för förslag, mål-läge och känslighetskurva. Par med en grupp under
 // tröskeln tas inte med (undantaget gäller bara fliken Likvärdigt arbete); minsta gruppstorlek för
@@ -590,6 +606,7 @@ function _forecastThreshold() {
     const host = document.getElementById('forecast-threshold-result');
     const d = getData();
     if (!host) return;
+    _fcKnappresultat.add('forecast-threshold-result');
     if (!d.length) { host.innerHTML = ''; return; }
     // Lyftet i procent och dess kostnad är kvinnornas lönesumma gånger procentsatsen — ett könsuppdelat
     // lönemått. Det visas bara när varje kön når tröskeln (regressionen jämför mot män); annars ett streck
@@ -642,6 +659,7 @@ function _forecastSensitivity() {
     const host = document.getElementById('forecast-sensitivity');
     const d = getData();
     if (!host) return;
+    _fcKnappresultat.add('forecast-sensitivity');
     if (!d.length) { host.innerHTML = ''; return; }
     _forecastReadControls();
     const cand = _fcKandidater();
@@ -661,6 +679,7 @@ function _forecastRemediation() {
     const host = document.getElementById('forecast-rem-result');
     const d = getData();
     if (!host) return;
+    _fcKnappresultat.add('forecast-rem-result');
     if (!d.length) { host.innerHTML = ''; return; }
     const gp = parseFloat(/** @type {HTMLInputElement} */ (document.getElementById('forecast-rem-pct'))?.value);
     // k-anonymitet: jämförelsen kräver tröskeln i antal män (mot en enda mans lön vore kostnaden
@@ -793,6 +812,7 @@ function _exportForecastExport() {
         const mn = document.getElementById('forecast-min-n'); if (mn) /** @type {HTMLInputElement} */ (mn).value = '10';
         const rs = document.getElementById('forecast-round'); if (rs) /** @type {HTMLInputElement} */ (rs).value = '0';
         const yr = document.getElementById('forecast-years'); if (yr) /** @type {HTMLInputElement} */ (yr).value = '1';
+        _fcGlomKnappresultat();
         renderForecast();
     });
 })();
