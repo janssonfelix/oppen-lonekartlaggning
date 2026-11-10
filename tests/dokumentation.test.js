@@ -15,7 +15,7 @@ import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { execSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, join, basename } from 'node:path';
-import { utanHtmlKommentarer, utanSkript } from './helpers/htmlrens.js';
+import { utanHtmlKommentarer, utanSkript, utanStil } from './helpers/htmlrens.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, '..');
@@ -426,8 +426,7 @@ describe('vakt: avförda ord och lagrum i användartexten (språkgenomgången 20
     };
     // Attribut som användaren läser (title, aria-label, data-tooltip, alt, placeholder, data-export-label)
     // står kvar som text också när värdet är ett ord; övriga attribut utan blanksteg (id, klass) rensas.
-    const htmlText = src => utanSkript(utanHtmlKommentarer(src), { medAttribut: true })
-        .replace(/<style[\s\S]*?<\/style>/g, '')
+    const htmlText = src => utanStil(utanSkript(utanHtmlKommentarer(src), { medAttribut: true }))
         .replace(/\s(?:title|aria-label|data-tooltip|alt|placeholder|data-export-label)="([^"]*)"/g, ' [$1] ')
         .replace(/\s[\w-]+="[^"\s]*"/g, '');
 

@@ -18,3 +18,10 @@ export function utanSkript(html, { medAttribut = false } = {}) {
     do { forra = s; s = s.replace(block, ''); } while (s !== forra);
     return s;
 }
+
+/** HTML utan stilblock (taggnamnet i valfri skiftläge, sluttaggen med blanksteg eller attribut). */
+export function utanStil(html) {
+    let s = String(html), forra;
+    do { forra = s; s = s.replace(/<style\b[^>]*>[\s\S]*?<\/style\b[^>]*>/gi, ''); } while (s !== forra);
+    return s;
+}
