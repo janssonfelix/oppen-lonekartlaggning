@@ -33333,7 +33333,7 @@ SHA-256:    Se <code>RELEASE.txt</code> i utvecklingsmappen för verifiering
             <tr><th>Bibliotek</th><th>Version</th><th>Licens</th><th>Användning</th></tr>
             <tr><td>PapaParse</td><td>5.7.0</td><td>MIT</td><td>CSV-parsning</td></tr>
             <tr><td>SheetJS Community (mini)</td><td>0.20.3</td><td>Apache 2.0</td><td>Excel read/write</td></tr>
-            <tr><td>D3</td><td>7.9.0</td><td>ISC</td><td>Diagram</td></tr>
+            <tr><td>D3</td><td>7.9.2</td><td>ISC</td><td>Diagram</td></tr>
             <tr><td>JSZip</td><td>3.10.2</td><td>MIT</td><td>ZIP-export och Word-utkastet (.docx)</td></tr>
         </table>
         <p class="text-dampad-sm">Alla licenser är godkända för kommersiell användning. Inga royalties krävs.</p>

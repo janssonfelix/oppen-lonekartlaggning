@@ -1,6 +1,6 @@
 # Risk- och sårbarhetsanalys (dataskydd och informationssäkerhet) — Öppen lönekartläggning
 
-**Bygge:** `2026.11.05` · **Artefakt-SHA-256:** `a41895874a856d0a5518220300505158b48e242db30e25bb86bc04c1f9730ac2` (se `dist/RELEASE.txt`).
+**Bygge:** `2026.11.05` · **Artefakt-SHA-256:** `d98de05378ac84c16d9321b9d53075bad4d223a1499c73de3a48a5107ec066ba` (se `dist/RELEASE.txt`).
 **Granskningsdatum:** 2026-11-07.
 **Granskningsmetod:** kodläsning påstående för påstående + statisk sökning i källkod och bygge +
 körning av det byggda verktyget i jsdom och i Chromium (utan nätverk) med syntetiska testfiler.
@@ -190,7 +190,7 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   också att en arbetstråd ur en `blob:`-adress och ett injicerat skript, en `onclick` och en `<img onerror>`
   stoppas av CSP:n.
 
-- **D3 7.9.0 (ISC)** ritar diagrammen (ADR-39) och är ett av de inlinade skripten, med egen hash.
+- **D3 7.9.2 (ISC)** ritar diagrammen (ADR-39) och är ett av de inlinade skripten, med egen hash.
   Sökning i `vendor/d3.min.js`: inget `localStorage`, `sessionStorage`, `setItem`,
   `document.cookie`, `eval(`, `XMLHttpRequest`, `WebSocket`, `sendBeacon` eller `Worker`. Filen innehåller **ett
   `new Function(`** (d3-dsv, radtolkaren i `d3.csvParse` m.fl.) och **fyra `fetch(`** (d3-fetch: `d3.json`,

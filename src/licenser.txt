@@ -282,8 +282,8 @@ Copyright (C) 2012-present SheetJS LLC
 
 ========================================================================
 
-D3 7.9.0 — ISC License
-Copyright 2010-2023 Mike Bostock
+D3 7.9.2 — ISC License
+Copyright 2010-2026 Mike Bostock
 
 Permission to use, copy, modify, and/or distribute this software for any purpose
 with or without fee is hereby granted, provided that the above copyright notice
