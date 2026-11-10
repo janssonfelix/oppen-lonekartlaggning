@@ -2,7 +2,7 @@
  * Vakt: dokumentationen ska beskriva den BYGGDA versionen (kvalitetskrav K4).
  *
  * Dokumentation glider isär från koden i varje commit: deltabeller som saknar
- * moduler, filer som inte finns, byggkommandon och testantal som inte stämmer.
+ * moduler, filer som inte finns och byggkommandon som inte stämmer.
  * Det som GÅR att kontrollera mekaniskt kontrolleras därför här, så att
  * påståenden om filer, moduler, skript och trösklar inte kan glida isär från
  * koden utan att CI säger ifrån.
@@ -41,16 +41,6 @@ describe('dokumentation: src/app/README.md speglar katalogen', () => {
 });
 
 describe('dokumentation: teknisk-plan.md stämmer med projektet', () => {
-    it('testfilsantalet i den tekniska planen är rätt', () => {
-        const testfiler = readdirSync(join(root, 'tests')).filter(f => f.endsWith('.test.js'));
-        const m = /Vitest — \d+ tester i (\d+) filer/.exec(planMd);
-        expect(m, 'hittade ingen "Vitest — N tester i M filer"-rad i teknisk-plan.md').not.toBeNull();
-        expect(
-            Number(m[1]),
-            `teknisk-plan.md säger ${m[1]} testfiler, katalogen har ${testfiler.length}`
-        ).toBe(testfiler.length);
-    });
-
     it('k-anonymitetströskeln i teknisk-plan.md är den som gäller i koden', () => {
         const kod = /const K_STANDARD = (\d+);/.exec(läs('src/app/06-k-anonymitet-och-dataminimering.js'));
         expect(kod).not.toBeNull();

@@ -39,8 +39,8 @@ jobs:
       - name: Typkontroll (tsc --checkJs, noll fel)
         run: npm run typecheck
 
-      - name: Enhetstester (Vitest)
-        run: npm test
+      - name: Testsviten (Vitest, hela)
+        run: npm run test:full
 
       - name: Teckenkodningsgrind (ingen U+FFFD i egen källkod)
         run: |

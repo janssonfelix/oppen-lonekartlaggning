@@ -428,6 +428,11 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 - **Programvaruförteckning (SBOM) på releasen.** `npm run sbom` (`tools/sbom.mjs`) skriver `dist/sbom.cdx.json` i
   CycloneDX med de fyra inbyggda biblioteken (version, licens, kontrollsumma) och artefaktens kontrollsumma;
   release-arbetsflödet signerar den som de andra filerna. Deterministisk, utan beroenden.
+- **Snabb och full testkörning.** Sviten är delad i två Vitest-projekt: `enhet` (moduler, vakter och källtext) och
+  `app` (filerna som ritar verktyget i jsdom), klassade automatiskt efter testfilens källa. `npm test` kör bara
+  `enhet` och tar sekunder; `npm run test:full` kör hela sviten, ska köras före en pull request och körs i CI
+  (`npm run test:app` kör bara jsdom-filerna). Testantalet i `teknisk-plan.md` jämförs inte längre med sviten, så ett
+  nytt test kräver ingen dokumentändring.
 
 ## 2026.11.05
 

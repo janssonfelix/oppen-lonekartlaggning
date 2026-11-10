@@ -247,7 +247,7 @@ adaptern verkligen delegerar vaktas av `tests/drift.test.js`:
   rätt grupp. Utskriftsfönstret för checklistorna (`printScaffoldView`) läser `:root` och allt från `.dold` till
   stilmallens slut ur den körande stilmallen och lägger in det som byggt stilark (`adoptedStyleSheets`): ett `<style>`-element
   som skriptet skapar blockeras av den ärvda CSP:n (`style-src-elem`), så fönstret var tidigare helt ostilat.
-- **Tester:** Vitest — 3288 tester i 99 filer: rena `src/lib/`-moduler, CSV-parsning, jsdom-röktest
+- **Tester:** Vitest — omkring 3300 tester i omkring 100 filer: rena `src/lib/`-moduler, CSV-parsning, jsdom-röktest
   av varje vy (ADR-7; `tests/smoke.test.js` med det delade fönstret och sju `tests/smoke-*.test.js` per
   område), k-tröskeln i nio `tests/ktroskel*.test.js` med riggen i `tests/helpers/ktroskel-rigg.js`,
   gränssnittet i `tests/granssnitt*.test.js` (riggen `tests/helpers/granssnitt-rigg.js`) och diagramvyerna i
@@ -275,7 +275,12 @@ adaptern verkligen delegerar vaktas av `tests/drift.test.js`:
   åtta arbetare till 168 s, femton till 150–168 s och tolv till 130 s: de tunga filerna är processorbundna, så
   med en arbetare per tråd trängs de om kärnorna, och med en per kärna köar de), begränsat av maskinens totala
   minne med 1,2 GB per arbetare och 2 GB åt resten.
-  *Testkörningen:* `npm test` kör `tools/test.mjs`, som kör sviten och sedan kör om de filer vars arbetare dog i
+  *Testkörningen:* sviten är delad i två Vitest-projekt i `vitest.config.js`: `enhet` (moduler, vakter och källtext,
+  utan att verktyget laddas) och `app` (filerna som ritar verktyget i jsdom). Klassningen görs när konfigurationen
+  laddas: en fil hör till `app` om källan nämner `app-harness`, en `-rigg.js` eller `createAppWindow`, eller
+  importerar jsdom. `npm test` är den snabba körningen, bara `enhet` (sekunder); `npm run test:full` kör båda
+  projekten (minuter) och ska köras före en pull request — det är den som körs i CI. Båda går genom `tools/test.mjs`,
+  som kör sviten och sedan kör om de filer vars arbetare dog i
   Node (SIGSEGV i V8:s skräpsamlare, sällsynt; orsaken ligger i Node, §9). Ett test som faller körs aldrig om, och
   utgångskoden är 0 först när alla filer har rapporterat. Hela sviten tar omkring 130 s på 8 kärnor/16 trådar
   (var tidigare 250–275 s, då `smoke.test.js` och `ktroskel.test.js` var för sig tog hela tiden); under full
@@ -1532,7 +1537,7 @@ Kända brister och obesvarade frågor, så att de inte lever bara i en konversat
    och under 5 ms på det stora demot, och hela beskedet 2,5 s mot 3,0 s.
 
 **Kod och bygge:**
-6. **Krasch i Node under testkörning** (V8:s skräpsamlare): orsaken är okänd; `npm test` kör om berörda filer.
+6. **Krasch i Node under testkörning** (V8:s skräpsamlare): orsaken är okänd; `npm test` och `npm run test:full` kör om berörda filer.
 7. **Stilen var spridd — åtgärdad.** De omkring 780 stilattributen i `index.html` och flikarnas mallar är flyttade till
    klasser, så att `style-src-attr` är stängt (`'none'`, ADR-30), och de genererade hashklasserna (428 `u-…`) är ersatta av
    ett namngivet bibliotek av hjälpklasser i stilmallen (§6, «Stilmallen»); inga hashnamn återstår och `tests/farger.test.js`
