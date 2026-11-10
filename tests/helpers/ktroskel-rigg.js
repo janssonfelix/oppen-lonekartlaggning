@@ -332,10 +332,10 @@ export async function samlaUtdata(w) {
 
     // Gruppdossiern: textkopian lämnar verktyget (exportläget); det som visas på skärmen maskeras inte (ADR-51).
     for (const g of w.__gruppdossierCandidates()) {
-        lagg(`gruppdossier ${g.key}`, w.eval(`medExportLage(() => gruppdossierAsText(buildGruppdossier(${JSON.stringify(g.key)})))`));
+        lagg(`gruppdossier ${g.key}`, w.medExportLage(() => w.gruppdossierAsText(w.buildGruppdossier(g.key))));
     }
     // BAS-dossiern: textkopian byggs i exportläget (basdossierText), för varje intervall som når den inställda tröskeln.
-    for (const { bas } of w.eval('medExportLage(() => basdossierKandidater())')) lagg(`basdossier ${bas}`, w.eval(`basdossierText(${JSON.stringify(bas)})`));
+    for (const { bas } of w.eval('medExportLage(() => basdossierKandidater())')) lagg(`basdossier ${bas}`, w.basdossierText(bas));
     // Bilagan med gruppdossierer (förvald av): kryssas i här, och prövas i Word-utkastets HTML och i utskriften.
     w.eval("sattRapportUrval({ ordning: rapportUrval().ordning, med: [...RM_URVAL.hela.med, 'dossierer'] })");
     lagg('rapportmodell: dossierer', w.eval("(m => rmTillHtml({ ...m, avsnitt: m.avsnitt.filter(a => a.id === 'dossierer') }))(rapportModell())"));

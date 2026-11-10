@@ -304,7 +304,7 @@ describe('stort demo: Excel (alla flikar) röjer ingen grupp under tröskeln', (
         const somTal = v => {
             if (typeof v === 'number') return v;
             const t = String(v ?? '').replace(/[\s  ]/g, '');
-            return /^-?\d+(?:[.,]\d+)?(?:kr|%)?$/.test(t) ? Number(t.replace(/kr|%/, '').replace(',', '.')) : null;
+            return /^-?\d+(?:[.,]\d+)?(?:kr|%)?$/.test(t) ? Number(t.replace(/kr|%/g, '').replace(',', '.')) : null;
         };
         expect([somTal('68 415 kr'), somTal('12'), somTal('91,7 %'), somTal('–'), somTal('< 10')]).toEqual([68415, 12, 91.7, null, null]);
         for (const { namn, rader } of bok) {

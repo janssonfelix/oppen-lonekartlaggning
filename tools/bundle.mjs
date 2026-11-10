@@ -77,10 +77,10 @@ function minifyHtml(html) {
     const protectedBlocks = new Map();
     let protIdx = 0;
     const patterns = [
-        /<pre\b[^>]*>[\s\S]*?<\/pre>/gis,
-        /<script\b[^>]*>[\s\S]*?<\/script>/gis,
-        /<style\b[^>]*>[\s\S]*?<\/style>/gis,
-        /<textarea\b[^>]*>[\s\S]*?<\/textarea>/gis
+        /<pre\b[^>]*>[\s\S]*?<\/pre\b[^>]*>/gis,
+        /<script\b[^>]*>[\s\S]*?<\/script\b[^>]*>/gis,
+        /<style\b[^>]*>[\s\S]*?<\/style\b[^>]*>/gis,
+        /<textarea\b[^>]*>[\s\S]*?<\/textarea\b[^>]*>/gis
     ];
     for (const p of patterns) {
         html = html.replace(p, m => {
@@ -90,8 +90,10 @@ function minifyHtml(html) {
             return key;
         });
     }
-    // HTML-kommentarer (utom villkorskommentarer <!--[if ...)
-    html = html.replace(/<!--(?!\[if)[\s\S]*?-->/g, '');
+    // HTML-kommentarer (utom villkorskommentarer <!--[if ...)). Upprepa tills inget ändras, så att en
+    // borttagning inte kan foga ihop en ny kommentar av resterna.
+    let forra;
+    do { forra = html; html = html.replace(/<!--(?!\[if)[\s\S]*?-->/g, ''); } while (html !== forra);
     // Kollapsa whitespace mellan taggar
     html = html.replace(/>\s+</g, '><');
     // Kollapsa flera whitespace till ett mellanslag inom textnoder

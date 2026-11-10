@@ -63,6 +63,7 @@ import * as libAb from '../src/lib/arsbokslut.js';
 import * as libSak from '../src/lib/sakligaskal.js';
 import * as libAidbas from '../src/lib/aidbas.js';
 import { MODULES, generateMirrorsSource } from '../tools/gen-mirrors.mjs';
+import { regexEscape } from './helpers/regex.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, '..');
@@ -127,7 +128,7 @@ describe('lib-speglar: 09-lib-speglar.js genereras ur src/lib/', () => {
                 // annan funktion i samma fil fångas. Gäller även privata hjälpare (_median).
                 const text = nlnorm(fn.toString());
                 expect(libText, `${appName} → ${mod.file}`).toContain(text);
-                expect(text, `${appName} → lib.${internal}`).toMatch(new RegExp(`^(async )?function\\*? ?${internal.replace(/\$/g, '\\$')}\\s*\\(`));
+                expect(text, `${appName} → lib.${internal}`).toMatch(new RegExp(`^(async )?function\\*? ?${regexEscape(internal)}\\s*\\(`));
                 if (lib[internal]) expect(lib[internal].name, `${appName} → lib.${internal}`).toBe(internal);
                 checked++;
             }

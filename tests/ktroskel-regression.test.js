@@ -6,6 +6,7 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
+import { utanTaggar } from '../src/lib/htmltext.js';
 import { normalisera, synliga, fonster, ritaAlla, oppnaFlik, KON_MA, ENSAM, KON_GAP, fonsterKon, harNagon, laddaXlsx, fangaBocker, utskriftAv, samlaUtdata, sammanhang, SJU_MAN, fonsterMan, tvaDec, somTal, andelText, SENT_MELLAN, SENT_SMA, iExport } from './helpers/ktroskel-rigg.js';
 
 // Sviten ritar om hela verktyget i varje test. Under full last tar ett test 4–6 s, så standardgränsen 5 s
@@ -71,7 +72,7 @@ describe('R1: regressionens ojusterade steg ("Endast kön") kräver tröskeln f�
         for (const namn of ['Word-utkastet', 'utskrift: komplett', 'utskrift: facklig']) {
             const t = utdata.find(([n]) => n === namn)[1];
             expect(t, namn).toMatch(/Sekventiell dekomponering/);
-            expect(t.replace(/<[^>]+>/g, ''), namn).toMatch(NOT);
+            expect(utanTaggar(t), namn).toMatch(NOT);
             expect(t, namn).toMatch(somTal(justerat.toFixed(2)));
         }
     }, 120000);

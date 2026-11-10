@@ -6,6 +6,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
+import { utanTaggar } from '../src/lib/htmltext.js';
 
 describe('säkerhet, dataskydd och HR-logik', () => {
     // Skadlig text i varje fält som kommer ur personalfilen eller ett organisationspaket.
@@ -569,7 +570,7 @@ describe('ansvarsraden och ansvarskolumnen vid fel', () => {
     };
     it('ansvarsraden visar skillnaden med tecken och säger till när den byter riktning', () => {
         const w = createAppWindow();
-        const t = (a, b) => w.eval(`_ansvarRadText(${a}, ${b})`).replace(/<[^>]+>/g, '');
+        const t = (a, b) => utanTaggar(w.eval(`_ansvarRadText(${a}, ${b})`));
         expect(t(-6.82, -5.1)).toMatch(/förklarar ytterligare 1,72 procentenheter.*−5,10 %.*före −6,82 %/);
         expect(t(-1, 0.8)).toMatch(/byter skillnaden riktning, från −1,00 % till \+0,80 %/);
         expect(t(-1, 0.8)).not.toMatch(/förklarar ytterligare/);
