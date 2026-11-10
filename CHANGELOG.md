@@ -386,6 +386,11 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ### Exporter
 
+- **HTML-text som vanlig text, på ett ställe (`src/lib/htmltext.js`).** Metodbladet i Excel visade `&lt;`, `&gt;` och
+  `&amp;` i reglerna och formlerna (t.ex. "n &lt; 10"); de står nu som `<`, `>` och `&`. Taggarna tas bort tills inga
+  finns kvar, i Excel, utskriftens metodlistor (som nu escapas), rapportmodellens bilaga och gruppdossierns textkopia.
+  Rubriken i Ålder & karriär escapar det valda BAS-intervallet, och mallens skriptblock hittas också med versaler.
+  Rättar CodeQL:s varningar om ofullständig tvättning.
 - **Word-utkastets tabeller inför Word-testet.** Två tabeller i följd skiljs av ett tomt stycke (Word slår annars
   ihop dem till en tabell), tabellbredden står i samma enhet som kolumnerna och cellerna, och varje tabell har
   `w:tblLook` som Word själv skriver.

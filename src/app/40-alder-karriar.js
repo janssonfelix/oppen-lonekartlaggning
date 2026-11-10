@@ -74,8 +74,8 @@ function renderKon(bas) {
     if (insightEl) {
         const scope = isAll ? "Hela urvalet" : `BAS ${bas}`;
         insightEl.innerHTML = konOk && medMa > 0 && expMa > 0
-            ? `<strong>${scope}:</strong> ${_akInsiktText(regKv.m, regMa.m, (medKv / medMa) * 100, (expKv / expMa) * 100)}`
-            : `<strong>${scope}:</strong> ${esc(_konUtelamnatNot())}`;
+            ? `<strong>${esc(scope)}:</strong> ${_akInsiktText(regKv.m, regMa.m, (medKv / medMa) * 100, (expKv / expMa) * 100)}`
+            : `<strong>${esc(scope)}:</strong> ${esc(_konUtelamnatNot())}`;
     }
     { const not = document.getElementById('kon-kohort-not'); if (not) not.textContent = KOHORT_FORBEHALL; }
     const colorBy = /** @type {HTMLInputElement} */ (document.getElementById('kon-color-by'))?.value || 'kon';

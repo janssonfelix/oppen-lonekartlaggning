@@ -354,8 +354,7 @@ function gruppdossierAsText(d, { stampel = true } = {}) {
     if (d.prio) L.push(`Prioritering: ${d.prio.status} · avvikelse ${svPct(d.prio.diffPct, 1)} · ${kr(d.prio.annualGapTotal)} per år`);
     // Förslagen är HTML (fetstil m.m.); textkopian tar bort taggarna och avkodar tecknen
     // utan att tolka HTML.
-    const somText = h => String(h).replace(/<[^>]*>/g, '').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
-        .replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&');
+    const somText = h => _htmlTillText(h);
     if (d.suggestions.length) { L.push('Frågor att undersöka:'); d.suggestions.forEach(s => L.push('  – ' + somText(s.text))); }
     if (d.lvUtelamnade) L.push(_parUtelamnadeNot(d.lvUtelamnade));
     L.push('Obs! Dossiern dokumenterar inte sakliga skäl – den bedömningen görs separat.');

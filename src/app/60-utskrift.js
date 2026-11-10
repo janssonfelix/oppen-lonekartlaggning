@@ -79,10 +79,10 @@ async function _buildPrintReportExport() {
                     const exclRows = [...(a.parseExcl||[]), ...(a.analysisExclusions||[])]
                         // Texten kan innehålla referensens namn (ur fil eller organisationspaket):
                         // taggar tas bort och resten escapas, så att en halv tagg inte kan leva kvar.
-                        .map(([r,c]) => `<tr><th>− ${esc(String(r).replace(/<[^>]+>/g, '').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&'))}</th><td>${fmtN(c)}</td></tr>`).join('');
+                        .map(([r,c]) => `<tr><th>− ${esc(_htmlTillText(r))}</th><td>${fmtN(c)}</td></tr>`).join('');
                     const used = a.usedInAnalysis !== undefined ? a.usedInAnalysis : a.afterFilter;
-                    const formler = (a.formler||[]).map(([n,d]) => `<li><strong>${n}:</strong> ${d.replace(/<[^>]+>/g, '')}</li>`).join('');
-                    const notes = (a.notes||[]).map(n => `<li>${n.replace(/<[^>]+>/g, '')}</li>`).join('');
+                    const formler = (a.formler||[]).map(([n,d]) => `<li><strong>${n}:</strong> ${esc(_htmlTillText(d))}</li>`).join('');
+                    const notes = (a.notes||[]).map(n => `<li>${esc(_htmlTillText(n))}</li>`).join('');
                     return `
                         <h3 class="pr-ned-14">${a.title}</h3>
                         <table class="kpi pr-under">

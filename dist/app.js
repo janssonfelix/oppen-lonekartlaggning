@@ -5840,7 +5840,7 @@ function bakaIn(html, paketJson, meta = {}) {
 
 /** Skriptblocken i en HTML-text, för tester som hävdar att inbakningen inte rör något skript. */
 function skriptBlock(html) {
-    return [...String(html ?? '').matchAll(/<script\b[^>]*>[\s\S]*?<\/script>/g)].map(m => m[0]);
+    return [...String(html ?? '').matchAll(/<script\b[^>]*>[\s\S]*?<\/script\s*>/gi)].map(m => m[0]);
 }
 
     return { bakaIn, filnamnForslag, normaliseraFilnamn };
@@ -6218,6 +6218,38 @@ function etikettlistaInfo() {
 const _aidSektorsnamn = __mirrorAid.sektorsnamn;
 const _aidJamforSektor = __mirrorAid.jamforSektor;
 const _aidEtikettlistaInfo = __mirrorAid.etikettlistaInfo;
+
+// ---- speglar src/lib/htmltext.js ----
+const __mirrorHtmlText = (() => {
+// SPDX-License-Identifier: MIT
+// Copyright 2026 Felix Jansson
+/**
+ * Öppen lönekartläggning — HTML-text som vanlig text: taggarna bort och tecknen avkodade.
+ *
+ * Verktygets egna texter (metodbilagans regler, förslagen i gruppdossiern) är skrivna som HTML. I Excel, utskriftens
+ * listor och textkopior ska de stå som vanlig text. Taggarna tas bort tills inga finns kvar (en ersättning i ett svep
+ * lämnar `<scr<b>ipt>` som `<script>`), och ett ensamt `<` som blir kvar tas bort. Avkodningen tar &amp; sist, så att
+ * `&amp;lt;` blir `&lt;` och inte `<`.
+ *
+ * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
+ */
+
+/** Texten utan HTML-taggar (entiteterna står kvar). */
+function utanTaggar(text) {
+    let s = String(text ?? ''), forra;
+    do { forra = s; s = s.replace(/<[^<>]*>/g, ''); } while (s !== forra);
+    return s.replace(/</g, '');
+}
+
+/** Texten utan HTML-taggar och med &lt; &gt; &quot; &#39; &amp; avkodade: vanlig text, ska escapas igen i HTML. */
+function htmlTillText(text) {
+    return utanTaggar(text).replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&');
+}
+
+    return { utanTaggar, htmlTillText };
+})();
+const _utanTaggar = __mirrorHtmlText.utanTaggar;
+const _htmlTillText = __mirrorHtmlText.htmlTillText;
 
 // ---- speglar src/lib/namn.js ----
 const __mirrorNamn = (() => {
@@ -19598,19 +19630,19 @@ function __excelAlltBokExport() {
         metRows.push([a.title || id]);
         metRows.push(['Total i datafilen', a.totalRaw]);
         [...(a.parseExcl||[]), ...(a.analysisExclusions||[])].forEach(([r,c]) => {
-            metRows.push(['− ' + r.replace(/<[^>]+>/g, ''), c]);
+            metRows.push(['− ' + _htmlTillText(r), c]);
         });
         const used = a.usedInAnalysis !== undefined ? a.usedInAnalysis : a.afterFilter;
         metRows.push(['= Använda i analysen', used]);
         metRows.push([]);
         if (a.formler && a.formler.length) {
             metRows.push(['Formler & definitioner']);
-            a.formler.forEach(([n, dsc]) => metRows.push(['  ' + n, dsc.replace(/<[^>]+>/g, '')]));
+            a.formler.forEach(([n, dsc]) => metRows.push(['  ' + n, _htmlTillText(dsc)]));
             metRows.push([]);
         }
         if (a.notes && a.notes.length) {
             metRows.push(['Speciella regler']);
-            a.notes.forEach(n => metRows.push(['  ' + n.replace(/<[^>]+>/g, '')]));
+            a.notes.forEach(n => metRows.push(['  ' + _htmlTillText(n)]));
             metRows.push([]);
         }
     });
@@ -23561,7 +23593,7 @@ function _lvKravFigur({ medPoang, grupper }) {
                     ...(medPoang ? [[d.uppskattad ? 'Poäng (efter BAS-intervallet)' : 'Arbetsvärderingspoäng', _figTalformat(d.krav, 'antal')]] : [])]
     })).filter(l => l.data.length);
     if (linje.length >= 2) lager.unshift({ marke: 'linje', serie: medPoang ? 'Nivå efter kraven (trend)' : 'Nivå per BAS-intervall', farg: PALETTE.semantic.mork, streck: 'streckad', tjocklek: 1.5, data: linje });
-    return { beskrivning: `En punkt per yrkesgrupp: arbetets krav (${medPoang ? 'arbetsvärderingspoäng' : 'BAS-intervall'}) mot gruppens medianlön, med form och färg efter könsdominans (kvinnodominerad vid ${kvDomGransText().replace('%', 'procent')} kvinnor). Den streckade linjen är nivån kraven brukar ge i organisationen.`,
+    return { beskrivning: `En punkt per yrkesgrupp: arbetets krav (${medPoang ? 'arbetsvärderingspoäng' : 'BAS-intervall'}) mot gruppens medianlön, med form och färg efter könsdominans (kvinnodominerad vid ${kvDomGransText().replaceAll('%', 'procent')} kvinnor). Den streckade linjen är nivån kraven brukar ge i organisationen.`,
         urval: [URVAL.bas, URVAL.sektor, URVAL.antal], x: medPoang ? { skala: 'linjar', titel: 'Arbetsvärderingspoäng' } : { skala: 'band', titel: 'BAS-intervall (stigande krav)', ordning: basOrdning },
         y: { skala: 'linjar', titel: 'Gruppens medianlön', format: 'kr' }, hojd: 420, lager };
 }
@@ -25668,8 +25700,8 @@ function renderKon(bas) {
     if (insightEl) {
         const scope = isAll ? "Hela urvalet" : `BAS ${bas}`;
         insightEl.innerHTML = konOk && medMa > 0 && expMa > 0
-            ? `<strong>${scope}:</strong> ${_akInsiktText(regKv.m, regMa.m, (medKv / medMa) * 100, (expKv / expMa) * 100)}`
-            : `<strong>${scope}:</strong> ${esc(_konUtelamnatNot())}`;
+            ? `<strong>${esc(scope)}:</strong> ${_akInsiktText(regKv.m, regMa.m, (medKv / medMa) * 100, (expKv / expMa) * 100)}`
+            : `<strong>${esc(scope)}:</strong> ${esc(_konUtelamnatNot())}`;
     }
     { const not = document.getElementById('kon-kohort-not'); if (not) not.textContent = KOHORT_FORBEHALL; }
     const colorBy = /** @type {HTMLInputElement} */ (document.getElementById('kon-color-by'))?.value || 'kon';
@@ -31959,7 +31991,7 @@ function _rmAvsnittenUtanUrval() {
     // Regressionens gap anges som skillnad i procent, negativ när kvinnor ligger lägre. Första steget ("Endast kön")
     // och den förklarade andelen följer tröskeln (_regStegForRedovisning, ADR-12).
     const nyckel = rader => ({ typ: 'tabell', nyckel: true, kolumner: [{ rubrik: '', typ: 'text' }, { rubrik: '', typ: 'text' }], rader });
-    const utanTaggar = t => String(t).replace(/<[^>]+>/g, '');
+    const utanTaggar = t => _utanTaggar(t);
     /** @type {{id: string, rubrik: string, utelamnat: string[], delar: any[], [k: string]: any}} */
     const regression = { id: 'regression', rubrik: 'Bilaga: Justerad löneskillnad i detalj', utelamnat: [], delar: [] };
     if (reg && !reg.error) {
@@ -32327,10 +32359,10 @@ async function _buildPrintReportExport() {
                     const exclRows = [...(a.parseExcl||[]), ...(a.analysisExclusions||[])]
                         // Texten kan innehålla referensens namn (ur fil eller organisationspaket):
                         // taggar tas bort och resten escapas, så att en halv tagg inte kan leva kvar.
-                        .map(([r,c]) => `<tr><th>− ${esc(String(r).replace(/<[^>]+>/g, '').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&'))}</th><td>${fmtN(c)}</td></tr>`).join('');
+                        .map(([r,c]) => `<tr><th>− ${esc(_htmlTillText(r))}</th><td>${fmtN(c)}</td></tr>`).join('');
                     const used = a.usedInAnalysis !== undefined ? a.usedInAnalysis : a.afterFilter;
-                    const formler = (a.formler||[]).map(([n,d]) => `<li><strong>${n}:</strong> ${d.replace(/<[^>]+>/g, '')}</li>`).join('');
-                    const notes = (a.notes||[]).map(n => `<li>${n.replace(/<[^>]+>/g, '')}</li>`).join('');
+                    const formler = (a.formler||[]).map(([n,d]) => `<li><strong>${n}:</strong> ${esc(_htmlTillText(d))}</li>`).join('');
+                    const notes = (a.notes||[]).map(n => `<li>${esc(_htmlTillText(n))}</li>`).join('');
                     return `
                         <h3 class="pr-ned-14">${a.title}</h3>
                         <table class="kpi pr-under">
@@ -36431,8 +36463,7 @@ function gruppdossierAsText(d, { stampel = true } = {}) {
     if (d.prio) L.push(`Prioritering: ${d.prio.status} · avvikelse ${svPct(d.prio.diffPct, 1)} · ${kr(d.prio.annualGapTotal)} per år`);
     // Förslagen är HTML (fetstil m.m.); textkopian tar bort taggarna och avkodar tecknen
     // utan att tolka HTML.
-    const somText = h => String(h).replace(/<[^>]*>/g, '').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
-        .replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&');
+    const somText = h => _htmlTillText(h);
     if (d.suggestions.length) { L.push('Frågor att undersöka:'); d.suggestions.forEach(s => L.push('  – ' + somText(s.text))); }
     if (d.lvUtelamnade) L.push(_parUtelamnadeNot(d.lvUtelamnade));
     L.push('Obs! Dossiern dokumenterar inte sakliga skäl – den bedömningen görs separat.');
