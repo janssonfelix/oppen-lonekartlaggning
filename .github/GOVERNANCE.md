@@ -8,11 +8,11 @@ beroende av projektet.
 
 - **Upphovspersonen** (Felix Jansson) är underhållare och fattar besluten om innehåll, releaser och
   riktning. Projektet har en underhållare; det står här så att ingen behöver gissa.
-- **Arkitekturbesluten** (ADR) i [`docs/utveckling/arkitekturbeslut.md`](docs/utveckling/arkitekturbeslut.md)
+- **Arkitekturbesluten** (ADR) i [`docs/utveckling/arkitekturbeslut.md`](../docs/utveckling/arkitekturbeslut.md)
   är bindande. Flera av dem är medvetna begränsningar — inga nätverksanrop, ingen lagring, ingen
   inbyggd organisation, en enda fil. De ändras bara genom ett nytt, daterat ADR i samma dokument, aldrig
   i förbigående i en ändring.
-- **Lagrumshänvisningar** ändras bara i [`docs/utveckling/lagrum.md`](docs/utveckling/lagrum.md)
+- **Lagrumshänvisningar** ändras bara i [`docs/utveckling/lagrum.md`](../docs/utveckling/lagrum.md)
   (ADR-16), med status *Förslag* tills jurist och dataskyddsombud stämt av dem.
 - **Bidrag** tas emot enligt [`CONTRIBUTING.md`](CONTRIBUTING.md) och lämnas under MIT-licensen; inget
   bidragsavtal utöver det. Alla som deltar följer [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md).
@@ -31,7 +31,7 @@ En version är en tagg `v<VERSION>` (CalVer). Grinden `npm run release:kontroll`
 lika överallt och att risk- och sårbarhetsanalysen är granskad mot den kod som släpps. Arbetsflödet
 bygger om, kräver att artefakten är byte-identisk med den incheckade, signerar med Sigstore och
 publicerar. Ingen signeringsnyckel finns att förlora eller lämna över: signaturen styrker att filen
-byggdes av arbetsflödet ur taggen (se [`SECURITY.md`](SECURITY.md)).
+byggdes av arbetsflödet ur taggen (se [`SECURITY.md`](../SECURITY.md)).
 
 ## Kontinuitet — om projektet slutar underhållas
 
@@ -46,7 +46,7 @@ inga tjänster och inga konton som en efterträdare måste få tillgång till.
 - En sådan fork bör behålla de bärande arkitekturbesluten (dataskyddet i teknisk-plan §3 och ADR som
   märkts som medvetna begränsningar), så att namnet fortsätter att betyda det det betyder.
 - Varje organisation kan när som helst, utan att vänta på något av ovanstående, bygga och signera sin
-  egen version enligt [`docs/anvandare/overta-verktyget.md`](docs/anvandare/overta-verktyget.md).
+  egen version enligt [`docs/anvandare/overta-verktyget.md`](../docs/anvandare/overta-verktyget.md).
 
 ## Vad projektet inte gör
 

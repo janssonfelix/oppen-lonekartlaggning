@@ -413,7 +413,7 @@ describe('dokumentation: organisationen, inte förvaltningen', () => {
     });
     it('varken gränssnitt, exporter, kod, tester eller dokument säger "förvaltning"', () => {
         const filer = [...gå('src'), ...gå('docs'), ...gå('tools'), ...gå('tests'),
-            'README.md', 'CONTRIBUTING.md', 'site/index.html', 'dist/app.js', 'dist/oppen-lonekartlaggning.html']
+            'README.md', '.github/CONTRIBUTING.md', 'site/index.html', 'dist/app.js', 'dist/oppen-lonekartlaggning.html']
             .filter(f => f !== 'tests/dokumentation.test.js' && !f.startsWith('tools/data/') && /\.(js|mjs|html|md|css|txt|snap)$/.test(f));
         expect(filer.filter(f => FORV.test(läs(f)))).toEqual([]);
     });
@@ -543,7 +543,7 @@ describe('dokumentation: skripten som nämns finns', () => {
         expect(saknas).toEqual([]);
     });
     it('varje "npm run …" i README och CONTRIBUTING finns i package.json', () => {
-        for (const f of ['README.md', 'CONTRIBUTING.md']) {
+        for (const f of ['README.md', '.github/CONTRIBUTING.md']) {
             for (const [, namn] of läs(f).matchAll(/npm run ([\w:-]+)/g)) expect(pkg.scripts, `${f}: npm run ${namn}`).toHaveProperty([namn]);
         }
     });
@@ -559,7 +559,8 @@ describe('dokumentation: kodbasen är redo att publiceras', () => {
         const readme = läs('README.md');
         expect(readme).toMatch(/MIT-licensen/);
         expect(readme).toMatch(/Prova/);
-        expect(läs('CONTRIBUTING.md')).toMatch(/MIT-licensen/);
+        expect(läs('.github/CONTRIBUTING.md')).toMatch(/MIT-licensen/);
+        for (const f of ['.github/GOVERNANCE.md', '.github/CODE_OF_CONDUCT.md']) expect(existsSync(join(root, f)), f).toBe(true);
         // En funktionsadress, inte en privat adress.
         expect(läs('SECURITY.md')).toMatch(/oppen-lonekartlaggning@proton\.me/);
         expect(läs('SECURITY.md')).not.toMatch(/gmail/i);

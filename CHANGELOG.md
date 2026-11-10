@@ -373,6 +373,15 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ### Dokumentation
 
+- **Samlad struktur för dokumenten.** Arkitekturbesluten står i en egen fil,
+  `docs/utveckling/arkitekturbeslut.md`, med en indextabell (nummer, beslut, status, datum) och samma nummer som
+  förut; `teknisk-plan.md` §8 hänvisar dit. Öppna punkter i §9 är gallrade: avslutade punkter är borta (numren byts
+  inte) och mätloggarna är de aktuella mätvärdena. `docs/README.md` listar dokumenten efter läsare.
+  `organisationsfil-design.md` heter `organisationsfil.md`. `CONTRIBUTING.md`, `GOVERNANCE.md` och
+  `CODE_OF_CONDUCT.md` ligger i `.github/`. `NOTICE` är borttagen och `LICENSES.md` heter
+  `TREDJEPARTSLICENSER.md`, kortad till en tabell över biblioteken; de fullständiga licenstexterna står som förut i
+  `src/licenser.txt` och i den byggda filen.
+
 - **Ansvarsförbehåll och övergripande juridikspråk (beslut 8c).** Samma förbehåll — verktyget är ett stöd för
   arbetsgivarens egen lönekartläggning, användaren ansvarar för användning, tolkning och juridisk bedömning, och
   verktyget är inte juridiskt granskat — står i Om verktyget, rapportunderlaget, Word/PDF:s sammanfattning (raden

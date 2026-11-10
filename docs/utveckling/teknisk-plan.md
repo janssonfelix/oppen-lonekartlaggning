@@ -220,7 +220,7 @@ adaptern verkligen delegerar vaktas av `tests/drift.test.js`:
   - `dist/` — genererat och incheckat: `dist/app.js`, `dist/oppen-lonekartlaggning.html`
     och `dist/RELEASE.txt`.
   - `docs/` — `docs/anvandare/` (medföljer verktyget), `docs/dataskydd/`,
-    och `docs/utveckling/` (denna plan och arkitekturbesluten).
+    och `docs/utveckling/` (denna plan och arkitekturbesluten); `docs/README.md` listar dokumenten.
   - `tests/`, `tools/` (bygge, generatorer; `tools/data/` för lokala indata, inget incheckat).
 - **Källfiler:** `src/index.html`, `src/style.css`, `src/app/NN-*.js`, `src/lib/*.js`.
   `dist/app.js` är ett **genererat** hopslag av `src/app/` och redigeras aldrig direkt (ADR-6/ADR-8).

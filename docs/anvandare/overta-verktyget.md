@@ -73,7 +73,7 @@ Vill du ändra något — en text, en tröskel, ett diagram, ett nytt arbetsvär
    disciplin som projektet håller.
 
 Ändringar som kan vara till nytta för andra: skicka dem tillbaka som förslag enligt
-[`CONTRIBUTING.md`](../../CONTRIBUTING.md). Du behöver inte, men verktyget blir bättre av det.
+[`CONTRIBUTING.md`](../../.github/CONTRIBUTING.md). Du behöver inte, men verktyget blir bättre av det.
 
 ## 5. Signera i eget namn
 
@@ -115,7 +115,7 @@ I båda fallen: signera `RELEASE.txt` också. Skriv sedan kontrollsumman från d
   i den byggda filen.
 - **Sårbarheter** som du hittar i verktyget: rapportera dem till projektet enligt `SECURITY.md`, så att
   rättningen når alla, också om du rättar dem själv först.
-- **Om projektet slutar underhållas** gäller [`GOVERNANCE.md`](../../GOVERNANCE.md). Efter tolv månader
+- **Om projektet slutar underhållas** gäller [`GOVERNANCE.md`](../../.github/GOVERNANCE.md). Efter tolv månader
   utan releaser eller svar uppmuntras en fork som tar över. Allt du behöver för det har du redan
   efter steg 1–5.
 
