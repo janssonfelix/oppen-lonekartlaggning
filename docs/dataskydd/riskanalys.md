@@ -356,10 +356,10 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   Annars utelämnas de, nyckeltalet visar ett streck och noten under diagrammet säger det
   (beslut 2026-10-16). Livscykelanalysen har sitt eget golv
   (`statGolv()`).
-- Skyddet vaktas av två invarianter. `tests/kanonymitet.test.js` ritar samtliga flikar i exportläget vid
-  10 mot ett dataset där varje liten grupps mått är ett unikt sentinelvärde. Testet kräver att
-  inget av dem syns. `tests/ktroskel.test.js`, `tests/ktroskel-hojning.test.js` och `tests/ktroskel-invarianter.test.js`
-  prövar flikarna vid 10, 25 och 5 med grupper om 20 och 6 personer. Vid **10 och 25** prövar de både flikarna
+- Skyddet vaktas av en invariant (I4, `tests/helpers/ktroskel-invariant.js`, körd från
+  `tests/ktroskel-invarianter.test.js`) mot ett dataset där varje liten grupps mått är ett unikt sentinelvärde.
+  Testet kräver att inget av dem syns. `tests/ktroskel.test.js` och `tests/ktroskel-hojning.test.js` prövar
+  flikarna vid 10, 25 och 5 med grupper om 20 och 6 personer. Vid **10 och 25** prövar invarianten både flikarna
   och utdata mot ett särskilt underlag. I underlaget:
   - har en grupp över tröskeln 1–3 män med en egen lön
   - har ett BAS två av varje kön
@@ -367,6 +367,7 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   - har varje yrke en rad i jämförelsestatistiken.
 
   Utdata som prövas:
+  - varje flik ritad i exportläget (det som *Som i exporten* visar och exporterna läser)
   - Översiktens delar, Word-utkastet och utskriften i sina tre urval (hela dokumentationen, ledningsbrief,
     facklig dialog)
   - rapportunderlagets block

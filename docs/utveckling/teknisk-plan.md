@@ -107,8 +107,8 @@ Icke förhandlingsbara arkitektoniska garantier:
      flikar (ADR-51). Skyddet gäller det som lämnar verktyget: tabellens CSV/urklipp och
      diagrammets exportmeny utelämnar grupperna om inte användaren kryssar i "Ta med grupper
      under tröskeln i exporten" — rutan är undantaget. K-invarianten vaktar exporten.
-   - **Vakt:** `tests/kanonymitet.test.js` är en *invariant*, inte stickprov —
-     den renderar samtliga flikar mot ett dataset där varje liten grupps
+   - **Vakt:** invarianten I4 (`tests/helpers/ktroskel-invariant.js`) är en *invariant*, inte stickprov —
+     den ritar samtliga flikar i exportläget och bygger varje export mot ett dataset där varje liten grupps
      mätvärden är unika sentinelvärden och hävdar att inget av dem syns.
 
 ---
@@ -390,8 +390,8 @@ K6. Bygget ska gå att öppna från `file://` och fungera utan internet.
 K7. Skydd som är juridiskt bindande (k-anonymitet, ingen lagring) ska vaktas av
     *invarianter* som gäller hela utdatan — inte av stickprov på enskilda vyer.
     En ny vy ska ärva skyddet utan att någon kommer ihåg att testa den.
-    Invarianterna står i `tests/kanonymitet.test.js` och `tests/ktroskel-invarianter.test.js` (flikar och
-    exporter; vad som inte prövas står i testfilerna och i `riskanalys.md` §6.5) och i
+    K-invarianten står i `tests/helpers/ktroskel-invariant.js` och körs från `tests/ktroskel-invarianter.test.js` (flikar i
+    exportläget och exporter; vad som inte prövas står i testfilerna och i `riskanalys.md` §6.5) och i
     lagringsspärrens test i `tests/sakerhet.test.js`.
     Varje ny utdata som lämnar verktyget (text, tabell, bild, fil) läggs i k-invariantsviten (`tests/helpers/ktroskel-rigg.js`) och i riskanalysens tabell över utdata innan den checkas in.
 
@@ -502,8 +502,8 @@ olika saker. I EU-matrisen har grupperna ofta 14–17 personer men bara 2–3 av
 tömma hela tabellen.
 
 Noterna innehåller avsiktligt **ingen inline-markup**: SheetJS trimmar varje elements text för sig och slår ihop
-dem utan avskiljare, vilket ger `4 yrkesgruppervisas` i Excel-exporten. Skyddet vaktas av invarianten i
-`tests/kanonymitet.test.js`.
+dem utan avskiljare, vilket ger `4 yrkesgruppervisas` i Excel-exporten. Skyddet vaktas av invarianten I4
+(`tests/helpers/ktroskel-invariant.js`).
 
 **ADR-13 — `VERSION` är enda källa för versionsstämpeln.** Versionsstämpeln (`APP_VERSION`, `APP_BUILD_DATE`)
 syns i rapportens sidfot och i Excel- och Word-metadata — det som gör ett resultat spårbart till en
@@ -903,8 +903,8 @@ löner är sentinelvärden, prövar tur och retur 10 → 25 → 10 mot kvarlevan
 efter en höjning, gränssnittet, utdata genom de verkliga vägarna, varje exportväg mot exportgrinden samt
 konfigurationsfil och organisationspaket, och har en invariant vid 10 och 25 över flikar och exporter mot ett
 underlag där ett kön är under tröskeln inuti en större grupp (vad den prövar och inte prövar står i
-`riskanalys.md` §6.5 och i testfilens kommentar). Både den och `tests/kanonymitet.test.js` kräver att listan över
-prövade flikar är menyns flikar; `tests/dokumentation.test.js` vaktar att dokumenten nämner ADR-38.
+`riskanalys.md` §6.5 och i testfilens kommentar). Den ritar menyns flikar i exportläget, och `tests/ktroskel-exporter.test.js`
+kräver att riggens lista över flikar är menyns; `tests/dokumentation.test.js` vaktar att dokumenten nämner ADR-38.
 
 **ADR-39 — Diagramkärna på D3 med eget figurformat.** Alla diagram ritas av en egen kärna: vyerna bygger en
 *figur* (ren data: axlar, lager av märken, referenser — `src/lib/figur.js`), och `ritaFigur` gör SVG av den med

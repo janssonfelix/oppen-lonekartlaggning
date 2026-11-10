@@ -440,6 +440,14 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   produktnamnet och för ordet "förvaltning" står kvar.
 - **Webbläsartestet i CI:** en vanlig push till en gren kör bara Chromium; pull requests, main och manuella
   körningar kör Chromium, Firefox och WebKit.
+- **K-tröskeltesterna slagna samman med invarianten I4.** I4 söker nu också igenom varje flik ritad i exportläget
+  (det som *Som i exporten* visar och exporterna läser) och EU-lönerapportens rader, där könsgapet står med en decimal
+  utan tecken. Tester som prövade samma vägar för sig är borttagna, vart och ett efter ett mutationsprov: en läcka
+  infördes i koden som testet vaktade, och både testet och I4 (eller R1:s helkörning) föll. Borttagna: flikarna i
+  exportläget, rapportunderlaget och Excel-exporterna i `kanonymitet.test.js`; Word-utkastet, utskriften och Excel
+  vid 10 i R1; C2:s Word-utkast, utskrift och EU-lönerapport; exportlägestesterna i `ktroskel.test.js`. R1:s
+  helkörning prövar också den förklarade andelen och att bilagan med stegen finns. 31 tester färre i k-tröskelfilerna
+  och `kanonymitet.test.js` (277 till 246); filerna tar omkring en tredjedel kortare tid.
 
 ## 2026.11.05
 

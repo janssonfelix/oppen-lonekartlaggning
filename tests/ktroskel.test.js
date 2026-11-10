@@ -6,7 +6,7 @@
  */
 import { describe, it, expect, beforeAll, vi } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
-import { FLIKAR, normalisera, synliga, fonster, ritaAlla, SENT_MELLAN, SENT_SMA, iExport } from './helpers/ktroskel-rigg.js';
+import { normalisera, synliga, fonster, ritaAlla, SENT_MELLAN, SENT_SMA } from './helpers/ktroskel-rigg.js';
 
 // Sviten ritar om hela verktyget i varje test. Under full last tar ett test 4–6 s, så standardgränsen 5 s
 // fäller olika tester från körning till körning.
@@ -82,27 +82,11 @@ describe('k-tröskeln: bekräftelse vid sänkning under 10', () => {
     });
 });
 
+// Att flikarna i exportläget (det som exporterna läser) utelämnar grupperna under tröskeln prövar invarianten I4
+// (vägen 'skärm i exportläget: alla flikar' i samlaUtdata, tests/helpers/ktroskel-rigg.js).
 describe('k-tröskeln styr varje flik', () => {
     it('på skärmen syns alla grupper, oavsett tröskel (ADR-51)', () => {
         for (const k of [null, 25]) { const w = fonster(k); ritaAlla(w); expect(synliga(w, [...SENT_MELLAN, ...SENT_SMA]).length, String(k)).toBe(6); }
-    });
-    it('i exportläget vid 10 syns mellangrupperna, inte de små', () => {
-        const w = iExport(fonster(null));
-        ritaAlla(w);
-        expect(synliga(w, SENT_MELLAN).length).toBeGreaterThan(0);
-        expect(synliga(w, SENT_SMA)).toEqual([]);
-    });
-    it('i exportläget vid 25 syns varken mellangrupperna eller de små i någon flik', () => {
-        const w = iExport(fonster(25));
-        for (const flik of FLIKAR) {
-            w.__renderTabContent(flik);
-            expect(synliga(w, [...SENT_MELLAN, ...SENT_SMA]), `fliken ${flik}`).toEqual([]);
-        }
-    });
-    it('vid 25: inget mellanvärde i Word-utkastet eller rapportunderlaget', () => {
-        const w = fonster(25);
-        const text = normalisera(w.__docDraftHtml() + w.__rapportunderlagBlock().map(b => w.__ruTillText(b)).join('\n'));
-        for (const v of [...SENT_MELLAN, ...SENT_SMA]) expect(text.includes(String(v)), String(v)).toBe(false);
     });
     it('Word-utkastet utelämnar BAS under tröskeln och namnger dem (ADR-12)', () => {
         const hamta = k => { const w = fonster(k); const d = w.document.createElement('div'); d.innerHTML = w.__docDraftHtml(); return d.querySelector('.k-mask-note'); };
