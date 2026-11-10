@@ -448,6 +448,9 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   vid 10 i R1; C2:s Word-utkast, utskrift och EU-lönerapport; exportlägestesterna i `ktroskel.test.js`. R1:s
   helkörning prövar också den förklarade andelen och att bilagan med stegen finns. 31 tester färre i k-tröskelfilerna
   och `kanonymitet.test.js` (277 till 246); filerna tar omkring en tredjedel kortare tid.
+  Tester som bara prövar en stämpel eller mening om tröskeln (utskriften, Word-utkastets sidfot, ZIP-filens bilder
+  och Excel-fil, rapportens not om utelämnade BAS-intervall) kör på en liten fixtur, `fonsterLitet` i riggen (116
+  rader i stället för ~1 150), och fäller fortfarande när stämpeln tas bort eller hamnar där den inte ska vara.
 
 ## 2026.11.05
 

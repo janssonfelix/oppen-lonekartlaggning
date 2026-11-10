@@ -55,6 +55,29 @@ export function fonster(k) {
     win.eval('populateSelects(); unlockTabs();');
     return win;
 }
+// En liten fixtur för tester som bara prövar en stämpel eller en mening om tröskeln (utskriften, Word-utkastets
+// sidfot, ZIP-filens bilder och Excel-fil), inte vilka grupper som syns: att bygga utdata på de ~1 150 raderna i
+// fonster() tar flera sekunder per test. Samma radform och samma referens per BAS, men 116 rader: S1–S3 med 30
+// personer var (båda könen; når tröskeln också vid 25), A med 20 (MELLAN: syns vid 10, saknas vid 25) och E med 6
+// (SMA: under 10). Lönerna i A och E är deras sentinelvärden, som i byggDataset().
+export const LITEN_BAS = [...STORA.slice(0, 3), MELLAN[0], SMA[0]];
+export function byggLitetDataset() {
+    const rader = [];
+    const rad = (bas, i, lon, aid, namn) => ({ bas, kon: i % 2 === 0 ? 'kvinna' : 'man', lon,
+        alder: 25 + ((i * 7) % 40), yrke: `${aid} ${namn}`, aid: String(aid), yrkeLabel: namn, enhet: '' });
+    STORA.slice(0, 3).forEach((bas, b) => { for (let i = 0; i < 30; i++) rader.push(rad(bas, i, 24000 + b * 800 + ((i * 37) % 900), 6000 + b, `Säkeryrke ${b}`)); });
+    for (let i = 0; i < 20; i++) rader.push(rad(MELLAN[0], i, SENT_MELLAN[0], 5300, 'Mellanyrke 0'));
+    for (let i = 0; i < 6; i++) rader.push(rad(SMA[0], i, SENT_SMA[0], 5400, 'Småyrke 0'));
+    return rader;
+}
+export function fonsterLitet(k) {
+    const win = createAppWindow();
+    if (k !== null) win.eval(`sattKTroskel(${k}, { fraga: false })`);
+    win.__state.data = byggLitetDataset();
+    win.__state.policy = LITEN_BAS.map(b => ({ bas: b, p10: 22000, med: 30000, p90: 52000 }));
+    win.eval('populateSelects(); unlockTabs();');
+    return win;
+}
 export const ritaAlla = win => { for (const f of FLIKAR) win.__renderTabContent(f); };
 // Öppnar fliken som användaren gör, genom menyn. Bara den öppna fliken ritas om
 // när tröskeln ändras; övriga töms och ritas när de öppnas eller när en export behöver dem (23-exportgrind.js).

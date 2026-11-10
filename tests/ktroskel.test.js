@@ -6,7 +6,7 @@
  */
 import { describe, it, expect, beforeAll, vi } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
-import { normalisera, synliga, fonster, ritaAlla, SENT_MELLAN, SENT_SMA } from './helpers/ktroskel-rigg.js';
+import { normalisera, synliga, fonster, fonsterLitet, ritaAlla, SENT_MELLAN, SENT_SMA } from './helpers/ktroskel-rigg.js';
 
 // Sviten ritar om hela verktyget i varje test. Under full last tar ett test 4–6 s, så standardgränsen 5 s
 // fäller olika tester från körning till körning.
@@ -99,10 +99,10 @@ describe('k-tröskeln styr varje flik', () => {
         expect(vid10.textContent).toMatch(/\bF\b/);
         expect(vid10.textContent).not.toMatch(/\bA\b/);
     });
-    // Den kompletta rapporten byggs en gång per tröskel: lokalt ≈ 4–5 s vardera, på en delad CI-maskin
-    // ungefär tre gånger så lång tid. Två test med egen tidsgräns i stället för ett som låg nära 30 s.
+    // Den kompletta rapporten byggs en gång per tröskel, på den lilla fixturen (fonsterLitet): A (20 personer) ska
+    // namnges vid 25 och E (6) vid 10. Två test med egen tidsgräns, från tiden då de byggdes på hela fixturen.
     const rapport = async k => {
-        const w = fonster(k);
+        const w = fonsterLitet(k);
         w.eval("sattRapportUrval('hela')");   // hela dokumentationen, med bilagorna
         await w.eval('buildPrintReport()');
         return w.document.getElementById('print-report');
