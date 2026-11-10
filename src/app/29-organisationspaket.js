@@ -66,7 +66,7 @@ function renderPaketInfo() {
         (n => (n ? `${n} ${n === 1 ? 'importprofil' : 'importprofiler'}` : null))((state.importprofiler || []).filter(x => x.kalla === 'organisationspaket').length),
     ].filter(Boolean).join(', ') || 'bara benämningar och inställningar';
     const rad = (dt, dd) => (dd == null || dd === '' ? '' : `<dt>${esc(dt)}</dt><dd>${esc(String(dd))}</dd>`);
-    // Organisationsfil: paketet är inbakat i den här filen, eller ersatt av en inläst fil (organisationsfil-design.md §3).
+    // Organisationsfil: paketet är inbakat i den här filen, eller ersatt av en inläst fil (organisationsfil.md §3).
     const inb = state.paketInbakat;
     const kalla = p.kalla === 'inbakat' ? `Inbakat i den här filen (skapad ${inb?.skapad || '–'})`
         : inb ? 'Inläst fil — ersätter det inbakade paketet för den här sessionen' : null;
@@ -385,7 +385,7 @@ document.getElementById('btn-paket-spara')?.addEventListener('click', () => {
     announceToScreenReader(`Organisationspaket sparat: ${a.download}`);
 });
 
-// ---- Organisationsfil: verktyget med paketet inbakat (organisationsfil-design.md) ----
+// ---- Organisationsfil: verktyget med paketet inbakat (organisationsfil.md) ----
 const INBAKAT_PAKET_ID = 'inbakat-organisationspaket';   // = MALL_ID i src/lib/organisationsfil.js
 /** @type {File|null} */
 let _verktygsfil = null;   // den fil systemägaren pekat ut

@@ -127,7 +127,7 @@ annat sätt används inte, och handläggaren får en varning när paketet läses
 
 Filen är JSON (formatversion 1). Den skapas och läses av verktyget; den behöver inte
 redigeras för hand. Verktyget läser bara de fält som hör till formatet och ignorerar allt
-annat. Formatet beskrivs i `docs/utveckling/teknisk-plan.md` (ADR-28) för
+annat. Formatet beskrivs i `docs/utveckling/arkitekturbeslut.md` (ADR-28) för
 den som vill ta fram paket automatiskt ur ett lönestatistiksystem. Rapportens recept ligger under
 `rapport`. `tabeller` är en lista med recept som verktyget själv skriver med *Lägg till i rapporten*.
 Skapa dem i verktyget och spara paketet; skriv dem inte för hand. `perBasRecept` är receptet för

@@ -326,7 +326,7 @@ describe('organisationspaket: läs in och skapa', () => {
         expect(w2.document.getElementById('lonepolitik-rubrik').textContent).toBe('Lönerna mot Vårt ställningstagande');
         expect(w2.document.getElementById('btn-referens-aterga').hidden).toBe(true);   // borttagning bara för egen fil
     });
-    // ---- Organisationsfil: verktyget med paketet inbakat (docs/utveckling/organisationsfil-design.md) ----
+    // ---- Organisationsfil: verktyget med paketet inbakat (docs/utveckling/organisationsfil.md) ----
     const INDEX = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'src', 'index.html'), 'utf8');
     const organisationsfil = (p = paket(), meta = { skapad: '2026-10-19', organisation: 'Exempelregionen', verktygssha: 'f00' }) => {
         const r = bakaIn(INDEX, JSON.stringify(p), meta);

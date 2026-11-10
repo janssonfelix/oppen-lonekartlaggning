@@ -113,7 +113,7 @@ profiler du redan har sparat i sessionen.
   profil vars rubriker alla finns i filen gäller. Roller som den inte täcker känns igen som vanligt.
 - **Se, ta bort och exportera:** *Inställningar › Importprofiler* listar profilerna med namn,
   källa och rubriker per fält. *Exportera JSON* ger profilen som en fil att dela eller bidra med
-  (se `CONTRIBUTING.md`).
+  (se `.github/CONTRIBUTING.md`).
 - Verktyget har **inga inbyggda profiler för namngivna lönesystem**. Stegen per system nedan är
   inte verifierade, och en profil som inte prövats mot ett riktigt uttag skulle ge fel kolumner.
   Profiler för lönesystemen kommer från organisationer som använt verktyget.
@@ -139,7 +139,7 @@ Ta bort sådana kolumner redan i uttaget ur lönesystemet.
 > regioner brukar vara uppbyggda, inte på provkörningar. Rapportnamn, menyvägar och fältnamn
 > skiljer sig mellan installationer, versioner och hur systemet är inställt i organisationen. Organisationens
 > systemägare fyller i raderna markerade **[fylls i lokalt]**. Rättelser och steg för fler system
-> är välkomna som bidrag (`CONTRIBUTING.md`).
+> är välkomna som bidrag (`.github/CONTRIBUTING.md`).
 
 ### Gemensamt för alla system
 

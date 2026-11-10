@@ -55,7 +55,7 @@ innehåller inga personuppgifter och kan spridas internt som vilken fil som hels
 Vill du ändra något — en text, en tröskel, ett diagram, ett nytt arbetsvärderingssystem — gör det i en
 **fork** av repot, inte i den byggda filen.
 
-1. Läs [`teknisk-plan.md`](../utveckling/teknisk-plan.md) §8 (arkitekturbesluten). Besluten om
+1. Läs [`arkitekturbeslut.md`](../utveckling/arkitekturbeslut.md). Besluten om
    dataskyddet — inga nätverksanrop, ingen lagring, k-anonymitet i det som lämnar verktyget — är det som
    gör att dokumenten i `docs/dataskydd/` fortsätter att gälla. Behåll dem, så gäller risk- och
    sårbarhetsanalysen fortfarande för din version, med en anteckning om vad du ändrat.
@@ -67,7 +67,7 @@ Vill du ändra något — en text, en tröskel, ett diagram, ett nytt arbetsvär
 3. Ge din version ett eget versionsnamn i `VERSION` (till exempel `2026.11.03-kommunen`) och en rad i
    `CHANGELOG.md`. Då syns det i *Om verktyget* och i `RELEASE.txt` vilken fil som är din.
 4. Byt det som pekar på projektet: säkerhetskontakten i [`SECURITY.md`](../../SECURITY.md) och
-   verifieringskommandots identitet (steg 5). Licens- och upphovsnotiserna (`LICENSE`, `NOTICE`,
+   verifieringskommandots identitet (steg 5). Licens- och upphovsnotiserna (`LICENSE`,
    SPDX-raderna och licenstexterna i `src/licenser.txt`) ska följa med enligt MIT-licensen; lägg din
    egen upphovsrad till, ta inte bort den befintliga.
 5. Kör `npm run release:kontroll` före varje egen release. Grinden kräver att versionen står lika
@@ -75,7 +75,7 @@ Vill du ändra något — en text, en tröskel, ett diagram, ett nytt arbetsvär
    disciplin som projektet håller.
 
 Ändringar som kan vara till nytta för andra: skicka dem tillbaka som förslag enligt
-[`CONTRIBUTING.md`](../../CONTRIBUTING.md). Du behöver inte, men verktyget blir bättre av det.
+[`CONTRIBUTING.md`](../../.github/CONTRIBUTING.md). Du behöver inte, men verktyget blir bättre av det.
 
 ## 5. Signera i eget namn
 
@@ -112,12 +112,12 @@ I båda fallen: signera `RELEASE.txt` också. Skriv sedan kontrollsumman från d
   Jämför `CHANGELOG.md`, bygg om, kör testerna, baka in organisationspaketet på nytt (avsnitt 4 i
   [`organisationspaket.md`](organisationspaket.md)) och signera.
 - **Biblioteken** (D3, SheetJS, PapaParse, JSZip) är låsta med kontrollsummor i `vendor/SHA256SUMS` och
-  uppgraderas medvetet, i en egen ändring, med uppdaterad kontrollsumma och `LICENSES.md`. Dependabot
+  uppgraderas medvetet, i en egen ändring, med uppdaterad kontrollsumma och `TREDJEPARTSLICENSER.md`. Dependabot
   i din fork föreslår uppdateringar av utvecklingsverktygen och arbetsflödenas steg; inget av dem ingår
   i den byggda filen.
 - **Sårbarheter** som du hittar i verktyget: rapportera dem till projektet enligt `SECURITY.md`, så att
   rättningen når alla, också om du rättar dem själv först.
-- **Om projektet slutar underhållas** gäller [`GOVERNANCE.md`](../../GOVERNANCE.md). Efter tolv månader
+- **Om projektet slutar underhållas** gäller [`GOVERNANCE.md`](../../.github/GOVERNANCE.md). Efter tolv månader
   utan releaser eller svar uppmuntras en fork som tar över. Allt du behöver för det har du redan
   efter steg 1–5.
 

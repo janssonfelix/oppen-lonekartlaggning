@@ -16,8 +16,8 @@ datorn** — det styr hur vi tar emot bidrag.
 
 ## Ändringsförslag i koden
 
-1. Läs `README.md` (för dig som utvecklar) och `docs/utveckling/teknisk-plan.md`, särskilt
-   arkitekturbesluten (ADR) — flera av dem är medvetna begränsningar som inte ska ändras
+1. Läs `README.md` (för dig som utvecklar), `docs/utveckling/teknisk-plan.md` och
+   arkitekturbesluten (ADR) i `docs/utveckling/arkitekturbeslut.md` — flera av dem är medvetna begränsningar som inte ska ändras
    utan ett nytt beslut.
 2. Gör ändringen i `src/` (aldrig direkt i `dist/`), med test.
 3. Kör `npm run build:app`, `npm run test:full`, `npm run lint`, `npm run bundle` och
@@ -58,7 +58,7 @@ varifrån den kommer (system och version, inte organisation).
   organisationens eget organisationspaket, inte i koden. Verktyget ska förbli
   organisationsneutralt (ADR-28); ett test vakar över det.
 - **Nätverksanrop, lagring i webbläsaren eller externa resurser** — verktyget ska fungera
-  utan nätverk och spara ingenting (ADR om dataskydd i den tekniska planen).
+  utan nätverk och spara ingenting (dataskyddet i den tekniska planen, §3, och arkitekturbesluten).
 
 ## Licens
 

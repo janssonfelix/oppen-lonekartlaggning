@@ -118,6 +118,6 @@ behålla sorteringsordningen — `tests/appsource.test.js` bevisar att hopslagni
 `tools/gen-mirrors.mjs` (varje lib-modul inlinas verbatim i en IIFE, endast
 `export` strippas, och namnen `app.js` anropar exponeras som `const`-alias).
 `tools/build-app.mjs` regenererar den före varje hopslagning, så `src/lib/` är enda
-källa för den statistiska kärnan (se ADR-8 i `teknisk-plan.md`). **Redigera aldrig `09`
+källa för den statistiska kärnan (se ADR-8 i `arkitekturbeslut.md`). **Redigera aldrig `09`
 för hand** — ändra `src/lib/`-modulen och kör `npm run build:app`. `tests/drift.test.js`
 vaktar att den är i synk med `src/lib/`.

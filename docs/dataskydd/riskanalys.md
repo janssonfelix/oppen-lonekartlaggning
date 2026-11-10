@@ -1,6 +1,6 @@
 # Risk- och sårbarhetsanalys (dataskydd och informationssäkerhet) — Öppen lönekartläggning
 
-**Bygge:** `2026.11.05` · **Artefakt-SHA-256:** `067da051f6a81f88a37f54221e21049436f5d91505a157bc0ac5886f042f0b1a` (se `dist/RELEASE.txt`).
+**Bygge:** `2026.11.05` · **Artefakt-SHA-256:** `47cfba0b592771083279140032888ea37942d2e72c615704800b5bde827cd744` (se `dist/RELEASE.txt`).
 **Granskningsdatum:** 2026-11-07.
 **Granskningsmetod:** kodläsning påstående för påstående + statisk sökning i källkod och bygge +
 körning av det byggda verktyget i jsdom och i Chromium (utan nätverk) med syntetiska testfiler.
@@ -322,7 +322,8 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   exporten ritade i exportläget (`_ritaOmEfterExport`). Lika arbetes minne har ett rum per tröskel, så att ett
   lägesbyte inte räknar om något. Knappen *Som i exporten* (`sattForhandsvisning`) sätter skärmen i exportläget
   tills den stängs av. En export medan den är på lämnar läget som det är, och ett lägesbyte medan en export
-  pågår avvisas (`tests/forhandsvisning.test.js`).
+  pågår avvisas (`tests/forhandsvisning.test.js`). Löneöversyns resultat som räknas på knapptryck räknas om i
+  det läge som gäller när fliken ritas om, och töms när fliken inte syns (`tests/ktroskel-invarianter.test.js`, I1b).
 - Standardvärdet är 10 (`K_STANDARD`); användaren kan ändra det (ADR-38). Vid 10 redovisas i det som
   lämnar verktyget inga gruppvärden när en grupp har färre än 10 personer. Gruppen utelämnas och namnges i en not vid tabellen.
   Är bara könsuppdelningen för liten (gruppen som helhet n ≥ 10) visas gruppens
@@ -755,7 +756,7 @@ före någon mutation).
 
 ### 6.9 Organisationsfilen — verktyget med paketet inbakat
 Systemägaren kan baka in organisationspaketet i verktygsfilen och sprida **en** fil
-(`docs/utveckling/organisationsfil-design.md`). Paketet ligger som en inaktiv datablock
+(`docs/utveckling/organisationsfil.md`). Paketet ligger som en inaktiv datablock
 (`<template id="inbakat-organisationspaket">`) sist i filen, efter sista skriptet. Blocket tolkas inte och
 exekveras inte. Inget skript ändras, och CSP:ns per-script-hashar är oförändrade (vaktas av
 `tests/organisationsfil.test.js`: varje skriptblock är byte-identiskt före och efter). Vid start läses

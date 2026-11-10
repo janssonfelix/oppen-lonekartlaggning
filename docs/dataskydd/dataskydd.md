@@ -133,7 +133,7 @@ lägre värden som ogiltiga. En lägre tröskel höjs till golvet när paketet l
 lägre eller inget golv kräver bekräftelse. Golvet följer paketet: *Rensa all data* tar bort det, och
 konfigurationsfilen bär det inte.
 Vissa skattningar (till exempel regression per BAS) följer `statGolv()` och sänks inte med tröskeln. Verktyget
-har också andra, fasta golv som inte gör det (teknisk-plan, ADR-38). Texten ska alltså inte läsas som att alla
+har också andra, fasta golv som inte gör det (arkitekturbeslut.md, ADR-38). Texten ska alltså inte läsas som att alla
 golv är minst 10.
 
 Fyra medvetna undantag:

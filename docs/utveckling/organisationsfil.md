@@ -1,6 +1,6 @@
 # Organisationsfil — verktyget med organisationspaketet inbakat
 
-> Formatspecifikation och beteende för organisationsfilen (ADR-49 i [`teknisk-plan.md`](teknisk-plan.md)).
+> Formatspecifikation och beteende för organisationsfilen (ADR-49 i [`arkitekturbeslut.md`](arkitekturbeslut.md)).
 > Hänvisningar till *paketet* avser organisationspaketet
 > ([`organisationspaket.md`](../anvandare/organisationspaket.md), ADR-28 och ADR-47). Riskanalysen §6.9
 > beskriver skydden; den här sidan beskriver vad filen är och hur den fungerar.
@@ -123,7 +123,7 @@ avsluta elementet.
   organisationsfilen: innehåll, att lönedata aldrig ingår, att paketet valideras som vid inläsning,
   att blocket inte exekveras; `dataskydd.md` §3 en mening. `tests/dokumentation.test.js` vaktar att
   blocket ligger efter sista skriptet i en inbakad fil och att den publicerade byggfilen saknar det.
-- `teknisk-plan.md`: ADR-49; `organisationspaket.md` beskriver hur filen skapas, sprids och uppdateras.
+- `arkitekturbeslut.md`: ADR-49; `organisationspaket.md` beskriver hur filen skapas, sprids och uppdateras.
 - Tester: `tests/organisationsfil.test.js` (ren kärna: inbakning, borttagning av tidigare block,
   oförändrade skript, avvisning av fel fil, versionsläsning, `<`-escapning); röktest
   (`tests/smoke-organisation.test.js`): baka in i jsdom ur `dist/oppen-lonekartlaggning.html`, öppna
