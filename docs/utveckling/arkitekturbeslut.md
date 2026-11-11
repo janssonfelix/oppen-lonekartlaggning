@@ -214,7 +214,9 @@ diagram får den automatiskt.
 `@` (eller tabb/CR) blir en formel när en CSV-fil öppnas eller en tabell klistras in i Excel. Yrkesnamn och
 andra textfält kommer ur lönefilen, så en fientlig fil skulle kunna lägga en formel i HR:s export
 (CSV-injektion, OWASP). Sådana celler får ett inledande `'`, som Excel visar som text. Tal — även formaterade
-som `-3,2 %` eller `-1 250 kr` — lämnas orörda, så att de fortfarande blir tal i Excel. Regeln bor i
+som `-3,2 %` eller `-1 250 kr` — lämnas orörda, så att de fortfarande blir tal i Excel. Ett tal som börjar
+med minustecknet `−` (U+2212), som tabellerna skriver, skrivs med `-` i CSV och urklipp, eftersom Excel annars läser
+cellen som text; text med `−` som inte är ett tal står kvar. Regeln bor i
 `_neutraliseraCell` (`22-exporthjalpare.js`) och gäller `_toCsv` och urklippets `_tillTsv`. Excel-exporten
 (SheetJS) skriver strängar som textceller och berörs inte. Vaktas av `tests/smoke.test.js` ("export: formler i
 celler neutraliseras").

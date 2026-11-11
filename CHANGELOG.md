@@ -399,6 +399,10 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ### Exporter
 
+- **Negativa tal blir tal i Excel från CSV och urklipp.** Tabellerna skriver minus som `−` (U+2212), och Excel läste
+  då cellen som text. CSV-exporten och urklippet skriver nu ett sådant tal med vanligt `-` (`−1 250 kr` blir
+  `-1 250 kr`); text med `−` som inte är ett tal, som ett intervall, står kvar som den är, och formelskyddet är
+  oförändrat (ADR-15).
 - **Svenskt talformat prövat i jämförelseexporten och CSV-exporterna.** Jämförelseexportens kolumner P10 och P90 är
   nu formaterade i kronor som medianen (de stod utan tusentalsavgränsare och kr). Talinläsningen läser minustecknet
   `−` (U+2212), som verktygets egna tabeller och exporter skriver, som minus; förut blev `−1 250` till 1 250. Testerna
