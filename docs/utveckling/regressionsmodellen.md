@@ -104,7 +104,11 @@ panelen säger varför. Ett ändrat skäl ändrar inga tal.
 räknats bort": "ålder och BAS-intervall" (standard), "BAS-intervall", "ålder", "BAS-intervall och yrkesgrupp", "ålder,
 BAS-intervall och yrkesgrupp", och tom sträng för endast kön, då texterna säger "utan att något räknats bort".
 `modellBeskrivning(m)` ger modellen i ord, "kön + ålder + BAS-intervall (indikatorer) + yrkesgrupp inom BAS (fasta
-effekter)" med de delar som är valda; den är regressionens `modelDesc` och står i rapportens bilaga.
+effekter)" med de delar som är valda; den är regressionens `modelDesc` och står i rapportens bilaga. Metodbilagan
+(bladet *Metod & parametrar*, `_methodAppendixData` i `22-exporthjalpare.js`) bygger raden *Modell — oförklarad
+skillnad* ur `modellBeskrivning(forklaringsmodell())`: med ålder i lönefilen och BAS som indikatorer står BAS som
+"BAS-intervall (indikatorvariabler, första BAS som referens)", och med yrkesgrupp vald tillkommer "skattat med
+inomtransformation". Standardmodellen ger samma rad som före valet.
 
 **Var valet slår igenom.** `runOLSRegression` läser förklaringsmodellen, så Översikt, Att göra, Lönestruktur, Lika
 arbetes nyckeltal, rapporten och rapportunderlaget visar samma huvudtal. Trappan, förklaringsbudgeten (avsnitt 4),
@@ -190,19 +194,20 @@ redovisar hur många grupper och personer det bygger på (`nGrupper`, `nGrupperB
 som är enkönade (`nEnkonade`).
 
 **Vad som redovisas.** När yrkesgrupp inte är vald står steget i regressionskortet som en rad efter huvudtalet, med
-meningen (`_yrkesStegText`) att det är löneskillnaden mellan kvinnor och män med samma yrkesgrupp, BAS-intervall och
-ålder, vad den bygger på och att huvudtalet inte räknar bort yrkesgruppen. I förklaringsbudgeten är steget delen
-*Förklaras av yrkesgrupp inom BAS*, och i trappan ett ljusare steg som inte ingår i huvudtalet. I rapportens bilaga är
-steget en rad i dekomponeringstabellen med samma mening efter tabellen, och metodbilagan har raden *Steg + Yrkesgrupp
-(dekomponeringen)*.
+meningen (`_yrkesStegText`) att det är löneskillnaden mellan kvinnor och män med samma yrkesgrupp, BAS-intervall och,
+när modellen har ålder, ålder, vad den bygger på och att huvudtalet inte räknar bort yrkesgruppen. I förklaringsbudgeten
+är steget delen *Förklaras av yrkesgrupp inom BAS*, och i trappan ett ljusare steg som inte ingår i huvudtalet. I
+rapportens bilaga är steget en rad i dekomponeringstabellen med samma mening efter tabellen, och metodbilagan har raden
+*Steg + Yrkesgrupp (dekomponeringen)*: utöver ålder eller utan ålder efter modellen, och att steget visas som sista steg
+och inte ingår i huvudtalet. Är BAS bortvalt räknas steget inte, och raden säger det.
 
 **Yrkesgrupp vald in i huvudtalet.** Då skattas huvudregressionen med samma inomtransformation (`_regInomYrkesgrupp`)
 på de transformerade kolumnerna [kön, (ålder)]. Kovarianserna, klassisk och HC3, skalas med (n − p) / (n − p − G), där p
 är antalet lutningar och G antalet grupper, för gruppnivåernas frihetsgrader, och antalet parametrar k = p + G räknar
 dem, så att t-kvantilen och p-värdet använder df = n − p − G. Resultatet får samma form som en vanlig skattning (kön på
 plats 1, ålder på plats 2), R² räknas mot lönens totala variation och `hHoga` på den transformerade designen. Steget
-*+ Yrkesgrupp* är då huvudtalet och står bland stegen. Kan modellen inte skattas tar reservstegen bort yrkesgruppen
-först (avsnitt 1).
+*+ Yrkesgrupp* är då huvudtalet och står bland stegen; meningen under steget och metodbilagans rad säger att steget är
+huvudtalet. Kan modellen inte skattas tar reservstegen bort yrkesgruppen först (avsnitt 1).
 
 ## 5. Blinder-Oaxaca
 
@@ -338,7 +343,7 @@ regressionskortets *Så fungerar regressionen* och i rapportens metodtext. Utan 
 metodtext, "Lönefilen saknar ålder: analysen körs utan åldersjustering, och Ålder & karriär visas inte."
 (`ALDER_SAKNAS_TEXT`), och rutan för ålder i panelen är avstängd. Bladet *Metod & parametrar* (`_methodAppendixData` i `22-exporthjalpare.js`)
 säger i raderna *Modell — oförklarad skillnad* och *Steg + Yrkesgrupp* modellen utan ålder
-(`modellBeskrivning(forklaringsmodell())`). Vad inläsningen, flikarna och exporterna gör utan ålder står i ADR-64.
+(`modellBeskrivning(forklaringsmodell())`, avsnitt 2) och att lönefilen saknar ålder. Vad inläsningen, flikarna och exporterna gör utan ålder står i ADR-64.
 
 ## 9. Golven och vad som redovisas
 

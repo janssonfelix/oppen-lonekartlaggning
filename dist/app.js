@@ -18734,6 +18734,20 @@ function _methodAppendixData() {
     const used  = (typeof getData === 'function' ? getData().length : total);
     const ver   = (typeof APP_VERSION !== 'undefined' ? APP_VERSION : '–');
     const medAlder = harAlder();
+    // Förklaringsmodellen (ADR-56): raderna säger den modell huvudtalet räknas med. Med ålder i lönefilen och BAS som
+    // indikatorer säger modellen referensen ("indikatorvariabler, första BAS som referens"), som förut; med yrkesgrupp
+    // vald ingår BAS i gruppnivåerna och modellen skattas med inomtransformation (regressionsmodellen.md §4).
+    const modell = forklaringsmodell();
+    const beskrivning = _rgModellBeskrivning(modell);
+    const modellText = (medAlder && !modell.yrkesgrupp
+        ? beskrivning.replace('BAS-intervall (indikatorer)', 'BAS-intervall (indikatorvariabler, första BAS som referens)')
+        : beskrivning) + (modell.yrkesgrupp ? ', skattat med inomtransformation' : '');
+    // Steget + Yrkesgrupp räknas på modellens ålder och bara när BAS är med (computeSequentialGap).
+    const stegAlder = medAlder ? (modell.alder ? ' utöver ålder' : ', utan ålder (bortvald i förklaringsmodellen)') : ', utan ålder (lönefilen saknar ålder)';
+    const stegText = !modell.bas
+        ? 'Räknas inte: steget förutsätter BAS-intervall, som är bortvalt i förklaringsmodellen'
+        : `Löneskillnad mellan könen med fasta effekter för yrkesgrupp inom BAS (AID×BAS)${stegAlder}, skattat med inomtransformation; `
+            + (modell.yrkesgrupp ? 'yrkesgrupp inom BAS är vald i förklaringsmodellen, så steget är huvudtalet' : 'visas som sista steg, ingår inte i huvudtalet');
     return [
         ['Verktyg', `Öppen lönekartläggning (v${ver})`],
         ['Exporttidpunkt', new Date().toLocaleString('sv-SE')],
@@ -18746,11 +18760,9 @@ function _methodAppendixData() {
         ['Nationell referens för andel kvinnor', skrForklaring()],
         // Utan ålder i lönefilen (ADR-64) säger raderna modellen utan ålder, som rapportens metodtext.
         ['Modell — oförklarad skillnad', medAlder
-            ? 'OLS på log(månadslön) ~ kön + ålder + BAS-intervall (indikatorvariabler, första BAS som referens); HC3-robusta standardfel (Long & Ervin 2000)'
-            : `OLS på log(månadslön) ~ ${_rgModellBeskrivning(forklaringsmodell())}; lönefilen saknar ålder, så analysen körs utan åldersjustering; HC3-robusta standardfel (Long & Ervin 2000)`],
-        ['Steg + Yrkesgrupp (dekomponeringen)', medAlder
-            ? 'Löneskillnad mellan könen med fasta effekter för yrkesgrupp inom BAS (AID×BAS) utöver ålder, skattat med inomtransformation; visas som sista steg, ingår inte i huvudtalet'
-            : 'Löneskillnad mellan könen med fasta effekter för yrkesgrupp inom BAS (AID×BAS), utan ålder (lönefilen saknar ålder), skattat med inomtransformation; visas som sista steg, ingår inte i huvudtalet'],
+            ? `OLS på log(månadslön) ~ ${modellText}; HC3-robusta standardfel (Long & Ervin 2000)`
+            : `OLS på log(månadslön) ~ ${modellText}; lönefilen saknar ålder, så analysen körs utan åldersjustering; HC3-robusta standardfel (Long & Ervin 2000)`],
+        ['Steg + Yrkesgrupp (dekomponeringen)', stegText],
         // Var uppstår löneskillnaden (ADR-65): raden finns bara när variablerna inte är standardvalet BAS och AID.
         ...(typeof gapVariabler === 'function' && !_guVariablerArStandard(gapVariabler())
             ? [['Var uppstår löneskillnaden (variabler)', gapVariabler().length > 1
@@ -28395,15 +28407,17 @@ function _ansvarRadText(fore, efter) {
 
 /**
  * Meningen under yrkesgruppssteget (ADR-46): vad talet är och vad det bygger på. Ren funktion, delas med
- * rapportmodellen.
+ * rapportmodellen. `modell` är den skattade förklaringsmodellen (ADR-56): steget räknas med ålder när modellen har
+ * ålder, och är huvudtalet när yrkesgrupp är vald.
+ * @param {any} s @param {{alder: boolean, yrkesgrupp: boolean}} modell
  */
-function _yrkesStegText(s) {
+function _yrkesStegText(s, modell) {
     const sv = v => v.toFixed(1).replace('.', ',');
     const tkn = v => `${v >= 0 ? '+' : '−'}${sv(Math.abs(v))} %`;
-    return `<strong>${tkn(s.gapPct)}</strong> är löneskillnaden mellan kvinnor och män med samma yrkesgrupp, BAS-intervall${harAlder() ? ' och ålder' : ''} `
+    return `<strong>${tkn(s.gapPct)}</strong> är löneskillnaden mellan kvinnor och män med samma yrkesgrupp, BAS-intervall${modell.alder ? ' och ålder' : ''} `
         + `(fasta effekter för yrkesgrupp inom BAS). Bygger på ${s.nPersoner} personer i ${s.nGrupperBada} yrkesgrupper där båda könen finns`
         + (s.nEnkonade ? `; ${s.nEnkonade} enkönade grupper bidrar inte` : '')
-        + `. Huvudtalet ovan räknar inte bort yrkesgruppen.`;
+        + (modell.yrkesgrupp ? '. Yrkesgrupp inom BAS är vald i förklaringsmodellen, så det här är huvudtalet.' : '. Huvudtalet ovan räknar inte bort yrkesgruppen.');
 }
 
 /**
@@ -28893,7 +28907,7 @@ function renderRegressionCard() {
                         <div class="step-bar-bg"><div class="step-bar-fill" data-stil-bredd="${widthPct.toFixed(1)}%"></div></div>
                         <div class="step-value">${sgnW}${absVal}%</div>
                     </div>
-                    ${isYrke ? `<p class="step-note">${_yrkesStegText(s)}</p>` : ''}
+                    ${isYrke ? `<p class="step-note">${_yrkesStegText(s, r.modell)}</p>` : ''}
                 </div>
             `;
         });
@@ -32067,7 +32081,7 @@ function _rmAvsnittenUtanUrval() {
         regression.delar.push({ typ: 'rubrik', niva: 3, text: 'Sekventiell dekomponering' },
             { typ: 'tabell', caption: antalText(reg.nKvAnalysed, reg.nMaAnalysed), kolumner: [{ rubrik: 'Modell', typ: 'text' }, { rubrik: 'Löneskillnad', typ: 'tecken2' }, { rubrik: 'R²', typ: 'pct1' }],
               rader: stegUt.steg.map(st => (st.status !== 'ok' ? [st.name, { text: st.status === 'singular' ? 'singulär' : 'för få obs' }, null] : [st.name, st.gapPct, st.R2 * 100])) });
-        if (reg.yrkesSteg?.status === 'ok') regression.delar.push(stycke(`Steget + Yrkesgrupp: ${utanTaggar(_yrkesStegText(reg.yrkesSteg))}`));
+        if (reg.yrkesSteg?.status === 'ok') regression.delar.push(stycke(`Steget + Yrkesgrupp: ${utanTaggar(_yrkesStegText(reg.yrkesSteg, reg.modell))}`));
         if (stegUt.utelamnat) { regression.delar.push(stycke(stegUt.not, 'not')); regression.utelamnat.push('första steget i dekomponeringen (ett kön under tröskeln)'); }
         else if (stegUt.explainedShare !== null) regression.delar.push(stycke(`Strukturellt förklarad andel: ${svPct(stegUt.explainedShare, 0)} av den råa löneskillnaden förklaras av strukturella variabler (${reg.fras}). Oförklarad rest: ${svPct(100 - stegUt.explainedShare, 0)}.`));
         const perBas = (reg.perBas || []).filter(pb => pb.status === 'ok');

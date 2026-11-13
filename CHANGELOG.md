@@ -424,6 +424,14 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   intervall föll bort utan not. Golvet är nu `LITET_UNDERLAG` i båda lägena, som för tabellerna per AID-kod och
   BAS-intervall: raden bär antal och andelar men inga lönemått, och intervall under golvet namnges i en not under
   tabellen, som följer med i Excel-bladet *Könsskevhet* och utskriften.
+- **Metodbilagan säger den valda förklaringsmodellen (ADR-56).** Med ålder i lönefilen sade raden *Modell — oförklarad
+  skillnad* i bladet *Metod & parametrar* och rapportens bilaga alltid kön + ålder + BAS-intervall, och raden om
+  steget + Yrkesgrupp att steget räknades utöver ålder och inte ingick i huvudtalet, också när handläggaren valt bort
+  ålder eller BAS eller valt in yrkesgrupp. Raderna byggs nu ur förklaringsmodellen: modellen som huvudtalet räknas
+  med, inomtransformationen när yrkesgrupp är vald, och om steget räknas med ålder, ingår i huvudtalet eller inte
+  räknas alls när BAS är bortvalt. Meningen under steget i regressionskortet och rapportens bilaga följer också
+  modellen: "och ålder" bara när modellen har ålder, och med yrkesgrupp vald säger den att steget är huvudtalet.
+  Standardmodellen ger samma text som förut.
 
 ### Analys
 
