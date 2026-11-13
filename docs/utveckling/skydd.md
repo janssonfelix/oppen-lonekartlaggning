@@ -69,8 +69,8 @@ har redan lönefilen. Undantagen är uppräknade och beslutade.
 vid tröskeln 10 (`tests/ktroskel-invarianter.test.js`) och 25 (`tests/ktroskel-invarianter-25.test.js`);
 differentialtesterna i `tests/diagramritare.test.js` kräver att det som lämnar verktyget är identiskt med en figur
 där de små punkterna tagits bort.
-*Vaktas inte:* invarianten letar efter de små gruppernas lönevärden, så antal, andelar och namn vaktas inte av den.
-Innehållet i bilder prövas inte. De beslutade undantagen ligger utanför (`docs/dataskydd/dataskydd.md` §3). Vad mer
+*Vaktas inte:* invarianten letar efter de små gruppernas lönevärden, så antal, andelar och namn vaktas inte av den;
+avstegen i antal (ADR-57) har egna tester. Innehållet i bilder prövas inte. De beslutade undantagen ligger utanför (`docs/dataskydd/dataskydd.md` §3). Vad mer
 som inte prövas står i testfilerna och i `docs/dataskydd/riskanalys.md` §6.5.
 
 ## S5. Ingen inbyggd organisation

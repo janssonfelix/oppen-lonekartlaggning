@@ -923,15 +923,11 @@ rättades trattens underlag, som grupperade per yrkesgrupp och tog BAS-intervall
 *Små grupper, ett avsteg från ADR-12:* en egen rad kräver minst fem personer i exportläget, inte tröskeln, och mindre
 grupper räknas upp i en not med namn och antal men utan löner. Lönemåtten följer `statGolv()` i båda lägena. Avsteget
 är avsiktligt: tabellerna är arbetsgivarens kartläggning av alla grupper, och lagen kräver att också små grupper
-analyseras, så gruppen och dess antal behöver stå i underlaget.
-
-*Könsfördelning per BAS-intervall (tillägg 2026-11-13):* samma avsteg i antal gäller Lönestrukturs tabell
-*Könsfördelning per BAS-intervall* (`#skevhet-table`) och diagrammet ovanför den (`chart-skevhet-andel`), och därmed
-Excel-bladet *Könsskevhet*, utskriften och diagrambilden i Word och ZIP. Ett intervall får en rad med antal och andel
-per kön från `LITET_UNDERLAG` personer i båda lägena; mindre intervall namnges i en not under tabellen, utan antal.
-Raden bär inga lönemått, och könsfördelningen per nivå är en del av kartläggningen. Golvet var tidigare en hårdkodad
-5 och mindre intervall föll bort utan not, i strid med ADR-12. Diagram över andel kvinnor per BAS-intervall följer
-samma regel. Vaktas av `tests/diagramvyer-marken.test.js`.
+analyseras, så gruppen och dess antal behöver stå i underlaget. Samma avsteg i antal gäller Lönestrukturs
+könsfördelning per BAS-intervall, tabellen och diagrammet över andel kvinnor (tillägg 2026-11-13): ett intervall får
+en rad med antal och andel per kön från `LITET_UNDERLAG` personer i båda lägena, och mindre intervall namnges i en
+not, eftersom könsfördelningen per nivå är en del av kartläggningen och raden inte bär några lönemått. Golvet var
+tidigare en hårdkodad femma och mindre intervall föll bort utan not, i strid med ADR-12.
 
 *Kvinnodominerat enligt DO eller SCB:* definitionen väljs i Likvärdigt arbetes inställningar
 (`state.likvardighet.kvDomDefinition`, standard `do`): DO är mer än kvinnotröskeln, SCB kvinnotröskeln eller mer.
@@ -941,8 +937,10 @@ Inställningar, följer med i konfigurationsfilen och skrivs ut som *inte angive
 sådan uppgift och verktyget gissar inte.
 *Motiv:* Lika arbete är samma yrkesgrupp (AID-kod) på samma nivå (BAS-intervall), och en skriven lönekartläggning
 behöver tabeller på den nivån.
-*Gäller i dag:* `k-troskeln.md` §4 (avsteget för små grupper) och §5 (golven).
-*Vakt:* `tests/aidbas.test.js` och `tests/smoke-aidbas.test.js`.
+*Gäller i dag:* `k-troskeln.md` §4 (avsteget för små grupper och för könsfördelningen per BAS-intervall: vilka
+utdata, noten) och §5 (golven).
+*Vakt:* `tests/aidbas.test.js` och `tests/smoke-aidbas.test.js`; för könsfördelningen per BAS-intervall
+`tests/diagramvyer-marken.test.js`.
 
 **ADR-58 — BAS-dossiern: ett BAS-intervall på en sida.** Beslut 2026-11-06. En skriven lönekartläggning disponeras
 ofta per BAS-intervall, och handläggaren behövde hämta varje intervall ur fem flikar. `81-basdossier.js`

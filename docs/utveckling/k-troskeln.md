@@ -67,7 +67,8 @@ Redovisningsformen (ADR-12) gäller det som lämnar verktyget, alltså exportlä
    redovisas (`kSamladNote()`). Den bygger på n ≥ `kTroskel()` och röjer ingen enskild, men ger ändå ett lönemått att
    förhålla sig till. Könsjämförelsen utgår, med förklaring.
 
-Tabellerna per AID-kod och BAS-intervall har ett avsiktligt avsteg (avsnitt 4).
+Tabellerna per AID-kod och BAS-intervall och könsfördelningen per BAS-intervall har ett avsiktligt avsteg i antal
+(avsnitt 4).
 
 **Noterna innehåller avsiktligt ingen inline-markup.** SheetJS trimmar varje elements text för sig och slår ihop dem
 utan avskiljare, vilket ger `4 yrkesgruppervisas` i Excel-exporten. Noten är ändå visuellt avskild (`.k-mask-note`).
@@ -143,6 +144,7 @@ här ska stämma med dem.
 | **Personer att granska** | ADR-23 | Individlistan lämnar aldrig verktyget: tabellen har inga exportverktyg, listan ingår inte i rapportunderlag, Word-utkast, PDF, Excel, JPA eller ZIP och döljs vid utskrift. Panelens diagram är märkt `markeraUtanExport` med skälet `individer` och går inte att exportera (`diagramkarnan.md`, ADR-39). Extremvärdeslistan i *Underlagets kvalitet* visar på samma sätt enskilda löner, på skärmen. | Ingen: inget lämnar verktyget. Skälet står i behållarens verktygstips. |
 | **Bilder med en punkt per person i ZIP och Komplett rapport** | ADR-48 | ZIP-exporten bär bilder av alla ritade diagram, och utskriftens mall *Komplett rapport* bär i sina bilagor bilder av Ålder & karriärs spridningsdiagram, låddiagram och täthetsdiagram. Word-utkastet och rapportens avsnitt (`RM_DIAGRAM`) och de kortare utskriftsurvalen har inga sådana diagram. En persons punkt ritas bara när personens grupp och kön i gruppen når tröskeln (avsnitt 2). Lådornas avvikare i låddiagrammet per kön är enskilda löner, utan yrke, och får exporteras som bild och diagramdata. | Exportnotisen säger att filen innehåller lönedata och ska hanteras som personuppgifter. Diagramdata från ett diagram med en punkt per person bär raden `kIndividRad()`. |
 | **Tabellerna per AID-kod och BAS-intervall** | ADR-57 | En egen rad kräver minst fem personer i exportläget (`LITET_UNDERLAG`), inte `kTroskel()`; mindre grupper räknas upp i en not med namn och antal men utan löner. Lönemått följer `statGolv()` i båda lägena: ett köns median, kvoten och gränserna kräver `statGolv()` personer av varje kön, alltså minst tio, (gruppen står annars som *Analyseras på individnivå*, och i arbetslistan utan löner), gruppens median och lönespridning `statGolv()` personer. På skärmen visas alla grupper. | Noten under tabellen. |
+| **Könsfördelningen per BAS-intervall** | ADR-57 (tillägg 2026-11-13) | Lönestrukturs tabell *Könsfördelning per BAS-intervall* (`#skevhet-table`) och diagrammet över andel kvinnor ovanför den (`chart-skevhet-andel`) ger ett intervall en rad med antal och andel per kön från `LITET_UNDERLAG` (fem) personer totalt, i båda lägena och oavsett tröskeln och antalet per kön (`generateSkevhet` i `41-lika-arbete.js`). Raden bär inga lönemått. Ett mindre intervall får varken rad eller stapel; det namnges i en not under tabellen (`_skevhetNot`, högst tolv namn och sedan "och N till"), som anger hur många intervall som utelämnats och golvet men inga antal eller andelar per intervall. Det som följer av tabellen och diagrammet har samma rader: Excel-bladet *Könsskevhet* (med noten), utskriften och PDF:en, som klonar tabellen, diagrammets diagramdata och diagrambilden i Word och ZIP. Beräkningsbeviset säger regeln och räknar de utelämnade intervallen. | Noten under tabellen. |
 | **Egna riktade rader i Löneöversyn** | ADR-38, regel R2 | En rad som användaren själv lägger på en grupp under tröskeln är användarens egen simulering: beloppet står på raden och ingår i summorna på skärmen och i Excel-exporten (avsnitt 8). | En not under raden om att gruppen är under tröskeln. |
 
 **Stämplarna.** `_kUndantagFor(el, medSma)` säger vilket undantag en tabell eller ett diagram hör till: allt i fliken
@@ -162,7 +164,7 @@ Tröskeln är redovisningens gräns. Skattningar och några tabeller har egna go
 | Huvudregressionen (Lönestruktur; `runOLSRegression`) | 5 av varje kön | Fast golv (beslut, ADR-38). Det justerade gapet med konfidensintervall visas därifrån, också när det ojusterade steget utelämnas (regel R1). |
 | Motiveringsregeln om medelålder per kön (`55-prioritering.js`) | 3 av varje kön | Fast golv (beslut, ADR-38). |
 | Löneöversiktens yrkesrader (`39-loneoversikt.js`) | 5 | Fast golv (beslut, ADR-38). |
-| `LITET_UNDERLAG` (`litetUnderlag()`) | 5 | Ingen maskeringsgräns. I ett diagram ritas en stapel eller ett segment som gäller färre än fem personer med mönster, som en varning (ADR-39, `diagramkarnan.md`). I tabellerna per AID-kod och BAS-intervall är det gränsen för en egen rad i exportläget (avsnitt 4). |
+| `LITET_UNDERLAG` (`litetUnderlag()`) | 5 | Ingen maskeringsgräns. I ett diagram ritas en stapel eller ett segment som gäller färre än fem personer med mönster, som en varning (ADR-39, `diagramkarnan.md`). I tabellerna per AID-kod och BAS-intervall är det gränsen för en egen rad i exportläget, och i könsfördelningen per BAS-intervall gränsen för en egen rad i båda lägena (avsnitt 4). |
 | Lönepolitikens mellannivå (`LP_COUNT_TIER_MIN` i `75-lonepolitik.js`) | Från 5 upp till tröskeln | Grupper mellan 5 och k redovisas med antal (bandplacering i antal), inga lönemått; under 5 maskeras raden men räknas in i BAS-totalen. Mellannivån försvinner när tröskeln är 5 eller lägre. |
 
 ## 6. Inställningen
@@ -307,6 +309,7 @@ utdata och dess skydd, står i riskanalysen (`docs/dataskydd/riskanalys.md` §6.
 | Personer att granska och extremvärdeslistan | Avsnitt 4 (ADR-23) | Undantagna i I4; `tests/smoke-granssnitt.test.js` (listan lämnar inte verktyget); `tests/smoke.test.js` (`markeraUtanExport`) |
 | Likvärdigt arbete i fliken och dess egen export | Avsnitt 4 | Undantagna i I4; I2 (stämpeln) |
 | Tabellerna per AID-kod och BAS-intervall | Avsnitt 4 (ADR-57) | `tests/aidbas.test.js`, `tests/smoke-aidbas.test.js`; I4 i exportläget |
+| Könsfördelningen per BAS-intervall: tabellen, diagrammet och dess diagramdata, Excel-bladet *Könsskevhet* och utskriften | Avsnitt 4 (ADR-57) | `tests/diagramvyer-marken.test.js` (i exportläget vid tröskeln 10 får ett intervall med 7 personer en rad och ett med 4 bara sitt namn i noten, utan andelar, i tabellen, diagrammets data och bild, diagramdatan, Excel-bladet och utskriften; ett annat test kräver att diagrammet har tabellens intervall och andelar) |
 
 ## 10. Testernas märkning
 
@@ -373,7 +376,9 @@ inställningen (standardvärdet).
 ## 11. Kända luckor
 
 - **Invarianten letar efter lönevärden.** Den söker sentinelvärdena, männens löner i Y1–Y3, kostnader och könsgap. Antal,
-  andelar och namn för en grupp under tröskeln vaktas inte av den.
+  andelar och namn för en grupp under tröskeln vaktas inte av den. Avstegen i antal (avsnitt 4, ADR-57) vaktas därför
+  av egna tester, `tests/aidbas.test.js`, `tests/smoke-aidbas.test.js` och `tests/diagramvyer-marken.test.js`, inte av
+  I4.
 - **Innehållet i bilder prövas inte.** ZIP-filens bilder, utskriftens bilder och Word-utkastets bilder går inte att
   läsa i testet; riggen tar bort bilderna ur utskriften före sökningen. `tests/ktroskel-bilder.test.js` prövar bara
   meningen om sänkt tröskel.
@@ -383,11 +388,3 @@ inställningen (standardvärdet).
   flikar är menyns. En ny export som inte läggs till i riggen prövas inte. Definition of Done kräver att den läggs till
   (`.github/CONTRIBUTING.md` punkt 3, regel R1 i `regler.md`).
 - **Riktade rader på små grupper.** Riggen lägger inga egna riktade rader i Löneöversyn; regel R2 prövas för sig.
-- **Könsfördelningen per BAS-intervall följer inte tröskeln.** `generateSkevhet` (`src/app/41-lika-arbete.js`, villkoret
-  `tot < 5`) tar med varje BAS-intervall med minst fem personer totalt, oavsett tröskeln och antal per kön, både i
-  tabellen *Könsfördelning per BAS-intervall* (`#skevhet-table`) och i diagrammet `chart-skevhet-andel`. Det gäller
-  också i exportläget, så raden följer med i Excel, utskriften och PDF:en och i diagrambilden i Word och ZIP. Ett
-  intervall med färre än fem personer faller bort utan not (det räknas bara i beräkningsbevisets utelämnade). Raden bär
-  antal och andelar, inga lönemått, så I4 ser det inte. Det är inte ett beslutat avsteg: det beslutade avsteget från
-  fem personer gäller bara tabellerna per AID-kod och BAS-intervall (ADR-57) och Lönepolitikens mellannivå. Avvikelsen
-  lagas i ett eget arbete.
