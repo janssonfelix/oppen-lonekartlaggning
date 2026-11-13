@@ -595,7 +595,8 @@ efter en höjning, gränssnittet, utdata genom de verkliga vägarna, varje expor
 konfigurationsfil och organisationspaket, och har en invariant vid 10 och 25 över flikar och exporter mot ett
 underlag där ett kön är under tröskeln inuti en större grupp (vad den prövar och inte prövar står i
 `riskanalys.md` §6.5 och i testfilens kommentar). Den ritar menyns flikar i exportläget, och `tests/ktroskel-exporter.test.js`
-kräver att riggens lista över flikar är menyns; `tests/dokumentation-struktur.test.js` vaktar att dokumenten nämner ADR-38.
+kräver att riggens lista över flikar är menyns; `tests/dokumentation-struktur.test.js` vaktar vad
+dataskyddsdokumenten och guiderna säger om inställningen.
 
 **ADR-39 — Diagramkärna på D3 med eget figurformat.** Alla diagram ritas av en egen kärna: vyerna bygger en
 *figur* (ren data: axlar, lager av märken, referenser — `src/lib/figur.js`), och `ritaFigur` gör SVG av den med

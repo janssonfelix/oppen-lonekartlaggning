@@ -126,26 +126,14 @@ describe('dokumentation: k-tröskeln beskrivs med rätt tal överallt', () => {
 });
 
 describe('dokumentation: valbar förklaringsmodell (ADR-56)', () => {
-    it('arkitekturbesluten har ADR-56 med gränsen 0,5 procentenheter och tilläggen i ADR-46 och ADR-53', () => {
-        expect(adrMd).toMatch(/\*\*ADR-56 — Valbar förklaringsmodell/);
-        expect(adrMd).toMatch(/0,5 procentenheter/);
-        expect(adrMd).toMatch(/ADR-46[^]*?ADR-56/);
-        expect(adrMd).toMatch(/ADR-53[^]*?valet \(ADR-56\)/);
-    });
-    it('Om verktyget, körguiden och ändringsloggen beskriver valet', () => {
+    it('Om verktyget och körguiden beskriver valet', () => {
         expect(läs('src/app/65-om-verktyget.js')).toMatch(/[Ff]örklaringsmodell/);
         expect(läs('src/app/65-om-verktyget.js')).toMatch(/0,5 procentenheter/);
         expect(läs('docs/anvandare/korguide.md')).toMatch(/välja om ålder, BAS-intervall och yrkesgrupp/);
-        expect(läs('CHANGELOG.md')).toMatch(/\*\*Valbar förklaringsmodell/);
     });
 });
 
 describe('dokumentation: k-tröskeln är en inställning (ADR-38)', () => {
-    it('arkitekturbesluten har ADR-38 och nämner kTroskel() och statGolv()', () => {
-        expect(adrMd).toMatch(/\*\*ADR-38 — /);
-        expect(adrMd).toContain('kTroskel()');
-        expect(adrMd).toContain('statGolv()');
-    });
     for (const fil of ['docs/dataskydd/dataskydd.md', 'docs/dataskydd/riskanalys.md']) {
         it(`${fil} säger att värdet kan ändras och att det skrivs ut i utdata`, () => {
             const t = läs(fil);
@@ -247,6 +235,33 @@ describe('produktnamnet', () => {
     });
 });
 
+// Statusorden i indexet (ADR-68). Sammanförd i och Flyttad till nämner dokumentet inom backtick.
+const STATUS = /^(Gällande|Ändrad av ADR-\d+|Sammanförd i |Flyttad till |Upphävd)/;
+// Ett dokument inom backtick söks relativt de här katalogerna (roten sist).
+const DOKUMENTKATALOGER = ['docs/utveckling', '.github', ''];
+
+/**
+ * Status och hänvisningar till gällande lydelse i arkitekturbesluten (ADR-68). Tar dokumentets text och en funktion
+ * som säger om en sökväg (relativ roten) finns, och returnerar en lista med fel: en status utanför statusorden, en
+ * status *Sammanförd i* eller *Flyttad till* som inte nämner ett dokument som finns, och en rad *Gäller i dag:* som
+ * inte pekar på ett dokument som finns. Ren funktion, så att självtestet kan ge den en påhittad text.
+ */
+function granskaStatusOchHänvisningar(text, finns) {
+    const fel = [];
+    const dokumentFinns = s => [...s.matchAll(/`([^`\s]+\.\w+)`/g)]
+        .some(([, f]) => DOKUMENTKATALOGER.some(k => finns(k ? `${k}/${f}` : f)));
+    for (const [, nr, status] of text.matchAll(/^\| ADR-(\d+) \| [^|\n]+? \| ([^|\n]+) \| [^|\n]+ \|$/gm)) {
+        if (!STATUS.test(status)) fel.push({ slag: 'status', adr: Number(nr), status });
+        else if (/^(Sammanförd i|Flyttad till) /.test(status) && !dokumentFinns(status))
+            fel.push({ slag: 'status-utan-dokument', adr: Number(nr), status });
+    }
+    // Raden Gäller i dag fortsätter till nästa fält (*Vakt:* …), nästa beslut eller en tom rad.
+    for (const [rad] of text.matchAll(/^\*Gäller i dag:\*[^\n]*(?:\n(?!\n|\*[^*\s][^*\n]*:\*|\*\*ADR-)[^\n]*)*/gm)) {
+        if (!dokumentFinns(rad)) fel.push({ slag: 'gäller-i-dag', rad });
+    }
+    return fel;
+}
+
 describe('den tekniska planen och arkitekturbesluten beskriver nuläget', () => {
     const plan = adrMd;
     it('ADR-loggen bär inga datum i rubrikerna och inga beslut om tidigare lägen', () => {
@@ -272,16 +287,70 @@ describe('den tekniska planen och arkitekturbesluten beskriver nuläget', () => 
         const rader = [...adrMd.matchAll(/^\| ADR-(\d+) \| [^|\n]+? \| ([^|\n]+) \| [^|\n]+ \|$/gm)];
         expect(beslut.length).toBeGreaterThan(20);
         expect(rader.map(m => Number(m[1]))).toEqual(beslut);
-        for (const [rad, , status] of rader) expect(status, rad).toMatch(/^(Gällande|Ändrad av ADR-\d+|Upphävd)/);
+        for (const [rad, , status] of rader) expect(status, rad).toMatch(STATUS);
         // En status som pekar på ett annat beslut pekar på ett som finns.
         const pekar = rader.flatMap(m => [...m[2].matchAll(/ADR-(\d+)/g)].map(p => Number(p[1])));
         expect(pekar.filter(n => !beslut.includes(n))).toEqual([]);
+    });
+    it('Sammanförd i, Flyttad till och Gäller i dag pekar på ett dokument som finns (ADR-68)', () => {
+        expect(granskaStatusOchHänvisningar(adrMd, f => existsSync(join(root, f)))).toEqual([]);
     });
     it('den tekniska planen har kvar avsnittsnumreringen och hänvisar till arkitekturbesluten', () => {
         const avsnitt = [...planMd.matchAll(/^## (\d+)\. /gm)].map(m => Number(m[1]));
         expect(avsnitt).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9]);
         expect(planMd).toContain('[`arkitekturbeslut.md`](arkitekturbeslut.md)');
         expect(planMd).not.toMatch(/^\*\*ADR-\d+ —/m);
+    });
+});
+
+describe('arkitekturbesluten: självtest av status- och hänvisningskontrollen', () => {
+    // En påhittad index- och beslutstext med ett fel av varje slag. Numren är beslut som finns, så att sökningen
+    // efter beslutsnummer ovan inte fäller på den här filen.
+    const text = [
+        '| ADR-1 | Ett | Gällande | – |',
+        '| ADR-2 | Två | Sammanförd i `finns.md` §2 | – |',
+        '| ADR-4 | Fyra | Flyttad till `saknas.md` | – |',
+        '| ADR-5 | Fem | Sammanförd i referensen | – |',
+        '| ADR-6 | Sex | Borttagen | – |',
+        '| ADR-7 | Sju | Flyttad till `.github/annat.md` | – |',
+        '',
+        '**ADR-1 — Ett.** Beslut 2026-01-01.',
+        '*Beslut:* något.',
+        '*Gäller i dag:* `finns.md` §2.',
+        '*Vakt:* ingen: text.',
+        '',
+        '**ADR-2 — Två.** Beslut 2026-01-02.',
+        '*Gäller i dag:* `saknas.md` §1 och',
+        '`också-saknas.md` §3.',
+        '*Vakt:* ingen: text.',
+        '',
+        '**ADR-4 — Fyra.** Beslut 2026-01-03.',
+        '*Gäller i dag:* referensen för området.',
+    ].join('\n');
+    const finns = s => ['docs/utveckling/finns.md', '.github/annat.md'].includes(s);
+    const fel = granskaStatusOchHänvisningar(text, finns);
+    it('statusmönstret godtar statusorden och inget annat', () => {
+        for (const s of ['Gällande', 'Ändrad av ADR-51', 'Ändrad av ADR-53 och ADR-63', 'Sammanförd i `k.md`',
+            'Flyttad till `teknisk-plan.md` §6', 'Upphävd']) expect(STATUS.test(s), s).toBe(true);
+        for (const s of ['Borttagen', 'Ändrad', 'Sammanförd', 'gällande']) expect(STATUS.test(s), s).toBe(false);
+    });
+    it('rapporterar en status utanför statusorden', () => {
+        expect(fel.filter(f => f.slag === 'status')).toEqual([{ slag: 'status', adr: 6, status: 'Borttagen' }]);
+    });
+    it('rapporterar Sammanförd i och Flyttad till utan ett dokument som finns, och godtar ett som finns', () => {
+        expect(fel.filter(f => f.slag === 'status-utan-dokument')).toEqual([
+            { slag: 'status-utan-dokument', adr: 4, status: 'Flyttad till `saknas.md`' },
+            { slag: 'status-utan-dokument', adr: 5, status: 'Sammanförd i referensen' },
+        ]);
+    });
+    it('rapporterar en rad Gäller i dag utan ett dokument som finns, också när raden fortsätter', () => {
+        expect(fel.filter(f => f.slag === 'gäller-i-dag')).toEqual([
+            { slag: 'gäller-i-dag', rad: '*Gäller i dag:* `saknas.md` §1 och\n`också-saknas.md` §3.' },
+            { slag: 'gäller-i-dag', rad: '*Gäller i dag:* referensen för området.' },
+        ]);
+    });
+    it('inga andra fel', () => {
+        expect(fel).toHaveLength(5);
     });
 });
 
@@ -393,7 +462,6 @@ describe('dokumentation: kodbasen är redo att publiceras', () => {
         expect(roller.filter(([, k]) => k).map(([r]) => r).sort()).toEqual(['bas', 'kon', 'lon', 'yrke']);
         expect(läs('README.md').replace(/\s+/g, ' ')).toMatch(/fyra obligatoriska, tre valfria/);
         expect(läs('README.md')).not.toMatch(/fem obligatoriska/);
-        expect(adrMd).toMatch(/\*\*ADR-64 — Ålder är valfri i lönefilen/);
     });
     it('.gitignore utesluter lokal data och arbetsmappar', () => {
         const g = läs('.gitignore');
@@ -425,33 +493,22 @@ describe('dokumentation: licens MIT', () => {
 });
 
 describe('dokumentation: AID och ansvarskoden', () => {
-    it('dataskyddet nämner ansvarskoden, datauttaget att Ansvar inte läses, arkitekturbesluten ADR-33', () => {
+    it('dataskyddet nämner ansvarskoden, datauttaget att Ansvar inte läses', () => {
         expect(läs('docs/dataskydd/dataskydd.md')).toMatch(/ansvarskod/i);
         expect(läs('docs/dataskydd/riskanalys.md')).toMatch(/ansvarskod/i);
         expect(läs('docs/anvandare/datauttag.md')).toMatch(/Ansvar.{0,80}läses\s+(aldrig|inte)/s);
-        expect(adrMd).toMatch(/\*\*ADR-33 —/);
-    });
-});
-
-describe('dokumentation: Jämförelsestatistik', () => {
-    it('ADR-35 finns och beskriver k-gränsen för P10/P90', () => {
-        const i = adrMd.indexOf('**ADR-35 —');
-        expect(i).toBeGreaterThan(-1);
-        expect(adrMd.slice(i, adrMd.indexOf('\n**ADR-', i + 1))).toMatch(/P10.*10 personer/s);
     });
 });
 
 describe('dokumentation: Översikt och namn', () => {
-    it('ADR-36 finns; dataskyddet nämner namnen i konfigurationsfilen', () => {
-        expect(adrMd).toMatch(/\*\*ADR-36 —/);
+    it('dataskyddet nämner namnen i konfigurationsfilen', () => {
         expect(läs('docs/dataskydd/riskanalys.md')).toMatch(/jämförelsestatistikens namn/);
         expect(läs('docs/dataskydd/dataskydd.md')).toMatch(/organisationens namn/i);
     });
 });
 
 describe('dokumentation: Word-utkastet som .docx', () => {
-    it('ADR-37 finns; körguiden säger .docx', () => {
-        expect(adrMd).toMatch(/\*\*ADR-37 —/);
+    it('körguiden säger .docx', () => {
         expect(läs('docs/anvandare/korguide.md')).toMatch(/Word-utkast[^\n]*\.docx/);
     });
 });

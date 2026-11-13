@@ -523,7 +523,9 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 - **Dokumentationstestet delat i struktur och språk.** `tests/dokumentation-struktur.test.js` prövar filer, skript,
   index och nummer och tal ur koden, `tests/dokumentation-sprak.test.js` de avförda orden, lagrummen, p-värdets
-  förklaring och ordet förvaltning; testerna är desamma som förut.
+  förklaring och ordet förvaltning; testerna är desamma som förut. Strukturtestet prövar dessutom att en status
+  *Sammanförd i* eller *Flyttad till* och raden *Gäller i dag:* pekar på ett dokument som finns, och testerna som
+  bara krävde en viss formulering eller rubrik i arkitekturbesluten är borttagna.
 
 ### Utveckling
 
