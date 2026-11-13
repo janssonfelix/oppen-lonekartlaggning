@@ -1113,20 +1113,28 @@ beslut förs in).
 
 **ADR-69 — Löneöversyns förslag följer den inställda tröskeln.** Beslut 2026-11-13.
 *Beslut:* Löneöversyn föreslår aldrig en riktad rad ur ett kandidatpar i likvärdigt arbete där det kvinnodominerade
-yrket eller jämförelseyrket har färre personer än den inställda tröskeln (`kInstalld()`), oavsett läge. Det gäller
-*Föreslå riktade potter*, mål-läget och känslighetskurvan (`_fcKandidater` i `36-loneoversyn.js`). En föreslagen rad
-(`kalla: 'par'`) tas bort när den inställda tröskeln höjs över någon av parets grupper, också på skärmen, och en
-föreslagen rad som läses in ur en konfigurationsfil prövas mot den inställda tröskeln (`_fcRensaParMal`). Användarens
-egna rader berörs inte; regel R2 gäller som förut.
+yrket eller jämförelseyrket har färre personer än den inställda tröskeln (`kInstalld()`), oavsett läge. Förslagen tar
+ett par per kvinnodominerat yrke (BAS-intervall och AID): det med störst skillnad bland paren som når tröskeln, så att
+ett yrke med flera jämförelseyrken får en rad och en pott. Det gäller *Föreslå riktade potter*, mål-läget och
+känslighetskurvan (`_fcKandidater` i `36-loneoversyn.js`, `ettParPerYrke` i `src/lib/loneoversyn.js`). En föreslagen
+rad (`kalla: 'par'`) som inte säkert räknades ur ett par som når den inställda tröskeln tas bort, också på skärmen:
+när tröskeln ändras, när en konfigurationsfil läses in och när lönefilen läses in (`_fcRensaParMal`). Raden bär inte
+paret. Ett förslag ur den här sessionen avgörs säkert av gruppernas storlek i paret, som verktyget minns för raden;
+en rad ur en konfigurationsfil står kvar bara när yrket har par och alla når tröskeln, annars tas den bort, och
+meningen vid förslagen säger det. Användarens egna rader berörs inte; regel R2 gäller som förut.
 *Motiv:* Ett förslag bär ett belopp räknat ur en grupps median: skillnaden mot jämförelseyrkets median gånger antalet
 i det kvinnodominerade yrket. På skärmen är tröskeln 1 sedan ADR-51, så verktyget föreslog rader också ur par med en
 grupp under den inställda tröskeln, och raden följde med i Excel-exporten (bladen *Sammanfattning* och *Fördelning*,
 där den nya medianen var jämförelseyrkets) och i konfigurationsfilen. Det är samma tal på skärmen och i exporten och
-räknas därför med `kInstalld()` (`k-troskeln.md` §1).
+räknas därför med `kInstalld()` (`k-troskeln.md` §1). Ett yrke med flera jämförelseyrken fick dessutom en rad per
+jämförelseyrke: potten räknades flera gånger, och en rensning per yrke kunde inte se att en av raderna kom ur ett
+par under tröskeln. En borttagen rad kostar användaren ett klick på *Föreslå*; en rad som står kvar felaktigt bär en
+liten grupps median ut ur verktyget.
 *Avvisat:* att låta förslagen stå kvar på skärmen och stoppa dem i exporten (summorna på skärmen och i exporten
 skulle skilja sig); att besluta det som ett avsteg (beloppet kommer ur en median som verktyget i övrigt utelämnar,
-och användaren har inte själv valt talet).
+och användaren har inte själv valt talet); att låta raden bära parets identitet, jämförelseyrkets AID, som ett nytt
+fält i konfigurationsfilen (kräver ett nytt fält och löser inte att potten räknas två gånger).
 *Gäller i dag:* `k-troskeln.md` §1 (vilken tröskel som läses), §2 (kandidatparen utanför fliken), §8 regel R2 och §9
 (utdata och vakter).
-*Vakt:* `tests/loneoversyn-forslag-troskel.test.js`, I1 i `tests/ktroskel-invarianter.test.js`,
-`tests/ktroskel-utdata.test.js` och `tests/troskelbeslut.test.js`.
+*Vakt:* `tests/loneoversyn-forslag-troskel.test.js`, `tests/loneoversyn.test.js` (ett par per yrke), I1 i
+`tests/ktroskel-invarianter.test.js`, `tests/ktroskel-utdata.test.js` och `tests/troskelbeslut.test.js`.

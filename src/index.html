@@ -1620,7 +1620,7 @@
                                     </select>
                                 </div>
                             </div>
-                            <button id="forecast-optimize-pott" type="button" class="btn btn-primary btn-sm" disabled title="Föreslår en fördelning som först riktar potten mot skillnaderna i likvärdigt arbete och visar förslaget under Riktade potter. Ange en pott först.">Föreslå fördelning mot skillnaderna i likvärdigt arbete</button>
+                            <button id="forecast-optimize-pott" type="button" class="btn btn-primary btn-sm" disabled title="Föreslår en fördelning som först riktar potten mot skillnaderna i likvärdigt arbete, en rad per yrke mot jämförelseyrket med störst skillnad, och visar förslaget under Riktade potter. Ange en pott först.">Föreslå fördelning mot skillnaderna i likvärdigt arbete</button>
                             <p class="text-dampad-xs marg-0 max-bredd-360">Potten är påslaget på lönerna i kronor per månad. Verktyget lägger på PO-påslag och beräkningsperiod (under Inställningar) i totalkostnaden nedan.</p>
                         </div>
                     </div>
@@ -1704,7 +1704,7 @@
 
                         <div class="rad-bryt gap-10 marg-b-10">
                             <button id="forecast-add-target" type="button" class="btn btn-secondary btn-sm">Lägg till riktad pott</button>
-                            <button id="forecast-optimize" type="button" class="btn btn-secondary btn-sm" title="Föreslår en fördelning som först riktar potten mot skillnaderna i likvärdigt arbete, i grupper som når minsta gruppstorlek">Föreslå fördelning mot skillnaderna i likvärdigt arbete</button>
+                            <button id="forecast-optimize" type="button" class="btn btn-secondary btn-sm" title="Föreslår en fördelning som först riktar potten mot skillnaderna i likvärdigt arbete: en rad per yrke, mot jämförelseyrket med störst skillnad bland dem där båda grupperna når minsta gruppstorlek">Föreslå fördelning mot skillnaderna i likvärdigt arbete</button>
                             <button id="forecast-reset" type="button" class="btn btn-secondary btn-sm">Nollställ</button>
                         </div>
                         <div id="forecast-targets"></div>
@@ -1738,7 +1738,7 @@
                                     <span class="falt-enhet">%</span>
                                 </div>
                             </div>
-                            <button id="forecast-closure" type="button" class="btn btn-secondary btn-sm" title="Bygger riktade rader som minskar skillnaderna i likvärdigt arbete med angiven andel och visar kostnaden">Beräkna kostnad</button>
+                            <button id="forecast-closure" type="button" class="btn btn-secondary btn-sm" title="Bygger riktade rader, en per yrke mot jämförelseyrket med störst skillnad, som minskar skillnaderna i likvärdigt arbete med angiven andel och visar kostnaden">Beräkna kostnad</button>
                             <div class="falt">
                                 <label class="falt-etikett" for="forecast-market-factor">Lyft mot en andel av jämförelsestatistikens median</label>
                                 <div class="falt-rad">

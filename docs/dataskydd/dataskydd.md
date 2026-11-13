@@ -206,9 +206,11 @@ visas bara när varje kön når tröskeln.
 när varje kön i urvalet når tröskeln. Annars står ett streck och meningen om utelämnat könsuppdelat
 mått. Verktyget föreslår inga riktade rader ur kandidatpar där det kvinnodominerade yrket eller
 jämförelseyrket har färre personer än tröskeln, inte heller på skärmen, eftersom förslagets belopp räknas ur
-jämförelseyrkets median. En riktad rad som verktyget självt föreslog ur kandidatparen tas bort när tröskeln
-höjs över någon av parets grupper, också på skärmen. Det gäller också när raden kommer ur en konfigurationsfil,
-som bär uppgiften om vilka rader som var förslag. Varningen "underlaget är litet" i Prioriteringens motiveringsförslag visas vid färre
+jämförelseyrkets median. Varje kvinnodominerat yrke får en föreslagen rad, mot jämförelseyrket med störst
+skillnad. En riktad rad som verktyget självt föreslog ur kandidatparen tas bort när tröskeln höjs över någon av
+parets grupper, också på skärmen. En föreslagen rad ur en konfigurationsfil, som bär uppgiften om vilka rader som
+var förslag men inte vilket par, tas bort när verktyget inte kan avgöra att paret den räknades ur når tröskeln.
+Verktyget säger vid förslagen när en rad har tagits bort. Varningen "underlaget är litet" i Prioriteringens motiveringsförslag visas vid färre
 än tröskeln av något kön. Processöversiktens steg 4 blir inte klart när alla kandidatpar har en grupp
 under tröskeln. Steget säger då hur många par som bara redovisas i fliken Likvärdigt arbete och leder dit.
 

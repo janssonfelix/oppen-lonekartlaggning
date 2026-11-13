@@ -103,7 +103,8 @@ describe('I1: Löneöversyn visar ingen kostnad för grupper under tröskeln', (
         expect(w.__state.kLage).not.toBe('export');
         expect(w.__state.forecast.targets.map(t => t.aid)).not.toContain('5300');
         expect(w.__state.forecast.targets.map(t => t.aid)).toContain('6000');
-        expect(w.document.getElementById('forecast-par-not').textContent).toBe('1 par med en grupp under 10 personer redovisas inte här.');
+        // Meningen säger att paret utelämnas och att förslaget togs bort, och varför (ADR-69).
+        expect(w.document.getElementById('forecast-par-not').textContent).toMatch(/^1 par med en grupp under 10 personer redovisas inte här\. 1 föreslagen rad togs bort eftersom paret den räknades ur har en grupp under 10 personer\./);
     });
 });
 

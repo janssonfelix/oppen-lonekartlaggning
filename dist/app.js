@@ -4045,15 +4045,36 @@ function allocate(rows, generell, targets, roundStep) {
 }
 
 /**
+ * Ett kandidatpar per kvinnodominerat yrke (BAS-intervall och AID): det med störst skillnad i kronor (ADR-69).
+ * Ett yrke med flera jämförelseyrken får då en rad och en pott i förslagen, inte en per jämförelseyrke. Anroparen
+ * har redan tagit bort paren som inte får redovisas, så att valet görs bland dem som når tröskeln. Ordningen och
+ * objekten är desamma som i indata.
+ * @template {{bas: any, aid: any, gapKr: number}} T
+ * @param {T[]} [candidates]
+ * @returns {T[]}
+ */
+function ettParPerYrke(candidates) {
+    /** @type {Map<string, T>} */
+    const bast = new Map();
+    for (const c of candidates || []) {
+        const nyckel = c.bas + '|' + c.aid;
+        const forra = bast.get(nyckel);
+        if (!forra || c.gapKr > forra.gapKr) bast.set(nyckel, c);
+    }
+    const valda = new Set(bast.values());
+    return (candidates || []).filter(c => valda.has(c));
+}
+
+/**
  * Föreslår en riktad fördelning som minskar de osakliga gapen först. Fördelar
  * riktadPott proportionellt mot påverkansindex (gapKr × n), kapat vid kostnaden
- * att helt stänga respektive grupps gap.
+ * att helt stänga respektive grupps gap. Ett par per yrke (ettParPerYrke).
  * @param {Array<{bas,aid,gapKr:number,n:number}>} candidates - gapKr > 0 = under referens (kr/mån/person)
  * @param {number} riktadPott
  * @param {number} [minN=0] - rikta endast mot grupper med minst minN personer
  */
 function suggestTargets(candidates, riktadPott, minN = 0) {
-    const valid = (candidates || []).filter(c => c.gapKr > 0 && c.n > 0 && c.n >= (minN || 0));
+    const valid = ettParPerYrke(candidates).filter(c => c.gapKr > 0 && c.n > 0 && c.n >= (minN || 0));
     if (!valid.length || riktadPott <= 0) return [];
     const totalIndex = valid.reduce((s, c) => s + c.gapKr * c.n, 0);
     if (totalIndex <= 0) return [];
@@ -4068,7 +4089,8 @@ function suggestTargets(candidates, riktadPott, minN = 0) {
 /**
  * Mål-läge: bygg riktade rader som stänger en andel (fraction) av de osakliga
  * gapen. Kostnaden för att helt stänga en grupps gap är gapKr × n; för andelen
- * f blir det f × gapKr × n. Fördelas lägst-först inom gruppen.
+ * f blir det f × gapKr × n. Fördelas lägst-först inom gruppen. Ett par per yrke (ettParPerYrke), också i
+ * känslighetskurvan, som bygger på den här funktionen.
  * @param {Array<{bas,aid,gapKr:number,n:number}>} candidates
  * @param {number} fraction - 0..1
  * @param {number} [minN=0]
@@ -4076,7 +4098,7 @@ function suggestTargets(candidates, riktadPott, minN = 0) {
 function closureTargets(candidates, fraction, minN = 0) {
     const f = Math.max(0, Math.min(1, fraction));
     if (f <= 0) return [];
-    return (candidates || [])
+    return ettParPerYrke(candidates)
         .filter(c => c.gapKr > 0 && c.n > 0 && c.n >= (minN || 0))
         .map(c => ({ bas: c.bas, aid: c.aid, mode: /** @type {'kr'} */ ('kr'), value: Math.round(f * c.gapKr * c.n), dist: /** @type {'lowest'} */ ('lowest') }))
         .filter(t => t.value > 0);
@@ -4316,13 +4338,14 @@ function sensitivityCurve(rows, candidates, costOpts, steps) {
     return out;
 }
 
-    return { computePott, allocate, targetRows, suggestTargets, closureTargets, stagedPlan, summarizeGroups, detectLeapfrog, forecastOutcome, bandStats, individualRemediation, marketTargets, sensitivityCurve, _median };
+    return { computePott, allocate, targetRows, suggestTargets, closureTargets, ettParPerYrke, stagedPlan, summarizeGroups, detectLeapfrog, forecastOutcome, bandStats, individualRemediation, marketTargets, sensitivityCurve, _median };
 })();
 const _fcComputePott = __mirrorForecast.computePott;
 const _fcAllocate = __mirrorForecast.allocate;
 const _fcTargetRows = __mirrorForecast.targetRows;
 const _fcSuggestTargets = __mirrorForecast.suggestTargets;
 const _fcClosureTargets = __mirrorForecast.closureTargets;
+const _fcEttParPerYrke = __mirrorForecast.ettParPerYrke;
 const _fcStagedPlan = __mirrorForecast.stagedPlan;
 const _fcSummarizeGroups = __mirrorForecast.summarizeGroups;
 const _fcDetectLeapfrog = __mirrorForecast.detectLeapfrog;
@@ -24355,22 +24378,52 @@ function _fcGlomKnappresultat() {
     for (const id of _fcKnappresultat) { const el = document.getElementById(id); if (el) el.innerHTML = ''; }
     _fcKnappresultat.clear();
     if (state.forecast) delete state.forecast._remediation;
+    _fcBorttagnaNot = '';   // meningen om borttagna förslag gällde det förra underlaget eller den förra prognosen
+    _fcVisaParNot();
 }
 // Kandidater ur § 3:10-paren för förslag, mål-läge och känslighetskurva. Par där det kvinnodominerade
 // yrket eller jämförelseyrket har färre personer än den inställda tröskeln tas inte med, också på
 // skärmen (ADR-69): förslagets belopp räknas ur jämförelseyrkets median och står på raden, i summorna,
 // i Excel-exporten och i konfigurationsfilen. Undantaget gäller bara fliken Likvärdigt arbete. Minsta
 // antal personer i gruppen för riktning är en ytterligare gräns. Meningen om utelämnade par visas vid
-// förslagen (#forecast-par-not) och står i Excel-exporten.
+// förslagen (#forecast-par-not) och står i Excel-exporten. Bland paren som är kvar tar förslagen ett par per
+// kvinnodominerat yrke, det med störst skillnad (_fcEttParPerYrke i src/lib/loneoversyn.js, ADR-69).
 let _fcParNot = '';
-function _fcKandidater() {
-    let pairs = [];
-    try { const lv = likvardighetResultat(); pairs = (lv && lv.pairs) || []; } catch (_e) { pairs = []; }
-    const r = _parForRedovisning(pairs, kInstalld());
-    _fcParNot = r.not;
+// Meningen om föreslagna rader som togs bort (_fcRensaParMal). Står kvar tills ett nytt förslag görs.
+let _fcBorttagnaNot = '';
+// Storleken på grupperna i paret som en föreslagen rad räknades ur, per rad (objektet i state.forecast.targets).
+// Bara i minnet: raden och konfigurationsfilen bär inte paret, så en rad ur en fil har ingen post här (ADR-69).
+/** @type {WeakMap<object, {kvN: number, maN: number|null}>} */
+const _fcParUrsprung = new WeakMap();
+/** Alla § 3:10-par i analysen, utan tröskel (tom lista om analysen inte går att räkna). */
+function _fcAllaPar() {
+    try { const lv = likvardighetResultat(); return (lv && lv.pairs) || []; } catch (_e) { return []; }
+}
+function _fcVisaParNot() {
     const el = document.getElementById('forecast-par-not');
-    if (el) el.textContent = r.not;
-    return r.par.map(p => ({ bas: p.kvBas, aid: p.kvAid, gapKr: p.gapKr, n: p.kvN }));
+    if (el) el.textContent = [_fcParNot, _fcBorttagnaNot].filter(Boolean).join(' ');
+}
+function _fcKandidater() {
+    const r = _parForRedovisning(_fcAllaPar(), kInstalld());
+    _fcParNot = r.not;
+    _fcVisaParNot();
+    return r.par.map(p => ({ bas: p.kvBas, aid: p.kvAid, gapKr: p.gapKr, n: p.kvN, maN: p.maN }));
+}
+/**
+ * Gör förslagen till riktade rader (kalla: 'par') och minns, för varje rad, storleken på grupperna i paret den räknades
+ * ur, så att _fcRensaParMal kan avgöra raden säkert när tröskeln ändras. Paret är det som _fcSuggestTargets och
+ * _fcClosureTargets valde: ett per yrke, ur samma _fcEttParPerYrke.
+ */
+function _fcForslagTillRader(targets, cand) {
+    const valda = new Map(_fcEttParPerYrke(cand).map(c => [c.bas + '|' + c.aid, c]));
+    _fcBorttagnaNot = '';
+    _fcVisaParNot();
+    return targets.map(t => {
+        const rad = { bas: t.bas, aid: t.aid, mode: 'kr', value: t.value, dist: 'lowest', targetLevel: 'median', pool: 'equity', kalla: 'par' };
+        const c = /** @type {{n: number, maN: number|null}|undefined} */ (/** @type {unknown} */ (valda.get(t.bas + '|' + t.aid)));
+        if (c) _fcParUrsprung.set(rad, { kvN: c.n, maN: c.maN ?? null });
+        return rad;
+    });
 }
 // Förslagsknappen vid potten: samma förslag som knappen under Riktade potter, aktiv först när en pott är angiven.
 function _fcUppdateraForslagPott() {
@@ -24400,15 +24453,20 @@ function _forecastOptimize() {
         alert('Verktyget hittade inga skillnader i likvärdigt arbete i grupper med minst ' + (state.forecast.minGroupN || 0) + ' personer, eller så har det generella påslaget tagit hela potten. Sänk minsta antal personer i gruppen eller lägg till riktade rader själv.');
         return;
     }
-    state.forecast.targets = targets.map(t => ({ bas: t.bas, aid: t.aid, mode: 'kr', value: t.value, dist: 'lowest', targetLevel: 'median', pool: 'equity', kalla: 'par' }));
+    state.forecast.targets = _fcForslagTillRader(targets, cand);
     renderForecastTargets();
     updateForecast();
 }
 /**
- * Efter ändrad tröskel, inläst konfigurationsfil och inläst lönefil: tar bort riktade rader som föreslogs
- * ur § 3:10-par (kalla: 'par') vars grupp inte längre finns bland kandidaterna, alltså par som inte når den
- * inställda tröskeln, också på skärmen (ADR-69), och uppdaterar meningen om utelämnade par. Rader som
- * användaren lagt till själv står kvar (regel R2). Anropas av sattKTroskel före omritningen.
+ * Efter ändrad tröskel, inläst konfigurationsfil och inläst lönefil: tar bort de riktade rader som verktyget föreslog
+ * ur § 3:10-par (kalla: 'par') och som inte säkert räknades ur ett par där båda grupperna når den inställda tröskeln,
+ * också på skärmen (ADR-69), och uppdaterar meningen om utelämnade par. Rader som användaren lagt till själv står kvar
+ * (regel R2). Anropas av sattKTroskel före omritningen.
+ *
+ * En rad som verktyget föreslog i den här sessionen avgörs säkert: storleken på paret den räknades ur finns i minnet
+ * (_fcParUrsprung). En rad utan den uppgiften (ur en konfigurationsfil, också en äldre med en rad per jämförelseyrke)
+ * kan komma ur vilket som helst av yrkets par; den står kvar bara när yrket har par och alla når tröskeln, annars
+ * tas den bort. Meningen vid förslagen säger hur många rader som togs bort och varför.
  * @returns {number} Antal borttagna rader.
  */
 function _fcRensaParMal() {
@@ -24416,10 +24474,34 @@ function _fcRensaParMal() {
     // Utan förslag ur par och utan visad mening finns inget att rensa eller uppdatera — och då
     // ska analysen inte heller köras här (den cachas, och underlaget kan vara på väg in).
     if (!_fcParNot && !state.forecast.targets.some(t => t.kalla === 'par')) return 0;
-    const kvar = new Set(_fcKandidater().map(c => c.bas + '|' + c.aid));
-    const fore = state.forecast.targets.length;
-    state.forecast.targets = state.forecast.targets.filter(t => t.kalla !== 'par' || kvar.has(t.bas + '|' + t.aid));
-    return fore - state.forecast.targets.length;
+    _fcKandidater();   // meningen om utelämnade par efter den inställda tröskeln
+    const k = kInstalld();
+    /** @type {Map<string, any[]>} */
+    const perYrke = new Map();
+    for (const p of _fcAllaPar()) {
+        const nyckel = p.kvBas + '|' + p.kvAid;
+        if (!perYrke.has(nyckel)) perYrke.set(nyckel, []);
+        /** @type {any[]} */ (perYrke.get(nyckel)).push(p);
+    }
+    let sakert = 0, forsiktigt = 0;
+    state.forecast.targets = state.forecast.targets.filter(t => {
+        if (t.kalla !== 'par') return true;
+        const u = _fcParUrsprung.get(t);
+        if (u) { if (_parNarK(u, k)) return true; sakert++; return false; }
+        const par = perYrke.get(t.bas + '|' + t.aid) || [];
+        if (par.length && par.every(p => _parNarK(p, k))) return true;
+        forsiktigt++;
+        return false;
+    });
+    if (sakert + forsiktigt) {
+        const rader = n => `${n} ${n === 1 ? 'föreslagen rad' : 'föreslagna rader'}`;
+        const skal = [];
+        if (sakert) skal.push(`${rader(sakert)} togs bort eftersom paret ${sakert === 1 ? 'den' : 'de'} räknades ur har en grupp under ${k} ${personOrd(k)}.`);
+        if (forsiktigt) skal.push(`${rader(forsiktigt)} togs bort eftersom verktyget inte kan avgöra vilket par ${forsiktigt === 1 ? 'den' : 'de'} räknades ur (till exempel ur en konfigurationsfil), och yrket har ett par med en grupp under ${k} ${personOrd(k)} eller inget par alls.`);
+        _fcBorttagnaNot = skal.join(' ') + ' Klicka på Föreslå fördelning mot skillnaderna i likvärdigt arbete för ett nytt förslag.';
+        _fcVisaParNot();
+    }
+    return sakert + forsiktigt;
 }
 // Kriteriebaserad riktning: expandera en massregel till riktade rader.
 function _forecastAddByCriteria() {
@@ -24467,7 +24549,7 @@ function _forecastClosure() {
     const cand = _fcKandidater();
     const targets = _fcClosureTargets(cand, fracPct / 100, state.forecast.minGroupN || 0);
     if (!targets.length) { alert('Verktyget hittade inga skillnader i likvärdigt arbete i grupper med minst ' + (state.forecast.minGroupN || 0) + ' personer.'); return; }
-    state.forecast.targets = targets.map(t => ({ bas: t.bas, aid: t.aid, mode: 'kr', value: t.value, dist: 'lowest', targetLevel: 'median', pool: 'equity', kalla: 'par' }));
+    state.forecast.targets = _fcForslagTillRader(targets, cand);
     renderForecastTargets();
     updateForecast();
 }
@@ -33193,7 +33275,7 @@ const INFO_SECTIONS = {
         <p>Ibland är bara <em>könsuppdelningen</em> för liten, medan gruppen som helhet når tröskeln. Då redovisar exporterna gruppens <strong>samlade median</strong> i stället, utan könsjämförelse. Samma regel gäller könsuppdelade mått för hela organisationen: varje kön ska nå tröskeln.</p>
         <p><strong>Undantag och särskilda fall:</strong></p>
         <ul>
-            <li><strong>Löneöversyn.</strong> Du får lägga en egen riktad rad på en grupp under ${kInstalld()} ${personOrd(kInstalld())}. Beloppet visas på raden och ingår i summorna, även i Excel-exporten. Raden bygger då på enskildas löner, och det står på raden. Verktygets egna förslag ur likvärdigt arbete riktar däremot aldrig mot ett par där en grupp har färre än ${kInstalld()} ${personOrd(kInstalld())}, inte heller på skärmen, och ett förslag tas bort om du höjer tröskeln över en av parets grupper.</li>
+            <li><strong>Löneöversyn.</strong> Du får lägga en egen riktad rad på en grupp under ${kInstalld()} ${personOrd(kInstalld())}. Beloppet visas på raden och ingår i summorna, även i Excel-exporten. Raden bygger då på enskildas löner, och det står på raden. Verktygets egna förslag ur likvärdigt arbete riktar däremot aldrig mot ett par där en grupp har färre än ${kInstalld()} ${personOrd(kInstalld())}, inte heller på skärmen. Varje yrke får en rad, mot jämförelseyrket med störst skillnad. Ett förslag tas bort om du höjer tröskeln över en av parets grupper, och ett förslag ur en konfigurationsfil tas bort när verktyget inte kan avgöra att paret når tröskeln. Det står vid förslagen när det händer.</li>
             <li><strong>Tabeller och egna vyer.</strong> Exporten av tabellen och diagrammen utelämnar grupper under ${kInstalld()} ${personOrd(kInstalld())}. Vill du ta med dem kryssar du i rutan <em>Ta med grupper under ${kInstalld()} i exporten</em>. Organisationspaketet kan stänga av rutan.</li>
             <li><strong>Likvärdigt arbete.</strong> Lagen kräver att även små kvinnodominerade yrken prövas. Fliken och dess egen export visar därför kandidatpar även när en grupp är under tröskeln, och exporten anger det i filen. Alla andra utdata tar bara med par där båda grupperna når tröskeln, och anger hur många par som utelämnats. Det gäller Rapportunderlaget, Word-utkastet, PDF-rapporten, protokollet för gemensam lönebedömning, Att göra och dess CSV, handlingsplanens förifyllda rader och gruppdossiern.</li>
             <li><strong>Enskilda personer i verktyget.</strong> Personer att granska (Lika arbete) och extremvärdena i Underlagets kvalitet visar enskilda löner med filens radnummer. Personer att granska kan inte exporteras eller skrivas ut.</li>

@@ -22,13 +22,17 @@ vi.setConfig({ testTimeout: 30000 });
 const KV_LON = 36421, JMF_LON = 51373, GAP = JMF_LON - KV_LON;   // 14 952 kr
 const NOT_10 = '1 par med en grupp under 10 personer redovisas inte här.';
 
-// kvN kvinnor i det kvinnodominerade yrket och jmfN personer i jämförelseyrket (var femte en kvinna).
-function fonsterPar({ kvN, jmfN, k = null, minGroupN = 0 }) {
+const JMF2_LON = 58111, GAP2 = JMF2_LON - KV_LON;   // ett andra jämförelseyrke (6200): 21 690 kr
+
+// kvN kvinnor i det kvinnodominerade yrket och jmfN personer i jämförelseyrket (var femte en kvinna); med jmf2N
+// dessutom ett andra jämförelseyrke (6200) med jmf2N män på jmf2Lon.
+function fonsterPar({ kvN, jmfN, k = null, minGroupN = 0, jmf2N = 0, jmf2Lon = JMF2_LON }) {
     const w = createAppWindow();
     const rader = [];
     const rad = (bas, kon, lon, aid, i) => ({ bas, kon, lon, alder: 30 + (i * 7) % 30, yrke: `${aid} Yrke ${aid}`, aid, yrkeLabel: `Yrke ${aid}`, enhet: '' });
     for (let i = 0; i < 30; i++) rader.push(rad('A', 'kvinna', 25000 + (i % 3) * 10, '6000', i), rad('A', 'man', 25500 + (i % 3) * 10, '6000', i));
     for (let i = 0; i < jmfN; i++) rader.push(rad('C', i % 5 === 4 ? 'kvinna' : 'man', JMF_LON, '6100', i));
+    for (let i = 0; i < jmf2N; i++) rader.push(rad('C', 'man', jmf2Lon, '6200', i));
     for (let i = 0; i < kvN; i++) rader.push(rad('C', 'kvinna', KV_LON, '5300', i));
     w.__state.data = rader;
     w.eval('populateSelects(); unlockTabs();');
@@ -125,11 +129,14 @@ describe('Löneöversyn: förslagen följer den inställda tröskeln, också på
         w.eval('sattKTroskel(10, { fraga: false })');
         expect(parRader(w)).toEqual([]);
         expect(aids(w)).toEqual(['6000']);
-        expect(text(w, 'forecast-par-not')).toBe(NOT_10);
-        // Sänks tröskeln igen följer noten med; raden kommer inte tillbaka av sig själv.
+        expect(text(w, 'forecast-par-not')).toBe(`${NOT_10} 1 föreslagen rad togs bort eftersom paret den räknades ur har en grupp under 10 personer. `
+            + 'Klicka på Föreslå fördelning mot skillnaderna i likvärdigt arbete för ett nytt förslag.');
+        // Sänks tröskeln igen följer meningen om utelämnade par med; raden kommer inte tillbaka av sig själv, och
+        // meningen om den borttagna raden står kvar tills ett nytt förslag görs.
         w.eval('sattKTroskel(5, { fraga: false })');
+        expect(text(w, 'forecast-par-not')).toMatch(/^1 föreslagen rad togs bort/);
+        w.eval('_forecastOptimize()');
         expect(text(w, 'forecast-par-not')).toBe('');
-        expect(aids(w)).toEqual(['6000']);
     });
     it('också jämförelseyrket: en rad föreslagen vid 5 tas bort när tröskeln höjs över jämförelseyrket (5 personer)', () => {
         const w = fonsterPar({ kvN: 12, jmfN: 5, k: 5 });
@@ -137,7 +144,7 @@ describe('Löneöversyn: förslagen följer den inställda tröskeln, också på
         expect(parRader(w)).toHaveLength(1);
         w.eval('sattKTroskel(6, { fraga: false })');
         expect(parRader(w)).toEqual([]);
-        expect(text(w, 'forecast-par-not')).toBe('1 par med en grupp under 6 personer redovisas inte här.');
+        expect(text(w, 'forecast-par-not')).toMatch(/^1 par med en grupp under 6 personer redovisas inte här\. 1 föreslagen rad togs bort/);
     });
     it('en konfigurationsfil med en föreslagen rad på ett par under tröskeln: raden läses inte in som förslag, den egna står kvar', () => {
         const fran = fonsterPar({ kvN: 6, jmfN: 24, k: 5 });
@@ -181,5 +188,121 @@ describe('Löneöversyn: förslagen följer den inställda tröskeln, också på
         expect(text(w, 'forecast-targets')).toMatch(/Raden berör 6 personer, färre än 12 personer/);
         const bok = await excel(w);
         expect(bok).toContain('BAS C, AID 5300: 777 kr/mån');
+    });
+});
+
+// ADR-69, tillägget: ett par per kvinnodominerat yrke (det med störst skillnad bland dem som når den inställda
+// tröskeln), och en föreslagen rad som inte säkert går att föra till ett par som når tröskeln tas bort.
+describe('Löneöversyn: ett par per yrke i förslagen, och försiktig rensning (ADR-69)', () => {
+    // 5300 (12 kvinnor) har två jämförelseyrken: 6100 (24 personer, skillnad 14 952) och 6200 (jmf2N män).
+    const tvaJmf = (jmf2N, k = null, jmf2Lon = JMF2_LON) => fonsterPar({ kvN: 12, jmfN: 24, jmf2N, k, jmf2Lon });
+    const BORTTAGEN = /föreslag(?:en rad|na rader) togs bort/;
+    const sokInte = (t, tal, namn) => { for (const v of tal) expect(t, `${namn}: ${v}`).not.toContain(String(v)); };
+    const litetTal = [GAP2, GAP2 * 12, JMF2_LON];
+    const cfgFran = (w, { utanK = false } = {}) => {
+        const cfg = JSON.parse(JSON.stringify(w.eval('buildConfigSnapshot()')));
+        if (utanK) delete cfg.kTroskel;
+        return cfg;
+    };
+    const lasIn = (w, cfg) => { w.__cfg = cfg; w.eval('applyConfigSnapshot(window.__cfg)'); };
+    const parRad = value => ({ bas: 'C', aid: '5300', mode: 'kr', value, dist: 'lowest', targetLevel: 'median', pool: 'equity', kalla: 'par' });
+
+    it('dubbelräkningen: två godkända jämförelseyrken ger en rad, och exporten stämmer med ett par', async () => {
+        const w = tvaJmf(12);
+        w.eval('_forecastOptimize()');
+        expect(parRader(w).map(t => t.value)).toEqual([GAP2 * 12]);
+        const bok = await excel(w);
+        expect(bok.match(/Riktad pott \d+/g)).toEqual(['Riktad pott 1']);
+        expect(bok).toContain(`Riktat (kr/mån) | ${GAP2 * 12}`);
+        // Den nya medianen för 5300 är jämförelseyrkets (6200) median, inte lyft av två potter.
+        const rad = bok.split('[Fördelning]')[1].split('\n').find(r => r.startsWith('C | 5300 |'));
+        expect(rad).toBe(`C | 5300 | 12 | 100 | ${KV_LON} | ${JMF2_LON} | ${+(100 * (JMF2_LON / KV_LON - 1)).toFixed(1)} | ${GAP2 * 12}`);
+    });
+    it('mål-läget och känslighetskurvan räknar också ett par per yrke', () => {
+        const w = tvaJmf(12);
+        w.document.getElementById('forecast-closure-pct').value = '100';
+        w.eval('_forecastClosure()');
+        expect(parRader(w).map(t => t.value)).toEqual([GAP2 * 12]);
+        w.eval('_forecastSensitivity()');
+        const sista = [...w.document.querySelectorAll('#forecast-sensitivity tbody tr')].pop();
+        const months = w.__state.costSettings.months, po = 1 + w.__state.costSettings.poPct / 100;
+        expect(normalisera(sista.children[1].textContent)).toBe(`${Math.round(GAP2 * 12 * months * po)} kr`);
+    });
+    it('väg 1: förslaget vid 5 ur det lilla jämförelseyrket (6 män, störst skillnad) tas bort när tröskeln höjs till 10', async () => {
+        const w = tvaJmf(6, 5);
+        w.eval('_forecastOptimize()');
+        expect(parRader(w).map(t => t.value)).toEqual([GAP2 * 12]);
+        w.eval('sattKTroskel(10, { fraga: false })');
+        expect(parRader(w)).toEqual([]);
+        expect(text(w, 'forecast-par-not')).toMatch(BORTTAGEN);
+        const bok = await excel(w);
+        sokInte(bok, litetTal, 'Excel');
+        sokInte(normalisera(JSON.stringify(w.eval('buildConfigSnapshot()').forecast)), litetTal, 'konfigurationsfilen');
+    });
+    it('väg 1, säkert: förslaget vid 5 ur det stora jämförelseyrket står kvar när tröskeln höjs till 10', () => {
+        const w = tvaJmf(6, 5, 40000);   // 6200 har lägre lön än 6100: paret med 6100 har störst skillnad
+        w.eval('_forecastOptimize()');
+        expect(parRader(w).map(t => t.value)).toEqual([GAP * 12]);
+        w.eval('sattKTroskel(10, { fraga: false })');
+        expect(parRader(w).map(t => t.value)).toEqual([GAP * 12]);
+        expect(text(w, 'forecast-par-not')).not.toMatch(BORTTAGEN);
+    });
+    it('väg 2: en konfigurationsfil med ett förslag räknat vid 5 läses in vid 10, med och utan kTroskel, före och efter lönefilen', () => {
+        const fran = tvaJmf(6, 5);
+        fran.eval('_forecastOptimize()');
+        const rader = JSON.parse(JSON.stringify(fran.__state.data));
+        for (const utanK of [false, true]) {
+            const cfg = cfgFran(fran, { utanK });
+            if (!utanK) cfg.kTroskel = 10;
+            const efter = tvaJmf(6);
+            lasIn(efter, cfg);
+            expect(parRader(efter), `efter lönefilen, utanK=${utanK}`).toEqual([]);
+            expect(text(efter, 'forecast-par-not')).toMatch(BORTTAGEN);
+            const fore = createAppWindow();
+            fore.alert = () => {};
+            lasIn(fore, cfg);
+            fore.__state.data = JSON.parse(JSON.stringify(rader));
+            fore.eval('_afterDataLoaded()');
+            expect(fore.eval('kInstalld()')).toBe(10);
+            expect(parRader(fore), `före lönefilen, utanK=${utanK}`).toEqual([]);
+        }
+    });
+    it('väg 2, försiktigt: en fil med en rad ur det stora paret tas också bort när yrket har ett par under tröskeln', () => {
+        const w = tvaJmf(6);
+        lasIn(w, { ...cfgFran(w), forecast: { ...cfgFran(w).forecast, targets: [parRad(GAP * 12)] } });
+        expect(parRader(w)).toEqual([]);
+    });
+    it('väg 2: en fil med en föreslagen rad står kvar när alla yrkets par når tröskeln', () => {
+        const w = tvaJmf(12);
+        lasIn(w, { ...cfgFran(w), forecast: { ...cfgFran(w).forecast, targets: [parRad(GAP2 * 12)] } });
+        expect(parRader(w).map(t => t.value)).toEqual([GAP2 * 12]);
+        expect(text(w, 'forecast-par-not')).not.toMatch(BORTTAGEN);
+    });
+    it('väg 3: en äldre fil med två föreslagna rader för samma yrke, en per jämförelseyrke: båda tas bort vid 10', async () => {
+        const w = tvaJmf(6);
+        lasIn(w, { ...cfgFran(w), forecast: { ...cfgFran(w).forecast, targets: [parRad(GAP2 * 12), parRad(GAP * 12)] } });
+        expect(parRader(w)).toEqual([]);
+        sokInte(await excel(w), litetTal, 'Excel');
+    });
+    it('väg 3 och 4: inläst vid 5 står båda kvar; en tas bort för hand och tröskeln höjs: den andra tas bort', () => {
+        const w = tvaJmf(6, 5);
+        const cfg = cfgFran(w);
+        lasIn(w, { ...cfg, forecast: { ...cfg.forecast, targets: [parRad(GAP * 12), parRad(GAP2 * 12)] } });
+        expect(parRader(w).map(t => t.value)).toEqual([GAP * 12, GAP2 * 12]);
+        w.__state.forecast.targets.splice(0, 1);   // som knappen Ta bort på raden
+        w.eval('sattKTroskel(10, { fraga: false })');
+        expect(parRader(w)).toEqual([]);
+    });
+    it('väg 4: en ensam föreslagen rad ur det lilla paret i en fil tas bort vid 10', () => {
+        const w = tvaJmf(6);
+        lasIn(w, { ...cfgFran(w), forecast: { ...cfgFran(w).forecast, targets: [parRad(GAP2 * 12)] } });
+        expect(parRader(w)).toEqual([]);
+    });
+    it('egna rader berörs aldrig, också på ett yrke vars förslag tas bort', () => {
+        const w = tvaJmf(6, 5);
+        w.eval('_forecastOptimize()');
+        w.__state.forecast.targets.push({ bas: 'C', aid: '5300', mode: 'kr', value: 777, dist: 'lowest', targetLevel: 'median', pool: 'övrigt' });
+        w.eval('sattKTroskel(10, { fraga: false })');
+        expect(w.__state.forecast.targets.map(t => [t.aid, t.value, t.kalla])).toEqual([['5300', 777, undefined]]);
     });
 });
