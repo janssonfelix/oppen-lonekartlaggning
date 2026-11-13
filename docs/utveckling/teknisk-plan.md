@@ -339,11 +339,12 @@ adaptern verkligen delegerar vaktas av `tests/drift.test.js`:
   otypade `let x = null`/`[]` och `state`-fälten med `@type`-annoteringar på deklarationen. Standardobjektet
   `= {}` på `k`-bärande funktioner i `src/lib` (`likaArbeteGrupper`, `prioritera` …) togs bort: utelämnad `k` hade
   tyst stängt av maskeringen, och varje anropare skickar den.
-- **CI** (`.github/workflows/ci.yml`), två jobb:
-  - `quality` — lint, typkontroll, hela testsviten, mojibake-grind och en **artefaktgrind**: bygget är
-    byte-reproducerbart, så CI bygger om och kräver oförändrad SHA-256. `appsource`-testet
-    vaktar `dist/app.js` mot `src/app/`; artefaktgrinden vaktar den skeppade HTML-filen.
-  - `browser` — en matris över Chromium, Firefox och WebKit (vid en vanlig push till en gren bara Chromium):
+- **CI** (`.github/workflows/ci.yml`, på push till `main` och taggar `v*`, på pull requests och för hand), två jobb;
+  en ny push på en pull request avbryter den pågående körningen:
+  - `quality` — lint, typkontroll, mojibake-grind och en **artefaktgrind**: bygget är byte-reproducerbart, så CI
+    bygger om och kräver oförändrad SHA-256. `appsource`-testet vaktar `dist/app.js` mot `src/app/`; artefaktgrinden
+    vaktar den skeppade HTML-filen. Hela testsviten körs sist, så att de billiga grindarna ger besked först.
+  - `browser` — en matris över Chromium, Firefox och WebKit (vid push av en tagg bara Chromium):
     installerar motorn, bygger artefakten och kör röktestet mot den.
   Båda kör Node 22. Jobbet bygger *inuti* körningen eftersom `git checkout` ger alla filer
   samma mtime, vilket annars skulle utlösa röktestets färskhetsspärr.

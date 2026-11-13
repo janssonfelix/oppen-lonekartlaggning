@@ -1,16 +1,29 @@
 name: CI
 
 # Kvalitetsgrind. Två jobb:
-#   quality — lint, typkontroll, hela testsviten, mojibake-skydd och kontroll av att den
-#             incheckade artefakten faktiskt motsvarar källan.
+#   quality — lint, typkontroll, mojibake-skydd, kontroll av att den incheckade artefakten
+#             faktiskt motsvarar källan och sist hela testsviten.
 #   browser — röktest av den byggda single-file-filen i riktig Chromium, Firefox och WebKit.
 #             Diagrammen (diagramkärnan på D3, ADR-39) ritas med äkta D3 också i
 #             jsdom-testerna; här prövas PNG-exporten, som kräver en riktig canvas,
 #             och att allt fungerar under CSP:n från file://.
+#
+# push körs bara på main (och versionstaggar); andra grenar prövas via sin pull request.
+# Annars körde varje push på en PR-gren hela sviten två gånger samtidigt (push +
+# pull_request). En gren utan pull request kan köras för hand med workflow_dispatch.
 on:
   push:
+    branches: [main]
+    tags: ['v*']
   pull_request:
   workflow_dispatch:
+
+# En körning åt gången per pull request (eller ref). En ny push på en pull request avbryter
+# den pågående körningen, vars resultat ändå är inaktuellt; på main och taggar får varje
+# körning gå klart.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 # Bara läsbehörighet: jobben checkar ut och testar, men skriver ingenting till repot.
 permissions:
@@ -43,9 +56,6 @@ jobs:
       - name: Typkontroll (tsc --checkJs, noll fel)
         run: npm run typecheck
 
-      - name: Testsviten (Vitest, hela)
-        run: npm run test:full
-
       - name: Teckenkodningsgrind (ingen U+FFFD i egen källkod)
         run: |
           node -e "const fs=require('fs');let bad=false;for(const f of ['dist/app.js','src/index.html','src/style.css']){if(fs.readFileSync(f,'utf8').includes('�')){console.error('U+FFFD (mojibake) i '+f);bad=true;}}if(bad)process.exit(1);console.log('Ingen mojibake i källfilerna.');"
@@ -68,10 +78,15 @@ jobs:
           fi
           echo "Artefakten är byte-identisk med en färsk build ($fore)."
 
+      # Sist, eftersom den tar längst tid (omkring tolv minuter): de billiga grindarna ovan
+      # ska kunna fälla en push innan sviten ens startat.
+      - name: Testsviten (Vitest, hela)
+        run: npm run test:full
+
   # Samma röktest i de tre webbläsarmotorer som verktyget stöder (Chrome/Edge, Firefox,
   # Safari). WebKit kräver systembibliotek som bara finns färdiga på Ubuntu, så det körs här.
-  # En vanlig push till en gren kör bara Chromium; pull requests, main och manuella körningar
-  # kör alla tre (en gren med öppen pull request får alltså alla tre via pull_request).
+  # Pull requests, main och manuella körningar kör alla tre; en push av en versionstagg kör
+  # bara Chromium (taggen har redan prövats i alla tre på main).
   browser:
     runs-on: ubuntu-latest
     strategy:
