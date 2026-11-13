@@ -1,8 +1,7 @@
 name: Release
 
 # Släpper en version när en tagg v<VERSION> pushas:
-#   1. release-grinden (npm run release:kontroll, tools/release.mjs) — versionen står lika i VERSION, package.json,
-#      CHANGELOG och RELEASE.txt, riskanalysen är granskad mot koden som släpps (teknisk-plan.md §9 punkt 17b);
+#   1. release-grinden (npm run release:kontroll; vad den prövar står i huvudet i tools/release.mjs);
 #   2. bygget görs om och måste bli byte-identiskt med den incheckade artefakten;
 #   3. artefakten, RELEASE.txt och programvaruförteckningen (SBOM) signeras med Sigstore cosign utan nyckel (keyless): certifikatet utfärdas för
 #      det här arbetsflödet genom GitHub Actions OIDC-token, så signaturen styrker att filen byggdes här ur taggen;

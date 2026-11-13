@@ -90,17 +90,22 @@ describe('säkerhet: CI-stegen är låsta på commit', () => {
             }
         });
     }
-    it('release.yml: grinden körs före bygget, och signeringen är keyless med minsta behörighet', () => {
+    it('release.yml: grinden körs före bygget, förteckningen efter, och signeringen är keyless med minsta behörighet', () => {
         const rel = läs('.github/workflows/release.yml');
         expect(rel).toMatch(/^permissions: \{\}$/m);
         expect(rel).toMatch(/id-token: write/);
         expect(rel).toMatch(/fetch-depth: 0/);
-        const steg = ['npm ci', 'npm run release:kontroll', 'npm run bundle', 'cosign sign-blob', 'cosign verify-blob', 'gh release create'];
+        const steg = ['npm ci', 'npm run release:kontroll', 'npm run bundle', 'npm run sbom', 'cosign sign-blob', 'cosign verify-blob', 'gh release create'];
         const jobb = rel.slice(rel.indexOf('\njobs:'));   // kommentaren överst nämner stegen i annan ordning
         const plats = steg.map(s => jobb.indexOf(s));
         expect(plats.every(p => p > 0), steg.join(', ')).toBe(true);
         expect([...plats].sort((a, b) => a - b)).toEqual(plats);
         expect(rel).not.toMatch(/--key\b|COSIGN_PRIVATE_KEY/);
+        // Artefakten, RELEASE.txt och programvaruförteckningen signeras och publiceras med sina Sigstore-paket.
+        for (const f of ['oppen-lonekartlaggning.html', 'RELEASE.txt', 'sbom.cdx.json']) {
+            expect(jobb, f).toContain(`cosign sign-blob --yes --bundle ${f}.sigstore.json ${f}`);
+            expect(jobb, f).toContain(`dist/${f}.sigstore.json`);
+        }
     });
     it('dependabot uppdaterar npm och arbetsflödenas steg', () => {
         const d = läs('.github/dependabot.yml');

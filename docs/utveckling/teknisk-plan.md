@@ -211,17 +211,9 @@ adaptern verkligen delegerar vaktas av `tests/drift.test.js`:
 - **Körtid för utveckling:** Node **≥ 22.12** (`engines` i `package.json`). jsdom-kedjan
   gör `require()` av en ES-modul, vilket kastar `ERR_REQUIRE_ESM` på Node 20 — smoke-,
   a11y- och golden-sviterna faller då tyst. `require(esm)` är påslaget från 22.12.
-- **Mappstruktur:**
-  - `src/` — källan: `src/index.html`, `src/style.css`, `src/app/NN-*.js` (appens moduler,
-    namngivna efter flik eller funktion; tabellen står i `src/app/README.md`)
-    och `src/lib/*.js` (rena moduler som testas direkt och speglas in i appen).
-  - `vendor/` — tredjepartsbiblioteken (`vendor/d3.min.js` (diagram, ADR-39),
-    `vendor/xlsx.mini.min.js`, `vendor/papaparse.min.js`, `vendor/jszip.min.js`), se `TREDJEPARTSLICENSER.md`.
-  - `dist/` — genererat och incheckat: `dist/app.js`, `dist/oppen-lonekartlaggning.html`
-    och `dist/RELEASE.txt`.
-  - `docs/` — `docs/anvandare/` (medföljer verktyget), `docs/dataskydd/`,
-    och `docs/utveckling/` (denna plan och arkitekturbesluten); `docs/README.md` listar dokumenten.
-  - `tests/`, `tools/` (bygge, generatorer; `tools/data/` för lokala indata, inget incheckat).
+- **Mappstruktur:** tabellen över repots mappar står i `README.md` och modulerna i `src/app/README.md`. Var varje
+  uppgift som flera filer behöver har sin källa, och vilken kontroll som vaktar den, står i `.github/CONTRIBUTING.md`
+  (*Var uppgifterna står*).
 - **Källfiler:** `src/index.html`, `src/style.css`, `src/app/NN-*.js`, `src/lib/*.js`.
   `dist/app.js` är ett **genererat** hopslag av `src/app/` och redigeras aldrig direkt (ADR-6/ADR-8).
   `src/index.html` pekar på biblioteken i `vendor/` och på `dist/app.js` (relativa sökvägar
@@ -235,7 +227,7 @@ adaptern verkligen delegerar vaktas av `tests/drift.test.js`:
   `Build:`-raden härleds ur `VERSION`, inte ur systemklockan, så en ombyggnad
   av oförändrad källa inte smutsar ner arbetskatalogen.
 - **Versionering:** CalVer (`ÅÅÅÅ.MM.DD`). `VERSION` är enda källa; `APP_VERSION`
-  och `APP_BUILD_DATE` genereras ur den och vaktas av `tests/version.test.js`.
+  och `APP_BUILD_DATE` genereras ur den, och `package.json` sätts samtidigt (`tests/version.test.js`).
 - **Stilmallen (`src/style.css`):** komponentregler per flik, variabler i `:root` (färger, `--fs-*`-skalan) och sist ett
   namngivet bibliotek av hjälpklasser som ersatte alla `style`-attribut (ADR-30). Biblioteket ligger i blocket «Hjälpklasser
   som ersätter style-attributen» (börjar vid `.dold`), med förklaring av namnen överst i blocket: sammansatta klasser för det som
@@ -262,8 +254,7 @@ adaptern verkligen delegerar vaktas av `tests/drift.test.js`:
   varje diagram har ritats av diagramkärnan, och ritar därtill ett eget diagram och exporterar det genom
   exportmenyn (PNG i båda storlekarna, SVG som öppnas som eget dokument, diagramdata) — PNG via canvas finns inte i jsdom. Den prövar också adressen `?demo=1`, räknar CSP-överträdelser
   och interna fel (ADR-31), och körs i Chromium, Firefox och WebKit (`--browser=…`,
-  `npm run test:browser:firefox`/`:webkit`; i CI alla tre vid pull requests och på main, bara Chromium vid en
-  vanlig push till en gren).
+  `npm run test:browser:firefox`/`:webkit`; i CI enligt `.github/workflows/ci.yml`).
   *Testmiljön:* `tests/helpers/app-harness.js` kompilerar d3 och app.js en gång per arbetare och stänger och
   tömmer fönster som inte behövs, så att varje arbetares minne håller sig under Nodes tak (den tyngsta filen
   under 1,2 GB). Ett fönster kostar omkring 0,15 s efter det första (som bär kompileringen); det dyra är
@@ -339,25 +330,14 @@ adaptern verkligen delegerar vaktas av `tests/drift.test.js`:
   otypade `let x = null`/`[]` och `state`-fälten med `@type`-annoteringar på deklarationen. Standardobjektet
   `= {}` på `k`-bärande funktioner i `src/lib` (`likaArbeteGrupper`, `prioritera` …) togs bort: utelämnad `k` hade
   tyst stängt av maskeringen, och varje anropare skickar den.
-- **CI** (`.github/workflows/ci.yml`, på push till `main` och taggar `v*`, på pull requests och för hand), två jobb;
-  en ny push på en pull request avbryter den pågående körningen:
-  - `quality` — lint, typkontroll, mojibake-grind och en **artefaktgrind**: bygget är byte-reproducerbart, så CI
-    bygger om och kräver oförändrad SHA-256. `appsource`-testet vaktar `dist/app.js` mot `src/app/`; artefaktgrinden
-    vaktar den skeppade HTML-filen. Hela testsviten körs sist, så att de billiga grindarna ger besked först.
-  - `browser` — en matris över Chromium, Firefox och WebKit (vid push av en tagg bara Chromium):
-    installerar motorn, bygger artefakten och kör röktestet mot den.
-  Båda kör Node 22. Jobbet bygger *inuti* körningen eftersom `git checkout` ger alla filer
-  samma mtime, vilket annars skulle utlösa röktestets färskhetsspärr.
-- **Release** (`.github/workflows/release.yml`, på tagg `v*`): `npm ci`, kontroll att taggen är `v<VERSION>`,
-  **release-grinden** `npm run release:kontroll` (`tools/release.mjs`: VERSION, `package.json`, CHANGELOG:s översta
-  versionsrubrik utan *Oförlöst* och `RELEASE.txt` anger samma version; bygget har RELEASE.txt:s SHA-256 och
-  riskanalysen samma bygge och kontrollsumma; riskanalysens och `dataskydd.md`:s granskningsdatum är inte äldre än
-  senaste commit som rör `src/`, `tools/bundle.mjs` eller `vendor/`; arbetskatalogen är ren — prövad på fixturer i
-  `tests/release.test.js`), ombyggnad med byte-identisk-kontroll, signering av artefakten och `RELEASE.txt` med
-  Sigstore cosign utan nyckel (certifikat för arbetsflödet genom GitHub Actions OIDC) och verifiering med samma
-  kommando som `SECURITY.md` anger, sist en GitHub Release med filerna och deras `.sigstore.json`-paket. Klonen är
-  fullständig (`fetch-depth: 0`) så att grinden kan läsa när koden senast ändrades. Jobbet har bara
-  `contents: write` och `id-token: write`.
+- **CI** (`.github/workflows/ci.yml`; stegen och när de körs står i filens kommentarer), två jobb:
+  - `quality` — lint, typkontroll, mojibake-grind, **artefaktgrinden** (bygget är byte-reproducerbart, så CI bygger
+    om och kräver att `dist/` är oförändrad: artefakten och `RELEASE.txt`) och sist hela testsviten.
+  - `browser` — röktestet mot den byggda artefakten i Chromium, Firefox och WebKit.
+- **Release** (`.github/workflows/release.yml`, på tagg `v*`): kontroll att taggen är `v<VERSION>`, **release-grinden**
+  `npm run release:kontroll` (vad den prövar står i huvudet i `tools/release.mjs`), ombyggnad med byte-identisk-kontroll,
+  programvaruförteckning, signering med Sigstore cosign utan nyckel och en GitHub Release. Hur en version släpps står i
+  `README.md` (*Släppa en version*), och verifieringen i `SECURITY.md`.
 - **Demosidan** (`.github/workflows/pages.yml`, på tagg `v*` eller för hand): `node tools/site.mjs` med
   guidelänkar till `docs/anvandare/` i repot, publicerad på GitHub Pages (`upload-pages-artifact`, `deploy-pages`;
   jobbet som publicerar har bara `pages: write` och `id-token: write`).
@@ -366,15 +346,8 @@ adaptern verkligen delegerar vaktas av `tests/drift.test.js`:
 - **Beroendeuppdateringar** (`.github/dependabot.yml`): npm veckovis med utvecklingsberoendena i en grupp, och
   arbetsflödenas steg veckovis. Varje `uses:` i arbetsflödena ska peka på en fullständig commit-SHA med versionen som
   kommentar (`tests/sakerhet.test.js`), och Dependabot uppdaterar båda tillsammans.
-- **Dokumentation:** `README.md` (översikt); `docs/anvandare/` — `korguide.md`,
-  `datauttag.md` (med uttagssteg för Heroma, Personec P och Visma, ej verifierade mot systemen),
-  `organisationspaket.md` (med ett påhittat exempelpaket och systemägarens checklista), `pilotchecklista.md`,
-  `sammanfattning-hr-chefer.md`, `sakerhetsbeskrivning.md` och `tillganglighetsredogorelse.md` (för IT och
-  dataskyddsombud) och `information-till-anstallda.md` (textförslag, ska stämmas av med dataskyddsombudet);
-  `docs/dataskydd/` — `riskanalys.md` (underlag till DPIA, det fullständiga dokumentet)
-  och `dataskydd.md` (kort beskrivning för dataskyddsombud och IT);
-  `docs/utveckling/lagrum.md` (lagrumshänvisningarna); `CHANGELOG.md` (per release).
-  Metoderna beskrivs för användaren i appens flik *Om verktyget*.
+- **Dokumentation:** `README.md` (översikt), `docs/README.md` (dokumenten, ordnade efter läsare) och `CHANGELOG.md`
+  (per release). Metoderna beskrivs för användaren i appens flik *Om verktyget*.
   Filnamn skrivs med gemener och bindestreck; levande dokument har inget datum eller
   versionsnummer i namnet.
 
@@ -394,7 +367,7 @@ K7. Skydd som är juridiskt bindande (k-anonymitet, ingen lagring) ska vaktas av
     K-invarianten står i `tests/helpers/ktroskel-invariant.js` och körs från `tests/ktroskel-invarianter.test.js` (flikar i
     exportläget och exporter; vad som inte prövas står i testfilerna och i `riskanalys.md` §6.5) och i
     lagringsspärrens test i `tests/sakerhet.test.js`.
-    Varje ny utdata som lämnar verktyget (text, tabell, bild, fil) läggs i k-invariantsviten (`tests/helpers/ktroskel-rigg.js`) och i riskanalysens tabell över utdata innan den checkas in.
+    Hur en ny utdata läggs in i sviten står i `.github/CONTRIBUTING.md`, punkt 3.
 
 ---
 
@@ -470,10 +443,9 @@ pekar på står kvar med en rad om hur den avslutades.
 
 **Dokumentation och lansering:**
 17b. **Före varje release: riskanalysen granskas mot koden.** `riskanalys.md` och `dataskydd.md` läses påstående
-    för påstående mot den kod som släpps, granskningsdatumet sätts och avvikelser förs hit. Senast gjort
-    2026-11-06. `npm run release:kontroll` (`tools/release.mjs`) stoppar en release när något av datumen är äldre
-    än senaste commit som rör `src/`, `tools/bundle.mjs` eller `vendor/`, eller när riskanalysens kontrollsumma inte
-    är byggets; release-arbetsflödet kör samma kontroll.
+    för påstående mot den kod som släpps, granskningsdatumen i dokumenten sätts och avvikelser förs hit.
+    Release-grinden (`tools/release.mjs`) stoppar en release när granskningen är äldre än koden eller gäller ett
+    annat bygge.
 18. **Uttagsstegen för Heroma, Personec P och Visma i `datauttag.md` är inte verifierade mot systemen**; de
     bygger på det gemensamma statistikuttaget och har rader som varje organisations systemförvaltare fyller i
     och bekräftar för sin installation.
