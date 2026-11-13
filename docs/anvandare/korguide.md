@@ -419,7 +419,9 @@ rubrikraden, också när det är hopfällt.
    belopp visas då på raden och ingår i summorna, även i Löneöversyns Excel-export (*Använt*,
    *Riktat* och, för en kvinnodominerad grupp, *Varav till kvinnodominerade grupper*). För en
    grupp med en enda person bygger beloppet alltså på den personens lön; verktyget säger det i
-   en not under raden. Tänk på det innan du delar exporten. Sparade scenarier (A/B) visar
+   en not under raden. Tänk på det innan du delar exporten. Verktygets egna förslag (*Föreslå fördelning mot
+   skillnaderna i likvärdigt arbete*, målet för skillnaden och känslighetskurvan) riktar däremot bara mot par där
+   båda grupperna når tröskeln, också på skärmen. Sparade scenarier (A/B) visar
    den råa löneskillnaden bara när båda könen når den tröskel som gäller just då.
 8. **Tabeller och egna vyer** (under 4 · Rapport) har två avsnitt: **Löneöversikt — alla BAS-intervall** (den fasta
    tabellen: hela löneläget per BAS, kön och yrkesgrupp) och **Egna vyer**. I

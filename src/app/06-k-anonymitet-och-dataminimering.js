@@ -180,26 +180,31 @@ function _kTolka(v) {
  * — Rapportunderlaget, Word-utkastet, utskriften, protokollet, Att göra, handlingsplanen och
  * gruppdossiern — använder denna regel (via _parForRedovisning).
  */
-function _parOverTroskel(p) {
-    const k = kTroskel();
+function _parOverTroskel(p) { return _parNarK(p, kTroskel()); }
+
+/** Når båda yrkesgrupperna i paret gränsen k? Ett jämförelseyrke ur statistiken (maN saknas) prövas inte. */
+function _parNarK(p, k) {
     return p.kvN >= k && (p.maN == null || p.maN >= k);
 }
 
 /** Mening om par som utelämnats ur underlaget (samma ordalydelse som Rapportunderlaget). */
-function _parUtelamnadeNot(antal) {
-    return antal ? `${antal} par med en grupp under ${kTroskel()} ${personOrd(kTroskel())} redovisas inte här.` : '';
+function _parUtelamnadeNot(antal, k = kTroskel()) {
+    return antal ? `${antal} par med en grupp under ${k} ${personOrd(k)} redovisas inte här.` : '';
 }
 
 /**
  * Delar en lista § 3:10-par i de som får redovisas utanför fliken Likvärdigt arbete och antalet som
  * utelämnas. `not` är meningen om de utelämnade (tom när inga utelämnats). Ordningen bevaras och
- * objekten är desamma som i indata.
+ * objekten är desamma som i indata. Gränsen är kTroskel(), det som gäller i läget; Löneöversyns
+ * förslag anger den inställda tröskeln, kInstalld(), också på skärmen (ADR-69).
+ * @param {any[]} [pairs]
+ * @param {number} [k]
  */
-function _parForRedovisning(pairs) {
+function _parForRedovisning(pairs, k = kTroskel()) {
     const alla = pairs || [];
-    const par = alla.filter(_parOverTroskel);
+    const par = alla.filter(p => _parNarK(p, k));
     const utelamnade = alla.length - par.length;
-    return { par, utelamnade, not: _parUtelamnadeNot(utelamnade) };
+    return { par, utelamnade, not: _parUtelamnadeNot(utelamnade, k) };
 }
 
 /** Raden som anger den inställda tröskeln (stämpeln), på de utdata som bär den. */
@@ -393,7 +398,6 @@ function sattKTroskel(v, { fraga = true, rita = true, stegvis = false } = {}) {
         return { ok: false, nekad: true };
     }
     _kVisaFel('');   // ett gammalt felmeddelande hör till ett värde som inte längre gäller
-    const hojd = n > state.kTroskel;
     const golvFore = statGolv();
     state.kTroskel = n;
     state._lifecycleCache = null;
@@ -402,8 +406,9 @@ function sattKTroskel(v, { fraga = true, rita = true, stegvis = false } = {}) {
     const golvAndrat = statGolv() !== golvFore;
     if (golvAndrat && typeof invalidateStatCaches === 'function') invalidateStatCaches({ recompute: false });   // räknas om i bakgrunden nedan
     else if (typeof ritGenerationNy === 'function') ritGenerationNy();   // allt som är ritat hittills bär den gamla tröskeln
-    // Löneöversynens förslag ur § 3:10-par som inte längre når tröskeln tas bort (egna rader står kvar).
-    if (hojd && typeof _fcRensaParMal === 'function') _fcRensaParMal();
+    // Löneöversynens förslag ur § 3:10-par som inte längre når den inställda tröskeln tas bort, också på skärmen (egna
+    // rader står kvar; ADR-69). En sänkt tröskel tar inte bort något men ändrar meningen om utelämnade par.
+    if (typeof _fcRensaParMal === 'function') _fcRensaParMal();
     _synkaKTroskel();
     // Från gränssnittet ritas allt om stegvis, med förlopp (stegvis); program och tester får det direkt.
     /** @type {Promise<void>|null} */

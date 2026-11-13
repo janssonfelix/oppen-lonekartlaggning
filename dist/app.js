@@ -1448,26 +1448,31 @@ function _kTolka(v) {
  * — Rapportunderlaget, Word-utkastet, utskriften, protokollet, Att göra, handlingsplanen och
  * gruppdossiern — använder denna regel (via _parForRedovisning).
  */
-function _parOverTroskel(p) {
-    const k = kTroskel();
+function _parOverTroskel(p) { return _parNarK(p, kTroskel()); }
+
+/** Når båda yrkesgrupperna i paret gränsen k? Ett jämförelseyrke ur statistiken (maN saknas) prövas inte. */
+function _parNarK(p, k) {
     return p.kvN >= k && (p.maN == null || p.maN >= k);
 }
 
 /** Mening om par som utelämnats ur underlaget (samma ordalydelse som Rapportunderlaget). */
-function _parUtelamnadeNot(antal) {
-    return antal ? `${antal} par med en grupp under ${kTroskel()} ${personOrd(kTroskel())} redovisas inte här.` : '';
+function _parUtelamnadeNot(antal, k = kTroskel()) {
+    return antal ? `${antal} par med en grupp under ${k} ${personOrd(k)} redovisas inte här.` : '';
 }
 
 /**
  * Delar en lista § 3:10-par i de som får redovisas utanför fliken Likvärdigt arbete och antalet som
  * utelämnas. `not` är meningen om de utelämnade (tom när inga utelämnats). Ordningen bevaras och
- * objekten är desamma som i indata.
+ * objekten är desamma som i indata. Gränsen är kTroskel(), det som gäller i läget; Löneöversyns
+ * förslag anger den inställda tröskeln, kInstalld(), också på skärmen (ADR-69).
+ * @param {any[]} [pairs]
+ * @param {number} [k]
  */
-function _parForRedovisning(pairs) {
+function _parForRedovisning(pairs, k = kTroskel()) {
     const alla = pairs || [];
-    const par = alla.filter(_parOverTroskel);
+    const par = alla.filter(p => _parNarK(p, k));
     const utelamnade = alla.length - par.length;
-    return { par, utelamnade, not: _parUtelamnadeNot(utelamnade) };
+    return { par, utelamnade, not: _parUtelamnadeNot(utelamnade, k) };
 }
 
 /** Raden som anger den inställda tröskeln (stämpeln), på de utdata som bär den. */
@@ -1661,7 +1666,6 @@ function sattKTroskel(v, { fraga = true, rita = true, stegvis = false } = {}) {
         return { ok: false, nekad: true };
     }
     _kVisaFel('');   // ett gammalt felmeddelande hör till ett värde som inte längre gäller
-    const hojd = n > state.kTroskel;
     const golvFore = statGolv();
     state.kTroskel = n;
     state._lifecycleCache = null;
@@ -1670,8 +1674,9 @@ function sattKTroskel(v, { fraga = true, rita = true, stegvis = false } = {}) {
     const golvAndrat = statGolv() !== golvFore;
     if (golvAndrat && typeof invalidateStatCaches === 'function') invalidateStatCaches({ recompute: false });   // räknas om i bakgrunden nedan
     else if (typeof ritGenerationNy === 'function') ritGenerationNy();   // allt som är ritat hittills bär den gamla tröskeln
-    // Löneöversynens förslag ur § 3:10-par som inte längre når tröskeln tas bort (egna rader står kvar).
-    if (hojd && typeof _fcRensaParMal === 'function') _fcRensaParMal();
+    // Löneöversynens förslag ur § 3:10-par som inte längre når den inställda tröskeln tas bort, också på skärmen (egna
+    // rader står kvar; ADR-69). En sänkt tröskel tar inte bort något men ändrar meningen om utelämnade par.
+    if (typeof _fcRensaParMal === 'function') _fcRensaParMal();
     _synkaKTroskel();
     // Från gränssnittet ritas allt om stegvis, med förlopp (stegvis); program och tester får det direkt.
     /** @type {Promise<void>|null} */
@@ -17946,8 +17951,9 @@ function applyConfigSnapshot(cfg) {
                 targetLevel: t.targetLevel === 'p25' ? 'p25' : 'median',
                 pool: ['equity', 'marknad', 'befordran', 'övrigt'].includes(t.pool) ? t.pool : 'övrigt',
                 // Valfritt och bakåtkompatibelt (filer utan fältet läses som förut): en rad verktyget själv
-                // föreslog ur § 3:10-par bär kalla: 'par' och rensas när tröskeln höjs (ADR-38 R2); en rad
-                // utan fältet är användarens egen och står kvar med noten om gruppen är under tröskeln.
+                // föreslog ur § 3:10-par bär kalla: 'par', prövas mot den inställda tröskeln när filen läses in
+                // och rensas när tröskeln höjs (ADR-69); en rad utan fältet är användarens egen och står kvar
+                // med noten om gruppen är under tröskeln (ADR-38, regel R2).
                 ...(t.kalla === 'par' ? { kalla: 'par' } : {})
             }));
         }
@@ -18068,8 +18074,8 @@ function applyConfigSnapshot(cfg) {
     }
     if (tmp.forecast) {
         state.forecast = /** @type {any} */ (tmp.forecast);
-        // Rader som verktyget föreslog ur par (kalla: 'par') prövas mot den tröskel som gäller nu — filen kan vara
-        // sparad vid en lägre — som när tröskeln höjs i gränssnittet.
+        // Rader som verktyget föreslog ur par (kalla: 'par') prövas mot den inställda tröskeln, också på skärmen — filen
+        // kan vara sparad vid en lägre — som när tröskeln höjs i gränssnittet (ADR-69). Utan lönefil prövas de när den läses in.
         if (typeof _fcRensaParMal === 'function') _fcRensaParMal();
         if (typeof renderForecast === 'function' && document.getElementById('view-loneoversyn')) {
             try { renderForecast(); } catch (_e) { /* renderas vid nästa flikbyte */ }
@@ -21919,6 +21925,9 @@ function _afterDataLoaded() {
     if (typeof _renderDemoBanner === 'function') _renderDemoBanner();
     /** @type {HTMLElement} */ (document.getElementById("dashboard-summary")).style.display = "grid";
     const poangCount = _deriveArbetsvarderingFromData();
+    // Föreslagna riktade rader (kalla: 'par') prövas mot paren i den nya lönefilen, också när de lästs in ur en
+    // konfigurationsfil innan det fanns en lönefil att pröva dem mot (ADR-69). Egna rader står kvar.
+    if (typeof _fcRensaParMal === 'function') _fcRensaParMal();
     unlockTabs();
     updateDashboardStats();
     populateSelects();
@@ -24347,15 +24356,17 @@ function _fcGlomKnappresultat() {
     _fcKnappresultat.clear();
     if (state.forecast) delete state.forecast._remediation;
 }
-// Kandidater ur § 3:10-paren för förslag, mål-läge och känslighetskurva. Par med en grupp under
-// tröskeln tas inte med (undantaget gäller bara fliken Likvärdigt arbete); minsta gruppstorlek för
-// riktning är en ytterligare, strängare gräns. Meningen om utelämnade par visas vid förslagen
-// (#forecast-par-not) och står i Excel-exporten.
+// Kandidater ur § 3:10-paren för förslag, mål-läge och känslighetskurva. Par där det kvinnodominerade
+// yrket eller jämförelseyrket har färre personer än den inställda tröskeln tas inte med, också på
+// skärmen (ADR-69): förslagets belopp räknas ur jämförelseyrkets median och står på raden, i summorna,
+// i Excel-exporten och i konfigurationsfilen. Undantaget gäller bara fliken Likvärdigt arbete. Minsta
+// antal personer i gruppen för riktning är en ytterligare gräns. Meningen om utelämnade par visas vid
+// förslagen (#forecast-par-not) och står i Excel-exporten.
 let _fcParNot = '';
 function _fcKandidater() {
     let pairs = [];
     try { const lv = likvardighetResultat(); pairs = (lv && lv.pairs) || []; } catch (_e) { pairs = []; }
-    const r = _parForRedovisning(pairs);
+    const r = _parForRedovisning(pairs, kInstalld());
     _fcParNot = r.not;
     const el = document.getElementById('forecast-par-not');
     if (el) el.textContent = r.not;
@@ -24394,9 +24405,10 @@ function _forecastOptimize() {
     updateForecast();
 }
 /**
- * Efter höjd tröskel: tar bort riktade rader som föreslogs ur § 3:10-par (kalla: 'par') vars
- * grupp inte längre finns bland kandidaterna, och uppdaterar meningen om utelämnade par. Rader
- * som användaren lagt till själv står kvar. Anropas av sattKTroskel före omritningen.
+ * Efter ändrad tröskel, inläst konfigurationsfil och inläst lönefil: tar bort riktade rader som föreslogs
+ * ur § 3:10-par (kalla: 'par') vars grupp inte längre finns bland kandidaterna, alltså par som inte når den
+ * inställda tröskeln, också på skärmen (ADR-69), och uppdaterar meningen om utelämnade par. Rader som
+ * användaren lagt till själv står kvar (regel R2). Anropas av sattKTroskel före omritningen.
  * @returns {number} Antal borttagna rader.
  */
 function _fcRensaParMal() {
@@ -33181,7 +33193,7 @@ const INFO_SECTIONS = {
         <p>Ibland är bara <em>könsuppdelningen</em> för liten, medan gruppen som helhet når tröskeln. Då redovisar exporterna gruppens <strong>samlade median</strong> i stället, utan könsjämförelse. Samma regel gäller könsuppdelade mått för hela organisationen: varje kön ska nå tröskeln.</p>
         <p><strong>Undantag och särskilda fall:</strong></p>
         <ul>
-            <li><strong>Löneöversyn.</strong> Du får lägga en egen riktad rad på en grupp under ${kInstalld()} ${personOrd(kInstalld())}. Beloppet visas på raden och ingår i summorna, även i Excel-exporten. Raden bygger då på enskildas löner, och det står på raden.</li>
+            <li><strong>Löneöversyn.</strong> Du får lägga en egen riktad rad på en grupp under ${kInstalld()} ${personOrd(kInstalld())}. Beloppet visas på raden och ingår i summorna, även i Excel-exporten. Raden bygger då på enskildas löner, och det står på raden. Verktygets egna förslag ur likvärdigt arbete riktar däremot aldrig mot ett par där en grupp har färre än ${kInstalld()} ${personOrd(kInstalld())}, inte heller på skärmen, och ett förslag tas bort om du höjer tröskeln över en av parets grupper.</li>
             <li><strong>Tabeller och egna vyer.</strong> Exporten av tabellen och diagrammen utelämnar grupper under ${kInstalld()} ${personOrd(kInstalld())}. Vill du ta med dem kryssar du i rutan <em>Ta med grupper under ${kInstalld()} i exporten</em>. Organisationspaketet kan stänga av rutan.</li>
             <li><strong>Likvärdigt arbete.</strong> Lagen kräver att även små kvinnodominerade yrken prövas. Fliken och dess egen export visar därför kandidatpar även när en grupp är under tröskeln, och exporten anger det i filen. Alla andra utdata tar bara med par där båda grupperna når tröskeln, och anger hur många par som utelämnats. Det gäller Rapportunderlaget, Word-utkastet, PDF-rapporten, protokollet för gemensam lönebedömning, Att göra och dess CSV, handlingsplanens förifyllda rader och gruppdossiern.</li>
             <li><strong>Enskilda personer i verktyget.</strong> Personer att granska (Lika arbete) och extremvärdena i Underlagets kvalitet visar enskilda löner med filens radnummer. Personer att granska kan inte exporteras eller skrivas ut.</li>

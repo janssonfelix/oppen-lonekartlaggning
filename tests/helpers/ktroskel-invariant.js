@@ -36,6 +36,9 @@ import { KON_MA, KON_GAP, KON_GAP_1, KON_GAP_CELL, KON_DOLDA, harNagon, samlaUtd
 //    personens grupp och kön i gruppen når tröskeln, så deras export prövas som alla andras.
 //  - Riktade potter i Löneöversyn på färre personer än tröskeln är användarens egen simulering (ADR-38 R2) och
 //    visar beloppet på raden; rigg­en lägger inga sådana rader. Det råa gapet före och efter prövas av C3.
+//  - Löneöversyns förslag ur kandidatparen (ADR-69): riggens underlag har inga kandidatpar i likvärdigt arbete,
+//    så ett förslag här vore tomt. Förslagen prövas i tests/loneoversyn-forslag-troskel.test.js, med par där
+//    det kvinnodominerade yrket eller jämförelseyrket är under tröskeln.
 //  - Robusthetspanelen körs här direkt (den räknas annars först på knapptryck) och läses som en egen väg;
 //    att den utelämnar par med en grupp under tröskeln och anger antalet prövas med parfixturen ovan.
 //  - Ålder & karriär ritas här med "Alla BAS". Att fliken följer regeln för ett litet kön, i hela

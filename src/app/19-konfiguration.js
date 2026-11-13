@@ -219,8 +219,9 @@ function applyConfigSnapshot(cfg) {
                 targetLevel: t.targetLevel === 'p25' ? 'p25' : 'median',
                 pool: ['equity', 'marknad', 'befordran', 'övrigt'].includes(t.pool) ? t.pool : 'övrigt',
                 // Valfritt och bakåtkompatibelt (filer utan fältet läses som förut): en rad verktyget själv
-                // föreslog ur § 3:10-par bär kalla: 'par' och rensas när tröskeln höjs (ADR-38 R2); en rad
-                // utan fältet är användarens egen och står kvar med noten om gruppen är under tröskeln.
+                // föreslog ur § 3:10-par bär kalla: 'par', prövas mot den inställda tröskeln när filen läses in
+                // och rensas när tröskeln höjs (ADR-69); en rad utan fältet är användarens egen och står kvar
+                // med noten om gruppen är under tröskeln (ADR-38, regel R2).
                 ...(t.kalla === 'par' ? { kalla: 'par' } : {})
             }));
         }
@@ -341,8 +342,8 @@ function applyConfigSnapshot(cfg) {
     }
     if (tmp.forecast) {
         state.forecast = /** @type {any} */ (tmp.forecast);
-        // Rader som verktyget föreslog ur par (kalla: 'par') prövas mot den tröskel som gäller nu — filen kan vara
-        // sparad vid en lägre — som när tröskeln höjs i gränssnittet.
+        // Rader som verktyget föreslog ur par (kalla: 'par') prövas mot den inställda tröskeln, också på skärmen — filen
+        // kan vara sparad vid en lägre — som när tröskeln höjs i gränssnittet (ADR-69). Utan lönefil prövas de när den läses in.
         if (typeof _fcRensaParMal === 'function') _fcRensaParMal();
         if (typeof renderForecast === 'function' && document.getElementById('view-loneoversyn')) {
             try { renderForecast(); } catch (_e) { /* renderas vid nästa flikbyte */ }

@@ -458,6 +458,16 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   hälsa, sjukfrånvaro, diagnos, etnicitet, religion, politisk tillhörighet, sexuell läggning, funktionsnedsättning,
   genetik eller biometri — som identifierare avvisades redan. Bara rubriken prövas (lagrum.md, C23b).
 
+### Dataskydd
+
+- **Löneöversyns förslag följer den inställda tröskeln, också på skärmen (ADR-69).** *Föreslå fördelning mot
+  skillnaderna i likvärdigt arbete*, målet för skillnaden och känslighetskurvan tar bara kandidatpar där både det
+  kvinnodominerade yrket och jämförelseyrket når minsta gruppstorlek, så att en föreslagen rad inte kan bära en liten
+  grupps median i Excel-exporten eller konfigurationsfilen. En föreslagen rad tas bort när tröskeln höjs över en av
+  parets grupper, och en föreslagen rad i en konfigurationsfil prövas mot tröskeln när den läses in (eller när
+  lönefilen läses in, om konfigurationsfilen kom först). Meningen om utelämnade par vid förslagen nämner den inställda
+  tröskeln. Egna riktade rader står kvar som förut, med noten när gruppen är under tröskeln.
+
 ### Dokumentation
 
 - **Samlad struktur för dokumenten.** Arkitekturbesluten står i en egen fil,

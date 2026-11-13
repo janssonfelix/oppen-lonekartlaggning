@@ -434,15 +434,17 @@ function _fcGlomKnappresultat() {
     _fcKnappresultat.clear();
     if (state.forecast) delete state.forecast._remediation;
 }
-// Kandidater ur § 3:10-paren för förslag, mål-läge och känslighetskurva. Par med en grupp under
-// tröskeln tas inte med (undantaget gäller bara fliken Likvärdigt arbete); minsta gruppstorlek för
-// riktning är en ytterligare, strängare gräns. Meningen om utelämnade par visas vid förslagen
-// (#forecast-par-not) och står i Excel-exporten.
+// Kandidater ur § 3:10-paren för förslag, mål-läge och känslighetskurva. Par där det kvinnodominerade
+// yrket eller jämförelseyrket har färre personer än den inställda tröskeln tas inte med, också på
+// skärmen (ADR-69): förslagets belopp räknas ur jämförelseyrkets median och står på raden, i summorna,
+// i Excel-exporten och i konfigurationsfilen. Undantaget gäller bara fliken Likvärdigt arbete. Minsta
+// antal personer i gruppen för riktning är en ytterligare gräns. Meningen om utelämnade par visas vid
+// förslagen (#forecast-par-not) och står i Excel-exporten.
 let _fcParNot = '';
 function _fcKandidater() {
     let pairs = [];
     try { const lv = likvardighetResultat(); pairs = (lv && lv.pairs) || []; } catch (_e) { pairs = []; }
-    const r = _parForRedovisning(pairs);
+    const r = _parForRedovisning(pairs, kInstalld());
     _fcParNot = r.not;
     const el = document.getElementById('forecast-par-not');
     if (el) el.textContent = r.not;
@@ -481,9 +483,10 @@ function _forecastOptimize() {
     updateForecast();
 }
 /**
- * Efter höjd tröskel: tar bort riktade rader som föreslogs ur § 3:10-par (kalla: 'par') vars
- * grupp inte längre finns bland kandidaterna, och uppdaterar meningen om utelämnade par. Rader
- * som användaren lagt till själv står kvar. Anropas av sattKTroskel före omritningen.
+ * Efter ändrad tröskel, inläst konfigurationsfil och inläst lönefil: tar bort riktade rader som föreslogs
+ * ur § 3:10-par (kalla: 'par') vars grupp inte längre finns bland kandidaterna, alltså par som inte når den
+ * inställda tröskeln, också på skärmen (ADR-69), och uppdaterar meningen om utelämnade par. Rader som
+ * användaren lagt till själv står kvar (regel R2). Anropas av sattKTroskel före omritningen.
  * @returns {number} Antal borttagna rader.
  */
 function _fcRensaParMal() {
