@@ -113,6 +113,19 @@ function _forecastOlsGap(origRows, simRows) {
     }
     return { fore, efter };
 }
+// Kostnadsinställningarna som prognosen räknas med.
+function _fcKostnadsval() {
+    return { months: (state.costSettings && state.costSettings.months) || 12, poPct: (state.costSettings && state.costSettings.poPct) || 0, roundStep: state.forecast.roundStep || 0,
+             kvThreshold: aidbasGrans(), kvDefinition: aidbasDefinition() };   // samma definition av kvinnodominerat som Likvärdigt arbete (ADR-60)
+}
+/**
+ * Prognosens utfall ur raderna och inställningarna som de står i state.forecast. Exporten och scenarierna räknar det
+ * här i stället för att läsa ett sparat utfall, så att de aldrig skriver ett utfall som räknades med en rad som
+ * sedan har tagits bort (ADR-69).
+ */
+function _fcBeraknaUtfall(d) {
+    return _fcForecastOutcome(d, state.forecast.budget, state.forecast.generell, state.forecast.targets, _fcKostnadsval());
+}
 function updateForecast() {
     const meterEl = document.getElementById('forecast-meter');
     const outEl = document.getElementById('forecast-outcome');
@@ -128,8 +141,6 @@ function updateForecast() {
         _renderForecastLutning(null, null);
         return;
     }
-    const cost = { months: (state.costSettings && state.costSettings.months) || 12, poPct: (state.costSettings && state.costSettings.poPct) || 0, roundStep: state.forecast.roundStep || 0,
-                   kvThreshold: aidbasGrans(), kvDefinition: aidbasDefinition() };   // samma definition av kvinnodominerat som Likvärdigt arbete (ADR-60)
     // #10 Indata-validering: fånga orimliga värden innan beräkning
     const valWarn = [];
     const bv = state.forecast.budget.value, gv = state.forecast.generell.value;
@@ -139,7 +150,8 @@ function updateForecast() {
     if (state.forecast.generell.mode === 'pct' && gv != null && gv > 25) valWarn.push('Det generella påslaget är ovanligt högt (> 25 %).');
     if (state.forecast.targets.some(t => t.value == null || !(t.value > 0))) valWarn.push('En eller flera riktade rader saknar belopp.');
     if (state.forecast.targets.some(t => _fcTargetRows(d, t).length === 0)) valWarn.push('En riktad rad matchar ingen person (kön eller lönegräns).');
-    const out = _fcForecastOutcome(d, state.forecast.budget, state.forecast.generell, state.forecast.targets, cost);
+    const cost = _fcKostnadsval();
+    const out = _fcBeraknaUtfall(d);
     const riktade = state.forecast.targets.length;
     _laNyckel('nyckel-lo-riktade', riktade ? `${riktade} ${riktade === 1 ? 'riktad pott' : 'riktade potter'}` : 'Inga riktade potter');
     _laNyckel('nyckel-lo-planering', state.forecast.roundStep > 0 || (state.forecast.years || 1) > 1 ? 'Anpassade värden' : 'Standardvärden');
@@ -450,6 +462,9 @@ let _fcBorttagnaNot = '';
 // Bara i minnet: raden och konfigurationsfilen bär inte paret, så en rad ur en fil har ingen post här (ADR-69).
 /** @type {WeakMap<object, {kvN: number, maN: number|null}>} */
 const _fcParUrsprung = new WeakMap();
+// De riktade raderna som ett sparat scenario (A/B) räknades med, per scenario. Bara i minnet, som scenarierna själva.
+/** @type {WeakMap<object, object[]>} */
+const _fcScenarioRader = new WeakMap();
 /** Alla § 3:10-par i analysen, utan tröskel (tom lista om analysen inte går att räkna). */
 function _fcAllaPar() {
     try { const lv = likvardighetResultat(); return (lv && lv.pairs) || []; } catch (_e) { return []; }
@@ -535,7 +550,10 @@ function _fcRensaParMal() {
     if (!state.data.length || !state.forecast || !Array.isArray(state.forecast.targets)) return 0;
     // Utan förslag ur par och utan visad mening finns inget att rensa eller uppdatera — och då
     // ska analysen inte heller köras här (den cachas, och underlaget kan vara på väg in).
-    if (!_fcParNot && !state.forecast.targets.some(t => t.kalla === 'par')) return 0;
+    const sc = state.forecast.scenarios || {};
+    const scenarioRader = s => (s && _fcScenarioRader.get(s)) || [];
+    const harPar = rader => rader.some(t => t.kalla === 'par');
+    if (!_fcParNot && !harPar(state.forecast.targets) && !harPar(scenarioRader(sc.A)) && !harPar(scenarioRader(sc.B))) return 0;
     _fcKandidater();   // meningen om utelämnade par efter den inställda tröskeln
     const k = kInstalld();
     /** @type {Map<string, any[]>} */
@@ -549,22 +567,36 @@ function _fcRensaParMal() {
         if (!perYrke.has(nyckel)) perYrke.set(nyckel, []);
         /** @type {any[]} */ (perYrke.get(nyckel)).push(p);
     }
+    // 'ok', 'sakert' (paret har en grupp under tröskeln) eller 'forsiktigt' (paret går inte att avgöra).
+    const prova = t => {
+        if (t.kalla !== 'par') return 'ok';
+        const u = _fcParUrsprung.get(t);
+        if (u) return _parNarK(u, k) ? 'ok' : 'sakert';
+        const par = perYrke.get(t.bas + '|' + t.aid) || [];
+        return fullstandig && par.length && par.every(p => _parNarK(p, k)) ? 'ok' : 'forsiktigt';
+    };
     let sakert = 0, forsiktigt = 0;
     state.forecast.targets = state.forecast.targets.filter(t => {
-        if (t.kalla !== 'par') return true;
-        const u = _fcParUrsprung.get(t);
-        if (u) { if (_parNarK(u, k)) return true; sakert++; return false; }
-        const par = perYrke.get(t.bas + '|' + t.aid) || [];
-        if (fullstandig && par.length && par.every(p => _parNarK(p, k))) return true;
-        forsiktigt++;
-        return false;
+        const svar = prova(t);
+        if (svar === 'sakert') sakert++; else if (svar === 'forsiktigt') forsiktigt++;
+        return svar === 'ok';
     });
-    if (sakert + forsiktigt) {
+    // Ett sparat scenario som räknades med en rad som inte står sig tas bort: dess summor räknades ur raden.
+    const bortScenarier = /** @type {string[]} */ ([]);
+    for (const slot of ['A', 'B']) {
+        if (sc[slot] && scenarioRader(sc[slot]).some(t => prova(t) !== 'ok')) { sc[slot] = null; bortScenarier.push(slot); }
+    }
+    if (sakert + forsiktigt || bortScenarier.length) {
         const rader = n => `${n} ${n === 1 ? 'föreslagen rad' : 'föreslagna rader'}`;
         const skal = [];
         if (sakert) skal.push(`${rader(sakert)} togs bort eftersom paret ${sakert === 1 ? 'den' : 'de'} räknades ur har en grupp under ${k} ${personOrd(k)}.`);
         if (forsiktigt) skal.push(`${rader(forsiktigt)} togs bort eftersom verktyget inte kan avgöra vilket par ${forsiktigt === 1 ? 'den' : 'de'} räknades ur (till exempel ur en konfigurationsfil), och yrket har ett par med en grupp under ${k} ${personOrd(k)}, inget par alls eller par utanför de visade (Visa max i Likvärdigt arbete).`);
+        if (bortScenarier.length) skal.push(`${bortScenarier.length === 1 ? `Det sparade scenario ${bortScenarier[0]}` : 'De sparade scenarierna A och B'} togs bort eftersom ${bortScenarier.length === 1 ? 'det' : 'de'} räknades med en föreslagen rad som inte står sig vid tröskeln ${k}.`);
         _fcBorttagnaNot = skal.join(' ') + ' Klicka på Föreslå fördelning mot skillnaderna i likvärdigt arbete för ett nytt förslag.';
+        // Utfallet räknades med de borttagna raderna: det räknas om ur raderna som står kvar, också när Löneöversyn inte
+        // är den öppna fliken. Exporten och scenarierna räknar dessutom alltid om (_fcBeraknaUtfall).
+        state.forecast.result = null;
+        try { renderForecast(); } catch (_e) { /* ritas vid nästa flikbyte; exporten räknar om */ }
         _fcVisaParNot();
     }
     return sakert + forsiktigt;
@@ -621,9 +653,9 @@ function _forecastClosure() {
 }
 // Scenario A/B: spara nuläget som ett scenario och jämför.
 function _forecastSaveScenario(slot) {
-    const o = state.forecast.result;
-    if (!o) { alert('Det finns ingen prognos att spara. Ange en pott först.'); return; }
     const d = getData();
+    if (!state.forecast.result || !d.length) { alert('Det finns ingen prognos att spara. Ange en pott först.'); return; }
+    const o = _fcBeraknaUtfall(d);
     const sim = d.map((r, i) => ({ ...r, lon: o.alloc.perPerson[i].nyLon }));
     const ols = _forecastOlsGap(d, sim);
     const { nKv, nMa } = _konAntal(d);
@@ -641,6 +673,7 @@ function _forecastSaveScenario(slot) {
             leapfrog: _fcDetectLeapfrog(o.alloc.perGroup.filter(g => !isKMasked(g.n))).length
         }
     };
+    _fcScenarioRader.set(state.forecast.scenarios[slot], state.forecast.targets.slice());
     _renderScenarioCompare();
 }
 function _renderScenarioCompare() {
@@ -799,8 +832,8 @@ function _forecastRemediationSeed() {
 function exportForecast(...a) { return medExportLage(() => _exportForecastExport.apply(null, /** @type {any} */ (a))); }
 function _exportForecastExport() {
     if (typeof XLSX === 'undefined') { alert('Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.'); return; }
-    const out = state.forecast.result;
-    if (!out) { alert('Det finns ingen prognos att exportera. Ange en pott först.'); return; }
+    if (!state.forecast.result || !getData().length) { alert('Det finns ingen prognos att exportera. Ange en pott först.'); return; }
+    const out = _fcBeraknaUtfall(getData());   // ur raderna som de står, inte ett utfall som räknades före en rensning
     _fcKandidater();   // uppdaterar meningen om utelämnade par efter gällande tröskel
     const kr = n => Math.round(n);
     const K = kTroskel();

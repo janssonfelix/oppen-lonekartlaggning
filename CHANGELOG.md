@@ -466,7 +466,9 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   grupps median i Excel-exporten eller konfigurationsfilen. En föreslagen rad tas bort när tröskeln höjs över en av
   parets grupper. En föreslagen rad i en konfigurationsfil, som inte bär vilket par den räknades ur, prövas när filen
   läses in (eller när lönefilen läses in, om konfigurationsfilen kom först) och tas bort om yrket har ett par med en
-  grupp under tröskeln, eller om likvärdighetsanalysen inte visar alla par (*Visa max*). Meningen vid förslagen säger när rader har tagits bort och varför, och meningen om utelämnade
+  grupp under tröskeln, eller om likvärdighetsanalysen inte visar alla par (*Visa max*). När en föreslagen rad tas
+  bort räknas prognosen om, också när Löneöversyn inte är den öppna fliken; exporten och scenarierna A/B räknar alltid
+  utfallet ur raderna som de står, och ett sparat scenario som räknades med raden tas bort. Meningen vid förslagen säger när rader har tagits bort och varför, och meningen om utelämnade
   par nämner den inställda tröskeln. Egna riktade rader står kvar som förut, med noten när gruppen är under tröskeln.
 
 - **Löneöversyns förslag: en rad per yrke.** Ett kvinnodominerat yrke med flera jämförelseyrken fick en föreslagen rad

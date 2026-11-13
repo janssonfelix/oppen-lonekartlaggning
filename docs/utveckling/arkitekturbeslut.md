@@ -1122,7 +1122,9 @@ när tröskeln ändras, när en konfigurationsfil läses in och när lönefilen 
 paret. Ett förslag ur den här sessionen avgörs säkert av gruppernas storlek i paret, som verktyget minns för raden;
 en rad ur en konfigurationsfil står kvar bara när parlistan är fullständig (inte kapad vid *Visa max*, `parAntal`
 räknas före urvalet), yrket har par och alla når tröskeln, annars tas den bort, och
-meningen vid förslagen säger det. Användarens egna rader berörs inte; regel R2 gäller som förut.
+meningen vid förslagen säger det. Inget som räknades med en borttagen rad står kvar: utfallet räknas om ur raderna
+som står kvar, exporten och scenarierna A/B räknar utfallet ur raderna som de står (`_fcBeraknaUtfall`), och ett
+sparat scenario som räknades med raden tas bort. Användarens egna rader berörs inte; regel R2 gäller som förut.
 *Motiv:* Ett förslag bär ett belopp räknat ur en grupps median: skillnaden mot jämförelseyrkets median gånger antalet
 i det kvinnodominerade yrket. På skärmen är tröskeln 1 sedan ADR-51, så verktyget föreslog rader också ur par med en
 grupp under den inställda tröskeln, och raden följde med i Excel-exporten (bladen *Sammanfattning* och *Fördelning*,

@@ -271,8 +271,12 @@ R-märkning följer inte heller den här numreringen rakt av (avsnitt 10).
   parlistan är fullständig, yrket har par och alla når tröskeln; annars tas den bort, på den försiktiga sidan.
   Parlistan är fullständig när den inte är kapad vid *Visa max* (`topN`): `parAntal.totalt`, som räknas före urvalet
   (ADR-61), är lika med antalet par i listan. *Lägre krav, högre lön* är en egen lista och räknas inte. Meningen vid förslagen
-  (`#forecast-par-not`) säger hur många rader som togs bort och varför, tills ett nytt förslag görs. Konfigurationsfilen
-  bär fältet `kalla` (valfritt, version oförändrad); egna rader står kvar med noten.
+  (`#forecast-par-not`) säger hur många rader som togs bort och varför, tills ett nytt förslag görs. Inget som räknades
+  med en borttagen rad står kvar: när en rad tas bort räknas prognosens utfall om ur raderna som står kvar, också när
+  Löneöversyn inte är den öppna fliken; exporten och scenarierna A/B räknar alltid utfallet ur raderna som de står
+  (`_fcBeraknaUtfall`), inte ur ett sparat utfall; och ett sparat scenario som räknades med en rad som inte står sig
+  tas bort, med en mening om det. Konfigurationsfilen bär fältet `kalla` (valfritt, version oförändrad); egna rader
+  står kvar med noten.
 - **R3. Ålder & karriär följer regeln.** Ojusterat och åldersjusterat gap kräver tröskeln för båda könen; lutning,
   trendlinje med konfidensband och låda kräver den för det könet (`40-alder-karriar.js`, `_setDiagramKNot` för noten
   under diagrammet). Demografidelens trendlinje och lutning för hela urvalet (alla BAS eller det valda) kräver att

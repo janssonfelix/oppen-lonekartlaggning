@@ -51,10 +51,19 @@ const text = (w, id) => normalisera(w.document.getElementById(id).textContent.re
 // gånger antalet kvinnor, eftersom potten räcker till allt).
 const parTal = kvN => [JMF_LON, GAP, GAP * kvN].map(String);
 
+// Hela arbetsboken (alla blad) som exporten skriver. Prognosen räknas inte om före exporten: fönstret har Löneöversyn
+// öppen från början, så ett utfall finns, och exporten ska skriva det som svarar mot raderna som de står.
 async function excel(w) {
     await laddaXlsx(w);
-    w.eval('updateForecast()');   // en prognos finns också när inget föreslogs, så att exporten skrivs
+    if (!w.__state.forecast.result) w.eval('updateForecast()');   // en prognos finns också när inget föreslogs
     const bocker = Object.values(fangaBocker(w, () => w.eval('exportForecast()')));
+    expect(bocker.length).toBe(1);
+    return bocker[0];
+}
+// Excel (alla flikar), som också ZIP-filen bär.
+async function excelAlla(w) {
+    await laddaXlsx(w);
+    const bocker = Object.values(fangaBocker(w, () => w.eval('exportAllToExcel()')));
     expect(bocker.length).toBe(1);
     return bocker[0];
 }
@@ -120,7 +129,7 @@ describe('Löneöversyn: förslagen följer den inställda tröskeln, också på
         expect(parRader(w).map(t => t.value)).toEqual([GAP * 6]);
         expect(await excel(w)).toContain(`BAS C, AID 5300: ${GAP * 6} kr/mån`);
     });
-    it('en föreslagen rad tas bort när tröskeln höjs över en av grupperna på skärmen; en egen rad står kvar med sin not', () => {
+    it('en föreslagen rad tas bort när tröskeln höjs över en av grupperna på skärmen; en egen rad står kvar med sin not', async () => {
         const w = fonsterPar({ kvN: 6, jmfN: 24, k: 5 });
         w.eval('_forecastOptimize()');
         expect(parRader(w)).toHaveLength(1);
@@ -131,6 +140,7 @@ describe('Löneöversyn: förslagen följer den inställda tröskeln, också på
         expect(aids(w)).toEqual(['6000']);
         expect(text(w, 'forecast-par-not')).toBe(`${NOT_10} 1 föreslagen rad togs bort eftersom paret den räknades ur har en grupp under 10 personer. `
             + 'Klicka på Föreslå fördelning mot skillnaderna i likvärdigt arbete för ett nytt förslag.');
+        forvantaInget(w, 6, { 'hela arbetsboken': await excel(w), konfigurationsfilen: normalisera(JSON.stringify(w.eval('buildConfigSnapshot()').forecast)) });
         // Sänks tröskeln igen följer meningen om utelämnade par med; raden kommer inte tillbaka av sig själv, och
         // meningen om den borttagna raden står kvar tills ett nytt förslag görs.
         w.eval('sattKTroskel(5, { fraga: false })');
@@ -138,13 +148,14 @@ describe('Löneöversyn: förslagen följer den inställda tröskeln, också på
         w.eval('_forecastOptimize()');
         expect(text(w, 'forecast-par-not')).toBe('');
     });
-    it('också jämförelseyrket: en rad föreslagen vid 5 tas bort när tröskeln höjs över jämförelseyrket (5 personer)', () => {
+    it('också jämförelseyrket: en rad föreslagen vid 5 tas bort när tröskeln höjs över jämförelseyrket (5 personer)', async () => {
         const w = fonsterPar({ kvN: 12, jmfN: 5, k: 5 });
         w.eval('_forecastOptimize()');
         expect(parRader(w)).toHaveLength(1);
         w.eval('sattKTroskel(6, { fraga: false })');
         expect(parRader(w)).toEqual([]);
         expect(text(w, 'forecast-par-not')).toMatch(/^1 par med en grupp under 6 personer redovisas inte här\. 1 föreslagen rad togs bort/);
+        forvantaInget(w, 12, { 'hela arbetsboken': await excel(w) });
     });
     it('en konfigurationsfil med en föreslagen rad på ett par under tröskeln: raden läses inte in som förslag, den egna står kvar', () => {
         const fran = fonsterPar({ kvN: 6, jmfN: 24, k: 5 });
@@ -247,7 +258,7 @@ describe('Löneöversyn: ett par per yrke i förslagen, och försiktig rensning 
         expect(parRader(w).map(t => t.value)).toEqual([GAP * 12]);
         expect(text(w, 'forecast-par-not')).not.toMatch(BORTTAGEN);
     });
-    it('väg 2: en konfigurationsfil med ett förslag räknat vid 5 läses in vid 10, med och utan kTroskel, före och efter lönefilen', () => {
+    it('väg 2: en konfigurationsfil med ett förslag räknat vid 5 läses in vid 10, med och utan kTroskel, före och efter lönefilen', async () => {
         const fran = tvaJmf(6, 5);
         fran.eval('_forecastOptimize()');
         const rader = JSON.parse(JSON.stringify(fran.__state.data));
@@ -258,6 +269,7 @@ describe('Löneöversyn: ett par per yrke i förslagen, och försiktig rensning 
             lasIn(efter, cfg);
             expect(parRader(efter), `efter lönefilen, utanK=${utanK}`).toEqual([]);
             expect(text(efter, 'forecast-par-not')).toMatch(BORTTAGEN);
+            await sokOveralltUtom(efter, `efter lönefilen, utanK=${utanK}`);
             const fore = createAppWindow();
             fore.alert = () => {};
             lasIn(fore, cfg);
@@ -265,6 +277,7 @@ describe('Löneöversyn: ett par per yrke i förslagen, och försiktig rensning 
             fore.eval('_afterDataLoaded()');
             expect(fore.eval('kInstalld()')).toBe(10);
             expect(parRader(fore), `före lönefilen, utanK=${utanK}`).toEqual([]);
+            await sokOveralltUtom(fore, `före lönefilen, utanK=${utanK}`);
         }
     });
     it('väg 2, försiktigt: en fil med en rad ur det stora paret tas också bort när yrket har ett par under tröskeln', () => {
@@ -284,23 +297,86 @@ describe('Löneöversyn: ett par per yrke i förslagen, och försiktig rensning 
         expect(parRader(w)).toEqual([]);
         sokInte(await excel(w), litetTal, 'Excel');
     });
-    it('väg 3 och 4: inläst vid 5 står båda kvar; en tas bort för hand och tröskeln höjs: den andra tas bort', () => {
+    it('väg 3 och 4: inläst vid 5 står båda kvar; en tas bort för hand och tröskeln höjs: den andra tas bort', async () => {
         const w = tvaJmf(6, 5);
         const cfg = cfgFran(w);
         lasIn(w, { ...cfg, forecast: { ...cfg.forecast, targets: [parRad(GAP * 12), parRad(GAP2 * 12)] } });
         expect(parRader(w).map(t => t.value)).toEqual([GAP * 12, GAP2 * 12]);
         w.__state.forecast.targets.splice(0, 1);   // som knappen Ta bort på raden
+        w.eval('renderForecastTargets(); updateForecast();');
+        oppnaFlik(w, 'kon');
         w.eval('sattKTroskel(10, { fraga: false })');
         expect(parRader(w)).toEqual([]);
+        await sokOveralltUtom(w, 'väg 3 och 4');
     });
-    it('väg 4: en ensam föreslagen rad ur det lilla paret i en fil tas bort vid 10', () => {
+    it('väg 4: en ensam föreslagen rad ur det lilla paret i en fil tas bort vid 10', async () => {
         const w = tvaJmf(6);
         lasIn(w, { ...cfgFran(w), forecast: { ...cfgFran(w).forecast, targets: [parRad(GAP2 * 12)] } });
         expect(parRader(w)).toEqual([]);
+        await sokOveralltUtom(w, 'väg 4');
+    });
+    // Utfallet (fördelningen, summorna, de nya medianerna) som räknades med en borttagen rad får inte finnas kvar:
+    // exporten, Excel (alla flikar), konfigurationsfilen och de sparade scenarierna A/B prövas efter rensningen, med
+    // tröskeln ändrad medan en annan flik är öppen (då ritas Löneöversyn inte om).
+    const sokOveralltUtom = async (w, namn) => {
+        sokInte(await excel(w), litetTal, `${namn}: Löneöversyns export`);
+        // Alla flikar bär BAS-intervallets percentiler, och 6200:s lön är den högsta i BAS C: där söks skillnaden och beloppet.
+        sokInte(await excelAlla(w), [GAP2, GAP2 * 12], `${namn}: Excel (alla flikar)`);
+        sokInte(normalisera(JSON.stringify(w.eval('buildConfigSnapshot()').forecast)), litetTal, `${namn}: konfigurationsfilen`);
+        sokInte(text(w, 'view-loneoversyn'), [GAP2 * 12], `${namn}: Löneöversyn på skärmen`);
+    };
+    it('utfallet: tröskeln höjs medan en annan flik är öppen; inget ur den borttagna raden i exporten eller filen', async () => {
+        const w = tvaJmf(6, 5);
+        w.__state.forecast.budget = { mode: 'kr', value: 9000000 };
+        w.eval('_forecastOptimize()');
+        expect(parRader(w).map(t => t.value)).toEqual([GAP2 * 12]);
+        expect(await excel(w)).toContain(`C | 5300 | 12 | 100 | ${KV_LON} | ${JMF2_LON} |`);   // provet bär talen före
+        oppnaFlik(w, 'kon');
+        w.eval('sattKTroskel(10, { fraga: false })');
+        expect(w.__state.forecast.targets).toEqual([]);
+        await sokOveralltUtom(w, 'höjd tröskel');
+        expect(w.__state.forecast.result ? w.__state.forecast.result.riktadCost || 0 : 0).toBe(0);
+    });
+    it('utfallet: en konfigurationsfil vid 10 läses in i ett fönster med ett utfall ur förslaget vid 5, med en annan flik öppen', async () => {
+        const w = tvaJmf(6, 5);
+        w.eval('_forecastOptimize()');
+        const cfg = { ...cfgFran(w), kTroskel: 10 };
+        oppnaFlik(w, 'kon');
+        lasIn(w, cfg);
+        expect(w.eval('kInstalld()')).toBe(10);
+        expect(parRader(w)).toEqual([]);
+        await sokOveralltUtom(w, 'inläst fil');
+    });
+    it('utfallet: lönefilen läses in på nytt efter en höjd tröskel; inget ur den borttagna raden', async () => {
+        const w = tvaJmf(6, 5);
+        w.eval('_forecastOptimize()');
+        oppnaFlik(w, 'kon');
+        w.__state.data = JSON.parse(JSON.stringify(w.__state.data));
+        w.eval('sattKTroskel(10, { fraga: false })');
+        w.eval('_afterDataLoaded()');
+        expect(parRader(w)).toEqual([]);
+        await sokOveralltUtom(w, 'ny lönefil');
+    });
+    it('ett sparat scenario A/B med en föreslagen rad som tas bort tas också bort, och meningen säger det', () => {
+        const w = tvaJmf(6, 5);
+        w.eval('_forecastOptimize()');
+        w.eval("_forecastSaveScenario('A')");
+        w.__state.forecast.targets = [];
+        w.eval('renderForecastTargets(); updateForecast();');
+        w.eval("_forecastSaveScenario('B')");   // utan förslaget: står kvar
+        expect(normalisera(text(w, 'forecast-scenarios'))).toContain(String(GAP2 * 12));
+        w.__state.forecast.targets = [];
+        w.eval('_forecastOptimize()');
+        oppnaFlik(w, 'kon');
+        w.eval('sattKTroskel(10, { fraga: false })');
+        expect(w.__state.forecast.scenarios.A).toBeNull();
+        expect(w.__state.forecast.scenarios.B).not.toBeNull();
+        sokInte(text(w, 'forecast-scenarios'), [GAP2 * 12], 'scenarierna');
+        expect(text(w, 'forecast-par-not')).toMatch(/scenario A togs bort/);
     });
     // Analysens parlista är kapad vid topN (Visa max). En rad utan post i minnet prövas bara mot listan när den är
     // fullständig (parAntal.totalt lika med antalet par i listan); annars tas den bort.
-    it('väg 2, kapad lista: ett par med en liten grupp utanför de visade paren gör att filens rad tas bort', () => {
+    it('väg 2, kapad lista: ett par med en liten grupp utanför de visade paren gör att filens rad tas bort', async () => {
         const w = tvaJmf(6, null, 40000);   // 6200 (6 män) har mindre skillnad än 6100 och hamnar efter det
         const cfg = cfgFran(w);
         lasIn(w, { ...cfg, likvardighet: { ...cfg.likvardighet, topN: 1 }, forecast: { ...cfg.forecast, targets: [parRad(GAP * 12)] } });
@@ -308,6 +384,7 @@ describe('Löneöversyn: ett par per yrke i förslagen, och försiktig rensning 
         expect(w.eval('likvardighetResultat().parAntal.totalt')).toBe(2);
         expect(parRader(w)).toEqual([]);
         expect(text(w, 'forecast-par-not')).toMatch(BORTTAGEN);
+        sokInte(await excel(w), [GAP * 12], 'hela arbetsboken');
     });
     it('väg 2, okapad lista: samma underlag med alla par över tröskeln och alla par i listan, raden står kvar', () => {
         const w = tvaJmf(12, null, 40000);
