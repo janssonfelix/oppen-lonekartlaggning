@@ -24399,6 +24399,13 @@ const _fcParUrsprung = new WeakMap();
 function _fcAllaPar() {
     try { const lv = likvardighetResultat(); return (lv && lv.pairs) || []; } catch (_e) { return []; }
 }
+/** Sant när analysens parlista har alla par, det vill säga inte är kapad vid Visa max (parAntal räknas före urvalet). */
+function _fcParListanFullstandig(allaPar) {
+    try {
+        const lv = likvardighetResultat();
+        return !!(lv && lv.parAntal && typeof lv.parAntal.totalt === 'number' && lv.parAntal.totalt === allaPar.length);
+    } catch (_e) { return false; }
+}
 function _fcVisaParNot() {
     const el = document.getElementById('forecast-par-not');
     if (el) el.textContent = [_fcParNot, _fcBorttagnaNot].filter(Boolean).join(' ');
@@ -24465,8 +24472,8 @@ function _forecastOptimize() {
  *
  * En rad som verktyget föreslog i den här sessionen avgörs säkert: storleken på paret den räknades ur finns i minnet
  * (_fcParUrsprung). En rad utan den uppgiften (ur en konfigurationsfil, också en äldre med en rad per jämförelseyrke)
- * kan komma ur vilket som helst av yrkets par; den står kvar bara när yrket har par och alla når tröskeln, annars
- * tas den bort. Meningen vid förslagen säger hur många rader som togs bort och varför.
+ * kan komma ur vilket som helst av yrkets par; den står kvar bara när parlistan är fullständig (inte kapad vid Visa
+ * max), yrket har par och alla når tröskeln, annars tas den bort. Meningen vid förslagen säger hur många rader som togs bort och varför.
  * @returns {number} Antal borttagna rader.
  */
 function _fcRensaParMal() {
@@ -24478,7 +24485,11 @@ function _fcRensaParMal() {
     const k = kInstalld();
     /** @type {Map<string, any[]>} */
     const perYrke = new Map();
-    for (const p of _fcAllaPar()) {
+    const allaPar = _fcAllaPar();
+    // Listan är kapad vid Visa max (topN); den räcker för den försiktiga prövningen bara när den har alla par
+    // (parAntal.totalt räknas före urvalet, ADR-61). Lägre krav, högre lön är en egen lista och räknas inte.
+    const fullstandig = _fcParListanFullstandig(allaPar);
+    for (const p of allaPar) {
         const nyckel = p.kvBas + '|' + p.kvAid;
         if (!perYrke.has(nyckel)) perYrke.set(nyckel, []);
         /** @type {any[]} */ (perYrke.get(nyckel)).push(p);
@@ -24489,7 +24500,7 @@ function _fcRensaParMal() {
         const u = _fcParUrsprung.get(t);
         if (u) { if (_parNarK(u, k)) return true; sakert++; return false; }
         const par = perYrke.get(t.bas + '|' + t.aid) || [];
-        if (par.length && par.every(p => _parNarK(p, k))) return true;
+        if (fullstandig && par.length && par.every(p => _parNarK(p, k))) return true;
         forsiktigt++;
         return false;
     });
@@ -24497,7 +24508,7 @@ function _fcRensaParMal() {
         const rader = n => `${n} ${n === 1 ? 'föreslagen rad' : 'föreslagna rader'}`;
         const skal = [];
         if (sakert) skal.push(`${rader(sakert)} togs bort eftersom paret ${sakert === 1 ? 'den' : 'de'} räknades ur har en grupp under ${k} ${personOrd(k)}.`);
-        if (forsiktigt) skal.push(`${rader(forsiktigt)} togs bort eftersom verktyget inte kan avgöra vilket par ${forsiktigt === 1 ? 'den' : 'de'} räknades ur (till exempel ur en konfigurationsfil), och yrket har ett par med en grupp under ${k} ${personOrd(k)} eller inget par alls.`);
+        if (forsiktigt) skal.push(`${rader(forsiktigt)} togs bort eftersom verktyget inte kan avgöra vilket par ${forsiktigt === 1 ? 'den' : 'de'} räknades ur (till exempel ur en konfigurationsfil), och yrket har ett par med en grupp under ${k} ${personOrd(k)}, inget par alls eller par utanför de visade (Visa max i Likvärdigt arbete).`);
         _fcBorttagnaNot = skal.join(' ') + ' Klicka på Föreslå fördelning mot skillnaderna i likvärdigt arbete för ett nytt förslag.';
         _fcVisaParNot();
     }

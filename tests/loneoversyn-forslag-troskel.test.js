@@ -298,6 +298,33 @@ describe('Löneöversyn: ett par per yrke i förslagen, och försiktig rensning 
         lasIn(w, { ...cfgFran(w), forecast: { ...cfgFran(w).forecast, targets: [parRad(GAP2 * 12)] } });
         expect(parRader(w)).toEqual([]);
     });
+    // Analysens parlista är kapad vid topN (Visa max). En rad utan post i minnet prövas bara mot listan när den är
+    // fullständig (parAntal.totalt lika med antalet par i listan); annars tas den bort.
+    it('väg 2, kapad lista: ett par med en liten grupp utanför de visade paren gör att filens rad tas bort', () => {
+        const w = tvaJmf(6, null, 40000);   // 6200 (6 män) har mindre skillnad än 6100 och hamnar efter det
+        const cfg = cfgFran(w);
+        lasIn(w, { ...cfg, likvardighet: { ...cfg.likvardighet, topN: 1 }, forecast: { ...cfg.forecast, targets: [parRad(GAP * 12)] } });
+        expect(w.eval("likvardighetResultat().pairs.map(p => p.maAid)")).toEqual(['6100']);
+        expect(w.eval('likvardighetResultat().parAntal.totalt')).toBe(2);
+        expect(parRader(w)).toEqual([]);
+        expect(text(w, 'forecast-par-not')).toMatch(BORTTAGEN);
+    });
+    it('väg 2, okapad lista: samma underlag med alla par över tröskeln och alla par i listan, raden står kvar', () => {
+        const w = tvaJmf(12, null, 40000);
+        const cfg = cfgFran(w);
+        lasIn(w, { ...cfg, likvardighet: { ...cfg.likvardighet, topN: 2 }, forecast: { ...cfg.forecast, targets: [parRad(GAP * 12)] } });
+        expect(w.eval("likvardighetResultat().pairs.map(p => p.maAid)")).toEqual(['6100', '6200']);
+        expect(w.eval('likvardighetResultat().parAntal.totalt')).toBe(2);
+        expect(parRader(w).map(t => t.value)).toEqual([GAP * 12]);
+        expect(text(w, 'forecast-par-not')).not.toMatch(BORTTAGEN);
+    });
+    it('väg 2, kapad lista med alla par över tröskeln: raden tas bort på den försiktiga sidan', () => {
+        const w = tvaJmf(12, null, 40000);
+        const cfg = cfgFran(w);
+        lasIn(w, { ...cfg, likvardighet: { ...cfg.likvardighet, topN: 1 }, forecast: { ...cfg.forecast, targets: [parRad(GAP * 12)] } });
+        expect(parRader(w)).toEqual([]);
+        expect(text(w, 'forecast-par-not')).toMatch(BORTTAGEN);
+    });
     it('egna rader berörs aldrig, också på ett yrke vars förslag tas bort', () => {
         const w = tvaJmf(6, 5);
         w.eval('_forecastOptimize()');

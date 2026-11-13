@@ -268,7 +268,9 @@ R-märkning följer inte heller den här numreringen rakt av (avsnitt 10).
   skärmen. En rad som föreslogs i sessionen avgörs säkert: storleken på grupperna i paret den räknades ur finns i
   minnet (`_fcParUrsprung`, en `WeakMap` per rad som inte sparas), och raden står kvar när båda når tröskeln. En rad
   utan den uppgiften — ur en konfigurationsfil, också en äldre fil med en rad per jämförelseyrke — står kvar bara när
-  yrket har par och alla når tröskeln; annars tas den bort, på den försiktiga sidan. Meningen vid förslagen
+  parlistan är fullständig, yrket har par och alla når tröskeln; annars tas den bort, på den försiktiga sidan.
+  Parlistan är fullständig när den inte är kapad vid *Visa max* (`topN`): `parAntal.totalt`, som räknas före urvalet
+  (ADR-61), är lika med antalet par i listan. *Lägre krav, högre lön* är en egen lista och räknas inte. Meningen vid förslagen
   (`#forecast-par-not`) säger hur många rader som togs bort och varför, tills ett nytt förslag görs. Konfigurationsfilen
   bär fältet `kalla` (valfritt, version oförändrad); egna rader står kvar med noten.
 - **R3. Ålder & karriär följer regeln.** Ojusterat och åldersjusterat gap kräver tröskeln för båda könen; lutning,

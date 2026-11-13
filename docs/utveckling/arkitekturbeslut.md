@@ -1120,7 +1120,8 @@ känslighetskurvan (`_fcKandidater` i `36-loneoversyn.js`, `ettParPerYrke` i `sr
 rad (`kalla: 'par'`) som inte säkert räknades ur ett par som når den inställda tröskeln tas bort, också på skärmen:
 när tröskeln ändras, när en konfigurationsfil läses in och när lönefilen läses in (`_fcRensaParMal`). Raden bär inte
 paret. Ett förslag ur den här sessionen avgörs säkert av gruppernas storlek i paret, som verktyget minns för raden;
-en rad ur en konfigurationsfil står kvar bara när yrket har par och alla når tröskeln, annars tas den bort, och
+en rad ur en konfigurationsfil står kvar bara när parlistan är fullständig (inte kapad vid *Visa max*, `parAntal`
+räknas före urvalet), yrket har par och alla når tröskeln, annars tas den bort, och
 meningen vid förslagen säger det. Användarens egna rader berörs inte; regel R2 gäller som förut.
 *Motiv:* Ett förslag bär ett belopp räknat ur en grupps median: skillnaden mot jämförelseyrkets median gånger antalet
 i det kvinnodominerade yrket. På skärmen är tröskeln 1 sedan ADR-51, så verktyget föreslog rader också ur par med en
