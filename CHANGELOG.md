@@ -485,6 +485,10 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   av Contributor Covenant 2.1. `docs/anvandare/overta-verktyget.md` beskriver hur en organisation bygger, ändrar,
   signerar och sprider sin egen version. Raden om svensk lag om lönetransparens i `lagrum.md` är uppdaterad till
   läget i oktober 2026.
+- **Lagringen utanför spärren rättad efter koden.** Riskanalysen §6.2, den tekniska planen, dataskyddsbeskrivningen
+  och säkerhetsbeskrivningen sade att CSP:n täcker IndexedDB och Cache API, eller att webbläsartestet prövar dem. CSP:n
+  begränsar inte lagring, bara att det lagrade skickas ut (`connect-src 'none'`), och webbläsartestet prövar bara
+  localStorage, sessionStorage och cookies. Skyddet för de två är att ingen kod använder dem, vilket prövas vid granskningen.
 
 ### Utveckling
 

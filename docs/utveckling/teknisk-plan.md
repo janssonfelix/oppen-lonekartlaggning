@@ -81,7 +81,8 @@ Icke förhandlingsbara arkitektoniska garantier:
    sätts. Spärren har inga undantag: varje `setItem` kastar, oavsett nyckel och anropare. Den är ändå en
    snubbeltråd mot misstag. Också direkt egenskapstilldelning fångas (`localStorage.x = …`): fönstrets två
    lagringsobjekt är utbytta mot ombud som kastar vid varje tilldelning. Kvar utanför spärren är IndexedDB och
-   Cache API, som ingen kod använder och som CSP och kodgranskning täcker.
+   Cache API. Skyddet där är att ingen kod använder dem, vilket kodgranskningen prövar; CSP:n begränsar inte
+   lagring, bara att det lagrade skickas ut (`connect-src 'none'`).
 4. **k-anonymitet** (K_STANDARD = 10; användaren kan ändra värdet, ADR-38): grupper med för få
    individer redovisas inte i det som lämnar verktyget, för att förhindra återidentifiering; på skärmen
    visas alla grupper (ADR-51), och det som står nedan om vad som visas gäller exportläget. Ett värde under 10 kräver

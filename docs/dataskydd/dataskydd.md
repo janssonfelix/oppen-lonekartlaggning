@@ -41,7 +41,8 @@ konsekvensbedömning (DPIA). Lagrumshänvisningarna samlas i
   kan alltså lämna ålder utanför uttaget och behandla en uppgift mindre.
 - **Ingen lagring på disken:** varken verktyget eller de inbyggda biblioteken skriver till
   localStorage, sessionStorage, IndexedDB, cookies eller cache. Det kontrolleras vid varje
-  granskning och i webbläsartestet. Som reserv finns en spärr i koden som avbryter med ett
+  granskning. Webbläsartestet prövar att localStorage, sessionStorage och cookies är tomma efter
+  en full körning; IndexedDB och cache prövas inte där. Som reserv finns en spärr i koden som avbryter med ett
   fel om något ändå anropar lagringens skrivfunktion (`setItem`) eller sätter en cookie.
   Spärren har inga undantag och fångar också direkt tilldelning. Det är ändå frånvaron av
   lagringskod som är skyddet — spärren fångar misstag (riskanalysen §6.2).

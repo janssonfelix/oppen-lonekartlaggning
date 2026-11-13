@@ -215,8 +215,10 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   **Spärren har inga undantag**, varken för nycklar eller för anropare. Den fångar också
   egenskapstilldelning (`localStorage.x = '…'`, `sessionStorage['x'] = '…'`). Fönstrets två lagringsobjekt är
   utbytta mot ombud som kastar vid varje tilldelning och egenskapsdefinition. Läsning, `removeItem` och
-  `clear` går vidare. Cookie-spärren har inga undantag. Utanför spärren står IndexedDB och Cache API, som ingen
-  kod använder (kodgranskning och CSP).
+  `clear` går vidare. Cookie-spärren har inga undantag. Utanför spärren står IndexedDB och Cache API. Där är
+  skyddet att ingen kod använder dem, och det prövas vid granskningen. CSP:n stänger dem inte: inget direktiv i den
+  begränsar lagring i webbläsaren. Den hindrar inte att något lagras, men att det skickas ut (`connect-src 'none'`).
+  Webbläsarröktestet prövar inte att de är tomma.
 - **Verifierat i webbläsare:** skrivförsök med `setItem` till localStorage och
   sessionStorage samt till cookie kastar. Efter demodata och alla flikar är
   localStorage, sessionStorage och cookies tomma.
