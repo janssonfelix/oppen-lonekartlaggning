@@ -494,6 +494,10 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   Löneläget (ADR-55); ADR-12 har status *Ändrad av ADR-51*. Neutralitetsregeln i `CLAUDE.md` och `CONTRIBUTING.md`
   har sina tre undantag utskrivna, och typkontrollen står bland byggstegen i `CONTRIBUTING.md` och `GOVERNANCE.md`.
 
+- **Skydden S1–S5 i ett eget dokument.** `docs/utveckling/skydd.md` samlar de fem skydden med regel, beslut, vakt och
+  vad som inte vaktas; teknisk-plan §3 och kvalitetskraven, `GOVERNANCE.md`, `CONTRIBUTING.md` och
+  dokumentöversikten pekar dit i stället för att upprepa dem.
+
 ### Utveckling
 
 - **D3 7.9.2 (från 7.9.0).** Samma API; biblioteket är byggt om på de senaste versionerna av D3:s delpaket. Det

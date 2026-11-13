@@ -16,9 +16,9 @@ datorn** — det styr hur vi tar emot bidrag.
 
 ## Ändringsförslag i koden
 
-1. Läs `README.md` (för dig som utvecklar), `docs/utveckling/teknisk-plan.md` och
-   arkitekturbesluten (ADR) i `docs/utveckling/arkitekturbeslut.md` — flera av dem är medvetna begränsningar som inte ska ändras
-   utan ett nytt beslut.
+1. Läs `README.md` (för dig som utvecklar), skydden i `docs/utveckling/skydd.md`, `docs/utveckling/teknisk-plan.md`
+   och arkitekturbesluten (ADR) i `docs/utveckling/arkitekturbeslut.md`. Skydden och flera av besluten är medvetna
+   begränsningar som inte ska ändras utan ett nytt beslut.
 2. Gör ändringen i `src/` (aldrig direkt i `dist/`), med test.
 3. Kör `npm run build:app`, `npm run test:full`, `npm run lint`, `npm run typecheck`, `npm run bundle` och
    `npm run test:browser`. Allt ska vara grönt. Under arbetet räcker `npm test`, den snabba körningen (moduler och
@@ -67,7 +67,7 @@ varifrån den kommer (system och version, inte organisation).
   ur användarens filer (`orgNamn`, `jmfNamn`) i stället för fasta texter. Att inga namn står i repot vaktas inte
   av något test; det granskas.
 - **Nätverksanrop, lagring i webbläsaren eller externa resurser** — verktyget ska fungera
-  utan nätverk och spara ingenting (dataskyddet i den tekniska planen, §3, och arkitekturbesluten).
+  utan nätverk och spara ingenting (skydden S1–S3 i `docs/utveckling/skydd.md`).
 
 ## Licens
 

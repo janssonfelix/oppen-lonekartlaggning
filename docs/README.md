@@ -28,7 +28,8 @@ Dokumenten i `docs/`, ordnade efter vem som läser dem. Översikten över hela r
 
 | Dokument | Vad det är |
 |---|---|
-| [`teknisk-plan.md`](utveckling/teknisk-plan.md) | Syfte, avgränsning, dataskydd, funktionsmål, likvärdighetsmodellen, teknisk plan, kvalitetskrav och öppna punkter. |
+| [`skydd.md`](utveckling/skydd.md) | De fem skydden som går före besluten: regeln, varför, beslut, vakt och vad som inte vaktas. |
+| [`teknisk-plan.md`](utveckling/teknisk-plan.md) | Syfte, avgränsning, dataskydd med minsta gruppstorlek, funktionsmål, likvärdighetsmodellen, teknisk plan, kvalitetskrav och öppna punkter. |
 | [`arkitekturbeslut.md`](utveckling/arkitekturbeslut.md) | Arkitekturbesluten (ADR) med motiv, avvisade alternativ och status; numren som koden och testerna pekar på. |
 | [`diagramkarnan.md`](utveckling/diagramkarnan.md) | Diagramkärnan som den är byggd: figurformatet, ritaren, exporten och vyernas skyldigheter. |
 | [`organisationsfil.md`](utveckling/organisationsfil.md) | Formatspecifikation för organisationsfilen: verktyget med organisationspaketet inbakat. |

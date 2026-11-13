@@ -71,18 +71,13 @@ gång rapporteringsformat ändras hos DO, Medlingsinstitutet eller EU.
 
 ## 3. Dataskydd — Privacy by Design (GDPR Art. 25)
 
-Icke förhandlingsbara arkitektoniska garantier:
+Icke förhandlingsbara arkitektoniska garantier. De tre första står som skydd i [`skydd.md`](skydd.md); den
+fjärde är skyddet S4 där, och dess detaljer står här tills de flyttas till en egen referens.
 
-1. **Single-file HTML, körs lokalt.** Ingen server, ingen molntjänst.
-2. **CSP `connect-src 'none'`** — webbläsaren blockerar all utgående
-   trafik. Hård teknisk barriär mot exfiltrering, inte ett löfte.
-3. **Ingen persistent lagring.** Varken verktygets kod eller de inbyggda biblioteken
-   skriver till lagringen. Som reserv kastar en *storage-tripwire* fel när
-   `localStorage.setItem` eller `sessionStorage.setItem` anropas eller `document.cookie`
-   sätts. Spärren har inga undantag: varje `setItem` kastar, oavsett nyckel och anropare. Den är ändå en
-   snubbeltråd mot misstag. Också direkt egenskapstilldelning fångas (`localStorage.x = …`): fönstrets två
-   lagringsobjekt är utbytta mot ombud som kastar vid varje tilldelning. Kvar utanför spärren är IndexedDB och
-   Cache API, som ingen kod använder och som CSP och kodgranskning täcker.
+1. **En fil, körs lokalt:** skyddet S3 i [`skydd.md`](skydd.md).
+2. **Inga nätverksanrop** (CSP `connect-src 'none'`): skyddet S1 i [`skydd.md`](skydd.md).
+3. **Ingen persistent lagring:** skyddet S2 i [`skydd.md`](skydd.md); lagringsspärren i detalj i
+   `docs/dataskydd/riskanalys.md` §6.2.
 4. **k-anonymitet** (K_STANDARD = 10; användaren kan ändra värdet, ADR-38): grupper med för få
    individer redovisas inte i det som lämnar verktyget, för att förhindra återidentifiering; på skärmen
    visas alla grupper (ADR-51), och det som står nedan om vad som visas gäller exportläget. Ett värde under 10 kräver
@@ -383,18 +378,21 @@ adaptern verkligen delegerar vaktas av `tests/drift.test.js`:
 ## 7. Kvalitetskrav (vad "klart och korrekt" betyder)
 
 K1. Alla statistiska formler ska vara spårbara och dokumenterade.
-K2. Inga nätverksanrop, ingen persistent lagring (verifierbart i bygget).
+K2. Inga nätverksanrop och ingen persistent lagring: skydden S1 och S2 i [`skydd.md`](skydd.md).
 K3. Kärnalgoritmer ska ha enhetstester som speglar den *gällande* modellen.
 K4. Dokumentationen ska beskriva den *byggda* versionen (ingen drift).
-K5. UI ska inte upprepa information på ett sätt som skymmer analysflödet.
-K6. Bygget ska gå att öppna från `file://` och fungera utan internet.
-K7. Skydd som är juridiskt bindande (k-anonymitet, ingen lagring) ska vaktas av
-    *invarianter* som gäller hela utdatan — inte av stickprov på enskilda vyer.
-    En ny vy ska ärva skyddet utan att någon kommer ihåg att testa den.
-    K-invarianten står i `tests/helpers/ktroskel-invariant.js` och körs från `tests/ktroskel-invarianter.test.js` (flikar i
-    exportläget och exporter; vad som inte prövas står i testfilerna och i `riskanalys.md` §6.5) och i
-    lagringsspärrens test i `tests/sakerhet.test.js`.
+K5. *(Struket 2026-11-13: gick inte att pröva.)*
+K6. En fil som går att öppna från `file://` och fungerar utan internet: skyddet S3 i [`skydd.md`](skydd.md).
+K7. Skydd som är juridiskt bindande vaktas av invarianter över hela utdatan: skyddet S4 och inledningen i
+    [`skydd.md`](skydd.md).
     Varje ny utdata som lämnar verktyget (text, tabell, bild, fil) läggs i k-invariantsviten (`tests/helpers/ktroskel-rigg.js`) och i riskanalysens tabell över utdata innan den checkas in.
+K8. Tillgänglighet enligt WCAG 2.1 AA. Vakt: `tests/a11y.test.js` (axe-core över alla flikar) och statusfärgernas
+    kontrast i `tests/sakerhet.test.js`; övrig färgkontrast prövas för hand enligt pilotchecklistan
+    (`docs/anvandare/pilotchecklista.md`).
+K9. Bygget är reproducerbart. Vakt: artefaktgrinden i `.github/workflows/ci.yml` kräver att en färsk byggd fil är
+    byte-identisk med den incheckade.
+K10. Klarspråk och ordval i det användaren läser. Vakt: `tests/dokumentation.test.js` (bland annat avförda ord och
+    lagrum i användartexten) och `tests/juridiksprak.test.js` (juridiska formuleringar hålls övergripande).
 
 ---
 
