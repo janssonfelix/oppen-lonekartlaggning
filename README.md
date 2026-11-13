@@ -144,9 +144,8 @@ Versionen står i `VERSION` (CalVer, `ÅÅÅÅ.MM.DD`) och ändringar dokumenter
    granskningsdatumet (teknisk-plan.md §9 punkt 17b).
 2. Sätt versionen i `VERSION` och `package.json`, och byt rubriken *Oförlöst* i `CHANGELOG.md` mot versionen.
 3. `npm run build:app && npm run bundle`; för in byggets kontrollsumma och version på rad 3 i riskanalysen.
-4. Checka in och kör `npm run release:kontroll` (`tools/release.mjs`). Grinden kontrollerar att versionen
-   står lika överallt, att riskanalysen är granskad efter senaste kodändringen och att arbetskatalogen är ren,
-   och skriver ut taggkommandot.
+4. Kör `npm run test:full`, checka in och kör `npm run release:kontroll`. Grinden prövar det som bara gäller vid
+   en release (vad, står i huvudet i `tools/release.mjs`) och skriver ut taggkommandot.
 5. Pusha taggen `v<VERSION>`. Arbetsflödet `.github/workflows/release.yml` kör grinden igen, bygger om,
    signerar med Sigstore cosign och publicerar en GitHub Release (verifieringen står i `SECURITY.md`).
    Samma tagg publicerar demosidan på GitHub Pages (`.github/workflows/pages.yml`; går också att köra för hand).

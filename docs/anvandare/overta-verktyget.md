@@ -70,8 +70,8 @@ Vill du ändra något — en text, en tröskel, ett diagram, ett nytt arbetsvär
    verifieringskommandots identitet (steg 5). Licens- och upphovsnotiserna (`LICENSE`,
    SPDX-raderna och licenstexterna i `src/licenser.txt`) ska följa med enligt MIT-licensen; lägg din
    egen upphovsrad till, ta inte bort den befintliga.
-5. Kör `npm run release:kontroll` före varje egen release. Grinden kräver att versionen står lika
-   överallt och att risk- och sårbarhetsanalysen är granskad efter den senaste kodändringen — samma
+5. Kör `npm run release:kontroll` före varje egen release. Grinden kräver att ändringsloggen och
+   risk- och sårbarhetsanalysen anger versionen och att analysen är granskad efter den senaste kodändringen — samma
    disciplin som projektet håller.
 
 Ändringar som kan vara till nytta för andra: skicka dem tillbaka som förslag enligt

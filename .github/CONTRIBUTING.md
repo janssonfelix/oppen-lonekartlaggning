@@ -51,6 +51,39 @@ Tre undantag:
 - **Källan till jämförelsestatistiken** får namnges som källa.
 - **Demodatan** har en påhittad organisation.
 
+## Var uppgifterna står
+
+Varje uppgift som flera filer behöver skrivs på **ett** ställe, källan. Andra filer hänvisar till källan eller
+härleds ur den av ett verktyg; de skriver inte av den. Varje sak prövas av **en** kontroll:
+
+- det som ska gälla i varje commit prövas av testsviten eller av en grind i CI (`.github/workflows/ci.yml`), aldrig
+  av båda;
+- det som bara gäller vid en release prövas av release-grinden (`npm run release:kontroll`, `tools/release.mjs`);
+- genererade filer vaktas genom att de byggs om och jämförs med den incheckade filen; innehållet i dem prövas inte
+  en gång till.
+
+| Uppgift | Källa (uppdateras här) | Hänvisar eller härleds | Kontroll |
+|---|---|---|---|
+| Version | `VERSION` | `package.json` (sätts samtidigt, npm kräver fältet); `src/app/08-version.js` (`npm run build:app`); `dist/` och programvaruförteckningen (bygget) | `tests/version.test.js` |
+| Ändringslogg | `CHANGELOG.md`, rubriken *Oförlöst* överst | releasens text | ordningen: `tests/dokumentation.test.js`; versionen överst vid release: release-grinden |
+| Artefakten och dess kontrollsumma | `dist/oppen-lonekartlaggning.html` och `dist/RELEASE.txt` (`npm run bundle`) | demosidan, SBOM | artefaktgrinden i CI: en färsk build ska ge samma `dist/` |
+| Det granskade bygget och granskningsdatumen | rad 3–4 i `docs/dataskydd/riskanalys.md`; *Granskad mot koden* i `docs/dataskydd/dataskydd.md` | förs in vid release (README, *Släppa en version*); teknisk-plan §9 punkt 17b hänvisar | release-grinden |
+| Kommandona för kontrollsumman | `VERIFIERING` i `tools/release.mjs` | `RELEASE.txt` (bygget), `SECURITY.md`, körguiden §0 | `tests/release.test.js` |
+| k-tröskelns standardvärde | `K_STANDARD` i `src/app/06-k-anonymitet-och-dataminimering.js` | dokumenten skriver talet | `tests/dokumentation.test.js` |
+| Bibliotekens versioner och kontrollsummor | filerna i `vendor/` och `vendor/SHA256SUMS` | `src/licenser.txt`, *Om verktyget*, `TREDJEPARTSLICENSER.md`, SBOM | `tests/sakerhet.test.js` |
+| Arkitekturbesluten | `docs/utveckling/arkitekturbeslut.md` (besluten och indextabellen) | kod, tester och dokument anger numret | `tests/dokumentation.test.js` |
+| Lagrummen | `docs/utveckling/lagrum.md` | övriga dokument anger kapitel | `tests/dokumentation.test.js` |
+| Öppna punkter | `docs/utveckling/teknisk-plan.md` §9 | anges med nummer | — |
+| Repots mappar | `README.md` | teknisk-plan §6 hänvisar | — |
+| Appens moduler | `src/app/README.md` | | `tests/dokumentation.test.js` |
+| Dokumenten | `docs/README.md` | teknisk-plan §6 hänvisar | — |
+| CI-jobben och stegen | `.github/workflows/ci.yml` (kommentarerna) | teknisk-plan §6 sammanfattar och hänvisar | — |
+| Hur en version släpps | `README.md`, *Släppa en version* | | — |
+| Vad release-grinden prövar | huvudet i `tools/release.mjs` | README, teknisk-plan och `release.yml` hänvisar | `tests/release.test.js` |
+| Regeln för ny utdata | punkt 3 i *Ändringsförslag i koden* ovan | teknisk-plan K7 hänvisar | — |
+
+En ny uppgift som flera filer behöver läggs in i tabellen med sin källa och sin kontroll.
+
 ## Bidra med en importprofil
 
 Verktyget har inga inbyggda importprofiler för namngivna lönesystem: en profil som inte prövats mot ett

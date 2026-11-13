@@ -4,11 +4,14 @@
 //
 //   npm run release:kontroll
 //
+// Grinden prövar bara det som gäller vid en release. Det som ska gälla i varje commit prövas där, en gång:
+// VERSION som CalVer och package.json med samma version i tests/version.test.js, och att dist/ (artefakten och
+// RELEASE.txt med version, kontrollsumma och verifieringsrader) är ett färskt bygge i artefaktgrinden i CI och i
+// release-arbetsflödet. Se "Var uppgifterna står" i .github/CONTRIBUTING.md.
+//
 // Kontrollerna:
-//   - VERSION, package.json, CHANGELOG:s översta versionsrubrik och dist/RELEASE.txt anger samma version,
-//     och CHANGELOG har ingen rubrik "Oförlöst" kvar;
-//   - bygget i dist/ är det som RELEASE.txt beskriver (SHA-256), och riskanalysen anger samma bygge och
-//     kontrollsumma;
+//   - CHANGELOG:s översta versionsrubrik är VERSION, och rubriken "Oförlöst" är borta;
+//   - riskanalysen anger bygget (VERSION) och kontrollsumman i dist/RELEASE.txt: den är granskad mot det som släpps;
 //   - riskanalysens granskningsdatum och dataskyddsbeskrivningens "Granskad mot koden" är inte äldre än
 //     senaste commit som rör koden (src/, tools/bundle.mjs, vendor/) — teknisk-plan.md §9 punkt 17b;
 //   - arbetskatalogen är ren, så att taggen pekar på exakt det som kontrollerats.
@@ -18,7 +21,6 @@
 // fixturer i tests/release.test.js; samla() läser filerna och git.
 
 import { readFileSync } from 'node:fs';
-import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
@@ -36,16 +38,11 @@ export const VERIFIERING = Object.freeze({
     linux: 'sha256sum oppen-lonekartlaggning.html',
 });
 
-// 2026.10.04 -> 2026.10.4 (npm tillåter inte inledande nollor i package.json).
-const semverish = v => String(v).split('.').map(p => String(Number(p))).join('.');
-
 /**
  * @typedef {Object} Underlag
  * @property {string} version            VERSION-filens innehåll
- * @property {string} pkgVersion         package.json:s version
  * @property {string} changelog          CHANGELOG.md
  * @property {string} release            dist/RELEASE.txt
- * @property {string} artefaktSha        SHA-256 för dist/oppen-lonekartlaggning.html
  * @property {string} riskanalys         docs/dataskydd/riskanalys.md
  * @property {string} dataskydd          docs/dataskydd/dataskydd.md
  * @property {string} ejIncheckat        `git status --porcelain` (tom när arbetskatalogen är ren)
@@ -60,11 +57,6 @@ const semverish = v => String(v).split('.').map(p => String(Number(p))).join('.'
 export function kontrollera(u) {
     const fel = [];
     const version = String(u.version ?? '').replace(/^﻿/, '').trim();
-    if (!CALVER.test(version)) fel.push(`VERSION ("${version}") följer inte CalVer ÅÅÅÅ.MM.DD.`);
-
-    if (semverish(u.pkgVersion) !== semverish(version)) {
-        fel.push(`package.json anger version ${u.pkgVersion}, VERSION ${version}. Sätt samma version i båda.`);
-    }
 
     const rubriker = [...String(u.changelog).matchAll(/^## (.+)$/gm)].map(m => m[1].trim());
     if (rubriker.some(r => /^oförlöst/i.test(r))) {
@@ -76,21 +68,11 @@ export function kontrollera(u) {
         fel.push(`CHANGELOG.md:s översta versionsrubrik är ${forsta.split(/\s/)[0]}, VERSION ${version}.`);
     }
 
-    const relVersion = /Version:\s+(\S+)/.exec(u.release)?.[1];
     const relSha = /SHA-256:\s+([0-9a-f]{64})/.exec(u.release)?.[1];
-    if (relVersion !== version) {
-        fel.push(`dist/RELEASE.txt anger version ${relVersion ?? '(ingen)'}, VERSION ${version}. Kör npm run build:app och npm run bundle.`);
-    }
-    if (!relSha) fel.push('dist/RELEASE.txt saknar SHA-256.');
-    if (!String(u.release).includes(`PowerShell : ${VERIFIERING.powershell}`)) fel.push('dist/RELEASE.txt saknar PowerShell-raden för kontrollsumman. Kör npm run bundle.');
-    if (!String(u.release).includes(`Linux/mac  : ${VERIFIERING.linux}`)) fel.push('dist/RELEASE.txt saknar Linux/mac-raden för kontrollsumman. Kör npm run bundle.');
-    else if (relSha !== u.artefaktSha) {
-        fel.push('dist/oppen-lonekartlaggning.html har inte den SHA-256 som dist/RELEASE.txt anger. Kör npm run bundle.');
-    }
-
     const raSha = /\*\*Artefakt-SHA-256:\*\*\s*`([0-9a-f]{64})`/.exec(u.riskanalys)?.[1];
     const raBygge = /\*\*Bygge:\*\*\s*`([^`]+)`/.exec(u.riskanalys)?.[1];
-    if (relSha && raSha !== relSha) {
+    if (!relSha) fel.push('dist/RELEASE.txt saknar SHA-256. Kör npm run bundle.');
+    else if (raSha !== relSha) {
         fel.push(`Riskanalysens kontrollsumma (rad 3) stämmer inte med dist/RELEASE.txt. Granska riskanalysen mot bygget och för in den nya kontrollsumman (${PUNKT}).`);
     }
     if (raBygge !== version) {
@@ -122,10 +104,8 @@ export function samla(root = ROOT) {
     const git = args => { try { return execFileSync('git', args, { cwd: root, encoding: 'utf8' }); } catch { return ''; } };
     return {
         version: las('VERSION'),
-        pkgVersion: JSON.parse(las('package.json')).version,
         changelog: las('CHANGELOG.md'),
         release: las('dist/RELEASE.txt'),
-        artefaktSha: createHash('sha256').update(readFileSync(join(root, 'dist', 'oppen-lonekartlaggning.html'))).digest('hex'),
         riskanalys: las('docs/dataskydd/riskanalys.md'),
         dataskydd: las('docs/dataskydd/dataskydd.md'),
         ejIncheckat: git(['status', '--porcelain']),

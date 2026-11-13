@@ -45,12 +45,6 @@ describe('dokumentation: src/app/README.md speglar katalogen', () => {
 });
 
 describe('dokumentation: teknisk-plan.md stämmer med projektet', () => {
-    it('k-anonymitetströskeln i teknisk-plan.md är den som gäller i koden', () => {
-        const kod = /const K_STANDARD = (\d+);/.exec(läs('src/app/06-k-anonymitet-och-dataminimering.js'));
-        expect(kod).not.toBeNull();
-        expect(planMd).toContain(`K_STANDARD = ${kod[1]}`);
-    });
-
     it('alla npm-skript som nämns finns i package.json', () => {
         const nämnda = [...(planMd + adrMd).matchAll(/`npm run ([\w:]+)`/g)].map(m => m[1]);
         expect(nämnda.length).toBeGreaterThan(0);
@@ -107,22 +101,27 @@ describe('dokumentation: CHANGELOG är kronologisk', () => {
     });
 });
 
-describe('dokumentation: k-tröskeln beskrivs med rätt tal överallt', () => {
-    // Användaren kan ändra tröskeln (ADR-38): appens texter
-    // fylls i ur kTroskel() (vaktas i ktroskel.test.js), och dokumenten nedan anger
-    // standardvärdet K_STANDARD.
+describe('dokumentation: k-tröskelns standardvärde står rätt', () => {
+    // Källan är K_STANDARD i koden. Användaren kan ändra tröskeln (ADR-38): appens texter fylls i ur kTroskel()
+    // (vaktas i ktroskel.test.js), och dokumenten nedan anger standardvärdet. Det här är den enda kontrollen av talet.
     const K = Number(/const K_STANDARD = (\d+);/.exec(läs('src/app/06-k-anonymitet-och-dataminimering.js'))[1]);
     const filer = ['docs/dataskydd/dataskydd.md', 'docs/dataskydd/riskanalys.md',
                    'docs/anvandare/sammanfattning-hr-chefer.md', 'docs/anvandare/korguide.md', PLAN, ADR];
 
     for (const fil of filer) {
-        it(`${fil}: "färre än/minst N personer" har N = ${K}`, () => {
-            const fel = [...läs(fil).matchAll(/(?:färre än|minst) (\d+) personer/g)]
-                .map(m => Number(m[1]))
+        it(`${fil}: "färre än/minst N personer" och "standardvärdet N" har N = ${K}`, () => {
+            const t = läs(fil);
+            const fel = [...t.matchAll(/(?:färre än|minst) (\d+) personer|K_STANDARD = (\d+)|[Ss]tandardvärdet (?:är )?(\d+)\b/g)]
+                .map(m => Number(m[1] ?? m[2] ?? m[3]))
                 .filter(n => n !== K);
             expect(fel, `${fil} anger fel tröskel: ${fel.join(', ')}`).toEqual([]);
         });
     }
+    it('den tekniska planen och dataskyddsdokumenten anger standardvärdet', () => {
+        expect(planMd).toContain(`K_STANDARD = ${K}`);
+        for (const fil of ['docs/dataskydd/dataskydd.md', 'docs/dataskydd/riskanalys.md'])
+            expect(läs(fil), fil).toMatch(new RegExp(`[Ss]tandardvärdet (är )?${K}\\b`));
+    });
 });
 
 describe('dokumentation: valbar förklaringsmodell (ADR-56)', () => {
@@ -137,7 +136,6 @@ describe('dokumentation: k-tröskeln är en inställning (ADR-38)', () => {
     for (const fil of ['docs/dataskydd/dataskydd.md', 'docs/dataskydd/riskanalys.md']) {
         it(`${fil} säger att värdet kan ändras och att det skrivs ut i utdata`, () => {
             const t = läs(fil);
-            expect(t).toMatch(/standard(värdet)? (är )?10/i);
             expect(t).toMatch(/kan ändra/);
             expect(t).toMatch(/Tröskeln är sänkt från standardvärdet 10/);
         });
@@ -231,7 +229,6 @@ describe('produktnamnet', () => {
     it('den byggda filen heter oppen-lonekartlaggning.html och bär namnet', () => {
         expect(existsSync(join(root, 'dist', 'oppen-lonekartlaggning.html'))).toBe(true);
         expect(läs('dist/oppen-lonekartlaggning.html')).toContain('<title>Öppen lönekartläggning</title>');
-        expect(läs('dist/RELEASE.txt')).toContain('oppen-lonekartlaggning.html');
     });
 });
 
@@ -360,13 +357,7 @@ describe('riskanalysen beskriver det aktuella bygget, inte vägen dit', () => {
         expect(ra).not.toMatch(/föregående fullständiga granskningar|Härdningstidslinje|omgranskning/);
         expect(ra).not.toMatch(/sedan 20\d\d[-.]\d\d|tillkom 20\d\d-|till och med 20\d\d-|release 20\d\d\.\d\d\.\d\d|bygge 2026\.0[5-9]/);
     });
-    it('byggets version och kontrollsumma stämmer med RELEASE.txt', () => {
-        const rel = läs('dist/RELEASE.txt');
-        const version = /Version:\s+(\S+)/.exec(rel)[1];
-        const sha = /SHA-256:\s+([0-9a-f]{64})/.exec(rel)[1];
-        expect(ra).toContain(`\`${version}\``);
-        expect(ra).toContain(sha);
-    });
+    // Byggets version och kontrollsumma (rad 3) förs in vid release och prövas av release-grinden (tools/release.mjs).
 });
 
 describe('testdata: helt syntetisk generator', () => {

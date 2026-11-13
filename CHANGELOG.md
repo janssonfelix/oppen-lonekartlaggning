@@ -560,6 +560,14 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ### Utveckling
 
+- **En källa per uppgift, en kontroll per sak.** `.github/CONTRIBUTING.md` har avsnittet *Var uppgifterna står*:
+  varje uppgift som flera filer behöver (version, artefaktens kontrollsumma, det granskade bygget, k-tröskelns
+  standardvärde, bibliotekens versioner m.fl.) har en källa och en kontroll. Riskanalysens bygge och kontrollsumma
+  prövas inte längre i testsviten utan bara av release-grinden, så en pull request som ändrar koden behöver inte
+  röra riskanalysen. Artefaktgrinden i CI kräver att hela `dist/` (också `RELEASE.txt`) är ett färskt bygge, och
+  release-grinden prövar bara det som gäller vid en release. Dubbla tester i `dokumentation`, `release` och `sbom` är
+  borttagna eller samlade, och den tekniska planen hänvisar till README, `docs/README.md` och `ci.yml` i stället för
+  att upprepa dem.
 - **D3 7.9.2 (från 7.9.0).** Samma API; biblioteket är byggt om på de senaste versionerna av D3:s delpaket. Det
   rättar bland annat avrundningen när en skala rundar av sina ändpunkter (`nice`, så att det avrundade intervallet
   alltid täcker de ursprungliga ändpunkterna), `d3.format` för noll, NaN och mycket små tal, hela cirkelbågar som försvann när start och slut sammanföll
