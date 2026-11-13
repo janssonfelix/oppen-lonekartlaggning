@@ -458,6 +458,25 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   hälsa, sjukfrånvaro, diagnos, etnicitet, religion, politisk tillhörighet, sexuell läggning, funktionsnedsättning,
   genetik eller biometri — som identifierare avvisades redan. Bara rubriken prövas (lagrum.md, C23b).
 
+### Dataskydd
+
+- **Löneöversyns förslag följer den inställda tröskeln, också på skärmen (ADR-69).** *Föreslå fördelning mot
+  skillnaderna i likvärdigt arbete*, målet för skillnaden och känslighetskurvan tar bara kandidatpar där både det
+  kvinnodominerade yrket och jämförelseyrket når minsta gruppstorlek, så att en föreslagen rad inte kan bära en liten
+  grupps median i Excel-exporten eller konfigurationsfilen. En föreslagen rad tas bort när tröskeln höjs över en av
+  parets grupper. En föreslagen rad i en konfigurationsfil, som inte bär vilket par den räknades ur, prövas när filen
+  läses in (eller när lönefilen läses in, om konfigurationsfilen kom först) och tas bort om yrket har ett par med en
+  grupp under tröskeln, eller om likvärdighetsanalysen inte visar alla par (*Visa max*). När en föreslagen rad tas
+  bort räknas prognosen om, också när Löneöversyn inte är den öppna fliken; exporten och scenarierna A/B räknar alltid
+  utfallet ur raderna som de står, och ett sparat scenario som räknades med raden tas bort. Meningen vid förslagen säger när rader har tagits bort och varför, och meningen om utelämnade
+  par nämner den inställda tröskeln. Egna riktade rader står kvar som förut, med noten när gruppen är under tröskeln.
+
+- **Löneöversyns förslag: en rad per yrke.** Ett kvinnodominerat yrke med flera jämförelseyrken fick en föreslagen rad
+  per jämförelseyrke, och potten räknades då flera gånger för samma yrke. Förslaget, målet för skillnaden och
+  känslighetskurvan tar nu ett par per yrke, det med störst skillnad bland dem som når minsta gruppstorlek (ADR-69).
+  I det lilla demot ger förslaget två rader i stället för fyra, och full stängning kostar 220 000 kr/mån i stället för
+  296 520 kr/mån.
+
 ### Dokumentation
 
 - **Samlad struktur för dokumenten.** Arkitekturbesluten står i en egen fil,

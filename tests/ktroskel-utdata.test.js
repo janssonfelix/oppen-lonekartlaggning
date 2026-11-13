@@ -245,7 +245,9 @@ describe('k-tröskeln: par i likvärdigt arbete utanför fliken (protokoll, Att 
         expect(t5).toContain('5300');
         expect(t5).toContain(arskostnad(w5));
     });
-    it('Löneöversynens förslag på skärmen riktar också mot den lilla gruppen (skärmen maskerar inget, ADR-51); raden säger att beloppet bygger på enskildas löner', () => {
+    // Ändrat med ADR-69 (2026-11-13): förslagen följer den inställda tröskeln också på skärmen. Förr riktade förslaget på
+    // skärmen också mot den lilla gruppen (ADR-51), och raden följde med i Excel-exporten och konfigurationsfilen.
+    it('Löneöversynens förslag riktar inte mot den lilla gruppen vid 10, också på skärmen (ADR-69); vid 5 gör det', () => {
         const forslag = k => {
             const w = fonsterPar(k);
             w.alert = () => {};
@@ -255,9 +257,8 @@ describe('k-tröskeln: par i likvärdigt arbete utanför fliken (protokoll, Att 
             return { w, aid: w.__state.forecast.targets.map(t => t.aid) };
         };
         const a10 = forslag(null);
-        expect(a10.aid).toContain('5300');
-        expect(a10.w.document.getElementById('forecast-par-not').textContent).toBe('');
-        expect(a10.w.document.getElementById('forecast-targets').textContent).toMatch(/Raden berör 6 personer, färre än 10 personer/);
+        expect(a10.aid).not.toContain('5300');
+        expect(a10.w.document.getElementById('forecast-par-not').textContent).toMatch(NOT);
         const a5 = forslag(5);
         expect(a5.aid).toContain('5300');
         expect(a5.w.document.getElementById('forecast-par-not').textContent).not.toMatch(NOT);

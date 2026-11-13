@@ -64,7 +64,7 @@ har redan lönefilen. Undantagen är uppräknade och beslutade.
 
 *Varför:* att förhindra återidentifiering i det som sprids.
 *Lydelse:* [`k-troskeln.md`](k-troskeln.md). *Beslut:* ADR-12, 14, 23, 38, 47, 48,
-51, 57.
+51, 57, 69.
 *Vakt:* invarianten I4, `tests/helpers/ktroskel-invariant.js`, ritar flikarna i exportläget och bygger exporterna
 vid tröskeln 10 (`tests/ktroskel-invarianter.test.js`) och 25 (`tests/ktroskel-invarianter-25.test.js`);
 differentialtesterna i `tests/diagramritare.test.js` kräver att det som lämnar verktyget är identiskt med en figur

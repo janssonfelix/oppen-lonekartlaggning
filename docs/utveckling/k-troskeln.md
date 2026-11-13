@@ -7,7 +7,7 @@ ut, undantagen, golven, inställningen och vakterna. Koden är sanningen; där d
 dokumentet som ska rättas.
 
 Dokumentet är inte beslutsloggen. Varför det är så här, vad som övervägdes och när det beslutades står i besluten i
-[`arkitekturbeslut.md`](arkitekturbeslut.md): ADR-12, 14, 23, 38, 47, 48, 51 och 57. Diagrammens del — figurens
+[`arkitekturbeslut.md`](arkitekturbeslut.md): ADR-12, 14, 23, 38, 47, 48, 51, 57 och 69. Diagrammens del — figurens
 `liten`-flagga, vyns skyldigheter och kraven på varje vy — står i [`diagramkarnan.md`](diagramkarnan.md) §1 och §7–8
 och upprepas inte här. Hur skyddet och undantagen beskrivs för dataskyddsombudet står i `docs/dataskydd/dataskydd.md`
 §3 och i riskanalysen (`docs/dataskydd/riskanalys.md` §6.5).
@@ -20,7 +20,7 @@ Den som lägger till något som lämnar verktyget läser avsnitt 1, 2 och 9 för
 | Exportläget, exportgrinden och förhandsvisningen | `src/app/23-exportgrind.js` |
 | Könsuppdelade mått i strukturen | `src/lib/struktur.js` |
 | Organisationspaketets låsningar | `src/lib/organisationspaket.js` (`_lasningar`), `src/app/29-organisationspaket.js` |
-| Vakterna | `tests/ktroskel*.test.js`, `tests/kanonymitet.test.js`, `tests/troskelbeslut.test.js`, riggen `tests/helpers/ktroskel-rigg.js` och invarianten `tests/helpers/ktroskel-invariant.js` |
+| Vakterna | `tests/ktroskel*.test.js`, `tests/kanonymitet.test.js`, `tests/troskelbeslut.test.js`, `tests/loneoversyn-forslag-troskel.test.js`, riggen `tests/helpers/ktroskel-rigg.js` och invarianten `tests/helpers/ktroskel-invariant.js` |
 
 ## 1. Två lägen
 
@@ -47,14 +47,21 @@ Exempel ur koden i dag:
   underlagets kvalitet räknas med `kInstalld()` (`13-oversikt.js`), eftersom de gäller det som lämnar verktyget.
 - **Handlingsplanens belopp.** En förifylld rad där den minsta gruppen bakom skillnaden är under den inställda
   tröskeln står i exporterna och bokslutet bara med kategorierna (`_hpUtanBelopp` i `56-handlingsplan.js`).
+- **Löneöversyns förslag (ADR-69).** *Föreslå riktade potter*, mål-läget och känslighetskurvan tar bara kandidatpar
+  där båda grupperna når den inställda tröskeln, också på skärmen (`_fcKandidater` anropar
+  `_parForRedovisning(pairs, kInstalld())` i `36-loneoversyn.js`), och meningen om utelämnade par vid förslagen
+  nämner den inställda tröskeln. Bland dem tar förslagen ett par per yrke, det med störst skillnad (`ettParPerYrke`).
+  Ett förslag bär ett belopp räknat ur jämförelseyrkets median, och raden står i summorna på skärmen, i
+  Excel-exporten och i konfigurationsfilen; talet ska vara detsamma överallt. En föreslagen rad som inte säkert når
+  tröskeln tas bort (`_fcRensaParMal`, regel R2 i avsnitt 8).
 - **Varningar och noter om tröskeln.** Noten under en egen riktad rad i Löneöversyn (`36-loneoversyn.js`), varningen
   *Underlaget är litet* i Prioriteringens motiveringsförslag (`55-prioritering.js`, den gäller skattningens säkerhet,
   inte läget) och antalet små grupper i likvärdighetsanalysens diagnostik (`34-likvardigt-arbete.js`) läser
   `kInstalld()`.
 - **Texterna.** Stämpeln (`kStampel`), metodbilagan (`_methodAppendixData` i `22-exporthjalpare.js`), sidfoten
   (`_kSidfot`), exportbeskeden och appens texter (`_kText`, `_fyllKTexter`) nämner den inställda tröskeln.
-- **Det som ritas.** Noterna (`kMaskNote`, `kSamladNote`), `_konFarRedovisas`, `_parForRedovisning`,
-  `individLitenFor` och vyernas `liten`-flaggor läser `kTroskel()`.
+- **Det som ritas.** Noterna (`kMaskNote`, `kSamladNote`), `_konFarRedovisas`, `_parForRedovisning` (utan andra
+  argument), `individLitenFor` och vyernas `liten`-flaggor läser `kTroskel()`.
 
 ## 2. Redovisningsformen
 
@@ -95,7 +102,8 @@ Excel-export bara när båda grupperna når tröskeln, med antalet utelämnade a
 PDF-rapporten, JPA-protokollet, Att göra och dess CSV, handlingsplanens förifyllda rader, gruppdossiern, Löneöversyns
 förslag, mål-läge och känslighetskurva samt robusthetspanelen i Exportera (`robusthetLikvardighet` i
 `85-robusthet-fardigcheck.js`: par med en grupp under tröskeln namnges inte i någon körning, och panelen anger antalet
-sådana par; beslut). I fliken gäller undantaget i avsnitt 4.
+sådana par; beslut). Löneöversyns förslag prövas mot den inställda tröskeln också på skärmen (ADR-69, avsnitt 1); de
+övriga ritas på skärmen med alla par och i exportläget utan de små. I fliken gäller undantaget i avsnitt 4.
 
 ## 3. Vägen ut
 
@@ -250,11 +258,25 @@ R-märkning följer inte heller den här numreringen rakt av (avsnitt 10).
   `_raGapText`.
 - **R2. Egna riktade rader i Löneöversyn på grupper under tröskeln är tillåtna** (användarens egen simulering):
   beloppet står på raden och ingår i summorna på skärmen och i Excel-exporten, och raden får en not om att gruppen är
-  under tröskeln. Beskrivet i `dataskydd.md` §3, riskanalysen §6.5 och körguiden. En rad som verktyget självt föreslog ur
-  kandidatpar i likvärdigt arbete bär `kalla: 'par'` och rensas när tröskeln höjs (`_fcRensaParMal`), mätt mot
-  kandidatparen som `_parForRedovisning` släpper igenom, alltså med `kTroskel()`: i skärmläget, där tröskeln är 1,
-  rensas inga förslag. Konfigurationsfilen bär fältet (valfritt, version oförändrad), så att en inläst rad behandlas
-  som den rad den var: förslag prövas mot tröskeln som gäller vid inläsningen, egna rader står kvar med noten.
+  under tröskeln. Beskrivet i `dataskydd.md` §3, riskanalysen §6.5 och körguiden. Rader som verktyget självt föreslår
+  ur kandidatpar i likvärdigt arbete omfattas inte (ADR-69): verktyget föreslår ingen rad ur ett par där det
+  kvinnodominerade yrket eller jämförelseyrket har färre personer än den inställda tröskeln, i något läge
+  (`_fcKandidater`, avsnitt 1), och tar ett par per kvinnodominerat yrke, det med störst skillnad bland dem som når
+  tröskeln (`ettParPerYrke` i `src/lib/loneoversyn.js`, som `suggestTargets` och `closureTargets`, och därmed
+  känslighetskurvan, går genom). En föreslagen rad bär `kalla: 'par'` men inte paret. `_fcRensaParMal` prövar den när
+  den inställda tröskeln ändras (`sattKTroskel`), när en konfigurationsfil läses in och när lönefilen läses in, också på
+  skärmen. En rad som föreslogs i sessionen avgörs säkert: storleken på grupperna i paret den räknades ur finns i
+  minnet (`_fcParUrsprung`, en `WeakMap` per rad som inte sparas), och raden står kvar när båda når tröskeln. En rad
+  utan den uppgiften — ur en konfigurationsfil, också en äldre fil med en rad per jämförelseyrke — står kvar bara när
+  parlistan är fullständig, yrket har par och alla når tröskeln; annars tas den bort, på den försiktiga sidan.
+  Parlistan är fullständig när den inte är kapad vid *Visa max* (`topN`): `parAntal.totalt`, som räknas före urvalet
+  (ADR-61), är lika med antalet par i listan. *Lägre krav, högre lön* är en egen lista och räknas inte. Meningen vid förslagen
+  (`#forecast-par-not`) säger hur många rader som togs bort och varför, tills ett nytt förslag görs. Inget som räknades
+  med en borttagen rad står kvar: när en rad tas bort räknas prognosens utfall om ur raderna som står kvar, också när
+  Löneöversyn inte är den öppna fliken; exporten och scenarierna A/B räknar alltid utfallet ur raderna som de står
+  (`_fcBeraknaUtfall`), inte ur ett sparat utfall; och ett sparat scenario som räknades med en rad som inte står sig
+  tas bort, med en mening om det. Konfigurationsfilen bär fältet `kalla` (valfritt, version oförändrad); egna rader
+  står kvar med noten.
 - **R3. Ålder & karriär följer regeln.** Ojusterat och åldersjusterat gap kräver tröskeln för båda könen; lutning,
   trendlinje med konfidensband och låda kräver den för det könet (`40-alder-karriar.js`, `_setDiagramKNot` för noten
   under diagrammet). Demografidelens trendlinje och lutning för hela urvalet (alla BAS eller det valda) kräver att
@@ -300,6 +322,7 @@ utdata och dess skydd, står i riskanalysen (`docs/dataskydd/riskanalys.md` §6.
 | Var uppstår löneskillnaden med andra val av variabler | Skyddsregeln i ADR-22 och ADR-65 | I7 |
 | Underlaget (`figur.underlag`, *Räkna för*) | Avsnitt 1 | I6 |
 | Löneöversyn: kostnad per grupp, knappresultat, egna rader, tröskelmål | Regel R2, R4 och R5 | I1, I1b; R3 i `tests/ktroskel-regression.test.js`; `tests/troskelbeslut.test.js` |
+| Löneöversyns förslag ur kandidatparen (*Föreslå riktade potter*, mål-läget, känslighetskurvan), deras rader i Excel-exporten och konfigurationsfilen | Avsnitt 1 och regel R2 (ADR-69): den inställda tröskeln, också på skärmen | `tests/loneoversyn-forslag-troskel.test.js` (jämförelseyrket eller det kvinnodominerade yrket under tröskeln, höjd tröskel på skärmen, inläst konfigurationsfil; ett yrke med två jämförelseyrken: en rad, och förslag ur det lilla paret, äldre filer med en rad per jämförelseyrke och en ensam rad ur det lilla paret tas bort); `tests/loneoversyn.test.js` (ett par per yrke); I1 i `tests/ktroskel-invarianter.test.js`; `tests/ktroskel-utdata.test.js`; `tests/troskelbeslut.test.js`. Inte I4: riggens underlag har inga kandidatpar (avsnitt 11) |
 | Regressionskortet (ojusterat steg, förklarad andel) | Regel R1 | R1 i `tests/ktroskel-regression.test.js` (samma vägar som I4, med 7 män i underlaget) |
 | Ålder & karriär | Regel R3 | R4 i `tests/ktroskel-regression.test.js`; `tests/troskelbeslut.test.js` (trendlinjen för hela urvalet) |
 | Könsuppdelade mått för hela organisationen och per BAS | Avsnitt 2 | C2, C3, C4, C6 |
@@ -388,3 +411,6 @@ inställningen (standardvärdet).
   flikar är menyns. En ny export som inte läggs till i riggen prövas inte. Definition of Done kräver att den läggs till
   (`.github/CONTRIBUTING.md` punkt 3, regel R1 i `regler.md`).
 - **Riktade rader på små grupper.** Riggen lägger inga egna riktade rader i Löneöversyn; regel R2 prövas för sig.
+  Riggens underlag har heller inga kandidatpar i likvärdigt arbete, så Löneöversyns förslag (ADR-69) prövas inte av
+  I4 utan av `tests/loneoversyn-forslag-troskel.test.js`. Ett par med en grupp under tröskeln i riggen skulle ändra
+  underlaget för alla vägar som I4 söker igenom.

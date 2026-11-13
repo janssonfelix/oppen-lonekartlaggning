@@ -1448,26 +1448,31 @@ function _kTolka(v) {
  * — Rapportunderlaget, Word-utkastet, utskriften, protokollet, Att göra, handlingsplanen och
  * gruppdossiern — använder denna regel (via _parForRedovisning).
  */
-function _parOverTroskel(p) {
-    const k = kTroskel();
+function _parOverTroskel(p) { return _parNarK(p, kTroskel()); }
+
+/** Når båda yrkesgrupperna i paret gränsen k? Ett jämförelseyrke ur statistiken (maN saknas) prövas inte. */
+function _parNarK(p, k) {
     return p.kvN >= k && (p.maN == null || p.maN >= k);
 }
 
 /** Mening om par som utelämnats ur underlaget (samma ordalydelse som Rapportunderlaget). */
-function _parUtelamnadeNot(antal) {
-    return antal ? `${antal} par med en grupp under ${kTroskel()} ${personOrd(kTroskel())} redovisas inte här.` : '';
+function _parUtelamnadeNot(antal, k = kTroskel()) {
+    return antal ? `${antal} par med en grupp under ${k} ${personOrd(k)} redovisas inte här.` : '';
 }
 
 /**
  * Delar en lista § 3:10-par i de som får redovisas utanför fliken Likvärdigt arbete och antalet som
  * utelämnas. `not` är meningen om de utelämnade (tom när inga utelämnats). Ordningen bevaras och
- * objekten är desamma som i indata.
+ * objekten är desamma som i indata. Gränsen är kTroskel(), det som gäller i läget; Löneöversyns
+ * förslag anger den inställda tröskeln, kInstalld(), också på skärmen (ADR-69).
+ * @param {any[]} [pairs]
+ * @param {number} [k]
  */
-function _parForRedovisning(pairs) {
+function _parForRedovisning(pairs, k = kTroskel()) {
     const alla = pairs || [];
-    const par = alla.filter(_parOverTroskel);
+    const par = alla.filter(p => _parNarK(p, k));
     const utelamnade = alla.length - par.length;
-    return { par, utelamnade, not: _parUtelamnadeNot(utelamnade) };
+    return { par, utelamnade, not: _parUtelamnadeNot(utelamnade, k) };
 }
 
 /** Raden som anger den inställda tröskeln (stämpeln), på de utdata som bär den. */
@@ -1661,7 +1666,6 @@ function sattKTroskel(v, { fraga = true, rita = true, stegvis = false } = {}) {
         return { ok: false, nekad: true };
     }
     _kVisaFel('');   // ett gammalt felmeddelande hör till ett värde som inte längre gäller
-    const hojd = n > state.kTroskel;
     const golvFore = statGolv();
     state.kTroskel = n;
     state._lifecycleCache = null;
@@ -1670,8 +1674,9 @@ function sattKTroskel(v, { fraga = true, rita = true, stegvis = false } = {}) {
     const golvAndrat = statGolv() !== golvFore;
     if (golvAndrat && typeof invalidateStatCaches === 'function') invalidateStatCaches({ recompute: false });   // räknas om i bakgrunden nedan
     else if (typeof ritGenerationNy === 'function') ritGenerationNy();   // allt som är ritat hittills bär den gamla tröskeln
-    // Löneöversynens förslag ur § 3:10-par som inte längre når tröskeln tas bort (egna rader står kvar).
-    if (hojd && typeof _fcRensaParMal === 'function') _fcRensaParMal();
+    // Löneöversynens förslag ur § 3:10-par som inte längre når den inställda tröskeln tas bort, också på skärmen (egna
+    // rader står kvar; ADR-69). En sänkt tröskel tar inte bort något men ändrar meningen om utelämnade par.
+    if (typeof _fcRensaParMal === 'function') _fcRensaParMal();
     _synkaKTroskel();
     // Från gränssnittet ritas allt om stegvis, med förlopp (stegvis); program och tester får det direkt.
     /** @type {Promise<void>|null} */
@@ -4040,15 +4045,36 @@ function allocate(rows, generell, targets, roundStep) {
 }
 
 /**
+ * Ett kandidatpar per kvinnodominerat yrke (BAS-intervall och AID): det med störst skillnad i kronor (ADR-69).
+ * Ett yrke med flera jämförelseyrken får då en rad och en pott i förslagen, inte en per jämförelseyrke. Anroparen
+ * har redan tagit bort paren som inte får redovisas, så att valet görs bland dem som når tröskeln. Ordningen och
+ * objekten är desamma som i indata.
+ * @template {{bas: any, aid: any, gapKr: number}} T
+ * @param {T[]} [candidates]
+ * @returns {T[]}
+ */
+function ettParPerYrke(candidates) {
+    /** @type {Map<string, T>} */
+    const bast = new Map();
+    for (const c of candidates || []) {
+        const nyckel = c.bas + '|' + c.aid;
+        const forra = bast.get(nyckel);
+        if (!forra || c.gapKr > forra.gapKr) bast.set(nyckel, c);
+    }
+    const valda = new Set(bast.values());
+    return (candidates || []).filter(c => valda.has(c));
+}
+
+/**
  * Föreslår en riktad fördelning som minskar de osakliga gapen först. Fördelar
  * riktadPott proportionellt mot påverkansindex (gapKr × n), kapat vid kostnaden
- * att helt stänga respektive grupps gap.
+ * att helt stänga respektive grupps gap. Ett par per yrke (ettParPerYrke).
  * @param {Array<{bas,aid,gapKr:number,n:number}>} candidates - gapKr > 0 = under referens (kr/mån/person)
  * @param {number} riktadPott
  * @param {number} [minN=0] - rikta endast mot grupper med minst minN personer
  */
 function suggestTargets(candidates, riktadPott, minN = 0) {
-    const valid = (candidates || []).filter(c => c.gapKr > 0 && c.n > 0 && c.n >= (minN || 0));
+    const valid = ettParPerYrke(candidates).filter(c => c.gapKr > 0 && c.n > 0 && c.n >= (minN || 0));
     if (!valid.length || riktadPott <= 0) return [];
     const totalIndex = valid.reduce((s, c) => s + c.gapKr * c.n, 0);
     if (totalIndex <= 0) return [];
@@ -4063,7 +4089,8 @@ function suggestTargets(candidates, riktadPott, minN = 0) {
 /**
  * Mål-läge: bygg riktade rader som stänger en andel (fraction) av de osakliga
  * gapen. Kostnaden för att helt stänga en grupps gap är gapKr × n; för andelen
- * f blir det f × gapKr × n. Fördelas lägst-först inom gruppen.
+ * f blir det f × gapKr × n. Fördelas lägst-först inom gruppen. Ett par per yrke (ettParPerYrke), också i
+ * känslighetskurvan, som bygger på den här funktionen.
  * @param {Array<{bas,aid,gapKr:number,n:number}>} candidates
  * @param {number} fraction - 0..1
  * @param {number} [minN=0]
@@ -4071,7 +4098,7 @@ function suggestTargets(candidates, riktadPott, minN = 0) {
 function closureTargets(candidates, fraction, minN = 0) {
     const f = Math.max(0, Math.min(1, fraction));
     if (f <= 0) return [];
-    return (candidates || [])
+    return ettParPerYrke(candidates)
         .filter(c => c.gapKr > 0 && c.n > 0 && c.n >= (minN || 0))
         .map(c => ({ bas: c.bas, aid: c.aid, mode: /** @type {'kr'} */ ('kr'), value: Math.round(f * c.gapKr * c.n), dist: /** @type {'lowest'} */ ('lowest') }))
         .filter(t => t.value > 0);
@@ -4311,13 +4338,14 @@ function sensitivityCurve(rows, candidates, costOpts, steps) {
     return out;
 }
 
-    return { computePott, allocate, targetRows, suggestTargets, closureTargets, stagedPlan, summarizeGroups, detectLeapfrog, forecastOutcome, bandStats, individualRemediation, marketTargets, sensitivityCurve, _median };
+    return { computePott, allocate, targetRows, suggestTargets, closureTargets, ettParPerYrke, stagedPlan, summarizeGroups, detectLeapfrog, forecastOutcome, bandStats, individualRemediation, marketTargets, sensitivityCurve, _median };
 })();
 const _fcComputePott = __mirrorForecast.computePott;
 const _fcAllocate = __mirrorForecast.allocate;
 const _fcTargetRows = __mirrorForecast.targetRows;
 const _fcSuggestTargets = __mirrorForecast.suggestTargets;
 const _fcClosureTargets = __mirrorForecast.closureTargets;
+const _fcEttParPerYrke = __mirrorForecast.ettParPerYrke;
 const _fcStagedPlan = __mirrorForecast.stagedPlan;
 const _fcSummarizeGroups = __mirrorForecast.summarizeGroups;
 const _fcDetectLeapfrog = __mirrorForecast.detectLeapfrog;
@@ -17946,8 +17974,9 @@ function applyConfigSnapshot(cfg) {
                 targetLevel: t.targetLevel === 'p25' ? 'p25' : 'median',
                 pool: ['equity', 'marknad', 'befordran', 'övrigt'].includes(t.pool) ? t.pool : 'övrigt',
                 // Valfritt och bakåtkompatibelt (filer utan fältet läses som förut): en rad verktyget själv
-                // föreslog ur § 3:10-par bär kalla: 'par' och rensas när tröskeln höjs (ADR-38 R2); en rad
-                // utan fältet är användarens egen och står kvar med noten om gruppen är under tröskeln.
+                // föreslog ur § 3:10-par bär kalla: 'par', prövas mot den inställda tröskeln när filen läses in
+                // och rensas när tröskeln höjs (ADR-69); en rad utan fältet är användarens egen och står kvar
+                // med noten om gruppen är under tröskeln (ADR-38, regel R2).
                 ...(t.kalla === 'par' ? { kalla: 'par' } : {})
             }));
         }
@@ -18068,8 +18097,8 @@ function applyConfigSnapshot(cfg) {
     }
     if (tmp.forecast) {
         state.forecast = /** @type {any} */ (tmp.forecast);
-        // Rader som verktyget föreslog ur par (kalla: 'par') prövas mot den tröskel som gäller nu — filen kan vara
-        // sparad vid en lägre — som när tröskeln höjs i gränssnittet.
+        // Rader som verktyget föreslog ur par (kalla: 'par') prövas mot den inställda tröskeln, också på skärmen — filen
+        // kan vara sparad vid en lägre — som när tröskeln höjs i gränssnittet (ADR-69). Utan lönefil prövas de när den läses in.
         if (typeof _fcRensaParMal === 'function') _fcRensaParMal();
         if (typeof renderForecast === 'function' && document.getElementById('view-loneoversyn')) {
             try { renderForecast(); } catch (_e) { /* renderas vid nästa flikbyte */ }
@@ -21919,6 +21948,9 @@ function _afterDataLoaded() {
     if (typeof _renderDemoBanner === 'function') _renderDemoBanner();
     /** @type {HTMLElement} */ (document.getElementById("dashboard-summary")).style.display = "grid";
     const poangCount = _deriveArbetsvarderingFromData();
+    // Föreslagna riktade rader (kalla: 'par') prövas mot paren i den nya lönefilen, också när de lästs in ur en
+    // konfigurationsfil innan det fanns en lönefil att pröva dem mot (ADR-69). Egna rader står kvar.
+    if (typeof _fcRensaParMal === 'function') _fcRensaParMal();
     unlockTabs();
     updateDashboardStats();
     populateSelects();
@@ -24026,6 +24058,19 @@ function _forecastOlsGap(origRows, simRows) {
     }
     return { fore, efter };
 }
+// Kostnadsinställningarna som prognosen räknas med.
+function _fcKostnadsval() {
+    return { months: (state.costSettings && state.costSettings.months) || 12, poPct: (state.costSettings && state.costSettings.poPct) || 0, roundStep: state.forecast.roundStep || 0,
+             kvThreshold: aidbasGrans(), kvDefinition: aidbasDefinition() };   // samma definition av kvinnodominerat som Likvärdigt arbete (ADR-60)
+}
+/**
+ * Prognosens utfall ur raderna och inställningarna som de står i state.forecast. Exporten och scenarierna räknar det
+ * här i stället för att läsa ett sparat utfall, så att de aldrig skriver ett utfall som räknades med en rad som
+ * sedan har tagits bort (ADR-69).
+ */
+function _fcBeraknaUtfall(d) {
+    return _fcForecastOutcome(d, state.forecast.budget, state.forecast.generell, state.forecast.targets, _fcKostnadsval());
+}
 function updateForecast() {
     const meterEl = document.getElementById('forecast-meter');
     const outEl = document.getElementById('forecast-outcome');
@@ -24041,8 +24086,6 @@ function updateForecast() {
         _renderForecastLutning(null, null);
         return;
     }
-    const cost = { months: (state.costSettings && state.costSettings.months) || 12, poPct: (state.costSettings && state.costSettings.poPct) || 0, roundStep: state.forecast.roundStep || 0,
-                   kvThreshold: aidbasGrans(), kvDefinition: aidbasDefinition() };   // samma definition av kvinnodominerat som Likvärdigt arbete (ADR-60)
     // #10 Indata-validering: fånga orimliga värden innan beräkning
     const valWarn = [];
     const bv = state.forecast.budget.value, gv = state.forecast.generell.value;
@@ -24052,7 +24095,8 @@ function updateForecast() {
     if (state.forecast.generell.mode === 'pct' && gv != null && gv > 25) valWarn.push('Det generella påslaget är ovanligt högt (> 25 %).');
     if (state.forecast.targets.some(t => t.value == null || !(t.value > 0))) valWarn.push('En eller flera riktade rader saknar belopp.');
     if (state.forecast.targets.some(t => _fcTargetRows(d, t).length === 0)) valWarn.push('En riktad rad matchar ingen person (kön eller lönegräns).');
-    const out = _fcForecastOutcome(d, state.forecast.budget, state.forecast.generell, state.forecast.targets, cost);
+    const cost = _fcKostnadsval();
+    const out = _fcBeraknaUtfall(d);
     const riktade = state.forecast.targets.length;
     _laNyckel('nyckel-lo-riktade', riktade ? `${riktade} ${riktade === 1 ? 'riktad pott' : 'riktade potter'}` : 'Inga riktade potter');
     _laNyckel('nyckel-lo-planering', state.forecast.roundStep > 0 || (state.forecast.years || 1) > 1 ? 'Anpassade värden' : 'Standardvärden');
@@ -24346,20 +24390,62 @@ function _fcGlomKnappresultat() {
     for (const id of _fcKnappresultat) { const el = document.getElementById(id); if (el) el.innerHTML = ''; }
     _fcKnappresultat.clear();
     if (state.forecast) delete state.forecast._remediation;
+    _fcBorttagnaNot = '';   // meningen om borttagna förslag gällde det förra underlaget eller den förra prognosen
+    _fcVisaParNot();
 }
-// Kandidater ur § 3:10-paren för förslag, mål-läge och känslighetskurva. Par med en grupp under
-// tröskeln tas inte med (undantaget gäller bara fliken Likvärdigt arbete); minsta gruppstorlek för
-// riktning är en ytterligare, strängare gräns. Meningen om utelämnade par visas vid förslagen
-// (#forecast-par-not) och står i Excel-exporten.
+// Kandidater ur § 3:10-paren för förslag, mål-läge och känslighetskurva. Par där det kvinnodominerade
+// yrket eller jämförelseyrket har färre personer än den inställda tröskeln tas inte med, också på
+// skärmen (ADR-69): förslagets belopp räknas ur jämförelseyrkets median och står på raden, i summorna,
+// i Excel-exporten och i konfigurationsfilen. Undantaget gäller bara fliken Likvärdigt arbete. Minsta
+// antal personer i gruppen för riktning är en ytterligare gräns. Meningen om utelämnade par visas vid
+// förslagen (#forecast-par-not) och står i Excel-exporten. Bland paren som är kvar tar förslagen ett par per
+// kvinnodominerat yrke, det med störst skillnad (_fcEttParPerYrke i src/lib/loneoversyn.js, ADR-69).
 let _fcParNot = '';
-function _fcKandidater() {
-    let pairs = [];
-    try { const lv = likvardighetResultat(); pairs = (lv && lv.pairs) || []; } catch (_e) { pairs = []; }
-    const r = _parForRedovisning(pairs);
-    _fcParNot = r.not;
+// Meningen om föreslagna rader som togs bort (_fcRensaParMal). Står kvar tills ett nytt förslag görs.
+let _fcBorttagnaNot = '';
+// Storleken på grupperna i paret som en föreslagen rad räknades ur, per rad (objektet i state.forecast.targets).
+// Bara i minnet: raden och konfigurationsfilen bär inte paret, så en rad ur en fil har ingen post här (ADR-69).
+/** @type {WeakMap<object, {kvN: number, maN: number|null}>} */
+const _fcParUrsprung = new WeakMap();
+// De riktade raderna som ett sparat scenario (A/B) räknades med, per scenario. Bara i minnet, som scenarierna själva.
+/** @type {WeakMap<object, object[]>} */
+const _fcScenarioRader = new WeakMap();
+/** Alla § 3:10-par i analysen, utan tröskel (tom lista om analysen inte går att räkna). */
+function _fcAllaPar() {
+    try { const lv = likvardighetResultat(); return (lv && lv.pairs) || []; } catch (_e) { return []; }
+}
+/** Sant när analysens parlista har alla par, det vill säga inte är kapad vid Visa max (parAntal räknas före urvalet). */
+function _fcParListanFullstandig(allaPar) {
+    try {
+        const lv = likvardighetResultat();
+        return !!(lv && lv.parAntal && typeof lv.parAntal.totalt === 'number' && lv.parAntal.totalt === allaPar.length);
+    } catch (_e) { return false; }
+}
+function _fcVisaParNot() {
     const el = document.getElementById('forecast-par-not');
-    if (el) el.textContent = r.not;
-    return r.par.map(p => ({ bas: p.kvBas, aid: p.kvAid, gapKr: p.gapKr, n: p.kvN }));
+    if (el) el.textContent = [_fcParNot, _fcBorttagnaNot].filter(Boolean).join(' ');
+}
+function _fcKandidater() {
+    const r = _parForRedovisning(_fcAllaPar(), kInstalld());
+    _fcParNot = r.not;
+    _fcVisaParNot();
+    return r.par.map(p => ({ bas: p.kvBas, aid: p.kvAid, gapKr: p.gapKr, n: p.kvN, maN: p.maN }));
+}
+/**
+ * Gör förslagen till riktade rader (kalla: 'par') och minns, för varje rad, storleken på grupperna i paret den räknades
+ * ur, så att _fcRensaParMal kan avgöra raden säkert när tröskeln ändras. Paret är det som _fcSuggestTargets och
+ * _fcClosureTargets valde: ett per yrke, ur samma _fcEttParPerYrke.
+ */
+function _fcForslagTillRader(targets, cand) {
+    const valda = new Map(_fcEttParPerYrke(cand).map(c => [c.bas + '|' + c.aid, c]));
+    _fcBorttagnaNot = '';
+    _fcVisaParNot();
+    return targets.map(t => {
+        const rad = { bas: t.bas, aid: t.aid, mode: 'kr', value: t.value, dist: 'lowest', targetLevel: 'median', pool: 'equity', kalla: 'par' };
+        const c = /** @type {{n: number, maN: number|null}|undefined} */ (/** @type {unknown} */ (valda.get(t.bas + '|' + t.aid)));
+        if (c) _fcParUrsprung.set(rad, { kvN: c.n, maN: c.maN ?? null });
+        return rad;
+    });
 }
 // Förslagsknappen vid potten: samma förslag som knappen under Riktade potter, aktiv först när en pott är angiven.
 function _fcUppdateraForslagPott() {
@@ -24389,25 +24475,76 @@ function _forecastOptimize() {
         alert('Verktyget hittade inga skillnader i likvärdigt arbete i grupper med minst ' + (state.forecast.minGroupN || 0) + ' personer, eller så har det generella påslaget tagit hela potten. Sänk minsta antal personer i gruppen eller lägg till riktade rader själv.');
         return;
     }
-    state.forecast.targets = targets.map(t => ({ bas: t.bas, aid: t.aid, mode: 'kr', value: t.value, dist: 'lowest', targetLevel: 'median', pool: 'equity', kalla: 'par' }));
+    state.forecast.targets = _fcForslagTillRader(targets, cand);
     renderForecastTargets();
     updateForecast();
 }
 /**
- * Efter höjd tröskel: tar bort riktade rader som föreslogs ur § 3:10-par (kalla: 'par') vars
- * grupp inte längre finns bland kandidaterna, och uppdaterar meningen om utelämnade par. Rader
- * som användaren lagt till själv står kvar. Anropas av sattKTroskel före omritningen.
+ * Efter ändrad tröskel, inläst konfigurationsfil och inläst lönefil: tar bort de riktade rader som verktyget föreslog
+ * ur § 3:10-par (kalla: 'par') och som inte säkert räknades ur ett par där båda grupperna når den inställda tröskeln,
+ * också på skärmen (ADR-69), och uppdaterar meningen om utelämnade par. Rader som användaren lagt till själv står kvar
+ * (regel R2). Anropas av sattKTroskel före omritningen.
+ *
+ * En rad som verktyget föreslog i den här sessionen avgörs säkert: storleken på paret den räknades ur finns i minnet
+ * (_fcParUrsprung). En rad utan den uppgiften (ur en konfigurationsfil, också en äldre med en rad per jämförelseyrke)
+ * kan komma ur vilket som helst av yrkets par; den står kvar bara när parlistan är fullständig (inte kapad vid Visa
+ * max), yrket har par och alla når tröskeln, annars tas den bort. Meningen vid förslagen säger hur många rader som togs bort och varför.
  * @returns {number} Antal borttagna rader.
  */
 function _fcRensaParMal() {
     if (!state.data.length || !state.forecast || !Array.isArray(state.forecast.targets)) return 0;
     // Utan förslag ur par och utan visad mening finns inget att rensa eller uppdatera — och då
     // ska analysen inte heller köras här (den cachas, och underlaget kan vara på väg in).
-    if (!_fcParNot && !state.forecast.targets.some(t => t.kalla === 'par')) return 0;
-    const kvar = new Set(_fcKandidater().map(c => c.bas + '|' + c.aid));
-    const fore = state.forecast.targets.length;
-    state.forecast.targets = state.forecast.targets.filter(t => t.kalla !== 'par' || kvar.has(t.bas + '|' + t.aid));
-    return fore - state.forecast.targets.length;
+    const sc = state.forecast.scenarios || {};
+    const scenarioRader = s => (s && _fcScenarioRader.get(s)) || [];
+    const harPar = rader => rader.some(t => t.kalla === 'par');
+    if (!_fcParNot && !harPar(state.forecast.targets) && !harPar(scenarioRader(sc.A)) && !harPar(scenarioRader(sc.B))) return 0;
+    _fcKandidater();   // meningen om utelämnade par efter den inställda tröskeln
+    const k = kInstalld();
+    /** @type {Map<string, any[]>} */
+    const perYrke = new Map();
+    const allaPar = _fcAllaPar();
+    // Listan är kapad vid Visa max (topN); den räcker för den försiktiga prövningen bara när den har alla par
+    // (parAntal.totalt räknas före urvalet, ADR-61). Lägre krav, högre lön är en egen lista och räknas inte.
+    const fullstandig = _fcParListanFullstandig(allaPar);
+    for (const p of allaPar) {
+        const nyckel = p.kvBas + '|' + p.kvAid;
+        if (!perYrke.has(nyckel)) perYrke.set(nyckel, []);
+        /** @type {any[]} */ (perYrke.get(nyckel)).push(p);
+    }
+    // 'ok', 'sakert' (paret har en grupp under tröskeln) eller 'forsiktigt' (paret går inte att avgöra).
+    const prova = t => {
+        if (t.kalla !== 'par') return 'ok';
+        const u = _fcParUrsprung.get(t);
+        if (u) return _parNarK(u, k) ? 'ok' : 'sakert';
+        const par = perYrke.get(t.bas + '|' + t.aid) || [];
+        return fullstandig && par.length && par.every(p => _parNarK(p, k)) ? 'ok' : 'forsiktigt';
+    };
+    let sakert = 0, forsiktigt = 0;
+    state.forecast.targets = state.forecast.targets.filter(t => {
+        const svar = prova(t);
+        if (svar === 'sakert') sakert++; else if (svar === 'forsiktigt') forsiktigt++;
+        return svar === 'ok';
+    });
+    // Ett sparat scenario som räknades med en rad som inte står sig tas bort: dess summor räknades ur raden.
+    const bortScenarier = /** @type {string[]} */ ([]);
+    for (const slot of ['A', 'B']) {
+        if (sc[slot] && scenarioRader(sc[slot]).some(t => prova(t) !== 'ok')) { sc[slot] = null; bortScenarier.push(slot); }
+    }
+    if (sakert + forsiktigt || bortScenarier.length) {
+        const rader = n => `${n} ${n === 1 ? 'föreslagen rad' : 'föreslagna rader'}`;
+        const skal = [];
+        if (sakert) skal.push(`${rader(sakert)} togs bort eftersom paret ${sakert === 1 ? 'den' : 'de'} räknades ur har en grupp under ${k} ${personOrd(k)}.`);
+        if (forsiktigt) skal.push(`${rader(forsiktigt)} togs bort eftersom verktyget inte kan avgöra vilket par ${forsiktigt === 1 ? 'den' : 'de'} räknades ur (till exempel ur en konfigurationsfil), och yrket har ett par med en grupp under ${k} ${personOrd(k)}, inget par alls eller par utanför de visade (Visa max i Likvärdigt arbete).`);
+        if (bortScenarier.length) skal.push(`${bortScenarier.length === 1 ? `Det sparade scenario ${bortScenarier[0]}` : 'De sparade scenarierna A och B'} togs bort eftersom ${bortScenarier.length === 1 ? 'det' : 'de'} räknades med en föreslagen rad som inte står sig vid tröskeln ${k}.`);
+        _fcBorttagnaNot = skal.join(' ') + ' Klicka på Föreslå fördelning mot skillnaderna i likvärdigt arbete för ett nytt förslag.';
+        // Utfallet räknades med de borttagna raderna: det räknas om ur raderna som står kvar, också när Löneöversyn inte
+        // är den öppna fliken. Exporten och scenarierna räknar dessutom alltid om (_fcBeraknaUtfall).
+        state.forecast.result = null;
+        try { renderForecast(); } catch (_e) { /* ritas vid nästa flikbyte; exporten räknar om */ }
+        _fcVisaParNot();
+    }
+    return sakert + forsiktigt;
 }
 // Kriteriebaserad riktning: expandera en massregel till riktade rader.
 function _forecastAddByCriteria() {
@@ -24455,15 +24592,15 @@ function _forecastClosure() {
     const cand = _fcKandidater();
     const targets = _fcClosureTargets(cand, fracPct / 100, state.forecast.minGroupN || 0);
     if (!targets.length) { alert('Verktyget hittade inga skillnader i likvärdigt arbete i grupper med minst ' + (state.forecast.minGroupN || 0) + ' personer.'); return; }
-    state.forecast.targets = targets.map(t => ({ bas: t.bas, aid: t.aid, mode: 'kr', value: t.value, dist: 'lowest', targetLevel: 'median', pool: 'equity', kalla: 'par' }));
+    state.forecast.targets = _fcForslagTillRader(targets, cand);
     renderForecastTargets();
     updateForecast();
 }
 // Scenario A/B: spara nuläget som ett scenario och jämför.
 function _forecastSaveScenario(slot) {
-    const o = state.forecast.result;
-    if (!o) { alert('Det finns ingen prognos att spara. Ange en pott först.'); return; }
     const d = getData();
+    if (!state.forecast.result || !d.length) { alert('Det finns ingen prognos att spara. Ange en pott först.'); return; }
+    const o = _fcBeraknaUtfall(d);
     const sim = d.map((r, i) => ({ ...r, lon: o.alloc.perPerson[i].nyLon }));
     const ols = _forecastOlsGap(d, sim);
     const { nKv, nMa } = _konAntal(d);
@@ -24481,6 +24618,7 @@ function _forecastSaveScenario(slot) {
             leapfrog: _fcDetectLeapfrog(o.alloc.perGroup.filter(g => !isKMasked(g.n))).length
         }
     };
+    _fcScenarioRader.set(state.forecast.scenarios[slot], state.forecast.targets.slice());
     _renderScenarioCompare();
 }
 function _renderScenarioCompare() {
@@ -24639,8 +24777,8 @@ function _forecastRemediationSeed() {
 function exportForecast(...a) { return medExportLage(() => _exportForecastExport.apply(null, /** @type {any} */ (a))); }
 function _exportForecastExport() {
     if (typeof XLSX === 'undefined') { alert('Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.'); return; }
-    const out = state.forecast.result;
-    if (!out) { alert('Det finns ingen prognos att exportera. Ange en pott först.'); return; }
+    if (!state.forecast.result || !getData().length) { alert('Det finns ingen prognos att exportera. Ange en pott först.'); return; }
+    const out = _fcBeraknaUtfall(getData());   // ur raderna som de står, inte ett utfall som räknades före en rensning
     _fcKandidater();   // uppdaterar meningen om utelämnade par efter gällande tröskel
     const kr = n => Math.round(n);
     const K = kTroskel();
@@ -33181,7 +33319,7 @@ const INFO_SECTIONS = {
         <p>Ibland är bara <em>könsuppdelningen</em> för liten, medan gruppen som helhet når tröskeln. Då redovisar exporterna gruppens <strong>samlade median</strong> i stället, utan könsjämförelse. Samma regel gäller könsuppdelade mått för hela organisationen: varje kön ska nå tröskeln.</p>
         <p><strong>Undantag och särskilda fall:</strong></p>
         <ul>
-            <li><strong>Löneöversyn.</strong> Du får lägga en egen riktad rad på en grupp under ${kInstalld()} ${personOrd(kInstalld())}. Beloppet visas på raden och ingår i summorna, även i Excel-exporten. Raden bygger då på enskildas löner, och det står på raden.</li>
+            <li><strong>Löneöversyn.</strong> Du får lägga en egen riktad rad på en grupp under ${kInstalld()} ${personOrd(kInstalld())}. Beloppet visas på raden och ingår i summorna, även i Excel-exporten. Raden bygger då på enskildas löner, och det står på raden. Verktygets egna förslag ur likvärdigt arbete riktar däremot aldrig mot ett par där en grupp har färre än ${kInstalld()} ${personOrd(kInstalld())}, inte heller på skärmen. Varje yrke får en rad, mot jämförelseyrket med störst skillnad. Ett förslag tas bort om du höjer tröskeln över en av parets grupper, och ett förslag ur en konfigurationsfil tas bort när verktyget inte kan avgöra att paret når tröskeln. Det står vid förslagen när det händer.</li>
             <li><strong>Tabeller och egna vyer.</strong> Exporten av tabellen och diagrammen utelämnar grupper under ${kInstalld()} ${personOrd(kInstalld())}. Vill du ta med dem kryssar du i rutan <em>Ta med grupper under ${kInstalld()} i exporten</em>. Organisationspaketet kan stänga av rutan.</li>
             <li><strong>Likvärdigt arbete.</strong> Lagen kräver att även små kvinnodominerade yrken prövas. Fliken och dess egen export visar därför kandidatpar även när en grupp är under tröskeln, och exporten anger det i filen. Alla andra utdata tar bara med par där båda grupperna når tröskeln, och anger hur många par som utelämnats. Det gäller Rapportunderlaget, Word-utkastet, PDF-rapporten, protokollet för gemensam lönebedömning, Att göra och dess CSV, handlingsplanens förifyllda rader och gruppdossiern.</li>
             <li><strong>Enskilda personer i verktyget.</strong> Personer att granska (Lika arbete) och extremvärdena i Underlagets kvalitet visar enskilda löner med filens radnummer. Personer att granska kan inte exporteras eller skrivas ut.</li>
