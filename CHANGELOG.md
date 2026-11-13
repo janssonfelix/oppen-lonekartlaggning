@@ -513,7 +513,7 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 - **En Definition of Done.** Den står i `CONTRIBUTING.md` punkt 3, och `GOVERNANCE.md`, README och teknisk-plan K7
   pekar dit. `npm run kontroll` (`tools/kontroll.mjs`) kör kedjan i CI:s ordning, `build:app`, `lint`, `typecheck`,
-  `test:full`, `bundle` och `test:browser`, prövar efter bygget att artefakten motsvarar källan och att
+  `test:full`, `bundle` och `test:browser`, prövar efter bygget att hela `dist/` motsvarar källan och att
   teckenkodningen är ren, stannar på första fel och skriver stegens tider; `--snabb` kör `npm test` och hoppar över
   röktestet. Ett test kräver att kedjan har varje steg som CI-jobbet quality kör.
 
@@ -528,7 +528,8 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 - **Dokumentationstestet delat i struktur och språk.** `tests/dokumentation-struktur.test.js` prövar filer, skript,
   index och nummer och tal ur koden, `tests/dokumentation-sprak.test.js` de avförda orden, lagrummen, p-värdets
-  förklaring och ordet förvaltning; testerna är desamma som förut. Strukturtestet prövar dessutom att en status
+  förklaring och ordet förvaltning; testerna är desamma som förut, utom de dubbla som *En källa per uppgift* under
+  *Utveckling* tog bort. Strukturtestet prövar dessutom att en status
   *Sammanförd i* eller *Flyttad till* och raden *Gäller i dag:* pekar på ett dokument som finns, och testerna som
   bara krävde en viss formulering eller rubrik i arkitekturbesluten är borttagna.
 
@@ -550,7 +551,9 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 - **Bygge och test: egen referens.** `docs/utveckling/bygge-och-test.md` samlar hur verktyget byggs, testas,
   typkontrolleras och släpps — bygget och dess skyddsnät, testsviten och testmiljön, typkontrollen, linten,
-  `npm run kontroll`, CI, releasen och demosidan — i stället för teknisk-plan §6, som pekar dit; ADR-7 är skriven i
+  `npm run kontroll`, CI, releasen och demosidan — i stället för teknisk-plan §6, som pekar dit. Mapparna,
+  dokumentförteckningen, CI-stegen och release-grindens kontroller skriver den inte av utan hänvisar till sina
+  källor; ADR-7 är skriven i
   den korta mallen, ADR-4 och ADR-5 är flyttade till referensen och `CONTRIBUTING.md`, och ADR-21 står i
   avgränsningen i teknisk-plan §2.
 
@@ -565,9 +568,9 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   standardvärde, bibliotekens versioner m.fl.) har en källa och en kontroll. Riskanalysens bygge och kontrollsumma
   prövas inte längre i testsviten utan bara av release-grinden, så en pull request som ändrar koden behöver inte
   röra riskanalysen. Artefaktgrinden i CI kräver att hela `dist/` (också `RELEASE.txt`) är ett färskt bygge, och
-  release-grinden prövar bara det som gäller vid en release. Dubbla tester i `dokumentation`, `release` och `sbom` är
-  borttagna eller samlade, och den tekniska planen hänvisar till README, `docs/README.md` och `ci.yml` i stället för
-  att upprepa dem.
+  release-grinden prövar bara det som gäller vid en release. Dubbla tester i dokumentationstestet, `release` och
+  `sbom` är borttagna eller samlade, och referensen `bygge-och-test.md` hänvisar till README, `docs/README.md`,
+  `ci.yml` och huvudet i `tools/release.mjs` i stället för att upprepa dem.
 - **D3 7.9.2 (från 7.9.0).** Samma API; biblioteket är byggt om på de senaste versionerna av D3:s delpaket. Det
   rättar bland annat avrundningen när en skala rundar av sina ändpunkter (`nice`, så att det avrundade intervallet
   alltid täcker de ursprungliga ändpunkterna), `d3.format` för noll, NaN och mycket små tal, hela cirkelbågar som försvann när start och slut sammanföll

@@ -97,9 +97,10 @@ säkerhetsregler*.
 | `docs/` | Dokumentationen; [`docs/README.md`](docs/README.md) listar dokumenten efter läsare |
 | `docs/anvandare/` | Dokument som följer med verktyget: körguide, datauttag, organisationspaket, införande |
 | `docs/dataskydd/` | Dataskyddsbeskrivning och risk- och sårbarhetsanalys |
-| `docs/utveckling/` | [`teknisk-plan.md`](docs/utveckling/teknisk-plan.md) (syfte, avgränsning och öppna punkter), [`arkitekturbeslut.md`](docs/utveckling/arkitekturbeslut.md) (ADR), [`diagramkarnan.md`](docs/utveckling/diagramkarnan.md), [`organisationsfil.md`](docs/utveckling/organisationsfil.md) och [`lagrum.md`](docs/utveckling/lagrum.md) |
+| `docs/utveckling/` | [`teknisk-plan.md`](docs/utveckling/teknisk-plan.md) (syfte, avgränsning och öppna punkter), [`skydd.md`](docs/utveckling/skydd.md) (skydden S1–S5), [`regler.md`](docs/utveckling/regler.md) (regelmatrisen), [`arkitekturbeslut.md`](docs/utveckling/arkitekturbeslut.md) (ADR), referenserna per område (bland dem [`diagramkarnan.md`](docs/utveckling/diagramkarnan.md) och [`bygge-och-test.md`](docs/utveckling/bygge-och-test.md)), [`organisationsfil.md`](docs/utveckling/organisationsfil.md) och [`lagrum.md`](docs/utveckling/lagrum.md) |
 | `tests/` | Vitest-sviten (enhetstester, röktester i jsdom, golden-facit, k-anonymitet, tillgänglighet) |
 | `tools/` | Bygge, speglingsgenerator, röktest i webbläsare, prestandamätning och testdatageneratorer. `tools/data/` håller lokala indata och är inte incheckad |
+| `types/` | Deklarationerna för typkontrollen (bibliotekens globaler och appens egna fält på DOM-element) |
 | `site/` | Demosidan på GitHub Pages (`npm run site`) |
 | `.github/` | Arbetsflödena för CI, release och demosidan, ärendemallar, [`CONTRIBUTING.md`](.github/CONTRIBUTING.md), [`GOVERNANCE.md`](.github/GOVERNANCE.md) och [`CODE_OF_CONDUCT.md`](.github/CODE_OF_CONDUCT.md) |
 | Roten | `README.md`, [`CHANGELOG.md`](CHANGELOG.md), [`SECURITY.md`](SECURITY.md), `LICENSE` (MIT), [`TREDJEPARTSLICENSER.md`](TREDJEPARTSLICENSER.md) och `VERSION` |

@@ -51,10 +51,10 @@ samtidigt:
 
 ## Hur en version släpps
 
-En version är en tagg `v<VERSION>` (CalVer). Grinden `npm run release:kontroll` kräver att versionen står
-lika överallt och att risk- och sårbarhetsanalysen är granskad mot den kod som släpps. Arbetsflödet
-bygger om, kräver att artefakten är byte-identisk med den incheckade, signerar med Sigstore och
-publicerar. Ingen signeringsnyckel finns att förlora eller lämna över: signaturen styrker att filen
+En version är en tagg `v<VERSION>` (CalVer). Grinden `npm run release:kontroll` prövar det som bara gäller vid
+en release (vad, står i huvudet i `tools/release.mjs`), bland annat att risk- och sårbarhetsanalysen är granskad mot
+den kod som släpps. Arbetsflödet bygger om, kräver att `dist/` är byte-identisk med det incheckade, signerar med
+Sigstore och publicerar. Ingen signeringsnyckel finns att förlora eller lämna över: signaturen styrker att filen
 byggdes av arbetsflödet ur taggen (se [`SECURITY.md`](../SECURITY.md)).
 
 ## Kontinuitet — om projektet slutar underhållas

@@ -4,9 +4,10 @@
 //
 // Stegen körs i ordning som `npm run <steg>` och kedjan stannar på första fel, med stegets slutkod. Efter `bundle`
 // prövas samma två grindar som CI-jobbet quality kör utöver npm-skripten (.github/workflows/ci.yml):
-//   artefakten   — bygget ändrade inga spårade filer under dist/. CI bygger om och kräver att den incheckade filen
-//                  blir byte-identisk; här jämförs dist/ som den låg när kedjan började med dist/ efter bygget. En
-//                  ändring betyder att dist/ inte motsvarade källan: de ombyggda filerna ska checkas in.
+//   artefakten   — bygget ändrade inga spårade filer under dist/. CI bygger om och kräver att hela dist/, artefakten
+//                  och RELEASE.txt, blir byte-identisk med det incheckade; här jämförs dist/ som den låg när kedjan
+//                  började med dist/ efter bygget. En ändring betyder att dist/ inte motsvarade källan: de ombyggda
+//                  filerna ska checkas in.
 //   teckenkodningen — ingen U+FFFD (mojibake) i dist/app.js, src/index.html och src/style.css.
 //
 // `--snabb` är körningen under arbetet: `test` (enhetsprojektet) i stället för `test:full`, och inget röktest i

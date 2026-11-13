@@ -8,7 +8,9 @@ sanningen; där dokumentet och filerna skiljer sig är det dokumentet som ska r�
 Dokumentet är inte Definition of Done — vad som krävs innan en ändring är klar står i *Definition of Done* i
 [`CONTRIBUTING.md`](../../.github/CONTRIBUTING.md), punkt 3 — och inte beslutsloggen: varför bygget och testerna är
 som de är står i [`arkitekturbeslut.md`](arkitekturbeslut.md), främst ADR-1, 2, 6, 7, 8, 9, 13, 30 och 31.
-Kommandona i korthet står i `README.md` (*För dig som utvecklar*).
+Kommandona i korthet står i `README.md` (*För dig som utvecklar*). Det som har en egen källa — mapparna, dokumenten,
+CI:s steg och vad release-grinden prövar — skrivs inte av här utan hänvisas dit (*Var uppgifterna står* i
+`CONTRIBUTING.md`).
 
 | Del | Fil |
 |---|---|
@@ -27,20 +29,7 @@ Kommandona i korthet står i `README.md` (*För dig som utvecklar*).
 `ERR_REQUIRE_ESM` på Node 20 — smoke-, a11y- och golden-sviterna faller då tyst. `require(esm)` är påslaget från
 22.12.
 
-**Mappstrukturen:**
-
-- `src/` — källan: `src/index.html`, `src/style.css`, `src/app/NN-*.js` (appens moduler, namngivna efter flik eller
-  funktion; tabellen står i `src/app/README.md`), `src/lib/*.js` (rena moduler som testas direkt och speglas in i
-  appen) och `src/licenser.txt` (licenstexterna som byggs in i HTML-filen).
-- `vendor/` — tredjepartsbiblioteken: `vendor/d3.min.js` (diagram, ADR-39), `vendor/xlsx.mini.min.js`,
-  `vendor/papaparse.min.js` och `vendor/jszip.min.js`, låsta med `vendor/SHA256SUMS`; licenserna i
-  `TREDJEPARTSLICENSER.md`.
-- `dist/` — genererat och incheckat: `dist/app.js`, `dist/oppen-lonekartlaggning.html` och `dist/RELEASE.txt`.
-- `docs/` — `docs/anvandare/` (medföljer verktyget), `docs/dataskydd/` och `docs/utveckling/` (planen, besluten,
-  skydden, regelmatrisen och referenserna); `docs/README.md` listar dokumenten (avsnitt 12).
-- `tests/`, `tools/` (bygge, generatorer; `tools/data/` för lokala indata, inget incheckat) och `types/`
-  (deklarationerna för typkontrollen, avsnitt 6).
-- `site/` — demosidans mall (avsnitt 10).
+**Mappstrukturen** står i `README.md` (*Mappstruktur*), och appens moduler i `src/app/README.md`.
 
 **Källfilerna** är `src/index.html`, `src/style.css`, `src/app/NN-*.js` och `src/lib/*.js`. `dist/app.js` är ett
 **genererat** hopslag av `src/app/` och redigeras aldrig direkt (ADR-6, ADR-8).
@@ -81,8 +70,10 @@ speglarna är i synk med `src/lib/`.
 
 ## 3. Versionering
 
-CalVer (`ÅÅÅÅ.MM.DD`). `VERSION` är enda källa; `APP_VERSION` och `APP_BUILD_DATE` genereras ur den och vaktas av
-`tests/version.test.js` (ADR-13). Hur en version släpps står i avsnitt 10.
+CalVer (`ÅÅÅÅ.MM.DD`). `VERSION` är källan, och `package.json` sätts samtidigt (npm kräver fältet). `APP_VERSION` och
+`APP_BUILD_DATE` genereras ur den (ADR-13). `tests/version.test.js` prövar att `VERSION` är CalVer och att stämpeln
+och `package.json` följer den. Var versionen i övrigt står, och vad som prövar den, står i *Var uppgifterna står* i
+[`CONTRIBUTING.md`](../../.github/CONTRIBUTING.md); hur en version släpps i `README.md` (*Släppa en version*).
 
 ## 4. Stilmallen
 
@@ -186,8 +177,8 @@ att ingen trafik lämnar sidan.
 - **Färskhetsspärren** (ADR-7): riggen avbryter innan något prövas om `src/index.html`, `src/style.css`,
   `dist/app.js` eller någon fil i `src/app/` är nyare än bygget. Kör `npm run bundle` först.
 - **Tre webbläsare:** Chromium, Firefox och WebKit (`--browser=…`, `npm run test:browser:firefox`/`:webkit`;
-  `npm run test:browser:webkit:behallare` kör WebKit i en behållare med podman). I CI körs alla tre vid pull
-  requests, på main och vid manuella körningar, och bara Chromium vid push av en versionstagg.
+  `npm run test:browser:webkit:behallare` kör WebKit i en behållare med podman). När CI kör vilken motor står i
+  jobbet `browser` i `.github/workflows/ci.yml` (avsnitt 9).
 
 ### 5.6 Prestandamätningen
 
@@ -237,8 +228,9 @@ förbjuds därför inte.
 `npm run kontroll` (`tools/kontroll.mjs`) kör kedjan i *Definition of Done* i
 [`CONTRIBUTING.md`](../../.github/CONTRIBUTING.md), punkt 3: `build:app`, `lint`, `typecheck`, `test:full`,
 `bundle` och `test:browser`, i den ordningen, och stannar på första fel med stegets slutkod. Efter `bundle` prövas
-samma två grindar som CI-jobbet `quality` kör utöver npm-skripten: **artefaktgrinden** (bygget ändrade inga spårade
-filer under `dist/`; en ändring betyder att `dist/` inte motsvarade källan, och de ombyggda filerna ska checkas in)
+samma två grindar som CI-jobbet `quality` kör utöver npm-skripten: **artefaktgrinden** (bygget ändrade ingen spårad
+fil under `dist/`, alltså inte heller `RELEASE.txt`; kedjan jämför `dist/` som den låg när den började, CI jämför med
+det incheckade. En ändring betyder att `dist/` inte motsvarade källan, och de ombyggda filerna ska checkas in)
 och **teckenkodningsgrinden** (ingen U+FFFD i `dist/app.js`, `src/index.html` och `src/style.css`). Sist skrivs
 stegens tider. `npm run kontroll -- --snabb` är körningen under arbetet: `test` i stället för `test:full`, och inget
 röktest i webbläsaren. `tests/dokumentation-struktur.test.js` kräver att kedjan har varje steg som CI-jobbet
@@ -246,44 +238,28 @@ röktest i webbläsaren. `tests/dokumentation-struktur.test.js` kräver att kedj
 
 ## 9. CI
 
-`.github/workflows/ci.yml` körs vid push till `main` och taggar `v*`, vid pull requests och för hand, med bara
-läsbehörighet, i två jobb. Båda kör Node 22. Andra grenar prövas genom sin pull request, och en ny push på en pull
-request avbryter den pågående körningen.
-
-- **`quality`** — lint, typkontroll, teckenkodningsgrinden (ingen U+FFFD i egen källkod) och **artefaktgrinden**:
-  bygget är byte-reproducerbart, så CI bygger om och kräver oförändrad SHA-256. `appsource`-testet vaktar
-  `dist/app.js` mot `src/app/`; artefaktgrinden vaktar den skeppade HTML-filen. Hela testsviten
-  (`npm run test:full`) körs sist, så att de billiga grindarna ger besked först.
-- **`browser`** — en matris över Chromium, Firefox och WebKit (vid push av en tagg bara Chromium):
-  installerar motorn, bygger artefakten och kör röktestet mot den. Jobbet bygger *inuti* körningen eftersom
-  `git checkout` ger alla filer samma mtime, vilket annars skulle utlösa röktestets färskhetsspärr.
-
-Varje `uses:` i arbetsflödena pekar på en fullständig commit-SHA med versionen som kommentar
-(`tests/sakerhet.test.js`, avsnitt 11).
+CI är `.github/workflows/ci.yml`, och dess kommentarer är källan till stegen, när de körs och varför. I korthet har
+arbetsflödet två jobb: **`quality`** kör lint, typkontroll, teckenkodningsgrinden, artefaktgrinden och sist hela
+testsviten (`npm run test:full`), och **`browser`** kör röktestet i Chromium, Firefox och WebKit mot en artefakt som
+byggs i jobbet. **Artefaktgrinden** bygger om och kräver att hela `dist/`, också `RELEASE.txt`, blir byte-identisk
+med det incheckade. Den är den enda kontrollen av artefakten och `RELEASE.txt`; `dist/app.js` vaktas också av
+`appsource`-testet.
 
 ## 10. Release och demosidan
 
 **Stegen** för att släppa en version står i `README.md` (*Släppa en version*), och hur en mottagare verifierar filen
-står i `SECURITY.md` (*Kontrollera att filen är äkta*). Här står vad grinden och arbetsflödet gör.
+står i `SECURITY.md` (*Kontrollera att filen är äkta*).
 
-**Release-grinden** `npm run release:kontroll` (`tools/release.mjs`, prövad på fixturer i `tests/release.test.js`):
+**Release-grinden** `npm run release:kontroll` (`tools/release.mjs`, prövad på fixturer i `tests/release.test.js`)
+prövar bara det som gäller vid en release; vad, står i huvudet i `tools/release.mjs`. Det som ska gälla i varje
+commit prövar den inte, utan testsviten och artefaktgrinden (*Var uppgifterna står* i
+[`CONTRIBUTING.md`](../../.github/CONTRIBUTING.md)).
 
-- `VERSION`, `package.json`, CHANGELOG:s översta versionsrubrik och `dist/RELEASE.txt` anger samma version, och
-  CHANGELOG har ingen rubrik *Oförlöst* kvar;
-- bygget har `RELEASE.txt`:s SHA-256, och riskanalysen anger samma bygge och kontrollsumma;
-- riskanalysens och `dataskydd.md`:s granskningsdatum är inte äldre än senaste commit som rör `src/`,
-  `tools/bundle.mjs` eller `vendor/` (teknisk-plan §9 punkt 17b);
-- arbetskatalogen är ren.
-
-Vid OK skriver grinden ut taggkommandot.
-
-**Arbetsflödet** (`.github/workflows/release.yml`, på tagg `v*`): `npm ci`, kontroll att taggen är `v<VERSION>`,
-release-grinden, ombyggnad med byte-identisk-kontroll, programvaruförteckningen (`npm run sbom`, `tools/sbom.mjs`:
-`dist/sbom.cdx.json` i CycloneDX), signering av artefakten, `RELEASE.txt` och programvaruförteckningen med Sigstore
-cosign utan nyckel (certifikat för arbetsflödet genom GitHub Actions OIDC) och verifiering med samma kommando som
-`SECURITY.md` anger, sist en GitHub Release med filerna och deras `.sigstore.json`-paket. Klonen är fullständig
-(`fetch-depth: 0`) så att grinden kan läsa när koden senast ändrades. Jobbet har bara `contents: write` och
-`id-token: write`.
+**Arbetsflödet** `.github/workflows/release.yml` körs på en tagg `v*`: det kör grinden igen, bygger om, tar fram
+programvaruförteckningen (`npm run sbom`, `tools/sbom.mjs`: `dist/sbom.cdx.json` i CycloneDX), signerar med Sigstore
+cosign utan nyckel och publicerar en GitHub Release. Stegen, deras ordning och behörigheterna står i arbetsflödet och
+dess kommentarer; `tests/sakerhet.test.js` prövar ordningen, den fullständiga klonen, att signeringen är utan nyckel
+och att jobbet har minsta behörighet.
 
 **Demosidan.** `npm run site` (`tools/site.mjs`, efter `npm run bundle`) bygger `site/dist/` (startsidan ur
 `site/index.html`, bygget och `RELEASE.txt`) för valfri statisk webbplats. Sidan har inga skript och länkar till
@@ -304,20 +280,6 @@ körtidsberoenden från npm: biblioteken ligger låsta i `vendor/`.
 
 ## 12. Dokumentationen
 
-- `README.md` i roten (översikt, kom igång, kommandona) och `CHANGELOG.md` (per release).
-- `docs/README.md` listar dokumenten i `docs/` efter läsare.
-- `docs/anvandare/` — `korguide.md`, `datauttag.md` (med uttagssteg för tre lönesystem, ej verifierade mot
-  systemen), `organisationspaket.md` (med ett påhittat exempelpaket och systemägarens checklista),
-  `overta-verktyget.md`, `pilotchecklista.md`, `sammanfattning-hr-chefer.md`, `sakerhetsbeskrivning.md` och
-  `tillganglighetsredogorelse.md` (för IT och dataskyddsombud) och `information-till-anstallda.md` (textförslag, ska
-  stämmas av med dataskyddsombudet).
-- `docs/dataskydd/` — `riskanalys.md` (underlag till DPIA, det fullständiga dokumentet) och `dataskydd.md` (kort
-  beskrivning för dataskyddsombud och IT).
-- `docs/utveckling/` — `teknisk-plan.md` (syfte, avgränsning, funktionsmål, kvalitetskrav och öppna punkter),
-  `skydd.md` (skydden S1–S5), `regler.md` (regelmatrisen), `arkitekturbeslut.md` (besluten), referenserna
-  `k-troskeln.md`, `regressionsmodellen.md`, `likvardighetsmodellen.md`, `diagramkarnan.md` och detta dokument,
-  formatspecifikationen `organisationsfil.md` och `lagrum.md` (lagrumshänvisningarna).
-- `.github/` — `CONTRIBUTING.md` (med Definition of Done) och `GOVERNANCE.md`; `SECURITY.md` i roten.
-
-Metoderna beskrivs för användaren i appens flik *Om verktyget*. Filnamn skrivs med gemener och bindestreck; levande
-dokument har inget datum eller versionsnummer i namnet.
+Förteckningen över dokumenten i `docs/`, efter läsare, står i [`docs/README.md`](../README.md), och filerna i roten
+och i `.github/` i `README.md` (*Mappstruktur*). Hur filer namnges står i `README.md` (*Namngivning*). Metoderna
+beskrivs för användaren i appens flik *Om verktyget*.

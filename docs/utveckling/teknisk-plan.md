@@ -137,10 +137,10 @@ Analysen av likvärdigt arbete — definitionen av kvinnodominerat, jämförelse
 
 ## 6. Teknisk plan & leveransform
 
-Hur verktyget byggs, testas, typkontrolleras och släpps — körtiden och mapparna, bygget och dess skyddsnät,
-versioneringen, stilmallen, testsviten och testmiljön, typkontrollen, linten, `npm run kontroll`, CI, releasen,
-demosidan, ärendena och beroendeuppdateringarna och förteckningen över dokumenten — står i
-[`bygge-och-test.md`](bygge-och-test.md).
+Hur verktyget byggs, testas, typkontrolleras och släpps — körtiden, bygget och dess skyddsnät, versioneringen,
+stilmallen, testsviten och testmiljön, typkontrollen, linten, `npm run kontroll`, CI, releasen, demosidan, ärendena
+och beroendeuppdateringarna — står i [`bygge-och-test.md`](bygge-och-test.md). Repots mappar står i `README.md`
+och förteckningen över dokumenten i `docs/README.md`.
 
 ---
 
@@ -160,8 +160,8 @@ K7. Skydd som är juridiskt bindande vaktas av invarianter över hela utdatan: s
 K8. Tillgänglighet enligt WCAG 2.1 AA. Vakt: `tests/a11y.test.js` (axe-core över alla flikar) och statusfärgernas
     kontrast i `tests/sakerhet.test.js`; övrig färgkontrast prövas för hand enligt pilotchecklistan
     (`docs/anvandare/pilotchecklista.md`).
-K9. Bygget är reproducerbart. Vakt: artefaktgrinden i `.github/workflows/ci.yml` kräver att en färsk byggd fil är
-    byte-identisk med den incheckade.
+K9. Bygget är reproducerbart. Vakt: artefaktgrinden i `.github/workflows/ci.yml` kräver att en färsk build ger
+    samma `dist/` som den incheckade, artefakten och `RELEASE.txt`.
 K10. Klarspråk och ordval i det användaren läser. Vakt: `tests/dokumentation-sprak.test.js` (bland annat avförda
     ord och lagrum i användartexten) och `tests/juridiksprak.test.js` (juridiska formuleringar hålls övergripande).
 

@@ -65,24 +65,31 @@ härleds ur den av ett verktyg; de skriver inte av den. Varje sak prövas av **e
 | Uppgift | Källa (uppdateras här) | Hänvisar eller härleds | Kontroll |
 |---|---|---|---|
 | Version | `VERSION` | `package.json` (sätts samtidigt, npm kräver fältet); `src/app/08-version.js` (`npm run build:app`); `dist/` och programvaruförteckningen (bygget) | `tests/version.test.js` |
-| Ändringslogg | `CHANGELOG.md`, rubriken *Oförlöst* överst | releasens text | ordningen: `tests/dokumentation.test.js`; versionen överst vid release: release-grinden |
+| Ändringslogg | `CHANGELOG.md`, rubriken *Oförlöst* överst | releasens text | ordningen: `tests/dokumentation-struktur.test.js`; versionen överst vid release: release-grinden |
 | Artefakten och dess kontrollsumma | `dist/oppen-lonekartlaggning.html` och `dist/RELEASE.txt` (`npm run bundle`) | demosidan, SBOM | artefaktgrinden i CI: en färsk build ska ge samma `dist/` |
 | Det granskade bygget och granskningsdatumen | rad 3–4 i `docs/dataskydd/riskanalys.md`; *Granskad mot koden* i `docs/dataskydd/dataskydd.md` | förs in vid release (README, *Släppa en version*); teknisk-plan §9 punkt 17b hänvisar | release-grinden |
 | Kommandona för kontrollsumman | `VERIFIERING` i `tools/release.mjs` | `RELEASE.txt` (bygget), `SECURITY.md`, körguiden §0 | `tests/release.test.js` |
-| k-tröskelns standardvärde | `K_STANDARD` i `src/app/06-k-anonymitet-och-dataminimering.js` | dokumenten skriver talet | `tests/dokumentation.test.js` |
+| k-tröskelns standardvärde | `K_STANDARD` i `src/app/06-k-anonymitet-och-dataminimering.js` | dokumenten skriver talet | `tests/dokumentation-struktur.test.js` |
 | Bibliotekens versioner och kontrollsummor | filerna i `vendor/` och `vendor/SHA256SUMS` | `src/licenser.txt`, *Om verktyget*, `TREDJEPARTSLICENSER.md`, SBOM | `tests/sakerhet.test.js` |
-| Arkitekturbesluten | `docs/utveckling/arkitekturbeslut.md` (besluten och indextabellen) | kod, tester och dokument anger numret | `tests/dokumentation.test.js` |
-| Lagrummen | `docs/utveckling/lagrum.md` | övriga dokument anger kapitel | `tests/dokumentation.test.js` |
+| Arkitekturbesluten | `docs/utveckling/arkitekturbeslut.md` (besluten och indextabellen) | kod, tester och dokument anger numret | `tests/dokumentation-struktur.test.js` |
+| Lagrummen | `docs/utveckling/lagrum.md` | övriga dokument anger kapitel | `tests/dokumentation-sprak.test.js` |
 | Öppna punkter | `docs/utveckling/teknisk-plan.md` §9 | anges med nummer | — |
-| Repots mappar | `README.md` | teknisk-plan §6 hänvisar | — |
-| Appens moduler | `src/app/README.md` | | `tests/dokumentation.test.js` |
-| Dokumenten | `docs/README.md` | teknisk-plan §6 hänvisar | — |
-| CI-jobben och stegen | `.github/workflows/ci.yml` (kommentarerna) | teknisk-plan §6 sammanfattar och hänvisar | — |
-| Hur en version släpps | `README.md`, *Släppa en version* | | — |
-| Vad release-grinden prövar | huvudet i `tools/release.mjs` | README, teknisk-plan och `release.yml` hänvisar | `tests/release.test.js` |
-| Regeln för ny utdata | punkt 3 i *Ändringsförslag i koden* ovan | teknisk-plan K7 hänvisar | — |
+| Repots mappar | `README.md` | `bygge-och-test.md` §1 hänvisar | — |
+| Appens moduler | `src/app/README.md` | `bygge-och-test.md` §1 hänvisar | `tests/dokumentation-struktur.test.js` |
+| Dokumenten | `docs/README.md` | `bygge-och-test.md` §12 hänvisar | — |
+| CI-jobben och stegen | `.github/workflows/ci.yml` (kommentarerna) | `bygge-och-test.md` §9 sammanfattar och hänvisar | — |
+| Hur en version släpps | `README.md`, *Släppa en version* | `bygge-och-test.md` §10 hänvisar | — |
+| Vad release-grinden prövar | huvudet i `tools/release.mjs` | README, `bygge-och-test.md` §10, `GOVERNANCE.md` och `release.yml` hänvisar | `tests/release.test.js` |
+| Regeln för ny utdata | punkt 3 (Definition of Done) i *Ändringsförslag i koden* ovan | teknisk-plan K7 och `CLAUDE.md` hänvisar | — |
+| Definition of Done och kontrollkedjan | punkt 3 ovan; stegen i `STEG` i `tools/kontroll.mjs` | README, `GOVERNANCE.md`, `CLAUDE.md` och `bygge-och-test.md` §8 hänvisar | `tests/dokumentation-struktur.test.js` (kedjan har CI:s steg, och README och `GOVERNANCE.md` pekar hit) |
+| Skydden S1–S5 | `docs/utveckling/skydd.md` | teknisk-plan §3 och §7, `CLAUDE.md` (kort lista), `GOVERNANCE.md` och regelmatrisen hänvisar | `tests/regler.test.js` (varje skydd har sin rad i regelmatrisen) |
+| Regelmatrisen | `docs/utveckling/regler.md` | vaktfilernas märkning `Vaktar:`, `CLAUDE.md` och `bygge-och-test.md` §5.1 hänvisar | `tests/regler.test.js` |
+| Gällande lydelse per område | referenserna i `docs/utveckling/` (`k-troskeln.md`, `regressionsmodellen.md`, `likvardighetsmodellen.md`, `diagramkarnan.md`, `bygge-och-test.md`) | besluten (*Gäller i dag:*), teknisk-plan och `CLAUDE.md` hänvisar | `tests/dokumentation-struktur.test.js` (*Gäller i dag* och statusen pekar på ett dokument som finns) |
 
-En ny uppgift som flera filer behöver läggs in i tabellen med sin källa och sin kontroll.
+En ny uppgift som flera filer behöver läggs in i tabellen med sin källa och sin kontroll. Tabellen säger var en
+**uppgift** har sin källa och vilken kontroll som håller avskrifterna i takt; regelmatrisen
+([`docs/utveckling/regler.md`](../docs/utveckling/regler.md)) säger vilken vakt som fäller en ändring som bryter en
+**regel**. De upprepar inte varandra.
 
 ## Bidra med en importprofil
 
