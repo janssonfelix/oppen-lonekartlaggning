@@ -1,7 +1,7 @@
 # Dokumentation
 
 Dokumenten i `docs/`, ordnade efter vem som läser dem. Översikten över hela repot står i
-[`README.md`](../README.md) i roten.
+[`README.md`](../README.md) i roten. Ingången för AI-assistenter är [`CLAUDE.md`](../CLAUDE.md) i roten.
 
 ## För den som gör kartläggningen
 

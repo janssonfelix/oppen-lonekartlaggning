@@ -512,6 +512,11 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   teckenkodningen är ren, stannar på första fel och skriver stegens tider; `--snabb` kör `npm test` och hoppar över
   röktestet. Ett test kräver att kedjan har varje steg som CI-jobbet quality kör.
 
+- **Ingång för AI-assistenter, checklista för beslut och PR-mall.** `CLAUDE.md` är en kort ingång med skydden, vad
+  klart betyder och en karta över vad som ska läsas före en ändring i varje område; `GOVERNANCE.md` har avsnittet
+  *När ett beslut förs in* med de nio stegen, och `.github/PULL_REQUEST_TEMPLATE.md` frågar efter Definition of Done,
+  utdata som lämnar verktyget och ändrade beslut.
+
 ### Utveckling
 
 - **D3 7.9.2 (från 7.9.0).** Samma API; biblioteket är byggt om på de senaste versionerna av D3:s delpaket. Det

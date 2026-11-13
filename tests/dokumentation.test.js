@@ -69,6 +69,28 @@ describe('dokumentation: teknisk-plan.md stämmer med projektet', () => {
     });
 });
 
+// CLAUDE.md är ingången för AI-assistenter: kort nog att läsas i sin helhet, och den pekar bara på det som finns.
+describe('dokumentation: CLAUDE.md är en kort ingång', () => {
+    const claudeMd = läs('CLAUDE.md');
+    it('CLAUDE.md är högst 60 rader', () => {
+        expect(claudeMd.trimEnd().split('\n').length).toBeLessThanOrEqual(60);
+    });
+    // En sökväg inom backtick: något med snedstreck, eller ett filnamn med ändelse. Ignorerade mappar (privat/)
+    // finns inte i en ny klon och prövas inte.
+    it('varje fil och mapp som CLAUDE.md pekar ut finns på disk', () => {
+        const kandidater = [...new Set([...claudeMd.matchAll(/`([\w.-]+\/[\w./-]*|[\w.-]+\.(?:js|mjs|json|md|html|css|txt|yml))`/g)]
+            .map(m => m[1]))];
+        expect(kandidater.length).toBeGreaterThan(0);
+        let ignorerade = [];
+        try {
+            ignorerade = execSync('git check-ignore --stdin', { cwd: root, encoding: 'utf8', input: kandidater.join('\n') })
+                .split('\n').filter(Boolean);
+        } catch { /* git check-ignore avslutar med 1 när ingen sökväg är ignorerad */ }
+        const saknade = kandidater.filter(f => !ignorerade.includes(f) && !existsSync(join(root, f)));
+        expect(saknade, `CLAUDE.md pekar ut filer som inte finns: ${saknade.join(', ')}`).toEqual([]);
+    });
+});
+
 describe('dokumentation: CHANGELOG är kronologisk', () => {
     it('versionsrubrikerna står i fallande datumordning', () => {
         const rubriker = [...läs('CHANGELOG.md').matchAll(/^## (\d{4})\.(\d{2})\.(\d{2})/gm)]

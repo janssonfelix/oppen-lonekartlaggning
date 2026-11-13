@@ -25,6 +25,27 @@ beroende av projektet.
 3. Granskning av underhållaren. Grenen `main` är skyddad: grön CI krävs, inga direkta pushar.
 4. Ändringen tas in först när hela Definition of Done är uppfylld, också de punkter som CI inte prövar.
 
+## När ett beslut förs in
+
+Ett beslut tas av underhållaren. Utkastet arbetas fram utanför repot och förs in i en ändring som gör allt nedan
+samtidigt:
+
+1. Beslutet i [`docs/utveckling/arkitekturbeslut.md`](../docs/utveckling/arkitekturbeslut.md), med nästa lediga
+   nummer och en rad i indexet. Ett nummer byts aldrig.
+2. Status på varje beslut det ändrar (*Ändrad av ADR-x*), och text i dem som inte längre gäller rättad eller
+   hänvisad till det nya beslutet.
+3. Den gällande lydelsen där den står: referensdokumentet för området (i dag `diagramkarnan.md`, `lagrum.md`,
+   `organisationsfil.md` och teknisk-plan §3–§6).
+4. Mål och avgränsning (teknisk-plan §1–§2) om omfånget ändras.
+5. [`docs/utveckling/skydd.md`](../docs/utveckling/skydd.md) om ett skydd berörs, och
+   [`docs/utveckling/regler.md`](../docs/utveckling/regler.md) om en regel eller en vakt tillkommer.
+6. Riskanalysen och [`docs/dataskydd/dataskydd.md`](../docs/dataskydd/dataskydd.md) om något som lämnar verktyget
+   ändras.
+7. Om verktyget (fliken i appen) och körguiden.
+8. `CHANGELOG.md`.
+9. En sökning på de ändrade besluten (`ADR-n`) i `src/`, `tests/` och `docs/`, och kommentarer och texter som
+   citerar det som inte längre gäller rättade.
+
 ## Hur en version släpps
 
 En version är en tagg `v<VERSION>` (CalVer). Grinden `npm run release:kontroll` kräver att versionen står
