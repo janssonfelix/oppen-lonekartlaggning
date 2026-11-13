@@ -311,7 +311,7 @@ efter korrigering när p < 0,05 och q < 0,05 (eller p < 0,05 när bara ett test 
 3 %, *Dokumentera* när den är säkerställd efter korrigering men under 3 %, *Osäkert utslag* när bara det råa p-värdet
 är under 0,05 (varningstriangeln), annars *Inget utslag*. Texten om korrigeringen räknas ur antalet tester
 (`_bhTextFor`). Protokollet för gemensam lönebedömning väljer sina BAS-intervall på det råa p-värdet, utan korrigering
-(teknisk-plan §6, punkt 9e).
+(teknisk-plan §9, punkt 9e).
 
 ## 8. Utan ålder
 

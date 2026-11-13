@@ -17,7 +17,8 @@ datorn** — det styr hur vi tar emot bidrag.
 ## Ändringsförslag i koden
 
 1. Läs `README.md` (för dig som utvecklar), skydden i `docs/utveckling/skydd.md`, `docs/utveckling/teknisk-plan.md`
-   och arkitekturbesluten (ADR) i `docs/utveckling/arkitekturbeslut.md`. Skydden och flera av besluten är medvetna
+   och arkitekturbesluten (ADR) i `docs/utveckling/arkitekturbeslut.md`; rör ändringen bygget, testmiljön, CI eller
+   releasen, också `docs/utveckling/bygge-och-test.md`. Skydden och flera av besluten är medvetna
    begränsningar som inte ska ändras utan ett nytt beslut.
 2. Gör ändringen i `src/` (aldrig direkt i `dist/`), med test.
 3. **Definition of Done.** En ändring är klar när:
@@ -35,6 +36,7 @@ datorn** — det styr hur vi tar emot bidrag.
      dem.
    - `CHANGELOG.md` har en rad om ändringen under *Oförlöst*.
    - Oanvänd kod är borttagen, inte utkommenterad.
+   - Säkerhetsgranskningen hålls samlad i `docs/dataskydd/riskanalys.md`, inte spridd på fler dokument.
    - Varje källfil bär licensraden (`SPDX-License-Identifier: MIT`).
 4. Beskriv ändringen och varför den behövs.
 

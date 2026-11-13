@@ -543,6 +543,16 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   *Lägre krav, högre lön*, inställningarna och vakterna — och ADR-25, 60 och 61 är skrivna i den korta mallen och pekar
   dit, liksom teknisk-plan §5 och `CLAUDE.md`.
 
+- **Bygge och test: egen referens.** `docs/utveckling/bygge-och-test.md` samlar hur verktyget byggs, testas,
+  typkontrolleras och släpps — bygget och dess skyddsnät, testsviten och testmiljön, typkontrollen, linten,
+  `npm run kontroll`, CI, releasen och demosidan — i stället för teknisk-plan §6, som pekar dit; ADR-7 är skriven i
+  den korta mallen, ADR-4 och ADR-5 är flyttade till referensen och `CONTRIBUTING.md`, och ADR-21 står i
+  avgränsningen i teknisk-plan §2.
+
+- **Besluten i mall, lydelsen i referenserna.** `arkitekturbeslut.md` har nu besluten i mall för k-tröskeln,
+  regressionen, likvärdigt arbete och bygget, med den gällande lydelsen i en referens per område; gränssnittet och
+  exporterna väntar på två beslut under arbete.
+
 ### Utveckling
 
 - **D3 7.9.2 (från 7.9.0).** Samma API; biblioteket är byggt om på de senaste versionerna av D3:s delpaket. Det

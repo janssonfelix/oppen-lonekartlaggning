@@ -109,7 +109,8 @@ Källmodulerna i `src/app/` beskrivs i [`src/app/README.md`](src/app/README.md).
 ## För dig som utvecklar
 
 Kräver Node 22.12 eller senare. När en ändring är klar står i *Definition of Done* i
-[`CONTRIBUTING.md`](.github/CONTRIBUTING.md) (punkt 3); kommandona nedan är referensen.
+[`CONTRIBUTING.md`](.github/CONTRIBUTING.md) (punkt 3); kommandona nedan är referensen. Hur bygget, testmiljön,
+CI och releasen fungerar står i [`bygge-och-test.md`](docs/utveckling/bygge-och-test.md).
 
 ```bash
 npm ci                 # installera utvecklingsberoenden

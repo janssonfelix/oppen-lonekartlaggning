@@ -31,7 +31,7 @@ request och `npm run kontroll -- --snabb` under arbetet. Ändra i `src/`, aldrig
 | likvärdigt arbete eller definitionen av kvinnodominerat | `docs/utveckling/likvardighetsmodellen.md`, `tests/likvardighet.test.js` |
 | `src/index.html`, stilmallen (`src/style.css`) eller CSP:n | `docs/utveckling/skydd.md` S1, ADR-9, ADR-30, ADR-43 |
 | text som användaren läser | ADR-16, `docs/utveckling/lagrum.md`, de avförda orden i `tests/dokumentation-sprak.test.js` |
-| bygget eller testmiljön | `docs/utveckling/teknisk-plan.md` §6, `src/app/README.md` |
+| bygget, testmiljön, CI eller releasen | `docs/utveckling/bygge-och-test.md`, `src/app/README.md` |
 | organisationspaketet, namn och etiketter | `docs/utveckling/skydd.md` S5, ADR-28, ADR-47 |
 
 **Regler och vakter:** `docs/utveckling/regler.md` säger vilket test som vaktar vilken regel. En ny bindande regel

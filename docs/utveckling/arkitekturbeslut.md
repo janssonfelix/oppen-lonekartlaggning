@@ -4,8 +4,8 @@
 > dem utan ny kontext. Besluten är numrerade för att koden, testerna och dokumenten ska kunna peka på dem. Numren
 > byts aldrig och inget nummer tas bort; ett nummer som saknas i listan används inte, och 66 och 67 är reserverade
 > för beslut under arbete. De fem skydden står i [`skydd.md`](skydd.md) och går före besluten. Syfte,
-> avgränsning, dataskydd, teknisk plan och öppna punkter står i [`teknisk-plan.md`](teknisk-plan.md); en
-> hänvisning som *teknisk-plan §5* pekar dit.
+> avgränsning, funktionsmål, kvalitetskrav och öppna punkter står i [`teknisk-plan.md`](teknisk-plan.md); en
+> hänvisning som *teknisk-plan §5* pekar dit. Bygget och testerna står i [`bygge-och-test.md`](bygge-och-test.md).
 
 **Formen (ADR-68).** Ett beslut skrivs i en mall: rubriken `**ADR-n — Rubrik.**` med *Beslut ÅÅÅÅ-MM-DD.* efter,
 och sedan *Beslut:* (en till fem meningar om vad som valdes), *Motiv:* (varför), *Avvisat:* (alternativen och
@@ -27,8 +27,8 @@ Datum står där beslutet har ett.
 |---|---|---|---|
 | ADR-1 | Web Worker avvisad | Gällande | – |
 | ADR-2 | JS-minifiering avvisad | Gällande | – |
-| ADR-4 | Byggskyddsnät | Gällande | – |
-| ADR-5 | Kodhygien | Gällande | – |
+| ADR-4 | Byggskyddsnät | Flyttad till `bygge-och-test.md` | – |
+| ADR-5 | Kodhygien | Flyttad till `CONTRIBUTING.md` | – |
 | ADR-6 | `app.js` genereras från `src/app/`-moduler | Gällande | – |
 | ADR-7 | Två lager röktest: jsdom och den byggda filen i riktiga webbläsare | Gällande | – |
 | ADR-8 | lib-speglarna genereras från `src/lib/` | Gällande | – |
@@ -42,7 +42,7 @@ Datum står där beslutet har ett.
 | ADR-17 | `runOLSRegression` får aldrig cachas | Gällande | – |
 | ADR-19 | Underlagets kvalitet: svagaste länken avgör | Gällande | – |
 | ADR-20 | Rapportunderlag via urklipp; bedömningen skrivs utanför verktyget | Gällande | – |
-| ADR-21 | Alla BAS-intervall ingår (upphävd begränsning) | Gällande | – |
+| ADR-21 | Alla BAS-intervall ingår (upphävd begränsning) | Sammanförd i `teknisk-plan.md` §2 | – |
 | ADR-22 | Var uppstår löneskillnaden? Uppdelning på medellön | Ändrad av ADR-65 | – |
 | ADR-23 | Personer att granska: individlista i verktyget, aldrig i utdata | Gällande | – |
 | ADR-24 | Stabilitet för flaggor i Lika arbete: märkning, inte nedgradering | Ändrad av ADR-59 | – |
@@ -98,11 +98,12 @@ blob-workers är opålitliga mellan webbläsare; (d) diagramritningen, som arbet
 (dokumenterat i bundlern). Vinsten (~14 % på en lokalt öppnad fil) motiverar inte ett beroende av terser eller
 esbuild. CSS och HTML minifieras (grammatiken är enklare).
 
-**ADR-4 — Byggskyddsnät.** Bundlern (`tools/bundle.mjs`) avbryter bygget vid U+FFFD (mojibake) i egna
-källfiler och kör `node --check` på `app.js` när Node finns.
+**ADR-4 — Byggskyddsnät.** Var en beskrivning av bundlerns skyddsnät (avbrott vid U+FFFD och `node --check` på
+`dist/app.js`), inte ett eget beslut; det står i [`bygge-och-test.md`](bygge-och-test.md) §2.
 
-**ADR-5 — Kodhygien.** Oanvänd kod tas bort, inte kommenteras ut. Säkerhetsgranskningen hålls samlad i
-`docs/dataskydd/riskanalys.md`.
+**ADR-5 — Kodhygien.** Var två regler, inte ett eget beslut: att oanvänd kod tas bort och att säkerhetsgranskningen
+hålls samlad i `docs/dataskydd/riskanalys.md`. Båda står i *Definition of Done* i
+[`CONTRIBUTING.md`](../../.github/CONTRIBUTING.md), punkt 3.
 
 **ADR-6 — `app.js` genereras från `src/app/`-moduler.** Appens kod ligger i numrerade källmoduler
 (`src/app/NN-*.js`) som `tools/build-app.mjs` slår ihop byte-identiskt (BOM + CRLF bevaras). Motiv:
@@ -115,16 +116,19 @@ bit oförändrad och uppdelningen är bevisbart beteendebevarande. Modulöversik
 Två delar **genereras** och redigeras aldrig för hand: `08-version.js` ur `VERSION` (`tools/gen-version.mjs`)
 och `09-lib-speglar.js` ur `src/lib/` (`tools/gen-mirrors.mjs`).
 
-**ADR-7 — Två lager röktest: jsdom och den byggda filen i riktiga webbläsare.** `tests/smoke.test.js` startar
-appen i jsdom och ritar varje flik. Diagramkärnan ritar där med äkta D3, så SVG:n som prövas är den riktiga.
-Lagret är brett och snabbt men prövar inte det jsdom saknar: CSP:n (som jsdom inte tillämpar), `file://`-bygget
-och bildexporten via canvas. Därför kör `tools/browser-smoke.mjs` den **byggda** artefakten i Chromium, Firefox
-och WebKit via Playwright. Lagren ersätter inte varandra — jsdom-testet är brett och snabbt, webbläsartestet
-smalt och verkligt. Båda körs i CI. Webbläsartestets kontroller ligger per område i `tools/browser-smoke/` med en
-gemensam rigg (`rigg.mjs`); `tools/browser-smoke.mjs` kör dem i en fast ordning och skriver sammanfattningen.
-
-Röktestet mot artefakten har en **färskhetsspärr**: är bygget äldre än källan avbryts det. Utan den blir allt
+**ADR-7 — Två lager röktest: jsdom och den byggda filen i riktiga webbläsare.**
+*Beslut:* Verktyget röktestas i två lager. `tests/smoke.test.js` startar appen i jsdom och ritar varje flik;
+diagramkärnan ritar där med äkta D3, så SVG:n som prövas är den riktiga. `tools/browser-smoke.mjs` kör den
+**byggda** artefakten i Chromium, Firefox och WebKit via Playwright. Lagren ersätter inte varandra, och båda körs i
+CI. Röktestet mot artefakten har en **färskhetsspärr**: är bygget äldre än källan avbryts det.
+*Motiv:* jsdom-lagret är brett och snabbt men prövar inte det jsdom saknar: CSP:n (som jsdom inte tillämpar),
+`file://`-bygget och bildexporten via canvas. Webbläsartestet är smalt och verkligt. Utan färskhetsspärren blir allt
 grönt medan en gammal artefakt testas, vilket är lätt att gå på.
+*Avvisat:* ett av lagren ensamt — jsdom-testet ser inte CSP:n, `file://` eller canvas, och webbläsartestet är för
+smalt för att ersätta det breda lagret.
+*Gäller i dag:* `bygge-och-test.md` §5.5 (kontrollerna per område, riggen, färskhetsspärren och när de tre
+webbläsarna körs) och §9 (CI-jobben).
+*Vakt:* `.github/workflows/ci.yml` (jobben `quality` och `browser`); färskhetsspärren i `tools/browser-smoke/rigg.mjs`.
 
 **ADR-8 — lib-speglarna genereras från `src/lib/`.** `tools/gen-mirrors.mjs` inlinar varje `src/lib/`-modul
 VERBATIM i en IIFE (endast `export` strippas — funktionskropparna rörs aldrig) och exponerar de namn `app.js`
@@ -157,7 +161,7 @@ beräknar SHA-256 (base64) av varje inlinat skripts exakta textinnehåll och skr
 bygget (avbryter om `'unsafe-inline'` inte hittas). Appen har därför inga inline-händelseattribut: knapparna
 använder delegerade lyssnare (`data-goto-tab` / `data-dismiss-parent` i `03-hjalpfunktioner.js`).
 `<style>`-element kräver också kontrollsumma, och stilattribut i markeringen är förbjudna (`style-src-attr 'none'`, ADR-30). Källfilen `src/index.html`
-har `'unsafe-inline'` och går inte att köra direkt (teknisk-plan §6); kör alltid det byggda verktyget.
+har `'unsafe-inline'` och går inte att köra direkt (`bygge-och-test.md` §1); kör alltid det byggda verktyget.
 **Vakter:** `tests/sakerhet.test.js` och webbläsarröktestets räknare för `securitypolicyviolation`.
 
 **ADR-10 — Sidopanelen är navigation, inte ARIA-tabs.** Sidopanelen är `<nav aria-label>` (ett
@@ -269,9 +273,9 @@ verksamheten har (uppdrag, prestation) och skrivs utanför verktyget (teknisk-pl
 kandidatpar med en grupp under tröskeln får inget block, fast fliken Likvärdigt arbete är undantagen.
 
 **ADR-21 — Alla BAS-intervall ingår (upphävd begränsning).** Till och med 2026.10.19 analyserades bara BAS A–J;
-personer i K och högre räknades men uteslöts. Efter användartest ingår all personal: lönekartläggningen ska
-omfatta hela organisationen, och chefsnivåerna är ofta de grupper där könsskillnaden är störst. Rimlighetskontrollen
-kräver bara att BAS är en bokstav; små intervall skyddas av minsta gruppstorlek vid export.
+personer i K och högre räknades men uteslöts. Begränsningen hävdes efter användartest, så att all personal ingår.
+Omfånget, med skälet, rimlighetskontrollen och skyddet för små intervall, står i avgränsningen i
+[`teknisk-plan.md`](teknisk-plan.md) §2.
 
 **ADR-22 — Var uppstår löneskillnaden? Uppdelning på medellön.**
 *Beslut:* Ett avsnitt i Lönestruktur och ett block i rapportunderlaget (efter Sammanfattning) delar skillnaden i
@@ -378,7 +382,7 @@ iakttagelser. Reglerna bor i `src/lib/attgora.js`. **Vakter:** `tests/attgora.te
 
 **ADR-30 — Stilelement kräver kontrollsumma, stilattribut är förbjudna; låsta beroenden.** Verktyget hade omkring
 780 `style="…"` i sidans skal och i flikarnas mallar, och fick därför ha inline-CSS i attribut tillåten. De är nu
-flyttade till klasser i stilmallen (layout, avstånd och text till ett namngivet hjälpklassbibliotek, teknisk-plan §6; färgerna till klasser per status, ADR-43; uträknade mått till `data-stil-*`
+flyttade till klasser i stilmallen (layout, avstånd och text till ett namngivet hjälpklassbibliotek, `bygge-och-test.md` §4; färgerna till klasser per status, ADR-43; uträknade mått till `data-stil-*`
 som `tillampaDataStil()` i `03-hjalpfunktioner.js` sätter via CSSOM), och CSP-direktivet är uppdelat så här:
 `style-src-elem` listar SHA-256 för den byggda filens statiska `<style>`-block, `style-src-attr 'none'` förbjuder
 attributen (direktivet måste skrivas ut: utan det gäller `style-src`), och `style-src 'unsafe-inline'` står som

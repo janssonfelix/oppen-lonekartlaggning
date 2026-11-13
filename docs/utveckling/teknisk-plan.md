@@ -1,8 +1,11 @@
 # teknisk-plan.md — Öppen lönekartläggning: Mål, syfte och plan
 
 > Detta dokument är den kanoniska beskrivningen av *vad* verktyget ska vara och varför
-> (öppna punkter i §9). Arkitekturbesluten (ADR) står i [`arkitekturbeslut.md`](arkitekturbeslut.md).
-> Lagrumshänvisningarna samlas i [`lagrum.md`](lagrum.md); diagramkärnan beskrivs i [`diagramkarnan.md`](diagramkarnan.md).
+> (öppna punkter i §9). Skydden står i [`skydd.md`](skydd.md) och arkitekturbesluten (ADR) i
+> [`arkitekturbeslut.md`](arkitekturbeslut.md). Den gällande lydelsen per område står i referenserna:
+> [`k-troskeln.md`](k-troskeln.md), [`regressionsmodellen.md`](regressionsmodellen.md),
+> [`likvardighetsmodellen.md`](likvardighetsmodellen.md), [`diagramkarnan.md`](diagramkarnan.md) och
+> [`bygge-och-test.md`](bygge-och-test.md). Lagrumshänvisningarna samlas i [`lagrum.md`](lagrum.md).
 
 ---
 
@@ -31,6 +34,10 @@ jämför sig med SKR:s personalstatistik; det är i praktiken kommuner och regio
 organisations — ställningstagande, statistik, benämningar, inställningar, rapportens recept — kommer ur
 organisationspaketet (ADR-28), aldrig ur koden eller dokumenten. Andra arbetsvärderingssystem står som öppen
 punkt i §9.
+
+**Alla BAS-intervall ingår** (ADR-21): lönekartläggningen ska omfatta hela organisationen, och chefsnivåerna är ofta
+de grupper där könsskillnaden är störst. Rimlighetskontrollen kräver bara att BAS är en bokstav; små intervall skyddas
+av minsta gruppstorlek vid export.
 
 Detta är en bärande designprincip, inte en begränsning av misstag:
 
@@ -130,175 +137,10 @@ Analysen av likvärdigt arbete — definitionen av kvinnodominerat, jämförelse
 
 ## 6. Teknisk plan & leveransform
 
-- **Körtid för utveckling:** Node **≥ 22.12** (`engines` i `package.json`). jsdom-kedjan
-  gör `require()` av en ES-modul, vilket kastar `ERR_REQUIRE_ESM` på Node 20 — smoke-,
-  a11y- och golden-sviterna faller då tyst. `require(esm)` är påslaget från 22.12.
-- **Mappstruktur:**
-  - `src/` — källan: `src/index.html`, `src/style.css`, `src/app/NN-*.js` (appens moduler,
-    namngivna efter flik eller funktion; tabellen står i `src/app/README.md`)
-    och `src/lib/*.js` (rena moduler som testas direkt och speglas in i appen).
-  - `vendor/` — tredjepartsbiblioteken (`vendor/d3.min.js` (diagram, ADR-39),
-    `vendor/xlsx.mini.min.js`, `vendor/papaparse.min.js`, `vendor/jszip.min.js`), se `TREDJEPARTSLICENSER.md`.
-  - `dist/` — genererat och incheckat: `dist/app.js`, `dist/oppen-lonekartlaggning.html`
-    och `dist/RELEASE.txt`.
-  - `docs/` — `docs/anvandare/` (medföljer verktyget), `docs/dataskydd/`,
-    och `docs/utveckling/` (denna plan och arkitekturbesluten); `docs/README.md` listar dokumenten.
-  - `tests/`, `tools/` (bygge, generatorer; `tools/data/` för lokala indata, inget incheckat).
-- **Källfiler:** `src/index.html`, `src/style.css`, `src/app/NN-*.js`, `src/lib/*.js`.
-  `dist/app.js` är ett **genererat** hopslag av `src/app/` och redigeras aldrig direkt (ADR-6/ADR-8).
-  `src/index.html` pekar på biblioteken i `vendor/` och på `dist/app.js` (relativa sökvägar
-  från `src/`) men **går inte att köra direkt i en webbläsare**: dess CSP (`default-src
-  'none'; script-src 'unsafe-inline'`) blockerar stilmallen och alla skriptfilerna (fem: fyra bibliotek och verktygets eget skript;
-  prövat i Chromium). Den är indata till bygget och till jsdom-testerna; en
-  ändring ses i `dist/oppen-lonekartlaggning.html` efter `npm run bundle`.
-- **Bygge:** `npm run bundle` (`tools/bundle.mjs`) → `dist/oppen-lonekartlaggning.html` (~2,5 MB;
-  single-file). CSS/HTML minifieras; **JS minifieras inte** (template
-  literals bevaras). SHA-256 loggas i `dist/RELEASE.txt`, som är deterministisk —
-  `Build:`-raden härleds ur `VERSION`, inte ur systemklockan, så en ombyggnad
-  av oförändrad källa inte smutsar ner arbetskatalogen.
-- **Versionering:** CalVer (`ÅÅÅÅ.MM.DD`). `VERSION` är enda källa; `APP_VERSION`
-  och `APP_BUILD_DATE` genereras ur den och vaktas av `tests/version.test.js`.
-- **Stilmallen (`src/style.css`):** komponentregler per flik, variabler i `:root` (färger, `--fs-*`-skalan) och sist ett
-  namngivet bibliotek av hjälpklasser som ersatte alla `style`-attribut (ADR-30). Biblioteket ligger i blocket «Hjälpklasser
-  som ersätter style-attributen» (börjar vid `.dold`), med förklaring av namnen överst i blocket: sammansatta klasser för det som
-  ofta hänger ihop (`rad-bryt-mitt`, `rad-mellan`, `text-dampad-sm`, `versal`, `notis-varning`), annars en klass per värde
-  efter mönstret `egenskap-värde` (`marg-t-8`, `pad-10-14`, `gap-12`, `fs-sm`, `farg-dampad`, `ram-1-kant`, `rund-6`).
-  Väljaren dubblerar klassnamnet (`.x.x.x`) för att få samma företräde som ett style-attribut hade, utan `!important`;
-  färg- och statusklasserna (`fg-`, `bg-`, `bricka-` …) och de äldre hjälpklasserna (`t-hoger`, `mb-14` …) är `!important`
-  och ligger efter biblioteket. En ny kombination skrivs med klasserna som finns; saknas ett värde läggs en rad till i
-  rätt grupp. Utskriftsfönstret för checklistorna (`printScaffoldView`) läser `:root` och allt från `.dold` till
-  stilmallens slut ur den körande stilmallen och lägger in det som byggt stilark (`adoptedStyleSheets`): ett `<style>`-element
-  som skriptet skapar blockeras av den ärvda CSP:n (`style-src-elem`), så fönstret var tidigare helt ostilat.
-- **Tester:** Vitest — omkring 3300 tester i omkring 100 filer: rena `src/lib/`-moduler, CSV-parsning, jsdom-röktest
-  av varje vy (ADR-7; `tests/smoke.test.js` med det delade fönstret och sju `tests/smoke-*.test.js` per
-  område), k-tröskeln i tio `tests/ktroskel*.test.js` med riggen i `tests/helpers/ktroskel-rigg.js`,
-  gränssnittet i `tests/granssnitt*.test.js` (riggen `tests/helpers/granssnitt-rigg.js`) och diagramvyerna i
-  `tests/diagramvyer*.test.js` (riggen `tests/helpers/diagramvyer-rigg.js`),
-  axe-a11y (ADR-10) samt vakterna `appsource`, `drift`, `exports.golden`,
-  `version`, `release` och `kanonymitet`, samt de rena modulerna bakom Tabeller och egna vyer och exportmenyn
-  (`utforska`, `urval`, `falt`). `tests/figur.test.js` prövar figurformatet och
-  `tests/diagramritare.test.js` diagramkärnan (ADR-39) — den ritar med **äkta D3** i jsdom, så SVG:n som prövas är
-  den riktiga, och två differentialtester vaktar att små grupper inte lämnar spår på skärmen eller i exporten.
-  Därutöver `npm run test:browser`: Playwright-röktest av den
-  **byggda** artefakten i riktig Chromium — under CSP:n från `file://`, som jsdom inte tillämpar. Provet kräver att
-  varje diagram har ritats av diagramkärnan, och ritar därtill ett eget diagram och exporterar det genom
-  exportmenyn (PNG i båda storlekarna, SVG som öppnas som eget dokument, diagramdata) — PNG via canvas finns inte i jsdom. Den prövar också adressen `?demo=1`, räknar CSP-överträdelser
-  och interna fel (ADR-31), och körs i Chromium, Firefox och WebKit (`--browser=…`,
-  `npm run test:browser:firefox`/`:webkit`; i CI alla tre vid pull requests och på main, bara Chromium vid en
-  vanlig push till en gren).
-  *Testmiljön:* `tests/helpers/app-harness.js` kompilerar d3 och app.js en gång per arbetare och stänger och
-  tömmer fönster som inte behövs, så att varje arbetares minne håller sig under Nodes tak (den tyngsta filen
-  under 1,2 GB). Ett fönster kostar omkring 0,15 s efter det första (som bär kompileringen); det dyra är
-  ritningen av alla flikar (omkring 2 s på demodatan), så tiden styrs av hur många flikritningar en fil gör.
-  Vitest kör en fil per arbetare, så den längsta filen sätter golvet för hela körningen: därför är röktestet,
-  k-tröskeltestet, gränssnittstestet och diagramvyerna delade i filer per område (`tests/smoke*.test.js`,
-  `tests/ktroskel*.test.js`, `tests/granssnitt*.test.js`, `tests/diagramvyer*.test.js`) med gemensamma riggar i
-  `tests/helpers/`; de tyngsta filerna tar ett par minuter under full last, och den längsta förberedelsen,
-  invarianten över flikar och exporter (I4), är därför delad per tröskel (`tests/ktroskel-invarianter.test.js` och
-  `tests/ktroskel-invarianter-25.test.js`, sviten i `tests/helpers/ktroskel-invariant.js`). `vitest.config.js` sätter en
-  gemensam tidsgräns och antalet arbetare: tre fjärdedelar av antalet trådar (på åtta kärnor med SMT mättes
-  åtta arbetare till 168 s, femton till 150–168 s och tolv till 130 s: de tunga filerna är processorbundna, så
-  med en arbetare per tråd trängs de om kärnorna, och med en per kärna köar de), begränsat av maskinens totala
-  minne med 1,2 GB per arbetare och 2 GB åt resten.
-  *Testkörningen:* sviten är delad i två Vitest-projekt i `vitest.config.js`: `enhet` (moduler, vakter och källtext,
-  utan att verktyget laddas) och `app` (filerna som ritar verktyget i jsdom). Klassningen görs när konfigurationen
-  laddas: en fil hör till `app` om källan nämner `app-harness`, en `-rigg.js` eller `createAppWindow`, eller
-  importerar jsdom. `npm test` är den snabba körningen, bara `enhet` (sekunder); `npm run test:full` kör båda
-  projekten (minuter) och är den som körs i CI och i `npm run kontroll` (vad som krävs före en pull request står i
-  *Definition of Done* i [`CONTRIBUTING.md`](../../.github/CONTRIBUTING.md)). Båda går genom `tools/test.mjs`,
-  som kör sviten och sedan kör om de filer vars arbetare dog i
-  Node (SIGSEGV i V8:s skräpsamlare, sällsynt; orsaken ligger i Node, §9). Ett test som faller körs aldrig om, och
-  utgångskoden är 0 först när alla filer har rapporterat. Hela sviten tar omkring 130 s på 8 kärnor/16 trådar
-  (var tidigare 250–275 s, då `smoke.test.js` och `ktroskel.test.js` var för sig tog hela tiden); under full
-  last tar varje fil omkring dubbelt så lång tid som ensam, och de tyngsta ett par minuter.
-  *Byggets förminskning av stilmallen* ligger i `tools/lib/minify-css.mjs` med tester i `tests/byggminify.test.js`: strängar och `url()` rörs inte, blanksteg runt `+` och `-` i värden står kvar, och blanksteget före en pseudoklass i en väljare står kvar.
-- **Delade fönster i testerna:** ett fönster och en inläsning av demodatan kostar omkring 0,6 s, så läsande tester kan
-  dela fönster med `delatFonster(forbered, skapa)` i `tests/helpers/app-harness.js`. Gruppen börjar med vakten
-  `utgangslage(w)` (tröskel, öppna dialoger, aktiv flik), och efter varje test jämförs `tillstandsavtryck(w)` (hela
-  `state` utom cachar, urvalet i Tabeller och egna vyer, markeringen och dialogerna): det test som lämnar något ändrat fälls. Avtrycket
-  ser inte allt, till exempel stubbar på fönstret och värden i fält, så ett test som ändrar något sådant behåller ett
-  eget fönster. `tests/granssnitt.test.js` (23,0 → 18,3 s ensam), `tests/diagramvyer.test.js` (22,7 → 18,1 s) och
-  `tests/diagramvyer-marken.test.js` (29,0 → 21,7 s) delar. En fil delar bara om den blir minst 20 % snabbare; under
-  gränsen stannade `smoke-vyer`, `smoke-granssnitt`, `granssnitt-vyer`, `smoke-ansvar`, `smoke-jamforelse`,
-  `smoke-innehall`, `smoke-docx`, `ktroskel-utdata`, `ktroskel-regression`, `ktroskel-exporter` och `ktroskel-kon`,
-  där de flesta tester ändrar något. `smoke`, `kanonymitet` och `diagramritare` delade redan eller har sin tid i
-  ritningen. Hela sviten: 176 och 164 s före mot 168 och 142 s efter, körda växelvis på samma maskin (sexton trådar);
-  variationen mellan körningar är större än vinsten i varje enskild fil.
-- **Demosida:** `npm run site` bygger `site/dist/` (startsidan
-  `site/index.html` + bygget + `RELEASE.txt`) för valfri statisk webbplats; sidan har inga
-  skript och länkar till verktyget med `?demo=1`, som startar demoläget (ingen annan
-  adressparameter läses). Finns en översiktsbild eller en kort slinga i `dist/marknad/` tas den
-  med på sidan.
-- **Prestanda:** `npm run perf` (`tools/perf-smoke.mjs`) laddar ett syntetiskt
-  55 000-radersdataset genom den riktiga filuppladdningen i Chromium, mäter tiden
-  tills gränssnittet är klart och tills bakgrundsanalyserna är klara, och tar tid
-  på varje fliks rendering. Vakten är en snäv budget på tiden till klart
-  gränssnitt (5 s; uppmätt ~2 s). Budgeten är maskinberoende, så skriptet körs
-  inför en release på en utvecklarmaskin, inte i CI. Mätvärdena står i § 9. Översiktens bootstrap och
-  trattdiagrammets omkastning räknas en gång per underlag.
-- **Typkontroll:** `npm run typecheck` kör TypeScript (`tsc`, enda tillägget i utvecklingsberoendena) i
-  `checkJs`-läge på JavaScript-källan med JSDoc som typspråk — inget skrivs om till TypeScript och inget
-  emitteras. Två projekt: `tsconfig.json` (`typecheck:lib`) tar `src/lib/**` och `tools/**` som ES-moduler;
-  `tsconfig.app.json` (`typecheck:app`) tar `src/app/*.js` som skript i ett gemensamt globalt scope, precis som
-  i `dist/app.js`. `strictNullChecks` är på, `noImplicitAny` av (koden är dynamiskt typad där JSDoc saknas);
-  `useUnknownInCatchVariables` av. Biblioteken (`d3`, `XLSX`, `Papa`, `JSZip`) och appens egna fält på
-  DOM-element (`tr._markering` m.fl.) deklareras i `types/globals.d.ts`; Node-API:t typas av `@types/node`
-  (utvecklingsberoende sedan 2026-10-30, `"types": ["node"]` i `tsconfig.json`; den egna minimala typfilen är
-  borta). Röktestet och prestandasvepet
-  kör sina callbacks i webbläsarens realm (`page.evaluate`) och är uteslutna, som i `eslint.config.js`.
-  Båda projekten är i **nolläge** (CI stoppar på första felet); inga `@ts-ignore`/`@ts-expect-error` används.
-  Felen vid införandet, sorterade:
-
-  | Projekt | Fel vid start | (i) verkliga buggar | (ii) fel i JSDoc | (iii) brus ur det dynamiska scopet |
-  |---|---|---|---|---|
-  | `src/lib` + `tools` | 558 (varav 427 i sidorealm-skripten) | 0 | ≈70 | ≈61 (+ 427 uteslutna) |
-  | `src/app` | 1769 (varav 130 speglade från `src/lib`) | 1 | ≈330 | ≈1 310 |
-
-  (i) `18-atgardslista.js` läste `state._lifecycleFixBas`, som aldrig sätts — livscykelpunkten i Att göra
-  räknades alltid på standardintervallet i stället för kortets val (test: `tests/attgora-livscykel.test.js`).
-  (ii) Ofullständiga `@returns`/`@param` (fält som saknades i typen, `{object}` som döljer fält, `function():`-syntax,
-  returtyper med `null`), rättade i JSDoc. (iii) DOM-typerna (`Element`/`EventTarget`/`HTMLElement`, null ur
-  `getElementById`) löstes med riktade typomvandlingar vid anropet (`/** @type {HTMLInputElement} */ (e.target).value`),
-  otypade `let x = null`/`[]` och `state`-fälten med `@type`-annoteringar på deklarationen. Standardobjektet
-  `= {}` på `k`-bärande funktioner i `src/lib` (`likaArbeteGrupper`, `prioritera` …) togs bort: utelämnad `k` hade
-  tyst stängt av maskeringen, och varje anropare skickar den.
-- **CI** (`.github/workflows/ci.yml`), två jobb:
-  - `quality` — lint, typkontroll, hela testsviten, mojibake-grind och en **artefaktgrind**: bygget är
-    byte-reproducerbart, så CI bygger om och kräver oförändrad SHA-256. `appsource`-testet
-    vaktar `dist/app.js` mot `src/app/`; artefaktgrinden vaktar den skeppade HTML-filen.
-  - `browser` — en matris över Chromium, Firefox och WebKit (vid en vanlig push till en gren bara Chromium):
-    installerar motorn, bygger artefakten och kör röktestet mot den.
-  Båda kör Node 22. Jobbet bygger *inuti* körningen eftersom `git checkout` ger alla filer
-  samma mtime, vilket annars skulle utlösa röktestets färskhetsspärr.
-- **Release** (`.github/workflows/release.yml`, på tagg `v*`): `npm ci`, kontroll att taggen är `v<VERSION>`,
-  **release-grinden** `npm run release:kontroll` (`tools/release.mjs`: VERSION, `package.json`, CHANGELOG:s översta
-  versionsrubrik utan *Oförlöst* och `RELEASE.txt` anger samma version; bygget har RELEASE.txt:s SHA-256 och
-  riskanalysen samma bygge och kontrollsumma; riskanalysens och `dataskydd.md`:s granskningsdatum är inte äldre än
-  senaste commit som rör `src/`, `tools/bundle.mjs` eller `vendor/`; arbetskatalogen är ren — prövad på fixturer i
-  `tests/release.test.js`), ombyggnad med byte-identisk-kontroll, signering av artefakten och `RELEASE.txt` med
-  Sigstore cosign utan nyckel (certifikat för arbetsflödet genom GitHub Actions OIDC) och verifiering med samma
-  kommando som `SECURITY.md` anger, sist en GitHub Release med filerna och deras `.sigstore.json`-paket. Klonen är
-  fullständig (`fetch-depth: 0`) så att grinden kan läsa när koden senast ändrades. Jobbet har bara
-  `contents: write` och `id-token: write`.
-- **Demosidan** (`.github/workflows/pages.yml`, på tagg `v*` eller för hand): `node tools/site.mjs` med
-  guidelänkar till `docs/anvandare/` i repot, publicerad på GitHub Pages (`upload-pages-artifact`, `deploy-pages`;
-  jobbet som publicerar har bara `pages: write` och `id-token: write`).
-- **Ärenden:** mallar för fel och förslag på svenska i `.github/ISSUE_TEMPLATE/`, med kryssrutan att ärendet inte
-  innehåller verklig lönedata; tomma ärenden är avstängda, och säkerhetsbrister rapporteras privat (`SECURITY.md`).
-- **Beroendeuppdateringar** (`.github/dependabot.yml`): npm veckovis med utvecklingsberoendena i en grupp, och
-  arbetsflödenas steg veckovis. Varje `uses:` i arbetsflödena ska peka på en fullständig commit-SHA med versionen som
-  kommentar (`tests/sakerhet.test.js`), och Dependabot uppdaterar båda tillsammans.
-- **Dokumentation:** `README.md` (översikt); `docs/anvandare/` — `korguide.md`,
-  `datauttag.md` (med uttagssteg för Heroma, Personec P och Visma, ej verifierade mot systemen),
-  `organisationspaket.md` (med ett påhittat exempelpaket och systemägarens checklista), `pilotchecklista.md`,
-  `sammanfattning-hr-chefer.md`, `sakerhetsbeskrivning.md` och `tillganglighetsredogorelse.md` (för IT och
-  dataskyddsombud) och `information-till-anstallda.md` (textförslag, ska stämmas av med dataskyddsombudet);
-  `docs/dataskydd/` — `riskanalys.md` (underlag till DPIA, det fullständiga dokumentet)
-  och `dataskydd.md` (kort beskrivning för dataskyddsombud och IT);
-  `docs/utveckling/lagrum.md` (lagrumshänvisningarna); `CHANGELOG.md` (per release).
-  Metoderna beskrivs för användaren i appens flik *Om verktyget*.
-  Filnamn skrivs med gemener och bindestreck; levande dokument har inget datum eller
-  versionsnummer i namnet.
+Hur verktyget byggs, testas, typkontrolleras och släpps — körtiden och mapparna, bygget och dess skyddsnät,
+versioneringen, stilmallen, testsviten och testmiljön, typkontrollen, linten, `npm run kontroll`, CI, releasen,
+demosidan, ärendena och beroendeuppdateringarna och förteckningen över dokumenten — står i
+[`bygge-och-test.md`](bygge-och-test.md).
 
 ---
 
