@@ -419,6 +419,11 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   `w:tblLook` som Word själv skriver.
 - **Word-utkastet är prövat i Microsoft Word.** Utkastet är öppnat i Word 365 och 2019 med litet och stort demo, och
   förbehållet om att det bara är prövat i LibreOffice är struket ur README och sammanfattningen för HR-chefer.
+- **Könsfördelning per BAS-intervall: beslutat golv och not för mindre intervall (ADR-57).** Tabellen och diagrammet i
+  Lönestruktur tog med varje BAS-intervall med minst 5 personer genom ett hårdkodat tal, också i exporten, och mindre
+  intervall föll bort utan not. Golvet är nu `LITET_UNDERLAG` i båda lägena, som för tabellerna per AID-kod och
+  BAS-intervall: raden bär antal och andelar men inga lönemått, och intervall under golvet namnges i en not under
+  tabellen, som följer med i Excel-bladet *Könsskevhet* och utskriften.
 
 ### Analys
 
