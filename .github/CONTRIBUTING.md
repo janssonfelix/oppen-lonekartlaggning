@@ -20,7 +20,7 @@ datorn** — det styr hur vi tar emot bidrag.
    arkitekturbesluten (ADR) i `docs/utveckling/arkitekturbeslut.md` — flera av dem är medvetna begränsningar som inte ska ändras
    utan ett nytt beslut.
 2. Gör ändringen i `src/` (aldrig direkt i `dist/`), med test.
-3. Kör `npm run build:app`, `npm run test:full`, `npm run lint`, `npm run bundle` och
+3. Kör `npm run build:app`, `npm run test:full`, `npm run lint`, `npm run typecheck`, `npm run bundle` och
    `npm run test:browser`. Allt ska vara grönt. Under arbetet räcker `npm test`, den snabba körningen (moduler och
    vakter, sekunder); `npm run test:full` är hela sviten med jsdom-testerna (minuter) och den som körs i CI. En
    testkörning räknas som grön först när alla testfiler har rapporterat (båda kör själva om en fil vars arbetare
@@ -33,6 +33,12 @@ Verktyget är **neutralt**: det är skrivet för alla arbetsgivare och är inte 
 organisation. Skriv inga namn på organisationer, arbetsgivare eller lönesystem i kod, tester, exempel eller
 dokument; skriv "organisationen" eller "arbetsgivaren", och använd påhittade, uppenbart syntetiska data. Det som är
 organisationsspecifikt (benämningar, referenser, statistik) kommer från användarens egna filer, aldrig från repot.
+Tre undantag:
+
+- **Lönesystem** får namnges i uttagsguiden (`docs/anvandare/datauttag.md`) och där den citeras, som system —
+  aldrig som någons kund eller arbetsgivare.
+- **Källan till jämförelsestatistiken** får namnges som källa.
+- **Demodatan** har en påhittad organisation.
 
 ## Bidra med en importprofil
 
@@ -56,7 +62,10 @@ varifrån den kommer (system och version, inte organisation).
   demoläget eller `npm run gen:testdata`, som skapar påhittad data.
 - **Organisationers referensdata och namn** — ställningstagande och statistik hör hemma i
   organisationens eget organisationspaket, inte i koden. Verktyget ska förbli
-  organisationsneutralt (ADR-28); ett test vakar över det.
+  organisationsneutralt (ADR-28). Ett test vakar över gränssnittets etiketter: `tests/sakerhet.test.js`
+  (*inga hårdkodade etiketter*) prövar att etiketterna för organisationen och jämförelsestatistiken läser namnen
+  ur användarens filer (`orgNamn`, `jmfNamn`) i stället för fasta texter. Att inga namn står i repot vaktas inte
+  av något test; det granskas.
 - **Nätverksanrop, lagring i webbläsaren eller externa resurser** — verktyget ska fungera
   utan nätverk och spara ingenting (dataskyddet i den tekniska planen, §3, och arkitekturbesluten).
 

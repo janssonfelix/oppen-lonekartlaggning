@@ -202,7 +202,7 @@ const tomtResultat = () => ({
     opts: {}
 });
 
-describe('§ 3:10: app.js delegerar till lib-spegeln', () => {
+describe('likvärdigt arbete: app.js delegerar till lib-spegeln', () => {
     it('adaptern innehåller ingen egen implementation', () => {
         expect(appLVSrc).toContain('_lvComputePairs(');
         // Namn som bara en egen implementation av algoritmen har. Dyker något av dem upp
@@ -272,7 +272,7 @@ describe('§ 3:10: app.js delegerar till lib-spegeln', () => {
     });
 });
 
-describe('§ 3:10: spegeln ger reproducerbara konfidensintervall', () => {
+describe('likvärdigt arbete: spegeln ger reproducerbara konfidensintervall', () => {
     // Bootstrappen seedas ur parets egna löner. Utan det blir KI:t nytt vid
     // varje körning och ett exporterat underlag går inte att återskapa.
     const rader = (aid, bas, kv, ma) => [

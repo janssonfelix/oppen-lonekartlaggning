@@ -22,7 +22,7 @@
 | ADR-8 | lib-speglarna genereras från `src/lib/` | Gällande | – |
 | ADR-9 | Hash-baserad CSP `script-src` | Gällande | – |
 | ADR-10 | Sidopanelen är navigation, inte ARIA-tabs | Gällande | – |
-| ADR-12 | K-anonymitetens redovisningsform: utelämna och namnge | Gällande (avsteg i ADR-57) | – |
+| ADR-12 | K-anonymitetens redovisningsform: utelämna och namnge | Ändrad av ADR-51 | – |
 | ADR-13 | `VERSION` är enda källa för versionsstämpeln | Gällande | – |
 | ADR-14 | Tabeller och egna vyer visar små grupper; exporten utelämnar dem | Ändrad av ADR-51 | – |
 | ADR-15 | Formler i CSV- och urklippsexport neutraliseras | Gällande | – |
@@ -160,7 +160,8 @@ bygget.
 
 **ADR-12 — K-anonymitetens redovisningsform: utelämna och namnge.** En rad där varje mätvärde står som `< 10`
 är tekniskt korrekt men praktiskt värdelös: den ger inget att analysera och gör tabellerna långa och svårlästa —
-i EU-matrisen kan en liten organisation få en tabell som nästan bara består av maskerade celler. Därför gäller:
+i EU-matrisen kan en liten organisation få en tabell som nästan bara består av maskerade celler. Redovisningsformen
+gäller det som lämnar verktyget; skärmen maskerar inga grupper (ADR-51). Därför gäller:
 
 1. **Hela gruppen under tröskeln** → raden utelämnas, och gruppen räknas upp **med namn** i en not vid tabellen
    (`kMaskNote()`). Handläggaren ser exakt vad som saknas och varför. Personerna ingår fortfarande i underlaget
@@ -171,7 +172,8 @@ i EU-matrisen kan en liten organisation få en tabell som nästan bara består a
 
 Punkt 2 är inte en uppmjukning av skyddet utan ett erkännande av att `anyMasked` och `isKMasked(gruppen)` är
 olika saker. I EU-matrisen har grupperna ofta 14–17 personer men bara 2–3 av ena könet; att utelämna dem skulle
-tömma hela tabellen.
+tömma hela tabellen. Tabellerna per AID-kod och BAS-intervall har ett avsiktligt avsteg: där kräver en egen rad
+minst fem personer i exportläget, inte tröskeln (ADR-57).
 
 Noterna innehåller avsiktligt **ingen inline-markup**: SheetJS trimmar varje elements text för sig och slår ihop
 dem utan avskiljare, vilket ger `4 yrkesgruppervisas` i Excel-exporten. Skyddet vaktas av invarianten I4
@@ -311,10 +313,11 @@ Word-utkast, PDF, Excel, JPA eller zip och döljs vid utskrift. Panelens diagram
 flaggad persons lön inte finns i utdata. Logiken i `src/lib/individflaggor.js`.
 
 **ADR-24 — Stabilitet för flaggor i Lika arbete: märkning, inte nedgradering.** I små yrkesgrupper kan en enda
-persons lön avgöra om skillnaden i medianlön hamnar över eller under 5 %. Varje flaggad grupp prövas därför:
-kan skillnaden bli 5 % eller mindre om en respektive två personer tas bort? Gruppen märks *skör* (1 eller 2
-personer) eller *stabil* i tabellen och i rapportunderlagets gruppblock. **Flaggan ligger kvar** — 5 %-gränsen
-är direktivets och verktyget släpper inte grupper; märkningen visar var enskilda löner avgör utfallet. **Exakt
+persons lön avgöra om skillnaden i medianlön hamnar över eller under verktygets storleksgräns 3 % (ADR-59). Varje
+flaggad grupp prövas därför: kan skillnaden hamna under 3 % om en respektive två personer tas bort? Gruppen märks
+*skör* (1 eller 2 personer) eller *stabil* i tabellen och i rapportunderlagets gruppblock. **Flaggan ligger kvar**
+— märkningen ändrar inte gruppens status och verktyget släpper inte grupper; den visar var enskilda löner avgör
+utfallet. Direktivmarkeringen vid 5 % är något annat och prövas inte här (ADR-59). **Exakt
 värsta fall:** en median beror bara på hur många värden som ligger på vardera sida, så det räcker att pröva
 ytterlägena och positionerna inom 2 från medianen i de sorterade lönelistorna (att ta bort själva medianvärdet
 kan ge det läge som kommer närmast lika lön). Metoden är verifierad mot uttömmande prövning av alla 1- och
@@ -338,7 +341,7 @@ Likvärdigt arbete (par där båda grupperna har minst k personer, med frågorna
 
 **ADR-28 — Organisationspaket; ingen inbyggd organisation.** Verktyget ska kunna användas av vilken arbetsgivare
 som helst och har därför ingen inbyggd organisation och ingen inbyggd referens. Utan ställningstagande visar
-Prioritering, Lönepolitik och statusrutan ett tomläge; profilen är neutral ("Er organisation",
+Prioritering, avsnittet *Mot ställningstagandet* i Löneläget (ADR-55) och statusrutan ett tomläge; profilen är neutral ("Er organisation",
 "jämförelsestatistiken"); inga interna namn bär ett organisationsprefix. Demoläget har en påhittad
 *Exempelkommunen* med påhittat ställningstagande.
 
@@ -364,12 +367,12 @@ profiler för lönesystemen kommer från organisationerna, via paketet eller som
 **ADR-29 — Ett steg är klart när dess punkter är hanterade.** Processöversikten markerar ett steg som klart när
 arbetet med det är gjort, inte när analysen har körts — annars står steget som klart precis när arbetet börjar.
 Steg 3 (Lika arbete) är klart när regressionen gått att köra och alla punkter i Att göra i kategorierna *Lika
-arbete* och *EU 2023/970* är avbockade; steg 4 (Likvärdigt arbete) är klart när analysen inte hittar några
+arbete* och *Lika arbete, fördjupning* (ADR-59) är avbockade; steg 4 (Likvärdigt arbete) är klart när analysen inte hittar några
 kandidatpar eller när alla kandidatpar i Att göra är avbockade. Har analysen bara par med en grupp under
 tröskeln (de redovisas bara i fliken Likvärdigt arbete) är steget inte klart utan har tillståndet *inget att
 hantera* med antalet par och en hänvisning till fliken (beslut 2026-10-16). Att göra tar med
 kandidatparen även utan jämförelsestatistik (paren kommer i första hand ur organisationens egna yrken). *Börja här* sorterar inom samma
-prioritet: underlaget först, sedan de könsrelaterade fynden, sist avvikelser mot lönepolitiken och övriga
+prioritet: underlaget först, sedan de könsrelaterade fynden, sist läget mot referenserna (*Löneläge mot referens*) och övriga
 iakttagelser. Reglerna bor i `src/lib/attgora.js`. **Vakter:** `tests/attgora.test.js` och `tests/smoke-innehall.test.js`.
 
 **ADR-30 — Stilelement kräver kontrollsumma, stilattribut är förbjudna; låsta beroenden.** Verktyget hade omkring
@@ -451,8 +454,9 @@ pekar inte ut vem, och medianen har samma egenskap vid udda antal — användare
 **Tillgänglighet:** en källa som inte är inläst är `aria-disabled` (inte `disabled`), så att flikraden fungerar
 med piltangenterna, och tabellhuvudet är statiskt, så att sorteringen håller när innehållet byts. Valen sparas
 i konfigurationsfilen (`ui.jamforelse`). Excelrubrikerna för jämförelsekolumnerna namnger den valda källan.
-**Fliken kräver jämförelsestatistik:** med bara ett ställningstagande är den dold, och jämförelsen mot
-ställningstagandet görs i fliken Lönepolitik. Inom fliken kan man välja ställningstagandet som källa. (Ersatt av ADR-55: jämförelsen mot ställningstagandet är ett eget avsnitt i Löneläget.)
+**Var den står:** sedan ADR-55 är jämförelsen mot statistiken avsnittet *Mot jämförelsestatistiken* i fliken
+Löneläget, låst till statistiken, och jämförelsen mot ställningstagandet är ett eget avsnitt i samma flik (*Mot
+ställningstagandet*).
 **Vakter:** `tests/jamforelse.test.js`, röktesterna för fliken och diagrammen, k-testerna för export, tabell och
 diagramdata, golden för den samlade exporten och webbläsartestet.
 
@@ -712,7 +716,7 @@ påhittade större underlaget har 42 yrkesgrupper) innan det är klart, eftersom
 kan gå sönder med fler grupper. Trattdiagrammets gränser är prövade mot simulering; för små grupper bedöms
 varje grupp med omkastning av könen i stället för normalformeln. *Avvisat:* kumulativ fördelningskurva per kön
 (varje steg är en person), Lorenzkurva (mäter ojämlikhet inom en grupp, inte skillnaden mellan könen), flöden och
-tidsserier (verktyget har inga uppgifter över tid, teknisk-plan §2).
+tidsserier (verktyget har inga tidsserier: årsbokslutet bär två år, förra årets och årets, ADR-54).
 
 **ADR-43 — Färgerna har en källa.** Färger som måste vara värden — i Word-filen, urklipp, arbetsboken och diagrammens
 attribut — kan inte vara stilmallens variabler, som inte följer med dit. Färgerna står därför i en tabell, `FARG`

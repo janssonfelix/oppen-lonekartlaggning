@@ -1,5 +1,5 @@
 /**
- * K-tröskeln som inställning: Lönepolitik, Prioritering, § 3:10-paren, texterna, gränssnittet, utdata, utskriften, konfigurationsfilen och organisationspaketet.
+ * K-tröskeln som inställning: Lönepolitik, Prioritering, paren i likvärdigt arbete, texterna, gränssnittet, utdata, utskriften, konfigurationsfilen och organisationspaketet.
  *
  * Riggen (fixturer, fönster och sökfunktioner) ligger i tests/helpers/ktroskel-rigg.js; sviten är delad i
  * flera filer så att Vitest fördelar den över flera arbetare.
@@ -48,7 +48,7 @@ describe('k-tröskeln: Prioritering visar ingen könsjämförelse för ett kön 
     });
 });
 
-describe('k-tröskeln: § 3:10-par i Word-utkastet och utskriften', () => {
+describe('k-tröskeln: par i likvärdigt arbete i Word-utkastet och utskriften', () => {
     const SENT = 36421;
     const fonsterPar = k => {
         const w = createAppWindow();
@@ -90,7 +90,7 @@ describe('k-tröskeln: § 3:10-par i Word-utkastet och utskriften', () => {
     });
 });
 
-describe('k-tröskeln: § 3:10-par utanför fliken (protokoll, Att göra, handlingsplan, gruppdossier)', () => {
+describe('k-tröskeln: par i likvärdigt arbete utanför fliken (protokoll, Att göra, handlingsplan, gruppdossier)', () => {
     // Undantaget gäller bara fliken Likvärdigt arbete och dess egen export. Överallt annars utelämnas
     // ett par där en grupp är under tröskeln, och utdata anger hur många som lämnats ut.
     const SENT = 36431;   // medianen i den lilla gruppen (36421, 36431, 36441 i tur och ordning)

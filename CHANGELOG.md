@@ -486,6 +486,14 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   signerar och sprider sin egen version. Raden om svensk lag om lönetransparens i `lagrum.md` är uppdaterad till
   läget i oktober 2026.
 
+### Dokumentation och styrning
+
+- **Avgränsningen och äldre beslut rättade efter gällande beslut.** Teknisk-plan §2 säger att jämförelsen mellan år
+  görs genom årsbokslutet (ADR-54) och att en vy kan läggas i rapporten som recept (ADR-52); §4, ADR-24 och ADR-29
+  följer statusens storleksgräns 3 % och Att göras kategorier (ADR-59); ADR-28 och ADR-35 talar om avsnitten i
+  Löneläget (ADR-55); ADR-12 har status *Ändrad av ADR-51*. Neutralitetsregeln i `CLAUDE.md` och `CONTRIBUTING.md`
+  har sina tre undantag utskrivna, och typkontrollen står bland byggstegen i `CONTRIBUTING.md` och `GOVERNANCE.md`.
+
 ### Utveckling
 
 - **D3 7.9.2 (från 7.9.0).** Samma API; biblioteket är byggt om på de senaste versionerna av D3:s delpaket. Det

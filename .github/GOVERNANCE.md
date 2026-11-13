@@ -9,9 +9,11 @@ beroende av projektet.
 - **Upphovspersonen** (Felix Jansson) är underhållare och fattar besluten om innehåll, releaser och
   riktning. Projektet har en underhållare; det står här så att ingen behöver gissa.
 - **Arkitekturbesluten** (ADR) i [`docs/utveckling/arkitekturbeslut.md`](../docs/utveckling/arkitekturbeslut.md)
-  är bindande. Flera av dem är medvetna begränsningar — inga nätverksanrop, ingen lagring, ingen
-  inbyggd organisation, en enda fil. De ändras bara genom ett nytt, daterat ADR i samma dokument, aldrig
-  i förbigående i en ändring.
+  är bindande. De ändras bara genom ett nytt, daterat ADR i samma dokument, aldrig i förbigående i en
+  ändring. De bärande skydden står i dataskyddet i
+  [`docs/utveckling/teknisk-plan.md`](../docs/utveckling/teknisk-plan.md) §3 — en enda fil som körs lokalt,
+  inga nätverksanrop, ingen lagring, minsta gruppstorlek i det som lämnar verktyget — och i ADR-28 (ingen
+  inbyggd organisation).
 - **Lagrumshänvisningar** ändras bara i [`docs/utveckling/lagrum.md`](../docs/utveckling/lagrum.md)
   (ADR-16), med status *Förslag* tills jurist och dataskyddsombud stämt av dem.
 - **Bidrag** tas emot enligt [`CONTRIBUTING.md`](CONTRIBUTING.md) och lämnas under MIT-licensen; inget
@@ -21,7 +23,8 @@ beroende av projektet.
 
 1. Ärende eller förslag enligt mallarna, aldrig med verklig lönedata.
 2. Ändring i `src/` med test; `npm run build:app`, `npm run test:full` (hela testsviten; `npm test` är
-   den snabba körningen utan jsdom-testerna), `npm run lint`, `npm run bundle` och `npm run test:browser` gröna.
+   den snabba körningen utan jsdom-testerna), `npm run lint`, `npm run typecheck`, `npm run bundle` och
+   `npm run test:browser` gröna.
 3. Granskning av underhållaren. Grenen `main` är skyddad: grön CI krävs, inga direkta pushar.
 4. Raden i `CHANGELOG.md` under *Oförlöst*.
 
@@ -43,8 +46,8 @@ inga tjänster och inga konton som en efterträdare måste få tillgång till.
   som vilande. Då uppmuntras en **fork** som tar över underhållet, under namnet *Öppen lönekartläggning*
   med ett tillägg som skiljer den från ursprunget (till exempel organisationens namn eller årtal), med
   licens- och upphovsnotiserna bevarade enligt MIT-licensen.
-- En sådan fork bör behålla de bärande arkitekturbesluten (dataskyddet i teknisk-plan §3 och ADR som
-  märkts som medvetna begränsningar), så att namnet fortsätter att betyda det det betyder.
+- En sådan fork bör behålla de bärande skydden (dataskyddet i teknisk-plan §3 och ADR-28, ingen inbyggd
+  organisation), så att namnet fortsätter att betyda det det betyder.
 - Varje organisation kan när som helst, utan att vänta på något av ovanstående, bygga och signera sin
   egen version enligt [`docs/anvandare/overta-verktyget.md`](../docs/anvandare/overta-verktyget.md).
 

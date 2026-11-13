@@ -48,17 +48,18 @@ Detta är en bärande designprincip, inte en begränsning av misstag:
 - **Använder inte** AI/LLM. All statistik är klassiska metoder med
   spårbara, dokumenterade formler.
 - **Sparar inte** data mellan sessioner.
-- Ingen flerårsuppföljning: verktyget stödjer en kartläggning; historiska filer skulle lägga fler
-  personuppgifter i minnet och förutsätter stabila BAS-strukturer. Flerårsjämförelser görs i
-  arbetsgivarens egna system. *Får inte införas utan nytt beslut.*
+- **Läser inga** historiska lönefiler: verktyget stödjer en kartläggning; historiska filer skulle lägga fler
+  personuppgifter i minnet och förutsätter stabila BAS-strukturer. Jämförelsen mellan år görs genom
+  årsbokslutet i konfigurationsfilen (ADR-54), som bara bär aggregat — aldrig individer eller lönedata.
+  *Att läsa historiska lönefiler får inte införas utan nytt beslut.*
 - Kolumnen Ansvar läses inte in och inget enhetsmått beräknas.
 - **Analyserar inte** rörliga eller kompletterande lönedelar (tillägg, bonus, förmåner).
   Verktyget har en lönedefinition — heltidsomräknad månadslön — och EU-rapportens mått
   redovisas för den. *Rörlig lön är inte aktuellt i verktyget.*
-- **Sparar inte** vyer eller urval. Uppställningarna i Tabeller och egna vyer (rader, kolumner, mått,
-  diagramtyp, urval) sparas inte som recept och kan inte läggas in i
-  utskriftsrapporten; det som ska bevaras exporteras via diagrammens exportmeny.
-  *Kommer inte att byggas.*
+- **Sparar inte** vyer eller urval som egna filer eller lägen. En uppställning i Tabeller och egna vyer
+  kan läggas i rapporten som ett recept (rader, kolumner, mått, urval; ADR-52), som följer med i
+  konfigurationsfilen och ritas om ur underlaget; i övrigt exporteras det som ska bevaras via diagrammens
+  exportmeny.
 - **Stödjer inte** mobil- eller surfplattebredd. Verktyget är ett skrivbordsverktyg för
   HR; vid smala fönster (under ungefär 768 px) fälls sidomenyn inte ihop. *En mobilvy är inte aktuell.*
 
@@ -118,7 +119,7 @@ Icke förhandlingsbara arkitektoniska garantier:
 | Område | Lagrum | Funktion |
 |---|---|---|
 | Kartläggning lika arbete | lika arbete (lagrum.md) | EU-Lönekartläggning: median-jämförelse kön inom yrkesgrupp + per-BAS-regression (oförklarat gap, ålderskontroll, HC3-SE, BH-FDR) |
-| Lönegap & könsfördelning | lönekartläggningen (lagrum.md) | Lika arbete-fliken: yrkesgrupperna först; trattdiagrammet ställer varje yrkesgrupps kvot mot gruppens storlek och bedömer den med omkastning av könen inom gruppen. Lönestruktur-fliken: översikten per BAS-intervall (*Lönegap per BAS-intervall*) som tabell med grafik i raden (antal, medianer, skillnad i kronor, kvot med bootstrap-intervall, status), samma kvot som diagram bara i exporten, lönespridning per BAS och kön, könsfördelning (*Könsfördelning per BAS-intervall*), 5 %-tröskel (EU Art. 9-analogt) |
+| Lönegap & könsfördelning | lönekartläggningen (lagrum.md) | Lika arbete-fliken: yrkesgrupperna först; trattdiagrammet ställer varje yrkesgrupps kvot mot gruppens storlek och bedömer den med omkastning av könen inom gruppen. Lönestruktur-fliken: översikten per BAS-intervall (*Lönegap per BAS-intervall*) som tabell med grafik i raden (antal, medianer, skillnad i kronor, kvot med bootstrap-intervall, status), samma kvot som diagram bara i exporten, lönespridning per BAS och kön, könsfördelning (*Könsfördelning per BAS-intervall*); statusen sätts på statistisk signal och verktygets storleksgräns 3 %, och 5 % (EU Art. 9-analogt) är en direktivmarkering vid den ojusterade skillnaden, ingen status (ADR-59) |
 | **Likvärdigt arbete** | **likvärdigt arbete (lagrum.md)** | **Likvärdigt arbete-fliken: organisationens kvinnodominerade AID×BAS mot yrken som inte är kvinnodominerade (ADR-60) med lika krav — i första hand organisationens egna i samma BAS, annars jämförelsestatistiken; med arbetsvärderingspoäng över BAS-gränserna. Därtill *Lägre krav, högre lön* (ADR-25)** |
 | Hierarkisk översikt | lönekartläggningen (lagrum.md) | Löneöversikten (i Tabeller och egna vyer): median/P10/P90/spridning per yrke+BAS, referenslinjer |
 | Prioritering | — | Löneläget mot er referens med kostnad att nå den (ADR-62): prioritetsindex (avvikelse × volym × jämställdhet), kostnadssimulering. Könsgapet i gruppen visas och räknas in i indexet bara när båda könen har minst k personer (ADR-12; annars räknas jämställdhetsdelen som 0). Jämför mot organisationens lönepolitiska ställningstagande (ur ett organisationspaket eller en egen namngiven fil; ingen inbyggd referens, ADR-28) eller mot jämförelsestatistiken |

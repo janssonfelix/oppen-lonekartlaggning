@@ -286,7 +286,7 @@ describe('den tekniska planen och arkitekturbesluten beskriver nuläget', () => 
         const rubriker = [...plan.matchAll(/^\*\*ADR-(\d+) — ([^*]+)\*\*/gm)];
         expect(rubriker.length).toBeGreaterThan(20);
         for (const [hel] of rubriker) expect(hel, hel).not.toMatch(/\(\d{4}-\d{2}(-\d{2})?[^)]*\)/);
-        expect(plan).not.toMatch(/ersätter ADR-|ersatt av ADR-|Delvis ersatt/);
+        expect(plan).not.toMatch(/ersätter ADR-|ersatt av ADR-|Delvis ersatt/i);
     });
     it('varje ADR som koden, testerna och dokumenten pekar på finns i arkitekturbesluten', () => {
         const finns = new Set([...plan.matchAll(/^\*\*ADR-(\d+) —/gm)].map(m => Number(m[1])));
