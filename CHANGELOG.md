@@ -538,6 +538,11 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   45, 46, 53, 56, 63, 64 och 65 är skrivna i den korta mallen och pekar dit, och teknisk-plan §4–§5 och `CLAUDE.md`
   pekar också dit.
 
+- **Likvärdighetsmodellen: egen referens.** `docs/utveckling/likvardighetsmodellen.md` samlar hur analysen av
+  likvärdigt arbete räknas i dag — definitionen av kvinnodominerat och var den används, jämförelseyrkena, kandidatparen,
+  *Lägre krav, högre lön*, inställningarna och vakterna — och ADR-25, 60 och 61 är skrivna i den korta mallen och pekar
+  dit, liksom teknisk-plan §5 och `CLAUDE.md`.
+
 ### Utveckling
 
 - **D3 7.9.2 (från 7.9.0).** Samma API; biblioteket är byggt om på de senaste versionerna av D3:s delpaket. Det

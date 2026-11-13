@@ -148,9 +148,9 @@ reservsteget) och när yrkesgrupp inom BAS är vald, eftersom BAS då ingår i g
 **Regressionerna per BAS-intervall** har BAS i urvalet, inte i modellen: en regression per intervall (avsnitt 7).
 
 **BAS som rang.** Ingen modell i `src/lib/regression.js` räknar BAS som ett tal. BAS-rangen, bokstavens plats
-(`basRangFn` i `src/lib/likvardighet.js`), används av *Lägre krav, högre lön* (teknisk-plan §5), som ordning i
-tabellerna per AID-kod och BAS-intervall (`src/lib/aidbas.js`) och som förklaringsvariabel i sektorsöversiktens egen
-modell (`src/lib/sektor.js`, avsnitt 2).
+(`basRangFn` i `src/lib/likvardighet.js`), används av *Lägre krav, högre lön* (`likvardighetsmodellen.md` §6), som
+ordning i tabellerna per AID-kod och BAS-intervall (`src/lib/aidbas.js`) och som förklaringsvariabel i
+sektorsöversiktens egen modell (`src/lib/sektor.js`, avsnitt 2).
 
 ## 4. Den stegvisa uppdelningen och steget *+ Yrkesgrupp*
 

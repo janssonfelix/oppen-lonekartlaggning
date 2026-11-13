@@ -230,7 +230,7 @@ describe('likvärdigt arbete: app.js delegerar till lib-spegeln', () => {
         expect(sedd.data).toBe(state.data);
         expect(sedd.statistik).toBe(state.statistik);
         expect(typeof sedd.scbKlass).toBe('function');
-        // BAS-ordningen är fast (se §5 i teknisk-plan.md): ingen basRang skickas.
+        // BAS-ordningen är fast (se §6 i likvardighetsmodellen.md): ingen basRang skickas.
         // Definitionen av kvinnodominerat och jämförelsemängden följer med (ADR-60).
         expect(sedd.opts).toEqual({ kvinnoTrosholdPct: 55, kvDomDefinition: 'scb', jamforelse: 'mansdominerade', minGapPct: 3, topN: 20, k: 15 });
     });

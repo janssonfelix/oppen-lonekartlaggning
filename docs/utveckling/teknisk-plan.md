@@ -121,52 +121,10 @@ uppstår löneskillnaden?* står i [`regressionsmodellen.md`](regressionsmodelle
 
 ## 5. Likvärdighetsmodellen
 
-Modellen bor i `src/lib/likvardighet.js` och speglas in i bygget som övriga kärnmoduler
-(ADR-8). `src/app/34-likvardigt-arbete.js` innehåller bara state-adaptern och UI:t — att
-adaptern verkligen delegerar vaktas av `tests/drift.test.js`:
-
-1. **Steg 1:** Identifiera organisationens kvinnodominerade AID×BAS-grupper
-   (mer än kvinnotröskeln, standard 60 %; beslut 2026-10-19, lagrum.md). k-anonymiteten tillämpas inte — lagen kräver att
-   även små grupper prövas (rapportunderlaget redovisar bara par där båda grupperna har
-   minst 10 personer).
-2. **Steg 2 — jämförelseyrken med lika krav:**
-   - **Jämförelsemängden (ADR-60):** alla yrken som **inte är kvinnodominerade** enligt vald
-     definition (DO: högst kvinnotröskeln, SCB: under den) — mansdominerade och blandade, med
-     klassen och könsandelen synliga i paret (`maKlass`, `maKvinnoPct`). Filtret
-     `state.likvardighet.jamforelse = 'mansdominerade'` begränsar till de mansdominerade.
-   - **BAS-läget (standard):** i första hand organisationens **egna** jämförelseyrken i samma
-     BAS-intervall. Saknas ett sådant i
-     BAS-intervallet används **jämförelsestatistiken** som reserv (dess egen
-     könsfördelning i första hand, SKR:s personalstatistik när den saknas, ADR-34).
-   - **Poängläget:** har lönefilen kolumnen Poäng jämförs med yrken som har lika eller
-     lägre arbetsvärderingspoäng (poäng ≤ det kvinnodominerade yrkets × (1 + band),
-     standardband 5 %) — även över BAS-gränserna.
-3. **Steg 3:** Flagga par där jämförelseyrkets median är högre än minsta skillnaden
-   `minGapPct`, med bootstrap-KI på medianskillnaden, och visa högst `topN` par. I verktyget
-   är standardvärdena **0 %** och **20 par** (`state.likvardighet` i `12-tillstand.js`;
-   användaren kan ändra dem i fliken, 0–50 % och 10–500 par). 0 % visar alla par där
-   jämförelseyrket har högre lön; 5 % är ett valbart filter, och knappen *Visa alla* visar
-   paren utöver de 20 (ADR-61). Modulens egna standardvärden,
-   0 % och 100 par, gäller bara när den anropas utan inställningar, som i enhetstesterna.
-   Den råa medianskillnaden är huvudmåttet — lagen prövar lönenivån som sådan. Interna par
-   får därtill en **åldersjusterad skillnad** (`aldersjusteradSkillnad`): i jämförelseyrket
-   skattas log(lön) = a + b·ålder (OLS; minst 10 personer med ålder och minst 5 års
-   åldersspridning, annars `null`), lönen prediceras vid varje person i den kvinnodominerade
-   gruppen med dennes ålder, och medianen av prediktionerna är den åldersjusterade
-   jämförelsemedianen; skillnaden räknas mot gruppens råa median. Den visar hur mycket av
-   skillnaden som kan bero på åldersstruktur och fälls ut i fliken (kolumnen *Justerad för
-   ålder*), bevis-popupen (med medelålder per sida, `kvMedelAlder`/`maMedelAlder`), flikens
-   CSV- och Excel-export och rapportunderlagets parblock. Externa par får `null` —
-   jämförelsestatistiken saknar individdata. Utanför fliken lyder den samma k-regel som
-   paret (`_parForRedovisning`).
-4. **Lägre krav, högre lön (ADR-25, BAS-läget):** kvinnodominerade yrken med lägre
-   medianlön än ett av organisationens egna yrken i *lägre* BAS, med antal BAS-steg.
-   BAS-ordningen är fast: bokstavsordning A–J. Den går inte att ändra i verktyget. Verktyget
-   antar att varje bokstav motsvarar ett lika brett poängintervall i arbetsvärderingen, så rangen är bokstavens
-   plats (A=1, B=2 …) där BAS räknas som ett tal — *Lägre krav* använder funktionen
-   (`basRangFn` i `src/lib/likvardighet.js`) — och B → D är två BAS-steg även när C saknas i
-   underlaget. Regressionsmodellerna räknar inte BAS som ett tal utan som indikatorvariabler; hur, och
-   var BAS-rangen i övrigt används, står i [`regressionsmodellen.md`](regressionsmodellen.md) §3.
+Analysen av likvärdigt arbete — definitionen av kvinnodominerat, jämförelseyrkena, paren med konfidensintervall och
+åldersjustering, *Lägre krav, högre lön* och BAS-rangen, inställningarna och vakterna — står i
+[`likvardighetsmodellen.md`](likvardighetsmodellen.md). Hur BAS kodas i regressionerna står i
+[`regressionsmodellen.md`](regressionsmodellen.md) §3.
 
 ---
 

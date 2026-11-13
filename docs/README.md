@@ -34,6 +34,7 @@ Dokumenten i `docs/`, ordnade efter vem som läser dem. Översikten över hela r
 | [`arkitekturbeslut.md`](utveckling/arkitekturbeslut.md) | Arkitekturbesluten (ADR) med motiv, avvisade alternativ och status; numren som koden och testerna pekar på. |
 | [`k-troskeln.md`](utveckling/k-troskeln.md) | Minsta gruppstorlek (skyddet S4) som den gäller: de två lägena, redovisningsformen, vägen ut, undantagen, golven, inställningen och vakterna. |
 | [`regressionsmodellen.md`](utveckling/regressionsmodellen.md) | Regressionen och uppdelningen av löneskillnaden som de räknas: huvudtalet, förklaringsmodellen, BAS-kodningen, Blinder-Oaxaca, kvantilregressionen, konfidensintervallen, *Var uppstår löneskillnaden?* och referensvärdena. |
+| [`likvardighetsmodellen.md`](utveckling/likvardighetsmodellen.md) | Analysen av likvärdigt arbete som den räknas: definitionen av kvinnodominerat, jämförelseyrkena, kandidatparen med konfidensintervall och åldersjustering, *Lägre krav, högre lön*, inställningarna och vakterna. |
 | [`diagramkarnan.md`](utveckling/diagramkarnan.md) | Diagramkärnan som den är byggd: figurformatet, ritaren, exporten och vyernas skyldigheter. |
 | [`organisationsfil.md`](utveckling/organisationsfil.md) | Formatspecifikation för organisationsfilen: verktyget med organisationspaketet inbakat. |
 | [`lagrum.md`](utveckling/lagrum.md) | Lagrumshänvisningarna: det enda stället där lagrummen står med paragraf och artikel. |
