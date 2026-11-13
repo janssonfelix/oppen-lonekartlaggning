@@ -278,7 +278,8 @@ adaptern verkligen delegerar vaktas av `tests/drift.test.js`:
   utan att verktyget laddas) och `app` (filerna som ritar verktyget i jsdom). Klassningen görs när konfigurationen
   laddas: en fil hör till `app` om källan nämner `app-harness`, en `-rigg.js` eller `createAppWindow`, eller
   importerar jsdom. `npm test` är den snabba körningen, bara `enhet` (sekunder); `npm run test:full` kör båda
-  projekten (minuter) och ska köras före en pull request — det är den som körs i CI. Båda går genom `tools/test.mjs`,
+  projekten (minuter) och är den som körs i CI och i `npm run kontroll` (vad som krävs före en pull request står i
+  *Definition of Done* i [`CONTRIBUTING.md`](../../.github/CONTRIBUTING.md)). Båda går genom `tools/test.mjs`,
   som kör sviten och sedan kör om de filer vars arbetare dog i
   Node (SIGSEGV i V8:s skräpsamlare, sällsynt; orsaken ligger i Node, §9). Ett test som faller körs aldrig om, och
   utgångskoden är 0 först när alla filer har rapporterat. Hela sviten tar omkring 130 s på 8 kärnor/16 trådar
@@ -385,7 +386,8 @@ K5. *(Struket 2026-11-13: gick inte att pröva.)*
 K6. En fil som går att öppna från `file://` och fungerar utan internet: skyddet S3 i [`skydd.md`](skydd.md).
 K7. Skydd som är juridiskt bindande vaktas av invarianter över hela utdatan: skyddet S4 och inledningen i
     [`skydd.md`](skydd.md).
-    Varje ny utdata som lämnar verktyget (text, tabell, bild, fil) läggs i k-invariantsviten (`tests/helpers/ktroskel-rigg.js`) och i riskanalysens tabell över utdata innan den checkas in.
+    Vad en ny utdata kräver (k-invariantsviten och riskanalysens tabell) står i *Definition of Done* i
+    [`CONTRIBUTING.md`](../../.github/CONTRIBUTING.md), punkt 3.
 K8. Tillgänglighet enligt WCAG 2.1 AA. Vakt: `tests/a11y.test.js` (axe-core över alla flikar) och statusfärgernas
     kontrast i `tests/sakerhet.test.js`; övrig färgkontrast prövas för hand enligt pilotchecklistan
     (`docs/anvandare/pilotchecklista.md`).

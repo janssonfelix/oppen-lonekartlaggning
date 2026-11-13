@@ -10,7 +10,7 @@
  * Det som inte går att mekanisera — om en förklaring är korrekt och begriplig —
  * står kvar som en öppen punkt i docs/utveckling/teknisk-plan.md § 9.
  *
- * Vaktar: R2, R7, R13, R19, R23, R24 (docs/utveckling/regler.md)
+ * Vaktar: R2, R7, R13, R17, R19, R23, R24 (docs/utveckling/regler.md)
  */
 import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
@@ -494,6 +494,50 @@ describe('dokumentation: skripten som nämns finns', () => {
         for (const f of ['README.md', '.github/CONTRIBUTING.md']) {
             for (const [, namn] of läs(f).matchAll(/npm run ([\w:-]+)/g)) expect(pkg.scripts, `${f}: npm run ${namn}`).toHaveProperty([namn]);
         }
+    });
+});
+
+describe('dokumentation: en Definition of Done, och npm run kontroll kör CI:s steg', () => {
+    const pkg = JSON.parse(läs('package.json'));
+    // Ett avsnitt i ett Markdown-dokument: från rubriken till nästa rubrik på samma eller högre nivå.
+    const avsnitt = (text, rubrik) => {
+        const start = text.indexOf(rubrik);
+        if (start < 0) return '';
+        const nivå = /^#+/.exec(rubrik)[0].length;
+        const resten = text.slice(start + rubrik.length);
+        const slut = resten.search(new RegExp(`^#{1,${nivå}} `, 'm'));
+        return slut < 0 ? resten : resten.slice(0, slut);
+    };
+    // Jobbet quality i ci.yml: från dess rad till nästa jobb på samma indrag.
+    const qualitySteg = () => {
+        const ci = läs('.github/workflows/ci.yml');
+        const start = ci.search(/^ {2}quality:/m);
+        const resten = ci.slice(start + 1);
+        const slut = resten.search(/^ {2}\w[\w-]*:/m);
+        return [...(slut < 0 ? resten : resten.slice(0, slut)).matchAll(/npm run ([\w:-]+)/g)].map(m => m[1]);
+    };
+    const kontroll = () => import('../tools/kontroll.mjs');
+
+    it('varje "npm run …" i CI-jobbet quality ingår i STEG i tools/kontroll.mjs', async () => {
+        const ci = qualitySteg();
+        expect(ci.length).toBeGreaterThan(0);
+        const { STEG } = await kontroll();
+        expect(ci.filter(n => !STEG.includes(n))).toEqual([]);
+    });
+    it('STEG har också bygget och webbläsarjobbets röktest, och varje steg finns i package.json', async () => {
+        const { STEG, SNABBA_STEG } = await kontroll();
+        for (const n of ['build:app', 'bundle', 'test:browser']) expect(STEG).toContain(n);
+        expect([...STEG, ...SNABBA_STEG].filter(n => !pkg.scripts[n])).toEqual([]);
+        expect(pkg.scripts.kontroll).toMatch(/node tools\/kontroll\.mjs/);
+    });
+    it('CONTRIBUTING har Definition of Done med npm run kontroll; GOVERNANCE och README pekar dit', () => {
+        expect(läs('.github/CONTRIBUTING.md')).toMatch(/Definition of Done[\s\S]*npm run kontroll/);
+        const gov = avsnitt(läs('.github/GOVERNANCE.md'), '## Hur en ändring kommer in');
+        expect(gov).toContain('CONTRIBUTING.md');
+        expect(gov).not.toMatch(/npm run (test:full|test:browser|bundle)/);
+        const readme = avsnitt(läs('README.md'), '## För dig som utvecklar');
+        expect(readme).toContain('CONTRIBUTING.md');
+        expect(readme).toContain('npm run kontroll');
     });
 });
 

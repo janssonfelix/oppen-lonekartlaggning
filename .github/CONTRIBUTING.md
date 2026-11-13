@@ -20,13 +20,22 @@ datorn** — det styr hur vi tar emot bidrag.
    och arkitekturbesluten (ADR) i `docs/utveckling/arkitekturbeslut.md`. Skydden och flera av besluten är medvetna
    begränsningar som inte ska ändras utan ett nytt beslut.
 2. Gör ändringen i `src/` (aldrig direkt i `dist/`), med test.
-3. Kör `npm run build:app`, `npm run test:full`, `npm run lint`, `npm run typecheck`, `npm run bundle` och
-   `npm run test:browser`. Allt ska vara grönt. Under arbetet räcker `npm test`, den snabba körningen (moduler och
-   vakter, sekunder); `npm run test:full` är hela sviten med jsdom-testerna (minuter) och den som körs i CI. En
-   testkörning räknas som grön först när alla testfiler har rapporterat (båda kör själva om en fil vars arbetare
-   kraschat). Rör ändringen utseendet eller ett diagram:
-   titta på resultatet i webbläsaren, också med ett underlag med många yrkesgrupper — demodatan har bara åtta.
-   Varje ny utdata som lämnar verktyget (text, tabell, bild, fil) läggs i k-invariantsviten (`tests/helpers/ktroskel-rigg.js`) och i riskanalysens tabell över utdata innan den checkas in.
+3. **Definition of Done.** En ändring är klar när:
+   - `npm run kontroll` är grönt. Den kör i ordning `build:app`, `lint`, `typecheck`, `test:full` (hela sviten med
+     jsdom-testerna, minuter, den som körs i CI), `bundle` och `test:browser`, prövar efter bygget att artefakten
+     motsvarar källan och att teckenkodningen är ren, och stannar på första fel. Under arbetet räcker
+     `npm run kontroll -- --snabb`, som kör `npm test` (moduler och vakter, sekunder) i stället för hela sviten och
+     hoppar över röktestet i webbläsaren. En testkörning räknas som grön först när alla testfiler har rapporterat
+     (`npm test` och `npm run test:full` kör själva om en fil vars arbetare kraschat).
+   - Rör ändringen utseendet eller ett diagram: resultatet är sett i webbläsaren, också med ett underlag med många
+     yrkesgrupper — demodatan har bara åtta.
+   - Varje ny utdata som lämnar verktyget (text, tabell, bild, fil) läggs i k-invariantsviten
+     (`tests/helpers/ktroskel-rigg.js`) och i riskanalysens tabell över utdata innan den checkas in.
+   - Dokumenten, besluten (ADR) och regelmatrisen (`docs/utveckling/regler.md`) är uppdaterade när ändringen rör
+     dem.
+   - `CHANGELOG.md` har en rad om ändringen under *Oförlöst*.
+   - Oanvänd kod är borttagen, inte utkommenterad.
+   - Varje källfil bär licensraden (`SPDX-License-Identifier: MIT`).
 4. Beskriv ändringen och varför den behövs.
 
 Verktyget är **neutralt**: det är skrivet för alla arbetsgivare och är inte kopplat till någon särskild

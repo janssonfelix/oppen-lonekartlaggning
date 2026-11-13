@@ -21,11 +21,9 @@ beroende av projektet.
 ## Hur en ändring kommer in
 
 1. Ärende eller förslag enligt mallarna, aldrig med verklig lönedata.
-2. Ändring i `src/` med test; `npm run build:app`, `npm run test:full` (hela testsviten; `npm test` är
-   den snabba körningen utan jsdom-testerna), `npm run lint`, `npm run typecheck`, `npm run bundle` och
-   `npm run test:browser` gröna.
+2. Ändring i `src/` med test, klar enligt *Definition of Done* i [`CONTRIBUTING.md`](CONTRIBUTING.md) (punkt 3).
 3. Granskning av underhållaren. Grenen `main` är skyddad: grön CI krävs, inga direkta pushar.
-4. Raden i `CHANGELOG.md` under *Oförlöst*.
+4. Ändringen tas in först när hela Definition of Done är uppfylld, också de punkter som CI inte prövar.
 
 ## Hur en version släpps
 
