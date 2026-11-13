@@ -424,6 +424,14 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   intervall föll bort utan not. Golvet är nu `LITET_UNDERLAG` i båda lägena, som för tabellerna per AID-kod och
   BAS-intervall: raden bär antal och andelar men inga lönemått, och intervall under golvet namnges i en not under
   tabellen, som följer med i Excel-bladet *Könsskevhet* och utskriften.
+- **Metodbilagan säger den valda förklaringsmodellen (ADR-56).** Med ålder i lönefilen sade raden *Modell — oförklarad
+  skillnad* i bladet *Metod & parametrar* och rapportens bilaga alltid kön + ålder + BAS-intervall, och raden om
+  steget + Yrkesgrupp att steget räknades utöver ålder och inte ingick i huvudtalet, också när handläggaren valt bort
+  ålder eller BAS eller valt in yrkesgrupp. Raderna byggs nu ur förklaringsmodellen: modellen som huvudtalet räknas
+  med, inomtransformationen när yrkesgrupp är vald, och om steget räknas med ålder, ingår i huvudtalet eller inte
+  räknas alls när BAS är bortvalt. Meningen under steget i regressionskortet och rapportens bilaga följer också
+  modellen: "och ålder" bara när modellen har ålder, och med yrkesgrupp vald säger den att steget är huvudtalet.
+  Standardmodellen ger samma text som förut.
 
 ### Analys
 
@@ -449,6 +457,25 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 - **Spärr mot särskilda kategorier av personuppgifter.** Lönefilen avvisas när en kolumnrubrik antyder fackmedlemskap,
   hälsa, sjukfrånvaro, diagnos, etnicitet, religion, politisk tillhörighet, sexuell läggning, funktionsnedsättning,
   genetik eller biometri — som identifierare avvisades redan. Bara rubriken prövas (lagrum.md, C23b).
+
+### Dataskydd
+
+- **Löneöversyns förslag följer den inställda tröskeln, också på skärmen (ADR-69).** *Föreslå fördelning mot
+  skillnaderna i likvärdigt arbete*, målet för skillnaden och känslighetskurvan tar bara kandidatpar där både det
+  kvinnodominerade yrket och jämförelseyrket når minsta gruppstorlek, så att en föreslagen rad inte kan bära en liten
+  grupps median i Excel-exporten eller konfigurationsfilen. En föreslagen rad tas bort när tröskeln höjs över en av
+  parets grupper. En föreslagen rad i en konfigurationsfil, som inte bär vilket par den räknades ur, prövas när filen
+  läses in (eller när lönefilen läses in, om konfigurationsfilen kom först) och tas bort om yrket har ett par med en
+  grupp under tröskeln, eller om likvärdighetsanalysen inte visar alla par (*Visa max*). När en föreslagen rad tas
+  bort räknas prognosen om, också när Löneöversyn inte är den öppna fliken; exporten och scenarierna A/B räknar alltid
+  utfallet ur raderna som de står, och ett sparat scenario som räknades med raden tas bort. Meningen vid förslagen säger när rader har tagits bort och varför, och meningen om utelämnade
+  par nämner den inställda tröskeln. Egna riktade rader står kvar som förut, med noten när gruppen är under tröskeln.
+
+- **Löneöversyns förslag: en rad per yrke.** Ett kvinnodominerat yrke med flera jämförelseyrken fick en föreslagen rad
+  per jämförelseyrke, och potten räknades då flera gånger för samma yrke. Förslaget, målet för skillnaden och
+  känslighetskurvan tar nu ett par per yrke, det med störst skillnad bland dem som når minsta gruppstorlek (ADR-69).
+  I det lilla demot ger förslaget två rader i stället för fyra, och full stängning kostar 220 000 kr/mån i stället för
+  296 520 kr/mån.
 
 ### Dokumentation
 

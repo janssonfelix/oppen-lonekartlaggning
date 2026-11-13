@@ -81,7 +81,9 @@ describe('I1: Löneöversyn visar ingen kostnad för grupper under tröskeln', (
         expect(blad.find(r => r.includes('| 6000 |'))).toMatch(/\| \d+$/);
         expect(bok).toMatch(/\d+ grupper med färre än 10 personer ingår i summorna/);
     });
-    it('höjd tröskel rör inte förslagen på skärmen (skärmen maskerar inget, ADR-51); egna rader står kvar', () => {
+    // Ändrat med ADR-69 (2026-11-13): förslagen följer den inställda tröskeln också på skärmen. Förr stod förslaget kvar
+    // på skärmen när tröskeln höjdes (ADR-51) och följde med i Excel-exporten och konfigurationsfilen.
+    it('höjd tröskel tar bort förslaget ur ett par under den, också på skärmen (ADR-69); egna rader står kvar', () => {
         const w = createAppWindow();
         const rader = [];
         const lagg = (n, kon, lon, bas, aid) => { for (let i = 0; i < n; i++) rader.push({ bas, kon, lon: lon + (i % 3) * 10,
@@ -98,11 +100,11 @@ describe('I1: Löneöversyn visar ingen kostnad för grupper under tröskeln', (
         expect(w.__state.forecast.targets.map(t => t.aid)).toContain('5300');
         w.__state.forecast.targets.push({ bas: 'A', aid: '6000', mode: 'kr', value: 1000, dist: 'lowest', targetLevel: 'median', pool: 'övrigt' });
         w.eval('sattKTroskel(10, { fraga: false })');
-        expect(w.__state.forecast.targets.map(t => t.aid)).toContain('5300');
+        expect(w.__state.kLage).not.toBe('export');
+        expect(w.__state.forecast.targets.map(t => t.aid)).not.toContain('5300');
         expect(w.__state.forecast.targets.map(t => t.aid)).toContain('6000');
-        expect(w.document.getElementById('forecast-par-not').textContent).toBe('');
-        // Raden på den lilla gruppen säger att beloppet bygger på enskildas löner (R2).
-        expect(w.document.getElementById('forecast-targets').textContent).toMatch(/Raden berör 6 personer, färre än 10 personer/);
+        // Meningen säger att paret utelämnas och att förslaget togs bort, och varför (ADR-69).
+        expect(w.document.getElementById('forecast-par-not').textContent).toMatch(/^1 par med en grupp under 10 personer redovisas inte här\. 1 föreslagen rad togs bort eftersom paret den räknades ur har en grupp under 10 personer\./);
     });
 });
 

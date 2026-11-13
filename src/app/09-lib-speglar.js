@@ -1632,15 +1632,36 @@ function allocate(rows, generell, targets, roundStep) {
 }
 
 /**
+ * Ett kandidatpar per kvinnodominerat yrke (BAS-intervall och AID): det med störst skillnad i kronor (ADR-69).
+ * Ett yrke med flera jämförelseyrken får då en rad och en pott i förslagen, inte en per jämförelseyrke. Anroparen
+ * har redan tagit bort paren som inte får redovisas, så att valet görs bland dem som når tröskeln. Ordningen och
+ * objekten är desamma som i indata.
+ * @template {{bas: any, aid: any, gapKr: number}} T
+ * @param {T[]} [candidates]
+ * @returns {T[]}
+ */
+function ettParPerYrke(candidates) {
+    /** @type {Map<string, T>} */
+    const bast = new Map();
+    for (const c of candidates || []) {
+        const nyckel = c.bas + '|' + c.aid;
+        const forra = bast.get(nyckel);
+        if (!forra || c.gapKr > forra.gapKr) bast.set(nyckel, c);
+    }
+    const valda = new Set(bast.values());
+    return (candidates || []).filter(c => valda.has(c));
+}
+
+/**
  * Föreslår en riktad fördelning som minskar de osakliga gapen först. Fördelar
  * riktadPott proportionellt mot påverkansindex (gapKr × n), kapat vid kostnaden
- * att helt stänga respektive grupps gap.
+ * att helt stänga respektive grupps gap. Ett par per yrke (ettParPerYrke).
  * @param {Array<{bas,aid,gapKr:number,n:number}>} candidates - gapKr > 0 = under referens (kr/mån/person)
  * @param {number} riktadPott
  * @param {number} [minN=0] - rikta endast mot grupper med minst minN personer
  */
 function suggestTargets(candidates, riktadPott, minN = 0) {
-    const valid = (candidates || []).filter(c => c.gapKr > 0 && c.n > 0 && c.n >= (minN || 0));
+    const valid = ettParPerYrke(candidates).filter(c => c.gapKr > 0 && c.n > 0 && c.n >= (minN || 0));
     if (!valid.length || riktadPott <= 0) return [];
     const totalIndex = valid.reduce((s, c) => s + c.gapKr * c.n, 0);
     if (totalIndex <= 0) return [];
@@ -1655,7 +1676,8 @@ function suggestTargets(candidates, riktadPott, minN = 0) {
 /**
  * Mål-läge: bygg riktade rader som stänger en andel (fraction) av de osakliga
  * gapen. Kostnaden för att helt stänga en grupps gap är gapKr × n; för andelen
- * f blir det f × gapKr × n. Fördelas lägst-först inom gruppen.
+ * f blir det f × gapKr × n. Fördelas lägst-först inom gruppen. Ett par per yrke (ettParPerYrke), också i
+ * känslighetskurvan, som bygger på den här funktionen.
  * @param {Array<{bas,aid,gapKr:number,n:number}>} candidates
  * @param {number} fraction - 0..1
  * @param {number} [minN=0]
@@ -1663,7 +1685,7 @@ function suggestTargets(candidates, riktadPott, minN = 0) {
 function closureTargets(candidates, fraction, minN = 0) {
     const f = Math.max(0, Math.min(1, fraction));
     if (f <= 0) return [];
-    return (candidates || [])
+    return ettParPerYrke(candidates)
         .filter(c => c.gapKr > 0 && c.n > 0 && c.n >= (minN || 0))
         .map(c => ({ bas: c.bas, aid: c.aid, mode: /** @type {'kr'} */ ('kr'), value: Math.round(f * c.gapKr * c.n), dist: /** @type {'lowest'} */ ('lowest') }))
         .filter(t => t.value > 0);
@@ -1903,13 +1925,14 @@ function sensitivityCurve(rows, candidates, costOpts, steps) {
     return out;
 }
 
-    return { computePott, allocate, targetRows, suggestTargets, closureTargets, stagedPlan, summarizeGroups, detectLeapfrog, forecastOutcome, bandStats, individualRemediation, marketTargets, sensitivityCurve, _median };
+    return { computePott, allocate, targetRows, suggestTargets, closureTargets, ettParPerYrke, stagedPlan, summarizeGroups, detectLeapfrog, forecastOutcome, bandStats, individualRemediation, marketTargets, sensitivityCurve, _median };
 })();
 const _fcComputePott = __mirrorForecast.computePott;
 const _fcAllocate = __mirrorForecast.allocate;
 const _fcTargetRows = __mirrorForecast.targetRows;
 const _fcSuggestTargets = __mirrorForecast.suggestTargets;
 const _fcClosureTargets = __mirrorForecast.closureTargets;
+const _fcEttParPerYrke = __mirrorForecast.ettParPerYrke;
 const _fcStagedPlan = __mirrorForecast.stagedPlan;
 const _fcSummarizeGroups = __mirrorForecast.summarizeGroups;
 const _fcDetectLeapfrog = __mirrorForecast.detectLeapfrog;

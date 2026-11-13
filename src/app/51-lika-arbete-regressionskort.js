@@ -311,15 +311,17 @@ function _ansvarRadText(fore, efter) {
 
 /**
  * Meningen under yrkesgruppssteget (ADR-46): vad talet är och vad det bygger på. Ren funktion, delas med
- * rapportmodellen.
+ * rapportmodellen. `modell` är den skattade förklaringsmodellen (ADR-56): steget räknas med ålder när modellen har
+ * ålder, och är huvudtalet när yrkesgrupp är vald.
+ * @param {any} s @param {{alder: boolean, yrkesgrupp: boolean}} modell
  */
-function _yrkesStegText(s) {
+function _yrkesStegText(s, modell) {
     const sv = v => v.toFixed(1).replace('.', ',');
     const tkn = v => `${v >= 0 ? '+' : '−'}${sv(Math.abs(v))} %`;
-    return `<strong>${tkn(s.gapPct)}</strong> är löneskillnaden mellan kvinnor och män med samma yrkesgrupp, BAS-intervall${harAlder() ? ' och ålder' : ''} `
+    return `<strong>${tkn(s.gapPct)}</strong> är löneskillnaden mellan kvinnor och män med samma yrkesgrupp, BAS-intervall${modell.alder ? ' och ålder' : ''} `
         + `(fasta effekter för yrkesgrupp inom BAS). Bygger på ${s.nPersoner} personer i ${s.nGrupperBada} yrkesgrupper där båda könen finns`
         + (s.nEnkonade ? `; ${s.nEnkonade} enkönade grupper bidrar inte` : '')
-        + `. Huvudtalet ovan räknar inte bort yrkesgruppen.`;
+        + (modell.yrkesgrupp ? '. Yrkesgrupp inom BAS är vald i förklaringsmodellen, så det här är huvudtalet.' : '. Huvudtalet ovan räknar inte bort yrkesgruppen.');
 }
 
 /**
@@ -809,7 +811,7 @@ function renderRegressionCard() {
                         <div class="step-bar-bg"><div class="step-bar-fill" data-stil-bredd="${widthPct.toFixed(1)}%"></div></div>
                         <div class="step-value">${sgnW}${absVal}%</div>
                     </div>
-                    ${isYrke ? `<p class="step-note">${_yrkesStegText(s)}</p>` : ''}
+                    ${isYrke ? `<p class="step-note">${_yrkesStegText(s, r.modell)}</p>` : ''}
                 </div>
             `;
         });
