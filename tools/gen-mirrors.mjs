@@ -70,7 +70,7 @@ export const MODULES = [
         // Löneöversynen — importerar likvardighet.js (definitionen av kvinnodominerat, ADR-60)
         file: 'loneoversyn.js', ns: '__mirrorForecast',
         expose: {
-            computePott: '_fcComputePott', allocate: '_fcAllocate', targetRows: '_fcTargetRows', suggestTargets: '_fcSuggestTargets', closureTargets: '_fcClosureTargets',
+            computePott: '_fcComputePott', allocate: '_fcAllocate', targetRows: '_fcTargetRows', suggestTargets: '_fcSuggestTargets', closureTargets: '_fcClosureTargets', ettParPerYrke: '_fcEttParPerYrke',
             stagedPlan: '_fcStagedPlan', summarizeGroups: '_fcSummarizeGroups', detectLeapfrog: '_fcDetectLeapfrog',
             forecastOutcome: '_fcForecastOutcome', bandStats: '_fcBandStats',
             individualRemediation: '_fcIndividualRemediation', marketTargets: '_fcMarketTargets',

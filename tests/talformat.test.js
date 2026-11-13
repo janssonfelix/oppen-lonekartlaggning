@@ -15,6 +15,8 @@
  *      CSV-exporten bär) läses tillbaka av talinläsningen (`parseNumberStrict`) till samma värde.
  *
  * All data är påhittad.
+ *
+ * Vaktar: R8 (docs/utveckling/regler.md)
  */
 import { describe, it, expect, beforeAll } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';

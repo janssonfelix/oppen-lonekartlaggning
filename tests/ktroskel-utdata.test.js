@@ -1,8 +1,10 @@
 /**
- * K-tröskeln som inställning: Lönepolitik, Prioritering, § 3:10-paren, texterna, gränssnittet, utdata, utskriften, konfigurationsfilen och organisationspaketet.
+ * K-tröskeln som inställning: Lönepolitik, Prioritering, paren i likvärdigt arbete, texterna, gränssnittet, utdata, utskriften, konfigurationsfilen och organisationspaketet.
  *
  * Riggen (fixturer, fönster och sökfunktioner) ligger i tests/helpers/ktroskel-rigg.js; sviten är delad i
  * flera filer så att Vitest fördelar den över flera arbetare.
+ *
+ * Vaktar: S4 (docs/utveckling/regler.md)
  */
 import { describe, it, expect, vi } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
@@ -48,7 +50,7 @@ describe('k-tröskeln: Prioritering visar ingen könsjämförelse för ett kön 
     });
 });
 
-describe('k-tröskeln: § 3:10-par i Word-utkastet och utskriften', () => {
+describe('k-tröskeln: par i likvärdigt arbete i Word-utkastet och utskriften', () => {
     const SENT = 36421;
     const fonsterPar = k => {
         const w = createAppWindow();
@@ -90,7 +92,7 @@ describe('k-tröskeln: § 3:10-par i Word-utkastet och utskriften', () => {
     });
 });
 
-describe('k-tröskeln: § 3:10-par utanför fliken (protokoll, Att göra, handlingsplan, gruppdossier)', () => {
+describe('k-tröskeln: par i likvärdigt arbete utanför fliken (protokoll, Att göra, handlingsplan, gruppdossier)', () => {
     // Undantaget gäller bara fliken Likvärdigt arbete och dess egen export. Överallt annars utelämnas
     // ett par där en grupp är under tröskeln, och utdata anger hur många som lämnats ut.
     const SENT = 36431;   // medianen i den lilla gruppen (36421, 36431, 36441 i tur och ordning)
@@ -243,7 +245,9 @@ describe('k-tröskeln: § 3:10-par utanför fliken (protokoll, Att göra, handli
         expect(t5).toContain('5300');
         expect(t5).toContain(arskostnad(w5));
     });
-    it('Löneöversynens förslag på skärmen riktar också mot den lilla gruppen (skärmen maskerar inget, ADR-51); raden säger att beloppet bygger på enskildas löner', () => {
+    // Ändrat med ADR-69 (2026-11-13): förslagen följer den inställda tröskeln också på skärmen. Förr riktade förslaget på
+    // skärmen också mot den lilla gruppen (ADR-51), och raden följde med i Excel-exporten och konfigurationsfilen.
+    it('Löneöversynens förslag riktar inte mot den lilla gruppen vid 10, också på skärmen (ADR-69); vid 5 gör det', () => {
         const forslag = k => {
             const w = fonsterPar(k);
             w.alert = () => {};
@@ -253,9 +257,8 @@ describe('k-tröskeln: § 3:10-par utanför fliken (protokoll, Att göra, handli
             return { w, aid: w.__state.forecast.targets.map(t => t.aid) };
         };
         const a10 = forslag(null);
-        expect(a10.aid).toContain('5300');
-        expect(a10.w.document.getElementById('forecast-par-not').textContent).toBe('');
-        expect(a10.w.document.getElementById('forecast-targets').textContent).toMatch(/Raden berör 6 personer, färre än 10 personer/);
+        expect(a10.aid).not.toContain('5300');
+        expect(a10.w.document.getElementById('forecast-par-not').textContent).toMatch(NOT);
         const a5 = forslag(5);
         expect(a5.aid).toContain('5300');
         expect(a5.w.document.getElementById('forecast-par-not').textContent).not.toMatch(NOT);

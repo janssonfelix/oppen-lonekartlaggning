@@ -5,6 +5,8 @@
  * och autocomplete="off" på fält som skapas efter start.
  *
  * Samma rigg som ktroskel.test.js: grupper där alla har samma lön, i tre storlekar (150, 20 och 6).
+ *
+ * Vaktar: S4 (docs/utveckling/regler.md)
  */
 import { describe, it, expect, vi } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
@@ -111,7 +113,10 @@ function parFonsterMedRader() {
     return w;
 }
 
-describe('Konfigurationsfilen: riktade rader bär fältet kalla; på skärmen rensas inga förslag när tröskeln höjs (ADR-51)', () => {
+// Ändrat med ADR-69 (2026-11-13): förslagen följer den inställda tröskeln också på skärmen. Ett förslag ur ett par med en
+// grupp under den tas bort när tröskeln höjs och läses inte in ur en konfigurationsfil; förr stod det kvar på skärmen
+// (ADR-51). Egna rader står kvar som förut (regel R2).
+describe('Konfigurationsfilen: riktade rader bär fältet kalla; ett förslag under den inställda tröskeln rensas, också på skärmen (ADR-69)', () => {
     const aids = w => w.__state.forecast.targets.map(t => t.aid).sort();
     it('filen bär kalla på förslaget men inte på den egna raden, och versionen är oförändrad', () => {
         const cfg = parFonsterMedRader().eval('buildConfigSnapshot()');
@@ -119,16 +124,15 @@ describe('Konfigurationsfilen: riktade rader bär fältet kalla; på skärmen re
         expect(cfg.forecast.targets.find(t => t.aid === '5300').kalla).toBe('par');
         expect(cfg.forecast.targets.find(t => t.aid === '6000').kalla).toBeUndefined();
     });
-    it('spara vid 5, höj till 10, läs in: båda raderna står kvar (skärmen maskerar inget), och raden på den lilla gruppen får noten', () => {
+    it('spara vid 5, höj till 10, läs in: förslaget rensas, också på skärmen, och den egna raden står kvar', () => {
         const w = parFonsterMedRader();
         const cfg = w.eval('buildConfigSnapshot()');
         delete cfg.kTroskel;   // filen ska inte sänka tröskeln igen
         w.eval('sattKTroskel(10, { fraga: false })');
-        expect(aids(w)).toEqual(['5300', '6000']);
+        expect(aids(w)).toEqual(['6000']);
         w.__cfg = JSON.parse(JSON.stringify(cfg));
         w.eval('applyConfigSnapshot(window.__cfg)');
-        expect(aids(w)).toEqual(['5300', '6000']);
-        expect(w.document.getElementById('forecast-targets').textContent).toMatch(/Raden berör 6 personer, färre än 10 personer/);
+        expect(aids(w)).toEqual(['6000']);
         // En egen rad på en grupp under tröskeln läses in som egen och får noten.
         w.__cfg.forecast.targets = [{ bas: 'C', aid: '5300', mode: 'kr', value: 500, dist: 'lowest', targetLevel: 'median', pool: 'övrigt' }];
         w.eval('applyConfigSnapshot(window.__cfg)');
@@ -136,7 +140,7 @@ describe('Konfigurationsfilen: riktade rader bär fältet kalla; på skärmen re
         expect(w.__state.forecast.targets[0].kalla).toBeUndefined();
         expect(w.document.getElementById('forecast-targets').textContent).toMatch(/Raden berör 6 personer, färre än 10 personer/);
     });
-    it('läs in vid 5 och höj sedan: raden ur filen bär kalla och står kvar', () => {
+    it('läs in vid 5 och höj sedan: raden ur filen bär kalla och rensas när tröskeln höjs', () => {
         const w = parFonsterMedRader();
         const cfg = w.eval('buildConfigSnapshot()');
         w.__state.forecast.targets = [];
@@ -145,7 +149,7 @@ describe('Konfigurationsfilen: riktade rader bär fältet kalla; på skärmen re
         expect(aids(w)).toEqual(['5300', '6000']);
         expect(w.__state.forecast.targets.find(t => t.aid === '5300').kalla).toBe('par');
         w.eval('sattKTroskel(10, { fraga: false })');
-        expect(aids(w)).toEqual(['5300', '6000']);
+        expect(aids(w)).toEqual(['6000']);
     });
 });
 

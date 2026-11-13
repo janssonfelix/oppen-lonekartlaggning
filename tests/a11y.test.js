@@ -11,6 +11,8 @@
  * fokus-synlighet verifieras i stället manuellt i riktig webbläsare (axe-körning
  * i preview, KVALDOK §8). Detta test fångar den maskinellt verifierbara delen och
  * larmar vid regressioner i markup-tillgänglighet.
+ *
+ * Vaktar: R16 (docs/utveckling/regler.md)
  */
 import { describe, it, expect, beforeAll } from 'vitest';
 import { readFileSync } from 'node:fs';

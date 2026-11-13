@@ -97,9 +97,10 @@ säkerhetsregler*.
 | `docs/` | Dokumentationen; [`docs/README.md`](docs/README.md) listar dokumenten efter läsare |
 | `docs/anvandare/` | Dokument som följer med verktyget: körguide, datauttag, organisationspaket, införande |
 | `docs/dataskydd/` | Dataskyddsbeskrivning och risk- och sårbarhetsanalys |
-| `docs/utveckling/` | [`teknisk-plan.md`](docs/utveckling/teknisk-plan.md) (syfte, avgränsning och öppna punkter), [`arkitekturbeslut.md`](docs/utveckling/arkitekturbeslut.md) (ADR), [`diagramkarnan.md`](docs/utveckling/diagramkarnan.md), [`organisationsfil.md`](docs/utveckling/organisationsfil.md) och [`lagrum.md`](docs/utveckling/lagrum.md) |
+| `docs/utveckling/` | [`teknisk-plan.md`](docs/utveckling/teknisk-plan.md) (syfte, avgränsning och öppna punkter), [`skydd.md`](docs/utveckling/skydd.md) (skydden S1–S5), [`regler.md`](docs/utveckling/regler.md) (regelmatrisen), [`arkitekturbeslut.md`](docs/utveckling/arkitekturbeslut.md) (ADR), referenserna per område (bland dem [`diagramkarnan.md`](docs/utveckling/diagramkarnan.md) och [`bygge-och-test.md`](docs/utveckling/bygge-och-test.md)), [`organisationsfil.md`](docs/utveckling/organisationsfil.md) och [`lagrum.md`](docs/utveckling/lagrum.md) |
 | `tests/` | Vitest-sviten (enhetstester, röktester i jsdom, golden-facit, k-anonymitet, tillgänglighet) |
 | `tools/` | Bygge, speglingsgenerator, röktest i webbläsare, prestandamätning och testdatageneratorer. `tools/data/` håller lokala indata och är inte incheckad |
+| `types/` | Deklarationerna för typkontrollen (bibliotekens globaler och appens egna fält på DOM-element) |
 | `site/` | Demosidan på GitHub Pages (`npm run site`) |
 | `.github/` | Arbetsflödena för CI, release och demosidan, ärendemallar, [`CONTRIBUTING.md`](.github/CONTRIBUTING.md), [`GOVERNANCE.md`](.github/GOVERNANCE.md) och [`CODE_OF_CONDUCT.md`](.github/CODE_OF_CONDUCT.md) |
 | Roten | `README.md`, [`CHANGELOG.md`](CHANGELOG.md), [`SECURITY.md`](SECURITY.md), `LICENSE` (MIT), [`TREDJEPARTSLICENSER.md`](TREDJEPARTSLICENSER.md) och `VERSION` |
@@ -108,13 +109,17 @@ Källmodulerna i `src/app/` beskrivs i [`src/app/README.md`](src/app/README.md).
 
 ## För dig som utvecklar
 
-Kräver Node 22.12 eller senare.
+Kräver Node 22.12 eller senare. När en ändring är klar står i *Definition of Done* i
+[`CONTRIBUTING.md`](.github/CONTRIBUTING.md) (punkt 3); kommandona nedan är referensen. Hur bygget, testmiljön,
+CI och releasen fungerar står i [`bygge-och-test.md`](docs/utveckling/bygge-och-test.md).
 
 ```bash
 npm ci                 # installera utvecklingsberoenden
+npm run kontroll       # hela kedjan i Definition of Done, i CI:s ordning; stannar på första fel
+                       # (npm run kontroll -- --snabb: npm test i stället för test:full, inget röktest)
 npm run build:app      # slå ihop src/app/ till dist/app.js (och spegla src/lib/)
 npm test               # snabb körning: moduler och vakter, utan jsdom (sekunder)
-npm run test:full      # hela Vitest-sviten med jsdom-testerna (minuter); före en pull request, körs i CI
+npm run test:full      # hela Vitest-sviten med jsdom-testerna (minuter); körs i CI
                        # (tools/test.mjs kör om en fil vars arbetare kraschat i Node)
 npm run lint           # eslint
 npm run typecheck      # JSDoc-typkontroll med tsc (checkJs): typecheck:lib för src/lib och tools, typecheck:app för src/app

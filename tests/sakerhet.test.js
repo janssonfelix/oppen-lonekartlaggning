@@ -1,6 +1,8 @@
 /**
  * Säkerhetshärdning: CSP för stilar, låsta tredjepartsbibliotek,
  * en enda escaping-funktion, utskriftsfönstret och låsta CI-steg.
+ *
+ * Vaktar: S1, S2, S5, R5, R6, R15, R16 (docs/utveckling/regler.md)
  */
 import { describe, it, expect, beforeAll } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';
@@ -14,13 +16,25 @@ const ROOT = join(import.meta.dirname, '..');
 const läs = f => readFileSync(join(ROOT, f), 'utf8');
 const sha256b64 = s => createHash('sha256').update(s, 'utf8').digest('base64');
 
+// Sidans CSP (den första meta-taggen; utskriftsfönstrets egen policy står escapad i ett skript) och dess direktiv.
+const cspIHtml = html => html.match(/http-equiv="Content-Security-Policy" content="([^"]+)"/)[1];
+const delaCsp = csp => Object.fromEntries(csp.split(';').map(d => d.trim()).filter(Boolean).map(d => {
+    const [namn, ...värden] = d.split(/\s+/);
+    return [namn, värden];
+}));
+// Värden som pekar ut i nätet (S1): allt som varken är ett lokalt schema eller ett citerat nyckelord, alltså *,
+// http:, https:, ws:, wss:, värdnamn och adresser. 'self' räknas också: det släpper samma ursprung om filen
+// läggs på en server.
+const LOKALA_SCHEMAN = ['data:', 'blob:'];
+const natkallor = direktiv => Object.entries(direktiv).flatMap(([namn, värden]) => värden
+    .filter(v => v === "'self'" || (!v.startsWith("'") && !LOKALA_SCHEMAN.includes(v)))
+    .map(v => `${namn} ${v}`));
+const SHA256_KALLA = /^'sha256-[A-Za-z0-9+/]+=*'$/;
+const skriptkallorUtomKontrollsummor = värden => värden.filter(v => !SHA256_KALLA.test(v));
+
 describe('säkerhet: CSP för stilar i bygget', () => {
     const html = läs('dist/oppen-lonekartlaggning.html');
-    const csp = html.match(/http-equiv="Content-Security-Policy" content="([^"]+)"/)[1];
-    const direktiv = Object.fromEntries(csp.split(';').map(d => d.trim()).filter(Boolean).map(d => {
-        const [namn, ...värden] = d.split(/\s+/);
-        return [namn, värden];
-    }));
+    const direktiv = delaCsp(cspIHtml(html));
     it('style-elementen kräver kontrollsumma; bara stilattribut får vara inline', () => {
         expect(direktiv['style-src-elem']).toBeDefined();
         expect(direktiv['style-src-elem']).not.toContain("'unsafe-inline'");
@@ -35,6 +49,42 @@ describe('säkerhet: CSP för stilar i bygget', () => {
         // En tom stilmall har ingen kontrollsumma: ett bibliotek som skapar en egen <style> blockeras.
         expect(direktiv['style-src-elem']).not.toContain(`'sha256-${sha256b64('')}'`);
         expect(direktiv['style-src-elem']).toHaveLength(block.length);
+    });
+});
+
+describe('säkerhet: byggets CSP släpper inte nätet (S1)', () => {
+    const csp = cspIHtml(läs('dist/oppen-lonekartlaggning.html'));
+    const direktiv = delaCsp(csp);
+    it('default-src och connect-src är \'none\' och inget annat', () => {
+        expect(direktiv['default-src']).toEqual(["'none'"]);
+        expect(direktiv['connect-src']).toEqual(["'none'"]);
+    });
+    it('script-src har bara kontrollsummor: inget \'unsafe-inline\', inget \'unsafe-eval\', inga källor (ADR-9)', () => {
+        expect(direktiv['script-src']).not.toContain("'unsafe-inline'");
+        expect(direktiv['script-src']).not.toContain("'unsafe-eval'");
+        expect(direktiv['script-src'].filter(v => SHA256_KALLA.test(v)).length).toBeGreaterThanOrEqual(1);
+        expect(skriptkallorUtomKontrollsummor(direktiv['script-src'])).toEqual([]);
+    });
+    it('inget direktiv i policyn pekar ut i nätet', () => {
+        expect(natkallor(direktiv)).toEqual([]);
+    });
+    it('källans CSP har default-src och connect-src \'none\' (bygget ärver dem; script-src byts ut i bygget)', () => {
+        const källa = delaCsp(cspIHtml(läs('src/index.html')));
+        expect(källa['default-src']).toEqual(["'none'"]);
+        expect(källa['connect-src']).toEqual(["'none'"]);
+    });
+    it('självtest: tolkningen och nätkällorna fäller en policy som släpper ut', () => {
+        const ut = delaCsp("default-src 'self'; connect-src https://exempel.invalid wss:; img-src * data:; font-src fonter.exempel.invalid; script-src 'sha256-abc=' http:");
+        expect(natkallor(ut)).toEqual(["default-src 'self'", 'connect-src https://exempel.invalid', 'connect-src wss:',
+            'img-src *', 'font-src fonter.exempel.invalid', 'script-src http:']);
+        expect(skriptkallorUtomKontrollsummor(ut['script-src'])).toEqual(['http:']);
+        const stängd = delaCsp("default-src 'none'; script-src 'sha256-abc='; img-src data: blob:; font-src data:; connect-src 'none'");
+        expect(natkallor(stängd)).toEqual([]);
+        expect(skriptkallorUtomKontrollsummor(stängd['script-src'])).toEqual([]);
+        // En kopia av byggets policy utan connect-src, eller med 'unsafe-inline' i script-src, fälls.
+        expect(delaCsp(csp.replace(/connect-src [^;]*;/, ''))['connect-src']).toBeUndefined();
+        expect(skriptkallorUtomKontrollsummor(delaCsp(csp.replace('script-src ', "script-src 'unsafe-inline' "))['script-src']))
+            .toEqual(["'unsafe-inline'"]);
     });
 });
 

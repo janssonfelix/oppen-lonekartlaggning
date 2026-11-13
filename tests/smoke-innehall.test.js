@@ -7,6 +7,7 @@
 import { describe, it, expect } from 'vitest';
 import { createAppWindow, delatFonster } from './helpers/app-harness.js';
 import { borjaHar } from '../src/lib/attgora.js';
+import { laddaXlsx } from './helpers/ktroskel-rigg.js';
 
 // Testerna som söker igenom flikarna ritar dem inte var för sig: ett delat fönster med demodatan klickar fram varje flik
 // en gång och sparar en kopia av det som då syns (flikens paneler och sidhuvudet), och testerna läser kopiorna.
@@ -965,6 +966,90 @@ describe('huvudtalet följer modellen i nyckeltal, Att göra, Struktur och rappo
         const lika = m.avsnitt.find(a => a.id === 'lika');
         expect(lika.delar.find(d => d.typ === 'tabell').rader.map(r => r[0])).toContain('Löneskillnad som står kvar efter ålder och BAS-intervall');
         expect(JSON.stringify(m.avsnitt.find(a => a.id === 'regression').delar)).toMatch(/Ålderseffekt/);
+    });
+});
+
+// Metodbilagan (bladet Metod & parametrar i Excel-exporten) säger den modell huvudtalet räknades med (ADR-56), och om
+// steget + Yrkesgrupp ingår i huvudtalet. Raderna läses ur arbetsboken som exporten bygger.
+describe('metodbilagan följer förklaringsmodellen (ADR-56)', () => {
+    const metodrader = async (modell, { utanAlder = false } = {}) => {
+        const w = createAppWindow(); await laddaXlsx(w); w.__loadDemoData();
+        if (utanAlder) {
+            w.__state.data = w.__state.data.map(r => ({ ...r, alder: 0 }));
+            w.eval('invalidateStatCaches(); populateSelects(); unlockTabs();');
+        }
+        w.__state.forklaringsmodell = modell;
+        const blad = w.eval('_excelAlltBok()').Sheets['Metod & parametrar'];
+        const rader = w.XLSX.utils.sheet_to_json(blad, { header: 1, raw: true });
+        const rad = namn => (rader.find(r => r[0] === namn) || [])[1];
+        return { w, modellRad: rad('Modell — oförklarad skillnad'), stegRad: rad('Steg + Yrkesgrupp (dekomponeringen)') };
+    };
+    it('ålder bortvald: modellen saknar ålder, och steget + Yrkesgrupp räknas utan ålder', async () => {
+        const { w, modellRad, stegRad } = await metodrader({ bas: true, alder: false, yrkesgrupp: false, skal: '' });
+        expect(w.eval('runOLSRegression().modell')).toMatchObject({ bas: true, alder: false, yrkesgrupp: false });
+        expect(modellRad).toMatch(/~ kön \+ BAS-intervall/);
+        expect(modellRad).not.toMatch(/ålder/);
+        expect(stegRad).not.toMatch(/utöver ålder/);
+        expect(stegRad).toMatch(/utan ålder/);
+        expect(stegRad).toMatch(/ingår inte i huvudtalet/);
+    });
+    it('BAS bortvalt: modellen saknar BAS, och steget + Yrkesgrupp räknas inte', async () => {
+        const { w, modellRad, stegRad } = await metodrader({ bas: false, alder: true, yrkesgrupp: false, skal: '' });
+        expect(w.eval('runOLSRegression().yrkesSteg')).toBeNull();
+        expect(modellRad).toMatch(/~ kön \+ ålder;/);
+        expect(modellRad).not.toMatch(/BAS/);
+        expect(stegRad).not.toMatch(/visas som sista steg/);
+        expect(stegRad).toMatch(/BAS-intervall.*bortvalt/);
+    });
+    it('yrkesgrupp vald: modellen har yrkesgrupp inom BAS och inomtransformation, och steget är huvudtalet', async () => {
+        const { w, modellRad, stegRad } = await metodrader({ bas: true, alder: true, yrkesgrupp: true, skal: '' });
+        expect(w.eval('runOLSRegression().modell.yrkesgrupp')).toBe(true);
+        expect(modellRad).toMatch(/yrkesgrupp inom BAS/);
+        expect(modellRad).toMatch(/inomtransformation/);
+        expect(stegRad).not.toMatch(/ingår inte i huvudtalet/);
+        expect(stegRad).toMatch(/huvudtalet/);
+    });
+    it('standardmodellen: raderna är som förut', async () => {
+        const { modellRad, stegRad } = await metodrader(null);
+        expect(modellRad).toBe('OLS på log(månadslön) ~ kön + ålder + BAS-intervall (indikatorvariabler, första BAS som referens); HC3-robusta standardfel (Long & Ervin 2000)');
+        expect(stegRad).toBe('Löneskillnad mellan könen med fasta effekter för yrkesgrupp inom BAS (AID×BAS) utöver ålder, skattat med inomtransformation; visas som sista steg, ingår inte i huvudtalet');
+    });
+    it('lönefil utan ålder: raderna är som förut (ADR-64)', async () => {
+        const { modellRad, stegRad } = await metodrader(null, { utanAlder: true });
+        expect(modellRad).toBe('OLS på log(månadslön) ~ kön + BAS-intervall (indikatorer); lönefilen saknar ålder, så analysen körs utan åldersjustering; HC3-robusta standardfel (Long & Ervin 2000)');
+        expect(stegRad).toBe('Löneskillnad mellan könen med fasta effekter för yrkesgrupp inom BAS (AID×BAS), utan ålder (lönefilen saknar ålder), skattat med inomtransformation; visas som sista steg, ingår inte i huvudtalet');
+    });
+});
+
+// Meningen under steget + Yrkesgrupp (_yrkesStegText) i regressionskortet och rapportens bilaga följer den skattade
+// modellen: ålder när modellen har ålder, och huvudtalet räknar bort yrkesgruppen när den är vald (ADR-56).
+describe('meningen under steget + Yrkesgrupp följer förklaringsmodellen (ADR-56)', () => {
+    const rita = modell => {
+        const w = createAppWindow(); w.__loadDemoData(); w.__state.forklaringsmodell = modell;
+        w.document.querySelector('.nav-item[data-tab="struktur"]').click(); w.eval('renderTabContent("struktur")');
+        const not = w.document.querySelector('#regression-card .step-yrke .step-note, #regression-card .step-note');
+        const bilaga = JSON.stringify(w.eval('rapportModell()').avsnitt.find(a => a.id === 'regression').delar);
+        return { kortNot: not ? not.textContent.replace(/\s+/g, ' ') : '', bilaga };
+    };
+    it('ålder bortvald: meningen säger inte "och ålder"', () => {
+        const { kortNot, bilaga } = rita({ bas: true, alder: false, yrkesgrupp: false, skal: '' });
+        expect(kortNot).toMatch(/samma yrkesgrupp, BAS-intervall \(/);
+        expect(kortNot).not.toMatch(/och ålder/);
+        expect(bilaga).toMatch(/Steget \+ Yrkesgrupp: [^"]*samma yrkesgrupp, BAS-intervall \(/);
+        expect(bilaga).toMatch(/Huvudtalet ovan räknar inte bort yrkesgruppen/);
+    });
+    it('yrkesgrupp vald: meningen säger inte att huvudtalet låter bli att räkna bort yrkesgruppen', () => {
+        const { kortNot, bilaga } = rita({ bas: true, alder: true, yrkesgrupp: true, skal: '' });
+        expect(kortNot).toMatch(/samma yrkesgrupp, BAS-intervall och ålder/);
+        expect(kortNot).not.toMatch(/räknar inte bort yrkesgruppen/);
+        expect(bilaga).toMatch(/Steget \+ Yrkesgrupp: /);
+        expect(bilaga).not.toMatch(/räknar inte bort yrkesgruppen/);
+    });
+    it('standardmodellen: meningen är som förut', () => {
+        const { kortNot, bilaga } = rita(null);
+        expect(kortNot).toMatch(/samma yrkesgrupp, BAS-intervall och ålder \(fasta effekter för yrkesgrupp inom BAS\)/);
+        expect(kortNot).toMatch(/Huvudtalet ovan räknar inte bort yrkesgruppen\.$/);
+        expect(bilaga).toMatch(/Huvudtalet ovan räknar inte bort yrkesgruppen/);
     });
 });
 

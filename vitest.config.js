@@ -15,8 +15,8 @@
 // bort den slumpen; ett test som hänger sig fälls fortfarande.
 //
 // Arbetare: Vitest kör en fil per arbetare, så den längsta filen sätter golvet för hela körningen (därför är
-// röktestet, k-tröskeltestet, gränssnittstestet och diagramvyerna delade i filer per område, se teknisk-plan.md
-// §6). Antalet arbetare är tre fjärdedelar av antalet trådar: de tunga filerna är processorbundna (jsdom ritar
+// röktestet, k-tröskeltestet, gränssnittstestet och diagramvyerna delade i filer per område, se
+// docs/utveckling/bygge-och-test.md §5.3). Antalet arbetare är tre fjärdedelar av antalet trådar: de tunga filerna är processorbundna (jsdom ritar
 // alla flikar), så på en maskin med åtta kärnor och sexton trådar (SMT) mättes åtta arbetare till 168 s (de tunga
 // filerna köar), femton (Vitests standard, trådar − 1) till 150–168 s (trådarna trängs om kärnorna och varje fil
 // tar tre gånger så lång tid som ensam) och tolv till 130 s. Taket från minnet: 1,2 GB per arbetare, som den

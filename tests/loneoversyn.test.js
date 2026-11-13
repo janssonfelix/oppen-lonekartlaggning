@@ -7,7 +7,7 @@ import { describe, it, expect } from 'vitest';
 import {
     totalLonSum, computePott, allocate, targetRows, rawGenderGap, suggestTargets, forecastOutcome,
     summarizeGroups, detectLeapfrog, closureTargets, stagedPlan,
-    bandStats, individualRemediation, marketTargets, sensitivityCurve
+    bandStats, individualRemediation, marketTargets, sensitivityCurve, ettParPerYrke
 } from '../src/lib/loneoversyn.js';
 
 const rows = () => [
@@ -310,6 +310,33 @@ describe('forecast: marknadspositionering (E)', () => {
         const groups = [{ bas: 'A', aid: '1', n: 2, median: 30000 }];
         expect(marketTargets(groups, new Map([['1', 35000]]), 1, 10)).toEqual([]);   // n<minN
         expect(marketTargets([{ bas: 'A', aid: '1', n: 5, median: 40000 }], new Map([['1', 35000]]), 1, 0)).toEqual([]);
+    });
+});
+
+// ADR-69: ett kandidatpar per kvinnodominerat yrke (BAS-intervall och AID), det med störst skillnad, så att ett yrke
+// med flera jämförelseyrken får en rad och en pott, inte en per jämförelseyrke.
+describe('forecast: ett par per yrke i förslagen (ADR-69)', () => {
+    const cand = [
+        { bas: 'C', aid: '5300', gapKr: 14952, n: 12, maN: 24 },
+        { bas: 'C', aid: '5300', gapKr: 21690, n: 12, maN: 12 },
+        { bas: 'D', aid: '5400', gapKr: 500, n: 20, maN: 30 },
+    ];
+    it('ettParPerYrke behåller paret med störst skillnad per yrke, i ursprunglig ordning', () => {
+        expect(ettParPerYrke(cand)).toEqual([cand[1], cand[2]]);
+        expect(ettParPerYrke([])).toEqual([]);
+        expect(ettParPerYrke(undefined)).toEqual([]);
+    });
+    it('suggestTargets ger en rad per yrke, räknad ur paret med störst skillnad', () => {
+        const t = suggestTargets(cand, 10000000);
+        expect(t.map(x => [x.aid, x.value])).toEqual([['5300', 21690 * 12], ['5400', 500 * 20]]);
+    });
+    it('closureTargets och känslighetskurvan räknar också ett par per yrke', () => {
+        expect(closureTargets(cand, 1).map(x => [x.aid, x.value])).toEqual([['5300', 21690 * 12], ['5400', 500 * 20]]);
+        const data = [];
+        for (let i = 0; i < 12; i++) data.push({ bas: 'C', aid: '5300', kon: 'kvinna', lon: 36421 });
+        for (let i = 0; i < 20; i++) data.push({ bas: 'D', aid: '5400', kon: 'kvinna', lon: 30000 });
+        const kurva = sensitivityCurve(data, cand, { months: 1, poPct: 0 }, 1);
+        expect(kurva[1].kostnad).toBe(21690 * 12 + 500 * 20);
     });
 });
 
