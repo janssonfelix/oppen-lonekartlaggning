@@ -5,6 +5,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { valideraFigur, figurTillTabell, utanSmaGrupper } from '../src/lib/figur.js';
 import { createAppWindow, delatFonster, utgangslage } from './helpers/app-harness.js';
+import { laddaXlsx } from './helpers/ktroskel-rigg.js';
 import { vanliga, KALLA, person, skapaRigg } from './helpers/diagramvyer-rigg.js';
 
 const demo = delatFonster(w => w.__loadDemoData());
@@ -482,9 +483,46 @@ describe('andelsstaplar: könsfördelning, ålderspyramid och avvikelse från f�
         const w2 = oppna();
         w2.__renderTabContent('struktur');
         const el = w2.document.getElementById('chart-skevhet-andel');
-        const tabell = [...w2.document.querySelectorAll('#skevhet-table tbody tr')].map(tr => ['BAS ' + tr.cells[0].textContent.trim(), parseFloat(tr.cells[4].textContent)]);   // efter BAS, Totalt N, Antal kvinnor och Antal män
+        const tabell = [...w2.document.querySelectorAll('#skevhet-table tbody tr:not(.skevhet-not)')].map(tr => ['BAS ' + tr.cells[0].textContent.trim(), parseFloat(tr.cells[4].textContent)]);   // efter BAS, Totalt N, Antal kvinnor och Antal män
         expect(el._figur.lager[0].data.map(d => [d.y, d.x])).toEqual(tabell);
         expect(el.querySelectorAll('rect[data-marke="stapel"]').length).toBe(tabell.length * 2);
+    });
+    it('könsfördelning per BAS i exportläget: ett intervall under 5 når varken tabell, diagram, diagramdata, Excel eller utskrift utom som namn i noten (ADR-57)', async () => {
+        // A: 40 personer; B: 7 (4 kvinnor, 3 män), under k = 10 men över golvet LITET_UNDERLAG; C: 4 (2 + 2), under golvet.
+        const rad = (kon, i, bas) => ({ bas, kon, lon: 30000 + i * 111, alder: 30 + (i % 30), yrke: '100 X', aid: '100', yrkeLabel: 'X' });
+        const w2 = createAppWindow();
+        w2.__state.data = [...Array.from({ length: 20 }, (_, i) => rad('kvinna', i, 'A')), ...Array.from({ length: 20 }, (_, i) => rad('man', i, 'A')),
+            ...Array.from({ length: 4 }, (_, i) => rad('kvinna', i, 'B')), ...Array.from({ length: 3 }, (_, i) => rad('man', i, 'B')),
+            ...Array.from({ length: 2 }, (_, i) => rad('kvinna', i, 'C')), ...Array.from({ length: 2 }, (_, i) => rad('man', i, 'C'))];
+        w2.eval('populateSelects(); unlockTabs();');
+        w2.__state.kLage = 'export';   // så som det lämnar verktyget (ADR-51)
+        expect(w2.eval('kTroskel()')).toBe(10);
+        w2.__renderTabContent('struktur');
+        const d = w2.document;
+        const rader = [...d.querySelectorAll('#skevhet-table tbody tr:not(.skevhet-not)')].map(tr => tr.cells[0].textContent.trim());
+        expect(rader).toEqual(['A', 'B']);                                              // B med 7 personer får en rad (avsteget i antal)
+        const not = d.querySelector('#skevhet-table tbody tr.skevhet-not');
+        expect(not.textContent).toMatch(/1 BAS-intervall visas inte här: C\. Det har färre än 5 personer/);
+        expect(not.textContent).not.toMatch(/\d+ ?%/);                                  // noten bär inga andelar
+        const el = d.getElementById('chart-skevhet-andel');
+        expect(el._figur.lager[0].data.map(p => p.y)).toEqual(['BAS A', 'BAS B']);
+        expect(el.outerHTML).not.toContain('BAS C');
+        const exportRader = w2.eval('chartExportRows(document.getElementById("chart-skevhet-andel"))');
+        expect(JSON.stringify(exportRader)).not.toContain('BAS C');
+        expect(exportRader.some(r => r.includes('BAS B'))).toBe(true);
+        // Excel-bladet Könsskevhet: samma rader och noten, ingen rad för C.
+        await laddaXlsx(w2);
+        let bok = null;
+        w2.XLSX.writeFile = wb => { bok = wb; };
+        w2.eval('exportAllToExcel()');
+        const blad = w2.XLSX.utils.sheet_to_json(bok.Sheets['Könsskevhet'], { header: 1, raw: true });
+        expect(blad.filter(r => ['A', 'B', 'C'].includes(String(r[0]).trim())).map(r => String(r[0]).trim())).toEqual(['A', 'B']);
+        expect(blad.some(r => /visas inte här: C\./.test(String(r[0])))).toBe(true);
+        // Utskriften klonar tabellen.
+        await w2.eval('buildPrintReport()');
+        const utskrift = [...d.querySelectorAll('#print-report #skevhet-table tbody tr, #print-report table[id$="skevhet-table"] tbody tr')];
+        expect(utskrift.length).toBeGreaterThan(0);
+        expect(utskrift.filter(tr => tr.cells.length > 1).map(tr => tr.cells[0].textContent.trim())).toEqual(['A', 'B']);
     });
     it('ålderspyramiden: kvinnor åt vänster, män åt höger, äldst överst, samma andelar som histogrammet', () => {
         const w2 = skapa();

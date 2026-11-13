@@ -1613,7 +1613,7 @@ exports[`golden: Excel-exporterna på fast dataset > "Excel (alla flikar)" match
       null,
     ],
     [
-      "  Könsfördelning räknas så länge totalen ≥ 5 (även om ena könet har < 5 individer)",
+      "  Könsfördelningen redovisas för BAS-intervall med minst 5 personer totalt, i båda lägena och oavsett minsta gruppstorlek (ett avsteg från k-tröskeln i antal, ADR-57: raden bär antal och andelar men inga lönemått); mindre intervall namnges i en not under tabellen",
       null,
     ],
     [
@@ -4942,7 +4942,7 @@ exports[`golden: PDF/print-rapporten (buildPrintReport) på fast dataset > urval
                             <tr><th><strong>= Använda i denna analys</strong></th><td><strong>62</strong></td></tr>
                         </tbody></table>
                         <p class="pr-tat"><strong>Formler:</strong></p><ul><li><strong>Kvinnors lön i % av mäns:</strong> median(kvinnors lön) / median(mäns lön) × 100 %. 100 % = lika lön.</li><li><strong>Status:</strong> Värt att granska = 95 % KI (bootstrap) utesluter 100 % och |kvot − 100 %| ≥ 3 % (verktygets storleksgräns) · Följ upp = minst 3 % men inte säkerställd, eller säkerställd under 3 % · Balanserat = under 3 % och inte säkerställd · Går ej att bedöma = ett kön under 10</li><li><strong>Direktivmarkering:</strong> |kvot − 100 %| ≥ 5 % på den ojusterade medianskillnaden. Direktivets regler om gemensam lönebedömning utgår från en skillnad på minst 5 %; markeringen visar var den nivån nås. Den är inte en bedömning.</li><li><strong>Ojämn könsfördelning:</strong> Ett kön är under 40 % av gruppen (jämn fördelning betyder att båda könen är minst 40 %)</li><li><strong>Översiktsdiagram:</strong> Punkt per BAS; färg och symbol = status (Balanserat, grön cirkel · Följ upp, bärnstensgul kvadrat · Värt att granska, lila romb · Går ej att bedöma, grå cirkel)</li></ul>
-                        <p class="pr-tat"><strong>Speciella regler:</strong></p><ul><li>Kräver minst 10 personer av varje kön för att medianer ska visas (k-anonymitet)</li><li>Könsfördelning räknas så länge totalen ≥ 5 (även om ena könet har &lt; 5 individer)</li></ul>
+                        <p class="pr-tat"><strong>Speciella regler:</strong></p><ul><li>Kräver minst 10 personer av varje kön för att medianer ska visas (k-anonymitet)</li><li>Könsfördelningen redovisas för BAS-intervall med minst 5 personer totalt, i båda lägena och oavsett minsta gruppstorlek (ett avsteg från k-tröskeln i antal, ADR-57: raden bär antal och andelar men inga lönemått); mindre intervall namnges i en not under tabellen</li></ul>
                     
                         <h3 class="pr-ned-14">Ålder &amp; karriär — livscykelmodellen</h3>
                         <table class="kpi pr-under">
@@ -6553,7 +6553,7 @@ exports[`golden: lönefil utan ålder (ADR-64) > "Excel (alla flikar)" matchar f
       null,
     ],
     [
-      "  Könsfördelning räknas så länge totalen ≥ 5 (även om ena könet har < 5 individer)",
+      "  Könsfördelningen redovisas för BAS-intervall med minst 5 personer totalt, i båda lägena och oavsett minsta gruppstorlek (ett avsteg från k-tröskeln i antal, ADR-57: raden bär antal och andelar men inga lönemått); mindre intervall namnges i en not under tabellen",
       null,
     ],
     [
@@ -7736,7 +7736,7 @@ exports[`golden: lönefil utan ålder (ADR-64) > PDF-rapporten (komplett) byggs 
                             <tr><th><strong>= Använda i denna analys</strong></th><td><strong>62</strong></td></tr>
                         </tbody></table>
                         <p class="pr-tat"><strong>Formler:</strong></p><ul><li><strong>Kvinnors lön i % av mäns:</strong> median(kvinnors lön) / median(mäns lön) × 100 %. 100 % = lika lön.</li><li><strong>Status:</strong> Värt att granska = 95 % KI (bootstrap) utesluter 100 % och |kvot − 100 %| ≥ 3 % (verktygets storleksgräns) · Följ upp = minst 3 % men inte säkerställd, eller säkerställd under 3 % · Balanserat = under 3 % och inte säkerställd · Går ej att bedöma = ett kön under 10</li><li><strong>Direktivmarkering:</strong> |kvot − 100 %| ≥ 5 % på den ojusterade medianskillnaden. Direktivets regler om gemensam lönebedömning utgår från en skillnad på minst 5 %; markeringen visar var den nivån nås. Den är inte en bedömning.</li><li><strong>Ojämn könsfördelning:</strong> Ett kön är under 40 % av gruppen (jämn fördelning betyder att båda könen är minst 40 %)</li><li><strong>Översiktsdiagram:</strong> Punkt per BAS; färg och symbol = status (Balanserat, grön cirkel · Följ upp, bärnstensgul kvadrat · Värt att granska, lila romb · Går ej att bedöma, grå cirkel)</li></ul>
-                        <p class="pr-tat"><strong>Speciella regler:</strong></p><ul><li>Kräver minst 10 personer av varje kön för att medianer ska visas (k-anonymitet)</li><li>Könsfördelning räknas så länge totalen ≥ 5 (även om ena könet har &lt; 5 individer)</li></ul>
+                        <p class="pr-tat"><strong>Speciella regler:</strong></p><ul><li>Kräver minst 10 personer av varje kön för att medianer ska visas (k-anonymitet)</li><li>Könsfördelningen redovisas för BAS-intervall med minst 5 personer totalt, i båda lägena och oavsett minsta gruppstorlek (ett avsteg från k-tröskeln i antal, ADR-57: raden bär antal och andelar men inga lönemått); mindre intervall namnges i en not under tabellen</li></ul>
                     
                         <h3 class="pr-ned-14">Ålder &amp; karriär — livscykelmodellen</h3>
                         <table class="kpi pr-under">

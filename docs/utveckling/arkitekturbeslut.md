@@ -925,6 +925,14 @@ grupper räknas upp i en not med namn och antal men utan löner. Lönemåtten f�
 är avsiktligt: tabellerna är arbetsgivarens kartläggning av alla grupper, och lagen kräver att också små grupper
 analyseras, så gruppen och dess antal behöver stå i underlaget.
 
+*Könsfördelning per BAS-intervall (tillägg 2026-11-13):* samma avsteg i antal gäller Lönestrukturs tabell
+*Könsfördelning per BAS-intervall* (`#skevhet-table`) och diagrammet ovanför den (`chart-skevhet-andel`), och därmed
+Excel-bladet *Könsskevhet*, utskriften och diagrambilden i Word och ZIP. Ett intervall får en rad med antal och andel
+per kön från `LITET_UNDERLAG` personer i båda lägena; mindre intervall namnges i en not under tabellen, utan antal.
+Raden bär inga lönemått, och könsfördelningen per nivå är en del av kartläggningen. Golvet var tidigare en hårdkodad
+5 och mindre intervall föll bort utan not, i strid med ADR-12. Diagram över andel kvinnor per BAS-intervall följer
+samma regel. Vaktas av `tests/diagramvyer-marken.test.js`.
+
 *Kvinnodominerat enligt DO eller SCB:* definitionen väljs i Likvärdigt arbetes inställningar
 (`state.likvardighet.kvDomDefinition`, standard `do`): DO är mer än kvinnotröskeln, SCB kvinnotröskeln eller mer.
 Mansdominerat speglas; övriga könsblandade. *Brukar anses kvinnodominerad* bygger på andelen kvinnor nationellt (SKR:s
