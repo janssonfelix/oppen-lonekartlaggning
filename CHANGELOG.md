@@ -498,6 +498,10 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   vad som inte vaktas; teknisk-plan §3 och kvalitetskraven, `GOVERNANCE.md`, `CONTRIBUTING.md` och
   dokumentöversikten pekar dit i stället för att upprepa dem.
 
+- **Vakter för nät och lagring.** Ett enhetstest kräver att byggets CSP har `default-src` och `connect-src 'none'`,
+  bara kontrollsummor i `script-src` och ingen källa som pekar ut i nätet, och linten förbjuder nät-API,
+  `indexedDB`, `caches` och arbetstrådar i `dist/app.js` och `src/lib/` (S1, S2).
+
 ### Utveckling
 
 - **D3 7.9.2 (från 7.9.0).** Samma API; biblioteket är byggt om på de senaste versionerna av D3:s delpaket. Det

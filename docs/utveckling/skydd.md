@@ -16,10 +16,15 @@ webbläsaren blockerar all utgående trafik. Det är en hård teknisk barriär m
 *Varför:* lönedata lämnar aldrig datorn. *Beslut:* ADR-9 (hash-baserad `script-src`), ADR-30 (stilar med
 kontrollsumma), ADR-1 (ingen arbetstråd). Hela policyn och vad den inte täcker: `docs/dataskydd/riskanalys.md` §6.1.
 *Vakt:* webbläsarröktestet, `tools/browser-smoke/sakerhet.mjs`: inga nätverksförfrågningar under hela körningen,
-inga CSP-överträdelser, och en arbetstråd, ett injicerat skript och en injicerad händelsehanterare stoppas. Stilarnas
-del av CSP:n prövas i `tests/sakerhet.test.js`.
-*Vaktas inte:* inget enhetstest hävdar `connect-src 'none'` i byggets CSP, och ingen lint förbjuder nät-API i
-koden. Röktestet körs i CI och med `npm run test:browser`, inte i `npm test`.
+inga CSP-överträdelser, och en arbetstråd, ett injicerat skript och en injicerad händelsehanterare stoppas.
+Testet *byggets CSP släpper inte nätet* i `tests/sakerhet.test.js`: `default-src` och `connect-src` är `'none'` (också i
+källans CSP, som bygget ärver dem från), `script-src` har bara kontrollsummor, och inget direktiv har `*`, `'self'`,
+ett nätschema eller ett värdnamn; stilarnas del av CSP:n prövas i samma fil. Linten (`eslint.config.js`) förbjuder
+`fetch`, `XMLHttpRequest`, `WebSocket`, `EventSource`, `navigator.sendBeacon` och `new Worker`/`new SharedWorker` i
+`dist/app.js` och `src/lib/`.
+*Vaktas inte:* linten ser bara direkta anrop med de namnen (inte till exempel `window['fetch']` eller ett alias), och
+tredjepartsbiblioteken i `vendor/` lintas inte; där är CSP:n och röktestet vakten. Röktestet körs i CI och med
+`npm run test:browser`, inte i `npm test`.
 
 ## S2. Ingen lagring
 
@@ -32,8 +37,11 @@ en snubbeltråd mot misstag, inte det egentliga skyddet.
 *Beslut:* ADR-1 (en arbetstråd skulle stå utanför spärren). Spärren i detalj: `docs/dataskydd/riskanalys.md` §6.2.
 *Vakt:* lagringsspärren i `tests/sakerhet.test.js` (varje `setItem` och varje direkt tilldelning kastar, ingenting
 lagras); `tools/browser-smoke/sakerhet.mjs` (spärren också för cookies, och lagringen är tom efter en full körning).
-*Vaktas inte:* IndexedDB och Cache API ligger utanför spärren. Ingen kod använder dem; det täcks av kodgranskning,
-inte av ett test (riskanalysen §6.2).
+Linten (`eslint.config.js`) förbjuder `indexedDB` och `caches`, också som `window.indexedDB` och `window.caches`, i
+`dist/app.js` och `src/lib/`.
+*Vaktas inte:* IndexedDB och Cache API ligger utanför spärren. Linten ser bara direkta anrop med de namnen, och
+tredjepartsbiblioteken i `vendor/` lintas inte; där täcks det av kodgranskning, inte av ett test (riskanalysen
+§6.2).
 
 ## S3. En fil, utan server
 
