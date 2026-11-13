@@ -175,7 +175,7 @@ describe('regelmatrisen: docs/utveckling/regler.md', () => {
 describe('regelmatrisen: självtest av tolkaren och kontrollerna', () => {
     // En påhittad matris med ett fel av varje slag. Filernas text är skriven på en rad med \n, så att den här
     // filens egen källtext inte innehåller några märkningsrader, och beslutet som saknas sätts ihop, så att
-    // dokumentationstestets sökning efter beslutsnummer inte hittar det.
+    // strukturtestets sökning efter beslutsnummer (dokumentation-struktur.test.js) inte hittar det.
     const okäntAdr = ['ADR', '99'].join('-');
     const matris = [
         'Inledning.',

@@ -12,7 +12,7 @@
 // `--snabb` är körningen under arbetet: `test` (enhetsprojektet) i stället för `test:full`, och inget röktest i
 // webbläsaren. Utan flagga körs allt, som före en pull request.
 //
-// STEG och SNABBA_STEG exporteras, så att tests/dokumentation.test.js kan pröva dem mot CI utan att köra något.
+// STEG och SNABBA_STEG exporteras, så att tests/dokumentation-struktur.test.js kan pröva dem mot CI utan att köra något.
 import { spawnSync, execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { readFileSync, existsSync } from 'node:fs';

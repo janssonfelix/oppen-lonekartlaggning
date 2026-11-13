@@ -3,7 +3,7 @@
  *
  * Verktyget påstår inte vad direktivet kräver i detalj och använder inte orden "utredningskrav",
  * "lagstadgat" eller "unexplained gender pay gap". Formen "Diskrimineringslagen kräver att du … (3 kap.)"
- * är vald i språkgenomgången och får stå; paragrafer och artiklar vaktas i dokumentation.test.js.
+ * är vald i språkgenomgången och får stå; paragrafer och artiklar vaktas i dokumentation-sprak.test.js.
  *
  * Testet läser det byggda dist/app.js (det användaren kör, utan kodkommentarer), src/index.html (utan
  * HTML-kommentarer), README och dokumenten för användare och dataskydd. Ordet "direktivet" i sig är

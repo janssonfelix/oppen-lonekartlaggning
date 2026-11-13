@@ -29,7 +29,7 @@ request och `npm run kontroll -- --snabb` under arbetet. Ändra i `src/`, aldrig
 | ett diagram | `docs/utveckling/diagramkarnan.md` §1, §7–8 och §10 |
 | regressionen eller annan statistik | ADR-44, ADR-45, ADR-46, ADR-53, ADR-56, ADR-63, ADR-64 och ADR-17 (regressionen cachas aldrig); `docs/utveckling/teknisk-plan.md` §5; `tests/stat-referens.test.js` |
 | `src/index.html`, stilmallen (`src/style.css`) eller CSP:n | `docs/utveckling/skydd.md` S1, ADR-9, ADR-30, ADR-43 |
-| text som användaren läser | ADR-16, `docs/utveckling/lagrum.md`, de avförda orden i `tests/dokumentation.test.js` |
+| text som användaren läser | ADR-16, `docs/utveckling/lagrum.md`, de avförda orden i `tests/dokumentation-sprak.test.js` |
 | bygget eller testmiljön | `docs/utveckling/teknisk-plan.md` §6, `src/app/README.md` |
 | organisationspaketet, namn och etiketter | `docs/utveckling/skydd.md` S5, ADR-28, ADR-47 |
 

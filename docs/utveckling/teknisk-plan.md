@@ -381,7 +381,8 @@ adaptern verkligen delegerar vaktas av `tests/drift.test.js`:
 K1. Alla statistiska formler ska vara spårbara och dokumenterade.
 K2. Inga nätverksanrop och ingen persistent lagring: skydden S1 och S2 i [`skydd.md`](skydd.md).
 K3. Kärnalgoritmer ska ha enhetstester som speglar den *gällande* modellen.
-K4. Dokumentationen ska beskriva den *byggda* versionen (ingen drift).
+K4. Dokumentationen ska beskriva den *byggda* versionen (ingen drift). Vakt:
+    `tests/dokumentation-struktur.test.js` (filer, skript, tröskeltal och nummer stämmer med koden).
 K5. *(Struket 2026-11-13: gick inte att pröva.)*
 K6. En fil som går att öppna från `file://` och fungerar utan internet: skyddet S3 i [`skydd.md`](skydd.md).
 K7. Skydd som är juridiskt bindande vaktas av invarianter över hela utdatan: skyddet S4 och inledningen i
@@ -393,8 +394,8 @@ K8. Tillgänglighet enligt WCAG 2.1 AA. Vakt: `tests/a11y.test.js` (axe-core öv
     (`docs/anvandare/pilotchecklista.md`).
 K9. Bygget är reproducerbart. Vakt: artefaktgrinden i `.github/workflows/ci.yml` kräver att en färsk byggd fil är
     byte-identisk med den incheckade.
-K10. Klarspråk och ordval i det användaren läser. Vakt: `tests/dokumentation.test.js` (bland annat avförda ord och
-    lagrum i användartexten) och `tests/juridiksprak.test.js` (juridiska formuleringar hålls övergripande).
+K10. Klarspråk och ordval i det användaren läser. Vakt: `tests/dokumentation-sprak.test.js` (bland annat avförda
+    ord och lagrum i användartexten) och `tests/juridiksprak.test.js` (juridiska formuleringar hålls övergripande).
 
 ---
 

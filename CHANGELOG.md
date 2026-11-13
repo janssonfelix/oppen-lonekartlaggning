@@ -521,6 +521,10 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   den gällande lydelsen står i ett referensdokument per område, och statusorden är *Gällande*, *Ändrad av*,
   *Sammanförd i*, *Flyttad till* och *Upphävd*; inget nummer byts eller tas bort.
 
+- **Dokumentationstestet delat i struktur och språk.** `tests/dokumentation-struktur.test.js` prövar filer, skript,
+  index och nummer och tal ur koden, `tests/dokumentation-sprak.test.js` de avförda orden, lagrummen, p-värdets
+  förklaring och ordet förvaltning; testerna är desamma som förut.
+
 ### Utveckling
 
 - **D3 7.9.2 (från 7.9.0).** Samma API; biblioteket är byggt om på de senaste versionerna av D3:s delpaket. Det
@@ -533,7 +537,7 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 - **Playwright 1.65.0** (från 1.64.1) för webbläsarröktestet, och behållaravbilden för WebKit
   (`test:browser:webkit:behallare`) är `v1.65.0-noble`. Bara ett utvecklingsberoende.
 
-- **Vakttest för ordvalen** i `tests/dokumentation.test.js`: index.html, strängarna i appen och användar- och
+- **Vakttest för ordvalen** i `tests/dokumentation-sprak.test.js`: index.html, strängarna i appen och användar- och
   dataskyddsdokumenten prövas mot de avförda orden, paragraftecken och artikelnummer, med undantag för kommentarer,
   identifierare, sökregistrets synonymer, ordlistans sökfält och Källor. p-värdevakten fångar fler felaktiga
   formuleringar och också konfidensintervallets. Vakten skannar hela `src/lib` och prövar etikettvärden och
