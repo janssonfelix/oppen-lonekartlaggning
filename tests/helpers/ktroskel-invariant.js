@@ -6,6 +6,8 @@
  * Förberedelsen (samlaUtdata) bygger alla exporter och tar omkring en minut per tröskel. Vitest kör en fil per
  * arbetare, så sviten anropas från en fil per tröskel: tests/ktroskel-invarianter.test.js (10) och
  * tests/ktroskel-invarianter-25.test.js (25), som då körs parallellt.
+ *
+ * Vaktar: S4 (docs/utveckling/regler.md)
  */
 import { describe, it, expect, beforeAll } from 'vitest';
 import { KON_MA, KON_GAP, KON_GAP_1, KON_GAP_CELL, KON_DOLDA, harNagon, samlaUtdata, sammanhang, fonsterKon, SENT_MELLAN, SENT_SMA, FK_RA } from './ktroskel-rigg.js';

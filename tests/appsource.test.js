@@ -6,6 +6,8 @@
  *
  * Skivorna är rena byte-skivor (BOM + CRLF bevarade), så hopslagningen ska vara
  * EXAKT byte-identisk med app.js.
+ *
+ * Vaktar: R3 (docs/utveckling/regler.md)
  */
 import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';

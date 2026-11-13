@@ -4,6 +4,8 @@
  * Riggen (fixturer, fönster och sökfunktioner) ligger i tests/helpers/ktroskel-rigg.js och invarianten i
  * tests/helpers/ktroskel-invariant.js. Invarianten vid 10 körs i tests/ktroskel-invarianter.test.js:
  * varje förberedelse (samlaUtdata) tar omkring en minut, så de fördelas på två filer som körs på var sin arbetare.
+ *
+ * Vaktar: S4 (docs/utveckling/regler.md)
  */
 import { describe, it, expect, beforeAll, vi } from 'vitest';
 import { SENT_MELLAN, fonsterKon, samlaUtdata, sammanhang } from './helpers/ktroskel-rigg.js';

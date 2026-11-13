@@ -29,6 +29,7 @@ Dokumenten i `docs/`, ordnade efter vem som läser dem. Översikten över hela r
 | Dokument | Vad det är |
 |---|---|
 | [`skydd.md`](utveckling/skydd.md) | De fem skydden som går före besluten: regeln, varför, beslut, vakt och vad som inte vaktas. |
+| [`regler.md`](utveckling/regler.md) | Regelmatrisen: varje bindande regel med sin källa och sin vakt, och det som inte vaktas. |
 | [`teknisk-plan.md`](utveckling/teknisk-plan.md) | Syfte, avgränsning, dataskydd med minsta gruppstorlek, funktionsmål, likvärdighetsmodellen, teknisk plan, kvalitetskrav och öppna punkter. |
 | [`arkitekturbeslut.md`](utveckling/arkitekturbeslut.md) | Arkitekturbesluten (ADR) med motiv, avvisade alternativ och status; numren som koden och testerna pekar på. |
 | [`diagramkarnan.md`](utveckling/diagramkarnan.md) | Diagramkärnan som den är byggd: figurformatet, ritaren, exporten och vyernas skyldigheter. |

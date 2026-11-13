@@ -502,6 +502,10 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   bara kontrollsummor i `script-src` och ingen källa som pekar ut i nätet, och linten förbjuder nät-API,
   `indexedDB`, `caches` och arbetstrådar i `dist/app.js` och `src/lib/` (S1, S2).
 
+- **Regelmatris med test.** `docs/utveckling/regler.md` pekar från varje bindande regel till dess källa och vakt, en
+  regel utan vakt står som `ingen: text`, och `tests/regler.test.js` kräver att varje vaktfil bär sin märkning
+  `Vaktar:` i filhuvudet och att varje märkning pekar tillbaka på en rad.
+
 ### Utveckling
 
 - **D3 7.9.2 (från 7.9.0).** Samma API; biblioteket är byggt om på de senaste versionerna av D3:s delpaket. Det

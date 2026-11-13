@@ -16,6 +16,8 @@
  * § 3:10 (computeLikvardighetPairs) speglas också; app.js har en tunn state-adapter
  * runt spegeln. Att adaptern verkligen DELEGERAR — och inte smyger tillbaka en egen implementation — vaktas
  * längst ned.
+ *
+ * Vaktar: R4 (docs/utveckling/regler.md)
  */
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';

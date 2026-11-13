@@ -9,6 +9,8 @@
  *
  * Det som inte går att mekanisera — om en förklaring är korrekt och begriplig —
  * står kvar som en öppen punkt i docs/utveckling/teknisk-plan.md § 9.
+ *
+ * Vaktar: R2, R7, R13, R19, R23, R24 (docs/utveckling/regler.md)
  */
 import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync, existsSync } from 'node:fs';

@@ -2,6 +2,8 @@
  * Release-grinden (tools/release.mjs, npm run release:kontroll): en version taggas bara när versionen står lika
  * överallt, bygget är det som RELEASE.txt beskriver, riskanalysen är granskad mot den kod som släpps och
  * arbetskatalogen är ren (teknisk-plan.md §9 punkt 17b). Prövas på fixturer, inte på riktig git.
+ *
+ * Vaktar: R11, R14 (docs/utveckling/regler.md)
  */
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
