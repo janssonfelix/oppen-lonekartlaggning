@@ -29,7 +29,7 @@ och sitt dataskyddsombud · *Avstämd* = granskad av jurist (ingen rad ännu). K
 | Årlig kartläggning: bestämmelser och praxis | 3 kap. 8 § 1 | *regler och praxis kring lön* | Förslag |
 | Årlig kartläggning: löneskillnader | 3 kap. 8 § 2 | *lönekartläggningen* | Förslag |
 | Analys av lika arbete | 3 kap. 9 § 1 | *lika arbete* | Förslag |
-| Kvinnodominerat arbete mot likvärdigt arbete | 3 kap. 9 § 2 | *likvärdigt arbete*; jämförelsemängden är alla yrken som inte är kvinnodominerade (mansdominerade och blandade, könsandelen synlig; filtret *bara mansdominerade* finns), med en definition av kvinnodominerat (DO eller SCB) i hela verktyget (ADR-59) | Förslag |
+| Kvinnodominerat arbete mot likvärdigt arbete | 3 kap. 9 § 2 | *likvärdigt arbete*; jämförelsemängden är alla yrken som inte är kvinnodominerade (mansdominerade och blandade, könsandelen synlig; filtret *bara mansdominerade* finns), med en definition av kvinnodominerat (DO eller SCB) i hela verktyget (ADR-60) | Förslag |
 | Kvinnodominerat arbete mot arbete med lägre krav och högre lön | 3 kap. 9 § 3 | *lägre krav, högre lön* | Förslag |
 | Vad som är likvärdigt arbete (kraven) | 3 kap. 10 § | *kraven i arbetet*, *arbetsvärdering* | Förslag |
 | Sakliga skäl | följer av 3 kap. 9 § (analys av samband med kön); lagen räknar inte upp några skäl — kategorierna i verktyget (Marknad, Utbildning, Erfarenhet, Prestation och resultat, Övergång, Annat sakligt skäl) är verktygets indelning, inte lagens | *sakliga skäl*, utan paragraf | Förslag |

@@ -1,6 +1,7 @@
 // Vyer som ritas med diagramkärnan (ADR-39): den gemensamma bildvägen och varje vys figur.
 // Delen här: märkena (trappa, punktsvärm, lutning, övergångar, andelsstaplar, täthet, regnmoln, trädkarta),
 // utskriften och talformatet; resten i diagramvyer.test.js (riggen i helpers/diagramvyer-rigg.js).
+// Vaktar: S4 (docs/utveckling/regler.md)
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { valideraFigur, figurTillTabell, utanSmaGrupper } from '../src/lib/figur.js';

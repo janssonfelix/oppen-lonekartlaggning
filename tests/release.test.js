@@ -1,7 +1,10 @@
 /**
- * Release-grinden (tools/release.mjs, npm run release:kontroll): en version taggas bara när versionen står lika
- * överallt, bygget är det som RELEASE.txt beskriver, riskanalysen är granskad mot den kod som släpps och
- * arbetskatalogen är ren (teknisk-plan.md §9 punkt 17b). Prövas på fixturer, inte på riktig git.
+ * Release-grinden (tools/release.mjs, npm run release:kontroll): en version taggas bara när CHANGELOG har
+ * versionen överst, riskanalysen är granskad mot det bygge och den kod som släpps och arbetskatalogen är ren
+ * (teknisk-plan.md §9 punkt 17b). Prövas på fixturer, inte på riktig git. Versionen i package.json prövas i
+ * tests/version.test.js och RELEASE.txt av artefaktgrinden i CI (CONTRIBUTING, "Var uppgifterna står").
+ *
+ * Vaktar: R14 (docs/utveckling/regler.md)
  */
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
@@ -15,10 +18,8 @@ const SHA = 'a'.repeat(64);
 /** Ett underlag som passerar; varje test ändrar en sak. */
 const ok = (andra = {}) => ({
     version: '2026.11.02\n',
-    pkgVersion: '2026.11.2',
     changelog: '# Changelog\n\n## 2026.11.02\n\n- Något.\n\n## 2026.10.13\n\n- Tidigare.\n',
-    release: `Version:    2026.11.02\nSHA-256:    ${SHA}\n\nVerifiering:\n  PowerShell : Get-FileHash .\\oppen-lonekartlaggning.html -Algorithm SHA256\n  Linux/mac  : sha256sum oppen-lonekartlaggning.html\n`,
-    artefaktSha: SHA,
+    release: `Version:    2026.11.02\nSHA-256:    ${SHA}\n`,
     riskanalys: `# Riskanalys\n\n**Bygge:** \`2026.11.02\` · **Artefakt-SHA-256:** \`${SHA}\` (se \`dist/RELEASE.txt\`).\n**Granskningsdatum:** 2026-11-02.\n`,
     dataskydd: '# Dataskydd\n\n**Granskad mot koden:** 2026-11-01.\n',
     ejIncheckat: '',
@@ -32,20 +33,13 @@ describe('release-grinden', () => {
         expect(kontrollera(ok())).toEqual({ fel: [], version: '2026.11.02' });
     });
 
-    it('VERSION måste vara CalVer och stämma med package.json', () => {
-        expect(fel({ version: 'dev', pkgVersion: 'dev' }).join()).toMatch(/CalVer/);
-        expect(fel({ pkgVersion: '2026.11.3' }).join()).toMatch(/package\.json anger version 2026\.11\.3/);
-    });
-
     it('CHANGELOG: ingen Oförlöst-rubrik, och översta versionen är VERSION', () => {
         expect(fel({ changelog: '## Oförlöst\n\n- x\n\n## 2026.11.02\n' }).join()).toMatch(/Oförlöst/);
         expect(fel({ changelog: '## 2026.10.13\n' }).join()).toMatch(/översta versionsrubrik är 2026\.10\.13/);
         expect(fel({ changelog: '# Changelog\n' }).join()).toMatch(/ingen versionsrubrik/);
     });
 
-    it('RELEASE.txt anger versionen, och bygget har dess kontrollsumma', () => {
-        expect(fel({ release: `Version:    2026.10.13\nSHA-256:    ${SHA}\n` }).join()).toMatch(/RELEASE\.txt anger version 2026\.10\.13/);
-        expect(fel({ artefaktSha: 'b'.repeat(64) }).join()).toMatch(/har inte den SHA-256/);
+    it('RELEASE.txt måste ha en kontrollsumma att jämföra riskanalysen med', () => {
         expect(fel({ release: 'Version:    2026.11.02\n' }).join()).toMatch(/saknar SHA-256/);
     });
 
@@ -85,28 +79,11 @@ describe('release-grinden', () => {
         expect(ra).toMatch(/\*\*Granskningsdatum:\*\* \d{4}-\d{2}-\d{2}/);
         expect(ds).toMatch(/\*\*Granskad mot koden:\*\* \d{4}-\d{2}-\d{2}/);
     });
-
-    it('package.json har skriptet release:kontroll', () => {
-        const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
-        expect(pkg.scripts['release:kontroll']).toBe('node tools/release.mjs');
-    });
 });
 
 // B5 (beslut 11b): kontrollsumman som alternativ till cosign, med PowerShell-raden bredvid Linux/mac-raden.
 describe('kontrollsumman i RELEASE.txt och dokumenten', () => {
     const las = f => readFileSync(join(root, f), 'utf8');
-    it('kommandona är de som dokumenten anger', () => {
-        expect(VERIFIERING.powershell).toBe('Get-FileHash .\\oppen-lonekartlaggning.html -Algorithm SHA256');
-        expect(VERIFIERING.linux).toBe('sha256sum oppen-lonekartlaggning.html');
-    });
-    it('grinden kräver båda raderna i RELEASE.txt', () => {
-        expect(fel({ release: `Version:    2026.11.02\nSHA-256:    ${SHA}\n  Linux/mac  : sha256sum oppen-lonekartlaggning.html\n` }).join()).toMatch(/PowerShell/);
-        expect(fel({ release: `Version:    2026.11.02\nSHA-256:    ${SHA}\n  PowerShell : ${VERIFIERING.powershell}\n` }).join()).toMatch(/Linux\/mac/);
-    });
-    it('dist/RELEASE.txt skriver PowerShell-raden bredvid Linux/mac-raden', () => {
-        const rel = las('dist/RELEASE.txt');
-        expect(rel).toContain(`  PowerShell : ${VERIFIERING.powershell}\n  Linux/mac  : ${VERIFIERING.linux}`);
-    });
     it('SECURITY.md och körguiden §0: stycket om kontrollsumman när cosign inte kan köras, med båda kommandona', () => {
         const stycke = 'Kan ni inte köra cosign: kontrollsumman i RELEASE.txt skyddar mot en skadad eller förväxlad fil';
         for (const f of ['SECURITY.md', 'docs/anvandare/korguide.md']) {

@@ -5,17 +5,19 @@
  * moduler, filer som inte finns och byggkommandon som inte stämmer.
  * Det som GÅR att kontrollera mekaniskt kontrolleras därför här, så att
  * påståenden om filer, moduler, skript och trösklar inte kan glida isär från
- * koden utan att CI säger ifrån.
+ * koden utan att CI säger ifrån. Språket i det användaren läser vaktas i
+ * dokumentation-sprak.test.js.
  *
  * Det som inte går att mekanisera — om en förklaring är korrekt och begriplig —
  * står kvar som en öppen punkt i docs/utveckling/teknisk-plan.md § 9.
+ *
+ * Vaktar: R2, R13, R17, R19, R24 (docs/utveckling/regler.md)
  */
 import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { execSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { dirname, join, basename } from 'node:path';
-import { utanHtmlKommentarer, utanSkript, utanStil } from './helpers/htmlrens.js';
+import { dirname, join } from 'node:path';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, '..');
@@ -43,12 +45,6 @@ describe('dokumentation: src/app/README.md speglar katalogen', () => {
 });
 
 describe('dokumentation: teknisk-plan.md stämmer med projektet', () => {
-    it('k-anonymitetströskeln i teknisk-plan.md är den som gäller i koden', () => {
-        const kod = /const K_STANDARD = (\d+);/.exec(läs('src/app/06-k-anonymitet-och-dataminimering.js'));
-        expect(kod).not.toBeNull();
-        expect(planMd).toContain(`K_STANDARD = ${kod[1]}`);
-    });
-
     it('alla npm-skript som nämns finns i package.json', () => {
         const nämnda = [...(planMd + adrMd).matchAll(/`npm run ([\w:]+)`/g)].map(m => m[1]);
         expect(nämnda.length).toBeGreaterThan(0);
@@ -64,6 +60,28 @@ describe('dokumentation: teknisk-plan.md stämmer med projektet', () => {
         expect(kandidater.length).toBeGreaterThan(0);
         const saknade = [...new Set(kandidater)].filter(f => !existsSync(join(root, f)));
         expect(saknade, `planen pekar ut filer som inte finns: ${saknade.join(', ')}`).toEqual([]);
+    });
+});
+
+// CLAUDE.md är ingången för AI-assistenter: kort nog att läsas i sin helhet, och den pekar bara på det som finns.
+describe('dokumentation: CLAUDE.md är en kort ingång', () => {
+    const claudeMd = läs('CLAUDE.md');
+    it('CLAUDE.md är högst 60 rader', () => {
+        expect(claudeMd.trimEnd().split('\n').length).toBeLessThanOrEqual(60);
+    });
+    // En sökväg inom backtick: något med snedstreck, eller ett filnamn med ändelse. Ignorerade mappar (privat/)
+    // finns inte i en ny klon och prövas inte.
+    it('varje fil och mapp som CLAUDE.md pekar ut finns på disk', () => {
+        const kandidater = [...new Set([...claudeMd.matchAll(/`([\w.-]+\/[\w./-]*|[\w.-]+\.(?:js|mjs|json|md|html|css|txt|yml))`/g)]
+            .map(m => m[1]))];
+        expect(kandidater.length).toBeGreaterThan(0);
+        let ignorerade = [];
+        try {
+            ignorerade = execSync('git check-ignore --stdin', { cwd: root, encoding: 'utf8', input: kandidater.join('\n') })
+                .split('\n').filter(Boolean);
+        } catch { /* git check-ignore avslutar med 1 när ingen sökväg är ignorerad */ }
+        const saknade = kandidater.filter(f => !ignorerade.includes(f) && !existsSync(join(root, f)));
+        expect(saknade, `CLAUDE.md pekar ut filer som inte finns: ${saknade.join(', ')}`).toEqual([]);
     });
 });
 
@@ -83,49 +101,41 @@ describe('dokumentation: CHANGELOG är kronologisk', () => {
     });
 });
 
-describe('dokumentation: k-tröskeln beskrivs med rätt tal överallt', () => {
-    // Användaren kan ändra tröskeln (ADR-38): appens texter
-    // fylls i ur kTroskel() (vaktas i ktroskel.test.js), och dokumenten nedan anger
-    // standardvärdet K_STANDARD.
+describe('dokumentation: k-tröskelns standardvärde står rätt', () => {
+    // Källan är K_STANDARD i koden. Användaren kan ändra tröskeln (ADR-38): appens texter fylls i ur kTroskel()
+    // (vaktas i ktroskel.test.js), och dokumenten nedan anger standardvärdet. Det här är den enda kontrollen av talet.
     const K = Number(/const K_STANDARD = (\d+);/.exec(läs('src/app/06-k-anonymitet-och-dataminimering.js'))[1]);
     const filer = ['docs/dataskydd/dataskydd.md', 'docs/dataskydd/riskanalys.md',
                    'docs/anvandare/sammanfattning-hr-chefer.md', 'docs/anvandare/korguide.md', PLAN, ADR];
 
     for (const fil of filer) {
-        it(`${fil}: "färre än/minst N personer" har N = ${K}`, () => {
-            const fel = [...läs(fil).matchAll(/(?:färre än|minst) (\d+) personer/g)]
-                .map(m => Number(m[1]))
+        it(`${fil}: "färre än/minst N personer" och "standardvärdet N" har N = ${K}`, () => {
+            const t = läs(fil);
+            const fel = [...t.matchAll(/(?:färre än|minst) (\d+) personer|K_STANDARD = (\d+)|[Ss]tandardvärdet (?:är )?(\d+)\b/g)]
+                .map(m => Number(m[1] ?? m[2] ?? m[3]))
                 .filter(n => n !== K);
             expect(fel, `${fil} anger fel tröskel: ${fel.join(', ')}`).toEqual([]);
         });
     }
+    it('den tekniska planen och dataskyddsdokumenten anger standardvärdet', () => {
+        expect(planMd).toContain(`K_STANDARD = ${K}`);
+        for (const fil of ['docs/dataskydd/dataskydd.md', 'docs/dataskydd/riskanalys.md'])
+            expect(läs(fil), fil).toMatch(new RegExp(`[Ss]tandardvärdet (är )?${K}\\b`));
+    });
 });
 
 describe('dokumentation: valbar förklaringsmodell (ADR-56)', () => {
-    it('arkitekturbesluten har ADR-56 med gränsen 0,5 procentenheter och tilläggen i ADR-46 och ADR-53', () => {
-        expect(adrMd).toMatch(/\*\*ADR-56 — Valbar förklaringsmodell/);
-        expect(adrMd).toMatch(/0,5 procentenheter/);
-        expect(adrMd).toMatch(/ADR-46[^]*?ADR-56/);
-        expect(adrMd).toMatch(/ADR-53[^]*?valet \(ADR-56\)/);
-    });
-    it('Om verktyget, körguiden och ändringsloggen beskriver valet', () => {
+    it('Om verktyget och körguiden beskriver valet', () => {
         expect(läs('src/app/65-om-verktyget.js')).toMatch(/[Ff]örklaringsmodell/);
         expect(läs('src/app/65-om-verktyget.js')).toMatch(/0,5 procentenheter/);
         expect(läs('docs/anvandare/korguide.md')).toMatch(/välja om ålder, BAS-intervall och yrkesgrupp/);
-        expect(läs('CHANGELOG.md')).toMatch(/\*\*Valbar förklaringsmodell/);
     });
 });
 
 describe('dokumentation: k-tröskeln är en inställning (ADR-38)', () => {
-    it('arkitekturbesluten har ADR-38 och nämner kTroskel() och statGolv()', () => {
-        expect(adrMd).toMatch(/\*\*ADR-38 — /);
-        expect(adrMd).toContain('kTroskel()');
-        expect(adrMd).toContain('statGolv()');
-    });
     for (const fil of ['docs/dataskydd/dataskydd.md', 'docs/dataskydd/riskanalys.md']) {
         it(`${fil} säger att värdet kan ändras och att det skrivs ut i utdata`, () => {
             const t = läs(fil);
-            expect(t).toMatch(/standard(värdet)? (är )?10/i);
             expect(t).toMatch(/kan ändra/);
             expect(t).toMatch(/Tröskeln är sänkt från standardvärdet 10/);
         });
@@ -185,63 +195,6 @@ describe('dokumentation: dataskyddstexterna följer ADR-14 och ADR-15', () => {
     }
 });
 
-describe('dokumentation: användarnära texter', () => {
-    const anvandartexter = ['src/index.html', 'src/app/60-utskrift.js', 'src/app/62-word-utkast.js',
-        'src/app/65-om-verktyget.js', 'src/app/04-ordlista.js', 'src/app/06-k-anonymitet-och-dataminimering.js',
-        'src/app/51-lika-arbete-regressionskort.js', 'src/app/52-livscykel.js', 'docs/anvandare/korguide.md', 'docs/anvandare/sammanfattning-hr-chefer.md',
-        'docs/anvandare/pilotchecklista.md', 'docs/anvandare/datauttag.md', 'docs/dataskydd/dataskydd.md',
-        'docs/anvandare/sakerhetsbeskrivning.md', 'docs/anvandare/tillganglighetsredogorelse.md', 'docs/anvandare/information-till-anstallda.md',
-        'docs/dataskydd/riskanalys.md'];
-
-    // p-värdet är sannolikheten för ett så stort utslag OM det inte fanns någon
-    // verklig skillnad — inte sannolikheten att resultatet "beror på slump".
-    // Konfidensintervallet säger inte att det sanna värdet "med 95 % sannolikhet" ligger i intervallet.
-    const P_FEL = /sannolikhet att resultatet beror på (slump|slumpmässig)|(?:osannolikt|troligt|sannolikhet(?:en)?)\s+(?:att\s+)?(?:skillnaden|resultatet)\s+(?:bara\s+)?(?:beror på|är)\s+(?:slump|slumpen)/;
-    const KI_FEL = /ligger med 95 ?% sannolikhet inom/;
-    it('mönstren för p-värdet och konfidensintervallet fångar de felaktiga formuleringarna', () => {
-        for (const t of ['det är mycket osannolikt att skillnaden beror på slumpen', 'Hur troligt att skillnaden bara är slump',
-            'sannolikhet att resultatet beror på slump'])
-            expect(P_FEL.test(t), t).toBe(true);
-        for (const t of ['en så stor skillnad sällan uppstår av slumpen när ingen finns', 'svår att förklara med slump'])
-            expect(P_FEL.test(t), t).toBe(false);
-        expect(KI_FEL.test('Det "verkliga" värdet ligger med 95 % sannolikhet inom det angivna intervallet.')).toBe(true);
-    });
-    for (const fil of anvandartexter) {
-        it(`${fil}: förklarar inte p-värdet som sannolikheten att resultatet beror på slump`, () => {
-            expect(läs(fil)).not.toMatch(P_FEL);
-            expect(läs(fil)).not.toMatch(KI_FEL);
-        });
-    }
-
-    // Hänvisningar med sökväg ska finnas relativt roten eller det hänvisande dokumentet;
-    // ett bart filnamn (t.ex. "datauttag.md" i appens hjälptext) ska finnas någonstans i repot.
-    const mdFiler = (() => {
-        const ut = [];
-        const gå = dir => {
-            for (const e of readdirSync(join(root, dir), { withFileTypes: true })) {
-                if (e.name === 'node_modules' || e.name.startsWith('.')) continue;   // dolda kataloger: git och lokala verktyg
-                const rel = dir ? `${dir}/${e.name}` : e.name;
-                if (e.isDirectory()) gå(rel); else if (e.name.endsWith('.md')) ut.push(rel);
-            }
-        };
-        gå('');
-        return new Set(ut.map(f => basename(f)));
-    })();
-    it('alla .md-dokument som användartexterna hänvisar till finns', () => {
-        const saknas = [];
-        for (const fil of anvandartexter) {
-            for (const m of läs(fil).matchAll(/(?<![\w/.-])((?:[\w.-]+\/)*[A-Za-z0-9][\w.-]*\.md)\b/g)) {
-                const ref = m[1];
-                const finns = ref.includes('/')
-                    ? existsSync(join(root, ref)) || existsSync(join(root, dirname(fil), ref))
-                    : mdFiler.has(ref);
-                if (!finns) saknas.push(`${fil} → ${ref}`);
-            }
-        }
-        expect([...new Set(saknas)]).toEqual([]);
-    });
-});
-
 describe('dokumentation: licenstexterna följer med den byggda filen', () => {
     // MIT och Apache 2.0 kräver att licenstexten följer med varje kopia. TREDJEPARTSLICENSER.md
     // distribueras inte med HTML-filen, så texterna byggs in i den (src/licenser.txt).
@@ -276,9 +229,35 @@ describe('produktnamnet', () => {
     it('den byggda filen heter oppen-lonekartlaggning.html och bär namnet', () => {
         expect(existsSync(join(root, 'dist', 'oppen-lonekartlaggning.html'))).toBe(true);
         expect(läs('dist/oppen-lonekartlaggning.html')).toContain('<title>Öppen lönekartläggning</title>');
-        expect(läs('dist/RELEASE.txt')).toContain('oppen-lonekartlaggning.html');
     });
 });
+
+// Statusorden i indexet (ADR-68). Sammanförd i och Flyttad till nämner dokumentet inom backtick.
+const STATUS = /^(Gällande|Ändrad av ADR-\d+|Sammanförd i |Flyttad till |Upphävd)/;
+// Ett dokument inom backtick söks relativt de här katalogerna (roten sist).
+const DOKUMENTKATALOGER = ['docs/utveckling', '.github', ''];
+
+/**
+ * Status och hänvisningar till gällande lydelse i arkitekturbesluten (ADR-68). Tar dokumentets text och en funktion
+ * som säger om en sökväg (relativ roten) finns, och returnerar en lista med fel: en status utanför statusorden, en
+ * status *Sammanförd i* eller *Flyttad till* som inte nämner ett dokument som finns, och en rad *Gäller i dag:* som
+ * inte pekar på ett dokument som finns. Ren funktion, så att självtestet kan ge den en påhittad text.
+ */
+function granskaStatusOchHänvisningar(text, finns) {
+    const fel = [];
+    const dokumentFinns = s => [...s.matchAll(/`([^`\s]+\.\w+)`/g)]
+        .some(([, f]) => DOKUMENTKATALOGER.some(k => finns(k ? `${k}/${f}` : f)));
+    for (const [, nr, status] of text.matchAll(/^\| ADR-(\d+) \| [^|\n]+? \| ([^|\n]+) \| [^|\n]+ \|$/gm)) {
+        if (!STATUS.test(status)) fel.push({ slag: 'status', adr: Number(nr), status });
+        else if (/^(Sammanförd i|Flyttad till) /.test(status) && !dokumentFinns(status))
+            fel.push({ slag: 'status-utan-dokument', adr: Number(nr), status });
+    }
+    // Raden Gäller i dag fortsätter till nästa fält (*Vakt:* …), nästa beslut eller en tom rad.
+    for (const [rad] of text.matchAll(/^\*Gäller i dag:\*[^\n]*(?:\n(?!\n|\*[^*\s][^*\n]*:\*|\*\*ADR-)[^\n]*)*/gm)) {
+        if (!dokumentFinns(rad)) fel.push({ slag: 'gäller-i-dag', rad });
+    }
+    return fel;
+}
 
 describe('den tekniska planen och arkitekturbesluten beskriver nuläget', () => {
     const plan = adrMd;
@@ -286,7 +265,7 @@ describe('den tekniska planen och arkitekturbesluten beskriver nuläget', () => 
         const rubriker = [...plan.matchAll(/^\*\*ADR-(\d+) — ([^*]+)\*\*/gm)];
         expect(rubriker.length).toBeGreaterThan(20);
         for (const [hel] of rubriker) expect(hel, hel).not.toMatch(/\(\d{4}-\d{2}(-\d{2})?[^)]*\)/);
-        expect(plan).not.toMatch(/ersätter ADR-|ersatt av ADR-|Delvis ersatt/);
+        expect(plan).not.toMatch(/ersätter ADR-|ersatt av ADR-|Delvis ersatt/i);
     });
     it('varje ADR som koden, testerna och dokumenten pekar på finns i arkitekturbesluten', () => {
         const finns = new Set([...plan.matchAll(/^\*\*ADR-(\d+) —/gm)].map(m => Number(m[1])));
@@ -305,10 +284,13 @@ describe('den tekniska planen och arkitekturbesluten beskriver nuläget', () => 
         const rader = [...adrMd.matchAll(/^\| ADR-(\d+) \| [^|\n]+? \| ([^|\n]+) \| [^|\n]+ \|$/gm)];
         expect(beslut.length).toBeGreaterThan(20);
         expect(rader.map(m => Number(m[1]))).toEqual(beslut);
-        for (const [rad, , status] of rader) expect(status, rad).toMatch(/^(Gällande|Ändrad av ADR-\d+|Upphävd)/);
+        for (const [rad, , status] of rader) expect(status, rad).toMatch(STATUS);
         // En status som pekar på ett annat beslut pekar på ett som finns.
         const pekar = rader.flatMap(m => [...m[2].matchAll(/ADR-(\d+)/g)].map(p => Number(p[1])));
         expect(pekar.filter(n => !beslut.includes(n))).toEqual([]);
+    });
+    it('Sammanförd i, Flyttad till och Gäller i dag pekar på ett dokument som finns (ADR-68)', () => {
+        expect(granskaStatusOchHänvisningar(adrMd, f => existsSync(join(root, f)))).toEqual([]);
     });
     it('den tekniska planen har kvar avsnittsnumreringen och hänvisar till arkitekturbesluten', () => {
         const avsnitt = [...planMd.matchAll(/^## (\d+)\. /gm)].map(m => Number(m[1]));
@@ -318,19 +300,64 @@ describe('den tekniska planen och arkitekturbesluten beskriver nuläget', () => 
     });
 });
 
+describe('arkitekturbesluten: självtest av status- och hänvisningskontrollen', () => {
+    // En påhittad index- och beslutstext med ett fel av varje slag. Numren är beslut som finns, så att sökningen
+    // efter beslutsnummer ovan inte fäller på den här filen.
+    const text = [
+        '| ADR-1 | Ett | Gällande | – |',
+        '| ADR-2 | Två | Sammanförd i `finns.md` §2 | – |',
+        '| ADR-4 | Fyra | Flyttad till `saknas.md` | – |',
+        '| ADR-5 | Fem | Sammanförd i referensen | – |',
+        '| ADR-6 | Sex | Borttagen | – |',
+        '| ADR-7 | Sju | Flyttad till `.github/annat.md` | – |',
+        '',
+        '**ADR-1 — Ett.** Beslut 2026-01-01.',
+        '*Beslut:* något.',
+        '*Gäller i dag:* `finns.md` §2.',
+        '*Vakt:* ingen: text.',
+        '',
+        '**ADR-2 — Två.** Beslut 2026-01-02.',
+        '*Gäller i dag:* `saknas.md` §1 och',
+        '`också-saknas.md` §3.',
+        '*Vakt:* ingen: text.',
+        '',
+        '**ADR-4 — Fyra.** Beslut 2026-01-03.',
+        '*Gäller i dag:* referensen för området.',
+    ].join('\n');
+    const finns = s => ['docs/utveckling/finns.md', '.github/annat.md'].includes(s);
+    const fel = granskaStatusOchHänvisningar(text, finns);
+    it('statusmönstret godtar statusorden och inget annat', () => {
+        for (const s of ['Gällande', 'Ändrad av ADR-51', 'Ändrad av ADR-53 och ADR-63', 'Sammanförd i `k.md`',
+            'Flyttad till `teknisk-plan.md` §6', 'Upphävd']) expect(STATUS.test(s), s).toBe(true);
+        for (const s of ['Borttagen', 'Ändrad', 'Sammanförd', 'gällande']) expect(STATUS.test(s), s).toBe(false);
+    });
+    it('rapporterar en status utanför statusorden', () => {
+        expect(fel.filter(f => f.slag === 'status')).toEqual([{ slag: 'status', adr: 6, status: 'Borttagen' }]);
+    });
+    it('rapporterar Sammanförd i och Flyttad till utan ett dokument som finns, och godtar ett som finns', () => {
+        expect(fel.filter(f => f.slag === 'status-utan-dokument')).toEqual([
+            { slag: 'status-utan-dokument', adr: 4, status: 'Flyttad till `saknas.md`' },
+            { slag: 'status-utan-dokument', adr: 5, status: 'Sammanförd i referensen' },
+        ]);
+    });
+    it('rapporterar en rad Gäller i dag utan ett dokument som finns, också när raden fortsätter', () => {
+        expect(fel.filter(f => f.slag === 'gäller-i-dag')).toEqual([
+            { slag: 'gäller-i-dag', rad: '*Gäller i dag:* `saknas.md` §1 och\n`också-saknas.md` §3.' },
+            { slag: 'gäller-i-dag', rad: '*Gäller i dag:* referensen för området.' },
+        ]);
+    });
+    it('inga andra fel', () => {
+        expect(fel).toHaveLength(5);
+    });
+});
+
 describe('riskanalysen beskriver det aktuella bygget, inte vägen dit', () => {
     const ra = läs('docs/dataskydd/riskanalys.md');
     it('ett granskningsdatum, inga tidigare granskningar, ingen tidslinje', () => {
         expect(ra).not.toMatch(/föregående fullständiga granskningar|Härdningstidslinje|omgranskning/);
         expect(ra).not.toMatch(/sedan 20\d\d[-.]\d\d|tillkom 20\d\d-|till och med 20\d\d-|release 20\d\d\.\d\d\.\d\d|bygge 2026\.0[5-9]/);
     });
-    it('byggets version och kontrollsumma stämmer med RELEASE.txt', () => {
-        const rel = läs('dist/RELEASE.txt');
-        const version = /Version:\s+(\S+)/.exec(rel)[1];
-        const sha = /SHA-256:\s+([0-9a-f]{64})/.exec(rel)[1];
-        expect(ra).toContain(`\`${version}\``);
-        expect(ra).toContain(sha);
-    });
+    // Byggets version och kontrollsumma (rad 3) förs in vid release och prövas av release-grinden (tools/release.mjs).
 });
 
 describe('testdata: helt syntetisk generator', () => {
@@ -345,142 +372,6 @@ describe('testdata: helt syntetisk generator', () => {
     });
 });
 
-describe('dokumentation: organisationen, inte förvaltningen', () => {
-    // "Förvaltning" är kommunal organisationslogik; det är arbetsgivaren som kartlägger. Ordet får inte stå
-    // någonstans — inte heller i kodnamn (förkortningen förv/forv före versal, siffra, _ eller ordslut).
-    // Verben förvaltar/förvaltad, systemförvaltare och förväntad är tillåtna.
-    const FORV = /[Ff][öo]rvaltning|FÖRVALTNING|(?<![\p{L}\p{N}_])[Ff][öo]rv(?=[\p{Lu}\p{N}_.]|(?![\p{L}\p{N}]))/u;
-    const gå = dir => readdirSync(join(root, dir), { withFileTypes: true }).flatMap(e =>
-        e.isDirectory() ? gå(`${dir}/${e.name}`) : [`${dir}/${e.name}`]);
-    it('mönstret fångar ordet och kodnamnen men inte de tillåtna orden', () => {
-        for (const t of ['Testförvaltningen', 'forvaltningsBand', "'forvaltning'", 'förvKvDom', 'förv2', 'Förv.', 'const forv =', 'FÖRVALTNING'])
-            expect(FORV.test(t), t).toBe(true);
-        for (const t of ['förvaltar', 'förvaltad', 'systemförvaltare', 'förväntad', 'forvantat', 'förval', 'förvaras'])
-            expect(FORV.test(t), t).toBe(false);
-    });
-    it('varken gränssnitt, exporter, kod, tester eller dokument säger "förvaltning"', () => {
-        const filer = [...gå('src'), ...gå('docs'), ...gå('tools'), ...gå('tests'),
-            'README.md', '.github/CONTRIBUTING.md', 'site/index.html', 'dist/app.js', 'dist/oppen-lonekartlaggning.html']
-            .filter(f => f !== 'tests/dokumentation.test.js' && !f.startsWith('tools/data/') && /\.(js|mjs|html|md|css|txt|snap)$/.test(f));
-        expect(filer.filter(f => FORV.test(läs(f)))).toEqual([]);
-    });
-});
-
-
-describe('vakt: avförda ord och lagrum i användartexten (språkgenomgången 2026-11)', () => {
-    // Ordvalen från språkgenomgången: löneskillnad (inte lönegap eller gap), anställda, BAS-intervall,
-    // likvärdigt arbete, lönefil. Lagen hänvisas till med kapitel, aldrig med paragraf eller artikel
-    // (ADR-16, docs/utveckling/lagrum.md). Vakten gäller det användaren läser: index.html, strängarna i
-    // appen och användar- och dataskyddsdokumenten. Kodkommentarer, identifierare, CHANGELOG,
-    // docs/utveckling och testerna ligger utanför; sökregistrets synonymer och ordlistans sok-fält också,
-    // så att de gamla orden går att söka på.
-    //
-    // Kända luckor: Källor-undantaget i Om verktyget gäller hela mallen references (inte rad för rad);
-    // index.html prövas rad för rad, så ett ord som bryts över två rader kan slinka igenom; ett avfört ord
-    // ensamt i en gemen enordsliteral prövas bara när den är värdet på etikett:, label: eller rubrik:;
-    // "gap-" med gement g följt av bindestreck prövas inte (det är klassnamn och id:n).
-    const AVFORDA = [
-        ['lönegap', /[Ll]önegap|LÖNEGAP/],
-        ['gap', /(?<![\p{L}\p{N}_.\-\/`])(?:[Gg]ap(?:et|en)?|[Rr]ågap(?:et)?|[Kk]önsgap(?:et)?)(?![\p{L}\p{N}_\-`])|(?<![\p{L}\p{N}_.\-\/`])Gap-\p{L}/u],
-        ['medarbetare', /[Mm]edarbetar/],
-        ['likvärdiga arbeten', /likvärdiga arbeten/i],
-        ['BAS-nivå', /BAS-nivå(?!\s+[A-ZÅÄÖ]\b)/],
-        ['strukturdata', /[Ss]trukturdata|[Ss]trukturfil/],
-        ['osakliga gap', /osakliga gap/],
-        ['anmälningspliktig', /anmälningspliktig/],
-        ['utredningsgräns', /utrednings(?:gräns|tröskel|steg)|obligatorisk utredning|[Ll]agstadgat tröskelvärde/],
-        // Klarspråksputsen (K-OR7): "Nära pension", och svenska ord i stället för de engelska och tekniska termerna.
-        // Ordlistan får ange den engelska termen inom parentes som förklaring ("(eng. privacy by design)").
-        ['Successionszon', /[Ss]uccessions(?:zon|risk)/],
-        ['conditional gap', /[Cc]onditional gap/],
-        ['Privacy by Design', /Privacy by [Dd]esign/],
-        // "vitlista" får stå bredvid kodnamnet ALLOWED_FIELDS; annars "godkända fält".
-        ['vitlista', /^(?![\s\S]*ALLOWED_FIELDS)[\s\S]*[Vv]itlist/],
-        ['datafunnel', /[Dd]atafunnel/],
-        ['lokal-only', /lokal-only/i],
-        ['leverage', /[Ll]everage/],
-        ['media-mått', /[Mm]edia-mått/],
-        ['rekryteringspipeline', /[Rr]ekryteringspipeline/],
-    ];
-    // I gränssnittet: inget paragraftecken och inget artikelnummer. "3 kap." är tillåtet.
-    const LAGRUM_UI = [['§', /§/], ['artikel', /\b[Aa]rt\.\s*\d|[Aa]rtikel\s+\d/]];
-    // I dokumenten är "§6.4" en avsnittshänvisning; ett lagrum skrivs "§ 8", "8 §" eller "§§".
-    // Dataskyddsdokumenten och informationsmallen behåller dataskyddsförordningens artiklar (lagrum.md).
-    const LAGRUM_DOK = [['§', /§\s+\d|\d\s*§|§§/]];
-
-    const traffar = (text, monster) => monster.filter(([, re]) => re.test(text)).map(([n]) => n);
-    const utanKommentarer = s => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"`\\])\/\/[^\n]*/g, '$1');
-    // Bara literaler som ser ut som text prövas: med blanksteg eller med versal först. Identifierare
-    // som 'lonegapPct' och id:n som 'gap-uppdelning' faller bort.
-    const textLiteraler = src => {
-        const ut = []; const re = /'(?:[^'\\\n]|\\.)*'|"(?:[^"\\\n]|\\.)*"|`(?:[^`\\]|\\.)*`/g; let m;
-        while ((m = re.exec(src))) ut.push(m[0].slice(1, -1).replace(/\$\{[^}]*\}/g, ' '));
-        return ut.filter(l => /\s/.test(l) || /^[A-ZÅÄÖ]/.test(l));
-    };
-    // Värden på etikett:, label: och rubrik: visas för användaren, också när de är ett gement ord.
-    const etikettVarden = src => [...src.matchAll(/\b(?:etikett|label|rubrik):\s*(['"`])((?:(?!\1)[^\\\n]|\\.)*)\1/g)].map(m => m[2]);
-    const appKalla = (fil, src) => {
-        let s = utanKommentarer(src).replace(/synonymer:\s*\[[^\]]*\]/g, '').replace(/sok:\s*'[^']*'/g, '');
-        if (fil.endsWith('65-om-verktyget.js')) s = s.replace(/references: \(\) => `[\s\S]*?`/, '');   // Källor
-        return s;
-    };
-    // Attribut som användaren läser (title, aria-label, data-tooltip, alt, placeholder, data-export-label)
-    // står kvar som text också när värdet är ett ord; övriga attribut utan blanksteg (id, klass) rensas.
-    const htmlText = src => utanStil(utanSkript(utanHtmlKommentarer(src), { medAttribut: true }))
-        .replace(/\s(?:title|aria-label|data-tooltip|alt|placeholder|data-export-label)="([^"]*)"/g, ' [$1] ')
-        .replace(/\s[\w-]+="[^"\s]*"/g, '');
-
-    it('mönstren fångar de avförda orden men inte identifierare och tillåtna former', () => {
-        for (const t of ['Lönegapet', 'det råa lönegapet', 'Gapet visar', 'ett gap på', 'rågapet', 'Könsgapet',
-            'BAS-nivån', 'Ladda upp strukturdata', 'strukturfilen', 'medarbetarna', 'likvärdiga arbeten',
-            'osakliga gap', 'anmälningspliktig', 'EU-direktivets utredningströskel', 'Lagstadgat tröskelvärde', 'Gap-analys',
-            'i successionszon', 'Hög successionsrisk', 'Per-BAS conditional gap', 'Privacy by Design', 'Privacy by design', 'Urval (datafunnel)', 'bara vitlistade kolumner', 'Fältvitlistan',
-            'lokal-only-arkitektur', 'leverage', 'media-mått', 'rekryteringspipelinen'])
-            expect(traffar(t, AVFORDA), t).not.toEqual([]);
-        for (const t of ['gapPct', 'meanGap', '68-var-uppstar-gapet.js', 'chart-perbas-gap', 'BAS-nivå B',
-            'löneskillnad', 'anställda', 'BAS-intervall', 'likvärdigt arbete', 'lönefilen', '`gap`',
-            'Nära pension', 'Inbyggt dataskydd', '(eng. privacy by design)', 'bara godkända fält', 'vitlista `ALLOWED_FIELDS`', 'inflytelserika punkter', 'rekryteringen'])
-            expect(traffar(t, AVFORDA), t).toEqual([]);
-        for (const t of ['(§ 8)', 'art. 9', 'Art. 9', 'artikel 10', '3 kap. 9 §']) expect(traffar(t, LAGRUM_UI), t).not.toEqual([]);
-        for (const t of ['Diskrimineringslagen kräver att du analyserar varje skillnad (3 kap.).', 'lagen'])
-            expect(traffar(t, LAGRUM_UI), t).toEqual([]);
-        for (const t of ['§ 8-bedömningarna', '9 §', '§§ 1–11']) expect(traffar(t, LAGRUM_DOK), t).not.toEqual([]);
-        for (const t of ['(§6.4)', 'teknisk-plan §9 punkt 1', '`organisationspaket.md` §5']) expect(traffar(t, LAGRUM_DOK), t).toEqual([]);
-    });
-    it('strängfiltret prövar text men inte identifierare, kommentarer, synonymer eller ordlistans sok-fält', () => {
-        const src = "const lonegapPct = 1; // Lönegapets form\n/* Gapet */ x('gap-uppdelning', 'Gapet visar');\n"
-            + "{ synonymer: ['lönegap'] } { sok:'lönegap gap' } y(`Läs in ${'Strukturdata'} först`);";
-        expect(textLiteraler(appKalla('x.js', src))).toEqual(['Gapet visar', 'Läs in   först']);
-        expect(etikettVarden("gap: { etikett: 'gap', enhet: '%' }, x: { label: 'medellön' }, y: { rubrik: \"Lönegap\" }"))
-            .toEqual(['gap', 'medellön', 'Lönegap']);
-        expect(htmlText('<th id="lonegap" class="gap" title="Lönegap">Kvinnor</th>')).toBe('<th [Lönegap] >Kvinnor</th>');
-    });
-
-    const appFiler = [
-        ...appDelar.filter(f => f !== '09-lib-speglar.js').map(f => `src/app/${f}`),
-        ...readdirSync(join(root, 'src/lib')).filter(f => f.endsWith('.js')).map(f => `src/lib/${f}`),
-    ];
-    const dokument = ['README.md',
-        ...readdirSync(join(root, 'docs/anvandare')).filter(f => f.endsWith('.md')).map(f => `docs/anvandare/${f}`),
-        ...readdirSync(join(root, 'docs/dataskydd')).filter(f => f.endsWith('.md')).map(f => `docs/dataskydd/${f}`)];
-
-    it('strängarna i appen använder inte de avförda orden, paragrafer eller artiklar', () => {
-        const fel = appFiler.flatMap(f => { const k = appKalla(f, läs(f)); return [...textLiteraler(k), ...etikettVarden(k)]
-            .flatMap(l => traffar(l, [...AVFORDA, ...LAGRUM_UI]).map(n => `${f}: ${n}: ${l.trim().slice(0, 100)}`)); });
-        expect(fel).toEqual([]);
-    });
-    it('index.html använder inte de avförda orden, paragrafer eller artiklar', () => {
-        const fel = htmlText(läs('src/index.html')).split('\n').flatMap((l, i) =>
-            traffar(l, [...AVFORDA, ...LAGRUM_UI]).map(n => `src/index.html:${i + 1}: ${n}: ${l.trim().slice(0, 100)}`));
-        expect(fel).toEqual([]);
-    });
-    it('användar- och dataskyddsdokumenten använder inte de avförda orden eller paragrafer', () => {
-        const fel = dokument.flatMap(f => läs(f).replace(/```[\s\S]*?```/g, m => m.replace(/[^\n]/g, '')).split('\n').flatMap((l, i) =>
-            traffar(l, [...AVFORDA, ...LAGRUM_DOK]).map(n => `${f}:${i + 1}: ${n}: ${l.trim().slice(0, 100)}`)));
-        expect(fel).toEqual([]);
-    });
-});
-
 describe('dokumentation: skripten som nämns finns', () => {
     const pkg = JSON.parse(läs('package.json'));
     it('varje npm-skript som kör ett verktyg pekar på en fil som finns', () => {
@@ -492,6 +383,50 @@ describe('dokumentation: skripten som nämns finns', () => {
         for (const f of ['README.md', '.github/CONTRIBUTING.md']) {
             for (const [, namn] of läs(f).matchAll(/npm run ([\w:-]+)/g)) expect(pkg.scripts, `${f}: npm run ${namn}`).toHaveProperty([namn]);
         }
+    });
+});
+
+describe('dokumentation: en Definition of Done, och npm run kontroll kör CI:s steg', () => {
+    const pkg = JSON.parse(läs('package.json'));
+    // Ett avsnitt i ett Markdown-dokument: från rubriken till nästa rubrik på samma eller högre nivå.
+    const avsnitt = (text, rubrik) => {
+        const start = text.indexOf(rubrik);
+        if (start < 0) return '';
+        const nivå = /^#+/.exec(rubrik)[0].length;
+        const resten = text.slice(start + rubrik.length);
+        const slut = resten.search(new RegExp(`^#{1,${nivå}} `, 'm'));
+        return slut < 0 ? resten : resten.slice(0, slut);
+    };
+    // Jobbet quality i ci.yml: från dess rad till nästa jobb på samma indrag.
+    const qualitySteg = () => {
+        const ci = läs('.github/workflows/ci.yml');
+        const start = ci.search(/^ {2}quality:/m);
+        const resten = ci.slice(start + 1);
+        const slut = resten.search(/^ {2}\w[\w-]*:/m);
+        return [...(slut < 0 ? resten : resten.slice(0, slut)).matchAll(/npm run ([\w:-]+)/g)].map(m => m[1]);
+    };
+    const kontroll = () => import('../tools/kontroll.mjs');
+
+    it('varje "npm run …" i CI-jobbet quality ingår i STEG i tools/kontroll.mjs', async () => {
+        const ci = qualitySteg();
+        expect(ci.length).toBeGreaterThan(0);
+        const { STEG } = await kontroll();
+        expect(ci.filter(n => !STEG.includes(n))).toEqual([]);
+    });
+    it('STEG har också bygget och webbläsarjobbets röktest, och varje steg finns i package.json', async () => {
+        const { STEG, SNABBA_STEG } = await kontroll();
+        for (const n of ['build:app', 'bundle', 'test:browser']) expect(STEG).toContain(n);
+        expect([...STEG, ...SNABBA_STEG].filter(n => !pkg.scripts[n])).toEqual([]);
+        expect(pkg.scripts.kontroll).toMatch(/node tools\/kontroll\.mjs/);
+    });
+    it('CONTRIBUTING har Definition of Done med npm run kontroll; GOVERNANCE och README pekar dit', () => {
+        expect(läs('.github/CONTRIBUTING.md')).toMatch(/Definition of Done[\s\S]*npm run kontroll/);
+        const gov = avsnitt(läs('.github/GOVERNANCE.md'), '## Hur en ändring kommer in');
+        expect(gov).toContain('CONTRIBUTING.md');
+        expect(gov).not.toMatch(/npm run (test:full|test:browser|bundle)/);
+        const readme = avsnitt(läs('README.md'), '## För dig som utvecklar');
+        expect(readme).toContain('CONTRIBUTING.md');
+        expect(readme).toContain('npm run kontroll');
     });
 });
 
@@ -518,7 +453,6 @@ describe('dokumentation: kodbasen är redo att publiceras', () => {
         expect(roller.filter(([, k]) => k).map(([r]) => r).sort()).toEqual(['bas', 'kon', 'lon', 'yrke']);
         expect(läs('README.md').replace(/\s+/g, ' ')).toMatch(/fyra obligatoriska, tre valfria/);
         expect(läs('README.md')).not.toMatch(/fem obligatoriska/);
-        expect(adrMd).toMatch(/\*\*ADR-64 — Ålder är valfri i lönefilen/);
     });
     it('.gitignore utesluter lokal data och arbetsmappar', () => {
         const g = läs('.gitignore');
@@ -550,33 +484,22 @@ describe('dokumentation: licens MIT', () => {
 });
 
 describe('dokumentation: AID och ansvarskoden', () => {
-    it('dataskyddet nämner ansvarskoden, datauttaget att Ansvar inte läses, arkitekturbesluten ADR-33', () => {
+    it('dataskyddet nämner ansvarskoden, datauttaget att Ansvar inte läses', () => {
         expect(läs('docs/dataskydd/dataskydd.md')).toMatch(/ansvarskod/i);
         expect(läs('docs/dataskydd/riskanalys.md')).toMatch(/ansvarskod/i);
         expect(läs('docs/anvandare/datauttag.md')).toMatch(/Ansvar.{0,80}läses\s+(aldrig|inte)/s);
-        expect(adrMd).toMatch(/\*\*ADR-33 —/);
-    });
-});
-
-describe('dokumentation: Jämförelsestatistik', () => {
-    it('ADR-35 finns och beskriver k-gränsen för P10/P90', () => {
-        const i = adrMd.indexOf('**ADR-35 —');
-        expect(i).toBeGreaterThan(-1);
-        expect(adrMd.slice(i, adrMd.indexOf('\n**ADR-', i + 1))).toMatch(/P10.*10 personer/s);
     });
 });
 
 describe('dokumentation: Översikt och namn', () => {
-    it('ADR-36 finns; dataskyddet nämner namnen i konfigurationsfilen', () => {
-        expect(adrMd).toMatch(/\*\*ADR-36 —/);
+    it('dataskyddet nämner namnen i konfigurationsfilen', () => {
         expect(läs('docs/dataskydd/riskanalys.md')).toMatch(/jämförelsestatistikens namn/);
         expect(läs('docs/dataskydd/dataskydd.md')).toMatch(/organisationens namn/i);
     });
 });
 
 describe('dokumentation: Word-utkastet som .docx', () => {
-    it('ADR-37 finns; körguiden säger .docx', () => {
-        expect(adrMd).toMatch(/\*\*ADR-37 —/);
+    it('körguiden säger .docx', () => {
         expect(läs('docs/anvandare/korguide.md')).toMatch(/Word-utkast[^\n]*\.docx/);
     });
 });

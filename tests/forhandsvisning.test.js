@@ -2,6 +2,7 @@
 // Copyright 2026 Felix Jansson
 // Förhandsvisning av exporten (ADR-51): skärmen i exportläget tills användaren stänger av den, och vad ett
 // tröskelbyte räknar om.
+// Vaktar: R9 (docs/utveckling/regler.md)
 import { describe, it, expect, vi } from 'vitest';
 import { fonster, ritaAlla, oppnaFlik, synliga, SENT_MELLAN, SENT_SMA } from './helpers/ktroskel-rigg.js';
 

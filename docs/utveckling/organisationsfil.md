@@ -85,7 +85,7 @@ ignoreras med ett besked. Så kan en organisationsfil ändå visas i demoläge.
 
 Ett `<template>` tolkas inte och exekveras inte; innehållet är text. Skriptens hashar i CSP:n
 påverkas inte eftersom inget skript ändras (samma mönster som licenstexterna, prövat i
-`tests/dokumentation.test.js`). JSON-texten skrivs med `<` som `<` och `</` kan därmed inte
+`tests/dokumentation-struktur.test.js`). JSON-texten skrivs med `<` som `<` och `</` kan därmed inte
 avsluta elementet.
 
 **Ren kärna i `src/lib/organisationsfil.js`** (speglad till appen som övriga lib-moduler, ADR-8):
@@ -121,7 +121,7 @@ avsluta elementet.
   öppna organisationsfilen som er systemägare tagit fram"; `pilotchecklista.md` en rad.
 - `docs/dataskydd/riskanalys.md` §6.8 (konfigurationsfilen) får ett syskonavsnitt om
   organisationsfilen: innehåll, att lönedata aldrig ingår, att paketet valideras som vid inläsning,
-  att blocket inte exekveras; `dataskydd.md` §3 en mening. `tests/dokumentation.test.js` vaktar att
+  att blocket inte exekveras; `dataskydd.md` §3 en mening. `tests/dokumentation-struktur.test.js` vaktar att
   blocket ligger efter sista skriptet i en inbakad fil och att den publicerade byggfilen saknar det.
 - `arkitekturbeslut.md`: ADR-49; `organisationspaket.md` beskriver hur filen skapas, sprids och uppdateras.
 - Tester: `tests/organisationsfil.test.js` (ren kärna: inbakning, borttagning av tidigare block,

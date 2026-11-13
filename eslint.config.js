@@ -13,6 +13,30 @@ const browserLibs = {
     JSZip: 'readonly'
 };
 
+// Skydden S1 och S2 (docs/utveckling/skydd.md): appens kod och lib-modulerna använder inga nät-API och ingen
+// lagring utanför lagringsspärren. Spärren i src/app/00-sakerhet-och-uppstart.js rör localStorage,
+// sessionStorage och document.cookie avsiktligt; de förbjuds därför inte här. Linten ser bara direkta anrop
+// med de här namnen, och tredjepartsbiblioteken i vendor/ lintas inte.
+const S1 = 'S1 i docs/utveckling/skydd.md: verktyget gör inga nätverksanrop.';
+const S2 = 'S2 i docs/utveckling/skydd.md: verktyget sparar ingenting i webbläsarens lagring.';
+const natOchLagring = {
+    'no-restricted-globals': ['error',
+        ...['fetch', 'XMLHttpRequest', 'WebSocket', 'EventSource'].map(name => ({ name, message: S1 })),
+        ...['indexedDB', 'caches'].map(name => ({ name, message: S2 }))
+    ],
+    'no-restricted-properties': ['error',
+        { object: 'navigator', property: 'sendBeacon', message: S1 },
+        ...['fetch', 'XMLHttpRequest', 'WebSocket'].map(property => ({ object: 'window', property, message: S1 })),
+        ...['indexedDB', 'caches'].map(property => ({ object: 'window', property, message: S2 })),
+        { object: 'self', property: 'fetch', message: S1 },
+        { object: 'globalThis', property: 'fetch', message: S1 }
+    ],
+    'no-restricted-syntax': ['error', {
+        selector: 'NewExpression[callee.name=/^(Shared)?Worker$/]',
+        message: 'ADR-1 och S2 i docs/utveckling/skydd.md: ingen arbetstråd; en arbetstråd står utanför lagringsspärren.'
+    }]
+};
+
 export default [
     {
         ignores: [
@@ -43,7 +67,8 @@ export default [
             'eqeqeq': ['error', 'always', { null: 'ignore' }],
             'no-var': 'error',
             'prefer-const': 'warn',
-            'no-trailing-spaces': 'warn'
+            'no-trailing-spaces': 'warn',
+            ...natOchLagring
         }
     },
     {
@@ -58,7 +83,8 @@ export default [
             'no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' }],
             'eqeqeq': ['error', 'always', { null: 'ignore' }],
             'no-var': 'error',
-            'prefer-const': 'warn'
+            'prefer-const': 'warn',
+            ...natOchLagring
         }
     },
     {

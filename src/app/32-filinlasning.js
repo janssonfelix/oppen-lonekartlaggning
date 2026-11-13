@@ -93,6 +93,9 @@ function _afterDataLoaded() {
     if (typeof _renderDemoBanner === 'function') _renderDemoBanner();
     /** @type {HTMLElement} */ (document.getElementById("dashboard-summary")).style.display = "grid";
     const poangCount = _deriveArbetsvarderingFromData();
+    // Föreslagna riktade rader (kalla: 'par') prövas mot paren i den nya lönefilen, också när de lästs in ur en
+    // konfigurationsfil innan det fanns en lönefil att pröva dem mot (ADR-69). Egna rader står kvar.
+    if (typeof _fcRensaParMal === 'function') _fcRensaParMal();
     unlockTabs();
     updateDashboardStats();
     populateSelects();

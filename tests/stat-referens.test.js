@@ -5,6 +5,8 @@
  * filen prövar i stället SIFFRORNA på en fast fixtur, så att en felräkning i HC3,
  * t-fördelningen, kvantilregressionen eller Blinder-Oaxaca fångas.
  *
+ * Vaktar: R20, R21 (docs/utveckling/regler.md)
+ *
  * Hur referensvärdena togs fram (2026-10-16):
  *   - Fixturen tests/fixtures/stat-referens.json: 100 rader, seedad mulberry32
  *     (tests/fixtures/gen-stat-referens.mjs, seed 20261016), heteroskedastiskt brus.

@@ -10,7 +10,6 @@ import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { byggSbom, BIBLIOTEK } from '../tools/sbom.mjs';
-import { regexEscape } from './helpers/regex.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const läs = f => readFileSync(join(root, f), 'utf8');
@@ -30,10 +29,9 @@ describe('sbom: innehållet speglar vendor/', () => {
             expect(c.hashes[0].content, fil).toBe(sha);
         }
     });
-    it('versionerna är de som TREDJEPARTSLICENSER.md anger, och licenserna är SPDX-id', () => {
-        const md = läs('TREDJEPARTSLICENSER.md');
+    // Att versionerna står rätt i TREDJEPARTSLICENSER.md prövas i tests/sakerhet.test.js, mot biblioteksfilerna.
+    it('licenserna är SPDX-id och paketadressen bär versionen', () => {
         for (const c of sbom.components) {
-            expect(md, c.name).toMatch(new RegExp(`^\\| [^|\\n]+ \\| ${regexEscape(c.version)}\\b`, 'm'));
             expect(c.licenses[0].license.id).toMatch(/^(MIT|ISC|Apache-2\.0)$/);
             expect(c.purl).toBe(`pkg:npm/${c.purl.split('/')[1].split('@')[0]}@${c.version}`);
         }
@@ -50,12 +48,8 @@ describe('sbom: innehållet speglar vendor/', () => {
 });
 
 describe('sbom: följer med releasen', () => {
-    it('release.yml bygger förteckningen efter bygget och signerar och publicerar den', () => {
-        const rel = läs('.github/workflows/release.yml');
-        const jobb = rel.slice(rel.indexOf('\njobs:'));
-        expect(jobb.indexOf('npm run sbom')).toBeGreaterThan(jobb.indexOf('npm run bundle'));
-        expect(jobb).toMatch(/cosign sign-blob --yes --bundle sbom\.cdx\.json\.sigstore\.json sbom\.cdx\.json/);
-        expect(jobb).toMatch(/dist\/sbom\.cdx\.json\.sigstore\.json/);
+    // Att release.yml bygger, signerar och publicerar förteckningen prövas med de andra stegen i tests/sakerhet.test.js.
+    it('förteckningen checkas inte in', () => {
         expect(läs('.gitignore')).toMatch(/^dist\/sbom\.cdx\.json$/m);
     });
     it('SECURITY.md säger att förteckningen finns på releasen', () => {

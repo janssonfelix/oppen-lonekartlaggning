@@ -192,7 +192,8 @@ Excel-export: raderna *Använt*, *Riktat* och, när gruppen är kvinnodominerad,
 kvinnodominerade grupper*. Är påslaget i procent och gruppen en enda person är beloppet den personens
 lön gånger procentsatsen. Det är användarens egen inmatning och filtreras inte. Verktyget visar en not
 under raden ("Raden berör 1 person, färre än 10 personer — beloppet bygger på enskildas löner …"), så
-att användaren vet vad en export då visar.
+att användaren vet vad en export då visar. Det gäller bara rader som användaren själv lägger till: verktyget
+föreslår inga riktade rader ur kandidatpar där en grupp är under tröskeln (se nedan).
 I exportens blad *Fördelning* maskeras medianer och kostnad per grupp under tröskeln; utfallstabellen på
 skärmen visar dem.
 
@@ -204,9 +205,13 @@ visas bara när varje kön når tröskeln.
 
 **Löneöversyns tröskelmål följer regeln.** Lyftet i procent till kvinnor och dess kostnad visas bara
 när varje kön i urvalet når tröskeln. Annars står ett streck och meningen om utelämnat könsuppdelat
-mått. En riktad rad som verktyget självt föreslog ur kandidatparen tas bort när tröskeln höjs över
-gruppens storlek. Det gäller också när raden kommer ur en konfigurationsfil, som bär uppgiften om vilka
-rader som var förslag. Varningen "underlaget är litet" i Prioriteringens motiveringsförslag visas vid färre
+mått. Verktyget föreslår inga riktade rader ur kandidatpar där det kvinnodominerade yrket eller
+jämförelseyrket har färre personer än tröskeln, inte heller på skärmen, eftersom förslagets belopp räknas ur
+jämförelseyrkets median. Varje kvinnodominerat yrke får en föreslagen rad, mot jämförelseyrket med störst
+skillnad. En riktad rad som verktyget självt föreslog ur kandidatparen tas bort när tröskeln höjs över någon av
+parets grupper, också på skärmen. En föreslagen rad ur en konfigurationsfil, som bär uppgiften om vilka rader som
+var förslag men inte vilket par, tas bort när verktyget inte kan avgöra att paret den räknades ur når tröskeln.
+Verktyget säger vid förslagen när en rad har tagits bort. Varningen "underlaget är litet" i Prioriteringens motiveringsförslag visas vid färre
 än tröskeln av något kön. Processöversiktens steg 4 blir inte klart när alla kandidatpar har en grupp
 under tröskeln. Steget säger då hur många par som bara redovisas i fliken Likvärdigt arbete och leder dit.
 

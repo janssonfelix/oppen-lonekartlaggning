@@ -419,6 +419,19 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   `w:tblLook` som Word själv skriver.
 - **Word-utkastet är prövat i Microsoft Word.** Utkastet är öppnat i Word 365 och 2019 med litet och stort demo, och
   förbehållet om att det bara är prövat i LibreOffice är struket ur README och sammanfattningen för HR-chefer.
+- **Könsfördelning per BAS-intervall: beslutat golv och not för mindre intervall (ADR-57).** Tabellen och diagrammet i
+  Lönestruktur tog med varje BAS-intervall med minst 5 personer genom ett hårdkodat tal, också i exporten, och mindre
+  intervall föll bort utan not. Golvet är nu `LITET_UNDERLAG` i båda lägena, som för tabellerna per AID-kod och
+  BAS-intervall: raden bär antal och andelar men inga lönemått, och intervall under golvet namnges i en not under
+  tabellen, som följer med i Excel-bladet *Könsskevhet* och utskriften.
+- **Metodbilagan säger den valda förklaringsmodellen (ADR-56).** Med ålder i lönefilen sade raden *Modell — oförklarad
+  skillnad* i bladet *Metod & parametrar* och rapportens bilaga alltid kön + ålder + BAS-intervall, och raden om
+  steget + Yrkesgrupp att steget räknades utöver ålder och inte ingick i huvudtalet, också när handläggaren valt bort
+  ålder eller BAS eller valt in yrkesgrupp. Raderna byggs nu ur förklaringsmodellen: modellen som huvudtalet räknas
+  med, inomtransformationen när yrkesgrupp är vald, och om steget räknas med ålder, ingår i huvudtalet eller inte
+  räknas alls när BAS är bortvalt. Meningen under steget i regressionskortet och rapportens bilaga följer också
+  modellen: "och ålder" bara när modellen har ålder, och med yrkesgrupp vald säger den att steget är huvudtalet.
+  Standardmodellen ger samma text som förut.
 
 ### Analys
 
@@ -444,6 +457,25 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 - **Spärr mot särskilda kategorier av personuppgifter.** Lönefilen avvisas när en kolumnrubrik antyder fackmedlemskap,
   hälsa, sjukfrånvaro, diagnos, etnicitet, religion, politisk tillhörighet, sexuell läggning, funktionsnedsättning,
   genetik eller biometri — som identifierare avvisades redan. Bara rubriken prövas (lagrum.md, C23b).
+
+### Dataskydd
+
+- **Löneöversyns förslag följer den inställda tröskeln, också på skärmen (ADR-69).** *Föreslå fördelning mot
+  skillnaderna i likvärdigt arbete*, målet för skillnaden och känslighetskurvan tar bara kandidatpar där både det
+  kvinnodominerade yrket och jämförelseyrket når minsta gruppstorlek, så att en föreslagen rad inte kan bära en liten
+  grupps median i Excel-exporten eller konfigurationsfilen. En föreslagen rad tas bort när tröskeln höjs över en av
+  parets grupper. En föreslagen rad i en konfigurationsfil, som inte bär vilket par den räknades ur, prövas när filen
+  läses in (eller när lönefilen läses in, om konfigurationsfilen kom först) och tas bort om yrket har ett par med en
+  grupp under tröskeln, eller om likvärdighetsanalysen inte visar alla par (*Visa max*). När en föreslagen rad tas
+  bort räknas prognosen om, också när Löneöversyn inte är den öppna fliken; exporten och scenarierna A/B räknar alltid
+  utfallet ur raderna som de står, och ett sparat scenario som räknades med raden tas bort. Meningen vid förslagen säger när rader har tagits bort och varför, och meningen om utelämnade
+  par nämner den inställda tröskeln. Egna riktade rader står kvar som förut, med noten när gruppen är under tröskeln.
+
+- **Löneöversyns förslag: en rad per yrke.** Ett kvinnodominerat yrke med flera jämförelseyrken fick en föreslagen rad
+  per jämförelseyrke, och potten räknades då flera gånger för samma yrke. Förslaget, målet för skillnaden och
+  känslighetskurvan tar nu ett par per yrke, det med störst skillnad bland dem som når minsta gruppstorlek (ADR-69).
+  I det lilla demot ger förslaget två rader i stället för fyra, och full stängning kostar 220 000 kr/mån i stället för
+  296 520 kr/mån.
 
 ### Dokumentation
 
@@ -490,8 +522,86 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   begränsar inte lagring, bara att det lagrade skickas ut (`connect-src 'none'`), och webbläsartestet prövar bara
   localStorage, sessionStorage och cookies. Skyddet för de två är att ingen kod använder dem, vilket prövas vid granskningen.
 
+### Dokumentation och styrning
+
+- **Avgränsningen och äldre beslut rättade efter gällande beslut.** Teknisk-plan §2 säger att jämförelsen mellan år
+  görs genom årsbokslutet (ADR-54) och att en vy kan läggas i rapporten som recept (ADR-52); §4, ADR-24 och ADR-29
+  följer statusens storleksgräns 3 % och Att göras kategorier (ADR-59); ADR-28 och ADR-35 talar om avsnitten i
+  Löneläget (ADR-55); ADR-12 har status *Ändrad av ADR-51*. Neutralitetsregeln i `CLAUDE.md` och `CONTRIBUTING.md`
+  har sina tre undantag utskrivna, och typkontrollen står bland byggstegen i `CONTRIBUTING.md` och `GOVERNANCE.md`.
+
+- **Skydden S1–S5 i ett eget dokument.** `docs/utveckling/skydd.md` samlar de fem skydden med regel, beslut, vakt och
+  vad som inte vaktas; teknisk-plan §3 och kvalitetskraven, `GOVERNANCE.md`, `CONTRIBUTING.md` och
+  dokumentöversikten pekar dit i stället för att upprepa dem.
+
+- **Vakter för nät och lagring.** Ett enhetstest kräver att byggets CSP har `default-src` och `connect-src 'none'`,
+  bara kontrollsummor i `script-src` och ingen källa som pekar ut i nätet, och linten förbjuder nät-API,
+  `indexedDB`, `caches` och arbetstrådar i `dist/app.js` och `src/lib/` (S1, S2).
+
+- **Regelmatris med test.** `docs/utveckling/regler.md` pekar från varje bindande regel till dess källa och vakt, en
+  regel utan vakt står som `ingen: text`, och `tests/regler.test.js` kräver att varje vaktfil bär sin märkning
+  `Vaktar:` i filhuvudet och att varje märkning pekar tillbaka på en rad.
+
+- **En Definition of Done.** Den står i `CONTRIBUTING.md` punkt 3, och `GOVERNANCE.md`, README och teknisk-plan K7
+  pekar dit. `npm run kontroll` (`tools/kontroll.mjs`) kör kedjan i CI:s ordning, `build:app`, `lint`, `typecheck`,
+  `test:full`, `bundle` och `test:browser`, prövar efter bygget att hela `dist/` motsvarar källan och att
+  teckenkodningen är ren, stannar på första fel och skriver stegens tider; `--snabb` kör `npm test` och hoppar över
+  röktestet. Ett test kräver att kedjan har varje steg som CI-jobbet quality kör.
+
+- **Ingång för AI-assistenter, checklista för beslut och PR-mall.** `CLAUDE.md` är en kort ingång med skydden, vad
+  klart betyder och en karta över vad som ska läsas före en ändring i varje område; `GOVERNANCE.md` har avsnittet
+  *När ett beslut förs in* med de nio stegen, och `.github/PULL_REQUEST_TEMPLATE.md` frågar efter Definition of Done,
+  utdata som lämnar verktyget och ändrade beslut.
+
+- **Arkitekturbeslutens form (ADR-68).** Ett beslut skrivs i mallen beslut, motiv, avvisat, gäller i dag och vakt,
+  den gällande lydelsen står i ett referensdokument per område, och statusorden är *Gällande*, *Ändrad av*,
+  *Sammanförd i*, *Flyttad till* och *Upphävd*; inget nummer byts eller tas bort.
+
+- **Dokumentationstestet delat i struktur och språk.** `tests/dokumentation-struktur.test.js` prövar filer, skript,
+  index och nummer och tal ur koden, `tests/dokumentation-sprak.test.js` de avförda orden, lagrummen, p-värdets
+  förklaring och ordet förvaltning; testerna är desamma som förut, utom de dubbla som *En källa per uppgift* under
+  *Utveckling* tog bort. Strukturtestet prövar dessutom att en status
+  *Sammanförd i* eller *Flyttad till* och raden *Gäller i dag:* pekar på ett dokument som finns, och testerna som
+  bara krävde en viss formulering eller rubrik i arkitekturbesluten är borttagna.
+
+- **K-tröskeln: gällande lydelse i en referens.** `docs/utveckling/k-troskeln.md` samlar det som gäller för minsta
+  gruppstorlek — de två lägena, redovisningsformen, vägen ut, undantagen, golven, inställningen, reglerna R1–R5 och
+  vakterna med testernas märkning — och ADR-12, 14, 23, 38, 47, 48, 51 och 57 är skrivna i den korta mallen och pekar
+  dit; teknisk-plan §3, `skydd.md` S4, regelmatrisen och `CLAUDE.md` pekar också dit.
+
+- **Regressionsmodellen: gällande lydelse i en referens.** `docs/utveckling/regressionsmodellen.md` samlar hur
+  huvudtalet, förklaringsmodellen, BAS-kodningen, den stegvisa uppdelningen, Blinder-Oaxaca, kvantilregressionen,
+  konfidensintervallen och *Var uppstår löneskillnaden?* räknas i dag, med referensvärdena och vakterna; ADR-22, 44,
+  45, 46, 53, 56, 63, 64 och 65 är skrivna i den korta mallen och pekar dit, och teknisk-plan §4–§5 och `CLAUDE.md`
+  pekar också dit.
+
+- **Likvärdighetsmodellen: egen referens.** `docs/utveckling/likvardighetsmodellen.md` samlar hur analysen av
+  likvärdigt arbete räknas i dag — definitionen av kvinnodominerat och var den används, jämförelseyrkena, kandidatparen,
+  *Lägre krav, högre lön*, inställningarna och vakterna — och ADR-25, 60 och 61 är skrivna i den korta mallen och pekar
+  dit, liksom teknisk-plan §5 och `CLAUDE.md`.
+
+- **Bygge och test: egen referens.** `docs/utveckling/bygge-och-test.md` samlar hur verktyget byggs, testas,
+  typkontrolleras och släpps — bygget och dess skyddsnät, testsviten och testmiljön, typkontrollen, linten,
+  `npm run kontroll`, CI, releasen och demosidan — i stället för teknisk-plan §6, som pekar dit. Mapparna,
+  dokumentförteckningen, CI-stegen och release-grindens kontroller skriver den inte av utan hänvisar till sina
+  källor; ADR-7 är skriven i
+  den korta mallen, ADR-4 och ADR-5 är flyttade till referensen och `CONTRIBUTING.md`, och ADR-21 står i
+  avgränsningen i teknisk-plan §2.
+
+- **Besluten i mall, lydelsen i referenserna.** `arkitekturbeslut.md` har nu besluten i mall för k-tröskeln,
+  regressionen, likvärdigt arbete och bygget, med den gällande lydelsen i en referens per område; gränssnittet och
+  exporterna väntar på två beslut under arbete.
+
 ### Utveckling
 
+- **En källa per uppgift, en kontroll per sak.** `.github/CONTRIBUTING.md` har avsnittet *Var uppgifterna står*:
+  varje uppgift som flera filer behöver (version, artefaktens kontrollsumma, det granskade bygget, k-tröskelns
+  standardvärde, bibliotekens versioner m.fl.) har en källa och en kontroll. Riskanalysens bygge och kontrollsumma
+  prövas inte längre i testsviten utan bara av release-grinden, så en pull request som ändrar koden behöver inte
+  röra riskanalysen. Artefaktgrinden i CI kräver att hela `dist/` (också `RELEASE.txt`) är ett färskt bygge, och
+  release-grinden prövar bara det som gäller vid en release. Dubbla tester i dokumentationstestet, `release` och
+  `sbom` är borttagna eller samlade, och referensen `bygge-och-test.md` hänvisar till README, `docs/README.md`,
+  `ci.yml` och huvudet i `tools/release.mjs` i stället för att upprepa dem.
 - **D3 7.9.2 (från 7.9.0).** Samma API; biblioteket är byggt om på de senaste versionerna av D3:s delpaket. Det
   rättar bland annat avrundningen när en skala rundar av sina ändpunkter (`nice`, så att det avrundade intervallet
   alltid täcker de ursprungliga ändpunkterna), `d3.format` för noll, NaN och mycket små tal, hela cirkelbågar som försvann när start och slut sammanföll
@@ -502,7 +612,7 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 - **Playwright 1.65.0** (från 1.64.1) för webbläsarröktestet, och behållaravbilden för WebKit
   (`test:browser:webkit:behallare`) är `v1.65.0-noble`. Bara ett utvecklingsberoende.
 
-- **Vakttest för ordvalen** i `tests/dokumentation.test.js`: index.html, strängarna i appen och användar- och
+- **Vakttest för ordvalen** i `tests/dokumentation-sprak.test.js`: index.html, strängarna i appen och användar- och
   dataskyddsdokumenten prövas mot de avförda orden, paragraftecken och artikelnummer, med undantag för kommentarer,
   identifierare, sökregistrets synonymer, ordlistans sökfält och Källor. p-värdevakten fångar fler felaktiga
   formuleringar och också konfidensintervallets. Vakten skannar hela `src/lib` och prövar etikettvärden och

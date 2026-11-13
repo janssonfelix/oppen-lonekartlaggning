@@ -20,6 +20,20 @@ function _methodAppendixData() {
     const used  = (typeof getData === 'function' ? getData().length : total);
     const ver   = (typeof APP_VERSION !== 'undefined' ? APP_VERSION : '–');
     const medAlder = harAlder();
+    // Förklaringsmodellen (ADR-56): raderna säger den modell huvudtalet räknas med. Med ålder i lönefilen och BAS som
+    // indikatorer säger modellen referensen ("indikatorvariabler, första BAS som referens"), som förut; med yrkesgrupp
+    // vald ingår BAS i gruppnivåerna och modellen skattas med inomtransformation (regressionsmodellen.md §4).
+    const modell = forklaringsmodell();
+    const beskrivning = _rgModellBeskrivning(modell);
+    const modellText = (medAlder && !modell.yrkesgrupp
+        ? beskrivning.replace('BAS-intervall (indikatorer)', 'BAS-intervall (indikatorvariabler, första BAS som referens)')
+        : beskrivning) + (modell.yrkesgrupp ? ', skattat med inomtransformation' : '');
+    // Steget + Yrkesgrupp räknas på modellens ålder och bara när BAS är med (computeSequentialGap).
+    const stegAlder = medAlder ? (modell.alder ? ' utöver ålder' : ', utan ålder (bortvald i förklaringsmodellen)') : ', utan ålder (lönefilen saknar ålder)';
+    const stegText = !modell.bas
+        ? 'Räknas inte: steget förutsätter BAS-intervall, som är bortvalt i förklaringsmodellen'
+        : `Löneskillnad mellan könen med fasta effekter för yrkesgrupp inom BAS (AID×BAS)${stegAlder}, skattat med inomtransformation; `
+            + (modell.yrkesgrupp ? 'yrkesgrupp inom BAS är vald i förklaringsmodellen, så steget är huvudtalet' : 'visas som sista steg, ingår inte i huvudtalet');
     return [
         ['Verktyg', `Öppen lönekartläggning (v${ver})`],
         ['Exporttidpunkt', new Date().toLocaleString('sv-SE')],
@@ -32,11 +46,9 @@ function _methodAppendixData() {
         ['Nationell referens för andel kvinnor', skrForklaring()],
         // Utan ålder i lönefilen (ADR-64) säger raderna modellen utan ålder, som rapportens metodtext.
         ['Modell — oförklarad skillnad', medAlder
-            ? 'OLS på log(månadslön) ~ kön + ålder + BAS-intervall (indikatorvariabler, första BAS som referens); HC3-robusta standardfel (Long & Ervin 2000)'
-            : `OLS på log(månadslön) ~ ${_rgModellBeskrivning(forklaringsmodell())}; lönefilen saknar ålder, så analysen körs utan åldersjustering; HC3-robusta standardfel (Long & Ervin 2000)`],
-        ['Steg + Yrkesgrupp (dekomponeringen)', medAlder
-            ? 'Löneskillnad mellan könen med fasta effekter för yrkesgrupp inom BAS (AID×BAS) utöver ålder, skattat med inomtransformation; visas som sista steg, ingår inte i huvudtalet'
-            : 'Löneskillnad mellan könen med fasta effekter för yrkesgrupp inom BAS (AID×BAS), utan ålder (lönefilen saknar ålder), skattat med inomtransformation; visas som sista steg, ingår inte i huvudtalet'],
+            ? `OLS på log(månadslön) ~ ${modellText}; HC3-robusta standardfel (Long & Ervin 2000)`
+            : `OLS på log(månadslön) ~ ${modellText}; lönefilen saknar ålder, så analysen körs utan åldersjustering; HC3-robusta standardfel (Long & Ervin 2000)`],
+        ['Steg + Yrkesgrupp (dekomponeringen)', stegText],
         // Var uppstår löneskillnaden (ADR-65): raden finns bara när variablerna inte är standardvalet BAS och AID.
         ...(typeof gapVariabler === 'function' && !_guVariablerArStandard(gapVariabler())
             ? [['Var uppstår löneskillnaden (variabler)', gapVariabler().length > 1

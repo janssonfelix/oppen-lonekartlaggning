@@ -60,23 +60,24 @@ jobs:
         run: |
           node -e "const fs=require('fs');let bad=false;for(const f of ['dist/app.js','src/index.html','src/style.css']){if(fs.readFileSync(f,'utf8').includes('�')){console.error('U+FFFD (mojibake) i '+f);bad=true;}}if(bad)process.exit(1);console.log('Ingen mojibake i källfilerna.');"
 
-      # Bygget är reproducerbart (ingen tidsstämpel i bannern), så en färsk
-      # build måste bli byte-identisk med den incheckade artefakten. Utan detta
-      # kan källan ändras utan att den skeppade HTML-filen byggs om —
-      # appsource-testet vaktar dist/app.js, men ingenting vaktade bundlen.
+      # Bygget är reproducerbart (ingen tidsstämpel i bannern), så en färsk build måste bli byte-identisk
+      # med den incheckade artefakten och RELEASE.txt. Grinden är den enda kontrollen av det som bygget skriver i
+      # dist/: version, kontrollsumma och verifieringsraderna i RELEASE.txt prövas inte en gång till i testsviten.
+      # appsource-testet vaktar dist/app.js mot src/app/.
       - name: Artefakten motsvarar källan (byte-identisk)
         run: |
           fore=$(sha256sum dist/oppen-lonekartlaggning.html | cut -d' ' -f1)
           npm run bundle
           efter=$(sha256sum dist/oppen-lonekartlaggning.html | cut -d' ' -f1)
-          if [ "$fore" != "$efter" ]; then
-            echo "::error::Den incheckade artefakten motsvarar inte källan."
+          if [ "$fore" != "$efter" ] || ! git diff --quiet -- dist; then
+            echo "::error::Den incheckade artefakten eller RELEASE.txt motsvarar inte källan."
             echo "  incheckad: $fore"
             echo "  ombyggd:   $efter"
+            git diff --stat -- dist
             echo "Kör 'npm run bundle' och committa resultatet."
             exit 1
           fi
-          echo "Artefakten är byte-identisk med en färsk build ($fore)."
+          echo "Artefakten och RELEASE.txt är byte-identiska med en färsk build ($fore)."
 
       # Sist, eftersom den tar längst tid (omkring tolv minuter): de billiga grindarna ovan
       # ska kunna fälla en push innan sviten ens startat.

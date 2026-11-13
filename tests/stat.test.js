@@ -9,6 +9,8 @@
  *   - normalCdf (Φ vid kända punkter ±1σ ±2σ)
  *   - matMul / transpose / invert (identitet, singulär)
  *   - fitOLS (kända koefficienter, HC3 vs klassisk vcov, n<k+2)
+ *
+ * Vaktar: R21 (docs/utveckling/regler.md)
  */
 
 import { describe, it, expect } from 'vitest';

@@ -4,6 +4,8 @@
  * Statusfärgerna står på ETT ställe: FARG i src/app/01-farger.js, speglad som --status-* i stilmallens :root.
  * Hexkoderna står inte utskrivna i vyernas mallar eller i stilmallen, så att en status får samma färg i alla flikar.
  * De här testerna håller koderna borta från resten.
+ *
+ * Vaktar: R10 (docs/utveckling/regler.md)
  */
 import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';
