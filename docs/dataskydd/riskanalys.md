@@ -1,6 +1,6 @@
 # Risk- och sårbarhetsanalys (dataskydd och informationssäkerhet) — Öppen lönekartläggning
 
-**Bygge:** `2026.11.05` · **Artefakt-SHA-256:** `80f03a60af96bcce30e2e2bfc95767a459e031553aa089df02b652839b98ca04` (se `dist/RELEASE.txt`).
+**Bygge:** `2026.11.05` · **Artefakt-SHA-256:** `3b7ad8032babcd43d9aa08352233f0dc4f41d8def86adddba955f52482430342` (se `dist/RELEASE.txt`).
 **Granskningsdatum:** 2026-11-07.
 **Granskningsmetod:** kodläsning påstående för påstående + statisk sökning i källkod och bygge +
 körning av det byggda verktyget i jsdom och i Chromium (utan nätverk) med syntetiska testfiler.
@@ -559,6 +559,14 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   Därför står gruppen och dess antal i underlaget. På skärmen
   visas alla grupper (ADR-51). Vaktas av `tests/aidbas.test.js` och `tests/smoke-aidbas.test.js`; den allmänna
   invarianten (§11) prövar inte de fyra bladen.
+- **Könsfördelning per BAS-intervall i Lönestruktur (ADR-57, 2026-11-13):** tabellen (`#skevhet-table`), diagrammet
+  ovanför den (`chart-skevhet-andel`) och det som följer av dem: Excel-bladet *Könsskevhet*, utskriften och PDF:en
+  (som klonar tabellen) och diagrambilden i Word och ZIP. Ett BAS-intervall får en rad med antal och andel per kön
+  från 5 personer (`LITET_UNDERLAG`) i båda lägena, inte från tröskeln, och utan lönemått. Mindre intervall namnges i
+  en not under tabellen, utan antal och andelar. Det är samma avsteg i antal som tabellerna per AID-kod och
+  BAS-intervall ovan, med samma skäl: könsfördelningen per nivå är en del av kartläggningen. Tidigare var golvet en
+  hårdkodad 5 och mindre intervall föll bort utan not. Vaktas av `tests/diagramvyer-marken.test.js` (ett intervall
+  med 7 och ett med 4 personer i exportläget: tabellen, diagrammets bild och data, Excel-bladet och utskriften).
 - **Förklaringsmodellen (ADR-56, 2026-11-05):** valet av variabler i regressionen ändrar inte vilka grupper som
   syns. Men *Endast kön* (den ojusterade skillnaden) får inte vara huvudtalet när ett kön i underlaget ligger under
   den inställda tröskeln. Spärren följer `kInstalld()` oavsett läge, så att huvudtalet är detsamma på skärmen och i

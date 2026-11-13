@@ -176,14 +176,16 @@ function generateSkevhet() {
     });
     const skBody = /** @type {HTMLElement} */ (document.querySelector("#skevhet-table tbody"));
     skBody.innerHTML = "";
-    let skBasMaskCount = 0;
+    // Golvet för en egen rad är LITET_UNDERLAG (5) i båda lägena, inte kTroskel(): ett avsteg från ADR-12 i antal
+    // som i ADR-57. Raden bär bara antal och andelar, inga lönemått; mindre intervall namnges i en not under tabellen.
+    const skUtelamnade = [];
     const skRader = [];   // samma BAS-intervall och andelar som tabellens rader — underlaget till diagrammet ovanför
     bas.forEach(b => {
         const df = d.filter(r => r.bas === b);
         const nKv = df.filter(r => r.kon.includes("kvinna")).length;
         const nMa = df.filter(r => r.kon === "man" || r.kon === "män").length;
         const tot = nKv + nMa;
-        if (tot < 5) { skBasMaskCount++; return; }
+        if (tot < LITET_UNDERLAG) { if (tot > 0) skUtelamnade.push(b); return; }
         const pctKv = (nKv/tot*100).toFixed(1), pctMa = (nMa/tot*100).toFixed(1);
         skRader.push({ bas: b, tot, pctKv: parseFloat(pctKv), pctMa: parseFloat(pctMa) });
         // Jämn könsfördelning = båda könen >= 40%. Underrepresenterat kön = det
@@ -194,6 +196,12 @@ function generateSkevhet() {
         tr.innerHTML = `<td>${esc(b)}</td><td>${tot}</td><td>${nKv}</td><td>${nMa}</td><td>${svPct(parseFloat(pctKv), 1)}</td><td>${svPct(parseFloat(pctMa), 1)}</td><td${underrep !== '-' ? ' class="f-kritisk"' : ''}>${underrep}</td>`;
         skBody.appendChild(tr);
     });
+    if (skUtelamnade.length) {
+        const trN = document.createElement("tr");
+        trN.className = 'skevhet-not';
+        trN.innerHTML = `<td colspan="7">${_skevhetNot(skUtelamnade)}</td>`;
+        skBody.appendChild(trN);
+    }
     const skEl = document.getElementById('chart-skevhet-andel');
     if (skEl) { if (skRader.length) ritaFigur(skEl, _skevhetAndelFigur(skRader)); else rensaFigur(skEl); }
 
@@ -213,7 +221,7 @@ function generateSkevhet() {
         usedInAnalysis: baseS.afterFilter,
         analysisExclusions: [
             ...(pgKMasked > 0 ? [[`BAS-intervall maskerade (k-anonymitet n&lt;${kTroskel()} per kön)`, pgKMasked]] : []),
-            ...(skBasMaskCount > 0 ? [[`BAS-intervall för små för könsskevhetsanalys (n&lt;5 totalt)`, skBasMaskCount]] : [])
+            ...(skUtelamnade.length > 0 ? [[`BAS-intervall för små för könsfördelningen (n&lt;${LITET_UNDERLAG} totalt, ADR-57)`, skUtelamnade.length]] : [])
         ],
         formler: [
             ['Kvinnors lön i % av mäns', '<code>median(kvinnors lön) / median(mäns lön) × 100 %</code>. 100 % = lika lön.'],
@@ -224,7 +232,7 @@ function generateSkevhet() {
         ],
         notes: [
             `Kräver minst ${kTroskel()} ${personOrd(kTroskel())} av <em>varje kön</em> för att medianer ska visas (k-anonymitet)`,
-            'Könsfördelning räknas så länge totalen ≥ 5 (även om ena könet har &lt; 5 individer)'
+            `Könsfördelningen redovisas för BAS-intervall med minst ${LITET_UNDERLAG} personer totalt, i båda lägena och oavsett minsta gruppstorlek (ett avsteg från k-tröskeln i antal, ADR-57: raden bär antal och andelar men inga lönemått); mindre intervall namnges i en not under tabellen`
         ]
     });
 }
@@ -734,6 +742,18 @@ function renderLikaArbeteTopp() {
     _laNyckel('nyckel-la-personer', personer != null ? `${svTal(personer, 0)} ${personer === 1 ? 'person' : 'personer'}` : '');
 }
 
+/**
+ * Noten under Könsfördelning per BAS-intervall: intervall med färre än LITET_UNDERLAG personer får ingen rad
+ * (ADR-57). Samma form som kMaskNote, men utan lönemått att tala om: det är andelarna som skulle peka ut enskilda.
+ * @param {string[]} lista  BAS-intervallen som utelämnats.
+ */
+function _skevhetNot(lista) {
+    const n = lista.length, t = LITET_UNDERLAG;
+    return `<p class="k-mask-note">${n} ${esc(_kNoteForm('BAS-intervall|BAS-intervall', n))} visas inte här: `
+        + `${_kNoteNamn(lista)}. ${n === 1 ? 'Det har' : 'De har'} färre än ${t} ${personOrd(t)}, och könsfördelningen `
+        + `skulle kunna peka ut enskilda. Personerna ingår fortfarande i underlaget och i totalsummorna.</p>`;
+}
+
 /** Lönestrukturs avsnittsnyckeltal för BAS-skevheten, könsfördelningen och regressionen. Ritas efter generateSkevhet och regressionskortet. */
 function renderLonestrukturNycklar() {
     const d = getData();
@@ -741,7 +761,7 @@ function renderLonestrukturNycklar() {
     // Per BAS-intervall: översiktens rader (båda könen når tröskeln) med samma status som tabellen (ADR-59).
     const basKvot = _laOversiktRader(d).filter(o => isFinite(o.gap));
     const basOver = basKvot.filter(o => _laOversiktStatus(o).niva === 'granska');
-    const konRader = [...document.querySelectorAll('#skevhet-table tbody tr')];
+    const konRader = [...document.querySelectorAll('#skevhet-table tbody tr:not(.skevhet-not)')];
     // Kolumnen Underrep. Kön är radens sista.
     const ojamna = konRader.filter(tr => { const c = /** @type {HTMLTableRowElement} */ (tr).cells; return c.length && c[c.length - 1].textContent.trim() !== '-'; }).length;
     /** @type {any} */ let reg = null;
