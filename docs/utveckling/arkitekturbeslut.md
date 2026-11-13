@@ -1,13 +1,25 @@
 # arkitekturbeslut.md — Öppen lönekartläggning: Arkitekturbeslut (ADR)
 
-> Här står de arkitekturbeslut som gäller, med motiv och avvisade alternativ, så att en granskare inte
-> återupptar dem utan ny kontext. Besluten är numrerade för att koden, testerna och dokumenten ska kunna peka på
-> dem, och numren byts aldrig. Ett nummer som saknas i listan används inte. Syfte, avgränsning, dataskydd,
-> teknisk plan och öppna punkter står i [`teknisk-plan.md`](teknisk-plan.md); en hänvisning som *teknisk-plan §5*
-> pekar dit.
+> Här står projektets arkitekturbeslut, med motiv och avvisade alternativ, så att en granskare inte återupptar
+> dem utan ny kontext. Besluten är numrerade för att koden, testerna och dokumenten ska kunna peka på dem. Numren
+> byts aldrig och inget nummer tas bort; ett nummer som saknas i listan används inte, och 66 och 67 är reserverade
+> för beslut under arbete. De fem skydden står i [`skydd.md`](skydd.md) och går före besluten. Syfte,
+> avgränsning, dataskydd, teknisk plan och öppna punkter står i [`teknisk-plan.md`](teknisk-plan.md); en
+> hänvisning som *teknisk-plan §5* pekar dit.
+
+**Formen (ADR-68).** Ett beslut skrivs i en mall: rubriken `**ADR-n — Rubrik.**` med *Beslut ÅÅÅÅ-MM-DD.* efter,
+och sedan *Beslut:* (en till fem meningar om vad som valdes), *Motiv:* (varför), *Avvisat:* (alternativen och
+skälet), *Gäller i dag:* (dokument och avsnitt, bara när beslutet har en lydelse som lever vidare i en referens) och
+*Vakt:* (testfil, eller "ingen: text"). Hur något fungerar i dag står i ett referensdokument per område, och
+beslutet pekar dit; ett beslut är loggen över varför. Äldre beslut skrivs om i mallen område för område, när
+området får sin referens; tills dess står de som de är.
 
 **Status:** *Gällande* betyder att beslutet gäller som det står. *Ändrad av ADR-x* betyder att ett senare beslut
-ändrar en del av det; texten i det senare beslutet gäller där de skiljer sig. Datum står där beslutet har ett.
+ändrar en del av det; texten i det senare beslutet gäller där de skiljer sig, och när området har en referens står
+den gällande lydelsen där. *Sammanförd i (dokument)* betyder att beslutets gällande lydelse står i det dokumentet
+tillsammans med andra besluts, och *Flyttad till (dokument)* att innehållet inte var ett eget beslut och nu står
+där; i båda fallen står numret och rubriken kvar och pekar dit. *Upphävd* betyder att beslutet inte längre gäller.
+Datum står där beslutet har ett.
 
 ## Index
 
@@ -72,6 +84,7 @@
 | ADR-63 | Kvantilregressionen på huvudmodellens design, villkorad tolkning | Gällande | 2026-11-08 |
 | ADR-64 | Ålder är valfri i lönefilen | Gällande | 2026-11-08 |
 | ADR-65 | Var uppstår löneskillnaden: valbara förklaringsvariabler | Gällande | 2026-11-10 |
+| ADR-68 | Arkitekturbeslutens form: beslut i mall, gällande lydelse i referenserna | Gällande | 2026-11-13 |
 
 ## Besluten
 
@@ -1183,3 +1196,20 @@ standard med varning, en fil utan fältet ger standard), nollställs av *Rensa a
 det lagras (som förklaringsmodellen, ADR-56). Organisationspaketet bär det inte. Vaktas av
 `tests/gapuppdelning.test.js`, `tests/rapportunderlag.test.js`, `tests/smoke-granssnitt.test.js`, I7 i
 `tests/ktroskel-invarianter.test.js` och webbläsarröktestet (`tools/browser-smoke/gapuppdelning.mjs`).
+
+**ADR-68 — Arkitekturbeslutens form: beslut i mall, gällande lydelse i referenserna.** Beslut 2026-11-13.
+*Beslut:* Ett beslut skrivs i mallen beslut, motiv, avvisat, gäller i dag och vakt, som inledningen beskriver. Hur
+något fungerar i dag står i ett referensdokument per område, och beslutet pekar dit; när ett senare beslut ändrar ett
+tidigare ändras referensen, och det tidigare beslutet får status *Ändrad av ADR-x*. Numren byts aldrig och inget
+nummer tas bort, och statusorden är *Gällande*, *Ändrad av ADR-x*, *Sammanförd i (dokument)*, *Flyttad till
+(dokument)* och *Upphävd*. Skydden står i `docs/utveckling/skydd.md` och går före besluten. Äldre beslut skrivs om
+i mallen område för område, när området får sin referens; tills dess står de som de är.
+*Motiv:* Dokumentet skulle både beskriva nuläget och vara en logg över besluten, och blev svårt att läsa som
+någotdera: den som ville veta vad som gäller fick följa ändringarna genom flera beslut. Med lydelsen i en referens
+per område står det som gäller på ett ställe, och loggen behåller motiven och numren som koden, testerna och
+dokumenten pekar på.
+*Avvisat:* ett beslut per fil (löser inte kedjorna mellan beslut); att ersätta loggen med områdesdokument (motiven
+och numren tappas); att bara lägga till en sammanfattning av nuläget (en plats till att hålla i synk).
+*Gäller i dag:* inledningen i `arkitekturbeslut.md` (formen och statusorden) och `.github/GOVERNANCE.md` (När ett
+beslut förs in).
+*Vakt:* `tests/dokumentation.test.js` (indexet, numren och statusen).

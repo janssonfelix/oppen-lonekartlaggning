@@ -517,6 +517,10 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   *När ett beslut förs in* med de nio stegen, och `.github/PULL_REQUEST_TEMPLATE.md` frågar efter Definition of Done,
   utdata som lämnar verktyget och ändrade beslut.
 
+- **Arkitekturbeslutens form (ADR-68).** Ett beslut skrivs i mallen beslut, motiv, avvisat, gäller i dag och vakt,
+  den gällande lydelsen står i ett referensdokument per område, och statusorden är *Gällande*, *Ändrad av*,
+  *Sammanförd i*, *Flyttad till* och *Upphävd*; inget nummer byts eller tas bort.
+
 ### Utveckling
 
 - **D3 7.9.2 (från 7.9.0).** Samma API; biblioteket är byggt om på de senaste versionerna av D3:s delpaket. Det

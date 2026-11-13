@@ -10,7 +10,8 @@ beroende av projektet.
   riktning. Projektet har en underhållare; det står här så att ingen behöver gissa.
 - **Arkitekturbesluten** (ADR) i [`docs/utveckling/arkitekturbeslut.md`](../docs/utveckling/arkitekturbeslut.md)
   är bindande. De ändras bara genom ett nytt, daterat ADR i samma dokument, aldrig i förbigående i en
-  ändring. De fem skydden står i [`docs/utveckling/skydd.md`](../docs/utveckling/skydd.md): inga
+  ändring: det tidigare beslutet får status och behåller sitt nummer, och den gällande lydelsen står i
+  referensdokumentet för området (ADR-68). De fem skydden står i [`docs/utveckling/skydd.md`](../docs/utveckling/skydd.md): inga
   nätverksanrop, ingen lagring, en enda fil som körs lokalt, minsta gruppstorlek i det som lämnar verktyget och
   ingen inbyggd organisation. De går före arkitekturbesluten och ändras bara genom ett eget, daterat beslut.
 - **Lagrumshänvisningar** ändras bara i [`docs/utveckling/lagrum.md`](../docs/utveckling/lagrum.md)
@@ -30,8 +31,9 @@ beroende av projektet.
 Ett beslut tas av underhållaren. Utkastet arbetas fram utanför repot och förs in i en ändring som gör allt nedan
 samtidigt:
 
-1. Beslutet i [`docs/utveckling/arkitekturbeslut.md`](../docs/utveckling/arkitekturbeslut.md), med nästa lediga
-   nummer och en rad i indexet. Ett nummer byts aldrig.
+1. Beslutet i [`docs/utveckling/arkitekturbeslut.md`](../docs/utveckling/arkitekturbeslut.md), skrivet i mallen
+   (beslut, motiv, avvisat, gäller i dag, vakt; ADR-68), med nästa lediga nummer och en rad i indexet. Ett nummer
+   byts aldrig och tas aldrig bort.
 2. Status på varje beslut det ändrar (*Ändrad av ADR-x*), och text i dem som inte längre gäller rättad eller
    hänvisad till det nya beslutet.
 3. Den gällande lydelsen där den står: referensdokumentet för området (i dag `diagramkarnan.md`, `lagrum.md`,
