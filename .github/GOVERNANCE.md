@@ -37,7 +37,7 @@ samtidigt:
 2. Status på varje beslut det ändrar (*Ändrad av ADR-x*), och text i dem som inte längre gäller rättad eller
    hänvisad till det nya beslutet.
 3. Den gällande lydelsen där den står: referensdokumentet för området (i dag `diagramkarnan.md`, `k-troskeln.md`,
-   `lagrum.md`, `organisationsfil.md` och teknisk-plan §4–§6).
+   `regressionsmodellen.md`, `lagrum.md`, `organisationsfil.md` och teknisk-plan §4–§6).
 4. Mål och avgränsning (teknisk-plan §1–§2) om omfånget ändras.
 5. [`docs/utveckling/skydd.md`](../docs/utveckling/skydd.md) om ett skydd berörs, och
    [`docs/utveckling/regler.md`](../docs/utveckling/regler.md) om en regel eller en vakt tillkommer.

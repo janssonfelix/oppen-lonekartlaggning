@@ -113,11 +113,9 @@ och det som inte vaktas.
 | Samverkan | EU Art. 10 | JPA-protokoll-export (flerflikars Excel) för facklig samverkan |
 | Transparens | — | Bevis-popup på varje fynd: visar *uträkningen*, inte tabelldata |
 
-**Statistisk metodik (kvalitetskrav):**
-- Percentil-bootstrap för konfidensintervall (B = 1000–2000).
-- HC3-robusta standardfel; t-fördelning för p-värden vid små n.
-- BH-FDR-korrektion vid multipla per-BAS-tester.
-- Blinder–Oaxaca-dekomposition för förklarad/oförklarad andel.
+**Statistisk metodik:** regressionen och dess standardfel, den stegvisa uppdelningen, Blinder-Oaxaca,
+kvantilregressionen, konfidensintervallen och p-värdena med korrigeringen för många tester, och uppdelningen *Var
+uppstår löneskillnaden?* står i [`regressionsmodellen.md`](regressionsmodellen.md).
 
 ---
 
@@ -167,13 +165,8 @@ adaptern verkligen delegerar vaktas av `tests/drift.test.js`:
    antar att varje bokstav motsvarar ett lika brett poängintervall i arbetsvärderingen, så rangen är bokstavens
    plats (A=1, B=2 …) där BAS räknas som ett tal — *Lägre krav* använder funktionen
    (`basRangFn` i `src/lib/likvardighet.js`) — och B → D är två BAS-steg även när C saknas i
-   underlaget. Huvudregressionen, den sekventiella dekomponeringen, Blinder-Oaxaca (ADR-53) och
-   kvantilregressionen (ADR-63) räknar inte BAS som ett tal utan som indikatorvariabler, en per
-   intervall med det alfabetiskt första som referens (ADR-44); bokstavsordningen avgör där bara
-   referensen. Kvantilregressionen (`kvantilDesign` och `quantileRegressionAtAllTau` i
-   `src/lib/regression.js`) skattas vid P10, medianen och P90 på huvudmodellens variabler enligt
-   förklaringsmodellen, utan yrkesgrupp inom BAS, och tolkas som glastak eller klibbigt golv bara
-   när bootstrap-intervallet för skillnaden P90 − P10 utesluter noll.
+   underlaget. Regressionsmodellerna räknar inte BAS som ett tal utan som indikatorvariabler; hur, och
+   var BAS-rangen i övrigt används, står i [`regressionsmodellen.md`](regressionsmodellen.md) §3.
 
 ---
 

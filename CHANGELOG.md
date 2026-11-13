@@ -532,6 +532,12 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   vakterna med testernas märkning — och ADR-12, 14, 23, 38, 47, 48, 51 och 57 är skrivna i den korta mallen och pekar
   dit; teknisk-plan §3, `skydd.md` S4, regelmatrisen och `CLAUDE.md` pekar också dit.
 
+- **Regressionsmodellen: gällande lydelse i en referens.** `docs/utveckling/regressionsmodellen.md` samlar hur
+  huvudtalet, förklaringsmodellen, BAS-kodningen, den stegvisa uppdelningen, Blinder-Oaxaca, kvantilregressionen,
+  konfidensintervallen och *Var uppstår löneskillnaden?* räknas i dag, med referensvärdena och vakterna; ADR-22, 44,
+  45, 46, 53, 56, 63, 64 och 65 är skrivna i den korta mallen och pekar dit, och teknisk-plan §4–§5 och `CLAUDE.md`
+  pekar också dit.
+
 ### Utveckling
 
 - **D3 7.9.2 (från 7.9.0).** Samma API; biblioteket är byggt om på de senaste versionerna av D3:s delpaket. Det

@@ -44,11 +44,11 @@ i `skydd.md` har sin rad. Testet prövar strukturen, aldrig formuleringarna.
 | R17 | Byggstegen är gröna före en ändring: `npm run kontroll`. | `CONTRIBUTING.md` punkt 3 (Definition of Done), `GOVERNANCE.md` | `.github/workflows/ci.yml`, `tools/kontroll.mjs` (kedjan lokalt, med artefakt- och teckenkodningsgrinden), `tests/dokumentation-struktur.test.js` (kedjan har CI:s steg) | Att stegen körs lokalt före en pull request |
 | R18 | Varje ändring har en rad i `CHANGELOG.md` under *Oförlöst*. | `CONTRIBUTING.md` punkt 3 (Definition of Done), `GOVERNANCE.md` | ingen: text | Allt |
 | R19 | Ett beslut ändras bara genom ett nytt, daterat beslut; numren står kvar. | `GOVERNANCE.md` (Vem beslutar, När ett beslut förs in), ADR-68 | `tests/dokumentation-struktur.test.js` (index, status, inga datum i rubrikerna) | Ändringar på plats i ett befintligt beslut; att checklistan följs |
-| R20 | De statistiska formlerna är spårbara och dokumenterade. | teknisk-plan §7 K1 | `tests/stat-referens.test.js` (mot etablerade implementationer) | Att formlerna är dokumenterade |
-| R21 | Kärnalgoritmerna har enhetstester som speglar den gällande modellen. | teknisk-plan §7 K3 | `tests/stat.test.js`, `tests/regression.test.js`, `tests/stat-referens.test.js` | Att testerna följer med när modellen ändras |
+| R20 | De statistiska formlerna är spårbara och dokumenterade. | teknisk-plan §7 K1, `regressionsmodellen.md` | `tests/stat-referens.test.js` (mot etablerade implementationer) | Att formlerna är dokumenterade |
+| R21 | Kärnalgoritmerna har enhetstester som speglar den gällande modellen. | teknisk-plan §7 K3, `regressionsmodellen.md` §11 | `tests/stat.test.js`, `tests/regression.test.js`, `tests/stat-referens.test.js` | Att testerna följer med när modellen ändras |
 | R22 | Bygget är reproducerbart. | teknisk-plan §7 K9 | `.github/workflows/ci.yml` (artefaktgrinden) | – |
 | R23 | Klarspråk och ordval: inga avförda ord, juridiska formuleringar hålls övergripande. | teknisk-plan §7 K10 | `tests/dokumentation-sprak.test.js` (avförda ord), `tests/juridiksprak.test.js` | Om en text är begriplig |
 | R24 | Varje källfil bär licensraden (SPDX). | `CONTRIBUTING.md` punkt 3 (Definition of Done) | `tests/dokumentation-struktur.test.js` | – |
-| R25 | Ålder är valfri i lönefilen. | ADR-64 | `tests/ktroskel-utan-alder.test.js` (varje utdataväg utan ålder), `tests/regression.test.js` (modellerna utan ålder) | – |
+| R25 | Ålder är valfri i lönefilen. | ADR-64, `regressionsmodellen.md` §8 | `tests/ktroskel-utan-alder.test.js` (varje utdataväg utan ålder), `tests/regression.test.js` (modellerna utan ålder) | – |
 | R26 | Ett nytt eller ändrat diagram ses i webbläsaren med många grupper. | `CONTRIBUTING.md` punkt 3 (Definition of Done), ADR-42 | ingen: text | Allt; det görs för hand |
 | R27 | Planer och designdokument ligger utanför repot, i den ignorerade mappen `privat/`. | `CLAUDE.md` (Arbetsmaterial) | ingen: text | Allt |

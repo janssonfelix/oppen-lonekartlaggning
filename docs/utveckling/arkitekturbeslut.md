@@ -273,25 +273,20 @@ personer i K och högre räknades men uteslöts. Efter användartest ingår all 
 omfatta hela organisationen, och chefsnivåerna är ofta de grupper där könsskillnaden är störst. Rimlighetskontrollen
 kräver bara att BAS är en bokstav; små intervall skyddas av minsta gruppstorlek vid export.
 
-**ADR-22 — Var uppstår löneskillnaden? Uppdelning på medellön.** Blinder-Oaxaca säger hur stor del av gapet som
-är "förklarat", men inte var det uppstår. Ett avsnitt i Lönestruktur och ett block i rapportunderlaget (efter
-Sammanfattning) delar därför skillnaden i medellön, kvinnor minus män (negativ när kvinnor ligger lägre, som
-överallt i verktyget), i tre delar som summerar exakt:
-**BAS-fördelning** (struktur), **AID inom BAS** (likvärdigt arbete) och **lön inom samma AID och BAS** (lika
-arbete), visade som en trappa. Varje steg delas symmetriskt med kvinnors och mäns genomsnitt som vikt, så inget
-kön är referens; saknas ett kön i en grupp får det andra könets medellön och gruppen bidrar bara till
-fördelningsdelen. Grupposterna mäts mot snittet (centrering), vilket inte ändrar summorna men gör varje post
-tolkbar. **Medellön, inte median:** bara medelvärden ger delar som summerar; mediankvoten visas bredvid.
-**Rangordning efter bidrag i kronor** till hela skillnaden — medvetet annorlunda än Lika arbetes sortering efter
-skillnadens storlek, och avsnittet säger det.
-
-**Skyddet:** en grupp namnges bara om varje kön som finns i den har minst k personer, och en AID-post dessutom
-bara om dess BAS klarar samma krav (BAS:ens medellön ingår i posten). Dolda grupper redovisas bara med antal,
-och poster som avrundas till 0 kr visas inte. Topplistan kortas efter en skyddsregel, så att ingen dold grupps
-bidrag går att räkna fram som delens summa minus de visade posterna: för varje dold post ska summan av |belopp|
-för de andra posterna som inte visas vara minst hälften av postens belopp. Går det inte ens med tom lista
-redovisas inga delar, bara hela skillnaden. Avsnittet och rapportunderlaget visar samma poster. Logiken i
-`src/lib/gapuppdelning.js`.
+**ADR-22 — Var uppstår löneskillnaden? Uppdelning på medellön.**
+*Beslut:* Ett avsnitt i Lönestruktur och ett block i rapportunderlaget (efter Sammanfattning) delar skillnaden i
+medellön, kvinnor minus män (negativ när kvinnor ligger lägre, som överallt i verktyget), i tre delar som summerar
+exakt: **BAS-fördelning** (struktur), **AID inom BAS** (likvärdigt arbete) och **lön inom samma AID och BAS** (lika
+arbete), visade som en trappa. Varje steg delas symmetriskt med kvinnors och mäns genomsnitt som vikt, så inget kön är
+referens. Grupperna rangordnas efter bidrag i kronor till hela skillnaden. **Skyddet:** en grupp namnges bara om varje
+kön som finns i den har minst k personer, och en AID-post dessutom bara om dess BAS klarar samma krav; dolda grupper redovisas bara med antal, och topplistan
+kortas efter en skyddsregel så att ingen dold grupps bidrag går att räkna fram som delens summa minus de visade
+posterna. Går det inte redovisas inga delar, bara hela skillnaden.
+*Motiv:* Blinder-Oaxaca säger hur stor del av gapet som är "förklarat", men inte var det uppstår. Rangordningen efter
+bidrag är medvetet annorlunda än Lika arbetes sortering efter skillnadens storlek, och avsnittet säger det.
+*Avvisat:* uppdelning på median: bara medelvärden ger delar som summerar; mediankvoten visas bredvid.
+*Gäller i dag:* `regressionsmodellen.md` §10 (delarna, formlerna och skyddsregeln).
+*Vakt:* `tests/gapuppdelning.test.js`.
 
 **ADR-23 — Personer att granska: individlista i verktyget, aldrig i utdata.**
 *Beslut:* Panelen Personer att granska i Lika arbete listar personer vars
@@ -668,48 +663,52 @@ Word och urklipp; regler med uträknade värden och regler som bara förekommer 
 elementet, där en klass per regel inte gör något lättare att ändra. Utskriftsfönstret för en enskild flik har
 ingen stilmall och får klasserna genom `HJALPKLASSER_CSS` i `60-utskrift.js`.
 
-**ADR-44 — BAS som indikatorvariabler i huvudregressionen.** Huvudregressionen (`runOLSRegression` i
-`51-lika-arbete-regressionskort.js`) och den sekventiella dekomponeringens steg *+ BAS-intervall*, *+ Ålder* och
-*+ Ansvar* (`_computeSequentialGap` i `50-regressionsmodeller.js`) kodar BAS som en indikator per intervall, med
-det alfabetiskt första intervallet i urvalet som referens. Tidigare var BAS ett linjärt tal (bokstavens plats),
-vilket antog att varje bokstavssteg är värt lika många procent i lön; det stämmer sällan, och ett felaktigt
-linjärt antagande lämnar BAS-nivåskillnader kvar i det "oförklarade" gapet. Med indikatorer får varje intervall
-sin egen nivå, och modellen rapporterar nivån per BAS mot referensen (`basEffekter`, `basRef`) i stället för en
-effekt "per BAS-steg". Reservsteget kön + ålder finns kvar när fullmodellen är singulär. **Orört (till ADR-53):** Blinder-Oaxaca
-behåller den linjära rangen, eftersom uppdelningen per komponent (endowment/coefficient/interaction) blir otydlig
-spridd över ett dussin indikatorer; kvantilregressionen och per-BAS-regressionerna (som har BAS i urvalet, inte i
-modellen) berörs inte. Livscykelmodellen använde redan indikatorer. Talen i golden-facit ändrades av bytet.
+**ADR-44 — BAS som indikatorvariabler i huvudregressionen.**
+*Beslut:* Huvudregressionen (`runOLSRegression`) och den stegvisa uppdelningens steg *+ BAS-intervall*, *+ Ålder* och
+*+ Ansvar* kodar BAS som en indikator per intervall, med det alfabetiskt första intervallet i urvalet som referens.
+Tidigare var BAS ett linjärt tal (bokstavens plats). Modellen rapporterar nivån per BAS-intervall mot referensen
+(`basEffekter`, `basRef`) i stället för en effekt "per BAS-steg", och reservsteget kön + ålder finns kvar när
+fullmodellen är singulär. Vid beslutet behöll Blinder-Oaxaca den linjära rangen, eftersom uppdelningen per komponent
+(endowment/coefficient/interaction) blir otydlig spridd över ett dussin indikatorer; det ändrades av ADR-53.
+Kvantilregressionen berördes inte (ändrad av ADR-63), och inte heller per-BAS-regressionerna, som har BAS i urvalet,
+inte i modellen. Livscykelmodellen använde redan indikatorer. Talen i golden-facit ändrades av bytet.
+*Motiv:* Det linjära talet antog att varje bokstavssteg är värt lika många procent i lön; det stämmer sällan, och ett
+felaktigt linjärt antagande lämnar BAS-nivåskillnader kvar i det "oförklarade" gapet. Med indikatorer får varje
+intervall sin egen nivå.
+*Gäller i dag:* `regressionsmodellen.md` §1 (huvudmodellen och reservstegen), §3 (kodningen) och §4 (stegen).
+*Vakt:* `tests/stat-referens.test.js` (stegen med BAS-indikatorer) och `tests/smoke-innehall.test.js` (referensen och
+en rad per BAS-indikator i kortet).
 
-**ADR-45 — t-kvantiler för konfidensintervallen; exakt t-fördelning.** Konfidensintervallen i huvudregressionen,
-per-BAS-regressionerna och livscykelmodellen räknas som β ± t(0,975; n−k) × SE, med `tQuantile(p, df)` i
-`src/lib/stat.js`, i stället för den fasta faktorn 1,96. Vid df ≥ 100 ger funktionen normalfördelningens kvantil
-(1,96), samma gräns som `pValue2Sided`; vid färre frihetsgrader är intervallet bredare (df 5: 2,571; df 26: 2,056).
-Per-BAS-regressionerna med k personer av varje kön har ofta df kring 20–40, där 1,96 gav för smala intervall.
-Kvantilen inverterar `tDistCdf` med bisektion, och för att den ska träffa tabellvärdena byttes `tDistCdf` från
-Hills approximation (som gav 2,62 vid df 5) till den exakta formen via den regulariserade ofullständiga
-betafunktionen; p-värdena vid små df flyttar sig därför på tredje decimalen. Bootstrap-intervallen, sektorsmodulen
-(`src/lib/sektor.js`) och jämförelsens osäkerhetsband i Lika arbete är orörda.
+**ADR-45 — t-kvantiler för konfidensintervallen; exakt t-fördelning.**
+*Beslut:* Konfidensintervallen i huvudregressionen, per-BAS-regressionerna och livscykelmodellen räknas som β ±
+t(0,975; n−k) × SE, med `tQuantile(p, df)` i `src/lib/stat.js`, i stället för den fasta faktorn 1,96. Kvantilen
+inverterar `tDistCdf`, och för att den ska träffa tabellvärdena byttes `tDistCdf` från Hills approximation (som gav
+2,62 vid df 5) till den exakta formen via den regulariserade ofullständiga betafunktionen; p-värdena vid små df
+flyttade sig därför på tredje decimalen. Bootstrap-intervallen, sektorsmodulen (`src/lib/sektor.js`) och jämförelsens
+osäkerhetsband i Lika arbete berördes inte.
+*Motiv:* Per-BAS-regressionerna med k personer av varje kön har ofta df kring 20–40, där 1,96 gav för smala intervall.
+*Gäller i dag:* `regressionsmodellen.md` §7.
+*Vakt:* `tests/stat.test.js` (`tQuantile` mot t-tabellen) och `tests/stat-referens.test.js` (`tDistCdf` och
+`pValue2Sided` mot scipy).
 
-**ADR-46 — Steget *+ Yrkesgrupp*: könsgapet med fasta effekter för yrkesgrupp inom BAS.** Huvudmodellen
-kontrollerar för BAS men inte för yrkesgrupp (AID), så det "oförklarade" gapet innehåller löneskillnader mellan
-yrken i samma BAS-intervall — som att kvinnorna finns i det lägre betalda av två yrken i BAS C. Den sekventiella
-dekomponeringen får därför ett sista steg, *+ Yrkesgrupp* (`computeYrkesgruppGap` i `src/lib/regression.js`):
-könsgapet efter fasta effekter för AID×BAS (AID-koden, eller yrket när AID saknas, inom BAS — samma nyckel som
-likvärdighetsmotorn) utöver ålder. Steget skattas med inomtransformation: gruppmedelvärdet dras av från log-lön, kön och
-ålder inom varje grupp, sedan OLS utan intercept på de transformerade variablerna. Det ger samma könskoefficient
-som en indikator per grupp (Frisch–Waugh–Lovell; `tests/smoke-innehall.test.js` prövar likheten) men går på 55 000 rader
-utan en designmatris med hundratals kolumner. R² räknas mot lönens totala variation så att den är jämförbar med
-stegen före. Grupper med färre än `statGolv()` av något kön ingår i skattningen — gruppmedelvärdet är ett
-mellanled, inte ett redovisat värde — men bara grupper med båda könen bidrar; steget redovisar hur många grupper
-och personer det bygger på och hur många grupper som är enkönade. Steget visas i regressionskortet som en rad
-efter huvudtalet, med meningen att det är löneskillnaden mellan kvinnor och män med samma yrkesgrupp, BAS och
-ålder, och i förklaringsbudgeten som delen *Förklaras av yrkesgrupp inom BAS*; i rapportmodellen står det som
-en rad i dekomponeringstabellen med samma mening. **Huvudtalet "oförklarad löneskillnad"** i kortet, Word-utkastet
-och PDF-rapporten är fortfarande steget *+ Ålder* (kön + ålder + BAS); den förklarade andelen, trappan och
-ansvarsraden räknas som förut till och med det steget. Beslut 2026-10-16: steget blir inte huvudtalet;
-huvudtalet förblir modellen med kön, ålder och BAS-indikatorer. Metodtexterna (regressionskortet, metodbilagan
-och *Om verktyget*) säger detsamma. **Tillägg 2026-11-05 (ADR-56):** det gäller som standard; handläggaren kan
-välja in yrkesgrupp i förklaringsmodellen, och då är steget huvudtalet.
+**ADR-46 — Steget *+ Yrkesgrupp*: könsgapet med fasta effekter för yrkesgrupp inom BAS.**
+*Beslut:* Den stegvisa uppdelningen får ett sista steg, *+ Yrkesgrupp* (`computeYrkesgruppGap` i
+`src/lib/regression.js`): könsgapet efter fasta effekter för AID×BAS (AID-koden, eller yrket när AID saknas, inom BAS —
+samma nyckel som likvärdighetsmotorn) utöver ålder, skattat med inomtransformation. Steget visas i regressionskortet
+som en rad efter huvudtalet, i förklaringsbudgeten som delen *Förklaras av yrkesgrupp inom BAS* och i rapportmodellens
+dekomponeringstabell. Beslut 2026-10-16: steget blir inte huvudtalet; huvudtalet "oförklarad löneskillnad" i kortet,
+Word-utkastet och PDF-rapporten förblir modellen med kön, ålder och BAS-indikatorer (steget *+ Ålder*), och den
+förklarade andelen, trappan och ansvarsraden räknas som förut till och med det steget. Metodtexterna
+(regressionskortet, metodbilagan och *Om verktyget*) säger detsamma. Tillägg 2026-11-05 (ADR-56): det gäller som
+standard; handläggaren kan välja in yrkesgrupp i förklaringsmodellen, och då är steget huvudtalet.
+*Motiv:* Huvudmodellen kontrollerar för BAS men inte för yrkesgrupp (AID), så det "oförklarade" gapet innehåller
+löneskillnader mellan yrken i samma BAS-intervall — som att kvinnorna finns i det lägre betalda av två yrken i BAS C.
+Inomtransformationen ger samma könskoefficient som en indikator per grupp (Frisch–Waugh–Lovell) men går på 55 000 rader
+utan en designmatris med hundratals kolumner.
+*Gäller i dag:* `regressionsmodellen.md` §4 (steget, inomtransformationen, vilka grupper som bidrar och vad som
+redovisas, och yrkesgrupp vald in i huvudtalet).
+*Vakt:* `tests/smoke-innehall.test.js` (likheten med en indikator per grupp, kortet och budgeten) och
+`tests/stat-referens.test.js` (steget på fixturen).
 
 **ADR-47 — Organisationspaketet kan låsa tre skydd.**
 *Beslut:* Minsta gruppstorlek (ADR-38), rensningen vid inaktivitet och rutan *Ta med grupper under tröskeln i
@@ -791,19 +790,25 @@ BAS-intervall följer ett recept (`state.perBasRecept`, `valideraPerBasRecept` i
 eller sektor), rader, mått, åldersgränser och summeringstabeller; standardreceptet är arbetsgivarnas utkast och sparas
 som null. Båda bärs av konfigurationsfilen och nollställs av *Rensa all data*.
 
-**ADR-53 — Blinder-Oaxaca med BAS som indikatorer.** Beslut 2026-10-29, upphäver undantaget i ADR-44. Uppdelningen
-(`blinderOaxaca` i `src/lib/regression.js`) kodar BAS som en indikator per intervall, som huvudregressionen, så att
-kortets förklarade och oförklarade del vilar på samma variabler som huvudtalet; skillnaden mellan dem är då bara att
-uppdelningen skattar kvinnors och mäns lönesättning var för sig. Referensintervallet är det alfabetiskt första som
-finns hos båda könen (huvudmodellen tar det första i urvalet; här måste båda ekvationerna ha ett intervall med alla
-indikatorer noll). Ett intervall som bara finns hos ett kön får en indikator bara i det könets ekvation och β = 0 i
-det andra könets; dess bidrag hamnar därmed i samspelet, som räknas som oförklarat — det är en redovisningsregel,
-inte en skattning av vad intervallet "borde" betala det kön som saknas. Komponenterna redovisas per variabel som
-konstant, ålder och BAS, där BAS är summan över indikatorerna (det som ADR-44 befarade skulle bli otydligt: ett
-dussin rader). Referensvärdena i `tests/fixtures/stat-referens-varden.json` är omräknade med statsmodels
-(`tests/fixtures/ref-stat-referens.py`); fixturen har ett intervall som bara finns hos männen, så regeln prövas.
-Kvantilregressionen kodar BAS på samma sätt (ADR-63). Sedan 2026-11-05 styr valet (ADR-56) båda:
-uppdelningen räknar på samma variabler som huvudtalet, också när ålder eller BAS valts bort eller yrkesgrupp valts in.
+**ADR-53 — Blinder-Oaxaca med BAS som indikatorer.** Beslut 2026-10-29, upphäver undantaget i ADR-44.
+*Beslut:* Uppdelningen (`blinderOaxaca` i `src/lib/regression.js`) kodar BAS som en indikator per intervall, som
+huvudregressionen. Referensintervallet är det alfabetiskt första som finns hos båda könen. Ett intervall som bara finns
+hos ett kön får en indikator bara i det könets ekvation och β = 0 i det andra könets; dess bidrag hamnar därmed i
+samspelet, som räknas som oförklarat. Komponenterna redovisas per variabel som konstant, ålder och BAS, där BAS är
+summan över indikatorerna. Referensvärdena i `tests/fixtures/stat-referens-varden.json` räknades om med statsmodels
+(`tests/fixtures/ref-stat-referens.py`). Kvantilregressionen kodar BAS på samma sätt (ADR-63). Sedan 2026-11-05 styr
+valet (ADR-56) uppdelningen: den räknar på samma variabler som huvudtalet, också när ålder eller BAS valts bort eller
+yrkesgrupp valts in.
+*Motiv:* Kortets förklarade och oförklarade del ska vila på samma variabler som huvudtalet; skillnaden mellan dem är
+då bara att uppdelningen skattar kvinnors och mäns lönesättning var för sig. Huvudmodellen tar det första intervallet i
+urvalet som referens, men här måste båda ekvationerna ha ett intervall med alla indikatorer noll. Regeln för ett
+intervall hos bara ett kön är en redovisningsregel, inte en skattning av vad intervallet "borde" betala det kön som
+saknas. Summan över indikatorerna löser det som ADR-44 befarade skulle bli otydligt: ett dussin rader.
+*Avvisat:* att behålla den linjära rangen (undantaget i ADR-44), som lät uppdelningen vila på andra variabler än
+huvudtalet.
+*Gäller i dag:* `regressionsmodellen.md` §5.
+*Vakt:* `tests/stat-referens.test.js` (mot statsmodels; fixturen har ett intervall som bara finns hos männen, så regeln
+prövas).
 
 **ADR-54 — Jämförelse mellan år genom ett årsbokslut i konfigurationsfilen.** Beslut 2026-10-30. Konfigurationsfilen
 bär ett *årsbokslut* (`src/lib/arsbokslut.js`, `cfg.arsbokslut`): nyckeltal för hela organisationen (antal, medianer
@@ -874,44 +879,30 @@ Organisationens P10, median och P90 per yrkesgrupp är gruppvärden och följer 
 (ADR-51); referensernas egna tal och tabellen statistiken mot ställningstagandet bär inga organisationsvärden och
 maskeras inte. Vaktas av `tests/referenser.test.js` och `tests/smoke-referenser.test.js`.
 
-**ADR-56 — Valbar förklaringsmodell.** Beslut 2026-11-05. Avsnittet *Vad blir kvar av lönegapet?* räknade alltid på
-kön + ålder + BAS-indikatorer. Det är pedagogiskt onödigt när ålder förklarar en bråkdel: varje tabell och steg bär då en
-variabel som inte säger något. Handläggaren (en HR-person som ska ledas fram till ett svar) kan nu välja vilka
-variabler som räknas bort: BAS-intervall, ålder eller båda, och lägga till yrkesgrupp inom BAS. Fullmodellen (BAS och
-ålder, utan yrkesgrupp) är utgångsläge, så standardhuvudtalet är detsamma som förut (ADR-44, ADR-46, ADR-53).
-
-*Panelen* (`renderForklaringsmodellPanel` i `51-lika-arbete-regressionskort.js`, före huvudtalet) visar kryssrutorna,
-en tabell över vad varje variabel tillför, ett förslag, ett fält för skäl utanför siffrorna och noteringen om det
-bortvalda. Tabellen (`computeVariabelTillfor` i `src/lib/regression.js`) räknas alltid mot fullmodellen, oberoende av
-valet, så att den står still när man kryssar: ΔR² = R²(full) − R²(full utan variabeln) och gapet utan → med; yrkesgrupp
-mäts ovanpå fullmodellen. Under **0,5 procentenheter** i förklaringsgrad räknas en variabel som *tillför lite*, och
-verktyget föreslår att lämna den utanför (bara BAS och ålder föreslås bort; yrkesgrupp är en tilläggsvariabel).
-Förslaget är ett pedagogiskt råd om vad som är värt att visa, inte ett statistiskt test. En bortvald variabel blir en
-mening i stället för siffror, "Ålder har kontrollerats och tillför 0,3 procentenheter i förklaringsgrad; den ingår inte i
-siffrorna. Skäl: …" (`bortvaltNotering` i `src/lib/rapportunderlag.js`), i panelen, i Oaxaca-kortet, i rapportunderlaget
-och i rapportens sammanfattning och bilaga.
-
-*Valet slår igenom överallt där huvudtalet används* (beslut på frågan 2026-11-05): `runOLSRegression` läser
-`state.forklaringsmodell` (null = standard; `normaliseraForklaringsmodell`, `modellFras`, `modellBeskrivning` i
-`src/lib/regression.js`), så Översikt, Att göra, Lönestruktur, Lika arbetes nyckeltal, rapporten och rapportunderlaget
-visar samma tal, och frasen "ålder och nivå" byts överallt mot modellens fras ("nivå", "ålder", "ålder, nivå och
-yrkesgrupp", tom för endast kön: "utan att något räknats bort"). Trappan, förklaringsbudgeten och Blinder-Oaxaca
-räknar på samma modell (ADR-53 består). Sektorsöversikten i Struktur (`src/lib/sektor.js`) har en egen modell och
-följer inte valet. Yrkesgrupp förutsätter BAS; valt in i huvudtalet skattas det med inomtransformation som steget
-(FWL), och kovarianserna (klassisk och HC3) skalas med (n − p)/(n − p − G) för gruppnivåernas frihetsgrader, med k som
-räknar dem (`_regInomYrkesgrupp`); i Oaxaca kodas då en indikator per AID×BAS-grupp i stället för BAS-indikatorerna,
-med ADR-53:s referensregel, och raden heter *Yrkesgrupp inom BAS*. Reservsteget tar bort variabler i ordningen
-yrkesgrupp, BAS, och lägger aldrig tillbaka något bortvalt. *Endast kön* är det ojusterade gapet och får inte vara
-huvudtalet när ett kön ligger under den inställda tröskeln (ADR-12); spärren följer `kInstalld()` oavsett läge, så
-att huvudtalet är detsamma på skärmen och i exporten, och panelen säger varför.
-
-Valet och skälet (högst 300 tecken, samma personuppgiftsvakt som handlingsplanens fritext) bärs av
-konfigurationsfilen (`forklaringsmodell`, null = standard; ett ogiltigt värde ger standard med varning, aldrig fel)
-och nollställs av *Rensa all data*. Organisationspaketet bär det inte: valet är handläggarens. Referensvärdena för
-Oaxaca på modellerna bara BAS, bara ålder och ålder + yrkesgrupp är räknade med statsmodels
-(`tests/fixtures/ref-stat-referens.py`); golden-facit och docx-facit är oförändrade i standardläget, vilket är
-kontrollen att standardmodellen räknar som förut. Vaktas av `tests/regression.test.js`,
-`tests/stat-referens.test.js`, `tests/smoke-innehall.test.js` och `tests/rapportunderlag.test.js`.
+**ADR-56 — Valbar förklaringsmodell.** Beslut 2026-11-05.
+*Beslut:* Avsnittet *Vad blir kvar av lönegapet?* räknade alltid på kön + ålder + BAS-indikatorer. Handläggaren kan nu
+välja vilka variabler som räknas bort: BAS-intervall, ålder eller båda, och lägga till yrkesgrupp inom BAS.
+Fullmodellen (BAS och ålder, utan yrkesgrupp) är utgångsläge, så standardhuvudtalet är detsamma som förut (ADR-44,
+ADR-46, ADR-53). En panel före huvudtalet visar vad varje variabel tillför, räknat mot fullmodellen oberoende av valet,
+och föreslår att lämna en variabel utanför när den tillför under **0,5 procentenheter** i förklaringsgrad; en bortvald
+variabel blir en mening i stället för siffror. Valet slår igenom överallt där huvudtalet används (beslut på frågan
+2026-11-05), och den fasta frasen "ålder och nivå" byts överallt mot modellens fras; trappan, förklaringsbudgeten och
+Blinder-Oaxaca räknar på samma modell (ADR-53 består). Sektorsöversikten har en egen modell och följer inte valet.
+Yrkesgrupp valt in i huvudtalet skattas med inomtransformation som steget (ADR-46), med kovarianserna skalade för
+gruppnivåernas frihetsgrader. *Endast kön* är det ojusterade gapet och får inte vara huvudtalet när ett kön ligger under
+den inställda tröskeln (ADR-12). Valet och skälet bärs av konfigurationsfilen och nollställs av *Rensa all data*.
+Organisationspaketet bär det inte: valet är handläggarens.
+*Motiv:* Att alltid räkna med ålder är pedagogiskt onödigt när ålder förklarar en bråkdel: varje tabell och steg bär
+då en variabel som inte säger något. Handläggaren är en HR-person som ska ledas fram till ett svar. Tabellen räknas mot
+fullmodellen så att den står still när man kryssar. Förslaget är ett pedagogiskt råd om vad som är värt att visa, inte
+ett statistiskt test.
+*Gäller i dag:* `regressionsmodellen.md` §2 (förklaringsmodellen, panelen, gränsen, frasen, var valet slår igenom,
+lagringen och spärren), §4 (yrkesgrupp vald in i huvudtalet) och §5 (Blinder-Oaxaca på vald modell); spärren också
+`k-troskeln.md` §1.
+*Vakt:* `tests/regression.test.js`, `tests/stat-referens.test.js` (Blinder-Oaxaca på modellerna bara BAS, bara ålder
+och ålder + yrkesgrupp mot statsmodels, `tests/fixtures/ref-stat-referens.py`), `tests/smoke-innehall.test.js` och
+`tests/rapportunderlag.test.js`. Golden-facit och docx-facit är oförändrade i standardläget, vilket är kontrollen att
+standardmodellen räknar som förut.
 
 **ADR-57 — Tabellerna per AID-kod och BAS-intervall.** Beslut 2026-11-05.
 *Beslut:* `src/lib/aidbas.js`
@@ -1034,71 +1025,59 @@ kostnaden som är kostnad att nå referensen. Vaktas av `tests/smoke.test.js`, `
 `tests/diagramvyer.test.js` och `tests/smoke-innehall.test.js`.
 
 **ADR-63 — Kvantilregressionen på huvudmodellens design, villkorad tolkning.** Beslut 2026-11-08 (beslut 6a inför
-lanseringen). Kvantilregressionen räknade BAS som ett tal (BAS-rangen, `basRangFn`) med ålder alltid med, medan
-huvudtalet räknar BAS som indikatorer och följer förklaringsmodellen (ADR-44, ADR-56); kortet sade ändå *samma
+lanseringen).
+*Beslut:* Kvantilregressionen räknade BAS som ett tal (BAS-rangen, `basRangFn`) med ålder alltid med, medan huvudtalet
+räknar BAS som indikatorer och följer förklaringsmodellen (ADR-44, ADR-56); kortet sade ändå *samma
 modellspecifikation som huvudregressionen*. Tolkningen *väger tyngre än* sades när beloppen vid P10 och P90 skilde mer
-än en procentenhet, utan prövning. Nu bygger `kvantilDesign(rows, modell, { ageMean?, basList? })` i
-`src/lib/regression.js` designen med samma hjälpare som stegen i dekomponeringen (`_sekvensRigg`): intercept, kön,
-[ålder centrerad], [en indikator per BAS-intervall utom det första] enligt förklaringsmodellen, utan yrkesgrupp inom
-BAS; raderna filtreras där (ålder krävs bara när ålder är med). `quantileRegressionAtAllTau(rows, { modell, ageMean?,
-basList? })` tar ingen rangfunktion längre och returnerar `konPct` per τ och `diffP90P10` (procentenheter). I appen
-använder punktskattningen och bootstrappen (`_regKvantilBerakna`, `_regKvantilBootstrap` i
-`51-lika-arbete-regressionskort.js`) samma byggare; varje omsampling bygger designen på nytt ur de dragna raderna, så
-att ett intervall som inte kom med inte ger en nollkolumn. Bootstrappen sparar `konPct[τ]` och `diff = konPct[0,9] −
-konPct[0,1]` per omsampling och ger percentilintervall för båda. Tabellen har raden *P90 − P10*. *Glastaket väger
-tyngre än det klibbiga golvet* (diff-KI under noll) eller tvärtom (över noll) sägs bara när diff-KI:t utesluter noll,
-annars *Ingen säkerställd skillnad mellan delarna av lönefördelningen.*; utan intervall (över 2 000 personer) sägs att
-det inte går att avgöra. Skattningarna färgas inte längre efter 5 % och 2 % (ADR-59: storlek ensam är ingen status).
-Diagrammets punktlager saknade `riktning: 'liggande'`, så intervallets gränser lästes som kategorier på bandaxeln och
-skrevs ut som råa tal (U4); det är rättat, och ett test kräver att ingen text i någon ritad figur är ett tal med
-decimalpunkt. IRLS-kärnan hoppar över nollor i designen (samma summor, snabbare med indikatorer), och bootstrappen
-startar varje omsampling i hela urvalets lösning (`start` i `quantileRegression`; samma lösning inom toleransen, färre varv). Referensen är en ny
-exakt LP-lösning för indikatormodellen (`tests/fixtures/stat-referens-kvantil.json`, framtagen och kontrollerad som
-filhuvudet i `tests/stat-referens.test.js` beskriver). `basRangFn` finns kvar för *Lägre krav*. Vaktas av
-`tests/regression.test.js`, `tests/stat-referens.test.js`, `tests/diagramritare.test.js` och
+än en procentenhet, utan prövning. Nu bygger `kvantilDesign` i `src/lib/regression.js` designen med samma hjälpare som
+stegen i den stegvisa uppdelningen, enligt förklaringsmodellen och utan yrkesgrupp inom BAS, och
+`quantileRegressionAtAllTau` tar ingen rangfunktion längre. Punktskattningen och bootstrappen i appen använder samma
+byggare, och bootstrappen ger ett percentilintervall också för skillnaden P90 − P10 (tabellens rad *P90 − P10*).
+Tolkningen glastak eller klibbigt golv sägs bara när det intervallet utesluter noll. Skattningarna färgas inte längre
+efter 5 % och 2 % (ADR-59: storlek ensam är ingen status). Samtidigt rättades diagrammet: punktlagret saknade
+`riktning: 'liggande'`, så intervallets gränser lästes som kategorier på bandaxeln och skrevs ut som råa tal (U4), och
+ett test kräver nu att ingen text i någon ritad figur är ett tal med decimalpunkt. IRLS-kärnan och bootstrappen gjordes
+snabbare med indikatorer, med samma lösning inom toleransen. Referensen är en ny exakt LP-lösning för indikatormodellen
+(`tests/fixtures/stat-referens-kvantil.json`). `basRangFn` finns kvar för *Lägre krav*.
+*Motiv:* Kvantilregressionen ska räkna på samma modell som huvudtalet, som kortet säger, och en tolkning ska vila på en
+prövning, inte på storleken ensam.
+*Gäller i dag:* `regressionsmodellen.md` §6 (designen, intervallen, gränsen och tolkningen) och §3 (var BAS-rangen
+används).
+*Vakt:* `tests/regression.test.js`, `tests/stat-referens.test.js`, `tests/diagramritare.test.js` och
 `tests/smoke-innehall.test.js`.
 
-**ADR-64 — Ålder är valfri i lönefilen.** Beslut 2026-11-08. En lönekartläggning förutsätter ingen ålderskolumn, och
-uppgiftsminimeringen talar för att den som inte behöver åldersjusteringen ska kunna lämna
-åldern utanför uttaget. Kolumnmappningen har ålder som valfri (`required: false`); en saknad kolumn ger ålder 0 på
-varje rad, och 0 betyder *saknas*. Om lönefilen har ålder härleds ur datan (`harAlderIRader` i
-`src/lib/regression.js`, i appen `harAlder()` i `50-regressionsmodeller.js`), inget nytt fält i tillståndet. Utan
-ålder utesluts inga rader; inläsningskontrollen och förhandskontrollen säger *Ålder saknas: analysen körs utan
-åldersjustering; Ålder & karriär visas inte.* Modellerna tar bort ålderstermen: förklaringsmodellen tvingar
-`alder: false` med en varning, regressionen, per-BAS-regressionen, Oaxaca–Blinder och kvantilregressionen körs med
-kön och BAS (och yrkesgrupp när den är vald), livscykelmodellen svarar `no_age`, Personer att granska prövar alla mot
-kollegornas median, datakvaliteten hoppar över rimligheten för ålder och tabellerna per BAS-intervall utelämnar
-medelålder och åldersgrupper med en mening om varför. Fliken Ålder & karriär låses som övriga låsta flikar med tipset
-*Kräver ålder i lönefilen*; Översiktens medelålder visas som –; Word, PDF, Excel, rapportunderlaget och dossiererna
-hoppar över åldersavsnitten. Metodmeningen *Att ålder räknas bort är ett metodval …; det avgör ni.* står alltid, med
-eller utan ålder: i nyckeltalets verktygstips i Lika arbete, i regressionskortets *Så fungerar regressionen* och i
-rapportens metodtext. Bladet *Metod & parametrar* (`_methodAppendixData` i `22-exporthjalpare.js`) säger i raderna
-*Modell — oförklarad skillnad* och *Steg + Yrkesgrupp* modellen utan ålder (`modellBeskrivning(forklaringsmodell())`).
-Importprofilernas kännetecken räknas som förut, så att sparade profiler känns igen. Vaktas av
-`tests/regression.test.js`, `tests/ktroskel-utan-alder.test.js` och facit *lönefil utan ålder* i
+**ADR-64 — Ålder är valfri i lönefilen.** Beslut 2026-11-08.
+*Beslut:* Kolumnmappningen har ålder som valfri (`required: false`); en saknad kolumn ger ålder 0 på varje rad, och 0
+betyder *saknas*. Om lönefilen har ålder härleds ur datan, inget nytt fält i tillståndet. Utan ålder utesluts inga
+rader; inläsningskontrollen och förhandskontrollen säger *Ålder saknas: analysen körs utan åldersjustering; Ålder &
+karriär visas inte.* Modellerna tar bort ålderstermen. Personer att granska prövar alla mot kollegornas median,
+datakvaliteten hoppar över rimligheten för ålder och tabellerna per BAS-intervall utelämnar medelålder och
+åldersgrupper med en mening om varför. Fliken Ålder & karriär låses som övriga låsta flikar med tipset *Kräver ålder i
+lönefilen*; Översiktens medelålder visas som –; Word, PDF, Excel, rapportunderlaget och dossiererna hoppar över
+åldersavsnitten. Importprofilernas kännetecken räknas som förut, så att sparade profiler känns igen.
+*Motiv:* En lönekartläggning förutsätter ingen ålderskolumn, och uppgiftsminimeringen talar för att den som inte
+behöver åldersjusteringen ska kunna lämna åldern utanför uttaget.
+*Gäller i dag:* `regressionsmodellen.md` §8 (hur det avgörs att åldern saknas, vad varje modell gör då, och
+metodmeningen och metodbilagans rader).
+*Vakt:* `tests/regression.test.js`, `tests/ktroskel-utan-alder.test.js` och facit *lönefil utan ålder* i
 `tests/exports.golden.test.js`.
 
-**ADR-65 — Var uppstår löneskillnaden: valbara förklaringsvariabler.** Beslut 2026-11-10. ADR-22 delar skillnaden i
-medellön på BAS och AID i den ordningen. Kortet *Förklara med:* låter handläggaren välja en till fyra variabler bland
-BAS, sektor, AID-mellannivå, AID och åldersgrupp (`ageBucket`, bara när lönefilen har ålder, ADR-64), och ordna dem.
-Uppdelningen nästlas i den ordningen: varje cell c på nivå i−1 har vikten ω_c, produkten av s̄ längs vägen från hela
-urvalet. Del i är Σ_c ω_c · Σ_barn Δs_barn|c · (W̄_barn − W̄_c), och den sista delen (*Inom …*) är Σ_löv ω_löv · ΔW_löv.
-Delarna summerar exakt till hela skillnaden, eftersom ΔW_c = Σ Δs · W̄ + Σ s̄ · ΔW på varje nivå. En cell där ett kön
-saknas bidrar bara till sin fördelningsdel, som förut. **Ordningen spelar roll**, och kortet säger det: den första
-variabeln får det den förklarar ensam. AID-nivåerna (sektor, mellannivå, AID) ordnas alltid grovt till fint på sina
-platser, eftersom en finare nivå före en grövre ger en tom del; en flytt som skulle bryta det är avstängd.
-**Skyddet** är ADR-22:s, per del: en cell är synlig bara om den själv och alla dess överceller har 0 eller minst k av
-varje kön, topplistan kortas efter samma regel, och kan en del inte redovisas visas ingen del. **Standardvalet** BAS,
-AID ger bitlika tal (posterna läggs i samma ordning och räknas med samma operationer) och samma texter; det prövas mot
-en frusen kopia av den tidigare implementationen på demot, det stora demot och testfallen
-(`tests/helpers/gapuppdelning-fore-adr65.js`). Delarnas namn, kortets texter, trappans beskrivning och
-rapportunderlagets meningar byggs ur variablerna (`gapDelar`, `gapDelarIText` i `src/lib/gapuppdelning.js`); ett
-annat val än standard nämns i rapportunderlaget och som en rad i metodbilagan (`_methodAppendixData`). Valet lagras som
-`state.gapUppdelning = { variabler }` (null = standard), sparas i konfigurationsfilen (`gapUppdelning`; ogiltigt ger
-standard med varning, en fil utan fältet ger standard), nollställs av *Rensa all data* och prövas inte mot åldern när
-det lagras (som förklaringsmodellen, ADR-56). Organisationspaketet bär det inte. Vaktas av
-`tests/gapuppdelning.test.js`, `tests/rapportunderlag.test.js`, `tests/smoke-granssnitt.test.js`, I7 i
-`tests/ktroskel-invarianter.test.js` och webbläsarröktestet (`tools/browser-smoke/gapuppdelning.mjs`).
+**ADR-65 — Var uppstår löneskillnaden: valbara förklaringsvariabler.** Beslut 2026-11-10.
+*Beslut:* ADR-22 delar skillnaden i medellön på BAS och AID i den ordningen. Kortet *Förklara med:* låter handläggaren
+välja en till fyra variabler bland BAS, sektor, AID-mellannivå, AID och åldersgrupp (bara när lönefilen har ålder,
+ADR-64), och ordna dem. Uppdelningen nästlas i den ordningen, och delarna summerar fortfarande exakt till hela
+skillnaden. En cell där ett kön saknas bidrar bara till sin fördelningsdel, som förut. **Ordningen spelar roll**, och
+kortet säger det. **Skyddet** är ADR-22:s, per del. **Standardvalet** BAS, AID ger bitlika tal och samma texter som
+före beslutet; ett annat val nämns i rapportunderlaget och i metodbilagan. Valet sparas i konfigurationsfilen och
+nollställs av *Rensa all data*; organisationspaketet bär det inte.
+*Motiv:* Med fler variabler än BAS och AID kan handläggaren se om skillnaden hänger ihop med till exempel sektor eller
+åldersgrupp, utan att standardvalet och dess tal ändras.
+*Gäller i dag:* `regressionsmodellen.md` §10 (de valbara variablerna, den nästlade uppdelningen, AID-nivåernas ordning,
+skyddsregeln per del och hur valet sparas).
+*Vakt:* `tests/gapuppdelning.test.js` (bland annat mot en frusen kopia av den tidigare implementationen,
+`tests/helpers/gapuppdelning-fore-adr65.js`, på demot, det stora demot och testfallen), `tests/rapportunderlag.test.js`,
+`tests/smoke-granssnitt.test.js`, I7 i `tests/ktroskel-invarianter.test.js` och webbläsarröktestet
+(`tools/browser-smoke/gapuppdelning.mjs`).
 
 **ADR-68 — Arkitekturbeslutens form: beslut i mall, gällande lydelse i referenserna.** Beslut 2026-11-13.
 *Beslut:* Ett beslut skrivs i mallen beslut, motiv, avvisat, gäller i dag och vakt, som inledningen beskriver. Hur
