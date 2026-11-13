@@ -71,41 +71,16 @@ gång rapporteringsformat ändras hos DO, Medlingsinstitutet eller EU.
 
 ## 3. Dataskydd — Privacy by Design (GDPR Art. 25)
 
-Icke förhandlingsbara arkitektoniska garantier. De tre första står som skydd i [`skydd.md`](skydd.md); den
-fjärde är skyddet S4 där, och dess detaljer står här tills de flyttas till en egen referens.
+Icke förhandlingsbara arkitektoniska garantier. Alla fyra står som skydd i [`skydd.md`](skydd.md), med regel, vakt
+och det som inte vaktas.
 
 1. **En fil, körs lokalt:** skyddet S3 i [`skydd.md`](skydd.md).
 2. **Inga nätverksanrop** (CSP `connect-src 'none'`): skyddet S1 i [`skydd.md`](skydd.md).
 3. **Ingen persistent lagring:** skyddet S2 i [`skydd.md`](skydd.md); lagringsspärren i detalj i
    `docs/dataskydd/riskanalys.md` §6.2.
-4. **k-anonymitet** (K_STANDARD = 10; användaren kan ändra värdet, ADR-38): grupper med för få
-   individer redovisas inte i det som lämnar verktyget, för att förhindra återidentifiering; på skärmen
-   visas alla grupper (ADR-51), och det som står nedan om vad som visas gäller exportläget. Ett värde under 10 kräver
-   bekräftelse, visas med stående varning och står i metodbilagan, i exporterad data och — under 10 — på varje
-   del som kan spridas för sig (diagrambilder, tabeller i urklipp, sidfötter, utskrift, rapportunderlag).
-   Redovisningsformen är tvådelad (ADR-12):
-   - **Hela gruppen under tröskeln** → raden utelämnas och gruppen räknas upp
-     *med namn* i en not vid tabellen.
-   - **Bara könsuppdelningen för liten**, medan gruppen som helhet ligger över
-     tröskeln → gruppens *samlade* median redovisas, utan könsjämförelse. Regeln gäller
-     de beskrivande könsuppdelade lönemåtten (ett köns median eller percentil, det råa
-     lönegapet, regressionens ojusterade steg "Endast kön" med den förklarade andelen, en
-     kostnad som räknats ur ett gap), per grupp och för hela organisationen: de redovisas bara
-     när varje kön når tröskeln (`_konFarRedovisas`).
-     Regressionens justerade gap visas från regressionens eget fasta golv, 5 per kön (ADR-38);
-     övriga skattningar har fasta eller statistiska golv (ADR-38). I Ålder & karriär följer
-     lönegapen, lutningen, trendlinjerna och lådorna per kön regeln; en persons punkt ritas bara
-     när personens grupp och kön i gruppen når tröskeln (ADR-14).
-   - **Undantag:** likvärdighetsanalysen tillämpar *inte* k-anonymitet (resultatet
-     är aggregerat per yrkesgrupp; uttryckligt beslut från användaren).
-     Antalet små grupper som ändå ingår redovisas i analysens diagnostik.
-   - **Undantag 2 (ADR-14):** fliken Tabeller och egna vyer visar grupper under tröskeln, som alla
-     flikar (ADR-51). Skyddet gäller det som lämnar verktyget: tabellens CSV/urklipp och
-     diagrammets exportmeny utelämnar grupperna om inte användaren kryssar i "Ta med grupper
-     under tröskeln i exporten" — rutan är undantaget. K-invarianten vaktar exporten.
-   - **Vakt:** invarianten I4 (`tests/helpers/ktroskel-invariant.js`) är en *invariant*, inte stickprov —
-     den ritar samtliga flikar i exportläget och bygger varje export mot ett dataset där varje liten grupps
-     mätvärden är unika sentinelvärden och hävdar att inget av dem syns.
+4. **Minsta gruppstorlek** (`K_STANDARD = 10`; användaren kan ändra värdet): grupper med för få individer redovisas
+   inte i det som lämnar verktyget. Skyddet S4 i [`skydd.md`](skydd.md); den gällande lydelsen, med
+   redovisningsformen, undantagen, golven och vakterna, står i [`k-troskeln.md`](k-troskeln.md).
 
 ---
 

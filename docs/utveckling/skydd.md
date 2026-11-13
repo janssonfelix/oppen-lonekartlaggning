@@ -63,7 +63,7 @@ färre personer än den inställda tröskeln (standard 10). På skärmen visas a
 har redan lönefilen. Undantagen är uppräknade och beslutade.
 
 *Varför:* att förhindra återidentifiering i det som sprids.
-*Lydelse:* [`teknisk-plan.md`](teknisk-plan.md) §3 punkt 4 och besluten. *Beslut:* ADR-12, 14, 23, 38, 47, 48,
+*Lydelse:* [`k-troskeln.md`](k-troskeln.md). *Beslut:* ADR-12, 14, 23, 38, 47, 48,
 51, 57.
 *Vakt:* invarianten I4, `tests/helpers/ktroskel-invariant.js`, ritar flikarna i exportläget och bygger exporterna
 vid tröskeln 10 (`tests/ktroskel-invarianter.test.js`) och 25 (`tests/ktroskel-invarianter-25.test.js`);

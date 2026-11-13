@@ -527,6 +527,11 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   *Sammanförd i* eller *Flyttad till* och raden *Gäller i dag:* pekar på ett dokument som finns, och testerna som
   bara krävde en viss formulering eller rubrik i arkitekturbesluten är borttagna.
 
+- **K-tröskeln: gällande lydelse i en referens.** `docs/utveckling/k-troskeln.md` samlar det som gäller för minsta
+  gruppstorlek — de två lägena, redovisningsformen, vägen ut, undantagen, golven, inställningen, reglerna R1–R5 och
+  vakterna med testernas märkning — och ADR-12, 14, 23, 38, 47, 48, 51 och 57 är skrivna i den korta mallen och pekar
+  dit; teknisk-plan §3, `skydd.md` S4, regelmatrisen och `CLAUDE.md` pekar också dit.
+
 ### Utveckling
 
 - **D3 7.9.2 (från 7.9.0).** Samma API; biblioteket är byggt om på de senaste versionerna av D3:s delpaket. Det
