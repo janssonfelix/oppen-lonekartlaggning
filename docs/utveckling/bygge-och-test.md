@@ -187,7 +187,7 @@ att ingen trafik lämnar sidan.
   `dist/app.js` eller någon fil i `src/app/` är nyare än bygget. Kör `npm run bundle` först.
 - **Tre webbläsare:** Chromium, Firefox och WebKit (`--browser=…`, `npm run test:browser:firefox`/`:webkit`;
   `npm run test:browser:webkit:behallare` kör WebKit i en behållare med podman). I CI körs alla tre vid pull
-  requests, på main och vid manuella körningar, och bara Chromium vid en vanlig push till en gren.
+  requests, på main och vid manuella körningar, och bara Chromium vid push av en versionstagg.
 
 ### 5.6 Prestandamätningen
 
@@ -246,13 +246,15 @@ röktest i webbläsaren. `tests/dokumentation-struktur.test.js` kräver att kedj
 
 ## 9. CI
 
-`.github/workflows/ci.yml` körs vid push, pull request och för hand, med bara läsbehörighet, i två jobb. Båda kör
-Node 22.
+`.github/workflows/ci.yml` körs vid push till `main` och taggar `v*`, vid pull requests och för hand, med bara
+läsbehörighet, i två jobb. Båda kör Node 22. Andra grenar prövas genom sin pull request, och en ny push på en pull
+request avbryter den pågående körningen.
 
-- **`quality`** — lint, typkontroll, hela testsviten (`npm run test:full`), teckenkodningsgrinden (ingen U+FFFD i
-  egen källkod) och **artefaktgrinden**: bygget är byte-reproducerbart, så CI bygger om och kräver oförändrad
-  SHA-256. `appsource`-testet vaktar `dist/app.js` mot `src/app/`; artefaktgrinden vaktar den skeppade HTML-filen.
-- **`browser`** — en matris över Chromium, Firefox och WebKit (vid en vanlig push till en gren bara Chromium):
+- **`quality`** — lint, typkontroll, teckenkodningsgrinden (ingen U+FFFD i egen källkod) och **artefaktgrinden**:
+  bygget är byte-reproducerbart, så CI bygger om och kräver oförändrad SHA-256. `appsource`-testet vaktar
+  `dist/app.js` mot `src/app/`; artefaktgrinden vaktar den skeppade HTML-filen. Hela testsviten
+  (`npm run test:full`) körs sist, så att de billiga grindarna ger besked först.
+- **`browser`** — en matris över Chromium, Firefox och WebKit (vid push av en tagg bara Chromium):
   installerar motorn, bygger artefakten och kör röktestet mot den. Jobbet bygger *inuti* körningen eftersom
   `git checkout` ger alla filer samma mtime, vilket annars skulle utlösa röktestets färskhetsspärr.
 
