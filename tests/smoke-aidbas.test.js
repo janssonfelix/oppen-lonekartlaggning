@@ -157,15 +157,15 @@ describe('Likvärdigt arbete: avsnitten per BAS-intervall och den hierarkiska j�
         expect(tabell(w2, 'aidbas-hierarki-tabell')).toBeNull();
         expect(w2.document.getElementById('aidbas-hierarki').textContent).toContain('Inga fall där ett arbete med lägre krav, som inte är kvinnodominerat, har högre lön än ett kvinnodominerat arbete med högre krav.');
     });
-    it('diagnostiken räknar kvinnodominerade yrken som jämfördes med statistiken, inte BAS-intervall', () => {
-        // Två kvinnodominerade yrken i samma BAS-intervall utan eget jämförelseyrke: två yrken, ett intervall.
+    it('diagnostiken räknar kvinnodominerade grupper (AID-kod i ett BAS-intervall) som jämfördes med statistiken, inte BAS-intervall', () => {
+        // Två kvinnodominerade grupper (två AID-koder) i samma BAS-intervall utan jämförelsegrupp i organisationen: två grupper, ett intervall.
         const w = fonster([...grupp('E', '2002', 'kvinna', 30, 38000), ...grupp('E', '2002', 'man', 9, 39000),
             ...grupp('E', '4004', 'kvinna', 12, 37000), ...grupp('E', '4004', 'man', 2, 37500)]);
         w.__state.statistik = [{ aid: '6100', bas: 'E', median: 45000, andelKv: 20, aidFull: '6100 Jämförelseyrke' }];
         w.__state.statistikHasKon = true;
         w.__renderTabContent('likvardighet');
         const text = w.document.getElementById('likvardighet-content').textContent.replace(/\s+/g, ' ');
-        expect(text).toContain('2 kvinnodominerade yrken saknade jämförelseyrke i organisationen och jämfördes i stället med jämförelsestatistiken');
+        expect(text).toContain('2 kvinnodominerade grupper (AID-kod i ett BAS-intervall) hade ingen jämförelsegrupp i organisationen och jämfördes i stället med jämförelsestatistiken');
         expect(text).not.toMatch(/BAS saknade/);
     });
 });
