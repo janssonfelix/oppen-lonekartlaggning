@@ -481,6 +481,20 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   raderna står sist i BAS-ordning. *Varav till kvinnodominerade grupper* visas som streck när den skulle ge en del av
   den samlade kostnaden. Utfallstabellen i exportläget (*Som i exporten*) visar samma rader; skärmen visar allt som
   förut.
+- **Livscykelns lönekurva följer tröskeln (ADR-70).** I Ålder & karriär utelämnade översiktstabellen redan
+  BAS-intervall med färre personer än tröskeln, men rullistan har alla intervall, och ett sådant intervall gav sin
+  lönekurva, modellens lönenivå i intervallet, också i exportläget: i diagramdatan, bilden, ZIP-filen och kopian i
+  *Alla diagram*. Nu ritas ingen kurva i det som lämnar verktyget för ett valt intervall under tröskeln, och en not
+  säger vilket intervall som är valt och varför, utan värden. Det valda intervallet byts inte. Beräkningsbeviset för
+  ett annat intervall visar då ingen nivåfaktor mot det valda. Modellen skattas som förut, och skärmen visar kurvan.
+  I det stora demot gäller det BAS J och K (8 och 4 personer) när de väljs; standardvalet och det lilla demot är
+  som förut.
+- **Löneöversyns scenariojämförelse röjer ingen liten grupps kostnad (ADR-70).** Ett sparat scenario visade *Till
+  kv-dom* som det räknades, också i exportläget (*Som i exporten*), där utfallets *Varav till kvinnodominerade
+  grupper* står som streck när talet ger en del av den samlade kostnaden för grupperna under tröskeln; skillnaden
+  mellan de två kunde vara en liten grupps kostnad. Nu följer *Till kv-dom* samma regel med samma funktion, annars ett
+  streck. Skärmen visar talet som förut. Scenarierna lämnar inte verktyget. I demona står *Varav* och *Till kv-dom*
+  som förut.
 - **Löneöversyns förslag följer den inställda tröskeln, också på skärmen (ADR-69).** *Föreslå fördelning mot
   skillnaderna i likvärdigt arbete*, målet för skillnaden och känslighetskurvan tar bara kandidatpar där både det
   kvinnodominerade yrket och jämförelseyrket når minsta gruppstorlek, så att en föreslagen rad inte kan bära en liten
@@ -615,6 +629,33 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ### Utveckling
 
+- **Tröskeln för minsta gruppstorlek i en egen modul.** `06-k-anonymitet-och-dataminimering.js` är delad i fyra
+  vid sina egna gränser: `06-k-troskel.js` (tröskeln, golven, stämplarna, inställningen och omritningen),
+  `06-kvinnoandel-referens.js`, `06-maskeringsnoter.js` och `06-uppgiftsminimering.js`. Innehållet är oförändrat;
+  bygget skiljer sig bara i de nya filernas filhuvuden (licensraden och upphovsraden), och utan dem är `app.js`
+  byte för byte densamma som förut.
+- **Testernas märkning följer reglerna.** Testerna för reglerna R1–R5 i `k-troskeln.md` §8 heter nu som regeln de
+  vaktar (förut följde bara R1 numreringen, och R5 saknade märkning), och sakliga skäl i
+  `tests/ktroskel-invarianter-25.test.js` heter I8, så att I5 bara står för omritningen efter konfigurationsfil och
+  organisationspaket. Inaktuella filhuvuden och rubriker är rättade: `tDistCdf` beskrivs som exakt (ADR-45),
+  programvaruförteckningens test beskriver det det prövar, och rubriker som pekade på flyttad text i
+  `teknisk-plan.md` pekar på `likvardighetsmodellen.md` och `regressionsmodellen.md`. Inga tester är tillagda eller
+  borttagna.
+- **K-tröskelns tester mot invarianten, en gång till.** Testerna som invarianten I4 täcker togs bort 2026-11-10;
+  en ny genomgång av dagens filer fann inga fler. De tester som liknar I4 mest prövar sådant som I4 inte ser: modellens
+  tal (regressionens ojusterade steg med sju män, BAS-effekterna, livscykelns kurva), ett annat underlag eller en annan
+  tröskel, och ett läckprov bekräftade det: med regressionens steg och BAS-effekterna omaskade i exporten föll de
+  riktade testerna men inte I4. Inget test är borttaget. Åtta tester som bara prövar stämpeln och meningen om sänkt
+  tröskel (metodbilagan, CSV, urklipp, diagramdata, gruppdossiern och rapportunderlaget) kör nu på den lilla fixturen
+  `fonsterLitet`, med samma trösklar och samma vägar; vart och ett faller på något av två läckprov i stämpeln. Tidsvinsten är liten (omkring 0,4 s).
+- **K-invarianten prövar varje ritat diagram.** Riggen för invarianten I4 (`samlaUtdata` i
+  `tests/helpers/ktroskel-rigg.js`) tar diagrammen ur diagramkärnans register i stället för ur en väljare, väntar in
+  kvantilregressionens bakgrundsräkning och nästa bildruta, och läser alla diagram i ett och samma exportläge. Förut
+  ritades fliken om för varje diagram, och diagram som omritningen ersatte hoppades tyst över: livscykelns kurva,
+  lönehistogrammet per kön och Var uppstår löneskillnaden (med kopian i Alla diagram) prövades aldrig. Riggen sparar
+  också en ögonblicksbild, så att jämförelsens diagram i *Spara och jämför år* ritas. Ett nytt test kräver att varje
+  diagram i registret har en väg med diagramdata, eller en som säger att det inte har något att exportera, utom de
+  namngivna undantagen. Appen är oförändrad, och invarianten är grön på de nya vägarna.
 - **En källa per uppgift, en kontroll per sak.** `.github/CONTRIBUTING.md` har avsnittet *Var uppgifterna står*:
   varje uppgift som flera filer behöver (version, artefaktens kontrollsumma, det granskade bygget, k-tröskelns
   standardvärde, bibliotekens versioner m.fl.) har en källa och en kontroll. Riskanalysens bygge och kontrollsumma

@@ -1,5 +1,5 @@
 /**
- * K-tröskeln som inställning: ett litet kön i regressionen, Löneöversyn, egna riktade rader och Ålder & karriär (R1–R4), omritningen från gränssnittet och ADR-47.
+ * K-tröskeln som inställning: reglerna R1–R4 i docs/utveckling/k-troskeln.md §8 (regressionens ojusterade steg R1, egna riktade rader R2, Ålder & karriär R3, lönegapet i Löneöversyns scenariojämförelse R4), omritningen från gränssnittet och ADR-47.
  *
  * Riggen (fixturer, fönster och sökfunktioner) ligger i tests/helpers/ktroskel-rigg.js; sviten är delad i
  * flera filer så att Vitest fördelar den över flera arbetare.
@@ -101,7 +101,7 @@ describe('R1: regressionens ojusterade steg ("Endast kön") kräver tröskeln f�
     });
 });
 
-describe('R2: Löneöversynens scenariojämförelse maskerar ett rågap som sparats vid en lägre tröskel', () => {
+describe('R4: Löneöversynens scenariojämförelse maskerar ett rågap som sparats vid en lägre tröskel', () => {
     it('i exportläget: sparat vid 5 med 7 män, rågapet visas vid 5 och döljs när tröskeln höjs till 10', () => {
         const w = iExport(fonsterMan(5, SJU_MAN));
         Object.assign(w.__state.forecast, { generell: { mode: 'pct', value: 2 } });
@@ -133,7 +133,7 @@ describe('R2: Löneöversynens scenariojämförelse maskerar ett rågap som spar
     });
 });
 
-describe('R3: en egen riktad rad på en grupp under tröskeln är tillåten och får en upplysning', () => {
+describe('R2: en egen riktad rad på en grupp under tröskeln är tillåten och får en upplysning', () => {
     it('raden på en grupp om en person får noten; raden på en stor grupp får den inte', () => {
         const w = fonsterKon(null);
         w.__state.forecast.targets = [
@@ -168,7 +168,7 @@ describe('R3: en egen riktad rad på en grupp under tröskeln är tillåten och 
     });
 });
 
-describe('R4: Ålder & karriär följer regeln för könsuppdelade mått', () => {
+describe('R3: Ålder & karriär följer regeln för könsuppdelade mått', () => {
     const TRE_MAN = [41417, 43719, 47827];
     // Serierna i ett diagram ritat av diagramkärnan (ADR-39); för lådagrammet de kön som har en låda.
     const namn = (w, id) => {

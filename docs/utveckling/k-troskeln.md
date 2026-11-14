@@ -16,7 +16,8 @@ Den som lägger till något som lämnar verktyget läser avsnitt 1, 2 och 9 för
 
 | Del | Fil |
 |---|---|
-| Tröskeln, golven, noterna, stämplarna, inställningen och omritningen | `src/app/06-k-anonymitet-och-dataminimering.js` |
+| Tröskeln, golven, stämplarna, noterna om utelämnade kön och par, inställningen och omritningen | `src/app/06-k-troskel.js` |
+| Maskeringsnoterna (`kMaskNote`, `kSamladNote`) | `src/app/06-maskeringsnoter.js` |
 | Exportläget, exportgrinden och förhandsvisningen | `src/app/23-exportgrind.js` |
 | Könsuppdelade mått i strukturen | `src/lib/struktur.js` |
 | Organisationspaketets låsningar | `src/lib/organisationspaket.js` (`_lasningar`), `src/app/29-organisationspaket.js` |
@@ -103,7 +104,17 @@ om den justerade löneskillnaden i Word-utkastet, PDF-rapporten och utskriften, 
 specifikation i exportläget) skrivs effekten inte ut för ett intervall med färre än `kTroskel()` personer i modellen
 (`basN`); intervallen namnges i en not utan värden (`_kMaskNoteText`). Har referensintervallet självt färre skrivs
 ingen effekt ut, eftersom varje effekt då beskriver dess nivå baklänges, och noten säger varför. Modellen och dess
-referens (ADR-44) ändras inte. Allt går genom `_basEffekterForRedovisning` (`06-k-anonymitet-och-dataminimering.js`).
+referens (ADR-44) ändras inte. Allt går genom `_basEffekterForRedovisning` (`06-k-troskel.js`).
+
+**Livscykelns lönekurva.** Kurvan i Ålder & karriär är livscykelmodellens lönenivå per kön i det valda BAS-intervallet
+(rullistan; som standard det mest folkrika). Översiktstabellen per intervall utelämnar ett intervall med färre än
+`kTroskel()` personer, och för ett valt intervall under tröskeln ritas heller ingen figur (`_lifecycleKurvaUtelamnad`
+i `52-livscykel.js`, samma antal som tabellens rader): diagramdatan, bilden, ZIP-filen och kopian i Alla diagram
+saknar den. En not i stället för kurvan säger vilket intervall som är valt och varför, utan värden. Valet byts inte,
+så att exporten inte tyst visar ett annat intervall än skärmen. Beräkningsbeviset för ett annat intervall skriver då
+ingen nivåfaktor mot det valda, eftersom raden delad med faktorn är det valda intervallets nivå. Tröskeln är
+`kTroskel()` (avsnitt 1): kurvan är något som ritas, och skärmen visar den. Modellen skattas med alla intervall, och
+dess golv är `statGolv()` (avsnitt 5). Rapporten och utskriften tar inte med kurvan.
 
 **Löneöversyns summor.** I Löneöversyns blad *Fördelning* och i utfallstabellen i exportläget har en grupp under
 tröskeln sin rad med BAS-intervall, yrke, antal och andel kvinnor; medianerna och kostnaden maskeras. Kostnaden för
@@ -118,7 +129,10 @@ inte säger något om kostnaden; spillover-listan tar inte med en invikt grupp. 
 det gäller och varför (`_fcUtfallsrader`, `_fcUtfallsNot` i `36-loneoversyn.js`). *Varav till kvinnodominerade
 grupper* står bara när de maskerade kvinnodominerade grupperna och de övriga maskerade grupperna var för sig är tomma
 eller omfattar minst `kTroskel()` personer, eller när en av dem är tom; annars ett streck (`_fcVaravKvDom`). En egen
-riktad rad (regel R2) har sitt belopp i *Sammanfattning* som förut.
+riktad rad (regel R2) har sitt belopp i *Sammanfattning* som förut. Scenariojämförelsen A/B följer samma regel: ett
+sparat scenario bär sina grupper med påslag, och dess *Till kv-dom* prövas med `_fcVaravKvDom` mot den tröskel som
+gäller när jämförelsen visas, annars ett streck (`_renderScenarioCompare`). Scenarierna lämnar inte verktyget; de
+finns bara i minnet och i fliken.
 
 **En punkt per person.** Utanför Tabeller och egna vyer ritas och exporteras en persons punkt i ett spridningsdiagram
 bara när personens grupp (yrke inom BAS) och personens kön i gruppen når tröskeln (`individLitenFor`). Antalen räknas på
@@ -275,8 +289,7 @@ filen innehåller lönedata och ska hanteras som personuppgifter.
 ## 8. Reglerna R1–R5
 
 Fem regler för könsuppdelade mått utöver avsnitt 2 (ADR-38). Beteckningarna R1–R5 hör till de här reglerna och ska
-inte förväxlas med regelmatrisens R-nummer i [`regler.md`](regler.md), som är en annan nummerserie. Testernas egna
-R-märkning följer inte heller den här numreringen rakt av (avsnitt 10).
+inte förväxlas med regelmatrisens R-nummer i [`regler.md`](regler.md), som är en annan nummerserie.
 
 - **R1. Regressionens ojusterade steg döljs när ett kön är under tröskeln.** Första steget i den stegvisa uppdelningen
   (*Endast kön*) är samma slags mått som det råa gapet. `_regStegForRedovisning(reg)` lämnar ut stegen utan det första,
@@ -313,10 +326,10 @@ R-märkning följer inte heller den här numreringen rakt av (avsnitt 10).
 - **R4. Lönerevisionssimulatorn är borttagen** (2026-10, ADR-50). Det den kunde — begränsa till ett kön och en
   lönegräns, "höj till" — gör en riktad rad i Löneöversyn, som följer R2: en rad som berör färre personer än tröskeln är
   användarens egen simulering, beloppet visas på raden med noten om enskildas löner. Lönegapet före och efter kräver
-  tröskeln för varje kön (`_konFarRedovisasFor`). Vaktas av C3 och röktest.
+  tröskeln för varje kön (`_konFarRedovisasFor`). Vaktas av R4, C3 och röktest.
 - **R5. Löneöversyns tröskelmål följer tröskeln** (`_forecastThreshold`; beslut 2026-10-16): lyftet i procent till
   kvinnor och dess kostnad (kvinnornas lönesumma gånger procentsatsen) visas bara när varje kön i urvalet når tröskeln
-  (`_konFarRedovisasFor`), annars ett streck med `_konUtelamnatNot()`. Vaktas av `tests/troskelbeslut.test.js`.
+  (`_konFarRedovisasFor`), annars ett streck med `_konUtelamnatNot()`. Vaktas av R5 i `tests/troskelbeslut.test.js`.
 
 ## 9. Utdata och vakter
 
@@ -338,23 +351,25 @@ utdata och dess skydd, står i riskanalysen (`docs/dataskydd/riskanalys.md` §6.
 | ZIP-filens Excel-fil | Avsnitt 2 och 7 | I4; I3 |
 | ZIP-filens bilder | Avsnitt 2 och 4 (ADR-48) | Bildernas innehåll prövas inte (avsnitt 11); `tests/ktroskel-bilder.test.js` prövar meningen under 10 |
 | Tabell-CSV för varje tabell med CSV-knapp | Avsnitt 2 och 7 | I4 |
-| Diagramdata för varje ritat diagram, och kopiorna i Alla diagram | `diagramkarnan.md` §1 och §7 | I4 (kopiorna ska vara källans, rad för rad); differentialtesterna i `tests/diagramritare.test.js` |
+| Diagramdata för varje diagram som diagramkärnan har ritat, och kopiorna i Alla diagram | `diagramkarnan.md` §1 och §7 | I4 (diagrammen ur kärnans register, och ett test kräver att varje ritat diagram har en väg; kopiorna ska vara källans, rad för rad); differentialtesterna i `tests/diagramritare.test.js` |
 | Tabeller och egna vyer: tabellens CSV och urklipp, diagrammets bild och diagramdata | Avsnitt 4 (ADR-14) | I4 med rutan urkryssad; `tests/kanonymitet.test.js` (Utforskas export; rutan låst av paketet); `tests/utforska.test.js` |
 | Gruppdossierns textkopia, för varje valbar grupp | Avsnitt 2 och 7 | I4; `tests/ktroskel-utdata.test.js` (par) |
 | BAS-dossierns textkopia, för varje valbart intervall | Avsnitt 2 | I4; `tests/basdossier.test.js` |
 | Robusthetspanelen i Exportera | Avsnitt 2, kandidatparen | I4; `tests/ktroskel-utdata.test.js` |
 | Löneläget: statistikens matchning och överblickens diagram | Grupper som når tröskeln | I4 |
-| Konfigurationsfilen (hela, årsbokslutet, importprofilerna) och importprofilerna som JSON | Bara aggregat och rubriknamn; bokslutet i exportläget (ADR-54) | I4; I5 (sakliga skäl); `tests/ktroskel-utdata.test.js` (konfigurationsfilen) |
+| Konfigurationsfilen (hela, årsbokslutet, importprofilerna) och importprofilerna som JSON | Bara aggregat och rubriknamn; bokslutet i exportläget (ADR-54) | I4; I8 (sakliga skäl); `tests/ktroskel-utdata.test.js` (konfigurationsfilen) |
 | Förra årets bokslut: rapportunderlagets block, rapportens avsnitt och BAS-hantelns diagramdata | Den högre av årens trösklar (ADR-54) | I4 |
 | Förhandskontrollens råvärden | Bara på skärmen | I4 |
 | Var uppstår löneskillnaden med andra val av variabler | Skyddsregeln i ADR-22 och ADR-65 | I7 |
 | Underlaget (`figur.underlag`, *Räkna för*) | Avsnitt 1 | I6 |
-| Löneöversyn: kostnad per grupp, knappresultat, egna rader, tröskelmål | Regel R2, R4 och R5 | I1, I1b; R3 i `tests/ktroskel-regression.test.js`; `tests/troskelbeslut.test.js` |
+| Löneöversyn: kostnad per grupp, knappresultat, egna rader, tröskelmål | Regel R2, R4 och R5 | I1, I1b; R2 och R4 i `tests/ktroskel-regression.test.js`; R5 i `tests/troskelbeslut.test.js` |
 | Löneöversyns summor: bladen *Fördelning* och *Sammanfattning*, utfallstabellen i exportläget | Avsnitt 2 (Löneöversyns summor, ADR-70) | `tests/ktroskel-loneoversyn-summor.test.js` (en ensam person, två små grupper under tröskeln tillsammans, små grupper som når den, alla grupper under den, lika antal; *Varav*; egna riktade rader; skärmen) |
 | Regressionens BAS-effekter: rapportens bilaga (Word-utkastet, PDF-rapporten, utskriften) och regressionskortet i exportläget | Avsnitt 2 (BAS-effekterna, ADR-70) | `tests/ktroskel-bas-effekter.test.js` (ett intervall och ett referensintervall med 4 personer, i invariantens utdatavägar) |
+| Livscykelns lönekurva: diagramdatan, bilden, ZIP-filen, kopian i Alla diagram, fliken i exportläget och beräkningsbeviset | Avsnitt 2 (livscykelns lönekurva, ADR-70) | `tests/ktroskel-livscykel.test.js` (ett valt intervall med 4 personer: kurvans egna vägar och invariantens utdatavägar; ett valt intervall över tröskeln; skärmen) |
+| Löneöversyns scenariojämförelse A/B i exportläget | Avsnitt 2 (Löneöversyns summor, ADR-70) | `tests/ktroskel-loneoversyn-scenarier.test.js` (*Varav* som streck: differensen mot utfallet; scenariot sparat på skärmen och i exportläget; *Varav* som står; övriga kolumner; att scenarierna inte följer med i konfigurationsfilen) |
 | Löneöversyns förslag ur kandidatparen (*Föreslå riktade potter*, mål-läget, känslighetskurvan), deras rader i Excel-exporten och konfigurationsfilen | Avsnitt 1 och regel R2 (ADR-69): den inställda tröskeln, också på skärmen | `tests/loneoversyn-forslag-troskel.test.js` (jämförelseyrket eller det kvinnodominerade yrket under tröskeln, höjd tröskel på skärmen, inläst konfigurationsfil; ett yrke med två jämförelseyrken: en rad, och förslag ur det lilla paret, äldre filer med en rad per jämförelseyrke och en ensam rad ur det lilla paret tas bort); `tests/loneoversyn.test.js` (ett par per yrke); I1 i `tests/ktroskel-invarianter.test.js`; `tests/ktroskel-utdata.test.js`; `tests/troskelbeslut.test.js`. Inte I4: riggens underlag har inga kandidatpar (avsnitt 11) |
 | Regressionskortet (ojusterat steg, förklarad andel) | Regel R1 | R1 i `tests/ktroskel-regression.test.js` (samma vägar som I4, med 7 män i underlaget) |
-| Ålder & karriär | Regel R3 | R4 i `tests/ktroskel-regression.test.js`; `tests/troskelbeslut.test.js` (trendlinjen för hela urvalet) |
+| Ålder & karriär | Regel R3 | R3 i `tests/ktroskel-regression.test.js`; `tests/troskelbeslut.test.js` (trendlinjen för hela urvalet) |
 | Könsuppdelade mått för hela organisationen och per BAS | Avsnitt 2 | C2, C3, C4, C6 |
 | Stämplarna för undantagen | Avsnitt 4 och 7 | I2 |
 | Omritning efter konfigurationsfil och organisationspaket | Avsnitt 3 | I5 i `tests/ktroskel-exporter.test.js` |
@@ -366,7 +381,8 @@ utdata och dess skydd, står i riskanalysen (`docs/dataskydd/riskanalys.md` §6.
 
 ## 10. Testernas märkning
 
-Testerna för tröskeln heter efter märkningar i sina `describe`-rubriker. Tre serier hör hit:
+Testerna för tröskeln heter efter märkningar i sina `describe`-rubriker. Tre serier hör hit, och R-märkningen är
+reglernas i avsnitt 8:
 
 | Märkning | Vad den prövar | Fil |
 |---|---|---|
@@ -375,25 +391,25 @@ Testerna för tröskeln heter efter märkningar i sina `describe`-rubriker. Tre 
 | I2 | Exporter som hör till ett undantag säger det, och notisen utlovar ingen aggregering | `tests/ktroskel-exporter.test.js` |
 | I3 | Tröskeln står i ZIP-filens Excel-fil och i utskriftens korta urval | `tests/ktroskel-exporter.test.js` |
 | I4 | Invarianten över flikar och exporter (nedan); dessutom att riggens lista över flikar är menyns | `tests/helpers/ktroskel-invariant.js`, körd vid 10 i `tests/ktroskel-invarianter.test.js` och vid 25 i `tests/ktroskel-invarianter-25.test.js`; listan i `tests/ktroskel-exporter.test.js` |
-| I5 | Två tester bär märkningen: konfigurationsfil och organisationspaket ritar om det som syns en gång när tröskeln ändras och tömmer resten; och sakliga skäl på en rad under tröskeln lämnar inte verktyget | `tests/ktroskel-exporter.test.js` respektive `tests/ktroskel-invarianter-25.test.js` |
+| I5 | Konfigurationsfil och organisationspaket ritar om det som syns en gång när tröskeln ändras och tömmer resten | `tests/ktroskel-exporter.test.js` |
 | I6 | Underlaget i exportläget, precis under och precis över skyddsregeln | `tests/ktroskel-invarianter.test.js` |
 | I7 | Var uppstår löneskillnaden med andra val av förklaringsvariabler, vid 10 och 25 | `tests/ktroskel-invarianter.test.js` |
+| I8 | Sakliga skäl på en rad under tröskeln lämnar inte verktyget | `tests/ktroskel-invarianter-25.test.js` |
 | C2 | Struktur per BAS visar inget könsgap när ett kön är under tröskeln | `tests/ktroskel-kon.test.js` |
 | C3 | Könsuppdelade mått för hela organisationen kräver tröskeln för varje kön | `tests/ktroskel-kon.test.js` |
 | C4 | Allt som visar gruppmått följer tröskeln när den ändras (den öppna fliken direkt, övriga när de öppnas) | `tests/ktroskel-kon.test.js` |
 | C5 | Bladet Lönepolitik i Excel (alla flikar) följer tröskeln som fliken | `tests/ktroskel-kon.test.js` |
 | C6 | Räkneexemplet i kronor per år bara när båda könen når tröskeln | `tests/ktroskel-kon.test.js` |
-| R1 | Regressionens ojusterade steg kräver tröskeln för varje kön (regel R1) | `tests/ktroskel-regression.test.js` |
-| R2 | Löneöversynens scenariojämförelse maskerar ett rågap som sparats vid en lägre tröskel (lönegapet före och efter, regel R4) | `tests/ktroskel-regression.test.js` |
-| R3 | En egen riktad rad på en grupp under tröskeln är tillåten och får en upplysning (regel R2) | `tests/ktroskel-regression.test.js` |
-| R4 | Ålder & karriär följer regeln för könsuppdelade mått (regel R3) | `tests/ktroskel-regression.test.js` |
+| R1 | Regressionens ojusterade steg kräver tröskeln för varje kön | `tests/ktroskel-regression.test.js` |
+| R2 | En egen riktad rad på en grupp under tröskeln är tillåten och får en upplysning | `tests/ktroskel-regression.test.js` |
+| R3 | Ålder & karriär följer regeln för könsuppdelade mått | `tests/ktroskel-regression.test.js` |
+| R4 | Löneöversynens scenariojämförelse maskerar ett rågap som sparats vid en lägre tröskel (lönegapet före och efter) | `tests/ktroskel-regression.test.js` |
+| R5 | Löneöversyns tröskelmål (lyft i procent och kostnad) kräver tröskeln för varje kön | `tests/troskelbeslut.test.js` |
 
-Det finns ingen C1. Testernas R1–R4 följer alltså inte reglernas numrering i avsnitt 8 utom för R1. Regel R5
-(tröskelmålet) vaktas av `tests/troskelbeslut.test.js` utan märkning, och regel R4 av C3 och röktest. Två andra serier
-med samma bokstäver hör inte hit: ritarens regler R1–R11 i `tests/diagramritare.test.js` och I2, I4 och I5 i
-`tests/smoke-vyer.test.js`. De övriga testerna i `tests/ktroskel*.test.js`, `tests/kanonymitet.test.js` och
-`tests/troskelbeslut.test.js` heter efter det de prövar. `tests/ktroskel-utan-alder.test.js` hör till regeln om ålder
-(ADR-64), inte till tröskeln.
+Det finns ingen C1. Regel R4 vaktas också av C3 och röktest. Två andra serier med samma bokstäver hör inte hit:
+ritarens regler R1–R11 i `tests/diagramritare.test.js` och I2, I4 och I5 i `tests/smoke-vyer.test.js`. De övriga
+testerna i `tests/ktroskel*.test.js`, `tests/kanonymitet.test.js` och `tests/troskelbeslut.test.js` heter efter det de
+prövar. `tests/ktroskel-utan-alder.test.js` hör till regeln om ålder (ADR-64), inte till tröskeln.
 
 **Fixturerna.** Alla bygger på grupper där alla har samma "omöjliga" lön, ett sentinelvärde, så att varje gruppaggregat
 är lika med det värdet och ett värde i utdata bara kan komma ur den gruppen.
@@ -417,7 +433,15 @@ utan att någon kommer ihåg att testa den. `samlaUtdata` ritar varje flik i men
 varje export i avsnitt 9 mot `fonsterKon` vid 10 och vid 25. Invarianten kräver att utdata finns för varje väg (en tom
 väg fäller testet), att skärmen visar grupperna och könen under tröskeln, och att ingen enskild lön, ingen lön för en
 grupp under tröskeln, ingen lön för ett kön under tröskeln, inget könsgap för en grupp där ett kön är under tröskeln
-och inget av förhandskontrollens råvärden finns i det som lämnar verktyget. Undantagna vyer (`EXPORTLAGE_UNDANTAG`,
+och inget av förhandskontrollens råvärden finns i det som lämnar verktyget. Diagrammen tas ur diagramkärnans eget
+register (`_rfBehallare`, `diagramkarnan.md` §3), inte ur en lista eller en väljare: riggen väntar in det som ritas
+senare (kvantilregressionens intervall i bakgrunden, `_regKvantilKlar`, och livscykelns kurva i nästa bildruta), läser
+registret efter ritningen på skärmen, i Alla diagram, i exportläget och med förra årets bokslut, och läser varje diagram i
+ett och samma exportläge sedan flikarna har ritats om i det (`exportSakraAlla`, som ZIP-filen). Ett test kräver att varje
+diagram i registret har en väg med diagramdata, eller en väg som säger att det inte har något att exportera (det ritas inte
+i exportläget, eller allt i det hör till grupper under tröskeln), utom de namngivna undantagen nedan och diagram märkta
+`markeraUtanExport`. Riggen sparar en ögonblicksbild i *Spara och jämför år*, så att jämförelsens diagram ritas; övriga
+diagram ritas i sitt standardläge. Undantagna vyer (`EXPORTLAGE_UNDANTAG`,
 `UNDANTAGNA_VYER`) och låddiagrammet per kön (`INDIVIDDIAGRAM`) söks inte igenom. Vad invarianten prövar och inte
 prövar står i huvudet i `tests/helpers/ktroskel-invariant.js` och i riskanalysen §6.5.
 
@@ -432,20 +456,40 @@ inställningen (standardvärdet).
   andelar och namn för en grupp under tröskeln vaktas inte av den; de omfattas inte av skyddet (avsnitt 2, ADR-70).
   Golven i antal (avsnitt 4, ADR-57) vaktas av egna tester, `tests/aidbas.test.js`, `tests/smoke-aidbas.test.js` och
   `tests/diagramvyer-marken.test.js`, inte av I4.
-- **Differenser.** I4 söker tal som står i utdatan, inte tal som går att räkna fram ur andra. Löneöversyns summor och
-  regressionens BAS-effekter prövas därför för sig (avsnitt 9). Differenser mellan olika exporter prövas inte: den
-  invikta gruppens median före påslaget kan stå i en annan tabell (gruppen når tröskeln), och med påslagets
-  procentsats ger antal gånger median en uppskattning av dess kostnad. Scenariojämförelsen A/B visar ett sparat
-  scenarios *Varav till kvinnodominerade grupper* som det sparades.
+- **Differenser.** I4 söker tal som står i utdatan, inte tal som går att räkna fram ur andra. Löneöversyns summor,
+  scenariojämförelsen A/B och regressionens BAS-effekter prövas därför för sig (avsnitt 9). Differenser mellan olika
+  exporter prövas inte: den invikta gruppens median före påslaget kan stå i en annan tabell (gruppen når tröskeln), och
+  med påslagets procentsats ger antal gånger median en uppskattning av dess kostnad.
 - **Innehållet i bilder prövas inte.** ZIP-filens bilder, utskriftens bilder och Word-utkastets bilder går inte att
   läsa i testet; riggen tar bort bilderna ur utskriften före sökningen. `tests/ktroskel-bilder.test.js` prövar bara
   meningen om sänkt tröskel.
 - **Undantagen ligger utanför.** Likvärdigt arbete i fliken, Tabeller och egna vyer med rutan, Personer att granska,
   extremvärdeslistan och låddiagrammet per kön söks inte igenom (avsnitt 4).
-- **Exportvägarna i riggen listas för hand.** `samlaUtdata` räknar upp varje export; ett test kräver bara att riggens
-  flikar är menyns. En ny export som inte läggs till i riggen prövas inte. Definition of Done kräver att den läggs till
+- **Exportvägarna i riggen listas för hand.** `samlaUtdata` räknar upp varje export utom diagrammen, som tas ur
+  diagramkärnans register; ett test kräver bara att riggens flikar är menyns och att varje ritat diagram har en väg. En ny
+  export som inte läggs till i riggen prövas inte. Definition of Done kräver att den läggs till
   (`.github/CONTRIBUTING.md` punkt 3, regel R1 i `regler.md`).
 - **Riktade rader på små grupper.** Riggen lägger inga egna riktade rader i Löneöversyn; regel R2 prövas för sig.
   Riggens underlag har heller inga kandidatpar i likvärdigt arbete, så Löneöversyns förslag (ADR-69) prövas inte av
   I4 utan av `tests/loneoversyn-forslag-troskel.test.js`. Ett par med en grupp under tröskeln i riggen skulle ändra
   underlaget för alla vägar som I4 söker igenom.
+- **Modelltal känns inte igen.** I4 söker sentinelvärden, och livscykelns kurva är modellens tal för det valda
+  intervallet, inte gruppens löner. Med felet från lagningen av kurvan återinfört och ett intervall med 6 personer valt
+  står kurvan i invariantens väg för `lifecycle-chart`, men I4 faller inte. Riggen ritar kurvan för det förvalda
+  intervallet (det största); kurvan för ett litet intervall prövas i `tests/ktroskel-livscykel.test.js`, som söker efter
+  kurvans egna tal. Detsamma gäller regressionens BAS-effekter och dess ojusterade steg: med båda omaskade i
+  exportläget (läckprov 2026-11-14) står effekterna för riggens små intervall i fliken, Word-utkastet och utskriften,
+  men I4 faller inte; `tests/ktroskel-bas-effekter.test.js` och R1 i `tests/ktroskel-regression.test.js` faller.
+- **Diagram som riggens underlag inte ritar.** Testet om att varje ritat diagram har en väg ser bara det som står i
+  registret. Hanteln per yrkesgrupp med förra årets bokslut (`chart-arsjamforelse`) ritas inte, eftersom riggens bokslut
+  inte ger den några rader. Lönehistogrammet per kön och Var uppstår löneskillnaden ritas på skärmen men inte i
+  exportläget med riggens underlag, och deras vägar säger att det inte finns något att exportera; histogrammets
+  diagramdata prövas alltså inte med innehåll.
+- **Andra slag av utdata.** Tabellerna med CSV-knapp räknas upp ur knapparna i sidan (`[data-csv-table]`), inte ur ett
+  register. Varje tabell läses genom exportgrinden med sitt id, så en omritning gör inte att den hoppas över, men en
+  tabell vars knapp inte står i sidan när riggen läser (bara efter ett val eller i en dialog) kommer inte med, och inget
+  test kräver att uppräkningen är fullständig. Gruppdossierns och BAS-dossierns textkopior byggs för varje valbar grupp
+  och intervall med samma funktioner som kopieringsknappen, inte ur den öppnade dialogen; dialogerna ritar inga diagram.
+  Beräkningsbevisen visas bara på skärmen och har ingen exportväg. Av knappresultaten körs robusthetspanelen och
+  Löneöversyns åtgärder och känslighet; Löneöversyns förslag ur kandidatparen och Var uppstår löneskillnaden med andra
+  val av variabler prövas för sig (avsnitt 9). Tabellernas urklipp är samma rader som deras CSV.

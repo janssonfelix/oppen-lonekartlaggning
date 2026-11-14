@@ -33,7 +33,10 @@ direkt vid laddning (händelsekopplingar, `const`) körs i den här ordningen.
 | `03-ikoner.js` | Linjeikonerna (`ikon`): ett bildspråk i stället för bildtecken; statusmärken med egen form |
 | `04-ordlista.js` | Ordlistan, symbolförklaringen och metodtexten om AID (`AID_METODTEXT`) |
 | `05-tabeller-och-lankar.js` | Beräkningspaneler (audit), sorterbara (underrader följer sin rad) och hopfällbara tabeller, växeln *Fler kolumner* för breda tabeller (`flerKolumner`; grundvyn gömmer sekundära kolumner, exporterna tar alla), `navigateTo`, korslänkar, stapelceller |
-| `06-k-anonymitet-och-dataminimering.js` | `K_STANDARD`, `kTroskel()`, `statGolv()`, `sattKTroskel()` (ADR-38), maskeringsnoter, SCB-klass, vitlistade fält, normalisering, PII-detektor |
+| `06-k-troskel.js` | Tröskeln för minsta gruppstorlek: `K_STANDARD`, `kTroskel()`, `statGolv()`, `sattKTroskel()` (ADR-38), könsuppdelade mått och par för redovisning, stämplarna, diagramnoterna och omritningen (se `docs/utveckling/k-troskeln.md`) |
+| `06-kvinnoandel-referens.js` | Den nationella kvinnoandelen per AID ur SKR:s personalstatistik (`nationellAidKlass`, `skrForklaring`), reserv i likvärdighetsanalysen |
+| `06-maskeringsnoter.js` | Maskeringsnoterna: `kMaskNote`, `kSamladNote` |
+| `06-uppgiftsminimering.js` | Uppgiftsminimeringen: vitlistade fält (`ALLOWED_FIELDS`), normalisering (`extractMinimalRecord`), detektorn för känsliga kolumner (`detectSensitiveColumns`) |
 | `07-standardinstallningar.js` | Standardvärden för prioritering och kostnad, BAS-gränsen (`BAS_MAX`, ADR-21), den neutrala standardprofilen (inga färdiga profiler, ADR-28), profiletiketter, namnen på organisationen och jämförelsestatistiken (`orgNamn`, `jmfNamn`, ADR-36) |
 | `08-version.js` | **AUTO-GENERERAD** ur `VERSION`: `APP_VERSION`, `APP_BUILD_DATE` |
 | `09-lib-speglar.js` | **AUTO-GENERERAD** spegel av `src/lib/` |

@@ -102,7 +102,7 @@ Vitest, med omkring 3 400 tester i drygt 100 filer:
 - rena `src/lib/`-moduler och CSV-parsningen;
 - jsdom-röktest av varje vy (ADR-7): `tests/smoke.test.js` med det delade fönstret och ett dussintal
   `tests/smoke-*.test.js` per område;
-- k-tröskeln i tio `tests/ktroskel*.test.js` med riggen i `tests/helpers/ktroskel-rigg.js`; gränssnittet i
+- k-tröskeln i fjorton `tests/ktroskel*.test.js` med riggen i `tests/helpers/ktroskel-rigg.js`; gränssnittet i
   `tests/granssnitt*.test.js` (riggen `tests/helpers/granssnitt-rigg.js`) och diagramvyerna i
   `tests/diagramvyer*.test.js` (riggen `tests/helpers/diagramvyer-rigg.js`);
 - axe-a11y (ADR-10, `tests/a11y.test.js`);

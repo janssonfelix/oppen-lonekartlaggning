@@ -3,7 +3,7 @@
  *
  * Riggen (fixturer, fönster och sökfunktioner) ligger i tests/helpers/ktroskel-rigg.js; sviten är delad i
  * flera filer så att Vitest fördelar den över flera arbetare. Invarianten (tests/helpers/ktroskel-invariant.js)
- * körs vid 25 i tests/ktroskel-invarianter-25.test.js, med sakliga skäl (I5): förberedelsen tar omkring en minut,
+ * körs vid 25 i tests/ktroskel-invarianter-25.test.js, med sakliga skäl (I8): förberedelsen tar omkring en minut,
  * så de två förberedelserna ligger i var sin fil.
  *
  * Vaktar: S4 (docs/utveckling/regler.md)

@@ -70,8 +70,10 @@ utöver de beslutade golven; den som gör kartläggningen ansvarar för vad som 
 *Vakt:* invarianten I4, `tests/helpers/ktroskel-invariant.js`, ritar flikarna i exportläget och bygger exporterna
 vid tröskeln 10 (`tests/ktroskel-invarianter.test.js`) och 25 (`tests/ktroskel-invarianter-25.test.js`);
 differentialtesterna i `tests/diagramritare.test.js` kräver att det som lämnar verktyget är identiskt med en figur
-där de små punkterna tagits bort; `tests/ktroskel-bas-effekter.test.js` (regressionens BAS-effekter) och
-`tests/ktroskel-loneoversyn-summor.test.js` (Löneöversyns summor) prövar två lönemått som I4 inte ser.
+där de små punkterna tagits bort; `tests/ktroskel-bas-effekter.test.js` (regressionens BAS-effekter),
+`tests/ktroskel-loneoversyn-summor.test.js` (Löneöversyns summor), `tests/ktroskel-livscykel.test.js` (livscykelns
+lönekurva) och `tests/ktroskel-loneoversyn-scenarier.test.js` (scenariojämförelsen A/B) prövar lönemått som I4 inte
+ser.
 *Vaktas inte:* invarianten letar efter de små gruppernas lönevärden, så antal, andelar och namn vaktas inte av den
 (de omfattas inte av skyddet, ADR-70), och inte heller ett lönemått som bara går att räkna fram som en differens;
 golven i antal (ADR-57) har egna tester. Innehållet i bilder prövas inte. De beslutade undantagen ligger utanför (`docs/dataskydd/dataskydd.md` §3). Vad mer

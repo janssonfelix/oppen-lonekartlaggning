@@ -622,7 +622,7 @@ ytans färg; axelsiffror är dämpade. Mönster (tunna sneda streck, små pricka
 Etiketter sätts på det som behöver namnges, inte på allt: trattdiagrammet namnger högst sex grupper.
 
 **Förbehåll under diagrammet.** Ett metodförbehåll står i en egen not under diagrammet (`_setDiagramMetodNot` i
-`06-k-anonymitet-och-dataminimering.js`), efter k-noten och utan att skriva över den, och samma mening står under
+`06-k-troskel.js`), efter k-noten och utan att skriva över den, och samma mening står under
 diagrammet i Word och PDF (`metodNot` i `RM_DIAGRAM`). Trattdiagrammet med färre än tio grupper har ett
 (`LA_TRATT_GLEST`). Under ett diagram där två punkter med var sitt konfidensintervall jämförs ska det stå att
 intervall som överlappar inte visar att skillnaden saknas och inte kan läggas ihop till ett intervall för skillnaden;

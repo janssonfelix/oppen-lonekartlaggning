@@ -1,5 +1,5 @@
 /**
- * K-tröskeln som inställning: ett kön under tröskeln inuti en grupp över den (fixturen, C2–C5).
+ * K-tröskeln som inställning: ett kön under tröskeln inuti en grupp över den (fixturen, C2–C6).
  *
  * Riggen (fixturer, fönster och sökfunktioner) ligger i tests/helpers/ktroskel-rigg.js; sviten är delad i
  * flera filer så att Vitest fördelar den över flera arbetare.

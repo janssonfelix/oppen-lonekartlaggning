@@ -69,7 +69,7 @@ härleds ur den av ett verktyg; de skriver inte av den. Varje sak prövas av **e
 | Artefakten och dess kontrollsumma | `dist/oppen-lonekartlaggning.html` och `dist/RELEASE.txt` (`npm run bundle`) | demosidan, SBOM | artefaktgrinden i CI: en färsk build ska ge samma `dist/` |
 | Det granskade bygget och granskningsdatumen | rad 3–4 i `docs/dataskydd/riskanalys.md`; *Granskad mot koden* i `docs/dataskydd/dataskydd.md` | förs in vid release (README, *Släppa en version*); teknisk-plan §9 punkt 17b hänvisar | release-grinden |
 | Kommandona för kontrollsumman | `VERIFIERING` i `tools/release.mjs` | `RELEASE.txt` (bygget), `SECURITY.md`, körguiden §0 | `tests/release.test.js` |
-| k-tröskelns standardvärde | `K_STANDARD` i `src/app/06-k-anonymitet-och-dataminimering.js` | dokumenten skriver talet | `tests/dokumentation-struktur.test.js` |
+| k-tröskelns standardvärde | `K_STANDARD` i `src/app/06-k-troskel.js` | dokumenten skriver talet | `tests/dokumentation-struktur.test.js` |
 | Bibliotekens versioner och kontrollsummor | filerna i `vendor/` och `vendor/SHA256SUMS` | `src/licenser.txt`, *Om verktyget*, `TREDJEPARTSLICENSER.md`, SBOM | `tests/sakerhet.test.js` |
 | Arkitekturbesluten | `docs/utveckling/arkitekturbeslut.md` (besluten och indextabellen) | kod, tester och dokument anger numret | `tests/dokumentation-struktur.test.js` |
 | Lagrummen | `docs/utveckling/lagrum.md` | övriga dokument anger kapitel | `tests/dokumentation-sprak.test.js` |

@@ -418,13 +418,15 @@ describe('k-tröskeln i gränssnittet', () => {
     });
 });
 
+// Stämplarna och meningen om sänkt tröskel, här och i "de verkliga vägarna" nedan, prövas på den lilla fixturen
+// (fonsterLitet): de beror på tröskeln, inte på vilka grupper som finns, och rapportunderlaget har samma slags block.
 describe('k-tröskeln i utdata', () => {
     const STAMPEL_10 = 'Minsta gruppstorlek för redovisning: 10.';
     const STAMPEL_6 = 'Minsta gruppstorlek för redovisning: 6. Tröskeln är sänkt från standardvärdet 10.';
     const metodrad = w => w.__methodAppendixData().find(r => r[0] === 'Minsta gruppstorlek för redovisning');
 
     it('vid standard: metodbilagan, Word-utkastet och sammanfattningen anger 10', () => {
-        const w = fonster(null);
+        const w = fonsterLitet(null);
         expect(w.eval('kStampel()')).toBe(STAMPEL_10);
         expect(w.eval('_kSanktNot()')).toBe('');
         expect(metodrad(w)[1]).toBe('10 personer. Grupper med färre redovisas inte i det som lämnar verktyget (gäller inte likvärdighetsanalysen); på skärmen visas alla grupper.');
@@ -434,7 +436,7 @@ describe('k-tröskeln i utdata', () => {
         expect(w.__ruTillText(block.find(b => b.id === 'struktur'))).not.toContain('Minsta gruppstorlek');
     });
     it('sänkt värde, utan att någon flik öppnats: varje utdata bär värdet och meningen om sänkning', () => {
-        const w = fonster(6);
+        const w = fonsterLitet(6);
         expect(w.eval('_kSanktNot()')).toBe(STAMPEL_6);
         expect(metodrad(w)[1]).toContain('6 personer.');
         expect(metodrad(w)[1]).toContain('Tröskeln är sänkt från standardvärdet 10.');
@@ -445,13 +447,13 @@ describe('k-tröskeln i utdata', () => {
         expect(w.eval('_kSidfot("Lönekartläggning 2026 — UTKAST")')).toBe('Lönekartläggning 2026 — UTKAST · minsta gruppstorlek 6 (standard 10)');
     });
     it('vid standard: CSV får stämpeln, urklipp och sidfot lämnas orörda', () => {
-        const w = fonster(null);
+        const w = fonsterLitet(null);
         expect(w.eval('_csvMedStampel([["a"],[1]])')).toEqual([['a'], [1], [], [STAMPEL_10]]);
         expect(w.eval('_tsvMedStampel([["a"],[1]])')).toEqual([['a'], [1]]);
         expect(w.eval('_kSidfot("x")')).toBe('x');
     });
     it('diagramdata: stämpeln står i spårbarhetsraden, inte dubbelt i CSV', () => {
-        const w = fonster(6);
+        const w = fonsterLitet(6);
         const gd = w.document.createElement('div');
         gd.id = 'chart-test';
         w.document.body.appendChild(gd);
@@ -520,7 +522,7 @@ describe('k-tröskeln i utdata: de verkliga vägarna', () => {
 
     it('gruppdossierns text slutar med stämpeln vid 6 och saknar den vid 10', () => {
         for (const [k, stampel] of [[6, STAMPEL_6], [10, null]]) {
-            const w = fonster(k);
+            const w = fonsterLitet(k);
             const d = w.__buildGruppdossier(w.__gruppdossierCandidates()[0].key);
             const txt = w.__gruppdossierAsText(d);
             if (stampel) expect(txt.endsWith('\n\n' + stampel)).toBe(true);
@@ -528,7 +530,7 @@ describe('k-tröskeln i utdata: de verkliga vägarna', () => {
         }
     });
     it('_downloadCSV: sista raden är stämpeln', async () => {
-        const w = fonster(null);
+        const w = fonsterLitet(null);
         let blob = null;
         w.URL.createObjectURL = b => { blob = b; return 'blob:x'; };
         w.alert = () => {};
@@ -539,7 +541,7 @@ describe('k-tröskeln i utdata: de verkliga vägarna', () => {
         expect(sistaRaden(text)).toBe(STAMPEL_10);
     });
     it.each([[6, true], [10, false]])('_copyMatrixToClipboard vid %i: stämpel=%s', (k, med) => {
-        const w = fonster(k);
+        const w = fonsterLitet(k);
         let kopierat = null;
         Object.defineProperty(w.navigator, 'clipboard', { configurable: true, value: { writeText: t => { kopierat = t; return Promise.resolve(); } } });
         w.__rader = rader;

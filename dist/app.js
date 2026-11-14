@@ -1828,6 +1828,8 @@ function _renderaOmAllaFlikarStegvis() {
     return _omritningPagar;
 }
 
+// SPDX-License-Identifier: MIT
+// Copyright 2026 Felix Jansson
 // ---------------------------------------------------------------------------
 // Nationell kvinnoandel per AID (SKR:s personalstatistik, kommuner och regioner)
 // ---------------------------------------------------------------------------
@@ -1881,6 +1883,8 @@ function nationellAidKlass(aid) {
     const klass = kl === 'kvinnodominerad' ? 'kvinnodominerat' : kl === 'mansdominerad' ? 'icke-kvinnodominerat' : 'blandat';
     return { kvAndel, klass, prefix: ref.prefix || s.slice(0, 3), niva: ref.niva, del: ref.del, kalla: _skrReferensInfo().kalla };
 }
+// SPDX-License-Identifier: MIT
+// Copyright 2026 Felix Jansson
 // Högst så många gruppnamn räknas upp i noten innan resten summeras.
 const K_NOTE_MAX_NAMN = 12;
 
@@ -1966,6 +1970,8 @@ function kSamladNote(namn, sammanhang) {
         + `så en könsjämförelse skulle peka ut enskilda.</p>`;
 }
 
+// SPDX-License-Identifier: MIT
+// Copyright 2026 Felix Jansson
 // ---- GDPR uppgiftsminimering (Art. 5(1)(c)) ----
 // Vitlista över tillåtna datafält. Verktyget extraherar ENBART dessa roller
 // från CSV. Alla övriga kolumner ignoreras helt även om de finns i filen.
@@ -24715,6 +24721,9 @@ function _forecastSaveScenario(slot) {
         targetsCount: state.forecast.targets.length,
         // Antalen följer med, så att jämförelsen kan pröva rågapet mot den tröskel som gäller när den visas.
         nKv, nMa,
+        // Grupperna med påslag (som utfallets rader), så att Till kv-dom kan prövas med samma regel som Varav till
+        // kvinnodominerade grupper mot den tröskel som gäller när jämförelsen visas (ADR-70, _renderScenarioCompare).
+        grupper: o.alloc.perGroup.filter(g => Math.abs(g.kostnad) > 0.5).map(g => ({ bas: g.bas, aid: g.aid, n: g.n, andelKv: g.andelKv, kostnad: g.kostnad })),
         summary: {
             använt: o.använt, totalKostnad: o.totalKostnad,
             rawGapFore: konOk ? o.rawGapFore : null, rawGapEfter: konOk ? o.rawGapEfter : null,
@@ -24738,7 +24747,11 @@ function _renderScenarioCompare() {
     const nu = _konAntal(getData());
     const konOk = s => _konFarRedovisas(s.nKv ?? nu.nKv, s.nMa ?? nu.nMa);
     const maskerat = [sc.A, sc.B].some(s => s && s.summary.rawGapEfter != null && !konOk(s));
-    const col = (s) => s ? `<td class="t-hoger">${kr(s.summary.använt)}</td><td class="t-hoger">${kr(s.summary.totalKostnad)}</td><td class="t-hoger">${andelAvMan(konOk(s) ? s.summary.rawGapEfter : null)}</td><td class="t-hoger">${pc(s.summary.oforklaratEfter)}</td><td class="t-hoger">${kr(s.summary.equityCost)}</td><td class="t-hoger">${s.summary.leapfrog}</td>` : '<td colspan="6" class="farg-dampad kursiv">ej sparat</td>';
+    // Till kv-dom följer regeln för Varav till kvinnodominerade grupper i utfallet, med samma funktion: i exportläget
+    // står talet bara när det inte ger en del av den samlade kostnaden för grupperna under tröskeln (ADR-70).
+    const K = kTroskel();
+    const tillKvDom = s => Array.isArray(s.grupper) ? _fcVaravKvDom(_fcUtfallsrader(s.grupper, K), s.summary.equityCost, K) : null;
+    const col = (s) => s ? `<td class="t-hoger">${kr(s.summary.använt)}</td><td class="t-hoger">${kr(s.summary.totalKostnad)}</td><td class="t-hoger">${andelAvMan(konOk(s) ? s.summary.rawGapEfter : null)}</td><td class="t-hoger">${pc(s.summary.oforklaratEfter)}</td><td class="t-hoger">${kr(tillKvDom(s))}</td><td class="t-hoger">${s.summary.leapfrog}</td>` : '<td colspan="6" class="farg-dampad kursiv">ej sparat</td>';
     host.innerHTML = `<table class="data-table fs-sm">
         <thead><tr><th>Scenario</th><th class="t-hoger">Använt/mån</th><th class="t-hoger">Total kostnad</th><th class="t-hoger">Kv. median i % av mäns, efter</th><th class="t-hoger">Oförkl. efter</th><th class="t-hoger">Till kv-dom</th><th class="t-hoger">Spillover</th></tr></thead>
         <tbody>
@@ -29845,6 +29858,14 @@ function renderLifecycleAnalysis() {
     // inget att analysera — och BAS:et räknas upp i noten under tabellen.
     const basVisade = basRows.filter(r => !isKMasked(r.n));
     const basUtelamnade = basRows.filter(r => isKMasked(r.n)).map(r => r.bas);
+    // Kurvan är modellens lönenivå i det valda intervallet, ett lönemått (ADR-70). Ett valt intervall som tabellen
+    // utelämnar får heller ingen kurva: ingen figur ritas, så varken bilden, diagramdatan eller kopian i Alla diagram
+    // bär den, och en not säger vilket intervall som är valt och varför. Det valda intervallet byts inte, så att
+    // exporten inte tyst visar något annat än skärmen. På skärmen syns allt (kTroskel() är 1, ADR-51).
+    const kurvaUtelamnad = _lifecycleKurvaUtelamnad(result, basRows);
+    const kurvNot = kurvaUtelamnad
+        ? `BAS ${result.fixBas} är valt. Lönekurvan visas inte här: intervallet har färre än ${kTroskel()} ${personOrd(kTroskel())}, och dess lönenivå skulle kunna peka ut enskilda. Personerna ingår fortfarande i modellen. Välj ett intervall med minst ${kTroskel()} ${personOrd(kTroskel())} för att se kurvan.`
+        : '';
 
     // ====== Modelljämförelse: vad livscykelmodellen tillför utöver huvudmodellen (justerat R²) ======
     // Står som en mening i tolkningen; talen finns i tabellen längst ned.
@@ -29929,7 +29950,8 @@ function renderLifecycleAnalysis() {
                 <label for="lifecycle-bas-select" class="fs-sm fw-600">Visa lönekurvor för BAS-intervall:</label>
                 <select id="lifecycle-bas-select" class="form-select pad-6-12 bredd-auto">${basOptions}</select>
             </div>
-            <div id="lifecycle-chart"></div>
+            <div id="lifecycle-chart"></div>${kurvNot ? `
+            <p class="k-mask-note" role="note">${esc(kurvNot)}</p>` : ''}
             <p class="livscykel-kohort-not text-dampad-xs lh-1_5 marg-8-0-0">${esc(KOHORT_FORBEHALL)}</p>
         </div>
 
@@ -30023,7 +30045,7 @@ function renderLifecycleAnalysis() {
         formler: [
             ['Modell', '<code>log(lön) ~ kön + ålder + ålder² + kön×ålder + kön×ålder² + C(BAS)</code>, skattad med minsta kvadratmetoden'],
             ['Standardfel', 'HC3-robusta standardfel (tål att lönespridningen skiljer mellan grupper)'],
-            ['BAS-intervall', `Indikatorvariabler; i kodningen är BAS ${esc(result.refBas)} referensintervall. Kurvan visas för det valda intervallet (${esc(result.fixBas)}), övriga intervall får sin nivå ur sin BAS-koefficient`],
+            ['BAS-intervall', `Indikatorvariabler; i kodningen är BAS ${esc(result.refBas)} referensintervall. Kurvan visas för det valda intervallet (${esc(result.fixBas)}), övriga intervall får sin nivå ur sin BAS-koefficient${kurvaUtelamnad ? `. Här visas ingen kurva: det valda intervallet har färre än ${kTroskel()} ${personOrd(kTroskel())}` : ''}`],
             ['Skillnad kvinnor mot män', '<code>(exp(skillnaden på log-skalan) − 1) × 100</code> vid varje ålder; kvinnors lön i % av mäns är 100 plus skillnaden'],
             ['Skuggade band', '95 % konfidensintervall för den predicerade lönen'],
             ['Säkerställd förändring', 'Kön×ålder eller kön×ålder² med p under 0,10 (tolkningsregeln). Stjärnorna i modelljämförelsen: * p under 0,05, ** p under 0,01, *** p under 0,001']
@@ -30039,8 +30061,12 @@ function renderLifecycleAnalysis() {
 
     // Rita diagrammet efter DOM-uppdatering
     // I exportläget (ADR-51) ritas figuren direkt: exportgrinden läser den i samma varv som fliken ritas om.
-    if (typeof iExportLage === 'function' && iExportLage()) _renderLifecycleChart(result);
-    else requestAnimationFrame(() => _renderLifecycleChart(result));
+    // Ritningen på skärmen väntar en bildruta och ritar bara i behållaren den gällde: har fliken hunnit ritas om
+    // (i exportläget, där kurvan kan vara utelämnad) ritas ingenting.
+    const behallare = document.getElementById('lifecycle-chart');
+    if (kurvaUtelamnad || !behallare) { /* ingen figur: noten står i stället */ }
+    else if (typeof iExportLage === 'function' && iExportLage()) _renderLifecycleChart(result, behallare);
+    else requestAnimationFrame(() => { if (behallare.isConnected) _renderLifecycleChart(result, behallare); });
 
     // Koppla BAS-dropdown
     const sel = document.getElementById('lifecycle-bas-select');
@@ -30057,15 +30083,27 @@ function renderLifecycleAnalysis() {
             if (!row) return;
             if (isKMasked(row.n)) return;   // k-anonymitet: knappen ritas inte för
                                             // maskerade BAS, men vägen stängs även här
-            _openEvidenceModal(_evidenceForLifecycleBas(row, state._lifecycleCache.result));
+            const c = state._lifecycleCache;
+            _openEvidenceModal(_evidenceForLifecycleBas(row, c.result, _lifecycleKurvaUtelamnad(c.result, c.basRows)));
         });
     });
 }
 
 /**
- * Bygger bevis-payload för en BAS-rad i livscykelöversikten (B8).
+ * Visas ingen kurva för det valda intervallet? Ja när intervallet har färre än tröskeln (kTroskel(): i exportläget den
+ * inställda, på skärmen 1), räknat som översiktstabellen räknar sina rader, så att tabellen och kurvan följs åt.
  */
-function _evidenceForLifecycleBas(row, result) {
+function _lifecycleKurvaUtelamnad(result, basRows) {
+    const fix = (basRows || []).find(r => r.bas === result.fixBas);
+    return !!fix && isKMasked(fix.n);
+}
+
+/**
+ * Bygger bevis-payload för en BAS-rad i livscykelöversikten (B8). `utanKurva`: kurvan för det valda intervallet visas
+ * inte (`_lifecycleKurvaUtelamnad`); då skrivs ingen nivåfaktor mot det, eftersom raden delad med faktorn är det
+ * intervallets lönenivå.
+ */
+function _evidenceForLifecycleBas(row, result, utanKurva = false) {
     const fmtKr = v => v == null || !isFinite(v) ? '—' : Math.round(v).toLocaleString('sv-SE') + ' kr';
     const fmtPct = v => v == null || !isFinite(v) ? '—' : (v >= 0 ? '+' : '') + svPct(v, 1);
     return {
@@ -30075,7 +30113,9 @@ function _evidenceForLifecycleBas(row, result) {
             { label: 'BAS-intervall',                       value: row.bas },
             { label: 'Antal personer i BAS (organisation)',  value: row.n.toLocaleString('sv-SE') },
             { label: 'Visat BAS-intervall',                 value: result.fixBas, note: 'Intervallet som lönekurvan räknas för direkt. Övriga intervall får sin nivå ur sin BAS-koefficient.' },
-            { label: 'Nivåfaktor mot visat intervall',      value: result.basFaktor?.[row.bas] != null ? svTal(result.basFaktor[row.bas], 3) : '—', note: 'exp(β_BAS − β_visat); 1,000 för det visade intervallet.' },
+            utanKurva
+                ? { label: 'Nivåfaktor mot visat intervall',    value: '—', note: `Visas inte: kurvan för BAS ${result.fixBas} visas inte, eftersom intervallet har färre än ${kTroskel()} ${personOrd(kTroskel())}.` }
+                : { label: 'Nivåfaktor mot visat intervall',    value: result.basFaktor?.[row.bas] != null ? svTal(result.basFaktor[row.bas], 3) : '—', note: 'exp(β_BAS − β_visat); 1,000 för det visade intervallet.' },
             { label: '— Predikterad lön vid 25 år',         value: '' },
             { label: 'Kvinna',                              value: fmtKr(row.kv25) },
             { label: 'Man',                                  value: fmtKr(row.ma25) },
@@ -30103,8 +30143,8 @@ function _evidenceForLifecycleBas(row, result) {
  * Ritar livscykelanalysens diagram med diagramkärnan (ADR-39): två kurvor med 95 % KI som band.
  * Bandens gränser finns därmed i exporterad diagramdata.
  */
-function _renderLifecycleChart(r) {
-    ritaFigur('lifecycle-chart', _lifecycleFigur(r), { hojd: 380 });
+function _renderLifecycleChart(r, el) {
+    ritaFigur(el || 'lifecycle-chart', _lifecycleFigur(r), { hojd: 380 });
 }
 
 function _lifecycleFigur(r) {

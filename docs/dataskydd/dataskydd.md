@@ -94,7 +94,8 @@ Exporterna byter då inte läge.
   ut. Modellen räknas som förut med alla personer.
 - **Ålder & karriär:** i bilder och diagramdata följer flera mått regeln: löneskillnaderna (ojusterad och
   åldersjusterad), lutningen per kön, trendlinjerna med konfidensband och lådorna per kön. Där ett kön är under
-  tröskeln står ett streck, och en not under diagrammet säger vad som utelämnats.
+  tröskeln står ett streck, och en not under diagrammet säger vad som utelämnats. Livscykelns lönekurva för ett valt
+  BAS-intervall med färre än 10 personer ritas inte; en not säger vilket intervall som är valt.
 - **Spridningsdiagrammen:** i bilder och diagramdata finns en persons punkt bara när personens grupp (yrke inom
   BAS) och personens kön i gruppen når tröskeln. En not säger hur många som inte är med.
 - **Löneläget:** avsnittet mot ställningstagandet har en mellannivå i exporten. För grupper med 5 eller fler
@@ -112,8 +113,9 @@ tabellernas CSV, gruppdossiern och diagramdatan för de diagram som inte visar e
 tröskeln 10 och vid 25. Testerna kräver att ingen lön för en grupp under tröskeln, för ett kön under tröskeln
 eller för en enskild person finns i dem. Vid 5 prövas flikarna i exportläget, och att skärmen visar grupperna
 prövas för sig. Egna tester prövar regressionens ojusterade steg (med 7 män i underlaget). De prövar också
-Ålder & karriär, med 3 män i hela urvalet och med ett valt BAS med en man, regressionens BAS-effekter och att
-Löneöversyns summor inte ger en liten grupps kostnad som differens.
+Ålder & karriär, med 3 män i hela urvalet och med ett valt BAS med en man, livscykelns lönekurva för ett valt
+BAS-intervall under tröskeln, regressionens BAS-effekter och att Löneöversyns summor och scenariojämförelse inte ger
+en liten grupps kostnad som differens.
 Testerna prövar inte undantagen nedan eller bilder av diagram.
 
 Standardvärdet är 10. Användaren kan ändra det under *Inställningar* i sidhuvudet (*Minsta gruppstorlek för redovisning*),

@@ -19,7 +19,7 @@ regressionerna står i [`regressionsmodellen.md`](regressionsmodellen.md) §3.
 | Adaptern som läser appens tillstånd, fliken, diagrammen och flikens CSV- och Excel-export | `src/app/34-likvardigt-arbete.js` |
 | Inställningarna och deras standardvärden | `state.likvardighet` i `src/app/12-tillstand.js` |
 | Definitionen i appen (`kvDomNu`, `konsklassNu`, `aidbasDefinition`, `lvJamforelse`) | `src/app/45-aid-bas-tabeller.js` |
-| Reserven för kvinnoandel (`nationellAidKlass`) och regeln för paren utanför fliken (`_parForRedovisning`) | `src/app/06-k-anonymitet-och-dataminimering.js`, `src/lib/skrreferens.js` |
+| Reserven för kvinnoandel (`nationellAidKlass`) och regeln för paren utanför fliken (`_parForRedovisning`) | `src/app/06-kvinnoandel-referens.js` (`nationellAidKlass`), `src/app/06-k-troskel.js` (`_parForRedovisning`), `src/lib/skrreferens.js` |
 | Poängen ur lönefilen (`_deriveArbetsvarderingFromData`) | `src/app/32-filinlasning.js` |
 | Vakterna | avsnitt 9 |
 
