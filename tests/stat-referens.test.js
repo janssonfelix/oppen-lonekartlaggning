@@ -3,7 +3,7 @@
  *
  * tests/stat.test.js prövar egenskaper (brusfri data, symmetri, singularitet). Den här
  * filen prövar i stället SIFFRORNA på en fast fixtur, så att en felräkning i HC3,
- * t-fördelningen, kvantilregressionen eller Blinder-Oaxaca fångas.
+ * t-fördelningen, kvantilregressionen, Blinder-Oaxaca eller BH-korrigeringen fångas.
  *
  * Vaktar: R20, R21 (docs/utveckling/regler.md)
  *
@@ -28,6 +28,11 @@
  *     precision. Kontroller i skriptet: alla reducerade kostnader ≥ 0 (optimalitetsvillkoret), ingen störning
  *     ±1e-6/±1e-4 av någon koordinat sänker förlusten, och samma skript gav på den gamla rangdesignen ovan
  *     scipy/HiGHS-lösningen inom 2e-15 i varje β och i förlusten.
+ *   - BH-korrigeringen (2026-11-14): tests/fixtures/bh-justera-referens.json har q-värdena från
+ *     statsmodels.stats.multitest.multipletests(p, method='fdr_bh')[1] för fem påhittade p-vektorer (band med lika
+ *     p-värden, ett enda p-värde, tio osorterade, ett fall där monotoniseringen slår till, p-värden nära och lika med
+ *     1). Räknade med tests/fixtures/ref-bh-justera.py (python3 -I; statsmodels 0.15.0, scipy 1.18.1, numpy 2.5.4,
+ *     Python 3.14.8) i en tillfällig venv utanför repot.
  *
  * Uppmätt avvikelse i verktyget (toleranserna nedan speglar den, utom för tDistCdf):
  *   - fitOLS: β, vcovClassic, vcovHC3, R², σ² inom relativt 1e-12 av statsmodels.
@@ -40,6 +45,7 @@
  *     lösningen vid τ = 0,5 men under 0,002 procentenheter vid τ = 0,1 och 0,9. Under den
  *     rapporteringsgräns på 0,5 procentenheter uppdraget satte; algoritmen är oförändrad.
  *   - Blinder-Oaxaca: komponenterna inom 1e-12.
+ *   - bhJustera: q-värdena inom 1e-12 av statsmodels.
  *   - quantileRegressionAtAllTau på indikatormodellen: könskoefficienten inom 0,001 procentenheter av LP-lösningen
  *     (bara BAS: 0,012 vid τ = 0,1), förlusten inom relativt 4e-5. Vid τ = 0,5 är LP-optimum inte unikt (medianen i
  *     ett intervall med jämnt antal personer är ett spann), så IRLS landar på en annan punkt på samma optimala yta:
@@ -50,7 +56,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { fitOLS, tDistCdf, pValue2Sided } from '../src/lib/stat.js';
+import { fitOLS, tDistCdf, pValue2Sided, bhJustera } from '../src/lib/stat.js';
 import { basRangFn } from '../src/lib/likvardighet.js';
 import { createAppWindow } from './helpers/app-harness.js';
 
@@ -59,6 +65,7 @@ const las = f => JSON.parse(readFileSync(join(here, 'fixtures', f), 'utf8'));
 const fx = las('stat-referens.json');
 const ref = las('stat-referens-varden.json');
 const refKv = las('stat-referens-kvantil.json');
+const refBh = las('bh-justera-referens.json');
 
 const X = fx.design.map(d => [1, d.kv, d.alderC, d.basC]);
 const y = fx.design.map(d => d.y);
@@ -343,5 +350,18 @@ describe('Blinder-Oaxaca på vald modell (ADR-56)', () => {
     });
     it('endast kön: ingen uppdelning (null)', () => {
         expect(kor({ bas: false, alder: false, yrkesgrupp: false, skal: '' })).toBeNull();
+    });
+});
+
+describe('BH-korrigeringen mot statsmodels', () => {
+    const fall = Object.entries(refBh.fall);
+    it('referensen har fallen band, ett, osorterad och monotonisering', () => {
+        expect(Object.keys(refBh.fall)).toEqual(expect.arrayContaining(['band', 'ett', 'osorterad', 'monotonisering']));
+        expect(refBh.fall.osorterad.p.length).toBeGreaterThanOrEqual(10);
+    });
+    it.each(fall)('%s: bhJustera ger statsmodels fdr_bh inom 1e-12, i indataordningen', (_, { p, q }) => {
+        const bh = bhJustera(p);
+        expect(bh).toHaveLength(q.length);
+        bh.forEach((v, i) => expect(Math.abs(v - q[i])).toBeLessThan(1e-12));
     });
 });

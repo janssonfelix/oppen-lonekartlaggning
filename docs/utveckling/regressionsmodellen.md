@@ -462,7 +462,7 @@ Filen ändras aldrig.
 | Fil | Prövar |
 |---|---|
 | `tests/stat.test.js` | OLS, HC3, `tDistCdf`, `tQuantile` mot t-tabellen, `pValue2Sided` och matrisalgebran: egenskaper; `bhJustera` mot handräknade fall |
-| `tests/stat-referens.test.js` | Siffrorna mot fixturerna: OLS och HC3, t-fördelningen, kvantilregressionen (rang- och indikatordesignen), den stegvisa uppdelningen och Blinder-Oaxaca, också på vald modell |
+| `tests/stat-referens.test.js` | Siffrorna mot fixturerna: OLS och HC3, t-fördelningen, kvantilregressionen (rang- och indikatordesignen), den stegvisa uppdelningen och Blinder-Oaxaca, också på vald modell; `bhJustera` mot statsmodels `multipletests(method='fdr_bh')` |
 | `tests/regression.test.js` | `src/lib/regression.js` direkt: förklaringsmodellen som värde, stegen på vald modell, vad varje variabel tillför, `kvantilDesign` och `quantileRegressionAtAllTau`, modellerna utan ålder och radfiltret |
 | `tests/smoke-innehall.test.js` | Appen: steget *+ Yrkesgrupp* (likheten med en indikator per grupp, kortet och budgeten), BAS-indikatorerna i kortet, kvantilregressionens intervall, gräns och tolkning, förklaringsmodellen i tillstånd, konfigurationsfil, huvudtal, panel och avsnitt |
 | `tests/rapportunderlag.test.js` | Frasen och noteringen om det bortvalda; uppdelningens block, med standardvalets text ordagrant |
@@ -480,5 +480,4 @@ Golden-facit och docx-facit (`tests/exports.golden.test.js`) är oförändrade i
 standardmodellen räknar som före ADR-56.
 
 **Det som inte prövas för sig:** frihetsgradsskalningen när yrkesgrupp är vald in i huvudtalet (avsnitt 4) har inget
-eget test av talen. BH-korrigeringens q-värden (avsnitt 7) prövas mot handräknade fall i `tests/stat.test.js`; ett
-referensfall mot statsmodels `multipletests(method='fdr_bh')` saknas.
+eget test av talen.

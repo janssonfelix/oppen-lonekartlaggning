@@ -51,6 +51,13 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   följde en myndighets praxis utan att peka ut någon källa. Meningen är struken; gränsen och korrigeringen står kvar
   som förut.
 
+### Utveckling
+
+- **BH-korrigeringen prövas mot statsmodels.** `bhJustera` prövades bara mot handräknade fall. Referenstestet
+  jämför nu q-värdena med `multipletests(method='fdr_bh')` i statsmodels för fem p-vektorer (lika p-värden, ett enda
+  p-värde, tio osorterade, ett fall där monotoniseringen slår till och p-värden nära 1), inom 1e-12. Skriptet som
+  räknade står i `tests/fixtures/ref-bh-justera.py`; inga tal i verktyget har ändrats.
+
 ## 2026.11.14
 
 ### Gränssnitt
