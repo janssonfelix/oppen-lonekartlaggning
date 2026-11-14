@@ -460,6 +460,27 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ### Dataskydd
 
+- **Skyddet gäller lönemått (ADR-70).** Minsta gruppstorlek gäller lönemått, som förut. Antal och andelar, också per
+  kön, för en grupp eller ett kön under tröskeln omfattas inte av skyddet utöver de golv som redan är beslutade
+  (tabellerna per AID-kod och BAS-intervall och könsfördelningen per BAS-intervall från fem personer, Lönelägets
+  mellannivå); den som gör kartläggningen bedömer vad som lämnas ut. Dataskyddsbeskrivningen, riskanalysen, körguiden
+  och Om verktyget säger det.
+- **Regressionens BAS-effekter följer tröskeln (ADR-70).** Bilagan om den justerade löneskillnaden i Word-utkastet,
+  PDF-rapporten och utskriften, och regressionskortets tekniska specifikation i exportläget, skrev ut varje
+  BAS-intervalls effekt, nivån mot referensintervallet, också för intervall med färre personer än tröskeln; effekten
+  ligger då nära deras genomsnittliga lönenivå. Nu namnges sådana intervall i en not utan värden, och är
+  referensintervallet självt under tröskeln står ingen effekt. Modellen skattas som förut med alla intervall, och
+  skärmen visar allt.
+- **Löneöversyns summor röjer ingen liten grupps kostnad (ADR-70).** I bladet *Fördelning* var kostnaden maskerad för
+  en grupp under tröskeln, men *Använt* i *Sammanfattning* minus de visade kostnaderna gav ändå de små gruppernas
+  kostnad, och med ett påslag i procent deras lönesumma; för en grupp med en person personens lön. Detsamma gällde
+  *Varav till kvinnodominerade grupper*. Nu står kostnaden för de maskerade raderna samlad på raden *Kostnad för
+  grupper under tröskeln*, så att bladets kostnader summerar till *Använt*. Omfattar den raden färre personer än
+  tröskeln viks den minsta visade gruppens kostnad in, och den gruppens medianer maskeras; räcker inte alla grupper
+  står ingen kostnad per grupp. De små grupperna har kvar sina rader med antal och andel kvinnor, och de maskerade
+  raderna står sist i BAS-ordning. *Varav till kvinnodominerade grupper* visas som streck när den skulle ge en del av
+  den samlade kostnaden. Utfallstabellen i exportläget (*Som i exporten*) visar samma rader; skärmen visar allt som
+  förut.
 - **Löneöversyns förslag följer den inställda tröskeln, också på skärmen (ADR-69).** *Föreslå fördelning mot
   skillnaderna i likvärdigt arbete*, målet för skillnaden och känslighetskurvan tar bara kandidatpar där både det
   kvinnodominerade yrket och jämförelseyrket når minsta gruppstorlek, så att en föreslagen rad inte kan bära en liten

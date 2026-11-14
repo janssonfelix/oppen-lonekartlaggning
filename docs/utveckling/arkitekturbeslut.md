@@ -86,6 +86,7 @@ Datum står där beslutet har ett.
 | ADR-65 | Var uppstår löneskillnaden: valbara förklaringsvariabler | Gällande | 2026-11-10 |
 | ADR-68 | Arkitekturbeslutens form: beslut i mall, gällande lydelse i referenserna | Gällande | 2026-11-13 |
 | ADR-69 | Löneöversyns förslag följer den inställda tröskeln | Gällande | 2026-11-13 |
+| ADR-70 | Skyddet gäller lönemått; antal och andelar är handläggarens ansvar | Gällande | 2026-11-14 |
 
 ## Besluten
 
@@ -1141,3 +1142,32 @@ fält i konfigurationsfilen (kräver ett nytt fält och löser inte att potten r
 (utdata och vakter).
 *Vakt:* `tests/loneoversyn-forslag-troskel.test.js`, `tests/loneoversyn.test.js` (ett par per yrke), I1 i
 `tests/ktroskel-invarianter.test.js`, `tests/ktroskel-utdata.test.js` och `tests/troskelbeslut.test.js`.
+
+**ADR-70 — Skyddet gäller lönemått; antal och andelar är handläggarens ansvar.** Beslut 2026-11-14.
+*Beslut:* Minsta gruppstorlek (S4) gäller lönemått. Antal och andelar för en grupp eller ett kön under tröskeln,
+också per kön, omfattas inte av skyddet utöver de golv som redan är beslutade (tabellerna per AID-kod och
+BAS-intervall och könsfördelningen per BAS-intervall från fem personer, ADR-57; Lönelägets mellannivå); handläggaren
+bevakar vad som lämnas ut. Två följder som gäller lönemått: regressionens BAS-effekter, ett intervalls lönenivå mot
+referensintervallet, skrivs inte ut för ett BAS-intervall under tröskeln i det som lämnar verktyget, och är
+referensintervallet självt under tröskeln skrivs ingen effekt ut (`_basEffekterForRedovisning`); och Löneöversyns
+export röjer inte en liten grupps kostnad genom en differens. I bladet *Fördelning* och utfallstabellen i
+exportläget har en grupp under tröskeln sin rad med antal och andel kvinnor, men kostnaden för de maskerade raderna
+står samlad på en rad som omfattar minst tröskelns antal personer; räcker inte de små grupperna viks den minsta
+visade gruppens kostnad in, med maskerade medianer, och räcker inte alla grupper står ingen kostnad per grupp
+(`_fcUtfallsrader`). *Varav till kvinnodominerade grupper* står bara när den inte ger en del av den samlade
+kostnaden (`_fcVaravKvDom`).
+*Motiv:* Den som gör kartläggningen har lönefilen och ansvarar för vad som sprids. Antal per grupp och kön behövs
+för att kartläggningen ska gå att läsa och står redan i många tabeller. En effekt i regressionen för ett intervall
+med få personer ligger däremot nära deras genomsnittliga lönenivå, och en kostnad som går att räkna fram ur summorna
+är en lönesumma gånger påslaget; för en grupp med en person är det personens lön. Båda är lönemått. Den invikta
+gruppens medianer maskeras eftersom antalet gånger skillnaden mellan gammal och ny median ligger nära gruppens
+kostnad; med ett påslag i procent och jämna löner i gruppen är felet en liten del av den lilla gruppens kostnad.
+*Avvisat:* en generell regel om att en grupp under tröskeln inte får ha en egen rad med antal eller andel, med en
+invariant över all utdata. Den prövades 2026-11-13 och togs bort: den skulle röra nästan varje tabell (antal per kön
+står överallt), och antal är inte det skyddet finns för. För Löneöversyns summor: att stryka kostnadskolumnen så
+snart en liten grupp finns (bladet förlorar sitt innehåll för att skydda en rad), att låta den invikta gruppens
+medianer stå (differensen blir en uppskattning nära den lilla gruppens kostnad) och att låta differensen stå som
+känd restrisk.
+*Gäller i dag:* `k-troskeln.md` §2 (vad skyddet omfattar, BAS-effekterna och Löneöversyns summor), §9 och §11.
+*Vakt:* `tests/ktroskel-bas-effekter.test.js` och `tests/ktroskel-loneoversyn-summor.test.js`; I1 i
+`tests/ktroskel-invarianter.test.js`.

@@ -148,6 +148,9 @@ avsnitt 6). Blinder-Oaxaca kodar BAS på samma sätt men med en egen regel för 
 `basList` hela listan. `basEffekter` är null när BAS inte är med i den skattade modellen (bortvald eller borttagen av
 reservsteget) och när yrkesgrupp inom BAS är vald, eftersom BAS då ingår i gruppnivåerna. `basRef` är null när BAS inte
 är med. Kortet visar referensintervallet och en rad per indikator, och rapportens bilaga nivåerna mot referensen.
+`basN` är antalet personer per intervall i modellen. I det som lämnar verktyget redovisas bara effekterna för intervall
+som når tröskeln; de övriga namnges i en not, och är referensintervallet under tröskeln redovisas ingen effekt
+(`_basEffekterForRedovisning`, ADR-70; `k-troskeln.md` §2). Modellen skattas med alla intervall.
 
 **Regressionerna per BAS-intervall** har BAS i urvalet, inte i modellen: en regression per intervall (avsnitt 7).
 

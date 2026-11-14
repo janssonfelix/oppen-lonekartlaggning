@@ -90,7 +90,8 @@ Exportera en lönefil (CSV eller XLSX) med dessa kolumner:
    **Minsta gruppstorlek för redovisning:** fältet ligger under **Inställningar** i sidhuvudet (värdet
    *Minsta gruppstorlek* i flikarnas översta rad är en länk dit). På skärmen visas alla grupper. Gränsen gäller
    det som lämnar verktyget (Excel, Word, PDF, ZIP, CSV, urklipp, diagrambilder, rapportunderlaget). Standardvärdet är 10: lönemått för grupper med färre personer än så redovisas
-   inte där. Du kan ändra värdet till ett heltal från 2 (högre skärper skyddet). Ett värde under 10
+   inte där. Antal och andelar, också per kön, kan däremot stå i exporterna för små grupper, till exempel antalet
+   kvinnor och män i ett yrke med få personer; bedöm själv vad som kan spridas. Du kan ändra värdet till ett heltal från 2 (högre skärper skyddet). Ett värde under 10
    kräver att du bekräftar och visas som en varning överst på alla flikar. Värdet står i
    metodbilagan och i exporterad data. Under 10 står dessutom meningen *Tröskeln är sänkt från
    standardvärdet 10.* på det som kan spridas för sig, till exempel diagrambilder, kopierade tabeller
@@ -417,9 +418,13 @@ rubrikraden, också när det är hopfällt.
    gruppens prioritet utan skillnaden mellan könen. I **Löneöversyn** får du lägga en egen riktad rad på
    vilken grupp som helst, också en grupp under tröskeln. Det är din egen simulering. Radens
    belopp visas då på raden och ingår i summorna, även i Löneöversyns Excel-export (*Använt*,
-   *Riktat* och, för en kvinnodominerad grupp, *Varav till kvinnodominerade grupper*). För en
+   *Riktat* och, för en kvinnodominerad grupp, *Varav till kvinnodominerade grupper* när den visas). För en
    grupp med en enda person bygger beloppet alltså på den personens lön; verktyget säger det i
-   en not under raden. Tänk på det innan du delar exporten. Verktygets egna förslag (*Föreslå fördelning mot
+   en not under raden. Tänk på det innan du delar exporten. I exportens blad *Fördelning* har en grupp under
+   tröskeln sin rad med antal och andel kvinnor men utan medianer och kostnad; kostnaden för de grupperna står
+   samlad på raden *Kostnad för grupper under tröskeln*. Når de inte tröskeln tillsammans står också den minsta av
+   de övriga gruppernas kostnad där, och noten under bladet säger vilken; så går en liten grupps kostnad inte att
+   räkna fram ur summorna. Verktygets egna förslag (*Föreslå fördelning mot
    skillnaderna i likvärdigt arbete*, målet för skillnaden och känslighetskurvan) riktar däremot bara mot par där
    båda grupperna når tröskeln, också på skärmen, med en rad per yrke mot jämförelseyrket med störst skillnad. Ett
    förslag som inte längre säkert når tröskeln (efter en höjd tröskel eller ur en konfigurationsfil) tas bort, och det
