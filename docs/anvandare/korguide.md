@@ -386,7 +386,11 @@ rubrikraden, också när det är hopfällt.
    prioriteringsindexet in. Trösklarna är granskningsgränsen, *Börja här*-tröskeln och gränserna för uppföljning
    och över referensen. Raden *Trösklar och viktning* i fliken Prioritering säger om värdena är ändrade, och *Ändra*
    öppnar Inställningar där. **Handlingsplanen** förifylls ur de två; egna åtgärder läggs
-   till med *Lägg till rad* och följer med i exporterna som de förifyllda. Kortet **Samverkan & uppföljning** i
+   till med *Lägg till rad* och följer med i exporterna som de förifyllda. Kolumnen *Kostnaden avser*, direkt
+   efter kostnaden, säger vilken kostnad raden har: *Nå referensens median* för rader ur Prioritering och *Nå
+   jämförelseyrkets median* för kandidatpar i likvärdigt arbete. En egen rad har ingen beräknad kostnad, och cellen
+   är tom. Kolumnen står också i Excel-underlaget, utskriften, Word-utkastet, PDF-rapporten och Rapporttext, där
+   summan delas på de två slagen. Kortet **Samverkan & uppföljning** i
    Handlingsplan har momenten att bocka av och knapparna för **protokollet för gemensam lönebedömning** och
    **handlingsplanen** som Excel.
    Knappen **Sakliga skäl** på varje rad öppnar en dialog där du dokumenterar skälen till gruppens löneskillnad: en

@@ -6394,13 +6394,19 @@ function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
     }
     if (typ === 'handlingsplan') {
         const rader = u.rader || [];
+        // Summan lägger ihop två slag av kostnad; den delas med samma ord som kolumnen Kostnaden avser. Prioriteringens del
+        // är kostnad att nå referensen: löneläget mot referensen, inte könsskillnaderna (ADR-62).
+        const delar = [
+            u.summaReferens ? `${_kr(u.summaReferens)} kostnad att nå referensens median för grupperna under referensen (löneläget mot er referens, inte lönekartläggningens könsskillnader)` : '',
+            u.summaJamforelse ? `${_kr(u.summaJamforelse)} kostnad att nå jämförelseyrkets median för kandidatparen i likvärdigt arbete` : '',
+        ].filter(Boolean);
         const st = [`${_st(rader.length, 'förifylld åtgärd', 'förifyllda åtgärder')}` + (u.summa ? ` med en uppskattad kostnad på ${_kr(u.summa)} per år.` : '.')
-            // Prioriteringens del är kostnad att nå referensen: löneläget mot referensen, inte könsskillnaderna (ADR-62).
-            + (u.summaReferens ? ` Av den är ${_kr(u.summaReferens)} kostnad att nå referensen för grupperna under referensen (löneläget mot er referens, inte lönekartläggningens könsskillnader).` : '')];
+            + (u.summa && delar.length ? ` Av den är ${delar.join(' och ')}.` : '')];
         if (!rader.length) return blk('Handlingsplan', st, null);
         // Antal berörda: gruppens antal (för ett kandidatpar det kvinnodominerade yrkets); tomt för en egen rad.
-        const b = blk('Handlingsplan', st, { rubriker: ['Åtgärd', 'Grupp', 'Antal berörda', 'Underlag', 'Uppskattad kostnad per år'],
-            rader: rader.map(r => [r.atgard, r.grupp, r.antal == null ? '' : formatTal(r.antal), r.underlag, _kr(r.kostnad)]) });
+        // Kostnaden avser: vilken kostnad raden har (_hpKostnadAvser i appen); tomt för en egen rad.
+        const b = blk('Handlingsplan', st, { rubriker: ['Åtgärd', 'Grupp', 'Antal berörda', 'Underlag', 'Uppskattad kostnad per år', 'Kostnaden avser'],
+            rader: rader.map(r => [r.atgard, r.grupp, r.antal == null ? '' : formatTal(r.antal), r.underlag, _kr(r.kostnad), r.kostnadAvser || '']) });
         // Sakliga skäl (u.skal, ur handlingsplanen): en rad per skäl med gruppen på första raden, och summan per kategori.
         const sk = u.skal;
         if (sk && Array.isArray(sk.grupper) && sk.grupper.length && sk.perKategori) {

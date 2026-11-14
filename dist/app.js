@@ -8856,13 +8856,19 @@ function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
     }
     if (typ === 'handlingsplan') {
         const rader = u.rader || [];
+        // Summan lägger ihop två slag av kostnad; den delas med samma ord som kolumnen Kostnaden avser. Prioriteringens del
+        // är kostnad att nå referensen: löneläget mot referensen, inte könsskillnaderna (ADR-62).
+        const delar = [
+            u.summaReferens ? `${_kr(u.summaReferens)} kostnad att nå referensens median för grupperna under referensen (löneläget mot er referens, inte lönekartläggningens könsskillnader)` : '',
+            u.summaJamforelse ? `${_kr(u.summaJamforelse)} kostnad att nå jämförelseyrkets median för kandidatparen i likvärdigt arbete` : '',
+        ].filter(Boolean);
         const st = [`${_st(rader.length, 'förifylld åtgärd', 'förifyllda åtgärder')}` + (u.summa ? ` med en uppskattad kostnad på ${_kr(u.summa)} per år.` : '.')
-            // Prioriteringens del är kostnad att nå referensen: löneläget mot referensen, inte könsskillnaderna (ADR-62).
-            + (u.summaReferens ? ` Av den är ${_kr(u.summaReferens)} kostnad att nå referensen för grupperna under referensen (löneläget mot er referens, inte lönekartläggningens könsskillnader).` : '')];
+            + (u.summa && delar.length ? ` Av den är ${delar.join(' och ')}.` : '')];
         if (!rader.length) return blk('Handlingsplan', st, null);
         // Antal berörda: gruppens antal (för ett kandidatpar det kvinnodominerade yrkets); tomt för en egen rad.
-        const b = blk('Handlingsplan', st, { rubriker: ['Åtgärd', 'Grupp', 'Antal berörda', 'Underlag', 'Uppskattad kostnad per år'],
-            rader: rader.map(r => [r.atgard, r.grupp, r.antal == null ? '' : formatTal(r.antal), r.underlag, _kr(r.kostnad)]) });
+        // Kostnaden avser: vilken kostnad raden har (_hpKostnadAvser i appen); tomt för en egen rad.
+        const b = blk('Handlingsplan', st, { rubriker: ['Åtgärd', 'Grupp', 'Antal berörda', 'Underlag', 'Uppskattad kostnad per år', 'Kostnaden avser'],
+            rader: rader.map(r => [r.atgard, r.grupp, r.antal == null ? '' : formatTal(r.antal), r.underlag, _kr(r.kostnad), r.kostnadAvser || '']) });
         // Sakliga skäl (u.skal, ur handlingsplanen): en rad per skäl med gruppen på första raden, och summan per kategori.
         const sk = u.skal;
         if (sk && Array.isArray(sk.grupper) && sk.grupper.length && sk.perKategori) {
@@ -31122,6 +31128,18 @@ function _handlingsplanUnderlag(underlag) {
     return underlag;
 }
 
+/**
+ * Kolumnen Kostnaden avser: vilken kostnad raden har, härledd ur dess underlag (inget eget fält, och inget i
+ * konfigurationsfilen). Rader ur Prioritering har kostnaden att lyfta gruppen till referensens median, kandidatpar
+ * kostnaden att lyfta det kvinnodominerade yrket till jämförelseyrkets median; en egen rad har ingen beräknad kostnad
+ * och får en tom cell. Enda källan till orden: fliken, Excel, utskriften, rapportmodellen och rapportunderlaget.
+ * @param {string} underlag
+ */
+function _hpKostnadAvser(underlag) {
+    const u = _handlingsplanUnderlag(String(underlag ?? ''));
+    return u === HP_UNDERLAG_PRIO ? 'Nå referensens median' : u === HP_UNDERLAG_PAR ? 'Nå jämförelseyrkets median' : '';
+}
+
 // Ett fritextfält som liknar ett personnummer eller en e-postadress får en varning; texten står kvar.
 function _hpLiknarPersonuppgift(t) { return !!t && typeof _opLiknarPersonuppgift === 'function' && _opLiknarPersonuppgift(t); }
 function _hpUppdateraVarning() {
@@ -31315,14 +31333,14 @@ function renderHandlingsplanSeed() {
             : `<td>${esc(r[0])}</td><td>${esc(g)}</td>${antal}<td>${esc(r[2])}</td>`;
         return `<tr class="handlingsplan-seeded${egen ? ' handlingsplan-egen' : ''}">${forsta}`
             + `<td>${lista(`hp-${i}-sakligt`, n, 'sakligt', r[3], HP_SAKLIGT, `Sakliga skäl prövade?: ${g}`)} ${_hpSkalKnapp(n, g, seed.skillnader[i])}</td>`
-            + `<td class="t-hoger">${esc(fmtKr(r[4]))}</td>`
+            + `<td class="t-hoger">${esc(fmtKr(r[4]))}</td><td>${esc(_hpKostnadAvser(r[2]))}</td>`
             + `<td>${text(`hp-${i}-ansvarig`, n, 'ansvarig', r[5], 'Roll, t.ex. HR-chef', `Ansvarig: ${g}`)}</td>`
             + `<td>${text(`hp-${i}-tidsplan`, n, 'tidsplan', r[6], 'T.ex. lönerevisionen nästa år', `Tidsplan: ${g}`)}</td>`
             + `<td>${lista(`hp-${i}-status`, n, 'status', r[7], HP_STATUS, `Status: ${g}`)}</td></tr>`;
     }).join('');
     const emptyN = Math.max(5, 8 - seed.rows.length);
     const emptyHtml = Array.from({ length: emptyN }, () =>
-        '<tr class="handlingsplan-empty"><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>').join('');
+        '<tr class="handlingsplan-empty"><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>').join('');
     tbody.innerHTML = seededHtml + emptyHtml;
     _hpUppdateraVarning();
     const note = document.getElementById('handlingsplan-seed-note');
@@ -31386,18 +31404,19 @@ function _hpValideraKonfiguration(lista, varningar) {
 function exportHandlingsplan(...a) { return medExportLage(() => _exportHandlingsplanExport.apply(null, /** @type {any} */ (a))); }
 function _exportHandlingsplanExport() {
     if (typeof XLSX === 'undefined') { alert('Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.'); return; }
-    const header = ['Åtgärd', 'Grupp (yrke och BAS-intervall)', 'Antal berörda', 'Underlag', 'Sakliga skäl prövade?', 'Beräknad kostnad (kr/år, inkl. PO)', 'Ansvarig', 'Tidsplan (senast inom tre år)', 'Status',
+    const header = ['Åtgärd', 'Grupp (yrke och BAS-intervall)', 'Antal berörda', 'Underlag', 'Sakliga skäl prövade?', 'Beräknad kostnad (kr/år, inkl. PO)', 'Kostnaden avser', 'Ansvarig', 'Tidsplan (senast inom tre år)', 'Status',
         'Sakliga skäl (kategori och belopp)', 'Förklarad andel av skillnaden (%)'];
     const seed = _handlingsplanSeedRows();
     const prioCount = seed.prioCount, lvCount = seed.lvCount;
-    // Bladets kolumner i skärmens ordning: Antal berörda efter gruppen (tomt för en egen rad). Sist de sakliga skälen
-    // ("Marknad 800 kr; Erfarenhet 400 kr") och hur stor andel av gruppens medianskillnad de förklarar.
+    // Bladets kolumner i skärmens ordning: Antal berörda efter gruppen (tomt för en egen rad), Kostnaden avser efter
+    // kostnaden (tomt för en egen rad). Sist de sakliga skälen ("Marknad 800 kr; Erfarenhet 400 kr") och hur stor andel
+    // av gruppens medianskillnad de förklarar.
     const rows = seed.rows.map((r, i) => {
         const sk = _hpVarden(seed.nycklar[i]).skal || [];
         const sum = sk.length && _hpUtanBelopp(seed.nycklar[i], seed.minsta[i]) ? _hpBaraKategorier(sk) : _sakSammanstallning(sk, seed.skillnader[i]);
-        return [r[0], r[1], r[8] != null ? r[8] : '', ...r.slice(2, 8), _hpSkalText(sum.skal), sum.antal && sum.forklaradAndel != null ? Math.round(sum.forklaradAndel * 1000) / 10 : ''];
+        return [r[0], r[1], r[8] != null ? r[8] : '', ...r.slice(2, 5), _hpKostnadAvser(r[2]), ...r.slice(5, 8), _hpSkalText(sum.skal), sum.antal && sum.forklaradAndel != null ? Math.round(sum.forklaradAndel * 1000) / 10 : ''];
     });
-    for (let i = 0; i < 5; i++) rows.push(['', '', '', '', '', '', '', '', '', '', '']);   // tomma rader för manuella tillägg
+    for (let i = 0; i < 5; i++) rows.push(header.map(() => ''));   // tomma rader för manuella tillägg
 
     const guide = [
         ['Handlingsplan för jämställda löner — vägledning', ''],
@@ -31409,7 +31428,7 @@ function _exportHandlingsplanExport() {
         ['Samverkan', 'Arbetet ska göras i samverkan med arbetstagarna (lagen).'],
         ['', ''],
         ['Detta underlag', `Förifyllt med ${prioCount} grupp(er) under referens (Prioritering) och ${lvCount} kandidatpar i likvärdigt arbete.${seed.parNot ? ' ' + seed.parNot : ''}${seed.egenCount ? ` ${seed.egenCount} egna rader från fliken står sist.` : ''} Det som fyllts i på fliken Handlingsplan står med; fyll i resten av sakligt skäl, ansvarig, tidsplan och status. Raderna bygger på gruppmått — inga individdata.`],
-        ['Kostnad att nå referensen', 'Kostnaden för raderna ur Prioritering: vad det kostar att lyfta gruppen till referensens median. Det är löneläget mot er referens, inte lönekartläggningens könsskillnader. För kandidatparen är det kostnaden att lyfta det kvinnodominerade yrket till jämförelseyrkets median.'],
+        ['Kostnad att nå referensen', 'Kostnaden för raderna ur Prioritering: vad det kostar att lyfta gruppen till referensens median. Det är löneläget mot er referens, inte lönekartläggningens könsskillnader. För kandidatparen är det kostnaden att lyfta det kvinnodominerade yrket till jämförelseyrkets median. Kolumnen Kostnaden avser säger vilken av dem raden har.'],
         ['OBS', 'Det här är ett underlag. Du skriver dokumentationen i Word-utkastet.']
     ];
 
@@ -32381,9 +32400,10 @@ function _rmAvsnittenUtanUrval() {
     const atgarder = { id: 'atgarder', numrerad: true, rubrik: 'Åtgärder och tidsplan', utelamnat: [], delar: [
         dampad('Planerade lönejusteringar och andra åtgärder, med beslut, ansvar och tidsplan. Tabellen visar åtgärderna. Den tar med de grupper som ligger under referensen enligt prioriteringen och kandidatparen i likvärdigt arbete, med uppskattad kostnad och det som fyllts i på fliken Handlingsplan. För grupperna ur prioriteringen är kostnaden kostnad att nå referensen: löneläget mot er referens, inte lönekartläggningens könsskillnader.'),
         hp.length
-            ? { typ: 'tabell', kolumner: [{ rubrik: 'Grupp', typ: 'text' }, { rubrik: 'Antal berörda', typ: 'antal' }, { rubrik: 'Underlag', typ: 'text' }, { rubrik: 'Uppskattad kostnad', typ: 'krAr' }, { rubrik: 'Sakliga skäl prövade?', typ: 'fyllIn' }, { rubrik: 'Ansvarig', typ: 'fyllIn' }, { rubrik: 'Tidsplan (senast inom tre år)', typ: 'fyllIn' }, { rubrik: 'Status', typ: 'fyllIn' }],
+            ? { typ: 'tabell', kolumner: [{ rubrik: 'Grupp', typ: 'text' }, { rubrik: 'Antal berörda', typ: 'antal' }, { rubrik: 'Underlag', typ: 'text' }, { rubrik: 'Uppskattad kostnad', typ: 'krAr' }, { rubrik: 'Kostnaden avser', typ: 'text' }, { rubrik: 'Sakliga skäl prövade?', typ: 'fyllIn' }, { rubrik: 'Ansvarig', typ: 'fyllIn' }, { rubrik: 'Tidsplan (senast inom tre år)', typ: 'fyllIn' }, { rubrik: 'Status', typ: 'fyllIn' }],
                 // Antal berörda: gruppens antal (för ett kandidatpar det kvinnodominerade yrkets); tomt för en egen rad.
-                rader: hp.map(r => [r[1], r[8] != null ? r[8] : { text: '' }, r[2], r[4] ? Math.round(r[4]) : null, hpFalt(r[3]), hpFalt(r[5]), hpFalt(r[6]), hpFalt(r[7])]) }
+                // Kostnaden avser (_hpKostnadAvser): vilken kostnad raden har; tomt för en egen rad.
+                rader: hp.map(r => [r[1], r[8] != null ? r[8] : { text: '' }, r[2], r[4] ? Math.round(r[4]) : null, { text: _hpKostnadAvser(r[2]) }, hpFalt(r[3]), hpFalt(r[5]), hpFalt(r[6]), hpFalt(r[7])]) }
             : dampad(state.policy.length || state.statistik.length ? 'Inga grupper under referensen och inga kandidatpar att föra in i handlingsplanen.' : 'Inga prioriterade åtgärdsgrupper (inget ställningstagande eller ingen jämförelsestatistik inläst).'),
         ...rmSakligaSkalDelar(hpSkal, dampad),
         fyllIn('Besluta åtgärder, budget och tidsplan (lönejusteringar ska genomföras så snart som möjligt och senast inom tre år). Beskriv även förebyggande åtgärder.'),
@@ -33867,7 +33887,7 @@ function _rapportDiagramLista(harPar, exkluderade) {
 // redan bort par med en grupp under k, så raderna används som de är — en enda regel för
 // skärmen, Excel, utskriften och underlaget.
 function _rapportHpRader(seedRows) {
-    return seedRows.map(r => ({ atgard: r[0], grupp: r[1], antal: r[8] == null ? null : r[8], underlag: _handlingsplanUnderlag(r[2]), kostnad: r[4] }));
+    return seedRows.map(r => ({ atgard: r[0], grupp: r[1], antal: r[8] == null ? null : r[8], underlag: _handlingsplanUnderlag(r[2]), kostnad: r[4], kostnadAvser: _hpKostnadAvser(r[2]) }));
 }
 
 /** Alla textblock: avsnitt, yrkesgrupper, kandidatpar, förra året, per BAS-intervall och egna tabeller (visas i grupper). */
@@ -33930,6 +33950,7 @@ function _rapportunderlagBlockExport() {
         _ruAvsnittBlock('sektorer', { sektorer: _skSektorsTabell(d, { k, skrDel: _skrDel() }), andel: _skSektorernasAndel(d, { k }) }, opt),
         _ruAvsnittBlock('handlingsplan', { rader: hpRader, summa: hpRader.reduce((s, r) => s + (r.kostnad || 0), 0),
             summaReferens: hpRader.filter(r => r.underlag === HP_UNDERLAG_PRIO).reduce((s, r) => s + (r.kostnad || 0), 0),
+            summaJamforelse: hpRader.filter(r => r.underlag === HP_UNDERLAG_PAR).reduce((s, r) => s + (r.kostnad || 0), 0),
             ...(hpSkalBlock ? { skal: hpSkalBlock } : {}) }, opt),
     ];
     const referenser = referensOverblick();

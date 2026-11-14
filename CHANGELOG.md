@@ -25,6 +25,13 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   (*Säkerställd efter korrigering (q < 0,05)*). Försättsbladets antal, raden i bladet med exkluderade grupper och
   metodbladets rader om signifikans och multipel jämförelse följer. Korrigeringen räknas på ett ställe
   (`bhJustera` i `src/lib/stat.js`) för kortet, Att göra och protokollet; kortets och Att göras tal är oförändrade.
+- **Handlingsplanen säger vad kostnaden avser.** Kolumnen *Beräknad kostnad* bär två slag av kostnad: för rader ur
+  Prioritering kostnaden att lyfta gruppen till referensens median, för kandidatpar i likvärdigt arbete kostnaden att
+  lyfta det kvinnodominerade yrket till jämförelseyrkets median. Bara vägledningsbladet sade det. Nu har varje rad
+  kolumnen *Kostnaden avser* direkt efter kostnaden, med *Nå referensens median* eller *Nå jämförelseyrkets median*
+  och en tom cell för en egen rad: på fliken och i utskriften av mallen, i
+  Excel-underlaget, i åtgärdstabellen i Word-utkastet och PDF-rapporten och i Rapporttext. Rapporttextens summa delas
+  på de två slagen. Kolumnen härleds ur radens underlag; konfigurationsfilen är oförändrad, och inga tal har ändrats.
 
 ## 2026.11.14
 

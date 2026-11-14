@@ -29,7 +29,7 @@ function _rapportDiagramLista(harPar, exkluderade) {
 // redan bort par med en grupp under k, så raderna används som de är — en enda regel för
 // skärmen, Excel, utskriften och underlaget.
 function _rapportHpRader(seedRows) {
-    return seedRows.map(r => ({ atgard: r[0], grupp: r[1], antal: r[8] == null ? null : r[8], underlag: _handlingsplanUnderlag(r[2]), kostnad: r[4] }));
+    return seedRows.map(r => ({ atgard: r[0], grupp: r[1], antal: r[8] == null ? null : r[8], underlag: _handlingsplanUnderlag(r[2]), kostnad: r[4], kostnadAvser: _hpKostnadAvser(r[2]) }));
 }
 
 /** Alla textblock: avsnitt, yrkesgrupper, kandidatpar, förra året, per BAS-intervall och egna tabeller (visas i grupper). */
@@ -92,6 +92,7 @@ function _rapportunderlagBlockExport() {
         _ruAvsnittBlock('sektorer', { sektorer: _skSektorsTabell(d, { k, skrDel: _skrDel() }), andel: _skSektorernasAndel(d, { k }) }, opt),
         _ruAvsnittBlock('handlingsplan', { rader: hpRader, summa: hpRader.reduce((s, r) => s + (r.kostnad || 0), 0),
             summaReferens: hpRader.filter(r => r.underlag === HP_UNDERLAG_PRIO).reduce((s, r) => s + (r.kostnad || 0), 0),
+            summaJamforelse: hpRader.filter(r => r.underlag === HP_UNDERLAG_PAR).reduce((s, r) => s + (r.kostnad || 0), 0),
             ...(hpSkalBlock ? { skal: hpSkalBlock } : {}) }, opt),
     ];
     const referenser = referensOverblick();
