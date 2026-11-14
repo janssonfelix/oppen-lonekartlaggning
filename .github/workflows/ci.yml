@@ -1,8 +1,12 @@
 name: CI
 
-# Kvalitetsgrind. Två jobb:
-#   quality — lint, typkontroll, mojibake-skydd, kontroll av att den incheckade artefakten
-#             faktiskt motsvarar källan och sist hela testsviten.
+# Kvalitetsgrind. Fyra jobb:
+#   grindar — lint, typkontroll, mojibake-skydd och kontroll av att den incheckade artefakten
+#             faktiskt motsvarar källan.
+#   tester  — hela testsviten, delad på fyra parallella jobb (Vitests --shard). Varje testfil körs
+#             i exakt ett av dem; tillsammans är de `npm run test:full`.
+#   quality — grön först när grindar och alla fyra delar av tester är gröna. Det är den kontroll
+#             som regeln för main kräver, så namnet står kvar.
 #   browser — röktest av den byggda single-file-filen i riktig Chromium, Firefox och WebKit.
 #             Diagrammen (diagramkärnan på D3, ADR-39) ritas med äkta D3 också i
 #             jsdom-testerna; här prövas PNG-exporten, som kräver en riktig canvas,
@@ -32,7 +36,7 @@ permissions:
 # Stegen är låsta på commit-SHA (versionen står som kommentar), så att en flyttad tagg hos
 # tredjepartsåtgärden inte kan ändra vad som körs. Uppdatera SHA och kommentar tillsammans.
 jobs:
-  quality:
+  grindar:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -79,10 +83,45 @@ jobs:
           fi
           echo "Artefakten och RELEASE.txt är byte-identiska med en färsk build ($fore)."
 
-      # Sist, eftersom den tar längst tid (omkring tolv minuter): de billiga grindarna ovan
-      # ska kunna fälla en push innan sviten ens startat.
-      - name: Testsviten (Vitest, hela)
-        run: npm run test:full
+  # Hela sviten tar omkring tolv minuter i ett jobb, eftersom CI-maskinen har få kärnor. Delad på
+  # fyra jobb körs samma tester parallellt. Vitest fördelar filerna efter sökvägen,
+  # så en ny testfil hamnar i en del utan att listas. fail-fast är av, så att varje del rapporterar
+  # sina fel också när en annan del har fallit.
+  tester:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        del: [1, 2, 3, 4]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # Node 22.12 eller senare krävs, se jobbet grindar.
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '22'
+
+      - name: Install (deterministiskt)
+        run: npm ci
+
+      - name: Testsviten (Vitest, del ${{ matrix.del }} av 4)
+        run: npm run test:full -- --shard=${{ matrix.del }}/4
+
+  # Samlar grindarna och sviten i en kontroll. always() gör att jobbet körs, och faller, också när
+  # ett jobb det väntar på har fallit eller avbrutits; annars hoppades det över, och en överhoppad
+  # kontroll räknas som godkänd av regeln för main.
+  quality:
+    if: always()
+    needs: [grindar, tester]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Grindarna och alla delar av sviten är gröna
+        env:
+          GRINDAR: ${{ needs.grindar.result }}
+          TESTER: ${{ needs.tester.result }}
+        run: |
+          echo "grindar: $GRINDAR, tester: $TESTER"
+          [ "$GRINDAR" = "success" ] && [ "$TESTER" = "success" ]
 
   # Samma röktest i de tre webbläsarmotorer som verktyget stöder (Chrome/Edge, Firefox,
   # Safari). WebKit kräver systembibliotek som bara finns färdiga på Ubuntu, så det körs här.

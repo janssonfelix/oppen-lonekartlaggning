@@ -398,21 +398,36 @@ describe('dokumentation: en Definition of Done, och npm run kontroll kör CI:s s
         const slut = resten.search(new RegExp(`^#{1,${nivå}} `, 'm'));
         return slut < 0 ? resten : resten.slice(0, slut);
     };
-    // Jobbet quality i ci.yml: från dess rad till nästa jobb på samma indrag.
-    const qualitySteg = () => {
+    // Ett jobb i ci.yml: från dess rad till nästa jobb på samma indrag.
+    const jobb = namn => {
         const ci = läs('.github/workflows/ci.yml');
-        const start = ci.search(/^ {2}quality:/m);
+        const start = ci.search(new RegExp(`^ {2}${namn}:`, 'm'));
+        expect(start, namn).toBeGreaterThan(-1);
         const resten = ci.slice(start + 1);
         const slut = resten.search(/^ {2}\w[\w-]*:/m);
-        return [...(slut < 0 ? resten : resten.slice(0, slut)).matchAll(/npm run ([\w:-]+)/g)].map(m => m[1]);
+        return slut < 0 ? resten : resten.slice(0, slut);
     };
+    // Jobben som samlas i kontrollen quality: grindarna och den delade sviten.
+    const qualitySteg = () => ['grindar', 'tester']
+        .flatMap(namn => [...jobb(namn).matchAll(/npm run ([\w:-]+)/g)].map(m => m[1]));
     const kontroll = () => import('../tools/kontroll.mjs');
 
-    it('varje "npm run …" i CI-jobbet quality ingår i STEG i tools/kontroll.mjs', async () => {
+    it('varje "npm run …" i CI-jobben grindar och tester ingår i STEG i tools/kontroll.mjs', async () => {
         const ci = qualitySteg();
         expect(ci.length).toBeGreaterThan(0);
+        expect(ci).toContain('test:full');
         const { STEG } = await kontroll();
         expect(ci.filter(n => !STEG.includes(n))).toEqual([]);
+    });
+    it('sviten är delad så att varje del körs, och quality väntar på grindarna och alla delar', () => {
+        const tester = jobb('tester');
+        const delar = /del: \[([\d, ]+)\]/.exec(tester)[1].split(',').map(s => Number(s.trim()));
+        const antal = Number(/--shard=\$\{\{ matrix\.del \}\}\/(\d+)/.exec(tester)[1]);
+        expect(delar).toEqual(Array.from({ length: antal }, (_, i) => i + 1));
+        const quality = jobb('quality');
+        expect(quality).toMatch(/if: always\(\)/);
+        expect(quality).toMatch(/needs: \[grindar, tester\]/);
+        for (const n of ['grindar', 'tester']) expect(quality).toContain(`needs.${n}.result`);
     });
     it('STEG har också bygget och webbläsarjobbets röktest, och varje steg finns i package.json', async () => {
         const { STEG, SNABBA_STEG } = await kontroll();

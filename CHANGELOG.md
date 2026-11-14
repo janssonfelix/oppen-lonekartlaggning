@@ -100,6 +100,11 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ### Utveckling
 
+- **CI kör testsviten delad på fyra parallella jobb.** Sviten tog omkring elva minuter i ett jobb. Jobbet `tester`
+  kör den nu i fyra delar med Vitests `--shard`; varje testfil körs i exakt en del, så testerna är desamma.
+  Grindarna (lint, typkontroll, teckenkodningen, artefakten) ligger i jobbet `grindar`, och `quality` är grön först
+  när grindarna och alla fyra delar är gröna. `tools/test.mjs` tar bort delningen när en fil körs om efter en
+  kraschad arbetare.
 - **jsdom 31.** Testmiljön är höjd från jsdom 30.1.1 till 31.0.0; jsdom 31 kräver samma Node som jsdom 30
   (22.22.2 eller senare i 22-serien, som CI kör). Två skillnader mot jsdom 30 syntes i sviten, och båda gör jsdom likare en webbläsare. Ett
   element i en dold panel (`display: none` på en förälder) får inte längre fokus: tio tester gav fokus i en flik som

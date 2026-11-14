@@ -3,7 +3,7 @@
 // Kör hela kedjan i Definition of Done (.github/CONTRIBUTING.md, punkt 3): `npm run kontroll`.
 //
 // Stegen körs i ordning som `npm run <steg>` och kedjan stannar på första fel, med stegets slutkod. Efter `bundle`
-// prövas samma två grindar som CI-jobbet quality kör utöver npm-skripten (.github/workflows/ci.yml):
+// prövas samma två grindar som CI-jobbet grindar kör utöver npm-skripten (.github/workflows/ci.yml):
 //   artefakten   — bygget ändrade inga spårade filer under dist/. CI bygger om och kräver att hela dist/, artefakten
 //                  och RELEASE.txt, blir byte-identisk med det incheckade; här jämförs dist/ som den låg när kedjan
 //                  började med dist/ efter bygget. En ändring betyder att dist/ inte motsvarade källan: de ombyggda
@@ -12,6 +12,8 @@
 //
 // `--snabb` är körningen under arbetet: `test` (enhetsprojektet) i stället för `test:full`, och inget röktest i
 // webbläsaren. Utan flagga körs allt, som före en pull request.
+//
+// CI kör sviten delad på fyra jobb (--shard); här körs den i ett stycke, och det är samma tester.
 //
 // STEG och SNABBA_STEG exporteras, så att tests/dokumentation-struktur.test.js kan pröva dem mot CI utan att köra något.
 import { spawnSync, execFileSync } from 'node:child_process';
