@@ -26,6 +26,10 @@ kvar med en rad om hur den avslutades. Syfte och avgränsning står i [`mal.md`]
 **Kod och bygge:**
 6. **Krasch i Node under testkörning** (V8:s skräpsamlare): orsaken är okänd; `npm test` och `npm run test:full` kör om berörda filer.
 8. **Ett gemensamt globalt scope** på omkring 20 000 rader. Logik flyttas till `src/lib/` när en del ändå ändras.
+28. **Hela testsviten tar omkring fem minuter lokalt och fyra till fem i CI** (delad på fyra jobb). Två
+    testfamiljer står för två tredjedelar av tiden: k-tröskeln och röktesterna av flikarna, där varje fil bygger
+    alla vägar ut ur verktyget. En kortare svit kräver att riggen som samlar in utdata (`tests/helpers/ktroskel-rigg.js`)
+    skrivs om, och den vaktar skyddet S4.
 
 **Gränssnitt och analys (översynen 2026-10-29):**
 9b. **Ett tecken i hela verktyget:** löneskillnader anges kvinnor mot män, negativt när kvinnor ligger lägre
@@ -48,6 +52,24 @@ kvar med en rad om hur den avslutades. Syfte och avgränsning står i [`mal.md`]
     lönebedömning väljer BAS-intervall efter BH-korrigeringen, och handlingsplanen säger i kolumnen *Kostnaden
     avser* vilken kostnad raden har.
 
+**Metodval att ta ställning till (noterade 2026-11-14, inte fel):**
+23. **Översikten per huvudområde räknar BAS som rang och kräver ålder** (`src/lib/sektor.js`), medan
+    huvudregressionen kodar BAS som indikatorer och räknar utan ålder när lönefilen saknar den (ADR-53, ADR-64).
+    Utan ålder i lönefilen ger översikten ingen justerad skillnad.
+24. **HC3 i steget för AID-etikett inom BAS räknas på den inomtransformerade designen**, så hävstången saknar
+    gruppdelen. Ett metodpåpekande; inverkan på standardfelen är inte mätt.
+25. **Poänglägets reserv mot jämförelsestatistiken** kräver att statistikradens AID-kod och BAS-intervall har poäng
+    i lönefilens poängtabell (`byggParPoäng`). Det har den sällan, så reserven används i praktiken nästan aldrig.
+
+**Efter bytet till AID:s ord (ADR-74, 2026-11-15):**
+26. **Utseendet med de nya orden är mätt, inte sett.** Mot bygget före bytet, med demodatan och det stora demot,
+    hamnar ingen diagramtext utanför eller ovanpå annan text, och ingen flik får vågrät rullning. Fyra tabeller som
+    redan rullade i sidled blev 7–28 punkter bredare (Handlingsplanen, Löneläget mot statistiken, *Lägre krav, högre
+    lön* och huvudområdena i Lönestruktur). Inte prövat: kolumnrubrikernas radbrytning, skärmar smalare än 1 100
+    punkter, och exporterna öppnade i Word, Excel och en PDF-läsare.
+27. **Termerna byts i koden, inte i en fil.** En annan uppsättning (till exempel för en annan bransch) kräver ett
+    eget bygge. Organisationspaketet kan inte bära en uppsättning, och dokumenten är skrivna med standardorden.
+
 **Dokumentation och lansering:**
 17b. **Före varje release: riskanalysen granskas mot koden.** `riskanalys.md` och `dataskydd.md` läses påstående
     för påstående mot den kod som släpps, granskningsdatumen i dokumenten sätts och avvikelser förs hit.
@@ -56,6 +78,9 @@ kvar med en rad om hur den avslutades. Syfte och avgränsning står i [`mal.md`]
 18. **Uttagsstegen per lönesystem i `datauttag.md` är inte verifierade mot systemen**; de
     bygger på det gemensamma statistikuttaget och har rader som varje organisations systemförvaltare fyller i
     och bekräftar för sin installation.
+29. **Beslutsloggen bär lydelsen för gränssnittet och exporterna.** De områdena har ingen referens, så ett tiotal
+    beslut (bland dem ADR-10, 15, 23, 29, 33, 35, 39, 50, 62) är längre än loggens tre meningar. Några detaljer i
+    ADR-16, 20, 28, 30, 33, 54 och 62 ströks när loggen kortades (ADR-73) och finns bara i git-historiken.
 19. **README i roten har ingen bild:** skärmbilder checkas inte in, så en bild där kräver ett
     beslut om att lägga en bildfil i källkoden.
 21. **Inför användning hos fler arbetsgivare:** licens- eller användaravtal, prismodell och support; en beskriven

@@ -1,7 +1,7 @@
 # Risk- och sårbarhetsanalys (dataskydd och informationssäkerhet) — Öppen lönekartläggning
 
-**Bygge:** `2026.11.14` · **Artefakt-SHA-256:** `2eccb9d6f067e1ac44b09775dba1fbd0d2f0caaafb1b383a0ae7fd94470ef331` (se `dist/RELEASE.txt`).
-**Granskningsdatum:** 2026-11-14.
+**Bygge:** `2026.11.15` · **Artefakt-SHA-256:** `faeb9f9044d132ac59e9397123599db6bd148da39f115907128513b5ad559c6b` (se `dist/RELEASE.txt`).
+**Granskningsdatum:** 2026-11-15.
 **Granskare:** granskningen är gjord med AI-verktyg och styrd av en person; ingen utomstående har granskat koden.
 **Granskningsmetod:** kodläsning påstående för påstående + statisk sökning i källkod och bygge +
 körning av det byggda verktyget i jsdom och i Chromium (utan nätverk) med syntetiska testfiler.
@@ -847,7 +847,7 @@ Skala: Sannolikhet/Konsekvens = Låg / Medel / Hög. Restrisk = efter åtgärd.
 |---|---|---|---|---|---|
 | A1 | Exfiltrering av data via nätverk | Låg | Hög | CSP `connect-src 'none'` + 0 nätverksanrop + 0 externa resurser | **Låg** |
 | A2 | Spår kvar på disk (lagring) | Låg | Medel | Ingen kod eller inbyggt bibliotek skriver till lagringen (webbläsartestet kräver tom lagring); storage-tripwire som reserv, med kända luckor (§6.2); ingen IndexedDB/cache; rensningsknapp | **Låg** (OS-swap utanför kontroll; spärren hindrar inte en framtida kodändring som skriver utan `setItem`) |
-| A3 | XSS via fientligt CSV-innehåll | Låg | Medel | Fyra lager: hash-baserad `script-src` (ADR-9) avvisar injicerade inline-`<script>` OCH inline-handlers — själva exekveringen blockeras; `esc()` (escapear `& < > " '`, säker i attributkontext); ingångssanering (`_cleanYrkeField` + `_normalizeBas`); `connect-src 'none'` hindrar all exfiltrering. Regressionstester i `parsing`; live-verifierat (injicerad handler kördes ej) | **Mycket låg** |
+| A3 | XSS via fientligt CSV-innehåll | Låg | Medel | Fyra lager: hash-baserad `script-src` (ADR-9) avvisar injicerade inline-`<script>` OCH inline-handlers — själva exekveringen blockeras; `esc()` (escapear `& < > " '`, säker i attributkontext); ingångssanering (`_cleanYrkeField` + `_normalizeBas`); `connect-src 'none'` hindrar all exfiltrering. Regressionstester i `parsing`; live-verifierat (injicerad handler kördes ej). Termerna (ADR-74) som sätts in i texterna är fasta ord ur `src/lib/termer.js`, aldrig ur en inläst fil, och `skapaTermer` avvisar tecken som kan bilda markering | **Mycket låg** |
 | A4 | Sårbarhet i tredjepartsbibliotek | Medel | Medel | Lokalt buntade, fastställda versioner, SHA i bygget; CSP hindrar exfiltrering även vid kompromiss | **Låg–medel** |
 | A5 | Skadligt webbläsartillägg / komprometterad enhet läser DOM | Medel | Hög | Utanför verktygets kontroll | **Medel** (organisatorisk åtgärd, §8) |
 | A6 | Manipulerad/utbytt HTML-fil distribueras | Låg | Hög | Sigstore-signatur från release-arbetsflödet, verifieras med `cosign verify-blob` (`SECURITY.md`); SHA-256 i `RELEASE.txt` skyddar bara mot en skadad fil. En organisationsfil (§6.9) har en annan kontrollsumma än den publicerade versionen och kan inte verifieras mot den: systemägaren verifierar den nedladdade versionen och sprider organisationsfilen via en behörighetsstyrd intern yta; *Visa paketet* anger kontrollsumman för den verktygsfil den byggdes av, som en uppgift i filen, inte ett äkthetsbevis | **Låg** (kräver att signaturen verifieras och att organisationsfilen sprids internt) |
@@ -996,32 +996,30 @@ gäller lönefilen, som de andra rubrikmönstren. Prövat av
 `tests/parsing.test.js` med 21 rubriker. Dataskyddsbeskrivningen (raden *Uppgifter som avvisas*) och datauttagsguiden
 säger detsamma. Releasen bär dessutom en programvaruförteckning (`sbom.cdx.json`, CycloneDX) som signeras som de
 andra filerna. Den innehåller biblioteksversioner och kontrollsummor, inga uppgifter om användare. Testsviten är
-79 filer.
+109 filer.
 
-**Granskningen 2026-11-14** prövade hela dokumentet mot koden som ändrats sedan föregående granskning (2026-11-07
-till 2026-11-14: ADR-59–65 och ADR-69–70, diagramfiltren, *Räkna för*, sakliga skäl och delningen av tröskelns
-modul). Varje namngiven fil, funktion, konstant och testfil söktes upp i `src/`, `tools/`, `tests/` och
-bygget; alla finns. Kontrollerat på nytt:
-- CSP-raden i bygget (ordagrant som §6.1, fem skript och fem hashar)
-- sökningen i `dist/app.js` och biblioteksfilerna efter nätverks- och lagringsanrop (träffarna i `dist/app.js` är
-  lagringsspärren och verktygets egen text; 0 `setItem` och 0 `document.cookie` i biblioteken; D3 7.9.2 har ett
-  `new Function(`, fyra `fetch(` och ett `new Image`)
+**Granskningen 2026-11-15** prövade dokumentet mot koden som ändrats efter bygget 2026.11.14: bytet till AID:s
+egna ord (ADR-74, termerna i `src/lib/termer.js`), förminskningen av sidan i bygget, konfigurationsfilens prövning av
+likvärdighetens inställningar, raderna kvantilregressionen räknar på, och statusstycket i *Om verktyget*. Modulerna
+för lagringsspärren, rensningen, uppgiftsminimeringen, k-tröskeln och exportgrinden är oförändrade utom i ord och
+kommentarer. Varje namngiven fil, funktion, konstant och testfil söktes upp i `src/`, `tools/`, `tests/` och bygget;
+alla finns. Varje namn på en flik, ett avsnitt, en knapp, ett blad eller en kolumn som dokumentet citerar söktes i
+verktygets skärmtext och i samtliga exporter, insamlade med k-riggen. Kontrollerat på nytt:
+- CSP-raden i bygget (fem skript och fem hashar)
+- sökningen i `dist/app.js` efter nätverks- och lagringsanrop (träffarna är lagringsspärren och verktygets egen
+  text); biblioteken i `vendor/` är oförändrade
 - att stilmallen saknar `url(`
-- att `buildConfigSnapshot()` inte läser `state.data`, och fälten i ögonblicksbilden mot §6.8
-- att *Rensa all data* nollar `state.gapUppdelning`, `state.rapportTabeller` och `state.perBasRecept`
-- rensningstidens val (30, 60, 90, 120 minuter eller av), `K_STANDARD`, `statGolv()` och `LITET_UNDERLAG`.
+- att `buildConfigSnapshot()` inte läser `state.data`
+- att termerna sätts in som text (`textContent`) eller som fasta ord i mallarna, aldrig ur en inläst fil.
 
-Sex påståenden rättades:
-- Obligatoriska fält är fyra, inte fem, sedan ålder blev valfri (ADR-64): §0, §5 och raden *Dataminimering* nedan
-  sade fem.
-- `statGolv()` läser den inställda tröskeln (`kInstalld()`), inte lägets (§6.5).
-- Diagrammens filter räknar om trendlinjerna i *Lön mot ålder*, och *Räkna för* räknar om fem diagram för en del av
-  underlaget med ett differensskydd; §6.6 sade att inget tal räknas om och nämnde inte *Räkna för*.
-- Konfigurationsfilen bär också rapportens innehåll, recepten för egna tabeller (med ett namn som fritext) och val i
-  gränssnittet (§2, §6.8).
-- Organisationspaketets godkända fält är fler än de uppräknade: organisationstyp, valet av jämförelseetiketter,
-  rapportens recept och importprofiler (§6.4).
-- Svaret om filens äkthet i §13 hänvisade bara till kontrollsumman; det hänvisar nu till signaturen, som A6.
+Tre påståenden rättades:
+- Knappen i Löneöversyn heter *Föreslå fördelning mot skillnaderna i likvärdigt arbete*; raden om Löneöversyns
+  förslag nedan angav ett annat namn.
+- Testsviten är 109 filer, inte 79.
+- Orden för AID:s begrepp följer verktygets (AID-etikett, AID-kod, etikettnamn, huvudområde), också i tabellen över
+  utdata.
+
+Granskningen är avgränsad till det som ändrats; påståenden om oförändrad kod lästes inte om mot koden.
 
 Testsviten (109 filer) och röktestet i Chromium kördes mot bygget. Inte prövat i den här granskningen: röktestet i
 Firefox och WebKit (det körs i CI) och de påståenden märkta *Verifierat i webbläsare* som inte har ett automatiskt
@@ -1043,7 +1041,7 @@ test.
 | k-anonymitet i exporten från Tabeller och egna vyer (ADR-14) | Exporttester i `tests/kanonymitet.test.js` + genomsökning i Chromium av alla kombinationer rad × kolumn × diagramtyp × helhet/per kön × mått med rutan urkryssad | ✔ inga grupper eller kön under 10 i tabell- eller diagramexport |
 | Personer att granska och extremvärdeslistan stannar i verktyget (ADR-23) | Test i `tests/smoke-granssnitt.test.js` (en flaggad persons lön finns inte i rapportunderlag eller Word-utkast) + webbläsarröktestet (extremvärdeslistan med rader syns inte i utskrift) + kodläsning (inga exportverktyg; bilagorna hämtar bara namngivna tabeller) | ✔ lönen och radnumret finns inte i någon utdata; båda döljs vid utskrift |
 | k-invarianten över flikar och exporter | `tests/ktroskel-invarianter.test.js`: underlag med ett kön under tröskeln i en större grupp, en ensam person och ett 2-mot-2-BAS; flikar, Word, utskrift ×3, rapportunderlag (med blocken per BAS-intervall), Excel ×9, CSV, diagramdata för varje diagram i diagramkärnans register, gruppdossier, BAS-dossierns text (`basdossierText`), Rapporttextens utkast med delen per BAS-intervall, rapportens avsnitt Lönekartläggning per BAS-intervall och, med förra årets bokslut inläst, blocket och avsnittet om förra året (tabellen per BAS-intervall) och BAS-hantelns diagramdata, årsbokslutet i konfigurationsfilen med lönespridningen, rapportens bilaga med gruppdossierer och utskriften med bilagan vald, importprofilerna (JSON-exporten och konfigurationsfilen: inga lönemått) och diagramdatan ur kopiorna i Alla diagram (samma som källans, rad för rad) vid 10 och 25; handlingsplanens sakliga skäl vid 10 (I8: en rad under tröskeln för varken kommentarens tal eller beloppet ut i någon utdata utom skärmen och hela konfigurationsfilen, och en rad där ett kön är under tröskeln bara kategorin, också i konfigurationsfilens årsbokslut) | ✔ inget dolt värde i någon prövad utdata; undantagen och diagrambilder prövas inte; lönerevisionssimulatorn prövas med ett urval under och ett över tröskeln (simulatorn togs bort 2026-10-29, ADR-50; samma urval prövas nu som riktade rader i Löneöversyn, C3); Ålder & karriär per BAS och regressionens ojusterade steg prövas av egna tester i `tests/ktroskel-regression.test.js` (§6.5) |
-| Löneöversyns förslag följer den inställda tröskeln (ADR-69) | `tests/loneoversyn-forslag-troskel.test.js`: ett kandidatpar där jämförelseetiketten (5 personer) eller den kvinnodominerade AID-etiketten (6) är under tröskeln 10, med en egen lön per grupp; *Föreslå riktade potter*, mål-läget, känslighetskurvan, Löneöversyns Excel-export och konfigurationsfilen; tröskeln höjd på skärmen; en konfigurationsfil med ett förslag, inläst före och efter lönefilen; en AID-etikett med två jämförelseetiketter (en med 6 män), förslaget vid 5 och tröskeln höjd till 10, äldre filer med en rad per jämförelseetikett och en ensam rad ur det lilla paret, och en fil där ett litet par ligger utanför de visade paren (*Visa max*); tröskeln höjd medan en annan flik är öppen, en inläst fil och en ny lönefil, med sökning i hela arbetsboken, i *Excel (alla flikar)* och i konfigurationsfilen; ett sparat scenario A/B; `tests/loneoversyn.test.js` (ett par per AID-etikett) | ✔ inget förslag ur paret, och varken beloppet, skillnaden eller jämförelseetikettens median i Excel-exporten eller i konfigurationsfilens del för Löneöversyn; en AID-etikett med flera jämförelseetiketter får en rad; ett förslag tas bort när tröskeln höjs över en av parets grupper, och ett förslag ur en fil som inte säkert går att föra till ett par som når tröskeln läses inte in; inget utfall eller sparat scenario som räknades med ett borttaget förslag står kvar; egna rader står kvar med noten (regel R2). Invarianten I4 prövar inte förslagen: riggens underlag har inga kandidatpar |
+| Löneöversyns förslag följer den inställda tröskeln (ADR-69) | `tests/loneoversyn-forslag-troskel.test.js`: ett kandidatpar där jämförelseetiketten (5 personer) eller den kvinnodominerade AID-etiketten (6) är under tröskeln 10, med en egen lön per grupp; *Föreslå fördelning mot skillnaderna i likvärdigt arbete*, mål-läget, känslighetskurvan, Löneöversyns Excel-export och konfigurationsfilen; tröskeln höjd på skärmen; en konfigurationsfil med ett förslag, inläst före och efter lönefilen; en AID-etikett med två jämförelseetiketter (en med 6 män), förslaget vid 5 och tröskeln höjd till 10, äldre filer med en rad per jämförelseetikett och en ensam rad ur det lilla paret, och en fil där ett litet par ligger utanför de visade paren (*Visa max*); tröskeln höjd medan en annan flik är öppen, en inläst fil och en ny lönefil, med sökning i hela arbetsboken, i *Excel (alla flikar)* och i konfigurationsfilen; ett sparat scenario A/B; `tests/loneoversyn.test.js` (ett par per AID-etikett) | ✔ inget förslag ur paret, och varken beloppet, skillnaden eller jämförelseetikettens median i Excel-exporten eller i konfigurationsfilens del för Löneöversyn; en AID-etikett med flera jämförelseetiketter får en rad; ett förslag tas bort när tröskeln höjs över en av parets grupper, och ett förslag ur en fil som inte säkert går att föra till ett par som når tröskeln läses inte in; inget utfall eller sparat scenario som räknades med ett borttaget förslag står kvar; egna rader står kvar med noten (regel R2). Invarianten I4 prövar inte förslagen: riggens underlag har inga kandidatpar |
 | Livscykelns lönekurva och Löneöversyns scenariojämförelse (ADR-70) | `tests/ktroskel-livscykel.test.js`: ett BAS-intervall med 4 personer valt i rullistan; diagramdatan, bilden före rastreringen, ZIP-filens urval, kopian i Alla diagram, fliken i exportläget, beräkningsbeviset och invariantens utdatavägar. `tests/ktroskel-loneoversyn-scenarier.test.js`: en ensam kvinna i den enda kvinnodominerade gruppen, scenariot sparat på skärmen och i exportläget | ✔ ingen kurva och inga av kurvans tal för det lilla intervallet i det som lämnar verktyget, en not i stället, och kurvan för ett intervall över tröskeln som förut; *Till kv-dom* är ett streck när *Varav* är det, och samma tal när *Varav* står |
 | Löneöversyns summor och regressionens BAS-effekter (ADR-70) | `tests/ktroskel-loneoversyn-summor.test.js`: bladet *Fördelning* och utfallstabellen i exportläget vid 10 med en ensam person under tröskeln, två små grupper som tillsammans är under tröskeln, små grupper som tillsammans når den, alla grupper under tröskeln och lika antal bland de minsta visade grupperna; *Varav till kvinnodominerade grupper*; en egen riktad rad. `tests/ktroskel-bas-effekter.test.js`: ett BAS-intervall med 4 personer och ett referensintervall med 4, i regressionskortet i exportläget och i invariantens utdatavägar | ✔ *Använt* minus bladets kostnader per grupp är aldrig en liten grupps kostnad eller lönesumma, och de små grupperna har sina rader med antal och andel; den invikta gruppens medianer står inte i bladet; effekten för ett intervall under tröskeln står inte i någon prövad utdata. Inte prövat: att den invikta gruppens median före påslaget står i andra exporter (den når tröskeln) |
 | Importprofiler bär bara rubriknamn | `valideraImportprofil` i `src/lib/importprofiler.js` (godkända fält; varje text högst 80 tecken och inget som liknar personnummer eller e-post; högst 20 rubriker per fält, högst 50 profiler) vid inläsning ur konfigurationsfil och organisationspaket; `profilFranMappning` tar bara rubriker som finns i filen; tester i `tests/importprofiler.test.js` och `tests/importprofiler-app.test.js`, k-invariantsviten och webbläsarröktestet | ✔ ingen ny utdata lämnar verktyget utöver profilens JSON (exporten och konfigurationsfilens och paketets fält), och den bär inga värden ur filen |
