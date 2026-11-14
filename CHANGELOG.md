@@ -19,6 +19,10 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   mellan kön och ålder är säkerställt (p < 0,10, samma gräns som tolkningen och rutan *Är förändringen säkerställd?*)
   och neutral annars, inte grön: att en förändring inte är säkerställd betyder inte att läget är balanserat. Ordet
   (*säkerställd förändring* eller *inte säkerställd*) står i verktygstipset och för skärmläsaren (ADR-59).
+- **Percentiltabellen i Lönestruktur markerar inte på storleken.** I *Var i lönefördelningen är skillnaden störst?*
+  var cellen *Kvinnors lön i % av mäns* rosa och halvfet när kvinnor låg mer än 5 % lägre vid percentilen, utan
+  prövning. Cellen är nu neutral, som uppmärksamhetstrappan kräver (ADR-59); stapeln bredvid visar fortfarande
+  skillnadens riktning och storlek.
 
 ### Exporter
 

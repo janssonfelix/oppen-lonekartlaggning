@@ -157,4 +157,19 @@ describe('ingen färg på storleken ensam i appen', () => {
     it('mönstret fäller den gamla gapKlass', () => {
         expect(MONSTER.test("const gapKlass = (g) => Math.abs(g) > 5 ? 'fg-kritisk' : Math.abs(g) > 2 ? 'fg-varning' : 'fg-ok';")).toBe(true);
     });
+
+    // Percentiltabellen i Lönestruktur färgade cellen Kvinnors lön i % av mäns rosa och halvfet när skillnaden var
+    // större än 5 %, på storleken ensam. En skillnad (gap, gapPct …) som jämförs med en gräns skild från 0 och direkt
+    // väljer en färg- eller viktklass är samma fel. Tecknet (< 0, kvinnor lägre) får välja färg på en stapel.
+    const STORLEK = /\bgap\w*\s*[<>]=?\s*-?(?!0(?:\.0+)?\b)\d+(?:\.\d+)?\s*\?\s*['"`]\s*(?:fg|farg|ar|bricka|bg|f|halvfet)[\w-]*/i;
+    it('Lönestruktur sätter inte färg eller fetstil på en skillnad jämförd med en storleksgräns', () => {
+        const f = '37-struktur.js';
+        const traffar = readFileSync(join(appDir, f), 'utf8').split('\n')
+            .map((rad, i) => (STORLEK.test(rad) ? `${f}:${i + 1}: ${rad.trim()}` : null)).filter(Boolean);
+        expect(traffar).toEqual([]);
+    });
+    it('mönstret fäller percentiltabellens gamla markering men inte stapelns tecken', () => {
+        expect(STORLEK.test("<td class=\"t-hoger${x.gapPct < -5 ? ' fg-rosa halvfet' : ''}\">")).toBe(true);
+        expect(STORLEK.test("${x.gapPct < 0 ? 'bg-rosa' : 'bg-ok'}")).toBe(false);
+    });
 });

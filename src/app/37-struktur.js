@@ -81,7 +81,7 @@ function renderStructure() {
             distEl.innerHTML = `<p class="text-dampad-sm marg-0-0-10">Kvinnors lön i procent av mäns vid olika percentiler i fördelningen. Under 100 % betyder att kvinnor ligger lägre.</p>
             <div class="mb-10" id="chart-struktur-percentiler"></div>
             <table class="data-table st-088">${antalCaption(totKv, ma.length)}<thead><tr><th>Percentil</th><th class="t-hoger">Kvinnor</th><th class="t-hoger">Män</th><th class="t-hoger">Kvinnors lön i % av mäns</th><th class="bredd-32p"></th></tr></thead><tbody>
-            ${dist.map(x => `<tr><td>P${x.p}</td><td class="t-hoger">${kr(x.kv)}</td><td class="t-hoger">${kr(x.ma)}</td><td class="t-hoger${x.gapPct < -5 ? ' fg-rosa halvfet' : ''}">${andelAvMan(x.gapPct)}</td><td><div class="rund-5 hojd-10 min-bredd-2 ${x.gapPct < 0 ? 'bg-rosa' : 'bg-ok'}" data-stil-bredd="${(Math.abs(x.gapPct || 0) / maxG * 100).toFixed(0)}%"></div></td></tr>`).join('')}
+            ${dist.map(x => `<tr><td>P${x.p}</td><td class="t-hoger">${kr(x.kv)}</td><td class="t-hoger">${kr(x.ma)}</td><td class="t-hoger">${andelAvMan(x.gapPct)}</td><td><div class="rund-5 hojd-10 min-bredd-2 ${x.gapPct < 0 ? 'bg-rosa' : 'bg-ok'}" data-stil-bredd="${(Math.abs(x.gapPct || 0) / maxG * 100).toFixed(0)}%"></div></td></tr>`).join('')}
             </tbody></table>${tolk ? `<p class="fs-sm marg-8-0-0">${tolk}</p>` : ''}`; tillampaDataStil(distEl);
         }
     }
