@@ -1155,7 +1155,10 @@ exportläget har en grupp under tröskeln sin rad med antal och andel kvinnor, m
 står samlad på en rad som omfattar minst tröskelns antal personer; räcker inte de små grupperna viks den minsta
 visade gruppens kostnad in, med maskerade medianer, och räcker inte alla grupper står ingen kostnad per grupp
 (`_fcUtfallsrader`). *Varav till kvinnodominerade grupper* står bara när den inte ger en del av den samlade
-kostnaden (`_fcVaravKvDom`).
+kostnaden (`_fcVaravKvDom`). Två lönemått till följer samma regel: livscykelns lönekurva, modellens lönenivå i det
+valda BAS-intervallet, ritas inte i det som lämnar verktyget när intervallet är under tröskeln (en not säger vilket
+intervall som är valt, och valet byts inte), och scenariojämförelsens *Till kv-dom* följer i exportläget regeln för
+*Varav* med samma funktion.
 *Motiv:* Den som gör kartläggningen har lönefilen och ansvarar för vad som sprids. Antal per grupp och kön behövs
 för att kartläggningen ska gå att läsa och står redan i många tabeller. En effekt i regressionen för ett intervall
 med få personer ligger däremot nära deras genomsnittliga lönenivå, och en kostnad som går att räkna fram ur summorna
@@ -1168,6 +1171,8 @@ står överallt), och antal är inte det skyddet finns för. För Löneöversyns
 snart en liten grupp finns (bladet förlorar sitt innehåll för att skydda en rad), att låta den invikta gruppens
 medianer stå (differensen blir en uppskattning nära den lilla gruppens kostnad) och att låta differensen stå som
 känd restrisk.
-*Gäller i dag:* `k-troskeln.md` §2 (vad skyddet omfattar, BAS-effekterna och Löneöversyns summor), §9 och §11.
-*Vakt:* `tests/ktroskel-bas-effekter.test.js` och `tests/ktroskel-loneoversyn-summor.test.js`; I1 i
+*Gäller i dag:* `k-troskeln.md` §2 (vad skyddet omfattar, BAS-effekterna, livscykelns lönekurva och Löneöversyns
+summor), §9 och §11.
+*Vakt:* `tests/ktroskel-bas-effekter.test.js`, `tests/ktroskel-loneoversyn-summor.test.js`,
+`tests/ktroskel-livscykel.test.js` och `tests/ktroskel-loneoversyn-scenarier.test.js`; I1 i
 `tests/ktroskel-invarianter.test.js`.

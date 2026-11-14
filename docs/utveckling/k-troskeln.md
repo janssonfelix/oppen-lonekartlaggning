@@ -105,6 +105,16 @@ specifikation i exportläget) skrivs effekten inte ut för ett intervall med fä
 ingen effekt ut, eftersom varje effekt då beskriver dess nivå baklänges, och noten säger varför. Modellen och dess
 referens (ADR-44) ändras inte. Allt går genom `_basEffekterForRedovisning` (`06-k-anonymitet-och-dataminimering.js`).
 
+**Livscykelns lönekurva.** Kurvan i Ålder & karriär är livscykelmodellens lönenivå per kön i det valda BAS-intervallet
+(rullistan; som standard det mest folkrika). Översiktstabellen per intervall utelämnar ett intervall med färre än
+`kTroskel()` personer, och för ett valt intervall under tröskeln ritas heller ingen figur (`_lifecycleKurvaUtelamnad`
+i `52-livscykel.js`, samma antal som tabellens rader): diagramdatan, bilden, ZIP-filen och kopian i Alla diagram
+saknar den. En not i stället för kurvan säger vilket intervall som är valt och varför, utan värden. Valet byts inte,
+så att exporten inte tyst visar ett annat intervall än skärmen. Beräkningsbeviset för ett annat intervall skriver då
+ingen nivåfaktor mot det valda, eftersom raden delad med faktorn är det valda intervallets nivå. Tröskeln är
+`kTroskel()` (avsnitt 1): kurvan är något som ritas, och skärmen visar den. Modellen skattas med alla intervall, och
+dess golv är `statGolv()` (avsnitt 5). Rapporten och utskriften tar inte med kurvan.
+
 **Löneöversyns summor.** I Löneöversyns blad *Fördelning* och i utfallstabellen i exportläget har en grupp under
 tröskeln sin rad med BAS-intervall, yrke, antal och andel kvinnor; medianerna och kostnaden maskeras. Kostnaden för
 de maskerade raderna står samlad på raden *Kostnad för grupper under tröskeln*, så att bladets kostnader summerar till
@@ -118,7 +128,10 @@ inte säger något om kostnaden; spillover-listan tar inte med en invikt grupp. 
 det gäller och varför (`_fcUtfallsrader`, `_fcUtfallsNot` i `36-loneoversyn.js`). *Varav till kvinnodominerade
 grupper* står bara när de maskerade kvinnodominerade grupperna och de övriga maskerade grupperna var för sig är tomma
 eller omfattar minst `kTroskel()` personer, eller när en av dem är tom; annars ett streck (`_fcVaravKvDom`). En egen
-riktad rad (regel R2) har sitt belopp i *Sammanfattning* som förut.
+riktad rad (regel R2) har sitt belopp i *Sammanfattning* som förut. Scenariojämförelsen A/B följer samma regel: ett
+sparat scenario bär sina grupper med påslag, och dess *Till kv-dom* prövas med `_fcVaravKvDom` mot den tröskel som
+gäller när jämförelsen visas, annars ett streck (`_renderScenarioCompare`). Scenarierna lämnar inte verktyget; de
+finns bara i minnet och i fliken.
 
 **En punkt per person.** Utanför Tabeller och egna vyer ritas och exporteras en persons punkt i ett spridningsdiagram
 bara när personens grupp (yrke inom BAS) och personens kön i gruppen når tröskeln (`individLitenFor`). Antalen räknas på
@@ -352,6 +365,8 @@ utdata och dess skydd, står i riskanalysen (`docs/dataskydd/riskanalys.md` §6.
 | Löneöversyn: kostnad per grupp, knappresultat, egna rader, tröskelmål | Regel R2, R4 och R5 | I1, I1b; R3 i `tests/ktroskel-regression.test.js`; `tests/troskelbeslut.test.js` |
 | Löneöversyns summor: bladen *Fördelning* och *Sammanfattning*, utfallstabellen i exportläget | Avsnitt 2 (Löneöversyns summor, ADR-70) | `tests/ktroskel-loneoversyn-summor.test.js` (en ensam person, två små grupper under tröskeln tillsammans, små grupper som når den, alla grupper under den, lika antal; *Varav*; egna riktade rader; skärmen) |
 | Regressionens BAS-effekter: rapportens bilaga (Word-utkastet, PDF-rapporten, utskriften) och regressionskortet i exportläget | Avsnitt 2 (BAS-effekterna, ADR-70) | `tests/ktroskel-bas-effekter.test.js` (ett intervall och ett referensintervall med 4 personer, i invariantens utdatavägar) |
+| Livscykelns lönekurva: diagramdatan, bilden, ZIP-filen, kopian i Alla diagram, fliken i exportläget och beräkningsbeviset | Avsnitt 2 (livscykelns lönekurva, ADR-70) | `tests/ktroskel-livscykel.test.js` (ett valt intervall med 4 personer: kurvans egna vägar och invariantens utdatavägar; ett valt intervall över tröskeln; skärmen) |
+| Löneöversyns scenariojämförelse A/B i exportläget | Avsnitt 2 (Löneöversyns summor, ADR-70) | `tests/ktroskel-loneoversyn-scenarier.test.js` (*Varav* som streck: differensen mot utfallet; scenariot sparat på skärmen och i exportläget; *Varav* som står; övriga kolumner; att scenarierna inte följer med i konfigurationsfilen) |
 | Löneöversyns förslag ur kandidatparen (*Föreslå riktade potter*, mål-läget, känslighetskurvan), deras rader i Excel-exporten och konfigurationsfilen | Avsnitt 1 och regel R2 (ADR-69): den inställda tröskeln, också på skärmen | `tests/loneoversyn-forslag-troskel.test.js` (jämförelseyrket eller det kvinnodominerade yrket under tröskeln, höjd tröskel på skärmen, inläst konfigurationsfil; ett yrke med två jämförelseyrken: en rad, och förslag ur det lilla paret, äldre filer med en rad per jämförelseyrke och en ensam rad ur det lilla paret tas bort); `tests/loneoversyn.test.js` (ett par per yrke); I1 i `tests/ktroskel-invarianter.test.js`; `tests/ktroskel-utdata.test.js`; `tests/troskelbeslut.test.js`. Inte I4: riggens underlag har inga kandidatpar (avsnitt 11) |
 | Regressionskortet (ojusterat steg, förklarad andel) | Regel R1 | R1 i `tests/ktroskel-regression.test.js` (samma vägar som I4, med 7 män i underlaget) |
 | Ålder & karriär | Regel R3 | R4 i `tests/ktroskel-regression.test.js`; `tests/troskelbeslut.test.js` (trendlinjen för hela urvalet) |
@@ -432,11 +447,10 @@ inställningen (standardvärdet).
   andelar och namn för en grupp under tröskeln vaktas inte av den; de omfattas inte av skyddet (avsnitt 2, ADR-70).
   Golven i antal (avsnitt 4, ADR-57) vaktas av egna tester, `tests/aidbas.test.js`, `tests/smoke-aidbas.test.js` och
   `tests/diagramvyer-marken.test.js`, inte av I4.
-- **Differenser.** I4 söker tal som står i utdatan, inte tal som går att räkna fram ur andra. Löneöversyns summor och
-  regressionens BAS-effekter prövas därför för sig (avsnitt 9). Differenser mellan olika exporter prövas inte: den
-  invikta gruppens median före påslaget kan stå i en annan tabell (gruppen når tröskeln), och med påslagets
-  procentsats ger antal gånger median en uppskattning av dess kostnad. Scenariojämförelsen A/B visar ett sparat
-  scenarios *Varav till kvinnodominerade grupper* som det sparades.
+- **Differenser.** I4 söker tal som står i utdatan, inte tal som går att räkna fram ur andra. Löneöversyns summor,
+  scenariojämförelsen A/B och regressionens BAS-effekter prövas därför för sig (avsnitt 9). Differenser mellan olika
+  exporter prövas inte: den invikta gruppens median före påslaget kan stå i en annan tabell (gruppen når tröskeln), och
+  med påslagets procentsats ger antal gånger median en uppskattning av dess kostnad.
 - **Innehållet i bilder prövas inte.** ZIP-filens bilder, utskriftens bilder och Word-utkastets bilder går inte att
   läsa i testet; riggen tar bort bilderna ur utskriften före sökningen. `tests/ktroskel-bilder.test.js` prövar bara
   meningen om sänkt tröskel.
@@ -449,3 +463,6 @@ inställningen (standardvärdet).
   Riggens underlag har heller inga kandidatpar i likvärdigt arbete, så Löneöversyns förslag (ADR-69) prövas inte av
   I4 utan av `tests/loneoversyn-forslag-troskel.test.js`. Ett par med en grupp under tröskeln i riggen skulle ändra
   underlaget för alla vägar som I4 söker igenom.
+- **Livscykelns kurva i riggen.** Kurvan ritas på skärmen i nästa bildruta, och riggens `samlaUtdata` läser
+  diagrammen innan den hunnit ritas; varken diagramdatan för `#lifecycle-chart` eller kopian i Alla diagram kommer
+  med i I4. Kurvans vägar prövas i `tests/ktroskel-livscykel.test.js`.

@@ -481,6 +481,20 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   raderna står sist i BAS-ordning. *Varav till kvinnodominerade grupper* visas som streck när den skulle ge en del av
   den samlade kostnaden. Utfallstabellen i exportläget (*Som i exporten*) visar samma rader; skärmen visar allt som
   förut.
+- **Livscykelns lönekurva följer tröskeln (ADR-70).** I Ålder & karriär utelämnade översiktstabellen redan
+  BAS-intervall med färre personer än tröskeln, men rullistan har alla intervall, och ett sådant intervall gav sin
+  lönekurva, modellens lönenivå i intervallet, också i exportläget: i diagramdatan, bilden, ZIP-filen och kopian i
+  *Alla diagram*. Nu ritas ingen kurva i det som lämnar verktyget för ett valt intervall under tröskeln, och en not
+  säger vilket intervall som är valt och varför, utan värden. Det valda intervallet byts inte. Beräkningsbeviset för
+  ett annat intervall visar då ingen nivåfaktor mot det valda. Modellen skattas som förut, och skärmen visar kurvan.
+  I det stora demot gäller det BAS J och K (8 och 4 personer) när de väljs; standardvalet och det lilla demot är
+  som förut.
+- **Löneöversyns scenariojämförelse röjer ingen liten grupps kostnad (ADR-70).** Ett sparat scenario visade *Till
+  kv-dom* som det räknades, också i exportläget (*Som i exporten*), där utfallets *Varav till kvinnodominerade
+  grupper* står som streck när talet ger en del av den samlade kostnaden för grupperna under tröskeln; skillnaden
+  mellan de två kunde vara en liten grupps kostnad. Nu följer *Till kv-dom* samma regel med samma funktion, annars ett
+  streck. Skärmen visar talet som förut. Scenarierna lämnar inte verktyget. I demona står *Varav* och *Till kv-dom*
+  som förut.
 - **Löneöversyns förslag följer den inställda tröskeln, också på skärmen (ADR-69).** *Föreslå fördelning mot
   skillnaderna i likvärdigt arbete*, målet för skillnaden och känslighetskurvan tar bara kandidatpar där både det
   kvinnodominerade yrket och jämförelseyrket når minsta gruppstorlek, så att en föreslagen rad inte kan bära en liten
