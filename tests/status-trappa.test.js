@@ -159,17 +159,27 @@ describe('ingen färg på storleken ensam i appen', () => {
     });
 
     // Percentiltabellen i Lönestruktur färgade cellen Kvinnors lön i % av mäns rosa och halvfet när skillnaden var
-    // större än 5 %, på storleken ensam (ADR-71). En skillnad (gap, gapPct …) som jämförs med en gräns skild från 0 och direkt
-    // väljer en färg- eller viktklass är samma fel. Tecknet (< 0, kvinnor lägre) får välja färg på en stapel.
-    const STORLEK = /\bgap\w*\s*[<>]=?\s*-?(?!0(?:\.0+)?\b)\d+(?:\.\d+)?\s*\?\s*['"`]\s*(?:fg|farg|ar|bricka|bg|f|halvfet)[\w-]*/i;
-    it('Lönestruktur sätter inte färg eller fetstil på en skillnad jämförd med en storleksgräns', () => {
-        const f = '37-struktur.js';
-        const traffar = readFileSync(join(appDir, f), 'utf8').split('\n')
-            .map((rad, i) => (STORLEK.test(rad) ? `${f}:${i + 1}: ${rad.trim()}` : null)).filter(Boolean);
+    // större än 5 %, och livscykelns tabell per BAS-intervall färgade Skillnad 25 och 65 år (kr) under -1000 kr, båda
+    // på storleken ensam (ADR-71). En skillnad (gap, gapPct, gap25Kr, skillnad, diff …) som jämförs med en gräns skild
+    // från 0 och direkt väljer en färg- eller viktklass är samma fel. Tecknet (< 0, kvinnor lägre) får välja färg på
+    // en stapel.
+    const STORLEK = /\b\w*(?:gap|skillnad|diff)\w*\s*[<>]=?\s*-?(?!0(?:\.0+)?\b)\d+(?:\.\d+)?\s*\?\s*['"`]\s*(?:fg|farg|ar|bricka|bg|f|halvfet)[\w-]*/i;
+    // Undantag: rader som får jämföra en skillnad med en storleksgräns och välja klass, som "fil:rad-text" med motiv.
+    // Listan är tom: inget ställe under src/app/ har i dag ett beslut som tillåter det.
+    const STORLEK_UNDANTAG = /** @type {Set<string>} */ (new Set([]));
+    it('ingen fil under src/app/ (utom spegeln) sätter färg eller fetstil på en skillnad jämförd med en storleksgräns', () => {
+        const traffar = readdirSync(appDir).filter(f => f.endsWith('.js') && f !== '09-lib-speglar.js')
+            .flatMap(f => readFileSync(join(appDir, f), 'utf8').split('\n')
+                .map((rad, i) => (STORLEK.test(rad) && !STORLEK_UNDANTAG.has(`${f}:${rad.trim()}`) ? `${f}:${i + 1}: ${rad.trim()}` : null))
+                .filter(Boolean));
         expect(traffar).toEqual([]);
     });
     it('mönstret fäller percentiltabellens gamla markering men inte stapelns tecken', () => {
         expect(STORLEK.test("<td class=\"t-hoger${x.gapPct < -5 ? ' fg-rosa halvfet' : ''}\">")).toBe(true);
         expect(STORLEK.test("${x.gapPct < 0 ? 'bg-rosa' : 'bg-ok'}")).toBe(false);
+    });
+    it('mönstret fäller livscykeltabellens gamla markering i kronor', () => {
+        expect(STORLEK.test("<td class=\"t-hoger halvfet${r.gap25Kr < -1000 ? ' fg-varning' : ''}\">")).toBe(true);
+        expect(STORLEK.test("${skillnadPct >= 5 ? 'farg-granska' : ''}")).toBe(true);
     });
 });

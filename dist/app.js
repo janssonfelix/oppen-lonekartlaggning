@@ -30055,10 +30055,10 @@ function renderLifecycleAnalysis() {
                                 <td class="t-hoger">${r.n}</td>
                                 <td class="t-hoger">${Math.round(r.kv25).toLocaleString('sv-SE')} kr</td>
                                 <td class="t-hoger">${Math.round(r.ma25).toLocaleString('sv-SE')} kr</td>
-                                <td class="t-hoger halvfet${r.gap25Kr < -1000 ? ' fg-varning' : ''}">${Math.round(r.gap25Kr).toLocaleString('sv-SE')} kr</td>
+                                <td class="t-hoger halvfet">${Math.round(r.gap25Kr).toLocaleString('sv-SE')} kr</td>
                                 <td class="t-hoger">${Math.round(r.kv65).toLocaleString('sv-SE')} kr</td>
                                 <td class="t-hoger">${Math.round(r.ma65).toLocaleString('sv-SE')} kr</td>
-                                <td class="t-hoger halvfet${r.gap65Kr < -1000 ? ' fg-varning' : ''}">${Math.round(r.gap65Kr).toLocaleString('sv-SE')} kr</td>
+                                <td class="t-hoger halvfet">${Math.round(r.gap65Kr).toLocaleString('sv-SE')} kr</td>
                                 <td class="t-mitt"><button class="btn-evidence" type="button" data-livscykel-bas="${esc(r.bas)}" title="Visa beräkningen för BAS ${esc(r.bas)}" aria-label="Visa beräkningen för BAS ${esc(r.bas)}">${ikon('sok')}</button></td>
                             </tr>`).join('')}
                     </tbody>

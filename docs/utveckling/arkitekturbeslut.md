@@ -1190,7 +1190,8 @@ exakt 0,10), och den används av rutan, *Är förändringen säkerställd?*, Att
 Protokollet för gemensam lönebedömning väljer BAS-intervall efter BH-korrigeringen (`bhJustera` i
 `src/lib/stat.js`), som regressionskortet och Att göra. Kolumnen *Skillnad kön* i Prioriteringens åtgärdslista
 prövar, liksom Utforska, ingen skillnad och når högst *Följ upp*. En tabellcell med en skillnad mellan kvinnors och
-mäns lön färgas eller markeras inte på storleken ensam: percentiltabellen i Lönestruktur är neutral.
+mäns lön färgas eller markeras inte på storleken ensam: percentiltabellen i Lönestruktur och livscykelns tabell per
+BAS-intervall (*Skillnad 25 år (kr)*, *Skillnad 65 år (kr)*) är neutrala.
 *Motiv:* Färg på storleken ensam säger att en skillnad är värd att granska utan att den har prövats mot slumpen,
 vilket är det ADR-59 tog bort ur statusen. Med två gränser för samspelet sade rutan och tolkningstexten olika saker
 vid exakt 0,10; med en funktion kan de inte glida isär. Protokollet tog med intervall på det råa p-värdet, så att
@@ -1200,5 +1201,6 @@ dit brickans verktygstips hänvisar, och en andra prövning skulle ge två utsla
 att pröva *Skillnad kön* i Prioriteringen (två utslag för samma fråga); att låta protokollet välja på det råa
 p-värdet (ett annat urval än kortet och Att göra).
 *Gäller i dag:* `regressionsmodellen.md` §7 (BH-korrigeringen och protokollet) och teknisk-plan §9 punkt 9e.
-*Vakt:* `tests/status-trappa.test.js` (ingen färgklass på storleken ensam), `tests/livscykel.test.js`
+*Vakt:* `tests/status-trappa.test.js` (ingen färg- eller viktklass på en skillnad jämförd med en storleksgräns i
+någon fil under `src/app/`), `tests/livscykel.test.js`
 (`livscykelNiva`, `samspelSakerstallt`) och `tests/ktroskel-utdata.test.js` (protokollets BAS-intervall).

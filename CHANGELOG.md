@@ -23,6 +23,10 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   var cellen *Kvinnors lön i % av mäns* rosa och halvfet när kvinnor låg mer än 5 % lägre vid percentilen, utan
   prövning. Cellen är nu neutral, som uppmärksamhetstrappan kräver (ADR-71); stapeln bredvid visar fortfarande
   skillnadens riktning och storlek.
+- **Livscykelns tabell per BAS-intervall markerar inte på storleken.** I *Modellens lönenivåer per BAS-intervall vid
+  25 och 65 år* var cellerna *Skillnad 25 år (kr)* och *Skillnad 65 år (kr)* varningsfärgade när kvinnor låg mer än
+  1 000 kr lägre, utan prövning. Cellerna är nu neutrala (ADR-71). Vakten mot färg på storleken ensam söker nu i alla
+  filer under `src/app/`, inte bara Lönestruktur.
 - **Livscykeln har en gräns för om samspelet mellan kön och ålder är säkerställt.** Rutan, Att utforska och
   nyckeltalet räknade samspelet som säkerställt vid p < 0,10, medan tolkningstexten räknade det som inte säkerställt
   först vid p > 0,10, så att de sade olika saker vid exakt 0,10. Alla fyra använder nu samma regel: säkerställt när
