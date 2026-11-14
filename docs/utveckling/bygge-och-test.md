@@ -233,19 +233,21 @@ förbjuds därför inte.
 `npm run kontroll` (`tools/kontroll.mjs`) kör kedjan i *Definition of Done* i
 [`CONTRIBUTING.md`](../../.github/CONTRIBUTING.md), punkt 3: `build:app`, `lint`, `typecheck`, `test:full`,
 `bundle` och `test:browser`, i den ordningen, och stannar på första fel med stegets slutkod. Efter `bundle` prövas
-samma två grindar som CI-jobbet `quality` kör utöver npm-skripten: **artefaktgrinden** (bygget ändrade ingen spårad
+samma två grindar som CI-jobbet `grindar` kör utöver npm-skripten: **artefaktgrinden** (bygget ändrade ingen spårad
 fil under `dist/`, alltså inte heller `RELEASE.txt`; kedjan jämför `dist/` som den låg när den började, CI jämför med
 det incheckade. En ändring betyder att `dist/` inte motsvarade källan, och de ombyggda filerna ska checkas in)
 och **teckenkodningsgrinden** (ingen U+FFFD i `dist/app.js`, `src/index.html` och `src/style.css`). Sist skrivs
 stegens tider. `npm run kontroll -- --snabb` är körningen under arbetet: `test` i stället för `test:full`, och inget
-röktest i webbläsaren. `tests/dokumentation-struktur.test.js` kräver att kedjan har varje steg som CI-jobbet
-`quality` kör.
+röktest i webbläsaren. `tests/dokumentation-struktur.test.js` kräver att kedjan har varje steg som CI-jobben
+`grindar` och `tester` kör.
 
 ## 9. CI
 
 CI är `.github/workflows/ci.yml`, och dess kommentarer är källan till stegen, när de körs och varför. I korthet har
-arbetsflödet två jobb: **`quality`** kör lint, typkontroll, teckenkodningsgrinden, artefaktgrinden och sist hela
-testsviten (`npm run test:full`), och **`browser`** kör röktestet i Chromium, Firefox och WebKit mot en artefakt som
+arbetsflödet fyra jobb: **`grindar`** kör lint, typkontroll, teckenkodningsgrinden och artefaktgrinden, **`tester`**
+kör hela testsviten (`npm run test:full`) delad på fyra parallella jobb med Vitests `--shard`, så att varje testfil
+körs i exakt ett av dem, **`quality`** är grön först när `grindar` och alla delar av `tester` är gröna (det är den
+kontroll som regeln för `main` kräver), och **`browser`** kör röktestet i Chromium, Firefox och WebKit mot en artefakt som
 byggs i jobbet. **Artefaktgrinden** bygger om och kräver att hela `dist/`, också `RELEASE.txt`, blir byte-identisk
 med det incheckade. Den är den enda kontrollen av artefakten och `RELEASE.txt`; `dist/app.js` vaktas också av
 `appsource`-testet.
