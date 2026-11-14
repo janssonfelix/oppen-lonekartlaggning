@@ -334,7 +334,7 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   Är bara könsuppdelningen för liten (gruppen som helhet n ≥ 10) visas gruppens
   samlade median utan könsjämförelse.
 - **Könsuppdelade mått kräver tröskeln för varje kön** (`_konFarRedovisas` i
-  `06-k-anonymitet-och-dataminimering.js`). Det gäller ett köns median eller percentil, en löneskillnad och en
+  `06-k-troskel.js`). Det gäller ett köns median eller percentil, en löneskillnad och en
   kostnad som räknats ur en löneskillnad. De redovisas bara när både kvinnor och män är minst så många som
   tröskeln, per grupp och för hela organisationen. Det gäller nyckeltalet på Översikt, Word-utkastet,
   PDF-rapporten, Lönestruktur, EU-lönerapporten, A/B-jämförelsen och Löneöversyns råa löneskillnad.

@@ -629,6 +629,11 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ### Utveckling
 
+- **Tröskeln för minsta gruppstorlek i en egen modul.** `06-k-anonymitet-och-dataminimering.js` är delad i fyra
+  vid sina egna gränser: `06-k-troskel.js` (tröskeln, golven, stämplarna, inställningen och omritningen),
+  `06-kvinnoandel-referens.js`, `06-maskeringsnoter.js` och `06-uppgiftsminimering.js`. Innehållet är oförändrat;
+  bygget skiljer sig bara i de nya filernas filhuvuden (licensraden och upphovsraden), och utan dem är `app.js`
+  byte för byte densamma som förut.
 - **Testernas märkning följer reglerna.** Testerna för reglerna R1–R5 i `k-troskeln.md` §8 heter nu som regeln de
   vaktar (förut följde bara R1 numreringen, och R5 saknade märkning), och sakliga skäl i
   `tests/ktroskel-invarianter-25.test.js` heter I8, så att I5 bara står för omritningen efter konfigurationsfil och

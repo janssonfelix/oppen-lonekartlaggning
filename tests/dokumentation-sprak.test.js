@@ -23,7 +23,8 @@ const appDelar = readdirSync(join(root, 'src', 'app')).filter(f => /^\d\d-.*\.js
 
 describe('dokumentation: användarnära texter', () => {
     const anvandartexter = ['src/index.html', 'src/app/60-utskrift.js', 'src/app/62-word-utkast.js',
-        'src/app/65-om-verktyget.js', 'src/app/04-ordlista.js', 'src/app/06-k-anonymitet-och-dataminimering.js',
+        'src/app/65-om-verktyget.js', 'src/app/04-ordlista.js', 'src/app/06-k-troskel.js',
+        'src/app/06-kvinnoandel-referens.js', 'src/app/06-maskeringsnoter.js', 'src/app/06-uppgiftsminimering.js',
         'src/app/51-lika-arbete-regressionskort.js', 'src/app/52-livscykel.js', 'docs/anvandare/korguide.md', 'docs/anvandare/sammanfattning-hr-chefer.md',
         'docs/anvandare/pilotchecklista.md', 'docs/anvandare/datauttag.md', 'docs/dataskydd/dataskydd.md',
         'docs/anvandare/sakerhetsbeskrivning.md', 'docs/anvandare/tillganglighetsredogorelse.md', 'docs/anvandare/information-till-anstallda.md',

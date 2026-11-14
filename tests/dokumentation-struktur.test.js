@@ -104,7 +104,7 @@ describe('dokumentation: CHANGELOG är kronologisk', () => {
 describe('dokumentation: k-tröskelns standardvärde står rätt', () => {
     // Källan är K_STANDARD i koden. Användaren kan ändra tröskeln (ADR-38): appens texter fylls i ur kTroskel()
     // (vaktas i ktroskel.test.js), och dokumenten nedan anger standardvärdet. Det här är den enda kontrollen av talet.
-    const K = Number(/const K_STANDARD = (\d+);/.exec(läs('src/app/06-k-anonymitet-och-dataminimering.js'))[1]);
+    const K = Number(/const K_STANDARD = (\d+);/.exec(läs('src/app/06-k-troskel.js'))[1]);
     const filer = ['docs/dataskydd/dataskydd.md', 'docs/dataskydd/riskanalys.md',
                    'docs/anvandare/sammanfattning-hr-chefer.md', 'docs/anvandare/korguide.md', PLAN, ADR];
 
@@ -180,7 +180,8 @@ describe('dokumentation: dataskyddstexterna följer ADR-14 och ADR-15', () => {
     // ett dataskyddsombud läser först beskriver just det.
     const texter = ['docs/dataskydd/dataskydd.md', 'docs/dataskydd/riskanalys.md',
                     'src/app/60-utskrift.js', 'src/app/62-word-utkast.js', 'src/app/65-om-verktyget.js',
-                    'src/app/04-ordlista.js', 'src/app/06-k-anonymitet-och-dataminimering.js'];
+                    'src/app/04-ordlista.js', 'src/app/06-k-troskel.js', 'src/app/06-kvinnoandel-referens.js',
+                    'src/app/06-maskeringsnoter.js', 'src/app/06-uppgiftsminimering.js'];
     for (const fil of texter) {
         it(`${fil}: påstår inte att små grupper aldrig syns i någon utdata`, () => {
             expect(läs(fil)).not.toMatch(/redovisas inte i någon utdata/);

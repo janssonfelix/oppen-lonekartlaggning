@@ -1828,6 +1828,8 @@ function _renderaOmAllaFlikarStegvis() {
     return _omritningPagar;
 }
 
+// SPDX-License-Identifier: MIT
+// Copyright 2026 Felix Jansson
 // ---------------------------------------------------------------------------
 // Nationell kvinnoandel per AID (SKR:s personalstatistik, kommuner och regioner)
 // ---------------------------------------------------------------------------
@@ -1881,6 +1883,8 @@ function nationellAidKlass(aid) {
     const klass = kl === 'kvinnodominerad' ? 'kvinnodominerat' : kl === 'mansdominerad' ? 'icke-kvinnodominerat' : 'blandat';
     return { kvAndel, klass, prefix: ref.prefix || s.slice(0, 3), niva: ref.niva, del: ref.del, kalla: _skrReferensInfo().kalla };
 }
+// SPDX-License-Identifier: MIT
+// Copyright 2026 Felix Jansson
 // Högst så många gruppnamn räknas upp i noten innan resten summeras.
 const K_NOTE_MAX_NAMN = 12;
 
@@ -1966,6 +1970,8 @@ function kSamladNote(namn, sammanhang) {
         + `så en könsjämförelse skulle peka ut enskilda.</p>`;
 }
 
+// SPDX-License-Identifier: MIT
+// Copyright 2026 Felix Jansson
 // ---- GDPR uppgiftsminimering (Art. 5(1)(c)) ----
 // Vitlista över tillåtna datafält. Verktyget extraherar ENBART dessa roller
 // från CSV. Alla övriga kolumner ignoreras helt även om de finns i filen.
