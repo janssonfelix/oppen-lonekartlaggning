@@ -60,7 +60,7 @@ function renderLifecycleAnalysis() {
     // Sammanfattningsrutor för gap-utveckling
     const gapStart = result.gapAt25;
     const gapEnd   = result.gapAt65;
-    // Nyckeltalens färg följer uppmärksamhetstrappan (ADR-59): modellens 95 %-intervall för skillnaden vid åldern
+    // Nyckeltalens färg följer uppmärksamhetstrappan (ADR-59, ADR-71): modellens 95 %-intervall för skillnaden vid åldern
     // prövar den (result.niva25, result.niva65 ur src/lib/livscykel.js). Färgen bär inte betydelsen ensam: statusens
     // ikon står bredvid talet och ordet i verktygstipset och för skärmläsaren (WCAG 1.4.1).
     const nyckeltal = (niva, kvot) => {
@@ -141,7 +141,7 @@ function renderLifecycleAnalysis() {
 
     coachText += modellMening;
 
-    // Förändringen 25–65 år färgas på prövningen, inte på storleken (ADR-59): varningsfärg när samspelet mellan kön
+    // Förändringen 25–65 år färgas på prövningen, inte på storleken (ADR-71): varningsfärg när samspelet mellan kön
     // och ålder är säkerställt (interaktionSig, samma gräns som tolkningen och rutan bredvid), annars neutral. Inte
     // grön: "inte säkerställd" är inte "balanserat". Ordet står i verktygstipset och för skärmläsaren (WCAG 1.4.1).
     const forandringOrd = interaktionSig ? 'säkerställd förändring' : 'inte säkerställd';

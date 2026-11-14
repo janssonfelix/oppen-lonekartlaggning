@@ -5673,7 +5673,7 @@ const __mirrorLivscykel = (() => {
 
 
 /**
- * Trappans nivå för skillnaden vid en ålder (ADR-59): avståndet från lika lön är |gapPct|, och skillnaden är
+ * Trappans nivå för skillnaden vid en ålder (ADR-59, ADR-71): avståndet från lika lön är |gapPct|, och skillnaden är
  * säkerställd när modellens 95 %-intervall för den utesluter 0. Ett intervall som saknas eller inte är ändligt går
  * ej att bedöma.
  * @param {{gapPct:number, gapLoPct:number, gapHiPct:number}|null|undefined} g  en rad ur gapPerAge
@@ -5684,7 +5684,7 @@ function livscykelNiva(g) {
     return statusNiva(Math.abs(g.gapPct), g.gapLoPct > 0 || g.gapHiPct < 0);
 }
 
-/** Gränsen för samspelet mellan kön och ålder: säkerställt när ett p-värde är under 0,10, inte vid exakt 0,10. */
+/** Gränsen för samspelet mellan kön och ålder (ADR-71): säkerställt när ett p-värde är under 0,10, inte vid exakt 0,10. */
 const SAMSPEL_GRANS = 0.10;
 
 /**
@@ -19836,7 +19836,7 @@ function _jpaExkluderadeTexter() {
  *   - Listar yrkesgrupper med statusen Värt att granska (säkerställd skillnad på minst 3 %, ADR-59) med kolumnen
  *     Ojusterad löneskillnad ≥ 5 % (direktivmarkeringen), och BAS-intervall där regressionens skillnad är
  *     säkerställd också efter korrigering för många tester (Benjamini–Hochberg, q < 0,05) och minst 3 %, som
- *     regressionskortet och Att göra
+ *     regressionskortet och Att göra (ADR-71)
  *   - K-anonymitet appliceras: grupper med färre än kTroskel() personer av något kön exkluderas helt
  *   - Tomma protokoll-fält för sakliga skäl, fackliga kommentar, åtgärder
  *   - Signaturblad för arbetsgivare + fackliga representanter
@@ -29885,7 +29885,7 @@ function renderLifecycleAnalysis() {
     // Sammanfattningsrutor för gap-utveckling
     const gapStart = result.gapAt25;
     const gapEnd   = result.gapAt65;
-    // Nyckeltalens färg följer uppmärksamhetstrappan (ADR-59): modellens 95 %-intervall för skillnaden vid åldern
+    // Nyckeltalens färg följer uppmärksamhetstrappan (ADR-59, ADR-71): modellens 95 %-intervall för skillnaden vid åldern
     // prövar den (result.niva25, result.niva65 ur src/lib/livscykel.js). Färgen bär inte betydelsen ensam: statusens
     // ikon står bredvid talet och ordet i verktygstipset och för skärmläsaren (WCAG 1.4.1).
     const nyckeltal = (niva, kvot) => {
@@ -29966,7 +29966,7 @@ function renderLifecycleAnalysis() {
 
     coachText += modellMening;
 
-    // Förändringen 25–65 år färgas på prövningen, inte på storleken (ADR-59): varningsfärg när samspelet mellan kön
+    // Förändringen 25–65 år färgas på prövningen, inte på storleken (ADR-71): varningsfärg när samspelet mellan kön
     // och ålder är säkerställt (interaktionSig, samma gräns som tolkningen och rutan bredvid), annars neutral. Inte
     // grön: "inte säkerställd" är inte "balanserat". Ordet står i verktygstipset och för skärmläsaren (WCAG 1.4.1).
     const forandringOrd = interaktionSig ? 'säkerställd förändring' : 'inte säkerställd';
@@ -30423,7 +30423,7 @@ const PRIO_STATUS_INFO = {
     analysera: { label: 'Över referens', icon: ikon('info'), color: FARG.info, bg: FARG.infoBg, klass: 'bricka-info' }
 };
 /**
- * Uppmärksamhetstrappans bricka för kolumnen Skillnad kön (ADR-59, 9e). Prioriteringen prövar inte skillnaden mot
+ * Uppmärksamhetstrappans bricka för kolumnen Skillnad kön (ADR-71). Prioriteringen prövar inte skillnaden mot
  * slumpen, så brickan sätts efter storleken som i Utforska (högst Följ upp); under statGolv() per kön, eller utan
  * jämförelse per kön, står Går ej att bedöma. Brickan står bara på skärmen: exporten bär talet.
  * @param {{gapPct:number|null, kvN:number, maN:number}} i

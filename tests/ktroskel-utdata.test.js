@@ -706,7 +706,7 @@ describe('k-tröskeln i organisationspaketet', () => {
     });
 });
 
-describe('protokollet för gemensam lönebedömning: BAS-intervallen väljs efter korrigering för många tester (ADR-59, 9e)', () => {
+describe('protokollet för gemensam lönebedömning: BAS-intervallen väljs efter korrigering för många tester (ADR-71)', () => {
     // Sex BAS-intervall med 20 kvinnor och 20 män var. Brusets storlek per intervall styr p-värdet: i C är kvinnornas
     // lön 5 % lägre och bruset stort, så att rått p hamnar strax under 0,05 men q efter Benjamini–Hochberg över 0,05.
     // I E (bara i det andra underlaget) är skillnaden 8 % och bruset litet: säkerställd också efter korrigering.

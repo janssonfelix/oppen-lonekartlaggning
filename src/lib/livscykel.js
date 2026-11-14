@@ -18,7 +18,7 @@ import { fitOLS, pValue2Sided, tQuantile } from './stat.js';
 import { statusNiva } from './status.js';
 
 /**
- * Trappans nivå för skillnaden vid en ålder (ADR-59): avståndet från lika lön är |gapPct|, och skillnaden är
+ * Trappans nivå för skillnaden vid en ålder (ADR-59, ADR-71): avståndet från lika lön är |gapPct|, och skillnaden är
  * säkerställd när modellens 95 %-intervall för den utesluter 0. Ett intervall som saknas eller inte är ändligt går
  * ej att bedöma.
  * @param {{gapPct:number, gapLoPct:number, gapHiPct:number}|null|undefined} g  en rad ur gapPerAge
@@ -29,7 +29,7 @@ export function livscykelNiva(g) {
     return statusNiva(Math.abs(g.gapPct), g.gapLoPct > 0 || g.gapHiPct < 0);
 }
 
-/** Gränsen för samspelet mellan kön och ålder: säkerställt när ett p-värde är under 0,10, inte vid exakt 0,10. */
+/** Gränsen för samspelet mellan kön och ålder (ADR-71): säkerställt när ett p-värde är under 0,10, inte vid exakt 0,10. */
 export const SAMSPEL_GRANS = 0.10;
 
 /**

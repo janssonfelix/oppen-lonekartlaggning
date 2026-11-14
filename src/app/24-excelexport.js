@@ -291,7 +291,7 @@ function _jpaExkluderadeTexter() {
  *   - Listar yrkesgrupper med statusen Värt att granska (säkerställd skillnad på minst 3 %, ADR-59) med kolumnen
  *     Ojusterad löneskillnad ≥ 5 % (direktivmarkeringen), och BAS-intervall där regressionens skillnad är
  *     säkerställd också efter korrigering för många tester (Benjamini–Hochberg, q < 0,05) och minst 3 %, som
- *     regressionskortet och Att göra
+ *     regressionskortet och Att göra (ADR-71)
  *   - K-anonymitet appliceras: grupper med färre än kTroskel() personer av något kön exkluderas helt
  *   - Tomma protokoll-fält för sakliga skäl, fackliga kommentar, åtgärder
  *   - Signaturblad för arbetsgivare + fackliga representanter

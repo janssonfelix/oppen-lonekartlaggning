@@ -77,7 +77,7 @@ Datum står där beslutet har ett.
 | ADR-56 | Valbar förklaringsmodell | Gällande | 2026-11-05 |
 | ADR-57 | Tabellerna per AID-kod och BAS-intervall | Gällande | 2026-11-05 |
 | ADR-58 | BAS-dossiern: ett BAS-intervall på en sida | Gällande | 2026-11-06 |
-| ADR-59 | Uppmärksamhetstrappan på statistisk signal, direktivmarkeringen åtskild | Gällande | 2026-11-08 |
+| ADR-59 | Uppmärksamhetstrappan på statistisk signal, direktivmarkeringen åtskild | Ändrad av ADR-71 | 2026-11-08 |
 | ADR-60 | Jämförelseyrkena i likvärdigt arbete är alla som inte är kvinnodominerade; en definition av kvinnodominerat | Gällande | 2026-11-08 |
 | ADR-61 | Minsta skillnad 0 % som standard i likvärdigt arbete | Gällande | 2026-11-08 |
 | ADR-62 | Prioriteringens egna ord för läget mot referensen | Gällande | 2026-11-08 |
@@ -87,6 +87,7 @@ Datum står där beslutet har ett.
 | ADR-68 | Arkitekturbeslutens form: beslut i mall, gällande lydelse i referenserna | Gällande | 2026-11-13 |
 | ADR-69 | Löneöversyns förslag följer den inställda tröskeln | Gällande | 2026-11-13 |
 | ADR-70 | Skyddet gäller lönemått; antal och andelar är handläggarens ansvar | Gällande | 2026-11-14 |
+| ADR-71 | Trappan i livscykeln, protokollet och Prioriteringen; ingen färg på storleken ensam | Gällande | 2026-11-14 |
 
 ## Besluten
 
@@ -980,14 +981,8 @@ bär ingen markering; per-BAS-signalen heter *Titta närmare* (säkerställd eft
 för gemensam lönebedömning. Att göra grupperar efter källa (*Lika arbete*, *Lika arbete, fördjupning*, *Likvärdigt
 arbete*, *Löneläge mot referens*, *Underlagets kvalitet*), Översiktens ruta heter *Säkerställd löneskillnad*, och
 protokollet för gemensam lönebedömning väljer yrkesgrupper som är värda att granska med markeringen som egen kolumn.
-Utforska prövar ingen skillnad och visar därför högst *Följ upp*. Tillägg 2026-11-14 (teknisk-plan §9 punkt 9e):
-livscykelns nyckeltal vid 25 och 65 år följer trappan, med modellens 95 % konfidensintervall för skillnaden vid
-åldern som prövning (`livscykelNiva` i `src/lib/livscykel.js`), och rutan *Förändring 25–65 år* är varningsfärgad
-bara när samspelet mellan kön och ålder är säkerställt (samma gräns som tolkningstexten), annars neutral. Protokollet
-för gemensam lönebedömning väljer BAS-intervall efter BH-korrigeringen (`bhJustera` i `src/lib/stat.js`), som
-regressionskortet och Att göra. Kolumnen *Skillnad kön* i Prioriteringens åtgärdslista prövar, liksom Utforska,
-ingen skillnad och når högst *Följ upp*; det är ett beslut: Prioriteringens grupper prövas i Lika arbete, dit
-brickans verktygstips hänvisar, och en andra prövning skulle ge två utslag för samma fråga. Vaktas av
+Utforska prövar ingen skillnad och visar därför högst *Följ upp*. Livscykeln, protokollets BAS-intervall,
+kolumnen *Skillnad kön* i Prioriteringen och färgen i tabellcellerna: se ADR-71. Vaktas av
 `tests/status-trappa.test.js`.
 
 **ADR-60 — Jämförelseyrkena i likvärdigt arbete är alla som inte är kvinnodominerade; en definition av
@@ -1184,3 +1179,26 @@ summor), §9 och §11.
 *Vakt:* `tests/ktroskel-bas-effekter.test.js`, `tests/ktroskel-loneoversyn-summor.test.js`,
 `tests/ktroskel-livscykel.test.js` och `tests/ktroskel-loneoversyn-scenarier.test.js`; I1 i
 `tests/ktroskel-invarianter.test.js`.
+
+**ADR-71 — Trappan i livscykeln, protokollet och Prioriteringen; ingen färg på storleken ensam.** Beslut 2026-11-14.
+*Beslut:* Uppmärksamhetstrappan (ADR-59) gäller också de ställen som stod kvar efter den (teknisk-plan §9 punkt 9e).
+Livscykelns nyckeltal vid 25 och 65 år följer trappan, med modellens 95 % konfidensintervall för skillnaden vid
+åldern som prövning (`livscykelNiva` i `src/lib/livscykel.js`). Rutan *Förändring 25–65 år* är varningsfärgad bara
+när samspelet mellan kön och ålder är säkerställt, annars neutral; gränsen är en funktion,
+`samspelSakerstallt` i `src/lib/livscykel.js` (säkerställt när något av de två p-värdena är under 0,10, inte vid
+exakt 0,10), och den används av rutan, *Är förändringen säkerställd?*, Att utforska och tolkningstexten.
+Protokollet för gemensam lönebedömning väljer BAS-intervall efter BH-korrigeringen (`bhJustera` i
+`src/lib/stat.js`), som regressionskortet och Att göra. Kolumnen *Skillnad kön* i Prioriteringens åtgärdslista
+prövar, liksom Utforska, ingen skillnad och når högst *Följ upp*. En tabellcell med en skillnad mellan kvinnors och
+mäns lön färgas eller markeras inte på storleken ensam: percentiltabellen i Lönestruktur är neutral.
+*Motiv:* Färg på storleken ensam säger att en skillnad är värd att granska utan att den har prövats mot slumpen,
+vilket är det ADR-59 tog bort ur statusen. Med två gränser för samspelet sade rutan och tolkningstexten olika saker
+vid exakt 0,10; med en funktion kan de inte glida isär. Protokollet tog med intervall på det råa p-värdet, så att
+samma intervall kunde vara säkerställt i protokollet men inte i kortet. Prioriteringens grupper prövas i Lika arbete,
+dit brickans verktygstips hänvisar, och en andra prövning skulle ge två utslag för samma fråga.
+*Avvisat:* att låta tabellcellerna behålla färgen med en fast gräns i kronor eller procent (storlek utan prövning);
+att pröva *Skillnad kön* i Prioriteringen (två utslag för samma fråga); att låta protokollet välja på det råa
+p-värdet (ett annat urval än kortet och Att göra).
+*Gäller i dag:* `regressionsmodellen.md` §7 (BH-korrigeringen och protokollet) och teknisk-plan §9 punkt 9e.
+*Vakt:* `tests/status-trappa.test.js` (ingen färgklass på storleken ensam), `tests/livscykel.test.js`
+(`livscykelNiva`, `samspelSakerstallt`) och `tests/ktroskel-utdata.test.js` (protokollets BAS-intervall).

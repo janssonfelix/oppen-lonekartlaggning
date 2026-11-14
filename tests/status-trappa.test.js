@@ -159,7 +159,7 @@ describe('ingen färg på storleken ensam i appen', () => {
     });
 
     // Percentiltabellen i Lönestruktur färgade cellen Kvinnors lön i % av mäns rosa och halvfet när skillnaden var
-    // större än 5 %, på storleken ensam. En skillnad (gap, gapPct …) som jämförs med en gräns skild från 0 och direkt
+    // större än 5 %, på storleken ensam (ADR-71). En skillnad (gap, gapPct …) som jämförs med en gräns skild från 0 och direkt
     // väljer en färg- eller viktklass är samma fel. Tecknet (< 0, kvinnor lägre) får välja färg på en stapel.
     const STORLEK = /\bgap\w*\s*[<>]=?\s*-?(?!0(?:\.0+)?\b)\d+(?:\.\d+)?\s*\?\s*['"`]\s*(?:fg|farg|ar|bricka|bg|f|halvfet)[\w-]*/i;
     it('Lönestruktur sätter inte färg eller fetstil på en skillnad jämförd med en storleksgräns', () => {

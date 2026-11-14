@@ -324,7 +324,7 @@ eftersom q aldrig är mindre än p. Signalen per intervall
 är under 0,05 (varningstriangeln), annars *Inget utslag*. Texten om korrigeringen räknas ur antalet tester
 (`_bhTextFor`). Protokollet för gemensam lönebedömning tar med de BAS-intervall som har signalen *Titta närmare*, med
 q < 0,05 som säkerställt efter korrigering; bladet har kolumnen *q-värde (BH-justerat)* efter p-värdet, och
-kolumnen *Säkerställd efter korrigering* gäller q (ADR-59, teknisk-plan §9 punkt 9e).
+kolumnen *Säkerställd efter korrigering* gäller q (ADR-71).
 
 ## 8. Utan ålder
 

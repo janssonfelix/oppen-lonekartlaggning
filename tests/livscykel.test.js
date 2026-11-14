@@ -4,6 +4,8 @@
  * Fixturen är deterministisk (LCG) och har ett känt kön-effekt-mönster. Könskoefficienten
  * jämförs mot fitOLS på samma designmatris, skriven här för hand, så att modellen inte
  * bara "ser rimlig ut" utan faktiskt skattar det den säger att den skattar.
+ *
+ * Vaktar: R28 (docs/utveckling/regler.md)
  */
 import { describe, it, expect } from 'vitest';
 import { livscykelRegression, livscykelNiva, samspelSakerstallt, SAMSPEL_GRANS } from '../src/lib/livscykel.js';
@@ -176,7 +178,7 @@ function trappFixtur(skillnadPct, brus) {
     return rader;
 }
 
-describe('livscykelRegression: nyckeltalen vid 25 och 65 år följer trappan (ADR-59)', () => {
+describe('livscykelRegression: nyckeltalen vid 25 och 65 år följer trappan (ADR-71)', () => {
     it('en tydlig skillnad (−8 %) med ett intervall som utesluter lika lön är värd att granska', () => {
         const res = livscykelRegression(trappFixtur(-8, 0.01), { golv: 10 });
         expect(res.gapAt25).toBeCloseTo(-8, 6);
@@ -224,7 +226,7 @@ describe('livscykelRegression: lönefil utan ålder (ADR-64)', () => {
     });
 });
 
-describe('samspelSakerstallt: en gräns för samspelet kön × ålder', () => {
+describe('samspelSakerstallt: en gräns för samspelet kön × ålder (ADR-71)', () => {
     it('gränsen är p < 0,10', () => {
         expect(SAMSPEL_GRANS).toBe(0.10);
     });

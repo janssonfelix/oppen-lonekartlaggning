@@ -222,12 +222,12 @@ pekar på står kvar med en rad om hur den avslutades.
 9d. **Dekomponeringen visas som en bild:** trappan med yrkesgruppssteget efter huvudtalet, förklaringsbudgeten
     under den, steglistan som skärmläsaralternativ. Livscykelns nivåer per BAS kommer ur modellens
     BAS-koefficienter (`basFaktor`). Blinder-Oaxaca kodar BAS som indikatorer sedan ADR-53.
-9e. **Storlek utan prövning, som beslut (ADR-59, ADR-62):** Utforska och kolumnen *Skillnad kön* i Prioriteringens
+9e. **Storlek utan prövning, som beslut (ADR-59, ADR-62, ADR-71):** Utforska och kolumnen *Skillnad kön* i Prioriteringens
     åtgärdslista visar storleken utan att pröva den mot slumpen och når därför högst *Följ upp*. Det är ett beslut,
     inte en rest: Utforskas celler är fria urval, där en prövning per cell vore många tester utan korrigering, och
     Prioriteringens grupper prövas i Lika arbete, dit brickans verktygstips hänvisar. På skärmen (k = 1) står många
     små grupper som *Går ej att bedöma*, eftersom prövningen kräver `statGolv()` per kön (ADR-38). Övriga rester
-    efter trappan är lösta (2026-11-14): livscykelns nyckeltal följer trappan med modellens konfidensintervall och
+    efter trappan är lösta (2026-11-14, ADR-71): livscykelns nyckeltal följer trappan med modellens konfidensintervall och
     förändringen 25–65 år färgas på prövningen av samspelet mellan kön och ålder, protokollet för gemensam
     lönebedömning väljer BAS-intervall efter BH-korrigeringen, och handlingsplanen säger i kolumnen *Kostnaden
     avser* vilken kostnad raden har.

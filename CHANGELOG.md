@@ -9,7 +9,7 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 ### Gränssnitt
 
 - **Livscykelns nyckeltal följer uppmärksamhetstrappan.** Kvinnors lön i % av mäns vid 25 och 65 år färgades rött
-  över 5 % och gult över 2 %, på storleken ensam. Färgen följer nu trappan (ADR-59): *Värt att granska* när modellens
+  över 5 % och gult över 2 %, på storleken ensam. Färgen följer nu trappan (ADR-71): *Värt att granska* när modellens
   95 % konfidensintervall för skillnaden vid åldern utesluter lika lön och skillnaden är minst 3 %, *Följ upp* när den
   är minst 3 % men inte säkerställd eller säkerställd men under 3 %, *Balanserat* annars, och *Går ej att bedöma*
   när intervallet inte kan räknas. Statusens ikon står bredvid talet och ordet i verktygstipset, så att färgen inte
@@ -18,10 +18,10 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   större än 1 procentenhet och grön annars, oavsett om den var säkerställd. Nu är den varningsfärgad när samspelet
   mellan kön och ålder är säkerställt (p < 0,10, samma gräns som tolkningen och rutan *Är förändringen säkerställd?*)
   och neutral annars, inte grön: att en förändring inte är säkerställd betyder inte att läget är balanserat. Ordet
-  (*säkerställd förändring* eller *inte säkerställd*) står i verktygstipset och för skärmläsaren (ADR-59).
+  (*säkerställd förändring* eller *inte säkerställd*) står i verktygstipset och för skärmläsaren (ADR-71).
 - **Percentiltabellen i Lönestruktur markerar inte på storleken.** I *Var i lönefördelningen är skillnaden störst?*
   var cellen *Kvinnors lön i % av mäns* rosa och halvfet när kvinnor låg mer än 5 % lägre vid percentilen, utan
-  prövning. Cellen är nu neutral, som uppmärksamhetstrappan kräver (ADR-59); stapeln bredvid visar fortfarande
+  prövning. Cellen är nu neutral, som uppmärksamhetstrappan kräver (ADR-71); stapeln bredvid visar fortfarande
   skillnadens riktning och storlek.
 - **Livscykeln har en gräns för om samspelet mellan kön och ålder är säkerställt.** Rutan, Att utforska och
   nyckeltalet räknade samspelet som säkerställt vid p < 0,10, medan tolkningstexten räknade det som inte säkerställt
@@ -41,7 +41,7 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 - **Protokollet för gemensam lönebedömning väljer BAS-intervall efter korrigering för många tester.** Bladet
   *3. Likvärdigt arbete (BAS)* tog med ett intervall när det råa p-värdet var under 0,05 och skillnaden minst 3 %,
   utan den korrigering som regressionskortet och Att göra gör (Benjamini–Hochberg). Nu gäller samma regel som där: ett
-  intervall tas med när q-värdet efter korrigeringen är under 0,05 och skillnaden minst 3 % (ADR-59). Bladet har
+  intervall tas med när q-värdet efter korrigeringen är under 0,05 och skillnaden minst 3 % (ADR-71). Bladet har
   kolumnen *q-värde (BH-justerat)* efter p-värdet, och kolumnen som sade Ja eller Nej på p säger det nu på q
   (*Säkerställd efter korrigering (q < 0,05)*). Försättsbladets antal, raden i bladet med exkluderade grupper och
   metodbladets rader om signifikans och multipel jämförelse följer. Korrigeringen räknas på ett ställe
@@ -61,6 +61,11 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ### Utveckling
 
+- **Ändringarna efter uppmärksamhetstrappan är ett eget beslut, ADR-71.** De fördes in som ett tillägg i ADR-59:
+  livscykelns nyckeltal och förändringen 25–65 år, protokollets BAS-intervall efter BH-korrigering, kolumnen
+  *Skillnad kön* i Prioriteringen och percentiltabellen i Lönestruktur. Ett beslut som ändrar ett annat får nästa
+  lediga nummer (`.github/GOVERNANCE.md`); ADR-59 har status *Ändrad av ADR-71*, och regel R28, teknisk-plan
+  punkt 9e och kommentarerna pekar på det nya beslutet.
 - **BH-korrigeringen prövas mot statsmodels.** `bhJustera` prövades bara mot handräknade fall. Referenstestet
   jämför nu q-värdena med `multipletests(method='fdr_bh')` i statsmodels för fem p-vektorer (lika p-värden, ett enda
   p-värde, tio osorterade, ett fall där monotoniseringen slår till och p-värden nära 1), inom 1e-12. Skriptet som

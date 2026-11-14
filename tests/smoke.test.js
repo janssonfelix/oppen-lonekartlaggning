@@ -1732,7 +1732,7 @@ describe('Prioritering: egna ord och rätt rubrik (A5)', () => {
     it('fliken har Prioriteringens egna ord, och nyckeltalet heter Kostnad att nå referensen', () => {
         const w = oppna();
         const d = w.document;
-        // Kolumnen Skillnad kön bär uppmärksamhetstrappans bricka (9e); den gäller skillnaden mellan kvinnor och män
+        // Kolumnen Skillnad kön bär uppmärksamhetstrappans bricka (ADR-71); den gäller skillnaden mellan kvinnor och män
         // och prövas för sig nedan.
         const vy = d.getElementById('view-prioritering').cloneNode(true);
         vy.querySelectorAll('.prio-konstatus').forEach(e => e.remove());
@@ -1751,7 +1751,7 @@ describe('Prioritering: egna ord och rätt rubrik (A5)', () => {
         expect(d.getElementById('prio-stat-cost-period').textContent).toBe('12 månader, inkl. PO-påslag 39,15 %');
         expect(vy.textContent).not.toMatch(/åtgärdskostnad/i);
     });
-    it('kolumnen Skillnad kön bär uppmärksamhetstrappans bricka efter storleken, utan prövning (9e)', () => {
+    it('kolumnen Skillnad kön bär uppmärksamhetstrappans bricka efter storleken, utan prövning (ADR-71)', () => {
         const w = oppna();
         const rader = [...w.document.querySelectorAll('#prio-table tbody tr')];
         expect(rader.length).toBeGreaterThan(0);
