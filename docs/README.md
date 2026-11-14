@@ -3,6 +3,10 @@
 Dokumenten i `docs/`, ordnade efter vem som läser dem. Översikten över hela repot står i
 [`README.md`](../README.md) i roten. Ingången för AI-assistenter är [`CLAUDE.md`](../CLAUDE.md) i roten.
 
+Verktyget är ett proof of concept, inte en färdig produkt: koden, testerna och alla dokument här är skrivna med
+AI-verktyg, styrda och granskade av en person. Det är inte prövat med verklig lönedata, statistiken är inte granskad
+av en statistiker, och texterna om lag och dataskydd är inte granskade av jurist eller dataskyddsombud.
+
 ## För den som gör kartläggningen
 
 | Dokument | Vad det är |
@@ -22,7 +26,7 @@ Dokumenten i `docs/`, ordnade efter vem som läser dem. Översikten över hela r
 | [`sammanfattning-hr-chefer.md`](anvandare/sammanfattning-hr-chefer.md) | Sammanfattning för HR-chefer: vad verktyget gör och inte gör. |
 | [`sakerhetsbeskrivning.md`](anvandare/sakerhetsbeskrivning.md) | Säkerhetsbeskrivning på en sida för IT-säkerhet och dataskyddsombud. |
 | [`dataskydd.md`](dataskydd/dataskydd.md) | Dataskyddsbeskrivningen i sammanfattning: vilka uppgifter, var de finns och hur de skyddas. |
-| [`riskanalys.md`](dataskydd/riskanalys.md) | Den fullständiga, kodgranskade risk- och sårbarhetsanalysen: dataflöde, skydd, riskregister och verifiering. |
+| [`riskanalys.md`](dataskydd/riskanalys.md) | Den fullständiga risk- och sårbarhetsanalysen, granskad mot koden med AI-verktyg: dataflöde, skydd, riskregister och verifiering. |
 
 ## För utvecklare och granskare
 

@@ -31,7 +31,8 @@ datastrukturering kan verktyget leverera värde över flera år utan att uppdate
 - **Dokumenterar inte** sakliga skäl per grupp internt — den bedömningen görs i HR:s ordinarie verktyg.
 - **Hanterar inte** anställds informationsrätt (art. 7), könsneutral lönesättningspolicy (art. 5) eller
   myndighetsrapportering (art. 9) — separata processer hos arbetsgivaren. *Informationsrätten får inte återinföras.*
-- **Använder inte** AI/LLM. All statistik är klassiska metoder med spårbara, dokumenterade formler.
+- **Använder inte** AI/LLM i beräkningarna. All statistik är klassiska metoder med spårbara, dokumenterade formler.
+  Verktyget är däremot *skrivet* med AI-verktyg, styrda och granskade av en person.
 - **Sparar inte** data mellan sessioner, och inte vyer eller urval som egna filer; en uppställning i Tabeller och egna
   vyer kan läggas i rapporten som ett recept (ADR-52).
 - **Läser inga** historiska lönefiler: de skulle lägga fler personuppgifter i minnet och förutsätter stabila

@@ -8,7 +8,7 @@ sanningen; där dokumentet och filerna skiljer sig är det dokumentet som ska r�
 Dokumentet är inte Definition of Done — vad som krävs innan en ändring är klar står i *Definition of Done* i
 [`CONTRIBUTING.md`](../../.github/CONTRIBUTING.md), punkt 3 — och inte beslutsloggen: varför bygget och testerna är
 som de är står i [`arkitekturbeslut.md`](arkitekturbeslut.md), främst ADR-1, 2, 6, 7, 8, 9, 13, 30 och 31.
-Kommandona i korthet står i `README.md` (*För dig som utvecklar*). Det som har en egen källa — mapparna, dokumenten,
+Kommandona står i `package.json` (`scripts`) och beskrivs i avsnitten nedan. Det som har en egen källa — mapparna, dokumenten,
 CI:s steg och vad release-grinden prövar — skrivs inte av här utan hänvisas dit (princip 4 i
 [`principer.md`](principer.md)).
 
@@ -29,7 +29,11 @@ CI:s steg och vad release-grinden prövar — skrivs inte av här utan hänvisas
 `ERR_REQUIRE_ESM` på Node 20 — smoke-, a11y- och golden-sviterna faller då tyst. `require(esm)` är påslaget från
 22.12.
 
-**Mappstrukturen** står i `README.md` (*Mappstruktur*), och appens moduler i `src/app/README.md`.
+**Mapparna** står i `README.md` (*Repot*), och appens moduler i `src/app/README.md`.
+
+**Namngivning.** Filnamn skrivs med gemener och bindestreck, utan å, ä och ö. Levande dokument har inget datum eller
+versionsnummer i filnamnet; versionen står i dokumentet. Modulerna i `src/app/` har ett tvåsiffrigt prefix som styr
+ordningen när de slås ihop.
 
 **Källfilerna** är `src/index.html`, `src/style.css`, `src/app/NN-*.js` och `src/lib/*.js`. `dist/app.js` är ett
 **genererat** hopslag av `src/app/` och redigeras aldrig direkt (ADR-6, ADR-8).
@@ -73,8 +77,7 @@ speglarna är i synk med `src/lib/`.
 CalVer (`ÅÅÅÅ.MM.DD`). `VERSION` är källan, och `package.json` sätts samtidigt (npm kräver fältet). `APP_VERSION` och
 `APP_BUILD_DATE` genereras ur den (ADR-13). `tests/version.test.js` prövar att `VERSION` är CalVer och att stämpeln
 och `package.json` följer den. Bygget för in den i `src/app/08-version.js`, `dist/` och programvaruförteckningen;
-`CHANGELOG.md` och riskanalysen anger den och prövas av release-grinden. Hur en version släpps står i `README.md`
-(*Släppa en version*).
+`CHANGELOG.md` och riskanalysen anger den och prövas av release-grinden. Hur en version släpps står i §10.
 
 ## 4. Stilmallen
 
@@ -256,8 +259,16 @@ med det incheckade. Den är den enda kontrollen av artefakten och `RELEASE.txt`;
 
 ## 10. Release och demosidan
 
-**Stegen** för att släppa en version står i `README.md` (*Släppa en version*), och hur en mottagare verifierar filen
-står i `SECURITY.md` (*Kontrollera att filen är äkta*).
+**Släppa en version.** Hur en mottagare verifierar filen står i `SECURITY.md` (*Kontrollera att filen är äkta*).
+
+1. Granska `docs/dataskydd/riskanalys.md` och `docs/dataskydd/dataskydd.md` mot koden och sätt
+   granskningsdatumet (punkt 17b i [`oppna-punkter.md`](oppna-punkter.md)).
+2. Sätt versionen i `VERSION` och `package.json`, och byt rubriken *Oförlöst* i `CHANGELOG.md` mot versionen.
+3. `npm run build:app && npm run bundle`; för in byggets kontrollsumma och version på rad 3 i riskanalysen.
+4. Kör `npm run test:full`, checka in och kör `npm run release:kontroll`. Grinden skriver ut taggkommandot.
+5. Pusha taggen `v<VERSION>`. Arbetsflödet `.github/workflows/release.yml` kör grinden igen, bygger om, signerar och
+   publicerar en GitHub Release. Samma tagg publicerar demosidan (`.github/workflows/pages.yml`; går också att köra
+   för hand).
 
 **Release-grinden** `npm run release:kontroll` (`tools/release.mjs`, prövad på fixturer i `tests/release.test.js`)
 prövar bara det som gäller vid en release; vad, står i huvudet i `tools/release.mjs`. Det som ska gälla i varje
@@ -288,6 +299,5 @@ körtidsberoenden från npm: biblioteken ligger låsta i `vendor/`.
 
 ## 12. Dokumentationen
 
-Förteckningen över dokumenten i `docs/`, efter läsare, står i [`docs/README.md`](../README.md), och filerna i roten
-och i `.github/` i `README.md` (*Mappstruktur*). Hur filer namnges står i `README.md` (*Namngivning*). Metoderna
-beskrivs för användaren i appens flik *Om verktyget*.
+Förteckningen över dokumenten i `docs/`, efter läsare, står i [`docs/README.md`](../README.md), och mapparna i
+`README.md` (*Repot*). Hur filer namnges står i §1. Metoderna beskrivs för användaren i appens flik *Om verktyget*.

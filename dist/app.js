@@ -33475,6 +33475,7 @@ const INFO_SECTIONS = {
     overview: () => `
         <h3>Vad är detta verktyg?</h3>
         <p class="om-ansvar"><strong>Ansvar.</strong> ${ANSVARSFORBEHALL}</p>
+        <p class="om-status"><strong>Status.</strong> Verktyget är ett proof of concept, inte en färdig produkt. All kod, alla tester och all dokumentation är skrivna med AI-verktyg, styrda och granskade av en person. Verktyget är inte prövat med verklig lönedata, statistiken är inte granskad av en statistiker, och texterna om lag och dataskydd är inte granskade av jurist eller dataskyddsombud.</p>
         <p>
             Öppen lönekartläggning är ett fritt verktyg för den årliga <strong>lönekartläggningen enligt diskrimineringslagen</strong> (3 kap., aktiva åtgärder om lönefrågor). Det tar emot en lönefil, räknar fram löneskillnaderna mellan kvinnor och män för lika och likvärdigt arbete, visar vad som bör prioriteras och vad det kostar, och skriver ett utkast till dokumentationen. Bedömningen av sakliga skäl och den slutliga dokumentationen gör arbetsgivaren i samverkan med facklig part.
         </p>
@@ -33514,7 +33515,7 @@ const INFO_SECTIONS = {
             <li>Samverkar med facket och lämnar den information som lagen kräver</li>
             <li>Ansvarar för arbetsvärderingen: BAS-intervallen, eller organisationens egna poäng, är verktygets mått på arbetets krav</li>
         </ul>
-        <p>Verktyget använder ingen artificiell intelligens. All statistik är klassiska metoder med formler som går att följa, och varje tal går att spåra med knappen <em>Visa beräkningen</em>. Ingenting sparas mellan sessioner: stäng fliken och allt är borta.</p>
+        <p>Beräkningarna använder ingen artificiell intelligens. All statistik är klassiska metoder med formler som går att följa, och varje tal går att spåra med knappen <em>Visa beräkningen</em>. Ingenting sparas mellan sessioner: stäng fliken och allt är borta.</p>
 
         <h3>Så går en kartläggning till</h3>
         <ol>

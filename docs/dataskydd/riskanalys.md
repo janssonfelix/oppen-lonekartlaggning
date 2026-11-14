@@ -2,6 +2,7 @@
 
 **Bygge:** `2026.11.14` · **Artefakt-SHA-256:** `2eccb9d6f067e1ac44b09775dba1fbd0d2f0caaafb1b383a0ae7fd94470ef331` (se `dist/RELEASE.txt`).
 **Granskningsdatum:** 2026-11-14.
+**Granskare:** granskningen är gjord med AI-verktyg och styrd av en person; ingen utomstående har granskat koden.
 **Granskningsmetod:** kodläsning påstående för påstående + statisk sökning i källkod och bygge +
 körning av det byggda verktyget i jsdom och i Chromium (utan nätverk) med syntetiska testfiler.
 Varje teknisk kontroll nedan är **verifierad mot koden och i webbläsaren**, inte antagen. Vad
