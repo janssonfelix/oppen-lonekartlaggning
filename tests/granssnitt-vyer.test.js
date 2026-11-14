@@ -143,9 +143,9 @@ describe('Löneöversikten i Utforska', () => {
     it('heter Löneöversikt, och sökfältet säger vad man söker på', () => {
         const html = las('src/index.html');
         expect(html).not.toMatch(/Hierarkisk Rapport/i);
-        expect(html).toContain('<h2>Löneöversikt — alla BAS-intervall</h2>');
+        expect(html).toContain('>Löneöversikt — alla BAS-intervall</h2>');
         const w = createAppWindow();
-        expect(w.document.getElementById('search-rapport').placeholder).toBe('Sök yrke eller BAS');
+        expect(w.document.getElementById('search-rapport').placeholder).toBe('Sök AID eller BAS');
     });
     it('jämförelsestatistikens kolumner visas bara när en statistik är inläst', () => {
         const w = rita();

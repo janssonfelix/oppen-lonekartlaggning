@@ -5,8 +5,8 @@
  *
  * Vakten håller de avförda orden (yrke, yrkesgrupp, jämförelseyrke, yrkeskod, yrkesbenämning, AID-grupp, sektor
  * om AID:s huvudområde) och termernas egna ordformer borta från det användaren läser i src/app/, src/lib/ och
- * src/index.html, på samma sätt som tests/farger.test.js håller färgkoderna på ett ställe. Under bytet står de
- * filer som inte är bytta i KVAR; listan krymper per etapp och är tom efter den sista.
+ * src/index.html, på samma sätt som tests/farger.test.js håller färgkoderna på ett ställe. Alla filer prövas; det
+ * som får stå kvar står som uttryckliga undantag med skäl nedan.
  */
 import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';
@@ -246,6 +246,9 @@ const UNDANTAG_FRASER = [
     { fil: 'src/lib/sakligaskal.js', fras: 'Svårrekryterade yrken eller konkurrens', skal: 'kategorin Marknad bland de sakliga skälen, vardagligt ord om arbetsmarknaden' },
     { fil: 'src/lib/sakligaskal.js', fras: 'Dokumenterad yrkeserfarenhet', skal: 'kategorin Erfarenhet bland de sakliga skälen, personens erfarenhet' },
     { fil: 'src/index.html', fras: 'Markera som bristyrke: yrken som organisationen har svårt att rekrytera till', skal: 'vad ett bristyrke är (Prioritering), vardagligt ord' },
+    { fil: 'src/index.html', fras: 'i lönefilen ofta Yrke eller Befattning', skal: 'lönefilens kolumnrubriker, som verktyget känner igen (ALLOWED_FIELDS)' },
+    { fil: 'src/app/32-filinlasning.js', fras: 'i lönefilen ofta Yrke eller Befattning', skal: 'lönefilens kolumnrubriker i kolumnmappningen, som verktyget känner igen (ALLOWED_FIELDS)' },
+    { fil: 'src/app/65-om-verktyget.js', fras: 'utbildning, yrkesval och anställningstid', skal: 'vardagligt ord om personers val, inte AID' },
 ];
 // Kolumnigenkänningen jämför med lönefilens rubriker, som är filens ord och inte verktygets: lönefiler med rubriken
 // Yrke, Yrkesgrupp eller Befattning ska fortfarande läsas in (ALLOWED_FIELDS), och importprofilernas rubriker och
@@ -253,62 +256,12 @@ const UNDANTAG_FRASER = [
 const KOLUMNIGENKANNING = [
     { fil: 'src/app/06-uppgiftsminimering.js', block: /const ALLOWED_FIELDS = \{[\s\S]*?\n\};/g },
     { fil: 'src/lib/importprofiler.js', block: /\b(?:rubriker|kannetecken):\s*(?:\{[^}]*\}|\[[^\]]*\])/g },
+    // CSV-mallens rubriker är kolumnnamnen i filen som laddas ned, och de ska kännas igen när filen läses in igen.
+    { fil: 'src/app/32-filinlasning.js', block: /const CSV_MALL_RUBRIKER = \[[^\]]*\];/g },
 ];
 // Filer som inte prövas: AID:s etikettlista är data, och etikettnamnen är AID:s egna (till exempel Studie- och yrkesvägledare).
 const UNDANTAG_FILER = ['src/lib/aid-etiketter.js'];
 
-// Filerna som ännu inte är bytta (etapp 2–5). Listan krymper per etapp och är tom efter den sista.
-const KVAR = [
-    'src/app/05-tabeller-och-lankar.js',
-    'src/app/06-k-troskel.js',
-    'src/app/06-kvinnoandel-referens.js',
-    'src/app/07-standardinstallningar.js',
-    'src/app/10-diagramtema.js',
-    'src/app/11-markering.js',
-    'src/app/12-tillstand.js',
-    'src/app/13-oversikt.js',
-    'src/app/15-extremvarden-basrang.js',
-    'src/app/16-inlasningskontroll.js',
-    'src/app/17-forhandskontroll.js',
-    'src/app/18-atgardslista.js',
-    'src/app/19-konfiguration.js',
-    'src/app/20-demodata-diagnostik.js',
-    'src/app/21-stort-demo.js',
-    'src/app/22-exporthjalpare.js',
-    'src/app/24-excelexport.js',
-    'src/app/27-berakningsbevis.js',
-    'src/app/28-vad-lagras-inaktivitet.js',
-    'src/app/29-organisationspaket.js',
-    'src/app/32-filinlasning.js',
-    'src/app/39-loneoversikt.js',
-    'src/app/58-rapportmodell.js',
-    'src/app/59-exportbesked.js',
-    'src/app/60-utskrift.js',
-    'src/app/65-om-verktyget.js',
-    'src/app/67-rapportunderlag.js',
-    'src/app/70-utforska.js',
-    'src/app/73-arsbokslut.js',
-    'src/app/80-gruppdossier.js',
-    'src/app/81-basdossier.js',
-    'src/app/85-robusthet-fardigcheck.js',
-    'src/app/86-installningar.js',
-    'src/app/86-sok-register.js',
-    'src/app/87-sok.js',
-    'src/lib/aid.js',
-    'src/lib/aidkontroll.js',
-    'src/lib/arsbokslut.js',
-    'src/lib/attgora.js',
-    'src/lib/datakvalitet.js',
-    'src/lib/falt.js',
-    'src/lib/forhandskontroll.js',
-    'src/lib/organisationspaket.js',
-    'src/lib/perbas.js',
-    'src/lib/rapportunderlag.js',
-    'src/lib/tabellrecept.js',
-    'src/lib/urval.js',
-    'src/lib/utforska.js',
-    'src/index.html',
-];
 
 /** Träffarna i en text: avförda ord (utom undantagsorden) och termernas ordformer. */
 function traffar(text) {
@@ -365,24 +318,23 @@ describe('vakt: AID:s ord står bara i termer.js (ADR-74)', () => {
             + '<b data-tip="AID-etikett" data-term-template="{enhet.en}" data-term-attr="data-tip">x</b></div>';
         expect(traffar(htmlText(htmlUtanMallar(html), [...LASTA_ATTRIBUT, 'data-tip']))).toEqual(['yrke: Yrkesgrupper']);
     });
-    it('ingen fil utanför listan har avförda ord eller termernas ordformer i det användaren läser', () => {
-        expect(GRANSKADE.filter(f => !KVAR.includes(f)).flatMap(fyndI)).toEqual([]);
-    });
-    it('listan över filer som återstår är aktuell: varje fil finns och har något kvar att byta', () => {
-        expect(KVAR.filter(f => !GRANSKADE.includes(f))).toEqual([]);
-        expect(KVAR.filter(f => fyndI(f).length === 0)).toEqual([]);
-        for (const f of ['src/app/04-ordlista.js', 'src/app/09-termer.js', 'src/lib/termer.js', 'src/lib/namn.js']) expect(KVAR).not.toContain(f);
+    it('ingen fil har avförda ord eller termernas ordformer i det användaren läser', () => {
+        expect(GRANSKADE.length).toBeGreaterThan(100);
+        expect(GRANSKADE).toContain('src/index.html');
+        expect(GRANSKADE.flatMap(fyndI)).toEqual([]);
     });
     it('undantagen står där de sägs stå', () => {
         for (const u of UNDANTAG_FRASER) expect(läs(u.fil), `${u.fil}: ${u.fras}`).toContain(u.fras);
     });
     it('index.html: varje data-term-template har standardtexten i elementet, och alla klamrar är termer', () => {
+        // I data-k-tooltip står också {k} och {golv}, som tröskeln fyller i efter termerna (06-k-troskel.js).
         const d = new JSDOM(läs('src/index.html')).window.document;
         const mallar = [...d.querySelectorAll('[data-term-template]')];
         expect(mallar.length).toBeGreaterThanOrEqual(3);
         for (const el of mallar) {
             const mall = el.getAttribute('data-term-template'), attr = el.getAttribute('data-term-attr');
-            expect(fyllTermer(mall), mall).not.toMatch(/\{/);
+            const fylld = fyllTermer(mall);
+            expect(attr === 'data-k-tooltip' ? fylld.replace(/\{(?:k|golv)\}/g, '') : fylld, mall).not.toMatch(/\{/);
             expect(attr ? el.getAttribute(attr) : el.textContent, mall).toBe(fyllTermer(mall));
         }
     });

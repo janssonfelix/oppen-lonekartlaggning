@@ -217,14 +217,14 @@ describe('Jämförelse med förra året: de flaggade yrkesgrupperna', () => {
         w.__state.forraArsbokslut.ar -= 1;
         const nuAr = new Date().getFullYear();
         w.eval('renderArsjamforelse()');
-        const panel = [...w.document.querySelectorAll('#arsjamforelse table')].filter(t => rubriker(t)[0] === 'Yrkesgrupp');
+        const panel = [...w.document.querySelectorAll('#arsjamforelse table')].filter(t => rubriker(t)[0] === 'AID-etikett');
         expect(panel.length).toBeGreaterThan(0);
         for (const t of panel) {
             expect(rubriker(t)[1]).toBe(`Kvinnor / män ${nuAr}`);
             for (const tr of t.querySelectorAll('tbody tr')) expect(ren(tr.cells[1].textContent)).toMatch(/^\d+ \/ \d+$/);
         }
         const avsnitt = w.eval('rapportModell({ alla: true })').avsnitt.find(a => a.id === 'arsjamforelse');
-        const grupptabeller = avsnitt.delar.filter(p => p.typ === 'tabell' && p.kolumner[0].rubrik === 'Yrkesgrupp');
+        const grupptabeller = avsnitt.delar.filter(p => p.typ === 'tabell' && p.kolumner[0].rubrik === 'AID-etikett');
         expect(grupptabeller.length).toBeGreaterThan(0);
         for (const t of grupptabeller) {
             const i = t.kolumner.findIndex(k => k.rubrik === `Kvinnor / män ${nuAr}`);

@@ -151,7 +151,7 @@ function buildGruppdossier(key, delat = null) {
             const nTot = traffar.reduce((s, i) => s + (i.n || 0), 0);
             prio = {
                 ...traffar[0],
-                yrke: `${g.aid} (${traffar.length} yrkesbenämningar)`,
+                yrke: `${g.aid} (${traffar.length} ${T.namn.fl})`,
                 n: nTot,
                 annualGapTotal: traffar.reduce((s, i) => s + (i.annualGapTotal || 0), 0),
                 // n-viktat medelvärde — ett rakt medel skulle ge små grupper lika tyngd
@@ -203,7 +203,7 @@ function renderGruppdossier(preselectKey) {
         sel.innerHTML = '';
         body.innerHTML = `<div class="flik-empty-state"><div class="empty-icon">${ikon('tomLada')}</div>
             <h3>Inga grupper att visa</h3>
-            <p>Ingen yrkesgrupp når tröskeln på ${kTroskel()} ${personOrd(kTroskel())}. Läs in en större lönefil, eller analysera per BAS-intervall i stället.</p></div>`;
+            <p>${termStor(termAdjektiv({ utrum: 'ingen', neutrum: 'inget', plural: 'inga' }, T.enhet))} ${T.enhet.en} når tröskeln på ${kTroskel()} ${personOrd(kTroskel())}. Läs in en större lönefil, eller analysera per ${T.niva.en} i stället.</p></div>`;
         return;
     }
     // Fyll väljaren (bevara valet om det fortfarande finns)
@@ -273,8 +273,8 @@ function _gdRenderBody(d) {
     const adjInner = d.adjusted && d.adjusted.status === 'ok'
         ? `<div class="gd-big">${d.adjusted.gapPct >= 0 ? '+' : ''}${svPct(d.adjusted.gapPct, 1)}</div>
            <p>Åldersrensad skillnad för hela BAS ${esc(d.bas)} (gruppens arbetsvärderingsnivå), 95 % KI ${svTal(d.adjusted.ciLow, 1)} – ${svPct(d.adjusted.ciHigh, 1)}.</p>
-           <p class="gd-note">Avser BAS-intervallet, inte enbart denna yrkesgrupp.</p>`
-        : missing('BAS-intervallet har inte tillräcklig könsbalans för en åldersrensad skattning.');
+           <p class="gd-note">Avser ${T.niva.bf}, inte enbart den här gruppen.</p>`
+        : missing(`${termStor(T.niva.bf)} har inte tillräcklig könsbalans för en åldersrensad skattning.`);
 
     // 4. Mot ställningstagandet
     const polInner = d.pol
@@ -283,14 +283,14 @@ function _gdRenderBody(d) {
                 ? `<div class="gd-big">${svPct((d.band.position * 100), 0)}</div><p>Gruppens median ligger så långt in i spannet (0 % = P10, 100 % = P90).</p>`
                 : '<p class="gd-note">Spannet är för smalt för ett positionsmått.</p>'}
            ${d.compliance ? `<p>${d.compliance.under} av ${d.compliance.n} under P10 · ${d.compliance.over} över P90.</p>` : ''}`
-        : missing('Ingen policyreferens träffar denna grupp (varken på AID-kod eller BAS-intervall).');
+        : missing(`Ingen policyreferens träffar denna grupp (varken på ${T.kod.en} eller ${T.niva.en}).`);
 
     // 5. § 3:10
     const lvRow = p => `<li>${esc(gruppNamn({ aid: p.maAid, yrke: p.maLabel }))} — skillnad ${svPct(p.gapPct, 1)} (${kr(p.gapKr)})</li>`;
     const lvNot = d.lvUtelamnade ? `<p class="gd-note">${esc(_parUtelamnadeNot(d.lvUtelamnade))}</p>` : '';
     const lvInner = (d.lvAsSubject.length || d.lvAsComparator.length)
         ? `${d.lvAsSubject.length ? `<p><strong>Gruppen är kvinnodominerad och jämförs mot:</strong></p><ul class="gd-list">${d.lvAsSubject.map(lvRow).join('')}</ul>` : ''}
-           ${d.lvAsComparator.length ? `<p><strong>Gruppen används som jämförelseyrke för:</strong></p><ul class="gd-list">${d.lvAsComparator.map(p => `<li>${esc(gruppNamn({ aid: p.kvAid, yrke: p.kvLabel }))} — skillnad ${svPct(p.gapPct, 1)}</li>`).join('')}</ul>` : ''}${lvNot}`
+           ${d.lvAsComparator.length ? `<p><strong>Gruppen används som ${T.jamforelse.en} för:</strong></p><ul class="gd-list">${d.lvAsComparator.map(p => `<li>${esc(gruppNamn({ aid: p.kvAid, yrke: p.kvLabel }))} — skillnad ${svPct(p.gapPct, 1)}</li>`).join('')}</ul>` : ''}${lvNot}`
         : (lvNot || missing('Gruppen ingår inte i någon jämförelse av likvärdigt arbete.'));
 
     // 6. Benchmark

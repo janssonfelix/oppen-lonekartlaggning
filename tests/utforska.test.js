@@ -307,8 +307,8 @@ describe('utforska: slå ihop små AID-grupper', () => {
                    ...p('206017', 'Ssk', 3), ...p('502010', 'Sysutv', 2)];
     it('små grupper i samma mellannivå slås ihop när summan når k', () => {
         const m = slaIhopSmaAid(rader, 10);
-        expect(m.get('207024 Vb')).toBe('Övriga i AID 2070xx (2 yrken)');
-        expect(m.get('207009 Usk hemtj')).toBe('Övriga i AID 2070xx (2 yrken)');
+        expect(m.get('207024 Vb')).toBe('Övriga i AID 2070xx (2 AID-etiketter)');
+        expect(m.get('207009 Usk hemtj')).toBe('Övriga i AID 2070xx (2 AID-etiketter)');
         expect(m.has('207011 Usk')).toBe(false);
     });
     it('räcker inte mellannivån: sektorn; räcker inte heller den: oförändrad (fortsatt liten)', () => {
@@ -319,10 +319,10 @@ describe('utforska: slå ihop små AID-grupper', () => {
     });
     it('pivoten använder ersättningen bara med slaIhop och rad = aid', () => {
         const med = computePivot(rader, { rad: 'aid', matt: 'n', slaIhop: true }, { k: 10 });
-        expect(med.radEtiketter).toContain('Övriga i AID 2070xx (2 yrken)');
-        expect(med.celler.find(c => c.rad === 'Övriga i AID 2070xx (2 yrken)').n).toBe(11);
+        expect(med.radEtiketter).toContain('Övriga i AID 2070xx (2 AID-etiketter)');
+        expect(med.celler.find(c => c.rad === 'Övriga i AID 2070xx (2 AID-etiketter)').n).toBe(11);
         const utan = computePivot(rader, { rad: 'aid', matt: 'n' }, { k: 10 });
-        expect(utan.radEtiketter).not.toContain('Övriga i AID 2070xx (2 yrken)');
+        expect(utan.radEtiketter).not.toContain('Övriga i AID 2070xx (2 AID-etiketter)');
         const bas = computePivot(rader, { rad: 'bas', matt: 'n', slaIhop: true }, { k: 10 });
         expect(bas.radEtiketter).toEqual(['C']);
     });

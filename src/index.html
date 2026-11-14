@@ -158,8 +158,8 @@
                 </div>
                 <div class="header-knappar">
                 <div id="sok-ruta" class="sok-ruta">
-                    <label for="sok-grupp" class="sr-only">Sök yrke, BAS-intervall eller funktion</label>
-                    <input type="search" id="sok-grupp" class="form-select" role="combobox" aria-expanded="false" aria-controls="sok-grupp-lista" aria-autocomplete="list" autocomplete="off" spellcheck="false" placeholder="Sök yrke, BAS eller funktion" title="Sök yrke, BAS-intervall eller funktion. Kortkommando: snedstreck eller Ctrl+K" aria-describedby="sok-hjalp">
+                    <label for="sok-grupp" class="sr-only" data-term-template="Sök {enhet.en}, {niva.en} eller funktion">Sök AID-etikett, BAS-intervall eller funktion</label>
+                    <input type="search" id="sok-grupp" class="form-select" role="combobox" aria-expanded="false" aria-controls="sok-grupp-lista" aria-autocomplete="list" autocomplete="off" spellcheck="false" placeholder="Sök AID, BAS eller funktion" title="Sök AID-etikett, BAS-intervall eller funktion. Kortkommando: snedstreck eller Ctrl+K" data-term-template="Sök {enhet.en}, {niva.en} eller funktion. Kortkommando: snedstreck eller Ctrl+K" data-term-attr="title" aria-describedby="sok-hjalp">
                     <span id="sok-hjalp" class="sr-only">Välj en träff för att markera gruppen i alla diagram, eller gå till en funktion. Kortkommando: snedstreck eller Ctrl+K.</span>
                     <ul id="sok-grupp-lista" class="sok-lista" role="listbox" aria-label="Träffar" hidden></ul>
                 </div>
@@ -245,18 +245,18 @@
                                 <div class="comp-icon" id="comp-gap-icon">—</div>
                                 <div class="comp-body">
                                     <div class="comp-label">Säkerställd löneskillnad
-                                        <span class="info-tip" data-tooltip="Antal BAS-intervall där skillnaden mellan kvinnors och mäns medianlön är statistiskt säkerställd (95 % konfidensintervall som inte når lika lön) och minst 3 % (verktygets storleksgräns) — statusen Värt att granska. Lagen kräver att du analyserar varje skillnad, också de mindre. Markeringen ≥ 5 % i tabellen per BAS-intervall visar var den ojusterade skillnaden når 5 %: Direktivets regler om gemensam lönebedömning utgår från en skillnad på minst 5 %; markeringen visar var den nivån nås. Den är inte en bedömning."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
+                                        <span class="info-tip" data-tooltip="Antal BAS-intervall där skillnaden mellan kvinnors och mäns medianlön är statistiskt säkerställd (95 % konfidensintervall som inte når lika lön) och minst 3 % (verktygets storleksgräns) — statusen Värt att granska. Lagen kräver att du analyserar varje skillnad, också de mindre. Markeringen ≥ 5 % i tabellen per BAS-intervall visar var den ojusterade skillnaden når 5 %: Direktivets regler om gemensam lönebedömning utgår från en skillnad på minst 5 %; markeringen visar var den nivån nås. Den är inte en bedömning." data-term-template="Antal {niva.fl} där skillnaden mellan kvinnors och mäns medianlön är statistiskt säkerställd (95 % konfidensintervall som inte når lika lön) och minst 3 % (verktygets storleksgräns) — statusen Värt att granska. Lagen kräver att du analyserar varje skillnad, också de mindre. Markeringen ≥ 5 % i tabellen per {niva.en} visar var den ojusterade skillnaden når 5 %: Direktivets regler om gemensam lönebedömning utgår från en skillnad på minst 5 %; markeringen visar var den nivån nås. Den är inte en bedömning." data-term-attr="data-tooltip"><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
                                     </div>
                                     <div class="comp-value" id="comp-gap-val">Räknar …</div>
                                     <div class="comp-sub">Säkerställd och minst 3 %</div>
-                                    <a href="#" class="comp-lank" data-go-to-tab="struktur" data-go-to-anchor="avsnitt-ls-bas" aria-label="Visa löneskillnad per BAS-intervall i Lönestruktur">Visa</a>
+                                    <a href="#" class="comp-lank" data-go-to-tab="struktur" data-go-to-anchor="avsnitt-ls-bas" aria-label="Visa löneskillnad per BAS-intervall i Lönestruktur" data-term-template="Visa löneskillnad per {niva.en} i Lönestruktur" data-term-attr="aria-label">Visa</a>
                                 </div>
                             </div>
                             <div class="compliance-card na" id="comp-skev">
                                 <div class="comp-icon" id="comp-skev-icon">—</div>
                                 <div class="comp-body">
                                     <div class="comp-label">Ojämn könsfördelning (ett kön under 40 %)
-                                        <span class="info-tip" data-tooltip="Antal BAS-intervall där ett kön är mindre än 40 procent av gruppen. Jämn könsfördelning betyder att båda könen är minst 40 procent. I grupper där ett kön dominerar blir lönejämförelserna svårare att tolka."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
+                                        <span class="info-tip" data-tooltip="Antal BAS-intervall där ett kön är mindre än 40 procent av gruppen. Jämn könsfördelning betyder att båda könen är minst 40 procent. I grupper där ett kön dominerar blir lönejämförelserna svårare att tolka." data-term-template="Antal {niva.fl} där ett kön är mindre än 40 procent av gruppen. Jämn könsfördelning betyder att båda könen är minst 40 procent. I grupper där ett kön dominerar blir lönejämförelserna svårare att tolka." data-term-attr="data-tooltip"><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
                                     </div>
                                     <div class="comp-value" id="comp-skev-val">Räknar …</div>
                                     <div class="comp-sub">Påverkar hur säkra jämförelserna är</div>
@@ -267,7 +267,7 @@
                                 <div class="comp-icon" id="comp-pol-icon">—</div>
                                 <div class="comp-body">
                                     <div class="comp-label"><span id="comp-pol-label">Under ställningstagandets P10</span>
-                                        <span class="info-tip" data-tooltip="Antal BAS-intervall där medianlönen ligger under den lägsta önskade nivån (P10) i organisationens lönepolitiska ställningstagande. Visar var lönenivåerna inte motsvarar ambitionen."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
+                                        <span class="info-tip" data-tooltip="Antal BAS-intervall där medianlönen ligger under den lägsta önskade nivån (P10) i organisationens lönepolitiska ställningstagande. Visar var lönenivåerna inte motsvarar ambitionen." data-term-template="Antal {niva.fl} där medianlönen ligger under den lägsta önskade nivån (P10) i organisationens lönepolitiska ställningstagande. Visar var lönenivåerna inte motsvarar ambitionen." data-term-attr="data-tooltip"><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
                                     </div>
                                     <div class="comp-value" id="comp-pol-val">Räknar …</div>
                                     <div class="comp-sub" id="comp-pol-sub">Lönepolitiskt ställningstagande</div>
@@ -278,7 +278,7 @@
                                 <div class="comp-icon" id="comp-bm-icon">—</div>
                                 <div class="comp-body">
                                     <div class="comp-label">Under jämförelsestatistikens median
-                                        <span class="info-tip" data-tooltip="Antal yrkesgrupper där organisationens medianlön ligger under medianen för motsvarande yrke i jämförelsestatistiken. Kan tyda på att organisationens löner halkar efter, vilket kan göra det svårare att rekrytera."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
+                                        <span class="info-tip" data-tooltip="Antal AID-etiketter i BAS-intervall där organisationens medianlön ligger under medianen för samma AID-kod och BAS-intervall i jämförelsestatistiken. Kan tyda på att organisationens löner halkar efter, vilket kan göra det svårare att rekrytera." data-term-template="Antal {enhet.fl} i {niva.en} där organisationens medianlön ligger under medianen för samma {kod.en} och {niva.en} i jämförelsestatistiken. Kan tyda på att organisationens löner halkar efter, vilket kan göra det svårare att rekrytera." data-term-attr="data-tooltip"><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
                                     </div>
                                     <div class="comp-value" id="comp-bm-val">Kräver jämförelsestatistik</div>
                                     <div class="comp-sub">Jämförelse mot jämförelsestatistiken</div>
@@ -380,7 +380,7 @@
                                     <input type="checkbox" id="paket-inaktivitet-last" class="sjalv-start">
                                     <label for="paket-sma-export">Små grupper får tas med i exporten från Tabeller och egna vyer</label>
                                     <input type="checkbox" id="paket-sma-export" checked class="sjalv-start">
-                                    <label for="paket-rapport">Ta med rapportens egna tabeller och receptet per BAS-intervall</label>
+                                    <label for="paket-rapport"><span data-term-template="Ta med rapportens egna tabeller och receptet per {niva.en}">Ta med rapportens egna tabeller och receptet per BAS-intervall</span></label>
                                     <input type="checkbox" id="paket-rapport" class="sjalv-start">
                                 </div>
                                 <p id="paket-sammanfattning" class="paket-sammanfattning"></p>
@@ -430,12 +430,12 @@
                                 <div class="upload-help-content">
                                     <p>Lönefil med <strong>en rad per anställd</strong>:</p>
                                     <ul>
-                                        <li><strong>BAS-intervall</strong> — en bokstav per rad; alla intervall ingår, även chefernas</li>
-                                        <li><strong>AID / Yrkesgrupp</strong> — yrkeskod + benämning</li>
+                                        <li><strong data-term-template="{Niva.en}">BAS-intervall</strong> — en bokstav per rad; alla intervall ingår, även chefernas</li>
+                                        <li><strong data-term-template="{Enhet.en}">AID-etikett</strong> — <span data-term-template="{kod.en} och {namn.en}">AID-kod och etikettnamn</span> (i lönefilen ofta Yrke eller Befattning)</li>
                                         <li><strong>Månadslön</strong> — heltidsekvivalent</li>
                                         <li><strong>Ålder</strong> <em>(valfri, rekommenderad)</em> — utan ålder körs analysen utan åldersjustering och Ålder &amp; karriär visas inte</li>
                                         <li><strong>Kön</strong> — Kvinna / Man</li>
-                                        <li><strong>Poäng</strong> <em>(valfri)</em> — arbetsvärderingspoäng per befattning; används i stället för BAS-intervallet som mått på kraven i Likvärdigt arbete</li>
+                                        <li><strong>Poäng</strong> <em>(valfri)</em> — arbetsvärderingspoäng per befattning; <span data-term-template="används i stället för {niva.bf} som mått på kraven i Likvärdigt arbete">används i stället för BAS-intervallet som mått på kraven i Likvärdigt arbete</span></li>
                                     </ul>
                                     <p class="mt-8">Format: <code>.csv</code> (verktyget känner igen vanliga avgränsare och teckenkodningar) eller Excel <code>.xlsx</code>.</p>
                                     <button id="btn-download-csv-template" type="button" class="btn btn-secondary btn-sm mt-8">Ladda ner CSV-mall</button>
@@ -468,7 +468,7 @@
                             <details class="upload-help" open>
                                 <summary>Vad används det till?</summary>
                                 <div class="upload-help-content">
-                                    <p>Önskade lönenivåer per BAS-intervall — P10 (lägstanivå), Median, P90 (toppnivå). Läs in organisationens lönepolitiska ställningstagande (eller ett organisationspaket); Prioritering och Löneläget jämför mot det. Du kan ge det ett namn.</p>
+                                    <p><span data-term-template="Önskade lönenivåer per {niva.en}">Önskade lönenivåer per BAS-intervall</span> — P10 (lägstanivå), Median, P90 (toppnivå). Läs in organisationens lönepolitiska ställningstagande (eller ett organisationspaket); Prioritering och Löneläget jämför mot det. Du kan ge det ett namn.</p>
                                     <p class="mt-8">Format: <code>.csv</code> eller <code>.xlsx</code>. Kolumner: <code>BAS</code>, <code>P10</code>, <code>Median</code>, <code>P90</code>.</p>
                                 </div>
                             </details>
@@ -494,8 +494,8 @@
                             <details class="upload-help" open>
                                 <summary>Vad används det till?</summary>
                                 <div class="upload-help-content">
-                                    <p>Medianlöner per yrkesgrupp i jämförelsestatistiken, för att jämföra lönerna med andra arbetsgivares.</p>
-                                    <p class="mt-8">Format: <code>.xlsx</code>. Kolumner: AID-kod, BAS-intervall, Median.</p>
+                                    <p data-term-template="Medianlöner per {kod.en} och {niva.en} i jämförelsestatistiken, för att jämföra lönerna med andra arbetsgivares.">Medianlöner per AID-kod och BAS-intervall i jämförelsestatistiken, för att jämföra lönerna med andra arbetsgivares.</p>
+                                    <p class="mt-8">Format: <code>.xlsx</code>. <span data-term-template="Kolumner: {Kod.en}, {Niva.en}, Median.">Kolumner: AID-kod, BAS-intervall, Median.</span></p>
                                 </div>
                             </details>
                         </div>
@@ -523,12 +523,12 @@
                         <!-- Extremvärden (enskilda löner) -->
                         <details id="outliers-container" class="prio-config-panel marg-t-14 dold" open>
                             <summary>Extremvärden (enskilda löner)
-                                <span class="info-tip" data-tooltip="Hittar enskilda rader vars lön ligger långt från snittet i samma BAS-intervall. Det hjälper dig hitta felinmatade löner och specialfall som behöver dokumenteras, till exempel specialistkompetens. Mer än 3 standardavvikelser motsvarar ungefär 0,3 procent av lönerna i en normalfördelning."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
+                                <span class="info-tip" data-tooltip="Hittar enskilda rader vars lön ligger långt från snittet i samma BAS-intervall. Det hjälper dig hitta felinmatade löner och specialfall som behöver dokumenteras, till exempel specialistkompetens. Mer än 3 standardavvikelser motsvarar ungefär 0,3 procent av lönerna i en normalfördelning." data-term-template="Hittar enskilda rader vars lön ligger långt från snittet i samma {niva.en}. Det hjälper dig hitta felinmatade löner och specialfall som behöver dokumenteras, till exempel specialistkompetens. Mer än 3 standardavvikelser motsvarar ungefär 0,3 procent av lönerna i en normalfördelning." data-term-attr="data-tooltip"><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
                                 <span id="outliers-count" class="text-dampad-sm marg-v-8"></span>
                             </summary>
                             <div class="prio-config-content">
                                 <p class="text-dampad-sm lh-1_55 marg-0-0-12">
-                                    Anställda vars lön ligger långt från andras i samma BAS-intervall (mer än valt antal standardavvikelser från medellönen, räknad på logaritmerade löner). Tabellen visar radnummer, inga namn.
+                                    <span data-term-template="Anställda vars lön ligger långt från andras i samma {niva.en}">Anställda vars lön ligger långt från andras i samma BAS-intervall</span> (mer än valt antal standardavvikelser från medellönen, räknad på logaritmerade löner). Tabellen visar radnummer, inga namn.
                                 </p>
                                 <div class="rad-bryt-mitt gap-14 marg-b-14">
                                     <label for="outliers-threshold" class="fw-600">Gräns (antal standardavvikelser):</label>
@@ -555,10 +555,10 @@
                                 <h3 class="marg-0-0-8">Uppgiftsminimering</h3>
                                 <p class="fs-md lh-1_6">Verktyget läser <strong>inte</strong> in anställningsnummer, personnummer, namn eller e-post även om de finns i lönefilen. En fil med sådana kolumner läses inte in, och du får veta varför.</p>
                                 <h3 class="marg-14-0-8">Små grupper</h3>
-                                <p class="fs-md lh-1_6">På skärmen visas alla grupper. I det som lämnar verktyget — Excel, Word, PDF, ZIP, CSV, urklipp, diagrambilder och rapportunderlaget — redovisas inte lönemått för grupper med färre än <span data-k-troskel>10</span> personer. Gruppen visas inte som en tom rad, utan räknas upp med namn i en not vid tabellen (<svg class="ikon ikon-las" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>) — så att du ser vad som saknas och varför. Är gruppen stor nog men ett av könen för litet visas gruppens samlade median, utan könsjämförelse. Det hindrar att någon räknar ut en enskild persons lön genom att lägga ihop kön, BAS-intervall och ålder.</p>
+                                <p class="fs-md lh-1_6">På skärmen visas alla grupper. I det som lämnar verktyget — Excel, Word, PDF, ZIP, CSV, urklipp, diagrambilder och rapportunderlaget — redovisas inte lönemått för grupper med färre än <span data-k-troskel>10</span> personer. Gruppen visas inte som en tom rad, utan räknas upp med namn i en not vid tabellen (<svg class="ikon ikon-las" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>) — så att du ser vad som saknas och varför. Är gruppen stor nog men ett av könen för litet visas gruppens samlade median, utan könsjämförelse. <span data-term-template="Det hindrar att någon räknar ut en enskild persons lön genom att lägga ihop kön, {niva.en} och ålder.">Det hindrar att någon räknar ut en enskild persons lön genom att lägga ihop kön, BAS-intervall och ålder.</span></p>
                                 <ul class="fs-md lh-1_6">
                                     <li><strong>När ett kön är för litet:</strong> medianlön per kön, den råa löneskillnaden och regressionens ojusterade steg visas bara när både kvinnor och män når tröskeln.</li>
-                                    <li><strong>I Ålder &amp; karriär</strong> gäller samma sak för löneskillnad, trendlinjer och lådor per kön. En persons punkt visas bara när personens grupp (yrke inom BAS-intervallet) och kön i gruppen når tröskeln.</li>
+                                    <li><strong>I Ålder &amp; karriär</strong> <span data-term-template="gäller samma sak för löneskillnad, trendlinjer och lådor per kön. En persons punkt visas bara när personens grupp ({enhet.en} inom {niva.bf}) och kön i gruppen når tröskeln.">gäller samma sak för löneskillnad, trendlinjer och lådor per kön. En persons punkt visas bara när personens grupp (AID-etikett inom BAS-intervallet) och kön i gruppen når tröskeln.</span></li>
                                     <li><strong>Undantag:</strong> Likvärdigt arbete visar kandidatpar även när en grupp är liten. Tabeller och egna vyer visar små grupper tonade; de följer med i exporten bara om du kryssar i det.</li>
                                     <li><strong>Enskilda personer:</strong> Personer att granska och extremvärdeslistan visar enskilda personer, bara i verktyget. Diagram med en punkt per person visar enskilda löner.</li>
                                 </ul>
@@ -763,15 +763,15 @@
                 <div id="view-rapport" class="view-panel dold">
                     <div class="flik-intro">
                         
-                        <strong>Hela löneläget, och egna vyer</strong> Löneöversikten visar lönenivåerna per BAS-intervall, uppdelat på kön och yrkesgrupp; längre ned bygger du egna tabeller och diagram, och under <em>Alla diagram</em> finns diagrammen från flikarna samlade. Börja här om du vill ha helhetsbilden innan du gräver i enskilda grupper.
+                        <strong>Hela löneläget, och egna vyer</strong> <span data-term-template="Löneöversikten visar lönenivåerna per {niva.en}, uppdelat på kön och {enhet.en};">Löneöversikten visar lönenivåerna per BAS-intervall, uppdelat på kön och AID-etikett;</span> längre ned bygger du egna tabeller och diagram, och under <em>Alla diagram</em> finns diagrammen från flikarna samlade. Börja här om du vill ha helhetsbilden innan du gräver i enskilda grupper.
                     </div>
                     <details class="card avsnitt" id="avsnitt-ut-oversikt" open>
-                        <summary><span class="avsnitt-titel"><h2>Löneöversikt — alla BAS-intervall</h2><span class="avsnitt-under">Den fasta tabellen: lönenivåerna per BAS-intervall, uppdelat på kön och yrkesgrupp</span></span><span class="avsnitt-nyckel" id="nyckel-ut-oversikt"></span></summary>
+                        <summary><span class="avsnitt-titel"><h2 data-term-template="Löneöversikt — alla {niva.fl}">Löneöversikt — alla BAS-intervall</h2><span class="avsnitt-under" data-term-template="Den fasta tabellen: lönenivåerna per {niva.en}, uppdelat på kön och {enhet.en}">Den fasta tabellen: lönenivåerna per BAS-intervall, uppdelat på kön och AID-etikett</span></span><span class="avsnitt-nyckel" id="nyckel-ut-oversikt"></span></summary>
                         <div class="card-header">
                             <div class="rad-bryt gap-16">
                                 <button id="rapport-collapse-all" class="btn btn-secondary btn-sm" type="button">Fäll in alla</button>
                                 <button id="rapport-expand-all" class="btn btn-secondary btn-sm" type="button">Fäll ut alla</button>
-                                <input type="text" id="search-rapport" class="form-select bredd-250" placeholder="Sök yrke eller BAS" aria-label="Sök yrke eller BAS i löneöversikten">
+                                <input type="text" id="search-rapport" class="form-select bredd-250" placeholder="Sök AID eller BAS" aria-label="Sök AID-etikett eller BAS-intervall i löneöversikten" data-term-template="Sök {enhet.en} eller {niva.en} i löneöversikten" data-term-attr="aria-label">
                                 <button id="btn-export-excel" class="btn btn-primary">
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="marg-h-8" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
                                     Exportera Excel
@@ -779,21 +779,21 @@
                             </div>
                         </div>
                         <p class="text-dampad-sm lh-1_55 marg-b-16">
-                            Tabellen visar lönenivåer per BAS-intervall, uppdelat på hela organisationen, kön och yrkesgrupp. Varje BAS-intervall börjar med en grå rad, sedan ställningstagandet (om det är inläst), organisationens siffror och yrkesgrupperna.
+                            <span data-term-template="Tabellen visar lönenivåer per {niva.en}, uppdelat på hela organisationen, kön och {enhet.en}. Varje {niva.en} börjar med en grå rad, sedan ställningstagandet (om det är inläst), organisationens siffror och {enhet.bfl}.">Tabellen visar lönenivåer per BAS-intervall, uppdelat på hela organisationen, kön och AID-etikett. Varje BAS-intervall börjar med en grå rad, sedan ställningstagandet (om det är inläst), organisationens siffror och AID-etiketterna.</span>
                             <strong>Median</strong> = mittersta lönen (50% tjänar mer, 50% tjänar mindre).
                             <strong>P10/P90</strong> = den lön där 10% respektive 90% av gruppen tjänar mindre.
                         </p>
                         <div class="table-container">
-                            <table id="rapport-table" class="data-table" aria-label="Löneöversikt per BAS-intervall, kön och yrkesgrupp">
+                            <table id="rapport-table" class="data-table" aria-label="Löneöversikt per BAS-intervall, kön och AID-etikett" data-term-template="Löneöversikt per {niva.en}, kön och {enhet.en}" data-term-attr="aria-label">
                                 <thead>
                                     <tr>
-                                        <th scope="col" data-export-label="Kategori (BAS / Kön / Yrkesgrupp)">Kategori</th>
+                                        <th scope="col" data-export-label="Kategori (BAS / Kön / AID-etikett)" data-term-template="Kategori (BAS / Kön / {Enhet.en})" data-term-attr="data-export-label">Kategori</th>
                                         <th scope="col" data-export-label="P10 — lägsta lönedecilen (kr/mån)">P10 (10:e percentilen) <span class="info-tip" data-tooltip="Den lönenivå där 10% av personerna i gruppen tjänar mindre och 90% tjänar mer. Speglar lönenivån för de lägst betalda i gruppen."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span></th>
                                         <th scope="col" data-export-label="Median (kr/mån)">Median <span class="info-tip" data-tooltip="Den mittersta lönen när alla löner sorteras. Hälften tjänar mer, hälften tjänar mindre. Påverkas mindre än medelvärdet av enstaka mycket höga eller låga löner."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span></th>
                                         <th scope="col" data-export-label="P90 — högsta lönedecilen (kr/mån)">P90 (90:e percentilen) <span class="info-tip" data-tooltip="Den lönenivå där 90% av personerna tjänar mindre och 10% tjänar mer. Speglar lönenivån för de högst betalda i gruppen."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span></th>
                                         <th scope="col" data-export-label="Antal personer">Antal</th>
                                         <th scope="col" data-export-label="Lönespridning P90/P10 (kvot)">Lönespridning <span class="info-tip" data-tooltip="P90 delat med P10. Värdet 1,0 = ingen spridning (alla tjänar lika). 1,3 = de högst betalda tjänar 30 % mer än de lägst betalda. Värden över ungefär 1,5 kan tyda på stora löneskillnader inom gruppen som bör granskas."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span></th>
-                                        <th class="jmf-kolumn" scope="col" data-export-label="Median i jämförelsestatistiken (kr/mån)">Median i jämförelsestatistiken <span class="info-tip" data-tooltip="Medianlönen för samma yrkesgrupp (samma AID-kod och BAS-intervall) i jämförelsestatistiken. Kräver att jämförelsestatistiken är inläst."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span></th>
+                                        <th class="jmf-kolumn" scope="col" data-export-label="Median i jämförelsestatistiken (kr/mån)">Median i jämförelsestatistiken <span class="info-tip" data-tooltip="Medianlönen för samma AID-kod och BAS-intervall i jämförelsestatistiken. Kräver att jämförelsestatistiken är inläst." data-term-template="Medianlönen för samma {kod.en} och {niva.en} i jämförelsestatistiken. Kräver att jämförelsestatistiken är inläst." data-term-attr="data-tooltip"><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span></th>
                                         <th class="jmf-kolumn" scope="col" data-export-label="Skillnad mot jämförelsestatistiken (%)">Skillnad mot jämförelsestatistiken <span class="info-tip" data-tooltip="Skillnad mellan organisationens median och jämförelsens median, uttryckt i procent. Negativt värde (rött) = organisationen ligger under jämförelsens median. Positivt (grönt) = över."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span></th>
                                     </tr>
                                 </thead>
@@ -811,20 +811,20 @@
                         <div class="flik-usage-content">
                             <h3>Internt arbete med lönekartläggning</h3>
                             <ul>
-                                <li>Granska varje BAS-intervall för att se om medianen ligger under organisationens lönepolitiska ställningstagande</li>
-                                <li>Identifiera yrken där medianen ligger långt under jämförelsens median (sista kolumnerna)</li>
+                                <li data-term-template="Granska varje {niva.en} för att se om medianen ligger under organisationens lönepolitiska ställningstagande">Granska varje BAS-intervall för att se om medianen ligger under organisationens lönepolitiska ställningstagande</li>
+                                <li data-term-template="Identifiera {enhet.fl} där medianen ligger långt under jämförelsens median (sista kolumnerna)">Identifiera AID-etiketter där medianen ligger långt under jämförelsens median (sista kolumnerna)</li>
                                 <li>Använd kolumnen för lönespridning för att hitta grupper med ovanligt stor inre variation</li>
                             </ul>
                             <h3>Vid samverkan</h3>
                             <ul>
                                 <li>Visa upp den fullständiga lönestrukturen för att skapa transparens</li>
                                 <li>Sortera tabellen efter löneskillnaden mellan könen eller skillnaden mot jämförelsestatistiken för att rikta diskussionen</li>
-                                <li>Sök på de yrkesgrupper som arbetstagarnas företrädare frågar om</li>
+                                <li data-term-template="Sök på de {enhet.fl} som arbetstagarnas företrädare frågar om">Sök på de AID-etiketter som arbetstagarnas företrädare frågar om</li>
                             </ul>
                             <h3>Inför ledningsmöte</h3>
                             <ul>
                                 <li><em>Exportera Excel</em> ovanför tabellen ger en bilaga med minsta gruppstorlek tillämpad</li>
-                                <li><em>Fäll in alla</em> och fäll sedan ut de BAS-intervall som är i fokus, så hålls materialet kort</li>
+                                <li><em>Fäll in alla</em> <span data-term-template="och fäll sedan ut de {niva.fl} som är i fokus, så hålls materialet kort">och fäll sedan ut de BAS-intervall som är i fokus, så hålls materialet kort</span></li>
                             </ul>
                         </div>
                     </details>
@@ -1413,7 +1413,7 @@
 
                         <div id="prio-content">
                             <div class="summary-stats" id="prio-summary">
-                                <div class="stat-box" data-k-tooltip="Antal grupper som ligger mer än 5 % under referensen och har minst {k} personer. Många berörda och tydlig budgetpåverkan — ett bra ställe att börja granskningen. Att en grupp lyfts betyder inte att något är fel; det är skillnaden du väger mot sakliga skäl.">
+                                <div class="stat-box" data-k-tooltip="Antal AID-etiketter i BAS-intervall som ligger mer än 5 % under referensen och har minst {k} personer. Många berörda och tydlig budgetpåverkan — ett bra ställe att börja granskningen. Att en grupp lyfts betyder inte att något är fel; det är skillnaden du väger mot sakliga skäl." data-term-template="Antal {enhet.fl} i {niva.en} som ligger mer än 5 % under referensen och har minst {k} personer. Många berörda och tydlig budgetpåverkan — ett bra ställe att börja granskningen. Att en grupp lyfts betyder inte att något är fel; det är skillnaden du väger mot sakliga skäl." data-term-attr="data-k-tooltip">
                                     <div class="stat-etikett">Börja här
                                     </div>
                                     <div class="stat-val" id="prio-stat-akut">0</div>
@@ -2095,13 +2095,13 @@
                                 <label for="struktur-narrative-omfang" class="fs-sm">Omfång</label>
                                 <select id="struktur-narrative-omfang" class="form-select bredd-auto">
                                     <option value="hela">Hela organisationen</option>
-                                    <option value="perBas" selected>Hela organisationen + per BAS-intervall</option>
+                                    <option value="perBas" selected data-term-template="Hela organisationen + per {niva.en}">Hela organisationen + per BAS-intervall</option>
                                 </select>
                                 <button id="struktur-narrative-regen" type="button" class="btn btn-secondary btn-sm" title="Återskapa utkastet från aktuell data"><svg class="ikon ikon-ater" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 12a8 8 0 1 0 2.6-5.9"/><path d="M4 4v5h5"/></svg> Återskapa</button>
                                 <button id="struktur-narrative-copy" type="button" class="btn btn-secondary btn-sm">Kopiera</button>
                             </div>
                         </div>
-                        <p class="text-dampad-sm marg-0-0-8">Ett utkast av fynden att redigera och föra in i dokumentationen (Word). Väljer du <em>per BAS-intervall</em> får varje intervall som når minsta gruppstorlek ett eget stycke, med en rad att fylla i för bedömningen. Redigera fritt. "Återskapa" skriver över med ett nytt utkast efter valet.</p>
+                        <p class="text-dampad-sm marg-0-0-8">Ett utkast av fynden att redigera och föra in i dokumentationen (Word). Väljer du <em data-term-template="per {niva.en}">per BAS-intervall</em> får varje intervall som når minsta gruppstorlek ett eget stycke, med en rad att fylla i för bedömningen. Redigera fritt. "Återskapa" skriver över med ett nytt utkast efter valet.</p>
                         <textarea id="struktur-narrative" rows="16" class="ram-1-kant rund-6 typsnitt-arv fs-sm lh-1_5 pad-12 storlek-lodrat bredd-100p" aria-label="Utkast till rapporttext"></textarea>
                     </div>
                     </details>
@@ -2153,7 +2153,7 @@
                         <summary><span class="avsnitt-titel"><h2>Jämförelse med förra året</h2><span class="avsnitt-under">Årsbokslutet i konfigurationsfilen mot årets underlag</span></span><span class="avsnitt-nyckel" id="nyckel-ar-arsjamforelse"></span></summary>
                         <div class="card">
                             <p class="text-dampad-sm lh-1_5 marg-0-0-10">
-                                Konfigurationsfilen bär ett årsbokslut: nyckeltal, en rad per yrkesgrupp där båda könen når minsta gruppstorlek, och Att göra-punkternas läge — inga individer. Spara konfigurationen när årets kartläggning är klar; läs in den nästa år, så visas skillnaden här.
+                                <span data-term-template="Konfigurationsfilen bär ett årsbokslut: nyckeltal, en rad per {enhet.en} där båda könen når minsta gruppstorlek,">Konfigurationsfilen bär ett årsbokslut: nyckeltal, en rad per AID-etikett där båda könen når minsta gruppstorlek,</span> och Att göra-punkternas läge — inga individer. Spara konfigurationen när årets kartläggning är klar; läs in den nästa år, så visas skillnaden här.
                             </p>
                             <div id="arsjamforelse"></div>
                         </div>
@@ -2192,12 +2192,12 @@
                             <div class="explore-ctl">
                                 <label for="explore-rad">Rader</label>
                                 <select id="explore-rad" class="form-select">
-                                    <option value="bas">BAS-intervall</option>
-                                    <option value="aid">Yrkesgrupp (AID)</option>
+                                    <option value="bas" data-term-template="{Niva.en}">BAS-intervall</option>
+                                    <option value="aid" data-term-template="{Enhet.en}">AID-etikett</option>
                                     <option value="alder">Åldersgrupp</option>
                                     <option value="kon">Kön</option>
-                                    <option value="aidbas">Yrkesgrupp inom BAS-intervallet</option>
-                                    <option value="sektor">Sektor (AID-huvudområde)</option>
+                                    <option value="aidbas" data-term-template="{Enhet.en} i {niva.en}">AID-etikett i BAS-intervall</option>
+                                    <option value="sektor" data-term-template="{Huvudomrade.en}">Huvudområde</option>
                                     <option value="aidniva">AID-mellannivå</option>
                                     <option value="lonespann">Lönespann (5 000 kr)</option>
                                     <option value="alla">Hela urvalet (samlat)</option>
@@ -2207,12 +2207,12 @@
                                 <label for="explore-kolumn">Kolumner</label>
                                 <select id="explore-kolumn" class="form-select">
                                     <option value="ingen">Ingen</option>
-                                    <option value="bas">BAS-intervall</option>
-                                    <option value="aid">Yrkesgrupp (AID)</option>
+                                    <option value="bas" data-term-template="{Niva.en}">BAS-intervall</option>
+                                    <option value="aid" data-term-template="{Enhet.en}">AID-etikett</option>
                                     <option value="alder">Åldersgrupp</option>
                                     <option value="kon">Kön</option>
-                                    <option value="aidbas">Yrkesgrupp inom BAS-intervallet</option>
-                                    <option value="sektor">Sektor (AID-huvudområde)</option>
+                                    <option value="aidbas" data-term-template="{Enhet.en} i {niva.en}">AID-etikett i BAS-intervall</option>
+                                    <option value="sektor" data-term-template="{Huvudomrade.en}">Huvudområde</option>
                                     <option value="aidniva">AID-mellannivå</option>
                                     <option value="lonespann">Lönespann (5 000 kr)</option>
                                 </select>
@@ -2295,10 +2295,10 @@
                     </div>
                     <div class="card mb-16">
                         <div class="chart-header rad-bryt-mitt gap-16 mellan marg-b-12">
-                            <h3 id="explore-chart-title" class="fs-1_2rem marg-0">Median månadslön per BAS-intervall</h3>
+                            <h3 id="explore-chart-title" class="fs-1_2rem marg-0" data-term-template="Median månadslön per {niva.en}">Median månadslön per BAS-intervall</h3>
                             <div class="explore-ctl-check" id="explore-sla-ihop-rad" hidden>
                                 <input type="checkbox" id="explore-sla-ihop">
-                                <label for="explore-sla-ihop">Slå ihop små yrkesgrupper till nästa AID-nivå</label>
+                                <label for="explore-sla-ihop" data-term-template="Slå ihop små {enhet.fl} till nästa AID-nivå">Slå ihop små AID-etiketter till nästa AID-nivå</label>
                             </div>
                             <div class="explore-ctl-check" id="explore-inkludera-sma-rad">
                                 <input type="checkbox" id="explore-inkludera-sma">
@@ -2316,8 +2316,8 @@
                     <div class="card">
                         <!-- Egna tabeller i rapporten (ADR-52): vyn sparas som ett recept, inte som tal, och ritas om i exportläget. -->
                         <div class="rad-bryt-mitt gap-10 marg-0-0-10" id="explore-rapport-rad">
-                            <label class="fs-sm">Namn i rapporten <input type="text" id="explore-rapport-namn" class="form-select" maxlength="80" autocomplete="off" placeholder="t.ex. Median per yrke"></label>
-                            <label class="fs-sm"><input type="checkbox" id="explore-rapport-perbas"> En tabell per BAS-intervall</label>
+                            <label class="fs-sm">Namn i rapporten <input type="text" id="explore-rapport-namn" class="form-select" maxlength="80" autocomplete="off" placeholder="t.ex. Median per AID-etikett" data-term-template="t.ex. Median per {enhet.en}" data-term-attr="placeholder"></label>
+                            <label class="fs-sm"><input type="checkbox" id="explore-rapport-perbas"> <span data-term-template="En tabell per {niva.en}">En tabell per BAS-intervall</span></label>
                             <button type="button" id="btn-explore-till-rapport" class="btn btn-secondary btn-sm" title="Sparar vyn som en egen tabell i Word-utkastet, PDF-rapporten och Excel-filen. Tabellen räknas om med minsta gruppstorlek när rapporten byggs.">Lägg till i rapporten</button>
                             <span id="explore-rapport-status" class="status-msg" role="status" aria-live="polite"></span>
                         </div>
@@ -2359,7 +2359,7 @@
                     <h2 id="yrke-modal-title">–</h2>
                     <div class="yrke-sub" id="yrke-modal-sub">–</div>
                 </div>
-                <button id="yrke-modal-close" class="btn btn-secondary btn-sm" aria-label="Stäng yrkesvy" type="button"><svg class="ikon ikon-kryss" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 6l12 12"/><path d="M18 6 6 18"/></svg></button>
+                <button id="yrke-modal-close" class="btn btn-secondary btn-sm" aria-label="Stäng vyn för AID-etiketten" data-term-template="Stäng vyn för {enhet.bf}" data-term-attr="aria-label" type="button"><svg class="ikon ikon-kryss" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 6l12 12"/><path d="M18 6 6 18"/></svg></button>
             </header>
             <div class="yrke-modal-content" id="yrke-modal-content"></div>
         </div>
@@ -2450,7 +2450,7 @@
                                     <option value="kommun">en kommun</option>
                                     <option value="region">en region</option>
                                 </select>
-                                <span class="info-tip" data-tooltip="Avgör vilken del av den nationella statistiken som är referens för andel kvinnor per yrke: kommunerna, regionerna eller båda. Statistiken är SKR:s personalstatistik (Sveriges Kommuner och Regioner), inbyggd i verktyget; perioden står i Om verktyget. Följer med i organisationspaketet och konfigurationsfilen."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
+                                <span class="info-tip" data-tooltip="Avgör vilken del av den nationella statistiken som är referens för andel kvinnor per AID-kod: kommunerna, regionerna eller båda. Statistiken är SKR:s personalstatistik (Sveriges Kommuner och Regioner), inbyggd i verktyget; perioden står i Om verktyget. Följer med i organisationspaketet och konfigurationsfilen." data-term-template="Avgör vilken del av den nationella statistiken som är referens för andel kvinnor per {kod.en}: kommunerna, regionerna eller båda. Statistiken är SKR:s personalstatistik (Sveriges Kommuner och Regioner), inbyggd i verktyget; perioden står i Om verktyget. Följer med i organisationspaketet och konfigurationsfilen." data-term-attr="data-tooltip"><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
                             </div>
                         <p class="inst-paverkar">Påverkar: kolumnen <em>Kvinnor nationellt</em> i Lika arbete och Lönestruktur, och reserven för könsfördelning i Likvärdigt arbete.</p>
                     </div>
@@ -2458,10 +2458,10 @@
                             <div class="paket-rad">
                                 <label for="lonemanad">Lönemånad</label>
                                 <input type="text" id="lonemanad" class="form-select bredd-auto" maxlength="40" placeholder="t.ex. 2026-10" autocomplete="off" aria-describedby="lonemanad-hjalp">
-                                <span class="info-tip" data-tooltip="Ange vilken månad lönerna i underlaget gäller. Lönefilen säger inte det. Den står ovanför tabellerna per AID-kod och BAS-intervall, på skärmen och i Excel-filen. Det gäller Lika arbete AID x BAS, Likvärdigt arbete, Hierarkisk jämförelse och Analys på individnivå. Ett tomt fält skrivs ut som ”inte angiven”. Lönemånaden följer med i konfigurationsfilen."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
+                                <span class="info-tip" data-tooltip="Ange vilken månad lönerna i underlaget gäller. Lönefilen säger inte det. Den står ovanför tabellerna per AID-kod och BAS-intervall, på skärmen och i Excel-filen. Det gäller Lika arbete AID x BAS, Likvärdigt arbete, Hierarkisk jämförelse och Analys på individnivå. Ett tomt fält skrivs ut som ”inte angiven”. Lönemånaden följer med i konfigurationsfilen." data-term-template="Ange vilken månad lönerna i underlaget gäller. Lönefilen säger inte det. Den står ovanför tabellerna per {kod.en} och {niva.en}, på skärmen och i Excel-filen. Det gäller Lika arbete AID x BAS, Likvärdigt arbete, Hierarkisk jämförelse och Analys på individnivå. Ett tomt fält skrivs ut som ”inte angiven”. Lönemånaden följer med i konfigurationsfilen." data-term-attr="data-tooltip"><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
                             </div>
-                            <p id="lonemanad-hjalp" class="k-troskel-hjalp">Står ovanför tabellerna per AID-kod och BAS-intervall. Tomt skrivs ut som ”inte angiven”.</p>
-                        <p class="inst-paverkar">Påverkar: tabellerna per AID-kod och BAS-intervall i Lika arbete och Likvärdigt arbete, och deras blad i Excel-filen.</p>
+                            <p id="lonemanad-hjalp" class="k-troskel-hjalp"><span data-term-template="Står ovanför tabellerna per {kod.en} och {niva.en}.">Står ovanför tabellerna per AID-kod och BAS-intervall.</span> Tomt skrivs ut som ”inte angiven”.</p>
+                        <p class="inst-paverkar"><span data-term-template="Påverkar: tabellerna per {kod.en} och {niva.en}">Påverkar: tabellerna per AID-kod och BAS-intervall</span> i Lika arbete och Likvärdigt arbete, och deras blad i Excel-filen.</p>
                     </div>
                     <div class="inst-rad">
                             <div class="paket-rad">
@@ -2648,7 +2648,7 @@
                 <button id="dossier-modal-close" class="btn btn-secondary btn-sm" aria-label="Stäng" type="button" data-dossier-close><svg class="ikon ikon-kryss" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 6l12 12"/><path d="M18 6 6 18"/></svg></button>
             </header>
             <div class="glossary-content">
-                <label for="dossier-select" class="block fs-sm fw-600 marg-b-4">Yrkesgrupp</label>
+                <label for="dossier-select" class="block fs-sm fw-600 marg-b-4" data-term-template="{Enhet.en} i {niva.en}">AID-etikett i BAS-intervall</label>
                 <select id="dossier-select" class="form-select marg-b-14 max-bredd-100p"></select>
                 <div id="dossier-body"></div>
             </div>
@@ -2666,12 +2666,12 @@
                 <button id="basdossier-modal-close" class="btn btn-secondary btn-sm" aria-label="Stäng" type="button" data-basdossier-close><svg class="ikon ikon-kryss" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 6l12 12"/><path d="M18 6 6 18"/></svg></button>
             </header>
             <div class="glossary-content">
-                <label for="basdossier-select" class="block fs-sm fw-600 marg-b-4">BAS-intervall</label>
+                <label for="basdossier-select" class="block fs-sm fw-600 marg-b-4" data-term-template="{Niva.en}">BAS-intervall</label>
                 <select id="basdossier-select" class="form-select marg-b-14 max-bredd-100p"></select>
                 <div id="basdossier-body"></div>
             </div>
             <footer class="glossary-footer">
-                <small>Ett BAS-intervall på en sida, i rapportens ordning: det verktyget redan räknat i flikarna, samlat. Bedömningen gör du.</small>
+                <small><span data-term-template="{Niva.art} {niva.en} på en sida,">Ett BAS-intervall på en sida,</span> i rapportens ordning: det verktyget redan räknat i flikarna, samlat. Bedömningen gör du.</small>
             </footer>
         </div>
     </div>

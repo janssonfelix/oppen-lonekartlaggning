@@ -33,8 +33,10 @@ const DEFAULT_PROFILE = Object.freeze({
     benchmarkLabel:          'jämförelsestatistiken',
     benchmarkLabelGenitive:  'jämförelsestatistikens',
     benchmarkShort:          'jämförelsen',
-    basSystem:               'BAS-intervall',
-    aidSystem:               'AID-kod (SKR)',
+    // Benämningarna av kravnivån och koden: ett organisationspaket kan sätta egna, standarden kommer ur termerna
+    // (ADR-74). T finns först efter 09-termer.js, så värdena läses när profilen kopieras (12-tillstand.js och framåt).
+    get basSystem()          { return T.niva.en; },
+    get aidSystem()          { return `${T.kod.en} (SKR)`; },
     poPctDefault:            39.15,
     poPctNote:               'SKR Cirkulär 2025',
     orgTyp:                  'alla',   // 'kommun' | 'region' | 'alla' — SKR-referensens del (ADR-34)
@@ -54,6 +56,8 @@ function applyProfileLabels() {
         const attr = el.getAttribute('data-term-attr');
         if (attr) el.setAttribute(attr, text); else el.textContent = text;
     });
+    // En mall i data-k-tooltip behåller {k} och {golv}; tröskeln fylls i därefter (06-k-troskel.js).
+    if (typeof _fyllKTexter === 'function') _fyllKTexter();
     const p = state.profile;
     document.querySelectorAll('[data-profile-label]').forEach(el => {
         const key = el.getAttribute('data-profile-label') || '';

@@ -37,7 +37,7 @@ function _skrPeriodText(period) {
 function skrKallaKort() { return `SKR:s personalstatistik, ${_skrPeriodText(_skrReferensInfo().period)}`; }
 /** Hela förklaringen, för tooltips och metodbilagan. */
 function skrForklaring() {
-    return `Nationell andel kvinnor per yrke (AID-kod) i ${_skrDelText(_skrDel())}, ur ${skrKallaKort()} (SKR är Sveriges Kommuner och Regioner). `
+    return `Nationell andel kvinnor per ${T.kod.en} i ${_skrDelText(_skrDel())}, ur ${skrKallaKort()} (SKR är Sveriges Kommuner och Regioner). `
         + 'Ett referensvärde bredvid organisationens egen könsfördelning, och reserv i Likvärdigt arbete när jämförelsestatistiken saknar könsfördelning. Valet kommun eller region görs under Inställningar.';
 }
 

@@ -1031,11 +1031,12 @@ describe('meningen under steget + Yrkesgrupp följer förklaringsmodellen (ADR-5
         const bilaga = JSON.stringify(w.eval('rapportModell()').avsnitt.find(a => a.id === 'regression').delar);
         return { kortNot: not ? not.textContent.replace(/\s+/g, ' ') : '', bilaga };
     };
-    it('ålder bortvald: meningen säger inte "och ålder"', () => {
+    it('ålder bortvald: meningen säger "samma AID-etikett och BAS-intervall", inte "och ålder"', () => {
         const { kortNot, bilaga } = rita({ bas: true, alder: false, yrkesgrupp: false, skal: '' });
-        expect(kortNot).toMatch(/samma AID-etikett, BAS-intervall \(/);
+        expect(kortNot).toMatch(/samma AID-etikett och BAS-intervall \(fasta effekter/);
+        expect(kortNot).not.toMatch(/samma AID-etikett, BAS-intervall/);
         expect(kortNot).not.toMatch(/och ålder/);
-        expect(bilaga).toMatch(/Steget \+ AID-etikett inom BAS: [^"]*samma AID-etikett, BAS-intervall \(/);
+        expect(bilaga).toMatch(/Steget \+ AID-etikett inom BAS: [^"]*samma AID-etikett och BAS-intervall \(/);
         expect(bilaga).toMatch(/Huvudtalet ovan räknar inte bort AID-etiketten/);
     });
     it('yrkesgrupp vald: meningen säger inte att huvudtalet låter bli att räkna bort yrkesgruppen', () => {

@@ -158,8 +158,8 @@ function _mkRitaRad() {
     // Ett markerat BAS-intervall: dess dossier (81-basdossier.js) ett klick bort, som gruppdossiern för en yrkesgrupp.
     if (_mkBorrBas() != null && typeof basdossierKandidater === 'function' && basdossierKandidater().some(x => x.bas === _mkBorrBas())) rad.appendChild(_mkKnapp('basdossier', 'Öppna BAS-dossiern'));
     if (_mkBorrBas() != null) {
-        const b = _mkKnapp('borra', 'Visa yrkesgrupperna');
-        b.title = 'Öppnar Tabeller och egna vyer med yrkesgrupperna i BAS-intervallet. Där visas också grupper under tröskeln, markerade; de följer inte med i en export om du inte väljer det.';
+        const b = _mkKnapp('borra', `Visa ${T.enhet.bfl}`);
+        b.title = `Öppnar Tabeller och egna vyer med ${T.enhet.bfl} i ${T.niva.bf}. Där visas också grupper under tröskeln, markerade; de följer inte med i en export om du inte väljer det.`;
         rad.appendChild(b);
     }
     rad.appendChild(_mkKnapp('rensa', 'Ta bort markeringen'));
@@ -226,7 +226,7 @@ function _mkBorrRad() {
     el.textContent = '';
     el.hidden = !_mkTillbaka;
     if (!_mkTillbaka) return;
-    el.appendChild(document.createTextNode(`Du kom hit från BAS ${_mkTillbaka.bas}: urvalet är satt till det BAS-intervallet och raderna till yrkesgrupp inom BAS. `
+    el.appendChild(document.createTextNode(`Du kom hit från BAS ${_mkTillbaka.bas}: urvalet är satt till ${termArtikel(T.niva, { bestamd: true })} ${T.niva.bf} och raderna till ${T.enhet.en} i ${T.niva.en}. `
         + `Grupper med färre än ${kInstalld()} ${personOrd(kInstalld())} följer inte med i en export om du inte kryssar i rutan. `));
     const b = _mkKnapp('tillbaka', 'Tillbaka till föregående urval');
     b.addEventListener('click', nedborrningTillbaka);

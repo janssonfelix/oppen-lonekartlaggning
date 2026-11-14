@@ -27,15 +27,15 @@ const SOK_FUNKTIONER = [
     { namn: 'Förhandskontroll av lönefilen', synonymer: ['förhandskontroll', 'tolkning', 'hur filen tolkades', 'årslön', 'timlön', 'födelseår', 'kön-kod', 'kontrollera filen'], flik: 'filer', avsnitt: 'avsnitt-fi-forhandskontroll' },
     { namn: 'Underlagets kvalitet', synonymer: ['datakvalitet', 'kontroll', 'saknas', 'extremvärden', 'outliers', 'avvikande löner', 'registerfel'], flik: 'filer', avsnitt: 'avsnitt-ov-kvalitet' },
     // Lönestruktur
-    { namn: 'Representation per BAS-intervall', synonymer: ['bas-nivå', 'segregering', 'andel kvinnor', 'könsfördelning'], flik: 'struktur', avsnitt: 'avsnitt-st-representation' },
+    { namn: `Representation per ${T.niva.en}`, synonymer: ['bas-nivå', 'segregering', 'andel kvinnor', 'könsfördelning'], flik: 'struktur', avsnitt: 'avsnitt-st-representation' },
     { namn: 'Organisationen som karta', synonymer: ['karta', 'trädkarta', 'yrkesgrupper', 'storlek'], flik: 'struktur', avsnitt: 'avsnitt-st-karta' },
     { namn: 'Var i lönefördelningen är skillnaden störst?', synonymer: ['gapet', 'kvartil', 'fjärdedel', 'percentil', 'klibbigt golv', 'glastak'], flik: 'struktur', avsnitt: 'avsnitt-st-fordelning' },
-    { namn: 'Per huvudområde', synonymer: ['aid-huvudområde', 'sektor', 'yrkesområde'], flik: 'struktur', avsnitt: 'avsnitt-st-sektorer' },
+    { namn: `Per ${T.huvudomrade.en}`, synonymer: ['aid-huvudområde', 'sektor', 'yrkesområde'], flik: 'struktur', avsnitt: 'avsnitt-st-sektorer' },
     { namn: 'Var uppstår löneskillnaden?', synonymer: ['gapuppdelning', 'uppdelning', 'trappa', 'medellön'], flik: 'struktur', avsnitt: 'avsnitt-ov-gap' },
     { namn: 'Lönetransparensdirektivets mått', synonymer: ['eu 2023/970', 'lönerapportmått', 'eu-mått', 'direktiv', 'lönetransparensdirektivet', 'lönerapport', 'artikel 9', 'kvartil', 'fjärdedel', 'rörlig lön'], flik: 'struktur', avsnitt: 'avsnitt-st-eu' },
     { namn: 'Bakgrund', synonymer: ['könslönegap', 'samhällsnivå', 'lönestruktur'], flik: 'struktur', avsnitt: 'avsnitt-st-metod' },
-    { namn: 'Löneskillnad per BAS-intervall', synonymer: ['lönegap', 'skevhet', 'bas-skevhet', 'löneskillnad per nivå'], flik: 'struktur', avsnitt: 'avsnitt-ls-bas' },
-    { namn: 'Könsfördelning per BAS-intervall', synonymer: ['kvinnodominerad', 'mansdominerad', '40 %', 'andel kvinnor'], flik: 'struktur', avsnitt: 'avsnitt-ls-kon' },
+    { namn: `Löneskillnad per ${T.niva.en}`, synonymer: ['lönegap', 'skevhet', 'bas-skevhet', 'löneskillnad per nivå'], flik: 'struktur', avsnitt: 'avsnitt-ls-bas' },
+    { namn: `Könsfördelning per ${T.niva.en}`, synonymer: ['kvinnodominerad', 'mansdominerad', '40 %', 'andel kvinnor'], flik: 'struktur', avsnitt: 'avsnitt-ls-kon' },
     { namn: 'Vad blir kvar av löneskillnaden?', synonymer: ['lönegap', 'regression', 'oförklarat', 'oförklarad', 'kvar av gapet', 'oaxaca', 'justerat gap'], flik: 'struktur', avsnitt: 'avsnitt-ls-regression' },
     { namn: 'Så räknas det', synonymer: ['metod', 'beräkning', 'urval', 'bas-skevhet'], flik: 'struktur', avsnitt: 'avsnitt-sr-metod' },
     // Ålder & karriär
@@ -43,20 +43,20 @@ const SOK_FUNKTIONER = [
     { namn: 'Lönespridning över ålder', synonymer: ['percentilband', 'femårsgrupp', 'median'], flik: 'kon', avsnitt: 'avsnitt-ak-lon' },
     { namn: 'Lönefördelning för kvinnor och män', synonymer: ['låddiagram', 'histogram', 'spridning'], flik: 'kon', avsnitt: 'avsnitt-ak-fordelning' },
     { namn: 'Åldersstruktur', synonymer: ['återväxt', 'pension', 'nära pension', 'pensionsavgångar', 'successionszon', 'demografi'], flik: 'kon', avsnitt: 'avsnitt-ak-struktur' },
-    { namn: 'Jämför alla BAS-intervall', synonymer: ['lön mot ålder', 'sida vid sida'], flik: 'kon', avsnitt: 'avsnitt-ak-alla' },
+    { namn: `Jämför alla ${T.niva.fl}`, synonymer: ['lön mot ålder', 'sida vid sida'], flik: 'kon', avsnitt: 'avsnitt-ak-alla' },
     { namn: 'Så räknas det', synonymer: ['metod', 'beräkning', 'urval', 'ålder'], flik: 'kon', avsnitt: 'avsnitt-ak-metod' },
     // Likvärdigt arbete
-    { namn: 'Likvärdigt arbete per BAS-intervall', synonymer: ['klassning', 'kvinnodominerad', 'aid x bas'], flik: 'likvardighet', avsnitt: 'avsnitt-lv-aidbas' },
+    { namn: `Likvärdigt arbete per ${T.niva.en}`, synonymer: ['klassning', 'kvinnodominerad', 'aid x bas'], flik: 'likvardighet', avsnitt: 'avsnitt-lv-aidbas' },
     { namn: 'Hierarkisk jämförelse', synonymer: ['lägre krav, högre lön', 'lägre värderat', 'högre lön', 'hierarki'], flik: 'likvardighet', avsnitt: 'avsnitt-lv-hierarki' },
     { namn: 'Arbetsvärdering med poäng', synonymer: ['arbetsvärdering', 'poäng', 'krav', 'kravprofil'], flik: 'likvardighet', avsnitt: 'avsnitt-lv-poang' },
     { namn: 'Bakgrund', synonymer: ['osaklig', 'likvärdigt arbete'], flik: 'likvardighet', avsnitt: 'avsnitt-lv-metod' },
     // Avsnitten nedan byggs när fliken ritas (34-likvardigt-arbete.js, 75-lonepolitik.js; listan i tests/sok-funktioner.test.js)
     { namn: 'Par att titta närmare på', synonymer: ['kandidatpar', 'par', 'jämförelseyrke', 'kvinnodominerat yrke', 'kandidatparen i kronor'], flik: 'likvardighet', avsnitt: 'avsnitt-lv-par' },
-    { namn: 'Yrkena bakom jämförelsen', synonymer: ['kvinnodominerade yrken', 'jämförelseyrken', 'underlag', 'steg för steg'], flik: 'likvardighet', avsnitt: 'avsnitt-lv-underlag' },
+    { namn: `${termStor(T.enhet.bfl)} bakom jämförelsen`, synonymer: ['kvinnodominerade yrken', 'jämförelseyrken', 'underlag', 'steg för steg'], flik: 'likvardighet', avsnitt: 'avsnitt-lv-underlag' },
     { namn: 'Inställningar för Likvärdigt arbete', synonymer: ['kvinnotröskel', 'minsta skillnad', 'minsta gap', 'antal par', 'definition av kvinnodominerat', 'mer än 60 %', '60 % eller mer', 'förarbetena', 'do', 'scb'], flik: 'likvardighet', avsnitt: 'avsnitt-lv-installningar' },
     { namn: 'Så fungerar analysen', synonymer: ['metod', 'likvärdigt arbete', 'diagnostik', 'krav-proxy'], flik: 'likvardighet', avsnitt: 'avsnitt-lv-analys' },
     // Lika arbete
-    { namn: 'Kvinnor och män med samma AID-etikett', synonymer: ['lika arbete', 'yrkesgrupp', 'aid-etikett', 'status'], flik: 'matrix', avsnitt: 'avsnitt-la-yrkesgrupper' },
+    { namn: `Kvinnor och män med samma ${T.enhet.en}`, synonymer: ['lika arbete', 'yrkesgrupp', 'aid-etikett', 'status'], flik: 'matrix', avsnitt: 'avsnitt-la-yrkesgrupper' },
     { namn: 'Personer att granska', synonymer: ['individ', 'enskilda löner', 'avvikande löner', 'under förväntad nivå'], flik: 'matrix', avsnitt: 'avsnitt-la-personer' },
     { namn: 'Lika arbete AID × BAS', synonymer: ['matris', 'slumpens gränser', 'median i procent'], flik: 'matrix', avsnitt: 'avsnitt-la-aidbas' },
     { namn: 'Analys på individnivå', synonymer: ['arbetslista', 'för litet', 'små grupper'], flik: 'matrix', avsnitt: 'avsnitt-la-individ' },
@@ -64,12 +64,12 @@ const SOK_FUNKTIONER = [
     // Löneläget
     { namn: 'Överblick — lönerna mot ställningstagandet och statistiken', synonymer: ['löneläge', 'överblick', 'bandkarta', 'statistikens spann', 'matchning', 'fylld', 'ofylld'], flik: 'benchmark', avsnitt: 'avsnitt-jmf-bandkartor' },
     { namn: 'Mot ställningstagandet', synonymer: ['lönepolitik', 'spann', 'referens'], flik: 'benchmark', avsnitt: 'avsnitt-jmf-stallningstagande' },
-    { namn: 'AID-etiketter mot sitt spann', synonymer: ['spann', 'lönespann', 'under spannet', 'ställningstagandet per yrkesgrupp', 'yrkesgrupper'], flik: 'benchmark', avsnitt: 'avsnitt-lp-tabell' },
+    { namn: `${termStor(T.enhet.fl)} mot sitt spann`, synonymer: ['spann', 'lönespann', 'under spannet', 'ställningstagandet per yrkesgrupp', 'yrkesgrupper'], flik: 'benchmark', avsnitt: 'avsnitt-lp-tabell' },
     { namn: 'Könsposition i bandet', synonymer: ['könsposition', 'band', 'spannets tredjedelar', 'läge i spannet'], flik: 'benchmark', avsnitt: 'avsnitt-lp-kon' },
     { namn: 'Efterlevnad', synonymer: ['efterlevnad', 'under spann', 'inom spann', 'över spann'], flik: 'benchmark', avsnitt: 'avsnitt-lp-efterlevnad' },
     { namn: 'Täckningsgrad', synonymer: ['täckning', 'täckningsgrad', 'policyreferens'], flik: 'benchmark', avsnitt: 'avsnitt-lp-tackning' },
     { namn: 'Mot jämförelsestatistiken', synonymer: ['statistik', 'marknad', 'p10', 'p90', 'benchmark'], flik: 'benchmark', avsnitt: 'avsnitt-jmf-statistik' },
-    { namn: 'AID-etikett för AID-etikett — löneläget och statistiken mot ställningstagandet', synonymer: ['per yrkesgrupp', 'per aid-etikett', 'mönster', 'förslag på referens', 'hantel'], flik: 'benchmark', avsnitt: 'avsnitt-jmf-overblick' },
+    { namn: `${termStor(T.enhet.en)} för ${T.enhet.en} — löneläget och statistiken mot ställningstagandet`, synonymer: ['per yrkesgrupp', 'per aid-etikett', 'mönster', 'förslag på referens', 'hantel'], flik: 'benchmark', avsnitt: 'avsnitt-jmf-overblick' },
     // Prioritering
     { namn: 'Åtgärdslistan', synonymer: ['prioritering', 'prioritet', 'börja här'], flik: 'prioritering', avsnitt: 'avsnitt-pr-lista' },
     { namn: 'Vad kostar det att åtgärda?', synonymer: ['kostnad', 'lyfta grupper'], flik: 'prioritering', avsnitt: 'avsnitt-pr-kostnad' },
@@ -105,7 +105,7 @@ const SOK_FUNKTIONER = [
     { namn: 'Jämförelse med förra året', synonymer: ['årsjämförelse', 'förra året', 'fjolår', 'fjolåret', 'årsbokslut', 'sakliga skäl per kategori'], flik: 'arbetet', avsnitt: 'avsnitt-ar-arsjamforelse' },
     { namn: 'Kontrollera verktyget med testdata', synonymer: ['självdiagnostik', 'testdata', 'syntetisk'], flik: 'arbetet', avsnitt: 'avsnitt-ar-diagnostik' },
     // Tabeller och egna vyer
-    { namn: 'Löneöversikt — alla BAS-intervall', synonymer: ['tabell', 'lönenivåer', 'fast tabell'], flik: 'utforska', avsnitt: 'avsnitt-ut-oversikt' },
+    { namn: `Löneöversikt — alla ${T.niva.fl}`, synonymer: ['tabell', 'lönenivåer', 'fast tabell'], flik: 'utforska', avsnitt: 'avsnitt-ut-oversikt' },
     { namn: 'Egna vyer', synonymer: ['pivot', 'egen tabell', 'eget diagram', 'utforska'], flik: 'utforska', avsnitt: 'avsnitt-ut-egna' },
     { namn: 'Alla diagram', synonymer: ['alla diagram', 'diagramsamling', 'samlade diagram', 'diagram från alla flikar', 'samtliga diagram', 'diagramöversikt'], flik: 'utforska', avsnitt: 'ut-alla-diagram' },
     // Dialogerna

@@ -55,7 +55,7 @@ describe('attgora: processöversiktens steg (ADR-29)', () => {
         expect(stegLikvardigt({ analys: false, antalPar: 0, t: 0, d: 0 }).status).toBe('ej');
         expect(stegLikvardigt({ analys: true, antalPar: 0, t: 0, d: 0 }).status).toBe('klar');
         expect(stegLikvardigt({ analys: true, antalPar: 2, t: 2, d: 0 })).toEqual({ status: 'delvis',
-            detail: '2 kandidatpar (kvinnodominerade yrken mot jämförelseyrken med likvärdiga krav) · 0 av 2 kandidatpar hanterade i Att göra.' });
+            detail: '2 kandidatpar (kvinnodominerade AID-etiketter mot jämförelseetiketter med likvärdiga krav) · 0 av 2 kandidatpar hanterade i Att göra.' });
         expect(stegLikvardigt({ analys: true, antalPar: 2, t: 2, d: 2 }).status).toBe('klar');
         // Par som inte kom med i Att göra (t = 0) räknas inte som hanterade.
         expect(stegLikvardigt({ analys: true, antalPar: 2, t: 0, d: 0 }).status).toBe('delvis');

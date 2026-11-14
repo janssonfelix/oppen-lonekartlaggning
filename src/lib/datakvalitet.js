@@ -10,6 +10,10 @@
  */
 import { konOf } from './falt.js';
 import { personOrd } from './namn.js';
+import { skapaTermer, ordForAntal } from './termer.js';
+/** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
+const T = skapaTermer();
+
 
 const RANG = { ok: 0, varning: 1, kritisk: 2 };
 const FTE_GOLV = 20000;
@@ -63,8 +67,8 @@ export function bedomUnderlag(rader, { k, audit, mde, modell, modellFras } = {})
         id: 'jamforbarhet', namn: 'Jämförbarhet', status: _stat(jPct, 80, 50, true), varde: jPct,
         text: jPct == null
             ? 'Inga personer med känt kön att jämföra.'
-            : `${_pct(jPct)} av personalen finns i BAS-intervall där båda könen har minst ${k} ${personOrd(k)}`
-              + (j.maskerade.length ? ` (${j.maskerade.length} BAS-intervall maskeras: ${j.maskerade.join(', ')}).` : '.'),
+            : `${_pct(jPct)} av personalen finns i ${T.niva.fl} där båda könen har minst ${k} ${personOrd(k)}`
+              + (j.maskerade.length ? ` (${j.maskerade.length} ${ordForAntal(j.maskerade.length, T.niva)} maskeras: ${j.maskerade.join(', ')}).` : '.'),
     });
 
     kriterier.push({
@@ -101,8 +105,8 @@ export function bedomUnderlag(rader, { k, audit, mde, modell, modellFras } = {})
     kriterier.push({
         id: 'modell', namn: 'Modell', status: mStatus, varde: modell ?? null,
         // modellFras (ADR-56): frasen för en vald modell som inte är standard; standardtexten ändras inte.
-        text: modell === 'full' ? (modellFras != null ? `Regressionen tar hänsyn till ${modellFras || 'kön, utan att något räknats bort'}.` : harAlder ? 'Regressionen tar hänsyn till både ålder och BAS-intervall.' : 'Regressionen tar hänsyn till BAS-intervall.')
-            : modell === 'minimal' ? 'Regressionen kunde bara ta hänsyn till ålder, inte BAS-intervall.'
+        text: modell === 'full' ? (modellFras != null ? `Regressionen tar hänsyn till ${modellFras || 'kön, utan att något räknats bort'}.` : harAlder ? `Regressionen tar hänsyn till både ålder och ${T.niva.en}.` : `Regressionen tar hänsyn till ${T.niva.en}.`)
+            : modell === 'minimal' ? `Regressionen kunde bara ta hänsyn till ålder, inte ${T.niva.en}.`
             : 'Regressionen gick inte att skatta.',
     });
 

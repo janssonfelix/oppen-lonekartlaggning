@@ -88,8 +88,8 @@ const GAP_STATUS_ALLA = Object.freeze([...GAP_STATUS, GAP_STATUS_EJ]);
  *   konsdominans  kategori på `konsdom`: 'Kvinnodominerad', 'Mansdominerad' eller 'Blandad'
  *   matchning     kategori på `matchning`: 'AID + BAS' eller 'Endast AID'
  *   avvikelse     intervall på `x`: avvikelsen i procent
- *   yrkesgrupp    kategori på `yrke` (yrkesgruppens namn som i tipset), visad som lista med sökfält
- *   sektor        kategori på `sektor` (sektorns namn som i sektorsöversikten), visad som lista med sökfält
+ *   yrkesgrupp    kategori på `yrke` (AID-etiketten som i tipset), visad som lista med sökfält
+ *   sektor        kategori på `sektor` (huvudområdets namn som i översikten per huvudområde), visad som lista med sökfält
  *   alder         intervall på `alder`: personens ålder, eller femårsgruppens första år (format ar)
  *   lon           intervall på `lon`: personens månadslön (format kr)
  *   aldersgrupp   kategori på `aldersgrupp`: åldersgruppens namn som i tipset ('30–39 år')
@@ -97,13 +97,13 @@ const GAP_STATUS_ALLA = Object.freeze([...GAP_STATUS, GAP_STATUS_EJ]);
  *   lonegap       intervall på `gap`: löneskillnaden i procent, samma tal som i tipset
  */
 const URVAL = Object.freeze({
-    bas: Object.freeze({ typ: 'kategori', falt: 'bas', namn: 'BAS-intervall', etikett: 'BAS {v}' }),
+    bas: Object.freeze({ typ: 'kategori', falt: 'bas', namn: termStor(T.niva.en), etikett: 'BAS {v}' }),
     antal: Object.freeze({ typ: 'intervall', falt: 'n', namn: 'Antal personer i gruppen', format: 'antal', etikett: '{v} personer i gruppen' }),
     konsdominans: Object.freeze({ typ: 'kategori', falt: 'konsdom', namn: 'Könsdominans', etikett: '{v}' }),
     matchning: Object.freeze({ typ: 'kategori', falt: 'matchning', namn: 'Matchning', etikett: '{v}' }),
     avvikelse: Object.freeze({ typ: 'intervall', falt: 'x', namn: 'Avvikelse (%)', format: 'pct', etikett: 'avvikelse {v}' }),
-    yrkesgrupp: Object.freeze({ typ: 'kategori', falt: 'yrke', namn: 'Yrkesgrupp', etikett: '{v}', visning: 'lista' }),
-    sektor: Object.freeze({ typ: 'kategori', falt: 'sektor', namn: 'Sektor', etikett: '{v}', visning: 'lista' }),
+    yrkesgrupp: Object.freeze({ typ: 'kategori', falt: 'yrke', namn: termStor(T.enhet.en), etikett: '{v}', visning: 'lista' }),
+    sektor: Object.freeze({ typ: 'kategori', falt: 'sektor', namn: termStor(T.huvudomrade.en), etikett: '{v}', visning: 'lista' }),
     alder: Object.freeze({ typ: 'intervall', falt: 'alder', namn: 'Ålder', format: 'ar', etikett: 'ålder {v} år' }),
     lon: Object.freeze({ typ: 'intervall', falt: 'lon', namn: 'Månadslön (kr)', format: 'kr', etikett: 'lön {v}' }),
     aldersgrupp: Object.freeze({ typ: 'kategori', falt: 'aldersgrupp', namn: 'Åldersgrupp', etikett: '{v}' }),
@@ -114,10 +114,10 @@ const URVAL = Object.freeze({
 // läses ur personraden med samma gruppnycklar som Tabeller och egna vyer (groupKey i src/lib/falt.js); personerna har
 // inget färdigt sektorsfält.
 const UNDERLAG = Object.freeze({
-    sektor: Object.freeze({ typ: 'kategori', falt: 'sektor', namn: 'Sektor', visning: 'lista', varde: r => _utGroupKey(r, 'sektor') }),
+    sektor: Object.freeze({ typ: 'kategori', falt: 'sektor', namn: termStor(T.huvudomrade.en), visning: 'lista', varde: r => _utGroupKey(r, 'sektor') }),
     aldersgrupp: Object.freeze({ typ: 'kategori', falt: 'aldersgrupp', namn: 'Åldersgrupp', visning: 'lista', varde: r => _utGroupKey(r, 'alder'), ordning: (a, b) => _faltJamforAlder(a, b) }),
-    yrkesgrupp: Object.freeze({ typ: 'kategori', falt: 'yrke', namn: 'Yrkesgrupp', visning: 'lista', varde: r => r.yrke }),
-    bas: Object.freeze({ typ: 'kategori', falt: 'bas', namn: 'BAS-intervall', etikett: 'BAS {v}', varde: r => r.bas }),
+    yrkesgrupp: Object.freeze({ typ: 'kategori', falt: 'yrke', namn: termStor(T.enhet.en), visning: 'lista', varde: r => r.yrke }),
+    bas: Object.freeze({ typ: 'kategori', falt: 'bas', namn: termStor(T.niva.en), etikett: 'BAS {v}', varde: r => r.bas }),
 });
 /**
  * Statusen för ett avstånd från lika lön i procent (|100 − kvoten|) och en prövning av skillnaden (true/false; null

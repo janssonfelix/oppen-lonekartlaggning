@@ -182,9 +182,9 @@ function _stRitaTopp(d, m) {
     if (!m) { urval.textContent = ''; host.innerHTML = ''; ['representation', 'karta', 'fordelning', 'eu'].forEach(n => _laNyckel(`nyckel-st-${n}`, '')); return; }
     urval.innerHTML = `<span><strong>Hela urvalet</strong> · ${svTal(d.length, 0)} personer</span>${kTroskelLank()}`;
     _laNyckel('nyckel-st-representation', `${m.basAntal} ${termForAntal(m.basAntal, T.niva)}`);
-    // Kartans yrkesgrupper: ett yrke inom ett BAS-intervall, samma indelning som ytorna (_strukturTradkartaFigur).
-    const yrkesgrupper = new Set(d.filter(r => r.bas != null && r.bas !== '').map(r => `${String(r.aid || r.yrke || 'okänd')}|${r.bas}`)).size;
-    _laNyckel('nyckel-st-karta', yrkesgrupper ? `${svTal(yrkesgrupper, 0)} ${termForAntal(yrkesgrupper, T.enhet)}` : '');
+    // Kartans ytor: en AID-etikett inom ett BAS-intervall, samma indelning som ytorna (_strukturTradkartaFigur).
+    const ytor = new Set(d.filter(r => r.bas != null && r.bas !== '').map(r => `${String(r.aid || r.yrke || 'okänd')}|${r.bas}`)).size;
+    _laNyckel('nyckel-st-karta', ytor ? `${svTal(ytor, 0)} ${termForAntal(ytor, T.enhet)} i ${T.niva.en}` : '');
     if (!m.konOk) {
         host.innerHTML = _laSlutsats('Kvinnor och män', 'Visas inte', _konUtelamnatNot());
         _laNyckel('nyckel-st-fordelning', ''); _laNyckel('nyckel-st-eu', '');

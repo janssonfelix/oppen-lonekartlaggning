@@ -23,6 +23,8 @@ function openDataResidency() {
     const last = state.paketLas.inaktivitetMin;
     const val = [...new Set([0, 30, 60, INAKTIVITET_STANDARD_MIN, 120, ...(last != null ? [last] : [])])].sort((a, b) => a - b);
 
+    // Fältets namn i minnet (en nyckel, som bas och lon) visas som kod; det byts inte med termerna (ADR-74).
+    const FALT_YRKE = 'yrke';
     let sampleRow = '';
     if (n > 0) {
         const r = state.data[0];
@@ -32,8 +34,8 @@ function openDataResidency() {
             <table class="data-table st-085">
                 <thead><tr><th>Fält</th><th>Värde</th><th>Källa</th></tr></thead>
                 <tbody>
-                    <tr><td><code>bas</code></td><td>${esc(r.bas) || '—'}</td><td>BAS-intervall (1 bokstav)</td></tr>
-                    <tr><td><code>yrke</code></td><td>${esc(maskedYrke)}</td><td>AID-kod + 40 tecken etikett, namn-mönster maskeras</td></tr>
+                    <tr><td><code>bas</code></td><td>${esc(r.bas) || '—'}</td><td>${T.niva.en} (1 bokstav)</td></tr>
+                    <tr><td><code>${FALT_YRKE}</code></td><td>${esc(maskedYrke)}</td><td>${T.kod.en} + 40 tecken ${T.namn.en}, namn-mönster maskeras</td></tr>
                     <tr><td><code>lon</code></td><td>${r.lon ? Math.round(r.lon).toLocaleString('sv-SE') : '—'} kr</td><td>månadslön, heltal</td></tr>
                     <tr><td><code>alder</code></td><td>${r.alder || '—'}</td><td>år</td></tr>
                     <tr><td><code>kon</code></td><td>${esc(r.kon) || '—'}</td><td>"kvinna"/"man"</td></tr>
@@ -54,7 +56,7 @@ function openDataResidency() {
                 <li>Nätverkstrafik: <strong>0 byte</strong> (CSP <code>connect-src 'none'</code> blockerar all utgående trafik)</li>
             </ul>
             <p><strong>Fälten som sparas per rad</strong></p>
-            <p class="marg-0-0-6">Verktyget läser bara fem fält ur filen: BAS-intervall, yrke, lön, ålder och kön, plus valfri arbetsvärderingspoäng och valfri ansvarskod enligt AID. Det noterar också radens nummer i filen. Allt annat (personnummer, namn, e-post, anställningsnummer, fri text utöver yrkesbenämningen) tas bort vid inläsningen och sparas aldrig.</p>
+            <p class="marg-0-0-6">Verktyget läser bara fem fält ur filen: ${T.niva.en}, ${T.enhet.en}, lön, ålder och kön, plus valfri arbetsvärderingspoäng och valfri ansvarskod enligt AID. Det noterar också radens nummer i filen. Allt annat (personnummer, namn, e-post, anställningsnummer, fri text utöver ${T.namn.bf}) tas bort vid inläsningen och sparas aldrig.</p>
             ${sampleRow}
             <p class="bak-ok-yta ram-v-3-ok rund-4 fs-sm marg-t-18 pad-10-14">
                 <strong>Inbyggt dataskydd enligt dataskyddsförordningen:</strong> uppgifterna minimeras innan de sparas i minnet, inte efter. Filen läses in i minnet, raderna minimeras en i taget, och filens övriga innehåll släpps när inläsningen är klar.

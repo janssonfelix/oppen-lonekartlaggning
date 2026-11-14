@@ -1381,7 +1381,7 @@ describe('nedborrning: från ett markerat BAS till yrkesgrupperna i Utforska, oc
     it('knappen finns bara när exakt ett BAS-intervall är markerat', () => {
         const w2 = oppna();
         w2.eval("sattDiagramMarkering('bas:A')");
-        expect(knapp(w2).textContent).toBe('Visa yrkesgrupperna');
+        expect(knapp(w2).textContent).toBe('Visa AID-etiketterna');
         expect(knapp(w2).title).toMatch(/under tröskeln/);
         w2.eval("sattDiagramMarkering('bas:B', { lagg: true })");
         expect(knapp(w2)).toBeNull();
@@ -1869,7 +1869,7 @@ describe('Diagramfilter v3: filtren i vyerna', () => {
         const r = rad(el, 'yrke');
         r.querySelector('[data-urval-markera="inga"]').click();
         [...rad(el, 'yrke').querySelectorAll('input[type="checkbox"]')].find(c => c.getAttribute('data-urval') === yrke).click();
-        expect(rad(el, 'yrke').querySelector('summary').textContent).toMatch(/^Yrkesgrupp: 1 av \d+$/);
+        expect(rad(el, 'yrke').querySelector('summary').textContent).toMatch(/^AID-etikett: 1 av \d+$/);
         expect(el.querySelectorAll('[data-marke="punkt"]').length).toBe(antal(kv, yrke) + antal(ma, yrke));
         const visad = el._rfVisadFigur;
         expect(trend(visad, 'Man (trend)').data).toEqual([]);
@@ -1994,8 +1994,8 @@ describe('Diagramfilter v3: filtren i vyerna', () => {
         expect(el.querySelectorAll('[data-marke="punkt"]')).toHaveLength(0);              // slumpens gränser (utan yrke) står kvar
         [...rad(el, 'yrke').querySelectorAll('input[type="checkbox"]')].find(c => c.getAttribute('data-urval') === yrken[0]).click();
         expect(el.querySelectorAll('[data-marke="punkt"]').length).toBe(p.filter(d => d.yrke === yrken[0]).length);
-        expect(rad(el, 'yrke').querySelector('summary').textContent).toBe(`Yrkesgrupp: 1 av ${yrken.length}`);
-        expect(not(el)).toMatch(new RegExp(`Diagrammet visar ett urval: (bara ${yrken[0].replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}|Yrkesgrupp 1 av)`));
+        expect(rad(el, 'yrke').querySelector('summary').textContent).toBe(`AID-etikett: 1 av ${yrken.length}`);
+        expect(not(el)).toMatch(new RegExp(`Diagrammet visar ett urval: (bara ${yrken[0].replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}|AID-etikett 1 av)`));
         w2.close();
     });
     it('kandidatparen: det kvinnodominerade yrkets BAS, löneskillnaden och dess antal; ett bortval döljer hela paret', () => {

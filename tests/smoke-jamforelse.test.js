@@ -540,7 +540,7 @@ describe('Statistikens matchning: märkning per rad, sammanfattning och rättels
     it('rapportens tabell och den samlade jämförelseexporten bär samma märkning', async () => {
         const w = medMatchning();
         const avsnitt = w.eval('rapportModell()').avsnitt.find(a => a.id === 'referenser');
-        const tabell = avsnitt.delar.find(d => d.typ === 'tabell' && d.kolumner.some(k => k.rubrik === 'Yrkesgrupp'));
+        const tabell = avsnitt.delar.find(d => d.typ === 'tabell' && d.kolumner.some(k => k.rubrik === 'AID-etikett'));
         const i = tabell.kolumner.findIndex(k => k.rubrik === 'Matchning');
         expect(i).toBe(1);
         const per = Object.fromEntries(tabell.rader.map(r => [String(r[0]).split(' ')[0], r[i]]));

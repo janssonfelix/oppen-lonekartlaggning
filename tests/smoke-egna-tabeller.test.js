@@ -32,7 +32,7 @@ describe('egna tabeller: från Utforska till rapporten', () => {
         expect(r).toMatchObject({ namn: 'Median per yrke', spec: { rad: 'aid', kolumn: null, matt: 'median' }, upprepa: null });
         expect(JSON.stringify({ ...r, id: undefined })).not.toMatch(/\d{5}/);   // id:t är slumpat och kan råka innehålla siffror
         // Utan namn får tabellen sin beskrivning som namn; per BAS kräver att raderna inte redan är BAS.
-        expect(laggTill(w, '', true)).toMatch(/Tillagd: Median månadslön per Yrkesgrupp \(AID\), en tabell per BAS-intervall/);
+        expect(laggTill(w, '', true)).toMatch(/Tillagd: Median månadslön per AID-etikett, en tabell per BAS-intervall/);
         d.getElementById('explore-rad').value = 'bas'; w.__renderExplorer();
         expect(laggTill(w, 'Fel', true)).toMatch(/går inte när raderna/);
         expect(w.__state.rapportTabeller).toHaveLength(2);
@@ -52,7 +52,7 @@ describe('egna tabeller: från Utforska till rapporten', () => {
         expect(rubriker[0]).toBe('Median per yrke');
         expect(rubriker.some(t => /^Yrken per BAS — BAS /.test(t))).toBe(true);
         const tabell = egna.delar.find(p => p.typ === 'tabell');
-        expect(tabell.kolumner.map(c => c.rubrik)).toEqual(['Yrkesgrupp (AID)', 'Median månadslön', 'n (K/M)']);
+        expect(tabell.kolumner.map(c => c.rubrik)).toEqual(['AID-etikett', 'Median månadslön', 'n (K/M)']);
         expect(tabell.rader.length).toBeGreaterThan(3);
         // Tröskeln: samma grupper som Utforskas export, inga grupper under 10.
         const k = w.eval('kInstalld()');
@@ -138,8 +138,8 @@ describe('egna tabeller: receptet för avsnittet per BAS-intervall', () => {
         const w = fonster();
         w.__state.perBasRecept = w.eval("_pbValideraRecept({ dim: 'sektor' })");
         const perbas = w.eval('rapportModell()').avsnitt.find(a => a.id === 'perbas');
-        expect(perbas.rubrik).toMatch(/Lönestruktur per sektor$/);
-        expect(perbas.delar.filter(p => p.typ === 'rubrik').map(p => p.text)[0]).toMatch(/^Sektor /);
+        expect(perbas.rubrik).toMatch(/Lönestruktur per huvudområde$/);
+        expect(perbas.delar.filter(p => p.typ === 'rubrik').map(p => p.text)[0]).toMatch(/^Huvudområde /);
         expect(perbas.delar.filter(p => p.typ === 'tabell').some(t => t.rader.some(r => /ställningstagande/i.test(String(r[0]))))).toBe(false);
     });
 });
@@ -182,7 +182,7 @@ describe('egna tabeller i rapportunderlaget (ADR-20, ADR-52)', () => {
         const block = w.eval('rapportunderlagBlock()').filter(b => b.id.startsWith('egen:'));
         expect(block).toHaveLength(1);
         expect(block[0]).toMatchObject({ id: 'egen:0:0', rubrik: 'Median per yrke' });
-        expect(block[0].tabell.rubriker[0]).toMatch(/Yrkesgrupp/);
+        expect(block[0].tabell.rubriker[0]).toMatch(/AID-etikett/);
         expect(block[0].tabell.rader.length).toBeGreaterThan(0);
         expect(block[0].tabell.rader[0][1]).toMatch(/^\d[\d\s ]* kr$/);
         expect(block[0].stycken.join(' ')).toMatch(/Urval: Hela organisationen/);

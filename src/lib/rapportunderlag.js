@@ -19,7 +19,7 @@ import { lonebegreppReservation } from './struktur.js';
 import { personOrd } from './namn.js';
 import { kvDefinitionText } from './aidbas.js';
 import { gapDelar, gapVariablerIText, gapVariablerArStandard, gapStandardVariabler } from './gapuppdelning.js';
-import { skapaTermer, genitiv } from './termer.js';
+import { skapaTermer, genitiv, stor, artikel, adjektiv, termFras } from './termer.js';
 
 /** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
 const T = skapaTermer();
@@ -118,9 +118,9 @@ export const FRAGOR_YRKE = Object.freeze([
     'Finns tidsbegränsade eller personliga lösningar (t.ex. garantilön, lönetrappa) i gruppen?',
 ]);
 export const FRAGOR_PAR = Object.freeze([
-    'Ställer yrkena likvärdiga krav på kunskap och färdigheter, ansvar, ansträngning och arbetsförhållanden?',
+    `Ställer ${T.enhet.bfl} likvärdiga krav på kunskap och färdigheter, ansvar, ansträngning och arbetsförhållanden?`,
     'Stämmer BAS-placeringen med befattningsbeskrivningarna?',
-    'Finns marknadsfaktorer eller rekryteringsläge som påverkar jämförelseyrket?',
+    `Finns marknadsfaktorer eller rekryteringsläge som påverkar ${T.jamforelse.bf}?`,
     'Finns skillnader i arbetstid, arbetsmiljö eller ansvar som inte syns i BAS?',
 ]);
 
@@ -213,17 +213,17 @@ export function gruppBlock(g, { id, justerat, ki, urval, demo, k = 10, troskelNo
     if (justerat && justerat.utanAlder) {
         provat = ['Lönefilen saknar ålder, så skillnaden har inte justerats för ålder och BAS.'];
     } else if (justerat && justerat.ejSkattbar) {
-        provat = ['Ålder och BAS kunde inte prövas eftersom kön och BAS sammanfaller i yrket (kvinnor och män finns i olika BAS).'];
+        provat = [`Ålder och BAS kunde inte prövas eftersom kön och BAS sammanfaller i ${T.enhet.bf} (kvinnor och män finns i olika BAS).`];
     } else if (justerat && !justerat.forFa) {
-        fakta += ` Efter hänsyn till ålder och BAS inom yrket återstår en skillnad på ${_pct(justerat.gapPct)}.`;
+        fakta += ` Efter hänsyn till ålder och BAS inom ${T.enhet.bf} återstår en skillnad på ${_pct(justerat.gapPct)}.`;
         const ra = (g.kvot - 1) * 100, ju = justerat.gapPct;
         const siffror = `(${_pct(ra)} före justering, ${_pct(ju)} efter)`;
         if (ra !== 0 && ju !== 0 && Math.sign(ra) !== Math.sign(ju)) {
-            provat = [`Efter hänsyn till ålder och BAS inom yrket byter skillnaden tecken ${siffror}. Råskillnaden och den justerade skillnaden mäter olika saker (median respektive genomsnitt i en modell) och bör läsas var för sig.`];
+            provat = [`Efter hänsyn till ålder och BAS inom ${T.enhet.bf} byter skillnaden tecken ${siffror}. Råskillnaden och den justerade skillnaden mäter olika saker (median respektive genomsnitt i en modell) och bör läsas var för sig.`];
         } else if (Math.abs(ju) < Math.abs(ra)) {
-            provat = [`Ålder och BAS inom yrket förklarar ${formatTal(Math.abs(ra) - Math.abs(ju), 1)} procentenheter av skillnaden ${siffror}.`];
+            provat = [`Ålder och BAS inom ${T.enhet.bf} förklarar ${formatTal(Math.abs(ra) - Math.abs(ju), 1)} procentenheter av skillnaden ${siffror}.`];
         } else {
-            provat = [`Ålder och BAS inom yrket förklarar inte skillnaden ${siffror}.`];
+            provat = [`Ålder och BAS inom ${T.enhet.bf} förklarar inte skillnaden ${siffror}.`];
         }
     } else {
         provat = ['För få personer för att justera för ålder och BAS.'];
@@ -250,17 +250,17 @@ export function parBlock(p, { id, kravProxy, urval, demo, troskelNot } = {}) {
     const kiPct = p.gapCI && p.kvMedian > 0 ? { lo: p.gapCI.lo / p.kvMedian * 100, hi: p.gapCI.hi / p.kvMedian * 100 } : null;
     const fakta = `${p.kvLabel} (BAS ${p.kvBas}, ${formatTal(p.kvKvinnoPct, 0)} % kvinnor, median ${_kr(p.kvMedian)}) har `
         + `${_kr(p.gapKr)} lägre medianlön än ${p.maLabel} (BAS ${p.maBas}, median ${_kr(p.maMedian)}). `
-        + `Jämförelseyrkets median ligger ${_pct(p.gapPct)} högre` + (kiPct ? ` (95 % KI ${_ki(kiPct.lo, kiPct.hi)} %)` : '') + '.'
+        + `${stor(genitiv(T.jamforelse.bf))} median ligger ${_pct(p.gapPct)} högre` + (kiPct ? ` (95 % KI ${_ki(kiPct.lo, kiPct.hi)} %)` : '') + '.'
         // Den råa skillnaden är det lagen prövar; den åldersjusterade (bara interna par) visar vad som kan bero på åldersstruktur.
         + (p.aldersJusterad && isFinite(p.aldersJusterad.gapPct) ? ` Justerat för ålder: ${_pct(p.aldersJusterad.gapPct)}.` : '');
     const proxy = kravProxy === 'poäng'
         ? 'Jämförelsen bygger på arbetsvärderingspoäng som mått på krav.'
-        : 'Jämförelsen bygger på BAS-intervall som mått på krav.';
-    const kalla = p.jamforKalla === 'extern' ? ' Jämförelseyrket kommer från jämförelsestatistiken.' : '';
+        : `Jämförelsen bygger på ${T.niva.fl} som mått på krav.`;
+    const kalla = p.jamforKalla === 'extern' ? ` ${stor(T.jamforelse.bf)} kommer från jämförelsestatistiken.` : '';
     return {
         id, rubrik: `${p.kvLabel} — ${p.maLabel}`,
         stycken: [...fore, fakta, proxy + kalla, ...efter],
-        tabell: { rubriker: ['Yrke', 'BAS', 'Andel kvinnor', 'Antal', 'Median'], rader: [
+        tabell: { rubriker: [stor(T.namn.en), 'BAS', 'Andel kvinnor', 'Antal', 'Median'], rader: [
             [p.kvLabel, p.kvBas, _pct(p.kvKvinnoPct, 0), String(p.kvN), _kr(p.kvMedian)],
             [p.maLabel, p.maBas, _pct(p.maKvAndel, 0), p.maN == null ? '–' : String(p.maN), _kr(p.maMedian)]] },
         provat: null, fragor: [...FRAGOR_PAR],
@@ -294,7 +294,7 @@ export function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
                      : ` Kvinnornas medianlön är ${_kr(u.medKv)} och männens ${_kr(u.medMa)}, vilket motsvarar ${_pct(kvot)} av männens.`)];
         if (u.oforklarat && !litet) {
             // Frasen följer förklaringsmodellen (ADR-56); tom fras = endast kön. Det bortvalda får en mening var.
-            const fras = typeof u.oforklarat.fras === 'string' ? u.oforklarat.fras : 'ålder och BAS-intervall';
+            const fras = typeof u.oforklarat.fras === 'string' ? u.oforklarat.fras : `ålder och ${T.niva.en}`;
             st.push(fras
                 ? `Efter hänsyn till ${fras} är den oförklarade löneskillnaden ${_pct(u.oforklarat.pct)} (95 % KI ${_ki(u.oforklarat.lo, u.oforklarat.hi)} %).`
                 : `Utan att något räknats bort är löneskillnaden ${_pct(u.oforklarat.pct)} (95 % KI ${_ki(u.oforklarat.lo, u.oforklarat.hi)} %).`);
@@ -307,7 +307,7 @@ export function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
         const rader = [['Antal anställda', formatTal(u.n)], ['Kvinnor', formatTal(u.nKv)], ['Män', formatTal(u.nMa)]];
         if (!litet) {
             rader.push(['Medianlön kvinnor', _kr(u.medKv)], ['Medianlön män', _kr(u.medMa)], ['Kvinnors lön i % av mäns', _pct(kvot)]);
-            if (u.oforklarat) { const fras = typeof u.oforklarat.fras === 'string' ? u.oforklarat.fras : 'ålder och BAS-intervall'; rader.push([fras ? `Oförklarad löneskillnad (${fras})` : 'Löneskillnad (inget räknat bort)', _pct(u.oforklarat.pct)]); }
+            if (u.oforklarat) { const fras = typeof u.oforklarat.fras === 'string' ? u.oforklarat.fras : `ålder och ${T.niva.en}`; rader.push([fras ? `Oförklarad löneskillnad (${fras})` : 'Löneskillnad (inget räknat bort)', _pct(u.oforklarat.pct)]); }
         }
         return blk('Sammanfattning', st, { rubriker: ['Nyckeltal', 'Värde'], rader });
     }
@@ -341,52 +341,52 @@ export function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
         const g = u.grupper || [];
         const flagg = g.filter(x => x.flaggad), samlade = g.filter(x => x.samladMedian);
         const jamforda = g.length + (u.utelamnade || []).length;
-        const st = [`${_st(jamforda, 'yrkesgrupp', 'yrkesgrupper')} jämfördes. ${flagg.length} är värda att granska: skillnaden mellan kvinnors och mäns medianlön är statistiskt säkerställd och minst 3 % (verktygets storleksgräns). `
+        const st = [`${_st(jamforda, T.enhet.en, T.enhet.fl)} jämfördes. ${flagg.length} är värda att granska: skillnaden mellan kvinnors och mäns medianlön är statistiskt säkerställd och minst 3 % (verktygets storleksgräns). `
             + `${samlade.length} redovisas med samlad median eftersom ett kön har färre än ${k} ${personOrd(k)}, och ${(u.utelamnade || []).length} utelämnas helt.`];
-        if (!flagg.length) return blk('Lika arbete', [...st, 'Ingen yrkesgrupp är värd att granska.'], null);
+        if (!flagg.length) return blk('Lika arbete', [...st, `${stor(adjektiv({ utrum: 'ingen', neutrum: 'inget', plural: 'inga' }, T.enhet))} ${T.enhet.en} är ${adjektiv({ utrum: 'värd', neutrum: 'värt', plural: 'värda' }, T.enhet)} att granska.`], null);
         return blk('Lika arbete', [...st, `Kolumnen ${DIREKTIV_KOLUMN} visar var den ojusterade skillnaden når 5 %. ${DIREKTIV_TIPS}`],
-            { rubriker: ['Yrkesgrupp', 'Kvinnor', 'Män', 'Median kvinnor', 'Median män', 'Kvinnors lön i % av mäns', DIREKTIV_KOLUMN],
+            { rubriker: [stor(T.enhet.en), 'Kvinnor', 'Män', 'Median kvinnor', 'Median män', 'Kvinnors lön i % av mäns', DIREKTIV_KOLUMN],
             rader: flagg.map(x => [x.yrke, String(x.nKv), String(x.nMa), _kr(x.medKv), _kr(x.medMa), _pct(x.kvot * 100), x.direktiv ? DIREKTIV_ETIKETT : '']) });
     }
     if (typ === 'likvardigt') {
         const par = u.par || [];
-        const proxy = u.kravProxy === 'poäng' ? 'arbetsvärderingspoäng' : 'BAS-intervall';
+        const proxy = u.kravProxy === 'poäng' ? 'arbetsvärderingspoäng' : T.niva.fl;
         const st = [(_kapad(u) ? `De ${u.topN} största kandidatparen` : `${par.length} kandidatpar`)
-            + ` där ett kvinnodominerat yrke har lägre medianlön än ett yrke med lika eller lägre krav. Kraven mäts med ${proxy}.`
-            + (u.kvinnoTroskel != null ? ` Ett yrke räknas som kvinnodominerat vid ${kvDefinitionText(u.kvDomDefinition, formatTal(u.kvinnoTroskel))}.` : '')
+            + ` där ${artikel(T.enhet)} ${termFras(T.enhet, 'en', { adjektiv: 'kvinnodominerad' })} har lägre medianlön än ${artikel(T.enhet)} ${T.enhet.en} med lika eller lägre krav. Kraven mäts med ${proxy}.`
+            + (u.kvinnoTroskel != null ? ` ${stor(artikel(T.enhet))} ${T.enhet.en} räknas som ${adjektiv('kvinnodominerad', T.enhet)} vid ${kvDefinitionText(u.kvDomDefinition, formatTal(u.kvinnoTroskel))}.` : '')
             // ADR-60: jämförelsemängden är alla yrken som inte är kvinnodominerade, eller bara de mansdominerade.
             + (u.jamforelse === 'mansdominerade'
-                ? ' Yrkena jämförs bara med mansdominerade yrken på samma nivå; könsandelen i jämförelseyrket står i tabellen.'
-                : ' Yrkena jämförs med yrken på samma nivå som inte är kvinnodominerade; könsandelen i jämförelseyrket står i tabellen.')];
+                ? ` ${stor(T.enhet.bfl)} jämförs bara med mansdominerade ${T.enhet.fl} på samma nivå; könsandelen i ${T.jamforelse.bf} står i tabellen.`
+                : ` ${stor(T.enhet.bfl)} jämförs med ${T.enhet.fl} på samma nivå som inte är kvinnodominerade; könsandelen i ${T.jamforelse.bf} står i tabellen.`)];
         if (_kapad(u)) st.push(_kapadText(u));
         if (u.exkluderade) st.push(`${u.exkluderade} par med en grupp under ${k} ${personOrd(k)} redovisas inte här.`);
         if (!par.length) return blk('Likvärdigt arbete', [...st, 'Inga kandidatpar att redovisa.'], null);
         const kiText = p => (p.gapCI && p.kvMedian > 0) ? `${_ki(p.gapCI.lo / p.kvMedian * 100, p.gapCI.hi / p.kvMedian * 100)} %` : '–';
-        return blk('Likvärdigt arbete', st, { rubriker: ['Kvinnodominerat yrke', 'Jämförelseyrke', 'Antal (kvinnodom. / jämf.)', 'Könsandel i jämförelseyrket', 'Skillnad (kr)', 'Skillnad (%)', '95 % KI'],
+        return blk('Likvärdigt arbete', st, { rubriker: [stor(termFras(T.enhet, 'en', { adjektiv: 'kvinnodominerad' })), stor(T.jamforelse.en), 'Antal (kvinnodom. / jämf.)', `Könsandel i ${T.jamforelse.bf}`, 'Skillnad (kr)', 'Skillnad (%)', '95 % KI'],
             rader: par.map(p => [`${p.kvLabel} (BAS ${p.kvBas})`, `${p.maLabel} (BAS ${p.maBas})`, _parAntal(p), _konsandel(p), _kr(p.gapKr), _pct(p.gapPct), kiText(p)]) });
     }
     if (typ === 'lagreKrav') {
         const R = 'Lägre krav, högre lön';
-        if (u.kravProxy === 'poäng') return blk(R, ['Med arbetsvärderingspoäng jämförs yrken över BAS-gränserna redan i Likvärdigt arbete.'], null);
+        if (u.kravProxy === 'poäng') return blk(R, [`Med arbetsvärderingspoäng jämförs ${T.enhet.fl} över BAS-gränserna redan i Likvärdigt arbete.`], null);
         const par = u.par || [];
         const st = [(_kapad(u) ? `De ${u.topN} största paren` : `${par.length} par`)
-            + ' där ett kvinnodominerat yrke har lägre medianlön än ett av organisationens yrken i lägre BAS. Kraven mäts med BAS-intervall, ett grovt mått som bör prövas mot befattningsbeskrivningarna.'];
+            + ` där ${artikel(T.enhet)} ${termFras(T.enhet, 'en', { adjektiv: 'kvinnodominerad' })} har lägre medianlön än ${artikel(T.enhet)} av organisationens ${T.enhet.fl} i lägre BAS. Kraven mäts med ${T.niva.fl}, ett grovt mått som bör prövas mot befattningsbeskrivningarna.`];
         if (_kapad(u)) st.push(_kapadText(u));
         if (u.exkluderade) st.push(`${u.exkluderade} par med en grupp under ${k} ${personOrd(k)} redovisas inte här.`);
-        if (!par.length) return blk(R, [...st, 'Inget kvinnodominerat yrke har lägre medianlön än ett yrke i lägre BAS.'], null);
+        if (!par.length) return blk(R, [...st, `${stor(adjektiv({ utrum: 'ingen', neutrum: 'inget', plural: 'inga' }, T.enhet))} ${termFras(T.enhet, 'en', { adjektiv: 'kvinnodominerad' })} har lägre medianlön än ${artikel(T.enhet)} ${T.enhet.en} i lägre BAS.`], null);
         const kiText = p => (p.gapCI && p.kvMedian > 0) ? `${_ki(p.gapCI.lo / p.kvMedian * 100, p.gapCI.hi / p.kvMedian * 100)} %` : '–';
-        const b = blk(R, st, { rubriker: ['Kvinnodominerat yrke', 'Jämförelseyrke', 'Antal (kvinnodom. / jämf.)', 'Könsandel i jämförelseyrket', 'BAS-steg', 'Skillnad (kr)', 'Skillnad (%)', '95 % KI'],
+        const b = blk(R, st, { rubriker: [stor(termFras(T.enhet, 'en', { adjektiv: 'kvinnodominerad' })), stor(T.jamforelse.en), 'Antal (kvinnodom. / jämf.)', `Könsandel i ${T.jamforelse.bf}`, 'BAS-steg', 'Skillnad (kr)', 'Skillnad (%)', '95 % KI'],
             rader: par.map(p => [`${p.kvLabel} (BAS ${p.kvBas})`, `${p.maLabel} (BAS ${p.maBas})`, _parAntal(p), _konsandel(p), String(p.basSteg), _kr(p.gapKr), _pct(p.gapPct), kiText(p)]) });
         return { ...b, fragor: [...FRAGOR_PAR] };
     }
     if (typ === 'struktur') {
         const kv = u.kvartiler || [];
-        const st = ['Könsfördelning och medianlön per BAS-intervall.', lonebegreppReservation()];
+        const st = [`Könsfördelning och medianlön per ${T.niva.en}.`, lonebegreppReservation()];
         const kvartilOk = !(u.nKv < k || u.nMa < k);   // k: kvartilandelar röjer annars ett litet kön
         if (kv.length && kvartilOk) st.push('Andel kvinnor per lönekvartil: ' + kv.map(q => `kvartil ${q.q} ${_pct(q.andelKv, 0)}`).join(', ') + '.');
         const rep = u.representation || [];
         const utelamnade = rep.filter(r => r.n < k).length;
-        if (utelamnade) st.push(`${_st(utelamnade, 'BAS-intervall', 'BAS-intervall')} med färre än ${k} ${personOrd(k)} redovisas inte.`);
+        if (utelamnade) st.push(`${_st(utelamnade, T.niva.en, T.niva.fl)} med färre än ${k} ${personOrd(k)} redovisas inte.`);
         return blk('Struktur och lönetransparens', st, { rubriker: ['BAS', 'Antal', 'Andel kvinnor', 'Median', 'Kvinnors lön jämfört med mäns'],
             rader: rep.filter(r => r.n >= k).map(r => [r.bas, String(r.n), _pct(r.andelKv),
                 _kr(r.median),
@@ -396,16 +396,16 @@ export function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
         // Sektorsöversikten (ADR-33): samma k-regler som vyn.
         const alla = u.sektorer || [];
         const visas = alla.filter(r => !r.maskerad);
-        const st = ['Kvinnors lön i procent av mäns per sektor (AID-huvudområde), rå och justerad för ålder och BAS-intervall.'];
+        const st = [`Kvinnors lön i procent av mäns per ${T.huvudomrade.en}, rå och justerad för ålder och ${T.niva.en}.`];
         const a = u.andel;
         if (a && a.andel != null) st.push(Math.abs(a.andel) < 0.01
-            ? `Skillnaden i medellön för hela organisationen (${_kr(a.gapKr)} per månad) beror nästan inte alls på att kvinnor och män arbetar i olika sektorer (under 1 %).`
-            : `Av skillnaden i medellön för hela organisationen (${_kr(a.gapKr)} per månad) beror ${_kr(a.sektorKr)} (${_pct(a.andel * 100)}) på att kvinnor och män arbetar i olika sektorer.`);
+            ? `Skillnaden i medellön för hela organisationen (${_kr(a.gapKr)} per månad) beror nästan inte alls på att kvinnor och män arbetar i olika ${T.huvudomrade.fl} (under 1 %).`
+            : `Av skillnaden i medellön för hela organisationen (${_kr(a.gapKr)} per månad) beror ${_kr(a.sektorKr)} (${_pct(a.andel * 100)}) på att kvinnor och män arbetar i olika ${T.huvudomrade.fl}.`);
         const dolda = alla.length - visas.length;
-        if (dolda) st.push(`${_st(dolda, 'sektor', 'sektorer')} med färre än ${k} ${personOrd(k)} redovisas inte.`);
+        if (dolda) st.push(`${_st(dolda, T.huvudomrade.en, T.huvudomrade.fl)} med färre än ${k} ${personOrd(k)} redovisas inte.`);
         const skr = visas.find(r => r.skrAndelKv != null);
-        if (skr) st.push(`Andel kvinnor i samma sektor i ${skrDelText(skr.skrDel)} enligt SKR:s personalstatistik står som referens.`);
-        return blk('Per sektor (AID-huvudområde)', st, { rubriker: ['Sektor', 'Antal', 'Andel kvinnor', 'Andel kvinnor, SKR', 'Kvinnors lön i % av mäns', 'Justerad (ålder, BAS)'],
+        if (skr) st.push(`Andel kvinnor i samma ${T.huvudomrade.en} i ${skrDelText(skr.skrDel)} enligt SKR:s personalstatistik står som referens.`);
+        return blk(`Per ${T.huvudomrade.en}`, st, { rubriker: [stor(T.huvudomrade.en), 'Antal', 'Andel kvinnor', 'Andel kvinnor, SKR', 'Kvinnors lön i % av mäns', 'Justerad (ålder, BAS)'],
             rader: visas.map(r => [r.namn, String(r.n), _pct(r.andelKv), r.skrAndelKv != null ? _pct(r.skrAndelKv) : '–',
                 !r.samladMedian && r.kvot != null ? _pct(r.kvot) : '–',
                 !r.samladMedian && r.justerat ? _pct(100 + r.justerat.pct) : '–']) });
@@ -508,8 +508,8 @@ export function arsjamforelseBlock(j, { id = 'arsjamforelse', forraAr, nuAr, urv
     const diff = (v, typ) => (v == null ? '–' : `${v > 0 ? '+' : v < 0 ? '−' : '±'}${skriv(Math.abs(v), typ)}${typ === 'pct' ? '-enheter' : ''}`);
     const g = j.grupper, p = j.punkter;
     const namn = l => l.map(x => x.yrke).join(', ');
-    const st = [`Jämfört med lönekartläggningen ${forraAr}. Lönemått bara för yrkesgrupper där båda könen når minsta gruppstorlek; skillnaden är kvinnors medianlön mot mäns.`,
-        `Flaggade yrkesgrupper i Lika arbete: ${g.kvar.length} båda åren${g.kvar.length ? ` (${namn(g.kvar)})` : ''}, ${g.nya.length} nya${g.nya.length ? ` (${namn(g.nya)})` : ''} och ${g.borta.length} inte längre flaggade${g.borta.length ? ` (${namn(g.borta)})` : ''}.`,
+    const st = [`Jämfört med lönekartläggningen ${forraAr}. Lönemått bara för ${T.enhet.fl} där båda könen når minsta gruppstorlek; skillnaden är kvinnors medianlön mot mäns.`,
+        `Flaggade ${T.enhet.fl} i Lika arbete: ${g.kvar.length} båda åren${g.kvar.length ? ` (${namn(g.kvar)})` : ''}, ${g.nya.length} nya${g.nya.length ? ` (${namn(g.nya)})` : ''} och ${g.borta.length} inte längre flaggade${g.borta.length ? ` (${namn(g.borta)})` : ''}.`,
         `Att göra: ${forraAr} var ${p.klaraForra} av ${p.totaltForra} punkter avbockade, ${nuAr} ${p.klaraNu} av ${p.totaltNu}.`
             + (p.kvarFranForra.length ? ` Av ${forraAr} års ${p.kvarFranForra.length} öppna punkter är ${p.kvarFranForra.filter(q => q.klarNu).length} klara i år.` : '')];
     return { id, rubrik: 'Jämförelse med förra året', stycken: [...fore, ...st, ...efter], provat: null, fragor: null,
@@ -529,8 +529,8 @@ function _basUtvecklingTabell(rader, forraAr, nuAr) {
     const tkn = v => (v > 0 ? '+' : v < 0 ? '−' : '±');
     const forandring = f => (!f || f.diff == null ? '–' : `${tkn(f.diff)}${_kr(Math.abs(f.diff))}${f.pct == null ? '' : ` (${tkn(f.pct)}${_pct(Math.abs(f.pct), 1)})`}`);
     const matt = [['p10', 'P10'], ['med', 'Median'], ['p90', 'P90']];
-    return { rubrik: 'Löneutveckling per BAS-intervall',
-        rubriker: ['BAS-intervall', `Antal ${forraAr}`, `Antal ${nuAr}`, ...matt.flatMap(([, e]) => [`${e} ${forraAr}`, `${e} ${nuAr}`, `${e} förändring`])],
+    return { rubrik: `Löneutveckling per ${T.niva.en}`,
+        rubriker: [stor(T.niva.en), `Antal ${forraAr}`, `Antal ${nuAr}`, ...matt.flatMap(([, e]) => [`${e} ${forraAr}`, `${e} ${nuAr}`, `${e} förändring`])],
         rader: rader.map(r => [`BAS ${r.bas}`, formatTal(r.n.forra), formatTal(r.n.nu), ...matt.flatMap(([m]) => [_kr(r[m].forra), _kr(r[m].nu), forandring(r[m])])]) };
 }
 
@@ -545,8 +545,8 @@ function _basUtvecklingTabell(rader, forraAr, nuAr) {
 export function basintervallBlock(b, { id = `bas:${b.bas}`, urval, demo, troskelNot } = {}) {
     const { fore, efter } = _inled({ demo, urval, troskelNot });
     const st = b.stycken.flatMap(x => [x.rubrik, ...x.rader]);
-    return { id, rubrik: `BAS-intervall ${b.bas}`, stycken: [...fore, ...st, `[HR fyller i] ${b.bedomning}`, ...efter], provat: null, fragor: null,
-        tabell: b.yrken.length ? { rubriker: ['AID', 'Yrke', 'Kvinnor / män', 'Median kvinnor', 'Median män', 'Kvinnors median i % av mäns', 'Status'],
+    return { id, rubrik: `${stor(T.niva.en)} ${b.bas}`, stycken: [...fore, ...st, `[HR fyller i] ${b.bedomning}`, ...efter], provat: null, fragor: null,
+        tabell: b.yrken.length ? { rubriker: ['AID', stor(T.namn.en), 'Kvinnor / män', 'Median kvinnor', 'Median män', 'Kvinnors median i % av mäns', 'Status'],
             rader: b.yrken.map(y => [String(y.aid), String(y.yrke), `${formatTal(y.nKv)} / ${formatTal(y.nMa)}`, _kr(y.medKv), _kr(y.medMa), _pct(y.kvotPct, 1), String(y.status)]) } : null };
 }
 
@@ -562,7 +562,7 @@ export function referenserBlock(overblick, { id = 'referenser', urval, demo, tro
     const { grupper, tal } = overblick, pm = tal.perMonster;
     const tecken = v => (v == null ? '–' : `${v >= 0 ? '+' : '−'}${_pct(Math.abs(v), 1)}`);
     const skillnad = (g, ref) => (g.org.median != null && ref?.median != null ? tecken((g.org.median / ref.median - 1) * 100) : '–');
-    const mening = (m, text) => `${_st(m.grupper, 'yrkesgrupp', 'yrkesgrupper')} (${_pct(m.andel, 0)} av personalen): ${text}.`;
+    const mening = (m, text) => `${_st(m.grupper, T.enhet.en + ' i ' + T.niva.en, T.enhet.fl + ' i ' + T.niva.en)} (${_pct(m.andel, 0)} av personalen): ${text}.`;
     const motPolicy = tal.vagdMedianMotStallningstagandePct != null, motStatistik = tal.vagdMedianMotStatistikPct != null;
     const st = ['Ställningstagandet är referenspunkten: löneläget och statistiken mäts mot det.',
         ...(motPolicy && motStatistik ? [mening(pm.badaOver, 'löneläget och statistiken ligger över ställningstagandet'),
@@ -571,7 +571,7 @@ export function referenserBlock(overblick, { id = 'referenser', urval, demo, tro
             mening(pm.badaInom, 'löneläget och statistiken ligger inom ställningstagandet')] : []),
         `Vägd medianskillnad, löneläget mot ${[motPolicy && `ställningstagandet: ${tecken(tal.vagdMedianMotStallningstagandePct)}`, motStatistik && `statistiken: ${tecken(tal.vagdMedianMotStatistikPct)}`].filter(Boolean).join(', mot ')}.`];
     return { id, rubrik: 'Lönerna mot referenserna', stycken: [...fore, ...st, ...efter], provat: null, fragor: null,
-        tabell: { rubriker: ['Yrkesgrupp', ...(harStatistik ? ['Matchning'] : []), 'n', 'Median (kr)', 'Mot ställningstagandet (%)', 'Mot statistiken (%)', 'Läge och förslag'],
+        tabell: { rubriker: [stor(T.enhet.en), ...(harStatistik ? ['Matchning'] : []), 'n', 'Median (kr)', 'Mot ställningstagandet (%)', 'Mot statistiken (%)', 'Läge och förslag'],
             // Samma text som skärmens kolumn och Excel-bladet (lageOchForslag i referenser.js)
             rader: grupper.map(g => [`${g.yrke} · BAS ${g.bas}`, ...(harStatistik ? [matchningEtikett(g.statistikMatchning)] : []), formatTal(g.n), formatTal(g.org.median, 0),
                 skillnad(g, g.stallningstagande), skillnad(g, g.statistik), g.lageOchForslag ?? g.monster.text]) } };

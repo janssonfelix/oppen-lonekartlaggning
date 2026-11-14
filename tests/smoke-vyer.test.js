@@ -281,9 +281,9 @@ describe('samma bild på Översikt', () => {
         const t = w.document.getElementById('dashboard-summary').textContent;
         expect(t).not.toContain('bör utredas enligt EU');
         // Under talet står bara vad det är; förklaringen ligger i verktygstipset (nyckeltalsraden är en rad hög).
-        expect(t).toContain('rå skillnad, innan yrke och BAS-intervall räknats bort');
+        expect(t).toContain('rå skillnad, innan AID-etikett och BAS-intervall räknats bort');
         const tip = w.document.querySelector('#stat-paygap .stat-tip');
-        expect(tip.getAttribute('title')).toContain('före hänsyn till yrke, BAS-intervall och ålder');
+        expect(tip.getAttribute('title')).toContain('före hänsyn till AID-etikett, BAS-intervall och ålder');
         // Rågapet är en utgångspunkt, inget fynd: neutral färg också när det är långt från 100 %.
         expect(tip.classList.contains('crit')).toBe(false);
         expect(tip.classList.contains('ok')).toBe(false);
@@ -414,7 +414,7 @@ describe('menystruktur', () => {
         }
         expect(faser).toEqual({
             '1 · Underlag': ['1. Underlag inläst', '2. Regler & praxis'],
-            '2 · Kartläggning': ['3. Lika arbete — samma yrke', '4. Likvärdigt arbete'],
+            '2 · Kartläggning': ['3. Lika arbete — samma AID-etikett', '4. Likvärdigt arbete'],
             '3 · Åtgärder': ['5. Handlingsplan', '6. Samverkan med facket'],
             '4 · Rapport': ['7. Rapporttext', '8. Dokumentation', '9. Uppföljning av handlingsplanen'],
         });

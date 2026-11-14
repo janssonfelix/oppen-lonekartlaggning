@@ -78,7 +78,7 @@ describe('perbas: löneskillnader inom likvärdigt arbete och i åldersgrupper',
         expect(yrkesnamn({ aid: '2071', yrkeLabel: 'Undersköterska' })).toBe('2071 Undersköterska');
         expect(yrkesnamn({ aid: '2071', yrkeLabel: '2071' })).toBe('2071');
         expect(yrkesnamn({ yrke: 'Fritext' })).toBe('Fritext');
-        expect(yrkesnamn({})).toBe('(okänt yrke)');
+        expect(yrkesnamn({})).toBe('(okänd AID-etikett)');
     });
 });
 
@@ -104,7 +104,7 @@ describe('perbas: receptet (ADR-52)', () => {
         const rader = underlag().map(r => ({ ...r, aid: r.aid === '2071' ? '207011' : r.aid === '1010' ? '101010' : r.aid === '3510' ? '351009' : '103010' }));
         const t = perBasTabeller(rader, { k: 10, referens, statistik: [{ aid: '207011', median: 1 }], recept: { dim: 'sektor' } });
         expect(t.dim).toBe('sektor');
-        expect(t.dimEtikett).toBe('Sektor');
+        expect(t.dimEtikett).toBe('Huvudområde');
         expect(t.intervall.length).toBeGreaterThan(0);
         for (const i of t.intervall) expect(i.rader.map(r => r.typ)).not.toContain('referens');
         for (const i of t.intervall) expect(i.rader.map(r => r.typ)).not.toContain('statistik');

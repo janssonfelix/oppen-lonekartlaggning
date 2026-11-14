@@ -112,7 +112,7 @@ function loadStortDemo() {
     if (!_lasInDemounderlag(generateStortDemo, { stort: true })) return;
     /** @type {HTMLElement} */ (document.getElementById('diagnostic-results')).style.display = 'none';   // ett tidigare litet demos diagnostik gäller inte här
     _renderDemoBanner();
-    announceToScreenReader(`Stort demo inläst: ${svTal(state.data.length)} påhittade personer i ${getBasIntervals().length} BAS-intervall.`);
+    announceToScreenReader(`Stort demo inläst: ${svTal(state.data.length)} påhittade personer i ${getBasIntervals().length} ${termForAntal(getBasIntervals().length, T.niva)}.`);
 }
 ['first-run-stort-demo', 'upload-demo-stort'].forEach(id =>
     document.getElementById(id)?.addEventListener('click', loadStortDemo));

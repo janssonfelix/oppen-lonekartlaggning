@@ -235,7 +235,7 @@ describe('Word-utkast: dokumentationsskelett (§§ 8–14) på demodata', () => 
         const html = draft();
         // Rubrikerna är klarspråk utan paragraf (lagrummen står i docs/utveckling/lagrum.md) — men varje
         // lagsteg måste fortfarande finnas, i rätt ordning.
-        const idxs = ['Regler och praxis kring lön', 'Lika arbete — kvinnor och män i samma yrke', 'Likvärdigt arbete — kvinnodominerade yrken',
+        const idxs = ['Regler och praxis kring lön', 'Lika arbete — kvinnor och män i samma AID-etikett', 'Likvärdigt arbete — kvinnodominerade AID-etiketter',
             'Åtgärder och tidsplan', 'Samverkan med arbetstagarna', 'Beslut och underskrift', 'Bilaga: Metod']
             .map(h => html.indexOf(h));
         idxs.forEach(i => expect(i).toBeGreaterThan(-1));        // alla finns

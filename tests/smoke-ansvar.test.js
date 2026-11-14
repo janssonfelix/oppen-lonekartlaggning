@@ -218,7 +218,7 @@ describe('Utforska: slå ihop små yrkesgrupper', () => {
         d.getElementById('explore-sla-ihop').checked = true;
         w.__state.kLage = 'export';
         w.__renderExplorer();
-        expect(d.getElementById('explore-table').textContent).toMatch(/Övriga i AID 2070xx \(2 yrken\)/);
+        expect(d.getElementById('explore-table').textContent).toMatch(/Övriga i AID 2070xx \(2 AID-etiketter\)/);
         d.getElementById('explore-sla-ihop').checked = false;
         w.__renderExplorer();
         expect(d.getElementById('explore-table').textContent).not.toMatch(/Övriga i/);
@@ -228,9 +228,9 @@ describe('Utforska: slå ihop små yrkesgrupper', () => {
         satt('explore-rad', 'aid'); satt('explore-kolumn', 'ingen');
         d.getElementById('explore-sla-ihop').checked = true;
         w.__renderExplorer();
-        w.eval(`explorerHandleClick({ rad: 'Övriga i AID 2070xx (2 yrken)', kol: null })`);
+        w.eval(`explorerHandleClick({ rad: 'Övriga i AID 2070xx (2 AID-etiketter)', kol: null })`);
         const not = d.getElementById('explore-note').textContent;
-        expect(not).toMatch(/slagits ihop av flera små yrken/);
+        expect(not).toMatch(/slagits ihop av flera små AID-etiketter/);
         expect(not).not.toMatch(/minst 10 personer/);
         d.getElementById('explore-sla-ihop').checked = false;
     });
@@ -410,7 +410,7 @@ describe('AID: metodtext enligt handboken', () => {
         const w = createAppWindow();
         w.__loadDemoData();
         const html = w.__docDraftHtml();
-        const lika = html.slice(html.indexOf('Lika arbete — kvinnor och män i samma yrke'), html.indexOf('Likvärdigt arbete — kvinnodominerade yrken'));
+        const lika = html.slice(html.indexOf('Lika arbete — kvinnor och män i samma AID-etikett'), html.indexOf('Likvärdigt arbete — kvinnodominerade AID-etiketter'));
         expect(lika).toMatch(/AID är inte ett arbetsvärderingssystem/);
     });
 });

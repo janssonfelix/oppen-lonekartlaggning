@@ -50,7 +50,7 @@ describe('rapportutkastet per BAS-intervall (Rapporttext)', () => {
         const utanForra = dossier.slice(0, dossier.indexOf('\nFörra året\n'));
         expect(c.startsWith(utanForra)).toBe(true);
         expect(c).not.toContain('Förra året');
-        for (const r of ['Nyckeltal', 'Yrkesgrupperna i intervallet', 'Likvärdigt arbete i intervallet', 'Ålder']) expect(c).toContain(`\n${r}\n`);
+        for (const r of ['Nyckeltal', 'AID-etiketterna i intervallet', 'Likvärdigt arbete i intervallet', 'Ålder']) expect(c).toContain(`\n${r}\n`);
         // Utkastets slutrad står kvar sist i helheten (före delen per intervall gäller den hela texten).
         expect(t.indexOf('Detta utkast är ett analysunderlag')).toBeLessThan(i);
         expect(w.__state.kLage).toBe('skarm');
@@ -133,7 +133,7 @@ describe('Word-utkastet och PDF-rapporten: Lönekartläggning per BAS-intervall'
         expect(c.filter(p => p.typ === 'stycke' && p.stil === 'fet').map(p => p.text)).toEqual(stycken.map(s => s.rubrik));
         // Tabellen: AID, yrke, antal per kön, medianer per kön, kvoten och status; bara yrken där båda könen når k.
         const tab = c.find(p => p.typ === 'tabell');
-        expect(tab.kolumner.map(k => k.rubrik)).toEqual(['AID', 'Yrke', 'Kvinnor / män', 'Median kvinnor', 'Median män', 'Kvinnors median i % av mäns', 'Status']);
+        expect(tab.kolumner.map(k => k.rubrik)).toEqual(['AID', 'Etikettnamn', 'Kvinnor / män', 'Median kvinnor', 'Median män', 'Kvinnors median i % av mäns', 'Status']);
         const d = w.eval("medExportLage(() => buildBasdossier('C'))");
         const delade = d.yrken.filter(y => !y.samlad);
         expect(tab.rader.map(r => r[0])).toEqual(delade.map(y => y.aid));
@@ -143,9 +143,9 @@ describe('Word-utkastet och PDF-rapporten: Lönekartläggning per BAS-intervall'
         // Word-utkastet och utskriften ritas ur modellen.
         const html = w.eval('_buildDocumentationDraftHtml()');
         expect(html).toContain('Lönekartläggning per BAS-intervall');
-        expect(html).toContain('<p><strong>Yrkesgrupperna i intervallet</strong></p>');
+        expect(html).toContain('<p><strong>AID-etiketterna i intervallet</strong></p>');
         const block = w.eval('_utkastTillBlock(_buildDocumentationDraftHtml())');
-        const fet = block.find(b => b.typ === 'stycke' && b.delar.length === 1 && b.delar[0].text === 'Yrkesgrupperna i intervallet');
+        const fet = block.find(b => b.typ === 'stycke' && b.delar.length === 1 && b.delar[0].text === 'AID-etiketterna i intervallet');
         expect(fet.delar[0].fet).toBe(true);
         expect(w.__state.kLage).toBe('skarm');
     });
@@ -216,7 +216,7 @@ describe('rapportunderlaget: Per BAS-intervall', () => {
         const iBed = c.stycken.findIndex(t => /^\[HR fyller i\] Bedömning: /.test(t));
         expect(iBed).toBeGreaterThan(c.stycken.indexOf(stycken[stycken.length - 1].rader.slice(-1)[0]));
         expect(c.stycken.slice(iBed + 1)).toEqual(['Urval: Hela organisationen.']);
-        expect(c.tabell.rubriker).toEqual(['AID', 'Yrke', 'Kvinnor / män', 'Median kvinnor', 'Median män', 'Kvinnors median i % av mäns', 'Status']);
+        expect(c.tabell.rubriker).toEqual(['AID', 'Etikettnamn', 'Kvinnor / män', 'Median kvinnor', 'Median män', 'Kvinnors median i % av mäns', 'Status']);
         expect(c.tabell.rader.length).toBeGreaterThan(0);
         expect(c.tabell.rader.every(r => r.every(x => typeof x === 'string'))).toBe(true);
         w.__renderTabContent('rapporttext');

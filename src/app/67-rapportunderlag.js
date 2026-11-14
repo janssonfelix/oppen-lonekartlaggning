@@ -6,10 +6,14 @@
 // Blocken byggs i src/lib/rapportunderlag.js (_ru*); här hämtas resultaten ur de
 // befintliga analyserna och kopieringen till urklipp sköts.
 
+// Förledet i id:t för blocken per AID-etikett i Lika arbete ("yrke:0"); en nyckel, inte text, så den byts inte med
+// termerna (ADR-74).
+const RU_GRUPPBLOCK = 'yrke:';
+
 // Diagram som kan kopieras som bild: id på diagrammet och fliken som ritar det.
 const RAPPORT_DIAGRAM = [
-    { id: 'chart-skevhet-overview', rubrik: 'Löneskillnad per BAS-intervall', flik: 'struktur' },
-    { id: 'chart-perbas-gap', rubrik: 'Oförklarad löneskillnad per BAS-intervall', flik: 'struktur' },
+    { id: 'chart-skevhet-overview', rubrik: `Löneskillnad per ${T.niva.en}`, flik: 'struktur' },
+    { id: 'chart-perbas-gap', rubrik: `Oförklarad löneskillnad per ${T.niva.en}`, flik: 'struktur' },
     { id: 'chart-likvardighet-heatmap', rubrik: 'Kandidatpar i likvärdigt arbete', flik: 'likvardighet' },
 ];
 
@@ -102,7 +106,7 @@ function _rapportunderlagBlockExport() {
         const rader = d.filter(r => r.yrke === g.yrke);
         const ki = _gdBootstrapGapCI(rader.filter(arKv).map(r => r.lon), rader.filter(arMa).map(r => r.lon));
         const arsbelopp = _prArsbeloppMening(g, state.costSettings, v => _figTalformat(Math.round(v), 'kr'));
-        block.push(_ruGruppBlock(g, { ...opt, id: `yrke:${i}`, justerat: _ruJusteratGap(rader, { k: statGolv() }), ki, arsbelopp }));
+        block.push(_ruGruppBlock(g, { ...opt, id: RU_GRUPPBLOCK + i, justerat: _ruJusteratGap(rader, { k: statGolv() }), ki, arsbelopp }));
     });
     par.forEach((p, i) => block.push(_ruParBlock(p, { ...opt, id: `par:${i}`, kravProxy })));
     // Jämförelsen med förra året (ADR-54), när ett bokslut är inläst.
@@ -149,7 +153,7 @@ function renderRapportunderlag() {
             </article>`).join('')
         : '';
     const avsnitt = block.filter(b => !b.id.includes(':'));
-    const yrken = block.filter(b => b.id.startsWith('yrke:'));
+    const yrken = block.filter(b => b.id.startsWith(RU_GRUPPBLOCK));
     const parBl = block.filter(b => b.id.startsWith('par:'));
     const egna = block.filter(b => b.id.startsWith('egen:'));
     const basBl = block.filter(b => b.id.startsWith('bas:'));
@@ -166,10 +170,10 @@ function renderRapportunderlag() {
     const toc = (rubrik, lista) => lista.length
         ? `<li><strong>${esc(rubrik)}</strong>: ${lista.map(b => `<a href="#" data-hoppa-till="${esc(_ruBlockId(b.id))}">${esc(b.rubrik)}</a>`).join(' · ')}</li>` : '';
     const forteckning = `<nav class="ru-toc" aria-label="Innehåll i rapportunderlaget"><ul>`
-        + toc('Avsnitt', avsnitt) + toc('Per BAS-intervall', basBl) + toc('Yrkesgrupper', yrken) + toc('Kandidatpar', parBl) + toc('Egna tabeller', egna) + `</ul>`
+        + toc('Avsnitt', avsnitt) + toc(`Per ${T.niva.en}`, basBl) + toc(termStor(T.enhet.fl), yrken) + toc('Kandidatpar', parBl) + toc('Egna tabeller', egna) + `</ul>`
         + `<div class="ru-atgard"><button type="button" class="btn btn-secondary btn-sm" id="btn-ru-kopiera-avsnitt">Kopiera alla avsnitt</button>`
         + `<span class="ru-kvitto" role="status"></span></div><div id="ru-alla-avsnitt" class="ru-alla-avsnitt" hidden></div></nav>`;
-    host.innerHTML = `<p class="ru-forbehall">${esc(ANSVARSFORBEHALL)}</p>` + forteckning + grupp('Avsnitt', avsnitt) + grupp('Per BAS-intervall', basBl) + grupp('Yrkesgrupper i Lika arbete', yrken)
+    host.innerHTML = `<p class="ru-forbehall">${esc(ANSVARSFORBEHALL)}</p>` + forteckning + grupp('Avsnitt', avsnitt) + grupp(`Per ${T.niva.en}`, basBl) + grupp(`${termStor(T.enhet.fl)} i Lika arbete`, yrken)
         + grupp('Kandidatpar i Likvärdigt arbete', parBl) + grupp('Egna tabeller från Tabeller och egna vyer', egna)
         + `<h3 class="ru-grupprubrik">Diagram</h3>${diagram}`;
 }

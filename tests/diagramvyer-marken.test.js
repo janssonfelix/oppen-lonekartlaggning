@@ -1079,7 +1079,7 @@ describe('utskriften ur rapportmodellen', () => {
         expect(hela.textContent).toContain('Låst kopia');
         expect(hela.textContent).not.toContain('UTKAST att färdigställa');
         // Bilagorna: flikarnas tabeller och diagram.
-        for (const r of ['Bilagor: tabeller och diagram ur flikarna', 'Löneöversikt (organisation · kön · yrke)', 'Lönespridning per BAS-intervall och kön', 'Bilaga: Metodik & urval (kvalitetssäkring)']) expect(rubriker(hela), r).toContain(r);
+        for (const r of ['Bilagor: tabeller och diagram ur flikarna', 'Löneöversikt (organisation · kön · AID-etikett)', 'Lönespridning per BAS-intervall och kön', 'Bilaga: Metodik & urval (kvalitetssäkring)']) expect(rubriker(hela), r).toContain(r);
         // Ett kortare urval är just avsnitten: inga bilagor, och inga avsnitt utöver urvalet.
         const facklig = await bygg('facklig');
         expect(rubriker(facklig).some(r => /^Bilagor:|Löneöversikt/.test(r))).toBe(false);

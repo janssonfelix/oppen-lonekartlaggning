@@ -120,7 +120,7 @@ function lasInPaket(text, _filnamn, { inbakat = false } = {}) {
     state.profile = { ...DEFAULT_PROFILE, ...profil };
     if (installningar.poPct != null) state.costSettings.poPct = installningar.poPct;
     if (installningar.months != null) state.costSettings.months = installningar.months;
-    // Jämförelseyrkena i likvärdigt arbete (ADR-60): alla som inte är kvinnodominerade, eller bara de mansdominerade.
+    // Jämförelseetiketterna i likvärdigt arbete (ADR-60): alla som inte är kvinnodominerade, eller bara de mansdominerade.
     if (installningar.jamforelse != null && state.likvardighet) { state.likvardighet.jamforelse = installningar.jamforelse; state.likvardighet.result = null; }
     // Låsningarna (ADR-47) sätts före tröskeln, så att sattKTroskel() prövar paketets eget värde mot golvet.
     state.paketLas = { kTroskelLagst: nyttGolv, inaktivitetMin: installningar.inaktivitetLast ? installningar.inaktivitetMin : null,
@@ -151,7 +151,7 @@ function lasInPaket(text, _filnamn, { inbakat = false } = {}) {
         state.rapportTabeller = rapport.tabeller.map(t => JSON.parse(JSON.stringify(t)));
         state.perBasRecept = rapport.perBasRecept ? JSON.parse(JSON.stringify(rapport.perBasRecept)) : null;
         varningar.push(`Paketet ger rapporten ${rapport.tabeller.length} ${rapport.tabeller.length === 1 ? 'egen tabell' : 'egna tabeller'}`
-            + (rapport.perBasRecept ? ' och ett eget recept per BAS-intervall.' : '.'));
+            + (rapport.perBasRecept ? ` och ett eget recept per ${T.niva.en}.` : '.'));
     }
 
     if (referens) {
@@ -293,7 +293,7 @@ function uppdateraPaketKnapp() {
                                         smaGrupperIExport: f.smaGrupperIExport });
         const lasDel = lasFel ? ` ${lasFel}` : lasText ? ` Låsningar: ${lasText}.` : ' Paketet låser inget.';
         const rp = _paketRapportUrFormular();
-        const rpDel = rp ? ` Rapporten: ${rp.tabeller.length} ${rp.tabeller.length === 1 ? 'egen tabell' : 'egna tabeller'}${rp.perBasRecept ? ' och ett eget recept per BAS-intervall' : ''}.` : '';
+        const rpDel = rp ? ` Rapporten: ${rp.tabeller.length} ${rp.tabeller.length === 1 ? 'egen tabell' : 'egna tabeller'}${rp.perBasRecept ? ` och ett eget recept per ${T.niva.en}` : ''}.` : '';
         sam.textContent = harData
             ? `Paketet får med: ${[harReferens() ? `ställningstagandet "${referensNamn()}" (${state.policy.length} rader)` : null,
                 state.statistik.length ? `jämförelsestatistiken (${state.statistik.length} rader)` : null].filter(Boolean).join(' och ')}.${kDel}${lasDel}${rpDel}`
@@ -322,7 +322,7 @@ function skapaPaket() {
         },
         installningar: { poPct: _paketTal('paket-po'), poNot: state.profile.poPctNote, months: _paketTal('paket-manader'),
                          kTroskel: _kTolka(_paketText('paket-k')) ?? undefined, ..._paketLasUrFormular(),
-                         jamforelse: lvJamforelse() },   // jämförelseyrkena i likvärdigt arbete, som i fliken (ADR-60)
+                         jamforelse: lvJamforelse() },   // jämförelseetiketterna i likvärdigt arbete, som i fliken (ADR-60)
         referens: harReferens() ? { namn: _paketText('paket-ref-namn') || state.policyNamn || undefined,
                                     kortnamn: _paketText('paket-ref-kortnamn') || _paketText('paket-ref-namn') || state.policyKortnamn || undefined,
                                     rader: state.policy } : null,
@@ -482,8 +482,8 @@ function visaInbakatPaket() {
         + `${rad('Inbakat', inb.skapad)}${rad('Verktygets version', inb.verktygsversion)}${rad('Verktygsfilens kontrollsumma (SHA-256)', inb.verktygssha)}`
         + `${rad('Benämning på jämförelsestatistiken', obj?.profil?.jamforelseNamn)}${rad('Minsta gruppstorlek', inst.kTroskel)}${rad('Lägsta tillåtna minsta gruppstorlek', inst.kTroskelLagst)}`
         + `${rad('Rensning vid inaktivitet (min)', inst.inaktivitetMin)}${rad('Rensningstiden låst', inst.inaktivitetLast ? 'ja' : null)}${rad('Små grupper i exporten från Tabeller och egna vyer', inst.smaGrupperIExport === false ? 'inte tillåtet' : null)}`
-        + `${rad('Jämförelseyrken i likvärdigt arbete', inst.jamforelse === 'mansdominerade' ? 'bara mansdominerade' : inst.jamforelse === 'alla' ? 'alla som inte är kvinnodominerade' : null)}</dl>`
-        + `${rad('Egna tabeller i rapporten', obj?.rapport?.tabeller?.length)}${rad('Receptet per BAS-intervall', obj?.rapport?.perBasRecept ? 'eget' : null)}`
+        + `${rad(`${termStor(T.jamforelse.fl)} i likvärdigt arbete`, inst.jamforelse === 'mansdominerade' ? 'bara mansdominerade' : inst.jamforelse === 'alla' ? 'alla som inte är kvinnodominerade' : null)}</dl>`
+        + `${rad('Egna tabeller i rapporten', obj?.rapport?.tabeller?.length)}${rad(`Receptet per ${T.niva.en}`, obj?.rapport?.perBasRecept ? 'eget' : null)}`
         + tabell(obj?.referens?.namn || 'Ställningstagandet', obj?.referens?.rader, ['aid', 'bas', 'p10', 'med', 'p90'])
         + tabell(obj?.statistik?.namn || 'Jämförelsestatistiken', obj?.statistik?.rader, ['aid', 'bas', 'median', 'p10', 'p90', 'andelKv'])
         + `<details class="bakgrund-panel marg-t-12"><summary>Råtext (JSON)</summary><pre class="fs-xs max-hojd-420 rulla">${esc(obj ? JSON.stringify(obj, null, 2) : inb.text)}</pre></details>`;

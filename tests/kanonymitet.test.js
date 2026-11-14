@@ -524,7 +524,7 @@ describe('k-anonymitet: sektorsöversikten', () => {
     it('Excel-bladet och rapportunderlaget röjer inte markörlönen', () => {
         expect(w.__tableToMatrix('sektor-table').flat().some(harMarkor)).toBe(false);
         expect(harMarkor(w.document.getElementById('rapportunderlag-innehall').textContent)).toBe(false);
-        expect(w.document.getElementById('rapportunderlag-innehall').textContent).toMatch(/Per sektor/);
+        expect(w.document.getElementById('rapportunderlag-innehall').textContent).toMatch(/Per huvudområde/);
     });
 });
 

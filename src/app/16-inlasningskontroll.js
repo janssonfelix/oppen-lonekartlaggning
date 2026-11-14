@@ -259,9 +259,9 @@ function renderConsistencyBanner() {
         const polBas = state.policy.map(p => p.bas);
         const dataNotInPol = dataBas.filter(b => !polBas.includes(b));
         const polNotInData = polBas.filter(b => !dataBas.includes(b));
-        if (dataNotInPol.length) issues.push(`<strong>${esc(referensKortnamn())}:</strong> ${dataNotInPol.length} BAS-intervall saknas (<code>${dataNotInPol.map(esc).join(', ')}</code>) — analyserna kan inte jämföra dessa mot policy.`);
+        if (dataNotInPol.length) issues.push(`<strong>${esc(referensKortnamn())}:</strong> ${dataNotInPol.length} ${termForAntal(dataNotInPol.length, T.niva)} saknas (<code>${dataNotInPol.map(esc).join(', ')}</code>) — analyserna kan inte jämföra dessa mot policy.`);
         // Den inbyggda målbilden täcker A–K avsiktligt; att underlaget saknar några BAS är inget fynd.
-        if (polNotInData.length && state.policyKalla !== 'demo') issues.push(`<strong>${esc(referensKortnamn())}:</strong> ${polNotInData.length} BAS-intervall finns i policy men inte i lönefilen (<code>${polNotInData.map(esc).join(', ')}</code>).`);
+        if (polNotInData.length && state.policyKalla !== 'demo') issues.push(`<strong>${esc(referensKortnamn())}:</strong> ${polNotInData.length} ${termForAntal(polNotInData.length, T.niva)} finns i policy men inte i lönefilen (<code>${polNotInData.map(esc).join(', ')}</code>).`);
     }
 
     // Jämförelsestatistik — visa AID + yrkesetikett
@@ -280,7 +280,7 @@ function renderConsistencyBanner() {
                 .map(a => `<code>${esc(aidToYrke[a] || a)}</code>`)
                 .join(', ');
             const more = dataAidNotInStat.length > 6 ? ` … och ${dataAidNotInStat.length - 6} till` : '';
-            issues.push(`<strong>Jämförelsestatistik:</strong> ${dataAidNotInStat.length} AID-koder i lönefilen saknar matchning i jämförelsestatistiken (${display}${more}) — dessa yrken kan inte jämföras med statistiken.`);
+            issues.push(`<strong>Jämförelsestatistik:</strong> ${dataAidNotInStat.length} ${termForAntal(dataAidNotInStat.length, T.kod)} i lönefilen saknar matchning i jämförelsestatistiken (${display}${more}) — de kan inte jämföras med statistiken.`);
         }
     }
 

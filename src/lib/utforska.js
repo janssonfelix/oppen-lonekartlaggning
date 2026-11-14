@@ -17,6 +17,10 @@ import { median, quantile } from './stat.js';
 import { groupKey, konOf, jamforAldersgrupp, jamforLonespann } from './falt.js';
 import { jamforSektor, mellannivaEtikett, huvudomrade } from './aid.js';
 import { personFilter, uppfyllerGrupp, gruppVillkorAktivt } from './urval.js';
+import { skapaTermer, ordForAntal } from './termer.js';
+/** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
+const T = skapaTermer();
+
 
 export const DIMENSIONER = ['bas', 'aid', 'alder', 'kon', 'alla', 'aidbas', 'lonespann', 'sektor', 'aidniva'];
 export const MATT = ['median', 'medel', 'n', 'p10', 'p25', 'p75', 'p90', 'spridning', 'andelKv', 'gap'];
@@ -96,7 +100,7 @@ export function slaIhopSmaAid(rows, k) {
         for (const [niva, keys] of grupper) {
             if (keys.length < 2) continue;
             if (keys.reduce((s, key) => s + n.get(key), 0) < k) continue;
-            const namn = `Övriga i ${niva} (${keys.length} yrken)`;
+            const namn = `Övriga i ${niva} (${keys.length} ${ordForAntal(keys.length, T.enhet)})`;
             keys.forEach(key => ut.set(key, namn));
         }
     };

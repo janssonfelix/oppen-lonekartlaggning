@@ -86,15 +86,18 @@ function _ebEgnaTabellerHtml() {
         <p class="text-dampad-sm marg-0-0-6">Tabeller du byggt i Tabeller och egna vyer och lagt till med <em>Lägg till i rapporten</em>. De står i avsnittet <em>Egna tabeller</em> i Word-utkastet och PDF-rapporten och i bladet <em>Egna tabeller</em> i Excel-filen, räknade med minsta gruppstorlek.</p>
         ${t.length ? `<ol class="urval-lista">${rader}</ol>` : '<p class="text-dampad-sm">Inga egna tabeller ännu.</p>'}</div>`;
 }
-const EB_PERBAS_RADER = [['referens', 'Referensen (ställningstagandet)'], ['organisation', 'Organisationen'], ['yrken', 'Yrkesgrupperna'], ['statistik', 'Jämförelsestatistikens rad under varje yrke'], ['kvinnor', 'Kvinnor'], ['man', 'Män']];
+const EB_PERBAS_RADER = [['referens', 'Referensen (ställningstagandet)'], ['organisation', 'Organisationen'], ['yrken', termStor(T.enhet.bfl)], ['statistik', `Jämförelsestatistikens rad under varje ${T.enhet.en}`], ['kvinnor', 'Kvinnor'], ['man', 'Män']];
+// Receptets dimensionsnyckel för upprepning per AID-huvudområde. Den sparas i konfigurationsfiler och
+// organisationspaket och byts därför inte med termerna (ADR-74).
+const PB_DIM_HUVUDOMRADE = 'sektor';
 const EB_PERBAS_MATT = [['p10', 'P10'], ['p25', 'P25'], ['med', 'Median'], ['p75', 'P75'], ['p90', 'P90'], ['medel', 'Medellön']];
 function _ebPerBasReceptHtml() {
     const r = _pbValideraRecept(state.perBasRecept);
     const kryss = (id, text, pa) => `<label class="fs-sm"><input type="checkbox" id="${id}"${pa ? ' checked' : ''}> ${esc(text)}</label>`;
-    return `<div id="rapport-perbas" class="marg-t-14"><h3 class="fs-md marg-0-0-6">Tabellerna per BAS-intervall</h3>
-        <p class="text-dampad-sm marg-0-0-6">Avsnittet <em>Lönestruktur per BAS-intervall</em> följer det här receptet. Standard är tabellerna som i en skriven lönekartläggning.</p>
+    return `<div id="rapport-perbas" class="marg-t-14"><h3 class="fs-md marg-0-0-6">Tabellerna per ${T.niva.en}</h3>
+        <p class="text-dampad-sm marg-0-0-6">Avsnittet <em>Lönestruktur per ${T.niva.en}</em> följer det här receptet. Standard är tabellerna som i en skriven lönekartläggning.</p>
         <div class="rad-bryt gap-14">
-            <label class="fs-sm">Upprepa per <select id="pb-dim" class="form-select bredd-auto"><option value="bas"${r.dim === 'bas' ? ' selected' : ''}>BAS-intervall</option><option value="sektor"${r.dim === 'sektor' ? ' selected' : ''}>sektor (AID-huvudområde)</option></select></label>
+            <label class="fs-sm">Upprepa per <select id="pb-dim" class="form-select bredd-auto"><option value="bas"${r.dim === 'bas' ? ' selected' : ''}>${T.niva.en}</option><option value="${PB_DIM_HUVUDOMRADE}"${r.dim === PB_DIM_HUVUDOMRADE ? ' selected' : ''}>${T.huvudomrade.en}</option></select></label>
             <fieldset class="falt-grupp"><legend>Rader i varje tabell</legend>${EB_PERBAS_RADER.map(([v, t]) => kryss('pb-rad-' + v, t, r.rader.includes(v))).join(' ')}</fieldset>
             <fieldset class="falt-grupp"><legend>Mått</legend>${EB_PERBAS_MATT.map(([v, t]) => kryss('pb-matt-' + v, t, r.matt.includes(v))).join(' ')}</fieldset>
             <fieldset class="falt-grupp"><legend>Summeringstabeller</legend>${kryss('pb-konsgap', 'Löneskillnader inom likvärdigt arbete', r.konsgap)} ${harAlder() ? kryss('pb-aldersgrupper', 'Löneskillnader i åldersgrupper', r.aldersgrupper) : '<span class="fs-sm text-dampad-sm">Löneskillnader i åldersgrupper: kräver ålder i lönefilen</span>'}

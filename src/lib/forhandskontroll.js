@@ -15,6 +15,10 @@
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
+import { skapaTermer } from './termer.js';
+
+/** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
+const T = skapaTermer();
 
 /** Antal rader i tolkningen. */
 export const FK_ANTAL_RADER = 10;
@@ -131,7 +135,7 @@ export function byggForhandskontroll({ rader = [], data = [], konVarden = [], pa
     // Sammandrag ur inläsningens räknare.
     const bortfall = [];
     const lagg = (kod, antal, text, exempel = []) => { if (antal > 0) bortfall.push({ kod, antal, text, exempel: [...exempel] }); };
-    lagg('bas', ps.excludedNoBas || 0, 'utan BAS-intervall');
+    lagg('bas', ps.excludedNoBas || 0, `utan ${T.niva.en}`);
     lagg('lon', ps.excludedZeroLon || 0, 'utan lön (tom, noll eller som inte går att läsa)', ps.invalidLonExamples || []);
     lagg('kon', ps.excludedMissingKon || 0, 'utan känt kön', ps.missingKonExamples || []);
     const sammandrag = {
@@ -191,7 +195,7 @@ export function byggForhandskontroll({ rader = [], data = [], konVarden = [], pa
         varna('kon-okand', 'varning', `${_fkRader(ps.excludedMissingKon)} har ett kön som verktyget inte känner igen och faller bort.`);
     }
     if ((ps.excludedNoBas || 0) > 0) {
-        varna('bortfall-bas', 'varning', `${_fkRader(ps.excludedNoBas)} saknar BAS-intervall och faller bort.`);
+        varna('bortfall-bas', 'varning', `${_fkRader(ps.excludedNoBas)} saknar ${T.niva.en} och faller bort.`);
     }
     if ((ps.excludedZeroLon || 0) > 0) {
         const ogiltig = ps.invalidLon || 0;

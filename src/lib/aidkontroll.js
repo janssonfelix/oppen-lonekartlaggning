@@ -9,6 +9,10 @@
  */
 import { etikett, huvudomrade, arRestkod, arLedningsetikett, normaliseraAid } from './aid.js';
 import { quantile } from './stat.js';
+import { skapaTermer, stor, adjektiv, ordForAntal } from './termer.js';
+/** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
+const T = skapaTermer();
+
 
 const RESTKOD_GRANS = 10;      // % av personerna
 const SPRIDNING_GRANS = 1.6;   // P90/P10
@@ -30,12 +34,12 @@ export function aidKriterier(rader, { k, harAnsvar = false }) {
     const okanda = d.filter(r => !etikett(r.aid) || !huvudomrade(r.aid));
     const okandaKoder = [...new Set(okanda.map(r => normaliseraAid(r.aid)))].slice(0, 5);
     const delar = [];
-    if (okanda.length) delar.push(`${pers(okanda.length)} har en AID-kod som inte finns i SKR:s etikettlista (t.ex. ${okandaKoder.join(', ')}).`);
-    if (utanKod) delar.push(`${pers(utanKod)} saknar en sexsiffrig AID-kod.`);
-    ut.push({ id: 'aid-okanda', namn: 'AID-koder', status: delar.length ? 'varning' : 'ok', varde: okanda.length + utanKod,
+    if (okanda.length) delar.push(`${pers(okanda.length)} har en ${T.kod.en} som inte finns i SKR:s etikettlista (t.ex. ${okandaKoder.join(', ')}).`);
+    if (utanKod) delar.push(`${pers(utanKod)} saknar en sexsiffrig ${T.kod.en}.`);
+    ut.push({ id: 'aid-okanda', namn: stor(T.kod.fl), status: delar.length ? 'varning' : 'ok', varde: okanda.length + utanKod,
         text: delar.length
-            ? `${delar.join(' ')} De ingår i analyserna men får ingen sektor.`
-            : 'Alla AID-koder finns i SKR:s etikettlista.' });
+            ? `${delar.join(' ')} De ingår i analyserna men får ${adjektiv({ utrum: 'ingen', neutrum: 'inget', plural: 'inga' }, T.huvudomrade)} ${T.huvudomrade.en}.`
+            : `Alla ${T.kod.fl} finns i SKR:s etikettlista.` });
 
     const rest = d.filter(r => arRestkod(r.aid)).length;
     const restPct = d.length ? rest / d.length * 100 : 0;
@@ -52,8 +56,8 @@ export function aidKriterier(rader, { k, harAnsvar = false }) {
     }).filter(x => x.kvot != null && x.kvot > SPRIDNING_GRANS);
     ut.push({ id: 'aid-spridning', namn: 'Lönespridning inom AID', status: breda.length ? 'varning' : 'ok', varde: breda.length,
         text: breda.length
-            ? `${breda.length} AID-grupper har ovanligt stor lönespridning (P90/P10 över ${String(SPRIDNING_GRANS).replace('.', ',')}): ${breda.slice(0, 5).map(x => x.aid).join(', ')}. Värt att granska — det kan tyda på att olika arbeten har samma kod.`
-            : 'Ingen AID-grupp har ovanligt stor lönespridning.' });
+            ? `${breda.length} ${ordForAntal(breda.length, T.kod)} har ovanligt stor lönespridning (P90/P10 över ${String(SPRIDNING_GRANS).replace('.', ',')}): ${breda.slice(0, 5).map(x => x.aid).join(', ')}. Värt att granska — det kan tyda på att olika arbeten har samma kod.`
+            : `${stor(adjektiv({ utrum: 'ingen', neutrum: 'inget', plural: 'inga' }, T.kod))} ${T.kod.en} har ovanligt stor lönespridning.` });
 
     if (harAnsvar) {
         const utanKod = d.filter(r => arLedningsetikett(r.aid) && !(r.ansvarskoder || []).some(x => 'ABCL'.includes(x) && x.length === 1)).length;

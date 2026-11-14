@@ -105,7 +105,7 @@ describe('BAS-dossiern: dialogen och ingångarna', () => {
         expect([...doc.querySelectorAll('#basdossier-select option')].map(o => o.value)).toEqual(['A', 'B', 'C', 'D', 'E']);
         const body = doc.getElementById('basdossier-body');
         expect(body.textContent).toContain('BAS-intervall C');
-        for (const rubrik of ['Nyckeltal', 'Yrkesgrupperna i intervallet', 'Likvärdigt arbete i intervallet', 'Ålder', 'Förra året']) expect(body.textContent).toContain(rubrik);
+        for (const rubrik of ['Nyckeltal', 'AID-etiketterna i intervallet', 'Likvärdigt arbete i intervallet', 'Ålder', 'Förra året']) expect(body.textContent).toContain(rubrik);
         expect(body.querySelectorAll('[data-bd-gruppdossier]').length).toBe(4);
         // Byte i väljaren ritar om.
         const sel = doc.getElementById('basdossier-select'); sel.value = 'D'; sel.dispatchEvent(new w.Event('change', { bubbles: true }));
@@ -229,7 +229,7 @@ describe('BAS-dossiern: förra året och textversionen', () => {
         const w = demo();
         const text = w.eval("basdossierText('C')");
         expect(text.split('\n')[0]).toBe('BAS-intervall C');
-        for (const rubrik of ['Nyckeltal', 'Yrkesgrupperna i intervallet', 'Likvärdigt arbete i intervallet', 'Ålder', 'Förra året']) expect(text).toContain(`\n${rubrik}\n`);
+        for (const rubrik of ['Nyckeltal', 'AID-etiketterna i intervallet', 'Likvärdigt arbete i intervallet', 'Ålder', 'Förra året']) expect(text).toContain(`\n${rubrik}\n`);
         expect(text).toMatch(/105 personer/);
         expect(text).toContain('Barnskötare');
         expect(w.__state.kLage).toBe('skarm');
@@ -244,7 +244,7 @@ describe('BAS-dossiern: förra året och textversionen', () => {
     it('textbyggaren är delad: dossierns text, utkastets stycke och rapportens avsnitt byggs ur samma stycken', () => {
         const { w } = medBokslut(ab => ab.basIntervall.forEach(r => { r.med -= 800; }));
         const stycken = w.eval("medExportLage(() => basdossierStycken(buildBasdossier('C')))");
-        expect(stycken.map(s => s.rubrik)).toEqual(['Nyckeltal', 'Yrkesgrupperna i intervallet', 'Likvärdigt arbete i intervallet', 'Ålder', 'Förra året']);
+        expect(stycken.map(s => s.rubrik)).toEqual(['Nyckeltal', 'AID-etiketterna i intervallet', 'Likvärdigt arbete i intervallet', 'Ålder', 'Förra året']);
         expect(stycken.every(s => s.rader.length > 0 && s.rader.every(r => typeof r === 'string' && r.length > 0))).toBe(true);
         // Dossierns text är rubriken och styckena, åtskilda av en tom rad.
         const text = w.eval("basdossierText('C')");
@@ -304,10 +304,10 @@ describe('BAS-dossiern: status som i Lika arbete, och sökrutans rad', () => {
         const eu = [...w.document.querySelectorAll('#matrix-table tbody tr')].map(tr => tr._euRow).find(r => r && r.yrke === '502010 Systemutvecklare');
         expect({ granska: 'granska', folj: 'folj', balanserat: 'balanserat', ejbedomd: 'ejbedomd' }[y.status]).toBe(eu.niva);
         w.eval("openBasdossier('C')");
-        expect(w.document.getElementById('basdossier-body').textContent).toContain(`Status gäller hela yrket (${hela.tot} personer), som i Lika arbete; yrket finns också i BAS D`);
+        expect(w.document.getElementById('basdossier-body').textContent).toContain(`Status gäller hela AID-etiketten (${hela.tot} personer), som i Lika arbete; AID-etiketten finns också i BAS D`);
         w.eval('closeBasdossier()');
         // Texten (exportläget, k = 10): intervallets antal och medianer, hela yrkets status och noten.
-        expect(w.eval("basdossierText('C')")).toMatch(/Systemutvecklare: 34 personer.*Värt att granska\. Status gäller hela yrket \(45 personer\), som i Lika arbete; yrket finns också i BAS D/);
+        expect(w.eval("basdossierText('C')")).toMatch(/Systemutvecklare: 34 personer.*Värt att granska\. Status gäller hela AID-etiketten \(45 personer\), som i Lika arbete; AID-etiketten finns också i BAS D/);
     });
     it('sökrutans rad finns bara för intervall som går att öppna, och ett intervall som fallit bort sägs', () => {
         const w = demo();

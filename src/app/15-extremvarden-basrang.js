@@ -65,7 +65,7 @@ function renderOutliers() {
     const fmt = new Intl.NumberFormat('sv-SE');
     wrap.innerHTML = `<div class="rulla-x"><table class="data-table st-088">
         <thead><tr>
-            <th>Rad</th><th>BAS</th><th>Yrkesgrupp</th><th>Kön</th><th class="t-hoger">Ålder</th>
+            <th>Rad</th><th>BAS</th><th>${termStor(T.enhet.en)}</th><th>Kön</th><th class="t-hoger">Ålder</th>
             <th class="t-hoger">Lön</th><th class="t-hoger">BAS-median</th>
             <th class="t-hoger">Diff %</th><th class="t-hoger">Avvikelse (sd)</th><th>Bedömning</th>
         </tr></thead>
