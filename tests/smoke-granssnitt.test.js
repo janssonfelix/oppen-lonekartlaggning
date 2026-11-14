@@ -212,7 +212,7 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         const tal = [...d.querySelectorAll('#lp-slutsatser .slutsats-varde')].map(e => e.textContent);
         expect(tal).toHaveLength(4);
         expect(tal.slice(1).map(Number)).toEqual([pos.filter(p => p < 0).length, pos.filter(p => p >= 0 && p <= 100).length, pos.filter(p => p > 100).length]);
-        expect(d.getElementById('nyckel-lp-tabell').textContent).toBe(`${pos.length} yrkesgrupper`);
+        expect(d.getElementById('nyckel-lp-tabell').textContent).toBe(`${pos.length} AID-etiketter i BAS-intervall`);
         expect(d.getElementById('nyckel-lp-tackning').textContent).toBe(tal[0]);
         expect(d.querySelectorAll('#lp-slutsatser .ar-kritisk')).toHaveLength(0);      // utanför spannet är ett fynd, inte ett fel
         expect(d.getElementById('lonepolitik-rubrik').closest('.flik-intro')).not.toBeNull();

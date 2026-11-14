@@ -44,7 +44,7 @@ function _exportBenchmarkExcelExport() {
         referensNamn(), '', '', '', '', '', '', ''
     ];
     const headerRow2 = [
-        'AID / Yrkesgrupp', 'BAS', 'Matchning', 'N (organisationen)',
+        termStor(T.enhet.en), 'BAS', 'Matchning', 'N (organisationen)',
         'P10', 'Median', 'P90', 'Bredd P90/P10',
         'P10', 'Diff P10 (kr)', 'Diff P10 (%)',
         'Median', 'Diff Median (kr)', 'Diff Median (%)',
@@ -115,7 +115,7 @@ function _exportBenchmarkExcelExport() {
         ['Jämförelsestatistik laddat', hasStat ? 'Ja' : 'Nej'],
         ['  - innehåller P10', state.statistikHasP10 ? 'Ja' : 'Nej (saknas i uppladdad fil)'],
         ['  - innehåller P90', state.statistikHasP90 ? 'Ja' : 'Nej (saknas i uppladdad fil)'],
-        ['Matchning', 'AID + BAS: samma AID och samma BAS. Endast AID: en rad med samma AID som saknar BAS. En rad för ett annat BAS-intervall används aldrig. – = statistik saknas.'],
+        ['Matchning', `AID + BAS: samma AID och samma BAS. Endast AID: en rad med samma AID som saknar BAS. Rader för andra ${T.niva.fl} används aldrig. – = statistik saknas.`],
         ['Referens', referensNamn() + referensKalla()],
         ['', ''],
         ['Diff-kolumner: positiva värden (grön) = organisationen ligger över referens.', ''],

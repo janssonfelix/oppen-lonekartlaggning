@@ -244,7 +244,7 @@ function renderPrioritering() {
 
     const items = computePrioritization(ref);
     if (!items.length) {
-        content.innerHTML = `<p class="farg-dampad pad-32 ta-mitt">Ingen yrkesgrupp har matchande referens i den valda jämförelsen. Kontrollera att <code>${ref === 'stallningstagande' ? 'BAS-intervallen' : 'AID-koderna'}</code> i lönefilen matchar jämförelsefilen.</p>`;
+        content.innerHTML = `<p class="farg-dampad pad-32 ta-mitt">${termStor(termAdjektiv({ utrum: 'ingen', neutrum: 'inget', plural: 'inga' }, T.enhet))} ${T.enhet.en} har matchande referens i den valda jämförelsen. Kontrollera att <code>${ref === 'stallningstagande' ? T.niva.bfl : T.kod.bfl}</code> i lönefilen matchar jämförelsefilen.</p>`;
         return;
     }
 
@@ -350,8 +350,8 @@ function renderPrioritering() {
         ...baseP,
         usedInAnalysis: items.length,
         analysisExclusions: [
-            ...(smallCount > 0 ? [[`Yrke×BAS-grupper för små (k-anonymitet n&lt;${kTroskel()})`, smallCount]] : []),
-            ...(noRefCount > 0 ? [[`Yrke×BAS-grupper utan matchning i ${ref === 'stallningstagande' ? referensNamn() : 'jämförelsestatistiken'}`, noRefCount]] : [])
+            ...(smallCount > 0 ? [[`${termStor(T.enhet.fl)} i ${T.niva.en} för små (k-anonymitet n&lt;${kTroskel()})`, smallCount]] : []),
+            ...(noRefCount > 0 ? [[`${termStor(T.enhet.fl)} i ${T.niva.en} utan matchning i ${ref === 'stallningstagande' ? referensNamn() : 'jämförelsestatistiken'}`, noRefCount]] : [])
         ],
         formler: [
             ['Avvikelse %', '<code>(organisationens median / referensens median) − 1</code> i %'],

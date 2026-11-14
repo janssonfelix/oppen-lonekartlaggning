@@ -22,7 +22,7 @@ describe('Jämförelsestatistik: tre block och filter', () => {
     it('rubrikerna har P10, median och P90 med Org, Jmf och Diff', () => {
         const w = oppna();
         const org = w.eval("orgNamn('org')");   // demot heter Exempelkommunen (ADR-36)
-        expect(rubriker(w)).toEqual(['Yrke', 'BAS', 'Matchning', 'N', `P10 ${org}`, 'P10 statistik', 'P10 skillnad', `Median ${org}`, 'Median statistik', 'Median skillnad',
+        expect(rubriker(w)).toEqual(['AID-etikett', 'BAS', 'Matchning', 'N', `P10 ${org}`, 'P10 statistik', 'P10 skillnad', `Median ${org}`, 'Median statistik', 'Median skillnad',
             `P90 ${org}`, 'P90 statistik', 'P90 skillnad']);
         expect(w.document.querySelectorAll('.benchmark-metric-btn[data-metric]').length).toBe(0);
     });
@@ -62,7 +62,7 @@ describe('Jämförelsestatistik: tre block och filter', () => {
         const par = baser.flatMap(b => sektorer.map(s => [b, s])).find(([b, s]) => !alla.some(r => r.bas === b && r.sektor === s));
         expect(par).toBeTruthy();
         w.eval(`jamforelseSattVal({ bas: ${JSON.stringify(par[0])}, sektor: ${JSON.stringify(par[1])} }); generateBenchmark();`);
-        expect(w.document.getElementById('benchmark-table').textContent).toMatch(/Inga yrken i urvalet/);
+        expect(w.document.getElementById('benchmark-table').textContent).toMatch(/Inga AID-etiketter i urvalet/);
     });
     it('bara ställningstagandet inläst: avsnittet säger att statistiken saknas och ritar inga rader', () => {
         const w = createAppWindow();
@@ -104,7 +104,7 @@ describe('Jämförelsestatistik: diagrammen', () => {
             expect(el._figur.lager.length).toBeGreaterThan(0);
         }
         expect(w.document.getElementById('jmf-diagram').textContent).toMatch(/Var ligger vi i marknadens spann\?/);
-        expect(w.document.getElementById('jmf-diagram').textContent).toMatch(/Vilka yrken avviker mest\?/);
+        expect(w.document.getElementById('jmf-diagram').textContent).toMatch(/Vilka AID-etiketter avviker mest\?/);
     });
     it('spannet: organisationens band och median per yrke i urvalet', () => {
         const w = oppna();
@@ -140,7 +140,7 @@ describe('Jämförelsestatistik: diagrammen', () => {
         w.eval('populateSelects(); unlockTabs();');
         w.__renderTabContent('benchmark');
         expect(w.document.getElementById('chart-jamforelse-spann')._figur.y.ordning.length).toBe(25);
-        expect(w.document.getElementById('jmf-spann-not').textContent).toMatch(/de 25 största yrkena av 30/);
+        expect(w.document.getElementById('jmf-spann-not').textContent).toMatch(/de 25 största AID-etiketterna av 30/);
         expect(w.document.querySelectorAll('#benchmark-table tbody tr[data-rad]').length).toBe(30);
     });
 });
@@ -492,9 +492,9 @@ describe('Statistikens matchning: märkning per rad, sammanfattning och rättels
     it('tabellen mot statistiken har kolumnen Matchning efter BAS, med regeln i rubriken', () => {
         const w = medMatchning();
         const th = [...w.document.querySelectorAll('#benchmark-table thead th')];
-        expect(th.map(t => t.textContent.trim()).slice(0, 4)).toEqual(['Yrke', 'BAS', 'Matchning', 'N']);
+        expect(th.map(t => t.textContent.trim()).slice(0, 4)).toEqual(['AID-etikett', 'BAS', 'Matchning', 'N']);
         expect(th[2].getAttribute('data-export-label')).toBe('Matchning mot jämförelsestatistiken');
-        expect(th[2].title).toMatch(/samma AID och samma BAS.*samma AID som saknar BAS.*annat BAS-intervall används aldrig/);
+        expect(th[2].title).toMatch(/samma AID och samma BAS.*samma AID som saknar BAS.*andra BAS-intervall används aldrig/);
         const rad = (aid, bas) => w.document.querySelector(`#benchmark-table tbody tr[data-rad="${aid}|${bas}"]`).children[2];
         expect(rad('402010', 'A').textContent).toBe('AID + BAS');
         expect(rad('207024', 'B').textContent).toBe('Endast AID');
@@ -507,16 +507,16 @@ describe('Statistikens matchning: märkning per rad, sammanfattning och rättels
     it('sammanfattningen ovanför tabellen räknar samma urval som tabellen', () => {
         const w = medMatchning();
         const info = () => w.document.getElementById('benchmark-matchning-info').textContent;
-        expect(info()).toBe('Statistiken: 1 yrkesgrupp matchad på AID och BAS, 1 på endast AID, 6 utan statistik.');
+        expect(info()).toBe('Statistiken: 1 AID-etikett i BAS-intervall matchad på AID och BAS, 1 på endast AID, 6 utan statistik.');
         w.eval("jamforelseSattVal({ bas: 'C' }); generateBenchmark();");
-        expect(info()).toBe('Statistiken: 0 yrkesgrupper matchade på AID och BAS, 0 på endast AID, 4 utan statistik.');
+        expect(info()).toBe('Statistiken: 0 AID-etiketter i BAS-intervall matchade på AID och BAS, 0 på endast AID, 4 utan statistik.');
         w.eval("jamforelseSattVal({ bas: 'B' }); generateBenchmark();");
-        expect(info()).toBe('Statistiken: 0 yrkesgrupper matchade på AID och BAS, 1 på endast AID, 0 utan statistik.');
+        expect(info()).toBe('Statistiken: 0 AID-etiketter i BAS-intervall matchade på AID och BAS, 1 på endast AID, 0 utan statistik.');
     });
     it('Beräkning & urval anger antalet per matchningsnivå', () => {
         const w = medMatchning();
         const panel = w.document.querySelector('details.audit-panel[data-audit-id="benchmark"] .audit-content').textContent;
-        expect(panel).toMatch(/I urvalet: 1 yrkesgrupp på AID \+ BAS, 1 på endast AID, 6 utan statistik/);
+        expect(panel).toMatch(/I urvalet: 1 AID-etikett i BAS-intervall på AID \+ BAS, 1 på endast AID, 6 utan statistik/);
     });
     it('utan statistik: ingen sammanfattning', () => {
         const w = createAppWindow(); w.__loadDemoData();
@@ -549,7 +549,7 @@ describe('Statistikens matchning: märkning per rad, sammanfattning och rättels
         await laddaXlsx(w);
         const bok = Object.values(fangaBocker(w, () => w.eval('exportBenchmarkExcel()')))[0];
         // fangaBocker slår ihop siffror över radbrytningar (tusentalsavgränsaren): sök i hela texten.
-        expect(bok).toMatch(/AID \/ Yrkesgrupp \| BAS \| Matchning \| N \(organisationen\) \| /);
+        expect(bok).toMatch(/AID-etikett \| BAS \| Matchning \| N \(organisationen\) \| /);
         expect(bok).toMatch(/402010 Förskollärare \| A \| AID \+ BAS \| 33 \| /);
         expect(bok).toMatch(/207024 Vårdbiträde \| B \| Endast AID \| 46 \| /);
         expect(bok).toMatch(/207011 Undersköterska \| C \| – \| 20 \| /);
@@ -608,7 +608,7 @@ describe('Löneläget: överblicken med bandkartan och statistikens spann', () =
         const w = medBlandad();
         expect(avsnitt(w).map(a => a.id)).toEqual(['avsnitt-jmf-bandkartor', 'avsnitt-jmf-stallningstagande', 'avsnitt-jmf-statistik', 'avsnitt-jmf-overblick']);
         expect(avsnitt(w).filter(a => a.open).map(a => a.id)).toEqual(['avsnitt-jmf-bandkartor']);
-        expect(el(w, 'avsnitt-jmf-overblick').querySelector('h2').textContent).toMatch(/^Yrkesgrupp för yrkesgrupp/);
+        expect(el(w, 'avsnitt-jmf-overblick').querySelector('h2').textContent).toMatch(/^AID-etikett för AID-etikett/);
         expect(el(w, 'avsnitt-jmf-bandkartor').querySelector('h2').textContent).toMatch(/^Överblick/);
         // Bandkartan står i överblicken, före statistikens spann, och inte längre i avsnittet mot ställningstagandet.
         const fore = (a, b) => !!(el(w, a).compareDocumentPosition(el(w, b)) & 4);

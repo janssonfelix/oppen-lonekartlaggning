@@ -19,6 +19,10 @@ import { lonebegreppReservation } from './struktur.js';
 import { personOrd } from './namn.js';
 import { kvDefinitionText } from './aidbas.js';
 import { gapDelar, gapVariablerIText, gapVariablerArStandard, gapStandardVariabler } from './gapuppdelning.js';
+import { skapaTermer, genitiv } from './termer.js';
+
+/** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
+const T = skapaTermer();
 
 const { STORLEKSGRANS, DIREKTIV_KOLUMN, DIREKTIV_ETIKETT, DIREKTIV_TIPS } = statusKonstanter();
 
@@ -412,7 +416,7 @@ export function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
         // är kostnad att nå referensen: löneläget mot referensen, inte könsskillnaderna (ADR-62).
         const delar = [
             u.summaReferens ? `${_kr(u.summaReferens)} kostnad att nå referensens median för grupperna under referensen (löneläget mot er referens, inte lönekartläggningens könsskillnader)` : '',
-            u.summaJamforelse ? `${_kr(u.summaJamforelse)} kostnad att nå jämförelseyrkets median för kandidatparen i likvärdigt arbete` : '',
+            u.summaJamforelse ? `${_kr(u.summaJamforelse)} kostnad att nå ${genitiv(T.jamforelse.bf)} median för kandidatparen i likvärdigt arbete` : '',
         ].filter(Boolean);
         const st = [`${_st(rader.length, 'förifylld åtgärd', 'förifyllda åtgärder')}` + (u.summa ? ` med en uppskattad kostnad på ${_kr(u.summa)} per år.` : '.')
             + (u.summa && delar.length ? ` Av den är ${delar.join(' och ')}.` : '')];

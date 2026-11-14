@@ -85,7 +85,7 @@ describe('Lönepolitik är avsnitt två i Löneläget', () => {
         expect(w.eval("tabMal('lonepolitik')")).toBe('benchmark');
         w.__renderTabContent('lonepolitik');
         expect([...d.querySelectorAll('#view-benchmark > details.avsnitt')].map(a => a.id)).toEqual(['avsnitt-jmf-bandkartor', 'avsnitt-jmf-stallningstagande', 'avsnitt-jmf-statistik', 'avsnitt-jmf-overblick']);
-        expect(d.querySelector('#avsnitt-jmf-stallningstagande #lonepolitik-content').textContent).toMatch(/Yrkesgrupper mot sitt spann/);
+        expect(d.querySelector('#avsnitt-jmf-stallningstagande #lonepolitik-content').textContent).toMatch(/AID-etiketter mot sitt spann/);
         expect(d.querySelector('.benchmark-metric-btn')).toBeNull();
         expect(d.querySelector('#avsnitt-jmf-statistik').textContent).toMatch(/Jämförelsestatistik saknas/);
     });

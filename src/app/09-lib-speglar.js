@@ -5926,6 +5926,9 @@ const __mirrorJamforelse = (() => {
     const median = __mirrorStat.median;
     const quantile = __mirrorStat.quantile;
     const sektorsnamn = __mirrorAid.sektorsnamn;
+    const skapaTermer = __mirrorTermer.skapaTermer;
+    const ordForAntal = __mirrorTermer.ordForAntal;
+    const adjektiv = __mirrorTermer.adjektiv;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -5942,6 +5945,10 @@ const __mirrorJamforelse = (() => {
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
 
+
+
+/** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
+const T = skapaTermer();
 
 const _pos = v => (typeof v === 'number' && v > 0 ? v : null);
 const _tre = (p10, med, p90) => ({ p10: _pos(p10), median: _pos(med), p90: _pos(p90) });
@@ -5995,7 +6002,7 @@ function matchningAntal(rader) {
 function matchningSammanfattning(rader) {
     if (!rader || !rader.length) return '';
     const { aidBas, aid, utan } = matchningAntal(rader);
-    return `Statistiken: ${aidBas} ${aidBas === 1 ? 'yrkesgrupp matchad' : 'yrkesgrupper matchade'} på AID och BAS, `
+    return `Statistiken: ${aidBas} ${ordForAntal(aidBas, T.enhet)} i ${T.niva.en} ${adjektiv('matchad', T.enhet, { plural: aidBas !== 1 })} på AID och BAS, `
         + `${aid} på endast AID, ${utan} utan statistik.`;
 }
 
@@ -6282,6 +6289,8 @@ const __mirrorRapportunderlag = (() => {
     const gapVariablerIText = __mirrorGapuppdelning.gapVariablerIText;
     const gapVariablerArStandard = __mirrorGapuppdelning.gapVariablerArStandard;
     const gapStandardVariabler = __mirrorGapuppdelning.gapStandardVariabler;
+    const skapaTermer = __mirrorTermer.skapaTermer;
+    const genitiv = __mirrorTermer.genitiv;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -6303,6 +6312,10 @@ const __mirrorRapportunderlag = (() => {
 
 
 
+
+
+/** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
+const T = skapaTermer();
 
 const { STORLEKSGRANS, DIREKTIV_KOLUMN, DIREKTIV_ETIKETT, DIREKTIV_TIPS } = statusKonstanter();
 
@@ -6696,7 +6709,7 @@ function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
         // är kostnad att nå referensen: löneläget mot referensen, inte könsskillnaderna (ADR-62).
         const delar = [
             u.summaReferens ? `${_kr(u.summaReferens)} kostnad att nå referensens median för grupperna under referensen (löneläget mot er referens, inte lönekartläggningens könsskillnader)` : '',
-            u.summaJamforelse ? `${_kr(u.summaJamforelse)} kostnad att nå jämförelseyrkets median för kandidatparen i likvärdigt arbete` : '',
+            u.summaJamforelse ? `${_kr(u.summaJamforelse)} kostnad att nå ${genitiv(T.jamforelse.bf)} median för kandidatparen i likvärdigt arbete` : '',
         ].filter(Boolean);
         const st = [`${_st(rader.length, 'förifylld åtgärd', 'förifyllda åtgärder')}` + (u.summa ? ` med en uppskattad kostnad på ${_kr(u.summa)} per år.` : '.')
             + (u.summa && delar.length ? ` Av den är ${delar.join(' och ')}.` : '')];

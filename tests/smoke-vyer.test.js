@@ -348,7 +348,7 @@ describe('samma bild på Översikt', () => {
         expect(d.getElementById('kon-kpi-agegap').style.color).toBe('');                       // ingen röd siffra utan förklaring
         expect(d.getElementById('kon-kpi-agegap-under').textContent).toMatch(/^(skillnad över 5 %|kvinnors lön i % av mäns)$/);
         const pr = d.getElementById('view-prioritering');
-        expect(pr.querySelector('.flik-intro strong').textContent).toBe('Vilka yrkesgrupper bör prioriteras utifrån löneläget?');
+        expect(pr.querySelector('.flik-intro strong').textContent).toBe('Vilka AID-etiketter bör prioriteras utifrån löneläget?');
         expect(pr.querySelectorAll('.valrad input[name="prio-ref"]').length).toBe(2);
         expect(pr.querySelector(':scope > .card')).toBeNull();                                 // inget kort runt hela fliken
         expect(pr.querySelectorAll('#prio-summary .stat-box[style]').length).toBe(0);          // inga egna färger på nyckeltalen

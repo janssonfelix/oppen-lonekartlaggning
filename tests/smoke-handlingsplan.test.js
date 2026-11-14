@@ -80,7 +80,7 @@ describe('Handlingsplan: fälten fylls i på skärmen', () => {
         const rad = bok.split('\n').find(l => l.includes('HR-chef'));
         expect(rad).toContain('Ja, sakligt skäl finns');
         expect(rad).toContain(tr.cells[1].textContent);
-        expect(bok).toContain('Åtgärd | Grupp (yrke och BAS-intervall) | Antal berörda | Underlag | Sakliga skäl prövade?');
+        expect(bok).toContain('Åtgärd | Grupp (AID-etikett och BAS-intervall) | Antal berörda | Underlag | Sakliga skäl prövade?');
         const atgarder = w.eval('rapportModell({ alla: true })').avsnitt.find(a => a.id === 'atgarder');
         const tabell = atgarder.delar.find(p => p.typ === 'tabell');
         expect(tabell.kolumner.map(k => k.rubrik)).toEqual(['Grupp', 'Antal berörda', 'Underlag', 'Uppskattad kostnad', 'Kostnaden avser', 'Sakliga skäl prövade?', 'Ansvarig', 'Tidsplan (senast inom tre år)', 'Status']);
@@ -141,7 +141,7 @@ describe('Handlingsplan: fälten fylls i på skärmen', () => {
 describe('Handlingsplan: Kostnaden avser', () => {
     // Kolumnen säger vilken kostnad raden har (_hpKostnadAvser): rader ur Prioritering lyfts till referensens median,
     // kandidatpar till jämförelseyrkets median; en egen rad har ingen beräknad kostnad.
-    const AVSER = { 'Prioritering (under referensen)': 'Nå referensens median', 'Likvärdigt arbete (kandidatpar)': 'Nå jämförelseyrkets median', 'Egen rad': '' };
+    const AVSER = { 'Prioritering (under referensen)': 'Nå referensens median', 'Likvärdigt arbete (kandidatpar)': 'Nå jämförelseetikettens median', 'Egen rad': '' };
     const ren = t => String(t ?? '').replace(/\s+/g, ' ').trim();
     const rubrikerAv = tabell => [...tabell.querySelectorAll('thead th')].map(th => ren(th.textContent));
     const excelBlad = w => { let bok = null; w.XLSX.writeFile = wb => { bok = wb; }; w.eval('exportHandlingsplan()'); return w.XLSX.utils.sheet_to_json(bok.Sheets.Handlingsplan, { header: 1, raw: true, defval: '' }); };
@@ -165,7 +165,7 @@ describe('Handlingsplan: Kostnaden avser', () => {
         for (const u of [skarm, ut]) { expect(u).toContain(UNDERLAG[0]); expect(u).toContain(UNDERLAG[1]); expect(u.at(-1)).toBe('Egen rad'); }
         const vantat = skarm.map(u => AVSER[u]), vantatUt = ut.map(u => AVSER[u]);
         expect(w.eval('_hpKostnadAvser')(UNDERLAG[0])).toBe('Nå referensens median');
-        expect(w.eval('_hpKostnadAvser')(UNDERLAG[1])).toBe('Nå jämförelseyrkets median');
+        expect(w.eval('_hpKostnadAvser')(UNDERLAG[1])).toBe('Nå jämförelseetikettens median');
         expect(w.eval('_hpKostnadAvser')('Egen rad')).toBe('');
         // Fliken: rubriken efter kostnaden, ett värde per rad; tomraderna har lika många celler som rubriken.
         const tabell = w.document.querySelector('#handlingsplan-tbody').closest('table');
@@ -201,7 +201,7 @@ describe('Handlingsplan: Kostnaden avser', () => {
         expect(summa(UNDERLAG[0])).toBeGreaterThan(0);
         expect(summa(UNDERLAG[1])).toBeGreaterThan(0);
         expect(text).toContain(`Av den är ${kr(summa(UNDERLAG[0]))} kr kostnad att nå referensens median`);
-        expect(text).toContain(`och ${kr(summa(UNDERLAG[1]))} kr kostnad att nå jämförelseyrkets median för kandidatparen i likvärdigt arbete.`);
+        expect(text).toContain(`och ${kr(summa(UNDERLAG[1]))} kr kostnad att nå jämförelseetikettens median för kandidatparen i likvärdigt arbete.`);
     });
     it('en plan med bara egna rader ger tomma celler, aldrig undefined eller null', async () => {
         const w = createAppWindow();
@@ -232,7 +232,7 @@ describe('Handlingsplan: Kostnaden avser', () => {
         a.eval('_hpLaggTillEgen()');
         const cfg = JSON.parse(a.eval('JSON.stringify(buildConfigSnapshot())'));
         const text = JSON.stringify(cfg.handlingsplan);
-        expect(text).not.toMatch(/kostnad|Nå referensens median|Nå jämförelseyrkets median/i);
+        expect(text).not.toMatch(/kostnad|Nå referensens median|Nå jämförelseetikettens median/i);
         for (const r of cfg.handlingsplan) expect(Object.keys(r).every(f => ['nyckel', 'sakligt', 'ansvarig', 'tidsplan', 'status', 'egen', 'atgard', 'grupp', 'skal'].includes(f))).toBe(true);
         const b = fonster();
         b.__cfg = cfg; b.eval('applyConfigSnapshot(window.__cfg)');

@@ -137,7 +137,7 @@ function _handlingsplanSeedRows({ baraEgna = false } = {}) {
             parUtelamnade = utelamnade;
             par.forEach(p => {
                 const arsKostnad = Math.round(Math.abs(p.gapKr) * (p.kvN || 1) * months * poFactor);
-                lagg(_hpNyckel('par', p.kvAid, p.kvBas, p.maAid, p.maBas), 'Granska likvärdigt arbete (kvinnodominerat yrke)', _hpGrupp(p.kvAid, p.kvLabel, p.kvBas), HP_UNDERLAG_PAR, arsKostnad, p.kvN, isFinite(p.gapKr) ? Math.round(p.gapKr) : null, Math.min(p.kvN, p.maN));
+                lagg(_hpNyckel('par', p.kvAid, p.kvBas, p.maAid, p.maBas), `Granska likvärdigt arbete (${termFras(T.enhet, 'en', { adjektiv: 'kvinnodominerad' })})`, _hpGrupp(p.kvAid, p.kvLabel, p.kvBas), HP_UNDERLAG_PAR, arsKostnad, p.kvN, isFinite(p.gapKr) ? Math.round(p.gapKr) : null, Math.min(p.kvN, p.maN));
                 lvCount++;
             });
         }
@@ -171,7 +171,7 @@ function _handlingsplanUnderlag(underlag) {
  */
 function _hpKostnadAvser(underlag) {
     const u = _handlingsplanUnderlag(String(underlag ?? ''));
-    return u === HP_UNDERLAG_PRIO ? 'Nå referensens median' : u === HP_UNDERLAG_PAR ? 'Nå jämförelseyrkets median' : '';
+    return u === HP_UNDERLAG_PRIO ? 'Nå referensens median' : u === HP_UNDERLAG_PAR ? `Nå ${termGenitiv(T.jamforelse.bf)} median` : '';
 }
 
 // Ett fritextfält som liknar ett personnummer eller en e-postadress får en varning; texten står kvar.
@@ -253,7 +253,7 @@ function _hpBedomningText(b) {
 /** Läs-raderna som HTML med länk till raden i Handlingsplan, eller tom sträng utan rader. `medGrupp`: gruppen först. */
 function _hpBedomningHtml(lista, { medGrupp = false } = {}) {
     if (!lista.length) return '';
-    const markning = b => (b.kalla !== 'par' ? '' : b.roll === 'jamforelse' ? ' (kandidatpar, jämförelseyrke)' : ' (kandidatpar)');
+    const markning = b => (b.kalla !== 'par' ? '' : b.roll === 'jamforelse' ? ` (kandidatpar, ${T.jamforelse.en})` : ' (kandidatpar)');
     return `<ul class="gd-list hp-bedomningar">${lista.map(b => `<li>${medGrupp ? `${esc(b.grupp)}${markning(b)}: ` : ''}${esc(_hpBedomningText(b))}. `
         + `<a href="#" data-hp-ga-till="${esc(b.nyckel)}" aria-label="${esc(`Gå till raden i Handlingsplan: ${b.grupp}`)}">Gå till raden</a></li>`).join('')}</ul>`;
 }
@@ -362,7 +362,7 @@ function renderHandlingsplanSeed() {
         const antal = `<td class="t-hoger">${r[8] != null ? esc(String(r[8])) : ''}</td>`;
         const forsta = egen
             ? `<td>${text(`hp-${i}-atgard`, n, 'atgard', r[0], 'Vad ska göras?', 'Åtgärd, egen rad')}</td>`
-              + `<td>${text(`hp-${i}-grupp`, n, 'grupp', r[1], 'Grupp eller yrke, inga namn', 'Berörd grupp, egen rad')}</td>${antal}`
+              + `<td>${text(`hp-${i}-grupp`, n, 'grupp', r[1], `Grupp eller ${T.enhet.en}, inga namn`, 'Berörd grupp, egen rad')}</td>${antal}`
               + `<td>${esc(r[2])} <button type="button" class="btn-table-tool hp-ta-bort" data-hp-ta-bort="${esc(n)}" data-noprint aria-label="Ta bort den egna raden">Ta bort</button></td>`
             : `<td>${esc(r[0])}</td><td>${esc(g)}</td>${antal}<td>${esc(r[2])}</td>`;
         return `<tr class="handlingsplan-seeded${egen ? ' handlingsplan-egen' : ''}">${forsta}`
@@ -438,7 +438,7 @@ function _hpValideraKonfiguration(lista, varningar) {
 function exportHandlingsplan(...a) { return medExportLage(() => _exportHandlingsplanExport.apply(null, /** @type {any} */ (a))); }
 function _exportHandlingsplanExport() {
     if (typeof XLSX === 'undefined') { alert('Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.'); return; }
-    const header = ['Åtgärd', 'Grupp (yrke och BAS-intervall)', 'Antal berörda', 'Underlag', 'Sakliga skäl prövade?', 'Beräknad kostnad (kr/år, inkl. PO)', 'Kostnaden avser', 'Ansvarig', 'Tidsplan (senast inom tre år)', 'Status',
+    const header = ['Åtgärd', `Grupp (${T.enhet.en} och ${T.niva.en})`, 'Antal berörda', 'Underlag', 'Sakliga skäl prövade?', 'Beräknad kostnad (kr/år, inkl. PO)', 'Kostnaden avser', 'Ansvarig', 'Tidsplan (senast inom tre år)', 'Status',
         'Sakliga skäl (kategori och belopp)', 'Förklarad andel av skillnaden (%)'];
     const seed = _handlingsplanSeedRows();
     const prioCount = seed.prioCount, lvCount = seed.lvCount;
@@ -462,7 +462,7 @@ function _exportHandlingsplanExport() {
         ['Samverkan', 'Arbetet ska göras i samverkan med arbetstagarna (lagen).'],
         ['', ''],
         ['Detta underlag', `Förifyllt med ${prioCount} grupp(er) under referens (Prioritering) och ${lvCount} kandidatpar i likvärdigt arbete.${seed.parNot ? ' ' + seed.parNot : ''}${seed.egenCount ? ` ${seed.egenCount} egna rader från fliken står sist.` : ''} Det som fyllts i på fliken Handlingsplan står med; fyll i resten av sakligt skäl, ansvarig, tidsplan och status. Raderna bygger på gruppmått — inga individdata.`],
-        ['Kostnad att nå referensen', 'Kostnaden för raderna ur Prioritering: vad det kostar att lyfta gruppen till referensens median. Det är löneläget mot er referens, inte lönekartläggningens könsskillnader. För kandidatparen är det kostnaden att lyfta det kvinnodominerade yrket till jämförelseyrkets median. Kolumnen Kostnaden avser säger vilken av dem raden har.'],
+        ['Kostnad att nå referensen', `Kostnaden för raderna ur Prioritering: vad det kostar att lyfta gruppen till referensens median. Det är löneläget mot er referens, inte lönekartläggningens könsskillnader. För kandidatparen är det kostnaden att lyfta ${termFras(T.enhet, 'bf', { adjektiv: 'kvinnodominerad' })} till ${termGenitiv(T.jamforelse.bf)} median. Kolumnen Kostnaden avser säger vilken av dem raden har.`],
         ['OBS', 'Det här är ett underlag. Du skriver dokumentationen i Word-utkastet.']
     ];
 

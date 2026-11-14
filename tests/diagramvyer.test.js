@@ -797,7 +797,7 @@ describe('Lönepolitik: chart-lp-bandmap', () => {
         expect(el.data).toBeUndefined();
         expect(f.lager.filter(l => l.marke === 'intervall')).toHaveLength(2);
         expect(f.fargskala).toBeUndefined();                                    // tre klasser, ingen glidande färgskala
-        const klasser = f.lager.filter(l => /yrkesgrupp$/.test(l.serie));
+        const klasser = f.lager.filter(l => /AID-etikett$/.test(l.serie));
         expect(klasser.length).toBeGreaterThan(0);
         for (const l of klasser) expect(l.data.every(p => (/^Kvinno/.test(l.serie) ? p.kvAndel >= 60 : /^Mans/.test(l.serie) ? p.kvAndel <= 40 : p.kvAndel > 40 && p.kvAndel < 60))).toBe(true);
         const grupper = { data: klasser.flatMap(l => l.data) };
@@ -808,7 +808,7 @@ describe('Lönepolitik: chart-lp-bandmap', () => {
         // Förskjutningen är stabil mellan omritningar.
         const fore = JSON.stringify(grupper.data.map(p => p.forskjutning));
         w2.__renderTabContent('lonepolitik');
-        expect(JSON.stringify(w2.document.getElementById('chart-lp-bandmap')._figur.lager.filter(l => /yrkesgrupp$/.test(l.serie)).flatMap(l => l.data).map(p => p.forskjutning))).toBe(fore);
+        expect(JSON.stringify(w2.document.getElementById('chart-lp-bandmap')._figur.lager.filter(l => /AID-etikett$/.test(l.serie)).flatMap(l => l.data).map(p => p.forskjutning))).toBe(fore);
     });
 });
 
@@ -1767,7 +1767,7 @@ describe('BAS-urval på diagrammen där BAS är en dimension', () => {
         expect(p.length).toBeGreaterThan(2);
         for (const { l, d } of p) {
             expect(['Kvinnodominerad', 'Mansdominerad', 'Blandad']).toContain(d.konsdom);
-            expect(l.serie).toBe(`${d.konsdom} yrkesgrupp`);
+            expect(l.serie).toBe(`${d.konsdom} AID-etikett`);
             expect(Number.isInteger(d.n) && d.n > 0).toBe(true);
             expect(l.tips(d)).toContainEqual(['Antal', String(d.n)]);
         }

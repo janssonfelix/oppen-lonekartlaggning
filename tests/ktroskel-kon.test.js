@@ -167,7 +167,7 @@ describe('C5: bladet Lönepolitik i Excel (alla flikar) följer tröskeln som fl
         expect(bok).toContain('[Lönepolitik]');
         const text = bok.split('[Lönepolitik]')[1].split('\n[')[0];
         const del = (fran, till) => text.split(fran)[1].split(till)[0];
-        return { text, yrken: del('Yrkesgrupper mot sitt spann', 'Läget i spannet per kön'),
+        return { text, yrken: del('AID-etiketter mot sitt spann', 'Läget i spannet per kön'),
             kon: del('Läget i spannet per kön', 'Fördelningen i spannets tredjedelar'),
             tredjedelar: del('Fördelningen i spannets tredjedelar', 'Efterlevnad per BAS-intervall'), efterlevnad: text.split('Efterlevnad per BAS-intervall')[1] };
     };

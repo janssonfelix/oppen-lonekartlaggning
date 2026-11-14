@@ -242,7 +242,7 @@ describe('före och efter: lutningsdiagrammen', () => {
         d.getElementById('forecast-lutning-niva').value = 'grupp';
         d.getElementById('forecast-lutning-niva').dispatchEvent(new w2.Event('change', { bubbles: true }));
         expect(el._figur).toBeUndefined();                                            // ett jämnt påslag ändrar inget gap inom gruppen
-        expect(el.textContent).toMatch(/I ingen yrkesgrupp med minst 10 kvinnor och 10 män ändras kvinnors median i procent av mäns/);
+        expect(el.textContent).toMatch(/I ingen AID-etikett med minst 10 kvinnor och 10 män ändras kvinnors median i procent av mäns/);
         // Med löner som ändras olika för könen: grupperna visas, den lilla aldrig.
         w2.__sim = w2.__state.data.map(r => ({ ...r, lon: r.kon === 'kvinna' ? r.lon * 1.05 : r.lon }));
         const rader = w2.eval('_forecastLutningRader(getData(), window.__sim, "grupp")');

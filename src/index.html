@@ -1274,30 +1274,30 @@
 
                 <!-- Benchmark Tab View -->
                 <div id="view-benchmark" class="view-panel dold">
-                    <div class="flik-intro"><strong>Hur ligger lönerna till mot det organisationen jämför sig med?</strong> Här jämför du lönerna per yrkesgrupp med organisationens lönepolitiska ställningstagande och med jämförelsestatistiken. Du ser var medianen ligger i spannet, var kvinnor och män ligger, och vilka grupper som hamnar utanför. Att ligga utanför är ett fynd att förklara, inte ett konstaterat fel. Fliken är en fördjupning och inget lagkrav.</div>
+                    <div class="flik-intro"><strong>Hur ligger lönerna till mot det organisationen jämför sig med?</strong> <span data-term-template="Här jämför du lönerna per {enhet.en} med organisationens lönepolitiska ställningstagande och med jämförelsestatistiken.">Här jämför du lönerna per AID-etikett med organisationens lönepolitiska ställningstagande och med jämförelsestatistiken.</span> Du ser var medianen ligger i spannet, var kvinnor och män ligger, och vilka grupper som hamnar utanför. Att ligga utanför är ett fynd att förklara, inte ett konstaterat fel. Fliken är en fördjupning och inget lagkrav.</div>
                     <div id="jmf-slutsatser" class="slutsatser"></div>
                     <details class="avsnitt" id="avsnitt-jmf-bandkartor" open>
-                    <summary><span class="avsnitt-titel"><h2>Överblick — lönerna mot ställningstagandet och statistiken</h2><span class="avsnitt-under">Var yrkesgruppernas medianlön ligger i ställningstagandets och statistikens spann, per BAS-intervall</span></span></summary>
+                    <summary><span class="avsnitt-titel"><h2>Överblick — lönerna mot ställningstagandet och statistiken</h2><span class="avsnitt-under" data-term-template="Var {enhet.bfl.s} medianlön ligger i ställningstagandets och statistikens spann, per {niva.en}">Var AID-etiketternas medianlön ligger i ställningstagandets och statistikens spann, per BAS-intervall</span></span></summary>
                     <div id="lp-bandkarta-kort" class="card mb-16" hidden>
                         <div class="chart-header rad-bryt-mitt gap-12 mellan marg-b-8">
-                            <h3 class="fs-lg marg-0">Bandkartan — var ligger varje yrkesgrupp i sitt spann?</h3>
+                            <h3 class="fs-lg marg-0" data-term-template="Bandkartan — var ligger varje {enhet.en} i sitt spann?">Bandkartan — var ligger varje AID-etikett i sitt spann?</h3>
                             <span id="lp-bandkarta-forklaring" class="text-dampad-xs"></span>
                         </div>
                         <div id="chart-lp-bandmap"></div>
                     </div>
                     <div id="jmf-statlage-kort" class="card mb-16" hidden>
                         <div class="chart-header rad-bryt-mitt gap-12 mellan marg-b-8">
-                            <h3 class="fs-lg marg-0">Var ligger yrkesgrupperna i statistikens spann?</h3>
-                            <span class="text-dampad-xs">Grått band = statistikens spann: 0 är statistikens P10 och 100 dess P90. Punkt = yrkesgruppens medianlön i spannet: kvinnodominerad, mansdominerad eller blandad. Fylld punkt = statistiken matchad på AID + BAS. Ofylld punkt = Endast AID (en rad utan BAS). Bara yrkesgrupper med P10 och P90 i statistiken. Diagrammet visar hela underlaget; filtren under Mot jämförelsestatistiken gäller bara tabellen och diagrammen där.</span>
+                            <h3 class="fs-lg marg-0" data-term-template="Var ligger {enhet.bfl} i statistikens spann?">Var ligger AID-etiketterna i statistikens spann?</h3>
+                            <span class="text-dampad-xs" data-term-template="Grått band = statistikens spann: 0 är statistikens P10 och 100 dess P90. Punkt = {enhet.bf.s} medianlön i spannet: {enhet.adj:kvinnodominerad}, {enhet.adj:mansdominerad} eller {enhet.adj:blandad}. Fylld punkt = statistiken matchad på AID + BAS. Ofylld punkt = Endast AID (en rad utan BAS). Bara {enhet.fl} med P10 och P90 i statistiken. Diagrammet visar hela underlaget; filtren under Mot jämförelsestatistiken gäller bara tabellen och diagrammen där.">Grått band = statistikens spann: 0 är statistikens P10 och 100 dess P90. Punkt = AID-etikettens medianlön i spannet: kvinnodominerad, mansdominerad eller blandad. Fylld punkt = statistiken matchad på AID + BAS. Ofylld punkt = Endast AID (en rad utan BAS). Bara AID-etiketter med P10 och P90 i statistiken. Diagrammet visar hela underlaget; filtren under Mot jämförelsestatistiken gäller bara tabellen och diagrammen där.</span>
                         </div>
                         <div id="chart-jmf-statlage"></div>
                     </div>
                     </details>
                     <details class="avsnitt" id="avsnitt-jmf-stallningstagande">
-                    <summary><span class="avsnitt-titel"><h2>Mot ställningstagandet</h2><span class="avsnitt-under">Tabellen per yrkesgrupp, könens läge i spannet, efterlevnaden och täckningen</span></span></summary>
+                    <summary><span class="avsnitt-titel"><h2>Mot ställningstagandet</h2><span class="avsnitt-under" data-term-template="Tabellen per {enhet.en}, könens läge i spannet, efterlevnaden och täckningen">Tabellen per AID-etikett, könens läge i spannet, efterlevnaden och täckningen</span></span></summary>
                     <div class="flik-intro">
                         <strong id="lonepolitik-rubrik">Lönerna mot organisationens lönepolitiska ställningstagande</strong>
-                        Jämför organisationens faktiska löneläge med ställningstagandet, ner på yrkesgrupp (AID). Ställningstagandet kan ange lönerna per BAS-intervall, per yrke eller båda. Den mest detaljerade raden gäller, och varje rad i tabellen visar var referensen kom ifrån. Detta är ett <strong>analysunderlag</strong>: att ligga utanför spannet är ett fynd att förklara, inte ett konstaterat fel.
+                        <span data-term-template="Jämför organisationens faktiska löneläge med ställningstagandet, ner på {enhet.en}. Ställningstagandet kan ange lönerna per {niva.en}, per {kod.en} eller båda.">Jämför organisationens faktiska löneläge med ställningstagandet, ner på AID-etikett. Ställningstagandet kan ange lönerna per BAS-intervall, per AID-kod eller båda.</span> Den mest detaljerade raden gäller, och varje rad i tabellen visar var referensen kom ifrån. Detta är ett <strong>analysunderlag</strong>: att ligga utanför spannet är ett fynd att förklara, inte ett konstaterat fel.
                     </div>
                     <div id="lp-urval" class="urvalsrad"></div>
                     <div id="lp-slutsatser" class="slutsatser"></div>
@@ -1305,20 +1305,20 @@
                         <div class="flik-empty-state">
                             <div class="empty-icon"><svg class="ikon ikon-tomLada" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 13h5l1.5 3h5L16 13h5"/><path d="M5 5h14l2 8v6H3v-6z"/></svg></div>
                             <h2>Referensen matchar inte underlaget</h2>
-                            <p>Referensen har inga rader för underlagets BAS-intervall eller yrken. Läs in en fil med P10/Median/P90 där varje rad har en <strong>BAS</strong>-kolumn, en <strong>AID</strong>-kolumn, eller båda.</p>
+                            <p><span data-term-template="Referensen har inga rader för underlagets {niva.fl} eller {kod.fl}.">Referensen har inga rader för underlagets BAS-intervall eller AID-koder.</span> Läs in en fil med P10/Median/P90 där varje rad har en <strong>BAS</strong>-kolumn, en <strong>AID</strong>-kolumn, eller båda.</p>
                             <button class="empty-action" data-goto-tab="filer">Gå till Filer och kvalitet</button>
                         </div>
                     </div>
                     <div id="lonepolitik-content" class="dold"></div>
                     </details>
                     <details class="avsnitt" id="avsnitt-jmf-statistik">
-                    <summary><span class="avsnitt-titel"><h2 data-profile-template="Mot {benchmarkLabel}">Mot jämförelsestatistiken</h2><span class="avsnitt-under">Organisationens P10, median och P90 per yrke mot statistiken</span></span></summary>
-                        <p class="text-dampad-sm lh-1_55 marg-t-4">Jämför organisationens P10, median och P90 per yrke med jämförelsestatistiken. Negativ skillnad (röd) = organisationen ligger lägre än jämförelsen.</p>
+                    <summary><span class="avsnitt-titel"><h2 data-profile-template="Mot {benchmarkLabel}">Mot jämförelsestatistiken</h2><span class="avsnitt-under" data-term-template="Organisationens P10, median och P90 per {enhet.en} mot statistiken">Organisationens P10, median och P90 per AID-etikett mot statistiken</span></span></summary>
+                        <p class="text-dampad-sm lh-1_55 marg-t-4" data-term-template="Jämför organisationens P10, median och P90 per {enhet.en} med jämförelsestatistiken. Negativ skillnad (röd) = organisationen ligger lägre än jämförelsen.">Jämför organisationens P10, median och P90 per AID-etikett med jämförelsestatistiken. Negativ skillnad (röd) = organisationen ligger lägre än jämförelsen.</p>
 
                         <div class="benchmark-metric-bar">
-                            <label class="jmf-filter">BAS-intervall <select id="jmf-bas" class="form-select"><option value="">Alla</option></select></label>
-                            <label class="jmf-filter">Sektor <select id="jmf-sektor" class="form-select"><option value="">Alla</option></select></label>
-                            <button id="btn-export-benchmark" type="button" class="btn btn-secondary btn-sm marg-v-auto" aria-label="Exportera samlad jämförelsetabell till Excel" title="Exportera alla percentiler (P10, median, P90 och bredd) för organisationen, jämförelsestatistiken och ställningstagandet i en samlad Excel-fil, för alla yrken oavsett filter.">Exportera samlad Excel</button>
+                            <label class="jmf-filter"><span data-term-template="{Niva.en}">BAS-intervall</span> <select id="jmf-bas" class="form-select"><option value="">Alla</option></select></label>
+                            <label class="jmf-filter"><span data-term-template="{Huvudomrade.en}">Huvudområde</span> <select id="jmf-sektor" class="form-select"><option value="">Alla</option></select></label>
+                            <button id="btn-export-benchmark" type="button" class="btn btn-secondary btn-sm marg-v-auto" aria-label="Exportera samlad jämförelsetabell till Excel" title="Exportera alla percentiler (P10, median, P90 och bredd) för organisationen, jämförelsestatistiken och ställningstagandet i en samlad Excel-fil, för alla AID-etiketter oavsett filter." data-term-template="Exportera alla percentiler (P10, median, P90 och bredd) för organisationen, jämförelsestatistiken och ställningstagandet i en samlad Excel-fil, för alla {enhet.fl} oavsett filter." data-term-attr="title">Exportera samlad Excel</button>
                         </div>
                         <p id="benchmark-metric-info" class="benchmark-metric-info" aria-live="polite"></p>
                         <p id="benchmark-matchning-info" class="benchmark-metric-info" aria-live="polite"></p>
@@ -1328,9 +1328,9 @@
                             <table id="benchmark-table" class="data-table" aria-label="Jämförelse organisationens löner mot extern statistik och lönepolitiskt ställningstagande">
                                 <thead id="benchmark-thead">
                                     <tr>
-                                        <th scope="col" data-export-label="AID / Yrkesgrupp">Yrke</th>
+                                        <th scope="col" data-export-label="AID-etikett" data-term-template="{Enhet.en}" data-term-attr="data-export-label"><span data-term-template="{Enhet.en}">AID-etikett</span></th>
                                         <th scope="col">BAS</th>
-                                        <th scope="col" data-kol="matchning" data-export-label="Matchning mot jämförelsestatistiken" title="Hur yrkesgruppen matchades mot jämförelsestatistiken. AID + BAS: en rad med samma AID och samma BAS. Endast AID: det finns ingen sådan rad, så en rad med samma AID som saknar BAS används. En rad för ett annat BAS-intervall används aldrig. – betyder att statistik saknas för gruppen.">Matchning</th>
+                                        <th scope="col" data-kol="matchning" data-export-label="Matchning mot jämförelsestatistiken" title="Hur AID-etiketten matchades mot jämförelsestatistiken. AID + BAS: en rad med samma AID och samma BAS. Endast AID: det finns ingen sådan rad, så en rad med samma AID som saknar BAS används. Rader för andra BAS-intervall används aldrig. – betyder att statistik saknas för gruppen." data-term-template="Hur {enhet.bf} matchades mot jämförelsestatistiken. AID + BAS: en rad med samma AID och samma BAS. Endast AID: det finns ingen sådan rad, så en rad med samma AID som saknar BAS används. Rader för andra {niva.fl} används aldrig. – betyder att statistik saknas för gruppen." data-term-attr="title">Matchning</th>
                                         <th scope="col" data-export-label="Antal personer (organisationen)">N</th>
                                         <th scope="col" class="jmf-block" data-kol="p10org" data-export-label="P10 organisationen (kr/mån)">P10 org</th>
                                         <th scope="col" data-jmf="P10" data-jmf-typ="varde" data-kol="p10jmf" data-export-label="P10 jämförelse (kr/mån)">P10 statistik</th>
@@ -1355,34 +1355,34 @@
                         <div class="flik-usage-content">
                             <h3>Så används fliken</h3>
                             <ul>
-                                <li><strong>Överblicken</strong> visar alla yrkesgrupper på en gång: bandkartan var medianlönen ligger i ställningstagandets spann, och diagrammet under den var den ligger i statistikens spann. Fylld punkt betyder att statistiken matchades på AID och BAS, ofylld att den matchades på endast AID</li>
+                                <li><strong>Överblicken</strong> <span data-term-template="visar alla {enhet.fl} på en gång:">visar alla AID-etiketter på en gång:</span> bandkartan var medianlönen ligger i ställningstagandets spann, och diagrammet under den var den ligger i statistikens spann. Fylld punkt betyder att statistiken matchades på AID och BAS, ofylld att den matchades på endast AID</li>
                                 <li><strong>Mot ställningstagandet</strong> och <strong>Mot jämförelsestatistiken</strong> fördjupar var sin referens</li>
-                                <li><strong>Yrkesgrupp för yrkesgrupp</strong> visar för varje grupp var löneläget och statistiken ligger mot ställningstagandet, som är referenspunkten</li>
+                                <li><strong data-term-template="{Enhet.en} för {enhet.en}">AID-etikett för AID-etikett</strong> visar för varje grupp var löneläget och statistiken ligger mot ställningstagandet, som är referenspunkten</li>
                                 <li>Kolumnen <em>Mönster</em> där är utgångspunkten för samtalet: ligger både löneläget och statistiken över ställningstagandet har det halkat efter marknaden; ligger bara löneläget över har organisationen gått före</li>
                                 <li>Kolumnen <em>Förslag på referens</em> säger vilket mått som säger något om gruppen. Det är ett förslag, ingen regel</li>
                             </ul>
                             <h3>Marknadslöneanalys</h3>
                             <ul>
-                                <li>Hitta yrkesgrupper där organisationen ligger under jämförelsens median (negativ skillnad, röd)</li>
+                                <li data-term-template="Hitta {enhet.fl} där organisationen ligger under jämförelsens median (negativ skillnad, röd)">Hitta AID-etiketter där organisationen ligger under jämförelsens median (negativ skillnad, röd)</li>
                                 <li>Bedöm om låga löner gör det svårt att rekrytera</li>
                             </ul>
                             <h3>Inför löneöversynen</h3>
                             <ul>
-                                <li>Diagrammet <em>Vilka yrken avviker mest?</em> rangordnar yrkena; klicka på en stapel för att se raden i tabellen</li>
+                                <li>Diagrammet <em data-term-template="Vilka {enhet.fl} avviker mest?">Vilka AID-etiketter avviker mest?</em> <span data-term-template="rangordnar {enhet.bfl}; klicka på en stapel för att se raden i tabellen">rangordnar AID-etiketterna; klicka på en stapel för att se raden i tabellen</span></li>
                                 <li>Räkna i <strong>Löneöversyn</strong> vad det kostar att lyfta dessa: lägg en riktad pott på gruppen</li>
                             </ul>
                             <h3>Tolkningstips</h3>
                             <ul>
                                 <li>Negativ skillnad (röd): organisationen ligger under jämförelsen, vilket kan motivera en höjning</li>
                                 <li>Positiv skillnad (grön): organisationen ligger över jämförelsen. Det kan ha skäl (specialistkompetens) eller tyda på att lönerna dragit iväg</li>
-                                <li>Konsistenskontrollen under Underlagets kvalitet i Filer och kvalitet visar vilka AID-koder som inte matchar mellan filerna</li>
+                                <li data-term-template="Konsistenskontrollen under Underlagets kvalitet i Filer och kvalitet visar vilka {kod.fl} som inte matchar mellan filerna">Konsistenskontrollen under Underlagets kvalitet i Filer och kvalitet visar vilka AID-koder som inte matchar mellan filerna</li>
                                 <li>Jämför P10 och P90, inte bara medianen. En skillnad bara i P90 tyder på att de erfarna inte når upp mot marknaden. En skillnad bara i P10 tyder på låga ingångslöner</li>
                             </ul>
                         </div>
                     </details>
                     </details>
                     <details class="avsnitt" id="avsnitt-jmf-overblick">
-                    <summary><span class="avsnitt-titel"><h2>Yrkesgrupp för yrkesgrupp — löneläget och statistiken mot ställningstagandet</h2><span class="avsnitt-under">Per yrkesgrupp: var lönerna ligger mot ställningstagandet, och var statistiken ligger mot det</span></span></summary>
+                    <summary><span class="avsnitt-titel"><h2 data-term-template="{Enhet.en} för {enhet.en} — löneläget och statistiken mot ställningstagandet">AID-etikett för AID-etikett — löneläget och statistiken mot ställningstagandet</h2><span class="avsnitt-under" data-term-template="Per {enhet.en}: var lönerna ligger mot ställningstagandet, och var statistiken ligger mot det">Per AID-etikett: var lönerna ligger mot ställningstagandet, och var statistiken ligger mot det</span></span></summary>
                     <div id="ref-overblick"></div>
                     </details>
                 </div>
@@ -1390,16 +1390,16 @@
                 <!-- Prioritering Tab View -->
                 <div id="view-prioritering" class="view-panel dold">
                     <div class="flik-yta">
-                        <div class="flik-intro"><strong>Vilka yrkesgrupper bör prioriteras utifrån löneläget?</strong> Här ordnar verktyget yrkesgrupperna efter var en åtgärd gör störst nytta. Det väger ihop hur långt under referensen gruppen ligger, hur många som berörs och skillnaden mellan kvinnor och män. För varje grupp står vad det kostar att lyfta den till referensens medianlön, som underlag till budgeten och handlingsplanen.</div>
+                        <div class="flik-intro"><strong data-term-template="Vilka {enhet.fl} bör prioriteras utifrån löneläget?">Vilka AID-etiketter bör prioriteras utifrån löneläget?</strong> <span data-term-template="Här ordnar verktyget {enhet.bfl} efter var en åtgärd gör störst nytta.">Här ordnar verktyget AID-etiketterna efter var en åtgärd gör störst nytta.</span> Det väger ihop hur långt under referensen gruppen ligger, hur många som berörs och skillnaden mellan kvinnor och män. För varje grupp står vad det kostar att lyfta den till referensens medianlön, som underlag till budgeten och handlingsplanen.</div>
                         <div class="valrad">
                             <strong>Jämför löneläget mot:</strong>
                             <label>
                                 <input type="radio" name="prio-ref" value="stallningstagande" checked> <span id="prio-ref-policy-namn">Lönepolitiskt ställningstagande</span>
                             </label>
                             <label>
-                                <input type="radio" name="prio-ref" value="statistik"> Jämförelsestatistiken (per AID-kod)
+                                <input type="radio" name="prio-ref" value="statistik"> <span data-term-template="Jämförelsestatistiken (per {kod.en})">Jämförelsestatistiken (per AID-kod)</span>
                             </label>
-                            <span class="info-tip" data-tooltip="Välj vad löneläget ska jämföras med. Ställningstagandet är organisationens lönepolitiska målbild per BAS-intervall. Jämförelsestatistiken är medianlönen för samma yrke (AID-kod) hos andra arbetsgivare och speglar marknaden. Båda läses in i Filer och kvalitet."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
+                            <span class="info-tip" data-tooltip="Välj vad löneläget ska jämföras med. Ställningstagandet är organisationens lönepolitiska målbild per BAS-intervall. Jämförelsestatistiken är medianlönen för samma AID-etikett hos andra arbetsgivare och speglar marknaden. Båda läses in i Filer och kvalitet." data-term-template="Välj vad löneläget ska jämföras med. Ställningstagandet är organisationens lönepolitiska målbild per {niva.en}. Jämförelsestatistiken är medianlönen för samma {enhet.en} hos andra arbetsgivare och speglar marknaden. Båda läses in i Filer och kvalitet." data-term-attr="data-tooltip"><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
                         </div>
 
                         <div id="prio-empty" class="dold">
@@ -1413,7 +1413,7 @@
 
                         <div id="prio-content">
                             <div class="summary-stats" id="prio-summary">
-                                <div class="stat-box" data-k-tooltip="Antal yrkesgrupp×BAS-kombinationer som ligger mer än 5 % under referensen och har minst {k} personer. Många berörda och tydlig budgetpåverkan — ett bra ställe att börja granskningen. Att en grupp lyfts betyder inte att något är fel; det är skillnaden du väger mot sakliga skäl.">
+                                <div class="stat-box" data-k-tooltip="Antal grupper som ligger mer än 5 % under referensen och har minst {k} personer. Många berörda och tydlig budgetpåverkan — ett bra ställe att börja granskningen. Att en grupp lyfts betyder inte att något är fel; det är skillnaden du väger mot sakliga skäl.">
                                     <div class="stat-etikett">Börja här
                                     </div>
                                     <div class="stat-val" id="prio-stat-akut">0</div>
@@ -1441,7 +1441,7 @@
                                     <div class="flex-1 min-bredd-280">
                                         <h3 class="fs-lg marg-0">Prioriteringsmatris</h3>
                                         <p class="text-dampad-xs lh-1_5 marg-4-0-0">
-                                            Varje bubbla är en yrkesgrupp inom ett BAS-intervall.
+                                            <span data-term-template="Varje bubbla är {enhet.art} {enhet.en} inom {niva.art} {niva.en}.">Varje bubbla är en AID-etikett inom ett BAS-intervall.</span>
                                             <strong>Vågrätt</strong>: avvikelse mot referensen i procent (negativt tal betyder under).
                                             <strong>Lodrätt</strong>: antal personer i gruppen.
                                             <strong>Bubbelstorlek</strong>: kostnaden för perioden för åtgärden.
@@ -1499,14 +1499,14 @@
                                 </div>
                                 <div id="prio-consequence-panel" class="marg-b-14 dold"></div>
                                 <div class="table-container">
-                                    <table id="prio-table" class="data-table" aria-label="Prioriteringsanalys: yrkesgrupper rangordnade efter prioriteringsindex">
+                                    <table id="prio-table" class="data-table" aria-label="Prioriteringsanalys: AID-etiketter rangordnade efter prioriteringsindex" data-term-template="Prioriteringsanalys: {enhet.fl} rangordnade efter prioriteringsindex" data-term-attr="aria-label">
                                         <thead>
                                             <tr>
                                                 <th data-kol="prio" class="sticky-col-1" scope="col" data-export-label="Prioriteringsindex (0–100, högt = först)">Prio
                                                     <span class="info-tip" data-tooltip="Prioriteringsindex 0-100. Högt = bör hanteras först."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
                                                 </th>
-                                                <th data-kol="yrke" class="sticky-col-2" scope="col" data-export-label="Yrkesgrupp (AID + benämning)">Yrkesgrupp</th>
-                                                <th data-kol="bas" scope="col" data-export-label="BAS-intervall">BAS</th>
+                                                <th data-kol="yrke" class="sticky-col-2" scope="col" data-export-label="AID-etikett (AID-kod och etikettnamn)" data-term-template="{Enhet.en} ({kod.en} och {namn.en})" data-term-attr="data-export-label"><span data-term-template="{Enhet.en}">AID-etikett</span></th>
+                                                <th data-kol="bas" scope="col" data-export-label="BAS-intervall" data-term-template="{Niva.en}" data-term-attr="data-export-label">BAS</th>
                                                 <th data-kol="status" class="t-mitt" scope="col" data-export-label="Läge mot referensen (Börja här / Under referens / Nära referens, under / Nära referens / Över referens)">Status</th>
                                                 <th data-kol="antal" class="t-hoger" scope="col" data-export-label="Antal personer i gruppen">Antal</th>
                                                 <th data-kol="kvma" class="t-mitt" scope="col" data-export-label="Antal kvinnor/män">Kv/Mä</th>
@@ -1545,7 +1545,7 @@
                                             <span class="info-tip" data-tooltip="Visar hur stor del av den totala kostnaden att nå referensen som ligger i de högst prioriterade grupperna. Ofta står en femtedel av grupperna för det mesta av kostnaden; börjar du med dem räcker pengarna längst."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
                                         </h3>
                                         <p class="text-dampad-xs lh-1_5 marg-4-0-0">
-                                            Staplarna visar kostnaden för perioden per yrkesgrupp, sorterade efter prioriteringsindex. Linjen visar hur stor del av den totala kostnaden de första grupperna står för.
+                                            <span data-term-template="Staplarna visar kostnaden för perioden per {enhet.en}, sorterade efter prioriteringsindex.">Staplarna visar kostnaden för perioden per AID-etikett, sorterade efter prioriteringsindex.</span> Linjen visar hur stor del av den totala kostnaden de första grupperna står för.
                                             Där ser du hur många grupper som behövs för att täcka en viss andel.
                                         </p>
                                     </div>
@@ -1599,7 +1599,7 @@
                 <div id="view-loneoversyn" class="view-panel dold">
                     <div class="flik-intro">
                         <strong>Vad händer om potten fördelas så här?</strong>
-                        Lägg in en budget och pröva olika sätt att fördela den — generellt till alla, eller riktat till valda yrkesgrupper. Du ser nya löner, hur mycket av potten som går åt och hur löneskillnaden påverkas. <strong>Inget ändras i organisationens system</strong>; det här är en beräkning att pröva idéer med.
+                        Lägg in en budget och pröva olika sätt att fördela den — generellt till alla, <span data-term-template="eller riktat till valda {enhet.fl}.">eller riktat till valda AID-etiketter.</span> Du ser nya löner, hur mycket av potten som går åt och hur löneskillnaden påverkas. <strong>Inget ändras i organisationens system</strong>; det här är en beräkning att pröva idéer med.
                     </div>
                     <div class="first-run-hint marg-t-0">
                         <span class="first-run-hint-icon" aria-hidden="true"><svg class="ikon ikon-blixt" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg></span>
@@ -1620,7 +1620,7 @@
                                     </select>
                                 </div>
                             </div>
-                            <button id="forecast-optimize-pott" type="button" class="btn btn-primary btn-sm" disabled title="Föreslår en fördelning som först riktar potten mot skillnaderna i likvärdigt arbete, en rad per yrke mot jämförelseyrket med störst skillnad, och visar förslaget under Riktade potter. Ange en pott först.">Föreslå fördelning mot skillnaderna i likvärdigt arbete</button>
+                            <button id="forecast-optimize-pott" type="button" class="btn btn-primary btn-sm" disabled title="Föreslår en fördelning som först riktar potten mot skillnaderna i likvärdigt arbete, en rad per AID-etikett mot jämförelseetiketten med störst skillnad, och visar förslaget under Riktade potter. Ange en pott först." data-term-template="Föreslår en fördelning som först riktar potten mot skillnaderna i likvärdigt arbete, en rad per {enhet.en} mot {jamforelse.bf} med störst skillnad, och visar förslaget under Riktade potter. Ange en pott först." data-term-attr="title">Föreslå fördelning mot skillnaderna i likvärdigt arbete</button>
                             <p class="text-dampad-xs marg-0 max-bredd-360">Potten är påslaget på lönerna i kronor per månad. Verktyget lägger på PO-påslag och beräkningsperiod (under Inställningar) i totalkostnaden nedan.</p>
                         </div>
                     </div>
@@ -1655,8 +1655,8 @@
                                 <strong>Löneskillnaden per grupp, före och efter</strong>
                                 <span><label for="forecast-lutning-niva" class="fs-sm marg-h-6">Visa per</label>
                                 <select id="forecast-lutning-niva" class="form-select pad-4-8 bredd-auto">
-                                    <option value="bas">BAS-intervall</option>
-                                    <option value="grupp">Yrkesgrupp</option>
+                                    <option value="bas" data-term-template="{Niva.en}">BAS-intervall</option>
+                                    <option value="grupp" data-term-template="{Enhet.en}">AID-etikett</option>
                                 </select></span>
                             </div>
                             <div id="chart-forecast-lutning"></div>
@@ -1666,7 +1666,7 @@
                     </div>
                     <p class="avsnitt-rubrikrad">Fördjupning</p>
                     <details class="avsnitt" id="avsnitt-lo-riktade" open>
-                    <summary><span class="avsnitt-titel"><h2>Riktade potter</h2><span class="avsnitt-under">Rikta en del av potten mot valda BAS-intervall och yrkesgrupper (BAS, sedan AID). En rad kan gälla bara ett kön eller löner under en gräns, och lyfta lönerna till en viss nivå.</span></span><span class="avsnitt-nyckel" id="nyckel-lo-riktade"></span></summary>
+                    <summary><span class="avsnitt-titel"><h2>Riktade potter</h2><span class="avsnitt-under" data-term-template="Rikta en del av potten mot valda {niva.fl} och {enhet.fl} (BAS, sedan AID). En rad kan gälla bara ett kön eller löner under en gräns, och lyfta lönerna till en viss nivå.">Rikta en del av potten mot valda BAS-intervall och AID-etiketter (BAS, sedan AID). En rad kan gälla bara ett kön eller löner under en gräns, och lyfta lönerna till en viss nivå.</span></span><span class="avsnitt-nyckel" id="nyckel-lo-riktade"></span></summary>
                     <div class="card">
                         
 
@@ -1676,7 +1676,7 @@
                                 <label class="falt-etikett" for="forecast-rule-match">Vilka grupper</label>
                                 <select id="forecast-rule-match" class="form-select">
                                     <option value="kvdom">Kvinnodominerade (definitionen i Likvärdigt arbete)</option>
-                                    <option value="underbas">Under medianen i sitt BAS-intervall</option>
+                                    <option value="underbas" data-term-template="Under medianen i {niva.bf}">Under medianen i BAS-intervallet</option>
                                     <option value="underp25">Under BAS-spannets nedre fjärdedel (P25)</option>
                                     <option value="all">Alla grupper</option>
                                 </select>
@@ -1704,7 +1704,7 @@
 
                         <div class="rad-bryt gap-10 marg-b-10">
                             <button id="forecast-add-target" type="button" class="btn btn-secondary btn-sm">Lägg till riktad pott</button>
-                            <button id="forecast-optimize" type="button" class="btn btn-secondary btn-sm" title="Föreslår en fördelning som först riktar potten mot skillnaderna i likvärdigt arbete: en rad per yrke, mot jämförelseyrket med störst skillnad bland dem där båda grupperna når minsta gruppstorlek">Föreslå fördelning mot skillnaderna i likvärdigt arbete</button>
+                            <button id="forecast-optimize" type="button" class="btn btn-secondary btn-sm" title="Föreslår en fördelning som först riktar potten mot skillnaderna i likvärdigt arbete: en rad per AID-etikett, mot jämförelseetiketten med störst skillnad bland dem där båda grupperna når minsta gruppstorlek" data-term-template="Föreslår en fördelning som först riktar potten mot skillnaderna i likvärdigt arbete: en rad per {enhet.en}, mot {jamforelse.bf} med störst skillnad bland dem där båda grupperna når minsta gruppstorlek" data-term-attr="title">Föreslå fördelning mot skillnaderna i likvärdigt arbete</button>
                             <button id="forecast-reset" type="button" class="btn btn-secondary btn-sm">Nollställ</button>
                         </div>
                         <div id="forecast-targets"></div>
@@ -1738,7 +1738,7 @@
                                     <span class="falt-enhet">%</span>
                                 </div>
                             </div>
-                            <button id="forecast-closure" type="button" class="btn btn-secondary btn-sm" title="Bygger riktade rader, en per yrke mot jämförelseyrket med störst skillnad, som minskar skillnaderna i likvärdigt arbete med angiven andel och visar kostnaden">Beräkna kostnad</button>
+                            <button id="forecast-closure" type="button" class="btn btn-secondary btn-sm" title="Bygger riktade rader, en per AID-etikett mot jämförelseetiketten med störst skillnad, som minskar skillnaderna i likvärdigt arbete med angiven andel och visar kostnaden" data-term-template="Bygger riktade rader, en per {enhet.en} mot {jamforelse.bf} med störst skillnad, som minskar skillnaderna i likvärdigt arbete med angiven andel och visar kostnaden" data-term-attr="title">Beräkna kostnad</button>
                             <div class="falt">
                                 <label class="falt-etikett" for="forecast-market-factor">Lyft mot en andel av jämförelsestatistikens median</label>
                                 <div class="falt-rad">
@@ -1773,7 +1773,7 @@
                     <div class="card">
                         
                         <p class="text-dampad-sm lh-1_55 marg-0-0-10">
-                            Verktyget hittar kvinnor vars lön ligger under jämförelsevärdet (mäns median i samma yrke, annars i samma BAS-intervall) och räknar vad det kostar att lyfta dem dit. Du ser bara summor. Om skillnaden har sakliga skäl avgör du.
+                            <span data-term-template="Verktyget hittar kvinnor vars lön ligger under jämförelsevärdet (mäns median med samma {enhet.en} i samma {niva.en}, annars i hela {niva.bf}) och räknar vad det kostar att lyfta dem dit.">Verktyget hittar kvinnor vars lön ligger under jämförelsevärdet (mäns median med samma AID-etikett i samma BAS-intervall, annars i hela BAS-intervallet) och räknar vad det kostar att lyfta dem dit.</span> Du ser bara summor. Om skillnaden har sakliga skäl avgör du.
                         </p>
                         <div class="falt-rad-yttre marg-b-10">
                             <div class="falt">
@@ -1836,12 +1836,12 @@
                             <div class="flik-usage-content">
                                 <h4>Vad ska granskas</h4>
                                 <ul><li>Finns dokumenterade, könsneutrala lönekriterier (ansvar, kompetens, komplexitet, resultat)?</li>
-                                <li>Tillämpar cheferna kriterierna på samma sätt oavsett kön, och i kvinno- och mansdominerade yrken?</li></ul>
+                                <li>Tillämpar cheferna kriterierna på samma sätt oavsett kön, och i kvinno- och mansdominerade arbeten?</li></ul>
                                 <h4>Ledande frågor</h4>
-                                <ul><li>Värderas egenskaper som är vanligare i kvinnodominerade yrken (t.ex. omsorg, bemötande) lägre än egenskaper i mansdominerade yrken?</li>
+                                <ul><li>Värderas egenskaper som är vanligare i kvinnodominerade arbeten (t.ex. omsorg, bemötande) lägre än egenskaper i mansdominerade arbeten?</li>
                                 <li>Känner de anställda och cheferna till kriterierna?</li></ul>
                                 <h4>Stöd i verktyget</h4>
-                                <ul><li class="bes8-stod" data-stod="likvardighet">Likvärdigt arbete visar om kvinnodominerade yrken systematiskt underbetalas vid likvärdiga krav.</li></ul>
+                                <ul><li class="bes8-stod" data-stod="likvardighet"><span data-term-template="Likvärdigt arbete visar om {enhet.fl:kvinnodominerad} systematiskt har lägre lön vid likvärdiga krav.">Likvärdigt arbete visar om kvinnodominerade AID-etiketter systematiskt har lägre lön vid likvärdiga krav.</span></li></ul>
                                 <div class="bes8-assess"></div>
                             </div>
                         </details>
@@ -1868,7 +1868,7 @@
                                 <ul><li>OB, jour, beredskap, bonus, bil-/bostadsförmån, friskvård m.m. — fördelas de könsneutralt?</li>
                                 <li>Är tillägg knutna till sakliga, könsneutrala grunder?</li></ul>
                                 <h4>Ledande frågor</h4>
-                                <ul><li>Gynnar tilläggsstrukturen yrken/scheman där det ena könet är överrepresenterat?</li>
+                                <ul><li>Gynnar tilläggsstrukturen arbeten eller scheman där det ena könet är överrepresenterat?</li>
                                 <li>Ingår alla lönedelar i lönekartläggningen, inte bara grundlönen?</li></ul>
                                 <h4>Stöd i verktyget</h4>
                                 <ul><li>Verktyget analyserar den heltidsomräknade fasta månadslönen, inte rörliga delar. Tillägg och förmåner prövar du här, i genomgången, utifrån organisationens egna underlag.</li></ul>
@@ -1883,9 +1883,9 @@
                                 <ul><li>Deltid, tidsbegränsade anställningar, möjlighet till heltid — fördelat per kön.</li>
                                 <li>Påverkar föräldraledighet karriär- och löneutveckling systematiskt?</li></ul>
                                 <h4>Ledande frågor</h4>
-                                <ul><li>Är deltid ett aktivt val eller en strukturell förutsättning i kvinnodominerade yrken?</li></ul>
+                                <ul><li>Är deltid ett aktivt val eller en strukturell förutsättning i kvinnodominerade arbeten?</li></ul>
                                 <h4>Stöd i verktyget</h4>
-                                <ul><li>Fliken Ålder & karriär visar ålders- och strukturmönster per BAS-intervall.</li></ul>
+                                <ul><li>Fliken Ålder & karriär <span data-term-template="visar ålders- och strukturmönster per {niva.en}.">visar ålders- och strukturmönster per BAS-intervall.</span></li></ul>
                                 <div class="bes8-assess"></div>
                             </div>
                         </details>
@@ -1898,7 +1898,7 @@
                                 <h4>Ledande frågor</h4>
                                 <ul><li>Finns ingångslönespann per befattning? Följs avvikelser upp per kön?</li></ul>
                                 <h4>Stöd i verktyget</h4>
-                                <ul><li class="bes8-stod" data-stod="matrix">Lika arbete visar skillnaden per yrkesgrupp; lönespridningen (P10/median/P90) och den ojusterade skillnaden per BAS-intervall står i Lönestruktur.</li></ul>
+                                <ul><li class="bes8-stod" data-stod="matrix"><span data-term-template="Lika arbete visar skillnaden per {enhet.en}; lönespridningen (P10/median/P90) och den ojusterade skillnaden per {niva.en} står i Lönestruktur.">Lika arbete visar skillnaden per AID-etikett; lönespridningen (P10/median/P90) och den ojusterade skillnaden per BAS-intervall står i Lönestruktur.</span></li></ul>
                                 <div class="bes8-assess"></div>
                             </div>
                         </details>
@@ -1909,7 +1909,7 @@
                                 <h4>Vad ska granskas</h4>
                                 <ul><li>Vem befordras och får extra lönepåslag? Är urvalskriterierna könsneutrala och dokumenterade?</li></ul>
                                 <h4>Ledande frågor</h4>
-                                <ul><li>Är karriärvägarna lika tillgängliga i kvinno- och mansdominerade yrken?</li></ul>
+                                <ul><li>Är karriärvägarna lika tillgängliga i kvinno- och mansdominerade arbeten?</li></ul>
                                 <h4>Stöd i verktyget</h4>
                                 <ul><li>Fliken Ålder & karriär visar om skillnaden växer med åldern — det kan tyda på att befordran eller lönehöjningar inte fördelas lika.</li>
                                 <li class="bes8-stod" data-stod="struktur">Lönestruktur visar andelen kvinnor i varje lönekvartil: färre kvinnor i de högre kvartilerna kan tyda på att karriärvägarna inte är lika öppna.</li></ul>
@@ -1951,12 +1951,12 @@
                             <thead>
                                 <tr>
                                     <th>Åtgärd</th>
-                                    <th>Grupp (yrke och BAS-intervall)</th>
-                                    <th class="tal" title="Antal personer i gruppen; för ett kandidatpar i det kvinnodominerade yrket">Antal berörda</th>
+                                    <th data-term-template="Grupp ({enhet.en} och {niva.en})">Grupp (AID-etikett och BAS-intervall)</th>
+                                    <th class="tal" title="Antal personer i gruppen; för ett kandidatpar i den kvinnodominerade AID-etiketten" data-term-template="Antal personer i gruppen; för ett kandidatpar i {enhet.bf:kvinnodominerad}" data-term-attr="title">Antal berörda</th>
                                     <th>Underlag</th>
                                     <th>Sakliga skäl prövade?</th>
                                     <th class="tal">Beräknad kostnad (kr/år)</th>
-                                    <th title="Rader ur Prioritering: kostnaden att lyfta gruppen till referensens median. Kandidatpar: kostnaden att lyfta det kvinnodominerade yrket till jämförelseyrkets median">Kostnaden avser</th>
+                                    <th title="Rader ur Prioritering: kostnaden att lyfta gruppen till referensens median. Kandidatpar: kostnaden att lyfta den kvinnodominerade AID-etiketten till jämförelseetikettens median" data-term-template="Rader ur Prioritering: kostnaden att lyfta gruppen till referensens median. Kandidatpar: kostnaden att lyfta {enhet.bf:kvinnodominerad} till {jamforelse.bf.s} median" data-term-attr="title">Kostnaden avser</th>
                                     <th>Ansvarig</th>
                                     <th>Tidsplan (senast inom tre år)</th>
                                     <th>Status</th>

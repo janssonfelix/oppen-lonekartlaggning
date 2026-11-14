@@ -14,6 +14,10 @@
  */
 import { median, quantile } from './stat.js';
 import { sektorsnamn } from './aid.js';
+import { skapaTermer, ordForAntal, adjektiv } from './termer.js';
+
+/** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
+const T = skapaTermer();
 
 const _pos = v => (typeof v === 'number' && v > 0 ? v : null);
 const _tre = (p10, med, p90) => ({ p10: _pos(p10), median: _pos(med), p90: _pos(p90) });
@@ -67,7 +71,7 @@ export function matchningAntal(rader) {
 export function matchningSammanfattning(rader) {
     if (!rader || !rader.length) return '';
     const { aidBas, aid, utan } = matchningAntal(rader);
-    return `Statistiken: ${aidBas} ${aidBas === 1 ? 'yrkesgrupp matchad' : 'yrkesgrupper matchade'} på AID och BAS, `
+    return `Statistiken: ${aidBas} ${ordForAntal(aidBas, T.enhet)} i ${T.niva.en} ${adjektiv('matchad', T.enhet, { plural: aidBas !== 1 })} på AID och BAS, `
         + `${aid} på endast AID, ${utan} utan statistik.`;
 }
 

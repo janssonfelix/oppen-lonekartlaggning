@@ -77,9 +77,9 @@ function _skalSkillnadHtml() {
     if (s.skillnadKr == null) return '<p class="skal-skillnad">Gruppens medianskillnad redovisas inte. Skälen redovisas med belopp.</p>';
     const par = s.kalla === 'par';
     if (s.skillnadKr <= 0) return par
-        ? `<p class="skal-skillnad">Det kvinnodominerade yrkets median är inte lägre än jämförelseyrkets (${svTal(s.skillnadKr, 0)} kr/mån). Andelar räknas inte.</p>`
+        ? `<p class="skal-skillnad">${termStor(termFras(T.enhet, 'bf', { adjektiv: 'kvinnodominerad', genitiv: true }))} median är inte lägre än ${termGenitiv(T.jamforelse.bf)} (${svTal(s.skillnadKr, 0)} kr/mån). Andelar räknas inte.</p>`
         : `<p class="skal-skillnad">Kvinnors median är inte lägre än mäns (${svTal(s.skillnadKr, 0)} kr/mån). Andelar räknas inte.</p>`;
-    const vad = par ? 'jämförelseyrkets median minus det kvinnodominerade yrkets' : 'mäns median minus kvinnors i gruppen';
+    const vad = par ? `${termGenitiv(T.jamforelse.bf)} median minus ${termFras(T.enhet, 'bf', { adjektiv: 'kvinnodominerad', genitiv: true })}` : 'mäns median minus kvinnors i gruppen';
     return `<p class="skal-skillnad"><strong>Medianskillnad ${svTal(s.skillnadKr, 0)} kr/mån</strong> <span class="text-dampad-sm">(${vad})</span></p>`
         + (par ? '' : '<p class="text-dampad-sm marg-0">Skälen gäller skillnaden mellan kvinnor och män i gruppen, inte gruppens avstånd till referensen.</p>');
 }
