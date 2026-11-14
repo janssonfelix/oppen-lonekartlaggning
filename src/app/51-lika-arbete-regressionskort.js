@@ -12,7 +12,7 @@
  *
  * BAS kodas som en indikator per BAS-intervall utom det första (alfabetiskt lägsta) som är
  * referens: varje intervall får sin egen lönenivå, utan antagandet att varje bokstavssteg
- * är värt lika mycket. Ordningen A–J är ändå fast (se likvardighetsmodellen.md §6) och styr
+ * är värt lika mycket. Ordningen A–Z är ändå fast (se likvardighetsmodellen.md §6) och styr
  * vilket intervall som blir referens.
  * @returns {{error?: string, errorCode?: string, [k: string]: any}} vid fel { error, errorCode } (ev. triedSteps, diagnostics);
  *   annars beta, se, p, R2, n, k, gapPct, decomposition m.fl. — se return-satsen.

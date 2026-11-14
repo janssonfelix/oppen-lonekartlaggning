@@ -13,7 +13,6 @@
 import { describe, it, expect } from 'vitest';
 import {
     KVINNO_TROSKEL_DEFAULT,
-    ICKE_KV_TAK,
     bootstrapMedianDiffKr,
     bootstrapMedianVsConstantKr,
     aggregeraOrgKvDom,
@@ -419,7 +418,6 @@ describe('bootstrapMedianVsConstantKr', () => {
 describe('konstanter', () => {
     it('exponerar trösklar', () => {
         expect(KVINNO_TROSKEL_DEFAULT).toBe(60);
-        expect(ICKE_KV_TAK).toBe(40);
     });
 });
 
@@ -561,6 +559,13 @@ describe('basRangFn: BAS-steg i bokstäver (se §6 i likvardighetsmodellen.md)',
         expect(rang('A')).toBe(1);
         expect(rang('D') - rang('B')).toBe(2);
         expect(rang('j')).toBe(10);
+    });
+    it('hela alfabetet A–Z har fast rang, också efter J', async () => {
+        const { basRangFn } = await import('../src/lib/likvardighet.js');
+        const rang = basRangFn(['K', 'Z', 'Ö']);
+        expect(rang('K')).toBe(11);
+        expect(rang('Z')).toBe(26);
+        expect(rang('Ö')).toBeGreaterThan(100);   // inte en bokstav i A–Z: läggs efter bokstäverna
     });
 });
 

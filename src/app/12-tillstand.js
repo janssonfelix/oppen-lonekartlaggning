@@ -24,7 +24,7 @@
  *     scenarios: {A: any, B: any}, result: any, _remediation?: any
  *   },
  *   inactivityTimeoutMin: number, kLage: 'skarm'|'export',
- *   likvardighet: {source: string, kvinnoTrosholdPct: number, kvDomDefinition: 'do'|'scb', jamforelse: 'alla'|'mansdominerade', minGapPct: number, topN: number, poangBandPct: number, result: any},
+ *   likvardighet: {kvinnoTrosholdPct: number, kvDomDefinition: 'do'|'scb', jamforelse: 'alla'|'mansdominerade', minGapPct: number, topN: number, poangBandPct: number, result: any},
  *   lonemanad: string,
  *   arbetsvardering: {byKey: Map<string, number>, [k: string]: any}|null,
  *   columnMap: {[roll: string]: string}|null,
@@ -91,7 +91,6 @@ const state = {
     // med ≤ samma BAS-rank (krav-proxy) och högre lön. Båda källor (data,
     // statistik) är giltig arbetsgivardata.
     likvardighet: {
-        source: 'organisation',    // 'organisation' | 'statistik'
         kvinnoTrosholdPct: 60,
         kvDomDefinition: 'do',     // 'do' (*Mer än X %*) | 'scb' (*X % eller mer*): den enda definitionen i verktyget (ADR-60); nycklarna är historiska och står kvar för sparade konfigurationsfiler (ADR-72)
         jamforelse: 'alla',        // 'alla' som inte är kvinnodominerade | 'mansdominerade' (filtret i Inställningar, ADR-60)

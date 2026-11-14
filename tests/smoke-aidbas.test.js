@@ -88,6 +88,28 @@ describe('Lika arbete: avsnitten Lika arbete AID x BAS och Analys på individniv
         expect(w.eval('buildConfigSnapshot()').likvardighet.jamforelse).toBe('mansdominerade');
         expect(() => w.eval('applyConfigSnapshot(' + JSON.stringify({ ...cfg, likvardighet: { jamforelse: 'blandade' } }) + ')')).toThrow(/jamforelse/);
     });
+    it('likvärdighetens fält i konfigurationsfilen: utan source, och talen prövas mot fältens gränser', () => {
+        const w = fonster();
+        const cfg = w.eval('buildConfigSnapshot()');
+        expect(Object.keys(cfg.likvardighet)).not.toContain('source');
+        // En äldre fil med fältet source läses in utan fel; fältet hoppas över.
+        w.eval('applyConfigSnapshot(' + JSON.stringify({ ...cfg, likvardighet: { ...cfg.likvardighet, source: 'statistik' } }) + ')');
+        expect(Object.keys(w.__state.likvardighet)).not.toContain('source');
+        // Utanför gränserna: kvinnotröskeln 50–70, minsta skillnad 0–50, antal par minst 1. Inget ändras.
+        const fel = lv => () => w.eval('applyConfigSnapshot(' + JSON.stringify({ ...cfg, likvardighet: { ...cfg.likvardighet, ...lv } }) + ')');
+        expect(fel({ kvinnoTrosholdPct: 80 })).toThrow(/kvinnoTrosholdPct måste vara ett tal mellan 50 och 70/);
+        expect(fel({ kvinnoTrosholdPct: 45 })).toThrow(/kvinnoTrosholdPct/);
+        expect(fel({ minGapPct: -1 })).toThrow(/minGapPct måste vara ett tal mellan 0 och 50/);
+        expect(fel({ minGapPct: 60 })).toThrow(/minGapPct/);
+        expect(fel({ topN: 0 })).toThrow(/topN måste vara ett tal som är minst 1/);
+        expect(w.__state.likvardighet.kvinnoTrosholdPct).toBe(60);
+        // Visa alla sätter antalet par till hela listan, som kan vara fler än fältets 500; ett sparat sådant värde läses in.
+        w.__state.likvardighet.topN = 750;
+        const allaPar = w.eval('buildConfigSnapshot()');
+        w.__state.likvardighet.topN = 20;
+        w.eval('applyConfigSnapshot(' + JSON.stringify(allaPar) + ')');
+        expect(w.__state.likvardighet.topN).toBe(750);
+    });
 });
 
 describe('Likvärdigt arbete: avsnitten per BAS-intervall och den hierarkiska jämförelsen', () => {
@@ -134,6 +156,17 @@ describe('Likvärdigt arbete: avsnitten per BAS-intervall och den hierarkiska j�
         w2.__renderTabContent('likvardighet');
         expect(tabell(w2, 'aidbas-hierarki-tabell')).toBeNull();
         expect(w2.document.getElementById('aidbas-hierarki').textContent).toContain('Inga fall där ett arbete med lägre krav, som inte är kvinnodominerat, har högre lön än ett kvinnodominerat arbete med högre krav.');
+    });
+    it('diagnostiken räknar kvinnodominerade AID-etiketter som jämfördes med statistiken, inte BAS-intervall', () => {
+        // Två kvinnodominerade AID-etiketter i samma BAS-intervall utan AID-etikett att jämföra med i organisationen: två etiketter, ett intervall.
+        const w = fonster([...grupp('E', '2002', 'kvinna', 30, 38000), ...grupp('E', '2002', 'man', 9, 39000),
+            ...grupp('E', '4004', 'kvinna', 12, 37000), ...grupp('E', '4004', 'man', 2, 37500)]);
+        w.__state.statistik = [{ aid: '6100', bas: 'E', median: 45000, andelKv: 20, aidFull: '6100 Jämförelseyrke' }];
+        w.__state.statistikHasKon = true;
+        w.__renderTabContent('likvardighet');
+        const text = w.document.getElementById('likvardighet-content').textContent.replace(/\s+/g, ' ');
+        expect(text).toContain('2 kvinnodominerade AID-etiketter (i ett BAS-intervall) hade ingen AID-etikett att jämföra med i organisationen och jämfördes i stället med jämförelsestatistiken');
+        expect(text).not.toMatch(/BAS saknade/);
     });
 });
 

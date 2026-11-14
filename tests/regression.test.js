@@ -229,6 +229,18 @@ describe('kvantilDesign: kvantilregressionen på huvudmodellens design (ADR-63)'
         const q = quantileRegressionAtAllTau(utan, { modell: m(true, false) });
         expect(q.results.every(r => !r.error && Number.isFinite(r.konPct))).toBe(true);
     });
+    it('samma rader som huvudregressionen: en rad utan ålder i en fil med ålder ingår inte, också med ålder bortvald', () => {
+        const utanAlderRad = { ...fx.rows[0], alder: 0, lon: fx.rows[0].lon * 3 };
+        const med = [...rader(), utanAlderRad];
+        const d = kvantilDesign(med, m(true, false));
+        expect(d.rader).toHaveLength(100);
+        expect(d.rader).not.toContain(utanAlderRad);
+        expect(quantileRegressionAtAllTau(med, { modell: m(true, false) }).n).toBe(100);
+        // Huvudregressionens steg räknar inte heller raden: samma tal med och utan den.
+        const basList = [...new Set(fx.rows.map(r => r.bas))].sort();
+        const steg = rr => computeSequentialGap(rr, fx.ageMean, basList, { golv: 10, modell: m(true, false) }).map(s => s.gapPct);
+        expect(steg(med)).toEqual(steg(rader()));
+    });
     it('basList och ageMean kan ges utifrån; referensen är det första intervallet i listan', () => {
         const d = kvantilDesign(rader(), FORKLARINGSMODELL_STANDARD, { ageMean: 40, basList: ['B', 'A', 'C', 'D', 'E', 'F'] });
         expect(d.kolumner.slice(3)).toEqual(['bas:A', 'bas:C', 'bas:D', 'bas:E', 'bas:F']);

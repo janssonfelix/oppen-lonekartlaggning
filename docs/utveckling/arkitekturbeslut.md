@@ -175,7 +175,7 @@ förklarat, men inte var. *Avvisat:* uppdelning på median, där delarna inte su
 **ADR-23 — Personer att granska: individlista i verktyget, aldrig i utdata.** Panelen i Lika arbete listar personer vars
 lön ligger minst X % (standard 10, inställbar 5–30) under en förväntad lön ur kollegorna i samma AID och BAS, utan
 personen själv: `ln(lön) = a + b · ålder` när kollegornas åldrar skiljer sig minst 5 år, annars deras median. Bara
-grupper med minst 10 personer prövas, och båda könen flaggas (`src/lib/individflaggor.js`). Personen identifieras med
+grupper med minst `statGolv()` personer prövas (minst 10, högre när tröskeln är höjd), och båda könen flaggas (`src/lib/individflaggor.js`). Personen identifieras med
 filens radnummer, så att ingen ny identifierare samlas in; ett citerat fält med radbrytning förskjuter numreringen, en
 accepterad begränsning. *Gäller i dag:* `k-troskeln.md` §4.
 

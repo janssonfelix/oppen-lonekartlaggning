@@ -31,7 +31,6 @@ function buildConfigSnapshot() {
         // Bug-fix: Set-objekt serialiseras inte korrekt med spread/JSON
         bristAids: Array.from(state.bristAids || []),
         likvardighet: state.likvardighet ? {
-            source: state.likvardighet.source,
             kvinnoTrosholdPct: state.likvardighet.kvinnoTrosholdPct,
             kvDomDefinition: state.likvardighet.kvDomDefinition || 'do',
             jamforelse: state.likvardighet.jamforelse === 'mansdominerade' ? 'mansdominerade' : 'alla',
@@ -154,15 +153,21 @@ function applyConfigSnapshot(cfg) {
     if (cfg.likvardighet != null) {
         if (typeof cfg.likvardighet !== 'object') throw new Error('likvardighet måste vara ett objekt.');
         const lv = {};
-        if (cfg.likvardighet.source != null) {
-            if (cfg.likvardighet.source !== 'organisation' && cfg.likvardighet.source !== 'statistik')
-                throw new Error('likvardighet.source måste vara "organisation" eller "statistik".');
-            lv.source = cfg.likvardighet.source;
-        }
-        for (const k of ['kvinnoTrosholdPct', 'minGapPct', 'topN']) {
-            if (cfg.likvardighet[k] != null) {
-                if (typeof cfg.likvardighet[k] !== 'number') throw new Error(`likvardighet.${k} måste vara ett nummer.`);
-                lv[k] = cfg.likvardighet[k];
+        // Fältet source i äldre filer läses aldrig och hoppas över.
+        // Gränserna är fältens i Likvärdigt arbetes inställningar. Antalet par har ingen övre gräns: Visa alla sätter det
+        // till hela listan, som kan vara längre än fältets 500. Den nedre är 1, inte fältets 10: en fil får kapa listan
+        // kortare än fältet (testerna av den kapade listan i Löneöversyn läser in sådana filer).
+        /** @type {Array<[string, number, number, string]>} */
+        const lvGranser = [
+            ['kvinnoTrosholdPct', 50, 70, 'ett tal mellan 50 och 70'],
+            ['minGapPct', 0, 50, 'ett tal mellan 0 och 50'],
+            ['topN', 1, Infinity, 'ett tal som är minst 1']
+        ];
+        for (const [k, min, max, text] of lvGranser) {
+            const v = cfg.likvardighet[k];
+            if (v != null) {
+                if (typeof v !== 'number' || !Number.isFinite(v) || v < min || v > max) throw new Error(`likvardighet.${k} måste vara ${text}.`);
+                lv[k] = v;
             }
         }
         if (cfg.likvardighet.kvDomDefinition != null) {
