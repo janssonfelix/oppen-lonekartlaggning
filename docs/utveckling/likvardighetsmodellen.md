@@ -59,9 +59,8 @@ Valen heter efter lydelsen, inte efter en avsändare (ADR-72): namnen och texter
 - **Övriga** är blandade. `konsklass` ger `'kvinnodominerad'`, `'mansdominerad'`, `'blandad'`, eller `''` när
   andelen är okänd; `arKvinnodominerad` ger `false` för en okänd andel.
 
-**Gränsen** är kvinnotröskeln, standard 60 % (`KVINNO_TROSKEL_DEFAULT`; beslut 2026-10-19, källan i `lagrum.md`). Konstanterna `ICKE_KV_TAK` (40) och `KV_DOM_STAT` (60) står kvar i modulen; `ICKE_KV_TAK` är klassens
-gräns för män med *Mer än* och standardgränsen, inte ett urval, och `KV_DOM_STAT` är bara standardvärdet i
-`klassificeraStatistik` när den anropas utan gräns.
+**Gränsen** är kvinnotröskeln, standard 60 % (`KVINNO_TROSKEL_DEFAULT`; beslut 2026-10-19, källan i `lagrum.md`). Konstanten `KV_DOM_STAT` (60) står kvar i modulen
+och är bara standardvärdet i `klassificeraStatistik` när den anropas utan gräns.
 
 **Valet** görs i Likvärdigt arbetes inställningar och gäller hela verktyget: kvinnotröskeln
 (`state.likvardighet.kvinnoTrosholdPct`) och definitionen (`state.likvardighet.kvDomDefinition`, standard `'do'`).
@@ -280,17 +279,17 @@ dess export är undantagna från tröskeln och märks med undantaget (`k-troskel
 | `minGapPct` | 0 | Minsta skillnad i procent (avsnitt 5) |
 | `topN` | 20 | Högst så många par i resultatet (avsnitt 5) |
 | `poangBandPct` | 5 | Bandet i poängläget (avsnitt 4) |
-| `source` | `'organisation'` | Bärs och valideras i konfigurationsfilen; analysen läser det inte |
 | `result` | `null` | Det senaste resultatet; nollställs när data eller inställningar ändras och av *Rensa all data* |
 
 Avsnittet *Inställningar* i fliken säger *Standardvärden* eller *Anpassade värden* efter kvinnotröskeln, minsta
 skillnaden, antalet par, definitionen och jämförelsemängden.
 
-**Konfigurationsfilen** bär `likvardighet` med `source`, `kvinnoTrosholdPct`, `kvDomDefinition`, `jamforelse`,
-`minGapPct` och `topN`. Vid inläsning prövas att talen är tal (inte att de ligger inom fältens gränser), att
-`likvardighet.kvDomDefinition` är `do` eller `scb`, att `likvardighet.jamforelse` är `alla` eller `mansdominerade` och
-att `source` är `organisation` eller `statistik`; ett ogiltigt värde avvisar filen. Värdena läggs över tillståndet och
-resultatet nollställs. Bandet för poäng bärs inte.
+**Konfigurationsfilen** bär `likvardighet` med `kvinnoTrosholdPct`, `kvDomDefinition`, `jamforelse`, `minGapPct` och
+`topN`. Vid inläsning prövas att talen ligger inom fältens gränser (kvinnotröskeln 50–70, minsta skillnaden 0–50, antalet
+par minst 1, utan övre gräns eftersom *Visa alla* sätter det till hela listan), att `likvardighet.kvDomDefinition` är
+`do` eller `scb` och att `likvardighet.jamforelse` är `alla` eller `mansdominerade`; ett ogiltigt värde avvisar filen.
+Fältet `source` i äldre filer hoppas över. Värdena läggs över tillståndet och resultatet nollställs. Bandet för poäng
+bärs inte.
 
 **Organisationspaketet** bär bara jämförelsemängden (`installningar.jamforelse`, prövad som i konfigurationsfilen). Det
 bär inte minsta skillnaden (ADR-61), antalet par, kvinnotröskeln eller definitionen.

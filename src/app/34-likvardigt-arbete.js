@@ -305,7 +305,7 @@ function renderLikvardighet() {
                     varav <strong>${d.jämförelse.statHögre} där jämförelseyrkets median är högre</strong> än det kvinnodominerade yrkets
                     (${d.jämförelse.statLägreEllerLika} där jämförelseyrket ≤ organisation — visas ej, inget problem med likvärdigt arbete).
                     <br><span class="f-dampad">Flaggade par: <strong>${d.jämförelse.internaPar}</strong> interna (organisation mot organisation),
-                    <strong>${d.jämförelse.externaPar}</strong> externa (mot jämförelsestatistiken)${d.jämförelse.basMedExternFallback > 0 ? ` — ${d.jämförelse.basMedExternFallback} BAS saknade internt jämförelseyrke och föll tillbaka på jämförelsestatistiken` : ''}.</span>
+                    <strong>${d.jämförelse.externaPar}</strong> externa (mot jämförelsestatistiken)${d.jämförelse.basMedExternFallback > 0 ? ` — ${d.jämförelse.basMedExternFallback} ${d.jämförelse.basMedExternFallback === 1 ? 'kvinnodominerat yrke' : 'kvinnodominerade yrken'} saknade jämförelseyrke i organisationen och jämfördes i stället med jämförelsestatistiken` : ''}.</span>
                 </div>` : ''}
         </div>`;
 

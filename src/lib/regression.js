@@ -533,8 +533,9 @@ export function blinderOaxaca(rows, { golv, modell = FORKLARINGSMODELL_STANDARD 
  * Kvantilregressionens design (ADR-63): samma variabler som huvudregressionen enligt förklaringsmodellen, utan
  * yrkesgrupp inom BAS — intercept, kön, [ålder centrerad på radmedel], [en indikator per BAS-intervall utom det
  * första, som är referens]. Matrisen byggs med samma hjälpare som stegen i den sekventiella dekomponeringen
- * (_sekvensRigg). Raderna filtreras här (lön > 0, kvinna eller man, ålder > 0 bara när ålder är med i modellen),
- * så att punktskattningen och bootstrappen i appen räknar på exakt samma matris.
+ * (_sekvensRigg). Raderna filtreras här som i huvudregressionen (lön > 0, kvinna eller man, ålder > 0 när lönefilen
+ * har ålder, också när ålder inte är med i modellen), så att punktskattningen och bootstrappen i appen räknar på
+ * exakt samma matris.
  * @param {any[]} rows - råradernas poster.
  * @param {any} [modell] - förklaringsmodellen (normaliseras; yrkesgrupp ingår aldrig).
  * @param {{ageMean?:number, basList?:string[]}} [opts] ageMean/basList ges utifrån eller räknas ur raderna
@@ -544,9 +545,10 @@ export function blinderOaxaca(rows, { golv, modell = FORKLARINGSMODELL_STANDARD 
  */
 export function kvantilDesign(rows, modell = FORKLARINGSMODELL_STANDARD, { ageMean, basList } = {}) {
     // Utan ålder i lönefilen (ADR-64) räknas modellen utan ålder, som i huvudregressionen.
-    const m = normaliseraForklaringsmodell(modell, { harAlder: harAlderIRader(rows) }).modell;
-    const rader = rows.filter(d => d.lon > 0 && (!m.alder || d.alder > 0)
-        && typeof d.kon === 'string' && (d.kon.includes('kvinna') || d.kon === 'man' || d.kon === 'män'));
+    // Raderna är huvudregressionens (_modellRad): ålder > 0 när lönefilen har ålder, också när ålder är bortvald.
+    const harAlder = harAlderIRader(rows);
+    const m = normaliseraForklaringsmodell(modell, { harAlder }).modell;
+    const rader = rows.filter(d => _modellRad(d, harAlder));
     const bl = m.bas ? (basList || [...new Set(rader.map(d => d.bas))].sort()) : [];
     const am = m.alder ? (ageMean != null ? ageMean : rader.reduce((s, d) => s + d.alder, 0) / (rader.length || 1)) : NaN;
     const vars = ['alder', 'bas'].filter(v => m[v]);

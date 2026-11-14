@@ -246,7 +246,8 @@ gapet. En bortvald variabel nämns med noteringen ur avsnitt 2.
 **Designen.** `kvantilDesign(rows, modell, { ageMean?, basList? })` i `src/lib/regression.js` bygger designen med
 samma hjälpare som stegen (`_sekvensRigg`): intercept, kön, [ålder centrerad på radernas medel] och [en indikator per
 BAS-intervall utom det första] enligt förklaringsmodellen, aldrig yrkesgrupp inom BAS. Raderna filtreras där: lön över
-0, kön kvinna eller man, och ålder över 0 bara när ålder är med i modellen. `basList` och medelåldern räknas ur raderna
+0, kön kvinna eller man och, när lönefilen har ålder, en ålder över 0, också när ålder inte är med i modellen: samma
+rader som huvudregressionen. `basList` och medelåldern räknas ur raderna
 om de inte ges. Punktskattningen och bootstrappen räknar på exakt samma byggare.
 
 **Skattningen.** `quantileRegressionAtAllTau(rows, { modell, ageMean?, basList? })` skattar vid **τ = 0,1, 0,5 och

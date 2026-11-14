@@ -3301,7 +3301,6 @@ const __mirrorLikvardighet = (() => {
 
 
 const KVINNO_TROSKEL_DEFAULT = 60;   // > → kvinnodominerat ('do', *Mer än 60 %*)
-const ICKE_KV_TAK = 40;              // < → mansdominerat med 'do' och standardgränsen (klassen, inte urvalet; ADR-60)
 const KV_DOM_STAT = 60;               // gränsen för jämförelsestatistiken — samma som KVINNO_TROSKEL_DEFAULT
 
 /**
@@ -5204,8 +5203,9 @@ function blinderOaxaca(rows, { golv, modell = FORKLARINGSMODELL_STANDARD }) {
  * Kvantilregressionens design (ADR-63): samma variabler som huvudregressionen enligt förklaringsmodellen, utan
  * yrkesgrupp inom BAS — intercept, kön, [ålder centrerad på radmedel], [en indikator per BAS-intervall utom det
  * första, som är referens]. Matrisen byggs med samma hjälpare som stegen i den sekventiella dekomponeringen
- * (_sekvensRigg). Raderna filtreras här (lön > 0, kvinna eller man, ålder > 0 bara när ålder är med i modellen),
- * så att punktskattningen och bootstrappen i appen räknar på exakt samma matris.
+ * (_sekvensRigg). Raderna filtreras här som i huvudregressionen (lön > 0, kvinna eller man, ålder > 0 när lönefilen
+ * har ålder, också när ålder inte är med i modellen), så att punktskattningen och bootstrappen i appen räknar på
+ * exakt samma matris.
  * @param {any[]} rows - råradernas poster.
  * @param {any} [modell] - förklaringsmodellen (normaliseras; yrkesgrupp ingår aldrig).
  * @param {{ageMean?:number, basList?:string[]}} [opts] ageMean/basList ges utifrån eller räknas ur raderna
@@ -5215,9 +5215,10 @@ function blinderOaxaca(rows, { golv, modell = FORKLARINGSMODELL_STANDARD }) {
  */
 function kvantilDesign(rows, modell = FORKLARINGSMODELL_STANDARD, { ageMean, basList } = {}) {
     // Utan ålder i lönefilen (ADR-64) räknas modellen utan ålder, som i huvudregressionen.
-    const m = normaliseraForklaringsmodell(modell, { harAlder: harAlderIRader(rows) }).modell;
-    const rader = rows.filter(d => d.lon > 0 && (!m.alder || d.alder > 0)
-        && typeof d.kon === 'string' && (d.kon.includes('kvinna') || d.kon === 'man' || d.kon === 'män'));
+    // Raderna är huvudregressionens (_modellRad): ålder > 0 när lönefilen har ålder, också när ålder är bortvald.
+    const harAlder = harAlderIRader(rows);
+    const m = normaliseraForklaringsmodell(modell, { harAlder }).modell;
+    const rader = rows.filter(d => _modellRad(d, harAlder));
     const bl = m.bas ? (basList || [...new Set(rader.map(d => d.bas))].sort()) : [];
     const am = m.alder ? (ageMean != null ? ageMean : rader.reduce((s, d) => s + d.alder, 0) / (rader.length || 1)) : NaN;
     const vars = ['alder', 'bas'].filter(v => m[v]);
@@ -15784,7 +15785,7 @@ document.addEventListener('keydown', e => {
  *     scenarios: {A: any, B: any}, result: any, _remediation?: any
  *   },
  *   inactivityTimeoutMin: number, kLage: 'skarm'|'export',
- *   likvardighet: {source: string, kvinnoTrosholdPct: number, kvDomDefinition: 'do'|'scb', jamforelse: 'alla'|'mansdominerade', minGapPct: number, topN: number, poangBandPct: number, result: any},
+ *   likvardighet: {kvinnoTrosholdPct: number, kvDomDefinition: 'do'|'scb', jamforelse: 'alla'|'mansdominerade', minGapPct: number, topN: number, poangBandPct: number, result: any},
  *   lonemanad: string,
  *   arbetsvardering: {byKey: Map<string, number>, [k: string]: any}|null,
  *   columnMap: {[roll: string]: string}|null,
@@ -15851,7 +15852,6 @@ const state = {
     // med ≤ samma BAS-rank (krav-proxy) och högre lön. Båda källor (data,
     // statistik) är giltig arbetsgivardata.
     likvardighet: {
-        source: 'organisation',    // 'organisation' | 'statistik'
         kvinnoTrosholdPct: 60,
         kvDomDefinition: 'do',     // 'do' (*Mer än X %*) | 'scb' (*X % eller mer*): den enda definitionen i verktyget (ADR-60); nycklarna är historiska och står kvar för sparade konfigurationsfiler (ADR-72)
         jamforelse: 'alla',        // 'alla' som inte är kvinnodominerade | 'mansdominerade' (filtret i Inställningar, ADR-60)
@@ -17902,7 +17902,6 @@ function buildConfigSnapshot() {
         // Bug-fix: Set-objekt serialiseras inte korrekt med spread/JSON
         bristAids: Array.from(state.bristAids || []),
         likvardighet: state.likvardighet ? {
-            source: state.likvardighet.source,
             kvinnoTrosholdPct: state.likvardighet.kvinnoTrosholdPct,
             kvDomDefinition: state.likvardighet.kvDomDefinition || 'do',
             jamforelse: state.likvardighet.jamforelse === 'mansdominerade' ? 'mansdominerade' : 'alla',
@@ -18025,15 +18024,21 @@ function applyConfigSnapshot(cfg) {
     if (cfg.likvardighet != null) {
         if (typeof cfg.likvardighet !== 'object') throw new Error('likvardighet måste vara ett objekt.');
         const lv = {};
-        if (cfg.likvardighet.source != null) {
-            if (cfg.likvardighet.source !== 'organisation' && cfg.likvardighet.source !== 'statistik')
-                throw new Error('likvardighet.source måste vara "organisation" eller "statistik".');
-            lv.source = cfg.likvardighet.source;
-        }
-        for (const k of ['kvinnoTrosholdPct', 'minGapPct', 'topN']) {
-            if (cfg.likvardighet[k] != null) {
-                if (typeof cfg.likvardighet[k] !== 'number') throw new Error(`likvardighet.${k} måste vara ett nummer.`);
-                lv[k] = cfg.likvardighet[k];
+        // Fältet source i äldre filer läses aldrig och hoppas över.
+        // Gränserna är fältens i Likvärdigt arbetes inställningar. Antalet par har ingen övre gräns: Visa alla sätter det
+        // till hela listan, som kan vara längre än fältets 500. Den nedre är 1, inte fältets 10: en fil får kapa listan
+        // kortare än fältet (testerna av den kapade listan i Löneöversyn läser in sådana filer).
+        /** @type {Array<[string, number, number, string]>} */
+        const lvGranser = [
+            ['kvinnoTrosholdPct', 50, 70, 'ett tal mellan 50 och 70'],
+            ['minGapPct', 0, 50, 'ett tal mellan 0 och 50'],
+            ['topN', 1, Infinity, 'ett tal som är minst 1']
+        ];
+        for (const [k, min, max, text] of lvGranser) {
+            const v = cfg.likvardighet[k];
+            if (v != null) {
+                if (typeof v !== 'number' || !Number.isFinite(v) || v < min || v > max) throw new Error(`likvardighet.${k} måste vara ${text}.`);
+                lv[k] = v;
             }
         }
         if (cfg.likvardighet.kvDomDefinition != null) {
@@ -23296,7 +23301,7 @@ function renderLikvardighet() {
                     varav <strong>${d.jämförelse.statHögre} där jämförelseyrkets median är högre</strong> än det kvinnodominerade yrkets
                     (${d.jämförelse.statLägreEllerLika} där jämförelseyrket ≤ organisation — visas ej, inget problem med likvärdigt arbete).
                     <br><span class="f-dampad">Flaggade par: <strong>${d.jämförelse.internaPar}</strong> interna (organisation mot organisation),
-                    <strong>${d.jämförelse.externaPar}</strong> externa (mot jämförelsestatistiken)${d.jämförelse.basMedExternFallback > 0 ? ` — ${d.jämförelse.basMedExternFallback} BAS saknade internt jämförelseyrke och föll tillbaka på jämförelsestatistiken` : ''}.</span>
+                    <strong>${d.jämförelse.externaPar}</strong> externa (mot jämförelsestatistiken)${d.jämförelse.basMedExternFallback > 0 ? ` — ${d.jämförelse.basMedExternFallback} ${d.jämförelse.basMedExternFallback === 1 ? 'kvinnodominerat yrke' : 'kvinnodominerade yrken'} saknade jämförelseyrke i organisationen och jämfördes i stället med jämförelsestatistiken` : ''}.</span>
                 </div>` : ''}
         </div>`;
 
@@ -28452,7 +28457,7 @@ function runQuantileRegressionAtAllTau() {
  *
  * BAS kodas som en indikator per BAS-intervall utom det första (alfabetiskt lägsta) som är
  * referens: varje intervall får sin egen lönenivå, utan antagandet att varje bokstavssteg
- * är värt lika mycket. Ordningen A–J är ändå fast (se likvardighetsmodellen.md §6) och styr
+ * är värt lika mycket. Ordningen A–Z är ändå fast (se likvardighetsmodellen.md §6) och styr
  * vilket intervall som blir referens.
  * @returns {{error?: string, errorCode?: string, [k: string]: any}} vid fel { error, errorCode } (ev. triedSteps, diagnostics);
  *   annars beta, se, p, R2, n, k, gapPct, decomposition m.fl. — se return-satsen.
