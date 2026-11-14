@@ -631,7 +631,7 @@ describe('Var uppstår löneskillnaden?', () => {
         expect(host.hidden).toBe(false);
         expect(host.querySelectorAll('[data-gu-del]').length).toBe(3);
         expect(host.textContent).toContain('DEMODATA');
-        expect(host.textContent).toContain('kan därför skilja sig från de flaggade yrkena i Lika arbete');
+        expect(host.textContent).toContain('kan därför skilja sig från de flaggade AID-etiketterna i Lika arbete');
         expect(host.querySelector('[data-go-to-tab="struktur"]')).not.toBeNull();
         expect(host.textContent).not.toMatch(/§|3 kap\./);
     });
@@ -972,7 +972,7 @@ describe('Var uppstår löneskillnaden: valbara förklaringsvariabler (ADR-65)',
         expect(delnamn(w)).toEqual(['A. BAS-fördelning', 'B. AID inom BAS', 'C. Inom AID och BAS']);
         const text = [...kort(w).querySelectorAll('.gu-text')].map(p => p.textContent);
         expect(text[0]).toContain('Kvinnor och män är olika fördelade över BAS-intervallen. Hör till karriärvägar och rekrytering');
-        expect(text[1]).toContain('Kvinnor och män har olika AID inom samma BAS. Kan kräva en lönesatsning på yrket');
+        expect(text[1]).toContain('Kvinnor och män har olika AID inom samma BAS. Kan kräva en lönesatsning på AID-etiketten');
         expect(text[2]).toContain('Kvinnor och män har olika lön i samma AID och BAS. Pröva lika arbete');
         expect(kort(w).querySelector('[data-gu-standard]')).toBeNull();
         expect(kort(w).textContent).toContain('Ordningen påverkar delarna: den första variabeln får det den förklarar ensam');

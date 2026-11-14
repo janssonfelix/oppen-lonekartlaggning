@@ -10,6 +10,11 @@
 // OLS-kärnan (_fitOLS m.fl.) är också speglad.
 // runOLSRegression ligger kvar i 51-lika-arbete-regressionskort.js och flyttas inte (ADR-17).
 
+// Stegens nycklar i den sekventiella dekomponeringen (ADR-74): kortet, rapporten och exporten slår upp stegen på dem.
+// Det som visas för ett steg kommer ur _rgStegEtikett.
+const _RG_STEG_BAS = _rgStegNamn('bas');
+const _RG_STEG_YRKE = _rgStegNamn('yrkesgrupp');
+
 // Diagnostiserar varför modellen misslyckas
 function _diagnoseCollinearity(rows, basList) {
     return _rgDiagnoseCollinearity(rows, basList);

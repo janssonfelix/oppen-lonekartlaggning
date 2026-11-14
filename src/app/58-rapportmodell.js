@@ -747,7 +747,7 @@ function _rmAvsnittenUtanUrval() {
                 ...(reg.ageEffect != null ? [['Ålderseffekt', `${rmCell(reg.ageEffect, 'tecken2')} per år`]] : []),
                 ['R² / justerad R²', `${svPct(reg.R2 * 100, 1)} / ${svPct(reg.adjR2 * 100, 1)}`],
                 ...(reg.basRef != null && !reg.modell.yrkesgrupp ? [['BAS-intervall i modellen', `${reg.nBas} (${reg.basList[0]}–${reg.basList[reg.basList.length - 1]}; indikatorvariabler, ${reg.basRef} är referens)`]] : []),
-                ...(reg.modell.yrkesgrupp && reg.yrkesSteg ? [['Yrkesgrupper i modellen', `${reg.yrkesSteg.nGrupper} grupper (AID inom BAS; fasta effekter), ${reg.yrkesSteg.nGrupperBada} med båda könen`]] : []),
+                ...(reg.modell.yrkesgrupp && reg.yrkesSteg ? [[`${termStor(T.enhet.fl)} i modellen`, `${reg.yrkesSteg.nGrupper} grupper (AID inom BAS; fasta effekter), ${reg.yrkesSteg.nGrupperBada} med båda könen`]] : []),
                 ...(basEffUt.effekter?.length ? [['BAS-effekter', `nivå mot BAS ${reg.basRef}: ${basEffUt.effekter.map(e => `${e.bas} ${rmCell(e.pct, 'tecken2')} (${_formatPValue(e.p)})`).join('; ')}`]] : []),
             ]));
         if (basEffUt.not) { regression.delar.push(stycke(basEffUt.not, 'not')); regression.utelamnat.push(basEffUt.referensUtelamnad ? 'BAS-effekterna (referensintervallet under tröskeln)' : 'BAS-effekter för intervall under tröskeln'); }
@@ -756,8 +756,8 @@ function _rmAvsnittenUtanUrval() {
         if (reg.fellBackFromFull && reg.diagnostics.length) regression.delar.push(stycke(`Notering: den valda modellen kunde inte skattas. Föll tillbaka till ${reg.modelDesc}. ${reg.diagnostics.map(utanTaggar).join(' ')}`));
         regression.delar.push({ typ: 'rubrik', niva: 3, text: 'Sekventiell dekomponering' },
             { typ: 'tabell', caption: antalText(reg.nKvAnalysed, reg.nMaAnalysed), kolumner: [{ rubrik: 'Modell', typ: 'text' }, { rubrik: 'Löneskillnad', typ: 'tecken2' }, { rubrik: 'R²', typ: 'pct1' }],
-              rader: stegUt.steg.map(st => (st.status !== 'ok' ? [st.name, { text: st.status === 'singular' ? 'singulär' : 'för få obs' }, null] : [st.name, st.gapPct, st.R2 * 100])) });
-        if (reg.yrkesSteg?.status === 'ok') regression.delar.push(stycke(`Steget + Yrkesgrupp: ${utanTaggar(_yrkesStegText(reg.yrkesSteg, reg.modell))}`));
+              rader: stegUt.steg.map(st => (st.status !== 'ok' ? [_rgStegEtikett(st.name), { text: st.status === 'singular' ? 'singulär' : 'för få obs' }, null] : [_rgStegEtikett(st.name), st.gapPct, st.R2 * 100])) });
+        if (reg.yrkesSteg?.status === 'ok') regression.delar.push(stycke(`Steget ${_rgStegEtikett(_RG_STEG_YRKE)}: ${utanTaggar(_yrkesStegText(reg.yrkesSteg, reg.modell))}`));
         if (stegUt.utelamnat) { regression.delar.push(stycke(stegUt.not, 'not')); regression.utelamnat.push('första steget i dekomponeringen (ett kön under tröskeln)'); }
         else if (stegUt.explainedShare !== null) regression.delar.push(stycke(`Strukturellt förklarad andel: ${svPct(stegUt.explainedShare, 0)} av den råa löneskillnaden förklaras av strukturella variabler (${reg.fras}). Oförklarad rest: ${svPct(100 - stegUt.explainedShare, 0)}.`));
         const perBas = (reg.perBas || []).filter(pb => pb.status === 'ok');

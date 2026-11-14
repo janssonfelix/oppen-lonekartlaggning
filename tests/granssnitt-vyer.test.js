@@ -640,7 +640,7 @@ describe('småsaker i texter och etiketter (granskning 2026-10-30, steg H)', () 
         w.__renderTabContent('struktur');
         const topp = (id, etikett) => [...d.querySelectorAll(`#${id} .slutsats`)].find(s => s.textContent.includes(etikett))?.querySelector('.slutsats-varde')?.textContent.trim();
         const [lv, la, st] = rader().map(l => l.textContent);
-        expect(la).toContain(`har ${topp('la-slutsatser', 'Yrkesgrupper att granska')} yrkesgrupper att granska`);
+        expect(la).toContain(`har ${topp('la-slutsatser', 'AID-etiketter att granska')} yrkesgrupper att granska`);
         expect(lv).toContain(`har ${topp('lv-slutsatser', 'Par att titta närmare på')} par att titta närmare på`);
         expect(st).toContain(`${topp('st-slutsatser', 'Högsta lönekvartilen')} kvinnor i den högsta lönekvartilen`);
         expect(st).toContain(`${topp('st-slutsatser', 'Lägsta lönekvartilen')} i den lägsta`);

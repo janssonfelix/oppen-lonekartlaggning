@@ -184,7 +184,7 @@ describe('sektorsöversikten', () => {
         w.__renderTabContent('struktur');
         const rader = [...w.document.querySelectorAll('#sektor-table tbody tr')].map(tr => tr.querySelector('.sektor-namn').textContent.trim());
         expect(rader).toEqual(['Vård- och omsorgsarbete med mera', 'Förskole-, skol-, fritids- och annan pedagogisk verksamhet', 'Teknikarbete']);
-        expect(w.document.getElementById('struktur-sektorer').textContent).toMatch(/på att kvinnor och män arbetar i olika sektorer/);
+        expect(w.document.getElementById('struktur-sektorer').textContent).toMatch(/på att kvinnor och män arbetar i olika huvudområden/);
         expect(w.document.getElementById('chart-sektorer')._figur.lager.map(l => l.serie)).toEqual(['Förklaras av ålder och BAS', 'Rå', 'Justerad (ålder, BAS)']);
     });
     it('klick på en sektor öppnar Utforska med sektorn som villkor', () => {

@@ -27,7 +27,7 @@ function renderLifecycleAnalysis() {
         wrap.innerHTML = `<div class="insight-box warn pad-18">
             <strong>${ikon('statusVarning')} Livscykelanalysen kunde inte köras</strong>
             <p class="fs-md marg-8-0-0">${esc(result.error)}</p>
-            ${result.errorCode === 'no_age' ? '' : `<p class="text-dampad-sm marg-8-0-0">Analysen kräver minst 50 personer totalt, minst ${statGolv()} av varje kön och minst 2 BAS-intervall. Säkerställ också att kön-, ålders- och lönefält är korrekt mappade.</p>`}
+            ${result.errorCode === 'no_age' ? '' : `<p class="text-dampad-sm marg-8-0-0">Analysen kräver minst 50 personer totalt, minst ${statGolv()} av varje kön och minst 2 ${T.niva.fl}. Säkerställ också att kön-, ålders- och lönefält är korrekt mappade.</p>`}
         </div>`;
         return;
     }
@@ -124,11 +124,11 @@ function renderLifecycleAnalysis() {
     if (!interaktionSig) {
         coachKategori = 'konstant';
         coachRubrik = 'Samma skillnad över karriären';
-        coachText = `Skillnaden ändras <strong>inte säkert</strong> med åldern (p<sub>kön×ålder</sub> = ${result.kvAgePVal < 0.001 ? '< 0,001' : svTal(result.kvAgePVal, 3)}, p<sub>kön×ålder²</sub> = ${result.kvAge2PVal < 0.001 ? '< 0,001' : svTal(result.kvAge2PVal, 3)}). Skillnaden är ungefär densamma i alla åldrar. <strong>Att utforska:</strong> lägg kraften på de strukturella analyserna (BAS-intervall, likvärdigt arbete) snarare än på karriären.`;
+        coachText = `Skillnaden ändras <strong>inte säkert</strong> med åldern (p<sub>kön×ålder</sub> = ${result.kvAgePVal < 0.001 ? '< 0,001' : svTal(result.kvAgePVal, 3)}, p<sub>kön×ålder²</sub> = ${result.kvAge2PVal < 0.001 ? '< 0,001' : svTal(result.kvAge2PVal, 3)}). Skillnaden är ungefär densamma i alla åldrar. <strong>Att utforska:</strong> lägg kraften på de strukturella analyserna (${T.niva.fl}, likvärdigt arbete) snarare än på karriären.`;
     } else if (result.gapDelta < -2) {
         coachKategori = 'växande';
         coachRubrik = 'Skillnaden växer med åldern';
-        coachText = `Skillnaden är större i de högre åldrarna än i de lägre: kvinnors lön mot mäns sjunker med ${svTal(Math.abs(result.gapDelta), 1)} procentenheter mellan 25 och 65 år. Kurvorna är ett tvärsnitt och visar inte orsaken, men hypoteser att pröva är (1) <strong>föräldraledighet</strong> vars effekt samlas över karriären, (2) <strong>långsammare karriärväg</strong> för kvinnor — färre steg till högre BAS, (3) <strong>lönerevisioner som slår olika</strong> år efter år. <strong>Att utforska:</strong> granska löneöversynernas utfall per kön i organisationens egna system (verktyget analyserar en kartläggning i taget), kontrollera befordringar per BAS-intervall, undersök om föräldralediga får samma lönelyft som heltidsarbetande.`;
+        coachText = `Skillnaden är större i de högre åldrarna än i de lägre: kvinnors lön mot mäns sjunker med ${svTal(Math.abs(result.gapDelta), 1)} procentenheter mellan 25 och 65 år. Kurvorna är ett tvärsnitt och visar inte orsaken, men hypoteser att pröva är (1) <strong>föräldraledighet</strong> vars effekt samlas över karriären, (2) <strong>långsammare karriärväg</strong> för kvinnor — färre steg till högre BAS, (3) <strong>lönerevisioner som slår olika</strong> år efter år. <strong>Att utforska:</strong> granska löneöversynernas utfall per kön i organisationens egna system (verktyget analyserar en kartläggning i taget), kontrollera befordringar per ${T.niva.en}, undersök om föräldralediga får samma lönelyft som heltidsarbetande.`;
     } else if (result.gapDelta > 2) {
         coachKategori = 'krympande';
         coachRubrik = 'Skillnaden krymper med åldern';
@@ -136,7 +136,7 @@ function renderLifecycleAnalysis() {
     } else {
         coachKategori = 'praktiskt konstant';
         coachRubrik = 'Skillnaden är i praktiken densamma';
-        coachText = `Löneskillnaden ändras med åldern (p under 0,10), men lite: ${result.gapDelta >= 0 ? '+' : ''}${svTal(result.gapDelta, 1)} procentenheter. I praktiken är skillnaden densamma över karriären. <strong>Att utforska:</strong> behandla den som en strukturell skillnad och arbeta med huvudregressionen och BAS-intervallen, inte med insatser för karriären.`;
+        coachText = `Löneskillnaden ändras med åldern (p under 0,10), men lite: ${result.gapDelta >= 0 ? '+' : ''}${svTal(result.gapDelta, 1)} procentenheter. I praktiken är skillnaden densamma över karriären. <strong>Att utforska:</strong> behandla den som en strukturell skillnad och arbeta med huvudregressionen och ${T.niva.bfl}, inte med insatser för karriären.`;
     }
 
     coachText += modellMening;
@@ -195,7 +195,7 @@ function renderLifecycleAnalysis() {
         <!-- BAS-dropdown + kurva -->
         <div class="card mb-14">
             <div class="rad-bryt-mitt gap-14 marg-b-8">
-                <label for="lifecycle-bas-select" class="fs-sm fw-600">Visa lönekurvor för BAS-intervall:</label>
+                <label for="lifecycle-bas-select" class="fs-sm fw-600">Visa lönekurvor för ${T.niva.en}:</label>
                 <select id="lifecycle-bas-select" class="form-select pad-6-12 bredd-auto">${basOptions}</select>
             </div>
             <div id="lifecycle-chart"></div>${kurvNot ? `
@@ -206,17 +206,17 @@ function renderLifecycleAnalysis() {
         <!-- B4: Översiktstabell — gap-utveckling per BAS -->
         <details class="mb-14" open>
             <summary class="bak-upphojd rund-6 pekare fw-600 pad-10-14">
-                Modellens lönenivåer per BAS-intervall vid 25 och 65 år
+                Modellens lönenivåer per ${T.niva.en} vid 25 och 65 år
             </summary>
             <div class="pad-10-0">
                 <table class="data-table st-088">
                     <thead>
                         <tr>
                             <th>BAS</th>
-                            <th class="t-hoger" title="Antal personer i organisationens BAS-intervall">n</th>
+                            <th class="t-hoger" title="Antal personer i organisationens ${T.niva.en}">n</th>
                             <th class="t-hoger">Kvinna 25 år</th>
                             <th class="t-hoger">Man 25 år</th>
-                            <th class="t-hoger" title="Kvinnors modellön minus mäns vid 25 år, för detta BAS-intervall; negativt när kvinnor ligger lägre">Skillnad 25 år (kr)</th>
+                            <th class="t-hoger" title="Kvinnors modellön minus mäns vid 25 år, för ${T.niva.bf}; negativt när kvinnor ligger lägre">Skillnad 25 år (kr)</th>
                             <th class="t-hoger">Kvinna 65 år</th>
                             <th class="t-hoger">Man 65 år</th>
                             <th class="t-hoger" title="Kvinnors modellön minus mäns vid 65 år; negativt när kvinnor ligger lägre">Skillnad 65 år (kr)</th>
@@ -238,7 +238,7 @@ function renderLifecycleAnalysis() {
                             </tr>`).join('')}
                     </tbody>
                 </table>
-                ${kMaskNote(basUtelamnade, 'BAS-intervall|BAS-intervall')}
+                ${kMaskNote(basUtelamnade, `${T.niva.en}|${T.niva.fl}`)}
                 <p class="text-dampad-xs lh-1_5 marg-10-0-0">
                     <em>Talen är modellens lönenivåer, inte uppmätta medianer: kurvan räknas för det visade intervallet (${esc(result.fixBas)}) och övriga intervall får sin nivå ur modellens egna BAS-koefficienter. Skillnaden i procent, kvinnor mot män (${svPct(result.gapAt25, 1)} vid 25 år, ${svPct(result.gapAt65, 1)} vid 65), är densamma för alla intervall i modellen; kronorna skiljer eftersom lönenivåerna skiljer.</em>
                 </p>
@@ -278,7 +278,7 @@ function renderLifecycleAnalysis() {
         </details>
 
         <p class="livscykel-modell-not text-dampad-xs lh-1_5 marg-t-10">
-            Modellen tar hänsyn till kön, ålder, åldern i kvadrat (att lönen planar ut sent i karriären), samspelet mellan kön och ålder, och BAS-intervall. De skuggade banden runt kurvorna visar osäkerheten. Detaljerna står under <em>Så räknas det</em> längst ned i fliken, i <em>Beräkning &amp; urval</em>.
+            Modellen tar hänsyn till kön, ålder, åldern i kvadrat (att lönen planar ut sent i karriären), samspelet mellan kön och ålder, och ${T.niva.en}. De skuggade banden runt kurvorna visar osäkerheten. Detaljerna står under <em>Så räknas det</em> längst ned i fliken, i <em>Beräkning &amp; urval</em>.
         </p>
     `;
 
@@ -293,13 +293,13 @@ function renderLifecycleAnalysis() {
         formler: [
             ['Modell', '<code>log(lön) ~ kön + ålder + ålder² + kön×ålder + kön×ålder² + C(BAS)</code>, skattad med minsta kvadratmetoden'],
             ['Standardfel', 'HC3-robusta standardfel (tål att lönespridningen skiljer mellan grupper)'],
-            ['BAS-intervall', `Indikatorvariabler; i kodningen är BAS ${esc(result.refBas)} referensintervall. Kurvan visas för det valda intervallet (${esc(result.fixBas)}), övriga intervall får sin nivå ur sin BAS-koefficient${kurvaUtelamnad ? `. Här visas ingen kurva: det valda intervallet har färre än ${kTroskel()} ${personOrd(kTroskel())}` : ''}`],
+            [termStor(T.niva.en), `Indikatorvariabler; i kodningen är BAS ${esc(result.refBas)} referensintervall. Kurvan visas för det valda intervallet (${esc(result.fixBas)}), övriga intervall får sin nivå ur sin BAS-koefficient${kurvaUtelamnad ? `. Här visas ingen kurva: det valda intervallet har färre än ${kTroskel()} ${personOrd(kTroskel())}` : ''}`],
             ['Skillnad kvinnor mot män', '<code>(exp(skillnaden på log-skalan) − 1) × 100</code> vid varje ålder; kvinnors lön i % av mäns är 100 plus skillnaden'],
             ['Skuggade band', '95 % konfidensintervall för den predicerade lönen'],
             ['Säkerställd förändring', 'Kön×ålder eller kön×ålder² med p under 0,10 (tolkningsregeln). Stjärnorna i modelljämförelsen: * p under 0,05, ** p under 0,01, *** p under 0,001']
         ],
         notes: [
-            'Modellen räknas på hela underlaget, inte på flikens urval av BAS-intervall',
+            `Modellen räknas på hela underlaget, inte på flikens urval av ${T.niva.fl}`,
             esc(KOHORT_FORBEHALL)
         ]
     });
@@ -358,9 +358,9 @@ function _evidenceForLifecycleBas(row, result, utanKurva = false) {
         title: `Beräkningen — BAS ${row.bas} (ålder och karriär)`,
         intro: `Predikterade lönenivåer från livscykelmodellen för BAS <strong>${esc(row.bas)}</strong>. Modellen är global (en regression över alla BAS samtidigt); nivån per BAS kommer ur modellens egen BAS-koefficient.`,
         rows: [
-            { label: 'BAS-intervall',                       value: row.bas },
+            { label: termStor(T.niva.en),                  value: row.bas },
             { label: 'Antal personer i BAS (organisation)',  value: row.n.toLocaleString('sv-SE') },
-            { label: 'Visat BAS-intervall',                 value: result.fixBas, note: 'Intervallet som lönekurvan räknas för direkt. Övriga intervall får sin nivå ur sin BAS-koefficient.' },
+            { label: `${termStor(termAdjektiv('visad', T.niva))} ${T.niva.en}`, value: result.fixBas, note: 'Intervallet som lönekurvan räknas för direkt. Övriga intervall får sin nivå ur sin BAS-koefficient.' },
             utanKurva
                 ? { label: 'Nivåfaktor mot visat intervall',    value: '—', note: `Visas inte: kurvan för BAS ${result.fixBas} visas inte, eftersom intervallet har färre än ${kTroskel()} ${personOrd(kTroskel())}.` }
                 : { label: 'Nivåfaktor mot visat intervall',    value: result.basFaktor?.[row.bas] != null ? svTal(result.basFaktor[row.bas], 3) : '—', note: 'exp(β_BAS − β_visat); 1,000 för det visade intervallet.' },
@@ -382,7 +382,7 @@ function _evidenceForLifecycleBas(row, result, utanKurva = false) {
             ln(lön) = β₀ + β_kön·isKv + β_ålder·(ålder−medel) + β_ålder²·(ålder−medel)² + β_kön×ålder·... + Σβ_BAS·dummies<br><br>
             För andra BAS ger modellens BAS-koefficient nivån:<br>
             lön(BAS) = lön(${result.fixBas}) × <em>exp(β_BAS − β_${result.fixBas})</em><br><br>
-            <em>Obs! Modellen är additiv: BAS-intervallet påverkar lönenivån men inte hur skillnaden utvecklas. Därför är skillnaden i procent densamma i alla BAS-intervall, medan beloppet i kronor skiljer eftersom lönenivåerna skiljer.</em>`,
+            <em>Obs! Modellen är additiv: ${T.niva.bf} påverkar lönenivån men inte hur skillnaden utvecklas. Därför är skillnaden i procent densamma i alla ${T.niva.fl}, medan beloppet i kronor skiljer eftersom lönenivåerna skiljer.</em>`,
         footer: `Livscykelmodellen låter skillnaden variera med åldern (via samspelet mellan kön och ålder). Är samspelet inte signifikant (p minst 0,10) är skillnaden i praktiken densamma, och då räcker huvudregressionen. Är det signifikant behöver du överväga åtgärder som rör karriären.`
     };
 }

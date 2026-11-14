@@ -388,7 +388,7 @@ describe('ADR-65: valbara förklaringsvariabler', () => {
         expect(gapDelar(['bas', 'alder', 'aid']).map(d => d.namn)).toEqual(['BAS-fördelning', 'Åldersgrupp inom BAS',
             'AID inom åldersgrupp och BAS', 'Inom AID, åldersgrupp och BAS']);
         expect(gapDelar(['alder']).map(d => d.namn)).toEqual(['Åldersfördelning', 'Inom åldersgrupp']);
-        expect(gapDelar(['sektor', 'aidniva']).map(d => d.namn)).toEqual(['Sektorsfördelning', 'AID-mellannivå inom sektor', 'Inom AID-mellannivå och sektor']);
+        expect(gapDelar(['sektor', 'aidniva']).map(d => d.namn)).toEqual(['Fördelning över huvudområden', 'AID-mellannivå inom huvudområde', 'Inom AID-mellannivå och huvudområde']);
     });
 });
 

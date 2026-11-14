@@ -18,6 +18,29 @@
  */
 
 import { fitOLS, invert, matMul, pValue2Sided, tQuantile } from './stat.js';
+import { skapaTermer, fyllTermer, ordForAntal } from './termer.js';
+
+/** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
+const T = skapaTermer();
+
+// Stegens namn i den sekventiella dekomponeringen är nycklar: kortet, rapporten, exporten och testerna slår upp stegen
+// på dem, så de står kvar oförändrade. Det som visas för ett steg kommer ur termerna (stegEtikett, ADR-74).
+export const STEG_BAS = '+ BAS-intervall';
+export const STEG_YRKE = '+ Yrkesgrupp';
+/** Stegets namn som det visas: STEG_YRKE blir "+ AID-etikett inom BAS", STEG_BAS "+ BAS-intervall"; övriga som de är. */
+export function stegEtikett(namn) {
+    if (namn === STEG_YRKE) return `+ ${T.enhet.en} inom BAS`;
+    if (namn === STEG_BAS) return `+ ${T.niva.en}`;
+    return namn;
+}
+/**
+ * Nyckeln för stegets namn per variabel, för appen som slår upp stegen på den.
+ * @param {'bas'|'yrkesgrupp'} variabel
+ * @returns {string}
+ */
+export function stegNamn(variabel) {
+    return variabel === 'bas' ? STEG_BAS : STEG_YRKE;
+}
 
 // ---- Förklaringsmodellen som värde (ADR-56) ----
 // Vilka variabler huvudregressionen, trappan och Blinder-Oaxaca räknar bort utöver kön. Standard är ADR-44/46/53-modellen:
@@ -66,11 +89,11 @@ export function normaliseraForklaringsmodell(v, { harYrke = true, harAlder = tru
         skal: typeof v.skal === 'string' ? v.skal.slice(0, SKAL_MAX) : '' });
     if (modell.yrkesgrupp && !harYrke) {
         modell.yrkesgrupp = false;
-        varningar.push('Yrkesgrupp inom BAS kan inte väljas: lönefilen saknar AID och yrke.');
+        varningar.push(fyllTermer('{Enhet.en} inom BAS kan inte väljas: lönefilen saknar {kod.en} och {namn.en}.', T));
     }
     if (modell.yrkesgrupp && !modell.bas) {
         modell.bas = true;
-        varningar.push('Yrkesgrupp inom BAS förutsätter BAS-intervall; BAS är valt.');
+        varningar.push(fyllTermer('{Enhet.en} inom BAS förutsätter {niva.en}; BAS är valt.', T));
     }
     return { modell, varningar };
 }
@@ -91,18 +114,18 @@ export function modellVariabler(m) {
 export function modellFras(m) {
     const delar = [];
     if (m && m.alder) delar.push('ålder');
-    if (m && m.bas) delar.push('BAS-intervall');
-    if (m && m.yrkesgrupp) delar.push('yrkesgrupp');
+    if (m && m.bas) delar.push(T.niva.en);
+    if (m && m.yrkesgrupp) delar.push(T.enhet.en);
     if (delar.length <= 1) return delar.join('');
     return `${delar.slice(0, -1).join(', ')} och ${delar[delar.length - 1]}`;
 }
 
-/** Modellen i ord för modelDesc och rapporten: "kön + ålder + BAS-intervall (indikatorer)". */
+/** Modellen i ord för modelDesc och rapporten: "kön + ålder + BAS-intervall (indikatorer)" (orden ur termerna). */
 export function modellBeskrivning(m) {
     const delar = ['kön'];
     if (m && m.alder) delar.push('ålder');
-    if (m && m.bas) delar.push('BAS-intervall (indikatorer)');
-    if (m && m.yrkesgrupp) delar.push('yrkesgrupp inom BAS (fasta effekter)');
+    if (m && m.bas) delar.push(`${T.niva.en} (indikatorer)`);
+    if (m && m.yrkesgrupp) delar.push(`${T.enhet.en} inom BAS (fasta effekter)`);
     return delar.join(' + ');
 }
 
@@ -118,8 +141,8 @@ export function diagnoseCollinearity(rows, basList) {
         const hasMa = sub.some(d => d.kon === 'man' || d.kon === 'män');
         if (!hasKv || !hasMa) singleSexBas++;
     });
-    if (singleSexBas > 0) issues.push(`<strong>${singleSexBas}</strong> BAS-intervall är helt enkönade – könseffekten kan inte estimeras inom dessa.`);
-    if (basList.length < 2) issues.push(`Endast <strong>${basList.length}</strong> BAS-intervall i urvalet – ingen variation att estimera BAS-effekten med.`);
+    if (singleSexBas > 0) issues.push(`<strong>${singleSexBas}</strong> ${T.niva.fl} är helt enkönade – könseffekten kan inte estimeras inom dessa.`);
+    if (basList.length < 2) issues.push(`Endast <strong>${basList.length}</strong> ${ordForAntal(basList.length, T.niva)} i urvalet – ingen variation att estimera BAS-effekten med.`);
     if (rows.length < 50)  issues.push(`Litet urval (n=${rows.length}) – kan ge instabila estimat.`);
     return issues;
 }
@@ -240,7 +263,7 @@ function _sekvensRigg(rows0, ageMean, basList, { medAlder = harAlderIRader(rows0
     const kolumn = { bas: i => basD[i], alder: i => [ageC[i]] };
     /** @param {string[]} vars @param {(i:number) => number[]} [extra] */
     const bygg = (vars, extra = () => []) => rows.map((_, i) => [1, isKv[i], ...vars.flatMap(v => kolumn[v](i)), ...extra(i)]);
-    const namn = { bas: '+ BAS-intervall', alder: '+ Ålder' };
+    const namn = { bas: STEG_BAS, alder: '+ Ålder' };
     /** @param {string[]} vars */
     const steg = vars => [{ name: 'Endast kön', X: bygg([]) }, ...vars.map((v, j) => ({ name: namn[v], X: bygg(vars.slice(0, j + 1)) }))];
     /** @param {{name:string, X:number[][]}} s @returns {{name:string, status:string, gapPct?:number, R2?:number, k?:number, nGrupper?:number, nGrupperBada?:number, nPersoner?:number, nEnkonade?:number}} */
@@ -275,7 +298,7 @@ function _sekvensRigg(rows0, ageMean, basList, { medAlder = harAlderIRader(rows0
  * @returns {{name:string, status:string, gapPct?:number, R2?:number, k?:number,
  *           nGrupper?:number, nGrupperBada?:number, nPersoner?:number, nEnkonade?:number}}
  */
-export function computeYrkesgruppGap(rows, y, isKv, ageC, { medAlder = true, extra = null, name = '+ Yrkesgrupp' } = {}) {
+export function computeYrkesgruppGap(rows, y, isKv, ageC, { medAlder = true, extra = null, name = STEG_YRKE } = {}) {
     if (!rows.some(d => d.aid || d.yrke)) return { name, status: 'too_few', nGrupper: 0, nGrupperBada: 0, nPersoner: 0, nEnkonade: 0 };
     // Kolumnerna som inomtransformeras: kön, (ålder), (extra kolumner, t.ex. ansvarsindikatorer).
     const kol = rows.map((_, i) => [isKv[i], ...(medAlder ? [ageC[i]] : []), ...(extra ? extra[i] : [])]);

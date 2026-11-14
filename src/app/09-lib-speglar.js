@@ -2438,6 +2438,9 @@ const __mirrorRegression = (() => {
     const matMul = __mirrorStat.matMul;
     const pValue2Sided = __mirrorStat.pValue2Sided;
     const tQuantile = __mirrorStat.tQuantile;
+    const skapaTermer = __mirrorTermer.skapaTermer;
+    const fyllTermer = __mirrorTermer.fyllTermer;
+    const ordForAntal = __mirrorTermer.ordForAntal;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -2458,6 +2461,29 @@ const __mirrorRegression = (() => {
  * @see 50-regressionsmodeller.js (adaptern i appen)
  */
 
+
+
+/** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
+const T = skapaTermer();
+
+// Stegens namn i den sekventiella dekomponeringen är nycklar: kortet, rapporten, exporten och testerna slår upp stegen
+// på dem, så de står kvar oförändrade. Det som visas för ett steg kommer ur termerna (stegEtikett, ADR-74).
+const STEG_BAS = '+ BAS-intervall';
+const STEG_YRKE = '+ Yrkesgrupp';
+/** Stegets namn som det visas: STEG_YRKE blir "+ AID-etikett inom BAS", STEG_BAS "+ BAS-intervall"; övriga som de är. */
+function stegEtikett(namn) {
+    if (namn === STEG_YRKE) return `+ ${T.enhet.en} inom BAS`;
+    if (namn === STEG_BAS) return `+ ${T.niva.en}`;
+    return namn;
+}
+/**
+ * Nyckeln för stegets namn per variabel, för appen som slår upp stegen på den.
+ * @param {'bas'|'yrkesgrupp'} variabel
+ * @returns {string}
+ */
+function stegNamn(variabel) {
+    return variabel === 'bas' ? STEG_BAS : STEG_YRKE;
+}
 
 // ---- Förklaringsmodellen som värde (ADR-56) ----
 // Vilka variabler huvudregressionen, trappan och Blinder-Oaxaca räknar bort utöver kön. Standard är ADR-44/46/53-modellen:
@@ -2506,11 +2532,11 @@ function normaliseraForklaringsmodell(v, { harYrke = true, harAlder = true } = {
         skal: typeof v.skal === 'string' ? v.skal.slice(0, SKAL_MAX) : '' });
     if (modell.yrkesgrupp && !harYrke) {
         modell.yrkesgrupp = false;
-        varningar.push('Yrkesgrupp inom BAS kan inte väljas: lönefilen saknar AID och yrke.');
+        varningar.push(fyllTermer('{Enhet.en} inom BAS kan inte väljas: lönefilen saknar {kod.en} och {namn.en}.', T));
     }
     if (modell.yrkesgrupp && !modell.bas) {
         modell.bas = true;
-        varningar.push('Yrkesgrupp inom BAS förutsätter BAS-intervall; BAS är valt.');
+        varningar.push(fyllTermer('{Enhet.en} inom BAS förutsätter {niva.en}; BAS är valt.', T));
     }
     return { modell, varningar };
 }
@@ -2531,18 +2557,18 @@ function modellVariabler(m) {
 function modellFras(m) {
     const delar = [];
     if (m && m.alder) delar.push('ålder');
-    if (m && m.bas) delar.push('BAS-intervall');
-    if (m && m.yrkesgrupp) delar.push('yrkesgrupp');
+    if (m && m.bas) delar.push(T.niva.en);
+    if (m && m.yrkesgrupp) delar.push(T.enhet.en);
     if (delar.length <= 1) return delar.join('');
     return `${delar.slice(0, -1).join(', ')} och ${delar[delar.length - 1]}`;
 }
 
-/** Modellen i ord för modelDesc och rapporten: "kön + ålder + BAS-intervall (indikatorer)". */
+/** Modellen i ord för modelDesc och rapporten: "kön + ålder + BAS-intervall (indikatorer)" (orden ur termerna). */
 function modellBeskrivning(m) {
     const delar = ['kön'];
     if (m && m.alder) delar.push('ålder');
-    if (m && m.bas) delar.push('BAS-intervall (indikatorer)');
-    if (m && m.yrkesgrupp) delar.push('yrkesgrupp inom BAS (fasta effekter)');
+    if (m && m.bas) delar.push(`${T.niva.en} (indikatorer)`);
+    if (m && m.yrkesgrupp) delar.push(`${T.enhet.en} inom BAS (fasta effekter)`);
     return delar.join(' + ');
 }
 
@@ -2558,8 +2584,8 @@ function diagnoseCollinearity(rows, basList) {
         const hasMa = sub.some(d => d.kon === 'man' || d.kon === 'män');
         if (!hasKv || !hasMa) singleSexBas++;
     });
-    if (singleSexBas > 0) issues.push(`<strong>${singleSexBas}</strong> BAS-intervall är helt enkönade – könseffekten kan inte estimeras inom dessa.`);
-    if (basList.length < 2) issues.push(`Endast <strong>${basList.length}</strong> BAS-intervall i urvalet – ingen variation att estimera BAS-effekten med.`);
+    if (singleSexBas > 0) issues.push(`<strong>${singleSexBas}</strong> ${T.niva.fl} är helt enkönade – könseffekten kan inte estimeras inom dessa.`);
+    if (basList.length < 2) issues.push(`Endast <strong>${basList.length}</strong> ${ordForAntal(basList.length, T.niva)} i urvalet – ingen variation att estimera BAS-effekten med.`);
     if (rows.length < 50)  issues.push(`Litet urval (n=${rows.length}) – kan ge instabila estimat.`);
     return issues;
 }
@@ -2680,7 +2706,7 @@ function _sekvensRigg(rows0, ageMean, basList, { medAlder = harAlderIRader(rows0
     const kolumn = { bas: i => basD[i], alder: i => [ageC[i]] };
     /** @param {string[]} vars @param {(i:number) => number[]} [extra] */
     const bygg = (vars, extra = () => []) => rows.map((_, i) => [1, isKv[i], ...vars.flatMap(v => kolumn[v](i)), ...extra(i)]);
-    const namn = { bas: '+ BAS-intervall', alder: '+ Ålder' };
+    const namn = { bas: STEG_BAS, alder: '+ Ålder' };
     /** @param {string[]} vars */
     const steg = vars => [{ name: 'Endast kön', X: bygg([]) }, ...vars.map((v, j) => ({ name: namn[v], X: bygg(vars.slice(0, j + 1)) }))];
     /** @param {{name:string, X:number[][]}} s @returns {{name:string, status:string, gapPct?:number, R2?:number, k?:number, nGrupper?:number, nGrupperBada?:number, nPersoner?:number, nEnkonade?:number}} */
@@ -2715,7 +2741,7 @@ function _sekvensRigg(rows0, ageMean, basList, { medAlder = harAlderIRader(rows0
  * @returns {{name:string, status:string, gapPct?:number, R2?:number, k?:number,
  *           nGrupper?:number, nGrupperBada?:number, nPersoner?:number, nEnkonade?:number}}
  */
-function computeYrkesgruppGap(rows, y, isKv, ageC, { medAlder = true, extra = null, name = '+ Yrkesgrupp' } = {}) {
+function computeYrkesgruppGap(rows, y, isKv, ageC, { medAlder = true, extra = null, name = STEG_YRKE } = {}) {
     if (!rows.some(d => d.aid || d.yrke)) return { name, status: 'too_few', nGrupper: 0, nGrupperBada: 0, nPersoner: 0, nEnkonade: 0 };
     // Kolumnerna som inomtransformeras: kön, (ålder), (extra kolumner, t.ex. ansvarsindikatorer).
     const kol = rows.map((_, i) => [isKv[i], ...(medAlder ? [ageC[i]] : []), ...(extra ? extra[i] : [])]);
@@ -3022,7 +3048,7 @@ function quantileRegressionAtAllTau(rows, { modell = FORKLARINGSMODELL_STANDARD,
     return { results, diffP90P10, kolumner: d.kolumner, n: d.rader.length, nKv, nMa: d.rader.length - nKv };
 }
 
-    return { diagnoseCollinearity, computePerBasGap, basIndikatorer, computeSequentialGap, quantileRegression, blinderOaxaca, quantileRegressionAtAllTau, kvantilDesign, computeVariabelTillfor, normaliseraForklaringsmodell, inomYrkesgrupp, forklaringsmodellArStandard, modellVariabler, modellFras, modellBeskrivning, tillforGransPp, harAlderIRader };
+    return { diagnoseCollinearity, computePerBasGap, basIndikatorer, computeSequentialGap, quantileRegression, blinderOaxaca, quantileRegressionAtAllTau, kvantilDesign, computeVariabelTillfor, normaliseraForklaringsmodell, inomYrkesgrupp, forklaringsmodellArStandard, modellVariabler, modellFras, modellBeskrivning, tillforGransPp, harAlderIRader, stegNamn, stegEtikett };
 })();
 const _rgDiagnoseCollinearity = __mirrorRegression.diagnoseCollinearity;
 const _rgComputePerBasGap = __mirrorRegression.computePerBasGap;
@@ -3041,6 +3067,8 @@ const _rgModellFras = __mirrorRegression.modellFras;
 const _rgModellBeskrivning = __mirrorRegression.modellBeskrivning;
 const _rgTillforGransPp = __mirrorRegression.tillforGransPp;
 const _rgHarAlderIRader = __mirrorRegression.harAlderIRader;
+const _rgStegNamn = __mirrorRegression.stegNamn;
+const _rgStegEtikett = __mirrorRegression.stegEtikett;
 
 // ---- speglar src/lib/lonepolitik.js ----
 const __mirrorLonepolitik = (() => {
@@ -3431,6 +3459,7 @@ const __mirrorLivscykel = (() => {
     const pValue2Sided = __mirrorStat.pValue2Sided;
     const tQuantile = __mirrorStat.tQuantile;
     const statusNiva = __mirrorStatus.statusNiva;
+    const skapaTermer = __mirrorTermer.skapaTermer;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -3449,6 +3478,10 @@ const __mirrorLivscykel = (() => {
  */
 
 
+
+
+/** Standardtermerna (ADR-74). */
+const T = skapaTermer();
 
 /**
  * Trappans nivå för skillnaden vid en ålder (ADR-59, ADR-71): avståndet från lika lön är |gapPct|, och skillnaden är
@@ -3495,7 +3528,7 @@ function livscykelRegression(rader, { fixBas, golv }) {
     if (kvN < golv || maN < golv) return { error: `Otillräcklig könsbalans (${kvN} kvinnor, ${maN} män). Minst ${golv} av varje krävs för interaktions-modell.`, errorCode: 'imbalance' };
 
     const basList = [...new Set(raw.map(d => d.bas))].sort();
-    if (basList.length < 2) return { error: 'Minst 2 BAS-intervall krävs för kategorisk kodning.', errorCode: 'single_bas' };
+    if (basList.length < 2) return { error: `Minst 2 ${T.niva.fl} krävs för kategorisk kodning.`, errorCode: 'single_bas' };
 
     // Välj default fixBas = mest folkrika BAS i organisationen om inte angivet
     if (!fixBas || !basList.includes(fixBas)) {
@@ -4923,6 +4956,8 @@ const __mirrorGapuppdelning = (() => {
     // importer ur tidigare speglade lib-moduler
     const groupKey = __mirrorFalt.groupKey;
     const konOf = __mirrorFalt.konOf;
+    const skapaTermer = __mirrorTermer.skapaTermer;
+    const stor = __mirrorTermer.stor;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -4950,6 +4985,10 @@ const __mirrorGapuppdelning = (() => {
  */
 
 
+
+/** Standardtermerna (ADR-74). */
+const T = skapaTermer();
+
 /** Variablerna i den ordning gränssnittet visar dem. */
 const GAP_VARIABLER = ['bas', 'sektor', 'aidniva', 'aid', 'alder'];
 const GAP_VARIABLER_STANDARD = ['bas', 'aid'];
@@ -4962,12 +5001,13 @@ const GAP_MAX = 4;
 const AID_NIVAER = ['sektor', 'aidniva', 'aid'];
 
 // Ord per variabel: etikett (kryssrutan), liten (i löptext: "inom samma …"), fordelning (del 1), over ("fördelade över …"
-// i kortet), overKort (samma i rapportunderlaget), olika ("har olika … inom samma"), post (en grupps namn).
+// i kortet), overKort (samma i rapportunderlaget), olika ("har olika … inom samma"), post (en grupps namn). Sektor är
+// AID:s huvudområde; orden för det, BAS-intervallet och AID-koden kommer ur termerna (ADR-74).
 const ORD = {
-    bas: { etikett: 'BAS', liten: 'BAS', fordelning: 'BAS-fördelning', over: 'BAS-intervallen', overKort: 'BAS', olika: 'BAS', post: n => `BAS ${n}` },
-    sektor: { etikett: 'Sektor', liten: 'sektor', fordelning: 'Sektorsfördelning', over: 'sektorerna', overKort: 'sektorer', olika: 'sektor', post: n => n },
+    bas: { etikett: 'BAS', liten: 'BAS', fordelning: 'BAS-fördelning', over: T.niva.bfl, overKort: 'BAS', olika: 'BAS', post: n => `BAS ${n}` },
+    sektor: { etikett: stor(T.huvudomrade.en), liten: T.huvudomrade.en, fordelning: `Fördelning över ${T.huvudomrade.fl}`, over: T.huvudomrade.bfl, overKort: T.huvudomrade.fl, olika: T.huvudomrade.en, post: n => n },
     aidniva: { etikett: 'AID-mellannivå', liten: 'AID-mellannivå', fordelning: 'Fördelning över AID-mellannivåer', over: 'AID-mellannivåerna', overKort: 'AID-mellannivåer', olika: 'AID-mellannivå', post: n => n },
-    aid: { etikett: 'AID', liten: 'AID', fordelning: 'AID-fördelning', over: 'AID-koderna', overKort: 'AID', olika: 'AID', post: n => n },
+    aid: { etikett: 'AID', liten: 'AID', fordelning: 'AID-fördelning', over: T.kod.bfl, overKort: 'AID', olika: 'AID', post: n => n },
     alder: { etikett: 'Åldersgrupp', liten: 'åldersgrupp', fordelning: 'Åldersfördelning', over: 'åldersgrupperna', overKort: 'åldersgrupper', olika: 'ålder', post: n => n === '—' ? 'ålder saknas' : `${n} år` },
 };
 

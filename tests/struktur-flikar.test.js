@@ -88,7 +88,7 @@ describe('Uppgift 2: Lönestruktur', () => {
         expect(d.getElementById('avsnitt-st-representation').nextElementSibling).toBe(karta);
         // Yrkesgrupperna: ett yrke inom ett BAS-intervall, som kartans ytor.
         const n = new Set(w.__state.data.map(r => `${r.aid}|${r.bas}`)).size;
-        expect(d.getElementById('nyckel-st-karta').textContent).toBe(`${n} yrkesgrupper`);
+        expect(d.getElementById('nyckel-st-karta').textContent).toBe(`${n} AID-etiketter`);
         // Hopfällt men ritat: rapportmodellen och ZIP-exporten tar diagrammet ur avsnittet.
         expect(w.eval('diagramRitat(document.getElementById("chart-struktur-tradkarta"))')).toBe(true);
         expect(w.eval('RM_DIAGRAM').find(r => r.id === 'chart-struktur-tradkarta').flik).toBe('struktur');

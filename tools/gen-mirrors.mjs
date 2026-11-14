@@ -34,7 +34,8 @@ const outFile = join(root, 'src', 'app', '09-lib-speglar.js');
 // inget alias.
 export const MODULES = [
     {
-        // Termerna (ADR-74): först, så att varje senare lib-modul kan importera dem; namn.js importerar genitiv
+        // Termerna (ADR-74): först, så att varje senare lib-modul kan importera dem; namn.js importerar genitiv, och
+        // modulerna som skriver text (regression.js m.fl.) hämtar standarduppsättningen med skapaTermer()
         file: 'termer.js', ns: '__mirrorTermer',
         expose: { skapaTermer: '_tmSkapa', fyllTermer: '_tmFyll', termFras: 'termFras', artikel: 'termArtikel',
                   adjektiv: 'termAdjektiv', genitiv: 'termGenitiv', stor: 'termStor', ordForAntal: 'termForAntal' }
@@ -108,7 +109,9 @@ export const MODULES = [
             forklaringsmodellArStandard: '_rgForklaringsmodellArStandard', modellVariabler: '_rgModellVariabler',
             modellFras: '_rgModellFras', modellBeskrivning: '_rgModellBeskrivning', tillforGransPp: '_rgTillforGransPp',
             // Ålder valfri (ADR-64)
-            harAlderIRader: '_rgHarAlderIRader'
+            harAlderIRader: '_rgHarAlderIRader',
+            // Stegens nycklar och det som visas för dem (ADR-74)
+            stegNamn: '_rgStegNamn', stegEtikett: '_rgStegEtikett'
         }
     },
     {

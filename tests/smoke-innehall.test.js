@@ -498,10 +498,10 @@ describe('steget + Yrkesgrupp: fasta effekter för AID×BAS med inomtransformati
         w.eval('renderRegressionCard()');
         const kort = w.document.getElementById('regression-card');
         const t = kort.textContent.replace(/\s+/g, ' ');
-        expect(t).toMatch(/löneskillnaden mellan kvinnor och män med samma yrkesgrupp, BAS-intervall och ålder/);
-        expect(t).toMatch(/Bygger på 114 personer i 4 yrkesgrupper där båda könen finns; 1 enkönade grupper bidrar inte/);
-        expect(t).toMatch(/Huvudtalet ovan räknar inte bort yrkesgruppen/);
-        expect(kort.querySelector('.reg-budget-legend').textContent).toMatch(/Förklaras av yrkesgrupp inom BAS/);
+        expect(t).toMatch(/löneskillnaden mellan kvinnor och män med samma AID-etikett, BAS-intervall och ålder/);
+        expect(t).toMatch(/Bygger på 114 personer i 4 grupper \(samma AID-etikett i samma BAS-intervall\) där båda könen finns; 1 enkönade grupper bidrar inte/);
+        expect(t).toMatch(/Huvudtalet ovan räknar inte bort AID-etiketten/);
+        expect(kort.querySelector('.reg-budget-legend').textContent).toMatch(/Förklaras av AID-etikett inom BAS/);
         expect(kort.querySelector('.step-final .step-name').textContent).toMatch(/BAS-intervall och ålder \(full modell\)/);
         expect(kort.querySelector('.step-yrke')).not.toBeNull();
         expect(kort.querySelector('.reg-number, .reg-headline, .step-final .step-value').textContent).toContain(Math.abs(r.konPct).toFixed(2).replace('.', ','));
@@ -721,7 +721,7 @@ describe('förklaringsmodellen i tillstånd och konfigurationsfil (ADR-56)', () 
         w2.__state.data = Array.from({ length: 120 }, (_, i) => rad(i % 2 ? 'kvinna' : 'man', 30000 + (i % 3) * 2000 + (i % 7) * 100, i));
         const r = w2.eval('sattForklaringsmodell({ bas: true, alder: true, yrkesgrupp: true, skal: "" }, { rita: false })');
         expect(r.modell.yrkesgrupp).toBe(false);
-        expect(r.varningar.join(' ')).toMatch(/AID och yrke/);
+        expect(r.varningar.join(' ')).toMatch(/AID-kod och etikettnamn/);
     });
 });
 
@@ -768,8 +768,8 @@ describe('runOLSRegression på vald modell (ADR-56)', () => {
         const std = kor(null).r;
         const { r } = kor({ bas: true, alder: true, yrkesgrupp: true, skal: '' });
         expect(r.konPct).toBeCloseTo(std.yrkesSteg.gapPct, 6);
-        expect(r.fras).toBe('ålder, BAS-intervall och yrkesgrupp');
-        expect(r.modelDesc).toBe('kön + ålder + BAS-intervall (indikatorer) + yrkesgrupp inom BAS (fasta effekter)');
+        expect(r.fras).toBe('ålder, BAS-intervall och AID-etikett');
+        expect(r.modelDesc).toBe('kön + ålder + BAS-intervall (indikatorer) + AID-etikett inom BAS (fasta effekter)');
         expect(r.sequential.at(-1).name).toBe('+ Yrkesgrupp');
         expect(r.yrkesSteg.status).toBe('ok');
         expect(r.bortvalt).toEqual([]);
@@ -898,7 +898,7 @@ describe('avsnittet följer modellen (ADR-56)', () => {
         expect(kortText).toMatch(/Efter kontroll för BAS-intervall/);
         expect(kortText).toMatch(/när BAS-intervall räknats bort/);
         expect(figur).not.toBeNull();
-        expect(figur.x.ordning).toEqual(['Ojusterad skillnad', 'BAS-intervall', 'Oförklarad skillnad', 'Yrkesgrupp inom BAS']);
+        expect(figur.x.ordning).toEqual(['Ojusterad skillnad', 'BAS-intervall', 'Oförklarad skillnad', 'AID-etikett inom BAS']);
         expect(oaxText).toMatch(/Förklarat av BAS-intervall/);
         expect([...oax.querySelectorAll('tbody td:first-child')].map(td => td.textContent)).not.toContain('Ålder');
         expect(oaxText).toMatch(/Ålder har kontrollerats/);
@@ -911,18 +911,18 @@ describe('avsnittet följer modellen (ADR-56)', () => {
     });
     it('yrkesgrupp vald: ordinarie steg i trappan, och Oaxaca har raden Yrkesgrupp inom BAS i stället för BAS-intervall', () => {
         const { kortText, oax, figur } = rita({ bas: true, alder: true, yrkesgrupp: true, skal: '' });
-        expect(figur.x.ordning).toEqual(['Ojusterad skillnad', 'BAS-intervall', 'Ålder', 'Yrkesgrupp inom BAS', 'Oförklarad skillnad']);
+        expect(figur.x.ordning).toEqual(['Ojusterad skillnad', 'BAS-intervall', 'Ålder', 'AID-etikett inom BAS', 'Oförklarad skillnad']);
         expect(figur.lager.some(l => /ingår inte i huvudtalet/.test(l.serie))).toBe(false);
         expect(kortText).not.toMatch(/ingår inte i huvudtalet/);
-        expect(kortText).toMatch(/ålder, BAS-intervall och yrkesgrupp räknats bort/);
+        expect(kortText).toMatch(/ålder, BAS-intervall och AID-etikett räknats bort/);
         const rader = [...oax.querySelectorAll('tbody td:first-child')].map(td => td.textContent);
-        expect(rader.some(t => /Yrkesgrupp inom BAS/.test(t))).toBe(true);
+        expect(rader.some(t => /AID-etikett inom BAS/.test(t))).toBe(true);
         expect(rader.some(t => /^BAS-intervall/.test(t))).toBe(false);
     });
     it('standardläget är som förut', () => {
         const { kortText, figur, oaxText } = rita(null);
         expect(kortText).toMatch(/när ålder och BAS-intervall räknats bort/);
-        expect(figur.x.ordning).toEqual(['Ojusterad skillnad', 'BAS-intervall', 'Ålder', 'Oförklarad skillnad', 'Yrkesgrupp inom BAS']);
+        expect(figur.x.ordning).toEqual(['Ojusterad skillnad', 'BAS-intervall', 'Ålder', 'Oförklarad skillnad', 'AID-etikett inom BAS']);
         expect(oaxText).toMatch(/Förklarat av ålder och BAS-intervall/);
     });
 });
@@ -982,7 +982,7 @@ describe('metodbilagan följer förklaringsmodellen (ADR-56)', () => {
         const blad = w.eval('_excelAlltBok()').Sheets['Metod & parametrar'];
         const rader = w.XLSX.utils.sheet_to_json(blad, { header: 1, raw: true });
         const rad = namn => (rader.find(r => r[0] === namn) || [])[1];
-        return { w, modellRad: rad('Modell — oförklarad skillnad'), stegRad: rad('Steg + Yrkesgrupp (dekomponeringen)') };
+        return { w, modellRad: rad('Modell — oförklarad skillnad'), stegRad: rad('Steg + AID-etikett inom BAS (dekomponeringen)') };
     };
     it('ålder bortvald: modellen saknar ålder, och steget + Yrkesgrupp räknas utan ålder', async () => {
         const { w, modellRad, stegRad } = await metodrader({ bas: true, alder: false, yrkesgrupp: false, skal: '' });
@@ -1004,7 +1004,7 @@ describe('metodbilagan följer förklaringsmodellen (ADR-56)', () => {
     it('yrkesgrupp vald: modellen har yrkesgrupp inom BAS och inomtransformation, och steget är huvudtalet', async () => {
         const { w, modellRad, stegRad } = await metodrader({ bas: true, alder: true, yrkesgrupp: true, skal: '' });
         expect(w.eval('runOLSRegression().modell.yrkesgrupp')).toBe(true);
-        expect(modellRad).toMatch(/yrkesgrupp inom BAS/);
+        expect(modellRad).toMatch(/AID-etikett inom BAS/);
         expect(modellRad).toMatch(/inomtransformation/);
         expect(stegRad).not.toMatch(/ingår inte i huvudtalet/);
         expect(stegRad).toMatch(/huvudtalet/);
@@ -1012,12 +1012,12 @@ describe('metodbilagan följer förklaringsmodellen (ADR-56)', () => {
     it('standardmodellen: raderna är som förut', async () => {
         const { modellRad, stegRad } = await metodrader(null);
         expect(modellRad).toBe('OLS på log(månadslön) ~ kön + ålder + BAS-intervall (indikatorvariabler, första BAS som referens); HC3-robusta standardfel (Long & Ervin 2000)');
-        expect(stegRad).toBe('Löneskillnad mellan könen med fasta effekter för yrkesgrupp inom BAS (AID×BAS) utöver ålder, skattat med inomtransformation; visas som sista steg, ingår inte i huvudtalet');
+        expect(stegRad).toBe('Löneskillnad mellan könen med fasta effekter för AID-etikett inom BAS (AID×BAS) utöver ålder, skattat med inomtransformation; visas som sista steg, ingår inte i huvudtalet');
     });
     it('lönefil utan ålder: raderna är som förut (ADR-64)', async () => {
         const { modellRad, stegRad } = await metodrader(null, { utanAlder: true });
         expect(modellRad).toBe('OLS på log(månadslön) ~ kön + BAS-intervall (indikatorer); lönefilen saknar ålder, så analysen körs utan åldersjustering; HC3-robusta standardfel (Long & Ervin 2000)');
-        expect(stegRad).toBe('Löneskillnad mellan könen med fasta effekter för yrkesgrupp inom BAS (AID×BAS), utan ålder (lönefilen saknar ålder), skattat med inomtransformation; visas som sista steg, ingår inte i huvudtalet');
+        expect(stegRad).toBe('Löneskillnad mellan könen med fasta effekter för AID-etikett inom BAS (AID×BAS), utan ålder (lönefilen saknar ålder), skattat med inomtransformation; visas som sista steg, ingår inte i huvudtalet');
     });
 });
 
@@ -1033,23 +1033,23 @@ describe('meningen under steget + Yrkesgrupp följer förklaringsmodellen (ADR-5
     };
     it('ålder bortvald: meningen säger inte "och ålder"', () => {
         const { kortNot, bilaga } = rita({ bas: true, alder: false, yrkesgrupp: false, skal: '' });
-        expect(kortNot).toMatch(/samma yrkesgrupp, BAS-intervall \(/);
+        expect(kortNot).toMatch(/samma AID-etikett, BAS-intervall \(/);
         expect(kortNot).not.toMatch(/och ålder/);
-        expect(bilaga).toMatch(/Steget \+ Yrkesgrupp: [^"]*samma yrkesgrupp, BAS-intervall \(/);
-        expect(bilaga).toMatch(/Huvudtalet ovan räknar inte bort yrkesgruppen/);
+        expect(bilaga).toMatch(/Steget \+ AID-etikett inom BAS: [^"]*samma AID-etikett, BAS-intervall \(/);
+        expect(bilaga).toMatch(/Huvudtalet ovan räknar inte bort AID-etiketten/);
     });
     it('yrkesgrupp vald: meningen säger inte att huvudtalet låter bli att räkna bort yrkesgruppen', () => {
         const { kortNot, bilaga } = rita({ bas: true, alder: true, yrkesgrupp: true, skal: '' });
-        expect(kortNot).toMatch(/samma yrkesgrupp, BAS-intervall och ålder/);
-        expect(kortNot).not.toMatch(/räknar inte bort yrkesgruppen/);
-        expect(bilaga).toMatch(/Steget \+ Yrkesgrupp: /);
-        expect(bilaga).not.toMatch(/räknar inte bort yrkesgruppen/);
+        expect(kortNot).toMatch(/samma AID-etikett, BAS-intervall och ålder/);
+        expect(kortNot).not.toMatch(/räknar inte bort AID-etiketten/);
+        expect(bilaga).toMatch(/Steget \+ AID-etikett inom BAS: /);
+        expect(bilaga).not.toMatch(/räknar inte bort AID-etiketten/);
     });
     it('standardmodellen: meningen är som förut', () => {
         const { kortNot, bilaga } = rita(null);
-        expect(kortNot).toMatch(/samma yrkesgrupp, BAS-intervall och ålder \(fasta effekter för yrkesgrupp inom BAS\)/);
-        expect(kortNot).toMatch(/Huvudtalet ovan räknar inte bort yrkesgruppen\.$/);
-        expect(bilaga).toMatch(/Huvudtalet ovan räknar inte bort yrkesgruppen/);
+        expect(kortNot).toMatch(/samma AID-etikett, BAS-intervall och ålder \(fasta effekter för AID-etikett inom BAS\)/);
+        expect(kortNot).toMatch(/Huvudtalet ovan räknar inte bort AID-etiketten\.$/);
+        expect(bilaga).toMatch(/Huvudtalet ovan räknar inte bort AID-etiketten/);
     });
 });
 

@@ -474,7 +474,7 @@ describe('regressionskortet: BH-texten räknar testerna, budgeten säger att ord
         w.__renderTabContent('struktur');
         const budget = w.document.querySelector('#regression-card .reg-budget');
         expect(budget).not.toBeNull();
-        expect(normalisera(budget.textContent).replace(/\s+/g, ' ')).toMatch(/Stegen läggs till i ordningen BAS, ålder(, yrkesgrupp inom BAS)?; vad som tillskrivs varje steg beror på ordningen\. Kortet Vad varje variabel tillför mäter varje variabel ovanpå alla andra\./);
+        expect(normalisera(budget.textContent).replace(/\s+/g, ' ')).toMatch(/Stegen läggs till i ordningen BAS, ålder(, AID-etikett inom BAS)?; vad som tillskrivs varje steg beror på ordningen\. Kortet Vad varje variabel tillför mäter varje variabel ovanpå alla andra\./);
     });
     it('Lika arbetes nyckeltal efter ålder och BAS-intervall varnar i verktygstipset när ett kön har färre än 10 i modellen', () => {
         const tips = w => { w.__renderTabContent('matrix');

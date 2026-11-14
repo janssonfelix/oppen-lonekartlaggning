@@ -53,7 +53,7 @@ function renderStructure() {
     const repVisade = rep.filter(g => !isKMasked(g.n));
     const repUtelamnade = rep.filter(g => isKMasked(g.n)).map(g => g.bas);
     if (repEl) repEl.innerHTML = `
-        <p class="text-dampad-sm marg-0-0-10">Andel kvinnor per BAS-intervall, i ordning A–Ö. Sjunker andelen kvinnor mot högre BAS-intervall (längre ner i tabellen) finns <strong>vertikal könssegregering</strong> (glastak). Det är en strukturell orsak till löneskillnaden.</p>
+        <p class="text-dampad-sm marg-0-0-10">Andel kvinnor per ${T.niva.en}, i ordning A–Ö. Sjunker andelen kvinnor mot högre ${T.niva.fl} (längre ner i tabellen) finns <strong>vertikal könssegregering</strong> (glastak). Det är en strukturell orsak till löneskillnaden.</p>
         ${repVisade.length ? `<table class="data-table st-088"><thead><tr><th>BAS</th><th class="t-hoger">n</th><th class="t-hoger">Median</th><th class="t-hoger">Andel kvinnor</th><th class="bredd-34p">Andel kvinnor (mot ${svPct(totAndel, 0)} totalt)</th><th class="t-hoger">Kvinnors median i % av mäns</th></tr></thead><tbody>
         ${repVisade.map(g => {
             const over = g.andelKv > totAndel + 10, under = g.andelKv < totAndel - 10;
@@ -63,8 +63,8 @@ function renderStructure() {
             <td class="t-hoger">${andelAvMan(g.gapPct)}${g.gapPct != null ? _direktivInline(100 + g.gapPct) : ''}</td></tr>`;
         }).join('')}
         </tbody></table>` : ''}
-        ${kMaskNote(repUtelamnade, 'BAS-intervall|BAS-intervall')}
-        ${kSamladNote(repVisade.filter(g => g.konLitet).map(g => g.bas), 'BAS-intervall|BAS-intervall')}`; if (repEl) tillampaDataStil(repEl);
+        ${kMaskNote(repUtelamnade, `${T.niva.en}|${T.niva.fl}`)}
+        ${kSamladNote(repVisade.filter(g => g.konLitet).map(g => g.bas), `${T.niva.en}|${T.niva.fl}`)}`; if (repEl) tillampaDataStil(repEl);
 
     // (3) Distributionellt gap
     if (distEl) {
@@ -152,7 +152,8 @@ function _stUtkastPerBas(k) {
     if (typeof basdossierKandidater !== 'function') return null;
     const kand = basdossierKandidater();
     if (!kand.length) return null;
-    const lines = ['PER BAS-INTERVALL', `Ett stycke per BAS-intervall med minst ${k} ${personOrd(k)}: antal och könsfördelning, ${state.policy.length ? 'läget mot ställningstagandet, ' : ''}yrkesgrupperna, likvärdigt arbete, ålder och förra året när ett bokslut är inläst. Yrkesgrupper med färre än ${k} ${personOrd(k)} står bara med namn.`];
+    const policyDel = state.policy.length ? 'läget mot ställningstagandet, ' : '';
+    const lines = [`PER ${T.niva.en.toLocaleUpperCase('sv')}`, `Ett stycke per ${T.niva.en} med minst ${k} ${personOrd(k)}: antal och könsfördelning, ${policyDel}${T.enhet.bfl}, likvärdigt arbete, ålder och förra året när ett bokslut är inläst. ${termStor(T.enhet.fl)} med färre än ${k} ${personOrd(k)} står bara med namn.`];
     const under = basdossierUtelamnade();
     if (under.length) lines.push(`BAS ${under.join(', ')} redovisas inte (färre än ${k} ${personOrd(k)}).`);
     for (const { bas } of kand) {
@@ -180,10 +181,10 @@ function _stRitaTopp(d, m) {
     if (!urval || !host) return;
     if (!m) { urval.textContent = ''; host.innerHTML = ''; ['representation', 'karta', 'fordelning', 'eu'].forEach(n => _laNyckel(`nyckel-st-${n}`, '')); return; }
     urval.innerHTML = `<span><strong>Hela urvalet</strong> · ${svTal(d.length, 0)} personer</span>${kTroskelLank()}`;
-    _laNyckel('nyckel-st-representation', `${m.basAntal} BAS-intervall`);
+    _laNyckel('nyckel-st-representation', `${m.basAntal} ${termForAntal(m.basAntal, T.niva)}`);
     // Kartans yrkesgrupper: ett yrke inom ett BAS-intervall, samma indelning som ytorna (_strukturTradkartaFigur).
     const yrkesgrupper = new Set(d.filter(r => r.bas != null && r.bas !== '').map(r => `${String(r.aid || r.yrke || 'okänd')}|${r.bas}`)).size;
-    _laNyckel('nyckel-st-karta', yrkesgrupper ? `${svTal(yrkesgrupper, 0)} yrkesgrupper` : '');
+    _laNyckel('nyckel-st-karta', yrkesgrupper ? `${svTal(yrkesgrupper, 0)} ${termForAntal(yrkesgrupper, T.enhet)}` : '');
     if (!m.konOk) {
         host.innerHTML = _laSlutsats('Kvinnor och män', 'Visas inte', _konUtelamnatNot());
         _laNyckel('nyckel-st-fordelning', ''); _laNyckel('nyckel-st-eu', '');
@@ -204,7 +205,7 @@ function _stRitaTopp(d, m) {
 function _sektorPunkter() {
     const ut = {};
     let punkter = [];
-    try { punkter = buildActionChecklist({ endastGrupper: true }); } catch (e) { rapporteraFel('Sektorsöversikten: Att göra', e); }
+    try { punkter = buildActionChecklist({ endastGrupper: true }); } catch (e) { rapporteraFel(`${termStor(T.huvudomrade.fl)}: Att göra`, e); }
     for (const it of punkter) {
         if (!it.aid) continue;
         const s = _aidSektorsnamn(it.aid);
@@ -261,16 +262,16 @@ function _strukturTradkartaFigur(rader, k = kTroskel()) {
     const basAntal = new Map(basYtor.map(b => [b.namn, b.varde]));
     const namn = 'ytornas läge och storlek';
     return { legend: false, hojd: 460,
-        beskrivning: `Organisationen som karta: varje yta är en yrkesgrupp, storleken är antalet personer och färgen andelen kvinnor, samlade per BAS-intervall. Yrkesgrupper med färre än ${k} ${personOrd(k)} är hopslagna till en grå yta per intervall.`,
+        beskrivning: `Organisationen som karta: varje yta är ${termArtikel(T.enhet)} ${T.enhet.en}, storleken är antalet personer och färgen andelen kvinnor, samlade per ${T.niva.en}. ${termStor(T.enhet.fl)} med färre än ${k} ${personOrd(k)} är hopslagna till en grå yta per intervall.`,
         urval: [URVAL.bas, URVAL.sektor, URVAL.antal],
         x: { skala: 'linjar', doman: [0, TRADKARTA_FORM], dold: true }, y: { skala: 'linjar', doman: [0, 1], dold: true },
         fargskala: { typ: 'divergerande', doman: [0, 100], mitt: 50, titel: 'Andel kvinnor (%)', farger: [[0, PALETTE.kon.man], [0.5, FARG.ytaStark], [1, PALETTE.kon.kvinna]] },
-        lager: [{ marke: 'yta', serie: 'BAS-intervall', farg: FARG.kant, opacitet: 0.5, etikettLage: 'topp', data: basYtor,
+        lager: [{ marke: 'yta', serie: termStor(T.niva.en), farg: FARG.kant, opacitet: 0.5, etikettLage: 'topp', data: basYtor,
                   tips: d => [[d.namn], ['Antal', String(d.varde)]],
-                  harleddAv: { lager: ['Yrkesgrupper'], namn, berakna: p => _tradkartaLagen(p).basYtor.map(b => ({ ...b, varde: basAntal.get(b.namn) })) } },
-                { marke: 'yta', serie: 'Yrkesgrupper', data: grupper,
+                  harleddAv: { lager: [termStor(T.enhet.fl)], namn, berakna: p => _tradkartaLagen(p).basYtor.map(b => ({ ...b, varde: basAntal.get(b.namn) })) } },
+                { marke: 'yta', serie: termStor(T.enhet.fl), data: grupper,
                   tips: d => [[d.namn], ['Antal', String(d.n)], ...(d.ovriga ? [['Könsfördelning', 'visas inte för små grupper']] : [['Andel kvinnor', _figTalformat(d.andelKv, 'pct')]])],
-                  harleddAv: { lager: ['Yrkesgrupper'], namn, berakna: p => _tradkartaLagen(p).grupper } }] };
+                  harleddAv: { lager: [termStor(T.enhet.fl)], namn, berakna: p => _tradkartaLagen(p).grupper } }] };
 }
 function renderStrukturTradkarta(d, id = 'chart-struktur-tradkarta') {
     const el = document.getElementById(id);
@@ -337,7 +338,7 @@ function renderSektorer(d) {
     try {
         tabell = _skSektorsTabell(d, { k: kTroskel(), punkter: _sektorPunkter(), skrDel: _skrDel() });
         andel = _skSektorernasAndel(d, { k: kTroskel() });
-    } catch (e) { rapporteraFel('Sektorsöversikten', e); host.innerHTML = ''; return; }
+    } catch (e) { rapporteraFel(termStor(T.huvudomrade.fl), e); host.innerHTML = ''; return; }
     const kr = n => (n == null ? '–' : `${Math.round(n).toLocaleString('sv-SE')} kr`);
     const pc = n => (n == null ? '–' : `${n.toFixed(1).replace('.', ',')} %`);
     const harLedning = tabell.some(r => r.ledningKv != null || r.ledningMa != null);
@@ -354,19 +355,19 @@ function renderSektorer(d) {
         const ledning = harLedning ? `<td class="num">${pc(r.ledningKv)} / ${pc(r.ledningMa)}</td>` : '';
         // Namnet står som text (följer med i exporten); pilknappen öppnar sektorn i Tabeller och egna vyer.
         return `<tr><td><span class="sektor-namn">${esc(r.namn)}</span> <button type="button" class="row-cross-link" data-sektor="${esc(r.namn)}"
-                title="Visa sektorns yrken i Tabeller och egna vyer" aria-label="Visa ${esc(r.namn)} i Tabeller och egna vyer">${ikon('pilUt', 14)}</button></td>
+                title="${termText('Visa {huvudomrade.bf.s} {enhet.fl} i Tabeller och egna vyer')}" aria-label="Visa ${esc(r.namn)} i Tabeller och egna vyer">${ikon('pilUt', 14)}</button></td>
             <td class="num" data-sort-value="${r.n}">${r.n}</td><td class="num" data-sort-value="${r.andelKv == null ? '' : r.andelKv.toFixed(1)}">${pc(r.andelKv)}</td><td class="num" data-sort-value="${r.skrAndelKv == null ? '' : r.skrAndelKv.toFixed(1)}">${pc(r.skrAndelKv)}</td>${loner}<td>${just}</td>
             <td class="num" data-sort-value="${r.antalAid}">${r.antalAid}</td><td class="num" data-sort-value="${r.punkter}">${r.punkter}</td>${ledning}</tr>`;
     }).join('');
     const andelText = !andel || andel.andel == null ? ''
         : Math.abs(andel.andel) < 0.01
             ? `<p class="sektor-andel">Skillnaden i medellön för hela organisationen (${kr(andel.gapKr)} per månad) beror nästan inte alls
-               på att kvinnor och män arbetar i olika sektorer (under 1 %).</p>`
+               på att kvinnor och män arbetar i olika ${T.huvudomrade.fl} (under 1 %).</p>`
             : `<p class="sektor-andel">Av skillnaden i medellön för hela organisationen (${kr(andel.gapKr)} per månad) beror
-               ${kr(andel.sektorKr)} (${pc(andel.andel * 100)}) på att kvinnor och män arbetar i olika sektorer.</p>`;
-    host.innerHTML = `<table class="data-table" id="sektor-table"><thead><tr><th>Sektor</th><th>Antal</th><th>Andel kvinnor</th><th title="Andel kvinnor i samma sektor nationellt, i ${_skrDelText(_skrDel())} enligt ${esc(skrKallaKort())} — ett referensvärde">Kvinnor nationellt</th>
+               ${kr(andel.sektorKr)} (${pc(andel.andel * 100)}) på att kvinnor och män arbetar i olika ${T.huvudomrade.fl}.</p>`;
+    host.innerHTML = `<table class="data-table" id="sektor-table"><thead><tr><th>${termStor(T.huvudomrade.en)}</th><th>Antal</th><th>Andel kvinnor</th><th title="Andel kvinnor i samma ${T.huvudomrade.en} nationellt, i ${_skrDelText(_skrDel())} enligt ${esc(skrKallaKort())} — ett referensvärde">Kvinnor nationellt</th>
         <th>Median kvinnor</th><th>Median män</th><th>Kvinnors lön i % av mäns</th><th>Justerad (ålder, BAS)</th>
-        <th>AID-grupper</th><th>Punkter i Att göra</th>${harLedning ? '<th>Ledningsansvar kv / män</th>' : ''}</tr></thead>
+        <th>${termStor(T.enhet.fl)}</th><th>Punkter i Att göra</th>${harLedning ? '<th>Ledningsansvar kv / män</th>' : ''}</tr></thead>
         <tbody>${rader}</tbody></table>${andelText}`;
     host.querySelectorAll('[data-sektor]').forEach(b => b.addEventListener('click', () => {
         explorerSattUrval({ lage: 'alla', villkor: [{ falt: 'sektor', op: 'enAv', varde: [/** @type {HTMLElement} */ (b).dataset.sektor] }] }, []);
@@ -394,7 +395,7 @@ function _sektorFigur(visa) {
         data: visa.filter(r => varde(r) != null).map(r => ({ y: r.namn, x: +varde(r).toFixed(1), forskjutning, ...falt(r) })),
         tips: d => [[d.y], [serie, _figTalformat(d.x, 'pct')]]
     });
-    return { beskrivning: 'Kvinnors lön i procent av mäns per sektor, rå och justerad för ålder och BAS-intervall. Samma värden finns i tabellen.',
+    return { beskrivning: `Kvinnors lön i procent av mäns per ${T.huvudomrade.en}, rå och justerad för ålder och ${T.niva.en}. Samma värden finns i tabellen.`,
         urval: [URVAL.sektor, URVAL.antal], x: { skala: 'linjar', titel: 'Kvinnors lön i % av mäns', doman: [xMin, xMax] },
         y: { skala: 'band', ordning: visa.map(r => r.namn), etikettMax: 64 },   // sektornamnen är långa och ska gå att läsa
         hojd: Math.max(170, 90 + visa.length * 36),
@@ -412,7 +413,7 @@ function _buildNarrative(d, ctx) {
     const lines = [];
     lines.push('LÖNEKARTLÄGGNING — SAMMANFATTNING (utkast)');
     lines.push('');
-    lines.push(`Underlaget omfattar ${d.length} anställda (${svPct(ctx.totAndel, 0)} kvinnor) fördelade på ${getBasIntervals().length} BAS-intervall.`);
+    lines.push(`Underlaget omfattar ${d.length} anställda (${svPct(ctx.totAndel, 0)} kvinnor) fördelade på ${getBasIntervals().length} ${termForAntal(getBasIntervals().length, T.niva)}.`);
     lines.push('');
     lines.push('Löneskillnad (kvinnors lön i procent av mäns):');
     if (ctx.konOk) lines.push(`  • Kvinnors genomsnittslön är ${andelAvMan(ctx.meanGap)} av mäns, och medianlönen ${andelAvMan(ctx.medGap)} av mäns.`);
@@ -442,7 +443,7 @@ function _buildNarrative(d, ctx) {
     const lvPar = _parForRedovisning(lv && lv.pairs);
     if (lvPar.par.length || lvPar.utelamnade) {
         lines.push('');
-        if (lvPar.par.length) lines.push(`Likvärdigt arbete: ${lvPar.par.length} kvinnodominerade yrkesgrupper identifierades med lägre lön än likvärdiga grupper som inte är kvinnodominerade. Dessa ska analyseras med avseende på sakliga skäl.`);
+        if (lvPar.par.length) lines.push(`Likvärdigt arbete: ${lvPar.par.length} ${termFras(T.enhet, lvPar.par.length === 1 ? 'en' : 'fl', { adjektiv: 'kvinnodominerad' })} identifierades med lägre lön än likvärdiga grupper som inte är kvinnodominerade. Dessa ska analyseras med avseende på sakliga skäl.`);
         if (lvPar.not) lines.push(lvPar.par.length ? lvPar.not : `Likvärdigt arbete: ${lvPar.not}`);
     }
     lines.push('');

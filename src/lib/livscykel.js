@@ -16,6 +16,10 @@
 
 import { fitOLS, pValue2Sided, tQuantile } from './stat.js';
 import { statusNiva } from './status.js';
+import { skapaTermer } from './termer.js';
+
+/** Standardtermerna (ADR-74). */
+const T = skapaTermer();
 
 /**
  * Trappans nivå för skillnaden vid en ålder (ADR-59, ADR-71): avståndet från lika lön är |gapPct|, och skillnaden är
@@ -62,7 +66,7 @@ export function livscykelRegression(rader, { fixBas, golv }) {
     if (kvN < golv || maN < golv) return { error: `Otillräcklig könsbalans (${kvN} kvinnor, ${maN} män). Minst ${golv} av varje krävs för interaktions-modell.`, errorCode: 'imbalance' };
 
     const basList = [...new Set(raw.map(d => d.bas))].sort();
-    if (basList.length < 2) return { error: 'Minst 2 BAS-intervall krävs för kategorisk kodning.', errorCode: 'single_bas' };
+    if (basList.length < 2) return { error: `Minst 2 ${T.niva.fl} krävs för kategorisk kodning.`, errorCode: 'single_bas' };
 
     // Välj default fixBas = mest folkrika BAS i organisationen om inte angivet
     if (!fixBas || !basList.includes(fixBas)) {

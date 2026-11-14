@@ -30,7 +30,7 @@ const SOK_FUNKTIONER = [
     { namn: 'Representation per BAS-intervall', synonymer: ['bas-nivå', 'segregering', 'andel kvinnor', 'könsfördelning'], flik: 'struktur', avsnitt: 'avsnitt-st-representation' },
     { namn: 'Organisationen som karta', synonymer: ['karta', 'trädkarta', 'yrkesgrupper', 'storlek'], flik: 'struktur', avsnitt: 'avsnitt-st-karta' },
     { namn: 'Var i lönefördelningen är skillnaden störst?', synonymer: ['gapet', 'kvartil', 'fjärdedel', 'percentil', 'klibbigt golv', 'glastak'], flik: 'struktur', avsnitt: 'avsnitt-st-fordelning' },
-    { namn: 'Per sektor', synonymer: ['aid-huvudområde', 'huvudområde', 'yrkesområde'], flik: 'struktur', avsnitt: 'avsnitt-st-sektorer' },
+    { namn: 'Per huvudområde', synonymer: ['aid-huvudområde', 'sektor', 'yrkesområde'], flik: 'struktur', avsnitt: 'avsnitt-st-sektorer' },
     { namn: 'Var uppstår löneskillnaden?', synonymer: ['gapuppdelning', 'uppdelning', 'trappa', 'medellön'], flik: 'struktur', avsnitt: 'avsnitt-ov-gap' },
     { namn: 'Lönetransparensdirektivets mått', synonymer: ['eu 2023/970', 'lönerapportmått', 'eu-mått', 'direktiv', 'lönetransparensdirektivet', 'lönerapport', 'artikel 9', 'kvartil', 'fjärdedel', 'rörlig lön'], flik: 'struktur', avsnitt: 'avsnitt-st-eu' },
     { namn: 'Bakgrund', synonymer: ['könslönegap', 'samhällsnivå', 'lönestruktur'], flik: 'struktur', avsnitt: 'avsnitt-st-metod' },
@@ -56,7 +56,7 @@ const SOK_FUNKTIONER = [
     { namn: 'Inställningar för Likvärdigt arbete', synonymer: ['kvinnotröskel', 'minsta skillnad', 'minsta gap', 'antal par', 'definition av kvinnodominerat', 'mer än 60 %', '60 % eller mer', 'förarbetena', 'do', 'scb'], flik: 'likvardighet', avsnitt: 'avsnitt-lv-installningar' },
     { namn: 'Så fungerar analysen', synonymer: ['metod', 'likvärdigt arbete', 'diagnostik', 'krav-proxy'], flik: 'likvardighet', avsnitt: 'avsnitt-lv-analys' },
     // Lika arbete
-    { namn: 'Kvinnor och män i samma yrkesgrupp', synonymer: ['lika arbete', 'yrkesgrupp', 'status'], flik: 'matrix', avsnitt: 'avsnitt-la-yrkesgrupper' },
+    { namn: 'Kvinnor och män med samma AID-etikett', synonymer: ['lika arbete', 'yrkesgrupp', 'aid-etikett', 'status'], flik: 'matrix', avsnitt: 'avsnitt-la-yrkesgrupper' },
     { namn: 'Personer att granska', synonymer: ['individ', 'enskilda löner', 'avvikande löner', 'under förväntad nivå'], flik: 'matrix', avsnitt: 'avsnitt-la-personer' },
     { namn: 'Lika arbete AID × BAS', synonymer: ['matris', 'slumpens gränser', 'median i procent'], flik: 'matrix', avsnitt: 'avsnitt-la-aidbas' },
     { namn: 'Analys på individnivå', synonymer: ['arbetslista', 'för litet', 'små grupper'], flik: 'matrix', avsnitt: 'avsnitt-la-individ' },

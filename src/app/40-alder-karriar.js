@@ -24,7 +24,7 @@ function _akInsiktText(lutKv, lutMa, ra, vidSammaAlder) {
         : skillnad > 0
             ? `Vid samma ålder är kvinnors lön ${svPct(vidSammaAlder, 1)} av mäns, mot ${svPct(ra, 1)} utan justering: åldersfördelningen förklarar en del av skillnaden${vidSammaAlder < 95 ? ', men inte hela' : ''}.`
             : `Vid samma ålder är kvinnors lön ${svPct(vidSammaAlder, 1)} av mäns, mot ${svPct(ra, 1)} utan justering: skillnaden blir större när åldern räknas bort, eftersom kvinnorna i urvalet i genomsnitt är äldre.`;
-    return `${lutning} ${justering} Vad BAS-intervall och yrkesgrupp förklarar står i Lönestruktur.`;
+    return `${lutning} ${justering} Vad ${T.niva.en} och ${T.enhet.en} förklarar står i Lönestruktur.`;
 }
 /** Utan ålder i lönefilen (ADR-64) ritas fliken inte, och det en tidigare fil ritade i den töms. */
 function _akTomUtanAlder() {
@@ -58,7 +58,7 @@ function renderKon(bas) {
     const urvalText = document.getElementById('ak-urval-text');
     if (urvalText) urvalText.textContent = `${svTal(df.length, 0)} personer · minsta gruppstorlek ${kInstalld()}`;
     _laNyckel('nyckel-ak-fordelning', konOk && medMa > 0 ? `Kvinnors median ${unadjGap} av mäns` : '');
-    _laNyckel('nyckel-ak-alla', `${getBasIntervals().length} BAS-intervall`);
+    _laNyckel('nyckel-ak-alla', `${getBasIntervals().length} ${termForAntal(getBasIntervals().length, T.niva)}`);
     /** @type {HTMLElement} */ (document.getElementById("kon-kpi-n")).textContent = svTal(df.length, 0);
     { const u = document.getElementById("kon-kpi-n-under"); if (u) u.textContent = `${svTal(dataKv.length, 0)} kvinnor · ${svTal(dataMa.length, 0)} män`; }
     /** @type {HTMLElement} */ (document.getElementById("kon-kpi-gap")).textContent = unadjGap;
@@ -94,7 +94,7 @@ function renderKon(bas) {
         const m = d => d.yrke.match(/^(\d+)/);
         statMedian = _jfStatistikensMedianFor(state.statistik, df.map(d => ({ aid: m(d) ? m(d)[1] : d.yrke, bas: d.bas })));
     }
-    const scope2 = isAll ? 'hela urvalet' : `BAS-intervall ${bas}`;
+    const scope2 = isAll ? 'hela urvalet' : `${T.niva.en} ${bas}`;
     // Noter under diagrammen om det som utelämnats, och samma sak i diagrammens beskrivningar.
     const utan = [kvOk ? null : 'kvinnor', maOk ? null : 'män'].filter(Boolean).join(' och ');
     const skal = `färre än ${kTroskel()} ${personOrd(kTroskel())} av ${kvOk || maOk ? 'könet' : 'vartdera könet'} finns i urvalet`;
@@ -146,11 +146,11 @@ function _konTathetFigur(rader, perKon, k = kTroskel(), form = 'fiol') {
     const utelamnade = [...antal].filter(([, n]) => n < k).map(([c]) => { const [bas, kn] = c.split('\u0000'); return kn ? `BAS ${bas} (${kn === 'Kvinna' ? 'kvinnor' : 'män'})` : `BAS ${bas}`; })
         .sort((a, b) => a.localeCompare(b, 'sv', { numeric: true }));
     const ordning = [...new Set(giltiga.map(r => r.bas))].sort().map(b => 'BAS ' + b);
-    if (form === 'kvantiler') return { utelamnade, figur: { beskrivning: `Lönefördelningen per BAS-intervall${perKon ? ' och kön' : ''} som kvantilpunkter: varje prick är en tjugondel av gruppen (i små grupper en större andel, aldrig färre än två personer), lagd vid den lönen. Räkna prickarna under en lön för att se hur stor andel som tjänar mindre. Inga enskilda löner visas.`,
+    if (form === 'kvantiler') return { utelamnade, figur: { beskrivning: `Lönefördelningen per ${T.niva.en}${perKon ? ' och kön' : ''} som kvantilpunkter: varje prick är en tjugondel av gruppen (i små grupper en större andel, aldrig färre än två personer), lagd vid den lönen. Räkna prickarna under en lön för att se hur stor andel som tjänar mindre. Inga enskilda löner visas.`,
         legend: perKon ? undefined : false, urval: URVAL.bas, x: { skala: 'band', ordning }, y: { skala: 'linjar', titel: 'Månadslön', format: 'kr' }, hojd: 420, lager } };
-    if (form !== 'fiol') return { utelamnade, figur: { beskrivning: `Lönespridningen per BAS-intervall och kön som lådagram: lådan är mittersta hälften av lönerna (första till tredje kvartilen), strecket i lådan medianen. Enstaka löner utanför morrhåren visas inte. Överlappar kvinnors och mäns lådor i ett intervall ligger könen på samma nivå där. BAS-intervall där ett kön har färre än ${k} ${personOrd(k)} visas inte för det könet.`,
+    if (form !== 'fiol') return { utelamnade, figur: { beskrivning: `Lönespridningen per ${T.niva.en} och kön som lådagram: lådan är mittersta hälften av lönerna (första till tredje kvartilen), strecket i lådan medianen. Enstaka löner utanför morrhåren visas inte. Överlappar kvinnors och mäns lådor i ett intervall ligger könen på samma nivå där. ${termStor(T.niva.fl)} där ett kön har färre än ${k} ${personOrd(k)} visas inte för det könet.`,
         urval: URVAL.bas, x: { skala: 'band', ordning }, y: { skala: 'linjar', titel: 'Månadslön', format: 'kr' }, hojd: 380, lager } };
-    return { utelamnade, figur: { beskrivning: `Lönefördelningen per BAS-intervall${perKon ? ' och kön' : ''} som täthetskurvor: kurvan är bredast där flest löner ligger. Strecken är median och kvartiler. Kurvan slutar vid morrhårens ändar; enstaka löner långt utanför visas inte.`,
+    return { utelamnade, figur: { beskrivning: `Lönefördelningen per ${T.niva.en}${perKon ? ' och kön' : ''} som täthetskurvor: kurvan är bredast där flest löner ligger. Strecken är median och kvartiler. Kurvan slutar vid morrhårens ändar; enstaka löner långt utanför visas inte.`,
         legend: perKon ? undefined : false, urval: URVAL.bas, x: { skala: 'band', ordning }, y: { skala: 'linjar', titel: 'Månadslön', format: 'kr' }, hojd: 420, lager } };
 }
 document.getElementById('kon-trend-alla')?.addEventListener('change', () => { const s = /** @type {HTMLInputElement|null} */ (document.getElementById('bas-select-kon')); if (s) renderKon(s.value); });
@@ -229,7 +229,7 @@ function _konAlderGapFigur(rader, scope) {
         ['95 % KI', d.fel ? `${_figTalformat(d.fel.lag, 'pct', { enhet: false })}–${_figTalformat(d.fel.hog, 'pct')}` : '–'],
         ['Median kvinnor / män', `${kr(d.o.medKv)} / ${kr(d.o.medMa)}`], ['Antal kvinnor / män', `${d.o.nKv} / ${d.o.nMa}`]];
     const alla = rader.flatMap(o => [o.gap, ...(o.ci ? [o.ci.lo, o.ci.hi] : [])]);
-    return { beskrivning: `Kvinnors medianlön i procent av mäns per åldersgrupp i ${scope}, som en punkt med 95 % konfidensintervall mot linjen för lika lön (100 %). Skillnaden är rå: alla kvinnor mot alla män i åldersgruppen, oavsett yrke och BAS-intervall.`,
+    return { beskrivning: `Kvinnors medianlön i procent av mäns per åldersgrupp i ${scope}, som en punkt med 95 % konfidensintervall mot linjen för lika lön (100 %). Skillnaden är rå: alla kvinnor mot alla män i åldersgruppen, oavsett ${T.enhet.en} och ${T.niva.en}.`,
         // Filtren döljer åldersgrupper (efter namnet, eller antalet av det minst företrädda könet; båda står i tipset).
         urval: [URVAL.aldersgrupp, URVAL.minstaKon],
         y: { skala: 'band', ordning: rader.map(o => o.namn) },
@@ -316,7 +316,7 @@ function _konMultiplarFigur(rader, liten, k = kTroskel()) {
         const reg = Stat.linearRegression(g.map(r => [r.alder, r.lon])), aldrar = g.map(r => r.alder), a0 = Math.min(...aldrar), a1 = Math.max(...aldrar);
         if (a1 > a0) lager.push({ marke: 'linje', serie: 'Trend (alla i intervallet)', farg: PALETTE.semantic.mork, tjocklek: 1.5, panel, data: [{ x: a0, y: reg.m * a0 + reg.b, bas: b }, { x: a1, y: reg.m * a1 + reg.b, bas: b }] });
     }
-    return { utanfor, nedsamplade, figur: { beskrivning: `Lön mot ålder i ${valda.length} BAS-intervall, ett litet diagram per intervall med gemensamma axlar. Trendlinjen i varje panel räknas ur alla i intervallet.`,
+    return { utanfor, nedsamplade, figur: { beskrivning: `Lön mot ålder i ${valda.length} ${termForAntal(valda.length, T.niva)}, ett litet diagram per intervall med gemensamma axlar. Trendlinjen i varje panel räknas ur alla i intervallet.`,
         individer: true, urval: [URVAL.bas, URVAL.yrkesgrupp, URVAL.alder, URVAL.lon], paneler: valda.map(b => 'BAS ' + b), x: { skala: 'linjar', titel: 'Ålder' }, y: { skala: 'linjar', titel: 'Månadslön', format: 'kr' }, hojd: 340, lager } };
 }
 function renderKonMultiplar() {
@@ -334,7 +334,7 @@ function renderKonMultiplar() {
 // ---- Figurer för diagramkärnan (ADR-39, steg 2) ----
 // Noten under ett spridningsdiagram om de punkter som inte visas.
 // `medTrend` är falskt när diagrammet saknar trendlinje (urvalet under tröskeln): då sägs inget om den.
-const _individNot = (n, medTrend = true) => (n ? `${n} ${n === 1 ? 'person visas' : 'personer visas'} inte som punkt: gruppen (yrke inom BAS), eller personens kön i gruppen, har färre än ${kTroskel()} ${personOrd(kTroskel())}.${medTrend ? ' Trendlinjen bygger på alla.' : ''}` : '');
+const _individNot = (n, medTrend = true) => (n ? `${n} ${n === 1 ? 'person visas' : 'personer visas'} inte som punkt: gruppen (${T.enhet.en} inom BAS), eller personens kön i gruppen, har färre än ${kTroskel()} ${personOrd(kTroskel())}.${medTrend ? ' Trendlinjen bygger på alla.' : ''}` : '');
 const _punktTips = d => [[d.yrke], ...(d.bas != null ? [['BAS', String(d.bas)]] : []), ...(d.kon ? [['Kön', d.kon]] : []),
                          ['Ålder', `${d.x} år`], ['Lön', _figTalformat(d.y, 'kr')]];
 // En vågrät linje över hela åldersspannet (referensens P10, median, P90; jämförelsestatistikens median).
@@ -510,7 +510,7 @@ function renderDemografi(bas) {
         ? getData().filter(d => d.alder > 0)
         : getData().filter(d => d.bas === bas && d.alder > 0);
     if (df.length < 2) return;
-    const scopeShort = isAll ? 'urvalet' : `BAS-intervallet`;
+    const scopeShort = isAll ? 'urvalet' : T.niva.bf;
     const basKv = df.filter(d => d.kon.includes('kvinna'));
     const basMa = df.filter(d => d.kon === 'man' || d.kon === 'män');
     const cntKv = countByBracket(basKv), cntMa = countByBracket(basMa);
@@ -588,9 +588,9 @@ function _demoHistFigur({ pctKv, pctMa, refPct, isAll }) {
         data: AGE_BRACKETS.map((x, i) => ({ x, y: varden[i] })),
         tips: d => [[d.x], [namn, _figTalformat(d.y, 'pct')]]
     });
-    return { beskrivning: 'Åldersfördelning i valt BAS-intervall jämfört med Sveriges sysselsatta befolkning. Nyckeltal i rutorna ovan.',
+    return { beskrivning: `Åldersfördelning i ${termAdjektiv('vald', T.niva)} ${T.niva.en} jämfört med Sveriges sysselsatta befolkning. Nyckeltal i rutorna ovan.`,
         x: { skala: 'band', titel: 'Åldersgrupp', ordning: AGE_BRACKETS.slice() },
-        y: { skala: 'linjar', titel: isAll ? 'Andel av organisationen (%)' : 'Andel av BAS-intervall (%)' },
+        y: { skala: 'linjar', titel: isAll ? 'Andel av organisationen (%)' : `Andel av ${T.niva.en} (%)` },
         lager: [serie('Kvinna', PALETTE.kon.kvinna, pctKv), serie('Man', PALETTE.kon.man, pctMa),
             { marke: 'linje', serie: 'Sveriges sysselsatta (SCB AKU 2023)', farg: PALETTE.semantic.referens, streck: 'prickad', punkter: true,
               data: AGE_BRACKETS.map((x, i) => ({ x, y: refPct[i] })),
@@ -608,9 +608,9 @@ function _demoPyramidFigur({ pctKv, pctMa, isAll }) {
     });
     const storst = Math.max(5, ...pctKv, ...pctMa);
     const grans = Math.ceil(storst * 1.1 / 5) * 5;
-    return { beskrivning: `Ålderspyramid: andel av ${isAll ? 'organisationen' : 'BAS-intervallet'} per åldersgrupp, kvinnor åt vänster och män åt höger. Samma andelar som i diagrammet ovanför.`,
+    return { beskrivning: `Ålderspyramid: andel av ${isAll ? 'organisationen' : T.niva.bf} per åldersgrupp, kvinnor åt vänster och män åt höger. Samma andelar som i diagrammet ovanför.`,
         y: { skala: 'band', titel: 'Åldersgrupp', ordning: grupper },
-        x: { skala: 'linjar', titel: `Kvinnor åt vänster · andel av ${isAll ? 'organisationen' : 'BAS-intervallet'} (%) · Män åt höger`, format: 'pctAbs', doman: [-grans, grans], nollinje: true },
+        x: { skala: 'linjar', titel: `Kvinnor åt vänster · andel av ${isAll ? 'organisationen' : T.niva.bf} (%) · Män åt höger`, format: 'pctAbs', doman: [-grans, grans], nollinje: true },
         hojd: Math.max(300, 70 + grupper.length * 24),
         lager: [serie('Kvinna', PALETTE.kon.kvinna, pctKv, -1), serie('Man', PALETTE.kon.man, pctMa, 1)] };
 }
