@@ -4,9 +4,25 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 `dist/oppen-lonekartlaggning.html`, gjort med `npm run bundle`. Byggets SHA-256 står i
 `dist/RELEASE.txt`. Varje versions avsnitt skrivs när versionen släpps, ur incheckningarna.
 
-## Oförlöst
+## 2026.11.15
 
 ### Gränssnitt
+
+- **Verktyget använder AID:s egna ord (ADR-74).** *AID-etikett*, *AID-kod*, *etikettnamn*, *jämförelseetikett* och
+  *huvudområde* i stället för yrke, yrkesgrupp, yrkeskod, jämförelseyrke och sektor, i gränssnittet, exporterna och
+  dokumenten. Handboken för kodning använder inte ordet yrke om etiketterna: AID grupperar arbetsuppgifter, och
+  etiketten väljs efter huvudsaklig arbetsuppgift. Ordlistan och metodtexten om AID är omskrivna efter handboken.
+  Meningar som återger lagens krav säger *arbete*. Lönefiler med rubriken Yrke, Yrkesgrupp eller Befattning läses in
+  som förut, och sparade konfigurationsfiler och paket fungerar som förut.
+- **Räknare säger vad de räknar.** En räknare som räknar kombinationer av AID-kod och BAS-intervall säger
+  *AID-etiketter i BAS-intervall*. Diagnostikraden i Likvärdigt arbete sa *BAS* men räknar kvinnodominerade
+  AID-etiketter som jämfördes med jämförelsestatistiken.
+- **Ord skrevs ihop över en elementgräns.** Bygget tog bort blanksteg mellan två textelement, så att till exempel
+  *Ålder (valfri)* visades som *Ålder(valfri)*. Blanksteget står nu kvar.
+- **Statusen står i *Om verktyget*:** verktyget är ett proof of concept, skrivet med AI-verktyg, inte prövat med
+  verklig lönedata och inte granskat av statistiker, jurist eller dataskyddsombud. Meningen om att verktyget inte
+  använder artificiell intelligens säger nu att det gäller beräkningarna.
+- **Regressionskortets mening om steget för AID-etikett inom BAS** saknade *och* när ålder inte är med i modellen.
 
 - **Livscykelns nyckeltal följer uppmärksamhetstrappan.** Kvinnors lön i % av mäns vid 25 och 65 år färgades rött
   över 5 % och gult över 2 %, på storleken ensam. Färgen följer nu trappan (ADR-71): *Värt att granska* när modellens
@@ -99,6 +115,15 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   som förut.
 
 ### Utveckling
+
+- **Termerna står på ett ställe (ADR-74).** `src/lib/termer.js` bär orden med ordformer och genus, texterna läser dem
+  därifrån, och `tests/termer.test.js` fäller den som skriver orden direkt i en text. En annan uppsättning böjs rätt
+  utan att texterna skrivs om (`docs/utveckling/bygge-och-test.md` §13).
+- **Styrningen är förenklad (ADR-73).** Skydden S1–S5 och sex principer binder; besluten är en logg, regelmatrisen
+  och den tekniska planen är borttagna, och Definition of Done har tre punkter.
+- **Kvantilregressionen räknar på samma rader som huvudregressionen**, också när ålder är bortvald i modellen.
+- **Konfigurationsfilen** avvisar likvärdighetens inställningar utanför fältens gränser, och sparar inte längre det
+  oanvända fältet `source`; en äldre fil med fältet läses in som förut.
 
 - **CI kör testsviten delad på fyra parallella jobb.** Sviten tog omkring elva minuter i ett jobb. Jobbet `tester`
   kör den nu i fyra delar med Vitests `--shard`; varje testfil körs i exakt en del, så testerna är desamma.
