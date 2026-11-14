@@ -328,7 +328,9 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   pågår avvisas (`tests/forhandsvisning.test.js`). Löneöversyns resultat som räknas på knapptryck räknas om i
   det läge som gäller när fliken ritas om, och töms när fliken inte syns (`tests/ktroskel-invarianter.test.js`, I1b).
 - Standardvärdet är 10 (`K_STANDARD`); användaren kan ändra det (ADR-38). Vid 10 redovisas i det som
-  lämnar verktyget inga gruppvärden när en grupp har färre än 10 personer. Gruppen utelämnas och namnges i en not vid tabellen.
+  lämnar verktyget inga lönemått när en grupp har färre än 10 personer. Där gruppens rad utelämnas namnges gruppen i en not vid tabellen.
+  Skyddet gäller lönemått (ADR-70): antal och andelar, också per kön, för en grupp eller ett kön under tröskeln
+  omfattas inte av det och kan stå i det som exporteras, och handläggaren ansvarar för vad som lämnas ut (§8, punkt 4).
   Är bara könsuppdelningen för liten (gruppen som helhet n ≥ 10) visas gruppens
   samlade median utan könsjämförelse.
 - **Könsuppdelade mått kräver tröskeln för varje kön** (`_konFarRedovisas` i
@@ -338,7 +340,11 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   PDF-rapporten, Lönestruktur, EU-lönerapporten, A/B-jämförelsen och Löneöversyns råa löneskillnad.
   Kvartilfördelningen visar då antal per kvartil men inte könsfördelningen.
   Huvudregressionen (i Lönestruktur, med talet i Lika arbetes nyckeltal) har kvar sitt fasta golv (5 per
-  kön, se nedan). Dess justerade löneskillnad med konfidensintervall visas från det golvet. Flera mått följer
+  kön, se nedan). Dess justerade löneskillnad med konfidensintervall visas från det golvet. Regressionens
+  BAS-effekter, ett intervalls lönenivå mot referensintervallet, skrivs inte ut för ett intervall under tröskeln
+  i rapportens bilaga (Word-utkastet, PDF-rapporten, utskriften) eller i regressionskortet i exportläget; intervallet
+  namnges i en not, och är referensintervallet under tröskeln står ingen effekt (`_basEffekterForRedovisning`,
+  `tests/ktroskel-bas-effekter.test.js`). Flera mått följer
   tröskeln för varje kön (`_regStegForRedovisning`): den råa medianskillnaden, kronexemplet i regressionskortet
   (som utgår från männens medianlön), regressionens ojusterade steg ("Endast kön") med den förklarade andelen,
   och förklaringsbudgeten. I regressionskortet, Word-utkastet och PDF-rapporten står då en mening i stället.
@@ -401,7 +407,9 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   regressionens ojusterade steg (60 kvinnor och 7 män). De prövar kortet, utskriftens tre urval,
   Word-utkastet, rapportunderlaget, Excelfilerna och invariantens övriga utdatavägar. Egna tester finns också
   för Ålder & karriär (3 män i hela urvalet, och ett valt BAS med en man), för Löneöversyns
-  scenariojämförelse och för noten vid egna riktade rader.
+  scenariojämförelse, för noten vid egna riktade rader, för regressionens BAS-effekter och för Löneöversyns summor
+  (`tests/ktroskel-loneoversyn-summor.test.js`). Invarianten söker efter lönevärden; den prövar inte antal och
+  andelar, och inte ett lönemått som bara går att räkna fram som en differens mellan andra tal.
 - **Värdet kan ändras av användaren (ADR-38).** Fältet *Minsta gruppstorlek för redovisning* under
   **Inställningar** i sidhuvudet tar heltal från 2 (högst 1 000). Klicka på värdet i flikarnas översta rad för att komma dit.
   Standardvärdet är 10, och inget lagras mellan sessioner.
@@ -508,7 +516,14 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
 - **Löneskillnad per BAS, hela organisationen och Löneöversyn:** *Lönestruktur per BAS-intervall* visar skillnaden bara när
   båda könen når tröskeln, annars ett streck och en not. Könsuppdelade mått för hela
   organisationen följer samma regel. Löneöversyn maskerar kostnaden där medianerna maskeras och
-  jämför bara mot mäns median när männen når tröskeln. Den ger en grupp egen rad på individnivån
+  jämför bara mot mäns median när männen når tröskeln. I exportens blad *Fördelning* och i utfallstabellen i
+  exportläget har en grupp under tröskeln sin rad med antal och andel kvinnor; kostnaden för de maskerade raderna
+  står samlad på en rad, så att *Använt* minus de visade raderna inte ger en liten grupps kostnad eller, med ett
+  påslag i procent, dess lönesumma. Omfattar den samlade raden färre än tröskelns antal personer flyttas den minsta
+  övriga gruppens kostnad dit, en grupp i taget, och den gruppens medianer maskeras, eftersom antalet gånger
+  medianernas skillnad annars ligger nära dess kostnad; räcker inte heller det står ingen kostnad per grupp, bara
+  summorna. *Varav till kvinnodominerade grupper* står som streck när den skulle ge en del av den samlade kostnaden
+  (ADR-70, `tests/ktroskel-loneoversyn-summor.test.js`). Den ger en grupp egen rad på individnivån
   först när tröskeln i antal berörs. Den föreslår inga riktade rader ur kandidatpar med en grupp under den
   inställda tröskeln, också på skärmen, och tar bort ett förslag som inte säkert räknades ur ett par som når
   tröskeln när den ändras (ADR-69). Vaktas av `tests/ktroskel-invarianter.test.js`, `tests/ktroskel-regression.test.js` och
@@ -520,12 +535,12 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
 - **Egna riktade rader i Löneöversyn — tillåtna enligt beslut:** en
   riktad rad som användaren själv lägger till för en grupp under tröskeln visar sitt belopp på
   raden. Beloppet ingår i summorna på skärmen och i Löneöversyns Excel-export (*Använt*,
-  *Riktat* och, när gruppen är kvinnodominerad, *Varav till kvinnodominerade grupper*). För en
+  *Riktat* och, när gruppen är kvinnodominerad och raden visas, *Varav till kvinnodominerade grupper*). För en
   grupp med en enda person och ett påslag i procent är beloppet personens lön gånger
   procentsatsen. Det är användarens egen inmatning i en egen simulering och filtreras inte.
   Under raden står en not om att gruppen är under tröskeln och att beloppet bygger på enskildas
-  löner. Kostnaden per grupp under tröskeln maskeras i exportens blad *Fördelning* (på skärmen visas
-  den). Risken bärs av användaren, som redan har underlaget; filen ska hanteras som
+  löner. Kostnaden per grupp under tröskeln maskeras i exportens blad *Fördelning* och står på den samlade
+  raden (ovan; på skärmen visas den). Risken bärs av användaren, som redan har underlaget; filen ska hanteras som
   personuppgifter (§8). Rader som verktyget själv föreslår ur kandidatparen omfattas inte (ADR-69, nedan).
 - **Löneöversyns scenariojämförelse (A/B)** prövar den råa löneskillnaden mot den tröskel som gäller när
   jämförelsen visas (scenariot bär antalet kvinnor och män). Ett scenario sparat vid en lägre
@@ -840,6 +855,8 @@ huvudsakligen organisatoriska och åligger arbetsgivaren:
    restriktiv med att exportera resultat för mycket små grupper. I Tabeller och egna vyer
    betyder det att bara kryssa i "Ta med grupper under 10 i exporten" när det
    behövs. Var lika restriktiv med diagramdata från diagram som visar enskilda personer.
+   Skyddet gäller lönemått: exporterna kan bära antal och andelar för små grupper och per kön, och
+   handläggaren bedömer vad som kan spridas (ADR-70).
 5. **Säkerställ HR-kompetens vid tolkning (B3, B4).** Verktyget identifierar
    *kandidater*; den juridiska bedömningen av sakliga skäl görs av människa och
    dokumenteras i rapporten.
@@ -966,6 +983,7 @@ andra filerna. Den innehåller biblioteksversioner och kontrollsummor, inga uppg
 | Personer att granska och extremvärdeslistan stannar i verktyget (ADR-23) | Test i `tests/smoke-granssnitt.test.js` (en flaggad persons lön finns inte i rapportunderlag eller Word-utkast) + webbläsarröktestet (extremvärdeslistan med rader syns inte i utskrift) + kodläsning (inga exportverktyg; bilagorna hämtar bara namngivna tabeller) | ✔ lönen och radnumret finns inte i någon utdata; båda döljs vid utskrift |
 | k-invarianten över flikar och exporter | `tests/ktroskel-invarianter.test.js`: underlag med ett kön under tröskeln i en större grupp, en ensam person och ett 2-mot-2-BAS; flikar, Word, utskrift ×3, rapportunderlag (med blocken per BAS-intervall), Excel ×9, CSV, diagramdata, gruppdossier, BAS-dossierns text (`basdossierText`), Rapporttextens utkast med delen per BAS-intervall, rapportens avsnitt Lönekartläggning per BAS-intervall och, med förra årets bokslut inläst, blocket och avsnittet om förra året (tabellen per BAS-intervall) och BAS-hantelns diagramdata, årsbokslutet i konfigurationsfilen med lönespridningen, rapportens bilaga med gruppdossierer och utskriften med bilagan vald, importprofilerna (JSON-exporten och konfigurationsfilen: inga lönemått) och diagramdatan ur kopiorna i Alla diagram (samma som källans, rad för rad) vid 10 och 25; handlingsplanens sakliga skäl vid 10 (I5: en rad under tröskeln för varken kommentarens tal eller beloppet ut i någon utdata utom skärmen och hela konfigurationsfilen, och en rad där ett kön är under tröskeln bara kategorin, också i konfigurationsfilens årsbokslut) | ✔ inget dolt värde i någon prövad utdata; undantagen och diagrambilder prövas inte; lönerevisionssimulatorn prövas med ett urval under och ett över tröskeln (simulatorn togs bort 2026-10-29, ADR-50; samma urval prövas nu som riktade rader i Löneöversyn, C3); Ålder & karriär per BAS och regressionens ojusterade steg prövas av egna tester i `tests/ktroskel-regression.test.js` (§6.5) |
 | Löneöversyns förslag följer den inställda tröskeln (ADR-69) | `tests/loneoversyn-forslag-troskel.test.js`: ett kandidatpar där jämförelseyrket (5 personer) eller det kvinnodominerade yrket (6) är under tröskeln 10, med en egen lön per grupp; *Föreslå riktade potter*, mål-läget, känslighetskurvan, Löneöversyns Excel-export och konfigurationsfilen; tröskeln höjd på skärmen; en konfigurationsfil med ett förslag, inläst före och efter lönefilen; ett yrke med två jämförelseyrken (ett med 6 män), förslaget vid 5 och tröskeln höjd till 10, äldre filer med en rad per jämförelseyrke och en ensam rad ur det lilla paret, och en fil där ett litet par ligger utanför de visade paren (*Visa max*); tröskeln höjd medan en annan flik är öppen, en inläst fil och en ny lönefil, med sökning i hela arbetsboken, i *Excel (alla flikar)* och i konfigurationsfilen; ett sparat scenario A/B; `tests/loneoversyn.test.js` (ett par per yrke) | ✔ inget förslag ur paret, och varken beloppet, skillnaden eller jämförelseyrkets median i Excel-exporten eller i konfigurationsfilens del för Löneöversyn; ett yrke med flera jämförelseyrken får en rad; ett förslag tas bort när tröskeln höjs över en av parets grupper, och ett förslag ur en fil som inte säkert går att föra till ett par som når tröskeln läses inte in; inget utfall eller sparat scenario som räknades med ett borttaget förslag står kvar; egna rader står kvar med noten (regel R2). Invarianten I4 prövar inte förslagen: riggens underlag har inga kandidatpar |
+| Löneöversyns summor och regressionens BAS-effekter (ADR-70) | `tests/ktroskel-loneoversyn-summor.test.js`: bladet *Fördelning* och utfallstabellen i exportläget vid 10 med en ensam person under tröskeln, två små grupper som tillsammans är under tröskeln, små grupper som tillsammans når den, alla grupper under tröskeln och lika antal bland de minsta visade grupperna; *Varav till kvinnodominerade grupper*; en egen riktad rad. `tests/ktroskel-bas-effekter.test.js`: ett BAS-intervall med 4 personer och ett referensintervall med 4, i regressionskortet i exportläget och i invariantens utdatavägar | ✔ *Använt* minus bladets kostnader per grupp är aldrig en liten grupps kostnad eller lönesumma, och de små grupperna har sina rader med antal och andel; den invikta gruppens medianer står inte i bladet; effekten för ett intervall under tröskeln står inte i någon prövad utdata. Inte prövat: att den invikta gruppens median före påslaget står i andra exporter (den når tröskeln) |
 | Importprofiler bär bara rubriknamn | `valideraImportprofil` i `src/lib/importprofiler.js` (godkända fält; varje text högst 80 tecken och inget som liknar personnummer eller e-post; högst 20 rubriker per fält, högst 50 profiler) vid inläsning ur konfigurationsfil och organisationspaket; `profilFranMappning` tar bara rubriker som finns i filen; tester i `tests/importprofiler.test.js` och `tests/importprofiler-app.test.js`, k-invariantsviten och webbläsarröktestet | ✔ ingen ny utdata lämnar verktyget utöver profilens JSON (exporten och konfigurationsfilens och paketets fält), och den bär inga värden ur filen |
 | Kvartiler utan enskilda löner | Enhetstest, röktest, golden-facit + EU-exporten genomsökt i Chromium | ✔ varken lägsta eller högsta lön i fliken eller exporten |
 | Formelskydd i CSV/urklipp (ADR-15) | Regressionstest (`tests/smoke.test.js`) + kodläsning av alla CSV-skrivare | ✔ `= + - @`-celler neutraliseras; tal orörda; mallfilen innehåller ingen användardata |

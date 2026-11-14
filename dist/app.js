@@ -1393,6 +1393,30 @@ function _regStegForRedovisning(reg) {
 }
 
 /**
+ * Regressionens BAS-effekter så som de får redovisas (ADR-70, beslut 2026-11-14). Effekten för ett BAS-intervall med
+ * färre personer än tröskeln ligger nära deras genomsnittliga lönenivå: den skrivs inte ut, och intervallet namnges i
+ * noten (redovisningsformen i ADR-12). Är referensintervallet självt under tröskeln beskriver varje effekt dess nivå
+ * baklänges; då skrivs ingen effekt ut. Modellen och dess referens (ADR-44) ändras inte; bara vad som visas. På
+ * skärmen är tröskeln 1 och allt visas (ADR-51).
+ * @param {any} reg  regressionsresultatet (basEffekter, basRef, basN)
+ * @returns {{effekter: Array|null, utelamnade: string[], referensUtelamnad: boolean, not: string}}
+ *   effekter är null när modellen inte har BAS-effekter; noten är text utan markup.
+ */
+function _basEffekterForRedovisning(reg) {
+    const alla = reg && reg.basEffekter;
+    if (!alla) return { effekter: null, utelamnade: [], referensUtelamnad: false, not: '' };
+    const n = b => (reg.basN && reg.basN[b]) || 0;
+    const k = kTroskel();
+    if (reg.basRef != null && isKMasked(n(reg.basRef))) {
+        return { effekter: [], utelamnade: alla.map(e => e.bas), referensUtelamnad: true,
+            not: `BAS-effekterna visas inte här: referensintervallet, BAS ${reg.basRef}, har färre än ${k} ${personOrd(k)}, och varje effekt mot det skulle visa dess lönenivå. Personerna ingår fortfarande i modellen.` };
+    }
+    const utelamnade = alla.filter(e => isKMasked(n(e.bas))).map(e => e.bas);
+    return { effekter: alla.filter(e => !isKMasked(n(e.bas))), utelamnade, referensUtelamnad: false,
+        not: utelamnade.length ? _kMaskNoteText(utelamnade, 'BAS-intervall|BAS-intervall', k, 'deras effekt i modellen skulle visa deras genomsnittliga lönenivå', 'modellen') : '' };
+}
+
+/**
  * Not under ett diagram där något utelämnats på grund av tröskeln (samma utseende som tabellernas
  * noter). Tom text tar bort noten. Noten läggs efter diagrammets behållare, så att den inte tränger
  * ihop ritytan.
@@ -1901,6 +1925,25 @@ function kMaskNote(namn, sammanhang, trosk) {
         + `${_kNoteNamn(lista)}. ${den} färre än ${t} ${personOrd(t)}, och ${dess} lönemått skulle kunna `
         + `peka ut enskilda. Personerna ingår fortfarande i underlaget och i totalsummorna — det är `
         + `redovisningen per grupp som utgår.</p>`;
+}
+
+/**
+ * Samma not som text utan markup, för rapportmodellen och kortets egna noter: vad som inte visas (`vad`, i plural)
+ * och var personerna fortfarande ingår (`dar`).
+ * @param {string[]} namn
+ * @param {string} sammanhang  "singular|plural"
+ * @param {number} t           tröskeln
+ * @param {string} vad
+ * @param {string} dar
+ */
+function _kMaskNoteText(namn, sammanhang, t, vad, dar) {
+    const lista = (namn || []).filter(Boolean);
+    if (!lista.length) return '';
+    const n = lista.length;
+    const visade = lista.slice(0, K_NOTE_MAX_NAMN).join(', ') + (n > K_NOTE_MAX_NAMN ? ` och ${n - K_NOTE_MAX_NAMN} till` : '');
+    const text = n === 1 ? vad.replace(/\bderas\b/g, 'dess') : vad;
+    return `${n} ${_kNoteForm(sammanhang, n)} visas inte här: ${visade}. ${n === 1 ? 'Det har' : 'De har'} färre än ${t} ${personOrd(t)}, `
+        + `och ${text}. Personerna ingår fortfarande i ${dar}; det är redovisningen per ${_kNoteForm(sammanhang, 1)} som utgår.`;
 }
 
 /**
@@ -24064,6 +24107,63 @@ function _fcKostnadsval() {
              kvThreshold: aidbasGrans(), kvDefinition: aidbasDefinition() };   // samma definition av kvinnodominerat som Likvärdigt arbete (ADR-60)
 }
 /**
+ * Utfallets rader per grupp, för tabellen och bladet Fördelning (ADR-70). En grupp under tröskeln `K` har sin rad med
+ * antal och andel kvinnor, men medianerna och kostnaden maskeras (`sma`). Kostnaden för de maskerade raderna står
+ * samlad på en rad, så att radernas kostnader summerar till det använda; annars vore det använda minus de visade
+ * raderna de små gruppernas kostnad, och med ett påslag i procent deras lönesumma. Den samlade kostnaden står bara när
+ * den omfattar minst `K` personer. Gör den inte det viks den minsta visade gruppens kostnad in, en grupp i taget
+ * (`invikta`; minst betyder färst personer, vid lika antal först efter BAS och sedan AID). Den gruppens medianer
+ * maskeras också: antalet gånger skillnaden mellan gammal och ny median ligger så nära gruppens kostnad att
+ * differensen annars gav de små gruppernas. Når inte ens alla grupper tillsammans `K` personer står ingen kostnad per
+ * grupp (`samlad.kostnad` är null), bara summorna. De visade raderna står först, i kostnadsordning; de maskerade efter
+ * dem, i BAS- och AID-ordning, så att platsen inte säger något om kostnaden. På skärmen (K = 1) maskeras inget.
+ * @param {any[]} rows  grupperna med påslag, i kostnadsordning
+ * @param {number} K
+ */
+function _fcUtfallsrader(rows, K) {
+    const ordning = (a, b) => String(a.bas).localeCompare(String(b.bas), 'sv') || String(a.aid).localeCompare(String(b.aid), 'sv');
+    const antal = gs => gs.reduce((s, g) => s + g.n, 0);
+    const sma = rows.filter(g => g.n < K);
+    const invikta = [];
+    if (sma.length) {
+        const kandidater = rows.filter(g => g.n >= K).sort((a, b) => a.n - b.n || ordning(a, b));
+        while (antal(sma) + antal(invikta) < K && kandidater.length) invikta.push(/** @type {any} */ (kandidater.shift()));
+    }
+    const maskerade = [...sma, ...invikta].sort(ordning);
+    const n = antal(maskerade);
+    return { visade: rows.filter(g => !maskerade.includes(g)), maskerade, sma, invikta,
+        samlad: maskerade.length ? { antalGrupper: maskerade.length, n, kostnad: n >= K ? maskerade.reduce((s, g) => s + g.kostnad, 0) : null } : null };
+}
+// Gruppens namn i noten under utfallet.
+const _fcGruppnamn = g => `BAS ${g.bas} · ${g.aid}`;
+/**
+ * Noten under utfallet, som text utan markup (skärmen och bladet Fördelning): hur många grupper som är under tröskeln,
+ * vilka grupper som har sin kostnad och sina medianer på den samlade raden, och var kostnaden står.
+ */
+function _fcUtfallsNot(utfall, K) {
+    const a = utfall.sma.length;
+    if (!a) return '';
+    const lista = gs => gs.slice(0, K_NOTE_MAX_NAMN).map(_fcGruppnamn).join(', ') + (gs.length > K_NOTE_MAX_NAMN ? ` och ${gs.length - K_NOTE_MAX_NAMN} till` : '');
+    let t = `${a} ${a === 1 ? 'grupp' : 'grupper'} med färre än ${K} ${personOrd(K)} ingår i summorna, men ${a === 1 ? 'dess' : 'deras'} medianer och kostnad redovisas inte per grupp.`;
+    if (utfall.invikta.length) t += ` Medianerna och kostnaden för ${lista(utfall.invikta)} redovisas inte heller per grupp: grupperna under tröskeln har tillsammans färre än ${K} ${personOrd(K)}, och annars skulle deras kostnad gå att räkna fram ur summorna.`;
+    t += utfall.samlad.kostnad != null
+        ? ` Kostnaden för ${utfall.maskerade.length === 1 ? 'gruppen' : `de ${utfall.maskerade.length} grupperna`} står samlad på raden Kostnad för grupper under tröskeln, så att kostnaderna summerar till det använda.`
+        : ` Grupperna med påslag har tillsammans färre än ${K} ${personOrd(K)}, så ingen kostnad redovisas per grupp; den står bara i summorna.`;
+    return t;
+}
+/**
+ * Hur mycket av påslaget som går till kvinnodominerade grupper, så som det får redovisas bredvid utfallets rader
+ * (ADR-70). Talet minus de visade kvinnodominerade raderna är kostnaden för de maskerade kvinnodominerade grupperna, och
+ * den samlade kostnaden minus den är de övrigas. Talet står när båda delarna är tomma eller omfattar minst `K`
+ * personer, eller när den ena är tom (då är den andra hela den samlade kostnaden, som redan står); annars null (visas
+ * som –). Utan maskerade grupper är det utfallets equityCost.
+ */
+function _fcVaravKvDom(utfall, equityCost, K) {
+    if (!utfall.maskerade.length) return equityCost;
+    const nKv = utfall.maskerade.filter(g => kvDomNu(g.andelKv)).reduce((s, g) => s + g.n, 0), nOvr = utfall.samlad.n - nKv;
+    return (nKv === 0 || nOvr === 0 || (nKv >= K && nOvr >= K)) ? equityCost : null;
+}
+/**
  * Prognosens utfall ur raderna och inställningarna som de står i state.forecast. Exporten och scenarierna räknar det
  * här i stället för att läsa ett sparat utfall, så att de aldrig skriver ett utfall som räknades med en rad som
  * sedan har tagits bort (ADR-69).
@@ -24166,17 +24266,17 @@ function updateForecast() {
     const rows = out.alloc.perGroup.filter(g => Math.abs(g.kostnad) > 0.5).sort((a, b) => b.kostnad - a.kostnad);
     const K = kTroskel();
     // Där medianerna maskeras maskeras också kostnaden: i en grupp med en person är ett påslag i
-    // procent personens lön gånger procentsatsen. Summorna ovan omfattar alla grupper.
-    const antalMaskerade = rows.filter(g => g.n < K).length;
-    const maskNot = antalMaskerade
-        ? `<p class="k-mask-note">${antalMaskerade} ${antalMaskerade === 1 ? 'grupp' : 'grupper'} med färre än ${K} ${personOrd(K)} ingår i summorna, men ${antalMaskerade === 1 ? 'dess' : 'deras'} medianer och kostnad redovisas inte per grupp.</p>`
-        : '';
+    // procent personens lön gånger procentsatsen. Kostnaden för de maskerade raderna står samlad, så att
+    // summorna minus de visade raderna inte ger en liten grupps kostnad (ADR-70, _fcUtfallsrader).
+    const utfall = _fcUtfallsrader(rows, K);
+    const utfallsNot = _fcUtfallsNot(utfall, K);
+    const maskNot = utfallsNot ? `<p class="k-mask-note">${esc(utfallsNot)}</p>` : '';
     // Könsuppdelade mått för hela urvalet kräver tröskeln för varje kön (ADR-12).
     const konOk = _konFarRedovisasFor(d);
-    const tableRows = rows.map(g => {
-        const masked = g.n < K;
+    const tableRows = [...utfall.visade, ...utfall.maskerade].map(g => {
+        const masked = utfall.maskerade.includes(g);
         const medCells = masked
-            ? `<td colspan="3" class="farg-dampad kursiv">n &lt; ${K} (maskerad)</td>`
+            ? `<td colspan="3" class="farg-dampad kursiv">${g.n < K ? `n &lt; ${K} (maskerad)` : 'visas inte (se noten)'}</td>`
             : `<td class="t-hoger">${kr(g.gammalMedian)}</td><td class="fw-600 ta-hoger">${kr(g.nyMedian)}</td><td class="farg-ok ta-hoger">+${svPct((100 * (g.nyMedian / g.gammalMedian - 1)), 1)}</td>`;
         const bm = bandByBas[g.bas] ? bandByBas[g.bas].median : null;
         const compa = (!masked && bm > 0) ? g.nyMedian / bm : null;
@@ -24184,7 +24284,9 @@ function updateForecast() {
             ? '<td class="farg-dampad ta-hoger">–</td>'
             : `<td class="t-hoger${compa > 1.1 ? ' fg-varning' : compa < 0.9 ? ' fg-info-mork' : ''}">${svTal(compa, 2)}${compa > 1.1 ? ' över' : compa < 0.9 ? ' under' : ''}</td>`;
         return `<tr><td>${esc(g.bas)}</td><td>${esc(g.aid)}</td><td class="t-hoger">${g.n}</td><td class="t-hoger">${svPct(g.andelKv, 0)}</td>${medCells}<td class="t-hoger">${masked ? '–' : kr(g.kostnad) + '/mån'}</td>${compaCell}</tr>`;
-    }).join('');
+    }).join('') + (utfall.samlad && utfall.samlad.kostnad != null
+        ? `<tr><td>Kostnad för grupper under tröskeln</td><td>${utfall.samlad.antalGrupper} ${utfall.samlad.antalGrupper === 1 ? 'grupp' : 'grupper'}, ${utfall.samlad.n} ${personOrd(utfall.samlad.n)}</td><td colspan="5"></td><td class="t-hoger">${kr(utfall.samlad.kostnad)}/mån</td><td></td></tr>`
+        : '');
     const gapCell = (before, after, _lowerBetterTowardZero) => {
         const arrow = (before == null || after == null) ? '' : (Math.abs(after) < Math.abs(before) ? ` <span class="farg-ok">minskar</span>` : (Math.abs(after) > Math.abs(before) ? ' <span class="f-kritisk">ökar</span>' : ' <span class="f-dampad">oförändrat</span>'));
         return `${pct(before)} till <strong>${pct(after)}</strong>${arrow}`;
@@ -24217,19 +24319,22 @@ function updateForecast() {
         </div>`;
     }
     // Fördelning av påslaget: generellt / riktat, samt andel till kvinnodom. grupper
-    const equityPctOfPott = out.pott > 0 ? 100 * out.equityCost / out.pott : null;
+    // Bredvid utfallets rader står andelen bara när den inte ger en del av den samlade kostnaden (ADR-70).
+    const varavKvDom = _fcVaravKvDom(utfall, out.equityCost, K);
+    const equityPctOfPott = out.pott > 0 && varavKvDom != null ? 100 * varavKvDom / out.pott : null;
     const splitHtml = out.använt > 0.5 ? `
         <div class="card ram-v-4-7c3aed marg-0-0-14">
             <strong class="block-mb6">Hur potten används</strong>
             <div class="fs-md lh-1_8">
                 Generellt påslag: <strong>${kr(out.generellCost)}</strong> &nbsp;·&nbsp; Riktade potter: <strong>${kr(out.riktadCost)}</strong><br>
-                Varav till kvinnodominerade grupper (${esc(kvDomGransText())} kvinnor): <strong>${kr(out.equityCost)}</strong>${equityPctOfPott != null ? ` <span class="f-dampad">(${svPct(equityPctOfPott, 0)} av potten)</span>` : ''}
+                Varav till kvinnodominerade grupper (${esc(kvDomGransText())} kvinnor): <strong>${varavKvDom == null ? '–' : kr(varavKvDom)}</strong>${equityPctOfPott != null ? ` <span class="f-dampad">(${svPct(equityPctOfPott, 0)} av potten)</span>` : ''}
             </div>
             <p class="text-dampad-xs marg-8-0-0">Andelen till kvinnodominerade grupper visar ungefär hur mycket av översynen som riktas mot skillnaderna i likvärdigt arbete.</p>
         </div>` : '';
     // Spillover-/leapfrog-varning
-    // Jämförelsen visar gruppmedianer: bara grupper som når tröskeln tas med.
-    const leaps = _fcDetectLeapfrog(out.alloc.perGroup.filter(g => !isKMasked(g.n)));
+    // Jämförelsen visar gruppmedianer: bara grupper som når tröskeln tas med, och inte en grupp vars medianer
+    // maskeras i utfallet för att dess kostnad står på den samlade raden (ADR-70).
+    const leaps = _fcDetectLeapfrog(out.alloc.perGroup.filter(g => !isKMasked(g.n) && !utfall.invikta.includes(g)));
     const leapHtml = leaps.length ? `
         <div class="card bak-varning-yta ram-v-4-varning marg-0-0-14">
             <strong class="block-mb6">${ikon('statusVarning')} Spillover: ${leaps.length} grupp${leaps.length > 1 ? 'er' : ''} går om en tidigare högre grupp</strong>
@@ -24784,7 +24889,10 @@ function _exportForecastExport() {
     const K = kTroskel();
     const konOk = _konFarRedovisasFor(getData());
     const exportGrupper = out.alloc.perGroup.filter(g => Math.abs(g.kostnad) > 0.5).sort((a, b) => b.kostnad - a.kostnad);
-    const antalMaskerade = exportGrupper.filter(g => g.n < K).length;
+    // Kostnaden för de maskerade raderna står samlad, och andelen till kvinnodominerade grupper bara när den inte ger
+    // en del av den (ADR-70, _fcUtfallsrader och _fcVaravKvDom).
+    const utfall = _fcUtfallsrader(exportGrupper, K);
+    const varavKvDom = _fcVaravKvDom(utfall, out.equityCost, K);
     const meta = [
         ['Löneöversyn — prognosunderlag', ''],
         ['Genererad', new Date().toLocaleString('sv-SE')],
@@ -24803,27 +24911,30 @@ function _exportForecastExport() {
         ['Stegvis plan (antal år)', state.forecast.years || 1],
         ['Generellt (kr/mån)', kr(out.generellCost || 0)],
         ['Riktat (kr/mån)', kr(out.riktadCost || 0)],
-        ['Varav till kvinnodominerade grupper (kr/mån)', kr(out.equityCost || 0)],
-        ['Spillover-varningar (grupper som går om en högre grupp)', _fcDetectLeapfrog(out.alloc.perGroup.filter(g => !isKMasked(g.n))).length],
+        ['Varav till kvinnodominerade grupper (kr/mån)', varavKvDom == null ? '–' : kr(varavKvDom || 0)],
+        ['Spillover-varningar (grupper som går om en högre grupp)', _fcDetectLeapfrog(out.alloc.perGroup.filter(g => !isKMasked(g.n) && !utfall.invikta.includes(g))).length],
         ['Total kostnad (inkl. PO + period)', kr(out.totalKostnad)],
         ['Lönesumma före (kr/mån)', kr(out.lonsummaFore)],
         ['Lönesumma efter (kr/mån)', kr(out.lonsummaEfter)],
         ['Kvinnors medianlön i % av mäns, före', !konOk || out.rawGapFore == null ? '–' : +(100 + out.rawGapFore).toFixed(1)],
         ['Kvinnors medianlön i % av mäns, efter', !konOk || out.rawGapEfter == null ? '–' : +(100 + out.rawGapEfter).toFixed(1)],
         ...(konOk ? [] : [['Könsuppdelade mått', _konUtelamnatNot()]]),
-        ...(antalMaskerade ? [['Grupper under tröskeln', `${antalMaskerade} ${antalMaskerade === 1 ? 'grupp' : 'grupper'} med färre än ${K} ${personOrd(K)} ingår i summorna, men ${antalMaskerade === 1 ? 'dess' : 'deras'} medianer och kostnad redovisas inte per grupp.`]] : []),
+        ...(utfall.sma.length ? [['Grupper under tröskeln', _fcUtfallsNot(utfall, K) + (varavKvDom == null ? ' Andelen till kvinnodominerade grupper visas inte, eftersom den skulle ge en del av den samlade kostnaden.' : '')]] : []),
         ['', ''],
         ['OBS', 'Bara summor. Enskildas löner ingår inte (inbyggt dataskydd). Den slutliga löneöversynen dokumenteras i Word-utkastet och Handlingsplan.']
     ];
     const header = ['BAS', 'Yrke (AID)', 'n', 'Andel kvinnor (%)', 'Gammal median', 'Ny median', 'Förändring (%)', 'Kostnad (kr/mån)'];
-    const body = exportGrupper.map(g => {
-        const masked = g.n < K;
+    const body = [...utfall.visade, ...utfall.maskerade].map(g => {
+        const masked = utfall.maskerade.includes(g), dold = g.n < K ? 'n<' + K : 'se noten';
         return [g.bas, g.aid, g.n, +g.andelKv.toFixed(0),
-            masked ? 'n<' + K : kr(g.gammalMedian),
-            masked ? 'n<' + K : kr(g.nyMedian),
+            masked ? dold : kr(g.gammalMedian),
+            masked ? dold : kr(g.nyMedian),
             masked ? '' : +(100 * (g.nyMedian / g.gammalMedian - 1)).toFixed(1),
             masked ? '' : kr(g.kostnad)];
     });
+    const s = utfall.samlad;
+    if (s && s.kostnad != null) body.push(['Kostnad för grupper under tröskeln', `${s.antalGrupper} ${s.antalGrupper === 1 ? 'grupp' : 'grupper'}, ${s.n} ${personOrd(s.n)}`, '', '', '', '', '', kr(s.kostnad)]);
+    if (s) body.push([], [_fcUtfallsNot(utfall, K)]);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(meta), 'Sammanfattning');
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([header, ...body]), 'Fördelning');
@@ -28378,6 +28489,10 @@ function runOLSRegression() {
         });
     }
     const basRef = skattad.bas ? basRef0 : null;
+    // Antal personer per BAS-intervall i modellen: redovisningen av effekterna följer tröskeln (_basEffekterForRedovisning).
+    /** @type {Record<string, number>} */
+    const basN = {};
+    for (const d of raw) basN[d.bas] = (basN[d.bas] || 0) + 1;
 
     // Sekventiell dekomponering på den skattade modellen.
     // Ansvarssteget lyfts ut: det redovisas på en egen rad och påverkar inte huvudtalet.
@@ -28442,6 +28557,7 @@ function runOLSRegression() {
         ageEffect, ageP,
         basEffekter,                          // per BAS-intervall utom referensen: nivå mot referensen (null vid reservmodell)
         basRef,                               // referensintervallet (alfabetiskt första)
+        basN,                                 // antal personer per BAS-intervall i modellen
         basList,                              // alfabetiskt sorterad lista, för referens i UI
         R2: chosen.R2, adjR2: chosen.adjR2,
         rawGapPct,
@@ -29184,6 +29300,8 @@ function renderRegressionCard() {
     // beräknas vid klick (inte i förväg) för att minska minne — pekar bara
     // på bas-namnet och slår upp i r.perBas + bhQByBas vid behov.
     const allM = (r.perBas || []).filter(p => p.status === 'ok' && isFinite(p.pValue)).length;
+    // BAS-effekterna så som de får redovisas (ADR-70): intervall under tröskeln namnges i en not.
+    const basEffUt = _basEffekterForRedovisning(r);
     const perBasRows = (r.perBas || []).map(p => {
         if (p.status !== 'ok') {
             const note = p.status === 'too_few' ? `För få: ${p.kvN} kvinnor, ${p.maN} män (kräver minst ${statGolv()} av varje kön)` : 'Singulär';
@@ -29468,13 +29586,14 @@ function renderRegressionCard() {
                         <tr><th>Procentuell löneförändring per levnadsår</th><td>${r.ageEffect >= 0 ? '+' : ''}${svPct(r.ageEffect, 3)}</td></tr>
                         <tr><th>p-värde</th><td>${_formatPValue(r.ageP)}</td></tr>
                     </table>` : ''}
-                    ${r.basEffekter ? `
+                    ${basEffUt.effekter ? `
                     <h3>BAS-effekter (indikatorvariabler)</h3>
                     <p>Varje BAS-intervall har en egen indikator; det alfabetiskt första intervallet, <code>${esc(r.basRef)}</code>, är referens. Koefficienten är intervallets lönenivå i procent mot referensen, efter kontroll för kön och ålder — inget antagande om lika stora steg mellan bokstäverna.</p>
-                    <table class="reg-tech-table">${antalCaption(r.nKvAnalysed, r.nMaAnalysed)}
+                    ${basEffUt.effekter.length ? `<table class="reg-tech-table">${antalCaption(r.nKvAnalysed, r.nMaAnalysed)}
                         <tr><th>BAS</th><th>Nivå mot ${esc(r.basRef)}</th><th>95% KI</th><th>p-värde</th></tr>
-                        ${r.basEffekter.map(e => `<tr><td>${esc(e.bas)}</td><td>${e.pct >= 0 ? '+' : ''}${svPct(e.pct, 1)}</td><td>${svPct(e.low, 1)} till ${svPct(e.high, 1)}</td><td>${_formatPValue(e.p)}</td></tr>`).join('')}
-                    </table>
+                        ${basEffUt.effekter.map(e => `<tr><td>${esc(e.bas)}</td><td>${e.pct >= 0 ? '+' : ''}${svPct(e.pct, 1)}</td><td>${svPct(e.low, 1)} till ${svPct(e.high, 1)}</td><td>${_formatPValue(e.p)}</td></tr>`).join('')}
+                    </table>` : ''}
+                    ${basEffUt.not ? `<p class="k-mask-note">${esc(basEffUt.not)}</p>` : ''}
                     ` : ''}
                     <h3>Modellspecifikationer som testades (kaskadval)</h3>
                     <p class="lh-1_7">${triedRow}</p>
@@ -32201,6 +32320,7 @@ function _rmAvsnittenUtanUrval() {
     if (reg && !reg.error) {
         const stegUt = _regStegForRedovisning(reg);
         const kritisk = _laRegGranska(reg);   // säkerställd och minst 3 % (ADR-59); regressionens tal bär ingen direktivmarkering
+        const basEffUt = _basEffekterForRedovisning(reg);   // intervall under tröskeln utelämnas och namnges (ADR-70)
         regression.delar.push(
             dampad(`Skattad modell: log(lön) ~ ${reg.modelDesc} (OLS-regression). Löneskillnaden anges i procent: negativ när kvinnor ligger lägre.`),
             nyckel([
@@ -32211,8 +32331,9 @@ function _rmAvsnittenUtanUrval() {
                 ['R² / justerad R²', `${svPct(reg.R2 * 100, 1)} / ${svPct(reg.adjR2 * 100, 1)}`],
                 ...(reg.basRef != null && !reg.modell.yrkesgrupp ? [['BAS-intervall i modellen', `${reg.nBas} (${reg.basList[0]}–${reg.basList[reg.basList.length - 1]}; indikatorvariabler, ${reg.basRef} är referens)`]] : []),
                 ...(reg.modell.yrkesgrupp && reg.yrkesSteg ? [['Yrkesgrupper i modellen', `${reg.yrkesSteg.nGrupper} grupper (AID inom BAS; fasta effekter), ${reg.yrkesSteg.nGrupperBada} med båda könen`]] : []),
-                ...(reg.basEffekter ? [['BAS-effekter', `nivå mot BAS ${reg.basRef}: ${reg.basEffekter.map(e => `${e.bas} ${rmCell(e.pct, 'tecken2')} (${_formatPValue(e.p)})`).join('; ')}`]] : []),
+                ...(basEffUt.effekter?.length ? [['BAS-effekter', `nivå mot BAS ${reg.basRef}: ${basEffUt.effekter.map(e => `${e.bas} ${rmCell(e.pct, 'tecken2')} (${_formatPValue(e.p)})`).join('; ')}`]] : []),
             ]));
+        if (basEffUt.not) { regression.delar.push(stycke(basEffUt.not, 'not')); regression.utelamnat.push(basEffUt.referensUtelamnad ? 'BAS-effekterna (referensintervallet under tröskeln)' : 'BAS-effekter för intervall under tröskeln'); }
         // Det bortvalda (ADR-56): en mening per variabel, med skälet.
         for (const b of reg.bortvalt || []) regression.delar.push(stycke(_ruBortvaltNotering(b)));
         if (reg.fellBackFromFull && reg.diagnostics.length) regression.delar.push(stycke(`Notering: den valda modellen kunde inte skattas. Föll tillbaka till ${reg.modelDesc}. ${reg.diagnostics.map(utanTaggar).join(' ')}`));
@@ -33315,11 +33436,11 @@ const INFO_SECTIONS = {
             <li>CSV, urklipp och diagrambilder</li>
             <li>rapportunderlaget och allt i Rapporttext, Exportera och Spara och jämför år</li>
         </ul>
-        <p>Där redovisas inte grupper med färre än ${kInstalld()} ${personOrd(kInstalld())}. De räknas i stället upp med namn i en not, så att det syns vad som saknas. Personerna ingår ändå i underlaget och i totalsummorna. Gällande värde är ${kInstalld()} och standardvärdet är ${K_STANDARD}. Du ändrar det under Inställningar i sidhuvudet (&quot;Minsta gruppstorlek för redovisning&quot;).</p>
+        <p>Där redovisas inga lönemått för grupper med färre än ${kInstalld()} ${personOrd(kInstalld())}. Där en grupps rad utelämnas räknas gruppen upp med namn i en not, så att det syns vad som saknas. Personerna ingår ändå i underlaget och i totalsummorna. Skyddet gäller lönemått: antal och andelar, också per kön, kan stå i exporterna för små grupper, och du bedömer själv vad som kan spridas. Gällande värde är ${kInstalld()} och standardvärdet är ${K_STANDARD}. Du ändrar det under Inställningar i sidhuvudet (&quot;Minsta gruppstorlek för redovisning&quot;).</p>
         <p>Ibland är bara <em>könsuppdelningen</em> för liten, medan gruppen som helhet når tröskeln. Då redovisar exporterna gruppens <strong>samlade median</strong> i stället, utan könsjämförelse. Samma regel gäller könsuppdelade mått för hela organisationen: varje kön ska nå tröskeln.</p>
         <p><strong>Undantag och särskilda fall:</strong></p>
         <ul>
-            <li><strong>Löneöversyn.</strong> Du får lägga en egen riktad rad på en grupp under ${kInstalld()} ${personOrd(kInstalld())}. Beloppet visas på raden och ingår i summorna, även i Excel-exporten. Raden bygger då på enskildas löner, och det står på raden. Verktygets egna förslag ur likvärdigt arbete riktar däremot aldrig mot ett par där en grupp har färre än ${kInstalld()} ${personOrd(kInstalld())}, inte heller på skärmen. Varje yrke får en rad, mot jämförelseyrket med störst skillnad. Ett förslag tas bort om du höjer tröskeln över en av parets grupper, och ett förslag ur en konfigurationsfil tas bort när verktyget inte kan avgöra att paret når tröskeln. Det står vid förslagen när det händer.</li>
+            <li><strong>Löneöversyn.</strong> Du får lägga en egen riktad rad på en grupp under ${kInstalld()} ${personOrd(kInstalld())}. Beloppet visas på raden och ingår i summorna, även i Excel-exporten. Raden bygger då på enskildas löner, och det står på raden. I exportens blad Fördelning står en liten grupps kostnad inte på gruppens rad utan på raden Kostnad för grupper under tröskeln, så att den inte går att räkna fram ur summorna. Verktygets egna förslag ur likvärdigt arbete riktar däremot aldrig mot ett par där en grupp har färre än ${kInstalld()} ${personOrd(kInstalld())}, inte heller på skärmen. Varje yrke får en rad, mot jämförelseyrket med störst skillnad. Ett förslag tas bort om du höjer tröskeln över en av parets grupper, och ett förslag ur en konfigurationsfil tas bort när verktyget inte kan avgöra att paret når tröskeln. Det står vid förslagen när det händer.</li>
             <li><strong>Tabeller och egna vyer.</strong> Exporten av tabellen och diagrammen utelämnar grupper under ${kInstalld()} ${personOrd(kInstalld())}. Vill du ta med dem kryssar du i rutan <em>Ta med grupper under ${kInstalld()} i exporten</em>. Organisationspaketet kan stänga av rutan.</li>
             <li><strong>Likvärdigt arbete.</strong> Lagen kräver att även små kvinnodominerade yrken prövas. Fliken och dess egen export visar därför kandidatpar även när en grupp är under tröskeln, och exporten anger det i filen. Alla andra utdata tar bara med par där båda grupperna når tröskeln, och anger hur många par som utelämnats. Det gäller Rapportunderlaget, Word-utkastet, PDF-rapporten, protokollet för gemensam lönebedömning, Att göra och dess CSV, handlingsplanens förifyllda rader och gruppdossiern.</li>
             <li><strong>Enskilda personer i verktyget.</strong> Personer att granska (Lika arbete) och extremvärdena i Underlagets kvalitet visar enskilda löner med filens radnummer. Personer att granska kan inte exporteras eller skrivas ut.</li>

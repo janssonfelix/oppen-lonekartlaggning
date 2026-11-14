@@ -144,6 +144,10 @@ function runOLSRegression() {
         });
     }
     const basRef = skattad.bas ? basRef0 : null;
+    // Antal personer per BAS-intervall i modellen: redovisningen av effekterna följer tröskeln (_basEffekterForRedovisning).
+    /** @type {Record<string, number>} */
+    const basN = {};
+    for (const d of raw) basN[d.bas] = (basN[d.bas] || 0) + 1;
 
     // Sekventiell dekomponering på den skattade modellen.
     // Ansvarssteget lyfts ut: det redovisas på en egen rad och påverkar inte huvudtalet.
@@ -208,6 +212,7 @@ function runOLSRegression() {
         ageEffect, ageP,
         basEffekter,                          // per BAS-intervall utom referensen: nivå mot referensen (null vid reservmodell)
         basRef,                               // referensintervallet (alfabetiskt första)
+        basN,                                 // antal personer per BAS-intervall i modellen
         basList,                              // alfabetiskt sorterad lista, för referens i UI
         R2: chosen.R2, adjR2: chosen.adjR2,
         rawGapPct,
@@ -950,6 +955,8 @@ function renderRegressionCard() {
     // beräknas vid klick (inte i förväg) för att minska minne — pekar bara
     // på bas-namnet och slår upp i r.perBas + bhQByBas vid behov.
     const allM = (r.perBas || []).filter(p => p.status === 'ok' && isFinite(p.pValue)).length;
+    // BAS-effekterna så som de får redovisas (ADR-70): intervall under tröskeln namnges i en not.
+    const basEffUt = _basEffekterForRedovisning(r);
     const perBasRows = (r.perBas || []).map(p => {
         if (p.status !== 'ok') {
             const note = p.status === 'too_few' ? `För få: ${p.kvN} kvinnor, ${p.maN} män (kräver minst ${statGolv()} av varje kön)` : 'Singulär';
@@ -1234,13 +1241,14 @@ function renderRegressionCard() {
                         <tr><th>Procentuell löneförändring per levnadsår</th><td>${r.ageEffect >= 0 ? '+' : ''}${svPct(r.ageEffect, 3)}</td></tr>
                         <tr><th>p-värde</th><td>${_formatPValue(r.ageP)}</td></tr>
                     </table>` : ''}
-                    ${r.basEffekter ? `
+                    ${basEffUt.effekter ? `
                     <h3>BAS-effekter (indikatorvariabler)</h3>
                     <p>Varje BAS-intervall har en egen indikator; det alfabetiskt första intervallet, <code>${esc(r.basRef)}</code>, är referens. Koefficienten är intervallets lönenivå i procent mot referensen, efter kontroll för kön och ålder — inget antagande om lika stora steg mellan bokstäverna.</p>
-                    <table class="reg-tech-table">${antalCaption(r.nKvAnalysed, r.nMaAnalysed)}
+                    ${basEffUt.effekter.length ? `<table class="reg-tech-table">${antalCaption(r.nKvAnalysed, r.nMaAnalysed)}
                         <tr><th>BAS</th><th>Nivå mot ${esc(r.basRef)}</th><th>95% KI</th><th>p-värde</th></tr>
-                        ${r.basEffekter.map(e => `<tr><td>${esc(e.bas)}</td><td>${e.pct >= 0 ? '+' : ''}${svPct(e.pct, 1)}</td><td>${svPct(e.low, 1)} till ${svPct(e.high, 1)}</td><td>${_formatPValue(e.p)}</td></tr>`).join('')}
-                    </table>
+                        ${basEffUt.effekter.map(e => `<tr><td>${esc(e.bas)}</td><td>${e.pct >= 0 ? '+' : ''}${svPct(e.pct, 1)}</td><td>${svPct(e.low, 1)} till ${svPct(e.high, 1)}</td><td>${_formatPValue(e.p)}</td></tr>`).join('')}
+                    </table>` : ''}
+                    ${basEffUt.not ? `<p class="k-mask-note">${esc(basEffUt.not)}</p>` : ''}
                     ` : ''}
                     <h3>Modellspecifikationer som testades (kaskadval)</h3>
                     <p class="lh-1_7">${triedRow}</p>

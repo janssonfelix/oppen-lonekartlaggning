@@ -7,7 +7,7 @@ ut, undantagen, golven, inställningen och vakterna. Koden är sanningen; där d
 dokumentet som ska rättas.
 
 Dokumentet är inte beslutsloggen. Varför det är så här, vad som övervägdes och när det beslutades står i besluten i
-[`arkitekturbeslut.md`](arkitekturbeslut.md): ADR-12, 14, 23, 38, 47, 48, 51, 57 och 69. Diagrammens del — figurens
+[`arkitekturbeslut.md`](arkitekturbeslut.md): ADR-12, 14, 23, 38, 47, 48, 51, 57, 69 och 70. Diagrammens del — figurens
 `liten`-flagga, vyns skyldigheter och kraven på varje vy — står i [`diagramkarnan.md`](diagramkarnan.md) §1 och §7–8
 och upprepas inte här. Hur skyddet och undantagen beskrivs för dataskyddsombudet står i `docs/dataskydd/dataskydd.md`
 §3 och i riskanalysen (`docs/dataskydd/riskanalys.md` §6.5).
@@ -89,8 +89,36 @@ Samma regel gäller `representationByBas`, `medianGapPct`, `distributionalGap` o
 EU-lönerapporten. Regressionens justerade gap visas från regressionens eget fasta golv, 5 per kön; övriga skattningar
 har fasta eller statistiska golv (avsnitt 5). Fem regler till står i avsnitt 8.
 
-**Antal är inte ett lönemått.** I Tabeller och egna vyer följer antal (n, och n per kön) med i exporten även när ett
-kön har färre än `kTroskel()` personer, och döljs inte (ADR-14).
+**Vad skyddet omfattar (ADR-70).** Skyddet gäller lönemått: medianer, medelvärden, percentiler, lönespann,
+lönesummor, kostnader räknade ur löner, löneskillnader och regressionens effekter. Antal och andelar, också per kön,
+för en grupp eller ett kön under tröskeln omfattas inte, utöver de beslutade golven: tabellerna per AID-kod och
+BAS-intervall och könsfördelningen per BAS-intervall (från fem personer, avsnitt 4) och Lönelägets mellannivå
+(avsnitt 5). Ett antal kan alltså stå på en rad vars lönemått är maskerade, eller i en not; handläggaren bevakar vad
+som lämnas ut. I Tabeller och egna vyer följer antal (n, och n per kön) med i exporten även när ett kön har färre än
+`kTroskel()` personer (ADR-14).
+
+**Regressionens BAS-effekter.** Effekten för ett BAS-intervall är dess lönenivå mot referensintervallet och ligger
+för ett intervall med få personer nära deras genomsnittliga lönenivå. I det som lämnar verktyget (rapportens bilaga
+om den justerade löneskillnaden i Word-utkastet, PDF-rapporten och utskriften, och regressionskortets tekniska
+specifikation i exportläget) skrivs effekten inte ut för ett intervall med färre än `kTroskel()` personer i modellen
+(`basN`); intervallen namnges i en not utan värden (`_kMaskNoteText`). Har referensintervallet självt färre skrivs
+ingen effekt ut, eftersom varje effekt då beskriver dess nivå baklänges, och noten säger varför. Modellen och dess
+referens (ADR-44) ändras inte. Allt går genom `_basEffekterForRedovisning` (`06-k-anonymitet-och-dataminimering.js`).
+
+**Löneöversyns summor.** I Löneöversyns blad *Fördelning* och i utfallstabellen i exportläget har en grupp under
+tröskeln sin rad med BAS-intervall, yrke, antal och andel kvinnor; medianerna och kostnaden maskeras. Kostnaden för
+de maskerade raderna står samlad på raden *Kostnad för grupper under tröskeln*, så att bladets kostnader summerar till
+*Använt* i *Sammanfattning* och ingen summa minus de visade raderna ger en liten grupps kostnad (med ett påslag i
+procent dess lönesumma). Den samlade kostnaden står bara när den omfattar minst `kTroskel()` personer. Annars viks den
+minsta visade gruppens kostnad in, en grupp i taget (färst personer, vid lika antal först efter BAS och sedan AID):
+gruppens rad står kvar med antal och andel kvinnor, men kostnaden och medianerna maskeras, eftersom antalet gånger
+skillnaden mellan medianerna ligger nära gruppens kostnad. Når inte ens alla grupper tillsammans tröskeln står ingen
+kostnad per grupp, bara summorna. De maskerade raderna står efter de visade, i BAS- och AID-ordning, så att platsen
+inte säger något om kostnaden; spillover-listan tar inte med en invikt grupp. Noten under raderna säger vilka grupper
+det gäller och varför (`_fcUtfallsrader`, `_fcUtfallsNot` i `36-loneoversyn.js`). *Varav till kvinnodominerade
+grupper* står bara när de maskerade kvinnodominerade grupperna och de övriga maskerade grupperna var för sig är tomma
+eller omfattar minst `kTroskel()` personer, eller när en av dem är tom; annars ett streck (`_fcVaravKvDom`). En egen
+riktad rad (regel R2) har sitt belopp i *Sammanfattning* som förut.
 
 **En punkt per person.** Utanför Tabeller och egna vyer ritas och exporteras en persons punkt i ett spridningsdiagram
 bara när personens grupp (yrke inom BAS) och personens kön i gruppen når tröskeln (`individLitenFor`). Antalen räknas på
@@ -322,6 +350,8 @@ utdata och dess skydd, står i riskanalysen (`docs/dataskydd/riskanalys.md` §6.
 | Var uppstår löneskillnaden med andra val av variabler | Skyddsregeln i ADR-22 och ADR-65 | I7 |
 | Underlaget (`figur.underlag`, *Räkna för*) | Avsnitt 1 | I6 |
 | Löneöversyn: kostnad per grupp, knappresultat, egna rader, tröskelmål | Regel R2, R4 och R5 | I1, I1b; R3 i `tests/ktroskel-regression.test.js`; `tests/troskelbeslut.test.js` |
+| Löneöversyns summor: bladen *Fördelning* och *Sammanfattning*, utfallstabellen i exportläget | Avsnitt 2 (Löneöversyns summor, ADR-70) | `tests/ktroskel-loneoversyn-summor.test.js` (en ensam person, två små grupper under tröskeln tillsammans, små grupper som når den, alla grupper under den, lika antal; *Varav*; egna riktade rader; skärmen) |
+| Regressionens BAS-effekter: rapportens bilaga (Word-utkastet, PDF-rapporten, utskriften) och regressionskortet i exportläget | Avsnitt 2 (BAS-effekterna, ADR-70) | `tests/ktroskel-bas-effekter.test.js` (ett intervall och ett referensintervall med 4 personer, i invariantens utdatavägar) |
 | Löneöversyns förslag ur kandidatparen (*Föreslå riktade potter*, mål-läget, känslighetskurvan), deras rader i Excel-exporten och konfigurationsfilen | Avsnitt 1 och regel R2 (ADR-69): den inställda tröskeln, också på skärmen | `tests/loneoversyn-forslag-troskel.test.js` (jämförelseyrket eller det kvinnodominerade yrket under tröskeln, höjd tröskel på skärmen, inläst konfigurationsfil; ett yrke med två jämförelseyrken: en rad, och förslag ur det lilla paret, äldre filer med en rad per jämförelseyrke och en ensam rad ur det lilla paret tas bort); `tests/loneoversyn.test.js` (ett par per yrke); I1 i `tests/ktroskel-invarianter.test.js`; `tests/ktroskel-utdata.test.js`; `tests/troskelbeslut.test.js`. Inte I4: riggens underlag har inga kandidatpar (avsnitt 11) |
 | Regressionskortet (ojusterat steg, förklarad andel) | Regel R1 | R1 i `tests/ktroskel-regression.test.js` (samma vägar som I4, med 7 män i underlaget) |
 | Ålder & karriär | Regel R3 | R4 i `tests/ktroskel-regression.test.js`; `tests/troskelbeslut.test.js` (trendlinjen för hela urvalet) |
@@ -399,9 +429,14 @@ inställningen (standardvärdet).
 ## 11. Kända luckor
 
 - **Invarianten letar efter lönevärden.** Den söker sentinelvärdena, männens löner i Y1–Y3, kostnader och könsgap. Antal,
-  andelar och namn för en grupp under tröskeln vaktas inte av den. Avstegen i antal (avsnitt 4, ADR-57) vaktas därför
-  av egna tester, `tests/aidbas.test.js`, `tests/smoke-aidbas.test.js` och `tests/diagramvyer-marken.test.js`, inte av
-  I4.
+  andelar och namn för en grupp under tröskeln vaktas inte av den; de omfattas inte av skyddet (avsnitt 2, ADR-70).
+  Golven i antal (avsnitt 4, ADR-57) vaktas av egna tester, `tests/aidbas.test.js`, `tests/smoke-aidbas.test.js` och
+  `tests/diagramvyer-marken.test.js`, inte av I4.
+- **Differenser.** I4 söker tal som står i utdatan, inte tal som går att räkna fram ur andra. Löneöversyns summor och
+  regressionens BAS-effekter prövas därför för sig (avsnitt 9). Differenser mellan olika exporter prövas inte: den
+  invikta gruppens median före påslaget kan stå i en annan tabell (gruppen når tröskeln), och med påslagets
+  procentsats ger antal gånger median en uppskattning av dess kostnad. Scenariojämförelsen A/B visar ett sparat
+  scenarios *Varav till kvinnodominerade grupper* som det sparades.
 - **Innehållet i bilder prövas inte.** ZIP-filens bilder, utskriftens bilder och Word-utkastets bilder går inte att
   läsa i testet; riggen tar bort bilderna ur utskriften före sökningen. `tests/ktroskel-bilder.test.js` prövar bara
   meningen om sänkt tröskel.

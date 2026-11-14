@@ -125,6 +125,30 @@ function _regStegForRedovisning(reg) {
 }
 
 /**
+ * Regressionens BAS-effekter så som de får redovisas (ADR-70, beslut 2026-11-14). Effekten för ett BAS-intervall med
+ * färre personer än tröskeln ligger nära deras genomsnittliga lönenivå: den skrivs inte ut, och intervallet namnges i
+ * noten (redovisningsformen i ADR-12). Är referensintervallet självt under tröskeln beskriver varje effekt dess nivå
+ * baklänges; då skrivs ingen effekt ut. Modellen och dess referens (ADR-44) ändras inte; bara vad som visas. På
+ * skärmen är tröskeln 1 och allt visas (ADR-51).
+ * @param {any} reg  regressionsresultatet (basEffekter, basRef, basN)
+ * @returns {{effekter: Array|null, utelamnade: string[], referensUtelamnad: boolean, not: string}}
+ *   effekter är null när modellen inte har BAS-effekter; noten är text utan markup.
+ */
+function _basEffekterForRedovisning(reg) {
+    const alla = reg && reg.basEffekter;
+    if (!alla) return { effekter: null, utelamnade: [], referensUtelamnad: false, not: '' };
+    const n = b => (reg.basN && reg.basN[b]) || 0;
+    const k = kTroskel();
+    if (reg.basRef != null && isKMasked(n(reg.basRef))) {
+        return { effekter: [], utelamnade: alla.map(e => e.bas), referensUtelamnad: true,
+            not: `BAS-effekterna visas inte här: referensintervallet, BAS ${reg.basRef}, har färre än ${k} ${personOrd(k)}, och varje effekt mot det skulle visa dess lönenivå. Personerna ingår fortfarande i modellen.` };
+    }
+    const utelamnade = alla.filter(e => isKMasked(n(e.bas))).map(e => e.bas);
+    return { effekter: alla.filter(e => !isKMasked(n(e.bas))), utelamnade, referensUtelamnad: false,
+        not: utelamnade.length ? _kMaskNoteText(utelamnade, 'BAS-intervall|BAS-intervall', k, 'deras effekt i modellen skulle visa deras genomsnittliga lönenivå', 'modellen') : '' };
+}
+
+/**
  * Not under ett diagram där något utelämnats på grund av tröskeln (samma utseende som tabellernas
  * noter). Tom text tar bort noten. Noten läggs efter diagrammets behållare, så att den inte tränger
  * ihop ritytan.
@@ -633,6 +657,25 @@ function kMaskNote(namn, sammanhang, trosk) {
         + `${_kNoteNamn(lista)}. ${den} färre än ${t} ${personOrd(t)}, och ${dess} lönemått skulle kunna `
         + `peka ut enskilda. Personerna ingår fortfarande i underlaget och i totalsummorna — det är `
         + `redovisningen per grupp som utgår.</p>`;
+}
+
+/**
+ * Samma not som text utan markup, för rapportmodellen och kortets egna noter: vad som inte visas (`vad`, i plural)
+ * och var personerna fortfarande ingår (`dar`).
+ * @param {string[]} namn
+ * @param {string} sammanhang  "singular|plural"
+ * @param {number} t           tröskeln
+ * @param {string} vad
+ * @param {string} dar
+ */
+function _kMaskNoteText(namn, sammanhang, t, vad, dar) {
+    const lista = (namn || []).filter(Boolean);
+    if (!lista.length) return '';
+    const n = lista.length;
+    const visade = lista.slice(0, K_NOTE_MAX_NAMN).join(', ') + (n > K_NOTE_MAX_NAMN ? ` och ${n - K_NOTE_MAX_NAMN} till` : '');
+    const text = n === 1 ? vad.replace(/\bderas\b/g, 'dess') : vad;
+    return `${n} ${_kNoteForm(sammanhang, n)} visas inte här: ${visade}. ${n === 1 ? 'Det har' : 'De har'} färre än ${t} ${personOrd(t)}, `
+        + `och ${text}. Personerna ingår fortfarande i ${dar}; det är redovisningen per ${_kNoteForm(sammanhang, 1)} som utgår.`;
 }
 
 /**
