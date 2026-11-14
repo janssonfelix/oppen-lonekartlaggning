@@ -109,6 +109,11 @@ describe('Likvärdigt arbete: avsnitten per BAS-intervall och den hierarkiska j�
         expect(b()[6]).toBe('Kvinnodominerad');
         expect(w.document.getElementById('aidbas-likvardigt').textContent).toContain('Kvinnodominerad vid 60 % kvinnor eller mer');
         expect(w.document.getElementById('nyckel-lv-aidbas').textContent).toBe('4 grupper · 2 kvinnodominerade (60 % kvinnor eller mer)');   // skärmen visar också gruppen med 4 personer
+        // Steg 1-raden, slutsatsen, Löneöversyn och beräkningsbeviset skriver gränsen med kvDomGransText(): samma lydelse
+        // som valet och tabellerna, inte "minst".
+        expect(w.eval('kvDomGransText()')).toBe('60 % kvinnor eller mer');
+        val.value = 'do'; val.dispatchEvent(new w.Event('change'));
+        expect(w.eval('kvDomGransText()')).toBe('mer än 60 % kvinnor');
     });
     it('rutan Jämför bara med mansdominerade yrken sätter filtret och ritar om (ADR-60)', () => {
         const w = fonster();

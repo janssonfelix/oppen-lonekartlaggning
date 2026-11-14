@@ -36,8 +36,9 @@ function lvJamforelse() { return state.likvardighet && state.likvardighet.jamfor
 function kvDomNu(pct) { return _arKvinnodominerad(pct, aidbasDefinition(), aidbasGrans()); }
 /** Klassen för en andel kvinnor: 'kvinnodominerad', 'mansdominerad', 'blandad' eller '' (ADR-60). */
 function konsklassNu(pct) { return _konsklass(pct, aidbasDefinition(), aidbasGrans()); }
-/** Gränsen för kvinnodominerat i ord: "mer än 60 %" ('do') eller "minst 60 %" ('scb'). */
-function kvDomGransText() { return `${aidbasDefinition() === 'scb' ? 'minst' : 'mer än'} ${svTal(aidbasGrans(), 0)} %`; }
+/** Gränsen för kvinnodominerat i ord, med valets lydelse (ADR-72): "mer än 60 % kvinnor" ('do') eller
+ *  "60 % kvinnor eller mer" ('scb'). Samma text som tabellerna och metodbladen (kvDefinitionText i src/lib/aidbas.js). */
+function kvDomGransText() { return _aidbasDefinitionText(aidbasDefinition(), svTal(aidbasGrans(), 0)); }
 /** Jämförelsemängden i ord, med gränsen: "inte kvinnodominerade, ≤ 60 %" eller "mansdominerade, < 40 %". */
 function jamforelseGransText() {
     const g = aidbasGrans(), scb = aidbasDefinition() === 'scb';

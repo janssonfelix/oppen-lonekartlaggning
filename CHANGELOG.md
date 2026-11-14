@@ -61,6 +61,11 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   *60 % kvinnor eller mer*), och metodbladen i Excel-exporten och PDF-rapportens formler skriver *Kvinnodominerad vid
   mer än 60 % kvinnor* i stället för *Kvinnodominerad enligt Förarbetena: mer än 60 % kvinnor (riktmärket i lagens
   förarbeten)* (ADR-72). Inga tal har ändrats.
+- **Gränsen för kvinnodominerat skrivs med samma ord överallt.** Med valet *60 % eller mer* skrev rapportunderlaget
+  och rapporttexten *Ett yrke räknas som kvinnodominerat vid minst 60 % kvinnor*, och Steg 1-raden, slutsatsen och
+  diagramtexten i Likvärdigt arbete, Löneöversyn och beräkningsbeviset *minst 60 % kvinnor*. De skriver nu *60 %
+  kvinnor eller mer*, som valet, tabellerna och metodbladen; texten kommer från samma funktion (`kvDefinitionText`).
+  Med *Mer än 60 %* är texten oförändrad.
 
 - **Protokollet för gemensam lönebedömning väljer BAS-intervall efter korrigering för många tester.** Bladet
   *3. Likvärdigt arbete (BAS)* tog med ett intervall när det råa p-värdet var under 0,05 och skillnaden minst 3 %,

@@ -79,7 +79,7 @@ function _evidenceForLikvardighetPair(p) {
     const ärIntern = p.jamforKalla === 'intern';
     // ADR-60: jämförelseyrket är ett yrke som inte är kvinnodominerat — mansdominerat eller blandat.
     const klassOrd = p.maKlass === 'mansdominerad' ? 'mansdominerat' : p.maKlass === 'blandad' ? 'blandat' : 'inte kvinnodominerat';
-    const klassMening = `${klassOrd}, alltså inte kvinnodominerat (kvinnodominerat är ${kvDomGransText()} kvinnor)`;
+    const klassMening = `${klassOrd}, alltså inte kvinnodominerat (kvinnodominerat är ${kvDomGransText()})`;
     const jämförKällaText = ärIntern
         ? `organisationens egna data (${klassOrd} yrke)`
         : `jämförelsestatistiken (${klassOrd})`;

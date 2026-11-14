@@ -66,8 +66,9 @@ gräns för män med *Mer än* och standardgränsen, inte ett urval, och `KV_DOM
 **Valet** görs i Likvärdigt arbetes inställningar och gäller hela verktyget: kvinnotröskeln
 (`state.likvardighet.kvinnoTrosholdPct`) och definitionen (`state.likvardighet.kvDomDefinition`, standard `'do'`).
 I appen läses de genom `aidbasDefinition()` och `aidbasGrans()`, och `kvDomNu(pct)` och `konsklassNu(pct)` i
-`45-aid-bas-tabeller.js` anropar definitionen med dem. Texterna säger *mer än* eller *minst* efter valet
-(`kvDomGransText()`).
+`45-aid-bas-tabeller.js` anropar definitionen med dem. Texterna säger gränsen med valets lydelse, *mer än 60 %
+kvinnor* eller *60 % kvinnor eller mer*: i appen `kvDomGransText()` och i rapportunderlaget `avsnittBlock`, båda med
+`kvDefinitionText`.
 
 **Jämn könsfördelning är något annat.** Lönestrukturs tabell över könsfördelningen per BAS-intervall, rutan *Ojämn
 könsfördelning* på Översikt och måttet på statistisk styrka räknar en grupp som jämn när båda könen är minst 40 %.

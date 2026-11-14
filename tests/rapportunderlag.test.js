@@ -267,9 +267,11 @@ describe('rapportunderlag: struktur, likvärdighet och singular', () => {
         const b = avsnittBlock('likvardigt', { par, exkluderade: 0, kravProxy: 'bas', kvinnoTroskel: 60 }, { k: 10 });
         expect(b.tabell.rubriker).toContain('95 % KI');
         expect(norm(b.tabell.rader[0].join('|'))).toContain('1,1–7,0 %');
-        // 'do' (*Mer än X %*) är standard: mer än tröskeln; 'scb' (*X % eller mer*): minst (ADR-60, ADR-72).
-        expect(b.stycken.join(' ')).toContain('mer än 60 % kvinnor');
-        expect(avsnittBlock('likvardigt', { par, kravProxy: 'bas', kvinnoTroskel: 60, kvDomDefinition: 'scb' }, { k: 10 }).stycken.join(' ')).toContain('minst 60 % kvinnor');
+        // 'do' (*Mer än X %*) är standard: mer än tröskeln; 'scb' (*X % eller mer*): med valets lydelse (ADR-60, ADR-72).
+        expect(b.stycken.join(' ')).toContain('räknas som kvinnodominerat vid mer än 60 % kvinnor.');
+        const scb = avsnittBlock('likvardigt', { par, kravProxy: 'bas', kvinnoTroskel: 60, kvDomDefinition: 'scb' }, { k: 10 }).stycken.join(' ');
+        expect(scb).toContain('räknas som kvinnodominerat vid 60 % kvinnor eller mer.');
+        expect(scb).not.toContain('minst 60');
         // Jämförelseyrket: alla som inte är kvinnodominerade, och könsandelen med klassen i tabellen.
         expect(b.stycken.join(' ')).toContain('jämförs med yrken på samma nivå som inte är kvinnodominerade');
         expect(b.tabell.rubriker).toContain('Könsandel i jämförelseyrket');
