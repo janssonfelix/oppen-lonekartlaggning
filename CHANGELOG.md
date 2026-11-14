@@ -629,6 +629,14 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ### Utveckling
 
+- **K-invarianten prövar varje ritat diagram.** Riggen för invarianten I4 (`samlaUtdata` i
+  `tests/helpers/ktroskel-rigg.js`) tar diagrammen ur diagramkärnans register i stället för ur en väljare, väntar in
+  kvantilregressionens bakgrundsräkning och nästa bildruta, och läser alla diagram i ett och samma exportläge. Förut
+  ritades fliken om för varje diagram, och diagram som omritningen ersatte hoppades tyst över: livscykelns kurva,
+  lönehistogrammet per kön och Var uppstår löneskillnaden (med kopian i Alla diagram) prövades aldrig. Riggen sparar
+  också en ögonblicksbild, så att jämförelsens diagram i *Spara och jämför år* ritas. Ett nytt test kräver att varje
+  diagram i registret har en väg med diagramdata, eller en som säger att det inte har något att exportera, utom de
+  namngivna undantagen. Appen är oförändrad, och invarianten är grön på de nya vägarna.
 - **En källa per uppgift, en kontroll per sak.** `.github/CONTRIBUTING.md` har avsnittet *Var uppgifterna står*:
   varje uppgift som flera filer behöver (version, artefaktens kontrollsumma, det granskade bygget, k-tröskelns
   standardvärde, bibliotekens versioner m.fl.) har en källa och en kontroll. Riskanalysens bygge och kontrollsumma

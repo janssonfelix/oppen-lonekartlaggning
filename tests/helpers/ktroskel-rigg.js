@@ -195,6 +195,27 @@ export function skarmtext(w) {
 // Förhandskontrollens råvärden (de tio första raderna i filen): märkord som inte finns någon annanstans i underlaget.
 export const FK_RA = ['FKBAS', 'FKLON', 'FKALDER', 'FKKON', 'FKKOLUMN'];
 
+// Vyerna vars diagram inte söks igenom (se I4): Likvärdigt arbete, Personer att granska och extremvärdeslistan.
+const DIAGRAM_UNDANTAGNA_VYER = '#view-likvardighet, #personer-att-granska, #outliers-container';
+/** Skälet till att ett ritat diagram inte prövas av I4 (ett namngivet undantag), eller null när det ska prövas. En kopia i
+ *  Alla diagram har källans skäl. */
+export function diagramUndantag(w, el) {
+    const kalla = w.arDiagramKopia(el) ? w.diagramKopiaKalla(el) : el;
+    if (!kalla) return null;
+    if (kalla.closest(DIAGRAM_UNDANTAGNA_VYER)) return 'undantagen vy';
+    if (INDIVIDDIAGRAM.has(kalla.id)) return 'INDIVIDDIAGRAM';
+    if (!w.__exportTillaten(kalla)) return 'markeraUtanExport';
+    return null;
+}
+// Diagramdatan som text, eller varför det inte finns någon: diagrammet ritas inte i exportläget, eller det ritas men allt i
+// det hör till grupper under tröskeln.
+const diagramText = (rader, ritat) => (rader.length ? rader.map(r => r.join(' | ')).join('\n')
+    : ritat ? 'inget att exportera: allt i diagrammet hör till grupper under tröskeln' : 'inget att exportera: diagrammet ritas inte i exportläget (ADR-51)');
+/** Varje diagram som diagramkärnan har ritat och som sitter i sidan, ur kärnans eget register (_rfBehallare, ADR-39),
+ *  inte ur en väljare: id, om det är en kopia i Alla diagram, flik och undantaget. `steg` säger när det lästes. */
+const ritadeDiagram = (w, steg) => w.__rfBehallare().filter(el => el.isConnected)
+    .map(el => ({ id: el.id || '(utan id)', flik: w._egFlikFor(el), kopia: w.arDiagramKopia(el), steg, undantag: diagramUndantag(w, el) }));
+
 export async function samlaUtdata(w) {
     const d = w.document;
     const ut = [];
@@ -218,8 +239,20 @@ export async function samlaUtdata(w) {
     // Påslaget är 100 %: då är varje grupps kostnad lika med gruppens lönesumma, och kostnaden för en
     // ensam person hennes lön — så att en omaskerad kostnad syns i textsökningen.
     Object.assign(w.__state.forecast, { generell: { mode: 'pct', value: 100 }, years: 3 });
+    // En ögonblicksbild sparas och jämförs (Spara och jämför år), som användaren gör med knapparna, så att jämförelsen och
+    // dess diagram (chart-snapshot-lutning) ritas; annars finns diagrammet aldrig i registret nedan.
+    w.prompt = () => '';
+    d.getElementById('btn-snapshot-save').click();
+    d.getElementById('btn-snapshot-compare').click();
     const flikar = [...d.querySelectorAll('.nav-item[data-tab]')].map(e => e.getAttribute('data-tab'));
     for (const f of flikar) { w.__renderTabContent(f); await new Promise(r => setTimeout(r, 0)); }
+    // Det som ritas efter flikens ritning: kvantilregressionens intervall i bakgrunden (_regKvantilKlar, som ritar om
+    // regressionskortet) och det som skärmen ritar i nästa bildruta (livscykelns kurva). En bildruta som begärs efter
+    // deras körs efter dem.
+    await w.eval('_regKvantilKlar()');
+    await new Promise(r => w.requestAnimationFrame(() => r()));
+    const ritade = ritadeDiagram(w, 'skärmen');
+    ut.diagram = ritade;
     w.eval('_forecastRemediation(); _forecastSensitivity();');
     d.getElementById('explore-inkludera-sma').checked = false;
     w.__renderExplorer();
@@ -267,15 +300,16 @@ export async function samlaUtdata(w) {
     oppnaFlik(w, 'utforska');
     d.getElementById('ut-flik-alla').click();
     for (const g of d.querySelectorAll('#ut-alla-grupper > details')) { g.open = true; g.dispatchEvent(new w.Event('toggle')); }
+    ritade.push(...ritadeDiagram(w, 'Alla diagram').filter(e => e.kopia));
     // Alla kopior läses i ett och samma exportläge (som ZIP-filen gör): varje källflik ritas då en gång i exportläget.
+    // Kopiorna tas ur kärnans register; en kopia vars källa inte ritas i exportläget får en väg som säger det.
     let kopior = 0;
     w.eval('medExportLage')(() => {
-        for (const el of d.querySelectorAll('#ut-alla-grupper [id^="ut-diagram-"]')) {
-            const kalla = d.getElementById(el.id.slice('ut-diagram-'.length));
-            if (!el._figur || !kalla || kalla.closest('#view-likvardighet, #personer-att-granska, #outliers-container') || INDIVIDDIAGRAM.has(kalla.id) || !w.__exportTillaten(kalla)) continue;
+        for (const el of w.__rfBehallare().filter(e => e.isConnected && w.arDiagramKopia(e))) {
+            if (diagramUndantag(w, el)) continue;
             kopior++;
             const rader = w.__chartExportRows(el);
-            lagg(`diagramdata (Alla diagram): ${el.id}`, rader.length ? rader.map(r => r.join(' | ')).join('\n') : 'inget att exportera: diagrammet ritas inte i exportläget (ADR-51)');
+            lagg(`diagramdata (Alla diagram): ${el.id}`, diagramText(rader, !!w.diagramKopiaKalla(el)?._figur));
         }
     });
     if (kopior < 5) throw new Error(`för få kopior i Alla diagram (${kopior}) prövades`);
@@ -306,7 +340,7 @@ export async function samlaUtdata(w) {
     for (const wb of zipBocker) lagg('ZIP Excel-filen', wb.SheetNames.map(b => `[${b}]\n` + w.XLSX.utils.sheet_to_json(wb.Sheets[b], { header: 1, raw: true }).map(r => r.join(' | ')).join('\n')).join('\n'));
 
     // Varje tabell med CSV-knapp och varje ritat diagram, utom de undantagna vyerna (Utforska prövas med rutan av).
-    const undantagen = el => !!el.closest('#view-likvardighet, #personer-att-granska, #outliers-container');
+    const undantagen = el => !!el.closest(DIAGRAM_UNDANTAGNA_VYER);
     let tabeller = 0, diagram = 0;
     for (const knapp of d.querySelectorAll('[data-csv-table]')) {
         const id = knapp.getAttribute('data-csv-table');
@@ -315,18 +349,26 @@ export async function samlaUtdata(w) {
         tabeller++;
         lagg(`tabell-CSV: ${id}`, w.__tableToMatrix(id).map(r => r.join(' | ')).join('\n'));
     }
-    // Ritade av diagramkärnan (el._figur, ADR-39) — också de utan "chart-" i id:t. Löneläget ritas med statistiken i
-    // fixturen, så Överblickens diagram över statistikens spann (chart-jmf-statlage) är med; testet kräver det. Ett diagram som inte får lämna
-    // verktyget (markeraUtanExport: Översiktens kopior, Personer att granska) ger ingen diagramdata alls och
-    // räknas därför inte som en väg; att det förblir så prövar tests/smoke.test.js.
-    for (const el of d.querySelectorAll('[id^="chart-"], #lifecycle-chart')) {
-        if (!el._figur || undantagen(el) || INDIVIDDIAGRAM.has(el.id) || !w.__exportTillaten(el)) continue;
-        diagram++;
-        // Ett diagram som finns på skärmen men inte i exportläget (t.ex. Var uppstår löneskillnaden, som skyddar
-        // sig genom att inte dela upp) ger ingen diagramdata: vägen noteras så att tystnaden inte ser ut som en läcka.
-        const rader = w.__chartExportRows(el);
-        lagg(`diagramdata: ${el.id}`, rader.length ? rader.map(r => r.join(' | ')).join('\n') : 'inget att exportera: diagrammet ritas inte i exportläget (ADR-51)');
-    }
+    // Varje diagram som diagramkärnan har ritat, ur dess register (_rfBehallare, ADR-39), inte ur en väljare: de som
+    // skärmen ritade (efter bakgrundsräkningen och nästa bildruta, ovan) och de som exportläget ritar. Alla läses i ett
+    // och samma exportläge, sedan varje ritad flik har ritats om i det (exportSakraAlla, som ZIP-filen gör): läses de ett
+    // och ett ritas fliken om för varje, och en behållare som omritningen har ersatt hoppas då tyst över. Löneläget ritas
+    // med statistiken i fixturen, så Överblickens diagram över statistikens spann (chart-jmf-statlage) är med; testet
+    // kräver det. Ett diagram som inte får lämna verktyget (markeraUtanExport: Översiktens kopior, Personer att granska)
+    // ger ingen diagramdata alls och räknas därför inte som en väg; att det förblir så prövar tests/smoke.test.js.
+    w.eval('medExportLage')(() => {
+        w.exportSakraAlla();
+        ritade.push(...ritadeDiagram(w, 'exportläget').filter(e => !e.kopia));
+        const undantagna = new Set(ritade.filter(e => e.undantag).map(e => e.id));
+        for (const id of new Set(ritade.filter(e => !e.kopia && !undantagna.has(e.id)).map(e => e.id))) {
+            diagram++;
+            // Ett diagram som finns på skärmen men inte i exportläget (t.ex. Var uppstår löneskillnaden, som skyddar
+            // sig genom att inte dela upp) ger ingen diagramdata: vägen noteras så att tystnaden inte ser ut som en läcka.
+            const el = d.getElementById(id);
+            const rader = el ? w.__chartExportRows(el) : [];
+            lagg(`diagramdata: ${id}`, diagramText(rader, !!d.getElementById(id)?._figur));
+        }
+    });
     if (tabeller < 5 || diagram < 5) throw new Error(`för få tabeller (${tabeller}) eller diagram (${diagram}) prövades`);
 
 
@@ -361,9 +403,19 @@ export async function samlaUtdata(w) {
     lagg('rapportunderlag: arsjamforelse (med bokslut)', w.__ruTillWordHtml(ars) + '\n' + w.__ruTillText(ars));
     lagg('rapportmodell: arsjamforelse (med bokslut)', w.eval("(m => rmTillHtml({ ...m, avsnitt: m.avsnitt.filter(a => a.id === 'arsjamforelse') }))(rapportModell())"));
     w.__renderTabContent('arbetet');
+    ritade.push(...ritadeDiagram(w, 'bokslut').filter(e => e.flik === 'arbetet'));
     const hantel = d.getElementById('chart-arsjamforelse-bas');
     if (!hantel || !hantel._figur) throw new Error('BAS-hanteln ritades inte');
-    lagg('diagramdata: chart-arsjamforelse-bas (med bokslut)', w.__chartExportRows(hantel).map(r => r.join(' | ')).join('\n'));
+    // Diagrammen i fliken med bokslutet inläst (BAS-hanteln och de andra), som ovan ur registret och i ett exportläge.
+    w.eval('medExportLage')(() => {
+        w.__renderTabContent('arbetet');
+        ritade.push(...ritadeDiagram(w, 'bokslut').filter(e => e.flik === 'arbetet'));
+        const bokslut = ritade.filter(e => e.steg === 'bokslut');
+        for (const id of new Set(bokslut.filter(e => !bokslut.some(u => u.id === e.id && u.undantag)).map(e => e.id))) {
+            const el = d.getElementById(id);
+            lagg(`diagramdata: ${id} (med bokslut)`, diagramText(el ? w.__chartExportRows(el) : [], !!d.getElementById(id)?._figur));
+        }
+    });
     return ut;
 }
 

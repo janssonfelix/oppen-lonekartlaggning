@@ -351,7 +351,7 @@ utdata och dess skydd, står i riskanalysen (`docs/dataskydd/riskanalys.md` §6.
 | ZIP-filens Excel-fil | Avsnitt 2 och 7 | I4; I3 |
 | ZIP-filens bilder | Avsnitt 2 och 4 (ADR-48) | Bildernas innehåll prövas inte (avsnitt 11); `tests/ktroskel-bilder.test.js` prövar meningen under 10 |
 | Tabell-CSV för varje tabell med CSV-knapp | Avsnitt 2 och 7 | I4 |
-| Diagramdata för varje ritat diagram, och kopiorna i Alla diagram | `diagramkarnan.md` §1 och §7 | I4 (kopiorna ska vara källans, rad för rad); differentialtesterna i `tests/diagramritare.test.js` |
+| Diagramdata för varje diagram som diagramkärnan har ritat, och kopiorna i Alla diagram | `diagramkarnan.md` §1 och §7 | I4 (diagrammen ur kärnans register, och ett test kräver att varje ritat diagram har en väg; kopiorna ska vara källans, rad för rad); differentialtesterna i `tests/diagramritare.test.js` |
 | Tabeller och egna vyer: tabellens CSV och urklipp, diagrammets bild och diagramdata | Avsnitt 4 (ADR-14) | I4 med rutan urkryssad; `tests/kanonymitet.test.js` (Utforskas export; rutan låst av paketet); `tests/utforska.test.js` |
 | Gruppdossierns textkopia, för varje valbar grupp | Avsnitt 2 och 7 | I4; `tests/ktroskel-utdata.test.js` (par) |
 | BAS-dossierns textkopia, för varje valbart intervall | Avsnitt 2 | I4; `tests/basdossier.test.js` |
@@ -432,7 +432,15 @@ utan att någon kommer ihåg att testa den. `samlaUtdata` ritar varje flik i men
 varje export i avsnitt 9 mot `fonsterKon` vid 10 och vid 25. Invarianten kräver att utdata finns för varje väg (en tom
 väg fäller testet), att skärmen visar grupperna och könen under tröskeln, och att ingen enskild lön, ingen lön för en
 grupp under tröskeln, ingen lön för ett kön under tröskeln, inget könsgap för en grupp där ett kön är under tröskeln
-och inget av förhandskontrollens råvärden finns i det som lämnar verktyget. Undantagna vyer (`EXPORTLAGE_UNDANTAG`,
+och inget av förhandskontrollens råvärden finns i det som lämnar verktyget. Diagrammen tas ur diagramkärnans eget
+register (`_rfBehallare`, `diagramkarnan.md` §3), inte ur en lista eller en väljare: riggen väntar in det som ritas
+senare (kvantilregressionens intervall i bakgrunden, `_regKvantilKlar`, och livscykelns kurva i nästa bildruta), läser
+registret efter ritningen på skärmen, i Alla diagram, i exportläget och med förra årets bokslut, och läser varje diagram i
+ett och samma exportläge sedan flikarna har ritats om i det (`exportSakraAlla`, som ZIP-filen). Ett test kräver att varje
+diagram i registret har en väg med diagramdata, eller en väg som säger att det inte har något att exportera (det ritas inte
+i exportläget, eller allt i det hör till grupper under tröskeln), utom de namngivna undantagen nedan och diagram märkta
+`markeraUtanExport`. Riggen sparar en ögonblicksbild i *Spara och jämför år*, så att jämförelsens diagram ritas; övriga
+diagram ritas i sitt standardläge. Undantagna vyer (`EXPORTLAGE_UNDANTAG`,
 `UNDANTAGNA_VYER`) och låddiagrammet per kön (`INDIVIDDIAGRAM`) söks inte igenom. Vad invarianten prövar och inte
 prövar står i huvudet i `tests/helpers/ktroskel-invariant.js` och i riskanalysen §6.5.
 
@@ -456,13 +464,29 @@ inställningen (standardvärdet).
   meningen om sänkt tröskel.
 - **Undantagen ligger utanför.** Likvärdigt arbete i fliken, Tabeller och egna vyer med rutan, Personer att granska,
   extremvärdeslistan och låddiagrammet per kön söks inte igenom (avsnitt 4).
-- **Exportvägarna i riggen listas för hand.** `samlaUtdata` räknar upp varje export; ett test kräver bara att riggens
-  flikar är menyns. En ny export som inte läggs till i riggen prövas inte. Definition of Done kräver att den läggs till
+- **Exportvägarna i riggen listas för hand.** `samlaUtdata` räknar upp varje export utom diagrammen, som tas ur
+  diagramkärnans register; ett test kräver bara att riggens flikar är menyns och att varje ritat diagram har en väg. En ny
+  export som inte läggs till i riggen prövas inte. Definition of Done kräver att den läggs till
   (`.github/CONTRIBUTING.md` punkt 3, regel R1 i `regler.md`).
 - **Riktade rader på små grupper.** Riggen lägger inga egna riktade rader i Löneöversyn; regel R2 prövas för sig.
   Riggens underlag har heller inga kandidatpar i likvärdigt arbete, så Löneöversyns förslag (ADR-69) prövas inte av
   I4 utan av `tests/loneoversyn-forslag-troskel.test.js`. Ett par med en grupp under tröskeln i riggen skulle ändra
   underlaget för alla vägar som I4 söker igenom.
-- **Livscykelns kurva i riggen.** Kurvan ritas på skärmen i nästa bildruta, och riggens `samlaUtdata` läser
-  diagrammen innan den hunnit ritas; varken diagramdatan för `#lifecycle-chart` eller kopian i Alla diagram kommer
-  med i I4. Kurvans vägar prövas i `tests/ktroskel-livscykel.test.js`.
+- **Modelltal känns inte igen.** I4 söker sentinelvärden, och livscykelns kurva är modellens tal för det valda
+  intervallet, inte gruppens löner. Med felet från lagningen av kurvan återinfört och ett intervall med 6 personer valt
+  står kurvan i invariantens väg för `lifecycle-chart`, men I4 faller inte. Riggen ritar kurvan för det förvalda
+  intervallet (det största); kurvan för ett litet intervall prövas i `tests/ktroskel-livscykel.test.js`, som söker efter
+  kurvans egna tal.
+- **Diagram som riggens underlag inte ritar.** Testet om att varje ritat diagram har en väg ser bara det som står i
+  registret. Hanteln per yrkesgrupp med förra årets bokslut (`chart-arsjamforelse`) ritas inte, eftersom riggens bokslut
+  inte ger den några rader. Lönehistogrammet per kön och Var uppstår löneskillnaden ritas på skärmen men inte i
+  exportläget med riggens underlag, och deras vägar säger att det inte finns något att exportera; histogrammets
+  diagramdata prövas alltså inte med innehåll.
+- **Andra slag av utdata.** Tabellerna med CSV-knapp räknas upp ur knapparna i sidan (`[data-csv-table]`), inte ur ett
+  register. Varje tabell läses genom exportgrinden med sitt id, så en omritning gör inte att den hoppas över, men en
+  tabell vars knapp inte står i sidan när riggen läser (bara efter ett val eller i en dialog) kommer inte med, och inget
+  test kräver att uppräkningen är fullständig. Gruppdossierns och BAS-dossierns textkopior byggs för varje valbar grupp
+  och intervall med samma funktioner som kopieringsknappen, inte ur den öppnade dialogen; dialogerna ritar inga diagram.
+  Beräkningsbevisen visas bara på skärmen och har ingen exportväg. Av knappresultaten körs robusthetspanelen och
+  Löneöversyns åtgärder och känslighet; Löneöversyns förslag ur kandidatparen och Var uppstår löneskillnaden med andra
+  val av variabler prövas för sig (avsnitt 9). Tabellernas urklipp är samma rader som deras CSV.

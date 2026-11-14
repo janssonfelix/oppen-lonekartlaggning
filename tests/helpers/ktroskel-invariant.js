@@ -19,7 +19,8 @@ import { KON_MA, KON_GAP, KON_GAP_1, KON_GAP_CELL, KON_DOLDA, harNagon, samlaUtd
 // inläsningsrapporten), Word-utkastet, utskriften i de tre urvalen,
 // rapportunderlagets block (HTML och text), Excel (alla flikar, protokollet, EU-lönerapporten,
 // handlingsplanen, jämförelseexporten, Löneöversyn, Löneöversikten, prioriteringslistan, ZIP-filens
-// rapport.xlsx), Att göra-CSV, varje tabell med CSV-knapp, diagramdata för varje ritat diagram,
+// rapport.xlsx), Att göra-CSV, varje tabell med CSV-knapp, diagramdata för varje diagram som diagramkärnan har ritat
+// (ur dess register, efter bakgrundsräkningen och nästa bildruta; ett test kräver att inget fattas) och kopiorna i Alla diagram,
 // gruppdossiern för varje valbar grupp, BAS-dossiern för varje valbart intervall, Rapporttextens utkast (med delen
 // per BAS-intervall), rapportens avsnitt Lönekartläggning per BAS-intervall, med förra årets bokslut inläst blocket
 // och avsnittet om förra året (tabellen per BAS-intervall, med lönespridningen) och BAS-hantelns diagramdata,
@@ -41,6 +42,12 @@ import { KON_MA, KON_GAP, KON_GAP_1, KON_GAP_CELL, KON_DOLDA, harNagon, samlaUtd
 //    det kvinnodominerade yrket eller jämförelseyrket är under tröskeln.
 //  - Robusthetspanelen körs här direkt (den räknas annars först på knapptryck) och läses som en egen väg;
 //    att den utelämnar par med en grupp under tröskeln och anger antalet prövas med parfixturen ovan.
+//  - Diagram som riggens underlag inte ritar finns inte i registret och prövas inte: hanteln per yrkesgrupp med förra
+//    årets bokslut (chart-arsjamforelse: riggens bokslut ger den inga rader). Lönehistogrammet per kön och
+//    Var uppstår löneskillnaden ritas på skärmen men inte i exportläget, och deras vägar säger "inget att exportera".
+//  - Livscykelns kurva ritas för det förvalda intervallet (det största). Kurvan är modellens tal, inte gruppens löner,
+//    så sökningen efter sentinelvärden känner inte igen den för ett litet intervall; det prövar
+//    tests/ktroskel-livscykel.test.js.
 //  - Ålder & karriär ritas här med "Alla BAS". Att fliken följer regeln för ett litet kön, i hela
 //    urvalet och i ett valt BAS, prövas av R4 längre ned; regressionens
 //    ojusterade steg prövas av R1, som också kör samlaUtdata mot ett underlag med 7 män.
@@ -133,6 +140,25 @@ export function invariantSvit(k, extra) {
                 expect(text, namn).toBe(kalla[1]);
             }
             expect(jamforda).toBeGreaterThanOrEqual(5);
+        });
+        // Fullständigheten: varje diagram som diagramkärnan har ritat (riggen läser kärnans register, _rfBehallare, efter
+        // ritningen på skärmen, i Alla diagram, i exportläget och med förra årets bokslut) har en väg med diagramdata,
+        // så att ett nytt diagram inte kan hamna utanför I4. Också ett diagram som inte har något att exportera (det ritas
+        // inte i exportläget, eller allt i det hör till grupper under tröskeln) har en väg, som säger det. Undantagen är
+        // de namngivna: de undantagna vyerna, låddiagrammet per kön (INDIVIDDIAGRAM) och diagram märkta markeraUtanExport.
+        it('varje diagram som diagramkärnan har ritat har en väg med diagramdata, utom de namngivna undantagen', () => {
+            const namn = new Set(utdata.map(([n]) => n));
+            const ritade = utdata.diagram;
+            expect(ritade.filter(e => !e.kopia && e.steg === 'skärmen').length).toBeGreaterThanOrEqual(30);
+            expect(ritade.filter(e => e.kopia).length).toBeGreaterThanOrEqual(25);
+            const saknas = [];
+            for (const e of ritade) {
+                expect(e.id, 'ett ritat diagram utan id').not.toBe('(utan id)');
+                if (e.undantag) { expect(['undantagen vy', 'INDIVIDDIAGRAM', 'markeraUtanExport'], e.id).toContain(e.undantag); continue; }
+                const vag = e.kopia ? `diagramdata (Alla diagram): ${e.id}` : `diagramdata: ${e.id}${e.steg === 'bokslut' ? ' (med bokslut)' : ''}`;
+                if (!namn.has(vag)) saknas.push(`${e.id} (${e.steg})`);
+            }
+            expect([...new Set(saknas)]).toEqual([]);
         });
         // Skärmen maskerar inget (ADR-51): den vägen prövas positivt nedan och undantas i läckkontrollerna.
         const exporter = () => utdata.filter(([n]) => n !== 'skärm: alla flikar');
