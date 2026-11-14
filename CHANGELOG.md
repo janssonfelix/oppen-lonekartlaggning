@@ -46,6 +46,8 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   *Kvinnodominerad vid mer än 60 % kvinnor* i stället för *enligt Förarbetena* eller *enligt SCB*, och ordlistan
   nämner inte längre förarbetena; källan står i utvecklardokumentationen. Klassningen är oförändrad, och sparade
   konfigurationsfiler läses som förut.
+- **Åldersdiagrammets text säger hur referenslinjen ser ut.** Texten under åldersfördelningen i Ålder & karriär
+  kallade referenslinjen för Sveriges sysselsatta streckad; den ritas prickad, och texten säger nu det.
 
 ### Exporter
 
