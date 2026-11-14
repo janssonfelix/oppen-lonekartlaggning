@@ -244,7 +244,7 @@ pekar på står kvar med en rad om hur den avslutades.
     för påstående mot den kod som släpps, granskningsdatumen i dokumenten sätts och avvikelser förs hit.
     Release-grinden (`tools/release.mjs`) stoppar en release när granskningen är äldre än koden eller gäller ett
     annat bygge.
-18. **Uttagsstegen för Heroma, Personec P och Visma i `datauttag.md` är inte verifierade mot systemen**; de
+18. **Uttagsstegen per lönesystem i `datauttag.md` är inte verifierade mot systemen**; de
     bygger på det gemensamma statistikuttaget och har rader som varje organisations systemförvaltare fyller i
     och bekräftar för sin installation.
 19. **README i roten har ingen bild:** skärmbilder checkas inte in, så en bild där kräver ett

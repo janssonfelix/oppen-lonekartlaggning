@@ -14,11 +14,14 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   är minst 3 % men inte säkerställd eller säkerställd men under 3 %, *Balanserat* annars, och *Går ej att bedöma*
   när intervallet inte kan räknas. Statusens ikon står bredvid talet och ordet i verktygstipset, så att färgen inte
   bär betydelsen ensam.
-- **Livscykelns förändring 25–65 år färgas på prövningen, inte på storleken.** Rutan var gul när förändringen var
-  större än 1 procentenhet och grön annars, oavsett om den var säkerställd. Nu är den varningsfärgad när samspelet
-  mellan kön och ålder är säkerställt (p < 0,10, samma gräns som tolkningen och rutan *Är förändringen säkerställd?*)
-  och neutral annars, inte grön: att en förändring inte är säkerställd betyder inte att läget är balanserat. Ordet
-  (*säkerställd förändring* eller *inte säkerställd*) står i verktygstipset och för skärmläsaren (ADR-71).
+- **Livscykelns förändring 25–65 år färgas på prövningen, inte på storleken, med en gräns för samspelet.** Rutan
+  var gul när förändringen var större än 1 procentenhet och grön annars, oavsett om den var säkerställd. Nu är den
+  varningsfärgad när samspelet mellan kön och ålder är säkerställt och neutral annars, inte grön: att en förändring
+  inte är säkerställd betyder inte att läget är balanserat. Ordet (*säkerställd förändring* eller *inte säkerställd*)
+  står i verktygstipset och för skärmläsaren (ADR-71). Rutan, *Är förändringen säkerställd?* och Att utforska
+  räknade samspelet som säkerställt vid p < 0,10, medan tolkningstexten räknade det som inte säkerställt först vid
+  p > 0,10, så att de sade olika saker vid exakt 0,10. Alla fyra använder nu en regel (`samspelSakerstallt`):
+  säkerställt när något av de två p-värdena är under 0,10; exakt 0,10 är inte säkerställt.
 - **Percentiltabellen i Lönestruktur markerar inte på storleken.** I *Var i lönefördelningen är skillnaden störst?*
   var cellen *Kvinnors lön i % av mäns* rosa och halvfet när kvinnor låg mer än 5 % lägre vid percentilen, utan
   prövning. Cellen är nu neutral, som uppmärksamhetstrappan kräver (ADR-71); stapeln bredvid visar fortfarande
@@ -27,14 +30,10 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   25 och 65 år* var cellerna *Skillnad 25 år (kr)* och *Skillnad 65 år (kr)* varningsfärgade när kvinnor låg mer än
   1 000 kr lägre, utan prövning. Cellerna är nu neutrala (ADR-71). Vakten mot färg på storleken ensam söker nu i alla
   filer under `src/app/`, inte bara Lönestruktur.
-- **Livscykeln har en gräns för om samspelet mellan kön och ålder är säkerställt.** Rutan, Att utforska och
-  nyckeltalet räknade samspelet som säkerställt vid p < 0,10, medan tolkningstexten räknade det som inte säkerställt
-  först vid p > 0,10, så att de sade olika saker vid exakt 0,10. Alla fyra använder nu samma regel: säkerställt när
-  något av de två p-värdena är under 0,10; exakt 0,10 är inte säkerställt.
 - **Källorna pekas ut exakt eller inte alls.** Ordlistan (*Oförklarad löneskillnad*), metodtexten i Om verktyget,
-  två verktygstips i regressionskortet, verktygstipset på nyckeltalet *Kvinnors lön i % av mäns* och *Så används fliken i arbetet*
-  i Lika arbete jämförde verktygets mått med Medlingsinstitutets utan att peka ut någon källa. Jämförelserna är
-  strukna. Bland referenserna i Om verktyget står i stället för en årlig skrift utan år den rapport verktyget
+  två verktygstips i regressionskortet, verktygstipset på nyckeltalet *Kvinnors lön i % av mäns* och *Så används
+  fliken i arbetet* i Lika arbete jämförde verktygets mått med Medlingsinstitutets utan att peka ut någon källa.
+  Jämförelserna är strukna. Bland referenserna i Om verktyget står i stället för en årlig skrift utan år den rapport verktyget
   citerar, Medlingsinstitutet (2026), *Löneskillnaden mellan kvinnor och män 2025*, och Blinder (1973) och Oaxaca
   (1973) med fullständiga uppgifter, eftersom regressionskortet hänvisar till dem. Referensdatan för åldersstrukturen
   säger nu vilket år den gäller: SCB:s arbetskraftsundersökningar (AKU), årsmedeltal 2023, avrundade, i

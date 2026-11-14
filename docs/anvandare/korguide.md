@@ -581,8 +581,8 @@ du ordna om och ta bort tabellerna.
    rapportunderlagets grupp **Per BAS-intervall**.
    Avsnittet **Rapportunderlag** har de färdiga avsnitten att klistra in. Överst i rapportunderlaget finns en
    förteckning över blocken och knappen **Kopiera alla avsnitt**, som lägger alla avsnitt i en enda kopiering.
-   Varje avsnitt har en knapp **Kopiera**. Det har också varje yrkesgrupp med skillnad över 5 % och varje
-   kandidatpar där båda grupperna är stora nog att redovisas. Faktastycket och tabellen hamnar på urklipp och tar mallens format när
+   Varje avsnitt har en knapp **Kopiera**. Det har också varje yrkesgrupp med statusen *Värt att granska*
+   (statistiskt säkerställd skillnad på minst 3 %) och varje kandidatpar där båda grupperna är stora nog att redovisas. Faktastycket och tabellen hamnar på urklipp och tar mallens format när
    du klistrar in. Diagrammen kopieras som bild med **Kopiera diagram**. Under varje grupp
    finns **frågor till verksamheten** — skicka dem till ansvarig chef inför bedömningen av
    om skillnaden är saklig.
