@@ -3277,8 +3277,8 @@ const __mirrorLikvardighet = (() => {
  *              med klassen synlig (PRIMÄR jämförelsekälla; § 3:10 är en
  *              inom-arbetsgivare-analys). K-anonymitet tillämpas EJ.
  *   Steg 2 — jämförelsestatistikens AID×BAS som inte är kvinnodominerade blir
- *            kandidater med klass. Lokal könsdata primär,
- *            SCB-prefix-fallback (injicerad `scbKlass`-funktion) annars.
+ *            kandidater med klass. Lokal könsdata primär, den nationella
+ *            personalstatistiken som reserv (injicerad `nationellKlass`-funktion) annars.
  *            Används som EXTERN fallback per BAS.
  *            Filtret `jamforelse: 'mansdominerade'` begränsar båda mängderna till de
  *            mansdominerade (det tidigare urvalet).
@@ -3512,30 +3512,30 @@ function aggregeraOrgKvDom(data, kvinnoThr = KVINNO_TROSKEL_DEFAULT, K = 10, def
  * `klass.ickeKv` är alla kandidater; `klass.blandat` är hur många av dem som är blandade.
  *
  * @param {Array<{aid:string, bas:string, median:number, andelKv?:number, aidFull?:string, nKv?:number, nMa?:number}>} statistik
- * @param {((aid:string) => ({kvAndel:number}|null))|null} [scbKlass] - SCB-prefix-fallback
+ * @param {((aid:string) => ({kvAndel:number}|null))|null} [nationellKlass] - reserven: den nationella kvinnoandelen per AID-kod
  * @param {{definition?:'do'|'scb', grans?:number}} [val]
  * @returns {{statIckeKv:Array, statByBas:Map, klass:Object, klassKalla:Object}}
  */
-function klassificeraStatistik(statistik, scbKlass, { definition = 'do', grans = KV_DOM_STAT } = {}) {
+function klassificeraStatistik(statistik, nationellKlass, { definition = 'do', grans = KV_DOM_STAT } = {}) {
     const statByBas = new Map();
     const statIckeKv = [];
     const klass = { kvDom: 0, blandat: 0, ickeKv: 0, oklassificerad: 0 };
-    const klassKalla = { lokal: 0, scb: 0 };
+    const klassKalla = { lokal: 0, nationell: 0 };
 
     for (const s of (statistik || [])) {
         if (!s || !s.aid || !s.bas || !(s.median > 0)) continue;
         if (!/^\d+$/.test(String(s.aid))) continue;   // hoppa över yrkesfamiljerubriker
 
         /** @type {number|null} */ let kvAndel = null;
-        /** @type {'lokal'|'scb'|null} */ let källa = null;
+        /** @type {'lokal'|'nationell'|null} */ let källa = null;
         if (s.andelKv != null && s.andelKv >= 0 && s.andelKv <= 100) {
             kvAndel = s.andelKv; källa = 'lokal';
-        } else if (typeof scbKlass === 'function') {
-            const scb = scbKlass(s.aid);
-            if (scb && scb.kvAndel != null) { kvAndel = scb.kvAndel; källa = 'scb'; }
+        } else if (typeof nationellKlass === 'function') {
+            const nat = nationellKlass(s.aid);
+            if (nat && nat.kvAndel != null) { kvAndel = nat.kvAndel; källa = 'nationell'; }
         }
         if (kvAndel == null) { klass.oklassificerad++; continue; }
-        if (källa === 'lokal') klassKalla.lokal++; else klassKalla.scb++;
+        if (källa === 'lokal') klassKalla.lokal++; else klassKalla.nationell++;
 
         const ks = konsklass(kvAndel, definition, grans);
         if (ks === 'kvinnodominerad') { klass.kvDom++; continue; }
@@ -3668,9 +3668,7 @@ function byggPar(orgKvDom, internByBas, externByBas, opts = {}) {
                 maN: ärIntern ? g.n : null,
                 maNKv: g.nKv, maNMa: g.nMa,
                 jamforKalla: källa,                       // 'intern' | 'extern'
-                maKlassKort: ärIntern ? 'intern' : (g.källa === 'lokal' ? 'lokal' : 'SCB'),
-                maScbKvAndel: ärIntern ? g.kvinnoPct : g.kvAndel,
-                maScbPrefix: (!ärIntern && g.källa === 'scb') ? String(g.aid).slice(0, 3) : null,
+                maKlassKort: ärIntern ? 'intern' : (g.källa === 'lokal' ? 'lokal' : 'nationell'),   // var andelen kommer ifrån
                 gapKr, gapPct, gapCI,
                 ..._aldersFalt(f, g, ärIntern, golv),
                 allvarsindex: Math.abs(gapKr) * f.n
@@ -3759,9 +3757,7 @@ function byggParPoäng(orgKvDom, internAll, externAll, poangByKey, opts = {}) {
                 maN: ärIntern ? g.n : null,
                 maNKv: g.nKv, maNMa: g.nMa,
                 jamforKalla: källa,
-                maKlassKort: ärIntern ? 'intern' : (g.källa === 'lokal' ? 'lokal' : 'SCB'),
-                maScbKvAndel: ärIntern ? g.kvinnoPct : g.kvAndel,
-                maScbPrefix: (!ärIntern && g.källa === 'scb') ? String(g.aid).slice(0, 3) : null,
+                maKlassKort: ärIntern ? 'intern' : (g.källa === 'lokal' ? 'lokal' : 'nationell'),   // var andelen kommer ifrån
                 gapKr, gapPct, gapCI,
                 ..._aldersFalt(f, g, ärIntern, golv),
                 kvPoang: fP, maPoang: poangFor(g),
@@ -3833,13 +3829,13 @@ function basRangFn(allaBas) {
  * @param {Object} [input]
  * @param {Array} [input.data] - organisationens individdata
  * @param {Array} [input.statistik] - jämförelsestatistiken
- * @param {((aid:string)=>({kvAndel:number}|null))|null} [input.scbKlass]
+ * @param {((aid:string)=>({kvAndel:number}|null))|null} [input.nationellKlass]
  * @param {Object} [input.opts] - { kvinnoTrosholdPct, kvDomDefinition, jamforelse, minGapPct, topN, B, rng, k, aldersGolv }
  *   kvDomDefinition: 'do' (*Mer än X %*, standard) | 'scb' (*X % eller mer*; ADR-72).
  *   jamforelse: 'alla' (alla som inte är kvinnodominerade, standard) | 'mansdominerade' (ADR-60).
  * @returns {{orgKvDom:Array, orgIckeKv:Array, statIckeKv:Array, pairs:Array, parAntal:{totalt:number, overDirektiv:number, sakra:number}, lagreKrav:Array, diagnostik:Object, opts:Object}}
  */
-function computeLikvardighetPairs({ data = [], statistik = [], scbKlass = null, opts = {} } = {}) {
+function computeLikvardighetPairs({ data = [], statistik = [], nationellKlass = null, opts = {} } = {}) {
     const kvinnoThr = opts.kvinnoTrosholdPct ?? KVINNO_TROSKEL_DEFAULT;
     const definition = opts.kvDomDefinition === 'scb' ? 'scb' : 'do';
     const jamforelse = opts.jamforelse === 'mansdominerade' ? 'mansdominerade' : 'alla';
@@ -3859,7 +3855,7 @@ function computeLikvardighetPairs({ data = [], statistik = [], scbKlass = null, 
 
     // k-tröskeln används bara för att RÄKNA små kvinnodominerade grupper i diagnostiken (de ingår ändå).
     const s1 = aggregeraOrgKvDom(data, kvinnoThr, opts.k ?? 10, definition);
-    const s2 = klassificeraStatistik(statistik, scbKlass, { definition, grans: kvinnoThr });
+    const s2 = klassificeraStatistik(statistik, nationellKlass, { definition, grans: kvinnoThr });
     // Filtret 'mansdominerade' begränsar jämförelsemängden innan paren byggs, så att reserven
     // till jämförelsestatistiken per BAS fungerar som förut när bara blandade egna yrken finns.
     if (jamforelse === 'mansdominerade') {
@@ -20573,7 +20569,7 @@ function _evidenceForLikvardighetPair(p) {
                 : (p.maKlassKort === 'lokal'
                     ? `Källa: jämförelsestatistiken (faktisk könsfördelning per AID×BAS)<br>${svPct(p.maKvAndel, 1)} kvinnor${p.maNKv != null && p.maNMa != null ? ` (${p.maNKv} kvinnor av ${p.maNKv + p.maNMa} totalt)` : ''}: ${klassMening}`
                     : `Källa: ${esc(_skrReferensInfo().kalla)} (nationell reserv)<br>AID ${esc(p.maAid)}: ${p.maKvAndel.toFixed(1).replace('.', ',')} % kvinnor i ${_skrDelText(_skrDel())}: ${klassMening}`)}`,
-        footer: `Verktyget identifierar statistiska kandidater. Den slutliga bedömningen — om kraven verkligen är likvärdiga och om det finns sakliga skäl — gör du själv, i dokumentationen.${p.maKlassKort === 'SCB' ? ' SKR:s kvinnoandel är nationell; jämförelsestatistikens faktiska könsfördelning per AID kan avvika och bör verifieras vid behov.' : ''}`
+        footer: `Verktyget identifierar statistiska kandidater. Den slutliga bedömningen — om kraven verkligen är likvärdiga och om det finns sakliga skäl — gör du själv, i dokumentationen.${p.maKlassKort === 'nationell' ? ' SKR:s kvinnoandel är nationell; jämförelsestatistikens faktiska könsfördelning per AID kan avvika och bör verifieras vid behov.' : ''}`
     };
 }
 
@@ -23085,7 +23081,7 @@ function computeLikvardighetPairs() {
         res = _lvComputePairs({
             data: state.data || [],
             statistik: state.statistik || [],
-            scbKlass: nationellAidKlass,
+            nationellKlass: nationellAidKlass,
             opts
         });
     } catch (e) {
@@ -23099,7 +23095,7 @@ function computeLikvardighetPairs() {
                     kvDomFunna: 0, kvDomMedNLessThanK: 0, ickeKvFunna: 0 },
                 statistik: { totalRader: (state.statistik || []).length,
                     klass: { kvDom: 0, blandat: 0, ickeKv: 0, oklassificerad: 0 },
-                    klassKalla: { lokal: 0, scb: 0 } },
+                    klassKalla: { lokal: 0, nationell: 0 } },
                 jämförelse: { gemensammaBas: 0, möjligaPar: 0, statHögre: 0, statLägreEllerLika: 0,
                     internaPar: 0, externaPar: 0, basMedExternFallback: 0,
                     kravProxy: usePoang ? 'poäng' : 'bas', kvUtanPoang: 0 },
@@ -23286,7 +23282,7 @@ function renderLikvardighet() {
                             (varav ${d.statistik.klass.blandat} blandade${lvJamforelse() === 'mansdominerade' ? ', som inte används med filtret mansdominerade' : ''}),
                             ${d.statistik.klass.kvDom} kvinnodominerade,
                             ${d.statistik.klass.oklassificerad} oklassificerade</li>
-                        <li>Källa: ${d.statistik.klassKalla.lokal} lokal, ${d.statistik.klassKalla.scb} nationell statistik (SKR)</li>
+                        <li>Källa: ${d.statistik.klassKalla.lokal} lokal, ${d.statistik.klassKalla.nationell} nationell statistik (SKR)</li>
                         ${d.statistik.exempelIckeKv.length
                             ? `<li class="marg-t-4"><small class="f-dampad">Exempel på jämförelseyrken: ${d.statistik.exempelIckeKv.map(esc).join(' · ')}</small></li>`
                             : ''}
@@ -23903,7 +23899,7 @@ function _exportLikvardighetCSVExport() {
     rows.push(['•varav externa (mot jämförelsestatistiken)', result.diagnostik?.jämförelse?.externaPar ?? 0]);
     rows.push(['BAS som föll tillbaka på extern statistik', result.diagnostik?.jämförelse?.basMedExternFallback ?? 0]);
     rows.push(['Klassificeringskälla — jämförelsestatistiken', result.diagnostik?.statistik?.klassKalla?.lokal ?? 0]);
-    rows.push(['Klassificeringskälla — SKR:s personalstatistik', result.diagnostik?.statistik?.klassKalla?.scb ?? 0]);
+    rows.push(['Klassificeringskälla — SKR:s personalstatistik', result.diagnostik?.statistik?.klassKalla?.nationell ?? 0]);
     rows.push(['KI-metod', 'Bootstrap B=1000; intern = bägge individurvalen, extern = org-löner mot jämförelsestatistikens median']);
     rows.push(['Justerad för ålder', LV_JUSTERAD_METOD]);
     rows.push(['k-anonymitet', 'Tillämpas EJ i denna analys']);
@@ -24027,7 +24023,7 @@ function _exportLikvardighetExport() {
             ['Kvinnodominerade i jämförelsestatistiken', safe(() => diagnostik.statistik.klass.kvDom, 0)],
             ['Oklassificerade i jämförelsestatistiken', safe(() => diagnostik.statistik.klass.oklassificerad, 0)],
             ['Klassificering från jämförelsestatistikens könsfördelning', safe(() => diagnostik.statistik.klassKalla.lokal, 0)],
-            ['Klassificering från SKR:s personalstatistik', safe(() => diagnostik.statistik.klassKalla.scb, 0)],
+            ['Klassificering från SKR:s personalstatistik', safe(() => diagnostik.statistik.klassKalla.nationell, 0)],
             ['Interna jämförelseyrken i organisationen', safe(() => diagnostik.organisation.ickeKvFunna, 0)],
             ['Gemensamma BAS', safe(() => diagnostik.jämförelse.gemensammaBas, 0)],
             ['Möjliga par', safe(() => diagnostik.jämförelse.möjligaPar, 0)],

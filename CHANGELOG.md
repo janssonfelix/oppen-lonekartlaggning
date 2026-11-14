@@ -90,6 +90,15 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ### Utveckling
 
+- **Reserven för kvinnoandel heter efter vad den är, inte SCB.** Den nationella kvinnoandelen per AID-kod kommer ur
+  SKR:s personalstatistik, men hette SCB i likvärdighetsanalysens kärna. Parametern `scbKlass` till
+  `computeLikvardighetPairs` och `klassificeraStatistik` heter `nationellKlass`, källan på en statistikrad `'nationell'`
+  i stället för `'scb'`, räknaren `diagnostik.statistik.klassKalla.scb` heter `klassKalla.nationell` och parets
+  `maKlassKort` är `'nationell'` i stället för `'SCB'`. De oanvända fälten `maScbKvAndel` (samma tal som `maKvAndel`)
+  och `maScbPrefix` är borttagna. Fälten är interna: de skrivs inte till någon export, konfigurationsfil eller
+  organisationspaket, och användaren såg aldrig värdet `'SCB'` (gränssnittet och exporterna skrev redan
+  *nationell statistik (SKR)* och *SKR:s personalstatistik*). Nyckeln `'scb'` för definitionen av kvinnodominerat
+  (*X % eller mer*, ADR-72) är oförändrad.
 - **Ändringarna efter uppmärksamhetstrappan är ett eget beslut, ADR-71.** De fördes in som ett tillägg i ADR-59:
   livscykelns nyckeltal och förändringen 25–65 år, protokollets BAS-intervall efter BH-korrigering, kolumnen
   *Skillnad kön* i Prioriteringen och percentiltabellen i Lönestruktur. Ett beslut som ändrar ett annat får nästa

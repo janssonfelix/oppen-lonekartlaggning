@@ -89,7 +89,7 @@ function computeLikvardighetPairs() {
         res = _lvComputePairs({
             data: state.data || [],
             statistik: state.statistik || [],
-            scbKlass: nationellAidKlass,
+            nationellKlass: nationellAidKlass,
             opts
         });
     } catch (e) {
@@ -103,7 +103,7 @@ function computeLikvardighetPairs() {
                     kvDomFunna: 0, kvDomMedNLessThanK: 0, ickeKvFunna: 0 },
                 statistik: { totalRader: (state.statistik || []).length,
                     klass: { kvDom: 0, blandat: 0, ickeKv: 0, oklassificerad: 0 },
-                    klassKalla: { lokal: 0, scb: 0 } },
+                    klassKalla: { lokal: 0, nationell: 0 } },
                 jämförelse: { gemensammaBas: 0, möjligaPar: 0, statHögre: 0, statLägreEllerLika: 0,
                     internaPar: 0, externaPar: 0, basMedExternFallback: 0,
                     kravProxy: usePoang ? 'poäng' : 'bas', kvUtanPoang: 0 },
@@ -290,7 +290,7 @@ function renderLikvardighet() {
                             (varav ${d.statistik.klass.blandat} blandade${lvJamforelse() === 'mansdominerade' ? ', som inte används med filtret mansdominerade' : ''}),
                             ${d.statistik.klass.kvDom} kvinnodominerade,
                             ${d.statistik.klass.oklassificerad} oklassificerade</li>
-                        <li>Källa: ${d.statistik.klassKalla.lokal} lokal, ${d.statistik.klassKalla.scb} nationell statistik (SKR)</li>
+                        <li>Källa: ${d.statistik.klassKalla.lokal} lokal, ${d.statistik.klassKalla.nationell} nationell statistik (SKR)</li>
                         ${d.statistik.exempelIckeKv.length
                             ? `<li class="marg-t-4"><small class="f-dampad">Exempel på jämförelseyrken: ${d.statistik.exempelIckeKv.map(esc).join(' · ')}</small></li>`
                             : ''}
@@ -907,7 +907,7 @@ function _exportLikvardighetCSVExport() {
     rows.push(['•varav externa (mot jämförelsestatistiken)', result.diagnostik?.jämförelse?.externaPar ?? 0]);
     rows.push(['BAS som föll tillbaka på extern statistik', result.diagnostik?.jämförelse?.basMedExternFallback ?? 0]);
     rows.push(['Klassificeringskälla — jämförelsestatistiken', result.diagnostik?.statistik?.klassKalla?.lokal ?? 0]);
-    rows.push(['Klassificeringskälla — SKR:s personalstatistik', result.diagnostik?.statistik?.klassKalla?.scb ?? 0]);
+    rows.push(['Klassificeringskälla — SKR:s personalstatistik', result.diagnostik?.statistik?.klassKalla?.nationell ?? 0]);
     rows.push(['KI-metod', 'Bootstrap B=1000; intern = bägge individurvalen, extern = org-löner mot jämförelsestatistikens median']);
     rows.push(['Justerad för ålder', LV_JUSTERAD_METOD]);
     rows.push(['k-anonymitet', 'Tillämpas EJ i denna analys']);
@@ -1031,7 +1031,7 @@ function _exportLikvardighetExport() {
             ['Kvinnodominerade i jämförelsestatistiken', safe(() => diagnostik.statistik.klass.kvDom, 0)],
             ['Oklassificerade i jämförelsestatistiken', safe(() => diagnostik.statistik.klass.oklassificerad, 0)],
             ['Klassificering från jämförelsestatistikens könsfördelning', safe(() => diagnostik.statistik.klassKalla.lokal, 0)],
-            ['Klassificering från SKR:s personalstatistik', safe(() => diagnostik.statistik.klassKalla.scb, 0)],
+            ['Klassificering från SKR:s personalstatistik', safe(() => diagnostik.statistik.klassKalla.nationell, 0)],
             ['Interna jämförelseyrken i organisationen', safe(() => diagnostik.organisation.ickeKvFunna, 0)],
             ['Gemensamma BAS', safe(() => diagnostik.jämförelse.gemensammaBas, 0)],
             ['Möjliga par', safe(() => diagnostik.jämförelse.möjligaPar, 0)],

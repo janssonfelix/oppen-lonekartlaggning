@@ -29,7 +29,7 @@ Modellen bor i `src/lib/likvardighet.js` och speglas in i bygget som övriga kä
 `src/app/34-likvardigt-arbete.js` innehåller bara tillståndsadaptern och gränssnittet: rendering, diagram och export.
 Att adaptern verkligen delegerar vaktas av `tests/drift.test.js`.
 
-**Orkestratorn** `computeLikvardighetPairs({ data, statistik, scbKlass, opts })` i lib kör stegen i ordning:
+**Orkestratorn** `computeLikvardighetPairs({ data, statistik, nationellKlass, opts })` i lib kör stegen i ordning:
 `aggregeraOrgKvDom` (steg 1, och organisationens jämförelseyrken), `klassificeraStatistik` (jämförelsestatistikens
 jämförelseyrken), filtret för jämförelsemängden (avsnitt 4), `byggPar` eller `byggParPoäng` (steg 3) och
 `byggParLagreKrav` (avsnitt 6). Den returnerar `orgKvDom`, `orgIckeKv`, `statIckeKv`, `pairs`, `parAntal`,
@@ -122,14 +122,16 @@ BAS-intervall i tabellerna per AID-kod och BAS-intervall (`arJamforelseKlass` i 
 
 **Organisationens jämförelseyrken** är `orgIckeKv` ur steg 1, grupperade per BAS av `orgIckeKvByBas`.
 
-**Jämförelsestatistikens jämförelseyrken.** `klassificeraStatistik(statistik, scbKlass, { definition, grans })`
+**Jämförelsestatistikens jämförelseyrken.** `klassificeraStatistik(statistik, nationellKlass, { definition, grans })`
 tar rader med AID, BAS och median över 0; en rad vars AID inte bara är siffror är en rubrik för en yrkesfamilj och
 hoppas över. Andelen kvinnor tas i första hand ur statistikens egen könsfördelning (`andelKv` mellan 0 och 100,
-källan `'lokal'`), annars ur reserven `scbKlass` (källan `'scb'`); ger ingen av dem en andel räknas raden som
+källan `'lokal'`), annars ur reserven `nationellKlass` (källan `'nationell'`); ger ingen av dem en andel räknas raden som
 oklassificerad. Kvinnodominerade rader hoppas över; övriga blir kandidater med klass och källa, grupperade per BAS
 (`statByBas`) och sorterade efter andel kvinnor. Diagnostiken räknar `klass.kvDom`, `klass.ickeKv`, `klass.blandat`
 (hur många av kandidaterna som är blandade) och `klass.oklassificerad`, och `klassKalla` hur många andelar som kom
-ur statistiken respektive reserven.
+ur statistiken respektive reserven (`lokal` och `nationell`). Paret bär källan i
+`maKlassKort`: `'intern'`, `'lokal'` eller `'nationell'`. Namnen säger källan, inte en avsändare: reserven är SKR:s
+personalstatistik, inte SCB, och syns för användaren som *nationell statistik (SKR)*.
 
 **Reserven för kvinnoandel** är den nationella personalstatistiken (ADR-34). Adaptern skickar `nationellAidKlass`:
 en sexsiffrig AID-kod slås upp med `skrKvinnoandel` i `src/lib/skrreferens.js` — etiketten och sedan prefixet (tre

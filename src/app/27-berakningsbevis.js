@@ -121,7 +121,7 @@ function _evidenceForLikvardighetPair(p) {
                 : (p.maKlassKort === 'lokal'
                     ? `Källa: jämförelsestatistiken (faktisk könsfördelning per AID×BAS)<br>${svPct(p.maKvAndel, 1)} kvinnor${p.maNKv != null && p.maNMa != null ? ` (${p.maNKv} kvinnor av ${p.maNKv + p.maNMa} totalt)` : ''}: ${klassMening}`
                     : `Källa: ${esc(_skrReferensInfo().kalla)} (nationell reserv)<br>AID ${esc(p.maAid)}: ${p.maKvAndel.toFixed(1).replace('.', ',')} % kvinnor i ${_skrDelText(_skrDel())}: ${klassMening}`)}`,
-        footer: `Verktyget identifierar statistiska kandidater. Den slutliga bedömningen — om kraven verkligen är likvärdiga och om det finns sakliga skäl — gör du själv, i dokumentationen.${p.maKlassKort === 'SCB' ? ' SKR:s kvinnoandel är nationell; jämförelsestatistikens faktiska könsfördelning per AID kan avvika och bör verifieras vid behov.' : ''}`
+        footer: `Verktyget identifierar statistiska kandidater. Den slutliga bedömningen — om kraven verkligen är likvärdiga och om det finns sakliga skäl — gör du själv, i dokumentationen.${p.maKlassKort === 'nationell' ? ' SKR:s kvinnoandel är nationell; jämförelsestatistikens faktiska könsfördelning per AID kan avvika och bör verifieras vid behov.' : ''}`
     };
 }
 
