@@ -328,7 +328,7 @@ describe('XSS-härdning: esc + _normalizeBas i attributkontext', () => {
 describe('detectSensitiveColumns (PII-rubriker)', () => {
     // Rader vars värden inte själva utlöser värdekontrollen (ett ord, inte "Förnamn Efternamn").
     const rader = kol => Array.from({ length: 10 }, (_, i) => ({ BAS: 'C', [kol]: `V${i}` }));
-    it('rubriken Förnamn avvisas, med och utan ö (teknisk-plan §9 punkt 22 var en känd brist)', () => {
+    it('rubriken Förnamn avvisas, med och utan ö (var en känd brist)', () => {
         for (const kol of ['Förnamn', 'Fornamn', 'FÖRNAMN', 'Förnamn ']) {
             const fel = P.detectSensitiveColumns(rader(kol));
             expect(fel.map(f => f.col), kol).toEqual([kol]);

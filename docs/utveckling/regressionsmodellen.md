@@ -56,7 +56,7 @@ standardmodellen är reserven kön + ålder och med bara BAS vald är den endast
 `diagnoseCollinearity`: helt enkönade BAS-intervall (med minst 3 personer), färre än två BAS-intervall och under 50
 personer. Kan inget steg skattas blir resultatet felet `all_failed`.
 
-**Ingen cache.** Regressionen räknas om vid varje anrop och får aldrig cachas (ADR-17, regel R9 i `regler.md`).
+**Ingen cache.** Regressionen räknas om vid varje anrop och får aldrig cachas (ADR-17).
 
 ## 2. Förklaringsmodellen
 
@@ -473,7 +473,7 @@ Filen ändras aldrig.
 | `tests/ktroskel-utdata.test.js` | Protokollets blad per BAS-intervall: ett intervall som bara är säkerställt på rått p utelämnas, ett som är säkerställt efter korrigering står med sitt q-värde |
 | `tests/ktroskel-utan-alder.test.js`, `tests/exports.golden.test.js` | Utan ålder: varje utdataväg, och facit *lönefil utan ålder* |
 | `tests/diagramritare.test.js` | Att ingen text i en ritad figur är ett tal med decimalpunkt (kvantildiagrammet, ADR-63) |
-| `tests/forhandsvisning.test.js` | Att regressionen inte cachas (regel R9) |
+| `tests/forhandsvisning.test.js` | Att regressionen inte cachas (ADR-17) |
 | `tools/browser-smoke/gapuppdelning.mjs` | Kortet *Förklara med:* i riktiga webbläsare |
 
 Golden-facit och docx-facit (`tests/exports.golden.test.js`) är oförändrade i standardläget, vilket är kontrollen att

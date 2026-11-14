@@ -7,10 +7,11 @@
   den citeras, som system, aldrig som någons kund eller arbetsgivare; källan till jämförelsestatistiken får namnges
   som källa; demodatan har en påhittad organisation. Se `.github/CONTRIBUTING.md`.
 - **Lönedata lämnar aldrig datorn**, och varje ny utdata prövas mot k-tröskeln (`.github/CONTRIBUTING.md`, punkt 3).
-- Läs `docs/utveckling/arkitekturbeslut.md` (arkitekturbesluten) innan du ändrar beteende.
+- Läs principerna (`docs/utveckling/principer.md`) och referensen för området innan du ändrar beteende; varför
+  något blev som det är står i beslutsloggen (`docs/utveckling/arkitekturbeslut.md`).
 - Skriv på svenska, i samma stil som omgivande kod och dokument.
 
-**Skydden** går före allt annat, också arkitekturbesluten. En ändring som rör ett skydd tas upp med underhållaren
+**Skydden** går före allt annat, också principerna och arkitekturbesluten. En ändring som rör ett skydd tas upp med underhållaren
 innan den görs. Regel, vakt och undantag står i `docs/utveckling/skydd.md`.
 
 - **S1. Inga nätverksanrop:** byggets CSP stänger all utgående trafik.
@@ -27,15 +28,12 @@ request och `npm run kontroll -- --snabb` under arbetet. Ändra i `src/`, aldrig
 |---|---|
 | något som lämnar verktyget (text, tabell, bild, fil) | `docs/utveckling/skydd.md` S4, `docs/utveckling/k-troskeln.md`, `docs/utveckling/diagramkarnan.md` §1 och §7–8, k-riggen `tests/helpers/ktroskel-rigg.js` |
 | ett diagram | `docs/utveckling/diagramkarnan.md` §1, §7–8 och §10 |
-| regressionen eller annan statistik | `docs/utveckling/regressionsmodellen.md`, ADR-17 (regressionen cachas aldrig); `tests/stat-referens.test.js` |
+| regressionen eller annan statistik | principerna 2–3, `docs/utveckling/regressionsmodellen.md`, ADR-17 (regressionen cachas aldrig); `tests/stat-referens.test.js` |
 | likvärdigt arbete eller definitionen av kvinnodominerat | `docs/utveckling/likvardighetsmodellen.md`, `tests/likvardighet.test.js` |
 | `src/index.html`, stilmallen (`src/style.css`) eller CSP:n | `docs/utveckling/skydd.md` S1, ADR-9, ADR-30, ADR-43 |
-| text som användaren läser | ADR-16, `docs/utveckling/lagrum.md`, de avförda orden i `tests/dokumentation-sprak.test.js` |
+| text som användaren läser | principerna 1 och 6, ADR-16, `docs/utveckling/lagrum.md`, de avförda orden i `tests/dokumentation-sprak.test.js` |
 | bygget, testmiljön, CI eller releasen | `docs/utveckling/bygge-och-test.md`, `src/app/README.md` |
 | organisationspaketet, namn och etiketter | `docs/utveckling/skydd.md` S5, ADR-28, ADR-47 |
-
-**Regler och vakter:** `docs/utveckling/regler.md` säger vilket test som vaktar vilken regel. En ny bindande regel
-får en rad där.
 
 **Ett beslut som ändras** förs in enligt *När ett beslut förs in* i `.github/GOVERNANCE.md`.
 

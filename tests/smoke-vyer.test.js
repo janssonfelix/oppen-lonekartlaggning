@@ -3,8 +3,6 @@
  *
  * Utbrutet ur smoke.test.js så att Vitest fördelar röktesterna över flera arbetare; varje describe-block
  * skapar sina egna fönster via createAppWindow (tests/helpers/app-harness.js).
- *
- * Vaktar: R7 (docs/utveckling/regler.md)
  */
 import { describe, it, expect, beforeAll } from 'vitest';
 import { createAppWindow, delatFonster } from './helpers/app-harness.js';

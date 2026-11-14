@@ -27,7 +27,7 @@ const flikfonster = delatFonster(w => {
     }
 });
 
-describe('ingen organisatorisk enhet i data eller utdata (se §2 i teknisk-plan.md)', () => {
+describe('ingen organisatorisk enhet i data eller utdata (se avgränsningen i mal.md)', () => {
     it('ordlistan, Vad lagras? och riskanalysen beskriver fem fält, utan enhet', async () => {
         const w = createAppWindow();
         w.__loadDemoData();

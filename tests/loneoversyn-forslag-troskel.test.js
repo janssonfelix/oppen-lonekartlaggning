@@ -10,8 +10,6 @@
  * Underlaget som parFonster i tests/troskelbeslut.test.js: ett kvinnodominerat yrke (5300) och ett jämförelseyrke (6100)
  * i BAS C, och ett stort yrke (6000) i BAS A för egna rader. Varje grupp i paret har en enda lön, ett sentinelvärde, så
  * att ett tal i utdata bara kan komma ur den gruppen: jämförelseyrkets median, skillnaden och förslagets belopp.
- *
- * Vaktar: S4 (docs/utveckling/regler.md)
  */
 import { describe, it, expect, vi } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';

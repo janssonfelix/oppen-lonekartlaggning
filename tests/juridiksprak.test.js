@@ -8,8 +8,6 @@
  * Testet läser det byggda dist/app.js (det användaren kör, utan kodkommentarer), src/index.html (utan
  * HTML-kommentarer), README och dokumenten för användare och dataskydd. Ordet "direktivet" i sig är
  * tillåtet. Vakten kontrollerar också att ansvarsförbehållet och förbehållet om verklig data står där de ska.
- *
- * Vaktar: R23 (docs/utveckling/regler.md)
  */
 import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';

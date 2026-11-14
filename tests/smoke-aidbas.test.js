@@ -7,8 +7,6 @@
  *
  * Underlaget är helt påhittat: 58 personer, samma fall som tests/aidbas.test.js, och en yrkesgrupp i två intervall
  * med båda könen över tröskeln så att tratten har två punkter för samma AID-kod.
- *
- * Vaktar: R29 (docs/utveckling/regler.md)
  */
 import { describe, it, expect, vi } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';

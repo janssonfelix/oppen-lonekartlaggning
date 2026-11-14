@@ -9,8 +9,6 @@
  * som ska vara spårbart.
  *
  * VERSION är nu enda källa; src/app/08-version.js genereras ur den.
- *
- * Vaktar: R11 (docs/utveckling/regler.md)
  */
 import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';

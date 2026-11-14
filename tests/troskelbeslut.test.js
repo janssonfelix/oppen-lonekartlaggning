@@ -1,12 +1,10 @@
 /**
- * Produktägarens beslut om k-tröskeln 2026-10-16 (teknisk-plan § 9, tidigare punkterna 11–17):
+ * Produktägarens beslut om k-tröskeln 2026-10-16 (tidigare öppna punkter 11–17):
  * demografidelens trendlinje, Löneöversyns tröskelmål, riktade rader ur konfigurationsfilen,
  * varningen "underlaget är litet", processöversiktens steg 4, diagramdata med en rad per person
  * och autocomplete="off" på fält som skapas efter start.
  *
  * Samma rigg som ktroskel.test.js: grupper där alla har samma lön, i tre storlekar (150, 20 och 6).
- *
- * Vaktar: S4 (docs/utveckling/regler.md)
  */
 import { describe, it, expect, vi } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';

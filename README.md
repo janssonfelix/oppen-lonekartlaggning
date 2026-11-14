@@ -1,162 +1,79 @@
 # Öppen lönekartläggning
 
-Ett fritt verktyg för den årliga **lönekartläggningen** enligt diskrimineringslagen, med stöd för
-delar av lönetransparensdirektivet. Hela verktyget är **en enda HTML-fil** som körs i webbläsaren på din
-dator: ingen server, inga nätverksanrop och ingen lagring. **Lönedata lämnar aldrig datorn.**
+Ett fritt verktyg för den årliga **lönekartläggningen** enligt diskrimineringslagen, med stöd för delar av
+lönetransparensdirektivet. Hela verktyget är **en enda HTML-fil** som körs i webbläsaren på din dator: ingen server,
+inga nätverksanrop och ingen lagring. **Lönedata lämnar aldrig datorn.**
 
-**Omfång i dag:** verktyget är byggt för arbetsgivare som kodar sina befattningar med **AID** och
-**BAS-intervall**. De ska också kunna jämföra sig med **SKR:s** personalstatistik, så i praktiken gäller
-det kommuner och regioner.
-Varje organisation tar in sitt eget ställningstagande, sin statistik och sina benämningar i ett
-organisationspaket, så att ingenting om en viss organisation är inbyggt. Andra arbetsvärderingssystem är en
-öppen punkt (teknisk plan §9).
-Verktyget är ännu inte prövat med verklig lönedata hos en arbetsgivare; checklistan för skarp data finns
-för den som gör det först.
+## Status: ett proof of concept
 
-- **Hela lagkedjan:** genomgång av bestämmelser och praxis, lika arbete (med regression och
-  oförklarad löneskillnad), likvärdigt arbete, direktivets rapportmått, löneläget mot er
-  referens med kostnad att nå den, och handlingsplan.
-- **Färdiga underlag:** ett redigerbart Word-utkast av dokumentationen (rapporten), en Excel-fil med
-  underlaget och en PDF som låst kopia. Dessutom en ZIP-fil med allt, protokoll för gemensam
-  lönebedömning och rapportunderlag att klistra in i din egen mall.
-- **Dataskydd inbyggt:** bara de fält analysen behöver läses in (fyra obligatoriska, tre
-  valfria). Filer med personnummer, namn eller e-post avvisas, och små grupper skyddas i det som
-  lämnar verktyget. En risk- och sårbarhetsanalys ingår som underlag till organisationens
-  konsekvensbedömning.
+- **All kod, alla tester och all dokumentation är skrivna med AI-verktyg**, styrda och granskade av en person.
+- **Verktyget är ett proof of concept, inte en färdig produkt.** Statistiken är inte granskad av en statistiker, och
+  texterna om lag och dataskydd är inte granskade av jurist eller dataskyddsombud. Verktyget är ännu inte prövat med
+  verklig lönedata hos en arbetsgivare; checklistan för skarp data finns för den som gör det först.
+
+## Vad det gör
+
+Lika och likvärdigt arbete, regression och oförklarad löneskillnad, direktivets rapportmått, löneläget och
+handlingsplan, med ett redigerbart Word-utkast av dokumentationen, Excel och PDF. Bara de fält analysen behöver läses
+in (fyra obligatoriska, tre valfria), och små grupper skyddas i det som lämnar verktyget. Verktyget är byggt för
+arbetsgivare som kodar befattningarna med **AID** och **BAS-intervall** och jämför sig med **SKR:s**
+personalstatistik, i praktiken kommuner och regioner. Det organisationsspecifika läses in ur ett organisationspaket;
+ingenting om en viss organisation är inbyggt.
 
 ## Prova
 
-Öppna verktyget och klicka **Prova med demodata** — allt fungerar med påhittad data, utan
-verkliga löner och utan installation.
+Öppna verktyget och klicka **Prova med demodata**: allt fungerar med påhittad data, utan installation.
 
 ## Kom igång
 
-1. **Ladda ner** `oppen-lonekartlaggning.html` från den senaste versionen under
-   [Releases](https://github.com/janssonfelix/oppen-lonekartlaggning/releases). **Verifiera
-   signaturen** innan du läser in verklig lönedata. Kommandot står i [`SECURITY.md`](SECURITY.md),
-   avsnittet *Kontrollera att filen är äkta*. Öppna filen i webbläsaren (Chrome, Edge, Firefox
-   eller Safari) på en dator.
-2. **Läs in organisationens paket**: ställningstagande, jämförelsestatistik och benämningar i en
-   fil som organisationens systemägare tar fram i verktyget. Du kan också öppna
-   **organisationsfilen**, där systemägaren bakat in paketet så att en fil räcker:
-   [`organisationspaket.md`](docs/anvandare/organisationspaket.md).
-3. **Läs in lönefilen** och följ körguiden:
-   [`korguide.md`](docs/anvandare/korguide.md) och [`datauttag.md`](docs/anvandare/datauttag.md).
-
-Mer: [sammanfattning för HR-chefer](docs/anvandare/sammanfattning-hr-chefer.md) ·
-[checklista för skarp data](docs/anvandare/pilotchecklista.md) ·
-[dataskyddsbeskrivning](docs/dataskydd/dataskydd.md) ·
-[risk- och sårbarhetsanalys](docs/dataskydd/riskanalys.md) ·
-[lagrumshänvisningar](docs/utveckling/lagrum.md)
-
-Verktyget ger **underlag**, inte juridiska bedömningar: bedömningen av sakliga skäl och den
-slutliga dokumentationen görs av arbetsgivaren i samverkan med facklig part.
-
-## Licens och bidrag
-
-Öppen lönekartläggning är öppen källkod under **MIT-licensen** (se `LICENSE`). Upphovsperson:
-Felix Jansson. Tredjepartsbibliotekens licenser står i [`TREDJEPARTSLICENSER.md`](TREDJEPARTSLICENSER.md) och
-följer med i den byggda filen.
-
-Vill du bidra, läs [`CONTRIBUTING.md`](.github/CONTRIBUTING.md) och [`CODE_OF_CONDUCT.md`](.github/CODE_OF_CONDUCT.md).
-Säkerhetsbrister rapporteras enligt [`SECURITY.md`](SECURITY.md). Hur projektet styrs, och vad som
-gäller om det slutar underhållas, står i [`GOVERNANCE.md`](.github/GOVERNANCE.md).
+1. **Ladda ner** `oppen-lonekartlaggning.html` under [Releases](https://github.com/janssonfelix/oppen-lonekartlaggning/releases)
+   och **verifiera signaturen** innan du läser in verklig lönedata ([`SECURITY.md`](SECURITY.md), *Kontrollera att
+   filen är äkta*). Öppna filen i Chrome, Edge, Firefox eller Safari på en dator.
+2. **Läs in organisationens paket**, eller öppna **organisationsfilen** där paketet är inbakat
+   ([`organisationspaket.md`](docs/anvandare/organisationspaket.md)).
+3. **Läs in lönefilen** och följ [`korguide.md`](docs/anvandare/korguide.md) och
+   [`datauttag.md`](docs/anvandare/datauttag.md). Dokumenten för den som inför verktyget: [`docs/README.md`](docs/README.md).
 
 ## Ansvar och roller
 
-Verktyget tillhandahålls fritt — utan avgift, support eller drift — av en privatperson utanför
-kommersiell verksamhet. Det får följder som en IT-avdelning eller ett dataskyddsombud brukar fråga om:
+Verktyget tillhandahålls fritt, utan avgift, support eller drift, av en privatperson utanför kommersiell verksamhet.
 
-- **Användarens ansvar.** Verktyget är ett stöd för arbetsgivarens egen lönekartläggning. Användaren
-  ansvarar för hur verktyget används, för tolkningen av resultaten och för den juridiska bedömningen.
-  Verktyget är inte juridiskt granskat.
-- **Arbetsgivaren som använder verktyget är ensam personuppgiftsansvarig.** Ingen uppgift når
-  upphovspersonen eller någon annan, och inget personuppgiftsbiträde finns
-  ([`sakerhetsbeskrivning.md`](docs/anvandare/sakerhetsbeskrivning.md)).
-- **EU:s cyberresiliensakt och produktansvarsdirektiv** undantar fri programvara som tillhandahålls
-  utanför kommersiell verksamhet och gäller därför inte upphovspersonen. Den som säljer verktyget,
-  drift av det eller support på det sätter en egen produkt på marknaden och bär tillverkarens
-  skyldigheter för den. En organisation som bygger och sprider verktyget internt gör det inom sin egen
-  verksamhet — se [`overta-verktyget.md`](docs/anvandare/overta-verktyget.md).
-- **Verktyget är inte ett AI-system** i AI-förordningens mening. All statistik är klassiska metoder med
-  fasta, dokumenterade formler. Inget lärs in, och inga beslut om enskilda fattas.
-- **Lagrumshänvisningarna** i [`lagrum.md`](docs/utveckling/lagrum.md) har status *Förslag* tills
-  jurist och dataskyddsombud har stämt av dem. Verktyget hänvisar övergripande till lagen just därför,
-  och ger underlag — inte juridiska bedömningar.
+- **Användarens ansvar.** Verktyget är ett stöd för arbetsgivarens egen lönekartläggning. Användaren ansvarar för hur
+  verktyget används, för tolkningen av resultaten och för den juridiska bedömningen. Verktyget är inte juridiskt
+  granskat. Verktyget ger underlag; bedömningen av sakliga skäl görs av arbetsgivaren i samverkan med facklig part.
+- **Arbetsgivaren är ensam personuppgiftsansvarig.** Ingen uppgift når upphovspersonen eller någon annan, och inget
+  personuppgiftsbiträde finns ([`sakerhetsbeskrivning.md`](docs/anvandare/sakerhetsbeskrivning.md)).
+- **EU:s cyberresiliensakt och produktansvarsdirektiv** undantar fri programvara som tillhandahålls utanför
+  kommersiell verksamhet. Den som säljer verktyget, drift eller support bär tillverkarens skyldigheter för sin
+  produkt ([`overta-verktyget.md`](docs/anvandare/overta-verktyget.md)).
+- **Verktyget är inte ett AI-system** i AI-förordningens mening: beräkningarna är fasta, dokumenterade formler, inget
+  lärs in och inga beslut om enskilda fattas. Att verktyget är skrivet med AI-verktyg ändrar inte det.
+- **Lagrumshänvisningarna** i [`lagrum.md`](docs/utveckling/lagrum.md) har status *Förslag* tills jurist och
+  dataskyddsombud har stämt av dem; där står också artiklarna bakom punkterna ovan.
 
-Artiklarna bakom punkterna står i [`lagrum.md`](docs/utveckling/lagrum.md), avsnittet *Produkt- och
-säkerhetsregler*.
+## Repot
 
-## Mappstruktur
-
-| Mapp eller fil | Innehåll |
+| Mapp | Innehåll |
 |---|---|
-| `src/` | Källan: `index.html`, `style.css`, `app/` (appens moduler i byggordning), `lib/` (rena, testade moduler som speglas in i appen) och `licenser.txt` (licenstexterna som byggs in i HTML-filen) |
-| `vendor/` | Tredjepartsbibliotek: D3, SheetJS, PapaParse, JSZip, låsta med `SHA256SUMS` (licenser i [`TREDJEPARTSLICENSER.md`](TREDJEPARTSLICENSER.md)) |
-| `dist/` | Genererat och incheckat: `app.js`, `oppen-lonekartlaggning.html`, `RELEASE.txt`. Redigeras aldrig för hand |
-| `docs/` | Dokumentationen; [`docs/README.md`](docs/README.md) listar dokumenten efter läsare |
-| `docs/anvandare/` | Dokument som följer med verktyget: körguide, datauttag, organisationspaket, införande |
-| `docs/dataskydd/` | Dataskyddsbeskrivning och risk- och sårbarhetsanalys |
-| `docs/utveckling/` | [`teknisk-plan.md`](docs/utveckling/teknisk-plan.md) (syfte, avgränsning och öppna punkter), [`skydd.md`](docs/utveckling/skydd.md) (skydden S1–S5), [`regler.md`](docs/utveckling/regler.md) (regelmatrisen), [`arkitekturbeslut.md`](docs/utveckling/arkitekturbeslut.md) (ADR), referenserna per område (bland dem [`diagramkarnan.md`](docs/utveckling/diagramkarnan.md) och [`bygge-och-test.md`](docs/utveckling/bygge-och-test.md)), [`organisationsfil.md`](docs/utveckling/organisationsfil.md) och [`lagrum.md`](docs/utveckling/lagrum.md) |
-| `tests/` | Vitest-sviten (enhetstester, röktester i jsdom, golden-facit, k-anonymitet, tillgänglighet) |
-| `tools/` | Bygge, speglingsgenerator, röktest i webbläsare, prestandamätning och testdatageneratorer. `tools/data/` håller lokala indata och är inte incheckad |
-| `types/` | Deklarationerna för typkontrollen (bibliotekens globaler och appens egna fält på DOM-element) |
-| `site/` | Demosidan på GitHub Pages (`npm run site`) |
-| `.github/` | Arbetsflödena för CI, release och demosidan, ärendemallar, [`CONTRIBUTING.md`](.github/CONTRIBUTING.md), [`GOVERNANCE.md`](.github/GOVERNANCE.md) och [`CODE_OF_CONDUCT.md`](.github/CODE_OF_CONDUCT.md) |
-| Roten | `README.md`, [`CHANGELOG.md`](CHANGELOG.md), [`SECURITY.md`](SECURITY.md), `LICENSE` (MIT), [`TREDJEPARTSLICENSER.md`](TREDJEPARTSLICENSER.md) och `VERSION` |
-
-Källmodulerna i `src/app/` beskrivs i [`src/app/README.md`](src/app/README.md).
+| `src/` | Källan: sidan, stilmallen, appens moduler (`app/`, se [`src/app/README.md`](src/app/README.md)) och de rena beräkningsmodulerna (`lib/`) |
+| `dist/` | Det byggda verktyget, genererat ur `src/` och incheckat; redigeras aldrig för hand |
+| `vendor/` | Tredjepartsbiblioteken, låsta med kontrollsummor ([`TREDJEPARTSLICENSER.md`](TREDJEPARTSLICENSER.md)) |
+| `tests/` | Testsviten (Vitest) |
+| `tools/` | Bygge, röktest i webbläsare, release och testdata |
+| `types/`, `site/` | Deklarationerna för typkontrollen; demosidan |
+| `docs/` | Dokumentationen, efter läsare: [`docs/README.md`](docs/README.md) |
+| `.github/` | CI, release, ärendemallar, bidragsregler och styrning |
 
 ## För dig som utvecklar
 
-Kräver Node 22.12 eller senare. När en ändring är klar står i *Definition of Done* i
-[`CONTRIBUTING.md`](.github/CONTRIBUTING.md) (punkt 3); kommandona nedan är referensen. Hur bygget, testmiljön,
-CI och releasen fungerar står i [`bygge-och-test.md`](docs/utveckling/bygge-och-test.md).
+Kräver Node 22.12 eller senare. `npm ci` installerar, `npm run kontroll` kör hela kedjan i CI:s ordning och
+`npm run bundle` bygger verktyget. När en ändring är klar står i *Definition of Done* i
+[`CONTRIBUTING.md`](.github/CONTRIBUTING.md). Övriga kommandon, testerna, CI och hur en version släpps står i
+[`bygge-och-test.md`](docs/utveckling/bygge-och-test.md).
 
-```bash
-npm ci                 # installera utvecklingsberoenden
-npm run kontroll       # hela kedjan i Definition of Done, i CI:s ordning; stannar på första fel
-                       # (npm run kontroll -- --snabb: npm test i stället för test:full, inget röktest)
-npm run build:app      # slå ihop src/app/ till dist/app.js (och spegla src/lib/)
-npm test               # snabb körning: moduler och vakter, utan jsdom (sekunder)
-npm run test:full      # hela Vitest-sviten med jsdom-testerna (minuter); körs i CI
-                       # (tools/test.mjs kör om en fil vars arbetare kraschat i Node)
-npm run lint           # eslint
-npm run typecheck      # JSDoc-typkontroll med tsc (checkJs): typecheck:lib för src/lib och tools, typecheck:app för src/app
-npm run bundle         # bygg dist/oppen-lonekartlaggning.html och dist/RELEASE.txt
-npm run test:browser   # röktest av det byggda verktyget i Chromium (kör bundle först)
-npm run test:browser:firefox   # samma röktest i Firefox (WebKit: test:browser:webkit, eller
-                               # test:browser:webkit:behallare som kör det i en behållare med podman)
-npm run perf           # prestandamätning på 55 000 rader (kör bundle först)
-npm run site           # demosidan i site/dist/ (kör bundle först)
-```
+## Licens och bidrag
 
-`src/index.html` är källan till bygget och går inte att köra direkt i webbläsaren. Dess
-innehållssäkerhetspolicy (CSP) tillåter inga externa filer, så stilmallen, biblioteken i
-`vendor/` och `dist/app.js` blockeras. Kör `npm run bundle` och öppna
-`dist/oppen-lonekartlaggning.html` för att se en ändring.
-
-Versionen står i `VERSION` (CalVer, `ÅÅÅÅ.MM.DD`) och ändringar dokumenteras i
-[`CHANGELOG.md`](CHANGELOG.md).
-
-### Släppa en version
-
-1. Granska `docs/dataskydd/riskanalys.md` och `docs/dataskydd/dataskydd.md` mot koden och sätt
-   granskningsdatumet (teknisk-plan.md §9 punkt 17b).
-2. Sätt versionen i `VERSION` och `package.json`, och byt rubriken *Oförlöst* i `CHANGELOG.md` mot versionen.
-3. `npm run build:app && npm run bundle`; för in byggets kontrollsumma och version på rad 3 i riskanalysen.
-4. Kör `npm run test:full`, checka in och kör `npm run release:kontroll`. Grinden prövar det som bara gäller vid
-   en release (vad, står i huvudet i `tools/release.mjs`) och skriver ut taggkommandot.
-5. Pusha taggen `v<VERSION>`. Arbetsflödet `.github/workflows/release.yml` kör grinden igen, bygger om,
-   signerar med Sigstore cosign och publicerar en GitHub Release (verifieringen står i `SECURITY.md`).
-   Samma tagg publicerar demosidan på GitHub Pages (`.github/workflows/pages.yml`; går också att köra för hand).
-
-Ärenden skrivs med mallarna i `.github/ISSUE_TEMPLATE/` (fel och förslag) och får aldrig innehålla verklig
-lönedata.
-
-## Namngivning
-
-- Filnamn skrivs med gemener och bindestreck, utan å, ä och ö.
-- Levande dokument har inget datum eller versionsnummer i filnamnet; versionen står i
-  dokumentet.
-- Modulerna i `src/app/` har ett tvåsiffrigt prefix som styr ordningen när de slås ihop.
+Öppen källkod under **MIT-licensen** (`LICENSE`). Upphovsperson: Felix Jansson. Tredjepartsbibliotekens licenser
+står i [`TREDJEPARTSLICENSER.md`](TREDJEPARTSLICENSER.md) och följer med i den byggda filen. Bidrag enligt
+[`CONTRIBUTING.md`](.github/CONTRIBUTING.md) och [`CODE_OF_CONDUCT.md`](.github/CODE_OF_CONDUCT.md), säkerhetsbrister
+enligt [`SECURITY.md`](SECURITY.md); styrningen står i [`GOVERNANCE.md`](.github/GOVERNANCE.md).

@@ -1,5 +1,5 @@
 /**
- * Svenskt talformat i exporterna (teknisk-plan §9 punkt 10).
+ * Svenskt talformat i exporterna.
  *
  * Tre vägar prövas:
  *   1. CSV- och urklippsexporten (`_toCsv`, `_tillTsv`, `_CSV_TALLIKT` i src/app/22-exporthjalpare.js): ett tal i
@@ -15,8 +15,6 @@
  *      CSV-exporten bär) läses tillbaka av talinläsningen (`parseNumberStrict`) till samma värde.
  *
  * All data är påhittad.
- *
- * Vaktar: R8 (docs/utveckling/regler.md)
  */
 import { describe, it, expect, beforeAll } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';

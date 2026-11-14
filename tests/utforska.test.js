@@ -267,7 +267,7 @@ describe('nya dimensioner och uppdelning per kön', () => {
 
 
 describe('utforska: dimensionerna', () => {
-    it('enhet är ingen dimension (se §2 i teknisk-plan.md)', () => expect(DIMENSIONER).not.toContain('enhet'));
+    it('enhet är ingen dimension (se avgränsningen i mal.md)', () => expect(DIMENSIONER).not.toContain('enhet'));
 });
 
 describe('utforska: sektor och AID-mellannivå', () => {

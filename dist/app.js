@@ -2065,7 +2065,7 @@ function _cleanYrkeField(raw) {
 /**
  * Extraherar ENBART vitlistade fält ur en CSV-rad — GDPR Art. 5(1)(c) uppgiftsminimering.
  * Säkerställer att verktyget aldrig laddar identifierande fält (PNR, namn, e-post)
- * även om användarens CSV innehåller dem. Ansvar läses inte in (se §2 i teknisk-plan.md).
+ * även om användarens CSV innehåller dem. Ansvar läses inte in (se avgränsningen i docs/utveckling/mal.md).
  * Yrke saneras via _cleanYrkeField (AID + 40 tecken etikett, namn-mönster maskeras).
  * @param {Object<string,*>} row - Rå CSV-rad (PapaParse-objekt).
  * @returns {{bas:string, yrke:string, lon:number, alder:number, kon:string}}
@@ -3811,7 +3811,7 @@ function byggParLagreKrav(orgKvDom, orgIckeKv, opts = {}) {
 }
 
 /**
- * BAS-rang (BAS-ordningen är fast, se §5 i teknisk-plan.md): bokstavens plats i alfabetet, A=1, B=2 … Varje bokstav är ett lika brett
+ * BAS-rang (BAS-ordningen är fast, se likvardighetsmodellen.md §6): bokstavens plats i alfabetet, A=1, B=2 … Varje bokstav är ett lika brett
  * poängintervall i BAS-systemet, så ett BAS-steg är alltid ett intervall — B → D är två steg
  * även när C saknas i underlaget. Samma rang används av regressionerna och Lägre krav.
  * Något som inte är en bokstav läggs alfabetiskt efter bokstäverna.
@@ -15889,7 +15889,7 @@ const state = {
 };
 
 /**
- * Returnerar hela datasetet; det finns inget enhetsfilter (se §2 i teknisk-plan.md).
+ * Returnerar hela datasetet; det finns inget enhetsfilter (se avgränsningen i docs/utveckling/mal.md).
  * @returns {Array<{bas:string, yrke:string, lon:number, alder:number, kon:string, aid?:string, yrkeLabel?:string, ansvarsgrupp?:string, [k:string]:any}>}
  */
 function getData() {
@@ -28452,7 +28452,7 @@ function runQuantileRegressionAtAllTau() {
  *
  * BAS kodas som en indikator per BAS-intervall utom det första (alfabetiskt lägsta) som är
  * referens: varje intervall får sin egen lönenivå, utan antagandet att varje bokstavssteg
- * är värt lika mycket. Ordningen A–J är ändå fast (se §5 i teknisk-plan.md) och styr
+ * är värt lika mycket. Ordningen A–J är ändå fast (se likvardighetsmodellen.md §6) och styr
  * vilket intervall som blir referens.
  * @returns {{error?: string, errorCode?: string, [k: string]: any}} vid fel { error, errorCode } (ev. triedSteps, diagnostics);
  *   annars beta, se, p, R2, n, k, gapPct, decomposition m.fl. — se return-satsen.
@@ -33475,6 +33475,7 @@ const INFO_SECTIONS = {
     overview: () => `
         <h3>Vad är detta verktyg?</h3>
         <p class="om-ansvar"><strong>Ansvar.</strong> ${ANSVARSFORBEHALL}</p>
+        <p class="om-status"><strong>Status.</strong> Verktyget är ett proof of concept, inte en färdig produkt. All kod, alla tester och all dokumentation är skrivna med AI-verktyg, styrda och granskade av en person. Verktyget är inte prövat med verklig lönedata, statistiken är inte granskad av en statistiker, och texterna om lag och dataskydd är inte granskade av jurist eller dataskyddsombud.</p>
         <p>
             Öppen lönekartläggning är ett fritt verktyg för den årliga <strong>lönekartläggningen enligt diskrimineringslagen</strong> (3 kap., aktiva åtgärder om lönefrågor). Det tar emot en lönefil, räknar fram löneskillnaderna mellan kvinnor och män för lika och likvärdigt arbete, visar vad som bör prioriteras och vad det kostar, och skriver ett utkast till dokumentationen. Bedömningen av sakliga skäl och den slutliga dokumentationen gör arbetsgivaren i samverkan med facklig part.
         </p>
@@ -33514,7 +33515,7 @@ const INFO_SECTIONS = {
             <li>Samverkar med facket och lämnar den information som lagen kräver</li>
             <li>Ansvarar för arbetsvärderingen: BAS-intervallen, eller organisationens egna poäng, är verktygets mått på arbetets krav</li>
         </ul>
-        <p>Verktyget använder ingen artificiell intelligens. All statistik är klassiska metoder med formler som går att följa, och varje tal går att spåra med knappen <em>Visa beräkningen</em>. Ingenting sparas mellan sessioner: stäng fliken och allt är borta.</p>
+        <p>Beräkningarna använder ingen artificiell intelligens. All statistik är klassiska metoder med formler som går att följa, och varje tal går att spåra med knappen <em>Visa beräkningen</em>. Ingenting sparas mellan sessioner: stäng fliken och allt är borta.</p>
 
         <h3>Så går en kartläggning till</h3>
         <ol>
@@ -36594,7 +36595,7 @@ function _lpExcelBlad() {
 //
 // Ingen ny statistik — enbart en sammanställning av befintliga beräkningar.
 // Dossiern DOKUMENTERAR INTE sakliga skäl; det är en medveten produktgräns
-// (teknisk-plan.md §2). Den samlar underlaget för den bedömning som görs någon annanstans.
+// (avgränsningen i docs/utveckling/mal.md). Den samlar underlaget för den bedömning som görs någon annanstans.
 // ====================================================================
 
 // Bootstrap-KI på mediankvoten (kvinnors median som % av männens). Samma metod

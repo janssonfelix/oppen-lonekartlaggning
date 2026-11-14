@@ -4,8 +4,6 @@
  * Fixturen är deterministisk (LCG) och har ett känt kön-effekt-mönster. Könskoefficienten
  * jämförs mot fitOLS på samma designmatris, skriven här för hand, så att modellen inte
  * bara "ser rimlig ut" utan faktiskt skattar det den säger att den skattar.
- *
- * Vaktar: R28 (docs/utveckling/regler.md)
  */
 import { describe, it, expect } from 'vitest';
 import { livscykelRegression, livscykelNiva, samspelSakerstallt, SAMSPEL_GRANS } from '../src/lib/livscykel.js';

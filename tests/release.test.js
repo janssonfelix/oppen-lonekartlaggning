@@ -1,10 +1,9 @@
 /**
  * Release-grinden (tools/release.mjs, npm run release:kontroll): en version taggas bara när CHANGELOG har
  * versionen överst, riskanalysen är granskad mot det bygge och den kod som släpps och arbetskatalogen är ren
- * (teknisk-plan.md §9 punkt 17b). Prövas på fixturer, inte på riktig git. Versionen i package.json prövas i
- * tests/version.test.js och RELEASE.txt av artefaktgrinden i CI (CONTRIBUTING, "Var uppgifterna står").
- *
- * Vaktar: R14 (docs/utveckling/regler.md)
+ * (oppna-punkter.md punkt 17b). Prövas på fixturer, inte på riktig git. Versionen i package.json prövas i
+ * tests/version.test.js och RELEASE.txt av artefaktgrinden i CI (princip 4 i
+ * docs/utveckling/principer.md).
  */
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';

@@ -299,7 +299,7 @@ describe('golden: bladen ur HTML-tabellerna bär cellerna som vyn visar dem (typ
 });
 
 /**
- * Tecknet i direktivets rapportmått (teknisk-plan § 4). Verktyget räknar (kvinnor − män) / män och visar kvinnors
+ * Tecknet i direktivets rapportmått (funktionsmålen i mal.md). Verktyget räknar (kvinnor − män) / män och visar kvinnors
  * lön i procent av mäns i alla flikar och blad; bara EU-lönerapporten (och rapportens avsnitt om lönetransparens)
  * skriver direktivets lönegap, (män − kvinnor) / män, positivt när kvinnor ligger lägre.
  */

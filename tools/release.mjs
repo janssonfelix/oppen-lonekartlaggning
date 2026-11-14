@@ -7,13 +7,13 @@
 // Grinden prövar bara det som gäller vid en release. Det som ska gälla i varje commit prövas där, en gång:
 // VERSION som CalVer och package.json med samma version i tests/version.test.js, och att dist/ (artefakten och
 // RELEASE.txt med version, kontrollsumma och verifieringsrader) är ett färskt bygge i artefaktgrinden i CI och i
-// release-arbetsflödet. Se "Var uppgifterna står" i .github/CONTRIBUTING.md.
+// release-arbetsflödet (princip 4 i docs/utveckling/principer.md: varje sak prövas av en kontroll).
 //
 // Kontrollerna:
 //   - CHANGELOG:s översta versionsrubrik är VERSION, och rubriken "Oförlöst" är borta;
 //   - riskanalysen anger bygget (VERSION) och kontrollsumman i dist/RELEASE.txt: den är granskad mot det som släpps;
 //   - riskanalysens granskningsdatum och dataskyddsbeskrivningens "Granskad mot koden" är inte äldre än
-//     senaste commit som rör koden (src/, tools/bundle.mjs, vendor/) — teknisk-plan.md §9 punkt 17b;
+//     senaste commit som rör koden (src/, tools/bundle.mjs, vendor/) — oppna-punkter.md punkt 17b;
 //   - arbetskatalogen är ren, så att taggen pekar på exakt det som kontrollerats.
 //
 // Vid OK skrivs taggkommandot ut. Release-arbetsflödet (.github/workflows/release.yml) kör samma kontroll
@@ -30,7 +30,7 @@ const CALVER = /^(\d{4})\.(\d{2})\.(\d{2})$/;
 const DATUM = /^\d{4}-\d{2}-\d{2}$/;
 // De sökvägar vars ändring kräver att riskanalysen granskas på nytt.
 export const KODVAGAR = ['src', 'tools/bundle.mjs', 'vendor'];
-const PUNKT = 'teknisk-plan.md §9 punkt 17b';
+const PUNKT = 'oppna-punkter.md punkt 17b';
 // Kontrollsummans kommandon i dist/RELEASE.txt (tools/bundle.mjs skriver dem) och i SECURITY.md och körguiden §0:
 // alternativet när cosign inte kan köras (beslut 11b). Skyddar mot en skadad eller förväxlad fil, inte en utbytt.
 export const VERIFIERING = Object.freeze({

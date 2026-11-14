@@ -3,6 +3,10 @@
 Dokumenten i `docs/`, ordnade efter vem som läser dem. Översikten över hela repot står i
 [`README.md`](../README.md) i roten. Ingången för AI-assistenter är [`CLAUDE.md`](../CLAUDE.md) i roten.
 
+Verktyget är ett proof of concept, inte en färdig produkt: koden, testerna och alla dokument här är skrivna med
+AI-verktyg, styrda och granskade av en person. Det är inte prövat med verklig lönedata, statistiken är inte granskad
+av en statistiker, och texterna om lag och dataskydd är inte granskade av jurist eller dataskyddsombud.
+
 ## För den som gör kartläggningen
 
 | Dokument | Vad det är |
@@ -22,16 +26,17 @@ Dokumenten i `docs/`, ordnade efter vem som läser dem. Översikten över hela r
 | [`sammanfattning-hr-chefer.md`](anvandare/sammanfattning-hr-chefer.md) | Sammanfattning för HR-chefer: vad verktyget gör och inte gör. |
 | [`sakerhetsbeskrivning.md`](anvandare/sakerhetsbeskrivning.md) | Säkerhetsbeskrivning på en sida för IT-säkerhet och dataskyddsombud. |
 | [`dataskydd.md`](dataskydd/dataskydd.md) | Dataskyddsbeskrivningen i sammanfattning: vilka uppgifter, var de finns och hur de skyddas. |
-| [`riskanalys.md`](dataskydd/riskanalys.md) | Den fullständiga, kodgranskade risk- och sårbarhetsanalysen: dataflöde, skydd, riskregister och verifiering. |
+| [`riskanalys.md`](dataskydd/riskanalys.md) | Den fullständiga risk- och sårbarhetsanalysen, granskad mot koden med AI-verktyg: dataflöde, skydd, riskregister och verifiering. |
 
 ## För utvecklare och granskare
 
 | Dokument | Vad det är |
 |---|---|
 | [`skydd.md`](utveckling/skydd.md) | De fem skydden som går före besluten: regeln, varför, beslut, vakt och vad som inte vaktas. |
-| [`regler.md`](utveckling/regler.md) | Regelmatrisen: varje bindande regel med sin källa och sin vakt, och det som inte vaktas. |
-| [`teknisk-plan.md`](utveckling/teknisk-plan.md) | Syfte, avgränsning, funktionsmål, kvalitetskrav och öppna punkter; skydden och referenserna står i egna dokument, som planen pekar på. |
-| [`arkitekturbeslut.md`](utveckling/arkitekturbeslut.md) | Arkitekturbesluten (ADR) med motiv, avvisade alternativ och status; numren som koden och testerna pekar på. |
+| [`principer.md`](utveckling/principer.md) | De sex principerna som binder tillsammans med skydden, med sina vakter. |
+| [`mal.md`](utveckling/mal.md) | Syfte, avgränsning och funktionsmål. |
+| [`oppna-punkter.md`](utveckling/oppna-punkter.md) | Kända brister och obesvarade frågor, med numren som koden och dokumenten pekar på. |
+| [`arkitekturbeslut.md`](utveckling/arkitekturbeslut.md) | Loggen över arkitekturbesluten (ADR): vad som valdes och varför, med status; numren som koden och testerna pekar på. |
 | [`k-troskeln.md`](utveckling/k-troskeln.md) | Minsta gruppstorlek (skyddet S4) som den gäller: de två lägena, redovisningsformen, vägen ut, undantagen, golven, inställningen och vakterna. |
 | [`regressionsmodellen.md`](utveckling/regressionsmodellen.md) | Regressionen och uppdelningen av löneskillnaden som de räknas: huvudtalet, förklaringsmodellen, BAS-kodningen, Blinder-Oaxaca, kvantilregressionen, konfidensintervallen, *Var uppstår löneskillnaden?* och referensvärdena. |
 | [`likvardighetsmodellen.md`](utveckling/likvardighetsmodellen.md) | Analysen av likvärdigt arbete som den räknas: definitionen av kvinnodominerat, jämförelseyrkena, kandidatparen med konfidensintervall och åldersjustering, *Lägre krav, högre lön*, inställningarna och vakterna. |

@@ -7,8 +7,6 @@
  * tröskeln 10 står det lilla intervallets effekt ingenstans i det som lämnar verktyget; intervallet namnges i en not.
  * När referensintervallet självt är under tröskeln står ingen effekt alls, eftersom varje effekt då beskriver det
  * lilla intervallets nivå baklänges. Modellen skattas som förut med alla intervall, och skärmen visar allt (ADR-51).
- *
- * Vaktar: S4 (docs/utveckling/regler.md)
  */
 import { describe, it, expect, vi } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';

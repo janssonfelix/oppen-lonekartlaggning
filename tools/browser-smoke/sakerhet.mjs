@@ -2,7 +2,6 @@
 // Copyright 2026 Felix Jansson
 // Webbläsar-röktestet, del: Säkerheten: ingen lagring, ingen utgående trafik och inga fel under körningen.
 // Körs av tools/browser-smoke.mjs i samma ordning som kontrollerna alltid har körts.
-// Vaktar: S1, S2, R5, R12 (docs/utveckling/regler.md)
 import { FIL, ok, browser, page, natverk, konsolfel, sidfel, internaFel } from './rigg.mjs';
 
 // GDPR: ingen lagring, och lagringsspärren.

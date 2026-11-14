@@ -1,8 +1,6 @@
 /**
  * Diagramkärnan på D3. Riggen laddar ÄKTA D3 ur vendor/,
  * så det som prövas här är riktig SVG — inte en stubb.
- *
- * Vaktar: S4 (docs/utveckling/regler.md)
  */
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';

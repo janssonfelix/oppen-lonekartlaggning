@@ -5,8 +5,6 @@
  *   - "Endast kön"-steget i den sekventiella dekomponeringen mot statsmodels-värdet
  *   - kvantilregressionen (τ = 0,1 / 0,5 / 0,9) mot den exakta LP-lösningen (≡ quantreg::rq)
  * Fixturerna och referensvärdena beskrivs i filhuvudet till tests/stat-referens.test.js.
- *
- * Vaktar: R21, R25 (docs/utveckling/regler.md)
  */
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';

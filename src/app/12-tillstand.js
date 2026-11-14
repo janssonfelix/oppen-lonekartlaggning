@@ -129,7 +129,7 @@ const state = {
 };
 
 /**
- * Returnerar hela datasetet; det finns inget enhetsfilter (se §2 i teknisk-plan.md).
+ * Returnerar hela datasetet; det finns inget enhetsfilter (se avgränsningen i docs/utveckling/mal.md).
  * @returns {Array<{bas:string, yrke:string, lon:number, alder:number, kon:string, aid?:string, yrkeLabel?:string, ansvarsgrupp?:string, [k:string]:any}>}
  */
 function getData() {

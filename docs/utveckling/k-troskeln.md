@@ -288,8 +288,7 @@ filen innehåller lönedata och ska hanteras som personuppgifter.
 
 ## 8. Reglerna R1–R5
 
-Fem regler för könsuppdelade mått utöver avsnitt 2 (ADR-38). Beteckningarna R1–R5 hör till de här reglerna och ska
-inte förväxlas med regelmatrisens R-nummer i [`regler.md`](regler.md), som är en annan nummerserie.
+Fem regler för könsuppdelade mått utöver avsnitt 2 (ADR-38).
 
 - **R1. Regressionens ojusterade steg döljs när ett kön är under tröskeln.** Första steget i den stegvisa uppdelningen
   (*Endast kön*) är samma slags mått som det råa gapet. `_regStegForRedovisning(reg)` lämnar ut stegen utan det första,
@@ -468,7 +467,7 @@ inställningen (standardvärdet).
 - **Exportvägarna i riggen listas för hand.** `samlaUtdata` räknar upp varje export utom diagrammen, som tas ur
   diagramkärnans register; ett test kräver bara att riggens flikar är menyns och att varje ritat diagram har en väg. En ny
   export som inte läggs till i riggen prövas inte. Definition of Done kräver att den läggs till
-  (`.github/CONTRIBUTING.md` punkt 3, regel R1 i `regler.md`).
+  (`.github/CONTRIBUTING.md` punkt 3).
 - **Riktade rader på små grupper.** Riggen lägger inga egna riktade rader i Löneöversyn; regel R2 prövas för sig.
   Riggens underlag har heller inga kandidatpar i likvärdigt arbete, så Löneöversyns förslag (ADR-69) prövas inte av
   I4 utan av `tests/loneoversyn-forslag-troskel.test.js`. Ett par med en grupp under tröskeln i riggen skulle ändra

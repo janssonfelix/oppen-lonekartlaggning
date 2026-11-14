@@ -2,6 +2,7 @@
 
 **Bygge:** `2026.11.14` · **Artefakt-SHA-256:** `2eccb9d6f067e1ac44b09775dba1fbd0d2f0caaafb1b383a0ae7fd94470ef331` (se `dist/RELEASE.txt`).
 **Granskningsdatum:** 2026-11-14.
+**Granskare:** granskningen är gjord med AI-verktyg och styrd av en person; ingen utomstående har granskat koden.
 **Granskningsmetod:** kodläsning påstående för påstående + statisk sökning i källkod och bygge +
 körning av det byggda verktyget i jsdom och i Chromium (utan nätverk) med syntetiska testfiler.
 Varje teknisk kontroll nedan är **verifierad mot koden och i webbläsaren**, inte antagen. Vad
@@ -258,8 +259,8 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
 ### 6.4 Uppgiftsminimering & avvisning av känsliga fält ✔
 - **Fältvitlista** (`ALLOWED_FIELDS`): endast BAS, AID/yrke, lön och kön, samt valfri ålder
   (ADR-64; saknas kolumnen blir åldern 0 på varje rad och betyder *saknas*), valfri arbetsvärderingspoäng (befattningsattribut) och valfri ansvarskod enligt AID
-  (ADR-33) läses in. Kolumnen *Ansvar* (ofta kostnadsställe) läses inte in (se §2 i
-  teknisk-plan.md).
+  (ADR-33) läses in. Kolumnen *Ansvar* (ofta kostnadsställe) läses inte in (se avgränsningen i
+  `docs/utveckling/mal.md`).
   **Under inläsningen ligger hela filen i minnet** — som byte, som avkodad text och (för
   CSV) uppdelad i rader; Excel-filer som ett helt blad. Fälten plockas ut rad för rad, och
   filens övriga innehåll släpps när inläsningen är klar. (Gränsen på högst 50 råa
@@ -806,7 +807,7 @@ Konfig-JSON:en (**version 2**) innehåller tre slags uppgifter.
 `state.data`-referens). Organisationens namn och jämförelsestatistikens namn ingår. Det är användarens egna namn,
 och text som liknar personnummer eller e-post avvisas. Organisationstypen (kommun, region eller båda) ingår som
 inställning. Ansvarskoderna och ansvarskolumnens namn ingår inte heller (vaktas av röktest). Inte heller lönedata
-eller anteckningar per år ingår (se §2 i teknisk-plan.md). Organisationspaketet ingår inte. Filen noterar bara
+eller anteckningar per år ingår (se avgränsningen i `docs/utveckling/mal.md`). Organisationspaketet ingår inte. Filen noterar bara
 paketets organisation och datum. Paketets låsningar (ADR-47) ingår inte heller, så en konfigurationsfil kan varken
 sätta eller häva en låsning. BAS-ordningen är fast och ingår inte i filen (`docs/utveckling/likvardighetsmodellen.md`).
 

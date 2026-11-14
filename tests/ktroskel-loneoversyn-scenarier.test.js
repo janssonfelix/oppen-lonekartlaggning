@@ -8,8 +8,6 @@
  * 30 personer, en med 12 och en ensam kvinna i en egen grupp; den ensamma kvinnans grupp är den enda kvinnodominerade,
  * så kostnaden till kvinnodominerade grupper är hennes påslag, 2 procent av hennes lön. Skärmen visar talet som förut.
  * Scenarierna lämnar inte verktyget (de finns bara i minnet och i fliken).
- *
- * Vaktar: S4 (docs/utveckling/regler.md)
  */
 import { describe, it, expect, vi } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
