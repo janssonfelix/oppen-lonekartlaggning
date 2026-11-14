@@ -336,7 +336,7 @@ function _yrkesStegText(s, modell) {
  */
 function _bhTextFor(n) {
     if (!(n > 0)) return '';
-    if (n === 1) return 'Här körs ett enda test, så ingen justering för många samtidiga tester behövs.';
+    if (n === 1) return 'Här körs ett enda test, så ingen justering för många samtidiga tester behövs: q-värdet är detsamma som p-värdet.';
     if (n < 5) return `Här körs ${n} tester samtidigt; varningstriangeln markerar grupper som är säkerställda i det råa p-värdet men inte efter justeringen enligt Benjamini–Hochberg.`;
     return `Här körs ${n} tester samtidigt. Med enbart rå p < 0,05 väntas ungefär ${svTal(n * 0.05, 1)} falskt positiva resultat av ren slump. `
         + 'Justeringen enligt Benjamini–Hochberg minskar den risken genom att kräva starkare bevis för grupper som prövas tillsammans. '
@@ -932,14 +932,12 @@ function renderRegressionCard() {
     // Multipel jämförelse-korrigering (Benjamini-Hochberg FDR, src/lib/stat.js bhJustera)
     // Vid 20+ per-BAS-tester förväntas ~1 falskt positivt per α=0.05-batch
     // av ren slump. BH-FDR skyddar mot detta utan att vara så strikt som
-    // Bonferroni. Testerna är de OK-tester som har ändligt p-värde. Med ett
-    // enda test finns ingen korrigering: q saknas och tabellen visar —.
+    // Bonferroni. Testerna är de OK-tester som har ändligt p-värde, samma som protokollet för gemensam
+    // lönebedömning och Att göra. Ett enda test ger q = p, och tabellen visar talet.
     const okTests = (r.perBas || []).filter(p => p.status === 'ok' && isFinite(p.pValue));
     const bhQByBas = {};
-    if (okTests.length > 1) {
-        const q = _bhJustera(okTests.map(t => t.pValue));
-        okTests.forEach((t, i) => { bhQByBas[t.bas] = q[i]; });
-    }
+    const qOk = _bhJustera(okTests.map(t => t.pValue));
+    okTests.forEach((t, i) => { bhQByBas[t.bas] = qOk[i]; });
 
     // Bevis-knapp per BAS-rad. Bevis-payload
     // beräknas vid klick (inte i förväg) för att minska minne — pekar bara
@@ -958,7 +956,7 @@ function renderRegressionCard() {
                 + `<td class="t-mitt"><button class="btn-evidence" data-bas-evidence="${esc(p.bas)}" type="button" title="Visa varför denna BAS inte kunde analyseras" aria-label="Visa bevis för BAS ${esc(p.bas)}">${ikon('sok')}</button></td></tr>`;
         }
         const sgn = p.gapPct >= 0 ? '+' : '';
-        const q = bhQByBas[p.bas];  // undefined om bara 1 test → ingen korrigering
+        const q = bhQByBas[p.bas];  // undefined bara för ett intervall utan ändligt p-värde
         // Flagga: kräver att BÅDE rå p OCH justerat q < 0.05. Skyddar mot falska positiv. Storleken prövas mot
         // statusens storleksgräns 3 % (ADR-59, src/lib/status.js); regressionens tal bär ingen direktivmarkering.
         const sigAfterCorrection = p.pValue < 0.05 && (q == null || q < 0.05);

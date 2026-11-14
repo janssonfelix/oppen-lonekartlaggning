@@ -250,8 +250,8 @@ function _evidenceForPerBasRow(p, bhCtx) {
     const isSig = p.pValue < 0.05;
     const sigAfterBH = bhCtx && bhCtx.q != null ? (p.pValue < 0.05 && bhCtx.q < 0.05) : isSig;
     const bhNote = bhCtx && bhCtx.q != null
-        ? `BH-FDR-justerat q = ${bhCtx.q < 0.001 ? '< 0,001' : svTal(bhCtx.q, 4)} (${bhCtx.allM} parallella tester)`
-        : 'Ingen multipel-jämförelse-korrigering (endast 1 BAS-test körs)';
+        ? `BH-FDR-justerat q = ${bhCtx.q < 0.001 ? '< 0,001' : svTal(bhCtx.q, 4)} (${bhCtx.allM > 1 ? `${bhCtx.allM} parallella tester` : 'ett enda test: q = p'})`
+        : 'Inget q-värde: intervallet har inget prövat p-värde';
     return {
         title: `Beräkningen — BAS ${p.bas} (per-BAS-regression)`,
         intro: harAlder()
@@ -273,7 +273,7 @@ function _evidenceForPerBasRow(p, bhCtx) {
             Standardfel: HC3-robusta (Long & Ervin 2000)<br>
             p-värde: 2-sidigt; t-fördelning med df = n − k vid små underlag (df &lt; 100), annars normal<br>
             skillnad % = (exp(β_kön) − 1) × 100 = (exp(${svTal((Math.log(1 + p.gapPct / 100)), 4)}) − 1) × 100 = <strong>${svPct(p.gapPct, 2)}</strong>`,
-        footer: `BH-FDR-korrektionen ${bhCtx && bhCtx.q != null ? `justerar för att ${bhCtx.allM} parallella tester körs samtidigt — skyddar mot falska positiva. ` : ''}Klassningen "Titta närmare" kräver både p < 0,05 (efter BH) och att skillnaden är minst 3 % (verktygets storleksgräns). ${harAlder() ? 'Talet är justerat för ålder och bär därför ingen direktivmarkering. ' : ''}Prövningen av sakliga skäl gör du själv, i dokumentationen.`
+        footer: `BH-FDR-korrektionen ${bhCtx && bhCtx.q != null && bhCtx.allM > 1 ? `justerar för att ${bhCtx.allM} parallella tester körs samtidigt — skyddar mot falska positiva. ` : ''}Klassningen "Titta närmare" kräver både p < 0,05 (efter BH) och att skillnaden är minst 3 % (verktygets storleksgräns). ${harAlder() ? 'Talet är justerat för ålder och bär därför ingen direktivmarkering. ' : ''}Prövningen av sakliga skäl gör du själv, i dokumentationen.`
     };
 }
 

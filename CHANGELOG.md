@@ -48,6 +48,10 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   konfigurationsfiler läses som förut.
 - **Åldersdiagrammets text säger hur referenslinjen ser ut.** Texten under åldersfördelningen i Ålder & karriär
   kallade referenslinjen för Sveriges sysselsatta streckad; den ritas prickad, och texten säger nu det.
+- **q-värdet visas också när bara ett BAS-intervall prövas.** Regressionskortet visade — som q-värde när ett enda
+  BAS-intervall kunde prövas, medan protokollet för gemensam lönebedömning skrev q-värdet (lika med p-värdet). Med ett
+  enda test är q = p, och kortet, beräkningsbeviset och Att göra visar nu talet, som protokollet. Texten under
+  tabellen säger att q-värdet är detsamma som p-värdet. Vilka intervall som är säkerställda ändras inte.
 - **Inga påståenden om standardmetoder utan källa.** Ordlistans *OLS-regression* kallade metoden *standardmetoden*
   och *vanlig metod i lönekartläggning*, och verktygstipset för Blinder-Oaxaca i regressionskortet *standardmetod inom
   arbetsmarknadsekonomi*, utan att peka ut någon källa. Ordlistan säger nu bara vad metoden gör, och verktygstipset

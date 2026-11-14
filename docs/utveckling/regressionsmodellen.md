@@ -316,9 +316,9 @@ Räkningen står på ett ställe, `bhJustera` i `src/lib/stat.js` (i appen `_bhJ
 p-värdena, q = min(1, p · m / rang) med p-värdena sorterade stigande, gjort monotont bakifrån; ett enda test ger q = p.
 m är antalet intervall som kunde skattas (status ok och ändligt p-värde). Regressionskortet (`renderRegressionCard`),
 Att göra och protokollet för gemensam lönebedömning anropar den över samma tester, så att samma intervall får samma q.
-Kortet och Att göra korrigerar bara när m > 1; med ett enda test saknas q där och visas som —. En skillnad är säkerställd
-efter korrigering när p < 0,05 och q < 0,05 (eller p < 0,05 när bara ett test körs), vilket är detsamma som q < 0,05
-eftersom q aldrig är mindre än p. Signalen per intervall
+Med ett enda test är q = p, och kortet, beräkningsbeviset, Att göra och protokollet visar talet. En skillnad är
+säkerställd efter korrigering när p < 0,05 och q < 0,05, vilket är detsamma som q < 0,05 eftersom q aldrig är
+mindre än p. Signalen per intervall
 (`perBasSignal` i `src/lib/status.js`, ADR-59) är *Titta närmare* när den är säkerställd efter korrigering och minst
 3 %, *Dokumentera* när den är säkerställd efter korrigering men under 3 %, *Osäkert utslag* när bara det råa p-värdet
 är under 0,05 (varningstriangeln), annars *Inget utslag*. Texten om korrigeringen räknas ur antalet tester

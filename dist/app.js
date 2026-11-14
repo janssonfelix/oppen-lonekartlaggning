@@ -17639,13 +17639,12 @@ function buildActionChecklist({ endastGrupper = false } = {}) {
         // många tester (Benjamini–Hochberg) och minst 3 % (ADR-59). Justerat tal: ingen direktivmarkering. ===
         try {
             if (reg && !reg.error && reg.perBas) {
-                // BH-justering (src/lib/stat.js bhJustera), samma tester som regressionskortet; ett enda test: q saknas
+                // BH-justering (src/lib/stat.js bhJustera), samma tester som regressionskortet och protokollet; ett
+                // enda test ger q = p
                 const okTests = reg.perBas.filter(p => p.status === 'ok' && isFinite(p.pValue));
                 const bhQ = {};
-                if (okTests.length > 1) {
-                    const q = _bhJustera(okTests.map(t => t.pValue));
-                    okTests.forEach((t, i) => { bhQ[t.bas] = q[i]; });
-                }
+                const qOk = _bhJustera(okTests.map(t => t.pValue));
+                okTests.forEach((t, i) => { bhQ[t.bas] = qOk[i]; });
                 reg.perBas.forEach(p => {
                     if (p.status !== 'ok') return;
                     const q = bhQ[p.bas];
@@ -20698,8 +20697,8 @@ function _evidenceForPerBasRow(p, bhCtx) {
     const isSig = p.pValue < 0.05;
     const sigAfterBH = bhCtx && bhCtx.q != null ? (p.pValue < 0.05 && bhCtx.q < 0.05) : isSig;
     const bhNote = bhCtx && bhCtx.q != null
-        ? `BH-FDR-justerat q = ${bhCtx.q < 0.001 ? '< 0,001' : svTal(bhCtx.q, 4)} (${bhCtx.allM} parallella tester)`
-        : 'Ingen multipel-jämförelse-korrigering (endast 1 BAS-test körs)';
+        ? `BH-FDR-justerat q = ${bhCtx.q < 0.001 ? '< 0,001' : svTal(bhCtx.q, 4)} (${bhCtx.allM > 1 ? `${bhCtx.allM} parallella tester` : 'ett enda test: q = p'})`
+        : 'Inget q-värde: intervallet har inget prövat p-värde';
     return {
         title: `Beräkningen — BAS ${p.bas} (per-BAS-regression)`,
         intro: harAlder()
@@ -20721,7 +20720,7 @@ function _evidenceForPerBasRow(p, bhCtx) {
             Standardfel: HC3-robusta (Long & Ervin 2000)<br>
             p-värde: 2-sidigt; t-fördelning med df = n − k vid små underlag (df &lt; 100), annars normal<br>
             skillnad % = (exp(β_kön) − 1) × 100 = (exp(${svTal((Math.log(1 + p.gapPct / 100)), 4)}) − 1) × 100 = <strong>${svPct(p.gapPct, 2)}</strong>`,
-        footer: `BH-FDR-korrektionen ${bhCtx && bhCtx.q != null ? `justerar för att ${bhCtx.allM} parallella tester körs samtidigt — skyddar mot falska positiva. ` : ''}Klassningen "Titta närmare" kräver både p < 0,05 (efter BH) och att skillnaden är minst 3 % (verktygets storleksgräns). ${harAlder() ? 'Talet är justerat för ålder och bär därför ingen direktivmarkering. ' : ''}Prövningen av sakliga skäl gör du själv, i dokumentationen.`
+        footer: `BH-FDR-korrektionen ${bhCtx && bhCtx.q != null && bhCtx.allM > 1 ? `justerar för att ${bhCtx.allM} parallella tester körs samtidigt — skyddar mot falska positiva. ` : ''}Klassningen "Titta närmare" kräver både p < 0,05 (efter BH) och att skillnaden är minst 3 % (verktygets storleksgräns). ${harAlder() ? 'Talet är justerat för ålder och bär därför ingen direktivmarkering. ' : ''}Prövningen av sakliga skäl gör du själv, i dokumentationen.`
     };
 }
 
@@ -28777,7 +28776,7 @@ function _yrkesStegText(s, modell) {
  */
 function _bhTextFor(n) {
     if (!(n > 0)) return '';
-    if (n === 1) return 'Här körs ett enda test, så ingen justering för många samtidiga tester behövs.';
+    if (n === 1) return 'Här körs ett enda test, så ingen justering för många samtidiga tester behövs: q-värdet är detsamma som p-värdet.';
     if (n < 5) return `Här körs ${n} tester samtidigt; varningstriangeln markerar grupper som är säkerställda i det råa p-värdet men inte efter justeringen enligt Benjamini–Hochberg.`;
     return `Här körs ${n} tester samtidigt. Med enbart rå p < 0,05 väntas ungefär ${svTal(n * 0.05, 1)} falskt positiva resultat av ren slump. `
         + 'Justeringen enligt Benjamini–Hochberg minskar den risken genom att kräva starkare bevis för grupper som prövas tillsammans. '
@@ -29373,14 +29372,12 @@ function renderRegressionCard() {
     // Multipel jämförelse-korrigering (Benjamini-Hochberg FDR, src/lib/stat.js bhJustera)
     // Vid 20+ per-BAS-tester förväntas ~1 falskt positivt per α=0.05-batch
     // av ren slump. BH-FDR skyddar mot detta utan att vara så strikt som
-    // Bonferroni. Testerna är de OK-tester som har ändligt p-värde. Med ett
-    // enda test finns ingen korrigering: q saknas och tabellen visar —.
+    // Bonferroni. Testerna är de OK-tester som har ändligt p-värde, samma som protokollet för gemensam
+    // lönebedömning och Att göra. Ett enda test ger q = p, och tabellen visar talet.
     const okTests = (r.perBas || []).filter(p => p.status === 'ok' && isFinite(p.pValue));
     const bhQByBas = {};
-    if (okTests.length > 1) {
-        const q = _bhJustera(okTests.map(t => t.pValue));
-        okTests.forEach((t, i) => { bhQByBas[t.bas] = q[i]; });
-    }
+    const qOk = _bhJustera(okTests.map(t => t.pValue));
+    okTests.forEach((t, i) => { bhQByBas[t.bas] = qOk[i]; });
 
     // Bevis-knapp per BAS-rad. Bevis-payload
     // beräknas vid klick (inte i förväg) för att minska minne — pekar bara
@@ -29399,7 +29396,7 @@ function renderRegressionCard() {
                 + `<td class="t-mitt"><button class="btn-evidence" data-bas-evidence="${esc(p.bas)}" type="button" title="Visa varför denna BAS inte kunde analyseras" aria-label="Visa bevis för BAS ${esc(p.bas)}">${ikon('sok')}</button></td></tr>`;
         }
         const sgn = p.gapPct >= 0 ? '+' : '';
-        const q = bhQByBas[p.bas];  // undefined om bara 1 test → ingen korrigering
+        const q = bhQByBas[p.bas];  // undefined bara för ett intervall utan ändligt p-värde
         // Flagga: kräver att BÅDE rå p OCH justerat q < 0.05. Skyddar mot falska positiv. Storleken prövas mot
         // statusens storleksgräns 3 % (ADR-59, src/lib/status.js); regressionens tal bär ingen direktivmarkering.
         const sigAfterCorrection = p.pValue < 0.05 && (q == null || q < 0.05);

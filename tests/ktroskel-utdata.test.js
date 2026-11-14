@@ -779,4 +779,33 @@ describe('protokollet för gemensam lönebedömning: BAS-intervallen väljs efte
         expect(rader[0][11]).toBe('Ja');
         expect(antalBas(forsatt)).toBe('1');
     });
+
+    it('ett enda prövat BAS-intervall: q = p, och kortet och protokollet visar samma q', async () => {
+        const w = createAppWindow();
+        const rader = [];
+        for (let i = 0; i < 40; i++) {
+            const kv = i % 2 === 0, j = i >> 1;
+            const brus = (((j * 7) % 11) - 5) / 5 * 300 * (kv ? 1 : -1);
+            rader.push({ bas: 'E', kon: kv ? 'kvinna' : 'man', lon: Math.round((30000 + brus) * (kv ? 0.92 : 1)),
+                alder: 25 + ((j * 13) % 40), yrke: '7004 Yrke 4', aid: '7004', yrkeLabel: 'Yrke 4', enhet: '' });
+        }
+        w.__state.data = rader;
+        w.eval('populateSelects(); unlockTabs();');
+        const pb = w.eval(`_computePerBasGap(getData(), ['E'])`);
+        expect(pb).toHaveLength(1);
+        expect(pb[0].status).toBe('ok');
+        const p = pb[0].pValue;
+        expect(p).toBeLessThan(0.05);
+        expect(w.eval(`_bhJustera([${p}])`)).toEqual([p]);
+        // Kortet: q-cellen visar talet, inte —.
+        w.eval('renderRegressionCard()');
+        const rad = [...w.document.querySelectorAll('#perbas-table tbody tr')].find(tr => tr.cells[0].textContent.trim() === 'E');
+        expect(rad.cells[6].textContent.trim()).toBe(w.eval(`_formatPValue(${p})`));
+        // Protokollet: samma q, lika med p.
+        const { bas } = await protokollet(w);
+        const prot = bas.slice(1).filter(r => r[1] === 'E');
+        expect(prot).toHaveLength(1);
+        expect(prot[0][9]).toBe(p < 0.001 ? '< 0.001' : String(+p.toFixed(4)));
+        expect(prot[0][9]).toBe(prot[0][8]);
+    });
 });
