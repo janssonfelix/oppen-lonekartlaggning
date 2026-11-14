@@ -15,11 +15,15 @@
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
 import { groupKey } from './falt.js';
+import { skapaTermer, stor } from './termer.js';
+/** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
+const T = skapaTermer();
+
 
 const FALT = {
     bas:         { typ: 'kategori', etikett: 'BAS', dim: 'bas' },
-    aid:         { typ: 'kategori', etikett: 'Yrkesgrupp', dim: 'aid' },
-    sektor:      { typ: 'kategori', etikett: 'Sektor', dim: 'sektor' },
+    aid:         { typ: 'kategori', etikett: stor(T.enhet.en), dim: 'aid' },
+    sektor:      { typ: 'kategori', etikett: stor(T.huvudomrade.en), dim: 'sektor' },
     aldersgrupp: { typ: 'kategori', etikett: 'Åldersgrupp', dim: 'alder' },
     kon:         { typ: 'kategori', etikett: 'Kön', dim: 'kon' },
     lon:         { typ: 'tal', etikett: 'Lön', enhet: 'kr' },

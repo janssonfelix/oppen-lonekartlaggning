@@ -144,7 +144,7 @@ function _basEffekterForRedovisning(reg) {
     }
     const utelamnade = alla.filter(e => isKMasked(n(e.bas))).map(e => e.bas);
     return { effekter: alla.filter(e => !isKMasked(n(e.bas))), utelamnade, referensUtelamnad: false,
-        not: utelamnade.length ? _kMaskNoteText(utelamnade, 'BAS-intervall|BAS-intervall', k, 'deras effekt i modellen skulle visa deras genomsnittliga lönenivå', 'modellen') : '' };
+        not: utelamnade.length ? _kMaskNoteText(utelamnade, `${T.niva.en}|${T.niva.fl}`, k, 'deras effekt i modellen skulle visa deras genomsnittliga lönenivå', 'modellen') : '' };
 }
 
 /**

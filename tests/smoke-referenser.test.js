@@ -85,7 +85,7 @@ describe('Lönepolitik är avsnitt två i Löneläget', () => {
         expect(w.eval("tabMal('lonepolitik')")).toBe('benchmark');
         w.__renderTabContent('lonepolitik');
         expect([...d.querySelectorAll('#view-benchmark > details.avsnitt')].map(a => a.id)).toEqual(['avsnitt-jmf-bandkartor', 'avsnitt-jmf-stallningstagande', 'avsnitt-jmf-statistik', 'avsnitt-jmf-overblick']);
-        expect(d.querySelector('#avsnitt-jmf-stallningstagande #lonepolitik-content').textContent).toMatch(/Yrkesgrupper mot sitt spann/);
+        expect(d.querySelector('#avsnitt-jmf-stallningstagande #lonepolitik-content').textContent).toMatch(/AID-etiketter mot sitt spann/);
         expect(d.querySelector('.benchmark-metric-btn')).toBeNull();
         expect(d.querySelector('#avsnitt-jmf-statistik').textContent).toMatch(/Jämförelsestatistik saknas/);
     });
@@ -166,7 +166,7 @@ describe('överblicken i exporterna', () => {
         const w = fonster();
         const b = w.eval('rapportunderlagBlock()').find(x => x.id === 'referenser');
         expect(b.rubrik).toBe('Lönerna mot referenserna');
-        expect(b.tabell.rubriker[0]).toBe('Yrkesgrupp');
+        expect(b.tabell.rubriker[0]).toBe('AID-etikett');
         expect(b.stycken.join(' ')).toMatch(/löneläget/);
     });
     it('rapportunderlagets lista har kolumnen Matchning bara när statistik finns, med detaljlistans ord', () => {
@@ -178,7 +178,7 @@ describe('överblicken i exporterna', () => {
         const aid = w.__state.statistik[0].aid;
         w.__state.statistik = [...w.__state.statistik.filter(r => r.aid !== aid), { aid, bas: '', median: 34000, p10: 30000, p90: 39000 }];
         const b = w.eval('rapportunderlagBlock()').find(x => x.id === 'referenser');
-        expect(b.tabell.rubriker.slice(0, 3)).toEqual(['Yrkesgrupp', 'Matchning', 'n']);
+        expect(b.tabell.rubriker.slice(0, 3)).toEqual(['AID-etikett', 'Matchning', 'n']);
         const grupper = w.eval('medExportLage(() => referensOverblick())').grupper;
         expect(b.tabell.rader.map(r => r[1])).toEqual(grupper.map(g => w.eval('_jfMatchningEtikett')(g.statistikMatchning)));
         expect(new Set(b.tabell.rader.map(r => r[1]))).toEqual(new Set(['AID + BAS', 'Endast AID']));

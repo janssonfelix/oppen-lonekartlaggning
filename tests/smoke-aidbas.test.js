@@ -50,7 +50,7 @@ describe('Lika arbete: avsnitten Lika arbete AID x BAS och Analys på individniv
         const w = fonster([...UNDERLAG, ...TVA_BAS]);
         w.__renderTabContent('matrix');
         const t = tabell(w, 'aidbas-lika-tabell');
-        expect(t.rubriker).toEqual(['BAS-intervall', 'AID-kod', 'Yrkesgrupp', 'Antal kvinnor', 'Antal män', 'Medianlön kvinnor', 'Medianlön män', 'Kvinnors median i % av mäns', 'Nedre gräns', 'Övre gräns', 'Bedömning', 'Ojusterad löneskillnad ≥ 5 %']);
+        expect(t.rubriker).toEqual(['BAS-intervall', 'AID-kod', 'Etikettnamn', 'Antal kvinnor', 'Antal män', 'Medianlön kvinnor', 'Medianlön män', 'Kvinnors median i % av mäns', 'Nedre gräns', 'Övre gräns', 'Bedömning', 'Ojusterad löneskillnad ≥ 5 %']);
         expect(t.rader.map(r => `${r[0]} ${r[1]}`)).toEqual(['A 1001', 'B 3003', 'C 1001', 'D 7007', 'E 2002', 'F 7007']);   // skärmen: också 4 personer
         const e = t.rader.find(r => r[1] === '2002');
         expect(e.slice(3)).toEqual(['30', '9', '–', '–', '–', '–', '–', 'Analyseras på individnivå', '–']);
@@ -62,7 +62,7 @@ describe('Lika arbete: avsnitten Lika arbete AID x BAS och Analys på individniv
         expect(w.document.getElementById('aidbas-lika').textContent).toContain('Lönemånad: inte angiven');
         // Arbetslistan: grupperna där något kön är under 10, utan löner.
         const i = tabell(w, 'aidbas-individ-tabell');
-        expect(i.rubriker).toEqual(['BAS-intervall', 'AID-kod', 'Yrkesgrupp', 'Antal kvinnor', 'Antal män', 'Analys genomförd', 'Resultat']);
+        expect(i.rubriker).toEqual(['BAS-intervall', 'AID-kod', 'Etikettnamn', 'Antal kvinnor', 'Antal män', 'Analys genomförd', 'Resultat']);
         expect(i.rader.map(r => `${r[0]} ${r[1]}`)).toEqual(['A 1001', 'B 3003', 'C 1001', 'E 2002']);
         expect(w.document.getElementById('aidbas-individ').textContent).not.toMatch(/\d{2} \d{3} kr/);
         expect(w.document.getElementById('nyckel-la-individ').textContent).toBe('4 grupper');
@@ -117,7 +117,7 @@ describe('Likvärdigt arbete: avsnitten per BAS-intervall och den hierarkiska j�
         const w = fonster();
         w.__renderTabContent('likvardighet');
         const t = tabell(w, 'aidbas-likvardigt-tabell');
-        expect(t.rubriker).toEqual(['BAS-intervall', 'AID-kod', 'Yrkesgrupp', 'Antal', 'Andel kvinnor (%)', 'Andel kvinnor nationellt (%)', 'Klassning', 'Brukar anses kvinnodominerad', 'Medianlön', 'Lönespridning']);
+        expect(t.rubriker).toEqual(['BAS-intervall', 'AID-kod', 'Etikettnamn', 'Antal', 'Andel kvinnor (%)', 'Andel kvinnor nationellt (%)', 'Klassning', 'Brukar anses kvinnodominerad', 'Medianlön', 'Lönespridning']);
         const b = () => tabell(w, 'aidbas-likvardigt-tabell').rader.find(r => r[1] === '3003');
         expect(b()[4]).toBe('60,0 %'); expect(b()[6]).toBe('Könsblandad'); expect(b()[8]).toBe('–');   // 5 personer: ingen median
         expect(w.document.getElementById('aidbas-likvardigt').textContent).toContain('Kvinnodominerad vid mer än 60 % kvinnor');
@@ -135,7 +135,7 @@ describe('Likvärdigt arbete: avsnitten per BAS-intervall och den hierarkiska j�
         val.value = 'do'; val.dispatchEvent(new w.Event('change'));
         expect(w.eval('kvDomGransText()')).toBe('mer än 60 % kvinnor');
     });
-    it('rutan Jämför bara med mansdominerade yrken sätter filtret och ritar om (ADR-60)', () => {
+    it('rutan Jämför bara med mansdominerade AID-etiketter sätter filtret och ritar om (ADR-60)', () => {
         const w = fonster();
         w.__renderTabContent('likvardighet');
         const ruta = w.document.getElementById('lv-bara-mansdominerade');
@@ -179,7 +179,7 @@ describe('Excel (alla flikar): de fyra bladen', () => {
         const lika = blad('Lika arbete AID x BAS');
         expect(lika[1]).toEqual(['Lönemånad: inte angiven']);
         const rubrik = lika.findIndex(r => r[0] === 'BAS-intervall');
-        expect(lika[rubrik]).toEqual(['BAS-intervall', 'AID-kod', 'Yrkesgrupp', 'Antal kvinnor', 'Antal män', 'Medianlön kvinnor', 'Medianlön män', 'Kvinnors median i % av mäns', 'Nedre gräns', 'Övre gräns', 'Bedömning', 'Ojusterad löneskillnad ≥ 5 %']);
+        expect(lika[rubrik]).toEqual(['BAS-intervall', 'AID-kod', 'Etikettnamn', 'Antal kvinnor', 'Antal män', 'Medianlön kvinnor', 'Medianlön män', 'Kvinnors median i % av mäns', 'Nedre gräns', 'Övre gräns', 'Bedömning', 'Ojusterad löneskillnad ≥ 5 %']);
         const rader = lika.slice(rubrik + 1).filter(r => r.length === 12);
         expect(rader.map(r => `${r[0]} ${r[1]}`)).toEqual(['A 1001', 'B 3003', 'D 7007', 'E 2002', 'F 7007']);   // exporten: 1001 i C (4 personer) i noten
         const not = lika.find(r => /färre än 5 personer/.test(String(r[0])))[0];
@@ -199,14 +199,14 @@ describe('Excel (alla flikar): de fyra bladen', () => {
         expect(celler.some(([, c]) => c.z === '#,##0.0')).toBe(true);
         // Tabell 2, 3 och 4
         const lv = blad('Likvärdigt arbete');
-        expect(lv.find(r => r[0] === 'BAS-intervall')).toEqual(['BAS-intervall', 'AID-kod', 'Yrkesgrupp', 'Antal', 'Andel kvinnor (%)', 'Andel kvinnor nationellt (%)', 'Klassning', 'Brukar anses kvinnodominerad', 'Medianlön', 'Lönespridning']);
+        expect(lv.find(r => r[0] === 'BAS-intervall')).toEqual(['BAS-intervall', 'AID-kod', 'Etikettnamn', 'Antal', 'Andel kvinnor (%)', 'Andel kvinnor nationellt (%)', 'Klassning', 'Brukar anses kvinnodominerad', 'Medianlön', 'Lönespridning']);
         expect(lv.some(r => r[0] === 'Sammanfattning per BAS-intervall: högsta och lägsta medianlön bland kvinnodominerade grupper och bland övriga; skillnaden är högsta median övriga mot högsta kvinnodominerad.')).toBe(true);
         expect(lv.filter(r => r.length === 10 && r[0] !== 'BAS-intervall').map(r => `${r[0]} ${r[1]}`)).toEqual(['A 1001', 'B 3003', 'D 7007', 'E 2002', 'F 7007']);
         const par = blad('Hierarkisk jämförelse');
         expect(par.find(r => r[0] === 'Grupp A (ej kvinnodominerad)')).toEqual(['Grupp A (ej kvinnodominerad)', 'BAS A', 'Median A', 'Grupp B (kvinnodominerad)', 'BAS B', 'Median B', 'Skillnad (kr)', 'Skillnad (%)']);
         expect(par.some(r => r[0] === '1001 Yrke 1001' && r[1] === 'A' && r[2] === 46450 && r[3] === '2002 Yrke 2002' && r[6] === 7050)).toBe(true);
         const ind = blad('Analys på individnivå');
-        expect(ind.find(r => r[0] === 'BAS-intervall')).toEqual(['BAS-intervall', 'AID-kod', 'Yrkesgrupp', 'Antal kvinnor', 'Antal män', 'Analys genomförd', 'Resultat']);
+        expect(ind.find(r => r[0] === 'BAS-intervall')).toEqual(['BAS-intervall', 'AID-kod', 'Etikettnamn', 'Antal kvinnor', 'Antal män', 'Analys genomförd', 'Resultat']);
         expect(ind.filter(r => r.length >= 5 && r[0] !== 'BAS-intervall').map(r => `${r[0]} ${r[1]}`)).toEqual(['A 1001', 'B 3003', 'E 2002']);
         expect(JSON.stringify(ind)).not.toMatch(/\b(3\d|4\d)\d{3}\b/);   // inga löner
         // Metodik beskriver tabellerna, gränserna och definitionen.

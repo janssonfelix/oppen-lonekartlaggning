@@ -42,7 +42,7 @@ function _renderSensitiveRejection(sensitive) {
         <strong class="f-kritisk">${ikon('stopp')} Filen avvisad – innehåller känsliga personuppgifter</strong><br>
         Följande kolumner verkar innehålla data som inte ska användas i lönekartläggning:
         <ul class="fs-sm marg-8-0-8-20">${list}</ul>
-        <span class="text-dampad-sm">Ta bort kolumnerna i filen och försök igen. Verktyget kräver endast: BAS-intervall, AID, månadslön och kön (ålder är valfri). Identifierare (personnummer, namn, e-post) och särskilda kategorier av personuppgifter (fackmedlemskap, hälsa med mera) ska inte ingå i uttaget.</span>
+        <span class="text-dampad-sm">Ta bort kolumnerna i filen och försök igen. Verktyget kräver endast: ${T.niva.en}, ${T.enhet.en}, månadslön och kön (ålder är valfri). Identifierare (personnummer, namn, e-post) och särskilda kategorier av personuppgifter (fackmedlemskap, hälsa med mera) ska inte ingå i uttaget.</span>
     </div>`;
     dataStatus.className = "status-msg";
 }
@@ -117,7 +117,7 @@ function _afterDataLoaded() {
     renderDataValidationReport();
     renderForhandskontroll();
     syncDatakvalitetPanel();
-    announceToScreenReader(`Datafil inläst: ${state.data.length} personer i ${getBasIntervals().length} BAS-intervall. Analyserna är nu tillgängliga i menyn.`);
+    announceToScreenReader(`Datafil inläst: ${state.data.length} personer i ${getBasIntervals().length} ${termForAntal(getBasIntervals().length, T.niva)}. Analyserna är nu tillgängliga i menyn.`);
     hideLoading();
 
     // Bootstrap-CI, åtgärdslista och skevhet tar merparten av inläsningstiden
@@ -143,10 +143,13 @@ function _afterDataLoaded() {
 // ---- CSV-mall: nedladdning ----
 // Genererar en tom CSV med rätt headers + 3 exempelrader så förstagångsanvändare
 // inte behöver gissa kolumnnamn. Innehåller ingen riktig data — bara mall.
+// Mallens rubriker är rubriker som kolumnigenkänningen (ALLOWED_FIELDS) känner igen, alltså filens ord och inte
+// verktygets; de byts inte med termerna (ADR-74).
+const CSV_MALL_RUBRIKER = ['BAS-intervall', 'AID', 'Manadslon', 'Alder', 'Kon', 'Poang'];
 document.getElementById('btn-download-csv-template')?.addEventListener('click', () => {
     // Poang är valfri: arbetsvärderingspoäng per befattning (krav-proxy i § 3:10).
     // Lämnas tom om ingen arbetsvärdering gjorts — BAS-rank används då.
-    const headers = ['BAS-intervall', 'AID', 'Manadslon', 'Alder', 'Kon', 'Poang'];
+    const headers = CSV_MALL_RUBRIKER;
     const examples = [
         ['E', '101011 Ledning, ekonomi',         '52000', '47', 'Kvinna', '480'],
         ['D', '152012 Administrator personal/HR', '34500', '38', 'Man',    '350'],
@@ -157,7 +160,8 @@ document.getElementById('btn-download-csv-template')?.addEventListener('click', 
         row.map(cell => {
             const s = String(cell);
             // Citera om cellen innehåller separator, citationstecken eller radslut
-            return /[;"\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+            // Citattecknet skrivs \u0022 i reguljäruttrycken, så att vakterna som läser källans strängar inte tappar takten.
+            return /[;\u0022\r\n]/.test(s) ? '"' + s.replace(/\u0022/g, '""') + '"' : s;
         }).join(';')
     ).join('\r\n');
 
@@ -361,9 +365,10 @@ function readTabularFile(file, synonymGroups, callback) {
                 : dec.text;
             const parsed = Papa.parse(csvText, { header: true, skipEmptyLines: true, delimiter: hdr.delim });
             const rows = (parsed.data || []).filter(r => r && typeof r === 'object');
+            const forsatt = hdr.line > 0 ? `, ${hdr.line} försättsrad${hdr.line > 1 ? 'er' : ''} överhoppad` : '';
             callback({
                 ok: true,
-                format: `CSV (avgränsare "${hdr.delim === '\t' ? 'TAB' : hdr.delim}"${hdr.line > 0 ? `, ${hdr.line} försättsrad${hdr.line > 1 ? 'er' : ''} överhoppad` : ''})`,
+                format: `CSV (avgränsare "${hdr.delim === '\t' ? 'TAB' : hdr.delim}"${forsatt})`,
                 encoding: dec.encoding,
                 headers: parsed.meta && parsed.meta.fields ? parsed.meta.fields.slice() : [],
                 rows
@@ -683,8 +688,9 @@ function loadStructureFile(file) {
 // inte kunde auto-matchas mot någon CSV-rubrik (olika personalsystem döper
 // kolumner olika). Låter användaren peka ut rätt kolumn och läsa in igen.
 const COLMAP_ROLES = [
-    { role: 'bas',    label: 'BAS-intervall', required: true },
-    { role: 'yrke',   label: 'Yrke / AID', required: true },
+    { role: 'bas',    label: termStor(T.niva.en), required: true },
+    // Fältet är AID-etiketten; kolumnen i lönefilen heter ofta något annat, och tipset säger det.
+    { role: 'yrke',   label: termStor(T.enhet.en), required: true, tips: 'i lönefilen ofta Yrke eller Befattning' },
     { role: 'lon',    label: 'Månadslön', required: true },
     { role: 'alder',  label: 'Ålder', required: false },   // valfri men rekommenderad (ADR-64)
     { role: 'kon',    label: 'Kön', required: true },
@@ -798,7 +804,7 @@ function _visaEjInlast(saknas, stats) {
     if (saknas.length) skal.push(`filens rubriker kändes inte igen (${saknas.map(m => m.label).join(', ')} saknas)`);
     else {
         const n = (antal, text) => { if (antal) skal.push(`${antal} ${antal === 1 ? 'rad' : 'rader'} ${text}`); };
-        n(stats.excludedNoBas, 'utan BAS-intervall');
+        n(stats.excludedNoBas, `utan ${T.niva.en}`);
         n(stats.excludedZeroLon, 'utan lön');
         n(stats.excludedMissingKon, 'utan kön');
         if (!skal.length) skal.push('filen har inga rader');
@@ -850,13 +856,13 @@ function maybeShowColumnMapping() {
     const profilRad = profil ? `<p class="colmap-kand fs-sm marg-6-0">${esc2(importprofilText(profil))}</p>` : '';
     const missing = COLMAP_ROLES.filter(r => r.required && !eff[r.role]);
 
-    const selects = COLMAP_ROLES.map(({ role, label, required }) => {
+    const selects = COLMAP_ROLES.map(({ role, label, required, tips }) => {
         const opts = ['<option value="">— ingen —</option>']
             .concat(headers.map(h => `<option value="${esc2(h)}"${eff[role] === h ? ' selected' : ''}>${esc2(h)}</option>`))
             .join('');
         const saknas = required && !eff[role];
         return `<label class="faltkolumn">
-            <span>${esc2(label)}${required ? ' <span class="f-kritisk">*</span>' : ' <span class="f-dampad">(valfri)</span>'}</span>
+            <span>${esc2(label)}${required ? ' <span class="f-kritisk">*</span>' : ' <span class="f-dampad">(valfri)</span>'}${tips ? ` <span class="f-dampad">(${esc2(tips)})</span>` : ''}</span>
             <select data-colmap-role="${role}" class="form-select${saknas ? ' colmap-saknas' : ''}">${opts}</select>
         </label>`;
     }).join('');

@@ -516,7 +516,7 @@ describe('gap per åldersgrupp, trattdiagram och läget i spannet per kön', () 
         expect(d.getElementById('chart-kon-aldergap')._figur.y.ordning.length).toBeGreaterThan(0);
         expect(d.getElementById('la-tratt-kort').hidden).toBe(false);
         expect(d.getElementById('chart-la-tratt')._figur.lager[0].marke).toBe('band');
-        expect(d.getElementById('la-tratt-not').textContent).toMatch(/^\d+ av \d+ bedömda grupper utanför gränserna \(yrkesgrupp i ett BAS-intervall där både kvinnor och män når minsta gruppstorlek\)/);
+        expect(d.getElementById('la-tratt-not').textContent).toMatch(/^\d+ av \d+ bedömda grupper utanför gränserna \(AID-etikett i ett BAS-intervall där både kvinnor och män når minsta gruppstorlek\)/);
         w2.eval('sattKTroskel(200, { fraga: false })');
         for (const t of ['matrix', 'kon']) w2.__renderTabContent(t);
         expect(d.getElementById('la-tratt-kort').hidden).toBe(true);
@@ -797,7 +797,7 @@ describe('Lönepolitik: chart-lp-bandmap', () => {
         expect(el.data).toBeUndefined();
         expect(f.lager.filter(l => l.marke === 'intervall')).toHaveLength(2);
         expect(f.fargskala).toBeUndefined();                                    // tre klasser, ingen glidande färgskala
-        const klasser = f.lager.filter(l => /yrkesgrupp$/.test(l.serie));
+        const klasser = f.lager.filter(l => /AID-etikett$/.test(l.serie));
         expect(klasser.length).toBeGreaterThan(0);
         for (const l of klasser) expect(l.data.every(p => (/^Kvinno/.test(l.serie) ? p.kvAndel >= 60 : /^Mans/.test(l.serie) ? p.kvAndel <= 40 : p.kvAndel > 40 && p.kvAndel < 60))).toBe(true);
         const grupper = { data: klasser.flatMap(l => l.data) };
@@ -808,7 +808,7 @@ describe('Lönepolitik: chart-lp-bandmap', () => {
         // Förskjutningen är stabil mellan omritningar.
         const fore = JSON.stringify(grupper.data.map(p => p.forskjutning));
         w2.__renderTabContent('lonepolitik');
-        expect(JSON.stringify(w2.document.getElementById('chart-lp-bandmap')._figur.lager.filter(l => /yrkesgrupp$/.test(l.serie)).flatMap(l => l.data).map(p => p.forskjutning))).toBe(fore);
+        expect(JSON.stringify(w2.document.getElementById('chart-lp-bandmap')._figur.lager.filter(l => /AID-etikett$/.test(l.serie)).flatMap(l => l.data).map(p => p.forskjutning))).toBe(fore);
     });
 });
 
@@ -886,7 +886,7 @@ describe('Likvärdigt arbete: chart-likvardighet-heatmap', () => {
                    { kvLabel: 'K2', kvBas: 'C', kvMedian: 31000, maLabel: 'J1', maBas: 'C', maMedian: 33000, gapPct: 6.1, gapKr: 2000, allvarsindex: 5 }];
         const f = w.eval('_lvParFigur(window.__par)');
         expect(f.y.ordning).toEqual(['K2 mot J1', 'K1 mot J1']);
-        expect(f.lager.map(l => [l.marke, l.serie])).toEqual([['intervall', 'Skillnad'], ['punkt', 'Kvinnodominerat yrke'], ['punkt', 'Jämförelseyrke']]);
+        expect(f.lager.map(l => [l.marke, l.serie])).toEqual([['intervall', 'Skillnad'], ['punkt', 'Kvinnodominerad AID-etikett'], ['punkt', 'Jämförelseetikett']]);
         expect(f.lager[0].data.map(d => [d.lag, d.hog])).toEqual([[31000, 33000], [30000, 33000]]);
         expect(f.lager[2].data.map(d => d.etikett)).toEqual(['6,1 %', '9,1 %']);
         expect(f.lager[1].data.every(d => d.etikett === undefined)).toBe(true);
@@ -1381,7 +1381,7 @@ describe('nedborrning: från ett markerat BAS till yrkesgrupperna i Utforska, oc
     it('knappen finns bara när exakt ett BAS-intervall är markerat', () => {
         const w2 = oppna();
         w2.eval("sattDiagramMarkering('bas:A')");
-        expect(knapp(w2).textContent).toBe('Visa yrkesgrupperna');
+        expect(knapp(w2).textContent).toBe('Visa AID-etiketterna');
         expect(knapp(w2).title).toMatch(/under tröskeln/);
         w2.eval("sattDiagramMarkering('bas:B', { lagg: true })");
         expect(knapp(w2)).toBeNull();
@@ -1767,7 +1767,7 @@ describe('BAS-urval på diagrammen där BAS är en dimension', () => {
         expect(p.length).toBeGreaterThan(2);
         for (const { l, d } of p) {
             expect(['Kvinnodominerad', 'Mansdominerad', 'Blandad']).toContain(d.konsdom);
-            expect(l.serie).toBe(`${d.konsdom} yrkesgrupp`);
+            expect(l.serie).toBe(`${d.konsdom} AID-etikett`);
             expect(Number.isInteger(d.n) && d.n > 0).toBe(true);
             expect(l.tips(d)).toContainEqual(['Antal', String(d.n)]);
         }
@@ -1869,7 +1869,7 @@ describe('Diagramfilter v3: filtren i vyerna', () => {
         const r = rad(el, 'yrke');
         r.querySelector('[data-urval-markera="inga"]').click();
         [...rad(el, 'yrke').querySelectorAll('input[type="checkbox"]')].find(c => c.getAttribute('data-urval') === yrke).click();
-        expect(rad(el, 'yrke').querySelector('summary').textContent).toMatch(/^Yrkesgrupp: 1 av \d+$/);
+        expect(rad(el, 'yrke').querySelector('summary').textContent).toMatch(/^AID-etikett: 1 av \d+$/);
         expect(el.querySelectorAll('[data-marke="punkt"]').length).toBe(antal(kv, yrke) + antal(ma, yrke));
         const visad = el._rfVisadFigur;
         expect(trend(visad, 'Man (trend)').data).toEqual([]);
@@ -1994,8 +1994,8 @@ describe('Diagramfilter v3: filtren i vyerna', () => {
         expect(el.querySelectorAll('[data-marke="punkt"]')).toHaveLength(0);              // slumpens gränser (utan yrke) står kvar
         [...rad(el, 'yrke').querySelectorAll('input[type="checkbox"]')].find(c => c.getAttribute('data-urval') === yrken[0]).click();
         expect(el.querySelectorAll('[data-marke="punkt"]').length).toBe(p.filter(d => d.yrke === yrken[0]).length);
-        expect(rad(el, 'yrke').querySelector('summary').textContent).toBe(`Yrkesgrupp: 1 av ${yrken.length}`);
-        expect(not(el)).toMatch(new RegExp(`Diagrammet visar ett urval: (bara ${yrken[0].replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}|Yrkesgrupp 1 av)`));
+        expect(rad(el, 'yrke').querySelector('summary').textContent).toBe(`AID-etikett: 1 av ${yrken.length}`);
+        expect(not(el)).toMatch(new RegExp(`Diagrammet visar ett urval: (bara ${yrken[0].replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}|AID-etikett 1 av)`));
         w2.close();
     });
     it('kandidatparen: det kvinnodominerade yrkets BAS, löneskillnaden och dess antal; ett bortval döljer hela paret', () => {
@@ -2004,7 +2004,7 @@ describe('Diagramfilter v3: filtren i vyerna', () => {
         w2.__p = [par('Usk', 'Tekniker', 'C', 12.34, 25), par('Barnskötare', 'Vaktmästare', 'B', 8, 4)];
         const f = w2.eval('_lvParFigur(window.__p)');
         expect(urvalLista(f).map(u => [u.falt, u.typ])).toEqual([['bas', 'kategori'], ['gap', 'intervall'], ['n', 'intervall']]);
-        expect(urvalLista(f)[0]).toMatchObject({ namn: 'BAS-intervall (kvinnodominerat yrke)', etikett: 'BAS {v}' });
+        expect(urvalLista(f)[0]).toMatchObject({ namn: 'BAS-intervall (kvinnodominerad AID-etikett)', etikett: 'BAS {v}' });
         for (const l of f.lager) expect(l.data.map(d => [d.bas, d.gap, d.n])).toEqual([['C', 12.3, 25], ['B', 8, 4]]);
         w2.__f = f;
         const svg = w2.eval("figurTillSvg(window.__f, 1000, 400, { filter: { kategori: new Map([['bas', new Set(['B'])]]), intervall: new Map() } })");

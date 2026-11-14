@@ -396,7 +396,7 @@ describe('Dossiererna: läs-raden pekar på bedömningen i handlingsplanen', () 
         const tr = radMedSkillnad(w);
         const [, , , maAid, maBas] = knapp(tr).dataset.hpSkal.split('|');
         w.eval(`openGruppdossier(${JSON.stringify(`${maAid}|${maBas}`)})`);
-        expect(ren(w.document.getElementById('dossier-modal').textContent)).toContain(`${tr.cells[1].textContent} (kandidatpar, jämförelseyrke): Bedömning i handlingsplanen`);
+        expect(ren(w.document.getElementById('dossier-modal').textContent)).toContain(`${tr.cells[1].textContent} (kandidatpar, jämförelseetikett): Bedömning i handlingsplanen`);
     });
     it('en rad utan skäl: läs-raden säger att inga skäl är angivna', () => {
         const w = fonster();

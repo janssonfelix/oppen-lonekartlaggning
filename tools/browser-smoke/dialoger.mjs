@@ -110,7 +110,7 @@ export async function sokOchBasdossier() {
             text: (document.getElementById('basdossier-body').textContent || '').replace(/\s+/g, ' '),
             val: document.getElementById('basdossier-select').value, hopfalld: document.querySelector(k).closest('tr').classList.contains('collapsed'),
             synlig: (() => { const r = document.querySelector('#basdossier-modal .glossary-panel').getBoundingClientRect(); return r.width > 300 && r.height > 200 && r.left >= 0 && r.right <= innerWidth; })() }), knapp);
-        ok(bd.oppen && bd.synlig && bd.val === 'C' && /BAS-intervall C/.test(bd.text) && /Yrkesgrupperna i intervallet/.test(bd.text) && /Förra året/.test(bd.text) && bd.hopfalld === fore,
+        ok(bd.oppen && bd.synlig && bd.val === 'C' && /BAS-intervall C/.test(bd.text) && /AID-etiketterna i intervallet/.test(bd.text) && /Förra året/.test(bd.text) && bd.hopfalld === fore,
             'knappen i Löneöversiktens BAS-rad öppnar BAS-dossiern för intervallet, utan att fälla raden');
         await page.keyboard.press('Escape');
         await page.waitForTimeout(300);

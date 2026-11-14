@@ -87,7 +87,7 @@ function _laOversiktRaderRakna(d, bas, k) {
 function _laSamladNot(namn) {
     const lista = (namn || []).filter(Boolean);
     if (!lista.length) return '';
-    return `<p class="k-mask-note">${lista.length} BAS-intervall står inte i tabellen: ${_kNoteNamn(lista)}. `
+    return `<p class="k-mask-note">${lista.length} ${termForAntal(lista.length, T.niva)} står inte i tabellen: ${_kNoteNamn(lista)}. `
         + `${lista.length === 1 ? 'Intervallet är stort' : 'Intervallen är stora'} nog att redovisa, men ett av könen har färre än ${kTroskel()} ${personOrd(kTroskel())}, så en könsjämförelse skulle peka ut enskilda.</p>`;
 }
 /**
@@ -114,7 +114,7 @@ function generateSkevhet() {
         const ladEl = document.getElementById('chart-skevhet-lador');
         if (ladEl) {
             const { figur, utelamnade } = _konTathetFigur(d, true, kTroskel(), 'lada');
-            if (figur.lager.length) ritaFigur(ladEl, figur, { tomtext: `Inget BAS-intervall har minst ${kTroskel()} ${personOrd(kTroskel())} av ett kön.` }); else rensaFigur(ladEl);
+            if (figur.lager.length) ritaFigur(ladEl, figur, { tomtext: `${termStor(termAdjektiv({ utrum: 'ingen', neutrum: 'inget', plural: 'inga' }, T.niva))} ${T.niva.en} har minst ${kTroskel()} ${personOrd(kTroskel())} av ett kön.` }); else rensaFigur(ladEl);
             const not = document.getElementById('skevhet-lador-not');
             if (not) { not.hidden = !utelamnade.length; not.textContent = utelamnade.length ? `Visas inte, färre än ${kTroskel()} ${personOrd(kTroskel())}: ${utelamnade.join(', ')}.` : ''; }
         }
@@ -159,8 +159,8 @@ function generateSkevhet() {
     });
     if (pgUtelamnade.length || pgSamlad.length) {
         const trN = document.createElement("tr");
-        trN.innerHTML = `<td colspan="6">${kMaskNote(pgUtelamnade, 'BAS-intervall|BAS-intervall')}`
-            + `${kSamladNote(pgSamlad, 'BAS-intervall|BAS-intervall')}</td>`;
+        trN.innerHTML = `<td colspan="6">${kMaskNote(pgUtelamnade, `${T.niva.en}|${T.niva.fl}`)}`
+            + `${kSamladNote(pgSamlad, `${T.niva.en}|${T.niva.fl}`)}</td>`;
         pgBody.appendChild(trN);
     }
 
@@ -220,8 +220,8 @@ function generateSkevhet() {
         ...baseS,
         usedInAnalysis: baseS.afterFilter,
         analysisExclusions: [
-            ...(pgKMasked > 0 ? [[`BAS-intervall maskerade (k-anonymitet n&lt;${kTroskel()} per kön)`, pgKMasked]] : []),
-            ...(skUtelamnade.length > 0 ? [[`BAS-intervall för små för könsfördelningen (n&lt;${LITET_UNDERLAG} totalt, ADR-57)`, skUtelamnade.length]] : [])
+            ...(pgKMasked > 0 ? [[`${termStor(T.niva.fl)} maskerade (k-anonymitet n&lt;${kTroskel()} per kön)`, pgKMasked]] : []),
+            ...(skUtelamnade.length > 0 ? [[`${termStor(T.niva.fl)} för små för könsfördelningen (n&lt;${LITET_UNDERLAG} totalt, ADR-57)`, skUtelamnade.length]] : [])
         ],
         formler: [
             ['Kvinnors lön i % av mäns', '<code>median(kvinnors lön) / median(mäns lön) × 100 %</code>. 100 % = lika lön.'],
@@ -232,7 +232,7 @@ function generateSkevhet() {
         ],
         notes: [
             `Kräver minst ${kTroskel()} ${personOrd(kTroskel())} av <em>varje kön</em> för att medianer ska visas (k-anonymitet)`,
-            `Könsfördelningen redovisas för BAS-intervall med minst ${LITET_UNDERLAG} personer totalt, i båda lägena och oavsett minsta gruppstorlek (ett avsteg från k-tröskeln i antal, ADR-57: raden bär antal och andelar men inga lönemått); mindre intervall namnges i en not under tabellen`
+            `Könsfördelningen redovisas för ${T.niva.fl} med minst ${LITET_UNDERLAG} personer totalt, i båda lägena och oavsett minsta gruppstorlek (ett avsteg från k-tröskeln i antal, ADR-57: raden bär antal och andelar men inga lönemått); mindre intervall namnges i en not under tabellen`
         ]
     });
 }
@@ -298,7 +298,7 @@ function _skrReferensCell(yrke) {
     const ref = _skrKvinnoandel(yrke, { del: _skrDel() });
     return ref
         ? `<td data-sort-value="${ref.pct.toFixed(1)}" title="Andel kvinnor nationellt: ${ref.niva === 'etikett' ? 'AID-etiketten' : 'AID-prefixet ' + esc(ref.prefix)} i ${_skrDelText(ref.del)}, ${esc(skrKallaKort())}">${svPct(ref.pct, 0)}</td>`
-        : `<td data-sort-value="" title="Yrkeskoden finns inte i ${esc(skrKallaKort())}">–</td>`;
+        : `<td data-sort-value="" title="${termStor(T.kod.bf)} finns inte i ${esc(skrKallaKort())}">–</td>`;
 }
 
 // Kolumnerna som yrkesgruppstabellens grundvy gömmer bakom Fler kolumner (data-kol i src/index.html).
@@ -401,8 +401,8 @@ function generateEUDirectiveMatrix() {
     });
     if (utelamnadeYrken.length || samladMedianYrken.length) {
         const trN = document.createElement("tr");
-        trN.innerHTML = `<td colspan="10">${kMaskNote(utelamnadeYrken, 'yrkesgrupp|yrkesgrupper')}`
-            + `${kSamladNote(samladMedianYrken, 'yrkesgrupp|yrkesgrupper')}</td>`;
+        trN.innerHTML = `<td colspan="10">${kMaskNote(utelamnadeYrken, `${T.enhet.en}|${T.enhet.fl}`)}`
+            + `${kSamladNote(samladMedianYrken, `${T.enhet.en}|${T.enhet.fl}`)}</td>`;
         tbody.appendChild(trN);
     }
     if (lika.grupper.some(g => g.flaggad)) {
@@ -436,15 +436,15 @@ function generateEUDirectiveMatrix() {
         ...baseM,
         usedInAnalysis: rows.length,
         analysisExclusions: [
-            ...(skippedTooFewKvOrMa > 0 ? [['Yrkesgrupper med &lt;2 av varje kön (ej jämförbara)', skippedTooFewKvOrMa]] : []),
-            ...(maskedYrken > 0 ? [[`Yrkesgrupper utelämnade, k-anonymitet (kön n&lt;${kTroskel()})`, maskedYrken]] : [])
+            ...(skippedTooFewKvOrMa > 0 ? [[`${termStor(T.enhet.fl)} med &lt;2 av varje kön (ej jämförbara)`, skippedTooFewKvOrMa]] : []),
+            ...(maskedYrken > 0 ? [[`${termStor(T.enhet.fl)} utelämnade, k-anonymitet (kön n&lt;${kTroskel()})`, maskedYrken]] : [])
         ],
         formler: [
-            ['Löneskillnad per yrke', '<code>(median kvinnor / median män − 1) × 100 %</code>'],
+            [`Löneskillnad per ${T.enhet.en}`, '<code>(median kvinnor / median män − 1) × 100 %</code>'],
             ['Status', `Värt att granska = utanför slumpens gränser för gruppen (omkastning av könen, 1 000 gånger) och minst 3 % (verktygets storleksgräns) · Följ upp = minst 3 % men inte säkerställd, eller säkerställd under 3 % · Balanserat = under 3 % och inte säkerställd · Går ej att bedöma = ett kön under ${statGolv()}`],
             ['Direktivmarkering', `≥ 5 % på den ojusterade medianskillnaden. ${esc(_STS_DIR_TIPS)}`],
             ['Dominans', `Kvinnodominerad vid ${esc(aidbasDefinitionText())}; mansdominerad med samma gräns för män; annars könsblandad. Samma definition som i Likvärdigt arbete (valet görs i dess inställningar).`],
-            ['OLS-regression', `log(lön) ~ kön${harAlder() ? ' + ålder' : ''} + BAS-intervall (indikatorvariabler, första BAS som referens). Standardfel: HC3 robust (Long &amp; Ervin 2000)`],
+            ['OLS-regression', `log(lön) ~ kön${harAlder() ? ' + ålder' : ''} + ${T.niva.en} (indikatorvariabler, första BAS som referens). Standardfel: HC3 robust (Long &amp; Ervin 2000)`],
             ['BAS-rangordning', 'Fast enligt BAS-systemet: A lägst (t.ex. 0–99 poäng), B nästa intervall (100–199) osv.; rang = bokstavens plats (A=1, B=2 …); ett BAS-steg är alltid ett intervall, även när en bokstav saknas i underlaget; högre rang = högre värderat arbete'],
             ['Per-BAS regression', `Separat <code>log(lön) ~ kön${harAlder() ? ' + ålder' : ''}</code> inom varje BAS med ≥${statGolv()} av varje kön`]
         ],
@@ -475,7 +475,7 @@ function _skevhetFigur(bars) {
                         ...(o.ci ? { fel: { lag: o.ci.lo, hog: o.ci.hi } } : {}), ..._kronorFalt(o.medKv, o.medMa) });
     const tips = d => [[d.y], ['Kvinnors median', `${_figTalformat(d.x, 'pct')} av männens`], ..._figKronorTipsRad(d.skillnadKr),
         ['95 % KI', d.fel ? `${_figTalformat(d.fel.lag, 'pct', { enhet: false })}–${_figTalformat(d.fel.hog, 'pct')}` : '–'], ['Antal', String(d.n)]];
-    return { beskrivning: 'Kvinnors medianlön i procent av männens per BAS-intervall, som en punkt med 95 % konfidensintervall mot linjen för lika lön (100 %). Detaljerade siffror finns i tabellerna nedan.',
+    return { beskrivning: `Kvinnors medianlön i procent av männens per ${T.niva.en}, som en punkt med 95 % konfidensintervall mot linjen för lika lön (100 %). Detaljerade siffror finns i tabellerna nedan.`,
         urval: URVAL.bas, y: { skala: 'band', ordning: bars.map(o => 'BAS ' + o.bas) },
         x: { skala: 'linjar', titel: 'Kvinnors median i % av männens — 100 = lika lön',
              doman: [Math.floor(Math.min(90, ...bars.map(o => (o.ci ? o.ci.lo : o.gap))) - 2), Math.ceil(Math.max(110, ...bars.map(o => (o.ci ? o.ci.hi : o.gap))) + 2)] },
@@ -528,11 +528,11 @@ function _laOversiktTabell(bars, d = getData()) {
             const n = d.filter(r => r.bas === b).length;
             if (n) (isKMasked(n) ? forSma : ettKon).push(b);
         }
-        not.innerHTML = kMaskNote(forSma, 'BAS-intervall|BAS-intervall') + _laSamladNot(ettKon);
+        not.innerHTML = kMaskNote(forSma, `${T.niva.en}|${T.niva.fl}`) + _laSamladNot(ettKon);
     }
     if (skala) skala.innerHTML = '';
     if (!bars.length) {
-        tb.innerHTML = '<tr><td colspan="9" class="la-oversikt-tom">För få BAS-intervall där både kvinnor och män når minsta gruppstorlek.</td></tr>';
+        tb.innerHTML = `<tr><td colspan="9" class="la-oversikt-tom">För få ${T.niva.fl} där både kvinnor och män når minsta gruppstorlek.</td></tr>`;
         flerKolumner('la-oversikt', LA_OVERSIKT_DOLDA_KOLUMNER, 'laOversikt');
         return;
     }
@@ -634,7 +634,7 @@ function _laTrattFigur(u, k = kTroskel()) {
     const lager = (serie, farg, symbol, valj) => ({ marke: 'punkt', serie, farg, symbol, storlek: 6, etikettLage: 'auto',
         data: u.punkter.filter(valj).map(p => ({ x: p.n, y: +p.kvot.toFixed(1), p, bas: p.bas, yrke: p.yrke, sektor: _aidSektorsnamn(p.aid), n: p.n, markering: markeringFor(p.bas, p.aid), ..._kronorFalt(p.medKv, p.medMa), ...(namngivna.has(p) ? { etikett: _rfKorta(String(p.yrke), 24) } : {}) })), tips });
     const ys = [...falt.flatMap(f => [f.lag, f.hog]), ...u.punkter.map(p => p.kvot)];
-    return { beskrivning: 'Trattdiagram: kvinnors medianlön i procent av mäns per yrkesgrupp och BAS-intervall mot gruppens storlek. Det skuggade fältet är de 95-procentiga gränserna för vad slumpen kan ge vid den gruppstorleken, och smalnar när gruppen blir större. Samma grupper finns i tabellen nedan.',
+    return { beskrivning: `Trattdiagram: kvinnors medianlön i procent av mäns per ${T.enhet.en} och ${T.niva.en} mot gruppens storlek. Det skuggade fältet är de 95-procentiga gränserna för vad slumpen kan ge vid den gruppstorleken, och smalnar när gruppen blir större. Samma grupper finns i tabellen nedan.`,
         urval: [URVAL.bas, URVAL.yrkesgrupp, URVAL.sektor, URVAL.antal], x: { skala: 'linjar', titel: 'Antal personer i gruppen', doman: [x0, x1] },
         y: { skala: 'linjar', titel: 'Kvinnors median i % av mäns', doman: [Math.floor(Math.min(...ys) - 1), Math.ceil(Math.max(...ys) + 1)] },
         hojd: 340,
@@ -652,7 +652,7 @@ function _laRitaTratt(d) {
     ritaFigur(el, _laTrattFigur(u));
     _setDiagramMetodNot('chart-la-tratt', _laTrattGlesNot(u.punkter.length));
     const ute = u.punkter.filter(p => p.utanfor).length;
-    if (not) not.textContent = `${ute} av ${u.punkter.length} bedömda grupper utanför gränserna (yrkesgrupp i ett BAS-intervall där både kvinnor och män når minsta gruppstorlek). Punktens färg bygger på en omkastning av könen inom gruppen (1 000 gånger; för grupper över 300 personer en normalapproximation) och gäller gruppens egna löner och antal; det skuggade fältet är en jämn kurva för orientering, ritad för lika många kvinnor som män. Gränserna är ett stöd för bedömningen, inte ett test som friar eller fäller.`;
+    if (not) not.textContent = `${ute} av ${u.punkter.length} bedömda grupper utanför gränserna (${T.enhet.en} i ${termArtikel(T.niva)} ${T.niva.en} där både kvinnor och män når minsta gruppstorlek). Punktens färg bygger på en omkastning av könen inom gruppen (1 000 gånger; för grupper över 300 personer en normalapproximation) och gäller gruppens egna löner och antal; det skuggade fältet är en jämn kurva för orientering, ritad för lika många kvinnor som män. Gränserna är ett stöd för bedömningen, inte ett test som friar eller fäller.`;
 }
 
 // Könsfördelningen per BAS-intervall som staplade staplar till 100 %, med gränserna för jämn könsfördelning
@@ -661,7 +661,7 @@ function _skevhetAndelFigur(rader) {
     const serie = (namn, farg, falt) => ({ marke: 'stapel', lage: 'staplad', riktning: 'liggande', serie: namn, farg,
         data: rader.map(o => ({ y: 'BAS ' + o.bas, x: o[falt], n: o.tot, bas: o.bas, markering: markeringFor(o.bas), ...(o[falt] >= 8 ? { etikett: _figTalformat(o[falt], 'pct') } : {}) })),
         tips: d => [[d.y], [namn, _figTalformat(d.x, 'pct')], ['Antal i intervallet', String(d.n)]] });
-    return { beskrivning: 'Andel kvinnor och män per BAS-intervall, staplat till 100 procent. Linjerna vid 40 och 60 procent är gränserna för jämn könsfördelning. Samma siffror finns i tabellen nedan.',
+    return { beskrivning: `Andel kvinnor och män per ${T.niva.en}, staplat till 100 procent. Linjerna vid 40 och 60 procent är gränserna för jämn könsfördelning. Samma siffror finns i tabellen nedan.`,
         urval: URVAL.bas, y: { skala: 'band', ordning: rader.map(o => 'BAS ' + o.bas) },
         x: { skala: 'linjar', titel: 'Andel av intervallet (%)', doman: [0, 100] },
         hojd: Math.max(160, 70 + rader.length * 32),
@@ -730,10 +730,10 @@ function renderLikaArbeteTopp() {
     catch (e) { rapporteraFel('Lika arbete: toppen', e); }
     const grans = typeof _pagGrans === 'function' ? svTal(_pagGrans(), 0) : '10';
     ut.innerHTML = [
-        rader.length ? _laSlutsats('Yrkesgrupper att granska', `${granska.length} av ${rader.length}`, granska.length ? 'säkerställd skillnad, minst 3 %' : 'ingen säkerställd skillnad på 3 %', granska.length > 0 ? 'granska' : false,
+        rader.length ? _laSlutsats(`${termStor(T.enhet.fl)} att granska`, `${granska.length} av ${rader.length}`, granska.length ? 'säkerställd skillnad, minst 3 %' : 'ingen säkerställd skillnad på 3 %', granska.length > 0 ? 'granska' : false,
             'Värt att granska: skillnaden är statistiskt säkerställd (utanför slumpens gränser för gruppen) och minst 3 % (verktygets storleksgräns)')
-                     : _laSlutsats('Yrkesgrupper att granska', '–', `ingen yrkesgrupp har minst ${kTroskel()} av varje kön`),
-        storst ? _laSlutsats('Största skillnaden', svPct(storst.kvot, 1), storst.yrke, false, 'Kvinnors medianlön i procent av mäns i den yrkesgrupp där skillnaden är störst') : '',
+                     : _laSlutsats(`${termStor(T.enhet.fl)} att granska`, '–', `${termAdjektiv({ utrum: 'ingen', neutrum: 'inget', plural: 'inga' }, T.enhet)} ${T.enhet.en} har minst ${kTroskel()} av varje kön`),
+        storst ? _laSlutsats('Största skillnaden', svPct(storst.kvot, 1), storst.yrke, false, `Kvinnors medianlön i procent av mäns för ${termArtikel(T.enhet, { bestamd: true })} ${T.enhet.en} där skillnaden är störst`) : '',
         regOk ? _laSlutsats(reg.fras ? `Efter ${reg.fras}` : 'Utan kontroller', svPct(reg.konKvot, 1), `kvinnors lön i % av mäns ${reg.fras ? 'när dessa räknats bort' : 'utan att något räknats bort'}`, _laRegGranska(reg) ? 'granska' : false,
             `Regressionen i regressionskortet i Lönestruktur: en oförklarad skillnad på ${reg.konPct >= 0 ? '+' : ''}${svPct(reg.konPct, 1)}, kvinnor mot män. Det är samma sak som att kvinnors lön är ${svPct(reg.konKvot, 1)} av mäns.${_laRegFaNot(reg)} ${ALDER_METODVAL_TEXT}${harAlder() ? '' : ' ' + ALDER_SAKNAS_TEXT}`) : '',
         personer != null ? _laSlutsats('Personer att granska', svTal(personer, 0), `minst ${grans} % under förväntad lön`) : ''
@@ -749,7 +749,7 @@ function renderLikaArbeteTopp() {
  */
 function _skevhetNot(lista) {
     const n = lista.length, t = LITET_UNDERLAG;
-    return `<p class="k-mask-note">${n} ${esc(_kNoteForm('BAS-intervall|BAS-intervall', n))} visas inte här: `
+    return `<p class="k-mask-note">${n} ${esc(_kNoteForm(`${T.niva.en}|${T.niva.fl}`, n))} visas inte här: `
         + `${_kNoteNamn(lista)}. ${n === 1 ? 'Det har' : 'De har'} färre än ${t} ${personOrd(t)}, och könsfördelningen `
         + `skulle kunna peka ut enskilda. Personerna ingår fortfarande i underlaget och i totalsummorna.</p>`;
 }

@@ -31,9 +31,9 @@ function sokKandidater() {
     const perBas = new Map();
     for (const r of d) if (r.bas != null && r.bas !== '') perBas.set(r.bas, (perBas.get(r.bas) || 0) + 1);
     const ut = [...perBas].filter(([, n]) => !isKMasked(n)).sort((a, b) => String(a[0]).localeCompare(String(b[0]), 'sv'))
-        .map(([bas, n]) => ({ nyckel: `bas:${bas}`, namn: `BAS ${bas}`, under: 'BAS-intervall', n, sok: _sokNorm(`bas ${bas} bas-intervall ${bas}`) }));
+        .map(([bas, n]) => ({ nyckel: `bas:${bas}`, namn: `BAS ${bas}`, under: termStor(T.niva.en), n, sok: _sokNorm(`bas ${bas} bas-intervall ${bas}`) }));
     for (const g of gruppdossierCandidates()) {
-        ut.push({ nyckel: `grupp:${g.key}`, namn: String(g.yrke || g.aid), under: `Yrkesgrupp · BAS ${g.bas}`, n: g.rows.length, sok: _sokNorm(`${g.yrke} ${g.aid} bas ${g.bas}`) });
+        ut.push({ nyckel: `grupp:${g.key}`, namn: String(g.yrke || g.aid), under: `${termStor(T.enhet.en)} · BAS ${g.bas}`, n: g.rows.length, sok: _sokNorm(`${g.yrke} ${g.aid} bas ${g.bas}`) });
     }
     return ut;
 }

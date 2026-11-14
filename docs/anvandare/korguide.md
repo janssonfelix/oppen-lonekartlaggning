@@ -40,8 +40,8 @@ besluten gör och äger arbetsgivaren.
    - **litet demo**: 260 påhittade personer i fem BAS-intervall, snabbt att bläddra i.
      Det är samma underlag som självdiagnostiken bygger på.
    - **stort demo (7 000 personer)**: en påhittad stor organisation med BAS-intervall A–K och
-     30 yrkesgrupper. Här syns verktyget i verklig
-     storlek: inlagda löneskillnader i några yrken, ett par för likvärdigt arbete, och små grupper
+     30 AID-etiketter. Här syns verktyget i verklig
+     storlek: inlagda löneskillnader i några AID-etiketter, ett par för likvärdigt arbete, och små grupper
      som maskeras i exporterna. Inläsningen tar några sekunder.
 
    Adressen kan också starta demot direkt: `?demo=1` för det lilla och `?demo=stor` för det stora.
@@ -58,7 +58,7 @@ Exportera en lönefil (CSV eller XLSX) med dessa kolumner:
 | Fält | Obligatoriskt | Kommentar |
 |---|---|---|
 | BAS-intervall | Ja | Kravnivå/svårighetsgrupp |
-| AID / yrkesgrupp | Ja | Yrkeskod/-namn |
+| AID-etikett | Ja | AID-kod och etikettnamn. Kolumnen heter i lönefilen ofta *Yrke* eller *Befattning* |
 | Månadslön | Ja | **Heltidsomräknad** fast månadslön — se *Lönedefinition* nedan |
 | Ålder *(eller födelseår)* | Nej, rekommenderad | Födelseår tolkas automatiskt till ålder. Utan ålder körs analysen utan åldersjustering och Ålder & karriär visas inte |
 | Kön | Ja | K/M, Kvinna/Man m.fl. tolkas automatiskt |
@@ -91,7 +91,7 @@ Exportera en lönefil (CSV eller XLSX) med dessa kolumner:
    *Minsta gruppstorlek* i flikarnas översta rad är en länk dit). På skärmen visas alla grupper. Gränsen gäller
    det som lämnar verktyget (Excel, Word, PDF, ZIP, CSV, urklipp, diagrambilder, rapportunderlaget). Standardvärdet är 10: lönemått för grupper med färre personer än så redovisas
    inte där. Antal och andelar, också per kön, kan däremot stå i exporterna för små grupper, till exempel antalet
-   kvinnor och män i ett yrke med få personer; bedöm själv vad som kan spridas. Du kan ändra värdet till ett heltal från 2 (högre skärper skyddet). Ett värde under 10
+   kvinnor och män i en AID-etikett med få personer; bedöm själv vad som kan spridas. Du kan ändra värdet till ett heltal från 2 (högre skärper skyddet). Ett värde under 10
    kräver att du bekräftar och visas som en varning överst på alla flikar. Värdet står i
    metodbilagan och i exporterad data. Under 10 står dessutom meningen *Tröskeln är sänkt från
    standardvärdet 10.* på det som kan spridas för sig, till exempel diagrambilder, kopierade tabeller
@@ -132,7 +132,7 @@ Exportera en lönefil (CSV eller XLSX) med dessa kolumner:
    Läs även in **jämförelsestatistik** om du har den. Fliken **Löneläget** går att öppna när underlaget och minst
    en referens är inlästa (se avsnitt 4). Den visar överblicken mot båda, avsnittet mot ställningstagandet och
    avsnittet mot statistiken. I avsnittet mot statistiken står organisationens P10, median och P90 bredvid
-   statistikens för varje yrke. Två diagram visar var du ligger i marknadens spann och vilka yrken som avviker
+   statistikens för varje AID-etikett. Två diagram visar var du ligger i marknadens spann och vilka AID-etiketter som avviker
    mest. Arbetsvärderingspoäng laddas **inte** upp separat. Lägg till kolumnen **Poäng** i lönefilen (se avsnitt 2).
 5. Gå igenom kortet **Att göra** på Översikt. Överst står status mot de fyra lagkraven,
    därunder **Börja här** med de tre viktigaste punkterna och sist alla punkter per
@@ -180,7 +180,7 @@ rubrikraden, också när det är hopfällt.
 
 ### Hitta rätt: sök och sidindex
 
-- **Sök** (fältet i sidhuvudet, snedstreck eller Ctrl+K) hittar ett yrke eller BAS-intervall och markerar det i alla
+- **Sök** (fältet i sidhuvudet, snedstreck eller Ctrl+K) hittar en AID-etikett eller ett BAS-intervall och markerar det i alla
   diagram och tabeller. Ett klick på en grupp i ett diagram eller en tabellrad gör samma sak; Escape tar bort markeringen.
   Sökningen hittar också funktioner, också innan lönefilen är inläst: flikarnas avsnitt (*ögonblicksbild*, *förra
   året*, *regression*), exporterna och fälten i Inställningar (*PO-påslag*, *minsta gruppstorlek*). Det vanliga
@@ -195,17 +195,17 @@ rubrikraden, också när det är hopfällt.
   avsnitt står inte i listan, och en flik med färre än tre avsnitt har ingen. Listan byggs om när fliken ritas
   om, till exempel efter att lönefilen lästs in.
 
-### Dossierer: en yrkesgrupp eller ett BAS-intervall på en sida
+### Dossierer: en AID-etikett eller ett BAS-intervall på en sida
 
-- **Gruppdossiern** samlar allt verktyget vet om en yrkesgrupp i ett BAS-intervall. Den öppnas från tabellraderna,
+- **Gruppdossiern** samlar allt verktyget vet om en AID-etikett i ett BAS-intervall. Den öppnas från tabellraderna,
   från en grupp i Egna vyer och från raden om markeringen (*Öppna gruppdossier*).
 - **BAS-dossiern** samlar ett BAS-intervall i rapportens ordning. Då kan du skriva avsnittet om intervallet utan
   att hämta det ur fem flikar. Dossiern har:
   - nyckeltalen (antal, kvinnor och män, median, P10–P90) och läget mot ställningstagandets rad för intervallet
-  - yrkesgrupperna i intervallet, med en knapp till varje grupps dossier. För varje grupp står antal, medianer
-    per kön, kvinnors median i procent av mäns och samma status som i Lika arbete. Statusen gäller hela yrket. Finns yrket också i
-    andra intervall säger en not det.
-  - kandidatparen i Likvärdigt arbete där det kvinnodominerade yrket ligger i intervallet, och paren *Lägre krav,
+  - AID-etiketterna i intervallet, med en knapp till varje grupps dossier. För varje grupp står antal, medianer
+    per kön, kvinnors median i procent av mäns och samma status som i Lika arbete. Statusen gäller hela AID-etiketten.
+    Finns AID-etiketten också i andra intervall säger en not det.
+  - kandidatparen i Likvärdigt arbete där den kvinnodominerade AID-etiketten ligger i intervallet, och paren *Lägre krav,
     högre lön*
   - medianlönen per åldersgrupp (–34, 35–49, 50–) och kön, med en länk till Ålder & karriär med intervallet valt
   - intervallets rad ur förra årets bokslut, när en konfigurationsfil från förra året är inläst.
@@ -231,25 +231,26 @@ rubrikraden, också när det är hopfällt.
 2. **Löneläget** *(fördjupning, inget lagkrav)* — fliken går att öppna när lönefilen och minst en referens
    (ställningstagandet eller jämförelsestatistiken) är inlästa. Med en lönefil men utan referens döljs den i menyn.
    Den har fyra avsnitt.
-   *Överblick* står överst och är öppen. Den visar alla yrkesgrupper i två diagram. Bandkartan visar var varje
-   yrkesgrupps medianlön ligger i ställningstagandets spann, och diagrammet *Var ligger yrkesgrupperna i statistikens
+   *Överblick* står överst och är öppen. Den visar alla AID-etiketter i två diagram. Bandkartan visar var varje
+   AID-etiketts medianlön ligger i ställningstagandets spann, och diagrammet *Var ligger AID-etiketterna i statistikens
    spann?* visar var den ligger i jämförelsestatistikens spann (0 = statistikens P10, 100 = dess P90). Punkten är
    fylld när statistiken matchades på AID och BAS, och ofylld när den matchades på endast AID. Diagrammet visar hela
    underlaget; filtren under *Mot jämförelsestatistiken* gäller inte där. Saknar statistiken P10 och P90 står ett
    meddelande i stället för diagrammet. Utan ställningstagande visas bara statistikens diagram, och utan statistik
    bara bandkartan.
-   *Mot ställningstagandet* är tabellen per yrkesgrupp och könens läge i spannet. Där står också hur stor andel av
+   *Mot ställningstagandet* är tabellen per AID-etikett och könens läge i spannet. Där står också hur stor andel av
    kvinnorna respektive männen som ligger i spannets nedre, mellersta och övre tredjedel, efterlevnaden och
-   täckningen. *Mot jämförelsestatistiken* är tabellen och diagrammen mot statistiken, med filter på BAS och sektor.
+   täckningen. *Mot jämförelsestatistiken* är tabellen och diagrammen mot statistiken, med filter på BAS-intervall och huvudområde.
    Tabellen visar medianens kolumner, och P10 och P90 ligger bakom *Fler kolumner* (Kopiera, CSV, Excel och
    utskriften tar med alla).
-   *Yrkesgrupp för yrkesgrupp* står sist och är stängd från början. Den visar per yrkesgrupp var löneläget och
+   *AID-etikett för AID-etikett* står sist och är stängd från början. Den visar per AID-etikett var löneläget och
    statistiken ligger mot ställningstagandet, som är referenspunkten. Där står skillnaden percentil för percentil
    och läget i spannet (0 = referensens P10, 100 = dess P90). Där står också mönstret i ord och ett förslag på
    vilken referens som säger något om gruppen. En bild visar de tre spannen, och en tabell visar statistiken mot
    ställningstagandet. Ligger både löneläget och statistiken över ställningstagandet har det halkat efter
    marknaden. Ligger bara löneläget över har organisationen gått före. Förslaget är ett förslag, ingen regel.
-3. **Lika arbete** — fliken öppnar med **yrkesgrupperna**: kvinnors och mäns medianlön i samma yrkesgrupp.
+3. **Lika arbete** — fliken öppnar med **Kvinnor och män med samma AID-etikett**: kvinnors och mäns medianlön per
+   AID-etikett.
    Varje grupp får en status som bygger på statistisk signal: **Värt att granska** när skillnaden är
    statistiskt säkerställd (utanför slumpens gränser för gruppen) och minst 3 % (verktygets egen storleksgräns),
    **Följ upp** när den är minst 3 % men inte säkerställd, eller säkerställd men under 3 %, **Balanserat** när den
@@ -258,24 +259,24 @@ rubrikraden, också när det är hopfällt.
    mindre. Kolumnen **≥ 5 %** är ingen status utan en markering på den ojusterade skillnaden: direktivets regler
    om gemensam lönebedömning utgår från en skillnad på minst 5 %, och markeringen visar var den nivån nås. Den är
    inte en bedömning och står aldrig vid regressionens justerade tal.
-   Diagrammet **Yrkesgrupperna mot slumpens gränser** ovanför tabellen visar varje yrkesgrupp mot gruppens storlek.
+   Diagrammet **AID-etiketterna mot slumpens gränser** ovanför tabellen visar varje AID-etikett mot gruppens storlek.
    En liten grupp kan ha en stor skillnad av ren slump, men en stor grupp kan det inte. Grupperna utanför det
    skuggade fältet är de där skillnaden är svår att förklara med slumpen. Nyckeltalen överst tar med hur stor
    skillnaden är när ålder och BAS-intervall räknats bort (regressionen, som står i Lönestruktur).
    Under Fördjupning kommer Personer att granska och avsnitten **Lika arbete AID × BAS** och **Analys på
    individnivå**. De har tabellerna i den form en skriven lönekartläggning brukar ha. Den första har en rad per
-   yrkesgrupp och BAS-intervall med kvinnors median i procent av mäns, mot slumpens gränser, och en bedömning. Den
+   AID-kod och BAS-intervall med kvinnors median i procent av mäns, mot slumpens gränser, och en bedömning. Den
    andra är en arbetslista över grupperna där något kön är för litet för lönemått, att fylla i efter den
    individuella granskningen. Båda finns som blad i Excel-filen.
-   Kolumnen **Kvinnor nationellt** visar andelen kvinnor i samma yrke i landets kommuner och
+   Kolumnen **Kvinnor nationellt** visar andelen kvinnor med samma AID-etikett i landets kommuner och
    regioner. Talen kommer ur SKR:s personalstatistik (SKR är Sveriges Kommuner och Regioner; perioden står i Om
    verktyget). Det är ett referensvärde att jämföra din egen könsfördelning mot. Välj under
    **Inställningar** i sidhuvudet om organisationen är en kommun eller en region, så jämförs du med rätt
    del av statistiken. Samma statistik är reserv för könsfördelningen i Likvärdigt arbete, och
    SKR:s PO-påslag är standardvärde i kostnadsberäkningen; ordlistan förklarar begreppet SKR.
-   Yrkesgrupperna är AID-grupper. AID är inte ett arbetsvärderingssystem — grupperna är en
+   AID grupperar arbetsuppgifter och är inte ett arbetsvärderingssystem — AID-etiketterna är en
    **utgångspunkt** för lika arbete som du bekräftar (se bakgrundspanelen i fliken).
-   Har lönefilen AID:s **ansvarskod** visas under yrket en rad per ansvarsgrupp
+   Har lönefilen AID:s **ansvarskod** visas under AID-etiketten en rad per ansvarsgrupp
    (ledningsansvar, särskilt uppdrag, inget särskilt ansvar). Raden **Utan ledningsansvar** visar
    skillnaden bland dem som inte leder. I regressionen (Lönestruktur) står på en egen rad hur mycket
    ansvaret förklarar. Huvudtalet räknar inte bort det: om ansvaret är ett sakligt skäl
@@ -283,72 +284,72 @@ rubrikraden, också när det är hopfällt.
    Grupper som är värda att granska märks **skör** om skillnaden kan hamna under 3 % när en
    eller två personer tas bort, annars **stabil**. Statusen gäller i båda fallen, men i en
    skör grupp avgör enskilda löner — titta särskilt på dem.
-   Under yrkesgrupperna finns **Personer att granska**. Det är personer som ligger minst 10 % under vad
-   kollegor i samma AID och BAS i samma ålder tjänar, och du kan ändra gränsen. Listan är
+   Under AID-etiketterna finns **Personer att granska**. Det är personer som ligger minst 10 % under vad
+   kollegor med samma AID-etikett i samma BAS-intervall och ålder tjänar, och du kan ändra gränsen. Listan är
    ett stöd för den individuella granskningen, inte ett besked om att lönen är osaklig.
    Slå upp personen med **radnumret** i lönefilen. Listan kan inte exporteras eller
    skrivas ut.
-4. **Likvärdigt arbete** — fliken öppnar med diagrammet **Krav mot lön**, där varje yrkesgrupp är en
+4. **Likvärdigt arbete** — fliken öppnar med diagrammet **Krav mot lön**, där varje AID-etikett är en
    punkt (kravnivå vågrätt, medianlön lodrätt). Kvinnodominerade grupper under linjen är de som är värda att titta
-   närmare på. Granska sedan kandidatparen (kvinnodominerade yrken vs jämförelseyrken). Diagrammet
-   **Kandidatparen i kronor** visar båda yrkenas medianlön per par. Kraven mäts med **BAS-intervall**, eller med
+   närmare på. Granska sedan kandidatparen (kvinnodominerade AID-etiketter mot jämförelseetiketter). Diagrammet
+   **Kandidatparen i kronor** visar båda AID-etiketternas medianlön per par. Kraven mäts med **BAS-intervall**, eller med
    **arbetsvärderingspoäng** om lönefilen har kolumnen Poäng — då väljs det
-   automatiskt och paren jämförs även över BAS-gränserna. Jämförelseyrkena är **alla yrken som inte är
-   kvinnodominerade**, både mansdominerade och könsblandade, och könsandelen i jämförelseyrket står i
+   automatiskt och paren jämförs även över BAS-gränserna. Jämförelseetiketterna är **alla AID-etiketter som inte
+   är kvinnodominerade**, både mansdominerade och könsblandade, och könsandelen i jämförelseetiketten står i
    partabellen (kolumnen *Könsandel*, med klassen mansdominerad eller blandad). Vill ni bara jämföra med
-   mansdominerade yrken kryssar ni i *Jämför bara med mansdominerade yrken* i flikens inställningar (av som
-   standard); valet följer med i konfigurationsfilen och organisationspaketet. Jämförelseyrkena hämtas i första hand
-   ur den egna organisationen; jämförelsestatistiken används bara där ett eget
-   jämförelseyrke saknas. Den slutliga kravvärderingen gör du utifrån befattningsbeskrivning.
-   Fliken visar som standard alla par där jämförelseyrket har högre lön, de 20 största i tabellen (knappen
+   mansdominerade AID-etiketter kryssar ni i *Jämför bara med mansdominerade AID-etiketter* i flikens inställningar
+   (av som standard); valet följer med i konfigurationsfilen och organisationspaketet. Jämförelseetiketterna hämtas i
+   första hand ur den egna organisationen; jämförelsestatistiken används bara där en egen
+   jämförelseetikett saknas. Den slutliga kravvärderingen gör du utifrån befattningsbeskrivning.
+   Fliken visar som standard alla par där jämförelseetiketten har högre lön, de 20 största i tabellen (knappen
    *Visa alla* visar resten). Nyckeltalet *Par att titta närmare på* säger hur många par det är och hur många av dem
    som har en ojusterad löneskillnad på minst 5 %. Vill ni bara se par med minst en viss skillnad, till exempel 5 %,
    anger ni den i fältet *Visa bara par med minst … % skillnad* (0 = alla); antalet par ändras också i fliken.
    Fliken och dess egen export visar par även
    när en grupp är liten — hantera dem därefter.
-   Avsnitten **Likvärdigt arbete** per BAS-intervall och **Hierarkisk jämförelse** klassar varje yrkesgrupp i varje
+   Avsnitten **Likvärdigt arbete** per BAS-intervall och **Hierarkisk jämförelse** klassar varje AID-etikett i varje
    intervall som kvinnodominerad, könsblandad eller mansdominerad, med en sammanfattning per intervall. De listar
    också par där ett arbete i lägre BAS som inte är kvinnodominerat har högre medianlön än ett kvinnodominerat
    arbete i högre BAS. Definitionen av kvinnodominerat väljs i flikens inställningar: **Mer än 60 %** (mer än tröskeln,
    standard) eller **60 % eller mer** (tröskeln eller mer), med den inställda kvinnotröskeln i stället för 60; mansdominerat är samma gräns för män och övriga är könsblandade. Samma
-   definition och samma jämförelseyrken gäller i hela verktyget: kandidatparen, *Lägre krav, högre lön*,
+   definition och samma jämförelseetiketter gäller i hela verktyget: kandidatparen, *Lägre krav, högre lön*,
    tabellerna per BAS-intervall, Lika arbetes kolumn Dominans, Löneöversynens *Varav till kvinnodominerade
    grupper* och Lönepolitikens diagram. Valet står i Excel-bladen och i metodbladet.
-   Bredvid skillnaden står kolumnen **Justerad för ålder**: jämförelseyrkets lön omräknad till
-   det kvinnodominerade yrkets åldersfördelning. Den råa skillnaden är den lagen prövar:
+   Bredvid skillnaden står kolumnen **Justerad för ålder**: jämförelseetikettens lön omräknad till
+   den kvinnodominerade AID-etikettens åldersfördelning. Den råa skillnaden är den lagen prövar:
    lönenivån som sådan. Den justerade visar hur mycket av skillnaden som kan bero på att
-   yrkena har olika åldersstruktur. Ett ungt kvinnodominerat yrke mot ett äldre jämförelseyrke
+   AID-etiketterna har olika åldersstruktur. En ung kvinnodominerad AID-etikett mot en äldre jämförelseetikett
    ger en rå skillnad som krymper när åldern räknats bort. Den justerade räknas bara för par där
-   jämförelseyrket finns i den egna organisationen med minst 10 personer och minst 5 års
+   jämförelseetiketten finns i den egna organisationen med minst 10 personer och minst 5 års
    åldersspridning. Annars står ett streck, och verktygstipset säger varför. Bevis-knappen
    visar medelåldern på båda sidor.
-   Under kandidatparen finns **Lägre krav, högre lön**: kvinnodominerade yrken som har
-   lägre medianlön än ett av organisationens yrken i *lägre* BAS. Det är ofta den tydligaste
+   Under kandidatparen finns **Lägre krav, högre lön**: kvinnodominerade AID-etiketter som har
+   lägre medianlön än en av organisationens AID-etiketter i *lägre* BAS. Det är ofta den tydligaste
    signalen om undervärdering, men BAS är ett grovt mått på krav — pröva paren mot
    befattningsbeskrivningarna.
 5. **Lönestruktur** — varför skillnaden finns där den finns. Fliken öppnar med slutsatserna. Under
    Fördjupning är bara representationen utfälld, och resten fälls ut vid behov.
    - **Representation per BAS-intervall** visar segregeringen: sjunker andelen kvinnor mot högre BAS-intervall?
-   - **Organisationen som karta** visar varje yrkesgrupp som en yta efter antal personer och andel kvinnor.
+   - **Organisationen som karta** visar varje AID-etikett som en yta efter antal personer och andel kvinnor.
    - **Var i lönefördelningen är skillnaden störst?** visar lönen vid olika percentiler för kvinnor och män. Då
      syns om skillnaden är störst bland de lägst eller högst betalda.
    - **Lönetransparensdirektivets mått** visar de mått som en större arbetsgivare ska rapportera när direktivet gäller.
      Måtten är räknade på fast heltidsmånadslön. Direktivets lönebegrepp är vidare (total ersättning, inklusive
      rörliga delar och förmåner); komplettera ur lönesystemet om ni rapporterar.
 
-   Avsnittet **Per sektor** visar läget sektor för sektor i AID:s 13 huvudområden, t.ex. vård och omsorg, skola
-   och teknik. Där står antal, andel kvinnor, medianer, kvinnors lön i procent av mäns (rå och justerad
+   Avsnittet **Per huvudområde** visar läget i AID:s 13 huvudområden, ett i taget, till exempel vård och omsorg,
+   skola och teknik. Där står antal, andel kvinnor, medianer, kvinnors lön i procent av mäns (rå och justerad
    för ålder och BAS) och antal punkter i Att göra. Under tabellen står hur mycket av
    skillnaden i hela organisationen som beror på att kvinnor och män arbetar i olika
-   sektorer. Pilen vid en sektor öppnar dess yrken i Tabeller och egna vyer. Lika arbete, likvärdigt arbete
+   huvudområden. Pilen vid ett huvudområde öppnar dess AID-etiketter i Tabeller och egna vyer. Lika arbete, likvärdigt arbete
    och övriga analyser gäller alltid hela organisationen.
    **Var uppstår löneskillnaden?** delar skillnaden i medellön i delar som tillsammans blir hela
    skillnaden. Diagrammet visar dem som en trappa som landar i hela skillnaden. Standard är tre delar:
    - **BAS-fördelning:** kvinnor och män i olika BAS. Det är en fråga om karriärvägar och rekrytering.
-   - **AID inom BAS:** olika yrken i samma BAS-intervall. Pröva likvärdigt arbete.
+   - **AID inom BAS:** olika AID-etiketter i samma BAS-intervall. Pröva likvärdigt arbete.
    - **inom AID och BAS:** olika lön i samma arbete. Pröva lika arbete.
 
-   Under raden **Förklara med:** väljer du andra variabler: BAS, sektor, AID-mellannivå, AID och åldersgrupp
+   Under raden **Förklara med:** väljer du andra variabler: BAS, huvudområde, AID-mellannivå, AID och åldersgrupp
    (åldersgrupp bara när lönefilen har ålder). Välj en till fyra och ordna dem med pilknapparna. Ordningen spelar
    roll: den första variabeln får det den förklarar ensam, nästa det den förklarar utöver den första, och så vidare.
    AID-nivåerna står alltid från grov till fin. Med BAS och åldersgrupp blir delarna *BAS-fördelning*, *Åldersgrupp
@@ -356,13 +357,14 @@ rubrikraden, också när det är hopfällt.
    samma grupp. Valet sparas i konfigurationsfilen och följer med i rapportunderlaget.
 
    Under varje del står de grupper som bidrar mest i kronor.
-   Listan kan skilja sig från de flaggade yrkena i Lika arbete, som sorteras efter hur stor
+   Listan kan skilja sig från de flaggade AID-etiketterna i Lika arbete, som sorteras efter hur stor
    skillnaden är i gruppen.
    **Löneskillnad per BAS-intervall** är en tabell per intervall med antal kvinnor och män och de två medianlönerna.
    Den visar också skillnaden i kronor, kvinnors lön i procent av mäns med konfidensintervall och status, och
    lönespridningen per kön. **Könsfördelning per BAS-intervall** visar var ett kön är under 40 %. Sist kommer
    **Vad blir kvar av löneskillnaden?**, den **oförklarade** löneskillnaden. Där finns regressionen, där du i panelen
-   *Förklaringsmodell* kan välja om ålder, BAS-intervall och yrkesgrupp ska räknas bort och se vad varje variabel tillför.
+   *Förklaringsmodell* kan välja om ålder, BAS-intervall och AID-etikett inom BAS ska räknas bort och se vad varje
+   variabel tillför.
    Där finns också trappan som visar vad varje vald variabel förklarar, och Blinder-Oaxaca. En bortvald variabel redovisas som
    kontrollerad, med ditt skäl, också i rapporten.
 6. **Ålder & karriär** *(fördjupning, inget lagkrav)* — lön mot ålder och löneskillnaden per åldersgrupp, alltså var
@@ -388,7 +390,7 @@ rubrikraden, också när det är hopfällt.
    öppnar Inställningar där. **Handlingsplanen** förifylls ur de två; egna åtgärder läggs
    till med *Lägg till rad* och följer med i exporterna som de förifyllda. Kolumnen *Kostnaden avser*, direkt
    efter kostnaden, säger vilken kostnad raden har: *Nå referensens median* för rader ur Prioritering och *Nå
-   jämförelseyrkets median* för kandidatpar i likvärdigt arbete. En egen rad har ingen beräknad kostnad, och cellen
+   jämförelseetikettens median* för kandidatpar i likvärdigt arbete. En egen rad har ingen beräknad kostnad, och cellen
    är tom. Kolumnen står också i Excel-underlaget, utskriften, Word-utkastet, PDF-rapporten och Rapporttext, där
    summan delas på de två slagen. Kortet **Samverkan & uppföljning** i
    Handlingsplan har momenten att bocka av och knapparna för **protokollet för gemensam lönebedömning** och
@@ -430,12 +432,12 @@ rubrikraden, också när det är hopfällt.
    de övriga gruppernas kostnad där, och noten under bladet säger vilken; så går en liten grupps kostnad inte att
    räkna fram ur summorna. Verktygets egna förslag (*Föreslå fördelning mot
    skillnaderna i likvärdigt arbete*, målet för skillnaden och känslighetskurvan) riktar däremot bara mot par där
-   båda grupperna når tröskeln, också på skärmen, med en rad per yrke mot jämförelseyrket med störst skillnad. Ett
+   båda grupperna når tröskeln, också på skärmen, med en rad per AID-etikett mot jämförelseetiketten med störst skillnad. Ett
    förslag som inte längre säkert når tröskeln (efter en höjd tröskel eller ur en konfigurationsfil) tas bort, och det
    står vid förslagen; klicka på *Föreslå* igen för ett nytt. Sparade scenarier (A/B) visar
    den råa löneskillnaden bara när båda könen når den tröskel som gäller just då.
 8. **Tabeller och egna vyer** (under 4 · Rapport) har två avsnitt: **Löneöversikt — alla BAS-intervall** (den fasta
-   tabellen: hela löneläget per BAS, kön och yrkesgrupp) och **Egna vyer**. I
+   tabellen: hela löneläget per BAS-intervall, kön och AID-etikett) och **Egna vyer**. I
    Egna vyer bygger du det som en fråga kräver när flikarna ovan inte besvarar den. Välj rader och ev. kolumner,
    mått och diagramtyp. Väljaren har de vanliga typerna överst och resten under *Fler diagramtyper*, bland dem
    värmekartan och regnmolnet. Välj också om du vill se helheten eller uppdelat per kön. Begränsa urvalet med
@@ -444,10 +446,10 @@ rubrikraden, också när det är hopfällt.
    Hanteldiagrammet visar skillnaden per grupp, bubbeldiagrammet om
    kvinnodominerade grupper har lägre lön. Grupper med färre än 10 personer visas
    som alla andra på skärmen men följer inte med i exporten om du inte kryssar i det. Klicka på en grupp
-   för att öppna dess gruppdossier. Rader och kolumner kan också vara **Sektor** eller
+   för att öppna dess gruppdossier. Rader och kolumner kan också vara **Huvudområde** eller
    **AID-mellannivå** (de fyra första siffrorna, t.ex. "AID 2070xx" för undersköterskor och
-   vårdbiträden). När raderna är yrkesgrupper kan små grupper **slås ihop till nästa
-   AID-nivå** ("Övriga i AID 2070xx (2 yrken)"). Det går bara i Tabeller och egna vyer, aldrig i Lika arbete,
+   vårdbiträden). När raderna är AID-etiketter kan små grupper **slås ihop till nästa
+   AID-nivå** ("Övriga i AID 2070xx (2 AID-etiketter)"). Det går bara i Tabeller och egna vyer, aldrig i Lika arbete,
    där en hopslagen grupp inte längre är lika arbete.
 
    Under Löneöversikten står två underflikar: **Egna vyer** och **Alla diagram**. Under Alla diagram finns diagrammen
@@ -467,7 +469,7 @@ arbete, Krav mot lön i Likvärdigt arbete, Prioriteringens två diagram och han
 jämför år) står en knapp per intervall ovanför diagrammet. Klicka på ett intervall för att dölja det, till exempel
 BAS A, B, C och N inför en presentation. Det sista synliga intervallet kan inte döljas.
 
-Diagram där varje punkt är en yrkesgrupp har fler filter, en rad per filter:
+Diagram där varje punkt är en AID-etikett har fler filter, en rad per filter:
 
 - **Antal personer i gruppen** med fälten **Minst** och **Högst**: skriv till exempel 10 i Minst för att dölja de
   minsta grupperna. Fälten gäller när du lämnar dem eller trycker Enter; ett tomt fält är ingen gräns, och gränserna
@@ -480,14 +482,14 @@ Diagram där varje punkt är en yrkesgrupp har fler filter, en rad per filter:
 - **Könsdominans** (Kvinnodominerad, Mansdominerad, Blandad) som knappar, i bandkartan och statistikens spann.
 - **Matchning** (AID + BAS, Endast AID) som knappar, i statistikens spann och de två diagrammen mot
   jämförelsestatistiken. En grupp utan statistik påverkas inte av det filtret.
-- **Yrkesgrupp** och **Sektor** som hopfällda listor med kryssrutor och ett sökfält, i Prioriteringens två diagram,
+- **AID-etikett** och **Huvudområde** som hopfällda listor med kryssrutor och ett sökfält, i Prioriteringens två diagram,
   trattdiagrammet i Lika arbete, statistikens spann, de två diagrammen mot jämförelsestatistiken och överblickens bild i
-  Löneläget. Bandkartan har Yrkesgrupp och Krav mot lön i Likvärdigt arbete Sektor. Klicka på summeringen
-  (till exempel "Yrkesgrupp: alla 40") för att öppna listan. **Avmarkera alla** och sedan en kryssruta visar bara den gruppen.
+  Löneläget. Bandkartan har AID-etikett och Krav mot lön i Likvärdigt arbete Huvudområde. Klicka på summeringen
+  (till exempel "AID-etikett: alla 40") för att öppna listan. **Avmarkera alla** och sedan en kryssruta visar bara den gruppen.
 
 Fler diagram har filter:
 
-- **Lön mot ålder** i Ålder & karriär: BAS-intervall (när hela urvalet visas), yrkesgrupp, ålder och lön (Minst och
+- **Lön mot ålder** i Ålder & karriär: BAS-intervall (när hela urvalet visas), AID-etikett, ålder och lön (Minst och
   Högst). Med ett filter räknas trendlinjerna per kön, deras konfidensband och trenden för hela urvalet om ur de
   punkter som syns, och noten säger det. Har ett kön färre synliga punkter än minsta gruppstorlek ritas inte dess
   trendlinje, och noten säger varför. *Lön mot ålder per BAS-intervall* har samma filter; där döljer filtren punkter,
@@ -495,14 +497,14 @@ Fler diagram har filter:
 - **Löneskillnaden per åldersgrupp**: åldersgrupp (knappar) och antalet av det minst företrädda könet i åldersgruppen.
 - **Åldersfördelningen som kurva** och **lönespridningen över ålder**: ålder (Minst och Högst). En femårsgrupp visas
   när dess första år ligger inom gränserna.
-- **Trädkartan** i Lönestruktur: BAS-intervall, sektor och antal personer i gruppen. Kartan läggs om så att de grupper
+- **Trädkartan** i Lönestruktur: BAS-intervall, huvudområde och antal personer i gruppen. Kartan läggs om så att de grupper
   som syns fyller den; bara ytornas läge och storlek ändras, inga tal. BAS-intervallets antal är hela intervallets.
-  Ytan för små grupper samlar flera yrken och påverkas inte av sektorsfiltret.
-- **Sektorerna** i Lönestruktur: sektor och antal personer i sektorn.
-- **Kandidatparen** i Likvärdigt arbete: det kvinnodominerade yrkets BAS-intervall, löneskillnaden och antalet i det
-  kvinnodominerade yrket. Ett filter döljer hela par.
-- **Före och efter** i Löneöversyn: BAS-intervall eller yrkesgrupp, efter vald nivå, och antal.
-- **Förändringen per yrkesgrupp** i Spara och jämför år: BAS-intervall, yrkesgrupp och antal. En yrkesgrupp som finns i
+  Ytan för små grupper samlar flera AID-etiketter och påverkas inte av filtret på huvudområde.
+- **Huvudområdena** i Lönestruktur: huvudområde och antal personer i huvudområdet.
+- **Kandidatparen** i Likvärdigt arbete: den kvinnodominerade AID-etikettens BAS-intervall, löneskillnaden och antalet
+  i den kvinnodominerade AID-etiketten. Ett filter döljer hela par.
+- **Före och efter** i Löneöversyn: BAS-intervall eller AID-etikett, efter vald nivå, och antal.
+- **Förändringen per AID-etikett** i Spara och jämför år: BAS-intervall, AID-etikett och antal. En AID-etikett som finns i
   flera BAS-intervall i årets lönefil påverkas inte av BAS-filtret.
 
 Filtren verkar tillsammans. Döljer de alla punkter står "Inga grupper i urvalet" i diagrammet; ändra eller töm ett
@@ -515,16 +517,16 @@ ny lönefil, läser in demot eller rensar all data. Det sparas inte i konfigurat
 stapel samlar flera BAS-intervall, till exempel lägena per kön i Lönepolitik, har inga sådana knappar.
 
 **Räkna ett diagram för en del av underlaget.** Några diagram som sammanfattar många personer kan räknas om för en
-del av dem: lådorna och histogrammet för kvinnors och mäns lön i Ålder & karriär (för en sektor eller en åldersgrupp),
-löneskillnaden per åldersgrupp (för en sektor eller en yrkesgrupp) och percentilerna och kvartilerna i Lönestruktur
-(för en sektor eller ett BAS-intervall). Raden **Räkna för** står ovanför diagrammet. Välj till exempel en sektor, så
-räknas diagrammet om för personerna där, och under diagrammet står "Diagrammet är räknat för: sektor Vård (60
-personer)". **Räkna för alla** går tillbaka till hela underlaget. Diagrammet räknas för en sak i taget: väljer du en
-åldersgrupp tas valet av sektor bort.
+del av dem: lådorna och histogrammet för kvinnors och mäns lön i Ålder & karriär (för ett huvudområde eller en åldersgrupp),
+löneskillnaden per åldersgrupp (för ett huvudområde eller en AID-etikett) och percentilerna och kvartilerna i
+Lönestruktur (för ett huvudområde eller ett BAS-intervall). Raden **Räkna för** står ovanför diagrammet. Välj till
+exempel ett huvudområde, så räknas diagrammet om för personerna där, och under diagrammet står "Diagrammet är räknat
+för: huvudområde Teknikarbete (60 personer)". **Räkna för alla** går tillbaka till hela underlaget. Diagrammet räknas för en sak i taget: väljer du en
+åldersgrupp tas valet av huvudområde bort.
 
 Det finns en skyddsregel. Både det du väljer och resten av underlaget måste ha antingen inga eller minst så många
 kvinnor och män som minsta gruppstorlek. Annars skulle två bilder, en för alla och en för valet, kunna avslöja en liten
-grupp. En sektor eller åldersgrupp som själv är för liten går inte att välja; raden säger hur många sådana det finns.
+grupp. Ett huvudområde eller en åldersgrupp som själv är för liten går inte att välja; raden säger hur många sådana det finns.
 Ett val som bryter regeln görs inte, och under diagrammet står varför. Vid exporten gäller den inställda minsta
 gruppstorleken, så ett val som går att göra på skärmen kan släppas där. Diagrammets egen export (PNG, SVG och
 diagramdata) visar valet och säger det i fotraden. Texten, tabellerna, rapporten, utskriften, ZIP-filen och
@@ -559,14 +561,14 @@ du ordna om och ta bort tabellerna.
    och kandidatpar under gränsen utelämnas, och det står hur många det gäller.
    Avsnittet **Lönestruktur per BAS-intervall** har tabellerna i den form en skriven
    lönekartläggning brukar ha. Det är en tabell per BAS-intervall med ett fält för din bedömning av
-   intervallet. Tabellen har referensen, organisationen och varje yrkesgrupp med jämförelsestatistikens
+   intervallet. Tabellen har referensen, organisationen och varje AID-etikett med jämförelsestatistikens
    nivå under, för kvinnor och män: P10, median, P90 och antal. Sist kommer två tabeller per BAS:
    löneskillnader inom likvärdigt arbete (medellön per kön, andel kvinnor, medelålder) och
    löneskillnader i åldersgrupper.
    Samma tabeller finns i Excel-filens blad **Per BAS**. Excel-filen har också de fyra bladen **Lika arbete AID x
    BAS**, **Likvärdigt arbete**, **Hierarkisk jämförelse** och **Analys på individnivå**. De har rapportens
    kolumnnamn och lönemånaden från Inställningar på raden ovanför tabellen. Avsnittet följer ett **recept** som du kan
-   ändra under *Rapportens innehåll*. Där väljer du om tabellerna upprepas per BAS-intervall eller per sektor,
+   ändra under *Rapportens innehåll*. Där väljer du om tabellerna upprepas per BAS-intervall eller per huvudområde,
    vilka rader och mått de ska ha, åldersgränserna och om summeringstabellerna ska med. *Återställ
    standard* ger utkastets form tillbaka.
 3. **Skriver du rapporten i en egen mall?** Öppna fliken **Rapporttext**. Avsnittet **Utkast till rapporttext** har
@@ -577,11 +579,11 @@ du ordna om och ta bort tabellerna.
    med raden *[HR fyller i] Bedömning*.
    Valet sparas inte i konfigurationsfilen. *Återskapa* följer det, och ett redigerat utkast skrivs inte över när
    du byter. Samma stycken står i Word-utkastets och PDF-rapportens avsnitt **Lönekartläggning per BAS-intervall**,
-   med intervallets yrkesgruppstabell. Avsnittet väljs bort under *Rapportens innehåll*. Styckena står också i
+   med intervallets tabell över AID-etiketterna. Avsnittet väljs bort under *Rapportens innehåll*. Styckena står också i
    rapportunderlagets grupp **Per BAS-intervall**.
    Avsnittet **Rapportunderlag** har de färdiga avsnitten att klistra in. Överst i rapportunderlaget finns en
    förteckning över blocken och knappen **Kopiera alla avsnitt**, som lägger alla avsnitt i en enda kopiering.
-   Varje avsnitt har en knapp **Kopiera**. Det har också varje yrkesgrupp med statusen *Värt att granska*
+   Varje avsnitt har en knapp **Kopiera**. Det har också varje AID-etikett med statusen *Värt att granska*
    (statistiskt säkerställd skillnad på minst 3 %) och varje kandidatpar där båda grupperna är stora nog att redovisas. Faktastycket och tabellen hamnar på urklipp och tar mallens format när
    du klistrar in. Diagrammen kopieras som bild med **Kopiera diagram**. Under varje grupp
    finns **frågor till verksamheten** — skicka dem till ansvarig chef inför bedömningen av
@@ -593,7 +595,7 @@ du ordna om och ta bort tabellerna.
      intill knappen är namnet på rapportens försättsblad; det hämtas från organisationspaketet när ett är inläst. Under
      *Rapportens innehåll* väljer du vilka avsnitt som följer med i båda (hela dokumentationen,
      ledningsbrief, facklig dialog eller ett eget urval). Sist i listan står **Bilaga: gruppdossierer**. Den är
-     förvald av, eftersom den kan bli lång. Kryssa i den så får rapporten en gruppdossier per yrkesgrupp där både
+     förvald av, eftersom den kan bli lång. Kryssa i den så får rapporten en gruppdossier per AID-etikett där både
      kvinnor och män når minsta gruppstorlek, med samma text som dossierns knapp *Kopiera*. BAS-intervallens
      dossierer står redan i avsnittet *Lönekartläggning per BAS-intervall*.
    - **Protokollet för gemensam lönebedömning** som underlag för **facklig samverkan**
@@ -610,16 +612,16 @@ du ordna om och ta bort tabellerna.
 
 - **"Spara konfiguration"** (fliken **Spara och jämför år** under *Arbetet*, avsnittet *Spara/ladda konfiguration*)
   om du vill återuppta inställningarna senare. Datafilen laddas om, och själva lönedatan sparas aldrig.
-  Filen innehåller också **årets bokslut**: nyckeltal och en rad per yrkesgrupp där båda könen når minsta
+  Filen innehåller också **årets bokslut**: nyckeltal och en rad per AID-etikett där båda könen når minsta
   gruppstorlek. Där finns också en rad per BAS-intervall med minst så många personer (antal, P10, median och P90)
   och Att göra-punkternas läge.
   Läs in filen nästa år, så visar **Jämförelse med förra året** (samma flik) vad som ändrats:
   - nyckeltalen sida vid sida
   - **löneutvecklingen per BAS-intervall**: P10, median och P90 förra året och i år, förändringen i kronor och
     procent, och medianen som en hantel
-  - **lönespridningen** per BAS-intervall och per flaggad yrkesgrupp: (P90 − P10) / median, i procent av
+  - **lönespridningen** per BAS-intervall och per flaggad AID-etikett: (P90 − P10) / median, i procent av
     medianen. Ett streck står när förra årets fil saknar måttet.
-  - vilka yrkesgrupper som är flaggade båda åren, nya och inte längre flaggade
+  - vilka AID-etiketter som är flaggade båda åren, nya och inte längre flaggade
   - vilka av förra årets öppna punkter som är klara
   - **Sakliga skäl per kategori**: summan och andelen förra året och i år, och per grupp hur skälen och skillnaden
     ändrats. Bokslutet sparar kategori och belopp (för en grupp där ett kön är under gränsen bara kategorin), inte
@@ -628,11 +630,11 @@ du ordna om och ta bort tabellerna.
   En fil sparad med en äldre version saknar raderna per BAS-intervall och de sakliga skälen. Panelen säger det, och
   resten av jämförelsen fungerar.
   Sparades förra årets fil med en lägre minsta gruppstorlek än årets läses båda åren med den högre gränsen.
-  Ta en yrkesgrupp som var flaggad förra året men då hade ett kön under den högre gränsen. Om den är flaggad nu
+  Ta en AID-etikett som var flaggad förra året men då hade ett kön under den högre gränsen. Om den är flaggad nu
   räknas den som **ny** i år, inte som flaggad båda åren, och förra årets löneskillnad för den visas inte.
   Det är avsiktligt: ett mått för en grupp under årets gräns lämnar aldrig verktyget. Panelen säger det i sin not.
   Samma jämförelse följer med som ett avsnitt i Word-utkastet och PDF-rapporten och som ett block i
-  rapportunderlaget. Den följer också med som ett diagram där varje yrkesgrupp visas som ett streck (förra året)
+  rapportunderlaget. Den följer också med som ett diagram där varje AID-etikett visas som ett streck (förra året)
   och en punkt (i år). Tabellen och hanteln per BAS-intervall följer med på samma sätt. Tabellen står i
   rapportens avsnitt och i rapportunderlagets block, och hanteln som bild i Word-utkastet, PDF-rapporten och ZIP-filen.
 - **"Rensa all data"** (under **Inställningar**, rubriken *Rensa*) när du är klar — eller stäng bara fliken; inget ligger kvar.

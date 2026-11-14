@@ -5,6 +5,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { minifyCss } from '../tools/lib/minify-css.mjs';
+import { minifyHtml } from '../tools/lib/minify-html.mjs';
 
 describe('förminskningen bevarar betydelsen', () => {
     it('calc: blanksteg runt + och - står kvar (utan dem är uttrycket ogiltigt)', () => {
@@ -74,5 +75,28 @@ describe('förminskningen på verktygets stilmall', () => {
         const kalla = css.replace(/\/\*[\s\S]*?\*\//g, '');
         const fall = [...kalla.matchAll(/([#.\w\])-]+) (:(?:is|not|where|has|first-child|last-child|nth-child)\b[^,{]*)/g)].filter(m => !/^\d/.test(m[1]));
         for (const m of fall) expect(ut, m[0]).toContain(`${m[1]} ${m[2].trim().split(/\s/)[0].slice(0, 6)}`);
+    });
+});
+
+describe('förminskningen av sidan bevarar ordmellanrum', () => {
+    it('blanksteg mellan två textelement blir ett mellanslag, så att orden inte skrivs ihop', () => {
+        expect(minifyHtml('<p><span>jämförs med dem som</span>\n   <em>inte</em> är kvinnodominerade.</p>'))
+            .toBe('<p><span>jämförs med dem som</span> <em>inte</em> är kvinnodominerade.</p>');
+        expect(minifyHtml('<li><strong>Ålder</strong> <em>(valfri)</em> — utan ålder</li>')).toBe('<li><strong>Ålder</strong> <em>(valfri)</em> — utan ålder</li>');
+        expect(minifyHtml('<a href="#x">Ett</a>  <code>två</code>')).toBe('<a href="#x">Ett</a> <code>två</code>');
+    });
+    it('blanksteg mellan blockelement, och mellan ett block och ett textelement, tas bort som förut', () => {
+        expect(minifyHtml('<ul>\n  <li>a</li>\n  <li>b</li>\n</ul>')).toBe('<ul><li>a</li><li>b</li></ul>');
+        expect(minifyHtml('<div>\n  <span>a</span>\n</div>\n<p>\n  <em>b</em></p>')).toBe('<div><span>a</span></div><p><em>b</em></p>');
+        expect(minifyHtml('<button>a</button> <button>b</button>')).toBe('<button>a</button><button>b</button>');
+    });
+    it('pre, script, style och textarea rörs inte, och kommentarer tas bort', () => {
+        expect(minifyHtml('<pre>  a\n   b </pre><!-- bort --><p>c</p>')).toBe('<pre>  a\n   b </pre><p>c</p>');
+        expect(minifyHtml('<textarea> x\n y</textarea><script>if (a > b) {  c(); }</script>')).toBe('<textarea> x\n y</textarea><script>if (a > b) {  c(); }</script>');
+    });
+    it('den byggda sidan skriver inte ihop ord över en elementgräns', () => {
+        const dist = readFileSync(new URL('../dist/oppen-lonekartlaggning.html', import.meta.url), 'utf8');
+        expect(dist).toContain('som</span> <em>inte</em> är kvinnodominerade');
+        expect(dist).toContain('<strong>Ålder</strong> <em>(valfri, rekommenderad)</em>');
     });
 });

@@ -18,7 +18,7 @@ Lönekartläggningen är ett årligt lagkrav. Lönerna ska kartläggas och analy
 3. **Åtgärder:** prioritering, löneöversyn, handlingsplan.
 4. **Rapport:** rapporttext, export och egna tabeller.
 
-Därtill finns **Spara och jämför år**, där arbetet sparas som fil och jämförs med förra året. Sökrutan hittar både yrken och funktioner. Flikarna har en lista över sina avsnitt som följer med när sidan rullas.
+Därtill finns **Spara och jämför år**, där arbetet sparas som fil och jämförs med förra året. Sökrutan hittar både AID-etiketter och funktioner. Flikarna har en lista över sina avsnitt som följer med när sidan rullas.
 
 ### Det här får du
 
@@ -31,11 +31,11 @@ Därtill finns **Spara och jämför år**, där arbetet sparas som fil och jämf
 ### Tryggt ur dataskyddssynpunkt — inbyggt från början
 
 - **Ingen data lämnar datorn.** Allt bearbetas i webbläsarens minne. Nätverkstrafik är tekniskt spärrad, och verktyget sparar ingenting på datorn. Inget molnkonto, ingen server, inget biträdesavtal.
-- **Minimerat:** bara fyra fält krävs: lön, kön, yrke och BAS. Tre fält är valfria: ålder (rekommenderad, för åldersjusteringen och Ålder & karriär), arbetsvärderingspoäng per befattning och ansvarskod enligt AID. Filer med personnummer, namn eller e-post avvisas.
+- **Minimerat:** bara fyra fält krävs: lön, kön, AID-etikett och BAS. Tre fält är valfria: ålder (rekommenderad, för åldersjusteringen och Ålder & karriär), arbetsvärderingspoäng per befattning och ansvarskod enligt AID. Filer med personnummer, namn eller e-post avvisas.
 - **Små grupper skyddas i det som lämnar verktyget:** på skärmen visas alla grupper. Men i Excel, Word, PDF, ZIP, CSV, urklipp, diagrambilder och rapportunderlaget redovisas inte lönemått för grupper med färre än 10 personer (k-anonymitet). Standardvärdet är 10, och du kan ändra det. Ett lägre värde kräver bekräftelse och visas som en varning. Värdet står i metodbilagan och i exporterad data, och under 10 även på diagrambilder, kopierade tabeller och rapporter.
-- **Två medvetna undantag:** **likvärdigt arbete** prövar även små kvinnodominerade yrken, eftersom lagen kräver det. Fliken och dess export visar dem, men Word-utkastet, PDF-rapporten och rapportunderlaget gör det inte. I fliken **Tabeller och egna vyer** följer små grupper bara med i exporten om du själv väljer det.
+- **Två medvetna undantag:** **likvärdigt arbete** prövar även små kvinnodominerade AID-etiketter, eftersom lagen kräver det. Fliken och dess export visar dem, men Word-utkastet, PDF-rapporten och rapportunderlaget gör det inte. I fliken **Tabeller och egna vyer** följer små grupper bara med i exporten om du själv väljer det.
 - **Enskilda personer:** **Personer att granska** listar enskilda personer som ligger klart under sina kollegor. Listan finns bara i verktyget, aldrig i någon export eller utskrift. Diagram med en punkt per person (lön mot ålder) visar enskilda löner. Bilder av sådana diagram ingår i PDF-rapportens mall *Komplett rapport* och i ZIP-exporten.
-- **Löneskillnaden mellan könen:** medianlön per kön, den råa löneskillnaden och regressionens ojusterade steg visas bara när både kvinnor och män är minst 10. Den justerade löneskillnaden (regressionen i Lönestruktur) visas från regressionens eget golv, 5 av varje kön. I Ålder & karriär gäller samma regel för löneskillnader, trendlinjer och lådor per kön. En persons punkt visas bara när personens grupp (yrke inom BAS) och kön i gruppen når tröskeln.
+- **Löneskillnaden mellan könen:** medianlön per kön, den råa löneskillnaden och regressionens ojusterade steg visas bara när både kvinnor och män är minst 10. Den justerade löneskillnaden (regressionen i Lönestruktur) visas från regressionens eget golv, 5 av varje kön. I Ålder & karriär gäller samma regel för löneskillnader, trendlinjer och lådor per kön. En persons punkt visas bara när personens grupp (AID-etikett inom BAS-intervallet) och kön i gruppen når tröskeln.
 - **Underlag till dataskyddsombudet ingår:** en risk- och sårbarhetsanalys som underlag för organisationens konsekvensbedömning (DPIA). Den har **färdiga svar på IT:s och dataskyddsombudets vanligaste frågor** (biträdesavtal? nätverk? lagring? — nej, nej, nej).
 - **Kvalitetssäkrat:** över två tusen automatiska tester (bland annat dataskydd och tillgänglighet) körs vid varje ändring, och varje bygge är spårbart med kontrollsumma.
 

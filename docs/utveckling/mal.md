@@ -16,8 +16,8 @@ slutdokument. Primär målgrupp: HR-handläggare, ledning, fackliga representant
 
 ## Avgränsning
 
-**Omfång.** Verktyget är allmänt för arbetsgivare som kodar befattningar med AID och BAS-intervall och jämför sig med
-SKR:s personalstatistik; det är i praktiken kommuner och regioner. Allt som är en viss organisations kommer ur
+**Omfång.** Verktyget är allmänt för arbetsgivare som klassificerar sina anställda enligt AID efter
+arbetsuppgifterna, värderar arbetena i BAS-intervall och jämför sig med SKR:s personalstatistik; det är i praktiken kommuner och regioner. Allt som är en viss organisations kommer ur
 organisationspaketet (ADR-28), aldrig ur koden eller dokumenten. Andra arbetsvärderingssystem är en öppen punkt.
 **Alla BAS-intervall ingår** (ADR-21): kartläggningen ska omfatta hela organisationen, och chefsnivåerna är ofta de
 grupper där könsskillnaden är störst. Rimlighetskontrollen kräver bara att BAS är en bokstav; små intervall skyddas av
@@ -48,11 +48,11 @@ datastrukturering kan verktyget leverera värde över flera år utan att uppdate
 
 | Område | Funktion |
 |---|---|
-| Lika arbete | Medianjämförelse kön inom yrkesgrupp och regression per BAS (oförklarat gap, ålderskontroll, HC3-SE, BH-FDR); yrkesgrupperna först, trattdiagrammet bedömer varje grupps kvot med omkastning av könen; Personer att granska (ADR-23) och stabilitet för flaggor (ADR-24) |
+| Lika arbete | Medianjämförelse kön inom AID-etikett och regression per BAS (oförklarat gap, ålderskontroll, HC3-SE, BH-FDR); AID-etiketterna först, trattdiagrammet bedömer varje grupps kvot med omkastning av könen; Personer att granska (ADR-23) och stabilitet för flaggor (ADR-24) |
 | Lönestruktur | Översikten per BAS-intervall som tabell med grafik i raden, lönespridning per BAS och kön, könsfördelning per BAS-intervall; statusen sätts på statistisk signal och storleksgränsen 3 %, och 5 % är en direktivmarkering vid den ojusterade skillnaden (ADR-59) |
-| Likvärdigt arbete | Kvinnodominerade AID×BAS mot yrken som inte är kvinnodominerade (ADR-60) med lika krav — i första hand organisationens egna i samma BAS, annars jämförelsestatistiken; arbetsvärderingspoäng över BAS-gränserna; *Lägre krav, högre lön* (ADR-25) |
+| Likvärdigt arbete | Kvinnodominerade AID-etiketter i BAS-intervall mot AID-etiketter som inte är kvinnodominerade (ADR-60) med lika krav — i första hand organisationens egna i samma BAS, annars jämförelsestatistiken; arbetsvärderingspoäng över BAS-gränserna; *Lägre krav, högre lön* (ADR-25) |
 | EU-direktivets rapportmått | Kvartilfördelning, representation per BAS, distributionellt gap, medel- och mediangap, med EU-lönerapporten som Excel. **Tecknet:** verktyget räknar (kvinnor − män) / män och visar kvinnors lön i procent av mäns; EU-lönerapportens blad och rapportens avsnitt *Struktur och lönetransparens* redovisar direktivets mått, (män − kvinnor) / män, med kolumnrubrik och metodrad som säger det. Tecknet vänds på ett ställe, `tillDirektivtecken` i `src/lib/struktur.js` |
-| Löneläget | Först i Kartläggning: bandkartan, avsnittet mot ställningstagandet (läge i spannet, tredjedelar per kön, efterlevnad, täckningsgrad), avsnittet mot jämförelsestatistiken (ADR-35) och yrkesgrupp för yrkesgrupp (ADR-55); bladet *Lönepolitik* i Excel när ett ställningstagande är inläst |
+| Löneläget | Först i Kartläggning: bandkartan, avsnittet mot ställningstagandet (läge i spannet, tredjedelar per kön, efterlevnad, täckningsgrad), avsnittet mot jämförelsestatistiken (ADR-35) och AID-etikett för AID-etikett (ADR-55); bladet *Lönepolitik* i Excel när ett ställningstagande är inläst |
 | Prioritering | Löneläget mot er referens med kostnad att nå den (ADR-62): prioritetsindex (avvikelse × volym × jämställdhet) och kostnadssimulering; könsgapet räknas in bara när båda könen har minst k personer; referensen ur ett organisationspaket, en egen fil eller jämförelsestatistiken (ADR-28) |
 | Fördjupning | Ålder & karriär och Löneläget, som inte är lagkrav och säger det; Nästa steg hoppar över dem när de är låsta |
 | Var uppstår löneskillnaden? | Skillnaden i medellön delad på BAS-fördelning, AID inom BAS och inom AID och BAS, eller valda förklaringsvariabler, som en trappa (ADR-22, ADR-65) |

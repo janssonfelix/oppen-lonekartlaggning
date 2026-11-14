@@ -160,7 +160,7 @@ function __renderRobusthetResultExport(host) {
     const lvNot = lv && lv.not ? `<p class="gd-missing">${esc(lv.not)}</p>` : '';
     const lvHtml = (lv && lv.rows.length
         ? `<table class="data-table st-088"><thead><tr>
-             <th>Kvinnodominerat yrke</th><th class="t-mitt">Med i körningar</th><th>Bedömning</th></tr></thead>
+             <th>${termStor(termFras(T.enhet, 'en', { adjektiv: 'kvinnodominerad' }))}</th><th class="t-mitt">Med i körningar</th><th>Bedömning</th></tr></thead>
            <tbody>${lv.rows.map(r => `<tr><td>${esc(r.label)}</td>
              <td class="t-mitt" data-sort-value="${r.hits}">${r.hits} av ${r.of}</td>
              <td>${stabilBadge(r.hits, r.of)}</td></tr>`).join('')}</tbody></table>`
@@ -170,7 +170,7 @@ function __renderRobusthetResultExport(host) {
         ? '<p class="gd-missing">Kräver två referenser (lönepolitiskt ställningstagande och extern statistik) för att kunna jämföras.</p>'
         : prio && prio.rows.length
             ? `<table class="data-table st-088"><thead><tr>
-                 <th>Yrkesgrupp</th><th class="t-mitt">I topplistan</th><th>Bedömning</th></tr></thead>
+                 <th>${termStor(T.enhet.en)}</th><th class="t-mitt">I topplistan</th><th>Bedömning</th></tr></thead>
                <tbody>${prio.rows.map(r => `<tr><td>${esc(r.label)}</td>
                  <td class="t-mitt" data-sort-value="${r.hits}">${r.hits} av ${r.of}</td>
                  <td>${stabilBadge(r.hits, r.of)}</td></tr>`).join('')}</tbody></table>`
@@ -220,7 +220,7 @@ function buildFardigcheck() {
         if (utan.length) {
             out.push({
                 id: 'bas-utan-policy', level: 'warn', tab: 'benchmark',
-                title: `${utan.length} BAS-intervall saknar lönepolitisk referens`,
+                title: `${utan.length} ${termForAntal(utan.length, T.niva)} saknar lönepolitisk referens`,
                 detail: `Saknas: ${utan.join(', ')}. Grupper utan referens kan inte avvika — "inga avvikelser" kan betyda "ingen referens".`
             });
         }
@@ -241,7 +241,7 @@ function buildFardigcheck() {
             out.push({
                 id: 'maskerade', level: andel > 20 ? 'warn' : 'info', tab: null,
                 title: `${personer} personer (${svPct(andel, 0)}) ligger i ${maskerade} grupper som är för små för att redovisas`,
-                detail: 'De ingår i siffrorna per BAS-intervall men syns inte per yrkesgrupp. Vid hög andel bör du komplettera analysen per BAS-intervall.'
+                detail: `De ingår i siffrorna per ${T.niva.en} men syns inte per ${T.enhet.en}. Vid hög andel bör du komplettera analysen per ${T.niva.en}.`
             });
         }
     } catch (e) { rapporteraFel('Färdigcheck: BAS utan referens eller maskerade grupper', e); }
@@ -266,8 +266,8 @@ function buildFardigcheck() {
         if (utan.length) {
             out.push({
                 id: 'utan-benchmark', level: 'info', tab: 'benchmark',
-                title: `${utan.length} yrkesgrupp${utan.length === 1 ? '' : 'er'} saknar motsvarighet i jämförelsestatistiken`,
-                detail: 'De kan inte jämföras externt. Kontrollera att AID-koderna stämmer om antalet är oväntat högt.'
+                title: `${utan.length} ${termForAntal(utan.length, T.enhet)} i ${T.niva.en} saknar motsvarighet i jämförelsestatistiken`,
+                detail: `De kan inte jämföras externt. Kontrollera att ${T.kod.bfl} stämmer om antalet är oväntat högt.`
             });
         }
     }

@@ -18,7 +18,7 @@ let _fkVantar = /** @type {{lasIn: () => void, tidigare: any}|null} */ (null);
 let _fkRitad = /** @type {any} */ (null);
 const FK_MAX_KONVARDEN = 20;
 const FK_OVRIGA = '(övriga värden)';
-const FK_ROLLNAMN = { bas: 'BAS', yrke: 'Yrke / AID', lon: 'Lön', alder: 'Ålder', kon: 'Kön', poang: 'Poäng', ansvar: 'Ansvar' };
+const FK_ROLLNAMN = { bas: 'BAS', yrke: termStor(T.enhet.en), lon: 'Lön', alder: 'Ålder', kon: 'Kön', poang: 'Poäng', ansvar: 'Ansvar' };
 
 /** Räknar ett värde i kön-kolumnen med verktygets tolkning (kvinna, man eller null). Högst 20 olika värden. */
 function _fkRaknaKon(karta, ra, tolkat) {
@@ -104,7 +104,7 @@ function _fkSlapp() {
 const FK_TITEL = {
     'lon-arslon': 'lönen ser ut som årslön', 'lon-timlon': 'lönen ser ut som timlön', 'lon-spridning': 'stor spridning i lönen',
     'alder-saknas': 'ålder saknas', 'alder-fodelsear': 'ålder ur födelseår', 'alder-utanfor': 'ålder utanför det rimliga', 'alder-ogiltig': 'ålder som inte går att läsa',
-    'bas-ovanlig': 'ovanliga BAS-värden', 'kon-okand': 'okända kön-värden', 'bortfall-bas': 'rader utan BAS-intervall', 'bortfall-lon': 'rader utan lön',
+    'bas-ovanlig': 'ovanliga BAS-värden', 'kon-okand': 'okända kön-värden', 'bortfall-bas': `rader utan ${T.niva.en}`, 'bortfall-lon': 'rader utan lön',
 };
 /** Varningar som en annan punkt i Att göra redan säger: punkten läggs inte till två gånger. */
 const FK_SAGS_AV = { 'kon-okand': ['dq-kon'], 'bortfall-lon': ['dq-lon', 'dq-fullstandighet'], 'bortfall-bas': ['dq-fullstandighet'] };
@@ -195,7 +195,7 @@ function renderForhandskontroll() {
         `Kön-värden: ${kon || '–'}`,
         `Lön: lägst ${_fkKr(f.lon?.min)}, median ${_fkKr(f.lon?.median)}, högst ${_fkKr(f.lon?.max)} (en median över ${esc(svTal(g.arslonMedian, 0))} kr ser ut som årslön, under ${esc(svTal(g.timlonMedian, 0))} kr som timlön)`,
         `Ålder: ${f.alder ? `lägst ${esc(svTal(f.alder.min, 0))}, högst ${esc(svTal(f.alder.max, 0))} år; utanför ${g.alderMin}–${g.alderMax} år: ${esc(svTal(f.alder.utanfor, 0))}` : 'saknas i filen (valfri)'}`,
-        `BAS-intervall med färre än ${esc(svTal(f.smaBas.k, 0))} ${personOrd(f.smaBas.k)}: ${f.smaBas.bas.length ? `${f.smaBas.bas.map(esc).join(', ')} (${esc(svPct(f.smaBas.andel * 100, 1))} av raderna)` : 'inga'}`,
+        `${termStor(T.niva.fl)} med färre än ${esc(svTal(f.smaBas.k, 0))} ${personOrd(f.smaBas.k)}: ${f.smaBas.bas.length ? `${f.smaBas.bas.map(esc).join(', ')} (${esc(svPct(f.smaBas.andel * 100, 1))} av raderna)` : 'inga'}`,
     ]);
 
     const kol = fk.kolumner;

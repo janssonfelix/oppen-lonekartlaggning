@@ -93,8 +93,8 @@ describe('jamforelse: märkningen och antalen per matchningsnivå', () => {
     it('räknar raderna per nivå och säger det i en mening', () => {
         const rader = [{ statistikMatchning: 'aid-bas' }, { statistikMatchning: 'aid-bas' }, { statistikMatchning: 'aid' }, { statistikMatchning: null }];
         expect(matchningAntal(rader)).toEqual({ aidBas: 2, aid: 1, utan: 1 });
-        expect(matchningSammanfattning(rader)).toBe('Statistiken: 2 yrkesgrupper matchade på AID och BAS, 1 på endast AID, 1 utan statistik.');
-        expect(matchningSammanfattning([{ statistikMatchning: 'aid-bas' }])).toBe('Statistiken: 1 yrkesgrupp matchad på AID och BAS, 0 på endast AID, 0 utan statistik.');
+        expect(matchningSammanfattning(rader)).toBe('Statistiken: 2 AID-etiketter i BAS-intervall matchade på AID och BAS, 1 på endast AID, 1 utan statistik.');
+        expect(matchningSammanfattning([{ statistikMatchning: 'aid-bas' }])).toBe('Statistiken: 1 AID-etikett i BAS-intervall matchad på AID och BAS, 0 på endast AID, 0 utan statistik.');
         expect(matchningSammanfattning([])).toBe('');
     });
 });

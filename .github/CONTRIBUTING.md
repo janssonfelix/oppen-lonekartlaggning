@@ -26,7 +26,7 @@ datorn** — det styr hur vi tar emot bidrag.
      sviten, inget röktest). En testkörning är grön först när alla testfiler har rapporterat.
    - Varje ny utdata som lämnar verktyget (text, tabell, bild, fil) ligger i k-riggen
      (`tests/helpers/ktroskel-rigg.js`) och i riskanalysens tabell över utdata.
-   - Det som syns är sett i webbläsaren, och ett diagram också med ett underlag med många yrkesgrupper —
+   - Det som syns är sett i webbläsaren, och ett diagram också med ett underlag med många AID-etiketter —
      demodatan har bara åtta.
 4. Beskriv ändringen och varför den behövs.
 

@@ -1339,7 +1339,9 @@ function _rfUrvalListaRad(el, o, lage) {
     sok.autocomplete = 'off';
     sok.spellcheck = false;
     sok.setAttribute('data-urval-sok', '');
-    sok.setAttribute('aria-label', `Sök ${o.u.namn.toLocaleLowerCase('sv')}`);
+    // Liten begynnelsebokstav, men en förkortning i början (AID-etikett, BAS-intervall) behåller sina versaler.
+    const namnSma = /^\p{Lu}\p{Lu}/u.test(o.u.namn) ? o.u.namn : o.u.namn.charAt(0).toLocaleLowerCase('sv') + o.u.namn.slice(1);
+    sok.setAttribute('aria-label', `Sök ${namnSma}`);
     sok.placeholder = 'Sök';
     sok.value = lage && lage.sok ? lage.sok : '';
     verktyg.appendChild(sok);

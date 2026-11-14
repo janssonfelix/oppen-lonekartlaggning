@@ -65,10 +65,10 @@ async function _buildPrintReportExport() {
                 if (diagramRitat(elD)) { try { imgs[nyckel] = await diagramTillBild(elD, { bredd: 1400, hojd, utanRubrik: true }); } catch (e) { rapporteraFel(`utskrift: ${id}`, e); } }
             }
             const cloneTable = id => { const t = exportElement(id); return t ? _exportVisaAllaRader(t.cloneNode(true)).outerHTML : ''; };   // genom exportgrinden; hopfällda rader följer med
-        const matrixSection   = `<section class="page-break"><h2>Lika arbete — kvinnor och män i samma yrke</h2><p>Yrkesgrupper där skillnaden är statistiskt säkerställd och minst 3 % (verktygets storleksgräns) är värda att granska mot sakliga skäl. Kolumnen ${esc(_STS_DIR_ETIKETT)}: ${esc(_STS_DIR_TIPS)}</p>${cloneTable('matrix-table')}</section>`;
-        const skevhetSection  = `<section class="page-break"><h2>Löneskillnad per BAS-intervall</h2><p>Markeringen ${esc(_STS_DIR_ETIKETT)} vid den ojusterade skillnaden: ${esc(_STS_DIR_TIPS)}</p>${cloneTable('paygap-table')}<h2 class="pr-ned">Ojämn könsfördelning (under 40 % av ett kön)</h2>${cloneTable('skevhet-table')}</section>`;
+        const matrixSection   = `<section class="page-break"><h2>Lika arbete — kvinnor och män i samma ${T.enhet.en}</h2><p>${termStor(T.enhet.fl)} där skillnaden är statistiskt säkerställd och minst 3 % (verktygets storleksgräns) är värda att granska mot sakliga skäl. Kolumnen ${esc(_STS_DIR_ETIKETT)}: ${esc(_STS_DIR_TIPS)}</p>${cloneTable('matrix-table')}</section>`;
+        const skevhetSection  = `<section class="page-break"><h2>Löneskillnad per ${T.niva.en}</h2><p>Markeringen ${esc(_STS_DIR_ETIKETT)} vid den ojusterade skillnaden: ${esc(_STS_DIR_TIPS)}</p>${cloneTable('paygap-table')}<h2 class="pr-ned">Ojämn könsfördelning (under 40 % av ett kön)</h2>${cloneTable('skevhet-table')}</section>`;
             const bildSektion = (rubrik, src, alt) => (src ? `<section class="page-break"><h2>${rubrik}</h2><img src="${src}" alt="${alt}"></section>` : '');
-        const rapportSection  = `<section class="page-break"><h2>Löneöversikt (organisation · kön · yrke)</h2>${cloneTable('rapport-table')}</section>`;
+        const rapportSection  = `<section class="page-break"><h2>Löneöversikt (organisation · kön · ${T.enhet.en})</h2>${cloneTable('rapport-table')}</section>`;
         const bmSection       = state.statistik.length ? `<section class="page-break"><h2>Jämförelse mot ${esc(_jmfKallaNamn(jamforelseAktivKalla()))}${jamforelseUrvalText() ? ` (${esc(jamforelseUrvalText())})` : ''}</h2>${cloneTable('benchmark-table')}</section>` : '';
         const bilagaSection   = `
             <section class="page-break">
@@ -98,9 +98,9 @@ async function _buildPrintReportExport() {
             bilagor = `<section class="page-break"><h1 class="pr-liten-rubrik">Bilagor: tabeller och diagram ur flikarna</h1>
                 <p class="pr-dampad">Underlaget bakom avsnitten, som det står i verktygets flikar. Grupper under tröskeln är utelämnade på samma sätt som där.</p></section>`
                 + matrixSection + skevhetSection
-                + bildSektion('Löneutveckling mot ålder (alla BAS-intervall)', imgs.kon, 'Punktdiagram: lön mot ålder per kön')
+                + bildSektion(`Löneutveckling mot ålder (alla ${T.niva.fl})`, imgs.kon, 'Punktdiagram: lön mot ålder per kön')
                 + bildSektion('Lönefördelning per kön', imgs.box, 'Lådagram över lönefördelningen')
-                + bildSektion('Lönespridning per BAS-intervall och kön', imgs.lador, 'Lådagram över lönerna per BAS-intervall och kön')
+                + bildSektion(`Lönespridning per ${T.niva.en} och kön`, imgs.lador, `Lådagram över lönerna per ${T.niva.en} och kön`)
                 + rapportSection + _utskriftReferenserHtml(cloneTable) + bmSection + bilagaSection;
         }
         // Tröskeln står i metodbilagan; saknas den i urvalet står den som en egen rad sist.

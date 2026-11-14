@@ -23,7 +23,7 @@ function jamforelseAktivKalla() { return 'statistik'; }
 function jamforelseUrvalText() {
     const delar = [];
     if (_jmfVal.bas) delar.push(`BAS ${_jmfVal.bas}`);
-    if (_jmfVal.sektor) delar.push(`sektor ${_jmfVal.sektor}`);
+    if (_jmfVal.sektor) delar.push(`${T.huvudomrade.en} ${_jmfVal.sektor}`);
     return delar.length ? `Urval: ${delar.join(' · ')}` : '';
 }
 function _jmfFyllVal(sel, varden, valt) {
@@ -116,7 +116,7 @@ function generateBenchmark() {
             + `<td data-sort-value="${matchSort[r.statistikMatchning] || 3}">${esc(_jfMatchningEtikett(r.statistikMatchning))}</td><td class="num" data-sort-value="${r.n}">${r.n}</td>`
             + `${block(r, 'p10')}${block(r, 'median')}${block(r, 'p90')}</tr>`;
     }
-    tbody.innerHTML = html || '<tr><td colspan="13" class="farg-dampad pad-24 ta-mitt">Inga yrken i urvalet.</td></tr>';
+    tbody.innerHTML = html || `<tr><td colspan="13" class="farg-dampad pad-24 ta-mitt">Inga ${T.enhet.fl} i urvalet.</td></tr>`;
     if (typeof flerKolumner === 'function') flerKolumner('benchmark-table', JMF_DOLDA_KOLUMNER, 'jamforelse');
     try { ritaJamforelseDiagram(rader, kalla); } catch (e) { rapporteraFel('Löneläget: diagrammen', e); }
 
@@ -128,7 +128,7 @@ function generateBenchmark() {
     };
     const utelamnadeIUrval = utelamnade.filter(iUrval);
     const antal = _jfMatchningAntal(rader);
-    const grupper = n => `${n} ${n === 1 ? 'yrkesgrupp' : 'yrkesgrupper'}`;
+    const grupper = n => `${n} ${termForAntal(n, T.enhet)} i ${T.niva.en}`;
     const urval = jamforelseUrvalText();
     setAudit('benchmark', {
         title: 'Jämförelsestatistik',
@@ -136,14 +136,14 @@ function generateBenchmark() {
         usedInAnalysis: rader.length,
         analysisExclusions: [
             ...(urval ? [[esc(urval), '']] : []),
-            ...(utelamnadeIUrval.length ? [[`Yrke×BAS-grupper för små (k-anonymitet n&lt;${kTroskel()})`, utelamnadeIUrval.length]] : []),
-            ...(utanMatch ? [[`Yrke×BAS-grupper utan median i ${esc(_jmfKallaNamn(kalla))}`, utanMatch]] : [])
+            ...(utelamnadeIUrval.length ? [[`${termStor(T.enhet.fl)} i ${T.niva.en} för små (k-anonymitet n&lt;${kTroskel()})`, utelamnadeIUrval.length]] : []),
+            ...(utanMatch ? [[`${termStor(T.enhet.fl)} i ${T.niva.en} utan median i ${esc(_jmfKallaNamn(kalla))}`, utanMatch]] : [])
         ],
         formler: [
-            ['AID-kod (matchningsnyckel)', 'Inledande sifferprefix av yrkesnamn (t.ex. "402010 Förskollärare" ger 402010)'],
-            ['Percentiler', '<code>P10 = kvantil 0,1</code>, <code>median</code>, <code>P90 = kvantil 0,9</code> av organisationens löner i yrke och BAS'],
+            [`${termStor(T.kod.en)} (matchningsnyckel)`, `Inledande sifferprefix av ${T.enhet.bf} (t.ex. "402010 Förskollärare" ger 402010)`],
+            ['Percentiler', `<code>P10 = kvantil 0,1</code>, <code>median</code>, <code>P90 = kvantil 0,9</code> av organisationens löner med samma ${T.enhet.en} i samma ${T.niva.en}`],
             ['Diff (%)', '<code>(organisationens värde / jämförelsens värde − 1) × 100</code>, per percentil'],
-            ['Matchning', 'Jämförelsestatistiken: först AID + BAS, annars AID utan BAS; en rad för ett annat BAS-intervall används aldrig. Ställningstagandet: AID + BAS, annars AID, annars BAS. '
+            ['Matchning', `Jämförelsestatistiken: först AID + BAS, annars AID utan BAS; rader för andra ${T.niva.fl} används aldrig. Ställningstagandet: AID + BAS, annars AID, annars BAS. `
                 + `I urvalet: ${grupper(antal.aidBas)} på AID + BAS, ${antal.aid} på endast AID, ${antal.utan} utan statistik.`]
         ],
         notes: [
@@ -174,12 +174,12 @@ function ritaJamforelseDiagram(rader, kalla) {
         <h3 class="jmf-diagram-rubrik">Var ligger vi i marknadens spann?</h3>
         <div class="jmf-diagram-yta"><div id="chart-jamforelse-spann"></div></div>
         <p id="jmf-spann-not" class="muted"></p>
-        <h3 class="jmf-diagram-rubrik">Vilka yrken avviker mest?</h3>
+        <h3 class="jmf-diagram-rubrik">Vilka ${T.enhet.fl} avviker mest?</h3>
         <div class="jmf-diagram-yta"><div id="chart-jamforelse-avvikelse"></div></div>
         <p id="jmf-avvikelse-not" class="muted"></p>`;
     if (!rader.length) {
-        /** @type {HTMLElement} */ (document.getElementById('jmf-spann-not')).textContent = 'Inga yrken i urvalet.';
-        /** @type {HTMLElement} */ (document.getElementById('jmf-avvikelse-not')).textContent = 'Inga yrken i urvalet.';
+        /** @type {HTMLElement} */ (document.getElementById('jmf-spann-not')).textContent = `Inga ${T.enhet.fl} i urvalet.`;
+        /** @type {HTMLElement} */ (document.getElementById('jmf-avvikelse-not')).textContent = `Inga ${T.enhet.fl} i urvalet.`;
         return;
     }
     try { _ritaJmfSpann(rader, kalla, namn); } catch (e) { rapporteraFel('Löneläget: spanndiagrammet', e); }
@@ -194,7 +194,7 @@ function _ritaJmfSpann(rader, kalla, namnLitet) {
         : rader;
     const not = /** @type {HTMLElement} */ (document.getElementById('jmf-spann-not'));
     const saknarBand = visa.some(r => r[kalla].p10 == null || r[kalla].p90 == null);
-    not.textContent = (rader.length > _JMF_MAX ? `Visar de ${_JMF_MAX} största yrkena av ${rader.length} — tabellen har alla. ` : '')
+    not.textContent = (rader.length > _JMF_MAX ? `Visar de ${_JMF_MAX} största ${T.enhet.bfl} av ${rader.length} — tabellen har alla. ` : '')
         + (saknarBand ? `Där ${namnLitet} saknar P10 eller P90 visas bara medianen.` : '');
     ritaFigur('chart-jamforelse-spann', _jmfSpannFigur(visa, kalla, namn, namnLitet));
 }
@@ -206,7 +206,7 @@ function _jmfSpannFigur(visa, kalla, namn, namnLitet) {
     const harBand = v => v.p10 != null && v.p90 != null;
     const kr = v => _figTalformat(v, 'kr');
     const refNamn = plotNamn(namn), org = plotNamn(orgNamn());
-    return { beskrivning: `Organisationens lönespann från P10 till P90 per yrke, med medianen som prick, ovanpå spannet i ${namnLitet}. Samma värden står i tabellen nedan.`,
+    return { beskrivning: `Organisationens lönespann från P10 till P90 per ${T.enhet.en}, med medianen som prick, ovanpå spannet i ${namnLitet}. Samma värden står i tabellen nedan.`,
         urval: [URVAL.bas, URVAL.yrkesgrupp, URVAL.sektor, URVAL.matchning, URVAL.antal], x: { skala: 'linjar', titel: 'Månadslön (kr)', format: 'kr' }, y: { skala: 'band', ordning: visa.map(etikett), etikettMax: 48 },
         hojd: 110 + 26 * visa.length, paneler: 'auto',   // fler än femton yrken: små multiplar
         lager: [
@@ -226,13 +226,13 @@ function _jmfSpannFigur(visa, kalla, namn, namnLitet) {
 function _ritaJmfAvvikelse(rader, kalla, namn) {
     const rang = _jfRangordning(rader, kalla);
     const not = /** @type {HTMLElement} */ (document.getElementById('jmf-avvikelse-not'));
-    if (!rang.length) { not.textContent = `Inga yrken har en median i både organisationen och ${namn}.`; return; }
+    if (!rang.length) { not.textContent = `Inga ${T.enhet.fl} har en median i både organisationen och ${namn}.`; return; }
     // Vid stort urval: de 25 med störst avvikelse (åt båda hållen), i rangordning.
     const visa = rang.length > _JMF_MAX
         ? [...rang].sort((a, b) => Math.abs(b.diff[kalla].median.pct) - Math.abs(a.diff[kalla].median.pct)).slice(0, _JMF_MAX)
             .sort((a, b) => a.diff[kalla].median.pct - b.diff[kalla].median.pct)
         : rang;
-    not.textContent = rang.length > _JMF_MAX ? `Visar de ${_JMF_MAX} yrkena med störst avvikelse av ${rang.length} — tabellen har alla.` : '';
+    not.textContent = rang.length > _JMF_MAX ? `Visar de ${_JMF_MAX} ${T.enhet.bfl} med störst avvikelse av ${rang.length} — tabellen har alla.` : '';
     // Klick på ett yrke markerar dess rad i tabellen.
     ritaFigur('chart-jamforelse-avvikelse', _jmfAvvikelseFigur(visa, kalla, namn), { vidKlick: d => { if (d && d.aid != null) jamforelseMarkeraRad(d.aid, d.bas); } });
 }
@@ -248,7 +248,7 @@ function _jmfAvvikelseFigur(visa, kalla, namn) {
     const tipsRad = r => [[_jmfEtikett(r)], ...[['P10', 'p10'], ['Median', 'median'], ['P90', 'p90']].filter(([, m]) => diff(r, m) != null).map(([t, m]) => [t, _jmfPct(diff(r, m))])];
     const streck = (serie, farg, m) => ({ marke: 'punkt', symbol: 'streck', serie, farg, storlek: 5,
         data: visa.filter(r => diff(r, m) != null).map(r => ({ ...bas(r), x: diff(r, m), r })), tips: d => tipsRad(d.r) });
-    return { beskrivning: `Skillnaden i lön mot ${namn} per yrke, rangordnad från mest negativ: medianen som punkt, och skillnaden i P10 och P90 som streck med ett spann emellan. Samma värden står i tabellen nedan.`,
+    return { beskrivning: `Skillnaden i lön mot ${namn} per ${T.enhet.en}, rangordnad från mest negativ: medianen som punkt, och skillnaden i P10 och P90 som streck med ett spann emellan. Samma värden står i tabellen nedan.`,
         urval: [URVAL.bas, URVAL.yrkesgrupp, URVAL.sektor, URVAL.matchning, URVAL.antal], x: { skala: 'linjar', titel: `Skillnad mot ${namn} (%)`, nollinje: true }, y: { skala: 'band', ordning: visa.map(_jmfEtikett), etikettMax: 48 },
         hojd: 110 + 28 * visa.length, paneler: 'auto',
         lager: [
@@ -275,7 +275,7 @@ function renderStatistikLage() {
     kort.hidden = false;
     const rader = jamforelseUnderlag().rader.filter(r => _rrLage(r.org.median, r.statistik).pos != null);
     if (!rader.length) {
-        _lpIngetDiagram(el, 'Jämförelsestatistiken har inte P10 och P90 för någon yrkesgrupp i underlaget, så läget i statistikens spann kan inte visas. Medianerna står under Mot jämförelsestatistiken.');
+        _lpIngetDiagram(el, `Jämförelsestatistiken har inte P10 och P90 för ${termAdjektiv({ utrum: 'någon', neutrum: 'något', plural: 'några' }, T.enhet)} ${T.enhet.en} i underlaget, så läget i statistikens spann kan inte visas. Medianerna står under Mot jämförelsestatistiken.`);
         return;
     }
     ritaFigur(el, _jmfStatlageFigur(rader), { hojd: 460 });
@@ -300,7 +300,7 @@ function _jmfStatlageFigur(rader) {
         .map(([matchning, ofylld]) => ({ marke: 'punkt', serie: `${klass} · ${_jfMatchningEtikett(matchning)}`, farg,
             ...(ofylld ? { ofylld: true } : { kant: FARG.vit }), data: pts.filter(p => p.matchning === _jfMatchningEtikett(matchning) && hor(p.kvAndel)).map(p => ({ ...p, konsdom: klass })), tips })));
     const linje = (y, etikett) => ({ typ: 'linje', y, streck: 'streckad', farg: PALETTE.semantic.referens, tjocklek: 1, etikett, textfarg: PALETTE.semantic.referens });
-    return { beskrivning: 'Var varje yrkesgrupps medianlön ligger i jämförelsestatistikens spann per BAS-intervall: 0 är statistikens P10 och 100 dess P90. '
+    return { beskrivning: `Var varje ${termGenitiv(T.enhet.en)} medianlön ligger i jämförelsestatistikens spann per ${T.niva.en}: 0 är statistikens P10 och 100 dess P90. `
             + 'Fylld punkt: statistiken matchad på AID och BAS. Ofylld punkt: endast AID. Hela underlaget, oberoende av filtren under Mot jämförelsestatistiken; '
             + 'läget räknas ur P10, median och P90 i tabellen där.',
         urval: [URVAL.bas, URVAL.yrkesgrupp, URVAL.sektor, URVAL.matchning, URVAL.konsdominans, URVAL.antal], x: { skala: 'band', ordning }, y: { skala: 'linjar', titel: 'Läget i statistikens spann (%)' },

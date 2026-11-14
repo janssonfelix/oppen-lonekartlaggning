@@ -18,13 +18,15 @@ Exportera en personallista (en rad per anställd) med dessa kolumner:
 | Fält | Obligatoriskt | Vanliga källkolumnnamn (auto-matchas) |
 |---|---|---|
 | BAS-intervall | Ja | `BAS`, `BAS-intervall` |
-| AID / yrke | Ja | `AID`, `Yrke`, `Yrkesgrupp`, `Befattning`, `AID-etikett` |
+| AID-etikett | Ja | `AID-etikett`, `AID`, `Yrke`, `Yrkesgrupp`, `Befattning` |
 | Månadslön | Ja | `Månadslön`, `Lön` — heltidsomräknad fast månadslön (se avsnitt 1b) |
 | Ålder *(eller födelseår)* | *Rekommenderad* | `Ålder`, `Alder` — innehåller cellerna födelseår räknas de om automatiskt. Utan ålder körs analysen utan åldersjustering och fliken Ålder & karriär visas inte |
 | Kön | Ja | `Kön`, `Kon` (K/M, Kvinna/Man m.fl. tolkas automatiskt) |
 | Poäng *(arbetsvärdering)* | Nej | `Poäng`, `Arbetsvärdering` — valfri krav-proxy för likvärdigt arbete |
 | Ansvarskod *(AID)* | Nej | `Ansvarskod`, `AID-ansvar`, `Ansvarsnivå` — A, B, C, L, F, M, 1001 eller 1002, med valfri lokal sista position (t.ex. `C1`); flera koder per person skiljs med mellanslag |
 
+- **AID-etiketten** är AID-koden med etikettnamnet, till exempel `402010 Förskollärare`. Verktyget kallar fältet
+  AID-etikett; i uttaget heter kolumnen ofta *Yrke* eller *Befattning*, och verktyget känner igen de namnen.
 - **Ansvarskoden** gör det möjligt att skilja chefer, funktionsansvariga och förstelärare
   från kollegerna med samma AID-etikett. Verktyget grupperar koderna i tre ansvarsgrupper
   (ledningsansvar, särskilt uppdrag, inget särskilt ansvar). Kolumnen läses bara om minst
@@ -94,8 +96,8 @@ slipper du göra om den nästa år:
    personallista (konfigurationsfilen)*. Pekar du sedan ut en annan kolumn än profilens för
    hand står det *Känd uppsättning, ändrad: …*.
 
-En importprofil innehåller **bara rubrikernas namn**: vilken rubrik som är BAS-intervall, yrke,
-lön och så vidare. Den anger också vilka rubriker som måste finnas för att profilen ska gälla. Inga värden
+En importprofil innehåller **bara rubrikernas namn**: vilken rubrik som är BAS-intervall,
+AID-etikett, lön och så vidare. Den anger också vilka rubriker som måste finnas för att profilen ska gälla. Inga värden
 ur filen följer med. Verktyget avvisar en profil med en rubrik längre än 80 tecken eller med
 något som liknar ett personnummer eller en e-postadress.
 
@@ -151,7 +153,7 @@ den mätmånad du väljer) och gör så här:
 | Fält i verktyget | Ta fram så här |
 |---|---|
 | **BAS-intervall** | Ofta ett lokalt fält på befattningen eller anställningen (arbetsvärderingens resultat). Finns det inte i lönesystemet: koppla på det i Excel från arbetsvärderingens lista per befattning, med AID-koden eller befattningskoden som nyckel. |
-| **AID / yrke** | AID-koden (sex tecken) med etiketten, t.ex. `402010 Förskollärare`. Använd samma kod som i statistikuttaget. |
+| **AID-etikett** | AID-koden (sex tecken) med etikettnamnet, t.ex. `402010 Förskollärare`. Kolumnen heter ofta *Yrke* eller *Befattning*. Använd samma kod som i statistikuttaget. |
 | **Månadslön** | **Heltidslön** (fast månadslön omräknad till heltid), inte utbetald lön. Finns bara faktisk lön och sysselsättningsgrad: räkna lön / sysselsättningsgrad i Excel (avsnitt 1b). |
 | **Ålder** | Ta ut **födelseår** — inte personnummer. Verktyget räknar om födelseår till ålder. Går det bara att få personnumret: räkna fram födelseåret i Excel och **ta bort personnummerkolumnen innan filen sparas**. |
 | **Kön** | Könsfältet (K/M eller Kvinna/Man). Juridiskt kön ur folkbokföringen är det vanliga. |

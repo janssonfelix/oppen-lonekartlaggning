@@ -89,7 +89,7 @@ function buildActionChecklist({ endastGrupper = false } = {}) {
                 items.push({
                     id: 'gap-bas-' + b, kategori: 'Lika arbete', prioritet: 'medel',
                     titel: `BAS ${b}: kvinnors medianlön ${andelAvMan(gap)} av mäns`,   // rå skillnad: samma form som i Lika arbete
-                    detalj: `Rå skillnad som är statistiskt säkerställd och minst 3 % i ett jämförbart BAS-intervall.${direktiv}${forklaring} Pröva om skillnaden har sakliga skäl.`,
+                    detalj: `Rå skillnad som är statistiskt säkerställd och minst 3 % i ${termArtikel(T.niva)} ${termFras(T.niva, 'en', { adjektiv: 'jämförbar' })}.${direktiv}${forklaring} Pröva om skillnaden har sakliga skäl.`,
                     tab: 'matrix', källa: 'Lika arbete'
                 });
             });
@@ -102,7 +102,7 @@ function buildActionChecklist({ endastGrupper = false } = {}) {
                     id: 'reg-oforklarat', kategori: 'Lika arbete',
                     prioritet: Math.abs(reg.konPct) >= _STS_STORLEK ? 'hög' : 'medel',
                     titel: `Oförklarad löneskillnad i hela organisationen: kvinnor har ${_agPct(reg.konPct)} % ${_agRiktning(reg.konPct)} lön än män (${reg.fras ? `efter ${reg.fras}` : 'inget räknat bort'})`,
-                    detalj: 'En oförklarad skillnad är inte samma sak som en osaklig. Pröva skillnaden per yrkesgrupp i Lika arbete.',
+                    detalj: `En oförklarad skillnad är inte samma sak som en osaklig. Pröva skillnaden per ${T.enhet.en} i Lika arbete.`,
                     tab: 'struktur', källa: 'Regressionen i Lönestruktur'
                 });
             }
@@ -157,7 +157,7 @@ function buildActionChecklist({ endastGrupper = false } = {}) {
                     prioritet: p.gapPct >= 10 ? 'hög' : 'medel',
                     titel: `${p.kvLabel || p.kvAid} (BAS ${p.kvBas}, ${svPct(p.kvKvinnoPct, 0)} kv) ligger ${_agPct(p.gapPct)} % under ${p.maLabel || p.maAid} (${svPct(p.maKvAndel, 0)} kv${p.maKlass ? `, ${konsklassOrd(p.maKlass)}` : ''})`,
                     // ADR-60: jämförelseyrket är ett yrke som inte är kvinnodominerat; klassen står i titeln.
-                    detalj: `Organisationens median ${Math.round(p.kvMedian).toLocaleString('sv-SE')} kr mot ${p.jamforKalla === 'extern' ? 'jämförelsestatistikens' : 'jämförelseyrkets'} ${Math.round(p.maMedian).toLocaleString('sv-SE')} kr. Granska om kraven är likvärdiga och dokumentera sakliga skäl.`,
+                    detalj: `Organisationens median ${Math.round(p.kvMedian).toLocaleString('sv-SE')} kr mot ${p.jamforKalla === 'extern' ? 'jämförelsestatistikens' : termGenitiv(T.jamforelse.bf)} ${Math.round(p.maMedian).toLocaleString('sv-SE')} kr. Granska om kraven är likvärdiga och dokumentera sakliga skäl.`,
                     tab: 'likvardighet',
                     källa: 'Likvärdighetsanalys'
                 });
@@ -188,7 +188,7 @@ function buildActionChecklist({ endastGrupper = false } = {}) {
                             titel: `BAS ${p.bas}: kvinnor ${_agPct(p.gapPct)} % ${_agRiktning(p.gapPct)} lön efter ålderskontroll — titta närmare`,
                             detalj: `Statistiskt säkerställt också efter korrigering för många samtidiga tester (p=${p.pValue < 0.001 ? '< 0,001' : _agTal(p.pValue, 3)}, q=${q != null && q < 0.001 ? '< 0,001' : (q != null ? _agTal(q, 3) : '—')}). Minst 3 % (verktygets storleksgräns) — pröva skillnaden mot sakliga skäl.`,
                             tab: 'matrix',
-                            källa: 'Regressionen per BAS-intervall i Lika arbete'
+                            källa: `Regressionen per ${T.niva.en} i Lika arbete`
                         });
                     }
                 });

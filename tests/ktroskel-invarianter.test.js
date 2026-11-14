@@ -239,11 +239,11 @@ describe('I6: underlaget i exportläget, precis under och precis över skyddsreg
         const w = fonsterUnderlag(10);
         const { el, ruta } = valjBaraVard(w, id);
         expect(ruta.hasAttribute('aria-invalid'), id).toBe(false);
-        expect(el._rfUnderlagText, id).toBe(`sektor ${VARD} (60 personer)`);
+        expect(el._rfUnderlagText, id).toBe(`huvudområde ${VARD} (60 personer)`);
         expect(el._rfUnderlagFigur, id).toBeTruthy();
         expect(el._rfUnderlagFigur.beskrivning, id).toContain(VARD);
         const rader = w.__chartExportRows(el);
-        expect(rader.some(r => r[0] === `Räknat för: sektor ${VARD} (60 personer)`), id).toBe(true);
+        expect(rader.some(r => r[0] === `Räknat för: huvudområde ${VARD} (60 personer)`), id).toBe(true);
         expect(normalisera(rader.join('\n')), id).not.toContain(String(LEDNING_MAN));
     });
     // Skärmen maskerar inget (ADR-51, tröskeln 1): där görs valet. Exporten ritar diagrammet i exportläget med den
@@ -256,18 +256,18 @@ describe('I6: underlaget i exportläget, precis under och precis över skyddsreg
             expect(el0._figur.underlag.k, id).toBe(1);
             const hel = w.eval('medExportLage')(() => w.__chartExportRows(w.document.getElementById(id)));
             valjBaraVard(w, id, [HANDL, 'Ledningsarbete', VARD]);
-            expect(w.document.getElementById(id)._rfUnderlagText, id).toBe(`sektor ${VARD} (60 personer)`);
+            expect(w.document.getElementById(id)._rfUnderlagText, id).toBe(`huvudområde ${VARD} (60 personer)`);
             const rader = w.eval('medExportLage')(() => w.__chartExportRows(w.document.getElementById(id)));
             const text = rader.map(r => r.join(' | ')).join('\n');
             if (raknat) {
-                expect(text, `${id}, ${man} män`).toContain(`Räknat för: sektor ${VARD} (60 personer)`);
+                expect(text, `${id}, ${man} män`).toContain(`Räknat för: huvudområde ${VARD} (60 personer)`);
                 expect(normalisera(text), id).not.toContain(String(LEDNING_MAN));
             } else {
                 expect(text, `${id}, ${man} män`).not.toContain('Räknat för');
                 expect(rader.slice(1), id).toEqual(hel.slice(1));
             }
             // Tillbaka på skärmen gäller valet igen.
-            expect(w.document.getElementById(id)._rfUnderlagText, id).toBe(`sektor ${VARD} (60 personer)`);
+            expect(w.document.getElementById(id)._rfUnderlagText, id).toBe(`huvudområde ${VARD} (60 personer)`);
         }
     });
 });

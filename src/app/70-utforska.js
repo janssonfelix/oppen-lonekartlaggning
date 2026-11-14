@@ -14,9 +14,9 @@
 // ====================================================================
 
 const EXPLORE_DIM_LABEL = {
-    bas: 'BAS-intervall', aid: 'Yrkesgrupp (AID)', alder: 'Åldersgrupp', kon: 'Kön',
-    aidbas: 'Yrkesgrupp inom BAS', lonespann: 'Lönespann', alla: 'Hela urvalet',
-    sektor: 'Sektor (AID-huvudområde)', aidniva: 'AID-mellannivå'
+    bas: termStor(T.niva.en), aid: termStor(T.enhet.en), alder: 'Åldersgrupp', kon: 'Kön',
+    aidbas: `${termStor(T.enhet.en)} i ${T.niva.en}`, lonespann: 'Lönespann', alla: 'Hela urvalet',
+    sektor: termStor(T.huvudomrade.en), aidniva: 'AID-mellannivå'
 };
 const EXPLORE_MATT_LABEL = {
     median: 'Median månadslön', medel: 'Medellön', n: 'Antal (n)',
@@ -442,7 +442,7 @@ function explorerHandleClick(d) {
     if (!mal) return;
     if (mal.hopslagen) {
         _renderExplorerNote(_explorerState.model,
-            'Gruppen har slagits ihop av flera små yrken och har därför ingen gruppdossier. Stäng av "Slå ihop små yrkesgrupper till nästa AID-nivå" för att se yrkena var för sig.');
+            `Gruppen har slagits ihop av flera små ${T.enhet.fl} och har därför ingen gruppdossier. Stäng av "Slå ihop små ${T.enhet.fl} till nästa AID-nivå" för att se dem var för sig.`);
         return;
     }
     if (mal.saknas) {
@@ -487,7 +487,7 @@ function explorerTillRapport() {
     const spec = _explorerSpec();
     const recept = _trNytt(spec, { namn: namnEl ? namnEl.value : '', upprepa: perBas ? 'bas' : null });
     if (!recept) { satt('Vyn går inte att spara som tabell.', false); return null; }
-    if (perBas && !recept.upprepa) { satt('En tabell per BAS-intervall går inte när raderna eller kolumnerna redan är BAS-intervall.', false); return null; }
+    if (perBas && !recept.upprepa) { satt(`En tabell per ${T.niva.en} går inte när raderna eller kolumnerna redan är ${T.niva.fl}.`, false); return null; }
     state.rapportTabeller = [...(state.rapportTabeller || []), recept];
     if (namnEl) namnEl.value = '';
     satt(`Tillagd: ${recept.namn} (${state.rapportTabeller.length} ${state.rapportTabeller.length === 1 ? 'egen tabell' : 'egna tabeller'}). Ordningen ändras under Exportera.`, true);

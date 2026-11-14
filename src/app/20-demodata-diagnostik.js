@@ -106,7 +106,7 @@ function runDiagnostics() {
 
     // Test 4: BAS-intervall korrekt antal
     tests.push({
-        name: 'Antal unika BAS-intervall = 5 (testdatan har A–E)',
+        name: `Antal unika ${T.niva.fl} = 5 (testdatan har A–E)`,
         expected: '5',
         actual: getBasIntervals().length.toString(),
         pass: getBasIntervals().length === 5

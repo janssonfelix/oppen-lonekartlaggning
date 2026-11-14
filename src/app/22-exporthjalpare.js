@@ -26,14 +26,14 @@ function _methodAppendixData() {
     const modell = forklaringsmodell();
     const beskrivning = _rgModellBeskrivning(modell);
     const modellText = (medAlder && !modell.yrkesgrupp
-        ? beskrivning.replace('BAS-intervall (indikatorer)', 'BAS-intervall (indikatorvariabler, första BAS som referens)')
+        ? beskrivning.replace(`${T.niva.en} (indikatorer)`, `${T.niva.en} (indikatorvariabler, första BAS som referens)`)
         : beskrivning) + (modell.yrkesgrupp ? ', skattat med inomtransformation' : '');
     // Steget + Yrkesgrupp räknas på modellens ålder och bara när BAS är med (computeSequentialGap).
     const stegAlder = medAlder ? (modell.alder ? ' utöver ålder' : ', utan ålder (bortvald i förklaringsmodellen)') : ', utan ålder (lönefilen saknar ålder)';
     const stegText = !modell.bas
-        ? 'Räknas inte: steget förutsätter BAS-intervall, som är bortvalt i förklaringsmodellen'
-        : `Löneskillnad mellan könen med fasta effekter för yrkesgrupp inom BAS (AID×BAS)${stegAlder}, skattat med inomtransformation; `
-            + (modell.yrkesgrupp ? 'yrkesgrupp inom BAS är vald i förklaringsmodellen, så steget är huvudtalet' : 'visas som sista steg, ingår inte i huvudtalet');
+        ? `Räknas inte: steget förutsätter ${T.niva.en}, som är ${termAdjektiv('bortvald', T.niva)} i förklaringsmodellen`
+        : `Löneskillnad mellan könen med fasta effekter för ${T.enhet.en} inom BAS (AID×BAS)${stegAlder}, skattat med inomtransformation; `
+            + (modell.yrkesgrupp ? `${T.enhet.en} inom BAS är vald i förklaringsmodellen, så steget är huvudtalet` : 'visas som sista steg, ingår inte i huvudtalet');
     return [
         ['Verktyg', `Öppen lönekartläggning (v${ver})`],
         ['Exporttidpunkt', new Date().toLocaleString('sv-SE')],
@@ -48,14 +48,14 @@ function _methodAppendixData() {
         ['Modell — oförklarad skillnad', medAlder
             ? `OLS på log(månadslön) ~ ${modellText}; HC3-robusta standardfel (Long & Ervin 2000)`
             : `OLS på log(månadslön) ~ ${modellText}; lönefilen saknar ålder, så analysen körs utan åldersjustering; HC3-robusta standardfel (Long & Ervin 2000)`],
-        ['Steg + Yrkesgrupp (dekomponeringen)', stegText],
+        [`Steg ${_rgStegEtikett(_RG_STEG_YRKE)} (dekomponeringen)`, stegText],
         // Var uppstår löneskillnaden (ADR-65): raden finns bara när variablerna inte är standardvalet BAS och AID.
         ...(typeof gapVariabler === 'function' && !_guVariablerArStandard(gapVariabler())
             ? [['Var uppstår löneskillnaden (variabler)', gapVariabler().length > 1
                 ? `Skillnaden i medellön delas med ${_guVariablerIText(gapVariabler())}, i den ordningen (standard: BAS och AID). Ordningen påverkar delarna.`
                 : `Skillnaden i medellön delas med ${_guVariablerIText(gapVariabler())} (standard: BAS och AID).`]] : []),
         ['Ålder & karriär (tvärsnitt)', 'Lön mot ålder och livscykelmodellen bygger på ett tvärsnitt: de visar skillnader mellan åldersgrupper i dag, inte hur en persons lön utvecklas över karriären (kohorteffekter)'],
-        ['Trattdiagrammet', 'Med färre än tio yrkesgrupper säger trattens form lite; varje grupp bedöms då för sig i tabellen. Punktens bedömning bygger på en omkastning av könen inom gruppen'],
+        ['Trattdiagrammet', `Med färre än tio ${T.enhet.fl} i ${T.niva.en} säger trattens form lite; varje grupp bedöms då för sig i tabellen. Punktens bedömning bygger på en omkastning av könen inom gruppen`],
         ['p-värden', 't-fördelning vid df < 100, annars normalfördelning; Benjamini-Hochberg (FDR) vid multipla grupptest'],
         ['Konfidensintervall', 'Bootstrap-percentil (B ≥ 1000 sampel) på mediankvot kvinna/man'],
         ['Signifikansnivå', 'α = 0,05'],
@@ -63,7 +63,7 @@ function _methodAppendixData() {
             + (kInstalld() < K_STANDARD ? ` Tröskeln är sänkt från standardvärdet ${K_STANDARD}.` : '')],
         ['Referens för lönenivåer', referensNamn() + referensKalla()],
         ['Jämförelsestatistik', statistikBeskrivning()],
-        ['Mått på kraven (likvärdigt arbete)', state.arbetsvardering ? 'Arbetsvärderingspoäng (ur lönefilens Poäng-kolumn)' : 'BAS-intervall (rangordning)'],
+        ['Mått på kraven (likvärdigt arbete)', state.arbetsvardering ? 'Arbetsvärderingspoäng (ur lönefilens Poäng-kolumn)' : `${T.niva.en} (rangordning)`],
         ['Löneskillnadens tecken', 'Verktyget räknar skillnaden som (kvinnor − män) / män och visar den som kvinnors lön i procent av mäns (under 100 = kvinnor lägre). EU-lönerapporten och rapportens avsnitt om lönetransparens redovisar i stället direktivets löneskillnad, (män − kvinnor) / män i procent: positivt tal = kvinnor lägre. Talet är lika stort.'],
         ['Tolkningsregel', 'En oförklarad skillnad är en statistisk signal om var man bör titta närmare, inte ett bevis för en osaklig löneskillnad. Den bedömningen görs av organisationen.'],
         ['Rättslig ram', 'Diskrimineringslagen 3 kap. (lönekartläggning); direktiv (EU) 2023/970 om lönetransparens. De enskilda lagrummen står i docs/utveckling/lagrum.md.']

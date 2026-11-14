@@ -16,8 +16,8 @@ inga nätverksanrop och ingen lagring. **Lönedata lämnar aldrig datorn.**
 Lika och likvärdigt arbete, regression och oförklarad löneskillnad, direktivets rapportmått, löneläget och
 handlingsplan, med ett redigerbart Word-utkast av dokumentationen, Excel och PDF. Bara de fält analysen behöver läses
 in (fyra obligatoriska, tre valfria), och små grupper skyddas i det som lämnar verktyget. Verktyget är byggt för
-arbetsgivare som kodar befattningarna med **AID** och **BAS-intervall** och jämför sig med **SKR:s**
-personalstatistik, i praktiken kommuner och regioner. Det organisationsspecifika läses in ur ett organisationspaket;
+arbetsgivare som klassificerar sina anställda enligt **AID** efter arbetsuppgifterna, värderar arbetena i
+**BAS-intervall** och jämför sig med **SKR:s** personalstatistik, i praktiken kommuner och regioner. Det organisationsspecifika läses in ur ett organisationspaket;
 ingenting om en viss organisation är inbyggt.
 
 ## Prova

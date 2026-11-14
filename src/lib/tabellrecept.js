@@ -12,6 +12,10 @@
  */
 import { computePivot } from './utforska.js';
 import { personOrd } from './namn.js';
+import { skapaTermer, stor } from './termer.js';
+/** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
+const T = skapaTermer();
+
 
 // Samma listor som i src/lib/utforska.js (DIMENSIONER, MATT); tests/tabellrecept.test.js vaktar att de är lika.
 const DIMENSIONER = ['bas', 'aid', 'alder', 'kon', 'alla', 'aidbas', 'lonespann', 'sektor', 'aidniva'];
@@ -19,9 +23,9 @@ const MATT = ['median', 'medel', 'n', 'p10', 'p25', 'p75', 'p90', 'spridning', '
 export const RECEPT_DIMENSIONER = DIMENSIONER, RECEPT_MATT = MATT;
 
 export const DIM_ETIKETT = Object.freeze({
-    bas: 'BAS-intervall', aid: 'Yrkesgrupp (AID)', alder: 'Åldersgrupp', kon: 'Kön',
-    aidbas: 'Yrkesgrupp inom BAS', lonespann: 'Lönespann', alla: 'Hela urvalet',
-    sektor: 'Sektor (AID-huvudområde)', aidniva: 'AID-mellannivå'
+    bas: stor(T.niva.en), aid: stor(T.enhet.en), alder: 'Åldersgrupp', kon: 'Kön',
+    aidbas: `${stor(T.enhet.en)} i ${T.niva.en}`, lonespann: 'Lönespann', alla: 'Hela urvalet',
+    sektor: stor(T.huvudomrade.en), aidniva: 'AID-mellannivå'
 });
 export const MATT_ETIKETT = Object.freeze({
     median: 'Median månadslön', medel: 'Medellön', n: 'Antal (n)',

@@ -104,7 +104,7 @@ function generateRapport() {
         ...base,
         usedInAnalysis: base.afterFilter,
         analysisExclusions: [
-            ...(yrkenSkippedCount > 0 ? [[`Yrkesgrupper med <5 personer (slås ihop med "Organisationen"-raden)`, yrkenSkippedCount]] : [])
+            ...(yrkenSkippedCount > 0 ? [[`${termStor(T.enhet.fl)} med <5 personer (slås ihop med "Organisationen"-raden)`, yrkenSkippedCount]] : [])
         ],
         formler: [
             ['Median', 'P50, mittersta värdet av sorterad lönelista'],
@@ -115,7 +115,7 @@ function generateRapport() {
         ],
         notes: [
             `K-anonymitet: ${kMaskedRowsCount} grupp${kMaskedRowsCount === 1 ? '' : 'er'} utelämnades (n &lt; ${kTroskel()}); de räknas upp under respektive BAS`,
-            `BAS-grupper visar i ordning: "${esc(referensKortnamn())}" (referensen), "Organisationen", "Kvinna", "Man" och sedan varje yrkesgrupp med ≥5 personer`
+            `BAS-grupper visar i ordning: "${esc(referensKortnamn())}" (referensen), "Organisationen", "Kvinna", "Man" och sedan varje ${T.enhet.en} med ≥5 personer`
         ]
     });
 }

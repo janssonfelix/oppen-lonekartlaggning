@@ -146,7 +146,7 @@ function renderBasdossier(bas) {
     if (!kand.length) {
         sel.innerHTML = '';
         body.innerHTML = `<div class="flik-empty-state"><div class="empty-icon">${ikon('tomLada')}</div>
-            <h3>Inga BAS-intervall att visa</h3><p>Inget BAS-intervall når ${kTroskel()} ${personOrd(kTroskel())}, eller ingen lönefil är inläst.</p></div>`;
+            <h3>Inga ${T.niva.fl} att visa</h3><p>${termStor(termAdjektiv({ utrum: 'ingen', neutrum: 'inget', plural: 'inga' }, T.niva))} ${T.niva.en} når ${kTroskel()} ${personOrd(kTroskel())}, eller ingen lönefil är inläst.</p></div>`;
         return;
     }
     const onskat = bas || sel.value || _bdVald || kand[0].bas;
@@ -156,7 +156,7 @@ function renderBasdossier(bas) {
     // Ett begärt intervall som inte (längre) når tröskeln öppnas inte i tysthet som ett annat: det sägs.
     if (bas && bas !== sel.value) announceToScreenReader(`BAS ${bas} visas inte i dossiern: intervallet finns inte i underlaget eller har färre än ${kTroskel()} ${personOrd(kTroskel())}. Visar BAS ${sel.value}.`);
     const d = buildBasdossier(sel.value);
-    body.innerHTML = d ? _bdRenderBody(d) : '<p class="f-dampad">BAS-intervallet kunde inte läsas.</p>';
+    body.innerHTML = d ? _bdRenderBody(d) : `<p class="f-dampad">${termStor(T.niva.bf)} kunde inte läsas.</p>`;
     // Fokusfällan cachar de fokuserbara elementen; när innehållet byggs om medan dialogen är öppen läggs den om,
     // med samma öppnare och utan att flytta fokus. Fokus står kvar där det var (väljaren), i stället för att hoppa
     // till stängknappen.
@@ -201,18 +201,18 @@ function _bdRenderBody(d) {
             : `<td class="t-tal">${_bdKr(y.medKv)}</td><td class="t-tal">${_bdKr(y.medMa)}</td><td class="t-tal">${svPct(y.kvotPct, 1)}${_direktivInline(y.kvotPct)}</td>`)
         + `<td>${status(y)}${y.ocksaI.length ? `<br><span class="gd-note">${esc(_bdHelaYrketNot(y))}</span>` : ''}</td><td class="t-mitt">${y.dossierKey ? `<button type="button" class="btn-table-tool" data-bd-gruppdossier="${esc(y.dossierKey)}" aria-label="Öppna gruppdossiern för ${esc(y.yrke)}">Gruppdossier</button>` : ''}</td></tr>`;
     const yrken = (d.yrken.length
-        ? `<div class="table-container"><table class="data-table st-088 bd-tabell" id="basdossier-yrken"><thead><tr><th scope="col">AID</th><th scope="col">Yrke</th><th scope="col" class="t-hoger">Antal (kv/mä)</th><th scope="col" class="t-hoger">Median kvinnor</th><th scope="col" class="t-hoger">Median män</th><th scope="col" class="t-hoger">Kvinnors median i % av mäns</th><th scope="col">Status</th><th scope="col"><span class="sr-only">Gruppdossier</span></th></tr></thead><tbody>${d.yrken.map(yrkesrad).join('')}</tbody></table></div>`
-        : missing('Ingen yrkesgrupp i intervallet har både kvinnor och män att jämföra.'))
-        + (d.yrkenUtelamnade.length ? kMaskNote(d.yrkenUtelamnade, 'yrkesgrupp|yrkesgrupper') : '')
+        ? `<div class="table-container"><table class="data-table st-088 bd-tabell" id="basdossier-yrken"><thead><tr><th scope="col">AID</th><th scope="col">${termStor(T.namn.en)}</th><th scope="col" class="t-hoger">Antal (kv/mä)</th><th scope="col" class="t-hoger">Median kvinnor</th><th scope="col" class="t-hoger">Median män</th><th scope="col" class="t-hoger">Kvinnors median i % av mäns</th><th scope="col">Status</th><th scope="col"><span class="sr-only">Gruppdossier</span></th></tr></thead><tbody>${d.yrken.map(yrkesrad).join('')}</tbody></table></div>`
+        : missing(`${termStor(termAdjektiv({ utrum: 'ingen', neutrum: 'inget', plural: 'inga' }, T.enhet))} ${T.enhet.en} i intervallet har både kvinnor och män att jämföra.`))
+        + (d.yrkenUtelamnade.length ? kMaskNote(d.yrkenUtelamnade, `${T.enhet.en}|${T.enhet.fl}`) : '')
         + (d.ejJamforbara.length ? `<p class="gd-note">Inte jämförbara (ett kön har färre än två personer): ${esc(d.ejJamforbara.join(', '))}.</p>` : '');
 
     // 3. Likvärdigt arbete
     const parLista = lista => `<ul class="gd-list">${lista.map(p => `<li>${esc(gruppNamn({ aid: p.kvAid, yrke: p.kvLabel }))} (BAS ${esc(p.kvBas)}) mot ${esc(gruppNamn({ aid: p.maAid, yrke: p.maLabel }))} (BAS ${esc(p.maBas)}): ${_bdKr(p.kvMedian)} mot ${_bdKr(p.maMedian)}, skillnad ${_bdKr(p.gapKr)} (${svPct(p.gapPct, 1)})</li>`).join('')}</ul>`;
     const parNot = d.par.utelamnade ? `<p class="gd-note">${esc(_parUtelamnadeNot(d.par.utelamnade))}</p>` : '';
     const likvardigt = (d.par.kandidat.length || d.par.hierarkiska.length)
-        ? (d.par.kandidat.length ? `<p><strong>Kandidatpar där det kvinnodominerade yrket ligger i intervallet</strong></p>${parLista(d.par.kandidat)}` : '<p>Inga kandidatpar där det kvinnodominerade yrket ligger i intervallet.</p>')
-          + (d.par.hierarkiska.length ? `<p><strong>Lägre krav, högre lön</strong> (jämförelseyrket ligger i ett lägre intervall)</p>${parLista(d.par.hierarkiska)}` : '') + parNot
-        : (parNot || missing('Inget kvinnodominerat yrke i intervallet ingår i en jämförelse av likvärdigt arbete.'));
+        ? (d.par.kandidat.length ? `<p><strong>Kandidatpar där ${termFras(T.enhet, 'bf', { adjektiv: 'kvinnodominerad' })} ligger i intervallet</strong></p>${parLista(d.par.kandidat)}` : `<p>Inga kandidatpar där ${termFras(T.enhet, 'bf', { adjektiv: 'kvinnodominerad' })} ligger i intervallet.</p>`)
+          + (d.par.hierarkiska.length ? `<p><strong>Lägre krav, högre lön</strong> (${T.jamforelse.bf} ligger i ett lägre intervall)</p>${parLista(d.par.hierarkiska)}` : '') + parNot
+        : (parNot || missing(`${termStor(termAdjektiv({ utrum: 'ingen', neutrum: 'inget', plural: 'inga' }, T.enhet))} ${termFras(T.enhet, 'en', { adjektiv: 'kvinnodominerad' })} i intervallet ingår i en jämförelse av likvärdigt arbete.`));
 
     // 4. Ålder (inte när lönefilen saknar ålder, ADR-64)
     const alder = !d.alder ? '' : `<table class="data-table st-088 bd-tabell"><thead><tr><th scope="col">Åldersgrupp</th><th scope="col" class="t-hoger">Antal (kv/mä)</th><th scope="col" class="t-hoger">Median</th><th scope="col" class="t-hoger">Median kvinnor</th><th scope="col" class="t-hoger">Median män</th></tr></thead><tbody>`
@@ -233,15 +233,15 @@ function _bdRenderBody(d) {
 
     return `
         <div class="gd-head">
-            <h3 class="fs-lg marg-0">BAS-intervall ${esc(d.bas)}</h3>
-            <span class="gd-sub">${svTal(d.n, 0)} personer · ${d.yrken.length} ${d.yrken.length === 1 ? 'yrkesgrupp' : 'yrkesgrupper'}</span>
+            <h3 class="fs-lg marg-0">${termStor(T.niva.en)} ${esc(d.bas)}</h3>
+            <span class="gd-sub">${svTal(d.n, 0)} personer · ${d.yrken.length} ${termForAntal(d.yrken.length, T.enhet)}</span>
             <button type="button" class="btn-table-tool" id="btn-basdossier-copy" title="Kopiera dossiern som text, i rapportens form">${ikon('kopiera', 14)} Kopiera som text</button>
         </div>
         <div class="bd-stack">
             ${(() => { const hp = _hpBedomningHtml(_hpBedomningar(([kalla, , bas]) => (kalla === 'prio' || kalla === 'par') && bas === String(d.bas)), { medGrupp: true });
                 return hp ? card('Bedömning i handlingsplanen', hp, 'Dossiern dokumenterar inte sakliga skäl. Skälen dokumenterar du i Handlingsplan.') : ''; })()}
             ${card('Nyckeltal', nyckeltal)}
-            ${card('Yrkesgrupperna i intervallet', yrken, 'Samma gränser som i Lika arbete, räknade på intervallets personer. Könsuppdelade mått bara där båda könen når minsta gruppstorlek.')}
+            ${card(termStor(T.enhet.bfl) + ' i intervallet', yrken, 'Samma gränser som i Lika arbete, räknade på intervallets personer. Könsuppdelade mått bara där båda könen når minsta gruppstorlek.')}
             ${card('Likvärdigt arbete i intervallet', likvardigt)}
             ${d.alder ? card('Ålder', alder) : ''}
             ${card('Förra året', forra)}
@@ -250,12 +250,12 @@ function _bdRenderBody(d) {
 
 /** Noten för ett yrke som också finns i andra BAS-intervall: statusen är Lika arbetes, för hela yrket. */
 function _bdHelaYrketNot(y) {
-    return `Status gäller hela yrket (${y.helaTot} personer), som i Lika arbete; yrket finns också i ${y.ocksaI.map(b => `BAS ${b}`).join(', ')}`;
+    return `Status gäller hela ${T.enhet.bf} (${y.helaTot} personer), som i Lika arbete; ${T.enhet.bf} finns också i ${y.ocksaI.map(b => `BAS ${b}`).join(', ')}`;
 }
 
 /** Raden i punkt 5 när det inte finns något att jämföra med. */
 function _bdForraText(f) {
-    if (f.lage === 'saknasFalt') return `Förra årets bokslut (${f.ar}) sparades med en äldre version av verktyget och saknar raderna per BAS-intervall. Årets konfigurationsfil har dem.`;
+    if (f.lage === 'saknasFalt') return `Förra årets bokslut (${f.ar}) sparades med en äldre version av verktyget och saknar raderna per ${T.niva.en}. Årets konfigurationsfil har dem.`;
     if (f.lage === 'saknasIntervall') return `Förra årets bokslut (${f.ar}) har ingen rad för intervallet: det hade färre än minsta gruppstorlek eller fanns inte.`;
     return 'Inget årsbokslut inläst. Konfigurationsfilen bär bokslutet: läs in förra årets fil i Spara och jämför år, så står intervallets rad här.';
 }
@@ -280,7 +280,7 @@ function basdossierStycken(d, { forraBaraMedBokslut = false } = {}) {
     ut.push({ rubrik: 'Nyckeltal', rader: nyckeltal });
 
     const yrken = [];
-    if (!d.yrken.length) yrken.push('Ingen yrkesgrupp i intervallet har både kvinnor och män att jämföra.');
+    if (!d.yrken.length) yrken.push(`${termStor(termAdjektiv({ utrum: 'ingen', neutrum: 'inget', plural: 'inga' }, T.enhet))} ${T.enhet.en} i intervallet har både kvinnor och män att jämföra.`);
     for (const y of d.yrken) {
         const antal = `${y.tot} personer (${y.nKv} kvinnor, ${y.nMa} män)`;
         yrken.push((y.samlad
@@ -290,13 +290,13 @@ function basdossierStycken(d, { forraBaraMedBokslut = false } = {}) {
     }
     if (d.yrkenUtelamnade.length) yrken.push(`Redovisas inte (färre än ${d.k} ${personOrd(d.k)}): ${d.yrkenUtelamnade.join(', ')}.`);
     if (d.ejJamforbara.length) yrken.push(`Inte jämförbara (ett kön har färre än två personer): ${d.ejJamforbara.join(', ')}.`);
-    ut.push({ rubrik: 'Yrkesgrupperna i intervallet', rader: yrken });
+    ut.push({ rubrik: `${termStor(T.enhet.bfl)} i intervallet`, rader: yrken });
 
     const likvardigt = [];
     const par = p => `- ${gruppNamn({ aid: p.kvAid, yrke: p.kvLabel })} (BAS ${p.kvBas}) mot ${gruppNamn({ aid: p.maAid, yrke: p.maLabel })} (BAS ${p.maBas}): ${kr(p.kvMedian)} mot ${kr(p.maMedian)}, skillnad ${kr(p.gapKr)} (${svPct(p.gapPct, 1)}).`;
-    if (d.par.kandidat.length) { likvardigt.push('Kandidatpar där det kvinnodominerade yrket ligger i intervallet:'); d.par.kandidat.forEach(p => likvardigt.push(par(p))); }
+    if (d.par.kandidat.length) { likvardigt.push(`Kandidatpar där ${termFras(T.enhet, 'bf', { adjektiv: 'kvinnodominerad' })} ligger i intervallet:`); d.par.kandidat.forEach(p => likvardigt.push(par(p))); }
     if (d.par.hierarkiska.length) { likvardigt.push('Lägre krav, högre lön:'); d.par.hierarkiska.forEach(p => likvardigt.push(par(p))); }
-    if (!d.par.kandidat.length && !d.par.hierarkiska.length) likvardigt.push('Inget kvinnodominerat yrke i intervallet ingår i en jämförelse av likvärdigt arbete.');
+    if (!d.par.kandidat.length && !d.par.hierarkiska.length) likvardigt.push(`${termStor(termAdjektiv({ utrum: 'ingen', neutrum: 'inget', plural: 'inga' }, T.enhet))} ${termFras(T.enhet, 'en', { adjektiv: 'kvinnodominerad' })} i intervallet ingår i en jämförelse av likvärdigt arbete.`);
     if (d.par.utelamnade) likvardigt.push(_parUtelamnadeNot(d.par.utelamnade));
     ut.push({ rubrik: 'Likvärdigt arbete i intervallet', rader: likvardigt });
 
@@ -319,11 +319,11 @@ function basdossierStycken(d, { forraBaraMedBokslut = false } = {}) {
 }
 
 /** Fältet att fylla i som avslutar ett intervall i rapportutkastet, Word-utkastet och rapportunderlaget. */
-const BD_BEDOMNING = 'Bedömning: har skillnaderna mellan kvinnor och män i intervallets yrkesgrupper sakliga skäl, och motsvarar lönen i de kvinnodominerade yrkena kraven i arbetet? Ange åtgärd där det behövs.';
+const BD_BEDOMNING = `Bedömning: har skillnaderna mellan kvinnor och män i intervallets ${T.enhet.fl} sakliga skäl, och motsvarar lönen i ${termFras(T.enhet, 'bfl', { adjektiv: 'kvinnodominerad' })} kraven i arbetet? Ange åtgärd där det behövs.`;
 
 /** Textens rader: rubriken "BAS-intervall X" och styckena, åtskilda av en tom rad. */
 function _bdTextRader(d, val) {
-    return [`BAS-intervall ${d.bas}`, '', ...basdossierStycken(d, val).flatMap((s, i) => [...(i ? [''] : []), s.rubrik, ...s.rader])];
+    return [`${termStor(T.niva.en)} ${d.bas}`, '', ...basdossierStycken(d, val).flatMap((s, i) => [...(i ? [''] : []), s.rubrik, ...s.rader])];
 }
 
 /**
@@ -353,7 +353,7 @@ function basdossierYrkesrader(d) {
     return d.yrken.filter(y => !y.samlad).map(y => ({ aid: y.aid, yrke: String(y.yrke).replace(/^\d+\s*/, '') || String(y.yrke),
         nKv: y.nKv, nMa: y.nMa, medKv: y.medKv, medMa: y.medMa, kvotPct: y.kvotPct, status: BD_STATUS_TEXT[y.status] }));
 }
-const BD_YRKESKOLUMNER = ['AID', 'Yrke', 'Kvinnor / män', 'Median kvinnor', 'Median män', 'Kvinnors median i % av mäns', 'Status'];
+const BD_YRKESKOLUMNER = ['AID', termStor(T.namn.en), 'Kvinnor / män', 'Median kvinnor', 'Median män', 'Kvinnors median i % av mäns', 'Status'];
 
 /** BAS-intervallen med lönerader som inte når k: de nämns i rapporten och utkastet, utan mått (som i Lönestruktur). */
 function basdossierUtelamnade() {
@@ -406,7 +406,7 @@ document.addEventListener('click', e => {
     if (t.closest('#btn-basdossier-copy')) {
         const sel = /** @type {HTMLSelectElement|null} */ (document.getElementById('basdossier-select'));
         const txt = sel ? basdossierText(sel.value) : null;   // texten lämnar verktyget (ADR-51)
-        if (!txt) { announceToScreenReader(`BAS-intervallet har färre än ${kInstalld()} ${personOrd(kInstalld())} och kopieras inte.`); return; }
+        if (!txt) { announceToScreenReader(`${termStor(T.niva.bf)} har färre än ${kInstalld()} ${personOrd(kInstalld())} och kopieras inte.`); return; }
         const klart = () => announceToScreenReader('BAS-dossiern kopierad.');
         if (navigator.clipboard?.writeText) navigator.clipboard.writeText(txt).then(klart).catch(() => {});
         else klart();

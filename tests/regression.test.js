@@ -98,8 +98,8 @@ describe('förklaringsmodellen som värde (ADR-56)', () => {
         expect(modellFras(m(true, true))).toBe('ålder och BAS-intervall');
         expect(modellFras(m(true, false))).toBe('BAS-intervall');
         expect(modellFras(m(false, true))).toBe('ålder');
-        expect(modellFras(m(true, false, true))).toBe('BAS-intervall och yrkesgrupp');
-        expect(modellFras(m(true, true, true))).toBe('ålder, BAS-intervall och yrkesgrupp');
+        expect(modellFras(m(true, false, true))).toBe('BAS-intervall och AID-etikett');
+        expect(modellFras(m(true, true, true))).toBe('ålder, BAS-intervall och AID-etikett');
         expect(modellFras(m(false, false))).toBe('');
     });
     it('beskrivningen för modelDesc och variablerna i fast ordning', () => {
@@ -107,7 +107,7 @@ describe('förklaringsmodellen som värde (ADR-56)', () => {
         expect(modellBeskrivning(m(true, false))).toBe('kön + BAS-intervall (indikatorer)');
         expect(modellBeskrivning(m(false, true))).toBe('kön + ålder');
         expect(modellBeskrivning(m(false, false))).toBe('kön');
-        expect(modellBeskrivning(m(true, false, true))).toBe('kön + BAS-intervall (indikatorer) + yrkesgrupp inom BAS (fasta effekter)');
+        expect(modellBeskrivning(m(true, false, true))).toBe('kön + BAS-intervall (indikatorer) + AID-etikett inom BAS (fasta effekter)');
         expect(modellVariabler(m(true, true, true))).toEqual(['bas', 'alder', 'yrkesgrupp']);
         expect(modellVariabler(m(false, true))).toEqual(['alder']);
         expect(modellVariabler(m(false, false))).toEqual([]);

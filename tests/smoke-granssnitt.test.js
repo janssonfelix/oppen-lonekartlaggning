@@ -212,7 +212,7 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         const tal = [...d.querySelectorAll('#lp-slutsatser .slutsats-varde')].map(e => e.textContent);
         expect(tal).toHaveLength(4);
         expect(tal.slice(1).map(Number)).toEqual([pos.filter(p => p < 0).length, pos.filter(p => p >= 0 && p <= 100).length, pos.filter(p => p > 100).length]);
-        expect(d.getElementById('nyckel-lp-tabell').textContent).toBe(`${pos.length} yrkesgrupper`);
+        expect(d.getElementById('nyckel-lp-tabell').textContent).toBe(`${pos.length} AID-etiketter i BAS-intervall`);
         expect(d.getElementById('nyckel-lp-tackning').textContent).toBe(tal[0]);
         expect(d.querySelectorAll('#lp-slutsatser .ar-kritisk')).toHaveLength(0);      // utanför spannet är ett fynd, inte ett fel
         expect(d.getElementById('lonepolitik-rubrik').closest('.flik-intro')).not.toBeNull();
@@ -631,7 +631,7 @@ describe('Var uppstår löneskillnaden?', () => {
         expect(host.hidden).toBe(false);
         expect(host.querySelectorAll('[data-gu-del]').length).toBe(3);
         expect(host.textContent).toContain('DEMODATA');
-        expect(host.textContent).toContain('kan därför skilja sig från de flaggade yrkena i Lika arbete');
+        expect(host.textContent).toContain('kan därför skilja sig från de flaggade AID-etiketterna i Lika arbete');
         expect(host.querySelector('[data-go-to-tab="struktur"]')).not.toBeNull();
         expect(host.textContent).not.toMatch(/§|3 kap\./);
     });
@@ -920,7 +920,7 @@ describe('Lägre krav, högre lön', () => {
     it('utan par: förklarande rad', () => {
         const w = createAppWindow();
         oppna(w, [...grupp('100', 'C', 18, 2, 30000), ...grupp('200', 'E', 2, 18, 34000)]);
-        expect(w.document.getElementById('likvardighet-lagre-krav').textContent).toContain('Inget kvinnodominerat yrke har lägre medianlön än ett yrke i lägre BAS.');
+        expect(w.document.getElementById('likvardighet-lagre-krav').textContent).toContain('Ingen av de kvinnodominerade AID-etiketterna har lägre medianlön än en AID-etikett i lägre BAS.');
     });
     it('demodatan: kandidatparen finns kvar och lagreKrav är en lista', () => {
         // Att dagens par är oförändrade vaktas av lib-testet och golden-facit.
@@ -972,7 +972,7 @@ describe('Var uppstår löneskillnaden: valbara förklaringsvariabler (ADR-65)',
         expect(delnamn(w)).toEqual(['A. BAS-fördelning', 'B. AID inom BAS', 'C. Inom AID och BAS']);
         const text = [...kort(w).querySelectorAll('.gu-text')].map(p => p.textContent);
         expect(text[0]).toContain('Kvinnor och män är olika fördelade över BAS-intervallen. Hör till karriärvägar och rekrytering');
-        expect(text[1]).toContain('Kvinnor och män har olika AID inom samma BAS. Kan kräva en lönesatsning på yrket');
+        expect(text[1]).toContain('Kvinnor och män har olika AID inom samma BAS. Kan kräva en lönesatsning på AID-etiketten');
         expect(text[2]).toContain('Kvinnor och män har olika lön i samma AID och BAS. Pröva lika arbete');
         expect(kort(w).querySelector('[data-gu-standard]')).toBeNull();
         expect(kort(w).textContent).toContain('Ordningen påverkar delarna: den första variabeln får det den förklarar ensam');

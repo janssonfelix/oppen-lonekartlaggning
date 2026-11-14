@@ -240,7 +240,7 @@ describe('lönespridningen i bokslutet, i panelen och i rapportens tabell per BA
         expect(celler.at(-2)).toBe('50 %');
         const nu = w.eval('byggArsbokslutNu()').basIntervall[0].spridning;
         expect(celler.at(-1)).toBe(w.eval('svPct')(nu * 100, 0));
-        const grupp = [...w.document.querySelectorAll('#arsjamforelse table')].find(t => /^Yrkesgrupp/.test(t.querySelector('th').textContent));
+        const grupp = [...w.document.querySelectorAll('#arsjamforelse table')].find(t => /^AID-etikett/.test(t.querySelector('th').textContent));
         expect(grupp).toBeTruthy();
         expect([...grupp.querySelectorAll('thead th')].map(th => th.textContent.trim()).slice(-2)).toEqual([`Lönespridning ${cfg.arsbokslut.ar}`, `Lönespridning ${cfg.arsbokslut.ar + 1}`]);
         expect(w.document.getElementById('arsjamforelse').textContent).toContain('Lönespridning: (P90 − P10) / median');

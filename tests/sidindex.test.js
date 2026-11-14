@@ -82,7 +82,7 @@ describe('Sidindex', () => {
         // Ett klick på smal skärm fäller ihop listan, så att den inte täcker avsnittet den ledde till.
         w.document.querySelector('#sidindex details').open = true;
         w.document.querySelector('#sidindex a[data-sidindex="avsnitt-st-sektorer"]').click();
-        expect(summary()).toBe('På den här sidan: Per sektor');
+        expect(summary()).toBe('På den här sidan: Per huvudområde');
         expect(w.document.querySelector('#sidindex details').open).toBe(false);
     });
     it('ett klickat avsnitt står kvar som aktivt när sidan inte kan rulla fram det, tills läsaren själv rullar', () => {

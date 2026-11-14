@@ -17,17 +17,17 @@ filer) finns ingen referens att jämföra mot.
 | Organisation | Organisationens namn, utgivare (t.ex. "Lönefunktionen, HR-avdelningen"), datum, vilket år paketet avser och organisationstypen (kommun, region eller båda) | Visas i verktyget och i exporter, så att det framgår vilket underlag som använts |
 | Benämningar | Vad jämförelsestatistiken heter (t.ex. "Kommunens lönestatistik") | Rubriker och texter i Löneläget, Prioritering och exporter |
 | Grundinställningar | PO-påslag och beräkningsperiod, och *Minsta gruppstorlek för redovisning* (valfritt; utan värde gäller 10 eller det handläggaren har satt) | Kostnadsberäkningarna i Prioritering och Löneöversyn, och vilka grupper som redovisas. Ett värde under 10 ger handläggaren en fråga om bekräftelse när paketet läses in |
-| Jämförelseyrken i likvärdigt arbete (valfritt) | `jamforelse`: `alla` (alla yrken som inte är kvinnodominerade, standard) eller `mansdominerade` (bara mansdominerade). Formuläret tar med valet i fliken Likvärdigt arbete när paketet skapas | Sätter rutan *Jämför bara med mansdominerade yrken* när paketet läses in; handläggaren kan ändra den efteråt (ingen låsning). Ett annat värde ger en varning och används inte |
+| Jämförelseetiketter i likvärdigt arbete (valfritt) | `jamforelse`: `alla` (alla AID-etiketter som inte är kvinnodominerade, standard) eller `mansdominerade` (bara mansdominerade). Formuläret tar med valet i fliken Likvärdigt arbete när paketet skapas | Sätter rutan *Jämför bara med mansdominerade AID-etiketter* när paketet läses in; handläggaren kan ändra den efteråt (ingen låsning). Ett annat värde ger en varning och används inte |
 | Låsningar (valfritt) | *Lägsta tillåtna minsta gruppstorlek*, en låst tid för *rensning vid inaktivitet*, och om *små grupper får tas med i exporten från Tabeller och egna vyer* | Det handläggaren inte får ändra, se avsnitt 5 |
 | Rapportens recept (valfritt) | Egna tabeller byggda i Tabeller och egna vyer och ett eget recept för avsnittet per BAS-intervall — bara recepten (rader, kolumner, mått, urval), inga tal | Samma tabeller i Word, PDF, Excel och rapportunderlaget hos alla handläggare; ersätter de egna tabeller som finns när paketet läses in |
-| Importprofiler (valfritt) | Sparade kolumnmappningar för lönesystemets uttag: vilken rubrik som är BAS-intervall, yrke, lön, ålder och kön (och poäng och ansvarskod). Dessutom vilka rubriker som måste finnas. Bara rubrikernas namn, inga värden | Uttaget känns igen utan kolumnmappning hos alla handläggare; paketets profiler prövas före handläggarens egna och verktygets inbyggda |
-| Lönepolitiskt ställningstagande | P10, median och P90 per BAS-intervall (och/eller per yrke) | Prioritering, Löneläget och statusrutan i Att göra |
-| Jämförelsestatistik | Median (och gärna P10, P90 och könsfördelning) per yrke och BAS | Fliken Löneläget, prioritering mot statistiken och reserven i Likvärdigt arbete |
+| Importprofiler (valfritt) | Sparade kolumnmappningar för lönesystemets uttag: vilken rubrik som är BAS-intervall, AID-etikett, lön, ålder och kön (och poäng och ansvarskod). Dessutom vilka rubriker som måste finnas. Bara rubrikernas namn, inga värden | Uttaget känns igen utan kolumnmappning hos alla handläggare; paketets profiler prövas före handläggarens egna och verktygets inbyggda |
+| Lönepolitiskt ställningstagande | P10, median och P90 per BAS-intervall (och/eller per AID-etikett) | Prioritering, Löneläget och statusrutan i Att göra |
+| Jämförelsestatistik | Median (och gärna P10, P90 och könsfördelning) per AID-etikett och BAS-intervall | Fliken Löneläget, prioritering mot statistiken och reserven i Likvärdigt arbete |
 
 Ställningstagandet och jämförelsestatistiken är var för sig valfria, men paketet måste
 innehålla minst det ena. Analysens trösklar (t.ex. 60 % för kvinnodominans och minsta skillnad för
 kandidatparen, standard 0 %) ingår inte — de är verktygets standard och kan ändras av handläggaren. Valet av
-jämförelseyrken i likvärdigt arbete (`jamforelse`) är det enda analysvalet paketet kan bära.
+jämförelseetiketter i likvärdigt arbete (`jamforelse`) är det enda analysvalet paketet kan bära.
 
 **Paketet innehåller inga personuppgifter** — bara organisationens ställningstagande och
 aggregerad statistik. Verktyget avvisar ett paket som innehåller något som liknar
@@ -248,8 +248,8 @@ Vad paketet gör när det läses in:
 - minsta gruppstorlek är 10 och kan inte sättas lägre (`kTroskelLagst`);
 - rensning vid inaktivitet är låst på 30 minuter (`inaktivitetMin` med `inaktivitetLast`);
 - små grupper kan inte tas med i exporten från Tabeller och egna vyer (`smaGrupperIExport: false`);
-- ställningstagandet har spann för BAS A och B och för en yrkesgrupp i BAS C, och statistiken har
-  två yrken.
+- ställningstagandet har spann för BAS A och B och för en AID-etikett i BAS C, och statistiken har
+  två AID-etiketter.
 
 ## 8. Checklista för systemägaren
 

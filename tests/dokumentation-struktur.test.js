@@ -141,7 +141,7 @@ describe('dokumentation: valbar förklaringsmodell (ADR-56)', () => {
     it('Om verktyget och körguiden beskriver valet', () => {
         expect(läs('src/app/65-om-verktyget.js')).toMatch(/[Ff]örklaringsmodell/);
         expect(läs('src/app/65-om-verktyget.js')).toMatch(/0,5 procentenheter/);
-        expect(läs('docs/anvandare/korguide.md')).toMatch(/välja om ålder, BAS-intervall och yrkesgrupp/);
+        expect(läs('docs/anvandare/korguide.md')).toMatch(/välja om ålder, BAS-intervall och AID-etikett inom BAS/);
     });
 });
 

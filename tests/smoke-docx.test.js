@@ -436,7 +436,7 @@ describe('Bilaga: gruppdossierer i Word-utkastet och PDF-rapporten', () => {
         // Exakt grupperna där båda könen når 25, i kandidaternas ordning.
         const forvantat = med.map(d => w.medExportLage(() => w.gruppdossierAsText(w.buildGruppdossier(d.key))).split('\n')[0]);
         expect(a.delar.filter(p => p.typ === 'rubrik').map(p => p.text)).toEqual(forvantat);
-        expect(a.utelamnat.join(' ')).toMatch(/yrkesgrupp(er)? där ett kön har färre än 25 personer/);
+        expect(a.utelamnat.join(' ')).toMatch(/AID-etikett(er)? där ett kön har färre än 25 personer/);
     });
     it('texten är svenska med å, ä och ö, och stämpeln om sänkt tröskel står en gång, överst i bilagan', () => {
         const w = createAppWindow(); w.__loadDemoData();

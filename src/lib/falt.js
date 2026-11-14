@@ -10,6 +10,10 @@
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
 import { sektorsnamn, mellannivaEtikett } from './aid.js';
+import { skapaTermer, stor, adjektiv } from './termer.js';
+/** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
+const T = skapaTermer();
+
 
 const AGE_ORDER = ['<20', '20–24', '25–29', '30–34', '35–39', '40–44', '45–49',
                    '50–54', '55–59', '60–64', '65+'];
@@ -52,7 +56,7 @@ export function konOf(row) {
 }
 
 /** Mellannivån för rader utan giltig sexsiffrig AID-kod (Utforska tappar dem annars). */
-const OKAND_AID_KOD = 'Okänd AID-kod';
+const OKAND_AID_KOD = `${stor(adjektiv('okänd', T.kod))} ${T.kod.en}`;
 
 /** Gruppnyckel för en rad i en dimension. null = raden saknar värde där. */
 export function groupKey(row, dim) {

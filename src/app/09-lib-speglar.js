@@ -10,6 +10,237 @@
 // tests/drift.test.js.
 // ====================================================================
 /* eslint-disable */
+// ---- speglar src/lib/termer.js ----
+const __mirrorTermer = (() => {
+// SPDX-License-Identifier: MIT
+// Copyright 2026 Felix Jansson
+/**
+ * Öppen lönekartläggning — termerna på ett ställe (ADR-74).
+ *
+ * Verktyget använder AID:s egna ord: AID-etikett, AID-kod, etikettnamn och huvudområde. Orden står bara här, som
+ * variabler, så att en annan uppsättning (till exempel för en annan bransch) byts på ett ställe. Varje begrepp har
+ * de ordformer svenskan kräver och sitt genus, så att artikel och adjektiv böjs rätt också för ett ett-ord:
+ * "en kvinnodominerad AID-etikett" men "ett kvinnodominerat yrke".
+ *
+ * I appen: `T` är den gällande uppsättningen (`src/app/09-termer.js`), `${T.enhet.fl}` i stället för ordet, och
+ * fast text skrivs som mall: `{enhet.en}`, se `fyllTermer`. Vakten i `tests/termer.test.js` håller orden borta
+ * från resten av gränssnittet.
+ *
+ * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
+ */
+
+/** @typedef {'utrum'|'neutrum'} Genus */
+/** @typedef {'en'|'bf'|'fl'|'bfl'} Form */
+/**
+ * Ett begrepp: obestämd form (en), bestämd form (bf), plural (fl), bestämd plural (bfl) och genus.
+ * @typedef {{ en: string, bf: string, fl: string, bfl: string, genus: Genus }} Begrepp
+ */
+/**
+ * En uppsättning termer. `enhet` är det verktyget grupperar på, `jamforelse` den enhet ett kvinnodominerat arbete
+ * jämförs med, `kod` och `namn` enhetens två delar, `huvudomrade` grupperna av enheter, `niva` kravnivån och
+ * `system` klassificeringens namn.
+ * @typedef {{ enhet: Begrepp, jamforelse: Begrepp, kod: Begrepp, namn: Begrepp, huvudomrade: Begrepp, niva: Begrepp, system: string }} Termer
+ */
+/** @typedef {string | { utrum: string, neutrum: string, plural: string }} Adjektiv */
+
+/** Begreppen, i den ordning de står i tabellen. */
+const TERM_BEGREPP = /** @type {const} */ (['enhet', 'jamforelse', 'kod', 'namn', 'huvudomrade', 'niva']);
+/** Ordformerna per begrepp. */
+const TERM_FORMER = /** @type {const} */ (['en', 'bf', 'fl', 'bfl']);
+/** Högsta längd för en ordform. */
+const TERM_MAX = 40;
+
+/** Standarduppsättningen. @type {Termer} */
+const STANDARDTERMER = Object.freeze({
+    enhet:       Object.freeze({ en: 'AID-etikett', bf: 'AID-etiketten', fl: 'AID-etiketter', bfl: 'AID-etiketterna', genus: /** @type {Genus} */ ('utrum') }),
+    jamforelse:  Object.freeze({ en: 'jämförelseetikett', bf: 'jämförelseetiketten', fl: 'jämförelseetiketter', bfl: 'jämförelseetiketterna', genus: /** @type {Genus} */ ('utrum') }),
+    kod:         Object.freeze({ en: 'AID-kod', bf: 'AID-koden', fl: 'AID-koder', bfl: 'AID-koderna', genus: /** @type {Genus} */ ('utrum') }),
+    namn:        Object.freeze({ en: 'etikettnamn', bf: 'etikettnamnet', fl: 'etikettnamn', bfl: 'etikettnamnen', genus: /** @type {Genus} */ ('neutrum') }),
+    huvudomrade: Object.freeze({ en: 'huvudområde', bf: 'huvudområdet', fl: 'huvudområden', bfl: 'huvudområdena', genus: /** @type {Genus} */ ('neutrum') }),
+    niva:        Object.freeze({ en: 'BAS-intervall', bf: 'BAS-intervallet', fl: 'BAS-intervall', bfl: 'BAS-intervallen', genus: /** @type {Genus} */ ('neutrum') }),
+    system:      'AID'
+});
+
+// Tecken som inte får stå i en term: markering, mallens klamrar och styrtecken. Termerna sätts in i HTML-mallar.
+const OTILLATET = /[<>&"'`{}\u0000-\u001f]/;
+
+/** @param {unknown} v @param {string} vad */
+function _ord(v, vad) {
+    const t = typeof v === 'string' ? v.replace(/\s+/g, ' ').trim() : '';
+    if (!t) throw new Error(`Termen saknar ${vad}.`);
+    if (t.length > TERM_MAX) throw new Error(`${vad} är längre än ${TERM_MAX} tecken.`);
+    if (OTILLATET.test(t)) throw new Error(`${vad} innehåller ett tecken som inte är tillåtet.`);
+    return t;
+}
+
+/**
+ * Lägger en egen uppsättning över standarden. Varje begrepp som anges måste ha alla fyra ordformerna och genus;
+ * begrepp som inte anges behåller standarden. Tomma, för långa eller okända värden avvisas med ett fel.
+ * @param {Partial<Record<typeof TERM_BEGREPP[number], Partial<Begrepp>>> & { system?: string } | null} [egna]
+ * @returns {Termer}
+ */
+function skapaTermer(egna) {
+    if (egna == null) return STANDARDTERMER;
+    if (typeof egna !== 'object' || Array.isArray(egna)) throw new Error('Termerna ska vara ett objekt.');
+    /** @type {Record<string, any>} */
+    const ut = { ...STANDARDTERMER };
+    for (const [nyckel, varde] of Object.entries(egna)) {
+        if (nyckel === 'system') { ut.system = _ord(varde, 'system'); continue; }
+        if (!(/** @type {readonly string[]} */ (TERM_BEGREPP)).includes(nyckel)) throw new Error(`Okänt begrepp: ${nyckel}.`);
+        if (!varde || typeof varde !== 'object') throw new Error(`Begreppet ${nyckel} ska ha ordformer och genus.`);
+        const b = /** @type {Record<string, unknown>} */ (varde);
+        if (b.genus !== 'utrum' && b.genus !== 'neutrum') throw new Error(`Begreppet ${nyckel} ska ha genus utrum eller neutrum.`);
+        ut[nyckel] = Object.freeze({
+            en: _ord(b.en, `${nyckel}.en`), bf: _ord(b.bf, `${nyckel}.bf`),
+            fl: _ord(b.fl, `${nyckel}.fl`), bfl: _ord(b.bfl, `${nyckel}.bfl`),
+            genus: b.genus
+        });
+    }
+    return /** @type {Termer} */ (Object.freeze(ut));
+}
+
+/** Genitiv: ordet + "s", utom när det slutar på s, x eller z ("AID-etikettens", "huvudområdets", "BAS-intervalls"). */
+function genitiv(ord) {
+    const t = String(ord ?? '');
+    if (!t.trim()) return '';
+    return /[sxz]$/i.test(t) ? t : t + 's';
+}
+
+/** Stor begynnelsebokstav: "huvudområde" → "Huvudområde". Resten av texten rörs inte. */
+function stor(text) {
+    const t = String(text ?? '');
+    return t.charAt(0).toLocaleUpperCase('sv') + t.slice(1);
+}
+
+/**
+ * Artikeln efter genus och antal: en/ett, med `bestamd` den/det, i plural de (bestämd) eller ingen (obestämd).
+ * @param {Begrepp} b
+ * @param {{ bestamd?: boolean, plural?: boolean }} [val]
+ */
+function artikel(b, { bestamd = false, plural = false } = {}) {
+    if (plural) return bestamd ? 'de' : '';
+    if (b.genus === 'neutrum') return bestamd ? 'det' : 'ett';
+    return bestamd ? 'den' : 'en';
+}
+
+const VOKAL = 'aeiouyåäöé';
+/** Neutrum av ett regelbundet adjektiv: kvinnodominerad → kvinnodominerat, stor → stort, känd → känt, lägre → lägre. */
+function _neutrum(s) {
+    if (/[ea]$/.test(s)) return s;                                   // lägre, lika: oböjliga
+    if (new RegExp(`[${VOKAL}]$`).test(s)) return s + 'tt';          // ny → nytt
+    if (/ad$/.test(s)) return s.slice(0, -1) + 't';                  // kvinnodominerad → kvinnodominerat
+    if (new RegExp(`[${VOKAL}]d$`).test(s)) return s.slice(0, -1) + 'tt';   // röd → rött
+    if (/d$/.test(s)) return s.slice(0, -1) + 't';                   // känd → känt
+    if (/t$/.test(s)) return s;                                      // lätt → lätt
+    return s + 't';                                                  // stor → stort, sexsiffrig → sexsiffrigt
+}
+/** Bestämd form och plural av ett regelbundet adjektiv: kvinnodominerad → kvinnodominerade, stor → stora. */
+function _plural(s) {
+    if (/[ea]$/.test(s)) return s;                                   // lägre, lika
+    if (/ad$/.test(s)) return s + 'e';                               // kvinnodominerad → kvinnodominerade
+    return s + 'a';                                                  // stor → stora, ny → nya
+}
+
+/**
+ * Adjektivet böjt efter begreppets genus och antal: "kvinnodominerad" blir kvinnodominerad (en-ord), kvinnodominerat
+ * (ett-ord) och kvinnodominerade (bestämd form eller plural). Reglerna gäller regelbundna adjektiv och particip på
+ * -ad; ett oregelbundet adjektiv anges med alla tre formerna: { utrum: 'egen', neutrum: 'eget', plural: 'egna' }.
+ * @param {Adjektiv} stam
+ * @param {Begrepp} b
+ * @param {{ bestamd?: boolean, plural?: boolean }} [val]
+ */
+function adjektiv(stam, b, { bestamd = false, plural = false } = {}) {
+    if (stam && typeof stam === 'object') return plural || bestamd ? stam.plural : b.genus === 'neutrum' ? stam.neutrum : stam.utrum;
+    const s = String(stam ?? '').trim();
+    if (plural || bestamd) return _plural(s);
+    return b.genus === 'neutrum' ? _neutrum(s) : s;
+}
+
+/**
+ * Begreppet i en form, med adjektiv och genitiv om de anges. Med adjektiv får bestämd form sin artikel
+ * (den/det/de), som svenskan kräver: "den kvinnodominerade AID-etiketten", "det kvinnodominerade yrket".
+ *   termFras(T.enhet, 'en', { adjektiv: 'kvinnodominerad' })  → "kvinnodominerad AID-etikett"
+ *   termFras(T.enhet, 'fl', { adjektiv: 'kvinnodominerad' })  → "kvinnodominerade AID-etiketter"
+ *   termFras(T.enhet, 'bf', { genitiv: true })                → "AID-etikettens"
+ * @param {Begrepp} b
+ * @param {Form} [form]
+ * @param {{ adjektiv?: Adjektiv, genitiv?: boolean }} [val]
+ */
+function termFras(b, form = 'en', { adjektiv: adj, genitiv: gen = false } = {}) {
+    if (!(/** @type {readonly string[]} */ (TERM_FORMER)).includes(form)) throw new Error(`Okänd ordform: ${form}.`);
+    let t = b[form];
+    if (adj) {
+        const plural = form === 'fl' || form === 'bfl', bestamd = form === 'bf' || form === 'bfl';
+        t = `${adjektiv(adj, b, { plural, bestamd })} ${t}`;
+        if (bestamd) t = `${artikel(b, { bestamd, plural })} ${t}`;
+    }
+    return gen ? genitiv(t) : t;
+}
+
+/** Formen för ett antal: obestämd singular vid 1, annars plural. `${n} ${ordForAntal(n, T.enhet)}` ger "1 AID-etikett". */
+function ordForAntal(n, b) {
+    return Number(n) === 1 ? b.en : b.fl;
+}
+
+// {begrepp}, {begrepp.form}, {begrepp.form.s} (genitiv), {begrepp.art} (en/ett), {begrepp.form:adjektiv} och
+// {begrepp.adj:adjektiv} (adjektivet ensamt, böjt efter genus: "räknas som {enhet.adj:kvinnodominerad}").
+const MALL = /\{([A-Za-z]+)(?:\.(en|bf|fl|bfl|art|adj))?(\.s)?(?::([\p{Ll}-]+))?\}/gu;
+
+/**
+ * Fyller en mall med termerna. Versal först i begreppets namn ger stor begynnelsebokstav. Klamrar som inte är ett
+ * begrepp ({k}, {golv}, profilens {benchmarkLabel}) står kvar, så att mallen kan fyllas i flera steg.
+ *   "Kvinnor och män med samma {enhet.en}"           → "Kvinnor och män med samma AID-etikett"
+ *   "{Enhet.bfl} i samma {niva.en}"                   → "AID-etiketterna i samma BAS-intervall"
+ *   "{enhet.art} {enhet.en:kvinnodominerad}"          → "en kvinnodominerad AID-etikett" (ett-ord: "ett kvinnodominerat yrke")
+ *   "{enhet.bf.s} median"                             → "AID-etikettens median"
+ *   "räknas som {enhet.adj:kvinnodominerad}"          → "räknas som kvinnodominerad" (ett-ord: "kvinnodominerat")
+ * @param {string} mall
+ * @param {Termer} [termer]
+ */
+function fyllTermer(mall, termer = STANDARDTERMER) {
+    return String(mall ?? '').replace(MALL, (hel, nyckel, form, gen, adj) => {
+        const namn = nyckel.charAt(0).toLowerCase() + nyckel.slice(1);
+        const versal = nyckel !== namn;
+        let t;
+        if (namn === 'system') {
+            if (form || adj) return hel;
+            t = gen ? genitiv(termer.system) : termer.system;
+        } else if ((/** @type {readonly string[]} */ (TERM_BEGREPP)).includes(namn)) {
+            const b = termer[/** @type {typeof TERM_BEGREPP[number]} */ (namn)];
+            if (form === 'art') {
+                if (gen || adj) return hel;
+                t = artikel(b);
+            } else if (form === 'adj') {
+                if (gen || !adj) return hel;
+                t = adjektiv(adj, b);
+            } else {
+                t = termFras(b, form || 'en', { adjektiv: adj, genitiv: !!gen });
+            }
+        } else {
+            return hel;
+        }
+        return versal ? stor(t) : t;
+    });
+}
+
+/** Alla ordformer i en uppsättning, längsta först (för vakten och sökningen). */
+function termformer(termer = STANDARDTERMER) {
+    const ord = new Set();
+    for (const b of TERM_BEGREPP) for (const f of TERM_FORMER) ord.add(termer[b][f]);
+    return [...ord].sort((a, b) => b.length - a.length);
+}
+
+    return { skapaTermer, fyllTermer, termFras, artikel, adjektiv, genitiv, stor, ordForAntal };
+})();
+const _tmSkapa = __mirrorTermer.skapaTermer;
+const _tmFyll = __mirrorTermer.fyllTermer;
+const termFras = __mirrorTermer.termFras;
+const termArtikel = __mirrorTermer.artikel;
+const termAdjektiv = __mirrorTermer.adjektiv;
+const termGenitiv = __mirrorTermer.genitiv;
+const termStor = __mirrorTermer.stor;
+const termForAntal = __mirrorTermer.ordForAntal;
+
 // ---- speglar src/lib/stat.js ----
 const __mirrorStat = (() => {
 // SPDX-License-Identifier: MIT
@@ -2207,6 +2438,9 @@ const __mirrorRegression = (() => {
     const matMul = __mirrorStat.matMul;
     const pValue2Sided = __mirrorStat.pValue2Sided;
     const tQuantile = __mirrorStat.tQuantile;
+    const skapaTermer = __mirrorTermer.skapaTermer;
+    const fyllTermer = __mirrorTermer.fyllTermer;
+    const ordForAntal = __mirrorTermer.ordForAntal;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -2227,6 +2461,29 @@ const __mirrorRegression = (() => {
  * @see 50-regressionsmodeller.js (adaptern i appen)
  */
 
+
+
+/** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
+const T = skapaTermer();
+
+// Stegens namn i den sekventiella dekomponeringen är nycklar: kortet, rapporten, exporten och testerna slår upp stegen
+// på dem, så de står kvar oförändrade. Det som visas för ett steg kommer ur termerna (stegEtikett, ADR-74).
+const STEG_BAS = '+ BAS-intervall';
+const STEG_YRKE = '+ Yrkesgrupp';
+/** Stegets namn som det visas: STEG_YRKE blir "+ AID-etikett inom BAS", STEG_BAS "+ BAS-intervall"; övriga som de är. */
+function stegEtikett(namn) {
+    if (namn === STEG_YRKE) return `+ ${T.enhet.en} inom BAS`;
+    if (namn === STEG_BAS) return `+ ${T.niva.en}`;
+    return namn;
+}
+/**
+ * Nyckeln för stegets namn per variabel, för appen som slår upp stegen på den.
+ * @param {'bas'|'yrkesgrupp'} variabel
+ * @returns {string}
+ */
+function stegNamn(variabel) {
+    return variabel === 'bas' ? STEG_BAS : STEG_YRKE;
+}
 
 // ---- Förklaringsmodellen som värde (ADR-56) ----
 // Vilka variabler huvudregressionen, trappan och Blinder-Oaxaca räknar bort utöver kön. Standard är ADR-44/46/53-modellen:
@@ -2275,11 +2532,11 @@ function normaliseraForklaringsmodell(v, { harYrke = true, harAlder = true } = {
         skal: typeof v.skal === 'string' ? v.skal.slice(0, SKAL_MAX) : '' });
     if (modell.yrkesgrupp && !harYrke) {
         modell.yrkesgrupp = false;
-        varningar.push('Yrkesgrupp inom BAS kan inte väljas: lönefilen saknar AID och yrke.');
+        varningar.push(fyllTermer('{Enhet.en} inom BAS kan inte väljas: lönefilen saknar {kod.en} och {namn.en}.', T));
     }
     if (modell.yrkesgrupp && !modell.bas) {
         modell.bas = true;
-        varningar.push('Yrkesgrupp inom BAS förutsätter BAS-intervall; BAS är valt.');
+        varningar.push(fyllTermer('{Enhet.en} inom BAS förutsätter {niva.en}; BAS är valt.', T));
     }
     return { modell, varningar };
 }
@@ -2300,18 +2557,18 @@ function modellVariabler(m) {
 function modellFras(m) {
     const delar = [];
     if (m && m.alder) delar.push('ålder');
-    if (m && m.bas) delar.push('BAS-intervall');
-    if (m && m.yrkesgrupp) delar.push('yrkesgrupp');
+    if (m && m.bas) delar.push(T.niva.en);
+    if (m && m.yrkesgrupp) delar.push(T.enhet.en);
     if (delar.length <= 1) return delar.join('');
     return `${delar.slice(0, -1).join(', ')} och ${delar[delar.length - 1]}`;
 }
 
-/** Modellen i ord för modelDesc och rapporten: "kön + ålder + BAS-intervall (indikatorer)". */
+/** Modellen i ord för modelDesc och rapporten: "kön + ålder + BAS-intervall (indikatorer)" (orden ur termerna). */
 function modellBeskrivning(m) {
     const delar = ['kön'];
     if (m && m.alder) delar.push('ålder');
-    if (m && m.bas) delar.push('BAS-intervall (indikatorer)');
-    if (m && m.yrkesgrupp) delar.push('yrkesgrupp inom BAS (fasta effekter)');
+    if (m && m.bas) delar.push(`${T.niva.en} (indikatorer)`);
+    if (m && m.yrkesgrupp) delar.push(`${T.enhet.en} inom BAS (fasta effekter)`);
     return delar.join(' + ');
 }
 
@@ -2327,8 +2584,8 @@ function diagnoseCollinearity(rows, basList) {
         const hasMa = sub.some(d => d.kon === 'man' || d.kon === 'män');
         if (!hasKv || !hasMa) singleSexBas++;
     });
-    if (singleSexBas > 0) issues.push(`<strong>${singleSexBas}</strong> BAS-intervall är helt enkönade – könseffekten kan inte estimeras inom dessa.`);
-    if (basList.length < 2) issues.push(`Endast <strong>${basList.length}</strong> BAS-intervall i urvalet – ingen variation att estimera BAS-effekten med.`);
+    if (singleSexBas > 0) issues.push(`<strong>${singleSexBas}</strong> ${T.niva.fl} är helt enkönade – könseffekten kan inte estimeras inom dessa.`);
+    if (basList.length < 2) issues.push(`Endast <strong>${basList.length}</strong> ${ordForAntal(basList.length, T.niva)} i urvalet – ingen variation att estimera BAS-effekten med.`);
     if (rows.length < 50)  issues.push(`Litet urval (n=${rows.length}) – kan ge instabila estimat.`);
     return issues;
 }
@@ -2449,7 +2706,7 @@ function _sekvensRigg(rows0, ageMean, basList, { medAlder = harAlderIRader(rows0
     const kolumn = { bas: i => basD[i], alder: i => [ageC[i]] };
     /** @param {string[]} vars @param {(i:number) => number[]} [extra] */
     const bygg = (vars, extra = () => []) => rows.map((_, i) => [1, isKv[i], ...vars.flatMap(v => kolumn[v](i)), ...extra(i)]);
-    const namn = { bas: '+ BAS-intervall', alder: '+ Ålder' };
+    const namn = { bas: STEG_BAS, alder: '+ Ålder' };
     /** @param {string[]} vars */
     const steg = vars => [{ name: 'Endast kön', X: bygg([]) }, ...vars.map((v, j) => ({ name: namn[v], X: bygg(vars.slice(0, j + 1)) }))];
     /** @param {{name:string, X:number[][]}} s @returns {{name:string, status:string, gapPct?:number, R2?:number, k?:number, nGrupper?:number, nGrupperBada?:number, nPersoner?:number, nEnkonade?:number}} */
@@ -2484,7 +2741,7 @@ function _sekvensRigg(rows0, ageMean, basList, { medAlder = harAlderIRader(rows0
  * @returns {{name:string, status:string, gapPct?:number, R2?:number, k?:number,
  *           nGrupper?:number, nGrupperBada?:number, nPersoner?:number, nEnkonade?:number}}
  */
-function computeYrkesgruppGap(rows, y, isKv, ageC, { medAlder = true, extra = null, name = '+ Yrkesgrupp' } = {}) {
+function computeYrkesgruppGap(rows, y, isKv, ageC, { medAlder = true, extra = null, name = STEG_YRKE } = {}) {
     if (!rows.some(d => d.aid || d.yrke)) return { name, status: 'too_few', nGrupper: 0, nGrupperBada: 0, nPersoner: 0, nEnkonade: 0 };
     // Kolumnerna som inomtransformeras: kön, (ålder), (extra kolumner, t.ex. ansvarsindikatorer).
     const kol = rows.map((_, i) => [isKv[i], ...(medAlder ? [ageC[i]] : []), ...(extra ? extra[i] : [])]);
@@ -2791,7 +3048,7 @@ function quantileRegressionAtAllTau(rows, { modell = FORKLARINGSMODELL_STANDARD,
     return { results, diffP90P10, kolumner: d.kolumner, n: d.rader.length, nKv, nMa: d.rader.length - nKv };
 }
 
-    return { diagnoseCollinearity, computePerBasGap, basIndikatorer, computeSequentialGap, quantileRegression, blinderOaxaca, quantileRegressionAtAllTau, kvantilDesign, computeVariabelTillfor, normaliseraForklaringsmodell, inomYrkesgrupp, forklaringsmodellArStandard, modellVariabler, modellFras, modellBeskrivning, tillforGransPp, harAlderIRader };
+    return { diagnoseCollinearity, computePerBasGap, basIndikatorer, computeSequentialGap, quantileRegression, blinderOaxaca, quantileRegressionAtAllTau, kvantilDesign, computeVariabelTillfor, normaliseraForklaringsmodell, inomYrkesgrupp, forklaringsmodellArStandard, modellVariabler, modellFras, modellBeskrivning, tillforGransPp, harAlderIRader, stegNamn, stegEtikett };
 })();
 const _rgDiagnoseCollinearity = __mirrorRegression.diagnoseCollinearity;
 const _rgComputePerBasGap = __mirrorRegression.computePerBasGap;
@@ -2810,6 +3067,8 @@ const _rgModellFras = __mirrorRegression.modellFras;
 const _rgModellBeskrivning = __mirrorRegression.modellBeskrivning;
 const _rgTillforGransPp = __mirrorRegression.tillforGransPp;
 const _rgHarAlderIRader = __mirrorRegression.harAlderIRader;
+const _rgStegNamn = __mirrorRegression.stegNamn;
+const _rgStegEtikett = __mirrorRegression.stegEtikett;
 
 // ---- speglar src/lib/lonepolitik.js ----
 const __mirrorLonepolitik = (() => {
@@ -3200,6 +3459,7 @@ const __mirrorLivscykel = (() => {
     const pValue2Sided = __mirrorStat.pValue2Sided;
     const tQuantile = __mirrorStat.tQuantile;
     const statusNiva = __mirrorStatus.statusNiva;
+    const skapaTermer = __mirrorTermer.skapaTermer;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -3218,6 +3478,10 @@ const __mirrorLivscykel = (() => {
  */
 
 
+
+
+/** Standardtermerna (ADR-74). */
+const T = skapaTermer();
 
 /**
  * Trappans nivå för skillnaden vid en ålder (ADR-59, ADR-71): avståndet från lika lön är |gapPct|, och skillnaden är
@@ -3264,7 +3528,7 @@ function livscykelRegression(rader, { fixBas, golv }) {
     if (kvN < golv || maN < golv) return { error: `Otillräcklig könsbalans (${kvN} kvinnor, ${maN} män). Minst ${golv} av varje krävs för interaktions-modell.`, errorCode: 'imbalance' };
 
     const basList = [...new Set(raw.map(d => d.bas))].sort();
-    if (basList.length < 2) return { error: 'Minst 2 BAS-intervall krävs för kategorisk kodning.', errorCode: 'single_bas' };
+    if (basList.length < 2) return { error: `Minst 2 ${T.niva.fl} krävs för kategorisk kodning.`, errorCode: 'single_bas' };
 
     // Välj default fixBas = mest folkrika BAS i organisationen om inte angivet
     if (!fixBas || !basList.includes(fixBas)) {
@@ -3792,6 +4056,9 @@ function aidEtikettlista() {
 const __mirrorAid = (() => {
     // importer ur tidigare speglade lib-moduler
     const aidEtikettlista = __mirrorAidEtiketter.aidEtikettlista;
+    const skapaTermer = __mirrorTermer.skapaTermer;
+    const stor = __mirrorTermer.stor;
+    const adjektiv = __mirrorTermer.adjektiv;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -3805,6 +4072,11 @@ const __mirrorAid = (() => {
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
+
+
+/** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
+const T = skapaTermer();
+
 
 const HUVUDOMRADEN = Object.freeze([
     { prefix: '10', namn: 'Ledningsarbete' },
@@ -3821,7 +4093,7 @@ const HUVUDOMRADEN = Object.freeze([
     { prefix: '60', namn: 'Köks- och måltidsarbete' },
     { prefix: '65', namn: 'Städ, tvätt och renhållningsarbete' },
 ]);
-const OKANT_HUVUDOMRADE = 'Okänt huvudområde';
+const OKANT_HUVUDOMRADE = `${stor(adjektiv('okänd', T.huvudomrade))} ${T.huvudomrade.en}`;
 
 const _PER_PREFIX = new Map(HUVUDOMRADEN.map(h => [h.prefix, h]));
 const _ORDNING = new Map(HUVUDOMRADEN.map((h, i) => [h.namn, i]));
@@ -3936,6 +4208,9 @@ const _htmlTillText = __mirrorHtmlText.htmlTillText;
 
 // ---- speglar src/lib/namn.js ----
 const __mirrorNamn = (() => {
+    // importer ur tidigare speglade lib-moduler
+    const genitiv = __mirrorTermer.genitiv;
+
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 /**
@@ -3944,13 +4219,12 @@ const __mirrorNamn = (() => {
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
+
 const MAX = 100;
 
-/** Genitiv: namnet + "s", utom när det slutar på s, x eller z. */
+/** Genitiv: namnet + "s", utom när det slutar på s, x eller z (regeln i termer.js). */
 function namnGenitiv(namn) {
-    const n = String(namn ?? '').trim();
-    if (!n) return '';
-    return /[sxz]$/i.test(n) ? n : n + 's';
+    return genitiv(String(namn ?? '').trim());
 }
 
 /** Trimmar, slår ihop blanksteg och kortar till högst 100 tecken. */
@@ -4315,6 +4589,9 @@ const __mirrorFalt = (() => {
     // importer ur tidigare speglade lib-moduler
     const sektorsnamn = __mirrorAid.sektorsnamn;
     const mellannivaEtikett = __mirrorAid.mellannivaEtikett;
+    const skapaTermer = __mirrorTermer.skapaTermer;
+    const stor = __mirrorTermer.stor;
+    const adjektiv = __mirrorTermer.adjektiv;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -4327,6 +4604,11 @@ const __mirrorFalt = (() => {
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
+
+
+/** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
+const T = skapaTermer();
+
 
 const AGE_ORDER = ['<20', '20–24', '25–29', '30–34', '35–39', '40–44', '45–49',
                    '50–54', '55–59', '60–64', '65+'];
@@ -4369,7 +4651,7 @@ function konOf(row) {
 }
 
 /** Mellannivån för rader utan giltig sexsiffrig AID-kod (Utforska tappar dem annars). */
-const OKAND_AID_KOD = 'Okänd AID-kod';
+const OKAND_AID_KOD = `${stor(adjektiv('okänd', T.kod))} ${T.kod.en}`;
 
 /** Gruppnyckel för en rad i en dimension. null = raden saknar värde där. */
 function groupKey(row, dim) {
@@ -4400,6 +4682,8 @@ const _faltJamforAlder = __mirrorFalt.jamforAldersgrupp;
 const __mirrorUrval = (() => {
     // importer ur tidigare speglade lib-moduler
     const groupKey = __mirrorFalt.groupKey;
+    const skapaTermer = __mirrorTermer.skapaTermer;
+    const stor = __mirrorTermer.stor;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -4418,10 +4702,15 @@ const __mirrorUrval = (() => {
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
 
+
+/** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
+const T = skapaTermer();
+
+
 const FALT = {
     bas:         { typ: 'kategori', etikett: 'BAS', dim: 'bas' },
-    aid:         { typ: 'kategori', etikett: 'Yrkesgrupp', dim: 'aid' },
-    sektor:      { typ: 'kategori', etikett: 'Sektor', dim: 'sektor' },
+    aid:         { typ: 'kategori', etikett: stor(T.enhet.en), dim: 'aid' },
+    sektor:      { typ: 'kategori', etikett: stor(T.huvudomrade.en), dim: 'sektor' },
     aldersgrupp: { typ: 'kategori', etikett: 'Åldersgrupp', dim: 'alder' },
     kon:         { typ: 'kategori', etikett: 'Kön', dim: 'kon' },
     lon:         { typ: 'tal', etikett: 'Lön', enhet: 'kr' },
@@ -4567,6 +4856,8 @@ const __mirrorDatakvalitet = (() => {
     // importer ur tidigare speglade lib-moduler
     const konOf = __mirrorFalt.konOf;
     const personOrd = __mirrorNamn.personOrd;
+    const skapaTermer = __mirrorTermer.skapaTermer;
+    const ordForAntal = __mirrorTermer.ordForAntal;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -4578,6 +4869,11 @@ const __mirrorDatakvalitet = (() => {
  * kan inte spädas ut av andra delar. Könsfördelningen i organisationen är inget
  * kvalitetskriterium — den är ett fynd (könsskevhet).
  */
+
+
+
+/** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
+const T = skapaTermer();
 
 
 const RANG = { ok: 0, varning: 1, kritisk: 2 };
@@ -4632,8 +4928,8 @@ function bedomUnderlag(rader, { k, audit, mde, modell, modellFras } = {}) {
         id: 'jamforbarhet', namn: 'Jämförbarhet', status: _stat(jPct, 80, 50, true), varde: jPct,
         text: jPct == null
             ? 'Inga personer med känt kön att jämföra.'
-            : `${_pct(jPct)} av personalen finns i BAS-intervall där båda könen har minst ${k} ${personOrd(k)}`
-              + (j.maskerade.length ? ` (${j.maskerade.length} BAS-intervall maskeras: ${j.maskerade.join(', ')}).` : '.'),
+            : `${_pct(jPct)} av personalen finns i ${T.niva.fl} där båda könen har minst ${k} ${personOrd(k)}`
+              + (j.maskerade.length ? ` (${j.maskerade.length} ${ordForAntal(j.maskerade.length, T.niva)} maskeras: ${j.maskerade.join(', ')}).` : '.'),
     });
 
     kriterier.push({
@@ -4670,8 +4966,8 @@ function bedomUnderlag(rader, { k, audit, mde, modell, modellFras } = {}) {
     kriterier.push({
         id: 'modell', namn: 'Modell', status: mStatus, varde: modell ?? null,
         // modellFras (ADR-56): frasen för en vald modell som inte är standard; standardtexten ändras inte.
-        text: modell === 'full' ? (modellFras != null ? `Regressionen tar hänsyn till ${modellFras || 'kön, utan att något räknats bort'}.` : harAlder ? 'Regressionen tar hänsyn till både ålder och BAS-intervall.' : 'Regressionen tar hänsyn till BAS-intervall.')
-            : modell === 'minimal' ? 'Regressionen kunde bara ta hänsyn till ålder, inte BAS-intervall.'
+        text: modell === 'full' ? (modellFras != null ? `Regressionen tar hänsyn till ${modellFras || 'kön, utan att något räknats bort'}.` : harAlder ? `Regressionen tar hänsyn till både ålder och ${T.niva.en}.` : `Regressionen tar hänsyn till ${T.niva.en}.`)
+            : modell === 'minimal' ? `Regressionen kunde bara ta hänsyn till ålder, inte ${T.niva.en}.`
             : 'Regressionen gick inte att skatta.',
     });
 
@@ -4690,6 +4986,8 @@ const __mirrorGapuppdelning = (() => {
     // importer ur tidigare speglade lib-moduler
     const groupKey = __mirrorFalt.groupKey;
     const konOf = __mirrorFalt.konOf;
+    const skapaTermer = __mirrorTermer.skapaTermer;
+    const stor = __mirrorTermer.stor;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -4717,6 +5015,10 @@ const __mirrorGapuppdelning = (() => {
  */
 
 
+
+/** Standardtermerna (ADR-74). */
+const T = skapaTermer();
+
 /** Variablerna i den ordning gränssnittet visar dem. */
 const GAP_VARIABLER = ['bas', 'sektor', 'aidniva', 'aid', 'alder'];
 const GAP_VARIABLER_STANDARD = ['bas', 'aid'];
@@ -4729,12 +5031,13 @@ const GAP_MAX = 4;
 const AID_NIVAER = ['sektor', 'aidniva', 'aid'];
 
 // Ord per variabel: etikett (kryssrutan), liten (i löptext: "inom samma …"), fordelning (del 1), over ("fördelade över …"
-// i kortet), overKort (samma i rapportunderlaget), olika ("har olika … inom samma"), post (en grupps namn).
+// i kortet), overKort (samma i rapportunderlaget), olika ("har olika … inom samma"), post (en grupps namn). Sektor är
+// AID:s huvudområde; orden för det, BAS-intervallet och AID-koden kommer ur termerna (ADR-74).
 const ORD = {
-    bas: { etikett: 'BAS', liten: 'BAS', fordelning: 'BAS-fördelning', over: 'BAS-intervallen', overKort: 'BAS', olika: 'BAS', post: n => `BAS ${n}` },
-    sektor: { etikett: 'Sektor', liten: 'sektor', fordelning: 'Sektorsfördelning', over: 'sektorerna', overKort: 'sektorer', olika: 'sektor', post: n => n },
+    bas: { etikett: 'BAS', liten: 'BAS', fordelning: 'BAS-fördelning', over: T.niva.bfl, overKort: 'BAS', olika: 'BAS', post: n => `BAS ${n}` },
+    sektor: { etikett: stor(T.huvudomrade.en), liten: T.huvudomrade.en, fordelning: `Fördelning över ${T.huvudomrade.fl}`, over: T.huvudomrade.bfl, overKort: T.huvudomrade.fl, olika: T.huvudomrade.en, post: n => n },
     aidniva: { etikett: 'AID-mellannivå', liten: 'AID-mellannivå', fordelning: 'Fördelning över AID-mellannivåer', over: 'AID-mellannivåerna', overKort: 'AID-mellannivåer', olika: 'AID-mellannivå', post: n => n },
-    aid: { etikett: 'AID', liten: 'AID', fordelning: 'AID-fördelning', over: 'AID-koderna', overKort: 'AID', olika: 'AID', post: n => n },
+    aid: { etikett: 'AID', liten: 'AID', fordelning: 'AID-fördelning', over: T.kod.bfl, overKort: 'AID', olika: 'AID', post: n => n },
     alder: { etikett: 'Åldersgrupp', liten: 'åldersgrupp', fordelning: 'Åldersfördelning', over: 'åldersgrupperna', overKort: 'åldersgrupper', olika: 'ålder', post: n => n === '—' ? 'ålder saknas' : `${n} år` },
 };
 
@@ -5075,6 +5378,8 @@ const __mirrorUtforska = (() => {
     const personFilter = __mirrorUrval.personFilter;
     const uppfyllerGrupp = __mirrorUrval.uppfyllerGrupp;
     const gruppVillkorAktivt = __mirrorUrval.gruppVillkorAktivt;
+    const skapaTermer = __mirrorTermer.skapaTermer;
+    const ordForAntal = __mirrorTermer.ordForAntal;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -5093,6 +5398,11 @@ const __mirrorUtforska = (() => {
  */
 
 
+
+
+
+/** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
+const T = skapaTermer();
 
 
 const DIMENSIONER = ['bas', 'aid', 'alder', 'kon', 'alla', 'aidbas', 'lonespann', 'sektor', 'aidniva'];
@@ -5173,7 +5483,7 @@ function slaIhopSmaAid(rows, k) {
         for (const [niva, keys] of grupper) {
             if (keys.length < 2) continue;
             if (keys.reduce((s, key) => s + n.get(key), 0) < k) continue;
-            const namn = `Övriga i ${niva} (${keys.length} yrken)`;
+            const namn = `Övriga i ${niva} (${keys.length} ${ordForAntal(keys.length, T.enhet)})`;
             keys.forEach(key => ut.set(key, namn));
         }
     };
@@ -5274,6 +5584,8 @@ const _utComputePivot = __mirrorUtforska.computePivot;
 const __mirrorAttgora = (() => {
     // importer ur tidigare speglade lib-moduler
     const personOrd = __mirrorNamn.personOrd;
+    const skapaTermer = __mirrorTermer.skapaTermer;
+    const termFras = __mirrorTermer.termFras;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -5286,6 +5598,11 @@ const __mirrorAttgora = (() => {
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
+
+
+/** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
+const T = skapaTermer();
+
 
 /** Kategorier för fynd som gäller skillnader mellan kvinnor och män (lagkravet). */
 const KONSRELATERADE = ['Lika arbete', 'Lika arbete, fördjupning', 'Likvärdigt arbete'];
@@ -5343,7 +5660,7 @@ function stegLikvardigt({ analys, antalPar, utelamnade = 0, k, t, d }) {
     if (antalPar === 0) return { status: 'klar', detail: 'Analysen körd — inga kandidatpar utifrån nuvarande trösklar.' };
     return {
         status: t > 0 && d >= t ? 'klar' : 'delvis',
-        detail: `${antalPar} kandidatpar (kvinnodominerade yrken mot jämförelseyrken med likvärdiga krav) · ${d} av ${t} kandidatpar hanterade i Att göra.`,
+        detail: `${antalPar} kandidatpar (${termFras(T.enhet, 'fl', { adjektiv: 'kvinnodominerad' })} mot ${T.jamforelse.fl} med likvärdiga krav) · ${d} av ${t} kandidatpar hanterade i Att göra.`,
     };
 }
 
@@ -5570,6 +5887,10 @@ const __mirrorAidkontroll = (() => {
     const arLedningsetikett = __mirrorAid.arLedningsetikett;
     const normaliseraAid = __mirrorAid.normaliseraAid;
     const quantile = __mirrorStat.quantile;
+    const skapaTermer = __mirrorTermer.skapaTermer;
+    const stor = __mirrorTermer.stor;
+    const adjektiv = __mirrorTermer.adjektiv;
+    const ordForAntal = __mirrorTermer.ordForAntal;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -5580,6 +5901,11 @@ const __mirrorAidkontroll = (() => {
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
+
+
+
+/** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
+const T = skapaTermer();
 
 
 const RESTKOD_GRANS = 10;      // % av personerna
@@ -5602,12 +5928,12 @@ function aidKriterier(rader, { k, harAnsvar = false }) {
     const okanda = d.filter(r => !etikett(r.aid) || !huvudomrade(r.aid));
     const okandaKoder = [...new Set(okanda.map(r => normaliseraAid(r.aid)))].slice(0, 5);
     const delar = [];
-    if (okanda.length) delar.push(`${pers(okanda.length)} har en AID-kod som inte finns i SKR:s etikettlista (t.ex. ${okandaKoder.join(', ')}).`);
-    if (utanKod) delar.push(`${pers(utanKod)} saknar en sexsiffrig AID-kod.`);
-    ut.push({ id: 'aid-okanda', namn: 'AID-koder', status: delar.length ? 'varning' : 'ok', varde: okanda.length + utanKod,
+    if (okanda.length) delar.push(`${pers(okanda.length)} har en ${T.kod.en} som inte finns i SKR:s etikettlista (t.ex. ${okandaKoder.join(', ')}).`);
+    if (utanKod) delar.push(`${pers(utanKod)} saknar en sexsiffrig ${T.kod.en}.`);
+    ut.push({ id: 'aid-okanda', namn: stor(T.kod.fl), status: delar.length ? 'varning' : 'ok', varde: okanda.length + utanKod,
         text: delar.length
-            ? `${delar.join(' ')} De ingår i analyserna men får ingen sektor.`
-            : 'Alla AID-koder finns i SKR:s etikettlista.' });
+            ? `${delar.join(' ')} De ingår i analyserna men får ${adjektiv({ utrum: 'ingen', neutrum: 'inget', plural: 'inga' }, T.huvudomrade)} ${T.huvudomrade.en}.`
+            : `Alla ${T.kod.fl} finns i SKR:s etikettlista.` });
 
     const rest = d.filter(r => arRestkod(r.aid)).length;
     const restPct = d.length ? rest / d.length * 100 : 0;
@@ -5624,8 +5950,8 @@ function aidKriterier(rader, { k, harAnsvar = false }) {
     }).filter(x => x.kvot != null && x.kvot > SPRIDNING_GRANS);
     ut.push({ id: 'aid-spridning', namn: 'Lönespridning inom AID', status: breda.length ? 'varning' : 'ok', varde: breda.length,
         text: breda.length
-            ? `${breda.length} AID-grupper har ovanligt stor lönespridning (P90/P10 över ${String(SPRIDNING_GRANS).replace('.', ',')}): ${breda.slice(0, 5).map(x => x.aid).join(', ')}. Värt att granska — det kan tyda på att olika arbeten har samma kod.`
-            : 'Ingen AID-grupp har ovanligt stor lönespridning.' });
+            ? `${breda.length} ${ordForAntal(breda.length, T.kod)} har ovanligt stor lönespridning (P90/P10 över ${String(SPRIDNING_GRANS).replace('.', ',')}): ${breda.slice(0, 5).map(x => x.aid).join(', ')}. Värt att granska — det kan tyda på att olika arbeten har samma kod.`
+            : `${stor(adjektiv({ utrum: 'ingen', neutrum: 'inget', plural: 'inga' }, T.kod))} ${T.kod.en} har ovanligt stor lönespridning.` });
 
     if (harAnsvar) {
         const utanKod = d.filter(r => arLedningsetikett(r.aid) && !(r.ansvarskoder || []).some(x => 'ABCL'.includes(x) && x.length === 1)).length;
@@ -5653,6 +5979,9 @@ const __mirrorJamforelse = (() => {
     const median = __mirrorStat.median;
     const quantile = __mirrorStat.quantile;
     const sektorsnamn = __mirrorAid.sektorsnamn;
+    const skapaTermer = __mirrorTermer.skapaTermer;
+    const ordForAntal = __mirrorTermer.ordForAntal;
+    const adjektiv = __mirrorTermer.adjektiv;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -5669,6 +5998,10 @@ const __mirrorJamforelse = (() => {
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
 
+
+
+/** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
+const T = skapaTermer();
 
 const _pos = v => (typeof v === 'number' && v > 0 ? v : null);
 const _tre = (p10, med, p90) => ({ p10: _pos(p10), median: _pos(med), p90: _pos(p90) });
@@ -5722,7 +6055,7 @@ function matchningAntal(rader) {
 function matchningSammanfattning(rader) {
     if (!rader || !rader.length) return '';
     const { aidBas, aid, utan } = matchningAntal(rader);
-    return `Statistiken: ${aidBas} ${aidBas === 1 ? 'yrkesgrupp matchad' : 'yrkesgrupper matchade'} på AID och BAS, `
+    return `Statistiken: ${aidBas} ${ordForAntal(aidBas, T.enhet)} i ${T.niva.en} ${adjektiv('matchad', T.enhet, { plural: aidBas !== 1 })} på AID och BAS, `
         + `${aid} på endast AID, ${utan} utan statistik.`;
 }
 
@@ -6009,6 +6342,12 @@ const __mirrorRapportunderlag = (() => {
     const gapVariablerIText = __mirrorGapuppdelning.gapVariablerIText;
     const gapVariablerArStandard = __mirrorGapuppdelning.gapVariablerArStandard;
     const gapStandardVariabler = __mirrorGapuppdelning.gapStandardVariabler;
+    const skapaTermer = __mirrorTermer.skapaTermer;
+    const genitiv = __mirrorTermer.genitiv;
+    const stor = __mirrorTermer.stor;
+    const artikel = __mirrorTermer.artikel;
+    const adjektiv = __mirrorTermer.adjektiv;
+    const termFras = __mirrorTermer.termFras;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -6030,6 +6369,10 @@ const __mirrorRapportunderlag = (() => {
 
 
 
+
+
+/** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
+const T = skapaTermer();
 
 const { STORLEKSGRANS, DIREKTIV_KOLUMN, DIREKTIV_ETIKETT, DIREKTIV_TIPS } = statusKonstanter();
 
@@ -6125,9 +6468,9 @@ const FRAGOR_YRKE = Object.freeze([
     'Finns tidsbegränsade eller personliga lösningar (t.ex. garantilön, lönetrappa) i gruppen?',
 ]);
 const FRAGOR_PAR = Object.freeze([
-    'Ställer yrkena likvärdiga krav på kunskap och färdigheter, ansvar, ansträngning och arbetsförhållanden?',
+    `Ställer ${T.enhet.bfl} likvärdiga krav på kunskap och färdigheter, ansvar, ansträngning och arbetsförhållanden?`,
     'Stämmer BAS-placeringen med befattningsbeskrivningarna?',
-    'Finns marknadsfaktorer eller rekryteringsläge som påverkar jämförelseyrket?',
+    `Finns marknadsfaktorer eller rekryteringsläge som påverkar ${T.jamforelse.bf}?`,
     'Finns skillnader i arbetstid, arbetsmiljö eller ansvar som inte syns i BAS?',
 ]);
 
@@ -6220,17 +6563,17 @@ function gruppBlock(g, { id, justerat, ki, urval, demo, k = 10, troskelNot, arsb
     if (justerat && justerat.utanAlder) {
         provat = ['Lönefilen saknar ålder, så skillnaden har inte justerats för ålder och BAS.'];
     } else if (justerat && justerat.ejSkattbar) {
-        provat = ['Ålder och BAS kunde inte prövas eftersom kön och BAS sammanfaller i yrket (kvinnor och män finns i olika BAS).'];
+        provat = [`Ålder och BAS kunde inte prövas eftersom kön och BAS sammanfaller i ${T.enhet.bf} (kvinnor och män finns i olika BAS).`];
     } else if (justerat && !justerat.forFa) {
-        fakta += ` Efter hänsyn till ålder och BAS inom yrket återstår en skillnad på ${_pct(justerat.gapPct)}.`;
+        fakta += ` Efter hänsyn till ålder och BAS inom ${T.enhet.bf} återstår en skillnad på ${_pct(justerat.gapPct)}.`;
         const ra = (g.kvot - 1) * 100, ju = justerat.gapPct;
         const siffror = `(${_pct(ra)} före justering, ${_pct(ju)} efter)`;
         if (ra !== 0 && ju !== 0 && Math.sign(ra) !== Math.sign(ju)) {
-            provat = [`Efter hänsyn till ålder och BAS inom yrket byter skillnaden tecken ${siffror}. Råskillnaden och den justerade skillnaden mäter olika saker (median respektive genomsnitt i en modell) och bör läsas var för sig.`];
+            provat = [`Efter hänsyn till ålder och BAS inom ${T.enhet.bf} byter skillnaden tecken ${siffror}. Råskillnaden och den justerade skillnaden mäter olika saker (median respektive genomsnitt i en modell) och bör läsas var för sig.`];
         } else if (Math.abs(ju) < Math.abs(ra)) {
-            provat = [`Ålder och BAS inom yrket förklarar ${formatTal(Math.abs(ra) - Math.abs(ju), 1)} procentenheter av skillnaden ${siffror}.`];
+            provat = [`Ålder och BAS inom ${T.enhet.bf} förklarar ${formatTal(Math.abs(ra) - Math.abs(ju), 1)} procentenheter av skillnaden ${siffror}.`];
         } else {
-            provat = [`Ålder och BAS inom yrket förklarar inte skillnaden ${siffror}.`];
+            provat = [`Ålder och BAS inom ${T.enhet.bf} förklarar inte skillnaden ${siffror}.`];
         }
     } else {
         provat = ['För få personer för att justera för ålder och BAS.'];
@@ -6257,17 +6600,17 @@ function parBlock(p, { id, kravProxy, urval, demo, troskelNot } = {}) {
     const kiPct = p.gapCI && p.kvMedian > 0 ? { lo: p.gapCI.lo / p.kvMedian * 100, hi: p.gapCI.hi / p.kvMedian * 100 } : null;
     const fakta = `${p.kvLabel} (BAS ${p.kvBas}, ${formatTal(p.kvKvinnoPct, 0)} % kvinnor, median ${_kr(p.kvMedian)}) har `
         + `${_kr(p.gapKr)} lägre medianlön än ${p.maLabel} (BAS ${p.maBas}, median ${_kr(p.maMedian)}). `
-        + `Jämförelseyrkets median ligger ${_pct(p.gapPct)} högre` + (kiPct ? ` (95 % KI ${_ki(kiPct.lo, kiPct.hi)} %)` : '') + '.'
+        + `${stor(genitiv(T.jamforelse.bf))} median ligger ${_pct(p.gapPct)} högre` + (kiPct ? ` (95 % KI ${_ki(kiPct.lo, kiPct.hi)} %)` : '') + '.'
         // Den råa skillnaden är det lagen prövar; den åldersjusterade (bara interna par) visar vad som kan bero på åldersstruktur.
         + (p.aldersJusterad && isFinite(p.aldersJusterad.gapPct) ? ` Justerat för ålder: ${_pct(p.aldersJusterad.gapPct)}.` : '');
     const proxy = kravProxy === 'poäng'
         ? 'Jämförelsen bygger på arbetsvärderingspoäng som mått på krav.'
-        : 'Jämförelsen bygger på BAS-intervall som mått på krav.';
-    const kalla = p.jamforKalla === 'extern' ? ' Jämförelseyrket kommer från jämförelsestatistiken.' : '';
+        : `Jämförelsen bygger på ${T.niva.fl} som mått på krav.`;
+    const kalla = p.jamforKalla === 'extern' ? ` ${stor(T.jamforelse.bf)} kommer från jämförelsestatistiken.` : '';
     return {
         id, rubrik: `${p.kvLabel} — ${p.maLabel}`,
         stycken: [...fore, fakta, proxy + kalla, ...efter],
-        tabell: { rubriker: ['Yrke', 'BAS', 'Andel kvinnor', 'Antal', 'Median'], rader: [
+        tabell: { rubriker: [stor(T.namn.en), 'BAS', 'Andel kvinnor', 'Antal', 'Median'], rader: [
             [p.kvLabel, p.kvBas, _pct(p.kvKvinnoPct, 0), String(p.kvN), _kr(p.kvMedian)],
             [p.maLabel, p.maBas, _pct(p.maKvAndel, 0), p.maN == null ? '–' : String(p.maN), _kr(p.maMedian)]] },
         provat: null, fragor: [...FRAGOR_PAR],
@@ -6301,7 +6644,7 @@ function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
                      : ` Kvinnornas medianlön är ${_kr(u.medKv)} och männens ${_kr(u.medMa)}, vilket motsvarar ${_pct(kvot)} av männens.`)];
         if (u.oforklarat && !litet) {
             // Frasen följer förklaringsmodellen (ADR-56); tom fras = endast kön. Det bortvalda får en mening var.
-            const fras = typeof u.oforklarat.fras === 'string' ? u.oforklarat.fras : 'ålder och BAS-intervall';
+            const fras = typeof u.oforklarat.fras === 'string' ? u.oforklarat.fras : `ålder och ${T.niva.en}`;
             st.push(fras
                 ? `Efter hänsyn till ${fras} är den oförklarade löneskillnaden ${_pct(u.oforklarat.pct)} (95 % KI ${_ki(u.oforklarat.lo, u.oforklarat.hi)} %).`
                 : `Utan att något räknats bort är löneskillnaden ${_pct(u.oforklarat.pct)} (95 % KI ${_ki(u.oforklarat.lo, u.oforklarat.hi)} %).`);
@@ -6314,7 +6657,7 @@ function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
         const rader = [['Antal anställda', formatTal(u.n)], ['Kvinnor', formatTal(u.nKv)], ['Män', formatTal(u.nMa)]];
         if (!litet) {
             rader.push(['Medianlön kvinnor', _kr(u.medKv)], ['Medianlön män', _kr(u.medMa)], ['Kvinnors lön i % av mäns', _pct(kvot)]);
-            if (u.oforklarat) { const fras = typeof u.oforklarat.fras === 'string' ? u.oforklarat.fras : 'ålder och BAS-intervall'; rader.push([fras ? `Oförklarad löneskillnad (${fras})` : 'Löneskillnad (inget räknat bort)', _pct(u.oforklarat.pct)]); }
+            if (u.oforklarat) { const fras = typeof u.oforklarat.fras === 'string' ? u.oforklarat.fras : `ålder och ${T.niva.en}`; rader.push([fras ? `Oförklarad löneskillnad (${fras})` : 'Löneskillnad (inget räknat bort)', _pct(u.oforklarat.pct)]); }
         }
         return blk('Sammanfattning', st, { rubriker: ['Nyckeltal', 'Värde'], rader });
     }
@@ -6348,52 +6691,52 @@ function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
         const g = u.grupper || [];
         const flagg = g.filter(x => x.flaggad), samlade = g.filter(x => x.samladMedian);
         const jamforda = g.length + (u.utelamnade || []).length;
-        const st = [`${_st(jamforda, 'yrkesgrupp', 'yrkesgrupper')} jämfördes. ${flagg.length} är värda att granska: skillnaden mellan kvinnors och mäns medianlön är statistiskt säkerställd och minst 3 % (verktygets storleksgräns). `
+        const st = [`${_st(jamforda, T.enhet.en, T.enhet.fl)} jämfördes. ${flagg.length} är värda att granska: skillnaden mellan kvinnors och mäns medianlön är statistiskt säkerställd och minst 3 % (verktygets storleksgräns). `
             + `${samlade.length} redovisas med samlad median eftersom ett kön har färre än ${k} ${personOrd(k)}, och ${(u.utelamnade || []).length} utelämnas helt.`];
-        if (!flagg.length) return blk('Lika arbete', [...st, 'Ingen yrkesgrupp är värd att granska.'], null);
+        if (!flagg.length) return blk('Lika arbete', [...st, `${stor(adjektiv({ utrum: 'ingen', neutrum: 'inget', plural: 'inga' }, T.enhet))} ${T.enhet.en} är ${adjektiv({ utrum: 'värd', neutrum: 'värt', plural: 'värda' }, T.enhet)} att granska.`], null);
         return blk('Lika arbete', [...st, `Kolumnen ${DIREKTIV_KOLUMN} visar var den ojusterade skillnaden når 5 %. ${DIREKTIV_TIPS}`],
-            { rubriker: ['Yrkesgrupp', 'Kvinnor', 'Män', 'Median kvinnor', 'Median män', 'Kvinnors lön i % av mäns', DIREKTIV_KOLUMN],
+            { rubriker: [stor(T.enhet.en), 'Kvinnor', 'Män', 'Median kvinnor', 'Median män', 'Kvinnors lön i % av mäns', DIREKTIV_KOLUMN],
             rader: flagg.map(x => [x.yrke, String(x.nKv), String(x.nMa), _kr(x.medKv), _kr(x.medMa), _pct(x.kvot * 100), x.direktiv ? DIREKTIV_ETIKETT : '']) });
     }
     if (typ === 'likvardigt') {
         const par = u.par || [];
-        const proxy = u.kravProxy === 'poäng' ? 'arbetsvärderingspoäng' : 'BAS-intervall';
+        const proxy = u.kravProxy === 'poäng' ? 'arbetsvärderingspoäng' : T.niva.fl;
         const st = [(_kapad(u) ? `De ${u.topN} största kandidatparen` : `${par.length} kandidatpar`)
-            + ` där ett kvinnodominerat yrke har lägre medianlön än ett yrke med lika eller lägre krav. Kraven mäts med ${proxy}.`
-            + (u.kvinnoTroskel != null ? ` Ett yrke räknas som kvinnodominerat vid ${kvDefinitionText(u.kvDomDefinition, formatTal(u.kvinnoTroskel))}.` : '')
+            + ` där ${artikel(T.enhet)} ${termFras(T.enhet, 'en', { adjektiv: 'kvinnodominerad' })} har lägre medianlön än ${artikel(T.enhet)} ${T.enhet.en} med lika eller lägre krav. Kraven mäts med ${proxy}.`
+            + (u.kvinnoTroskel != null ? ` ${stor(artikel(T.enhet))} ${T.enhet.en} räknas som ${adjektiv('kvinnodominerad', T.enhet)} vid ${kvDefinitionText(u.kvDomDefinition, formatTal(u.kvinnoTroskel))}.` : '')
             // ADR-60: jämförelsemängden är alla yrken som inte är kvinnodominerade, eller bara de mansdominerade.
             + (u.jamforelse === 'mansdominerade'
-                ? ' Yrkena jämförs bara med mansdominerade yrken på samma nivå; könsandelen i jämförelseyrket står i tabellen.'
-                : ' Yrkena jämförs med yrken på samma nivå som inte är kvinnodominerade; könsandelen i jämförelseyrket står i tabellen.')];
+                ? ` ${stor(T.enhet.bfl)} jämförs bara med mansdominerade ${T.enhet.fl} på samma nivå; könsandelen i ${T.jamforelse.bf} står i tabellen.`
+                : ` ${stor(T.enhet.bfl)} jämförs med ${T.enhet.fl} på samma nivå som inte är kvinnodominerade; könsandelen i ${T.jamforelse.bf} står i tabellen.`)];
         if (_kapad(u)) st.push(_kapadText(u));
         if (u.exkluderade) st.push(`${u.exkluderade} par med en grupp under ${k} ${personOrd(k)} redovisas inte här.`);
         if (!par.length) return blk('Likvärdigt arbete', [...st, 'Inga kandidatpar att redovisa.'], null);
         const kiText = p => (p.gapCI && p.kvMedian > 0) ? `${_ki(p.gapCI.lo / p.kvMedian * 100, p.gapCI.hi / p.kvMedian * 100)} %` : '–';
-        return blk('Likvärdigt arbete', st, { rubriker: ['Kvinnodominerat yrke', 'Jämförelseyrke', 'Antal (kvinnodom. / jämf.)', 'Könsandel i jämförelseyrket', 'Skillnad (kr)', 'Skillnad (%)', '95 % KI'],
+        return blk('Likvärdigt arbete', st, { rubriker: [stor(termFras(T.enhet, 'en', { adjektiv: 'kvinnodominerad' })), stor(T.jamforelse.en), 'Antal (kvinnodom. / jämf.)', `Könsandel i ${T.jamforelse.bf}`, 'Skillnad (kr)', 'Skillnad (%)', '95 % KI'],
             rader: par.map(p => [`${p.kvLabel} (BAS ${p.kvBas})`, `${p.maLabel} (BAS ${p.maBas})`, _parAntal(p), _konsandel(p), _kr(p.gapKr), _pct(p.gapPct), kiText(p)]) });
     }
     if (typ === 'lagreKrav') {
         const R = 'Lägre krav, högre lön';
-        if (u.kravProxy === 'poäng') return blk(R, ['Med arbetsvärderingspoäng jämförs yrken över BAS-gränserna redan i Likvärdigt arbete.'], null);
+        if (u.kravProxy === 'poäng') return blk(R, [`Med arbetsvärderingspoäng jämförs ${T.enhet.fl} över BAS-gränserna redan i Likvärdigt arbete.`], null);
         const par = u.par || [];
         const st = [(_kapad(u) ? `De ${u.topN} största paren` : `${par.length} par`)
-            + ' där ett kvinnodominerat yrke har lägre medianlön än ett av organisationens yrken i lägre BAS. Kraven mäts med BAS-intervall, ett grovt mått som bör prövas mot befattningsbeskrivningarna.'];
+            + ` där ${artikel(T.enhet)} ${termFras(T.enhet, 'en', { adjektiv: 'kvinnodominerad' })} har lägre medianlön än ${artikel(T.enhet)} av organisationens ${T.enhet.fl} i lägre BAS. Kraven mäts med ${T.niva.fl}, ett grovt mått som bör prövas mot befattningsbeskrivningarna.`];
         if (_kapad(u)) st.push(_kapadText(u));
         if (u.exkluderade) st.push(`${u.exkluderade} par med en grupp under ${k} ${personOrd(k)} redovisas inte här.`);
-        if (!par.length) return blk(R, [...st, 'Inget kvinnodominerat yrke har lägre medianlön än ett yrke i lägre BAS.'], null);
+        if (!par.length) return blk(R, [...st, `${stor(adjektiv({ utrum: 'ingen', neutrum: 'inget', plural: 'inga' }, T.enhet))} ${termFras(T.enhet, 'en', { adjektiv: 'kvinnodominerad' })} har lägre medianlön än ${artikel(T.enhet)} ${T.enhet.en} i lägre BAS.`], null);
         const kiText = p => (p.gapCI && p.kvMedian > 0) ? `${_ki(p.gapCI.lo / p.kvMedian * 100, p.gapCI.hi / p.kvMedian * 100)} %` : '–';
-        const b = blk(R, st, { rubriker: ['Kvinnodominerat yrke', 'Jämförelseyrke', 'Antal (kvinnodom. / jämf.)', 'Könsandel i jämförelseyrket', 'BAS-steg', 'Skillnad (kr)', 'Skillnad (%)', '95 % KI'],
+        const b = blk(R, st, { rubriker: [stor(termFras(T.enhet, 'en', { adjektiv: 'kvinnodominerad' })), stor(T.jamforelse.en), 'Antal (kvinnodom. / jämf.)', `Könsandel i ${T.jamforelse.bf}`, 'BAS-steg', 'Skillnad (kr)', 'Skillnad (%)', '95 % KI'],
             rader: par.map(p => [`${p.kvLabel} (BAS ${p.kvBas})`, `${p.maLabel} (BAS ${p.maBas})`, _parAntal(p), _konsandel(p), String(p.basSteg), _kr(p.gapKr), _pct(p.gapPct), kiText(p)]) });
         return { ...b, fragor: [...FRAGOR_PAR] };
     }
     if (typ === 'struktur') {
         const kv = u.kvartiler || [];
-        const st = ['Könsfördelning och medianlön per BAS-intervall.', lonebegreppReservation()];
+        const st = [`Könsfördelning och medianlön per ${T.niva.en}.`, lonebegreppReservation()];
         const kvartilOk = !(u.nKv < k || u.nMa < k);   // k: kvartilandelar röjer annars ett litet kön
         if (kv.length && kvartilOk) st.push('Andel kvinnor per lönekvartil: ' + kv.map(q => `kvartil ${q.q} ${_pct(q.andelKv, 0)}`).join(', ') + '.');
         const rep = u.representation || [];
         const utelamnade = rep.filter(r => r.n < k).length;
-        if (utelamnade) st.push(`${_st(utelamnade, 'BAS-intervall', 'BAS-intervall')} med färre än ${k} ${personOrd(k)} redovisas inte.`);
+        if (utelamnade) st.push(`${_st(utelamnade, T.niva.en, T.niva.fl)} med färre än ${k} ${personOrd(k)} redovisas inte.`);
         return blk('Struktur och lönetransparens', st, { rubriker: ['BAS', 'Antal', 'Andel kvinnor', 'Median', 'Kvinnors lön jämfört med mäns'],
             rader: rep.filter(r => r.n >= k).map(r => [r.bas, String(r.n), _pct(r.andelKv),
                 _kr(r.median),
@@ -6403,16 +6746,16 @@ function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
         // Sektorsöversikten (ADR-33): samma k-regler som vyn.
         const alla = u.sektorer || [];
         const visas = alla.filter(r => !r.maskerad);
-        const st = ['Kvinnors lön i procent av mäns per sektor (AID-huvudområde), rå och justerad för ålder och BAS-intervall.'];
+        const st = [`Kvinnors lön i procent av mäns per ${T.huvudomrade.en}, rå och justerad för ålder och ${T.niva.en}.`];
         const a = u.andel;
         if (a && a.andel != null) st.push(Math.abs(a.andel) < 0.01
-            ? `Skillnaden i medellön för hela organisationen (${_kr(a.gapKr)} per månad) beror nästan inte alls på att kvinnor och män arbetar i olika sektorer (under 1 %).`
-            : `Av skillnaden i medellön för hela organisationen (${_kr(a.gapKr)} per månad) beror ${_kr(a.sektorKr)} (${_pct(a.andel * 100)}) på att kvinnor och män arbetar i olika sektorer.`);
+            ? `Skillnaden i medellön för hela organisationen (${_kr(a.gapKr)} per månad) beror nästan inte alls på att kvinnor och män arbetar i olika ${T.huvudomrade.fl} (under 1 %).`
+            : `Av skillnaden i medellön för hela organisationen (${_kr(a.gapKr)} per månad) beror ${_kr(a.sektorKr)} (${_pct(a.andel * 100)}) på att kvinnor och män arbetar i olika ${T.huvudomrade.fl}.`);
         const dolda = alla.length - visas.length;
-        if (dolda) st.push(`${_st(dolda, 'sektor', 'sektorer')} med färre än ${k} ${personOrd(k)} redovisas inte.`);
+        if (dolda) st.push(`${_st(dolda, T.huvudomrade.en, T.huvudomrade.fl)} med färre än ${k} ${personOrd(k)} redovisas inte.`);
         const skr = visas.find(r => r.skrAndelKv != null);
-        if (skr) st.push(`Andel kvinnor i samma sektor i ${skrDelText(skr.skrDel)} enligt SKR:s personalstatistik står som referens.`);
-        return blk('Per sektor (AID-huvudområde)', st, { rubriker: ['Sektor', 'Antal', 'Andel kvinnor', 'Andel kvinnor, SKR', 'Kvinnors lön i % av mäns', 'Justerad (ålder, BAS)'],
+        if (skr) st.push(`Andel kvinnor i samma ${T.huvudomrade.en} i ${skrDelText(skr.skrDel)} enligt SKR:s personalstatistik står som referens.`);
+        return blk(`Per ${T.huvudomrade.en}`, st, { rubriker: [stor(T.huvudomrade.en), 'Antal', 'Andel kvinnor', 'Andel kvinnor, SKR', 'Kvinnors lön i % av mäns', 'Justerad (ålder, BAS)'],
             rader: visas.map(r => [r.namn, String(r.n), _pct(r.andelKv), r.skrAndelKv != null ? _pct(r.skrAndelKv) : '–',
                 !r.samladMedian && r.kvot != null ? _pct(r.kvot) : '–',
                 !r.samladMedian && r.justerat ? _pct(100 + r.justerat.pct) : '–']) });
@@ -6423,7 +6766,7 @@ function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
         // är kostnad att nå referensen: löneläget mot referensen, inte könsskillnaderna (ADR-62).
         const delar = [
             u.summaReferens ? `${_kr(u.summaReferens)} kostnad att nå referensens median för grupperna under referensen (löneläget mot er referens, inte lönekartläggningens könsskillnader)` : '',
-            u.summaJamforelse ? `${_kr(u.summaJamforelse)} kostnad att nå jämförelseyrkets median för kandidatparen i likvärdigt arbete` : '',
+            u.summaJamforelse ? `${_kr(u.summaJamforelse)} kostnad att nå ${genitiv(T.jamforelse.bf)} median för kandidatparen i likvärdigt arbete` : '',
         ].filter(Boolean);
         const st = [`${_st(rader.length, 'förifylld åtgärd', 'förifyllda åtgärder')}` + (u.summa ? ` med en uppskattad kostnad på ${_kr(u.summa)} per år.` : '.')
             + (u.summa && delar.length ? ` Av den är ${delar.join(' och ')}.` : '')];
@@ -6515,8 +6858,8 @@ function arsjamforelseBlock(j, { id = 'arsjamforelse', forraAr, nuAr, urval, dem
     const diff = (v, typ) => (v == null ? '–' : `${v > 0 ? '+' : v < 0 ? '−' : '±'}${skriv(Math.abs(v), typ)}${typ === 'pct' ? '-enheter' : ''}`);
     const g = j.grupper, p = j.punkter;
     const namn = l => l.map(x => x.yrke).join(', ');
-    const st = [`Jämfört med lönekartläggningen ${forraAr}. Lönemått bara för yrkesgrupper där båda könen når minsta gruppstorlek; skillnaden är kvinnors medianlön mot mäns.`,
-        `Flaggade yrkesgrupper i Lika arbete: ${g.kvar.length} båda åren${g.kvar.length ? ` (${namn(g.kvar)})` : ''}, ${g.nya.length} nya${g.nya.length ? ` (${namn(g.nya)})` : ''} och ${g.borta.length} inte längre flaggade${g.borta.length ? ` (${namn(g.borta)})` : ''}.`,
+    const st = [`Jämfört med lönekartläggningen ${forraAr}. Lönemått bara för ${T.enhet.fl} där båda könen når minsta gruppstorlek; skillnaden är kvinnors medianlön mot mäns.`,
+        `Flaggade ${T.enhet.fl} i Lika arbete: ${g.kvar.length} båda åren${g.kvar.length ? ` (${namn(g.kvar)})` : ''}, ${g.nya.length} nya${g.nya.length ? ` (${namn(g.nya)})` : ''} och ${g.borta.length} inte längre flaggade${g.borta.length ? ` (${namn(g.borta)})` : ''}.`,
         `Att göra: ${forraAr} var ${p.klaraForra} av ${p.totaltForra} punkter avbockade, ${nuAr} ${p.klaraNu} av ${p.totaltNu}.`
             + (p.kvarFranForra.length ? ` Av ${forraAr} års ${p.kvarFranForra.length} öppna punkter är ${p.kvarFranForra.filter(q => q.klarNu).length} klara i år.` : '')];
     return { id, rubrik: 'Jämförelse med förra året', stycken: [...fore, ...st, ...efter], provat: null, fragor: null,
@@ -6536,8 +6879,8 @@ function _basUtvecklingTabell(rader, forraAr, nuAr) {
     const tkn = v => (v > 0 ? '+' : v < 0 ? '−' : '±');
     const forandring = f => (!f || f.diff == null ? '–' : `${tkn(f.diff)}${_kr(Math.abs(f.diff))}${f.pct == null ? '' : ` (${tkn(f.pct)}${_pct(Math.abs(f.pct), 1)})`}`);
     const matt = [['p10', 'P10'], ['med', 'Median'], ['p90', 'P90']];
-    return { rubrik: 'Löneutveckling per BAS-intervall',
-        rubriker: ['BAS-intervall', `Antal ${forraAr}`, `Antal ${nuAr}`, ...matt.flatMap(([, e]) => [`${e} ${forraAr}`, `${e} ${nuAr}`, `${e} förändring`])],
+    return { rubrik: `Löneutveckling per ${T.niva.en}`,
+        rubriker: [stor(T.niva.en), `Antal ${forraAr}`, `Antal ${nuAr}`, ...matt.flatMap(([, e]) => [`${e} ${forraAr}`, `${e} ${nuAr}`, `${e} förändring`])],
         rader: rader.map(r => [`BAS ${r.bas}`, formatTal(r.n.forra), formatTal(r.n.nu), ...matt.flatMap(([m]) => [_kr(r[m].forra), _kr(r[m].nu), forandring(r[m])])]) };
 }
 
@@ -6552,8 +6895,8 @@ function _basUtvecklingTabell(rader, forraAr, nuAr) {
 function basintervallBlock(b, { id = `bas:${b.bas}`, urval, demo, troskelNot } = {}) {
     const { fore, efter } = _inled({ demo, urval, troskelNot });
     const st = b.stycken.flatMap(x => [x.rubrik, ...x.rader]);
-    return { id, rubrik: `BAS-intervall ${b.bas}`, stycken: [...fore, ...st, `[HR fyller i] ${b.bedomning}`, ...efter], provat: null, fragor: null,
-        tabell: b.yrken.length ? { rubriker: ['AID', 'Yrke', 'Kvinnor / män', 'Median kvinnor', 'Median män', 'Kvinnors median i % av mäns', 'Status'],
+    return { id, rubrik: `${stor(T.niva.en)} ${b.bas}`, stycken: [...fore, ...st, `[HR fyller i] ${b.bedomning}`, ...efter], provat: null, fragor: null,
+        tabell: b.yrken.length ? { rubriker: ['AID', stor(T.namn.en), 'Kvinnor / män', 'Median kvinnor', 'Median män', 'Kvinnors median i % av mäns', 'Status'],
             rader: b.yrken.map(y => [String(y.aid), String(y.yrke), `${formatTal(y.nKv)} / ${formatTal(y.nMa)}`, _kr(y.medKv), _kr(y.medMa), _pct(y.kvotPct, 1), String(y.status)]) } : null };
 }
 
@@ -6569,7 +6912,7 @@ function referenserBlock(overblick, { id = 'referenser', urval, demo, troskelNot
     const { grupper, tal } = overblick, pm = tal.perMonster;
     const tecken = v => (v == null ? '–' : `${v >= 0 ? '+' : '−'}${_pct(Math.abs(v), 1)}`);
     const skillnad = (g, ref) => (g.org.median != null && ref?.median != null ? tecken((g.org.median / ref.median - 1) * 100) : '–');
-    const mening = (m, text) => `${_st(m.grupper, 'yrkesgrupp', 'yrkesgrupper')} (${_pct(m.andel, 0)} av personalen): ${text}.`;
+    const mening = (m, text) => `${_st(m.grupper, T.enhet.en + ' i ' + T.niva.en, T.enhet.fl + ' i ' + T.niva.en)} (${_pct(m.andel, 0)} av personalen): ${text}.`;
     const motPolicy = tal.vagdMedianMotStallningstagandePct != null, motStatistik = tal.vagdMedianMotStatistikPct != null;
     const st = ['Ställningstagandet är referenspunkten: löneläget och statistiken mäts mot det.',
         ...(motPolicy && motStatistik ? [mening(pm.badaOver, 'löneläget och statistiken ligger över ställningstagandet'),
@@ -6578,7 +6921,7 @@ function referenserBlock(overblick, { id = 'referenser', urval, demo, troskelNot
             mening(pm.badaInom, 'löneläget och statistiken ligger inom ställningstagandet')] : []),
         `Vägd medianskillnad, löneläget mot ${[motPolicy && `ställningstagandet: ${tecken(tal.vagdMedianMotStallningstagandePct)}`, motStatistik && `statistiken: ${tecken(tal.vagdMedianMotStatistikPct)}`].filter(Boolean).join(', mot ')}.`];
     return { id, rubrik: 'Lönerna mot referenserna', stycken: [...fore, ...st, ...efter], provat: null, fragor: null,
-        tabell: { rubriker: ['Yrkesgrupp', ...(harStatistik ? ['Matchning'] : []), 'n', 'Median (kr)', 'Mot ställningstagandet (%)', 'Mot statistiken (%)', 'Läge och förslag'],
+        tabell: { rubriker: [stor(T.enhet.en), ...(harStatistik ? ['Matchning'] : []), 'n', 'Median (kr)', 'Mot ställningstagandet (%)', 'Mot statistiken (%)', 'Läge och förslag'],
             // Samma text som skärmens kolumn och Excel-bladet (lageOchForslag i referenser.js)
             rader: grupper.map(g => [`${g.yrke} · BAS ${g.bas}`, ...(harStatistik ? [matchningEtikett(g.statistikMatchning)] : []), formatTal(g.n), formatTal(g.org.median, 0),
                 skillnad(g, g.stallningstagande), skillnad(g, g.statistik), g.lageOchForslag ?? g.monster.text]) } };
@@ -6791,6 +7134,9 @@ const __mirrorPerBas = (() => {
     const quantile = __mirrorStat.quantile;
     const sektorsnamn = __mirrorAid.sektorsnamn;
     const statistikFor = __mirrorJamforelse.statistikFor;
+    const skapaTermer = __mirrorTermer.skapaTermer;
+    const stor = __mirrorTermer.stor;
+    const adjektiv = __mirrorTermer.adjektiv;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -6813,13 +7159,18 @@ const __mirrorPerBas = (() => {
 
 
 
+
+/** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
+const T = skapaTermer();
+
+
 // ---- Receptet (ADR-52): vad avsnittet ska innehålla. Standardvärdet är tabellerna som de står i arbetsgivarnas utkast. ----
 const PERBAS_DIMENSIONER = ['bas', 'sektor'];
 const PERBAS_MATT = ['p10', 'p25', 'med', 'p75', 'p90', 'medel'];
 const PERBAS_MATT_ETIKETT = Object.freeze({ p10: 'P10', p25: 'P25', med: 'Median', p75: 'P75', p90: 'P90', medel: 'Medellön' });
 const PERBAS_RADER = ['referens', 'organisation', 'yrken', 'statistik', 'kvinnor', 'man'];
-const PERBAS_RAD_ETIKETT = Object.freeze({ referens: 'Referensen (ställningstagandet)', organisation: 'Organisationen', yrken: 'Yrkesgrupperna',
-    statistik: 'Jämförelsestatistikens rad under varje yrke', kvinnor: 'Kvinnor', man: 'Män' });
+const PERBAS_RAD_ETIKETT = Object.freeze({ referens: 'Referensen (ställningstagandet)', organisation: 'Organisationen', yrken: stor(T.enhet.bfl),
+    statistik: `Jämförelsestatistikens rad under varje ${T.enhet.en}`, kvinnor: 'Kvinnor', man: 'Män' });
 function perBasStandard() {
     return { dim: 'bas', rader: [...PERBAS_RADER], matt: ['p10', 'med', 'p90'], konsgap: true, aldersgrupper: true, aldersgranser: [35, 50] };
 }
@@ -6851,7 +7202,7 @@ function yrkesnamn(r) {
     const aid = r.aid != null ? String(r.aid).trim() : '';
     const etikett = r.yrkeLabel ? String(r.yrkeLabel).trim() : '';
     if (aid && etikett && etikett !== aid) return `${aid} ${etikett}`;
-    return aid || etikett || String(r.yrke || '').trim() || '(okänt yrke)';
+    return aid || etikett || String(r.yrke || '').trim() || `(${adjektiv('okänd', T.enhet)} ${T.enhet.en})`;
 }
 
 /**
@@ -6955,7 +7306,7 @@ function perBasTabeller(rader, opt = {}) {
     };
     const aldersgrupper = { grupper, rader: [aldersRad('Alla', d), ...visadeBas.map(b => aldersRad(b, d.filter(r => dimAv(r) === b)))] };
 
-    return { k, recept, dim: recept.dim, dimEtikett: recept.dim === 'sektor' ? 'Sektor' : 'BAS-intervall', intervall, basUtelamnade, harAlder,
+    return { k, recept, dim: recept.dim, dimEtikett: stor(recept.dim === 'sektor' ? T.huvudomrade.en : T.niva.en), intervall, basUtelamnade, harAlder,
              konsgap: recept.konsgap ? konsgap : null, aldersgrupper: recept.aldersgrupper && harAlder ? aldersgrupper : null };
 }
 
@@ -6971,6 +7322,8 @@ const __mirrorTabellrecept = (() => {
     // importer ur tidigare speglade lib-moduler
     const computePivot = __mirrorUtforska.computePivot;
     const personOrd = __mirrorNamn.personOrd;
+    const skapaTermer = __mirrorTermer.skapaTermer;
+    const stor = __mirrorTermer.stor;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -6986,15 +7339,20 @@ const __mirrorTabellrecept = (() => {
  */
 
 
+
+/** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
+const T = skapaTermer();
+
+
 // Samma listor som i src/lib/utforska.js (DIMENSIONER, MATT); tests/tabellrecept.test.js vaktar att de är lika.
 const DIMENSIONER = ['bas', 'aid', 'alder', 'kon', 'alla', 'aidbas', 'lonespann', 'sektor', 'aidniva'];
 const MATT = ['median', 'medel', 'n', 'p10', 'p25', 'p75', 'p90', 'spridning', 'andelKv', 'gap'];
 const RECEPT_DIMENSIONER = DIMENSIONER, RECEPT_MATT = MATT;
 
 const DIM_ETIKETT = Object.freeze({
-    bas: 'BAS-intervall', aid: 'Yrkesgrupp (AID)', alder: 'Åldersgrupp', kon: 'Kön',
-    aidbas: 'Yrkesgrupp inom BAS', lonespann: 'Lönespann', alla: 'Hela urvalet',
-    sektor: 'Sektor (AID-huvudområde)', aidniva: 'AID-mellannivå'
+    bas: stor(T.niva.en), aid: stor(T.enhet.en), alder: 'Åldersgrupp', kon: 'Kön',
+    aidbas: `${stor(T.enhet.en)} i ${T.niva.en}`, lonespann: 'Lönespann', alla: 'Hela urvalet',
+    sektor: stor(T.huvudomrade.en), aidniva: 'AID-mellannivå'
 });
 const MATT_ETIKETT = Object.freeze({
     median: 'Median månadslön', medel: 'Medellön', n: 'Antal (n)',
@@ -7243,6 +7601,7 @@ const __mirrorArsbokslut = (() => {
     // importer ur tidigare speglade lib-moduler
     const median = __mirrorStat.median;
     const quantile = __mirrorStat.quantile;
+    const skapaTermer = __mirrorTermer.skapaTermer;
     const valideraSkal = __mirrorSakligaskal.valideraSkal;
     const skalPerKategori = __mirrorSakligaskal.skalPerKategori;
     const skalSammanstallning = __mirrorSakligaskal.skalSammanstallning;
@@ -7260,6 +7619,10 @@ const __mirrorArsbokslut = (() => {
 // jämförelsen kan visa fördelningen per kategori båda åren. Ett bokslut från version 1 läses som förut, utan skäl.
 
 
+
+
+/** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
+const T = skapaTermer();
 
 const ARSBOKSLUT_VERSION = 2;
 const MAX_TEXT = 200;
@@ -7419,7 +7782,7 @@ const ARSBOKSLUT_NYCKELTAL = Object.freeze([
     ['n', 'Antal personer', 'antal'], ['nKv', 'Kvinnor', 'antal'], ['nMa', 'Män', 'antal'],
     ['medKv', 'Medianlön kvinnor', 'kr'], ['medMa', 'Medianlön män', 'kr'],
     ['kvotPct', 'Kvinnors medianlön i % av mäns', 'pct'], ['oforklaratPct', 'Oförklarad löneskillnad (regressionen, %)', 'pct'],
-    ['antalFlaggade', 'Flaggade yrkesgrupper i Lika arbete', 'antal'], ['antalKandidatpar', 'Kandidatpar i Likvärdigt arbete', 'antal'],
+    ['antalFlaggade', `Flaggade ${T.enhet.fl} i Lika arbete`, 'antal'], ['antalKandidatpar', 'Kandidatpar i Likvärdigt arbete', 'antal'],
 ]);
 
 /**
@@ -7794,6 +8157,9 @@ const _ipInbyggda = __mirrorImportprofiler.inbyggdaProfiler;
 
 // ---- speglar src/lib/forhandskontroll.js ----
 const __mirrorForhandskontroll = (() => {
+    // importer ur tidigare speglade lib-moduler
+    const skapaTermer = __mirrorTermer.skapaTermer;
+
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 /**
@@ -7811,6 +8177,9 @@ const __mirrorForhandskontroll = (() => {
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
+
+/** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
+const T = skapaTermer();
 
 /** Antal rader i tolkningen. */
 const FK_ANTAL_RADER = 10;
@@ -7927,7 +8296,7 @@ function byggForhandskontroll({ rader = [], data = [], konVarden = [], parseStat
     // Sammandrag ur inläsningens räknare.
     const bortfall = [];
     const lagg = (kod, antal, text, exempel = []) => { if (antal > 0) bortfall.push({ kod, antal, text, exempel: [...exempel] }); };
-    lagg('bas', ps.excludedNoBas || 0, 'utan BAS-intervall');
+    lagg('bas', ps.excludedNoBas || 0, `utan ${T.niva.en}`);
     lagg('lon', ps.excludedZeroLon || 0, 'utan lön (tom, noll eller som inte går att läsa)', ps.invalidLonExamples || []);
     lagg('kon', ps.excludedMissingKon || 0, 'utan känt kön', ps.missingKonExamples || []);
     const sammandrag = {
@@ -7987,7 +8356,7 @@ function byggForhandskontroll({ rader = [], data = [], konVarden = [], parseStat
         varna('kon-okand', 'varning', `${_fkRader(ps.excludedMissingKon)} har ett kön som verktyget inte känner igen och faller bort.`);
     }
     if ((ps.excludedNoBas || 0) > 0) {
-        varna('bortfall-bas', 'varning', `${_fkRader(ps.excludedNoBas)} saknar BAS-intervall och faller bort.`);
+        varna('bortfall-bas', 'varning', `${_fkRader(ps.excludedNoBas)} saknar ${T.niva.en} och faller bort.`);
     }
     if ((ps.excludedZeroLon || 0) > 0) {
         const ogiltig = ps.invalidLon || 0;
@@ -8022,6 +8391,7 @@ const __mirrorOrganisationspaket = (() => {
     const valideraPerBasRecept = __mirrorPerBas.valideraPerBasRecept;
     const perBasReceptArStandard = __mirrorPerBas.perBasReceptArStandard;
     const valideraImportprofiler = __mirrorImportprofiler.valideraImportprofiler;
+    const skapaTermer = __mirrorTermer.skapaTermer;
 
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
@@ -8038,6 +8408,11 @@ const __mirrorOrganisationspaket = (() => {
  */
 
 
+
+
+
+/** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
+const T = skapaTermer();
 
 
 const PAKET_FORMAT = 'lonekartlaggning-organisationspaket';
@@ -8276,7 +8651,7 @@ function tolkaPaket(text) {
     if (inst.kTroskel != null && _kTroskel(inst.kTroskel) === undefined) varningar.push('Paketets minsta gruppstorlek är ogiltig och används inte.');
     const las = _lasningar(inst, varningar);
     if (inst.jamforelse != null && _jamforelse(inst.jamforelse) === undefined)
-        varningar.push('Paketets val av jämförelseyrken i likvärdigt arbete är ogiltigt ("alla" eller "mansdominerade") och används inte.');
+        varningar.push(`Paketets val av ${T.jamforelse.fl} i likvärdigt arbete är ogiltigt ("alla" eller "mansdominerade") och används inte.`);
     // Paketets egen tröskel får inte ligga under paketets golv: den höjs till golvet, med en varning.
     let kTroskel = _kTroskel(inst.kTroskel);
     if (kTroskel !== undefined && las.kTroskelLagst !== undefined && kTroskel < las.kTroskelLagst) {

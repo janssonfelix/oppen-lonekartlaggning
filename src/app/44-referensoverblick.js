@@ -15,7 +15,7 @@ function referensOverblick() {
 }
 // Läget i spannet är ett index: rubriken säger skalan, verktygstipset vad talet betyder.
 const _RR_LAGE_TIPS = 'Var gruppens medianlön ligger i referensens spann: 0 är referensens P10 och 100 dess P90. Under 0 ligger medianen nedanför spannet, över 100 ovanför. Orden före talet säger samma sak.';
-const _RR_MATCHNING_TIPS = 'Hur yrkesgruppen matchades mot jämförelsestatistiken. AID + BAS: en rad med samma AID och samma BAS. Endast AID: det finns ingen sådan rad, så en rad med samma AID som saknar BAS används. En rad för ett annat BAS-intervall används aldrig. – betyder att statistik saknas för gruppen.';
+const _RR_MATCHNING_TIPS = `Hur ${T.enhet.bf} matchades mot jämförelsestatistiken. AID + BAS: en rad med samma AID och samma BAS. Endast AID: det finns ingen sådan rad, så en rad med samma AID som saknar BAS används. Rader för andra ${T.niva.fl} används aldrig. – betyder att statistik saknas för gruppen.`;
 const _rrPct = v => (v == null ? '–' : `${v >= 0 ? '+' : '−'}${svTal(Math.abs(v), 1)} %`);
 const _rrSkillnad = (org, ref) => (org != null && ref != null ? (org / ref - 1) * 100 : null);
 const _rrLageText = l => (l.pos == null ? '–' : `${l.ord} (${svTal(l.pos, 0)})`);
@@ -26,7 +26,7 @@ function _rrKolumner({ harStatistik, harStallningstagande }) {
     const skillnad = (kort, nyckel) => per.map(([t, p]) => ({ rubrik: `${t} mot ${kort} (%)`, typ: 'pct', varde: g => _rrSkillnad(g.org[p], g[nyckel][p]) }));
     const lage = g => [harStallningstagande && _rrLageText(g.lage.stallningstagande), harStatistik && _rrLageText(g.lage.statistik)].filter(Boolean).join(' · ');
     return [
-        { rubrik: 'Yrkesgrupp', typ: 'text', varde: g => `${g.yrke} · BAS ${g.bas}` },
+        { rubrik: termStor(T.enhet.en), typ: 'text', varde: g => `${g.yrke} · BAS ${g.bas}` },
         // Statistikens matchning (samma ord som tabellen mot jämförelsestatistiken), bara när statistik finns.
         ...(harStatistik ? [{ rubrik: 'Matchning', tips: _RR_MATCHNING_TIPS, typ: 'text', varde: g => _jfMatchningEtikett(g.statistikMatchning),
             sortering: g => ({ 'aid-bas': 1, aid: 2 })[g.statistikMatchning] || 3 }] : []),
@@ -49,7 +49,7 @@ function _rrTabellHtml(kolumner, grupper) {
         if (k.typ === 'pct') return `<td class="num" data-sort-value="${v.toFixed(2)}">${_rrPct(v)}</td>`;
         return `<td class="num" data-sort-value="${v}">${svTal(v, 0)}</td>`;
     };
-    return `<div class="table-container"><table id="ref-tabell" class="data-table" aria-label="Löneläget och statistiken mot ställningstagandet per yrkesgrupp"><thead><tr>`
+    return `<div class="table-container"><table id="ref-tabell" class="data-table" aria-label="Löneläget och statistiken mot ställningstagandet per ${T.enhet.en}"><thead><tr>`
         + kolumner.map(k => `<th scope="col"${k.tips ? ` title="${esc(k.tips)}"` : ''}>${esc(k.rubrik)}</th>`).join('')
         + `</tr></thead><tbody>${grupper.map(g => `<tr>${kolumner.map(k => cell(k, g)).join('')}</tr>`).join('')}</tbody></table></div>`;
 }
@@ -59,7 +59,7 @@ function _rrTalHtml(tal, { harStatistik, harStallningstagande }) {
     const monsterRuta = (etikett, m) => ruta(etikett, `${m.grupper} · ${svPct(m.andel, 0)}`);
     const pm = tal.perMonster;
     return '<div class="summary-stats">' + [
-        ruta('Yrkesgrupper', String(tal.antalGrupper)),
+        ruta(`${termStor(T.enhet.fl)} i ${T.niva.en}`, String(tal.antalGrupper)),
         ...(harStatistik && harStallningstagande ? [
             monsterRuta('Båda över ställningstagandet', pm.badaOver), monsterRuta('Bara löneläget över', pm.baraLonelageOver),
             monsterRuta('Bara statistiken över', pm.baraStatistikOver), monsterRuta('Båda inom', pm.badaInom),
@@ -93,7 +93,7 @@ function _rrHantelFigur(rader, { harStatistik }) {
               data: med.map(d => ({ y: d.y, x: d.v.median, forskjutning, ...falt(d) })), tips: d => [[d.y], [s.namn], ['Median', kr(d.x)]] }
         ];
     });
-    return { beskrivning: `Månadslönen per yrkesgrupp, med ${serier.map(s => s.namn.toLowerCase()).join(', ').replace(/, ([^,]*)$/, ' och $1')} bredvid varandra i raden; ställningstagandet är referenspunkten. Bandet är P10–P90 och strecket medianen. Samma värden står i tabellen ovanför.`,
+    return { beskrivning: `Månadslönen per ${T.enhet.en}, med ${serier.map(s => s.namn.toLowerCase()).join(', ').replace(/, ([^,]*)$/, ' och $1')} bredvid varandra i raden; ställningstagandet är referenspunkten. Bandet är P10–P90 och strecket medianen. Samma värden står i tabellen ovanför.`,
         urval: [URVAL.bas, URVAL.yrkesgrupp, URVAL.sektor, URVAL.antal], x: { skala: 'linjar', format: 'kr', titel: 'Månadslön (kr)' }, y: { skala: 'band', ordning: rader.map(r => r.namn), etikettMax: 40 },
         hojd: 80 + serier.length * 18 * rader.length,
         lager };
@@ -102,8 +102,8 @@ function _rrHantelFigur(rader, { harStatistik }) {
 function _rrStatTabellHtml(rader) {
     return `<h3 class="jmf-diagram-rubrik">Statistiken mot ställningstagandet</h3>
         <p class="muted">Positivt: statistiken ligger över ställningstagandet. Negativt: statistiken ligger under det. Organisationens löner ingår inte.</p>
-        <div class="table-container"><table id="ref-stat-mot-stallning" class="data-table" aria-label="Statistiken mot ställningstagandet per yrkesgrupp"><thead><tr>
-        <th scope="col">Yrkesgrupp</th><th scope="col">BAS</th><th scope="col">P10 (%)</th><th scope="col">Median (%)</th><th scope="col">P90 (%)</th></tr></thead><tbody>`
+        <div class="table-container"><table id="ref-stat-mot-stallning" class="data-table" aria-label="Statistiken mot ställningstagandet per ${T.enhet.en}"><thead><tr>
+        <th scope="col">${termStor(T.enhet.en)}</th><th scope="col">BAS</th><th scope="col">P10 (%)</th><th scope="col">Median (%)</th><th scope="col">P90 (%)</th></tr></thead><tbody>`
         + rader.map(r => `<tr><td>${esc(r.yrke)}</td><td>${esc(r.bas)}</td>${['p10', 'median', 'p90'].map(p => (r[p] == null
             ? '<td class="num muted" data-sort-value="">–</td>' : `<td class="num" data-sort-value="${r[p].toFixed(2)}">${_rrPct(r[p])}</td>`)).join('')}</tr>`).join('')
         + '</tbody></table></div>';
@@ -119,10 +119,10 @@ function _rrExcelBlad() {
     const cell = (k, g) => { const v = k.varde(g); return k.typ === 'pct' ? pct(v) : k.typ === 'kr' ? (v == null ? '' : Math.round(v)) : v ?? ''; };
     return [
         ['Löneläget och statistiken mot ställningstagandet (fliken Löneläget)'],
-        [`Minsta gruppstorlek ${kTroskel()}: yrkesgrupper med färre personer redovisas inte. Ställningstagandet är referenspunkten.`], [],
+        [`Minsta gruppstorlek ${kTroskel()}: ${T.enhet.fl} i ${T.niva.en} med färre personer redovisas inte. Ställningstagandet är referenspunkten.`], [],
         kolumner.map(k => k.rubrik),
         ...o.grupper.map(g => kolumner.map(k => cell(k, g))),
-        ...(har.harStatistik && har.harStallningstagande ? [[], ['Statistiken mot ställningstagandet (%)'], ['Yrkesgrupp', 'BAS', 'P10', 'Median', 'P90'],
+        ...(har.harStatistik && har.harStallningstagande ? [[], ['Statistiken mot ställningstagandet (%)'], [termStor(T.enhet.en), 'BAS', 'P10', 'Median', 'P90'],
             ...o.statistikMotStallningstagande.map(r => [r.yrke, r.bas, pct(r.p10), pct(r.median), pct(r.p90)])] : [])
     ];
 }
@@ -139,7 +139,7 @@ function _rrRitaTopp(o, { harStatistik, harStallningstagande }) {
     if (!host) return;
     if (!o) { host.innerHTML = ''; return; }
     const antal = villkor => o.grupper.filter(villkor).length;
-    const grupper = n => `${n} ${n === 1 ? 'yrkesgrupp' : 'yrkesgrupper'}`;
+    const grupper = n => `${n} ${termForAntal(n, T.enhet)} i ${T.niva.en}`;
     host.innerHTML = _laSlutsats('Referenser', harStatistik && harStallningstagande ? 'Båda' : harStatistik ? 'Statistiken' : 'Ställningstagandet',
             harStatistik && harStallningstagande ? 'Ställningstagandet är referenspunkten' : 'Bara den referensen är inläst')
         + (harStallningstagande ? _laSlutsats('Löneläget utanför ställningstagandet', grupper(antal(g => g.monster.lonelage === 'ovanför' || g.monster.lonelage === 'nedanför')), `av ${o.tal.antalGrupper}`) : '')
@@ -163,7 +163,7 @@ function renderReferensOverblick() {
         ${_rrTabellHtml(_rrKolumner(har), o.grupper)}
         <h3 class="jmf-diagram-rubrik">Lönerna mot ställningstagandet och statistiken</h3>
         <div class="jmf-diagram-yta"><div id="chart-ref-hantel"></div></div>
-        <p class="muted">${flera ? `Visar de ${_RR_MAX} första yrkesgrupperna av ${o.grupper.length} — tabellen har alla. ` : ''}${utanSpann ? 'P10 och P90 saknas i jämförelsestatistiken: den visas bara med sin median.' : ''}</p>
+        <p class="muted">${flera ? `Visar de ${_RR_MAX} första ${T.enhet.bfl} av ${o.grupper.length} — tabellen har alla. ` : ''}${utanSpann ? 'P10 och P90 saknas i jämförelsestatistiken: den visas bara med sin median.' : ''}</p>
         ${har.harStatistik && har.harStallningstagande ? _rrStatTabellHtml(o.statistikMotStallningstagande) : ''}`;
     try { ritaFigur('chart-ref-hantel', _rrHantelFigur(_rrHantelRader(o.grupper.slice(0, _RR_MAX)), har)); } catch (e) { rapporteraFel('Löneläget: överblickens bild', e); }
     addTableExportTools('ref-tabell', 'referenser');

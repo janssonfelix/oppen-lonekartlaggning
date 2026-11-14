@@ -10,6 +10,10 @@
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
 import { personOrd } from './namn.js';
+import { skapaTermer, termFras } from './termer.js';
+/** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
+const T = skapaTermer();
+
 
 /** Kategorier för fynd som gäller skillnader mellan kvinnor och män (lagkravet). */
 export const KONSRELATERADE = ['Lika arbete', 'Lika arbete, fördjupning', 'Likvärdigt arbete'];
@@ -67,6 +71,6 @@ export function stegLikvardigt({ analys, antalPar, utelamnade = 0, k, t, d }) {
     if (antalPar === 0) return { status: 'klar', detail: 'Analysen körd — inga kandidatpar utifrån nuvarande trösklar.' };
     return {
         status: t > 0 && d >= t ? 'klar' : 'delvis',
-        detail: `${antalPar} kandidatpar (kvinnodominerade yrken mot jämförelseyrken med likvärdiga krav) · ${d} av ${t} kandidatpar hanterade i Att göra.`,
+        detail: `${antalPar} kandidatpar (${termFras(T.enhet, 'fl', { adjektiv: 'kvinnodominerad' })} mot ${T.jamforelse.fl} med likvärdiga krav) · ${d} av ${t} kandidatpar hanterade i Att göra.`,
     };
 }

@@ -1,7 +1,7 @@
 # Likvärdighetsmodellen — referens
 
-Likvärdighetsanalysen jämför organisationens kvinnodominerade yrken med yrken som inte är kvinnodominerade och har lika
-eller lägre krav, och pekar ut par där jämförelseyrket har högre lön. Bredvid kandidatparen står listan *Lägre krav,
+Likvärdighetsanalysen jämför organisationens kvinnodominerade AID-etiketter i BAS-intervall med AID-etiketter som inte är
+kvinnodominerade och har lika eller lägre krav, och pekar ut par där jämförelseetiketten har högre lön. Bredvid kandidatparen står listan *Lägre krav,
 högre lön*. Det här dokumentet bär den **gällande lydelsen** för analysen: definitionen av kvinnodominerat och var den
 används, de tre stegen, måtten på kraven, konfidensintervallen och åldersjusteringen, listan över lägre krav,
 inställningarna och vakterna. Koden är sanningen; där dokumentet och koden skiljer sig är det dokumentet som ska
@@ -30,8 +30,8 @@ Modellen bor i `src/lib/likvardighet.js` och speglas in i bygget som övriga kä
 Att adaptern verkligen delegerar vaktas av `tests/drift.test.js`.
 
 **Orkestratorn** `computeLikvardighetPairs({ data, statistik, nationellKlass, opts })` i lib kör stegen i ordning:
-`aggregeraOrgKvDom` (steg 1, och organisationens jämförelseyrken), `klassificeraStatistik` (jämförelsestatistikens
-jämförelseyrken), filtret för jämförelsemängden (avsnitt 4), `byggPar` eller `byggParPoäng` (steg 3) och
+`aggregeraOrgKvDom` (steg 1, och organisationens jämförelseetiketter), `klassificeraStatistik` (jämförelsestatistikens
+jämförelseetiketter), filtret för jämförelsemängden (avsnitt 4), `byggPar` eller `byggParPoäng` (steg 3) och
 `byggParLagreKrav` (avsnitt 6). Den returnerar `orgKvDom`, `orgIckeKv`, `statIckeKv`, `pairs`, `parAntal`,
 `lagreKrav`, `diagnostik` och `opts`.
 
@@ -91,39 +91,40 @@ kvinnodominerad med *X % eller mer* vid gränsen 60. Ordlistan (*Jämn könsför
 `aggregeraOrgKvDom(data, kvinnoThr, K, definition)` grupperar organisationens rader per AID × BAS (nyckeln
 `aid|bas`). Rader utan AID, utan BAS eller utan lön över 0 räknas inte. Varje grupp får antal, antal kvinnor
 (`kon` som innehåller `kvinna`), andel kvinnor, klass, medianlön, lönerna och åldrarna (parallellt med lönerna, `null`
-när åldern saknas; de används av åldersjusteringen i avsnitt 5). Namnet är `yrkeLabel`, annars `yrke`, annars AID.
+när åldern saknas; de används av åldersjusteringen i avsnitt 5). Namnet (etikettnamnet) är `yrkeLabel`, annars `yrke`, annars
+AID.
 
 Grupper med klassen `'kvinnodominerad'` blir **`orgKvDom`**, analysens subjekt; **alla övriga** blir `orgIckeKv`,
-organisationens jämförelseyrken (avsnitt 4). Båda sorteras efter antal, störst först.
+organisationens jämförelseetiketter (avsnitt 4). Båda sorteras efter antal, störst först.
 
 **Minsta gruppstorlek tillämpas inte i steget:** också små kvinnodominerade grupper ingår, eftersom lagen kräver att
-även de prövas. `K` (adaptern skickar `kInstalld()`) används bara för att räkna dem i diagnostiken
+kvinnodominerat arbete prövas också när gruppen är liten. `K` (adaptern skickar `kInstalld()`) används bara för att räkna dem i diagnostiken
 (`kvDomMedNLessThanK`), som fliken visar. Undantaget och vad det innebär för fliken och dess export står i
 `k-troskeln.md` §4.
 
-## 4. Steg 2: jämförelseyrkena
+## 4. Steg 2: jämförelseetiketterna
 
 **Jämförelsemängden** är alla grupper som **inte är kvinnodominerade** enligt vald definition (ADR-60):
 mansdominerade och blandade. Med *Mer än* och gränsen 60 betyder det högst 60 % kvinnor, med *eller mer* under 60 %. Klassen och
 könsandelen står på varje par (`maKlass`, `maKvinnoPct`; `maKvAndel` bär samma andel), för interna och externa
-jämförelseyrken. Tolkningen att jämförelsemängden är alla som inte är kvinnodominerade är ett förslag, inte prövat av
+jämförelseetiketter. Tolkningen att jämförelsemängden är alla som inte är kvinnodominerade är ett förslag, inte prövat av
 jurist; lagens regler om kvinnodominerat arbete beskrivs i `lagrum.md`.
 
 **Filtret** `jamforelse: 'alla' | 'mansdominerade'` (`state.likvardighet.jamforelse`, standard `'alla'`, rutan
-*Jämför bara med mansdominerade yrken* i Inställningar) begränsar mängden till de mansdominerade
+*Jämför bara med mansdominerade AID-etiketter* i flikens avsnitt Inställningar) begränsar mängden till de mansdominerade
 (`state.likvardighet.jamforelse = 'mansdominerade'`). Det tillämpas i orkestratorn **innan** paren byggs, på
-organisationens yrken, på statistikens yrken och per BAS-intervall i statistiken (ett intervall utan mansdominerade
+organisationens AID-etiketter, på statistikens rader och per BAS-intervall i statistiken (ett intervall utan mansdominerade
 rader tas bort), så att reserven till jämförelsestatistiken per BAS fungerar som utan filter. Med filtret på återskapas
 urvalet före ADR-60.
 
 **Samma mängd** används i kandidatparen, *Lägre krav, högre lön*, *Hierarkisk jämförelse* och sammanfattningen per
 BAS-intervall i tabellerna per AID-kod och BAS-intervall (`arJamforelseKlass` i `src/lib/aidbas.js`).
 
-**Organisationens jämförelseyrken** är `orgIckeKv` ur steg 1, grupperade per BAS av `orgIckeKvByBas`.
+**Organisationens jämförelseetiketter** är `orgIckeKv` ur steg 1, grupperade per BAS av `orgIckeKvByBas`.
 
-**Jämförelsestatistikens jämförelseyrken.** `klassificeraStatistik(statistik, nationellKlass, { definition, grans })`
-tar rader med AID, BAS och median över 0; en rad vars AID inte bara är siffror är en rubrik för en yrkesfamilj och
-hoppas över. Andelen kvinnor tas i första hand ur statistikens egen könsfördelning (`andelKv` mellan 0 och 100,
+**Jämförelsestatistikens jämförelseetiketter.** `klassificeraStatistik(statistik, nationellKlass, { definition, grans })`
+tar rader med AID, BAS och median över 0; en rad vars AID inte bara är siffror är en rubrik för en grupp av etiketter
+och hoppas över. Andelen kvinnor tas i första hand ur statistikens egen könsfördelning (`andelKv` mellan 0 och 100,
 källan `'lokal'`), annars ur reserven `nationellKlass` (källan `'nationell'`); ger ingen av dem en andel räknas raden som
 oklassificerad. Kvinnodominerade rader hoppas över; övriga blir kandidater med klass och källa, grupperade per BAS
 (`statByBas`) och sorterade efter andel kvinnor. Diagnostiken räknar `klass.kvDom`, `klass.ickeKv`, `klass.blandat`
@@ -138,53 +139,54 @@ första siffrorna) i den del som organisationstypen väljer (kommuner, regioner 
 etiketten och prefixet i båda delarna — och en kod med tre siffror som prefix. Andelen avrundas till en decimal.
 
 **BAS-läget** (standard, när lönefilen saknar poäng): `byggPar` jämför **inom samma BAS-intervall**. För varje
-kvinnodominerat yrke används i första hand organisationens **egna** jämförelseyrken i intervallet (`jamforKalla`
+kvinnodominerad AID-etikett används i första hand organisationens **egna** jämförelseetiketter i intervallet (`jamforKalla`
 `'intern'`). Saknas sådana i intervallet används **jämförelsestatistiken** som reserv (`'extern'`), och diagnostiken
-räknar det i `basMedExternFallback`. Saknas båda bildas inga par för yrket.
+räknar det i `basMedExternFallback`. Saknas båda bildas inga par för AID-etiketten.
 
 **Poängläget.** Har lönefilen kolumnen Poäng bygger `_deriveArbetsvarderingFromData` en tabell `aid|bas` → poäng
-(det första värdet per grupp) i `state.arbetsvardering.byKey`, och `byggParPoäng` ersätter `byggPar`. Ett
-jämförelseyrke kvalificerar när dess poäng är högst det kvinnodominerade yrkets poäng × (1 + band / 100) — lika eller
+(det första värdet per grupp) i `state.arbetsvardering.byKey`, och `byggParPoäng` ersätter `byggPar`. En
+jämförelseetikett kvalificerar när dess poäng är högst den kvinnodominerade AID-etikettens poäng × (1 + band / 100) — lika eller
 lägre krav — **även över BAS-gränserna**. Bandet är standard 5 % (`state.likvardighet.poangBandPct`, fältet *Räkna som
-lika krav inom ± … %* i avsnittet *Arbetsvärdering med poäng*, 0–50). Organisationens egna jämförelseyrken används i
-första hand; finns inget som kvalificerar används statistikens rader som har poäng i samma tabell. Ett kvinnodominerat
-yrke utan poäng får inga par och räknas i `kvUtanPoang`, som fliken visar. Diagnostikens `kravProxy` är `'poäng'`
+lika krav inom ± … %* i avsnittet *Arbetsvärdering med poäng*, 0–50). Organisationens egna jämförelseetiketter används i
+första hand; finns inget som kvalificerar används statistikens rader som har poäng i samma tabell. En kvinnodominerad
+AID-etikett utan poäng får inga par och räknas i `kvUtanPoang`, som fliken visar. Diagnostikens `kravProxy` är `'poäng'`
 eller `'bas'`.
 
 ## 5. Steg 3: paren
 
-**Ett par** bildas när jämförelseyrkets median är **högre** än det kvinnodominerade yrkets och skillnaden i procent av
-det kvinnodominerade yrkets median, `gapPct` = (median jämf. − median kv) / median kv · 100, är minst minsta skillnaden.
-Par där jämförelseyrket ligger lika eller lägre räknas i diagnostiken (`statLägreEllerLika`) men visas inte. Varje par
-får skillnaden i kronor (`gapKr`) och procent, och `allvarsindex` = |`gapKr`| · antalet i det kvinnodominerade yrket
+**Ett par** bildas när jämförelseetikettens median är **högre** än den kvinnodominerade AID-etikettens och skillnaden i
+procent av den kvinnodominerade AID-etikettens median, `gapPct` = (median jämf. − median kv) / median kv · 100, är minst minsta skillnaden.
+Par där jämförelseetiketten ligger lika eller lägre räknas i diagnostiken (`statLägreEllerLika`) men visas inte. Varje par
+får skillnaden i kronor (`gapKr`) och procent, och `allvarsindex` = |`gapKr`| · antalet i den kvinnodominerade AID-etiketten
 (kolumnen *Summa för gruppen (kr/mån)*). Paren sorteras efter `gapPct`, störst först.
 
 **Minsta skillnad och antal par** (ADR-61):
 
 | Värde | I verktyget (`state.likvardighet`) | Fältet i fliken | Modulens eget standardvärde |
 |---|---|---|---|
-| `minGapPct` | **0 %**: alla par där jämförelseyrket har högre lön | *Visa bara par med minst … % skillnad (0 = alla)*, 0–50 | 0 |
+| `minGapPct` | **0 %**: alla par där jämförelseetiketten har högre lön | *Visa bara par med minst … % skillnad (0 = alla)*, 0–50 | 0 |
 | `topN` | **20 par** | *Visa max: … par*, 10–500 | 100 |
 
-Med `state.likvardighet.minGapPct` 0 visas alla par där jämförelseyrket har högre lön, och 5 % är ett valbart filter i
+Med `state.likvardighet.minGapPct` 0 visas alla par där jämförelseetiketten har högre lön, och 5 % är ett valbart filter i
 fältet för minsta skillnad. Tabellen visar de `topN` största; finns fler står raden *Tabellen visar de N största
 skillnaderna av M par* och knappen *Visa alla M par*, som sätter `topN` till antalet par (minst 10). Modulens egna
 standardvärden, 0 % och 100 par, gäller bara när den anropas utan inställningar, som i enhetstesterna; adaptern faller
 också tillbaka på 100 om `topN` saknas i tillståndet. Allt som läser paren utanför fliken läser samma urval (`pairs`).
 
 **Före urvalet räknas** i `byggPar` och `byggParPoäng` (`parAntal`, `_parAntal` i lib): `totalt` (alla par som klarat
-minsta skillnaden), `overDirektiv` (par där det kvinnodominerade yrkets median i procent av jämförelseyrkets får
+minsta skillnaden), `overDirektiv` (par där den kvinnodominerade AID-etikettens median i procent av jämförelseetikettens får
 direktivmarkeringen, `direktivMarkering` ur `src/lib/status.js`, det vill säga en ojusterad löneskillnad på minst 5 %)
 och `sakra` (par vars hela konfidensintervall ligger över 0). Nyckeltalet *Par att titta närmare på* visar `totalt` med
 *varav M med ojusterad löneskillnad ≥ 5 %, S med säker skillnad*, så att direktivnivån syns utan att paren under den
-döljs. Rutan *Största skillnaden* visar det kvinnodominerade yrkets median i procent av jämförelseyrkets.
+döljs. Rutan *Största skillnaden* visar den kvinnodominerade AID-etikettens median i procent av
+jämförelseetikettens.
 
 **Konfidensintervallet** är ett bootstrap-intervall på medianskillnaden i kronor, 1 000 omdragningar, percentilerna
 2,5 och 97,5 (95 %).
 
 - Interna par (`bootstrapMedianDiffKr`): båda gruppernas löner dras om. Kräver minst 3 löner på varje sida, annars
   `null`.
-- Externa par (`bootstrapMedianVsConstantKr`): det kvinnodominerade yrkets löner dras om mot statistikens median som
+- Externa par (`bootstrapMedianVsConstantKr`): den kvinnodominerade AID-etikettens löner dras om mot statistikens median som
   konstant, eftersom statistiken saknar individdata. Kräver minst 3 löner och en median över 0.
 - **Reproducerbart:** utan en injicerad slumpgenerator seedas bootstrappen per par ur parets egna löner (`rngFor` ur
   `src/lib/rng.js`; för externa par lönerna och statistikens median). Två körningar på samma underlag ger samma
@@ -195,12 +197,12 @@ döljs. Rutan *Största skillnaden* visar det kvinnodominerade yrkets median i p
 
 **Huvudmåttet** är den råa medianskillnaden: lagen prövar lönenivån som sådan.
 
-**Den åldersjusterade skillnaden** (`aldersjusteradSkillnad`) räknas bara för interna par. I jämförelseyrket skattas
+**Den åldersjusterade skillnaden** (`aldersjusteradSkillnad`) räknas bara för interna par. I jämförelseetiketten skattas
 log(lön) = a + b · ålder med OLS. Kraven är minst 10 personer med ålder (`ALDERS_GOLV_DEFAULT`, opts `aldersGolv`) och
-minst 5 års åldersspridning (`ALDERS_SPRIDNING_MIN`), och att det kvinnodominerade yrket har någon med ålder; annars
-`null`. Lönen prediceras vid varje person i det kvinnodominerade yrket med dennes ålder, och medianen av prediktionerna
-är den åldersjusterade jämförelsemedianen (`medianJusterad`). Skillnaden räknas i kronor och procent mot det
-kvinnodominerade yrkets **råa** median, så att den är jämförbar med parets råa skillnad. Den visar hur mycket av
+minst 5 års åldersspridning (`ALDERS_SPRIDNING_MIN`), och att den kvinnodominerade AID-etiketten har någon med ålder;
+annars `null`. Lönen prediceras vid varje person i den kvinnodominerade AID-etiketten med dennes ålder, och medianen av prediktionerna
+är den åldersjusterade jämförelsemedianen (`medianJusterad`). Skillnaden räknas i kronor och procent mot den
+kvinnodominerade AID-etikettens **råa** median, så att den är jämförbar med parets råa skillnad. Den visar hur mycket av
 skillnaden som kan bero på åldersstruktur. Paret bär också medelåldern per sida (`kvMedelAlder`, `maMedelAlder`;
 `maMedelAlder` bara för interna par). Externa par får `null`: jämförelsestatistiken saknar individdata. Ett par utan
 justerad skillnad finns kvar.
@@ -213,16 +215,16 @@ parblock. Utanför fliken lyder den samma regel som paret (`k-troskeln.md` §2).
 ## 6. Lägre krav, högre lön
 
 Med BAS som mått på kraven bildas kandidatparen bara inom samma BAS-intervall. Listan *Lägre krav, högre lön*
-(`byggParLagreKrav`, ADR-25) tar med de par där ett kvinnodominerat yrke har **lägre medianlön** än ett av
-**organisationens egna** jämförelseyrken (samma mängd som kandidatparen, avsnitt 4) i ett **strikt lägre**
+(`byggParLagreKrav`, ADR-25) tar med de par där en kvinnodominerad AID-etikett har **lägre medianlön** än en av
+**organisationens egna** jämförelseetiketter (samma mängd som kandidatparen, avsnitt 4) i ett **strikt lägre**
 BAS-intervall.
 
-- **Bara organisationens egna yrken**, ingen reserv ur jämförelsestatistiken.
+- **Bara organisationens egna AID-etiketter**, ingen reserv ur jämförelsestatistiken.
 - **Alla lägre BAS-intervall** ingår; varje par bär antalet BAS-steg (`basSteg`, rangskillnaden).
 - Samma `minGapPct` och `topN` som kandidatparen, och samma bootstrapintervall för interna par, seedat per par.
   Intervallen räknas bara för de par som behålls; sorteringen beror inte på dem, så resultatet blir detsamma.
 - Sortering: störst skillnad i procent först, vid lika fler BAS-steg först.
-- Paren bär kandidatparens fält för yrkena, medianerna, klassen, könsandelen och skillnaden, men inga åldersfält, och
+- Paren bär kandidatparens fält för AID-etiketterna, medianerna, klassen, könsandelen och skillnaden, men inga åldersfält, och
   `jamforKalla` är `'intern'`.
 - **Poängläget räknar inte listan** (`lagreKrav` är tom): där jämför kandidatparen redan över BAS-gränserna, och
   fliken säger det.
@@ -240,12 +242,13 @@ befattningsbeskrivningarna. Regressionerna räknar inte BAS som ett tal; var ran
 
 ## 7. Var resultatet visas och vad som följer med ut
 
-**Fliken Likvärdigt arbete** visar överst nyckeltalen (kvinnodominerade yrken, jämförelseyrken, par att titta närmare
-på, största skillnaden) och diagrammet *Krav mot lön* (en punkt per yrkesgrupp som når `kTroskel()`, krav mot medianlön,
+**Fliken Likvärdigt arbete** visar överst nyckeltalen (kvinnodominerade AID-etiketter, jämförelseetiketter, par att
+titta närmare på, största skillnaden) och diagrammet *Krav mot lön* (en punkt per AID-etikett som når `kTroskel()`, krav mot medianlön,
 form och färg efter `konsklassNu`; med poäng placeras en grupp utan poäng efter sitt BAS-intervall). Avsnittet *Par att
-titta närmare på* har kandidatparen som bild (de 14 paren med störst `allvarsindex`), partabellen (jämförelseyrkets
-andel kvinnor och klass i kolumnen *Könsandel*) med bevis-popup och listan *Lägre krav, högre lön*. Avsnittet *Yrkena
-bakom jämförelsen* visar Steg 1, Steg 2a (organisationens jämförelseyrken) och Steg 2b (statistikens), med klass och den
+titta närmare på* har kandidatparen som bild (de 14 paren med störst `allvarsindex`), partabellen (jämförelseetikettens
+andel kvinnor och klass i kolumnen *Könsandel*) med bevis-popup och listan *Lägre krav, högre lön*. Avsnittet
+*AID-etiketterna bakom jämförelsen* visar Steg 1, Steg 2a (organisationens jämförelseetiketter) och Steg 2b
+(statistikens), med klass och den
 nationella andelen kvinnor som referensvärde. Därtill inställningarna (avsnitt 8), metoden och diagnostiken.
 
 **Flikens export** är CSV och Excel med metodblad (`exportLikvardighetCSV`, `exportLikvardighet`), med bland annat
@@ -256,12 +259,13 @@ dess export är undantagna från tröskeln och märks med undantaget (`k-troskel
 (`_parForRedovisning`; listan över utdata står i `k-troskeln.md` §2). Det gäller också *Lägre krav*.
 
 - **Rapportunderlaget** har blocket *Likvärdigt arbete* (med definitionen, jämförelsemängden och könsandelen i
-  jämförelseyrket; metodtexten säger att yrkena jämförs med yrken på samma nivå som inte är kvinnodominerade och att
+  jämförelseetiketten; metodtexten säger att AID-etiketterna jämförs med AID-etiketter på samma nivå som inte är
+  kvinnodominerade och att
   könsandelen står i tabellen), ett block per kandidatpar (faktastycke, tabell, den justerade skillnaden och frågor till
   verksamheten) och blocket *Lägre krav, högre lön* efter Likvärdigt arbete, med BAS-steg och frågorna.
-- **Rapporten** (Word-utkastet och PDF-rapporten) tar paren med könsandelen i jämförelseyrket, och JPA-protokollet
+- **Rapporten** (Word-utkastet och PDF-rapporten) tar paren med könsandelen i jämförelseetiketten, och JPA-protokollet
   med andel och klass (*Jämf. klass*).
-- **Att göra** tar upp till 20 par, med jämförelseyrkets andel kvinnor och klass i titeln; processöversiktens steg 4
+- **Att göra** tar upp till 20 par, med jämförelseetikettens andel kvinnor och klass i titeln; processöversiktens steg 4
   följer dem (ADR-29).
 - Översikten, Lönestruktur, handlingsplanen, gruppdossiern, BAS-dossiern (också *Lägre krav*), Löneöversyn, årsbokslutet
   och robusthetspanelen i Exportera (`robusthetLikvardighet`, som kör om analysen med kvinnotrösklarna 55, 60 och 65 och
@@ -301,7 +305,7 @@ bär inte minsta skillnaden (ADR-61), antalet par, kvinnotröskeln eller definit
 | `tests/likvardighet.test.js` | Modulen direkt: klassningen i steg 1 och 2 med båda definitionerna vid gränsen, reserven för kvinnoandel, parbygget (intern före extern, reserven per BAS, minsta skillnad, sortering och `topN`, `parAntal` före urvalet, `allvarsindex`, intervallen), orkestratorn, bootstrappen, poängläget, *Lägre krav* (BAS-ordningen fast, sorteringen, tom i poängläget, intervallen bara för paren som behålls), `basRangFn`, åldersjusteringen, den enda definitionen (också `dominans`) och jämförelsemängden med filtret |
 | `tests/drift.test.js` | Att adaptern delegerar till spegeln och översätter tillståndet till anropet, att den ger ett strukturerat resultat när spegeln kastar, och att spegeln ger reproducerbara konfidensintervall |
 | `tests/aidbas.test.js`, `tests/smoke-aidbas.test.js` | Definitionen och jämförelsemängden i tabellerna per AID-kod och BAS-intervall; definitionen och jämförelsemängden i konfigurationsfilen; att definitionernas namn säger lydelsen och inte en avsändare (ADR-72) |
-| `tests/smoke-vyer.test.js` | Demot: ett par där båda grupperna når tröskeln, Systemutvecklare (blandad) som jämförelseyrke i BAS C, standardvärdet 0 % och filtret 5 %, filtret *bara mansdominerade*, nyckeltalet och *Visa alla*, rapportunderlagets parblock |
+| `tests/smoke-vyer.test.js` | Demot: ett par där båda grupperna når tröskeln, Systemutvecklare (blandad) som jämförelseetikett i BAS C, standardvärdet 0 % och filtret 5 %, filtret *bara mansdominerade*, nyckeltalet och *Visa alla*, rapportunderlagets parblock |
 | `tests/granssnitt-vyer.test.js` | Partabellens intervall och märke, kolumnerna, att ett par under 5 % syns utan att något ändrats och fältets text, och att Översiktens tal är flikens |
 | `tests/smoke-organisation.test.js` | Organisationspaketets jämförelsemängd, poängläget i fliken och att resultatet nollställs |
 | `tests/organisationspaket.test.js` | Fältet `installningar.jamforelse` i paketet |

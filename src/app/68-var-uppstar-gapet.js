@@ -10,8 +10,8 @@
 const _GU_ATGARD = {
     bas: { atgard: 'Hör till karriärvägar och rekrytering — inte till lönesättningen.', flik: 'struktur', flikNamn: 'Lönestruktur' },
     sektor: { atgard: 'Hör till hur verksamheten är organiserad och till rekryteringen.', flik: 'struktur', flikNamn: 'Lönestruktur' },
-    aidniva: { atgard: 'Kan kräva en lönesatsning på yrkesområdet; pröva likvärdigt arbete.', flik: 'likvardighet', flikNamn: 'Likvärdigt arbete' },
-    aid: { atgard: 'Kan kräva en lönesatsning på yrket; pröva likvärdigt arbete.', flik: 'likvardighet', flikNamn: 'Likvärdigt arbete' },
+    aidniva: { atgard: 'Kan kräva en lönesatsning på AID-mellannivån; pröva likvärdigt arbete.', flik: 'likvardighet', flikNamn: 'Likvärdigt arbete' },
+    aid: { atgard: `Kan kräva en lönesatsning på ${T.enhet.bf}; pröva likvärdigt arbete.`, flik: 'likvardighet', flikNamn: 'Likvärdigt arbete' },
     alder: { atgard: 'Hör till åldersstrukturen. Pröva om skillnaden finns kvar vid samma ålder.', flik: 'kon', flikNamn: 'Ålder & karriär' },
     inom: { atgard: 'Pröva lika arbete och se över lönerna individuellt.', flik: 'matrix', flikNamn: 'Lika arbete',
         ankare: 'personer-att-granska', ankareNamn: 'Personer att granska' },
@@ -154,7 +154,7 @@ function renderGapUppdelning() {
         + _guValHtml()
         + '<div id="chart-gap-uppdelning" class="marg-6-0-14"></div>'
         + rader
-        + '<p class="gu-not">Grupperna rangordnas efter bidrag till hela organisationens skillnad och kan därför skilja sig från de flaggade yrkena i Lika arbete, som sorteras efter skillnadens storlek. Grupper där ett kön har färre än '
+        + `<p class="gu-not">Grupperna rangordnas efter bidrag till hela organisationens skillnad och kan därför skilja sig från de flaggade ${T.enhet.bfl} i Lika arbete, som sorteras efter skillnadens storlek. Grupper där ett kön har färre än `
         + `${kTroskel()} ${personOrd(kTroskel())} namnges inte.</p>`; tillampaDataStil(body);
     { const el = document.getElementById('chart-gap-uppdelning'); if (el) ritaFigur(el, _guTrappaFigur(u)); }
 }

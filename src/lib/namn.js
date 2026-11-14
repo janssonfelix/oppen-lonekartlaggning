@@ -6,13 +6,13 @@
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
+import { genitiv } from './termer.js';
+
 const MAX = 100;
 
-/** Genitiv: namnet + "s", utom när det slutar på s, x eller z. */
+/** Genitiv: namnet + "s", utom när det slutar på s, x eller z (regeln i termer.js). */
 export function namnGenitiv(namn) {
-    const n = String(namn ?? '').trim();
-    if (!n) return '';
-    return /[sxz]$/i.test(n) ? n : n + 's';
+    return genitiv(String(namn ?? '').trim());
 }
 
 /** Trimmar, slår ihop blanksteg och kortar till högst 100 tecken. */

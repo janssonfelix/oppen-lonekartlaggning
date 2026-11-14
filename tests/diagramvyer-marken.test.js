@@ -32,12 +32,12 @@ describe('Lika arbete: trappan, gapet längs lönefördelningen och hanteln per 
     it('trappan med yrkesgruppssteget: ett ljusare spann efter huvudtalet, med egen nivå, och beskrivningen säger att det inte ingår i huvudtalet', () => {
         w.__s = steg; w.__y = { name: '+ Yrkesgrupp', status: 'ok', gapPct: -2.3 };
         const f = w.eval('_regTrappaFigur(window.__s, window.__y)');
-        expect(f.x.ordning).toEqual(['Ojusterad skillnad', 'BAS-intervall', 'Ålder', 'Oförklarad skillnad', 'Yrkesgrupp inom BAS']);
+        expect(f.x.ordning).toEqual(['Ojusterad skillnad', 'BAS-intervall', 'Ålder', 'Oförklarad skillnad', 'AID-etikett inom BAS']);
         expect(f.lager.map(l => l.marke)).toEqual(['stapel', 'intervall', 'intervall', 'punkt']);
-        expect(f.lager[2]).toMatchObject({ opacitet: 0.45, serie: 'Yrkesgrupp inom BAS (ingår inte i huvudtalet)' });
-        expect(f.lager[2].data.map(d => [d.x, d.lag, d.hog, d.farg])).toEqual([['Yrkesgrupp inom BAS', -4.6, -2.3, '#2a78d6']]);
+        expect(f.lager[2]).toMatchObject({ opacitet: 0.45, serie: 'AID-etikett inom BAS (ingår inte i huvudtalet)' });
+        expect(f.lager[2].data.map(d => [d.x, d.lag, d.hog, d.farg])).toEqual([['AID-etikett inom BAS', -4.6, -2.3, '#2a78d6']]);
         expect(f.lager[3].data.map(d => d.etikett)).toEqual(['−9,4 %', '−4,1 %', '−4,6 %', '−4,6 %', '−2,3 %']);
-        expect(f.beskrivning).toMatch(/Räknas också yrkesgrupp inom BAS bort blir −2,3 % kvar; det steget ingår inte i huvudtalet/);
+        expect(f.beskrivning).toMatch(/Räknas också AID-etikett inom BAS bort blir −2,3 % kvar; det steget ingår inte i huvudtalet/);
         expect(() => valideraFigur(f, 't')).not.toThrow();
         // Ett utelämnat yrkesgruppssteg ger trappan utan det steget.
         w.__y = { name: '+ Yrkesgrupp', status: 'too_few' };
@@ -242,7 +242,7 @@ describe('före och efter: lutningsdiagrammen', () => {
         d.getElementById('forecast-lutning-niva').value = 'grupp';
         d.getElementById('forecast-lutning-niva').dispatchEvent(new w2.Event('change', { bubbles: true }));
         expect(el._figur).toBeUndefined();                                            // ett jämnt påslag ändrar inget gap inom gruppen
-        expect(el.textContent).toMatch(/I ingen yrkesgrupp med minst 10 kvinnor och 10 män ändras kvinnors median i procent av mäns/);
+        expect(el.textContent).toMatch(/I ingen AID-etikett med minst 10 kvinnor och 10 män ändras kvinnors median i procent av mäns/);
         // Med löner som ändras olika för könen: grupperna visas, den lilla aldrig.
         w2.__sim = w2.__state.data.map(r => ({ ...r, lon: r.kon === 'kvinna' ? r.lon * 1.05 : r.lon }));
         const rader = w2.eval('_forecastLutningRader(getData(), window.__sim, "grupp")');
@@ -702,7 +702,7 @@ describe('Likvärdigt arbete: krav mot lön', () => {
         w2.eval('sattKTroskel(15, { fraga: false })');
         w2.__renderTabContent('likvardighet');
         expect(el()._figur).toBeUndefined();
-        expect(el().textContent).toMatch(/För få yrkesgrupper med minst 15 personer/);
+        expect(el().textContent).toMatch(/För få AID-etiketter med minst 15 personer/);
     });
 });
 
@@ -948,7 +948,7 @@ describe('Struktur: organisationen som trädkarta', () => {
     it('en yta per yrkesgrupp som når tröskeln, små hopslagna per BAS utan namn och könsfördelning, ytan följer antalet', () => {
         w.__d = data();
         const f = w.eval('_strukturTradkartaFigur(window.__d, 10)');
-        expect(f.lager.map(l => [l.marke, l.serie])).toEqual([['yta', 'BAS-intervall'], ['yta', 'Yrkesgrupper']]);
+        expect(f.lager.map(l => [l.marke, l.serie])).toEqual([['yta', 'BAS-intervall'], ['yta', 'AID-etiketter']]);
         expect(f.lager[0].data.map(d => [d.namn, d.varde])).toEqual([['BAS A', 37], ['BAS B', 40]]);
         const g = f.lager[1].data;
         expect(g.map(d => [d.etikett, d.n, d.fargvarde ?? null]).sort()).toEqual([['Yrke2000', 20, 75], ['Yrke2100', 12, 16.7], ['Yrke3000', 40, 50], ['Övriga små grupper (2)', 5, null]].sort());
@@ -970,7 +970,7 @@ describe('Struktur: organisationen som trädkarta', () => {
         expect(el.querySelectorAll('rect[data-marke="yta"]')).toHaveLength(6);           // två BAS + fyra ytor
         expect(el.querySelectorAll('[data-marke="fargstapel"]').length).toBeGreaterThan(0);
         const rader = w2.eval('chartExportRows(document.getElementById("chart-struktur-tradkarta"))');
-        expect(rader.some(r => r[0] === 'Yrkesgrupper' && r[1] === 'Yrke3000 · BAS B' && r[2] === 40)).toBe(true);
+        expect(rader.some(r => r[0] === 'AID-etiketter' && r[1] === 'Yrke3000 · BAS B' && r[2] === 40)).toBe(true);
         expect(JSON.stringify(rader) + el.outerHTML).not.toMatch(/Yrke2200|Yrke2300|73777/);
     });
 });
@@ -1079,7 +1079,7 @@ describe('utskriften ur rapportmodellen', () => {
         expect(hela.textContent).toContain('Låst kopia');
         expect(hela.textContent).not.toContain('UTKAST att färdigställa');
         // Bilagorna: flikarnas tabeller och diagram.
-        for (const r of ['Bilagor: tabeller och diagram ur flikarna', 'Löneöversikt (organisation · kön · yrke)', 'Lönespridning per BAS-intervall och kön', 'Bilaga: Metodik & urval (kvalitetssäkring)']) expect(rubriker(hela), r).toContain(r);
+        for (const r of ['Bilagor: tabeller och diagram ur flikarna', 'Löneöversikt (organisation · kön · AID-etikett)', 'Lönespridning per BAS-intervall och kön', 'Bilaga: Metodik & urval (kvalitetssäkring)']) expect(rubriker(hela), r).toContain(r);
         // Ett kortare urval är just avsnitten: inga bilagor, och inga avsnitt utöver urvalet.
         const facklig = await bygg('facklig');
         expect(rubriker(facklig).some(r => /^Bilagor:|Löneöversikt/.test(r))).toBe(false);
@@ -1229,7 +1229,7 @@ describe('Lika arbete — urval, slutsatser och avsnittens nyckeltal', () => {
         const rader = [...d.querySelectorAll('#matrix-table tbody tr')].map(tr => tr._euRow).filter(r => r && !r.samladMedian);
         const granska = rader.filter(r => r.niva === 'granska').length;
         const kort = [...d.querySelectorAll('#la-slutsatser .slutsats')].map(k => [t(k.querySelector('.slutsats-etikett').textContent), t(k.querySelector('.slutsats-varde').textContent)]);
-        expect(kort.map(k => k[0])).toEqual(['Yrkesgrupper att granska', 'Största skillnaden', 'Efter ålder och BAS-intervall', 'Personer att granska']);
+        expect(kort.map(k => k[0])).toEqual(['AID-etiketter att granska', 'Största skillnaden', 'Efter ålder och BAS-intervall', 'Personer att granska']);
         expect(kort[0][1]).toBe(`${granska} av ${rader.length}`);
         const storst = rader.slice().sort((a, b) => Math.abs(100 - b.kvot) - Math.abs(100 - a.kvot))[0];
         expect(kort[1][1]).toBe(storst.kvot.toFixed(1).replace('.', ',') + ' %');
@@ -1275,7 +1275,7 @@ describe('Lika arbete — urval, slutsatser och avsnittens nyckeltal', () => {
         w2.eval('populateSelects(); unlockTabs();');
         w2.__renderTabContent('matrix');
         const topp = t(w2.document.getElementById('la-topp').textContent);
-        expect(topp).toMatch(/Yrkesgrupper att granska\s*1 av 1/);
+        expect(topp).toMatch(/AID-etiketter att granska\s*1 av 1/);
         expect(topp).toMatch(/Största skillnaden\s*\d+,\d %\s*207011 Usk/);
         expect(topp).not.toMatch(/Hemlig|7266\d/);
     });

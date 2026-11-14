@@ -114,7 +114,7 @@ describe('gruppBlock', () => {
         expect(t).toContain('Inom Undersköterska (n = 84, varav 62 kvinnor och 22 män)');
         expect(t).toContain('96,1 % av männens');
         expect(t).toContain('95 % KI 93,0–98,9');
-        expect(t).toContain('Efter hänsyn till ålder och BAS inom yrket återstår en skillnad på -2,8 %');
+        expect(t).toContain('Efter hänsyn till ålder och BAS inom AID-etiketten återstår en skillnad på -2,8 %');
         expect(t).toContain('Urval: Hela organisationen');
     });
     it('tabell per kön, prövat och frågor', () => {
@@ -144,7 +144,7 @@ describe('parBlock', () => {
         expect(b.rubrik).toBe('Förskollärare — Ingenjör');
         const t = norm(b.stycken.join(' '));
         expect(t).toContain('Förskollärare (BAS D, 91 % kvinnor, median 36 400 kr) har 1 600 kr lägre medianlön än Ingenjör (BAS D, median 38 000 kr)');
-        expect(t).toContain('Jämförelseyrkets median ligger 4,4 % högre (95 % KI 1,1–7,0 %)');
+        expect(t).toContain('Jämförelseetikettens median ligger 4,4 % högre (95 % KI 1,1–7,0 %)');
         expect(t).toContain('BAS-intervall som mått på krav');
         expect(b.fragor).toEqual(FRAGOR_PAR);
         expect(FRAGOR_PAR.length).toBe(4);
@@ -160,7 +160,7 @@ describe('avsnittBlock', () => {
             { yrke: 'Vaktmästare', nKv: 3, nMa: 12, tot: 15, samladMedian: true, flaggad: false, gapPct: 0, medTot: 30000 }];
         const b = avsnittBlock('lika', { grupper, utelamnade: ['Tandläkare'] }, { k: 10 });
         const t = norm(b.stycken.join(' '));
-        expect(t).toContain('4 yrkesgrupper');
+        expect(t).toContain('4 AID-etiketter');
         expect(t).toContain('1 är värda att granska');
         expect(t).toContain('1 redovisas med samlad median');
         expect(t).toContain('1 utelämnas');
@@ -171,7 +171,7 @@ describe('avsnittBlock', () => {
     });
     it('lika arbete utan flaggade yrken', () => {
         const b = avsnittBlock('lika', { grupper: [], utelamnade: [] }, { k: 10 });
-        expect(b.stycken.join(' ')).toContain('Ingen yrkesgrupp är värd att granska');
+        expect(b.stycken.join(' ')).toContain('Ingen AID-etikett är värd att granska');
         expect(b.tabell).toBeNull();
     });
     it('struktur utelämnar BAS under k och maskerar gap när ett kön är under k', () => {
@@ -268,15 +268,15 @@ describe('rapportunderlag: struktur, likvärdighet och singular', () => {
         expect(b.tabell.rubriker).toContain('95 % KI');
         expect(norm(b.tabell.rader[0].join('|'))).toContain('1,1–7,0 %');
         // 'do' (*Mer än X %*) är standard: mer än tröskeln; 'scb' (*X % eller mer*): med valets lydelse (ADR-60, ADR-72).
-        expect(b.stycken.join(' ')).toContain('räknas som kvinnodominerat vid mer än 60 % kvinnor.');
+        expect(b.stycken.join(' ')).toContain('räknas som kvinnodominerad vid mer än 60 % kvinnor.');
         const scb = avsnittBlock('likvardigt', { par, kravProxy: 'bas', kvinnoTroskel: 60, kvDomDefinition: 'scb' }, { k: 10 }).stycken.join(' ');
-        expect(scb).toContain('räknas som kvinnodominerat vid 60 % kvinnor eller mer.');
+        expect(scb).toContain('räknas som kvinnodominerad vid 60 % kvinnor eller mer.');
         expect(scb).not.toContain('minst 60');
         // Jämförelseyrket: alla som inte är kvinnodominerade, och könsandelen med klassen i tabellen.
-        expect(b.stycken.join(' ')).toContain('jämförs med yrken på samma nivå som inte är kvinnodominerade');
-        expect(b.tabell.rubriker).toContain('Könsandel i jämförelseyrket');
+        expect(b.stycken.join(' ')).toContain('jämförs med AID-etiketter på samma nivå som inte är kvinnodominerade');
+        expect(b.tabell.rubriker).toContain('Könsandel i jämförelseetiketten');
         expect(norm(b.tabell.rader[0][3])).toBe('45 % (blandad)');
-        expect(avsnittBlock('likvardigt', { par, kravProxy: 'bas', jamforelse: 'mansdominerade' }, { k: 10 }).stycken.join(' ')).toContain('bara med mansdominerade yrken');
+        expect(avsnittBlock('likvardigt', { par, kravProxy: 'bas', jamforelse: 'mansdominerade' }, { k: 10 }).stycken.join(' ')).toContain('bara med mansdominerade AID-etiketter');
     });
     it('kön och BAS som sammanfaller inom yrket ger ett eget besked', () => {
         const r = [];
@@ -291,7 +291,7 @@ describe('rapportunderlag: struktur, likvärdighet och singular', () => {
     });
     it('singular i texterna', () => {
         const lika = avsnittBlock('lika', { grupper: [], utelamnade: ['X'] }, { k: 10 });
-        expect(lika.stycken.join(' ')).toContain('1 yrkesgrupp jämfördes');
+        expect(lika.stycken.join(' ')).toContain('1 AID-etikett jämfördes');
         const hp = avsnittBlock('handlingsplan', { rader: [{ atgard: 'a', grupp: 'g', underlag: 'u', kostnad: 1000 }], summa: 1000 }, { k: 10 });
         expect(hp.stycken.join(' ')).toContain('1 förifylld åtgärd');
         const s = avsnittBlock('sammanfattning', { n: 20, nKv: 10, nMa: 10, medKv: 1, medMa: 1 }, { k: 10 });
@@ -483,17 +483,17 @@ describe('avsnittBlock lagreKrav', () => {
         const b = avsnittBlock('lagreKrav', { par: [par], exkluderade: 2, kravProxy: 'bas' }, { k: 10, urval: 'Hela organisationen' });
         expect(b.id).toBe('lagreKrav');
         expect(b.rubrik).toBe('Lägre krav, högre lön');
-        expect(b.stycken.join(' ')).toContain('1 par där ett kvinnodominerat yrke har lägre medianlön än ett av organisationens yrken i lägre BAS');
+        expect(b.stycken.join(' ')).toContain('1 par där en kvinnodominerad AID-etikett har lägre medianlön än en av organisationens AID-etiketter i lägre BAS');
         expect(b.stycken.join(' ')).toContain('2 par med en grupp under 10 personer redovisas inte här.');
-        expect(b.tabell.rubriker).toEqual(['Kvinnodominerat yrke', 'Jämförelseyrke', 'Antal (kvinnodom. / jämf.)', 'Könsandel i jämförelseyrket', 'BAS-steg', 'Skillnad (kr)', 'Skillnad (%)', '95 % KI']);
+        expect(b.tabell.rubriker).toEqual(['Kvinnodominerad AID-etikett', 'Jämförelseetikett', 'Antal (kvinnodom. / jämf.)', 'Könsandel i jämförelseetiketten', 'BAS-steg', 'Skillnad (kr)', 'Skillnad (%)', '95 % KI']);
         expect(b.tabell.rader[0].slice(0, 5)).toEqual(['Barnskötare (BAS E)', 'Drifttekniker (BAS C)', '46 / 30', '–', '2']);
         expect(b.fragor).toEqual([...FRAGOR_PAR]);
         expect(b.stycken.join(' ')).not.toMatch(/§|3 kap\./);
     });
     it('inga par och poängläget', () => {
-        expect(avsnittBlock('lagreKrav', { par: [], kravProxy: 'bas' }, { k: 10 }).stycken.join(' ')).toContain('Inget kvinnodominerat yrke har lägre medianlön än ett yrke i lägre BAS.');
+        expect(avsnittBlock('lagreKrav', { par: [], kravProxy: 'bas' }, { k: 10 }).stycken.join(' ')).toContain('Ingen kvinnodominerad AID-etikett har lägre medianlön än en AID-etikett i lägre BAS.');
         const p = avsnittBlock('lagreKrav', { par: [], kravProxy: 'poäng' }, { k: 10 });
-        expect(p.stycken.join(' ')).toContain('Med arbetsvärderingspoäng jämförs yrken över BAS-gränserna redan i Likvärdigt arbete.');
+        expect(p.stycken.join(' ')).toContain('Med arbetsvärderingspoäng jämförs AID-etiketter över BAS-gränserna redan i Likvärdigt arbete.');
         expect(p.tabell).toBeNull();
     });
 });
@@ -535,19 +535,19 @@ describe('rapportunderlag: sektorer', () => {
             rad('Teknikarbete', { nKv: 3, nMa: 27, samladMedian: true, medKv: null, medMa: null, kvot: null, justerat: null, justeratSkal: 'fa' }),
             rad('Okänt huvudområde', { n: 4, maskerad: true, medTot: null, medKv: null, medMa: null, kvot: null, justerat: null, justeratSkal: null }),
         ], andel: { gapKr: 3000, sektorKr: 1200, andel: 0.4 } }, { k: 10 });
-        expect(b.rubrik).toMatch(/Per sektor/);
+        expect(b.rubrik).toMatch(/Per huvudområde/);
         expect(b.tabell.rader.map(r => r[0])).toEqual(['Vård- och omsorgsarbete med mera', 'Teknikarbete']);
         const teknik = b.tabell.rader[1];
         expect(teknik.slice(4)).toEqual(['–', '–']);   // kvot och justerad; kolumn 3 är SKR:s referens
-        expect(b.stycken.join(' ')).toMatch(/1 sektor med färre än 10 personer redovisas inte/);
-        expect(b.stycken.join(' ')).toMatch(/olika sektorer/);
+        expect(b.stycken.join(' ')).toMatch(/1 huvudområde med färre än 10 personer redovisas inte/);
+        expect(b.stycken.join(' ')).toMatch(/olika huvudområden/);
     });
 });
 
 describe('rapportunderlag: sektorernas andel nära noll', () => {
     it('under 1 % sägs att skillnaden nästan inte alls beror på sektorerna', () => {
         const b = avsnittBlock('sektorer', { sektorer: [], andel: { gapKr: 6177, sektorKr: -2, andel: -0.0003 } }, { k: 10 });
-        expect(b.stycken.join(' ')).toMatch(/nästan inte alls på att kvinnor och män arbetar i olika sektorer/);
+        expect(b.stycken.join(' ')).toMatch(/nästan inte alls på att kvinnor och män arbetar i olika huvudområden/);
         expect(b.stycken.join(' ')).not.toMatch(/−0,0|-0,0/);
     });
 });
@@ -573,7 +573,7 @@ describe('blocket Lönerna mot referenserna', () => {
     it('säger var löneläget och statistiken ligger mot ställningstagandet, aldrig tvärtom', () => {
         const b = referenserBlock(overblick, { urval: 'Hela organisationen', demo: false });
         expect(b).toMatchObject({ id: 'referenser', rubrik: 'Lönerna mot referenserna', provat: null, fragor: null });
-        expect(b.tabell.rubriker).toEqual(['Yrkesgrupp', 'n', 'Median (kr)', 'Mot ställningstagandet (%)', 'Mot statistiken (%)', 'Läge och förslag']);
+        expect(b.tabell.rubriker).toEqual(['AID-etikett', 'n', 'Median (kr)', 'Mot ställningstagandet (%)', 'Mot statistiken (%)', 'Läge och förslag']);
         expect(b.tabell.rader[0][0]).toBe('1 Yrke · BAS C');
         expect(b.tabell.rader[0][5]).toBe(grupp.monster.text);
         expect(b.stycken.join(' ')).toMatch(/löneläget och statistiken ligger över ställningstagandet/);
@@ -583,7 +583,7 @@ describe('blocket Lönerna mot referenserna', () => {
     it('med statistik har listan kolumnen Matchning efter Yrkesgrupp, med tabellens ord', () => {
         const grupper = [{ ...grupp, statistikMatchning: 'aid-bas' }, { ...grupp, yrke: '2 Yrke', statistikMatchning: 'aid' }, { ...grupp, yrke: '3 Yrke', statistikMatchning: null }];
         const b = referenserBlock({ ...overblick, grupper }, { urval: 'Hela organisationen', demo: false, harStatistik: true });
-        expect(b.tabell.rubriker).toEqual(['Yrkesgrupp', 'Matchning', 'n', 'Median (kr)', 'Mot ställningstagandet (%)', 'Mot statistiken (%)', 'Läge och förslag']);
+        expect(b.tabell.rubriker).toEqual(['AID-etikett', 'Matchning', 'n', 'Median (kr)', 'Mot ställningstagandet (%)', 'Mot statistiken (%)', 'Läge och förslag']);
         expect(b.tabell.rader.map(r => r[1])).toEqual(['AID + BAS', 'Endast AID', '–']);
         expect(b.tabell.rader[0][6]).toBe(grupp.monster.text);
         // Utan statistik (förvalet) finns kolumnen inte.

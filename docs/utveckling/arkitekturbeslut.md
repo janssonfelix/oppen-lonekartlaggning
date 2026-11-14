@@ -41,7 +41,7 @@ senare beslutet gäller där de skiljer sig); *Sammanförd i* eller *Flyttad til
 | ADR-29 | Ett steg är klart när dess punkter är hanterade | Ändrad av ADR-59 | – |
 | ADR-30 | Stilelement kräver kontrollsumma, stilattribut är förbjudna; låsta beroenden | Gällande | – |
 | ADR-31 | Interna fel rapporteras i stället för att sväljas | Gällande | – |
-| ADR-33 | AID-hierarki, sektorsöversikt, ansvarskod och kodkvalitet | Gällande | – |
+| ADR-33 | AID-hierarki, översikt per huvudområde, ansvarskod och kodkvalitet | Gällande | – |
 | ADR-34 | SKR:s personalstatistik som referens för kvinnoandel | Gällande | – |
 | ADR-35 | Jämförelsestatistik: alla percentiler i en tabell och två diagram | Ändrad av ADR-55 | – |
 | ADR-36 | Filrutorna syns alltid; namn på organisationen och jämförelsestatistiken | Gällande | – |
@@ -54,7 +54,7 @@ senare beslutet gäller där de skiljer sig); *Sammanförd i* eller *Flyttad til
 | ADR-43 | Färgerna har en källa | Gällande | – |
 | ADR-44 | BAS som indikatorvariabler i huvudregressionen | Ändrad av ADR-53 och ADR-63 | – |
 | ADR-45 | t-kvantiler för konfidensintervallen; exakt t-fördelning | Gällande | – |
-| ADR-46 | Steget *+ Yrkesgrupp*: könsgapet med fasta effekter för yrkesgrupp inom BAS | Ändrad av ADR-56 | – |
+| ADR-46 | Steget *+ AID-etikett inom BAS*: könsgapet med fasta effekter för AID-etikett inom BAS | Ändrad av ADR-56 | – |
 | ADR-47 | Organisationspaketet kan låsa tre skydd | Gällande | – |
 | ADR-48 | Bilder med en punkt per person följer med i ZIP och Komplett rapport | Gällande | 2026-10-16 |
 | ADR-49 | Organisationsfil: paketet inbakat i verktygsfilen, en fil att sprida | Gällande | – |
@@ -68,7 +68,7 @@ senare beslutet gäller där de skiljer sig); *Sammanförd i* eller *Flyttad til
 | ADR-57 | Tabellerna per AID-kod och BAS-intervall | Gällande | 2026-11-05 |
 | ADR-58 | BAS-dossiern: ett BAS-intervall på en sida | Gällande | 2026-11-06 |
 | ADR-59 | Uppmärksamhetstrappan på statistisk signal, direktivmarkeringen åtskild | Ändrad av ADR-71 | 2026-11-08 |
-| ADR-60 | Jämförelseyrkena i likvärdigt arbete är alla som inte är kvinnodominerade; en definition av kvinnodominerat | Ändrad av ADR-72 | 2026-11-08 |
+| ADR-60 | Jämförelseetiketterna i likvärdigt arbete är alla som inte är kvinnodominerade; en definition av kvinnodominerat | Ändrad av ADR-72 | 2026-11-08 |
 | ADR-61 | Minsta skillnad 0 % som standard i likvärdigt arbete | Gällande | 2026-11-08 |
 | ADR-62 | Prioriteringens egna ord för läget mot referensen | Gällande | 2026-11-08 |
 | ADR-63 | Kvantilregressionen på huvudmodellens design, villkorad tolkning | Gällande | 2026-11-08 |
@@ -80,6 +80,7 @@ senare beslutet gäller där de skiljer sig); *Sammanförd i* eller *Flyttad til
 | ADR-71 | Trappan i livscykeln, protokollet och Prioriteringen; ingen färg på storleken ensam | Gällande | 2026-11-14 |
 | ADR-72 | Definitionerna av kvinnodominerat heter efter lydelsen | Gällande | 2026-11-14 |
 | ADR-73 | Skydden och principerna binder; besluten är en logg | Gällande | 2026-11-14 |
+| ADR-74 | AID:s egna ord, och termerna på ett ställe | Gällande | 2026-11-14 |
 
 ## Besluten
 
@@ -184,8 +185,8 @@ skillnaden kan hamna under storleksgränsen när en eller två personer tas bort
 Det räcker att pröva ytterlägena och positionerna inom 2 från medianen, verifierat mot uttömmande prövning
 (`likaArbeteGrupper` i `src/lib/rapportunderlag.js`). *Gäller i dag:* `docs/anvandare/korguide.md` §4.
 
-**ADR-25 — Lägre krav, högre lön: jämförelse över BAS-gränserna.** En egen lista jämför kvinnodominerade yrken med
-organisationens egna jämförelseyrken i strikt lägre BAS, så att kandidatparen inte beror på antagandet att BAS-ordningen
+**ADR-25 — Lägre krav, högre lön: jämförelse över BAS-gränserna.** En egen lista jämför kvinnodominerade AID-etiketter
+med organisationens egna jämförelseetiketter i strikt lägre BAS, så att kandidatparen inte beror på antagandet att BAS-ordningen
 speglar kraven. *Avvisat:* en reserv ur jämförelsestatistiken (dubbelt osäker). *Gäller i dag:*
 `likvardighetsmodellen.md` §6–§7.
 
@@ -210,8 +211,8 @@ något kastar, men anropar `rapporteraFel(plats, e)` (`03-hjalpfunktioner.js`): 
 ofullständigt, och konsolen får en varning där siffrorna är maskerade, eftersom konsolen aldrig ska bära lönedata.
 Avsiktliga `catch`, som nekad urklippsbehörighet, rapporterar inte. Vakten är `tests/smoke-ansvar.test.js`.
 
-**ADR-33 — AID-hierarki, sektorsöversikt, ansvarskod och kodkvalitet.** Sektor (AID-huvudområdet) är en översikt och en
-dimension i Tabeller och egna vyer, inte ett globalt filter, som skulle ändra alla flikars resultat och k-skydd
+**ADR-33 — AID-hierarki, översikt per huvudområde, ansvarskod och kodkvalitet.** Huvudområdet i AID är en översikt
+och en dimension i Tabeller och egna vyer, inte ett globalt filter, som skulle ändra alla flikars resultat och k-skydd
 samtidigt. Ansvarskoden är valfri, läses bara om minst 95 % av värdena är giltiga och redovisas bredvid huvudresultaten;
 huvudtalet räknar inte bort den, eftersom om ansvaret är ett sakligt skäl är arbetsgivarens bedömning. *Gäller i dag:*
 `docs/anvandare/datauttag.md` och `docs/dataskydd/riskanalys.md` §6.4.
@@ -246,7 +247,7 @@ med varning". *Gäller i dag:* `k-troskeln.md` §1, §3 och §5–§10.
 med D3, så att varje datapunkt bär gruppnyckel och `liten`-flagga och skyddet ligger på ett ställe. Etiketter lutas
 aldrig. Täthetskurvor skattas med normalkärna och Silvermans bandbredd mellan morrhårens ändar; ett histogram kön mot
 kön visas bara när båda könen når tröskeln och ingen klass rymmer färre (ändklasserna slås ihop inåt); trädkartan slår
-ihop yrkesgrupper under tröskeln till en grå yta per BAS-intervall; och en värmekartas färgskala räknas bara ur värden
+ihop AID-etiketter under tröskeln till en grå yta per BAS-intervall; och en värmekartas färgskala räknas bara ur värden
 som får redovisas. *Gäller i dag:* `diagramkarnan.md` §1–§8 och `k-troskeln.md` §4.
 
 **ADR-40 — Fyra exporter med var sin uppgift, ritade ur en rapportmodell.** Word-utkastet är rapporten, Excel-filen
@@ -277,9 +278,9 @@ linjärt tal, som lämnade BAS-nivåskillnader kvar i det oförklarade gapet. *G
 för 1,96, och `tDistCdf` är exakt i stället för Hills approximation, eftersom per-BAS-regressionerna ofta har df kring
 20–40. *Gäller i dag:* `regressionsmodellen.md` §7.
 
-**ADR-46 — Steget *+ Yrkesgrupp*: könsgapet med fasta effekter för yrkesgrupp inom BAS.** Den stegvisa uppdelningen får
-ett sista steg med fasta effekter för AID×BAS (inomtransformation), eftersom huvudmodellen lämnar löneskillnader mellan
-yrken i samma BAS i det oförklarade gapet. Steget blev inte huvudtalet; sedan ADR-56 kan det väljas in. *Gäller i dag:*
+**ADR-46 — Steget *+ AID-etikett inom BAS*: könsgapet med fasta effekter för AID-etikett inom BAS.** Den stegvisa
+uppdelningen får ett sista steg med fasta effekter för AID-etikett i BAS-intervall (inomtransformation), eftersom
+huvudmodellen lämnar löneskillnader mellan AID-etiketter i samma BAS i det oförklarade gapet. Steget blev inte huvudtalet; sedan ADR-56 kan det väljas in. *Gäller i dag:*
 `regressionsmodellen.md` §4.
 
 **ADR-47 — Organisationspaketet kan låsa tre skydd.** Paketet kan låsa ett golv för tröskeln, rensningstiden och om små
@@ -341,8 +342,8 @@ signal och storleksgränsen 3 % (`src/lib/status.js`), och 5 % är en direktivma
 grupp med 18 kvinnor och 2 män bli *Värt att granska* på storleken ensam. *Gäller i dag:* princip 3 i `principer.md`,
 `docs/anvandare/korguide.md` §4 och `regressionsmodellen.md` §7.
 
-**ADR-60 — Jämförelseyrkena i likvärdigt arbete är alla som inte är kvinnodominerade; en definition av
-kvinnodominerat.** Förut föll blandade yrken (40–60 % kvinnor) bort; ett filter återskapar det tidigare urvalet.
+**ADR-60 — Jämförelseetiketterna i likvärdigt arbete är alla som inte är kvinnodominerade; en definition av
+kvinnodominerat.** Förut föll blandade AID-etiketter (40–60 % kvinnor) bort; ett filter återskapar det tidigare urvalet.
 *Gäller i dag:* `likvardighetsmodellen.md` §2, §4 och §8.
 
 **ADR-61 — Minsta skillnad 0 % som standard i likvärdigt arbete.** Alla par visas och 5 % är ett valbart filter,
@@ -369,7 +370,7 @@ ersätta loggen med områdesdokument (motiven och numren tappas); en sammanfattn
 synk). *Gäller i dag:* inledningen ovan och `.github/GOVERNANCE.md`.
 
 **ADR-69 — Löneöversyns förslag följer den inställda tröskeln.** Förslagen tar aldrig ett par där en grupp är under den
-inställda tröskeln, oavsett läge, och tar ett par per kvinnodominerat yrke, eftersom beloppet räknas ur en grupps
+inställda tröskeln, oavsett läge, och tar ett par per kvinnodominerad AID-etikett, eftersom beloppet räknas ur en grupps
 median. *Avvisat:* att stoppa förslagen bara i exporten (summorna skulle skilja sig); ett avsteg; parets identitet som
 nytt fält i konfigurationsfilen. *Gäller i dag:* `k-troskeln.md` §1–§2, §8 och §9.
 
@@ -395,3 +396,10 @@ att referensen och koden ändras i samma ändring. Regelmatrisen, kvalitetskrave
 borttagna; mål och öppna punkter har var sitt korta dokument. *Avvisat:* att låta varje beslut binda med full lydelse,
 som gjorde att en liten ändring krävde rättelser på många ställen. *Gäller i dag:* `skydd.md`, `principer.md` och
 `.github/GOVERNANCE.md`.
+
+**ADR-74 — AID:s egna ord, och termerna på ett ställe.** Verktyget säger AID-etikett, AID-kod, etikettnamn och
+huvudområde, som handboken för kodning, i stället för *yrke* och *yrkesgrupp*, och analysenheten är AID-etikett i
+BAS-intervall. Orden står som variabler med ordformer och genus i `src/lib/termer.js`, så att en annan uppsättning byts
+på ett ställe, och vakten i `tests/termer.test.js` håller dem borta från resten av gränssnittet. *Avvisat:* påhittade
+ord (grupp, AID-grupp), som inte blev tydligare; att behålla *yrke*, som handboken inte använder om
+etiketterna. *Gäller i dag:* `src/lib/termer.js` och `bygge-och-test.md` §13.

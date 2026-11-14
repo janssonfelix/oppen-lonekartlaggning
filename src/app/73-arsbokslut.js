@@ -93,7 +93,7 @@ function _abHantelFigur(j, forraAr, nuAr, basFor = _abYrketsBas()) {
     const fig = foreEfterFigur({ rader: rader.map(r => ({ namn: r.namn, yrke: r.namn, ...(basFor(r.namn) != null ? { bas: basFor(r.namn) } : {}),
             ...(antal.get(r.namn) != null ? { n: antal.get(r.namn) } : {}), fore: +r.fore.toFixed(1), efter: +r.efter.toFixed(1), farg: farg[r.riktning] })),
         kolumner: [String(forraAr), String(nuAr)], titel: 'Kvinnors medianlön i procent av mäns', format: 'pct',
-        beskrivning: `Kvinnors medianlön i procent av mäns per yrkesgrupp, ${forraAr} (strecket) och ${nuAr} (punkten), sorterade efter förändringens storlek. Grön när kvoten närmat sig lika lön, orange när den fjärmat sig; linjen vid 100 % är lika lön.` });
+        beskrivning: `Kvinnors medianlön i procent av mäns per ${T.enhet.en}, ${forraAr} (strecket) och ${nuAr} (punkten), sorterade efter förändringens storlek. Grön när kvoten närmat sig lika lön, orange när den fjärmat sig; linjen vid 100 % är lika lön.` });
     return { ..._abEtiketterBortFranStrecket(fig), urval: [URVAL.bas, URVAL.yrkesgrupp, URVAL.antal] };
 }
 /** Yrkets BAS-intervall i årets lönefil, eller null när yrket saknas eller finns i flera intervall. */
@@ -123,8 +123,8 @@ function _abBasHantelFigur(j, forraAr, nuAr) {
     const { rader } = _abBasHantelRader(j);
     if (!rader.length) return null;
     const fig = foreEfterFigur({ rader: rader.map(r => ({ namn: r.namn, bas: r.bas, fore: r.fore, efter: r.efter, farg: PALETTE.semantic.linje, markering: markeringFor(r.bas) })),
-        kolumner: [String(forraAr), String(nuAr)], titel: 'Medianlön per BAS-intervall', format: 'kr',
-        beskrivning: `Medianlönen per BAS-intervall, ${forraAr} (strecket) och ${nuAr} (punkten). Bara intervall med minst ${j.kGrans} ${personOrd(j.kGrans)} båda åren.` });
+        kolumner: [String(forraAr), String(nuAr)], titel: `Medianlön per ${T.niva.en}`, format: 'kr',
+        beskrivning: `Medianlönen per ${T.niva.en}, ${forraAr} (strecket) och ${nuAr} (punkten). Bara intervall med minst ${j.kGrans} ${personOrd(j.kGrans)} båda åren.` });
     return { ..._abEtiketterBortFranStrecket(fig), urval: URVAL.bas };
 }
 
@@ -146,13 +146,13 @@ const AB_SPRIDNING_NOT = 'Lönespridning: (P90 − P10) / median, i procent av m
 
 /** Tabellen Löneutveckling per BAS-intervall i panelen, eller raden om att förra årets bokslut saknar fältet. */
 function _abBasTabellHtml(j, forraAr, nuAr) {
-    const rubrik = '<h4 class="fs-sm marg-12-0-2">Löneutveckling per BAS-intervall</h4>';
+    const rubrik = `<h4 class="fs-sm marg-12-0-2">Löneutveckling per ${T.niva.en}</h4>`;
     if (!Array.isArray(j.basIntervall)) {
-        return rubrik + '<p class="text-dampad-sm marg-0">Löneutvecklingen per BAS-intervall saknas i förra årets fil: bokslutet sparades med en äldre version av verktyget. Årets bokslut har den, så nästa års jämförelse får den.</p>';
+        return rubrik + `<p class="text-dampad-sm marg-0">Löneutvecklingen per ${T.niva.en} saknas i förra årets fil: bokslutet sparades med en äldre version av verktyget. Årets bokslut har den, så nästa års jämförelse får den.</p>`;
     }
-    if (!j.basIntervall.length) return rubrik + `<p class="text-dampad-sm marg-0">Inget BAS-intervall har minst ${j.kGrans} ${personOrd(j.kGrans)}.</p>`;
+    if (!j.basIntervall.length) return rubrik + `<p class="text-dampad-sm marg-0">${termStor(termAdjektiv({ utrum: 'ingen', neutrum: 'inget', plural: 'inga' }, T.niva))} ${T.niva.en} har minst ${j.kGrans} ${personOrd(j.kGrans)}.</p>`;
     const matt = [['p10', 'P10'], ['med', 'Median'], ['p90', 'P90']];
-    const huvud = `<thead><tr><th scope="col" rowspan="2">BAS-intervall</th><th scope="colgroup" colspan="2" class="t-mitt">Antal</th>`
+    const huvud = `<thead><tr><th scope="col" rowspan="2">${termStor(T.niva.en)}</th><th scope="colgroup" colspan="2" class="t-mitt">Antal</th>`
         + matt.map(([, e]) => `<th scope="colgroup" colspan="3" class="t-mitt">${e}</th>`).join('')
         + '<th scope="colgroup" colspan="2" class="t-mitt">Lönespridning</th></tr><tr>'
         + `<th scope="col" class="t-hoger">${forraAr}</th><th scope="col" class="t-hoger">${nuAr}</th>`
@@ -165,8 +165,8 @@ function _abBasTabellHtml(j, forraAr, nuAr) {
         + `<td class="t-tal">${_abSpridningText(r.spridning?.forra)}</td><td class="t-tal">${_abSpridningText(r.spridning?.nu)}</td></tr>`;
     const h = _abBasHantelRader(j);
     return rubrik + `<div class="table-container"><table class="data-table st-088" id="arsjamforelse-bas">${huvud}<tbody>${j.basIntervall.map(rad).join('')}</tbody></table></div>`
-        + (h.rader.length ? `<h4 class="fs-sm marg-10-0-4">Medianlön per BAS-intervall, ${forraAr} och ${nuAr}</h4><div class="chart-container"><div id="chart-arsjamforelse-bas"></div></div>` : '')
-        + (h.utelamnade ? `<p class="k-mask-note">${h.utelamnade} BAS-intervall har median bara ett av åren (färre än minsta gruppstorlek, eller fanns inte) och visas inte i diagrammet.</p>` : '')
+        + (h.rader.length ? `<h4 class="fs-sm marg-10-0-4">Medianlön per ${T.niva.en}, ${forraAr} och ${nuAr}</h4><div class="chart-container"><div id="chart-arsjamforelse-bas"></div></div>` : '')
+        + (h.utelamnade ? `<p class="k-mask-note">${h.utelamnade} ${termForAntal(h.utelamnade, T.niva)} har median bara ett av åren (färre än minsta gruppstorlek, eller fanns inte) och visas inte i diagrammet.</p>` : '')
         + `<p class="text-dampad-xs marg-4-0-0">Bara intervall med minst ${j.kGrans} ${personOrd(j.kGrans)} båda åren (den högre av årens minsta gruppstorlek). Förändringen i kronor och i procent av förra årets värde. Medianen rör sig också när sammansättningen ändras: nyanställda och avgångar påverkar den lika mycket som löneökningar. ${AB_SPRIDNING_NOT}</p>`;
 }
 
@@ -254,22 +254,22 @@ function renderArsjamforelse() {
     const gruppRad = g => `<tr><td>${esc(g.yrke)}</td><td class="t-tal">${antal(g)}</td><td class="t-tal">${g.gapForra == null ? '–' : svPct(g.gapForra, 1)}</td><td class="t-tal">${g.gapNu == null ? '–' : svPct(g.gapNu, 1)}</td>`
         + `<td class="t-tal">${_abSpridningText(g.spridningForra)}</td><td class="t-tal">${_abSpridningText(g.spridningNu)}</td></tr>`;
     const grupptabell = (rubrik, lista, tom) => `<h4 class="fs-sm marg-10-0-4">${esc(rubrik)} (${lista.length})</h4>` + (lista.length
-        ? `<table class="data-table st-088"><thead><tr><th>Yrkesgrupp</th><th class="t-hoger">Kvinnor / män ${nu.ar}</th><th class="t-hoger">Skillnad ${forra.ar}</th><th class="t-hoger">Skillnad ${nu.ar}</th><th class="t-hoger">Lönespridning ${forra.ar}</th><th class="t-hoger">Lönespridning ${nu.ar}</th></tr></thead><tbody>${lista.map(gruppRad).join('')}</tbody></table>`
+        ? `<table class="data-table st-088"><thead><tr><th>${termStor(T.enhet.en)}</th><th class="t-hoger">Kvinnor / män ${nu.ar}</th><th class="t-hoger">Skillnad ${forra.ar}</th><th class="t-hoger">Skillnad ${nu.ar}</th><th class="t-hoger">Lönespridning ${forra.ar}</th><th class="t-hoger">Lönespridning ${nu.ar}</th></tr></thead><tbody>${lista.map(gruppRad).join('')}</tbody></table>`
         : `<p class="text-dampad-sm marg-0">${esc(tom)}</p>`);
     const g = j.grupper;
     const hantel = _abHantelRader(j);
-    const grupper = grupptabell('Flaggade båda åren', g.kvar, 'Ingen yrkesgrupp är flaggad båda åren.')
-        + grupptabell('Nya flaggade', g.nya, 'Inga nya flaggade yrkesgrupper.')
-        + grupptabell('Inte längre flaggade', g.borta, 'Ingen yrkesgrupp har slutat vara flaggad.')
-        + (hantel.rader.length ? `<h4 class="fs-sm marg-10-0-4">Förändring per yrkesgrupp</h4><div class="chart-container"><div id="chart-arsjamforelse"></div></div>` : '')
-        + (hantel.utelamnade ? `<p class="k-mask-note">${hantel.utelamnade} ${hantel.utelamnade === 1 ? 'yrkesgrupp' : 'yrkesgrupper'} har en löneskillnad bara ett av åren (under tröskeln eller fanns inte) och visas inte i diagrammet.</p>` : '');
+    const grupper = grupptabell('Flaggade båda åren', g.kvar, `${termStor(termAdjektiv({ utrum: 'ingen', neutrum: 'inget', plural: 'inga' }, T.enhet))} ${T.enhet.en} är ${termAdjektiv('flaggad', T.enhet)} båda åren.`)
+        + grupptabell('Nya flaggade', g.nya, `Inga nya flaggade ${T.enhet.fl}.`)
+        + grupptabell('Inte längre flaggade', g.borta, `${termStor(termAdjektiv({ utrum: 'ingen', neutrum: 'inget', plural: 'inga' }, T.enhet))} ${T.enhet.en} har slutat vara ${termAdjektiv('flaggad', T.enhet)}.`)
+        + (hantel.rader.length ? `<h4 class="fs-sm marg-10-0-4">Förändring per ${T.enhet.en}</h4><div class="chart-container"><div id="chart-arsjamforelse"></div></div>` : '')
+        + (hantel.utelamnade ? `<p class="k-mask-note">${hantel.utelamnade} ${termForAntal(hantel.utelamnade, T.enhet)} har en löneskillnad bara ett av åren (under tröskeln eller fanns inte) och visas inte i diagrammet.</p>` : '');
     const p = j.punkter;
     const kvar = p.kvarFranForra;
     const punkter = `<p class="text-dampad-sm marg-8-0-4">Förra året var ${p.klaraForra} av ${p.totaltForra} punkter i Att göra avbockade; i år ${p.klaraNu} av ${p.totaltNu}.</p>`
         + (kvar.length ? `<p class="text-dampad-sm marg-0-0-4">Förra årets öppna punkter (${kvar.length}):</p><ul class="fs-sm marg-0-0-8">${kvar.map(q => `<li>${esc(q.titel || q.id)}${q.klarNu ? ' — <strong>klar i år</strong>' : q.finnsNu ? ' — fortfarande öppen' : ' — finns inte längre i listan'}</li>`).join('')}</ul>` : '<p class="text-dampad-sm marg-0">Förra året hade inga öppna punkter.</p>');
-    host.innerHTML = huvud + (j.samma_k ? '' : `<p class="k-mask-note">Bokslutet sparades med minsta gruppstorlek ${forra.k}; i år gäller ${nu.k}. Yrkesgrupper och BAS-intervall jämförs bara där de, och för könsuppdelade mått båda könen, når den högre av årens gränser, ${j.kGrans} ${personOrd(j.kGrans)}. En yrkesgrupp som var flaggad förra året men då hade ett kön under ${j.kGrans} ${personOrd(j.kGrans)} räknas därför som ny i år om den är flaggad nu, och förra årets löneskillnad för den visas inte.</p>`)
+    host.innerHTML = huvud + (j.samma_k ? '' : `<p class="k-mask-note">Bokslutet sparades med minsta gruppstorlek ${forra.k}; i år gäller ${nu.k}. ${termStor(T.enhet.fl)} och ${T.niva.fl} jämförs bara där de, och för könsuppdelade mått båda könen, når den högre av årens gränser, ${j.kGrans} ${personOrd(j.kGrans)}. ${termStor(termArtikel(T.enhet))} ${T.enhet.en} som var ${termAdjektiv('flaggad', T.enhet)} förra året men då hade ett kön under ${j.kGrans} ${personOrd(j.kGrans)} räknas därför som ny i år om den är ${termAdjektiv('flaggad', T.enhet)} nu, och förra årets löneskillnad för den visas inte.</p>`)
         + `<h4 class="fs-sm marg-6-0-4">Nyckeltal</h4>${nyckeltal}${_abBasTabellHtml(j, forra.ar, nu.ar)}<h4 class="fs-sm marg-12-0-2">Lika arbete</h4>${grupper}${_abSkalHtml(j, forra.ar, nu.ar)}<h4 class="fs-sm marg-12-0-2">Att göra</h4>${punkter}`
-        + `<p class="text-dampad-xs marg-8-0-0">Lönemått bara för yrkesgrupper där båda könen når minsta gruppstorlek; skillnaden är kvinnors medianlön mot mäns, negativt när kvinnor ligger lägre. ${AB_SPRIDNING_NOT}</p>`;
+        + `<p class="text-dampad-xs marg-8-0-0">Lönemått bara för ${T.enhet.fl} där båda könen når minsta gruppstorlek; skillnaden är kvinnors medianlön mot mäns, negativt när kvinnor ligger lägre. ${AB_SPRIDNING_NOT}</p>`;
     const el = document.getElementById('chart-arsjamforelse');
     if (el) { const fig = _abHantelFigur(j, forra.ar, nu.ar); if (fig) ritaFigur(el, fig); }
     const elBas = document.getElementById('chart-arsjamforelse-bas');

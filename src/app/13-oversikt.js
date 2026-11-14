@@ -35,11 +35,11 @@ function updateCompliance() {
         if (kv.length / tot < 0.4 || ma.length / tot < 0.4) skevCount++;
     });
     if (gapTotal === 0) {
-        setCompCard('comp-gap', 0, 0, `Inga jämförbara BAS-intervall${maskText}`, 'na');
-        setCompCard('comp-skev', 0, 0, `Inga jämförbara BAS-intervall${maskText}`, 'na');
+        setCompCard('comp-gap', 0, 0, `Inga jämförbara ${T.niva.fl}${maskText}`, 'na');
+        setCompCard('comp-skev', 0, 0, `Inga jämförbara ${T.niva.fl}${maskText}`, 'na');
     } else {
-        setCompCard('comp-gap', gapCrit, gapTotal, `${gapCrit} av ${gapTotal} jämförbara BAS-intervall${maskText}`, gapCrit === 0 ? 'ok' : gapCrit >= 3 ? 'crit' : 'warn');
-        setCompCard('comp-skev', skevCount, gapTotal, `${skevCount} av ${gapTotal} jämförbara BAS-intervall${maskText}`, skevCount === 0 ? 'ok' : 'warn');
+        setCompCard('comp-gap', gapCrit, gapTotal, `${gapCrit} av ${gapTotal} jämförbara ${T.niva.fl}${maskText}`, gapCrit === 0 ? 'ok' : gapCrit >= 3 ? 'crit' : 'warn');
+        setCompCard('comp-skev', skevCount, gapTotal, `${skevCount} av ${gapTotal} jämförbara ${T.niva.fl}${maskText}`, skevCount === 0 ? 'ok' : 'warn');
     }
 
     // 3. Policy P10-underläge — referensen namnges; utan referens ett tomläge (ADR-28)
@@ -62,9 +62,9 @@ function updateCompliance() {
         // ren AID-policy). Då finns inget att jämföra mot — grönt "0 av 0" vore
         // falskt lugnande, så kortet blir 'na'.
         if (polTotal === 0) {
-            setCompCard('comp-pol', 0, 0, `${referensNamn()} saknar rader per BAS-intervall`, 'na');
+            setCompCard('comp-pol', 0, 0, `${referensNamn()} saknar rader per ${T.niva.en}`, 'na');
         } else {
-            setCompCard('comp-pol', polLow, polTotal, `${polLow} av ${polTotal} BAS-intervall`, polLow === 0 ? 'ok' : polLow >= 2 ? 'crit' : 'warn');
+            setCompCard('comp-pol', polLow, polTotal, `${polLow} av ${polTotal} ${T.niva.fl}`, polLow === 0 ? 'ok' : polLow >= 2 ? 'crit' : 'warn');
         }
     }
 
@@ -85,8 +85,8 @@ function updateCompliance() {
             if (orgMed < statRow.median) bmLow++;
         });
         if (bmTotal === 0) setCompCard('comp-bm', 0, 0, 'Ingen matchning hittad', 'na');
-        else if (bmLow === 0) setCompCard('comp-bm', 0, bmTotal, `0 av ${bmTotal} yrkesgrupper`, 'ok');
-        else setCompCard('comp-bm', bmLow, bmTotal, `${bmLow} av ${bmTotal} yrkesgrupper`, bmLow / bmTotal > 0.5 ? 'crit' : 'warn');
+        else if (bmLow === 0) setCompCard('comp-bm', 0, bmTotal, `0 av ${bmTotal} ${T.enhet.fl} i ${T.niva.en}`, 'ok');
+        else setCompCard('comp-bm', bmLow, bmTotal, `${bmLow} av ${bmTotal} ${T.enhet.fl} i ${T.niva.en}`, bmLow / bmTotal > 0.5 ? 'crit' : 'warn');
     }
     // Länken till fliken Löneläget bara när fliken finns (jämförelsestatistik inläst).
     const bmLank = document.querySelector('#comp-bm .comp-lank');
@@ -333,12 +333,12 @@ function renderProcessTracker({ punkter: givna } = {}) {
 
     // 3. § 9 Lika arbete (oförklarat gap + antal grupper att förklara/åtgärda)
     rows.push(safe(() => {
-        if (!hasData) return { n: 3, tab: 'matrix', title: '3. Lika arbete — samma yrke', status: 'ej', detail: 'Kräver inläst underlag.' };
+        if (!hasData) return { n: 3, tab: 'matrix', title: `3. Lika arbete — samma ${T.enhet.en}`, status: 'ej', detail: 'Kräver inläst underlag.' };
         const reg = (typeof runOLSRegression === 'function') ? runOLSRegression() : null;
         const ok = !!(reg && !reg.error);
         const { t, d } = hanterade(['Lika arbete', 'Lika arbete, fördjupning']);
-        return { n: 3, tab: 'matrix', title: '3. Lika arbete — samma yrke', ..._agStegLikaArbete({ regressionOk: ok, t, d }) };
-    }, { n: 3, tab: 'matrix', title: '3. Lika arbete — samma yrke', status: 'ej', detail: 'Kräver inläst underlag.' }));
+        return { n: 3, tab: 'matrix', title: `3. Lika arbete — samma ${T.enhet.en}`, ..._agStegLikaArbete({ regressionOk: ok, t, d }) };
+    }, { n: 3, tab: 'matrix', title: `3. Lika arbete — samma ${T.enhet.en}`, status: 'ej', detail: 'Kräver inläst underlag.' }));
 
     // 4. § 3:10 Likvärdigt arbete (antal kandidatpar)
     rows.push(safe(() => {
@@ -518,10 +518,10 @@ function updateDashboardStats() {
             // Rå kvot för hela organisationen: direktivmarkeringen (≥ 5 %) står per grupp,
             // inte här — därför ingen hänvisning till den, och neutral färg: rågapet
             // är en utgångspunkt, inget fynd. Bedömningen görs per grupp i Lika arbete.
-            const tipText = 'Rå skillnad för hela organisationen, före hänsyn till yrke, BAS-intervall och ålder. Se Lika arbete för skillnaden per grupp.';
+            const tipText = `Rå skillnad för hela organisationen, före hänsyn till ${T.enhet.en}, ${T.niva.en} och ålder. Se Lika arbete för skillnaden per grupp.`;
             // Förklaringen står i verktygstipset; under talet står bara vad det är för tal (nyckeltalsraden är en rad hög).
             pgEl.innerHTML = svPct(ratio, 1) +
-                `<div class="stat-tip" title="${esc(tipText)}">rå skillnad, innan yrke och BAS-intervall räknats bort</div>`;
+                `<div class="stat-tip" title="${esc(tipText)}">rå skillnad, innan ${T.enhet.en} och ${T.niva.en} räknats bort</div>`;
         }
     }
 }

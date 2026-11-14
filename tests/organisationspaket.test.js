@@ -195,7 +195,7 @@ describe('organisationspaket: jämförelseyrken i likvärdigt arbete (ADR-60)', 
         const r = tolkaPaket(JSON.stringify(p));
         expect(r.ok).toBe(true);
         expect(r.delar.installningar.jamforelse).toBeUndefined();
-        expect(r.varningar.join(' ')).toMatch(/jämförelseyrken i likvärdigt arbete/);
+        expect(r.varningar.join(' ')).toMatch(/jämförelseetiketter i likvärdigt arbete/);
     });
 });
 

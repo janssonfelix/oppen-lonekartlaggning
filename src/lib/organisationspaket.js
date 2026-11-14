@@ -15,6 +15,10 @@
 import { valideraRecept } from './tabellrecept.js';
 import { valideraPerBasRecept, perBasReceptArStandard } from './perbas.js';
 import { valideraImportprofiler } from './importprofiler.js';
+import { skapaTermer } from './termer.js';
+/** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
+const T = skapaTermer();
+
 
 export const PAKET_FORMAT = 'lonekartlaggning-organisationspaket';
 export const PAKET_VERSION = 1;
@@ -252,7 +256,7 @@ export function tolkaPaket(text) {
     if (inst.kTroskel != null && _kTroskel(inst.kTroskel) === undefined) varningar.push('Paketets minsta gruppstorlek är ogiltig och används inte.');
     const las = _lasningar(inst, varningar);
     if (inst.jamforelse != null && _jamforelse(inst.jamforelse) === undefined)
-        varningar.push('Paketets val av jämförelseyrken i likvärdigt arbete är ogiltigt ("alla" eller "mansdominerade") och används inte.');
+        varningar.push(`Paketets val av ${T.jamforelse.fl} i likvärdigt arbete är ogiltigt ("alla" eller "mansdominerade") och används inte.`);
     // Paketets egen tröskel får inte ligga under paketets golv: den höjs till golvet, med en varning.
     let kTroskel = _kTroskel(inst.kTroskel);
     if (kTroskel !== undefined && las.kTroskelLagst !== undefined && kTroskel < las.kTroskelLagst) {

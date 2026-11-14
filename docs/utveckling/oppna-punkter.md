@@ -6,11 +6,11 @@ kvar med en rad om hur den avslutades. Syfte och avgränsning står i [`mal.md`]
 
 **Användning och prövning:**
 1. **Ingen användare har provat gränssnittet och diagrammen med verklig data**; de är sedda med demodatan och ett
-   påhittat större underlag (42 yrken). Checklistan för skarp data (`pilotchecklista.md`) har punkter för det
+   påhittat större underlag (42 AID-etiketter). Checklistan för skarp data (`pilotchecklista.md`) har punkter för det
    som inte går att pröva utan verklig data.
-3. **Punkter som täcker varandra i bandkartan** när många yrkesgrupper i samma BAS-intervall har nästan samma
+3. **Punkter som täcker varandra i bandkartan** när många AID-etiketter i samma BAS-intervall har nästan samma
    median. *Krav mot lön* flyttar isär sådana grupper i sidled, och prioriteringsmatrisens etiketter flyttas isär
-   uppåt; bandkartan är inte prövad med många yrken. Bör bedömas med verklig data.
+   uppåt; bandkartan är inte prövad med många AID-etiketter. Bör bedömas med verklig data.
 4. **Trattdiagrammets ritade fält är en normalapproximation** (med korrektion för små grupper); bedömningen av
    varje grupp görs med omkastning, utom för grupper över 300 personer.
 
@@ -35,7 +35,7 @@ kvar med en rad om hur den avslutades. Syfte och avgränsning står i [`mal.md`]
 9c. **Ålder & karriär ordnad efter tre frågor** (vid samma ålder; över karriären; åldersstruktur), med ett
     spridningsdiagram där hela urvalets trend är ett valbart lager. Täthetskurvorna per BAS är borta ur fliken
     (lönespridningen per BAS och kön finns som lådor i Lönestruktur, och utskriften använder den bilden).
-9d. **Dekomponeringen visas som en bild:** trappan med yrkesgruppssteget efter huvudtalet, förklaringsbudgeten
+9d. **Dekomponeringen visas som en bild:** trappan med steget för AID-etikett inom BAS efter huvudtalet, förklaringsbudgeten
     under den, steglistan som skärmläsaralternativ. Livscykelns nivåer per BAS kommer ur modellens
     BAS-koefficienter (`basFaktor`). Blinder-Oaxaca kodar BAS som indikatorer sedan ADR-53.
 9e. **Storlek utan prövning, som beslut (ADR-59, ADR-62, ADR-71):** Utforska och kolumnen *Skillnad kön* i Prioriteringens

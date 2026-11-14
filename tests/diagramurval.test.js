@@ -596,8 +596,8 @@ describe('kategori som lista', () => {
     const sok = (el, text) => { const s = sokf(el); s.value = text; s.dispatchEvent(new w.Event('input', { bubbles: true })); };
 
     it('URVAL.yrkesgrupp och URVAL.sektor läser yrke och sektor och visas som lista', () => {
-        expect(w.eval('JSON.stringify(URVAL.yrkesgrupp)')).toBe(JSON.stringify({ typ: 'kategori', falt: 'yrke', namn: 'Yrkesgrupp', etikett: '{v}', visning: 'lista' }));
-        expect(w.eval('JSON.stringify(URVAL.sektor)')).toBe(JSON.stringify({ typ: 'kategori', falt: 'sektor', namn: 'Sektor', etikett: '{v}', visning: 'lista' }));
+        expect(w.eval('JSON.stringify(URVAL.yrkesgrupp)')).toBe(JSON.stringify({ typ: 'kategori', falt: 'yrke', namn: 'AID-etikett', etikett: '{v}', visning: 'lista' }));
+        expect(w.eval('JSON.stringify(URVAL.sektor)')).toBe(JSON.stringify({ typ: 'kategori', falt: 'sektor', namn: 'Huvudområde', etikett: '{v}', visning: 'lista' }));
         expect(w.eval('Object.isFrozen(URVAL.yrkesgrupp) && Object.isFrozen(URVAL.sektor)')).toBe(true);
     });
     it('en hopfälld lista med summering, sökfält, Markera alla och Avmarkera alla och en ikryssad ruta per värde (ARIA)', () => {
@@ -607,12 +607,12 @@ describe('kategori som lista', () => {
         const r = lrad(el);
         expect(el.previousElementSibling).toBe(r);
         expect(r.getAttribute('role')).toBe('group');
-        expect(r.getAttribute('aria-label')).toBe('Visa Yrkesgrupp');
+        expect(r.getAttribute('aria-label')).toBe('Visa AID-etikett');
         expect(r.getAttribute('data-urval-falt')).toBe('yrke');
         expect(det(el).open).toBe(false);
-        expect(summering(el).textContent).toBe('Yrkesgrupp: alla 40');
+        expect(summering(el).textContent).toBe('AID-etikett: alla 40');
         expect(sokf(el).type).toBe('search');
-        expect(sokf(el).getAttribute('aria-label')).toBe('Sök yrkesgrupp');
+        expect(sokf(el).getAttribute('aria-label')).toBe('Sök AID-etikett');
         expect(markera(el, 'alla').textContent).toBe('Markera alla');
         expect(markera(el, 'inga').textContent).toBe('Avmarkera alla');
         expect([markera(el, 'alla').type, markera(el, 'inga').type]).toEqual(['button', 'button']);
@@ -643,7 +643,7 @@ describe('kategori som lista', () => {
         vaxla(ruta(el, 'Yrke 01'));
         expect(punkter(el)).toBe(39);
         expect(ruta(el, 'Yrke 01').checked).toBe(false);
-        expect(summering(el).textContent).toBe('Yrkesgrupp: 39 av 40');
+        expect(summering(el).textContent).toBe('AID-etikett: 39 av 40');
         expect(not(el).textContent).toBe('Diagrammet visar ett urval: utan Yrke 01. Talen i texten och tabellerna gäller hela underlaget.');
         expect(visaAlla(el).hidden).toBe(false);
         vaxla(ruta(el, 'Yrke 01'));
@@ -651,15 +651,15 @@ describe('kategori som lista', () => {
         expect(not(el)).toBeNull();
         markera(el, 'inga').click();
         expect(rutor(el).some(x => x.checked)).toBe(false);
-        expect(summering(el).textContent).toBe('Yrkesgrupp: 0 av 40');
+        expect(summering(el).textContent).toBe('AID-etikett: 0 av 40');
         expect(el.textContent).toBe('Inga grupper i urvalet');
-        expect(not(el).textContent).toContain('Diagrammet visar ett urval: Yrkesgrupp 0 av 40.');
+        expect(not(el).textContent).toContain('Diagrammet visar ett urval: AID-etikett 0 av 40.');
         vaxla(ruta(el, 'Yrke 05'));
         expect(punkter(el)).toBe(1);
         expect(not(el).textContent).toContain('urval: bara Yrke 05.');
         markera(el, 'alla').click();
         expect(punkter(el)).toBe(40);
-        expect(summering(el).textContent).toBe('Yrkesgrupp: alla 40');
+        expect(summering(el).textContent).toBe('AID-etikett: alla 40');
         expect(not(el)).toBeNull();
         rensa(el);
     });
@@ -677,8 +677,8 @@ describe('kategori som lista', () => {
         expect(markera(el, 'inga').textContent).toBe('Avmarkera träffarna');
         markera(el, 'inga').click();
         expect(punkter(el)).toBe(30);
-        expect(summering(el).textContent).toBe('Yrkesgrupp: 30 av 40');
-        expect(not(el).textContent).toContain('urval: Yrkesgrupp 30 av 40.');
+        expect(summering(el).textContent).toBe('AID-etikett: 30 av 40');
+        expect(not(el).textContent).toContain('urval: AID-etikett 30 av 40.');
         sok(el, 'finns inte');
         expect(synligaPoster(el)).toEqual([]);
         expect(traffar().textContent).toBe('0 av 40 träffar');
@@ -701,17 +701,17 @@ describe('kategori som lista', () => {
         markera(el, 'inga').click();
         rensa(el);
         ritaI(el, yrkesFigur());
-        expect(summering(el).textContent).toBe('Yrkesgrupp: 30 av 40');
+        expect(summering(el).textContent).toBe('AID-etikett: 30 av 40');
         expect(punkter(el)).toBe(30);
         expect(ruta(el, 'Yrke 21').checked).toBe(false);
         // En figur där alla bortvalda saknas: allt visas, och valet gäller igen när de finns.
         ritaI(el, yrkesFigur(19));
-        expect(summering(el).textContent).toBe('Yrkesgrupp: alla 19');
+        expect(summering(el).textContent).toBe('AID-etikett: alla 19');
         ritaI(el, yrkesFigur());
-        expect(summering(el).textContent).toBe('Yrkesgrupp: 30 av 40');
+        expect(summering(el).textContent).toBe('AID-etikett: 30 av 40');
         w.eval('_rfRensaAlla()');
         ritaI(el, yrkesFigur());
-        expect(summering(el).textContent).toBe('Yrkesgrupp: alla 40');
+        expect(summering(el).textContent).toBe('AID-etikett: alla 40');
         rensa(el);
     });
     it('öppet läge, sökningen och fokus (sökfält, kryssruta, knapp, summering) följer med när raderna byggs om', () => {
@@ -753,10 +753,10 @@ describe('kategori som lista', () => {
         vaxla(ruta(kopia, 'Yrke 02'));
         expect(punkter(kopia)).toBe(39);
         expect(punkter(kalla)).toBe(40);
-        expect(summering(kalla).textContent).toBe('Yrkesgrupp: alla 40');
+        expect(summering(kalla).textContent).toBe('AID-etikett: alla 40');
         markera(kalla, 'inga').click();
         expect(kalla.textContent).toBe('Inga grupper i urvalet');
-        expect(summering(kopia).textContent).toBe('Yrkesgrupp: 39 av 40');
+        expect(summering(kopia).textContent).toBe('AID-etikett: 39 av 40');
         rensa(kalla); rensa(kopia);
         kalla.parentElement.remove(); kopia.parentElement.remove();
     });
@@ -767,14 +767,14 @@ describe('kategori som lista', () => {
         sok(el, 'yrke 1');
         markera(el, 'inga').click();
         w.__el = el;
-        expect(w.eval('chartExportRows(window.__el)')[1]).toEqual(['Urval i diagrammet: Yrkesgrupp 30 av 40']);
+        expect(w.eval('chartExportRows(window.__el)')[1]).toEqual(['Urval i diagrammet: AID-etikett 30 av 40']);
         const org = w.figurTillBild, sedda = [];
         w.figurTillBild = (figur, format, b, h, val) => { sedda.push({ figur, val }); return Promise.resolve('data:image/png;base64,AAAA'); };
         try {
             await w.eval('chartExportRun(window.__el, "svg")');
             await w.eval('diagramTillBild(window.__el, { bredd: 1600, hojd: 900 })');
         } finally { w.figurTillBild = org; }
-        expect(sedda[0].val.fot).toMatch(/ · Urval i diagrammet: Yrkesgrupp 30 av 40$/);
+        expect(sedda[0].val.fot).toMatch(/ · Urval i diagrammet: AID-etikett 30 av 40$/);
         expect('filter' in sedda[1].val).toBe(false);
         expect((w.figurTillSvg(sedda[1].figur, 1600, 900, sedda[1].val).match(/data-marke="punkt"/g) || []).length).toBe(40);
         rensa(el);

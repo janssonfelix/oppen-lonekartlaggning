@@ -422,7 +422,7 @@ describe('golden: Word-utkastet (§§ 8–14) på fast dataset', () => {
 
     it('strukturell sanity: alla lagsteg, [HR fyller i]-block och manuellt innehåll', () => {
         const draft = win.__docDraftHtml();
-        ['Regler och praxis kring lön', 'Lika arbete — kvinnor och män i samma yrke', 'Likvärdigt arbete — kvinnodominerade yrken', 'Åtgärder och tidsplan', 'Samverkan med arbetstagarna', 'Beslut och underskrift', 'Bilaga: Metod']
+        ['Regler och praxis kring lön', 'Lika arbete — kvinnor och män i samma AID-etikett', 'Likvärdigt arbete — kvinnodominerade AID-etiketter', 'Åtgärder och tidsplan', 'Samverkan med arbetstagarna', 'Beslut och underskrift', 'Bilaga: Metod']
             .forEach(h => expect(draft, `saknar rubrik "${h}"`).toContain(h));
         expect((draft.match(/class="fillin"/g) || []).length).toBeGreaterThanOrEqual(5);
         expect(draft).toContain('Åtgärd krävs');              // § 8-status flödar in

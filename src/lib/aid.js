@@ -11,6 +11,10 @@
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
 import { aidEtikettlista } from './aid-etiketter.js';
+import { skapaTermer, stor, adjektiv } from './termer.js';
+/** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
+const T = skapaTermer();
+
 
 export const HUVUDOMRADEN = Object.freeze([
     { prefix: '10', namn: 'Ledningsarbete' },
@@ -27,7 +31,7 @@ export const HUVUDOMRADEN = Object.freeze([
     { prefix: '60', namn: 'Köks- och måltidsarbete' },
     { prefix: '65', namn: 'Städ, tvätt och renhållningsarbete' },
 ]);
-export const OKANT_HUVUDOMRADE = 'Okänt huvudområde';
+export const OKANT_HUVUDOMRADE = `${stor(adjektiv('okänd', T.huvudomrade))} ${T.huvudomrade.en}`;
 
 const _PER_PREFIX = new Map(HUVUDOMRADEN.map(h => [h.prefix, h]));
 const _ORDNING = new Map(HUVUDOMRADEN.map((h, i) => [h.namn, i]));

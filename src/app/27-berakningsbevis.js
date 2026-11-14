@@ -77,25 +77,27 @@ function _evidenceForLikvardighetPair(p) {
         ? (p.gapCI.lo > 0 ? 'Säker skillnad — värt att granska' : 'Inom slumpfel')
         : '— Ej beräkningsbar';
     const ärIntern = p.jamforKalla === 'intern';
-    // ADR-60: jämförelseyrket är ett yrke som inte är kvinnodominerat — mansdominerat eller blandat.
-    const klassOrd = p.maKlass === 'mansdominerad' ? 'mansdominerat' : p.maKlass === 'blandad' ? 'blandat' : 'inte kvinnodominerat';
-    const klassMening = `${klassOrd}, alltså inte kvinnodominerat (kvinnodominerat är ${kvDomGransText()})`;
+    // ADR-60: jämförelseetiketten är en AID-etikett som inte är kvinnodominerad — mansdominerad eller blandad.
+    // Adjektiven böjs efter termens genus (ADR-74).
+    const adj = s => termAdjektiv(s, T.enhet);
+    const klassOrd = p.maKlass === 'mansdominerad' ? adj('mansdominerad') : p.maKlass === 'blandad' ? adj('blandad') : `inte ${adj('kvinnodominerad')}`;
+    const klassMening = `${klassOrd}, alltså inte ${adj('kvinnodominerad')} (kvinnodominerat är ${kvDomGransText()})`;
     const jämförKällaText = ärIntern
-        ? `organisationens egna data (${klassOrd} yrke)`
+        ? `organisationens egna data (${klassOrd} ${T.enhet.en})`
         : `jämförelsestatistiken (${klassOrd})`;
     // Bootstrap-metoden skiljer sig per källa: intern = bägge individurvalen,
     // extern = organisationens löner mot jämförelsestatistikens median som konstant.
     const ciNote = ärIntern
-        ? 'Bootstrap på bägge individurvalen (org. kv-dom + org. jämförelseyrke), B=1000'
+        ? `Bootstrap på bägge individurvalen (org. kv-dom + org. ${T.jamforelse.en}), B=1000`
         : 'Bootstrap mot konstant jämförelsestatistikens median, B=1000 omdragningar av organisationens löner';
     return {
         title: `Beräkningen — ${p.kvLabel || p.kvAid} mot ${p.maLabel || p.maAid}`,
-        intro: `Detta par flaggades i likvärdighetsanalysen: <strong>${esc(p.kvLabel || p.kvAid)}</strong> i organisationen (kvinnodominerat) har lägre medianlön än <strong>${esc(p.maLabel || p.maAid)}</strong> i ${jämförKällaText} inom <em>samma BAS-intervall</em> (= likvärdiga krav). ${ärIntern ? 'Det här är en <strong>jämförelse inom organisationen</strong>: båda yrkena finns i organisationen.' : 'Inget jämförelseyrke i organisationen fanns i det här BAS-intervallet, därför används jämförelsestatistiken.'} Tabellraden visar antal, medianer och skillnad — nedan visas <em>hur</em> klassning och säkerhet räknats fram.`,
+        intro: `Detta par flaggades i likvärdighetsanalysen: <strong>${esc(p.kvLabel || p.kvAid)}</strong> i organisationen (kvinnodominerat) har lägre medianlön än <strong>${esc(p.maLabel || p.maAid)}</strong> i ${jämförKällaText} inom <em>samma ${T.niva.en}</em> (= likvärdiga krav). ${ärIntern ? `Det här är en <strong>jämförelse inom organisationen</strong>: båda ${T.enhet.bfl} finns i organisationen.` : `${termStor(termAdjektiv({ utrum: 'ingen', neutrum: 'inget', plural: 'inga' }, T.jamforelse))} ${T.jamforelse.en} i organisationen fanns i ${termArtikel(T.niva, { bestamd: true })} här ${T.niva.bf}, därför används jämförelsestatistiken.`} Tabellraden visar antal, medianer och skillnad — nedan visas <em>hur</em> klassning och säkerhet räknats fram.`,
         rows: [
-            // Endast det som INTE redan står i tabellraden: varför jämförelseyrket räknas
+            // Endast det som INTE redan står i tabellraden: varför jämförelseetiketten räknas
             // som inte kvinnodominerat, hur säkerheten bedöms, och vad påverkansindex betyder.
-            { label: 'Varför jämförbart yrke?',
-              value: ärIntern ? 'Organisationens eget yrke (intern)' : (p.maKlassKort === 'lokal' ? 'Faktisk könsfördelning (jämförelsestatistiken)' : `Nationell könsfördelning som reserv (${skrKallaKort()})`),
+            { label: `Varför ${termAdjektiv('jämförbar', T.enhet)} ${T.enhet.en}?`,
+              value: ärIntern ? `Organisationens ${termAdjektiv({ utrum: 'egen', neutrum: 'eget', plural: 'egna' }, T.enhet)} ${T.enhet.en} (intern)` : (p.maKlassKort === 'lokal' ? 'Faktisk könsfördelning (jämförelsestatistiken)' : `Nationell könsfördelning som reserv (${skrKallaKort()})`),
               note: ärIntern
                 ? `${svPct(p.maKvAndel, 0)} kvinnor i organisationens grupp${p.maN != null ? ` (n=${p.maN})` : ''}: ${klassMening}`
                 : (p.maKlassKort === 'lokal'
@@ -103,19 +105,19 @@ function _evidenceForLikvardighetPair(p) {
                     : `${svPct(p.maKvAndel, 0)} kvinnor på nationell nivå: ${klassMening}. Lokal könsdata saknades.`) },
             { label: '95 % säkerhetsintervall (skillnad)',      value: p.gapCI ? `[${fmtKr(p.gapCI.lo)}, ${fmtKr(p.gapCI.hi)}]` : '—', note: p.gapCI ? ciNote : 'För få observationer i organisationen för bootstrap' },
             { label: 'Säkerhetsbedömning',                 value: sigStatus, isHtml: true, note: p.gapCI ? (p.gapCI.lo > 0 ? 'Hela intervallet ligger över 0: skillnaden är svår att förklara med slumpen' : 'Intervallet når 0: skillnaden kan bero på slumpen') : '' },
-            { label: 'Summa för gruppen (kr/mån)',         value: fmtN(Math.round(p.allvarsindex)), note: `|skillnad| × n (i organisationen) = ${fmtKr(Math.abs(p.gapKr))} × ${p.kvN} — skillnaden gånger antalet personer i det kvinnodominerade yrket; rangordnar paren och är verktygets eget mått` },
-            { label: 'Medelålder',                         value: `${alderText(p.kvMedelAlder)} år mot ${alderText(p.maMedelAlder)} år`, note: 'Det kvinnodominerade yrket mot jämförelseyrket. Skiljer sig åldrarna mycket kan en del av skillnaden vara åldersstruktur.' },
+            { label: 'Summa för gruppen (kr/mån)',         value: fmtN(Math.round(p.allvarsindex)), note: `|skillnad| × n (i organisationen) = ${fmtKr(Math.abs(p.gapKr))} × ${p.kvN} — skillnaden gånger antalet personer i ${termFras(T.enhet, 'bf', { adjektiv: 'kvinnodominerad' })}; rangordnar paren och är verktygets eget mått` },
+            { label: 'Medelålder',                         value: `${alderText(p.kvMedelAlder)} år mot ${alderText(p.maMedelAlder)} år`, note: `${termStor(termFras(T.enhet, 'bf', { adjektiv: 'kvinnodominerad' }))} mot ${T.jamforelse.bf}. Skiljer sig åldrarna mycket kan en del av skillnaden vara åldersstruktur.` },
             { label: 'Justerad för ålder',                 value: p.aldersJusterad ? svPct(p.aldersJusterad.gapPct, 1) : '—',
               note: p.aldersJusterad
-                ? `Jämförelseyrkets lön omräknad till det kvinnodominerade yrkets åldersfördelning ger medianen ${fmtKr(p.aldersJusterad.medianJusterad)}, ${fmtKr(p.aldersJusterad.gapKr)} över ${fmtKr(p.kvMedian)}. Den råa skillnaden är det lagen prövar; den justerade visar hur mycket som kan bero på åldersstruktur.`
-                : (ärIntern ? 'Kunde inte räknas: jämförelseyrket har för få personer med ålder eller för liten åldersspridning.' : 'Räknas bara för interna par — jämförelsestatistiken saknar individdata.') }
+                ? `${termStor(termGenitiv(T.jamforelse.bf))} lön omräknad till ${termFras(T.enhet, 'bf', { adjektiv: 'kvinnodominerad', genitiv: true })} åldersfördelning ger medianen ${fmtKr(p.aldersJusterad.medianJusterad)}, ${fmtKr(p.aldersJusterad.gapKr)} över ${fmtKr(p.kvMedian)}. Den råa skillnaden är det lagen prövar; den justerade visar hur mycket som kan bero på åldersstruktur.`
+                : (ärIntern ? `Kunde inte räknas: ${T.jamforelse.bf} har för få personer med ålder eller för liten åldersspridning.` : 'Räknas bara för interna par — jämförelsestatistiken saknar individdata.') }
         ],
         formula: `<strong>Beräkning:</strong><br>
-            skillnad (kr) = median(jämförelseyrke) − median(organisation)<br>
+            skillnad (kr) = median(${T.jamforelse.en}) − median(organisation)<br>
             = ${fmtKr(p.maMedian)} − ${fmtKr(p.kvMedian)} = <strong>${fmtKr(p.gapKr)}</strong><br>
             skillnad (%) = skillnad / median(organisation) × 100<br>
             = ${fmtKr(p.gapKr)} / ${fmtKr(p.kvMedian)} × 100 = <strong>${svPct(p.gapPct, 2)}</strong><br><br>
-            <strong>Klassificering av jämförelseyrket (${esc(klassOrd)}):</strong><br>
+            <strong>Klassificering av ${T.jamforelse.bf} (${esc(klassOrd)}):</strong><br>
             ${ärIntern
                 ? `Källa: organisationens egna individdata (faktisk könsfördelning per AID×BAS)<br>${svPct(p.maKvAndel, 1)} kvinnor${p.maN != null ? ` (n=${p.maN})` : ''}: ${klassMening}`
                 : (p.maKlassKort === 'lokal'
@@ -174,21 +176,21 @@ function _evidenceForPrioItem(it, _reference) {
 }
 
 /**
- * Bevis-payload för en EU-matris-rad (yrkesgrupps-jämförelse).
+ * Bevis-payload för en EU-matris-rad (jämförelse per AID-etikett).
  * @param {Object} r - rad från EU-matris-aggregering
  */
 function _evidenceForEUMatrixRow(r) {
     const fmtKr = v => Math.round(v).toLocaleString('sv-SE') + ' kr';
-    // Andelen kvinnor i yrket nationellt (kolumnen Kvinnor nationellt, som grundvyn gömmer).
+    // Andelen kvinnor i AID-etiketten nationellt (kolumnen Kvinnor nationellt, som grundvyn gömmer).
     const skr = _skrKvinnoandel(r.yrke, { del: _skrDel() });
     const nationellt = { label: 'Andel kvinnor nationellt', value: skr ? svPct(skr.pct, 0) : '–',
-        note: skr ? `${_skrDelText(skr.del)}, ${skrKallaKort()}` : `Yrkeskoden finns inte i ${skrKallaKort()}` };
+        note: skr ? `${_skrDelText(skr.del)}, ${skrKallaKort()}` : `${termStor(T.kod.bf)} finns inte i ${skrKallaKort()}` };
     if (r.samladMedian) {
         return {
             title: `Beräkningen — ${r.yrke}`,
-            intro: `Ett av könen har färre än ${kTroskel()} ${personOrd(kTroskel())} i yrkesgruppen. Då redovisas bara gruppens samlade median, så att ingen enskild lön kan räknas fram, och ingen jämförelse mellan kvinnor och män görs.`,
+            intro: `Ett av könen har färre än ${kTroskel()} ${personOrd(kTroskel())} i gruppen. Då redovisas bara gruppens samlade median, så att ingen enskild lön kan räknas fram, och ingen jämförelse mellan kvinnor och män görs.`,
             rows: [
-                { label: 'Yrkesgrupp',               value: r.yrke },
+                { label: termStor(T.enhet.en),         value: r.yrke },
                 { label: 'Antal anställda totalt', value: r.tot.toLocaleString('sv-SE'), note: `${r.nKv} kvinnor · ${r.nMa} män` },
                 { label: 'Könsdominans',             value: r.dominans },
                 nationellt,
@@ -202,9 +204,9 @@ function _evidenceForEUMatrixRow(r) {
     const gapPct = gapSgn * 100;
     return {
         title: `Beräkningen — ${r.yrke}`,
-        intro: `Jämförelse av medianlöner mellan kvinnor och män inom samma yrkesgrupp (lika arbete). Inga kontroller för ålder eller nivå görs här; det är en direkt jämförelse av medianerna. Statusen prövar skillnaden mot slumpens gränser för gruppen (omkastning av könen, 1 000 gånger).`,
+        intro: `Jämförelse av medianlöner mellan kvinnor och män inom samma ${T.enhet.en} (lika arbete). Inga kontroller för ålder eller nivå görs här; det är en direkt jämförelse av medianerna. Statusen prövar skillnaden mot slumpens gränser för gruppen (omkastning av könen, 1 000 gånger).`,
         rows: [
-            { label: 'Yrkesgrupp',                value: r.yrke },
+            { label: termStor(T.enhet.en),          value: r.yrke },
             { label: 'Antal anställda totalt',  value: r.tot.toLocaleString('sv-SE') },
             { label: 'Antal kvinnor',             value: r.nKv.toLocaleString('sv-SE'), note: r.kMaskedKv ? `Maskerad — under k=${kTroskel()}` : '' },
             { label: 'Antal män',                 value: r.nMa.toLocaleString('sv-SE'), note: r.kMaskedMa ? `Maskerad — under k=${kTroskel()}` : '' },
@@ -221,7 +223,7 @@ function _evidenceForEUMatrixRow(r) {
             `<strong>Beräkning:</strong><br>
             kvot = median(kvinnor) / median(män) = ${fmtKr(r.medKv)} / ${fmtKr(r.medMa)} = <strong>${svTal(ratio, 4)}</strong><br>
             skillnad = (kvot − 1) × 100 = (${svTal(ratio, 4)} − 1) × 100 = <strong>${svPct(gapPct, 2)}</strong>`,
-        footer: `Jämförelsen gäller lika arbete: samma yrke, oberoende av andra egenskaper. För likvärdigt arbete (annat yrke, likvärdiga krav), se fliken Likvärdigt arbete.`
+        footer: `Jämförelsen gäller lika arbete: samma ${T.enhet.en}, oberoende av andra egenskaper. För likvärdigt arbete (${termAdjektiv({ utrum: 'annan', neutrum: 'annat', plural: 'andra' }, T.enhet)} ${T.enhet.en}, likvärdiga krav), se fliken Likvärdigt arbete.`
     };
 }
 
@@ -239,7 +241,7 @@ function _evidenceForPerBasRow(p, bhCtx) {
                 ? `Per-BAS-regression kunde inte köras eftersom underlaget är för litet (k-anonymitet).`
                 : `Per-BAS-regression misslyckades på grund av multikollinearitet (singulär designmatris — typiskt om alla i gruppen har samma BAS-rang och ålder är extremt korrelerad med kön).`,
             rows: [
-                { label: 'BAS-intervall', value: p.bas },
+                { label: termStor(T.niva.en), value: p.bas },
                 { label: 'Antal totalt',   value: (p.n || 0).toLocaleString('sv-SE') },
                 { label: 'Antal kvinnor',  value: (p.kvN || 0).toLocaleString('sv-SE'), note: (p.kvN || 0) < statGolv() ? `Under k=${statGolv()}` : '' },
                 { label: 'Antal män',      value: (p.maN || 0).toLocaleString('sv-SE'), note: (p.maN || 0) < statGolv() ? `Under k=${statGolv()}` : '' },
@@ -258,7 +260,7 @@ function _evidenceForPerBasRow(p, bhCtx) {
             ? `Inom BAS ${p.bas} kör verktyget en regression: <code>ln(lön) = β₀ + β_kön · Kvinna + β_ålder · (ålder − medel) + ε</code>. β_kön omräknat till procent ger löneskillnaden när skillnaden i ålder har räknats bort.`
             : `Inom BAS ${p.bas} kör verktyget en regression: <code>ln(lön) = β₀ + β_kön · Kvinna + ε</code>. Lönefilen saknar ålder, så åldern räknas inte bort.`,
         rows: [
-            { label: 'BAS-intervall',          value: p.bas },
+            { label: termStor(T.niva.en),          value: p.bas },
             { label: 'Antal totalt',           value: p.n.toLocaleString('sv-SE') },
             { label: 'Antal kvinnor / män',    value: `${p.kvN} / ${p.maN}` },
             { label: '— Oförklarad löneskillnad', value: `<strong>${fmtPct(p.gapPct)}</strong>`, isHtml: true, note: harAlder() ? 'När skillnaden i ålder har räknats bort' : 'Utan åldersjustering: lönefilen saknar ålder' },
@@ -278,7 +280,7 @@ function _evidenceForPerBasRow(p, bhCtx) {
 }
 
 /**
- * Bevis-payload för en rad i Löneöversikten (yrkesgrupp/kön/organisation).
+ * Bevis-payload för en rad i Löneöversikten (AID-etikett/kön/organisation).
  * @param {Object} p - { kategori, bas, lons, polRow, statRefMedian, masked }
  */
 function _evidenceForRapportRow(p) {
@@ -295,7 +297,7 @@ function _evidenceForRapportRow(p) {
 
     const rows = [
         { label: 'Kategori',                value: p.kategori },
-        { label: 'BAS-intervall',           value: p.bas },
+        { label: termStor(T.niva.en),           value: p.bas },
         { label: 'Antal anställda',         value: n.toLocaleString('sv-SE'), note: masked ? `Maskerad — under k=${kTroskel()}` : '' }
     ];
     if (masked) {
@@ -333,7 +335,7 @@ function _evidenceForRapportRow(p) {
             P10 = värdet vid 10:e percentilen = <strong>${fmtKr(p10)}</strong><br>
             P90 = värdet vid 90:e percentilen = <strong>${fmtKr(p90)}</strong><br>
             Lönespridning = P90 / P10 = ${fmtKr(p90)} / ${fmtKr(p10)} = <strong>${spread != null ? svTal(spread, 2) : '—'}</strong>`,
-        footer: `Detta är en deskriptiv vy — inga statistiska tester eller kontroller görs här. För regressionen (oförklarad skillnad när ålder och BAS-intervall räknats bort), se fliken Lönestruktur.`
+        footer: `Detta är en deskriptiv vy — inga statistiska tester eller kontroller görs här. För regressionen (oförklarad skillnad när ålder och ${T.niva.en} räknats bort), se fliken Lönestruktur.`
     };
 }
 
@@ -348,14 +350,14 @@ function _evidenceForPaygapRow(p) {
     if (p.masked) {
         return {
             title: `Beräkningen — BAS ${p.bas}`,
-            intro: `Löneskillnaden i det här BAS-intervallet visas inte, eftersom något kön har färre än ${kTroskel()} ${personOrd(kTroskel())}.`,
+            intro: `Löneskillnaden i ${termArtikel(T.niva, { bestamd: true })} här ${T.niva.bf} visas inte, eftersom något kön har färre än ${kTroskel()} ${personOrd(kTroskel())}.`,
             rows: [
-                { label: 'BAS-intervall',     value: p.bas },
+                { label: termStor(T.niva.en),     value: p.bas },
                 { label: 'Antal kvinnor',     value: nKv.toLocaleString('sv-SE'), note: nKv < kTroskel() ? `< k=${kTroskel()}` : '' },
                 { label: 'Antal män',         value: nMa.toLocaleString('sv-SE'), note: nMa < kTroskel() ? `< k=${kTroskel()}` : '' },
                 { label: 'Status',            value: 'Maskerad — minsta gruppstorlek för redovisning' }
             ],
-            footer: 'Det hindrar att någon räknar ut en enskild persons lön genom att lägga ihop kön, BAS-intervall och lön.'
+            footer: `Det hindrar att någon räknar ut en enskild persons lön genom att lägga ihop kön, ${T.niva.en} och lön.`
         };
     }
     const medKv = Stat.median(p.kvLons);
@@ -368,9 +370,9 @@ function _evidenceForPaygapRow(p) {
     const status = gapPct != null ? gapStatusKI({ gap: gapPct, ci, nKv, nMa }) : GAP_STATUS_EJ;
     return {
         title: `Beräkningen — BAS ${p.bas}`,
-        intro: `Kvoten räknas som <em>kvinnors median ÷ mäns median × 100 %</em>. 100 % = lika lön. Inget ålders- eller yrkesfilter — direkt median-jämförelse inom BAS-intervallet.`,
+        intro: `Kvoten räknas som <em>kvinnors median ÷ mäns median × 100 %</em>. 100 % = lika lön. Ingen hänsyn till ålder eller ${T.enhet.en} — direkt median-jämförelse inom ${T.niva.bf}.`,
         rows: [
-            { label: 'BAS-intervall',           value: p.bas },
+            { label: termStor(T.niva.en),           value: p.bas },
             { label: 'Antal kvinnor',           value: nKv.toLocaleString('sv-SE') },
             { label: 'Antal män',               value: nMa.toLocaleString('sv-SE') },
             { label: 'Median kvinnor',          value: fmtKr(medKv) },
@@ -384,7 +386,7 @@ function _evidenceForPaygapRow(p) {
         formula: `<strong>Beräkning:</strong><br>
             kvot = median(kvinnor) / median(män) = ${fmtKr(medKv)} / ${fmtKr(medMa)} = <strong>${svTal(ratio, 4)}</strong><br>
             Kvinnor i % av män = kvot × 100 = <strong>${svPct(gapPct, 2)}</strong>`,
-        footer: `Det här är en rå skillnad inom BAS-intervallet, utan hänsyn till ålder eller yrke. Den oförklarade skillnaden per BAS-intervall står i regressionen i fliken Lönestruktur.`
+        footer: `Det här är en rå skillnad inom ${T.niva.bf}, utan hänsyn till ålder eller ${T.enhet.en}. Den oförklarade skillnaden per ${T.niva.en} står i regressionen i fliken Lönestruktur.`
     };
 }
 

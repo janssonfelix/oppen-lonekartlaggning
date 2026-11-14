@@ -113,7 +113,7 @@ function _pagAvvikelseTabell(rader, grans) {
     const g = new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 1 }).format(grans);
     const kant = Math.min(100, Math.ceil(Math.max(10, ...rader.map(o => Math.max(o.under, o.over))) * 1.2 / 10) * 10);
     const andel = (v, antal) => `${_figTalformat(v, 'antal')} %${antal > 0 && antal < litetUnderlag() ? '<span class="pag-litet" title="Litet underlag">*</span>' : ''}`;
-    /** @type {HTMLElement} */ (t.querySelector('thead')).innerHTML = `<tr><th scope="col">BAS-intervall</th><th scope="col" class="ta-vanster">Kön</th><th scope="col" class="tal">Prövade</th>`
+    /** @type {HTMLElement} */ (t.querySelector('thead')).innerHTML = `<tr><th scope="col">${termStor(T.niva.en)}</th><th scope="col" class="ta-vanster">Kön</th><th scope="col" class="tal">Prövade</th>`
         + `<th scope="col" class="tal">Minst ${g} % under</th><th scope="col" class="la-oversikt-skala t-mitt" data-export-skip>under åt vänster · över åt höger</th><th scope="col" class="ta-vanster">Minst ${g} % över</th></tr>`;
     const tb = /** @type {HTMLElement} */ (t.querySelector('tbody'));
     tb.innerHTML = '';
@@ -136,7 +136,7 @@ function _pagRitaAvvikelse(d, grans) {
     if (!rader.length) { /** @type {HTMLElement} */ (t.querySelector('thead')).innerHTML = ''; /** @type {HTMLElement} */ (t.querySelector('tbody')).innerHTML = ''; return; }
     const fa = _pagAvvikelseTabell(rader, grans);
     const not = document.getElementById('pag-diagram-not');
-    if (not) not.textContent = `Bara BAS-intervall där minst ${kTroskel()} kvinnor och ${kTroskel()} män har prövats. En avvikelse är inte i sig osaklig — tabellen visar var det finns mest att titta närmare på.`
+    if (not) not.textContent = `Bara ${T.niva.fl} där minst ${kTroskel()} kvinnor och ${kTroskel()} män har prövats. En avvikelse är inte i sig osaklig — tabellen visar var det finns mest att titta närmare på.`
         + (fa ? ` Andelar märkta med * gäller färre än ${litetUnderlag()} personer: ett litet underlag, som inte ska läsas som ett mönster.` : '');
 }
 

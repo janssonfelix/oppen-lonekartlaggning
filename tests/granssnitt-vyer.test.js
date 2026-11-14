@@ -143,9 +143,9 @@ describe('Löneöversikten i Utforska', () => {
     it('heter Löneöversikt, och sökfältet säger vad man söker på', () => {
         const html = las('src/index.html');
         expect(html).not.toMatch(/Hierarkisk Rapport/i);
-        expect(html).toContain('<h2>Löneöversikt — alla BAS-intervall</h2>');
+        expect(html).toContain('>Löneöversikt — alla BAS-intervall</h2>');
         const w = createAppWindow();
-        expect(w.document.getElementById('search-rapport').placeholder).toBe('Sök yrke eller BAS');
+        expect(w.document.getElementById('search-rapport').placeholder).toBe('Sök AID eller BAS');
     });
     it('jämförelsestatistikens kolumner visas bara när en statistik är inläst', () => {
         const w = rita();
@@ -574,7 +574,7 @@ describe('småsaker i texter och etiketter (granskning 2026-10-30, steg H)', () 
         w.__renderTabContent('likvardighet');
         const th = w.document.querySelector('#likvardighet-table thead th[data-kol="paverkan"]');
         expect(th.textContent.trim()).toBe('Summa för gruppen (kr/mån)');
-        expect(th.title).toBe('Skillnaden i kronor gånger antalet personer i det kvinnodominerade yrket, per månad');
+        expect(th.title).toBe('Skillnaden i kronor gånger antalet personer med den kvinnodominerade AID-etiketten, per månad');
         expect(th.hasAttribute('data-export-label')).toBe(false);
         for (const fil of ['src/app/34-likvardigt-arbete.js', 'src/app/24-excelexport.js', 'src/app/27-berakningsbevis.js']) {
             expect(las(fil), fil).not.toMatch(/Påverkan/);
@@ -640,7 +640,7 @@ describe('småsaker i texter och etiketter (granskning 2026-10-30, steg H)', () 
         w.__renderTabContent('struktur');
         const topp = (id, etikett) => [...d.querySelectorAll(`#${id} .slutsats`)].find(s => s.textContent.includes(etikett))?.querySelector('.slutsats-varde')?.textContent.trim();
         const [lv, la, st] = rader().map(l => l.textContent);
-        expect(la).toContain(`har ${topp('la-slutsatser', 'Yrkesgrupper att granska')} yrkesgrupper att granska`);
+        expect(la).toContain(`har ${topp('la-slutsatser', 'AID-etiketter att granska')} AID-etiketter i BAS-intervall att granska`);
         expect(lv).toContain(`har ${topp('lv-slutsatser', 'Par att titta närmare på')} par att titta närmare på`);
         expect(st).toContain(`${topp('st-slutsatser', 'Högsta lönekvartilen')} kvinnor i den högsta lönekvartilen`);
         expect(st).toContain(`${topp('st-slutsatser', 'Lägsta lönekvartilen')} i den lägsta`);

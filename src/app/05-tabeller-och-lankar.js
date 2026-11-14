@@ -18,7 +18,7 @@ function buildBaseAudit() {
     const afterParse = state.data.length;
     const afterFilter = getData().length;
     const parseExcl = [];
-    if (da.excludedNoBas > 0)   parseExcl.push(['Saknar BAS-intervall', da.excludedNoBas]);
+    if (da.excludedNoBas > 0)   parseExcl.push([`Saknar ${T.niva.en}`, da.excludedNoBas]);
     if (da.excludedZeroLon > 0) parseExcl.push(['Lön ≤ 0 eller saknas', da.excludedZeroLon]);
     return { totalRaw, afterParse, afterFilter, parseExcl };
 }

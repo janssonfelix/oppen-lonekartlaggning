@@ -528,7 +528,7 @@ function renderSnapshotComparison() {
         ['Oförklarad löneskillnad (regressionen, %)', snap.unexplainedGapPct,                 cur.unexplainedGapPct,            v => svPct(v, 1)],
         ['Underlagets kvalitet',       snap.underlag,                          cur.underlag,                     v => v],
         ['Genomsnittsålder',           snap.avgAge,                            cur.avgAge,                       v => svTal(v, 1) + ' år'],
-        ['Antal BAS-intervall',        snap.nBas,                              cur.nBas,                         fmt]
+        [`Antal ${T.niva.fl}`,        snap.nBas,                              cur.nBas,                         fmt]
     ];
     const tableHtml = rows.map(([label, a, b, formatter]) => {
         const valA = (a == null) ? '–' : (formatter ? formatter(a) : fmt(a));

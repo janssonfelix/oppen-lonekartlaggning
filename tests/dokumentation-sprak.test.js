@@ -11,7 +11,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join, basename } from 'node:path';
-import { utanHtmlKommentarer, utanSkript, utanStil } from './helpers/htmlrens.js';
+import { textLiteraler, etikettVarden, appKalla, htmlText } from './helpers/anvandartext.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, '..');
@@ -139,26 +139,10 @@ describe('vakt: avförda ord och lagrum i användartexten (språkgenomgången 20
     const LAGRUM_DOK = [['§', /§\s+\d|\d\s*§|§§/]];
 
     const traffar = (text, monster) => monster.filter(([, re]) => re.test(text)).map(([n]) => n);
-    const utanKommentarer = s => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"`\\])\/\/[^\n]*/g, '$1');
-    // Bara literaler som ser ut som text prövas: med blanksteg eller med versal först. Identifierare
-    // som 'lonegapPct' och id:n som 'gap-uppdelning' faller bort.
-    const textLiteraler = src => {
-        const ut = []; const re = /'(?:[^'\\\n]|\\.)*'|"(?:[^"\\\n]|\\.)*"|`(?:[^`\\]|\\.)*`/g; let m;
-        while ((m = re.exec(src))) ut.push(m[0].slice(1, -1).replace(/\$\{[^}]*\}/g, ' '));
-        return ut.filter(l => /\s/.test(l) || /^[A-ZÅÄÖ]/.test(l));
-    };
-    // Värden på etikett:, label: och rubrik: visas för användaren, också när de är ett gement ord.
-    const etikettVarden = src => [...src.matchAll(/\b(?:etikett|label|rubrik):\s*(['"`])((?:(?!\1)[^\\\n]|\\.)*)\1/g)].map(m => m[2]);
-    const appKalla = (fil, src) => {
-        let s = utanKommentarer(src).replace(/synonymer:\s*\[[^\]]*\]/g, '').replace(/sok:\s*'[^']*'/g, '');
-        if (fil.endsWith('65-om-verktyget.js')) s = s.replace(/references: \(\) => `[\s\S]*?`/, '');   // Källor
-        return s;
-    };
-    // Attribut som användaren läser (title, aria-label, data-tooltip, alt, placeholder, data-export-label)
-    // står kvar som text också när värdet är ett ord; övriga attribut utan blanksteg (id, klass) rensas.
-    const htmlText = src => utanStil(utanSkript(utanHtmlKommentarer(src), { medAttribut: true }))
-        .replace(/\s(?:title|aria-label|data-tooltip|alt|placeholder|data-export-label)="([^"]*)"/g, ' [$1] ')
-        .replace(/\s[\w-]+="[^"\s]*"/g, '');
+    // Strängfiltret (textLiteraler, etikettVarden, appKalla, htmlText) står i tests/helpers/anvandartext.js och
+    // delas med termvakten i tests/termer.test.js. Bara literaler som ser ut som text prövas: med blanksteg eller
+    // med versal först; värden på etikett:, label: och rubrik: också som ett gement ord. I index.html står de
+    // attribut som användaren läser (title, aria-label, data-tooltip, alt, placeholder, data-export-label) kvar som text.
 
     it('mönstren fångar de avförda orden men inte identifierare och tillåtna former', () => {
         for (const t of ['Lönegapet', 'det råa lönegapet', 'Gapet visar', 'ett gap på', 'rågapet', 'Könsgapet',
