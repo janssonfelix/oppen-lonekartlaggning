@@ -20,6 +20,7 @@ import { buildAppBuffer } from './build-app.mjs';
 import { writeMirrors } from './gen-mirrors.mjs';
 import { writeVersionModule } from './gen-version.mjs';
 import { minifyCss } from './lib/minify-css.mjs';
+import { minifyHtml } from './lib/minify-html.mjs';
 import { VERIFIERING } from './release.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -71,41 +72,7 @@ function testAppJsSyntax(path) {
 
 // --- Build-time minifiers ---
 
-// minifyCss finns i tools/lib/minify-css.mjs (egen fil, med egna tester i tests/byggminify.test.js).
-
-function minifyHtml(html) {
-    const protectedBlocks = new Map();
-    let protIdx = 0;
-    const patterns = [
-        /<pre\b[^>]*>[\s\S]*?<\/pre\b[^>]*>/gis,
-        /<script\b[^>]*>[\s\S]*?<\/script\b[^>]*>/gis,
-        /<style\b[^>]*>[\s\S]*?<\/style\b[^>]*>/gis,
-        /<textarea\b[^>]*>[\s\S]*?<\/textarea\b[^>]*>/gis
-    ];
-    for (const p of patterns) {
-        html = html.replace(p, m => {
-            const key = `__BUNDLE_PROTECTED_${protIdx}__`;
-            protectedBlocks.set(key, m);
-            protIdx++;
-            return key;
-        });
-    }
-    // HTML-kommentarer (utom villkorskommentarer <!--[if ...)). Upprepa tills inget ändras, så att en
-    // borttagning inte kan foga ihop en ny kommentar av resterna.
-    let forra;
-    do { forra = html; html = html.replace(/<!--(?!\[if)[\s\S]*?-->/g, ''); } while (html !== forra);
-    // Kollapsa whitespace mellan taggar
-    html = html.replace(/>\s+</g, '><');
-    // Kollapsa flera whitespace till ett mellanslag inom textnoder
-    html = html.replace(/[ \t]+/g, ' ');
-    html = html.replace(/\r?\n\s*/g, '\n');
-    html = html.replace(/\n+/g, '\n');
-    // Aterstall skyddade block
-    for (const [key, value] of protectedBlocks) {
-        html = html.split(key).join(value);
-    }
-    return html.trim();
-}
+// minifyCss och minifyHtml finns i tools/lib/ (egna filer, med tester i tests/byggminify.test.js).
 
 // --- Releasestrategi: las VERSION + valj biblioteksvarianter ---
 // VERSION ar byggdatumet i CalVer (AAAA.MM.DD) och enda kalla for bade
