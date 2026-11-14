@@ -2,7 +2,6 @@
 // Copyright 2026 Felix Jansson
 // Tabellerna per AID-kod och BAS-intervall (src/lib/aidbas.js): lika arbete, likvärdigt arbete, hierarkisk
 // jämförelse och arbetslistan för analys på individnivå. Underlaget är helt påhittat: 58 personer.
-// Vaktar: R29 (docs/utveckling/regler.md)
 import { describe, it, expect } from 'vitest';
 import { grupperaAidBas, dominans, likaArbeteTabell, likvardigtTabell, hierarkiskaPar, individnivaTabell, arJamforelseKlass, KV_DEFINITIONER, kvDefinitionText, kvDefinitionNamn, klassNamn, ingaParText } from '../src/lib/aidbas.js';
 

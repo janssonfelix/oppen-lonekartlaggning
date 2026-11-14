@@ -9,8 +9,6 @@
  * medianerna ligger nära kostnaden). Har alla grupper tillsammans färre än tröskeln står ingen kostnad per grupp.
  * Andelen till kvinnodominerade grupper står bara när den inte ger en del av den samlade kostnaden som differens.
  * Skärmen (tröskeln 1) visar varje grupp som förut.
- *
- * Vaktar: S4 (docs/utveckling/regler.md)
  */
 import { describe, it, expect, vi } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';

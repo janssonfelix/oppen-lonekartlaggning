@@ -10,8 +10,6 @@
  *
  * Det som inte går att mekanisera — om en förklaring är korrekt och begriplig —
  * står kvar som en öppen punkt i docs/utveckling/teknisk-plan.md § 9.
- *
- * Vaktar: R2, R13, R17, R19, R24 (docs/utveckling/regler.md)
  */
 import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
@@ -82,6 +80,21 @@ describe('dokumentation: CLAUDE.md är en kort ingång', () => {
         } catch { /* git check-ignore avslutar med 1 när ingen sökväg är ignorerad */ }
         const saknade = kandidater.filter(f => !ignorerade.includes(f) && !existsSync(join(root, f)));
         expect(saknade, `CLAUDE.md pekar ut filer som inte finns: ${saknade.join(', ')}`).toEqual([]);
+    });
+});
+
+// skydd.md är källan för skyddens vakter: varje fil och mapp det pekar ut ska finnas. En sökväg med snedstreck
+// läses från roten; ett bart filnamn (`app.js`, `k-troskeln.md`) ska finnas någonstans i repot. Adresser som
+// file:// prövas inte.
+describe('dokumentation: skydd.md pekar bara på det som finns', () => {
+    it('varje sökväg inom backtick i skydd.md finns på disk', () => {
+        const kandidater = [...new Set([...läs('docs/utveckling/skydd.md')
+            .matchAll(/`([\w.-]+\/[\w./-]*|[\w.-]+\.(?:js|mjs|json|md|html|css|txt|yml))`/g)]
+            .map(m => m[1]).filter(f => !f.includes('://')))];
+        expect(kandidater.length).toBeGreaterThan(0);
+        const namn = new Set(execSync('git ls-files', { cwd: root, encoding: 'utf8' }).split('\n').map(f => f.split('/').pop()));
+        const saknade = kandidater.filter(f => f.includes('/') ? !existsSync(join(root, f)) : !namn.has(f));
+        expect(saknade, `skydd.md pekar ut filer som inte finns: ${saknade.join(', ')}`).toEqual([]);
     });
 });
 

@@ -11,8 +11,6 @@
  *
  * Det är ett RÖKTEST, inte ett pixel-/innehållstest: assertionen är "renderar utan
  * att kasta + förväntade element finns", inte exakta värden (det täcks av kärn-testerna).
- *
- * Vaktar: R8 (docs/utveckling/regler.md)
  */
 import { describe, it, expect, beforeAll } from 'vitest';
 import { createAppWindow, tillstandsavtryck, utgangslage } from './helpers/app-harness.js';

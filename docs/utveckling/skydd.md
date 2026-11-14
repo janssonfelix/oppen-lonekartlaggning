@@ -6,8 +6,8 @@ beslut får inte strida mot ett skydd, och ett skydd ändras bara genom ett eget
 
 Varje skydd har en vakt, och det som inte vaktas står utskrivet. Ett skydd som är juridiskt bindande (S2, S4) ska
 vaktas av *invarianter* som gäller hela utdatan, inte av stickprov på enskilda vyer: en ny vy ska ärva skyddet utan
-att någon kommer ihåg att testa den. Vakterna står också i regelmatrisen, [`regler.md`](regler.md), som
-`tests/regler.test.js` håller hel.
+att någon kommer ihåg att testa den. Det här dokumentet är källan för skyddens vakter; varje sökväg det nämner prövas
+av `tests/dokumentation-struktur.test.js`.
 
 ## S1. Inga nätverksanrop
 

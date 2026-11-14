@@ -4,8 +4,6 @@
  * Riggen (fixturer, fönster och sökfunktioner) ligger i tests/helpers/ktroskel-rigg.js; sviten är delad i
  * flera filer så att Vitest fördelar den över flera arbetare. Testerna prövar meningen, inte vilka grupper som syns,
  * och kör därför på den lilla fixturen (fonsterLitet).
- *
- * Vaktar: S4 (docs/utveckling/regler.md)
  */
 import { describe, it, expect, vi } from 'vitest';
 import { fonsterLitet } from './helpers/ktroskel-rigg.js';

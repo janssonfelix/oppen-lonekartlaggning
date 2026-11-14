@@ -3,8 +3,6 @@
 /**
  * Lönefil utan ålder (ADR-64): hela verktyget och varje utdataväg (Word, Excel, ZIP, utskrift, dossierer)
  * med bara BAS, AID, lön och kön. Inget får krascha, och fliken Ålder & karriär är låst.
- *
- * Vaktar: R25 (docs/utveckling/regler.md)
  */
 import { describe, it, expect, vi } from 'vitest';
 import { fonsterKon, iExport, samlaUtdata } from './helpers/ktroskel-rigg.js';

@@ -7,7 +7,7 @@
 // Grinden prövar bara det som gäller vid en release. Det som ska gälla i varje commit prövas där, en gång:
 // VERSION som CalVer och package.json med samma version i tests/version.test.js, och att dist/ (artefakten och
 // RELEASE.txt med version, kontrollsumma och verifieringsrader) är ett färskt bygge i artefaktgrinden i CI och i
-// release-arbetsflödet. Se "Var uppgifterna står" i .github/CONTRIBUTING.md.
+// release-arbetsflödet (princip 4 i docs/utveckling/principer.md: varje sak prövas av en kontroll).
 //
 // Kontrollerna:
 //   - CHANGELOG:s översta versionsrubrik är VERSION, och rubriken "Oförlöst" är borta;

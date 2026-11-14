@@ -9,8 +9,8 @@ Dokumentet är inte Definition of Done — vad som krävs innan en ändring är 
 [`CONTRIBUTING.md`](../../.github/CONTRIBUTING.md), punkt 3 — och inte beslutsloggen: varför bygget och testerna är
 som de är står i [`arkitekturbeslut.md`](arkitekturbeslut.md), främst ADR-1, 2, 6, 7, 8, 9, 13, 30 och 31.
 Kommandona i korthet står i `README.md` (*För dig som utvecklar*). Det som har en egen källa — mapparna, dokumenten,
-CI:s steg och vad release-grinden prövar — skrivs inte av här utan hänvisas dit (*Var uppgifterna står* i
-`CONTRIBUTING.md`).
+CI:s steg och vad release-grinden prövar — skrivs inte av här utan hänvisas dit (princip 4 i
+[`principer.md`](principer.md)).
 
 | Del | Fil |
 |---|---|
@@ -72,8 +72,9 @@ speglarna är i synk med `src/lib/`.
 
 CalVer (`ÅÅÅÅ.MM.DD`). `VERSION` är källan, och `package.json` sätts samtidigt (npm kräver fältet). `APP_VERSION` och
 `APP_BUILD_DATE` genereras ur den (ADR-13). `tests/version.test.js` prövar att `VERSION` är CalVer och att stämpeln
-och `package.json` följer den. Var versionen i övrigt står, och vad som prövar den, står i *Var uppgifterna står* i
-[`CONTRIBUTING.md`](../../.github/CONTRIBUTING.md); hur en version släpps i `README.md` (*Släppa en version*).
+och `package.json` följer den. Bygget för in den i `src/app/08-version.js`, `dist/` och programvaruförteckningen;
+`CHANGELOG.md` och riskanalysen anger den och prövas av release-grinden. Hur en version släpps står i `README.md`
+(*Släppa en version*).
 
 ## 4. Stilmallen
 
@@ -112,7 +113,8 @@ Vitest, med omkring 3 400 tester i drygt 100 filer:
   **äkta D3** i jsdom, så SVG:n som prövas är den riktiga, och två differentialtester vaktar att små grupper inte
   lämnar spår på skärmen eller i exporten.
 
-Vilket test som vaktar vilken regel står i [`regler.md`](regler.md).
+Vilka tester som vaktar skydden står i [`skydd.md`](skydd.md), och vilka som vaktar principerna i
+[`principer.md`](principer.md).
 
 **Fokus i jsdom kräver en synlig vy.** Som i en webbläsare får ett element inte fokus när det eller en förälder har
 `display: none`, och de stängda flikarnas paneler har det. Ett test som prövar fokus öppnar därför fliken som
@@ -259,8 +261,7 @@ står i `SECURITY.md` (*Kontrollera att filen är äkta*).
 
 **Release-grinden** `npm run release:kontroll` (`tools/release.mjs`, prövad på fixturer i `tests/release.test.js`)
 prövar bara det som gäller vid en release; vad, står i huvudet i `tools/release.mjs`. Det som ska gälla i varje
-commit prövar den inte, utan testsviten och artefaktgrinden (*Var uppgifterna står* i
-[`CONTRIBUTING.md`](../../.github/CONTRIBUTING.md)).
+commit prövar den inte, utan testsviten och artefaktgrinden (princip 4 i [`principer.md`](principer.md)).
 
 **Arbetsflödet** `.github/workflows/release.yml` körs på en tagg `v*`: det kör grinden igen, bygger om, tar fram
 programvaruförteckningen (`npm run sbom`, `tools/sbom.mjs`: `dist/sbom.cdx.json` i CycloneDX), signerar med Sigstore

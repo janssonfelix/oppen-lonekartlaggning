@@ -8,12 +8,10 @@ beroende av projektet.
 
 - **Upphovspersonen** (Felix Jansson) är underhållare och fattar besluten om innehåll, releaser och
   riktning. Projektet har en underhållare; det står här så att ingen behöver gissa.
-- **Arkitekturbesluten** (ADR) i [`docs/utveckling/arkitekturbeslut.md`](../docs/utveckling/arkitekturbeslut.md)
-  är bindande. De ändras bara genom ett nytt, daterat ADR i samma dokument, aldrig i förbigående i en
-  ändring: det tidigare beslutet får status och behåller sitt nummer, och den gällande lydelsen står i
-  referensdokumentet för området (ADR-68). De fem skydden står i [`docs/utveckling/skydd.md`](../docs/utveckling/skydd.md): inga
-  nätverksanrop, ingen lagring, en enda fil som körs lokalt, minsta gruppstorlek i det som lämnar verktyget och
-  ingen inbyggd organisation. De går före arkitekturbesluten och ändras bara genom ett eget, daterat beslut.
+- **Skydden** S1–S5 i [`docs/utveckling/skydd.md`](../docs/utveckling/skydd.md) går före allt annat och ändras bara
+  genom ett eget, daterat beslut av underhållaren, aldrig i förbigående i en ändring. **Principerna** i
+  [`docs/utveckling/principer.md`](../docs/utveckling/principer.md) binder tillsammans med dem. Övriga designval
+  står i referensen för sitt område.
 - **Lagrumshänvisningar** ändras bara i [`docs/utveckling/lagrum.md`](../docs/utveckling/lagrum.md)
   (ADR-16), med status *Förslag* tills jurist och dataskyddsombud stämt av dem.
 - **Bidrag** tas emot enligt [`CONTRIBUTING.md`](CONTRIBUTING.md) och lämnas under MIT-licensen; inget
@@ -21,61 +19,36 @@ beroende av projektet.
 
 ## Hur en ändring kommer in
 
-1. Ärende eller förslag enligt mallarna, aldrig med verklig lönedata.
-2. Ändring i `src/` med test, klar enligt *Definition of Done* i [`CONTRIBUTING.md`](CONTRIBUTING.md) (punkt 3).
-3. Granskning av underhållaren. Grenen `main` är skyddad: grön CI krävs, inga direkta pushar.
-4. Ändringen tas in först när hela Definition of Done är uppfylld, också de punkter som CI inte prövar.
+Ett ärende eller förslag, aldrig med verklig lönedata; en ändring klar enligt *Definition of Done* i
+[`CONTRIBUTING.md`](CONTRIBUTING.md) (punkt 3); granskning av underhållaren. Grenen `main` är skyddad: grön CI
+krävs, inga direkta pushar.
 
 ## När ett beslut förs in
 
-Ett beslut tas av underhållaren. Utkastet arbetas fram utanför repot och förs in i en ändring som gör allt nedan
-samtidigt:
+Ett designval ändras i en och samma ändring:
 
-1. Beslutet i [`docs/utveckling/arkitekturbeslut.md`](../docs/utveckling/arkitekturbeslut.md), skrivet i mallen
-   (beslut, motiv, avvisat, gäller i dag, vakt; ADR-68), med nästa lediga nummer och en rad i indexet. Ett nummer
-   byts aldrig och tas aldrig bort.
-2. Status på varje beslut det ändrar (*Ändrad av ADR-x*), och text i dem som inte längre gäller rättad eller
-   hänvisad till det nya beslutet.
-3. Den gällande lydelsen där den står: referensdokumentet för området (i dag `diagramkarnan.md`, `k-troskeln.md`,
-   `regressionsmodellen.md`, `likvardighetsmodellen.md`, `bygge-och-test.md`, `lagrum.md`, `organisationsfil.md`
-   och funktionsmålen i teknisk-plan §4).
-4. Mål och avgränsning (teknisk-plan §1–§2) om omfånget ändras.
-5. [`docs/utveckling/skydd.md`](../docs/utveckling/skydd.md) om ett skydd berörs, och
-   [`docs/utveckling/regler.md`](../docs/utveckling/regler.md) om en regel eller en vakt tillkommer.
-6. Riskanalysen och [`docs/dataskydd/dataskydd.md`](../docs/dataskydd/dataskydd.md) om något som lämnar verktyget
-   ändras.
-7. Om verktyget (fliken i appen) och körguiden.
-8. `CHANGELOG.md`.
-9. En sökning på de ändrade besluten (`ADR-n`) i `src/`, `tests/` och `docs/`, och kommentarer och texter som
-   citerar det som inte längre gäller rättade.
+1. Referensen för området och koden, med test, ändras.
+2. Beslutsloggen [`docs/utveckling/arkitekturbeslut.md`](../docs/utveckling/arkitekturbeslut.md) får ett nytt beslut
+   med nästa lediga nummer och en rad i indexet, och det beslut det ändrar får status. Ett nummer byts aldrig.
+3. Hänvisningar till det ändrade beslutet (`ADR-n`) i `src/`, `tests/` och `docs/` rättas.
 
 ## Hur en version släpps
 
-En version är en tagg `v<VERSION>` (CalVer). Grinden `npm run release:kontroll` prövar det som bara gäller vid
-en release (vad, står i huvudet i `tools/release.mjs`), bland annat att risk- och sårbarhetsanalysen är granskad mot
-den kod som släpps. Arbetsflödet bygger om, kräver att `dist/` är byte-identisk med det incheckade, signerar med
-Sigstore och publicerar. Ingen signeringsnyckel finns att förlora eller lämna över: signaturen styrker att filen
-byggdes av arbetsflödet ur taggen (se [`SECURITY.md`](../SECURITY.md)).
+En version är en tagg `v<VERSION>` (CalVer). Grinden `npm run release:kontroll` prövar det som bara gäller vid en
+release (huvudet i `tools/release.mjs`). Arbetsflödet bygger om, kräver att `dist/` är byte-identisk med det
+incheckade, signerar med Sigstore och publicerar. Signaturen styrker att filen byggdes ur taggen, och ingen nyckel
+finns att förlora eller lämna över (se [`SECURITY.md`](../SECURITY.md)).
 
 ## Kontinuitet — om projektet slutar underhållas
 
-Allt som behövs för att bygga, testa, signera och släppa verktyget finns i repot: källan, de låsta
-biblioteken med kontrollsummor, testerna, byggskripten och arbetsflödena. Det finns inga hemligheter,
-inga tjänster och inga konton som en efterträdare måste få tillgång till.
-
-- Om ingen version har släppts och inga ärenden besvarats på **tolv månader**, ska projektet betraktas
-  som vilande. Då uppmuntras en **fork** som tar över underhållet, under namnet *Öppen lönekartläggning*
-  med ett tillägg som skiljer den från ursprunget (till exempel organisationens namn eller årtal), med
-  licens- och upphovsnotiserna bevarade enligt MIT-licensen.
-- En sådan fork bör behålla de fem skydden ([`docs/utveckling/skydd.md`](../docs/utveckling/skydd.md)), så att
-  namnet fortsätter att betyda det det betyder.
-- Varje organisation kan när som helst, utan att vänta på något av ovanstående, bygga och signera sin
-  egen version enligt [`docs/anvandare/overta-verktyget.md`](../docs/anvandare/overta-verktyget.md).
+Allt som behövs för att bygga, testa, signera och släppa verktyget finns i repot, utan hemligheter, tjänster eller
+konton. Har ingen version släppts och inga ärenden besvarats på **tolv månader** är projektet vilande, och en
+**fork** uppmuntras: under namnet *Öppen lönekartläggning* med ett tillägg som skiljer den från ursprunget, med
+licens- och upphovsnotiserna kvar och med de fem skydden behållna. Varje organisation kan när som helst bygga och
+signera sin egen version enligt [`docs/anvandare/overta-verktyget.md`](../docs/anvandare/overta-verktyget.md).
 
 ## Vad projektet inte gör
 
-- Erbjuder inte support, drift, utbildning eller juridisk rådgivning. Den som gör det i eget namn gör
-  det under eget ansvar (README, *Ansvar och roller*).
-- Tar inte emot organisationers referensdata, namn eller lönedata i repot (ADR-28).
-- Byter inte licens. MIT är vald för att en arbetsgivare ska kunna ändra och sprida verktyget internt
-  utan licensfrågor.
+Erbjuder inte support, drift, utbildning eller juridisk rådgivning (den som gör det i eget namn gör det under eget
+ansvar, README *Ansvar och roller*). Tar inte emot organisationers referensdata, namn eller lönedata (ADR-28). Byter
+inte licens: MIT är vald för att en arbetsgivare ska kunna ändra och sprida verktyget utan licensfrågor.

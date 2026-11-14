@@ -29,8 +29,6 @@
  *
  * Samma form bär nu invarianten I4 (tests/helpers/ktroskel-invariant.js), som söker igenom varje flik i exportläget
  * och varje export vid 10 och 25. Här står de riktade fallen, flera med egna fixturer.
- *
- * Vaktar: S4 (docs/utveckling/regler.md)
  */
 import { describe, it, expect, beforeAll } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';

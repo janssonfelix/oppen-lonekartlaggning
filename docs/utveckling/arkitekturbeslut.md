@@ -106,8 +106,8 @@ esbuild. CSS och HTML minifieras (grammatiken är enklare).
 `dist/app.js`), inte ett eget beslut; det står i [`bygge-och-test.md`](bygge-och-test.md) §2.
 
 **ADR-5 — Kodhygien.** Var två regler, inte ett eget beslut: att oanvänd kod tas bort och att säkerhetsgranskningen
-hålls samlad i `docs/dataskydd/riskanalys.md`. Båda står i *Definition of Done* i
-[`CONTRIBUTING.md`](../../.github/CONTRIBUTING.md), punkt 3.
+hålls samlad i `docs/dataskydd/riskanalys.md`. Den första står i [`CONTRIBUTING.md`](../../.github/CONTRIBUTING.md),
+punkt 2, den andra i princip 4 i [`principer.md`](principer.md).
 
 **ADR-6 — `app.js` genereras från `src/app/`-moduler.** Appens kod ligger i numrerade källmoduler
 (`src/app/NN-*.js`) som `tools/build-app.mjs` slår ihop byte-identiskt (BOM + CRLF bevaras). Motiv:

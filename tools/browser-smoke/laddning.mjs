@@ -2,7 +2,6 @@
 // Copyright 2026 Felix Jansson
 // Webbläsar-röktestet, del: Inläsningen: laddning under CSP:n, demodata, policyfil, startsidan och organisationsfilen.
 // Körs av tools/browser-smoke.mjs i samma ordning som kontrollerna alltid har körts.
-// Vaktar: S3 (docs/utveckling/regler.md)
 import { readFileSync, writeFileSync, mkdtempSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';

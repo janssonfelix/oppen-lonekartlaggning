@@ -9,8 +9,6 @@
  * vilket intervall som är valt och varför kurvan inte visas, utan värden. Beräkningsbeviset för ett annat intervall
  * skriver inte nivåfaktorn mot D. Kurvans tal söks i varje utdataväg som invarianten söker igenom. Ett intervall
  * över tröskeln har sin kurva som förut, och skärmen visar kurvan för D (ADR-51). Modellen skattas som förut.
- *
- * Vaktar: S4 (docs/utveckling/regler.md)
  */
 import { describe, it, expect, vi } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';

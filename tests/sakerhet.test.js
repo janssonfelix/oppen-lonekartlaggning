@@ -1,8 +1,6 @@
 /**
  * Säkerhetshärdning: CSP för stilar, låsta tredjepartsbibliotek,
  * en enda escaping-funktion, utskriftsfönstret och låsta CI-steg.
- *
- * Vaktar: S1, S2, S5, R5, R6, R15, R16 (docs/utveckling/regler.md)
  */
 import { describe, it, expect, beforeAll } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';

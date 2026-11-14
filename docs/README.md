@@ -29,7 +29,7 @@ Dokumenten i `docs/`, ordnade efter vem som läser dem. Översikten över hela r
 | Dokument | Vad det är |
 |---|---|
 | [`skydd.md`](utveckling/skydd.md) | De fem skydden som går före besluten: regeln, varför, beslut, vakt och vad som inte vaktas. |
-| [`regler.md`](utveckling/regler.md) | Regelmatrisen: varje bindande regel med sin källa och sin vakt, och det som inte vaktas. |
+| [`principer.md`](utveckling/principer.md) | De sex principerna som binder tillsammans med skydden, med sina vakter. |
 | [`teknisk-plan.md`](utveckling/teknisk-plan.md) | Syfte, avgränsning, funktionsmål, kvalitetskrav och öppna punkter; skydden och referenserna står i egna dokument, som planen pekar på. |
 | [`arkitekturbeslut.md`](utveckling/arkitekturbeslut.md) | Arkitekturbesluten (ADR) med motiv, avvisade alternativ och status; numren som koden och testerna pekar på. |
 | [`k-troskeln.md`](utveckling/k-troskeln.md) | Minsta gruppstorlek (skyddet S4) som den gäller: de två lägena, redovisningsformen, vägen ut, undantagen, golven, inställningen och vakterna. |

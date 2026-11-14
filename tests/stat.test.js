@@ -10,8 +10,6 @@
  *   - matMul / transpose / invert (identitet, singulär)
  *   - fitOLS (kända koefficienter, HC3 vs klassisk vcov, n<k+2)
  *   - bhJustera (Benjamini–Hochberg: ordning, m = 1, tom lista, lika p-värden, tak 1, monotonicitet)
- *
- * Vaktar: R21 (docs/utveckling/regler.md)
  */
 
 import { describe, it, expect } from 'vitest';

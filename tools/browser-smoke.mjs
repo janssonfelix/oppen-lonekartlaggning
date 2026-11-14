@@ -17,7 +17,6 @@
 //
 // Kontrollerna ligger per område i tools/browser-smoke/ med en gemensam rigg (rigg.mjs: webbläsaren, sidan,
 // ok() och hjälparna). Den här filen kör dem i samma ordning som de alltid har körts och skriver sammanfattningen.
-// Vaktar: S3 (docs/utveckling/regler.md)
 import { browser, NAMN, antalFel } from './browser-smoke/rigg.mjs';
 import { laddningOchDemo, startsidan, organisationsfilen } from './browser-smoke/laddning.mjs';
 import { flikarOchDiagram, oversiktEfterInlasning } from './browser-smoke/flikar-och-diagram.mjs';

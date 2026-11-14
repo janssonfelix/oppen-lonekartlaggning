@@ -9,8 +9,6 @@
  *
  * Direktivmarkeringen (≥ 5 %) är något annat: den följer den OJUSTERADE medianskillnaden och står aldrig på
  * regressionens justerade tal.
- *
- * Vaktar: R28 (docs/utveckling/regler.md)
  */
 import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';

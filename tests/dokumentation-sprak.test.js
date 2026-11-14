@@ -6,8 +6,6 @@
  * dokument pekar på något som finns. Varje mönster har ett självtest som visar att
  * det fångar de felaktiga formuleringarna och släpper de tillåtna. Dokumentationens
  * struktur och tal ur koden vaktas i dokumentation-struktur.test.js.
- *
- * Vaktar: R7, R23 (docs/utveckling/regler.md)
  */
 import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync, existsSync } from 'node:fs';

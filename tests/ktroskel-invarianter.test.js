@@ -5,8 +5,6 @@
  * flera filer så att Vitest fördelar den över flera arbetare. Invarianten (tests/helpers/ktroskel-invariant.js)
  * körs vid 25 i tests/ktroskel-invarianter-25.test.js, med sakliga skäl (I8): förberedelsen tar omkring en minut,
  * så de två förberedelserna ligger i var sin fil.
- *
- * Vaktar: S4 (docs/utveckling/regler.md)
  */
 import { describe, it, expect, vi } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';

@@ -5,8 +5,6 @@
  * och autocomplete="off" på fält som skapas efter start.
  *
  * Samma rigg som ktroskel.test.js: grupper där alla har samma lön, i tre storlekar (150, 20 och 6).
- *
- * Vaktar: S4 (docs/utveckling/regler.md)
  */
 import { describe, it, expect, vi } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
