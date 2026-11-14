@@ -636,6 +636,13 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
   programvaruförteckningens test beskriver det det prövar, och rubriker som pekade på flyttad text i
   `teknisk-plan.md` pekar på `likvardighetsmodellen.md` och `regressionsmodellen.md`. Inga tester är tillagda eller
   borttagna.
+- **K-tröskelns tester mot invarianten, en gång till.** Testerna som invarianten I4 täcker togs bort 2026-11-10;
+  en ny genomgång av dagens filer fann inga fler. De tester som liknar I4 mest prövar sådant som I4 inte ser: modellens
+  tal (regressionens ojusterade steg med sju män, BAS-effekterna, livscykelns kurva), ett annat underlag eller en annan
+  tröskel, och ett läckprov bekräftade det: med regressionens steg och BAS-effekterna omaskade i exporten föll de
+  riktade testerna men inte I4. Inget test är borttaget. Åtta tester som bara prövar stämpeln och meningen om sänkt
+  tröskel (metodbilagan, CSV, urklipp, diagramdata, gruppdossiern och rapportunderlaget) kör nu på den lilla fixturen
+  `fonsterLitet`, med samma trösklar och samma vägar; vart och ett faller på något av två läckprov i stämpeln. Tidsvinsten är liten (omkring 0,4 s).
 - **K-invarianten prövar varje ritat diagram.** Riggen för invarianten I4 (`samlaUtdata` i
   `tests/helpers/ktroskel-rigg.js`) tar diagrammen ur diagramkärnans register i stället för ur en väljare, väntar in
   kvantilregressionens bakgrundsräkning och nästa bildruta, och läser alla diagram i ett och samma exportläge. Förut

@@ -56,7 +56,8 @@ export function fonster(k) {
     return win;
 }
 // En liten fixtur för tester som bara prövar en stämpel eller en mening om tröskeln (utskriften, Word-utkastets
-// sidfot, ZIP-filens bilder och Excel-fil), inte vilka grupper som syns: att bygga utdata på de ~1 150 raderna i
+// sidfot, ZIP-filens bilder och Excel-fil, CSV, urklipp, diagramdata, gruppdossiern och rapportunderlaget), inte vilka
+// grupper som syns: att bygga utdata på de ~1 150 raderna i
 // fonster() tar flera sekunder per test. Samma radform och samma referens per BAS, men 116 rader: S1–S3 med 30
 // personer var (båda könen; når tröskeln också vid 25), A med 20 (MELLAN: syns vid 10, saknas vid 25) och E med 6
 // (SMA: under 10). Lönerna i A och E är deras sentinelvärden, som i byggDataset().
