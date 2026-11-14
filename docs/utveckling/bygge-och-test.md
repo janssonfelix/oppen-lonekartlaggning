@@ -114,6 +114,11 @@ Vitest, med omkring 3 400 tester i drygt 100 filer:
 
 Vilket test som vaktar vilken regel står i [`regler.md`](regler.md).
 
+**Fokus i jsdom kräver en synlig vy.** Som i en webbläsare får ett element inte fokus när det eller en förälder har
+`display: none`, och de stängda flikarnas paneler har det. Ett test som prövar fokus öppnar därför fliken som
+användaren gör, med ett klick på `.nav-item[data-tab="…"]`; `__renderTabContent` ritar bara innehållet och lämnar
+panelen dold.
+
 ### 5.2 De två projekten
 
 Sviten är delad i två Vitest-projekt i `vitest.config.js`: `enhet` (moduler, vakter och källtext, utan att verktyget

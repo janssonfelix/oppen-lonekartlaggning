@@ -100,6 +100,14 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 
 ### Utveckling
 
+- **jsdom 31.** Testmiljön är höjd från jsdom 30.1.1 till 31.0.0; jsdom 31 kräver samma Node som jsdom 30
+  (22.22.2 eller senare i 22-serien, som CI kör). Två skillnader mot jsdom 30 syntes i sviten, och båda gör jsdom likare en webbläsare. Ett
+  element i en dold panel (`display: none` på en förälder) får inte längre fokus: tio tester gav fokus i en flik som
+  testet bara hade ritat med `__renderTabContent`, inte öppnat. De öppnar nu fliken med sidomenyns knapp, som
+  användaren gör, och påståendena om fokus står kvar. CSSOM läser tillbaka ett tal med sex värdesiffror
+  (`4.16667%`), som Chromium och Firefox; testet av staplarnas `data-stil-*` jämförde talen exakt och jämför nu med
+  vad samma värde blir i en tom stil. Inget av felen fanns i verktyget. `docs/utveckling/bygge-och-test.md` säger
+  hur ett test som prövar fokus öppnar fliken.
 - **Reserven för kvinnoandel heter efter vad den är, inte SCB.** Den nationella kvinnoandelen per AID-kod kommer ur
   SKR:s personalstatistik, men hette SCB i likvärdighetsanalysens kärna. Parametern `scbKlass` till
   `computeLikvardighetPairs` och `klassificeraStatistik` heter `nationellKlass`, källan på en statistikrad `'nationell'`

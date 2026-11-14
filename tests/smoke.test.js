@@ -152,11 +152,15 @@ describe('#1 röktest: varje flik renderar utan kast', () => {
     it('staplar med data-stil-* har fått sitt mått via CSSOM efter ritning', () => {
         const d = win.document;
         const saknas = [];
+        // CSSOM läser tillbaka ett tal med sex värdesiffror, som Chromium och Firefox: "4.166666666666667%" blir
+        // "4.16667%". Måttet jämförs därför med vad samma värde blir när det sätts i en tom stil.
+        const tom = d.createElement('span').style;
+        const somSatt = (egenskap, varde) => { tom[egenskap] = ''; tom[egenskap] = varde; return tom[egenskap] || 'saknas'; };
         for (const t of tabs) {
             win.__renderTabContent(t);
-            for (const el of d.querySelectorAll('[data-stil-bredd]')) if (parseFloat(el.style.width) !== parseFloat(el.getAttribute('data-stil-bredd'))) saknas.push(`${t}: ${el.className}`);
-            for (const el of d.querySelectorAll('[data-stil-vanster]')) if (parseFloat(el.style.left) !== parseFloat(el.getAttribute('data-stil-vanster'))) saknas.push(`${t}: ${el.className}`);
-            for (const el of d.querySelectorAll('[data-stil-mvanster]')) if (parseFloat(el.style.marginLeft) !== parseFloat(el.getAttribute('data-stil-mvanster'))) saknas.push(`${t}: ${el.className}`);
+            for (const el of d.querySelectorAll('[data-stil-bredd]')) if (el.style.width !== somSatt('width', el.getAttribute('data-stil-bredd'))) saknas.push(`${t}: ${el.className}`);
+            for (const el of d.querySelectorAll('[data-stil-vanster]')) if (el.style.left !== somSatt('left', el.getAttribute('data-stil-vanster'))) saknas.push(`${t}: ${el.className}`);
+            for (const el of d.querySelectorAll('[data-stil-mvanster]')) if (el.style.marginLeft !== somSatt('marginLeft', el.getAttribute('data-stil-mvanster'))) saknas.push(`${t}: ${el.className}`);
         }
         expect(saknas).toEqual([]);
     });
@@ -960,11 +964,11 @@ describe('a11y: ARIA APG-tangentbord i den in-page-tablisten', () => {
     // i Tab-ordningen med flit. Det här gäller info-sektionerna och underflikarna i Tabeller och egna vyer (samma
     // klasser, 74-alla-diagram.js), som är äkta tablists.
     const listor = [
-        ['info-sektionerna', '#view-info .info-section-btn', () => win],
-        ['underflikarna i Tabeller och egna vyer', '[data-ut-underflik]', () => win]
+        ['info-sektionerna', '#view-info .info-section-btn', () => win, 'info'],
+        ['underflikarna i Tabeller och egna vyer', '[data-ut-underflik]', () => win, 'utforska']
     ];
 
-    for (const [namn, sel, fonster] of listor) {
+    for (const [namn, sel, fonster, flik] of listor) {
         it(`${namn}: exakt en knapp ligger i Tab-ordningen (roving tabindex)`, () => {
             const btns = [...fonster().document.querySelectorAll(sel)];
             expect(btns.length).toBeGreaterThan(1);
@@ -973,6 +977,7 @@ describe('a11y: ARIA APG-tangentbord i den in-page-tablisten', () => {
         });
 
         it(`${namn}: högerpil flyttar aktiv flik, fokus och tabindex`, () => {
+            fonster().document.querySelector(`.nav-item[data-tab="${flik}"]`).click();
             const btns = [...fonster().document.querySelectorAll(sel)];
             const från = btns.findIndex(b => b.tabIndex === 0);
             const till = (från + 1) % btns.length;
@@ -1393,6 +1398,7 @@ describe('Utforska: urval', () => {
     it('fokus stannar på jämförelselistan när man byter jämförelse', () => {
         const w = createAppWindow();
         w.__loadDemoData();
+        w.document.querySelector('.nav-item[data-tab="utforska"]').click();
         w.__explorerSetUrval({ lage: 'alla', villkor: [{ falt: 'lon', op: 'minst', varde: null, inte: false }] },
                              [{ matt: 'gap', op: 'mindre', varde: null }]);
         w.__renderExplorer();
@@ -1655,7 +1661,7 @@ describe('Utforska: tomläge, exportmeny och talfält', () => {
     const tomtUrval = () => win.__explorerSetUrval({ lage: 'alla', villkor: [{ falt: 'lon', op: 'mindre', varde: 1, inte: false }] });
     const meny = () => $('chart-explore').parentElement.querySelector('.chart-export');
     const verktyg = () => $('explore-table').closest('.table-container').previousElementSibling;
-    beforeAll(async () => { win.__loadDemoData(); grund(); rita(); await vanta(); });
+    beforeAll(async () => { win.__loadDemoData(); win.document.querySelector('.nav-item[data-tab="utforska"]').click(); grund(); rita(); await vanta(); });
 
     it('tomläget döljer exportmenyn och tabellverktygen, och de kommer tillbaka', () => {
         grund(); tomtUrval(); rita();
