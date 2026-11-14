@@ -274,7 +274,7 @@ describe('namnen i etiketterna', () => {
         w.__renderTabContent('likvardighet');
         const lv = w.document.getElementById('likvardighet-content').textContent;
         expect(lv).toMatch(/Median Testkommunen/);
-        expect(lv).toMatch(/Kvinnodom\. yrke \(Testkommunen\)/);
+        expect(lv).toMatch(/Kvinnodom\. AID-etikett \(Testkommunen\)/);
         w.__renderTabContent('benchmark');
         const th = [...w.document.querySelectorAll('#benchmark-table thead th')].map(t => t.textContent.trim());
         expect(th).toContain('P10 Testkommunen');

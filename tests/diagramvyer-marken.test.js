@@ -702,7 +702,7 @@ describe('Likvärdigt arbete: krav mot lön', () => {
         w2.eval('sattKTroskel(15, { fraga: false })');
         w2.__renderTabContent('likvardighet');
         expect(el()._figur).toBeUndefined();
-        expect(el().textContent).toMatch(/För få yrkesgrupper med minst 15 personer/);
+        expect(el().textContent).toMatch(/För få AID-etiketter med minst 15 personer/);
     });
 });
 

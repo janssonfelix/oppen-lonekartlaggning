@@ -886,7 +886,7 @@ describe('Likvärdigt arbete: chart-likvardighet-heatmap', () => {
                    { kvLabel: 'K2', kvBas: 'C', kvMedian: 31000, maLabel: 'J1', maBas: 'C', maMedian: 33000, gapPct: 6.1, gapKr: 2000, allvarsindex: 5 }];
         const f = w.eval('_lvParFigur(window.__par)');
         expect(f.y.ordning).toEqual(['K2 mot J1', 'K1 mot J1']);
-        expect(f.lager.map(l => [l.marke, l.serie])).toEqual([['intervall', 'Skillnad'], ['punkt', 'Kvinnodominerat yrke'], ['punkt', 'Jämförelseyrke']]);
+        expect(f.lager.map(l => [l.marke, l.serie])).toEqual([['intervall', 'Skillnad'], ['punkt', 'Kvinnodominerad AID-etikett'], ['punkt', 'Jämförelseetikett']]);
         expect(f.lager[0].data.map(d => [d.lag, d.hog])).toEqual([[31000, 33000], [30000, 33000]]);
         expect(f.lager[2].data.map(d => d.etikett)).toEqual(['6,1 %', '9,1 %']);
         expect(f.lager[1].data.every(d => d.etikett === undefined)).toBe(true);
@@ -2004,7 +2004,7 @@ describe('Diagramfilter v3: filtren i vyerna', () => {
         w2.__p = [par('Usk', 'Tekniker', 'C', 12.34, 25), par('Barnskötare', 'Vaktmästare', 'B', 8, 4)];
         const f = w2.eval('_lvParFigur(window.__p)');
         expect(urvalLista(f).map(u => [u.falt, u.typ])).toEqual([['bas', 'kategori'], ['gap', 'intervall'], ['n', 'intervall']]);
-        expect(urvalLista(f)[0]).toMatchObject({ namn: 'BAS-intervall (kvinnodominerat yrke)', etikett: 'BAS {v}' });
+        expect(urvalLista(f)[0]).toMatchObject({ namn: 'BAS-intervall (kvinnodominerad AID-etikett)', etikett: 'BAS {v}' });
         for (const l of f.lager) expect(l.data.map(d => [d.bas, d.gap, d.n])).toEqual([['C', 12.3, 25], ['B', 8, 4]]);
         w2.__f = f;
         const svg = w2.eval("figurTillSvg(window.__f, 1000, 400, { filter: { kategori: new Map([['bas', new Set(['B'])]]), intervall: new Map() } })");

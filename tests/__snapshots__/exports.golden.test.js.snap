@@ -42,7 +42,7 @@ exports[`golden: Excel-exporterna på fast dataset > "Excel (alla flikar)" match
     [
       "BAS-intervall",
       "AID-kod",
-      "Yrkesgrupp",
+      "Etikettnamn",
       "Antal kvinnor",
       "Antal män",
       "Analys genomförd",
@@ -473,7 +473,7 @@ exports[`golden: Excel-exporterna på fast dataset > "Excel (alla flikar)" match
     [
       "BAS-intervall",
       "AID-kod",
-      "Yrkesgrupp",
+      "Etikettnamn",
       "Antal kvinnor",
       "Antal män",
       "Medianlön kvinnor",
@@ -698,7 +698,7 @@ exports[`golden: Excel-exporterna på fast dataset > "Excel (alla flikar)" match
     [
       "BAS-intervall",
       "AID-kod",
-      "Yrkesgrupp",
+      "Etikettnamn",
       "Antal",
       "Andel kvinnor (%)",
       "Andel kvinnor nationellt (%)",
@@ -1472,7 +1472,7 @@ exports[`golden: Excel-exporterna på fast dataset > "Excel (alla flikar)" match
     ],
     [
       "Tabellerna per AID-kod och BAS-intervall",
-      "Bladen Lika arbete AID x BAS, Likvärdigt arbete, Hierarkisk jämförelse, Analys på individnivå grupperar varje person på AID-kod och BAS-intervall ur personens egen rad: lika arbete är samma yrkesgrupp på samma nivå, och en yrkesgrupp i flera intervall får en rad per intervall. Lönemånad: inte angiven.",
+      "Bladen Lika arbete AID x BAS, Likvärdigt arbete, Hierarkisk jämförelse, Analys på individnivå grupperar varje person på AID-kod och BAS-intervall ur personens egen rad: utgångspunkten för lika arbete är samma AID-etikett på samma nivå, och en AID-etikett i flera intervall får en rad per intervall. Lönemånad: inte angiven.",
     ],
     [
       "Små grupper i tabellerna per AID och BAS",
@@ -1484,7 +1484,7 @@ exports[`golden: Excel-exporterna på fast dataset > "Excel (alla flikar)" match
     ],
     [
       "Kvinnodominerat arbete (Likvärdigt arbete, Hierarkisk jämförelse)",
-      "Kvinnodominerad vid mer än 60 % kvinnor. Mansdominerad med samma gräns för män; övriga könsblandade. Som jämförelse används alla grupper som inte är kvinnodominerade, både mansdominerade och könsblandade. Samma definition och samma jämförelsemängd gäller kandidatparen i Likvärdigt arbete och hela verktyget. "Brukar anses kvinnodominerad" bygger på andelen kvinnor nationellt i yrket (SKR:s personalstatistik, november 2025) med samma definition — lagen gäller arbete som är eller brukar anses vara kvinnodominerat. Lönespridning = (P90 − P10) / median. Den hierarkiska jämförelsen listar par där en grupp som inte är kvinnodominerad har lägre BAS-intervall och högre median än en kvinnodominerad grupp; BAS-ordningen är bokstavsordningen.",
+      "Kvinnodominerad vid mer än 60 % kvinnor. Mansdominerad med samma gräns för män; övriga könsblandade. Som jämförelse används alla grupper som inte är kvinnodominerade, både mansdominerade och könsblandade. Samma definition och samma jämförelsemängd gäller kandidatparen i Likvärdigt arbete och hela verktyget. "Brukar anses kvinnodominerad" bygger på andelen kvinnor nationellt med AID-etiketten (SKR:s personalstatistik, november 2025) med samma definition — lagen gäller arbete som är eller brukar anses vara kvinnodominerat. Lönespridning = (P90 − P10) / median. Den hierarkiska jämförelsen listar par där en grupp som inte är kvinnodominerad har lägre BAS-intervall och högre median än en kvinnodominerad grupp; BAS-ordningen är bokstavsordningen.",
     ],
   ],
   "Metodik": [
@@ -1882,7 +1882,7 @@ exports[`golden: Excel-exporterna på fast dataset > "Excel (alla flikar)" match
     ],
     [
       "  Tabellerna per AID-kod och BAS-intervall",
-      "Bladen Lika arbete AID x BAS, Likvärdigt arbete, Hierarkisk jämförelse, Analys på individnivå grupperar varje person på AID-kod och BAS-intervall ur personens egen rad: lika arbete är samma yrkesgrupp på samma nivå, och en yrkesgrupp i flera intervall får en rad per intervall. Lönemånad: inte angiven.",
+      "Bladen Lika arbete AID x BAS, Likvärdigt arbete, Hierarkisk jämförelse, Analys på individnivå grupperar varje person på AID-kod och BAS-intervall ur personens egen rad: utgångspunkten för lika arbete är samma AID-etikett på samma nivå, och en AID-etikett i flera intervall får en rad per intervall. Lönemånad: inte angiven.",
     ],
     [
       "  Små grupper i tabellerna per AID och BAS",
@@ -1894,7 +1894,7 @@ exports[`golden: Excel-exporterna på fast dataset > "Excel (alla flikar)" match
     ],
     [
       "  Kvinnodominerat arbete (Likvärdigt arbete, Hierarkisk jämförelse)",
-      "Kvinnodominerad vid mer än 60 % kvinnor. Mansdominerad med samma gräns för män; övriga könsblandade. Som jämförelse används alla grupper som inte är kvinnodominerade, både mansdominerade och könsblandade. Samma definition och samma jämförelsemängd gäller kandidatparen i Likvärdigt arbete och hela verktyget. "Brukar anses kvinnodominerad" bygger på andelen kvinnor nationellt i yrket (SKR:s personalstatistik, november 2025) med samma definition — lagen gäller arbete som är eller brukar anses vara kvinnodominerat. Lönespridning = (P90 − P10) / median. Den hierarkiska jämförelsen listar par där en grupp som inte är kvinnodominerad har lägre BAS-intervall och högre median än en kvinnodominerad grupp; BAS-ordningen är bokstavsordningen.",
+      "Kvinnodominerad vid mer än 60 % kvinnor. Mansdominerad med samma gräns för män; övriga könsblandade. Som jämförelse används alla grupper som inte är kvinnodominerade, både mansdominerade och könsblandade. Samma definition och samma jämförelsemängd gäller kandidatparen i Likvärdigt arbete och hela verktyget. "Brukar anses kvinnodominerad" bygger på andelen kvinnor nationellt med AID-etiketten (SKR:s personalstatistik, november 2025) med samma definition — lagen gäller arbete som är eller brukar anses vara kvinnodominerat. Lönespridning = (P90 − P10) / median. Den hierarkiska jämförelsen listar par där en grupp som inte är kvinnodominerad har lägre BAS-intervall och högre median än en kvinnodominerad grupp; BAS-ordningen är bokstavsordningen.",
     ],
   ],
   "Per BAS": [
@@ -4238,13 +4238,13 @@ exports[`golden: Excel-exporterna på fast dataset > exporten om likvärdigt arb
     [
       "Nr",
       "Org. AID",
-      "Org. Yrke",
+      "Org. etikettnamn",
       "BAS",
       "Org. n",
       "Org. % kvinnor",
       "Median Org. (kr)",
       "Jämf. AID",
-      "Jämf. Yrke",
+      "Jämf. etikettnamn",
       "Jämf. % kvinnor",
       "Jämf. klass",
       "Jämf. n",
@@ -4313,7 +4313,7 @@ exports[`golden: Excel-exporterna på fast dataset > exporten om likvärdigt arb
   ],
   "Metadata": [
     [
-      "Likvärdigt arbete — kvinnodominerade yrken",
+      "Likvärdigt arbete — kvinnodominerade AID-etiketter",
       "",
     ],
     [
@@ -4334,7 +4334,7 @@ exports[`golden: Excel-exporterna på fast dataset > exporten om likvärdigt arb
     ],
     [
       "Modell",
-      "Organisationens kvinnodominerade AID×BAS jämförs inom samma BAS med yrken som inte är kvinnodominerade (mansdominerade och blandade; könsandelen i jämförelseyrket står i tabellen), i första hand organisationens egna (intern), annars jämförelsestatistiken (extern)",
+      "Organisationens kvinnodominerade AID-etiketter jämförs inom samma BAS-intervall med AID-etiketter som inte är kvinnodominerade (mansdominerade och blandade; könsandelen i jämförelseetiketten står i tabellen), i första hand organisationens egna (intern), annars jämförelsestatistiken (extern)",
     ],
     [
       "",
@@ -4353,7 +4353,7 @@ exports[`golden: Excel-exporterna på fast dataset > exporten om likvärdigt arb
       "mer än 60 % kvinnor",
     ],
     [
-      "Jämförelseyrken",
+      "Jämförelseetiketter",
       "inte kvinnodominerade, ≤ 60 % kvinnor",
     ],
     [
@@ -4377,7 +4377,7 @@ exports[`golden: Excel-exporterna på fast dataset > exporten om likvärdigt arb
       "",
     ],
     [
-      "Organisationens AID×BAS totalt",
+      "Organisationens AID-etiketter i BAS-intervall totalt",
       4,
     ],
     [
@@ -4421,7 +4421,7 @@ exports[`golden: Excel-exporterna på fast dataset > exporten om likvärdigt arb
       0,
     ],
     [
-      "Interna jämförelseyrken i organisationen",
+      "Interna jämförelseetiketter i organisationen",
       2,
     ],
     [
@@ -4433,7 +4433,7 @@ exports[`golden: Excel-exporterna på fast dataset > exporten om likvärdigt arb
       2,
     ],
     [
-      "•varav jämförelseyrke > organisation",
+      "•varav jämförelseetikett > organisation",
       2,
     ],
     [
@@ -4462,7 +4462,7 @@ exports[`golden: Excel-exporterna på fast dataset > exporten om likvärdigt arb
     ],
     [
       "Diskrimineringslagen",
-      "Arbetsgivaren ska analysera om kvinnodominerade yrken har lägre lön än yrken som inte är kvinnodominerade och har likvärdiga eller lägre krav.",
+      "Arbetsgivaren ska analysera om kvinnodominerat arbete har lägre lön än arbete som inte är kvinnodominerat och har likvärdiga eller lägre krav.",
     ],
     [
       "Mått på kraven",
@@ -4470,7 +4470,7 @@ exports[`golden: Excel-exporterna på fast dataset > exporten om likvärdigt arb
     ],
     [
       "Jämförelsekälla",
-      "I första hand organisationens egna yrken som inte är kvinnodominerade. Saknas ett sådant yrke i ett BAS-intervall används jämförelsestatistiken i stället.",
+      "I första hand organisationens egna AID-etiketter som inte är kvinnodominerade. Saknas sådana i ett BAS-intervall används jämförelsestatistiken i stället.",
     ],
     [
       "95 % KI",
@@ -4478,11 +4478,11 @@ exports[`golden: Excel-exporterna på fast dataset > exporten om likvärdigt arb
     ],
     [
       "Justerad för ålder (%)",
-      "Jämförelseyrkets lön omräknad till det kvinnodominerade yrkets åldersfördelning: log(lön) = a + b·ålder skattas i jämförelseyrket (minst 10 personer, minst 5 års åldersspridning), lönen prediceras vid varje person i det kvinnodominerade yrket och medianen av prediktionerna jämförs med dess median. Den råa skillnaden är det lagen prövar; den justerade visar hur mycket som kan bero på åldersstruktur. Bara interna par; tomt när den inte kan räknas.",
+      "Jämförelseetikettens lön omräknad till den kvinnodominerade AID-etikettens åldersfördelning: log(lön) = a + b·ålder skattas i jämförelseetiketten (minst 10 personer, minst 5 års åldersspridning), lönen prediceras vid varje person med den kvinnodominerade AID-etiketten och medianen av prediktionerna jämförs med dess median. Den råa skillnaden är det lagen prövar; den justerade visar hur mycket som kan bero på åldersstruktur. Bara interna par; tomt när den inte kan räknas.",
     ],
     [
       "Summa för gruppen (kr/mån)",
-      "Skillnaden i kronor gånger antalet personer i det kvinnodominerade yrket, per månad. Används bara för att rangordna paren.",
+      "Skillnaden i kronor gånger antalet personer med den kvinnodominerade AID-etiketten, per månad. Används bara för att rangordna paren.",
     ],
   ],
   "Metod & parametrar": [
@@ -5045,7 +5045,7 @@ exports[`golden: lönefil utan ålder (ADR-64) > "Excel (alla flikar)" matchar f
     [
       "BAS-intervall",
       "AID-kod",
-      "Yrkesgrupp",
+      "Etikettnamn",
       "Antal kvinnor",
       "Antal män",
       "Analys genomförd",
@@ -5476,7 +5476,7 @@ exports[`golden: lönefil utan ålder (ADR-64) > "Excel (alla flikar)" matchar f
     [
       "BAS-intervall",
       "AID-kod",
-      "Yrkesgrupp",
+      "Etikettnamn",
       "Antal kvinnor",
       "Antal män",
       "Medianlön kvinnor",
@@ -5701,7 +5701,7 @@ exports[`golden: lönefil utan ålder (ADR-64) > "Excel (alla flikar)" matchar f
     [
       "BAS-intervall",
       "AID-kod",
-      "Yrkesgrupp",
+      "Etikettnamn",
       "Antal",
       "Andel kvinnor (%)",
       "Andel kvinnor nationellt (%)",
@@ -6423,7 +6423,7 @@ exports[`golden: lönefil utan ålder (ADR-64) > "Excel (alla flikar)" matchar f
     ],
     [
       "Tabellerna per AID-kod och BAS-intervall",
-      "Bladen Lika arbete AID x BAS, Likvärdigt arbete, Hierarkisk jämförelse, Analys på individnivå grupperar varje person på AID-kod och BAS-intervall ur personens egen rad: lika arbete är samma yrkesgrupp på samma nivå, och en yrkesgrupp i flera intervall får en rad per intervall. Lönemånad: inte angiven.",
+      "Bladen Lika arbete AID x BAS, Likvärdigt arbete, Hierarkisk jämförelse, Analys på individnivå grupperar varje person på AID-kod och BAS-intervall ur personens egen rad: utgångspunkten för lika arbete är samma AID-etikett på samma nivå, och en AID-etikett i flera intervall får en rad per intervall. Lönemånad: inte angiven.",
     ],
     [
       "Små grupper i tabellerna per AID och BAS",
@@ -6435,7 +6435,7 @@ exports[`golden: lönefil utan ålder (ADR-64) > "Excel (alla flikar)" matchar f
     ],
     [
       "Kvinnodominerat arbete (Likvärdigt arbete, Hierarkisk jämförelse)",
-      "Kvinnodominerad vid mer än 60 % kvinnor. Mansdominerad med samma gräns för män; övriga könsblandade. Som jämförelse används alla grupper som inte är kvinnodominerade, både mansdominerade och könsblandade. Samma definition och samma jämförelsemängd gäller kandidatparen i Likvärdigt arbete och hela verktyget. "Brukar anses kvinnodominerad" bygger på andelen kvinnor nationellt i yrket (SKR:s personalstatistik, november 2025) med samma definition — lagen gäller arbete som är eller brukar anses vara kvinnodominerat. Lönespridning = (P90 − P10) / median. Den hierarkiska jämförelsen listar par där en grupp som inte är kvinnodominerad har lägre BAS-intervall och högre median än en kvinnodominerad grupp; BAS-ordningen är bokstavsordningen.",
+      "Kvinnodominerad vid mer än 60 % kvinnor. Mansdominerad med samma gräns för män; övriga könsblandade. Som jämförelse används alla grupper som inte är kvinnodominerade, både mansdominerade och könsblandade. Samma definition och samma jämförelsemängd gäller kandidatparen i Likvärdigt arbete och hela verktyget. "Brukar anses kvinnodominerad" bygger på andelen kvinnor nationellt med AID-etiketten (SKR:s personalstatistik, november 2025) med samma definition — lagen gäller arbete som är eller brukar anses vara kvinnodominerat. Lönespridning = (P90 − P10) / median. Den hierarkiska jämförelsen listar par där en grupp som inte är kvinnodominerad har lägre BAS-intervall och högre median än en kvinnodominerad grupp; BAS-ordningen är bokstavsordningen.",
     ],
   ],
   "Metodik": [
@@ -6833,7 +6833,7 @@ exports[`golden: lönefil utan ålder (ADR-64) > "Excel (alla flikar)" matchar f
     ],
     [
       "  Tabellerna per AID-kod och BAS-intervall",
-      "Bladen Lika arbete AID x BAS, Likvärdigt arbete, Hierarkisk jämförelse, Analys på individnivå grupperar varje person på AID-kod och BAS-intervall ur personens egen rad: lika arbete är samma yrkesgrupp på samma nivå, och en yrkesgrupp i flera intervall får en rad per intervall. Lönemånad: inte angiven.",
+      "Bladen Lika arbete AID x BAS, Likvärdigt arbete, Hierarkisk jämförelse, Analys på individnivå grupperar varje person på AID-kod och BAS-intervall ur personens egen rad: utgångspunkten för lika arbete är samma AID-etikett på samma nivå, och en AID-etikett i flera intervall får en rad per intervall. Lönemånad: inte angiven.",
     ],
     [
       "  Små grupper i tabellerna per AID och BAS",
@@ -6845,7 +6845,7 @@ exports[`golden: lönefil utan ålder (ADR-64) > "Excel (alla flikar)" matchar f
     ],
     [
       "  Kvinnodominerat arbete (Likvärdigt arbete, Hierarkisk jämförelse)",
-      "Kvinnodominerad vid mer än 60 % kvinnor. Mansdominerad med samma gräns för män; övriga könsblandade. Som jämförelse används alla grupper som inte är kvinnodominerade, både mansdominerade och könsblandade. Samma definition och samma jämförelsemängd gäller kandidatparen i Likvärdigt arbete och hela verktyget. "Brukar anses kvinnodominerad" bygger på andelen kvinnor nationellt i yrket (SKR:s personalstatistik, november 2025) med samma definition — lagen gäller arbete som är eller brukar anses vara kvinnodominerat. Lönespridning = (P90 − P10) / median. Den hierarkiska jämförelsen listar par där en grupp som inte är kvinnodominerad har lägre BAS-intervall och högre median än en kvinnodominerad grupp; BAS-ordningen är bokstavsordningen.",
+      "Kvinnodominerad vid mer än 60 % kvinnor. Mansdominerad med samma gräns för män; övriga könsblandade. Som jämförelse används alla grupper som inte är kvinnodominerade, både mansdominerade och könsblandade. Samma definition och samma jämförelsemängd gäller kandidatparen i Likvärdigt arbete och hela verktyget. "Brukar anses kvinnodominerad" bygger på andelen kvinnor nationellt med AID-etiketten (SKR:s personalstatistik, november 2025) med samma definition — lagen gäller arbete som är eller brukar anses vara kvinnodominerat. Lönespridning = (P90 − P10) / median. Den hierarkiska jämförelsen listar par där en grupp som inte är kvinnodominerad har lägre BAS-intervall och högre median än en kvinnodominerad grupp; BAS-ordningen är bokstavsordningen.",
     ],
   ],
   "Per BAS": [

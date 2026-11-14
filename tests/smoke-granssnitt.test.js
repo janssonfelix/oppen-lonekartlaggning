@@ -920,7 +920,7 @@ describe('Lägre krav, högre lön', () => {
     it('utan par: förklarande rad', () => {
         const w = createAppWindow();
         oppna(w, [...grupp('100', 'C', 18, 2, 30000), ...grupp('200', 'E', 2, 18, 34000)]);
-        expect(w.document.getElementById('likvardighet-lagre-krav').textContent).toContain('Inget kvinnodominerat yrke har lägre medianlön än ett yrke i lägre BAS.');
+        expect(w.document.getElementById('likvardighet-lagre-krav').textContent).toContain('Ingen av de kvinnodominerade AID-etiketterna har lägre medianlön än en AID-etikett i lägre BAS.');
     });
     it('demodatan: kandidatparen finns kvar och lagreKrav är en lista', () => {
         // Att dagens par är oförändrade vaktas av lib-testet och golden-facit.
